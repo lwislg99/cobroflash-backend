@@ -65,6 +65,16 @@ export function rendersDe(codigoDeLaVista) {
  *
  * Así que el precio de la precisión lo paga el TEST, no el censo: un test que quiera que su vista
  * cuente, la monta con el nombre escrito en la llamada. Es más verboso y es comprobable.
+ *
+ * ⚠️ Y LA PROXIMIDAD SE MIDE EN CARACTERES, NO EN «EL ARGUMENTO DE AL LADO». La versión anterior
+ * exigía `pintarVista(<sin comas>, 'renderX')`, y eso **sólo reconoce la llamada más simple**:
+ * `pintarVista(cargarDashboard(RAIZ, { datos }), 'renderPlansView')` lleva comas y paréntesis
+ * dentro del primer argumento, así que no casaba. Medido: las dos únicas vistas que necesitan
+ * datos propios quedaban fuera del censo **estando cubiertas**.
+ *
+ *   >>> Es la tercera vez en este módulo que el detector sólo ve la forma que su autor tenía en
+ *   >>> la cabeza. Por eso ahora el criterio es la CERCANÍA al nombre de la llamada, que no
+ *   >>> depende de cómo se escriban los argumentos. <<<
  */
 export function rendersEjercitados(raiz) {
   const dir = path.join(raiz, 'tests');
@@ -73,7 +83,9 @@ export function rendersEjercitados(raiz) {
   for (const f of fs.readdirSync(dir)) {
     if (!f.endsWith('.mjs')) continue;
     const cod = fs.readFileSync(path.join(dir, f), 'utf8');
-    for (const m of cod.matchAll(/pintarVista\s*\([^,]+,\s*['"`](render[A-Za-z0-9_]+)['"`]/g)) fuera.add(m[1]);
+    // El primer literal `render*` que aparece a menos de 160 caracteres de una llamada a
+    // `pintarVista`. La ventana está acotada a propósito: sin ella volvería a ser «nombrarla».
+    for (const m of cod.matchAll(/pintarVista[\s\S]{0,160}?['"`](render[A-Za-z0-9_]+)['"`]/g)) fuera.add(m[1]);
   }
   return fuera;
 }

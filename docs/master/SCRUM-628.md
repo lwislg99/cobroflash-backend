@@ -215,3 +215,92 @@ candidata va al diagnóstico, no a un aserto.
 * Las vistas se ejercitan en el **banco (JSDOM)**: comprueban que **montan y pintan**, no contraste
   ni tamaño táctil ni CLS — eso son los `guard:*` de navegador, fuera de la tanda.
 * **`src/` y `public/` intactos:** las vistas se leen, no se tocan.
+
+---
+
+# APÉNDICE · 16-sep-2026 · SCRUM-628c · FASE c: las seis que quedaban, y el trinquete a CERO
+
+**Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `a9a1a3382fa74008e7da6da9611289b0ce6165ce` · 2026-09-16T09:40:24+01:00
+
+> **Un trinquete en cero no sobra: es lo único que impide que entre la siguiente sin vigilar.**
+
+## El trinquete, cerrado
+
+```
+población: 20 guards visuales · 27 vistas del dashboard · 27 nombradas por algún guard · 0 SIN CUBRIR
+```
+
+| fase | sin cubrir |
+| --- | --- |
+| a (declarado) | 20 ← inflado por el censo ciego |
+| a (censo arreglado) | 11 |
+| b | 6 |
+| **c** | **0** |
+
+Las seis de esta fase, por el mismo criterio derivado: `expensesView` (576), `providersView`
+(475), `libroRegistroView` (360), `plansView` (267), `parteOficinaView` (228), `quoteRequestsView`
+(161).
+
+## 🔴 Y por tercera vez, el detector sólo veía la forma que yo tenía en la cabeza
+
+Con las seis montando, el censo seguía diciendo **2 sin cubrir** — y eran exactamente
+`plansView.js` y `quoteRequestsView.js`, **las dos únicas que se montan con datos propios**:
+
+```js
+pintarVista(cargarDashboard(RAIZ, { datos }), 'renderPlansView')
+```
+
+El reconocedor exigía `pintarVista(<sin comas>, 'renderX')`, y ese primer argumento lleva comas y
+paréntesis. **Estaban cubiertas y el censo no las veía.** Ahora el criterio es la **cercanía** al
+nombre de la llamada (ventana de 160 caracteres), que no depende de cómo se escriban los
+argumentos.
+
+Es la tercera vez en este módulo — primero no veía los tests, luego contaba menciones, ahora sólo
+la llamada simple. Queda escrito en el propio fichero para que la cuarta se note antes.
+
+## ⚠️ Dos vistas necesitan la forma de su ruta, y NO es un defecto del producto
+
+`plansView` y `quoteRequestsView` revientan con la respuesta `{}` que el banco da por defecto,
+porque sus rutas devuelven una **lista**. Comprobado leyendo el consumidor, no suponiendo:
+`buildPlansHtml({ currentPlan, planExpiresAt, plans, founding })` desestructura, y
+`quoteRequestsView` **ya defiende** `null` y lista vacía (`if (!requests || requests.length === 0)`)
+— lo que no espera es un objeto. Darles su forma es usar el banco bien, no taparles nada.
+
+## 🔴 El control que justifica NO borrar el trinquete en cero
+
+En cero deja de medir deuda y pasa a ser una **puerta**. Que sepa seguir subiendo hay que
+comprobarlo **ejecutándolo**: un trinquete en cero que no sabe subir y uno que ya no existe se leen
+exactamente igual.
+
+Se escribe una vista sintética en el directorio real y se borra en `finally`:
+
+```
+antes: 0 sin cubrir
+con la vista intrusa: 1 sin cubrir, y la NOMBRA (__scrum628cIntrusaView.js)
+tras borrarla: 0 — el árbol queda como estaba
+```
+
+## Verificado en rojo — las seis, una a una
+
+```
+expensesView.js         ENTRÓ:sí · cae SU test:SÍ · positivo sigue verde:SÍ · restaurado ✅
+providersView.js        ENTRÓ:sí · cae SU test:SÍ · positivo sigue verde:SÍ · restaurado ✅
+libroRegistroView.js    ENTRÓ:sí · cae SU test:SÍ · positivo sigue verde:SÍ · restaurado ✅
+plansView.js            ENTRÓ:sí · cae SU test:SÍ · positivo sigue verde:SÍ · restaurado ✅
+parteOficinaView.js     ENTRÓ:sí · cae SU test:SÍ · positivo sigue verde:SÍ · restaurado ✅
+quoteRequestsView.js    ENTRÓ:sí · cae SU test:SÍ · positivo sigue verde:SÍ · restaurado ✅
+```
+
+**El positivo discrimina en las seis:** las vistas ya vigiladas siguieron montando en cada pasada,
+así que el rojo era de la vista rota y no del banco.
+
+⚠️ **Por identidad:** los asertos cuentan **nodos del árbol pintado**, no `includes` sobre HTML.
+
+## Lo que NO cubre
+
+* Las 27 se ejercitan en el **banco (JSDOM)**: comprueban que **montan y pintan**. Contraste,
+  tamaño táctil y CLS siguen siendo los `guard:*` de navegador, fuera de la tanda. **Cobertura de
+  montaje al 100 %, no cobertura visual completa** — y la diferencia importa.
+* **`src/` y `public/` intactos:** las vistas se leen, no se tocan. La vista sintética del control
+  se borra en `finally` y el test comprueba que el árbol queda como estaba.
