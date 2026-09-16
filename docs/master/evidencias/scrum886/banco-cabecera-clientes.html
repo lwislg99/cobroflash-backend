@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../../../public/tokens.css"><link rel="stylesheet" href="../../../../public/dashboard/css/styles.css">
+</head><body><main id="m"></main><pre id="out"></pre>
+<script>
+const conExport = location.hash !== '#antes'; const conWrap = location.hash === '#arreglo';
+const m = document.getElementById('m'); m.style.padding = '16px';
+const card = document.createElement('div'); card.className = 'data-card'; m.appendChild(card);
+const header = document.createElement('div'); header.className = 'data-card-header';
+const left = document.createElement('div'); left.innerHTML = '<h2>Clientes</h2><p>12 clientes</p>'; header.appendChild(left);
+const acts = document.createElement('div'); acts.style.cssText = conWrap ? 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' : 'display:flex;align-items:center;gap:8px';
+const b = (tag, cls, t) => { const e = document.createElement(tag); e.className = cls; e.textContent = t; return e; };
+acts.appendChild(b('button', 'btn-secondary btn-sm', '⬆ Importar CSV'));
+if (conExport) { const a = b('a', 'btn-secondary btn-sm', '⬇ Clientes CSV'); a.href = '#'; acts.appendChild(a); }
+acts.appendChild(b('button', 'btn-primary', 'Nuevo cliente'));
+header.appendChild(acts); card.appendChild(header);
+const cr = card.getBoundingClientRect();
+const filas = [...acts.children].map((e) => { const r = e.getBoundingClientRect();
+  return e.textContent + ' L=' + Math.round(r.left) + ' R=' + Math.round(r.right) + ' H=' + Math.round(r.height) + ' deco=' + getComputedStyle(e).textDecorationLine + ' T=' + Math.round(r.top) + (r.right > cr.right + 0.5 ? ' CORTADO' : ''); });
+document.getElementById('out').textContent = 'vw=' + innerWidth + ' card=[' + Math.round(cr.left) + ',' + Math.round(cr.right) + '] acts.scrollW=' + acts.scrollWidth + ' acts.clientW=' + acts.clientWidth + ' | ' + filas.join(' | ');
+</script></body></html>

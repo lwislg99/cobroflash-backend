@@ -813,6 +813,9 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'almacenLocal.js',
   'api.js',
   'app.js',
+  // SCRUM-885 · la regla del aviso «el documento del cobro no ha salido», compartida por el
+  // detalle de la factura y el del trabajo. La llaman al confirmar y al pintar, no al cargarse.
+  'avisoDocumentoSinEnviar.js',
   // SCRUM-713 · la regla con la que el presupuesto filtra sus clientes al teclear, y los tres
   // textos que enseña al hacerlo. Va ANTES de `quotesView.js`, que la llama al MONTAR el selector
   // —no sólo al buscar—, así que cargarla después dejaría la pantalla sin selector de cliente.
