@@ -1,0 +1,30 @@
+═══ ⑤ SUELO · ¿es ESTABLE el tamaño? (los bytes ya se sabe que no lo son) ═══
+   tres pasadas con datos IDÉNTICOS: 5209 · 5209 · 5209 bytes
+   ¿bytes idénticos? ....: 🔴 NO (ya medido el 15-sep)
+   ¿TAMAÑO estable? .....: ✅ SÍ — el número se puede dar como cifra
+
+═══ ② EL NÚMERO · cuánto ocupa un PDF de factura, por forma de factura ═══
+     5209 bytes    5.1 KiB   factura de 1 línea (la fixture)
+     5359 bytes    5.2 KiB   factura de 5 líneas
+     6403 bytes    6.3 KiB   factura de 20 líneas
+     5255 bytes    5.1 KiB   rectificativa (R1, cita la rectificada)
+     5512 bytes    5.4 KiB   con marca DEMO
+
+   ⚠️ SIN LOGO en todas: `logoUrl` va a `null`. Un logo se EMBEBE en el PDF, así que es el
+      factor que más puede mover este número y el banco no lo mide (exigiría una imagen real
+      y una descarga). Se dice, no se estima.
+
+═══ ③ LA MARCA «DEMO» · ¿se queda dentro del papel? — comprobado, no asumido ═══
+   SUELO · el lector encuentra el número de la factura en el papel: sí
+   con `watermark` puesto → el papel LLEVA la marca: ✅ sí
+   con `watermark` a null → el papel NO la lleva ..: ✅ correcto
+
+   LECTURA: la marca es CONTENIDO del fichero, no un adorno al servirlo. Luego un PDF
+   guardado el día de la emisión la conserva aunque el merchant deje de ser demo — que es
+   justo lo que hoy se pierde al reimprimir, porque `watermark` se deriva EN VIVO de
+   `isDemoMerchant(...)`. Con el camino (B) el problema desaparece solo: confirmado.
+
+═══ RESUMEN ═══
+   tamaño de una factura típica (1 línea, sin logo): 5209 bytes ≈ 5.1 KiB
+   la mayor de las formas medidas ..................: 6403 bytes ≈ 6.3 KiB
+   tamaño estable entre pasadas ....................: sí
