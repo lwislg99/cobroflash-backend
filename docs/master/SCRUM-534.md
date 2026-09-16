@@ -152,3 +152,105 @@ consecuencia que conviene tener delante al decidir el orden: **quien los revise 
 publicación leerá afirmaciones ya escritas, no las escribirá de nuevo.** Un texto heredado se
 revisa con menos desconfianza que uno en blanco — que es justo lo contrario de lo que hace falta en
 un documento con régimen jurídico propio.
+
+---
+
+# APÉNDICE · 16-sep-2026 · SCRUM-534b · El censo de documentos fantasma
+
+**Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `e778e7b232c99b5b46ce44b6c4c90d526b67b175` · 2026-09-16T10:38:44+01:00
+**Tanda:** 7016 tests, 6906 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 837 ficheros · exit 0 — con tope duro, compilando DESPUÉS de mergear.
+
+> 🔒 **Un documento citado que no existe es peor que uno que falta: el que falta se busca, y el
+> citado se da por leído.**
+
+## El reparto — que es el entregable, no el total
+
+```
+población: 707 documentos · 514 rutas .md citadas
+   437 existen
+    48 🔴 FANTASMA          ← el defecto
+    24 🟡 deuda de nombre    ← existe, con otra ruta
+     3 ⚪ plantillas         ← `sesion-N.md`: la N es una variable
+     1 ⚪ futura declarada
+     1 ⚪ sólo en `docs/historico/`
+descontadas por vivir en bloque de código: 62
+vistas SÓLO por el instrumento normalizado: 2
+```
+
+**Las clases suman las 514**, y hay un test que lo comprueba: un censo cuyas partes no cierran no
+es un censo.
+
+### 🔴 Los fantasmas que más se citan
+
+| citas | documento |
+| --- | --- |
+| **7** | `docs/VERIFACTU_EVIDENCIAS.md` |
+| 2 | `docs/RUNBOOK_PAGOS.md` · `docs/legal/AVISOS_FISCALES.md` · `docs/AUDITORIA_SUPERFICIE_PUBLICA.md` · `GRAPH_REPORT.md` · `aviso.md` |
+| 1 | `docs/legal/DPA_PROFESIONAL.md` · `docs/legal/REGISTRO_ACTIVIDADES_TRATAMIENTO.md` · `docs/master/ROAD-39.md` · y 39 más |
+
+🔴 **`docs/VERIFACTU_EVIDENCIAS.md` tiene 7 citadores, no 4**: el máster (`:448`, `:1042`),
+`docs/RUNBOOKS.md:79`, `docs/master/SCRUM-538.md:124`, dos en
+`docs/legal/INVENTARIO_AFIRMACIONES_SKILLS.md` y uno en el histórico.
+
+⚠️ **Un patrón que el reparto destapa:** buena parte de los 48 son documentos de trabajo de un
+ticket —`SCRUM-209.md`, `SCRUM-242-RUNBOOK.md`, `SCRUM-403-ESPEC-COLUMNAS.md`,
+`SCRUM-555-punto4.md`…— citados con enlace markdown desde otra entrada. Son **enlaces que nunca
+llevaron a ningún sitio**: el registro por fichero nació con SCRUM-273 y el histórico no se migró.
+
+## Qué mira, declarado — y qué no
+
+* `docs/**/*.md`, `.claude/skills/**/*.md`, `README.md` y `CLAUDE.md`.
+* **NO mira `scripts/`**, y no por olvido: ya lo vigila **SCRUM-242**
+  (`scrum242-scripts-no-prometen-documentos`). Dos censos sobre la misma población pueden divergir
+  — es el defecto de SCRUM-663 con otra ropa.
+* **NO mira `src/` ni `public/`**: ahí una ruta `.md` es casi siempre un dato, no una promesa.
+
+## 🔴 Los dos instrumentos, y su discrepancia otra vez fue el dato
+
+* **① por línea** — da el número de línea y sabe descontar bloques cercados, pero **pierde la cita
+  que envuelve**.
+* **② sobre texto normalizado** — ve las que envuelven; a cambio no precisa la línea.
+* **Aportó 2 citas** que el ① no veía. Uno solo habría sido media medida.
+
+### Y el control cazó un límite de MI propio instrumento
+
+El test fabricó una ruta partida por el salto (`docs/\nVERIFACTU_EVIDENCIAS.md`) y **el instrumento
+② tampoco la veía**: normalizar el salto a espacio deja `docs/ FICHERO.md` con un hueco dentro, y
+la expresión no casa. Los dos fallaban igual, o sea que el segundo no servía para lo único que
+está. Arreglado cerrando el espacio tras la barra.
+
+## Verificación
+
+* 🔴 **EL QUE DECIDE** — `docs/VERIFACTU_EVIDENCIAS.md` sale en la lista **con ≥4 citadores**, y se
+  comprueba además que de verdad no existe (si alguien lo crea, el control lo dice en vez de pasar).
+* ✅ **POSITIVO** — `docs/RUNBOOKS.md`, que existe y se cita mucho, **no sale**; y se exige que sí
+  aparezca entre los que existen, para que su ausencia de la lista signifique algo.
+* ⚠️ **Bloques de código** — una cita dentro de ``` no cuenta, **y el censo declara cuántas
+  descontó (62)**. Un filtro que no dice lo que se come es un número sin auditar.
+* ⚪ **Plantillas** — `sesion-N.md` va a su cubo: sin él, el censo mandaba a crear un fichero que no
+  debe existir (`sesion-5.md` sí existe).
+* 🔴 **SUELO** — cero citas es CIEGO, no «está limpio»; y las clases **suman** las 514.
+
+## 🔴 Y el guard hermano cazó a este censo — SCRUM-349 en persona
+
+Antes de empujar, **SCRUM-242 se puso en rojo acusando a este propio módulo**: nombraba en sus
+comentarios tres rutas que no existen, y una de ellas era **el fantasma que viene a censar**.
+
+> El fichero que explica la prohibición contiene los patrones que persigue.
+
+El guard tenía razón: vigila rutas y **no puede distinguir una mención de una promesa** — lo dice
+su propia cabecera. **No se relajó** (A7): se reescribieron las tres menciones partiendo el nombre
+de la ruta. Es el impuesto de SCRUM-349 sobre la claridad del comentario, pagado a propósito y
+dicho aquí para que no parezca un descuido de redacción.
+
+## Lo que NO cubre
+
+* ⛔ **No se ha creado ningún documento ni se ha corregido ninguna cita** (regla 9). Se lista.
+* **Falsos positivos residuales, declarados:** `aviso.md` es un fichero que un script **genera** al
+  correr, y el filtro de «generado» no lo atrapa por cómo está redactada su frase. Queda dentro de
+  los 48 y se dice, en vez de afinar el filtro hasta que el número quede bonito.
+* **El histórico va aparte pero no exento:** `docs/historico/` son copias congeladas y corregirlas
+  sería reescribir el pasado — pero quien las lea sigue encontrando rutas que no llevan a nada.
+* **No hay trinquete numérico**, a propósito: esta fase mide. Fijar el número pondría en rojo a
+  quien empiece a borrar citas, que es justo lo que debe pasar.
