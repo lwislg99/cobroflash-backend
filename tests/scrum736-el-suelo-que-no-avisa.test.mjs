@@ -11,7 +11,7 @@
 // una línea, y lo puede hacer cualquier sesión.» Llevaba ocho días imprimiéndola.
 //
 // ── EL DEFECTO, PROVOCADO ANTES DE TOCAR NADA ───────────────────────────────────────────
-// Sobre el TAP REAL de la tanda de hoy (6903), bajando el total 441 tests:
+// Sobre el TAP REAL de la tanda del 16-sep-2026 (6903), bajando el total 441 tests:
 //
 //     con el suelo declarado (6246)  ->  margen 216   ✅ VERDE, exit 0
 //
@@ -150,7 +150,21 @@ test('SCRUM-736 · ✅ POSITIVO: la tanda sana de hoy pasa, y la red no fabrica 
   // Y el margen que queda hoy es HOLGURA, no una tarea pendiente: nadie tiene que subir nada.
   const v = veredictoDelSuelo(tap(declarados), SUELO_TESTS, declarados);
   assert.ok(v.margen > 0, '🔴 la tanda de hoy no debería estar pegada al suelo.');
-  assert.doesNotMatch(String(v.detalle), /Subir el suelo/,
+
+  // 🔴 EL HERMANO DEL TOKEN (SCRUM-237). La negación de abajo sería un VERDE PERMANENTE si el
+  // patrón dejara de casar con nada: primero se comprueba que SÍ caza el texto que se retiró.
+  const RE_TAREA_IMPRESA = /Subir el suelo/;
+  assert.match('   Subir el suelo a N es una línea, y lo puede hacer cualquier sesión.',
+    RE_TAREA_IMPRESA,
+    '🔴 el patrón ya no reconoce la frase que este ticket retiró: entonces la negación de abajo '
+    + 'no prueba nada y pasaría para siempre.');
+
+  // Y el sujeto se verifica POR CONTENIDO, no sólo por ausencia: el camino verde tiene que decir
+  // de dónde sale el suelo, que es lo que sustituye a la tarea impresa.
+  assert.match(String(v.detalle), /Sale del árbol/,
+    '🔴 el camino verde ya no dice de dónde sale el suelo. Sin eso, quien lo lea no sabe que no '
+    + 'hay nada que subir.');
+  assert.doesNotMatch(String(v.detalle), RE_TAREA_IMPRESA,
     '🔴 el camino verde sigue pidiéndole a quien lo lea que suba el suelo a mano. Eso es el '
     + 'defecto de SCRUM-736: una tarea impresa que nadie está obligado a hacer.');
 });

@@ -153,7 +153,10 @@ export const SALIDA_NO_SUPE_MIRAR = 2;
  * árbol declara (el TAP cuenta los subtests y los tests que nacen dentro de un bucle, que el AST
  * ve como una sola llamada). O sea que 0,97 deja **5 puntos por debajo de la relación observada**:
  * holgado para que un bucle de más no fabrique un rojo, y suficiente para cazar que la tanda deje
- * de dar cuenta del 3% de lo que el árbol declara — hoy, 208 tests.
+ * de dar cuenta del 3% de lo que el árbol declara. **No se escribe aquí a cuántos tests equivale
+ * ese 3%**: sería una cifra que caduca mañana, y la calcula el propio veredicto en cada ejecución
+ * (`sueloEfectivo`, y el título lo imprime). Que la frase no diga un número es el escalón ② de la
+ * jerarquía de SCRUM-737, y es mejor que anclarlo: no hay nada que mantener.
  *
  * ⚠️ Y UN PUNTO ES UN PUNTO: la relación 1,022 está medida sobre UN árbol. Por eso el suelo del
  * guard exige que la relación observada caiga dentro de una banda ancha, y si se sale, lo DICE
