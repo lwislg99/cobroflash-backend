@@ -280,6 +280,19 @@ test('SCRUM-885 · sin email y WhatsApp EN COLA más de 10 minutos → CON aviso
     '🔴 CALLADO PARA SIEMPRE: un WhatsApp atascado en cola más de 10 minutos no deja aviso en la fila.');
 });
 
+test('SCRUM-885 · factura AÚN SIN COBRAR → SIN aviso en la fila: todavía no había nada que enviar', async () => {
+  const b = banco({ email: null, telefono: null });
+  const fila = (await b.detalleDelTrabajo()).cuerpo?.invoices?.find((i) => i.chargeId === b.chargeId);
+  assert.ok(fila, '🔴 CIEGO: la factura del cobro no sale en el detalle del trabajo.');
+  assert.equal(b.emisiones.length, 0, 'control: no se ha cobrado nada');
+  assert.equal(avisoVisible(fila.envioDocumento).mostrar, false,
+    '🔴 FALSA ALARMA: una factura pendiente de cobro ya dice que el documento no se ha enviado.');
+  // Control positivo del mismo banco: tras cobrar, la misma fila SÍ avisa.
+  await b.confirmarBizum();
+  const cobrada = (await b.detalleDelTrabajo()).cuerpo.invoices.find((i) => i.chargeId === b.chargeId);
+  assert.equal(avisoVisible(cobrada.envioDocumento).mostrar, true, 'control: cobrada y sin email, la fila avisa');
+});
+
 test('SCRUM-885 · flag APAGADO → SIN aviso (que no le llegue a nadie es otro ticket)', async () => {
   const { b, enToast, enFila } = await cobrarYMirar({ email: null, telefono: null, autoEmail: false });
   assert.equal(b.correos.length, 0);
