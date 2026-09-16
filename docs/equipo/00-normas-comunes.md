@@ -316,15 +316,31 @@ enunciado no es una medición.**
 
 ## A19 · El PUESTO no se cierra; el CHAT sí
 
-La Sesión N es un puesto y dura lo que dure el equipo. Lo que se cierra es la conversación:
+La Sesión N es un puesto y dura lo que dure el equipo. Lo que se cierra, cuando toca, es la
+conversación:
 
-- **Chat nuevo** cuando se cierra el ticket, o cuando la conversación pasa de **~300k tokens**. En
-  ese segundo caso, antes de parar se deja el **traspaso en memoria** —qué está en `main` por
-  efecto, qué queda pendiente, ramas y PR abiertos— y se para. No se sigue «un turno más».
-- **Nunca se reanuda un chat viejo.** Ni para «acabar lo que quedaba»: se abre uno nuevo y se lee
-  el traspaso.
+- **Por defecto, el MISMO chat.** Cerrar un ticket NO obliga a abrir chat nuevo: el siguiente
+  encargo entra en la conversación que ya está abierta. Un chat recién estrenado no gana nada
+  cambiándose.
+- **Chat nuevo SOLO en dos casos:**
+  1. la conversación va por **más de ~200k tokens**;
+  2. la conversación lleva **más de 1 hora parada** con un contexto grande. La caché de prompt
+     caduca a la hora y el siguiente mensaje reescribe la conversación entera; Claude Code lo
+     avisa con «Idle… re-cache about Nk tokens».
+- **Antes de cerrar**, se deja el **traspaso en memoria** —qué está en `main` por efecto, qué queda
+  pendiente, ramas y PR abiertos— y se para. No se sigue «un turno más». Si el chat se cierra por
+  tamaño al terminar una tarea, la primera línea del informe lo dice: «chat lleno: el siguiente
+  encargo, en chat nuevo».
+- **Nunca se reanuda un chat grande y frío.** Ni para «acabar lo que quedaba»: se abre uno nuevo
+  con un prompt corto y se lee el traspaso.
 - **El chat nuevo se abre en la MISMA CARPETA.** La memoria va por carpeta: abierto en otra, no
   encuentra el traspaso y arranca a ciegas creyendo que arranca limpio.
+
+⚠️ **Corregida dos veces por el fundador el 16-sep-2026** («¿por qué un chat nuevo? no tiene
+sentido»). La primera versión de A19 decía «chat nuevo cuando se cierra el ticket, o cuando la
+conversación pasa de ~300k»: el cierre de ticket como disparador queda RETIRADO, y el umbral de
+tamaño baja a ~200k. La medición de abajo no cambia; lo que cambió es la lectura: lo caro es
+arrastrar un contexto grande o reescribirlo en frío, no seguir en un chat pequeño.
 
     🔒 El coste no es lo que entra en el chat: es lo que el chat arrastra.
 
