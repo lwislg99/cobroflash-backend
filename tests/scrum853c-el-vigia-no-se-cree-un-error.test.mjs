@@ -30,6 +30,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VIGIA = path.join(RAIZ, '.github', 'workflows', 'vigia-atascados.yml');
@@ -194,7 +195,7 @@ const CLASIFICAR = '      - id: pasada';
 // ── SUELOS ─────────────────────────────────────────────────────────────────────────────────────
 
 test('🔴 SUELO · el gh falso imita las DOS formas de fallar que se midieron', () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-853c-suelo-${process.pid}-`));
+  const tmp = temporal(`yaqu-853c-suelo-${process.pid}-`);
   const bin = path.join(tmp, 'bin');
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, 'gh'), GH_FALSO);

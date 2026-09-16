@@ -123,6 +123,16 @@ export function clasificaFuente(rutaFichero, fuente, raiz) {
       const c = n.expression;
       const nom = ts.isPropertyAccessExpression(c) ? c.name.text : ts.isIdentifier(c) ? c.text : '';
       if (nom === 'tmpdir') return 'TMP';
+      // SCRUM-864 · `temporal(prefijo)` es el ayudante de la casa (`tests/_temporal.mjs`) y su
+      // cuerpo construye la ruta con `path.join(os.tmpdir(), prefijo)`. Se reconoce aquí porque
+      // llega IMPORTADO, y la resolución de ayudantes de abajo sólo atraviesa los declarados en
+      // el propio fichero.
+      //
+      // 🔴 Esto NO afloja el guard: el conjunto de «sin probar» ENCOGE, y la exigencia sigue
+      // siendo la misma. Y no es una promesa escrita: `scrum864-el-temporal-que-se-borra` tiene
+      // un caso que comprueba que el helper sigue colgando de `os.tmpdir()`. El día que deje de
+      // hacerlo, cae ese test — no este reconocimiento en silencio.
+      if (nom === 'temporal') return 'TMP';
       if (['join', 'resolve', 'normalize'].includes(nom)) return raizDe(n.arguments[0], prof + 1);
       // `realpathSync`, `realpathSync.native` y `mkdtemp*` son TUBERÍAS: la raíz es la de su
       // argumento. `native` hay que nombrarlo aparte porque el nombre del método es ése, no

@@ -29,6 +29,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { traerRefs, instantanea, poblacionDe } from '../scripts/_censo-alcanzabilidad.mjs';
 import { agruparRamas } from '../scripts/_censo-reparto.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 /** El nombre que generó GitHub al pulsar «Revert»: el literal del incidente, no uno inventado. */
 const REVERT = 'revert-1192-scrum-824b-el-vigia-que-no-deja-pasar';
@@ -65,7 +66,7 @@ function refsDeOrigin(clon) {
  * los tests decidiera si hay ref rancia delante o no.
  */
 function bancoConRefRancia() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum829b-'));
+  const dir = temporal('scrum829b-');
   const origen = path.join(dir, 'origen');
   const clon = path.join(dir, 'clon');
   fs.mkdirSync(origen);

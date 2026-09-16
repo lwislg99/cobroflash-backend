@@ -43,6 +43,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { lecturaDeDeclaraciones } from './meta-guard-mutaciones.mjs';
+import { temporal } from '../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 export const RAMA_DE_REFERENCIA = 'origin/main';
 
@@ -217,7 +218,7 @@ export function arbolDeLaBase(raiz = process.cwd(), base = null) {
   // temporal — que es exactamente el defecto de la nota de turno que aquel ticket persigue.
   // El precio es no poder cachear entre procesos: 1,6 s por proceso. Barato al lado de que dos
   // sesiones se pisen un árbol.
-  const destino = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-base-'));
+  const destino = temporal('yaqu-base-');
   const testigo = path.join(destino, 'package.json');
   const tar = path.join(destino, 'arbol.tar');
   try {
