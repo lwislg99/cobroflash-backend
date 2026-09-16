@@ -180,3 +180,26 @@ está y una que no).
 `docs/equipo/00-normas-comunes.md` (A1, A2, A7, A8, A16) · `tests/_censo-eol.mjs` (SCRUM-533) ·
 `tests/_base-de-la-rama.mjs` (SCRUM-723) · `tests/scrum273-registro-por-fichero.test.mjs` ·
 `CLAUDE.md`
+
+---
+
+# APÉNDICE · SCRUM-854 (16-sep-2026) · Entrada exigida por un asunto de commit, sin trabajo de SCRUM-854
+
+**Medido contra:** `origin/main` = `7000a0cffe284fc99c669af2ba27e74ab9cb78c9` · 2026-09-16T19:32:47Z
+
+**Rama:** `scrum-839e-solo-pr-armados` (PR #1367). El trabajo de la rama es SCRUM-839e (ver `docs/master/SCRUM-839.md`).
+
+## Por qué existe esta entrada
+
+El commit `56484895` («SCRUM-854: entrada de registro que le faltaba al commit 9f396783»), empujado a la rama
+por el bot de Claude (cuenta `github-actions[bot]`), empieza su asunto por `SCRUM-854`. El guard de esta ficha
+(vía SCRUM-857: el ticket se lee del **inicio del asunto** de cada commit de la rama) exige entonces
+`docs/master/SCRUM-854.md`, aunque ese commit no trae trabajo de SCRUM-854: solo añade la entrada de SCRUM-859 y
+un bug en `docs/BUGS.md`. Norma A7: se escribe la entrada, no se relaja el guard.
+
+## El efecto, anotado como dato del guard
+
+Un commit que **cita** el guard en su asunto para explicar por qué escribe una entrada crea la obligación de
+OTRA entrada. Medido en esta rama: `9f396783` (asunto `SCRUM-859:`) hizo caer el guard en el CI de `89f25523`
+(«build + tests» en `failure`); el arreglo del bot (`56484895`, asunto `SCRUM-854:`) lo habría vuelto a tumbar.
+Arreglo de proceso, sin tocar el guard: el asunto de un commit de registro empieza por el ticket de la RAMA.

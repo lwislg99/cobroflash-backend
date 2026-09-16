@@ -465,3 +465,30 @@ declara `QUIEN_EMPUJA: 'User'` (sus casos son de una persona).
   se le abre ni arma PR (push `Bot`); la rama huérfana quedaría a la vista.
 - La **pieza B** (aviso en el PR) sigue esperando.
 - **Para volver a encender** el workflow, tras el merge: GitHub → Actions → «Conflicto de registro» → «Enable workflow».
+
+## ⑥ Tercer agujero (16-sep, 19:13Z): un push del bot de Claude deja el PR sin checks y sin aviso — NO arreglado
+
+**Medido contra:** `origin/main` = `7000a0cffe284fc99c669af2ba27e74ab9cb78c9` · 2026-09-16T19:32:47Z
+
+- El CI de `89f25523` (push de persona) salió rojo en «build + tests» (guard SCRUM-854: faltaba la entrada de
+  SCRUM-859) y en «meta-guard». El aviso despertó al bot de Claude, que empujó a la rama **`9f396783`** (18:38Z) y
+  **`56484895`** (19:09Z). Cuenta que empuja según la API: `github-actions[bot]` (el nombre dentro del commit es
+  `claude[bot]`).
+- Sus runs de **CI** y **Zona roja** quedaron en `action_required` (18:38:32Z y 19:10:06Z): GitHub no ejecuta
+  workflows sobre un push de esa cuenta sin aprobación. **0 check-runs** sobre `56484895`. El PR siguió con el
+  auto-merge ARMADO y sin ningún check: no se iba a mergear nunca, y nada lo dijo en el PR.
+- **¿Lo vería la pieza B?** No: no existe todavía, y su alcance es avisar cuando un conflicto de solo registro no
+  se puede resolver. Un PR sin conflicto y sin checks no entra.
+- **¿Lo vería el vigía?** Sí, pero tarde y sin la causa: #1367 es asunto suyo (auto-merge armado) y
+  `causaDelAtasco` (`scripts/vigia-atascados.mjs`) da `SIN-CHECKS` con 0 checks pasados los 10 min de gracia.
+  No distingue «falta aprobar un run en `action_required`» de cualquier otro «no arrancó ningún check»: el detalle
+  no dice qué hacer. Retraso: el cron dice cada 3 h, pero sus tres últimas pasadas del 16-sep fueron 07:56Z,
+  13:47Z y 18:30Z (huecos de 5,9 h y 4,7 h; antes se midieron hasta 7,1 h). Con `56484895` a las 19:09Z, la
+  primera pasada que lo ve llega entre ~21:00Z y ~02:00Z.
+- Salida aplicada aquí: merge de `main` y push como persona, que relanza CI con jobs de verdad.
+- **Hallazgo colateral, de otro carril (SCRUM-859/866), no arreglado:** el cambio de `9f396783` NO desmuda la
+  mutación. Medido en esta rama: aplicada la mutación re-apuntada, «insertar una entrada en medio NO mueve ninguna
+  clave» sigue en verde (0 caídos), mientras la otra mutación del mismo fichero sí tumba su test. Causa: con claves
+  por posición, las de antes (`#1…#n`) siguen todas presentes tras insertar (`#1…#n+1`); la aserción «ninguna
+  clave perdida» no puede ver el desplazamiento. El test es mudo por construcción: el arreglo está en la aserción
+  (qué entrada hay detrás de cada clave), no en a qué fichero apunta la mutación.
