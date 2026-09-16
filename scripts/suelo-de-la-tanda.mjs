@@ -14,9 +14,29 @@
 // `# tests N` del TAP lo emite el propio reporter, siempre y en el mismo formato. El CI ya escribe
 // ese fichero en cada tanda, así que esto no añade nada nuevo que mantener: le da superficie.
 import fs from 'node:fs';
-import { veredictoDelSuelo, SALIDA_NO_SUPE_MIRAR } from './_suelo-de-la-tanda.mjs';
+import path from 'node:path';
+import { veredictoDelSuelo, SALIDA_NO_SUPE_MIRAR, SUELO_TESTS } from './_suelo-de-la-tanda.mjs';
 
 const ruta = process.argv[2];
+const RAIZ = path.resolve(import.meta.dirname, '..');
+
+/**
+ * SCRUM-736 · cuántos tests DECLARA el árbol, para que el suelo no dependa de un número escrito
+ * hace ocho días. Se pregunta al censo por AST de SCRUM-708 — el mismo que usa el trinquete
+ * derivado de SCRUM-810b, no un segundo censo.
+ *
+ * 🔴 Y si no se puede contar, se pasa `null`: el veredicto lo DICE y rige el declarado. Un censo
+ * que revienta no es un árbol de cero tests, y confundirlos aquí bajaría el suelo a nada.
+ */
+async function declaradosEnElArbol() {
+  try {
+    const m = await import('../tests/_poblacion-de-tests.mjs');
+    const n = m.testsDeclaradosEn(RAIZ);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
 
 if (!ruta) {
   console.error('\n⚠️ NO SUPE MIRAR: falta la ruta del TAP.');
@@ -36,7 +56,7 @@ try {
   process.exit(SALIDA_NO_SUPE_MIRAR);
 }
 
-const v = veredictoDelSuelo(texto);
+const v = veredictoDelSuelo(texto, SUELO_TESTS, await declaradosEnElArbol());
 
 console.log('\n[suelo de la tanda] ' + v.titulo);
 if (v.detalle) console.log(v.detalle);
