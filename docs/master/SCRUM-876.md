@@ -275,3 +275,172 @@ plano: al terminar la tarea se lleva el servidor (SCRUM-871 §2)—.
 **Los instrumentos vivían en el scratchpad de la sesión y se pierden con ella.** Su diseño está
 escrito en el §1 de esta entrada (censo por experimento controlado, P1-P4, suelo de cuatro
 fabricados) y en este apéndice (rojo mutando `dist/` con restauración por bytes).
+
+---
+
+# APÉNDICE · SCRUM-876c · PASO 0, PASO 1 y T2
+
+**Medido contra:** `origin/main` = `4b0d5739bc19e7bad5109a32822ef7039d9ca860` · 2026-09-16T13:53:47Z (cabecera `Date:` de GitHub)
+**Rama:** `scrum-876c-tres-a-withmerchant` · **Carril:** `tests/` (Sesión 3)
+
+## PASO 0 · ¿Quién borró el banco? **Windows, no el repo** — medido
+
+La sospecha era un script del repo borrando bajo el temporal compartido (SCRUM-864 acababa de entrar).
+**No es eso.** Lo borró el **Sensor de almacenamiento de Windows**, y las cuatro medidas lo cuadran:
+
+| medida | dato |
+|---|---|
+| configuración (`HKCU:\…\StorageSense\Parameters\StoragePolicy`) | `01` = 1 (activo) · `04` = 1 («borrar archivos temporales que mis aplicaciones no usan») |
+| `StoragePoliciesLastTrigger` (FILETIME) | **15:25:01** hora local |
+| log del cluster | último checkpoint sano **15:25:17**; primer `FATAL … share/timezone` a las **15:25:56** (13:25:56 GMT) |
+| `mtime` de `Temp/pgt/pgsql` | **15:25:50** |
+
+⏱ Horas del reloj LOCAL (va ~333 s por delante de GitHub): los cuatro sellos salen del mismo reloj, así
+que su orden y su separación valen tal cual.
+
+**Qué borra y qué no — y por eso parecía selectivo:**
+
+* De `bin/` quedaron **13 ficheros: `postgres.exe` y sus DLL cargadas**, o sea exactamente lo que
+  estaba **en uso**. Cayeron `pg_isready`, pero también `initdb`, `pg_ctl` y `psql`: el apéndice de
+  SCRUM-876b sólo vio el primero.
+* `share/` quedó **vacío** (nada de ahí lo tiene abierto un proceso).
+* El criterio es la **antigüedad** (> 7 días), y aquí está la trampa: `ZipFile` conserva el `mtime`
+  **de 2024** de cada entrada del zip, así que un banco extraído hace diez minutos **parece de hace
+  dos años**.
+* Control: en la raíz de `Temp` sobreviven **2** ficheros de más de 7 días de 446, y son `con.log` y
+  `con.txt` — `CON` es un nombre reservado de Windows que el borrado normal no puede quitar.
+
+**Scripts del repo:** `tests/_temporal.mjs` (SCRUM-864) sólo borra lo que crea su propio proceso
+(`pendientes`), y los dos `readdirSync(os.tmpdir())` del árbol (`scrum864-el-temporal-que-se-borra` y
+su evidencia `el-que-decide.mjs`) filtran por su prefijo y no borran lo listado. ⚠️ Esto es una
+búsqueda por texto de quién LISTA el temporal, no un censo por AST de cada `rmSync`: lo que cierra la
+pregunta es la coincidencia de los cuatro sellos de arriba, no esta búsqueda.
+
+**Así que no es un defecto del repo y no hay nada que parar.** Es configuración de la máquina, y
+queda anotado para el fundador: cualquier cosa de más de 7 días de `mtime` en `Temp` —bancos
+extraídos de un zip incluidos— puede desaparecer en plena sesión. **Mitigación usada aquí:** banco en
+el scratchpad con `LastWriteTime = ahora` en cada fichero al extraer (7 días de margen), puerto propio
+(55876). **El cluster compartido de `Temp/pgt` + `Temp/pgb` no se ha parado**: es de varias sesiones
+(SCRUM-809) y sigue sin aceptar conexiones nuevas.
+
+## PASO 1 · 🔴 `tenancy-permisos`: la supresión **SÍ filtra** por merchant — medido corriendo
+
+**Leído:** `supresion.routes.ts` compara `merchantId !== req.merchantId` y responde 404 **antes** del
+`findUnique` (SCRUM-440). **Corrido**, contra el banco con `MERCHANT_DELETE_ENABLED=true` y dos
+merchants de `withMerchant`:
+
+| pasada | admin de A → suprimir B (con el nombre de B bien escrito) | control: B se suprime a sí mismo |
+|---|---|---|
+| código de hoy | **404**, B intacto | **200**, B anonimizado (el flag estaba encendido de verdad) |
+| `dist/` sin la comparación | **200, B anonimizado** ← la fuga que la comparación impide | 409 (ya estaba borrado) |
+
+`dist/` restaurado y comprobado por hash. **No hay fuga: el test estaba desfasado**, y su propio
+mensaje decía el arreglo («Añade su reemplazo arriba, junto a `:invoiceId`/`:planId`»). Se añade
+`:merchantId` → el merchant **propio** del técnico (el caso que importa: un técnico pidiendo suprimir SU
+empresa tiene que dar 403 por el rol).
+
+| pasada (copia de medición, banco local) | resultado |
+|---|---|
+| HEAD | cae: `PLACEHOLDER SIN SUSTITUIR "/admin/supresion/:merchantId"` |
+| alineado | 2/2 |
+| alineado, `dist/app.js` sin `requireRole('admin')` en la supresión | **cae**: `PERMISOS ROTOS: técnico obtuvo 404 en POST /admin/supresion/2 (esperado 403)` |
+
+⚠️ Dos errores míos en el instrumento, dichos: la primera pasada de HEAD apuntaba a `t_HEAD_test` y
+`psql` había creado `t_head_test` (sin comillas, minúsculas) — corrió contra una base inexistente y dio
+2 caídos en vez de 1; y la primera mutación de `dist/app.js` **no entró** (los nombres compilados eran
+otros) y dio un verde que no valía. Las dos se repitieron con la comprobación delante.
+
+**Destino:** `tenancy-permisos` sigue **gateado por `QA_DB_TEST`** (staging), que esta sesión no puede
+tocar. Su rojo está medido en el banco, **no en staging**: se queda gateado y declarado.
+
+## T2 · `scrum13`, `scrum52`, `scrum692` → `withMerchant`, y a la tanda de CI
+
+Los tres tenían `MERCHANT_ID = 1` (el demo que SCRUM-42 quemó). Ahora crean su merchant con
+`withMerchant` (precedente SCRUM-159) y ganan un **segundo destino sin aflojar el primero**:
+
+* `QA_DB_TEST=1` → staging por `_staging-db.mjs`, **igual que antes** (con esa variable, la nueva ni se lee).
+* Si no, `LIBRO_PG_URL` —el banco que CI ya levanta para la tanda, **sin variable nueva**— con guard
+  propio fail-closed: loopback y base `*_test`, o el fichero **cae** (comprobado: con un host ajeno cae;
+  sin variable, `skipped`).
+
+### El rojo, por fichero, en el banco local
+
+Mutando `dist/` —nunca `src/`—, cada mutación comprobada con `grep -c` = 1 antes de correr, y `dist/`
+restaurado por hash después:
+
+| fichero | verde | defecto inyectado | rojo | poso |
+|---|---|---|---|---|
+| `scrum13-cobrado` | 1/1 | `recalcJobCobradoForJob` suma también las `pending` | `totalCobrado = 50` → **actual 100** | `merchants = 0` |
+| `scrum52-operario` | 1/1 | `ensureJobForQuote` escribe `operarioId: null` | `operarioId = creador` → **actual null** | `merchants = 0` |
+| `scrum692-guardado-parcial-en-base` | 1/1 | `updateCustomer` rellena `billing*`/`internalRef` a `null` | **HA BORRADO LA DIRECCIÓN DE FACTURACIÓN** | `merchants = 0`, `customers = 0` |
+
+### El rojo, en CI — el destino donde van a correr
+
+Run **35105775083**, job `build + tests (con banco desechable)`, sobre `2f2f53a5e247034e83ebcb5644c960ae61203b8a`
+(leído en el LOG el 2026-09-16T14:14:49Z). Un paso temporal, colocado tras levantar el banco y antes de
+la tanda, inyectó en `dist/` las tres mutaciones —cada una exigiendo casar **una** vez, y las tres
+imprimieron `mutado:`— y corrió los tres ficheros contra `yaqu_libro_test`:
+
+| fichero | en CI, con su defecto |
+|---|---|
+| `scrum13-cobrado` | pass 0 · fail 1 · skipped 0 — `totalCobrado = 50`: **actual 100** |
+| `scrum52-operario` | pass 0 · fail 1 · skipped 0 — `operarioId = creador`: **actual null, esperado 1** |
+| `scrum692-guardado-parcial-en-base` | pass 0 · fail 1 · skipped 0 — **HA BORRADO LA DIRECCIÓN**: actual null |
+
+El paso se retiró en el commit siguiente (`47da81c9`), y `ci.yml` quedó **idéntico al de `main`**
+(comprobado por hash de blob): esta rama no deja infraestructura nueva en CI.
+
+⚠️ En ese mismo run cayó también `meta-guard · los guards caen cuando deben` por
+`scrum859-identidad-y-motivo-cerrado · MUDO`. **No es de esta rama:** cae igual en `main`
+(run 35102401285, sobre `4b0d5739`), y `scrum859` es una de las mudas de SCRUM-866, que no se tocan.
+No es un check obligatorio (lo es sólo `build + tests`).
+
+### Y el verde, dentro de la tanda de CI
+
+⚠️ **Pendiente de leer, y se dice:** con el automerge armado y `build + tests` como único check
+obligatorio, el push que lleva este registro se mezcla en cuanto pasa, así que su evidencia no cabe
+aquí. Lo que hay que comprobar en el log del run de `build + tests` sobre la cabeza de esta rama: los
+tres aparecen con ✔ y **sin** `# sin QA_DB_TEST=1 ni LIBRO_PG_URL` (un skip también se pinta como
+pasado), y `scrum419` dice «`LIBRO_PG_URL` presente». Lo que sí está medido: en la suite local con
+`LIBRO_PG_URL`, los tres pasan **dentro de la tanda paralela** (7.055 tests, fallaban sólo los 2 de
+`scrum419` que pedían la declaración, ya hecha).
+
+## TRASPASO — estado exacto al cerrar la Sesión 3 (16-sep-2026)
+
+Cierro por tamaño de contexto (norma de ~300k), no por bloqueo.
+
+| paso | estado |
+|---|---|
+| **PASO 0** · quién borró el banco | **cerrado**: Sensor de almacenamiento de Windows, no el repo. Nada que parar. Configuración de la máquina → fundador |
+| **PASO 1** · supresión y regla 2 | **cerrado**: filtra (medido corriendo, con rojo). `tenancy-permisos` alineado, **sigue gateado** (staging) |
+| **T1** · `scrum814-carrera-del-tramo` | cerrada en SCRUM-876b: gateada y declarada |
+| **T2** · `scrum13`, `scrum52`, `scrum692` | **cerrada en este PR**: `withMerchant` + `LIBRO_PG_URL`, rojo en CI |
+| **T3** · 5 obsoletos restantes | **sin empezar** (ver abajo) |
+| **T4** · 5 sin atribuir | **sin empezar** |
+| `scrum173` | no se toca (SCRUM-880, STOP fiscal) |
+
+**T3, lo que queda:** `albaran` (cita SCRUM-592, formato `AB260001`), `scrum234-carrera-serie.gated`,
+`scrum17-recapitulativa` y `scrum781-concurrencia-de-la-factura` (los tres citan SCRUM-780), y
+`scrum72-pdfs-privados` (cita SCRUM-844, el `invoicesDir` que se quedó sin `import`). Tres avisos:
+
+1. ⚠️ **`scrum234` y `scrum781` son de CARRERA.** Lo que T1 midió vale aquí: en un banco sin latencia una
+   carrera puede no existir, y su verde no respaldaría nada. Alinear la aserción al formato de hoy sí
+   se puede; **desgatearlos, sólo si caen con la carrera reabierta EN CI**. Si no, alineados y gateados.
+2. `scrum781` además **lee `.env` a mano** (`DATABASE_URL_DEV`): eso es anterior al formato y hay que
+   mirarlo antes de darle ningún destino.
+3. El patrón de T2 está probado de punta a punta y se puede copiar: segundo destino `LIBRO_PG_URL` con
+   guard fail-closed, declaración en `scrum419`, rojo en local mutando `dist/`, y **rojo en CI con un
+   paso temporal que se retira en el commit siguiente**. Empujar PRIMERO el commit rojo: con el
+   automerge armado por `pr-automatico.yml`, un primer push verde podría mezclar antes de tener la
+   evidencia.
+
+**T4:** los 5 crean su merchant con `withMerchant`; ni el entorno de WhatsApp ni el flag los cambian
+(§2 D). Su causa está por medir y **no se desgatea nada sin causa**.
+
+**El banco de esta sesión** vive en su scratchpad (puerto **55876**) y se pierde con ella. Para
+rehacerlo: el `pg.zip` de la sesión `cba1b7dc…` seguía vivo el 16-sep; copiarlo al scratchpad propio,
+extraer `pgsql/(bin|lib|share)` con `[System.IO.Compression.ZipFile]` **poniendo `LastWriteTime` = ahora**
+a cada fichero (o el Sensor de almacenamiento lo borra), `initdb` y `pg_ctl` con `Start-Process`, y el
+esquema con `migrate diff --from-empty` desde un worktree sin `.env`. Una base plantilla y
+`CREATE DATABASE x_test TEMPLATE plantilla` por pasada da bases recién creadas en un segundo. ⚠️ Nombres
+de base **en minúsculas**: `psql` las crea así sin comillas y la URL no perdona.

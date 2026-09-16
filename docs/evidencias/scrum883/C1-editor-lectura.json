@@ -1,0 +1,19 @@
+{
+ "hash": "#quotes-new",
+ "lineas": [
+  "36,26 €",
+  "51,24 €",
+  "39,17 €",
+  "116,46 €"
+ ],
+ "totales": "Base imponible | 200,95 € | IVA (21%) | 42,19 €",
+ "kpi": "TOTAL PRESUPUESTO | 243,14 €",
+ "preview": "QA Staging | QA Staging S.L. | C/ Staging 1, 28000 Madrid | WhatsApp 34600000001 | CLIENTE | Selecciona un cliente para completar estos datos. | CONDICIONES DE PAGO | Pago 100% al aceptar el presupuesto. | Concepto\tCant.\tPrecio\tTotal | Magnetotérmico 2P 16A\t3\t9,99 €\t36,26 € | Diferencial 40A 30mA\t1\t42,35 €\t51,24 € | Cable 2,5 mm² (m)\t37\t0,88 €\t39,17 € | Mano de obra (h)\t2.5\t38,50 €\t116,46 € | Base imponible | 200,95 € | IVA total | 42,19 € | Total presupuesto | 243,14 € | Presupuesto válido durante 30 días salvo indicación en contrario.",
+ "inputsDescuento": [
+  {
+   "id": "global-search-input",
+   "name": "",
+   "ph": "Buscar… (o pulsa /)"
+  }
+ ]
+}
