@@ -75,6 +75,18 @@ async function fetchInvoiceDetail(id) {
     setStatus('', '');
     const st = String(invoice.status || '').toLowerCase();
 
+    // SCRUM-885b · el documento del cobro no le ha llegado al cliente (ni email ni WhatsApp). FIJO, y
+    // no sólo el toast de «Confirmar Bizum»: 3 s no dan para leerlo. Misma regla y mismo componente
+    // que la fila de la factura en el trabajo (AB3: `.alert.warning`).
+    const avisoEnvio = avisoDocumentoSinEnviar(invoice.envioDocumento);
+    if (avisoEnvio.mostrar) {
+      const banda = document.createElement('div');
+      banda.className = 'alert warning invoice-detail__aviso';
+      banda.setAttribute('role', 'status');
+      banda.textContent = avisoEnvio.texto;
+      page.appendChild(banda);
+    }
+
     // V0-0: justificante de cobro (merchant ES real sin facturación activa) — el copy no dice "factura"
     const isReceipt = invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-');
     if (isReceipt) {

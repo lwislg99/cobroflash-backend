@@ -95,7 +95,10 @@ function banco({ email = null, telefono = null, wa = 'sent', autoEmail = true } 
     'charge.update': (args) => { Object.assign(cobro, args?.data ?? {}, { events: undefined, reconciliations: undefined }); return { ...cobro }; },
     'customer.findUnique': () => ({ ...customer }),
     'merchant.findUnique': () => ({ ...merchant }),
-    'invoice.findFirst': () => ({ id: invoiceId, number: factura.number, status: factura.status }),
+    // La ficha (`getInvoiceDetailAdmin`) pide la factura CON su merchant y su cliente.
+    'invoice.findFirst': (args) => (args?.include?.merchant
+      ? { ...factura, merchantId, customerId, merchant: { ...merchant }, customer: { ...customer, notes: null }, quote: null, rectifies: null, rectifiedBy: null }
+      : { id: invoiceId, number: factura.number, status: factura.status }),
     'invoice.findUnique': () => ({ id: invoiceId, number: factura.number, status: factura.status }),
     'invoice.update': () => ({ id: invoiceId }),
     'job.findFirst': () => ({ ...trabajo }),
@@ -150,16 +153,20 @@ function banco({ email = null, telefono = null, wa = 'sent', autoEmail = true } 
     'dist/modules/billing/app/routes/psp.routes.js',
     'dist/modules/billing/app/routes/chargesAdmin.routes.js',
     'dist/modules/jobs/app/routes/jobs.routes.js',
+    'dist/modules/system/invoiceAdmin.js',
+    'dist/modules/system/app/routes/invoicesAdmin.routes.js',
   ]) { try { delete requiere.cache[rutaDe(m)]; } catch { /* aún no existe */ } }
 
   psp = handleDe('dist/modules/billing/app/routes/psp.routes.js', 'post', '/');
   const confirmar = handleDe('dist/modules/billing/app/routes/chargesAdmin.routes.js', 'post', '/:id/confirm-bizum');
   const detalle = handleDe('dist/modules/jobs/app/routes/jobs.routes.js', 'get', '/:id');
+  const ficha = handleDe('dist/modules/system/app/routes/invoicesAdmin.routes.js', 'get', '/:id');
 
   return {
     emisiones, correos, filasWa,
     confirmarBizum: () => entregarA(confirmar, { params: { id: String(chargeId) }, body: {}, merchantId }),
     detalleDelTrabajo: () => entregarA(detalle, { params: { id: String(jobId) }, merchantId, userRole: 'admin' }),
+    fichaDeLaFactura: () => entregarA(ficha, { params: { id: String(invoiceId) }, merchantId, userRole: 'admin' }),
     chargeId,
   };
 }
@@ -186,7 +193,14 @@ async function entregarA(handle, req) {
   return { cuerpo, statusCode: res.statusCode };
 }
 
-/** Cobra por el camino del profesional y devuelve lo que ve en los DOS sitios. */
+/** Lo que dice la ficha de la factura (`GET /admin/invoices/:id`), juzgado con la regla. */
+async function avisoEnLaFicha(b) {
+  const f = await b.fichaDeLaFactura();
+  assert.equal(f.statusCode, 200, `la ficha de la factura respondió ${f.statusCode}: ${JSON.stringify(f.cuerpo)}`);
+  return avisoVisible(f.cuerpo?.envioDocumento);
+}
+
+/** Cobra por el camino del profesional y devuelve lo que ve en los TRES sitios. */
 async function cobrarYMirar(opciones) {
   const b = banco(opciones);
   const r = await b.confirmarBizum();
@@ -203,44 +217,52 @@ async function cobrarYMirar(opciones) {
     b,
     enToast: avisoVisible(r.cuerpo?.envioDocumento),
     enFila: avisoVisible(fila.envioDocumento),
+    // SCRUM-885b · la ficha de la factura: un toast de 3 s no basta para 98 caracteres, así que
+    // ahí el aviso también queda FIJO, con la misma regla que la fila del trabajo.
+    enFicha: await avisoEnLaFicha(b),
   };
 }
 
 // ═══ ① EL ROJO — flag encendido, sin email y sin WhatsApp ═════════════════════════════════════
 
 test('SCRUM-885 · 🔴 sin email y sin WhatsApp → AVISO en el toast y en la fila de la factura, con el texto firmado', async () => {
-  const { b, enToast, enFila } = await cobrarYMirar({ email: null, telefono: null });
+  const { b, enToast, enFila, enFicha } = await cobrarYMirar({ email: null, telefono: null });
   assert.equal(b.correos.length, 0, 'sin email no puede salir ningún correo');
   assert.equal(b.filasWa.length, 0, 'sin teléfono no se intenta el WhatsApp');
   assert.deepEqual(enToast, { mostrar: true, texto: TEXTO_FIRMADO },
     '🔴 EL PROFESIONAL NO SE ENTERA: la respuesta de «Confirmar Bizum» no deja aviso visible.');
   assert.deepEqual(enFila, { mostrar: true, texto: TEXTO_FIRMADO },
     '🔴 EL PROFESIONAL NO SE ENTERA: la fila de la factura en el trabajo no deja aviso visible.');
+  assert.deepEqual(enFicha, { mostrar: true, texto: TEXTO_FIRMADO },
+    '🔴 EL PROFESIONAL NO SE ENTERA: la ficha de la factura no deja aviso fijo (sólo un toast de 3 s).');
 });
 
 // ═══ ② POSITIVOS ══════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-885 · con email → SIN aviso, y el correo sale igual que hoy (uno, al email del cliente)', async () => {
-  const { b, enToast, enFila } = await cobrarYMirar({ email: 'cliente@ejemplo.invalid', telefono: null });
+  const { b, enToast, enFila, enFicha } = await cobrarYMirar({ email: 'cliente@ejemplo.invalid', telefono: null });
   assert.deepEqual(b.correos, [{ invoiceId: 8850, to: 'cliente@ejemplo.invalid' }]);
   assert.equal(enToast.mostrar, false);
   assert.equal(enFila.mostrar, false);
+  assert.equal(enFicha.mostrar, false);
 });
 
 test('SCRUM-885 · sin email pero WhatsApp ENVIADO → SIN aviso', async () => {
-  const { b, enToast, enFila } = await cobrarYMirar({ email: null, telefono: '+34600000885', wa: 'sent' });
+  const { b, enToast, enFila, enFicha } = await cobrarYMirar({ email: null, telefono: '+34600000885', wa: 'sent' });
   assert.equal(b.filasWa.length, 1, 'control: el WhatsApp tiene que haberse intentado');
   assert.equal(enToast.mostrar, false);
   assert.equal(enFila.mostrar, false);
+  assert.equal(enFicha.mostrar, false);
 });
 
 // ═══ ③ NEGATIVOS ══════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-885 · sin email y WhatsApp FALLIDO → CON aviso', async () => {
-  const { b, enToast, enFila } = await cobrarYMirar({ email: null, telefono: '+34600000885', wa: 'failed' });
+  const { b, enToast, enFila, enFicha } = await cobrarYMirar({ email: null, telefono: '+34600000885', wa: 'failed' });
   assert.equal(b.filasWa.length, 1, 'control: el WhatsApp tiene que haberse intentado');
   assert.equal(enToast.mostrar, true);
   assert.equal(enFila.mostrar, true);
+  assert.equal(enFicha.mostrar, true);
 });
 
 test('SCRUM-885 · un WhatsApp que falla DESPUÉS (webhook de estado) hace aparecer el aviso en la fila', async () => {
@@ -260,11 +282,12 @@ test('SCRUM-885 · un WhatsApp que falla DESPUÉS (webhook de estado) hace apare
 // enviado.
 
 test('SCRUM-885 · sin email y WhatsApp EN COLA recién puesto → SIN aviso (todavía no se sabe)', async () => {
-  const { b, enToast, enFila } = await cobrarYMirar({ email: null, telefono: '+34600000885', wa: 'queued' });
+  const { b, enToast, enFila, enFicha } = await cobrarYMirar({ email: null, telefono: '+34600000885', wa: 'queued' });
   assert.equal(b.filasWa.length, 1, 'control: el WhatsApp tiene que haberse intentado');
   assert.equal(b.filasWa[0].status, 'queued', 'control: la fila tiene que seguir en cola');
   assert.equal(enToast.mostrar, false, '🔴 FALSA ALARMA: un WhatsApp en cola aún no ha fallado y el toast ya avisa.');
   assert.equal(enFila.mostrar, false, '🔴 FALSA ALARMA: un WhatsApp en cola aún no ha fallado y la fila ya avisa.');
+  assert.equal(enFicha.mostrar, false, '🔴 FALSA ALARMA: un WhatsApp en cola aún no ha fallado y la ficha ya avisa.');
 });
 
 test('SCRUM-885 · sin email y WhatsApp EN COLA más de 10 minutos → CON aviso en la fila (atascado)', async () => {
@@ -287,17 +310,21 @@ test('SCRUM-885 · factura AÚN SIN COBRAR → SIN aviso en la fila: todavía no
   assert.equal(b.emisiones.length, 0, 'control: no se ha cobrado nada');
   assert.equal(avisoVisible(fila.envioDocumento).mostrar, false,
     '🔴 FALSA ALARMA: una factura pendiente de cobro ya dice que el documento no se ha enviado.');
+  assert.equal((await avisoEnLaFicha(b)).mostrar, false,
+    '🔴 FALSA ALARMA: la ficha de una factura pendiente de cobro ya dice que el documento no se ha enviado.');
   // Control positivo del mismo banco: tras cobrar, la misma fila SÍ avisa.
   await b.confirmarBizum();
   const cobrada = (await b.detalleDelTrabajo()).cuerpo.invoices.find((i) => i.chargeId === b.chargeId);
   assert.equal(avisoVisible(cobrada.envioDocumento).mostrar, true, 'control: cobrada y sin email, la fila avisa');
+  assert.equal((await avisoEnLaFicha(b)).mostrar, true, 'control: cobrada y sin email, la ficha avisa');
 });
 
 test('SCRUM-885 · flag APAGADO → SIN aviso (que no le llegue a nadie es otro ticket)', async () => {
-  const { b, enToast, enFila } = await cobrarYMirar({ email: null, telefono: null, autoEmail: false });
+  const { b, enToast, enFila, enFicha } = await cobrarYMirar({ email: null, telefono: null, autoEmail: false });
   assert.equal(b.correos.length, 0);
   assert.equal(enToast.mostrar, false);
   assert.equal(enFila.mostrar, false);
+  assert.equal(enFicha.mostrar, false);
 });
 
 test('SCRUM-885 · NINGÚN envío nuevo: los envíos son los de hoy en todos los casos', async () => {
@@ -310,6 +337,7 @@ test('SCRUM-885 · NINGÚN envío nuevo: los envíos son los de hoy en todos los
     await b.confirmarBizum();
     await b.detalleDelTrabajo();
     await b.detalleDelTrabajo(); // mirar la pantalla dos veces no puede enviar nada
+    await b.fichaDeLaFactura();
     assert.equal(b.correos.length, caso.email ? 1 : 0, `correos en ${JSON.stringify(caso)}`);
     assert.equal(b.filasWa.length, caso.telefono ? 1 : 0, `WhatsApps en ${JSON.stringify(caso)}`);
   }
@@ -410,3 +438,19 @@ for (const rel of ['public/dashboard/js/jobDetailView.js', 'public/dashboard/js/
     sinCopiaDelLiteral(rel);
   });
 }
+
+test('SCRUM-885b · la ficha de la factura deja el aviso FIJO desde la regla, con el envioDocumento de la factura', () => {
+  const rel = 'public/dashboard/js/invoiceDetailView.js';
+  const fijo = llamadasALaRegla(rel).filter((c) => !c.confirmaBizum);
+  assert.equal(fijo.length, 1, '🔴 la ficha de la factura no pinta el aviso fijo: sólo el toast de 3 s del confirm-bizum');
+  assert.equal(fijo[0].objeto, 'invoice', '🔴 el aviso fijo tiene que juzgar el envioDocumento de la factura cargada (invoice.envioDocumento)');
+  assert.deepEqual(fijo[0].destinos, ['textContent'], '🔴 lo que se pinta fijo tiene que ser el .texto de la regla');
+  // El componente es el de la fila del trabajo (AB3): `.alert.warning`, no uno nuevo.
+  const ambito = funcionesQueEnvuelven(fijo[0].llamada)[0];
+  const clases = nodos(ambito, (n) => ts.isBinaryExpression(n) && ts.isPropertyAccessExpression(n.left)
+    && n.left.name.text === 'className' && funcionesQueEnvuelven(n)[0] === ambito)
+    .map((n) => textoPlano(n.right) ?? '');
+  assert.ok(clases.some((c) => /(^|\s)alert(\s|$)/.test(c) && /(^|\s)warning(\s|$)/.test(c)),
+    '🔴 el aviso fijo de la ficha tiene que ser un .alert.warning, como en la fila del trabajo');
+  sinCopiaDelLiteral(rel);
+});
