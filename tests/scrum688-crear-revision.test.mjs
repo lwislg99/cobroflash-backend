@@ -235,44 +235,113 @@ test('SCRUM-688 · ✅ el PDF de la revisión SALE, con su contenido heredado', 
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
-// 🔴 DEFECTO VIVO, MEDIDO Y NO ARREGLADO AQUÍ · el PDF no puede decir DE QUÉ VERSIÓN es
+// ✅ EL PDF YA DICE DE QUÉ VERSIÓN ES — este caso está GIRADO, no borrado
 //
-// El ticket mandaba verificar «el PDF de una revisión creada por este camino». Verificado, y sale
-// un defecto real que NO se toca en este encargo:
+// Nació el 15-sep-2026 afirmando **lo contrario**: que el papel NO llevaba el «.1». Era un defecto
+// real y medido, y se dejó fijado en vez de saltado, con esta instrucción dentro de su propio
+// mensaje: «este test tiene que pasar a EXIGIRLO en vez de declararlo. No lo borres: gíralo.»
 //
-//     ParamsPdfPresupuesto.quoteNumber?: number | null        ← un ENTERO
-//     .text(`${QUOTE_LABEL} #${params.quoteNumber ?? params.quoteId}`)   (pdf.service.ts:749)
+// El 16-sep-2026 el fundador dio luz verde y se arregló. Lo que cambió, y por qué NO arrastró a la
+// factura:
 //
-// El número del papel es un entero, así que **no admite el «.1»**: la revisión y la original salen
-// con el MISMO `#2004226`. El cliente recibe dos documentos que se llaman igual — exactamente lo
-// que las revisiones existen para evitar.
-//
-// ⛔ POR QUÉ NO SE ARREGLA AQUÍ: cambiarlo es modificar `pdf.service.ts`, el fichero del camino de
-// emisión (regla 38: se lee, no se modifica). Y no es un detalle de formato — es decidir qué
-// número ve el cliente en un documento, que además es microcopy (regla 30).
-//
-// Este caso FIJA el estado de hoy. Si alguien arregla el PDF, cae, y ése es el aviso de que hay
-// que venir aquí a cambiarlo por la afirmación contraria.
+//   · `quoteNumber` SIGUE siendo `number`. Ensancharlo a texto era la salida fácil y es la que
+//     habría metido a la factura en el cambio — un número que a veces es texto deja de poder
+//     ordenarse ni compararse. La revisión viaja como DATO PROPIO (`revision?: number | null`).
+//   · el rótulo se compone DENTRO de `generateQuotePdf` (línea 702+), donde la factura no llega:
+//     `generateInvoicePdf` cierra en 696 y declara su tipo en línea, así que ni lee este tipo.
+//   · el número lo forma `numeroConRevision`, el del dominio. No se recompone aquí: dos sitios que
+//     forman el mismo número acaban formándolo distinto.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-688 · 🔴 DEFECTO VIVO: el PDF de la revisión NO lleva el «.1» que la distingue', async () => {
+test('SCRUM-688 · 🔴 EL QUE DECIDE: el PDF de la revisión dice «.1», y el ORIGINAL no', async () => {
   const { creada } = await crear();
-  const { outPath } = await generateQuotePdf({
-    quoteId: 6882, quoteNumber: NUMERO, merchantId: MERCHANT,
-    merchant: { name: 'Taller de prueba' }, customer: { name: 'Cliente QA' },
-    currency: 'EUR', lines: [{ concept: 'Reforma', qty: 1, price: 3000, tax: 0.21 }],
-    total: '3000.00', qrData: 'x',
-  });
-  const r = extraerTextoPdf(fs.readFileSync(outPath));
-  assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
 
-  assert.equal(r.texto.includes(String(creada.numero)), false,
-    '🔴 EL PDF YA LLEVA EL NÚMERO CON REVISIÓN. Es una buena noticia y hay que anotarla: el defecto '
-    + 'que este caso fijaba está arreglado, así que este test tiene que pasar a EXIGIRLO en vez de '
-    + 'declararlo. No lo borres: gíralo.');
-  assert.ok(r.texto.includes(String(NUMERO)),
-    `🔴 el PDF no lleva ni el número base (${NUMERO}): entonces este caso no está midiendo lo que `
-    + 'dice, porque el papel no identifica el documento de ninguna forma.');
+  const papel = async (revision, quoteId) => {
+    const { outPath } = await generateQuotePdf({
+      quoteId, quoteNumber: NUMERO, revision, merchantId: MERCHANT,
+      merchant: { name: 'Taller de prueba' }, customer: { name: 'Cliente QA' },
+      currency: 'EUR', lines: [{ concept: 'Reforma', qty: 1, price: 3000, tax: 0.21 }],
+      total: '3000.00', qrData: 'x',
+    });
+    const r = extraerTextoPdf(fs.readFileSync(outPath));
+    assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
+    return r.texto;
+  };
+
+  // El original: su número PELADO. Un «.0» en el papel sería un número que el cliente no reconoce.
+  const original = await papel(0, 6882);
+  assert.ok(original.includes(String(NUMERO)),
+    `🔴 el papel del original no lleva ni su número base (${NUMERO}): este caso no mide lo que dice.`);
+  assert.equal(/2004226\.\d/.test(original), false,
+    '🔴 el ORIGINAL ha salido con sufijo de revisión. No la tiene: el papel estaría inventando una '
+    + 'versión que no existe, y el cliente tendría dos números para un solo documento.');
+
+  // La revisión: el número que ya compone el dominio, sin recomponerlo aquí.
+  const revisada = await papel(1, 6883);
+  assert.ok(revisada.includes(String(creada.numero)),
+    `🔴 el papel de la revisión no lleva «${creada.numero}». Sin él, la revisión y el original se `
+    + 'llaman igual y el cliente recibe dos documentos con el mismo número.');
+  assert.match(String(creada.numero), /\.1$/,
+    '🔴 SUELO: el número que se está buscando en el papel no lleva «.1», así que encontrarlo no '
+    + 'probaría nada.');
+
+  // Y los dos papeles NO dicen lo mismo, que es el hecho entero del ticket.
+  assert.notEqual(original, revisada,
+    '🔴 los dos papeles son idénticos: el documento sigue sin poder decir de qué versión es.');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL CABLE ENTRE LA FILA Y EL PAPEL — un hueco que encontró la MUTACIÓN, no yo
+//
+// El caso de arriba llama a `generateQuotePdf` DIRECTAMENTE, pasándole `revision` a mano. Con eso
+// solo, se demuestra que el documento SABE pintar el sufijo… y nada más. Medido: cambiar
+// `paramsDePresupuestoParaPdf` para que mandara `revision: 0` en vez de `quote.revision ?? 0`
+// **no tumbaba ningún test**. O sea, el cable entre la fila de la base y el papel estaba sin
+// vigilar, y romperlo devolvía en silencio los dos documentos con el mismo número.
+//
+// Es la misma forma del defecto que da nombre a este ticket: «el documento puede» no es «el
+// producto lo hace». Así que aquí se entra por la MISMA puerta que usan las cuatro rutas reales
+// —`paramsDePresupuestoParaPdf`— y no por la de dentro.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-688 · 🔴 la `revision` DE LA FILA llega al papel por el camino real', async () => {
+  const { paramsDePresupuestoParaPdf } =
+    await import('../dist/modules/quotes/domain/presupuestoParaPdf.js');
+
+  const filaDe = (revision) => ({
+    id: 7700 + revision, merchantId: MERCHANT, quoteNumber: NUMERO, revision,
+    currency: 'EUR', total: { toString: () => '3000.00' },
+    lines: [{ concept: 'Reforma', qty: 1, price: 3000, tax: 0.21 }],
+    docFields: null, discountGlobalAmount: null, docHeaderText: null, docFooterText: null,
+    shippingAddressMode: null, shippingAddress: null, signatureUrl: null, acceptedAt: null,
+  });
+
+  const papelDeLaFila = async (revision) => {
+    const params = paramsDePresupuestoParaPdf({
+      quote: filaDe(revision),
+      merchant: { id: MERCHANT, name: 'Taller de prueba' },
+      customer: { name: 'Cliente QA' },
+    });
+    // SUELO: si el constructor no incluyera la clave, lo de abajo mediría el valor por defecto
+    // del documento y no lo que la fila dice — que es justo el hueco que este caso cierra.
+    assert.ok('revision' in params,
+      '🔴 `paramsDePresupuestoParaPdf` no pasa `revision`. El papel no tiene forma de saber de qué '
+      + 'versión es, por muy bien que sepa pintarla.');
+    const { outPath } = await generateQuotePdf({ ...params, merchantId: MERCHANT, qrData: 'x' });
+    const r = extraerTextoPdf(fs.readFileSync(outPath));
+    assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}`);
+    return r.texto;
+  };
+
+  const texto1 = await papelDeLaFila(1);
+  assert.ok(texto1.includes(`${NUMERO}.1`),
+    `🔴 la fila dice revisión 1 y el papel no dice «${NUMERO}.1». El documento sabe pintarlo, pero `
+    + 'el dato no le llega: el cliente vuelve a recibir dos documentos con el mismo número.');
+
+  const texto0 = await papelDeLaFila(0);
+  assert.equal(/2004226\.\d/.test(texto0), false,
+    '🔴 una fila SIN revisar ha sacado sufijo. `Quote.revision` es `Int @default(0)`, así que el '
+    + 'caso normal es el 0 y no puede inventarse una versión.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
