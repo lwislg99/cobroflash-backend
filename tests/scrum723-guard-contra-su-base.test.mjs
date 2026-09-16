@@ -314,6 +314,9 @@ const HALLAZGOS_DECLARADOS = [
   // …y su test, que resuelve `main` y `pr` dentro de repositorios SINTÉTICOS creados en el
   // temporal —su `main` no es el de nadie—, mismo caso que la entrada `[show]` de este fichero.
   'tests/scrum839d-union-solo-en-el-registro.test.mjs [rev-parse]',
+  // SCRUM-839e · mismo caso: `main`, `pr` y la rama del PR en un remoto DESNUDO creado en el
+  // temporal; el `rev-parse` mide si esa rama sintética se movió. No es el `main` de nadie.
+  'tests/scrum839e-solo-pr-armados.test.mjs [rev-parse]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -338,6 +341,9 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-839d · construye repositorios SINTÉTICOS en el temporal con una rama `main` y una `pr`, y
   // nombra `main` al montarlos y al hablar del job. Ninguno es el `main` de este repositorio.
   'tests/scrum839d-union-solo-en-el-registro.test.mjs',
+  // SCRUM-839e · lo mismo: nombra `main` al montar sus repositorios sintéticos (y el remoto desnudo
+  // del banco del job) y al pasárselo al CLI dentro de ellos. Ninguno es el `main` de este repositorio.
+  'tests/scrum839e-solo-pr-armados.test.mjs',
   // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
   // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
   // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.

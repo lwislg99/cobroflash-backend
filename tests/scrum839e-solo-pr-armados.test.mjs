@@ -184,20 +184,27 @@ test('la lectura del armado, sola', () => {
 });
 
 test('🔴 CLI: lee el armado de la lista de PR que le pasa el workflow, con suelo', () => {
-  conRepo((r) => {
-    const correr = (lista, argumentos = ['880', r.cabeza, 'main', 'prs.json']) => {
-      if (lista !== undefined) fs.writeFileSync(path.join(r.dir, 'prs.json'), JSON.stringify(lista));
-      const salida = execFileSync(process.execPath, [SCRIPT, ...argumentos], { cwd: r.dir, encoding: 'utf8', stdio: 'pipe' });
-      return JSON.parse(salida);
-    };
-    assert.equal(correr([{ number: 880, autoMergeRequest: ARMADO }]).accion, 'EMPUJAR');
-    assert.equal(correr([{ number: 880, autoMergeRequest: null }]).accion, 'NO-EMPUJA');
-    assert.equal(correr([{ number: 880 }]).accion, 'NO-PUDE-MIRAR');
-    assert.equal(correr([{ number: 399, autoMergeRequest: ARMADO }]).accion, 'NO-PUDE-MIRAR',
-      '🔴 el armado de OTRO PR no vale para este');
-    fs.writeFileSync(path.join(r.dir, 'prs.json'), '{ no es json');
-    assert.equal(correr(undefined).accion, 'NO-PUDE-MIRAR');
-  });
+  // La lista va en su PROPIO temporal: así el censo de SCRUM-824 ve de dónde cuelga.
+  const listas = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum839e-lista-'));
+  const prsJson = path.join(listas, 'prs.json');
+  try {
+    conRepo((r) => {
+      const correr = (lista) => {
+        if (lista !== undefined) fs.writeFileSync(prsJson, JSON.stringify(lista));
+        const salida = execFileSync(process.execPath, [SCRIPT, '880', r.cabeza, 'main', prsJson], { cwd: r.dir, encoding: 'utf8', stdio: 'pipe' });
+        return JSON.parse(salida);
+      };
+      assert.equal(correr([{ number: 880, autoMergeRequest: ARMADO }]).accion, 'EMPUJAR');
+      assert.equal(correr([{ number: 880, autoMergeRequest: null }]).accion, 'NO-EMPUJA');
+      assert.equal(correr([{ number: 880 }]).accion, 'NO-PUDE-MIRAR');
+      assert.equal(correr([{ number: 399, autoMergeRequest: ARMADO }]).accion, 'NO-PUDE-MIRAR',
+        '🔴 el armado de OTRO PR no vale para este');
+      fs.writeFileSync(prsJson, '{ no es json');
+      assert.equal(correr(undefined).accion, 'NO-PUDE-MIRAR');
+    });
+  } finally {
+    fs.rmSync(listas, { recursive: true, force: true });
+  }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -257,38 +264,45 @@ if (args[0] === 'pr' && args[1] === 'view') { console.log('{}'); process.exit(0)
 process.exit(0);
 `;
 
-/** Ejecuta `paso` (texto bash) en `cwd` con el `gh` falso delante en el PATH. */
-function correrPaso({ banco, paso, cwd, env }) {
-  const bin = path.join(banco, 'bin');
-  fs.mkdirSync(bin, { recursive: true });
-  fs.writeFileSync(path.join(bin, 'gh.mjs'), GH_FALSO);
-  fs.writeFileSync(path.join(bin, 'gh'), '#!/bin/bash\nexec node "$(dirname "$0")/gh.mjs" "$@"\n');
-  fs.chmodSync(path.join(bin, 'gh'), 0o755);
-  fs.writeFileSync(path.join(banco, 'paso.sh'), paso);
-  // El PATH se monta DENTRO de bash (en Windows, un PATH con `C:\…` desde Node no lo entiende).
-  fs.writeFileSync(path.join(banco, 'correr.sh'),
-    '#!/bin/bash\nD="$(cd "$(dirname "$0")" && pwd)"\nexport PATH="$D/bin:$PATH"\nexport RUNNER_TEMP="$D"\n'
-    + 'exec bash "$D/paso.sh"\n');
-  for (const f of ['llamadas.txt', 'resumen.md', 'salida.txt']) fs.writeFileSync(path.join(banco, f), '');
-  let codigo = 0;
-  let log = '';
+/**
+ * Ejecuta `paso` (texto bash) en `cwd` con el `gh` falso delante en el PATH. Su banco es suyo
+ * (`mkdtemp` aquí mismo, donde el censo de SCRUM-824 lo ve) y se borra al terminar.
+ */
+function correrPaso({ paso, cwd, env }) {
+  const banco = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum839e-paso-'));
   try {
-    log = execFileSync('bash', [path.join(banco, 'correr.sh')], {
-      cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-      env: {
-        ...process.env,
-        LLAMADAS: path.join(banco, 'llamadas.txt'),
-        GITHUB_STEP_SUMMARY: path.join(banco, 'resumen.md'),
-        GITHUB_OUTPUT: path.join(banco, 'salida.txt'),
-        ...env,
-      },
-    });
-  } catch (e) {
-    codigo = e.status;
-    log = String(e.stdout || '') + String(e.stderr || '');
+    fs.mkdirSync(path.join(banco, 'bin'), { recursive: true });
+    fs.writeFileSync(path.join(banco, 'bin', 'gh.mjs'), GH_FALSO);
+    fs.writeFileSync(path.join(banco, 'bin', 'gh'), '#!/bin/bash\nexec node "$(dirname "$0")/gh.mjs" "$@"\n');
+    fs.chmodSync(path.join(banco, 'bin', 'gh'), 0o755);
+    fs.writeFileSync(path.join(banco, 'paso.sh'), paso);
+    // El PATH se monta DENTRO de bash (en Windows, un PATH con `C:\…` desde Node no lo entiende).
+    fs.writeFileSync(path.join(banco, 'correr.sh'),
+      '#!/bin/bash\nD="$(cd "$(dirname "$0")" && pwd)"\nexport PATH="$D/bin:$PATH"\nexport RUNNER_TEMP="$D"\n'
+      + 'exec bash "$D/paso.sh"\n');
+    for (const f of ['llamadas.txt', 'resumen.md', 'salida.txt']) fs.writeFileSync(path.join(banco, f), '');
+    let codigo = 0;
+    let log = '';
+    try {
+      log = execFileSync('bash', [path.join(banco, 'correr.sh')], {
+        cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+        env: {
+          ...process.env,
+          LLAMADAS: path.join(banco, 'llamadas.txt'),
+          GITHUB_STEP_SUMMARY: path.join(banco, 'resumen.md'),
+          GITHUB_OUTPUT: path.join(banco, 'salida.txt'),
+          ...env,
+        },
+      });
+    } catch (e) {
+      codigo = e.status;
+      log = String(e.stdout || '') + String(e.stderr || '');
+    }
+    const txt = (f) => fs.readFileSync(path.join(banco, f), 'utf8');
+    return { codigo, log, llamadas: txt('llamadas.txt'), resumen: txt('resumen.md'), veredicto: fs.existsSync(path.join(banco, 'veredicto.txt')) ? txt('veredicto.txt') : '' };
+  } finally {
+    fs.rmSync(banco, { recursive: true, force: true });
   }
-  const txt = (f) => fs.readFileSync(path.join(banco, f), 'utf8');
-  return { codigo, log, llamadas: txt('llamadas.txt'), resumen: txt('resumen.md'), veredicto: fs.existsSync(path.join(banco, 'veredicto.txt')) ? txt('veredicto.txt') : '' };
 }
 
 test('🔴 SUELO del banco: hay `bash` para correr los pasos de verdad', () => {
@@ -322,7 +336,7 @@ function bancoDelJob({ autoMergeRequest, quitar = '' }) {
     const paso = guionDelPaso(leer('conflicto-de-registro.yml'), 'Resolver los conflictos de solo registro');
     assert.ok(paso, '🔴 no encuentro el paso «Resolver los conflictos de solo registro»');
     const run = correrPaso({
-      banco, paso, cwd: clon,
+      paso, cwd: clon,
       env: { LISTA: path.join(banco, 'lista.json'), QUITAR: quitar, GH_TOKEN: 'x', APP_TOKEN: 'x', SLUG: 'yaqu-bot' },
     });
     const ahora = execFileSync('git', ['--git-dir', origen, 'rev-parse', `refs/heads/${RAMA}`], { encoding: 'utf8' }).trim();
@@ -360,14 +374,9 @@ test('🔴 SUELO del job: si la lista no trae el armado, «no pude mirar», rojo
 
 /** El paso «Armar el auto-merge», con un PR existente, empujado por `quien`. */
 function bancoDelArmado(quien) {
-  const banco = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum839e-armar-'));
-  try {
-    const paso = guionDelPaso(leer('pr-automatico.yml'), 'Armar el auto-merge');
-    assert.ok(paso, '🔴 no encuentro el paso «Armar el auto-merge»');
-    return correrPaso({ banco, paso, cwd: RAIZ, env: { NUM: '880', MODO_COMPLETO: 'true', QUIEN_EMPUJA: quien } });
-  } finally {
-    fs.rmSync(banco, { recursive: true, force: true });
-  }
+  const paso = guionDelPaso(leer('pr-automatico.yml'), 'Armar el auto-merge');
+  assert.ok(paso, '🔴 no encuentro el paso «Armar el auto-merge»');
+  return correrPaso({ paso, cwd: RAIZ, env: { NUM: '880', MODO_COMPLETO: 'true', QUIEN_EMPUJA: quien } });
 }
 
 test('🔴 ROJO/NEGATIVO: un push de la App (Bot) a un PR existente NO arma el auto-merge', () => {
@@ -410,7 +419,7 @@ function bancoDeAbrir(quien) {
     }
     const paso = guionDelPaso(leer('pr-automatico.yml'), 'Abrir el PR');
     assert.ok(paso, '🔴 no encuentro el paso «Abrir el PR»');
-    return correrPaso({ banco, paso, cwd: repo, env: { RAMA, GH_TOKEN: 'x', QUIEN_EMPUJA: quien } });
+    return correrPaso({ paso, cwd: repo, env: { RAMA, GH_TOKEN: 'x', QUIEN_EMPUJA: quien } });
   } finally {
     fs.rmSync(banco, { recursive: true, force: true });
   }

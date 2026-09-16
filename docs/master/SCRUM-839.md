@@ -391,3 +391,77 @@ ajenos salieron CIEGOS: ese dato no dice nada de ellos.
   reintenta. No se ha ensanchado el permiso de la App: eso es decisión del fundador.
 - Hallazgo de otro carril, sin arreglar: `tests/_banco-vistas.mjs` acumula 16 conflictos en el censo; candidato
   a partirse (anotado en el traspaso, no es de este ticket).
+
+
+---
+
+# APÉNDICE · SCRUM-839e (16-sep-2026) · Arreglo de la pieza A: solo PR ya armados, y solo una persona arma
+
+**Medido contra:** `origin/main` = `42bf571252873fd462ae661e0d74d3b63116e002` · 2026-09-16T18:30:36Z
+
+**Tanda:** __TANDA__ — medida DESPUÉS del último cambio de código, sobre este `origin/main` mergeado en la rama.
+
+**Rama:** `scrum-839e-solo-pr-armados` · Sesión 5 · encargo del orquestador (16-sep 19:55 CEST, `origin/main` `364e7d3a`).
+
+## ① El daño, medido
+
+La primera pasada real de la pieza A (run `35109786942`, 14:37:24Z) empujó a **#880** (abierto 1-sep) y **#399**
+(4-ago), dos PR de Javier **sin auto-merge**. Ese push disparó `pr-automatico.yml` — runs `35109865025` y
+`35109859845`, actor `yaqu-bot[bot]`, tipo **`Bot`** —, que les **armó** el auto-merge (`enabledBy app/yaqu-bot`,
+14:38:23Z en #880). Entraron en `main` a las 14:44Z y 14:45Z (medido por el orquestador): #880 con diff vacío,
+#399 con 2 líneas en `docs/master/SCRUM-284.md`. El fundador apagó el workflow «Conflicto de registro».
+
+## ② Dos agujeros, no uno
+
+1. **El job** empujaba a cualquier PR `scrum-*` con choque de solo registro.
+2. **`pr-automatico.yml` armaba ante CUALQUIER push** a una rama `scrum-*` con PR abierto, fuera de quien fuera
+   (paso «Armar el auto-merge», sin condición sobre el autor), y abría PR ante cualquier push a una rama sin PR.
+   Censo de sus **270 runs** hasta el 16-sep: `Javierpf28` 156 y `lwislg99` 112 (tipo `User`), `yaqu-bot[bot]` **2**
+   (tipo `Bot`): exactamente los del daño.
+
+## ③ Qué se cambió
+
+- `scripts/conflicto-de-registro.mjs`: **cerradura 0**, antes de mirar ningún fichero. `armadoAntesDeLaPasada(pr)`
+  lee `autoMergeRequest` de la lista que el workflow leyó al empezar la pasada: objeto con `enabledAt` → sigue;
+  `null` → `NO-EMPUJA` (`SIN-AUTO-MERGE`); campo ausente, forma desconocida, PR que no está en la lista o lista
+  ilegible → `NO-PUDE-MIRAR`. El CLI recibe la lista como cuarto argumento.
+- `.github/workflows/conflicto-de-registro.yml`: pide `autoMergeRequest` en `gh pr list`, pasa `prs.json` a la
+  decisión y cuenta los PR sin armar en una línea del resumen.
+- `.github/workflows/pr-automatico.yml`: «Abrir el PR» y «Armar el auto-merge» reciben
+  `QUIEN_EMPUJA: ${{ github.event.sender.type }}` y solo actúan si es `User` (lista blanca: vacío o cualquier
+  otro tipo no abre ni arma). Veredicto nuevo: `EMPUJE-SIN-PERSONA`.
+- Elegido «solo si empuja una persona» y no «solo al abrir el PR»: el segundo rompe el re-armado cuando una
+  sesión arregla un conflicto de su propio PR (el armado falla legítimamente al abrir y se arma en el push
+  siguiente). **Lo que NO cambia:** un push de Javier a un PR suyo antiguo lo sigue armando, como en sus 156 runs.
+
+## ④ ROJO · POSITIVO · NEGATIVO · SUELO
+
+`tests/scrum839e-solo-pr-armados.test.mjs` ejecuta **los pasos de verdad del YAML** con repos git reales (un
+remoto desnudo con `refs/pull/880/head`) y un `gh` falso que, como el real, solo devuelve los campos pedidos en
+`--json`. Veredicto por EFECTO: si la rama se movió en el remoto o si se llamó a `gh pr merge` / `gh pr create`.
+
+- **ROJO** — commit `439c14c4a9568319bc1662884e0547d6164eb821`, empujado antes del arreglo: contra el código de
+  `364e7d3a`, **10 de 13 caen por su motivo** (el job empuja a un PR sin armar; empuja sin poder leer el armado;
+  un push `Bot` arma; un push `Bot` a una rama sin PR abre PR). Los 3 verdes eran los positivos y el suelo del banco.
+- **POSITIVO** — PR armado con choque solo de registro → la rama avanza (`EMPUJADO`); push `User` → `gh pr merge 880 --auto --merge`.
+- **NEGATIVO** — PR sin auto-merge → la rama no se mueve y el run no pinta rojo; push `Bot` → ni `pr merge` ni `pr create`.
+- **SUELO** — lista sin `autoMergeRequest` → no se mueve, run en rojo, `NO PUDE MIRAR`; tipo de quien empuja vacío → no se arma.
+
+**Mutaciones declaradas (8), las 8 caen** (pasada local 16-sep, árbol restaurado byte a byte): cerradura 0
+apagada · suelo apagado · armado de otro PR de la lista · YAML sin `autoMergeRequest` · guarda de armar apagada ·
+lista negra `= "Bot"` en vez de blanca · guarda de abrir apagada · `QUIEN_EMPUJA` cableado a `User`.
+⚠️ Mi arnés de mutaciones dio primero dos «MUDA» falsas (#880 y #1318): un heredoc convirtió `\\#` en `\#` y el
+nombre escapado de TAP no casaba. Aplicada a mano, la mutación de #880 tumba su test y dos más.
+
+Tests viejos tocados, sin bajar nada: `scrum839d` pasa un PR armado a `decidir()`; `pr-automatico-el-mensaje-del-automerge`
+declara `QUIEN_EMPUJA: 'User'` (sus casos son de una persona).
+
+## ⑤ Lo que queda abierto
+
+- **Riesgo sin observar:** que GitHub mantenga armado un PR tras el push de la App (la App tiene `Contents: write`;
+  la doc solo desarma ante pushes sin escritura). Se verá en el primer `EMPUJADO` real.
+- Carrera aceptada: si alguien desarma un PR entre la lista y el push, esa pasada lo empuja igualmente (sin armarlo).
+- Si un PR se mergea y su rama se borra entre la lista y el push, `git push` la recrearía. Con este arreglo ya no
+  se le abre ni arma PR (push `Bot`); la rama huérfana quedaría a la vista.
+- La **pieza B** (aviso en el PR) sigue esperando.
+- **Para volver a encender** el workflow, tras el merge: GitHub → Actions → «Conflicto de registro» → «Enable workflow».
