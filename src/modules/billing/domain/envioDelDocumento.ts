@@ -39,16 +39,16 @@ export type EnvioDelDocumento = {
 };
 
 /** Las dos condiciones con las que psp manda el documento por email al cobrar. */
-export function envioAutomaticoEncendido(): boolean {
+function envioAutomaticoEncendido(): boolean {
   return config.AUTO_INVOICE_ON_PAID === true && config.AUTO_EMAIL_INVOICE_ON_PAID === true;
 }
 
 /** Pasado este tiempo en cola, un WhatsApp cuenta como no enviado (orquestador, 16-sep-2026). */
-export const MINUTOS_EN_COLA_SIN_SABER = 10;
+const MINUTOS_EN_COLA_SIN_SABER = 10;
 
 export type FilaWhatsappDelDocumento = { status: string | null | undefined; createdAt: Date | string | null | undefined };
 
-export function estadoWhatsappDeFilas(filas: ReadonlyArray<FilaWhatsappDelDocumento>, ahora: Date = new Date()): EstadoWhatsappDelDocumento {
+function estadoWhatsappDeFilas(filas: ReadonlyArray<FilaWhatsappDelDocumento>, ahora: Date = new Date()): EstadoWhatsappDelDocumento {
   if (filas.length === 0) return 'sin_intento';
   if (filas.some((f) => SENT_OR_MORE.has(String(f.status)))) return 'enviado';
   const limite = ahora.getTime() - MINUTOS_EN_COLA_SIN_SABER * 60_000;

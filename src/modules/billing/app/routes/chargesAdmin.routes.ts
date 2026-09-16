@@ -28,7 +28,7 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     // Multi-tenant: el cobro debe ser del merchant de la sesión
     const charge = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId },
-      include: { merchant: true, customer: { select: { name: true, email: true, phone: true, mobile: true } } },
+      include: { merchant: true, customer: { select: { name: true } } },
     });
     if (!charge) return res.status(404).json({ error: 'not_found' });
     if (charge.status === 'paid') return res.json({ ok: true, status: 'already_paid' });
@@ -66,7 +66,7 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     // SCRUM-885 · si el documento no ha salido ni por email ni por WhatsApp, el profesional tiene
     // que enterarse AQUÍ, que es donde está mirando. Sólo se leen hechos ya guardados: no se
     // envía nada. Qué se pinta lo decide la regla del dashboard (`avisoDocumentoSinEnviar`).
-    const envioDocumento = await envioDelDocumentoDelCobro(charge.merchantId, id, charge.customer);
+    const envioDocumento = await envioDelDocumentoDelCobro(req.merchantId!, id);
 
     return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual', paid_at: fecha.fecha.toISOString(), envioDocumento });
   } catch (err: any) {
@@ -75,7 +75,14 @@ router.post('/:id/confirm-bizum', async (req, res) => {
   }
 });
 
-async function envioDelDocumentoDelCobro(merchantId: number, chargeId: number, customer: { email: string | null; phone: string | null; mobile: string | null } | null) {
+async function envioDelDocumentoDelCobro(merchantId: number, chargeId: number) {
+  // El contacto se lee aquí, con su `select` y desde el id de la ruta, y no ensanchando el
+  // `include` del cobro ni pasándole nada de él: lo leído sin `select` acabaría viajando hasta la
+  // respuesta (trinquete de SCRUM-860).
+  const customer = (await prisma.charge.findFirst({
+    where: { id: chargeId, merchantId }, // regla 2
+    select: { customer: { select: { email: true, phone: true, mobile: true } } },
+  }))?.customer ?? null;
   const leerEstados = () =>
     prisma.whatsAppMessage.findMany({
       where: { merchantId, relatedType: 'charge', relatedId: chargeId }, // regla 2
