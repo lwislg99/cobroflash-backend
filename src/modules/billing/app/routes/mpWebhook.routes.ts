@@ -5,12 +5,15 @@ import { config } from '../../../../core/config/env';
 import { verifyMpWebhookSignature, getMpPayment } from '../../../../integrations/mercadopago';
 import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
+import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397
+// SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
+import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
 
 const router = Router();
 
@@ -96,18 +99,28 @@ router.post('/', async (req, res) => {
     const mpStatus = payment.status;
 
     if (mpStatus === 'approved' && charge.status !== 'paid') {
+      // SCRUM-397 · el mismo generador que `/webhooks/psp`: columna y evento con UN solo instante.
+      // Aquí no hay fecha declarada —lo confirma Mercado Pago, no una persona—, así que el
+      // instante es el de proceso, que es lo correcto para un aviso automático.
       const updated = await prisma.charge.update({
         where: { id: chargeId },
         data: {
-          status: 'paid',
-          method: 'mp',
+          ...datosDeCobroPagado(new Date(), { mp_payment_id: mpPaymentId, mp_status: mpStatus, ...payment }),
+          // SCRUM-489 · aquí se escribía `'mp'` a fuego, y `'mp'` NO está en `PAID_VIA`. No era una
+          // preferencia: es el `update` que marca el cobro como PAGADO, así que el `paid_via` que
+          // quedaba registrado era falso — la familia de SCRUM-191, sobre la columna que viaja al
+          // CSV del asesor fiscal.
+          //
+          // 🔴 Y no hace falta traductor nuevo: `getMpPayment()` (arriba) YA devuelve el método
+          // traducido al vocabulario de la casa. SCRUM-474 arregló el TRADUCTOR y no a su
+          // CONSUMIDOR, así que llevaba desde entonces devolviendo el valor bueno para que nadie lo
+          // mirara. Esto solo deja de tirarlo.
+          //
+          // El caso difícil ya lo resuelve él: si MercadoPago manda un `payment_type_id` que no
+          // conocemos —o no lo manda—, devuelve el DESCONOCIDO DECLARADO. Decir que no consta, no
+          // adivinar; y aquí pesa más que en ningún otro sitio porque el cobro ya está cerrado.
+          method: payment.method,
           reference: mpPaymentId,
-          events: {
-            create: {
-              type: 'paid',
-              payload: { mp_payment_id: mpPaymentId, mp_status: mpStatus, ...payment } as any,
-            },
-          },
           reconciliations: {
             create: { bankRef: mpPaymentId, matched: true },
           },
@@ -117,10 +130,15 @@ router.post('/', async (req, res) => {
 
       // Factura automática
       let invoiceId: number | null = null;
+      // SCRUM-502 · el estado, para la guarda de anulada. `ensureInvoiceForCharge` puede devolver
+      // una factura EXISTENTE (busca por el evento `invoiced` y por `quoteId`, sin filtro de
+      // estado), asi que lo que llega aqui puede estar anulado.
+      let invoiceEstado: string | null = null;
       if (config.AUTO_INVOICE_ON_PAID) {
         try {
           const inv = await ensureInvoiceForCharge(chargeId, prisma);
           invoiceId = inv.id;
+          invoiceEstado = (inv as { status?: string }).status ?? null;
 
           // P0-4: email SIEMPRE (sendInvoiceEmail genera el PDF si falta y envía por Resend)
           if (config.AUTO_EMAIL_INVOICE_ON_PAID && updated.customer?.email) {
@@ -136,7 +154,10 @@ router.post('/', async (req, res) => {
         }
       }
 
-      if (invoiceId) {
+      // 🔴 SCRUM-502 · UNA ANULADA NO VUELVE. Esta puerta actualizaba por `id` sin mirar el estado.
+      // ⚠️ El `.catch(() => {})` de abajo se traga el fallo de escritura y NO se toca en esta tanda:
+      // es otro defecto, esta reportado, y una cosa por tanda.
+      if (invoiceId && puedeCobrarPorPasarela({ status: invoiceEstado ?? '' })) {
         await prisma.invoice.update({
           where: { id: invoiceId },
           data: { status: 'paid', paidAt: new Date() },
@@ -152,11 +173,11 @@ router.post('/', async (req, res) => {
         ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
         : null;
       const documentNumber = invConf?.number || String(updated.id);   // P1-6: sin '#'
-      if (updated.customer?.phone) {
+      if (updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
         // SCRUM-74: token OPACO del recibo público, NUNCA el chargeId (IDOR/RGPD).
         const receiptToken = await ensureChargeReceiptToken(updated.id, prisma);
         sendPaymentConfirmationInvoice({
-          toPhone: updated.customer.phone,
+          toPhone: canalDeWhatsApp(updated.customer),
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
@@ -178,8 +199,8 @@ router.post('/', async (req, res) => {
       }
 
       // Notificaciones WhatsApp al merchant y reseña al cliente
-      if (merchant?.googleReviewUrl && updated.customer?.phone) {
-        const phone = normalizePhone(updated.customer.phone);
+      if (merchant?.googleReviewUrl && updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
+        const phone = canalDeWhatsApp(updated.customer);
         if (phone) {
           sendWhatsAppCtaUrl({
             to: phone,

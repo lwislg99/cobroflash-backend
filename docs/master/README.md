@@ -98,6 +98,58 @@ actualizar el censo, para que la mejora quede anotada en vez de pasar desapercib
 
 Si estas escribiendo una entrada NUEVA, nada de esto te afecta: pon el ancla.
 
+### 🔴 UN APENDICE ES UNA ENTRADA, Y LLEVA SU PROPIA ANCLA (SCRUM-532)
+
+Si tu registro va sobre un ticket que **ya tiene fichero**, SCRUM-273 te manda escribirlo como
+apendice al final de ese fichero — y eso esta bien. Lo que tienes que saber es que **ese apendice
+es una entrada nueva y necesita SU ancla**, no le vale la del principio del fichero.
+
+Hasta el 15-sep-2026 le valia, y ese era el hueco: el guard troceaba por `# SCRUM-<n>`, los
+apendices se encabezan `# APENDICE`, y el fichero entero contaba como UNA entrada. Medido el
+8-sep-2026 en `SCRUM-825.md`: de sus **cinco** anclas el guard solo miraba **dos**, y una sesion
+abrevio la suya a proposito para comprobarlo — siguio en verde.
+
+**Encabeza tu apendice de una de estas dos formas**, que son las que el guard reconoce:
+
+```markdown
+# SCRUM-<n> · APENDICE · <fecha> · <titulo>
+# APENDICE · <fecha> · <titulo>
+```
+
+Y debajo, su ancla, medida por ti al escribirla:
+
+```markdown
+**Medido contra:** `origin/main` = `<sha de 40>` · <ISO-8601 con huso>
+```
+
+⚠️ **Lo que el guard NO reconoce como entrada** son los encabezados de seccion interna
+(`# PUNTO 1`, `# TRAMO 2`, `# FASE C`). Estan medidos —**153 en el arbol**— y no se les exige
+ancla, porque no son mediciones aparte. Si tu apendice de verdad es un trabajo nuevo, ponle
+`APENDICE` en el titulo: es lo que lo convierte en una entrada a ojos del guard.
+
+## ANTES DE EMPUJAR: `npm run guards:entrada`
+
+**No es un guard, son CUATRO**, y hasta ahora cada sesion los descubria EN ROJO despues de empujar,
+cuando el PR ya estaba abierto:
+
+| guard | lo que exige |
+|---|---|
+| SCRUM-273 | el fichero se llama `SCRUM-<n>.md`, y el trabajo no se escribe en `YAQU_MASTER.md` |
+| SCRUM-267 | el ancla `**Medido contra:**`, con sha de **40** y hora con huso |
+| SCRUM-391 | todo test que la entrada DECLARA existe en el arbol |
+| SCRUM-242 | no se nombra un documento que no existe |
+
+```
+npm run guards:entrada
+```
+
+Tarda segundos: los cuatro son estructurales -no compilan ni tocan la base-. `npm test` tambien los
+corre, pero compila y lanza 2.400 tests, asi que nadie lo usa para revisar un fichero de texto: por
+eso los rojos llegaban por el PR.
+
+Si el comando corre menos de cuatro, **falla nombrando cual falta**. Un agregador que se queda corto
+da la tranquilidad entera con la cobertura a medias.
+
 ## El guard
 
 `tests/scrum273-registro-por-fichero.test.mjs` se pone **rojo** si aparece una entrada de trabajo

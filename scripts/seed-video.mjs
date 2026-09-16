@@ -22,6 +22,19 @@ import { allocateQuoteNumber } from '../dist/modules/quotes/domain/quoteNumber.s
 import { allocateInvoiceNumber, isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 import { allocateAlbaranNumber } from '../dist/modules/jobs/domain/albaranNumber.service.js';
 import { resolveBillingPlan, distributeStageAmounts } from '../dist/modules/quotes/domain/billingPlan.js';
+// SCRUM-761: la normalización del catálogo se DERIVA del alta real. Aquí vivía una segunda copia
+// (`p.name.toLowerCase()`) que no quitaba diacríticos — ver el comentario en la escritura.
+import { normalizeSearch } from '../dist/modules/products/domain/products.service.js';
+// SCRUM-381: quien mira una URL de BD pasa por aquí (`parseBDSegura` no tiene forma de devolver
+// la cadena), y `destinoSembrable` es la allowlist de dónde puede escribir un sembrador.
+import { parseBDSegura, destinoSembrable } from './_db-guard.mjs';
+
+// SCRUM-381 · EL SOBRE DE UNA SIEMBRA — ver la nota larga en `seed-demo.mjs`. Este script también
+// llamaba a `allocateInvoiceNumber` con `{}`, así que sus números quedaban en el AuditLog sin nada
+// que los separase de una emisión real. `tipo:'semilla'` es lo que los separa; `ref` dice qué
+// sembrador y qué tanda.
+const TANDA = new Date().toISOString();
+const sembrado = (punto) => ({ actor: { tipo: 'semilla', ref: `seed-video:${punto}@${TANDA}` } });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURACIÓN EDITABLE POR EL FUNDADOR
@@ -44,8 +57,19 @@ const round2 = (n) => Math.round(n * 100) / 100;
 // Total de una línea = base + IVA (line.tax es FRACCIÓN, p.ej. 0.21 = 21% — convención del código, quotesView.js).
 const lineTotal = (l) => round2(Number(l.qty) * Number(l.price) * (1 + Number(l.tax || 0)));
 const linesTotal = (lines) => round2(lines.reduce((a, l) => a + lineTotal(l), 0));
-// Firma de muestra (PNG 1x1 válido) — placeholder visual; el rótulo "✅ Firmado digitalmente" es el que manda.
-const SAMPLE_SIGNATURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+// 🔴 SCRUM-472 · AQUÍ VIVÍA `SAMPLE_SIGNATURE`, UN PNG DE 1×1 PX QUE SE ESCRIBÍA COMO FIRMA.
+//
+// Se escribía en `Quote.signatureUrl` y en un `Albaran` con `estado: 'firmado'`, saltándose las dos
+// rutas legítimas —que exigen `data:image/(png|jpeg);base64,` y construyen el sobre de evidencias—.
+// En producción dejó `albaranes.id = 5` (merchant 22, 16-jun-2026): 118 caracteres, un lienzo vacío.
+//
+// El motivo por el que no vuelve no es de estilo: **una firma fabricada, una vez en la columna, es
+// indistinguible de una real** —mismo formato, misma columna, mismo estado— y la fortaleza
+// probatoria de un albarán depende de la integridad de su firma. La semilla puede inventarse un
+// importe o un nombre; no puede inventarse el trazo de una persona.
+//
+// Si el vídeo necesita un documento firmado, se firma **por la ruta**.
+// Guard: `tests/scrum472-seed-no-fabrica-firmas.test.mjs`.
 // PNG 1x1 (bytes) para una foto adjunta de solicitud (la galería muestra miniatura).
 const SAMPLE_PHOTO = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 
@@ -56,8 +80,24 @@ async function preflight() {
   const dbUrl = process.env.DATABASE_URL || '';
   if (!dbUrl) abort('DATABASE_URL no está definida. El fundador decide contra qué BD se ejecuta.');
 
-  let host = '';
-  try { host = new URL(dbUrl).hostname; } catch { abort('DATABASE_URL no es una URL válida.'); }
+  // SCRUM-381: esto era `new URL(dbUrl).hostname` dentro de un try/catch. NO filtraba —el catch
+  // no imprimía el error— pero es la forma que SCRUM-223 quitó de `seed-demo.mjs` después de que
+  // publicara una contraseña de producción: `new URL()` no redacta, y la URL entera viaja dentro
+  // del objeto de error. Aquí sobrevivía porque nadie miró los dos sembradores a la vez.
+  const destino = parseBDSegura(dbUrl);
+  if (!destino) abort('DATABASE_URL no es una URL válida. (No se dice cuál era: R7.)');
+  const host = destino.host;
+
+  // SCRUM-381 · PRIMERO la allowlist: producción no es destino de una semilla, y ninguna
+  // confirmación la abre. Nombrar la base contesta «¿es la que querías?», no «¿se puede sembrar
+  // ahí?» — con solo la ceremonia, escribir el hostname de prod bastaba para sembrar en prod.
+  const sembrable = destinoSembrable(dbUrl);
+  if (!sembrable.ok) {
+    abort(
+      `Destino NO sembrable → ${sembrable.etiqueta}\n\n  ${sembrable.motivo}\n\n` +
+      '  (Solo se nombra host/base: ni usuario, ni contraseña, ni la URL — R7.)',
+    );
+  }
 
   // El fundador DEBE confirmar explícitamente el host de la BD (no se asume prod).
   if (process.env.SEED_VIDEO_CONFIRM !== host) {
@@ -366,7 +406,16 @@ async function seed() {
         data: {
           merchantId: mid,
           name: p.name,
-          nameSearch: p.name.toLowerCase(),
+          // SCRUM-761 · era `p.name.toLowerCase()`: una SEGUNDA normalización, y equivocada.
+          // No quita diacríticos, así que sembraba `'sustitución de grifo monomando'` mientras
+          // `searchProducts` normaliza la consulta a `'sustitucion …'` — teclear la palabra sin
+          // tilde no encontraba la fila. Medido con los dos literales del propio catálogo.
+          //
+          // No sube al escalón 1 (llamar a `createProduct`) por una imposibilidad MEDIDA, no de
+          // calendario: esta siembra va dentro de `prisma.$transaction` y escribe con `tx`,
+          // mientras `createProduct` escribe con el cliente global — el producto se quedaría
+          // FUERA de la transacción. Así que escalón 2: se deriva la normalización.
+          nameSearch: normalizeSearch(p.name),
           price: p.price.toFixed(2),
           cost: p.cost != null ? p.cost.toFixed(2) : null,
           vat: p.vat.toFixed(4),
@@ -411,10 +460,15 @@ async function seed() {
           rejectedAt: q.status === 'rejected' ? decidedAt : null,
           decisionChannel: isDecided ? 'whatsapp' : null,
           rejectionReason: q.status === 'rejected' ? (q.rejectionReason ?? null) : null,
-          // Evidencia + firma plausibles para los aceptados (coherente con el flujo real).
-          signatureUrl: q.status === 'accepted' ? SAMPLE_SIGNATURE : null,
+          // SCRUM-472 · aceptado SIN TRAZO, que es un camino REAL del producto y no una simulación:
+          // `method: 'checkbox'` es «Acepto sin firmar», y así lo pinta el expediente
+          // (`invoicesAdmin.routes.ts:317` → «Aceptación expresa sin trazo»). Antes se sembraba un
+          // `signatureUrl` inventado y `method: 'signature'`: eso afirmaba que un cliente firmó.
+          // De `Quote.signatureUrl` deriva el libro registro su «presupuesto firmado»
+          // (`libroRegistro.repo.ts`), así que la mentira no se quedaba en la pantalla.
+          signatureUrl: null,
           evidence: q.status === 'accepted'
-            ? { ts: decidedAt?.toISOString(), method: 'signature', channel: 'whatsapp', ua: 'seed/video' }
+            ? { ts: decidedAt?.toISOString(), method: 'checkbox', channel: 'whatsapp', ua: 'seed/video' }
             : (q.status === 'rejected'
               ? { ts: decidedAt?.toISOString(), method: 'reject', channel: 'whatsapp' }
               : undefined),
@@ -435,7 +489,17 @@ async function seed() {
           const amount = stageAmounts[stage.index];
           const paid = q.stagesPaid[i];
           const paidAt = paid ? thisMonthDay(q.stagesPaidDay[i]) : null;
-          const method = (i % 2 === 0) ? 'bizum' : 'transfer';
+          // 🔴 SCRUM-489 · aquí ponía `'bizum'` A SECAS, y `'bizum'` NO está en `PAID_VIA`: el
+          // conjunto cerrado tiene `bizum_auto` y `bizum_manual`, y la diferencia no es de estilo
+          // —uno lo confirma un WEBHOOK y el otro una PERSONA, que son dos cadenas de evidencia
+          // distintas ante una inspección (SCRUM-191)—. Este seed no pasa por ninguna pasarela:
+          // sus cobros los da por pagados el propio script, así que lo que corresponde es el
+          // MANUAL. Sembrar un valor fuera del conjunto metía en la base un método que ningún
+          // camino del producto puede producir.
+          //
+          // ⚠️ Las filas YA SEMBRADAS se quedan como están: ningún backfill. Lo histórico se
+          // documenta, no se reinterpreta.
+          const method = (i % 2 === 0) ? 'bizum_manual' : 'transfer';
 
           // Cobro (Charge) en BD, estado ya resuelto (sin Stripe).
           const charge = await tx.charge.create({
@@ -453,7 +517,12 @@ async function seed() {
           // Justificante (Invoice). allocateInvoiceNumber → J- (merchant ES sin flag).
           // El nº lleva la fecha de emisión histórica (paidAt/createdAt).
           const emitAt = paidAt ?? createdAt;
-          const invoiceNumber = await allocateInvoiceNumber(tx, mid, {}, emitAt);
+          // El camino se DERIVA del tramo, no se fija: el primero nace cuando el cliente acepta
+          // el presupuesto (C1) y los siguientes son el pro cobrando el resto (C2, collect-rest).
+          // Un número sembrado sale por una vía real —este script llama al mismo código—, así que
+          // declara la que imita.
+          const camino = i === 0 ? 'C1' : 'C2';
+          const invoiceNumber = await allocateInvoiceNumber(tx, mid, { camino, ...sembrado(`tramo${i + 1}`) }, emitAt);
           const scaled = stage.percentage < 1
             ? q.lines.map((l) => ({ ...l, price: round2(Number(l.price) * stage.percentage) }))
             : q.lines;
@@ -504,17 +573,24 @@ async function seed() {
     // 7a) ALBARANES (pantalla en el detalle del Trabajo) — sobre los jobs terminado/en_curso.
     if (jobByKey['aseo']) {
       const j = jobByKey['aseo'];
-      // Firmado (congelado)
-      const numFirmado = await allocateAlbaranNumber(tx, mid);
+      // 🔴 SCRUM-472 · EMITIDO, NO FIRMADO. Aquí se sembraba `estado: 'firmado'` con `firmadoAt` y
+      // una firma de 1×1 px, sin pasar por ninguna de las dos rutas de firma —que validan la imagen
+      // y construyen el sobre de evidencias (SCRUM-462)—. Eso deja en la BD una fila que, mirada de
+      // frente, es idéntica a un albarán firmado de verdad: misma columna, mismo estado, mismo
+      // formato. En producción quedó `albaranes.id = 5`.
+      //
+      // `emitido` es el estado real de un albarán que espera firma, así que el vídeo sigue teniendo
+      // su pantalla de albaranes con contenido. Si hiciera falta uno FIRMADO, se firma por la ruta.
+      const numEmitido = await allocateAlbaranNumber(tx, mid);
       await tx.albaran.create({
         data: {
-          merchantId: mid, jobId: j.id, numero: numFirmado, fecha: daysAgo(30),
+          merchantId: mid, jobId: j.id, numero: numEmitido, fecha: daysAgo(30),
           lineas: [
             { concepto: 'Retirada de aparatos y demolición de alicatado', cantidad: 1, unidad: 'jornada' },
             { concepto: 'Montaje de plato de ducha e inodoro', cantidad: 1, unidad: 'ud' },
           ],
-          estado: 'firmado', version: 2, signatureUrl: SAMPLE_SIGNATURE, firmadoAt: daysAgo(29),
-          notas: 'Primera fase de obra ejecutada. Conforme el cliente.', pdfUrl: null,
+          estado: 'emitido', version: 2,
+          notas: 'Primera fase de obra ejecutada. Pendiente de firma del cliente.', pdfUrl: null,
           createdAt: daysAgo(30), updatedAt: daysAgo(29),
         },
       });

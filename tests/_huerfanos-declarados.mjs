@@ -1,0 +1,891 @@
+// tests/_huerfanos-declarados.mjs — SCRUM-411 · LA SEGUNDA POBLACIÓN, DECLARADA UNO A UNO.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 POR QUÉ ESTO ES UNA LISTA Y NO UN NÚMERO
+//
+// El trinquete de la primera población (módulos enteros inalcanzables) es un TOPE: hoy 8. Ahí
+// funciona porque son ocho y cada movimiento se discute. **Aquí no puede funcionar**, y ése es el
+// ticket entero: son 190, y en una base viva se escribe un export antes que su consumidor
+// constantemente. Un «no más de 190» sólo tiene dos finales — o bloquea trabajo legítimo, o se sube
+// sin mirar hasta que deja de significar nada. Las dos acaban en un guard que nadie atiende.
+//
+// Así que lo que se vigila NO es el número: es que **nadie entre en esta población en silencio**.
+// Un huérfano nuevo tiene que aparecer aquí, con su fecha y su motivo, igual que un módulo nuevo de
+// la primera población «se sube con su fecha y su motivo en vez de cablearlo a la fuerza». Ese
+// contrato se respeta y se EXTIENDE; no se cambia.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// CÓMO SE AÑADE UNO (es el caso normal, y tiene que costar poco)
+//
+// El guard cae nombrando fichero y línea. Se añade el nombre al grupo que le corresponda —o un
+// grupo nuevo con su `motivo`— y se sigue. Lo que NO vale es que entre sin que nadie se entere.
+//
+// Y si el guard cae al revés («declarado que ya no es huérfano»), hay exactamente dos causas y
+// ninguna es rutina: **o lo has cableado** (bien: borra la línea en el mismo commit, así queda
+// constancia de la mejora) **o el detector se ha quedado ciego**. Bajar sin mirar es la avería que
+// este fichero existe para impedir: «cero» y «no supe mirar» nunca son el mismo número.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LAS CATEGORÍAS SALIERON DE MEDIR, NO DE SUPONER
+//
+// El encargo proponía tres (deliberados · infraestructura de test · promesa incumplida). Midiendo
+// aparecieron otras que las tres no distinguían, y la que más importa es `SUPLANTADO_POR_UNA_COPIA`:
+// hay funciones sin llamador **cuya capacidad sí se sirve**, porque alguien rehízo la misma consulta
+// inline en otro sitio. Eso NO es una promesa rota —el profesional puede hacerlo— pero tampoco es
+// higiene: es la misma regla en dos sitios, con dos sitios donde divergir.
+//
+// La señal que separa las categorías está medida en `_huerfanos-en-modulos-vivos.mjs`:
+// `loEjecutaAlguien` — si algún export VIVO del mismo fichero alcanza a éste por el grafo interno.
+// `false` significa **nada de lo que corre en producción pasa por aquí**. Salieron 35 de 190, y
+// esos 35 están clasificados a mano, uno a uno. Los otros 155 sí los ejecuta código vivo: su
+// `export` es superficie, no deuda.
+export const CATEGORIAS = {
+  // 🔴 El producto lo promete y NADIE lo hace, ni aquí ni en otro sitio. Es la clase de
+  // `borrarMerchant`. Obliga a un ticket, no a una línea en un documento.
+  PROMESA_SIN_CABLE: 'el producto lo ofrece y no ocurre',
+  // 🟠 Sin llamador porque la misma consulta o regla se rehízo en otro sitio. La capacidad SÍ se
+  // sirve; lo que hay es una copia, y dos sitios donde divergir.
+  SUPLANTADO_POR_UNA_COPIA: 'lo hace otro, copiado',
+  // 🟣 NO TIENE LLAMADOR EN PRODUCCIÓN Y NO SE PUEDE BORRAR NUNCA. No espera cable —otro sirve ya
+  // la capacidad— pero es el SUJETO EJECUTABLE de un guard: un test lo CORRE contra un doble y
+  // comprueba en él una regla que no está escrita en ningún otro sitio. Retirarlo no quita código
+  // muerto: quita la única comprobación de esa regla.
+  //
+  // 🔴 Por qué es una categoría y no un matiz de `SUPLANTADO_POR_UNA_COPIA`: **una copia superada se
+  // acaba borrando**. Ésa es la conducta correcta para una copia y la equivocada para esto. La
+  // etiqueta de más era una invitación a limpiarlo dentro de seis meses, y por eso se separa.
+  ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE: 'el test lo CORRE: es la regla, y borrarlo la borra',
+  // 🔵 Deliberado y declarado: espera un diff de esquema, su fase siguiente, o una decisión. Tres de
+  // los cinco que el fundador nombró viven aquí. Borrarlos sería tirar trabajo pagado.
+  MOTOR_EN_ESPERA: 'construido a propósito antes que su consumidor',
+  // ⚪ Constante, copy o error exportado para ser la ÚNICA fuente de un término. Su lector de hoy es
+  // su propio módulo y su test. No es deuda: es cómo se evita que el término se escriba a mano.
+  VOCABULARIO_DEL_MODULO: 'la única fuente de un término',
+  // ⚪ Código que ejecuta su propio módulo; el `export` es superficie que nadie de fuera consume,
+  // normalmente para que su test pueda fijar la regla sin pasar por la ruta entera.
+  PIEZA_INTERNA_EXPORTADA: 'vivo dentro, exportado de más',
+  // ⚪ El `export` NO sobra: está puesto a propósito y DICHO en la cabecera del módulo, para que las
+  // fixtures deriven de él en vez de escribir el dato a mano y quedarse atrás en el próximo cambio.
+  // Se separa de `PIEZA_INTERNA_EXPORTADA` porque «exportado de más» y «exportado a propósito» piden
+  // cosas distintas de quien lo lea.
+  EXPORTADO_PARA_LAS_FIXTURES: 'exportado a propósito para que las fixtures deriven de él',
+  // 🟡 La regla vive DOS veces a propósito: el frontend es vanilla y no puede importar de `src/`.
+  // El backend queda sin importador sin estar muerto. Consta como copia en el propio fichero de
+  // `public/`, y por eso es una categoría y no un hallazgo.
+  REGLA_COPIADA_AL_FRONT: 'duplicada en public/ porque el front no puede importar',
+  // 🟠 Tiene llamador y el instrumento NO PUEDE VERLO. Se declara con la causa medida para que el
+  // trinquete no lo cuente como hallazgo. Arreglar el instrumento es el ticket de 411, no éste.
+  FALSO_POSITIVO_MEDIDO: 'tiene llamador que el instrumento no ve',
+  // 🔴 Ni código vivo, ni test, ni documento. De éste no consta ni para qué se escribió.
+  SIN_LECTOR_NI_TEST: 'nadie lo nombra en ningún sitio del repo',
+};
+
+/**
+ * EL CENSO DECLARADO. Medido el 12-ago-2026 contra `main` = 1117b313 (190 huérfanos en 66 módulos
+ * vivos; los mismos 190 que midió SCRUM-484 contra 75b2b018, que son 189 + el falso positivo).
+ *
+ * Un grupo = (módulo, categoría, motivo). El trinquete compara el CONJUNTO de pares
+ * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
+ */
+export const DECLARADOS = [
+  // ── SCRUM-805 · el sello del PRESUPUESTO, y por qué sus cuatro exports son distintos ───
+  //
+  // Nacen en el mismo módulo y NO son el mismo caso, así que van en tres categorías. El guard
+  // proponía quitarles el `export` y medir por superficie pública: aquí eso rompería justo lo
+  // que el fundador exigió comprobar.
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE", desde: "2026-09-07",
+    motivo: "El canónico del presupuesto ES la regla: qué se firmó. Su test lo CORRE campo a "
+      + "campo —muta cada clave del contenido y exige que el hash se mueva— y ése es el control "
+      + "que el fundador puso como condición de que el ticket esté hecho. Medirlo sólo por la "
+      + "superficie pública (el sellador) probaría que el sobre se escribe, NO que cubre el "
+      + "total, la validez, las condiciones de pago y las cláusulas, que es el ticket entero.",
+    exports: ["computePresupuestoContentHash"],
+  },
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "VOCABULARIO_DEL_MODULO", desde: "2026-09-07",
+    motivo: "La única fuente del número de versión del canónico. Viaja DENTRO de cada evidencia "
+      + "sellada, así que quien verifique un presupuesto firmado hoy dentro de dos años tiene "
+      + "que poder nombrarla. Su test comprueba que el sobre la lleva.",
+    exports: ["PRESUPUESTO_CONTENIDO_VERSION_ACTUAL"],
+  },
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "MOTOR_EN_ESPERA", desde: "2026-09-07",
+    motivo: "La mitad VERIFICADORA del sello. Sellar sin poder verificar es guardar una huella "
+      + "que nadie compara —el defecto que SCRUM-369 encontró en el albarán, donde el hash se "
+      + "calculaba en un solo sitio y nada lo recalculaba—. Se construyen con el sellador y en "
+      + "el mismo commit, a propósito: su consumidor (enseñar la verificación al profesional) es "
+      + "trabajo de otro ticket y no se cablea de paso.",
+    exports: ["recomputarHashDeEvidenciaPresupuesto", "verificarEvidenciaPresupuesto"],
+  },
+  // ── SCRUM-624 (fase C) · lo que destapa MOVER LA FRONTERA ──────────────────────────────
+  //
+  // `totalDeFacturables` se queda sin llamador porque el camino albarán→factura **deja de usarla
+  // para el total de la FACTURA**: ese total pasa a salir de `calcVatBreakdown`, la canónica, para
+  // que el `ImporteTotal` se pueda reconstruir sumando su propio desglose (VeriFactu 1210).
+  //
+  // 🔴 NO SE BORRA, y es una decisión del fundador, no una omisión: **la convención POR LÍNEA sigue
+  // viva y gobierna el ALBARÁN**. Esta función es donde está ESCRITA —con su porqué, en su
+  // cabecera— y su hermana `calcAlbaranTotales` (`albaran.service.ts:191`) es la que la ejerce.
+  // Borrarla se llevaría por delante la declaración de una convención que sigue vigente.
+  //
+  // Lo que estaba mal no era la convención: era que CRUZABA LA FRONTERA al convertirse en factura.
+  // Se arregló la frontera.
+  // ── SCRUM-592 (DOC-02) · dos piezas cuyo consumidor vive FUERA de `src/` ────────────────
+  //
+  // No son motores dormidos: los dos tienen llamador de verdad, sólo que el censo mira `src/` y
+  // ellos se consumen desde un script y desde la suite. Se declaran en vez de forzarles un
+  // consumidor artificial dentro de `src/`, que sería inventar un cable para callar un guard.
+  {
+    modulo: 'src/modules/jobs/domain/albaranNumber.service.ts',
+    cat: 'EXPORTADO_PARA_LAS_FIXTURES', desde: '2026-09-04',
+    motivo: 'La pregunta «¿este albarán ya está en el formato de SCRUM-592?». La usa '
+      + '`scripts/renumerar-documentos.mjs` para no renumerar dos veces —un proceso que no es '
+      + 'idempotente cambia el número cada vez que alguien lo lanza— y su test la corre. Vive en '
+      + 'el dominio, y no en el script, porque la respuesta la da la SERIE, no quien pregunta.',
+    exports: ['esAlbaranRenumerado'],
+  },
+  // ── SCRUM-761 · la normalización del catálogo, consumida desde un SEMBRADOR ─────────────
+  //
+  // Mismo caso que el par de SCRUM-592 de aquí arriba, y por eso va pegado a ellos: tiene
+  // llamador de verdad (`scripts/seed-video.mjs`), sólo que el censo mira `src/` y no lo ve.
+  {
+    modulo: 'src/modules/products/domain/products.service.ts',
+    cat: 'FALSO_POSITIVO_MEDIDO', desde: '2026-09-06',
+    motivo: 'La ÚNICA normalización del catálogo (`name` → `nameSearch`, la columna por la que '
+      + 'filtra `searchProducts`). Se exportó en SCRUM-761 porque `scripts/seed-video.mjs` tenía '
+      + 'una SEGUNDA copia y estaba mal —`p.name.toLowerCase()`, sin quitar diacríticos: sembraba '
+      + '«sustitución …» mientras la consulta se normaliza a «sustitucion …», así que teclear sin '
+      + 'tilde no encontraba la fila—. Ahora ese script la importa. Dentro de `src/` la usa su '
+      + 'propio módulo (createProduct, importProductsCsv, searchProducts, updateProduct), así que '
+      + 'el `export` es superficie para el sembrador, no un motor dormido.',
+    exports: ['normalizeSearch'],
+  },
+  {
+    modulo: 'src/modules/quotes/domain/quoteNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-04',
+    motivo: 'El guion con el que se dice «este presupuesto no tiene número». Se exporta para que '
+      + 'la suite compruebe el texto sin volver a escribirlo —copiarlo sería tener dos verdades— y '
+      + 'porque es la alternativa al defecto que SCRUM-592 cierra: hasta hoy ahí se enseñaba el id '
+      + 'GLOBAL de la plataforma, que es justo lo que A1.2 vino a esconder.',
+    exports: ['SIN_NUMERO'],
+  },
+  {
+    modulo: 'src/modules/jobs/domain/albaranAFactura.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-04',
+    motivo: 'La convención de redondeo POR LÍNEA del albarán, escrita y ejecutable. Perdió su llamador al mover la frontera albarán→factura (SCRUM-624): el total de la FACTURA sale ahora de la canónica. Se conserva porque es donde la convención del albarán está declarada, y su test la corre.',
+    exports: ['totalDeFacturables'],
+  },
+
+  // SCRUM-653 · `ordenDeFirmaExigido` no tiene llamador Y NO SE LE QUITA EL `export`.
+  //
+  // Devuelve `null` a propósito: es la DECISIÓN de que el orden de firma no se exige, escrita en
+  // un sitio y no repartida por dos rutas. Su consumidor es el test que la fija — el día que
+  // alguien quiera exigir un orden, lo cambia aquí y el rojo dice dónde mirar.
+  //
+  // Es exactamente la categoría de «la regla vive en la función»: borrarla no quita código muerto,
+  // quita la única constancia de que esa decisión se tomó.
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-03',
+    motivo: 'Es la decisión ESCRITA de que las dos firmas no llevan orden: la corre su test, y borrarla borraría la única constancia de esa decisión.',
+    exports: ['ordenDeFirmaExigido'] },
+  // ── SCRUM-683 (cableado) · lo que destapa DARLE SUPERFICIE AL DICTADO ──────────────────
+  //
+  // Mismo efecto que el bloque de abajo: al cablear `parteDictado.ts`, el censo deja de contarlo
+  // como un módulo huérfano ENTERO y pasa a mirarlo por dentro. Lo que queda a la vista es LA
+  // PUERTA — `aLineaDelParte`, el paso entre una PROPUESTA y una línea del parte, que exige la
+  // cantidad confirmada por el técnico y lanza nombrando la línea si no la hay.
+  //
+  // Hoy la confirmación viaja por el `PATCH` de siempre, que trae su propia validación
+  // (`validarLineasDelTecnico`), así que la puerta está construida y probada y sin llamador de
+  // producción todavía.
+  //
+  // ⚠️ Y AL DECLARARLA SALE UN HALLAZGO QUE NO SE ARREGLA AQUÍ (regla 9, carril de SCRUM-652 fase
+  // C): las dos NO comprueban lo mismo. `validarLineasDelTecnico` acepta `Number.isFinite(unds)`
+  // —o sea, **0 y negativas**— y `aLineaDelParte` exige `> 0`. Tocar la validación de esa ruta
+  // cambiaría el comportamiento de una pantalla ya mergeada por otra sesión: se reporta.
+  { modulo: 'src/modules/jobs/domain/parteDictado.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-02',
+    motivo: 'La puerta entre la propuesta del dictado y la línea del parte: exige cantidad confirmada por el técnico y lanza nombrando la línea. La confirmación va hoy por el PATCH, que trae su propia validación; su cable es el de esa pantalla.',
+    exports: ['aLineaDelParte'] },
+  // ── SCRUM-652 (T3 fase C) · lo que destapa DARLE SUPERFICIE AL PARTE ───────────────────
+  //
+  // Mientras `parteTrabajo.ts` era un módulo inalcanzable ENTERO, sus exports no se contaban uno
+  // a uno: el módulo era el huérfano. Al cablearlo, el censo pasa a mirarlo por dentro, y estos
+  // tres quedan a la vista. NO son código muerto y NO se borran: son la mitad de OFICINA del
+  // documento —los totales por bloque, en céntimos enteros— y el vocabulario de estados. Su
+  // consumidor es la pantalla que valora, que es otro ticket (T8 y siguientes).
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-02',
+    motivo: 'La aritmética de la OFICINA del parte, construida en la fase B y probada: la pantalla del técnico no la usa a propósito (no ve importes) y la de oficina es un ticket posterior.',
+    exports: ['lineasDelBloque', 'totalesPorBloque'] },
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'Los estados del parte, exportados para ser su única fuente; hoy los leen su propio módulo y su test.',
+    exports: ['ESTADOS_PARTE'] },
+  // La numeración del parte: `siguienteNumeroParte` SÍ tiene llamador (la creación); estos dos son
+  // su vocabulario y su formateador, que hoy sólo ejerce el propio módulo y su test.
+  { modulo: 'src/modules/jobs/domain/parteNumero.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta (`siguienteNumeroParte` lo llama); el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['formatParteNumber', 'PARTE_NUMBER_PREFIX'] },
+  // SCRUM-656 (T7) · el vocabulario del MODO DE IVA de un presupuesto. `MODOS_IVA` es además la
+  // lista contra la que se contrasta el `z.enum` del validador: si dejara de exportarse, las dos
+  // copias del conjunto cerrado podrían separarse sin que nada lo dijera.
+  { modulo: 'src/modules/quotes/domain/presentacionIva.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'Constantes exportadas para ser la única fuente del término; hoy las leen su propio módulo, su test y el contraste con el `z.enum` del validador.',
+    exports: ['MODOS_IVA', 'MODO_IVA_POR_DEFECTO', 'LEYENDA_IVA_NO_INCLUIDO'] },
+  { modulo: 'src/modules/quotes/domain/presentacionIva.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['esModoIva'] },
+  { modulo: 'src/modules/quotes/domain/clausulas.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['esClausulaPintable'] },
+  { modulo: 'src/modules/ai/domain/ai.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['normalizarUnidad', 'sanearLineasAlbaran'] },
+  { modulo: 'src/modules/auth/domain/entornoApp.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['aInstaladaPwa'] },
+  { modulo: 'src/modules/auth/domain/entornoApp.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['ENTORNOS_APP', 'ENTORNO_ESCRITO', 'ENTORNO_NO_SE_PUDO', 'ENTORNO_SIN_CAMBIO'] },
+  { modulo: 'src/modules/jobs/domain/tipoIntervencion.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'SCRUM-651 · el vocabulario CERRADO del tipo de intervencion, aprobado por el fundador. El guard propone quitarle el export porque hoy solo lo lee su modulo y su test, y AQUI ESA ES LA RESPUESTA EQUIVOCADA: el parte de trabajo (SCRUM-652) tiene que IMPORTAR estos valores, y si no los encuentra exportados la salida facil es declarar su propia lista — que es exactamente lo que el fundador prohibio, porque dos listas para el mismo hecho se separan y entonces un parte afirma sobre un Trabajo una palabra que el Trabajo no admite. Se borra esta linea el dia que SCRUM-652 lo consuma.',
+    exports: ['TIPOS_INTERVENCION'] },
+  { modulo: 'src/modules/quotes/domain/revision.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-02',
+    motivo: 'SCRUM-655 fase B. `vigenteDe` YA NO lo llama nadie vivo: el camino de pantalla usa `vigenteUnicaDe`, que ante dos revisiones empatadas PARA en vez de contestar. Y no se borra porque su test lo CORRE para demostrar POR QUE hizo falta la estricta: con dos vigentes, `vigenteDe` devuelve una en silencio. Borrarlo deja el rojo de `vigenteUnicaDe` sin nada con que compararse, y entonces nadie puede saber si el mecanismo nuevo cambiaba algo.',
+    exports: ['vigenteDe'] },
+  { modulo: 'src/modules/quotes/domain/revision.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'SCRUM-655 fase B. Los dos errores con nombre del modulo. Su test comprueba `e.name`, no el texto del mensaje: sin la clase exportada esa comprobacion se haria por substring del mensaje, que es lo que se rompe el dia que alguien mejora la redaccion del rojo.',
+    exports: ['RevisionesAmbiguas', 'CensoDeRevisionesCiego'] },
+  { modulo: 'src/modules/quotes/domain/revision.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'SCRUM-655 fase B. Las dos piezas que compone `vistaDeRevisiones` —el suelo de ceguera y el que no elige ante un empate—. El endpoint llama a la compuesta; estas van exportadas para que el test fije CADA regla por separado sin montar la vista entera, que es como se sabe cual de las dos cayo. · SCRUM-688 (16-sep-2026): `vigenteUnicaDe` SALE de esta linea porque ya tiene llamador vivo — `crearRevisionDeQuote` la usa para decidir sobre QUE version se crea la revision, y ante un empate PARA, que es justo para lo que se escribio. `revisionesDe` sigue sin uno.',
+    exports: ['revisionesDe'] },
+  { modulo: 'src/modules/quotes/domain/revision.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
+    motivo: 'SCRUM-655 fase B. `vistaDeRevisiones` lo ejecuta dentro del modulo, asi que el consejo del guard —quitarle el `export`— es correcto en su forma general. NO se le quita, y con motivo: el test de la fase A lo llama DIRECTO para fijar «la vigente es la mas alta, y las demas siguen ahi» sobre un grupo escrito a mano, sin pasar por la vista. Ese test es de este mismo ticket y esta verde sin tocarlo; reescribirlo para medir por la superficie publica seria cambiar una prueba que ya funciona por otra equivalente, y la unica ganancia seria una linea menos en este registro.',
+    exports: ['esVigente'] },
+  { modulo: 'src/modules/quotes/domain/revision.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
+    motivo: 'SCRUM-655 fase B. La clasificacion de los campos de `Quote` al revisar: que hereda una revision, que NO hereda (la firma, la evidencia, la decision) y que pone el sistema. Es la UNICA fuente de ese reparto y el test la contrasta contra `prisma/schema.prisma`: una columna nueva sin clasificar cae en rojo, que es lo que impide que una revision pierda un dato en silencio. · SCRUM-688 (16-sep-2026): `REVISION_HEREDA` SALE de esta linea, y no por casualidad: `crearRevisionDeQuote` DERIVA de ella su `select` de Prisma en vez de escribir una lista paralela. Ese era el hueco (a) del ticket — `nuevaRevisionDe` copia con `if (campo in anterior)`, asi que un campo clasificado que el llamador no pidiera no viajaba y nada se ponia rojo. Los otros dos siguen sin llamador.',
+    exports: ['REVISION_NO_HEREDA', 'REVISION_LA_PONE_EL_SISTEMA'] },
+  // 🔴 SCRUM-688 (16-sep-2026) · AQUI VIVIA `nuevaRevisionDe`, y la linea decia textualmente:
+  // «Se borra esta linea el dia que un POST la cablee.» Ese dia fue hoy.
+  //
+  // `POST /admin/quotes/:id/revisiones` la llama a traves de `crearRevisionDeQuote`. La deuda duro
+  // del 2-sep-2026 al 16-sep-2026: catorce dias con la regla «un presupuesto FIRMADO no se
+  // reescribe» construida, probada y sin un solo camino por el que un profesional llegara a ella.
+  // Se deja escrito el rastro en vez de borrarlo a secas, porque el guard de SCRUM-411 avisa de
+  // que una lista que MENGUA tiene dos causas —la cableaste, o el detector se quedo ciego— y la
+  // constancia de cual fue es lo unico que distingue las dos el dia que alguien lo relea.
+  { modulo: 'src/modules/auth/domain/referral.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['ensureReferralCode'] },
+  { modulo: 'src/modules/billing/domain/bizumCharge.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['BIZUM_MAX_CENTS', 'BIZUM_MIN_CENTS'] },
+  { modulo: 'src/modules/jobs/domain/asignacionDeTrabajo.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-02',
+    motivo: 'SCRUM-650: la regla de los TRES ejes, ejecutable. No tiene llamador vivo por una razon medida: el guard de SCRUM-467 comprueba POR SU TEXTO que el `where` de las dos rutas nombre operarioId y assignedUserId, asi que sacarlos a una funcion comun lo ponia en rojo sin que la garantia cambiara. Su test es de otro carril y no se toca (regla 9), luego el literal se queda inline y esto es su especificacion. Lo que impide que las dos rutas se separen es el guard de scrum650b.',
+    exports: ['loVe', 'EJES_DE_VISIBILIDAD'] },
+  { modulo: 'src/modules/jobs/domain/asignacionDeTrabajo.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-02',
+    motivo: 'SCRUM-650: el censo de incoherencias entre la columna y la tabla puente. No tiene llamador vivo A PROPOSITO: en npm test nadie lee la base, asi que hoy su consumidor es el guard. Su cable es el barrido sobre datos reales cuando la tabla tenga filas.',
+    exports: ['censoDeIncoherencias'] },
+  { modulo: 'src/modules/billing/domain/cobros.service.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'Los días de deuda; ni código vivo ni test lo leen, solo consta en documentos.',
+    exports: ['diasDeDeuda'] },
+  { modulo: 'src/modules/billing/domain/cobros.service.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'El predicado de deuda, construido y sin llamador vivo.',
+    exports: ['esDeuda'] },
+  { modulo: 'src/modules/billing/domain/cobros.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['fundirCobros'] },
+  { modulo: 'src/modules/billing/domain/cobros.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'El vocabulario de deuda; su lector de hoy es su test.',
+    exports: ['ESTADOS_DEUDA'] },
+  { modulo: 'src/modules/billing/domain/cobros.service.ts',
+    cat: 'EXPORTADO_PARA_LAS_FIXTURES', desde: '2026-08-12',
+    motivo: 'Lo declara su propia cabecera: «SE EXPORTA PARA QUE LAS FIXTURES DERIVEN DE ELLA», porque la fixture de SCRUM-474 escrita a mano se quedó atrás en cuanto el serializador estrenó `metodoCubo` y el test acusó al filtro de un fallo que no era suyo. Entró en `main` el 12-ago-2026 y la cazó este trinquete en su primer merge.',
+    exports: ['camposDeMetodo'] },
+  { modulo: 'src/modules/billing/domain/fechaDeCobro.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['COPY_FECHA_FUTURA', 'COPY_FECHA_ILEGIBLE'] },
+  { modulo: 'src/modules/billing/domain/fechaDeCobro.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Microcopy del lote de una sola fecha (SCRUM-397); su lector es su test.',
+    exports: ['COPY_LOTE_UNA_FECHA'] },
+  { modulo: 'src/modules/billing/domain/founding.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['FOUNDING_PRICE', 'PLAZA_OCUPADA'] },
+  { modulo: 'src/modules/billing/domain/metodoDeCobro.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: '🔴 DEJÓ DE SER UN MOTOR EN ESPERA EL 12-ago-2026, y se anota porque es la mejora: SCRUM-484 lo nombró entre los seis que un profesional nota («agrupar sus cobros por método fiable: la validación existe y no se aplica»), y ese mismo día SCRUM-474 fase 2 entró en `main` con `cuboDeCobro`, que sí lo llama. El export sigue sin importador de fuera, pero el código YA se ejecuta.',
+    exports: ['metodoParaAgrupar'] },
+  // 🔴 `CUBO_SIN_METODO` ESTUVO DECLARADO AQUÍ Y SE RETIRA EL 12-ago-2026, en el mismo commit que
+  // lo cableó (SCRUM-488 fase 2): `reports/domain/cobrosPorCubo.ts` lo importa para saber cuándo
+  // `cuboDeCobro` NO ha clasificado un método y hay que dejar la fila del informe como estaba. La
+  // deuda duró lo que duró —de la mañana a la tarde del mismo día— y esta línea es su constancia.
+  { modulo: 'src/modules/billing/domain/metodoDeCobro.ts',
+    cat: 'REGLA_COPIADA_AL_FRONT', desde: '2026-08-12',
+    motivo: 'La regla vive DOS veces a propósito: `public/dashboard/js/cobrosView.js:117` lo declara («ESTO ES UNA SEGUNDA COPIA DELIBERADA DE `partirMetodo`, Y CONSTA COMO TAL»). El backend no la importa porque el navegador no puede importarla.',
+    exports: ['partirMetodo'] },
+  { modulo: 'src/modules/billing/domain/metodoDeCobro.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['METODO_DESCONOCIDO'] },
+  // SCRUM-294 (fase B) · el criterio de caja se CABLEA hoy: 'leerCriterioCaja' lo consume
+  // 'devengoPorCaja.ts', y ese lo consume el libro de registro. Lo que queda huerfano es la otra
+  // mitad -- la que CLASIFICA los asientos por cobro para el 303, que es A5 y va por otro carril.
+  { modulo: 'src/modules/invoicing/domain/criterioCaja.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'Clasificar los asientos por cobro y su advertencia son de A5 (el 303 contra cobros reales), que no es este ticket. La lectura del criterio SI esta cableada.',
+    exports: ['ADVERTENCIA_CAJA', 'clasificarPorCobro'] },
+  { modulo: 'src/modules/invoicing/domain/devengoPorCaja.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'CAMPO_COBRO es el vocabulario del modulo -- lo consume su propio codigo y su test; el libro solo necesita CAMPO_EMISION. fechaDeDevengo decide la fecha de UNA factura y lo consumira A5 al agrupar; hoy el libro filtra por columna en la consulta.',
+    exports: ['CAMPO_COBRO', 'fechaDeDevengo'] },
+  { modulo: 'src/modules/billing/domain/paidVia.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'La validación del método de cobro existe y no se aplica en ningún camino vivo (SCRUM-484).',
+    exports: ['esPaidViaValido'] },
+  { modulo: 'src/modules/billing/domain/stripePrices.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['PRICE_LOOKUP_KEYS'] },
+  { modulo: 'src/modules/expenses/domain/expenses.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['trabajosPorQuote'] },
+  { modulo: 'src/modules/expenses/domain/justificante.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'E3: el aviso de que con un ticket NO se puede deducir el IVA. El veredicto está construido y ninguna pantalla lo enseña (SCRUM-484).',
+    exports: ['avisaDeSimplificado'] },
+  { modulo: 'src/modules/expenses/domain/justificante.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['FALTA', 'INCOHERENCIA', 'TOLERANCIA_CENTIMOS', 'VEREDICTO'] },
+  { modulo: 'src/modules/exports/domain/exportData.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['buildClientesReferenciados', 'csvEscape'] },
+  { modulo: 'src/modules/exports/domain/exportData.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CAMPO_FECHA_TRABAJOS', 'CSV_SEPARADOR'] },
+  { modulo: 'src/modules/exports/domain/portabilidadCompleta.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['comprobarDerivacion', 'modelosAExportar', 'modelosDelMerchant'] },
+  { modulo: 'src/modules/exports/domain/portabilidadCompleta.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CAMPO_TENENCIA', 'EXCLUIDOS', 'MINIMO_MODELOS'] },
+  { modulo: 'src/modules/exports/domain/portabilidadRegistro.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'Ídem: la cuenta de días del plazo, sin consumidor vivo.',
+    exports: ['diasTranscurridos'] },
+  { modulo: 'src/modules/exports/domain/portabilidadRegistro.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'El plazo legal de la portabilidad, en la misma espera que `solicitudesPendientes`.',
+    exports: ['fechaLimite'] },
+  { modulo: 'src/modules/exports/domain/portabilidadRegistro.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'Ver si una solicitud de portabilidad se atendió dentro de plazo. Construido, sin pantalla (SCRUM-484).',
+    exports: ['solicitudesPendientes'] },
+  { modulo: 'src/modules/exports/domain/portabilidadRegistro.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['ACCION_ATENDIDA', 'ACCION_SOLICITADA', 'ENTIDAD', 'PLAZO_MESES'] },
+  { modulo: 'src/modules/exports/domain/seleccionExport.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['DATASETS'] },
+  { modulo: 'src/modules/exports/domain/seleccionExport.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'El nombre de fichero del CSV exportado; lo fija su test.',
+    exports: ['NOMBRE_CSV'] },
+  { modulo: 'src/modules/invoicing/domain/emission.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['DEMO_MERCHANT_EMAIL'] },
+  { modulo: 'src/modules/invoicing/domain/facturaSuelta.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['ERROR_LINEAS_INVALIDAS'] },
+  // SCRUM-728 · el aviso del cerrojo saturado. `cuerpoCerrojoSaturado()` es lo que usan las seis
+  // rutas; estos dos son su CONTRATO, y se exportan para que el guard compare contra ellos por
+  // identidad en vez de copiar el literal. Copiarlo seria tener dos fuentes del mismo texto
+  // aprobado, que es justo lo que la regla 30 evita.
+  { modulo: 'src/modules/invoicing/domain/clienteCongelado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-09',
+    motivo: 'SCRUM-729 · los cinco nombres del cliente congelado, en un solo sitio. Ningun otro modulo de `src/` los enumera a proposito: el codigo derrama el objeto entero. Su lector es el banco, que comprueba con esta lista que el envoltorio escribe LOS CINCO — una copia escrita a mano en el test podria quedarse atras sin que nadie lo notara, y congelar cuatro de cinco deja un documento mitad congelado y mitad vivo.',
+    exports: ['CAMPOS_CONGELADOS'] },
+  { modulo: 'src/modules/invoicing/domain/cerrojoSaturado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-08',
+    motivo: 'Codigo y texto oficial del 503 `serie_ocupada`; su lector de fuera es el guard, que los compara por identidad para no duplicar el literal aprobado.',
+    exports: ['ERROR_CERROJO_SATURADO', 'COPY_CERROJO_SATURADO'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceLines.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['reconcileToTarget', 'stageLines'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['ReferenciaJustificanteAgotada', 'makeReceiptNumber'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['INTENTOS_REFERENCIA_JUSTIFICANTE', 'RECEIPT_NUMBER_PREFIX'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'La lista de orígenes de C7. Ni siquiera su propio módulo la usa: su único lector es su test.',
+    exports: ['ORIGENES_C7'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-07',
+    motivo: 'SCRUM-780 · LA FECHA DE CORTE AL FORMATO F, firmada por el fundador. Se exporta para '
+      + 'que exista UN solo sitio donde vive ese dato y para que su test pueda comprobar que sigue '
+      + 'siendo la firmada: moverla renumeraría facturas ya emitidas, que es la regla 29. Hoy la '
+      + 'leen su propio módulo (por defecto de `usaFormatoF`) y su test.',
+    exports: ['CORTE_FORMATO_F'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-07',
+    motivo: 'SCRUM-780 · la mitad PURA del contador de la serie F. La consume `leerSeqDeLaSerieF` '
+      + 'de su propio módulo, que es quien pone la consulta; se exporta aparte para poder probar la '
+      + 'aritmética —máximo y no recuento, y el reinicio anual— sin base de datos, que es donde '
+      + 'está el error que costaría un número repetido.',
+    exports: ['siguienteSeqDeLaSerieF'] },
+  { modulo: 'src/modules/invoicing/domain/lineasFacturables.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['FacturaSinLineasError', 'hayLineasFacturables'] },
+  { modulo: 'src/modules/invoicing/domain/modoVisible.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['MODOS_VISIBLES'] },
+  { modulo: 'src/modules/invoicing/domain/portonDocumento.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['estaSellada', 'puedeSalirDocumento'] },
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-293 (③a) · 13-ago-2026 · ENTRAN SIETE DE GOLPE, Y NO SE ESCRIBIÓ NI UNA LÍNEA NUEVA.
+  //
+  // Los siete existían desde A2 y NINGUNO es código nuevo. Estaban INVISIBLES para este censo por
+  // una razón estructural que conviene no perder: `retencionIrpf.ts` era un módulo ENTERO
+  // inalcanzable, o sea población PRIMERA, y esta segunda población solo mira DENTRO de módulos
+  // VIVOS. Un módulo muerto no aporta huérfanos: aporta un módulo.
+  //
+  // El cable de ③a (`src/app.ts` importa `tiposDeRetencionOrdenados()`) lo pasa de muerto a vivo, y
+  // en ese salto sus otros siete exports aparecen aquí por primera vez. Por eso el tope de la
+  // primera población baja de 8 a 7 y este censo sube de 196 a 203 EN EL MISMO COMMIT: no son dos
+  // hallazgos, es un import — y si algún día se ven moverse por separado, es que algo no cuadra.
+  //
+  // ⚠️ CUATRO DE LOS SIETE VIENEN CON EL CONSEJO CONTRARIO, y queda dicho en vez de aplicado a
+  // escondidas: el clasificador aconseja QUITARLES EL `export` a `CUBO_DE_RETENCION`,
+  // `esTipoRetencionValido`, `calcularRetencion` y `liquidoAPercibir`, porque su consumidor real
+  // está dentro del módulo y de fuera solo entran sus tests. NO se hace aquí, y por dos motivos
+  // medidos: ① des-exportarlos rompe `scrum293-retencion-irpf`, `scrum293-tres-estados-retencion` y
+  // `scrum500-suplidos`, que los importan — eso es una refactorización, no una declaración; y
+  // ② tocar un módulo fiscal para que un contador quede bonito es justo lo que la cabecera del
+  // trinquete prohíbe. Se declaran con su categoría real y el cambio va a su propia tanda.
+  { modulo: 'src/modules/invoicing/domain/retencionIrpf.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-13',
+    motivo: 'La lista CERRADA de tipos de retención (regla 27) y la fuente del tipo `TipoRetencion`: un tipo libre dejaría meter un 7,5 que no existe. Su único lector interno está en posición de TIPO, que el detector no cuenta como ejecución — por eso sale huérfano sin serlo del todo.',
+    exports: ['TIPOS_RETENCION'] },
+  { modulo: 'src/modules/invoicing/domain/retencionIrpf.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-13',
+    motivo: 'Código vivo de su propio módulo los ejecuta —`tiposDeRetencionOrdenados` (que SÍ tiene importador desde ③a) y `bloqueRetencion` pasan por ellos—; el `export` es superficie que de fuera solo consumen sus tests. El clasificador aconseja retirarlo: se hará en su tanda, no en la del cable.',
+    exports: ['CUBO_DE_RETENCION', 'calcularRetencion', 'esTipoRetencionValido', 'liquidoAPercibir'] },
+  { modulo: 'src/modules/invoicing/domain/retencionIrpf.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-13',
+    motivo: '🔴 LOS DOS QUE SIGUEN SIN CABLE, y son los que importan: `bloqueRetencion` pinta la retención en el documento y `leerTipoRetencion` es el SUELO FISCAL que impide emitir sin saber si el profesional retiene. Cablear cualquiera de los dos cambia lo que se SELLA (regla 38) y necesita GO explícito del fundador. ③a entrega la pantalla donde se DECLARA el tipo; aplicarlo a una factura es otra cosa y no se ha hecho.',
+    exports: ['bloqueRetencion', 'leerTipoRetencion'] },
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  { modulo: 'src/modules/invoicing/domain/rectificabilidad.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['ERROR_RECTIFICAR_ANULADA', 'ERROR_RECTIFICAR_ESTADO_DESCONOCIDO', 'ESTADOS_RECTIFICABLES'] },
+  { modulo: 'src/modules/invoicing/domain/selladoEstado.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'Decide el estado de sellado al nacer un documento. Su constante `SELLADO_NO_APLICA` SÍ la usa código vivo; la función no la llama nadie. Cablearla es tocar el sellado → STOP (regla 38).',
+    exports: ['estadoAlNacer'] },
+  { modulo: 'src/modules/invoicing/domain/selladoEstado.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['entraEnLaCadena'] },
+  { modulo: 'src/modules/invoicing/domain/selladoEstado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['SELLADO_NO_APLICA'] },
+  { modulo: 'src/modules/invoicing/domain/tipoDocumento.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['esTipoConocido'] },
+  { modulo: 'src/modules/invoicing/domain/tipoDocumento.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['AEAT_POR_TIPO'] },
+  { modulo: 'src/modules/invoicing/domain/verifactu.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['buildVeriFactuQrUrl', 'computeVeriFactuHash', 'computeVeriFactuHashAnulacion', 'exigirTipoDeclarable', 'formatFechaHoraHuso'] },
+  { modulo: 'src/modules/jobs/domain/albaran.service.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'La otra mitad de la verificación de evidencia, en la misma espera y con el mismo STOP.',
+    exports: ['recomputarHashDeEvidencia'] },
+  { modulo: 'src/modules/jobs/domain/albaran.service.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'Comprobar que la evidencia de una firma no se ha alterado. Construido y sin cable (SCRUM-484). Cablearlo toca el camino de sellado → GO explícito (regla 38).',
+    exports: ['verificarEvidenciaAlbaran'] },
+  { modulo: 'src/modules/jobs/domain/albaran.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['computeAlbaranContentHash'] },
+  { modulo: 'src/modules/jobs/domain/albaran.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['ALBARAN_CONTENIDO_VERSION_ACTUAL'] },
+  { modulo: 'src/modules/jobs/domain/albaranAFactura.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'La base de líneas facturables de un albarán; ningún export vivo del módulo la alcanza.',
+    exports: ['baseDeFacturables'] },
+  { modulo: 'src/modules/jobs/domain/albaranAFactura.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'El destinatario por defecto al pasar albarán a factura; hoy solo lo lee su test.',
+    exports: ['TIPO_DESTINATARIO_POR_DEFECTO'] },
+  { modulo: 'src/modules/jobs/domain/albaranBarrido.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['lectorPrisma'] },
+  { modulo: 'src/modules/jobs/domain/albaranContenidoFuentes.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['ContenidoCongeladoIncompletoError', 'VersionDeSobreDesconocidaError', 'validarContenidoCongelado'] },
+  { modulo: 'src/modules/jobs/domain/albaranContenidoFuentes.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CLAVES_CONGELADAS', 'FUENTES_POR_VERSION', 'VERSIONES_CON_FUENTES'] },
+  { modulo: 'src/modules/jobs/domain/albaranDuplicado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'La cara negativa de `CAMPOS_QUE_VIAJAN` al duplicar un albarán: existe para que la lista se lea entera y su test la fije; el código vivo solo recorre la positiva.',
+    exports: ['CAMPOS_QUE_NO_VIAJAN'] },
+  { modulo: 'src/modules/jobs/domain/albaranDuplicado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CAMPOS_QUE_VIAJAN'] },
+  { modulo: 'src/modules/jobs/domain/albaranEdicion.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['ERROR_ALBARAN_CAMBIADO_AL_EDITAR'] },
+  { modulo: 'src/modules/jobs/domain/albaranesListado.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'C1 (SCRUM-301): el filtro por los dos ejes del listado global de albaranes. Su hermano `listarAlbaranesDelMerchant` sí está cableado; el filtro no lo aplica nadie todavía.',
+    exports: ['filtrarAlbaranes'] },
+  { modulo: 'src/modules/jobs/domain/albaranesListado.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['contarAlbaranes'] },
+  { modulo: 'src/modules/jobs/domain/albaranesListado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['EJES_ALBARAN'] },
+  { modulo: 'src/modules/jobs/domain/albaranFirmante.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['codificarCalidad', 'decodificarCalidad', 'normalizarNombreFirmante'] },
+  { modulo: 'src/modules/jobs/domain/albaranFirmante.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Los rótulos aprobados del albarán (microcopy cerrada, Parte N5). Nadie los lee en código: hoy viven como fuente citada por docs.',
+    exports: ['ALBARAN_ROTULOS_APROBADOS'] },
+  { modulo: 'src/modules/jobs/domain/albaranFirmante.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['COPY_CALIDAD_INVALIDA', 'ERROR_ALBARAN_CAMBIADO', 'FIRMANTE_CALIDAD_IDS', 'FIRMANTE_CALIDAD_SET', 'LUGAR_ENTREGA_MAX', 'PENDIENTE'] },
+  { modulo: 'src/modules/jobs/domain/albaranIdempotencia.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CLAVE_IDEMPOTENCIA_MAX', 'ERROR_CLAVE_INVALIDA'] },
+  { modulo: 'src/modules/jobs/domain/albaranNumber.service.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'El reconocedor de números de albarán; su serie está construida y sin cable (SCRUM-484 lo cuenta entre los 8 por el módulo hermano `albaranSerie.ts`).',
+    exports: ['isAlbaranNumber'] },
+  { modulo: 'src/modules/jobs/domain/albaranNumber.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['AlbaranSerieSinAnioError', 'formatAlbaranNumber', 'resolveAlbaranSeq'] },
+  { modulo: 'src/modules/jobs/domain/albaranNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['ALBARAN_NUMBER_PREFIX'] },
+  { modulo: 'src/modules/jobs/domain/albaranVerificacion.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['versionesSoportadas'] },
+  { modulo: 'src/modules/jobs/domain/albaranVerificacion.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['RECETAS_POR_VERSION'] },
+  { modulo: 'src/modules/jobs/domain/consolidacionCliente.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['ordenNumeroAlbaran'] },
+  { modulo: 'src/modules/jobs/domain/entregaDelTrabajo.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CALCULADO', 'ILEGIBLE', 'SIN_EJE'] },
+  { modulo: 'src/modules/jobs/domain/entregaPendiente.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['COPY_ENTREGA'] },
+  { modulo: 'src/modules/jobs/domain/fotoDuplicada.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['huellaDeBytes'] },
+  { modulo: 'src/modules/jobs/domain/job.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['quotesDelJob', 'recalcJobCobradoForJob', 'recalcJobCobradoForQuote'] },
+  { modulo: 'src/modules/jobs/domain/job.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Los cinco estados de un trabajo. Su único uso dentro del módulo es en POSICIÓN DE TIPO (`typeof JOB_STATES[number]`), que no se ejecuta; el valor solo lo lee su test.',
+    exports: ['JOB_STATES'] },
+  { modulo: 'src/modules/jobs/domain/jobDireccion.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['versionLeeJobDireccion'] },
+  { modulo: 'src/modules/jobs/domain/jobDireccion.ts',
+    cat: 'REGLA_COPIADA_AL_FRONT', desde: '2026-08-12',
+    motivo: 'El tope está duplicado como literal `300` en `public/dashboard/js/jobDetailView.js:803`, que lo dice en un comentario. La constante del backend es la fuente; el front la copia porque es vanilla y no puede importarla.',
+    exports: ['JOB_DIRECCION_MAX'] },
+  { modulo: 'src/modules/jobs/domain/pendientesFacturar.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    // SCRUM-643: `toIsoDateLocal` SE RETIRÓ. Existía para esquivar una trampa —formatear un
+    // plazo legal con el reloj local— y la trampa desapareció al representar el plazo como DÍA.
+    // La declaración se BORRA, no se pone a cero: el trinquete de SCRUM-411 cae igual si sobra.
+    exports: ['avisoDeFacturacion', 'calcularSemaforo', 'fechaLimiteRecapitulativa', 'resolveTipoDestinatario'] },
+  { modulo: 'src/modules/jobs/domain/precarga.service.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'H1 fase 2 (SCRUM-458/460): el paquete de precarga está cableado por `GET /admin/precarga`, pero esta condición concreta no la alcanza ese camino.',
+    exports: ['esDelTecnico'] },
+  { modulo: 'src/modules/jobs/domain/precarga.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['albaranParaFirmar', 'condicionDelTecnico', 'motivosDePrecarga', 'ventanaDePrecarga', 'whereDePrecarga'] },
+  { modulo: 'src/modules/jobs/domain/precarga.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['ALBARAN_FIRMABLE', 'ESTADO_CERRADO', 'PRECARGA_DIAS_AGENDA', 'PRECARGA_DIAS_ATRAS', 'PRECARGA_LISTA', 'PRECARGA_NO_SE_PUDO'] },
+  { modulo: 'src/modules/jobs/domain/presupuestosDelTrabajo.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['ordenarPresupuestos', 'tieneTramoPendiente'] },
+  { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['avisarPlanSinCanal', 'isQuietHoursMadrid', 'seleccionarLotes'] },
+  { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
+    cat: 'SIN_LECTOR_NI_TEST', desde: '2026-08-12',
+    motivo: '🔴 Ni código vivo, ni test, ni documento lo mencionan en todo el repo. Es el único del censo del que no consta ni para qué se escribió.',
+    exports: ['maintenanceEurInMonth'] },
+  { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['MAINTAINABLE_SEEDS', 'TOPE_LOTE'] },
+  { modulo: 'src/modules/messaging/domain/avisoConstancia.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['registroDeAviso'] },
+  { modulo: 'src/modules/messaging/domain/avisoConstancia.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'El catálogo de avisos con constancia (SCRUM-477); su lector de hoy es su test.',
+    exports: ['AVISOS'] },
+  // ✅ `avanzar` y `ESTADOS_CORREO` SE RETIRAN de este registro el 17-ago-2026, en el mismo commit
+  // que los cablea (SCRUM-475 fase 2B) — que es lo que este trinquete pide cuando una declaración
+  // deja de corresponder a un huérfano: «LO HAS CABLEADO: borra su línea en ESTE MISMO commit, así
+  // el registro queda como la constancia de que la deuda duró exactamente lo que duró».
+  //
+  // Estaban declarados como MOTOR_EN_ESPERA desde el 12-ago con un motivo que nombraba a su
+  // consumidor futuro: «el consumidor es la fase siguiente». La fase siguiente es el receptor del
+  // webhook: `registroDeEnvios.aplicarAvisoDeProveedor` llama a `avanzar` para que el aviso del
+  // proveedor NO retroceda el embudo, y `ESTADOS_CORREO` deja de ser huérfano porque montar la
+  // ruta hizo alcanzable a `firmaResend.ts`, que ya lo importaba desde 2A sin que nadie llegara.
+  //
+  // 🔴 La deuda duró CINCO DÍAS y consta. Eso es exactamente lo que el registro entrega.
+  { modulo: 'src/modules/messaging/domain/constanciaCorreo.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['idDeLaRespuesta'] },
+  { modulo: 'src/modules/messaging/domain/email.service.ts',
+    cat: 'FALSO_POSITIVO_MEDIDO', desde: '2026-08-12',
+    motivo: '🔴 NO es huérfano: lo llama `quotesAdmin.routes.ts` por import DINÁMICO, y `nombresImportados` solo lee imports estáticos, así que no ata el nombre. Medido y nombrado por SCRUM-484. Se declara aquí para que el trinquete no lo cuente como hallazgo — arreglar el instrumento es el ticket de 411, no éste.',
+    exports: ['sendQuoteEmail'] },
+  { modulo: 'src/modules/messaging/domain/whatsappLog.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['aggregateWaRows', 'shouldApplyStatus'] },
+  { modulo: 'src/modules/messaging/domain/whatsappLog.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['DELIVERED_OR_MORE', 'SENT_OR_MORE', 'WA_UTILITY_COST_ES', 'WA_WINDOW_SAFETY_MS'] },
+  { modulo: 'src/modules/billing/domain/avisoBizumSinTelefono.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'SCRUM-328: el veredicto lo consume `app.ts` por `decidirAvisoBizum`; `hayQueAvisar` es el predicado de las DOS puertas que avisan, y hoy solo lo ejercita su test. Se exporta para que la regla —«no se pudo leer» tambien avisa— quede en un sitio y no repartida en comparaciones sueltas. SCRUM-515: sigue aqui a proposito. `scripts/guard-aviso-bizum.mjs` necesita el mismo predicado, pero importarlo desde `scripts/` —que ES entrada viva para los dos censos de alcance— lo sacaria de esta lista y abriria una discrepancia sin clase en el comparador de SCRUM-493. El guard lleva su propia copia ACOTADA y `tests/scrum515-aviso-bizum-render.test.mjs` la pincha contra esta funcion.',
+    exports: ['hayQueAvisar'] },
+  { modulo: 'src/modules/metrics/domain/metrics.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['funnelForPeriod'] },
+  { modulo: 'src/modules/products/domain/frequentConcepts.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['MIN_CONCEPTOS', 'MIN_USOS', 'TOP'] },
+  { modulo: 'src/modules/quoteRequests/domain/attachment.service.ts',
+    cat: 'SUPLANTADO_POR_UNA_COPIA', desde: '2026-08-12',
+    motivo: 'La galería de adjuntos se sirve, pero con un `prisma.attachment.findMany` inline en `quoteRequests.routes.ts:25` en vez de con esta función. Misma consulta, dos sitios.',
+    exports: ['listQuoteRequestAttachments'] },
+  { modulo: 'src/modules/quotes/domain/billingPlan.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'El siguiente tramo del plan de cobro: construido, sin llamador vivo.',
+    exports: ['getNextBillingStage'] },
+  { modulo: 'src/modules/quotes/domain/billingPlan.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
+    motivo: 'El importe de un tramo del plan de cobro: construido, y ningún export vivo del módulo lo alcanza.',
+    exports: ['getStageAmount'] },
+  { modulo: 'src/modules/quotes/domain/billingPlan.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['getBillingPlan'] },
+  { modulo: 'src/modules/reports/domain/desgloseEmpleado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CLAVE_SIN_ASIGNAR'] },
+  { modulo: 'src/modules/system/domain/anonimizarMerchant.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['INTOCABLES', 'REDACTADO'] },
+  { modulo: 'src/modules/system/domain/avisoPuerta.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CLAUSULAS_DEPENDIENTES'] },
+  { modulo: 'src/modules/system/domain/barridoDemo.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['PREFIJO_TELEFONO_DEMO'] },
+  { modulo: 'src/modules/system/domain/borradoMerchant.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-08-12',
+    motivo: '🔴 SEGUNDA CORRECCIÓN, Y LA ANTERIOR ERA MÍA. Pasó por PROMESA_SIN_CABLE (repitiendo el encargo) y por SUPLANTADO_POR_UNA_COPIA (mío, y también mal). Medido: sigue con cero llamadores en producción, PERO ES EL SUJETO EJECUTABLE de dos guards que lo CORREN contra un prisma falso y comprueban la SECUENCIA — `scrum192` (4 llamadas: `event` antes que los charges, `merchant` el último, y el recorrido igual a `ORDEN_BORRADO_MERCHANT`) y `scrum244-colgados` (3 llamadas: `reconciliation` ANTES que `charge` porque la FK es RESTRICT, y ningún `where` vacío). Con cero FK en cascada, ESE ORDEN ES LA GARANTÍA, y no está escrito en ningún otro sitio. Y `suprimirMerchant` NO puede heredarlos: ANONIMIZA con un `updateMany`, no borra, así que no tiene orden de borrado que verificar. No es una copia superada: **borrarlo borra la única comprobación del orden de borrado seguro.**',
+    exports: ['borrarMerchant'] },
+  { modulo: 'src/modules/system/domain/borradoMerchant.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-08-12',
+    motivo: 'La lista de lo que el barrido genérico NO debe tocar. No es accesoria de `borrarMerchant`: `scrum192` la comprueba directamente («tiene que estar declarada FUERA, no simplemente ausente»), que es la diferencia entre un modelo que se decidió dejar fuera y uno que se olvidó. Misma categoría que su función y por el mismo motivo: borrarla borra la comprobación.',
+    exports: ['FUERA_DEL_BARRIDO_GENERICO'] },
+  { modulo: 'src/modules/system/domain/importarClientes.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['normalizarCabecera'] },
+  { modulo: 'src/modules/system/domain/importarClientes.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CAMPOS_CLIENTE'] },
+  { modulo: 'src/modules/system/domain/importarClientes.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Las etiquetas de cabecera del importador de clientes; hoy solo constan en documentos.',
+    exports: ['ETIQUETA_CAMPO'] },
+  { modulo: 'src/modules/system/domain/puertaClienteReal.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CADENCIA_RECORDATORIO_DIAS'] },
+  { modulo: 'src/modules/system/domain/qrPagina.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['luminanciaRelativa', 'ratioContraste'] },
+  { modulo: 'src/modules/system/domain/qrPagina.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['CONTRASTE_MINIMO', 'FORMATOS_QR', 'TAMANOS_QR'] },
+  { modulo: 'src/modules/system/domain/soporte.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
+    exports: ['entornoLegible'] },
+  { modulo: 'src/modules/system/domain/soporte.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
+    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
+    exports: ['SOPORTE_MENSAJE_MAX'] },
+  { modulo: 'src/modules/team/domain/team.service.ts',
+    cat: 'SUPLANTADO_POR_UNA_COPIA', desde: '2026-08-12',
+    motivo: 'El profesional SÍ ve su equipo: lo sirven `teamOverview.service.ts:58` y consultas inline en rutas (`jobs.routes.ts:133`, `reports.routes.ts:99`). No es una promesa rota, es la misma consulta escrita en varios sitios, con varios sitios donde divergir.',
+    exports: ['listTeamMembers'] },
+  // ── SCRUM-340 · la regla de la plaza de fundador, escrita ANTES que su columna ──────────
+  //
+  // El fundador firmó el 8-sep-2026 que «la plaza se queda con él; si se retrasa en un pago tiene
+  // un tiempo para pagarla, y si no, esa plaza desaparece con el merchant». Ocupa quien tiene
+  // `founding_purchased_at` NOT NULL — y esa columna NO EXISTE todavía: el ALTER está escrito y
+  // sin aplicar (`docs/sql/scrum-340-la-plaza-comprada.sql`) porque `prisma/schema.prisma` es
+  // dominio del fundador. Sin la columna, `getFoundingStatus` no puede seleccionarla y el
+  // predicado se queda sin cable.
+  //
+  // NO es código muerto y NO se borra: es la regla que repara el significado que se rompió dos
+  // veces —por `plan` (se resetea al cancelar y LIBERA la plaza) y por `subscriptionStatus` (lo
+  // comparten `pro` y `founding`, así que cada PRO activo ocupaba una plaza)—. Está probada con
+  // sus dos rojos en `tests/scrum340-la-plaza-comprada.test.mjs`.
+  //
+  // Lo retira: quien cablee `getFoundingStatus` a la columna, el día que se aplique el ALTER.
+  { modulo: 'src/modules/billing/domain/founding.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-08',
+    motivo: 'La regla firmada de quién ocupa plaza de fundador, construida antes que su columna: '
+      + '`merchants.founding_purchased_at` no existe todavía y `prisma/schema.prisma` es del '
+      + 'fundador, así que el contador no puede leerla. Pura y con sus dos rojos; su cable es el '
+      + 'ALTER de SCRUM-340.',
+    exports: ['plazaOcupada'] },
+
+  // ── SCRUM-815 (③) · la exclusión que se nombra para no parecer un olvido ────────────────
+  //
+  // El protocolo de `gateway_events` se enciende SOLO para los cinco tipos de evento seguros de
+  // repetir. Los DOS que no lo son quedan fuera por decisión del asesor (15-sep-2026): hoy el
+  // defecto es silencioso —se pierden eventos— y encenderlo ahí lo volvería ruidoso: correo de
+  // primer pago reenviado, WhatsApp de disputa repetido, posible mes gratis duplicado.
+  //
+  // `EVENTOS_CON_REGISTRO` NO está aquí, y es la diferencia: aquélla la consume `llevaRegistro`
+  // dentro del propio módulo, así que se le quitó el `export` en vez de declararla. Ésta no la
+  // consume nadie dentro —su trabajo es CONSTAR— y por eso se declara en vez de des-exportarla.
+  //
+  // Lo retira: quien cablee la exclusión a algo que la lea de verdad (un panel de eventos
+  // atascados, o el día que los dos tipos dejen de tener efectos irreversibles y entren).
+  { modulo: 'src/modules/billing/domain/gatewayEvents.service.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-15',
+    motivo: 'La lista de los dos eventos que NO llevan registro de idempotencia, enumerados a '
+      + 'propósito: una exclusión que no se nombra se lee como un descuido, y la siguiente '
+      + 'sesión la «arregla» encendiéndolos. Su test la recorre y exige que `llevaRegistro` diga '
+      + 'que no a los dos, que es el control positivo de la decisión.',
+    exports: ['EVENTOS_SIN_REGISTRO'] },
+];
+
+/** Los pares `módulo::export` declarados, aplanados. */
+export function paresDeclarados() {
+  const out = new Map();
+  for (const g of DECLARADOS) for (const e of g.exports) out.set(`${g.modulo}::${e}`, g);
+  return out;
+}

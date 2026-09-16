@@ -18,6 +18,18 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'POST', path: '/admin/invoices/:invoiceId/send-reminder' },
   { method: 'GET', path: '/admin/invoices/:invoiceId/dispute-package' },
   { method: 'POST', path: '/admin/invoices/:invoiceId/payment-anomaly', body: { amount: 1 } },
+  // SCRUM-296 (A6): el libro de registro es la facturación ENTERA del negocio — lectura de
+  // admin, no trabajo de campo. Con una ruta basta: el montaje entero comparte la instancia.
+  { method: 'GET', path: '/admin/libro-registro' },
+  // SCRUM-325 (E4): el mismo libro de A6, por periodo y en fichero. El CSV lleva el NIF y el
+  // nombre de cada cliente del trimestre, así que es lectura de admin igual que su origen.
+  { method: 'GET', path: '/admin/libros/expedidas.csv' },
+  // SCRUM-295 (A5): el 303 del trimestre — misma razón que el libro.
+  { method: 'GET', path: '/admin/modelo-303' },
+  // SCRUM-297 (A7): el paquete de evidencias — misma razón que el libro y el 303.
+  { method: 'GET', path: '/admin/evidencias.zip' },
+  // SCRUM-244 (RGPD-1): la supresión del merchant, lo más destructivo que hay.
+  { method: 'POST', path: '/admin/supresion/:merchantId', body: { confirmacion: 'x' } },
   // Configuración / cuenta (S1: Técnico ❌)
   { method: 'PUT', path: '/admin/merchant', body: { name: 'X' } },
   { method: 'GET', path: '/admin/merchant/public-profile-qr' },
@@ -33,8 +45,25 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/billing/plans' },
   { method: 'GET', path: '/admin/team' },
   { method: 'POST', path: '/admin/connect/onboard' },
+  // SCRUM-597 (DOC-07) · asignar usuarios a un documento es REPARTO DE TRABAJO, y S1 dice que
+  // el reparto es del Admin — mismo criterio que el selector de asignados de los Trabajos. Las
+  // dos entran, porque son dos rutas y dos `requireRole`: ninguna hereda el 403 de la otra.
+  //
+  // ⚠️ Que estén aquí NO convierte la asignación en un permiso: siguen sin decidir quién edita ni
+  // quién emite. Esto declara quién puede ASIGNAR, no qué gana el asignado — que es nada.
+  { method: 'PATCH', path: '/admin/quotes/999999/asignados',   body: { assignedUserIds: [] } },
+  { method: 'PATCH', path: '/admin/invoices/999999/asignados', body: { assignedUserIds: [] } },
   // Supervisión por operario (SCRUM-24): S1 → equipo/supervisión es Admin
   { method: 'GET', path: '/admin/metrics/operarios' },
+  // SCRUM-301 (C1) declaró aquí el listado GLOBAL de albaranes, y **SCRUM-467 RE-DECLARA la
+  // regla**: el técnico pasa a verlo FILTRADO a sus Trabajos, porque se le precargan los albaranes
+  // en el móvil y no tenía ninguna pantalla desde la que abrirlos. `GET /admin/albaranes` se MUEVE
+  // a `TECNICO_ALLOWED` con su motivo escrito.
+  //
+  // ⚠️ EL CONTROL NO SE QUITA, y no hizo falta añadir nada: el montaje YA conserva su muestra de
+  // 403 con el `POST /admin/albaranes/consolidar` que ya estaba declarado abajo — admin-only de
+  // verdad, porque consolidar partes en una factura es dinero. Borrar esta entrada sin mirar si
+  // quedaba otra habría dejado el montaje sin ningún 403 comprobado (invariante de SCRUM-158).
   // SCRUM-55: su hermana /team salía 200 a un Operario en PRODUCCIÓN. Mismo criterio de S1
   // ("equipo ❌ Técnico") y mismo router; estaba aparcada como "Nivel 2" por descuido, no
   // por duda. Aquí queda su 403 exigido.
@@ -82,6 +111,10 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   // sellan VeriFactu igual que la de Job, así que su 403 se ejerce igual.
   { method: 'POST', path: '/admin/albaranes/999999/facturar-parcial', body: { lineas: [{ index: 0, cantidad: 1 }] } },
   { method: 'POST', path: '/admin/albaranes/consolidar', body: { customerId: 999999, albaranIds: [999999] } },
+  // SCRUM-290 (A0.4): la TERCERA vía de emisión desde albarán — cantidades del parte, precios del
+  // presupuesto firmado. Emite factura y sella VeriFactu igual que sus dos hermanas, así que su
+  // 403 se ejerce igual. No hereda el de ninguna: es otra ruta y otro `requireRole`.
+  { method: 'POST', path: '/admin/albaranes/999999/convertir-en-factura' },
   // La factura del resto + payment_request. ERA EL OBJETIVO ORIGINAL DE SCRUM-54,
   // que se cerró sobre consolidar-albaranes y dejó esta abierta: aquí su evidencia.
   { method: 'POST', path: '/admin/jobs/999999/collect-rest' },

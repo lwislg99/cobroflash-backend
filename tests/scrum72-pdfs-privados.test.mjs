@@ -21,23 +21,33 @@ import path from 'node:path';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto + auth + tenancy)', { skip: !ENABLED }, async (t) => {
-  const { prisma } = await import('../dist/core/db/prisma.js');
-  const { app } = await import('../dist/app.js');
+// ── 🔒 ASSERT DE REGRESIÓN (el que blinda esto para siempre) ──────────────
+// Si alguien devuelve el dir a public/ o reintroduce el mount estático, esto falla.
+//
+// 🔴 FUERA DEL GATE (SCRUM-844 §13). Estos dos asserts estaban DENTRO del gateado de abajo, y el
+// gate está puesto al FICHERO: se los llevaba por delante aunque no necesitan base para nada —
+// sólo leen `invoicesDir`, que es configuración. O sea que «el que blinda esto para siempre»
+// sólo corría si alguien levantaba Postgres a mano. Un assert que no corre no blinda nada.
+//
+// MEDIDO, no supuesto: ejecutados sin base, pasan (SCRUM-844, apéndice del §13). Ni una palabra
+// del assert ha cambiado; lo único que cambia es dónde vive respecto al gate.
+test('SCRUM-72: invoicesDir no cuelga de public/ (regresión — sin base)', async () => {
   const { invoicesDir } = await import('../dist/core/storage/dirs.js');
-
-  const server = app.listen(0);
-  await new Promise((r) => server.once('listening', r));
-  const base = `http://127.0.0.1:${server.address().port}`;
-
-  // ── 🔒 ASSERT DE REGRESIÓN (el que blinda esto para siempre) ──────────────
-  // Si alguien devuelve el dir a public/ o reintroduce el mount estático, esto falla.
   const normalized = invoicesDir.replace(/\\/g, '/');
   assert.ok(
     !/\/public\//.test(normalized) && !normalized.endsWith('/public'),
     `REGRESIÓN SCRUM-72: invoicesDir vuelve a estar bajo public/ (${invoicesDir}) → los PDFs se sirven como estático`,
   );
   assert.ok(normalized.includes('/storage/'), `invoicesDir debe vivir en storage/ (actual: ${invoicesDir})`);
+});
+
+test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto + auth + tenancy)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { app } = await import('../dist/app.js');
+
+  const server = app.listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
 
   const stamp = Date.now();
   // SCRUM-113: `invoiceSeriesPrefix` se conserva — los asserts buscan números `…-CF-…`.

@@ -21,23 +21,46 @@ import {
 } from '../dist/modules/jobs/domain/albaran.service.js';
 
 // ── Numeración (pura) ────────────────────────────────────────────────────────
-test('formatAlbaranNumber: ALB-2026-001 y sin truncar >999', () => {
-  assert.equal(formatAlbaranNumber(2026, 1), 'ALB-2026-001');
-  assert.equal(formatAlbaranNumber(2026, 42), 'ALB-2026-042');
-  assert.equal(formatAlbaranNumber(2026, 1234), 'ALB-2026-1234');
+// 🔴 SCRUM-592 (DOC-02) · el formato pasa a `AB260001`. El de antes —`ALB-2026-001`— sigue
+// RECONOCIÉNDOSE mientras haya bases sin renumerar (lo fija el test de `isAlbaranNumber` justo
+// debajo), pero ya no se emite: una sola numeración, no dos formatos conviviendo.
+test('formatAlbaranNumber: AB260001, y al desbordar CRECE en vez de truncarse', () => {
+  assert.equal(formatAlbaranNumber(2026, 1), 'AB260001');
+  assert.equal(formatAlbaranNumber(2026, 42), 'AB260042');
+  assert.equal(formatAlbaranNumber(2026, 1234), 'AB261234');
+  // Truncar daría dos albaranes con el mismo número, y ese número se cita en la recapitulativa.
+  assert.equal(formatAlbaranNumber(2026, 12345), 'AB2612345');
 });
 
-test('isAlbaranNumber distingue la serie ALB de la fiscal y la J-', () => {
+test('isAlbaranNumber distingue LAS DOS formas de la serie, de la fiscal y de la J-', () => {
+  assert.equal(isAlbaranNumber('AB260001'), true);
+  // 🔴 EL VIEJO SIGUE RECONOCIÉNDOSE, y este caso casi se pierde: al sustituir el formato en los
+  // asserts se cambió también éste, que es justo el que vigila la transición. Mientras haya bases
+  // sin renumerar —producción espera a que el fundador decida—, un lector que sólo conozca la
+  // forma nueva daría por «no es un albarán» a documentos que sí lo son.
   assert.equal(isAlbaranNumber('ALB-2026-001'), true);
   assert.equal(isAlbaranNumber('2026-CF-001'), false);
   assert.equal(isAlbaranNumber('J-20260713-ABCD'), false);
+  assert.equal(isAlbaranNumber('P260001'), false, '🔴 confunde un PRESUPUESTO con un albarán');
   assert.equal(isAlbaranNumber(null), false);
 });
 
 test('resolveAlbaranSeq: continúa en el mismo año, resetea al cambiar y con serie nueva', () => {
   assert.equal(resolveAlbaranSeq({ albaranSeriesYear: 2026, nextAlbaranNumber: 8 }, 2026), 8);
   assert.equal(resolveAlbaranSeq({ albaranSeriesYear: 2026, nextAlbaranNumber: 8 }, 2027), 1);
-  assert.equal(resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 5 }, 2026), 1);
+
+  // ⚠️ SCRUM-306 (C7) · ESTE CASO ESTABA MAL Y FIJABA LA TRAMPA COMO COMPORTAMIENTO ESPERADO.
+  //
+  // Decía `{ albaranSeriesYear: null, nextAlbaranNumber: 5 }` → 1, bajo el rótulo «con serie
+  // nueva». Pero un contador en 5 NO es una serie nueva: es una serie a la que alguien le movió el
+  // número sin fijar el año. Este assert hacía que el reinicio silencioso pareciera deliberado — y
+  // un test que dice lo que no es cuesta más que no tenerlo, porque el siguiente que lo lea creerá
+  // que está decidido.
+  //
+  // La serie NUEVA de verdad es el merchant recién creado: año nulo y contador en 1.
+  assert.equal(resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 1 }, 2026), 1);
+  // Y el contador movido sin año falla en vez de reiniciar (detalle en scrum306-serie-albaranes).
+  assert.throws(() => resolveAlbaranSeq({ albaranSeriesYear: null, nextAlbaranNumber: 5 }, 2026));
 });
 
 test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async () => {
@@ -55,8 +78,9 @@ test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async 
     },
   };
   const now = new Date('2026-07-13T12:00:00Z');
-  assert.equal(await allocateAlbaranNumber(tx, 7, now), 'ALB-2026-001');
-  assert.equal(await allocateAlbaranNumber(tx, 7, now), 'ALB-2026-002');
+  // SCRUM-592 (DOC-02): mismo comportamiento —correlativo y con cerrojo—, formato nuevo.
+  assert.equal(await allocateAlbaranNumber(tx, 7, now), 'AB260001');
+  assert.equal(await allocateAlbaranNumber(tx, 7, now), 'AB260002');
   assert.equal(state.nextAlbaranNumber, 3);
   // SCRUM-234: una reserva, un cerrojo. Si esto baja a 0, la carrera está de vuelta.
   assert.equal(cerrojos.length, 2, 'cada reserva de serie toma su advisory lock');
@@ -66,7 +90,7 @@ test('allocateAlbaranNumber: correlativo y avanza el contador (tx mock)', async 
   );
   assert.equal(state.albaranSeriesYear, 2026);
   // Cambio de año → serie nueva desde 1
-  assert.equal(await allocateAlbaranNumber(tx, 7, new Date('2027-01-02T09:00:00Z')), 'ALB-2027-001');
+  assert.equal(await allocateAlbaranNumber(tx, 7, new Date('2027-01-02T09:00:00Z')), 'AB270001');
   assert.equal(updates.length, 3);
 });
 
@@ -175,7 +199,7 @@ test('calcAlbaranTotales: SIN_VALORAR (líneas sin precioUnitario) da 0, no NaN'
 // ── Tenancy + flujo HTTP real (gateado, patrón tenancy-permisos.test.mjs) ───
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENABLED }, async () => {
+test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -256,7 +280,10 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
     const rSignEarly = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' });
     assert.equal(rSignEarly.status, 409);
     assert.equal((await jsonReq(`/admin/albaranes/${alb1.id}/emitir`, cookieA, 'POST')).status, 200);
-    const rSign = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' });
+    // SCRUM-300: al firmar se puede declarar QUIÉN firma, y ese nombre entra en el contenido
+    // SELLADO (v:2). Es OPCIONAL —los albaranes ya firmados no lo tienen y siguen siendo
+    // válidos—; aquí se manda a propósito para ejercitar el camino con dato.
+    const rSign = await jsonReq(`/admin/albaranes/${alb1.id}/firmar`, cookieA, 'POST', { signatureData: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', firmadoPorNombre: 'Ana Pérez' });
     assert.equal(rSign.status, 200);
     const albSigned = await rSign.json(); // serializado con pdfUrl al endpoint auth
     const rLocked = await jsonReq(`/admin/albaranes/${alb1.id}`, cookieA, 'PATCH', { notas: 'tarde' });
@@ -301,7 +328,7 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
 // Playwright MCP contra staging (no hay librería de parseo de PDF en el repo);
 // aquí se blinda la MECÁNICA: validación 400, candado del modo tras emitir 409,
 // y que el PDF se sigue generando (200 + application/pdf) en ambos modos.
-test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambos modos', { skip: !ENABLED }, async () => {
+test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambos modos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

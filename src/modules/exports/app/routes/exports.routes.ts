@@ -16,6 +16,7 @@ import {
   flagsFiscalesDe,
 } from '../../../system/audit.service';
 import { estadoCobroFor } from '../../../jobs/domain/job.service';
+import { fechaDeCobroDeCharge } from '../../../billing/domain/instanteDeCobro'; // SCRUM-397
 // SCRUM-25 (B): paquete ZIP. `archiver` hace streaming real (.pipe + backpressure);
 // jszip se descartó porque carga todo en memoria.
 // ⚠️ archiver 8 cambió la API: ya NO exporta la función `archiver('zip', opts)` de v5/v6,
@@ -27,13 +28,13 @@ import { buildVerifactuRegistrosXml } from '../../../invoicing/domain/verifactu.
 import { invalidAnioFiscal } from '../../../../core/validation/fiscalInput'; // SCRUM-217
 import {
   construirCsvsDelPaquete, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
-  buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos,
+  buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos, buildGastos,
   EXPORT_PDF_CONCURRENCIA, // SCRUM-83
 } from '../../domain/exportData';
 // SCRUM-244 · la PUERTA de portabilidad: cobertura derivada + registro del derecho ejercido.
 // `actorDeRequest` y `requestIp` ya vienen del import de `audit.service` de arriba.
 import {
-  construirPaquete, camposDe, datasetACsv, LEEME_PENDIENTE,
+  construirPaquete, camposDe, datasetACsv, LEEME,
 } from '../../domain/portabilidadCompleta';
 import { registrarSolicitud, registrarAtencion } from '../../domain/portabilidadRegistro';
 import { mapearConLimite } from '../../../../core/utils/concurrencia'; // SCRUM-83
@@ -387,7 +388,7 @@ router.get('/datos.zip', async (req, res) => {
         cabecera: [
           ...entrega.cabeceraLeeme,
           ...(exclusionesVerifactu.length === 0 ? [] : [
-            `ATENCION: ${exclusionesVerifactu.length} factura(s) NO se han podido declarar y NO estan`,
+            `ATENCION: ${exclusionesVerifactu.length} ${exclusionesVerifactu.length === 1 ? 'factura NO se ha podido declarar y NO esta' : 'facturas NO se han podido declarar y NO estan'}`,
             'en el registro VeriFactu de este paquete. Corrigelas y vuelve a exportar:',
             ...exclusionesVerifactu.map((x) => `  · ${x.number} (${x.year}): ${x.motivo}`),
           ]),
@@ -486,12 +487,18 @@ router.get('/fees.csv', async (req, res) => {
         (e) => e.type === 'card_session_created' && (e as any).payload?.connect === true,
       );
       if (!viaConnect) continue; // pagos en la cuenta de plataforma (demo/test): sin fee
-      const paidEv = (ch.events || []).find((e) => e.type === 'paid');
+      // SCRUM-397: de los tres consumidores éste era el que ya hacía lo correcto (el PRIMER evento
+      // `paid`). Pasa por el mismo lector que los otros dos para que sigan siendo tres respuestas
+      // iguales — antes coincidía por criterio propio, que es lo que se desincronizó una vez.
+      const fechaPago = fechaDeCobroDeCharge(ch);
       const amount = Number(ch.amount);
       const fee = feeOf(amount);
       totalFees += fee;
       rows.push(csvRow([
-        (paidEv ? new Date((paidEv as any).ts ?? ch.updatedAt) : ch.updatedAt).toISOString().slice(0, 10),
+        // Sin reserva a `updatedAt`: si la regla es que esa fecha no es la del cobro, no puede
+        // tener una excepción aquí. En la práctica no se ve vacío —toda fila de este CSV pasó por
+        // Connect y por tanto tiene su evento `paid`—, pero vacío es la respuesta honesta.
+        fechaPago ? fechaPago.toISOString().slice(0, 10) : '',
         ch.id,
         ch.merchant?.legalName || ch.merchant?.name || ch.merchantId,
         ch.concept,
@@ -673,36 +680,12 @@ router.get('/expenses.csv', async (req, res) => {
     const { from, to } = parseDateFilter(req.query as any);
     const category = String(req.query.category || 'all');
 
-    const where: any = { merchantId: req.merchantId };
-    if (category !== 'all') where.category = category;
-    if (from || to) {
-      where.date = {};
-      if (from) where.date.gte = from;
-      if (to)   where.date.lte = to;
-    }
-
-    const expenses = await prisma.expense.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      include: {
-        quote:    { select: { id: true } },
-        provider: { select: { name: true } },
-      },
-    });
-
     auditExport(req, 'gastos.csv', { from, to });
 
-    const header = ['Fecha', 'Concepto', 'Categoría', 'Importe', 'Moneda', 'Proveedor', 'Presupuesto ID', 'Notas'];
-    const rows = expenses.map((e) => csvRow([
-      new Date(e.date).toISOString().slice(0, 10),
-      e.concept,
-      e.category,
-      csvNum(e.amount),
-      e.currency,
-      e.provider?.name ?? '',
-      e.quote?.id ?? '',
-      e.notes ?? '',
-    ]));
+    // SCRUM-343: el suelto usa el MISMO builder que el paquete (buildGastos) — antes tenía su propia
+    // cabecera a mano y le faltaba «Registrado por» (8 vs 9). Ahora hay una sola fuente y no pueden
+    // divergir (guard: tests/scrum343). `category` se pasa como filtro extra del suelto.
+    const { header, rows } = await buildGastos(req.merchantId, { from, to }, category);
 
     sendCsv(res, `gastos_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
   } catch (err) {
@@ -791,9 +774,15 @@ router.get('/portabilidad.zip', async (req, res) => {
     for (const dataset of paquete) {
       archive.append(datasetACsv(dataset, camposDe(dataset.modelo)), { name: dataset.fichero });
     }
-    // El aviso del art. 15 va con el texto PENDIENTE de aprobación (regla 30): la pieza existe
-    // vacía a propósito, para que ponerlo sea una línea el día que esté aprobado.
-    archive.append(LEEME_PENDIENTE, { name: 'LEEME.txt' });
+    // 17-ago-2026 · texto APROBADO. Va a un `.txt`, no al DOM: sus saltos de línea son bytes del
+    // fichero y no necesitan `white-space` de nada. Lo que sí hay que sostener es que LLEGUEN, y de
+    // eso hay guard: un `.join(' ')` de más los aplanaría sin que nadie lo notara al abrir el ZIP.
+    //
+    // 🔴 NO copia el aviso del art. 15: apunta a la política de privacidad. Duplicar ahí las
+    // finalidades, los destinatarios y los plazos crearía DOS FUENTES del mismo hecho legal, y el
+    // día que una cambie la otra miente. Y NO enumera los CSV: esa lista se derivaría de lo que el
+    // ZIP mete de verdad — una escrita a mano es la siguiente que se queda vieja.
+    archive.append(LEEME, { name: 'LEEME.txt' });
     await archive.finalize();
   } catch (err) {
     console.error('[GET /admin/exports/portabilidad.zip]', err);

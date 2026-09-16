@@ -1,0 +1,292 @@
+# SCRUM-484 · Los motores sin cable: la lista leída, no el recuento
+
+**Medido contra:** `origin/main` = `75b2b01820f71bdb1bf2b3244b19f801d69e24f6` · 2026-08-12T09:59:54+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · **Cero cables, cero schema, cero emisión.** Esto entrega el mapa.
+
+---
+
+## Lo que NO he reconstruido, y por qué
+
+**El mecanismo ya existe y es mejor que el que yo habría escrito:** `tests/_alcance-dominio.mjs`
+(SCRUM-411). Alcanzabilidad **por EXPORT**, no por módulo; grafo desde entradas reales
+(`src/index.ts`, `src/app.ts` **y los `scripts/*.mjs` que `package.json` declara**, derivados);
+`tests/` fuera a propósito — que es justo la trampa del encargo. Y lleva escrita dentro la lección
+que lo hizo posible: *«un módulo vivo por una constante ESCONDE una función muerta»*.
+
+Mi trabajo es el otro: **leer la lista y clasificarla.**
+
+## 🔴 1 · El trinquete de 411 cuenta MÓDULOS, y tres de tus cinco no son módulos
+
+| | |
+|---|---|
+| módulos **enteros** inalcanzables | **8** |
+| exports **huérfanos dentro de módulos vivos** | **189** (+1 falso positivo, abajo) |
+
+**De los cinco que nombraste:** `recargoEquivalencia` y el IRPF de A2 (`retencionIrpf`) son módulos
+enteros — salen. **`justificante.ts`, `metodoParaAgrupar` (`metodoDeCobro.ts`) y `PAID_VIA`
+(`paidVia.ts → esPaidViaValido`) NO son módulos inalcanzables: son funciones muertas dentro de
+módulos vivos.** El trinquete de 411 **no puede verlas**, porque cuenta módulos.
+
+> Ésa es la respuesta a «no hay ningún rojo que se encienda por esto»: sí lo hay, pero mide una de
+> las dos poblaciones, y la que se te aparece cinco veces en 48 horas es **la otra**.
+
+## 🔴 2 · Límite MEDIDO del instrumento, antes de publicar ningún número
+
+`nombresImportados` solo lee imports **estáticos**. Un `const { X } = await import('…')` ata el
+módulo (el grafo sí lo sigue) pero **no ata el nombre**, así que ese export sale como huérfano sin
+serlo.
+
+**Lo he acotado en vez de declararme ciego a medias:** los nombres desestructurados de un import
+dinámico en `src/` son **cinco** (`getFoundingStatus`, `recordCustomerEvent`, `sendInvoiceEmail`,
+`generateQuotePdf`, `sendQuoteEmail`) y de ellos **solo UNO** aparece en la lista:
+
+* 🔴 **falso positivo: `email.service.ts → sendQuoteEmail`** — lo llama `quotesAdmin.routes.ts` por
+  import dinámico.
+
+**Y de los 8 módulos inalcanzables, contaminados: CERO.** Así que **los 8 son firmes** y el 190 es
+**189 reales + 1 nombrado**. No toco `_alcance-dominio.mjs`: es el guard de otra sesión y arreglarlo
+es su ticket (regla 9).
+
+## Controles, antes de la lista
+
+* **SUELO:** cero inalcanzables aborta por «CIEGO» — sabemos que hay al menos cinco. Salieron 8.
+* **CONTROL NEGATIVO:** el camino de emisión (`invoiceNumber.service`, `verifactu`,
+  `registro.builder`) **tiene** llamadores y **no** sale en la lista. Si saliera, el detector marca
+  de más y el censo entero no vale.
+* **Los tests no cuentan como llamador.** Es la trampa que hacía que los cinco parecieran vivos.
+
+---
+
+# LA LISTA · los 8 módulos, clasificados
+
+> La clasificación sale de **lo que cada módulo declara en su propia cabecera**, no de lo que yo
+> suponga. Donde no lo declara, lo digo.
+
+### 1 · `invoicing/domain/recargoEquivalencia.ts` — **espera schema + STOP emisión**
+`RECARGO_POR_TIPO_IVA` · `calcularRecargo` · `calcularRecargoDeFactura` · `leerRecargoDelCliente`
+Necesita el campo de régimen en `Customer` (hoy `Customer` no tiene ninguno) y enchufarlo cambia
+`Invoice.total`, que va **sellado**, y el desglose del XML.
+> **Hoy un profesional que vende a un cliente en recargo no puede facturarle bien: le emite una
+> factura sin recargo, y ese recargo lo tiene que ingresar él.**
+
+### 2 · `invoicing/domain/retencionIrpf.ts` — **espera schema** (lo declara él mismo)
+`TIPOS_RETENCION` · `esTipoRetencionValido` · `calcularRetencion` · `liquidoAPercibir` ·
+`bloqueRetencion` · `leerTipoRetencion`
+Su cabecera: *«ESTE MÓDULO NO LO LLAMA NADIE TODAVÍA, Y ESO ES DELIBERADO… los campos que hacen
+falta necesitan migración, y las migraciones están paradas»*.
+> **Un profesional que factura a empresa con retención no puede: la factura sale por el bruto y el
+> líquido a percibir lo calcula a mano.**
+
+### 3 · `invoicing/domain/criterioCaja.ts` — **falta el cable** (+ gate regla 24)
+`ADVERTENCIA_CAJA` · `clasificarPorCobro` · `leerCriterioCaja`
+Clasifica y avisa; no liquida. Nadie lo enseña en ninguna pantalla ni informe.
+> **Un profesional en criterio de caja no ve en ningún sitio qué IVA le toca declarar este
+> trimestre, aunque el producto sepa calcularlo.**
+
+### 4 · `invoicing/domain/finalInvoice.service.ts` — **falta el cable + STOP emisión**
+`buildFinalInvoice` — motor puro de la factura final con deducción de anticipos y tramos ya
+facturados, con las referencias que la hacen auditable.
+> **Quien cobró una señal no puede emitir la factura final descontándola: o factura de más, o
+> resta a mano y pierde el rastro de qué descontó.**
+
+### 5 · `invoicing/domain/huecosSerie.ts` — **falta el cable**
+`MAX_SEQ_BARRIDO` · `huecosDeLaSerie`
+Su cabecera: el competidor pone un aviso en gris; esto **comprueba** y dice qué números faltan.
+> **Nadie le avisa de que en su serie falta el 147 — y eso es lo primero que mira una inspección.**
+
+### 6 · `jobs/domain/albaranSerie.ts` — **falta el cable**
+`componerNumeroAlbaran` · `huecosDeAlbaranes` · `vistaPreviaAlbaran`
+> **No ve qué número le va a tocar al siguiente albarán ni si le falta alguno.**
+
+### 7 · `jobs/domain/ventanaDeFirma.ts` — **falta el cable**
+`FUENTES_DE_SUELO` · `elegirSuelo` · `contrastarReloj` · `cruzaDias`
+Su cabecera: la fecha de una firma depende hoy **del reloj que controla el usuario**; firmando sin
+red, el trazo sube días después y el servidor lo sella al llegar.
+> **Una firma hecha el día 30 sin cobertura y subida el día 2 queda fechada el 2 — y puede cruzar
+> de mes o de trimestre.**
+
+### 8 · `system/domain/flagFiscal.service.ts` — **espera decisión de producto (del fundador)**
+`FLAGS_FISCALES` · `esFlagFiscal` · `ErrorCambioFlag` · `cambiarFlagFiscal`
+Su cabecera: encender `INVOICING_ES_ENABLED` para un merchant real es **la acción de mayor
+consecuencia del producto**, y hasta hoy era un UPDATE a mano contra la base: sin actor, sin
+momento y **sin poder acreditarle a una inspección desde cuándo emite**.
+> **Nadie puede encender la facturación fiscal de un merchant dejando rastro; se hace a mano contra
+> la base — que es exactamente lo que este módulo vino a impedir.**
+
+**Ninguno es «muerto, se retira».** Los 8 tienen destinatario y motivo; lo que falta es el cable, un
+campo, o una decisión.
+
+---
+
+# Los huérfanos dentro de módulos vivos — 189, y los que más pesan
+
+No los clasifico todos: serían 189 juicios y el encargo pide leer, no inventariar. **Los que un
+profesional nota**, con su fichero:
+
+| export huérfano | qué no puede hacer hoy un profesional |
+|---|---|
+| `system/domain/borradoMerchant.ts → borrarMerchant` | 🔴 **pedir que borren su cuenta y sus datos.** Es RGPD-1, y su ticket (SCRUM-244) está **CERRADO** |
+| `billing/domain/metodoDeCobro.ts → metodoParaAgrupar` · `paidVia.ts → esPaidViaValido` | agrupar sus cobros por método fiable: la validación existe y no se aplica |
+| `expenses/domain/justificante.ts → avisaDeSimplificado`, `VEREDICTO`, `INCOHERENCIA` | que le avisen de que **con un ticket no puede deducir el IVA** (E3), aunque el veredicto esté construido |
+| `messaging/domain/constanciaCorreo.ts → ESTADOS_CORREO, idDeLaRespuesta, avanzar` | saber si su correo llegó — es SCRUM-475/478, **con la tabla parada a propósito** |
+| `exports/domain/portabilidadRegistro.ts → solicitudesPendientes, fechaLimite…` | que alguien vea si su solicitud de portabilidad se atendió dentro de plazo |
+| `jobs/domain/albaran.service.ts → verificarEvidenciaAlbaran, recomputarHashDeEvidencia` | comprobar que la evidencia de una firma no se ha alterado |
+
+⚠️ **`sendQuoteEmail` NO está en esta tabla**: es el falso positivo medido arriba.
+
+---
+
+## Lo que este censo NO cubre, declarado
+
+* **El import dinámico por nombre** — acotado a 1 caso, no arreglado (fichero de otra sesión).
+* **`import * as x`**: el analizador da el módulo por vivo entero, así que **puede esconder
+  huérfanos**. El 189 es un **suelo**, no un techo.
+* **El frontend**: `public/` es vanilla y no entra en este grafo. Un motor de `src/` que solo
+  consumiera el navegador saldría aquí como huérfano; no he encontrado ninguno de los 8 en ese caso,
+  pero no lo he medido export por export.
+* **No he clasificado los 189.** Lo que entrego de ellos son los seis que más pesan, nombrados.
+
+## Lo que NO se ha hecho
+
+**Cero cables**: no he enchufado ninguno de los 8, ni tocado `prisma/schema.prisma`, ni el camino de
+emisión, ni el guard de SCRUM-411. **No he retirado nada**: ningún módulo salió como muerto.
+
+
+---
+
+# SCRUM-484 · CONTINUACIÓN · los 56 sin motivo escrito, clasificados
+
+**Medido contra:** `origin/main` = `3d8c1d7d91d151d87d960aa9b1927dedc9cddab4` · 2026-08-12T10:50:12+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · **Cero cables, cero schema, cero emisión.**
+
+## 🔴 Los números CAMBIARON, y no por un error: `main` se movió
+
+La partición anterior (131/59 sobre 190) se midió contra otro `main` — que ya incluye, entre otras
+cosas, mi propia entrada de SCRUM-485. **Recuento de ahora, con la suma hecha por el instrumento:**
+
+| | exports | módulos |
+|---|---|---|
+| con motivo escrito en su fichero | **136** | 44 |
+| **sin** motivo escrito | **56** | 22 |
+| **total** | **192** | 66 |
+
+`136 + 56 = 192`. **CUADRA.** Y ocho módulos inalcanzables enteros, como antes.
+
+## La sexta clase resultó ser DETECTABLE, y se lleva 41 de los 56
+
+Con `especificación ejecutable sin superficie` sobre la mesa, la pregunta se vuelve mecánica:
+**¿lo consume un guard?** Si `tests/` lo usa, no es olvido — es una especificación que se ejecuta
+aunque no tenga superficie. Es exactamente la clase que `borrarMerchant` estrenó.
+
+| de los 56 | |
+|---|---|
+| **especificación ejecutable sin superficie** (la consume un guard) | **41** |
+| **olvido de verdad** — ni producción, ni guard, ni motivo escrito en fichero **ni en su entrada de máster** | **15** |
+
+`41 + 15 = 56`. **CUADRA.**
+
+## 🔴 Y el detector dio CERO antes de dar 41 — tercera vez hoy con la misma causa
+
+La primera pasada dijo **«especificación ejecutable: 0»**. No me lo creí, porque un cero es la forma
+exacta de un detector ciego. Con el segundo instrumento (`grep` sobre `tests/`) salió que
+`aggregateWaRows`, `shouldApplyStatus`, `calcularSemaforo`, `normalizarCabecera` y `ratioContraste`
+**sí están en los tests**.
+
+**La causa: el heredoc del shell se comió las barras invertidas** de `…`, y el patrón quedó en
+un carácter de retroceso que no casa nunca. Es la tercera vez hoy —el mismo mecanismo que me mordió
+en el censo de llamadores y en el arnés de rojos—. Ahora el script **lleva su propio control dentro**:
+un nombre que seguro está y otro que seguro no; si no los distingue, **sale por CIEGO sin números**.
+
+## Los 15 OLVIDOS — mirados en el fichero Y en su entrada de máster
+
+| export | qué no puede hacer hoy un profesional |
+|---|---|
+| `auth/referral.service → ensureReferralCode` | un merchant antiguo **nunca obtiene su código de referido**: el backfill perezoso existe y no lo invoca nadie |
+| `team.service → listTeamMembers` | listar su equipo por esta vía |
+| `quoteRequests/attachment.service → listQuoteRequestAttachments` | ver los adjuntos de una solicitud de presupuesto |
+| `jobs/presupuestosDelTrabajo → tieneTramoPendiente` | saber si a un trabajo le queda **tramo pendiente de facturar** |
+| `invoicing/portonDocumento → estaSellada` | (su hermano `puedeSalirDocumento` sí lo ejercita un guard; esta comprobación suelta, no) |
+| `system/importarClientes → CAMPOS_CLIENTE`, `ETIQUETA_CAMPO` | las etiquetas del importador no las usa la superficie: el usuario no ve nombrados los campos que va a mapear |
+| `messaging/whatsappLog → WA_WINDOW_SAFETY_MS`, `DELIVERED_OR_MORE`, `SENT_OR_MORE` | el margen de la ventana de 24 h y los umbrales de entrega **no los aplica nadie** |
+| `jobs/albaranIdempotencia → ERROR_CLAVE_INVALIDA` | recibir ese error con su nombre |
+| `jobs/albaranContenidoFuentes → VERSIONES_CON_FUENTES` | — (declaración de versiones sin consumidor) |
+| `billing/stripePrices → PRICE_LOOKUP_KEYS` | — (lista de claves de precio sin comprobador) |
+| `system/qrPagina → luminanciaRelativa` | ⚠️ **probable falso positivo**: `ratioContraste` sí lo ejercita un guard y **la llama por dentro**. Un export usado solo internamente sale como huérfano |
+| `system/soporte → SOPORTE_MENSAJE_MAX` | que el tope del mensaje de soporte se aplique de verdad |
+
+⚠️ **El caso de `luminanciaRelativa` es una clase que no estaba en la lista y hay que contarla:**
+*export usado solo dentro de su propio módulo*. No es olvido ni especificación — es un export que no
+necesitaba serlo. **No he barrido los 15 buscando este patrón**, así que **de los 15, uno está
+identificado como probable falso positivo y los otros 14 no están comprobados contra ese patrón.**
+
+## Recuento honesto de lo leído
+
+* Clasificados **a mano** hasta hoy: **8 módulos enteros** + **6 exports** (SCRUM-484) + **1** el de
+  supresión (SCRUM-485) + **los 15 de aquí** = **22 exports y 8 módulos**.
+* Clasificados **por derivación** (con su control): **41** como especificación ejecutable y **136**
+  como «con motivo escrito» — éstos últimos **sin leer uno por uno**.
+* **Sin leer individualmente: 136.** Lo digo con el número, que es lo que pide el suelo.
+
+## Límites, arrastrados y declarados otra vez
+
+`nombresImportados` solo lee imports **estáticos** (1 falso positivo acotado) · `import * as` da el
+módulo por vivo entero → **192 es SUELO, no techo** · el **frontend vanilla** no entra en el grafo ·
+y el nuevo: **un export usado solo dentro de su módulo aparece como huérfano**.
+
+## Lo que NO se ha hecho
+
+No he enchufado nada, no he retirado nada —`borrarMerchant` **se queda**, reclasificado—, cero
+schema, cero emisión, y no he tocado ningún guard ajeno.
+
+
+---
+
+# SCRUM-484 · CONTINUACION 3 · los tres sin lector: contestados, y NO retirados
+
+**Medido contra:** `origin/main` = `423a9c9c0a6b6e13847ff669d2e24d6360960ddf` · 2026-08-12T11:57:40+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · **Cero retiradas, cero cables, cero schema.**
+
+## La respuesta a «que NO puede hacer hoy un profesional»
+
+| export | que pasa hoy | veredicto |
+|---|---|---|
+| `team.service → listTeamMembers` | **El profesional SI ve su equipo**: lo sirve `GET /admin/team` → `getTeamOverview()` → `teamOverview.service.ts:58` | **no hay victima** — es la misma consulta escrita dos veces |
+| `attachment.service → listQuoteRequestAttachments` | **SI ve los adjuntos** de una solicitud: `quoteRequests.routes.ts:25` hace el mismo `findMany` **inline** | **no hay victima** — copia |
+| `maintenance.service → maintenanceEurInMonth` | calcula los **€ cobrados de presupuestos nacidos del ciclo de mantenimiento** (A15.3). La funcion de mantenimiento existe en el producto (los recordatorios estan en `quotesDetailView.js:1170`), pero **ese numero no lo ensena ni lo pide nadie** | 🔴 **DUDO, y por eso no lo retiro** |
+
+Para el tercero, la victima que se puede nombrar: **nadie puede ver cuanto ha facturado gracias a
+los recordatorios de mantenimiento**. La capacidad de recordar existe; la de saber si sirve, no. **Lo
+traigo, no lo decido.**
+
+## 🛑 Y LOS DOS PRIMEROS TAMPOCO SE PUEDEN RETIRAR HOY — el motivo es nuevo
+
+Los tres estan **DECLARADOS** en `tests/_huerfanos-declarados.mjs` (SCRUM-487, que entro en `main`
+despues de mi medicion), con categoria, fecha y motivo:
+
+* `listTeamMembers` → `SUPLANTADO_POR_UNA_COPIA`
+* `listQuoteRequestAttachments` → `SUPLANTADO_POR_UNA_COPIA`
+* `maintenanceEurInMonth` → `SIN_LECTOR_NI_TEST` — *«el unico del censo del que no consta ni para
+  que se escribio»*
+
+Y ese guard **cae en los dos sentidos**: un huerfano declarado que ya no toca **tambien sale en
+rojo**, porque bajar es sospecha. **Retirar el codigo sin retirar su declaracion pone `main` en
+rojo**; retirar la declaracion exige tocar `_huerfanos-declarados.mjs`, que es del otro carril y
+tengo prohibido tocar.
+
+> **La retirada es correcta y no es mia:** va en UN commit que quite el codigo **y** su declaracion
+> a la vez, y ese commit lo tiene que hacer quien posee el fichero de declaraciones.
+
+## Los dos instrumentos convergen, y eso es lo que vale del turno
+
+Llegue a los mismos veredictos **por otro camino y sin leer su fichero**: el equipo se sirve por
+`getTeamOverview` y los adjuntos por un `findMany` inline. Su declaracion ademas **anade dos sitios
+mas** que yo no habia encontrado para el equipo (`jobs.routes.ts:133`, `reports.routes.ts:99`).
+
+**Dos censos independientes, la misma respuesta.** Donde antes discrepabamos —yo decia «al menos
+tres sin lector», ellos «uno»— la diferencia era de CATEGORIA, no de hecho: los otros dos si tienen
+lector, pero es una copia de su consulta.
+
+## Lo que NO se ha hecho
+
+No he retirado nada, no he tocado `_huerfanos-declarados.mjs` ni `_alcance-dominio.mjs`, ni he
+enchufado ninguno de los tres. Cero schema, cero emision.

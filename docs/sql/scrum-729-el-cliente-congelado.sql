@@ -1,0 +1,127 @@
+-- docs/sql/scrum-729-el-cliente-congelado.sql — SCRUM-729
+--
+-- EL CLIENTE, CONGELADO EN EL DOCUMENTO EL DÍA QUE SE EMITE. Cinco columnas en `invoices` y las
+-- mismas cinco en `albaranes`. **Nada más.**
+--
+-- ESTADO (8-sep-2026):
+--    · desarrollo, staging y producción → ⛔ TODAS pendientes. Las aplica el fundador.
+--    · esta sesión NO ha ejecutado nada contra ninguna base. Ni con `--dry-run`.
+--
+-- POR QUÉ HACE FALTA: `docs/master/SCRUM-729.md` («Una factura EMITIDA reimprime el cliente DE HOY,
+-- no el del día que se emitió»). Ese documento MIDE el defecto; esto es el ALTER que allí quedó
+-- «pedido a Javier» y nunca se escribió.
+--
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+-- 🔴 LOS NOMBRES FÍSICOS ESTÁN MEDIDOS, NO RECORDADOS — y por DOS fuentes independientes
+--
+-- Este esquema es MIXTO, así que «aplicar la regla» no es una comprobación: es una suposición con
+-- buena pinta. Medido el 8-sep-2026 sobre `origin/main` = 61d14a15:
+--
+--   Prisma            físico        schema.prisma        deriva-prod.sql
+--   ───────────────── ───────────── ──────────────────── ────────────────────────────────
+--   model Invoice     invoices      @@map("invoices")    36 filas ('invoices', …)
+--   model Albaran     albaranes     @@map("albaranes")   26 filas ('albaranes', …)
+--
+-- `docs/sql/deriva-prod.sql` es la segunda fuente y vale porque se escribió CONTRA LA BASE REAL,
+-- no contra el esquema: si el esquema y la base hubieran divergido, ahí se vería.
+--
+-- Y se comprobó que **ninguna de las cinco columnas existe ya**: 0 coincidencias de
+-- `customer_name`, `customer_legal_name`, `customer_tax_id`, `customer_email` y `customer_phone`
+-- en el manifiesto. El nombre nuevo no pisa nada.
+--
+-- ── LA CONVENCIÓN, Y LA TRAMPA QUE TIENE ESTA TABLA EN CONCRETO ──────────────────────────
+-- 🔴 `invoices` MEZCLA DOS CONVENCIONES, y hay que saberlo antes de elegir el nombre:
+--
+--      merchantId, customerId, quoteId  →  SIN `@map` → físicamente "customerId", EN CAMELLO
+--      paid_at, charge_id, paid_via, …  →  CON `@map` → guiones bajos (24 campos en Invoice)
+--
+-- Medido en todo el esquema: sólo `Quote` e `Invoice` —los dos modelos más antiguos— dejan
+-- `customerId` sin `@map`; los otros ocho que lo tienen (Charge, QuoteRequest, CustomerEvent,
+-- WhatsAppMessage, Job, MaintenancePlan, EmailMessage, ParteTrabajo) usan `@map("customer_id")`.
+--
+-- **DECISIÓN: guiones bajos.** Que `customerId` esté desnudo es DEUDA del modelo más antiguo, no
+-- el patrón a seguir; `albaranes` es snake_case sin una sola excepción (20 campos con `@map`). Los
+-- nombres físicos son:
+--
+--      customer_name · customer_legal_name · customer_tax_id · customer_email · customer_phone
+--
+-- ⚠️ Convivirán con `"customerId"` en camello dentro de la MISMA tabla. No hay choque —son nombres
+-- distintos— pero queda dicho para que nadie lo lea como un descuido de este ALTER.
+--
+-- ── EL TIPO SALE DEL ORIGEN, no de una preferencia ───────────────────────────────────────
+-- `TEXT` en las cinco, porque es lo que son en `model Customer`, que es de donde se copian:
+-- `name`, `legalName`, `taxId`, `email` y `phone` son `String` sin `@db` (cero `@db.VarChar` en
+-- todo el modelo), y Prisma mapea `String` a `text` en Postgres. Un `VARCHAR(n)` aquí podría
+-- truncar al congelar un nombre que en `customers` cabe entero.
+--
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+-- 🔴 NULLABLE Y SIN DEFAULT, A PROPÓSITO
+--
+-- `NULL` = «no consta qué cliente era», que es la verdad de todos los documentos de hoy.
+--
+-- Un `DEFAULT` convertiría **todas las facturas históricas en «este era el cliente»**, y eso no lo
+-- ha dicho nadie: hoy el PDF reimprime el cliente DE HOY, así que ningún documento emitido guarda
+-- quién era entonces. Rellenar con el dato actual sería inventar una historia que no consta —y
+-- sobre un documento fiscal ya emitido (regla 29).
+--
+-- Mismo criterio que `Merchant.founding_purchased_at` (SCRUM-340), `Invoice.suplidos` (SCRUM-500)
+-- y `Merchant.paid_via` (SCRUM-441): sin default, para que «no consta» no se confunda con un valor.
+--
+-- RELLENO INICIAL: **NULL en todas las filas.** No hay backfill posible y no es un olvido — el
+-- dato de entonces no existe en ninguna parte. A partir de la emisión siguiente, se congela.
+--   ⚠️ ANTES de aplicar esto, córrase `docs/sql/scrum-729-verificar.sql` —su consulta ⓪—. Si no
+--      lista las columnas de las dos tablas, o si alguna `customer_*` YA aparece, **NO se aplica**:
+--      se para y se mira qué hay ahí.
+--
+-- ⛔ SIN ÍNDICE, deliberado: son datos de PRESENTACIÓN del documento, se leen por su fila (ya
+--    localizada por `id`) y no se busca por ellos. Si algún día hay que buscar facturas por el NIF
+--    congelado, se añade entonces — con la medición delante, no antes.
+-- ⛔ SIN CLAVE AJENA, y es el ticket entero: si apuntaran a `customers` volverían a seguir al
+--    cliente de hoy, que es justo el defecto. Son COPIAS, no referencias.
+--
+-- ⛔ AQUÍ NO SE ESCRIBE EL RELLENADOR. El código que copie estos cinco valores al emitir es
+--    **camino de emisión** → STOP del fundador (AA1.4 y regla 40). Este fichero sólo abre el sitio
+--    donde ese dato podrá vivir.
+--
+-- ADITIVO Y REVERSIBLE: `ADD COLUMN` nullable no toca ni una fila existente y se deshace con un
+-- `DROP COLUMN` limpio. Aplicarlo NO cambia nada de lo que hay hoy: ningún código lee ni escribe
+-- estas columnas todavía, así que el producto se comporta exactamente igual antes y después.
+--
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+-- 🔴 Y ESTO OBLIGA A CINCO `@map` POR MODELO EN `schema.prisma`, QUE EL FUNDADOR ESCRIBE A MANO
+--
+-- Sin el `@map`, Prisma buscaría columnas llamadas `"customerName"` (camello, entre comillas) que
+-- NO existen, y fallaría en la primera consulta que las pidiera. **Renombrar después es otro ALTER
+-- contra producción**, así que el nombre se decide aquí y no luego.
+--
+-- Para pegar dentro de `model Invoice` (junto a los otros campos del documento):
+--
+--        customerName      String? @map("customer_name")
+--        customerLegalName String? @map("customer_legal_name")
+--        customerTaxId     String? @map("customer_tax_id")
+--        customerEmail     String? @map("customer_email")
+--        customerPhone     String? @map("customer_phone")
+--
+-- Y las MISMAS CINCO, literalmente iguales, dentro de `model Albaran`.
+--
+-- ⚠️ El orden de aplicación es el de la regla 3: ① decisión → ② ALTER en las TRES bases
+-- (dev → staging → prod) → ③ UN solo PR con esquema + código + tests. **Nunca ③ sin ②**: si el
+-- `@map` entra en `schema.prisma` antes que estas columnas, el arranque se cae contra la base que
+-- aún no las tiene.
+--
+-- 🔴 ESTE FICHERO ES SÓLO DDL. La comprobación vive aparte, en
+-- `docs/sql/scrum-729-verificar.sql`: el clasificador del aplicador rechaza un `SELECT` dentro de
+-- un fichero de DDL (lección de SCRUM-650), y mezclarlos deja el ALTER sin poder ejecutarse.
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "customer_name"       TEXT;
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "customer_legal_name" TEXT;
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "customer_tax_id"     TEXT;
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "customer_email"      TEXT;
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "customer_phone"      TEXT;
+
+ALTER TABLE "albaranes" ADD COLUMN IF NOT EXISTS "customer_name"       TEXT;
+ALTER TABLE "albaranes" ADD COLUMN IF NOT EXISTS "customer_legal_name" TEXT;
+ALTER TABLE "albaranes" ADD COLUMN IF NOT EXISTS "customer_tax_id"     TEXT;
+ALTER TABLE "albaranes" ADD COLUMN IF NOT EXISTS "customer_email"      TEXT;
+ALTER TABLE "albaranes" ADD COLUMN IF NOT EXISTS "customer_phone"      TEXT;

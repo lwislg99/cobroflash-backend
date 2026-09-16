@@ -8,6 +8,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
 import { estadoCobroFor } from '../../jobs/domain/job.service';
+import { fechaDeCobroDeCharge } from '../../billing/domain/instanteDeCobro'; // SCRUM-397
 import type { Dataset } from './seleccionExport'; // SCRUM-138 (export selectivo)
 
 export interface Rango { from: Date | null; to: Date | null }
@@ -231,24 +232,36 @@ export async function buildCobros(merchantId: number, rango: Rango, status = 'al
   const charges = await prisma.charge.findMany({
     where: whereRango(merchantId, rango, 'createdAt', status !== 'all' ? { status } : {}),
     orderBy: { createdAt: 'desc' },
-    include: { customer: { select: { name: true } } },
+    // SCRUM-397: los eventos entran para poder fechar los cobros ANTERIORES a `paid_at`. Es el
+    // mismo hecho leído donde sí estaba, no un dato inventado — y saca de aquí el `updatedAt`.
+    include: { customer: { select: { name: true } }, events: { select: { type: true, ts: true } } },
   });
   return {
     customerIds: idsDe(charges), // SCRUM-104: OJO, Charge.customerId es nullable
     header: ['Cobro #', 'Fecha', 'Cliente', 'Concepto', 'Importe', 'Moneda', 'Método (paid_via)', 'Estado', 'Cobrado en', 'Referencia'],
-    rows: charges.map((ch) => csvRow([
-      ch.id,
-      dia(ch.createdAt),
-      ch.customer?.name ?? '',
-      ch.concept,
-      csvNum(ch.amount),
-      ch.currency,
-      ch.method,
-      ch.status,
-      // El cobro no guarda paidAt: cuando está pagado, updatedAt es el momento del cobro.
-      ch.status === 'paid' ? dia(ch.updatedAt) : '',
-      ch.reference ?? '',
-    ])),
+    rows: charges.map((ch) => {
+      // 🔴 SCRUM-397 · AQUÍ ESTABA EL DEFECTO ORIGINAL DEL TICKET: «Cobrado en» salía de
+      // `updatedAt`, que es la última vez que alguien TOCÓ la fila. Un cobro del 31 de marzo
+      // editado el 2 de abril se exportaba como de abril — y con criterio de caja eso es el euro
+      // declarado en el trimestre que no toca.
+      //
+      // Ahora sale del mismo sitio que el recibo y que el export de fees. Y si no consta, va
+      // VACÍO: mezclar «no se sabe» con una fecha cualquiera es lo que producía el número que no
+      // significa nada.
+      const cobradoEn = fechaDeCobroDeCharge(ch);
+      return csvRow([
+        ch.id,
+        dia(ch.createdAt),
+        ch.customer?.name ?? '',
+        ch.concept,
+        csvNum(ch.amount),
+        ch.currency,
+        ch.method,
+        ch.status,
+        cobradoEn ? dia(cobradoEn) : '',
+        ch.reference ?? '',
+      ]);
+    }),
   };
 }
 
@@ -296,8 +309,14 @@ export async function buildTrabajos(merchantId: number, rango: Rango, status = '
 // ── gastos.csv ────────────────────────────────────────────────────────────
 // SCRUM-138: hasta ahora los gastos SOLO existían como descarga suelta
 // (`GET /admin/exports/expenses.csv`) y NUNCA entraban en el paquete — el asesor abría el ZIP
-// y veía ingresos sin costes. Mismas columnas que el CSV suelto, para que las dos descargas
-// cuadren entre sí (mismo criterio que el resto de builders compartidos).
+// y veía ingresos sin costes.
+//
+// ⚠️ SCRUM-343 · ESTE BUILDER ES LA ÚNICA FUENTE de gastos.csv. Lo usan LOS DOS caminos: el
+// paquete (`construirCsvsDelPaquete`) Y el CSV suelto (`GET /admin/exports/expenses.csv`), así que
+// las dos descargas NO pueden divergir. Antes el suelto tenía su propia cabecera a mano y le
+// faltaba «Registrado por» (8 vs 9 columnas) mientras este comentario afirmaba que coincidían:
+// mentía. El guard `tests/scrum343-cabecera-gastos-unica.test.mjs` falla si las dos cabeceras
+// dejan de ser idénticas — derivadas de ambos caminos, no de una lista escrita a mano.
 //
 // FECHA: `date` (cuándo se hizo el gasto), no `createdAt` (cuándo se tecleó) — el criterio de
 // "fecha del hecho, no del apunte" que SCRUM-106 fijó para trabajos.
@@ -305,10 +324,14 @@ export async function buildTrabajos(merchantId: number, rango: Rango, status = '
 // NO devuelve `customerIds`: un gasto apunta a una COTIZACIÓN, no a un cliente (SCRUM-135),
 // así que no puede alimentar la lista de clientes referenciados de SCRUM-104. Añadirlo por
 // simetría metería en clientes.csv a gente sin ningún documento en el rango.
-export async function buildGastos(merchantId: number, rango: Rango): Promise<CsvData> {
+//
+// `category` (SCRUM-343): filtro del CSV suelto (?category=materiales|...). El ZIP no lo pasa
+// (undefined = 'all') → no filtra, mismo comportamiento de siempre. Aditivo, no toca al paquete.
+export async function buildGastos(merchantId: number, rango: Rango, category?: string): Promise<CsvData> {
+  const extra = category && category !== 'all' ? { category } : {};
   const [gastos, members] = await Promise.all([
     prisma.expense.findMany({
-      where: whereRango(merchantId, rango, 'date'),
+      where: whereRango(merchantId, rango, 'date', extra),
       orderBy: { date: 'desc' },
       include: { provider: { select: { name: true } } },
     }),

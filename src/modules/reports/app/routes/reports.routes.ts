@@ -1,8 +1,10 @@
 // src/modules/reports/app/routes/reports.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
 import { desglosarPorEmpleado } from '../../domain/desgloseEmpleado'; // SCRUM-228
+import { filasDelInforme } from '../../domain/cobrosPorCubo'; // SCRUM-488 / SCRUM-491
+import { leerLibroRegistro } from '../../../invoicing/domain/libroRegistro.repo'; // SCRUM-389: un solo agregador
+import { rangoTrimestre } from '../../../fiscal/modelo303/modelo303'; // SCRUM-389: un solo criterio de fechas
 
 const router = Router();
 
@@ -151,19 +153,29 @@ router.get('/x2', async (req, res) => {
       select: {
         total: true, paidAt: true,
         reminder7SentAt: true, reminder14SentAt: true,
+        // SCRUM-491 · lo que el profesional DECLARA al marcar la factura cobrada a mano
+        // (SCRUM-441 lo escribe). Sin esta línea el dato se escribía y no lo leía nadie.
+        paidVia: true,
         charge: { select: { method: true } },
       },
     });
 
-    // Cobros por método (paid_via): charge.method; sin charge = marcado a mano
-    const byMethodMap = new Map<string, { eur: number; count: number }>();
+    // Cobros por método (paid_via) — el reparto vive en el dominio para poder ejercerlo en la tanda.
+    //
+    // 🔴 SCRUM-488 fase 2 — la clave de agrupación es el CUBO, no el valor crudo. Antes, `card` y
+    // `card:stripe` eran dos filas distintas del informe **etiquetadas las dos «💳 Tarjeta»**: el
+    // profesional veía dos filas idénticas con importes distintos y en ninguna parte el total de lo
+    // cobrado con tarjeta. Lo que `cuboDeCobro` no clasifica NO se agrupa: sale como salía.
+    //
+    // 🔴 SCRUM-491 — el MÉTODO sale de `Charge.method` o de `Invoice.paidVia`, y el REGISTRO («lo
+    // marcó una persona») deja de ocupar esa columna: aquí se fabricaba un `'manual'` que se
+    // pintaba «✍️ Marcado a mano» en el sitio donde va por dónde entró el dinero. Sale contado
+    // aparte en `marcadosAMano` — el hecho es real y no se borra; DÓNDE se enseña es microcopy.
+    const { byMethod, marcadosAMano } = filasDelInforme(paid);
+
     let reminderEur = 0;
     const H72 = 72 * 3600 * 1000;
     for (const inv of paid) {
-      const method = inv.charge?.method || 'manual';
-      const cur = byMethodMap.get(method) ?? { eur: 0, count: 0 };
-      cur.eur += Number(inv.total); cur.count += 1;
-      byMethodMap.set(method, cur);
       // € por recordatorios: pagó ≤72h después de CUALQUIERA de los dos avisos.
       // ⚠️ SCRUM-117: `reminderXSentAt` solo significa «se envió» DESDE SCRUM-116 (deploy
       // 2026-07-23 15:22 UTC). Antes se marcaba aunque el WhatsApp fallara, así que una fecha
@@ -178,9 +190,6 @@ router.get('/x2', async (req, res) => {
       const after = (d: Date | null) => !!d && paidTs >= new Date(d).getTime() && paidTs - new Date(d).getTime() <= H72;
       if (after(inv.reminder7SentAt) || after(inv.reminder14SentAt)) reminderEur += Number(inv.total);
     }
-    const byMethod = [...byMethodMap.entries()]
-      .map(([method, v]) => ({ method, eur: Math.round(v.eur * 100) / 100, count: v.count }))
-      .sort((a, b) => b.eur - a.eur);
 
     // Pendiente por antigüedad (foto de HOY, no del año)
     const pending = await prisma.invoice.findMany({
@@ -203,6 +212,13 @@ router.get('/x2', async (req, res) => {
     return res.json({
       year,
       byMethod,
+      // 🔴 SCRUM-491 · EL REGISTRO, SIN PINTAR TODAVÍA — y sin borrar. Cuánto de la caja lo apuntó
+      // una persona en vez de una pasarela es un hecho REAL y útil, y hasta SCRUM-491 salía en la
+      // columna del método diciendo «✍️ Marcado a mano», que contesta otra pregunta. DÓNDE se le
+      // enseña al profesional es microcopy y lo aprueba el asesor (regla 30): viaja aquí, contado y
+      // con su importe, para que quien lo decida no tenga que volver a deducirlo. La vista NO lo
+      // lee — si algún día lo pinta, el texto pasa antes por el asesor.
+      marcadosAMano,
       reminderEur: Math.round(reminderEur * 100) / 100,
       aging: buckets.map(({ bucket, label, count, eur }) => ({ bucket, label, count, eur: Math.round(eur * 100) / 100 })),
       pendingTotal: Math.round(pending.reduce((a, i) => a + Number(i.total), 0) * 100) / 100,
@@ -229,37 +245,44 @@ router.get('/vat', async (req, res) => {
     const qRaw = Number(req.query.quarter) || Math.floor(now.getMonth() / 3) + 1;
     const quarter = Math.min(4, Math.max(1, qRaw));
 
-    const from = new Date(year, (quarter - 1) * 3, 1);
-    const to   = new Date(year, quarter * 3, 0, 23, 59, 59, 999);
+    // SCRUM-389 · el periodo lo fija `rangoTrimestre`, el MISMO que usa el 303. Antes se
+    // construía aquí con las mismas dos líneas, y dos copias del mismo criterio de fechas es
+    // exactamente cómo empiezan a discrepar dos cifras que deberían ser una.
+    const { desde: from, hasta: to } = rangoTrimestre(year, quarter);
 
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        merchantId: req.merchantId,
-        createdAt: { gte: from, lte: to },
-      },
-      select: { id: true, number: true, total: true, currency: true, lines: true, type: true },
-    });
+    // Y los euros salen del LIBRO (SCRUM-296), no de una lectura propia: es la única forma de
+    // que Informes, el Libro y el 303 no puedan decir tres cifras distintas del mismo trimestre.
+    const libro = await leerLibroRegistro(prisma, { merchantId: req.merchantId, desde: from, hasta: to });
 
     const rateMap = new Map<number, { base: number; cuota: number }>();
     let currency = 'EUR';
     let excludedCount = 0;
     let excludedTotal = 0;
 
-    for (const inv of invoices) {
-      if (inv.currency) currency = inv.currency;
-      const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
-      if (lines.length === 0) {
+    for (const a of libro.asientos) {
+      if (a.moneda) currency = a.moneda;
+      // Sin desglose no entra en el cuadro y se informa aparte — el mismo criterio de siempre.
+      if (a.porTipo.length === 0) {
         excludedCount += 1;
-        excludedTotal += Number(inv.total);
+        excludedTotal += a.total ?? 0;
         continue;
       }
-      for (const e of calcVatBreakdown(lines).entries) {
-        const acc = rateMap.get(e.rate) ?? { base: 0, cuota: 0 };
+      for (const e of a.porTipo) {
+        const acc = rateMap.get(e.tipo) ?? { base: 0, cuota: 0 };
         acc.base += e.base;
         acc.cuota += e.cuota;
-        rateMap.set(e.rate, acc);
+        rateMap.set(e.tipo, acc);
       }
     }
+
+    // ⚠️ Las filas SIN NÚMERO cambian de sitio, y se dice: antes sus euros entraban en el cuadro
+    // (el lector viejo no miraba el número); ahora el Libro las aparta, así que van al aviso de
+    // «no incluidas», donde se pueden revisar a mano. Medido antes de tocar nada: con los datos
+    // que el código puede producir hoy no existe ninguna —`formatInvoiceNumber` nunca devuelve
+    // cadena vacía y los siete `invoice.create` del árbol sacan el número de
+    // `allocateInvoiceNumber`—, así que ninguna cifra que el profesional haya visto cambia.
+    excludedCount += libro.sinNumero;
+    excludedTotal += libro.sinNumeroImporte;
 
     const r2 = (n: number) => Math.round(n * 100) / 100;
     const rates = [...rateMap.entries()]
@@ -277,7 +300,9 @@ router.get('/vat', async (req, res) => {
         base:  r2(rates.reduce((a, e) => a + e.base, 0)),
         cuota: r2(rates.reduce((a, e) => a + e.cuota, 0)),
       },
-      invoiceCount: invoices.length,
+      // `miradas` es lo que contaba `invoices.length`: TODAS las filas del periodo, entren o no
+      // en el cuadro.
+      invoiceCount: libro.miradas,
       excluded: { count: excludedCount, total: r2(excludedTotal) },
     });
   } catch (err) {

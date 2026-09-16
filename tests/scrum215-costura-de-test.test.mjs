@@ -163,7 +163,7 @@ test('SCRUM-215 · `opts` sigue siendo el 3.er parámetro del emisor (el umbral 
 // que es capaz de RECIBIR. Un guard que nunca ha visto un rojo no ha demostrado que pueda darlo.
 test('SCRUM-215 · el escáner caza una llamada infractora sintética (y no se caza a sí mismo)', () => {
   const infractor = `import { ${EMISOR} } from './x';\n` +
-    `const r = await ${EMISOR}({ merchantId: 1, year: 2026 }, prisma, { ${PARAMETRO}: 'ART_61D' });`;
+    `const r = await ${EMISOR}({ merchantId: 7, year: 2026 }, prisma, { ${PARAMETRO}: 'ART_61D' });`;
   assert.equal(infractoras(llamadasEn(infractor, 'ficticio.ts')).length, 1,
     '🔴 el escáner NO ve una llamada de 3 argumentos: es incapaz de dar rojo, no está limpio');
 
@@ -185,7 +185,7 @@ test('SCRUM-215 · el escáner caza una llamada infractora sintética (y no se c
     '🔴 el guard está mirando TEXTO: cazaría su propia prosa y sería inmantenible');
 
   // Y la llamada legítima de producción —sin `opts`— NO es infractora.
-  assert.deepEqual(infractoras(llamadasEn(`await ${EMISOR}({ merchantId: 1, year: 2026 });`, 'ficticio.ts')), [],
+  assert.deepEqual(infractoras(llamadasEn(`await ${EMISOR}({ merchantId: 7, year: 2026 });`, 'ficticio.ts')), [],
     '🔴 el guard da rojo contra la llamada normal: sería ruido, no protección');
 });
 

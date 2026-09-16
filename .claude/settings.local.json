@@ -50,7 +50,8 @@
       "PowerShell(claude *)",
       "PowerShell(cmd /c \"claude mcp add playwright -- npx -y @playwright/mcp@latest\")",
       "PowerShell(git add *)",
-      "PowerShell(git push *)"
+      "PowerShell(git push *)",
+      "Bash(git fetch *)"
     ]
   }
 }

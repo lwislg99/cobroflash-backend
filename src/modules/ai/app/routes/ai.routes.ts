@@ -57,14 +57,17 @@ router.post('/suggest-quote', async (req, res) => {
       select: { country: true, defaultCurrency: true },
     });
 
-    const lines = await suggestQuoteLines({
+    const propuesta = await suggestQuoteLines({
       description,
       merchantId: req.merchantId,
       country: merchant?.country || 'ES',
       currency: merchant?.defaultCurrency || 'EUR',
     });
 
-    return res.json({ lines });
+    // SCRUM-507: `descartadas` viaja al navegador. Una linea que no se puede proponer —hoy solo
+    // por IVA ilegible— NO desaparece en silencio: el profesional ve QUE trabajo se quedo fuera y
+    // puede escribirlo a mano. `lines` conserva su nombre para no romper al consumidor.
+    return res.json({ lines: propuesta.lineas, descartadas: propuesta.descartadas });
   } catch (err: any) {
     console.error('[POST /admin/ai/suggest-quote]', err?.message || err);
     return aiErrorResponse(res, err);
@@ -74,7 +77,12 @@ router.post('/suggest-quote', async (req, res) => {
 /**
  * POST /admin/ai/suggest-albaran-lines — SCRUM-71 (VOZ-ALB V1)
  * Body: { albaranId: number, description: string }
- * Devuelve: { lines: [{concepto, cantidad, unidad, precioUnitario?, tipoIva?}] }
+ * Devuelve: { lines: [{concepto, cantidad, unidad, precioUnitario?, tipoIva?, tipoIvaRechazado?}] }
+ *
+ * SCRUM-760 · `tipoIvaRechazado` viaja cuando el modelo dio un tipo que NO EXISTE y la puerta lo
+ * rechazó (antes lo RECORTABA, y un `21` acababa pintado como 100 % de IVA). Es el motivo de
+ * `invalidTipoIva`, que ya nombra el valor recibido. Hoy la pantalla no lo pinta: qué debe hacer
+ * con él es decisión del fundador (regla 30) y va en su propio ticket.
  *
  * DOS DECISIONES QUE NO SON DE ESTILO:
  *

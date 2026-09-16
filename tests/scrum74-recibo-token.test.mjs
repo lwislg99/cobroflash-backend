@@ -18,7 +18,7 @@ import { crearFactura } from './_factura-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 200, PDF y feedback solo con token', { skip: !ENABLED }, async (t) => {
+test('SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 200, PDF y feedback solo con token', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { ensureChargeReceiptToken } = await import('../dist/lib/invoicing.js');

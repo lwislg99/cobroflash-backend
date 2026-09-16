@@ -83,7 +83,7 @@ function listarEntradasZip(buf) {
   return nombres;
 }
 
-test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, flag OFF y audit', { skip: !ENABLED }, async (t) => {
+test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, flag OFF y audit', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { isFlagEnabled } = await import('../dist/core/flags.js');

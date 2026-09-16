@@ -45,7 +45,7 @@ import { withMerchant } from './_merchant-fixture.mjs';
 const ENABLED = process.env.QA_DB_TEST === '1';
 const DIA = 24 * 60 * 60 * 1000;
 
-test('SCRUM-116: un recordatorio que falla NO cierra el candado; uno enviado SÍ', { skip: !ENABLED }, async (t) => {
+test('SCRUM-116: un recordatorio que falla NO cierra el candado; uno enviado SÍ', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { sendInvoicePaymentReminders } = await import('../dist/modules/billing/domain/invoiceReminder.service.js');
   const { config } = await import('../dist/core/config/env.js');

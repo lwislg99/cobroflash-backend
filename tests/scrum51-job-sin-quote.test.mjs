@@ -27,7 +27,7 @@ import { withMerchant } from './_merchant-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-51: el detalle incluye albaranes[] en un Job sin quoteId (y sigue igual con quote)', { skip: !ENABLED }, async () => {
+test('SCRUM-51: el detalle incluye albaranes[] en un Job sin quoteId (y sigue igual con quote)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

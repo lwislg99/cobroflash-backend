@@ -26,9 +26,14 @@
 //
 // ⚠️ SE DERIVA POR EL NOMBRE DEL CAMPO (`merchantId`), NUNCA POR EL DE LA COLUMNA.
 //
-// Es la trampa que ya costó el backfill de SCRUM-205, y aquí muerde igual: **de los 21 modelos
-// con `merchantId`, 19 mapean a `merchant_id` y DOS no** — `Quote` e `Invoice` guardan la
-// columna en camelCase (`invoices.merchantId`). Medido contra el DMMF, no supuesto. Derivar la
+// Es la trampa que ya costó el backfill de SCRUM-205, y aquí muerde igual: **hay modelos cuya
+// columna NO se llama `merchant_id`** — `Quote` e `Invoice` la guardan en camelCase
+// (`invoices.merchantId`). Se nombran en vez de contarlos, y a propósito (SCRUM-680): aquí
+// decía «de los 23 modelos, 19 mapean y DOS no», que además de envejecer **no sumaba** —
+// 19 + 2 = 21, no 23. El recuento real del día en que se cazó era 21 mapeados y 2 sin mapear;
+// el «19» se quedó atrás mientras el total sí se iba subiendo, que es exactamente cómo miente
+// un número derivado escrito a mano. Los dos nombres no caducan; los tres números, sí.
+// Medido contra el DMMF, no supuesto. Derivar la
 // lista buscando una columna `merchant_id` perdería esos dos **en silencio**: un export de
 // portabilidad al que le faltan las facturas y los presupuestos, sin ningún aviso.
 //
@@ -198,4 +203,19 @@ export function datasetACsv(dataset: Dataset, campos: string[]): string {
  * esté aprobado, ponerlo es una línea, y mientras tanto quien abra el ZIP ve que falta algo en
  * vez de no ver nada. Un hueco declarado es más honesto que una ausencia silenciosa.
  */
-export const LEEME_PENDIENTE = '[PENDIENTE microcopy oficial]\n';
+export const LEEME = [
+  'Tus datos de YaQu',
+  '=================',
+  '',
+  'Este ZIP contiene una copia de tus datos en YaQu, en ficheros CSV que puedes abrir con',
+  'cualquier hoja de cálculo.',
+  '',
+  'Lo has descargado tú desde tu panel, y nadie más lo recibe.',
+  '',
+  'Dentro hay un CSV por cada tipo de dato. La primera fila de cada uno son los nombres de',
+  'las columnas.',
+  '',
+  'Para qué usamos tus datos, quién los recibe y cuánto tiempo los guardamos, lo tienes',
+  'explicado en nuestra política de privacidad: yaqu.app/privacidad',
+  '',
+].join('\n');

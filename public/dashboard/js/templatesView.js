@@ -4,6 +4,10 @@
 async function renderTemplatesView(container) {
   container.innerHTML = '';
 
+  // SCRUM-432 (B1 · incremento 3): la MISMA tira que el historial. Sin ella aquí, entrar en
+  // Plantillas sería un callejón: la pestaña llevaría a una pantalla sin forma de volver.
+  renderPestanasPresupuestos(container, 'templates');
+
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:flex;flex-direction:column;gap:20px;max-width:860px';
   container.appendChild(wrap);
@@ -153,10 +157,6 @@ function showRenameModal(tpl, onSuccess, setAlert) {
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal" style="max-width:380px">
-      <div class="modal-header">
-        <h3 class="modal-title">Renombrar plantilla</h3>
-        <button class="modal-close" id="rename-tpl-close">&times;</button>
-      </div>
       <div class="modal-body">
         <div class="field">
           <label>Nombre</label>
@@ -166,6 +166,8 @@ function showRenameModal(tpl, onSuccess, setAlert) {
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "Renombrar plantilla", idCierre: "rename-tpl-close" }));
   document.body.appendChild(overlay);
 
   const close = () => overlay.remove();

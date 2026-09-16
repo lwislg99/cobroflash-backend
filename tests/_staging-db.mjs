@@ -1,8 +1,14 @@
-// tests/_staging-db.mjs — SCRUM-60, endurecido en SCRUM-118
-// Los tests GATEADOS (QA_DB_TEST=1) corren contra la BD de STAGING, JAMÁS producción.
-// Se importa el PRIMERO en cada test gateado, ANTES de `dist/core/db/prisma.js`: fija
-// process.env.DATABASE_URL = DATABASE_URL_STAGING para que el PrismaClient de dist/ la lea
+// tests/_staging-db.mjs — SCRUM-60, endurecido en SCRUM-118, renombrada la clave en SCRUM-383
+// Los tests GATEADOS (QA_DB_TEST=1) corren contra la BASE DE PRUEBAS DE SU CARRIL, JAMÁS
+// producción. Se importa el PRIMERO en cada test gateado, ANTES de `dist/core/db/prisma.js`:
+// fija process.env.DATABASE_URL = DATABASE_URL_TESTS para que el PrismaClient de dist/ la lea
 // al construirse.
+//
+// SCRUM-383 · POR QUÉ `_TESTS` Y NO `_STAGING`: la clave se llamaba `DATABASE_URL_STAGING` y en
+// `cobroflash-backend` apuntaba a `yaqu_dev_javier` (DESARROLLO), mientras que en b1/b2/b3
+// apuntaba a `railway` (STAGING). Un solo nombre, dos bases, y cuál te tocaba dependía del
+// directorio. El reparto por carril es DELIBERADO y se conserva; lo que se arregla es el nombre,
+// que prometía una base concreta cuando lo que designa es «la de pruebas de este carril».
 //
 // ⚠️ ESTO ES CÓDIGO DE SEGURIDAD, no una utilidad de tests. Lo que hay al otro lado de un
 // fallo aquí es `QA_DB_TEST=1` contra producción, y los gateados CREAN Y BORRAN merchants:
@@ -73,17 +79,17 @@ const GATES = ['QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST'];
 const gate = GATES.find((g) => process.env[g] === '1');
 
 if (gate) {
-  const staging = process.env.DATABASE_URL_STAGING;
+  const staging = process.env.DATABASE_URL_TESTS;
   if (!staging) {
-    console.error(`❌ ${gate}=1 exige DATABASE_URL_STAGING (BD de staging) en .env. Abortado: no se corre contra prod.`);
+    console.error(`❌ ${gate}=1 exige DATABASE_URL_TESTS (BD de pruebas de este carril) en .env. Abortado: no se corre contra prod.`);
     process.exit(1);
   }
 
   // ── BARRERA 1 · pertenencia de la URL, antes de abrir ninguna conexión ──────
-  // Incluye el chequeo de SCRUM-60 «staging === la DATABASE_URL del entorno».
+  // Incluye el chequeo de SCRUM-60 «la BD de pruebas === la DATABASE_URL del entorno».
   const check = assertSafeStagingUrl(staging, process.env.DATABASE_URL);
   if (!check.safe) {
-    console.error(`❌ ${gate}=1: DATABASE_URL_STAGING no es una URL de staging segura (${check.reason}) — abortado.`);
+    console.error(`❌ ${gate}=1: DATABASE_URL_TESTS no es una URL de pruebas segura (${check.reason}) — abortado.`);
     process.exit(1);
   }
 
@@ -154,7 +160,7 @@ if (gate) {
     console.error(`   Base "${nombreBd}": no lleva el marcador de staging.`);
     console.error('   Si ES una BD de staging legítima, márcala una vez:');
     console.error('     DATABASE_URL="<su url>" node scripts/marcar-staging.mjs');
-    console.error('   Si NO lo es, revisa DATABASE_URL_STAGING en tu .env: los tests gateados');
+    console.error('   Si NO lo es, revisa DATABASE_URL_TESTS en tu .env: los tests gateados');
     console.error('   CREAN Y BORRAN merchants, y eso contra producción es irreversible.\n');
     process.exit(1);
   }

@@ -54,8 +54,17 @@ test('SCRUM-257 · (a) el prellenado trae concepto y cantidad, y DESCARTA precio
   const lineas = mapear(LINEAS_DE_QUOTE);
 
   assert.equal(lineas.length, 2);
-  assert.deepEqual(lineas[0], { concepto: 'Sustituir grifo monomando', cantidad: 1, unidad: 'ud' });
-  assert.deepEqual(lineas[1], { concepto: 'Tubo cobre 15 mm', cantidad: 3.5, unidad: 'ud' });
+  // SCRUM-367: se comparan los campos de ENTREGA, no la forma exacta del objeto. El prellenado
+  // añade ahora `quoteLineIndex` —el origen de la línea— y la comparación literal se ponía roja por
+  // un campo legítimo. Lo que este test protege es que NO se cuele precio ni IVA, y eso sigue
+  // abajo, entero.
+  const entrega = (l) => ({ concepto: l.concepto, cantidad: l.cantidad, unidad: l.unidad });
+  assert.deepEqual(entrega(lineas[0]), { concepto: 'Sustituir grifo monomando', cantidad: 1, unidad: 'ud' });
+  assert.deepEqual(entrega(lineas[1]), { concepto: 'Tubo cobre 15 mm', cantidad: 3.5, unidad: 'ud' });
+  // Y el origen que añade SCRUM-367: el índice del PRESUPUESTO, que es lo que por fin distingue una
+  // línea prellenada de una añadida en obra — lo que este ticket dio por imposible por no tenerlo.
+  assert.equal(lineas[0].quoteLineIndex, 0, '🔴 la primera línea perdió su origen');
+  assert.equal(lineas[1].quoteLineIndex, 1, '🔴 la segunda línea perdió su origen');
 
   // El albarán es COMPROBANTE DE ENTREGA (decisión 3 del fundador): dice QUÉ se entregó, no cuánto
   // cuesta. Y no es solo criterio: `validarLineas` RECHAZA una línea con precio en SIN_VALORAR, así
@@ -126,33 +135,61 @@ function sustituirPrisma(job) {
   moduloPrisma.prisma.$transaction = async () => ({
     id: 9, jobId: job?.id ?? 1, numero: 'A-2026-0001', fecha: new Date(),
     modoValoracion: 'SIN_VALORAR', lineas: [], estado: 'borrador', version: 1,
-    merchantId: 1, createdAt: new Date(),
+    merchantId: 7, createdAt: new Date(),
   });
 }
 
-const REQ = (id) => ({ params: { id: String(id) }, body: {}, merchantId: 1, query: {}, headers: {} });
+const REQ = (id, body = {}) => ({ params: { id: String(id) }, body, merchantId: 7, query: {}, headers: {} });
 
-test('SCRUM-257 · (b) job SIN presupuesto → 409 con el texto aprobado', async () => {
-  sustituirPrisma({ id: 3, merchantId: 1, quoteId: null });
-  const r = await invocar(REQ(3));
+// 🔴 RE-ANCLADO el 4-sep-2026 (SCRUM-684), y NO es un debilitamiento: es que la REGLA cambió.
+//
+// El fundador decidió que una AVERÍA abierta como trabajo directo (SCRUM-651) SÍ puede entregar
+// albarán — «nadie presupuesta una urgencia» y «hay que dejar papel al irse» (ALB-02) son la misma
+// escena, y el guard viejo la partía en dos. El guard se ACOTA, no se quita: lo que sigue
+// devolviendo 409 es el caso donde la falta de presupuesto de verdad importa, **una línea que dice
+// venir de un presupuesto que no existe** (`quoteLineIndex` sin `quoteId`).
+//
+// El caso de antes —cuerpo vacío sobre un job sin presupuesto— ahora es un 201, y tiene su propio
+// control justo debajo. Los dos siguen aquí: si se pierde cualquiera de los dos, se nota.
+test('SCRUM-257 · (b) 🔴 una línea que afirma un origen INEXISTENTE → 409 (acotado en SCRUM-684)', async () => {
+  sustituirPrisma({ id: 3, merchantId: 7, quoteId: null });
+  const r = await invocar(REQ(3, {
+    lineas: [{ concepto: 'Sustituir diferencial', cantidad: 1, unidad: 'ud', quoteLineIndex: 0 }],
+  }));
 
   assert.equal(
     r?.code, 409,
-    '🔴 SE CREA UN ALBARÁN SOBRE UN TRABAJO SIN PRESUPUESTO. Decisión 1 del fundador: no se puede. ' +
+    '🔴 SE ACEPTA UNA LÍNEA QUE DICE VENIR DE UN PRESUPUESTO QUE NO EXISTE. `validarLineas` ' +
+      'conserva ese índice sin poder validarlo, y el motor de entrega pendiente se lo cree. ' +
       `Respondió ${r?.code} con ${JSON.stringify(r?.body)}`,
   );
   assert.equal(r.body?.error, 'job_without_quote');
+  // ⚠️ EL TEXTO APROBADO YA NO SIRVE, y por eso no se exige: decía «no se puede crear un albarán»
+  // y hoy eso es FALSO. El mensaje nuevo sale con marcador (regla 30) y nombra QUÉ línea.
+  assert.match(
+    r.body?.message || '', /línea 1\b/,
+    '🔴 el mensaje no dice QUÉ línea afirma el origen. Sin `message`, el dashboard enseñaría el ' +
+      'código crudo «job_without_quote» — el defecto que cerró SCRUM-275 en la página de acceso.',
+  );
+});
+
+test('SCRUM-257 · (b) 🔴 y una AVERÍA sin líneas enlazadas SÍ crea albarán (SCRUM-684)', async () => {
+  // El otro lado del acotado, y es el ticket entero: el técnico abre la avería, la arregla y tiene
+  // que poder dejar papel. Sin este control, «acotar» sería indistinguible de «bloquear siempre».
+  sustituirPrisma({ id: 3, merchantId: 7, quoteId: null });
+  const r = await invocar(REQ(3));
+
   assert.equal(
-    r.body?.message, COPY_SIN_PRESUPUESTO,
-    '🔴 el mensaje no es el aprobado (regla 30). Sin `message`, el dashboard enseñaría el código ' +
-      'crudo «job_without_quote» — el defecto que cerró SCRUM-275 en la página de acceso.',
+    r?.code, 201,
+    '🔴 UNA AVERÍA SIGUE SIN PODER ENTREGAR PAPEL: el guard volvió a ser de brocha gorda. ' +
+      `Respondió ${r?.code} con ${JSON.stringify(r?.body)}`,
   );
 });
 
 test('SCRUM-257 · (b) CONTROL: job CON presupuesto sigue devolviendo 201', async () => {
   // El caso que impide «arreglarlo» bloqueando todo. Sin este control, el guard podría rechazar
   // SIEMPRE y el test de arriba seguiría en verde.
-  sustituirPrisma({ id: 4, merchantId: 1, quoteId: 77 });
+  sustituirPrisma({ id: 4, merchantId: 7, quoteId: 77 });
   const r = await invocar(REQ(4));
 
   assert.equal(
@@ -172,9 +209,20 @@ test('SCRUM-257 · (b) el guard NO se ha puesto en la ruta equivocada', async ()
   assert.ok(iAlb !== -1 && iCollect !== -1, '🔴 no encuentro las dos rutas para distinguirlas');
 
   const cuerpoAlbaranes = src.slice(iAlb, iCollect > iAlb ? iCollect : undefined);
+  // 🔴 RE-ANCLADO (SCRUM-684): antes se buscaba el TEXTO aprobado, que ya no vive en esta ruta —
+  // el mensaje lo compone `albaranSinPresupuesto.ts`, que es donde vive la decisión. Se ancla a la
+  // LLAMADA, que es más fuerte: el texto se puede reescribir sin cambiar quién decide, y lo que
+  // este control tiene que distinguir es de QUÉ RUTA sale el rechazo.
   assert.ok(
-    cuerpoAlbaranes.includes(COPY_SIN_PRESUPUESTO),
-    '🔴 el texto aprobado no está en la ruta de albaranes. Si solo está en collect-rest, lo que ' +
+    cuerpoAlbaranes.includes('veredictoAlbaranSinPresupuesto('),
+    '🔴 la ruta de albaranes no consulta el veredicto. Si solo está en collect-rest, lo que ' +
       'hay es el precedente que el ticket cita, no la tarea.',
+  );
+  // Y el control del propio control: `collect-rest` sigue teniendo SU `job_without_quote`, que es
+  // otro rechazo y no éste. Si desapareciera, este test estaría distinguiendo dos cosas iguales.
+  const cuerpoCollect = src.slice(iCollect);
+  assert.ok(
+    cuerpoCollect.includes('job_without_quote'),
+    '🔴 el precedente de `collect-rest` ha desaparecido: este control ya no distingue nada.',
   );
 });

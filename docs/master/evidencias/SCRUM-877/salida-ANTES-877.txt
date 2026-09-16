@@ -1,0 +1,39 @@
+SUELO DEL CENSO
+  auto-referencias absolutas en los 5 ficheros : 9
+  de ellas, con respaldo (no se tocan)         : 1
+  🔴 a pelo                                    : 8
+  lineas que DERIVAN de config.PUBLIC_BASE_URL : 1
+
+DETALLE
+  🔴 src/integrations/whatsappNotifications.ts:97
+        `https://yaqu.app/recibo/${params.receiptToken}`,
+  🔴 src/integrations/whatsappNotifications.ts:105
+        url: `https://yaqu.app/recibo/${params.receiptToken}`,
+  🔴 src/modules/billing/domain/invoiceWhatsApp.service.ts:102
+        `https://yaqu.app/pay/invoice/${payToken}`,
+  🔴 src/modules/billing/domain/invoiceWhatsApp.service.ts:110
+        url: `https://yaqu.app/pay/invoice/${payToken}`,
+  🔴 src/modules/messaging/domain/emailLayout.ts:69
+        Enviado con <a href="https://yaqu.app" style="color:${BRAND_DARK};text-decoration:none;font-weight:600">YaQu</a> — presupuestos, f
+  🔴 src/modules/messaging/domain/emailLayout.ts:70
+        <a href="https://yaqu.app/privacidad" style="color:${MUTED}">Privacidad</a> · <a href="https://yaqu.app/terminos" style="color:${M
+     src/modules/messaging/domain/lifecycle.service.ts:16
+        const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
+  🔴 src/modules/messaging/domain/lifecycle.service.ts:61
+        <p style="font-size:12px;color:#9ca3af">YaQu · Cotiza por WhatsApp y cobra antes de empezar · <a href="https://yaqu.app" style="co
+  🔴 src/modules/system/app/routes/customerPortal.routes.ts:161
+        <p class="pf-footer">Hecho con <a href="https://yaqu.app" style="color:inherit;font-weight:700;text-decoration:none">YaQu</a></p>
+
+MITAD DINAMICA · renderEmailLayout (3 de los 8 enlaces)
+  PUBLIC_BASE_URL puesta a : https://centinela-877.invalid
+  enlaces con yaqu.app     : 3
+  enlaces con el centinela : 0
+  VEREDICTO: 🔴 los enlaces IGNORAN la variable (estado de ANTES del cambio)
+
+MITAD ESTATICA · los 5 ficheros
+  literales absolutos a pelo que quedan : 8  🔴
+  lineas que derivan de la variable     : 1
+
+  y los DOS que no se tocan, intactos:
+    src/modules/auth/domain/referral.service.ts:55   const base = config.PUBLIC_BASE_URL || 'https://yaqu.app';
+    src/modules/messaging/domain/lifecycle.service.ts:16   const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;

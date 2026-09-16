@@ -5,14 +5,22 @@ import { prisma } from '../../../../core/db/prisma';
 import { PSPWebhookSchema } from '../../../../core/validation/schemas';
 import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { config } from '../../../../core/config/env';
 import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { sendMerchantPaymentEmail } from '../../../messaging/domain/merchantNotifications';
+// SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
+import { conConstancia } from '../../../messaging/domain/avisoConstancia';
+import { esMetodoValido } from '../../domain/metodoDeCobro';
 import { recalcJobCobradoForCharge } from '../../../jobs/domain/job.service'; // SCRUM-13
+import { datosDeCobroPagado, resolverInstanteDeCobro } from '../../domain/instanteDeCobro'; // SCRUM-397
+// SCRUM-502: la guarda de anulada se CONSUME de donde vive, no se reescribe aqui.
+import { puedeCobrarPorPasarela } from '../../../system/invoiceAdmin';
+// SCRUM-815: la constancia EN DISCO de que el correo de la factura ya salio para este cobro.
+import { yaSeEnvioElCorreo, marcarCorreoEnviado } from '../../domain/correoDeFacturaEnviado';
 
 
 const router = Router();
@@ -51,16 +59,31 @@ router.post('/', async (req, res) => {
             config.AUTO_EMAIL_INVOICE_ON_PAID &&
             charge.customerId
           ) {
-            const cust = await prisma.customer.findUnique({
-              where: { id: charge.customerId },
-            });
-            if (cust?.email) {
-              await sendInvoiceEmail({
-                invoiceId: inv.id,
-                toEmail: cust.email,
-                toName: cust.name ?? '',
-                prisma,
+            // 🔴 SCRUM-815 · AQUÍ ESTABA EL CORREO DUPLICADO. Esta rama es un REINTENTO de un
+            // cobro ya pagado, y Stripe reentrega hasta tres días: sin esta guarda, cada entrega
+            // mandaba al cliente otro correo con LA MISMA factura. La marca vive en `events`, en
+            // DISCO, porque la memoria del proceso se vacía al reiniciar — que es el defecto
+            // entero de este expediente.
+            //
+            // No se envía «nunca»: se envía si NO consta que ya saliera. Así se conserva el caso
+            // en que el cobro llegó a `paid` por otro camino y esta entrega es la primera que
+            // puede mandarlo.
+            if (await yaSeEnvioElCorreo(chargeId, inv.id, prisma)) {
+              console.log(`[psp] reintento de ${chargeId}: el correo de la factura ${inv.id} ya salió, no se reenvía`);
+            } else {
+              const cust = await prisma.customer.findUnique({
+                where: { id: charge.customerId },
               });
+              if (cust?.email) {
+                await sendInvoiceEmail({
+                  invoiceId: inv.id,
+                  toEmail: cust.email,
+                  toName: cust.name ?? '',
+                  prisma,
+                });
+                // 🔒 AL TERMINAR, NUNCA ANTES: marcar antes de enviar es el defecto que se quita.
+                await marcarCorreoEnviado(chargeId, inv.id, prisma);
+              }
             }
           }
         } catch (e) {
@@ -80,13 +103,33 @@ router.post('/', async (req, res) => {
     }
 
     if (body.event === 'payment.confirmed') {
+      // SCRUM-397 · el instante del cobro sale de UN generador: columna y evento con la misma
+      // fecha. `body.ts` ya venía en el esquema y no lo leía nadie — es la fecha DECLARADA del
+      // camino manual (confirm-bizum), y es donde el Bizum del 31-mar confirmado el 2-abr cruzaba
+      // de trimestre. Los cinco reenviadores automáticos mandan el instante de proceso, así que
+      // para ellos esto no cambia nada.
+      const resolucion = resolverInstanteDeCobro(body.ts);
+      if (!resolucion.ok) {
+        // Fail-closed: no se marca nada. El único llamador que trae fecha declarada la valida
+        // antes con el mismo criterio, así que esto no debería verse; si se ve, es preferible un
+        // error a un cobro fechado con un reloj que no es el suyo.
+        return res.status(400).json({ error: resolucion.error, message: resolucion.message });
+      }
+
       const updated = await prisma.charge.update({
         where: { id: chargeId },
         data: {
-          status: 'paid',
-          method: body.method ?? charge.method,
+          ...datosDeCobroPagado(resolucion.fecha, body),
+          // 🔴 SCRUM-473 · LA PUERTA ABIERTA, CERRADA. Esto escribía lo que viniera en el cuerpo,
+          // sin mirarlo: es el ÚNICO escritor de los nueve capaz de meter un valor arbitrario, y
+          // por tanto el único que explica los 6 cobros con `bizum` a secas que hay en producción
+          // y que ningún camino vivo escribe.
+          //
+          // Mientras esta línea siguiera abierta, cualquier guard sobre los otros ocho era
+          // decorativo. Un valor que no cumple la forma `<metodo>[:<pasarela>]` NO se guarda: se
+          // conserva el que ya tenía el cobro, que es un dato real, en vez de pisarlo con basura.
+          method: esMetodoValido(body.method) ? body.method : charge.method,
           reference: body.bank_ref ?? charge.reference,
-          events: { create: { type: 'paid', payload: body as any } },
           reconciliations: {
             create: { bankRef: body.bank_ref ?? 'n/a', matched: true },
           },
@@ -112,14 +155,24 @@ router.post('/', async (req, res) => {
               ...(linkedQuote ? [{ quoteId: linkedQuote.id }] : []),
             ],
           },
-          select: { id: true, number: true },
+          // SCRUM-502 · el ESTADO entra en el select porque sin el no se puede aplicar la guarda.
+          select: { id: true, number: true, status: true },
         });
         if (linkedInvoice) {
           paidInvoiceNumber = linkedInvoice.number;
+          // 🔴 SCRUM-502 · UNA ANULADA NO VUELVE, TAMPOCO POR AQUI. Este `findFirst` no filtra por
+          // estado, y el enlace sobrevive a la anulacion —anular escribe SOLO `status`—, asi que un
+          // pago que llegue despues resucitaba el documento como COBRADO. Y aqui no pulsa nadie un
+          // boton: se dispara con lo que llegue por la red.
+          //
+          // La guarda va sobre la ESCRITURA y no sobre el `where`: asi lo demas —el numero para la
+          // confirmacion al cliente— se comporta exactamente igual que hoy.
+          if (puedeCobrarPorPasarela(linkedInvoice)) {
           await prisma.invoice.update({
             where: { id: linkedInvoice.id },
             data: { status: 'paid', paidAt: new Date() },
           });
+          }
         }
       } catch (e) {
         console.error('[psp] P0-3 marcar factura pagada (robusto) error', (e as any)?.message || 'error desconocido'); // SCRUM-105
@@ -128,11 +181,16 @@ router.post('/', async (req, res) => {
       // 👇 NUEVO: intentamos emitir / asegurar la factura
         // 👇 NUEVO: intentamos emitir / asegurar la factura
   let invoiceId: number | null = null;
+  // SCRUM-502 · el estado de esa misma factura, para poder aplicar la guarda de anulada abajo.
+  // `ensureInvoiceForCharge` puede DEVOLVER una existente —busca por el evento `invoiced` y por
+  // `quoteId`, las dos SIN filtro de estado (`lib/invoicing.ts`)—, asi que puede ser una anulada.
+  let invoiceEstado: string | null = null;
 
   if (config.AUTO_INVOICE_ON_PAID) {
     try {
       const inv = await ensureInvoiceForCharge(updated.id, prisma);
       invoiceId = inv.id;
+      invoiceEstado = (inv as { status?: string }).status ?? null;
 
       // P0-4: enviar el email de la factura SIEMPRE (sendInvoiceEmail genera el
       // PDF bajo demanda si falta y envía por Resend con adjunto). Antes se
@@ -146,6 +204,11 @@ router.post('/', async (req, res) => {
             toName: updated.customer.name ?? '',
             prisma,
           });
+          // 🔒 SCRUM-815 · la constancia EN DISCO de que este correo salió, escrita AL TERMINAR.
+          // Es lo que hace que el reintento de arriba sepa que no tiene que reenviarlo. Si se
+          // escribiera antes del envío, un fallo a mitad dejaría al cliente sin su factura y con
+          // la marca puesta — que es exactamente el defecto que este ticket quita.
+          await marcarCorreoEnviado(updated.id, inv.id, prisma);
         } catch (e) {
           console.error('auto-email error', (e as any)?.message || 'error desconocido'); // SCRUM-105
         }
@@ -157,7 +220,8 @@ router.post('/', async (req, res) => {
 
 
         // 👇 NUEVO: si hemos conseguido una factura, la marcamos como PAGADA
-        if (invoiceId) {
+        // 🔴 SCRUM-502 · misma guarda que arriba: una anulada no se marca cobrada.
+        if (invoiceId && puedeCobrarPorPasarela({ status: invoiceEstado ?? '' })) {
           try {
             await prisma.invoice.update({
               where: { id: invoiceId },
@@ -190,11 +254,11 @@ router.post('/', async (req, res) => {
         : null;
       // P1-6: nº de documento REAL (sin '#') — factura o justificante, no el id del cobro.
       const documentNumber = invConf?.number || paidInvoiceNumber || String(updated.id);
-      if (updated.customer?.phone) {
+      if (updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
         // SCRUM-74: token OPACO del recibo público, NUNCA el chargeId (IDOR/RGPD).
         const receiptToken = await ensureChargeReceiptToken(updated.id, prisma);
         sendPaymentConfirmationInvoice({
-          toPhone: updated.customer.phone,
+          toPhone: canalDeWhatsApp(updated.customer),
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
@@ -218,8 +282,8 @@ router.post('/', async (req, res) => {
 
       // Solicitud de reseña Google al cliente — A23: BOTÓN-ENLACE (fire-and-forget; solo
       // en ventana, que está abierta porque el cliente acaba de pagar por el enlace).
-      if (merchant?.googleReviewUrl && updated.customer?.phone) {
-        const reviewPhone = normalizePhone(updated.customer.phone);
+      if (merchant?.googleReviewUrl && updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
+        const reviewPhone = canalDeWhatsApp(updated.customer);
         if (reviewPhone) {
           const customerName = updated.customer.name || 'Cliente';
           const merchantName = merchant.name || 'tu proveedor';
@@ -251,14 +315,19 @@ router.post('/', async (req, res) => {
       // Email al merchant si tiene notificaciones activadas
       if (merchant?.notifyEmailOnPaid && merchant?.email) {
         const inv = await prisma.invoice.findFirst({ where: { id: invoiceId ?? undefined }, select: { number: true } }).catch(() => null);
-        sendMerchantPaymentEmail({
+        // SCRUM-477 · el `.catch(() => {})` que había aquí se comía el fallo entero: al profesional
+        // no le llegaba el «te han pagado» y no quedaba ni una línea de que no le llegó.
+        // ⚠️ SIGUE SIN `await` a propósito: el cobro ya está registrado y un aviso que no sale NO
+        // puede tumbar la confirmación del pago. Lo que cambia es que ahora deja constancia.
+        conConstancia('pago_recibido', merchant.email, sendMerchantPaymentEmail({
+          merchantId: updated.merchantId, // SCRUM-508: para que el aviso deje fila
           merchantEmail: merchant.email,
           merchantName: merchant.name || 'Tu negocio',
           customerName: updated.customer?.name || 'Cliente',
           amount: (body.amount ?? updated.amount).toString(),
           currency: body.currency ?? updated.currency,
           invoiceNumber: inv?.number ?? null,
-        }).catch(() => {});
+        }));
       }
 
       // SCRUM-13 (COBROS-1): recalcular Job.totalCobrado (suma desde cero de los Charge

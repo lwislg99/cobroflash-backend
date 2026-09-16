@@ -154,6 +154,37 @@ async function fetchInvoiceDetail(id) {
       `<div class="detail-total-amount">${fmtInvMoney(invoice.total, invoice.currency)}</div>`;
     summaryRow.appendChild(totalBlock);
 
+    // SCRUM-285 (§B4, punto 3) · BLOQUE «Cobro»: contexto, NO botón.
+    //
+    // El detalle de factura SABÍA que había un cobro —`invoice.chargeId` decidía qué botones
+    // pintar en cinco sitios— y no enseñaba NADA de él. El comentario de más abajo llamaba
+    // «callejón» a ese estado, y lo era: el profesional tenía que salir del documento e ir a
+    // Cobros a buscar a mano cuándo entró su dinero.
+    //
+    // ⚠️ NO ENLAZA, y no es un olvido: **la ficha de detalle de cobro NO EXISTE**. `charge-detail`
+    // no está en el dispatch de `app.js` (25 `case` enumerados, ninguno) y `appState.chargeId` no
+    // existe. Si algún día se construye esa pantalla, ESTE bloque es el sitio natural del enlace.
+    //
+    // ⚠️ Y LA FECHA ES LA DE PROCESO, NO LA DEL INGRESO (SCRUM-397): `paidAt` se escribe con
+    // `new Date()` en los tres sitios que lo tocan. Desde SCRUM-397 lo marcado va bien; los cobros
+    // ANTIGUOS conservan la fecha vieja y NO se tocan. Que nadie lo lea como un fallo nuevo.
+    if (invoice.chargeId) {
+      const cobroBlock = document.createElement('div');
+      cobroBlock.className = 'detail-cobro';
+      cobroBlock.style.textAlign = 'right';
+      cobroBlock.style.marginTop = '10px';
+      const cuando = invoice.paidAt
+        ? new Date(invoice.paidAt).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })
+        : '';
+      cobroBlock.innerHTML =
+        '<div class="detail-total-label">Cobro</div>'
+        + `<div class="detail-cobro-importe">${fmtInvMoney(invoice.total, invoice.currency)}</div>`
+        + (cuando ? `<div class="detail-cobro-fecha">${cuando}</div>` : '');
+      summaryRow.appendChild(cobroBlock);
+    }
+    // Si NO hay cobro no se pinta nada: un bloque «Cobro» vacío en la pantalla del dinero se lee
+    // como un fallo de carga. O está el dato, o no está la sección.
+
     // Badges de recordatorios
     if (invoice.reminder7SentAt || invoice.reminder14SentAt) {
       const remDiv = document.createElement('div');
@@ -188,30 +219,140 @@ async function fetchInvoiceDetail(id) {
     dataSec.appendChild(dl);
     page.appendChild(dataSec);
 
-    // --- Sección: acciones ---
+    // --- Sección: etiquetas (SCRUM-595, DOC-05) ---
+    // LA MISMA PIEZA que la ficha del presupuesto. Es el punto del ticket: el bloque aplica a los
+    // DOS documentos y con el mismo mecanismo.
+    //
+    // 🔴 Y NO ES EDITAR UNA FACTURA EMITIDA (regla 29). Escribe un campo de la FICHA que no sale
+    // del documento por ningún lado: la huella de VeriFactu es una lista cerrada de ocho campos y
+    // los parámetros del PDF son lista blanca — las dos cosas MEDIDAS en
+    // `tests/scrum595-etiquetas-del-documento.test.mjs`, no supuestas. Va DESPUÉS de «Datos» y
+    // ANTES de «Acciones» a propósito: es un dato de la ficha, no una acción sobre el documento.
+    if (window.montarEtiquetasDelDocumento) {
+      window.montarEtiquetasDelDocumento(page, invoice, `/admin/invoices/${invoice.id}/tags`);
+    }
+
+    // ── SCRUM-597 (DOC-07) · QUIÉN LLEVA ESTE DOCUMENTO ───────────────────────────────────
+    //
+    // Categorización, no permiso: dice de quién es el asunto. No cambia quién puede editar ni
+    // emitir, y no abre coste ni margen — un técnico asignado sigue sin verlos (P-DOC-3).
+    //
+    // 🔴 Y NO TOCA LA FACTURA (regla 29). El PATCH escribe SOLO en `invoice_assignees`: asignar
+    // una factura EMITIDA no puede cambiar su número, su total ni su PDF. Por eso esta sección
+    // puede existir en el detalle de una factura ya sellada sin ser una excepción a nada.
+    //
+    // El cableado vive en `documentoAsignados.js`, compartido con el presupuesto.
+    if (typeof cablearAsignadosDeDocumento === 'function') {
+      const asigSec = document.createElement('div');
+      asigSec.className = 'detail-section';
+      asigSec.dataset.seccion = 'asignados';
+      page.appendChild(asigSec);
+      cablearAsignadosDeDocumento(document, {
+        doc: 'invoice',
+        documentoId: invoice.id,
+        contenedor: asigSec,
+        asignados: invoice.asignados || [],
+        // Editar es admin-only, igual que el endpoint (`requireRole('admin')`). Al técnico se le
+        // pinta en solo lectura con los nombres que ya trae el detalle.
+        puedeEditar: window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario',
+        pedir: apiRequest,
+        avisar: setStatus,
+        alGuardar: () => {},
+      });
+    }
+
+    // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
+    // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el
+    // guard verifica: nadie escribe la tabla dos veces. El estado decide el destino de cada acción;
+    // el rótulo es microcopy sin aprobar y sale con el marcador (regla 30). ANULAR no pasa por aquí:
+    // se queda en su propia sección, con su código y su rótulo intactos (excepción de la regla 5).
     const actionsSec = document.createElement('div');
     actionsSec.className = 'detail-section';
     actionsSec.innerHTML = '<h3 class="detail-section-title">Acciones</h3>';
     page.appendChild(actionsSec);
 
     const actions = document.createElement('div');
-    actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+    actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
     actionsSec.appendChild(actions);
+
+    // ── SCRUM-845 · EL ESTADO Y EL CONTEXTO YA NO SE CALCULAN AQUÍ ──────────────────────────
+    //
+    // Vivían en estas constantes LOCALES, dentro de esta función, así que la lista de Facturas no
+    // tenía forma de preguntar qué se puede hacer con una factura: no había ni un nombre que
+    // llamar. Es la cuarta vez de la misma familia (366 · 823 · 831) y la primera que encontró un
+    // instrumento —`npm run censo:decisiones-encerradas`, SCRUM-837— en vez de una persona.
+    //
+    // Se han mudado VERBATIM a `js/invoiceAccion.js` (`estadoDeFactura` · `ctxAccionesFactura`):
+    // mismo mapeo de los cuatro estados de la Parte L —`R1` manda porque es el `type`, columna
+    // distinta de `status`; `expired` es un `pending` vencido— y los mismos dos predicados
+    // COMPLEMENTARIOS de Bizum de SCRUM-402, que garantizan que la ranura primaria nunca queda
+    // vacía. Aquí no cambia ni un destino.
+    // Sólo `estadoFactura` se queda, y NO para las acciones: lo lee el selector de método de cobro
+    // (l.711). El contexto ya no se calcula aquí — lo pide `destinoDeAccionFactura` cuando le toca.
+    // Dejarlo declarado «por si acaso» habría dejado en pantalla dos contextos donde hay uno, que
+    // es el mismo aspecto que tenía el defecto de este ticket.
+    const estadoFactura = window.estadoDeFactura(invoice);
+    // `MARCA_MICRO` se BORRA el 17-ago-2026: ya no tenía ningún consumidor, y desde hoy los ocho
+    // rótulos de acción de esta pantalla están aprobados. Dejar la constante habría dejado a mano
+    // un marcador que alguien vuelve a enchufar sin querer.
+
+  /**
+   * 🔴 SCRUM-707 · EL ESTADO QUE NO RECONOCEMOS SE DICE, NO SE CALLA.
+   *
+   * Con un estado que la tabla no contempla, `destinoEfectivo` devuelve ahora `'oculta'` para
+   * todas las acciones: cero botones y cero TypeError. Pero cero botones **en silencio** no se
+   * distingue de un documento que legítimamente no admite nada — una factura `annulled` ofrece
+   * dos y podría ofrecer cero mañana. Son dos hechos distintos.
+   *
+   * ⚠️ Sólo cuando el estado NO está en la tabla (`estadoReconocido`), nunca por tener la lista
+   * de acciones vacía: si se disparara por «cero botones», saldría en documentos correctos y en
+   * dos días nadie lo leería.
+   *
+   * ✅ Texto APROBADO por el fundador el 8-sep-2026 (regla 30), en
+   * `docs/microcopy/2026-09-08-SCRUM-707-estado-no-reconocido.md`. LITERAL.
+   */
+  function avisoEstadoNoReconocido(doc, registro, estado) {
+    if (typeof window.estadoReconocido !== 'function') return;
+    if (window.estadoReconocido(registro, estado)) return;
+    const p = doc.createElement('p');
+    p.className = 'detail-estado-desconocido';
+    p.dataset.estadoDesconocido = '1';
+    p.textContent = 'No reconocemos el estado de este documento — no podemos ofrecerte acciones aquí.';
+    return p;
+  }
+
+    const cubosAcc = { primaria: [], secundaria: [], overflow: [] };
+
+    // Coloca un botón YA CREADO (con su handler intacto) según su destino en este estado. `oculta` no
+    // se pinta; `seccion-propia` (Anular) lo pinta su propio código. El rótulo lo pone cada botón al
+    // crearse, con el marcador (regla 30); el censo lo capta y el guard de microcopy lo verifica.
+    //
+    // SCRUM-845: el destino se PREGUNTA a `destinoDeAccionFactura` (`invoiceAccion.js`) en vez de
+    // resolverse aquí con una copia local del registro. El criterio es idéntico —el mismo registro
+    // y el mismo `destinoEfectivo`—; lo que cambia es que ahora la respuesta tiene un nombre que la
+    // lista de Facturas también puede decir.
+    function ubicarAccion(btn, id) {
+      const destino = window.destinoDeAccionFactura(id, invoice);
+      if (destino === 'oculta' || destino === 'seccion-propia') return;
+      btn.className = destino === 'primaria' ? 'btn-primary btn-sm'
+        : (destino === 'secundaria' ? 'btn-secondary btn-sm' : 'btn-ghost btn-sm');
+      cubosAcc[destino].push(btn);
+    }
 
     // Abrir PDF — siempre vía el endpoint que genera bajo demanda si falta
     // (nunca enlazar a invoice.pdfUrl directo, que puede valer 'PENDING_PDF').
     const btnPdf = document.createElement('button');
     btnPdf.className = 'btn-primary btn-sm';
-    btnPdf.textContent = 'Abrir PDF';
+    btnPdf.textContent = 'Descargar PDF';
     btnPdf.addEventListener('click', () => {
       window.open(`/admin/invoices/${invoice.id}/pdf`, '_blank');
     });
-    actions.appendChild(btnPdf);
+    ubicarAccion(btnPdf, 'btnPdf');
   
     // Reenviar por WhatsApp
     const btnWhatsApp = document.createElement('button');
     btnWhatsApp.className = 'btn-secondary btn-sm';
-    btnWhatsApp.textContent = 'Reenviar por WhatsApp';
+    btnWhatsApp.textContent = 'Enviar por WhatsApp';
   
     const canSendWhatsApp =
       invoice.customer && invoice.customer.phone;
@@ -278,18 +419,21 @@ async function fetchInvoiceDetail(id) {
       }
     });
   
-    // Una rectificativa no es cobrable: sin reenvío de cobro por WhatsApp
-    if (invoice.type !== 'R1') actions.appendChild(btnWhatsApp);
+    // La visibilidad por estado la decide el registro (secundaria en pending/paid; oculta en annulled/R1).
+    ubicarAccion(btnWhatsApp, 'btnWhatsApp');
 
     // Marcar como PAGADA / PENDIENTE
     // SCRUM-153: sobre una factura ANULADA este botón no se pinta. Antes salía «Marcar como
     // PAGADA» —porque el ternario solo miraba si era `paid`—, ofreciendo resucitar un
     // documento fiscal dado de baja. El backend ya lo rechaza (409), pero un botón que
     // siempre falla es peor que no tenerlo: enseña que la pantalla miente.
+    // SCRUM-441 · el selector de metodo. Se declara aqui y se pinta abajo, con la barra de
+    // acciones ya montada: el manejador de mas abajo lo captura por cierre. `null` mientras no se
+    // pinte, y `cuerpoConMetodo` con `null` devuelve el cuerpo de siempre.
+    let selMetodo = null;
     const btnTogglePaid = document.createElement('button');
     btnTogglePaid.className = 'btn-secondary btn-sm';
-    btnTogglePaid.textContent =
-      st === 'paid' ? 'Marcar como PENDIENTE' : 'Marcar como PAGADA';
+    btnTogglePaid.textContent = 'Marcar como cobrada';
 
     btnTogglePaid.addEventListener('click', async () => {
       const targetStatus = st === 'paid' ? 'pending' : 'paid';
@@ -334,7 +478,13 @@ async function fetchInvoiceDetail(id) {
         const res = await fetch(`/admin/invoices/${invoice.id}/status`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: targetStatus }),
+          // SCRUM-441 · el metodo viaja SOLO si el profesional lo eligio, y solo al marcar cobrada.
+          // Con «sin especificar» el cuerpo sale identico al de siempre y la columna no se toca.
+          body: JSON.stringify(
+            targetStatus === 'paid' && typeof window.cuerpoConMetodo === 'function'
+              ? window.cuerpoConMetodo({ status: targetStatus }, selMetodo)
+              : { status: targetStatus },
+          ),
         });
 
         const data = await res.json();
@@ -358,37 +508,46 @@ async function fetchInvoiceDetail(id) {
       }
     });
   
-    // SCRUM-153: `st !== 'annulled'` — una anulada no cambia de estado (Parte L no declara
-    // ninguna transición que salga de `annulled`).
-    if (invoice.type !== 'R1' && st !== 'annulled') actions.appendChild(btnTogglePaid);
+    // La visibilidad por estado la decide el registro: primaria de pending (sin chargeId), «⋮» en
+    // paid (Marcar como PENDIENTE), oculta en annulled/R1 —SCRUM-153: una anulada no cambia de
+    // estado (Parte L no declara transición que salga de `annulled`)—.
+    ubicarAccion(btnTogglePaid, 'btnTogglePaid');
 
     // A21.1 (R14): paquete de evidencia de disputa en 1 clic — con cobro de
     // tarjeta (charge) siempre disponible; la firma digital gana disputas.
     if (invoice.chargeId) {
       const btnDispute = document.createElement('button');
       btnDispute.className = 'btn-secondary btn-sm';
-      btnDispute.textContent = '📎 Paquete de disputa';
+      btnDispute.textContent = 'Ver la reclamación del banco';
       btnDispute.title = 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco';
       btnDispute.addEventListener('click', () => {
         window.open(`/admin/invoices/${invoice.id}/dispute-package`, '_blank');
       });
-      actions.appendChild(btnDispute);
+      ubicarAccion(btnDispute, 'btnDispute');
     }
 
     // C1-4: "Confirmar Bizum recibido" (N5) con DOBLE toque — el 1er clic pide
     // confirmación explícita con el importe, el 2º ejecuta. Dispara la misma
     // cadena post-pago que un PSP (paid_via='bizum_manual').
-    if (st === 'pending' && invoice.chargeId && invoice.type !== 'R1') {
+    // 🔴 SCRUM-402: LA BANDERA, NO SOLO EL DATO. La condición era `if (invoice.chargeId)` a secas
+    // y el navegador no conocía `BIZUM_MANUAL_ENABLED`, que está en `false`. Resultado: acción
+    // PRIMARIA de las facturas `pending`, y al SEGUNDO toque —después de enseñarle al profesional
+    // el importe y el nombre de su cliente— un 409 `bizum_disabled` (`chargesAdmin.routes.ts:29`).
+    //
+    // El backend rechazaba bien; el problema es que se pintaba. **Si se pinta, es porque puede
+    // funcionar.** El veredicto lo da el servidor (`/admin/me` → `bizumManualEnabled`): aquí no se
+    // reimplementa la bandera, se recibe.
+    if (invoice.chargeId && window.appBizumManualEnabled) {
       const amountTxt = fmtMoneyEs(invoice.total, invoice.currency || 'EUR');
       const custName = (invoice.customer && invoice.customer.name) || 'el cliente';
       const btnBizum = document.createElement('button');
       btnBizum.className = 'btn-secondary btn-sm';
-      btnBizum.textContent = '📲 Confirmar Bizum recibido';
+      btnBizum.textContent = 'Cobrar por Bizum';
       let armed = false;
       btnBizum.addEventListener('click', async () => {
         if (!armed) {
           armed = true;
-          btnBizum.className = 'btn-primary btn-sm';
+          btnBizum.className = 'btn-primary';
           btnBizum.textContent = `¿Has recibido ${amountTxt} de ${custName} en tu Bizum? Sí, confirmar`;
           setTimeout(() => { // desarmar a los 6s si no confirma
             if (armed) { armed = false; btnBizum.className = 'btn-secondary btn-sm'; btnBizum.textContent = '📲 Confirmar Bizum recibido'; }
@@ -417,14 +576,14 @@ async function fetchInvoiceDetail(id) {
           btnBizum.textContent = '📲 Confirmar Bizum recibido';
         }
       });
-      actions.appendChild(btnBizum);
+      ubicarAccion(btnBizum, 'btnBizum');
     }
 
-    // Botón Recordar pago (solo visible si la factura está pendiente y el cliente tiene teléfono)
-    if (st === 'pending' && invoice.customer?.phone) {
+    // Recordar pago: el estado (solo pending) lo decide el registro; aquí queda el dato (teléfono).
+    if (invoice.customer?.phone) {
       const btnReminder = document.createElement('button');
       btnReminder.className = 'btn-secondary btn-sm';
-      btnReminder.innerHTML = '💬 Recordar pago';
+      btnReminder.textContent = 'Enviar recordatorio de pago';
       btnReminder.title = 'Envía un WhatsApp recordatorio al cliente';
       btnReminder.addEventListener('click', async () => {
         btnReminder.disabled = true;
@@ -452,15 +611,16 @@ async function fetchInvoiceDetail(id) {
           btnReminder.textContent = '💬 Recordar pago';
         }
       });
-      actions.appendChild(btnReminder);
+      ubicarAccion(btnReminder, 'btnReminder');
     }
 
-    // Botón Rectificar (solo facturas F1 sin rectificativa previa)
+    // Rectificar: el estado (pending/paid; NO en annulled por SCRUM-308, NO en R1) lo decide el
+    // registro; aquí queda el dato (que no tenga ya una rectificativa).
     const alreadyRectified = invoice.rectifiedBy && invoice.rectifiedBy.length > 0;
-    if (invoice.type !== 'R1' && !alreadyRectified) {
+    if (!alreadyRectified) {
       const btnRectify = document.createElement('button');
       btnRectify.className = 'btn-danger btn-sm';
-      btnRectify.textContent = '⎌ Rectificar factura';
+      btnRectify.textContent = 'Emitir factura rectificativa';
       btnRectify.title = 'Emite una factura rectificativa (R1) con los importes en negativo';
       btnRectify.addEventListener('click', async () => {
         const ok = window.confirm(
@@ -487,7 +647,7 @@ async function fetchInvoiceDetail(id) {
           btnRectify.textContent = '⎌ Rectificar factura';
         }
       });
-      actions.appendChild(btnRectify);
+      ubicarAccion(btnRectify, 'btnRectify');
     }
 
     // ── SCRUM-153 (c) · ANULAR — EN BLOQUE APARTE, NO JUNTO A RECTIFICAR ──────────────
@@ -550,7 +710,7 @@ async function fetchInvoiceDetail(id) {
     // Botón Regenerar PDF (con VeriFactu si aplica)
     const btnRegen = document.createElement('button');
     btnRegen.className = 'btn-ghost btn-sm';
-    btnRegen.textContent = invoice.vfHash ? '↻ Regenerar PDF' : '↻ Regenerar PDF (VeriFactu)';
+    btnRegen.textContent = 'Volver a generar el PDF';
     btnRegen.title = 'Regenera el PDF aplicando VeriFactu si el merchant tiene NIF configurado';
     btnRegen.addEventListener('click', async () => {
       btnRegen.disabled = true;
@@ -568,7 +728,31 @@ async function fetchInvoiceDetail(id) {
       btnRegen.disabled = false;
       btnRegen.textContent = '↻ Regenerar PDF';
     });
-    actions.appendChild(btnRegen);
+    ubicarAccion(btnRegen, 'btnRegen');
+
+    // Ensamblar la barra en orden: primaria (regla 1) · secundarias (regla 2) · «⋮» (regla 3). El
+    // «⋮» reutiliza overflowMenu de AB3 (a11y, teclado, hoja inferior ≤640px). Si no está cargado,
+    // las acciones del overflow se pintan sueltas: perder el menú no puede costar una acción (SCRUM-31).
+    // SCRUM-441 · «Como lo has cobrado?», solo cuando el gesto disponible es MARCAR COBRADA. En
+    // una factura ya pagada no se pregunta: no habria nada que hacer con la respuesta. Las opciones
+    // las sirve el arranque derivadas de PAID_VIA; si no llegaron, esto devuelve `null` y la
+    // pantalla se comporta exactamente como antes de existir el selector.
+    if (estadoFactura === 'pending' && typeof window.pintarSelectorMetodo === 'function') {
+      selMetodo = window.pintarSelectorMetodo(actions, { id: 'metodo-cobro-factura' });
+    }
+    // 🔴 Al fusionar SCRUM-707 con main, esta línea seguía pasando `REGISTRO_ACC`: una constante
+    // local que SCRUM-845 retiró al sacar el resolutor a `invoiceAccion.js`. Git lo fusionó SIN
+    // conflicto —las dos ramas tocaban líneas distintas— y la ficha no montaba: `ReferenceError`,
+    // que cazó `scrum600d`. Se pasa el registro por su nombre global, igual que hace
+    // `albaranDetailView.js` con el suyo. Un merge sin conflictos no es un merge correcto.
+    const avisoF = avisoEstadoNoReconocido(document, window.INVOICE_ACTION_REGISTRY || [], estadoFactura);
+    if (avisoF) actions.appendChild(avisoF);
+    cubosAcc.primaria.forEach((b) => actions.appendChild(b));
+    cubosAcc.secundaria.forEach((b) => actions.appendChild(b));
+    if (cubosAcc.overflow.length) {
+      if (typeof window.overflowMenu === 'function') actions.appendChild(window.overflowMenu(cubosAcc.overflow));
+      else cubosAcc.overflow.forEach((b) => actions.appendChild(b));
+    }
   }
 
   // ── SCRUM-153 (c) · MODAL DE ANULACIÓN ───────────────────────────────────────────────
@@ -602,10 +786,6 @@ async function fetchInvoiceDetail(id) {
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
       <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="anul-t">
-        <div class="modal-header">
-          <h3 class="modal-title" id="anul-t">Anular la factura ${escAnul(invoice.number)}</h3>
-          <button class="modal-close" id="anul-x" aria-label="Cerrar">&times;</button>
-        </div>
         <div class="modal-body">
           <div class="field">
             <label for="anul-motivo">¿Por qué se anula?</label>
@@ -636,6 +816,12 @@ async function fetchInvoiceDetail(id) {
         </div>
       </div>
     `;
+    // SCRUM-446: la cabecera sale del constructor compartido. El título va SIN `escAnul`: el
+    // constructor usa `textContent`, así que escaparlo aquí haría visible el «&amp;».
+    // Y conserva `id="anul-t"`, que es a quien apunta el `aria-labelledby` del modal.
+    overlay.querySelector('.modal').prepend(cabeceraModal({
+      titulo: `Anular la factura ${invoice.number}`, idTitulo: 'anul-t', idCierre: 'anul-x',
+    }));
     document.body.appendChild(overlay);
 
     const cerrar = () => overlay.remove();

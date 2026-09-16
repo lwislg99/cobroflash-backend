@@ -98,7 +98,7 @@ function prismaFalso(inv, merchant) {
       findUnique: async () => ({
         id: 1, lines: [], total: { toString: () => '121.00' }, currency: 'EUR',
         createdAt: new Date(), pdfUrl: 'PENDING_PDF', qrData: 'PENDING_QR',
-        merchantId: 1, customerId: 1, type: 'F1', stageLabel: null, rectifies: null,
+        merchantId: 7, customerId: 1, type: 'F1', stageLabel: null, rectifies: null,
         ...inv,
         merchant: { id: 1, name: 'Fontanería Pepe', legalName: null, address: null, logoUrl: null, whatsappPhone: null, email: null, ...merchant },
         customer: { id: 1, name: 'Cliente', email: null, phone: null },

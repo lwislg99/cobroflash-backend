@@ -26,6 +26,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -215,7 +216,7 @@ test('SCRUM-235 · un schema del que no sale ningún modelo NO puede dar verde',
   // la comparación es correcta y no compara nada. Misma forma que el suelo de SCRUM-239.
   // El fichero de sonda se escribe FUERA del repo: un `.prisma` suelto en el árbol lo vería
   // cualquier otra sesión, y un schema fantasma es justo lo que este guard existe para cazar.
-  const tmp = process.env.TMPDIR || process.env.TEMP || '.';
+  const tmp = os.tmpdir();
   const ruta = path.join(tmp, `scrum235-sin-modelos-${process.pid}.prisma`);
   fs.writeFileSync(ruta, ['generator client {', '  provider = "prisma-client-js"', '}', ''].join('\n'));
   try {
@@ -323,7 +324,7 @@ test('SCRUM-235 · EJECUTADO como script: exit 1 con un cliente divergente, 0 co
   // cadena, no la ejecución. Esto arranca el guard como subproceso, que es como corre en
   // `pretest`, y exige el código de salida. Es la diferencia entre «está el código» y «pasa lo
   // que quiero», que es justo lo que este ticket vino a arreglar.
-  const tmp = process.env.TMPDIR || process.env.TEMP || '.';
+  const tmp = os.tmpdir();
   const falso = path.join(tmp, `scrum235-cliente-falso-${process.pid}.mjs`);
   // Un cliente de mentira con la forma del DMMF: un solo modelo, con un campo que el schema real
   // no tiene. Barato y hermético — no hace falta generar un cliente de Prisma para esto.
@@ -361,4 +362,33 @@ test('SCRUM-235 · la tanda gateada ejecuta el guard ANTES de tomar el turno', (
       'que arranca una tanda necesita el suyo (SCRUM-166 dejó DOS nombres para el runner).',
     );
   }
+});
+
+// ═══ SCRUM-429 · EL MENSAJE NOMBRA LAS DOS CAUSAS ════════════════════════════════════════
+
+test('SCRUM-429 · el diagnóstico nombra las DOS causas, no solo el node_modules compartido', () => {
+  // 🔴 DE DÓNDE SALE: este mensaje decía que la divergencia «suele pasar al regenerarlo desde otro
+  // worktree, y como `node_modules` se comparte por junction, afecta a todas las sesiones». Con esa
+  // frase delante, una sesión diagnosticó su propia caída como «me la rompió otro» y lo reportó así
+  // — cuando su `node_modules` era REAL y propio, y lo que había cambiado era su rama.
+  //
+  // `prisma/schema.prisma` viaja con la rama; el cliente generado NO. Esa causa existía desde
+  // siempre y el mensaje no la nombraba, así que mandaba a mirar al sitio equivocado. Un
+  // diagnóstico que solo conoce una causa no es una ayuda: es una pista falsa con autoridad.
+  // La forma que `mensaje` espera de verdad — la misma que devuelve `primeraDiscrepancia`.
+  const m = mensaje({ tipo: 'modelo', modelo: 'Invoice', direccion: 'falta' });
+
+  const exigido = [
+    [/rama/i, 'la causa (A): el schema viaja con la rama y el cliente no'],
+    [/junction/i, 'la causa (B): el node_modules compartido'],
+    [/LinkType|linkType/, 'cómo COMPROBAR cuál de las dos es (si el node_modules es propio o no)'],
+    [/prisma:generate|prisma generate/, 'el comando que lo arregla'],
+    [/rompe el de los dem|avisa antes/i, 'el aviso de que en el caso (B) arreglar el tuyo rompe el ajeno'],
+  ];
+  const faltan = exigido.filter(([re]) => !re.test(m)).map(([, q]) => q);
+  assert.deepEqual(faltan, [],
+    '🔴 al diagnóstico le falta enunciar:\n    - ' + faltan.join('\n    - ')
+    + '\n\n  Es el mismo arreglo que se le hizo al mensaje de SCRUM-273: un guard que acusa sin\n'
+    + '  decir dónde mirar manda a la gente al sitio equivocado, y con autoridad. Aquí costó un\n'
+    + '  diagnóstico mal reportado al fundador.');
 });

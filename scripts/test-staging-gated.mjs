@@ -35,7 +35,7 @@
 // lanzador: modifica el comentario de catálogo de la BD. Por eso aplica la allowlist de host
 // de `_db-guard.mjs` de forma INCONDICIONAL, igual que `marcar-staging.mjs` — misma razón:
 // una herramienta que escribe no puede depender de que alguien recuerde comprobar antes.
-import 'dotenv/config'; // el turno necesita DATABASE_URL_STAGING en el PADRE, no solo en los hijos
+import 'dotenv/config'; // el turno necesita DATABASE_URL_TESTS en el PADRE, no solo en los hijos
 import { spawnSync } from 'node:child_process';
 import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -248,16 +248,19 @@ const DURACION_PREVISTA_MS = hijos.reduce(
 
 // La allowlist de host, INCONDICIONAL y antes de construir el cliente: desde SCRUM-188 este
 // script escribe, y lo que escribe es la barrera de seguridad de SCRUM-118.
-const urlStaging = process.env.DATABASE_URL_STAGING;
+// SCRUM-383 · LA BASE DE PRUEBAS DE ESTE CARRIL. Los hijos heredan `{...process.env}` y la leen
+// ellos mismos por `tests/_staging-db.mjs`, así que basta con que esté en el `.env` del worktree:
+// no se les pasa por argumento ni por variable intermedia (medido el 6-ago-2026).
+const urlStaging = process.env.DATABASE_URL_TESTS;
 if (!urlStaging) {
-  console.error('\n❌ tanda gateada ABORTADA: falta DATABASE_URL_STAGING en el entorno — sin ella no hay ni turno ni tanda.\n');
+  console.error('\n❌ tanda gateada ABORTADA: falta DATABASE_URL_TESTS en el entorno — sin ella no hay ni turno ni tanda.\n');
   process.exit(2);
 }
 {
   const check = assertSafeStagingUrl(urlStaging, process.env.DATABASE_URL);
   if (!check.safe) {
     console.error(
-      `\n❌ tanda gateada ABORTADA: DATABASE_URL_STAGING no es una URL de staging segura (${check.reason}).\n` +
+      `\n❌ tanda gateada ABORTADA: DATABASE_URL_TESTS no es una URL de pruebas segura (${check.reason}).\n` +
       `   Solo se opera contra el host de STAGING: ${STAGING_HOST}. Esta comprobación no se puede desactivar.\n`,
     );
     process.exit(2);
@@ -414,7 +417,7 @@ process.exit(codigoFinal);
 async function tanda() {
 
   // ── PREFLIGHT (SCRUM-167): antes de lanzar ningún hijo, comprobar que el esquema de la BD
-  // coincide con prisma/schema.prisma. Los tres hijos corren contra DATABASE_URL_STAGING (vía
+  // coincide con prisma/schema.prisma. Los tres hijos corren contra DATABASE_URL_TESTS (vía
   // _staging-db.mjs); el preflight lee ESA MISMA variable (sin pasarle URL) para mirar
   // EXACTAMENTE la misma BD. Si no da luz verde → ABORTA aquí con la causa nombrada, en vez de
   // dejar caer 16 errores crípticos de Prisma repartidos por los ficheros (SCRUM-160).

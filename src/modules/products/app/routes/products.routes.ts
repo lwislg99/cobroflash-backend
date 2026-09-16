@@ -1,14 +1,18 @@
 import { Router } from 'express';
 import {
   createProduct, listProducts, getProductById, updateProduct,
-  deleteProduct, searchProducts, exportProductsCsv, importProductsCsv,
+  searchProducts, exportProductsCsv, importProductsCsv,
 } from '../../domain/products.service';
 import { prisma } from '../../../../core/db/prisma';
 import { getTradeCatalog } from '../../../../core/data/tradeCatalogs';
 import { getCatalogFile, midPrice, orientativoLabel } from '../../../../core/data/catalogLoader';
 import { getLocale } from '../../../../core/i18n/locales';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { itemKindSchema } from '../../../../core/validation/schemas'; // SCRUM-609 (CAT-01)
 import { conceptosFrecuentes, VENTANA_DIAS } from '../../domain/frequentConcepts'; // SCRUM-162
+// SCRUM-597 (DOC-07 · P-DOC-3): el coste del catálogo es economía del negocio. Quién lo ve se
+// PREGUNTA aquí, nunca se decide en la ruta (mismo trato que `entitlements.ts`, regla 34).
+import { veEconomiaDelNegocio, sinCosteDeCatalogoEnLista, sinCosteDeCatalogo } from '../../../../core/visibilidadEconomica';
 
 const router = Router();
 
@@ -19,7 +23,16 @@ router.get('/ping', (_req, res) => res.json({ ok: true, module: 'products' }));
 // A17.1 (ONBOARD-2): para España manda data/catalogs/{gremio}.json (schema del
 // master, precios ORIENTATIVOS etiquetados, borrador hasta validación) y además
 // siembra las plantillas frecuentes del gremio; LATAM sigue con el catálogo TS.
-router.post('/load-catalog', async (req, res) => {
+// SCRUM-365 · ADMIN. La asimetría que cierra este ticket: `/export` llevaba `requireRole` y estas
+// dos no, así que lo protegido era LEER el tarifario y lo abierto, REESCRIBIRLO — al revés de como
+// se protege cualquier cosa. Y detrás están los precios: un tarifario reescrito es cada
+// presupuesto siguiente mal, y eso no se nota hasta que el cliente firma.
+//
+// EL CRITERIO NO SE INVENTA AQUÍ. Ya estaba escrito en `adminRouteDeclarations.ts:84`, donde
+// `DELETE /admin/products/:id` SÍ es de Técnico y su motivo dice por qué: **«Simétrico del alta;
+// una línea de catálogo, no el tarifario»**. Ésa es la frontera — línea suelta al presupuestar,
+// trabajo de operario; catálogo entero, no.
+router.post('/load-catalog', requireRole('admin'), async (req, res) => {
   try {
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
@@ -35,7 +48,32 @@ router.post('/load-catalog', async (req, res) => {
       return res.json({ ok: true, inserted: 0, skipped: 'already_has_products' });
     }
 
-    const vat = getLocale(merchant.country).defaultVat;
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-646 · AQUÍ SE ESTAMPABA UN TIPO DE IVA QUE NADIE HABÍA ELEGIDO.
+    //
+    // Estaba `const vat = getLocale(merchant.country).defaultVat`, y ese número se escribía
+    // en CADA producto que nacía de la carga por gremio. No se proponía en pantalla: se
+    // GRABABA. El profesional entra por el onboarding —con la casilla marcada por defecto
+    // (`onboardingView.js:284`)— o por el botón del catálogo, y en ningún sitio se le pregunta
+    // por el IVA. A partir de ahí el número viaja solo: a la línea, al documento, al PDF y al
+    // importe que el cliente firma.
+    //
+    // Y el valor dependía del PAÍS: 0,21 · 0,16 (MX) · 0,18 (PE/CL) · 0,19 (CO). Canarias es
+    // `ES`, así que a un canario —que repercute IGIC— le habría puesto 21.
+    //
+    // AHORA NACEN SIN TIPO, y eso NO rompe nada — medido, no supuesto:
+    //   · `Product.vat` es `Decimal?`: el alta no falla;
+    //   · la tabla del catálogo ya pinta «—» cuando es null (`productsView.js:586`);
+    //   · el CSV de exportación ya saca vacío (`products.service.ts:97`);
+    //   · y la LÍNEA cae al «IVA por defecto» del documento, que el profesional VE y puede
+    //     cambiar. Es la regla que ya estaba escrita: «el general SIEMBRA, nunca PISA».
+    //
+    // El tipo lo elige quien crea la línea. Eso es lo que cambia: de un número grabado a
+    // espaldas del profesional, a un número que elige delante.
+    //
+    // ⛔ NO se toca la tabla de locales: sigue sirviendo moneda, idioma y los rótulos del
+    // documento. Lo que se retira es el CABLEADO del IVA, no la tabla.
+    // ═══════════════════════════════════════════════════════════════════════════════
     const country = (merchant.country || 'ES').toUpperCase();
     const file = country === 'ES' ? getCatalogFile(trade) : null;
     let inserted = 0;
@@ -51,7 +89,7 @@ router.post('/load-catalog', async (req, res) => {
             name: item.nombre,
             description: orientativoLabel(item), // etiqueta VISIBLE (spec)
             price,
-            vat,
+            // SCRUM-646 · sin `vat`: nace sin tipo y lo elige quien crea la línea.
           });
           inserted++;
         } catch (e: any) {
@@ -69,7 +107,14 @@ router.post('/load-catalog', async (req, res) => {
               concept: l.concept,
               qty: l.qty,
               price: priceOf.get(l.priceFrom) ?? 0,
-              tax: vat,
+              // 🔴 SCRUM-646 · TERCER SITIO, y el que menos se veía: la PLANTILLA de presupuesto
+              // también llevaba el tipo por país grabado. Vive dentro de un `.map`, así que la
+              // propiedad NO está sintácticamente dentro de la llamada a Prisma — mi censo por
+              // AST no lo vio: lo cazó el compilador al quitar la variable. Queda escrito porque
+              // es exactamente la forma que un censo de escrituras se pierde.
+              //
+              // Sin `tax`, la línea de la plantilla cae al «IVA por defecto» del documento igual
+              // que cualquier otra: `quotesView.js` mira `vat`, luego `tax`, luego el defecto.
             }))
             .filter((l) => l.price > 0);
           if (!lines.length) continue;
@@ -103,7 +148,7 @@ router.post('/load-catalog', async (req, res) => {
           name: item.name,
           description: item.description ?? null,
           price: item.price,
-          vat,
+          // SCRUM-646 · sin `vat`: nace sin tipo y lo elige quien crea la línea.
         });
         inserted++;
       } catch (e: any) {
@@ -123,7 +168,9 @@ router.get('/autocomplete', async (req, res) => {
     const q = String(req.query.q || '').trim();
     if (!q) return res.json({ ok: true, items: [] });
     const items = await searchProducts(req.merchantId, q);
-    return res.json({ ok: true, items });
+    // El autocompletado de la línea del presupuesto: es POR AQUÍ por donde el coste llegaba al
+    // formulario, así que taparlo sólo en la ficha habría dejado la puerta de al lado abierta.
+    return res.json({ ok: true, items: veEconomiaDelNegocio(req.userRole) ? items : sinCosteDeCatalogoEnLista(items) });
   } catch (err) {
     console.error('[GET /admin/products/autocomplete]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
@@ -171,12 +218,22 @@ router.get('/export', requireRole('admin'), async (req, res) => {
   }
 });
 
-router.post('/import', async (req, res) => {
+// SCRUM-365 · ADMIN, por el mismo criterio de `adminRouteDeclarations.ts:84`: esto reescribe el
+// tarifario en bloque. Y era el lado peor de la asimetría — `GET /export` (leer) ya exigía admin
+// desde SCRUM-103 mientras esta (escribir) estaba abierta.
+router.post('/import', requireRole('admin'), async (req, res) => {
   try {
     const csv = String(req.body?.csv || '').trim();
     if (!csv) return res.status(400).json({ ok: false, error: 'csv_required' });
     const result = await importProductsCsv(req.merchantId, csv);
-    return res.status(200).json({ ok: true, inserted: result.inserted, skippedDuplicates: result.skippedDuplicates ?? 0 });
+    // SCRUM-339: contrato ALINEADO con POST /admin/customers/import (created/skipped/errors/errorList).
+    return res.status(200).json({
+      ok: true,
+      created: result.created,
+      skipped: result.skipped,
+      errors: result.errors,
+      errorList: result.errorList,
+    });
   } catch (err) {
     console.error('[POST /admin/products/import]', err);
     const msg = err instanceof Error ? err.message : String(err || '');
@@ -188,7 +245,7 @@ router.post('/import', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const items = await listProducts(req.merchantId);
-    return res.json({ ok: true, items });
+    return res.json({ ok: true, items: veEconomiaDelNegocio(req.userRole) ? items : sinCosteDeCatalogoEnLista(items) });
   } catch (err) {
     console.error('[GET /admin/products]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
@@ -201,16 +258,38 @@ router.get('/:id', async (req, res) => {
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
     const item = await getProductById(req.merchantId, id);
     if (!item) return res.status(404).json({ ok: false, error: 'not_found' });
-    return res.json({ ok: true, item });
+    return res.json({ ok: true, item: veEconomiaDelNegocio(req.userRole) ? item : sinCosteDeCatalogo(item) });
   } catch (err) {
     console.error('[GET /admin/products/:id]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
 
-router.post('/', async (req, res) => {
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-614 · EL CATÁLOGO SE CIERRA A ESCRITURA. El Operario SÓLO VE.
+//
+// Esto DEROGA la decisión del 22-jul-2026 («Simétrico del alta; una línea de catálogo, no el
+// tarifario»), que abría POST/PUT/DELETE al Técnico. Aquella decisión no era un error: era
+// correcta MIENTRAS una fila del catálogo fuese una línea de catálogo — un nombre y un precio
+// de venta para autocompletar. Con DOC-08 el coste y el margen salen del documento y pasan a
+// vivir SÓLO aquí, así que la fila pasa a ser DONDE ESTÁ ESCRITO LO QUE GANA EL MERCHANT.
+// Caducó la premisa; la decisión la sigue (fundador, 24-ago-2026).
+//
+// ⚠️ LA LECTURA NO SE TOCA, y no es un olvido: el fundador decidió el 24-ago que coste y margen
+// los ven TODOS los roles. `GET /` y `GET /:id` siguen abiertos y siguen devolviendo `cost`.
+// Cerrar la lectura aquí sería ir contra esa decisión, no completarla.
+//
+// El registro de la derogación vive en `adminRouteDeclarations.ts`, donde estaba la entrada
+// vieja, y lo vigila `tests/scrum365-permisos-tarifario.test.mjs` — el mismo guard que hasta hoy
+// protegía lo contrario, INVERTIDO en este ticket en vez de borrado.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+router.post('/', requireRole('admin'), async (req, res) => {
   try {
-    const { name, description, price, cost, vat, providerId, isActive } = req.body || {};
+    const { name, description, price, cost, vat, providerId, isActive, itemKind } = req.body || {};
+    // SCRUM-609 · el lado se valida contra la lista CERRADA. Un valor de fuera no entra:
+    // una columna de texto libre acabaría con «producto», «Producto» y «PRODUCTOS» dentro.
+    const ladoNuevo = itemKindSchema.safeParse(itemKind);
+    if (!ladoNuevo.success) return res.status(400).json({ ok: false, error: 'item_kind_invalid' });
     if (!name || typeof name !== 'string') return res.status(400).json({ ok: false, error: 'name_required' });
     if (price == null || Number.isNaN(Number(price))) return res.status(400).json({ ok: false, error: 'price_required' });
     const priceNum = Number(price);
@@ -218,10 +297,13 @@ router.post('/', async (req, res) => {
     const created = await createProduct(req.merchantId, {
       name, description,
       price: priceNum,
-      cost: cost == null ? null : Number(cost),
+      // SCRUM-597 · mismo criterio que el PUT: quien no ve el coste no lo fija. `null` es «no se
+      // sabe», que es exactamente lo que un alta hecha por un técnico puede afirmar.
+      cost: veEconomiaDelNegocio(req.userRole) && cost != null ? Number(cost) : null,
       vat: vat == null ? null : Number(vat),
       providerId: providerId == null ? null : Number(providerId),
       isActive: isActive === undefined ? true : Boolean(isActive),
+      itemKind: ladoNuevo.data ?? null,
     });
     return res.status(201).json({ ok: true, item: created });
   } catch (err: any) {
@@ -231,7 +313,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+// SCRUM-614 · admin. Ver el bloque de `POST /`. Y ojo a lo que arrastra: «Desactivar» es ESTA
+// ruta con `{ isActive: false }`, así que retirar un producto pasa a ser también de admin. Es
+// coherente con la decisión —«el Operario SÓLO VE»— y se escribe aquí porque desde fuera parece
+// otro botón: no lo es, es el mismo verbo.
+router.put('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
@@ -240,31 +326,64 @@ router.put('/:id', async (req, res) => {
     if (body.name !== undefined)       patch.name = body.name;
     if (body.description !== undefined) patch.description = body.description;
     if (body.price !== undefined)      patch.price = Number(body.price);
-    if (body.cost !== undefined)       patch.cost = body.cost == null ? null : Number(body.cost);
+    // SCRUM-597 · quien NO ve el coste tampoco lo escribe. No es celo: su formulario ya no trae
+    // el campo, así que un `cost` en ESTE cuerpo sólo puede venir de un cliente que se lo inventa
+    // — y aceptarlo dejaría que un técnico pusiera a null el coste de un artículo que ni siquiera
+    // puede leer. Se IGNORA la clave (no se rechaza la petición entera): el resto del PUT es suyo.
+    if (body.cost !== undefined && veEconomiaDelNegocio(req.userRole)) {
+      patch.cost = body.cost == null ? null : Number(body.cost);
+    }
     if (body.vat !== undefined)        patch.vat  = body.vat  == null ? null : Number(body.vat);
     if (body.isActive !== undefined)   patch.isActive = Boolean(body.isActive);
     if (body.providerId !== undefined) patch.providerId = body.providerId == null ? null : Number(body.providerId);
+    // SCRUM-609 · misma lista cerrada que en el alta. `undefined` no toca la columna.
+    if (body.itemKind !== undefined) {
+      const lado = itemKindSchema.safeParse(body.itemKind);
+      if (!lado.success) return res.status(400).json({ ok: false, error: 'item_kind_invalid' });
+      patch.itemKind = lado.data ?? null;
+    }
     if (Object.keys(patch).length === 0) return res.status(400).json({ ok: false, error: 'empty_update' });
     const updated = await updateProduct(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ ok: false, error: 'not_found' });
     return res.json({ ok: true, item: updated });
-  } catch (err) {
+  } catch (err: any) {
+    // SCRUM-641 · el MISMO criterio que `POST /` unas líneas más arriba, copiado y no inventado:
+    // una escritura de UNA fila que choca con el índice único no es un servidor roto, es un
+    // nombre cogido. Antes caía al 500 de abajo, y un 500 dice «se ha roto algo» — mensaje
+    // distinto para quien mira y arreglo distinto para quien programa.
+    //
+    // ⚠️ Las rutas MASIVAS (`POST /load-catalog`, `POST /import`) NO hacen esto y siguen igual:
+    // ahí un duplicado se SALTA y la operación entera sigue siendo un éxito. El reparto es
+    // masiva vs una sola fila, y `PUT /:id` es de las segundas.
+    if (err?.code === 'P2002') return res.status(409).json({ ok: false, error: 'name_duplicate' });
     console.error('[PUT /admin/products/:id]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
 
-router.delete('/:id', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
-    const deleted = await deleteProduct(req.merchantId, id);
-    if (!deleted) return res.status(404).json({ ok: false, error: 'not_found' });
-    return res.json({ ok: true, deleted });
-  } catch (err) {
-    console.error('[DELETE /admin/products/:id]', err);
-    return res.status(500).json({ ok: false, error: 'internal_error' });
-  }
-});
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🛑 SCRUM-614 · AQUÍ VIVÍA `DELETE /admin/products/:id`, Y SE HA RETIRADO.
+//
+// Era un borrado FÍSICO (`prisma.product.delete`) sin comprobar nada. Se retira por decisión del
+// fundador delegada en el asesor (1-sep-2026), y el motivo salió de la propia medición del
+// ticket: **«Desactivar» ya existía justo al lado** —`PUT` con `isActive`— y nada empujaba hacia
+// la opción reversible.
+//
+// Lo irreversible es lo caro. Y con DOC-08 la fila pasa a ser donde está escrito el margen:
+// `cost` NO sale por ninguna vía que el merchant pueda usar —`exportProductsCsv` lo filtra del
+// `select`, y los seis datasets de `datos.zip`/`portabilidad.zip` no incluyen el catálogo—, así
+// que un clic destruía el único registro del margen sin recuperación.
+//
+// ⚠️ NO SE SUSTITUYE POR UN BORRADO LÓGICO EN ESTA RUTA. «Desactivar» ya es `PUT /:id` con
+// `isActive: false`: una segunda puerta que hiciera lo mismo sería otro sitio donde se decide lo
+// mismo, y eso es lo que este ticket lleva toda la semana desmontando.
+//
+// 🛑 CONSECUENCIA VIVA Y DECLARADA, que no se tapa: `@@unique([merchantId, nameSearch])` **NO
+// mira `isActive`**, así que un producto desactivado SIGUE OCUPANDO SU NOMBRE — recrearlo revienta
+// y el importador CSV lo cuenta como `skipped`. Retirado el borrado, hoy **no queda ninguna forma
+// de liberar un nombre**. El diff que lo arregla está PREPARADO Y PARADO: `prisma/schema.prisma`
+// es de los fundadores. Está en `docs/master/SCRUM-614.md` con sus dos opciones y lo que cuesta
+// cada una.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
 
 export default router;

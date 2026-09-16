@@ -5,6 +5,10 @@ import {
   agruparPorMes,
   ordenNumeroAlbaran,
 } from '../dist/modules/jobs/domain/consolidacionCliente.service.js';
+import { inicioDelDiaEn } from '../dist/core/zonaDelMerchant.js'; // SCRUM-643
+
+// La zona se fija A MANO: sin esto el fichero mediría la máquina donde corre.
+const MADRID = 'Europe/Madrid';
 
 /**
  * SCRUM-70 (FACT-2) — ámbito CLIENTE + MES NATURAL, cruzando Trabajos.
@@ -33,7 +37,7 @@ test('SCRUM-70: dos Trabajos del MISMO cliente en el mismo mes caen en UN grupo'
   ], CLIENTE);
 
   assert.equal(descartados.length, 0);
-  const grupos = agruparPorMes(elegibles);
+  const grupos = agruparPorMes(elegibles, MADRID);
   assert.equal(grupos.length, 1, 'dos Trabajos del mismo cliente y mes deben dar UNA sola factura');
   assert.deepEqual(grupos[0].jobIds, [100, 200], 'el grupo debe declarar de qué Trabajos sale');
   assert.equal(grupos[0].mesKey, '2026-03');
@@ -41,10 +45,10 @@ test('SCRUM-70: dos Trabajos del MISMO cliente en el mismo mes caen en UN grupo'
 
 test('SCRUM-70: la rotura por mes natural (art. 13) se mantiene al cruzar Trabajos', () => {
   const { elegibles } = seleccionarConsolidablesDeCliente([
-    alb({ id: 1, jobId: 100, fecha: new Date('2026-03-31') }),
-    alb({ id: 2, jobId: 200, fecha: new Date('2026-04-01') }),
-  ], CLIENTE);
-  const grupos = agruparPorMes(elegibles);
+    alb({ id: 1, jobId: 100, fecha: new Date(Date.UTC(2026, 2, 31, 12)) }),
+    alb({ id: 2, jobId: 200, fecha: new Date(Date.UTC(2026, 3, 1, 12)) }),
+  ], CLIENTE, {}, MADRID);
+  const grupos = agruparPorMes(elegibles, MADRID);
   assert.equal(grupos.length, 2, 'meses naturales distintos NUNCA se agrupan juntos');
   assert.deepEqual(grupos.map((g) => g.mesKey), ['2026-03', '2026-04']);
 });
@@ -115,12 +119,38 @@ test('SCRUM-70 (ruta 2): un número con formato desconocido NO se descarta por r
 test('SCRUM-70 (ruta 1): "hasta el 31" incluye el 31 ENTERO', () => {
   // Un albarán de las 18:00 del último día del rango es del día 31, y quedarse fuera de su
   // factura por la hora sería un bug de los que solo se ven en producción a fin de mes.
+  //
+  // 🔴 SCRUM-643 · LA ZONA VA ESCRITA, y por eso este test dejó de medir la máquina. Antes los
+  // fixtures eran `new Date('2026-03-31T18:00:00')` —hora LOCAL del proceso— contra un `hasta`
+  // que se interpretaba en UTC: dos convenciones mezcladas, y en una máquina con desfase
+  // negativo el albarán del 31 se quedaba FUERA de su propia factura. Ahora los dos extremos
+  // viven en el calendario del merchant.
   const { elegibles } = seleccionarConsolidablesDeCliente([
-    alb({ id: 1, fecha: new Date('2026-03-31T18:00:00') }),
-    alb({ id: 2, fecha: new Date('2026-04-01T09:00:00') }),
-  ], CLIENTE, { desde: '2026-03-01', hasta: '2026-03-31' });
+    alb({ id: 1, fecha: new Date(inicioDelDiaEn('2026-03-31', MADRID).getTime() + 18 * 3600_000) }),
+    alb({ id: 2, fecha: new Date(inicioDelDiaEn('2026-04-01', MADRID).getTime() + 9 * 3600_000) }),
+  ], CLIENTE, { desde: '2026-03-01', hasta: '2026-03-31' }, MADRID);
 
   assert.deepEqual(elegibles.map((a) => a.id), [1]);
+});
+
+test('SCRUM-70 · 🔴 SCRUM-643: el albarán del 1 de abril de MADRUGADA ya NO entra en marzo', () => {
+  // El defecto que medía SCRUM-640, ahora cerrado: con el servidor en UTC y el merchant en la
+  // península, un parte del 1 de abril a las 00:30 hora española ENTRABA en el rango «hasta el
+  // 31 de marzo» — y con él, en la recapitulativa del mes que no le tocaba.
+  const madrugada = new Date(inicioDelDiaEn('2026-04-01', MADRID).getTime() + 30 * 60_000);
+  const { elegibles } = seleccionarConsolidablesDeCliente(
+    [alb({ id: 1, fecha: madrugada })], CLIENTE, { desde: '2026-03-01', hasta: '2026-03-31' }, MADRID,
+  );
+  assert.deepEqual(elegibles, [],
+    '🔴 un albarán del 1 de abril sigue entrando en el rango de marzo: la rotura del art. 13 no '
+    + 'se está aplicando en el calendario del merchant.');
+
+  // ✅ Y el control negativo: el MISMO instante SÍ entra en el rango de ABRIL, que es el suyo.
+  const enAbril = seleccionarConsolidablesDeCliente(
+    [alb({ id: 1, fecha: madrugada })], CLIENTE, { desde: '2026-04-01', hasta: '2026-04-30' }, MADRID,
+  );
+  assert.deepEqual(enAbril.elegibles.map((a) => a.id), [1],
+    '🔴 se ha caído de los DOS rangos: eso no es periodificar bien, es perder el albarán');
 });
 
 test('SCRUM-70: un parte de otro cliente jamás entra (tenancy de la selección)', () => {

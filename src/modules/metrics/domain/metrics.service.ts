@@ -116,7 +116,26 @@ export async function getHomeMetrics(merchantId: number) {
     .filter((h): h is number => h !== null && h >= 0);
   if (deltas.length) avgResponseHours = Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 10) / 10;
 
+  // ── SCRUM-315 (D4) · las señales del checklist, HASTA EL COBRO ────────────────────────────
+  //
+  // Cada paso tiene que poder decir si está hecho, y decirlo con una MEDICIÓN, no con una
+  // suposición. Se calculan aquí —donde ya se consulta la BD— y viajan como booleanos: la
+  // interfaz no reimplementa el criterio, igual que en SCRUM-314.
+  //
+  // ⚠️ El paso «Que tu cliente firme» mira `signatureUrl`, no `acceptedAt`: aceptar y FIRMAR no
+  // son lo mismo, y el valor del paso está justo en la firma — es la prueba si el cliente dice
+  // luego que no lo pidió.
+  const [conPrecios, conFirma, conCobro] = await Promise.all([
+    prisma.product.count({ where: { merchantId } }),
+    prisma.quote.count({ where: { merchantId, signatureUrl: { not: null } } }),
+    prisma.charge.count({ where: { merchantId, status: 'paid' } }),
+  ]);
+
   return {
+    // SCRUM-315: los tres van juntos y con nombre propio para que la interfaz pueda exigir
+    // `=== true`. Si este bloque no llega (endpoint viejo, respuesta parcial), el paso se pinta
+    // como NO hecho — nunca como hecho.
+    onboarding: { precios: conPrecios > 0, firma: conFirma > 0, cobro: conCobro > 0 },
     weekly: {
       quotesThisWeek,
       quotesLastWeek,

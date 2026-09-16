@@ -285,12 +285,92 @@ Un cambio de schema NO está aplicado hasta estar en las TRES bases:
 
 ```
 1. acela.proxy.rlwy.net / railway          — STAGING. Protegida por el máster: no se toca
-                                             sin que el fundador lo sepa. Es la base del
-                                             worktree cobroflash-b2.
+                                             sin que el fundador lo sepa.
 2. acela.proxy.rlwy.net / yaqu_dev_javier  — DESARROLLO. El fundador dijo que NO requiere su
-                                             GO para aplicarle schema. Base de cobroflash-b1.
+                                             GO para aplicarle schema.
 3. autorack.proxy.rlwy.net                 — PRODUCCIÓN.
 ```
+
+> ### 🔒 INTERINO desde el 4-sep-2026 · STAGING ESTÁ CONTAMINADA COMO SUJETO DE MEDIDA
+>
+> **Decisión del fundador (SCRUM-668). No es una sospecha: es una declaración de estado.**
+>
+> `DATABASE_URL_TESTS` en los carriles `b1`, `b2` y `b3` apunta a `acela/railway`, que **es la
+> misma base que `DATABASE_URL_STAGING`**. O sea: la suite gateada ESCRIBE en la base que
+> también se usa para medir. Y son 61 ficheros de test los que están gateados por esa clave,
+> con `_merchant-fixture.mjs` creando un merchant y barriéndolo sobre 23 modelos por pasada.
+>
+> **Consecuencia operativa, y es lo único que hay que recordar:**
+>
+> * **Una cifra sacada de `acela/railway` NO vale como medición.** Filas, totales, huecos,
+>   duplicados, «no hay ninguno»: nada de eso distingue el estado real del sedimento de una
+>   tanda. Una base que es a la vez el sujeto de la medida y el vertedero de los tests no da
+>   resultados: da coincidencias.
+> * **Sirve igual para lo de siempre**: correr la suite gateada, probar una pantalla, un
+>   `db push` de ensayo. Lo que se retira es su valor como FUENTE DE UN NÚMERO.
+> * **Si necesitas medir de verdad**, mide contra producción en sólo-lectura (`autorack`, y
+>   di en el informe que era producción) o levanta una base propia.
+>
+> **No se relaja nada para esto.** `assertSafeStagingUrl` es una allowlist de host y es
+> fail-closed: sigue igual. Esto no cambia ni una variable de entorno — sólo dice qué valor
+> tiene el dato que sale de ahí.
+>
+> **Se levanta cuando** cada carril tenga su base de pruebas propia (`yaqu_tests_b1|b2|b3`), que
+> es el objetivo acordado y necesita infraestructura: **espera a Javier**. Se descartó mandar
+> los cuatro carriles a `yaqu_dev_javier`: cuatro sesiones escribiendo en la misma base es
+> cambiar un problema por otro.
+>
+> ⚠️ Y lo que **no** se sabe, dicho como resultado y no como tranquilidad: **no está medido si
+> alguna cifra de staging ya publicada salió contaminada.** No se ha barrido quién midió qué
+> contra `acela/railway` ni cuándo. Un «no» sin medir no habría sido un resultado.
+
+> ### 📌 QUÉ BASE TOCA CADA WORKTREE — MAPA MEDIDO el 6-ago-2026
+>
+> **Método:** censo de `.env*` en los cuatro árboles, imprimiendo `clave → host/base` con
+> `describirBD` (nunca el valor). Es una FOTO fechada, no una verdad permanente: si alguien
+> cambia una clave en Railway, esta tabla envejece sin que nadie la toque. Re-medir antes de usarla.
+>
+> **ESTADO ACTUAL — tras SCRUM-383 (6-ago-2026).** Los cuatro árboles llevan las TRES claves, con
+> el mismo host y las mismas credenciales; solo cambia el nombre de la base:
+>
+> | Clave | `cobroflash-backend` | `cobroflash-b1` · `b2` · `b3` |
+> | --- | --- | --- |
+> | `DATABASE_URL_STAGING` | `acela…/railway` | `acela…/railway` |
+> | `DATABASE_URL_DEV` | `acela…/yaqu_dev_javier` | `acela…/yaqu_dev_javier` |
+> | `DATABASE_URL_TESTS` | `acela…/yaqu_dev_javier` | `acela…/railway` |
+>
+> `DATABASE_URL_TESTS` es **la base de pruebas DE ESE CARRIL**, y es la que leen los seis
+> consumidores de la tanda. Que difiera por worktree **no es un defecto**: el reparto por carril
+> es DELIBERADO (23-jul-2026), para aislar los carriles. Lo que se arregló es el NOMBRE.
+>
+> **Y por eso hay DOS turnos de staging, no uno.** El marcador del turno vive DENTRO de la base
+> (`current_database()` + comentario de schema), así que el turno del árbol principal está en
+> `yaqu_dev_javier` y el que comparten b1/b2/b3 está en `railway`. Nadie compite con nadie por un
+> turno ajeno, y no es casualidad: es la consecuencia de que cada carril pruebe en su base.
+>
+> **REGISTRO — lo que se midió el 6-ago-2026 ANTES de SCRUM-383** (se conserva: es la prueba de
+> por qué se hizo el ticket, no una descripción del presente):
+>
+> | Worktree | Clave | Base real | Cuál es |
+> | --- | --- | --- | --- |
+> | `cobroflash-backend` | `DATABASE_URL_STAGING` | `acela…/yaqu_dev_javier` | **DEV** |
+> | `cobroflash-b1` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
+> | `cobroflash-b2` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
+> | `cobroflash-b3` | `DATABASE_URL_STAGING` | `acela…/railway` | **STAGING** |
+>
+> 🔴 **Una misma clave significaba DOS bases distintas según el directorio**, y ningún comando lo
+> recordaba. Ninguna apuntaba a producción (`autorack`). SCRUM-383 no movió a nadie de base: dio
+> nombre propio a cada destino, para que el nombre dejara de mentir.
+>
+> ⚠️ Antes de eso, aquí ponía que staging era «la base del worktree `cobroflash-b2`» y dev la «de
+> `cobroflash-b1`». **Medido: era falso.** `b1` tiene STAGING, y quien tiene DEV es el worktree
+> PRINCIPAL, que ni se mencionaba. Se corrigió el 6-ago-2026; la afirmación anterior no llevaba
+> fecha ni método, que es justo por lo que pudo envejecer sin que nadie lo notara.
+>
+> **Lo vigila `tests/scrum383-clave-vs-destino.test.mjs`**: compara lo que la clave PROMETE con el
+> destino REAL y aborta antes de cualquier operación de esquema. Para comprobarlo en un árbol:
+> `node scripts/comprobar-claves-bd.mjs` — y hay que correrlo EN LOS CUATRO, porque «según la
+> carpeta» era precisamente la dimensión del fallo.
 
 ⚠️ Las dos primeras viven en el MISMO servidor (`acela`) y son bases DISTINTAS. Ninguna es
 "local". Por eso pueden divergir de esquema sin que nada avise: `scripts/_db-guard.mjs` valida
@@ -328,10 +408,17 @@ que **no es el TTL**: el TTL dice cuándo caduca el turno (1h 10min), no cuánto
 (~27 min). Si la otra sesión corre código anterior a SCRUM-232, sale «NO CONSTA» y el mensaje
 degrada al de siempre.
 
-> Estos comandos leen `DATABASE_URL_STAGING` del `.env`, y `.env` está en `.gitignore`: **solo
-> existe en el checkout principal, no en los worktrees**. Desde un worktree, ejecútalos con el
-> cwd del checkout principal (`cd <principal> && node ../<worktree>/scripts/turno-staging.mjs
-> estado`). Nunca pases la URL por línea de órdenes (regla 9).
+> Estos comandos leen `DATABASE_URL_TESTS` del `.env` **de su propio árbol** (SCRUM-383).
+>
+> ⚠️ **CORREGIDO el 6-ago-2026.** Aquí ponía que `.env` «solo existe en el checkout principal, no
+> en los worktrees», y **medido: es falso** — los CUATRO tienen su `.env` (`b1`/`b2`/`b3` con seis
+> claves cada uno). La instrucción que seguía —ejecutarlos con el cwd del principal— era además
+> **activamente dañina**: el turno se toma sobre la base a la que apunte la clave del árbol desde
+> el que corres, así que hacerlo desde el principal tomaba el turno de `yaqu_dev_javier` cuando lo
+> que querías sostener era `railway`. Cada carril corre sus comandos **desde su propio árbol**.
+>
+> Para ver a qué base apunta cada clave aquí: `node scripts/comprobar-claves-bd.mjs`. Nunca pases
+> la URL por línea de órdenes (regla 9).
 
 **Ninguno de los tres rompe un lock ajeno**, a propósito: para eso está `marcar-staging.mjs`, y
 solo sabiendo que la otra sesión está muerta.
@@ -428,3 +515,222 @@ hay prisa de verdad: recargar con Ctrl+F5.
 no fue el valor, fue que vivía en un panel que nadie ve desde el código. La solución de fondo es
 fingerprint por contenido en el nombre del fichero (**SCRUM-274**), que permite cachear un año
 sin este riesgo.
+
+## R14 · Restaurar la base de datos desde un backup lógico
+
+> **PROBADO de principio a fin el 10-ago-2026** contra una base desechable: volcar → vaciar →
+> restaurar → comparar → emitir. Evidencia pegada en `docs/evidencias/scrum242-restauracion.md`.
+>
+> La prueba **encontró dos fallos que hacían el backup lógico irrestaurable** (tipos y orden de
+> inserción), y los dos están corregidos en `scripts/backup-restore.mjs`. Ninguno se veía leyendo el
+> código.
+>
+> Lo que la prueba **no** cubre está dicho al final de la evidencia: el volumen (fueron 5 filas), y
+> que hoy **nadie dispara el volcado**.
+
+**Cuándo:** se ha perdido la base y hay un fichero `yaqu-AAAAMMDD.logical.gz.enc`.
+
+**Formato:** el **lógico** (JSON), que es el que se produce en Railway porque su imagen de Node no
+trae `pg_dump`. Si tu fichero es `.pgdump.` en vez de `.logical.`, esto **no** es tu procedimiento:
+usa `pg_restore` con el fichero descifrado.
+
+**Necesitas:** el fichero `.enc`, la `BACKUP_ENCRYPTION_KEY` **con la que se cifró** (sin ella no
+hay restauración posible: el cifrado es AES-256-GCM), y una base de destino **vacía y con el schema
+ya aplicado**.
+
+### 1 · Comprobar que el backup está íntegro ANTES de tocar nada
+
+```
+BACKUP_DIR=<carpeta del fichero> BACKUP_ENCRYPTION_KEY=<la clave>   node scripts/backup-dump.mjs --restore-test
+```
+
+Descifra, valida el tag GCM (integridad criptográfica) y compara los conteos contra la base
+**viva**. Si la base está caída, este paso fallará al comparar conteos: eso es esperado, y lo que
+importa es que **llegue a descifrar**. Si falla al descifrar, la clave no es la correcta o el
+fichero está corrupto — **para aquí**.
+
+### 2 · Preparar el destino
+
+El schema se aplica **desde el repo**, no desde el backup: el volcado lógico lleva **filas, no
+estructura**.
+
+```
+DATABASE_URL=<destino> npx prisma db push
+```
+
+### 3 · Escribir las filas de vuelta
+
+```
+BACKUP_ENCRYPTION_KEY=<la clave> node scripts/backup-restore.mjs <fichero.logical.gz.enc>
+```
+
+`scripts/backup-restore.mjs` descifra, inserta **padres antes que hijos** —orden topológico derivado
+del schema, no una lista a mano— y repone las secuencias del paso 4. Existe desde la prueba de
+SCRUM-242: antes de ella, este paso **no tenía código** y la restauración del formato lógico era una
+promesa escrita en una cabecera.
+
+⚠️ **El destino tiene que estar VACÍO, y el script lo comprueba antes de escribir.** La
+restauración **no es transaccional**: si falla a mitad, la base queda a medias y el reintento muere
+con `Key (id)=(1) already exists`, que despista. Si te pasa: vacía y vuelve al paso 2.
+
+Tres cosas que se descubrieron ejecutándolo, por si vuelven a aparecer:
+
+- **Los tipos.** JSON no tiene fechas ni decimales; sin castear, Postgres rechaza el INSERT
+  («column … is of type timestamp … but expression is of type text»). Los casts se derivan del DMMF.
+- **El orden NO es `ORDEN_BORRADO_MERCHANT` invertido.** Esa lista enumera los *hijos* de un
+  merchant: `merchants` no está en ella y acaba insertándose después de `customers`, que lo
+  referencia.
+- **Los ficheros.** `attachments.data` es `bytea`: las **fotos de los trabajos viven dentro de
+  Postgres**. Sin decodificarlas al insertar: «column "data" is of type bytea but expression is of
+  type jsonb», y se recuperaba todo **menos los ficheros de los clientes**. Desde `yaqu-logical-v2`
+  viajan en **base64** (ver §6, el techo); el códec lo comparten volcado y restauración en
+  `scripts/_backup-codec.mjs`, y la restauración sigue leyendo los ficheros `v1`.
+
+### 4 · Reponer las secuencias — SIN ESTO LA BASE QUEDA ROTA
+
+Lo hace el script del paso 3, pero conviene saber por qué está ahí. El volcado hace
+`SELECT * FROM <tabla>`: trae los **ids**, pero **no el estado de las secuencias**. Los **24**
+modelos con `@default(autoincrement())` quedarían con su contador en 1, así que **el siguiente
+INSERT chocaría con una fila restaurada**.
+
+Para cada tabla con id autoincremental:
+
+```
+SELECT setval(pg_get_serial_sequence('"<tabla>"', 'id'), COALESCE((SELECT MAX(id) FROM "<tabla>"), 1));
+```
+
+Esto **está medido**, no razonado: en la prueba, dejando la secuencia en 1 el siguiente INSERT
+devolvió `Unique constraint failed on the fields: (id)`.
+
+**En facturas esto no es un inconveniente, es un incidente:** un número de factura repetido no se
+arregla borrando (regla 29).
+
+### 5 · Comparar — qué se compara, que es lo que decide si la restauración vale
+
+Conteos por tabla es el **mínimo**, y no basta: una restauración con el número correcto de filas y
+el contenido mal es el peor verde del proyecto. Lo que se comprobó, en orden de lo que duele:
+
+1. **Conteos** por tabla.
+2. **Claves**: los ids restaurados son los mismos, no unos nuevos equivalentes.
+3. **Sumas de importes**: el dinero cuadra al céntimo.
+4. **La cadena de huellas VeriFactu**: el `vfPrevHash` de cada factura == el `vfHash` de la
+   anterior. Una cadena rota no se ve en ningún conteo y no se puede recomponer después.
+5. **Que la base pueda seguir emitiendo**: un INSERT sin id explícito que no choque (paso 4).
+6. **Los ficheros, byte a byte.** `sha256` de `attachments.data` antes y después. Un adjunto con el
+   tamaño correcto y los bytes mal no se nota hasta que alguien abre la foto.
+
+Y una sexta que se olvida: **comprobar que el comparador sabe ver una diferencia**. En la prueba se
+mutó un importe del censo restaurado y se verificó que la comparación lo detectaba. Si no, «los dos
+censos coinciden» y «el comparador no compara nada» son el mismo verde.
+
+### 6 · EL TECHO: hasta cuántas fotos aguanta este formato
+
+**El volcado lógico no crece indefinidamente, y conviene saber dónde para antes de necesitarlo.**
+Todo el volcado acaba en **un único `JSON.stringify`**, así que el límite no es el disco ni la RAM:
+es `MAX_STRING_LENGTH` de V8 — **536.870.888** caracteres en Node 24. Y `attachments.data` es
+`bytea`: **las fotos de los trabajos viven dentro de Postgres** (MEDIA-1, fallback sin R2).
+
+| formato | caracteres por byte de fichero | techo | a 5 MB/foto | a 2 MB/foto |
+|---|---|---|---|---|
+| `yaqu-logical-v1` (objeto de índices) | 12,4–13,4× *(crecía con el tamaño)* | ~41 MB | **8 fotos** | 20 |
+| **`yaqu-logical-v2` (base64)** | **1,333×** *(constante)* | **~384 MB** | **76 fotos** | **191** |
+
+⚠️ **Al pasarse NO se degrada: `JSON.stringify` LANZA**, y con el fail-closed de SCRUM-241 **no se
+escribe fichero**. O sea: el día que se sube la foto que sobra, se deja de tener backup **del todo**.
+Si además el disparador solo escribe en un log, nadie se entera.
+
+**El tope no ha desaparecido, se ha movido**, y 76 fotos siguen siendo pocas para un año de trabajo.
+Cuando se acerque, las salidas son `pg_dump` (formato físico, sin este límite) o sacar los ficheros
+de Postgres a R2. Lo vigila con número `tests/scrum242-backup-codec.test.mjs`: si alguien cambia el
+códec y el factor sube, sale rojo antes de que el techo se desplome en silencio.
+
+### Los tests de `LIBRO_PG_URL` — el banco DESECHABLE (SCRUM-419 / SCRUM-456)
+
+**No son los de staging.** Los gateados por `QA_DB_TEST` usan la base de staging y van por
+`npm run test:staging:gated` (arriba). Éstos son otros **7**, y piden un Postgres **de usar y
+tirar**: crean y **borran** filas, y prueban tenencia contra el motor real.
+
+> 🔴 **Sus guards exigen `127.0.0.1`/`localhost` y una base terminada en `_test`, y no se
+> relajan.** No es burocracia: `exigirBancoDesechable` es lo único que impide que una tanda que
+> BORRA se ejecute contra algo que importe. Lo que se arregla es saber montar el banco, no el guard.
+
+CI ya lo hace en cada PR (`ci.yml`, servicio `postgres:16-alpine`). En local, la misma receta:
+
+```bash
+# 1) un Postgres desechable en loopback (cualquier vía: contenedor, instalación local…)
+# 2) la base, con el nombre que los guards exigen
+psql "postgresql://postgres@127.0.0.1:55432/postgres" -c 'CREATE DATABASE yaqu_libro_test'
+# 3) el esquema. `migrate diff --from-empty` NO toca ninguna base: escribe el DDL a un fichero.
+#    Se evita `db push` a propósito: es el mecanismo reservado a las bases del proyecto (regla 3).
+npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > /tmp/esquema.sql
+psql "postgresql://postgres@127.0.0.1:55432/yaqu_libro_test" -q -f /tmp/esquema.sql
+# 4) la tanda, con la variable puesta
+LIBRO_PG_URL="postgresql://postgres@127.0.0.1:55432/yaqu_libro_test" npm test
+```
+
+**Cómo saber qué NO se ha ejecutado.** `npm test` termina en «0 fallos» tanto si un test pasó como
+si saltó, y el reporter por defecto (`spec`) **no imprime el motivo del salto**. Por eso nadie vio
+durante meses que 67 tests se apagaban en silencio. Para verlos:
+
+```bash
+node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
+     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" tests/*.test.mjs
+grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
+```
+
+> ⚠️ **SCRUM-850 · el TAP va a fichero y se lee en un SEGUNDO comando, nunca por tubería.** Aquí
+> ponía `… tests/*.test.mjs | grep "# SKIP"`, y en una tubería el código de salida es el del
+> **último** tramo: con esa forma, **una tanda en rojo salía `0`**. El fichero va fuera del árbol
+> porque un temporal dentro del repo es el rojo intermitente que midió SCRUM-824.
+
+Todo salto **declara su motivo** y el comando que lo arregla; que siga siendo así lo vigila
+`tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`, que corre **sin gate** — el guard que vigila a
+los gateados no puede estar gateado él mismo.
+
+---
+
+## R20 · Lanzar el CLI de Prisma desde un script (y por qué `node_modules/.bin/prisma` no vale)
+
+**Síntoma.** Un script propio lanza Prisma con `execFileSync`/`spawnSync` apuntando a
+`node_modules/.bin/prisma` y **falla siempre en Windows**, con un error que no habla de Prisma:
+`spawnSync ... ENOENT`, o una salida vacía y un código distinto de 0. El mismo comando escrito a
+mano en la terminal funciona, así que se lee como «Prisma no puede generar» — y eso es otra cosa.
+
+**Dónde mirar.** `ls node_modules/.bin/prisma*` → hay **tres** ficheros: `prisma` (script sh),
+`prisma.cmd` y `prisma.ps1`. Ninguno es un ejecutable: son **lanzadores de shell** que npm crea.
+`execFileSync` ejecuta un binario, no los interpreta.
+
+**Acción — la forma correcta, y es la que la casa ya usa en tres sitios:**
+
+```js
+import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
+
+const requireDelRepo = createRequire(path.join(RAIZ, 'x.js'));
+const PRISMA_JS = requireDelRepo.resolve('prisma/build/index.js');   // el JS, no el lanzador
+const r = spawnSync(process.execPath, [PRISMA_JS, 'generate'], { cwd: RAIZ, encoding: 'utf8' });
+```
+
+Se lanza **`process.execPath`** (el node que ya está corriendo) con el JS como primer argumento.
+Funciona igual en Windows, Linux y en el runner del CI, y no depende de `PATH` ni de `npx` —que
+además se baja otro CLI de la red en silencio si el local falta (incidente del 5-ago-2026).
+
+Precedentes en el árbol: `scripts/aplicar-sql-dev.mjs`, `scripts/preflight-schema-drift.mjs`,
+`scripts/_prisma-sync.mjs` y `scripts/preview-migracion.mjs` ya lo hacen así.
+
+**⚠️ Y una trampa aparte, del mismo día:** Prisma **infiere la raíz del proyecto desde la ruta que
+se le pasa en `--schema`**. Con un schema de usar y tirar fuera del repo, infiere el directorio de
+ese fichero, no encuentra `package.json`, se lanza a un `npm i prisma` y muere. Un schema temporal
+va **dentro de `prisma/`**, y se borra al terminar.
+
+**🔴 Y el guard SÍ mira esta forma, desde SCRUM-744.** Hasta entonces no: el hook sólo reconocía
+`prisma db push` tecleado con espacios y a menos de 40 caracteres del nombre, así que la
+invocación correcta de aquí arriba —con los verbos en un array— **pasaba sin saltar**, `db push`
+y `--force-reset` incluidos. Escribirla bien nunca fue un rodeo de la barrera, pero durante unas
+horas lo pareció. Ahora el guard mira **qué hace** el comando, no cómo está escrito.
+
+**Qué decir al merchant.** Nada: es de herramienta interna, no llega a producción.
+
+**Prevención.** Medido el 4-sep-2026 (SCRUM-733/742). El censo
+`npm run censo:internos-prisma` enumera quién lanza el CLI y quién sólo nombra su ruta, para que
+un cambio del punto de entrada se pueda evaluar con la lista delante.

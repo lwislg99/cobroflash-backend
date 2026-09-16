@@ -21,7 +21,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios', { skip: !ENABLED }, async (t) => {
+test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { requestMagicLink, getSession } = await import('../dist/modules/auth/domain/auth.service.js');

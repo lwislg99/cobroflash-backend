@@ -16,7 +16,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113: fixture + 
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-120: PATCH /admin/jobs/:id — gate por campo (técnico: operativo ✅, fiscal/dinero ❌ fail-closed)', { skip: !ENABLED }, async (t) => {
+test('SCRUM-120: PATCH /admin/jobs/:id — gate por campo (técnico: operativo ✅, fiscal/dinero ❌ fail-closed)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

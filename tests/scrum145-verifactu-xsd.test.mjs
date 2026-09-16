@@ -74,7 +74,7 @@ const fakePrisma = (invoices) => ({
 
 const build = async (invoices) => {
   const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
-  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma(invoices));
+  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma(invoices));
   return xml;
 };
 

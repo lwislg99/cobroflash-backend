@@ -40,7 +40,28 @@ import {
 } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 // SCRUM-223: quien mira una URL de BD pasa por aquí. `parseBDSegura` quita el envoltorio de
 // comillas del `.env` y NO tiene forma de devolver la cadena — solo host, base, usuario y puerto.
-import { parseBDSegura } from './_db-guard.mjs';
+// SCRUM-381: y `destinoSembrable` es la allowlist que la nota de SCRUM-208 (abajo) dejaba escrita.
+import { parseBDSegura, destinoSembrable } from './_db-guard.mjs';
+// SCRUM-314: el barrido del demo, DERIVADO del orden que ya guarda el schema (no una lista aquí).
+// SCRUM-381: vivía en `./_wipe-demo.mjs`, que SCRUM-314 (cbc2880) borró al mover el barrido al
+// dominio SIN actualizar este import. El script llevaba tickets sin poder ni arrancar, y nadie se
+// enteró porque ninguna suite lo cargaba — el hueco que cierra el guard de este mismo ticket.
+import { barridoDemo } from '../dist/modules/system/domain/barridoDemo.js';
+// SCRUM-761: el catálogo se siembra POR EL CAMINO REAL DEL ALTA, no con un `product.create` a
+// mano. Ver el bloque largo junto al catálogo, más abajo.
+import { createProduct } from '../dist/modules/products/domain/products.service.js';
+// SCRUM-767: y los CLIENTES igual, por el mismo motivo y con el mismo escalón. Ver el bloque
+// junto a `customersData`, más abajo.
+import { createCustomer } from '../dist/modules/system/customerAdmin.js';
+// …y el cliente que usa ESE camino, para poder cerrarlo al final: `createProduct` escribe con el
+// singleton de `core/db/prisma`, no con el `new PrismaClient()` de este script. Sin este
+// `$disconnect` el proceso se queda con una conexión viva y no termina solo.
+//
+// ⚠️ Esto NO adelanta la construcción de un cliente por delante del guard de destino: MEDIDO
+// hoy, el singleton ya lo construían los imports que este script tenía (`invoiceNumber.service`
+// lo arrastra por `audit.service`). Y construir un `PrismaClient` no conecta: la conexión la
+// abre la primera consulta, que sigue ocurriendo después de `confirmarDestino()`.
+import { prisma as prismaApp } from '../dist/core/db/prisma.js';
 
 /**
  * El copy del cobro NUNCA dice "factura" de un `J-` (regla 24/26, Parte M). No es un texto
@@ -54,6 +75,23 @@ import { parseBDSegura } from './_db-guard.mjs';
 const docLabel = (number) => (isReceiptNumber(number) ? 'Justificante' : 'Factura');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SCRUM-381 · EL SOBRE DE UNA SIEMBRA
+//
+// `allocateInvoiceNumber` exige `camino` y `actor` desde SCRUM-207, y este script se los pasaba
+// VACÍOS (`{}`) — el mismo día que no podía ni arrancar. Con el sobre vacío, un número sembrado
+// quedaba en el AuditLog indistinguible de uno emitido de verdad.
+//
+// `actor.tipo:'semilla'` es lo que lo distingue, y `ref` dice qué sembrador y qué TANDA, para
+// poder separar dos ejecuciones del mismo script. Se define UNA vez: dos literales en dos sitios
+// se desincronizan solos, y el que se quede atrás lo hace en silencio.
+//
+// El `camino`, en cambio, va en cada llamada porque CAMBIA: un número sembrado sí sale por una
+// vía real —este script llama al mismo código—, así que declara la que imita, no una inventada.
+// ─────────────────────────────────────────────────────────────────────────────
+const TANDA = new Date().toISOString();
+const sembrado = (punto) => ({ actor: { tipo: 'semilla', ref: `seed-demo:${punto}@${TANDA}` } });
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SCRUM-208 · GUARD DE DESTINO — hay que NOMBRAR la base
 //
 // Este script es un RESET: lo primero que hace es doce `deleteMany` sobre el merchant 1.
@@ -65,6 +103,12 @@ const docLabel = (number) => (isReceiptNumber(number) ? 'Justificante' : 'Factur
 // obliga a NOMBRAR la base. Sigue siendo posible hacerlo a propósito; deja de ser posible
 // por accidente. Si algún día se confirma que producción nunca debe ser destino de una
 // semilla, se endurece con la allowlist de host de SCRUM-118.
+//
+// SCRUM-381 · ESE DÍA LLEGÓ (asesor, 6-ago-2026): producción NUNCA es destino de una semilla.
+// La allowlist va PRIMERO y no se puede confirmar para saltarla: nombrar la base contesta
+// «¿es la que querías?», no «¿se puede sembrar ahí?». Con solo la confirmación, escribir el
+// hostname de prod era suficiente para resembrar producción — la ceremonia estaba, la
+// prohibición no. Ahora son las dos, en este orden: IDENTIDAD del destino, luego INTENCIÓN.
 //
 // ⚠️ POR QUÉ EXIGE `DATABASE_URL` EN EL ENTORNO Y NO SE CONFORMA CON LA DE `.env`:
 // porque el agujero es justo ese. Si aquí leyéramos el fichero para "ser amables", el
@@ -94,6 +138,15 @@ function confirmarDestino() {
   const destino = parseBDSegura(dbUrl);
   if (!destino) abortar('DATABASE_URL no es una URL válida. (No se dice cuál era: R7.)');
   const host = destino.host;
+
+  // SCRUM-381 · ANTES que la confirmación: ninguna confirmación abre producción.
+  const sembrable = destinoSembrable(dbUrl);
+  if (!sembrable.ok) {
+    abortar(
+      `Destino NO sembrable → ${sembrable.etiqueta}\n\n  ${sembrable.motivo}\n\n` +
+      '  (Solo se nombra host/base: ni usuario, ni contraseña, ni la URL — R7.)',
+    );
+  }
 
   if (process.env.SEED_DEMO_CONFIRM !== host) {
     abortar(
@@ -129,20 +182,21 @@ const LOGO =
   ).toString('base64');
 
 async function wipeDemo() {
-  // Orden respetando FKs. Todo scoped al merchant demo.
-  await prisma.customerEvent.deleteMany({ where: { merchantId: DEMO_ID } }).catch(() => {});
-  await prisma.whatsAppMessage.deleteMany({ where: { merchantId: DEMO_ID } }).catch(() => {});
-  await prisma.expense.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.event.deleteMany({ where: { charge: { merchantId: DEMO_ID } } });
-  await prisma.reconciliation.deleteMany({ where: { charge: { merchantId: DEMO_ID } } }).catch(() => {});
-  await prisma.quoteRequest.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.invoice.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.quote.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.charge.deleteMany({ where: { merchantId: DEMO_ID } });
-  // Sesiones del bot de los teléfonos demo (ficticios, prefijo 6110000xx)
-  await prisma.botSession.deleteMany({ where: { phone: { startsWith: '346110000' } } }).catch(() => {});
-  await prisma.customer.deleteMany({ where: { merchantId: DEMO_ID } });
-  await prisma.product.deleteMany({ where: { merchantId: DEMO_ID } });
+  // SCRUM-314 · el barrido ya NO se escribe aquí. Esta función borraba una lista a mano de **10**
+  // modelos cuando los que tienen `merchantId` son **21**: se quedaban sucios `job`, `albaran`,
+  // `albaranLineaFacturada`, `teamMember`, `auditLog`, `attachment`, `authSession`, `provider`,
+  // `quoteTemplate`, `maintenancePlan` y `legalAcceptance` — once.
+  //
+  // Ahora cuelga de `ORDEN_BORRADO_MERCHANT`, que es la MISMA lista que ya guarda un test
+  // derivado del schema (SCRUM-172/192): un modelo nuevo con `merchantId` entra en el barrido del
+  // demo el día que entra en el del merchant, sin que nadie tenga que acordarse. Dos listas del
+  // mismo hecho se desincronizan solas, y es justo lo que dejó ésta en 10 de 21.
+  const { porModelo } = await barridoDemo(prisma, DEMO_ID);
+  const noDisponibles = Object.entries(porModelo).filter(([, n]) => n === null).map(([m]) => m);
+  if (noDisponibles.length) {
+    // `null` ≠ 0: uno dice «no se pudo mirar» y el otro «no había nada». Se dice, no se calla.
+    console.log(`   ⚠️  sin barrer (modelo no disponible en este entorno): ${noDisponibles.join(', ')}`);
+  }
 }
 
 async function seed() {
@@ -183,10 +237,31 @@ async function seed() {
     { name: 'Revisión general de fontanería', price: 45 },
     { name: 'Mano de obra (hora)', price: 35 },
   ];
+  // ───────────────────────────────────────────────────────────────────────
+  // SCRUM-761 · EL CATÁLOGO SE DA DE ALTA POR EL CAMINO REAL
+  //
+  // Esto era `prisma.product.create({ data: { merchantId, name, price } })`, y omitía
+  // `nameSearch` — la sombra normalizada de `name` que `createProduct` escribe y por la que
+  // `searchProducts` FILTRA. Consecuencia medida el 6-sep-2026 sobre la BD de desarrollo (8/8 con
+  // `name_search` NULL): «desatasco de» → 0, «sustitución de» → 0, «instalación de» → 0.
+  // TODO el catálogo sembrado era invisible al autocompletado de la pantalla que el máster
+  // quiere resuelta en 30 segundos, mientras un producto dado de alta a mano SÍ aparecía.
+  //
+  // Y un segundo daño, menos visible: en Postgres los NULL NO CHOCAN ENTRE SÍ, así que sobre
+  // esas 8 filas `@@unique([merchantId, nameSearch])` no vigilaba NADA. Una base de desarrollo
+  // cuyo estado deja inoperante la restricción que se está midiendo no es una base de pruebas.
+  //
+  // 🔴 NO se arregla escribiendo aquí `nameSearch: normalizeSearch(p.name)`. Eso sería una
+  // SEGUNDA copia del alta, y el día que el alta real derive una columna más, este sembrador
+  // volvería a quedarse corto exactamente igual — que es el defecto, no el síntoma. Se llama al
+  // alta de verdad, que es el escalón 1: derivar el camino entero.
+  //
+  // `createProduct` escribe con el cliente global (`core/db/prisma`), no con el `prisma` de este
+  // fichero. Los dos resuelven la MISMA `DATABASE_URL`, que el guard de destino ya confirmó
+  // arriba; el cierre del global se hace al final del script.
+  // ───────────────────────────────────────────────────────────────────────
   for (const p of productsData) {
-    await prisma.product.create({
-      data: { merchantId: DEMO_ID, name: p.name, price: p.price.toFixed(2) },
-    });
+    await createProduct(DEMO_ID, { name: p.name, price: p.price });
   }
 
   // ── Clientes (teléfonos FICTICIOS 34611000xx — el guard V0-2 bloquea envíos) ──
@@ -199,9 +274,31 @@ async function seed() {
     { name: 'Comunidad de Vecinos C/ Mayor 5',  phone: '34000000008', email: 'admin.mayor5@example.com' },
     { name: 'Bar El Rincón',                    phone: '34000000009', email: 'barelrincon@example.com' },
   ];
+  // ───────────────────────────────────────────────────────────────────────
+  // SCRUM-767 · LOS CLIENTES SE DAN DE ALTA POR EL CAMINO REAL
+  //
+  // Esto era `prisma.customer.create({ data: { merchantId, ...c } })`, y omitía `portalToken`
+  // —la llave del portal público del cliente— que `createCustomer` sí escribe.
+  //
+  // CONSECUENCIA MEDIDA el 6-sep-2026 sobre la BD de desarrollo: **11 de 14 clientes sin token
+  // (79 %), y los SIETE del demo entre ellos**. En la ficha 360 (`customerDetailView.js:76`) el
+  // botón «🔗 Portal» **sólo se pinta si el token existe**, así que en el demo —el que se le
+  // enseña a quien está decidiendo— ese botón NO APARECE en ningún cliente. Y en la LISTA sí
+  // aparece, porque aquel camino llama a `ensurePortalToken` y cura al vuelo. El mismo cliente,
+  // dos pantallas, dos respuestas.
+  //
+  // 🔴 NO se arregla escribiendo aquí `portalToken: …`. Sería una SEGUNDA copia del alta, y el
+  // día que el alta real derive una columna más este sembrador volvería a quedarse corto
+  // exactamente igual — que es el defecto, no el síntoma. Es el escalón 1: el camino entero.
+  // Misma decisión y mismo motivo que SCRUM-761 con el catálogo, doce líneas más arriba.
+  //
+  // `createCustomer` escribe con el cliente global (`core/db/prisma`), no con el `prisma` de
+  // este fichero, y devuelve `CUSTOMER_SELECT_NO_TOKEN` — que trae `id`, que es lo único que el
+  // resto del sembrador usa de estas filas. El token NO se devuelve a propósito (SCRUM-97).
+  // ───────────────────────────────────────────────────────────────────────
   const customers = [];
   for (const c of customersData) {
-    customers.push(await prisma.customer.create({ data: { merchantId: DEMO_ID, ...c } }));
+    customers.push(await createCustomer(DEMO_ID, c));
   }
   const [maria, joseluis, carmen, antonio, lucia, comunidad, bar] = customers;
 
@@ -238,7 +335,9 @@ async function seed() {
     // Cobro + documento en UNA transacción: `allocateInvoiceNumber` reserva el número
     // y avanza la serie ahí dentro, para que un fallo no deje un hueco (invoiceNumber.service).
     const { charge, number } = await prisma.$transaction(async (tx) => {
-      const number = await allocateInvoiceNumber(tx, DEMO_ID, {}, emitAt);
+      // C1: el cliente aceptó el presupuesto desde WhatsApp — que es la historia que cuenta el
+      // demo (`decisionChannel: 'whatsapp'`) — y el cobro ya está pagado.
+      const number = await allocateInvoiceNumber(tx, DEMO_ID, { camino: 'C1', ...sembrado('paidJob') }, emitAt);
       const charge = await tx.charge.create({
         data: {
           merchantId: DEMO_ID,
@@ -306,7 +405,8 @@ async function seed() {
   {
     const emitAt = daysAgo(3, 12);
     const charge = await prisma.$transaction(async (tx) => {
-      const number = await allocateInvoiceNumber(tx, DEMO_ID, {}, emitAt);
+      // C1 también: mismo camino, cobro todavía sin pagar (el "dinero en juego" de la Home).
+      const number = await allocateInvoiceNumber(tx, DEMO_ID, { camino: 'C1', ...sembrado('pendiente') }, emitAt);
       const charge = await tx.charge.create({
         data: {
           merchantId: DEMO_ID, customerId: lucia.id,
@@ -369,3 +469,6 @@ const counts = {
 };
 console.log('Sembrado ✅', counts);
 await prisma.$disconnect();
+// SCRUM-761: el alta real del catálogo escribe con el singleton de la app, que es OTRO cliente.
+// Cerrar sólo el de arriba dejaba una conexión abierta y el proceso sin terminar.
+await prismaApp.$disconnect();

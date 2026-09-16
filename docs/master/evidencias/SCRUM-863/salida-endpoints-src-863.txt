@@ -1,0 +1,92 @@
+POBLACION: 282 ficheros .ts bajo src/
+
+② SALIENTE — hosts que el codigo de src/ LLAMA (fuera de comentarios)
+   18  fonts.googleapis.com
+        src/modules/billing/app/routes/payBank.routes.ts:77
+        src/modules/billing/app/routes/payBank.routes.ts:79
+        src/modules/billing/app/routes/payBizum.routes.ts:37
+   11  yaqu.app
+        src/integrations/whatsappNotifications.ts:97
+        src/integrations/whatsappNotifications.ts:105
+        src/modules/auth/domain/referral.service.ts:55
+    9  fonts.gstatic.com
+        src/modules/billing/app/routes/payBank.routes.ts:78
+        src/modules/billing/app/routes/payBizum.routes.ts:38
+        src/modules/billing/app/routes/payInvoice.routes.ts:158
+    7  wa.me
+        src/modules/system/app/routes/customerPortal.routes.ts:388
+        src/modules/system/app/routes/quoteDecisionLanding.routes.ts:498
+        src/modules/system/app/routes/quoteDecisionLanding.routes.ts:555
+    3  www2.agenciatributaria.gob.es
+        src/modules/fiscal/verifactu/registro.builder.ts:10
+        src/modules/fiscal/verifactu/registro.builder.ts:11
+        src/modules/invoicing/domain/verifactu.service.ts:153
+    1  http://localhost:$ (con hueco)
+        src/core/config/env.ts:8
+    1  $
+        src/core/validation/schemas.ts:483
+    1  api.resend.com
+        src/integrations/enviarCorreo.ts:113
+    1  generativelanguage.googleapis.com
+        src/integrations/gemini.ts:8
+    1  api.mercadopago.com
+        src/integrations/mercadopago.ts:9
+    1  graph.facebook.com
+        src/integrations/whatsapp.ts:18
+    1  www.mercadopago.com
+        src/modules/billing/app/routes/payMp.routes.ts:43
+    1  sandbox.mercadopago.com
+        src/modules/billing/app/routes/payMp.routes.ts:44
+    1  localhost:3000
+        src/modules/system/app/routes/quoteDecisionLanding.routes.ts:19
+
+  rutas declaradas en src/: 218
+
+② ENTRANTE — puntos de entrada que un PROVEEDOR llama
+   (la URL a la que apunta cada proveedor NO vive en el arbol: vive en su consola)
+  /webhooks/stripe          src/app.ts:148
+  /webhooks/stripe-connect  src/app.ts:151
+  /webhooks/resend          src/app.ts:156
+  /webhooks/psp             src/app.ts:350
+  /webhooks/mp              src/app.ts:366
+  /webhooks/whatsapp        src/app.ts:367
+
+  (y por si acaso, rutas cuyo PROPIO nombre dice webhook/callback/ipn: 1)
+    POST  /:id/paid-webhook   src/modules/invoicing/app/routes/invoice.routes.ts:60
+
+⚠️ FALSO NEGATIVO DECLARADO — proveedores cuyo host NO se ve en el arbol
+  Stripe: `new Stripe(...)` en 1 fichero(s) — el host lo pone el SDK.
+        src/integrations/stripe.ts
+
+② LA BASE PROPIA — de donde saca la app su propia URL
+  PUBLIC_BASE_URL  (2)
+        src/core/config/env.ts:8
+        src/modules/system/app/routes/quoteDecisionLanding.routes.ts:19
+  APPLICATION_FEE_BPS  (1)
+        src/core/config/env.ts:28
+  WHATSAPP_PHONE_NUMBER_ID  (1)
+        src/core/config/env.ts:60
+  WHATSAPP_BOT_PHONE  (1)
+        src/core/config/env.ts:64
+  WHATSAPP_BUSINESS_ACCOUNT_ID  (1)
+        src/core/config/env.ts:65
+  WHATSAPP_ACCESS_TOKEN  (1)
+        src/core/config/env.ts:66
+  WHATSAPP_VERIFY_TOKEN  (1)
+        src/core/config/env.ts:67
+  WHATSAPP_APP_SECRET  (1)
+        src/core/config/env.ts:69
+  WHATSAPP_DRY_RUN  (1)
+        src/integrations/whatsapp.ts:24
+
+  auto-referencias ABSOLUTAS a yaqu.app escritas en src/ (fuera de comentarios): 10
+        src/integrations/whatsappNotifications.ts:97   `https://yaqu.app/recibo/${params.receiptToken}`,
+        src/integrations/whatsappNotifications.ts:105   url: `https://yaqu.app/recibo/${params.receiptToken}`,
+        src/modules/auth/domain/referral.service.ts:55   const base = config.PUBLIC_BASE_URL || 'https://yaqu.app';
+        src/modules/billing/domain/invoiceWhatsApp.service.ts:102   `https://yaqu.app/pay/invoice/${payToken}`,
+        src/modules/billing/domain/invoiceWhatsApp.service.ts:110   url: `https://yaqu.app/pay/invoice/${payToken}`,
+        src/modules/messaging/domain/emailLayout.ts:69   Enviado con <a href="https://yaqu.app" style="color:${BRAND_DARK};text-decoration:none;font-weight:6
+        src/modules/messaging/domain/emailLayout.ts:70   <a href="https://yaqu.app/privacidad" style="color:${MUTED}">Privacidad</a> · <a href="https://yaqu.
+        src/modules/messaging/domain/lifecycle.service.ts:16   const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
+        src/modules/messaging/domain/lifecycle.service.ts:61   <p style="font-size:12px;color:#9ca3af">YaQu · Cotiza por WhatsApp y cobra antes de empezar · <a hre
+        src/modules/system/app/routes/customerPortal.routes.ts:161   <p class="pf-footer">Hecho con <a href="https://yaqu.app" style="color:inherit;font-weight:700;text-

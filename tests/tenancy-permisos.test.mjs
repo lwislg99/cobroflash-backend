@@ -23,7 +23,7 @@ import { exigirTodas } from './_evidencia.mjs'; // SCRUM-270: las dos preguntas,
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', { skip: !ENABLED }, async (t) => {
+test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { ADMIN_ONLY_ROUTES } = await import('../dist/core/http/adminOnlyRoutes.js');
@@ -163,7 +163,12 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
 
     // A12.4 — el técnico SIEMPRE 403 en la lista admin-only
     for (const r of ADMIN_ONLY_ROUTES) {
-      const path = r.path.replace(':invoiceId', '999999').replace(':planId', '999999');
+      // SCRUM-244 (1b) añadió `/admin/supresion/:merchantId` a la lista y nadie añadió aquí su
+      // reemplazo (SCRUM-876: roto y gateado desde el 10-ago-2026). Va el merchant PROPIO del
+      // técnico y no un id de mentira: el caso que importa es un técnico pidiendo suprimir SU
+      // empresa, y ese tiene que dar 403 por el rol, no 404 por no encontrarla.
+      const path = r.path.replace(':invoiceId', '999999').replace(':planId', '999999')
+        .replace(':merchantId', String(merchantB.id));
 
       // SCRUM-155: ningún placeholder puede sobrevivir a la sustitución.
       //
@@ -208,7 +213,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
 // ve/accede los Trabajos que originó (operarioId), el admin/owner ve todos. Dimensión que
 // A12.1 (cross-merchant) y A12.4 (rutas admin-only) NO cubren.
 // Datos EFÍMEROS propios (nada del seed demo — lección de SCRUM-63) y limpieza en el finally.
-test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED }, async (t) => {
+test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

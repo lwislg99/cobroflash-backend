@@ -1,5 +1,71 @@
 // public/dashboard/js/settingsView.js
 
+// SCRUM-298 (A8) · LOS TRES RÓTULOS DEL MODO DE EMISIÓN — DOS APROBADOS, UNO DEVUELTO.
+//
+// **Aprobados por el fundador el 7-ago-2026**, con la condición de verificar cada afirmación
+// contra el mecanismo antes de escribirla. Se verificaron, y por eso `receipt` sigue con marcador:
+// su texto afirmaba algo que el código NO hace (abajo, en su propia nota).
+//
+// PROCEDENCIA: `docs/master/SCRUM-298.md`, sección «Microcopy». Ahí está el detalle de qué se midió
+// para cada uno y con qué ficheros — no se repite aquí para no tener dos sitios que puedan divergir.
+//
+// ⚠️ REGLA 26 · Ninguno nombra VeriFactu, la AEAT, Hacienda ni el calendario, y no es casualidad:
+// eso se responde SOLO con el guion H2. Hay guard que lo exige, con hermano positivo.
+const PENDIENTE_MODO_EMISION = '[PENDIENTE microcopy oficial]';
+
+/**
+ * Título y detalle de cada modo. Los dos textos van juntos: el título solo no distingue «factura»
+ * de «justificante» para quien no sepa la diferencia, que es justo el profesional al que esta fila
+ * le importa.
+ *
+ * ⚠️ CADA AFIRMACIÓN ESTÁ MEDIDA CONTRA EL CÓDIGO, no redactada de memoria:
+ *
+ *   · `fiscal`  — numera con la serie fiscal (`formatInvoiceNumber`, con su advisory lock
+ *     `SERIE_LOCK_NS`) y no se edita ni se borra: `invoicesAdmin.routes.ts:68` es SOLO ALTA
+ *     («esta ruta no edita ni borra»), regla 29.
+ *   · `demo`    — `DEMO_WATERMARK = 'DEMO — no válida fiscalmente'` (`emission.service.ts:12`),
+ *     aplicada en `lib/invoicing.ts:122` y `:257`. Factura completa, con marca de agua.
+ *   · `receipt` — REESCRITO tras devolverlo. Ver la nota de abajo: es el que demuestra que la
+ *     condición sirve para algo.
+ */
+// ⚠️ DOS OBJETOS PLANOS, y no es estilo: es que el guard tiene que poder VERLOS. Al escribirlos
+// primero como un objeto anidado (`{ fiscal: { titulo, detalle } }`) el extractor de microcopy se
+// quedó a CERO textos y su suelo saltó — «solo ve 0 textos del modo». La forma nueva la introduje
+// yo, así que se cambia el código y no el analizador: enseñarle a ver una forma que acabo de
+// inventar es exactamente cómo un guard se vuelve ciego sin que nadie lo note.
+const TITULO_MODO_EMISION = {
+  fiscal: 'Se emiten facturas',
+  demo: 'Cuenta de demostración',
+  receipt: 'Se emiten justificantes de cobro',
+};
+const DETALLE_MODO_EMISION = {
+  fiscal: 'Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar.',
+  demo: 'Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar.',
+  receipt: 'Cada cobro genera un justificante para tu cliente, con su propia referencia. No es una factura y no consume tu serie de facturación.',
+};
+
+// ── `receipt`: EL QUE SE DEVOLVIÓ, Y POR QUÉ EL DE AHORA SÍ SE SOSTIENE ───────────────────────
+//
+// La primera redacción decía «con su propia NUMERACIÓN», y el código dice lo contrario en su
+// propio comentario (`invoiceNumber.service.ts:32-35`): los J- **no consumen la serie fiscal**,
+// reciben una **referencia** `J-YYYYMMDD-XXXX` **fuera de toda serie de facturación** («sin
+// numeración de factura», Parte M). Y `makeReceiptNumber` la cierra con `Math.random()`, no con un
+// contador. «Numeración» habría prometido una correlatividad que no existe, a un profesional que
+// responde ante Hacienda, y **en el modo en el que están HOY todos los merchants ES reales**.
+//
+// Se devolvió, y la redacción de ahora dice «referencia». Las TRES afirmaciones, medidas:
+//
+//   · «con su propia referencia» — cada justificante recibe una distinta, y lo garantiza el
+//     `@@unique([merchantId, number])` de `Invoice`: no pueden coexistir dos iguales. ⚠️ El texto
+//     habla de DISTINCIÓN, nunca de orden — dos del mismo día no guardan ninguno entre sí.
+//     (Que la unicidad la dé la restricción y no el generador es SCRUM-396, otro carril.)
+//   · «no es una factura» — `type: 'JUST'`, prefijo `J-`, y nunca entra en la cadena de huellas
+//     (`verifactu.service.ts:333`).
+//   · «no consume tu serie de facturación» — la más fuerte de las tres:
+//     `invoiceNumber.service.ts:214-219` genera la referencia y hace `return` **antes** del
+//     `tx.merchant.update` que avanza `nextInvoiceNumber`. El contador no se toca ni por accidente.
+
+
 function renderSettingsView(container) {
     container.innerHTML = "";
 
@@ -7,13 +73,89 @@ function renderSettingsView(container) {
     card.className = "customers-card";
     container.appendChild(card);
 
-    // A18.5 (AB4 · Parte M): checklist de readiness ARRIBA — qué te falta para cobrar
+    // ── SCRUM-284 (B1) · CONFIGURACIÓN TROCEADA EN DIEZ SUBMENÚS ────────────────────────────
+    //
+    // El scroll único con doce asuntos distintos se parte en diez paneles. **Cada campo se coloca
+    // LEYENDO EL MAPA** (`settingsSubmenus.js`), nunca por una posición escrita a mano aquí: el
+    // fallo mudo de este ticket es que un ajuste desaparezca en la reorganización, y la única forma
+    // de que el guard signifique algo sobre esta pantalla es que la pantalla y el guard lean LO
+    // MISMO. Si aparece un campo que el mapa no conoce, `submenuDeCampo` LANZA — ruidoso a
+    // propósito: caer en el sitio equivocado sería mudo.
+    //
+    // NO se ha movido ni reescrito la construcción de un solo campo: siguen creándose exactamente
+    // igual y en el mismo orden. Lo único que cambia es DÓNDE se hace `appendChild`. Eso es lo que
+    // mantiene el cambio revisable (regla 4) y lo que permite que el censo siga viendo los 25.
+    const nav = document.createElement("div");
+    nav.className = "settings-nav";
+    nav.setAttribute("role", "tablist");
+    nav.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px";
+    card.appendChild(nav);
+
+    const paneles = {};
+    let submenuActivo = SUBMENUS[0];
+
+    SUBMENUS.forEach((clave) => {
+      const panel = document.createElement("div");
+      panel.className = "settings-panel";
+      panel.dataset.submenu = clave;
+      panel.style.cssText = "display:none;flex-direction:column;gap:14px;width:100%;max-width:560px";
+      paneles[clave] = panel;
+    });
+
+    /** Coloca el bloque de un campo en SU panel. El sitio lo dice el mapa, no esta función. */
+    function colocar(clave, bloque) {
+      paneles[submenuDeCampo(clave)].appendChild(bloque);
+    }
+
+    /**
+     * El panel de una SUPERFICIE (la segunda población). Existe para que las dos poblaciones no
+     * puedan descuadrarse: los `pp-*`/`qr-*` están asignados a `publica` como CAMPOS, pero quien
+     * los pinta es `renderPublicProfileCard`. Si la tarjeta acabara en otro panel, esos seis campos
+     * dirían una cosa en el mapa y aparecerían en otra en pantalla — y el guard de campos, que solo
+     * mira el mapa, seguiría verde.
+     */
+    function panelDeSuperficie(nombre) {
+      return paneles[submenuDeSuperficie(nombre)];
+    }
+
+    function pintarNav() {
+      nav.innerHTML = "";
+      SUBMENUS.forEach((clave) => {
+        // Inventario AB3: mismo control segmentado que el filtro de Trabajos (SCRUM-11). Cero
+        // componentes nuevos. Rótulo = marcador: los diez nombres son microcopy sin aprobar.
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn-sm " + (submenuActivo === clave ? "btn-secondary" : "btn-ghost");
+        b.textContent = rotuloDeSubmenu(clave);
+        b.dataset.submenu = clave;
+        b.style.minHeight = "44px"; // AB6: objetivo al pulgar (btn-sm se queda en 30)
+        b.setAttribute("role", "tab");
+        b.setAttribute("aria-selected", submenuActivo === clave ? "true" : "false");
+        b.addEventListener("click", () => { submenuActivo = clave; pintarNav(); });
+        nav.appendChild(b);
+      });
+      SUBMENUS.forEach((clave) => {
+        paneles[clave].style.display = submenuActivo === clave ? "flex" : "none";
+      });
+    }
+
+    // A18.5 (AB4 · Parte M): checklist de readiness ARRIBA — qué te falta para cobrar.
+    // SCRUM-284: se queda en la CABECERA, fuera de los diez. No es una superficie de Configuración:
+    // es un ÍNDICE DE ESTADO, y sus tres elementos (whatsappPhone, iban, taxId) no son campos
+    // propios sino REFERENCIAS a campos que ya viven en Empresa y en Cobro. Por eso no entran en el
+    // mapa — y por eso el «tres destinos» deja de existir como problema que resolver eligiendo uno.
     renderReadinessCard(container, card);
 
-    // Tarjeta de Referidos (se rellena de forma asíncrona)
+    // SCRUM-284 · «Invita y gana»: COLOCACIÓN PROVISIONAL, declarada en `SUPERFICIES_PROVISIONALES`.
+    //
+    // Su destino es la barra lateral —no es un ajuste, no persiste nada— pero esa entrada es el
+    // incremento 2. Dejarla sin llamar entre un incremento y el otro la haría INALCANZABLE, y el
+    // programa de referidos paga un mes gratis al referidor: eso es una regresión de dinero, no un
+    // detalle de orden. Se sigue pintando donde está hoy —tarjeta suelta al final, fuera de los diez
+    // paneles— hasta que exista su destino. Quien haga el incremento 2 borra esta llamada y su
+    // entrada en el mapa.
     renderReferralCard(container);
-    renderWaFairUseCard(container); // A9.3: fair use W2 visible
-    renderPublicProfileCard(container); // A14.1 (PERFIL-1): página pública + QR
+    renderPublicProfileCard(panelDeSuperficie("renderPublicProfileCard")); // A14.1 (PERFIL-1): página pública + QR
     // SCRUM-138: "Descargar mis datos" se muda a Finanzas › Descargar datos
     // (public/dashboard/js/exportView.js). Es el entregable para el asesor y para una
     // inspección — dinero, no una preferencia de la cuenta — y aquí no lo encontraba nadie.
@@ -21,13 +163,65 @@ function renderSettingsView(container) {
     const title = document.createElement("h2");
     title.textContent = "Datos de la empresa";
     title.style.cssText = "margin:0 0 4px;font-size:18px;font-weight:700;color:var(--ink)";
-    card.appendChild(title);
+    card.insertBefore(title, nav);
 
     const subtitle = document.createElement("p");
     subtitle.textContent = "Se usan en presupuestos, facturas y comunicaciones con clientes.";
     subtitle.style.cssText = "margin:0 0 20px;font-size:13px;color:var(--neutral-400)";
-    card.appendChild(subtitle);
-  
+    card.insertBefore(subtitle, nav);
+
+    // ── SCRUM-298 (A8) · EL MODO DE EMISIÓN, VISIBLE ─────────────────────────────────────
+    //
+    // Hasta hoy `getEmissionMode` no llegaba ni una vez al navegador, así que dos estados que
+    // producen documentos DISTINTOS —factura, factura con marca de agua, justificante— se veían
+    // exactamente igual en pantalla. El profesional no tenía forma de saber en cuál estaba.
+    //
+    // ⚠️ SIN DATO NO SE PINTA NADA. `null` significa «no se sabe», y una fila que dijera un modo
+    // equivocado es peor que no tener fila: quien la lee toma decisiones fiscales sobre una
+    // pantalla que le miente y no tiene forma de sospecharlo.
+    //
+    // ⚠️ REGLA 26 · AQUÍ NO SE EXPLICA NADA. Ni qué es cada modo, ni por qué, ni desde cuándo, ni
+    // una palabra sobre VeriFactu, la AEAT o el calendario. Esa pregunta se responde SOLO con el
+    // guion H2. Los tres rótulos van con el marcador y su procedencia está en la entrada del
+    // ticket: un texto que explica mal una obligación fiscal no es feo, es peligroso.
+    //
+    // ⚠️ Y NO ES UN INTERRUPTOR. Esto solo LEE. El modal de dos caminos quedó bloqueado porque
+    // «se envía» no existe (sin cliente SOAP/mTLS, sin cola de remisión): una salida inerte le
+    // diría al profesional que puede elegir remitir a la AEAT, y no puede.
+    //
+    // ⚠️ VIVE EN `Configuración › Cumplimiento`, y el panel se pide POR EL MAPA
+    // (`panelDeSuperficie`), nunca por una posición escrita a mano: el fallo mudo de B1 es que una
+    // superficie acabe en un panel distinto del que declara el mapa, y el guard de campos —que
+    // solo mira el mapa— seguiría verde. Antes se insertaba en la cabecera de la tarjeta, fuera
+    // de los diez paneles, y por eso el submenú figuraba como hueco declarado.
+    //
+    // La derivación NO se toca al mudarla: sigue siendo `window.appModoEmision`, que viene de
+    // `getEmissionMode` por `/admin/me`. Recalcular aquí el criterio al moverlo habría sido
+    // exactamente la fuente doble que este ticket existe para impedir.
+    if (window.appModoEmision) {
+      const fila = document.createElement("div");
+      fila.className = "settings-modo-emision";
+      fila.style.cssText = "display:flex;flex-direction:column;gap:6px";
+      fila.dataset.modo = window.appModoEmision;
+      // Regla 30: los rótulos los aprueba el fundador. `receipt` sigue con marcador porque su
+      // texto afirmaba una numeración que el código no da — el guard recorre las TRES ramas, que
+      // es la lección del ternario ciego de SCRUM-346.
+      const pill = document.createElement("span");
+      pill.className = "status-pill";
+      pill.dataset.modo = window.appModoEmision;
+      pill.style.cssText = "align-self:flex-start";
+      pill.textContent = TITULO_MODO_EMISION[window.appModoEmision] || PENDIENTE_MODO_EMISION;
+      fila.appendChild(pill);
+
+      const detalle = document.createElement("p");
+      // Mismos tokens que el subtítulo de la cabecera: ni un color ni un tamaño nuevos (DESIGN.md).
+      detalle.style.cssText = "margin:0;font-size:13px;color:var(--neutral-400);line-height:1.5";
+      detalle.textContent = DETALLE_MODO_EMISION[window.appModoEmision] || PENDIENTE_MODO_EMISION;
+      fila.appendChild(detalle);
+
+      panelDeSuperficie("modoEmision").appendChild(fila);
+    }
+
     const alertBox = document.createElement("div");
     alertBox.className = "alert";
     alertBox.style.display = "none";
@@ -44,7 +238,26 @@ function renderSettingsView(container) {
     const form = document.createElement("form");
     form.style.cssText = "display:flex;flex-direction:column;gap:14px;width:100%;max-width:560px";
     card.appendChild(form);
-  
+    // Los diez paneles cuelgan del MISMO form: un solo «Guardar cambios» sigue guardando todo,
+    // se vea el panel que se vea. Trocear la pantalla no trocea el guardado.
+    SUBMENUS.forEach((clave) => form.appendChild(paneles[clave]));
+
+    // ── LOS TRES VACÍOS DECLARADOS ──────────────────────────────────────────────────────────
+    // «Un menú que lleva a una página vacía es peor que no tener el menú.» El submenú existe porque
+    // el hueco está DECLARADO y con motivo en el mapa (`VACIOS_DECLARADOS`), y se dice en pantalla
+    // que todavía no hay nada, en vez de dejar un panel en blanco que parezca roto.
+    //
+    // El motivo NO se pinta: es texto interno del mapa, no microcopy aprobada. Lo que se ve es el
+    // marcador (regla 30) sobre el componente de vacío que ya existe en el inventario AB3.
+    Object.keys(VACIOS_DECLARADOS).forEach((clave) => {
+      const vacio = document.createElement("div");
+      vacio.className = "empty-state";
+      vacio.innerHTML =
+        '<div class="empty-state-title">' + MARCA_MICROCOPY_SUBMENU + '</div>' +
+        '<div class="empty-state-desc">' + MARCA_MICROCOPY_SUBMENU + '</div>';
+      paneles[clave].appendChild(vacio);
+    });
+
     function createField(labelText, name, type = "text", required = false) {
       const wrapper = document.createElement("div");
       wrapper.className = "field";
@@ -64,6 +277,30 @@ function renderSettingsView(container) {
     const fLegalName = createField("Razón social", "legalName", "text", true);
     const fTaxId = createField("NIF/CIF", "taxId", "text", true);
     const fAddress = createField("Dirección fiscal", "address", "text", true);
+
+    // SCRUM-294 (fase C) · CRITERIO DE CAJA. Un <select> de TRES opciones, no una casilla: el
+    // dato tiene tres estados nativos en la base (NULL / false / true) y una casilla solo sabe
+    // dos, asi que leeria «no consta» como «declara que no». Mismo patron que el recargo de
+    // equivalencia de la fase A, y por el mismo motivo.
+    //
+    // MICROCOPY: marcador (regla 30). Explicarle a un profesional si le conviene el criterio de
+    // caja es asesorarle, y eso es dictamen del asesor, no producto. El dato se PIDE, no se explica.
+    const criterioWrapper = document.createElement("div");
+    criterioWrapper.className = "field";
+    const criterioLabel = document.createElement("label");
+    criterioLabel.textContent = "Criterio de caja";
+    criterioLabel.htmlFor = "merchant-criterio-caja";
+    const fCriterioCaja = document.createElement("select");
+    fCriterioCaja.id = "merchant-criterio-caja";
+    fCriterioCaja.name = "criterioCaja";
+    fCriterioCaja.className = "input";
+    fCriterioCaja.style.minHeight = "44px"; // AB6
+    fCriterioCaja.innerHTML =
+      '<option value="">No consta</option>' +
+      '<option value="si">Sí, estoy acogido</option>' +
+      '<option value="no">No estoy acogido</option>';
+    criterioWrapper.appendChild(criterioLabel);
+    criterioWrapper.appendChild(fCriterioCaja);
     const fWhatsappPhone = createField(
       "Teléfono WhatsApp (E.164 sin +)",
       "whatsappPhone",
@@ -113,15 +350,95 @@ function renderSettingsView(container) {
     const fIban  = createField("IBAN (para pagos por transferencia — España/Europa)", "iban", "text", false);
     const fClabe = createField("CLABE interbancaria (para pagos por transferencia — México)", "clabe", "text", false);
 
-    form.appendChild(fName.wrapper);
-    form.appendChild(fLegalName.wrapper);
-    form.appendChild(fTaxId.wrapper);
-    form.appendChild(fAddress.wrapper);
-    form.appendChild(fWhatsappPhone.wrapper);
-    form.appendChild(fCountryWrapper);
-    form.appendChild(fDefaultCurrency.wrapper);
-    form.appendChild(fInvoiceSeriesPrefix.wrapper);
-    form.appendChild(fLogoUrl.wrapper);
+    colocar("name", fName.wrapper);
+    colocar("legalName", fLegalName.wrapper);
+    colocar("taxId", fTaxId.wrapper);
+    colocar("address", fAddress.wrapper);
+    colocar("criterioCaja", criterioWrapper);
+    colocar("whatsappPhone", fWhatsappPhone.wrapper);
+    colocar("country", fCountryWrapper);
+    colocar("defaultCurrency", fDefaultCurrency.wrapper);
+    colocar("invoiceSeriesPrefix", fInvoiceSeriesPrefix.wrapper);
+
+    // ── SCRUM-293 (③a) · RETENCIÓN DE IRPF ────────────────────────────────────────────
+    // Las opciones salen de `tiposDeRetencionOrdenados()` (el cubo del dominio): aquí NO se
+    // escribe ni un porcentaje ni se reordena nada. Si mañana se añade o se quita un tipo,
+    // esta pantalla lo refleja sola — y si alguien lo añadiera sin rótulo, no compilaría.
+    //
+    // La primera opción es «no consta» y NO es un tipo: es la ausencia de declaración, que
+    // es un estado distinto de «declaro que no retengo». Los tres viajan por separado.
+    // 17-ago-2026: los tres rótulos de aquí están APROBADOS y `MARCA_RETENCION` se BORRA. Los del
+    // CUBO siguen sin marca por el mismo motivo de siempre: vienen del dominio, y ahí un «15 %» es
+    // el dato, no microcopy. «Sin indicar» pasó a «No consta» al aprobarse, para que los TRES
+    // selectores de estado fiscal —recargo, criterio de caja y retención— digan la misma terna con
+    // las mismas palabras: si uno dijera otra cosa, se leería que son estados distintos.
+    const selRetencion = document.createElement("select");
+    selRetencion.id = "retencion-irpf-tipo";
+    // SCRUM-293 (③a-bis) · EL `.name` NO ES DECORACIÓN: es cómo un `<select>` construido a mano
+    // DECLARA qué columna de `Merchant` persiste. Sus dos hermanos —`fCriterioCaja` y
+    // `fCountrySelect`— lo declaran, y el censo de Configuración (SCRUM-284) lee justo eso.
+    // Sin esta línea el campo era invisible para el censo y su clave en el mapa de submenús salía
+    // como fantasma: el guard acusaba de «este ajuste ya no existe en la pantalla» a un ajuste que
+    // sí está. Medido: 19 de las 20 claves de `colocar(…)` se veían; ésta era la única que no.
+    // No cambia comportamiento — el submit sigue construyendo el payload a mano desde `.value`.
+    selRetencion.name = "retencionIrpfTipo";
+    selRetencion.className = "input";
+    const RET_NO_CONSTA = "";      // no lo ha declarado
+    const RET_NO_RETIENE = "no";   // lo ha declarado: no retiene
+    [
+      { value: RET_NO_CONSTA, texto: "No consta" },
+      { value: RET_NO_RETIENE, texto: "No aplico retención" },
+    ].forEach(function (o) {
+      const op = document.createElement("option");
+      op.value = o.value; op.textContent = o.texto;
+      selRetencion.appendChild(op);
+    });
+    // Del CABLE, no de una lista local: el orden y los rótulos los manda el cubo del dominio.
+    (Array.isArray(window.appRetencionOpciones) ? window.appRetencionOpciones : [])
+      .forEach(function (t) {
+        const op = document.createElement("option");
+        op.value = String(t.tipo);
+        op.textContent = t.rotulo;   // ← del CUBO, no escrito aquí
+        selRetencion.appendChild(op);
+      });
+    const wrapRetencion = document.createElement("div");
+    wrapRetencion.className = "form-group";
+    const labRetencion = document.createElement("label");
+    labRetencion.textContent = "Retención de IRPF";
+    labRetencion.htmlFor = selRetencion.id;
+    wrapRetencion.appendChild(labRetencion);
+    wrapRetencion.appendChild(selRetencion);
+    colocar("retencionIrpfTipo", wrapRetencion);
+    colocar("logoUrl", fLogoUrl.wrapper);
+
+    // ── SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD ───────────────────────────
+    //
+    // Va en el panel de NUMERACIÓN, encima del campo de la serie, porque es la pregunta que hay
+    // que contestar ANTES de tocarla. Quien pasó el onboarding sin contestarla no tenía dónde.
+    //
+    // 🔴 El veredicto lo da el servidor (`window.appPuertaSerieDisponible`). Aquí NO se comprueba
+    // `invoiceSeriesYear !== año`: esa regla vive en un sitio y solo en uno.
+    const panelNumeracion = paneles[submenuDeCampo("invoiceSeriesPrefix")];
+    if (window.renderPuertaSerie) {
+      window.renderPuertaSerie(panelNumeracion, {
+        prefijoActual: null, // se rellena al cargar el perfil, más abajo
+        onGuardado: () => window.location.reload(),
+      });
+    }
+
+    // Y si YA hay facturas emitidas, el campo de la serie sale BLOQUEADO CON SU MOTIVO. Un campo
+    // editable que el servidor va a rechazar es peor que uno bloqueado: le deja escribir, le deja
+    // guardar y le contesta que no. El motivo también lo deriva el servidor (`serieEmitida`).
+    const motivoBloqueo = window.motivoSerieBloqueada && window.motivoSerieBloqueada();
+    if (motivoBloqueo) {
+      fInvoiceSeriesPrefix.input.disabled = true;
+      fInvoiceSeriesPrefix.input.setAttribute("aria-describedby", "serie-bloqueada-motivo");
+      const nota = document.createElement("p");
+      nota.id = "serie-bloqueada-motivo";
+      nota.style.cssText = "font-size:12px;color:var(--muted);margin:4px 0 0";
+      nota.textContent = motivoBloqueo;
+      fInvoiceSeriesPrefix.wrapper.appendChild(nota);
+    }
 
     // ── Logo: SUBIR imagen en vez de pegar una URL (feedback fundador) ──
     // El input de texto pasa a ser el contenedor oculto del valor (URL antigua
@@ -203,19 +520,14 @@ function renderSettingsView(container) {
     });
 
     // Separador — Pagos por transferencia
-    const sepBank = document.createElement("div");
-    sepBank.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
-    sepBank.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Datos bancarios para transferencias</p>';
-    form.appendChild(sepBank);
-
     fIban.input.placeholder = "ES91 2100 0418 4502 0005 1332";
     fIban.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Se muestra al cliente en la página de pago por transferencia bancaria.</p>'
     );
     fClabe.input.placeholder = "646180110400000007";
-    form.appendChild(fIban.wrapper);
-    form.appendChild(fClabe.wrapper);
+    colocar("iban", fIban.wrapper);
+    colocar("clabe", fClabe.wrapper);
 
     // C1-4: móvil de Bizum (default: el de WhatsApp, editable)
     const fBizumPhone = createField("Móvil de Bizum (para cobros por Bizum)", "bizumPhone", "text", false);
@@ -224,7 +536,33 @@ function renderSettingsView(container) {
       "afterend",
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">El cliente verá este móvil en la página "Pagar por Bizum". Si lo dejas vacío se usa tu número de WhatsApp.</p>'
     );
-    form.appendChild(fBizumPhone.wrapper);
+    colocar("bizumPhone", fBizumPhone.wrapper);
+
+    // SCRUM-328 · EL AVISO DEL FALLO MUDO, Y VA AQUI POR ESO: éste es el campo que lo arregla.
+    //
+    // Sin teléfono, la página de pago del cliente NO pinta la opción Bizum (`payInvoice.routes.ts`)
+    // y el profesional concluye que el producto está roto. Un aviso en un log —o en una pantalla
+    // que no visita— no es un aviso: tiene que salir donde puede arreglarlo, y en el momento en
+    // que está mirando ese campo.
+    //
+    // ⚠️ EL VEREDICTO NO SE CALCULA AQUI. Lo da `/admin/me` (`window.appBizumSinTelefono`) con el
+    // MISMO criterio que usa la página del cliente —los dos teléfonos, con su fallback—. Si el
+    // navegador lo reimplementara, acabaríamos avisando a quien no toca, y un aviso que sale
+    // cuando no debe se aprende a ignorar.
+    //
+    // MICROCOPY: marcador, sin aprobar (regla 30). Y no es cosmético — es lo único que separa «me
+    // falta rellenar un campo» de «esto no funciona».
+    var estadoBizum = window.appBizumSinTelefono;
+    if (estadoBizum === "falta_telefono" || estadoBizum === "no_se_pudo_leer") {
+      var avisoBizum = document.createElement("p");
+      avisoBizum.className = "aviso-bizum-sin-telefono";
+      avisoBizum.setAttribute("role", "status");
+      avisoBizum.style.cssText = "font-size:12.5px;font-weight:600;color:var(--warn,#b45309);margin:2px 0 6px";
+      avisoBizum.textContent = estadoBizum === "falta_telefono"
+        ? "Sin este móvil, tu cliente no ve la opción de Bizum."
+        : "No hemos podido comprobar tu móvil de Bizum. Revísalo antes de cobrar por ahí.";
+      fBizumPhone.wrapper.appendChild(avisoBizum);
+    }
 
     // C1-1: card "Cobros con tarjeta" (Stripe Connect Express) — solo si el
     // flag PAYMENTS_CONNECT_ENABLED está activo (lo dice /admin/connect/status)
@@ -233,7 +571,7 @@ function renderSettingsView(container) {
     connectBlock.innerHTML =
       '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Cobros con tarjeta</p>' +
       '<div id="connect-status-body" style="font-size:13px;color:var(--body)">Cargando…</div>';
-    form.appendChild(connectBlock);
+    panelDeSuperficie("connectStatus").appendChild(connectBlock);
 
     (async function renderConnectCard() {
       let st;
@@ -272,24 +610,14 @@ function renderSettingsView(container) {
     })();
 
     // Separador visual — Automatizaciones
-    const sep = document.createElement("div");
-    sep.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
-    sep.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Automatizaciones</p>';
-    form.appendChild(sep);
-
     fGoogleReviewUrl.input.placeholder = "https://g.page/r/tu-negocio/review";
     fGoogleReviewUrl.wrapper.querySelector("label").insertAdjacentHTML(
       "afterend",
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Al recibir un pago, se enviará automáticamente un WhatsApp al cliente pidiéndole una reseña.</p>'
     );
-    form.appendChild(fGoogleReviewUrl.wrapper);
+    colocar("googleReviewUrl", fGoogleReviewUrl.wrapper);
 
     // Separador — Notificaciones por email
-    const sepNotif = document.createElement("div");
-    sepNotif.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
-    sepNotif.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Notificaciones por email</p>';
-    form.appendChild(sepNotif);
-
     function createToggle(id, labelText, hint) {
       const wrapper = document.createElement("div");
       wrapper.className = "field inline-checkbox";
@@ -373,16 +701,11 @@ function renderSettingsView(container) {
     tNotifyWeekly.wrapper.appendChild(previewBtn);
     tNotifyWeekly.wrapper.appendChild(previewBox);
 
-    form.appendChild(tNotifyPaid.wrapper);
-    form.appendChild(tNotifyAccepted.wrapper);
-    form.appendChild(tNotifyWeekly.wrapper);
+    colocar("notifyEmailOnPaid", tNotifyPaid.wrapper);
+    colocar("notifyEmailOnQuoteAccepted", tNotifyAccepted.wrapper);
+    colocar("notifyEmailWeeklyDigest", tNotifyWeekly.wrapper);
 
     // ── Enterprise: branding + aprobación (ENT-1, ENT-2) ──────────────────
-    const sepEnt = document.createElement("div");
-    sepEnt.style.cssText = "border-top:1px solid var(--border);margin:12px 0 4px;padding-top:12px";
-    sepEnt.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.04em">Empresa (Enterprise)</p>';
-    form.appendChild(sepEnt);
-
     // Color de marca
     const fBrandWrapper = document.createElement("div");
     fBrandWrapper.className = "field";
@@ -394,7 +717,7 @@ function renderSettingsView(container) {
         <span id="brand-color-hex" style="font-size:13px;color:var(--muted)">#22c55e</span>
         <button type="button" id="brand-color-reset" class="btn-secondary btn-sm">Sin color (por defecto)</button>
       </div>`;
-    form.appendChild(fBrandWrapper);
+    colocar("brand-color-input", fBrandWrapper);
     const brandColorInput = fBrandWrapper.querySelector("#brand-color-input");
     const brandColorHex = fBrandWrapper.querySelector("#brand-color-hex");
     let brandColorEnabled = false;
@@ -417,7 +740,7 @@ function renderSettingsView(container) {
       "afterend",
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 4px">Las cotizaciones de un operario por encima de este importe quedarán "pendientes de aprobación" hasta que un admin las apruebe.</p>'
     );
-    form.appendChild(fApproval.wrapper);
+    colocar("approvalThreshold", fApproval.wrapper);
 
     const actions = document.createElement("div");
     actions.className = "form-actions";
@@ -428,7 +751,41 @@ function renderSettingsView(container) {
   
     actions.appendChild(saveBtn);
     form.appendChild(actions);
-  
+
+    // SCRUM-284 · «WhatsApp este mes» dentro de AVISOS, pero FUERA del mapa y fuera del guard.
+    // No es un ajuste ni un control: es un contador de consumo y no persiste nada. Por la regla del
+    // fundador («un ajuste se guarda y persiste») no pertenece al mapa de campos — pero tiene que
+    // vivir en algún sitio, y Avisos es donde encaja: habla de lo que se envía.
+    renderWaFairUseCard(panelDeSuperficie("renderWaFairUseCard")); // A9.3: fair use W2 visible
+
+    // SCRUM-420 (B1 · incremento 2) · «Descargar datos» sale de la barra lateral y su camino pasa
+    // por aquí. El diseño §B1 lo dice y lo declaraba el propio hueco de `datos`: «la página YA
+    // EXISTE (SCRUM-244) y NO se rehace: aquí solo cambiará de dónde se enlaza».
+    //
+    // 🔴 ES LA OTRA MITAD DE SACARLA DE LA BARRA, no un extra. Una entrada retirada sin camino
+    // nuevo no es una reorganización: es una pantalla perdida — el mismo defecto que este
+    // incremento viene a arreglar, cometido por el arreglo.
+    renderDescargarDatosCard(panelDeSuperficie("renderDescargarDatosCard"));
+
+    // SCRUM-314 (D3): hueco para «Eliminar datos de ejemplo». Nace VACÍO y solo se rellena en la
+    // cuenta demo (lo decide el backend con `esCuentaDemo`), así que fuera del demo no ocupa nada
+    // ni se ve — no hay botón deshabilitado que invite a preguntar por él.
+    //
+    // SCRUM-284 · POR QUÉ CUELGA DEL `form` Y NO DE UN PANEL. Su destino natural sería «Tus datos»
+    // —es un acto sobre los datos de la cuenta—, pero el botón SOLO se pinta en la cuenta demo. Meterlo
+    // ahí dejaría ese submenú vacío para todo el mundo menos el demo, y un submenú que aparece vacío
+    // para el 99 % de los usuarios es peor que el hueco declarado que ya tiene. Cuando «Tus datos»
+    // tenga contenido propio, se muda ahí. Queda en `SUPERFICIES_PROVISIONALES` con ese motivo.
+    const huecoEjemplo = document.createElement("div");
+    huecoEjemplo.id = "datos-ejemplo";
+    huecoEjemplo.style.marginTop = "18px";
+    form.appendChild(huecoEjemplo);
+
+    // Y con todo colocado —incluido el hueco de arriba—, se enciende la navegación: pinta las diez
+    // pestañas y deja visible la primera. Va EL ÚLTIMO a propósito: pintarla antes dejaría paneles a
+    // medio llenar visibles durante el render.
+    pintarNav();
+
     // Cargar datos actuales
     async function loadMerchant() {
       try {
@@ -439,11 +796,21 @@ function renderSettingsView(container) {
         fLegalName.input.value = merchant.legalName || "";
         fTaxId.input.value = merchant.taxId || "";
         fAddress.input.value = merchant.address || "";
+        // Los tres estados, sin colapsar: `true` -> «si», `false` -> «no», y cualquier otra cosa
+        // —`null` o el campo ausente— es «no consta», que es la opcion vacia.
+        fCriterioCaja.value = merchant.criterioCaja === true ? "si"
+          : merchant.criterioCaja === false ? "no" : "";
         fWhatsappPhone.input.value = merchant.whatsappPhone || "";
         fDefaultCurrency.input.value = merchant.defaultCurrency || "EUR";
         fInvoiceSeriesPrefix.input.value = merchant.invoiceSeriesPrefix || "";
+        // SCRUM-293 · TRES estados, y el orden de las ramas importa: `declarada` primero.
+        // Con `merchant.retencionIrpfTipo || ""` se colapsarían «no consta» y «no retiene».
+        selRetencion.value = merchant.retencionIrpfDeclarada
+          ? (merchant.retencionIrpfTipo == null ? RET_NO_RETIENE : String(merchant.retencionIrpfTipo))
+          : RET_NO_CONSTA;
         fLogoUrl.input.value = merchant.logoUrl || "";
         refreshLogoUI(); // preview del logo actual (URL antigua o data-URI)
+        montarDatosDeEjemplo(merchant); // SCRUM-314 (D3)
         fGoogleReviewUrl.input.value = merchant.googleReviewUrl || "";
         fIban.input.value  = merchant.iban  || "";
         fClabe.input.value = merchant.clabe || "";
@@ -458,6 +825,23 @@ function renderSettingsView(container) {
           brandColorHex.textContent = merchant.brandColor;
         }
         fApproval.input.value = merchant.approvalThreshold != null ? merchant.approvalThreshold : "";
+
+        // SCRUM-656 (T7 fase B) · 🔴 SUELO: «no ha escrito ninguna» y «no supe leerlas» son la
+        // misma caja vacía en pantalla y significan lo contrario. La segunda es un PDF saliendo
+        // SIN las condiciones que el profesional cree que lleva, y nadie se entera hasta que un
+        // cliente discute la garantía. Por eso una columna ILEGIBLE se DICE, no se pinta vacía.
+        var brutas = merchant.clausulasPresupuesto;
+        if (brutas === null || brutas === undefined) {
+          clausulasEstado = [];
+        } else if (Array.isArray(brutas)) {
+          clausulasEstado = brutas.map(function (c) {
+            return { id: c && c.id, titulo: (c && c.titulo) || "", texto: (c && c.texto) || "" };
+          });
+        } else {
+          clausulasEstado = [];
+          setAlert("error", TX.clausulasIlegibles);
+        }
+        pintarClausulas();
   
         setAlert(null, "");
       } catch (err) {
@@ -467,6 +851,138 @@ function renderSettingsView(container) {
   
     loadMerchant();
   
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // SCRUM-656 (T7 fase B) · LAS CLÁUSULAS DE CIERRE DEL PRESUPUESTO
+    //
+    // Hoy el gerente reescribe GARANTÍA, ALCANCE y PLAZO DE VALIDEZ en cada presupuesto. Se
+    // escriben aquí UNA vez y salen en todos.
+    //
+    // 🔴 EL TEXTO LO ESCRIBE EL MERCHANT, NO NOSOTROS (regla 30): no hay plantilla, no hay
+    // ejemplo prerrellenado y no se sugiere nada. Una garantía es una obligación jurídica, y
+    // ponerle a un profesional una que no ha dado sería redactar en su nombre.
+    //
+    // ⚠️ El `id` de cada fila VIAJA y no se recalcula: la exclusión de un presupuesto concreto
+    // es una lista de `id`, y reasignarlos haría que un presupuesto que quitó la garantía
+    // pasara a quitar otra cláusula. No falla nada: solo sale mal el papel.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 MICROCOPY PROPUESTA, SIN APROBAR (regla 30). Estos rótulos son de NUESTRA pantalla; el
+    // texto que ve el cliente en el PDF lo escribe el merchant y no se toca desde aquí.
+    //
+    // ⚠️ La marca va FACTORIZADA en una constante y concatenada, igual que `MARCA_RETENCION`: el
+    // censo de SCRUM-402 cuenta LITERALES que contienen la marca, no superficies marcadas, así que
+    // esto añade rótulos marcados sin mover su número. Queda dicho para que nadie lea el censo
+    // como «no hay nada nuevo pendiente de aprobar».
+    // ✅ MICROCOPY APROBADA por el fundador el 3-sep-2026 (regla 30). LITERAL, sin marcador.
+    //
+    // ⚠️ El último cambió respecto a lo propuesto: decía «No hemos podido leer…» y la voz de la
+    // casa no dice «no hemos podido» — suena a excusa nuestra. Es la misma corrección que se hizo
+    // en los avisos del dictado, y por eso lleva raya larga y termina en el hecho, no en nosotros.
+    //
+    // ⛔ Estos rótulos son de NUESTRA pantalla. El texto que ve el cliente en el PDF lo escribe el
+    // merchant: aquí no hay plantilla, ni ejemplo, ni sugerencia. Una garantía es una obligación
+    // jurídica, y redactarla en su nombre sería ponerle una que no ha dado.
+    var TX = {
+      clausulasTitulo: 'Condiciones del presupuesto',
+      clausulasPista: 'Se escriben una vez y salen en todos tus presupuestos.',
+      clausulaTitulo: 'Título (GARANTÍA, ALCANCE…)',
+      clausulaTexto: 'Texto de la condición',
+      clausulaQuitar: 'Quitar',
+      clausulaAnadir: 'Añadir condición',
+      clausulasVacio: 'Todavía no has escrito ninguna condición.',
+      clausulasIlegibles: 'No se han podido leer tus condiciones — no se ha guardado nada',
+    };
+
+    var CLAUSULAS_MAX = 10;
+    var clausulasEstado = [];
+
+    function filaClausula(c, i) {
+      return '' +
+        '<div class="clausula-fila" data-clausula-fila="' + i + '" style="margin-bottom:10px">' +
+        '<input type="text" data-clausula-titulo="1" placeholder="' + TX.clausulaTitulo + '" ' +
+        'value="' + escapaAtributo(c.titulo || '') + '" style="width:100%;margin-bottom:4px">' +
+        '<textarea data-clausula-texto="1" rows="2" placeholder="' + TX.clausulaTexto + '" ' +
+        'style="width:100%">' + escapaTexto(c.texto || '') + '</textarea>' +
+        '<button type="button" data-clausula-quitar="' + i + '" style="font-size:13px">' +
+        TX.clausulaQuitar + '</button></div>';
+    }
+
+    function escapaAtributo(v) {
+      return String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function escapaTexto(v) {
+      return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function pintarClausulas() {
+      var caja = document.getElementById('clausulas-lista');
+      if (!caja) return;
+      // 🔴 SUELO: vacío se DICE. «No has escrito ninguna» y «no supe leerlas» son la misma caja
+      // vacía y significan lo contrario; el servidor manda `[]` cuando no hay, y el aviso de
+      // ilegible lo pinta la rama de error de `loadMerchant`.
+      caja.innerHTML = clausulasEstado.length
+        ? clausulasEstado.map(filaClausula).join('')
+        : '<p style="color:var(--muted);font-size:13px">' + TX.clausulasVacio + '</p>';
+    }
+
+    /** Lo escrito en pantalla → lo que viaja. Se lee de los CAMPOS, no del estado. */
+    function clausulasDelFormulario() {
+      var caja = document.getElementById('clausulas-lista');
+      if (!caja) return clausulasEstado;
+      var filas = caja.querySelectorAll('[data-clausula-fila]');
+      var salida = [];
+      Array.prototype.forEach.call(filas, function (fila, i) {
+        var t = fila.querySelector('[data-clausula-titulo="1"]');
+        var x = fila.querySelector('[data-clausula-texto="1"]');
+        var previa = clausulasEstado[i] || {};
+        salida.push({
+          // el id de la fila que ya existía se CONSERVA; una nueva va sin él y lo pone el servidor
+          id: previa.id,
+          titulo: (t && t.value) || '',
+          texto: (x && x.value) || '',
+        });
+      });
+      return salida;
+    }
+
+    // El envoltorio de la sección, colocado en su submenú por el mismo camino que el resto.
+    // `colocar` pasa por `submenuDeCampo`, que LANZA si el campo no tiene destino declarado — por
+    // eso la entrada en `settingsSubmenus.js` no es papeleo: sin ella, esto revienta al montar.
+    var cajaClausulas = document.createElement('div');
+    // 🔴 DECLARA SU CLAVE, como el selector de país (`_censo-configuracion.mjs`, forma 2): esta
+    // sección PERSISTE `clausulasPresupuesto`, y sin decirlo el censo de SCRUM-284 no la ve y su
+    // mapa de submenús queda describiendo una Configuración que no es la de hoy.
+    //
+    // ⚠️ Es un campo COMPUESTO —una lista de filas, no un input—, y ésa es una QUINTA forma que
+    // ese censo no modela; su propia cabecera avisa de que podría aparecer. Se declara así para
+    // que el censo diga la verdad. Ampliarlo es de su carril.
+    cajaClausulas.name = 'clausulasPresupuesto';
+    cajaClausulas.innerHTML =
+      '<label style="display:block;font-weight:600;margin-bottom:2px">' + TX.clausulasTitulo + '</label>' +
+      '<p style="font-size:12px;color:var(--muted);margin:2px 0 6px">' + TX.clausulasPista + '</p>' +
+      '<div id="clausulas-lista"></div>' +
+      '<button type="button" id="clausulas-anadir" style="font-size:13px">' + TX.clausulaAnadir + '</button>';
+    colocar('clausulasPresupuesto', cajaClausulas);
+
+    cajaClausulas.addEventListener('click', function (ev) {
+      var quitar = ev.target && ev.target.getAttribute && ev.target.getAttribute('data-clausula-quitar');
+      if (quitar !== null && quitar !== undefined && quitar !== '') {
+        // Se lee de los CAMPOS antes de quitar: si se leyera del estado, lo que el profesional
+        // acabase de escribir en las otras filas se perdería al borrar una.
+        clausulasEstado = clausulasDelFormulario();
+        clausulasEstado.splice(Number(quitar), 1);
+        pintarClausulas();
+        return;
+      }
+      if (ev.target && ev.target.id === 'clausulas-anadir') {
+        clausulasEstado = clausulasDelFormulario();
+        // El tope no es una limitación de producto: un pie de página tiene fondo.
+        if (clausulasEstado.length >= CLAUSULAS_MAX) return;
+        clausulasEstado.push({ titulo: '', texto: '' });   // sin `id`: lo pone el servidor
+        pintarClausulas();
+      }
+    });
+
     form.addEventListener("submit", async (ev) => {
       ev.preventDefault();
       setAlert(null, "");
@@ -476,9 +992,19 @@ function renderSettingsView(container) {
         legalName: fLegalName.input.value.trim(),
         taxId: fTaxId.input.value.trim(),
         address: fAddress.input.value.trim(),
+        // «no consta» viaja como NULL, no como `false` ni como cadena vacia: es un valor que el
+        // negocio elige, y la base lo guarda distinto de «declara que no».
+        criterioCaja: fCriterioCaja.value === "si" ? true : fCriterioCaja.value === "no" ? false : null,
         whatsappPhone: fWhatsappPhone.input.value.trim(),
         defaultCurrency: fDefaultCurrency.input.value.trim() || "EUR",
         invoiceSeriesPrefix: fInvoiceSeriesPrefix.input.value.trim(),
+        // SCRUM-293 · se mandan LOS DOS: `declarada` dice SI lo ha dicho, `tipo` QUÉ dijo.
+        // Mandar solo el tipo haría indistinguibles «no lo ha dicho» y «dice que no retiene».
+        retencionIrpfDeclarada: selRetencion.value !== RET_NO_CONSTA,
+        retencionIrpfTipo:
+          selRetencion.value === RET_NO_CONSTA || selRetencion.value === RET_NO_RETIENE
+            ? null
+            : Number(selRetencion.value),
         logoUrl: fLogoUrl.input.value.trim() || null,
         // A2.5: normalizar — si pegan "g.page/r/…" sin protocolo, anteponer https://
         googleReviewUrl: (function () {
@@ -497,6 +1023,9 @@ function renderSettingsView(container) {
         notifyEmailWeeklyDigest:    tNotifyWeekly.chk.checked,
         brandColor: brandColorEnabled ? brandColorInput.value : null,
         approvalThreshold: fApproval.input.value.trim() === "" ? null : Number(fApproval.input.value),
+        // SCRUM-656 (T7 fase B): las condiciones del pie del presupuesto. Van con su `id` para
+        // que las exclusiones ya guardadas en presupuestos concretos sigan apuntando a la misma.
+        clausulasPresupuesto: clausulasDelFormulario(),
       };
   
       if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {
@@ -525,6 +1054,47 @@ function renderSettingsView(container) {
 // "300 plantillas/mes de uso razonable — aviso, NUNCA corte". El contador sale
 // del log J8 (solo cuentan las PLANTILLAS; lo que viaja por ventana es gratis
 // y no computa). Transparencia: en demo responde a "¿y si mando muchos?".
+/**
+ * SCRUM-420 (B1 · incremento 2) · EL CAMINO A «Descargar datos» DESPUÉS DE SALIR DE LA BARRA.
+ *
+ * No rehace nada: la pantalla es la de SCRUM-244 y sigue siendo la misma vista `export`. Esto es
+ * solo el enlace que el diseño §B1 pide («Descargar datos pasa a Configuración › Tus datos»).
+ *
+ * MICROCOPY (regla 30) — «Descargar datos», aprobado por el asesor el 10-ago-2026, y el criterio
+ * queda escrito porque sirve para los que vengan: **un botón de navegación nombra su destino**, y
+ * así no puede mentir sobre lo que pasa al pulsarlo. «Descargar» a secas prometería una descarga
+ * inmediata, y lo que hace es llevar a una pantalla donde se elige qué y de qué fechas.
+ *
+ * 🔴 Y POR ESO NO HAY `<h2>`. La primera versión abría la tarjeta con el título `Descargar datos` y
+ * ponía debajo un botón con el mismo texto: la misma frase dos veces seguidas, que no informa de
+ * nada y encima la lee dos veces quien navega con lector de pantalla. El sitio ya tiene su rótulo
+ * —la pestaña «Tus datos» del submenú—, así que lo que falta aquí no es un título: es el camino.
+ *
+ * Consecuencia declarada: sin `<h2>` esto **no es una SUPERFICIE** para el censo de SCRUM-284 (su
+ * criterio es «función `render…(container)` que pinta un bloque con título propio»), sino un bloque
+ * colocado — la misma clase que `connectStatus` y `modoEmision`, que también viven en
+ * `ASIGNACION_SUPERFICIE` sin ser funciones censadas. Su colocación la sigue vigilando el guard de
+ * `panelDeSuperficie(...)`, que es el que importa: es quien impide que caiga en el panel equivocado.
+ */
+function renderDescargarDatosCard(container) {
+  if (!container) return;
+  const card = document.createElement('div');
+  card.className = 'customers-card';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-secondary';
+  btn.id = 'btn-ir-descargar-datos';
+  btn.style.minHeight = '44px'; // AB6: objetivo al pulgar, igual que las pestañas de los submenús
+  btn.textContent = 'Descargar datos';
+  btn.addEventListener('click', () => {
+    // El mismo enrutador que usa el resto del dashboard (`app.js:372`). Guardado como en el resto
+    // de vistas: si no está, no se rompe la pantalla de Configuración por un enlace.
+    if (window.renderAppView) window.renderAppView('export');
+  });
+  card.appendChild(btn);
+  container.appendChild(card);
+}
+
 async function renderWaFairUseCard(container) {
   const FAIR_USE = 300; // W2: soft, aviso, nunca corte
   let data;
@@ -571,7 +1141,17 @@ async function renderReadinessCard(container, mainFormCard) {
   card.style.marginTop = '0';
   container.insertBefore(card, container.firstChild);
 
-  const chargeReady = !!(m.iban || m.bizumPhone);
+  // SCRUM-519 · EL CRITERIO NO SE CALCULA AQUÍ, SE RECIBE. Esta línea era
+  // `!!(m.iban || m.bizumPhone)` y dejaba fuera `whatsappPhone`, que SÍ vale como móvil de Bizum
+  // (`payInvoice.routes.ts:69`): a quien solo tenía WhatsApp esta tarjeta le decía que no podía
+  // cobrar mientras su cliente veía el botón de Bizum. El veredicto lo da `viasDeCobro` en el
+  // servidor, la misma función que responde al checklist de la Home.
+  //
+  // 🔴 SIN VEREDICTO NO SE INVENTA UNO. Si el campo no viene —backend viejo, respuesta recortada—
+  // esto queda en `false` y la fila sale como pendiente. Reponer aquí el `||` de antes sería
+  // recrear la copia que este cambio quita, y encima en el camino que nadie mira.
+  const vias = m.viasDeCobro || null;
+  const chargeReady = !!(vias && vias.cobroManual);
   const fiscalReady = !!(m.legalName && m.taxId && m.address);
   const connect = String(m.connectStatus || 'none');
 
@@ -586,7 +1166,14 @@ async function renderReadinessCard(container, mainFormCard) {
     {
       ok: chargeReady,
       label: 'Cobro por transferencia o Bizum',
-      okText: m.iban && m.bizumPhone ? 'IBAN y Bizum configurados' : (m.iban ? 'IBAN configurado' : 'Bizum configurado'),
+      // SCRUM-519 · LOS TRES TEXTOS SON LOS DE SIEMPRE, palabra por palabra: lo que cambia es a
+      // qué caso corresponde cada uno. Antes «Bizum configurado» exigía `bizumPhone`; ahora sale
+      // también con solo `whatsappPhone`, que es cuando el cliente ve de verdad el botón de
+      // Bizum. No se añade microcopy —eso lo aprueba el asesor (regla 30)—, se deja de aplicar
+      // mal la que ya estaba aprobada.
+      okText: vias && vias.transferencia && vias.bizum === true
+        ? 'IBAN y Bizum configurados'
+        : (vias && vias.transferencia ? 'IBAN configurado' : 'Bizum configurado'),
       koText: 'Añade tu IBAN o tu Bizum para que te puedan pagar',
       focus: 'iban',
     },
@@ -931,6 +1518,88 @@ async function renderReferralCard(container) {
     }
     copyBtn.textContent = '¡Copiado!';
     setTimeout(() => { copyBtn.textContent = 'Copiar link'; }, 1800);
+  });
+}
+
+
+// ── SCRUM-314 (D3) · «Eliminar datos de ejemplo» ────────────────────────────────────────────
+//
+// SOLO se pinta en la cuenta demo, y el veredicto lo da el backend (`esCuentaDemo`, derivado de
+// `isDemoMerchant`): la interfaz no reimplementa el criterio con un `id === 1`.
+//
+// Y no es cosmético: medido al construirlo, el registro NO siembra datos de ejemplo y no hay
+// marca por fila que distinga sembrado de real. En una cuenta de verdad este botón borraría
+// datos REALES bajo un rótulo que dice «de ejemplo». Por eso no se pinta, y la ruta lo rechaza
+// además por su cuenta.
+//
+// Los cuatro textos son los APROBADOS por el fundador (regla 30) y van literales.
+function montarDatosDeEjemplo(merchant) {
+  const hueco = document.getElementById('datos-ejemplo');
+  if (!hueco) return;
+  hueco.innerHTML = '';
+  if (!merchant || !merchant.esCuentaDemo) return; // fuera del demo, ni existe
+
+  const btn = document.createElement('button');
+  btn.className = 'btn-secondary';
+  btn.type = 'button';
+  btn.textContent = 'Eliminar datos de ejemplo';
+  const salida = document.createElement('div');
+  salida.style.cssText = 'margin-top:10px;font-size:13px';
+  hueco.append(btn, salida);
+
+  btn.addEventListener('click', () => {
+    // CONFIRMACIÓN EXPLÍCITA. Es irreversible, y un aviso que no detiene nada solo cambia dónde
+    // aparece el destrozo (SCRUM-260): por eso el borrado cuelga del botón de confirmar, no de éste.
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    // Plantilla en un template literal, que es UNA de las tres formas que el censo de SCRUM-350
+    // sabe leer. Con concatenación el pie existía pero sus botones eran invisibles para ese guard
+    // — y un pie que el censo ve a medias es un modal que su arreglo de CSS no cubre.
+    overlay.innerHTML = `
+      <div class="modal" style="max-width:460px" role="dialog" aria-modal="true" aria-labelledby="de-t">
+
+        <div class="modal-body">
+          <p>Vamos a borrar los clientes, presupuestos y facturas de ejemplo. Esto no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="de-no" type="button">Cancelar</button>
+          <button class="btn-primary" id="de-si" type="button">Sí, eliminar</button>
+        </div>
+      </div>`;
+    // SCRUM-446: la cabecera sale del constructor compartido.
+    overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "Eliminar datos de ejemplo", idTitulo: "de-t", idCierre: "de-x" }));
+    document.body.appendChild(overlay);
+    const cerrar = () => overlay.remove();
+    overlay.querySelector('#de-x').addEventListener('click', cerrar);
+    overlay.querySelector('#de-no').addEventListener('click', cerrar);
+    overlay.addEventListener('click', (ev) => { if (ev.target === overlay) cerrar(); });
+
+    overlay.querySelector('#de-si').addEventListener('click', async () => {
+      const si = overlay.querySelector('#de-si');
+      si.disabled = true; si.textContent = 'Eliminando…';
+      try {
+        const r = await apiRequest('/admin/datos-ejemplo/eliminar', { method: 'POST' });
+        cerrar();
+        // DICE QUÉ BORRÓ: el usuario tiene que poder COMPROBAR que su cuenta está limpia, no
+        // creérselo. Un «listo» a secas es indistinguible de un borrado a medias.
+        salida.textContent =
+          'Listo. Hemos eliminado ' + (r.clientes || 0) + ' clientes, ' + (r.presupuestos || 0) +
+          ' presupuestos y ' + (r.facturas || 0) + ' facturas de ejemplo.';
+        // Y SI FALLÓ A MEDIAS, LO DICE. Una cuenta medio limpia que se anuncia limpia es el fallo
+        // mudo que este ticket existe para evitar.
+        if (r.ok === false) {
+          const aviso = document.createElement('div');
+          aviso.className = 'alert warning';
+          aviso.style.marginTop = '8px';
+          aviso.textContent =
+            'No se pudo terminar: quedan datos sin borrar (' + (r.noBarridos || []).join(', ') + ').';
+          salida.appendChild(aviso);
+        }
+      } catch (e) {
+        cerrar();
+        salida.textContent = 'No se pudo eliminar: ' + (e?.data?.message || e.message);
+      }
+    });
   });
 }
 

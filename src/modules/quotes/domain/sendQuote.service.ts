@@ -8,7 +8,8 @@ import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildQuoteDecision } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
-import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
+import { formatMoneyEs } from '../../../core/utils/utils';
+import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { BASE_URL } from '../../../core/config/env';
 import { ensureQuoteDecisionToken } from './quoteToken.service'; // SCRUM-95
 
@@ -17,12 +18,20 @@ export type SendQuoteResult =
   | { ok: false; sent: false; reason:
         | 'not_found' | 'customer_missing_phone' | 'invalid_phone_format'
         | 'pending_approval' | 'demo_safe_numbers' | 'wa_opt_out'
-        | 'daily_cap' | 'customer_daily_cap' | 'whatsapp_send_failed';
+        | 'daily_cap' | 'customer_daily_cap' | 'whatsapp_send_failed'
+        | 'ventana_cerrada'; // SCRUM-195: se decidió NO mandar, no es que fallara
       error?: unknown };
 
 export async function sendQuoteWhatsAppToCustomer(
   quoteId: number,
   merchantId?: number, // si viene, se exige pertenencia (multi-tenant)
+  // SCRUM-195 (rebanada 3): con la ventana cerrada, NO caer a `quote_decision_es`. Reutilizar
+  // la plantilla que ABRE la conversación le llega al cliente como el mensaje de antes — la
+  // receta del «pero si esto ya lo firmé». Por defecto `false`: el envío normal no cambia.
+  //
+  // ⚠️ QUIÉN lo pone NO se decide aquí. Depende del ROL del presupuesto (`Quote.esAdicional`),
+  // que es schema del fundador y está PENDIENTE. Deducirlo de otra cosa sería simular el rol.
+  opciones: { sinPlantilla?: boolean } = {},
 ): Promise<SendQuoteResult> {
   const quote = await prisma.quote.findUnique({
     where: { id: quoteId },
@@ -32,13 +41,16 @@ export async function sendQuoteWhatsAppToCustomer(
   if (!quote || (merchantId != null && quote.merchantId !== merchantId)) {
     return { ok: false, sent: false, reason: 'not_found' };
   }
-  if (!quote.customer?.phone) {
+  // SCRUM-590 (CONT-19): el destino es el MÓVIL si consta y el fijo si no. Los DOS guards se conservan
+  // porque son dos respuestas distintas del contrato de esta función: «no nos dio número»
+  // e «invalid_phone_format» («nos dio uno que no se puede marcar»).
+  if (!tieneNumeroDeContacto(quote.customer)) {
     return { ok: false, sent: false, reason: 'customer_missing_phone' };
   }
   if (quote.status === 'pending_approval') {
     return { ok: false, sent: false, reason: 'pending_approval' };
   }
-  const to = normalizePhone(quote.customer.phone);
+  const to = canalDeWhatsApp(quote.customer);
   if (!to) {
     return { ok: false, sent: false, reason: 'invalid_phone_format' };
   }
@@ -77,13 +89,15 @@ export async function sendQuoteWhatsAppToCustomer(
       totalWithCurrency: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
       decisionToken, // SCRUM-95: token opaco, no el id global
     }),
+    sinPlantilla: opciones.sinPlantilla === true, // SCRUM-195
     log: { customerId: quote.customerId, relatedType: 'quote', relatedId: quote.id }, // WA-0b
   });
 
   if (!result.ok) {
     const reason = (result as { reason?: string }).reason;
     if (reason === 'demo_safe_numbers' || reason === 'wa_opt_out' ||
-        reason === 'daily_cap' || reason === 'customer_daily_cap') {
+        reason === 'daily_cap' || reason === 'customer_daily_cap' ||
+        reason === 'ventana_cerrada') { // SCRUM-195: motivo propio, con su copy aprobado
       return { ok: false, sent: false, reason };
     }
     console.error('[sendQuote] Error de Meta API:', (result as { error?: unknown }).error);

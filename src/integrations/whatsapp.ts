@@ -4,6 +4,7 @@ import { maskPhone } from '../core/utils/utils'; // A11.2 (S3): PII fuera de log
 import { config } from '../core/config/env';
 import { prisma } from '../core/db/prisma';
 import { normalizePhone } from '../core/utils/utils';
+import { numerosDelContacto } from '../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { validateTemplateComponents } from './whatsappTemplates';
 import { demoSendBlocked, salidaAMetaBloqueada, MOTIVO_SALIDA_BLOQUEADA } from './whatsappPolicy';
 import type { MotivoExencionDemo } from './whatsappPolicy';
@@ -106,16 +107,33 @@ export type DestinoDeEnvio =
 
 /**
  * J3: ¿el destinatario se dio de baja de WhatsApp para este merchant?
- * Compara el teléfono normalizado contra los clientes con `waOptOut=true`
- * (los teléfonos guardados pueden venir con separadores/prefijos sucios).
+ *
+ * 🔴 COMPARA CONTRA **LOS DOS** NÚMEROS DEL CLIENTE — SCRUM-590 (CONT-19).
+ *
+ * Esta función ya estaba atada al NÚMERO y no al registro: no mira el `waOptOut` del cliente al
+ * que se envía, sino si el DESTINO coincide con el de alguien dado de baja. Eso era correcto y
+ * no cambia. Lo que cambia es que un cliente tiene ahora dos números, y mirar sólo `phone`
+ * abría un agujero exacto y mudo:
+ *
+ *   el cliente pide la baja · su ficha tiene el fijo en `phone` y el móvil en `mobile` ·
+ *   el documento sale al MÓVIL (que es el canal) · aquí se compara el móvil contra los `phone`
+ *   de los dados de baja · no coincide · **el envío pasa**.
+ *
+ * O sea: partir el teléfono en dos, sin tocar esto, habría convertido una baja respetada en una
+ * baja ignorada, sin error, sin log y sin que nadie se enterara. El opt-out protege a un
+ * DESTINATARIO, y un destinatario es un número: enviar mira UNO —al que toca—, proteger mira
+ * LOS DOS (`numerosDelContacto`).
+ *
+ * (Los números guardados pueden venir con separadores/prefijos sucios: por eso se normalizan
+ * los dos lados antes de comparar, igual que antes.)
  */
 async function isWaOptedOut(merchantId: number, to: string): Promise<boolean> {
   try {
     const optedOut = await prisma.customer.findMany({
-      where: { merchantId, waOptOut: true, phone: { not: null } },
-      select: { phone: true },
+      where: { merchantId, waOptOut: true, OR: [{ phone: { not: null } }, { mobile: { not: null } }] },
+      select: { phone: true, mobile: true },
     });
-    return optedOut.some((c) => normalizePhone(c.phone || '') === to);
+    return optedOut.some((c) => numerosDelContacto(c).includes(to));
   } catch (err: any) {
     console.error('[WhatsApp] Error comprobando waOptOut:', err?.message || err);
     return false; // ante la duda no bloquear: el guard es best-effort, el dato manda en BD
@@ -384,6 +402,8 @@ export async function sendWhatsAppWindowFirst(params: {
   customerId?: number | null;
   windowText: string;
   windowCta?: { bodyText: string; buttonText: string; url: string }; // A23: si se pasa, la vía ventana usa botón-enlace (sin URL cruda)
+  /** SCRUM-195: con la ventana cerrada, NO caer a plantilla — ver el porqué abajo. */
+  sinPlantilla?: boolean;
   template: { templateName: string; languageCode?: string; components?: any[] };
   log?: WaLogMeta;
 }): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
@@ -440,6 +460,25 @@ export async function sendWhatsAppWindowFirst(params: {
       return { ok: true, via: 'window' };
     }
     console.warn('[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SCRUM-195 (rebanada 3) · SIN CAÍDA A PLANTILLA, cuando el llamador lo pide.
+  //
+  // POR QUÉ EXISTE, y no es preferencia de canal: `quote_decision_es` es «la ÚNICA plantilla
+  // del ciclo — la que abre la conversación» (`docs/WHATSAPP_TEMPLATES.md`). Volver a mandarla
+  // le llega al cliente como el mensaje de antes, y eso es **la receta del «pero si esto ya lo
+  // firmé»** — justo la disputa que el presupuesto adicional viene a evitar.
+  //
+  // Con la ventana cerrada es MEJOR NO MANDAR y decírselo al pro, que mandar algo que parece
+  // lo de antes. Decisión 3 del ticket (fundador, 28-jul-2026), que además evita el STOP de
+  // Meta entero: no hace falta plantilla nueva.
+  //
+  // OPCIONAL y por defecto NO cambia nada: quien no lo pide sigue cayendo a plantilla como
+  // siempre. Aquí NO se decide quién lo pide — eso depende del ROL del presupuesto, que es
+  // schema del fundador y está pendiente.
+  if (params.sinPlantilla) {
+    return { ok: false, via: 'none', reason: 'ventana_cerrada' };
   }
 
   const result = await sendWhatsAppTemplate({

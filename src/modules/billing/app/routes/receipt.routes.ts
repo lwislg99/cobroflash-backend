@@ -5,12 +5,13 @@ import axios from 'axios';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml, documentoEnRegistroHtml } from '../../../../core/http/publicNotFound';
 import { esErrorSinSellar, COPY_PUBLICO_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
-import { esc, formatMoneyEs } from '../../../../core/utils/utils';
+import { esc, formatMoneyEs, hrefSeguro } from '../../../../core/utils/utils';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { stripe } from '../../../../integrations/stripe';
 import { BASE_URL, config } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
+import { fechaDeCobroDeCharge } from '../../domain/instanteDeCobro'; // SCRUM-397
 
 const router = Router();
 
@@ -107,13 +108,25 @@ router.get('/:token', async (req, res) => {
     typeof (req.query as any).mail === 'string' ? (req.query as any).mail : undefined;
   const emlParam =
     typeof (req.query as any).eml === 'string' ? (req.query as any).eml : undefined;
+  // SCRUM-807 · TRES cosas en esta línea, y las tres estaban medidas antes de tocarla:
+  //
+  // ① EL GATE. Este banner dice «(modo dev)» y el código no lo comprobaba: bastaba pedir
+  //    `?mail=saved` para que se pintara TAMBIÉN en producción. Su ÚNICO productor legítimo es
+  //    `dev.routes.ts:100`, y `/dev` sólo se monta si `NODE_ENV!=='production'` (`app.ts:354`).
+  //    Se le pone el MISMO gate que a su productor: el código pasa a cumplir lo que su propio
+  //    rótulo ya prometía. Re-verificado antes de gatearlo que no hay un segundo productor.
+  // ② EL ESQUEMA. `emlParam` es un parámetro de URL en crudo: lo controla quien manda el enlace.
+  //    `hrefSeguro` valida por LISTA BLANCA donde se construye el href — no dentro de `esc`,
+  //    que sigue haciendo lo suyo (escapar el HTML) sobre el resultado ya validado.
+  // ③ `rel="noopener"`: era el único `target="_blank"` del fichero sin él. Las otras tres anclas
+  //    ya lo llevaban.
   const mailBanner =
     mailParam === 'sent'
       ? `<div class="note note-ok">📧 Email enviado correctamente.</div>`
-      : mailParam === 'saved'
+      : mailParam === 'saved' && config.NODE_ENV !== 'production'
       ? `<div class="note note-info">📧 Email generado en <a href="${esc(
-          emlParam || '',
-        )}" target="_blank">.eml</a> (modo dev).</div>`
+          hrefSeguro(emlParam),
+        )}" target="_blank" rel="noopener">.eml</a> (modo dev).</div>`
       : '';
 
     // Consideramos que solo hay PDF real si pdfUrl existe y no es un placeholder
@@ -204,9 +217,13 @@ router.get('/:token', async (req, res) => {
     ((req.query as any).card === 'success' || (req.query as any).celebrate === '1');
 
   // R-1 (N3): en el recibo PAGADO mostrar fecha + método del pago.
-  const paidEvent = (ch.events || [])
-    .filter((e) => e.type === 'paid')
-    .sort((a, b) => +new Date(b.ts) - +new Date(a.ts))[0];
+  //
+  // 🔴 SCRUM-397 · ESTO ENSEÑABA LA FECHA DEL REINTENTO. Cogía el evento `paid` MÁS RECIENTE, y
+  // `psp.routes.ts` crea otro evento `paid` (marcado `duplicate: true`) cada vez que el webhook se
+  // repite. En un cobro con reintento, el documento que se lleva el CLIENTE fechaba el pago el día
+  // del reintento. Ahora sale del mismo sitio que la exportación y que el resto: la columna, y
+  // para los cobros anteriores a ella el evento MÁS ANTIGUO — que es cuando se pagó.
+  const fechaPago = fechaDeCobroDeCharge(ch);
   const methodLabel = (m?: string | null): string => {
     const s = String(m || '').toLowerCase();
     if (!s) return '';
@@ -219,8 +236,8 @@ router.get('/:token', async (req, res) => {
   const paidMeta =
     ch.status === 'paid'
       ? [
-          paidEvent
-            ? `Pagado el ${new Date(paidEvent.ts).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`
+          fechaPago
+            ? `Pagado el ${fechaPago.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`
             : 'Pagado',
           methodLabel(ch.method),
         ]

@@ -42,6 +42,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // SCRUM-740
 
 const THIS_FILE = fileURLToPath(import.meta.url);
 const RAIZ = path.join(path.dirname(THIS_FILE), '..');
@@ -129,12 +130,20 @@ function walk(dir, out) {
 
 function escanearRepo() {
   const hallazgos = [];
+  let leidos = 0;
   for (const f of walk(RAIZ, [])) {
-    const codigo = fs.readFileSync(f, 'utf8');
+    // SCRUM-740: otro test del mismo `npm test` puede borrar un fichero entre el `readdirSync`
+    // que lo listó y esta lectura — cuatro autopruebas fabrican ficheros dentro de `tests/` a
+    // propósito. Se tolera SÓLO su desaparición (nada más: un permiso denegado sigue siendo un
+    // fallo), y el suelo de abajo impide que tolerarla se convierta en barrer un árbol vacío.
+    const codigo = leerSiSigueAhi(f);
+    if (codigo === null) continue;
+    leidos++;
     for (const h of argvConCredencial(codigo, f)) {
       hallazgos.push(`${path.relative(RAIZ, f).replace(/\\/g, '/')}:${h.linea} → ${h.token}`);
     }
   }
+  exigirCorpusLeido(leidos, 50, 'SCRUM-226 · credenciales en argv');
   return hallazgos;
 }
 

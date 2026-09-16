@@ -5,7 +5,7 @@
 // (GET técnico ve solo los suyos) es SCRUM-107 V2, carril B — fuera de este ticket.
 //
 // ⚠️ Toca BD real (staging), gateado:
-//   QA_DB_TEST=1 DATABASE_URL_STAGING="..." npm run test:staging
+//   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging
 import './_staging-db.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,7 +13,7 @@ import { withMerchant, registrarBarridoFinal } from './_merchant-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-109: createExpense guarda teamMemberId cuando se indica', { skip: !ENABLED }, async () => {
+test('SCRUM-109: createExpense guarda teamMemberId cuando se indica', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   registrarBarridoFinal(prisma);
   const { createExpense } = await import('../dist/modules/expenses/domain/expenses.service.js');
@@ -36,7 +36,7 @@ test('SCRUM-109: createExpense guarda teamMemberId cuando se indica', { skip: !E
   });
 });
 
-test('SCRUM-109: createExpense sin teamMemberId → null (propietario), no rompe el flujo existente', { skip: !ENABLED }, async () => {
+test('SCRUM-109: createExpense sin teamMemberId → null (propietario), no rompe el flujo existente', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   registrarBarridoFinal(prisma);
   const { createExpense } = await import('../dist/modules/expenses/domain/expenses.service.js');

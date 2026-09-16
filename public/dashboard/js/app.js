@@ -6,11 +6,77 @@ async function initApp() {
   try { me = await apiRequest('/admin/me'); }
   catch { window.location.href = '/login.html'; return; }
 
+  // SCRUM-360 (H5 fase 2) · SE MANDA EL ENTORNO, y va aquí porque aquí ya sabemos que la sesión
+  // es buena. SUELTO Y SIN `await`: es telemetría, y nada de esto puede retrasar ni tumbar el
+  // arranque. Quién lo consume es la fase siguiente; lo que esta fase cierra es que el dato LLEGUE.
+  enviarEntornoDeLaApp();
+
   window.appMerchantId = me.merchantId;
   window.appUserRole   = me.userRole || 'admin';
   window.appUserName   = me.name || '';
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
   window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
+  // SCRUM-402: veredicto del SERVIDOR sobre Bizum manual. `=== true` a propósito: si el campo no
+  // llega —un `/admin/me` viejo en caché, un despliegue a medias— sale `false` y el botón NO se
+  // pinta. Fallar cerrado es lo correcto aquí: no pintarlo cuando se podría es un botón de menos;
+  // pintarlo cuando no se puede es lo que este ticket viene a quitar.
+  window.appBizumManualEnabled = me.bizumManualEnabled === true;
+  // SCRUM-328: el veredicto del aviso lo da el servidor; aqui solo se guarda para pintarlo.
+  window.appBizumSinTelefono = me.bizumSinTelefono || null;
+  // SCRUM-289 (A0.3) · SCRUM-346 (A0.5): veredicto YA CALCULADO por el servidor
+  // (`modoDocumentoSuelto`). El navegador no reimplementa el modo de emisión: lo recibe.
+  // Son TRES valores —'factura' | 'justificante' | 'no'— porque el profesional español real no
+  // es un «no puedes»: emite justificantes, que es otro documento, no una factura degradada.
+  // Un valor desconocido cae a 'no': fallar cerrado, igual que el servidor.
+  // SCRUM-298 (A8): EL MODO DE EMISIÓN, tal cual lo calculó el servidor. `null` = no se sabe, y
+  // entonces la pantalla NO pinta nada — enseñar el modo equivocado es peor que no enseñar
+  // ninguno. Un valor fuera del contrato cae también a `null`: no se normaliza a un modo, porque
+  // normalizar aquí sería inventarse el estado fiscal de alguien.
+  window.appModoEmision =
+    ['fiscal', 'demo', 'receipt'].includes(me.modoEmision) ? me.modoEmision : null;
+
+  window.appDocumentoSuelto =
+    ['factura', 'justificante'].includes(me.documentoSuelto) ? me.documentoSuelto : 'no';
+
+  // SCRUM-293 (③a) · las opciones de retención, tal y como las manda el CUBO del dominio. El
+  // front es vanilla y no puede importar de `src/`: si esta lista no viajara, la única forma de
+  // pintar el selector sería escribir los porcentajes a mano — que es justo lo que el cubo
+  // existe para impedir. Aquí no se filtra ni se reordena: el orden es propiedad del cubo.
+  window.appRetencionOpciones = Array.isArray(me.retencionIrpfOpciones)
+    ? me.retencionIrpfOpciones
+    : [];
+
+  // SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD. Mismo patrón: el veredicto lo da el servidor
+  // (`debeOfrecerArranqueDeSerie`, la MISMA regla que usa `resolveSeriesSeq`) y aquí solo se
+  // recibe. El navegador NO comprueba `invoiceSeriesYear !== año` por su cuenta: dos sitios
+  // decidiendo lo mismo acaban discrepando, y el de fuera es el fácil de equivocar.
+  window.appPuertaSerieDisponible = me.puertaSerieDisponible === true;
+  // Y POR QUÉ no se puede, cuando no se puede: `{ emitidas, ejemplo }`. La puerta es `false` por
+  // dos motivos distintos —ya emitió, o ya contestó este año— y solo el primero bloquea el campo.
+  window.appSerieEmitida = me.serieEmitida || { emitidas: 0, ejemplo: null };
+  // SCRUM-300 (C5): las SEIS ranuras de «en calidad de qué», los rótulos y las ayudas del
+  // albarán llegan SERVIDOS. El navegador NO los escribe: son microcopy que acaba en un documento
+  // que se puede leer en un juzgado (regla 30), y una segunda copia aquí es cómo dos textos
+  // divergen sin que nadie se entere. Mismo criterio que `appDocumentoSuelto`, encima.
+  window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
+  window.appAlbaranRotulos = me.albaranRotulos || {};
+  window.appAlbaranAyudas = me.albaranAyudas || {};
+  // SCRUM-474 fase 2 · LOS CUBOS DEL FILTRO DE COBROS, derivados de `PAID_VIA` en el servidor
+  // (regla 22). El navegador NO decide qué método cae en qué cubo — esa copia en el front es
+  // justo lo que este ticket vino a quitar. Mismo criterio que los rótulos del albarán de arriba.
+  //
+  // Llegan en el ARRANQUE porque son CONSTANTES, no parte de la respuesta de una lista. Cuando
+  // viajaban con los cobros, la barra de filtros desaparecía si la red fallaba, y esa pantalla es
+  // el dinero del negocio.
+  window.appCobrosCubos = Array.isArray(me.cobrosCubos) ? me.cobrosCubos : [];
+  // SCRUM-441 · los metodos que el profesional puede DECLARAR al marcar cobrada a mano. Derivados
+  // de PAID_VIA en el servidor, igual que los cubos de arriba y por el mismo motivo: el navegador
+  // no decide que metodos existen. Vacio si no llegan, y entonces el selector no se pinta — que es
+  // exactamente el comportamiento de hoy, sin selector.
+  window.appMetodosDeclarables = Array.isArray(me.metodosDeclarables) ? me.metodosDeclarables : [];
+  // SCRUM-tecnosel · los tipos de intervención, DERIVADOS del vocabulario cerrado del servidor.
+  // Vacío si no llegan, y entonces el desplegable no se pinta — nunca se inventan aquí.
+  window.appTiposIntervencion = Array.isArray(me.tiposIntervencion) ? me.tiposIntervencion : [];
 
   // A10.2 (Parte L): past_due → banner global "Hay un problema con tu pago"
   // + portal de Stripe. La cuenta sigue funcionando (gracia); solo avisa.
@@ -32,9 +98,21 @@ async function initApp() {
       }
     });
   }
+  // 🔴 SCRUM-827 · AQUÍ HABÍA UN `defaultVat: 0.21` ESCRITO A MANO, Y SE RETIRA.
+  //
+  // Era el único tipo impositivo tecleado fuera de la tabla de locales, y estaba en el respaldo
+  // que se usa cuando el servidor no manda `me.locale`. MEDIDO antes de tocarlo: en todo
+  // `public/`, quitando comentarios, `defaultVat` aparecía **una sola vez — esta**. CERO lectores.
+  //
+  // Y un valor por defecto que nadie lee es un valor que alguien va a leer algún día creyendo que
+  // manda: este respaldo estampaba el 21 % español a cualquiera, y `defaultVat` está indexado por
+  // PAÍS (MX 16 %, PE 18 %, CO/CL 19 %). Ahora, si alguien lo leyera, obtendría `undefined` y
+  // fallaría a la vista en vez de aplicar en silencio el tipo de otro país.
+  //
+  // El IVA de una línea sale de `tiposDeIva.js` y del documento, nunca de este respaldo.
   window.appLocale = me.locale || {
     quote: 'Presupuesto', quotePlural: 'Presupuestos', quoteNew: 'Nuevo presupuesto',
-    quoteVerb: 'presupuesto', currency: 'EUR', defaultVat: 0.21, vatName: 'IVA',
+    quoteVerb: 'presupuesto', currency: 'EUR', vatName: 'IVA',
   };
 
   // Ocultar elementos de navegación para técnicos
@@ -126,13 +204,11 @@ async function initApp() {
   // 4. Localizar labels del sidebar
   const navQuotesLabel = document.getElementById('nav-quotes-label');
   if (navQuotesLabel) navQuotesLabel.textContent = window.appLocale.quotePlural;
-  const navQuotesNew = document.getElementById('nav-quotes-new');
-  if (navQuotesNew) navQuotesNew.textContent = window.appLocale.quoteNew;
 
   const viewContainer = document.getElementById('view-container');
   const viewTitle     = document.getElementById('view-title');
 
-  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null };
+  if (!window.appState) window.appState = { view: 'home', quoteId: null, invoiceId: null, jobId: null, albaranId: null, parteId: null };
 
   // 5. Hamburger menu (móvil)
   const overlay = document.createElement('div');
@@ -152,18 +228,25 @@ async function initApp() {
 
   // 6. Menú activo
   function setActiveMenu(view) {
+    // SCRUM-301 (C1): el detalle del albarán ya tiene sección propia a la que pertenecer. Antes
+    // marcaba «Trabajos» porque los albaranes no existían como sitio; ahora sí.
+    // SCRUM-432: `templates` ya no tiene entrada propia — es la pestaña «Plantillas» DENTRO de
+    // Presupuestos. Sin esta línea, estando en Plantillas la barra no marcaría nada y el
+    // profesional no sabría en qué sección está.
     const menuView = view === 'quotes-detail' ? 'quotes-list'
+      : view === 'templates' ? 'quotes-list'
+      : view === 'albaran-detail' ? 'albaranes'
       : view === 'invoice-detail' ? 'invoices'
       : view === 'jobs-detail' ? 'jobs' : view;
 
     document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
       btn.classList.toggle('active', btn.dataset.view === menuView);
     });
-    document.querySelectorAll('.nav-group').forEach((group) => {
-      const subitems = group.querySelectorAll('.nav-subitem[data-view]');
-      const shouldOpen = Array.from(subitems).some((b) => b.dataset.view === menuView);
-      group.classList.toggle('open', shouldOpen);
-    });
+    // SCRUM-768: aquí se abría el grupo del submenú buscando `.nav-subitem[data-view]`. Desde
+    // SCRUM-599 no queda ni un `.nav-subitem` en el árbol, así que este bucle recorría el único
+    // `.nav-group` que sobrevivía para no encontrar nada y alternar una clase que ya no estilaba
+    // nadie. Se retira con el resto del residuo: código que no puede hacer nada no protege nada,
+    // y de paso sostenía la ilusión de que la barra todavía tiene submenús.
   }
 
   // 7. Render view
@@ -172,7 +255,14 @@ async function initApp() {
     state.view = view;
     if (options.quoteId   !== undefined) state.quoteId   = options.quoteId;
     if (options.invoiceId !== undefined) state.invoiceId = options.invoiceId;
+    if (options.albaranId !== undefined) state.albaranId = options.albaranId; // SCRUM-302
+    if (options.parteId !== undefined) state.parteId = options.parteId; // SCRUM-652 (fase D)
     if (options.jobId     !== undefined) state.jobId     = options.jobId;
+    // 🔴 SCRUM-832 · ÉSTE FALTABA. `case 'customer-360'` LEE `state.customerId360` y nadie lo
+    // escribía aquí: quien abría la ficha 360 tenía que tocar `window.appState` desde fuera.
+    // Funcionaba por costumbre, no por mecanismo — y el router no podía restaurarla desde el hash,
+    // que es lo que este ticket necesita. Aditivo: quien ya lo asignaba fuera sigue igual.
+    if (options.customerId360 !== undefined) state.customerId360 = options.customerId360;
 
     closeSidebar();
 
@@ -206,7 +296,17 @@ async function initApp() {
         renderQuotesView(viewContainer, options.template || null);
         break;
       case 'quotes-detail':
-        viewTitle.textContent = L.quotePlural;
+        // 🔴 SCRUM-832 · AQUÍ PONÍA `L.quotePlural` — «Presupuestos», en plural, para la ficha de
+        // UNO. Nadie lo veía porque `quotesListView.js` escribía el título A MANO antes de pintar
+        // la ficha, saltándose el router; al mandarla por el router, medido en navegador, el
+        // usuario pasaba de ver «Presupuesto #N-1» a ver «Presupuestos».
+        //
+        // Y hay un enganche que no se ve desde aquí: `quotesDetailView.js` corrige el título al
+        // número REAL del presupuesto **sólo si ya empieza por «Presupuesto #»** (su regex). O sea
+        // que quien navega escribe el rótulo provisional con el id, y la ficha lo corrige al
+        // cargar. Ese es el contrato que había, y es el que se conserva — con el mismo literal,
+        // que es el que la ficha sabe reconocer.
+        viewTitle.textContent = state.quoteId != null ? 'Presupuesto #' + state.quoteId : L.quotePlural;
         if (state.quoteId != null) renderQuoteDetailView(viewContainer, state.quoteId);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">Sin cotización seleccionada</div></div>`;
         break;
@@ -228,16 +328,82 @@ async function initApp() {
         break;
       case 'jobs-detail':
         viewTitle.textContent = 'Trabajo';
-        if (state.jobId != null && typeof renderJobDetailView === 'function') renderJobDetailView(viewContainer, state.jobId);
+        // SCRUM-606 (ALB-01): `altaAlbaran` viaja como ARGUMENTO y a propósito NO se guarda en
+        // `state` — mismo criterio que la plantilla de `quotes-new` (SCRUM-140): es de un solo uso,
+        // y persistirlo haría que la hoja de «Nuevo albarán» se abriera sola la próxima vez que
+        // alguien entrara en ese Trabajo por cualquier otro camino. Las navegaciones que no lo
+        // mandan —que son todas las demás— reciben `null` y abren el Trabajo tal cual.
+        if (state.jobId != null && typeof renderJobDetailView === 'function') renderJobDetailView(viewContainer, state.jobId, options.altaAlbaran || null);
         else viewContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔧</div><div class="empty-state-title">Sin trabajo seleccionado</div></div>`;
         break;
       case 'customer-360':
         viewTitle.textContent = 'Cliente';
         if (typeof renderCustomer360View === 'function') renderCustomer360View(viewContainer, state.customerId360);
         break;
+      // SCRUM-285 (B4): Cobros, separado de Facturas.
+      case 'cobros':
+        viewTitle.textContent = 'Cobros';
+        if (typeof renderCobrosView === 'function') renderCobrosView(viewContainer);
+        break;
       case 'invoices':
         viewTitle.textContent = 'Facturas';
         renderInvoicesView(viewContainer);
+        break;
+      // SCRUM-600 (DOC-10) · el documento suelto tiene PÁGINA PROPIA, la misma que el
+      // presupuesto. Antes se hacía en un modal que se abría desde un botón: sin ruta, no se
+      // podía enlazar, ni recargar, ni volver — y una recarga a media factura lo perdía todo.
+      //
+      // El rótulo NO se escribe aquí: sale de `rotulosDelDocumento`, que ya sabe si este
+      // profesional emite facturas o justificantes (SCRUM-776). Escribir 'Facturas' a pelo sería
+      // decirle «factura» a un merchant español real, que con el flag en su valor por defecto
+      // emite JUSTIFICANTES.
+      // ⚠️ La ruta llama a `renderDocumentoSueltoView(viewContainer)` y NO a
+      // `renderQuotesView(viewContainer, null, true)`. El destino es el mismo; la FORMA no. El
+      // guard de marcadores (SCRUM-722) monta cada vista del router con un argumento como mucho,
+      // así que con la llamada de tres argumentos montaba esta ruta SIN el tercero — o sea,
+      // pintaba el PRESUPUESTO y contaba sus marcadores como si fueran de aquí. Medido.
+      case 'invoices-new':
+        viewTitle.textContent = window.rotulosDelDocumento.tituloModal();
+        renderDocumentoSueltoView(viewContainer);
+        break;
+      // Sprint Tecnosel · LA OFICINA VALORA LOS PARTES FIRMADOS. Sin este `case` el fichero se
+      // cargaría y no llevaría a él ninguna puerta — que es exactamente lo que le pasa hoy a
+      // `parteDetailView.js`, medido en la certificación del sprint.
+      case 'partes-oficina':
+        viewTitle.textContent = 'Partes por valorar';
+        if (typeof window.renderPartesOficinaView === 'function') {
+          // 🔴 SCRUM-720b · era `opts`, y el parametro de `renderView` se llama `options`.
+          // `ReferenceError: opts is not defined` en cada pulsacion: el titulo YA se habia
+          // puesto en la linea de arriba, asi que la pantalla se quedaba en blanco con el
+          // rotulo correcto — «no pasa nada». Medido pulsando, no leyendo.
+          window.renderPartesOficinaView(viewContainer, options);
+        }
+        break;
+      case 'albaranes':
+        // SCRUM-301 (C1): sección propia. Rótulo APROBADO (5-ago-2026), mismo que el del menú: es
+        // el nombre del documento, no copy de acción — el criterio que C2 dejó escrito aquí abajo.
+        viewTitle.textContent = 'Albaranes';
+        if (typeof window.renderAlbaranesView === 'function') window.renderAlbaranesView(viewContainer);
+        break;
+      case 'albaran-detail':
+        // SCRUM-302 (C2): el albarán tiene página propia. El rótulo del título es el nombre del
+        // documento, no microcopy de acción: no lleva marcador.
+        viewTitle.textContent = 'Albarán';
+        if (state.albaranId != null && typeof window.renderAlbaranDetailView === 'function')
+          window.renderAlbaranDetailView(viewContainer, state.albaranId);
+        break;
+      // 🔴 SCRUM-652 (fase D) · LA PUERTA AL PARTE, que hasta hoy NO EXISTÍA.
+      //
+      // `parteDetailView.js` llevaba cargado en el índice desde la fase C y **no había forma de
+      // llegar a él**: ni caso aquí, ni una sola llamada que lo abriera. Un fichero cargado al que
+      // no lleva nada no es una pantalla; es peso muerto que además parece hecho.
+      //
+      // El rótulo es el NOMBRE DEL DOCUMENTO, no microcopy de acción — mismo criterio que
+      // 'Albarán' y 'Factura' de aquí al lado, y por eso no lleva marcador.
+      case 'parte-detail':
+        viewTitle.textContent = 'Parte de trabajo';
+        if (state.parteId != null && typeof window.renderParteDetailView === 'function')
+          window.renderParteDetailView(viewContainer, state.parteId);
         break;
       case 'invoice-detail':
         viewTitle.textContent = 'Factura';
@@ -251,6 +417,12 @@ async function initApp() {
       case 'providers':
         viewTitle.textContent = 'Proveedores';
         (window.renderProvidersView || renderProvidersView)(viewContainer);
+        break;
+      case 'libro-registro':
+        // SCRUM-296 (A6). El titulo sale de la MISMA constante que la vista: dos copias del
+        // rotulo se desincronizan, y una de ellas se quedaria sin marcador.
+        viewTitle.textContent = (window.LIBRO_COPY && window.LIBRO_COPY.titulo) || '';
+        if (typeof window.renderLibroRegistroView === 'function') window.renderLibroRegistroView(viewContainer);
         break;
       case 'expenses':
         viewTitle.textContent = 'Gastos';
@@ -315,20 +487,123 @@ async function initApp() {
 
   // Deep-links por hash: /dashboard/#products abre Productos directamente.
   // Útil para compartir/QA (y para las capturas de la maqueta A4.7).
-  const HASH_VIEWS = ['home','quotes-list','quotes-new','customers','products','providers',
-    'invoices','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings'];
+  // ⚠️ ESTA LISTA SE MANTIENE A MANO Y POR ESO SE QUEDA ATRÁS. `albaranes` llevaba fuera desde
+  // que C1 le dio sección propia (SCRUM-301): se actualizó el dispatch y se actualizó el menú, y
+  // esta tercera lista no. Quien recargaba estando en Albaranes, o guardaba el enlace, perdía la
+  // vista. No estaba fuera por ningún motivo — el test de abajo hace que no vuelva a pasar.
+  // NOTA: las vistas de DETALLE (`albaran-detail`, …) NO van aquí a propósito: necesitan un id que
+  // el hash no lleva, así que un deep-link a ellas abriría una ficha vacía.
+  const HASH_VIEWS = ['home','cobros','quotes-list','quotes-new','customers','products','providers',
+    // SCRUM-600 (DOC-10) · el TERCER sitio, que es justo el que este comentario dice que se
+    // olvida. Sin esto, quien recargue estando a media factura suelta pierde la pantalla — que
+    // es exactamente lo que le pasaba con el modal, y medio motivo del ticket.
+    'invoices','invoices-new','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
+      'libro-registro','albaranes',
+    // sprint Tecnosel · el TERCER sitio, que es el que se olvida: sin esto, quien recargue
+    // estando en «Partes por valorar» pierde la vista. Se entra desde Trabajos.
+      'partes-oficina'];
+  // ══ SCRUM-832 · LAS FICHAS TAMBIÉN VIVEN EN EL HASH, Y POR ESO EL «ATRÁS» VUELVE ═══════════
+  //
+  // LA VÍCTIMA: quien entra a un presupuesto en el móvil, da al botón atrás —que ahí es EL gesto
+  // de navegación— y se sale de la aplicación.
+  //
+  // 🔴 LA CAUSA NO ERA LA QUE PARECÍA, y está medida. El ticket decía que Presupuestos falla por
+  // saltarse el router. Falla, y se lo salta, pero no es eso: **fallaban las CINCO listas**, y las
+  // otras cuatro sí usan el router. Medido en navegador real, con historial real: abrir un detalle
+  // creaba **0 entradas** en las cinco, porque `apilable` era false y `replaceState` **sustituye**
+  // la entrada de la lista en vez de añadir una. Abrir una ficha BORRABA la lista del historial.
+  //
+  // La nota de arriba explicaba por qué los detalles no estaban en `HASH_VIEWS` —«necesitan un id
+  // que el hash no lleva»— y tenía razón: el problema no era la lista, era que **al hash le
+  // faltaba el id**. Así que se le añade, en vez de dejar las fichas fuera.
+  //
+  // ADITIVO: no se renombra ninguna clave de vista. El hash pasa a ser `#clave/id` y el router
+  // sólo aprende a partir por la PRIMERA barra; `#customers` sigue significando lo mismo.
+  const DETALLES = {
+    'quotes-detail':  { clave: 'quoteId',       lista: 'quotes-list', ruta: (id) => '/admin/quotes/' + id,     aviso: 'Ese presupuesto ya no existe.' },
+    'jobs-detail':    { clave: 'jobId',         lista: 'jobs',        ruta: (id) => '/admin/jobs/' + id,       aviso: 'Ese trabajo ya no existe.' },
+    'invoice-detail': { clave: 'invoiceId',     lista: 'invoices',    ruta: (id) => '/admin/invoices/' + id,   aviso: 'Esa factura ya no existe.' },
+    'albaran-detail': { clave: 'albaranId',     lista: 'albaranes',   ruta: (id) => '/admin/albaranes/' + id,  aviso: 'Ese albarán ya no existe.' },
+    'customer-360':   { clave: 'customerId360', lista: 'customers',   ruta: (id) => '/admin/customers/' + id,  aviso: 'Ese cliente ya no existe.' },
+  };
+
+  /** El hash, partido por la PRIMERA barra: `#quotes-detail/123` → `{ view, id }`. */
   function viewFromHash() {
     const h = (window.location.hash || '').replace('#', '');
-    return HASH_VIEWS.includes(h) ? h : null;
+    if (!h) return null;
+    const barra = h.indexOf('/');
+    if (barra === -1) return HASH_VIEWS.includes(h) ? { view: h, id: null } : null;
+    const view = h.slice(0, barra);
+    // Se descodifica porque `hashDe` codifica: sin esto, un id con un carácter reservado saldría
+    // del hash como `%2F` y se le pediría eso al servidor. Hoy los ids son números y no cambia
+    // nada; la asimetría sería una trampa esperando a que dejen de serlo.
+    let id = h.slice(barra + 1);
+    try { id = decodeURIComponent(id); } catch (_err) {}
+    return DETALLES[view] && id ? { view, id } : null;
+  }
+
+  /** El hash que le toca a una navegación. Las fichas llevan su id; las demás, sólo la clave. */
+  function hashDe(view, opts) {
+    const d = DETALLES[view];
+    if (!d) return '#' + view;
+    const id = opts && opts[d.clave] !== undefined ? opts[d.clave]
+      : (window.appState ? window.appState[d.clave] : null);
+    return id == null || id === '' ? '#' + view : '#' + view + '/' + encodeURIComponent(id);
+  }
+
+  /**
+   * Restaura una ficha desde el hash — el camino del ATRÁS y el del enlace compartido.
+   *
+   * 🔒 «NO EXISTE» Y «NO ES TUYO» RESPONDEN EXACTAMENTE LO MISMO. Mismo destino y mismo texto,
+   * carácter por carácter. Si se distinguieran, cualquiera podría recorrer ids y averiguar QUÉ
+   * documentos hay en otros negocios sin llegar a ver ninguno: es fuga de tenencia (regla 2)
+   * aunque no se enseñe un solo dato. Por eso aquí no se mira el CÓDIGO del error —404, 403 o el
+   * que sea— sino sólo si la petición salió bien.
+   */
+  async function abrirFichaDesdeHash(view, id) {
+    const d = DETALLES[view];
+    try {
+      await apiRequest(d.ruta(id));
+    } catch (_e) {
+      _origRender(d.lista);
+      if (typeof showToast === 'function') showToast(d.aviso, 'warn');
+      try { history.replaceState(null, '', '#' + d.lista); } catch (_e2) {}
+      return;
+    }
+    _origRender(view, { [d.clave]: id });
   }
   const _origRender = renderView;
   window.renderAppView = function (view, opts) {
-    try { history.replaceState(null, '', '#' + view); } catch (_e) {}
+    // 🔴 SCRUM-819 · `pushState` PARA LO QUE SE PUEDE RECUPERAR; `replaceState` PARA LO DEMÁS.
+    //
+    // Antes era `replaceState` SIEMPRE, y eso no crea entrada de historial: medido, 17 clics =
+    // **0 entradas**, y «atrás» sacaba de la aplicación. Arreglar sólo el menú habría dejado la
+    // URL correcta y el botón de atrás igual de roto — son dos defectos, no uno.
+    //
+    // ⚠️ Y NO SE APILA TODO, a propósito. Sólo las vistas que el hash sabe RESTAURAR
+    // (`HASH_VIEWS`). Las de DETALLE no están ahí porque necesitan un id que el hash no lleva
+    // —ya lo dice la nota de arriba—, así que apilarlas daría un «atrás» que cambia la URL y no
+    // la pantalla: la incoherencia de hoy, del revés.
+    //
+    // Tampoco se apila navegar al sitio donde ya estás: pulsar dos veces el mismo botón del menú
+    // no puede obligar a dar dos veces atrás.
+    try {
+      // SCRUM-832 · las FICHAS ya se pueden apilar, porque su hash lleva el id y el router sabe
+      // restaurarlas. Sigue sin apilarse navegar al sitio donde ya estás — se compara el hash
+      // ENTERO, así que ir del presupuesto 7 al 9 sí apila: son dos pantallas distintas.
+      const actual = window.location.hash || '';
+      const nuevo = hashDe(view, opts);
+      const conocida = HASH_VIEWS.includes(view) || !!DETALLES[view];
+      const apilable = conocida && actual !== nuevo;
+      history[apilable ? 'pushState' : 'replaceState'](null, '', nuevo);
+    } catch (_e) {}
     return _origRender(view, opts);
   };
   window.addEventListener('hashchange', () => {
     const v = viewFromHash();
-    if (v) _origRender(v);
+    if (!v) return;
+    if (v.id != null) { abrirFichaDesdeHash(v.view, v.id); return; }
+    _origRender(v.view);
   });
 
   // Botón flotante de ayuda (guía de inicio)
@@ -337,49 +612,149 @@ async function initApp() {
   // Badges del sidebar (contadores) independientes de la vista actual
   if (typeof refreshSidebarBadges === 'function') refreshSidebarBadges();
 
-  // Atajo de teclado: "n" abre una nueva cotización rápida (usuarios avanzados)
+  // 🔴 SCRUM-599 (DOC-09) · EL ATAJO «N», UN SOLO MECANISMO PARA LAS CUATRO LISTAS.
+  //
+  // Este manejador YA EXISTÍA y ya se protegía de las cuatro situaciones peligrosas; lo que hacía
+  // era abrir SIEMPRE la cotización rápida, estuvieras donde estuvieras. No nace un segundo: la
+  // condición se ha extraído a `atajoNuevo.sePuedeDisparar` —PURA, y por eso se puede probar sin
+  // navegador— y el destino lo decide la vista en la que estás.
+  //
+  // Si la vista no ha registrado destino, se cae al comportamiento de siempre: quitarlo sería
+  // retirarle un atajo a quien ya lo usa, y este ticket viene a unificar, no a quitar.
   document.addEventListener('keydown', (e) => {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const t = e.target;
-    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
-    if (typing) return;
-    if (document.querySelector('.modal-overlay, .modal-backdrop, #qq-modal-backdrop, #onboarding-backdrop')) return;
-    if (e.key === 'n' || e.key === 'N') {
-      e.preventDefault();
-      if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
-    }
+    const A = window.atajoNuevo;
+    if (!A || !A.sePuedeDisparar(e, document)) return;
+    e.preventDefault();
+    const accion = A.accionDe(window.appState && window.appState.view);
+    if (accion) { accion(); return; }
+    if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
   });
 
   // Clicks en el sidebar
   document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
-    btn.addEventListener('click', () => renderView(btn.dataset.view));
+    // 🔴 SCRUM-819 · POR EL ENVOLTORIO, NO POR `renderView` CRUDO.
+    //
+    // Aquí ponía `renderView(...)`, que pinta la vista y NO toca el hash. Medido pulsando los 17
+    // destinos en un navegador de verdad: **0 de 17** dejaban la URL diciendo dónde estabas, así
+    // que F5 te llevaba a otra pantalla y un enlace guardado abría la vista anterior.
+    //
+    // `window.renderAppView` —y no `renderView`— porque para cuando corre este `click` ya es el
+    // envoltorio: se reasigna arriba, después de declararse `HASH_VIEWS`. Llamar al crudo desde
+    // aquí era saltarse el único sitio que escribe la URL.
+    btn.addEventListener('click', () => window.renderAppView(btn.dataset.view));
   });
 
-  // Submenú toggle
-  document.querySelectorAll('.nav-group').forEach((group) => {
-    const parentBtn = group.querySelector('.nav-item-parent');
-    parentBtn?.addEventListener('click', () => {
-      const isOpen = group.classList.contains('open');
-      document.querySelectorAll('.nav-group').forEach((g) => g.classList.remove('open'));
-      if (!isOpen) group.classList.add('open');
-    });
-  });
+  // SCRUM-768: aquí vivía el «Submenú toggle». Le colgaba a `.nav-item-parent` un SEGUNDO
+  // manejador de click —además del de arriba, que es el que navega— para alternar la clase `open`
+  // del grupo. Sin subítems que abrir y sin chevron que girar, ese segundo manejador no hacía
+  // nada observable. La navegación no cambia: la entrada de Presupuestos la sigue moviendo el
+  // manejador de `.nav-item[data-view]`, igual que Albaranes, Facturas y Clientes.
 
   // Hash inicial
+  //
+  // 🔴 SCRUM-832 · ESTO COGÍA EL HASH CRUDO, y con el id dentro (`#quotes-detail/123`) le habría
+  // dejado a `appState.view` la cadena entera: ninguna `case` casa con eso, así que el `default`
+  // te dejaba en Inicio. El enlace compartido a una ficha —y el ATRÁS, que llega por el mismo
+  // sitio— abrían la portada sin decir por qué.
+  let fichaInicial = null;
   try {
-    const hash = (window.location.hash || '').replace('#', '').trim();
-    if (hash) window.appState.view = hash;
+    const h = viewFromHash();
+    if (h && h.id != null) fichaInicial = h;             // una ficha: se comprueba antes de pintar
+    else if (h) window.appState.view = h.view;
+    else {
+      // Lo que no reconoce `viewFromHash` se deja como estaba: hay hashes que no son vistas.
+      const hash = (window.location.hash || '').replace('#', '').trim();
+      if (hash && hash.indexOf('/') === -1) window.appState.view = hash;
+    }
   } catch {}
 
   // 8. Onboarding o render
+  const pintarInicio = () => {
+    // Una ficha no se pinta a ciegas: si su id no existe —o no es de este negocio— se vuelve a la
+    // lista con su aviso, por el MISMO camino que el botón atrás. Ver `abrirFichaDesdeHash`.
+    if (fichaInicial) return abrirFichaDesdeHash(fichaInicial.view, fichaInicial.id);
+    return renderView(window.appState.view || 'home');
+  };
   if (!me.onboardingCompleted) {
-    showOnboardingWizard(() => renderView(window.appState.view || 'home'));
+    showOnboardingWizard(pintarInicio);
   } else {
-    renderView(window.appState.view || 'home');
+    pintarInicio();
+  }
+
+  // 9. SCRUM-358 (H3 · fase 3) · LA COLA DE FIRMAS SE VACÍA AL ABRIR.
+  //
+  // Éste es el único momento que tenemos: en iOS no hay Background Sync (0 % en Safari, medido en
+  // H0) y el push está descartado (regla 36), así que el navegador no nos despierta nunca. Si no
+  // se drena aquí, una firma hecha sin cobertura se queda en el móvil hasta que el profesional
+  // vuelva a firmar ese albarán a mano.
+  //
+  // Va DESPUÉS del render y SIN `await`: pintar el dashboard no puede esperar a la red. El aviso
+  // se repinta solo cuando el drenado termina — `drenarAlAbrir` se encarga, y no lanza nunca.
+  if (typeof window.drenarAlAbrir === 'function') window.drenarAlAbrir();
+
+  // 10. SCRUM-360 (H5 · fase 3) · QUE iOS NO SE LLEVE UNA FIRMA EN SILENCIO.
+  //
+  // WebKit borra el origen entero —service worker, Cache API e IndexedDB— tras 7 días de usar
+  // Safari sin visitar el sitio (medido en H0). Los web apps añadidos a la pantalla de inicio
+  // están exentos; una pestaña normal, NO. Se pide persistencia —y se MIRA la respuesta, que
+  // pedirla sin mirarla no sirve de nada— y se comprueba si el almacén se ha vaciado solo.
+  //
+  // Va sin `await` y no puede tumbar el arranque: esto informa, no bloquea.
+  //
+  // 🔴 SCRUM-469 · Y EL RESULTADO SE GUARDA Y SE PINTA. Hasta este ticket esta línea llamaba y
+  // **tiraba lo que devolvía**: el mecanismo sabía que el navegador se había llevado firmas sin
+  // subir y no había ninguna superficie donde decirlo. Un fallo medido y no dicho es un fallo
+  // mudo, que es contra lo que existe el bloque H entero.
+  //
+  // Se guarda en `window` con el patrón que ya dejó SCRUM-460 (`precargaUltimoResultado`) porque
+  // los dos órdenes son posibles: si la home se monta antes de que la medida llegue, la pinta
+  // este `then`; si llega antes, la pinta la home al montarse leyendo esta misma variable.
+  if (typeof window.resistenciaAlArrancar === 'function') {
+    window.resistenciaAlArrancar()
+      .then((r) => {
+        window.resistenciaUltimoResultado = r;
+        if (typeof window.pintarDesalojoEnHome === 'function') window.pintarDesalojoEnHome(r);
+      })
+      // `resistenciaAlArrancar` no lanza nunca (SCRUM-360, y hay test). El `catch` está para que
+      // el día que alguien rompa esa promesa el desenlace no sea un rechazo sin gestionar durante
+      // el arranque del dashboard.
+      .catch(() => { window.resistenciaUltimoResultado = null; });
+  }
+}
+
+/**
+ * SCRUM-360 (H5 fase 2) · Manda al servidor el ÚLTIMO ENTORNO VISTO de esta sesión.
+ *
+ * 🔴 EL FILTRO DE «SOLO SI CAMBIA» ESTÁ EN EL SERVIDOR, NO AQUÍ, y no es un detalle de reparto: el
+ * navegador **no sabe** qué hay guardado en la fila. Hacérselo recordar en `localStorage` sería otra
+ * clave que purgar (SCRUM-457) y encima mentiría en cuanto alguien cierre sesión en ese móvil.
+ *
+ * NUNCA LANZA. Si falla, no pasa nada: es un dato de telemetría, y perderlo cuesta precisión en un
+ * recuento — no cuesta el trabajo de nadie.
+ */
+async function enviarEntornoDeLaApp() {
+  try {
+    if (typeof window.entornoDeLaApp !== 'function') return null;
+    return await apiRequest('/admin/entorno', {
+      method: 'POST',
+      body: JSON.stringify({ entorno: window.entornoDeLaApp() }),
+    });
+  } catch (_e) {
+    return null;
   }
 }
 
 async function logout() {
+  // SCRUM-455 · EL PURGADO VA PRIMERO, y el orden no es indiferente.
+  //
+  // Es local y no depende de la red; el POST puede colgarse minutos en un sótano. Si el pro mata la
+  // pestaña mientras la petición espera, los datos de sus clientes ya se han ido del móvil. Al
+  // revés se quedarían.
+  //
+  // Y NO bloquea la salida: cerrar sesión tiene que funcionar siempre, también si el almacén no
+  // está disponible. Quién mira este resultado y qué le dice al profesional es de H2 (SCRUM-356);
+  // aquí no se pinta nada.
+  try { await window.purgarDatosLocales(); } catch (_e) { /* sin almacén no hay nada que purgar */ }
   await fetch('/auth/logout', { method: 'POST' }).catch(() => {});
   window.location.href = '/login.html';
 }
@@ -476,4 +851,77 @@ function startVersionWatch() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => { initApp(); startVersionWatch(); });
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-460 (H1 · fase 3) · CUÁNDO SE PRECARGA. Es una decisión, no un detalle.
+//
+// 🔴 SOLO AL ARRANCAR NO VALE, y no es una preferencia: sería pedirle al profesional que se
+// acuerde de recargar la app antes de meterse en un sótano — justo lo que la política de precarga
+// venía a evitar. El caso que se escapa es el normal: abre la app en casa por la mañana, la oficina
+// emite el albarán a las diez, y él no vuelve a recargar en todo el día.
+//
+// LOS DOS MOMENTOS, medidos sobre lo que el panel ya tiene:
+//   ① `DOMContentLoaded` — el arranque.
+//   ② `visibilitychange` → `visible` — sacar el móvil del bolsillo. Es el gesto que ocurre JUSTO
+//      ANTES de entrar a la obra, y ya lo usa el vigilante de versión, así que no se estrena nada.
+//
+// ⚠️ LO QUE ESTO DEJA FUERA, DICHO: si el profesional no trae la app al frente **con cobertura**
+// entre que el albarán se emite y él baja al sótano, no se precarga nada. No hay tercer momento
+// disponible: `Periodic Background Sync` no existe en Safari/iOS y el push tampoco está montado.
+// Y no se usa `navigator.onLine` para decidir —miente en este escenario exacto, y tiene CERO usos
+// en el árbol a propósito (SCRUM-356)—: se intenta y se mira el resultado.
+//
+// El intento es silencioso y NO bloquea nada: si falla, la app sigue igual. Quién le cuenta al
+// profesional que hoy no lleva nada precargado es H2 (SCRUM-356), no esto.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** No se reintenta más seguido que esto: volver a la pestaña doce veces no son doce paquetes. */
+const PRECARGA_MIN_ENTRE_INTENTOS_MS = 5 * 60 * 1000;
+let precargaUltimoIntento = 0;
+
+/**
+ * 🔴 SCRUM-357 · Y AHORA EL RESULTADO SE PINTA. Hasta este ticket los tres valores se guardaban en
+ * `window.precargaUltimoResultado` y **nadie los leía** —cero consumidores, medido el 11-ago-2026—:
+ * el producto sabía qué llevaba el móvil al sótano y el profesional no. Distinguir «no había nada»
+ * de «no supe mirar» en una variable que no lee nadie deja al pro exactamente igual de ciego que
+ * colapsarlas, con el coste de haberlas separado.
+ *
+ * Se pinta por `window` y con guarda: la home puede no estar montada todavía, y entonces la pinta
+ * ella al montarse leyendo esta misma variable (`pintarPrecargaEnHome`). Los dos órdenes acaban con
+ * el aviso en pantalla, que es la única propiedad que importa.
+ */
+function anotarPrecarga(resultado) {
+  window.precargaUltimoResultado = resultado;
+  if (typeof window.pintarPrecargaEnHome === 'function') window.pintarPrecargaEnHome(resultado);
+  return resultado;
+}
+
+async function precargarSiTocaAhora() {
+  // 🔴 SCRUM-357 · Que el precargador NO ESTÉ es «no supe mirar», y se dice. Antes esto devolvía
+  // `null` en silencio y `precargaUltimoResultado` se quedaba sin valor **para siempre**: el único
+  // caso en que el hueco de «la medida aún no ha llegado» dejaba de ser un hueco y pasaba a ser
+  // mudez permanente, justo en el fallo más grave —no hay ni precargador—.
+  if (typeof window.precargarAlbaranes !== 'function') {
+    return anotarPrecarga({ estado: 'NO_SE_PUDO', n: 0, motivo: 'no hay precargador en esta página' });
+  }
+  const ahora = Date.now();
+  // Sin tocar el resultado: el anterior sigue siendo la última medida válida y pisarlo con un
+  // «no se pudo» convertiría el límite de frecuencia en un fallo que no ha ocurrido.
+  if (ahora - precargaUltimoIntento < PRECARGA_MIN_ENTRE_INTENTOS_MS) return null;
+  precargaUltimoIntento = ahora;
+  try {
+    // Los tres valores —precargué N, no había nada, no supe mirar— llegan enteros a quien pinta:
+    // colapsarlos aquí destruiría la distinción que el productor se molestó en hacer.
+    return anotarPrecarga(await window.precargarAlbaranes());
+  } catch (_e) {
+    // Ni siquiera un fallo inesperado del precargador puede impedir que la app arranque.
+    return anotarPrecarga({ estado: 'NO_SE_PUDO', n: 0, motivo: 'el precargador falló' });
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') precargarSiTocaAhora();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  initApp(); startVersionWatch(); precargarSiTocaAhora();
+});

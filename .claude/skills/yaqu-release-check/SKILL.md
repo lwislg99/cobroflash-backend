@@ -32,7 +32,7 @@ description: Cierre de sprint de YaQu (protocolo AA1.7) — QA del sprint, docs 
 
    ⚠️ **Alcance, para no leerlo por más de lo que es:** es un guard contra el **OLVIDO, no
    contra la mala fe** — nada impide borrar o editar el recibo a mano. Y **NO sustituye a un
-   CI** de los gateados (que no existe: `DATABASE_URL_STAGING` no entra en GitHub Actions,
+   CI** de los gateados (que no existe: `DATABASE_URL_TESTS` no entra en GitHub Actions,
    regla 9). Sustituye al descuido, que es el fallo que de verdad ocurre.
 
 2. **Verificación en producción.** Los flujos tocados verificados en **yaqu.app**
@@ -44,7 +44,7 @@ description: Cierre de sprint de YaQu (protocolo AA1.7) — QA del sprint, docs 
    tocaron plantillas.
 4. **Done + evidencias en U.** En `docs/YAQU_MASTER.md` Parte U: marcar el done de la fila
    con motivo/evidencias (capturas, IDs, docs de evidencia que pida la tarea, p. ej.
-   `EVIDENCIAS_E2E.md`, `VERIFACTU_EVIDENCIAS.md`). **✅ con motivo; nunca borrar filas
+   `EVIDENCIAS_E2E.md`). **✅ con motivo; nunca borrar filas
    ni reescribir historia.**
 5. **Master actualizado.** Si el sprint reveló necesidad de cambios de spec → propuesta
    de cambio de master al fundador (nunca editarlo de tapadillo). CLAUDE.md y `.claude/*`

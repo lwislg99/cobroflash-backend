@@ -1,0 +1,130 @@
+// scripts/censo-guards-navegador.mjs — SCRUM-546 · cuántos guards de navegador hay y qué cuestan.
+//
+//   node scripts/censo-guards-navegador.mjs            (censo + tiempos)
+//   node scripts/censo-guards-navegador.mjs --solo-censo   (sin ejecutarlos)
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// POR QUÉ EXISTE
+//
+// La casa tiene varios guards que levantan navegador FUERA de `npm test`, precisamente porque
+// cuestan. SCRUM-522 discute si eso escala — y esa discusión se estaba teniendo **sin el número**:
+// nadie sabía cuánto cuestan juntos. Aquí se mide, en vez de estimarse.
+//
+// Y hay un segundo motivo, que es el que lo destapó: SCRUM-546 encontró **dos guards escritos con
+// dos días de diferencia que levantan navegador sobre la misma página**. Sin un censo, el tercero
+// se escribe igual.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LA AUTORIDAD ES `package.json`, NO EL DIRECTORIO
+//
+// El censo sale de los scripts `guard:*` declarados, porque **lo que existe es lo que alguien
+// puede ejecutar**. Un fichero en `scripts/` que nadie declara no es un guard: es código.
+//
+// 🔴 SUELO: si algún `guard:*` declarado NO tiene su fichero en el disco, el censo **falla
+// declarándose ciego** en vez de dar un total más bajo. Un total que no cuadra con lo declarado se
+// lee como «cuestan poco», que es justo la conclusión contraria a la verdad.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+// SCRUM-548 · el solape sale de un modulo aparte para que un test estatico pueda mirarlo
+// SIN levantar navegador: la revision manual que encontro el solape de SCRUM-546 costaba
+// un conflicto de merge, y esto cuesta milisegundos.
+import { censarSolape } from './_solape-de-guards.mjs';
+// SCRUM-554 (rebote) · QUE SIGNIFICA EL NUMERO CON EL QUE TERMINO UN GUARD. Aqui se pintaba
+// `rojo(N)` cualquier cosa que no fuera 0 ni 2 — y eso llamaba «defecto medido» tanto a una
+// ceguera declarada (3, 4) como a un codigo IMPUESTO desde fuera. El 143 que este censo
+// reporto el 16-sep-2026 no era de su guard: lo puso un `timeout` que envolvia al censo.
+import { estadoDeLaSalida } from './_salida-de-guard.mjs';
+
+const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SOLO_CENSO = process.argv.includes('--solo-censo');
+const TOPE_MS = 240000;
+
+const pkg = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
+const scripts = pkg.scripts || {};
+
+/** Un guard es «de navegador» si su propia documentación dice que levanta uno. */
+function esDeNavegador(nombre) {
+  const doc = String(scripts['//' + nombre] || '');
+  return /puppeteer|navegador/i.test(doc);
+}
+
+/** El fichero que ejecuta, extraído del comando declarado. */
+function ficheroDe(nombre) {
+  const m = String(scripts[nombre] || '').match(/scripts\/[A-Za-z0-9._-]+\.mjs/);
+  return m ? m[0] : null;
+}
+
+const declarados = Object.keys(scripts).filter((k) => k.startsWith('guard:'));
+const navegador = declarados.filter(esDeNavegador);
+
+console.log('censo de guards de NAVEGADOR — SCRUM-546 (el número que le falta a SCRUM-522)\n');
+console.log('scripts `guard:*` declarados en package.json : ' + declarados.length);
+console.log('de ellos, de navegador                       : ' + navegador.length);
+
+// ── SUELO ────────────────────────────────────────────────────────────────────────────────────
+const sinFichero = navegador.filter((g) => { const f = ficheroDe(g); return !f || !fs.existsSync(path.join(RAIZ, f)); });
+if (navegador.length === 0) {
+  console.error('\n🔴 CIEGO: cero guards de navegador. O se han retirado todos —y entonces esto sobra—');
+  console.error('   o el detector dejó de reconocerlos. No se afirma un total sobre una lista vacía.');
+  process.exit(2);
+}
+if (sinFichero.length) {
+  console.error('\n🔴 CIEGO: hay guards declarados SIN fichero en el disco: ' + sinFichero.join(', '));
+  console.error('   Un total calculado sobre menos guards de los declarados se lee como «cuestan poco».');
+  process.exit(2);
+}
+
+console.log('');
+for (const g of navegador) console.log('   ' + g.padEnd(26) + ficheroDe(g));
+
+// ── SOLAPE · ¿cuántos pagan el arranque de un navegador por la MISMA página? ─────────────────
+{
+  const s = censarSolape(RAIZ);
+  console.log('\n── SOBRE QUÉ PÁGINA MIDE CADA UNO ─────────────────────');
+  for (const f of s.fichas) {
+    console.log('   ' + f.guard.padEnd(26) + (f.derivado ? '(no derivable: su destino sale de una variable)' : (f.rutas.join(' ') || '(sin goto)')));
+  }
+  if (s.solapes.length) {
+    console.log('\n   🟡 SOLAPES:');
+    for (const x of s.solapes) console.log('      ' + x.guards.length + ' guards sobre ' + x.ruta + ' — ' + x.guards.join(', '));
+    console.log('\n   No es un defecto por sí solo: dos guards pueden mirar cosas distintas de la misma');
+    console.log('   página. Es el sitio donde MIRAR, y hasta hoy sólo se miraba cuando un conflicto de');
+    console.log('   merge obligaba a abrir package.json a mano (SCRUM-548).');
+  }
+  if (s.noResueltos.length) {
+    console.log('\n   ⚠️ NO RESUELTOS por este detector: ' + s.noResueltos.join(', '));
+    console.log('   Su destino sale de una variable. Cualquier solape suyo es INVISIBLE aquí, y eso');
+    console.log('   se dice en vez de contarlo como «sin solape».');
+  }
+}
+
+if (SOLO_CENSO) { console.log('\n(--solo-censo: no se ejecuta ninguno)'); process.exit(0); }
+
+// ── EL COSTE, medido ─────────────────────────────────────────────────────────────────────────
+console.log('\nejecutando uno a uno (tope ' + (TOPE_MS / 1000) + ' s cada uno)…\n');
+let total = 0;
+const filas = [];
+for (const g of navegador) {
+  const t0 = Date.now();
+  const r = spawnSync(process.execPath, [ficheroDe(g)], { cwd: RAIZ, timeout: TOPE_MS, encoding: 'utf8' });
+  const ms = Date.now() - t0;
+  total += ms;
+  const estado = estadoDeLaSalida(r);
+  filas.push({ g, s: Math.round(ms / 100) / 10, estado });
+  console.log('   ' + g.padEnd(26) + String(Math.round(ms / 100) / 10).padStart(6) + ' s   ' + estado);
+}
+
+console.log('\n── TOTAL ──────────────────────────────────────────────');
+console.log('   ' + navegador.length + ' guards de navegador · ' + Math.round(total / 100) / 10 + ' s en serie');
+const verdes = filas.filter((f) => f.estado === 'verde').length;
+console.log('   verdes: ' + verdes + ' · no verdes: ' + (filas.length - verdes)
+  + (filas.length - verdes ? ' (' + filas.filter((f) => f.estado !== 'verde').map((f) => f.g + '=' + f.estado).join(', ') + ')' : ''));
+console.log('');
+console.log('⚠️ Sólo «verde» y «rojo(N)» son veredictos DEL GUARD. «CIEGO», «NO ARRANCA»,');
+console.log('   «SIN SERVIDOR», «TOPE», «MATADO» y «FUERA DEL VOCABULARIO» significan que NO');
+console.log('   llegó a medir — y ninguno de ésos es un defecto que buscar (SCRUM-554).');
+console.log('\n⚠️ Un «rojo» o un «CIEGO» aquí NO es necesariamente el coste: varios de estos guards');
+console.log('   necesitan la app levantada o una sesión. El número que vale para SCRUM-522 es el');
+console.log('   TIEMPO, que se paga igual acierten o no.');

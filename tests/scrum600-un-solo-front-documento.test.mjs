@@ -1,0 +1,296 @@
+// tests/scrum600-un-solo-front-documento.test.mjs — SCRUM-600 (DOC-10)
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 EL HALLAZGO QUE JUSTIFICA ESTE FICHERO, Y ESTA MEDIDO
+//
+// El encargo de SCRUM-600 declara OCHO funciones innegociables (F7–F14: lo que YaQu ya hace
+// mejor que Holded) y ordena que la unificacion de los dos fronts del documento no pierda
+// ninguna. Antes de escribir una linea se midio si alguna estaba SUJETA por algo.
+//
+//   MEDIDO el 24-ago-2026 sobre `main` (9b49190a), rompiendo CADA UNA a proposito y corriendo
+//   la tanda COMPLETA (3.934 tests) despues de cada rotura:
+//
+//     F7  vista previa en vivo ................ fail=0 · NADIE LO CAZA
+//     F8  la marca de suplido viaja en la linea  fail=0 · NADIE LO CAZA
+//     F9  margen/coste por linea .............. fail=0 · NADIE LO CAZA
+//     F10 la comision, en el formulario ....... fail=0 · NADIE LO CAZA
+//     F11 IA + plantillas en primer plano ..... fail=0 · NADIE LO CAZA
+//     F12 el selector dice que falta .......... fail=0 · NADIE LO CAZA
+//     F13 el albaran enlaza a su trabajo ...... fail=1, pero el que cae es el guard de fines de
+//         linea de SCRUM-533 — salta porque ese fichero lleva CRLF en disco y no dice NADA de
+//         la funcion. O sea: NADIE LA CAZA.
+//     F14 la firma sale en el PDF ............. igual que F13. NADIE LA CAZA.
+//
+//   Y el banco SABIA dar rojo: como CONTROL POSITIVO se cambio el texto aprobado de la accion
+//   primaria del modal de factura y cayo `SCRUM-289b · MICROCOPY`, nombrandolo. Sin ese control,
+//   ocho «fail=0» seguidos no distinguen «nadie lo vigila» de «no supe mirar» (SCRUM-311).
+//
+// Ocho funciones que son LA VENTAJA DEL PRODUCTO y que se pueden borrar sin que nadie se entere.
+// Por eso este fichero existe ANTES que la unificacion: mover un front sin red es como se
+// pierde una en silencio, y la unificacion es justo la operacion que mueve el front.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// POR QUE AST Y NO `grep`
+//
+// Un `includes('appendChild(previewBox)')` sobre la fuente da VERDE con esa linea COMENTADA.
+// Es el falso verde de SCRUM-515 —un aviso pintado y borrado cuatro lineas despues, con el test
+// en verde porque el texto seguia en el fichero—. Aqui el arbitro es el arbol: un comentario no
+// es un nodo de llamada, asi que queda fuera POR CONSTRUCCION y no por una lista de excepciones.
+//
+// CADA detector lleva su CONTROL NEGATIVO dentro: se le quita el ancla a una copia EN MEMORIA
+// (nunca al fichero) y se exige que cambie de respuesta. Un detector que no sabe decir «no» no
+// vigila nada, y esa es la mitad que casi nunca se prueba.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
+import {
+  censarControles, censarCapacidades, CAPACIDADES, LOS_OCHO,
+  F9_EN_EL_CATALOGO, faltaEnF9,
+} from './_censo-dos-fronts.mjs';
+import { extraerRanurasVisibles, ranurasDelDocumento, RANURAS_NO_DERIVABLES } from './_ranuras-documento.mjs';
+
+const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
+
+const FRONT_PRESUPUESTO = 'public/dashboard/js/quotesView.js';
+// 🔴 SCRUM-867 · EL FRONT B SE RETIRO. `nuevaFacturaModal.js` estaba muerto —nadie lo abria desde
+// que la lista navega a `invoices-new`— y salio del arbol con su `<script>` y su precache. Su censo
+// no se pierde: quedo MEDIDO en `docs/master/SCRUM-600.md` (PASO 0: CERO capacidades de las
+// catorce). Aqui se sigue nombrando para exigir que NO vuelva: dos pantallas emitiendo es
+// exactamente lo que este ticket unifico.
+const FRONT_FACTURA = 'public/dashboard/js/nuevaFacturaModal.js';
+
+const arbol = (fuente, ruta) => ts.createSourceFile(ruta, fuente, ts.ScriptTarget.Latest, true);
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SUELO · el escaner tiene que VER las dos pantallas. Un cero de un instrumento ciego se lee
+// igual que una pantalla vacia, y aqui todo el censo se apoya en eso.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-600 · SUELO: el escaner ve el front que queda, y el retirado no vuelve', () => {
+  const a = censarControles(leer(FRONT_PRESUPUESTO), 'quotesView.js');
+  assert.ok(a.controles.length >= 20,
+    `🔴 ESCANER CIEGO sobre el presupuesto: solo veo ${a.controles.length} controles`);
+  assert.equal(fs.existsSync(path.join(RAIZ, FRONT_FACTURA)), false,
+    `🔴 ${FRONT_FACTURA} ha vuelto al arbol. Se retiro en SCRUM-867 por muerto, con su censo ya `
+    + 'medido y escrito. Si hace falta otra vez, es cambio de master antes de codigo.');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// PASO 0 · EL CENSO. La pregunta del ticket: que tiene HOY cada uno de los dos fronts.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-600 · PASO 0: el front que queda las tiene TODAS, y el retirado tenia CERO', () => {
+  // 🔴 SCRUM-867 · AQUI SE CENSABAN LOS DOS FRONTS. El B se retiro, asi que su columna ya no se
+  // puede derivar del arbol: su medicion —CERO de las catorce capacidades— quedo escrita en
+  // `docs/master/SCRUM-600.md`, que es donde vive el PASO 0. Lo que sigue vivo aqui es la mitad que
+  // se puede seguir midiendo: que el front que queda no PIERDA ninguna.
+  const censo = censarCapacidades([
+    { nombre: 'quotesView.js', fuente: leer(FRONT_PRESUPUESTO) },
+  ]);
+  assert.equal(censo.length, CAPACIDADES.length, 'el censo tiene que cubrir el inventario entero');
+
+  const enPresupuesto = censo.filter((c) => c.porFront['quotesView.js']).map((c) => c.id);
+
+  // El presupuesto las tiene TODAS. Si dejara de tenerlas, el censo estaria midiendo otra cosa.
+  const perdidas = CAPACIDADES.map((c) => c.id).filter((id) => !enPresupuesto.includes(id));
+  assert.deepEqual(perdidas, [],
+    `🔴 el presupuesto ha PERDIDO estas capacidades: ${perdidas.join(', ')}. `
+    + 'O se han borrado, o el detector dejo de verlas: las dos cosas hay que mirarlas antes de seguir.');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LA RED · los OCHO. Uno por uno, con nombre, y con su control negativo.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+for (const f of LOS_OCHO) {
+  test(`SCRUM-600 · 🔴 ${f.id} NO SE PIERDE: ${f.que}`, () => {
+    const fuente = leer(f.fichero);
+
+    // CONTROL POSITIVO — hoy esta.
+    assert.ok(f.detecta(arbol(fuente, f.fichero)),
+      `🔴 SE HA PERDIDO ${f.id} (${f.que}) en ${f.fichero}. `
+      + `El encargo de SCRUM-600 lo declara innegociable: si se ha quitado a proposito, es cambio `
+      + `de master ANTES de codificar, no un borrado de paso.`);
+
+    // El ancla tiene que ser UNICA, o el control negativo estaria quitando otra cosa.
+    const veces = fuente.split(f.ancla).length - 1;
+    assert.equal(veces, 1,
+      `🔴 el ancla de ${f.id} aparece ${veces} veces en ${f.fichero}: el control negativo no seria fiable`);
+
+    // CONTROL NEGATIVO — sobre una copia EN MEMORIA. El detector tiene que saber decir «no».
+    const mutilada = fuente.replace(f.ancla, '');
+    assert.equal(f.detecta(arbol(mutilada, f.fichero)), false,
+      `🔴 DETECTOR TAUTOLOGICO en ${f.id}: sigue diciendo que si con el ancla quitada, `
+      + `asi que no vigila nada y su verde no vale.`);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// R-CONTAR · el numero de vigilados no baja sin que se vea. Quitar una entrada de `LOS_OCHO`
+// apagaria su test SIN QUE FALLE NADA: un guard que se puede desactivar borrando su fila no es
+// un guard. Misma forma que el trinquete de SCRUM-402.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-600 · 🔴 la red cubre los OCHO — quitar uno de la lista tiene que doler', () => {
+  // SCRUM-598: F9 ya no se ancla en `quotesView.js`, porque la capacidad se MUDÓ al catálogo con
+  // CAT-01 (decisión del fundador, 24-ago-2026). Pero siguen siendo OCHO: siete anclados por
+  // línea en `LOS_OCHO` y F9 con su detector propio. Se suman aquí a propósito — si mañana
+  // alguien borra `F9_EN_EL_CATALOGO`, esta cuenta lo dice, que es lo que impide que una
+  // mudanza acabe siendo una retirada silenciosa.
+  const vigilados = [...LOS_OCHO.map((f) => f.id), F9_EN_EL_CATALOGO.id]
+    .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
+  assert.deepEqual(vigilados,
+    ['F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'],
+    '🔴 la red de SCRUM-600 son OCHO y estan enumeradas en el encargo. Ni una menos.');
+  for (const f of LOS_OCHO) {
+    assert.ok(fs.existsSync(path.join(RAIZ, f.fichero)),
+      `🔴 ${f.id} apunta a ${f.fichero}, que no existe: la red vigilaria el vacio`);
+  }
+  for (const rel of Object.values(F9_EN_EL_CATALOGO.ficheros)) {
+    assert.ok(fs.existsSync(path.join(RAIZ, rel)),
+      `🔴 F9 apunta a ${rel}, que no existe: su casa nueva estaria vacia`);
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 F9 · EL CONTROL POSITIVO EN SU CASA NUEVA.
+//
+// El rojo probado (romper el catálogo a propósito y comprobar que este detector CAE y NOMBRA qué
+// falta) vive en `scrum598-el-margen-sale-del-documento.test.mjs`, que es el ticket que hizo la
+// mudanza. Aquí va lo que le toca a esta red: que F9 SIGUE ESTANDO.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test(`SCRUM-600 · 🔴 F9 NO SE PIERDE: ${F9_EN_EL_CATALOGO.que}`, () => {
+  const falta = faltaEnF9({
+    vista: leer(F9_EN_EL_CATALOGO.ficheros.vista),
+    aritmetica: leer(F9_EN_EL_CATALOGO.ficheros.aritmetica),
+  });
+  assert.deepEqual(falta, [],
+    '🔴 SE HA PERDIDO F9 (coste y margen existen en el producto), y en el CATÁLOGO, que es donde '
+    + 'vive desde CAT-01. Falta esto:\n'
+    + falta.map((f) => '   · ' + f).join('\n')
+    + '\n\n  El encargo de SCRUM-600 lo declara innegociable: si se ha quitado a propósito, es '
+    + 'cambio de máster ANTES de codificar, no un borrado de paso.');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// LAS RANURAS DE TEXTO · lo que el fundador tiene que decidir para que esto se pueda codificar.
+//
+// La lista se FIJA aqui —texto a texto, comparado con `===`— y no en un informe, porque un
+// informe no vuelve a leerse: en cuanto alguien toque un rotulo del presupuesto, la lista que
+// el fundador esta mirando deja de ser cierta SIN QUE NADIE SE ENTERE. Fijada, cae.
+//
+// 🔴 NO se fija la LINEA. Se fija la VIA y el TEXTO. Una linea cambia porque alguien anadio un
+// comentario doce lineas mas arriba, y un guard que cae por eso lo apaga el siguiente que pase.
+// Las lineas van en la entrada del master, fechadas contra su sha.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const RANURAS_A = [
+  ["textContent", "Crear presupuesto"],
+  ["textContent", "Genera un presupuesto con varias líneas, calcula los totales y envía el link de pago por WhatsApp."],
+  ["cabeceraModal(titulo)", "Presupuesto #${displayNum} generado"],
+  ["textContent", "Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente."],
+  ["title", "PDF Presupuesto #${displayNum}"],
+  ["setAlert", "Presupuesto enviado por email."],
+  ["setAlert", "Presupuesto enviado por WhatsApp."],
+  // 🔴 SCRUM-656 (T7) · RANURA NUEVA, y entra en esta lista precisamente porque el texto es MÍO
+  // y no está aprobado (regla 30). Es el rótulo del selector que decide si el presupuesto suma
+  // el IVA al final o lo declara no incluido. Los dos textos de las opciones —«Sumar el IVA al
+  // final» y «IVA no incluido»— sí son literales del encargo del fundador; el rótulo del campo
+  // no, así que espera aquí con las demás.
+  ["createFieldSelect()", "IVA del presupuesto"],
+  ["textContent", "Solo presupuesto (facturación manual)"],
+  ["textContent", "Pasada esta fecha el presupuesto caduca solo y el cliente verá \"pide uno actualizado\"."],
+  ["textContent", "Añade los conceptos que vas a presupuestar."],
+  ["title", "Describe el trabajo y Claude sugiere las líneas del presupuesto"],
+  ["textContent", "Generar presupuesto"],
+  ["textContent", "Estado del presupuesto"],
+  ["innerHTML [const STATUS_EMPTY_HTML]", "<div class=\"quote-status-empty\">📄 Genera el presupuesto y aquí verás su número, el estado y si se ha enviado.</div>"],
+  ["innerHTML [const STATUS_EMPTY_HTML]", "<div class=\"quote-status-empty\">📄 Genera el presupuesto y aquí verás su número, el estado y si se ha enviado.</div>"],
+  ["innerHTML", "<strong>Presupuesto #${displayNum}</strong>"],
+  ["innerHTML", "KPI-TOTAL"],
+  ["innerHTML", "PIE-TOTAL"],
+  ["textContent", "Presupuesto válido durante 30 días salvo indicación en contrario."],
+  ["title", "Añadir una línea con \"${item.concepto}\" (en ${item.usos} presupuestos)"],
+  ["textContent", "en ${item.usos} presupuestos"],
+  ["innerHTML", "MODAL-USAR-PLANTILLA"],
+  ["innerHTML", "MODAL-GUARDAR-PLANTILLA"],
+  ["setAlert", "Plantilla \"${template.name}\" cargada — completa los datos del cliente y genera el presupuesto."],
+  ["new Error", "Respuesta inesperada al crear presupuesto."],
+  // 🔴 SCRUM-600 (7-sep-2026) · ESTAS DOS SON NUEVAS EN LA LISTA Y NO SON RANURAS NUEVAS.
+  //
+  // Llevaban aqui desde siempre, escondidas detras de un ternario dentro de un `setAlert`, y el
+  // extractor no bajaba a las ramas de una condicional: devolvia `null` y las perdia. O sea que
+  // la lista que el fundador tenia delante decia 27 cuando eran 29 — un censo que se calla dos
+  // ranuras no dice «no las veo», dice un numero mas pequeno.
+  //
+  // Se destaparon al arreglar el instrumento, no al escribir codigo nuevo. Van con su motivo
+  // aqui para que nadie las lea como «dos textos que alguien anadio».
+  ["setAlert", "📋 Presupuesto enviado a un administrador para aprobación."],
+  ["setAlert", "Presupuesto creado en borrador."],
+  ["textContent", "Generar presupuesto"],
+];
+
+// Las cuatro ranuras que son BLOQUES de HTML con la frase dentro. Se fijan por la frase, no por
+// el bloque entero: el bloque lleva ademas estilos y marcado, que cambian sin que cambie el
+// texto — y entonces el guard caeria por algo que no es lo que vigila.
+const FRASES_EN_BLOQUE = {
+  'KPI-TOTAL': 'Total presupuesto',
+  'PIE-TOTAL': 'Total presupuesto',
+  'MODAL-USAR-PLANTILLA': 'Elige una plantilla para cargar sus líneas en el presupuesto actual.',
+  'MODAL-GUARDAR-PLANTILLA': 'Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.',
+};
+
+test('SCRUM-600 · SUELO: el extractor de ranuras VE la pantalla entera', () => {
+  // SCRUM-867: aqui se exigian tambien las >=15 ranuras del modal retirado. La lista de ranuras que
+  // este fichero vigila —la de abajo— siempre fue la del PRESUPUESTO, que es la que sigue viva.
+  const q = extraerRanurasVisibles(leer(FRONT_PRESUPUESTO), 'quotesView.js');
+  assert.ok(q.length >= 100, `🔴 EXTRACTOR CIEGO sobre el presupuesto: ${q.length} ranuras visibles`);
+});
+
+test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 29 posiciones, 27 textos', () => {
+  const ranuras = ranurasDelDocumento(leer(FRONT_PRESUPUESTO), 'quotesView.js');
+
+  assert.equal(ranuras.length, RANURAS_A.length,
+    `🔴 el numero de ranuras ha cambiado: eran ${RANURAS_A.length} y ahora son ${ranuras.length}. `
+    + 'La lista que el fundador esta mirando ha dejado de ser cierta — hay que volver a mandarsela.');
+
+  ranuras.forEach((r, i) => {
+    const [via, esperado] = RANURAS_A[i];
+    assert.equal(r.via, via, `ranura ${i + 1}: la via cambio de ${via} a ${r.via}`);
+    const clave = FRASES_EN_BLOQUE[esperado];
+    if (clave === undefined) {
+      // Texto EXACTO, con `===`. Nada de `includes`.
+      assert.equal(r.texto, esperado,
+        `🔴 la ranura ${i + 1} (${via}) cambio de texto.\n  antes: ${JSON.stringify(esperado)}\n  ahora: ${JSON.stringify(r.texto)}`);
+    } else {
+      // Bloque de HTML: se exige que la FRASE siga dentro, byte a byte.
+      const dentro = r.texto.split(clave).length - 1;
+      assert.equal(dentro, 1,
+        `🔴 la frase del bloque ${esperado} ya no esta (o esta ${dentro} veces): ${JSON.stringify(clave)}`);
+    }
+  });
+
+  const distintos = new Set(ranuras.map((r) => r.texto));
+  // 24 → 25 (SCRUM-656): entra el rótulo del selector de IVA del presupuesto.
+  // 25 → 27 (SCRUM-600, 7-sep-2026): NO entra texto nuevo. El extractor aprendió a bajar a las
+  // dos ramas de un ternario y destapó los dos `setAlert` del alta que estaban escondidos ahí.
+  assert.equal(distintos.size, 27,
+    `🔴 textos distintos: ${distintos.size}. Son 29 posiciones menos las dos parejas que `
+    + 'comparten texto («Generar presupuesto» en el boton y al restaurarlo; el vacio del panel de '
+    + 'estado, que sale dos veces de la MISMA constante).');
+});
+
+test('SCRUM-600 · 🔴 GRUPO B: la ranura que el criterio derivado NO puede ver sigue donde se dijo', () => {
+  assert.ok(RANURAS_NO_DERIVABLES.length >= 1,
+    '🔴 el grupo B se ha vaciado: o se resolvio y hay que decirlo, o alguien lo borro');
+  for (const r of RANURAS_NO_DERIVABLES) {
+    const disco = fs.readFileSync(path.join(RAIZ, r.fichero));       // BYTES, no texto
+    const veces = disco.toString('utf8').split(r.ancla).length - 1;
+    assert.equal(veces, 1,
+      `🔴 ${r.id}: su ancla aparece ${veces} veces en ${r.fichero}. La lista a mano se ha desincronizado `
+      + 'del codigo, que es lo peor que le puede pasar a una lista a mano.');
+    // Y el criterio derivado NO la ve: si algun dia la viera, sobra del grupo B.
+    assert.equal(r.texto.toLowerCase().includes('presupuest'), false,
+      `🔴 ${r.id} SI nombra el documento, asi que el criterio derivado ya la encuentra: `
+      + 'sacala del grupo B o se contara dos veces.');
+  }
+});

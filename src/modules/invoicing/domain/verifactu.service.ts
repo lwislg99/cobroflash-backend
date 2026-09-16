@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import { prisma as defaultPrisma } from '../../../core/db/prisma';
 import { calcVatBreakdown, calcVatCuotaTotal } from './vat.service';
 import { isReceiptNumber } from './invoiceNumber.service';
+import { declarabilidadDe } from './tipoDocumento'; // SCRUM-413
 import { config } from '../../../core/config/env';
 // SCRUM-247: la identidad del PRODUCTOR es constante del repo, no configuración de panel.
 import {
@@ -34,6 +35,7 @@ import {
   RegistroNoEmitibleError,
   resolverSinDestinatario,
 } from '../../fiscal/verifactu/registro.builder';
+import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
 
 // SCRUM-145: los namespaces oficiales de los XSD de la AEAT vivían aquí (`NS_LR`, `NS_INFO`)
 // SOLO para el sobre que se armaba en este fichero. SCRUM-240 se llevó el sobre a
@@ -152,6 +154,36 @@ export function buildVeriFactuQrUrl(params: {
 }
 
 /**
+ * SCRUM-413 · EL CORTE POR TIPO EN EL SELLADO. Devuelve el `TipoFactura` del catálogo o LANZA.
+ *
+ * ── POR QUÉ ESTA FORMA, Y NO OTRA ────────────────────────────────────────────────────────
+ *
+ * ① **Lanza, no excluye.** `applyVeriFactu` sella UN documento; no hay «el resto del lote». Si el
+ *    documento no es declarable, la respuesta es un no rotundo — igual que el `throw` de
+ *    `receipt_document_not_invoiceable` que ya vivía dos líneas más arriba. En el paquete anual
+ *    (`construirRegistro`) la respuesta correcta es la contraria: excluir CON MOTIVO, porque ahí sí
+ *    hay un lote que sigue siendo entregable. Mismo veredicto, dos formas de fallar, y cada una
+ *    donde toca.
+ *
+ * ② **Devuelve el tipo en vez de solo comprobar.** Así el punto donde se usa (`tipoFactura:` de la
+ *    huella) no puede volver a construir el valor por su cuenta: el que decide y el que escribe son
+ *    la misma llamada. Un `assert` suelto habría dejado el `? :` vivo al lado, listo para divergir.
+ *
+ * ③ **Distingue los dos motivos.** «No es una factura» y «no sé qué es esto» son fallos distintos:
+ *    el primero es correcto y esperado (un justificante), el segundo es que alguien escribió un
+ *    tipo que nadie clasificó. Aplastarlos en un mensaje único haría que el segundo se leyera como
+ *    rutina — y es justo el que hay que mirar.
+ */
+export function exigirTipoDeclarable(tipo: string | null, numero: string): 'F1' | 'R1' {
+  const v = declarabilidadDe(tipo);
+  if (v.declara) return v.tipoAeat;
+  if (v.motivo === 'no_es_una_factura') {
+    throw new Error(`document_not_invoiceable:${v.tipo}:${numero}`);
+  }
+  throw new Error(`unknown_invoice_type:${v.tipo}:${numero}`);
+}
+
+/**
  * Aplica VeriFactu a una factura:
  *  1. Obtiene la huella de la factura anterior del mismo merchant
  *  2. Calcula la nueva huella
@@ -176,6 +208,20 @@ export async function applyVeriFactu(
   if (isReceiptNumber(invoice.number)) {
     throw new Error('receipt_document_not_invoiceable');
   }
+  // SCRUM-413 · Y EL MISMO CORTE POR EL OTRO EJE: EL TIPO.
+  //
+  // El `if` de arriba mira el NÚMERO; éste mira el TIPO. Son dos ejes distintos y **en producción
+  // ya discrepan**: 5 facturas tienen `type: 'F1'` con número `J-` (medido el 10-ago-2026). Con
+  // solo uno de los dos, un documento no declarable entra por el otro lado.
+  //
+  // ⚠️ VA AQUÍ ARRIBA, JUNTO A SU HERMANO, Y NO EN EL PUNTO DONDE SE USA EL TIPO (≈:290). Tres
+  // motivos, y el tercero es el que manda:
+  //   ① es el punto de no retorno: antes de leer la cadena, calcular la huella o escribir nada;
+  //   ② los DOS ejes se leen juntos, que es como se ve que son dos y no uno;
+  //   ③ el mensaje es del MISMO tipo que el de arriba (`throw`, no exclusión): esta función sella
+  //      UN documento, así que «no declarable» es un no rotundo. Excluir-y-seguir es lo correcto
+  //      en el paquete anual, donde el resto del ejercicio sí se entrega — y allí se hace así.
+  exigirTipoDeclarable(invoice.type ?? null, invoice.number);
 
   // SCRUM-149: FAIL-CLOSED — una factura SIN LÍNEAS no se sella.
   //
@@ -283,7 +329,9 @@ export async function applyVeriFactu(
       nif: taxId,
       serie: invoice.number,
       fecha,
-      tipoFactura: invoice.type === 'R1' ? 'R1' : 'F1',
+      // SCRUM-413: el veredicto ya se exigio arriba; aqui solo se lee. Si el tipo no fuera
+      // declarable, esta linea no se alcanza.
+      tipoFactura: exigirTipoDeclarable(invoice.type ?? null, invoice.number),
       cuotaTotal,
       importeTotal,
       prevHash,
@@ -509,6 +557,12 @@ export async function buildVerifactuRegistrosXml(
     // SCRUM-145: vfTimestamp (sello real de la huella) y los campos de ANULACIÓN.
     include: {
       // SCRUM-145 (gap 6): el NIF del cliente decide si se puede emitir `Destinatarios`.
+      //
+      // SCRUM-729 · SE SIGUE CARGANDO, pero ya NO manda: es el respaldo para las facturas
+      // anteriores al escritor. El destinatario sale de las columnas congeladas de la propia
+      // factura (`clienteDelDocumento`). Hasta hoy este `include` decidía, para el ejercicio
+      // ENTERO y en el momento de EXPORTAR, qué NIF se le declaraba a la AEAT — así que
+      // corregir la ficha de un cliente cambiaba registros de facturas ya selladas.
       customer:  { select: { name: true, taxId: true } },
       // SCRUM-216: `lines` de la factura RECTIFICADA — de ahi salen la base y la cuota
       // SUSTITUIDAS que exige `ImporteRectificacion` en las rectificativas por sustitucion
@@ -617,14 +671,43 @@ export async function buildVerifactuRegistrosXml(
       );
     }
 
-    // ⚠️ PENDIENTE FISCAL (asesor): el XSD admite `TipoRectificativa` (S=sustitución /
-    // I=diferencias) y `ImporteRectificacion`, ambos minOccurs=0. NO se emiten porque elegir
-    // uno u otro es una calificación fiscal, no una decisión de implementación (regla: no
-    // inventar). Queda registrado en SCRUM-145 para el dictamen.
-    // SCRUM-216: la R1 ya no sale sin `TipoRectificativa` — eso era un 1114 seguro en CADA
-    // rectificativa. Omitir un campo que el esquema exige no es abstenerse: es garantizar el
-    // rechazo. Hoy `MODO_TIPO_RECTIFICATIVA` vale SIN_CONFIRMAR, así que la R1 se EXCLUYE del
-    // registro y se reporta; no se emite con un valor que nadie ha confirmado.
+    // ── `TipoRectificativa` · LA R1 SÍ ENTRA HOY EN EL REGISTRO ──────────────────────────────
+    //
+    // 🔴 AQUÍ HUBO UNA AFIRMACIÓN FALSA DURANTE 18 DÍAS, y conviene que conste por qué se
+    // corrige en vez de borrarse: este comentario decía «hoy `MODO_TIPO_RECTIFICATIVA` vale
+    // SIN_CONFIRMAR, así que la R1 se EXCLUYE del registro». Las dos mitades eran falsas desde
+    // el 30-jul-2026, cuando el fundador movió el modo a `INCREMENTAL_I`. El código cambió y la
+    // frase se quedó. Quien construyese la remisión leyendo esto habría dado por supuesto que
+    // las rectificativas no se declaran — y dejarlas fuera del registro no es un fallo de
+    // interfaz, es un incumplimiento (SCRUM-513).
+    //
+    // LO QUE PASA HOY, MEDIDO ejerciendo el camino con un doble (no leído del nombre de la
+    // constante, que es un nombre, ni de este comentario, que ya mintió una vez):
+    // una R1 con `rectifies` produce su `RegistroAlta` con `TipoRectificativa` dentro, y el
+    // paquete la cuenta. NO se excluye. Evidencia y método: `docs/master/SCRUM-513.md`.
+    //
+    // ⚠️ NO SE REPITE AQUÍ EL VALOR DEL MODO, y eso es la corrección de fondo. Duplicar la
+    // constante en prosa es lo que permitió que esta línea envejeciera en silencio: la próxima
+    // vez que alguien mueva el modo, este comentario volvería a mentir. La autoridad es
+    // `MODO_TIPO_RECTIFICATIVA` en `registro.builder.ts`, donde vive con su ratchet; lo que sí
+    // se puede decir sin caducar es qué CONSECUENCIA tiene cada modo:
+    //
+    //   · `INCREMENTAL_I`  → declara la R1 con `TipoRectificativa` = I y SIN
+    //                        `ImporteRectificacion` (AEAT 1119 lo prohíbe si no es sustitución).
+    //   · `SUSTITUTIVA_S`  → declara con S y CON `ImporteRectificacion` (AEAT 1118 lo exige).
+    //   · `SIN_CONFIRMAR`  → NO declara: `resolverTipoRectificativa` lanza y la R1 sale
+    //                        EXCLUIDA del paquete con su motivo. Es el camino de bloqueo, que se
+    //                        conserva y se prueba para el día que el dictamen obligue a parar.
+    //
+    // Omitir el campo NO es una cuarta opción: era un 1114 seguro en CADA rectificativa
+    // (SCRUM-216). Omitir un campo que el esquema exige no es abstenerse, es garantizar el
+    // rechazo — la abstención de verdad es bloquear y pedir el dato, que es `SIN_CONFIRMAR`.
+    //
+    // 🔴 PENDIENTE FISCAL, Y SIGUE ABIERTO: P12 del expediente dice que nuestras R1 «consignan el
+    // total corregido» (que sería S) y el código las crea con el total NEGADO (que es I). `I` está
+    // puesto para que la etiqueta coincida con lo que el documento ya contiene, no como dictamen.
+    // Lo reserva el máster al asesor. Si algún día se confirma `S`, no basta con mover la
+    // constante: hay que cambiar cómo se CREAN las R1. No se toca desde aquí.
     //
     // La base y la cuota SUSTITUIDAS salen de las líneas de la factura RECTIFICADA (no de la
     // R1): es lo que significa «sustituida» en `DesgloseRectificacionType`.
@@ -700,8 +783,41 @@ export async function buildVerifactuRegistrosXml(
     // cadena podían ver. Ahora se resuelve por `MODO_SIN_DESTINATARIO`, que hoy vale
     // SIN_DICTAMEN: la factura se EXCLUYE del registro y se reporta, en vez de declararse con
     // una marca que nadie ha decidido. El producto no se toca: la factura se emite y se cobra.
-    const tipoBase: 'F1' | 'R1' = inv.type === 'R1' ? 'R1' : 'F1';
-    const sinDestinatario = !inv.customer?.taxId
+    // SCRUM-413 · EL SITIO SIN GUARDA. Su cadena de funciones no tenia NADA que parase un
+    // documento no declarable, y la consulta que la alimenta trae TODAS las facturas del ano sin
+    // filtrar por tipo ni por sellado. Aqui NO se lanza a secas: se excluye CON MOTIVO, que es el
+    // camino que este constructor ya tiene para lo que no se puede calificar -- el resto del
+    // ejercicio sigue siendo entregable, y un paquete al que le falta algo lo DICE.
+    const veredicto = declarabilidadDe(inv.type);
+    if (!veredicto.declara) {
+      throw new RegistroNoEmitibleError(
+        veredicto.motivo === 'no_es_una_factura'
+          ? `documento_no_declarable:${veredicto.tipo}`
+          : `tipo_de_factura_desconocido:${veredicto.tipo}`,
+      );
+    }
+    const tipoBase: 'F1' | 'R1' = veredicto.tipoAeat;
+
+    // ── 🔴 SCRUM-729 · EL DESTINATARIO SALE DE LA FACTURA, NO DE LA FICHA DE HOY ──────────────
+    //
+    // Éste es el lector que más dolía de los cuatro, y no es el PDF. Aquí el NIF del cliente NO
+    // sólo se imprime: DECIDE. Con `MODO_SIN_DESTINATARIO = 'SIN_DICTAMEN'`, una factura cuyo
+    // cliente no tiene NIF queda FUERA del registro de la AEAT. Leyendo en vivo, eso significaba:
+    //
+    //   · rellenar el NIF de un cliente en septiembre METÍA en el registro una factura de marzo
+    //     que se emitió sin destinatario identificado;
+    //   · y borrarlo o corregirlo la SACABA, o le cambiaba el `TipoFactura` a F2.
+    //
+    // Y `TipoFactura` es uno de los OCHO campos de `computeVeriFactuHash`. Al sellar sale de
+    // `invoice.type` (columna congelada, línea 333); al exportar salía de aquí. O sea que editar
+    // una ficha de cliente podía dejar el XML declarando un `TipoFactura` distinto del que está
+    // dentro de la huella que ese mismo XML lleva firmada.
+    //
+    // Un documento firmado cuyo contenido se recalcula al exportarlo no está firmado: está
+    // sellado sobre algo que ya no existe.
+    const destinatario = clienteDelDocumento(inv, inv.customer);
+
+    const sinDestinatario = !destinatario.taxId
       ? resolverSinDestinatario(tipoBase, inv.number, opts.modoSinDestinatario ?? MODO_SIN_DESTINATARIO)
       : null;
 
@@ -709,11 +825,11 @@ export async function buildVerifactuRegistrosXml(
     // Va entre `DescripcionOperacion` y `Destinatarios`: es el orden del XSD (sequence).
     const marcadorSinDestinatario = sinDestinatario ? sinDestinatario.marcadorXml : '';
 
-    const destinatarios = inv.customer?.taxId ? `
+    const destinatarios = destinatario.taxId ? `
       <sum1:Destinatarios>
         <sum1:IDDestinatario>
-          <sum1:NombreRazon>${xmlEscape(inv.customer.name || 'Cliente')}</sum1:NombreRazon>
-          <sum1:NIF>${xmlEscape(inv.customer.taxId)}</sum1:NIF>
+          <sum1:NombreRazon>${xmlEscape(destinatario.name || 'Cliente')}</sum1:NombreRazon>
+          <sum1:NIF>${xmlEscape(destinatario.taxId)}</sum1:NIF>
         </sum1:IDDestinatario>
       </sum1:Destinatarios>` : '';
 

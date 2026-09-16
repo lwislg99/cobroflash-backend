@@ -9,6 +9,8 @@ import { config } from '../../../../core/config/env';
 import { maskPhone, normalizePhone, formatMoneyEs } from '../../../../core/utils/utils';
 import { sendWhatsAppText, markInboundRead } from '../../../../integrations/whatsapp';
 import { sendMerchantQuoteAcceptedEmail } from '../../../messaging/domain/merchantNotifications';
+// SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
+import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { updateWaMessageStatus, recordInboundWaMessage } from '../../../messaging/domain/whatsappLog.service';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
@@ -236,11 +238,35 @@ async function routeIncoming(from: string, input: BotInput): Promise<void> {
   if (text) await handleIncomingText(from, text);
 }
 
+/**
+ * 🔴 SCRUM-590 (CONT-19) · DÓNDE PUEDE ESTAR GUARDADO UN NÚMERO ENTRANTE — en CUALQUIERA de los
+ * dos campos.
+ *
+ * Cuatro consultas de este fichero preguntan lo mismo —«¿de quién es este número?»— y las cuatro
+ * miraban sólo `phone`. En cuanto el móvil del cliente vive en `mobile`, que es el caso que este
+ * ticket crea Y el número por el que se le escribe, las cuatro dejan de reconocerlo:
+ *
+ *   · la BAJA no se guarda, y encima se le contesta «este número no tiene mensajes activos»,
+ *     que es MENTIRA — los documentos le están saliendo justo a ese número;
+ *   · el acuse del «👍 Recibido» pierde el merchant;
+ *   · su «Acepto» deja de contar como decisión sobre el presupuesto;
+ *   · y su mensaje normal recibe «no encontramos un presupuesto asociado a este número».
+ *
+ * El criterio de coincidencia NO se ensancha: siguen siendo las DOS GRAFÍAS de siempre (`34…` y
+ * `+34…`), que es lo que había. Lo único que cambia es DÓNDE se busca. Y va en una función
+ * porque cuatro copias de una condición son cuatro sitios donde divergir — la lección de
+ * `identificadoresDuplicados` (SCRUM-578): la regla en un sitio, y quien la use que la importe.
+ */
+function dondePuedeEstarElNumero(phone: string) {
+  const grafias = [phone, `+${phone}`];
+  return { OR: [{ phone: { in: grafias } }, { mobile: { in: grafias } }] };
+}
+
 // J3 (F1-build): procesar la baja del canal para TODOS los merchants que
 // tengan este número como cliente. Bloqueo real en sendWhatsAppTemplate.
 async function handleOptOutRequest(phone: string, from: string): Promise<void> {
   const customers = await prisma.customer.findMany({
-    where: { phone: { in: [phone, `+${phone}`] } },
+    where: dondePuedeEstarElNumero(phone),
     select: { id: true, merchantId: true, name: true },
   });
   if (!customers.length) {
@@ -252,7 +278,7 @@ async function handleOptOutRequest(phone: string, from: string): Promise<void> {
     });
     return;
   }
-  await prisma.customer.updateMany({ where: { phone: { in: [phone, `+${phone}`] } }, data: { waOptOut: true } });
+  await prisma.customer.updateMany({ where: dondePuedeEstarElNumero(phone), data: { waOptOut: true } });
   await sendWhatsAppText({
     sinMerchant: 'multi-merchant', // SCRUM-245: la baja vale para TODOS sus negocios (customers.map)
     to: from,
@@ -287,7 +313,7 @@ async function handleTemplateButtonReply(from: string, btnText: string): Promise
     const phone = normalizePhone(from);
     const customers = phone
       ? await prisma.customer.findMany({
-          where: { phone: { in: [phone, `+${phone}`] } },
+          where: dondePuedeEstarElNumero(phone),
           select: { merchantId: true },
         })
       : [];
@@ -306,7 +332,7 @@ async function handleTemplateButtonReply(from: string, btnText: string): Promise
 // bot). Devuelve true si la aplicó; false → que decida el menú del bot.
 async function tryLegacyDecision(phone: string, from: string, text: string): Promise<boolean> {
   const customers = await prisma.customer.findMany({
-    where: { phone: { in: [phone, `+${phone}`] } },
+    where: dondePuedeEstarElNumero(phone),
     select: { id: true },
   });
   if (!customers.length) return false;
@@ -339,7 +365,7 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
 
   // Buscar todos los customers con este número (cross-merchant)
   const customers = await prisma.customer.findMany({
-    where: { phone: { in: [phone, `+${phone}`] } },
+    where: dondePuedeEstarElNumero(phone),
     select: { id: true, merchantId: true, name: true },
   });
 
@@ -475,14 +501,17 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     });
 
     if (merchant?.notifyEmailOnQuoteAccepted && merchant.email) {
-      sendMerchantQuoteAcceptedEmail({
+      // SCRUM-477 · ⚠️ SIGUE SIN `await`: el presupuesto ya se aceptó por WhatsApp y un aviso que
+      // no sale NO puede tumbar esa aceptación. Lo que cambia es que ahora deja constancia.
+      conConstancia('presupuesto_aceptado', merchant.email, sendMerchantQuoteAcceptedEmail({
+        merchantId: quote.merchantId, // SCRUM-508: para que el aviso deje fila
         merchantEmail: merchant.email,
         merchantName:  merchant.name || 'Tu negocio',
         customerName:  customer?.name || 'Cliente',
         quoteId:       quote.id,
         total:         Number(quote.total).toFixed(2),
         currency:      quote.currency,
-      }).catch(() => {});
+      }));
     }
 
     // WhatsApp al merchant

@@ -16,6 +16,36 @@ async function renderHomeView(container) {
         ${window.appUserRole === 'admin' ? '<button class="btn-ghost btn-sm" id="btn-home-prefs" title="Elige qué bloques ves en tu Home">⚙ Personalizar</button>' : ''}
       </header>
 
+      <!-- SCRUM-356 (H2) · Firmas que aún no están a salvo.
+           Va ANTES del héroe y SIN atributo data-home-block a propósito: el héroe habla del dinero que
+           te deben, esto de un albarán que puedes perder, y no es un bloque que se pueda quitar
+           desde «Personalizar». Un aviso de riesgo ocultable no es un aviso.
+           Se rellena aparte para no retrasar el resto de la home, y cuando no hay nada pendiente
+           no ocupa ni una línea. -->
+      <div id="home-firmas-pendientes"></div>
+
+      <!-- SCRUM-469 (H5 mide → H2 pinta) · Firmas que el móvil YA se ha llevado.
+           Va DESPUÉS del contador de pendientes y no antes, a propósito: cuando hay desalojo el
+           contador de arriba dice «no hemos podido comprobar…» o se queda a cero —la cola se fue
+           con el almacén—, así que el orden de lectura es «lo que creías que tenías» y luego «lo
+           que ha pasado con ello». Tampoco lleva atributo data-home-block: un aviso de pérdida
+           que se puede quitar desde «Personalizar» no es un aviso.
+           (Sin comillas invertidas aquí dentro: esto vive en un template literal y cerrarían la
+           cadena, que es el defecto que dejó la home EN BLANCO y documenta SCRUM-356.)
+           Cuando no se ha perdido nada no ocupa ni una línea. -->
+      <div id="home-desalojo"></div>
+
+      <!-- SCRUM-357 (H1 · cierre) · QUÉ LLEVAS ENCIMA para el sótano.
+           Va DETRÁS de los dos de arriba a propósito: aquéllos hablan de trabajo que puedes
+           PERDER y éste de trabajo que puedes HACER, y una pérdida se lee antes que una
+           capacidad. Tampoco lleva data-home-block — que el pro pueda ocultar desde
+           «Personalizar» el único sitio donde se le dice que baja con las manos vacías sería
+           devolverle el fallo mudo que este ticket cierra.
+           A diferencia de sus dos vecinos, este aviso SÍ habla cuando todo va bien: «no hay nada
+           que llevarte» es información que el profesional necesita ANTES de bajar, no ruido.
+           Lo único que no pinta es el hueco en que la medida aún no ha llegado. -->
+      <div id="home-precarga"></div>
+
       <!-- Número héroe: lo que te deben (foco principal) -->
       <div id="home-hero" data-home-block="hero"></div>
 
@@ -119,7 +149,83 @@ async function renderHomeView(container) {
     const af = document.getElementById("activity-feed");
     if (af) af.innerHTML = "";   // detener los skeletons que quedaban cargando
   }
+
+  // SCRUM-356 (H2) · FUERA del try/catch a propósito: si las métricas fallan —que es justo cuando
+  // quedan firmas sin subir— este aviso es lo único que no puede desaparecer.
+  pintarFirmasPendientesEnHome();
+
+  // SCRUM-469 · Y por el mismo motivo, el de desalojo. Si además la home se monta ANTES de que la
+  // medida de `resistenciaAlArrancar` esté lista, aquí no se pinta nada y la repinta `app.js`
+  // cuando llega: los dos órdenes acaban con el aviso en pantalla, que es la única propiedad que
+  // importa.
+  pintarDesalojoEnHome();
+
+  // SCRUM-357 · Y el de qué llevas encima, fuera del `try` por el mismo motivo que los dos de
+  // arriba: el escenario en el que hace falta saber qué llevas al sótano es exactamente aquel en
+  // el que la red va mal y las métricas de la home se han caído por el `catch`.
+  pintarPrecargaEnHome();
 }
+
+/**
+ * SCRUM-356 (H2) · El aviso de firmas pendientes en la home.
+ *
+ * 🔴 VA FUERA DEL `try` DE LAS MÉTRICAS, y se llama también cuando ésas fallan: si la red está mal
+ * —que es justo cuando quedan firmas sin subir— el `catch` de arriba se lleva la home entera, y
+ * este aviso es lo ÚNICO que no puede desaparecer en ese momento. Perderlo ahí sería quitar el
+ * salvavidas cuando el barco se hunde.
+ *
+ * No lanza nunca: `pendientesDeSubir` ya traduce cualquier fallo a «no hemos podido comprobar»,
+ * que es un texto DISTINTO de «no queda nada» y ésa es toda la gracia.
+ */
+async function pintarFirmasPendientesEnHome() {
+  const caja = document.getElementById('home-firmas-pendientes');
+  if (!caja || typeof window.pendientesDeSubir !== 'function') return;
+  caja.innerHTML = window.pintarPendientesDeSubir(await window.pendientesDeSubir());
+}
+window.pintarFirmasPendientesEnHome = pintarFirmasPendientesEnHome;
+
+/**
+ * SCRUM-469 (H5 → H2) · El aviso de desalojo en la home.
+ *
+ * 🔴 VA FUERA DEL `try` DE LAS MÉTRICAS, igual que el de firmas pendientes y por una razón aún
+ * más fuerte: el desalojo se lleva el almacén entero, así que el escenario en el que este aviso
+ * hace falta es exactamente aquel en el que el resto de la home puede estar fallando.
+ *
+ * ⚠️ SIN ARGUMENTO USA LA ÚLTIMA MEDIDA CONOCIDA, y si todavía no hay ninguna pinta cadena vacía
+ * — no un aviso. La medida llega sin `await` desde `app.js` (no puede bloquear el arranque), así
+ * que la home puede montarse antes; cuando llegue, `app.js` vuelve a llamar aquí. Inventar un
+ * aviso mientras no se sabe sería justo la acusación falsa que `pintarDesalojo` evita.
+ *
+ * No lanza nunca: sin caja o sin `pintarDesalojo` no hace nada, y `pintarDesalojo` es puro.
+ */
+function pintarDesalojoEnHome(medida) {
+  const caja = document.getElementById('home-desalojo');
+  if (!caja || typeof window.pintarDesalojo !== 'function') return;
+  caja.innerHTML = window.pintarDesalojo(
+    medida !== undefined ? medida : window.resistenciaUltimoResultado,
+  );
+}
+window.pintarDesalojoEnHome = pintarDesalojoEnHome;
+
+/**
+ * SCRUM-357 (H1 · cierre) · El aviso de qué llevas encima, en la home.
+ *
+ * Mismo reparto que el de desalojo, y por las mismas razones: sin argumento usa la última medida
+ * conocida, y si todavía no hay ninguna `pintarPrecarga` devuelve cadena vacía — no un aviso. La
+ * precarga sale sin `await` desde `app.js` (no puede bloquear el arranque), así que los dos
+ * órdenes son posibles: si la home se monta antes, la pinta `app.js` al terminar; si la medida ya
+ * estaba, la pinta esta llamada. Lo único que importa es que acabe en pantalla por los dos.
+ *
+ * No lanza nunca: sin caja o sin `pintarPrecarga` no hace nada, y `pintarPrecarga` es puro.
+ */
+function pintarPrecargaEnHome(resultado) {
+  const caja = document.getElementById('home-precarga');
+  if (!caja || typeof window.pintarPrecarga !== 'function') return;
+  caja.innerHTML = window.pintarPrecarga(
+    resultado !== undefined ? resultado : window.precargaUltimoResultado,
+  );
+}
+window.pintarPrecargaEnHome = pintarPrecargaEnHome;
 
 function setNavBadge(id, count, max99 = true) {
   const badge = document.getElementById(id);
@@ -200,11 +306,32 @@ function renderSetupChecklist(merchant, data) {
   // cómo cobras (IBAN/Bizum), WhatsApp, reseñas y el primer presupuesto.
   const steps = [
     { label: 'Añade tu logo',              done: !!merchant.logoUrl,       action: 'settings', hint: 'Aparecerá en tus presupuestos' },
-    { label: 'Configura cómo cobras',      done: !!(merchant.iban || merchant.bizumPhone), action: 'settings', hint: 'IBAN para transferencia o Bizum' },
+    // SCRUM-519 · mismo veredicto que la tarjeta de Configuración, y por el mismo motivo: era
+    // `!!(merchant.iban || merchant.bizumPhone)` y se dejaba fuera `whatsappPhone`, que SÍ vale
+    // como móvil de Bizum. Lo decide `viasDeCobro` en el servidor; aquí solo se pinta. Si el
+    // campo no llega, el paso queda PENDIENTE — nunca se rehace el criterio a mano.
+    { label: 'Configura cómo cobras',      done: !!(merchant.viasDeCobro && merchant.viasDeCobro.cobroManual), action: 'settings', hint: 'IBAN para transferencia o Bizum' },
     { label: 'Conecta tu WhatsApp',        done: !!merchant.whatsappPhone,  action: 'settings', hint: 'Te avisamos cuando acepten o paguen' },
     { label: 'Enlace de reseñas de Google', done: !!merchant.googleReviewUrl, action: 'settings', hint: 'Se lo pedimos al cliente tras pagar' },
     { label: 'Completa NIF y dirección',   done: !!(merchant.taxId && merchant.address), action: 'settings', hint: 'Salen en tus PDF' },
     { label: 'Crea tu primer presupuesto', done: data.recentActivity && data.recentActivity.length > 0, action: 'quotes-new', hint: null },
+    // ── SCRUM-315 (D4) · el checklist llega hasta donde llega el dinero ──────────────────────
+    //
+    // Acababa en «crea tu primer presupuesto», que es la mitad del camino: un presupuesto sin
+    // firmar no prueba nada y un trabajo sin cobrar no ha terminado. Los tres nuevos conservan lo
+    // que este checklist ya hacía mejor que nadie — cada paso dice PARA QUÉ SIRVE (`hint`).
+    //
+    // ⚠️ `=== true` NO es manía: si el bloque `onboarding` no llega —endpoint viejo, respuesta a
+    // medias, fallo del cálculo— cualquier otra forma de escribirlo dejaría el paso en un valor
+    // ambiguo. Aquí un dato ausente se pinta como NO HECHO. Un checklist que se marca solo por
+    // error le dice al profesional que ya está listo cuando no lo está, y eso es peor que uno que
+    // le pide de más.
+    { label: 'Carga tus precios', done: data.onboarding?.precios === true, action: 'products',
+      hint: 'Para que un presupuesto salga en 30 segundos' },
+    { label: 'Que tu cliente firme un presupuesto', done: data.onboarding?.firma === true, action: 'quotes-list',
+      hint: 'Es tu prueba si luego dice que no lo pidió' },
+    { label: 'Cobra tu primer trabajo', done: data.onboarding?.cobro === true, action: 'invoices',
+      hint: 'Bizum, tarjeta o transferencia, desde el mismo enlace' },
   ];
 
   const incomplete = steps.filter(s => !s.done);
@@ -390,9 +517,14 @@ function renderActivity(items) {
     return;
   }
   feed.innerHTML = items.map((item) => {
-    const statusLabel = {
-      draft: "Borrador", sent: "Enviado", accepted: "Aceptado", rejected: "Rechazado",
-    }[item.status] || item.status;
+    // SCRUM-820 · ERA UNA COPIA MÁS DEL MISMO DICCIONARIO, y con CUATRO claves de seis: un
+    // presupuesto `expired` o `pending_approval` salía aquí como `● expired` y `● pending_approval`
+    // —el identificador interno, crudo, en la portada—. Medido, no supuesto.
+    //
+    // Ahora lee de la pieza compartida (`quoteStatusMeta`, api.js), la misma que la lista. Ése es
+    // el arreglo de fondo: la contradicción entre pantallas no se quita alineando dos mapas, se
+    // quita dejando UNO.
+    const statusLabel = window.quoteStatusMeta(item.status).label;
     const statusColor = {
       accepted: "#16a34a", rejected: "#dc2626", sent: "#2563eb", draft: "#6b756f",
     }[item.status] || "#6b756f";
@@ -619,10 +751,6 @@ function openQuickQuoteModal(prefill) {
   backdrop.id = "qq-modal-backdrop";
   backdrop.innerHTML = `
     <div class="modal qq-modal">
-      <div class="modal-header">
-        <span class="modal-title">${qNew} ${qFast}</span>
-        <button class="modal-close" id="qq-close">&times;</button>
-      </div>
 
       <div class="qq-modal-body">
         <!-- Cliente -->
@@ -732,6 +860,10 @@ function openQuickQuoteModal(prefill) {
     </div>
   `;
 
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  backdrop.querySelector('.modal').prepend(cabeceraModal({
+    titulo: `${qNew} ${qFast}`, idCierre: 'qq-close',
+  }));
   document.body.appendChild(backdrop);
 
   document.getElementById("qq-close").addEventListener("click", closeQuickQuote);

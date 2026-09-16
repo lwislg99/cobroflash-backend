@@ -10,13 +10,17 @@
 // Los dos dicen lo mismo: la tanda se ejecutó contra un árbol distinto del que hay ahora.
 //
 // El ticket sospechaba de un `dist` COMPARTIDO por junction entre worktrees. **Se midió y no
-// es así**: de los 24 worktrees vivos, ninguno tiene `dist` como junction — todos lo tienen
-// propio. Lo que sí se comparte es `node_modules`, y por DOS mecanismos distintos, lo que
-// hace la superficie mayor de lo que decía el ticket:
+// es así**: de los 24 worktrees vivos EN JULIO-2026, ninguno tenía `dist` como junction — todos
+// propio. Lo que sí se compartía entonces era `node_modules`, por DOS mecanismos distintos, lo
+// que hacía la superficie mayor de lo que decía el ticket:
 //   · junction explícito (wt-scrum-114, wt-scrum-162, wt-scrum-178 → node_modules del repo);
 //   · resolución hacia arriba de Node: los worktrees bajo `.claude/worktrees/` viven DENTRO
 //     del repo y ni siquiera tienen `node_modules`; resuelven el del padre sin que haya
 //     ningún enlace que lo delate. Este segundo es peor justo porque no se ve.
+//
+// ⚠️ SCRUM-351 · ESO ERA UNA MEDICIÓN, NO UNA PROPIEDAD DEL PROYECTO, y aquí se leía en presente.
+// Ninguno de esos tres worktrees existe ya: el 11-ago-2026 quedan CUATRO y ninguno comparte. No se
+// escribe aquí el número nuevo —caducaría igual—: se pregunta cuando haga falta, `npm run topologia`.
 //
 // Y el solapamiento NO necesita worktrees para ocurrir: `npm test` es `build && node --test`,
 // así que dos tandas en el MISMO árbol ya se pisan el `dist` la una a la otra.
@@ -128,8 +132,12 @@ export function mensajeArbolMovido(cambios) {
     '   recibí 501" sobre un arreglo que ya estaba en el árbol).\n\n' +
     '   Causas habituales, en orden de probabilidad:\n' +
     '     1. otra tanda o un `npm run build` en ESTE mismo árbol (npm test compila antes de correr);\n' +
-    '     2. un `npx prisma generate` en otro worktree: node_modules se comparte por junction Y\n' +
-    '        por resolución hacia arriba en los worktrees de .claude/worktrees/;\n' +
+    // SCRUM-461: esta causa DEPENDE DEL MONTAJE y antes se daba por hecha. Medido el 10-ago, los
+    // cuatro worktrees vivos tienen `node_modules` PROPIO — sin enlace, regenerar en otro no toca
+    // a éste. Se deja como causa posible, pero con su comprobación al lado.
+    '     2. un `npx prisma generate` en otro worktree — SÓLO si tu node_modules es un enlace al\n' +
+    '        suyo, o se resuelve hacia arriba (worktrees de .claude/worktrees/). Compruébalo:\n' +
+    '        node -e "console.log(require(\'fs\').lstatSync(\'node_modules\').isSymbolicLink())";\n' +
     '     3. una edición de tests/ a mitad de la tanda.\n\n' +
     '   R6 («un solo trabajo contra staging a la vez») serializa la BD, NO las compilaciones.\n' +
     '   Espera a tener el árbol para ti y vuelve a lanzarla entera.\n'

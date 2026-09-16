@@ -438,3 +438,221 @@ sigue bloqueada por dictamen, y hoy ejecutarla destruiría el `AuditLog` fiscal.
 `Reconciliation` y los adjuntos binarios siguen fuera del paquete, como estaba escrito.
 
 **Falta lo único que no puedo poner yo:** los textos aprobados.
+
+---
+
+# SCRUM-244 · 1(b) LEVANTADO: la supresión existe, y ANONIMIZA en vez de borrar
+
+**Fecha:** 10-ago-2026 · **Carril:** A · **Gate:** sin gate en `npm test`; el control contra base va
+tras `LIBRO_PG_URL` (banco desechable) · **Flag:** `MERCHANT_DELETE_ENABLED` = OFF
+**Medido contra:** `origin/main` = `08f0445315cbbee52aa6cb878a5b9fef5a9d6bc1` · 2026-08-10T13:37:47+02:00
+**Entregado:** 2026-08-10T14:08:04+02:00
+
+Esto cierra el **1(b)** que la primera entrada dejó «a dictamen» y desbloquea el punto 1 (la ruta),
+que llevaba desde el 3-ago escrito como «exponerla tal cual habría sido peor que no tenerla».
+
+## Las tres decisiones del fundador (10-ago-2026), y lo que cambian
+
+**① DOS acciones de auditoría, no una** (`merchant_borrado` **y** `merchant_anonimizado`). Borrar y
+anonimizar son actos **distintos**: con una sola acción, dentro de un año nadie podría saber qué se
+hizo con los datos de quién. `AuditAction` es una unión CERRADA (regla 5) y crece solo así.
+
+**② `MERCHANT_DELETE_ENABLED`, OFF por defecto.** Esto borra datos y es irreversible: **se
+construye, no se enciende** (mismo criterio que la regla 24). Con el flag apagado la ruta responde
+**404 y no 403** — una ruta que no existe todavía no anuncia que existe. La tabla P crece con su
+fila (regla 5: la lista es cerrada) y `flags.test.mjs` pasa de 12 a 13 flags; **ese rojo llegó
+solo**, antes que ninguna persona, que es exactamente para lo que está.
+
+**③ El rastro fiscal se ANONIMIZA, no se borra.** Art. 17.3.b RGPD: queda excluido de la supresión
+lo necesario para cumplir una obligación legal, y el registro de facturación hay obligación de
+conservarlo. Se van los identificativos —nombre, email, teléfono, NIF, dirección, notas, del
+negocio y de sus clientes—; se queda el asiento con su encadenamiento intacto. **Esto responde la
+pregunta cerrada de `PREGUNTAS_ASESOR.md` §E punto 13** y cierra la decisión que
+`borradoMerchant.ts` llevaba abierta desde SCRUM-207.
+
+## Por qué la anotación va ANTES, y por qué eso solo funciona si se anonimiza
+
+Anotar antes de ejecutar **no bastaba**: `ORDEN_BORRADO_MERCHANT` incluye `auditLog`, así que el
+borrado completo **se habría llevado por delante la propia anotación**. Habría sido decorativa —la
+misma trampa que un vigilante que rompe lo que vigila—. Como el rastro se conserva redactado, la
+anotación previa sigue ahí cuando todo termina, y el test **la lee DESPUÉS**: es la única forma de
+probarlo.
+
+Dos correcciones que el propio test destapó, y que valen más que el código que arreglan:
+`recordAudit` es **fire-safe** (no puede tumbar una respuesta) — aquí eso era justo lo contrario de
+lo que hace falta, así que se usa `recordAuditOrThrow`; y la primera versión pasaba por el
+**singleton**, con lo que la anotación se iba a **otra base** que la redacción. Constancia en otro
+sitio no es constancia: el cliente entra por parámetro y el control contra el banco lo cazó con «la
+anotación NO ha sobrevivido».
+
+## El control que decide si esto vale
+
+**Tras anonimizar, la cadena de huellas sigue verificando.** El test crea dos facturas encadenadas
+(`i2.vfPrevHash === i1.vfHash`), anonimiza, y comprueba cadena, número, importe y QR intactos. Si
+se rompiera, habríamos cambiado un problema legal por otro peor — y ése no se arregla, porque lo
+sellado no se toca ni para arreglarlo (regla 29). La red `tocaIntocables` para el `data` **antes**
+de llegar a la base el día que alguien añada `vfHash` «para limpiar bien».
+
+## Lo entregado
+
+- `src/modules/system/domain/anonimizarMerchant.ts` — `CAMPOS_PERSONALES` (lista **explícita** a
+  propósito: derivarla «de todo lo que parezca texto» borraría el concepto de una factura),
+  `INTOCABLES` con su motivo, `planDeAnonimizado()` (se calcula aparte de ejecutarse **para poder
+  anotarlo antes**), `redaccionesPara`, `tocaIntocables`.
+- `src/modules/system/domain/supresionMerchant.service.ts` — anota primero o no toca nada.
+- `src/modules/system/app/routes/supresion.routes.ts` — `POST /admin/supresion/:merchantId`,
+  admin-only y declarada en `ADMIN_ONLY_ROUTES`; 404 con el flag apagado; **409 si la confirmación
+  escrita no es el nombre del negocio**.
+- `tests/scrum244-supresion-y-anonimizado.test.mjs` — 10 tests.
+
+## Rojos probados (por el mecanismo, no por sintaxis)
+
+| Inyección | Cae | Lo que demuestra |
+|---|---|---|
+| se quita la anotación previa | `ROJO DEL MECANISMO: sin poder anotar, NO se borra nada` | sin constancia no se toca un dato |
+| se quita la lectura del flag | `con el flag APAGADO la ruta responde 404` | el flag es puerta, no cartel |
+| se quita la confirmación | `confirmacion que no coincide: 409` | el nombre escrito es requisito |
+| la anotación pasa a ir después | `ANOTA primero y redacta despues` | el orden es el ticket entero |
+
+## Lo que NO se ha tocado, dicho
+
+- **Ninguna base real.** El control corre contra el banco desechable (loopback y base terminada en
+  `_test`, **fail-closed**); los tests de la ruta sustituyen los modelos del cliente por dobles **y
+  comprueban que la sustitución está puesta ANTES de invocar nada**. Si fallara, el test cae ahí y
+  no sale una sola consulta — «nada contra producción ni staging, ni en lectura» tenía que ser un
+  mecanismo, no una intención.
+- **Cero `db push`, cero migración**; no toca `prisma/schema.prisma`.
+- **Cero superficie de usuario.** No hay pantalla: la confirmación se **propone** abajo, no se pinta.
+
+## Propuesta de microcopy — PENDIENTE de aprobación del fundador (regla 30)
+
+Dice **qué se borra**, **qué se conserva y por qué**, y obliga a un acto deliberado: escribir el
+nombre del negocio, no un «¿seguro?» que se pulsa sin leer. Escribirlo obliga a **mirar de quién
+son los datos que se van**, que es el error que no se deshace.
+
+> **Vas a borrar los datos personales de {NOMBRE DEL NEGOCIO}.**
+>
+> **Se borra:** nombre, email, teléfono, NIF, dirección y notas del negocio y de todos sus
+> clientes. No se puede deshacer.
+>
+> **Se conserva:** las facturas emitidas —número, importe, fechas y líneas— y el registro de
+> actividad. La ley obliga a guardarlas aunque se ejerza el derecho al borrado (art. 17.3.b RGPD),
+> y tocarlas invalidaría la prueba de todas las facturas siguientes.
+>
+> Para confirmar, escribe el nombre del negocio: `[____________]`
+>
+> [Cancelar] · [Borrar los datos personales]
+
+## Tope de SCRUM-411: **NO se ha bajado a 7, y aquí está el número**
+
+El encargo pedía bajarlo de 8 a 7 en este mismo commit. **Medido con el propio censo, en los dos
+árboles:** main = **8** módulos de dominio inalcanzables, esta rama = **8**. Los mismos ocho.
+
+Este ticket **no saca a ninguno de la lista**: `borradoMerchant.ts` ya era alcanzable en main (entra
+por `barridoDemo.ts`), así que nunca estuvo entre los ocho — lo huérfano era su **export**
+`borrarMerchant`, y **lo sigue siendo** porque la decisión ③ manda anonimizar en vez de borrar. Los
+dos módulos nuevos nacen **alcanzables** (dominio: 85 → 87; inalcanzables: 8 → 8), que es
+justamente la prueba de que la superficie existe. El trinquete es de **igualdad**
+(`assert.equal(lista.length, MAX)`), no de «≤»: ponerlo en 7 lo dejaría en rojo hoy mismo por un
+motivo ajeno a este ticket. Se deja en 8 y se reporta.
+
+## Hallazgo de otro carril (regla 9): `scrum297-evidencias-postgres` está ROJO en main
+
+Con `LIBRO_PG_URL` puesto, `tests/scrum297-evidencias-postgres.test.mjs` falla **en `origin/main` =
+08f0445**, sin nada de esta rama: comprobado ejecutándolo en un árbol de main con entorno completo.
+Mismo mensaje: «el sello del albarán sale como `hash_no_coincide`».
+
+**Causa localizada, y no es el verificador:** SCRUM-300 hizo que `obra` salga de `Job.direccion` en
+la **v:1** del sello y de `Albaran.lugarEntrega` en la **v:2**, y que la versión **se LEA del dato**.
+La fixture de SCRUM-297 escribe `evidenciaFirma: { v: 1, … contentHash: computeAlbaranContentHash(fuentes) }`
+—declara v:1 pero sella con la versión **por defecto**, hoy v:2—, así que el verificador recalcula
+con las reglas de v:1 y no cuadra. **El producto está bien; la fixture es la que miente.** Arreglo
+de una línea (`computeAlbaranContentHash(fuentes, 1)`), de otro carril, **no tocado aquí**.
+
+## Aviso de rama concurrente
+
+`origin/scrum-244-microcopy-aprobada` (f6c6848) trabaja el **mismo número de ticket** en otra parte
+—los ocho textos aprobados del menú de portabilidad, `exportView.js`— y añade **su propia sección
+de 84 líneas a este mismo fichero**. No hay solape de código con esta rama. Al mergear, **se
+conservan AMBAS secciones**.
+# SCRUM-244 · los textos aprobados sustituyen a los marcadores (paso 3 CERRADO)
+
+**Fecha:** 4-ago-2026 · **Carril:** A · **Gate:** sin gate, corre en `npm test`
+
+> **Ancla (en prosa).** Medido contra `origin/main` = `5d0cebef4fee6f180d44e8de4f1a458f29bcd97e` · 2026-08-04T14:59:28+02:00. En prosa porque el guard de SCRUM-267 juzga por FICHERO.
+
+## Los ocho, literales
+
+El fundador aprobó los ocho textos el 4-ago-2026 y se han puesto **sin tocar una coma**: rótulo,
+título, descripción y botón en la card; preparando, éxito, error y aviso en los estados.
+
+## EL GUARD SE DIO LA VUELTA, y esa es la parte interesante
+
+Nació exigiendo que los textos fueran `[PENDIENTE microcopy oficial]`, porque no había textos.
+Ahora exige que sean **exactamente los aprobados**.
+
+**La pregunta que contesta no ha cambiado** —«¿ha escrito alguien microcopy sin pasar por el
+fundador?»— y por eso sirve para las dos etapas sin ser dos guards. Lo que cambió es contra qué
+se compara: antes un marcador, ahora el texto congelado.
+
+Comprueba **las dos direcciones**, y la segunda es la que no es obvia:
+
+1. Cada texto aprobado **está** donde tiene que estar.
+2. **No hay ningún texto visible que no esté aprobado.** Sin esto, añadir una frase pasaría
+   desapercibida — los ocho seguirían estando.
+
+**No hace falta trinquete, y conviene decir por qué:** el conjunto es **cerrado** y no crece
+solo. Un trinquete existe para conjuntos que crecen (los pendientes de SCRUM-243, el censo de
+267). Aquí cambiar un texto obliga a tocar el fichero del guard, y **eso aparece en el diff donde
+un humano lo ve** — que es exactamente el momento de decisión que la regla 30 quiere provocar.
+
+**La duplicación del texto en el test es deliberada**, y es lo contrario de las listas que este
+repo lleva la semana desmontando: allí había dos copias de un dato y ninguna era la autoridad,
+así que derivaban. Aquí **la copia ES la autoridad**. Y por eso no se importa desde la vista: un
+test que comparase el fichero consigo mismo pasaría siempre sin comprobar nada — el medidor
+dentro de lo medido.
+
+## Dos decisiones de COLOCACIÓN que no venían dadas
+
+Los textos venían aprobados; **dónde va cada uno, no**. Las dos que tomé, para que se corrijan en
+una línea si no son lo que querías:
+
+- **El «aviso» va en la card después de descargar**, y el «éxito» va en el toast. El toast
+  confirma y se va; la advertencia sobre los datos de los clientes se queda visible cuando el
+  profesional vuelva a mirar. Como dice *«este archivo»*, se muestra cuando el archivo ya existe.
+- **El botón pierde el contador vivo que tiene la card de gestoría.** Aquel muestra
+  «Preparando… 12s», o sea que **construye** la cadena; aquí el texto de espera está aprobado
+  literal y pegarle un contador detrás **sería modificarlo**. La espera la comunica la propia
+  frase, que dice cuánto puede tardar — que es justo para lo que servía el contador. Hay un guard
+  que falla si alguien «mejora la espera» concatenando algo a la etiqueta.
+
+## El criterio del recorte, ahora como función
+
+Mi propio fallo de ayer se queda escrito y ejecutable: **todo recorte comprueba sus dos
+extremos.** `indexOf` devuelve −1 cuando no encuentra su ancla y `slice(inicio, −1)` **no falla**
+— se lleva el fichero entero menos un carácter, y el rojo que sale **no es tuyo**: te manda a
+mirar donde no es. La primera versión de este guard cayó contra `0 && ds.length`, código que está
+fuera de la card.
+
+Ya no se hace `slice` a pelo: la función `recorte(texto, desde, hasta, etiqueta)` exige los dos
+índices, comprueba que existen y que van en orden, y falla nombrando cuál falta. Un ámbito
+equivocado **no se nota en la salida** —el rojo se lee igual de convincente— así que la única
+defensa es no dejar que ocurra.
+
+## Verificado en rojo, cuatro veces
+
+1. **Cambiar UNA palabra** de un texto aprobado (`mis` → `tus`) → cae nombrando cuál.
+2. **Añadir una frase** nueva con los ocho intactos → cae nombrando la frase.
+3. **Concatenar un contador** a la etiqueta del botón → cae.
+4. **Quitarle un ancla al recorte** → cae por escáner ciego, en vez de medir medio fichero.
+
+Revertidas, verde después. **Suite ungated: 1260 tests, 0 fallos.**
+
+## Lo que queda
+
+- **El `LEEME.txt` del ZIP sigue con `[PENDIENTE]`.** No lo redacto: abajo va lo que
+  legalmente tiene que decir, para que el fundador apruebe el texto.
+- **La supresión** sigue bloqueada por dictamen, fuera de esta pantalla, con su test.
+
+Con esto, **el paso 3 de portabilidad queda cerrado**: registro, cobertura y puerta, con sus
+textos.

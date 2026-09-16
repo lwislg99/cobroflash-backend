@@ -109,6 +109,17 @@ export const SEND_ENDPOINTS_DECLARED: ReadonlyArray<SendEndpointDeclaration> = [
       'en el subobjeto whatsapp:{sent,error?,message?} — NO detectable por la heurística ' +
       'de nombre (ver el límite honesto arriba). jobs.routes.ts, SCRUM-126.',
   },
+  {
+    method: 'POST',
+    path: '/admin/soporte',
+    shape: { kind: 'top-level' },
+    channel: 'email',
+    reason:
+      'SCRUM-406 · «Escríbenos». La heurística de nombre NO lo habría encontrado —«soporte» no ' +
+      'lleva enviar/send/resend—: es el punto ciego nº 2 declarado arriba, y se declara a mano. ' +
+      'Aquí `sent` no es formato: si el correo no sale, el profesional TIENE que enterarse, porque ' +
+      'el canal que esto sustituye (un mailto:) al menos le dejaba el texto delante.',
+  },
 ];
 
 export interface SendEndpointPending {

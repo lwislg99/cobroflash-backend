@@ -16,7 +16,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fantasma ni fuga de empresa)', { skip: !ENABLED }, async (t) => {
+test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fantasma ni fuga de empresa)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

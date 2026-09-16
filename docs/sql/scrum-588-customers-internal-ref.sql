@@ -1,0 +1,48 @@
+-- docs/sql/scrum-588-customers-internal-ref.sql — SCRUM-588 (CONT-16)
+--
+-- LA REFERENCIA INTERNA DEL CLIENTE: el número con el que el PROFESIONAL conoce a ese cliente —
+-- el nº de expediente de la aseguradora, el código del sistema viejo, el nº de finca del
+-- administrador. Hoy lo mete en «Notas», que es texto libre, y luego no lo puede buscar.
+--
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+-- 🛑 ESTE FICHERO ES EL PASO ② DE LA MIGRACIÓN, Y LO APLICA EL FUNDADOR — NO UNA SESIÓN.
+--
+--    ① decisión .................. hecha (asesor, 2-sep-2026)
+--    ② ALTER en LAS TRES bases ... dev · staging · producción   ← ESTE FICHERO
+--    ③ UN SOLO PR ................ esquema + código + tests, DESPUÉS del ②
+--
+-- Producción estuvo NUEVE DÍAS sin desplegar por saltarse este orden: `schemaDrift.ts` para el
+-- arranque cuando la base no tiene lo que el código nombra, y hace bien. Por eso
+-- `prisma/schema.prisma` de esta rama sigue IDÉNTICO A MAIN: una rama cuyo esquema nombre una
+-- columna que las bases no tienen tumba el arranque si alguien la mergea.
+-- ═════════════════════════════════════════════════════════════════════════════════════════
+--
+-- ── EL DDL NO ESTÁ ESCRITO A MANO ───────────────────────────────────────────────────────
+-- Lo emitió `prisma migrate diff` a través de `scripts/preview-migracion.mjs` (el script de la
+-- casa, que ejecuta el CLI LOCAL y trae control positivo: 27 tablas). Se generó comparando el
+-- schema de `main` contra una copia temporal CON la columna, ninguna de las dos en el árbol.
+--
+-- 🔴 Y EL TIPO NO SE ADIVINA. En la deriva anterior dos columnas eran JSONB y crearlas TEXT
+-- habría arrancado en verde y podrido semanas después: `schemaDrift` comprueba que la columna
+-- EXISTA, no de qué tipo es. Aquí el tipo lo decide Prisma a partir de `String?` → TEXT, y la
+-- consulta de verificación lo comprueba LEYENDO EL CATÁLOGO, no suponiéndolo.
+--
+-- ── POR QUÉ NULLABLE Y SIN DEFAULT ──────────────────────────────────────────────────────
+-- «Ausente ≠ vacío» (decisión del asesor): lo vacío viaja como NULL, nunca como cadena vacía.
+-- Un DEFAULT convertiría a todos los clientes que ya existen en «tienen referencia» sin que
+-- nadie lo haya dicho. Y es lo que hace la sentencia segura sobre una tabla con filas: un
+-- `ADD COLUMN` nullable no reescribe la tabla ni bloquea.
+--
+-- ── NOMBRE FÍSICO ───────────────────────────────────────────────────────────────────────
+-- `internal_ref`, en inglés snake_case, que es la convención FÍSICA de `customers`
+-- (`contact_kind`, `legal_name`, `tax_id`, `billing_address`…). NO se usa `referencia` como en
+-- `Charge.reference` y `ParteTrabajo.referencia`: aquéllas son de otras tablas y otra cosa —
+-- la referencia de un cobro no es el código con el que el profesional llama a su cliente.
+--
+-- RE-EJECUTABLE (`IF NOT EXISTS`): volver a correrlo sobre una base ya aplicada no hace nada.
+--
+-- ⚠️ LA VERIFICACIÓN NO VIVE AQUÍ: está en `docs/sql/scrum-588-verificacion.sql`. La lista
+-- blanca del aplicador RECHAZA un `SELECT`, así que un fichero que mezcle el ALTER con su
+-- comprobación queda INAPLICABLE. Ya pasó una vez; se separan a propósito.
+
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "internal_ref" TEXT;

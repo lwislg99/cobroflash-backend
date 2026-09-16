@@ -91,7 +91,7 @@ test('A12.5c: watermark de DEMO presente en el PDF', async () => {
 // P3-9 (SCRUM-80, 22-jul): antes usaba el merchant demo id=1 — SCRUM-42 lo quemó (0 filas)
 // y el test revienta (TypeError sobre quote null). Datos EFÍMEROS propios (mismo patrón
 // que SCRUM-78 en tenancy-permisos/webhooks-idempotencia): nada depende ya del demo.
-test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PDF SIEMPRE', { skip: !DB }, async () => {
+test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PDF SIEMPRE', { skip: !DB && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

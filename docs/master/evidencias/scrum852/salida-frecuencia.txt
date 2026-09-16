@@ -1,0 +1,12 @@
+RANGO EFIMERO: 32768-60999  (28232 puertos)
+CONTIENEN '404': 157  ->  0.556 %  =  1 de cada 179.8
+ejemplos: 33404, 34040, 34041, 34042, 34043, 34044, 34045, 34046 …
+
+CONTROL POSITIVO (4040-4049, deberian ser los 10): 10 ✅
+CONTROL NEGATIVO (5000-5009, deberian ser 0): 0 ✅
+
+LECTURA: con 0.56 % por ejecucion, la probabilidad de haberlo visto
+  tras  10 ejecuciones: 5.4 %
+  tras  50 ejecuciones: 24.3 %
+  tras 100 ejecuciones: 42.7 %
+  tras 200 ejecuciones: 67.2 %

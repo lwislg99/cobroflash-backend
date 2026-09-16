@@ -12,6 +12,9 @@ export const config = {
     BUILD_ID: process.env.RAILWAY_GIT_COMMIT_SHA || String(Date.now()),
 
     RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+    // SCRUM-475 (fase 2B): el secreto del webhook de entregas y rebotes. Sin él el receptor es
+    // fail-closed y lo dice como `NO_SE_PUDO_COMPROBAR`, que NO es «firma inválida».
+    RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET || '',
 
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
@@ -127,6 +130,10 @@ export const config = {
       ['STRIPE_CONNECT_WEBHOOK_SECRET', config.STRIPE_CONNECT_WEBHOOK_SECRET],
       ['MP_WEBHOOK_SECRET', config.MP_WEBHOOK_SECRET],
       ['WHATSAPP_APP_SECRET', config.WHATSAPP_APP_SECRET],
+      // SCRUM-475 (fase 2B): sin él, TODO aviso de entrega o rebote se rechaza (fail-closed) y el
+      // embudo del correo se queda mudo. Que salga en el ARRANQUE es justo lo que hace falta: el
+      // síntoma —que no llega ningún aviso— es indistinguible de «no ha rebotado nada».
+      ['RESEND_WEBHOOK_SECRET', config.RESEND_WEBHOOK_SECRET],
     ];
     const missing = required.filter(([, value]) => !value).map(([name]) => name);
     if (missing.length) {

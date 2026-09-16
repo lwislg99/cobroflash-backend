@@ -18,7 +18,10 @@
   /* Neutros calidos */
   --ink: #0f1c17;            /* titulares y cifras */
   --body: #3f4a45;           /* texto de parrafo */
-  --muted: #6b756f;          /* metadatos, ayudas, placeholders */
+  /* SCRUM-368 · era #6b756f, que sobre --bg daba 4,44:1 — por DEBAJO de los 4,5 de WCAG AA
+     por 0,06. Medido en navegador en 31 nodos de 8 páginas. -1 por canal basta: 4,51 sobre
+     --bg y 4,84 sobre --surface, e indistinguible a ojo. No es color de marca: es un neutro. */
+  --muted: #6a746e;          /* metadatos, ayudas, placeholders */
   --bg: #f6f7f5;             /* lienzo */
   --surface: #ffffff;        /* cards, inputs, modales */
   --border: #e7e9e5;         /* divisores y contornos 1px */

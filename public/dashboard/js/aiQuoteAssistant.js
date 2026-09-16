@@ -10,10 +10,6 @@ function openAiSuggestModal(addLinesFn) {
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal" style="max-width:500px">
-      <div class="modal-header">
-        <h3 class="modal-title">✨ Sugerir líneas con IA</h3>
-        <button class="modal-close" id="ai-modal-close">&times;</button>
-      </div>
       <div class="modal-body">
         <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
           Describe el trabajo con tus propias palabras y Claude sugerirá las líneas del presupuesto usando tu catálogo de productos.
@@ -34,6 +30,8 @@ function openAiSuggestModal(addLinesFn) {
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "✨ Sugerir líneas con IA", idCierre: "ai-modal-close" }));
   document.body.appendChild(overlay);
 
   const closeModal = () => overlay.remove();
@@ -63,12 +61,14 @@ function openAiSuggestModal(addLinesFn) {
     results.innerHTML = '';
 
     let lines;
+    let descartadas = []; // SCRUM-507
     try {
       const data = await apiRequest('/admin/ai/suggest-quote', {
         method: 'POST',
         body: JSON.stringify({ description }),
       });
       lines = data.lines;
+      descartadas = data.descartadas || [];
     } catch (err) {
       const msg = err?.data?.error === 'ai_not_configured'
         ? 'La IA no está configurada. Añade GEMINI_API_KEY (gratis) en Railway.'
@@ -90,11 +90,52 @@ function openAiSuggestModal(addLinesFn) {
     // Mostrar las líneas sugeridas con checkboxes para aceptar/rechazar
     results.innerHTML = `<p style="font-size:13px;font-weight:600;color:var(--neutral-700);margin:0 0 8px">Sugerencias (selecciona las que quieras añadir):</p>`;
 
+    // SCRUM-507 · LO QUE NO SE PUDO PROPONER, DICHO. Una linea con IVA ilegible no se propone
+    // —un 0 % plausible no llama la atencion de quien revisa—, pero desaparecer en silencio seria
+    // otro fallo mudo: aqui sale su CONCEPTO, para que el profesional lo escriba a mano.
+    // MICROCOPY: marcador sin aprobar (regla 30).
+    //
+    // 🔴 VA DESPUES DEL `innerHTML`, Y NO ES UN DETALLE DE ORDEN: lo escribi antes y el `innerHTML`
+    // de arriba BORRABA el aviso: el nodo se creaba, se insertaba y desaparecia sin que nadie lo
+    // viera. Es el mismo fallo mudo que arregla el ticket, cometido al pintarlo. El guard de orden
+    // de la suite existe por esto.
+    if (descartadas.length) {
+      var avisoDesc = document.createElement('p');
+      avisoDesc.className = 'ai-lineas-descartadas';
+      // `white-space:pre-line` NO es decoracion: el texto aprobado lleva un salto de linea, y un
+      // `\n` dentro de un `textContent` lo colapsa HTML — «Añádelo tú si va en el presupuesto.»
+      // saldria pegado a la lista de conceptos. Un texto aprobado que se pinta de otra forma que la
+      // aprobada no es el texto aprobado.
+      avisoDesc.style.cssText = 'font-size:12.5px;font-weight:600;color:var(--warn,#b45309);margin:0 0 8px;white-space:pre-line';
+      // MICROCOPY OFICIAL, aprobada por el fundador en SCRUM-507 · consta en
+      // `docs/master/SCRUM-507.md` (tercera entrega), con el texto literal (regla 30).
+      //
+      // El sujeto es «esto», no la lista: por eso la frase vale con un concepto y con diez, y el
+      // fallo de concordancia que traia mi marcador —«cantidad y precio que no venia»— **no se
+      // arregla, deja de ser posible**.
+      //
+      // ⚠️ `textContent` y NO `innerHTML`: los conceptos vienen del modelo, y son lo unico de esta
+      // pantalla que no ha escrito ni el producto ni el profesional.
+      avisoDesc.textContent = 'Esto no lo hemos añadido porque no sabíamos qué IVA ponerle: '
+        + descartadas.map(function (d) { return d.concept; }).join(' · ')
+        + '\nAñádelo tú si va en el presupuesto.';
+      results.insertAdjacentElement('afterbegin', avisoDesc);
+    }
+
     const list = document.createElement('div');
     list.style.cssText = 'display:flex;flex-direction:column;gap:6px';
 
     lines.forEach((line, i) => {
       const item = document.createElement('label');
+      // SCRUM-507 · LA MARCA DE «SUPUESTO», que es el defecto de fondo: hasta hoy una cantidad
+      // inventada por la IA era INDISTINGUIBLE de una que tecleo el profesional. El veredicto lo
+      // da el servidor (`supuestos`), aqui solo se pinta.
+      //
+      // MICROCOPY OFICIAL, aprobada por el fundador en SCRUM-507 · consta en
+      // `docs/master/SCRUM-507.md` (tercera entrega), con sus tres formas (regla 30). El sujeto es
+      // «esto» y la lista va detras de los dos puntos, asi que la frase concuerda con uno y con dos.
+      var supuestos = Array.isArray(line.supuestos) ? line.supuestos : [];
+      var camposSupuestos = supuestos.map(function (c) { return c === 'qty' ? 'cantidad' : 'precio'; }).join(' y ');
       item.style.cssText = 'display:flex;align-items:flex-start;gap:8px;background:var(--neutral-50);border:1px solid var(--neutral-200);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px';
       item.innerHTML = `
         <input type="checkbox" checked style="margin-top:2px;flex-shrink:0" data-idx="${i}"/>
@@ -103,6 +144,7 @@ function openAiSuggestModal(addLinesFn) {
           <div style="color:var(--neutral-500)">
             Cantidad: ${line.qty} · Precio: ${fmtMoneyEs(line.price, (window.appLocale && window.appLocale.currency) || 'EUR')} · IVA: ${(line.tax * 100).toFixed(0)}%
           </div>
+          ${supuestos.length ? `<div class="ai-linea-supuesta" style="color:var(--warn,#b45309);font-weight:600;margin-top:2px">Esto lo hemos puesto nosotros: ${camposSupuestos}. Revísalo antes de enviar.</div>` : ''}
         </div>
       `;
       list.appendChild(item);
@@ -143,10 +185,6 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal" style="max-width:440px">
-      <div class="modal-header">
-        <h3 class="modal-title">✨ Mensaje WhatsApp con IA</h3>
-        <button class="modal-close" id="ai-msg-close">&times;</button>
-      </div>
       <div class="modal-body">
         <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">
           Claude redactará un mensaje personalizado para enviar a ${escHtml(customerName)} junto con el presupuesto.
@@ -168,6 +206,8 @@ function openAiMessageModal({ customerName, concept, total, currency, onCopy }) 
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "✨ Mensaje WhatsApp con IA", idCierre: "ai-msg-close" }));
   document.body.appendChild(overlay);
 
   const closeModal = () => overlay.remove();

@@ -143,6 +143,11 @@ vite.config.ts.timestamp-*
 # guard-dangerous: sentinel de autorizacion de db push (un solo uso, nunca commitear)
 .claude/allow-db-push
 
+# SCRUM-454: el mismo diseno para la familia destructiva (descartar cambios, truncar un fichero
+# existente, seguir un junction). Un solo uso, y NUNCA commiteado: si viajara con la rama, la
+# autorizacion de una sesion autorizaria a las otras tres.
+.claude/allow-destructivo
+
 # SCRUM-161: recibo de la tanda gateada. LOCAL Y NUNCA COMMITEADO, igual que el sentinel de
 # arriba y por el mismo motivo: si viajara con la rama seria un artefacto que se COPIA entre
 # ramas, y una prueba que se copia deja de probar nada. Lo escribe scripts/test-staging-gated.mjs.
@@ -150,6 +155,18 @@ vite.config.ts.timestamp-*
 
 # muestras generadas para validacion XSD (S1-C)
 tmp/
+
+# SCRUM-414: scripts DESECHABLES que tocan una base de datos.
+#
+# La cabecera de tests/scrum195-url-bd-sin-fuga.test.mjs manda ponerlos aqui -en scripts/, no en el
+# scratchpad, para que el guard de `new URL` los VEA- y prometia que ya estaban ignorados. NO lo
+# estaban: solo existia `tmp/`, que es un directorio. Quien seguia la convencion documentada al pie
+# de la letra acababa commiteando su script de base de datos desechable, y la promesa hacia que no
+# lo comprobara.
+#
+# Lo sostiene tests/scrum414-url-a-mano.test.mjs PREGUNTANDOLE A GIT (`git check-ignore`), no
+# leyendo esta linea: que un .gitignore diga algo y que git lo aplique son dos hechos distintos.
+scripts/tmp-*
 
 # A11.3: dumps cifrados locales (datos de prod — JAMÁS al repo)
 backups/
@@ -162,3 +179,14 @@ public/invoices/
 # SCRUM-48: PDFs de albarán fuera de public/ (privados, se sirven por endpoint auth).
 # Anclado a la raíz (/) para NO ignorar src/core/storage/ ni otros "storage" del árbol.
 /storage/
+
+# SCRUM-473: salidas del MCP de Playwright (capturas y volcados de la página que deja el navegador
+# al verificar UI). NO lo cubría SCRUM-454 —aquello fue el sentinel `.claude/allow-destructivo` y la
+# familia destructiva del hook, no el árbol de trabajo—. Los `console-*.log` de dentro ya caían por
+# el `*.log` de arriba; los .png y los .yml no, y por eso el directorio llevaba tres sesiones
+# apareciendo suelto. Censo del 11-ago-2026: 35 ficheros no trackeados y no ignorados, los 35 aquí.
+.playwright-mcp/
+
+# SCRUM-716: el historial del vigía. Sólo existe si `VIGIA_ESTADO` lo pide (en CI, dentro de
+# la caché de Actions). Nunca se commitea: es estado de ejecución, no fuente.
+.vigia/

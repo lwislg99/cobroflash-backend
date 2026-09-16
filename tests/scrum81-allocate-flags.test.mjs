@@ -12,7 +12,8 @@ import { allocateInvoiceNumber, isReceiptNumber } from '../dist/modules/invoicin
 const AUDIT_FALSO = { create: async () => ({}) };
 const CTX = { camino: 'C3', actor: { tipo: 'pro_propietario', teamMemberId: null } };
 
-// tx mínima: findUnique devuelve el merchant (allocateInvoiceNumber solo lee de merchant); update no-op.
+// tx mínima: findUnique devuelve el merchant; update no-op. Desde SCRUM-396 el camino del
+// justificante también consulta `invoice` para comprobar que la referencia está libre.
 const mkTx = (merchant) => {
   const state = { ...merchant };
   return {
@@ -24,6 +25,9 @@ const mkTx = (merchant) => {
       findUnique: async () => state,
       update: async ({ data }) => { Object.assign(state, data); return state; },
     },
+    // SCRUM-396: `null` = referencia libre. Lo que mide este fichero son los flags; que la
+    // referencia se compruebe y se reintente tiene su propio fichero.
+    invoice: { findUnique: async () => null },
     auditLog: AUDIT_FALSO,
   };
 };

@@ -11,6 +11,31 @@
 
 ---
 
+> ## 🔴 AVISO DE VIGENCIA — SCRUM-513 (17-ago-2026)
+>
+> **Los enlaces de este documento ya NO llevan número de línea, y es a propósito.** Llevaban 75
+> anclas `#L<n>` y, medidas contra el árbol de hoy, **41 de las 43 comprobables apuntaban a otro
+> sitio** (las 32 restantes no eran comprobables por el instrumento; el método y los números están
+> en `docs/master/SCRUM-513.md`). Un desvío típico era de más de cien líneas, así que no se trataba
+> de un enlace despistado: el sistema de coordenadas entero había caducado.
+>
+> **Se han QUITADO los números en vez de actualizarlos.** Quitar una coordenada equivocada no
+> afirma nada; escribir 41 coordenadas nuevas sin verificar cada una a mano sería inventar una
+> medición, y además volverían a derivar con el siguiente commit. Ahora se apunta al **fichero y al
+> SÍMBOLO** (nombre de función, constante o código de error), que es lo único que sobrevive a que
+> alguien añada un import diez líneas más arriba.
+>
+> **⚠️ LO QUE ESTE AVISO *NO* HACE, dicho en voz alta:** SCRUM-513 corrigió coordenadas, **no
+> re-midió las afirmaciones**. Este documento es un RECON del 29-jul-2026 y hay al menos dos sitios
+> cuyo contenido parece superado por tickets posteriores: la fila *«Cualquier fallo de sellado →
+> SIGUE, sin rastro»* de §6.3 (SCRUM-205/206 dicen haber cerrado ese fail-open) y el §*«AuditLog no
+> cubre lo fiscal»* (SCRUM-207 añadió `factura_emitida` y las acciones bloqueantes). **Están
+> marcados donde tocan y NO se han reescrito aquí**: cambiarlos exige re-medir cada uno, que es otro
+> trabajo con su propia evidencia. Hasta entonces, para el estado de hoy manda el código, no esta
+> foto.
+
+---
+
 ## 1. La respuesta, primero
 
 **¿Existe un punto único por el que pase toda emisión, o hay que crearlo?**
@@ -18,11 +43,11 @@
 **Las dos cosas, y esa es la buena noticia.** No hay un punto único de *emisión*: hay **7 sitios
 distintos que crean una factura** repartidos en **6 ficheros**. Pero sí hay un punto único de
 **numeración**: los 7 pasan, sin excepción, por
-[`allocateInvoiceNumber()`](../../src/modules/invoicing/domain/invoiceNumber.service.ts#L73).
+[`allocateInvoiceNumber()`](../../src/modules/invoicing/domain/invoiceNumber.service.ts).
 
 Ese embudo ya existe, ya está en el sitio correcto (dentro de la transacción que crea la factura)
 y **ya se usa como gate fiscal**: es donde vive hoy el interruptor `INVOICING_ES_ENABLED`, en
-[invoiceNumber.service.ts:106](../../src/modules/invoicing/domain/invoiceNumber.service.ts#L106).
+[invoiceNumber.service.ts](../../src/modules/invoicing/domain/invoiceNumber.service.ts).
 
 > **Pero no vale tal cual, por una razón concreta de firma:** `allocateInvoiceNumber(tx,
 > merchantId, opts, now)` **solo recibe el `merchantId`**. No ve las líneas, ni el cliente, ni las
@@ -46,13 +71,13 @@ camino. Son dos mecanismos en dos sitios, no uno.
 
 | # | Camino | Ruta / disparador | Guard de acceso | Crea en |
 |---|---|---|---|---|
-| **C1** | **Cliente acepta el presupuesto** | `POST /quote/:token/decision` · `/accept` — **el CLIENTE**, desde WhatsApp | ⚠️ **Sin login**: token opaco + rate-limit ([quotes.routes.ts:384](../../src/modules/quotes/app/routes/quotes.routes.ts#L384)) | [quotes.routes.ts:537](../../src/modules/quotes/app/routes/quotes.routes.ts#L537) |
-| **C2** | **Cobrar el resto** | `POST /admin/jobs/:id/collect-rest` — el pro | `requireRole('admin')` ([jobs.routes.ts:524](../../src/modules/jobs/app/routes/jobs.routes.ts#L524)) | [jobs.routes.ts:567](../../src/modules/jobs/app/routes/jobs.routes.ts#L567) |
-| **C3** | **Facturar un presupuesto** | `POST /admin/quotes/:id/invoice` | `requireRole('admin')` ([quotesAdmin.routes.ts:141](../../src/modules/system/app/routes/quotesAdmin.routes.ts#L141)) | [quotesAdmin.routes.ts:193](../../src/modules/system/app/routes/quotesAdmin.routes.ts#L193) |
-| **C4** | **Emisión manual** (SCRUM-178) | `POST /admin/quotes/:id/invoice-manual` | `requireRole('admin')` ([quotesAdmin.routes.ts:298](../../src/modules/system/app/routes/quotesAdmin.routes.ts#L298)) | [quotesAdmin.routes.ts:367](../../src/modules/system/app/routes/quotesAdmin.routes.ts#L367) |
-| **C5** | **Rectificativa R1** (SCRUM-153) | `POST /admin/invoices/:id/rectify` | `requireRole('admin')` ([invoicesAdmin.routes.ts:678](../../src/modules/system/app/routes/invoicesAdmin.routes.ts#L678)) | [invoicesAdmin.routes.ts:714](../../src/modules/system/app/routes/invoicesAdmin.routes.ts#L714) |
-| **C6** | **Cobro pagado → factura** | `ensureInvoiceForCharge()` — **webhooks e interno** (§2.2) | según el llamador | [lib/invoicing.ts:244](../../src/lib/invoicing.ts#L244) |
-| **C7** | **`emitInvoice()` compartido** | recapitulativas y albarán parcial (§2.3) | según el llamador | [invoicing.service.ts:40](../../src/modules/invoicing/domain/invoicing.service.ts#L40) |
+| **C1** | **Cliente acepta el presupuesto** | `POST /quote/:token/decision` · `/accept` — **el CLIENTE**, desde WhatsApp | ⚠️ **Sin login**: token opaco + rate-limit ([quotes.routes.ts](../../src/modules/quotes/app/routes/quotes.routes.ts)) | [quotes.routes.ts](../../src/modules/quotes/app/routes/quotes.routes.ts) |
+| **C2** | **Cobrar el resto** | `POST /admin/jobs/:id/collect-rest` — el pro | `requireRole('admin')` ([jobs.routes.ts](../../src/modules/jobs/app/routes/jobs.routes.ts)) | [jobs.routes.ts](../../src/modules/jobs/app/routes/jobs.routes.ts) |
+| **C3** | **Facturar un presupuesto** | `POST /admin/quotes/:id/invoice` | `requireRole('admin')` ([quotesAdmin.routes.ts](../../src/modules/system/app/routes/quotesAdmin.routes.ts)) | [quotesAdmin.routes.ts](../../src/modules/system/app/routes/quotesAdmin.routes.ts) |
+| **C4** | **Emisión manual** (SCRUM-178) | `POST /admin/quotes/:id/invoice-manual` | `requireRole('admin')` ([quotesAdmin.routes.ts](../../src/modules/system/app/routes/quotesAdmin.routes.ts)) | [quotesAdmin.routes.ts](../../src/modules/system/app/routes/quotesAdmin.routes.ts) |
+| **C5** | **Rectificativa R1** (SCRUM-153) | `POST /admin/invoices/:id/rectify` | `requireRole('admin')` ([invoicesAdmin.routes.ts](../../src/modules/system/app/routes/invoicesAdmin.routes.ts)) | [invoicesAdmin.routes.ts](../../src/modules/system/app/routes/invoicesAdmin.routes.ts) |
+| **C6** | **Cobro pagado → factura** | `ensureInvoiceForCharge()` — **webhooks e interno** (§2.2) | según el llamador | [lib/invoicing.ts](../../src/lib/invoicing.ts) |
+| **C7** | **`emitInvoice()` compartido** | recapitulativas y albarán parcial (§2.3) | según el llamador | [invoicing.service.ts](../../src/modules/invoicing/domain/invoicing.service.ts) |
 
 ### 2.2 C6 — los disparadores NO de interfaz (los que se olvidan)
 
@@ -60,19 +85,19 @@ camino. Son dos mecanismos en dos sitios, no uno.
 
 | Boca | Ruta | Disparador | Guard |
 |---|---|---|---|
-| **Webhook Mercado Pago** | `POST /webhooks/mp` | **el PSP**, no una persona ([mpWebhook.routes.ts:122](../../src/modules/billing/app/routes/mpWebhook.routes.ts#L122)) | firma del webhook |
-| **Webhook PSP genérico** | `POST /webhooks/psp` | **el PSP** ([psp.routes.ts:43](../../src/modules/billing/app/routes/psp.routes.ts#L43)) | `requireInternalSecret` ([app.ts:170](../../src/app.ts#L170)) |
-| **API de cobros** | `/charges` | interno ([psp.routes.ts:134](../../src/modules/billing/app/routes/psp.routes.ts#L134)) | `requireInternalSecret` ([app.ts:171](../../src/app.ts#L171)) |
-| **API de emisión** | `POST /invoice/issue` | interno ([invoice.routes.ts:15](../../src/modules/invoicing/app/routes/invoice.routes.ts#L15)) | `requireInternalSecret` ([app.ts:179](../../src/app.ts#L179)) |
+| **Webhook Mercado Pago** | `POST /webhooks/mp` | **el PSP**, no una persona ([mpWebhook.routes.ts](../../src/modules/billing/app/routes/mpWebhook.routes.ts)) | firma del webhook |
+| **Webhook PSP genérico** | `POST /webhooks/psp` | **el PSP** ([psp.routes.ts](../../src/modules/billing/app/routes/psp.routes.ts)) | `requireInternalSecret` ([app.ts](../../src/app.ts)) |
+| **API de cobros** | `/charges` | interno ([psp.routes.ts](../../src/modules/billing/app/routes/psp.routes.ts)) | `requireInternalSecret` ([app.ts](../../src/app.ts)) |
+| **API de emisión** | `POST /invoice/issue` | interno ([invoice.routes.ts](../../src/modules/invoicing/app/routes/invoice.routes.ts)) | `requireInternalSecret` ([app.ts](../../src/app.ts)) |
 
-*(Existe una quinta boca en [dev.routes.ts:64,79](../../src/modules/system/app/routes/dev.routes.ts#L64), montada solo si `NODE_ENV !== 'production'` — [app.ts:191](../../src/app.ts#L191). No cuenta como camino de producción.)*
+*(Existe una quinta boca en [dev.routes.ts](../../src/modules/system/app/routes/dev.routes.ts), montada solo si `NODE_ENV !== 'production'` — [app.ts](../../src/app.ts). No cuenta como camino de producción.)*
 
 ### 2.3 C7 — los dos llamadores de `emitInvoice()`
 
 | Llamador | Ruta | Guard |
 |---|---|---|
-| **Recapitulativa** (art. 13, SCRUM-17/171a) | `POST /admin/jobs/:id/consolidar-albaranes` ([jobs.routes.ts:622](../../src/modules/jobs/app/routes/jobs.routes.ts#L622)) y la vía de ámbito CLIENTE (`/admin/albaranes/consolidar`, [albaranes.routes.ts:177](../../src/modules/jobs/app/routes/albaranes.routes.ts#L177)) → ambas por [recapitulativa.service.ts:85](../../src/modules/jobs/domain/recapitulativa.service.ts#L85) | `requireRole('admin')` |
-| **Albarán parcial** (SCRUM-170) | `POST /admin/albaranes/:id/facturar-parcial` ([albaranes.routes.ts:602](../../src/modules/jobs/app/routes/albaranes.routes.ts#L602)) → [albaranes.routes.ts:660](../../src/modules/jobs/app/routes/albaranes.routes.ts#L660) | `requireRole('admin')` |
+| **Recapitulativa** (art. 13, SCRUM-17/171a) | `POST /admin/jobs/:id/consolidar-albaranes` ([jobs.routes.ts](../../src/modules/jobs/app/routes/jobs.routes.ts)) y la vía de ámbito CLIENTE (`/admin/albaranes/consolidar`, [albaranes.routes.ts](../../src/modules/jobs/app/routes/albaranes.routes.ts)) → ambas por [recapitulativa.service.ts](../../src/modules/jobs/domain/recapitulativa.service.ts) | `requireRole('admin')` |
+| **Albarán parcial** (SCRUM-170) | `POST /admin/albaranes/:id/facturar-parcial` ([albaranes.routes.ts](../../src/modules/jobs/app/routes/albaranes.routes.ts)) → [albaranes.routes.ts](../../src/modules/jobs/app/routes/albaranes.routes.ts) | `requireRole('admin')` |
 
 ### 2.4 Negativos verificados — dónde NO hay emisión
 
@@ -95,20 +120,20 @@ Esto se midió porque el ticket lo pide explícitamente, y el resultado **negati
 
 | Camino | Gate de rol | Gate de modo fiscal | Validación de negocio propia | **¿Sella VeriFactu?** |
 |---|---|---|---|---|
-| **C1** cliente acepta | ❌ ninguno (token) | solo el implícito de `allocateInvoiceNumber` | plan de facturación y tramo ([quotes.routes.ts:517-533](../../src/modules/quotes/app/routes/quotes.routes.ts#L517-L533)) | 🔴 **NO** |
-| **C2** collect-rest | `admin` | solo el implícito | `job.status==='terminado'`, `quoteId`, tramo pendiente ([jobs.routes.ts:530-553](../../src/modules/jobs/app/routes/jobs.routes.ts#L530-L553)) | 🔴 **NO** |
-| **C3** facturar presupuesto | `admin` | implícito | — | ✅ [quotesAdmin.routes.ts:215](../../src/modules/system/app/routes/quotesAdmin.routes.ts#L215) |
-| **C4** emisión manual | `admin` | implícito | — | ✅ [quotesAdmin.routes.ts:389](../../src/modules/system/app/routes/quotesAdmin.routes.ts#L389) |
-| **C5** rectificativa R1 | `admin` | implícito + serie R ([:713](../../src/modules/system/app/routes/invoicesAdmin.routes.ts#L713)) | — | ✅ [invoicesAdmin.routes.ts:738](../../src/modules/system/app/routes/invoicesAdmin.routes.ts#L738) |
-| **C6** cobro→factura | según boca | implícito | `charge.status==='paid'` ([lib/invoicing.ts:128](../../src/lib/invoicing.ts#L128)) | ✅ [lib/invoicing.ts:148](../../src/lib/invoicing.ts#L148) |
-| **C7a** recapitulativa | `admin` | ✅ **explícito** `getEmissionMode` ([jobs.routes.ts:637](../../src/modules/jobs/app/routes/jobs.routes.ts#L637), [albaranes.routes.ts:201](../../src/modules/jobs/app/routes/albaranes.routes.ts#L201)) | `validarConsolidacion` + rotura art. 13 ([jobs.routes.ts:668](../../src/modules/jobs/app/routes/jobs.routes.ts#L668)) | ✅ [recapitulativa.service.ts:115](../../src/modules/jobs/domain/recapitulativa.service.ts#L115) |
-| **C7b** albarán parcial | `admin` | ✅ **explícito** ([albaranes.routes.ts:630](../../src/modules/jobs/app/routes/albaranes.routes.ts#L630)) | — | ✅ [albaranes.routes.ts:685](../../src/modules/jobs/app/routes/albaranes.routes.ts#L685) |
+| **C1** cliente acepta | ❌ ninguno (token) | solo el implícito de `allocateInvoiceNumber` | plan de facturación y tramo ([quotes.routes.ts](../../src/modules/quotes/app/routes/quotes.routes.ts)) | 🔴 **NO** |
+| **C2** collect-rest | `admin` | solo el implícito | `job.status==='terminado'`, `quoteId`, tramo pendiente ([jobs.routes.ts](../../src/modules/jobs/app/routes/jobs.routes.ts)) | 🔴 **NO** |
+| **C3** facturar presupuesto | `admin` | implícito | — | ✅ [quotesAdmin.routes.ts](../../src/modules/system/app/routes/quotesAdmin.routes.ts) |
+| **C4** emisión manual | `admin` | implícito | — | ✅ [quotesAdmin.routes.ts](../../src/modules/system/app/routes/quotesAdmin.routes.ts) |
+| **C5** rectificativa R1 | `admin` | implícito + serie R (`isReceiptNumber`) | — | ✅ [invoicesAdmin.routes.ts](../../src/modules/system/app/routes/invoicesAdmin.routes.ts) · `sellarTrasEmision` |
+| **C6** cobro→factura | según boca | implícito | `charge.status==='paid'` ([lib/invoicing.ts](../../src/lib/invoicing.ts)) | ✅ [lib/invoicing.ts](../../src/lib/invoicing.ts) |
+| **C7a** recapitulativa | `admin` | ✅ **explícito** `getEmissionMode` ([jobs.routes.ts](../../src/modules/jobs/app/routes/jobs.routes.ts), [albaranes.routes.ts](../../src/modules/jobs/app/routes/albaranes.routes.ts)) | `validarConsolidacion` + rotura art. 13 ([jobs.routes.ts](../../src/modules/jobs/app/routes/jobs.routes.ts)) | ✅ [recapitulativa.service.ts](../../src/modules/jobs/domain/recapitulativa.service.ts) |
+| **C7b** albarán parcial | `admin` | ✅ **explícito** ([albaranes.routes.ts](../../src/modules/jobs/app/routes/albaranes.routes.ts)) | — | ✅ [albaranes.routes.ts](../../src/modules/jobs/app/routes/albaranes.routes.ts) |
 
 **Tres asimetrías, todas verificadas leyendo:**
 
 1. **🔴 C1 y C2 crean una factura `F1` con número consumido y NO la sellan.** Ninguno de los dos
    llama a `applyVeriFactu`. Se comprobó también el eslabón que parecía taparlo:
-   `sendInvoicePaymentRequest()` ([invoiceWhatsApp.service.ts:30](../../src/modules/billing/domain/invoiceWhatsApp.service.ts#L30)),
+   `sendInvoicePaymentRequest()` ([invoiceWhatsApp.service.ts](../../src/modules/billing/domain/invoiceWhatsApp.service.ts)),
    que los dos invocan después, **no sella ni genera PDF**. La factura queda numerada y sin huella
    hasta que *alguien, alguna vez*, renderice su PDF (§5).
 2. **El gate de rol es desigual por diseño… salvo en C1.** Cinco caminos exigen `admin`; C1 no
@@ -126,9 +151,9 @@ Esto se midió porque el ticket lo pide explícitamente, y el resultado **negati
 
 | Capa | Dónde | ¿Enumerable? |
 |---|---|---|
-| **Modo de emisión** (fiscal vs justificante) | [emission.service.ts:36-40](../../src/modules/invoicing/domain/emission.service.ts#L36-L40) — una función, un flag, precedencia merchant > país > env | ✅ **Sí.** Una sola regla, un solo sitio |
-| **Numeración y series** | [invoiceNumber.service.ts:73-125](../../src/modules/invoicing/domain/invoiceNumber.service.ts#L73-L125) — serie anual, serie R separada, reset de año, J- para justificantes | ✅ **Sí** |
-| **Integridad del registro** | [verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts): sin líneas no se sella ([:179](../../src/modules/invoicing/domain/verifactu.service.ts#L179)), justificante nunca entra ([:156](../../src/modules/invoicing/domain/verifactu.service.ts#L156)), cerrojo por merchant ([:232](../../src/modules/invoicing/domain/verifactu.service.ts#L232)), cadena rota lanza ([:582](../../src/modules/invoicing/domain/verifactu.service.ts#L582)) | ⚠️ **A medias.** Son 4 guards reales y sólidos, pero viven como `throw` dentro del sellador, no como catálogo |
+| **Modo de emisión** (fiscal vs justificante) | [emission.service.ts](../../src/modules/invoicing/domain/emission.service.ts) — una función, un flag, precedencia merchant > país > env | ✅ **Sí.** Una sola regla, un solo sitio |
+| **Numeración y series** | [invoiceNumber.service.ts](../../src/modules/invoicing/domain/invoiceNumber.service.ts) — serie anual, serie R separada, reset de año, J- para justificantes | ✅ **Sí** |
+| **Integridad del registro** | [verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts): sin líneas no se sella (`invoice_without_lines_not_sealable`), justificante nunca entra (`isReceiptNumber`), cerrojo por merchant (`pg_advisory_xact_lock`), cadena rota lanza (`verifactu_cadena_rota`) | ⚠️ **A medias.** Son 4 guards reales y sólidos, pero viven como `throw` dentro del sellador, no como catálogo |
 | **Contenido de la factura** (lo que la AEAT valida de verdad) | **En ningún sitio** | 🔴 **No.** No existe |
 
 **El hueco concreto.** Ninguna regla del catálogo AEAT sobre el *contenido* está implementada como
@@ -149,7 +174,7 @@ Este es el hallazgo que más cambia el diseño de cualquier freno.
 
 ### Punto A — se consume el número (irreversible)
 
-[`allocateInvoiceNumber`](../../src/modules/invoicing/domain/invoiceNumber.service.ts#L115) hace
+[`allocateInvoiceNumber`](../../src/modules/invoicing/domain/invoiceNumber.service.ts) hace
 `merchant.update({ nextInvoiceNumber: seq + 1 })` **dentro de la misma transacción** que crea la
 factura. En ese commit:
 
@@ -163,22 +188,22 @@ retorno real de los 7 caminos, y es el mismo para todos — porque el embudo de 
 ### Punto B — se sella la huella (irreversible y encadenado)
 
 `applyVeriFactu` persiste `vfHash`/`vfPrevHash`/`vfTimestamp`
-([verifactu.service.ts:280](../../src/modules/invoicing/domain/verifactu.service.ts#L280)) bajo
+([verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts)) bajo
 cerrojo consultivo por merchant. A partir de ahí la factura es un eslabón: corregirla exige una R1
 (regla 29).
 
 ### Lo que hace esto peligroso: **B es perezoso, y lo puede disparar el cliente**
 
 En C1 y C2 el sellado no ocurre en la emisión. Ocurre la primera vez que se renderiza el PDF,
-dentro de `ensureInvoicePdf` ([lib/invoicing.ts:53-61](../../src/lib/invoicing.ts#L53-L61)) — y ese
+dentro de `ensureInvoicePdf` ([lib/invoicing.ts](../../src/lib/invoicing.ts)) — y ese
 helper cuelga de cuatro sitios, uno de ellos **público**:
 
 | Quién puede disparar el sellado | Ruta | Guard |
 |---|---|---|
-| 🔴 **El cliente final** | `GET /recibo/:token/pdf` ([receipt.routes.ts:418](../../src/modules/billing/app/routes/receipt.routes.ts#L418)) | **sin login** — token opaco |
-| El pro | `GET /admin/invoices/:id/pdf` ([invoicesAdmin.routes.ts:873](../../src/modules/system/app/routes/invoicesAdmin.routes.ts#L873)) | sesión |
-| Un export | `GET /admin/exports/datos.zip` ([exports.routes.ts:182](../../src/modules/exports/app/routes/exports.routes.ts#L182)) | sesión |
-| Un email automático | [email.service.ts:30](../../src/modules/messaging/domain/email.service.ts#L30) | ninguno (proceso) |
+| 🔴 **El cliente final** | `GET /recibo/:token/pdf` ([receipt.routes.ts](../../src/modules/billing/app/routes/receipt.routes.ts)) | **sin login** — token opaco |
+| El pro | `GET /admin/invoices/:id/pdf` ([invoicesAdmin.routes.ts](../../src/modules/system/app/routes/invoicesAdmin.routes.ts)) | sesión |
+| Un export | `GET /admin/exports/datos.zip` ([exports.routes.ts](../../src/modules/exports/app/routes/exports.routes.ts)) | sesión |
+| Un email automático | [email.service.ts](../../src/modules/messaging/domain/email.service.ts) | ninguno (proceso) |
 
 > **En una frase:** en dos de los siete caminos, **el momento en que una factura entra en la cadena
 > de huellas lo elige el cliente final descargando un PDF**, no el profesional emitiendo. El orden
@@ -204,7 +229,7 @@ Los dos sitios donde se sella dentro de `lib/invoicing.ts` capturan y siguen:
 ```
 
 **Consecuencia exacta, leída:** si el sellado falla, el `qrData` cae a la cadena **no fiscal**
-`INV:<num>|AMOUNT:<total>|CUR:<div>` ([lib/invoicing.ts:49](../../src/lib/invoicing.ts#L49)),
+`INV:<num>|AMOUNT:<total>|CUR:<div>` ([lib/invoicing.ts](../../src/lib/invoicing.ts)),
 `vfHash` queda `null`, **el PDF se genera igual y se entrega igual**, y lo único que queda es una
 línea en el log de un servidor. La factura existe, tiene número, tiene PDF y no tiene huella.
 
@@ -213,7 +238,7 @@ palabra *«se omite»* escrita en el código. Nada en el producto lo distingue d
 
 ⚖️ **Matiz honesto, para no exagerarlo:** ese `catch` es deliberado y está argumentado en el
 código — *"preferir NO sellar antes que sellar mal"*
-([verifactu.service.ts:171-173](../../src/modules/invoicing/domain/verifactu.service.ts#L171-L173)),
+([verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts)),
 y los guards que lo alimentan (justificante, factura sin líneas) son fail-closed a propósito. **El
 problema no es que capture: es que capturar no deja rastro consultable.** Falta el registro, no el `try`.
 
@@ -224,7 +249,7 @@ Barrido completo sobre `src/`: **24 apariciones, todas en
 configuración fiscal obligatoria** — los datos del productor del SIF (art. 13 RRSIF):
 
 `VERIFACTU_PRODUCTOR_NOMBRE` · `VERIFACTU_PRODUCTOR_NIF` · `VERIFACTU_ID_SISTEMA` ·
-`VERIFACTU_VERSION` · `VERIFACTU_NUM_INSTALACION` — [env.ts:30-34](../../src/core/config/env.ts#L30-L34).
+`VERIFACTU_VERSION` · `VERIFACTU_NUM_INSTALACION` — [env.ts](../../src/core/config/env.ts).
 
 **Pero aquí la sospecha del ticket no se confirma, y conviene decirlo con la misma claridad que si
 se hubiera confirmado.** Aguas abajo hay un guard explícito y fail-**closed**:
@@ -236,7 +261,7 @@ if (!productor.nombre || !productor.nif || !productor.idSistema || !productor.ve
 }
 ```
 
-Con su comentario razonándolo ([:500-504](../../src/modules/invoicing/domain/verifactu.service.ts#L500-L504)):
+Con su comentario razonándolo (en [verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts), sobre `verifactu_productor_no_configurado`):
 *"un `SistemaInformatico` relleno con placeholders sería un registro fiscal que miente sobre quién
 produjo el software"*. **El `|| ''` es fail-open en la lectura; el uso es fail-closed.**
 
@@ -246,15 +271,15 @@ entra en la huella), pero significa que la protección cubre la exportación del
 
 ### 6.3 Resumen del comportamiento
 
-| Incumplimiento | Hoy | Fichero:línea |
+| Incumplimiento | Hoy | Fichero · símbolo |
 |---|---|---|
-| Merchant ES sin `INVOICING_ES_ENABLED` | 🟢 **Degrada** a justificante `J-` (no bloquea, no miente) | [invoiceNumber.service.ts:106](../../src/modules/invoicing/domain/invoiceNumber.service.ts#L106) |
-| Rectificativa sin flag | 🟢 **Bloquea** (`invoicing_es_disabled`) | [invoiceNumber.service.ts:107](../../src/modules/invoicing/domain/invoiceNumber.service.ts#L107) |
-| Factura sin líneas | 🟢 **Bloquea el sellado** (fail-closed) | [verifactu.service.ts:179](../../src/modules/invoicing/domain/verifactu.service.ts#L179) |
-| Sellar dentro de una `$transaction` | 🟢 **Bloquea** (fail-closed, mensaje explícito) | [verifactu.service.ts:217](../../src/modules/invoicing/domain/verifactu.service.ts#L217) |
-| Cadena rota al exportar | 🟢 **Bloquea** (`verifactu_cadena_rota`) | [verifactu.service.ts:582](../../src/modules/invoicing/domain/verifactu.service.ts#L582) |
-| Productor del SIF sin configurar | 🟢 **Bloquea el XML** / ⚠️ no cubre el sellado | [verifactu.service.ts:512](../../src/modules/invoicing/domain/verifactu.service.ts#L512) |
-| **Cualquier fallo de sellado** | 🔴 **SIGUE**, sin rastro consultable | [lib/invoicing.ts:58](../../src/lib/invoicing.ts#L58), [:152](../../src/lib/invoicing.ts#L152) |
+| Merchant ES sin `INVOICING_ES_ENABLED` | 🟢 **Degrada** a justificante `J-` (no bloquea, no miente) | [invoiceNumber.service.ts](../../src/modules/invoicing/domain/invoiceNumber.service.ts) |
+| Rectificativa sin flag | 🟢 **Bloquea** (`invoicing_es_disabled`) | [invoiceNumber.service.ts](../../src/modules/invoicing/domain/invoiceNumber.service.ts) |
+| Factura sin líneas | 🟢 **Bloquea el sellado** (fail-closed) | [verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts) |
+| Sellar dentro de una `$transaction` | 🟢 **Bloquea** (fail-closed, mensaje explícito) | [verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts) |
+| Cadena rota al exportar | 🟢 **Bloquea** (`verifactu_cadena_rota`) | [verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts) |
+| Productor del SIF sin configurar | 🟢 **Bloquea el XML** / ⚠️ no cubre el sellado | [verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts) |
+| **Cualquier fallo de sellado** | 🔴 **SIGUE**, sin rastro consultable — ⚠️ **fila NO re-medida: SCRUM-205/206 dicen haber cerrado este fail-open. Ver el aviso al final de §6.3** | [lib/invoicing.ts](../../src/lib/invoicing.ts) · `ensureInvoicePdf` y `ensureInvoiceForCharge` |
 | **Contenido fiscalmente inválido** | 🔴 **SIGUE** — no se comprueba nada | (no existe) |
 
 ---
@@ -265,12 +290,12 @@ entra en la huella), pero significa que la protección cubre la exportación del
 
 | Pregunta del comentario | Hoy | Evidencia |
 |---|---|---|
-| **¿Qué se envió?** — ¿el XML exacto o solo los datos? | 🔴 **Solo los datos.** El XML se **regenera** desde la BD en cada petición | `buildVerifactuRegistrosXml` [:468](../../src/modules/invoicing/domain/verifactu.service.ts#L468) construye al vuelo; no se persiste |
-| **¿Cuándo?** | ⚠️ Hay `vfTimestamp`, pero es el sello de **generación de la huella**, no de envío | [schema.prisma:375](../../prisma/schema.prisma#L375) |
+| **¿Qué se envió?** — ¿el XML exacto o solo los datos? | 🔴 **Solo los datos.** El XML se **regenera** desde la BD en cada petición | `buildVerifactuRegistrosXml` ([verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts)) construye al vuelo; no se persiste |
+| **¿Cuándo?** | ⚠️ Hay `vfTimestamp`, pero es el sello de **generación de la huella**, no de envío | [schema.prisma](../../prisma/schema.prisma) |
 | **¿Qué contestó la AEAT?** | 🔴 **No existe.** No hay tabla ni columna de respuesta | Sin `VfSubmission` en el schema |
 | **Si falló, ¿en qué estado quedó?** | 🔴 **No existe.** Sin estado, sin reintentos | ídem |
-| **¿Se puede verificar la cadena entera?** | 🟢 **Sí** — `vfPrevHash` se guarda como **dato**, no como inferencia | [schema.prisma:370](../../prisma/schema.prisma#L370), [:386](../../prisma/schema.prisma#L386) |
-| **¿Se detecta que está rota?** | 🟠 **Sí, pero solo de rebote** | [verifactu.service.ts:582](../../src/modules/invoicing/domain/verifactu.service.ts#L582) lanza `verifactu_cadena_rota` — **solo si alguien exporta el XML**. No hay chequeo proactivo |
+| **¿Se puede verificar la cadena entera?** | 🟢 **Sí** — `vfPrevHash` se guarda como **dato**, no como inferencia | [schema.prisma](../../prisma/schema.prisma) · `vfPrevHash` y `vfAnulPrevHash` |
+| **¿Se detecta que está rota?** | 🟠 **Sí, pero solo de rebote** | [verifactu.service.ts](../../src/modules/invoicing/domain/verifactu.service.ts) lanza `verifactu_cadena_rota` — **solo si alguien exporta el XML**. No hay chequeo proactivo |
 
 **Lectura justa de esto, y es importante no cobrarlo como deuda:** no hay rastro de envío **porque
 no hay envío**. La remisión al SIF (S1-D) no está construida y `VfSubmission` es un modelo del
@@ -288,11 +313,16 @@ de trazabilidad que sí debería existir ya —la cadena— existe y es verifica
 
 ### Y un hueco que sí es de ahora: **AuditLog no cubre lo fiscal**
 
-`recordAudit` existe y funciona ([audit.service.ts:33](../../src/modules/system/audit.service.ts#L33)),
+> ⚠️ **FOTO DEL 29-jul-2026, NO RE-MEDIDA (aviso de SCRUM-513).** SCRUM-207 añadió después
+> `factura_emitida` —escrita DENTRO de la transacción que consume el número— y la lista de acciones
+> bloqueantes. Lo que sigue describe el estado ANTERIOR a eso. No se reescribe aquí porque exige
+> re-medir el módulo entero, con su propia evidencia.
+
+`recordAudit` existe y funciona ([audit.service.ts](../../src/modules/system/audit.service.ts)),
 con 8 acciones tipadas. **Ninguna es la emisión de una factura**: hay `anular_factura`,
 `marcar_pagado_manual`, `deshacer_pago`, `cambio_flag`… y el propio fichero declara que *"el
 AuditLog completo (login, **fiscal**, Connect…) es F2"*
-([:4](../../src/modules/system/audit.service.ts#L4)).
+(cabecera de [audit.service.ts](../../src/modules/system/audit.service.ts)).
 
 > ⚠️ **Esto choca de frente con el MATIZ VINCULANTE.** El matiz dice que en un ÁMBAR *"queda en
 > AuditLog el texto del aviso y su elección"*. Hoy **no hay ninguna acción de AuditLog para eso**,

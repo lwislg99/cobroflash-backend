@@ -13,7 +13,7 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-22: serializer expone operario:{id,name} en lista+detalle (null propietario) + tenancy', { skip: !ENABLED }, async () => {
+test('SCRUM-22: serializer expone operario:{id,name} en lista+detalle (null propietario) + tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);

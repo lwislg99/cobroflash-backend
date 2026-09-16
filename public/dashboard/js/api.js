@@ -3,6 +3,176 @@
 // Si el backend sirve el dashboard desde el mismo dominio, base = "".
 const API_BASE_URL = ""; // mismo origin (http://localhost:3000)
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-451 · EL PLAZO DE RED VIVE AQUÍ, Y CORTA
+//
+// LA VÍCTIMA: un profesional con mala cobertura abre una pantalla, la petición se queda en el
+// aire, y la pantalla espera PARA SIEMPRE. Ni datos, ni error, ni nada. En SCRUM-448 se midió que
+// de 10 vistas que el banco pinta con la petición colgada, **nueve se quedan mudas**.
+//
+// SCRUM-448 puso el primer plazo de la casa DENTRO de una vista, y dejó dicho que ése era el
+// momento de decidir: o baja a un sitio común, o las otras nueve crecen cada una el suyo. Baja.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 EL PLAZO ES **SOLO PARA GET**, Y ESO NO ES PEREZA: ESTÁ MEDIDO
+//
+// Censo por AST sobre `public/` entero (136 llamadas a `apiRequest`, 31 ficheros):
+//   · **58 GET «pelados»** —sin opciones, o solo `method:'GET'`—. Cero GET con `headers` o `body`,
+//     así que dos peticiones a la misma ruta son LA MISMA petición, sin ambigüedad.
+//   · **78 MUTACIONES** (POST 56 · PATCH 10 · PUT 8 · DELETE 4).
+//   · Las 4 descargas pesadas (ZIP de portabilidad, XML VeriFactu) NO pasan por aquí: van por
+//     `descargarBinario`, con su propio `fetch`. **No les toca este plazo**, y no se les pone uno
+//     a ojo: un ZIP de evidencias y un listado de cobros no aguantan lo mismo.
+//
+// Abortar un GET no cuesta nada: es idempotente y se vuelve a pedir. **Abortar una MUTACIÓN es
+// otra cosa**: el servidor ha podido procesarla ya, el profesional ve un error, lo repite, y sale
+// una segunda factura. Eso es dinero y es el camino de emisión, así que no se decide aquí.
+// Queda PARADO y propuesto al fundador. Las 78 mutaciones siguen exactamente como estaban.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// EL NÚMERO: 10 s, el mismo que ya decidió el fundador en SCRUM-448, y por lo mismo. No hay p95
+// de estas rutas en producción y no se inventa; es el umbral clásico a partir del cual una
+// persona deja de creer que el sistema trabaja y empieza a creer que está roto. Referencia
+// general, no dato nuestro. **Un sitio, una constante**: `cobrosView` ya no tiene el suyo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** El plazo, en milisegundos. `var` a propósito: así un test puede acortarlo desde `window`. */
+var PLAZO_RED_MS = (typeof window !== 'undefined' && window.PLAZO_RED_MS) || 10000;
+
+/**
+ * SCRUM-358 (H3 · fase 3) · ESPERAR A LA RED LO QUE LA CASA HAYA DECIDIDO ESPERAR — sin abortar.
+ *
+ * Vive AQUÍ, junto a la constante, y no en quien la usa. El drenado de la cola de firmas necesita
+ * rendirse con una firma para poder pasar a la siguiente —si no, contra una red que acepta y no
+ * entrega la primera petición no vuelve nunca y las demás no suben jamás—, y su primera versión se
+ * declaró su propio plazo. **El guard de SCRUM-451 lo cazó y tenía razón**: el mecanismo era otro,
+ * pero la decisión era la misma —cuánto espera el producto a la red— y ésa vive en un sitio para
+ * que el día que se mida cambie en una línea.
+ *
+ * ⚠️ NO ABORTA NADA, y por eso no es el plazo del `POST`. Abortar una mutación puede duplicar una
+ * factura y eso está PARADO (SCRUM-459): aquí sólo se deja de esperar. La petición sigue su curso;
+ * si llegó, el reintento se encontrará el 409 del documento ya firmado.
+ *
+ * Devuelve `{ valor }`, `{ error }` o `{ vencio: true }` — tres salidas, porque significan cosas
+ * distintas y quien llama tiene que poder separarlas.
+ */
+function esperarLoQueLaRed(promesa, ms) {
+  const tope = ms || PLAZO_RED_MS;
+  return new Promise((resolver) => {
+    let vivo = true;
+    const t = setTimeout(() => { if (vivo) { vivo = false; resolver({ vencio: true }); } }, tope);
+    if (t && t.unref) t.unref();
+    promesa.then(
+      (valor) => { if (vivo) { vivo = false; clearTimeout(t); resolver({ valor }); } },
+      (error) => { if (vivo) { vivo = false; clearTimeout(t); resolver({ error }); } },
+    );
+  });
+}
+if (typeof window !== 'undefined') window.esperarLoQueLaRed = esperarLoQueLaRed;
+
+/**
+ * 🔴 QUÉ RESPUESTA MANDA: la de la ÚLTIMA petición lanzada para esa ruta, y solo ésa.
+ *
+ * Abortar NO quita la necesidad de esto: el aborto no es instantáneo, y una respuesta que ya venía
+ * de camino puede llegar DESPUÉS de otra más nueva y pintar encima una lista más vieja, sin que
+ * nada lo diga. Es el defecto que nadie ve hasta que muerde.
+ *
+ * ⚠️ Y NO SE DESCARTA LA VIEJA EN SILENCIO, que era lo primero que pensé: está medido que **22
+ * rutas se piden desde más de un sitio** —`/admin/jobs/{}` desde 7, `/admin/merchant` desde 6,
+ * `/admin/metrics/home` desde 2 en la MISMA vista—. Descartar dejaría a un llamador legítimo sin
+ * su respuesta para siempre, y eso es una avería nueva, no un arreglo. Lo que se hace es
+ * **compartir**: al que se quedó atrás se le entrega el resultado de la MÁS NUEVA. Nadie se queda
+ * sin respuesta y nadie pinta datos viejos.
+ */
+const _secuenciaPorRuta = Object.create(null);
+const _ultimaPorRuta = Object.create(null);
+
+/** Marca el error de un plazo vencido con la MISMA señal que un fallo de red (SCRUM-404). */
+function errorDeRedVencido(causa) {
+  // No se inventa microcopy: se marca. `sinRed` porque para el profesional es el mismo hecho
+  // —no hay cobertura— y las vistas que ya se bifurcan por esa marca siguen valiendo.
+  const e = new Error('la petición ha superado el plazo de red');
+  e.sinRed = true;
+  e.vencido = true;
+  e.causaOriginal = causa;
+  return e;
+}
+
+/** Una petición, de principio a fin. El plazo cubre TAMBIÉN la descarga del cuerpo. */
+async function _enviar(url, finalOptions, ctrl) {
+  const opciones = ctrl ? { ...finalOptions, signal: ctrl.signal } : finalOptions;
+  // 🔴 EL PLAZO CUBRE TAMBIÉN EL CUERPO, y de eso depende que corte algo: `fetch` vuelve con las
+  // CABECERAS y el cuerpo se sigue bajando después, así que un plazo que muriera al resolver el
+  // `fetch` dejaría vivo justo lo que gasta los datos del profesional.
+  //
+  // ⚠️ Lo que lo sostiene es el `await` de aquí abajo, no el de dentro de `_pedir`: el `finally`
+  // corre cuando `_enviar` sale, y sin ese `await` saldría con la promesa todavía en la mano —
+  // limpiando el plazo antes de bajar nada—. Probado en rojo: quitarlo pone el test del cuerpo en
+  // rojo; quitar el `await` de `res.json()` NO, porque `_pedir` encadena su promesa igual.
+  const plazo = ctrl ? setTimeout(() => ctrl.abort(), PLAZO_RED_MS) : null;
+  try {
+    return await _pedir(url, opciones);
+  } catch (e) {
+    if (ctrl && ctrl.signal && ctrl.signal.aborted) throw errorDeRedVencido(e);
+    throw e;
+  } finally {
+    if (plazo) clearTimeout(plazo);
+  }
+}
+
+/**
+ * SCRUM-459 · el error de una MUTACIÓN vencida. `incierto`, y **sin `sinRed`**.
+ *
+ * La diferencia no es de matiz: `sinRed` significa «no hay cobertura, no salió», y sobre una
+ * mutación eso es una afirmación que no podemos hacer — la petición pudo llegar entera y morir la
+ * respuesta. Quien lea esta marca tiene que poder decir «no lo sé» y ofrecer reintentar, cosa que
+ * solo es segura porque el camino de firma viaja con `claveIdempotencia` (SCRUM-358/425).
+ */
+function errorDeMutacionIncierta(causa) {
+  const e = new Error('no se pudo confirmar si la petición llegó');
+  e.incierto = true;
+  e.vencido = true;
+  e.causaOriginal = causa;
+  return e;
+}
+
+/** Una MUTACIÓN, con plazo. Mismo corte que las lecturas; distinto significado al vencer. */
+async function _enviarMutacion(url, finalOptions, ctrl) {
+  const opciones = ctrl ? { ...finalOptions, signal: ctrl.signal } : finalOptions;
+  const plazo = ctrl ? setTimeout(() => ctrl.abort(), PLAZO_RED_MS) : null;
+  try {
+    return await _pedir(url, opciones);
+  } catch (e) {
+    if (ctrl && ctrl.signal && ctrl.signal.aborted) throw errorDeMutacionIncierta(e);
+    throw e;
+  } finally {
+    if (plazo) clearTimeout(plazo);
+  }
+}
+
+/**
+ * ¿Es esto un cuerpo que `fetch` sabe enviar TAL CUAL?
+ *
+ * Una cadena, sí — y son las 52 llamadas que ya hacen `JSON.stringify` fuera. Los tipos del
+ * navegador (FormData, Blob, URLSearchParams…) también: serializarlos con `JSON.stringify` daría
+ * `{}` y perdería el fichero entero sin ningún error. Todo lo demás —un objeto plano, un array—
+ * no viaja: hay que serializarlo.
+ *
+ * Las comprobaciones van con `typeof x !== 'undefined'` porque este mismo fichero se carga en
+ * contextos sin DOM (los tests lo evalúan con `new Function`), y ahí `FormData` no existe.
+ */
+function esCuerpoQueFetchEnvia(body) {
+  if (typeof body === 'string') return true;
+  const nativos = ['FormData', 'Blob', 'File', 'URLSearchParams', 'ArrayBuffer', 'ReadableStream'];
+  for (const nombre of nativos) {
+    const Tipo = typeof globalThis !== 'undefined' ? globalThis[nombre] : undefined;
+    if (typeof Tipo === 'function' && body instanceof Tipo) return true;
+  }
+  // Vistas sobre un buffer (Uint8Array y compañía): `fetch` las envía como bytes.
+  if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView && ArrayBuffer.isView(body)) return true;
+  return false;
+}
+
 async function apiRequest(path, options = {}) {
   const url = API_BASE_URL + path;
 
@@ -14,7 +184,95 @@ async function apiRequest(path, options = {}) {
     ...options,
   };
 
-  const res = await fetch(url, finalOptions);
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-704 · UN `body` QUE NO ES CADENA VIAJA COMO «[object Object]»
+  //
+  // `fetch` no serializa nada: a lo que no es un cuerpo válido le aplica `String(x)`, y de un
+  // objeto plano eso sale **"[object Object]"**. Medido, no deducido:
+  //
+  //     new Request(url, { body: { direccion: 'Av. Rey Juan Carlos 145' } })  ->  "[object Object]"
+  //
+  // Con `Content-Type: application/json`, al servidor le llega basura que no parsea, y el campo
+  // NO SE GUARDA. Le pasaba a dos: el nombre del Trabajo y **la dirección de la obra** — que es
+  // donde se presenta el técnico. Si el jefe la corrige y no se guarda, el técnico va a la
+  // dirección vieja: un desplazamiento perdido, de los que Tecnosel apunta como coste real.
+  //
+  // 🔴 POR QUÉ NORMALIZAR Y NO «SERIALIZAR SIEMPRE», que es el arreglo que parece obvio y rompe
+  // 52 sitios. Censo por AST sobre `public/` (SCRUM-704): de **55** llamadas con `body`,
+  // **52 ya mandan `JSON.stringify(...)`**, 2 mandaban objeto y 1 manda una cadena o `undefined`.
+  // La convención de la casa es serializar FUERA. Un `JSON.stringify` incondicional aquí les
+  // metería la cadena DENTRO DE OTRA CADENA —`"{\"a\":1}"` en vez de `{"a":1}`— y el servidor
+  // recibiría un string donde espera un objeto: cambiaría un fallo silencioso por otro, y en 52
+  // sitios en vez de 2.
+  //
+  // Así que sólo se serializa lo que NO es ya un cuerpo que `fetch` sepa enviar. Los 52 pasan
+  // intactos POR CONSTRUCCIÓN, no por una lista de excepciones.
+  //
+  // ⚠️ Se arregla AQUÍ y no en los dos llamadores: arreglar los dos deja la puerta abierta para el
+  // siguiente, y el siguiente tampoco daría error. Éste es el único punto por el que pasan todos.
+  if (finalOptions.body !== undefined && finalOptions.body !== null && !esCuerpoQueFetchEnvia(finalOptions.body)) {
+    finalOptions.body = JSON.stringify(finalOptions.body);
+  }
+
+  const metodo = String(finalOptions.method || 'GET').toUpperCase();
+
+  // ─────────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-459 · LAS MUTACIONES TAMBIÉN TIENEN PLAZO, Y SU VENCIMIENTO SIGNIFICA OTRA COSA
+  //
+  // Hasta hoy salían «sin plazo y sin secuencia», y un POST contra una red que ACEPTA la conexión
+  // y no entrega **no vuelve nunca**: no da error, da silencio. El profesional que acaba de
+  // recoger una firma en una obra se queda mirando la pantalla sin saber si llegó.
+  //
+  // 🔴 PERO UN POST VENCIDO NO ES «FALLÓ»: ES «NO LO SÉ». Son TRES estados —llegó, no llegó, y no
+  // se sabe— y por eso NO se reutiliza `errorDeRedVencido`, que marca `sinRed`. Las vistas que se
+  // bifurcan por esa marca dirían «no hay cobertura» sobre algo que puede estar guardado, y eso
+  // invita a repetir la operación. «No se envió» cuando sí se envió es peor que «no sé si se envió».
+  //
+  // La secuencia por ruta NO se aplica aquí: descartar una mutación por vieja sería tirar una
+  // escritura que el profesional dio por hecha.
+  if (metodo !== 'GET' || finalOptions.body) {
+    const ctrlMut = typeof AbortController === 'function' ? new AbortController() : null;
+    return _enviarMutacion(url, finalOptions, ctrlMut);
+  }
+
+  let mia = (_secuenciaPorRuta[path] = (_secuenciaPorRuta[path] || 0) + 1);
+  const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+  const promesa = _enviar(url, finalOptions, ctrl);
+  _ultimaPorRuta[path] = promesa;
+
+  let resultado; let fallo = null;
+  try { resultado = await promesa; } catch (e) { fallo = e; }
+
+  // Si mientras tanto salió otra para esta misma ruta, la que manda es la suya — y se espera, para
+  // que quien preguntó primero también reciba lo último. El bucle cubre el caso de que la más
+  // nueva quede a su vez superada mientras se la espera.
+  while (_secuenciaPorRuta[path] !== mia) {
+    mia = _secuenciaPorRuta[path];
+    try { resultado = await _ultimaPorRuta[path]; fallo = null; }
+    catch (e) { fallo = e; resultado = undefined; }
+  }
+
+  if (fallo) throw fallo;
+  return resultado;
+}
+
+async function _pedir(url, finalOptions) {
+  // SCRUM-404 · UN FALLO DE RED Y UN RECHAZO DEL SERVIDOR PIDEN COSAS DISTINTAS AL PROFESIONAL:
+  // esperar a tener cobertura, o llamar por teléfono. Sin envolver el `fetch` los dos llegaban
+  // igual —un `TypeError: Failed to fetch`, en inglés— y quien mostrara el error no podía
+  // distinguirlos.
+  //
+  // Se MARCA `sinRed` y NO se toca el `message`: los demás llamadores siguen viendo exactamente
+  // lo que veían. Quien quiera distinguir, mira la marca.
+  let res;
+  try {
+    res = await fetch(url, finalOptions);
+  } catch (errRed) {
+    const e = new Error(errRed && errRed.message ? errRed.message : 'fallo de red');
+    e.sinRed = true;
+    e.causaOriginal = errRed;
+    throw e;
+  }
 
   if (!res.ok) {
     let data = null;
@@ -49,6 +307,140 @@ async function apiRequest(path, options = {}) {
   return res.json();
 }
 
+// -------- SCRUM-405 · LA ÚNICA FORMA DE DESCARGAR UN FICHERO --------
+//
+// EL DEFECTO QUE CIERRA: tres descargas comprobaban `res.ok` y llamaban a `res.blob()` sin mirar
+// NADA más. Un portal cautivo —la wifi de cortesía de una obra, la del bar de al lado— responde
+// **200 con el HTML de su página de login**. `res.ok` es `true`, el blob se guarda, y el
+// profesional se lleva a casa un `yaqu-datos-2026-08-07.zip` que por dentro es la pantalla de
+// acceso de un router. Se entera el día que se lo abre su asesor.
+//
+// 🔴 Y LO QUE DE VERDAD ARREGLA ESTE BLOQUE NO SON LOS TRES SITIOS: ES QUITAR LA FORMA DE EN MEDIO.
+// Los tres eran el mismo código copiado, y el tercero se escribió en SCRUM-325 imitando a los dos
+// anteriores. Mientras la forma siga siendo copiable, el cuarto nace mal. Por eso existe esta
+// función y por eso hay un guard (`tests/scrum405-descarga-verificada.test.mjs`) que pone en rojo
+// cualquier `.blob()` que no pase por aquí, NOMBRANDO fichero y línea.
+//
+// ⚠️ HASTA DÓNDE LLEGA LA COMPROBACIÓN — y no llega más lejos:
+//
+//   · **Detectar un portal cautivo CON CERTEZA no se puede desde el navegador**, y esto no lo
+//     intenta. Un portal que devolviera `200` con `Content-Type: application/zip` y basura dentro
+//     pasaría esta comprobación entera.
+//   · Lo que sí se puede, y es lo que hace: **no entregar como fichero algo que evidentemente no
+//     lo es.** Si la respuesta dice `text/html`, o dice un tipo que no es el que se pidió, no se
+//     descarga nada.
+//   · **NO se usa `navigator.onLine`.** Miente exactamente en este escenario —el móvil está
+//     conectadísimo… al router del bar— y además hoy tiene CERO usos en el árbol (medido en
+//     SCRUM-356). No se estrena aquí.
+//
+// SIN MICROCOPY: esta función lanza un error con CÓDIGO y **la vista decide el texto**. Ramificar
+// por código y no por texto es la regla de SCRUM-151, y además impide que un helper compartido se
+// convierta en dueño de microcopy que aprueba el fundador (regla 30).
+
+/** El código del error cuando la respuesta no es el fichero que decía ser. */
+const ERROR_NO_ES_FICHERO = 'respuesta_no_es_fichero';
+
+// SCRUM-405 · el mensaje de «esto no es tu fichero». **MICROCOPY APROBADA** por el asesor el
+// 10-ago-2026 (regla 30). Reformular estos dos textos es cambio de máster, no edición.
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SON DOS CAUSAS DISTINTAS, Y HASTA HOY PINTABAN EL MISMO TEXTO
+//
+// La condición que las dispara es `esHtml || !cuadra`. Cuando la causa era la segunda, el mensaje
+// del portal cautivo **mentía**: culpaba a la wifi de la obra y mandaba al profesional a gastar
+// datos móviles para arreglar algo que no estaba en su red.
+
+/**
+ * CASO A · la respuesta es una PÁGINA: wifi de obra o de bar que intercepta la descarga.
+ *
+ * ⚠️ CORTO A PROPÓSITO. La primera redacción aprobada tenía 157 caracteres —unos 9,5 s de
+ * lectura— en un toast que se va a los 5 s: el profesional lo veía desaparecer justo antes de la
+ * parte que dice QUÉ HACER. El asesor lo acortó al medirlo. Lo que se cayó es la explicación de
+ * POR QUÉ, que en un toast no la lee nadie; lo que se conserva es qué ha pasado y qué puede hacer.
+ */
+const MSG_DESCARGA_PORTAL_CAUTIVO =
+  'Esta red ha devuelto su pantalla de acceso en vez de tu archivo. '
+  + 'Prueba con datos móviles u otra red.';
+
+/**
+ * CASO B · llegó algo que no es el tipo esperado y NO es una página.
+ *
+ * 🔴 La última frase es la que de verdad importa, y es justo la que faltaba: le impide gastar
+ * datos, cambiar de sitio o culpar a la wifi de la obra. Y pone la culpa donde está. No promete
+ * ningún canal de contacto a propósito — no se le da un sitio al que escribir sin haber
+ * comprobado que existe.
+ */
+const MSG_DESCARGA_TIPO_INESPERADO =
+  'Lo que ha llegado no es tu archivo. Vuelve a intentarlo; '
+  + 'si sigue pasando no es tu conexión, es cosa nuestra.';
+
+/**
+ * Qué mensaje toca para un error de descarga.
+ *
+ * ⚠️ El CASO B es el POR DEFECTO, y no por comodidad: si no consta que la respuesta fuera una
+ * página, no se puede afirmar que la culpa sea de la red. Equivocarse hacia «es cosa nuestra» le
+ * cuesta al profesional un reintento; equivocarse hacia «es tu wifi» le cuesta datos, un viaje y
+ * la sospecha de que su conexión está mal. La asimetría decide el defecto.
+ */
+function mensajeDescargaFallida(err) {
+  return err && err.esHtml === true ? MSG_DESCARGA_PORTAL_CAUTIVO : MSG_DESCARGA_TIPO_INESPERADO;
+}
+
+/**
+ * Descarga un binario y lo entrega al navegador. Lanza si algo no cuadra; NO pinta nada.
+ *
+ * @param {string} url
+ * @param {{tipoEsperado: string, nombrePorDefecto: string}} opciones
+ *        `tipoEsperado` es una subcadena del `Content-Type` (p. ej. `'zip'`, `'csv'`).
+ * @returns {Promise<{nombre: string, res: Response}>} el nombre con el que se guardó y la
+ *        respuesta, para que quien llama pueda leer sus cabeceras (`X-Yaqu-Filas`, etc.).
+ */
+async function descargarBinario(url, { tipoEsperado, nombrePorDefecto }) {
+  const res = await fetch(url, { credentials: 'same-origin' });
+
+  if (!res.ok) {
+    // El error de estado se deja pasar TAL CUAL: cada pantalla lo trata a su manera (una lee el
+    // JSON del cuerpo, otra solo avisa) y unificarlo aquí les quitaría información.
+    const err = new Error(`descarga ${res.status}`);
+    err.status = res.status;
+    err.respuesta = res;
+    throw err;
+  }
+
+  const tipo = (res.headers.get('content-type') || '').toLowerCase();
+  const esHtml = tipo.includes('text/html');
+  const cuadra = tipo.includes(String(tipoEsperado).toLowerCase());
+  if (esHtml || !cuadra) {
+    const err = new Error(`la respuesta no es un fichero (${tipo || 'sin Content-Type'})`);
+    err.code = ERROR_NO_ES_FICHERO;
+    err.tipoRecibido = tipo || null;
+    err.tipoEsperado = tipoEsperado;
+    // SCRUM-405 · CUÁL de las dos causas fue. `tipoRecibido` ya viajaba, pero nadie lo miraba y las
+    // dos causas acababan pintando el mismo texto. Esto lo hace explícito para que la elección del
+    // mensaje no dependa de volver a parsear el Content-Type en cada pantalla.
+    err.esHtml = esHtml;
+    throw err;
+  }
+
+  // El nombre lo decide el SERVIDOR: lleva la fecha o el periodo, y a veces una señal (el
+  // `INCOMPLETO` del paquete de datos). Esa señal tiene que llegar al fichero guardado.
+  const cd = res.headers.get('content-disposition') || '';
+  const m = /filename="([^"]+)"/.exec(cd);
+  const nombre = m ? m[1] : nombrePorDefecto;
+
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+
+  return { nombre, res };
+}
+
 // -------- UI helpers compartidos (carga / error) --------
 
 // Pinta un estado de error con botón de reintento dentro de `container`.
@@ -79,21 +471,114 @@ function uiMarkFieldError(el, scope) {
 }
 window.uiMarkFieldError = uiMarkFieldError;
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-360 (H5 · fase 1) · ¿ESTÁ LA APLICACIÓN INSTALADA EN LA PANTALLA DE INICIO?
+//
+// No es una curiosidad: **es la mitigación entera de H5**. iOS borra el origen completo —service
+// worker, caché e IndexedDB— cuando pasan 7 días sin abrir la aplicación, y con él se llevaría una
+// firma pendiente de subir. **Las aplicaciones añadidas a la pantalla de inicio están EXENTAS de
+// ese borrado; una pestaña normal, no.** Así que saber en cuál estamos es saber si hay riesgo.
+//
+// ⚠️ VIVE AQUÍ, Y NO EN UN FICHERO NUEVO, por dos motivos medidos: `api.js` es el PRIMER script del
+// dashboard —así que la función existe antes que cualquier vista— y ya está en el precache del
+// service worker (`sw.js:23`). Un fichero nuevo habría que meterlo en ese precache, y el service
+// worker no se toca en esta fase.
+//
+// 🔴 TRES ESTADOS, NO DOS, y ésta es la decisión que sostiene el dato:
+//
+//   · `instalada`   — se pudo evaluar y la respuesta es sí;
+//   · `pestana`     — se pudo evaluar y la respuesta es no;
+//   · `desconocido` — **NO SE PUDO EVALUAR**.
+//
+// «No está instalada» y «no supe mirar» son lo CONTRARIO: el primero dice que hay riesgo, el
+// segundo no dice nada. Colapsarlos en un booleano daría un recuento tranquilo y falso — parecería
+// que sabemos que N están en pestaña cuando en realidad no pudimos preguntárselo a nadie.
+
+/** Los tres estados posibles. Cerrado a propósito: quien lo lea no tiene que adivinar. */
+var ENTORNO_INSTALADA = 'instalada';
+var ENTORNO_PESTANA = 'pestana';
+var ENTORNO_DESCONOCIDO = 'desconocido';
+
+/**
+ * En qué contexto se está ejecutando la aplicación.
+ *
+ * Dos vías, y las dos hacen falta: `display-mode: standalone` es el estándar, y
+ * `navigator.standalone` es **la única que responde en Safari de iPhone** — que es el caso peor
+ * del parque medido en H0 y justo el que sufre el borrado a los 7 días.
+ */
+function entornoDeLaApp() {
+  var puedeMatchMedia = typeof window !== 'undefined' && typeof window.matchMedia === 'function';
+  var tieneLegacy = typeof window !== 'undefined' && window.navigator
+    && typeof window.navigator.standalone === 'boolean';
+
+  // Si NINGUNA de las dos vías se puede consultar, no se contesta: se dice que no se sabe.
+  if (!puedeMatchMedia && !tieneLegacy) return ENTORNO_DESCONOCIDO;
+
+  if (puedeMatchMedia && window.matchMedia('(display-mode: standalone)').matches) return ENTORNO_INSTALADA;
+  if (tieneLegacy && window.navigator.standalone === true) return ENTORNO_INSTALADA;
+  return ENTORNO_PESTANA;
+}
+window.entornoDeLaApp = entornoDeLaApp;
+window.ENTORNO_INSTALADA = ENTORNO_INSTALADA;
+window.ENTORNO_PESTANA = ENTORNO_PESTANA;
+window.ENTORNO_DESCONOCIDO = ENTORNO_DESCONOCIDO;
+
 // P-A66-3: dinero SIEMPRE en formato español también dentro del BO — espejo
 // del formatMoneyEs del servidor (core/utils). "2.383,70 €", nunca "2383.70 EUR".
-function fmtMoneyEs(n, currency = 'EUR') {
+/** Un número utilizable. Lo ilegible se trata como 0, que es lo que hacía `fmtMoneyEs` ya. */
+function numeroSeguroDeDinero(n) {
   const v = Number(n);
-  const safe = Number.isFinite(v) ? v : 0;
-  const opts = {
+  return Number.isFinite(v) ? v : 0;
+}
+
+/**
+ * SCRUM-739 · LAS OPCIONES DEL DINERO, EN UN SOLO SITIO.
+ *
+ * Estaban escritas dentro de `fmtMoneyEs` y no se mueve ni un valor al sacarlas: son las mismas.
+ * Lo que cambia es que ahora `fmtImporteEs` —la variante SIN símbolo— las comparte, así que las
+ * dos no pueden divergir. El backend deja escrito el aviso que esto convierte en imposible:
+ * *«comparte cuerpo con `formatMoneyEs` a propósito —mismo `Intl`, mismas opciones— salvo
+ * `style`. Si divergieran, el símbolo dejaría de ser lo único que las separa.»*
+ */
+function opcionesDeDinero(currency) {
+  return {
     style: 'currency',
     currency: currency || 'EUR',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   };
+}
+
+/**
+ * SCRUM-743 · LO ÚNICO QUE LAS TRES FORMAS COMPARTEN, Y LO ÚNICO QUE NO PUEDE DIVERGIR.
+ *
+ * Estaba escrito DOS veces —una en cada función—, y es justo lo que lleva cuatro tickets
+ * rompiéndose: `es-ES` no agrupa los enteros de cuatro cifras por CLDR, así que cada copia del
+ * formato reintrodujo `1500` donde el producto escribe `1.500`. Aquí está una vez. Lo que separa a
+ * las tres formas es sólo lo que TIENE que separarlas: el símbolo y los decimales.
+ */
+var AGRUPA_SIEMPRE = { useGrouping: 'always' };
+
+/**
+ * SCRUM-743 · LA TERCERA FORMA: un NÚMERO agrupado, **sin forzar decimales**.
+ *
+ * No es dinero: es el rótulo de un eje, una cantidad. 🔴 `1,5` sigue siendo `1,5` y NO `1,50` —
+ * las dos formas de dinero fijan el mínimo en 2 decimales, y pasar por ellas **añadiría decimales
+ * que hoy no están**, que es cambiar lo que se ve y no cómo se escribe.
+ *
+ * Gemela de `formatNumeroEs` (`core/utils/utils.ts`), como lo son las otras dos.
+ */
+function opcionesDeNumero() {
+  return { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 2 };
+}
+
+function fmtMoneyEs(n, currency = 'EUR') {
+  const safe = numeroSeguroDeDinero(n);
+  const opts = opcionesDeDinero(currency);
   // A18.2 (AB6 "9.999,99 €"): es-ES por defecto NO agrupa los miles de 4 cifras
   // (CLDR); useGrouping 'always' fuerza el punto SIEMPRE. Fallback en cascada.
   try {
-    return new Intl.NumberFormat('es-ES', { ...opts, useGrouping: 'always' }).format(safe);
+    return new Intl.NumberFormat('es-ES', { ...opts, ...AGRUPA_SIEMPRE }).format(safe);
   } catch {
     try { return new Intl.NumberFormat('es-ES', opts).format(safe); }
     catch { return safe.toFixed(2) + ' ' + currency; }
@@ -101,29 +586,315 @@ function fmtMoneyEs(n, currency = 'EUR') {
 }
 window.fmtMoneyEs = fmtMoneyEs;
 
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-739 · EL IMPORTE **SIN SÍMBOLO**, para donde el símbolo no va en la cifra.
+ *
+ * Hay pantallas donde el `€` NO puede ir pegado al número: la columna de una tabla lo lleva en
+ * la cabecera, y el KPI de Informes lo pinta en un `<span>` más pequeño aparte. Forzarles
+ * `fmtMoneyEs` metería un símbolo por celda, o dos donde ya hay uno.
+ *
+ * 🔴 ESTO NO ES UN SEXTO FORMATEADOR: es la variante que el BACKEND YA TIENE
+ * (`formatImporteEs`, SCRUM-636) y que al front se le quedó sin traer. Ésa es la razón medida de
+ * que exista este ticket: `reportsView.js` necesitaba un número sin símbolo, no había ninguno, y
+ * se escribió su propio `toLocaleString` — que en `es-ES` **no agrupa los enteros de cuatro
+ * cifras**. Resultado: la pantalla de Informes escribía `6050,00` donde el resto del producto
+ * escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo corriente de un
+ * fontanero. Por encima de 10.000 volvía a coincidir, que es lo que lo hacía difícil de ver.
+ *
+ * ── POR QUÉ SE DERIVA DE LAS PARTES Y NO SE REESCRIBEN LAS OPCIONES ──────────────────────
+ *
+ * Se le pide al MISMO formateador que descomponga el resultado (`formatToParts`) y se le quita
+ * la pieza de la moneda. El separador de miles, los decimales y el redondeo salen de la misma
+ * llamada que `fmtMoneyEs`, así que **no pueden divergir**: no es que se hayan escrito iguales,
+ * es que son la misma. Copiar las opciones habría sido la quinta copia del formato — justo lo
+ * que este ticket viene a cerrar.
+ *
+ * ⚠️ Se quita la pieza `currency` y se recorta el espacio que la acompañaba (en `es-ES` va
+ * detrás, con espacio duro). Se recorta a los DOS lados a propósito: en otras plazas el símbolo
+ * va delante, y este código no tiene por qué saber en cuál está.
+ *
+ * Mismo respaldo que el backend: si `Intl` falla, se escribe algo legible en vez de romper la
+ * pantalla.
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ */
+function fmtImporteEs(n, currency = 'EUR') {
+  const safe = numeroSeguroDeDinero(n);
+  const opts = opcionesDeDinero(currency);
+  const sinSimbolo = (o) => new Intl.NumberFormat('es-ES', o)
+    .formatToParts(safe)
+    .filter((p) => p.type !== 'currency')
+    .map((p) => p.value)
+    .join('')
+    .replace(/^[\s ]+|[\s ]+$/g, '');
+  try {
+    return sinSimbolo({ ...opts, ...AGRUPA_SIEMPRE });
+  } catch {
+    try { return sinSimbolo(opts); }
+    catch { return safe.toFixed(2); }
+  }
+}
+window.fmtImporteEs = fmtImporteEs;
+
+/**
+ * SCRUM-743 · UN NÚMERO AGRUPADO, SIN FORZAR DECIMALES. Gemela de `formatNumeroEs` del backend.
+ *
+ * Para lo que NO es dinero: el rótulo de un eje, una cantidad. Comparte `AGRUPA_SIEMPRE` con las
+ * otras dos —que es lo que estaba roto en las cuatro copias que hubo— y NADA más: sus decimales
+ * son suyos, y ahí está el filo del ticket.
+ *
+ * 🔴 `1,5` SIGUE SIENDO `1,5`. Pasarlo por una forma de dinero lo escribiría `1,50` — añadiría
+ * un decimal que hoy no está. En un albarán ya firmado eso es cambiar lo impreso, que es peor
+ * que el defecto que se viene a arreglar.
+ */
+function fmtNumeroEs(n) {
+  const v = Number(n);
+  const safe = Number.isFinite(v) ? v : 0;
+  const opts = opcionesDeNumero();
+  try {
+    return new Intl.NumberFormat('es-ES', { ...opts, ...AGRUPA_SIEMPRE }).format(safe);
+  } catch {
+    try { return new Intl.NumberFormat('es-ES', opts).format(safe); }
+    // Sin `toFixed`: forzaría los decimales que esta forma existe para NO poner.
+    catch { return String(safe); }
+  }
+}
+window.fmtNumeroEs = fmtNumeroEs;
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * SCRUM-436 · EL MISMO IMPORTE, PERO DISTINGUIENDO EL AUSENTE DEL CERO
+ *
+ * `fmtMoneyEs` trata el dato ilegible o ausente como **0,00 €**, y para casi todas las pantallas
+ * eso está bien: un total que aún no se ha calculado se enseña a cero y no pasa nada.
+ *
+ * En un **libro de registro** no: ahí `null` NO es cero — es «no hay dato», y se imprime y se
+ * entrega. Decir «0,00 €» donde no se sabe nada es afirmar un importe que nadie ha calculado.
+ *
+ * Esta variante existe para eso y **NO reimplementa el formato**: delega en `fmtMoneyEs`, así que
+ * el separador de miles, los decimales, la posición del símbolo y la moneda son los mismos POR
+ * CONSTRUCCIÓN. Lo único que añade es la decisión sobre el ausente.
+ *
+ * @param {*} n         el importe
+ * @param {string} [currency='EUR']
+ * @param {string} [ausente='—']  qué se pinta cuando no hay dato
+ */
+function fmtMoneyEsOAusente(n, currency = 'EUR', ausente = '—') {
+  if (n === null || n === undefined || n === '') return ausente;
+  // Un texto que no es un número tampoco es un importe: `fmtMoneyEs` lo daría por 0,00 € y aquí
+  // eso volvería a ser la afirmación que esta función existe para no hacer.
+  if (!Number.isFinite(Number(n))) return ausente;
+  return fmtMoneyEs(n, currency);
+}
+window.fmtMoneyEsOAusente = fmtMoneyEsOAusente;
+
 // A6.2: toast compartido de TODO el BO (una sola voz para el feedback de acción).
 // kind: 'ok' (verde marca) · 'warn' (ámbar) · 'error' (rojo). Sustituye a los
 // alert() del navegador. Uno cada vez; aria-live para lectores de pantalla.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-443 · EL TOAST DE ERROR SE PUEDE LEER ENTERO, Y SE PUEDE QUITAR
+//
+// El defecto, medido: los errores duraban **5 s fijos** y el mensaje de error más largo del
+// producto son **136 caracteres ≈ 7,5 s de lectura**. O sea que había errores que **se iban por la
+// mitad**, y el profesional no podía ni recuperarlos ni pararlos: `showToast` no registraba ningún
+// listener, no pintaba cierre y no tenía `cursor:pointer`.
+//
+// Se queda sabiendo que algo falló y sin saber qué.
+//
+// ⚠️ ESTO CAMBIA EL CONTENEDOR, JAMÁS EL CONTENIDO. Ni un texto se toca aquí.
+
+/**
+ * Cuánto tiempo tiene que estar un aviso en pantalla, DERIVADO DE SU LONGITUD.
+ *
+ * 🔴 EL NÚMERO NO SE ELIGE: SE CALCULA. Un «pongamos 10 segundos» vuelve a romperse el día que
+ * alguien escriba un mensaje más largo — que es exactamente cómo hemos llegado hasta aquí, con un
+ * 5 fijo puesto cuando los mensajes eran cortos.
+ *
+ * `MS_POR_CARACTER` sale de la velocidad de lectura habitual (~3,3 palabras/s a ~5,5 caracteres por
+ * palabra ≈ 18 car/s ≈ 55 ms/car), redondeada al alza. `MS_BASE` es el tiempo de darse cuenta de
+ * que ha aparecido algo antes de empezar a leerlo.
+ *
+ * El SUELO de 5 s es el valor que había: esto sólo puede alargar, nunca acortar.
+ */
+const TOAST_MS_BASE = 1500;
+const TOAST_MS_POR_CARACTER = 60;
+const TOAST_MS_MIN_ERROR = 5000;
+const TOAST_MS_MAX = 15000;
+/** Los avisos de ÉXITO no se tocan: un «guardado» quiere irse rápido y estorbar lo mínimo. */
+const TOAST_MS_OK = 3000;
+
+/**
+ * `null` = **no se cierra solo**; se queda hasta que el profesional lo cierre.
+ *
+ * 🔴 Esto lo destapó el propio guard de este ticket, y merece explicarse porque el primer intento
+ * estaba mal: yo había puesto un tope de 15 s, y con un mensaje de 300 caracteres —que necesita
+ * ~16,7 s— el tope RECORTABA por debajo de lo legible. O sea que había reconstruido el defecto
+ * original, más arriba: un mensaje que se va antes de poder leerse.
+ *
+ * Un tope hace falta —un aviso de 25 s tapando la pantalla es intrusivo—, pero la salida no era
+ * subirlo hasta que cupiera el mensaje más largo imaginable. **Si un aviso no cabe en el tope, lo
+ * que no puede hacer es irse solo.** Ahora que los errores llevan botón de cierre, quedarse es una
+ * opción honesta: el profesional lo lee al ritmo que sea y lo quita cuando termina.
+ */
+function duracionToast(msg, kind) {
+  if (kind !== 'error') return TOAST_MS_OK;
+  const largo = String(msg == null ? '' : msg).length;
+  const necesita = Math.max(TOAST_MS_MIN_ERROR, TOAST_MS_BASE + largo * TOAST_MS_POR_CARACTER);
+  return necesita > TOAST_MS_MAX ? null : necesita;
+}
+
+/**
+ * ¿Es un aviso de una sola línea?
+ *
+ * El `border-radius: 999px` está pensado para una línea: con tres, los extremos curvos se comen las
+ * esquinas del texto. Por debajo de este largo cabe en una línea a 14px dentro del ancho máximo del
+ * toast (480px, y 92vw en móvil); por encima, se usa un radio normal.
+ */
+const TOAST_LARGO_UNA_LINEA = 45;
+
+/**
+ * SCRUM-444 · CUÁNTOS AVISOS CABEN A LA VEZ.
+ *
+ * Con más de esto en pantalla ya no hay nada que leer, hay una pared. Al llegar el que sobra se
+ * retira el MÁS ANTIGUO —el que más tiempo ha tenido para leerse—, y queda declarado como el
+ * único caso en que este ticket sigue perdiendo un aviso.
+ */
+const TOAST_MAX_A_LA_VEZ = 4;
+
+/** La pila donde viven. Se crea sola la primera vez que hace falta. */
+function pilaDeToasts() {
+  let pila = document.getElementById('yaqu-toasts');
+  if (pila) return pila;
+  pila = document.createElement('div');
+  pila.id = 'yaqu-toasts';
+  // Columna INVERSA: el más nuevo aparece abajo, junto al pulgar y donde estaba el toast único de
+  // siempre. Los anteriores suben, así que nada salta de sitio bajo el dedo.
+  pila.style.cssText = `
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+    z-index:400; display:flex; flex-direction:column-reverse; gap:8px;
+    align-items:center; pointer-events:none;
+  `;
+  document.body.appendChild(pila);
+  return pila;
+}
+
+// ── SCRUM-622 · UN `kind` QUE NO SE RECONOCE NO SE PINTA DE VERDE ──────────────────────────
+//
+// Aquí había `colors[kind] || colors.ok`, y esa red convertía «no sé qué es esto» en «todo ha
+// ido bien». Las dos equivocaciones NO cuestan lo mismo: pintar de verde un aviso que el código
+// no entiende le dice al profesional que está todo correcto; pintarlo de ámbar solo le dice que
+// mire. El desempate va al lado CARO.
+//
+// 🔴 NO ERA TEÓRICO, Y NO LO DESCUBRÍ YO: `productsView.js` ya tuvo que sortearlo. Su comentario
+// dice, con todas las letras, «`'info'` NO EXISTE — showToast solo admite ok|warn|error y
+// cualquier otra cosa cae al verde de éxito», y por eso eligió `'warn'`. La trampa ya había
+// condicionado código: basta un `'Error'` con mayúscula para que un fallo salga en verde.
+//
+// `'warn'` y no `'error'`: un `kind` desconocido no es necesariamente un fallo, así que gritar
+// tampoco sería honesto. Ámbar no afirma ninguna de las dos cosas. Y NO introduce nada nuevo —
+// `warn` ya existía y ya se usa.
+const TOAST_COLORES = { ok: 'var(--brand, #16a34a)', warn: '#b45309', error: '#b91c1c' };
+
+/** El color de un toast. Un `kind` que no se reconoce cae en ÁMBAR, nunca en el verde de éxito. */
+function colorDeToast(kind) {
+  if (kind === true) kind = 'warn'; // compat: llamadas antiguas `showToast(msg, true)`
+  return Object.prototype.hasOwnProperty.call(TOAST_COLORES, kind)
+    ? TOAST_COLORES[kind]
+    : TOAST_COLORES.warn;
+}
+if (typeof window !== 'undefined') window.colorDeToast = colorDeToast;
+
 function showToast(msg, kind = 'ok') {
-  document.getElementById('yaqu-toast')?.remove();
   // Compat: llamadas antiguas showToast(msg, true) = warn
   if (kind === true) kind = 'warn';
-  const colors = { ok: 'var(--brand, #16a34a)', warn: '#b45309', error: '#b91c1c' };
+  const pila = pilaDeToasts();
+
+  // ── ① EL MISMO AVISO OTRA VEZ NO SE APILA: SE REFRESCA ──────────────────────────────────
+  //
+  // Medido: «No se pudieron guardar las notas» existe en DOS sitios (`jobsView` y `jobDetailView`)
+  // y se dispara al perder el foco. Si el profesional corrige, vuelve a salir del campo y vuelve a
+  // fallar, el mensaje es EL MISMO — y dos copias idénticas apiladas ocupan el doble sin decir
+  // nada nuevo. Se reinicia el reloj del que ya está: sigue siendo verdad y vuelve a estar entero.
+  const yaEsta = [...pila.children].find(
+    (n) => n.dataset.kind === kind && n.dataset.msg === String(msg == null ? '' : msg),
+  );
+  if (yaEsta) {
+    clearTimeout(Number(yaEsta.dataset.timer));
+    programarCierre(yaEsta, msg, kind);
+    return;
+  }
+
   const toast = document.createElement('div');
-  toast.id = 'yaqu-toast';
+  toast.className = 'yaqu-toast';
+  toast.dataset.kind = kind;
+  toast.dataset.msg = String(msg == null ? '' : msg);
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
+  const unaLinea = String(msg == null ? '' : msg).length <= TOAST_LARGO_UNA_LINEA;
   toast.style.cssText = `
-    position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
-    background:${colors[kind] || colors.ok}; color:#fff; max-width:min(92vw,480px);
-    padding:10px 20px; border-radius:999px; font-size:14px; font-weight:600;
-    z-index:400; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    background:${colorDeToast(kind)}; color:#fff; max-width:min(92vw,480px);
+    padding:10px 20px; border-radius:${unaLinea ? '999px' : '14px'}; font-size:14px; font-weight:600;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2); pointer-events:auto;
+    display:flex; align-items:center; gap:12px; text-align:left;
   `;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), kind === 'error' ? 5000 : 3000);
+  const texto = document.createElement('span');
+  texto.textContent = msg;
+  toast.appendChild(texto);
+
+  // ── CERRARLO A MANO ─────────────────────────────────────────────────────────────────────
+  //
+  // Sólo en los errores: son los únicos que duran lo bastante como para estorbar, y los únicos
+  // que alguien puede querer quitarse de encima antes de tiempo. Un «guardado» de 3 s con una
+  // aspa al lado es ruido.
+  //
+  // ⚠️ SE REUTILIZA `.modal-close`, el patrón de cierre que YA existe en la casa (seis
+  // componentes: modales de IA, importador CSV, clientes, gastos, inicio…). No se inventa un
+  // segundo botón de cerrar con otra pinta y otro tamaño.
+  if (kind === 'error') {
+    const cerrar = document.createElement('button');
+    cerrar.type = 'button';
+    cerrar.className = 'modal-close';
+    // `aria-label="Cerrar"` NO es microcopy nueva: es el literal que ya usan `invoiceDetailView`,
+    // `jobDetailView` y `settingsView` con este mismo patrón. Reutilizar no es inventar (regla 30)
+    // — y aquí un marcador sería peor que en ningún sitio: un lector de pantalla leería en voz
+    // alta «PENDIENTE microcopy oficial» a alguien que sólo quiere cerrar un aviso.
+    cerrar.setAttribute('aria-label', 'Cerrar');
+    cerrar.innerHTML = '&times;';
+    cerrar.style.cssText = 'flex:0 0 auto; width:24px; height:24px; font-size:16px; background:rgba(255,255,255,.22); color:#fff';
+    cerrar.addEventListener('click', () => toast.remove());
+    toast.appendChild(cerrar);
+  }
+
+  pila.appendChild(toast);
+
+  // ── ② EL TOPE, Y EL ÚNICO AVISO QUE ESTE TICKET SIGUE PUDIENDO PERDER ───────────────────
+  //
+  // Se retira el MÁS ANTIGUO, que es el que más tiempo ha tenido para leerse. Con cuatro avisos
+  // simultáneos ya no hay nada que leer: hay una pared tapando la pantalla.
+  while (pila.children.length > TOAST_MAX_A_LA_VEZ) {
+    clearTimeout(Number(pila.firstElementChild.dataset.timer));
+    pila.firstElementChild.remove();
+  }
+
+  programarCierre(toast, msg, kind);
 }
+
+/**
+ * Le pone (o le renueva) el reloj a un aviso.
+ *
+ * 🔴 Aparte para que **refrescar un aviso repetido sea exactamente lo mismo que estrenarlo**: si el
+ * cierre se programara en dos sitios, el repetido acabaría con otra duración que el original y
+ * nadie se enteraría. `null` = no se cierra solo (SCRUM-443); sólo pasa en errores, que llevan
+ * botón — un aviso que no se va y no se puede quitar sería una trampa, no una mejora.
+ */
+function programarCierre(toast, msg, kind) {
+  const ms = duracionToast(msg, kind);
+  if (ms === null) { delete toast.dataset.timer; return; }
+  toast.dataset.timer = String(setTimeout(() => toast.remove(), ms));
+}
+
 window.showToast = showToast;
+window.duracionToast = duracionToast;
 
 // Rellena un <tbody> con filas-esqueleto mientras carga una lista. Se sustituyen
 // al pintar los datos (tbody.innerHTML = ''). cols = nº de columnas de la tabla.
@@ -294,7 +1065,7 @@ function planTramosEstado(tramos, emitidas) {
     return {
       ok: false,
       sumaPct: 0,
-      error: `Ya hay ${yaEmitidos} tramo(s) facturado(s): el plan no puede tener menos.`,
+      error: `Ya hay ${yaEmitidos} ${yaEmitidos === 1 ? 'tramo facturado' : 'tramos facturados'}: el plan no puede tener menos.`,
     };
   }
 
@@ -347,6 +1118,61 @@ function invoiceStatusMeta(status) {
   return M[status] || { label: String(status || '—').toUpperCase(), pillClass: 'status-pill-draft' };
 }
 window.invoiceStatusMeta = invoiceStatusMeta;
+
+// ── SCRUM-820 · ESTADO DEL PRESUPUESTO → etiqueta + clase, EN UN SOLO SITIO ─────────────────
+//
+// LA VÍCTIMA: el fontanero que abre Presupuestos y lee DRAFT, SENT, ACCEPTED y REJECTED. Y la
+// app contradiciéndose: el MISMO presupuesto salía «Aceptado» en Inicio y ACCEPTED en la lista.
+// Medido corriendo, con las dos pantallas pintadas y el mismo dato: discrepaban los SEIS estados.
+//
+// 🔴 NO ES UN MAPA NUEVO. Había CUATRO copias del mismo diccionario en este directorio
+// —`customerDetailView`, `globalSearch`, `homeView` y el medio-mapa de `quotesListView`— y cada
+// una traducía un subconjunto distinto. La contradicción no era un olvido: era que nadie leía del
+// mismo sitio. Se toma el más completo (el de `customerDetailView`, con sus claves y su mapa de
+// clases) y se trae AQUÍ, que es donde ya viven `invoiceStatusMeta`, `cobroPillClass` y
+// `jobStatusMeta`. Mismo patrón `{label, pillClass}`, para no estrenar forma.
+//
+// LOS LITERALES SON LOS QUE YA ESTÁN EN PRODUCCIÓN, sin cambiar una letra (regla 30). Donde dos
+// copias discrepaban se ha tomado la de la pantalla de Presupuestos, que es la que se arregla:
+//   · `expired` → «Caducado» (y no «Caducada», que es la forma de la FACTURA).
+//   · `pending_approval` → «Pendiente de aprobación», que es el literal que LA PROPIA LISTA ya
+//     usa en su filtro (`quotesListView.js:73`). Y ahí estaba la contradicción más fina de todas:
+//     se filtraba por «Pendiente de aprobación» y la fila respondía «PENDIENTE APROBACIÓN». El
+//     jefe filtra por lo que ve escrito, así que manda el del filtro. Hay tres formas vivas
+//     —ésta, «PENDIENTE APROBACIÓN» y «Pend. aprob.»— y van reportadas para que el fundador firme
+//     una; aquí no se inventa una cuarta.
+//
+// 🔴 Y EL RESPALDO NO VUELCA EL IDENTIFICADOR. Un estado sin mapear no puede disfrazarse del más
+// inocente —ésa es la lección de SCRUM-153 y se respeta— pero tampoco se le escupe `pending_x` a
+// la cara a un profesional. Cae al guion que este mismo fichero ya usa de respaldo, con pill
+// neutra. El rótulo definitivo («qué poner cuando no se reconoce el estado») está propuesto y sin
+// firmar: hasta que llegue, un guion dice menos que un identificador y miente mucho menos.
+function quoteStatusMeta(status) {
+  const M = {
+    draft:            { label: 'Borrador',             pillClass: 'status-pill-draft' },
+    sent:             { label: 'Enviado',              pillClass: 'status-pill-pending' },
+    accepted:         { label: 'Aceptado',             pillClass: 'status-pill-accepted' },
+    rejected:         { label: 'Rechazado',            pillClass: 'status-pill-rejected' },
+    expired:          { label: 'Caducado',             pillClass: 'status-pill-draft' },
+    pending_approval: { label: 'Pendiente de aprobación', pillClass: 'status-pill-approval' },
+    // 🔴 LOS DOS DERIVADOS DEL COBRO, y NO son un extra: sin ellos esta pieza convierte en «—» un
+    // estado que el servidor SÍ manda. `listQuotesAdmin` (`src/modules/system/quoteAdmin.ts:79-91`)
+    // sustituye `draft` por `paid` o `pending` cuando el presupuesto tiene cobro, y ESA es la ruta
+    // que alimenta la LISTA (`quotesAdmin.routes.ts:65`) — no sólo la ficha de un miembro.
+    //
+    // Medido sobre esta misma rama antes de añadirlos: un presupuesto ya cobrado caía al respaldo y
+    // se pintaba «—». Mejor que el `PAID` en inglés de antes, pero se perdía el dato: «pagado» y
+    // «no lo reconozco» acababan diciendo lo mismo en pantalla.
+    //
+    // Los literales NO son nuevos: son los de `teamView.js`, que es de donde vienen estos dos
+    // estados y el único mapa que los tiene en MASCULINO. Es el mismo criterio que ya decidió
+    // «Caducado» y no «Caducada»: un presupuesto es masculino; la factura es la que es «Pagada».
+    paid:             { label: 'Pagado',               pillClass: 'status-pill-accepted' },
+    pending:          { label: 'Pendiente',            pillClass: 'status-pill-pending' },
+  };
+  return M[String(status || '').toLowerCase()] || { label: '—', pillClass: 'status-pill-draft' };
+}
+window.quoteStatusMeta = quoteStatusMeta;
 
 // SCRUM-31 (F1): estado del TRABAJO (FSM Parte L) → etiqueta + clase de status-pill CANÓNICA.
 // Antes hand-styled en JOB_STATE_META (jobsView, deuda SCRUM-11). El color codifica la

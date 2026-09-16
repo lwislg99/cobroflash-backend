@@ -3,23 +3,56 @@
 // resto JAMÁS se cobra solo — SIEMPRE acción del pro). Merchant-scoped (regla 2).
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
+import type { Prisma } from '@prisma/client'; // SCRUM-717b: los tipos SALEN del select
+import type { Job } from '@prisma/client'; // SCRUM-717d: sin `select`, la consulta devuelve el MODELO
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: dinero = admin)
 import { seesOnlyOwnJobs, seesAllJobs, adminOnlyJobField } from '../../../../core/http/roleCapabilities'; // SCRUM-147 / SCRUM-164
-import { canTransition, estadoCobroFor, JOB_TIPOS_OPERACION } from '../../domain/job.service';
+import { listExpenses } from '../../../expenses/domain/expenses.service'; // SCRUM-370: los gastos de ESTE Trabajo
+import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION } from '../../domain/job.service';
 import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
+// SCRUM-195 (rebanada 2): el CRITERIO (orden, cuál se cobra, cuánto queda) vive en su propio
+// módulo para que el test use el MISMO y no una copia.
+import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
+// SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
+import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../../domain/trabajoDirecto';
+import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
+// SCRUM-358 (H3): el alta de albarán, idempotente.
+import {
+  normalizarClaveIdempotencia,
+  tomarCerrojoDeSerie,
+  compararAlta,
+  ClaveIdempotenciaReutilizadaError,
+  ERROR_CLAVE_REUTILIZADA,
+  msgClaveReutilizada,
+} from '../../domain/albaranIdempotencia';
+// SCRUM-424 (G3): la dirección de la OBRA — el escritor que le faltaba al bloque DÓNDE del rail.
+import {
+  normalizarJobDireccion,
+  albaranesConFirmaQueDependeDelTrabajo,
+  ERROR_DIRECCION_SELLADA,
+  MSG_DIRECCION_SELLADA,
+} from '../../domain/jobDireccion';
 // SCRUM-170: derivación del estado de cobro (parcial) — nunca un flag almacenado.
 import { estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea } from '../../domain/albaranFacturacion';
+import { normalizarLugarEntrega } from '../../domain/albaranFirmante'; // SCRUM-424
 import { emitirRecapitulativas } from '../../domain/recapitulativa.service'; // SCRUM-171a: emisión compartida
+// SCRUM-423: el eje de ENTREGA (C6 · SCRUM-305) llega por fin a la pantalla. El cálculo NO se
+// toca: esto sólo resuelve sus tres entradas con datos que este serializador ya tiene cargados.
+import { entregaDelTrabajo, entregaParaVista } from '../../domain/entregaDelTrabajo';
 import {
   ALBARAN_MODOS_VALORACION,
   serializeAlbaran,
   validarLineas,
+
+  contarLineasDePresupuesto, // SCRUM-367
   validarConsolidacion,
   groupByRotura,
   type AlbaranModoValoracion,
@@ -29,15 +62,26 @@ import { getEmissionMode } from '../../../invoicing/domain/emission.service'; //
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
 import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
+import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
+// SCRUM-650 (T1): la asignacion a VARIOS vive en su dominio; aqui no se decide nada de ella.
+import {
+  normalizarAsignados, principalDe, escribirAsignados, type ClienteDeAsignacion,
+} from '../../domain/asignacionDeTrabajo';
 
 const router = Router();
 
 const jobInclude = {
-  customer: { select: { id: true, name: true, phone: true } },
+  // SCRUM-590 (CONT-19): el panel decide con esto si ofrece «Recordar pago» (`if
+  // (job.customer?.phone)`). Sin `mobile`, a un cliente que sólo tenga móvil —al que SÍ se le
+  // puede escribir— se le esconderían los botones.
+  customer: { select: { id: true, name: true, phone: true, mobile: true } },
   // quote via relation? Job no tiene relación Prisma declarada — se resuelve a mano
 } as const;
 
@@ -47,9 +91,31 @@ const QUOTE_SELECT = {
   id: true, quoteNumber: true, total: true, currency: true,
   paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
   lines: true, // SCRUM-141: el importe de cada tramo se deriva de las líneas (= lo que se emitirá)
-  Invoice: { select: { id: true, status: true, total: true } },
+  // SCRUM-816 · `createdAt` entra porque la escalera de la siguiente acción (`jobNextAction`,
+  // nivel 2) pregunta si hay una factura sin pagar de HACE 7 DÍAS O MÁS. Sin la fecha ese nivel
+  // no se puede evaluar en la LISTA, y la lista propondría algo distinto del detalle para el
+  // mismo Trabajo. Es UN campo más en un `select` que ya viajaba: cero consultas nuevas.
+  Invoice: { select: { id: true, status: true, total: true, createdAt: true } },
 } as const;
-const CUSTOMER_SELECT = { id: true, name: true, phone: true } as const;
+const CUSTOMER_SELECT = { id: true, name: true, phone: true, mobile: true } as const; // SCRUM-590 (CONT-19)
+
+/**
+ * SCRUM-717b · LOS TIPOS DEL LOTE SALEN DEL `select`, NO SE ESCRIBEN A MANO.
+ *
+ * `Prisma.<Modelo>GetPayload<{ select: typeof X }>` deriva la forma exacta que devuelve la
+ * consulta. Escribir el tipo aparte crearía **dos fuentes para el mismo hecho**: el día que alguien
+ * añada un campo al `select` y no al tipo, o al revés, el compilador dejaría de saber cuál manda.
+ *
+ * 🔴 QUÉ DEVUELVE ESTO A LA VIGILANCIA. Hasta hoy `JobRefs` declaraba `Map<number, any>`, y un
+ * `any` apaga al compilador: quitar `phone` de `CUSTOMER_SELECT` daba `tsc rc=0` — y el teléfono
+ * desaparecía del rail del Trabajo, donde se pinta pulsable para llamar desde la obra. Medido.
+ *
+ * No se añade ningún guard: se le devuelve al que ya estaba encendido una consulta que no veía.
+ */
+type QuoteDelLote = Prisma.QuoteGetPayload<{ select: typeof QUOTE_SELECT }>;
+/** La segunda consulta pide lo mismo MÁS `jobId` — la pertenencia (SCRUM-195). */
+type QuoteDelLoteConJob = Prisma.QuoteGetPayload<{ select: typeof QUOTE_SELECT & { jobId: true } }>;
+type ClienteDelLote = Prisma.CustomerGetPayload<{ select: typeof CUSTOMER_SELECT }>;
 
 /**
  * SCRUM-58: resuelve quote + customer + operario de TODOS los jobs de una lista en 3
@@ -62,22 +128,86 @@ const CUSTOMER_SELECT = { id: true, name: true, phone: true } as const;
  * filas trajeran el mismo id.
  */
 type JobRefs = {
-  quotes: Map<number, any>;
-  customers: Map<number, any>;
+  quotes: Map<number, QuoteDelLote | QuoteDelLoteConJob>;
+  /**
+   * SCRUM-195 (rebanada 2) · TODOS los presupuestos de cada Trabajo, precargados en lote.
+   *
+   * Va en el lote y no en una consulta por fila a propósito: la lista serializa hasta 200
+   * Trabajos, y resolver la pertenencia dentro de `serializeJob` habría reintroducido el N+1
+   * que SCRUM-58 quitó — medido allí en 2910 ms contra 1270 ms.
+   */
+  quotesPorJob: Map<number, Array<QuoteDelLote | QuoteDelLoteConJob>>;
+  customers: Map<number, ClienteDelLote>;
   operarios: Map<string, { id: number; name: string }>;
+  /**
+   * SCRUM-727b · QUIÉN EJECUTA, EN PLURAL Y EN LOTE.
+   *
+   * El detalle ya lo traía; el listado no, y su comentario decía por qué: resolverlo dentro de
+   * `serializeJob` sería UNA CONSULTA POR FILA, el N+1 que SCRUM-58 quitó. La objeción era
+   * correcta y no se discute — se cumple: esto viaja en el lote, una sola consulta para las 200
+   * filas, y `serializeJob` solo LEE de este Map.
+   *
+   * ⚠️ NO es `operarios`. Ése es la AUTORÍA (quién redactó el presupuesto, congelada en
+   * SCRUM-52). Un presupuesto lo redacta uno y lo ejecutan tres; el esquema los declara aparte.
+   */
+  asignadosPorJob: Map<number, Array<{ id: number; name: string }>>;
+  /**
+   * ═══ SCRUM-816 · LOS ALBARANES DE CADA TRABAJO, EN LOTE — Y ESTO ES MEDIO TICKET ═══════════
+   *
+   * 🔴 EL DEFECTO QUE CIERRA. `jobNextAction` —la escalera ÚNICA de SCRUM-366— **no ramifica por
+   * el estado del Trabajo**: decide por sus ALBARANES y sus FACTURAS. Y este serializador, el de
+   * la LISTA, no mandaba ninguno de los dos: `albaranes` e `invoices` los añadía sólo
+   * `serializeJobDetail`. Así que la escalera caía SIEMPRE al nivel 5 y las veinte filas ofrecían
+   * `+ Nuevo albarán` — también un Trabajo CERRADO, medido en navegador el 7-sep-2026.
+   *
+   * Y lo caro no es el botón repetido: es que **la lista y el detalle decían cosas distintas del
+   * mismo Trabajo**, que es exactamente el defecto que SCRUM-366 se escribió para cerrar. Su
+   * guard pasaba en verde porque comprueba que las dos pantallas LLAMEN a la escalera; nunca que
+   * la llamen CON LOS MISMOS DATOS.
+   *
+   * ⚠️ POR QUÉ EN EL LOTE Y NO DENTRO DEL SERIALIZADOR. Una consulta por fila es el N+1 que
+   * SCRUM-58 quitó (2910 ms contra 1270 ms, medido allí) y que su test vigila comparando el
+   * conteo con 3 y con 12 Trabajos. Esto es UNA consulta para las 200 filas, el mismo patrón que
+   * `asignadosPorJob` justo arriba — copiado, no reinventado.
+   *
+   * ⚠️ Y NO SON LOS ALBARANES DEL DETALLE. Aquí viajan los DOS campos que lee la escalera (`id` y
+   * `estado`); el detalle sigue mandando el documento entero con sus líneas, su facturación y sus
+   * pendientes. Se llaman igual porque **son la misma cosa vista por la misma escalera**: si se
+   * llamaran distinto, la lista tendría que traducirlos antes de preguntar, y esa traducción
+   * sería el segundo sitio por donde las dos pantallas vuelven a separarse.
+   */
+  albaranesPorJob: Map<number, Array<{ id: number; estado: string }>>;
 };
 const operarioKey = (merchantId: number, operarioId: number) => `${merchantId}:${operarioId}`;
 
-async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
+/**
+ * SCRUM-717e · CUARTO ESLABON. `jobs` sale de `prisma.job.findMany` SIN `select`, asi que su
+ * tipo es el MODELO — el mismo `Job` que ya usa `serializeJob`. No se escribe aparte: dos
+ * fuentes para el mismo hecho es lo que este trabajo lleva toda la semana desmontando.
+ */
+async function loadJobRefs(jobs: Job[]): Promise<JobRefs> {
   const quoteIds = [...new Set(jobs.map((j) => j.quoteId).filter((v): v is number => v != null))];
   const customerIds = [...new Set(jobs.map((j) => j.customerId).filter((v): v is number => v != null))];
   const conOperario = jobs.filter((j) => j.operarioId != null);
   const operarioIds = [...new Set(conOperario.map((j) => j.operarioId as number))];
   const merchantIds = [...new Set(conOperario.map((j) => j.merchantId as number))];
 
-  const [quotes, customers, operarios] = await Promise.all([
+  // SCRUM-195: el sentido NUEVO, en lote. `merchantId` acota la lectura (regla 2).
+  const jobIds = jobs.map((j) => j.id).filter((v): v is number => v != null);
+  const merchantsDeJobs = [...new Set(jobs.map((j) => j.merchantId).filter((v): v is number => v != null))];
+
+  const [quotes, porJobId, customers, operarios, asignados, albaranes] = await Promise.all([
     quoteIds.length
       ? prisma.quote.findMany({ where: { id: { in: quoteIds } }, select: QUOTE_SELECT })
+      : Promise.resolve([]),
+    // Los adicionales, y los originales ya backfilleados. El sentido viejo de arriba se
+    // mantiene mientras conviven: sin él, un par anterior al backfill perdería su presupuesto
+    // en la lista — el mismo fallo que esto viene a cerrar, en la otra ventana.
+    jobIds.length && merchantsDeJobs.length
+      ? prisma.quote.findMany({
+          where: { jobId: { in: jobIds }, merchantId: { in: merchantsDeJobs } },
+          select: { ...QUOTE_SELECT, jobId: true },
+        })
       : Promise.resolve([]),
     customerIds.length
       ? prisma.customer.findMany({ where: { id: { in: customerIds } }, select: CUSTOMER_SELECT })
@@ -88,23 +218,151 @@ async function loadJobRefs(jobs: any[]): Promise<JobRefs> {
           select: { id: true, name: true, merchantId: true },
         })
       : Promise.resolve([]),
+    // SCRUM-727b · UNA consulta para TODAS las filas: `in` sobre los ids y se agrupa después.
+    // 🔴 REGLA 2 aunque la clave ajena ya ate: se acota al merchant de los Trabajos. La FK
+    // garantiza que el empleado EXISTE, no que sea de este negocio — es la misma cautela que
+    // ya escribió el detalle, y se copia en vez de reinventarla.
+    // El `orderBy` no es cosmético: sin él el orden de los nombres lo decide el planificador y
+    // la misma fila cambia de aspecto entre dos cargas sin que nadie haya tocado nada.
+    jobIds.length && merchantsDeJobs.length
+      ? prisma.jobAssignee.findMany({
+          where: { jobId: { in: jobIds }, teamMember: { merchantId: { in: merchantsDeJobs } } },
+          select: { jobId: true, teamMember: { select: { id: true, name: true } } },
+          orderBy: { teamMemberId: 'asc' },
+        })
+      : Promise.resolve([]),
+    // SCRUM-816 · LOS ALBARANES, en la MISMA consulta única. Ver el porqué largo en `JobRefs`.
+    // `merchantId` acota la lectura (regla 2) igual que las cuatro de arriba, y el `orderBy` por
+    // `createdAt` es el mismo que usa el detalle: la escalera elige el MÁS AVANZADO, así que un
+    // orden que cambie entre dos cargas puede cambiar el botón sin que nadie haya tocado nada.
+    jobIds.length && merchantsDeJobs.length
+      ? prisma.albaran.findMany({
+          where: { jobId: { in: jobIds }, merchantId: { in: merchantsDeJobs } },
+          select: { id: true, jobId: true, estado: true },
+          orderBy: { createdAt: 'asc' },
+        })
+      : Promise.resolve([]),
   ]);
 
+  const asignadosPorJob: JobRefs['asignadosPorJob'] = new Map();
+  for (const a of asignados) {
+    const lista = asignadosPorJob.get(a.jobId);
+    const quien = { id: a.teamMember.id, name: a.teamMember.name };
+    if (lista) lista.push(quien);
+    else asignadosPorJob.set(a.jobId, [quien]);
+  }
+
+  // SCRUM-816 · se agrupan por Trabajo con el MISMO gesto que los asignados de arriba.
+  const albaranesPorJob: JobRefs['albaranesPorJob'] = new Map();
+  for (const a of albaranes) {
+    if (a.jobId == null) continue;   // un albarán suelto no es de ningún Trabajo
+    const lista = albaranesPorJob.get(a.jobId);
+    const cual = { id: a.id, estado: a.estado };
+    if (lista) lista.push(cual);
+    else albaranesPorJob.set(a.jobId, [cual]);
+  }
+
+  // Los tipos de los Map internos son los MISMOS que declara `JobRefs`: se escriben una vez.
+  const porId: JobRefs['quotes'] = new Map([...quotes, ...porJobId].map((q) => [q.id, q]));
+  const quotesPorJob: JobRefs['quotesPorJob'] = new Map();
+  for (const j of jobs) {
+    const suyos: Array<QuoteDelLote | QuoteDelLoteConJob> = [];
+    const vistos = new Set<number>();
+    // El ORIGINAL primero: define el alcance base, y ese orden lo usan tanto el detalle como
+    // `collect-rest` para ser deterministas (§4 del ticket).
+    // 🔴 SCRUM-717e · UNA sola busqueda, y se comprueba EL RESULTADO. Antes era `has()` y
+    // luego `get()`: dos consultas al Map para la misma pregunta, y el compilador no puede
+    // demostrar que la segunda traiga algo — con `any` eso no se veia y `suyos` podia acabar
+    // con un `undefined` dentro. El comportamiento es el mismo (el Map nunca guarda
+    // `undefined`), pero ahora lo dice el tipo y no la costumbre.
+    const original = j.quoteId != null ? porId.get(j.quoteId) : undefined;
+    // Y `original.id` en vez de `j.quoteId as number`: es el MISMO valor —el Map se indexa por
+    // `q.id`— y no necesita casteo. Un `as` es una afirmacion sin comprobar, aunque sea inocente.
+    if (original) { suyos.push(original); vistos.add(original.id); }
+    for (const q of porJobId) {
+      if (q.jobId === j.id && !vistos.has(q.id)) { suyos.push(q); vistos.add(q.id); }
+    }
+    quotesPorJob.set(j.id, suyos);
+  }
+
   return {
-    quotes: new Map(quotes.map((q: any) => [q.id, q])),
-    customers: new Map(customers.map((c: any) => [c.id, c])),
-    operarios: new Map(operarios.map((o: any) => [operarioKey(o.merchantId, o.id), { id: o.id, name: o.name }])),
+    quotes: porId,
+    quotesPorJob,
+    customers: new Map(customers.map((c) => [c.id, c])),
+    operarios: new Map(operarios.map((o) => [operarioKey(o.merchantId, o.id), { id: o.id, name: o.name }])),
+    asignadosPorJob,
+    albaranesPorJob,
   };
 }
 
-async function serializeJob(job: any, refs?: JobRefs) {
+/**
+ * SCRUM-195 (rebanada 2) · LOS PRESUPUESTOS DE UN TRABAJO, para el camino de LECTURA.
+ *
+ * Con `refs` sale del lote (lista); sin él consulta, que es lo que hacen el detalle y el update.
+ * Devuelve el ORIGINAL primero y los adicionales después, por id: el orden es parte del
+ * contrato — de él dependen el título, el plan base y a qué presupuesto va el siguiente tramo.
+ *
+ * Los DOS sentidos siguen vivos (paso 1: `Job.quoteId` no se retira). El nuevo responde por
+ * `Quote.jobId`; el viejo cubre los pares que aún no tiene el backfill.
+ */
+/**
+ * SCRUM-717b · SEGUNDO ESLABON. Tipar `JobRefs` no basta: si esta funcion devuelve `any[]`, el
+ * valor sale del Map tipado y vuelve a `any` en el mismo gesto. La frontera no se cierra, se
+ * MUEVE — medido: con `JobRefs` tipado y esto en `any[]`, quitar `currency` de `QUOTE_SELECT`
+ * seguia dando `tsc rc=0`.
+ */
+async function quotesDeJob(job: any, refs?: JobRefs): Promise<Array<QuoteDelLote | QuoteDelLoteConJob>> {
+  if (refs) return refs.quotesPorJob.get(job.id) ?? [];
+
+  const [original, porJob] = await Promise.all([
+    job.quoteId != null
+      ? prisma.quote.findUnique({ where: { id: job.quoteId }, select: QUOTE_SELECT })
+      : Promise.resolve(null),
+    prisma.quote.findMany({
+      where: { jobId: job.id, merchantId: job.merchantId }, // regla 2
+      select: { ...QUOTE_SELECT, jobId: true },
+    }),
+  ]);
+
+  const salida: Array<QuoteDelLote | QuoteDelLoteConJob> = [];
+  const vistos = new Set<number>();
+  if (original) { salida.push(original); vistos.add(original.id); }
+  for (const q of porJob) if (!vistos.has(q.id)) { salida.push(q); vistos.add(q.id); }
+  return salida;
+}
+
+/**
+ * SCRUM-363 · lo FACTURADO del Trabajo: suma de las facturas de sus presupuestos.
+ *
+ * Es el segundo candidato a importe de referencia, y existe porque el primero puede no estar: un
+ * Trabajo sin presupuesto (SCRUM-51) no tiene `totalAceptado`, pero si se le ha emitido factura,
+ * ESA es la cifra contra la que su cobro significa algo.
+ *
+ * Se suman TODAS las facturas del presupuesto, incluidas las anuladas: aquí no se decide política
+ * fiscal, solo si existe un eje contra el que medir. Afinarlo es otra decisión.
+ */
+function totalFacturadoDe(quotes: any[]): number {
+  let total = 0;
+  for (const q of quotes ?? []) {
+    for (const inv of q?.Invoice ?? []) total += Number(inv?.total ?? 0);
+  }
+  return total;
+}
+
+/**
+ * SCRUM-717d · TERCER ESLABON. `job` era `any`, y no porque faltara de donde sacar el tipo:
+ * medido, las CINCO consultas que alimentan a los dos serializadores no llevan `select`
+ * explicito — ninguna. Y sin `select` Prisma devuelve el MODELO ENTERO, cuyo tipo ya existe
+ * generado. No habia nada que derivar porque el tipo estaba escrito desde el principio.
+ */
+async function serializeJob(job: Job, refs?: JobRefs) {
   // SCRUM-58: con `refs` (lista) se lee del lote; sin él (detalle, update) se consulta como
   // siempre. Mismos selects en ambas ramas — ver QUOTE_SELECT/CUSTOMER_SELECT.
-  const quote = job.quoteId
-    ? refs
-      ? refs.quotes.get(job.quoteId) ?? null
-      : await prisma.quote.findUnique({ where: { id: job.quoteId }, select: QUOTE_SELECT })
-    : null;
+  // SCRUM-195 (rebanada 2): el Trabajo puede tener VARIOS presupuestos. `quote` sigue siendo el
+  // ORIGINAL —define el alcance base, el título y la moneda—, pero el DINERO ya no se lee solo
+  // de él: ver `remaining` abajo.
+  const todosLosQuotes = await quotesDeJob(job, refs);
+  const quote = todosLosQuotes[0] ?? null;
   const customer = refs
     ? refs.customers.get(job.customerId) ?? null
     : await prisma.customer.findUnique({ where: { id: job.customerId }, select: CUSTOMER_SELECT });
@@ -119,18 +377,80 @@ async function serializeJob(job: any, refs?: JobRefs) {
         })
     : null;
 
+  // ── SCRUM-727b · QUIÉN EJECUTA, TAMBIÉN EN LA LISTA ─────────────────────────────────────
+  //
+  // 🔴 POR QUÉ NO VALE `assignedUserId`, QUE YA VIAJABA. Es el espejo del PRIMER asignado
+  // (`asignacionDeTrabajo.ts`: la columna escalar «solo sabe guardar uno»). Un Trabajo con tres
+  // técnicos que enseña uno **no está incompleto: está mintiendo con cara de estar bien**, y el
+  // jefe no tiene forma de notarlo. Por eso la fila lee de aquí y no de allí.
+  //
+  // `assignedUserId` NO se toca ni se retira: esto es ADITIVO y quien lo consuma hoy sigue igual.
+  //
+  // Con lote (la lista) se LEE del Map — una consulta para las 200 filas. Sin lote es un Trabajo
+  // suelto y una consulta es lo correcto: es el mismo patrón que usa `operario` cuatro líneas
+  // arriba, copiado y no reinventado.
+  const asignados = refs
+    ? refs.asignadosPorJob.get(job.id) ?? []
+    : (
+        await prisma.jobAssignee.findMany({
+          where: { jobId: job.id, teamMember: { merchantId: job.merchantId } },
+          select: { teamMember: { select: { id: true, name: true } } },
+          orderBy: { teamMemberId: 'asc' },
+        })
+      ).map((a) => ({ id: a.teamMember.id, name: a.teamMember.name }));
+
+  // ── SCRUM-816 · LO QUE LEE LA ESCALERA, TAMBIÉN EN LA LISTA ─────────────────────────────
+  //
+  // Los dos campos por los que `jobNextAction` decide y que este serializador NO mandaba. El
+  // porqué largo está en `JobRefs.albaranesPorJob`; aquí sólo la mecánica, que es la misma que
+  // la de `asignados` de arriba: con lote se LEE del Map, sin lote se consulta (un Trabajo
+  // suelto, una consulta).
+  //
+  // El detalle SOBRESCRIBE los dos con su versión completa (`{ ...base, invoices, albaranes }`),
+  // así que esto no le cambia ni un campo: lo comprueba `scrum816-la-lista-no-miente`.
+  const albaranes = refs
+    ? refs.albaranesPorJob.get(job.id) ?? []
+    : (
+        await prisma.albaran.findMany({
+          where: { jobId: job.id, merchantId: job.merchantId },   // regla 2
+          select: { id: true, estado: true },
+          orderBy: { createdAt: 'asc' },
+        })
+      );
+
+  // 🔴 LAS FACTURAS NO CUESTAN NI UNA CONSULTA: `todosLosQuotes` ya las trae dentro
+  // (`QUOTE_SELECT.Invoice`), porque el importe de referencia las necesitaba desde SCRUM-363. Lo
+  // único que faltaba era `createdAt`, un campo en un `select` que ya viajaba.
+  //
+  // Se aplanan igual que en el detalle —todas las de todos los presupuestos del Trabajo, por
+  // fecha— porque omitir las de un adicional volvería a hacer que las dos pantallas contesten
+  // distinto, que es el defecto entero de este ticket.
+  const invoices = todosLosQuotes
+    .flatMap((q) => (q as { Invoice?: Array<{ id: number; status: string; createdAt: Date }> }).Invoice ?? [])
+    .map((inv) => ({ id: inv.id, status: inv.status, createdAt: inv.createdAt }))
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
   // A13.3: ¿queda tramo pendiente? (plan según paymentTerms vs facturas emitidas)
   let remaining: { amount: number; currency: string } | null = null;
   let planView: ReturnType<typeof buildBillingPlanView> | null = null; // SCRUM-34
   if (quote) {
-    const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset (Pendiente/semáforo cuadran con el plan real)
-    const emitted = (quote.Invoice || []).length;
-    if (emitted < plan.length) {
-      const pct = plan.slice(emitted).reduce((a, s) => a + s.percentage, 0);
-      remaining = { amount: Math.round(Number(quote.total) * pct * 100) / 100, currency: quote.currency };
+    // SCRUM-195 (rebanada 2) · `remaining` SUMA TODOS los presupuestos del Trabajo.
+    //
+    // EL FALLO QUE CIERRA: antes salía solo del original, así que un adicional aceptado y no
+    // cobrado NO aparecía en «pendiente». El pro veía menos deuda de la que tiene — dinero
+    // visible que no aparece, y sin ningún error.
+    //
+    // Cada presupuesto tiene su PROPIO plan (decisión 5 del ticket: el plan del extra es
+    // independiente), así que lo correcto es sumar los restos, no recalcular un plan conjunto.
+    const pendiente = restanteDelTrabajo(todosLosQuotes, resolveBillingPlan);
+    if (pendiente > 0) {
+      remaining = { amount: Math.round(pendiente * 100) / 100, currency: quote.currency };
     }
     // SCRUM-34: siguiente tramo + pendientes por el MISMO conteo que collect-rest (plan[emitted]).
-    planView = buildBillingPlanView(quote, emitted);
+    // ⚠️ `planView` sigue siendo el del ORIGINAL a propósito: es la vista del plan BASE, y
+    // enseñar los planes de los adicionales es timeline multi-documento — rebanada 3, con su
+    // microcopy. Lo que NO puede seguir mintiendo hoy es el importe pendiente, y ése ya suma.
+    planView = buildBillingPlanView(quote, (quote.Invoice || []).length);
   }
 
   return {
@@ -142,15 +462,30 @@ async function serializeJob(job: any, refs?: JobRefs) {
     createdAt: job.createdAt,
     // SCRUM-10: campos del contenedor "Trabajo". Fallback a derivado para Jobs
     // anteriores (titulo/totalAceptado null) → sin cambiar el comportamiento visible.
-    titulo: job.titulo ?? `Presupuesto #${quote ? (quote.quoteNumber ?? quote.id) : job.id}${customer?.name ? ` · ${customer.name}` : ''}`,
+    // 🔴 SCRUM-651 · el CRITERIO del titulo vive en `tituloDeTrabajo`, no aqui: en linea solo se
+    // podia vigilar comparando texto, y un guard asi pasa en verde en cuanto alguien reescribe la
+    // expresion sin cambiar el defecto. Medido en su tanda de rojos.
+    titulo: tituloDeTrabajo({ titulo: job.titulo, quote, customer, jobId: job.id }),
     direccion: job.direccion ?? null,
     totalAceptado: job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : null),
     totalCobrado: Number(job.totalCobrado ?? 0),
     // SCRUM-13: semáforo de cobro derivado (SCRUM-11 lo pinta; aquí NO se hace UI).
     // totalCobrado lo materializa recalcJobCobradoForCharge en los webhooks de pago.
+    // SCRUM-363 · el eje de cobro puede NO existir, y entonces esto vale `null` y no se pinta
+    // chip. El importe FACTURADO es el segundo candidato del orden decidido: sale de las facturas
+    // de los presupuestos del Trabajo, que ya están resueltas aquí — sin consulta nueva.
     estadoCobro: estadoCobroFor(
       Number(job.totalCobrado ?? 0),
       job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : 0),
+      totalFacturadoDe(todosLosQuotes),
+    ),
+    // SCRUM-363 · el EJE, explícito. Viaja para que la interfaz no vuelva a derivarlo por su
+    // cuenta: el listado decidía si pintar el chip con `aceptado > 0`, que era un SEGUNDO
+    // criterio — y en cuanto el eje puede venir de lo facturado, los dos dejan de coincidir y el
+    // mismo Trabajo sale «Pagado» en el detalle y sin chip en la lista. `null` = sin eje.
+    importeReferencia: importeDeReferencia(
+      job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : 0),
+      totalFacturadoDe(todosLosQuotes),
     ),
     customer,
     // SCRUM-22: autoría del operario (creador del presupuesto, congelada en SCRUM-52).
@@ -158,6 +493,8 @@ async function serializeJob(job: any, refs?: JobRefs) {
     // La UI del detalle/timeline la consume aparte (jobDetailView.js, carril de Javier).
     operarioId: job.operarioId ?? null,
     operario: operario ? { id: operario.id, name: operario.name } : null,
+    // SCRUM-727b · quién EJECUTA, en plural. Va al lado de `assignedUserId`, que se queda.
+    asignados,
     // SCRUM-66 (TRABAJO-4): tipo de operación fiscal (default para Jobs previos al campo).
     // El motor que lo respeta es SCRUM-17; aquí solo se lee/edita en el detalle.
     tipoOperacion: job.tipoOperacion ?? 'TRABAJO_UNICO',
@@ -171,6 +508,11 @@ async function serializeJob(job: any, refs?: JobRefs) {
       : null,
     pendingStagesCount: planView?.pendingStagesCount ?? 0,
     hasCustomPlan: planView?.hasCustomPlan ?? false,
+    // SCRUM-816 · los dos que le faltaban a la escalera. El detalle los sobrescribe con su
+    // versión completa; para la lista éstos son los que hacen que su respuesta y la del detalle
+    // dejen de ser dos.
+    albaranes,
+    invoices,
   };
 }
 
@@ -179,15 +521,53 @@ async function serializeJob(job: any, refs?: JobRefs) {
 // getQuoteDetailAdmin (quoteAdmin.ts:141-160) con su PROPIO fetch (Job 1:1 Quote vía
 // Job.quoteId; NO acopla a getQuoteDetailAdmin). GAP CERRADO: cada invoice expone
 // status/paidAt/payToken (semáforo por tramo + link /pay/invoice/:token, SCRUM-85).
+/**
+ * SCRUM-717d · ESTE SE QUEDA EN `any`, Y NO ES UN OLVIDO. `scrum363-eje-de-cobro` fija POR TEXTO
+ * la firma de esta funcion —`serializeJobDetail(job: any)`— para exigir que el detalle DELEGUE en
+ * el serializer del listado. Tiparlo hace caer ese guard SIN QUE LA PROPIEDAD SE HAYA ROTO: la
+ * delegacion sigue ahi. Reanclarlo es de otro carril (regla 9) y esta reportado.
+ *
+ * `job` le llega de las mismas consultas SIN `select` que a `serializeJob`, asi que el tipo es
+ * el mismo `Job` el dia que su guard deje de fijar la forma.
+ */
 async function serializeJobDetail(job: any) {
   const base = await serializeJob(job);
   // SCRUM-12 (decisión 2): el detalle expone customer.email (fallback de correo del
   // "Reenviar por WhatsApp"). Aditivo, solo lectura; Customer.email ya existe (no es schema).
+  // SCRUM-292 (A1): y `taxId`, para que la revisión ANTES de emitir sepa si falta el NIF. Aditivo y
+  // de solo lectura, igual que el email: `Customer.taxId` ya existe y ya se edita desde la ficha.
+  // No toca el camino de emisión (regla 38) — el tipo de factura lo sigue derivando quien lo
+  // derivaba; esto solo permite preguntar por el dato que falta ANTES de llegar ahí.
   let customer: any = base.customer;
   if (customer && job.customerId) {
-    const c = await prisma.customer.findUnique({ where: { id: job.customerId }, select: { email: true } });
-    customer = { ...customer, email: c?.email ?? null };
+    const c = await prisma.customer.findUnique({
+      where: { id: job.customerId },
+      select: { email: true, taxId: true },
+    });
+    customer = { ...customer, email: c?.email ?? null, taxId: c?.taxId ?? null };
   }
+  // ── SCRUM-650 (T1) · QUIÉN EJECUTA, EN PLURAL ────────────────────────────────────────────
+  //
+  // El parte de papel de Tecnosel escribe «Israel, Miguel y Jesús.L» en el campo «Técnico». La
+  // tabla `job_assignees` ya lo guarda y el PATCH ya lo escribe; sin esto, la pantalla solo podía
+  // pintar UNO (`assignedUserId`, que es el principal) y el jefe no tenía cómo ver a los otros dos.
+  //
+  // ⚠️ ESTO NO ES `operarioId`. `base.operario` es la AUTORÍA —quién redactó el presupuesto,
+  // congelada al aceptarlo (SCRUM-52)— y viaja aparte, como hasta hoy. Son dos ideas distintas y
+  // el esquema las declara aparte: un presupuesto lo redacta uno y lo ejecutan tres.
+  //
+  // Va en el DETALLE y no en `serializeJob`: el listado llama al serializador POR FILA y esto
+  // sería una consulta por Trabajo (el N+1 que SCRUM-58 vino a quitar). El detalle es una sola.
+  //
+  // 🔴 REGLA 2 aunque la clave ajena ya ate: se filtra por el merchant del Trabajo. La FK
+  // garantiza que el empleado EXISTE, no que sea de este negocio.
+  const asignadosRaw = await prisma.jobAssignee.findMany({
+    where: { jobId: job.id, teamMember: { merchantId: job.merchantId } },
+    select: { teamMember: { select: { id: true, name: true } } },
+    orderBy: { teamMemberId: 'asc' },
+  });
+  const asignados = asignadosRaw.map((a) => ({ id: a.teamMember.id, name: a.teamMember.name }));
+
   // SCRUM-14 (ADITIVO): albaranes del Trabajo para la sección "Albaranes" y el timeline de
   // Documentos. Documento NO fiscal — nada de importes. SCRUM-22: la autoría del Trabajo se
   // propaga a sus documentos (albarán), derivada de Job.operarioId ya resuelto en base.
@@ -215,32 +595,73 @@ async function serializeJobDetail(job: any) {
       operario: base.operario,
       // `facturado` (invoiceId != null) sigue intacto en serializeAlbaran; esto lo COMPLETA con
       // los tres valores derivados: sin_facturar | parcial | facturado.
-      estadoCobro: estadoCobroAlbaran(lineas, facturado, a.invoiceId != null),
+      //
+      // ⚠️ SCRUM-372 · SE LLAMA IGUAL QUE EN EL DETALLE DEL ALBARÁN, Y ES EL PUNTO DEL TICKET.
+      // Antes salía de aquí como `estadoCobro` y de `albaranes.routes.ts:575` como
+      // `estadoFacturacion`, siendo la MISMA llamada. Y `estadoCobro` ya nombra otra cosa en este
+      // mismo endpoint: el cobro del TRABAJO (`Pagado`/`Parcial`/`Pendiente`, línea 253).
+      estadoFacturacion: estadoCobroAlbaran(lineas, facturado, a.invoiceId != null),
       pendientes: pendientePorLinea(lineas, facturado),
     };
   });
 
-  // invoices[] y charge SÍ dependen del quote (tramos/cobro): un Job sin quote no tiene → []/null.
-  if (!job.quoteId) return { ...base, customer, invoices: [], charge: null, albaranes };
+  // invoices[] y charge SÍ dependen de los presupuestos (tramos/cobro): un Job sin ninguno no
+  // tiene → []/null.
+  //
+  // SCRUM-195 (rebanada 2) · SE PREGUNTA POR TODOS, no solo por `job.quoteId`. Antes las
+  // facturas de un ADICIONAL no salían en el detalle: el pro no las veía, y no había error.
+  // Y la condición de corte era `!job.quoteId`, que con 1:N es la pregunta equivocada — un
+  // Trabajo manual (SCRUM-51) con un adicional colgado tiene `quoteId` null y SÍ tiene
+  // facturas que enseñar.
+  const quotesDelTrabajo = await quotesDeJob(job);
+  // SCRUM-423 · el eje de ENTREGA viaja TAMBIÉN por esta salida temprana. Un Trabajo manual
+  // (SCRUM-51) no tiene presupuesto contra el que medir, y eso es `sin_eje` — una respuesta, no un
+  // fallo. Omitir el campo aquí dejaría a la pantalla sin poder distinguirlo de «no se pudo leer».
+  if (quotesDelTrabajo.length === 0) {
+    return {
+      // SCRUM-650 · `asignados` viaja TAMBIÉN por esta salida temprana. Un Trabajo manual sin
+      // presupuesto es la AVERÍA —el caso más frecuente del primer cliente real, y el que más se
+      // reparte entre varios—: dejarlo fuera de aquí habría hecho que el selector saliera vacío
+      // justo donde más falta hace, sin ningún error.
+      ...base, customer, invoices: [], charge: null, albaranes, asignados,
+      entregaPendiente: entregaParaVista(entregaDelTrabajo([], albaranesRaw)),
+    };
+  }
 
-  const quote = await prisma.quote.findUnique({
-    where: { id: job.quoteId },
+  const detalles = await prisma.quote.findMany({
+    where: { id: { in: quotesDelTrabajo.map((q) => q.id) }, merchantId: job.merchantId }, // regla 2
     select: {
+      id: true,
       charge: { select: { id: true, status: true, method: true, amount: true, currency: true } },
       Invoice: {
         select: {
           id: true, number: true, total: true, currency: true, createdAt: true,
           pdfUrl: true, type: true, status: true, paidAt: true, chargeId: true, stageLabel: true, // SCRUM-27
+          // SCRUM-319 (G4): el vínculo de la rectificativa con su original. Ya existía en el
+          // modelo (`rectifies_id`, relación "Rectification") y NO llegaba a la pantalla del
+          // Trabajo. Aditivo y de solo lectura: sin él la rectificativa se pinta como una fila
+          // suelta que no dice a qué factura corrige, que es legalmente ilegible.
+          rectifiesId: true,
         },
         orderBy: { createdAt: 'asc' },
       },
     },
   });
 
+  // El ORIGINAL manda para `charge` (es el cobro base y el campo es singular en la API);
+  // enseñar el de cada adicional es timeline multi-documento, o sea rebanada 3.
+  const porIdDetalle = new Map(detalles.map((d) => [d.id, d]));
+  const quote = porIdDetalle.get(quotesDelTrabajo[0].id) ?? null;
+  // Las FACTURAS sí se juntan todas y se ordenan por fecha: son el dinero, y omitir las del
+  // adicional es exactamente lo que este cambio viene a cerrar.
+  const facturasDelTrabajo = quotesDelTrabajo
+    .flatMap((q) => porIdDetalle.get(q.id)?.Invoice ?? [])
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
   // SCRUM-85: payToken (Charge.receiptToken) AÑADIDO para el link público /pay/invoice/:token
   // (IDOR/RGPD — ya no acepta el id numérico). chargeId se CONSERVA: lo sigue usando la
   // acción autenticada /admin/charges/:chargeId/confirm-bizum (no es superficie pública).
-  const invoices = await Promise.all((quote?.Invoice ?? []).map(async (inv) => ({
+  const invoices = await Promise.all(facturasDelTrabajo.map(async (inv) => ({
     id: inv.id,
     number: inv.number,               // número visible de la factura/justificante
     total: Number(inv.total),         // Decimal(12,2) → Number (como serializeJob)
@@ -253,6 +674,7 @@ async function serializeJobDetail(job: any) {
     chargeId: inv.chargeId,           // acción admin confirm-bizum (autenticada, NO es link público)
     payToken: inv.chargeId ? await ensureChargeReceiptToken(inv.chargeId, prisma) : null, // ← GAP CERRADO (link /pay/invoice/:token)
     stageLabel: inv.stageLabel,       // SCRUM-27: etiqueta del tramo (custom); null en presets
+    rectifiesId: inv.rectifiesId,     // SCRUM-319 (G4): a qué factura rectifica (solo R1)
   })));
 
   const charge = quote?.charge
@@ -266,7 +688,14 @@ async function serializeJobDetail(job: any) {
       }
     : null;
 
-  return { ...base, customer, invoices, charge, albaranes };
+  // SCRUM-423 · «qué queda por ENTREGAR», el eje que C6 construyó y que hasta hoy no salía de su
+  // test. Sin consulta nueva: `quotesDelTrabajo` ya viene con `lines` (QUOTE_SELECT) y con el
+  // ORIGINAL el primero, que es lo que `entregaDelTrabajo` necesita para decidir el eje y
+  // `hayAdicionales`. Los albaranes van CRUDOS —`albaranesRaw`— y no los serializados: el cálculo
+  // mira `lineas`, `estado` y `modoValoracion`, y el serializado no está obligado a conservarlos.
+  const entrega = entregaParaVista(entregaDelTrabajo(quotesDelTrabajo, albaranesRaw));
+
+  return { ...base, customer, invoices, charge, albaranes, asignados, entregaPendiente: entrega };
 }
 
 // GET /admin/jobs — lista para la vista "Esta semana" (simple, por fecha)
@@ -280,9 +709,34 @@ router.get('/', async (req, res) => {
     // veía TODOS los Trabajos del merchant. `seesOnlyOwnJobs` complementa un allowlist de
     // 'admin', así que un rol desconocido queda RESTRINGIDO — misma lección que SCRUM-55 dejó
     // escrita en consolidar-albaranes (:470) y que aquí no se había aplicado.
-    const where: { merchantId: number; operarioId?: number | null } = { merchantId: req.merchantId };
+    // SCRUM-467 · LOS DOS EJES, y NO son el mismo campo — lo declara el schema de `Job`:
+    // `operarioId` es AUTORÍA (quien creó el presupuesto, congelada al aceptar — SCRUM-52) y
+    // `assignedUserId` es QUIEN LO EJECUTA (SCRUM-10). Filtrar solo por el primero dejaba fuera
+    // los Trabajos que a alguien le ASIGNAN: **asignar un trabajo no hacía que el técnico lo
+    // viera**, y había 6 con `assignedUserId` escrito que no miraba nadie.
+    // No se unifican los campos —son dos ideas distintas—: se filtra por LOS DOS.
+    const where: {
+      merchantId: number;
+      operarioId?: number | null;
+      OR?: Array<{ operarioId?: number | null; assignedUserId?: number | null }>;
+    } = { merchantId: req.merchantId };
     const restringido = seesOnlyOwnJobs(req.userRole);
-    if (restringido) where.operarioId = req.teamMemberId;
+    // SCRUM-650 (T1) paso B · LOS TRES EJES. El tercero —la tabla puente— no es cosmetico: sin el,
+    // un tecnico asignado por la tabla NUEVA no veria su trabajo, que es literalmente el defecto
+    // que SCRUM-467 arreglo. Los ejes salen de UNA fuente (`ejesDeVisibilidad`) para que esta ruta
+    // y la de albaranes no puedan quedarse con listas distintas.
+    if (restringido) {
+      where.OR = [
+        { operarioId: req.teamMemberId },
+        { assignedUserId: req.teamMemberId },
+        // SCRUM-650 (T1) paso B · EL TERCER EJE. Los dos de arriba se quedan ESCRITOS TAL CUAL: el
+        // guard de SCRUM-467 los comprueba por su texto, y sacarlos a una funcion comun lo ponia en
+        // rojo sin que la garantia cambiara. Es de otro carril y no se toca (regla 9), asi que aqui
+        // se AMPLIA. Lo que impide que las dos rutas se separen es el guard de SCRUM-650b, que
+        // exige los TRES en las dos.
+        { assignees: { some: { teamMemberId: req.teamMemberId } } },
+      ] as typeof where.OR;
+    }
 
     // SCRUM-148: ?operarioId=<id> | 'owner' → Trabajos de ESE operario, para el detalle por
     // miembro del hub de Equipo.
@@ -321,6 +775,53 @@ router.get('/', async (req, res) => {
 
 // GET /admin/jobs/:id — DETALLE del Trabajo (SCRUM-12, solo lectura, aditivo).
 // Tenancy idéntica al resto de handlers :id (findFirst { id, merchantId } → 404).
+// ── SCRUM-651 (T2) · ABRIR UN TRABAJO SIN PRESUPUESTO ───────────────────────────────────
+//
+// LA PUERTA QUE FALTABA. Hasta hoy el ÚNICO creador de Trabajos era `ensureJobForQuote`, que
+// arranca en `quote → accepted`: no había forma de meter una AVERÍA en el producto, que es el
+// caso MÁS frecuente del primer cliente real. Nadie presupuesta una urgencia.
+//
+// ⚠️ La exigencia era DE HECHO, no del esquema: `Job.quoteId` ya era `Int?`. Cero cambios de
+// schema, que es el freno duro del proyecto.
+//
+// 🔴 NO ES ADMIN-ONLY, y está medido: quien coge la avería es el técnico, en la calle. El gate
+// por CAMPO del PATCH sigue intacto (`tipoOperacion`, `assignedUserId`, cerrar) — aquí no se
+// escribe ninguno de esos, así que abrir la creación no abre nada de dinero ni de reparto.
+router.post('/', async (req, res) => {
+  try {
+    const entrada = datosDeTrabajoDirecto(req.body);
+    if (!entrada.ok) return res.status(400).json({ error: entrada.error });
+
+    // regla 2 · el cliente tiene que ser DE ESTE merchant. Y se comprueba ANTES de crear: sin
+    // esto, un `customerId` de otro merchant fabricaría un Trabajo que apunta fuera del inquilino
+    // y que nadie podría ni ver ni borrar.
+    const customer = await prisma.customer.findFirst({
+      where: { id: entrada.datos.customerId, merchantId: req.merchantId },
+      select: { id: true },
+    });
+    if (!customer) return res.status(404).json({ error: 'customer_not_found' });
+
+    const job = await prisma.job.create({
+      data: filaDeTrabajoDirecto(req.merchantId, entrada.datos, req.teamMemberId ?? null),
+    });
+
+    // SCRUM-651 · traza del Trabajo abierto SIN presupuesto (acción aprobada el 2-sep-2026). El
+    // camino del presupuesto ya dejaba la suya; éste no dejaba ninguna, y un registro con un
+    // agujero es peor que no tenerlo. Fire-and-forget, como el resto de `recordAudit`.
+    recordAudit({
+      merchantId: req.merchantId,
+      teamMemberId: req.teamMemberId ?? null,
+      action: 'trabajo_creado',
+      entityType: 'job',
+      entityId: job.id,
+    });
+    return res.status(201).json(await serializeJob(job));
+  } catch (err: any) {
+    console.error('[jobs] POST / falló:', err?.message || err);
+    return res.status(500).json({ error: 'server_error' });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -340,6 +841,52 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/jobs/:id/gastos — SCRUM-370: LOS GASTOS DE ESTE TRABAJO.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * EL DEFECTO: QUIEN PUEDE CREAR ALGO NO PODÍA VOLVER A VERLO
+ *
+ * «+ Añadir gasto» se construyó **para el técnico** (SCRUM-135: compra material en la furgoneta y
+ * lo registra sin llamar al jefe). Pero `GET /admin/expenses` es `requireRole('admin')` y su nav
+ * está oculto, así que tras el toast de confirmación **el gasto desaparecía para él para
+ * siempre**. No es que no se guardara —se guarda, con su `quoteId`—: es que su autor no podía
+ * comprobarlo.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * POR QUÉ UNA RUTA POR TRABAJO Y NO ABRIR `GET /admin/expenses` AL TÉCNICO
+ *
+ * Abrir el listado global con `?quoteId=` habría dejado enumerar cotizaciones y ver los gastos de
+ * CUALQUIER trabajo del merchant, incluidos los que no son suyos. Esta ruta cuelga del Trabajo, así
+ * que hereda el mismo candado que `GET /admin/jobs/:id`: tenencia por `merchantId` **y** la regla
+ * de SCRUM-147 —un técnico solo ve SUS Trabajos—. Se abre lo justo, y por el sitio que ya decide
+ * quién puede mirar.
+ *
+ * ⚠️ ALCANCE DECLARADO, y el límite es del ticket vecino: **sin totales, sin márgenes y sin
+ * comparar con el presupuesto**. Eso es rentabilidad por obra y tiene su propio camino
+ * (`GET /admin/expenses/margin/:quoteId`, admin-only), que aquí NO se toca. Esto solo devuelve lo
+ * que el usuario metió, para que pueda verlo.
+ */
+router.get('/:id/gastos', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
+    if (!job) return res.status(404).json({ error: 'not_found' });
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+    // Un Trabajo sin cotización no puede tener gastos vinculados: el gasto se ata por `quoteId`.
+    // Lista VACÍA, no 404: «no tiene gastos» es una respuesta, no un error.
+    if (job.quoteId == null) return res.json({ gastos: [] });
+    const gastos = await listExpenses(req.merchantId!, { quoteId: job.quoteId });
+    return res.json({ gastos });
+  } catch (err: any) {
+    console.error('[GET /admin/jobs/:id/gastos]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // PATCH /admin/jobs/:id — { status?, scheduledAt?, notes?, assignedUserId? }
 router.patch('/:id', async (req, res) => {
   try {
@@ -347,6 +894,13 @@ router.patch('/:id', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
+    // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
+    // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
+    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
+    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
 
     // SCRUM-120: gate por CAMPO (no por ruta — status/scheduledAt/notes del día a día son del operario).
     // Admin-only por afectar a FACTURACIÓN/DINERO: `tipoOperacion` (bandera fiscal: recapitulativa mensual
@@ -387,13 +941,74 @@ router.patch('/:id', async (req, res) => {
       data.scheduledAt = d;
     }
     if (req.body?.notes !== undefined) data.notes = String(req.body.notes || '').slice(0, 2000) || null;
-    if (req.body?.assignedUserId !== undefined) {
-      const uid = req.body.assignedUserId === null ? null : Number(req.body.assignedUserId);
-      if (uid !== null) {
+    // ── SCRUM-317 (G2) · el pro pone NOMBRE al Trabajo ──────────────────────────────────
+    //
+    // `titulo` existía en el modelo desde SCRUM-10 y NINGUNA ruta lo escribía: se rellenaba solo
+    // al crear el Job y se quedaba así para siempre (medido en SCRUM-309 §4). Abrirlo aquí es
+    // todo lo que hacía falta — cero cambios de schema, que es el único freno duro del proyecto.
+    //
+    // NO es admin-only, y es deliberado: el nombre del Trabajo es una etiqueta operativa, no una
+    // bandera fiscal ni de dinero. Un técnico que está en la obra es quien mejor sabe si esto es
+    // «Reforma baño» o «Avería cocina». Las que sí son admin-only siguen donde estaban
+    // (`ADMIN_ONLY_JOB_FIELDS`: tipoOperacion, assignedUserId, cerrar).
+    //
+    // Vacío → `null`, no cadena vacía: así «sin nombre» es UN solo estado y la pantalla no tiene
+    // que distinguir `''` de `null` para decidir si pinta el separador.
+    if (req.body?.titulo !== undefined) {
+      data.titulo = String(req.body.titulo || '').trim().slice(0, 120) || null;
+    }
+    // ── SCRUM-424 (G3) · el pro escribe la DIRECCIÓN DE LA OBRA ──────────────────────────
+    //
+    // Misma puerta que abrió SCRUM-317 para `titulo`, por el mismo motivo y con el mismo coste:
+    // el campo existe en el modelo desde SCRUM-10 y **ninguna ruta lo escribía**, así que el
+    // bloque DÓNDE del rail —con su enlace a mapa, lo que ningún facturador tiene— estaba
+    // construido y era INALCANZABLE. Abrirlo aquí es todo lo que hacía falta: cero schema.
+    //
+    // NO es admin-only, igual que `titulo`: adónde se va a trabajar es un dato operativo, no una
+    // bandera fiscal ni de dinero, y el técnico que está en la obra es quien mejor lo sabe.
+    //
+    // 🔴 SALVO QUE ROMPA UNA FIRMA YA EMITIDA (regla 29). Ver `jobDireccion.ts`: los sobres v:1
+    // calculan su `obra` desde `Job.direccion` Y LA LEEN EN VIVO al verificar, así que escribirla
+    // hoy dejaría sin verificar un albarán firmado que nadie ha tocado. Se comprueba SOLO cuando
+    // el valor CAMBIA de verdad —reenviar el mismo no toca nada y no merece una consulta— y se
+    // corta ANTES del `update`, no después.
+    if (req.body?.direccion !== undefined) {
+      const nueva = normalizarJobDireccion(req.body.direccion);
+      if (nueva !== (job.direccion ?? null)) {
+        const albaranes = await prisma.albaran.findMany({
+          where: { jobId: id, merchantId: req.merchantId! }, // regla 2: siempre por merchant
+          select: { numero: true, evidenciaFirma: true },
+        });
+        const atados = albaranesConFirmaQueDependeDelTrabajo(albaranes);
+        if (atados.length) {
+          return res.status(409).json({
+            error: ERROR_DIRECCION_SELLADA,
+            message: MSG_DIRECCION_SELLADA,
+            albaranes: atados,
+          });
+        }
+        data.direccion = nueva;
+      }
+    }
+    // SCRUM-650 (T1) · SE ASIGNA A VARIOS. Se admiten las dos formas: `assignedUserIds` (la nueva,
+    // una lista) y `assignedUserId` (la de siempre, uno o `null`), que se normaliza a lista de uno.
+    // Aceptar las dos es lo que permite que el front migre sin que nada deje de funcionar un dia.
+    let asignadosPedidos: number[] | null = null;
+    if (req.body?.assignedUserIds !== undefined) {
+      asignadosPedidos = normalizarAsignados(req.body.assignedUserIds);
+    } else if (req.body?.assignedUserId !== undefined) {
+      asignadosPedidos = normalizarAsignados(req.body.assignedUserId);
+    }
+    if (asignadosPedidos !== null) {
+      // 🔴 REGLA 2, UNO A UNO: cada id tiene que ser de ESTE merchant. Validar solo el primero
+      // dejaria colar los demas — y con varios asignados eso es la mayoria de la lista.
+      for (const uid of asignadosPedidos) {
         const member = await prisma.teamMember.findFirst({ where: { id: uid, merchantId: req.merchantId } });
         if (!member) return res.status(400).json({ error: 'invalid_assignee' });
       }
-      data.assignedUserId = uid;
+      // La columna guarda el PRINCIPAL mientras el filtro siga leyendola (paso A). La tabla es la
+      // fuente; esto es la copia que el guard vigila.
+      data.assignedUserId = principalDe(asignadosPedidos);
     }
     // SCRUM-66 (TRABAJO-4): tipo de operación fiscal. Enum CERRADO (validación estricta);
     // editable siempre mientras el Job esté abierto (el candado real es SCRUM-17). Solo se
@@ -410,7 +1025,16 @@ router.patch('/:id', async (req, res) => {
       }
     }
 
-    const updated = await prisma.job.update({ where: { id }, data });
+    // 🔴 LOS DOS SITIOS, EN LA MISMA TRANSACCION. Si una de las dos escrituras se quedara fuera,
+    // la discrepancia que `discrepanciaDeAsignacion` prohibe se produciria sola — y el guard
+    // estaria vigilando un invariante que el propio codigo rompe.
+    const updated = asignadosPedidos === null
+      ? await prisma.job.update({ where: { id }, data })
+      : await prisma.$transaction(async (tx) => {
+        const j = await tx.job.update({ where: { id }, data });
+        await escribirAsignados(tx as unknown as ClienteDeAsignacion, id, asignadosPedidos as number[]);
+        return j;
+      });
     // SCRUM-66: traza de que la decisión fiscal la tomó el usuario (caveat del ticket).
     // teamMemberId = quien edita (null = propietario/admin). Fire-and-forget como el resto.
     if (tipoOperacionElegido) {
@@ -477,6 +1101,13 @@ router.post('/:id/albaranes', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
+    // 🔴 SCRUM-849 · LA MISMA COMPROBACION QUE `GET /:id`, QUE AQUI NO ESTABA.
+    // Sin esto, un tecnico no podia ABRIR el Trabajo de otro (404 desde SCRUM-23) y si podia
+    // ESCRIBIR en el. Un eje y no tres, porque es el que aplica la lectura de ESTE recurso:
+    // subir aqui a los tres ejes de albaranes dejaria la escritura mas abierta que su lectura.
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
 
     // SCRUM-257 · UN ALBARÁN NACE DE UN PRESUPUESTO (decisión 1 del fundador, 2-ago-2026).
     //
@@ -490,11 +1121,14 @@ router.post('/:id/albaranes', async (req, res) => {
     //
     // El `message` va porque sin él el dashboard enseñaría el código crudo — `apiRequest` cae al
     // identificador cuando no hay texto, que es el defecto que cerró SCRUM-275 en /login.html.
-    if (!job.quoteId) {
-      return res.status(409).json({
-        error: 'job_without_quote',
-        message: 'Este trabajo no tiene presupuesto; no se puede crear un albarán.',
-      });
+    // 🔴 SCRUM-684 · ACOTADO, NO RETIRADO. Decisión del fundador: una avería abierta como
+    // TRABAJO DIRECTO (SCRUM-651) SÍ puede entregar albarán — «nadie presupuesta una urgencia» y
+    // «hay que dejar papel al irse» (ALB-02) son la MISMA escena. Lo que sigue devolviendo 409 es
+    // el caso donde la falta de presupuesto de verdad importa: una línea que dice venir de uno.
+    // El motivo entero, medido, en `albaranSinPresupuesto.ts`.
+    const vOrigen = veredictoAlbaranSinPresupuesto(job.quoteId != null, req.body?.lineas);
+    if (!vOrigen.ok) {
+      return res.status(409).json({ error: vOrigen.error, message: vOrigen.message });
     }
 
     // SCRUM-65: modo de valoración al crear (default SIN_VALORAR = comportamiento de siempre).
@@ -510,13 +1144,80 @@ router.post('/:id/albaranes', async (req, res) => {
     // Líneas iniciales opcionales; si llegan, se validan contra el modo (condición 4 del OK + SCRUM-65)
     let lineas: any[] = [];
     if (req.body?.lineas !== undefined) {
-      const v = validarLineas(req.body.lineas, modoValoracion);
+      // SCRUM-367: el rango de `quoteLineIndex` se valida contra el presupuesto REAL, no contra
+      // lo que diga el cliente. Un enlace roto es peor que ninguno: C6 se lo creería.
+      const nLineasQuote = await contarLineasDePresupuesto(job.id, req.merchantId!);
+      const v = validarLineas(req.body.lineas, modoValoracion, nLineasQuote);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.error });
       lineas = v.lineas;
     }
     const notas = req.body?.notas !== undefined ? String(req.body.notas || '').slice(0, 2000) || null : null;
+    // SCRUM-593 (DOC-03): el texto de cabecera se lee EXACTAMENTE igual que `notas`, su campo
+    // hermano del mismo documento — mismo tope, misma regla de vacío→NULL. Dos formas de leer
+    // el mismo tipo de campo acaban divergiendo (es la lección de SCRUM-424 con `lugarEntrega`).
+    const docHeaderText = req.body?.docHeaderText !== undefined
+      ? String(req.body.docHeaderText || '').slice(0, 2000) || null : null;
+
+    // SCRUM-607 (ALB-02) · el interruptor del papel, TAMBIEN al crear. Si el PATCH lo guardara y
+    // el create no, marcar la casilla al dar de alta se perderia en silencio — que es el defecto
+    // que SCRUM-424 cazo aqui mismo con la fecha de entrega.
+    //
+    // Booleano ESTRICTO, igual que en el PATCH: un `Boolean()` convertiria la cadena "false" en
+    // `true`, y en este campo eso significa ensenar los precios de alguien a su cliente.
+    if (req.body?.ocultarPreciosEnDocumento !== undefined
+        && typeof req.body.ocultarPreciosEnDocumento !== 'boolean') {
+      return res.status(400).json({ error: 'ocultar_precios_invalido' });
+    }
+    const ocultarPreciosEnDocumento = req.body?.ocultarPreciosEnDocumento === true;
+
+    // SCRUM-424 · la fecha de entrega, con el MISMO criterio que el PATCH: admite vaciarse
+    // (undefined o '' -> null, el documento puede no tenerla) y una ilegible NO se guarda como
+    // hoy en silencio: se rechaza. Inventar una fecha de entrega es el defecto de SCRUM-397.
+    let fechaEntregaAlCrear: Date | null = null;
+    if (req.body?.fechaEntrega !== undefined && String(req.body.fechaEntrega ?? '').trim() !== '') {
+      const d = new Date(String(req.body.fechaEntrega).trim());
+      if (isNaN(d.getTime())) return res.status(400).json({ error: 'invalid_date' });
+      fechaEntregaAlCrear = d;
+    }
+
+    // ── SCRUM-358 (H3) · EL ALTA, IDEMPOTENTE ────────────────────────────────────────────
+    //
+    // La clave la acuña el CLIENTE al pulsar crear (una vez, y se persiste con el elemento de la
+    // cola: si se acuñara otra vez al reintentar no habría idempotencia ninguna). Aquí solo se
+    // valida y se pregunta al constraint. El porqué de cada decisión, en `albaranIdempotencia.ts`.
+    const claveNorm = normalizarClaveIdempotencia(req.body?.claveIdempotencia);
+    if (!claveNorm.ok) return res.status(400).json({ error: claveNorm.error, message: claveNorm.message });
+    const clave = claveNorm.clave;
+
+    const contenido = { jobId: job.id, modoValoracion, lineas, notas };
+    let repetida = false;
 
     const albaran = await prisma.$transaction(async (tx) => {
+      // 🔴 EL CERROJO SE TOMA ANTES DE MIRAR LA CLAVE. Es el mismo de la serie y la misma sección
+      // crítica: si la comprobación viviera fuera, dos reintentos simultáneos pasarían los dos el
+      // «no la he visto» y se llevarían DOS números.
+      await tomarCerrojoDeSerie(tx, req.merchantId!);
+
+      if (clave) {
+        // La pregunta al CONSTRAINT, por el nombre que Prisma le da al índice: si el índice
+        // cambiara de forma, esto no compilaría. No se captura el `P2002` — una sentencia fallida
+        // aborta la transacción entera (ver el módulo).
+        const yaExiste = await tx.albaran.findUnique({
+          where: { merchantId_claveIdempotencia: { merchantId: req.merchantId!, claveIdempotencia: clave } },
+        });
+        if (yaExiste) {
+          const cmp = compararAlta(
+            { jobId: yaExiste.jobId, modoValoracion: yaExiste.modoValoracion, lineas: yaExiste.lineas, notas: yaExiste.notas },
+            contenido,
+          );
+          if (!cmp.mismo) throw new ClaveIdempotenciaReutilizadaError(clave, yaExiste.numero, cmp.diferencias);
+          // 🔴 SE DEVUELVE EL ORIGINAL Y **NO SE RESERVA NÚMERO**. Reservarlo aquí lo dejaría
+          // consumido y sin documento: un hueco en la serie abierto por la propia idempotencia.
+          repetida = true;
+          return yaExiste;
+        }
+      }
+
       const numero = await allocateAlbaranNumber(tx, req.merchantId!);
       return tx.albaran.create({
         data: {
@@ -526,12 +1227,62 @@ router.post('/:id/albaranes', async (req, res) => {
           modoValoracion,
           lineas,
           notas,
+          // SCRUM-593 (DOC-03): si el PATCH lo guarda y el create no, lo que el profesional
+          // teclea al crear se pierde EN SILENCIO — el defecto entero de SCRUM-424.
+          docHeaderText,
+          // SCRUM-607 (ALB-02): ver arriba.
+          ocultarPreciosEnDocumento,
+          // ── SCRUM-424 · LO QUE SE ESCRIBE AL CREAR SE PERDÍA EN SILENCIO ──────────────────
+          //
+          // El PATCH guarda `lugarEntrega` y `fechaEntrega` (albaranes.routes.ts:474-486) y este
+          // create NO los escribía: **cero apariciones**. El campo está pintado, con su rótulo
+          // aprobado, y lo que el profesional teclea al crear no llegaba a la fila.
+          //
+          // 🔴 Y NO ES «UN CAMPO MÁS»: `lugarEntrega` entra en el HASH DEL SOBRE v:2. Un albarán
+          // creado y firmado sin él queda **SELLADO** sin él, y sellado no se edita (regla 29). No
+          // es un dato que se pueda añadir después.
+          //
+          // Se lee IGUAL que en el PATCH —mismo helper, mismas reglas— en vez de inventar una
+          // segunda forma: `normalizarLugarEntrega` (vacío → NULL, **nunca** el domicilio fiscal).
+          // Dos formas de leer el mismo campo acaban divergiendo.
+          lugarEntrega: normalizarLugarEntrega(req.body?.lugarEntrega),
+          fechaEntrega: fechaEntregaAlCrear,
+          claveIdempotencia: clave,
         },
       });
     });
-    return res.status(201).json(serializeAlbaran(albaran));
+
+    // 🔴 «CON CLAVE» Y «SIN CLAVE» NO PUEDEN DAR LA MISMA SALIDA, y por eso la respuesta lo dice.
+    //
+    // Un alta sin clave NO falla —los clientes de hoy no la mandan y los albaranes históricos no
+    // la tienen— pero **tampoco puede pasar en silencio**: si el día de mañana la cola dejara de
+    // enviarla por un fallo suyo, todo seguiría en verde y la idempotencia estaría apagada sin
+    // que nadie lo notara. `idempotencia` es lo que distingue las tres situaciones.
+    //
+    // Y la REPETICIÓN devuelve **200, no 201**: se está entregando un albarán que ya existía, no
+    // creando uno. Tampoco un 409 —eso le diría al profesional que salió mal algo que salió
+    // bien—; el cuerpo es el albarán original, que es lo que la cola necesita para cerrar su
+    // elemento.
+    const idempotencia = !clave ? 'no_solicitada' : repetida ? 'repetida' : 'aplicada';
+    return res.status(repetida ? 200 : 201).json({ ...serializeAlbaran(albaran), idempotencia });
   } catch (err: any) {
+    // SCRUM-358: misma clave con contenido DISTINTO. No es un fallo del servidor: es que la
+    // etiqueta está puesta a dos cosas, y hay que decirlo con los dos documentos delante.
+    if (err instanceof ClaveIdempotenciaReutilizadaError) {
+      return res.status(409).json({
+        error: ERROR_CLAVE_REUTILIZADA,
+        // El número del original va DENTRO del texto, no solo en el campo de al lado: el
+        // profesional lee el mensaje, no el JSON (asesor, 11-ago-2026).
+        message: msgClaveReutilizada(err.numeroOriginal),
+        numeroOriginal: err.numeroOriginal,
+        diferencias: err.diferencias,
+      });
+    }
     console.error('[POST /admin/jobs/:id/albaranes]', err?.message || err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -552,17 +1303,44 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     if (job.status !== 'terminado') {
       return res.status(409).json({ error: 'job_not_finished', message: 'Marca el trabajo como terminado para cobrar el resto.' });
     }
-    if (!job.quoteId) return res.status(409).json({ error: 'job_without_quote' });
-
-    const quote = await prisma.quote.findFirst({
-      where: { id: job.quoteId, merchantId: req.merchantId },
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCRUM-195 (rebanada 2) · AQUÍ ESTABA LA TRAMPA, y merece leerse entera.
+    //
+    // Antes: `if (!job.quoteId) return 409 job_without_quote`, y luego el plan del quote
+    // apuntado por `job.quoteId`. Con 1:N **ese guard NO salta**, porque `job.quoteId` sigue
+    // apuntando al original. Así que la ruta cobraba el resto del ORIGINAL e ignoraba el
+    // adicional: **fallaba de menos, callando**.
+    //
+    // Y el caso peor no era ése. Con el original YA cobrado entero y un adicional pendiente,
+    // esta ruta devolvía `nothing_pending`: el pro no podía cobrar lo que le deben, y el
+    // mensaje decía que no quedaba nada. Dinero real, con la puerta cerrada por un guard que
+    // preguntaba por el objeto equivocado.
+    //
+    // Ahora se pregunta por el CONJUNTO. El 409 de «sin presupuesto» solo procede si el
+    // Trabajo no tiene NINGUNO — que es lo que ese error siempre quiso decir.
+    const quotesConPlan = await prisma.quote.findMany({
+      where: {
+        merchantId: req.merchantId, // regla 2
+        OR: [{ jobId: job.id }, ...(job.quoteId != null ? [{ id: job.quoteId }] : [])],
+      },
       include: { Invoice: { select: { id: true } } },
     });
-    if (!quote) return res.status(404).json({ error: 'quote_not_found' });
+    if (quotesConPlan.length === 0) return res.status(409).json({ error: 'job_without_quote' });
 
+    // ORIGINAL primero, adicionales después por id: el orden es determinista a propósito —
+    // «cobrar el resto» tiene que emitir siempre el mismo tramo si se pulsa dos veces.
+    const conPendiente = primeroConTramoPendiente(quotesConPlan, job.quoteId, resolveBillingPlan);
+    const ordenados = [
+      ...quotesConPlan.filter((q) => q.id === job.quoteId),
+      ...quotesConPlan.filter((q) => q.id !== job.quoteId).sort((a, b) => a.id - b.id),
+    ];
+
+    // Sin ninguno pendiente, el motivo se explica con el plan del ORIGINAL, que es el que el
+    // pro reconoce (`no_billing_plan` vs `nothing_pending`, SCRUM-151).
+    const quote = conPendiente ?? ordenados[0];
     const plan = resolveBillingPlan(quote); // SCRUM-27: custom o preset
     const emitted = (quote.Invoice || []).length;
-    if (emitted >= plan.length) {
+    if (!conPendiente) {
       // SCRUM-151: con plan VACÍO (MANUAL/SIN_CONDICIONES) el mensaje de siempre mentía — no es
       // que no QUEDE tramo, es que nunca los hubo. Ahora también cambia el CÓDIGO en ese caso
       // (`no_billing_plan`), porque es otra condición; el de "ya se cobró todo" sigue siendo
@@ -573,43 +1351,86 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       // no lo veía porque el cuerpo del JSON es `any`.
       return res.status(409).json(motivoSinTramo(plan, 'nothing_pending'));
     }
-    const stage = plan[emitted];
     const isCustomPlan = Array.isArray((quote as any).customBillingPlan) && (quote as any).customBillingPlan.length > 0;
     // SCRUM-141: líneas del tramo primero, importe DERIVADO de ellas (el total es consecuencia de
     // las líneas). Antes venía de `distributeStageAmounts` con las líneas escaladas aparte: el
     // desfase de redondeo acababa sellado en la huella VeriFactu. Ver invoiceLines.service.ts.
     const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
-    const scaledLines = stageLinesReconciled(
-      quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
-    );
-    const amount = grossOfLines(scaledLines);
+
+    // SCRUM-814 · el tramo se DERIVA del recuento, para poder recalcularlo DENTRO del cerrojo.
+    // Misma forma exacta que `quotesAdmin.routes.ts`: un solo patrón para los tres caminos.
+    const tramoTrasEmitidas = (n: number) => {
+      const stage = plan[n] ?? null;
+      if (!stage) return null;
+      const scaledLines = stageLinesReconciled(
+        quoteLines, plan, stage.index, distributeStageAmounts(quote.total, plan)[stage.index],
+      );
+      return { stage, scaledLines, amount: grossOfLines(scaledLines) };
+    };
+    const tramoPrevio = tramoTrasEmitidas(emitted);
+    if (!tramoPrevio) return res.status(409).json(motivoSinTramo(plan, 'nothing_pending'));
+    const scaledLines = tramoPrevio.scaledLines;
 
     // SCRUM-246 · ANTES de pedir número. Si no hay nada que cobrar, no se emite y la serie
     // ni se entera: comprobarlo DESPUÉS obligaría a modificar una factura ya numerada o a
     // deshacerla, y deshacer es lo que crea el hueco que hay que justificar ante Hacienda.
     exigirLineasFacturables(scaledLines);
+    // SCRUM-771 · y que el tipo de IVA EXISTA. Mismo sitio y misma razón que la línea de
+    // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
+    // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
+    exigirTiposDeIvaEmitibles(scaledLines);
+
+    // SCRUM-729 · fuera de la transacción a propósito: aquí el cerrojo de serie se toma en la
+    // PRIMERA línea de la tx (SCRUM-814), así que cualquier lectura de dentro se serializa.
+    const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
 
     const invoice = await prisma.$transaction(async (tx) => {
+      // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
+      //
+      // «Cobrar el resto» pulsado dos veces emitía DOS FACTURAS DEL MISMO TRAMO: `emitted` se
+      // contó arriba, fuera de la transacción, y envolver la creación no protege una decisión
+      // tomada antes de abrirla. Mismo arreglo y mismo cerrojo que `quotesAdmin.routes.ts`:
+      // `tomarCerrojoDeSerie` es el `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)` de
+      // SCRUM-234/728, re-entrante, que `allocateInvoiceNumber` vuelve a tomar más abajo.
+      //
+      // Y ANTES de pedir número: si el tramo se agotó mientras esperábamos se sale por el
+      // `return null` sin haber escrito una fila, así que no hay número que deshacer — y
+      // deshacer es lo que crea el hueco en la serie que hay que justificar ante Hacienda.
+      await tomarCerrojoDeSerie(tx, quote.merchantId);
+      const emitidasAhora = await tx.invoice.count({
+        where: { quoteId: quote.id, merchantId: quote.merchantId }, // regla 2: scoped
+      });
+      const tramo = tramoTrasEmitidas(emitidasAhora);
+      if (!tramo) return null;   // el plan se agotó mientras esperábamos: 409 fuera
+
+      // Las mismas dos puertas, sobre las líneas que de verdad se van a emitir: si la carrera
+      // movió el tramo, éstas juzgan OTRAS líneas.
+      exigirLineasFacturables(tramo.scaledLines);
+      exigirTiposDeIvaEmitibles(tramo.scaledLines);
+
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
       });
-      return tx.invoice.create({
-        data: {
-          merchantId: quote.merchantId,
-          customerId: quote.customerId,
-          quoteId: quote.id,
-          number: invoiceNumber,
-          type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
-          total: amount.toFixed(2),
-          stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
-          currency: quote.currency,
-          lines: scaledLines.length > 0 ? scaledLines : undefined,
-          pdfUrl: 'PENDING_PDF',
-          qrData: 'PENDING_QR',
-          registerId: null,
-        },
+      return crearFacturaEmitida(tx, clienteCongelado, {
+        merchantId: quote.merchantId,
+        customerId: quote.customerId,
+        quoteId: quote.id,
+        number: invoiceNumber,
+        type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
+        total: tramo.amount.toFixed(2),
+        stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+        currency: quote.currency,
+        lines: tramo.scaledLines.length > 0 ? tramo.scaledLines : undefined,
+        pdfUrl: 'PENDING_PDF',
+        qrData: 'PENDING_QR',
+        registerId: null,
       });
     });
+
+    // SCRUM-814 · la carrera perdida no es un error del profesional: es el mismo «ya no queda
+    // tramo» de arriba visto un instante después. Mismo código y mismo texto ya firmado — no se
+    // redacta ninguna frase nueva.
+    if (!invoice) return res.status(409).json(motivoSinTramo(plan, 'nothing_pending'));
 
     // Enviar el enlace de cobro (payment_request / ventana-first A5.5)
     // ── SCRUM-206b · SELLAR AL EMITIR. Este camino NO sellaba en absoluto.
@@ -673,6 +1494,10 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     });
   } catch (err: any) {
     console.error('[POST /admin/jobs/:id/collect-rest]', err?.message || err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     // SCRUM-246: no hay nada que cobrar. No se ha emitido NI consumido número, así que el
     // profesional arregla el presupuesto y vuelve — la serie sigue intacta.
     if (esErrorSinLineas(err)) {

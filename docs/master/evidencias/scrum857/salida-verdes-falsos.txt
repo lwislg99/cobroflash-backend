@@ -1,0 +1,8 @@
+Examinados 198 merges de PR.
+🔴 VERDE FALSO LITERAL (viejo=CUMPLE, nuevo=FALTA): 2
+  b07546cf PR#1149 scrum-805-que-firmo-el-cliente
+      asuntos: SCRUM-797/805: la lista blanca del aplicador de dev admite DROP DEFAULT | SCRUM-805 (máster): la re-medición tras mezclar main, y el cuerpo del PR | SCRUM-805: qué firmó el cliente — la evidencia de firma del presupuesto
+      el nuevo reclama: 797
+  855562ac PR#1143 scrum-818-parte-de-trabajo
+      asuntos: SCRUM-818: «Descripción», firmada — las líneas ya tienen sus DOS cabeceras | SCRUM-818: la cabecera del parte deja de mentir — los siete son campos | SCRUM-722: el «vencimiento» de Charge dice, en el esquema, que no es el de la factura
+      el nuevo reclama: 722

@@ -46,7 +46,7 @@ const fakePrisma = (invoices) => ({
 
 const build = async (invoices, opts) => {
   const { buildVerifactuRegistrosXml } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
-  return buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma(invoices), opts);
+  return buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma(invoices), opts);
 };
 
 // ── 1 · HOY, SIN DICTAMEN: no se declara, se excluye y se dice por qué ────────────────────

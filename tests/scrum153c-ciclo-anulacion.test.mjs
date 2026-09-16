@@ -38,7 +38,7 @@ const merchant = { id: 1, country: 'ES', taxId: 'B12345678', legalName: 'QA Font
 
 const factura = (over = {}) => ({
   id: 10,
-  merchantId: 1,
+  merchantId: 7,
   number: '2026-CF-001',
   createdAt: new Date('2026-03-15T10:00:00Z'),
   total: '121.00',
@@ -201,7 +201,7 @@ test('SCRUM-153 · el XML del ejercicio lleva el alta Y la anulación', async ()
   const inv = factura();
   await applyVeriFactuAnulacion(inv, merchant.taxId, fakePrisma([inv]));
 
-  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma([inv]));
+  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma([inv]));
 
   assert.ok(
     /RegistroAlta/.test(xml),
@@ -220,7 +220,7 @@ test('SCRUM-153 · el XML del ejercicio lleva el alta Y la anulación', async ()
 });
 
 test('SCRUM-153 · sin anular, el XML trae solo el alta', async () => {
-  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 1, year: 2026 }, fakePrisma([factura()]));
+  const { xml } = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma([factura()]));
   assert.ok(/RegistroAlta/.test(xml));
   assert.ok(
     !/RegistroAnulacion/.test(xml),

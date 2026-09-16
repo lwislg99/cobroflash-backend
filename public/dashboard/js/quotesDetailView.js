@@ -180,15 +180,19 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   stateLabel.textContent = 'Estado';
   stateBlock.appendChild(stateLabel);
 
+  // 🔴 SCRUM-820 (encima de d03b1950) · EL MISMO DEFECTO, UN CLIC MÁS ADENTRO.
+  //
+  // Esta ficha es a donde llega el profesional al pinchar una fila de la lista, y tenía COPIADO el
+  // mismo ternario con `st.toUpperCase()`: pintaba `ACCEPTED` cuando la lista, ya arreglada, decía
+  // «Aceptado». Arreglar sólo la lista **mueve la contradicción un clic** en vez de cerrarla — y la
+  // deja en el sitio donde el jefe mira para decidir.
+  //
+  // El barrido por AST lo cazó: era el único `st.toUpperCase()` que quedaba en un camino de
+  // presupuesto después de d03b1950.
+  const meta = quoteStatusMeta(st);
   const statusSpan = document.createElement('span');
-  statusSpan.className = 'status-pill';
-  statusSpan.textContent = st === 'pending_approval' ? 'PENDIENTE APROBACIÓN'
-    : st === 'expired' ? 'CADUCADO' : st.toUpperCase(); // A16.2
-  if (st === 'accepted') statusSpan.classList.add('status-pill-accepted');
-  else if (st === 'rejected') statusSpan.classList.add('status-pill-rejected');
-  else if (st === 'draft' || st === 'expired') statusSpan.classList.add('status-pill-draft');
-  else if (st === 'pending_approval') statusSpan.classList.add('status-pill-approval');
-  else statusSpan.classList.add('status-pill-pending');
+  statusSpan.className = 'status-pill ' + meta.pillClass;
+  statusSpan.textContent = meta.label;
   stateBlock.appendChild(statusSpan);
 
   // WA-0b: chip de entrega del WhatsApp del presupuesto (J4)
@@ -464,6 +468,33 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   }
   page.appendChild(infoSec);
 
+
+  // ── SCRUM-597 (DOC-07) · QUIÉN LLEVA ESTE DOCUMENTO ─────────────────────────────────────
+  //
+  // Categorización, no permiso: dice de quién es el asunto. No cambia quién puede editar ni
+  // emitir, y no abre coste ni margen — un técnico asignado sigue sin verlos (P-DOC-3).
+  //
+  // Todo el cableado vive en `documentoAsignados.js`, compartido con la factura/el presupuesto:
+  // metido aquí serían dos copias de la misma pantalla y se separarían a la primera.
+  if (typeof cablearAsignadosDeDocumento === 'function') {
+    const asigSec = document.createElement('div');
+    asigSec.className = 'detail-section';
+    asigSec.dataset.seccion = 'asignados';
+    page.appendChild(asigSec);
+    cablearAsignadosDeDocumento(document, {
+      doc: 'quote',
+      documentoId: quote.id,
+      contenedor: asigSec,
+      asignados: quote.asignados || [],
+      // Editar es admin-only, igual que el endpoint (`requireRole('admin')`). Al técnico se le
+      // pinta en solo lectura con los nombres que ya trae el detalle.
+      puedeEditar: window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario',
+      pedir: apiRequest,
+      avisar: setStatus,
+      alGuardar: () => {},
+    });
+  }
+
   // ── Sección: CONCEPTOS + TOTALES ────────────────────────────
   const concSec = document.createElement('div');
   concSec.className = 'detail-section';
@@ -484,8 +515,29 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   let totalBase = 0;
   let totalIva = 0;
 
-  lines.forEach((line) => {
+  // SCRUM-655 · La numeración se DERIVA de la posición, de una vez y para todas las líneas.
+  // No se teclea nunca: si se tecleara, dos líneas podrían acabar con el mismo 1.02 y «quítame la
+  // 1.03» dejaría de tener respuesta.
+  const numeracion = numerarLineas(lines);
+
+  lines.forEach((line, i) => {
     const l = line || {};
+    const num = numeracion[i] || { cabecera: false, numero: null };
+
+    // ── CABECERA DE APARTADO ────────────────────────────────────────────────────────────
+    // Una fila a todo lo ancho: es un título, no una línea que cobre. No toca los totales —no
+    // lleva cantidad ni precio— y por eso ni siquiera pasa por la aritmética de abajo.
+    if (num.cabecera) {
+      const trA = document.createElement('tr');
+      trA.className = 'quote-apartado';
+      const td = document.createElement('td');
+      td.colSpan = 5;
+      td.appendChild(celdaConcepto(document, `${num.numero}. ${l.concept || ''}`));
+      trA.appendChild(td);
+      tbody.appendChild(trA);
+      return;
+    }
+
     const qty = Number(l.qty) || 0;
     const price = Number(l.price) || 0;
     const tax = Number(l.tax ?? 0);
@@ -497,11 +549,27 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
     const tr = document.createElement('tr');
     tr.innerHTML =
-      `<td>${escHtml(l.concept || '—')}</td>` +
+      `<td class="quote-line-cel"></td>` +
       `<td>${qty}</td>` +
       `<td>${fmtQuoteMoney(price, cur)}</td>` +
       `<td>${(tax * 100).toFixed(0)} %</td>` +
       `<td style="text-align:right" class="amount">${fmtQuoteMoney(total, cur)}</td>`;
+
+    // 🔴 EL CONCEPTO SE CONSTRUYE COMO NODOS, no como cadena de HTML. La descripción larga viaja
+    // dentro del concepto detrás de un salto de línea (SCRUM-603) y el HTML COLAPSA los saltos:
+    // ocho renglones
+    // de texto técnico salían aquí en una línea corrida. `celdaConcepto` los devuelve como un
+    // elemento por renglón — estructura, no estilo—, así que el salto sobrevive sin depender de
+    // ninguna propiedad de CSS. Y con `textContent`, el texto del profesional no puede inyectar
+    // marcado aunque nadie se acuerde de escaparlo.
+    const celda = tr.querySelector('.quote-line-cel');
+    if (num.numero) {
+      const n = document.createElement('span');
+      n.className = 'quote-line-num';
+      n.textContent = num.numero;
+      celda.appendChild(n);
+    }
+    celda.appendChild(celdaConcepto(document, l.concept || ''));
     tbody.appendChild(tr);
   });
 
@@ -556,7 +624,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const ayuda = document.createElement('p');
     ayuda.style.cssText = 'font-size:13px;color:var(--muted);margin:0 0 10px';
     ayuda.textContent = emitidos > 0
-      ? `Ya hay ${emitidos} tramo(s) facturado(s): esos quedan fijos. Puedes reajustar los que quedan y añadir tramos nuevos si la obra ha crecido.`
+      ? `Ya hay ${emitidos} ${emitidos === 1 ? 'tramo facturado' : 'tramos facturados'}: esos quedan fijos. Puedes reajustar los que quedan y añadir tramos nuevos si la obra ha crecido.`
       : 'Aún no has facturado ningún tramo: puedes reajustarlos todos y añadir los que necesites.';
     planSec.appendChild(ayuda);
 
@@ -666,7 +734,12 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           body: JSON.stringify({ customBillingPlan: leerTramos() }),
         });
         showToast('✓ Plan de cobro actualizado');
-        if (window.renderAppView) window.renderAppView('quote-detail', { quoteId: quote.id });
+        // SCRUM-727 · decía `quote-detail` y el router atiende `quotes-detail`: al guardar el
+        // plan de cobro salía el «✓ Plan de cobro actualizado» y acto seguido te plantaba en
+        // Inicio. Lo encontró el mecanismo del guard de vistas, no una mirada — es el segundo
+        // huérfano con la misma `s` de menos, en otra pantalla. Se arregla aquí porque sin esto
+        // el guard nace en rojo; es de otro carril y queda declarado en el informe.
+        if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: quote.id });
       } catch (e) {
         showToast(e && e.message ? e.message : 'No se pudo guardar el plan', 'error');
         btnGuardar.textContent = antes;
@@ -703,6 +776,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       });
 
       if (inv.status === 'pending') {
+        // SCRUM-441 · mismo selector que el detalle de factura, MISMA pieza. Dos desplegables de
+        // metodos escritos por separado serian dos listas, que es justo lo que este ticket evita.
+        let selMetodo = null;
         const btnPaid = document.createElement('button');
         btnPaid.className = 'btn-secondary btn-sm';
         btnPaid.style.marginTop = '6px';
@@ -719,7 +795,13 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
             const res = await fetch(`/admin/invoices/${inv.id}/status`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'paid' }),
+              // El metodo viaja SOLO si lo eligio. Con «sin especificar», cuerpo identico al de
+              // siempre y la columna sin tocar.
+              body: JSON.stringify(
+                typeof window.cuerpoConMetodo === 'function'
+                  ? window.cuerpoConMetodo({ status: 'paid' }, selMetodo)
+                  : { status: 'paid' },
+              ),
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) {
@@ -735,6 +817,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
             btnPaid.textContent = original;
           }
         });
+        if (typeof window.pintarSelectorMetodo === 'function') {
+          selMetodo = window.pintarSelectorMetodo(div, { id: 'metodo-cobro-inv-' + inv.id });
+        }
         div.appendChild(btnPaid);
       }
       invList.appendChild(div);
@@ -848,7 +933,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const notesHeader = document.createElement('div');
   notesHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
   notesHeader.innerHTML =
-    '<h3 class="detail-section-title" style="margin:0">📝 Notas internas</h3>' +
+    '<h3 class="detail-section-title" style="margin:0">Notas internas</h3>' +
     '<span style="font-size:11px;color:var(--muted);background:var(--neutral-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
   notesSec.appendChild(notesHeader);
 
@@ -882,6 +967,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       }
     }, 1200);
   });
+
+  // ── Sección: ETIQUETAS (SCRUM-595, DOC-05) ──────────────────
+  // El bloque lo monta una pieza compartida con la ficha de la FACTURA: el mismo bloque para los
+  // dos documentos, no dos que se parezcan. Va detrás de las notas internas porque es lo mismo
+  // que ellas —cómo el profesional organiza SU documento—, y ninguna de las dos sale en el papel.
+  if (window.montarEtiquetasDelDocumento) {
+    window.montarEtiquetasDelDocumento(page, quote, `/admin/quotes/${quote.id}/tags`);
+  }
 
   // ── Sección: GASTOS Y MARGEN ────────────────────────────────
   const marginSec = document.createElement('div');

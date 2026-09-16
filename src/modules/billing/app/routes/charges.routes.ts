@@ -5,6 +5,7 @@ import { CreateChargeSchema } from '../../../../core/validation/schemas';
 import { normalizePhone, makeReference } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
+import { metodoDesdePreferencia } from '../../domain/metodoDeCobro'; // SCRUM-486
 
 const router = Router();
 
@@ -22,6 +23,13 @@ router.post('/', async (req, res) => {
     } else if (body.customer) {
       const c = await prisma.customer.create({
         data: {
+          // SCRUM-797 · EL DUEÑO SE DICE, NO SE HEREDA DEL DEFECTO DE LA COLUMNA.
+          // `merchant_id` ya viene validado tres líneas arriba (404 si no existe). Sin esta
+          // línea la fila nacía con el `@default(1)` del schema —y el merchant 1 ES LA CUENTA
+          // DEMO—, con HTTP 201 y sin una queja: el profesional que la creaba no la veía en su
+          // lista y el demo sí. Medido por el camino real contra dev el 7-sep-2026: cliente
+          // id=932 archivado bajo el merchant 1 desde una petición del merchant 1044.
+          merchantId: body.merchant_id,
           name: body.customer.name,
           phone: body.customer.phone ? normalizePhone(body.customer.phone) : null,
           email: body.customer.email ?? null,
@@ -34,7 +42,13 @@ router.post('/', async (req, res) => {
     const expiresAt = body.expires_at ? new Date(body.expires_at) : null;
 
     const methodPref = body.method_preference;
-    const method = methodPref === 'card' ? 'card' : methodPref === 'mp' ? 'mp' : 'bank';
+    // SCRUM-474 · «bank» NO está en PAID_VIA y era el caso POR DEFECTO: todo lo que no fuera
+    // tarjeta ni MercadoPago caía ahí. El valor del conjunto cerrado para eso es «transfer».
+    //
+    // SCRUM-486 · y a esa traduccion le faltaba una regla: `mp` se quedaba SIN TRADUCIR y entraba
+    // tal cual en la columna. Ahora la traduccion entera vive en `metodoDesdePreferencia`, junto
+    // al vocabulario que se guarda -- no aqui, que es donde se pierde de vista que hay DOS.
+    const method = metodoDesdePreferencia(methodPref);
 
     const charge = await prisma.charge.create({
       data: {

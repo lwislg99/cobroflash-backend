@@ -14,11 +14,27 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 
 > **Flujo Git completo (ramas + PR + trabajo en equipo): `docs/FLUJO_DE_TRABAJO.md`.**
 
+🔴 **LECTURA OBLIGATORIA, cada tanda: [`docs/equipo/00-normas-comunes.md`](docs/equipo/00-normas-comunes.md)** —
+las normas comunes de todas las sesiones: preámbulo, PASO 0, cómo se mide aquí, git, el orden del
+esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propias, en
+`docs/equipo/sesion-N.md`.
+
 1. Leer este archivo → abrir `docs/YAQU_MASTER.md` → localizar el **sprint activo en la Parte U**.
    Duda → preguntar, nunca asumir.
 2. **Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ commit del máster aparte, misma rama) → PR a `main`.** `main` protegida: push directo BLOQUEADO. El merge del PR lo hace un HUMANO, nunca Claude. `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
 3. Tests relevantes en verde antes de commit (`npm test`); verificación en **yaqu.app**
    (no localhost) antes de cerrar la tarea.
+3bis. **REGLA 42 del master — un ticket no se cierra mientras su rama siga sin mergear.** El
+   enunciado firmado por el fundador vive en `docs/YAQU_MASTER.md`, Parte I, regla 42, y **NO se
+   repite aquí**: este archivo es derivado (regla 35) y una regla escrita dos veces son dos reglas
+   que pueden divergir. Aquí va sólo CÓMO se cumple:
+   · El enlace de comparación se **COPIA** de la salida de `git push` o de
+     `npm run ramas:sin-mergear`. **Nunca se construye a partir del número del ticket** — ése es
+     el defecto medido en SCRUM-637: `…/pull/new/scrum-614` para una rama que se llama
+     `scrum-614-censo-rutas-sin-rol`. La referencia se LEE, no se deduce.
+   · Qué hay esperando a que alguien lo mire: `npm run ramas:sin-mergear` (las que NO están en
+     `main`, con su edad y su compare) · `npm run ramas:borrables` (las que ya están y se pueden
+     tirar) · `npm run enlace:ticket-rama` (cuándo rama, commit, `docs/master/` y Jira discrepan).
 4. **STOP CONDITIONS — parar y pedir OK del fundador si la tarea toca:**
    - claims fiscales/VeriFactu (en UI, marketing o copy)
    - dinero real o flujo de cobro en producción
@@ -51,7 +67,13 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 1. **NUNCA n8n.** WhatsApp solo vía `src/integrations/whatsapp.ts` (Meta Cloud API directa).
 2. **Multi-tenant:** toda query filtra por `req.merchantId` (inyectado por `requireAuth`).
 3. **Prisma sin TTY:** siempre `db push` con preview del diff antes de tocar prod;
-   `migrate dev` está PROHIBIDO (el hook lo bloquea). `.env` apunta a PROD; dev usa `.env.local`.
+   `migrate dev` está PROHIBIDO (el hook lo bloquea). **Claves de BD — REGISTRO MEDIDO el
+   10-ago-2026 (SCRUM-418), no afirmación de estado:** los cuatro worktrees llevan
+   `DATABASE_URL_STAGING`, `_DEV` y `_TESTS`; **ninguno tiene `DATABASE_URL`, ninguno apunta a
+   producción, y no existe ningún `.env.local`**. Quien lo vuelva a medir, que lo re-feche aquí:
+   `node scripts/comprobar-claves-bd.mjs` (mapa y guard en `scripts/_clave-vs-destino.mjs`; en un
+   árbol de trabajo NO vive producción, y desde SCRUM-418 el guard lo hace cumplir por DESTINO).
+   `loadEnv.ts` sigue dando prioridad a `.env.local` **si aparece**.
 4. **Frontend vanilla** (sin React/Tailwind/bundler/build). `DESIGN.md` es la única fuente de
    tokens visuales; cambios de UI = una pantalla/componente, jamás rediseño total (Parte AB).
 5. **Estados (L), flags (P) y microcopy (N5/K1) son CERRADOS.** Lo que no está en el master
@@ -66,13 +88,48 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 10. **`CLAUDE.md` y `.claude/*` son derivados del master** (regla 35). Prohibido instalar
     plugins/skills/hooks de terceros sin revisión explícita del fundador (regla 36).
 
+## Las tres que no se negocian (valen para TODA ejecución, también la de `@claude`)
+
+> Desde `.github/workflows/claude.yml`, un `@claude` en una issue o en una revisión de PR
+> arranca una ejecución **cuyo prompt no ha revisado nadie**: ni el fundador ni otra sesión.
+> Lo único que hereda son las normas del repositorio.
+
+🔴 **LECTURA OBLIGATORIA ANTES DE ESCRIBIR UNA SOLA LÍNEA: `docs/YAQU_MASTER.md`, Parte I,
+reglas 39, 40 y 41.** El texto literal vive ALLÍ y solo allí (regla 35: si este fichero y el
+master divergen, gana el master; y dos copias del mismo párrafo divergen en dos semanas).
+Aquí van únicamente los tres asuntos que cubren, para que sepas que te aplican:
+
+1. **Texto que ve el usuario** → firma del fundador (regla 39; ensancha la 30).
+2. **Camino de emisión fiscal y `prisma/schema.prisma`** → se leen; el esquema exige ALTER previo (regla 40; junta la 38 y la 3).
+3. **Guard en rojo** → se arregla el código, nunca el guard (regla 41).
+
+Si no puedes abrir el master, no estás en condiciones de tocar ninguno de los tres: para y dilo.
+
 ## Comandos
 
 ```bash
 npm run dev              # hot reload; carga .env.local con prioridad (BD local + DISABLE_CRONS=true)
 npm run build            # tsc → dist/
 npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
-npx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script   # preview ANTES de db push
+# ⚠️ `npm test` NO LO CORRE TODO, y su «0 fallos» no incluye lo que saltó (SCRUM-419/456).
+# Los saltos DECLARAN su motivo: búscalos con el reporter TAP, porque `spec` NO lo imprime.
+# ⚠️ SCRUM-850: el TAP va a FICHERO y se lee después, en DOS comandos. Con `| grep` el código de
+# salida es el del `grep`, así que una tanda EN ROJO sale 0. Y el fichero va FUERA del árbol:
+# un temporal dentro del repo es el rojo intermitente que midió SCRUM-824.
+node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
+     --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" tests/*.test.mjs
+grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
+npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_SUITE_TEST.
+                             # Toma el TURNO de staging y lo suelta (detalle en RUNBOOKS y en
+                             # docs/QA/SUITE_REGRESION.md). NO lo lances con `| tail`.
+# Los de LIBRO_PG_URL piden un Postgres DESECHABLE — loopback y base terminada en `_test`, que es
+# lo que sus guards exigen antes de tocar nada (crean y BORRAN filas). Receta en docs/RUNBOOKS.md.
+# preview OBLIGATORIO antes de db push (SCRUM-385). Lleva CONTROL POSITIVO dentro: si la
+# herramienta no responde lo DICE, en vez de devolver un «no hay cambios» que no sabe.
+# ⚠️ NO usar `npx prisma migrate diff` a pelo: si falta el CLI local, `npx` se baja otro de la
+# red en silencio y su salida vacía se lee como «sin cambios» (incidente del 5-ago-2026).
+node scripts/preview-migracion.mjs                        # contra la BD del entorno
+node scripts/preview-migracion.mjs --desde viejo.prisma    # offline: schema viejo → actual
 npx prisma db push --accept-data-loss   # solo tras preview aditivo + confirmación
 npx prisma generate      # en Windows: matar node antes si el DLL queda bloqueado
 ```

@@ -1,0 +1,43 @@
+-- prisma/backfill/scrum609-item-kind.sql — SCRUM-609 / CAT-01
+--
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- EL LADO DEL CATÁLOGO: Producto | Servicio.
+--
+-- El catálogo pasa a ser de productos Y servicios, con un switch que CAMBIA LOS CAMPOS (mismo
+-- patrón que Empresa/Persona de CONT-01):
+--
+--     PRODUCTO  →  Nombre · Coste · Margen % · Precio · Proveedor · Descripción
+--     SERVICIO  →  Nombre · Precio · Descripción
+--
+-- Un switch sin columna es un control que OLVIDA lo que elegiste en cuanto recargas: peor que no
+-- tenerlo. Por eso la columna va primero.
+--
+-- ── LA FORMA, Y POR QUÉ ────────────────────────────────────────────────────────────────────
+-- Nullable y SIN `DEFAULT`, igual que `contact_kind` (CONT-01). Un `DEFAULT` convertiría a cada
+-- fila futura en «declarada» sin que nadie lo haya dicho; NULL significa «sin clasificar» y el
+-- switch no preselecciona ningún lado.
+--
+-- ── EL ORDEN, QUE NO SE NEGOCIA (lección de SCRUM-205) ─────────────────────────────────────
+-- `schemaDrift` compara `esperado ⊆ real` al arrancar: si `schema.prisma` nombra una columna que
+-- la base no tiene, PRODUCCIÓN NO ARRANCA. Así que esto se aplica a las TRES bases ANTES de que
+-- el PR con el `schema.prisma` mergee. DEV y STAGING las aplica la sesión; PRODUCCIÓN, Javier.
+--
+-- ── EL BACKFILL: TODAS NACEN «PRODUCTO» ────────────────────────────────────────────────────
+-- Decisión del fundador (2-sep-2026). Motivo escrito: **no hay merchants reales, todos son de
+-- prueba**, así que el backfill no declara nada por nadie.
+--
+-- 🔴 Y EL LÍMITE, ESCRITO PARA QUE NADIE REUTILICE EL PRECEDENTE: la decisión vale POR EL ESTADO
+-- DE LOS DATOS, NO POR EL CRITERIO. Con catálogos reales, un backfill masivo SÍ estaría declarando
+-- por el profesional —diciendo que su catálogo son productos cuando quizá son servicios— y
+-- entonces sería la decisión equivocada. Es el mismo límite que se dejó escrito con `timezone`.
+--
+-- 📌 Efecto colateral bueno, y conviene saber por qué es bueno: como todas nacen PRODUCTO,
+-- ninguna fila existente se queda sin sitio donde vivir el coste y el margen que YA tiene. El
+-- caso «un servicio con coste» no aparece con este backfill.
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+-- ① La columna. Aditiva, nullable, sin default.
+ALTER TABLE "products" ADD COLUMN "item_kind" TEXT;
+
+-- ② El backfill. `WHERE item_kind IS NULL` para que reaplicarlo no pise nada ya declarado.
+UPDATE "products" SET "item_kind" = 'PRODUCTO' WHERE "item_kind" IS NULL;

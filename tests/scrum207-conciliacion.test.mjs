@@ -34,7 +34,7 @@ test('SCRUM-207 · los seis cubos, uno por rama', () => {
     doc({ id: 3, merchantId: 8, number: '2026-0002' }),                // ES sin NIF
     doc({ id: 4, merchantId: 7, number: '2026-0003', vfHash: 'AB12' }),// sellada
     doc({ id: 5, merchantId: 7, number: '2026-0004', lines: [] }),     // sin líneas → H3-B
-    doc({ id: 6, merchantId: 1, number: '2026-0005' }),                // demo → H3-D
+    doc({ id: 6, merchantId: 1, number: '2026-0005' }),                // demo → H3-D  // MERCHANT DEMO A PROPOSITO (SCRUM-409): este cubo ES el del demo
     doc({ id: 7, merchantId: 7, number: '2026-0006' }),                // ⬅️ H3-A, el agujero
   ];
 

@@ -6,15 +6,32 @@
 //   (3) audit 'operario_asignado' una sola vez (idempotencia: 2ª llamada no re-crea/audita)
 //   (4) índice (merchant_id, operario_id) presente en la tabla jobs (db push aplicado)
 //
-// ⚠️ GATEADO (toca la BD del .env con el merchant demo id=1 y LIMPIA lo suyo):
-//   QA_DB_TEST=1 npm run test:staging
+// ⚠️ GATEADO. Dos destinos (SCRUM-876):
+//   QA_DB_TEST=1 npm run test:staging                     → staging, por `_staging-db.mjs` (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test   → el banco desechable que CI levanta para la tanda
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { interceptarAuditLog } from './_audit-log-sync.mjs'; // SCRUM-255: esperar la escritura, no el reloj
+import { parseBDSegura } from '../scripts/_db-guard.mjs';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
-const ENABLED = process.env.QA_DB_TEST === '1';
-const MERCHANT_ID = 1;              // demo (regla 8)
+// SCRUM-876 · DOS DESTINOS, y el primero no se afloja: con `QA_DB_TEST=1` manda staging (por
+// `_staging-db.mjs`) y `LIBRO_PG_URL` ni se lee. Sin él, el banco desechable que CI levanta para
+// la tanda, con guard fail-closed: una URL que no sea loopback + `*_test` hace FALLAR el fichero,
+// no saltarlo. Nunca se imprime la URL (SCRUM-226).
+//
+// Y el merchant es EFÍMERO: era `MERCHANT_ID = 1`, el demo que SCRUM-42 quemó a propósito, y sobre
+// una base recién creada el test moría en `team_members_merchant_id_fkey` antes de mirar nada.
+const URL_BANCO = process.env.QA_DB_TEST === '1' ? '' : (process.env.LIBRO_PG_URL || '');
+if (URL_BANCO) {
+  const p = parseBDSegura(URL_BANCO);
+  if (!p || !['127.0.0.1', 'localhost', '::1'].includes(p.host) || !p.base.endsWith('_test')) {
+    throw new Error('🔴 LIBRO_PG_URL no es un banco desechable (loopback y base «*_test»). No se toca nada.');
+  }
+  process.env.DATABASE_URL = URL_BANCO;
+}
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 const MARK = '(SCRUM-52 QA) operarioId';
 
 // recordAudit es fire-and-forget → poll corto por la traza (sin await del log en el código).
@@ -31,35 +48,17 @@ async function buscarAudit(prisma, jobId) {
     .catch(() => null);
 }
 
-test('SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + índice', { skip: !ENABLED }, async () => {
+test('SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + índice', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { ensureJobForQuote } = await import('../dist/modules/jobs/domain/job.service.js');
 
   const stamp = Date.now();
-  const cleanup = async () => {
-    // hijos → padres. Los Jobs y sus audit_log se localizan vía los Quotes marcados.
-    const quotes = await prisma.quote
-      .findMany({ where: { merchantId: MERCHANT_ID, internalNotes: MARK }, select: { id: true } })
-      .catch(() => []);
-    const qIds = quotes.map((q) => q.id);
-    if (qIds.length) {
-      const jobs = await prisma.job.findMany({ where: { quoteId: { in: qIds } }, select: { id: true } }).catch(() => []);
-      const jIds = jobs.map((j) => j.id);
-      if (jIds.length) {
-        await prisma.auditLog
-          .deleteMany({ where: { merchantId: MERCHANT_ID, action: 'operario_asignado', entityType: 'job', entityId: { in: jIds } } })
-          .catch(() => {});
-      }
-      await prisma.job.deleteMany({ where: { quoteId: { in: qIds } } }).catch(() => {});
-    }
-    await prisma.quote.deleteMany({ where: { merchantId: MERCHANT_ID, internalNotes: MARK } }).catch(() => {});
-    await prisma.customer.deleteMany({ where: { merchantId: MERCHANT_ID, notes: MARK } }).catch(() => {});
-    await prisma.teamMember.deleteMany({ where: { merchantId: MERCHANT_ID, name: MARK } }).catch(() => {});
-  };
-  await cleanup(); // por si una ejecución anterior crasheó
-
+  // La limpieza la garantiza `withMerchant`: teamMember, customer, quote, job y auditLog cuelgan
+  // del merchant, también si un assert revienta a mitad.
   try {
-    // ── Actores: un operario (técnico) y un cliente del merchant demo ──
+    await withMerchant(prisma, { name: 'QA SCRUM-52', email: `qa-scrum52-m-${stamp}@test.local` }, async (merchant) => {
+    const MERCHANT_ID = merchant.id;
+    // ── Actores: un operario (técnico) y un cliente del merchant efímero ──
     const operario = await prisma.teamMember.create({
       data: { merchantId: MERCHANT_ID, name: MARK, email: `qa-scrum52-${stamp}@test.local`, role: 'tecnico', status: 'active' },
     });
@@ -127,8 +126,8 @@ test('SCRUM-52: operarioId = quote.teamMemberId (+ null owner) + audit único + 
     assert.ok(Array.isArray(idx) && idx.length >= 1, 'debe existir un índice sobre operario_id en jobs (db push aplicado)');
 
     console.log('✔ SCRUM-52: operarioId poblado (teamMember + owner null), audit único operario_asignado, índice presente.');
+    });
   } finally {
-    await cleanup();
     await prisma.$disconnect();
   }
 });

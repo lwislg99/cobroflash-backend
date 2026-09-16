@@ -38,12 +38,47 @@ const SRC = path.join(RAIZ, 'src');
  * función que hace el update.
  */
 const CENSO = {
+  // SCRUM-313 (D2) · ESTE NO AVANZA UN CONTADOR: LO FIJA. Es «¿por qué número vas?» del alta, que
+  // escribe el arranque de la serie una sola vez, antes de la primera factura.
+  //
+  // Entra en el censo igualmente porque hace lo que este test vigila —leer y escribir un valor
+  // ABSOLUTO en `nextInvoiceNumber`—, y de hecho **lo cazó antes de que llegara a `main`**: la
+  // primera versión no llevaba cerrojo. Sin él, entre leer «no hay facturas» y escribir el 42 cabe
+  // una emisión, y esa factura consumiría la 001 — que DUPLICA un número que el profesional ya usó
+  // en su programa anterior. Ni hueco ni carrera abstracta: el daño exacto que D2 viene a evitar.
+  //
+  // Forma `cerrojo`, mismo namespace que `allocateInvoiceNumber`, para que reservar un número y
+  // declarar el arranque no puedan ocurrir a la vez. La relectura va DENTRO de la transacción:
+  // comprobar fuera y escribir dentro no serializa nada.
+  'src/app.ts': {
+    campo: 'nextInvoiceNumber',
+    forma: 'cerrojo',
+    motivo:
+      'SCRUM-313: FIJA el arranque de la serie en el alta (no lo avanza). Lee lo emitido y escribe '
+      + 'un valor absoluto, así que necesita el mismo cerrojo que la reserva — y con la relectura '
+      + 'dentro de la transacción, no fuera.',
+  },
   'src/modules/quotes/domain/quoteNumber.service.ts': {
     campo: 'nextQuoteNumber',
-    forma: 'increment',
+    // 🔴 SCRUM-592 (DOC-02) · CAMBIA DE `increment` A `cerrojo`, Y ESTE CENSO LO EXIGIÓ.
+    //
+    // Hasta el 4-sep-2026 era un contador SIMPLE y la declaración decía, con razón, que
+    // `{ increment: 1 }` bastaba: es atómico en la BD y serializa aunque no haya transacción.
+    //
+    // DOC-02 le da REINICIO ANUAL (`quoteSeriesYear`), y eso rompe el argumento entero: ya no se
+    // suma uno, hay que LEER el año y DECIDIR si el siguiente es el contador o el 1. Eso es un
+    // read-then-write con valor absoluto, que en READ COMMITTED **no serializa** — dos creaciones
+    // del primer presupuesto del año leerían las dos «serie vacía» y escribirían las dos el 1.
+    //
+    // Es exactamente el razonamiento que este mismo fichero ya tenía escrito para la factura y el
+    // albarán. La serie del presupuesto se une a ellos.
+    forma: 'cerrojo',
     motivo:
-      'Contador SIMPLE, sin reinicio anual. `{ increment: 1 }` es atómico en la BD y serializa '
-      + 'aunque no haya transacción. No hay motivo para tocarlo (decisión del fundador, 30-jul-2026).',
+      'REINICIO ANUAL (`quoteSeriesYear`, SCRUM-592). `increment` no puede expresar «y si cambió '
+      + 'el año, vuelve a 1» en un solo update: hay que leer el año y decidir, y ese '
+      + 'read-then-write con valor absoluto no serializa en READ COMMITTED. Mismo cerrojo y mismo '
+      + 'namespace que la factura y el albarán. Y aquí importa más que en los otros dos: `Quote` '
+      + 'NO tiene índice único sobre su número, así que el cerrojo es la ÚNICA garantía.',
   },
   'src/modules/invoicing/domain/invoiceNumber.service.ts': {
     campo: 'nextInvoiceNumber',

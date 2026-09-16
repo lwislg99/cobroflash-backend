@@ -80,8 +80,12 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
 2. **Cada uno en SU máquina/carpeta.** Jamás dos sesiones de Claude Code sobre el mismo checkout (lección del 13-jul: colisión 14/43). Si un mismo humano necesita 2 sesiones: worktrees.
 
    > ⚠️ **RETIRAR un worktree: deshacer sus ENLACES primero** (incidente #11, 27-jul-2026, ver
-   > `docs/ERRORES_ASESOR.md`). Los worktrees llevan un junction `node_modules → <repo>/node_modules`
-   > para no duplicar 271 paquetes por copia. `git worktree remove` **entra por el enlace y borra
+   > `docs/ERRORES_ASESOR.md`). Aquel montaje llevaba en cada worktree un junction
+   > `node_modules → <repo>/node_modules` para no duplicar 271 paquetes por copia — **y esa frase
+   > estaba aquí en presente, como si fuera una propiedad del proyecto** (SCRUM-351): el 11-ago-2026
+   > los cuatro worktrees vivos lo tienen PROPIO. La regla de abajo NO depende de eso y sigue
+   > entera: **si hay enlace, deshazlo primero**. Para saber si lo hay, `npm run topologia` — no se
+   > escribe aquí la respuesta, porque volvería a caducar. `git worktree remove` **entra por el enlace y borra
    > el contenido del destino**: una limpieza rutinaria de 37 worktrees dejó sin dependencias a
    > TODAS las sesiones a la vez, y ningún comando falló. Orden obligatorio, probado en los dos
    > sentidos (con enlace → el destino se vacía; con `rmdir` antes → sobrevive):
@@ -114,6 +118,30 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
    > efecto: el runner gateado toma una huella de `dist/`, `tests/` y el cliente de Prisma
    > antes y después, y si algo cambió sale con **código 4** diciendo que sus números no son
    > evidencia de nada — ni el verde ni el rojo (`scripts/_artefactos-guard.mjs`).
+
+   > 📏 **SEGUNDA MEDICIÓN — 11-ago-2026 (SCRUM-351).** La de arriba **no se corrige**: era cierta
+   > el día que se tomó, y una medición fechada que se reescribe deja de ser un registro. Se
+   > supera poniéndole al lado una más reciente.
+   >
+   > **Resultado de hoy: los worktrees vivos NO comparten `node_modules`.** Cada uno tiene el
+   > suyo — ni junction, ni symlink, ni resolución hacia arriba. Con lo cual **la restricción que
+   > se dedujo de la tabla de arriba —«no regeneres el cliente de Prisma, que regeneras para
+   > todos»— hoy no aplica**, y aplicarla ya costó dinero en las dos direcciones (se desaconsejó
+   > un `npm install` por un riesgo inexistente; y una sesión estuvo a punto de no arreglar una
+   > tanda rota por respetarla).
+   >
+   > ⚠️ **AQUÍ NO SE ESCRIBE NINGÚN RECUENTO, y es deliberado.** Cuántos worktrees hay y cuántos
+   > comparten es un dato que caduca — dentro de tres semanas sería exactamente la premisa falsa
+   > que este ticket vino a matar, cometida por su propio arreglo. La respuesta de hoy, el día que
+   > la necesites, se saca así:
+   >
+   > ```bash
+   > npm run topologia    # dice si comparten y CON QUIÉN; si no puede leerlo, dice NO SUPE MIRAR
+   > ```
+   >
+   > Cubre los tres montajes —propio, enlazado y **ausente** (la vía ② de arriba, la que no deja
+   > enlace que inspeccionar)— y **nunca** cuenta un fallo de lectura como «son independientes».
+   > Un puntero al método no caduca; un recuento sí.
 3. **Empezar SIEMPRE con `git checkout main && git pull`.** Rebase de main a la rama si pasa de 1 día.
 4. **Anunciar zona roja:** antes de empezar un ticket, comentar en él qué archivos de zona roja tocará. El otro carril lo lee antes de arrancar el suyo.
 5. **El segundo reconcilia:** si dos PRs tocan lo mismo, el que mergea segundo resuelve conflictos rebasando sobre main (patrón del PR #10). Los merges los hace Luis con "Create a merge commit" si hay 2+ commits.
@@ -129,13 +157,13 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
    | **Sesión 1 (Javier / carril B)** | `yaqu_dev_javier` |
    | **Sesión 2** | `railway` (la original) |
 
-   Cada uno la apunta en `DATABASE_URL_STAGING` de **su `.env` local** — nunca en el repo.
+   Cada uno la apunta en `DATABASE_URL_TESTS` de **su `.env` local** — nunca en el repo.
    Las dos están sembradas con `scripts/seed-staging.mjs`, que es **obligatorio**: crea el
    merchant demo `id=1` que exigen `a55-window-quote`, `bot-suite`, `scrum13-cobrado` y
    `scrum52-operario`. Sin él, esos cuatro fallan **solo en un carril** — el rojo ambiguo
    que este cambio vino a eliminar.
 
-   **`scripts/clean-staging-tests.mjs` pasa a ser por carril:** lee `DATABASE_URL_STAGING`,
+   **`scripts/clean-staging-tests.mjs` pasa a ser por carril:** lee `DATABASE_URL_TESTS`,
    así que cada uno limpia la suya. Ya no es una herramienta compartida.
 
    > **Los 4 merchants huérfanos `qa-s74-*` (#339, #340, #381, #383) viven en `railway`**, o
@@ -161,7 +189,7 @@ Cada carril es DUEÑO de sus módulos. El dueño puede tocarlos sin preguntar; e
 2. **Abrir SIEMPRE la carpeta raíz del repo** en VS Code (no una carpeta madre) — así su Claude Code carga `.mcp.json` (Playwright MCP) y `CLAUDE.md` automáticamente. Primera sesión: verificar con `/mcp` que playwright aparece.
 3. **Lectura obligatoria (día 1):** `docs/YAQU_MASTER.md` → este documento → `docs/FLUJO_DE_TRABAJO.md` → `docs/QA/SUITE_REGRESION.md`. Su Claude Code hereda las mismas reglas: briefs como fuente de verdad, STOP conditions (AA1.4), regla 9 (hallazgo→reporte), nunca transicionar a Finalizada, nunca `--accept-data-loss`, PRs con descripción pegada ANTES de crear.
 4. **Briefs:** mismo sistema — el asesor escribe `docs/Srpint Scrum/SESION_ACTUAL_SCRUM-<n>.md`, Luis se lo pasa a Javier, Javier se lo da a su Claude Code. Recon primero, brief después, código al final.
-5. **Secrets:** Luis le pasa por canal privado (nunca chat de Claude ni el repo) lo que necesite: URL de staging y `E2E_TEST_LOGIN_SECRET` para la suite. La `DATABASE_URL_STAGING` solo si su tarea exige seed — de inicio, NO (sus tickets 22-24 no tocan seed).
+5. **Secrets:** Luis le pasa por canal privado (nunca chat de Claude ni el repo) lo que necesite: URL de staging y `E2E_TEST_LOGIN_SECRET` para la suite. La `DATABASE_URL_TESTS` solo si su tarea exige seed — de inicio, NO (sus tickets 22-24 no tocan seed).
 6. **Jira:** Javier comenta y mueve a "En revisión"; Finalizada = asesor. Si su Claude Code tiene conector Atlassian, mismas reglas.
 7. **Primera tarea (rodaje sin riesgo):** RECON de SCRUM-22 en solo-lectura → reporte con rutas:líneas → el asesor escribe el brief → construye. Así aprende el flujo completo con una tarea de su dominio.
 8. **GitHub approvals:** cuando Javier esté activo, restaurar required approvals = 1 en el ruleset "protect main" → cada PR lo revisa el otro (Luis revisa los de Javier, Javier los de Luis). El merge a main lo sigue haciendo Luis.

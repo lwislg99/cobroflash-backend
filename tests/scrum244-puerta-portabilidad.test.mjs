@@ -22,7 +22,7 @@ const RUTAS = path.join(RAIZ, 'src', 'modules', 'exports', 'app', 'routes', 'exp
 const FUENTE = fs.readFileSync(RUTAS, 'utf8');
 const ARBOL = ts.createSourceFile(RUTAS, FUENTE, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 
-const { datasetACsv, LEEME_PENDIENTE, camposDe } =
+const { datasetACsv, LEEME, camposDe } =
   await import('../dist/modules/exports/domain/portabilidadCompleta.js');
 
 /** El nodo del handler de una ruta, por su path. AST y no `grep`: un comentario no es un nodo. */
@@ -109,15 +109,18 @@ test('SCRUM-244 · la puerta NO relaja el rol: hereda el gate del montaje', () =
   );
 });
 
-test('SCRUM-244 · el aviso del art. 15 viaja, y con su marca de PENDIENTE (regla 30)', () => {
-  assert.match(
-    LEEME_PENDIENTE, /\[PENDIENTE microcopy oficial\]/,
-    '🔴 el LEEME ha dejado de declararse pendiente. El texto es microcopy oficial y lo aprueba el ' +
-      'fundador; que la pieza exista VACÍA y marcada es mejor que no exista, y mucho mejor que ' +
-      'un texto inventado que parezca aprobado.',
-  );
+test('SCRUM-244 · el aviso del art. 15 viaja, y ahora con su texto APROBADO (regla 30)', () => {
+  // 17-ago-2026 · APROBADO. Protegía que la pieza existiera VACÍA y marcada en vez de con un texto
+  // inventado que pareciera aprobado — y eso sigue protegido, solo que ahora contra el texto real:
+  // el guard exige que el aviso ESTÉ y que apunte a la política de privacidad, que es la decisión
+  // del fundador (no se copia el art. 15 aquí: serían dos fuentes del mismo hecho legal).
+  assert.ok(LEEME.includes('yaqu.app/privacidad'),
+    '🔴 el LEEME ha dejado de apuntar a la política de privacidad. Ahí es donde vive el aviso del ' +
+    'art. 15; si se copia aquí, hay DOS fuentes y el día que una cambie la otra miente.');
+  assert.ok(!LEEME.includes('[PENDIENTE'),
+    '🔴 ha vuelto el marcador al LEEME: o hay texto nuevo sin aprobar, o se ha revertido.');
   const texto = handlerDe('/portabilidad.zip').getText(ARBOL);
-  assert.ok(texto.includes('LEEME_PENDIENTE'), '🔴 el paquete no incluye el aviso del art. 15');
+  assert.ok(texto.includes('LEEME'), '🔴 el paquete no incluye el aviso del art. 15');
 });
 
 test('SCRUM-244 · el CSV no pierde información: fechas en ISO y JSON serializado', () => {

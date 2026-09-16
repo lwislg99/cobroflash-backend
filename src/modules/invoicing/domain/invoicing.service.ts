@@ -11,8 +11,12 @@
 // invoicesAdmin R1) aplican VeriFactu INLINE; unificarlos a lazy cambiaría su comportamiento
 // (regla 9 / decisión fundador). Se deja para un ticket aparte con su propia revisión.
 import { Prisma } from '@prisma/client';
-import { allocateInvoiceNumber, isReceiptNumber } from './invoiceNumber.service';
+import { allocateInvoiceNumber, isReceiptNumber, type OrigenC7 } from './invoiceNumber.service';
+import type { DeductRef } from './finalInvoice.service'; // SCRUM-16/142 (#2)
 import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
+import type { TipoDocumento } from './tipoDocumento'; // SCRUM-413: union CERRADA
+import { crearFacturaEmitida } from './crearFacturaEmitida'; // SCRUM-729
+import type { ClienteCongelado } from './clienteCongelado'; // SCRUM-729
 
 export interface AlbaranRef {
   albaranId: number;
@@ -25,13 +29,59 @@ export interface EmitInvoiceInput {
   customerId: number;
   total: string;              // Decimal(12,2) ya formateado ("218.90")
   currency: string;
-  type?: string;              // default 'F1' (se fuerza 'JUST' si la serie sale J-); FISCAL-1 usará 'ANT'
+  /**
+   * SCRUM-413 · union CERRADA. Era `string` libre, y el mapeo a AEAT declaraba como factura
+   * completa CUALQUIER cadena que llegara. Ahora un tipo nuevo NO COMPILA hasta declarar con que
+   * `TipoFactura` se sella -- que es dictamen fiscal, no una decision de codigo.
+   *
+   * 'ANT' (anticipo) sigue RESERVADO en FISCAL-1 y no esta en la union: entra cuando P16.2 tenga
+   * respuesta. Hasta entonces, escribirlo no compila -- antes se sellaba como F1 en silencio.
+   */
+  type?: TipoDocumento;       // default 'F1' (se fuerza 'JUST' si la serie sale J-)
   lines?: unknown;            // Invoice.lines Json — [{concept, qty, price, tax(fracción)}]
   albaranRefs?: AlbaranRef[]; // FISCAL-2: operaciones agrupadas
+  /**
+   * SCRUM-16/142 (#2) · las facturas que esta FINAL descuenta, con su base y su cuota.
+   *
+   * Es lo que hace AUDITABLE la compensación: sin esto, la final dice un importe menor y **no
+   * consta contra qué** — y el art. 6.1 RD 1619/2012 exige identificar los documentos previos.
+   * `buildFinalInvoice` ya las produce; hasta la migración del 10-ago-2026 no tenían dónde ir.
+   *
+   * Mismo patrón EXACTO que `albaranRefs`: `Json?` en la fila, tipado aquí. **No se derivan de
+   * las líneas negativas**: de un concepto en texto no se saca un identificador de factura.
+   */
+  deductsRefs?: DeductRef[];
   quoteId?: number | null;
   stageLabel?: string | null;
   /** SCRUM-207 · OBLIGATORIO: quién emite. Los 2 llamadores de C7 son rutas de admin. */
   actor: ActorAudit;
+  /**
+   * SCRUM-347 · OBLIGATORIO: de cuál de los cuatro caminos de `emitInvoice` nace esta factura.
+   *
+   * Hasta hoy esta función fijaba `camino: 'C7'` a fuego, así que la recapitulativa, el parcial de
+   * albarán, el albarán→factura y la suelta se registraban con la MISMA etiqueta. En una
+   * inspección son cuatro historias distintas.
+   *
+   * Va por parámetro y no se deduce: el origen solo lo sabe quien llama. Inferirlo de
+   * `albaranRefs != null` sería sacar el origen de un dato que no está para eso — y en un registro
+   * fiscal, deducir es inventar.
+   *
+   * MISMO PATRÓN QUE `actor` (SCRUM-207): obligatorio por tipo, así que **un llamador nuevo no
+   * compila hasta declarar de dónde viene**. Es la forma más barata de guard y la más difícil de
+   * saltarse.
+   */
+  origen: OrigenC7;
+  /**
+   * SCRUM-729 · OBLIGATORIO: el cliente TAL Y COMO ESTÁ EN ESTE INSTANTE.
+   *
+   * Lo lee el llamador con `congelarCliente(prisma, merchantId, customerId)` **antes de abrir la
+   * `$transaction`**, no esta función: dentro estaría detrás del `pg_advisory_xact_lock` de
+   * `allocateInvoiceNumber`, o sea un viaje más en la sección crítica que SCRUM-728 mide.
+   *
+   * Obligatorio por tipo, mismo patrón que `actor` y `origen`: un llamador nuevo no compila hasta
+   * declarar de qué cliente es la factura que emite.
+   */
+  clienteCongelado: ClienteCongelado;
 }
 
 /**
@@ -40,25 +90,27 @@ export interface EmitInvoiceInput {
  */
 export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoiceInput) {
   const number = await allocateInvoiceNumber(tx, input.merchantId, {
-    camino: 'C7', actor: input.actor,
+    // SCRUM-347: el camino lo dice el LLAMADOR. Antes iba 'C7' a fuego y los cuatro
+    // orígenes se registraban igual.
+    camino: input.origen, actor: input.actor,
   });
-  return tx.invoice.create({
-    data: {
-      merchantId: input.merchantId,
-      customerId: input.customerId,
-      quoteId: input.quoteId ?? null,
-      number,
-      // V0-0 (regla 26): si la serie salió J- (merchant real sin INVOICING_ES_ENABLED) → JUST.
-      type: isReceiptNumber(number) ? 'JUST' : (input.type ?? 'F1'),
-      total: input.total,
-      currency: input.currency,
-      lines: (input.lines as any) ?? undefined,
-      albaranRefs: (input.albaranRefs as any) ?? undefined,
-      stageLabel: input.stageLabel ?? null,
-      // LAZY: se rellenan bajo demanda en ensureInvoicePdf (VeriFactu + PDF).
-      pdfUrl: 'PENDING_PDF',
-      qrData: 'PENDING_QR',
-      registerId: null,
-    },
+  // SCRUM-729 · el cliente de este instante entra por el envoltorio, en el MISMO `INSERT`.
+  return crearFacturaEmitida(tx, input.clienteCongelado, {
+    merchantId: input.merchantId,
+    customerId: input.customerId,
+    quoteId: input.quoteId ?? null,
+    number,
+    // V0-0 (regla 26): si la serie salió J- (merchant real sin INVOICING_ES_ENABLED) → JUST.
+    type: isReceiptNumber(number) ? 'JUST' : (input.type ?? 'F1'),
+    total: input.total,
+    currency: input.currency,
+    lines: (input.lines as any) ?? undefined,
+    albaranRefs: (input.albaranRefs as any) ?? undefined,
+    deductsRefs: (input.deductsRefs as any) ?? undefined,
+    stageLabel: input.stageLabel ?? null,
+    // LAZY: se rellenan bajo demanda en ensureInvoicePdf (VeriFactu + PDF).
+    pdfUrl: 'PENDING_PDF',
+    qrData: 'PENDING_QR',
+    registerId: null,
   });
 }

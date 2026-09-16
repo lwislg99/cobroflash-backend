@@ -1,0 +1,62 @@
+// src/modules/invoicing/domain/vistaPreviaSerie.ts — SCRUM-313 (D2) · la vista previa del número.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// POR QUÉ ESTO NO CALCULA NADA
+//
+// La vista previa es el corazón de la pantalla de D2, no un adorno: es lo único que convierte
+// «41» en «2026-CF-042» delante de los ojos del profesional **antes** de que sea irreversible. Si
+// no está, la puerta de última oportunidad no protege nada — el usuario no sabría qué confirma.
+//
+// Y precisamente por eso **no puede calcular el número por su cuenta**. Si esto compusiera el
+// formato o replicara la regla del año, habría DOS sitios calculando el mismo número, y ésa es
+// exactamente la forma en que la vista previa acaba diciendo una cosa y la factura otra: no falla
+// el día del cambio, falla meses después, cuando alguien toca uno de los dos.
+//
+// Así que se le PREGUNTA a quien decide:
+//
+//   · `resolveSeriesSeq` → qué secuencia toca (y es quien aplica el reinicio anual);
+//   · `formatInvoiceNumber` → cómo se escribe.
+//
+// Las dos ya están exportadas. Este módulo las **importa** y no modifica ni una línea de
+// `invoiceNumber.service.ts` (regla 38): leer ese camino no es STOP, modificarlo sí.
+import { formatInvoiceNumber, resolveSeriesSeq } from './invoiceNumber.service';
+// SCRUM-780: el corte se PREGUNTA también, por el mismo motivo que lo demás — aparte para no
+// tocar la línea de arriba, que es la que vigila el guard de SCRUM-313.
+import { usaFormatoF } from './invoiceNumber.service';
+
+/**
+ * El número que saldrá de verdad si se emite ahora mismo con este par.
+ *
+ * @param prefijo  El prefijo de serie del merchant.
+ * @param par      `{ invoiceSeriesYear, nextInvoiceNumber }` — el par entero. Se pide junto a
+ *                 propósito: `resolveSeriesSeq` devuelve 1 si el año no coincide, así que pasar
+ *                 solo el número daría una vista previa que MIENTE (ver SCRUM-313).
+ * @param año      El año en curso. Se recibe, no se calcula aquí: quien pinta la pantalla y quien
+ *                 la prueba tienen que poder fijarlo, y una llamada a `new Date()` escondida en
+ *                 una función pura hace que el test del cambio de año sea imposible de escribir.
+ */
+export function vistaPreviaSerie(
+  prefijo: string | null | undefined,
+  par: { invoiceSeriesYear: number | null; nextInvoiceNumber: number },
+  año: number,
+  rectificativa = false,
+  fecha?: Date | null,
+  seqF?: number | null,
+): string {
+  // ── SCRUM-780 · LA VISTA PREVIA TIENE QUE PASAR POR EL CORTE, O MIENTE ────────────────────
+  // Tras el corte la serie ordinaria es `F<AA><NNNN>` y su secuencia NO sale de
+  // `nextInvoiceNumber`: se deriva de lo ya emitido (`leerSeqDeLaSerieF`). Sin `seqF`, el
+  // merchant 1 de dev vería `F260006` —su contador viejo— y emitiría `F260001`. Esta pantalla es
+  // la puerta de última oportunidad: un número distinto del que va a salir es peor que no
+  // enseñar ninguno, porque el profesional confirma creyendo que sabe qué confirma.
+  const enFormatoF = usaFormatoF(fecha, rectificativa);
+  if (enFormatoF && (seqF == null || !Number.isInteger(seqF) || seqF < 1)) {
+    throw new RangeError(
+      'vistaPreviaSerie: tras el corte hace falta `seqF` (la secuencia DERIVADA de la serie F, '
+      + 'con `leerSeqDeLaSerieF`). Sin ella esta pantalla enseñaría el contador de la serie vieja '
+      + 'y prometería un número que no va a salir.',
+    );
+  }
+  const seq = enFormatoF ? (seqF as number) : resolveSeriesSeq(par, año);
+  return formatInvoiceNumber(prefijo, año, seq, rectificativa, fecha);
+}

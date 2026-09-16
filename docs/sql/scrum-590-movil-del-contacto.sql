@@ -1,0 +1,56 @@
+-- SCRUM-590 (CONT-19) · El MÓVIL del contacto — y es el número que recibe los documentos.
+--
+-- LA VÍCTIMA: el profesional que trabaja con una empresa tiene UN solo campo de teléfono. No
+-- puede guardar la centralita Y el móvil de la persona de contacto, así que guarda uno de los
+-- dos y pierde el otro. Y como ese único campo es además el canal de WhatsApp, guardar la
+-- centralita significa que el presupuesto, el albarán y la factura se van a un fijo donde nadie
+-- los va a abrir.
+--
+-- Evidencia (Holded): «Teléfono» y «Móvil» separados, en Empresa y en Persona. Holded no marca
+-- ninguno como canal porque Holded no manda WhatsApp. Nosotros sí, y por eso hace falta la marca.
+--
+-- ⚠️ NOMBRE DE LA BASE (snake_case), NO DEL MODELO. Aquí coinciden —el campo es `mobile` y la
+-- columna es `mobile`— igual que `phone`, `email` o `notes`, y a diferencia de `wa_opt_out` o
+-- `dto_por_defecto`. El `@map("mobile")` del esquema es EXPLÍCITO a propósito, no redundante:
+-- deja escrito que el nombre físico está elegido, no heredado.
+--
+-- 🔴 UNA SOLA COLUMNA, Y LA SEGUNDA NO SE CREA. La medición de SCRUM-590 dejó sobre la mesa un
+-- `wa_canal` («por cuál de los dos se escribe»). NO ENTRA: sus valores serían un ESTADO NUEVO y
+-- los estados son cerrados (regla 27, Partes L/P) — se proponen como cambio de máster, no se
+-- construyen de paso. La marca del canal es ESTRUCTURAL: recibe el número que está en «Móvil».
+-- Las tres opciones quedan medidas en `docs/master/SCRUM-590.md` §4 por si el fundador prefiere
+-- otra; esta columna no las cierra, porque añadir `wa_canal` después seguiría siendo aditivo.
+--
+-- 🔴 EL TIPO NO ESTÁ ADIVINADO: lo generó `scripts/preview-migracion.mjs --desde` (CLI **local**,
+-- nunca `npx` a la red — el incidente del 5-ago-2026), comparando el esquema de `origin/main`
+-- contra el candidato, sin tocar ninguna base:
+--
+--     node scripts/preview-migracion.mjs --desde /tmp/schema-antes.prisma
+--     → ALTER TABLE "customers" ADD COLUMN "mobile" TEXT;
+--
+-- Su veredicto: **aditiva — ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL**, con
+-- control positivo: la herramienta respondió y produjo UNA sentencia. Si hubiera devuelto vacío
+-- sin decir nada, no se podría distinguir «no hay cambios» de «no ha mirado».
+--
+-- 🔴 SIN `NOT NULL` Y SIN `DEFAULT`, y aquí eso es lo que hace que el cambio no rompa nada.
+-- `NULL` = «no consta un móvil», que NO es «no tiene móvil». Todo cliente que existe hoy nace
+-- con `NULL`, y el resolvedor del canal (`src/core/contacto/canalDeWhatsApp.ts`) devuelve
+-- entonces exactamente lo que devolvía la línea anterior: `normalizePhone(phone)`. El
+-- comportamiento de hoy no es un caso que se respete, es el caso por defecto.
+--
+-- ⛔ UN `DEFAULT` COPIANDO `phone` HABRÍA SIDO EL DESASTRE: convertiría a los clientes de hoy en
+-- «tienen móvil declarado» siendo el número que hay (que en una empresa es la centralita), y a
+-- partir de ahí nadie podría distinguir un móvil de verdad de una copia. Es el mismo motivo
+-- escrito en `contact_kind`, `recargo_equivalencia`, `tipo_destinatario` y `dto_por_defecto`.
+--
+-- ADITIVO Y RE-EJECUTABLE: `IF NOT EXISTS`, así que volver a correrlo sobre una base ya aplicada
+-- no hace nada y no falla.
+--
+-- ⚠️ ORDEN ①②③: esto va ANTES de que el código desplegado nombre el campo. `schemaDrift` compara
+-- esperado ⊆ real al arrancar: una columna de MÁS en la base es inocua, una de MENOS **impide
+-- arrancar producción**. Las tres bases primero (staging → yaqu_dev_javier → producción); el
+-- despliegue después. Hasta que se aplique, `scripts/constancia-del-alter.mjs` dirá FALTAN — y
+-- eso es la señal funcionando, no un fallo del PR.
+
+ALTER TABLE "customers"
+  ADD COLUMN IF NOT EXISTS "mobile" TEXT;

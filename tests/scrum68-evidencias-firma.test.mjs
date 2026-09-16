@@ -14,6 +14,24 @@ import { computeAlbaranContentHash } from '../dist/modules/jobs/domain/albaran.s
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 const HEX64 = /^[0-9a-f]{64}$/;
 
+// ⚠️ SCRUM-438 · EL BLOQUE CONGELADO ES OBLIGATORIO DESDE v:3, y por eso está aquí.
+//
+// `computeAlbaranContentHash` sella con la versión ACTUAL cuando no se le pide otra, y «actual»
+// pasó a ser 3. **El defecto NO se clava a una versión vieja** —eso sellaría contenido en formato
+// antiguo para siempre sin que nadie se enterara—, así que quien llama se hace explícito: o aporta
+// el bloque, o pide una versión concreta con su motivo.
+//
+// Este banco prueba propiedades del hash (determinismo, sensibilidad, colisión null/cadena) sobre
+// la versión que se sella HOY, así que aporta el bloque. Los cinco valores son los mismos que
+// llevan los campos vivos de arriba: así el fixture sigue describiendo el mismo documento.
+const contenidoCongelado = {
+  obra: 'C/ Mayor 12',
+  referenciaTrabajo: 'Reparación fuga',
+  cliente: 'Ana Pérez',
+  emisor: 'Fontanería Torres',
+  emisorNif: 'B12345678',
+};
+
 const baseContent = {
   numero: 'ALB-2026-001',
   fecha: new Date('2026-07-13T10:00:00Z'),
@@ -25,6 +43,7 @@ const baseContent = {
   cliente: 'Ana Pérez',
   emisor: 'Fontanería Torres',
   emisorNif: 'B12345678',
+  contenidoCongelado,
 };
 
 // ── Hash del CONTENIDO canónico (puro) ───────────────────────────────────────
@@ -65,8 +84,11 @@ test('computeAlbaranContentHash: null vs cadena no colisionan (serialización ca
 const ENABLED = process.env.QA_DB_TEST === '1';
 const FWD_IP = '203.0.113.9';   // x-forwarded-for determinista para la aserción de ip
 const UA = 'QA-UA-SCRUM68/1.0';
+// SCRUM-300: DISTINTO del nombre del cliente ('Cliente 68') a propósito — es lo que permite
+// distinguir «lo declaró alguien» de «se lo pusimos nosotros».
+const FIRMANTE_DECLARADO = 'Encargado de obra Paco';
 
-test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', { skip: !ENABLED }, async () => {
+test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -109,7 +131,10 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
     const rFirmar = await fetch(`${base}/albaran/${firmaToken}/firmar`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-forwarded-for': FWD_IP, 'user-agent': UA },
-      body: JSON.stringify({ signatureData: SIG }),
+      // SCRUM-300: se declara un nombre DISTINTO del cliente a propósito. Antes el sobre ponía
+      // el nombre del cliente pasara lo que pasara, así que los dos valores eran
+      // indistinguibles y el test no podía ver la diferencia. Ahora sí.
+      body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: FIRMANTE_DECLARADO }),
     });
     assert.equal(rFirmar.status, 200, `firmar remoto → 200 (fue ${rFirmar.status})`);
     const firmarBody = await rFirmar.text();
@@ -122,7 +147,11 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
     assert.equal(evRemoto.ua, UA, 'ua capturada');
     assert.equal(evRemoto.hashAlg, 'sha256');
     assert.match(evRemoto.contentHash, HEX64, 'contentHash es SHA-256 hex');
-    assert.equal(evRemoto.firmante, 'Cliente 68', 'firmante = nombre del cliente');
+    // SCRUM-300: el firmante es QUIEN DECLARÓ firmar, no el titular del trabajo. Se comprueban
+    // las dos caras: que es el declarado Y que NO es el del cliente (si volviera el
+    // relleno automático, esta segunda línea lo caza).
+    assert.equal(evRemoto.firmante, FIRMANTE_DECLARADO, 'firmante = nombre DECLARADO al firmar');
+    assert.notEqual(evRemoto.firmante, 'Cliente 68', 'el firmante NO se rellena solo con el cliente');
 
     // PRIVACIDAD: la respuesta pública del POST NO filtra ip/ua/hash
     assert.ok(!firmarBody.includes(FWD_IP) && !firmarBody.includes(UA) && !firmarBody.includes(evRemoto.contentHash),
@@ -138,7 +167,7 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
     const rInSitu = await fetch(`${base}/admin/albaranes/${albInSitu.id}/firmar`, {
       method: 'POST',
       headers: { cookie, 'content-type': 'application/json', 'x-forwarded-for': FWD_IP, 'user-agent': UA },
-      body: JSON.stringify({ signatureData: SIG }),
+      body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: FIRMANTE_DECLARADO }),
     });
     assert.equal(rInSitu.status, 200, `firmar in situ → 200 (fue ${rInSitu.status})`);
     const inSituText = await rInSitu.text();

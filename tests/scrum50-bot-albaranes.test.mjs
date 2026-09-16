@@ -23,7 +23,7 @@ process.env.WHATSAPP_APP_SECRET = 'wa-test-secret-scrum122';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán→aviso+acuse · sin-albarán→clásico', { skip: !ENABLED }, async () => {
+test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán→aviso+acuse · sin-albarán→clásico', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { app } = await import('../dist/app.js');
   const { prisma } = await import('../dist/core/db/prisma.js');
 

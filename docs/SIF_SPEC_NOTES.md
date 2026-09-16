@@ -1,10 +1,35 @@
 # SIF_SPEC_NOTES — Investigación técnica VERI*FACTU (S1-0b)
 
+> ## 🔴 QUÉ ES ESTE DOCUMENTO, Y QUÉ NO
+>
+> **Es un PLAN y una SPEC. NO es una descripción de lo que YaQu tiene construido.**
+>
+> **Hoy no existe el envío a la AEAT.** No está apagado ni pendiente de activar: no está
+> escrito (auditoría `docs/legal/AUDITORIA_CAMINO_EMISION.md`, SCRUM-525, eslabones 8 y 9).
+> Tampoco existe la cola `VfSubmission` — no está en `prisma/schema.prisma`, medido.
+>
+> **Por qué esta cabecera (SCRUM-566):** el inventario de SCRUM-538 midió que este documento no
+> decía en ninguna parte que el envío no estuviera construido. Ninguna frase era falsa; lo que
+> faltaba era la marca. **Un plan sin marca de estado se lee igual antes y después de
+> construirlo** — y ésa es la misma puerta por la que entraron las 19 afirmaciones falsas del
+> máster (SCRUM-528) y la del `description` de la skill (SCRUM-538).
+>
+> ### Cada sección lleva su etiqueta, y son tres
+>
+> | etiqueta | significa |
+> |---|---|
+> | **[NORMA]** | lo que la AEAT exige. Es cierto hoy, y no depende de nosotros. |
+> | **[EXISTE]** | construido y en el repo. Verificable en el código ahora mismo. |
+> | **[SE HARÁ]** | diseño y decisiones tomadas. **Todavía no está.** |
+>
+> Si una sección no lleva etiqueta, es que alguien la añadió sin decidir cuál le toca: trátala
+> como **[SE HARÁ]** y ponle la suya.
+>
 > Entregable de **S1-0b** (master U1.3). Investigado el 12-jun-2026 sobre fuentes AEAT.
 > Lo marcado **[VALIDAR]** viene de fuente secundaria o requiere confirmación contra el
 > XSD/entorno de pruebas en S1-D. Audita lo ya construido contra esto en **S1-A**.
 
-## 1. Decisión principal: NO necesitamos XAdES (ni microservicio Java/.NET)
+## 1. Decisión principal: NO necesitamos XAdES (ni microservicio Java/.NET)  **[NORMA]**
 
 **En modalidad VERI*FACTU (remisión inmediata — la nuestra, S1-B) NO se exige firma
 electrónica de los registros de facturación**: la huella SHA-256 encadenada + la remisión
@@ -16,7 +41,7 @@ de eventos (`EventosSIF.xsd`).
 justificada" del master (microservicio solo-firma) NO hace falta. Fuente: FAQ oficial AEAT
 "Firma" (sede.agenciatributaria.gob.es → SIF/VERI*FACTU → FAQ → Firma).
 
-## 2. Servicio web AEAT
+## 2. Servicio web AEAT  **[NORMA]**
 
 - **Protocolo:** SOAP 1.1 modo *document*, HTTPS, respuestas **síncronas**.
 - **WSDL:** `SistemaFacturacion.wsdl`
@@ -37,14 +62,19 @@ justificada" del master (microservicio solo-firma) NO hace falta. Fuente: FAQ of
 
 (Existe también el endpoint `RequerimientoSOAP` para sistemas no-VERI*FACTU — no nos aplica.)
 
-## 3. Autenticación
+## 3. Autenticación  **[NORMA]**
 
 - **mTLS con certificado electrónico cualificado** (FNMT del obligado/representante, o
   **colaborador social** — relevante: YaQu remite COMO colaborador o con certificado del
   merchant **[VALIDAR con asesor en S1-F: modelo de representación]**).
 - En Node: nativo — `https.Agent({ cert, key })` (PEM) o `{ pfx, passphrase }`. Sin librerías.
 
-## 4. Reglas operativas del envío
+## 4. Reglas operativas del envío  **[NORMA]** — lo que la AEAT exige del envío
+
+> ⚠️ **Esta sección describe un envío que TODAVÍA NO EXISTE.** Las reglas son ciertas —las
+> impone la AEAT—, pero YaQu no las cumple ni las incumple hoy: no hay envío que las cumpla.
+> Y donde dice «la cola `VfSubmission`» o «nuestra FSM», léase **[SE HARÁ]**: esa cola no
+> está en `prisma/schema.prisma`.
 
 - **Máx 1.000 registros por envío.**
 - **Flujo de control:** cada `RespuestaSuministro` trae `TiempoEsperaEnvio` (mínimo 60 s);
@@ -63,7 +93,11 @@ justificada" del master (microservicio solo-firma) NO hace falta. Fuente: FAQ of
   contra el XSD en S1-D]**). Mapea limpio a nuestra FSM `VfSubmission`
   (`rejected → pending(retry)`).
 
-## 5. Contenido del registro de alta (lo que audita S1-A)
+## 5. Contenido del registro de alta (lo que audita S1-A)  **[EXISTE]** — con una parte **[SE HARÁ]**
+
+> Los campos de la huella **sí están** en `verifactu.service.ts`, y el vector oficial de la
+> AEAT pasa en `tests/verifactu.test.mjs` (ver `docs/AUDITORIA_RRSIF.md`). Lo que **[SE HARÁ]**
+> es la comparación campo a campo contra el XSD, asignada a S1-A/S1-C.
 
 Campos de la Orden HAC/1177/2024 ya implementados en `verifactu.service.ts` (huella:
 NIF, número y fecha de factura, tipo, cuota, importe total, huella anterior, fecha-hora);
@@ -73,7 +107,11 @@ NIF, número y fecha de factura, tipo, cuota, importe total, huella anterior, fe
 URL del QR de cotejo (`https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?...`
 ya implementada). Diff spec↔código → `docs/AUDITORIA_RRSIF.md`.
 
-## 6. Stack elegido para `src/modules/fiscal/verifactu/sif.client.ts` (S1-D)
+## 6. Stack elegido para `src/modules/fiscal/verifactu/sif.client.ts` (S1-D)  **[SE HARÁ]**
+
+> 🔴 **`sif.client.ts` NO EXISTE.** Esta sección es la decisión de cómo se construirá, no una
+> descripción de lo que hay. `fast-xml-parser` tampoco está instalado, y la cola
+> `VfSubmission` del último punto no está en el esquema.
 
 - **HTTP:** `https` nativo de Node con agente mTLS (cert del merchant/colaborador en env
   o storage cifrado **[decisión de custodia con el asesor]**).
@@ -87,12 +125,12 @@ ya implementada). Diff spec↔código → `docs/AUDITORIA_RRSIF.md`.
   persistido; FSM de la Parte L (`pending→sent→accepted | sent→rejected→pending(retry)`,
   `attempts≥5 → manual_review`).
 
-## 7. Bloqueado por el fundador (PENDIENTES_FUNDADOR)
+## 7. Bloqueado por el fundador (PENDIENTES_FUNDADOR)  **[SE HARÁ]**
 
 - S1-0: certificado FNMT + alta/acceso al entorno de pruebas + cita asesor (bundle Y3).
 - Decisión de representación (¿colaborador social vs certificado por merchant?) — asesor.
 
-## Fuentes
+## Fuentes  **[NORMA]**
 
 - WSDL oficial: prewww2.aeat.es (...)/SistemaFacturacion.wsdl (endpoints y operaciones).
 - Sede AEAT — SIF/VERI*FACTU: descripción del servicio web (`Veri-Factu_Descripcion_SWeb.pdf`),

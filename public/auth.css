@@ -84,7 +84,8 @@ input::placeholder { color: var(--muted); }
 input:focus, select:focus { border-color: var(--brand); box-shadow: var(--ring); }
 
 .btn {
-  width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
+  /* SCRUM-368 · A1: 18.66px para cumplir AA por la vía de texto grande (era 16px). */
+  width: 100%; padding: 14px; font-size: 18.66px; font-weight: 700;
   background: var(--brand); color: #fff;
   border: none; border-radius: var(--r-full);   /* píldora, como el landing y DESIGN.md */
   cursor: pointer; margin-top: 8px;

@@ -19,7 +19,7 @@ import { withMerchant } from './_merchant-fixture.mjs';
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
-test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendiente de sus compañeros', { skip: !ENABLED }, async () => {
+test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendiente de sus compañeros', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const request = (await import('node:http')).default;
@@ -68,7 +68,7 @@ test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendien
   });
 });
 
-test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes, trabajos del histórico', { skip: !ENABLED }, async () => {
+test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes, trabajos del histórico', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { getTeamOverview } = await import('../dist/modules/team/domain/teamOverview.service.js');
 
@@ -117,7 +117,7 @@ test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes
   });
 });
 
-test('SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus propios números', { skip: !ENABLED }, async () => {
+test('SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus propios números', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { getTeamOverview } = await import('../dist/modules/team/domain/teamOverview.service.js');
 

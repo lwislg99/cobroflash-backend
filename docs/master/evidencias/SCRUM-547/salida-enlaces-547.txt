@@ -1,0 +1,27 @@
+CONTROL DEL INSTRUMENTO
+  ve un documento que SI esta enlazado : SI  OK
+  no ve uno inventado                  : OK
+
+POBLACION
+  .md bajo docs/                       : 666
+  de ellos, «esperan una aprobacion»   : 9
+
+EL REPARTO — documentos de APROBACION (fuera del registro)
+  total                                          : 6
+  enlazados desde el master o PENDIENTES_FUNDADOR : 4
+  🔴 SIN enlazar                                  : 2
+
+TODOS, para que el reparto no sea una seleccion mia:
+  🔴  docs/CENSO_MICROCOPY_PENDIENTE.md   [nombre+cuerpo]
+  ✅  docs/DECISIONES_PENDIENTES.md   [nombre]
+  🔴  docs/MICROCOPY_APROBADA_SIN_APLICAR.md   [nombre]
+  ✅  docs/MICROCOPY_BLOQUE_F_PARA_APROBAR.md   [nombre+cuerpo]
+  ✅  docs/PENDIENTES_FUNDADOR.md   [nombre]
+  ✅  docs/legal/AUDITLOG_FISCAL_CONTRATO.md   [cuerpo]
+
+Y las entradas de REGISTRO que el criterio tambien toca (3), contadas aparte:
+  ·  docs/master/SCRUM-400.md
+  ·  docs/master/SCRUM-549.md
+  ·  docs/master/SCRUM-836.md
+  No son documentos de aprobacion: son la entrada de su ticket. Exigirles enlace desde
+  PENDIENTES_FUNDADOR seria pedir que se enlacen ~500 entradas de registro.

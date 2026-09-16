@@ -34,7 +34,7 @@ const pareceZip = (buf) => buf.length >= 4 && buf[0] === 0x50 && buf[1] === 0x4b
 const pareceRegistroFiscal = (txt) => /RegistroAlta|RegFactuSistemaFacturacion/.test(txt);
 
 test('SCRUM-221 · el registro BLOQUEA: sin fila no salen bytes (XML y ZIP por separado)',
-  { skip: !ENABLED }, async () => {
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
     const { prisma } = await import('../dist/core/db/prisma.js');
     const { app } = await import('../dist/app.js');
     const auditMod = require('../dist/modules/system/audit.service.js');

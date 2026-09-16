@@ -23,7 +23,11 @@ export type SendFailureReason =
   | 'customer_daily_cap'
   | 'whatsapp_send_failed'
   | 'email_send_failed'
-  | 'media_upload_failed';
+  | 'media_upload_failed'
+  // SCRUM-195 (rebanada 3): la ventana de 24 h esta cerrada y el llamador pidio NO caer a
+  // plantilla. Es un motivo propio y no `whatsapp_send_failed`: no ha fallado nada -- se ha
+  // decidido no enviar, y el pro tiene que leer justo eso para poder actuar.
+  | 'ventana_cerrada';
 
 // Mensaje humano ÚNICO por motivo. Antes vivía triplicado con redacciones parecidas pero
 // no idénticas — un merchant podía leer un texto distinto para el MISMO motivo según qué
@@ -37,6 +41,7 @@ export const SEND_FAILURE_MESSAGES: Record<SendFailureReason, string> = {
   whatsapp_send_failed: 'No se pudo enviar por WhatsApp. Copia el enlace y mándaselo por SMS o llámale.',
   email_send_failed: 'No se pudo enviar el email. Puedes reintentarlo.',
   media_upload_failed: 'No se pudo preparar el PDF para WhatsApp. Inténtalo de nuevo.',
+  ventana_cerrada: 'Tu cliente no ha escrito en 24 h, llámale o mándaselo tú.',
 };
 
 /**

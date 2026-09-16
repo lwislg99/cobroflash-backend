@@ -218,10 +218,6 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal" style="max-width:420px">
-      <div class="modal-header">
-        <h3 class="modal-title">${prefill ? 'Reactivar miembro' : 'Invitar miembro'}</h3>
-        <button class="modal-close" id="modal-close-invite">&times;</button>
-      </div>
       <div class="modal-body">
         <div class="alert error" id="invite-alert" style="display:none"></div>
         <form id="invite-form" style="display:flex;flex-direction:column;gap:14px">
@@ -245,6 +241,8 @@ function showInviteModal(onSuccess, setAlert, prefill = null) {
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: `${prefill ? 'Reactivar miembro' : 'Invitar miembro'}`, idCierre: "modal-close-invite" }));
   document.body.appendChild(overlay);
 
   overlay.querySelector('#modal-close-invite').onclick = () => overlay.remove();
@@ -299,10 +297,6 @@ function showEditModal(member, onSuccess, setAlert) {
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal" style="max-width:380px">
-      <div class="modal-header">
-        <h3 class="modal-title">Editar miembro</h3>
-        <button class="modal-close" id="modal-close-edit">&times;</button>
-      </div>
       <div class="modal-body">
         <form id="edit-form" style="display:flex;flex-direction:column;gap:14px">
           <div class="field">
@@ -321,6 +315,8 @@ function showEditModal(member, onSuccess, setAlert) {
       </div>
     </div>
   `;
+  // SCRUM-446: la cabecera sale del constructor compartido.
+  overlay.querySelector('.modal').prepend(cabeceraModal({ titulo: "Editar miembro", idCierre: "modal-close-edit" }));
   document.body.appendChild(overlay);
 
   overlay.querySelector('#modal-close-edit').onclick = () => overlay.remove();
@@ -347,21 +343,21 @@ function showEditModal(member, onSuccess, setAlert) {
   };
 }
 
-// Mismas etiquetas de estado que el filtro de Presupuestos (quotesListView): en el detalle
-// se veía el valor crudo del schema ("sent"), y el pro no lee inglés de base de datos.
-// `paid`/`pending` salen del estado DERIVADO del cobro que añade listQuotesAdmin.
-const QUOTE_STATUS_LABELS = {
-  pending_approval: 'Pendiente de aprobación',
-  draft: 'Borrador',
-  sent: 'Enviado',
-  accepted: 'Aceptado',
-  rejected: 'Rechazado',
-  expired: 'Caducado',
-  paid: 'Pagado',
-  pending: 'Pendiente',
-};
+// SCRUM-820 (encima de d03b1950) · LA COPIA QUE VIVÍA AQUÍ SE HA IDO A `quoteStatusMeta` (api.js).
+//
+// Era la quinta copia del diccionario, y d03b1950 la dejó censada y vigilada en vez de cerrarla —
+// decisión razonable entonces, porque el ticket hablaba de la lista. Se cierra ahora porque **este
+// mapa era el que tenía los literales buenos**: «Caducado» en masculino (los demás dicen
+// «Caducada», que es la forma de la FACTURA) y «Pendiente de aprobación» sin abreviar. Al llevarlos
+// a la pieza, esta copia deja de ser la referencia y pasa a ser lo que era: una copia.
+//
+// Sus dos estados propios —`paid` y `pending`, derivados del cobro— viajaron con ella, y NO era
+// opcional: sin eso, esta misma línea habría pasado a pintar «—» donde hoy dice «Pagado».
+//
+// El comentario original decía «mismas etiquetas de estado que el filtro de Presupuestos»: hoy es
+// verdad de veras, porque las dos leen del mismo sitio en vez de parecerse.
 function quoteStatusLabel(status) {
-  return QUOTE_STATUS_LABELS[status] || status || '';
+  return quoteStatusMeta(status).label;
 }
 
 // ── SCRUM-148: detalle de UN miembro ─────────────────────────────────────────

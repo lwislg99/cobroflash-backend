@@ -1,0 +1,207 @@
+// tests/_envio-doblado.mjs — SCRUM-590 / SCRUM-590b (CONT-19)
+//
+// EJERCITAR EL CAMINO REAL DE ENVÍO SIN BASE Y SIN META — en un solo sitio.
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// POR QUÉ ES UN MÓDULO Y NO UNA COPIA EN CADA TEST
+//
+// Lo usan al menos dos ficheros: el que prueba que el documento sale al móvil
+// (`scrum590-el-movil-es-el-canal`) y el que prueba el viaje entero desde la pantalla
+// (`scrum590b-el-campo-en-la-pantalla`). Dos copias de un doble son dos sitios donde divergir, y
+// un doble que diverge **no mide de menos: mide otra cosa**, y su verde se lee igual que el bueno.
+// Es la lección de `_bocas-de-emision.mjs` (tres listas idénticas que se desincronizaron) y la de
+// `_banco-vistas.mjs` («un banco infiel no mide de menos: mide OTRA COSA»).
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// LOS DOS DOBLES, Y QUÉ **NO** SE DOBLA
+//
+//  · LA BASE, por `require.cache` de `dist/core/db/prisma.js`, ANTES de cargar nada de `dist/`.
+//  · META, con el mecanismo que YA existe: `WHATSAPP_DRY_RUN=1` + `globalThis.__waDryRunOutbox`.
+//    En dry-run los senders **pasan TODOS los guards** (opt-out, demo, topes, validación J7) y
+//    sólo se saltan la llamada HTTP — está escrito en `whatsapp.ts:20`. Por eso un caso de
+//    opt-out montado con esto es real: el guard se comprueba ANTES del corte de dry-run.
+//
+// ⛔ NO SALE UN SOLO BYTE HACIA META ni un mensaje a ningún número real: `metaHttp` lanza si algo
+//    lo intentara (SCRUM-180), y los números de prueba salen del rango imposible (SCRUM-262).
+//
+// 🔴 LO QUE **NO** SE DOBLA es lo que se mide: el resolvedor del canal, los guards de envío y
+//    `sendQuoteWhatsAppToCustomer` entero son el código de producción tal cual.
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL LÍMITE DE ESTE DOBLE: **NO TIENE ESTADO**
+//
+// Devuelve respuestas FIJAS, las que declare el banco por método (`{'quote.findUnique': …}`) o
+// lo vacío por defecto. No hay tabla detrás. En concreto, y medido:
+//
+//   · lo que se ESCRIBE no se puede LEER de vuelta — tras un `merchant.update`, el
+//     `merchant.findUnique` de la línea siguiente sigue devolviendo `null`;
+//   · `updateMany` devuelve `{ count: 0 }` **sin mirar el `where`**: el `count` no refleja
+//     cuántas filas habría tocado;
+//   · `{increment}` y `{decrement}` **se pasan tal cual**, no se interpretan.
+//
+// Se dice aquí porque el silencio de un instrumento se lee como capacidad. Dos ficheros
+// (`scrum815-referido-una-sola-vez`, `scrum856-canje-una-sola-vez`) necesitaron exactamente eso
+// —estado, `where` evaluado, `count` real y un cerrojo de fila— y se encontraron el muro sin que
+// nada se lo dijera, así que cada uno escribió su propio banco de concurrencia. Siguen ahí a
+// propósito: sus cabeceras explican qué modelan y por qué no usan éste.
+//
+// ⚠️ Si lo que necesitas es ESO, no lo fuerces aquí: mira esos dos. Y si eres el TERCERO que lo
+// necesita, ése es el momento de extraer un banco de concurrencia común — con tres instrumentos
+// vivos, no antes.
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+
+// ANTES de cargar `dist/`: `config` se congela al importarse.
+process.env.WHATSAPP_DRY_RUN = '1';
+
+const requiere = createRequire(import.meta.url);
+
+/** El merchant NO es el 1: el 1 es el demo y `demoSendBlocked` lo trata aparte (V0-2). Con el
+ *  demo, un bloqueo por lista blanca se confundiría con el bloqueo que se está midiendo. */
+export const MERCHANT = 4242;
+export const CLIENTE = 55;
+
+/**
+ * Devuelve lo vacío por defecto —lista vacía, `null`, `0`— para que ninguna consulta que el test
+ * no gobierna (ventana de servicio, topes A3.2, log WA-0b, historial) decida nada por su cuenta.
+ */
+export function dobleDeLaBase(respuestas) {
+  const porDefecto = (metodo) => {
+    if (metodo === 'findMany') return [];
+    if (metodo === 'count') return 0;
+    if (metodo === 'aggregate') return { _max: {}, _count: 0 };
+    if (metodo === 'findUnique' || metodo === 'findFirst') return null;
+    if (metodo === 'updateMany' || metodo === 'deleteMany') return { count: 0 };
+    return {};
+  };
+  const modelo = (nombre) =>
+    new Proxy({}, {
+      get: (_t, metodo) => async (args) => {
+        const propia = respuestas[`${nombre}.${String(metodo)}`];
+        return typeof propia === 'function' ? propia(args) : propia ?? porDefecto(String(metodo));
+      },
+    });
+  const cache = new Map();
+
+  /**
+   * El cliente que se le pasa al callback de `$transaction`.
+   *
+   * 🔴 NO LLEVA `$transaction`, y eso es fidelidad, no pereza: el `tx` de Prisma es
+   * `Omit<PrismaClient, ITXClientDenyList>` y `$transaction` está en esa lista. Hay código de
+   * producción que se apoya EXACTAMENTE en eso para negarse a trabajar dentro de una transacción
+   * —`applyVeriFactu` lanza `verifactu_seal_inside_transaction` si `typeof
+   * prismaClient.$transaction !== 'function'`—. Un `tx` que llevara `$transaction` haría pasar en
+   * verde justo el caso que esa guarda existe para impedir.
+   */
+  const tx = new Proxy({}, {
+    get: (_t, prop) => {
+      const nombre = String(prop);
+      if (nombre === '$transaction') return undefined;
+      return clienteGet(nombre, 'el cliente de transacción');
+    },
+  });
+
+  function clienteGet(nombre, quien) {
+    if (nombre === '$transaction') {
+      // Las DOS firmas, porque son dos contratos distintos y el código de la casa usa los dos:
+      //   · `$transaction(cb)`   → interactiva: se LLAMA al callback y se devuelve su resultado
+      //   · `$transaction([...])`→ lote: se esperan las promesas y se devuelven sus resultados
+      return async (arg) => {
+        if (typeof arg === 'function') return arg(tx);
+        if (Array.isArray(arg)) return Promise.all(arg);
+        throw new Error(
+          `🔴 EL DOBLE NO SABE IMITAR ESTA FORMA DE $transaction: recibió ${typeof arg}. Prisma `
+          + 'acepta un callback o un array de promesas. Si el código de producción empezó a '
+          + 'llamarla de otra manera, el doble tiene que aprenderla — devolver `undefined` aquí '
+          + 'dejaría el test en verde sin haber ejecutado el trabajo.');
+      };
+    }
+    // Ciclo de vida: no mueven datos, así que imitarlos con un no-op es fiel.
+    if (nombre === '$connect' || nombre === '$disconnect') return async () => undefined;
+    if (nombre.startsWith('$')) {
+      // ④ EL SUELO QUE FALTABA. Un doble al que le piden algo que no sabe imitar TIENE QUE
+      // DECIRLO. Antes, todo lo que empezaba por `$` devolvía `undefined` en silencio: quien
+      // llamara a `$queryRaw` recibía `undefined` y seguía como si la consulta hubiera ido bien.
+      // Se puede declarar la respuesta en `respuestas` (`{'$queryRaw': () => [...]}`) — lo que no
+      // se puede es contestar sin saber.
+      const propia = respuestas[nombre];
+      if (propia !== undefined) return async (...a) => (typeof propia === 'function' ? propia(...a) : propia);
+      return async () => {
+        throw new Error(
+          `🔴 EL DOBLE NO SABE IMITAR \`prisma.${nombre}()\` y ${quien} se lo ha pedido. Antes `
+          + 'esto devolvía `undefined` en silencio y el test seguía en verde sobre una llamada '
+          + `que nunca ocurrió. Declara su respuesta en el banco (\`{'${nombre}': …}\`) o `
+          + 'enséñale a imitarlo aquí.');
+      };
+    }
+    if (!cache.has(nombre)) cache.set(nombre, modelo(nombre));
+    return cache.get(nombre);
+  }
+
+  return new Proxy({}, { get: (_t, prop) => clienteGet(String(prop), 'el cliente') });
+}
+
+/**
+ * Inyecta el doble de la base y descarta los módulos que lo capturaron.
+ *
+ * `ademas` son otros módulos de `dist/` que también tomaron el `prisma` bueno y hay que releer —
+ * p. ej. `customerAdmin`, cuando el test quiere ejercitar el ALTA de cliente además del envío.
+ */
+export function inyectarBase(respuestas, ademas = []) {
+  const rutaPrisma = requiere.resolve('../dist/core/db/prisma.js');
+  requiere.cache[rutaPrisma] = {
+    id: rutaPrisma, filename: rutaPrisma, loaded: true,
+    exports: { prisma: dobleDeLaBase(respuestas) },
+  };
+  const modulos = [
+    '../dist/modules/quotes/domain/sendQuote.service.js',
+    '../dist/integrations/whatsapp.js',
+    ...ademas,
+  ];
+  for (const m of modulos) delete requiere.cache[requiere.resolve(m)];
+}
+
+/** Lo que `dist/` exporta, leído DESPUÉS de haber inyectado el doble. */
+export function moduloDeDist(ruta) {
+  return requiere(ruta);
+}
+
+/**
+ * Manda un PRESUPUESTO a `cliente` por el camino real y devuelve a qué números salió.
+ *
+ * `dadosDeBaja` son las filas que devolvería la consulta de `isWaOptedOut`: los clientes de ese
+ * merchant con `waOptOut = true`. Vacío = nadie se ha dado de baja.
+ */
+export async function enviarPresupuestoDeVerdad({ cliente, dadosDeBaja = [] }) {
+  const quote = {
+    id: 7,
+    merchantId: MERCHANT,
+    customerId: CLIENTE,
+    status: 'sent',
+    quoteNumber: 12,
+    total: '150.00',
+    currency: 'EUR',
+    decisionToken: 'tok-590-de-laboratorio', // ya existe: no hace falta escribir en la base
+    merchant: { id: MERCHANT, name: 'Taller de prueba', legalName: null },
+    customer: cliente,
+  };
+
+  inyectarBase({
+    'quote.findUnique': () => quote,
+    'customer.findMany': () => dadosDeBaja,
+  });
+
+  const buzon = [];
+  globalThis.__waDryRunOutbox = buzon;
+  try {
+    const { sendQuoteWhatsAppToCustomer } = requiere('../dist/modules/quotes/domain/sendQuote.service.js');
+    // 🔴 SUELO: si el export desaparece o cambia de nombre, esto NO puede pasar en silencio.
+    assert.equal(typeof sendQuoteWhatsAppToCustomer, 'function',
+      'CIEGO: no se encuentra el camino de envío del presupuesto. Sabemos que existe: si se ha '
+      + 'movido o renombrado, hay que reapuntar el test, no borrarlo.');
+    const resultado = await sendQuoteWhatsAppToCustomer(7, MERCHANT);
+    return { resultado, destinos: buzon.map((e) => e.to), buzon };
+  } finally {
+    delete globalThis.__waDryRunOutbox;
+  }
+}

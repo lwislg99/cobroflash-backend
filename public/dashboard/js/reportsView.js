@@ -66,19 +66,17 @@ async function renderReportsView(container) {
     const year = yearSelect.value;
     btnVf.disabled = true;
     try {
-      const r = await fetch(`/admin/exports/verifactu.xml?year=${year}`);
-      if (!r.ok) {
-        const d = await r.json().catch(() => ({}));
-        showToast(d.message || 'No se pudo generar el XML VeriFactu.', 'error');
-        return;
-      }
-      const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `verifactu_${year}.xml`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch {
+      // SCRUM-405: por la forma común. ERA EL CUARTO SITIO con el defecto, y no estaba en el
+      // censo de SCRUM-356 —que solo miró `exportView.js`—: lo encontró el guard por AST. Aquí
+      // pesa más que en los otros tres, porque lo que se descarga es el registro VeriFactu: con
+      // un portal cautivo, el profesional se guardaba la página de login del router como
+      // `verifactu_2026.xml`.
+      await descargarBinario(`/admin/exports/verifactu.xml?year=${year}`, {
+        tipoEsperado: 'xml',
+        nombrePorDefecto: `verifactu_${year}.xml`,
+      });
+    } catch (e) {
+      if (e && e.code === ERROR_NO_ES_FICHERO) { showToast(mensajeDescargaFallida(e), 'error'); return; }
       showToast('Error de red al descargar el XML.', 'error');
     } finally {
       btnVf.disabled = false;
@@ -156,7 +154,16 @@ async function renderReportsView(container) {
     }
 
     const { months, totals, prevYear, currency } = data;
-    const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+    // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+    // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+    // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+    // hacía invisible.
+    //
+    // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+    // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+    // tenía en `formatImporteEs`—, no un formateador nuevo.
+    const fmt = (n) => fmtImporteEs(n, currency);
 
     // ── Tarjetas KPI ─────────────────────────────────────────────────────
     const kpiWrap = document.createElement('div');
@@ -234,19 +241,41 @@ async function renderReportsView(container) {
     months.forEach(m => {
       const margin = m.revenue > 0 ? Math.round(m.profit / m.revenue * 100) : (m.revenue === 0 && m.expenses === 0 ? null : -100);
       const profitColor = m.profit >= 0 ? 'var(--green-700)' : 'var(--red-600)';
+      // 🔴 SCRUM-764 · EL MARGEN NEGATIVO SE VE, TAMBIÉN AQUÍ.
+      //
+      // Medido en navegador ANTES de tocar: un mes con −2.000,00 € pintaba el Beneficio en
+      // `rgb(220,38,38)` y, EN LA MISMA FILA, el −50 % en `rgb(107,117,111)` — el gris de
+      // siempre. Un rojo al lado de un gris se lee como que el porcentaje está bien.
+      //
+      // La REGLA no se escribe aquí: es `margenCatalogo.bajoCoste`, la misma que decide en la
+      // ficha del catálogo (SCRUM-764). Si cada pantalla comparara `< 0` por su cuenta, acabarían
+      // decidiendo distinto — y este fichero es la prueba de que pasa: calcula su margen sin
+      // usar el módulo, y por eso el aviso llegó aquí un ticket más tarde.
+      //
+      // ⚠️ VA EN LÍNEA Y NO EN LA CLASE `margen--bajo-coste`, y no es por comodidad: MEDIDO, un
+      // `style="color:…"` en línea GANA a la clase (se inyectó la regla en la página y el color
+      // no se movió de `rgb(107,117,111)`). Todas las celdas de esta tabla se colorean en línea
+      // —`profitColor`, dos líneas arriba, es la de al lado—, así que el token se comparte y el
+      // mecanismo es el del fichero. `null` (mes sin actividad, «—») no se pinta: `bajoCoste`
+      // devuelve `false` porque «no se sabe» no es «va mal».
+      const marginColor = window.margenCatalogo.bajoCoste(margin)
+        ? 'var(--danger-ink)' : 'var(--neutral-500)';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight:600">${m.label}</td>
         <td style="text-align:right;color:var(--green-700)">${m.revenue > 0 ? fmt(m.revenue) : '<span style="color:var(--neutral-300)">—</span>'}</td>
         <td style="text-align:right;color:var(--red-600)">${m.expenses > 0 ? fmt(m.expenses) : '<span style="color:var(--neutral-300)">—</span>'}</td>
         <td style="text-align:right;font-weight:600;color:${profitColor}">${fmt(m.profit)}</td>
-        <td style="text-align:right;color:var(--neutral-500)">${margin !== null ? margin + '%' : '—'}</td>
+        <td style="text-align:right;color:${marginColor}">${margin !== null ? margin + '%' : '—'}</td>
       `;
       tbody.appendChild(tr);
     });
 
     // Fila de totales
     const totalMargin = totals.revenue > 0 ? Math.round(totals.profit / totals.revenue * 100) : null;
+    // SCRUM-764 · el TOTAL del año también. Esta celda no traía color —hereda— así que sólo se
+    // le pone uno cuando hay algo que decir; el año bueno se queda exactamente como estaba.
+    const totalMarginColor = window.margenCatalogo.bajoCoste(totalMargin) ? 'var(--danger-ink)' : '';
     const trTotal = document.createElement('tr');
     trTotal.style.cssText = 'background:var(--neutral-50);font-weight:700;border-top:2px solid var(--neutral-200)';
     trTotal.innerHTML = `
@@ -254,7 +283,7 @@ async function renderReportsView(container) {
       <td style="text-align:right;color:var(--green-700)">${fmt(totals.revenue)}</td>
       <td style="text-align:right;color:var(--red-600)">${fmt(totals.expenses)}</td>
       <td style="text-align:right;color:${totals.profit >= 0 ? 'var(--green-700)' : 'var(--red-600)'}">${fmt(totals.profit)}</td>
-      <td style="text-align:right">${totalMargin !== null ? totalMargin + '%' : '—'}</td>
+      <td style="text-align:right${totalMarginColor ? ';color:' + totalMarginColor : ''}">${totalMargin !== null ? totalMargin + '%' : '—'}</td>
     `;
     tbody.appendChild(trTotal);
 
@@ -293,7 +322,16 @@ async function renderReportsView(container) {
       return;
     }
 
-    const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+    // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+    // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+    // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+    // hacía invisible.
+    //
+    // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+    // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+    // tenía en `formatImporteEs`—, no un formateador nuevo.
+    const fmt = (n) => fmtImporteEs(n);
 
     vatCard.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
@@ -357,7 +395,7 @@ async function renderReportsView(container) {
     if (data.excluded.count > 0) {
       const note = document.createElement('p');
       note.style.cssText = 'margin:10px 0 0;font-size:12px;color:var(--neutral-500)';
-      note.textContent = `⚠ ${data.excluded.count} factura(s) sin desglose de líneas (total ${fmtMoneyEs(data.excluded.total, data.currency)}) no incluidas en el cuadro — revísalas a mano.`;
+      note.textContent = `⚠ ${data.excluded.count} ${data.excluded.count === 1 ? 'factura sin desglose de líneas' : 'facturas sin desglose de líneas'} (total ${fmtMoneyEs(data.excluded.total, data.currency)}) ${data.excluded.count === 1 ? 'no incluida' : 'no incluidas'} en el cuadro — revísalas a mano.`;
       vatCard.appendChild(note);
     }
   }
@@ -368,6 +406,29 @@ async function renderReportsView(container) {
   loadX2(x2Card, currentYear); // A16.1
 }
 
+/**
+ * SCRUM-499 · EL PIE DEL REGISTRO — cuántos de estos cobros los apuntó una PERSONA.
+ *
+ * Devuelve el `<p>` del pie, o cadena vacía cuando no hay ninguno.
+ *
+ * 🔴 Microcopy APROBADA (regla 30) y LITERAL: «Marcados a mano: {n} cobros · {importe}», en
+ * singular «Marcado a mano: 1 cobro · {importe}». No se adorna ni se traduce.
+ *
+ * 🔴 CON CERO NO SE PINTA. Mismo criterio que la celda vacía de Cobros (SCRUM-285): un hecho que no
+ * existe no ocupa sitio hablando de sí mismo. Y `undefined` —un servidor que todavía no manda el
+ * campo— se comporta igual que el cero: la pantalla no inventa un «0 cobros».
+ *
+ * El formateador entra por parámetro para poder ejercer esta función sin navegador.
+ */
+function pieDeMarcadosAMano(marcadosAMano, fmtMoney) {
+  var n = marcadosAMano && Number(marcadosAMano.count);
+  if (!n || n < 1) return '';
+  var uno = n === 1;
+  return '<p style="margin:10px 0 0;font-size:12.5px;color:var(--muted)">'
+    + (uno ? 'Marcado' : 'Marcados') + ' a mano: ' + n + ' ' + (uno ? 'cobro' : 'cobros')
+    + ' · ' + fmtMoney(marcadosAMano.eur) + '</p>';
+}
+
 // ── A16.1 (X2): cómo te pagan + € por recordatorios + pendiente por antigüedad ──
 async function loadX2(card, year) {
   let d;
@@ -376,20 +437,41 @@ async function loadX2(card, year) {
   if (!hasAny) { card.style.display = 'none'; return; }
   card.style.display = 'block';
 
-  const METHOD_LABELS = {
-    card: '💳 Tarjeta', bizum: '📲 Bizum', transfer: '🏦 Transferencia',
-    bank: '🏦 Transferencia', manual: '✍️ Marcado a mano', cash: '💶 Efectivo',
-    mercadopago: '🌎 Mercado Pago',
-  };
+  // SCRUM-398 · las etiquetas salen de `paidViaEtiquetas.js`, que es la ÚNICA fuente y está atada
+  // por guard al conjunto cerrado de `paidVia.ts`. El mapa que había aquí declaraba `bizum`,
+  // `bank` y `mercadopago` —tres valores que NADIE escribe— y le faltaban los que sí llegan
+  // (`bizum_auto`, `card:stripe`, `mp`). Cuatro vocabularios distintos para el mismo dato.
   const maxEur = Math.max(1, ...(d.byMethod || []).map((m) => m.eur));
   const methodRows = (d.byMethod || []).map((m) => `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-      <span style="width:150px;flex:none;font-size:13px;color:var(--body)">${METHOD_LABELS[m.method] || m.method}</span>
+      <span style="width:150px;flex:none;font-size:13px;color:var(--body)">${etiquetaMetodoCobro(m.method)}</span>
       <div style="flex:1;background:var(--neutral-100);border-radius:6px;height:10px;overflow:hidden">
         <div style="width:${Math.round((m.eur / maxEur) * 100)}%;height:100%;background:var(--green-600);border-radius:6px"></div>
       </div>
       <span style="width:130px;flex:none;text-align:right;font-size:13px;font-variant-numeric:tabular-nums">${fmtMoneyEs(m.eur)} <span style="color:var(--muted)">(${m.count})</span></span>
     </div>`).join('');
+
+  // ── SCRUM-499 · EL PIE DEL REGISTRO ───────────────────────────────────────────────────────
+  //
+  // Cuántos de estos cobros los apuntó una PERSONA en vez de una pasarela. Hasta SCRUM-491 ese
+  // hecho ocupaba la columna del MÉTODO —salía «✍️ Marcado a mano» donde va por dónde entró el
+  // dinero—, y desde entonces viajaba sin sitio donde vivir. Éste es su sitio.
+  //
+  // 🔴 VA EN UN PIE, NO EN UNA FILA, y no es estética: es una propiedad del CONJUNTO. Una fila más
+  // dentro de la lista se leería como un método más y su importe se sumaría dos veces —esos euros
+  // YA están repartidos entre las filas de arriba, por su método—. Fuera de la lista no se puede
+  // confundir con dinero que se cuenta otra vez.
+  //
+  // 🔴 CON CERO NO SE PINTA. Mismo criterio que la celda vacía de Cobros (SCRUM-285): un hecho que
+  // no existe no ocupa sitio hablando de sí mismo.
+  //
+  // Microcopy APROBADA (regla 30) y literal: «Marcados a mano: {n} cobros · {importe}», en singular
+  // «Marcado a mano: 1 cobro · {importe}». No se adorna.
+  //
+  // Vive en una función y no suelto dentro de `loadX2` para que la tanda pueda EJERCERLO —el
+  // singular, el plural y el cero— en vez de comprobarlo con una expresión regular sobre el
+  // fuente: una regex dice que el texto está escrito, no que se pinte cuando toca.
+  const pieMarcados = pieDeMarcadosAMano(d.marcadosAMano, fmtMoneyEs);
 
   const agingRows = (d.aging || []).map((b) => `
     <div class="kpi-card" style="text-align:center">
@@ -402,6 +484,7 @@ async function loadX2(card, year) {
     <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Cómo te pagan · ${year}</h3>
     <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted)">Cobros completados por método de pago.</p>
     ${methodRows || '<p style="font-size:13px;color:var(--muted)">Aún no hay cobros este año.</p>'}
+    ${pieMarcados}
     ${d.reminderEur > 0 ? `
       <div style="margin-top:12px;background:var(--brand-tint);border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;font-size:13px;color:var(--ink)">
         ⏰ <strong>${fmtMoneyEs(d.reminderEur)}</strong> cobrados en las 72 h siguientes a un recordatorio automático — dinero que el sistema fue a buscar solo.
@@ -447,11 +530,30 @@ async function loadWhatsAppMetrics(card) {
   if (!m || (m.total === 0 && ch.windowMonth === 0)) return;
   card.style.display = '';
 
-  const fmtEur = (n) => Number(n || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  // SCRUM-436 · esta MISMA pantalla ya pintaba dinero con `fmtMoneyEs` (`:338`, `:347`, `:388`…):
+  // el formateador de al lado imprimía «9999,99 €» donde el otro imprime «9.999,99 €», y los dos
+  // se veían a la vez. Además forzaba «€» ignorando la moneda y daba «NaN €» con un dato ilegible.
+  const fmtEur = (n) => fmtMoneyEs(n);
 
-  const alertHtml = data.alert && data.alert.active
-    ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${data.alert.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
-    : '';
+  // 🔴 SCRUM-530 · TRES CASOS, NO DOS. Aquí sólo se pintaba cuando la alerta estaba ACTIVA, y la
+  // alerta exige una muestra mínima (`alert.minimo`, hoy 10 envíos en 7 días). Para un fontanero
+  // del Pioneer que manda 3 mensajes en una semana eso era SILENCIO — con 2 fallos de 3 dentro.
+  //
+  //   🔒 Una alerta que nunca se activa y una alerta que no tiene datos se leen IGUAL
+  //      y significan lo contrario.
+  //
+  // El mínimo NO se escribe aquí: viaja en el DTO, porque la misma regla en dos sitios es cómo
+  // una de las dos se queda atrás. Y el texto de este tercer caso es del fundador (regla 30):
+  // va MARCADO y sin escribir.
+  const al = data.alert || {};
+  const muestraCorta = al.active !== true
+    && typeof al.minimo === 'number'
+    && Number(al.sample || 0) < al.minimo;
+  const alertHtml = al.active
+    ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${al.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
+    : muestraCorta
+      ? `<div class="alert" data-microcopy="PENDIENTE_FUNDADOR" style="display:block;margin:0 0 14px">[PENDIENTE microcopy oficial] · <strong>${Number(al.sample || 0)}/${al.minimo}</strong></div>`
+      : '';
 
   // A5.4: plantilla (pagada) vs ventana (gratis) — el ahorro se enseña
   const savedHtml = ch.windowMonth > 0
@@ -539,7 +641,10 @@ async function loadPlatformFunnel(card) {
 
   // Desgloses de atribución: cómo se cobra y cómo se crean las quotes
   const fmtPairs = (obj, money) => Object.entries(obj || {})
-    .map(([k, v]) => `${k}: <strong>${money ? (v.count + ' · ' + v.amount.toLocaleString('es-ES', { minimumFractionDigits: 2 }) + ' €') : v}</strong>`)
+    // SCRUM-436 · el QUINTO, y no lo vio ninguna persona: lo cazó el censo de este ticket mientras
+    // se escribía. Llevaba `minimumFractionDigits` pero NO `maximumFractionDigits` ni agrupado, así
+    // que imprimía «1000,00 €» y además podía soltar más de dos decimales.
+    .map(([k, v]) => `${k}: <strong>${money ? (v.count + ' · ' + fmtMoneyEs(v.amount)) : v}</strong>`)
     .join(' · ') || '—';
   const meta = document.createElement('p');
   meta.style.cssText = 'margin:0 0 14px;font-size:12px;color:var(--muted)';
@@ -592,7 +697,7 @@ async function loadPlatformFunnel(card) {
           <td style="padding:6px 8px;text-align:right">${m.quotes}</td>
           <td style="padding:6px 8px;text-align:right">${m.sent}</td>
           <td style="padding:6px 8px;text-align:right">${m.accepted}</td>
-          <td style="padding:6px 8px;text-align:right" class="amount">${m.collectedAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+          <td style="padding:6px 8px;text-align:right" class="amount">${fmtImporteEs(m.collectedAmount)} €</td>
         </tr>`).join('')}
       </tbody>
     </table>`;
@@ -682,7 +787,16 @@ function renderServices(card, data) {
     return;
   }
 
-  const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+  // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+  // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+  // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+  // hacía invisible.
+  //
+  // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+  // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+  // tenía en `formatImporteEs`—, no un formateador nuevo.
+  const fmt = (n) => fmtImporteEs(n);
   const tableWrap = document.createElement('div');
   tableWrap.className = 'table-scroll';
   const table = document.createElement('table');
@@ -766,7 +880,11 @@ function buildBarChart(months, currency) {
     label.setAttribute('text-anchor', 'end');
     label.setAttribute('font-size', '10');
     label.setAttribute('fill', '#949b92');
-    label.textContent = Math.round(maxVal * f).toLocaleString('es-ES');
+    // SCRUM-743 · el hueco que SCRUM-739 dejó DECLARADO, y no por olvido: este rótulo es un
+    // ENTERO y las dos formas de dinero fuerzan dos decimales, así que pasarlo por ellas habría
+    // escrito `6.050,00` en un eje donde hoy pone `6050` — añadir decimales donde no los hay es
+    // cambiar lo que se ve. `fmtNumeroEs` agrupa y no toca los decimales: `6050` → `6.050`.
+    label.textContent = fmtNumeroEs(Math.round(maxVal * f));
     svg.appendChild(label);
   });
 
@@ -797,7 +915,7 @@ function buildBarChart(months, currency) {
 
       // Tooltip
       const title = document.createElementNS(svgNS, 'title');
-      title.textContent = `${m.label}: ${Number(value).toLocaleString('es-ES', {minimumFractionDigits:2})} ${currency}`;
+      title.textContent = `${m.label}: ${fmtImporteEs(value, currency)} ${currency}`;
       rect.appendChild(title);
 
       svg.appendChild(rect);
@@ -910,8 +1028,14 @@ function buildDesgloseEmpleado(filas, year, fmt, currency) {
   filas.forEach((f) => {
     const b = document.createElement('button');
     b.type = 'button';
-    // Objetivo táctil ≥44 px (AB6). Clases del inventario: seleccionado = primario.
-    b.style.cssText = 'min-height:44px';
+    // SCRUM-384 · el `style="min-height:44px"` que había aquí SE RETIRÓ, y no solo por redundante.
+    //
+    // La base ya da 44 px en móvil a `.btn-secondary`/`.btn-primary` sueltas desde SCRUM-352
+    // (`.btn-primary:not(.btn-sm)`), así que el objetivo táctil de AB6 se cumple sin esto. Pero
+    // al ser INLINE ganaba siempre: a 1280 px forzaba 44 donde la casa da 36, y este botón de
+    // filtro era 8 px más alto que sus hermanos en escritorio sin que nadie lo hubiera decidido.
+    //
+    // Clases del inventario: seleccionado = primario.
     b.textContent = f.label;
     const sincronizar = () => {
       const on = sel.has(f.key);
@@ -931,4 +1055,10 @@ function buildDesgloseEmpleado(filas, year, fmt, currency) {
   box.appendChild(tableWrap);
   pintar();
   return box;
+}
+
+// SCRUM-499 · el pie se exporta para que la tanda pueda EJERCERLO (singular, plural y cero) sobre
+// la funcion que corre, no sobre una copia. Mismo patron que `cobrosView.js` y `paidViaEtiquetas.js`.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { pieDeMarcadosAMano };
 }

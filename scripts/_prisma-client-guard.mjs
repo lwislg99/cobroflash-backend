@@ -8,8 +8,22 @@
 // un schema más viejo, y `tsc` empezó a fallar por `decisionToken` y por una relación que "no
 // existía". El cliente estaba ahí. Un guard de presencia habría dicho que todo bien.
 //
-// Y es fácil de provocar sin querer, porque `node_modules` se comparte por JUNCTION entre todos
-// los worktrees: quien regenera, regenera para todos (incidente #11 de `docs/ERRORES_ASESOR.md`).
+// Y es fácil de provocar sin querer. La causa de siempre es que `schema.prisma` viaja con la rama y
+// el cliente generado no. Hay una segunda que DEPENDE DEL MONTAJE: si `node_modules` es un enlace
+// al de otro worktree, quien regenera regenera para todos (incidente #11, `docs/ERRORES_ASESOR.md`).
+//
+// ⚠️ SCRUM-461 · esto ANTES se afirmaba como un hecho —«se comparte por JUNCTION entre todos»—. Se
+// midió el 10-ago con `fs.realpathSync` sobre los cuatro worktrees vivos: **ninguno lo era**, los
+// cuatro son directorios propios. No comprobarlo ya costó una decisión equivocada en cada dirección
+// (se desaconsejó un `npm install` por un riesgo que no existía; y una sesión estuvo a punto de no
+// arreglar cuatro `ERR_MODULE_NOT_FOUND` por respetar una restricción que no aplicaba).
+//
+// ⚠️ SCRUM-351 · Y NO SE SUSTITUYE POR LA AFIRMACIÓN CONTRARIA. «Son independientes» vuelve a ser
+// una premisa falsa en cuanto alguien recree un worktree, cambie de máquina o instale de otra
+// forma — que es exactamente cómo llegamos aquí. La respuesta se DERIVA cada vez, y cubre los tres
+// montajes de una sola pasada (propio · enlazado · sin `node_modules`, que resuelve hacia arriba
+// sin dejar ningún enlace que inspeccionar):
+//     npm run topologia
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // SCRUM-235 · POR QUÉ EL CRITERIO ANTERIOR DABA FALSO VERDE
@@ -60,8 +74,9 @@
 //
 // LO QUE ESTO NO HACE: no compara contra la BASE, solo contra `schema.prisma`. Si la base y el
 // schema divergen (un `db push` pendiente), esto no lo ve — para eso está
-// `scripts/preflight-schema-drift.mjs`. Y no arregla la causa de fondo, el `node_modules`
-// compartido: convierte media hora tirada en un aborto de dos segundos.
+// `scripts/preflight-schema-drift.mjs`. Y no arregla ninguna de las dos causas de fondo —el cambio
+// de rama (A) y un `node_modules` compartido (B), *si* lo está—: convierte media hora tirada en un
+// aborto de dos segundos.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 //
 // MENSAJE ÚNICO Y SALIDA INMEDIATA: se informa de la PRIMERA diferencia y se para. Veinte
@@ -155,13 +170,28 @@ export function modelosDelSchema(textoSchema) {
 
 /**
  * Campos del cliente generado, sacados de su DMMF. `rutaCliente` permite apuntar a OTRO cliente
- * —un directorio generado aparte—, que es como se prueba este guard en rojo sin tocar el
- * `node_modules` que comparten todos los worktrees.
+ * —un directorio generado aparte—, que es como se prueba este guard en rojo sin tocar ningún
+ * `node_modules` de verdad: ni el propio, ni el de otro worktree si resultara estar compartido.
  *
  * @returns {Promise<Map<string, Map<string, string>>>} modelo → (campo → columna)
  */
 export async function modelosDelCliente(rutaCliente) {
-  const mod = await import(rutaCliente || '@prisma/client');
+  // ⚠️ SCRUM-429 · SI EL CLIENTE NO SE PUEDE CARGAR, SE DEVUELVE VACÍO — NO SE LANZA.
+  //
+  // Antes, un cliente ausente o ilegible reventaba con el error de ESM crudo
+  // («Cannot find module …», o el de rutas de Windows sin `file://`). Eso es un stack, no un
+  // diagnóstico: quien lo ve no sabe si el guard ha encontrado un problema o si el guard ES el
+  // problema.
+  //
+  // Devolviendo vacío cae en el suelo que ya existe (`sinDatos`), que **falla cerrado** y explica
+  // que no se pudo comparar. Es la diferencia entre «no supe mirar» y «está mal», que es
+  // exactamente lo que este guard existe para no confundir.
+  let mod;
+  try {
+    mod = await import(rutaCliente || '@prisma/client');
+  } catch {
+    return new Map();
+  }
   const modelos = mod.Prisma?.dmmf?.datamodel?.models || [];
   return new Map(modelos.map((m) => [
     m.name,
@@ -253,11 +283,29 @@ export function mensaje(d) {
     '',
     ...porDireccion,
     '',
-    '   El cliente ESTÁ generado — no falta: es de OTRO schema. Suele pasar al regenerarlo desde',
-    '   un worktree que está en otra rama, y como `node_modules` se comparte por junction, afecta',
-    '   a todas las sesiones a la vez.',
+    '   El cliente ESTÁ generado — no falta: es de OTRO schema. Y hay DOS causas distintas, que',
+    '   piden mirar en sitios distintos. Este mensaje solo nombraba la primera, y eso llevó a',
+    '   diagnosticar mal una caída (SCRUM-429, 10-ago-2026):',
     '',
-    '   Arreglo:  npx prisma generate   (desde ESTE worktree)',
+    '     (A) TU PROPIO CAMBIO DE RAMA. `prisma/schema.prisma` viaja con la rama y el cliente',
+    '         generado NO. Cambias de rama o mergeas main, el schema gana una columna, y el',
+    '         cliente que tenías se queda viejo sin que nadie más haya tocado nada.',
+    '         Compruébalo:  git log -1 --format=%h -- prisma/schema.prisma',
+    '',
+    '     (B) OTRO WORKTREE, si tu `node_modules` acaba siendo el mismo que el suyo — por un',
+    '         enlace (junction o symlink), o porque no tengas ninguno propio y Node resuelva el',
+    '         del padre. Entonces el cliente es de todos y quien regenera último manda.',
+    '         Compruébalo:  npm run topologia',
+    '         (el `(Get-Item node_modules).LinkType` de antes solo ve el enlace: cuando no hay',
+    '          `node_modules` que inspeccionar sale vacío y eso NO significa que sea tuyo.)',
+    '',
+    '   Arreglo, en los dos casos:  npm run prisma:generate   (desde ESTE worktree)',
+    '',
+    '   ⚠️ Y si es (B), regenerar ARREGLA EL TUYO Y ROMPE EL DE LOS DEMÁS: avisa antes.',
+    '      SCRUM-351: esto ANTES se daba por hecho, y de darlo por hecho salió la restricción',
+    '      «no regeneres» que en los cuatro worktrees de hoy NO aplica. Míralo, no lo supongas —',
+    '      ni en un sentido ni en el otro. `npm run topologia` nombra con quién compartes, si',
+    '      compartes, y dice NO SUPE MIRAR cuando no ha podido leerlo.',
     '',
   ].join('\n');
 }

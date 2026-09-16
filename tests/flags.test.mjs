@@ -2,11 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isFlagEnabled, FLAG_DEFAULTS } from '../dist/core/flags.js';
 
-// La tabla P es cerrada: estos son exactamente los 12 flags del master.
+// La tabla P es cerrada: estos son exactamente los 13 flags del master.
 // SCRUM-71 añadió VOICE_ALBARAN_ENABLED con aprobación explícita del fundador (regla 5: la
 // lista es cerrada, así que crecer exige cambio de máster). Que este test se pusiera rojo al
 // añadirlo es el mecanismo funcionando: la tabla no puede crecer en silencio.
-test('tabla P: exactamente los 12 flags del master con sus defaults', () => {
+// SCRUM-244 (RGPD-1) añadió MERCHANT_DELETE_ENABLED con la misma aprobación explícita («② El flag:
+// MERCHANT_DELETE_ENABLED, por defecto OFF», fundador 10-ago-2026) y su fila en la Parte P. Y otra
+// vez el rojo llegó solo: el flag entró y esta lista lo cazó antes que ninguna persona.
+test('tabla P: exactamente los 13 flags del master con sus defaults', () => {
   assert.deepEqual(Object.keys(FLAG_DEFAULTS).sort(), [
     'BIZUM_AUTO_ENABLED',
     'BIZUM_MANUAL_ENABLED',
@@ -14,6 +17,7 @@ test('tabla P: exactamente los 12 flags del master con sus defaults', () => {
     'BOT_INBOUND_ENABLED',
     'INVOICING_ES_ENABLED',
     'MAINTENANCE_ENABLED',
+    'MERCHANT_DELETE_ENABLED',
     'PAYMENTS_CONNECT_ENABLED',
     'PUBLIC_PROFILE_ENABLED',
     'SIF_ENABLED',
@@ -25,6 +29,8 @@ test('tabla P: exactamente los 12 flags del master con sus defaults', () => {
   assert.equal(FLAG_DEFAULTS.WHATSAPP_TEMPLATES_ENABLED, true);
   assert.equal(FLAG_DEFAULTS.INVOICING_ES_ENABLED, false);
   assert.equal(FLAG_DEFAULTS.SIF_ENABLED, false);
+  // Éste borra datos y es irreversible: encendido por defecto sería el peor default del sistema.
+  assert.equal(FLAG_DEFAULTS.MERCHANT_DELETE_ENABLED, false);
 });
 
 test('default de la tabla cuando no hay env ni overrides', () => {

@@ -235,9 +235,9 @@ Un plan público (Parte W): **Pro 19,90 €/mes (199 €/año) + 0,9 % solo tarj
 
 ---
 
-# PARTE I — REGLAS (1-37; cerradas)
+# PARTE I — REGLAS (1-42; cerradas)
 
-**Técnicas heredadas:** 1) NUNCA n8n — WhatsApp solo vía `src/integrations/whatsapp.ts` (Meta Cloud API directa). 2) Multi-tenant: toda query filtra por `req.merchantId`. 3) Prisma sin TTY: `db push` (procedimiento canónico `scripts/db-push-prod` — host-check→preview→GO→push→documentar, SCRUM-40), nunca `migrate dev`; `prisma/migrations` archivada en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026; volver a migrate = SCRUM-40 opción A). Preview del diff antes de tocar prod. 4) Frontend vanilla, sin frameworks ni build. 5) Emails por Resend. 6) Crons in-process. 7) Rutas `/admin/*` con `pf_session`. 8) Demo merchant `demo@yaqu.app` id=1 (watermark, DEMO_SAFE_NUMBERS, fuera de métricas).
+**Técnicas heredadas:** 1) NUNCA n8n — WhatsApp solo vía `src/integrations/whatsapp.ts` (Meta Cloud API directa). 2) Multi-tenant: toda query filtra por `req.merchantId`. 3) Prisma sin TTY: **NUNCA `db push` contra PRODUCCIóN** (SCRUM-705). El procedimiento ÚNICO es ① decisión → ② ALTER ADITIVO en las TRES bases (dev→staging→prod) → ③ UN solo PR con esquema+código+tests; **nunca ③ sin ②**. El DDL sale de `prisma migrate diff` y de ningún otro sitio. `scripts/db-push-prod` queda para STAGING y para diagnosticar deriva. Nunca `migrate dev`; `prisma/migrations` archivada en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026; volver a migrate = SCRUM-40 opción A). Preview del diff antes de tocar prod. 4) Frontend vanilla, sin frameworks ni build. 5) Emails por Resend. 6) Crons in-process. 7) Rutas `/admin/*` con `pf_session`. 8) Demo merchant `demo@yaqu.app` id=1 (watermark, DEMO_SAFE_NUMBERS, fuera de métricas).
 **Técnicas v5+:** 9) Código nuevo lee `getCountryConfig()` — nada hardcodeado por país (capa mínima en F1). 10) Todo cobro con tarjeta pasa por Connect cuando el merchant lo tenga activo. 11) Artefactos nuevos a R2 desde F2 (no fs local). 12) Ningún claim fiscal en UI/marketing que el motor del país no cumpla (LATAM sin PAC: "nota/recibo").
 **Estratégicas:** 13) **El producto se construye COMPLETO antes de la captación.** *(Redacción del fundador, 27-jul-2026 — sustituye a "prohibido replanificar antes de 25 pagantes".)* **Motivo:** en el sector de oficios un producto a medias QUEMA al prospecto, y el boca a boca del gremio no da segunda oportunidad. El feedback de usuarios se incorpora **DESPUÉS** de tener el producto construido —para añadir o quitar sobre algo terminado, no para decidir qué construir—. **Consecuencia operativa:** todo gate de tipo *"cuando haya clientes / cuando duela / post-tracción / a los 25 pagantes"* **DEJA DE BLOQUEAR la construcción**; lo que quede de esos gates es orden de cola, no permiso. **NO cambian** los gates **fiscales** (regla 24, dictamen del asesor) ni los de **seguridad**: esos no son de tracción y siguen bloqueando igual. Las dudas siguen yendo a `docs/DECISIONES_PENDIENTES.md`. 14) Marketing mono-país hasta F3; arquitectura country-aware desde ya. 15) Una feature nueva exige matar o posponer otra (WIP limit). 16) Cada sprint cerrado actualiza este documento (mover a ✅; nunca borrar, tachar con motivo).
 **Legales/claims:** 17) Ningún claim regulatorio sin su sprint legal cerrado (VeriFactu ⇒ SIF-1 + declaración). 18) Tarjeta para clientes reales SOLO con Connect activo en ese merchant; mientras, transferencia/Bizum manual. 19) VALIDA-0 no se cierra sin 10 discovery registradas y criterios de alarma evaluados. 20) Toda cifra del master lleva fuente o [VALIDAR]; lo [VALIDAR] no entra en argumentarios. 21) Partida real anual de asesoría fiscal/legal.
@@ -252,7 +252,21 @@ Un plan público (Parte W): **Pro 19,90 €/mes (199 €/año) + 0,9 % solo tarj
 > · **DENTRO** — el TDZ de `quotesView` (SCRUM-183) lo arregló SCRUM-162 en su propio PR: mismo fichero, una línea, y sin él su propia funcionalidad no se pintaba.
 > · **FUERA** — el agujero de VeriFactu en la recapitulativa (SCRUM-173) NO se arregló dentro de SCRUM-20: el análisis de los tres peligros del encadenamiento (empate de `createdAt`, READ COMMITTED, cliente global dentro de la transacción) costó su propia tarea. Hacerlo «de paso» habría metido esa sesión en el núcleo de la cadena sin ese análisis.
 
+**Proceso (8-sep-2026):** 42) **UN TICKET NO SE CIERRA MIENTRAS SU RAMA SIGA SIN MERGEAR.** *Redacción del fundador, firmada el 8-sep-2026:* **«Un ticket no se cierra mientras su rama siga sin mergear. Quien entrega pega el enlace de comparación en su parte. Quien cierra comprueba que esa rama está en `main` — o escribe por qué no va a estarlo.»** **Motivo, medido (SCRUM-637):** el trabajo terminado no tenía forma de anunciarse, y el hueco se pagó dos veces. Por un lado el asesor dio durante dos días enlaces de PR construidos con el NÚMERO del ticket (`…/pull/new/scrum-614`) para ramas que se llaman `scrum-614-censo-rutas-sin-rol`, y GitHub contestaba «There isn't anything to compare»; por otro, **86 ramas fuera de `main` el 8-sep-2026, la más vieja de hace 59 días**, varias con trabajo terminado que nadie sabía que estaba ahí — y SCRUM-614 se «cerró» el 1-sep con su rama sin mergear, que sigue sin estarlo. **La tercera frase es la que hace la regla aplicable:** «o escribe por qué no va a estarlo» — una rama puede quedarse fuera con motivo (descartada, absorbida por otra, bloqueada por una decisión), y lo que no puede es quedarse fuera **en silencio**. **Cómo se cumple, sin adivinar:** el enlace se COPIA de la salida de `git push` o de `npm run ramas:sin-mergear`, nunca se construye a partir del número; `npm run ramas:sin-mergear` lista las que están fuera con su edad y su compare. **Consecuencia operativa:** `CLAUDE.md` AA1.3bis implementa esta regla y la CITA por su número (regla 35: allí no se vuelve a enunciar, para que no puedan divergir).
+
 **Proceso (29-jul-2026):** 38) **UN TEST READ-ONLY SOBRE EL CAMINO FISCAL NO ES STOP.** Añadir un test, un guard o una comprobación que solo LEE el camino de emisión (rutas, servicios, documentos, XML generado) no toca dinero ni cambia comportamiento: se hace sin pedir GO. Pero si para hacerlo posible hay que MODIFICAR el camino de emisión —extraer un helper, exportar algo que no estaba exportado, cambiar una firma, mover código de sitio— eso SÍ es STOP fiscal, aunque el objetivo final sea solo un test y aunque el cambio parezca mecánico. El motivo es el de la regla 29: refactorizar para poder observar es indistinguible, en el diff, de refactorizar y cambiar el sellado. Se para con el diff delante. Y antes de asumir el STOP, la pregunta es si se puede observar sin modificar: análisis estático del árbol (AST), no instrumentación ni grep — SCRUM-203 vigila las 7 creaciones de factura sin tocar ni una línea del camino de emisión.
+
+**Proceso (7-sep-2026) — LAS TRES QUE HEREDA UNA EJECUCIÓN QUE NADIE REVISA.** Nacen con
+`.github/workflows/claude.yml`: un `@claude` escrito en una issue o en una revisión de PR
+arranca una ejecución **cuyo prompt no ha revisado ni el fundador ni otra sesión**. Lo único
+que hereda son las normas del repositorio. Estas tres son el suelo, y valen igual para
+cualquier sesión.
+
+39) **Ningún texto que vea el usuario se escribe sin firma del fundador. Se propone el literal y se para.** Es la regla 30 ensanchada: aquélla cubre landing (N5) y bot (K1); ésta cubre **todo** texto que llegue a un usuario —panel, emails, PDFs, mensajes de error—. Sin firma, el texto sale marcado `[PENDIENTE microcopy oficial]`, que es la convención viva del árbol, no un despiste.
+
+40) **El camino de emisión fiscal se lee, no se modifica. `prisma/schema.prisma` no se toca sin ALTER previo.** Las dos mitades ya existían por separado —la primera es la regla 38, la segunda el procedimiento ÚNICO de la regla 3 (① decisión → ② ALTER aditivo en las tres bases → ③ el PR)—. Aquí van juntas y en una línea porque es la forma en que hay que recordarlas cuando no hay nadie revisando.
+
+41) **Un guard en rojo se arregla cambiando el CÓDIGO, nunca lo que el guard exige. Si el arreglo pasa por relajar el guard, se para y se dice.** Un guard que cede ante el primer rojo deja de medir y nadie se entera: el rojo desaparece de la pantalla y el defecto se queda en el árbol. Bajar un umbral, añadir una excepción o recortar el ámbito para que pase **es** relajar el guard. Si de verdad el guard está mal, eso es un hallazgo con su ticket (regla 37), no una edición de paso.
 
 ---
 
@@ -310,6 +324,46 @@ Máx 1 recordatorio/presupuesto y 2/factura (7/14d) · mantenimientos solo con a
 ## J8. Métricas de coste y entrega `F2-spec`
 Por merchant/mes: enviados/entregados/leídos/fallidos + coste €; por plantilla: tasa de entrega; alerta runbook si <90 % en 7 días.
 **✅ DONE 13-jun-26 (sobre WA-0b):** `getWhatsAppMetrics` (funnel derivado read⊃delivered⊃sent + coste sumando `costEstimate` + tasa por plantilla + alerta 7d <90% con muestra ≥10), endpoint `GET /admin/metrics/whatsapp`, tarjeta en Informes (se oculta si 0 envíos este mes). Tests `aggregateWaRows` 72/72. Datos reales en cuanto haya tráfico WhatsApp.
+
+## LAS TRES REGLAS DE LAS DEMOS SOBRE EL NÚMERO DE YAQU
+
+**Escritas el 19-ago-2026, ANTES de la primera demo de WhatsApp.**
+
+Las demos de YaQu Studio se enseñan sobre el número de WhatsApp de YaQu. Es la
+decisión práctica: es la única infraestructura compartida entre las dos líneas.
+
+**Pero ese número es el que YaQu usa con sus clientes reales.** Meta califica la
+calidad POR NÚMERO, en función de los bloqueos y denuncias de quien recibe los
+mensajes, y esa calificación gobierna el límite de conversaciones que se pueden
+iniciar al día. Y la regla del máster no deja lugar a dudas: violar la política
+antispam = ban del número = producto muerto.
+
+**1 · Sólo a quien la ha pedido.** En la misma conversación y con permiso explícito.
+Nunca en frío, nunca a una lista.
+
+**2 · Nunca en volumen.** Una demo es una visita, no una campaña.
+
+**3 · Mirar la calificación de calidad del número después de cada tanda.** Se ve en
+**WhatsApp Manager → Números de teléfono**, en la columna de calidad de cada número.
+Si baja del nivel más alto: **se paran las demos sobre ese número y se monta uno
+aparte.** Antes, no después.
+
+Y con ella se mira **el límite de mensajería** del número, en la misma pantalla: si
+baja de escalón, es la misma señal por otra vía.
+
+**Quién lo mira y cada cuánto:** **Luis**, al terminar cada tanda de demos y, como
+mínimo, una vez por semana mientras haya demos activas. _(Javier tendrá acceso al
+panel; cuando lo tenga, se revisa esta línea para nombrar suplente. Mientras tanto el
+responsable es uno, y es Luis.)_
+
+### Por qué esto no es paranoia
+
+El canal de captación decidido es la llamada en frío. Eso significa gente viendo YaQu
+por primera vez, sin contexto — exactamente el perfil que reporta un mensaje que no
+entiende. No hace falta mala fe.
+
+**El activo más frágil que tenemos es la reputación de ese número, y no se puede
+comprar de vuelta.**
 
 ---
 
@@ -417,7 +471,99 @@ Botones: "Firmar y aceptar" · "Acepto sin firmar" · "No me interesa" · "Pagar
 | `BOT_AI_ENABLED` | merchant | OFF | admin F2 tardía | IA del bot (K2) | gates K2 | kill-switch: vuelve a botones |
 | `PUBLIC_PROFILE_ENABLED` | merchant | OFF | merchant opt-in F2 | /p/:slug | PERFIL-1 | 404 digno |
 | `MAINTENANCE_ENABLED` | merchant | OFF | merchant opt-in F2 | planes + cron | MANT-1 | cron ignora |
+| `MERCHANT_DELETE_ENABLED` | global | OFF | admin, caso a caso | ruta de supresión del merchant (RGPD art. 17) | RGPD-1 | **404: la ruta no existe** |
 Gates que NO son flags: venta fuerte/claims ⇐ SIF-1 · tarjeta real ⇐ Connect del merchant · ~~F2 ⇐ 25 pagantes~~ **(retirado 27-jul-2026, regla 13 nueva: los 25 pagantes ordenan la cola, no dan permiso para construir). Los otros dos SIGUEN vigentes: SIF-1 es fiscal y Connect es de dinero real.**
+
+## EXCEPCIÓN TEMPORAL DE FACTURACIÓN · THE PIONEER
+
+**Escrita el 19-ago-2026. Caduca en enero de 2027, o antes.**
+
+Esta excepción existe porque el paso 1 de la rama C —terminar la facturación sin
+VeriFactu y ponerla en manos de un profesional real— necesita que un merchant real
+emita facturas antes de que exista el convenio de colaboración social con la AEAT.
+
+### La regla general NO cambia
+
+`INVOICING_ES_ENABLED` sigue estando **off para merchants reales**. Esta excepción no
+la deroga: la perfora para UN merchant nombrado.
+
+### Qué se autoriza, exactamente
+
+| | |
+|---|---|
+| **Para quién** | **Únicamente** el merchant de The Pioneer, **por identificador**. Nunca de forma global. |
+| **Cómo se enciende** | **Override por merchant**, con la llave auditada `scripts/cambiar-flag-fiscal.mjs` (SCRUM-218). |
+| **Qué NO se toca** | 🔴 **La variable de entorno global.** Ver «El hueco conocido», abajo. |
+| **Quién revisa las facturas** | **Él, con su gestoría.** Es la única validación externa que tenemos. |
+| **Alcance del control** | **Vale para él y sólo para él.** Antes de un segundo merchant real con facturación hace falta OTRO control, decidido y escrito. |
+
+### 🔴 La caducidad, y es dura
+
+**La excepción termina el 31 de enero de 2027, o antes si llega el Modelo A. Lo que
+ocurra primero.**
+
+Escrito así a propósito. Dos cosas que NO dependen de lo mismo y que no se pueden
+mezclar:
+
+| | ¿Necesita a la AEAT? | Cuándo |
+|---|---|---|
+| **Encender el flag** para que The Pioneer facture (Modelo C: cada merchant remite con su propio certificado) | **NO** | **Septiembre de 2026** |
+| **Pasar a Modelo A** (YaQu remite por sus clientes, Convenio 017) | **SÍ** | Cuando llegue el convenio |
+
+Es decir: **la excepción arranca en septiembre y termina cuando exista Modelo A** — no
+al contrario.
+
+**Y por eso la fecha no puede ser condicional.** Según SCRUM-143, la AEAT dice que el
+convenio «en condiciones normales podría ser de un mes» pero **no compromete plazo**, y
+además admite que «no está en disposición de afirmar» que el convenio sirva hasta que
+salga una orden ministerial.
+
+> Si la caducidad fuese «cuando nos autorice la AEAT», **podría no caducar nunca.** Por
+> eso es: **enero, o antes si llega Modelo A.**
+
+Llegado el 31 de enero de 2027 sin Modelo A, esta excepción **no se prorroga por
+costumbre**: o se renueva por escrito con su motivo y una fecha nueva, o se apaga.
+
+### Qué se le comunica a él, y cómo queda constancia
+
+Antes de encender el flag, un fundador se lo comunica **por teléfono**, y le transmite
+cuatro cosas: que es el primer usuario real, que su facturación está en pruebas, que
+debe revisar cada factura con su gestoría, y a quién avisar si algo no cuadra.
+
+**Después de esa llamada se anota, con fecha, que se hizo y qué se le dijo.** Una
+llamada no deja constancia por sí sola, y esta excepción se apoya en que él sabe en
+qué condiciones está facturando.
+
+**No se enciende el flag antes de que esa llamada esté hecha y anotada.**
+
+### 🔴 El hueco conocido, declarado con su puerta
+
+La llave auditada de SCRUM-218 gobierna **el override POR MERCHANT**. **No gobierna el
+interruptor global** (`INVOICING_ES_ENABLED` como variable de entorno).
+
+Medido el 17-ago-2026: en producción (`cobroflash-backend`) y en `yaqu-staging` esa
+variable está **sin definir**, luego vale `false` por defecto del código. Está en
+`false` **por ausencia, no por mecanismo**.
+
+Y la precedencia es `merchant → país → env → default`, así que **si esa variable se
+pusiera en `true`, todos los merchants españoles sin override propio quedarían con la
+facturación encendida sin una sola fila `cambio_flag`.**
+
+Por tanto, mientras dure esta excepción:
+
+- **La variable global no se toca. Ni para encender, ni «para probar».**
+- El único camino autorizado para encender la facturación de un merchant es la llave
+  auditada, que deja fila en el AuditLog con valor anterior, valor nuevo, actor y
+  momento.
+- **Puerta de este hueco:** convertir esa prohibición en un mecanismo. Hasta entonces
+  es una convención humana, y **una prohibición sin mecanismo es una costumbre que
+  falla una vez de cada seis.**
+
+### Qué hay que poder demostrar el día que alguien pregunte
+
+Fecha exacta en que se encendió · quién lo hizo · con qué llave · para qué merchant ·
+qué se le comunicó a él y cuándo · y por qué existía la excepción. Todo eso vive en el
+AuditLog y en este apartado; **ninguna parte vive en la memoria de nadie.**
 
 ---
 
@@ -810,7 +956,7 @@ Bases: ejecución de contrato (merchant); interés legítimo/relación precontra
 > **VALIDA-0** (U1.1): V0-0 ✅ (`INVOICING_ES_ENABLED` off + justificante `J-` + watermark DEMO) · V0-1 ✅ DONE (E2E móvil completo confirmado por el fundador; `EVIDENCIAS_E2E.md`) · V0-2 ✅ (`DEMO_SAFE_NUMBERS`) · V0-3 ✅ (funnel: `acquisitionSource`/`paid_via`/`quote_created_via` + vista BO) · V0-4 🟡 (página `/precios` + founding con contador real; precios Stripe en **TEST**, falta LIVE) · V0-5 ⏳ HUMANO (bug-bash dispositivos; checklist `docs/BUG_BASH_LANDING.md` lista 15-jun + percepción pre-arreglada en code-review: PC-B IVA, PC-A botón duda, PC-C/PC-D estados/microcopy, PC-E motion/AB6, PC-F N5 /pay/bank, PC-G política de señal V8, PC-H fecha/método en el recibo, PC-I 400 digno, PC-J foco AB6 en /recibo+/pay/invoice+/pay/bank, PC-K refactor estilos inline→tokens en /recibo) · V0-6 ⏳ HUMANO (calle: 10 discovery + vídeo + ≥3 founding).
 > **DOCS-F1** (U1.2): ✅ COMPLETO — skills (`/yaqu-sprint`, `/yaqu-release-check`, `yaqu-premium-ui`, `yaqu-verifactu-sif`), hook `guard-dangerous`, `frontend-design` instalada, J7 builders+test, `RUNBOOKS.md`, `QA_MASTER.md`, flags (`core/flags.ts`), J3 `waOptOut`, check manifest PWA (Y1).
 > **TOOLING-CODEX** (post-DOCS-F1, al 29-jun): espejo de la constitución y el tooling para el harness de Codex — `AGENTS.md` (equivalente a `CLAUDE.md`, derivado de este master, regla 35), `.codex/` (`config.toml` MCP Playwright + `hooks.json` + `hooks/guard-dangerous.sh` réplica del de `.claude/`), y skills espejo en `.agents/skills/` (`yaqu-*` + `impeccable`). ⚠️ **`impeccable` es skill de TERCEROS** (regla 36): presente en el repo; pendiente de que su permanencia quede ratificada por el fundador (ver nota en AA2).
-> **SIF-1** (U1.3): S1-0 🟡 HUMANO (cert FNMT ✅ conseguido 15-jun con copia `.pfx`; falta alta en el entorno de pruebas AEAT + cita asesor) · S1-0b ✅ (`SIF_SPEC_NOTES.md`: VERI*FACTU NO exige XAdES → 100% Node) · S1-A ✅ (`AUDITORIA_RRSIF.md`: huella regenerada a formato oficial, vector de prueba AEAT en verde) · S1-B ✅ (modalidad documentada) · S1-C ✅ (registros alta/R1/anulación validados contra XSD oficial) · S1-D ⏸ PAUSA (espera decisión de representación del asesor) · S1-E 🟡 (`docs/legal/DECLARACION_RESPONSABLE.md` borrador) · S1-F ⏳ (revisión asesor) · S1-G ⏳ (cert + producción AEAT) · S1-H 🟡 (`docs/legal/PACK_GESTORIA.md` borrador).
+> **SIF-1** (U1.3): S1-0 🟡 HUMANO (cert FNMT ✅ conseguido 15-jun con copia `.pfx`; falta alta en el entorno de pruebas AEAT + cita asesor) · S1-0b ✅ (`SIF_SPEC_NOTES.md`: VERI*FACTU NO exige XAdES → 100% Node) · S1-A ✅ (`AUDITORIA_RRSIF.md`: huella regenerada a formato oficial, vector de prueba AEAT en verde) · S1-B ✅ (modalidad documentada) · S1-C ✅ (registros alta/R1/anulación validados contra XSD oficial) · S1-D ✅ DECIDIDO 2026-09-16 (fundador): la representación ante la AEAT se hará como COLABORADOR SOCIAL. La vía MERCHANT no se implementa. Ningún certificado de colaborador social viaja a ninguna sesión, ni de prueba. · S1-E 🟡 (`docs/legal/DECLARACION_RESPONSABLE.md` borrador) · S1-F ⏳ (revisión asesor) · S1-G ⏳ (cert + producción AEAT) · S1-H 🟡 (`docs/legal/PACK_GESTORIA.md` borrador).
 > **Canal WhatsApp** (Parte J, en huecos de SIF-1): J3 ✅ · WA-0b (J4) ✅ (log + estados webhook + chip de entrega + tabla en prod) · J8 ✅ (métricas coste/entrega) · plantillas `payment_confirmation_invoice_es` y `merchant_alert_es` ✅ **Approved (15-jun) y CONECTADAS** (`e922495`, `b5fa810`): la 1ª sustituye a `payment_confirmation_es` en los webhooks de pago (botón "Ver documento" → `/recibo/:token`, token opaco desde SCRUM-74); la 2ª es el fallback al PRO con ventana 24h cerrada vía `notifyMerchantAlert` en pago (psp+mp, 15-jun) y en decisión de presupuesto (`quotes.routes.ts`, 16-jun). ⚠️ quedaron en categoría **Marketing** → recategorizar a Utility (P3-3).
 > **CONNECT-1** (U1.4, avanzada "en huecos" durante DEMO-READY/EXT, jun-jul): C1-0 ✅ (flags+columnas `stripeAccountId`/`connectStatus`/`bizumPhone` en prod) · C1-1 ✅ (onboarding Express `connect.routes.ts` + webhook separado `connectWebhook.routes.ts` + card en Configuración) · C1-2 ✅ código (DIRECT charge con `application_fee_amount` en `payCard.routes.ts`; falta pago test real + refund documentado → RUNBOOK_PAGOS, acción fundador con Stripe) · C1-3 ✅ (copy 0,9 % en precios/Configuración + export owner `GET /admin/exports/fees.csv`, 5-jul) · C1-4 ✅ (Bizum manual asistido E2E visto por el fundador 4-jul) · C1-5 ✅ (selector W4 verificado en el barrido A6.6 a 390 real). **Activación = fundador:** webhook Connect en Stripe + `STRIPE_CONNECT_WEBHOOK_SECRET` + flags (PENDIENTES_FUNDADOR).
 > **VOZ-1 · PRECIOS-1 · GTM-1**: ⏳ no iniciadas (van tras SIF-1).
@@ -1469,8 +1615,8 @@ F3: LATAM-1 (i18n MX/CO end-to-end, MP/SPEI/PSE, sin claim de factura, plantilla
 > **✅ SCRUM-263 · SIN-LINEAS-409: el rechazo por facturar sin líneas deja de ser una conducta correcta por casualidad (3-ago-2026, QA — sin gate, corre en `npm test`).**
 > **EL HUECO EXACTO, y por qué la cobertura que ya había no lo tapaba:** SCRUM-246 dejó un guard AST que garantiza que **ningún camino de emisión escapa al portón** (`exigirLineasFacturables`) y el predicado unitario. Las dos son correctas y ninguna comprueba lo que importa: **el AST demuestra que se LLAMA al portón, no que el `catch` de cada ruta TRADUZCA `FacturaSinLineasError` a un 409 con su copy** en vez de dejarlo caer al `internal_error` general que hay debajo. Esa traducción es **una línea dentro de un `catch`**, y borrarla no rompía el AST, ni el predicado, ni ningún test: el profesional pasaría de leer «añade lo que vas a cobrar» a un 500 mudo **y la suite seguiría verde**. Medido antes de escribir nada: la suite entera tenía **cero menciones de 409** y ningún test de extremo a extremo sobre este camino. **SON CUATRO RUTAS, NO TRES** — el enunciado hablaba de tres ficheros, pero `quotesAdmin` emite por **dos** rutas distintas (separadas a propósito, no es un flag de la otra): `jobs → POST /:id/collect-rest` · `quotes → POST /:token/decision` (**cliente final**) · `quotesAdmin → POST /:id/invoice` · `quotesAdmin → POST /:id/invoice-manual`. **LAS CUATRO YA TRADUCÍAN BIEN, así que esto no arregla nada: FIJA UN CONTRATO.** Por eso el rojo no puede ser «el código está mal» — **es romper cada `catch` por separado y comprobar que el test lo caza**, que es lo que convierte una conducta correcta hoy en una que no se puede perder en un refactor. **CÓMO SE EJERCITA, y por qué NO es gateado:** el patrón de la casa para rutas es gateado contra staging con `fetch` a un servidor real, pero aquí lo que se vigila es la traducción del error **dentro del handler**, no la integración con la BD. Se importa el router REAL del `dist`, se localiza su capa por método y ruta, y se invoca **el handler real** con un `res` de doble y un `prisma` sustituido. Sin BD, sin red, sin turno de staging y **sin dependencia nueva** (regla 36: no hay supertest en el repo y no se añade). El detalle que lo hace posible: `prisma` se sustituye **MUTANDO las propiedades del objeto exportado**, no reasignando el módulo — las rutas hicieron `const { prisma } = require(...)` al cargarse y esa desestructuración apunta al MISMO objeto, así que mutarlo llega a código ya importado; reasignar el binding no llegaría. **REGLA 30 RESPETADA POR CONSTRUCCIÓN:** los dos copys siguen marcados `[PENDIENTE microcopy oficial]` y los aprueba el fundador (SCRUM-264). El test compara **contra las constantes importadas, jamás contra un literal**, así que el día que se apruebe el texto definitivo este fichero sigue verde sin tocarlo. Si comparase con un literal, aprobar el copy rompería la suite y el test presionaría contra el cambio. **Y DE PROPINA ATA UN DATO QUE VIVE EN DOS SITIOS:** `quotes.routes.ts:719` escribe `'factura_sin_lineas'` a mano en vez de usar `ERROR_SIN_LINEAS` (importa el copy pero no la constante del código). **No se corrige aquí** —no es el alcance—, pero al comparar contra la constante, el día que diverjan sale rojo: una coincidencia pasa a ser un invariante. **SUELO:** un control con una línea de 100 € que exige que NO salga el rechazo por falta de líneas. Sin él, los cuatro asserts pasarían igual si la ruta devolviera 409 siempre por cualquier otro motivo — el suelo demuestra que el 409 lo produce el portón y no el decorado. **VERIFICADO EN ROJO CUATRO VECES, una por ruta, con `tsc` limpio en las cuatro (un rojo de compilación no prueba nada):** retirada la línea de traducción de `quotesAdmin:263`, `quotesAdmin:442`, `jobs:660` y `quotes:719`, **cada una tumba EXACTAMENTE su ruta y ninguna otra** — que es lo que demuestra que los cuatro tests son independientes y no se cubren entre ellos. Las cuatro inyecciones revertidas, `src/` limpio. **TRES FIXTURES SE MIDIERON EN VEZ DE SUPONERSE, y los tres fallaron primero:** `invoice-manual` exige `paymentTerms: 'MANUAL'` (con plan de tramos responde `has_billing_plan` antes de llegar al portón); `/:token/decision` exige `status: 'sent'` (con `accepted` corta por idempotencia con un 200) y un token **hexadecimal**, porque `parseToken` descarta todo lo demás y con la cadena vacía la ruta responde 404 sin llegar nunca al portón. Ninguno de los tres se adivinó: se capturó el error real. Ficheros: `tests/scrum263-sin-lineas-409.test.mjs` (5, sin gate).
 
-> **⏳ REGLA FECHADA · «los DATOS de producción son de prueba; lo que importa es que los registros NUEVOS nazcan bien» (decisión del fundador, 2-ago-2026 — CADUCA con el primer cliente real).**
-> **QUÉ DICE:** todas las cuentas que hay hoy en producción son de PRUEBA. Por tanto un defecto de **DATOS** en producción **no es importante** —rellenar filas falsas no vale nada— y lo que sí importa es que **los registros NUEVOS nazcan correctos**. **CÓMO SE PRIORIZA CON ESTO, que es para lo que existe:** ante un hallazgo en producción, la primera pregunta deja de ser «¿cuántas filas están mal?» y pasa a ser **«¿el código de HOY sigue produciendo filas mal?»**. Si la respuesta es no, es historia y no urge; si es sí, urge aunque hoy no se note. **⚠️ CADUCIDAD, y por eso va FECHADA y no como regla permanente:** el día que entre el primer cliente real, los datos de producción dejan de ser desechables y esta regla se retira. Una regla que autoriza a ignorar datos malos es justamente la que no puede sobrevivir a su motivo por descuido — sin fecha, el día del primer cliente nadie recordaría que dependía de que no lo hubiera. **PRIMERA APLICACIÓN, el mismo día:** el backfill de `quotes.job_id` (SCRUM-195 paso 2, 42 pares en producción) **cae del alcance de SCRUM-225** por esta regla. **Y la comprobación que la regla OBLIGA a hacer antes de dejarlo caer se hizo, que es su mitad valiosa:** una columna a NULL admite dos lecturas —«el backfill nunca se hizo» (da igual) o «el código no la rellena nunca» (defecto vivo que llegaría al primer cliente)—, y **se leyó el camino de creación en vez de inferirlo del NULL**. Resultado: **nadie escribe `Quote.jobId` y nadie la lee** — los dos sitios que crean un `Quote` (`quotes.routes.ts:125`, `maintenance.service.ts:152`) no la mencionan y ningún `update` la toca; sus dos únicas apariciones en `src/` son comentarios **en futuro** de `job.service.ts` («cuando llegue el 1:N…»), y hoy el vínculo va por `Job.quoteId`, la dirección contraria. La columna **no tiene consumidor**: lo que falta no es el backfill, es la funcionalidad 1:N para la que se creó. No hay defecto vivo, y el backfill cae con motivo medido en vez de por decreto. **LO QUE ESTA REGLA NO AUTORIZA:** no cubre el **schema ni la estructura** —una columna o un índice ausente afecta igual a las filas futuras, así que sigue siendo trabajo real: el índice de `audit_log` (SCRUM-207) se queda pendiente por eso— ni relaja ninguna regla fiscal, de dinero o de canal, que no dependen de si el cliente es de prueba.
+> **⏳ REGLA FECHADA · «los DATOS de producción son de prueba; lo que importa es que los registros NUEVOS nazcan bien» (decisión del fundador, 2-ago-2026 — CADUCA cuando se abra la puerta de SCRUM-390: **cualquier merchant con `stripeSubscriptionId != null`, o mas merchants que `CUENTAS_DE_PRUEBA_DECLARADAS`** (`src/modules/system/domain/puertaClienteReal.ts`, comprobable con `npm run puerta:cliente-real`)).**
+> **QUÉ DICE:** todas las cuentas que hay hoy en producción son de PRUEBA. Por tanto un defecto de **DATOS** en producción **no es importante** —rellenar filas falsas no vale nada— y lo que sí importa es que **los registros NUEVOS nazcan correctos**. **CÓMO SE PRIORIZA CON ESTO, que es para lo que existe:** ante un hallazgo en producción, la primera pregunta deja de ser «¿cuántas filas están mal?» y pasa a ser **«¿el código de HOY sigue produciendo filas mal?»**. Si la respuesta es no, es historia y no urge; si es sí, urge aunque hoy no se note. **⚠️ CADUCIDAD, Y AHORA ES EVALUABLE (SCRUM-390):** esta regla se retira cuando se abra la puerta de SCRUM-390: **cualquier merchant con `stripeSubscriptionId != null`, o mas merchants que `CUENTAS_DE_PRUEBA_DECLARADAS`** (`src/modules/system/domain/puertaClienteReal.ts`, comprobable con `npm run puerta:cliente-real`). Antes decía «el día que entre el primer cliente real», que es prosa: nadie la evaluaba y ese día no disparaba nada. Ahora hay DOS señales porque una sola no bastaba —un cliente real en trial que aun no ha pagado no dispara la primera— y no se añadió un campo `esCliente` a proposito: **un campo que alguien tiene que acordarse de marcar tiene el mismo modo de fallo que la promesa escrita que sustituye**. Una regla que autoriza a ignorar datos malos es justamente la que no puede sobrevivir a su motivo por descuido — sin fecha, el día del primer cliente nadie recordaría que dependía de que no lo hubiera. **PRIMERA APLICACIÓN, el mismo día:** el backfill de `quotes.job_id` (SCRUM-195 paso 2, 42 pares en producción) **cae del alcance de SCRUM-225** por esta regla. **Y la comprobación que la regla OBLIGA a hacer antes de dejarlo caer se hizo, que es su mitad valiosa:** una columna a NULL admite dos lecturas —«el backfill nunca se hizo» (da igual) o «el código no la rellena nunca» (defecto vivo que llegaría al primer cliente)—, y **se leyó el camino de creación en vez de inferirlo del NULL**. Resultado: **nadie escribe `Quote.jobId` y nadie la lee** — los dos sitios que crean un `Quote` (`quotes.routes.ts:125`, `maintenance.service.ts:152`) no la mencionan y ningún `update` la toca; sus dos únicas apariciones en `src/` son comentarios **en futuro** de `job.service.ts` («cuando llegue el 1:N…»), y hoy el vínculo va por `Job.quoteId`, la dirección contraria. La columna **no tiene consumidor**: lo que falta no es el backfill, es la funcionalidad 1:N para la que se creó. No hay defecto vivo, y el backfill cae con motivo medido en vez de por decreto. **LO QUE ESTA REGLA NO AUTORIZA:** no cubre el **schema ni la estructura** —una columna o un índice ausente afecta igual a las filas futuras, así que sigue siendo trabajo real: el índice de `audit_log` (SCRUM-207) se queda pendiente por eso— ni relaja ninguna regla fiscal, de dinero o de canal, que no dependen de si el cliente es de prueba.
 
 **V2. Trigger del segundo tramo:** **✅ VERIFICADO (SCRUM-10/13, 9-jul-2026): el resto NUNCA se cobra solo** (confirmado en código: `/admin/jobs/:id/collect-rest` vía `getNextBillingStage`, siempre acción del pro). Regla: el resto NUNCA se cobra solo; trigger = acción del pro ("Trabajo terminado → Cobrar resto"; con JOB-1: estado `terminado`) → cobro/factura del resto + payment_request.
 **V3. Anticipos [VALIDAR asesor en S1-F]:** señal con factura = **factura de anticipo con IVA**; la final descuenta el anticipo. Pre-SIF: señal con recibo no fiscal (coherente con flag). Post-SIF: implementar el dictamen (regla 32).

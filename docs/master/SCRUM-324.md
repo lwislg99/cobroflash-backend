@@ -1,0 +1,457 @@
+# SCRUM-324 · E3: el hueco del modelo del gasto, MEDIDO (informe, cero construcción)
+
+**Fecha:** 7-ago-2026 · **Carril:** E (medición) · **Gate:** sin gate — esta tarea **solo lee**
+
+**Medido contra:** `origin/main` = `572c9414f620f70ef4e980ca4948fccbaf9c47ea` · 2026-08-07T19:07:56Z
+
+> El ancla es la de la **declaración de `amount`** (apartado 1b). El censo original se midió contra
+> `origin/main` = `cb2399788aebe786608491734390b45e8b067d1e` · 2026-08-07T18:51:38Z y **se ha
+> re-verificado contra este main**: `Expense` y `Provider` siguen **idénticos, campo por campo**
+> — ningún campo que se diera por inexistente ha aparecido. El censo sigue siendo cierto.
+
+> **No se ha construido nada.** Ni una línea de dominio, ni un test de comportamiento, ni un campo.
+> `prisma/schema.prisma` **solo se ha leído**. Regla 38: leer no es tocar.
+
+---
+
+## 🔴 LA DISCREPANCIA, que es el motivo de parar antes de construir
+
+**E3 (este ticket) especifica TRES campos. El libro de facturas recibidas necesita más.**
+
+Construir los tres de E3 **NO desbloquearía** el libro de recibidas de SCRUM-325 (E4). Se dice
+aquí porque en la entrega de E4 quedó escrito que «con ellos el libro deja de estar bloqueado», y
+**con los tres de E3 no es así**: faltarían tipo de IVA, cuota, deducible, y el número de la
+factura del proveedor.
+
+Y el segundo motivo para parar: esos campos viven en `prisma/schema.prisma`, que es **dominio
+exclusivo del fundador**. Construir el dominio sin los campos repetiría lo de A2/A3 — módulos con
+tests, sin llamadores, esperando un schema que nadie ha tocado.
+
+---
+
+## 1 · Qué tiene HOY `Expense`
+
+**Ya estaba medido en SCRUM-321 (E0, Q2) y no se re-deriva** — se cita y se contrasta contra el
+schema de hoy, que sigue igual: **14 escalares + 3 relaciones**.
+
+`id` · `merchantId` · `quoteId?` · `providerId?` · `concept` · `amount` (`Decimal(12,2)`) ·
+`currency` (`"EUR"`) · `category` (`"otros"`) · `date` (`now()`) · `notes?` · `receiptData?` ·
+`teamMemberId?` · `createdAt` · `updatedAt`.
+
+⚠️ **`category` NO es contable.** Son cinco categorías de oficio —`materiales`, `desplazamiento`,
+`herramientas`, `subcontrata`, `otros`— y **no se puede inferir de ellas un tipo de IVA**: nada dice
+que «materiales» sea 21 %.
+
+⚠️ **`amount` no declaraba qué es.** No había ningún campo, comentario ni validación que dijera si
+el profesional teclea la base o el total con IVA. Ya está decidido — ver el apartado siguiente.
+
+## 1b · ✅ DECLARADO: `Expense.amount` es el IMPORTE TOTAL, con IVA incluido
+
+**Decisión del asesor, 7-ago-2026.** Y no es una preferencia: **es lo que el producto ya asumía**.
+
+### La prueba, en tres líneas del árbol
+
+```
+reports.routes.ts:71   monthlyRevenue[m] += Number(inv.total);
+reports.routes.ts:85   profit = Math.round((monthlyRevenue[i] - monthlyExpenses[i]) * 100) / 100;
+recargoEquivalencia.ts:31   «Invoice.total = grossOfLines() = base + cuota»
+```
+
+El «Beneficio neto» de Informes **resta gastos a una facturación que lleva IVA**. Esa resta solo
+cuadra si el gasto también lo lleva. O sea: la declaración no cambia ni una cifra — **pone por
+escrito lo único bajo lo cual el cálculo de hoy tiene sentido**.
+
+### 🔴 LA RESPUESTA CORRECTA POR EL MOTIVO EQUIVOCADO SIGUE SIN ESTAR VERIFICADA
+
+El motivo que se iba a dar por bueno era otro: *«es lo que el profesional lee del ticket del
+proveedor»*. Es cierto y es buena razón de producto, pero **no ata nada**: si mañana alguien decide
+que el formulario pida la base, ese argumento no se opone — solo cambia lo que se teclea. El que
+ata es el de arriba, porque nombra **un cálculo vivo que se rompería en silencio**.
+
+> **Acertar por el motivo equivocado deja la decisión sin verificar: el día que el motivo cambie,
+> nadie sabrá que la conclusión dependía de otra cosa.**
+
+Por eso la declaración va con la prueba pegada y no sola.
+
+### Qué CIERRA esta declaración
+
+**No hay defecto vivo entre lectores**, y por tanto **esto NO bloquea E3.** Censo por MODELO
+(accesos a `Expense`, no apariciones de la palabra «amount»): **4 escrituras y 12 lecturas**.
+
+* **Ningún lector interpreta `amount`**: nadie le aplica un tipo de IVA ni lo divide por `(1+tipo)`.
+  Búsqueda explícita de `1.21`, `/(1+`, `*0.21`, `iva`, `vat`, `tax`, `base` sobre gastos, métricas,
+  informes y exports: **cero resultados**. Todos lo SUMAN.
+* **Los tres sitios donde lo ve alguien dicen «Importe» a secas** —formulario
+  (`expensesView.js:282`), tabla (`:210`) y CSV que va al asesor (`exportData.ts:330`)—, ninguno
+  «Importe total» ni «Base imponible». No había declaración de facto en pantalla.
+* **El gasto no entra en NADA fiscal:** cero menciones de `Expense` en el modelo 303 (A5), en el
+  libro de registro (A6), en el paquete de evidencias (A7) y en VeriFactu. Eso acota el daño de
+  cualquier error aquí: llega al «Beneficio neto» que el profesional mira, no a un documento
+  oficial.
+* **El importador (D1 / SCRUM-312) NO escribe gastos**: los importadores son de clientes
+  (`importarClientes.service.ts`) y de productos.
+
+### Qué ABRE — y es **SCRUM-403**, que no se arregla aquí
+
+El «Beneficio neto» resta **cifras con IVA en los dos lados**, y el IVA no es ni ingreso propio ni
+gasto propio: es dinero de la Hacienda que pasa por la cuenta. La resta cuadra internamente y el
+número está inflado por arriba y por abajo. **Va en SCRUM-403** (regla 9: se reporta, no se
+arregla). La declaración de este apartado no lo causa —ya estaba— pero lo deja a la vista.
+
+### ⚠️ Técnica para la próxima sesión: un censo de propiedades pierde los spreads
+
+El primer barrido dio **3 escrituras** y marcó `updateExpense` como «no escribe amount». **Sí lo
+escribe**: pasa el objeto entero (`prisma.expense.update({ where, data })`,
+`expenses.service.ts:177`), y un censo que busca `amount:` como propiedad literal **no ve un
+spread**. Son 4, no 3.
+
+> **Si censas un campo por AST, cuenta también los objetos que se pasan enteros: una propiedad
+> literal se ve, una variable propagada no.**
+
+Misma familia que `already_paid` (SCRUM-325): allí el peligro era contar de más —una palabra que no
+era un estado—, aquí contar de menos. **En los dos casos la regla es la misma: mira lo que llega al
+modelo, no lo que se parece al nombre del campo.**
+
+## 2 · Qué tiene HOY `Provider` — confirmado campo por campo
+
+`id` · `merchantId` · `name` · `phone?` · `email?` · `notes?` · `isActive` · `createdAt` ·
+`updatedAt`.
+
+**CERO campos fiscales.** Ni `taxId`, ni `legalName`, ni domicilio. Confirmado.
+
+> **Y la asimetría que lo enmarca:** `Customer` **sí** tiene `legalName` y `taxId` (entraron en el
+> lote EXT3). El mismo concepto —la contraparte de una operación— tiene identidad fiscal en el lado
+> de la VENTA y ninguna en el lado de la COMPRA. No es que falte un campo: es que el proveedor
+> nunca se modeló como sujeto fiscal.
+
+## 3 · La lista UNIFICADA — una sola tabla
+
+| # | Campo | ¿Lo pide **E3**? | ¿Lo pide el **libro de recibidas**? | ¿Existe hoy? | ¿Exige `schema.prisma`? |
+| --- | --- | :---: | :---: | --- | --- |
+| 1 | **Fecha** | ✅ | ✅ | ✅ `Expense.date` | **NO** — ya está |
+| 2 | **Importe total** | ✅ | ✅ | ⚠️ `Expense.amount`, pero **sin declarar** si es base o total | **NO** para el número · **SÍ** si se quiere declarar qué significa |
+| 3 | **NIF del proveedor** | ✅ | ✅ | ❌ `Provider` no tiene ni un campo fiscal | **SÍ** |
+| 4 | **Base imponible** | ❌ | ✅ | ❌ | **SÍ** *(o derivable — ver §4)* |
+| 5 | **Tipo de IVA** | ❌ | ✅ | ❌ · **no inferible** de `category` | **SÍ** |
+| 6 | **Cuota de IVA** | ❌ | ✅ | ❌ | **NO — DERIVABLE** de 4 × 5 |
+| 7 | **¿Deducible?** | ❌ | ✅ | ❌ | **SÍ** |
+| 8 | **Razón social del proveedor** | ❌ | ✅ | ⚠️ `Provider.name` existe, pero es el nombre **comercial**; `Customer` distingue `name` de `legalName` y `Provider` no | **SÍ** (o decidir que `name` vale) |
+| 9 | **Nº y serie de la factura del proveedor** | ❌ | ✅ | ❌ | **SÍ** |
+
+**Resumen:** de los 9, **E3 pide 3** (dos ya existen) y **el libro necesita los 9**. Los cinco que
+la entrega de E4 llamó «los que faltan» son 3, 4, 5, 6 y 7 — el núcleo; **8 y 9 también faltan** y
+no estaban en esa cuenta.
+
+*(Fuera de tabla y anotado: **retención de IRPF** y **cuándo y cómo se pagó el gasto** —`Expense` no
+tiene `paidAt` ni método—. No los pide ninguno de los dos tickets; se dejan visibles porque un
+asiento de compra completo los acaba pidiendo.)*
+
+## 4 · Qué exige schema y qué se puede derivar
+
+**Exigen `prisma/schema.prisma` (y por tanto al fundador):** 3, 4, 5, 7, 8 y 9.
+
+**NO lo exige — y es el hallazgo más barato de este censo: la CUOTA (6).**
+
+`cuota = base × tipo`. No es un campo que capturar: es una derivación. Y **ya existe la forma en
+casa**: `calcVatBreakdown` (`vat.service.ts:17`) hace exactamente eso en el lado de la venta —
+recorre las líneas, agrupa por tipo y calcula `base` y `cuota` sin que nadie teclee la segunda.
+
+> **Capturar base y cuota por separado crea un problema que capturar base y tipo no tiene.**
+
+Consecuencia para quien decida el alcance: **con dos campos nuevos (tipo de IVA y la declaración de
+qué es `amount`) se obtienen tres de los datos del libro (4, 5 y 6)**, en vez de tres campos para
+tres datos.
+
+**Y el 2 no necesita columna, necesita una DECISIÓN:** si se declara que `amount` es el **total con
+IVA**, la base se deriva (`total ÷ (1 + tipo)`). Si se declara que es la **base**, el total se
+deriva. Lo que no puede seguir es sin declarar — hoy los dos lectores posibles darían cifras
+distintas del mismo gasto.
+
+## 5 · Dos números tecleados que deben cuadrar: la forma YA está resuelta en casa
+
+La pregunta no está en ninguno de los dos tickets y tiene **dos respuestas**, en este orden:
+
+### ① La barata: que el problema no exista
+
+En VENTAS **nadie teclea la cuota**: sale de base × tipo (`calcVatBreakdown`). No hay dos números
+que cuadrar porque solo se captura uno. Es el principio de la casa —*imposible mejor que
+vigilado*— y es la opción que hay que descartar primero antes de construir cualquier aviso.
+
+### ② Si aun así se teclean los dos, la forma a copiar es `payment-anomaly`
+
+Ocurre de verdad: la factura de un proveedor puede traer una cuota que **no es exactamente**
+base × tipo por redondeos de su propio programa. Para eso el producto ya tiene una forma decidida
+—**`POST /admin/invoices/:id/payment-anomaly`** (A21.2, runbooks V4/V5,
+`invoicesAdmin.routes.ts:215`)— y sus cinco rasgos son justo lo que hace falta aquí:
+
+1. **No decide nada automáticamente.** Su propio comentario: *«F1 = NADA automático: si llegó un
+   importe DISTINTO, la factura sigue pending y aquí solo se ANOTA»*.
+2. **No ajusta ninguno de los dos números.** Ni toca el total ni corrige lo recibido.
+3. **Nombra la DIRECCIÓN del descuadre** — `parcial` vs `sobrepago`, dos nombres distintos, no un
+   «no cuadra» genérico. Aquí serían «cuota mayor de la esperada» y «cuota menor».
+4. **Deja rastro consultable** (`recordCustomerEvent`, tipo `payment_anomaly`, en la ficha 360), no
+   un `console.log` que se pierde.
+5. **Dice la siguiente acción concreta** y remite al runbook.
+
+⚠️ **Y una advertencia que sale de medir, no de opinar: hoy no existe ninguna noción de TOLERANCIA
+en el árbol.** `vat.service.ts` solo tiene `round2`. Una comparación estricta entre `base × tipo` y
+la cuota tecleada marcaría como descuadre una diferencia legítima de **un céntimo**, que es la
+fábrica de falsos rojos de siempre. Si se construye el aviso, la tolerancia es una decisión
+explícita, no un detalle de implementación.
+
+---
+
+## Lo que este informe NO cubre, dicho para que no se le suponga
+
+* **OCR e IA quedan FUERA y ni se miden como opción.** Dependencia nueva y coste recurrente: regla
+  36, decide el fundador.
+* **Cero microcopy fiscal.** No se propone el texto del aviso del régimen simplificado ni ningún
+  otro: un texto fiscal mal escrito le dice a un profesional qué puede deducirse, y eso lo aprueba
+  el asesor antes de escribirse.
+* **No se decide el alcance.** Esta medición dice qué falta, qué cuesta schema y qué se deriva. Qué
+  entra en E3 y qué se le pide al fundador lo decide el asesor.
+* **No se ha mirado ninguna base de datos.** Todo sale del schema y del código.
+
+
+---
+
+# SCRUM-324 (E3) · segunda entrega: EL DOMINIO DEL JUSTIFICANTE
+
+**Medido contra:** `origin/main` = `8159ee4a200c1623493402ecca0bff57b0ca814c` · 2026-08-10T15:23:34+02:00
+**Rama:** `scrum-324-gasto-usable`
+
+**10-ago-2026, 15:23 CEST (UTC+0200)** · commit `06928ffdde167a6e857b1dc377cb16ac1e7495f3`
+
+La primera entrega (7-ago) midio el hueco y paro. Ya no esta bloqueada: **las seis columnas de
+`Expense` y `providers.tax_id` estan en produccion**, con su semantica decidida en el propio schema.
+
+## Lo que cambia respecto al censo del 7-ago
+
+El censo decia «`Provider` no tiene ni un campo fiscal» y «faltan tipo, cuota, deducible y el numero
+de la factura del proveedor». **Ya estan**: `baseAmount`, `vatRate`, `vatAmount`, `vatDeducible`,
+`providerInvoiceNumber`, `providerInvoiceDate` y `Provider.taxId`. Verificado contra `origin/main`,
+no supuesto — el schema de mi arbol iba detras y lo primero fue comprobarlo.
+
+## La correccion legal, que ordena el diseno entero
+
+**Un ticket o factura SIMPLIFICADA no permite deducir el IVA soportado.** La excepcion es la
+**simplificada CUALIFICADA**: NIF del **DESTINATARIO** —el del profesional, no el del proveedor— y
+**cuota desglosada**. La v1 listaba el NIF del proveedor, que es otro campo.
+
+## La decision de diseno: el veredicto tiene TRES valores
+
+**Si el papel lleva o no el NIF del profesional no esta en ningun campo.** Es un hecho del
+documento, no del modelo.
+
+- Darlo por **SI** repite el error legal de la v1.
+- Darlo por **NO** convierte el aviso en ruido, y un aviso que salta siempre se aprende a ignorar
+  igual que uno que no salta nunca.
+
+Por eso existe `falta_confirmar`, y lo confirma una persona. Es el mismo principio que regiria el
+OCR si algun dia entra: **lo que no se puede comprobar se propone; nunca se da por bueno.** Encaja
+ademas con la semantica que el schema ya declaro para `vatDeducible`: `null` = nunca clasificado,
+`false` = se decidio que no.
+
+## Cero microcopy, y no es prudencia
+
+El modulo devuelve **codigos**, no frases. Las dos preguntas estan en
+`docs/legal/PREGUNTAS_ASESOR.md` con tres versiones propuestas — incluida una que **evita la palabra
+«deducir»**, porque un ticket **si** puede ser gasto deducible en IRPF en estimacion directa y decir
+«no te lo puedes deducir» a secas seria **falso por exceso**. Mientras no haya respuesta aprobada,
+el producto **no dice nada**: mejor un hueco que un relleno que tranquiliza.
+
+## Las verificaciones que exigia el ticket
+
+| exigida | como |
+|---|---|
+| una factura completa **no** dispara el aviso | control negativo explicito — si avisara siempre seria ruido |
+| sin NIF de proveedor no entra en silencio | veredicto `no_deducible` y el fallo **lo nombra** |
+| el mismo ticket dos veces **pasa siempre** | clasificar no es dar de alta; un «ya lo vi» no vive aqui |
+| `Number('')` es 0 y `0 \|\| 1` es 1 | `aCentimos` separa vacio (`null`) de cero (`0`); **ni un `\|\|`** en ese camino |
+| suelo | los **tres** veredictos son alcanzables: si no, el aviso seria una constante disfrazada |
+
+## Dos trampas del schema, respetadas
+
+- **`vatRate` es entero de porcentaje** (21/10/4), no la fraccion de `Quote.lines[].tax`. Un
+  `0 < tipo < 1` se declara como incoherencia: mezclarlas multiplica el IVA por cien sin que nada falle.
+- **Tolerancia de un centimo.** El censo §5 midio que no existe ninguna nocion de tolerancia en el
+  arbol. En estricto, el redondeo del programa del proveedor seria la fabrica de falsos rojos. Y una
+  incoherencia **no cambia el veredicto, solo se anota** — doctrina de `payment-anomaly` (A21.2).
+
+## Un hallazgo de entorno, no del codigo
+
+El build fallo con `'deductsRefs' does not exist`. **No era main:** el schema si lo tiene y el
+cliente de Prisma compartido estaba viejo (`node_modules` por junction entre worktrees). Regenerado
+con el binario local. Se anota porque el sintoma apunta al sitio equivocado y ya mordio antes.
+
+## Lo que NO se ha tocado
+
+`prisma/schema.prisma` · la UI (espera microcopy aprobada) · **E4**, que necesita mas campos y lo
+lleva la sesion 2 · el canal al asesor (E1) · el fichero contable (E2).
+
+Ficheros: `src/modules/expenses/domain/justificante.ts` (nuevo) ·
+`tests/scrum324-justificante-deducible.test.mjs` (nuevo) · `docs/legal/PREGUNTAS_ASESOR.md`.
+
+
+---
+
+# SCRUM-324 (E3) · tercera entrega: LA MICROCOPY APROBADA Y LOS TRES CAMPOS
+
+**Medido contra:** `origin/main` = `65a2830c4851ca2a5c88a1563fc4ca1a470df64d` · 2026-08-10T16:34:38+02:00
+**Rama:** `scrum-324-gasto-usable`
+
+**10-ago-2026, 16:34 CEST (UTC+0200)** · commit `b834d53af0b584b6c6a8a7178ef90bc9c3fb520a`
+
+## La frase, y por qué es ésa
+
+> «Con un ticket no puedes deducir el IVA. Pide en el almacén una factura a tu nombre, con tu NIF y
+> el IVA desglosado.»
+
+Aprobada por el fundador. **Ninguna de las tres que propuse**, y el motivo queda escrito en el
+código porque quien venga a «mejorarla» tiene que saber qué se descartó:
+
+- **«no puedes deducir este gasto»** — falso por exceso: un ticket **sí** puede ser gasto deducible
+  en IRPF en estimación directa, que es otra cosa y otro importe.
+- **«para que tu asesor pueda usar este gasto»** — resuelve el problema **escondiendo** lo que está
+  en juego. Lo que se pierde es **el IVA**, que es dinero del profesional y es cuantificable.
+
+## Los tres campos del momento
+
+| campo | antes | ahora |
+|---|---|---|
+| importe total | ya estaba | igual |
+| fecha | ya estaba | igual |
+| **NIF del proveedor** | **no existía** | selector de proveedor **por nombre** + NIF al lado |
+
+Lo que había en su lugar era un `input type="number"` que pedía **«ID del proveedor»**. De pie en un
+almacén nadie se sabe el 47 — es la misma fricción que SCRUM-135 quitó en Trabajos.
+
+El NIF **se captura en el gasto pero vive en `Provider.taxId`**, que es su sitio. Y **no se pisa uno
+ya guardado**: el de la ficha lo puso alguien mirando una factura; el del almacén se teclea con
+prisa. El `updateMany` filtra por `merchantId` — sin él se saltaría el multi-tenant.
+
+## El aviso es el producto, no un adorno del guardado
+
+Cuando el justificante no deduce, **el modal no se cierra solo**. Si se cerrara, el aviso sería un
+toast que se va antes de que nadie lo lea, y habríamos guardado un ticket inútil con la sensación de
+haber hecho el trabajo. El botón pasa a «Entendido».
+
+⚠️ **Solo con `no_deducible`.** Con `falta_confirmar` no se pinta nada: ahí todo lo comprobable está
+y solo queda mirar el papel. Avisar sería acusar sin saber, y un aviso que salta siempre se aprende
+a ignorar exactamente igual que uno que no salta nunca.
+
+**La clasificación se calcula en el SERVIDOR** y viaja con el gasto creado. Si viviera en el
+navegador, cada pantalla que da de alta un gasto tendría su copia; el día que difirieran, una le
+diría a un profesional que puede deducir algo que no puede.
+
+## Verificado en rojo
+
+Tres rojos por `$?`, los tres vuelven a verde al revertir: microcopy parafraseada · el aviso
+condicionado a `true` (salta siempre) · quitar la captura del NIF, que **cae nombrándola** —
+`FALTA UNO DE LOS TRES CAMPOS DEL MOMENTO: el NIF del proveedor`—, que es literalmente lo que el
+ticket exigía.
+
+## Un bug que cazó `node --check` antes de empujar
+
+Metí acentos graves dentro de un comentario HTML que vive **dentro de un template literal**, y eso
+**termina la cadena**. Se anota porque el comentario parecía inerte y no lo era.
+
+## Lo que NO toca
+
+`prisma/schema.prisma` · **E4**, que sigue siendo de la sesión 2 · E1 · E2 · las cinco
+clasificaciones del gremio (SCRUM-280 punto 6).
+
+Ficheros: `public/dashboard/js/expensesView.js` · `src/modules/expenses/domain/expenses.service.ts` ·
+`src/modules/expenses/app/routes/expenses.routes.ts` ·
+`tests/scrum324-aviso-simplificado-ui.test.mjs` (nuevo).
+
+---
+
+# SCRUM-324 (E3, apéndice) · la cadena se cierra: el gasto con desglose LLEGA al libro
+
+**Fecha:** 10-ago-2026 · **Carril:** E (gastos) · **Gate:** el control de la cadena va tras
+`LIBRO_PG_URL` (banco desechable) y está declarado en el inventario de CI
+**Medido contra:** `origin/main` = `9093c11017e52fcb0e7b085e5054fb8505168f43` · 2026-08-10T20:41:05+02:00
+
+## PASO 0 · la rama valía la MITAD
+
+`scrum-324-gasto-usable` traía tres cosas buenas, y se conservan enteras: el **selector de
+proveedor por nombre** (poblado de `/admin/providers`, con el mismo patrón que el de Trabajos), la
+**captura del NIF** hacia `Provider.taxId` —y solo si estaba `null`— y **`justificante.ts`
+conectado** desde la ruta, que deja de ser un motor sin llamadores.
+
+**Lo que no traía era la función.** `createExpense` seguía escribiendo los mismos 10 campos: ni
+`baseAmount`, ni `vatRate`, ni `vatAmount`, ni `providerInvoiceNumber`, ni `providerInvoiceDate`. Y
+el formulario añadía exactamente tres ids —proveedor, NIF y el aviso— y **ninguno era el desglose**.
+Con esa rama mergeada, **el libro de recibidas seguía saliendo vacío**.
+
+## Lo entregado
+
+- **Formulario**: base imponible, tipo de IVA (21/10/4/0), cuota, nº y fecha de factura del
+  proveedor. `numeroONull` en el envío: `Number('')` es **0**, así que el atajo habitual convierte
+  un campo en blanco en un cero y un cero de verdad en `null` — **las dos direcciones mal**.
+- **Ruta**: los acepta en alta y en edición, distinguiendo «no lo mandes» (`undefined`) de «bórralo»
+  (`null`). Sin esa distinción, abrir el modal y guardar borraría el desglose.
+- **Servicio**: los **escribe**. `?? null` y no `x ? … : null`, porque un **0** legítimo —tipo
+  exento— es falsy y el atajo lo convertiría en «no se sabe».
+
+## 🔴 El aviso fiscal NO se enciende, y el hueco queda declarado
+
+La rama pintaba «Con un ticket no puedes deducir el IVA…». **Decir qué admite Hacienda es una
+afirmación FISCAL y el producto no las hace sin el asesor** (decisión del fundador, 10-ago-2026).
+Fuera la constante, fuera el pintado y **fuera del DOM el contenedor**: un `<div>` mudo esperando
+texto es SCRUM-424 un paso antes, y encima invita a rellenarlo sin aprobación. Las tres versiones
+siguen en **`docs/legal/PREGUNTAS_ASESOR.md:539-542` como preguntas SIN responder**.
+
+El test de la rama que exigía ese aviso **se invierte**, con el motivo escrito dentro.
+
+**Sí entra la microcopy aprobada**, literal, bajo «Foto del ticket (opcional)»:
+
+> Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.
+
+Describe lo que hace el **software**, que es lo único afirmable hoy.
+
+## El test que cierra esto — y corre, no se salta
+
+```
+alta con base/tipo/cuota → se guarda → el libro de recibidas TRAE el asiento
+```
+
+**6/6 en verde contra el banco desechable, cero saltados.** Comprueba la base y la cuota **dentro
+del asiento**, no solo que la fila exista.
+
+- **Rojo por el mecanismo:** quitar la escritura de `baseAmount` pone rojo **dos** tests — el suelo
+  («solo escribe 4 de 5 campos fiscales, faltan: baseAmount») y la cadena («la base NO se ha
+  guardado. La ruta la acepta y el servicio la tira»).
+- **Control negativo:** un gasto sin desglose **se sigue guardando**, no entra como asiento, y se
+  **declara** en `sinClasificar` **con su importe** — «un gasto fuera» y «12,50 € fuera» no son la
+  misma información.
+- **La medida de «se arregla solo»:** el motor del justificante ya **no** da el mismo veredicto con
+  datos y sin ellos. Era una afirmación y ahora tiene su medida: un motor alimentado con nulos
+  *parece* que funciona.
+
+## Tres guards del repo me cazaron a mí, y los tres se arreglaron, no se rebajaron
+
+1. **El backtick dentro del template literal** (SCRUM-417): me lo hice yo solo, en el comentario que
+   explicaba el desglose. Lo cazó `node --check`.
+2. **La auto-referencia**: mi guard buscaba «no puedes deducir el IVA» y **casaba con su propio
+   comentario** explicando la prohibición. Se mira el fuente **sin comentarios**.
+3. **SCRUM-237**: tres `doesNotMatch` seguidos **sin hermano positivo** son un verde permanente.
+   Ahora se demuestra primero que el detector encuentra esos tokens cuando están, y que la pregunta
+   al asesor sigue viva en su documento.
+
+Y dos correcciones del propio test, también mías: `createExpense` escribe por el **singleton**, así
+que el test apunta `DATABASE_URL` al banco **con la comprobación de loopback y base `…_test` DELANTE
+de la asignación**; y `leerLibroRecibidas` es `(db, {merchantId, desde, hasta})` — la llamaba con
+posicionales y el libro contaba **todo como ajeno**: el test medía mi error, no el del producto.
+
+## Lo que NO se ha tocado
+
+`prisma/schema.prisma` (las columnas ya estaban en las tres bases) · el camino de emisión · el motor
+del libro, que estaba bien · ninguna factura emitida · **ninguna base real**: el control corre contra
+el banco desechable y todo lo que lee lo ha creado el propio test.
+
+## Evidencia
+
+- **Suite con banco: 2782 tests · 2715 pass · 0 fail · 67 skipped · `$? = 0`.**
+- `npm run guards:entrada`: **`$? = 0`**.

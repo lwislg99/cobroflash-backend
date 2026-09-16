@@ -33,7 +33,15 @@ Flags nuevas arrancan OFF; activación = fundador (PENDIENTES_FUNDADOR).
 > resolvió SIN fundador — pipeline headless propio (magic link `type:'magic_link'` minteado en BD → Edge
 > `--headless` con perfil persistente → deep-links `/dashboard/#vista`; tutorial.js se auto-silencia en
 > headless `915d11d`). Capturas 390px limpias en `public/img/landing/` + `docs/evidencias/demo-caps/`.
-> Demo publicada: `public/js/landing-demo.js` (vanilla, sin líbs) — Acto 1 = 4 escenas (<30s, auto 7s,
+> 🔴 **RETIRADA el 5-ago-2026 (SCRUM-376). El párrafo de abajo describe algo que NUNCA llegó a estar
+> publicado, y se deja escrito en vez de borrarlo porque un hueco silencioso es como nació el
+> problema.** Medido: `public/index.html` carga solo `js/atribucion.js` y no menciona `idemo` ni una
+> vez — nadie cargaba `landing-demo.js`. La documentación lo daba por publicado y un test lo citaba
+> como si existiera en pantalla. Qué lleva la landing lo decide el **bloque F**, que está por hacer:
+> encenderla habría sido tomar una decisión de producto por la puerta de atrás. Está en el historial
+> de git y el bloque F puede resucitarla A PROPÓSITO, que es distinto de heredarla por inercia.
+>
+> ~~Demo publicada~~ (retirada): `public/js/landing-demo.js` (vanilla, sin líbs) — Acto 1 = 4 escenas (<30s, auto 7s,
 > hotspot clicable, dots+pausa, arranque perezoso IO, reduced-motion sin auto-play); Acto 2 = 5 chips
 > (bot WA con pagar-pendiente recreado, clientes, catálogo, informes, solicitudes; SIN gastos/proveedores
 > — el seed no tiene gastos y la maqueta solo enseña lo real). Carrusel A4.3 retirado; DEMO_VIDEO_URL

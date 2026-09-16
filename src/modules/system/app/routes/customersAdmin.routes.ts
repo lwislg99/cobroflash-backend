@@ -5,6 +5,19 @@ import { customerCreateSchema, customerUpdateSchema } from '../../../../core/val
 import { prisma } from '../../../../core/db/prisma';
 import { listCustomerEvents } from '../../customerEvents.service';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (D2: borrado = admin)
+// SCRUM-578 (CONT-05): el aviso de duplicado. La lista de campos identificadores vive en UN sitio.
+import {
+  buscarCoincidencias, formasBuscables, canonEmail, canonNif,
+} from '../../domain/identificadoresDuplicados';
+
+// SCRUM-312 (D1): el CSV se parsea en el SERVIDOR, con las primitivas compartidas. Antes lo
+// hacia el navegador, y eso dejaba dos parseos vivos del mismo formato que ni siquiera eran
+// equivalentes (el del navegador no honraba `""` ni el BOM).
+import { trocearCsv } from '../../../../core/csv/csv';
+import {
+  decodificarCsv, proponerMapeo, importarClientes, csvDeRechazos,
+  type Codificacion, type CampoCliente,
+} from '../../domain/importarClientes.service';
 
 const router = Router();
 
@@ -32,6 +45,61 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/customers/duplicados — SCRUM-578 (CONT-05, punto c).
+ *
+ * ¿Alguno de estos identificadores YA lo usa otro cliente de este merchant?
+ *
+ * 🔴 ES SOLO LECTURA Y ES UN AVISO, NO UN BLOQUEO. No impide guardar nada, y por eso vive en un
+ * GET aparte en vez de dentro del POST: hay casos legítimos —marido y mujer con el mismo móvil,
+ * dos comunidades del mismo administrador con el mismo email— y el que decide es el profesional.
+ *
+ * Va ANTES de `/:id` a propósito: `duplicados` no es un id, pero si esta ruta se registrara
+ * después, `/:id` la capturaría y devolvería `invalid_id`. Es la misma precaución que ya toma
+ * `albaranes.routes.ts` con `/pendientes-facturar`.
+ *
+ * NO se lee la tabla entera: se pregunta por las FORMAS BUSCABLES del valor —con prefijo y sin
+ * él— para que el filtro lo pueda resolver el índice. Un `findMany` sin `where` funcionaría con
+ * 15 clientes y sería una bomba con 15.000.
+ */
+router.get('/duplicados', async (req, res) => {
+  try {
+    const phone = typeof req.query.phone === 'string' ? req.query.phone : null;
+    const email = typeof req.query.email === 'string' ? req.query.email : null;
+    const taxId = typeof req.query.taxId === 'string' ? req.query.taxId : null;
+    const excluirId = Number(req.query.excluirId);
+
+    const or: any[] = [];
+    for (const forma of formasBuscables(phone)) or.push({ phone: forma });
+    if (canonEmail(email)) or.push({ email: { equals: email!.trim(), mode: 'insensitive' } });
+    if (canonNif(taxId)) or.push({ taxId: { equals: taxId!.trim(), mode: 'insensitive' } });
+    // Sin ningún identificador que buscar no se consulta: devolver «todos» sería el peor default.
+    if (or.length === 0) return res.json({ coincidencias: [] });
+
+    const candidatos = await prisma.customer.findMany({
+      where: { merchantId: req.merchantId, OR: or },
+      select: { id: true, name: true, phone: true, email: true, taxId: true },
+    });
+
+    // El filtro de arriba es AMPLIO a propósito (lo que el índice sabe resolver); quien decide de
+    // verdad es la comparación canónica, que es la que entiende que `+34 …` y `…` son lo mismo.
+    const coincidencias = buscarCoincidencias(
+      { id: Number.isNaN(excluirId) ? 0 : excluirId, phone, email, taxId },
+      candidatos,
+    );
+
+    // Se devuelve el nombre para que el aviso pueda decir CON QUIÉN choca. El texto es del
+    // fundador (regla 30): aquí sólo viajan los datos.
+    const porId = new Map(candidatos.map((c) => [c.id, c.name]));
+    res.json({
+      coincidencias: coincidencias.map((c) => ({ ...c, customerName: porId.get(c.customerId) ?? null })),
+    });
+  } catch (err) {
+    console.error('[GET /admin/customers/duplicados]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const parsed = customerCreateSchema.parse(req.body);
@@ -39,6 +107,10 @@ router.post('/', async (req, res) => {
     res.status(201).json(customer);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
+    // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
+    // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
+    if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
     console.error('[POST /admin/customers]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -54,6 +126,10 @@ router.put('/:id', async (req, res) => {
     res.json(updated);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
+    // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
+    // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
+    if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
     console.error('[PUT /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -74,54 +150,86 @@ router.get('/:id/portal-url', async (req, res) => {
   }
 });
 
-// POST /admin/customers/import — importación masiva desde CSV (parseo en cliente, batch en servidor)
-router.post('/import', async (req, res) => {
+/**
+ * POST /admin/customers/import/preparar — PASO 1: leer el fichero y PROPONER.
+ *
+ * Devuelve la primera fila ya decodificada (para la pantalla «¿Se ven bien los acentos?») y el
+ * mapeo propuesto con su confianza (para «Esto es lo que hemos entendido»). NO escribe nada.
+ *
+ * `codificacion` opcional: cuando el usuario pulsa «No, prueba de otra forma», el navegador la
+ * manda y aqui se reintenta con la otra — no se adivina dos veces lo mismo.
+ */
+router.post('/import/preparar', requireRole('admin'), async (req, res) => {
   try {
-    const rows: Array<{ name?: string; phone?: string; email?: string; notes?: string }> =
-      Array.isArray(req.body?.customers) ? req.body.customers : [];
+    const base64 = String(req.body?.fichero ?? '');
+    if (!base64) return res.status(400).json({ error: 'no_data', message: 'No hemos recibido ningún archivo. Vuelve a elegirlo.' });
 
-    if (rows.length === 0) return res.status(400).json({ error: 'no_data' });
-    if (rows.length > 500)  return res.status(400).json({ error: 'too_many_rows', max: 500 });
-
-    const merchantId = req.merchantId;
-    let created = 0, skipped = 0, errors = 0;
-    const errorList: string[] = [];
-
-    for (const row of rows) {
-      const name = String(row.name || '').trim();
-      if (!name) { errors++; continue; }
-
-      const phone = row.phone ? String(row.phone).trim() : null;
-      const email = row.email ? String(row.email).trim().toLowerCase() : null;
-      const notes = row.notes ? String(row.notes).trim() : null;
-
-      try {
-        // Dedup: si ya existe un cliente con el mismo teléfono o email → skip
-        if (phone || email) {
-          const existing = await prisma.customer.findFirst({
-            where: {
-              merchantId,
-              OR: [
-                ...(phone ? [{ phone }] : []),
-                ...(email ? [{ email }] : []),
-              ],
-            },
-          });
-          if (existing) { skipped++; continue; }
-        }
-
-        await prisma.customer.create({ data: { merchantId, name, phone, email, notes } });
-        created++;
-      } catch (e: any) {
-        errors++;
-        errorList.push(`${name}: ${e?.message?.slice(0, 80)}`);
-      }
+    const forzar = req.body?.codificacion as Codificacion | undefined;
+    const d = decodificarCsv(Buffer.from(base64, 'base64'), forzar);
+    const { cabecera } = trocearCsv(d.texto);
+    if (cabecera.length === 0) {
+      return res.status(400).json({ error: 'csv_vacio', message: 'El archivo no tiene ninguna fila.' });
     }
 
-    return res.json({ ok: true, created, skipped, errors, errorList: errorList.slice(0, 10) });
+    return res.json({
+      ok: true,
+      codificacion: d.codificacion,
+      alternativa: d.alternativa,
+      primeraFila: d.primeraFila,
+      columnas: proponerMapeo(cabecera),
+    });
   } catch (err) {
+    console.error('[POST /admin/customers/import/preparar]', err);
+    return res.status(500).json({ error: 'internal_error', message: 'No hemos podido leer el archivo.' });
+  }
+});
+
+// POST /admin/customers/import — importación masiva desde CSV (parseo en cliente, batch en servidor)
+router.post('/import', requireRole('admin'), async (req, res) => {
+  try {
+    // PASO 2: el fichero otra vez + la codificacion y el mapeo YA CONFIRMADOS por el usuario.
+    // Aqui no se adivina nada: si falta el mapeo, se dice.
+    const base64 = String(req.body?.fichero ?? '');
+    if (!base64) return res.status(400).json({ error: 'no_data', message: 'No hemos recibido ningún archivo. Vuelve a elegirlo.' });
+
+    const mapeo = (req.body?.mapeo ?? {}) as Partial<Record<CampoCliente, number>>;
+    if (mapeo.name == null) {
+      return res.status(400).json({
+        error: 'sin_columna_nombre',
+        message: 'Dinos cuál es la columna del nombre: sin ella no podemos crear los clientes.',
+      });
+    }
+
+    const { texto } = decodificarCsv(Buffer.from(base64, 'base64'), req.body?.codificacion as Codificacion | undefined);
+
+    // Tope de filas, como antes. El limite es del lote, no del formato.
+    const { filas } = trocearCsv(texto);
+    if (filas.length === 0) return res.status(400).json({ error: 'no_data', message: 'El archivo no tiene ninguna fila de datos.' });
+    if (filas.length > 500) return res.status(400).json({ error: 'too_many_rows', max: 500, message: 'Este archivo tiene más de 500 filas. Divídelo en varios y súbelos de uno en uno.' });
+
+    // TENENCIA: el merchant sale de la sesion, JAMAS del cuerpo (regla 2). Un import no puede
+    // meter clientes en el merchant de otro.
+    const r = await importarClientes(req.merchantId as number, texto, mapeo, prisma.customer);
+
+    return res.json({
+      ok: true,
+      creados: r.creados,
+      omitidos: r.omitidos,
+      // TODAS las rechazadas, sin capar a 10: el ticket lo pide explicito y capar era el
+      // defecto que tenia el importador viejo.
+      rechazos: r.rechazos.map((x) => ({ fila: x.fila, motivo: x.motivo })),
+      // El CSV para «Descargar las filas con errores», ya listo.
+      csvRechazos: r.rechazos.length ? csvDeRechazos(r) : null,
+    });
+  } catch (err: any) {
+    if (err?.message === 'sin_columna_nombre') {
+      return res.status(400).json({
+        error: 'sin_columna_nombre',
+        message: 'Dinos cuál es la columna del nombre: sin ella no podemos crear los clientes.',
+      });
+    }
     console.error('[POST /admin/customers/import]', err);
-    return res.status(500).json({ error: 'internal_error' });
+    return res.status(500).json({ error: 'internal_error', message: 'No hemos podido importar el archivo.' });
   }
 });
 
@@ -133,7 +241,10 @@ router.get('/:id/detail', async (req, res) => {
 
     const customer = await prisma.customer.findFirst({
       where: { id, merchantId: req.merchantId },
-      select: { id: true, name: true, phone: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true },
+      // SCRUM-590 (CONT-19): `mobile` también aquí — este `select` es distinto del de
+      // `customerAdmin.ts` y alimenta la ficha 360. Sin él, la ficha enseñaría el fijo y
+      // callaría el número por el que de verdad se le escribe al cliente.
+      select: { id: true, name: true, phone: true, mobile: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true },
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 

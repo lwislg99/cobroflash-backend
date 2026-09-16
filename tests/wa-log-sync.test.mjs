@@ -71,7 +71,7 @@ test('SCRUM-250 · (2) esperar() NO resuelve mientras la escritura sigue pendien
 
   const wa = interceptarWaLog({ log, prisma });
   try {
-    log.recordWaMessage({ merchantId: 1 }); // fire-and-forget, como el call-site real
+    log.recordWaMessage({ merchantId: 71 }); // fire-and-forget, como el call-site real
 
     let resuelta = false;
     const espera = wa.esperar().then(() => { resuelta = true; });
@@ -113,7 +113,7 @@ test('SCRUM-250 · (4) el motivo REAL del fallo llega al mensaje del assert', as
 
   const wa = interceptarWaLog({ log, prisma });
   try {
-    log.recordWaMessage({ merchantId: 1 });
+    log.recordWaMessage({ merchantId: 71 });
     await wa.esperar(); // resuelve: la escritura TERMINÓ, aunque terminara mal
 
     assert.equal(wa.fallos.length, 1, 'la capa 2 tiene que capturar el error antes de que recordWaMessage se lo trague');
@@ -129,7 +129,7 @@ test('SCRUM-250 · (4b) sin fallos, explicar() no inventa causas', async () => {
   const { log, prisma } = dobles(() => Promise.resolve({ id: 1 }));
   const wa = interceptarWaLog({ log, prisma });
   try {
-    log.recordWaMessage({ merchantId: 1 });
+    log.recordWaMessage({ merchantId: 71 });
     await wa.esperar();
     assert.equal(wa.explicar('mensaje pelado'), 'mensaje pelado');
   } finally {
@@ -150,7 +150,7 @@ test('SCRUM-250 · (5) una sola suscripción a la promesa perezosa (un PrismaPro
 
   const wa = interceptarWaLog({ log, prisma });
   try {
-    log.recordWaMessage({ merchantId: 1 });
+    log.recordWaMessage({ merchantId: 71 });
     await wa.esperar();
     assert.equal(suscripciones, 1, 'dos suscripciones a un PrismaPromise es un INSERT ejecutado dos veces');
   } finally {
@@ -176,7 +176,7 @@ test('SCRUM-250 · (7) la red de última instancia da un rojo con mensaje, no un
   // no depende del número. Con 60 s el veredicto sería el mismo, solo tardaría 60 s.
   const wa = interceptarWaLog({ log, prisma, timeoutMs: 20 });
   try {
-    log.recordWaMessage({ merchantId: 1 });
+    log.recordWaMessage({ merchantId: 71 });
     await assert.rejects(() => wa.esperar(), (err) => {
       assert.match(err.message, /no terminó en 20 ms/, 'el mensaje tiene que citar los ms REALES con los que se armó la red');
       assert.match(err.message, /P2024/);

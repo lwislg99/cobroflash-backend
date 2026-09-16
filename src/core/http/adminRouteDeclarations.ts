@@ -29,6 +29,36 @@ export interface RouteDeclaration {
 export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Sesión y negocio (perfil REDUCIDO para técnico — el filtrado vive en app.ts)
   { method: 'GET', path: '/admin/me', why: 'Perfil de la propia sesión; no expone datos de otros' },
+  // SCRUM-651 (T2) · DECISIÓN DE PERMISOS, no un trámite: abrir un Trabajo SIN presupuesto es
+  // trabajo de CAMPO. El caso es una AVERÍA —el más frecuente del primer cliente real— y quien
+  // la coge es el técnico, en la calle. Dejarlo admin-only obligaría a llamar a la oficina para
+  // poder empezar, que es resolverlo para la persona equivocada (misma lección que SCRUM-464).
+  //
+  // Y no abre nada de dinero ni de reparto: esta ruta NO escribe ninguno de los campos con gate
+  // (tipoOperacion, assignedUserId, cerrar), que siguen bloqueados en el PATCH. Además el Trabajo
+  // nace con su autoria (operarioId) = quien lo abre, así que el técnico solo se crea trabajos SUYOS.
+  { method: 'POST', path: '/admin/jobs', why: 'Abrir un Trabajo sin presupuesto (avería) es trabajo de campo del Operario; no toca campos de dinero ni de reparto' },
+  // SCRUM-464 (H1 fase 4). DECISIÓN DEL FUNDADOR, no un trámite: el que baja al sótano es el
+  // operario, así que dejar la precarga admin-only era resolver H1 para la persona equivocada. El
+  // paquete que recibe va FILTRADO a sus trabajos —los que se le asignaron o los que creó él—,
+  // porque darle el merchant entero era lo peor por RGPD: su móvil llevaría la cartera completa.
+  { method: 'GET', path: '/admin/precarga', why: 'Lo que necesita llevarse a la obra para firmar sin red; FILTRADO a sus trabajos (SCRUM-464)' },
+  // SCRUM-467. DECISIÓN DE PERMISOS, no un trámite, y **RE-DECLARA la de SCRUM-301 (C1)**: aquel
+  // ticket cerró este listado por ser GLOBAL —le diría al técnico de qué obras AJENAS hay partes,
+  // de qué clientes y con qué fechas— y dejó escrito que abrirlo era decisión de producto. Se ha
+  // tomado, y con un motivo de campo: a SCRUM-464 le precargamos los albaranes en el móvil y **no
+  // tenía ninguna pantalla desde la que abrirlos**. Lo que se abre NO es el listado global: va
+  // FILTRADO a sus Trabajos —los que creó y los que le asignaron, los DOS ejes— y el filtro va en
+  // la query. Un admin sigue viéndolo todo.
+  { method: 'GET', path: '/admin/albaranes', why: 'Los partes de SUS obras, FILTRADO a sus Trabajos por los dos ejes (SCRUM-467); el listado global sigue siendo de admin' },
+  // SCRUM-360 (H5 fase 2). DECISIÓN DE PERMISOS, no un trámite: escribe el entorno de LA PROPIA
+  // sesión y de ninguna otra —el id sale de la cookie del que llama—, así que no es una capacidad
+  // de administración. Y al revés: dejarlo admin-only dejaría SIN MEDIR justo a los técnicos, que
+  // son los que más van a obra y por tanto los que más riesgo tienen de perder una firma.
+  { method: 'POST', path: '/admin/entorno', why: 'Marca el entorno de su PROPIA sesión; el operario es quien más va a obra y sin él el recuento de riesgo sale sesgado' },
+  // SCRUM-406. Pedir ayuda NO es una capacidad de administracion, y dejarlo admin-only callaria
+  // justo al operario que esta en la obra, que es quien mas lo necesita. Mismo criterio que /admin/entorno.
+  { method: 'POST', path: '/admin/soporte', why: 'Escribirnos desde dentro del producto; el operario en obra es quien mas lo necesita y no es capacidad de admin' },
   { method: 'GET', path: '/admin/merchant', why: 'Perfil del negocio REDUCIDO para técnico (sin NIF/IBAN/serie); el recorte vive en app.ts' },
 
   // Clientes — S1: "clientes crear-ver" ✅ (el BORRADO es admin, ver customersAdmin.routes.ts)
@@ -36,6 +66,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'POST', path: '/admin/customers', why: 'S1: clientes crear-ver ✅' },
   { method: 'GET',  path: '/admin/customers/:id', why: 'S1: clientes crear-ver ✅' },
   { method: 'PUT',  path: '/admin/customers/:id', why: 'Corregir teléfono/dirección desde la obra' },
+  // SCRUM-578 (CONT-05): va con `POST`/`PUT` de clientes, que YA son de campo. Si el aviso de
+  // duplicado fuera admin-only, el Operario podría seguir CREANDO clientes sin verlo nunca — y es
+  // justo quien más los da de alta desde la obra, con el móvil y con prisa. El aviso quedaría
+  // ciego para el único rol que lo necesita. Es SOLO LECTURA y no revela nada que no devuelva ya
+  // `GET /admin/customers`, que también es de campo.
+  { method: 'GET',  path: '/admin/customers/duplicados', why: 'Avisar del duplicado a quien da de alta desde la obra' },
   { method: 'GET',  path: '/admin/customers/:id/detail', why: 'Ficha e historial del cliente que va a visitar' },
   { method: 'GET',  path: '/admin/customers/:id/portal-url', why: 'Link del portal para dárselo al cliente en mano' },
 
@@ -60,28 +96,120 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',   path: '/admin/jobs/:id', why: 'Detalle de SU trabajo; 404 en el ajeno (SCRUM-23)' },
   { method: 'PATCH', path: '/admin/jobs/:id', why: 'Mover el estado del trabajo es su trabajo (FSM JOB-1)' },
   { method: 'GET',   path: '/admin/jobs/:id/ics', why: 'Su cita en el calendario del móvil' },
+  // SCRUM-370 · DECISIÓN DE PERMISOS, no trámite: el técnico YA puede CREAR gastos en este
+  // Trabajo (`POST /admin/expenses` está abierto a propósito desde SCRUM-135) y hasta hoy no podía
+  // volver a verlos — `GET /admin/expenses` es admin-only y su nav está oculto. Quien puede crear
+  // algo tiene que poder comprobarlo. Se abre por el TRABAJO y no por el listado global: así
+  // hereda el candado de SCRUM-147 —un técnico solo ve SUS Trabajos— en vez de dejar enumerar
+  // cotizaciones ajenas. SIN totales ni márgenes: eso sigue siendo admin-only en /admin/expenses.
+  { method: 'GET',   path: '/admin/jobs/:id/gastos', why: 'Ver los gastos que ÉL acaba de meter en SU trabajo (SCRUM-370)' },
   { method: 'POST',  path: '/admin/jobs/:id/albaranes', why: 'Crear el parte de trabajo en la obra (albarán NO fiscal)' },
 
   // Albaranes — SCRUM-14/47/49: partes de trabajo NO fiscales, el caso de uso del
   // Operario por definición. Firmar/enviar es explícito en SCRUM-47.
   { method: 'PATCH', path: '/admin/albaranes/:id', why: 'Rellenar el parte en la obra (SCRUM-14)' },
+  // SCRUM-302 (C2): la FICHA del albarán. Va al operario porque negarle LEER el parte mientras
+  // puede rellenarlo, emitirlo y firmarlo (las líneas de al lado) sería incoherente: es la misma
+  // pantalla de su trabajo de campo, solo que ahora tiene página propia en vez de ser una fila.
+  // Solo lectura y filtrada por merchant, como el resto.
+  { method: 'GET',   path: '/admin/albaranes/:id', why: 'Ver la ficha del parte que él mismo rellena y firma (SCRUM-302)' },
   { method: 'POST',  path: '/admin/albaranes/:id/emitir', why: 'Emitir ALBARÁN (no factura): documento NO fiscal' },
   { method: 'POST',  path: '/admin/albaranes/:id/firmar', why: 'Firma del cliente en el móvil del operario (SCRUM-49)' },
+
+  // ── SCRUM-652 (T3 fase C) · EL PARTE DE TRABAJO ────────────────────────────────────────
+  //
+  // ⚠️ OJO CON EL NOMBRE: las entradas de arriba llaman «parte de trabajo» a los ALBARANES, por
+  // herencia de cuando era lo único que había. Desde hoy hay un ParteTrabajo de verdad, con su
+  // tabla (`partes_trabajo`) y sus rutas. Son DOS documentos distintos.
+  //
+  // Van a TECNICO_ALLOWED y no a admin, y no es una concesión: el parte ES el trabajo de campo
+  // del Operario. Lo rellena él en la obra, lo firma el cliente delante de él, y lo hace sin
+  // cobertura. Dejarlo admin-only sería entregar una pantalla que su único usuario no puede abrir.
+  //
+  // 🔴 Y NO ABRE NINGUNA PUERTA A DINERO: `/admin/partes` no sirve ni un importe en ninguna de sus
+  // cinco rutas —`serializeParteParaElTecnico` se construye con `lineasParaElTecnico`— y no hay
+  // ruta de facturar (eso es T8, bloqueado por regla 24). La valoración vive en la pantalla de
+  // oficina, que todavía no existe y que cuando exista tendrá que declarar SU rol aquí.
+  { method: 'GET',   path: '/admin/partes', why: 'Sus partes, para retomar el que dejó a medias en la obra' },
+  { method: 'POST',  path: '/admin/partes', why: 'Abrir el parte al llegar a la obra (documento NO fiscal, sin importes)' },
+  { method: 'GET',   path: '/admin/partes/:id', why: 'Ver el parte que él mismo rellena y firma; sin importes (SCRUM-652)' },
+  { method: 'PATCH', path: '/admin/partes/:id', why: 'Rellenar el parte en la obra: horas, kilómetros, mano de obra y materiales. Sin precios: los pone la oficina después' },
+  { method: 'POST',  path: '/admin/partes/:id/firmar', why: 'Firma del cliente en el móvil del operario, con la cola sin cobertura que ya existe (SCRUM-358)' },
+  // SCRUM-653 · la SEGUNDA firma del papel. Va a TECNICO_ALLOWED por el mismo motivo que la
+  // primera y con más razón: es LA SUYA. Dejarla admin-only sería pedirle al técnico que llame al
+  // jefe para firmar su propio parte en la obra.
+  //
+  // ⚠️ Y no abre puerta a dinero: escribe en `signature_tecnico_url`, `firmado_tecnico_at` y
+  // `firmado_tecnico_nombre`, y responde con el serializador del técnico, que no lleva importes.
+  { method: 'POST',  path: '/admin/partes/:id/firmar-tecnico', why: 'La firma del PROPIO técnico en su parte, en la obra y sin cobertura (SCRUM-653)' },
+  // SCRUM-683: trabajo de campo puro. El técnico dicta EN LA OBRA con el micro del teclado de su
+  // móvil y esto solo ORDENA ese texto en las dos listas. No escribe en el parte —devuelve una
+  // propuesta que él confirma— y no sirve ni un importe: el esquema que se le pide al modelo no
+  // tiene campo de precio, y el saneador tampoco lo dejaría pasar.
+  { method: 'POST',  path: '/admin/partes/:id/dictado', why: 'Ordenar en líneas lo que dictó en la obra; devuelve una PROPUESTA que él confirma, no escribe en el parte, y sin importes' },
+  { method: 'POST',  path: '/admin/albaranes/:id/duplicar', why: 'Duplicar el parte de ayer para el de hoy: el técnico rellena partes en obra, y el duplicado nace en BORRADOR sin firma ni evidencia (SCRUM-302)' },
   { method: 'GET',   path: '/admin/albaranes/:id/pdf', why: 'Enseñar/enviar el parte firmado' },
   { method: 'POST',  path: '/admin/albaranes/:id/fotos', why: 'Fotos del trabajo hecho (MEDIA-1)' },
   { method: 'GET',   path: '/admin/albaranes/:id/fotos', why: 'Ver las fotos que él mismo subió' },
   { method: 'POST',  path: '/admin/albaranes/:id/enviar-whatsapp', why: 'S1 "enviar WA" ✅; requireActivePlan, sin rol (SCRUM-47)' },
   { method: 'POST',  path: '/admin/albaranes/:id/enviar-para-firmar', why: 'Firma remota del albarán (SCRUM-47/49)' },
+  // ⚠️ SCRUM-301: `GET /admin/albaranes` (el listado global) NO está en esta lista, y la razón
+  // merece leerse antes de «arreglarlo» añadiéndola: es **admin-only con `requireRole`**.
+  //
+  // El criterio de «la misma información, agrupada» —el que justifica `consolidables` aquí abajo—
+  // vale cuando la información YA era visible. Para el técnico no lo era: SCRUM-147 midió y cerró
+  // que un técnico solo ve SUS Trabajos (`seesOnlyOwnJobs`, allowlist, rol desconocido restringido).
+  // Los albaranes cuelgan de Trabajos, así que un listado global le enseñaría de qué obras AJENAS
+  // hay partes, de qué clientes y con qué fechas: exactamente lo que la puerta principal le niega,
+  // servido por la puerta de atrás. Cerrar de más es un incordio; abrir de más no se deshace.
   { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación, mismo criterio S1 que GET /admin/invoices ("facturas: ver sí")' },
+  // SCRUM-606 (ALB-01) · el buscador de presupuesto de «Nuevo albarán». Va aquí y no en admin-only
+  // por COHERENCIA con el alta que abre: `POST /admin/jobs/:id/albaranes` está tres líneas más
+  // arriba en esta misma lista, y con este motivo —«crear el parte de trabajo EN LA OBRA»—. Un
+  // técnico que puede crear el albarán desde el Trabajo y no desde la pestaña Albaranes tendría
+  // el mismo permiso por un camino y no por el otro, que es como se fabrica un 403 incomprensible.
+  //
+  // Y NO ABRE SUPERFICIE NUEVA: el contenido son presupuestos de `listQuotesAdmin`, la misma
+  // función de `GET /admin/quotes` —declarada aquí arriba con «S1: quotes crear-ver ✅»—, así que
+  // no enseña ni un presupuesto que el llamante no pudiera pedir por su cuenta. Lo que SÍ acota
+  // por rol es a qué Trabajo puede aterrizar: `seesOnlyOwnJobs` marca como NO elegibles los
+  // Trabajos que no son suyos (SCRUM-467), con su motivo y sin darle el `jobId`.
+  { method: 'GET',   path: '/admin/albaranes/presupuestos', why: 'SCRUM-606: elegir de qué presupuesto nace el albarán que va a rellenar en la obra; mismo criterio que POST /admin/jobs/:id/albaranes' },
   { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
 
-  // Productos — S1: "productos crear-ver" ✅. El tarifario en bloque (export/import/
-  // load-catalog) NO está clasificado: ver PENDIENTE_CLASIFICAR.
-  { method: 'GET',    path: '/admin/products', why: 'S1: productos crear-ver ✅' },
-  { method: 'GET',    path: '/admin/products/:id', why: 'S1: productos crear-ver ✅' },
-  { method: 'POST',   path: '/admin/products', why: 'S1: productos crear-ver ✅' },
-  { method: 'PUT',    path: '/admin/products/:id', why: 'Corregir un precio suelto al presupuestar' },
-  { method: 'DELETE', path: '/admin/products/:id', why: 'Simétrico del alta; una línea de catálogo, no el tarifario' },
+  // ── Productos ──────────────────────────────────────────────────────────────────────────
+  //
+  // 🔴 SCRUM-614 (24-ago-2026) · EL CATÁLOGO SE CIERRA A ESCRITURA. **El Operario SÓLO VE.**
+  //
+  // AQUÍ HABÍA TRES ENTRADAS MÁS Y NO SE HAN BORRADO POR ESTORBAR — ESTÁN DEROGADAS. Eran:
+  //
+  //     POST   /admin/products      → 'S1: productos crear-ver ✅'
+  //     PUT    /admin/products/:id  → 'Corregir un precio suelto al presupuestar'
+  //     DELETE /admin/products/:id  → 'Simétrico del alta; una línea de catálogo, no el tarifario'
+  //
+  // Las tres se declararon el 22-jul-2026 (SCRUM-55) y la de DELETE fue además el CRITERIO con
+  // el que SCRUM-365 cerró `import` y `load-catalog` («línea suelta al presupuestar → Técnico;
+  // catálogo entero → Admin»). Hoy las tres exigen `requireRole('admin')` en
+  // `products.routes.ts`, así que salen de esta lista: la red de SCRUM-55 exige que una ruta
+  // esté en EXACTAMENTE UNO de los dos sitios, y tenerlas en los dos es rojo por «declarada dos
+  // veces» — que es como se enteró este ticket de que iba bien.
+  //
+  // 🔴 POR QUÉ SE DEROGAN, que es lo único que no se puede reconstruir mirando el diff:
+  // **aquella decisión era CORRECTA con la premisa de julio.** Una fila de `products` era una
+  // línea de catálogo: un nombre y un precio de venta para autocompletar, y dejar que el
+  // operario corrigiera una al presupuestar era trabajo de campo. Con DOC-08 el coste y el
+  // margen SALEN DEL DOCUMENTO y pasan a vivir SÓLO en el catálogo, así que esa misma fila pasa
+  // a ser **donde está escrito lo que gana el merchant**. No se relajó un criterio: se le
+  // caducó el supuesto debajo, y la decisión lo sigue (fundador, 24-ago-2026).
+  //
+  // ⚠️ LA LECTURA SE QUEDA ABIERTA A PROPÓSITO. El fundador decidió el mismo día que coste y
+  // margen los ven TODOS los roles, así que los `GET` de aquí abajo NO son un resto de la lista
+  // vieja: son la otra mitad de la decisión. Cerrarlos sería ir contra ella.
+  //
+  // (El encabezado anterior decía además que el tarifario en bloque «NO está clasificado: ver
+  // PENDIENTE_CLASIFICAR». Dejó de ser cierto en SCRUM-365, que lo clasificó con `requireRole`.)
+  { method: 'GET',    path: '/admin/products', why: 'S1: productos crear-ver → ahora SOLO ver; y coste/margen los ve todo rol (fundador 24-ago-2026)' },
+  { method: 'GET',    path: '/admin/products/:id', why: 'Ídem: la ficha del producto, en lectura' },
   { method: 'GET',    path: '/admin/products/autocomplete', why: 'Autocompletar al montar el presupuesto' },
   // SCRUM-162: misma familia que el autocompletado —alimenta el mismo campo del editor— y no
   // enseña nada que el técnico no vea ya: son conceptos de los presupuestos de SU merchant,
@@ -93,7 +221,12 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Solicitudes entrantes, adjuntos, búsqueda y bot
   { method: 'GET',   path: '/admin/quote-requests', why: 'Solicitudes entrantes que va a presupuestar' },
   { method: 'PATCH', path: '/admin/quote-requests/:id', why: 'Marcar la solicitud como atendida' },
-  { method: 'GET',   path: '/admin/attachments/:id', why: 'Fotos que mandó el cliente con la solicitud' },
+  // SCRUM-302: el motivo decía SOLO lo de las solicitudes, y esta ruta sirve DOS cosas desde hace
+  // meses — también las fotos del albarán (la fila del Trabajo y la ficha del albarán las pintan
+  // desde aquí). En un fichero de declaración de permisos eso no es cosmético: quien audita el rol
+  // lee el motivo para decidir si es el que toca, y con la mitad escrita revisa sobre una premisa
+  // falsa. El rol NO cambia; lo que se corrige es lo que dice servir.
+  { method: 'GET',   path: '/admin/attachments/:id', why: 'Fotos que mandó el cliente con la solicitud y fotos del albarán del trabajo' },
   { method: 'GET',   path: '/admin/search', why: 'Busca clientes/quotes/facturas: todo ello ya es visible para él' },
   { method: 'GET',   path: '/admin/bot/handoffs', why: 'Conversaciones del bot que piden persona (A8.3)' },
 
@@ -151,9 +284,13 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
 
   // TANDA 3 — configuración y datos en bloque. Ninguna es flujo de campo evidente;
   // se aparcan por volumen y porque tocarlas mueve el nav del dashboard.
-  { method: 'POST',   path: '/admin/products/import', tanda: 3, duda: 'Reescribe el tarifario en bloque → admin' },
-  { method: 'POST',   path: '/admin/products/load-catalog', tanda: 3, duda: 'Ídem, carga catálogo entero' },
-  { method: 'POST',   path: '/admin/customers/import', tanda: 3, duda: 'Alta masiva de clientes → probable admin' },
+  // SCRUM-365: SALEN `/admin/products/import` y `/admin/products/load-catalog`, declaradas con
+  // `requireRole('admin')`. No hacía falta decidir nada nuevo: su duda ya proponía admin y el
+  // criterio estaba escrito arriba, en el motivo de `DELETE /admin/products/:id` («una línea de
+  // catálogo, no el tarifario»). Lo que las mantenía aquí no era una duda, era la tarea sin hacer
+  // — igual que le pasó a `/admin/products/export` en SCRUM-103.
+  // SCRUM-312: y con ella sale `/admin/customers/import`, por el mismo criterio: un alta
+  // MASIVA de clientes es catalogo entero, no una linea suelta.
   { method: 'GET',    path: '/admin/providers', tanda: 3, duda: 'Proveedores: ligado a compras/gastos → probable admin' },
   { method: 'POST',   path: '/admin/providers', tanda: 3, duda: 'Ídem' },
   { method: 'PUT',    path: '/admin/providers/:id', tanda: 3, duda: 'Ídem' },
@@ -173,6 +310,11 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * 24 → 17 (SCRUM-107): salen las 7 de /admin/expenses, clasificadas por verbo.
  * 17 → 16 (SCRUM-103): sale /admin/products/export. No la sacó una revisión humana:
  * la cazó el assert nuevo, porque su propia "duda" decía que S1 ya lo había decidido.
+ * 16 → 14 (SCRUM-365): salen /admin/products/import y /admin/products/load-catalog, las dos con
+ * requireRole('admin'). Lo que las delató fue la ASIMETRÍA, no una revisión: `export` (leer el
+ * tarifario) exigía admin desde SCRUM-103 y estas dos (reescribirlo) seguían abiertas — lo
+ * protegido era leer y lo abierto, escribir. Y el criterio ya estaba escrito arriba, en el motivo
+ * de DELETE /admin/products/:id: «una línea de catálogo, no el tarifario».
  *
  * BAJAR EL TOPE VA EN EL MISMO COMMIT QUE SACA LAS ENTRADAS, siempre. La lista va
  * SIEMPRE al límite exacto, sin holgura — es eso lo que hace que el ratchet muerda.
@@ -181,7 +323,15 @@ export const PENDIENTE_CLASIFICAR: ReadonlyArray<PendingDeclaration> = [
  * protege por ir apretado; un tope con holgura es el descuadre silencioso que este
  * fichero existe para evitar (ver SCRUM-103 sobre qué más no valida).
  */
-export const PENDIENTE_MAX = 16;
+// LAS TRES SALEN, y el numero es la suma de las dos bajadas, no la de una:
+//   16 - 2 (SCRUM-365: /products/import y /products/load-catalog)
+//      - 1 (SCRUM-312: /customers/import)  =  13
+//
+// Se resolvio asi porque quedarse en 14 o en 15 dejaria HOLGURA, y este mismo fichero dice
+// por que eso es un defecto: «un tope con holgura deja huecos libres para aparcar sin que
+// nadie se entere». Dos ramas bajaron el trinquete desde el mismo punto de partida y
+// ninguna estaba mal; lo que estaria mal es resolver eligiendo una.
+export const PENDIENTE_MAX = 13;
 
 /**
  * Fecha límite. Pasada esta fecha el test FALLA mientras queden pendientes.
