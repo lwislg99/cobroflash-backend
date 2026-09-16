@@ -3,8 +3,8 @@
 **Medido contra:** `origin/main` = `e62cd0db8876a4aef48139860b6072907caeca41` · 2026-09-16T13:02:06Z
 **Rama:** `scrum-876-la-semilla-de-los-dieciseis` · **Carril:** `tests/` (Sesión 3) · **Gate:** sin gate
 
-> Un gate no sólo apaga un test: le quita a su rotura la única forma de verse. Siete de estos 16
-> llevaban semanas rotos, y ninguno necesitaba semilla para estarlo.
+> Un gate no sólo apaga un test: le quita a su rotura la única forma de verse. Seis de estos 16
+> llevaban semanas rotos por cambios del propio código, y ninguno necesitaba semilla para estarlo.
 
 ⏱ Horas **de GitHub** (el reloj local va 333 s adelantado, medido el 16-sep-2026).
 
@@ -122,9 +122,10 @@ está en el código; lo que falla es **cómo desempata**:
   `hh:mm:ss` y se persiste como `new Date(timestamp)` (`verifactu.service.ts:66-75`).
 
 **Una anulación sellada en el mismo segundo que su alta empata, gana el alta, y la factura siguiente
-bifurca la cadena** —lo que la AEAT lee como manipulación—. Contra staging casi nunca empatan (la
-latencia remota separa los sellos); en un banco local empatan siempre. Por eso este test estaba
-verde donde se corría y rojo en cuanto se le quita la latencia.
+bifurca la cadena** —lo que la AEAT lee como manipulación—. En un banco local, sin latencia, empatan
+y el test cae **de forma reproducible**. ⚠️ Que contra staging no empaten es una **inferencia, no una
+medición**: la latencia remota separa los sellos, y eso explicaría que el test se diera por bueno
+donde se corría. No se ha comprobado en staging.
 
 ⛔ **Es el camino de emisión fiscal: no se toca aquí** (regla 38 — arreglarlo exige GO del fundador).
 Impacto hoy: `INVOICING_ES_ENABLED` está apagado para merchants reales, así que no hay emisión fiscal
@@ -149,8 +150,9 @@ pedirla eran otra cosa (§2 B y D).
 
 ## 5 · Lo que esto dice de los gates, y es lo más valioso del censo
 
-**Siete de los 16 estaban rotos por cambios del propio código**, y el más antiguo lleva así desde el
-**10-ago-2026**. Ninguno se vio porque ninguno corre: un test gateado roto y uno gateado sano dan el
+**Seis de los 16 estaban rotos por cambios del propio código**, y el más antiguo lleva así desde el
+**10-ago-2026**. Y un séptimo, `scrum173`, tapaba un **defecto real** que sólo la latencia de staging
+escondía (§3). Ninguno se vio porque ninguno corre: un test gateado roto y uno gateado sano dan el
 mismo `skipped`. Es el hueco de SCRUM-869 §8.3 (la familia `QA_DB_TEST` no tiene trinquete) con su
 coste ya medido.
 
