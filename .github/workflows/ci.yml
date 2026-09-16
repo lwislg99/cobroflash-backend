@@ -158,21 +158,38 @@ jobs:
       # queda: aquí no se afloja nada, se le da lo que pide.
       # ⚠️ EL PUERTO SE LEE, NO SE ESCRIBE. `job.services.postgres.ports['5432']` es el puerto que
       # Docker asignó en el host para este job. Escribirlo a mano es lo que rompió CI.
-      - name: Banco desechable para los tests de libro
+      # SCRUM-871 · TRES BASES, NO UNA. `scrum728` (cerrojo de serie) y `scrum814` (carrera de
+      # tramos) piden lo mismo que los de libro —loopback y base terminada en `_test`, comprobado
+      # por ellos mismos y fail-closed— pero **no pueden compartir base con ellos**: `node --test`
+      # corre los ficheros EN PARALELO, `scrum728` mide el coste por reserva (y falla si se acerca
+      # a los 880 ms de la base remota) y `scrum814` emite facturas. Las escrituras de un fichero
+      # falsearían la medición del otro. Una base por fichero, y el mismo esquema en las tres.
+      #
+      # ⚠️ Ninguna variable de entorno NUEVA: `SERIE_PG_URL` y `TRAMOS_PG_URL` ya existen —las leen
+      # esos tests desde SCRUM-728 y SCRUM-814— y lo único que pasaba es que NADIE las ponía, así
+      # que los dos no corrían en ningún sitio. Aquí se les da lo que ya pedían.
+      - name: Banco desechable para los tests de banco (libro · serie · tramos)
         env:
           PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
         run: |
           test -n "$PGPORT_HOST" || { echo "🔴 no se pudo leer el puerto del servicio: no se toca ninguna base"; exit 1; }
           echo "banco desechable en 127.0.0.1:$PGPORT_HOST"
-          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c 'CREATE DATABASE yaqu_libro_test'
           npx prisma migrate diff --from-empty \
             --to-schema-datamodel prisma/schema.prisma --script > "$RUNNER_TEMP/esquema.sql"
           test -s "$RUNNER_TEMP/esquema.sql" || { echo "🔴 el esquema salió VACÍO: no se aplica nada a ciegas"; exit 1; }
-          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/yaqu_libro_test" -q -f "$RUNNER_TEMP/esquema.sql"
+          for BASE in yaqu_libro_test yaqu_serie_test yaqu_tramos_test; do
+            psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c "CREATE DATABASE $BASE"
+            psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/$BASE" -q -f "$RUNNER_TEMP/esquema.sql"
+            echo "  $BASE · tablas: $(psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/$BASE" -tAc "select count(*) from information_schema.tables where table_schema='public'")"
+          done
 
-      - name: Tests (incluidos los 7 de banco)
+      - name: Tests (incluidos los de banco desechable)
         env:
           LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
+          # SCRUM-871 · `SERIE_PG_URL` ya existía y no la ponía nadie, así que `scrum728` no corría
+          # en ningún sitio. Aquí SÍ entra en la tanda: medido, tarda ~17 s dentro de ella.
+          # `TRAMOS_PG_URL` NO va aquí, y el motivo está medido — ver el paso de abajo.
+          SERIE_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_serie_test
           # SCRUM-552 · DOS REPORTERS A LA VEZ, cada uno a su destino.
           #
           # El log sigue siendo `spec` en stdout —4.374 líneas, legible— y el TAP completo va a un
@@ -193,6 +210,25 @@ jobs:
             --test-reporter=spec --test-reporter-destination=stdout
             --test-reporter=tap --test-reporter-destination=${{ runner.temp }}/tanda.tap
         run: npm test
+
+      # SCRUM-871 · `scrum814` VA SOLO, Y NO ES PRUDENCIA: ESTÁ MEDIDO.
+      #
+      # Dentro de la tanda paralela (ensayo local del 16-sep-2026, con las tres variables puestas)
+      # este fichero CAYÓ, y el log dice por qué: `Transaction already closed: … timeout 5000 ms,
+      # however 6602 ms passed`. Bajo la carga de los ~800 ficheros la transacción de emisión se
+      # pasa del `timeout` de Prisma y la emisión revienta — o sea que el fichero se ahoga por la
+      # MISMA saturación que documenta `scrum728`, no por el defecto que vigila.
+      #
+      # Y la diferencia de tiempo lo dice igual de claro: 393 s dentro de la tanda frente a 64 s
+      # corriendo solo. Solo, y repetido, sale verde.
+      #
+      # 🔴 Un verde nuevo que se cae uno de cada tantas tandas es peor que el skip que sustituye:
+      # entrena a relanzar. Por eso corre AISLADO y después, con su propia base. No se sube ningún
+      # timeout (lo prohíbe el guard de SCRUM-728) y no se toca el test.
+      - name: Carrera de tramos, aislada (emite facturas y MIDE una carrera)
+        env:
+          TRAMOS_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_tramos_test
+        run: node --test --test-force-exit tests/scrum814-carrera-de-tramos-postgres.test.mjs
 
       # Sólo cuando hay rojo. En verde no imprime nada y no cuesta un segundo.
       - name: Por qué cayó (del TAP, sólo si la tanda falla)
