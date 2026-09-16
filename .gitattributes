@@ -59,3 +59,4 @@ scripts/db-push-prod text eol=lf
 # SCRUM-201b: la fuente oficial AEAT se guarda BYTE A BYTE (es ISO-8859-1 con CRLF).
 # Si git normaliza saltos, su SHA-256 cambia y deja de casar con el que cita el documento.
 docs/legal/fuentes/aeat-errores.properties -text
+docs/master/*.md merge=union
