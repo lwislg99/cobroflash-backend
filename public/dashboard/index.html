@@ -285,8 +285,11 @@
   <script src="./js/economiaVisible.js"></script> <!-- SCRUM-597 (DOC-07 · P-DOC-3): quien ve coste y margen; va ANTES de quotesView.js, productsView.js e invoiceDetailView.js, que lo consumen -->
   <script src="./js/documentoAsignados.js"></script> <!-- SCRUM-597 (DOC-07): el selector de usuarios asignados al documento; va ANTES de quotesDetailView.js e invoiceDetailView.js -->
   <script src="./js/textoDelDocumento.js"></script> <!-- SCRUM-593 (DOC-03): los dos textos libres del documento; va ANTES de quotesView.js, que los consumira en la fase 3 (schema+cableado) -->
-  <script src="./js/cuerpoDelDocumentoSuelto.js"></script> <!-- SCRUM-600 (DOC-10): la UNICA composicion del cuerpo de POST /admin/invoices; va ANTES de quotesView.js y de nuevaFacturaModal.js, que son las dos pantallas que la llaman -->
+  <script src="./js/cuerpoDelDocumentoSuelto.js"></script> <!-- SCRUM-600 (DOC-10): la UNICA composicion del cuerpo de POST /admin/invoices; va ANTES de quotesView.js, la UNICA pantalla que la llama desde SCRUM-867 (el modal viejo se retiro) -->
   <script src="./js/buscadorDeClientes.js"></script> <!-- SCRUM-713: filtrar clientes al teclear (textos + regla de comparacion); va ANTES de quotesView.js, que lo llama al MONTAR el selector -->
+  <!-- SCRUM-776: cómo se llama el documento (factura/justificante), UNA sola fuente. SCRUM-867: sube
+       aquí, por delante de quotesView.js, para que se cargue ANTES que TODOS sus consumidores. -->
+  <script src="./js/rotulosDelDocumento.js"></script>
   <script src="./js/quotesView.js"></script>
   <script src="./js/quotesDetailView.js"></script>
   <script src="./js/switchTipoArticulo.js"></script> <!-- SCRUM-609 (CAT-01): el switch Producto/Servicio, una pieza para los dos formularios -->
@@ -294,11 +297,12 @@
   <script src="./js/productsView.js"></script>
   <script src="./js/providersView.js"></script>
   <script src="./js/tipoDestinatarioPendiente.js"></script> <!-- SCRUM-615: la pregunta y el aviso de la bandeja -->
-  <script src="./js/rotulosDelDocumento.js"></script> <!-- SCRUM-776: cómo se llama el documento (factura/justificante), UNA sola fuente; va ANTES de invoicesView.js y nuevaFacturaModal.js, que lo consumen -->
   <script src="./js/invoicesView.js"></script>
   <!-- SCRUM-285 (B4): la pantalla de Cobros -->
   <script src="./js/cobrosView.js"></script>
-  <script src="./js/nuevaFacturaModal.js"></script>
+  <!-- SCRUM-867: aquí se cargaba `nuevaFacturaModal.js`, el modal viejo de «Nueva factura». Se
+       retiró con su fichero: nadie lo abría desde que la lista navega a `invoices-new`. -->
+
   <!-- SCRUM-302 (C2): la LEY del patrón va PRIMERO — los registros la consumen al cargarse. -->
   <script src="./js/patronDetalleAcciones.js"></script>
   <script src="./js/invoiceActionsRegistry.js"></script>

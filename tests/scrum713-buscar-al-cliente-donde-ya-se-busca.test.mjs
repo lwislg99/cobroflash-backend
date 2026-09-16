@@ -37,7 +37,11 @@ import { constaAprobado } from './_microcopy-aprobada.mjs';
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require_ = createRequire(import.meta.url);
 const DIR_JS = path.join(RAIZ, 'public/dashboard/js');
+// 🔴 SCRUM-867 · EL ORIGEN DEL PATRÓN SE RETIRÓ. `nuevaFacturaModal.js` —de donde salió la
+// interacción de este ticket— estaba muerto y salió del árbol. Se sigue nombrando para exigir que
+// NO vuelva: si reaparece, vuelve un segundo buscador de clientes, que es lo que este ticket evitó.
 const MODAL_FACTURA = path.join(DIR_JS, 'nuevaFacturaModal.js');
+const PAGINA_DOCUMENTO = path.join(DIR_JS, 'quotesView.js');
 const VISTA_CLIENTES = path.join(DIR_JS, 'customersView.js');
 const RUTA_BUSCADOR = path.join(DIR_JS, 'buscadorDeClientes.js');
 
@@ -277,16 +281,28 @@ test('SCRUM-713 · 🔴 SUELO: con CERO clientes la pantalla LO DICE y ofrece la
 
 // ═══ ⑥ NO ROMPER LO QUE YA FUNCIONA ══════════════════════════════════════════════════════
 
-test('SCRUM-713 · 🔴 EL ORIGEN SIGUE IGUAL: `nuevaFacturaModal.js` conserva su buscador', () => {
-  // Camino de emisión (regla 38): se LEE. Lo que se comprueba es que copiar el patrón no se haya
-  // hecho MOVIÉNDOLO — el defecto clásico de «reutilizar» extrayendo del sitio que funcionaba.
-  const lits = literalesDe(leer(MODAL_FACTURA), 'nuevaFacturaModal.js');
-  assert.ok(lits.includes('search'),
-    '🔴 el modal de factura ha perdido su `type = "search"`. El patrón se COPIA, no se muda.');
-  assert.ok(lits.includes('Busca por nombre…'),
-    '🔴 el modal de factura ha perdido su placeholder aprobado.');
-  assert.ok(lits.some((l) => l.includes('/admin/customers')),
-    '🔴 el modal de factura ya no llama a `/admin/customers`: su buscador dejó de resolver.');
+test('SCRUM-713 · 🔴 EL PATRÓN SIGUE EN PIE, y en UN solo sitio', () => {
+  // ANTES (hasta SCRUM-867) esto leía el ORIGEN —el modal de factura— para comprobar que copiar el
+  // patrón no se había hecho MOVIÉNDOLO: el defecto clásico de «reutilizar» vaciando el sitio que
+  // funcionaba. Ese origen se retiró entero por muerto (nadie lo abría), así que lo que queda por
+  // exigir es lo que el ticket perseguía de verdad: que el patrón viva en UN sitio y la pantalla lo
+  // consuma, en vez de reescribirlo.
+  assert.equal(fs.existsSync(MODAL_FACTURA), false,
+    '🔴 `nuevaFacturaModal.js` ha vuelto al árbol, y con él un SEGUNDO buscador de clientes: la casa '
+    + 'ya tenía seis y ninguno sabía de los otros. Es justo lo que este ticket vino a no repetir.');
+
+  const pieza = literalesDe(leer(RUTA_BUSCADOR), 'buscadorDeClientes.js');
+  assert.ok(pieza.includes('Buscar por nombre, teléfono, email o referencia…'),
+    '🔴 la pieza compartida ha perdido su placeholder aprobado (asesor, 2-sep-2026).');
+
+  const pagina = leer(PAGINA_DOCUMENTO);
+  assert.ok(/buscadorCliente\.type\s*=\s*"search"/.test(pagina),
+    '🔴 la pantalla ha perdido su `type = "search"`: el campo deja de ser un buscador para el navegador.');
+  assert.ok(pagina.includes('window.buscadorDeClientes.TEXTOS.placeholder'),
+    '🔴 la pantalla ya no lee el texto de la pieza compartida.');
+  assert.ok(!literalesDe(pagina, 'quotesView.js').includes('Buscar por nombre, teléfono, email o referencia…'),
+    '🔴 el placeholder se ha COPIADO a la pantalla. Un texto en dos sitios es un texto que un día '
+    + 'cambia en uno solo.');
 });
 
 test('SCRUM-713 · 🔴 SCRUM-591 SIGUE VIVO: «+ Nuevo cliente» es la PRIMERA opción tras el placeholder', async () => {
