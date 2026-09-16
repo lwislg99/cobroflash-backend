@@ -316,3 +316,113 @@ forma». Por eso el caso se parte en dos y el segundo se afirma **en positivo**:
   firmada.
 
 **Tanda completa: 6938 tests · 6828 pass · 0 fail · 110 skipped.**
+
+---
+
+# APÉNDICE · 16-sep-2026 · EL HUECO (b), CERRADO — el papel ya dice de qué versión es
+
+**Medido contra:** `origin/main` = `396e65caa92cd008632d0eb79d39bb56b7f2faef` · 2026-09-16T10:10:11+01:00
+**Qué cambia respecto al §5 de arriba:** aquél declaraba el defecto VIVO y decía por qué no se
+tocaba. El fundador dio luz verde el 16-sep-2026 sobre la medición que sostenía el PARO.
+
+## 1 · La respuesta a la pregunta que condicionaba el diseño
+
+**¿Lee `generateInvoicePdf` el tipo de `:157`? NO.** Declara el suyo **en línea** en la 244
+(`params: { number: string; invoiceId: number; … }`) y no menciona `ParamsPdfPresupuesto`. Sus dos
+únicos lectores son `generateQuotePdf` (702) y `presupuestoParaPdf.ts`. Así que el campo nuevo no
+roza la factura, y —como decía el encargo— ni esa conversación.
+
+## 2 · El tipo NO se ensancha: la revisión viaja como dato propio
+
+```ts
+quoteNumber?: number | null;          // SIGUE siendo number
+revision?: number | null;             // SCRUM-688 · el dato nuevo
+```
+
+Ensanchar `quoteNumber` a texto era la salida fácil y es la que habría metido a la factura en el
+cambio: un número que a veces es texto deja de poder ordenarse ni compararse en ningún sitio.
+
+⚠️ **Opcional aquí, obligatorio para quien construye los parámetros.** `presupuestoParaPdf.ts`
+deriva su tipo con `Completo<ParamsPdfPresupuesto>`, que quita el `?` de **todas** las claves: el
+campo no se puede olvidar en el constructor —no compila— y a la vez no rompe a ningún llamador con
+un objeto de antes. La `?` es compatibilidad, no laxitud.
+
+## 3 · El número lo forma el DOMINIO, no el documento
+
+```ts
+const numeroVisible = params.quoteNumber == null
+  ? String(params.quoteId)
+  : numeroConRevision({ numero: String(params.quoteNumber), revision: Number(params.revision ?? 0) });
+```
+
+`numeroConRevision` **ya llevaba dentro** la regla «sólo con `revision > 0`»: devuelve el número
+pelado cuando no la hay. No se reimplementa nada — dos sitios que forman el mismo número acaban
+formándolo distinto. El respaldo al `quoteId` se conserva, y sobre un id **no** se pinta revisión:
+no es un número de documento, es una clave interna.
+
+Todo el cambio vive **por encima de la 702**; lo único fuera es el `import` y el campo del tipo.
+
+## 4 · Los controles
+
+### 🔴 EL QUE DECIDE — ejecutado, antes y después
+
+```
+ANTES                                   DESPUÉS
+ORIGINAL  → Presupuesto #2004226        ORIGINAL  → Presupuesto #2004226
+REVISIÓN  → Presupuesto #2004226        REVISIÓN  → Presupuesto #2004226.1
+¿`revision` en los params? false        ¿`revision` en los params? true
+```
+
+### ✅ NEGATIVO — la factura, POR CONTENIDO
+
+Generada con el código de antes (`faead250`) y con el de ahora: **dice exactamente lo mismo**, 500
+caracteres comparados, con su número `2026-CF-0007` dentro (suelo: un papel mudo coincidiría
+consigo mismo sin probar nada).
+
+🔴 **Y por qué no por bytes.** El encargo lo corrigió citando SCRUM-665, y se comprobó **aquí**
+antes de aceptarlo, con dos pasadas seguidas y **parámetros idénticos** —mismo `invoiceId`, fecha
+clavada— para que la diferencia no pudiera ser el dato:
+
+```
+bytes iguales entre dos pasadas idénticas:      false      ← el formato NO es determinista
+tamaños:                                        4883 vs 4883
+contenido igual entre dos pasadas idénticas:    true
+```
+
+Dos salidas que difieren en bytes no prueban nada aquí. El contenido sí.
+
+### ✅ POSITIVO — un presupuesto sin revisiones
+
+Idéntico en contenido a como salía antes (324 caracteres), con su número y **sin ningún `.0`**.
+
+### 🔴 MUTACIÓN — y la que NO cayó era un hueco de verdad
+
+| | mutación | qué cae |
+|---|---|---|
+| MP1 | el rótulo vuelve a ignorar la revisión | el que decide, **y** el del camino real |
+| MP2 | el constructor manda `revision: 0` fijo | el del camino real |
+
+**MP2 no tumbaba nada la primera vez**, y no era una mutación equivalente: mis casos llamaban a
+`generateQuotePdf` **directamente**, pasándole `revision` a mano. Con eso sólo se demuestra que el
+documento SABE pintar el sufijo — el cable entre la fila de la base y el papel estaba **sin
+vigilar**, y romperlo devolvía en silencio los dos documentos con el mismo número.
+
+Es la misma forma del defecto que da nombre a este ticket: «el documento puede» no es «el producto
+lo hace». Se cerró con un caso que entra por la MISMA puerta que las cuatro rutas reales
+—`paramsDePresupuestoParaPdf`— y con su suelo (`'revision' in params`).
+
+Las dos mutaciones demuestran que **entraron** (contenido distinto; si no cambia, aborta) y el
+fuente se restauró **byte a byte** con reconstrucción de `dist/` después.
+
+### El test de ayer se GIRÓ
+
+Afirmaba que el papel **no** llevaba el «.1», con esta instrucción dentro: *«no lo borres:
+gíralo»*. Hoy exige lo contrario, y además que **el original siga sin sufijo** y que los dos
+papeles **no digan lo mismo**.
+
+## 5 · Un mordisco del instrumento, anotado
+
+El lector de cifras de la mutación salió **CIEGO** en la primera pasada: el heredoc se comió una
+barra y `'(\d+)'` quedó `(d+)`, que no casa nunca. El instrumento **se declaró ciego en vez de
+inventar un cero** —para eso está el suelo—, pero la causa era mía. Ahora usa `[0-9]`, que no tiene
+barra que perder por el camino.
