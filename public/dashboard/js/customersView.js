@@ -100,6 +100,17 @@ function renderCustomersView(container) {
   } else {
     importBtn.addEventListener("click", openImportCsvModal);
   }
+  // SCRUM-886 · LA MISMA exportación que Informes (`reportsView.js`), con su rótulo LITERAL y su
+  // mismo destino: el fichero descargado es el mismo desde los dos sitios.
+  //
+  // 🔴 SE OCULTA, NO SE DESHABILITA como el de importar, y el criterio es otro a propósito: aquí
+  // es `=== 'admin'`, el MISMO que la ruta (`requireRole('admin')`) y que la vista «Descargar
+  // datos» en `app.js`. Exportar se lleva los datos de todos los clientes; el GO del fundador
+  // cubre esta entrada SOLO para quien ya podía exportar, y un técnico no ve el camino.
+  const exportBtn = window.appUserRole === 'admin'
+    ? createElement("a", "btn-secondary btn-sm", "⬇ Clientes CSV")
+    : null;
+  if (exportBtn) exportBtn.href = "/admin/exports/customers.csv";
   // SCRUM-599 (que ABSORBE CONT-12): el mismo atajo que las otras tres listas, del mismo
   // registro. Dos implementaciones del atajo habrían sido el ticket mal hecho.
   const newBtn = createElement("button", "btn-primary", "Nuevo cliente");
@@ -108,6 +119,7 @@ function renderCustomersView(container) {
     window.atajoNuevo.registrar("customers", () => newBtn.click());
   }
   headActions.appendChild(importBtn);
+  if (exportBtn) headActions.appendChild(exportBtn);
   headActions.appendChild(newBtn);
   header.appendChild(headActions);
   outerCard.appendChild(header);
