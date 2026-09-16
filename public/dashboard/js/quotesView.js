@@ -2050,8 +2050,7 @@ blockDelivery.appendChild(descWrapper);
             // SCRUM-598 · el aviso «Final: …» existía porque el margen hacía que el precio
             // escrito NO fuese el que veía el cliente. Sin margen no puede volver a pasar, así
             // que el aviso queda siempre vacío en vez de decir una diferencia que ya no existe.
-            try { if (line.priceHint) line.priceHint.textContent = ''; } catch (_e) {}
-      
+                  
       
       const vatPerc = parseFloat(
         String(line.vatInput.value || "").replace(",", ".")
@@ -2761,8 +2760,7 @@ conceptInput.dataset.pfProductName = (it.name || "").trim();
 if (typeof it.price !== "undefined" && it.price !== null && it.price !== "") {
   const base = Number(it.price);
   if (Number.isFinite(base)) {
-    // guardamos base
-    priceInput.dataset.pfBasePrice = String(base);
+    // SCRUM-669 (resto 1) · aquí se guardaba `dataset.pfBasePrice`. Retirado: 0 lecturas.
 
     // El precio del catálogo es el PRECIO FINAL: desde CAT-01 (SCRUM-609) el margen NO se guarda
     // en el catálogo, se DERIVA de coste y precio — o sea que `price` ya lo lleva dentro.
@@ -3142,7 +3140,7 @@ conceptInput.addEventListener("input", () => {
 
   function addLine(initial) {
     // SCRUM-139 F1: tarjeta, no `<tr>`. Se conservan EXACTAMENTE las mismas claves en `lineObj`
-    // (conceptInput, qtyInput, priceInput, vatInput, totalCell, priceHint) para que
+    // (conceptInput, qtyInput, priceInput, vatInput, totalCell) para que
     // todo lo que ya las consume —payload, borrador, recalcTotals, plantillas, IA, autocompletado—
     // siga funcionando sin tocarse. Lo que cambia es el DOM, no el contrato.
     const tr = document.createElement("div");
@@ -3178,19 +3176,13 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     priceInput.step = "0.01";
     priceInput.value = initial && initial.price != null ? initial.price : "";
     priceTd.appendChild(priceInput);
-    priceInput.dataset.pfBasePrice = ""; // precio catálogo o base antes de markup
 
-    // Hint: precio final con markup (solo visual; vacío si no hay markup).
-    // SCRUM-139 F4 (cierra BUGS.md P3-13): vive JUNTO A LA ETIQUETA, no debajo del input.
-    // Colgando debajo hacía la celda de PRECIO más alta que las demás y, con `align-items:end`,
-    // su input subía ~15 px respecto a Cantidad y Total. Al lado de la etiqueta todas las cajas
-    // miden lo mismo y el descuadre desaparece de raíz, en vez de compensarse con un ajuste.
-    // Y ahora es MÁS necesario que antes: con el margen dentro de la hoja, este aviso es la
-    // única señal visible de que el precio que verá el cliente no es el que hay escrito.
-const priceHint = document.createElement("span");
-priceHint.className = "price-final-hint";
-priceHint.textContent = "";
-priceTd.querySelector(".quote-line__label").appendChild(priceHint);
+    // SCRUM-669 (resto 4) · AQUÍ VIVÍA `priceHint`, el «Final: …» que avisaba de la diferencia
+    // que creaba el margen de la línea. Se retira porque desde DOC-08 (SCRUM-598) el margen ya
+    // no vive en la línea: sin margen no hay diferencia que avisar, y el hueco se quedaba
+    // SIEMPRE vacío. Un elemento de interfaz que existe y nunca dice nada es una promesa
+    // incumplida — el profesional aprende a no mirar ahí, y el día que algo tenga que decir
+    // ya no lo lee.
 
 
     // ═══════════════════════════════════════════════════════════════════════════════════
@@ -3241,7 +3233,8 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
     // tiene algo escrito — un dato invisible es un dato que nadie va a corregir y que sigue
     // viajando». Guardarlo en un `dataset` habría sido más barato y habría creado exactamente
     // eso: un número que viaja al servidor y que el profesional no puede ni ver ni arreglar.
-    // Ya tenemos uno así en este mismo fichero (`pfBasePrice`, hoy estado muerto). No dos.
+    // Este fichero tuvo uno así —`pfBasePrice`— y acabó siendo estado muerto: se escribía en
+    // cinco sitios y no lo leía nadie. SCRUM-669 lo retiró. No repitamos el patrón.
     //
     // EDITABLE, y ésa es la mitad que hace que la regla sirva. Visible-pero-bloqueado cumple
     // «se ve» y no cumple «alguien lo va a corregir»: una línea escrita a mano no podría llevar
@@ -3588,8 +3581,7 @@ priceTd.querySelector(".quote-line__label").appendChild(priceHint);
       // payload y el borrador, igual que `costeInput`.
       dtoInput,
       totalCell: totalTd,
-      priceHint,
-      // SCRUM-139 F4 — dónde viven margen e IVA y quién abre su hoja. Las claves de arriba
+            // SCRUM-139 F4 — dónde viven margen e IVA y quién abre su hoja. Las claves de arriba
       // NO cambia: `vatInput` sigue siendo el mismo elemento.
       ajustesCampos,
       ajustesBtn,
@@ -3636,21 +3628,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     });
     
     qtyInput.addEventListener("input", onChange);
+    // SCRUM-669 (resto 1) · aquí se REESCRIBÍA `dataset.pfBasePrice` al teclear el precio. Se
+    // retira con el dato: nadie lo leía —CERO lecturas en todo el árbol, medido con dos
+    // instrumentos independientes (texto y AST)— y un dato que se mantiene al día y nadie
+    // consulta invita a que alguien lo lea dentro de seis meses creyendo que significa algo.
     priceInput.addEventListener("input", () => {
-      // si el usuario toca el precio manualmente, invalidamos base
-      // (solo si no viene del autocomplete en ese momento)
-      if (!conceptInput.dataset.pfSelecting) {
-        const raw = String(priceInput.value || "").replace(",", ".").trim();
-const n = Number(raw);
-
-// si el usuario mete un número válido, lo tomamos como nueva base
-if (Number.isFinite(n) && n >= 0) {
-  priceInput.dataset.pfBasePrice = String(n);
-} else {
-  // si deja algo inválido, vaciamos base para no arrastrar basura
-  priceInput.dataset.pfBasePrice = "";
-}
-      }
       onChange();
     });
     
@@ -3684,11 +3666,6 @@ if (Number.isFinite(n) && n >= 0) {
         // —concepto, precio, IVA—, así que su descripción se va con ella. No es el defecto de
         // los otros dos: allí se borraba mientras el profesional escribía.
         if (descInput) descInput.value = "";
-        priceInput.dataset.pfBasePrice = "";
-
-        if (priceHint) {
-          priceHint.textContent = "";
-        }
 
         recalcTotals();
         renderPreview();

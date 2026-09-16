@@ -319,12 +319,21 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // AISLADO: quitando esos dos subárboles el árbol vuelve a 262 exactos, así que el delta entero
   // vive en el control nuevo y esta pantalla no ha movido nada más. El script añadido al banco no
   // aporta ningún nodo: sólo publica `window.buscadorDeClientes`.
-  assert.equal(nodos.length, 264,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 264 `
+  // 🔴 SCRUM-669 · 15-sep-2026 · 264 → 261. LA SEGUNDA BAJADA, y es una RETIRADA medida: el
+  // aviso «Final: …» (`priceHint`) quedaba SIEMPRE vacío desde que DOC-08 sacó el margen de la
+  // línea, así que se retiró con su clase. El banco NO se ha tocado en esta rama.
+  //
+  // IDENTIFICADOS POR IDENTIDAD sobre el árbol montado, no restando 264 − 261: montando la vista
+  // con `priceHint` de vuelta salen 264 y **3 × `span.price-final-hint`**; sin él, 261 y cero.
+  // La diferencia (3) es exactamente el recuento de esa clase, ni un nodo más — uno por cada
+  // línea inicial del presupuesto. Si mañana bajara 4, no sería esto.
+  assert.equal(nodos.length, 261,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 261 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
-    + 'has tocado el banco y esto se mueve, el arreglo pinta.');
+    + '− los 3 avisos «Final: …» retirados por SCRUM-669). Si no has tocado el banco y esto se '
+    + 'mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');
