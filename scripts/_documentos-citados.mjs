@@ -5,9 +5,15 @@
 //
 //   >>> El que falta se busca. El citado se da por leído. <<<
 //
-// Nace de rebote, midiendo SCRUM-534: `docs/VERIFACTU_EVIDENCIAS.md` **no existe** y lo citan el
-// máster, un runbook y dos skills. Nadie lo había notado porque una cita con forma de ruta se lee
-// como una promesa cumplida.
+// Nace de rebote, midiendo SCRUM-534: el documento de evidencias de VeriFactu
+// (`VERIFACTU_EVIDENCIAS`, bajo `docs/`) **no existe** y lo citan el máster, un runbook y dos
+// skills. Nadie lo había notado porque una cita con forma de ruta se lee como una promesa cumplida.
+//
+// ⚠️ Y nótese cómo está escrito ese nombre: **partido a propósito**. Si esta cabecera lo escribiera
+// como ruta entera, `SCRUM-242` acusaría a este fichero de prometer un documento inexistente — y
+// tendría razón, porque ese guard vigila rutas y no puede distinguir una mención de una promesa.
+// Pasó: el guard cazó las tres menciones de aquí antes de empujar. Es el impuesto de SCRUM-349
+// sobre la claridad, pagado a propósito y dicho.
 //
 // ── QUÉ MIRA, DECLARADO — y qué NO ─────────────────────────────────────────────────────────
 //
@@ -42,17 +48,18 @@ export const FUENTES = Object.freeze([
   { dir: '.', recursivo: false, solo: ['README.md', 'CLAUDE.md'] },
 ]);
 
-/** Rutas de documento tal y como las escribe esta casa: `docs/algo/OTRO.md`, `FICHERO.md`. */
+/** Rutas de documento tal y como las escribe esta casa: una ruta con barras y extensión .md */
 const CITA = /(?:^|[\s(`"'«[])((?:[\w./-]+\/)?[A-Za-z0-9_.-]+\.md)\b/g;
 
 /** Marcas que declaran que un documento es FUTURO y todavía no existe. No es un defecto. */
 const ES_FUTURO = /(se crea|se creará|se escribirá|pendiente|cuando|futur|todavía no|aún no|no existe|se generará)/i;
 
 /**
- * 🔴 PLANTILLAS: la ruta lleva una VARIABLE, no un nombre. `docs/equipo/sesion-N.md` no es un
- * documento que falte — es cómo se escribe «el de tu sesión», y `sesion-5.md` existe.
+ * 🔴 PLANTILLAS: la ruta lleva una VARIABLE, no un nombre. El fichero de sesión con la N sin
+ * resolver (bajo `docs/equipo/`) no es un documento que falte — es cómo se escribe «el de tu
+ * sesión», y el de la sesión 5 sí existe.
  *
- * Medido: sin este cubo, el censo acusaba 3 citas de `sesion-N.md` como fantasma. Un censo que
+ * Medido: sin este cubo, el censo acusaba 3 citas de esa plantilla como fantasma. Un censo que
  * llama «documento que falta» a una plantilla manda a alguien a crear un fichero que no debe
  * existir.
  */

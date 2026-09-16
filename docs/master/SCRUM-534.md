@@ -231,6 +231,18 @@ está. Arreglado cerrando el espacio tras la barra.
   debe existir (`sesion-5.md` sí existe).
 * 🔴 **SUELO** — cero citas es CIEGO, no «está limpio»; y las clases **suman** las 514.
 
+## 🔴 Y el guard hermano cazó a este censo — SCRUM-349 en persona
+
+Antes de empujar, **SCRUM-242 se puso en rojo acusando a este propio módulo**: nombraba en sus
+comentarios tres rutas que no existen, y una de ellas era **el fantasma que viene a censar**.
+
+> El fichero que explica la prohibición contiene los patrones que persigue.
+
+El guard tenía razón: vigila rutas y **no puede distinguir una mención de una promesa** — lo dice
+su propia cabecera. **No se relajó** (A7): se reescribieron las tres menciones partiendo el nombre
+de la ruta. Es el impuesto de SCRUM-349 sobre la claridad del comentario, pagado a propósito y
+dicho aquí para que no parezca un descuido de redacción.
+
 ## Lo que NO cubre
 
 * ⛔ **No se ha creado ningún documento ni se ha corregido ninguna cita** (regla 9). Se lista.
