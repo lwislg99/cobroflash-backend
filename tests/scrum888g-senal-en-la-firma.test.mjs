@@ -79,60 +79,113 @@ test('SCRUM-888g · SUELO: la fixture monta la página y el cobro da la señal m
   assert.equal(importeQueEmite(q, 0), 291.07, 'la recomposición de la emisión no reproduce la señal real');
 });
 
-// ── ROJO ────────────────────────────────────────────────────────────────────────────────────
+// ── LA PÍLDORA, tal cual se lee ─────────────────────────────────────────────────────────────
+/** Texto de la píldora de condiciones, o `null` si no hay. Espacios normalizados (el € va con nbsp). */
+function pildora(html) {
+  const m = html.match(/<span class="terms-badge">([\s\S]*?)<\/span>/);
+  return m ? visible(m[1]).replace(/\s+/g, ' ').trim() : null;
+}
+const euros = (n) => formatMoneyEs(n, 'EUR').replace(/\s/g, ' ');
+
+// ── ROJO · 1 · plan propio: «{tramo}: {importe} · {tramo}: {importe}» ─────────────────────────
+// Firma del formato: SCRUM-888 comentario 15624. Los nombres son los del plan; lo nuestro, «: » y « · ».
 for (const [caso, paymentTerms] of [['MANUAL + plan propio (staging)', 'MANUAL'], ['null + plan propio (editor)', null]]) {
   test(`SCRUM-888g · 🔴 con señal, la firma enseña su importe — ${caso}`, () => {
     const q = presupuesto({ paymentTerms, customBillingPlan: PLAN_30_70 });
-    const html = renderQuoteDetail(q, 'tok');
-    const senal = formatMoneyEs(importeQueEmite(q, 0), 'EUR');
-    assert.ok(
-      visible(html).includes(senal),
+    const esperado = `Señal: ${euros(importeQueEmite(q, 0))} · Resto al terminar: ${euros(importeQueEmite(q, 1))}`;
+    assert.equal(esperado, 'Señal: 291,07 € · Resto al terminar: 679,16 €', 'la recomposición de la emisión cambió');
+    assert.equal(
+      pildora(renderQuoteDetail(q, 'tok')),
+      esperado,
       `🔴 EL CLIENTE FIRMA SIN SABER CUÁNTO PAGA AL ACEPTAR.\n` +
-        `  El cobro de la señal emitirá ${senal} y la página de firma no lo enseña.`,
+        `  El cobro emitirá lo de «${esperado}» y la página de firma no lo enseña así.`,
     );
   });
 }
 
-// ── NEGATIVO: ningún identificador interno a la vista ────────────────────────────────────────
-for (const [caso, datos] of [
+// ── ROJO · 2 · los planes de serie: el MISMO formato, con sus textos ya aprobados ─────────────
+for (const [paymentTerms, nombres] of [
+  ['FIFTY_FIFTY', ['50% al aceptar', '50% al finalizar']],
+  ['FULL_UPFRONT', ['Pago completo al aceptar']],
+]) {
+  test(`SCRUM-888g · 🔴 plan de serie con importe, mismo formato — ${paymentTerms}`, () => {
+    const q = presupuesto({ paymentTerms });
+    const esperado = nombres.map((n, i) => `${n}: ${euros(importeQueEmite(q, i))}`).join(' · ');
+    assert.equal(pildora(renderQuoteDetail(q, 'tok')), esperado, `🔴 la píldora de ${paymentTerms} no dice lo que cobrará la emisión`);
+  });
+}
+
+// ── ROJO · 4 · con opciones a elegir: PORCENTAJE en lugar de importe ─────────────────────────
+// El importe depende de la opción que elija el cliente: antes de elegir no hay uno verdadero.
+for (const [caso, datos, esperado] of [
+  ['plan propio', { customBillingPlan: PLAN_30_70 }, 'Señal: 30% · Resto al terminar: 70%'],
+  ['FIFTY_FIFTY', { paymentTerms: 'FIFTY_FIFTY' }, '50% al aceptar: 50% · 50% al finalizar: 50%'],
+  ['FULL_UPFRONT', { paymentTerms: 'FULL_UPFRONT' }, 'Pago completo al aceptar: 100%'],
+]) {
+  test(`SCRUM-888g · 🔴 con opciones a elegir, porcentaje y no importe — ${caso}`, () => {
+    const html = renderQuoteDetail(presupuesto(datos), 'tok', { min: 500 });
+    assert.equal(pildora(html), esperado, '🔴 con tiers la píldora no lleva el porcentaje de cada tramo');
+    assert.doesNotMatch(pildora(html) ?? '', /€/, '🔴 con tiers la píldora promete un importe que aún no existe');
+  });
+}
+
+// ── NEGATIVO: ningún identificador interno a la vista, en NINGÚN caso ────────────────────────
+const TODOS = [
   ['MANUAL + plan propio', { paymentTerms: 'MANUAL', customBillingPlan: PLAN_30_70 }],
+  ['null + plan propio', { customBillingPlan: PLAN_30_70 }],
   ['MANUAL sin plan', { paymentTerms: 'MANUAL' }],
   ['SIN_CONDICIONES sin plan', { paymentTerms: 'SIN_CONDICIONES' }],
   ['FIFTY_FIFTY', { paymentTerms: 'FIFTY_FIFTY' }],
   ['FULL_UPFRONT', { paymentTerms: 'FULL_UPFRONT' }],
-]) {
-  test(`SCRUM-888g · 🔴 ningún código interno a la vista del cliente — ${caso}`, () => {
-    const m = visible(renderQuoteDetail(presupuesto(datos), 'tok')).match(CODIGOS_INTERNOS);
-    assert.equal(m, null, `🔴 el cliente lee el código interno «${m?.[0]}» en la página de firma`);
+  ['sin condiciones', {}],
+];
+for (const [caso, datos] of TODOS) {
+  for (const tiers of [null, { min: 500 }]) {
+    test(`SCRUM-888g · 🔴 ningún código interno a la vista del cliente — ${caso}${tiers ? ' · con tiers' : ''}`, () => {
+      const m = visible(renderQuoteDetail(presupuesto(datos), 'tok', tiers)).match(CODIGOS_INTERNOS);
+      assert.equal(m, null, `🔴 el cliente lee el código interno «${m?.[0]}» en la página de firma`);
+    });
+  }
+}
+
+// ── 3 · MANUAL / SIN_CONDICIONES sin plan: sin píldora, IGUAL que null ───────────────────────
+for (const paymentTerms of ['MANUAL', 'SIN_CONDICIONES']) {
+  test(`SCRUM-888g · 🔴 ${paymentTerms} sin plan se pinta EXACTAMENTE igual que sin condiciones`, () => {
+    for (const tiers of [null, { min: 500 }]) {
+      assert.equal(
+        renderQuoteDetail(presupuesto({ paymentTerms }), 'tok', tiers),
+        renderQuoteDetail(presupuesto(), 'tok', tiers),
+        `🔴 ${paymentTerms} sin plan no se pinta como null`,
+      );
+    }
   });
 }
 
-// ── POSITIVO: sin señal, la página no cambia ────────────────────────────────────────────────
-test('SCRUM-888g · sin señal la página NO cambia — pago completo y sin condiciones', () => {
-  const full = renderQuoteDetail(presupuesto({ paymentTerms: 'FULL_UPFRONT' }), 'tok');
-  assert.match(full, /<span class="terms-badge">Pago completo al aceptar<\/span>/, 'cambió la píldora del pago completo');
-  assert.doesNotMatch(full, /senal-policy/, 'el pago completo no tiene política de señal');
-
+// ── POSITIVO: sin señal ni plan, la página queda como en main ─────────────────────────────────
+// La igualdad byte a byte con `main` se midió al construir (registro en docs/master/SCRUM-888g.md);
+// lo que queda vigilado aquí es lo que la define: sin píldora, sin política, y los mismos importes.
+test('SCRUM-888g · sin señal ni plan la página NO cambia — ni píldora, ni política, ni importes nuevos', () => {
   const sin = renderQuoteDetail(presupuesto(), 'tok');
   assert.doesNotMatch(sin, /terms-badge|senal-policy/, 'sin condiciones no se pinta ninguna');
+  const importes = (visible(sin).match(/\d{1,3}(?:\.\d{3})*,\d{2}\s?€/g) || []).map((s) => s.replace(/\s/g, ' '));
+  assert.deepEqual(
+    importes,
+    [
+      '689,00 €',
+      '54,51 €',
+      '58,33 €',
+      '801,84 €',
+      '168,39 €',
+      '970,23 €',
+    ],
+    'sin señal apareció o desapareció un importe',
+  );
+});
 
-  // Ningún importe nuevo: sólo los de siempre (líneas, base, IVA y total), en su orden. Lista
-  // medida sobre `main` antes del arreglo.
-  for (const html of [full, sin]) {
-    const importes = (visible(html).match(/\d{1,3}(?:\.\d{3})*,\d{2}\s?€/g) || []).map((s) => s.replace(/\s/g, ' '));
-    assert.deepEqual(
-      importes,
-      [
-        '689,00 €',
-        '54,51 €',
-        '58,33 €',
-        '801,84 €',
-        '168,39 €',
-        '970,23 €',
-      ],
-      'sin señal apareció o desapareció un importe',
-    );
-  }
+// ── Y LA POLÍTICA DE SEÑAL (V8) NO SE MUEVE: sigue sólo con FIFTY_FIFTY ────────────────────────
+test('SCRUM-888g · la política «La señal no es reembolsable» sigue donde estaba', () => {
+  assert.match(renderQuoteDetail(presupuesto({ paymentTerms: 'FIFTY_FIFTY' }), 'tok'), /senal-policy/);
+  assert.doesNotMatch(renderQuoteDetail(presupuesto({ paymentTerms: 'FULL_UPFRONT' }), 'tok'), /senal-policy/);
 });
 
 // ── Y SIN SEGUNDO CÁLCULO (AST) ──────────────────────────────────────────────────────────────
