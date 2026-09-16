@@ -183,44 +183,6 @@ jobs:
             echo "  $BASE · tablas: $(psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/$BASE" -tAc "select count(*) from information_schema.tables where table_schema='public'")"
           done
 
-      # 🔴 TEMPORAL · SCRUM-876c · ROJO EN EL DESTINO. Se RETIRA en el commit siguiente de la misma
-      # rama. Inyecta en `dist/` (nunca en `src/`) el defecto que vigila cada uno de los tres de T2 y
-      # los corre contra el banco de CI. Cada mutación exige casar UNA vez: si no entra, el paso
-      # lo dice y no corre nada (un rojo sin mutación sería un rojo de otra cosa).
-      - name: ROJO TEMPORAL — T2 con su defecto inyectado (SCRUM-876c)
-        env:
-          LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
-        run: |
-          node - <<'EOF'
-          const fs = require('fs');
-          const muta = (f, de, a) => {
-            const s = fs.readFileSync(f, 'utf8');
-            const n = s.split(de).length - 1;
-            if (n !== 1) { console.log(`🔴 la mutación no entra en ${f} (casa ${n} veces)`); process.exit(1); }
-            fs.writeFileSync(f, s.replace(de, a));
-            console.log(`mutado: ${f}`);
-          };
-          muta('dist/modules/jobs/domain/job.service.js',
-            "where: { quoteId: { in: quoteIds }, status: 'paid' },",
-            "where: { quoteId: { in: quoteIds }, status: { in: ['paid', 'pending'] } },");
-          muta('dist/modules/jobs/domain/job.service.js',
-            '                operarioId: quote.teamMemberId,',
-            '                operarioId: null,');
-          muta('dist/modules/system/customerAdmin.js',
-            'where: { id, merchantId }, data: normalizarEtiquetas(normalizarIdentificadores(data)) });',
-            'where: { id, merchantId }, data: { billingAddress: null, billingCity: null, billingPostalCode: null, internalRef: null, ...normalizarEtiquetas(normalizarIdentificadores(data)) } });');
-          EOF
-          for F in scrum13-cobrado scrum52-operario scrum692-guardado-parcial-en-base; do
-            echo "════════ $F (con su defecto) ════════"
-            if node --test --test-force-exit "tests/$F.test.mjs"; then
-              echo "🔴 $F PASA CON SU DEFECTO: su verde en este banco no respalda nada"
-            else
-              echo "✅ $F CAE con su defecto"
-            fi
-          done
-          echo "ROJO DELIBERADO de SCRUM-876c: este paso se retira en el commit siguiente."
-          exit 1
-
       - name: Tests (incluidos los de banco desechable)
         env:
           LIBRO_PG_URL: postgresql://postgres@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/yaqu_libro_test
