@@ -134,13 +134,20 @@ jobs:
             }' > candidatos.tsv
           echo "PR scrum-* abiertos: $(wc -l < candidatos.tsv)"
 
-          while IFS="$(printf '\t')" read -r N SHA RAMA; do
+          # El bucle lee por el descriptor 3, no por stdin: así ninguna orden de dentro (git, node)
+          # puede comerse las líneas que quedan.
+          while IFS="$(printf '\t')" read -r N SHA RAMA <&3; do
             # La cabeza de verdad: `merge-tree` necesita el commit, no su nombre.
-            if ! git fetch --no-tags --quiet origin "pull/$N/head" \
-               || [ "$(git rev-parse FETCH_HEAD)" != "$SHA" ]; then
-              echo "::warning::#$N: no pude mirar (la cabeza no se pudo traer o ya no es $SHA)."
-              echo "- #$N · **NO PUDE MIRAR** — la cabeza no se pudo traer o se movió." >> "$GITHUB_STEP_SUMMARY"
+            if ! git fetch --no-tags --quiet origin "pull/$N/head"; then
+              echo "::error::#$N: no pude mirar (la cabeza del PR no se pudo traer). No se empuja."
+              echo "- #$N · **NO PUDE MIRAR** — la cabeza no se pudo traer." >> "$GITHUB_STEP_SUMMARY"
               NO_PUDE=1
+              continue
+            fi
+            # Se movió entre la lista y el fetch: es una carrera, no una avería. Ese push nuevo no
+            # dispara este job; lo mirará la siguiente pasada, cuando `main` vuelva a avanzar.
+            if [ "$(git rev-parse FETCH_HEAD)" != "$SHA" ]; then
+              echo "- #$N · **SE MOVIÓ** — la cabeza ya no es \`${SHA:0:8}\`; no se toca en esta pasada." >> "$GITHUB_STEP_SUMMARY"
               continue
             fi
 
@@ -171,7 +178,7 @@ jobs:
                 NO_PUDE=1
                 ;;
             esac
-          done < candidatos.tsv
+          done 3< candidatos.tsv
 
           # Un «no pude mirar» pone el run en rojo: es el instrumento diciendo que no vale, no un
           # PR atascado (eso no falla nunca: lo cuenta el vigía).
