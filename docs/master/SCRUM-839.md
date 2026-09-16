@@ -397,9 +397,9 @@ ajenos salieron CIEGOS: ese dato no dice nada de ellos.
 
 # APÉNDICE · SCRUM-839e (16-sep-2026) · Arreglo de la pieza A: solo PR ya armados, y solo una persona arma
 
-**Medido contra:** `origin/main` = `42bf571252873fd462ae661e0d74d3b63116e002` · 2026-09-16T18:30:36Z
+**Medido contra:** `origin/main` = `c8f9548338dcd3d3ed93d3ef2afdcc5161abdfd4` · 2026-09-16T18:40:25Z
 
-**Tanda:** __TANDA__ — medida DESPUÉS del último cambio de código, sobre este `origin/main` mergeado en la rama.
+**Tanda:** 7107 tests, 6997 pass, 0 fail, 110 skipped — medida DESPUÉS del último cambio de código, sobre este `origin/main` mergeado en la rama.
 
 **Rama:** `scrum-839e-solo-pr-armados` · Sesión 5 · encargo del orquestador (16-sep 19:55 CEST, `origin/main` `364e7d3a`).
 
