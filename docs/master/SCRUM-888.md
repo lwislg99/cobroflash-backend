@@ -142,6 +142,24 @@ cuatro casos dentro y sin scroll horizontal** en los dos anchos. ⚠️ La medid
   `billingPlanView.ts` ni `invoiceLines.service.ts`; el test sólo los importa y los ejecuta.
 - **Sin schema.**
 
+## SCRUM-887 entró en main mientras esta rama corría en CI
+
+El primer CI del arreglo (run 35140347955, sobre `f1aeb9887dc3204cdbbb32560a3f7d3dbbc9934d`) cayó con
+el fichero entero en rojo, **suelo incluido**: `lineasParaFacturar: el presupuesto llega sin
+`discountGlobalAmount` cargado`. SCRUM-887 (#1369, merge `7000a0cffe284fc99c669af2ba27e74ab9cb78c9`) hizo
+que la emisión y `buildBillingPlanView` facturen `lineasParaFacturar(quote)` —el dto de línea
+aplicado— y exijan `discountGlobalAmount` cargado. No era el arreglo: era la fixture.
+
+- La fixture lleva `discountGlobalAmount: null` (en la página real `loadQuote` usa `include`, que
+  trae todas las columnas escalares, así que el campo llega siempre).
+- La recomposición de la emisión en el test pasa a `lineasParaFacturar(q)`, **igual que
+  `quotes.routes.ts:650`** en main.
+- Caso nuevo: **con dto de línea** la píldora enseña la señal con el dto aplicado, con control de que
+  el dto mueve el importe (si no lo moviera, el caso no distinguiría nada).
+
+Con eso la página siguió sin tocarse: sigue pidiéndolo todo a `buildBillingPlanView`, y por eso
+heredó el cambio de SCRUM-887 sin una línea propia — que es justo lo que pedía el «sin segundo cálculo».
+
 ## Sobre la entrada anterior
 
 La escribió `claude[bot]` sobre esta rama (`63156546`, 19:06Z) mientras el rojo corría en CI, y se

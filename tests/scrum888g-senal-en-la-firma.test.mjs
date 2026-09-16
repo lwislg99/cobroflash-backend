@@ -14,7 +14,7 @@
 // LA REGLA DEL ARREGLO: el importe de la señal sale de la MISMA función que el cobro. Nada de un
 // segundo cálculo. Por eso el importe esperado de este test NO se calcula con la función que use
 // la página, sino recomponiendo LITERALMENTE lo que hace la emisión al aceptar
-// (`quotes.routes.ts`: `resolveBillingPlan` → `stageLinesReconciled(lines, plan, i,
+// (`quotes.routes.ts`: `resolveBillingPlan` → `stageLinesReconciled(lineasParaFacturar(quote), plan, i,
 // distributeStageAmounts(total, plan)[i])` → `grossOfLines`). Si la página calculara por su
 // cuenta y divergiera en un céntimo, esto cae.
 //
@@ -30,7 +30,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { renderQuoteDetail } from '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
 import { resolveBillingPlan, distributeStageAmounts } from '../dist/modules/quotes/domain/billingPlan.js';
-import { stageLinesReconciled, grossOfLines } from '../dist/modules/invoicing/domain/invoiceLines.service.js';
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../dist/modules/invoicing/domain/invoiceLines.service.js';
 import { formatMoneyEs } from '../dist/core/utils/utils.js';
 
 const require = createRequire(import.meta.url);
@@ -42,19 +42,21 @@ const PLAN_30_70 = [
 ];
 
 /** Las líneas del C4 de SCRUM-883, tal cual están en staging (todas al 21 %). */
-const presupuesto = ({ paymentTerms = null, customBillingPlan = null } = {}) => ({
+const presupuesto = ({ paymentTerms = null, customBillingPlan = null, lines = null, total = 970.23 } = {}) => ({
   id: 1875,
   quoteNumber: 4,
   currency: 'EUR',
-  total: 970.23,
+  total,
   status: 'draft',
   createdAt: new Date('2026-09-16T10:00:00Z'),
   validUntil: null,
   paymentTerms,
   customBillingPlan,
+  // SCRUM-887: la emisión exige que venga cargado (`include` lo trae siempre de la BD; null = sin global).
+  discountGlobalAmount: null,
   merchant: { name: 'Electricidad QA', legalName: null, logoUrl: null, address: null, country: 'ES', timezone: 'Europe/Madrid' },
   customer: { name: 'Cliente' },
-  lines: [
+  lines: lines ?? [
     { concept: 'Cuadro eléctrico', qty: 1, price: 689, tax: 0.21 },
     { concept: 'Metro de cable', qty: 23, price: 2.37, tax: 0.21 },
     { concept: 'Desplazamiento', qty: 1, price: 58.33, tax: 0.21 },
@@ -64,7 +66,8 @@ const presupuesto = ({ paymentTerms = null, customBillingPlan = null } = {}) => 
 /** Lo que la EMISIÓN cobra como tramo `i` al aceptar — recompuesto, no importado de la página. */
 function importeQueEmite(q, i) {
   const plan = resolveBillingPlan(q);
-  const lineas = stageLinesReconciled(q.lines, plan, i, distributeStageAmounts(q.total, plan)[i]);
+  // SCRUM-887: la emisión factura `lineasParaFacturar` (el dto de línea aplicado), no `quote.lines` a pelo.
+  const lineas = stageLinesReconciled(lineasParaFacturar(q), plan, i, distributeStageAmounts(q.total, plan)[i]);
   return grossOfLines(lineas);
 }
 
@@ -106,6 +109,22 @@ for (const [caso, paymentTerms] of [['MANUAL + plan propio (staging)', 'MANUAL']
     );
   });
 }
+
+// ── Y CON DTO DE LÍNEA (SCRUM-887): la señal es la que cobra la emisión, con el dto aplicado ──────
+test('SCRUM-888g · con dto de línea, la píldora enseña lo que cobra la emisión (no el precio sin dto)', () => {
+  const lines = [
+    { concept: 'Cuadro eléctrico', qty: 1, price: 689, tax: 0.21, dto: 10 },
+    { concept: 'Desplazamiento', qty: 1, price: 58.33, tax: 0.21 },
+  ];
+  const total = grossOfLines(lineasParaFacturar({ lines, discountGlobalAmount: null }));
+  const conDto = presupuesto({ customBillingPlan: PLAN_30_70, lines, total });
+  const esperado = `Señal: ${euros(importeQueEmite(conDto, 0))} · Resto al terminar: ${euros(importeQueEmite(conDto, 1))}`;
+  // Control: el dto mueve el importe. Si no lo moviera, este caso no distinguiría nada.
+  const sinDto = presupuesto({ customBillingPlan: PLAN_30_70, lines: lines.map(({ dto, ...l }) => l), total });
+  assert.notEqual(importeQueEmite(conDto, 0), grossOfLines(stageLinesReconciled(sinDto.lines, resolveBillingPlan(sinDto), 0)),
+    'el dto no mueve la señal: el caso no discrimina');
+  assert.equal(pildora(renderQuoteDetail(conDto, 'tok')), esperado, '🔴 con dto de línea la firma promete otra señal que la que se cobra');
+});
 
 // ── ROJO · 2 · los planes de serie: el MISMO formato, con sus textos ya aprobados ─────────────
 for (const [paymentTerms, nombres] of [
