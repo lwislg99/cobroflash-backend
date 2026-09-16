@@ -290,3 +290,21 @@ por estar arreglada.
 y sin coste** y se exige que salga `;;12.00;;`. Con eso demostrado, su ausencia en la fila real
 significa algo. No se subió ningún número ni se tocó el guard.
 
+## 7 · La tanda, con su población y sus saltos aparte
+
+```
+✅ LA TANDA TERMINÓ · 40 min · concurrencia 1 · tope duro 45
+# tests 6988 · # pass 6878 · # fail 0 · # skipped 110 · # todo 0
+población: 830 ficheros de tests/      not ok: 0
+```
+
+Los **110 saltados** son los gateados de siempre (base real, navegador), cada uno con su motivo
+declarado, y van **aparte del pass**: «0 fail» sin decir sobre cuántos no es un verde, es una
+frase (norma A3, de [SCRUM-850](SCRUM-850.md)).
+
+Dentro van los siete de este ticket y **los dos que arreglé** (`SCRUM-661 ①` y `SCRUM-237`), en verde.
+
+⚠️ **Y otro dato para [SCRUM-858](SCRUM-858.md), que se apunta y no se investiga:** esta misma
+tanda tardó **14 minutos** hace dos horas y **40** ahora, las dos completas y con la misma
+invocación. La serie va ya **18 · 35 · 45-sin-terminar · 14 · 40**. Sigue sin ser un cuelgue y
+sigue sin estar concentrado en nada.
