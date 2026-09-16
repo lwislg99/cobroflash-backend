@@ -70,6 +70,31 @@ test('SCRUM-421 · el falso positivo del `res.json` no vuelve', () => {
   assert.deepEqual(r.escrituras[0].valores, ['draft']);
 });
 
+test('SCRUM-421 · el `select: { status: true }` no se cuenta como escritura — con su negativo', () => {
+  // 🔴 SCRUM-688 lo destapó: `crearRevisionDeQuote` pide de vuelta el estado de la fila recién
+  // creada (`select: { …, status: true }`) y el censo lo leía como una escritura cuyo valor no
+  // sabía resolver. Eso NO es un estado fuera de la tabla: es «devuélveme la columna». Y el efecto
+  // era el peor posible — el fichero entero se declaraba CIEGO por una proyección.
+  const r = censarFuente('proyeccion.ts', [
+    'async function h() {',
+    "  const a = await prisma.quote.create({ data: { status: 'draft' }, select: { id: true, status: true } });",
+    '  const b = await prisma.quote.findFirst({ where: { id: 1 }, select: { status: true } });',
+    '  return [a, b];',
+    '}',
+  ].join('\n'));
+
+  assert.deepEqual(r.sinResolver, [],
+    `🔴 el censo sigue sin poder resolver ${r.sinResolver.length} nodo(s): una proyección lo deja `
+    + 'ciego, y un fichero ciego da verde diciendo «no supe mirar».');
+
+  // 🔴 EL NEGATIVO, que es lo que separa «enseñarle a ver» de «taparle un ojo»: la escritura de
+  // verdad —la que va bajo `data:`— se sigue contando, y con su valor.
+  assert.equal(r.escrituras.length, 1,
+    `🔴 el censo cuenta ${r.escrituras.length} escrituras y hay UNA: la de \`data:\`. Si cuenta 0, `
+    + 'la corrección no distingue proyección de escritura — se ha comido las dos.');
+  assert.deepEqual(r.escrituras[0].valores, ['draft']);
+});
+
 // ── EL CONTRASTE: la tabla contra el árbol ───────────────────────────────────────────────────
 
 test('SCRUM-421 · 🔴 CONTRASTE: ningún estado escrito se queda fuera de la tabla', () => {

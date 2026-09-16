@@ -3442,3 +3442,11 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   margin-bottom: 6px;
   box-sizing: border-box;
 }
+
+/* SCRUM-688 · El aviso de que no se pudo crear la revision.
+   Cero tokens nuevos. La tinta es `--danger-ink`, NO `--danger`, y no es preferencia: esta hoja
+   ya lo midio mas arriba (linea ~600) — `--danger` (#dc2626) sobre fondo claro se queda corto
+   de 4,5:1 para texto, y `--danger-ink` (#991b1b) lo pasa. El primer intento de este aviso venia
+   con `--danger` en un `style.cssText`, asi que el trinquete de estilos en JS arreglo las dos
+   cosas de una: lo saco a su clase y de paso le quito el color que no contrasta. */
+.revision-error { margin: 6px 0 0; font-size: 13px; color: var(--danger-ink, #991b1b); }

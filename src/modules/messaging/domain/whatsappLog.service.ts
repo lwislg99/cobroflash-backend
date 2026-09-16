@@ -196,6 +196,22 @@ const MIN_MUESTRA_ALERTA = 10;
 export const DELIVERED_OR_MORE = new Set(['delivered', 'read']);
 export const SENT_OR_MORE = new Set(['sent', 'delivered', 'read']);
 
+/**
+ * 🔴 SCRUM-862 · EL DENOMINADOR DE UNA TASA DE ENTREGA SON LOS INTENTOS, NO LOS QUE NO FALLARON.
+ *
+ * `SENT_OR_MORE` no incluye `failed`, así que usarlo de denominador daba una tasa que **no puede
+ * bajar por culpa de un fallo** — que es lo único que debería hacerla bajar. Medido antes de
+ * tocar nada: con 1 entregado y 9 fallidos la pantalla enseñaba **100 %** y la alerta callaba.
+ *
+ * ⛔ Y POR ESO ESTO ES UNA FUNCIÓN APARTE Y NO UN `failed` DENTRO DE `SENT_OR_MORE`: ese conjunto
+ * también alimenta `aggregateWaRows`, que es quien calcula el KPI `month.sent`. Metiendo el fallo
+ * ahí, la tarjeta pasaría a enseñar «Enviados 10 · Fallidos 9» contando los mismos nueve DOS
+ * VECES. Esa cifra hoy es correcta; el arreglo va sólo en el denominador de las dos tasas.
+ */
+function esIntentoDeEntrega(estado: string): boolean {
+  return SENT_OR_MORE.has(estado) || estado === 'failed';
+}
+
 /** Pura (testeable): funnel derivado + coste a partir de filas {status, costEstimate}.
  *  `costEstimate` acepta number, Prisma Decimal o string (se normaliza con Number(String())). */
 export function aggregateWaRows(
@@ -252,11 +268,11 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
       const s = r.status;
       const tpl = r.templateName || '(desconocida)';
       if (!perTpl[tpl]) perTpl[tpl] = { enviados: 0, entregados: 0 };
-      if (SENT_OR_MORE.has(s)) perTpl[tpl].enviados++;
+      if (esIntentoDeEntrega(s)) perTpl[tpl].enviados++;
       if (DELIVERED_OR_MORE.has(s)) perTpl[tpl].entregados++;
 
       if (r.createdAt >= weekAgo) {
-        if (SENT_OR_MORE.has(s)) week.enviados++;
+        if (esIntentoDeEntrega(s)) week.enviados++;
         if (DELIVERED_OR_MORE.has(s)) week.entregados++;
       }
     }

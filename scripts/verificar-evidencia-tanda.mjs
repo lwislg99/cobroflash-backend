@@ -55,8 +55,24 @@ const git = (args, stdin) => {
 };
 const huellaActual = huellaDeCodigo(git);
 
+/**
+ * SCRUM-736 · cuántos tests DECLARA el árbol. Es al recuento de tests lo que `ficherosEsperados`
+ * es al de ficheros, y sale del censo por AST de SCRUM-708 — no de un segundo censo propio.
+ *
+ * 🔴 `null` si no se puede contar, y el validador lo dice: un censo que revienta no es un árbol de
+ * cero tests, y confundirlos bajaría el suelo a nada.
+ */
+let testsEsperados = null;
+try {
+  const m = await import('../tests/_poblacion-de-tests.mjs');
+  const n = m.testsDeclaradosEn(RAIZ);
+  if (Number.isFinite(n) && n > 0) testsEsperados = n;
+} catch { /* sin censo: rige el declarado, y el validador lo dice */ }
+
 const activo = estaActivo(process.env);
-const res = validarEvidencia({ texto, commitActual, huellaActual, ahoraMs: Date.now(), ficherosEsperados });
+const res = validarEvidencia({
+  texto, commitActual, huellaActual, ahoraMs: Date.now(), ficherosEsperados, testsEsperados,
+});
 
 process.stdout.write(mensajeVeredicto(res, { activo }));
 process.stdout.write(AVISO_ALCANCE);

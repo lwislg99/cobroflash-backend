@@ -273,20 +273,25 @@ export const DECLARADOS = [
     exports: ['RevisionesAmbiguas', 'CensoDeRevisionesCiego'] },
   { modulo: 'src/modules/quotes/domain/revision.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
-    motivo: 'SCRUM-655 fase B. Las dos piezas que compone `vistaDeRevisiones` —el suelo de ceguera y el que no elige ante un empate—. El endpoint llama a la compuesta; estas van exportadas para que el test fije CADA regla por separado sin montar la vista entera, que es como se sabe cual de las dos cayo.',
-    exports: ['vigenteUnicaDe', 'revisionesDe'] },
+    motivo: 'SCRUM-655 fase B. Las dos piezas que compone `vistaDeRevisiones` —el suelo de ceguera y el que no elige ante un empate—. El endpoint llama a la compuesta; estas van exportadas para que el test fije CADA regla por separado sin montar la vista entera, que es como se sabe cual de las dos cayo. · SCRUM-688 (16-sep-2026): `vigenteUnicaDe` SALE de esta linea porque ya tiene llamador vivo — `crearRevisionDeQuote` la usa para decidir sobre QUE version se crea la revision, y ante un empate PARA, que es justo para lo que se escribio. `revisionesDe` sigue sin uno.',
+    exports: ['revisionesDe'] },
   { modulo: 'src/modules/quotes/domain/revision.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
     motivo: 'SCRUM-655 fase B. `vistaDeRevisiones` lo ejecuta dentro del modulo, asi que el consejo del guard —quitarle el `export`— es correcto en su forma general. NO se le quita, y con motivo: el test de la fase A lo llama DIRECTO para fijar «la vigente es la mas alta, y las demas siguen ahi» sobre un grupo escrito a mano, sin pasar por la vista. Ese test es de este mismo ticket y esta verde sin tocarlo; reescribirlo para medir por la superficie publica seria cambiar una prueba que ya funciona por otra equivalente, y la unica ganancia seria una linea menos en este registro.',
     exports: ['esVigente'] },
   { modulo: 'src/modules/quotes/domain/revision.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
-    motivo: 'SCRUM-655 fase B. La clasificacion de los campos de `Quote` al revisar: que hereda una revision, que NO hereda (la firma, la evidencia, la decision) y que pone el sistema. Es la UNICA fuente de ese reparto y el test la contrasta contra `prisma/schema.prisma`: una columna nueva sin clasificar cae en rojo, que es lo que impide que una revision pierda un dato en silencio.',
-    exports: ['REVISION_HEREDA', 'REVISION_NO_HEREDA', 'REVISION_LA_PONE_EL_SISTEMA'] },
-  { modulo: 'src/modules/quotes/domain/revision.ts',
-    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-02',
-    motivo: 'SCRUM-655 fase B. La regla «un presupuesto FIRMADO no se reescribe»: los datos de la fila NUEVA, sin `id` — no tiene forma de tocar la anterior aunque se lo pidan. No tiene endpoint todavia (crear la revision desde pantalla no estaba en el encargo y abre superficie de escritura), asi que hoy su consumidor es su test, y ahi es donde vive la regla. Se borra esta linea el dia que un POST la cablee.',
-    exports: ['nuevaRevisionDe'] },
+    motivo: 'SCRUM-655 fase B. La clasificacion de los campos de `Quote` al revisar: que hereda una revision, que NO hereda (la firma, la evidencia, la decision) y que pone el sistema. Es la UNICA fuente de ese reparto y el test la contrasta contra `prisma/schema.prisma`: una columna nueva sin clasificar cae en rojo, que es lo que impide que una revision pierda un dato en silencio. · SCRUM-688 (16-sep-2026): `REVISION_HEREDA` SALE de esta linea, y no por casualidad: `crearRevisionDeQuote` DERIVA de ella su `select` de Prisma en vez de escribir una lista paralela. Ese era el hueco (a) del ticket — `nuevaRevisionDe` copia con `if (campo in anterior)`, asi que un campo clasificado que el llamador no pidiera no viajaba y nada se ponia rojo. Los otros dos siguen sin llamador.',
+    exports: ['REVISION_NO_HEREDA', 'REVISION_LA_PONE_EL_SISTEMA'] },
+  // 🔴 SCRUM-688 (16-sep-2026) · AQUI VIVIA `nuevaRevisionDe`, y la linea decia textualmente:
+  // «Se borra esta linea el dia que un POST la cablee.» Ese dia fue hoy.
+  //
+  // `POST /admin/quotes/:id/revisiones` la llama a traves de `crearRevisionDeQuote`. La deuda duro
+  // del 2-sep-2026 al 16-sep-2026: catorce dias con la regla «un presupuesto FIRMADO no se
+  // reescribe» construida, probada y sin un solo camino por el que un profesional llegara a ella.
+  // Se deja escrito el rastro en vez de borrarlo a secas, porque el guard de SCRUM-411 avisa de
+  // que una lista que MENGUA tiene dos causas —la cableaste, o el detector se quedo ciego— y la
+  // constancia de cual fue es lo unico que distingue las dos el dia que alguien lo relea.
   { modulo: 'src/modules/auth/domain/referral.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
