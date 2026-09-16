@@ -1,0 +1,20 @@
+Presupuesto
+Presupuesto #1
+Emisor: QA Staging S.L.
+C/ Staging 1, 28000 Madrid
+WhatsApp 34600000001
+Cliente: SCRUM-883 Cliente electricista
+Tel: 34600883883
+Email: scrum883@example.com
+SCRUM-883 C1
+Detalle del presupuesto:
+Concepto Cant. Precio IVA% Total
+Magnetotérmico 2P 16A 3 9,99 21% 36,26
+Diferencial 40A 30mA 1 42,35 21% 51,24
+Cable 2,5 mm² (m) 37 0,88 21% 39,17
+Mano de obra (h) 2.5 38,50 21% 116,46
+Base imponible: 200,95 EUR
+IVA 21%: 42,20 EUR
+Total presupuesto: 243,14 EUR
+Presupuesto generado automáticamente por YaQu — válido salvo indicación en contrario.
+
