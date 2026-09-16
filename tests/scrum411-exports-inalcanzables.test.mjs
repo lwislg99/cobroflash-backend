@@ -194,7 +194,23 @@ const R = analizar(RAIZ);
 // `revision.ts` están ya en la lista. Los 7 que quedan son los de siempre — el bloque fiscal y
 // los motores de oficina— y ninguno es de hoy.
 // ═══════════════════════════════════════════════════════════════════════════════════════
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
+// ⚠️ 16-sep-2026 · SUBE A 8, Y ES UNA DECISIÓN ESCRITA, NO UN AJUSTE PARA VOLVER AL VERDE.
+//
+// Entra `src/modules/invoicing/domain/emisorCongelado.ts` (SCRUM-665 A): las siete columnas del
+// emisor congelado, con su escritor y su lector. **Nace inalcanzable a propósito y por una razón
+// que no está en mi mano:** su llamador necesita las siete columnas en `Invoice`, y
+// `prisma/schema.prisma` es del fundador — el encargo dice «PROPÓN el diff, NO lo apliques a
+// ninguna base». Sin columnas, `prisma.invoice.create({ data: { merchantName… } })` ni compila.
+//
+// 🔴 NO es un motor sin llamador de los que este trinquete persigue: está **ejercitado de punta a
+// punta** por `tests/scrum665a-congelar-el-emisor.test.mjs`, con el contraste positivo/negativo
+// sobre PDFs reales. Lo que falta es el ALTER, no la prueba.
+//
+// **VUELVE A 7** el día que se aplique el diff y se cablee el escritor en `src/lib/invoicing.ts`.
+// Quien lo haga, que baje este número en el mismo commit: un tope que se queda alto después de
+// que su motivo desaparezca es un trinquete que ha dejado de proteger sin que nadie lo note —
+// exactamente lo que dice el bloque de arriba.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
