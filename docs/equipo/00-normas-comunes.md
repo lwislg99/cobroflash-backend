@@ -312,21 +312,3 @@ ticket decía «a 4 ramas» de un umbral concreto, `dentro.length > 10`, y ese m
 hoy es 57. Dos umbrales distintos con dos márgenes distintos, y atribuirle a uno el número del
 otro es la misma clase de error que la norma viene a cortar: **un número heredado de un
 enunciado no es una medición.**
-
-## A19 · El PUESTO no se cierra; la CONVERSACIÓN sí
-
-S0 a S5 son **puestos**: cada uno hace su pregunta para siempre. Lo que se cierra es la
-**conversación** de Claude en la que trabaja, y se cierra en tres casos:
-
-1. Ha cerrado su ticket → el siguiente ticket va en **conversación nueva**.
-2. Su contexto pasa de **~300k tokens** → deja el traspaso en su memoria y para, aunque el ticket
-   no esté acabado.
-3. Nunca se reanuda una conversación vieja: se abre una nueva con el prompt corto.
-
-**La conversación nueva se abre en la MISMA CARPETA que la anterior.** La memoria de Claude va
-por carpeta: abierta en otra, no encuentra el traspaso.
-
-**La medición (Sesión 0, 16-sep-2026):** 94,7 % del gasto es contexto arrastrado; 39 turnos de
-arranque o reanudación en frío escriben el 80,7 % de la caché. Ver `afirmaciones-verificadas.md`.
-
-    🔒 El coste no es lo que entra en un turno: es lo que cada turno arrastra.

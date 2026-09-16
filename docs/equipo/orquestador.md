@@ -240,7 +240,7 @@ Cuando el orquestador firma, firma así:
     línea que se entiende sin saber nada, DÓNDE se pega: «🆕 CHAT NUEVO en la carpeta de la
     Sesión N» o «↩️ MISMO CHAT de la Sesión N». Escribir «conversación nueva» DENTRO del prompt
     no sirve: lo lee la sesión cuando ya está pegado en el chat equivocado. Pasó con S2 y S5.
-    Los puestos no se cierran nunca (A19): lo que se cierra es el chat.
+    Los puestos no se cierran nunca: lo que se cierra es el chat.
 
 ## 10bis · Las reglas de ticket
 
