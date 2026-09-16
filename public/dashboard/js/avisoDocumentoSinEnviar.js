@@ -13,8 +13,9 @@
 //   · el envío automático al cobrar está ENCENDIDO — apagado no le llega a nadie, y ese es otro
 //     problema, no éste;
 //   · el cliente NO tiene email;
-//   · el WhatsApp no cuenta: no se intentó, o ninguna fila dice enviado o más. Un WhatsApp que
-//     todavía no ha vuelto de Meta (`en_curso`) no es un fallo y no avisa.
+//   · el WhatsApp no cuenta: no se intentó, o ninguna fila dice enviado o más. Un WhatsApp del
+//     que todavía no se sabe (`en_curso`: aún sin fila, o en cola desde hace menos de 10 minutos)
+//     no es un fallo y no avisa; en cola MÁS de 10 minutos llega como `no_enviado` y sí avisa.
 // Sin `envioDocumento` (factura sin cobro pagado, o una respuesta de antes) no hay aviso.
 
 var AVISO_DOCUMENTO_SIN_ENVIAR =

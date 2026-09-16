@@ -76,11 +76,11 @@ router.post('/:id/confirm-bizum', async (req, res) => {
 });
 
 async function envioDelDocumentoDelCobro(merchantId: number, chargeId: number, customer: { email: string | null; phone: string | null; mobile: string | null } | null) {
-  const leerEstados = async () =>
-    (await prisma.whatsAppMessage.findMany({
+  const leerEstados = () =>
+    prisma.whatsAppMessage.findMany({
       where: { merchantId, relatedType: 'charge', relatedId: chargeId }, // regla 2
-      select: { status: true },
-    })).map((f) => f.status);
+      select: { status: true, createdAt: true },
+    });
 
   let estados = await leerEstados();
   // Sólo merece la pena esperar si el aviso depende de ello: cliente sin email y con número.
@@ -91,7 +91,7 @@ async function envioDelDocumentoDelCobro(merchantId: number, chargeId: number, c
   }
   return envioDelDocumento({
     clienteEmail: customer?.email,
-    estadosWhatsapp: estados,
+    filasWhatsapp: estados,
     enCurso: dependeDelWhatsapp && estados.length === 0,
   });
 }

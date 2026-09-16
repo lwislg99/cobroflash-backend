@@ -676,7 +676,7 @@ async function serializeJobDetail(job: any) {
         }),
         prisma.whatsAppMessage.findMany({
           where: { merchantId: job.merchantId, relatedType: 'charge', relatedId: { in: idsDeCobro } }, // regla 2
-          select: { relatedId: true, status: true },
+          select: { relatedId: true, status: true, createdAt: true },
         }),
       ]);
   const pagados = new Set(cobrosPagados.map((c) => c.id));
@@ -684,7 +684,7 @@ async function serializeJobDetail(job: any) {
     chargeId != null && pagados.has(chargeId)
       ? envioDelDocumento({
           clienteEmail: customer?.email,
-          estadosWhatsapp: filasWhatsapp.filter((w) => w.relatedId === chargeId).map((w) => w.status),
+          filasWhatsapp: filasWhatsapp.filter((w) => w.relatedId === chargeId),
         })
       : null;
 
