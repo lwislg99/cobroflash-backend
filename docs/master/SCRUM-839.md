@@ -250,7 +250,7 @@ quien venga detrás.
 
 **Medido contra:** `origin/main` = `b42c220648790e8318664dc15fc15139c7e10f23` · 2026-09-16T14:22:25Z
 
-**Tanda:** __TANDA__
+**Tanda:** 7075 tests, 6965 pass, 0 fail, 110 skipped — medida DESPUÉS del último cambio de código, sobre este `origin/main` mergeado en la rama.
 
 **Rama:** `scrum-839d-conflicto-de-registro-solo` · Sesión 5 · encargo del orquestador (16-sep ~15:40, `origin/main` `e5e67c01`).
 
