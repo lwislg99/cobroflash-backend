@@ -3,6 +3,10 @@
 **Fecha:** 16-sep-2026 · **Carril:** backend (ruta + dominio) y frontend (pantalla) · **Gate:** sin gate, corre en `npm test`
 
 **Medido contra:** `origin/main` = `713a29b738966ecb524a25fffbb842e9f3d09a52` · 2026-09-16T04:49:22Z
+**Re-medido contra:** `origin/main` = `8dac4cd5` — **main se movió durante el ticket** y la línea
+base caduca cuando eso pasa. Se mergeó y se volvió a pasar la tanda ENTERA, no sólo lo mío: trae
+`scrum628-cobertura-visual-del-dashboard`, y este ticket toca la pantalla y la hoja de estilos, así
+que dar por bueno el verde anterior habría sido suponerlo. **0 colisiones de fichero, 0 fallos.**
 **Rama:** `scrum-688-crear-revision`
 
 > 🟢 **Construido con el SÍ del fundador**, y sólo lo que ese sí cubría: el POST que llama a
@@ -247,5 +251,5 @@ tocó `.gitattributes`.
 ---
 
 **`npm run guards:entrada`: 4 guards, 26 tests, 0 fallos.**
-**Tanda completa: 6917 tests · 6807 pass · 0 fail · 110 skipped** (los gateados de siempre —
+**Tanda completa (con main dentro): 6937 tests · 6827 pass · 0 fail · 110 skipped** (los gateados de siempre —
 `QA_DB_TEST`, `LIBRO_PG_URL`, staging—; este ticket **no añade ni un salto**).
