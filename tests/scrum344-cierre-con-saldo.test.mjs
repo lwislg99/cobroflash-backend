@@ -225,12 +225,24 @@ test('SCRUM-344 · INYECCIÓN: quitar la confirmación deja el cierre sin aviso 
 });
 
 test('SCRUM-344 · INYECCIÓN: sacar el cierre de su sección y dejarlo suelto hace caer el guard', () => {
-  // El cierre se muda a `jobCard`, que es exactamente donde vivía antes de este ticket.
+  // El cierre se muda a la función de la FILA, que es donde vivía antes de este ticket.
+  //
+  // ⚠️ SCRUM-727b renombró `jobCard` → `jobRow` al convertir la pantalla en tabla. El ancla vieja
+  // dejó de casar y este test **falló diciendo que no encontraba dónde inyectar**, en vez de pasar
+  // en verde sin haber probado nada. Es exactamente lo que tenía que hacer: se actualiza el ancla,
+  // no se relaja el guard.
+  // ⚠️ SCRUM-816 le añadió un TERCER parámetro (`equipo`, el que alimenta el desplegable de
+  // técnicos de la fila) y el ancla literal volvió a dejar de casar — y volvió a FALLAR diciendo
+  // que no encontraba dónde inyectar, en vez de pasar en verde sin haber probado nada. Es, otra
+  // vez, lo que tenía que hacer. Ahora el ancla es la CABECERA sin su lista de parámetros: lo que
+  // este test necesita es el SITIO, no la firma, y la firma va a seguir moviéndose.
+  const cabecera = codigoReal.match(/function jobRow\([^)]*\) \{/);
+  assert.ok(cabecera, '🔴 la inyección no encontró jobRow: ¿se renombró la función de la fila?');
   const inyectado = codigoReal.replace(
-    'function jobCard(j, container) {',
-    "function jobCard(j, container) {\n  const escape = () => patch({ status: 'cerrado' }, 'x');",
+    cabecera[0],
+    `${cabecera[0]}\n  const escape = () => patch({ status: 'cerrado' }, 'x');`,
   );
-  assert.notEqual(inyectado, codigoReal, '🔴 la inyección no encontró jobCard.');
+  assert.notEqual(inyectado, codigoReal, '🔴 la inyección no encontró jobRow.');
   const sueltos = censarCierreTrabajo(inyectado).cierres.filter((c) => c.funcion !== FUNCION_SECCION);
   assert.ok(sueltos.length >= 1, '🔴 el guard NO distingue un cierre suelto de uno en su sección.');
 });

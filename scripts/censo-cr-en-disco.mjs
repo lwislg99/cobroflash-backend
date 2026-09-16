@@ -43,7 +43,26 @@ import { pathToFileURL } from 'node:url';
 const ENV = { ...process.env, MSYS_NO_PATHCONV: '1' };
 const CR = 13;
 
-/** Cuenta los 0x0D de un buffer. Con BYTES, nunca con `grep`: en Git Bash normaliza al leer. */
+/**
+ * Cuenta los 0x0D de un buffer. Con BYTES, nunca con `grep`: en Git Bash normaliza al leer.
+ *
+ * 🔴 SCRUM-766 · Y NO SOLO POR ESO, que es la mitad tranquilizadora. «Normaliza al leer» produce
+ *    un falso NEGATIVO (un cero, que asusta y se investiga). La otra cara produce un falso
+ *    POSITIVO: dentro de `$( )` el patrón `$'\r'` llega VACÍO y `grep -c` devuelve EXACTAMENTE
+ *    `wc -l` — un número grande, plausible y del mismo orden de magnitud que la respuesta buena.
+ *    Ése no se investiga: se publica. Medido el 7-sep-2026; el control que lo separa está en
+ *    tests/scrum766-el-grep-que-cuenta-lineas.test.mjs.
+ *
+ * 🔴 SCRUM-766 (enmienda del 7-sep-2026) · Y ES **DE LA PLATAFORMA**. Lo de arriba NO se retira
+ *    —es cierto en las máquinas donde se trabaja—; se le añade el dónde, que faltaba:
+ *      · MSYS/Windows (uname -o = Msys)         → las dos caras fallan, como está escrito;
+ *      · GNU/Linux (ubuntu-latest, CI)          → el grep de GNU acierta las dos.
+ *    Lo destapó CI. El test lo afirma AHORA POR PLATAFORMA, con veredicto impreso en la que no
+ *    reproduce el defecto — no con un skip, que habría escondido el día que CI cambie de
+ *    plataforma.
+ *    ⚠️ Esto NO reabre el uso de `grep` aquí: se cuenta en BYTES igualmente. Un instrumento que
+ *    sólo es correcto en algunos sitios no es un instrumento correcto.
+ */
 export function contarCR(buf) {
   let n = 0;
   for (const b of buf) if (b === CR) n += 1;

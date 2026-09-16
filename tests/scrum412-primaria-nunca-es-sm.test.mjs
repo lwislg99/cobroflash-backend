@@ -54,25 +54,83 @@ const DECLARADAS = {
     'FILA. Un «✓ Aprobar» por cada presupuesto pendiente de la lista.',
   'templatesView.js:btnUse':
     'FILA. Un «Usar» por cada plantilla.',
+  // SCRUM-727b · los cuatro de la lista de Trabajos, clasificados leyendo cada sitio.
+  // SCRUM-823 · CAMBIA DE FICHERO, NO DE CLASIFICACIÓN. El diálogo de agendar se mudó VERBATIM de
+  // `jobsView.js` a `jobAgendar.js` para que el DETALLE pudiera nombrarlo — el defecto de
+  // SCRUM-366 en espejo. Es el mismo botón, del mismo modal, con el mismo motivo: lo único que
+  // cambió es quién más puede abrirlo.
+  'jobAgendar.js:okAgendar':
+    'MODAL. Confirma el diálogo de agendar, que existe justo porque el `datetime-local` salió de '
+    + 'la fila: dentro de la fila era lo que la hacía gigante.',
+  'jobsView.js:okAsignar':
+    'MODAL. El «Guardar» del diálogo de técnicos, y es el CANDADO del ticket: asignar no puede '
+    + 'dispararse con el mismo gesto con el que se navega, así que hay que entrar en el menú y '
+    + 'confirmar aquí.',
+  'jobsView.js:bSiguiente':
+    'FILA. Una por trabajo: la acción siguiente que dicta `jobNextAction`, y NAVEGA al detalle, '
+    + 'no ejecuta. Hay tantas como filas tenga la lista.',
+  'jobsView.js:cobrarBtn':
+    'FILA. El «Cobrar el resto» de cada trabajo terminado con saldo. Es el momento de dinero, '
+    + 'pero va por fila: la pantalla no existe para cobrar UNO en concreto.',
   'signaturePad.js:okBtn':
     'MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero '
     + 'lo pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). '
     + 'Si el fundador decide que un modal así cuenta como primaria, sale de esta lista.',
 };
 
+/**
+ * Las formas de escribir un `btn-primary btn-sm` que este censo reconoce, con el nombre de su variable.
+ *
+ * 🔴 SCRUM-711 · AQUÍ SÓLO HABÍA UNA, y por eso «Nuevo cliente» estuvo a 30 px sin que nadie lo
+ * viera. Clientes escribe su botón con el helper de las vistas —`createElement("button",
+ * "btn-primary btn-sm", "Nuevo cliente")`— y este detector sólo leía `X.className = '…'`. No lo
+ * declaraba ni lo prohibía: no lo veía. Medido el 15-sep-2026 sobre todo el front: 14 escritos con
+ * `className` y 1 con el helper, que era justo ése.
+ *
+ * Las formas son las mismas que ya censa `_censo-clases-de-boton.mjs` (SCRUM-352); no se importa
+ * aquel motor porque no devuelve el nombre de la variable, y estas declaraciones van por
+ * `fichero:variable` a propósito: por línea caducarían al primer commit.
+ */
+const FORMAS = [
+  /(\w+)\.className\s*=\s*['"]btn-primary btn-sm['"]/,
+  /(?:const|let|var)\s+(\w+)\s*=\s*createElement\(\s*['"]button['"]\s*,\s*['"]btn-primary btn-sm['"]/,
+];
+
+/** Los `btn-primary btn-sm` de UN fuente. Puro, para poder ponerle delante un caso fabricado. */
+function usosEnFuente(fichero, texto) {
+  const out = [];
+  texto.split('\n').forEach((l, i) => {
+    for (const forma of FORMAS) {
+      const m = l.match(forma);
+      if (m) { out.push({ clave: `${fichero}:${m[1]}`, fichero, linea: i + 1 }); break; }
+    }
+  });
+  return out;
+}
+
 /** Todos los `btn-primary btn-sm` que hay, con el nombre de su variable. */
 function censo() {
   const out = [];
   for (const f of fs.readdirSync(DIR)) {
     if (!f.endsWith('.js')) continue;
-    const lineas = fs.readFileSync(path.join(DIR, f), 'utf8').split('\n');
-    lineas.forEach((l, i) => {
-      const m = l.match(/(\w+)\.className\s*=\s*['"]btn-primary btn-sm['"]/);
-      if (m) out.push({ clave: `${f}:${m[1]}`, fichero: f, linea: i + 1 });
-    });
+    out.push(...usosEnFuente(f, fs.readFileSync(path.join(DIR, f), 'utf8')));
   }
   return out;
 }
+
+test('SCRUM-711 · 🔴 CASO CONOCIDO: el censo VE el botón escrito con el helper de las vistas', () => {
+  // Fabricado, no leído del árbol: el botón real ya no lleva `btn-sm`, así que un detector que
+  // hubiera vuelto a quedarse ciego a esta forma daría el mismo verde que uno bueno.
+  const ciego = usosEnFuente('customersView.js',
+    '  const newBtn = createElement("button", "btn-primary btn-sm", "Nuevo cliente");');
+  assert.deepEqual(ciego.map((x) => x.clave), ['customersView.js:newBtn'],
+    '🔴 el censo no ve un `btn-primary btn-sm` escrito con `createElement`: es la forma exacta en '
+    + 'que «Nuevo cliente» estuvo a 30 px sin que este test lo viera (SCRUM-711).');
+  // Y la mitad negativa: la acción primaria tal como queda NO es un uso de `btn-sm`.
+  assert.deepEqual(usosEnFuente('customersView.js',
+    '  const newBtn = createElement("button", "btn-primary", "Nuevo cliente");'), [],
+    '🔴 el censo cuenta como `btn-sm` un botón que no lo lleva: diría «sí» a todo.');
+});
 
 test('SCRUM-412 · SUELO: el censo sigue viendo los botones', () => {
   // Si el detector dejara de encontrarlos, la prohibición de abajo pasaría por no ver nada — que

@@ -96,7 +96,7 @@ async function renderExpensesView(container) {
           <option value="">Todas las categorías</option>
           ${Object.entries(CATEGORY_LABELS).map(([v,c]) => `<option value="${v}">${c.label}</option>`).join('')}
         </select>
-        <button class="btn-primary" id="exp-new-btn" style="margin-left:auto">+ Nuevo gasto</button>
+        <button class="btn-primary" id="exp-new-btn" style="margin-left:auto">Nuevo gasto</button>
         <a id="exp-export-btn" href="/admin/exports/expenses.csv" class="btn-secondary btn-sm" style="text-decoration:none" title="Exportar gastos filtrados a CSV">⬇ CSV</a>
       </div>
 
@@ -105,7 +105,28 @@ async function renderExpensesView(container) {
     </div>
   `;
 
-  document.getElementById('exp-new-btn').addEventListener('click', () => openExpenseModal(null));
+  // SCRUM-769 · el rótulo del botón de arriba está FIRMADO por el fundador el 6-sep-2026: se
+  // retira el «+ » y queda «Nuevo gasto», el mismo patrón que el resto de las listas. El texto
+  // escrito en el marcado es el RESPALDO por si la pieza del atajo no ha cargado; el que manda es
+  // atajoNuevo.TEXTOS.expenses, y `etiquetar` lo pisa aquí abajo.
+  //
+  // ⚠️ Esta explicación va FUERA de la plantilla y no dentro, como comentario HTML: la primera
+  // versión la puso dentro y llevaba acentos graves, que CIERRAN el literal de plantilla. El
+  // fichero dejó de parsear, `renderExpensesView` dejó de publicarse y la vista desapareció del
+  // censo — que es un falso verde con forma de progreso. Lo cazó el propio censo al ver bajar la
+  // población de 26 a 25.
+  const expNuevoBtn = document.getElementById('exp-new-btn');
+  expNuevoBtn.addEventListener('click', () => openExpenseModal(null));
+  // SCRUM-769 · el atajo «N», por el MISMO mecanismo que las otras (SCRUM-599): `etiquetar` pone
+  // el rótulo firmado y la tecla, `registrar` dice qué abre la «N» estando en esta pantalla. Nada
+  // se reimplementa aquí — es el defecto que SCRUM-768 quitó de `invoicesView`.
+  //
+  // Encaja en el patrón porque este botón ABRE el modal de alta (`openExpenseModal(null)`), no
+  // confirma una creación ya escrita.
+  if (window.atajoNuevo) {
+    window.atajoNuevo.etiquetar(expNuevoBtn, 'expenses');
+    window.atajoNuevo.registrar('expenses', () => expNuevoBtn.click());
+  }
 
   // SCRUM-324 (E3) · EL AVISO DEL SIMPLIFICADO NO SE ENCIENDE, y el hueco se declara aquí.
   //

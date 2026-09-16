@@ -39,6 +39,25 @@ export const PERMITIDAS = Object.freeze([
   { nombre: 'ALTER TABLE … ADD COLUMN', re: /^ALTER\s+TABLE\s+\S+\s+ADD\s+COLUMN\s+(IF\s+NOT\s+EXISTS\s+)?[\s\S]+$/i },
   { nombre: 'CREATE [UNIQUE] INDEX',    re: /^CREATE\s+(UNIQUE\s+)?INDEX\s+(CONCURRENTLY\s+)?(IF\s+NOT\s+EXISTS\s+)?[\s\S]+$/i },
   { nombre: 'CREATE TABLE … ( … )',     re: /^CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?"?[\w.]+"?\s*\([\s\S]+$/i },
+  // ── LA CUARTA FORMA · SCRUM-797 (7-sep-2026) ────────────────────────────────────────────
+  //
+  // EL CASO que la trajo: `docs/sql/scrum-797-merchant-id-sin-default.sql`, quitar el `DEFAULT 1`
+  // de `customers.merchant_id` para que un cliente insertado sin merchant FALLE en vez de caer en
+  // el demo en silencio. No se podía aplicar porque la lista sólo conocía formas ADITIVAS.
+  //
+  // 🔴 POR QUÉ SE PUEDE AMPLIAR AQUÍ, y no es «porque hacía falta»: está MEDIDO. La sentencia se
+  // aplicó de verdad contra `yaqu_dev_javier` dentro de una transacción y se revirtió
+  // (`docs/MIGRATIONS_PENDING.md`, SCRUM-797): 14 filas antes, 14 dentro, 14 después, y la huella
+  // `sha256(id, merchant_id)` = `5ef05d5434f8d8ab` IDÉNTICA en los tres momentos, con el control
+  // positivo de que dentro `column_default` ya era `null`. `DROP DEFAULT` cambia el CATÁLOGO, no
+  // las filas.
+  //
+  // ⛔ SE ADMITE LA FORMA, NO LA FAMILIA. `ALTER COLUMN` cubre también `DROP NOT NULL` y los
+  // cambios de `TYPE`, que SÍ pueden perder datos o reescribir la tabla entera. Por eso la
+  // expresión termina en `DROP DEFAULT` y no en un comodín: una lista blanca que crece por
+  // familias deja de ser blanca. El rojo de esa vecindad está probado en
+  // `scrum425-aplicador-sql-dev.test.mjs`.
+  { nombre: 'ALTER TABLE … ALTER COLUMN … DROP DEFAULT', re: /^ALTER\s+TABLE\s+\S+\s+ALTER\s+COLUMN\s+\S+\s+DROP\s+DEFAULT$/i },
 ]);
 
 /** Quita comentarios CONSERVANDO las líneas, para que el número que se reporte sea el real. */

@@ -24,7 +24,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { parseBDSegura, describirBD, PROD_HOST, STAGING_HOST } from './_db-guard.mjs';
+import { describirBD, destinoDesechable } from './_db-guard.mjs';
 
 // El `.env` del checkout principal: los worktrees no tienen el suyo.
 const CANDIDATOS = ['.env', '.env.local', '../cobroflash-backend/.env', '../cobroflash-backend/.env.local'];
@@ -44,14 +44,13 @@ if (!encontrado) {
   process.exit(1);
 }
 
-const partes = parseBDSegura(encontrado.url);
-if (!partes) {
-  // Sin volcar la cadena: si se pudiera imprimir el motivo, alguien acabaría imprimiéndola.
-  console.error('🔴 SCRATCH_DATABASE_URL no es una URL válida (no se vuelca la cadena). No se ejecuta nada.');
-  process.exit(1);
-}
-if (partes.host === PROD_HOST || partes.host === STAGING_HOST) {
-  console.error(`🔴 SCRATCH_DATABASE_URL apunta a ${partes.host === PROD_HOST ? 'PRODUCCIÓN' : 'STAGING'}. PARO.`);
+// SCRUM-746 (fase B) · EL CANDADO ES EL MISMO, y ahora vive en `_db-guard.mjs`.
+// No cambia lo que decide: ni producción ni staging, y fail-closed si no se puede leer. Lo que
+// cambia es que **ya no vive sólo aquí**: `backup-restore.mjs` —que es quien escribe— lo llama
+// también, porque tiene entrada propia y no comprobaba haber llegado por este runner.
+const veredicto = destinoDesechable(encontrado.url);
+if (!veredicto.ok) {
+  console.error(`🔴 SCRATCH_DATABASE_URL → ${veredicto.etiqueta}: ${veredicto.motivo} No se ejecuta nada.`);
   process.exit(1);
 }
 

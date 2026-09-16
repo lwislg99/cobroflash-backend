@@ -9,6 +9,66 @@ intacto. Esto mide y propone, que es lo que pedía el encargo.
 
 ---
 
+## ✍️ P-DOC-8 · FIRMADA — 5-sep-2026 · el fundador
+
+> **EL IVA GUARDADO EN EL PRODUCTO NO SE USA COMO VALOR POR DEFECTO DE LA LÍNEA.**
+> **Se conserva sin usar, y con FECHA DE CADUCIDAD.**
+
+Es la **salida ③** de las tres que se propusieron abajo, y se elige por ser **la única reversible**.
+Firmada el **5-sep-2026**, con la medición del 1-sep delante y sin re-medir la tabla.
+
+**El motivo, que es el que salió de la medición y no de una preferencia:**
+
+`POST /admin/products/load-catalog` escribe **0,21 por defecto del SISTEMA**, no por decisión de
+nadie — es `getLocale(country).defaultVat` en el onboarding por gremio. Usar ese valor como defecto
+de la línea **ascendería un default accidental a decisión**, y encima **por delante** del IVA que el
+profesional puso en su propio documento. Y no hace falta: **ya existe un defecto de IVA al nivel
+correcto**, el `vatDefault` del presupuesto. La salida ② no crearía un sitio para ese defecto:
+crearía un **segundo** sitio, y con él la pregunta de cuál manda.
+
+**Qué significa en la práctica, para que nadie lo lea de más:**
+
+| | qué pasa |
+|---|---|
+| la columna `products.vat` | **se queda**. No se borra, no se migra, no se rellena |
+| las 3 filas del merchant 22 con `vat = 0.1000` | **siguen visibles** en la tabla del catálogo. Huérfanas y a la vista, que era el criterio |
+| quién lee `vat` para decidir el IVA de una línea | **nadie nuevo.** El formulario ya dejó de escribirlo (apéndice 1); lo que ya lo leía sigue como estaba |
+| un producto sin `vat` | cae al `vatDefault` del documento, **exactamente como hoy** |
+| rellenar los vacíos con 21 % | 🛑 **sigue prohibido.** Un vacío no es un 21 % |
+
+### 🗓️ La caducidad, que es la condición de la firma
+
+Una columna que nadie lee ni mantiene se pudre, y dentro de seis meses nadie sabrá si ese 0,21
+significa algo. Por eso la firma **no es indefinida**:
+
+> **FECHA LÍMITE: 5-mar-2027.** Si en esa fecha **nadie ha usado `products.vat`** para nada,
+> **la columna se retira.**
+
+**De dónde sale la fecha, para que moverla sea una línea y no una discusión:** son **seis meses
+justos desde la firma**, el plazo en el que DOC-16 (SCRUM-623/624) o bien ha dicho qué quiere hacer
+con un IVA por artículo, o bien ha demostrado con su silencio que no lo necesita. No es una fecha
+sagrada: es un tope para que la decisión no se convierta en olvido. **Quien la mueva, que escriba
+por qué.**
+
+**Y un disparador que puede adelantarla, porque ya existe y es evaluable — no prosa:** el argumento
+entero de arriba («ese 0,21 lo escribió el sistema, y hoy no hay merchants reales») descansa en el
+mismo supuesto que el backfill de SCRUM-205, y ese supuesto **tiene puerta**:
+**`npm run puerta:cliente-real`** (SCRUM-390, `src/modules/system/domain/puertaClienteReal.ts`).
+**El día que esa puerta se abra, esta decisión hay que releerla antes del 5-mar-2027**: con clientes
+reales dentro, un `vat` puesto a mano por un profesional deja de ser un dato de prueba.
+
+### 🕳️ Lo que esta firma NO decide, dicho para que no se dé por decidido
+
+1. **No decide qué hace DOC-16** con el IVA por artículo. La columna se queda quieta *esperando* esa
+   decisión; si DOC-16 la quiere, la encontrará ahí.
+2. **No autoriza tocar `products.vat`** en ninguna dirección: ni borrarla, ni rellenarla, ni
+   migrarla. «Conservar sin usar» es literal.
+3. **No hay número de producción.** Cuántos merchants pusieron un IVA a mano en producción sigue
+   sin medirse — desde un árbol de trabajo no se puede (regla 3). La firma se toma **sabiendo que
+   ese dato falta**, y eso es parte de la firma, no un descuido de ella.
+
+---
+
 ## 🔴 LO PRIMERO, PORQUE CAMBIA CÓMO SE LEE TODO LO DEMÁS
 
 **La tabla que el ticket describe está en PRODUCCIÓN, y desde un árbol de trabajo no se puede
@@ -125,6 +185,11 @@ un defecto de IVA **ya está construido**, y no es el producto.
   el comportamiento de hoy. **No hay que inventar nada para ellos.**
 
 ### ③ Se CONSERVA sin usarse, y se decide con DOC-16
+
+> ✍️ **ÉSTA ES LA FIRMADA** (5-sep-2026). La decisión, su motivo y su fecha de caducidad
+> (**5-mar-2027**) están arriba del todo, en «P-DOC-8 · FIRMADA». Lo de abajo es la propuesta
+> tal y como se escribió el 1-sep, y se deja intacta como historia fechada.
+
 - El switch entra, el IVA sale del formulario (que es lo que CAT-01 pide), y la columna se queda
   quieta hasta que 623/624 se desbloqueen y DOC-16 diga qué quiere.
 - **A favor:** no destruye ni asciende nada. Es la única reversible.
@@ -161,3 +226,665 @@ lo que ya hacen hoy.
 - `npm run guards:entrada` en verde.
 - Cero ficheros de producto tocados. No se ha migrado nada, no se ha tocado el esquema, no se ha
   construido el switch ni el autocompletado.
+
+---
+
+# SCRUM-609 · APÉNDICE · Lo construido, y el switch que NO se pudo construir
+
+**Fecha:** 01-sep-2026 · **Carril:** producto · **Gate:** sin gate — corre en `npm test`
+
+**Medido contra:** `origin/main` = `17f028b68cea6225c9fbb5b063b821346e4a4698` · 2026-09-01T15:43:53+01:00
+
+## La enmienda: **la migración que borra `vat` no existía**
+
+No estaba escrita ni preparada. Lo único que hace este diff es **quitar campos de formulario que
+escribían**; comprobado sobre el propio diff: cero `UPDATE products`, cero `SET vat`, cero
+`DROP COLUMN`, y `prisma/` sin tocar. No hubo nada que borrar de la rama.
+
+Y el 0,10 de las tres filas del merchant 22 **sigue visible**: la columna IVA de la tabla del
+catálogo no se toca. Huérfano y a la vista, que era el criterio.
+
+---
+
+## 🔴 EL CENSO QUE PIDIÓ LA ENMIENDA — (a), (b) y (c)
+
+### (a) Quién lee `products.vat` hoy
+
+| lector | fichero:línea | qué hace con él |
+|---|---|---|
+| `searchProducts` (autocompletado del presupuesto) | `products.service.ts:211` | lo **selecciona** para devolverlo al front |
+| **el editor de presupuestos** | `quotesView.js:1762-1766` | al elegir un producto, **escribe ese IVA en la línea** (fracción → porcentaje) |
+| `exportProductsCsv` | `products.service.ts:68` y `:92` | lo saca en el CSV del tarifario |
+| la tabla del catálogo | `productsView.js:340` y `:469-471` | lo pinta como «N %» |
+| `PUT /admin/products/:id` | `products.routes.ts:263` | lo escribiría **sólo si viaja** — y ya no viaja |
+
+**✅ Control positivo del censo:** no es un cero. La búsqueda **encuentra lectores reales y
+nombrados** — el más importante, `quotesView.js:1762`, es justo el que decide el IVA de la línea.
+Si hubiera dado 0, no lo habría escrito como 0.
+
+### (b) ¿Alguno se queda sin valor? ¿Cae a un default 0,21?
+
+**Sí, y es deliberado.** La cadena, en `quotesView.js:2150-2158`:
+
+```
+if (initial.vat != null)      → el IVA del producto
+else if (initial.tax != null) → el de plantilla/IA
+else                          → fieldVatDefault.input.value || "21"
+```
+
+Un producto **sin** `vat` cae al **defecto del documento** (`21`). Es el comportamiento de hoy y
+está decidido desde SCRUM-132/134, con su motivo escrito en esa misma línea:
+
+> **«El general SIEMBRA, nunca PISA: solo se aplica si la línea no trae IVA propio.»**
+
+### (c) ¿Ese 0,21 pisaría el 0,10 del merchant 22? → **NO**
+
+Y no es una opinión: **el orden del `if` lo impide**. El IVA del producto se escribe PRIMERO
+(`quotesView.js:1762`); el `21` es la rama `else` y sólo entra cuando no hay IVA propio.
+
+**Las tres filas del merchant 22, con `vat = 0.1000`, seguirán poniendo `10` en la línea.** Lo que
+cambia con este ticket es sólo que los productos **nuevos** nacen sin `vat` y por tanto caen al
+defecto del documento — que es exactamente lo que CAT-01 quiere.
+
+**No procede parar.**
+
+---
+
+## Lo construido
+
+### ✅ El margen, sobre PRECIO DE VENTA
+
+`public/dashboard/js/margenCatalogo.js` — aritmética sin DOM, para que esta pantalla tenga red en
+`npm test` (los nueve guards no cubren el dashboard, SCRUM-628).
+
+- `margen % = (precio − coste) / precio × 100`
+- coste + margen → precio · coste + precio → margen
+- **sólo precio → NADA**, y es válido
+- coste 0 con precio > 0 → **100 %**, que sale solo de la fórmula
+- **nunca pisa el campo que se está tecleando**
+- un margen imposible (≥ 100 % con coste > 0) devuelve `null`, no un infinito disfrazado
+
+### ✅ El IVA sale del formulario — de los DOS
+
+Del alta **y** de la edición, porque «deja de escribirse» no se cumple si la mitad lo sigue
+escribiendo. En la edición **el `vat` ya no viaja** — no se manda `vat: null`, que borraría el dato
+al guardar cualquier otro cambio — y `PUT` sólo toca las claves presentes
+(`products.routes.ts:263`). El campo del margen se rellena **derivado** de coste y precio.
+
+### 🛑 El switch NO se ha construido, y no es un olvido
+
+**`Product` no tiene ninguna columna donde guardar el lado.** Un switch sin columna es un control
+que **olvida lo que elegiste** en cuanto recargas: peor que no tenerlo.
+
+Diff **preparado y PARADO**, sobre una copia (schema real intacto, `Buffer.compare === 0`), y es
+**aditivo**:
+
+```sql
+ALTER TABLE "products" ADD COLUMN "item_kind" TEXT;
+```
+
+Con la forma ya decidida en CONT-01 y por el mismo motivo: **nullable y sin `@default`**, porque un
+default convertiría a los **58 productos de producción** en «declarados» sin que nadie lo haya
+dicho. NULL = sin clasificar, y el switch **no preselecciona ningún lado**.
+
+---
+
+## Hallazgo del banco de vistas, arreglado porque bloqueaba el montaje
+
+El parser de `innerHTML` de `tests/_banco-vistas.mjs` copiaba `id`, `class` y `data-*` — **`name`
+no**. Y como `casaSimple` **sí** considera soportado `[name="cost"]`, no lo anotaba como no
+soportado: devolvía **`null` en silencio**, indistinguible de «ese nodo no existe».
+
+**Es el defecto que ese banco existe para eliminar, una capa más abajo.** No se había notado porque
+`productsView` sólo usaba esos nodos dentro de manejadores, que el banco no dispara; en cuanto una
+vista les puso un `addEventListener` al montar, reventó.
+
+Se copia `name` vía `setAttribute` —no como propiedad suelta, porque el matcher resuelve por
+`getAttribute`—. **Hueco que queda declarado:** cualquier OTRO atributo (`type`, `placeholder`,
+`min`…) sigue dando el mismo null mudo.
+
+⚠️ Y una hipótesis mía que era falsa, dicha en voz alta: primero culpé a un comentario HTML dentro
+del literal. Lo quité y **siguió fallando**. La causa era el atributo. Lo cazó mirar la línea del
+`stack`, no razonar.
+
+---
+
+## Los controles
+
+Árbol commiteado en **`321c1432`** antes de inyectar.
+
+| control | resultado |
+|---|---|
+| **Rotura inyectada** · dividir entre el coste | **el test CAE y nombra los dos números**: «ha salido **233.33**, y tiene que ser **70**» |
+| **Control negativo** · sólo precio | no autocompleta nada; un producto sin coste ni IVA **se sigue guardando igual** |
+| **coste 0, precio > 0** | margen **100 %** — confirma que la convención es sobre precio |
+| reversión | `Buffer.compare(disco, testigo) === 0` |
+
+## Recuento y contador
+
+- **Suite: total 4172 · pass 4093 · fail 0 · skipped 79**, medida en esta rama.
+- `SCRIPTS_DEL_DASHBOARD` **64 → 65**, **recalculado** desde el `index.html` de esta rama
+  (`grep -c "<script src="`), no elegido.
+- `margenCatalogo.js` añadido al SHELL del service worker (`addAll` es atómico).
+- **Censo de marcadores: NO sube.** Ningún texto nuevo — «Coste» y «Margen %» describen el campo, y
+  un rótulo que sigue describiendo bien el campo no se marca.
+- `npm run guards:entrada` en verde.
+
+## HALLAZGOS FUERA DE ALCANCE
+
+- **El banco de vistas sólo copia `id`, `class`, `data-*` y `name`.** Cualquier otro atributo en un
+  selector devuelve `null` mudo. Arreglado sólo `name`, que era lo que bloqueaba; el resto queda.
+- **El CSV del tarifario exporta `vat` pero no `cost`** (`products.service.ts:68`). Con el margen
+  entrando en la pantalla, el export enseña el IVA que ya no se pide y esconde el coste del que sale
+  el margen. No se toca aquí.
+
+---
+
+# SCRUM-609 · APÉNDICE 2 · El switch sigue parado: los valores NO están en el máster
+
+**Fecha:** 01-sep-2026 · **Carril:** producto · **Gate:** sin gate — no entra código
+
+**Medido contra:** `origin/main` = `775bf7e04e4c0f55ca23ad4c9bfe58a0b365c3dc` · 2026-09-01T16:10:13+01:00
+
+**No se ha construido el switch y no se ha tocado `prisma/schema.prisma`.** La columna está
+autorizada; lo que **no** lo está es qué cadenas escribe dentro, y eso es lo que faltaba comprobar.
+
+## (a) y (b) · La comprobación en el máster: **NO ESTÁN**
+
+| se buscó | resultado |
+|---|---|
+| `item_kind` / `itemKind` en `docs/YAQU_MASTER.md` | **no aparece** |
+| la pareja por CONTENIDO («Producto \| Servicio», «producto o servicio», `PRODUCTO`/`SERVICIO`) | **no aparece** |
+| `CAT-01` / `CAT-1` en el máster | **no aparece** |
+| un documento de campos del catálogo, como el que CONT-01 tiene | **no existe** (sí existe `docs/CONTACTOS_CAMPOS_POR_LADO.md`, pero es de contactos) |
+| los **rótulos de interfaz** de los dos lados | **no aparecen** |
+
+**✅ Control positivo del barrido — el cero no es ceguera:** el mismo barrido **sí** encuentra las
+partes del máster (`PARTE A — NORTE CLARO`, `B — PAÍSES Y REGULACIÓN`, `C — PRODUCTO`, `D`, `E`,
+`F`…) y **sí** encuentra la sección del catálogo por gremio (`ONBOARD-2`, línea 609). Encuentra lo
+que hay; lo que no hay es la pareja.
+
+### 🔴 Y una discrepancia del encargo que hay que decir
+
+El ticket sitúa CAT-01 en el **«bloque K»**. En `YAQU_MASTER.md`, **`PARTE K` es «BOT WHATSAPP
+ENTRANTE»** (línea 356) — el bot, no el catálogo. Y `J7. Catálogo técnico` (línea 307) tampoco es
+el catálogo de productos: es el **catálogo de plantillas de WhatsApp**.
+
+Así que el «bloque K» del ticket es el documento aprobado el 24-ago, **no una sección del máster**.
+Los valores de `item_kind` no están escritos en el máster **por ninguna de las dos vías**.
+
+> **PARA.** No invento «PRODUCTO/SERVICIO», ni «MATERIAL/MANO_DE_OBRA», ni ninguna otra pareja
+> razonable. Va al fundador.
+
+## 🛑 Y por eso tampoco se añade la columna todavía — con su motivo medido
+
+La columna está autorizada y su SQL está listo:
+
+```sql
+ALTER TABLE "products" ADD COLUMN "item_kind" TEXT;
+```
+
+**No se aplica en esta rama, y no es desobediencia: es el orden.** Medido en
+`src/core/db/schemaDrift.ts`:
+
+- la comparación del arranque es **`esperado ⊆ real`** (línea 30);
+- si `schema.prisma` nombra una columna que la base no tiene → **DERIVA → producción NO ARRANCA**
+  (líneas 224-225, 261).
+
+Y `db push` está prohibido para esta sesión «se invoque como se invoque», porque **sincroniza el
+esquema entero**, no sólo este cambio. Así que si el schema entrara hoy en la rama y el PR mergease
+antes de que el `ALTER TABLE` corriera en las tres bases, **el siguiente arranque no levantaría**.
+Es la lección de SCRUM-205, escrita allí como innegociable: **`ALTER TABLE` → luego el código.
+Nunca el código primero.**
+
+**Y hoy la columna no tendría consumidor**: el switch no se puede cablear sin los valores. Meterla
+sola sólo abre la ventana de deriva sin ganar nada.
+
+**Propuesta de orden**, para que lo decida el fundador:
+
+1. El fundador escribe **los dos valores y sus dos rótulos** (o los aprueba con marcador).
+2. Se aplica el `ALTER TABLE` a las tres bases.
+3. Entra un PR con el `schema.prisma`, el switch cableado y su test — todo junto, sin ventana de
+   deriva.
+
+Si se prefiere meter la columna antes, es viable — pero el `ALTER TABLE` tiene que correr en las
+tres bases **antes** de que ese PR mergee, no después.
+
+## Lo que sigue en pie de este ticket
+
+El **margen** y el **IVA fuera del formulario** están construidos y verificados en el apéndice
+anterior, y no se han tocado hoy. El único cambio de este apéndice es documental.
+
+## Estado del árbol
+
+- **Suite: total 4172 · pass 4093 · fail 0 · skipped 79** — sin cambios de código desde la
+  medición anterior de esta rama.
+- `prisma/schema.prisma` **intacto**.
+- `npm run guards:entrada` en verde.
+
+## HALLAZGOS FUERA DE ALCANCE
+
+- **El «bloque K» del ticket no es la Parte K del máster.** Conviene que el ticket lo diga, o el
+  siguiente que lo lea buscará CAT-01 en el bot de WhatsApp.
+- Se mantienen los dos del apéndice anterior (banco de vistas → SCRUM-634 · CSV del tarifario →
+  SCRUM-635), y no se han tocado.
+
+---
+
+# SCRUM-609 · APÉNDICE 3 · EL SWITCH, CONSTRUIDO
+
+**Fecha:** 2-sep-2026 · **Carril:** producto · **Gate:** sin gate — corre en `npm test`
+
+**Medido contra:** `origin/main` = `080eb4fbd3f22e42c71f6e591bf9cb1f816a0f74` · 2026-09-02T05:12:03+01:00
+
+**Tanda:** 4295 tests, 4216 pass, 0 fail, 79 skipped
+
+> 🛑 **ESTE PR NO PUEDE MERGEAR HASTA QUE PRODUCCIÓN TENGA LA COLUMNA.** `schemaDrift` compara
+> `esperado ⊆ real` al arrancar: con el `schema.prisma` de este PR dentro y sin la columna en la
+> base, **producción NO ARRANCA**. DEV y STAGING ya la tienen (abajo, con su recuento). Producción
+> la aplica Javier a mano con `prisma/backfill/scrum609-item-kind.sql`. **Está listo para dárselo.**
+
+---
+
+## Los valores: no estaban donde miré, y no era culpa mía ni suya
+
+Paré porque no estaban en el máster. **Nunca estuvieron ahí**: viven en el documento de mejoras
+aprobadas del 24-ago, del que sale el ticket. Confirmado por el fundador el 2-sep. Los dos lados
+son **Producto** y **Servicio**, y el switch **cambia los campos**:
+
+| lado | campos |
+|---|---|
+| **PRODUCTO** | Nombre · Coste · Margen % · Precio · Proveedor · Descripción |
+| **SERVICIO** | Nombre · Precio · Descripción |
+
+## ✅ El patrón de CONT-01: COMPROBADO, no supuesto
+
+El encargo pedía parar si CONT-01 no era el patrón que creía. **Lo es, y en los tres planos:**
+
+| plano | CONT-01 | lo que se ha hecho |
+|---|---|---|
+| columna | `contactKind String? @map("contact_kind")` — nullable, sin `@default` | `itemKind String? @map("item_kind")` |
+| validación | `z.enum(['EMPRESA','PERSONA']).nullable().optional()` | `z.enum(['PRODUCTO','SERVICIO']).nullable().optional()` |
+| front | `switchFormaJuridica.js` — radios, y **oculta** vía `envoltorio.hidden` | `switchTipoArticulo.js`, su espejo |
+
+## 🎯 «Un servicio con coste»: MEDIDO, y la decisión YA EXISTÍA
+
+El encargo pedía medirlo y proponer. Al leer CONT-01 aparece decidido, con su motivo escrito:
+
+> **① ESCONDER NO ES BORRAR.** Un campo oculto conserva su valor y se sigue enviando al guardar.
+> **② NUNCA SE ESCONDE UN CAMPO QUE TIENE ALGO ESCRITO.** «Un dato invisible es un dato que nadie
+> va a corregir y que sigue viajando a la factura.»
+
+**Así que no se borra el coste y tampoco se conserva oculto: se conserva VISIBLE** — la única de
+las tres opciones en la que el profesional puede enterarse y quitarlo si sobra. No hacía falta
+proponer nada: hacía falta no inventar una segunda regla para el mismo problema.
+
+## El orden, ejecutado
+
+### ② El ALTER y el backfill — con la cantidad DECLARADA ANTES
+
+Preflight en verde (`preflight-migracion.mjs`, rama comprobada). El clasificador aprueba el
+`ALTER` y **rechaza el `UPDATE` por defecto**; se autorizó **nominalmente por su huella**
+`277d1e973156`, con motivo y nombre — no hay interruptor global, y está bien que no lo haya.
+
+| base | declarado ANTES | tocó | forma acreditada contra `information_schema` |
+|---|---:|---:|---|
+| **DEV** | 8 filas | **8** ✅ | `text` · `is_nullable=YES` · `column_default=null` |
+| **STAGING** | 0 filas | **0** ✅ | `text` · `is_nullable=YES` · `column_default=null` |
+| **PRODUCCIÓN** | 58 filas (dato del fundador) | — | **pendiente, la aplica Javier** |
+
+Dentro de transacción y con `throw` si no cuadraba: un descuadre habría deshecho el cambio.
+
+> ⚠️ **STAGING NO VALIDA EL BACKFILL, y decirlo importa.** Tiene **0 productos**, así que su «0
+> filas» es correcto y a la vez **no ejercita nada**. Quien lea «staging en verde» no debe leer
+> «el backfill está probado en staging»: lo está en DEV, con 8 filas.
+
+### 🔴 El límite de la decisión, escrito para que nadie reutilice el precedente
+
+Todas nacen PRODUCTO **por el ESTADO de los datos, no por el criterio**: no hay merchants reales,
+todos son de prueba, así que el backfill no declara nada por nadie. **Con catálogos reales, un
+backfill masivo SÍ estaría declarando por el profesional** —diciendo que su catálogo son productos
+cuando quizá son servicios— y sería la decisión equivocada. Mismo límite que se dejó con `timezone`.
+
+📌 Y el efecto colateral bueno: como todas nacen PRODUCTO, **ninguna fila existente se queda sin
+sitio** donde vivir el coste y el margen que ya tiene.
+
+## El control
+
+| control | resultado |
+|---|---|
+| **el lado SOBREVIVE a la recarga** | contra DEV: creado `SERVICIO` → **releído de la base: `SERVICIO`** ✅ |
+| **NEGATIVO · un producto existente** | `itemKind=PRODUCTO`, `cost` y `vat` **intactos** |
+| **limpieza** | 8 productos antes, 8 después |
+| SERVICIO esconde coste/margen/proveedor · PRODUCTO no | la regla, **ejecutada** |
+| un campo **con valor** nunca se esconde | ejecutado |
+| `null` enseña TODO | ejecutado |
+| los valores del switch = los del `z.enum` | comparados contra el fuente del backend |
+
+**Por qué los tests que pasan, pasan** (criterio de SCRUM-639/647): los cuatro primeros ejercitan
+`debeEsconder`, que vive **sin DOM** justo para que la suite pueda ejecutarla — una regla enterrada
+en el pintado sólo podría auditarse leyendo el fuente, y leer no ejecuta.
+
+🔴 **Y un control que NO puede cazar su regresión, dicho:** el test que comprueba que la vista
+escribe el lado guardado **mira el fuente**, no la pantalla. Si alguien cambiara el orden de las
+llamadas de forma que `aplicar()` corriera antes de rellenar los campos, el fuente seguiría
+teniendo las cuatro líneas y el test seguiría verde — y el modal escondería un coste que estaba a
+punto de aparecer. **Eso necesita navegador y es del fundador.**
+
+## Dos infidelidades del banco de vistas, encontradas y corregidas
+
+`productsView` dejó de montar al añadir el switch. Dos causas, las dos del banco y no del producto:
+
+1. **`parentNode` no existía.** El banco guardaba el padre en `_padre` y le faltaba el nombre
+   estándar, así que `x.parentNode.insertBefore(...)` —DOM de manual— reventaba.
+2. **Los hijos nacidos de `innerHTML` no tenían padre.** El parser los metía en `hijos` sin
+   asignar `_padre`, así que `parentNode` devolvía `null`.
+
+Se corrigen **en el banco y no rodeándolo desde la vista**, que es lo que su propia cabecera manda:
+un banco infiel hace que el test mida el banco y no el producto.
+
+## Contadores
+
+* `SCRIPTS_DEL_DASHBOARD` **67 → 68**, **RECONTADO** sobre el índice (`grep -c "<script src="`),
+  no sumado. (En el rebase ya se había recontado 65 → 67 por lo que main traía.)
+* **Censo de marcadores: `switchTipoArticulo.js` entra con 1**, a conciencia. **CUENTA 1 Y PINTA 3**
+  —la pregunta y las dos etiquetas salen de una sola constante—, así que aprobar uno de los tres
+  textos NO apaga los otros dos.
+* `docs/sql/deriva-prod.sql` regenerado con su script (no a mano: hay un test que lo compara).
+
+## El rebase, que hacía falta
+
+La rama iba **61 commits** por detrás y `main` había tocado `productsView.js` y
+`products.routes.ts` — con **mi propio trabajo ya mergeado** (SCRUM-641) y `_banco-vistas.mjs` con
+SCRUM-634. Se rebasó. El conflicto del banco se resolvió **quedándose el arreglo GENERAL de 634 y
+retirando mi parche estrecho de `name`**, que es exactamente lo que dejé escrito en aquella entrada.
+
+## Lo que NO se ha hecho
+
+1. **Producción.** No puedo y no debo. El fichero está listo.
+2. **La verificación visual** (que el radio se pinte y los campos desaparezcan) necesita navegador.
+3. **El CSV del tarifario** (SCRUM-635), el `@@unique` (SCRUM-631) y el `vat` de los existentes
+   **no se han tocado**.
+
+## Ficheros
+
+* `prisma/schema.prisma` — `itemKind String? @map("item_kind")`.
+* `prisma/backfill/scrum609-item-kind.sql` — **el que Javier necesita para producción.**
+* `src/core/validation/schemas.ts` — `ITEM_KIND` + `itemKindSchema`.
+* `src/modules/products/domain/products.service.ts` · `.../products.routes.ts` — el lado viaja;
+  valor fuera de la lista → `400 item_kind_invalid`.
+* `public/dashboard/js/switchTipoArticulo.js` — **nuevo**, espejo de `switchFormaJuridica`.
+* `public/dashboard/js/productsView.js` — cableado en los DOS formularios.
+* `tests/scrum609b-switch-tipo-articulo.test.mjs` — **nuevo**, 7 tests.
+* `tests/_banco-vistas.mjs` — `parentNode` y el padre de los hijos del marcado.
+* `public/dashboard/index.html` · `public/sw.js` · `docs/sql/deriva-prod.sql` · el censo de marcadores.
+
+## HALLAZGOS FUERA DE ALCANCE
+
+* **STAGING tiene 0 productos**, así que no puede validar ningún backfill del catálogo.
+* Se mantienen los de los apéndices anteriores (CSV del tarifario sin `cost`, y el «bloque K» del
+  ticket que no es la Parte K del máster).
+
+---
+
+# SCRUM-609 · APÉNDICE S5 · 16-sep-2026 · Las dos ramas vivas: las dos son RESTOS, y la regla 42 medida
+
+**Medido contra:** `origin/main` = `3e5f58db7325058ededc7ba2381140d0be291abc` · 2026-09-15T15:27:37Z
+**Rama:** `scrum-609-ramas-vivas-medidas` · **Carril:** proceso · **Gate:** sin gate
+
+⛔ **No se ha mergeado ni borrado ninguna rama. No se ha reabierto ni cerrado ningún ticket.**
+`src/` intacto. Esto mide; cerrar o reabrir la 609 es del fundador.
+
+---
+
+## 1 · El veredicto de las dos: **(a) restos**, las dos
+
+| rama | commits propios | veredicto |
+|---|---|---|
+| `scrum-609-medir-el-catalogo` | 1 | ✅ **(a)** todo su contenido está ya en `main` |
+| `scrum-609-switch-y-margen` | 5 | ✅ **(a)** su trabajo entró por otra vía; `main` va muy por delante |
+
+### Cómo se midió, y por qué no por sha
+
+Con squash o con un rehecho **el commit no llega pero el código sí**, así que comparar shas diría
+«sin mergear» sobre trabajo que ya está dentro. Se comparó **fichero a fichero, por contenido**,
+entre cada rama y `origin/main`.
+
+### 🔴 Y mi primer comparador dio un FALSO (b) — lo que lo cazó fue la estructura
+
+La comparación por **pertenencia de líneas** dijo que `scrum-609-switch-y-margen` llevaba
+**105 líneas que no están en main**, repartidas en tres ficheros, y concluyó «(b) trabajo real que
+nunca entró». **Era falso.** Lo desmintió preguntar por la ESTRUCTURA en vez de por el parecido:
+
+| pregunta estructural | main | rama |
+|---|---|---|
+| ¿existe `public/dashboard/js/margenCatalogo.js`? | **sí** | sí |
+| ¿cuántas veces se llama a `cablearMargen(`? | **3** | 3 |
+| ¿el `index.html` carga `margenCatalogo`? | **sí** | sí |
+
+El margen **entró en main**. Y midiendo las dos direcciones se ve por qué sobraban esas 105 líneas:
+
+| fichero | sólo en la RAMA | sólo en MAIN |
+|---|---|---|
+| `public/dashboard/index.html` | 9 | **74** |
+| `public/dashboard/js/productsView.js` | 32 | **292** |
+| `tests/_banco-vistas.mjs` | 64 | **723** |
+
+**`main` va muy por delante en los tres.** Las líneas «sólo en la rama» son fragmentos rancios de
+ficheros que `main` ha reescrito desde entonces — no trabajo que falte.
+
+> 🔒 Una comparación por parecido contesta «esto no está» cuando lo que pasa es «esto ya no se
+> escribe así». Es la misma familia que la ventana de seis líneas de anoche: **si la pregunta se
+> puede hacer por estructura, no se hace por proximidad.**
+
+**Conclusión:** las dos ramas son restos. El ticket **no** está mal cerrado por ellas.
+
+### ⚠️ Lo que NO alcanzo a mirar, declarado
+
+* La comparación por contenido cubre los ficheros que cada rama toca. **No sigo renombrados**: si
+  un fichero llegó a main con otro nombre, saldría como «no existe en main».
+* No distingo si una línea ausente es trabajo pendiente o estilo viejo **salvo preguntando por
+  estructura**, y eso lo he hecho sólo para el margen, que es lo que este apéndice necesitaba.
+
+---
+
+## 2 · ③ La regla 42, medida por primera vez
+
+Derivado del árbol, no a mano:
+
+| | |
+|---|---|
+| ramas remotas | **145** |
+| 🔴 **vivas** (no ancestras de `main`) | **127** |
+| · con número de ticket en el nombre | 72 |
+| · **sin** número (no atribuibles) | **55** |
+| tickets distintos con rama viva | **57** |
+| 🔴 **de ellos, CERRADOS** (`statusCategory = done`) | **55** |
+| en revisión | 2 |
+
+> 🔒 **55 de 57.** La 609 no es un caso: **es la norma.** Un ticket cerrado con rama viva es lo
+> normal en este repositorio hoy, y la regla 42 —«un ticket no se cierra mientras su rama siga sin
+> mergear»— describe algo que no está pasando.
+
+Los 55 van desde `SCRUM-37` hasta `SCRUM-820`, y hay entre ellos carril fiscal (`198` XSD, `205`
+sellado, `215` destinatarios, `216` rectificativa, `234` numeración, `240` sobre duplicado) y
+tenencia (`440`).
+
+### 🔴 El suelo y el control positivo
+
+* **SUELO:** el instrumento encuentra **127** ramas vivas. Si encontrara cero se declararía CIEGO —
+  hay dos medidas a mano en este mismo apéndice.
+* **CONTROL POSITIVO:** sobre tickets cerrados **sin** rama tiene que decir «sin rama», y lo dice:
+
+```
+SCRUM-824  ✅ sin rama      SCRUM-856  ✅ sin rama      SCRUM-752  ✅ sin rama
+SCRUM-844  ✅ sin rama      SCRUM-815  ✅ sin rama
+SCRUM-609  🔴 2 vivas: scrum-609-medir-el-catalogo, scrum-609-switch-y-margen
+```
+
+No contesta lo mismo para todos: **distingue**.
+
+### ⚠️ El límite que más pesa sobre ese 55
+
+**La prueba (a)/(b) por contenido se ha hecho SÓLO para las dos ramas de la 609.** Los otros 53
+cerrados están contados por **tener rama viva**, no por llevar trabajo que falte. Si el patrón de
+la 609 se repite —y es lo que yo esperaría, porque el auto-borrado al mergear deja atrás justo las
+ramas que se rehicieron—, **la mayoría serán restos y no agujeros**. Pero eso **no está medido**, y
+contarlo como medido sería exactamente lo que este apéndice viene a evitar.
+
+Lo que sí está medido es el número que importa para la regla 42: **cuántos tickets cerrados tienen
+hoy una rama remota viva. Son 55.**
+
+## 3 · Lo NO tocado
+
+Ninguna rama mergeada ni borrada · ningún ticket reabierto ni cerrado · `src/` · `prisma/schema.prisma` ·
+el camino de emisión fiscal (regla 38) · ningún estado ni flag (27) · ninguna dependencia (36).
+**Nada ejecutado contra producción ni contra staging.**
+# SCRUM-609 · APÉNDICE S5b · 16-sep-2026 · Los 53 por contenido: el carril fiscal está limpio
+
+**Medido contra:** `origin/main` = `f5720e41e44a8445f51773b9879df277cc7ef946` · 2026-09-15T15:32:18+01:00
+**Rama:** `scrum-609b-los-53-por-contenido` · **Carril:** proceso · **Gate:** sin gate
+
+> 🔴 **EL ORDEN DE LOS APÉNDICES NO SALE DE LAS HORAS, Y ESTE PAR LO DEMUESTRA.** Al fusionar,
+> ordenar por el ancla habría puesto **este apéndice ANTES que el S5**, y sería al revés:
+>
+> | apéndice | ancla | en UTC |
+> |---|---|---|
+> | S5 | `2026-09-15T15:27:37Z` | **15:27** |
+> | S5b (éste) | `2026-09-15T15:32:18+01:00` | **14:32** |
+>
+> 🔒 **El ancla dice contra qué `main` se MIDIÓ, no cuándo se ESCRIBIÓ.** Dos sesiones pueden medir
+> contra commits distintos en cualquier orden, y encima con husos distintos —aquí uno en `Z` y otro
+> en `+01:00`, que es media hora de diferencia aparente que no existe—. **Manda la DEPENDENCIA:**
+> este apéndice dice en su primera línea que «cierra el límite que dejó declarado el apéndice S5»,
+> así que S5 va delante. Quien fusione el siguiente, que lea la dependencia antes que el reloj.
+
+⛔ **Ninguna rama mergeada ni borrada. Ningún ticket reabierto ni cerrado.** `src/` y `prisma/` a
+0 líneas. Cierra el límite que dejó declarado el apéndice S5.
+
+---
+
+## 1 · ✅ EL CARRIL FISCAL Y TENENCIA: los siete, RESTOS. No hay PARA
+
+Era la prioridad del encargo — «si alguno lleva trabajo que falta, PARA inmediatamente». **Ninguno
+lo lleva.** Cada uno comprobado a mano, no por el agregado:
+
+| ticket | rama(s) | veredicto | por qué |
+|---|---|---|---|
+| **198** | `spike-xsd` | ✅ resto | el `spike/` no está en main, pero **su conclusión sí**: `tests/_xsd-verifactu.mjs` y `scrum198-consumidores-xml.test.mjs` |
+| **205** | `sellado`, `sellado-rebasada` | ✅ resto | lo «ausente» son encabezados de `MIGRATIONS_PENDING.md` y `YAQU_MASTER.md`; main tiene **76 y 11** propios frente a 1 |
+| **215** | `destinatarios` | ✅ resto | ver §2 — era un **renombrado** |
+| **216** | `consolidar`, `p12-contradiccion` | ✅ resto | ídem |
+| **234** | `carrera-numeracion` | ✅ resto | ver §2 — el **formato cambió** |
+| **240** | `rebasada`, `rebasada-2` | ✅ resto | `# PARTE I — REGLAS (1-37)`, y main va por la 42 |
+| **440** | `tenencia-supresion` | ✅ resto | `MIGRATIONS_PENDING.md`: main **48** propios frente a 9 |
+
+---
+
+## 2 · 🔴 TRES MODOS DE FALLO DE LA COMPARACIÓN AUTOMÁTICA, y los tres me pasaron
+
+Esto vale más que el veredicto, porque el veredicto caduca y esto no.
+
+### ① Por PARECIDO DE LÍNEAS → falso «falta» (apéndice S5, anoche)
+
+Dijo «105 líneas que no están en main» sobre trabajo que sí estaba. Una línea ausente no distingue
+«falta esto» de «esto ya no se escribe así».
+
+### ② Por SÍMBOLO, ciego a los RENOMBRADOS
+
+Cambié la unidad de línea a **símbolo declarado** (exports, funciones, títulos de test) y preguntando
+si existe **en cualquier parte** de main. Mejor, y aun así:
+
+`scrum-215-destinatarios` y `scrum-216-consolidar` salieron 🔴 por `buildRegFactuEnvelope`, que no
+está en main. **Y main lo explica en su propio código:**
+
+```
+registro.builder.ts:580   `buildRegFactuEnvelope`, que no decía de qué era el sobre; ahora dice lo que es.
+registroBuilder.test.mjs:73  SCRUM-240: `buildRegFactuEnvelope` pasó a llamarse `construirCuerpoSoapRegFactu`
+```
+
+Lo mismo en `scrum-234`: la rama testea `formatAlbaranNumber: ALB-2026-001` y main
+`formatAlbaranNumber: AB260001, y al desbordar CRECE` — **el formato cambió con DOC-02 (SCRUM-592)**.
+
+Y en el `216`: la rama afirma `la constante sigue SIN CONFIRMAR`; main tiene
+`la constante sigue en INCREMENTAL_I (y moverla exige el dictamen)` — **la constante se confirmó por
+decisión del fundador**, y main tiene **13 títulos frente a los 6 de la rama**.
+
+**El arreglo:** medir la DIRECCIÓN. Por fichero, cuántas unidades tiene sólo la rama y cuántas sólo
+main. Con eso, «main va por delante» deja de leerse como «falta trabajo».
+
+### ③ Por SÍMBOLO, ciego a la REIMPLEMENTACIÓN
+
+El que no cierra ni con dirección. `scrum-418-puerta-de-produccion` lleva
+**`src/core/db/puertaDeProduccion.ts`**, que no existe en main, y sus símbolos —`HOST_DE_PRODUCCION`,
+`exigirDestinoDeclarado`, `hostDe`— tampoco. Parece trabajo perdido, y de los caros: la puerta de
+producción.
+
+**No lo es.** Main resuelve lo mismo con **otro diseño**: `scripts/_clave-vs-destino.mjs`, con
+
+```
+DATABASE_URL: { host: 'autorack.proxy.rlwy.net', base: null, comoSeLlama: 'PRODUCCIÓN' }
+```
+
+y es literalmente lo que `CLAUDE.md` describe: «desde SCRUM-418 el guard lo hace cumplir por
+DESTINO». La rama es un diseño anterior que se superó.
+
+> 🔒 **Ningún comparador automático puede cerrar esto**, porque la pregunta ya no es «¿está este
+> símbolo?» sino «¿está cubierta esta PREOCUPACIÓN?». Eso se contesta leyendo, y por eso lo de abajo
+> se entrega como lista para mirar y no como veredicto.
+
+---
+
+## 3 · El barrido completo, y lo que NO certifico
+
+| | |
+|---|---|
+| ramas vivas | **127** |
+| · con número de ticket | **72** |
+| · sin número | **55** |
+| de las 72: ✅ restos limpios (ni una unidad propia) | **37** |
+| ⚠️ con algo propio **sólo en `docs/`** | **9** |
+| ⚠️ con algo propio en **código** (`src`/`tests`/`scripts`/`public`) | **26** |
+
+**Las 37 limpias son restos con la misma seguridad que las dos de la 609.** Las 9 de sólo-docs son,
+en todos los casos mirados, apéndices de máster que se rehicieron.
+
+🔴 **Las 26 con código NO las certifico.** Cada una necesita la lectura del §2③ —¿está cubierta la
+preocupación, aunque no esté el símbolo?— y eso lo he hecho para el carril fiscal, tenencia y la 418.
+Las demás quedan **listadas, no juzgadas**. Las que tienen ficheros que no existen en main, que son
+las que más piden mirada:
+
+`scrum-300-c5-campos` · `scrum-340-contador-plazas-reales` · `scrum-368-a1-texto-grande` ·
+`scrum-388-censo-contra-main` · `scrum-397-fecha-de-cobro-rebasada` · `scrum-418-puerta-de-produccion`
+(✅ ya mirada: reimplementada) · `scrum-683b-acotado-al-hecho` · `scrum-809-el-paywall-del-reves` ·
+`scrum-813-el-trinquete-de-zona-horaria` · `scrum-820b-una-sola-forma`
+
+### Las 55 sin número: qué puedo y qué no
+
+**Puedo** decir que están vivas y cuántas son. **No puedo** atribuirlas a un ticket: el nombre no
+lleva número y el mensaje de commit no es una fuente fiable para eso (un commit puede citar varios
+tickets, o ninguno). Contarlas dentro del censo de la regla 42 sería inventar la atribución, así que
+**quedan fuera del 55-de-57 y se declaran aparte**.
+
+---
+
+## 4 · 🔴 El control positivo, y por qué es sintético
+
+El encargo pide control positivo «sobre una rama que SÍ lleve algo que no esté en main, fabricada por
+ti». **No he fabricado ninguna rama**: crear y borrar refs choca con el «ninguna rama se borra, ni
+una». Se hace sobre el índice, que es donde vive la decisión:
+
+```
+símbolo inventado (estaFuncionNoExisteEnMainSCRUM609B) → ✅ NO está en el índice: lo marcaría ausente
+símbolo real de main (resolverTipoRectificativa)       → ✅ SÍ está: el índice ve lo que hay
+índice de main: 22.690 unidades estructurales
+```
+
+**SUELO:** con el índice vacío el comparador sale con 3 y se declara CIEGO — si no, todo saldría
+«falta» y el barrido diría que 72 ramas llevan trabajo perdido.
+
+## 5 · Lo NO tocado
+
+Ninguna rama · ningún ticket · `src/` · `prisma/schema.prisma` · el camino de emisión fiscal (leído,
+regla 38) · ningún estado ni flag (27) · ninguna dependencia (36). **Nada ejecutado contra producción
+ni contra staging.**

@@ -107,8 +107,22 @@ const TABLES = [
   'merchants', 'customers', 'quotes', 'invoices', 'charges', 'events', 'expenses',
   'products', 'providers', 'team_members', 'auth_sessions', 'quote_templates',
   'quote_requests', 'customer_events', 'reconciliations', 'whatsapp_messages',
-  'legal_acceptances', 'jobs', 'maintenance_plans', 'audit_log', 'attachments',
+  'legal_acceptances', 'jobs', 'job_assignees', 'maintenance_plans', 'audit_log', 'attachments',
   'bot_sessions', 'albaranes', 'albaran_lineas_facturadas', 'email_messages',
+  // SCRUM-674: `partes_trabajo` (SCRUM-652) entra al volcado como cualquier otra tabla de
+  // negocio. Un parte firmado es la prueba de que el trabajo se hizo; que no esté en el dump
+  // se descubriria despues de restaurar, que es cuando ya no tiene arreglo.
+  'partes_trabajo',
+  // SCRUM-597 (DOC-07): quién LLEVA cada documento. Entran las dos por el mismo motivo que
+  // `job_assignees`: el reparto del trabajo es un hecho del negocio, y un backup que no lo lleva
+  // restaura una cuenta donde nadie sabe de quién era cada presupuesto ni cada factura. Se
+  // descubriría DESPUÉS de restaurar, que es cuando ya no tiene arreglo.
+  'quote_assignees', 'invoice_assignees',
+  // SCRUM-815: qué eventos de la pasarela se han atendido YA, y cuáles llegaron y no terminaron.
+  // Entra porque es justo lo que no se puede reconstruir: restaurar sin ella deja el sistema sin
+  // memoria de lo procesado, y el siguiente reintento de Stripe —que los hay— se atendería como
+  // si fuera nuevo. Es la tabla que existe para que un cobro no se cuente dos veces.
+  'gateway_events',
 ];
 
 async function logicalDump(prisma) {

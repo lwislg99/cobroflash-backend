@@ -33,7 +33,7 @@
 //   · `merchantId: 1` DENTRO DE UNA CADENA — la fuente sintética con la que otro guard se
 //     autoprueba. Ahí no hay ningún merchant: hay un texto que habla de uno.
 //   · 🔴 Y el que tenía la tanda EN ROJO al empezar este ticket: **un COMENTARIO**. El despojo
-//     `linea.replace(/\/\/.*$/, '')` no funciona cuando el fichero tiene finales CRLF —`$` sin
+//     `soloEjecutable(linea)` no funciona cuando el fichero tiene finales CRLF —`$` sin
 //     flag `m` no casa antes de un `\r`—, así que el comentario entero se analizaba como código.
 //     Saltaba sobre la línea de `scrum508` que EXPLICA que este guard salta. Medido, no deducido.
 //
@@ -69,6 +69,7 @@
 // hallazgos de verdad. Si hubiera hecho falta exentar a mano a los 16, la señal estaría mal
 // elegida y eso sería una decisión del asesor, no de este ticket.
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';

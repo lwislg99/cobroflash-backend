@@ -28,6 +28,7 @@
 // que el fichero es BINARIO y deja de normalizarlo **en silencio**. Por eso las reglas declaran
 // `text` EXPLÍCITO por extensión: así la detección no participa.
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -110,7 +111,7 @@ test('SCRUM-480 · 🔴 ningún blob de TEXTO lleva CR (salvo lo declarado)', ()
 //
 // Y EL DISCO IMPORTA AUNQUE `.gitattributes` YA PROTEJA EL REPOSITORIO, por un motivo que no es
 // de higiene: **un guard no abre el repositorio, hace `readFileSync` del disco**. Con un `\r` en
-// la línea, `linea.replace(/\/\/.*$/, '')` NO HACE NADA —sin `m`, `$` exige fin de cadena y el
+// la línea, `soloEjecutable(linea)` NO HACE NADA —sin `m`, `$` exige fin de cadena y el
 // `\r` está en medio—, así que un guard que promete «miro el código, no los comentarios» mira
 // también los comentarios y aprueba lo que venía a prohibir. Le pasó al de SCRUM-409 durante
 // semanas, y solo en Windows: el CI es Linux y allí iba en verde.
@@ -130,6 +131,33 @@ test('SCRUM-480 · 🔴 ningún blob de TEXTO lleva CR (salvo lo declarado)', ()
 // AVISO DE INSTRUMENTO, PORQUE LOS DE ANDAR POR CASA MIENTEN SOBRE PRECISAMENTE ESTO:
 //   · el `grep` de Git Bash NORMALIZA CRLF al leer, y `grep -c $'\r'` da falso NEGATIVO.
 //     MEDIDO el 19-ago-2026: fichero con 3 CR en el disco, `grep -c` dice 0, node dice 3.
+//   · 🔴 SCRUM-766 · Y TIENE UNA SEGUNDA CARA QUE ESTE AVISO NO DECÍA, que es la peligrosa.
+//     Lo de arriba SIGUE SIENDO CIERTO y no se retira: es la cara del falso negativo, la que
+//     sale al escribir el grep DIRECTO. Pero dentro de una sustitución de órdenes —o sea
+//     `n=$(grep -c ...)`, que es LA forma de capturar un recuento en shell— el bash de MSYS se
+//     come el byte CR del texto de la orden, así que el patrón llega VACÍO y un patrón vacío
+//     casa con TODAS las líneas. Resultado: falso positivo del 100 %, y el número que sale es
+//     EXACTAMENTE `wc -l`. Medido el 7-sep-2026 sobre el mismo fichero de 3 CR en 50 líneas:
+//         len($'\r') FUERA de $() = 1   ·   DENTRO = 0   ·   len($'\t') DENTRO = 1
+//     O sea que le pasa al CR y no a la sustitución en general. `-U` arregla la primera cara y
+//     NO arregla ésta: cura la lectura, y aquí lo que falta es el patrón.
+//     🔴 POR QUÉ IMPORTA MÁS QUE LA OTRA: `wc -l` y «ficheros con CR» son números del mismo
+//     orden de magnitud sobre el mismo árbol, así que la salida no delata nada. Contra un valor
+//     ilegible se puede programar una barrera; contra uno plausible no hay síntoma.
+//     El control que decide y el censo del árbol están en tests/scrum766-el-grep-que-cuenta-lineas.test.mjs.
+//   · 🔴 SCRUM-766 (enmienda del 7-sep-2026) · Y EL DEFECTO ES **DE LA PLATAFORMA**, dato que
+//     faltaba. NADA DE LO DE ARRIBA SE RETIRA: sigue siendo cierto en las máquinas donde se
+//     trabaja. Lo que se añade es DÓNDE pasa y dónde no, medido:
+//         MSYS/Windows (uname -o = Msys)          →  las dos caras FALLAN. Es lo escrito arriba.
+//         GNU/Linux (ubuntu-latest, donde va CI)  →  el grep de GNU ACIERTA las dos caras.
+//     Lo destapó CI poniéndose roja con el mensaje «el entorno ha cambiado», que era exacto.
+//     ⛔ No se resolvió con un skip: el test AFIRMA por plataforma y la que no reproduce el
+//     defecto lo dice con un VEREDICTO IMPRESO — y si algún día GNU/Linux lo ganara, se pone
+//     roja igual. Un skip habría escondido justo eso.
+//     🔴 LA REGLA PRÁCTICA NO CAMBIA NI UN PELO: aquí se cuenta en BYTES con node, nunca con
+//     `grep`. Que una plataforma acierte no convierte a `grep` en el instrumento — sólo
+//     significa que en ESA plataforma el defecto no se manifiesta, y el código se escribe una
+//     vez para todas.
 //   · `git show <rev>:<ruta>` se reportó el 17-ago-2026 como que APLICA el filtro de salida y
 //     hace concluir que tus commits meten CR en el repositorio. NO lo he reproducido el
 //     19-ago-2026 con git 2.55.0.windows.2: sobre un blob anterior a la renormalización dio

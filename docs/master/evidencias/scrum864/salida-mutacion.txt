@@ -1,0 +1,12 @@
+═══ CONTROL · sin mutar ═══
+   el caso de DESPUÉS deja: 0  ✅
+
+═══ MUTACIÓN · se le quita el enganche de salida ═══
+   ¿ENTRÓ la mutación? sí (contenido distinto)
+   el caso de DESPUÉS deja ahora: 1
+   ¿el cuerpo siguió ejecutándose? sí
+
+   VEREDICTO: ✅ CAE — sin el enganche vuelve el resto. El arreglo es el arreglo.
+
+   restaurado byte a byte: sí
+   post-condición · el caso de DESPUÉS vuelve a dejar: 0

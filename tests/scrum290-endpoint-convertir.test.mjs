@@ -50,6 +50,12 @@ function montar({ albaran, quote = { id: 7, quoteNumber: 'P-1', lines: PRESUPUES
     findMany: async () => albaranes ?? [{ id: albaran?.id ?? 1, lineas: albaran?.lineas ?? [] }],
   };
   p.job = { findFirst: async () => ({ id: 1, customerId: 5, quoteId: quote ? quote.id : null }) };
+  // SCRUM-729 · la ruta congela el cliente ANTES de abrir la transacción, así que el doble tiene
+  // que traer la ficha. Sin esto la llamada cae al Prisma de verdad y muere sin `DATABASE_URL` —
+  // que es exactamente lo que pasó al añadir el escritor, y lo cazó esta tanda.
+  p.customer = {
+    findFirst: async () => ({ name: 'Cliente QA', legalName: null, taxId: null, email: null, phone: null }),
+  };
   // ⚠️ MERCHANT REAL, NO EL DEMO. `isDemoMerchant` es `id === 1` o `demo@yaqu.app`, así que un
   // fixture con `id: 1` hace que TODOS los casos corran en modo 'demo' — y entonces la puerta de
   // la regla 24 no se ejercita nunca. La primera versión de este fichero tenía ese `id: 1` y por
@@ -65,7 +71,7 @@ function montar({ albaran, quote = { id: 7, quoteNumber: 'P-1', lines: PRESUPUES
   // de esa implementación — se rompería cada vez que ella cambiara, sin que nada estuviera mal.
   // Lo que sí se fija es lo ÚNICO que decide el importe: qué se le pasa a `invoice.create`.
   const txBase = {
-    invoice: { create: async ({ data }) => { capturado.emitido = data; return { ...data, id: 33, total: { toString: () => data.total } }; } },
+    invoice: { findMany: async () => [], create: async ({ data }) => { capturado.emitido = data; return { ...data, id: 33, total: { toString: () => data.total } }; } },
     albaranLineaFacturada: { createMany: async (a) => { capturado.libroEscrito = a.data; } },
     // `allocateInvoiceNumber` avanza el contador de serie con un `merchant.update`: si solo se
     // define `findUnique`, el Proxy no llega (la clave YA existe) y revienta dentro de la tx.

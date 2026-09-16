@@ -30,14 +30,17 @@ test('SCRUM-139 F4: los inputs de la hoja son LOS DE LA LÍNEA, no copias', () =
   // fuentes de verdad: el usuario cambiaría el IVA en la hoja y el payload seguiría enviando
   // el viejo, porque `lineObj.vatInput` apuntaría al original. Silencioso y con dinero dentro.
   assert.ok(
-    /ajustesCampos\.appendChild\(markupTd\)/.test(src) && /ajustesCampos\.appendChild\(vatTd\)/.test(src),
+    // SCRUM-598 · el campo del margen sale de la hoja (DOC-08). Quedan SUPLIDO y el IVA, y el
+    // orden entre ellos no cambia: sólo desaparece el de en medio.
+    /ajustesCampos\.appendChild\(suplidoTd\)/.test(src) && /ajustesCampos\.appendChild\(vatTd\)/.test(src),
     'margen e IVA ya no van al contenedor que viaja a la hoja: revisa que no se hayan duplicado'
   );
   assert.ok(
     !/cloneNode/.test(src),
     'aparece cloneNode en el editor: un input clonado es una segunda fuente de verdad para un número que va en el presupuesto'
   );
-  for (const clave of ['markupInput,', 'vatInput,']) {
+  // SCRUM-598 · `markupInput` ya no existe: el margen sale del documento.
+  for (const clave of ['vatInput,']) {
     assert.ok(
       src.includes('      ' + clave),
       `lineObj pierde ${clave.replace(',', '')}: es el contrato que consumen payload, borrador, plantillas, IA y autocompletado`
@@ -71,13 +74,28 @@ test('SCRUM-139 F4: la hoja reutiliza .modal-overlay de AB3, sin componente nuev
 test('SCRUM-139 F4 (P3-13): el aviso "Final:" no vuelve a colgar debajo del input', () => {
   // Colgando bajo el input hacía la celda de PRECIO más alta y `align-items:end` le subía el
   // input ~15 px respecto a Cantidad y Total. Medido tras el arreglo: descuadre 0 px en ≥768.
-  assert.ok(
-    /priceTd\.querySelector\("\.quote-line__label"\)\.appendChild\(priceHint\)/.test(src),
-    'el aviso "Final: X €" vuelve a colgar bajo el input: reabre el descuadre de PRECIO (BUGS.md P3-13)'
-  );
+  //
+  // 🔴 SCRUM-669 (resto 4) · SE RETIRA LA PRIMERA ASERCIÓN, y no es relajar el guard: DESAPARECE
+  // SU CAUSA. Exigía que `appendChild(priceHint)` estuviera dentro de `.quote-line__label`, y
+  // `priceHint` ya no existe — desde DOC-08 el margen no vive en la línea, así que el aviso no
+  // tenía nunca nada que decir y su hueco salía siempre vacío. Un guard que exige la PRESENCIA
+  // de algo retirado no protege: cae por lo normal y acaba desactivado. Mismo criterio y mismas
+  // palabras que `scrum610` usó al retirar sus anclas por SCRUM-598.
+  //
+  // Lo que SÍ sigue vivo es el invariante que este test existe para sostener: que la celda de
+  // precio no recupere un aviso colgado directamente de ella. Esa aserción se queda, y sigue
+  // cazando su violación real — si alguien vuelve a crear el aviso y lo cuelga mal, cae.
   assert.ok(
     !/priceTd\.appendChild\(priceHint\)/.test(src),
-    'el aviso "Final: X €" se vuelve a añadir directamente a la celda de precio'
+    'el aviso "Final: X €" se vuelve a añadir directamente a la celda de precio: reabre el '
+    + 'descuadre de PRECIO (BUGS.md P3-13)'
+  );
+  // Y el suelo de la etiqueta, que es lo que sostiene la forma de la celda: si `.quote-line__label`
+  // dejara de existir, la aserción de arriba sería cierta por vacío sobre un DOM que ya no es éste.
+  assert.ok(
+    /quote-line__label/.test(src),
+    '🔴 ha desaparecido `.quote-line__label`: la celda de precio ya no reparte su ancho, y este '
+    + 'test estaría vigilando un descuadre sobre una estructura que cambió'
   );
 });
 

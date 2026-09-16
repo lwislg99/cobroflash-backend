@@ -22,6 +22,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const URL_BANCO = process.env.LIBRO_PG_URL || '';
@@ -57,11 +59,10 @@ const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
  * explicación de por qué el aviso fiscal no se enciende. Se mira lo que se PINTA, no lo que se
  * cuenta sobre lo que no se pinta.
  */
-const sinComentarios = (rel) => leer(rel)
-  .split(String.fromCharCode(10))
-  .filter((l) => !l.trimStart().startsWith('//'))
-  .join(String.fromCharCode(10))
-  .replace(/\/\*[\s\S]*?\*\//g, '');
+// SCRUM-694 · era un filtro por líneas MÁS un regex de bloque, y esa combinación falla en el
+// sentido caro: un `//` dentro de una cadena —una URL— hacía que el regex se comiera código real
+// creyendo que era comentario. Ese trozo dejaba de vigilarse y el guard daba VERDE.
+const sinComentarios = (rel) => soloCodigo(leer(rel));
 
 function exigirBancoDesechable(url) {
   const p = parseBDSegura(url);

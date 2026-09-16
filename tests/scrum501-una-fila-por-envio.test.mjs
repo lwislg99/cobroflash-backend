@@ -155,22 +155,55 @@ test('SCRUM-501 · 🔴 si la escritura REVIENTA, no lanza y el envío sigue su 
   assert.equal(cliente.escrituras.length, 1, '🔴 ni lo ha intentado.');
 });
 
-test('SCRUM-501 · 🔴 si la base NO CONTESTA, el envío no se queda colgado', async () => {
-  // Un `try/catch` no protege de esto: una escritura que nunca resuelve no lanza, **retrasa**. Y
-  // retrasar indefinidamente un correo es tumbar la operación por otro camino.
+/** ¿Se ha resuelto ya? Sin reloj: una vuelta de macrotarea basta para saberlo. */
+const yaSeResolvio = (p) => Promise.race([
+  p.then(() => true, () => true),
+  new Promise((r) => setImmediate(() => r(false))),
+]);
+
+test('SCRUM-501 · 🔴 si la base NO CONTESTA, al llamador lo suelta EL PLAZO', async () => {
+  // Un `try/catch` no protege de esto: una escritura que nunca resuelve no lanza, **retrasa**.
+  //
+  // 🔴 ESTO MEDÍA RELOJ DE PARED: `Date.now()` antes y después, y `tardado < 2_000`. Y era el
+  // más traicionero de su familia PRECISAMENTE POR HOLGADO: 40 ms reales contra un tope de
+  // 2.000 no caen casi nunca, así que el fallo no se elimina — se APLAZA, y cuando por fin sale
+  // es en la rama de otra sesión, sin relación con lo que esa sesión tocó. Un intermitente con
+  // mucho margen es un intermitente al que además le hemos quitado el contexto.
+  //
+  // El hecho no era «tardó poco», que es una propiedad de la máquina: es que **al llamador lo
+  // suelta el PLAZO y no la escritura**. Con el temporizador inyectado eso se comprueba entero,
+  // y de paso se prueba algo que el reloj no probaba: que ANTES de vencer no suelta a nadie.
   const cliente = clienteEspia({ cuelga: true });
-  const arranque = Date.now();
-  const r = await registrarEnvio({
+  let vencerPlazo;
+  let msPedidos;
+  let cancelado = false;
+  const temporizar = (fn, ms) => { msPedidos = ms; vencerPlazo = fn; return () => { cancelado = true; }; };
+
+  const enCurso = registrarEnvio({
     contexto: CONTEXTO, to: 'ana@obra.example', constancia: constanciaDeEnvio({ id: 'x' }),
-    cliente, plazoMs: 40,
+    cliente, plazoMs: 40, temporizar,
   });
-  const tardado = Date.now() - arranque;
+
+  assert.equal(msPedidos, 40,
+    `🔴 el plazo programado es ${msPedidos} y se pidieron 40. Si no es el que le pasan, el `
+    + 'llamador no puede acotar cuánto le van a retener.');
+
+  assert.equal(await yaSeResolvio(enCurso), false,
+    '🔴 SUELTA AL LLAMADOR ANTES DE QUE VENZA EL PLAZO, con la escritura aún sin contestar. '
+    + 'Entonces no está esperando a nada y el resultado que devuelva no puede distinguir «no '
+    + 'contestó a tiempo» de «no lo intenté». Esto el reloj no lo comprobaba.');
+
+  vencerPlazo();
+  const r = await enCurso;
 
   assert.deepEqual(r, { escrita: false, motivo: 'plazo' },
-    '🔴 una escritura que no contesta no se declara: el llamador no puede saber que no consta.');
-  assert.ok(tardado < 2_000,
-    `🔴 el registro ha retenido el envío ${tardado} ms con la base sin contestar. El plazo existe `
-    + 'para que el correo no espere a la telemetría.');
+    '🔴 una escritura que no contesta no se declara: el llamador no puede saber que no consta. '
+    + 'Y al vencer el plazo NO se quedó esperando a la escritura, que sigue colgada.');
+  assert.equal(cliente.escrituras.length, 1,
+    '🔴 o no lo ha intentado, o lo ha intentado más de una vez: el plazo no es un reintento.');
+  assert.ok(cancelado,
+    '🔴 el plazo no se cancela al salir. Un temporizador vivo por envío es una fuga, y el `unref` '
+    + 'sólo evita que retenga el proceso: no evita acumularlos.');
 
   // Y el plazo POR DEFECTO existe y es finito: se lee del fuente, porque no está exportado y lo que
   // importa es que ninguna salida quede sin límite. Medido: 3 s.

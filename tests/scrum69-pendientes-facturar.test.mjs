@@ -6,16 +6,18 @@ import {
   resolveTipoDestinatario,
   fechaLimiteRecapitulativa,
   calcularSemaforo,
-  toIsoDateLocal,
 } from '../dist/modules/jobs/domain/pendientesFacturar.service.js';
 
-// fechaLimiteRecapitulativa devuelve una Date en hora LOCAL a propósito (para comparar con
-// "hoy" también local, ver calcularSemaforo) — formatear con toIsoDateLocal, NUNCA
-// .toISOString() (convierte a UTC y desplaza un día en timezones con offset positivo, p.ej.
-// Madrid). Este helper de test replica exactamente lo que usa el código real.
-function limite(mesKey, tipo) {
-  return toIsoDateLocal(fechaLimiteRecapitulativa(mesKey, tipo));
-}
+// 🔴 SCRUM-643 · `fechaLimiteRecapitulativa` YA DEVUELVE UN DÍA (`YYYY-MM-DD`), así que este
+// helper ya no formatea nada. Antes devolvía una `Date` en hora LOCAL y había que formatearla
+// con `toIsoDateLocal` —NUNCA `.toISOString()`, que desplazaba el día en husos positivos—. Ese
+// cuidado era un vigilante que había que recordar; un plazo legal es un DÍA y ahora se
+// representa como tal, así que no hay nada que vigilar. `toIsoDateLocal` se retiró con él.
+const limite = (mesKey, tipo) => fechaLimiteRecapitulativa(mesKey, tipo);
+
+// La zona con la que se leen los tests de semáforo: se fija A MANO. Sin esto volverían a medir
+// la máquina donde corren, que es lo que cazó SCRUM-640 en cinco ficheros.
+const MADRID = 'Europe/Madrid';
 
 // ── resolveTipoDestinatario ──────────────────────────────────────────────────
 test('resolveTipoDestinatario: null/undefined → PARTICULAR (criterio seguro, plazo más corto)', () => {
@@ -45,15 +47,16 @@ test('fechaLimiteRecapitulativa: diciembre → enero (desbordamiento de año)', 
 
 // ── calcularSemaforo ──────────────────────────────────────────────────────────
 test('calcularSemaforo: fronteras exactas 0/5/6/-1 días', () => {
-  const hoy = new Date('2026-07-10T15:00:00'); // hora del día no debe afectar (normaliza a medianoche)
-  assert.equal(calcularSemaforo(new Date('2026-07-10'), hoy), 'ambar'); // 0 días → ámbar
-  assert.equal(calcularSemaforo(new Date('2026-07-15'), hoy), 'ambar'); // 5 días → ámbar
-  assert.equal(calcularSemaforo(new Date('2026-07-16'), hoy), 'verde'); // 6 días → verde
-  assert.equal(calcularSemaforo(new Date('2026-07-09'), hoy), 'rojo');  // -1 día (vencido) → rojo
+  // La hora del día no debe afectar: el semáforo compara DÍAS naturales, no instantes.
+  const hoy = new Date(Date.UTC(2026, 6, 10, 13, 0)); // 15:00 en Madrid
+  assert.equal(calcularSemaforo('2026-07-10', hoy, MADRID), 'ambar'); // 0 días → ámbar
+  assert.equal(calcularSemaforo('2026-07-15', hoy, MADRID), 'ambar'); // 5 días → ámbar
+  assert.equal(calcularSemaforo('2026-07-16', hoy, MADRID), 'verde'); // 6 días → verde
+  assert.equal(calcularSemaforo('2026-07-09', hoy, MADRID), 'rojo');  // -1 día (vencido) → rojo
 });
 
 test('calcularSemaforo: verde muy por delante, rojo muy vencido', () => {
-  const hoy = new Date('2026-07-10');
-  assert.equal(calcularSemaforo(new Date('2026-08-31'), hoy), 'verde');
-  assert.equal(calcularSemaforo(new Date('2026-01-01'), hoy), 'rojo');
+  const hoy = new Date(Date.UTC(2026, 6, 10, 10, 0)); // mediodía en Madrid
+  assert.equal(calcularSemaforo('2026-08-31', hoy, MADRID), 'verde');
+  assert.equal(calcularSemaforo('2026-01-01', hoy, MADRID), 'rojo');
 });

@@ -48,13 +48,15 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FUENTE = 'src/modules/invoicing/infra/pdf/pdf.service.ts';
 
 /** Genera un presupuesto de verdad y devuelve su TEXTO. Borra el fichero siempre. */
-async function textoDePresupuesto(id, { lines, total, country = 'ES' }) {
+// SCRUM-647 · `taxName` entra en la ayuda porque el documento ya no lo deduce del país: se lo
+// pasa quien llama. Sin él, el generador imprime su valor por defecto, que es lo que se comprueba.
+async function textoDePresupuesto(id, { lines, total, country = 'ES', taxName }) {
   const { generateQuotePdf } = await import('../dist/lib/pdf.js');
   const { outPath } = await generateQuotePdf({
     quoteId: 99990000 + id, quoteNumber: 600 + id,
     merchant: { name: 'QA Fontanería', legalName: 'QA SL', taxId: 'B00000000' },
     customer: { name: 'Cliente QA' },
-    currency: 'EUR', total, lines, signatureData: null, country,
+    currency: 'EUR', total, lines, signatureData: null, country, taxName,
   });
   try {
     const r = extraerTextoPdf(fs.readFileSync(outPath));
@@ -137,13 +139,31 @@ test('SCRUM-604b · 🔴 el caso con SUPLIDO: dos bases, y la del 0 % sigue sin 
     + 'impuesto que el de una sola. Si esto falla, la del 0 % ya sale — y ① está resuelto.');
 });
 
-test('SCRUM-604b · el rótulo del impuesto sale del locale: en Perú es IGV, no IVA', async () => {
+test('SCRUM-604b · el rótulo del impuesto: en Perú sigue siendo IGV (SCRUM-647)', async () => {
+  // 🔴 REAPUNTADO POR SCRUM-647, y la propiedad NO se debilita: un presupuesto peruano sigue
+  // teniendo que decir IGV. Lo que cambia es DÓNDE se decide.
+  //
+  // Antes el documento lo resolvía con `locale.vatName`, indexado por PAÍS. Eso miente en
+  // Canarias —que es `ES` y repercute IGIC—, así que la resolución por país SUBIÓ AL LLAMANTE,
+  // donde el país ya está a la vista. El documento recibe el nombre y no lo decide.
   const bloque = bloqueDeTotales(await textoDePresupuesto(6, {
-    lines: [{ concept: 'Mano de obra', qty: 2, price: 30, tax: 0.18 }], total: '70.80', country: 'PE',
+    lines: [{ concept: 'Mano de obra', qty: 2, price: 30, tax: 0.18 }], total: '70.80',
+    country: 'PE', taxName: 'IGV', // ← exactamente lo que pasan las tres rutas
   }));
   assert.equal(bloque, 'Base imponible: 60,00 EURIGV 18%: 10,80 EURTotal cotización: 70,80 EUR',
-    '🔴 el rótulo del impuesto ha dejado de salir de `locale.vatName`, o cambió el de Perú. '
+    '🔴 el rótulo del impuesto ha dejado de llegar al bloque, o cambió el de Perú. '
     + 'Es lo que hace que este bloque no necesitara microcopy nueva.');
+
+  // ⚠️ Y EL CAMBIO DE COMPORTAMIENTO, ESCRITO EN VEZ DE ESCONDIDO: sin `taxName`, el país YA NO
+  // basta. El documento dice «IVA» aunque le pases `PE`. Que Perú siga viendo IGV depende
+  // enteramente de que los llamantes lo pasen, y eso lo vigila
+  // `scrum647-presupuesto-tambien-neutral.test.mjs` — sin aquel guard, esto regresaría en silencio.
+  const sinNombre = bloqueDeTotales(await textoDePresupuesto(7, {
+    lines: [{ concept: 'Mano de obra', qty: 2, price: 30, tax: 0.18 }], total: '70.80', country: 'PE',
+  }));
+  assert.equal(sinNombre, 'Base imponible: 60,00 EURIVA 18%: 10,80 EURTotal cotización: 70,80 EUR',
+    '🔴 el documento ha vuelto a resolver el impuesto por el país. Eso es lo que miente en '
+    + 'Canarias y lo que SCRUM-647 sacó de aquí.');
 });
 
 test('SCRUM-604b · sin líneas no hay desglose que imprimir, y el total sigue saliendo', async () => {
@@ -179,7 +199,23 @@ test('SCRUM-604b · 🔴 las filas del desglose son DATOS, no dibujo: cabe una c
   })(sf);
 
   assert.ok(declarada, '🔴 ya no existe `filasDeTotales`: el desglose ha dejado de ser una lista de datos');
-  assert.ok(seEmpuja >= 2, `🔴 sólo veo ${seEmpuja} \`push\` sobre \`filasDeTotales\`: la lista se ha vuelto fija`);
+  // 🔴 2-sep-2026 · SCRUM-656 · LA LISTA SIGUE SIENDO DATOS, pero ya no se llena AQUÍ. Las filas
+  // las construye `quotes/domain/presentacionIva.ts`, que además decide CUÁLES se pintan según el
+  // modo de IVA del presupuesto — en «IVA no incluido» no va ninguna cuota. La maqueta declara la
+  // lista, la recibe y la recorre, que es exactamente lo que este guard protege: que quepa una
+  // cuarta fila sin rehacer el dibujo. Se exige lo mismo, en el sitio donde ahora ocurre.
+  const dominio = fs.readFileSync(path.join(RAIZ, 'src/modules/quotes/domain/presentacionIva.ts'), 'utf8');
+  const sfDom = ts.createSourceFile('p.ts', dominio, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let empujaDominio = 0;
+  (function rec2(n) {
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+        && ts.isIdentifier(n.expression.name) && n.expression.name.text === 'push'
+        && ts.isIdentifier(n.expression.expression) && n.expression.expression.text === 'filas') empujaDominio++;
+    n.forEachChild(rec2);
+  })(sfDom);
+  assert.ok(seEmpuja + empujaDominio >= 2,
+    `🔴 entre la maqueta (${seEmpuja}) y el dominio (${empujaDominio}) el desglose se ha vuelto una `
+    + 'lista fija: una cuarta fila obligaría a rehacer el dibujo, que es lo que SCRUM-604 mandaba evitar.');
   assert.ok(seRecorre,
     '🔴 el desglose ya NO se pinta recorriendo la lista. Eso significa que añadir la cuarta fila '
     + '(el suplido fuera de la base, cuando el fundador escriba su etiqueta) obligaría a rehacer '
@@ -195,15 +231,29 @@ test('SCRUM-604b · los dos formateadores de importe del fichero no pueden separ
   const { fmtImporte } = await import('../dist/modules/invoicing/infra/pdf/pdf.service.js');
   const fuente = fs.readFileSync(path.join(RAIZ, FUENTE), 'utf8');
 
-  // El de la factura vive DENTRO de su función y no se puede importar: se comprueba que su
-  // cuerpo siga siendo el mismo, con `===` sobre la línea exacta.
-  const cuerpoFactura = "    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });";
+  // ⚠️ SCRUM-636 · ESTE GUARD CAMBIA DE REFERENCIA, NO DE INTENCIÓN, y queda escrito por qué.
+  //
+  // Comprobaba dos cosas contra `v.toLocaleString('es-ES', …)`: que el `fmt` de la factura tuviera
+  // ESE cuerpo exacto, y que `fmtImporte` diera ESA salida. Las dos usaban como patrón el
+  // algoritmo que el fundador acaba de RETIRAR: `toLocaleString('es-ES')` no agrupa los enteros de
+  // cuatro cifras (CLDR), así que el documento escribía `1000,00` y `12.345,67` — incoherente
+  // consigo mismo. Un guard cuyo patrón es lo que se ha decidido no hacer ya no vigila nada.
+  //
+  // 🔴 Lo que este test existe para impedir —que los dos formateadores del fichero SE SEPAREN— no
+  // cambia, y ahora se comprueba MÁS FUERTE: en vez de exigir que los dos cuerpos sean iguales, se
+  // exige que sean EL MISMO, porque uno llama al otro y el otro llama al sitio único.
+  const cuerpoFactura = '    return fmtImporte(v);';
   assert.equal(fuente.split(cuerpoFactura).length - 1, 1,
-    '🔴 el `fmt` de la factura ha cambiado de cuerpo (o se ha movido). Si ahora formatea distinto '
-    + 'que `fmtImporte`, los dos documentos empiezan a escribir el dinero de dos maneras.');
+    '🔴 el `fmt` de la factura ha dejado de delegar en `fmtImporte` (o se ha movido). Si vuelve a '
+    + 'tener cuerpo propio, los dos documentos pueden empezar a escribir el dinero de dos maneras.');
+  assert.match(fuente, /export function fmtImporte[\s\S]{0,600}?return formatImporteEs\(v\);/,
+    '🔴 `fmtImporte` ha dejado de delegar en el sitio único (`formatImporteEs`).');
 
-  for (const v of [0, 4.5, 12.6, 105, 117.6, 1234.5]) {
-    assert.equal(fmtImporte(v), v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      `🔴 \`fmtImporte\` ya no formatea ${v} como el de la factura`);
+  // Y la comprobación de SALIDA se conserva, contra el sitio único en vez de contra el algoritmo
+  // retirado. Se añade 1000 a propósito: es la banda donde la incoherencia se veía.
+  const { formatImporteEs } = await import('../dist/core/utils/utils.js');
+  for (const v of [0, 4.5, 12.6, 105, 117.6, 1234.5, 1000]) {
+    assert.equal(fmtImporte(v), formatImporteEs(v),
+      `🔴 \`fmtImporte\` ya no escribe ${v} como el sitio único del dinero`);
   }
 });

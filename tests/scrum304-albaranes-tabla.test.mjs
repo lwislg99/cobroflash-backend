@@ -153,10 +153,24 @@ function decisoresDeLaFila() {
     assert.ok(j > i, `🔴 ESCÁNER CIEGO: no encuentro el FINAL «${hasta}» tras «${desde}»`);
     return FILA.slice(i, j);
   };
-  const src = corte('function ctxAlbaranEnFila', '\n// ── SCRUM-303');
-  assert.ok(src.length > 200 && src.length < 3000,
+  // ── SCRUM-831 · LOS DECISORES YA NO ESTÁN TODOS EN EL MISMO FICHERO ─────────────────────
+  //
+  // `ctxAlbaranDeFila` y `primariaDeAlbaran` se mudaron a `js/albaranAccion.js` para que la LISTA
+  // de Albaranes pudiera nombrarlos: viviendo dentro de esta vista, era la única de las cinco
+  // listas de la casa con CERO acciones en la fila (el defecto de SCRUM-366, por tercera vez).
+  //
+  // Este guard NO se relaja por eso: sigue EJECUTANDO los decisores de verdad, sólo que ahora los
+  // toma de sus DOS casas. Cuando se movieron se puso rojo diciendo «ESCÁNER CIEGO: no encuentro
+  // function ctxAlbaranEnFila» — que es exactamente lo que tenía que hacer, y por eso se actualiza
+  // el ancla en vez de aflojar el corte.
+  const compartido = fs.readFileSync(new URL('../public/dashboard/js/albaranAccion.js', import.meta.url), 'utf8');
+  assert.ok(/function primariaDeAlbaran/.test(compartido),
+    '🔴 ESCÁNER CIEGO: `albaranAccion.js` ya no define el resolutor. ¿Se movió otra vez?');
+  // `destinoEnFila` SÍ sigue en la vista: sólo lo usa ella, así que no había motivo para sacarlo.
+  const src = corte('const ctxAlbaranEnFila', '\n// Los rótulos NO se escriben aquí');
+  assert.ok(src.length > 100 && src.length < 3000,
     `🔴 ESCÁNER CIEGO: el recorte mide ${src.length} caracteres — no son los decisores.`);
-  return new Function('window', `${src}\nreturn { ctxAlbaranEnFila, primariaDeAlbaran, destinoEnFila };`)({
+  return new Function('window', `${compartido}\n${src}\nreturn { ctxAlbaranEnFila, primariaDeAlbaran, destinoEnFila };`)({
     ALBARAN_ACTION_REGISTRY: registro.ALBARAN_ACTION_REGISTRY,
     destinoEfectivo: ley.destinoEfectivo,
   });
@@ -318,7 +332,13 @@ test('SCRUM-304 · el patrón móvil es EL MISMO que usa la lista global de alba
   // Dos formas móviles para el MISMO documento según la pantalla sería SCRUM-240 en la capa
   // visual. Se deriva del otro fichero, no se escribe el nombre del patrón a mano en los dos.
   const lista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/albaranesView.js'), 'utf8');
-  const m = lista.match(/className = 'table (table--[a-z-]+)'/);
+  // ⚠️ SCRUM-831 · SE LEE EL PATRÓN COMPARTIDO, NO LA CADENA ENTERA. El ancla era
+  // `className = 'table (table--x)'` —una clase exacta— y se puso roja en cuanto la lista añadió
+  // su MODIFICADOR (`table--albaranes`, el que le da al Trabajo su área propia en la tarjeta ahora
+  // que las acciones recuperan la suya). El patrón compartido no había cambiado: lo que cambió fue
+  // que hay dos clases donde había una. Lo que este test juzga es que las dos pantallas usen el
+  // MISMO patrón, así que lee el primero y deja pasar los modificadores acotados.
+  const m = lista.match(/className = 'table (table--cards-mobile|table--stack-mobile)/);
   assert.ok(m, '🔴 ESCÁNER CIEGO: `albaranesView.js` ya no declara un patrón móvil de tabla');
   assert.ok(FILA.includes(`table ${m[1]}`),
     `🔴 la lista global usa «${m[1]}» y esta tabla usa otro. El mismo albarán se leería con dos ` +

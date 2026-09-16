@@ -9,6 +9,7 @@
 // vencida se sigue descargando entera: gasta los datos del profesional en el peor sitio posible.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -39,7 +40,7 @@ test('SCRUM-451 · el plazo son 10 s, en UNA constante con nombre, en el camino 
   // de toast que **no son plazos de red**. Un escáner que los cuente da ruido, y un escáner que da
   // ruido acaba relajado hasta quedarse ciego. Así que no se busca el número: se busca **el que
   // arma el corte**. Todo `setTimeout` que aborte tiene que llevar la constante, y no otra cosa.
-  const codigo = fuente.replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+  const codigo = soloEjecutable(fuente);
   const cortes = [...codigo.matchAll(/setTimeout\(([^;]*?abort[^;]*?),\s*([^)]+)\)/g)];
   assert.ok(cortes.length >= 1,
     '🔴 no hay ningún `setTimeout` que aborte: el plazo no corta nada.');
@@ -62,7 +63,7 @@ test('SCRUM-451 · el plazo son 10 s, en UNA constante con nombre, en el camino 
   // La distinción es toda la diferencia: `PLAZO_RED_MS` es REUSAR; `PLAZO_FIRMA_MS = 8000` es
   // duplicar la decisión con otro nombre.
   const dir = path.join(RAIZ, 'public/dashboard/js');
-  const sinComentarios = (f) => fs.readFileSync(path.join(dir, f), 'utf8').replace(/\/\/[^\n]*|\/\*[^]*?\*\//g, '');
+  const sinComentarios = (f) => soloEjecutable(fs.readFileSync(path.join(dir, f), 'utf8'));
   const otros = fs.readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'api.js');
 
   const conPlazoPropio = otros.filter((f) => {

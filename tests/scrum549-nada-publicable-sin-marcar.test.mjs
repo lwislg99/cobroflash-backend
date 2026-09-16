@@ -5,8 +5,10 @@
 // marcar se publica sin que nada diga nada — le pasó al titular del bloque de contacto, y lo cazó
 // un extractor por casualidad.
 import test from 'node:test';
+import { ejecutableDe } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -19,7 +21,7 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
 test('SCRUM-549 · 🔴 SUELO: sin elementos ocultos, el censo se declara CIEGO', () => {
-  const vacio = fs.mkdtempSync(path.join(RAIZ, 'tests', '.tmp-549-'));
+  const vacio = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-549-${process.pid}-`));
   try {
     fs.mkdirSync(path.join(vacio, 'public'), { recursive: true });
     fs.writeFileSync(path.join(vacio, 'public', 'index.html'), '<html><body><p>nada oculto</p></body></html>');
@@ -95,7 +97,7 @@ test('SCRUM-549 · ✅ CONTROL POSITIVO: el copy YA aprobado no dispara el guard
 });
 
 test('SCRUM-549 · AUTOPRUEBA: un bloque nuevo, oculto y sin marcar, SÍ se ve', () => {
-  const dir = fs.mkdtempSync(path.join(RAIZ, 'tests', '.tmp-549b-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-549b-${process.pid}-`));
   try {
     fs.mkdirSync(path.join(dir, 'public'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'public', 'index.html'),
@@ -116,12 +118,15 @@ test('SCRUM-549 · 🔴 el guard NO busca la palabra «PROPUESTA» en el texto',
   // daría rojo permanente sobre un texto legítimo — o alguien la excluiría y con ella excluiría a
   // las de verdad. Se mira la ESTRUCTURA (el atributo), no el vocabulario.
   const fuente = fs.readFileSync(path.join(RAIZ, 'scripts', '_censo-microcopy-sin-marcar.mjs'), 'utf8');
-  const sinComentarios = fuente.replace(/\/\/[^\n]*/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  // SUELO (SCRUM-719): el ancla son LOS MARCADORES QUE ESTE TEST YA COMPROBABA — sólo que los
+  // comprobaba sobre `fuente`, el texto CRUDO, que es el paso de antes. Sobre el filtrado sí
+  // responden a la pregunta que importa: ¿el texto donde busco «PROPUESTA» es el censo?
+  const sinComentarios = ejecutableDe(fuente, { ancla: [...MARCADORES], donde: '_censo-microcopy-sin-marcar.mjs' });
   assert.doesNotMatch(sinComentarios, /['"`]PROPUESTA/,
     '🔴 el censo ha empezado a buscar la cadena «PROPUESTA» en el texto. El copy de F5-1 la lleva ' +
     'dentro: eso es un rojo permanente sobre un texto legítimo, y la salida fácil (excluirla) se ' +
     'lleva por delante a las de verdad.');
-  for (const k of MARCADORES) assert.ok(fuente.includes(k), '🔴 ya no mira el marcador ' + k);
+  // (la comprobación de los marcadores vive ahora en el ancla de arriba, sobre el texto FILTRADO)
 });
 
 // ── LA CUARENTENA, CON TOPE ──────────────────────────────────────────────────────────────────

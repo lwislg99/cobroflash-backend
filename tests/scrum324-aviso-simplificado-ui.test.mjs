@@ -21,6 +21,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+// SCRUM-694: el scanner de TypeScript, no un filtro por lineas.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/expensesView.js');
@@ -67,7 +69,9 @@ test('SCRUM-324 · 🔴 la afirmación FISCAL sobre el ticket NO está encendida
     '🔴 la pregunta al asesor sobre el IVA del ticket ha desaparecido del documento: entonces ' +
     'estas negaciones no protegen una decisión pendiente, protegen un olvido.');
 
-  const codigo = vista().split(String.fromCharCode(10)).filter((l) => !l.trimStart().startsWith('//')).join(String.fromCharCode(10));
+  // SCRUM-694 · filtraba SOLO las lineas : un bloque /* */ que citara la frase prohibida
+  // habria hecho saltar el guard por su propia documentacion.
+  const codigo = soloCodigo(vista());
   assert.doesNotMatch(codigo, /no puedes deducir el IVA/i,
     '🔴 se ha encendido la afirmación fiscal sobre el ticket sin el asesor.');
   assert.doesNotMatch(codigo, /AVISO_SIMPLIFICADO/,

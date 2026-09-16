@@ -14,6 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -59,7 +60,7 @@ function gremiosPublicados(bloque) {
 // ── ① SUELO: un cero tiene que doler ─────────────────────────────────────────────────────────
 
 test('SCRUM-333 · 🔴 SUELO: sin catálogos, el derivador se declara CIEGO en vez de devolver []', () => {
-  const vacio = fs.mkdtempSync(path.join(RAIZ, 'tests', '.tmp-gremios-'));
+  const vacio = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-333-${process.pid}-`));
   try {
     assert.throws(() => leerCatalogos(vacio), CatalogosCiego,
       '🔴 el derivador ha devuelto una lista vacía sin protestar. «No hay gremios configurados» y ' +

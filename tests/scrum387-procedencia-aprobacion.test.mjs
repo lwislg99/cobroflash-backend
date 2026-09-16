@@ -57,16 +57,51 @@ function ficheros(dir) {
   return out;
 }
 
-/** Los COMENTARIOS de un fuente, agrupados en bloques: `//` seguidos cuentan como uno solo. */
+/**
+ * Los COMENTARIOS de un fuente, agrupados en bloques: `//` seguidos cuentan como uno solo.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * 🔴 SE LEEN CON EL PARSER, NO CON `createScanner` A PELO — y no es una preferencia de estilo.
+ *
+ * SCRUM-814 (7-sep-2026) lo destapó al meter un `` tx.$executeRaw`… ${x} …` `` en
+ * `quotesAdmin.routes.ts`. Un escáner suelto no sabe de gramática: ante un template literal CON
+ * SUSTITUCIONES hace falta `reScanTemplateToken`, y sin eso se descarrila y deja de reconocer
+ * los tokens siguientes. Medido sobre ese mismo fichero:
+ *
+ *     sin el template  → 143 comentarios vistos, 1 con marca de aprobación
+ *     con el template  →  72 comentarios vistos, 0 con marca      ← CIEGO
+ *
+ * O sea: **toda marca de aprobación situada DESPUÉS del primer template con `${}` de su fichero
+ * era invisible para este censo** — y no sólo la de SCRUM-814: `invoiceNumber.service.ts` ya
+ * tenía uno. El modo de fallo es el peor posible: el número BAJA, y una bajada se lee como una
+ * mejora. Lo cazó la mitad del trinquete que vigila las BAJADAS, no la que vigila las subidas —
+ * que es exactamente para lo que esa mitad existe.
+ *
+ * El parser sí conoce la gramática. Se recogen los comentarios adheridos a cada nodo (delante y
+ * detrás), deduplicando por posición.
+ */
 function bloquesDeComentario(codigo, nombre) {
-  const escaner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, codigo);
-  const trozos = [];
-  let k;
-  while ((k = escaner.scan()) !== ts.SyntaxKind.EndOfFileToken) {
-    if (k === ts.SyntaxKind.SingleLineCommentTrivia || k === ts.SyntaxKind.MultiLineCommentTrivia) {
-      trozos.push({ texto: escaner.getTokenText(), inicio: escaner.getTokenStart(), fin: escaner.getTokenEnd(), suelto: k === ts.SyntaxKind.SingleLineCommentTrivia });
+  const sf = ts.createSourceFile(nombre, codigo, ts.ScriptTarget.Latest, true);
+  const porInicio = new Map();
+  const recoger = (rangos) => {
+    for (const r of rangos ?? []) {
+      if (porInicio.has(r.pos)) continue;
+      porInicio.set(r.pos, {
+        texto: codigo.slice(r.pos, r.end),
+        inicio: r.pos,
+        fin: r.end,
+        suelto: r.kind === ts.SyntaxKind.SingleLineCommentTrivia,
+      });
     }
-  }
+  };
+  const visitar = (n) => {
+    recoger(ts.getLeadingCommentRanges(codigo, n.getFullStart()));
+    recoger(ts.getTrailingCommentRanges(codigo, n.getEnd()));
+    // 🔴 sin `return`: `forEachChild` corta el recorrido en cuanto el callback devuelve truthy.
+    ts.forEachChild(n, (h) => { visitar(h); });
+  };
+  visitar(sf);
+  const trozos = [...porInicio.values()].sort((a, b) => a.inicio - b.inicio);
   // Unir los `//` consecutivos: la marca y su `(SCRUM-264)` suelen ir en líneas distintas del
   // mismo comentario, y separarlas convertiría una procedencia válida en un falso positivo.
   const bloques = [];
@@ -105,7 +140,35 @@ function censar() {
 // SCRUM-404 (7-ago-2026): 10 → 9. Al reescribir el fallo de firma en `albaranDetailView.js`, el
 // `'No se pudo firmar: ' + e.message` —texto suelto, sin ticket detrás— pasó a ser un marcador
 // `[PENDIENTE microcopy oficial · …]` con su ticket. Una marca menos sin procedencia.
-export const SIN_PROCEDENCIA = 9;
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-814 (7-sep-2026): 9 → 17, Y SUBE. Es la única subida legítima de este número, y hay
+// que leerla al revés de como se lee normalmente.
+//
+// NO han aparecido ocho marcas nuevas: han aparecido ocho que YA ESTABAN y que el censo no
+// podía ver. El lector de comentarios usaba `ts.createScanner` a pelo y se descarrilaba en el
+// primer template literal con `${}` de cada fichero — desde ahí, ciego (ver
+// `bloquesDeComentario`). Todo lo que estuviera detrás de un `$executeRaw` o de cualquier
+// plantilla con sustituciones no se contaba.
+//
+// Las OCHO que estaban tapadas, enumeradas y no contadas:
+//     public/dashboard/js/albaranDetailView.js:155
+//     public/dashboard/js/homeView.js:643
+//     public/dashboard/js/jobDetailView.js:302
+//     public/dashboard/js/jobDetailView.js:385
+//     public/dashboard/js/reportsView.js:940
+//     src/modules/fiscal/librosAeat/librosAeat.ts:183
+//     src/modules/jobs/domain/parteDictado.ts:401
+//     src/modules/system/app/routes/invoicesAdmin.routes.ts:1116
+//
+// Ninguna es de SCRUM-814: son deuda vieja que el instrumento no alcanzaba. Este número NO
+// vuelve a subir por nada que no sea otro arreglo del instrumento, y baja según se les ponga
+// su ticket o su documento.
+//
+// 📌 Y la lección, que vale más que el número: el fallo se manifestó como una BAJADA —de 9 a 8—,
+// o sea con la forma de una mejora. Lo cazó la mitad del trinquete que vigila que no baje en
+// silencio, que hasta hoy parecía la mitad menos útil.
+export const SIN_PROCEDENCIA = 17;
 
 test('SCRUM-387 · SUELO: el censo encuentra marcas de aprobación de verdad', () => {
   const { conProcedencia, sinProcedencia } = censar();

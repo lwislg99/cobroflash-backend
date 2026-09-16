@@ -1,0 +1,271 @@
+// tests/scrum601-copy-del-documento-vs-flag.test.mjs — SCRUM-601 (DOC-11)
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// EL COPY DEL DOCUMENTO, ¿ES FUNCIÓN DEL FLAG O ESTÁ ESCRITO A PELO?
+//
+// LA VÍCTIMA, medida y reproducible sin BD (ver `tests/scrum601-*` y el parte del ticket):
+// para un merchant ES real —`country: 'ES'`, sin override— con `INVOICING_ES_ENABLED` en su
+// valor por defecto:
+//
+//     isFlagEnabled            → false
+//     getEmissionMode          → 'receipt'
+//     modoDocumentoSuelto      → 'justificante'
+//
+// El botón de la pantalla de Facturas SÍ lo seguía: decía «+ Nuevo justificante»
+// (`invoicesView.js`, elegido por `window.appDocumentoSuelto`). El modal que ese botón ABRE, no:
+// su título era «Nueva factura» y su botón primario «Emitir factura», los dos escritos a pelo.
+//
+// O sea que el profesional pulsaba un botón que le prometía un justificante y se le abría una
+// ventana que le decía que iba a emitir una factura. En la MISMA pantalla y en el MISMO gesto.
+//
+// ⚠️ SCRUM-601 MIDIÓ Y NO TOCÓ (regla 30: el microcopy lo firma el asesor): dejó el defecto ATADO
+// para que no pudiera crecer en silencio.
+//
+// ✅ SCRUM-776 LO CERRÓ, con los textos ya firmados (asesor, 6-sep-2026). Siete rótulos derivan
+// ahora de `rotulosDelDocumento`, y este fichero se queda como LA RED que lo sostiene: el
+// veredicto anclado, el censo que no puede encogerse en silencio y el trinquete —que bajó de
+// SEIS entradas a UNA—. La que queda es el `aria-label` del selector de cliente, que el asesor
+// NO firmó a propósito porque «cliente al que justificas» no existe en castellano.
+//
+// 🔴 Este fichero se lee HOY, no el día que se escribió: si vuelve a describir un árbol que ya no
+// existe, es el defecto que llevamos cinco veces cazándole al máster de agosto.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { portadoresDelFlag, censoCopy, NOMBRE_FLAG, SEMILLA_FLAG, SEMILLA_TIPO } from './_censo-copy-vs-flag.mjs';
+
+const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// Se calcula UNA vez: cada cierre recorre 355 ficheros y no cambia entre aserciones.
+const cierre = portadoresDelFlag(RAIZ, SEMILLA_FLAG);
+const cierreTipo = portadoresDelFlag(RAIZ, SEMILLA_TIPO);
+const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
+
+/**
+ * EL VEREDICTO, ANCLADO. Medido el 6-sep-2026 sobre `main` = 00c6cb0c (re-medido tras mezclarlo: la población pasó a 356 ficheros y 19.978 literales, y el reparto NO se movió).
+ *
+ *   ① FLAG — el texto lo elige, EN CÓDIGO, una condición que baja del flag.
+ *   ② TIPO — lo elige el `type` del documento ya emitido. La dependencia es real pero pasa por
+ *            una fila de `invoices`: ningún cierre estático puede encadenarla al flag.
+ *   ③ A PELO — nada lo elige. Con el flag OFF dirá «factura» a quien emite justificantes.
+ *
+ * Se anclan los TRES y se exige que SUMEN. Un censo cuyas partes no suman no es un censo, y
+ * anclar sólo el total dejaría pasar un trasvase silencioso entre categorías — que es
+ * exactamente cómo este defecto se disolvería sin que nadie lo viera.
+ */
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 8-sep-2026 · ESTE NÚMERO SE REGENERÓ EN UN MERGE, Y LA PREDICCIÓN ERA FALSA.
+//
+// Dos ramas subieron `aPelo` de 151 a 152 el mismo día, cada una por SU literal. Al mezclarlas
+// razoné que el árbol fusionado tendría los dos y que el número sería 153. **El censo dijo 152**,
+// y tenía razón: al ceder el arreglo de SCRUM-814 a la versión de `main` se retiró el módulo que
+// llevaba mi literal, así que sólo queda el suyo. Lo mismo con `NO_LEGIBLES_AL_MEDIR`, que
+// vuelve a 31.
+//
+// Es exactamente por esto por lo que una cifra derivada NO SE ELIGE NI SE DEDUCE: se recalcula
+// con el generador sobre el árbol que va a quedar. Mi «153» habría sido un ancla que miente por
+// uno, y un ancla que miente por uno deja pasar el siguiente cambio sin decir nada.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+// 🔴 151 → 152 · 7-sep-2026 (SCRUM-805) · CUÁL SE MOVIÓ Y POR QUÉ, que es lo que este trinquete
+// pide antes de tocar el número. NO es un trasvase entre categorías —ninguno pasó de «flag» a «a
+// pelo»—: es UN literal NUEVO en `pdf/pdf.service.ts`, el pie del PDF del presupuesto:
+//
+//     'Documento sin validez fiscal. No es una factura.'
+//
+// Entra en el censo porque lleva la diana («factura»), y cae en ③ porque no lo elige ningún flag.
+// Y ahí es donde tiene que estar: es una frase que **niega** ser una factura, así que su texto no
+// depende de si el merchant emite facturas o justificantes — dice lo mismo en los dos casos, y
+// con el flag OFF sigue siendo cierto. NO va a `PENDIENTES_DE_FIRMA`: es copy YA APROBADA
+// (SCRUM-67), copiada byte a byte del PDF del albarán y refirmada por el fundador para este uso.
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 16 → 12 · 152 → 151 · 16-sep-2026 (SCRUM-867) · CUÁL SE MOVIÓ Y POR QUÉ. No es un trasvase
+// entre categorías ni un rótulo que se haya estropeado: es un FICHERO QUE SALIÓ DEL ÁRBOL.
+// `nuevaFacturaModal.js` estaba muerto (nadie lo abría) y se retiró. Con él se fueron:
+//   · sus CUATRO literales que derivaban del flag —los rótulos que leía de `rotulosDelDocumento`—,
+//     que es todo lo que baja de `flag`;
+//   · su ÚNICO literal a pelo, el `aria-label` «Cliente al que facturas», que nadie llegó a firmar.
+// La cifra NO se dedujo: se regeneró con el censo sobre el árbol resultante.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VEREDICTO_AL_MEDIR = { flag: 12, tipo: 7, aPelo: 151 };
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
+// ─────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-601 · el cierre del flag recorre la cadena entera, y por la vía correcta', () => {
+  assert.ok(cierre.ficheros > 300, `población: ${cierre.ficheros} ficheros → NO MEDIBLE`);
+  assert.ok(cierre.definiciones > 1000, `población: ${cierre.definiciones} definiciones → NO MEDIBLE`);
+  assert.equal(cierre.ficheroArranque, 'src/app.ts',
+    'no se ha localizado el fichero que sirve `/admin/me`. Sin él no hay puente back→front y ' +
+    'todo literal del front saldría «no depende» por ceguera, no por medida.');
+
+  // 🔴 SE COMPRUEBA LA VÍA, NO SÓLO LA PERTENENCIA. La primera versión de este cierre usaba el
+  // nombre pelado y daba 5261 portadores: `modoDocumentoSuelto` salía portador «vía merchant»,
+  // o sea acertaba la respuesta conocida POR EL MOTIVO EQUIVOCADO. Un control positivo que puede
+  // pasar por casualidad no es un control.
+  const CADENA = [
+    ['EXPORT::getEmissionMode', NOMBRE_FLAG],
+    ['EXPORT::modoDocumentoSuelto', 'EXPORT::getEmissionMode'],
+    ['WIRE::documentoSuelto', 'EXPORT::modoDocumentoSuelto'],
+    ['WINDOW::appDocumentoSuelto', 'WIRE::documentoSuelto'],
+  ];
+  for (const [clave, viaEsperada] of CADENA) {
+    const p = cierre.portadores.get(clave);
+    assert.ok(p, `CIERRE CIEGO: no ve \`${clave}\`, que es un eslabón conocido de la cadena del flag.`);
+    assert.equal(p.via, viaEsperada,
+      `\`${clave}\` sale portador por «${p.via}» y la cadena real pasa por «${viaEsperada}». ` +
+      'Acertar la pertenencia por otra vía es el falso positivo que ya se cazó una vez aquí.');
+  }
+
+  // Y el cable tiene que ser ESTRECHO: si vuelve a ensancharse, el censo se llena de portadores
+  // falsos y todo saldría «depende del flag» — que es cómo este defecto se escondería solo.
+  assert.ok(cierre.cables.length <= 20,
+    `el puente back→front tiene ${cierre.cables.length} claves y eso es demasiado ancho: ` +
+    `${JSON.stringify(cierre.cables.slice(0, 30))}`);
+});
+
+test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario cualquiera', () => {
+  assert.ok(censo.literales > 10000, `población: ${censo.literales} literales → NO MEDIBLE`);
+  assert.ok(censo.visibles.length > 0, 'cero literales visibles con la diana: el censo no está mirando');
+
+  const en = (f, l) => censo.visibles.filter((v) => v.fichero === f && v.linea === l);
+
+  // POSITIVO, del árbol real: el rótulo del botón SÍ deriva del flag.
+  const boton = en('public/dashboard/js/invoicesView.js', 223);
+  assert.equal(boton.length, 1, 'no se encuentra el rótulo «+ Nuevo justificante» donde se midió');
+  assert.equal(boton[0].texto, '+ Nuevo justificante');
+  assert.equal(boton[0].dependeDelFlag, true,
+    'el censo no ve que «+ Nuevo justificante» lo elige `window.appDocumentoSuelto`. Con el ' +
+    'positivo caído, un «ninguno depende» significaría «no supe mirar».');
+  assert.equal(boton[0].via, 'WINDOW::appDocumentoSuelto');
+
+  // NEGATIVO, del árbol real: un rótulo del panel que NO deriva del flag.
+  //
+  // 🔴 SCRUM-867 · ANTES ERA EL `aria-label` DEL MODAL (`nuevaFacturaModal.js:108`, «Cliente al que
+  // facturas»). Ese modal se retiró por muerto y su literal se fue con él, así que el negativo se
+  // reancla en otro que sí sigue en el árbol: el rótulo de Facturas del menú.
+  const menu = en('public/dashboard/js/app.js', 349);
+  assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
+  assert.equal(menu[0].texto, 'Facturas');
+  assert.equal(menu[0].dependeDelFlag, false);
+});
+
+test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () => {
+  const flag = censo.visibles.filter((v) => v.dependeDelFlag);
+  const tipo = censo.visibles.filter((v) => v.derivaDelTipo);
+  const aPelo = censo.visibles.filter((v) => !v.dependeDelFlag && !v.derivaDelTipo);
+
+  assert.equal(flag.length + tipo.length + aPelo.length, censo.visibles.length,
+    'las categorías no suman el total: un censo cuyas partes no suman no es un censo');
+
+  assert.deepEqual(
+    { flag: flag.length, tipo: tipo.length, aPelo: aPelo.length },
+    VEREDICTO_AL_MEDIR,
+    'El reparto de literales visibles ha cambiado. NO actualices el número sin mirar cuál se ' +
+    'movió y por qué: si uno pasó de «a pelo» a «flag», es un arreglo y hay que celebrarlo ' +
+    'borrándolo de PENDIENTES_DE_FIRMA; si pasó al revés, es una regresión de copy.\n' +
+    `  ① flag=${flag.length}  ② tipo=${tipo.length}  ③ a pelo=${aPelo.length}`);
+
+  // Y que el reparto NO sea trivial: si todo cayera en un solo cubo, el censo no discrimina.
+  assert.ok(flag.length > 0 && tipo.length > 0 && aPelo.length > 0,
+    'alguna categoría está vacía: el censo no está separando, está clasificando todo igual');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 2 · LO QUE NO SABE LEER, LO DICE
+// ─────────────────────────────────────────────────────────────────────────────────────────
+/**
+ * Sumideros visibles cuyo valor mezcla literales con partes DINÁMICAS: el texto final no se
+ * puede afirmar desde el fuente. NO son un fallo del árbol ni se aprueban — son el límite del
+ * instrumento, y va escrito con su número para que crecer sea visible.
+ *
+ * Medido el 6-sep-2026 sobre `main` = 00c6cb0c (re-medido tras mezclarlo: la población pasó a 356 ficheros y 19.978 literales, y el reparto NO se movió).
+ */
+// 8-sep-2026 · sigue en 31, MEDIDO tras el merge. Mi rama lo había subido a 32 porque el texto
+// del 409 llegaba al sumidero por REFERENCIA desde su única constante —el +1 lo producía hacer lo
+// correcto—, pero ese arreglo cedió al de `main` y la constante ya no existe. El caso queda
+// anotado en `docs/master/SCRUM-814.md`: un censo que penaliza centralizar copy empuja a
+// duplicarla, y eso hay que verlo venir antes de que empuje a nadie.
+const NO_LEGIBLES_AL_MEDIR = 31;
+
+test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
+  const n = censo.noLegibles.length;
+  assert.ok(n > 0,
+    'CERO construcciones no legibles sobre 19.968 literales es increíble: un censo que nunca ' +
+    'tropieza no está leyendo. «No hay» y «no supe mirar» se escriben igual.');
+  assert.ok(n <= NO_LEGIBLES_AL_MEDIR,
+    `las construcciones que el censo NO sabe leer han pasado de ${NO_LEGIBLES_AL_MEDIR} a ${n}. ` +
+    'Cada una es un literal visible cuyo texto final no se puede afirmar desde el fuente: ' +
+    'míralas a mano y vuelve a anclar el número.\n  ' +
+    censo.noLegibles.slice(0, 12).map((v) => `${v.fichero}:${v.linea} ${JSON.stringify(v.texto).slice(0, 50)}`).join('\n  '));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 3 · 🔴 EL ROJO QUE DECIDE — la contradicción DENTRO DE UN MISMO GESTO
+// ─────────────────────────────────────────────────────────────────────────────────────────
+/**
+ * EL FLUJO DE LA FACTURA SUELTA: el botón de la pantalla de Facturas y el modal que abre.
+ * Un solo gesto del profesional, dos ficheros.
+ *
+ * 🔴 LOS TRES RÓTULOS INCUMPLIDORES, DECLARADOS UNO A UNO — no un número. Están escritos a pelo
+ * y con el flag OFF le dicen «factura» a quien emite justificantes. NO SE ARREGLAN AQUÍ: el
+ * microcopy lo firma el asesor (regla 30) y este ticket MIDE. Se atan para que no crezcan.
+ *
+ * El día que uno de ellos pase a derivar del flag, este test cae pidiendo que se borre de la
+ * lista — así el arreglo no puede entrar sin dejar constancia. Y si aparece un CUARTO rótulo a
+ * pelo en el flujo, también cae.
+ */
+const PENDIENTES_DE_FIRMA = [
+  // SCRUM-776 · SE VACIÓ DE SEIS A UNO. Los cinco que faltan ya derivan de
+  // `rotulosDelDocumento`, y se han borrado de aquí EN EL MISMO COMMIT que los arregla — que es
+  // lo que este trinquete exige y por lo que sirve de algo.
+  //
+  // 🔴 SCRUM-867 · Y DE UNO A NINGUNO, PERO NO POR FIRMA. El que quedaba —el `aria-label` «Cliente
+  // al que facturas», que el asesor no firmó porque «cliente al que justificas» no existe en
+  // castellano— vivía en `nuevaFacturaModal.js`, y ese modal se retiró por muerto. La deuda se
+  // cierra por DESAPARICIÓN de la pantalla, no porque nadie la firmara: si el texto vuelve al
+  // panel, `scrum776` lo caza.
+  //
+  // 🔴 LO QUE QUEDA DECLARADO es de otra clase, y por eso lleva su motivo: el censo lo ve «a pelo»
+  // porque contiene la diana, pero NO nombra el documento que se emite.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 672, texto: 'Solo presupuesto (facturación manual)',
+    motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
+      + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
+];
+
+test('SCRUM-601 · 🔴 el flujo del documento suelto NO habla con una sola voz (defecto ATADO)', () => {
+  // 🔴 SCRUM-867 · EL FLUJO SE MUDÓ, Y EL TRINQUETE CON ÉL. Hasta ahora el flujo eran el botón de
+  // Facturas y el MODAL que abría. Retirado el modal, el gesto termina en la PÁGINA del documento
+  // suelto: es ahí donde un rótulo nuevo escrito a pelo le diría «factura» a quien emite
+  // justificantes. Vigilar el fichero retirado sería vigilar un sitio donde ya no puede pasar nada.
+  const FLUJO = 'public/dashboard/js/quotesView.js';
+
+  // Premisa: el botón que ABRE este modal sí deriva del flag. Si dejara de hacerlo, la
+  // contradicción desaparecería por el lado malo y este test tiene que enterarse.
+  const boton = censo.visibles.find((v) => v.fichero === 'public/dashboard/js/invoicesView.js' && v.linea === 223);
+  assert.ok(boton && boton.dependeDelFlag,
+    'el rótulo del botón ha dejado de derivar del flag: ya no hay «uno sí y otro no», hay «ninguno».');
+
+  const aPelo = censo.visibles
+    .filter((v) => v.fichero === FLUJO && !v.dependeDelFlag)
+    .map((v) => ({ fichero: v.fichero, linea: v.linea, texto: v.texto }));
+
+  const clave = (x) => `${x.fichero}:${x.linea}:${x.texto}`;
+  const declarados = new Set(PENDIENTES_DE_FIRMA.map(clave));
+  const nuevos = aPelo.filter((x) => !declarados.has(clave(x)));
+  const arreglados = PENDIENTES_DE_FIRMA.filter((x) => !aPelo.some((y) => clave(y) === clave(x)));
+
+  assert.deepEqual(nuevos, [],
+    '🔴 RÓTULO NUEVO ESCRITO A PELO en el flujo de la factura suelta. Con `INVOICING_ES_ENABLED` ' +
+    'en su valor por defecto, un merchant ES real emite JUSTIFICANTES y este texto le dirá ' +
+    '«factura». No lo arregles por tu cuenta: el microcopy lo firma el asesor (regla 30).\n  ' +
+    nuevos.map(clave).join('\n  '));
+
+  assert.deepEqual(arreglados, [],
+    '🟢 Uno de los rótulos declarados YA DERIVA DEL FLAG. Bórralo de `PENDIENTES_DE_FIRMA` en el ' +
+    'mismo commit que lo arregla, para que la lista siga diciendo la verdad:\n  ' +
+    arreglados.map(clave).join('\n  '));
+});

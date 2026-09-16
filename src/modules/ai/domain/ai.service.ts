@@ -13,7 +13,16 @@ import { anthropic } from '../../../integrations/claude';
 import { geminiComplete, isGeminiConfigured } from '../../../integrations/gemini';
 import { config } from '../../../core/config/env';
 import { prisma } from '../../../core/db/prisma';
+// SCRUM-760 · la MISMA regla fiscal que ya guarda la puerta del presupuesto (SCRUM-217). Se
+// importa, no se copia: ver el bloque de `sanearLineasAlbaran`.
+import { invalidTipoIva } from '../../../core/validation/fiscalInput';
 import { cantidadUtilizable, mapearLineasSugeridas } from './lineasSugeridas';
+import {
+  PROMPT_PARTE_APROBADO,
+  sanearDictadoDelParte,
+  type PropuestaDelDictado,
+} from '../../jobs/domain/parteDictado';
+
 
 // ¿Hay algún proveedor de IA disponible? (lo usa la ruta para el 503 digno)
 export function isAiConfigured(): boolean {
@@ -192,6 +201,17 @@ export interface LineaAlbaranSugerida {
   unidad: UnidadAlbaran;
   precioUnitario?: number;
   tipoIva?: number;
+  /**
+   * SCRUM-760 · POR QUÉ NO HAY TIPO, cuando el modelo sí dijo uno.
+   *
+   * Es el MOTIVO tal cual lo devuelve `invalidTipoIva` —que ya nombra el valor recibido—, y
+   * existe para que «el modelo no dijo nada» y «el modelo dijo algo imposible» no se lean igual.
+   * Sin él, las dos cosas llegan a la pantalla como una línea sin IVA y nadie puede distinguirlas.
+   *
+   * ⚠️ NO es microcopy: hoy no lo pinta nadie. Qué debe HACER la pantalla con un tipo rechazado
+   * es decisión del fundador (regla 30) y va aparte; esto es el dato con el que decidirla.
+   */
+  tipoIvaRechazado?: string;
 }
 
 export type ModoValoracion = 'SIN_VALORAR' | 'VALORADO';
@@ -222,9 +242,44 @@ export function sanearLineasAlbaran(crudo: unknown, modo: ModoValoracion): Linea
     // El corazón del requisito: en SIN_VALORAR no se copia precio NI IVA, venga como venga.
     if (modo === 'VALORADO') {
       const precio = Number(l?.precioUnitario ?? l?.price);
-      const iva = Number(l?.tipoIva ?? l?.tax);
       if (Number.isFinite(precio)) linea.precioUnitario = Math.max(0, precio);
-      if (Number.isFinite(iva)) linea.tipoIva = Math.min(1, Math.max(0, iva));
+
+      // ═══════════════════════════════════════════════════════════════════════════════════
+      // 🔴 SCRUM-760 · EL IVA SE RECHAZA, NO SE RECORTA.
+      //
+      // Aquí había `Math.min(1, Math.max(0, iva))`, y era el defecto más grave abierto: el
+      // prompt pide el tipo como decimal (`0.21`), el modelo contestaba `21` queriendo decir
+      // «21 %», el recorte lo dejaba en `1` y el `×100` del navegador lo pintaba **100 % DE
+      // IVA**. Medido en el camino real: 170,00 € de base salían como 340,00 € de total.
+      //
+      // Un 100 % es PLAUSIBLE PARA LA MÁQUINA E IMPOSIBLE PARA EL NEGOCIO. No caía en ningún
+      // `catch` y el guardado tampoco lo paraba (`validarLineas` admite 0-100), así que se
+      // comportaba como un tipo válido hasta que alguien miraba el papel — y el albarán lo
+      // firma el cliente.
+      //
+      // Y la ironía estaba en la cabecera de esta misma función: «ES EL MECANISMO, NO EL
+      // PROMPT». Existe porque un prompt es una PETICIÓN; no se defendía de que su propia
+      // petición se malinterpretara.
+      //
+      // ⛔ NO se amplía el recorte a `Math.min(100, …)`: aplanar sigue siendo aplanar, y
+      //    convertiría un `2100` (puntos básicos) en un 100 % con la misma cara de inocente.
+      // ⛔ NO se arregla en el PROMPT: el prompt ya lo pide: el defecto era no comprobarlo.
+      //
+      // SE DERIVA de `invalidTipoIva` (SCRUM-217) en vez de escribir una segunda validación:
+      // es la MISMA regla —la lista española en puntos básicos, con sus siete tipos, incluidos
+      // el 2 %, el 5 % y el 7,5 % de las ventanas temporales que una rectificativa necesita—,
+      // y dos copias de una regla derivan en silencio hasta que una admite un tipo que no
+      // existe o tira uno que sí. Aquí no hay lista: hay una llamada.
+      //
+      // Que el modelo NO diga nada no es un rechazo, es un silencio: se distinguen, porque a
+      // la pantalla los dos le llegan como una línea sin IVA y sólo uno merece explicación.
+      // ═══════════════════════════════════════════════════════════════════════════════════
+      const bruto = l?.tipoIva ?? l?.tax;
+      if (bruto !== undefined) {
+        const motivo = invalidTipoIva(bruto);
+        if (motivo === null) linea.tipoIva = Number(bruto);
+        else linea.tipoIvaRechazado = motivo;
+      }
     }
 
     salida.push(linea);
@@ -340,4 +395,50 @@ Trabajo: ${params.concept}
 Total: ${params.total} ${params.currency}`;
 
   return (await aiComplete({ system: MESSAGE_SYSTEM, user, maxTokens: 256 })).trim();
+}
+
+// ─── Dictado del técnico → las DOS listas del parte (SCRUM-683, cableado) ──────────────────
+//
+// 🔴 EL SANEADO MANDA SOBRE EL MODELO, Y AQUÍ MÁS QUE EN NINGÚN SITIO. Igual que
+// `suggestAlbaranLines` borra el precio en `SIN_VALORAR` pase lo que pase, esto pasa TODO por
+// `sanearDictadoDelParte`, que retira cualquier cantidad que el dictado no respalde. El prompt lo
+// pide; el saneador lo garantiza. La diferencia importa: un prompt es una petición.
+//
+// ⚠️ El `dictado` viaja DOS VECES —al modelo y al saneador— y no es un descuido: sin el texto
+// original no hay contra qué contrastar las cantidades. Un saneador que solo mirase la respuesta
+// estaría confiando en el prompt.
+//
+// ⛔ NI UN IMPORTE, en ninguna dirección: no se consulta el catálogo (que es lo único que aporta
+// precios) y el esquema que se le pide al modelo no tiene campo de precio ni de IVA.
+export async function suggestLineasDeParte(params: { dictado: string }): Promise<PropuestaDelDictado> {
+  const raw = (
+    await aiComplete({
+      system: PROMPT_PARTE_APROBADO,
+      user: `Dictado del técnico:\n${params.dictado}`,
+      maxTokens: 2048,
+      jsonSchema: {
+        type: 'ARRAY',
+        items: {
+          type: 'OBJECT',
+          properties: {
+            bloque: { type: 'STRING' },
+            descripcion: { type: 'STRING' },
+            // NULLABLE a propósito: es como el modelo dice «no se dijo». Un campo obligatorio le
+            // obligaría a inventarse un número para poder responder.
+            unds: { type: 'NUMBER', nullable: true },
+          },
+          required: ['descripcion'],
+        },
+      },
+    })
+  ).trim();
+
+  const jsonMatch = raw.match(/\[[\s\S]*\]/);
+  // Sin JSON reconocible se entrega al saneador tal cual: devuelve la propuesta VACÍA con su
+  // motivo en vez de lanzar, que es lo que deja al técnico seguir escribiendo a mano.
+  if (!jsonMatch) return sanearDictadoDelParte(null, params.dictado);
+
+  let parsed: unknown = null;
+  try { parsed = JSON.parse(jsonMatch[0]); } catch { parsed = null; }
+  return sanearDictadoDelParte(parsed, params.dictado);
 }

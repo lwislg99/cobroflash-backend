@@ -56,6 +56,29 @@ function csv(cabecera: string[], filas: unknown[][]): string {
  * ilegible en cero (familia SCRUM-271). En un paquete de cumplimiento, un importe que no se pudo
  * leer impreso como `0,00` es una AFIRMACIÓN de que esa factura no cobró nada.
  */
+/**
+ * 🔴 SCRUM-636 · ESTA **NO** SE LLEVA AL SITIO ÚNICO, Y NO ES UN OLVIDO.
+ *
+ * El encargo la señalaba como «un replace que es un formateador que alguien no encontró». Medido,
+ * no lo es: **esto serializa un CSV**, no pinta una pantalla.
+ *
+ *   · `paquete.ts:39` → `const SEP = ';'`, y `eur` alimenta filas de ese CSV (líneas 204, 252,
+ *     263-267): el asiento del libro y las casillas del modelo 303.
+ *   · El sitio único agrupa los miles (`useGrouping:'always'`), así que `2383.70` pasaría de
+ *     `2383,70` a **`2.383,70`** — un número con DOS separadores dentro de una celda de un CSV
+ *     que alguien importa. Lo que en una pantalla es legibilidad, aquí es un dato que se rompe.
+ *   · Y es un **paquete de cumplimiento**: lo que va en esa celda no es presentación, es el dato
+ *     que se entrega.
+ *
+ * Es la misma frontera que ya está escrita para el sellador —`.toFixed(2)` es correcto en el XML
+ * de VeriFactu y defecto en el PDF— aplicada a un tercer sitio: el CSV.
+ *
+ * Además conserva algo que el sitio único no da: **`''` para lo ilegible**, nunca `0,00`. El
+ * motivo está justo encima y es de la familia de SCRUM-271.
+ *
+ * `tests/scrum636-sitio-unico-dinero.test.mjs` VIGILA que siga sin unificarse: un comentario que
+ * dice «no unifiques esto» no impide que alguien lo unifique; un test sí.
+ */
 function eur(n: number | null | undefined): string {
   if (n === null || n === undefined || !Number.isFinite(n)) return '';
   return n.toFixed(2).replace('.', ',');

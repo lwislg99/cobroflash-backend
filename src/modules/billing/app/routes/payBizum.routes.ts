@@ -10,7 +10,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
-import { esc } from '../../../../core/utils/utils';
+import { esc, formatImporteEs } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 
@@ -160,7 +160,7 @@ router.get('/bizum/:token', async (req, res) => {
     ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}" onerror="this.style.display='none'"/>`
     : `<div class="logo-mark">${initial}</div>`;
   const amount = esc(
-    Number(charge.amount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
+    formatImporteEs(Number(charge.amount)) +
       ' ' + charge.currency,
   );
 

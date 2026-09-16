@@ -27,9 +27,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { bocasDeEmision, desprotegidas } from './_bocas-de-emision.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
@@ -42,6 +44,9 @@ const MOTOR = 'src/modules/invoicing/domain/verifactu.service.ts';
 
 const SELLADORAS = ['applyVeriFactu', 'applyVeriFactuAnulacion'];
 const PUERTA = 'sellarTrasEmision';
+
+/** Trinquete SCRUM-778: llamadas a `emitInvoice` medidas el 6-sep-2026. No puede bajar. */
+const MINIMO_LLAMADORES_DE_EMIT = 4;
 
 const rel = (p) => path.relative(RAIZ, p).split(path.sep).join('/');
 
@@ -137,7 +142,7 @@ test('SCRUM-205 · `ensureInvoicePdf` NO sella: generar un PDF no es emitir', ()
 // ── autoprueba: el guard sabe distinguir ──────────────────────────────────────────────────
 
 test('SCRUM-205 (autoprueba) · el escáner ve una llamada de sellado sintética', () => {
-  const tmp = path.join(RAIZ, 'tests', '__tmp-sellado-sintetico.ts');
+  const tmp = path.join(os.tmpdir(), `yaqu-205-${process.pid}-sellado-sintetico.ts`);
   fs.writeFileSync(tmp, 'export async function x(i: any) { await applyVeriFactu(i, "B1", null as any); }\n');
   try {
     const encontradas = llamadasA(SELLADORAS, tmp);
@@ -151,7 +156,7 @@ test('SCRUM-205 (autoprueba) · el escáner ve una llamada de sellado sintética
 test('SCRUM-205 (autoprueba) · un COMENTARIO que nombra la función no dispara el guard', () => {
   // La trampa clásica: el literal prohibido vive en la prosa que explica la prohibición —
   // este mismo fichero la nombra decenas de veces. El AST solo ve nodos.
-  const tmp = path.join(RAIZ, 'tests', '__tmp-solo-comentario.ts');
+  const tmp = path.join(os.tmpdir(), `yaqu-205-${process.pid}-solo-comentario.ts`);
   fs.writeFileSync(tmp, '// PROHIBIDO: no llames a applyVeriFactu aquí, usa sellarTrasEmision.\nexport const a = 1;\n');
   try {
     assert.deepEqual(llamadasA(SELLADORAS, tmp), []);
@@ -183,10 +188,8 @@ const DELEGA = {
     'aquí sellaría dentro de la tx del llamador. Sus DOS llamadores sellan, y eso se comprueba ' +
     'abajo en vez de darse por supuesto.',
 };
-const LLAMADORES_DE_EMIT = [
-  'src/modules/jobs/app/routes/albaranes.routes.ts',
-  'src/modules/jobs/domain/recapitulativa.service.ts',
-];
+// 🔴 SCRUM-778 · aquí había una lista CABLEADA de dos ficheros y el árbol tiene tres, y
+// comprobaba POR FICHERO. La población se deriva ahora con `bocasDeEmision()`.
 
 /** Funciones envolventes de cada llamada a `nombre`, de dentro hacia fuera. */
 function envolventesDe(nombre, ruta) {
@@ -256,15 +259,23 @@ test('SCRUM-205 · toda emisión termina en el punto de sellado (o delega, y se 
 });
 
 test('SCRUM-205 · los llamadores de `emitInvoice` sellan (la delegación no es un agujero)', () => {
-  for (const r of LLAMADORES_DE_EMIT) {
-    const abs = path.join(RAIZ, r);
-    assert.ok(fs.existsSync(abs), `🔴 ESCÁNER CIEGO: no encuentro ${r} — ¿se movió el llamador?`);
-    assert.ok(
-      llamadasA([PUERTA], abs).length > 0,
-      `🔴 ${r} llama a \`emitInvoice\` y NO sella.\n\n` +
-        `  \`emitInvoice\` está exento de la regla 3 PORQUE delega en sus llamadores. Si un\n` +
-        '  llamador deja de sellar, la exención pasa de justificada a falsa y la emisión queda\n' +
-        '  huérfana sin que nada lo diga.',
-    );
-  }
+  // SCRUM-778: población DERIVADA del árbol y comprobada POR LLAMADA. `cuando: 'despues'` porque
+  // aquí el sellado va DESPUÉS del commit a propósito — es el punto único de este ticket.
+  const bocas = bocasDeEmision({ raiz: RAIZ, porton: PUERTA, cuando: 'despues' })
+    .filter((b) => b.tipo === 'emisor');
+
+  assert.ok(bocas.length >= MINIMO_LLAMADORES_DE_EMIT,
+    `🔴 ESCÁNER CIEGO: ${bocas.length} llamadas a \`emitInvoice\` y se midieron `
+    + `${MINIMO_LLAMADORES_DE_EMIT} el 6-sep-2026. Si el censo encoge, deja de vigilar en silencio.`);
+
+  const fuera = desprotegidas(bocas);
+  assert.deepEqual(
+    fuera, [],
+    '🔴 HAY UNA LLAMADA A `emitInvoice` QUE NO SELLA:\n    · ' + fuera.join('\n    · ')
+      + '\n\n  `emitInvoice` está exento de la regla 3 PORQUE delega en sus llamadores. Si un\n'
+      + '  llamador deja de sellar, la exención pasa de justificada a falsa y la emisión queda\n'
+      + '  huérfana sin que nada lo diga.\n\n'
+      + '  Se comprueba POR LLAMADA: un fichero con dos bocas no queda cubierto porque UNA de las\n'
+      + '  dos selle (SCRUM-778).',
+  );
 });

@@ -28,8 +28,28 @@ import path from 'node:path';
 import ts from 'typescript';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
-const PAGINA = path.join(RAIZ, 'public/dashboard/js/albaranDetailView.js');
-const FILA = path.join(RAIZ, 'public/dashboard/js/jobDetailView.js');
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-759 · LA POBLACIÓN QUE ESTE GUARD VIGILA, DECLARADA.
+//
+// El censo de SCRUM-759 lo sacó con la forma del defecto: población anclada a DOS ficheros y una
+// afirmación de total cuyo rótulo decía «toda navegación a jobs-detail» — que es una frase sobre
+// el dashboard entero, ~74 ficheros. Cualquier vista puede navegar al Trabajo, y este guard sólo
+// abre dos: su verde no distinguía «no hay callejones» de «no he mirado ahí».
+//
+// Decisión de SCRUM-759: **ESTRECHAR EL RÓTULO**. Lo que este guard sabe —y sabe bien— es que
+// los puentes DE LA PÁGINA DEL ALBARÁN siguen teniendo mecanismo en la fila. Eso se dice, y se
+// dice derivándolo de esta declaración para que no pueda volver a crecer sin que se lea.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const POBLACION_QUE_VIGILO = [
+  'public/dashboard/js/albaranDetailView.js',
+  'public/dashboard/js/jobDetailView.js',
+];
+const REL_PAGINA = POBLACION_QUE_VIGILO[0];
+const REL_FILA = POBLACION_QUE_VIGILO[1];
+
+const PAGINA = path.join(RAIZ, REL_PAGINA);
+const FILA = path.join(RAIZ, REL_FILA);
 
 const codigoPagina = fs.readFileSync(PAGINA, 'utf8');
 const codigoFila = fs.readFileSync(FILA, 'utf8');
@@ -178,14 +198,16 @@ test('SCRUM-302 · todo puente declarado navega de verdad', () => {
   }
 });
 
-test('SCRUM-302 · toda navegación a jobs-detail está declarada (o es un destino, no un puente)', () => {
+test('SCRUM-302 · toda navegación a jobs-detail DE LA PÁGINA DEL ALBARÁN está declarada (o es un destino, no un puente)', () => {
   const declarados = puentesDeclarados(codigoPagina);
   const navegan = accionesQueNavegan(codigoPagina);
   const DESTINOS_LEGITIMOS = ['btnVerTrabajo']; // ir al Trabajo ES su función, no una delegación
   const huerfanos = navegan.filter((id) => !DESTINOS_LEGITIMOS.includes(id) && !(id in declarados));
   assert.deepEqual(
     huerfanos, [],
-    'estas acciones navegan al Trabajo sin declarar de qué mecanismo dependen. Si delegan, decláralas en PUENTES_A_LA_FILA; si su función es navegar, añádelas a DESTINOS_LEGITIMOS con su motivo',
+    `en ${REL_PAGINA}, estas acciones navegan al Trabajo sin declarar de qué mecanismo dependen. `
+    + 'Si delegan, decláralas en PUENTES_A_LA_FILA; si su función es navegar, añádelas a '
+    + 'DESTINOS_LEGITIMOS con su motivo',
   );
 });
 

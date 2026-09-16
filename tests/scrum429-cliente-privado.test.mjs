@@ -17,6 +17,7 @@
 //
 // Sin gate: funciones puras y ficheros temporales. Ni BD, ni red.
 import test from 'node:test';
+import { soloEjecutable } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -100,7 +101,7 @@ test('SCRUM-429 · el automatismo NO llama a `npx` ni pasa por un shell', () => 
   // (SCRUM-385): sería cambiar un cliente equivocado por otro. Y el `.cmd` de `.bin` exige
   // `shell: true` en Windows, que arrastra un aviso de deprecación por los argumentos sin escapar.
   const s = fs.readFileSync(path.join(RAIZ, 'scripts/_prisma-sync.mjs'), 'utf8');
-  const ejecutable = s.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  const ejecutable = soloEjecutable(s);
   assert.ok(!/npx/.test(ejecutable), '🔴 el automatismo llama a `npx`: puede generar desde otra versión');
   assert.ok(!/shell:\s*true|shell:\s*process\.platform/.test(ejecutable),
     '🔴 el automatismo pasa por un shell: vuelve el aviso de deprecación y el escapado de argumentos');

@@ -44,6 +44,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+// SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
+import { scriptsDeLaPagina, hojasDeLaPagina, sinComentarios } from './_scripts-de-la-pagina.mjs';
 
 /**
  * Globales del NAVEGADOR (+ los dos de Node que usan los ficheros del navegador dentro de su guard
@@ -67,7 +69,10 @@ export const PLATAFORMA = new Set([
   'require', 'process',
 ]);
 
-const sinComentariosHtml = (html) => html.replace(/<!--[\s\S]*?-->/g, '');
+// SCRUM-676 · era una CUARTA opinión sobre qué es un comentario HTML, escrita aquí a mano. El
+// extractor único ya exporta `sinComentarios` justo para esto, y su propio comentario lo dice: si
+// cada consumidor decide por su cuenta, vuelve a haber dos criterios. Se usa el de la casa.
+const sinComentariosHtml = sinComentarios;
 
 /** Las páginas del producto. */
 export function paginas(raiz) {
@@ -83,12 +88,27 @@ export function paginas(raiz) {
   return out.sort();
 }
 
-/** Los `<script src>` y `<link .css>` que la página CARGA de verdad (comentados no cuentan). */
+/**
+ * Los `<script src>` y `<link .css>` que la página CARGA de verdad (comentados no cuentan).
+ *
+ * SCRUM-670 · los `<script>` los lee el extractor ÚNICO. Éste era uno de los dos que acertaban
+ * —quitaba comentarios y aceptaba comillas simples—, así que aquí no se pierde nada: lo que se
+ * gana es que las otras cinco lecturas del repo pasen a compartir su criterio en vez de tener
+ * cada una el suyo. Se juntan las tres clases porque esta función pregunta «qué carga la página»,
+ * no «cómo se aísla cada cosa».
+ *
+ * SCRUM-676 · y las HOJAS también, por el mismo motivo y con dos defectos medidos encima: la
+ * regex que vivía aquí exigía que el href ACABARA en `.css` —así que un `?v=` la dejaba a cero—
+ * y contaba un `rel="preload"` como hoja cargada, que no lo es. Ahora la población se decide por
+ * `rel`, como la decide el navegador. Se juntan locales y remotas porque la pregunta sigue
+ * siendo «qué carga la página»; quien necesite sólo las del árbol filtra con `aFichero`.
+ */
 export function recursosDe(html) {
-  const limpio = sinComentariosHtml(html);
+  const s = scriptsDeLaPagina(html);
+  const h = hojasDeLaPagina(html);
   return {
-    scripts: [...limpio.matchAll(/<script[^>]*\ssrc=["']([^"']+)["']/g)].map((m) => m[1]),
-    hojas: [...limpio.matchAll(/<link[^>]*\shref=["']([^"']+\.css)["']/g)].map((m) => m[1]),
+    scripts: [...s.clasicos, ...s.modulos, ...s.remotos],
+    hojas: [...h.locales, ...h.remotas],
   };
 }
 

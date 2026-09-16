@@ -154,7 +154,16 @@ async function renderReportsView(container) {
     }
 
     const { months, totals, prevYear, currency } = data;
-    const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+    // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+    // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+    // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+    // hacía invisible.
+    //
+    // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+    // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+    // tenía en `formatImporteEs`—, no un formateador nuevo.
+    const fmt = (n) => fmtImporteEs(n, currency);
 
     // ── Tarjetas KPI ─────────────────────────────────────────────────────
     const kpiWrap = document.createElement('div');
@@ -232,19 +241,41 @@ async function renderReportsView(container) {
     months.forEach(m => {
       const margin = m.revenue > 0 ? Math.round(m.profit / m.revenue * 100) : (m.revenue === 0 && m.expenses === 0 ? null : -100);
       const profitColor = m.profit >= 0 ? 'var(--green-700)' : 'var(--red-600)';
+      // 🔴 SCRUM-764 · EL MARGEN NEGATIVO SE VE, TAMBIÉN AQUÍ.
+      //
+      // Medido en navegador ANTES de tocar: un mes con −2.000,00 € pintaba el Beneficio en
+      // `rgb(220,38,38)` y, EN LA MISMA FILA, el −50 % en `rgb(107,117,111)` — el gris de
+      // siempre. Un rojo al lado de un gris se lee como que el porcentaje está bien.
+      //
+      // La REGLA no se escribe aquí: es `margenCatalogo.bajoCoste`, la misma que decide en la
+      // ficha del catálogo (SCRUM-764). Si cada pantalla comparara `< 0` por su cuenta, acabarían
+      // decidiendo distinto — y este fichero es la prueba de que pasa: calcula su margen sin
+      // usar el módulo, y por eso el aviso llegó aquí un ticket más tarde.
+      //
+      // ⚠️ VA EN LÍNEA Y NO EN LA CLASE `margen--bajo-coste`, y no es por comodidad: MEDIDO, un
+      // `style="color:…"` en línea GANA a la clase (se inyectó la regla en la página y el color
+      // no se movió de `rgb(107,117,111)`). Todas las celdas de esta tabla se colorean en línea
+      // —`profitColor`, dos líneas arriba, es la de al lado—, así que el token se comparte y el
+      // mecanismo es el del fichero. `null` (mes sin actividad, «—») no se pinta: `bajoCoste`
+      // devuelve `false` porque «no se sabe» no es «va mal».
+      const marginColor = window.margenCatalogo.bajoCoste(margin)
+        ? 'var(--danger-ink)' : 'var(--neutral-500)';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight:600">${m.label}</td>
         <td style="text-align:right;color:var(--green-700)">${m.revenue > 0 ? fmt(m.revenue) : '<span style="color:var(--neutral-300)">—</span>'}</td>
         <td style="text-align:right;color:var(--red-600)">${m.expenses > 0 ? fmt(m.expenses) : '<span style="color:var(--neutral-300)">—</span>'}</td>
         <td style="text-align:right;font-weight:600;color:${profitColor}">${fmt(m.profit)}</td>
-        <td style="text-align:right;color:var(--neutral-500)">${margin !== null ? margin + '%' : '—'}</td>
+        <td style="text-align:right;color:${marginColor}">${margin !== null ? margin + '%' : '—'}</td>
       `;
       tbody.appendChild(tr);
     });
 
     // Fila de totales
     const totalMargin = totals.revenue > 0 ? Math.round(totals.profit / totals.revenue * 100) : null;
+    // SCRUM-764 · el TOTAL del año también. Esta celda no traía color —hereda— así que sólo se
+    // le pone uno cuando hay algo que decir; el año bueno se queda exactamente como estaba.
+    const totalMarginColor = window.margenCatalogo.bajoCoste(totalMargin) ? 'var(--danger-ink)' : '';
     const trTotal = document.createElement('tr');
     trTotal.style.cssText = 'background:var(--neutral-50);font-weight:700;border-top:2px solid var(--neutral-200)';
     trTotal.innerHTML = `
@@ -252,7 +283,7 @@ async function renderReportsView(container) {
       <td style="text-align:right;color:var(--green-700)">${fmt(totals.revenue)}</td>
       <td style="text-align:right;color:var(--red-600)">${fmt(totals.expenses)}</td>
       <td style="text-align:right;color:${totals.profit >= 0 ? 'var(--green-700)' : 'var(--red-600)'}">${fmt(totals.profit)}</td>
-      <td style="text-align:right">${totalMargin !== null ? totalMargin + '%' : '—'}</td>
+      <td style="text-align:right${totalMarginColor ? ';color:' + totalMarginColor : ''}">${totalMargin !== null ? totalMargin + '%' : '—'}</td>
     `;
     tbody.appendChild(trTotal);
 
@@ -291,7 +322,16 @@ async function renderReportsView(container) {
       return;
     }
 
-    const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+    // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+    // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+    // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+    // hacía invisible.
+    //
+    // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+    // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+    // tenía en `formatImporteEs`—, no un formateador nuevo.
+    const fmt = (n) => fmtImporteEs(n);
 
     vatCard.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
@@ -495,9 +535,25 @@ async function loadWhatsAppMetrics(card) {
   // se veían a la vez. Además forzaba «€» ignorando la moneda y daba «NaN €» con un dato ilegible.
   const fmtEur = (n) => fmtMoneyEs(n);
 
-  const alertHtml = data.alert && data.alert.active
-    ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${data.alert.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
-    : '';
+  // 🔴 SCRUM-530 · TRES CASOS, NO DOS. Aquí sólo se pintaba cuando la alerta estaba ACTIVA, y la
+  // alerta exige una muestra mínima (`alert.minimo`, hoy 10 envíos en 7 días). Para un fontanero
+  // del Pioneer que manda 3 mensajes en una semana eso era SILENCIO — con 2 fallos de 3 dentro.
+  //
+  //   🔒 Una alerta que nunca se activa y una alerta que no tiene datos se leen IGUAL
+  //      y significan lo contrario.
+  //
+  // El mínimo NO se escribe aquí: viaja en el DTO, porque la misma regla en dos sitios es cómo
+  // una de las dos se queda atrás. Y el texto de este tercer caso es del fundador (regla 30):
+  // va MARCADO y sin escribir.
+  const al = data.alert || {};
+  const muestraCorta = al.active !== true
+    && typeof al.minimo === 'number'
+    && Number(al.sample || 0) < al.minimo;
+  const alertHtml = al.active
+    ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${al.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
+    : muestraCorta
+      ? `<div class="alert" data-microcopy="PENDIENTE_FUNDADOR" style="display:block;margin:0 0 14px">[PENDIENTE microcopy oficial] · <strong>${Number(al.sample || 0)}/${al.minimo}</strong></div>`
+      : '';
 
   // A5.4: plantilla (pagada) vs ventana (gratis) — el ahorro se enseña
   const savedHtml = ch.windowMonth > 0
@@ -641,7 +697,7 @@ async function loadPlatformFunnel(card) {
           <td style="padding:6px 8px;text-align:right">${m.quotes}</td>
           <td style="padding:6px 8px;text-align:right">${m.sent}</td>
           <td style="padding:6px 8px;text-align:right">${m.accepted}</td>
-          <td style="padding:6px 8px;text-align:right" class="amount">${m.collectedAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €</td>
+          <td style="padding:6px 8px;text-align:right" class="amount">${fmtImporteEs(m.collectedAmount)} €</td>
         </tr>`).join('')}
       </tbody>
     </table>`;
@@ -731,7 +787,16 @@ function renderServices(card, data) {
     return;
   }
 
-  const fmt = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // SCRUM-739 · AL SITIO ÚNICO. Antes: `toLocaleString('es-ES')`, que por CLDR **no agrupa
+  // los enteros de cuatro cifras** — esta pantalla escribía `6050,00` donde el resto del
+  // producto escribe `6.050,00`, y fallaba justo entre 1.000 y 9.999 €, que es el trabajo
+  // corriente de un fontanero. Por encima de 10.000 volvía a coincidir, y eso es lo que lo
+  // hacía invisible.
+  //
+  // SIN símbolo a propósito: aquí el `€` va en un `<span>` aparte o en la cabecera de la
+  // columna. `fmtImporteEs` es la VARIANTE del sitio único —la misma que el backend ya
+  // tenía en `formatImporteEs`—, no un formateador nuevo.
+  const fmt = (n) => fmtImporteEs(n);
   const tableWrap = document.createElement('div');
   tableWrap.className = 'table-scroll';
   const table = document.createElement('table');
@@ -815,7 +880,11 @@ function buildBarChart(months, currency) {
     label.setAttribute('text-anchor', 'end');
     label.setAttribute('font-size', '10');
     label.setAttribute('fill', '#949b92');
-    label.textContent = Math.round(maxVal * f).toLocaleString('es-ES');
+    // SCRUM-743 · el hueco que SCRUM-739 dejó DECLARADO, y no por olvido: este rótulo es un
+    // ENTERO y las dos formas de dinero fuerzan dos decimales, así que pasarlo por ellas habría
+    // escrito `6.050,00` en un eje donde hoy pone `6050` — añadir decimales donde no los hay es
+    // cambiar lo que se ve. `fmtNumeroEs` agrupa y no toca los decimales: `6050` → `6.050`.
+    label.textContent = fmtNumeroEs(Math.round(maxVal * f));
     svg.appendChild(label);
   });
 
@@ -846,7 +915,7 @@ function buildBarChart(months, currency) {
 
       // Tooltip
       const title = document.createElementNS(svgNS, 'title');
-      title.textContent = `${m.label}: ${Number(value).toLocaleString('es-ES', {minimumFractionDigits:2})} ${currency}`;
+      title.textContent = `${m.label}: ${fmtImporteEs(value, currency)} ${currency}`;
       rect.appendChild(title);
 
       svg.appendChild(rect);

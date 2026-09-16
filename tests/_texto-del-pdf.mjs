@@ -127,6 +127,121 @@ export function extraerTextoPdf(buf) {
   return { ok: true, texto, trozos };
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-659 · LEER LAS LÍNEAS, NO SÓLO EL TEXTO
+//
+// `extraerTextoPdf` **no distingue un salto de línea de su ausencia**. Medido en las dos
+// direcciones: `'ALFA\nBETA'` y `'ALFABETA'` devuelven los dos `"ALFABETA"`. PDFKit sí respeta el
+// salto —lo pinta en dos líneas—, pero aquí los trozos se concatenan sin separador.
+//
+// Eso deja SIN VERIFICAR el criterio de DOC-03 y de SCRUM-655 (T6): «los saltos se ven en el PDF».
+// Un test escrito contra el lector de texto pasaría en verde con el salto roto: guard muerto el
+// día que nace.
+//
+// ── POR QUÉ SE AÑADE UNA LECTURA EN VEZ DE CAMBIAR LA QUE HAY ────────────────────────────────
+// `extraerTextoPdf` sostiene los controles de SCRUM-603, 604, 604b, 623, 625, 636 y 647. Si
+// cambiara lo que DEVUELVE, esos siete tests cambiarían de significado sin que nadie lo pidiera.
+// Medido antes de decidir: los consumidores usan `r.ok` (147), `r.motivo` (107) y `r.texto` (54)
+// — y **nadie usa `r.trozos`**. Aun así se añade una función APARTE en vez de un campo: el riesgo
+// sobre el camino existente pasa a ser CERO, no «pequeño», y no cuesta nada.
+//
+// ── CÓMO, Y ESTÁ MEDIDO, NO SUPUESTO ────────────────────────────────────────────────────────
+// PDFKit emite un bloque `BT … Tm … TJ … ET` POR LÍNEA, con la matriz de texto completa:
+//
+//     BT  1 0 0 1 72 712.82 Tm  /F1 10 Tf  [<414c46> 80 <41> 0] TJ  ET     ← «ALFA»
+//     BT  1 0 0 1 72 701.26 Tm  /F1 10 Tf  [<42455441> 0] TJ         ET     ← «BETA»
+//
+// Misma `x` (72) y distinta `y`. Dos fragmentos con la misma `y` son la MISMA línea; con `y`
+// distinta, dos líneas. La `y` decrece hacia abajo, así que ordenar por `y` descendente da el
+// orden de lectura.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Dos `y` que difieren menos que esto son la misma línea. Medido: el interlineado real es ~11,6. */
+const TOLERANCIA_Y = 1.5;
+
+/** Los seis números de un `Tm`, o los dos de un `Td`/`TD`. `null` si no es un operador de posición. */
+function posicionDe(linea) {
+  const t = linea.trim();
+  const numeros = t.split(/\s+/);
+  const op = numeros[numeros.length - 1];
+  const n = numeros.slice(0, -1).map(Number);
+  if (op === 'Tm' && n.length === 6 && n.every(Number.isFinite)) return { x: n[4], y: n[5], relativo: false };
+  if ((op === 'Td' || op === 'TD') && n.length === 2 && n.every(Number.isFinite)) return { x: n[0], y: n[1], relativo: true };
+  return null;
+}
+
+/**
+ * Las LÍNEAS que imprime un PDF, con su posición.
+ *
+ * @returns {{ok: true, lineas: {x:number, y:number, texto:string}[], texto: string}
+ *          | {ok: false, motivo: string}}
+ *          `ok:false` es «NO SUPE LEERLO», que NO es lo mismo que «no tiene líneas».
+ */
+export function lineasDePdf(buf) {
+  // Los mismos suelos que el lector de texto: si aquél no sabe leer el documento, éste tampoco.
+  const base = extraerTextoPdf(buf);
+  if (!base.ok) return base;
+
+  const fragmentos = [];
+  let sinPosicion = 0;
+  for (const flujo of flujosDeContenido(buf)) {
+    if (!flujo.includes('TJ') && !flujo.includes('Tj')) continue;
+    let x = null;
+    let y = null;
+    for (const linea of flujo.split('\n')) {
+      const p = posicionDe(linea);
+      if (p) {
+        if (p.relativo && x !== null) { x += p.x; y += p.y; } else { x = p.x; y = p.y; }
+        continue;
+      }
+      if (!linea.includes('<')) continue;
+      let texto = '';
+      let i = 0;
+      while (i < linea.length) {
+        if (linea[i] !== '<') { i++; continue; }
+        const fin = linea.indexOf('>', i + 1);
+        if (fin === -1) break;
+        texto += deHex(linea.slice(i + 1, fin));
+        i = fin + 1;
+      }
+      if (texto === '') continue;
+      if (y === null) { sinPosicion += 1; continue; }
+      fragmentos.push({ x, y, texto });
+    }
+  }
+
+  // 🔴 SUELO · texto sin posición NO se cuela en silencio. Si hubiera fragmentos que no sabemos
+  // situar, el recuento de líneas sería menor que el real y el guard mentiría en verde.
+  if (sinPosicion > 0) {
+    return { ok: false, motivo: `${sinPosicion} fragmento(s) de texto sin operador de posición: no sé en qué línea van` };
+  }
+  if (fragmentos.length === 0) {
+    return { ok: false, motivo: 'no he situado ni un fragmento: el lector de líneas no ha sabido leer este PDF' };
+  }
+
+  // Se agrupa por `y`, y dentro de cada línea se ordena por `x` — que es como se lee.
+  const lineas = [];
+  for (const f of fragmentos.slice().sort((a, b) => (b.y - a.y) || (a.x - b.x))) {
+    const ultima = lineas[lineas.length - 1];
+    if (ultima && Math.abs(ultima.y - f.y) <= TOLERANCIA_Y) {
+      ultima.texto += f.texto;
+      ultima.x = Math.min(ultima.x, f.x);
+    } else {
+      lineas.push({ x: f.x, y: f.y, texto: f.texto });
+    }
+  }
+  return { ok: true, lineas, texto: lineas.map((l) => l.texto).join('') };
+}
+
+/**
+ * Cuántas LÍNEAS del PDF contienen `aguja`. Es lo que hace falta para afirmar un salto: un texto
+ * de dos líneas que se pinta en una sola devuelve 1, y ahí está la regresión.
+ */
+export function lineasConPdf(lineas, aguja) {
+  if (aguja === '') return 0;
+  return lineas.filter((l) => l.texto.includes(aguja)).length;
+}
+
 /**
  * ¿Aparece `aguja` en el texto del PDF? Devuelve CUÁNTAS veces, no un booleano: «una vez» y «tres
  * veces» son hechos distintos en un documento fiscal, y un booleano los da por iguales.

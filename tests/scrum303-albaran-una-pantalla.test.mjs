@@ -28,7 +28,31 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
-const RUTA_FRONT = path.join(RAIZ, 'public', 'dashboard', 'js', 'jobDetailView.js');
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-759 · LA POBLACIÓN QUE ESTE GUARD VIGILA, DECLARADA — y el rótulo DERIVADO de ella.
+//
+// Este guard afirmaba «hay N altas de albarán EN EL FRONT» leyendo UN fichero. Y no era una
+// pega teórica: una sesión escribió una segunda alta en otro fichero —lo que este guard existe
+// para impedir— y ESTE GUARD SE QUEDÓ VERDE (SCRUM-606, mutación M5, corrida y anotada).
+//
+// La decisión de SCRUM-759 para este guard es **ESTRECHAR EL RÓTULO**, no ampliar la población:
+// el punto ciego ya lo tapa SCRUM-606 (d), que censa el alta sobre los ~74 ficheros del
+// dashboard con su propio suelo. Dos censos del mismo hecho se desincronizan; un guard honesto
+// sobre un fichero sigue siendo útil.
+//
+// Y el rótulo no se estrecha A MANO: se DERIVA de la declaración, y las rutas que se leen
+// también. Así la divergencia entre lo que se mira y lo que se dice no queda vigilada — queda
+// IMPOSIBLE. `tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs` comprueba que lo
+// declarado es exactamente lo que se lee, y que estos rótulos siguen saliendo de aquí.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+export const POBLACION_QUE_VIGILO = [
+  'public/dashboard/js/jobDetailView.js',
+  'public/dashboard/css/styles.css',
+];
+const DONDE_MIRO = POBLACION_QUE_VIGILO[0];
+
+const RUTA_FRONT = path.join(RAIZ, DONDE_MIRO);
 const FRONT = fs.readFileSync(RUTA_FRONT, 'utf8');
 
 /** El texto oficial del rechazo del backend (regla 30, aprobado en SCRUM-257). */
@@ -229,7 +253,7 @@ test('SCRUM-303 · 🔴 EL AVISO SE VE: `styles.css` esconde `.alert` sin tono',
   //
   // Se DERIVA de la hoja de estilos: si mañana cambian los modificadores válidos, este guard se
   // entera. Comparar contra una lista escrita a mano solo comprobaría lo que yo creí que había.
-  const css = fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'css', 'styles.css'), 'utf8');
+  const css = fs.readFileSync(path.join(RAIZ, POBLACION_QUE_VIGILO[1]), 'utf8');
   const regla = css.match(/\.alert((?::not\(\.[a-z]+\))+)\s*\{[^}]*display:\s*none/);
   assert.ok(regla,
     '🔴 ESCÁNER CIEGO: ya no encuentro en styles.css la regla que esconde `.alert` sin modificador. ' +
@@ -327,7 +351,7 @@ test('SCRUM-303 · 🔴 ABRIR NO CREA NADA NI QUEMA NÚMERO: el POST no está en
   assert.deepEqual(
     enElClic.map((p) => p.linea), [],
     '🔴 EL ALBARÁN VUELVE A CREARSE AL PULSAR EL BOTÓN.\n\n' +
-    `  Hay un POST a /albaranes dentro del manejador del clic (línea ${enElClic[0]?.linea}).\n\n` +
+    `  Hay un POST a /albaranes dentro del manejador del clic (${DONDE_MIRO}, línea ${enElClic[0]?.linea}).\n\n` +
     '  Ése es el defecto que este ticket existe para matar: el documento pasa a existir antes de\n' +
     '  que nadie lo haya mirado, y con el número ALB-YYYY-NNN ya reservado dentro de la\n' +
     '  transacción. Si el profesional sale sin guardar, queda un albarán vacío Y UN HUECO EN LA\n' +
@@ -337,14 +361,19 @@ test('SCRUM-303 · 🔴 ABRIR NO CREA NADA NI QUEMA NÚMERO: el POST no está en
   const fuera = posts.filter((p) => !p.enCrearSheet);
   assert.deepEqual(
     fuera.map((p) => p.linea), [],
-    '🔴 hay un ALTA de albarán fuera de `openAlbCrearSheet` (líneas ' +
+    `🔴 hay un ALTA de albarán fuera de \`openAlbCrearSheet\` (${DONDE_MIRO}, líneas ` +
     `${fuera.map((p) => p.linea).join(', ')}). El alta tiene UN SOLO sitio a propósito: si se crea ` +
     'desde otro punto, «no existe hasta que se guarda» deja de ser cierto por ese camino.',
   );
 
+  // 🔴 SCRUM-759 · EL RÓTULO DICE QUÉ FICHERO SE HA MIRADO, y lo dice DERIVÁNDOLO de la
+  // población declarada arriba. Antes decía «en el front» leyendo un fichero: con esa frase,
+  // una segunda alta escrita en otro sitio dejaba este verde intacto y nadie lo notaba. El
+  // dashboard entero lo censa SCRUM-606 (d); aquí se afirma sobre lo que aquí se lee.
   assert.equal(posts.length, 1,
-    `🔴 hay ${posts.length} altas de albarán en el front. Debe haber exactamente UNA: dos altas ` +
-    'divergen en cuanto alguien toca una — que es justo lo que pasó y lo que este ticket encontró.');
+    `🔴 hay ${posts.length} altas de albarán en ${DONDE_MIRO}. Debe haber exactamente UNA: dos ` +
+    'altas divergen en cuanto alguien toca una — que es justo lo que pasó y lo que este ticket ' +
+    'encontró. (Fuera de este fichero no mira nadie desde aquí: eso es SCRUM-606 (d).)');
 });
 
 test('SCRUM-303 · LOS DOS BOTONES QUE DAN DE ALTA usan la misma puerta', () => {
@@ -366,10 +395,21 @@ test('SCRUM-303 · LOS DOS BOTONES QUE DAN DE ALTA usan la misma puerta', () => 
     ts.forEachChild(n, visitar);
   })(sf);
 
-  assert.equal(llamadas.length, 2,
-    `🔴 el alta se llama desde ${llamadas.length} sitio(s) y deberían ser DOS: el botón «+ Nuevo ` +
-    'albarán» de la sección y la siguiente acción `nuevo` de la cabecera. Si baja a uno, hay un ' +
-    'camino que volvió a crear por su cuenta; si sube, hay un alta nueva sin medir.');
+  // 🔴 5-sep-2026 · 2 → 3 (SCRUM-606 · ALB-01) · EL TERCER LLAMANTE, Y ESTE NÚMERO ES SU MEDIDA.
+  //
+  // ALB-01 pone un «Nuevo albarán» en la pestaña Albaranes con un buscador de presupuesto detrás.
+  // Al elegir, se ATERRIZA en el Trabajo de ese presupuesto y se abre ESTA MISMA hoja, ya
+  // prellenada: el alta no se reescribe ni en `albaranesView.js` ni en el modal del buscador.
+  //
+  // 🔴 Y había un motivo duro para no escribirla allí: **este censo lee SÓLO `jobDetailView.js`**.
+  // Un `POST` a `/albaranes` en otro fichero no le saldría, o sea que el guard que existe para
+  // impedir la segunda alta habría sido ciego justo ante ella. «El alta tiene un solo sitio» se
+  // sostiene porque el tercer camino LLAMA, no porque nadie lo haya mirado.
+  assert.equal(llamadas.length, 3,
+    `🔴 el alta se llama desde ${llamadas.length} sitio(s) y deberían ser TRES: el botón «+ Nuevo ` +
+    'albarán» de la sección, la siguiente acción `nuevo` de la cabecera y la llegada desde el ' +
+    'buscador de presupuesto de la pestaña Albaranes (SCRUM-606). Si baja, hay un camino que ' +
+    'volvió a crear por su cuenta; si sube, hay un alta nueva sin medir.');
 });
 
 test('SCRUM-303 · 🔴 EL ORIGEN (SCRUM-367) SOBREVIVE A LA HOJA, ida y vuelta', () => {
@@ -459,7 +499,7 @@ test('SCRUM-303 · RETROCOMPATIBILIDAD: sin `onGuardar` el editor sigue haciendo
 const moduloPrisma = await import(DIST + 'core/db/prisma.js');
 const routerDe = (mod) => mod.default?.default ?? mod.default;
 
-async function invocarAlta(job) {
+async function invocarAlta(job, cuerpo = {}) {
   moduloPrisma.prisma.job = { findFirst: async () => job, findUnique: async () => job };
   moduloPrisma.prisma.$transaction = async () => ({
     id: 9, jobId: job?.id ?? 1, numero: 'A-2026-0001', fecha: new Date(),
@@ -478,19 +518,36 @@ async function invocarAlta(job) {
   };
   const handlers = capa.route.stack;
   await handlers[handlers.length - 1].handle(
-    { params: { id: String(job?.id ?? 1) }, body: {}, merchantId: 7, query: {}, headers: {} },
+    { params: { id: String(job?.id ?? 1) }, body: cuerpo, merchantId: 7, query: {}, headers: {} },
     res, () => {},
   );
   return salida;
 }
 
-test('SCRUM-303 · LAS DOS CARAS: sin presupuesto sigue dando 409 con su mensaje humano', async () => {
-  const r = await invocarAlta({ id: 3, merchantId: 7, quoteId: null });
+// 🔴 RE-ANCLADO el 4-sep-2026 (SCRUM-684): la regla cambió, y este guard vigilaba la vieja.
+//
+// Una AVERÍA abierta como trabajo directo (SCRUM-651) SÍ puede entregar albarán — decisión del
+// fundador. El guard de SCRUM-257 se ACOTA, no se quita: sigue en 409 el caso donde la falta de
+// presupuesto de verdad importa, una línea que dice venir de uno que no existe. Aquí se conservan
+// **las dos caras**, que es lo que este fichero se llama.
+test('SCRUM-303 · LAS DOS CARAS: una línea con origen inexistente sigue dando 409 con su mensaje', async () => {
+  const r = await invocarAlta({ id: 3, merchantId: 7, quoteId: null }, {
+    lineas: [{ concepto: 'Sustituir diferencial', cantidad: 1, unidad: 'ud', quoteLineIndex: 0 }],
+  });
   assert.equal(r?.code, 409,
-    `🔴 el guard de SCRUM-257 se ha debilitado: respondió ${r?.code} con ${JSON.stringify(r?.body)}`);
+    `🔴 el guard de SCRUM-257 se ha debilitado de más: respondió ${r?.code} con ${JSON.stringify(r?.body)}`);
   assert.equal(r.body?.error, 'job_without_quote');
-  assert.equal(r.body?.message, COPY_SIN_PRESUPUESTO,
-    '🔴 sin `message`, el dashboard enseñaría el código crudo — el defecto que cerró SCRUM-275.');
+  // El texto aprobado en SCRUM-257 ya no vale: decía «no se puede crear un albarán» y hoy sería
+  // falso. El nuevo sale con marcador (regla 30) y NOMBRA la línea.
+  assert.match(r.body?.message || '', /línea 1\b/,
+    '🔴 sin `message` útil, el dashboard enseñaría el código crudo — el defecto que cerró SCRUM-275.');
+});
+
+test('SCRUM-303 · LAS DOS CARAS: una AVERÍA sin líneas enlazadas SÍ crea albarán (SCRUM-684)', async () => {
+  // La cara nueva. Sin ella, «acotar» sería indistinguible de «seguir bloqueando».
+  const r = await invocarAlta({ id: 3, merchantId: 7, quoteId: null });
+  assert.equal(r?.code, 201,
+    `🔴 la avería sigue sin poder entregar papel: ${JSON.stringify(r?.body)}`);
 });
 
 test('SCRUM-303 · LAS DOS CARAS: con presupuesto sigue creando (201)', async () => {

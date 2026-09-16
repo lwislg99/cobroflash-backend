@@ -14,6 +14,8 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
+// SCRUM-693: el filtro de comentarios, con el scanner de TypeScript en vez de un regex.
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(import.meta.url);
@@ -95,18 +97,24 @@ const fuenteBruta = require_('node:fs')
 
 /**
  * 🔴 SOLO EL CÓDIGO. Sin esto, los guards de abajo SE CAZAN A SÍ MISMOS en los comentarios que
- * explican la prohibición — me pasó al escribirlos: el comentario que dice «el rótulo
- * “E.164 sin +” describía un campo que ya no existe» hacía caer al guard que comprueba que ese
- * rótulo no está, y el que explica el `|| "34"` hacía caer al que lo prohíbe.
+ * explican la prohibición — me pasó al escribirlos: el comentario que documenta qué rótulo se
+ * retiró hacía caer al guard que comprueba que ese rótulo no está, y el que explica el `|| "34"`
+ * hacía caer al que lo prohíbe.
  *
- * Es la misma lección de SCRUM-574, y por eso se quitan las líneas de comentario Y los
- * comentarios al final de línea: quitar solo las que empiezan por `//` no basta.
+ * ── SCRUM-693 · EL FILTRO ESTABA A MEDIAS, Y SE ARREGLA ────────────────────────────────
+ * Saltaba las líneas `//` y **no los bloques** `/* *\/`. Así que documentar aquel rótulo en un
+ * JSDoc seguía tumbando el guard — pasó al cerrar SCRUM-575— y eso empuja a escribir comentarios
+ * VAGOS («aquel texto», «el rótulo antiguo») justo donde hace falta precisión.
+ *
+ * Ahora usa `soloCodigo`, que tokeniza con el scanner de TypeScript en vez de recortar con un
+ * regex. Eso resuelve por CONSTRUCCIÓN los dos casos que un regex se deja:
+ *   · un `//` DENTRO de una cadena (una URL) no abre un comentario — el regex se comía código;
+ *   · una cadena DENTRO de un comentario no es código — el filtro por líneas la conservaba.
+ *
+ * ⚠️ Y NO ENCOGE EL TEXTO: los comentarios se sustituyen por espacios, conservando los saltos de
+ * línea. Los `slice(indexOf('function a'), indexOf('function b'))` de más abajo dependen de eso.
  */
-const fuenteVista = fuenteBruta
-  .split(/\r?\n/)
-  .filter((l) => !l.trimStart().startsWith('//'))
-  .map((l) => l.replace(/\s*\/\/.*$/, ''))
-  .join('\n');
+const fuenteVista = soloCodigo(fuenteBruta, 'customersView.js');
 
 test('SCRUM-578 · SUELO: se ha leído la vista de verdad', () => {
   assert.ok(fuenteBruta.length > 5000, '🔴 no he leído customersView.js: nada de lo de abajo mediría');

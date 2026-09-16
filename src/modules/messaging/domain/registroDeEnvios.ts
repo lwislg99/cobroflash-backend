@@ -172,6 +172,18 @@ export async function registrarEnvio(args: {
   constancia: Constancia;
   cliente?: ClienteDeEnvios;
   plazoMs?: number;
+  /**
+   * El temporizador del plazo, INYECTABLE (SCRUM-679). Devuelve su propia cancelación.
+   *
+   * Se recibe por el mismo motivo por el que ya se recibía `cliente`: para poder EJERCITAR el
+   * mecanismo sin depender de lo cargada que esté la máquina. Su test medía reloj de pared
+   * —`Date.now()` antes y después, y `tardado < 2_000`— y ese aserto no comprueba el plazo:
+   * comprueba que la máquina fuera rápida. Con 40 ms reales contra un tope de 2.000, además,
+   * casi nunca cae: **aplaza el fallo intermitente y le quita el contexto**, que es peor.
+   *
+   * En producción no cambia nada: por defecto es `setTimeout` con su `unref`.
+   */
+  temporizar?: (fn: () => void, ms: number) => () => void;
 }): Promise<ResultadoRegistro> {
   const { contexto, to, constancia } = args;
 
@@ -190,7 +202,14 @@ export async function registrarEnvio(args: {
 
   // ⚠️ EL `await` Y EL `catch` SOBRE LA MISMA PROMESA. Si la escritura se lanzara sin esperar, este
   // `try` no vería nada: un rechazo que llega cuando el bloque ya terminó no lo captura nadie.
-  let temporizador: NodeJS.Timeout | undefined;
+  let cancelarPlazo: (() => void) | undefined;
+  // Por defecto, el de siempre: `setTimeout` que NO retiene el proceso —un envío no puede dejar
+  // el `node` vivo esperando a la telemetría— y que devuelve su `clearTimeout`.
+  const temporizar = args.temporizar ?? ((fn: () => void, ms: number) => {
+    const t = setTimeout(fn, ms);
+    t.unref?.();
+    return () => clearTimeout(t);
+  });
   try {
     const escritura = cliente.emailMessage.create({
       data: {
@@ -210,9 +229,7 @@ export async function registrarEnvio(args: {
       },
     });
     const plazo = new Promise<'plazo'>((resolver) => {
-      temporizador = setTimeout(() => resolver('plazo'), plazoMs);
-      // No retiene el proceso: un envío no puede dejar el `node` vivo esperando a la telemetría.
-      temporizador.unref?.();
+      cancelarPlazo = temporizar(() => resolver('plazo'), plazoMs);
     });
     const cual = await Promise.race([escritura, plazo]);
     if (cual === 'plazo') {
@@ -229,7 +246,7 @@ export async function registrarEnvio(args: {
     anotarFallo(to, e);
     return { escrita: false, motivo: 'fallo_escritura' };
   } finally {
-    if (temporizador) clearTimeout(temporizador);
+    cancelarPlazo?.();
   }
 }
 

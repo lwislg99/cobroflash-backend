@@ -181,3 +181,160 @@ texto del contador, `public/index.html`, `public/precios.html` y cualquier otra 
 la regla de `past_due`, y la rama `scrum-340-contador-plazas-reales` — leída en
 `docs/master/SCRUM-409.md` fase 5, **no mergeada**, y de ella sólo se ha tomado el razonamiento.
 Cero cambios en código de producción: el commit del carril añade un fichero de test y nada más.
+---
+---
+
+# APÉNDICE (7-sep-2026) · Se vuelve a pedir esta mitad, y PARA: no hay estado que usar — pero hay algo peor debajo
+
+**Carril:** billing · **Gate:** sin gate (AST y lectura) + una medición en la BD de **desarrollo**
+**Medido contra:** `origin/main` = `5af8e7e9cdcd15ac90eb9b8a1473737872b6625c` · 2026-09-06T23:20:04+01:00
+**Tanda:** 5728 tests, 5626 pass, 0 fail, 102 skipped (salida 0)
+
+> **Paso 0 · esta mitad YA ESTABA HECHA.** El encargo pedía abrir `scrum-512-la-plaza-que-no-se-libera`
+> desde main. El barrido completo de `git ls-remote` encontró **`scrum-512-el-pago-no-se-olvida`**,
+> y está **mergeada en main con 0 commits vivos**; y `docs/master/SCRUM-512.md` —este fichero— ya
+> existía, del 19-ago-2026. Su test sigue en el árbol y **sigue en verde: 5/5**.
+>
+> Más importante todavía: **aquella entrega ya midió y RECHAZÓ el arreglo que este encargo insinúa**
+> (§3 de arriba, «por qué NO se arregla conservando `plan` al cancelar»). No se da por bueno de
+> oídas: abajo se vuelve a medir, y la resolución se sostiene.
+
+## B1 · Obligación 1 · El rojo, provocado en desarrollo
+
+Base `yaqu_dev_javier`, comprobada por el mecanismo de la casa antes de escribir nada
+(`exigirDestinoCorrecto` + `parseBDSegura`): `DATABASE_URL_DEV → …/yaqu_dev_javier (DESARROLLO) ✅`.
+Cero producción y cero staging.
+
+**El objeto de la cancelación se EXTRAE del fuente por AST, no se copia** — si mañana alguien le
+añade un campo, esta medición lo aplica. Las dos puertas escriben exactamente lo mismo:
+
+```
+stripe.routes.ts:138 -> {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null,"planExpiresAt":null}
+stripe.routes.ts:151 -> {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null,"planExpiresAt":null}
+```
+
+Y las consecuencias se evalúan con las funciones **reales** (`getEntitlements` de `dist/`) y con la
+condición del paywall **leída del fuente**, no reescrita:
+
+```
+condición del paywall, leída del fuente: plan === 'trial' && planExpiresAt && planExpiresAt < new Date()
+control del evaluador · trial caducado dispara el paywall: true
+```
+
+| momento | plan | planExpiresAt | ¿salta el paywall? | entitlements | ¿correos de trial? |
+|---|---|---|---|---|---|
+| ① paga | `pro` | +30 días | no | `maxUsers 1 · wa 300` | no |
+| ② cancela por `:138` | `trial` | **`null`** | **NO** | `maxUsers 1 · wa 300` | **sí** |
+| ② cancela por `:151` | `trial` | **`null`** | **NO** | `maxUsers 1 · wa 300` | **sí** |
+| ✅ **positivo** · nunca pagó, trial agotado | `trial` | ayer | **SÍ** | `maxUsers 1 · wa 300` | sí |
+
+**Limpieza:** el merchant de prueba (id 1031, marcado `SCRUM512-PRUEBA-BORRAR-`) se borró y se
+**verificó**: 0 por email y 0 por nombre.
+
+### 🔴 Y lo que se ve al mirar las consecuencias no es lo que decía el ticket
+
+El ticket dice «el producto olvida que esa persona pagó». Es cierto, y es lo de menos. Lo medido:
+
+**LA CANCELACIÓN DEJA AL MERCHANT EN UN ESTADO DONDE EL PAYWALL NO PUEDE SALTAR NUNCA.** No es que
+salte tarde: es que **la condición es insatisfacible**. Exige `planExpiresAt &&`, y la cancelación
+escribe `planExpiresAt: null`. Comprobado que no hay red debajo:
+
+- `authMiddleware.ts:72` es **el único** `403 trial_expired` del árbol.
+- **Nadie lee `subscriptionStatus` para decidir acceso**: en `founding.ts` sólo aparece como filtro
+  del contador de plazas — que no se toca.
+- `getEntitlements('trial')` y `getEntitlements('pro')` devuelven **la misma fila**
+  (`maxUsers 1 · wa 300`), así que los permisos tampoco cambian.
+
+O sea: **quien paga y cancela se queda con el producto gratis y para siempre; quien nunca pagó y
+agota el trial se queda fuera.** Está del revés, y la fila del control positivo lo enseña al lado.
+
+## B2 · Obligación 2 · Qué valores admite `plan`, y si hay uno que sirva
+
+Medido por AST sobre `src/` + `public/` (**357 ficheros**), recogiendo todo literal que se **asigna**
+a `plan` o se **compara** con él. No la lista del comentario del schema, que además está **caducada**:
+dice `trial | basic | pro | empresa` y ni `basic` ni `empresa` aparecen en el código, mientras que
+`founding` sí y no está en el comentario.
+
+| valor | dónde | qué significa |
+|---|---|---|
+| `trial` | 11 sitios | prueba, **y también «canceló»** — ahí está el defecto |
+| `pro` | `plansView.js:40`, `entitlements.ts` | de pago |
+| `founding` | 5 sitios, incl. `founding.ts:34` | plaza fundadora |
+| `equipo` | `entitlements.ts` (`BY_PLAN`) | oferta manual W1 |
+| `""` | 3 comparaciones | ausencia |
+
+### 🛑 NO EXISTE ninguno que signifique «canceló después de pagar». PARO.
+
+Es literalmente la instrucción de la obligación 2. Crear uno es **inventar un estado**, y la regla 27
+lo prohíbe: se describe y lo firma el fundador. **Y hay motivo de fondo, ya medido en §3 de arriba y
+reconfirmado hoy**: `plan` gobierna permisos, así que no puede llevar historia. Meter ahí «canceló»
+obliga a decidir su fila en `BY_PLAN`, su respuesta en el paywall, si cuenta como referido y qué
+correos recibe — cuatro decisiones de producto en un campo que hoy sólo dice qué compró.
+
+## B3 · Obligación 3 · Quién lee `plan` y qué decide
+
+Por AST y sin lista cableada. **✅ Control positivo del encargo: el censo VE `stripe.routes.ts:138`
+y `:151`**, las dos con `plan: "trial"` — sin eso, nada de lo que dijera valdría.
+
+**19 escrituras · 21 lecturas en 11 ficheros.** Las que deciden algo:
+
+| quién lee | qué decide | qué le pasa al que canceló |
+|---|---|---|
+| `authMiddleware.ts:72` | **el paywall** | queda **fuera de alcance** (`planExpiresAt: null`) |
+| `entitlements.ts:25` → `team.routes.ts:74` | cuántos usuarios | nada: `trial` y `pro` dan la misma fila |
+| `referral.service.ts:53` (`plan !== 'trial'`) | si cuenta como referido que paga | **deja de contar** |
+| `lifecycle.service.ts:183` (`plan === 'trial'`) | qué correos recibe | **vuelve a los de prueba** |
+| `subscriptions.routes.ts:36` | `currentPlan` de la pantalla de Planes | se le enseña como si nunca hubiera pagado |
+| `app.ts:414` | la etiqueta del dashboard | ídem |
+
+Esta tabla **amplía** la de §3: aquella nombraba tres lectores; el censo encuentra los tres y además
+`authMiddleware` y `entitlements`, que son justo los del acceso. La conclusión de §3 no sólo se
+sostiene: sale reforzada.
+
+## B4 · Obligación 4 · Qué se entrega, y qué NO se aplica
+
+**No se construye nada.** El arreglo que el encargo describe necesita estado nuevo → medición y diff
+preparado, sin aplicar.
+
+### Diff preparado ① — el mínimo, y NO necesita estado nuevo
+
+El defecto grave de B1 se cierra **sin tocar `plan`**: basta con que la cancelación deje de borrar
+`planExpiresAt`. Con una fecha ahí, el paywall vuelve a ser alcanzable y el que canceló pasa a estar
+donde está el trial agotado.
+
+```diff
+--- a/src/modules/billing/app/routes/stripe.routes.ts
++++ b/src/modules/billing/app/routes/stripe.routes.ts
+@@ (las DOS puertas, :138 y :151)
+-  data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null },
++  data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null },
+```
+
+Quitar `planExpiresAt: null` conserva la fecha que ya había —el final del periodo pagado— así que el
+merchant mantiene el acceso **hasta donde pagó** y lo pierde después. Ni estado nuevo, ni literal, ni
+schema.
+
+**🛑 NO SE APLICA, y no por la regla 27:** esto cambia **quién pierde el acceso y cuándo**, o sea el
+flujo de cobro. Es una STOP CONDITION de `CLAUDE.md` («dinero real o flujo de cobro en producción»)
+y la firma el fundador. Van también las dos preguntas que no puedo contestar yo:
+
+1. ¿El que cancela conserva el acceso **hasta el final del periodo pagado** (lo que hace este diff)
+   o **inmediatamente**? Stripe manda `subscription.deleted` en momentos distintos según se cancele
+   «al vencimiento» o «ya».
+2. Si al cancelar `planExpiresAt` ya estaba en el pasado, el paywall salta **al instante**. ¿Es lo
+   que se quiere?
+
+### Diff preparado ② — el que el encargo insinuaba, y que sigue sin proceder
+
+Un valor de `plan` que diga «canceló después de pagar». **No se prepara**: elegirlo es elegir un
+estado (regla 27) y arrastra las cuatro decisiones de B2 sobre los seis lectores de B3. Si el
+fundador lo quiere, lo que hace falta primero es su firma sobre el valor y sobre qué contesta cada
+lector, no un diff.
+
+## B5 · Lo que NO se ha tocado
+
+El **contador de plazas** entero: `founding.ts`, `PLAZA_OCUPADA`, `public/index.html`,
+`public/precios.html` y cualquier claim de la landing. La rama `scrum-340-contador-plazas-reales`:
+**ni mergeada ni abierta ni leída** — sólo se la nombra porque §8 de arriba ya la nombraba.
+`prisma/schema.prisma`. Ningún estado, ningún flag, ningún literal. **Cero código de producción**:
+esta entrega es medición y documento.

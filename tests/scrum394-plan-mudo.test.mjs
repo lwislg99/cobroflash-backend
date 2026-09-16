@@ -17,6 +17,7 @@
 // el «si vuelve, se retoma» que hoy es cierto PRECISAMENTE porque `nextDueAt` se queda en el
 // pasado. Eso lo fija R5.
 import test from 'node:test';
+import { ejecutableDe } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -209,7 +210,11 @@ test('SCRUM-394 · R4: la rama del OPT-OUT no reprograma nada — por AST, no po
   };
   visita(sf);
   assert.ok(bloque, '🔴 ESCÁNER CIEGO: no encuentro el bloque `if (customer.waOptOut)`. Si se renombró, ARREGLA EL ESCÁNER.');
-  const cuerpo = bloque.getText(sf).replace(/\/\/.*$/gm, '');
+  // SUELO (SCRUM-719): el `assert.ok(bloque)` de arriba prueba que el AST ENCONTRÓ la rama —
+  // un paso antes de la ceguera. Esto prueba que su texto sobrevive al filtro: la rama
+  // apunta lo que se salta, y si eso desaparece no es que ya no toque `nextDueAt`, es que
+  // estoy leyendo otra cosa.
+  const cuerpo = ejecutableDe(bloque.getText(sf), { ancla: 'skipped.push', donde: 'rama waOptOut' });
   assert.doesNotMatch(cuerpo, /nextDueAt/,
     '🔴 la rama del opt-out ha empezado a tocar `nextDueAt`. Eso rompe «si vuelve, se retoma» (R5) y ' +
     'deja la microcopy mintiendo: dice «el mantenimiento sigue vivo» y solo es cierto si NO se reprograma.');

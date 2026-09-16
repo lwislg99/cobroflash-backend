@@ -83,6 +83,11 @@ var ASIGNACION_SUBMENU = {
   // ── numeracion ── el ticket coloca el prefijo en DOS submenús a la vez: es una contradicción
   // interna, no una opción. Manda el nombre del submenú — una serie va en Numeración.
   invoiceSeriesPrefix: 'facturacion',
+  // SCRUM-656 (T7 fase B) · las cláusulas de cierre del PRESUPUESTO van a Facturación por el
+  // criterio ya escrito arriba: **el destino sale de lo que GOBIERNA, no de dónde se ve el
+  // efecto**. Gobiernan el pie de todos los presupuestos, igual que el prefijo gobierna la serie
+  // de todas las facturas. Se ven en el PDF, que es su consumidor, no su sitio.
+  clausulasPresupuesto: 'facturacion',
   // SCRUM-293 (③a) · la retención vive donde el prefijo: son las dos reglas de emisión que
   // el profesional configura una vez y no vuelve a mirar.
   retencionIrpfTipo: 'facturacion',

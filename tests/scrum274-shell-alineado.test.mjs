@@ -34,6 +34,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+// SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
+import { scriptsDeLaPagina, cegueraDelExtractor } from './_scripts-de-la-pagina.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = path.join(RAIZ, 'public', 'dashboard', 'index.html');
@@ -109,13 +111,21 @@ function rutasMuertas(rutas, excepciones, raiz = RAIZ) {
   });
 }
 
-/** Los `<script src>` LOCALES del dashboard, normalizados a la URL que pide el navegador. */
+/**
+ * Los `<script src>` LOCALES del dashboard, normalizados a la URL que pide el navegador.
+ *
+ * SCRUM-670 · DERIVA DEL EXTRACTOR ÚNICO y ya no tiene regex propia. La suya sólo entendía
+ * comillas DOBLES: con `<script src='./js/x.js'>` veía **0** — y no era el único, tres extractores
+ * daban cero a la vez ante esa forma. Un cero unánime parece una confirmación y es el síntoma.
+ *
+ * Se comparan POBLACIONES, no secuencias, y por eso da igual el orden: medido el 2-sep-2026, el
+ * SHELL y el índice coinciden en los 70 nombres y **difieren en 9 posiciones**. El precache
+ * descarga, no ejecuta; el orden de ejecución lo vigilan las dependencias declaradas del índice.
+ */
 function scriptsDelHtml() {
-  const html = fs.readFileSync(HTML, 'utf8');
-  return [...html.matchAll(/<script[^>]+src\s*=\s*"([^"]+)"/gi)]
-    .map((m) => m[1])
-    .filter((s) => !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(s)) // externas fuera, por absolutas
-    .map((s) => s.replace(/^\.\//, '/dashboard/'));
+  const { clasicos, modulos } = scriptsDeLaPagina(fs.readFileSync(HTML, 'utf8'));
+  // Los `module` también se precachean: el navegador los pide igual, sólo cambia cómo se aíslan.
+  return [...clasicos, ...modulos].map((s) => s.replace(/^\.\//, '/dashboard/'));
 }
 
 /** Las entradas `.js` del SHELL de sw.js. */
@@ -133,6 +143,11 @@ function jsDelShell() {
 test('SCRUM-274 · SUELO: el extractor ve los scripts y el SHELL de verdad', () => {
   const enHtml = scriptsDelHtml();
   const enShell = jsDelShell();
+
+  // SCRUM-670 · el suelo del extractor único, que además distingue «no veo» de «no sé leer».
+  const ceguera = cegueraDelExtractor(
+    scriptsDeLaPagina(fs.readFileSync(HTML, 'utf8')), MINIMO_SCRIPTS, 'dashboard/index.html');
+  assert.equal(ceguera, null, String(ceguera));
 
   assert.ok(
     enHtml.length >= MINIMO_SCRIPTS,
@@ -158,7 +173,11 @@ test('SCRUM-274 · el SHELL del service worker lleva TODOS los <script> del dash
       faltan.map((s) => `    ${s}`).join('\n') +
       '\n\n  La primera visita SIN COBERTURA se queda sin esas pantallas, y con red no se nota\n' +
       '  nada — por eso llevaba tiempo desalineado sin que saltara. Añádelos a `SHELL` en\n' +
-      '  `public/sw.js`, en el mismo orden que el HTML.',
+      '  `public/sw.js`.\n\n' +
+      '  ⚠️ SCRUM-662: aquí ponía «en el mismo orden que el HTML» y era FALSO. Este guard compara\n' +
+      '  con `new Set`: exige la misma LISTA, no la misma secuencia — y de hecho las dos secuencias\n' +
+      '  divergen desde antes de aquel ticket. Una frase que miente dentro de un error es peor que\n' +
+      '  ninguna: la lee quien está depurando a las once de la noche.',
   );
 });
 

@@ -4,6 +4,8 @@
 //   Parte GATEADA (QA_DB_TEST=1): se añade con el endpoint (2 meses → 2 facturas, IVA mixto,
 //   doble consolidación concurrente, TRABAJO_UNICO/SIN_VALORAR/receipt, tenancy).
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+// SCRUM-643: la zona se fija A MANO; sin esto el fichero mediría la máquina donde corre.
+const MADRID = 'Europe/Madrid';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -19,7 +21,7 @@ import {
 const mkAlb = (o = {}) => ({
   id: o.id ?? 1,
   numero: o.numero ?? 'ALB-2026-001',
-  fecha: o.fecha ?? new Date(2026, 2, 10), // marzo
+  fecha: o.fecha ?? new Date(Date.UTC(2026, 2, 10, 12)), // marzo
   estado: o.estado ?? 'firmado',
   modoValoracion: o.modoValoracion ?? 'VALORADO',
   invoiceId: o.invoiceId ?? null,
@@ -29,18 +31,18 @@ const JOB = { tipoOperacion: 'OPERACIONES_SUELTAS', customerId: 7 };
 
 // ── Rotura por mes natural ───────────────────────────────────────────────────
 test('mesNaturalKey/Label: YYYY-MM y etiqueta legible', () => {
-  assert.equal(mesNaturalKey(new Date(2026, 2, 1)), '2026-03');
-  assert.equal(mesNaturalKey(new Date(2026, 11, 31)), '2026-12');
+  assert.equal(mesNaturalKey(new Date(Date.UTC(2026, 2, 1, 12)), MADRID), '2026-03');
+  assert.equal(mesNaturalKey(new Date(Date.UTC(2026, 11, 31, 12)), MADRID), '2026-12');
   assert.equal(mesNaturalLabel('2026-03'), 'marzo 2026');
   assert.equal(mesNaturalLabel('2026-12'), 'diciembre 2026');
 });
 
 test('groupByRotura: 2 meses distintos → 2 grupos ordenados por mes', () => {
   const g = groupByRotura([
-    mkAlb({ id: 1, fecha: new Date(2026, 3, 5) }),  // abril
-    mkAlb({ id: 2, fecha: new Date(2026, 2, 20) }), // marzo
-    mkAlb({ id: 3, fecha: new Date(2026, 2, 1) }),  // marzo
-  ]);
+    mkAlb({ id: 1, fecha: new Date(Date.UTC(2026, 3, 5, 12)) }),  // abril
+    mkAlb({ id: 2, fecha: new Date(Date.UTC(2026, 2, 20, 12)) }), // marzo
+    mkAlb({ id: 3, fecha: new Date(Date.UTC(2026, 2, 1, 12)) }),  // marzo
+  ], MADRID);
   assert.equal(g.length, 2);
   assert.equal(g[0].mesKey, '2026-03');
   assert.equal(g[0].mesLabel, 'marzo 2026');
@@ -50,10 +52,10 @@ test('groupByRotura: 2 meses distintos → 2 grupos ordenados por mes', () => {
 });
 
 test('groupByRotura: 1 mes → 1 grupo; vacío → []', () => {
-  const g = groupByRotura([mkAlb({ id: 1 }), mkAlb({ id: 2, fecha: new Date(2026, 2, 28) })]);
+  const g = groupByRotura([mkAlb({ id: 1 }), mkAlb({ id: 2, fecha: new Date(Date.UTC(2026, 2, 28, 12)) })], MADRID);
   assert.equal(g.length, 1);
   assert.equal(g[0].albaranes.length, 2);
-  assert.deepEqual(groupByRotura([]), []);
+  assert.deepEqual(groupByRotura([], MADRID), []);
 });
 
 // ── Validación de consolidación (cada código de error) ───────────────────────
@@ -154,11 +156,11 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
 
     // ── (1) HAPPY: 2 meses → 2 facturas; marzo con IVA MIXTO (21%+10%) ──────────
     const ctxA = await mkCtx(mA);
-    const albMar = await mkAlb(mA, ctxA.job, `ALB-QA17M-${stamp}`, new Date(2026, 2, 10), [
+    const albMar = await mkAlb(mA, ctxA.job, `ALB-QA17M-${stamp}`, new Date(Date.UTC(2026, 2, 10, 12)), [
       { concepto: 'Mano de obra', cantidad: 2, unidad: 'h', precioUnitario: 45, tipoIva: 21 },
       { concepto: 'Material', cantidad: 1, unidad: 'ud', precioUnitario: 100, tipoIva: 10 },
     ]);
-    const albAbr = await mkAlb(mA, ctxA.job, `ALB-QA17A-${stamp}`, new Date(2026, 3, 5), [
+    const albAbr = await mkAlb(mA, ctxA.job, `ALB-QA17A-${stamp}`, new Date(Date.UTC(2026, 3, 5, 12)), [
       { concepto: 'Revisión', cantidad: 1, unidad: 'ud', precioUnitario: 200, tipoIva: 21 },
     ]);
 
@@ -188,14 +190,14 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
 
     // ── (3) SIN_VALORAR → 400 albaran_sin_precios ─────────────────────────────
     const ctxSV = await mkCtx(mA);
-    const albSV = await mkAlb(mA, ctxSV.job, `ALB-QA17SV-${stamp}`, new Date(2026, 2, 3), [{ concepto: 'X', cantidad: 1, unidad: 'ud' }], { modo: 'SIN_VALORAR' });
+    const albSV = await mkAlb(mA, ctxSV.job, `ALB-QA17SV-${stamp}`, new Date(Date.UTC(2026, 2, 3, 12)), [{ concepto: 'X', cantidad: 1, unidad: 'ud' }], { modo: 'SIN_VALORAR' });
     const rSV = await post(cookieA, ctxSV.job.id, [albSV.id]);
     assert.equal(rSV.status, 400);
     assert.equal((await rSV.json()).error, 'albaran_sin_precios');
 
     // ── (4) TRABAJO_UNICO → 409 consolidacion_no_aplica ───────────────────────
     const ctxTU = await mkCtx(mA, 'TRABAJO_UNICO');
-    const albTU = await mkAlb(mA, ctxTU.job, `ALB-QA17TU-${stamp}`, new Date(2026, 2, 4), [{ concepto: 'Y', cantidad: 1, unidad: 'ud', precioUnitario: 10, tipoIva: 21 }]);
+    const albTU = await mkAlb(mA, ctxTU.job, `ALB-QA17TU-${stamp}`, new Date(Date.UTC(2026, 2, 4, 12)), [{ concepto: 'Y', cantidad: 1, unidad: 'ud', precioUnitario: 10, tipoIva: 21 }]);
     const rTU = await post(cookieA, ctxTU.job.id, [albTU.id]);
     assert.equal(rTU.status, 409);
     assert.equal((await rTU.json()).error, 'consolidacion_no_aplica');
@@ -203,7 +205,7 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
     // ── (5) modo RECEIPT → 409 consolidacion_no_disponible ────────────────────
     const cookieR = await mkCookie(mR.id);
     const ctxR = await mkCtx(mR);
-    const albR = await mkAlb(mR, ctxR.job, `ALB-QA17R-${stamp}`, new Date(2026, 2, 6), [{ concepto: 'Z', cantidad: 1, unidad: 'ud', precioUnitario: 10, tipoIva: 21 }]);
+    const albR = await mkAlb(mR, ctxR.job, `ALB-QA17R-${stamp}`, new Date(Date.UTC(2026, 2, 6, 12)), [{ concepto: 'Z', cantidad: 1, unidad: 'ud', precioUnitario: 10, tipoIva: 21 }]);
     const rR = await post(cookieR, ctxR.job.id, [albR.id]);
     assert.equal(rR.status, 409);
     assert.equal((await rR.json()).error, 'consolidacion_no_disponible');

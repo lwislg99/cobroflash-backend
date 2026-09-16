@@ -180,13 +180,37 @@ export function extractWaMessageId(data: any): string | null {
 export interface WhatsAppMetrics {
   month: { sent: number; delivered: number; read: number; failed: number; total: number; costEur: number };
   byTemplate: Array<{ templateName: string; enviados: number; entregados: number; deliveryRate: number | null }>;
-  alert: { active: boolean; deliveryRate7d: number | null; sample: number };
+  alert: { active: boolean; deliveryRate7d: number | null; sample: number; minimo: number };
   // A5.4: plantilla (pagada) vs ventana (0 €) — el ahorro es argumento de venta interno
   channel: { templateToday: number; windowToday: number; windowMonth: number; savedEurMonth: number };
 }
 
+/**
+ * Muestra mínima para que la tasa de 7 días signifique algo: con 2 envíos y 1 fallo el 50 % no
+ * dice nada, así que exigir población es CORRECTO. Lo que estaba mal (SCRUM-530) era CALLAR
+ * cuando no se llega — una alerta que nunca se activa y una que no tiene datos se leen igual.
+ * ⛔ No se exporta: nadie lo importa, y un export sin llamador es lo que caza SCRUM-411.
+ */
+const MIN_MUESTRA_ALERTA = 10;
+
 export const DELIVERED_OR_MORE = new Set(['delivered', 'read']);
 export const SENT_OR_MORE = new Set(['sent', 'delivered', 'read']);
+
+/**
+ * 🔴 SCRUM-862 · EL DENOMINADOR DE UNA TASA DE ENTREGA SON LOS INTENTOS, NO LOS QUE NO FALLARON.
+ *
+ * `SENT_OR_MORE` no incluye `failed`, así que usarlo de denominador daba una tasa que **no puede
+ * bajar por culpa de un fallo** — que es lo único que debería hacerla bajar. Medido antes de
+ * tocar nada: con 1 entregado y 9 fallidos la pantalla enseñaba **100 %** y la alerta callaba.
+ *
+ * ⛔ Y POR ESO ESTO ES UNA FUNCIÓN APARTE Y NO UN `failed` DENTRO DE `SENT_OR_MORE`: ese conjunto
+ * también alimenta `aggregateWaRows`, que es quien calcula el KPI `month.sent`. Metiendo el fallo
+ * ahí, la tarjeta pasaría a enseñar «Enviados 10 · Fallidos 9» contando los mismos nueve DOS
+ * VECES. Esa cifra hoy es correcta; el arreglo va sólo en el denominador de las dos tasas.
+ */
+function esIntentoDeEntrega(estado: string): boolean {
+  return SENT_OR_MORE.has(estado) || estado === 'failed';
+}
 
 /** Pura (testeable): funnel derivado + coste a partir de filas {status, costEstimate}.
  *  `costEstimate` acepta number, Prisma Decimal o string (se normaliza con Number(String())). */
@@ -209,7 +233,7 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
   const empty: WhatsAppMetrics = {
     month: { sent: 0, delivered: 0, read: 0, failed: 0, total: 0, costEur: 0 },
     byTemplate: [],
-    alert: { active: false, deliveryRate7d: null, sample: 0 },
+    alert: { active: false, deliveryRate7d: null, sample: 0, minimo: MIN_MUESTRA_ALERTA },
     channel: { templateToday: 0, windowToday: 0, windowMonth: 0, savedEurMonth: 0 },
   };
   try {
@@ -244,11 +268,11 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
       const s = r.status;
       const tpl = r.templateName || '(desconocida)';
       if (!perTpl[tpl]) perTpl[tpl] = { enviados: 0, entregados: 0 };
-      if (SENT_OR_MORE.has(s)) perTpl[tpl].enviados++;
+      if (esIntentoDeEntrega(s)) perTpl[tpl].enviados++;
       if (DELIVERED_OR_MORE.has(s)) perTpl[tpl].entregados++;
 
       if (r.createdAt >= weekAgo) {
-        if (SENT_OR_MORE.has(s)) week.enviados++;
+        if (esIntentoDeEntrega(s)) week.enviados++;
         if (DELIVERED_OR_MORE.has(s)) week.entregados++;
       }
     }
@@ -261,11 +285,14 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
     })).sort((a, b) => b.enviados - a.enviados);
 
     const rate7d = week.enviados > 0 ? Math.round((week.entregados / week.enviados) * 100) : null;
-    // Alerta solo con muestra significativa (≥10 envíos en 7 días) para no avisar en vacío
+    // Alerta solo con muestra significativa para no avisar en vacío. El umbral NO se duplica en
+    // la vista: viaja en el DTO (`minimo`), porque la misma regla escrita dos veces es cómo una
+    // de las dos se queda atrás.
     const alert = {
-      active: rate7d !== null && week.enviados >= 10 && rate7d < 90,
+      active: rate7d !== null && week.enviados >= MIN_MUESTRA_ALERTA && rate7d < 90,
       deliveryRate7d: rate7d,
       sample: week.enviados,
+      minimo: MIN_MUESTRA_ALERTA,
     };
 
     return { month: m, byTemplate, alert, channel };

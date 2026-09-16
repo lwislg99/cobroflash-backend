@@ -1,0 +1,38 @@
+CONTROL DEL COMPROBADOR:
+  SCRUM-729.md en origin/main (debe estar): SI ✅
+fatal: path 'docs/master/SCRUM-99999.md' does not exist in 'origin/main'
+  SCRUM-99999.md en origin/main (no debe):  NO ✅
+
+fatal: path 'docs/master/SCRUM-839.md' exists on disk, but not in '5359f41d'
+5359f41d  PR#1261  2026-09-15  scrum-839b-edad-y-rojo-obligatorio
+    SCRUM-839.md · en el merge: NO · hoy: SI
+    🔴 entro SIN expediente; alguien lo escribio DESPUES
+fatal: path 'docs/master/SCRUM-846.md' does not exist in '658976f0'
+fatal: path 'docs/master/SCRUM-846.md' does not exist in 'origin/main'
+658976f0  PR#1257  2026-09-15  scrum-846-caso-conocido-por-ast
+    SCRUM-846.md · en el merge: NO · hoy: NO
+    🔴🔴 ENTRO SIN EXPEDIENTE, Y SIGUE SIN EL
+51a28288  PR#1248  2026-09-15  scrum-637-verificacion-s5
+    SCRUM-637.md · en el merge: SI · hoy: SI
+    ⚠️ el expediente ya existia; este PR no lo actualizo
+fatal: path 'docs/master/SCRUM-848.md' exists on disk, but not in '07ccd16c'
+07ccd16c  PR#1240  2026-09-09  scrum-848-tactil-ficha-trabajo
+    SCRUM-848.md · en el merge: NO · hoy: SI
+    🔴 entro SIN expediente; alguien lo escribio DESPUES
+fatal: path 'docs/master/SCRUM-839.md' exists on disk, but not in '85f4e0cb'
+85f4e0cb  PR#1239  2026-09-09  scrum-839-detectar-conflicto
+    SCRUM-839.md · en el merge: NO · hoy: SI
+    🔴 entro SIN expediente; alguien lo escribio DESPUES
+d0ab360b  PR#1238  2026-09-09  scrum-637-verificacion-s5
+    SCRUM-637.md · en el merge: SI · hoy: SI
+    ⚠️ el expediente ya existia; este PR no lo actualizo
+5c35a66d  PR#1234  2026-09-09  scrum-637-verificacion-s5
+    SCRUM-637.md · en el merge: SI · hoy: SI
+    ⚠️ el expediente ya existia; este PR no lo actualizo
+fatal: path 'docs/master/SCRUM-834.md' does not exist in '4dec28eb'
+fatal: path 'docs/master/SCRUM-834.md' does not exist in 'origin/main'
+4dec28eb  PR#1233  2026-09-09  scrum-834e-censo-de-modulos
+    SCRUM-834.md · en el merge: NO · hoy: NO
+    🔴🔴 ENTRO SIN EXPEDIENTE, Y SIGUE SIN EL
+
+RESUMEN: entraron SIN expediente = 5 · expediente sin actualizar = 3

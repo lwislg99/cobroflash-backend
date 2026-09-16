@@ -60,10 +60,25 @@ const CENSO = {
   },
   'src/modules/quotes/domain/quoteNumber.service.ts': {
     campo: 'nextQuoteNumber',
-    forma: 'increment',
+    // 🔴 SCRUM-592 (DOC-02) · CAMBIA DE `increment` A `cerrojo`, Y ESTE CENSO LO EXIGIÓ.
+    //
+    // Hasta el 4-sep-2026 era un contador SIMPLE y la declaración decía, con razón, que
+    // `{ increment: 1 }` bastaba: es atómico en la BD y serializa aunque no haya transacción.
+    //
+    // DOC-02 le da REINICIO ANUAL (`quoteSeriesYear`), y eso rompe el argumento entero: ya no se
+    // suma uno, hay que LEER el año y DECIDIR si el siguiente es el contador o el 1. Eso es un
+    // read-then-write con valor absoluto, que en READ COMMITTED **no serializa** — dos creaciones
+    // del primer presupuesto del año leerían las dos «serie vacía» y escribirían las dos el 1.
+    //
+    // Es exactamente el razonamiento que este mismo fichero ya tenía escrito para la factura y el
+    // albarán. La serie del presupuesto se une a ellos.
+    forma: 'cerrojo',
     motivo:
-      'Contador SIMPLE, sin reinicio anual. `{ increment: 1 }` es atómico en la BD y serializa '
-      + 'aunque no haya transacción. No hay motivo para tocarlo (decisión del fundador, 30-jul-2026).',
+      'REINICIO ANUAL (`quoteSeriesYear`, SCRUM-592). `increment` no puede expresar «y si cambió '
+      + 'el año, vuelve a 1» en un solo update: hay que leer el año y decidir, y ese '
+      + 'read-then-write con valor absoluto no serializa en READ COMMITTED. Mismo cerrojo y mismo '
+      + 'namespace que la factura y el albarán. Y aquí importa más que en los otros dos: `Quote` '
+      + 'NO tiene índice único sobre su número, así que el cerrojo es la ÚNICA garantía.',
   },
   'src/modules/invoicing/domain/invoiceNumber.service.ts': {
     campo: 'nextInvoiceNumber',

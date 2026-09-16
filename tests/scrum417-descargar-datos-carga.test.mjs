@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
-import { cargarDashboard, pintarVista, scriptsDelDashboard, nodo, SCRIPTS_DEL_DASHBOARD } from './_banco-vistas.mjs';
+import { cargarDashboard, pintarVista, scriptsDelDashboard, nodo, contrastarScripts } from './_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VISTA = 'js/exportView.js';
@@ -26,13 +26,16 @@ const VISTA = 'js/exportView.js';
 test('SCRUM-417 · SUELO: el banco encuentra los scripts del dashboard', () => {
   const scripts = scriptsDelDashboard(RAIZ);
   // SCRUM-559: era `>= 40` sobre una población de 60 — 20 de holgura. Con eso, perder UNA
-  // etiqueta (60 → 59) pasaba en verde y esa vista dejaba de estar vigilada sin avisar. El
-  // recuento es EXACTO y su número vive en `_banco-vistas.mjs`, no aquí.
-  assert.equal(scripts.length, SCRIPTS_DEL_DASHBOARD,
-    `🔴 BANCO CIEGO: ${scripts.length} <script src> leídos de dashboard/index.html y se esperaban ` +
-    `${SCRIPTS_DEL_DASHBOARD}. Si SOBRAN, alguien añadió una vista y hay que subir el número en ` +
-    '`tests/_banco-vistas.mjs` en ese mismo commit. Si FALTAN, hay vistas que este banco ya no ' +
-    'carga: «ninguna vista falla» dejaría de significar nada.');
+  // etiqueta (60 → 59) pasaba en verde y esa vista dejaba de estar vigilada sin avisar.
+  // SCRUM-662: y ya no se contrasta una CUENTA sino la LISTA, que además dice CUÁL falta.
+  const c = contrastarScripts(scripts);
+  assert.deepEqual([...c.sobran, ...c.faltan], [],
+    '🔴 BANCO CIEGO: el índice y la lista declarada no coinciden.\n\n'
+    + (c.sobran.length ? `  SOBRAN en el índice: ${c.sobran.join(', ')}\n` : '')
+    + (c.faltan.length ? `  FALTAN en el índice: ${c.faltan.join(', ')}\n` : '')
+    + '\n  Si has añadido una vista, añádela a `SCRIPTS_DEL_DASHBOARD` en `tests/_banco-vistas.mjs`'
+    + '\n  en ese mismo commit. Si FALTAN, hay vistas que este banco ya no carga: «ninguna vista'
+    + '\n  falla» dejaría de significar nada.');
   assert.ok(scripts.includes(VISTA),
     `🔴 \`${VISTA}\` ya no está declarado en index.html: o cambió de nombre, o la pantalla dejó ` +
     'de servirse. Este test estaría midiendo un fichero que el navegador no carga.');

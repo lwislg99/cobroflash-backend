@@ -13,26 +13,26 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import puppeteer from 'puppeteer-core';
+import { fileURLToPath } from 'node:url';
+import { vistasDelBarrido } from './_vistas-del-barrido.mjs';
+
+const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const EDGE = process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const PROFILE = process.env.CAPTURE_PROFILE || '';
 const BASE = process.env.CAPTURE_BASE || 'https://yaqu.app';
 const OUT = process.env.CAPTURE_OUT || 'docs/evidencias/demo-final';
 
-const AUTH_VIEWS = [
-  ['01-home', '/dashboard/#home'],
-  ['04-quotes-new', '/dashboard/#quotes-new'],
-  ['05-quotes-list', '/dashboard/#quotes-list'],
-  ['06-customers', '/dashboard/#customers'],
-  ['07-products', '/dashboard/#products'],
-  ['08-invoices', '/dashboard/#invoices'],
-  ['09-reports', '/dashboard/#reports'],
-  ['10-quote-requests', '/dashboard/#quote-requests'],
-  ['11-expenses', '/dashboard/#expenses'],
-  ['12-providers', '/dashboard/#providers'],
-  ['13-team', '/dashboard/#team'],
-  ['14-settings', '/dashboard/#settings'],
-];
+// 🔴 SCRUM-821 · AQUÍ HABÍA UNA LISTA A MANO DE DOCE PANTALLAS, Y SE LE CAÍAN SEIS.
+//
+// Faltaban `jobs`, `albaranes`, `partes-oficina`, `cobros`, `libro-registro` y `plans` — la
+// cadena Tecnosel entera, el recorrido del único usuario real del producto. Y contra
+// `HASH_VIEWS` faltaban dos más (`export`, `templates`): **ocho**.
+//
+// 🔒 La lista que decide qué se mira era la única que nadie miraba. Ahora se DERIVA de
+// `HASH_VIEWS`, que ya tiene cinco ficheros de tests vigilándola, y un guard compara las dos
+// poblaciones —por CONJUNTOS, no por cuenta— en cada tanda.
+const AUTH_VIEWS = vistasDelBarrido(RAIZ).map((v) => [v.nombre, v.url]);
 
 // Públicas del cliente final (ids del seed demo; ajustar si se resiembra)
 const PUBLIC_VIEWS = [

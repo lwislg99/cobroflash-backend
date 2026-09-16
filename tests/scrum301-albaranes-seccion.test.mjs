@@ -24,6 +24,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+// SCRUM-670 · el ÚNICO sitio del repo donde se lee un `<script>` de un marcado.
+import { scriptsDeLaPagina } from './_scripts-de-la-pagina.mjs';
 
 import { ALBARAN_ESTADOS } from '../dist/modules/jobs/domain/albaran.service.js';
 import { ESTADOS_COBRO } from '../dist/modules/jobs/domain/albaranFacturacion.js';
@@ -335,10 +337,14 @@ test('SCRUM-301 · 🏆 cada fila lleva su TRABAJO, con id para poder enlazarlo'
  * Medido en rojo: la primera versión de este guard buscaba el nombre del fichero en el HTML entero
  * y **comentar el `<script>` la dejaba en verde** — el texto seguía ahí dentro. Un guard que no
  * distingue una etiqueta viva de una comentada no vigila el cableado, vigila la ortografía.
+ *
+ * SCRUM-670 · ese criterio —el bueno— es ahora el del extractor ÚNICO, y por eso este guard ya no
+ * tiene regex propia. Cuatro de los seis extractores que había SÍ contaban un `<script>`
+ * comentado; éste y el de `_carga-de-pagina` eran los dos que acertaban.
  */
 function scriptsCargados(html) {
-  const sinComentarios = html.replace(/<!--[\s\S]*?-->/g, '');
-  return [...sinComentarios.matchAll(/<script[^>]*\ssrc=["']([^"']+)["']/g)].map((m) => m[1]);
+  const { clasicos, modulos, remotos } = scriptsDeLaPagina(html);
+  return [...clasicos, ...modulos, ...remotos];
 }
 
 test('SCRUM-301 · la sección está CABLEADA: menú, ruta y script', () => {
@@ -378,7 +384,14 @@ const COPY_APROBADA = {
   seccion: 'Albaranes',
   pestanaTodos: 'Todos',
   estados: { borrador: 'Borradores', emitido: 'Emitidos', firmado: 'Firmados' },
-  columnas: ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado'],
+  // SCRUM-831 · entra «Acciones», y NO es una palabra nueva en el producto: es el rótulo que ya
+  // usan `jobsView.js` y `quotesListView.js` EN PRODUCCIÓN para esta misma columna. Se copia tal
+  // cual en vez de estrenar un sinónimo — el mismo criterio que aplicó SCRUM-816 a las cabeceras
+  // de Trabajos. Las otras seis no se tocan.
+  //
+  // ⚠️ QUEDA DICHO PARA QUE SE PUEDA VETAR EN UNA LÍNEA: es nueva EN ESTA PANTALLA. Si el fundador
+  // prefiere otra palabra aquí, se cambia en este renglón y en la cabecera de la vista.
+  columnas: ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado', 'Acciones'],
   filtroTodos: 'Facturación: todos',
   cobro: { sin_facturar: 'sin facturar', parcial: 'parcial', facturado: 'facturado' },
 };
@@ -587,7 +600,15 @@ function cuerpoDe(fuente, nombre) {
 /** Las clases de celda que la hoja de estilos define DE VERDAD para `.table--cards-mobile`. */
 function clasesDeCeldaEnCss() {
   const css = fs.readFileSync(path.join(RAIZ, 'public', 'dashboard', 'css', 'styles.css'), 'utf8');
-  return new Set([...css.matchAll(/\.table--cards-mobile\s+td\.(cell-[a-z]+)/g)].map((m) => m[1]));
+  // ⚠️ SCRUM-831 · TAMBIÉN VALEN LAS DEFINIDAS BAJO UN MODIFICADOR. El lector sólo miraba
+  // `.table--cards-mobile td.cell-*`, o sea la rejilla COMPARTIDA, y declaraba «clase que la hoja
+  // no define» a una que sí define — sólo que acotada a una tabla (`.table--albaranes
+  // td.cell-trabajo`). Acotar es MÁS preciso, no menos: es el patrón que la casa ya usa desde
+  // SCRUM-727b (`.table--trabajos td.cell-tecnicos`), y existe justamente para no mover a las
+  // cuatro listas hermanas al añadir un área.
+  //
+  // Lo que este test juzga sigue igual: que ninguna celda lleve una clase que la hoja ignora.
+  return new Set([...css.matchAll(/\.table--[a-z-]+\s+td\.(cell-[a-z]+)/g)].map((m) => m[1]));
 }
 
 /** Las clases que la vista pone en sus `<td>`, leídas del AST (`tdX.className = '…'`). */

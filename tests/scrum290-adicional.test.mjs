@@ -50,6 +50,11 @@ function montar(lineasAlbaran) {
   };
   p.albaran = { findFirst: async () => albaran, findMany: async () => [{ id: 1, lineas: lineasAlbaran }] };
   p.job = { findFirst: async () => ({ id: 1, customerId: 5, quoteId: 7 }) };
+  // SCRUM-729 · la ruta congela el cliente ANTES de la transacción: el doble tiene que traer la
+  // ficha o la llamada cae al Prisma de verdad y muere sin `DATABASE_URL`.
+  p.customer = {
+    findFirst: async () => ({ name: 'Cliente QA', legalName: null, taxId: null, email: null, phone: null }),
+  };
   // Merchant REAL con el flag, no el demo (`isDemoMerchant` es id === 1): si no, todo corre en
   // modo demo y la puerta de la regla 24 no se ejercita.
   p.merchant = { findUnique: async () => ({ id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, defaultCurrency: 'EUR', taxId: 'B1' }) };
@@ -57,7 +62,7 @@ function montar(lineasAlbaran) {
   p.albaranLineaFacturada = { findMany: async () => [], createMany: async () => {} };
 
   const tx = new Proxy({
-    invoice: { create: async ({ data }) => { cap.facturaEmitida = data; return { ...data, id: 33, total: { toString: () => data.total } }; } },
+    invoice: { findMany: async () => [], create: async ({ data }) => { cap.facturaEmitida = data; return { ...data, id: 33, total: { toString: () => data.total } }; } },
     albaranLineaFacturada: { createMany: async () => {} },
     merchant: {
       findUnique: async () => ({ id: 7, country: 'ES', flags: { INVOICING_ES_ENABLED: true }, invoiceSeq: 0, quoteSeq: 0 }),

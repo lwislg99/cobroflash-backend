@@ -22,6 +22,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -87,7 +88,7 @@ test('SCRUM-538 · SUELO: el censo ve las skills y ve rutas dentro', () => {
 // ── ② AUTOPRUEBA DEL EXTRACTOR ──────────────────────────────────────────────────────────────
 // Sin esto, un extractor que devolviera siempre [] pasaría el guard de abajo en verde.
 test('SCRUM-538 · AUTOPRUEBA: el extractor coge rutas del repo y NO acusa a lo ajeno', () => {
-  const tmp = path.join(RAIZ, 'tests', '_tmp-538.md');
+  const tmp = path.join(os.tmpdir(), `yaqu-538-${process.pid}.md`);
   fs.writeFileSync(tmp, [
     'Lee `docs/YAQU_MASTER.md` y `scripts/x.mjs`.',
     'El XSD `SuministroLR.xsd` es de la AEAT, y `https://sede.agenciatributaria.gob.es/a.pdf` una URL.',
@@ -105,7 +106,7 @@ test('SCRUM-538 · AUTOPRUEBA: el extractor coge rutas del repo y NO acusa a lo 
 // La trajo un falso positivo real de este guard, así que va con su prueba: si mañana alguien
 // afina la ventana o el patrón, esto dice cuál de las dos mitades se ha roto.
 test('SCRUM-538 · nombrar un fichero PARA DECIR QUE NO EXISTE no cuenta como promesa', () => {
-  const tmp = path.join(RAIZ, 'tests', '_tmp-538b.md');
+  const tmp = path.join(os.tmpdir(), `yaqu-538b-${process.pid}.md`);
   fs.writeFileSync(tmp, [
     'El documento `docs/QUE-NO-EXISTE-538.md` **no existe** (comprobado el 20-ago).',
     '',

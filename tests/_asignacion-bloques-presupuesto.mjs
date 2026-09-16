@@ -51,6 +51,22 @@ export const CAMPO_A_BLOQUE = {
   validUntil: { control: 'validWrapper', bloque: 'blockConditions' },
   payMethods: { control: 'payMethodsWrapper', bloque: 'blockDelivery' },
   docFields: { control: 'docFieldsWrapper', bloque: 'blockDelivery' },
+  // SCRUM-656 (T7) · CÓMO se presenta el IVA en ESTE presupuesto. Va al bloque de LÍNEAS, junto
+  // al «IVA por defecto», porque es su misma familia: los dos deciden qué impuesto enseña el
+  // documento. En «Condiciones» quedaría al lado del plan de cobro, que es OTRA conversación.
+  ivaModo: { control: 'fieldIvaModo', bloque: 'blockLines' },
+  // SCRUM-594 (DOC-04) · el descuento GLOBAL, en euros. Va al bloque de TOTALES y no al de
+  // Líneas: no es un ajuste de una línea, es una rebaja sobre el conjunto —se negocia a bulto—,
+  // y su efecto se lee justo donde se pinta, entre la suma y la base imponible. El `Dto. %` de
+  // cada línea sí vive en Líneas, dentro de la hoja de ajustes de su fila.
+  discountGlobalAmount: { control: 'dtoGlobalWrap', bloque: 'blockTotals' },
+  // SCRUM-602 (DOC-12) · la dirección de la OBRA. Va al bloque del CLIENTE y no a «4. Envío»,
+  // que en esta pantalla significa el envío del DOCUMENTO por WhatsApp o correo: dos cosas
+  // distintas con el mismo nombre en la misma pantalla es cómo se aprende mal un producto.
+  // Son DOS claves porque son dos datos —el modo y el texto— y el texto sólo existe con
+  // «Personalizada»; el control que gobierna cada una es distinto, así que se listan las dos.
+  shippingAddressMode: { control: 'fieldDireccionObra', bloque: 'blockClient' },
+  shippingAddress: { control: 'direccionObraWrap', bloque: 'blockClient' },
 };
 
 /**
@@ -103,8 +119,19 @@ export function revisarAsignacionDeBloques(fuente, ruta = 'quotesView.js') {
   const bloquesFantasma = [...new Set(Object.values(CAMPO_A_BLOQUE).map((v) => v.bloque))]
     .filter((b) => !bloquesDelFormulario.includes(b));
 
+  // ⑥ SCRUM-602 · lo que el censo del ENVÍO no ha podido resolver. Un `...spread` de una
+  //    variable o de una llamada esconde sus claves del análisis estático, así que el censo lo
+  //    DECLARA en vez de devolver un número más bajo — que se leería como «no hay campos ahí».
+  const envioOpaco = (envio.opacos ?? []).map((o) => `${o.texto} (línea ${o.linea})`);
+
   return {
+    // 🔴 4-sep-2026 · AQUÍ HUBO DOS NOMBRES PARA LO MISMO y se queda UNO. SCRUM-587 sacaba esto
+    // como `opacos` y SCRUM-602 como `envioOpaco` (arriba), los dos el mismo día y sin saberlo.
+    // Dejar los dos habría sido peor que dejar cualquiera: dos nombres para el mismo dato es cómo
+    // nace un instrumento que mide dos veces y se contradice. Se queda `envioOpaco`, que es el que
+    // ya consume `scrum602-direccion-obra.test.mjs`.
     envio, pintado, bloqueDe, clavesDeEnvio, bloquesDelFormulario,
     dejaronDeViajar, sinControlEnPantalla, enElBloqueEquivocado, sinSitio, bloquesFantasma,
+    envioOpaco,
   };
 }

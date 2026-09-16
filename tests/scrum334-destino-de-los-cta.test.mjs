@@ -127,6 +127,18 @@ test('SCRUM-334 · SUELO: el censo de CTA VE botones antes de decir que estan bi
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-334 · ningun CTA lleva a un 404 ni a una pagina vacia', async () => {
+  // SUELO (SCRUM-822): `/index.html` lo sirve el estatico, o sea el camino que no depende de
+  // ninguna ruta declarada a mano. Si ni eso responde, este caso no mide botones: mide que no
+  // hay servidor. Y decir «404» en esa situacion manda a arreglar la landing en vez del
+  // arranque — que es exactamente lo que costo SCRUM-822.
+  const REFERENCIA = '/index.html'; // el mensaje sale de aqui, no de un literal repetido
+  const referencia = await pedir(REFERENCIA);
+  assert.equal(
+    referencia.status, 200,
+    `🔴 CIEGO: el banco no sirve ni \`${REFERENCIA}\` (→ ${referencia.status || 'sin respuesta'}).\n`
+    + '  NO se acusa a ningun CTA: con el servidor mudo, todos saldrian rotos y ninguno lo esta.',
+  );
+
   const fallos = [];
   const vistos = new Map();
   for (const c of CTA.filter((x) => esInterno(x.href))) {

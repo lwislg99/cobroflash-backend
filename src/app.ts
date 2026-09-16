@@ -11,6 +11,7 @@ import { viasDeCobro } from './modules/billing/domain/viasDeCobro'; // SCRUM-519
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
 import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
 import { cubosDeMetodo, opcionesDeMetodoDeclarable, ROTULO_SIN_METODO } from './modules/billing/domain/metodoDeCobro';
+import { tiposIntervencionParaUI } from './modules/jobs/domain/tipoIntervencion';
 // ⚠️ FUSIÓN: C5 importaba `puedeCrearFacturaSuelta`, que SCRUM-346 (A0.5) RETIRÓ de `main`.
 // Medido antes de resolver: ya no se exporta, y `appFacturaSueltaDisponible` tiene CERO
 // consumidores en `public/`. No son dos cosas que hagan lo mismo — es una que evolucionó, así
@@ -21,6 +22,9 @@ import { modoEmisionVisible } from './modules/invoicing/domain/modoVisible'; // 
 import { requireAuth, requireActivePlan, requireRole } from './core/http/authMiddleware';
 import { mountAdmin } from './core/http/adminMounts'; // SCRUM-55: red fail-closed de /admin
 import { requireInternalSecret } from './core/http/internalAuth';
+// SCRUM-687 · la constancia del ALTER. Secreto PROPIO, no el interno (ver schemaCheckAuth.ts).
+import { requireSchemaCheckSecret } from './core/http/schemaCheckAuth';
+import { compararConstancia, CONSULTA_COLUMNAS } from './core/db/constanciaDelAlter';
 // SCRUM-274: huella de contenido en las referencias del dashboard (sin build ni bundler)
 import {
   sellarReferencias, crearHuellas, PARAM_HUELLA, CACHE_CON_HUELLA,
@@ -62,6 +66,7 @@ import legalPagesRouter from './modules/system/app/routes/legalPages.routes';
 import publicProfileRouter from './modules/system/app/routes/publicProfile.routes';
 import jobsRouter from './modules/jobs/app/routes/jobs.routes';
 import albaranesRouter from './modules/jobs/app/routes/albaranes.routes'; // SCRUM-14 (ALBARAN-1)
+import partesRouter from './modules/jobs/app/routes/partes.routes'; // SCRUM-652 (T3 fase C)
 import precargaAdminRouter from './modules/jobs/app/routes/precargaAdmin.routes'; // SCRUM-460 (H1 fase 3)
 import entornoAdminRouter from './modules/auth/app/routes/entornoAdmin.routes'; // SCRUM-360 (H5 fase 2)
 import soporteAdminRouter from './modules/system/app/routes/soporteAdmin.routes'; // SCRUM-406
@@ -105,6 +110,7 @@ import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from
 import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
 import { arranqueDeSerie, numerosDeLaSerie, bloqueoCambioDeSerie, invalidPrefijoSerie, debeOfrecerArranqueDeSerie, resumenSerieEmitida } from './core/validation/fiscalInput';
 import { vistaPreviaSerie } from './modules/invoicing/domain/vistaPreviaSerie';
+import { leerSeqDeLaSerieF } from './modules/invoicing/domain/invoiceNumber.service'; // SCRUM-780
 import { SERIE_LOCK_NS } from './modules/invoicing/domain/invoiceNumber.service';
 import QRCode from 'qrcode'; // A14.2: QR del perfil público (PNG alta res para furgoneta/tarjeta)
 import { resolverOpcionesQr, ErrorQr } from './modules/system/domain/qrPagina.service'; // SCRUM-230
@@ -262,12 +268,28 @@ app.use(
   }),
 );
 
+// ── SCRUM-822 · `root` NO ES DECORACIÓN, Y LO QUE EVITA NO SE VE LEYENDO LA LÍNEA ────────
+//
+// `res.sendFile(rutaAbsoluta)` SIN `root` hace que `send` parta la ruta ENTERA —el path de
+// instalación incluido— y le aplique su regla de dotfiles (`send/index.js:451-470`,
+// `containsDotFile`). Resultado: si CUALQUIER tramo del sitio donde vive el checkout empieza
+// por `.` (`.claude/worktrees/…`, un `.tmp`, un árbol desechable), estas tres rutas devuelven
+// **404 con el fichero presente y legible**. Con `root`, `send` sólo inspecciona el nombre
+// relativo — y de paso confina lo servido a `publicDir`.
+//
+// POR QUÉ NADIE LO VIO ANTES: `express.static` SÍ pasa `root`, así que la misma página seguía
+// respondiendo 200 como `/privacidad.html` y 404 como `/privacidad`. Y producción vive en
+// `/app` (Railway), sin ningún punto en la ruta, así que el sitio público nunca lo sufrió: el
+// defecto sólo se manifestaba en el banco de pruebas, donde se leía como «la landing enlaza a
+// un 404» — dos guards en rojo acusando a un producto sano. Medido en SCRUM-822 sobre el
+// `dist/` real: `/index.html` 200, `/privacidad` 404, `/privacidad.html` 200.
+
 // URLs limpias para políticas legales (privacidad requerida por Meta para publicar la app)
-app.get('/privacidad', (_req, res) => res.sendFile(path.join(publicDir, 'privacidad.html')));
-app.get('/terminos', (_req, res) => res.sendFile(path.join(publicDir, 'terminos.html')));
+app.get('/privacidad', (_req, res) => res.sendFile('privacidad.html', { root: publicDir }));
+app.get('/terminos', (_req, res) => res.sendFile('terminos.html', { root: publicDir }));
 
 // V0-4: página de precios + contador REAL de plazas founding (público, sin auth)
-app.get('/precios', (_req, res) => res.sendFile(path.join(publicDir, 'precios.html')));
+app.get('/precios', (_req, res) => res.sendFile('precios.html', { root: publicDir }));
 app.get('/public/founding-status', async (_req, res) => {
   try {
     const { getFoundingStatus } = await import('./modules/billing/domain/founding');
@@ -286,6 +308,40 @@ app.get('/version', (_req, res) => {
   res.set('Cache-Control', 'no-store');
   res.json({ version: config.BUILD_ID });
 });
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-687 · LA CONSTANCIA DEL `ALTER`, Y LA DA PRODUCCIÓN
+//
+// Producción estuvo NUEVE DÍAS sin desplegar: tres veces se mergeó el esquema sin haber aplicado
+// el `ALTER`, y `schemaDrift` se negó a arrancar. Un healthcheck fallido deja vivo el despliegue
+// anterior, así que el síntoma era «no cambia nada». Esto lo detecta ANTES de mergear.
+//
+// CI manda el conjunto ESPERADO; aquí se contesta SÓLO qué falta de lo que trajo. **No se publica
+// la lista real de tablas y columnas**: es el espejo de la pregunta, no un mapa de la base.
+//
+// FAIL-CLOSED: sin `SCHEMA_CHECK_SECRET` esto no existe (404). Su secreto es PROPIO y no el
+// interno, porque el interno abre `/charges` e `/invoice` y éste lo llama CI (ver
+// `schemaCheckAuth.ts`).
+//
+// El `express.json` va AQUÍ y acotado a 512 kb: el parser general se monta más abajo, y este
+// cuerpo es una lista de cadenas cortas. Un tope propio y pequeño evita que una superficie nueva
+// herede un límite pensado para otra cosa.
+app.post('/schema-check', requireSchemaCheckSecret, express.json({ limit: '512kb' }), async (req, res) => {
+  try {
+    const esperadas = (req.body && (req.body as any).esperadas) as unknown[];
+    const filas = await prisma.$queryRawUnsafe<Array<{ tabla: string; columna: string }>>(CONSULTA_COLUMNAS);
+    const reales = filas.map((f) => `${f.tabla}.${f.columna}`);
+    const c = compararConstancia(esperadas, reales);
+    // 400 cuando la PREGUNTA no vale (cero esperadas, forma mala): no es un hallazgo del esquema
+    // y no se puede leer como uno. 200 sólo cuando de verdad se comparó algo.
+    if (!c.ok) return res.status(400).json({ error: 'peticion_invalida', motivo: c.motivo, comparadas: 0 });
+    return res.json({ faltan: c.faltan, comparadas: c.comparadas });
+  } catch (e) {
+    // 🔴 Y AQUÍ NO SE DEVUELVE `faltan: []`. Un fallo leyendo el catálogo con cuerpo vacío se leería
+    // como «no falta nada», que es el verde más caro que se puede dar.
+    return res.status(503).json({ error: 'no_pude_leer_el_catalogo', comparadas: 0 });
+  }
+});
+
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 // P0-SEC-1/3: estos dos son endpoints INTERNOS (self-call desde los webhooks de pago y
@@ -472,6 +528,9 @@ app.get('/admin/me', async (req, res) => {
     // (regla 22) y servido en el ARRANQUE, porque es CONSTANTE. El navegador no tiene lista propia
     // de metodos — esa duplicacion es la que SCRUM-474 arranco de `cobrosView.js`.
     metodosDeclarables: opcionesDeMetodoDeclarable(),
+    // SCRUM-tecnosel · el vocabulario de tipos de intervención, DERIVADO del servidor. El
+    // navegador no decide qué tipos existen: los recibe, como los cubos de cobros.
+    tiposIntervencion: tiposIntervencionParaUI(),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
     subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
@@ -508,6 +567,13 @@ mountAdmin(app, '/admin/expenses',   expensesRouter);
 mountAdmin(app, '/admin/bot',        botAdminRouter); // A8.3: handoffs pendientes del bot
 mountAdmin(app, '/admin/jobs',       jobsRouter);    // A13 (JOB-1): trabajos
 mountAdmin(app, '/admin/albaranes',  albaranesRouter); // SCRUM-14 (ALBARAN-1): partes de trabajo NO fiscales
+// SCRUM-652 (T3 fase C) · EL PARTE DE TRABAJO, que hasta hoy no tenia llamador.
+// OJO con el comentario de la linea de arriba: llama «partes de trabajo» a los ALBARANES, y desde
+// hoy eso es ambiguo porque existe un ParteTrabajo de verdad. No se toca aqui (no es de este
+// carril), pero queda dicho: son DOS documentos distintos con dos tablas distintas.
+// Sin parser propio de 8mb a proposito: el parte NO lleva fotos. Solo la firma, y su tope
+// (1.400.000 caracteres) cabe de sobra en el limite global de 2mb.
+mountAdmin(app, '/admin/partes',     partesRouter);
 mountAdmin(app, '/admin/precarga',   precargaAdminRouter); // SCRUM-460 (H1 fase 3): qué bajar para firmar sin red
 mountAdmin(app, '/admin/entorno',    entornoAdminRouter); // SCRUM-360 (H5 fase 2): el último entorno visto
 mountAdmin(app, '/admin/soporte',    soporteAdminRouter); // SCRUM-406: el otro extremo de «Escríbenos»
@@ -602,8 +668,16 @@ app.get('/admin/merchant', async (req, res, next) => {
     // id/nombre/moneda/logo; lo fiscal y bancario (NIF, IBAN, CLABE, serie,
     // umbral de aprobación, prefs de email, reseñas) es solo del admin.
     if (req.userRole !== 'admin') {
-      const { id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor } = merchant;
-      return res.json({ id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor });
+      // 🔴 SCRUM-633 · `timezone` ENTRA TAMBIÉN AQUÍ, y no es un descuido de alcance.
+      //
+      // Un técnico CREA presupuestos, así que necesita saber en qué calendario vive el negocio:
+      // sin la zona vería una caducidad distinta de la que rige el documento. Negársela sería
+      // crear el defecto que este ticket viene a cerrar, sólo que para un rol.
+      //
+      // Es dato de CALENDARIO, no fiscal ni bancario: no abre la puerta que esta rama protege
+      // (NIF, IBAN, CLABE, serie, umbral de aprobación). Decisión del asesor, 4-sep-2026.
+      const { id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor, timezone } = merchant;
+      return res.json({ id, name, legalName, trade, defaultCurrency, logoUrl, whatsappPhone, country, brandColor, brandAccentColor, timezone });
     }
     // A14.1: estado EFECTIVO del flag del perfil público (merchant > env > default)
     // para que Configuración pinte "activa/aún no activa" sin duplicar la lógica.
@@ -670,8 +744,9 @@ app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
 // ese rótulo borraría datos REALES bajo una etiqueta que dice lo contrario. Por eso el front no
 // lo pinta fuera del demo y aquí se rechaza igualmente — la puerta se cierra por los dos lados.
 //
-// El barrido es el DERIVADO del schema (SCRUM-314, primera mitad): cubre los 22 modelos con
-// `merchantId` y hereda el guard de SCRUM-172/192, así que no puede volver a quedarse corto.
+// El barrido es el DERIVADO del schema (SCRUM-314, primera mitad): cubre TODOS los modelos con
+// `merchantId` —sean los que sean, sin número escrito aquí (SCRUM-680)— y hereda el guard de
+// SCRUM-172/192, así que no puede volver a quedarse corto.
 app.post('/admin/datos-ejemplo/eliminar', requireRole('admin'), async (req, res, next) => {
   try {
     const merchant = await prisma.merchant.findUnique({
@@ -818,12 +893,17 @@ app.post('/admin/onboarding/serie/previa', requireRole('admin'), async (req, res
 
     const prefijoPedido = typeof req.body?.serie === 'string' ? req.body.serie.trim() : '';
     const prefijo = prefijoPedido || merchant.invoiceSeriesPrefix;
+    // SCRUM-780: la secuencia de la serie F se DERIVA de lo emitido, no del contador viejo.
+    const ahora = new Date();
     return res.json({
       ok: true,
       proximoNumero: vistaPreviaSerie(
         prefijo,
         { invoiceSeriesYear: arranque.invoiceSeriesYear, nextInvoiceNumber: arranque.nextInvoiceNumber },
         año,
+        false,
+        ahora,
+        await leerSeqDeLaSerieF(prisma, req.merchantId, año),
       ),
     });
   } catch (err) {
@@ -935,6 +1015,9 @@ app.post('/admin/onboarding/serie', requireRole('admin'), async (req, res, next)
           nextInvoiceNumber: actualizado.nextInvoiceNumber,
         },
         año,
+        false,
+        new Date(),                                        // SCRUM-780: el corte decide por fecha
+        await leerSeqDeLaSerieF(prisma, req.merchantId, año),
       ),
     });
   } catch (err) {

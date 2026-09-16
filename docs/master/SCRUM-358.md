@@ -302,7 +302,7 @@ fallo sigue dando los suyos.
 
 **Carril:** H (albarán sin red) · **Gate:** sin gate, corre en `npm test`
 
-**Medido contra:** `origin/main` = `7f826e6…` · con SCRUM-425 dentro (columna en las tres bases
+**Medido contra:** `origin/main` = `7f826e61f5ce1a82d5def188451ef16125f7e704` · con SCRUM-425 dentro (columna en las tres bases
 **y** en `schema.prisma`).
 
 > **Cero `prisma migrate diff`** — ya no está prohibido, pero no hace falta para nada de esto.

@@ -23,6 +23,13 @@ router.post('/', async (req, res) => {
     } else if (body.customer) {
       const c = await prisma.customer.create({
         data: {
+          // SCRUM-797 · EL DUEÑO SE DICE, NO SE HEREDA DEL DEFECTO DE LA COLUMNA.
+          // `merchant_id` ya viene validado tres líneas arriba (404 si no existe). Sin esta
+          // línea la fila nacía con el `@default(1)` del schema —y el merchant 1 ES LA CUENTA
+          // DEMO—, con HTTP 201 y sin una queja: el profesional que la creaba no la veía en su
+          // lista y el demo sí. Medido por el camino real contra dev el 7-sep-2026: cliente
+          // id=932 archivado bajo el merchant 1 desde una petición del merchant 1044.
+          merchantId: body.merchant_id,
           name: body.customer.name,
           phone: body.customer.phone ? normalizePhone(body.customer.phone) : null,
           email: body.customer.email ?? null,

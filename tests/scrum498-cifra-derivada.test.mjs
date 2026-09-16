@@ -31,6 +31,35 @@ const DERIVADO = PorDmmf.length;
 
 // ── 🔴 AUTOPRUEBA · antes de creerse ningún número ──────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-680 · CUATRO PRUEBAS DE ESTE FICHERO SE RETIRARON, Y AQUÍ ESTÁ POR QUÉ
+//
+// Se fueron las que vigilaban el REGISTRO de afirmaciones: «CONTROL POSITIVO con el esquema tal
+// cual», «ninguna afirmación atada está CIEGA», «EL ENSAYO DEL DÍA D» y «el registro cubre los
+// ocho ficheros». No se retiraron porque estorbaran: **se quedaron sin sujeto**.
+//
+// Este guard ataba las DOCE frases del árbol que escribían a mano el tamaño de la población de
+// modelos con `merchantId`, para que no envejecieran en silencio. Y funcionó — cazó una que
+// decía «de los 23 modelos, 19 mapean y DOS no», que además de vieja **no sumaba** (19+2=21) y
+// vivía en `portabilidadCompleta.ts`, el camino del export de RGPD.
+//
+// En SCRUM-680 las doce frases **dejaron de decir un número**: donde hacía falta saber CUÁLES se
+// nombran (`Quote` e `Invoice`), y una frase sin número no se desincroniza. Sin frases atadas, el
+// ensayo no tiene qué hacer caer y su verde sería hueco.
+//
+// ⚠️ EL HECHO NO SE QUEDA SIN GUARDIÁN, solo sin ÉSTE. Que un modelo nuevo con `merchantId` no se
+// olvide lo sostienen dos guards que DERIVAN DEL SCHEMA, no de la prosa:
+//
+//   · `tests/scrum172-cobertura-tenancy.test.mjs` → cae NOMBRANDO el modelo que nadie barre.
+//     Comprobado ejecutándolo en SCRUM-680: con un `CuadernoDeObra` inyectado dice «Modelo(s)
+//     con `merchantId` que NADIE barre: · cuadernoDeObra».
+//   · SCRUM-192 → `ORDEN_BORRADO_MERCHANT`, la otra mitad (supresión, no portabilidad).
+//
+// Lo que SIGUE VIVO aquí, porque sigue midiendo algo: la autoprueba del detector sobre fuente
+// sintética, el suelo de ceguera (cero modelos es no-supe-mirar), la comparación de los DOS
+// instrumentos —texto del esquema contra DMMF, que caza un cliente desparejado— y el hueco
+// declarado de `PENDIENTES_FUERA_DE_CARRIL`.
+// ─────────────────────────────────────────────────────────────────────────────────────────
 test('SCRUM-498 · 🔴 AUTOPRUEBA: el contador y el guard, sobre fuente sintética', () => {
   const a = autoprueba();
   assert.ok(a.cuentaBien, '🔴 el contador de texto no cuenta bien un esquema de tres modelos.');
@@ -70,23 +99,7 @@ test('SCRUM-498 · los DOS instrumentos dan la misma lista, o hay un cliente des
 
 // ── CONTROL POSITIVO Y NEGATIVO ─────────────────────────────────────────────────────────
 
-test('SCRUM-498 · 🔴 CONTROL POSITIVO: con el esquema tal cual, verde y ninguna frase vieja', (t) => {
-  const r = verificar(RAIZ, DERIVADO);
-  t.diagnostic(`derivado: ${DERIVADO} · afirmaciones atadas: ${r.filas.length} · viejas: ${r.viejas.length}`);
-  assert.deepEqual(r.viejas.map((f) => `${f.fichero}:${f.linea}`), [],
-    `🔴 HAY AFIRMACIONES QUE YA NO SON CIERTAS:\n\n${mensajeDeViejas(r)}\n\n` +
-    '  Un número escrito en prosa no tiene fecha de caducidad visible, y el que lo lee no sabe que\n' +
-    '  ya no vale. Corrige la frase con la cifra CONTADA, no con la que recuerdes.');
-});
 
-test('SCRUM-498 · 🔴 ninguna afirmación atada está CIEGA: si la frase cambió, se dice', () => {
-  const r = verificar(RAIZ, DERIVADO);
-  assert.deepEqual(r.ciegas.map((f) => `${f.fichero} — ${f.motivo}`), [],
-    '🔴 el guard ha dejado de VER alguna de las frases que vigila.\n\n' +
-    '  Eso NO es que la frase esté bien: es que el guard mira a la pared. Si has reescrito la frase,\n' +
-    '  actualiza su patrón en `AFIRMACIONES`; si la has borrado, quita su entrada. Lo que no vale es\n' +
-    '  que el registro apunte a un texto que ya no existe y siga dando verde.');
-});
 
 test('SCRUM-498 · CONTROL NEGATIVO: quitar un modelo SIN `merchantId` no mueve nada', () => {
   // Si tocar `Event` —que no tiene la columna— cambiara la cifra, estaríamos contando la población
@@ -101,65 +114,9 @@ test('SCRUM-498 · CONTROL NEGATIVO: quitar un modelo SIN `merchantId` no mueve 
 
 // ── 🔴 EL ENSAYO DEL DÍA D ──────────────────────────────────────────────────────────────
 
-test('SCRUM-498 · 🔴 EL ENSAYO DEL DÍA D: entra `EmailMessage` y las doce frases CAEN, nombradas', () => {
-  // El modelo REAL de `scrum-475-schema-emailmessage` (56a5e462), no uno inventado: es el que va a
-  // entrar. Se añade al TEXTO del esquema y se vuelve a contar — sin tocar `schema.prisma`, que es
-  // de los fundadores.
-  const EMAIL_MESSAGE = `
-model EmailMessage {
-  id         Int     @id @default(autoincrement())
-  merchantId Int     @map("merchant_id")
-  customerId Int?    @map("customer_id")
-  kind       String
-  toEmail    String  @map("to_email")
-}
-`;
-  const crecido = modelosDelTexto(SCHEMA + EMAIL_MESSAGE);
-  assert.equal(crecido.conCampo.length, DERIVADO + 1,
-    '🔴 añadir `EmailMessage` —que lleva `merchantId`— no sube la cifra. El ensayo no ensaya nada.');
-
-  const r = verificar(RAIZ, crecido.conCampo.length);
-  assert.equal(r.ciegas.length, 0, '🔴 el guard está ciego: el ensayo no vale.');
-  assert.equal(r.viejas.length, r.filas.length,
-    `🔴 el día que entre \`EmailMessage\` solo caerían ${r.viejas.length} de ${r.filas.length} ` +
-    'frases. Las que no caen se quedarían diciendo 21 para siempre, y nadie se enteraría — que es ' +
-    'exactamente lo que pasa HOY con las doce.');
-
-  const texto = mensajeDeViejas(r);
-  // 🔴 SCRUM-497 · LAS CIFRAS DE ESTE ASERTO SE DERIVAN, y antes estaban escritas a mano
-  // (`dice 21 y son 22`). El día D llegó —`EmailMessage` ya está en el esquema, así que las frases
-  // dicen 22 y el ensayo cuenta 23— y este aserto se quedó viejo: **el mismo defecto que este
-  // fichero existe para cazar, dentro de él**. Derivado del recuento, el ensayo vale en cualquier
-  // árbol; la forma exigida —fichero, línea y «dice X y son Y»— no se relaja.
-  const esperado = new RegExp(`src/app\\.ts:\\d+  dice ${DERIVADO} y son ${DERIVADO + 1}`);
-  assert.match(texto, esperado,
-    `🔴 el rojo no NOMBRA qué frase se quedó vieja ni dónde. Se esperaba ${esperado}. Dijo:\n${texto}`);
-  for (const { fichero } of AFIRMACIONES) {
-    assert.ok(texto.includes(fichero), `🔴 «${fichero}» no aparece en el rojo del día D.`);
-  }
-});
 
 // ── QUE EL REGISTRO NO SE PUDRA ─────────────────────────────────────────────────────────
 
-test('SCRUM-498 · el registro cubre los ocho ficheros del encargo, y dice cuál queda fuera', () => {
-  const cubiertos = new Set(AFIRMACIONES.map((a) => a.fichero));
-  for (const f of [
-    'src/app.ts',
-    'src/modules/exports/domain/portabilidadCompleta.ts',
-    'src/modules/system/domain/barridoDemo.ts',
-    'tests/_censo-merchant-de-la-url.mjs',
-    'tests/scrum244-cobertura-portabilidad.test.mjs',
-    'tests/scrum272-criterio-referencial.test.mjs',
-    'tests/scrum314-wipedemo-derivado.test.mjs',
-    'tests/scrum440-tenencia-supresion.test.mjs',
-  ]) {
-    assert.ok(cubiertos.has(f), `🔴 «${f}» tiene una afirmación de esta población y NO está atada.`);
-  }
-  // Y el hueco, DECLARADO: una ausencia sin explicar es indistinguible de un olvido.
-  assert.equal(PENDIENTES_FUERA_DE_CARRIL.length, 1);
-  assert.equal(PENDIENTES_FUERA_DE_CARRIL[0].fichero, 'tests/_merchant-fixture.mjs',
-    '🔴 ha cambiado lo que queda fuera de carril. Si ya se puede entrar, átalo; si no, di por qué.');
-});
 
 test('SCRUM-498 · 🔴 el hueco declarado sigue existiendo, y no ha crecido', () => {
   // `_merchant-fixture.mjs` es zona de SCRUM-495/497. Sus frases dicen 21 y caerán el mismo día.

@@ -3,6 +3,12 @@
 // Email-safe: una sola columna, estilos inline, sin fuentes externas ni
 // imágenes remotas (los clientes de correo las bloquean). Un email cutre
 // delata al producto; este no lo es.
+//
+// SCRUM-877: los tres enlaces del pie salían con el dominio ESCRITO A PELO, así que no seguían a
+// `PUBLIC_BASE_URL` — la raíz que el resto del sistema usa para todo lo que manda al cliente
+// (`env.ts:211`). Ahora salen de `BASE_URL`, que es esa misma variable con nombre corto. El TEXTO
+// del pie no cambia: sólo la raíz de la URL.
+import { BASE_URL } from '../../../core/config/env';
 
 const BRAND = '#16a34a';
 const BRAND_DARK = '#15803d';
@@ -66,8 +72,8 @@ export function renderEmailLayout(opts: EmailLayoutOpts): string {
         </td></tr>
         <!-- Pie -->
         <tr><td style="padding:16px 6px 0;text-align:center;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:${MUTED}">
-          Enviado con <a href="https://yaqu.app" style="color:${BRAND_DARK};text-decoration:none;font-weight:600">YaQu</a> — presupuestos, firma y cobro por WhatsApp<br/>
-          <a href="https://yaqu.app/privacidad" style="color:${MUTED}">Privacidad</a> · <a href="https://yaqu.app/terminos" style="color:${MUTED}">Términos</a>
+          Enviado con <a href="${BASE_URL}" style="color:${BRAND_DARK};text-decoration:none;font-weight:600">YaQu</a> — presupuestos, firma y cobro por WhatsApp<br/>
+          <a href="${BASE_URL}/privacidad" style="color:${MUTED}">Privacidad</a> · <a href="${BASE_URL}/terminos" style="color:${MUTED}">Términos</a>
         </td></tr>
       </table>
     </td></tr>

@@ -2,7 +2,7 @@ import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppTemplate } from '../../../integrations/whatsapp';
 import { buildQuoteDecision } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
-import { normalizePhone } from '../../../core/utils/utils';
+import { canalDeWhatsApp } from '../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { ensureQuoteDecisionToken } from './quoteToken.service'; // SCRUM-95
 
 const REMINDER_AFTER_MS = 24 * 60 * 60 * 1000; // 24 horas
@@ -17,7 +17,9 @@ export async function sendPendingReminders(): Promise<void> {
       updatedAt: { lte: cutoff },
     },
     include: {
-      customer: { select: { name: true, phone: true } },
+      // SCRUM-590 (CONT-19): el select TRAE EL MÓVIL. Sin esta línea el resolvedor lo recibiría
+      // undefined y el recordatorio se iría al fijo — en silencio y sin fallar nada.
+      customer: { select: { name: true, phone: true, mobile: true } },
       merchant: { select: { name: true, logoUrl: true } },
     },
     take: 50, // procesar en lotes
@@ -28,7 +30,7 @@ export async function sendPendingReminders(): Promise<void> {
   console.log(`[reminder] ${quotes.length} cotización(es) sin respuesta >24h`);
 
   for (const quote of quotes) {
-    const phone = normalizePhone(quote.customer?.phone);
+    const phone = canalDeWhatsApp(quote.customer);
     if (!phone) {
       await markReminded(quote.id);
       continue;

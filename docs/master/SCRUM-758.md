@@ -1,0 +1,511 @@
+# SCRUM-758 · Las «nueve migraciones» — medidas, y el enunciado no se sostiene
+
+**Fecha:** 6-sep-2026 · **Carril:** datos · despliegue · **Gate:** sin gate (todo lee ficheros)
+
+**Medido contra:** `origin/main` = `50312d327c0f7ddcf8a0670ab54c46407a7bba9d` · 2026-09-06T22:36:05+01:00
+
+> 🛑 **Ticket de MEDIR.** Cero escrituras, cero conexiones a ninguna base — ni a dev compartida.
+> Todo lo de aquí sale de leer ficheros del árbol.
+
+---
+
+## 🔴 EL ENUNCIADO, CORREGIDO POR EL ÁRBOL
+
+El ticket dice: *«NUEVE migraciones que MUTAN datos no constan en el log de `db push`»*. **Las tres
+mitades de esa frase fallan**, y el propio log lo dice.
+
+**Las «nueve» existen, y están en el log**, con su nombre:
+
+```
+docs/MIGRATIONS_PENDING.md:575
+## LOTE ÚNICO · 9 columnas en 4 tablas (SCRUM-403 · A5 · E4 · SCRUM-195 · SCRUM-16/142)
+```
+
+**① No mutan datos: son NUEVE `ADD COLUMN`.** El recuento está en el propio log, contado del SQL:
+
+| `ADD COLUMN` | `DROP` | `ALTER COLUMN` | `NOT NULL` | `DEFAULT` | `DELETE`/`TRUNCATE` |
+|---|---|---|---|---|---|
+| **9** | 0 | 0 | 0 | 0 | 0 |
+
+*«100 % aditivo: nueve columnas nullable, sin default, sin unique, sin índice.»* Y una línea más
+abajo: **«Ninguna fila se toca. Las nueve columnas quedan a `NULL`.»**
+
+**② Sí constan en el log**: son una entrada con su cabecera, su preview y su verificación.
+
+**③ Y están APLICADAS EN PRODUCCIÓN**, con verificación independiente:
+
+```
+- [x] producción · autorack — aplicado 10-ago-2026 con GO EXPLÍCITO del fundador
+      Verificación independiente por `information_schema`: 9/9 columnas, is_nullable = YES
+      CERO BACKFILL: expenses 10 filas · 0 con base_amount · quotes 125 · 0 con es_adicional
+                     invoices 55 · 0 con deducts_refs
+```
+
+⚠️ **Y hay un defecto de documentación que casi me engaña a mí:** la CABECERA de esa entrada
+sigue diciendo **«🔴 SIN APLICAR en ninguna de las tres»**, mientras su propio cuerpo tiene las
+tres casillas marcadas. **El título contradice al cuerpo.** Si el ticket nació de leer ese título,
+nació de una línea que envejeció.
+
+---
+
+## EL CENSO · qué cambia ESTRUCTURA y qué cambia DATOS
+
+`scripts/censo-migraciones.mjs`, sin lista cableada. **Sobre 173 ficheros: 25 tocan datos, 32 sólo
+estructura.**
+
+### 🔴 Y las migraciones de este árbol viven en TRES IDIOMAS
+
+Lo aprendí midiéndome a mí misma, y las tres pasadas están escritas en la cabecera del script:
+
+| pasada | qué miraba | DML encontrado |
+|---|---|---|
+| 1ª | sólo ficheros `.sql` | **3** |
+| 2ª | + llamadas de Prisma | subió |
+| 3ª | + `cliente.query(sql)` con `pg` en crudo | apareció `backfill-job-assignees.mjs` |
+
+`backfill-job-assignees.mjs` **escribe** (su cabecera lo dice: `--aplicar` → escribe) y las dos
+primeras pasadas lo daban por limpio. **Un censo que mire un solo idioma subestima**, y ése es el
+motivo por el que una lista de «migraciones de datos» hecha a ojo sale corta.
+
+⚠️ **Y la primera pasada dio 0 de 43** — todas «desconocida». No era el árbol: `partirSentencias`
+devuelve `{ sql, linea }` y yo le pasaba el objeto, así que clasificaba `[object Object]`. **Un
+cero sobre 43 no es un dato**; por eso el script lleva ahora control positivo dentro y sale con
+código 2 si no ve los cinco idiomas conocidos.
+
+### El parseo se DERIVA, no se reescribe
+
+`desnudar` + `partirSentencias` salen del clasificador oficial (SCRUM-395), que ya dejó escrito por
+qué un `grep` no vale: *«un guard de texto acaba vigilando la EXPLICACIÓN en vez del código»*.
+
+---
+
+## 🔴 EL MECANISMO QUE EXPLICA EL ENUNCIADO — y es más interesante que el enunciado
+
+**El aplicador oficial NO PUEDE aplicar una migración de datos.** Medido ejecutándolo:
+
+```
+docs/sql/scrum-650-paso-c-backfill.sql   (INSERT … SELECT)
+   ok: false · rechazada DESCONOCIDA — «se rechaza POR DEFECTO»
+prisma/backfill/scrum609-item-kind.sql   (ADD COLUMN + UPDATE)
+   permitida  ADD COLUMN ×1
+   rechazada  DESCONOCIDA          ← el UPDATE
+docs/sql/scrum-425-clave-idempotencia.sql (DDL puro)
+   ok: true · permitida ADD COLUMN ×1 · permitida CREATE INDEX
+```
+
+`scripts/aplicar-sql-dev.mjs` sólo ejecuta la **lista blanca** de formas aditivas. El DML no está
+en ella y **nunca lo va a estar**: la lista blanca existe para que un `DROP` no pase.
+
+**Consecuencia estructural, y es el hallazgo del ticket:** toda migración de DATOS tiene que
+aplicarse **por otra vía** —un `.mjs` con su propio cliente, o a mano en la consola— y esa otra vía
+**no pasa por el aplicador que escribe en el log**. No es que a alguien se le olvidara apuntarlas:
+es que el camino que las aplica no tiene por dónde apuntarlas.
+
+Las que hoy tocan datos y **no constan por nombre** en el log:
+
+| fichero | vía |
+|---|---|
+| `docs/sql/scrum-650-paso-c-backfill.sql` | `.sql` (`INSERT … SELECT`) |
+| `scripts/backfill-job-assignees.mjs` | `pg` en crudo |
+| `scripts/backfill-quote-jobid.mjs` | `$executeRawUnsafe` |
+| `scripts/renumerar-documentos.mjs` | Prisma |
+| `scripts/conciliar-auditoria-fiscal.mjs` | `$executeRawUnsafe` |
+
+(`scrum205-vf-estado.sql`, `scrum609-item-kind.sql` y `backfill-quote-numbers.mjs` **sí** constan.)
+
+---
+
+## 🔴 LA CAÍDA DE PRODUCCIÓN · lo que sí apunta a algo, y NO son las nueve
+
+La hipótesis del encargo era `schemaDrift` sobre las nueve columnas. **No se sostiene: producción
+las tiene.** Pero el mismo mecanismo apunta a **otra entrada del log**, y ésa sí encaja:
+
+```
+docs/MIGRATIONS_PENDING.md:462
+## SCRUM-475 (fase 2) · tabla nueva `email_messages` — ✅ APLICADO solo en DEV (11-ago-2026)
+   «Staging y producción están PENDIENTES»
+```
+
+Y la cadena, cerrada sin tocar producción:
+
+1. `prisma/schema.prisma:1282` declara **`model EmailMessage`**.
+2. `schemaDrift.tablasEsperadas()` deriva de **`Prisma.dmmf.datamodel`** — todos los modelos, así
+   que `email_messages` entra.
+3. Su contrato: *«SÍ: que exista cada TABLA y cada COLUMNA que el cliente Prisma va a nombrar.»*
+4. En producción: *«HAY DERIVA → no arranca»* — `schemaDrift.ts:276` hace `throw`.
+
+→ **Si producción no tiene `email_messages`, la app de hoy no arranca ahí.** Encaja con el
+síntoma: **el vigía dispara idéntico en tres ramas porque el fallo no es de rama, es de la base.**
+
+⚠️ **ESTO ES UNA HIPÓTESIS CON MECANISMO, NO UNA MEDIDA DE PRODUCCIÓN.** No he consultado
+producción y no voy a hacerlo. Y acabo de ver en este mismo fichero que **un título del log puede
+mentir sobre su propio cuerpo**, así que un log que dice «pendiente» tampoco prueba que lo esté.
+
+### Lo que lo cierra en un solo paso, y ya existe
+
+`docs/sql/deriva-prod.sql` — **468 líneas, SOLO LECTURA, sin credenciales**, generado del mismo
+schema que usa la app. Se pega entero en la consola de Postgres de producción. **0 filas = en
+sync**; cualquier fila nombra lo que falta. Comprobado que cubre los candidatos: `email_messages`
+aparece 12 veces, y las nueve columnas del lote una vez cada una.
+
+**No lo ejecuto yo** (obligación 5): es producción.
+
+---
+
+## OBLIGACIÓN 4 · NO SE HA PODIDO EJECUTAR, y por qué
+
+Reconstruir desde el log en una base desechable y arrancar la app. **No hay base desechable en
+esta máquina**, medido:
+
+```
+puertos 5432/55432 a la escucha ... ninguno
+LIBRO_PG_URL .................... NO definida
+docker .......................... no disponible
+```
+
+Y las alternativas están prohibidas: dev es **compartida** (otra sesión vio filas desaparecer entre
+dos censos suyos), y staging/producción no se tocan. **No hay control que dé.**
+
+🔴 **Así que el control que decide de este ticket queda SIN EJECUTAR, y no se sustituye por un
+razonamiento.** Lo que sí puedo afirmar sin base es lo de arriba: qué tabla espera el código y qué
+dice el log sobre ella.
+
+**Y hay un límite anterior, que importa más:** el log es un **Markdown**, no un guion. «Reconstruir
+una base desde el log» no es una operación que exista hoy — habría que traducir a mano prosa a SQL,
+y esa traducción sería mía, no del log. La pregunta de la obligación 4 **no tiene mecanismo**
+todavía; eso es un hallazgo, no una excusa.
+
+---
+
+## OBLIGACIÓN 5 · lo que apunta a un ALTER en producción
+
+Si `deriva-prod.sql` devolviera filas para `email_messages`, el arreglo sería **crear esa tabla en
+producción** — un `CREATE TABLE`, aditivo. **Queda escrito y PARO**: ni lo aplico, ni lo propongo
+como acción. El SQL ya existe en `docs/sql/scrum-475-email-messages.sql` (censado: 4 sentencias,
+todas de estructura).
+
+---
+
+## HUECOS DECLARADOS
+
+- ⛔ **Cero conexiones a cualquier base.** Ni producción, ni staging, ni la dev compartida.
+- 🔴 **La obligación 4 no se ejecutó** (arriba, con la medición de por qué).
+- 🔴 **El censo declara su propia ceguera** en `prisma/backfill/scrum205-vf-estado.sql`: 3
+  sentencias que no clasifica. Son fragmentos de un bloque `DO $guard$ … $$` —
+  `IF faltan IS NOT NULL THEN RAISE EXCEPTION`, `END IF`, `END $guard$`— porque
+  `partirSentencias` corta por `;` **también dentro** de un bloque con comillas de dólar. Es una
+  limitación del partidor oficial (SCRUM-395), no de este censo, y **no se ha tocado**.
+- **El censo NO separa «migración» de «sembrador» ni de «herramienta»**, y no debe: `seed-demo.mjs`
+  escribe datos y no es una migración. Da el hecho; la lectura la hace quien la tenga que hacer.
+- **«Consta en el log» se determina por dos mecanismos** —el nombre del fichero, y el número de
+  ticket— y se reportan por separado a propósito: que el log mencione SCRUM-650 no prueba que
+  mencione su fichero de backfill.
+- **No he medido si producción arranca hoy.** Sólo qué espera el código y qué dice el log.
+- **Ninguna cifra de este documento sale de una base**, así que ninguna es una foto que caduque —
+  salvo las que cito del log, que son fotos de agosto y llevan su fecha.
+
+---
+
+## TANDA
+
+**5.714 tests · 5.612 pass · 0 fail · 102 skipped · estado 0**, sobre el árbol ya mezclado con
+`main` (`50312d32`, que trajo SCRUM-793 mergeada).
+
+Los 102 saltados declaran su motivo y **suman**: 90 `QA_DB_TEST` + 9 `LIBRO_PG_URL` +
+1 `BOT_SUITE_TEST` + 1 `A55_DB_TEST` + 1 que no puede crear un enlace a fichero en Windows sin
+elevación. **Este ticket no añade tests**: su entrega es la medición y el censo.
+
+`node scripts/censo-migraciones.mjs` → estado **0**, con su control positivo en verde.
+
+---
+
+## LO QUE ME CAZÓ A MÍ
+
+**SCRUM-763** (*el árbol ejecutable NO es el fuente*). Ramifiqué desde `main` y **no recompilé**:
+`dist/` seguía llevando el `customerAdmin.ts` de SCRUM-793, que en `main` todavía no estaba. El
+guard lo dijo con el fichero delante —*«cualquier medición sobre este árbol mide un código que no
+es el que hay escrito»*— y tenía razón. Recompilado y vuelto a medir.
+
+Y **mi propio censo dio 0 de 43 en la primera pasada**, que es el otro modo de estar ciego. Las
+dos veces el aviso vino de la misma regla de la casa: **un cero hay que saber de cuál de los dos
+es.**
+
+---
+
+# APÉNDICE (7-sep-2026) · La cabecera corregida, la cobertura declarada, y el guard que lo impide
+
+**Medido contra:** `origin/main` = `5af8e7e9cdcd15ac90eb9b8a1473737872b6625c` · 2026-09-06T23:20:04+01:00
+
+El ticket no se cerró con la medición: se re-apuntó. Esto entrega las tres piezas.
+
+---
+
+## 🔴 EL ROJO, ANTES DE CORREGIR LA CABECERA
+
+El guard se escribió PRIMERO y se corrió contra el documento **sin tocar**. Cazó la línea:
+
+```
+✖ SCRUM-758 · 🔴 NINGUNA cabecera del log contradice a su propio cuerpo
+  · docs/MIGRATIONS_PENDING.md:575
+      título: LOTE ÚNICO · 9 columnas en 4 tablas (…) — 🔴 SIN APLICA…
+      la cabecera dice SIN APLICAR EN NINGUNA y el cuerpo tiene 2 casilla(s) MARCADA(S)
+```
+
+✅ **Y el control positivo pasó en la misma pasada**: `SCRUM-195 · 🟡 PARCIAL` tiene tres casillas
+marcadas (paso 1, en las tres bases) y tres sin marcar (paso 2, en ninguna) — su cabecera dice
+exactamente lo que dice su cuerpo, y el guard **no la acusa**. Si hubiera saltado en las dos, se
+habría roto por el otro lado.
+
+---
+
+## ① LA CABECERA, CORREGIDA
+
+`— 🔴 SIN APLICAR en ninguna de las tres` → `— 🟡 PARCIAL: ✅ APLICADO en staging y producción
+(10-ago-2026) · ⏳ pendiente en desarrollo`.
+
+Y debajo queda **por qué cambió**, para que la corrección no se lea como que siempre dijo eso: la
+línea se quedó sin actualizar cuando se marcaron las casillas, y de ella salieron un enunciado
+falso y una hipótesis equivocada sobre la caída de producción.
+
+⚠️ **Se elige `🟡 PARCIAL` y no una frase libre a propósito:** es vocabulario que el guard sabe
+juzgar. Una cabecera redactada fuera de ese vocabulario habría quedado **no medible**, o sea que
+arreglarla la habría sacado de la vigilancia — el arreglo desactivando el guard.
+
+---
+
+## ② EL LOG DECLARA SU COBERTURA
+
+Cabecera nueva del documento: **«ESTE LOG NO CUBRE LAS MIGRACIONES DE DATOS»**, con el mecanismo
+delante y la tabla de las tres ejecuciones del clasificador que lo demuestran (DDL puro `ok:true`;
+`INSERT…SELECT` RECHAZADA; `ADD COLUMN`+`UPDATE` → el `UPDATE` rechazado).
+
+Es la decisión firmada: **el log declara, el aplicador no cambia.** Un log que aparenta
+completitud es peor que uno que dice qué no ve.
+
+Y el guard exige las dos mitades: que la declaración **exista** y que **nombre el mecanismo** (la
+lista blanca). Sin el porqué es una frase bonita, y una frase bonita se borra en el primer
+refactor del documento.
+
+---
+
+## ③ EL GUARD · `tests/scrum758-cabecera-no-miente.test.mjs`
+
+**La regla sale del vocabulario del propio documento**, no de mi cabeza:
+
+| la cabecera dice | el cuerpo no puede tener |
+|---|---|
+| «SIN APLICAR en ninguna» | ni una casilla marcada |
+| «APLICADO … en las TRES» | ninguna sin marcar |
+| «PARCIAL» | todas iguales (tiene que haber de las dos) |
+
+### 🔴 EL TITULAR QUE PEDÍAS: cuántas cabeceras más mienten
+
+**UNA de DOS juzgables — y la otra 44 NO SON MEDIBLES.** El guard lo imprime en su suelo cada vez
+que corre, derivado, para que la cifra no envejezca en un comentario:
+
+```
+· entradas: 46 · con casillas (juzgables): 2 · en prosa (NO medibles por este guard): 44
+```
+
+**No las doy por buenas: las declaro no medibles.** Dicen su estado en prosa, y no hay forma de
+contrastarla sin adivinar.
+
+⚠️ **Y descarté la población que parecía fácil.** Nueve entradas tienen tablas que nombran bases,
+y un detector que las leyera subiría la población de 2 a 11 — pero da **falsos positivos**: la
+tabla de la línea 230 lista Host / Nombre de base / Recuento de facturas, que son
+**discriminadores de destino, no estados de migración**. Un guard que gritara sobre una entrada
+sana se acaba apagando. **Se queda fuera, y se dice por qué.**
+
+🔴 **Así que no he corregido ninguna otra cabecera, y no porque estén bien: porque no lo sé.**
+Decidir si las 44 se vuelven medibles —convirtiendo su estado en casillas— es tuyo.
+
+---
+
+## MUTACIONES
+
+**Tres declaradas, las tres VIVAS**, y cada una deshace la entrega por una vía distinta:
+
+| # | qué imita | cae |
+|---|---|---|
+| ① | vuelve la cabecera mentirosa, tal cual estaba | el guard de concordancia |
+| ② | el log deja de declarar su cobertura | el guard de la declaración |
+| ③ | el detector deja de ver «dice ninguna y hay marcadas» | el control positivo fabricado |
+
+③ importa por sí sola: sin ella, el verde del guard sobre el documento **ya corregido** no
+distinguiría «no miente» de «no miro».
+
+`npm run meta:mutaciones` — **tres pasadas**: **vivas 98 · mudas 0 · ciegas 0 · ficheros muertos
+0**, idénticas.
+
+---
+
+## LO QUE ME CAZÓ A MÍ (otra vez)
+
+**SCRUM-737** (*cifras sin ancla*): el censo pasó de 81 a 82 porque escribí «de las 46 entradas,
+sólo 2 exponen casillas» **en un comentario**. Es literalmente el defecto que este fichero viene a
+impedir un piso más arriba: una cifra de recuento que envejece en silencio.
+
+**No la actualicé al valor de hoy** —eso lo reproduce mañana—: tomé el primer escalón que el guard
+ofrece y **la derivé**. Ahora la cuenta el propio guard y la imprime al correr.
+
+---
+
+## HUECOS DECLARADOS
+
+- ⛔ **Cero conexiones a ninguna base.** Este encargo era documento y guard.
+- ⛔ **No he ejecutado `docs/sql/deriva-prod.sql`**: lo ejecuta el fundador.
+- ⛔ **No he tocado el aplicador ni su lista blanca** (decisión firmada), ni la ceguera del censo
+  en `scrum205-vf-estado.sql` (limitación de SCRUM-395, sigue declarada).
+- 🔴 **44 cabeceras quedan sin juzgar**, con su motivo. No están verificadas.
+- **El guard no lee las tablas por base**, y por eso su población es 2 y no 11. Está medido que
+  ese lector daría falsos positivos.
+- **La corrección de :575 la hice yo leyendo su cuerpo**, no consultando ninguna base: afirmo lo
+  que dicen sus casillas, no el estado real de staging o producción hoy.
+
+---
+
+## TANDA DEL APÉNDICE
+
+**5.734 tests · 5.632 pass · 0 fail · 102 skipped · estado 0**, sobre el árbol ya mezclado con
+`main` (`5af8e7e9`, que trajo la primera mitad de este mismo ticket ya mergeada).
+
+Los 102 saltados declaran su motivo y **suman**: 90 `QA_DB_TEST` + 9 `LIBRO_PG_URL` +
+1 `BOT_SUITE_TEST` + 1 `A55_DB_TEST` + 1 EPERM de enlace en Windows. **El apéndice añade 6 tests**,
+todos sin gate: no necesitan base.
+
+---
+
+# APÉNDICE 2 (7-sep-2026) · El suelo que impide que el guard nazca caducando
+
+**Medido contra:** `origin/main` = `0cc6a3a684f702095074bbd1ef2b7cb996f07935` · 2026-09-07T02:48:35+01:00
+
+---
+
+## 🔴 EL AGUJERO, ENSEÑADO ANTES DE CONSTRUIR
+
+El guard del apéndice anterior juzga 2 de 46, y esa proporción **sólo puede empeorar**. Provocado
+sobre texto fabricado, sin tocar el documento:
+
+```
+documento REAL             entradas:  46 · juzgables: 2 · mentirosas: 0 · veredicto: VERDE
++ ENTRADA NUEVA EN PROSA   entradas:  47 · juzgables: 2 · mentirosas: 0 · veredicto: VERDE
+```
+
+**La zona ciega crece de 44 a 45 y el guard no se entera.** Ése era el agujero.
+
+---
+
+## «NUEVA» RESPECTO A QUÉ — el filo, y por qué no hace falta contestarlo
+
+Las dos formas obvias de anclar «nueva» fallan, y por motivos distintos:
+
+| forma | por qué no |
+|---|---|
+| una **lista** de entradas conocidas | es un censo congelado el día que se escribe — justo lo que el encargo prohíbe |
+| `git blame` de la cabecera | editar una cabecera vieja la convertiría en «nueva», y un clon superficial dejaría al guard **ciego sin decirlo** |
+
+🔴 **Así que no se cuenta quién es nueva: se capa el TAMAÑO de la zona ciega.** Es el trinquete que
+la casa ya usa en SCRUM-737 —*«el censo de cifras SIN ancla no crece, y si baja hay que anotarlo»*—
+y resuelve las cinco situaciones de golpe:
+
+| qué pasa | veredicto |
+|---|---|
+| entrada NUEVA en prosa muda | el recuento sube → **🔴 ROJO** |
+| entrada NUEVA con casillas | no sube → verde |
+| entrada NUEVA en prosa **con motivo** | cae en «declaradas» → verde |
+| alguien EDITA una vieja y la deja igual de muda | no cambia nada → verde |
+| alguien EDITA una vieja y le pone casillas o motivo | el recuento **BAJA** → hay que bajar el tope, y la mejora queda **anotada** en vez de absorberse |
+
+**Ésa es la respuesta a «qué pasa cuando alguien edita una entrada vieja»:** nada, salvo que la
+mejore — y entonces se anota.
+
+---
+
+## EL ESCAPE, DERIVADO · `NO MEDIBLE: <por qué>`
+
+No es una forma inventada. Medido sobre `docs/` el 7-sep-2026: `HUECO DECLARADO` ×17,
+`NO MEDIBLE`/`no medible` ×10, `SIN MEDIR` ×3. Se toma **`NO MEDIBLE`** porque es el que **este
+mismo guard ya imprime** en su suelo: el documento y el guard hablan igual.
+
+⚠️ **Y se exige motivo detrás, no el marcador a secas.** Un `NO MEDIBLE.` pelado cuenta como muda
+—hay un caso que lo prueba—: el marcador sin motivo es un silencio con etiqueta.
+
+---
+
+## LOS CONTROLES
+
+```
+ok · 🔴 EL SUELO: la zona ciega NO CRECE — una entrada nueva en prosa muda es ROJO
+ok · 🔴 EL QUE DECIDE: prosa nueva SIN motivo crece; CON motivo, no
+ok · ✅ CONTROL POSITIVO: el detector CAZA una cabecera que miente (fabricada)
+ok · 🔴 NINGUNA cabecera del log contradice a su propio cuerpo
+ok · ✅ CONTROL POSITIVO sobre el documento REAL: la entrada PARCIAL pasa
+ok · el log DECLARA que no cubre migraciones de DATOS
+# tests 8 · pass 8 · fail 0
+```
+
+✅ **Las 44 que ya existen NO se ponen rojas**: el tope se ancló en su valor de hoy, así que el
+documento real está exactamente en el límite y en verde. Si el suelo las hubiera cazado, habría
+roto el árbol entero.
+✅ **Y los de siempre siguen**: `SCRUM-195 · 🟡 PARCIAL` sin acusarse, y `:575` corregida en verde.
+
+**El recuento sale derivado y por la misma línea**, con la cifra nueva dentro:
+
+```
+· entradas: 46 · con casillas (juzgables): 2 · en prosa (NO medibles por este guard): 44
+  · de ésas, DECLARADAS: 0 · MUDAS: 44 (tope 44)
+```
+
+---
+
+## EL TOPE, ANCLADO
+
+`TOPE_PROSA_MUDA = 44`, medido el **7-sep-2026** sobre `5af8e7e9` y **re-medido sin cambio** tras
+mezclar `0cc6a3a6`, que es el árbol sobre el que se entrega. Va anclado con fecha y sha
+porque una cifra de recuento sin ancla es el defecto de SCRUM-737 — el mismo que me cazó ayer.
+
+⛔ **Y el mensaje del rojo dice explícitamente que NO se suba el tope:** subirlo es apagar el
+aviso, no atenderlo. Las dos salidas legítimas son casillas o motivo.
+
+---
+
+## MUTACIONES
+
+**Cinco declaradas, las cinco VIVAS.** Las dos nuevas cubren **las dos direcciones** del trinquete:
+
+| # | qué imita | dirección |
+|---|---|---|
+| ④ | entra al log una entrada nueva en prosa muda | **por arriba**: la ceguera crece |
+| ⑤ | el tope se queda por encima del real (44 → 99) | **por abajo**: queda hueco para crecer sin aviso |
+
+Las dos declaran **el mismo test** (`🔴 EL SUELO: la zona ciega NO CRECE`) porque es ese único test
+el que sostiene las dos direcciones; se declaran por separado porque son dos formas distintas de
+deshacerlo y **cada una cae por su cuenta**.
+
+`npm run meta:mutaciones` — **tres pasadas**: **vivas 115 · mudas 0 · ciegas 0 · ficheros muertos
+0**, idénticas. La cifra sube de 98 a 115 por lo que trajo el merge de `main`, no por este ticket.
+
+⚠️ El campo `a` de las cinco va como **literal único, nunca concatenado**: el lector por AST
+descarta el resto en silencio, y eso ya ha mordido a tres sesiones.
+
+---
+
+## HUECOS DECLARADOS
+
+- ⛔ **Las 44 siguen sin corregir, y sigue siendo lo correcto**: no están bien — **no lo sabemos**.
+  Ponerles casillas exigiría auditar dev, staging y producción de cada una, y escribir 44 estados
+  que nadie ha medido sería fabricar la misma mentira que este ticket quitó de una.
+- **El guard sigue juzgando 2 de 46.** El suelo no amplía su alcance: impide que la ceguera
+  CREZCA. Es menos de lo que parece y más de lo que había.
+- **No se amplió el lector a las tablas por base**: ya está medido que da falsos positivos.
+- **Cero bases, cero `deriva-prod.sql`, sin tocar el aplicador ni su lista blanca.**
+
+---
+
+## TANDA DEL APÉNDICE 2
+
+**5.770 tests · 5.668 pass · 0 fail · 102 skipped · estado 0**, sobre el árbol ya mezclado con
+`main` (`0cc6a3a6`) y **recompilado tras mezclar** (la lección de SCRUM-763).
+
+Los 102 saltados suman: 90 `QA_DB_TEST` + 9 `LIBRO_PG_URL` + 1 `BOT_SUITE_TEST` +
+1 `A55_DB_TEST` + 1 EPERM. Este apéndice añade **2 tests**, los dos sin gate.

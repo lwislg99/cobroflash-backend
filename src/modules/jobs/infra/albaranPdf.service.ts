@@ -14,6 +14,10 @@ import { loadLogoBuffer } from '../../invoicing/infra/pdf/pdf.service';
 import type { AlbaranLinea, AlbaranModoValoracion, FirmaEvidencia } from '../domain/albaran.service';
 // SCRUM-300: los rótulos NO se escriben aquí. Viven en un solo sitio (regla 30) y el PDF los lee.
 import { ALBARAN_ROTULOS, etiquetaCalidad } from '../domain/albaranFirmante';
+import { formatImporteEs } from '../../../core/utils/utils'; // SCRUM-636: el sitio unico
+import { TITULO_OBSERVACIONES } from '../../invoicing/infra/pdf/pdf.service'; // SCRUM-593: un solo rotulo
+import { partirConceptoYDescripcion } from '../../invoicing/infra/pdf/conceptoLinea'; // SCRUM-603 (DOC-13)
+import { documentoEnsenaPrecios } from '../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -22,6 +26,17 @@ export async function generateAlbaranPdf(params: {
   emisionAt: Date;          // SCRUM-67: fecha de emisión del documento (Albaran.createdAt)
   version: number;
   modoValoracion: AlbaranModoValoracion;
+  // SCRUM-607 (ALB-02) · el albarán CONSERVA sus precios y este papel no los enseña. Opcional y
+  // `false` por defecto: los albaranes que ya existen salen byte a byte como salían.
+  ocultarPreciosEnDocumento?: boolean | null;
+  // SCRUM-607 (ALB-02) · de qué presupuesto sale, para el PIE. Ya viene compuesto por
+  // `referenciaPresupuesto`: aquí no se decide el texto, se imprime. `null` = el Trabajo no vino
+  // de un presupuesto, y entonces no se pinta la línea.
+  //
+  // 🔴 FUERA DEL SOBRE DE LA FIRMA, que sigue en sus cinco campos (SCRUM-452). Está en el mismo
+  // cajón que `merchant.address` o `notas`: el sello no afirma nada sobre esto, así que no puede
+  // contradecir al papel.
+  presupuestoRef?: string | null;
   // ── LO QUE **NO** VIAJA EN EL SOBRE ────────────────────────────────────────────────────────
   //
   // 🔴 SCRUM-452: aquí ya NO están `name`, `legalName` ni `taxId` del emisor, ni el nombre del
@@ -63,6 +78,9 @@ export async function generateAlbaranPdf(params: {
   lineas: AlbaranLinea[];
   totales: { base: number; cuota: number; total: number } | null; // solo en modo VALORADO
   notas?: string | null;
+  // SCRUM-593 (DOC-03) · el texto libre de CABECERA. El PIE ya existe aqui: es `notas`, y NO se
+  // duplica con otro campo. Multilinea: PDFKit respeta los saltos en `doc.text`.
+  docHeaderText?: string | null;
   signatureData?: string | null; // data-URI (solo si estado firmado)
   firmadoAt?: Date | null;
   // SCRUM-300 (C5): quién firmó y en calidad de qué. null en todo lo firmado antes de la 300 —
@@ -113,10 +131,17 @@ export async function generateAlbaranPdf(params: {
   function fmtQty(v: number) {
     return v.toLocaleString('es-ES', { maximumFractionDigits: 2 });
   }
+  // SCRUM-636: DELEGA en el sitio unico. Era la SEXTA copia del formato, y su falta de agrupado
+  // es lo que hacia que el PDF del albaran escribiera `1234,50 €` mientras su propia vista
+  // publica escribia `1.234,50 €` — DOS formatos para el MISMO papel, que es justo lo que el
+  // guard de SCRUM-468 existe para impedir. Lo cazo el al cablear la vista.
   function fmtMoney(v: number) {
-    return v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    return formatImporteEs(v) + ' €';
   }
-  const valorado = params.modoValoracion === 'VALORADO';
+  // SCRUM-607 (ALB-02) · el mismo decisor que usa la pantalla publica del cliente, no una copia:
+  // ocultar los precios en un sitio y no en el otro seria no ocultar nada, y el sitio donde no
+  // se taparan es el que el cliente abre desde el movil.
+  const valorado = documentoEnsenaPrecios(params);
 
   // ── Cabecera: logo izquierda, título derecha ─────────────────────────────
   const hY = doc.y;
@@ -180,6 +205,16 @@ export async function generateAlbaranPdf(params: {
   doc.fillColor('#000');
   doc.moveDown(1);
 
+  // ── SCRUM-593 (DOC-03) · TEXTO LIBRE bajo la cabecera ────────────────────
+  // Tras Emisor/Receptor/Obra y ANTES de la tabla: es texto del DOCUMENTO, no de una linea.
+  if (params.docHeaderText && String(params.docHeaderText).trim() !== '') {
+    // SIN RÓTULO (fundador, 2-sep-2026): en el papel va sólo el texto del profesional. El
+    // rótulo aprobado es el del FORMULARIO y vive en la pieza del dashboard.
+    doc.font('Helvetica').fillColor(BODY).text(String(params.docHeaderText), { width: W });
+    doc.fillColor('#000');
+    doc.moveDown(1);
+  }
+
   // ── Tabla de líneas ───────────────────────────────────────────────────────
   // SIN_VALORAR: concepto · cantidad · unidad (sin precios, como siempre).
   // VALORADO (SCRUM-65): + precio unitario e importe por línea. SIN desglose de
@@ -214,14 +249,52 @@ export async function generateAlbaranPdf(params: {
     doc.moveDown(0.5);
   }
   for (const l of params.lineas) {
+    // ── SCRUM-603 (DOC-13): el concepto y su DESCRIPCION, separados ────────────────────
+    // La descripcion no viaja en un campo propio: viaja DENTRO del concepto, detras de un salto
+    // de linea. Y al albaran le llega copiada del presupuesto tal cual —`jobDetailView.js:426`
+    // hace `l.concept.trim()` sobre la linea del presupuesto, que es justo la que el editor
+    // concatena cuando el profesional marca «Incluir descripcion en el PDF»—. Hasta hoy esta
+    // tabla imprimia el concepto ENTERO de una vez: la descripcion salia —el salto se respeta—
+    // pero con el MISMO tamano y peso, indistinguible de un concepto largo. Es el mismo defecto
+    // que la factura tenia y que se arreglo el 1-sep.
+    //
+    // La particion es la MISMA funcion que usan factura y presupuesto (`conceptoLinea.ts`), que
+    // ya se escribio pensando en este dia: «el dia que la tenga, la funcion ya esta y no habra
+    // que escribirla por tercera vez». Copias: siguen siendo CERO.
+    //
+    // 🔴 Y NO TOCA EL SELLADO. Medido: el hash del albaran certifica el CONTENIDO CANONICO
+    // —`numero`, `fecha`, `cliente`, `lineas`…— y NO el PDF (`albaran.service.ts:532`). Aqui
+    // solo cambia como se PINTA un texto que ya estaba: el papel imprime exactamente lo mismo
+    // que se sello, que es lo que exige SCRUM-452. Ni un byte del canonico cambia.
+    const { titulo: cTitulo, descripcion: cDesc } = partirConceptoYDescripcion(l.concepto);
+
+    // La altura se mide con el tamano de CADA parte: medir la descripcion con el del concepto
+    // dejaria la fila corta y el texto se pisaria con la de abajo.
+    doc.fontSize(10);
+    const hTitulo = doc.heightOfString(cTitulo || ' ', { width: colConceptoW - rowPad * 2 });
+    doc.fontSize(8);
+    const hDesc = cDesc ? doc.heightOfString(cDesc, { width: colConceptoW - rowPad * 2 }) : 0;
+    doc.fontSize(10);
+    // El 26 de siempre se conserva como MINIMO: sin descripcion, el salto de pagina decide
+    // exactamente igual que antes de este cambio. Solo reserva mas cuando hay algo mas que pintar.
+    const necesario = Math.max(26, hTitulo + (cDesc ? 1 + hDesc : 0) + rowPad);
+
     // Salto de página con recabecera si no cabe la fila
-    if (doc.y + 26 > doc.page.height - doc.page.margins.bottom - 90) {
+    if (doc.y + necesario > doc.page.height - doc.page.margins.bottom - 90) {
       doc.addPage();
       tableHeader();
     }
     const y = doc.y;
     doc.fontSize(10).fillColor(BODY);
-    doc.text(l.concepto, M + rowPad, y, { width: colConceptoW - rowPad * 2 });
+    doc.text(cTitulo, M + rowPad, y, { width: colConceptoW - rowPad * 2 });
+    if (cDesc) {
+      // Menor tamano y tinta suave — el MISMO gris (`MUTED`) que usan la factura y la vista
+      // previa del editor, para que el documento no le ensene al profesional otra cosa distinta
+      // de la que le prometio la pantalla.
+      doc.fontSize(8).fillColor(MUTED)
+        .text(cDesc, M + rowPad, doc.y + 1, { width: colConceptoW - rowPad * 2 });
+      doc.fontSize(10).fillColor(BODY);
+    }
     const rowH = Math.max(doc.y - y, 14);
     doc.text(fmtQty(l.cantidad), M + colConceptoW, y, { width: colCantW - rowPad, align: 'right' });
     doc.text(l.unidad || '—', M + colConceptoW + colCantW + rowPad, y, { width: colUnidadW - rowPad * 2 });
@@ -251,9 +324,12 @@ export async function generateAlbaranPdf(params: {
     doc.moveDown(1);
   }
 
-  // ── Notas ────────────────────────────────────────────────────────────────
+  // ── SCRUM-593 (DOC-03) · OBSERVACIONES ───────────────────────────────────
+  // El rotulo pasa de «Notas:» a «Observaciones»: es texto APROBADO sustituido por texto
+  // APROBADO (fundador, 2-sep-2026), no por un marcador. El CAMPO no cambia — sigue siendo
+  // `notas`, que ya existia y ya se imprimia.
   if (params.notas) {
-    doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text('Notas:');
+    doc.fontSize(10).font('Helvetica-Bold').fillColor(INK).text(TITULO_OBSERVACIONES);
     doc.font('Helvetica').fillColor(BODY).text(params.notas, { width: W });
     doc.fillColor('#000');
     doc.moveDown(1);
@@ -340,6 +416,26 @@ export async function generateAlbaranPdf(params: {
     );
     doc.fillColor('#000');
     doc.moveDown(0.5);
+  }
+
+  // ── SCRUM-607 (ALB-02) · DE QUÉ PRESUPUESTO SALE ──────────────────────────
+  //
+  // Si el albarán no lleva precios, TIENE que decir de dónde viene: sin eso el cliente recibe una
+  // lista de cosas sin nada que la ate a lo que aceptó, y el documento deja de ser comprobable.
+  // Se imprime SIEMPRE que haya presupuesto de origen —también con precios—: la trazabilidad no
+  // estorba en un papel que ya los enseña, y un pie que cambia de forma según el interruptor
+  // sería una diferencia más que explicar.
+  //
+  // 🔴 EN EL PIE Y FUERA DEL SOBRE. El sobre de la firma se queda en sus cinco campos
+  // (SCRUM-452): ampliarlo cambiaría el hash y dejaría los albaranes ya firmados con un sobre de
+  // otra forma. Esto va en el mismo cajón que `merchant.address`: el sello no afirma nada sobre
+  // ello, así que no puede contradecir al papel.
+  if (params.presupuestoRef) {
+    if (doc.y + 60 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+    doc.moveDown(0.8);
+    doc.fontSize(8).font('Helvetica').fillColor(MUTED).text(
+      String(params.presupuestoRef), M, doc.y, { width: W, align: 'center' },
+    );
   }
 
   // ── Pie legal (SCRUM-67 · texto EXACTO del brief, en AMBOS modos) ─────────

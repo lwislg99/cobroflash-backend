@@ -1,0 +1,462 @@
+# SCRUM-720 · Los 21 rótulos firmados del parte, y el control que mira lo PINTADO
+
+**Medido contra:** `origin/main` = `d9f60f7e89cc600e4d518af50ad2a977ed1876ba` · 2026-09-04T14:07:39+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-720-rotulos-del-parte`
+
+**LA VÍCTIMA: el profesional que abre el parte en producción y ve 26 corchetes.** El fundador firmó
+**21** rótulos y se aplicaron literales, con su registro en
+`docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md` (mecanismo de SCRUM-709: un fichero por
+aprobación, sin índice).
+
+**EL MECANISMO SE VACÍA, NO SE RETIRA.** Las dos constantes —`M` en la pantalla del parte y
+`MARCA_ASIGNADOS` en el selector— siguen vivas, y hay un control que cae si desaparecen: el rótulo
+que alguien añada mañana sin firmar tiene que seguir saliendo marcado.
+
+**QUEDAN DIEZ SIN FIRMAR, y eran más de los 21 que el fundador sospechaba.** Van listados con su
+literal exacto, fichero y línea en el registro de la aprobación. No se inventan, no se borran y no se
+dejan sueltos.
+
+## El arreglo de fondo: el control cambia de sitio
+
+El censo de SCRUM-402 decía **1** mientras la pantalla enseñaba **26**, y **las dos cifras eran
+correctas**: ese censo cuenta literales con la marca en el FUENTE, y la vista la factoriza en una
+constante que concatena 26 veces. Un número honesto sobre el fichero, y una pantalla llena de
+corchetes.
+
+`tests/scrum720-marcadores-en-lo-pintado.test.mjs` **ejecuta la pantalla y cuenta los marcadores en
+lo que PINTA**, en tres estados —borrador, firmado y sin líneas—, con el banco de DOM de la casa y
+sin dependencias nuevas (regla 36). Hoy pinta **1**: «Firmado. El contenido ya no se toca.». El
+trinquete no puede subir, y con el parte en borrador salen 0 — quedarse en ese estado habría dado un
+cero de mentira.
+
+**SUELO:** si la pantalla no pintara nada, contar marcadores sobre una cadena vacía daría cero y
+parecería una buena noticia. Se exige que pinte contenido real antes de contar.
+
+⚠️ **LO QUE ESE BANCO NO ALCANZA, dicho aquí y no descubierto en producción:** de los diez que
+quedan, cinco viven en caminos que `renderParte` no pinta (el pad de firma, el error al cargar, la
+propuesta del dictado) y cuatro están en otra pantalla. El trinquete **no los vigila**.
+
+## Un guard que había que reapuntar, no relajar
+
+`SCRUM-650d` exigía que **todos** los textos del selector llevaran marcador — cierto el día que se
+escribió, porque no había ni uno firmado. Ahora uno lo está. Convertirlo en «los que yo diga» habría
+sido relajarlo; se apunta al **HECHO**: sin marca sólo si **consta aprobado**, y eso no se declara
+—se comprueba contra el registro con `constaAprobado` (SCRUM-709/710, por identidad y no por
+subcadena). Queda más fuerte que antes: un texto sin marca y sin aprobación sigue cayendo.
+
+---
+
+# SCRUM-720 · la pantalla del parte no tenía UNA SOLA regla de CSS
+
+**Medido contra:** `origin/main` = `d9f60f7e89cc600e4d518af50ad2a977ed1876ba` · 2026-09-04T14:10:00+02:00
+
+---
+
+## 0 · PASO 0 · el diagnóstico, y era el SEGUNDO de los tres
+
+**La hoja SÍ se carga.** El índice la trae en `index.html:10-11` (`tokens.css` y `css/styles.css`),
+la app es un SPA de un solo índice, y en la captura se ve aplicada: **la tipografía Inter y los
+colores `--muted`/`--ink` de las etiquetas están puestos**. No es «no se carga».
+
+**El defecto es que las clases no existen.** Medido, enumerado:
+
+| vista | clases que pinta | existen en la hoja | **no existen** |
+|---|---|---|---|
+| **el parte** | 4 | **0** | 🔴 `parte-bloque`, `parte-tipo`, `parte-anadir`, `parte-quitar-linea` |
+| Trabajos (sí se ve) | 15 | 13 | `job-actions`, `job-cierre` |
+| albarán (sí se ve) | 12 | 11 | `alb-status` |
+
+**Cero de cuatro.** Y encima la hoja sólo declara `button { font-family: inherit; cursor: pointer }`
+—sin apariencia—, así que **todo botón sin clase sale como el nativo del navegador**. La pantalla
+del parte pinta **tres botones sin clase** (`[data-parte-firmar]`, `[data-dictado-ordenar]`,
+`[data-propuesta-confirmar]`) más dos con clase inexistente. Eso es exactamente lo que se vio en
+producción.
+
+> ⚠️ **Un matiz sobre lo reportado:** en el papel medido, «Firmar aquí mismo» sale como **botón
+> nativo**, no como enlace azul subrayado — la hoja neutraliza los enlaces (`a { color: inherit;
+> text-decoration: none }`) y esa pantalla no pinta ningún `<a>`. Lo digo por si el enlace azul
+> venía de otra vista, porque el arreglo es el mismo pero la coordenada no.
+
+---
+
+## 1 · El arreglo: **la hoja, y sólo la hoja**
+
+147 líneas en `public/dashboard/css/styles.css`. **Ni una línea en el JS** — la sesión 4 está
+firmando los rótulos en ese fichero y chocaríamos por un `class=`.
+
+Por eso se estiliza por `data-*` donde el marcado no lleva clase: **no es un atajo**, son los mismos
+ganchos que ya usan los tests, y son estables.
+
+**No se estrena vocabulario.** Se reutiliza el que existe: la tarjeta copia `.customers-card`, el
+botón principal copia `.btn-primary`, el secundario `.btn-secondary`, y los tokens son los de la
+casa. Un componente nuevo iría al inventario AB3 y esta pantalla no necesita ninguno.
+
+---
+
+## 2 · LA CAPTURA — campo por campo
+
+| elemento | **antes** | **después** |
+|---|---|---|
+| los dos bloques (mano de obra / materiales) | texto suelto sobre blanco, sin contorno | **tarjeta** blanca con borde, radio y sombra, como el resto de la app |
+| filas de línea | pegadas, sin separación | separador sutil, y la última sin línea colgando |
+| cabecera de la tabla | texto plano | etiqueta gris, peso 600, con su regla debajo |
+| **«Firmar aquí mismo»** | **botón gris nativo del navegador** | **botón verde de marca**, píldora, ancho completo |
+| «Ordenar en líneas» | botón nativo | botón secundario de la casa |
+| «Añadir línea» (×2) | botón nativo | botón secundario, dentro de su tarjeta |
+| **«×» de quitar línea** | botoncito nativo con borde de sistema | fantasma discreto, y en rojo al pasar por encima |
+| las 3 casillas de tipo | radios desnudos en fila | **píldoras**; la marcada, con borde de marca y fondo tinte |
+| textarea del dictado | caja del sistema | campo con el borde de la casa y anillo de foco |
+| cabecera y datos (obra, REF, horas…) | ya iban bien | **sin cambios** — su estilo en línea ya los resolvía |
+
+---
+
+## 3 · Los controles
+
+**CONTROL POSITIVO — y ejecutado, no afirmado.** Se renderizó un banco con los componentes que usan
+Trabajos, Clientes y el albarán (`customers-card`, `btn-primary`, `btn-secondary`, `btn-ghost`,
+`status-pill`, `empty-state`, `alert`, `input`, una tabla suelta y un `<button>` sin clase **fuera**
+del parte) con la hoja de **antes** y la de **ahora**:
+
+```
+casa-antes.png  sha256 51855557a535ae08…
+casa-ahora.png  sha256 51855557a535ae08…
+✅ IDÉNTICAS al byte: el bloque nuevo no toca ningún componente de la casa
+
+CONTROL POSITIVO DEL MÉTODO: el parte antes/después SÍ difiere → el método discrimina
+```
+
+**CONTROL NEGATIVO — cero estilos en línea.** `git diff` sobre `public/` añade **0** líneas con
+`style=`. El diff entero es **un fichero**: la hoja.
+
+**Y los guards de navegador**: 9/9 verdes, exit 0.
+
+---
+
+## 4 · 🔴 Lo que sigue mal y NO es de esta tanda (regla 9)
+
+**La cabecera «UNDS» se parte en cuatro líneas.** No es el CSS: es que el rótulo lleva delante
+`[PENDIENTE microcopy oficial] `, y ese texto no cabe en una columna de 64 px. Se ve igual en las
+dos capturas. **Lo cierra la sesión 4 al firmar los rótulos**, y por eso no lo toco: taparlo con CSS
+sería maquillar un texto que está a punto de desaparecer.
+
+**Y la razón de fondo, que es SCRUM-666:** ninguno de los 5.059 tests podía haber cazado esto. El
+banco de vistas no aplica CSS externo, así que un test puede afirmar que la pantalla «se pinta»
+mientras el usuario ve texto crudo. **La confirmación de este ticket es la captura, no la suite** —
+y esa es la lección, no el CSS.
+
+---
+
+# SCRUM-720b · «Partes por valorar» no abría: `opts` donde el parámetro se llama `options`
+
+**Fecha:** 4-sep-2026 · **Carril:** dashboard (router del nav) · **Gate:** sin gate, corre en `npm test`
+
+**Medido contra:** `origin/main` = `d9f60f7e89cc600e4d518af50ad2a977ed1876ba` · 2026-09-04T14:05:00+02:00
+
+## 1 · PASO 0 = PULSAR
+
+No se empezó por el código. Se sirvió `public/` en local y **se pulsó la entrada en un navegador**:
+
+```
+ReferenceError: opts is not defined
+    at renderView (app.js:326:57)
+    at HTMLButtonElement.<anonymous> (app.js:489:41)
+```
+
+`renderView(view, options = {})` — y el `case 'partes-oficina'` escribía **`opts`**.
+
+## 2 · Cuál de los cuatro cortes era: **ninguno de los cuatro**
+
+| | medido |
+| --- | --- |
+| a) el nav no dispara | ❌ **sí dispara** — el botón existe, es visible (`display: flex`), y el escuchador de `app.js:489` corre |
+| b) la vista no está registrada | ❌ **sí está** — `window.renderPartesOficinaView` es `function`, y llamada a mano pinta **1250 caracteres** y lanza su `GET /admin/partes/oficina/pendientes` |
+| c) la ruta responde 4xx/5xx | ❌ **no se llega a pedir** |
+| d) responde bien y no pinta | ❌ **tampoco** |
+
+**Revienta ENTRE el `case` y la llamada a la vista**, en un identificador que no existe. Y el
+título ya se había puesto en la línea de arriba, así que el profesional ve **el rótulo correcto y
+la pantalla en blanco**. Eso es lo que se lee como «no pasa nada».
+
+## 3 · Qué se ve al pulsar, después del arreglo
+
+```
+título    : «Partes por valorar»
+innerHTML : 1250 caracteres
+lo que se lee: «Partes por valorar — Los partes que tu equipo ya ha firmado y todavía no
+               tienen precios.»
+```
+
+**CONTROL POSITIVO, enumerado — las 17 entradas del nav pulsadas una a una, todas abren:**
+
+| entrada | HTML | entrada | HTML | entrada | HTML |
+| --- | :-: | --- | :-: | --- | :-: |
+| home | 5846 | invoices | 5713 | reports | 2244 |
+| quote-requests | 1775 | cobros | 584 | libro-registro | 273 |
+| jobs | 1932 | customers | 6327 | team | 1612 |
+| quotes-list | 5879 | products | 7796 | plans | 108 |
+| albaranes | 226 | providers | 4610 | settings | 11053 |
+| **partes-oficina** | **1250** | expenses | 3117 | | |
+
+Cero excepciones en las 17. Arreglar una no ha roto otra.
+
+## 4 · 🔒 Por qué 21/21 en verde no lo vieron
+
+`scrum652d` mide que ninguna entrada del nav lleve a una vista **sin contexto**; `scrum652f` que el
+extractor **no se quede ciego**. Las dos son ciertas, las dos siguen en verde con el defecto puesto,
+y **ninguna pulsa**.
+
+> **Se medía el mecanismo, no el hecho.** Un `data-view` que existe y un `case` que existe no son
+> una pantalla que se abre.
+
+## 5 · El guard que faltaba
+
+Que `renderView` **no lea ningún identificador fuera de su alcance**. Eso es, por construcción, la
+clase entera de este defecto: un `ReferenceError` en el router deja la pantalla en blanco sin que
+falle ningún test.
+
+**No es un tercer analizador**: es una comprobación de ámbito sobre **una sola función**, con el
+scanner de la casa, y valida contra fuente sintética donde la respuesta se sabe por construcción.
+
+## 6 · ⚠️ Y ESTE INSTRUMENTO NACIÓ ROTO
+
+La primera versión recogía las declaraciones de las funciones **hermanas**, así que `opts`
+—parámetro de `window.renderAppView = function (view, opts)`, otra función del mismo fichero— salía
+«a alcance». **Daba CERO con el fallo puesto.**
+
+No lo vi mirando la salida: **lo dijo la inyección.** Es exactamente la regla que la sesión 4 dejó
+escrita hoy —*mirar las muestras a ojo no es un control*— y por eso el guard lleva **autoprueba
+sobre fuente sintética**: un fuente sano que no puede acusar, y uno roto que tiene que cazar.
+
+## 7 · Los rojos · commit de resguardo `9a0aa971b353bbc9f09c0f152cb2230aac1bde56`
+
+| # | Qué se rompe | Qué cae |
+| :-: | --- | --- |
+| 1 | se reinyecta `opts` (el defecto real) | 1/3 · `EL ROUTER LEE UN IDENTIFICADOR QUE NO EXISTE A SU ALCANCE: app.js:330 opts` |
+| 2 | el instrumento vuelve a su versión rota | 1/3 · **la autoprueba**: `EL INSTRUMENTO NO VE EL DEFECTO` |
+| 3 | se le quitan las globales de la página | 1/3 · acusa al sano — y el guard lo caza |
+
+🔴 **Y CAE CON EL MECANISMO VIEJO:** con `opts` reinyectado, `scrum652d` sale **rc=0, 0 fallos**.
+El guard que había pasa en verde sobre el defecto que llegó a producción.
+
+## 8 · Lo que NO se ha tocado
+
+`parteDetailView.js` (sesiones 2 y 4) · `parteOficinaView.js` · el nav · `scrum652d`/`scrum652f`,
+que no se relajan · el camino de emisión.
+
+## 9 · Huecos declarados
+
+1. **El guard cubre `renderView`, no todo el árbol.** La misma clase de defecto en otra función
+   sigue sin vigilar. Medido por qué no se generaliza hoy: `tsc --allowJs --checkJs` sobre los
+   scripts del dashboard da **1086 errores, 149 de ellos «Cannot find name»** — casi todos globales
+   que se resuelven entre ficheros. Como trinquete nacería rojo y lo apagaría alguien.
+2. **El banco de vistas no puede pulsar.** `window.renderAppView = renderView` se asigna dentro de
+   `initApp()`, que corre en `DOMContentLoaded`, y `cargarDashboard` no lo dispara. Un test que
+   pulse de verdad exige plomería en `_banco-vistas.mjs`, compartido por ~30 tests. **No se toca
+   aquí.** Es lo que convertiría este guard estático en uno de comportamiento.
+
+
+---
+
+# SCRUM-720d · Repaso visual de la pantalla del parte, mirándola
+
+**Medido contra:** `origin/main` = `7ac80025df1ca0fcc12bc61bf3c1a9025ceeb772` · 2026-09-04T17:02:30+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-720d-repaso-visual`
+**Carril:** front / hoja de estilos
+
+## Qué se pedía
+
+Abrir la pantalla del parte y **mirarla**, en móvil y en escritorio: pulgar, scroll horizontal,
+los dos bloques, la firma, y los estados (vacío, cargando, error, firmado). Lo mismo con
+`#job-detail` y con «Partes por valorar». Reportar antes de arreglar; arreglar **solo lo roto**.
+
+## Cómo se miró (y por qué así)
+
+Navegador de verdad, `puppeteer-core` + `scripts/_navegador.mjs`, con **viewport real**
+(`page.setViewport`, 390 y 1280). El banco anterior usaba `--window-size` y maquetaba **siempre a
+484 px**: las «capturas de móvil» eran el diseño de escritorio recortado, y el recorte que yo creía
+ver era mío. Objetivos táctiles con `elementsFromPoint` — el método de la casa (SCRUM-542) —, no
+con la caja, que miente hacia el lado cómodo.
+
+**Suelo en el instrumento.** Tres cosas que se distinguen y antes no:
+- pila vacía = *el punto cae fuera de la ventana* → «NO SUPE MIRAR», nunca «tapado»;
+- un **ancestro** que recibe el toque (la etiqueta que envuelve su radio) **no** es tapar;
+- si se pintan menos de 5 nodos, el banco aborta: no mide, luego no aprueba.
+
+## Lo que salió
+
+**Cero scroll horizontal** en las 4 pantallas del parte, en «Partes por valorar» y en `#job-detail`,
+a 390 y a 1280. Mi impresión inicial de recorte queda **desmentida por la medición**.
+
+Objetivos táctiles bajo los 44 px de AB6 en el parte, y uno duele: **`.parte-quitar-linea`, la «×»
+que borra una línea, medía 22 px**. Con el móvil en la mano, de pie, y con una acción destructiva
+detrás. Eso sí es «no se puede usar»: **arreglado en la hoja** — 44×44 de área sin engordar el
+dibujo ni la fila. Con él, botones y píldoras del parte al mínimo de AB6.
+
+Resultado medido, borrador a 390 px: **14 → 11**. Y tras mezclar `main` —que trae los rótulos
+firmados de SCRUM-720c— se volvió a medir, porque la pantalla ya no era la misma: **no queda ni un
+solo control accionable por debajo de 44 px** en ninguno de los cuatro estados, ni a 390 ni a 1280.
+Lo que el instrumento sigue listando es el dibujo del radio (13 px; su objetivo es la píldora de 44),
+un `<label for>` de 20 px que no es una acción, y elementos que **sí miden 44** pero caen fuera de la
+ventana en el momento del sondeo: eso es «NO SUPE MIRAR», y se nombra así para no cobrarse como verde.
+
+## Lo que NO se tocó, y por qué
+
+- **Los rótulos `[PENDIENTE microcopy oficial]`**: los firma la sesión 4 en SCRUM-720c (regla 30).
+- **La cabecera «UNDS» partida en 4 líneas**: se midió si la culpa era de la columna o del rótulo
+  provisional. Con el marcador, 4 líneas y 75 px; con `Unds`, **1 línea y 64 px**. La tabla no
+  tiene defecto: se arregla sola cuando aterrice el rótulo. **No se toca.**
+- **Botones compartidos del dashboard** (`.btn-primary` 36 px, `.btn-secondary`/`.btn-ghost` 30 px,
+  `.state-error-retry` 33 px, la miga 19 px): están por debajo de 44, pero son de **todas** las
+  pantallas. Subirlos aquí sería un rediseño global disfrazado de arreglo (regla 4: una pantalla
+  por cambio). Van a ticket propio.
+
+## Un falso positivo que casi reporto como avería
+
+En `#job-detail` salieron **11 controles «TAPADOS»**, algunos de 44 px. Antes de escribirlo, el
+instrumento tuvo que decir **quién** tapaba: un `div` fijo con `z-index:300`… que era
+`#onboarding-backdrop`. Mi banco cargaba los 77 scripts del dashboard, y `onboardingView.js`, al
+contestarle mi `apiRequest` de mentira, decidió que el merchant era nuevo y plantó el asistente de
+alta sobre todo. Quitado ese único script (declarado), **los 11 desaparecen**. No había avería:
+había banco. Un «TAPADO» que no nombra al que tapa no es un hallazgo, es una sospecha.
+
+## Hallazgos abiertos (regla 37 — ninguno bloquea, ninguno es de esta zona)
+
+1. **Botones compartidos por debajo de 44 px** — `.btn-primary` 36, `.btn-secondary` 30,
+   `.btn-ghost` 30, `.state-error-retry` 33, `.detail-miga-link` 19, `a.detail-rail-enlace` 20.
+   Afecta a todo el dashboard. Gate: decisión de si AB6 aplica al escritorio o solo a táctil.
+2. **«Partes por valorar»: las filas son `div` con `cursor:pointer`** — 3 filas pulsables con el
+   dedo y el ratón, **inalcanzables con el teclado** (sin `tabindex`, sin `role`). La pantalla del
+   parte, medida igual, da **0**. Carril de la sesión 1.
+3. **Esa misma pantalla está escrita con `style=` en línea** (`fila.style.cssText`, `style="…"` en
+   el HTML): fuera de tokens y sin poder responder al ancho.
+4. **`btn-ghost` no parece pulsable**: «Facturar el trabajo» y «Cambiar» se leen como texto
+   corrido. Es la acción siguiente del trabajo y no invita a tocarla.
+5. **`#tut-help-btn` flota sobre el contenido** en móvil (48×48 fijo abajo a la derecha) y en el
+   detalle del Trabajo cae encima del bloque «Qué falta para cobrar».
+6. **Falso positivo del hook `guard-dangerous`**: bloquea `--force-device-scale-factor` porque
+   contiene `--force`. No es una operación destructiva; es una bandera de calibrado del navegador.
+
+## Cierre
+
+`npm test` **5092 tests, 0 fallos** · `guards-entrada` 4/4 · `guards-visuales` **9/9**.
+Sin dependencias nuevas. Sin `style=` en línea: el arreglo vive entero en la hoja.
+---
+
+> ⚠️ **Dos tickets distintos comparten este fichero.** El de arriba es SCRUM-720b (el router del
+> nav) y el de abajo SCRUM-720 (los rótulos del parte). Se conservan **los dos**, por número: ninguno
+> sustituye al otro y no se ha tocado una palabra de ninguno.
+
+---
+
+# SCRUM-720c · Los diez que faltaban: la pantalla del parte queda a cero
+
+**Medido contra:** `origin/main` = `119484af9d0fdf9f4beb008751a2be86d5179acd` · 2026-09-04T16:33:48+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-720c-los-diez-rotulos`
+
+El fundador firmó los **diez** que quedaban: seis tal cual y **cuatro cambiados**, con su motivo
+escrito en `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`. Con éstos, las dos
+pantallas quedan a **CERO marcadores**.
+
+**Los cuatro cambios no son de estilo, son de significado**, y por eso van al registro: «el
+contenido ya no se **puede cambiar**» en vez de «ya no se toca», porque **los precios siguen
+abiertos** tras firmar; «elige mano de obra o materiales» en vez de «dile dónde va», porque nombra
+las dos opciones reales del vocabulario cerrado (regla 27); «quién ejecuta **este trabajo**», que
+dice cuál; y «todavía no has dado de alta a nadie en tu equipo», porque un estado vacío que no dice
+el siguiente paso es media pantalla.
+
+**EL MECANISMO SE VACÍA, NO SE RETIRA.** Las dos constantes siguen vivas con su control.
+
+## El guard ya no promete más de lo que cubre
+
+Era mi propio punto débil declarado: el trinquete medía sólo lo que `renderParte` pinta, y cinco de
+los diez vivían en caminos que ese banco no alcanza —el pad de firma, el error al cargar, la
+propuesta del dictado— más cuatro en otra pantalla. **Un guard cuyo nombre promete más de lo que
+cubre es peor que uno que no existe**: quien lo lea deja de mirar donde el guard no llega.
+
+Ahora son **dos capas**, y la cobertura vive en una constante que **sale en el rojo**, no sólo en un
+comentario:
+
+1. **① Lo que se pinta** — tres estados (borrador, firmado, sin líneas). **Cero.** Un cero en un
+   solo estado no es un cero: con el parte en borrador ya salía 0 antes de firmar nada.
+2. **② El catálogo entero** — `PARTE_TEXTOS` (27 textos) y `TEXTOS_ASIGNADOS` (5). **Cero.** Esta
+   capa **sí llega a la otra pantalla**, que era la pregunta pendiente.
+
+**Y lo que sigue sin cubrirse lo dice el propio guard:** que cada texto del catálogo **llegue** a
+una pantalla. Un texto declarado y nunca pintado pasaría las dos capas; para eso está el censo de
+SCRUM-402, que mira el fuente.
+
+⚠️ **Este fichero lo comparten tres tickets** (720b del router del nav, 720 de los 21 rótulos y este
+720c). No es un error de nadie: el número se repartió a varias sesiones y el guard de SCRUM-273
+obliga a un fichero por ticket. Se conservan **los tres**, por número, sin tocar una palabra de los
+otros.
+
+---
+
+# SCRUM-720e · el terciario no parecía pulsable, y el botón de ayuda no tapaba nada
+
+**Medido contra:** `origin/main` = `ec97cd92501baf20984f585be7e985d893fc4ef7` · 2026-09-04T17:46:21+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-720e-ghost-y-ayuda`
+**Carril:** front / hoja de estilos
+
+## ① `.btn-ghost` no parecía pulsable — CONFIRMADO, y arreglado
+
+El instrumento no es el ojo: es el **despegue del papel**, el contraste del relleno del botón contra
+el fondo del sitio donde vive. Medido en `#job-detail`, a 390 y a 1280:
+
+| control | despegue del papel | borde | contraste del texto |
+|---|---|---|---|
+| `.btn-ghost` («Facturar el trabajo», «Cambiar») | **1.00** | ninguno | 4.77 |
+| `.btn-primary` («+ Nuevo albarán») | 3.30 | ninguno | — |
+| `.btn-secondary` («+ Añadir gasto») | 1.00 | **1px** | — |
+
+**1.00 no es «poco contraste»: es exactamente el mismo color que el fondo.** Sin relleno y sin
+borde, `.btn-ghost` no era un botón discreto — era texto. Y debajo de esa clase está «Facturar el
+trabajo», que es cómo cobra el profesional. 🔒 Una acción primaria que no parece una acción es una
+función que el usuario no sabe que existe.
+
+**El arreglo no estrena vocabulario: ese aspecto ya existía, en su propio `:hover`.** Se asciende a
+reposo y el hover sube un escalón. Que viviera solo en el hover era el defecto en el peor sitio
+posible — **en el móvil no hay hover**, así que allí no llegaba a verse nunca.
+
+Después: despegue **1.12**, texto **10.14** (AA holgado, antes 4.77 rozando el mínimo).
+
+**🔴 CONTROL NEGATIVO, que es el que decide:** el terciario no puede acabar pesando como el
+principal. Sigue en **1.12 frente a 3.30** — el primario se despega casi el triple. Y se distingue
+del secundario porque el suyo es relleno suave sin borde y el del secundario es borde nítido sin
+relleno. **No se toca `.btn-primary` ni `.btn-secondary`**: eso mueve todas las pantallas a la vez
+y es SCRUM-724.
+
+## ② El botón de ayuda tapando «Qué falta para cobrar» — NO SE SOSTIENE
+
+Se midió antes de moverlo, y la premisa se cae. Tres medidas:
+
+1. **Recorriendo la página entera**, en las cuatro paradas de scroll a 390 px y las tres a 1280, y
+   sondeando los cuatro vértices y el centro del botón: **0 controles tapados y 0 cifras tapadas**.
+   Nunca cae encima de nada que haya que pulsar ni de ningún importe.
+2. **La captura mentía, y era la mía.** En una captura `fullPage` un elemento `position:fixed` se
+   pinta a la altura del scroll de ese momento, así que aparece en mitad del documento cuando en la
+   pantalla está siempre abajo a la derecha. Es el mismo error de método que el recorte de
+   SCRUM-720d, en otra forma: **no se mira la captura, se recorre la página**.
+3. **La colisión que sí habría sido grave no existe.** En móvil hay estilos de una barra de
+   navegación inferior fija (`.sidebar-nav-bottom`, `bottom:0`) y el botón va a `bottom:20px` con
+   48 px de alto: sobre el papel se solapan, y habría tapado una pestaña de navegación. Se fue a
+   comprobar al `index.html` real y **esa barra no existe**: `.sidebar-nav-bottom` aparece
+   únicamente en la hoja de estilos, ningún HTML ni ningún JS la pinta.
+
+**No se toca.** Lo que decía la medición era «aquí no hay avería», y mover un botón que no estorba
+solo mueve el riesgo de sitio.
+
+## Hallazgos abiertos (regla 37 — no bloquean, no son de esta zona)
+
+1. **CSS muerto de la barra inferior**: `.sidebar-nav-bottom` y `.bottom-nav-item` se estilizan y
+   nadie los pinta. Y `.view-container` reserva **80 px** de relleno inferior en móvil «para
+   bottom-nav» — espacio en blanco al final de todas las pantallas de móvil, por una barra que no
+   está. Es medida, no impresión, y no se toca aquí porque afecta a todas las vistas.
+2. **`#tut-help-btn` se estiliza con `style.cssText` desde `tutorial.js`**, fuera de la hoja y
+   fuera de tokens. No se mueve en este ticket porque no había defecto que arreglar en él, y
+   trasladarlo sin motivo es tocar por tocar.
+
+## Cierre
+
+`npm test` **5138 tests, 0 fallos** · `guards-entrada` 4/4 · `guards-visuales` **9/9**.
+Ni un `style=` en línea: el cambio son cinco líneas de la hoja.

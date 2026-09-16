@@ -213,6 +213,63 @@ export function destinoSembrable(urlStr) {
   return { ok: true, etiqueta };
 }
 
+// ── SCRUM-746 (fase B) · EL DESTINO DESECHABLE, Y POR QUÉ NO VALE `destinoSembrable` ────────
+//
+// Un SEMBRADOR puede escribir en staging: añade filas de demo y no se lleva nada por delante.
+// Una RESTAURACIÓN no: sobrescribe la base ENTERA con otra, y eso no se deshace. Por eso su
+// allowlist es más estrecha —ni producción ni staging— y por eso son dos funciones y no una con
+// un parámetro: el día que alguien pase el flag equivocado, la diferencia es una base perdida.
+//
+// 🔴 LA REGLA NO ES NUEVA: es la que `_scratch-run.mjs` lleva ejecutando desde SCRUM-242, sacada
+// aquí para que la use TAMBIÉN quien escribe. El defecto medido en SCRUM-746 es que vivía sólo en
+// el runner: `backup-restore.mjs` tiene su propia entrada de línea de comandos y no comprobaba
+// haber llegado por él. No se escribe una segunda comprobación —dos reglas que dicen lo mismo
+// acaban diciendo cosas distintas—: se saca ésta y la llaman los dos.
+//
+// PURA a propósito: recibe la URL y devuelve veredicto. Así su rojo se ejercita sin `.env`, sin
+// entorno y sin base, que es la única forma de probar un candado que existe para NO ejecutarse.
+
+/** Los hosts donde una RESTAURACIÓN puede escribir: ni producción ni staging. */
+export function destinoDesechable(urlStr) {
+  const p = parseBDSegura(urlStr);
+  if (!p) {
+    // Ilegible o ausente ya es toda la información útil: sin la cadena, a propósito (R7).
+    return {
+      ok: false,
+      etiqueta: '(URL de BD ilegible o ausente)',
+      motivo: 'no se pudo leer el destino. «No sé a dónde escribo» NO es «escribo en un sitio seguro».',
+    };
+  }
+  // 🔴 UN HOST VACÍO NO ES UN HOST SEGURO, y esto lo cazó un test antes de que saliera de aquí.
+  // `parseBDSegura('postgresql://')` devuelve un objeto con `host: ''` —parseable pero sin
+  // destino—, y una LISTA NEGRA («ni producción ni staging») lo dejaba pasar. Es la diferencia
+  // que enseña `destinoSembrable`, que es lista BLANCA y por eso falla cerrado con lo raro: una
+  // lista negra sólo sabe decir que no a lo que le enseñaron.
+  //
+  // ⚠️ Y esa limitación se declara en vez de taparla: aquí NO se puede usar lista blanca, porque
+  // la base desechable es la que sea (un contenedor, un Postgres local, otro puerto). Lo que se
+  // exige es que HAYA destino y que no sea ninguno de los dos prohibidos.
+  if (!p.host) {
+    return {
+      ok: false,
+      etiqueta: '(URL sin host)',
+      motivo: 'la URL no nombra ningún host. «No sé a dónde escribo» NO es «escribo en un sitio seguro».',
+    };
+  }
+  const etiqueta = `${p.host}/${p.base}`;
+  if (p.host === PROD_HOST || p.host === STAGING_HOST) {
+    return {
+      ok: false,
+      etiqueta,
+      motivo: p.host === PROD_HOST
+        ? 'ESE HOST ES PRODUCCIÓN. Una restauración sobrescribe la base ENTERA: no se deshace.'
+        : 'ESE HOST ES STAGING. Una restauración lo sobrescribe entero, y staging es de todo el '
+          + 'equipo. La prueba de restauración va contra la base DESECHABLE.',
+    };
+  }
+  return { ok: true, etiqueta };
+}
+
 /**
  * ¿Es `candidateUrl` una URL segura para tratar como STAGING (nunca producción)?
  * `prodUrl` es opcional — si se pasa (p. ej. `DATABASE_URL` ya cargado), se usa como

@@ -186,3 +186,7 @@ public/invoices/
 # el `*.log` de arriba; los .png y los .yml no, y por eso el directorio llevaba tres sesiones
 # apareciendo suelto. Censo del 11-ago-2026: 35 ficheros no trackeados y no ignorados, los 35 aquí.
 .playwright-mcp/
+
+# SCRUM-716: el historial del vigía. Sólo existe si `VIGIA_ESTADO` lo pide (en CI, dentro de
+# la caché de Actions). Nunca se commitea: es estado de ejecución, no fuente.
+.vigia/
