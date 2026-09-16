@@ -1,0 +1,194 @@
+# SCRUM-688 · El motor de revisiones tenía cero llamadores — ahora tiene uno, y una puerta
+
+**Fecha:** 16-sep-2026 · **Carril:** backend (ruta + dominio) y frontend (pantalla) · **Gate:** sin gate, corre en `npm test`
+
+**Medido contra:** `origin/main` = `713a29b738966ecb524a25fffbb842e9f3d09a52` · 2026-09-16T04:49:22Z
+**Rama:** `scrum-688-crear-revision`
+
+> 🟢 **Construido con el SÍ del fundador**, y sólo lo que ese sí cubría: el POST que llama a
+> `nuevaRevisionDe`, su llamada desde `quoteRevisiones.js` sobre la versión **vigente**, y esta
+> entrada.
+> ⛔ **El texto del botón NO lo he escrito yo** (regla 30). Va con centinela y se dice abajo.
+> ⛔ **Sin ALTER, sin columna nueva, sin estado nuevo, sin dependencia.** No hizo falta ninguno.
+
+---
+
+## 1 · El control que decide, ANTES: un motor sin llamador
+
+`nuevaRevisionDe` llevaba desde SCRUM-655 construido, probado y con su propio trinquete de
+herencia (SCRUM-686). Lo que nadie había medido es si alguien lo llamaba.
+
+Censo ejecutando la app de verdad —`app.router.stack` + `getAdminMounts()`—, **no por `grep`**:
+
+| | rutas | POST | POST que cree una revisión |
+|---|---|---|---|
+| con el cableado **apagado** | 177 | 66 | **0** |
+| con el cableado puesto | 178 | 67 | `POST /admin/quotes/:id/revisiones` |
+
+Y `LLAMADORES EN src/ : 0`. «Construido ≠ alcanzable» en su forma pura: todo el trabajo de
+SCRUM-655b, 661 y 686 vigilaba un camino que ningún profesional podía recorrer.
+
+🔴 **Y el primer censo que escribí para esto estaba CIEGO**, conviene anotarlo porque casi publica
+una conclusión falsa: andaba `app._router`, que **Express 5 ya no tiene** (aquí va la 5.1.0).
+Devolvía `rutas: 0` — y el cero del árbol LIMPIO es lo único que lo delató, porque el cero de
+después se lee exactamente igual que un «✅ la mutación cae». El censo definitivo lleva control
+positivo: si con el cableado puesto no ve la ruta, aborta en vez de contar ceros.
+
+## 2 · Qué hacía el profesional mientras tanto, y por eso el tamaño del arreglo
+
+No podía editar el original —no existe ninguna ruta que edite el cuerpo de un presupuesto— así que
+hacía **uno nuevo desde cero, con otro número base**. El cliente recibía `P2004227` en vez de
+`P2004226.1`: dos documentos sin relación visible, sin histórico de qué se le enseñó, y con los 24
+campos heredables rellenados a mano otra vez.
+
+## 3 · ⛔ Lo que este camino NO es: un rodeo a `puedeEditarse`
+
+Un presupuesto firmado **sigue sin poder tocarse**. Crear una revisión no edita nada: escribe una
+fila nueva y la anterior se queda exactamente como estaba. Comprobado explícitamente, no asumido:
+
+- `quote.update` se dobla y se cuenta — la función hace **0 UPDATE**;
+- `signatureUrl` **no se hereda**: heredarla sería firmar por el cliente un documento que no ha
+  visto. La mutación que la hereda (M4) tumba el caso.
+
+## 4 · 🔴 El hueco (a) del ticket: que el `select` traiga los 24 campos de `REVISION_HEREDA`
+
+`nuevaRevisionDe` copia con `if (campo in anterior)`. Un campo clasificado que el llamador no traiga
+en su `select` **no viaja, y los tests siguen verdes**: no falla nada, el dato simplemente no está.
+
+Cerrado **en la raíz, no con una lista paralela**: el `select` se **deriva** de `REVISION_HEREDA`,
+no se escribe a mano.
+
+```ts
+const SELECT_PARA_REVISION = Object.freeze(Object.fromEntries(
+  [...REVISION_HEREDA, 'id', 'merchantId', 'quoteNumber', 'revision', 'signatureUrl']
+    .map((campo) => [campo, true]),
+)) as Record<string, true>;
+```
+
+Y el censo no lee el código: **captura el `select` real desde el doble** y lo compara campo a campo
+contra `REVISION_HEREDA`, con suelo (`REVISION_HEREDA.length >= 20`) para que una lista vacía no
+pase por «todos viajan». Dos casos separados, porque son dos afirmaciones distintas: lo que se
+**pide** y lo que **llega a la fila**.
+
+## 5 · 🔴 El hueco (b): el PDF de una revisión — **defecto vivo, medido y NO arreglado aquí**
+
+El PDF de la revisión **sale**, y sale con su contenido heredado (total y líneas, comprobado sobre
+los datos que la función escribió, no sobre un objeto inventado).
+
+**Pero no puede decir de qué versión es.**
+
+```ts
+// src/modules/invoicing/infra/pdf/pdf.service.ts
+export type ParamsPdfPresupuesto = { quoteId: number; … quoteNumber?: number | null; … }   // :157
+.text(`${QUOTE_LABEL} #${params.quoteNumber ?? params.quoteId}`, { align: 'right' });        // :749
+```
+
+`quoteNumber` es un **entero**: estructuralmente no admite el `.1`. La revisión y la original salen
+con el mismo `#2004226`. `params.number` —el que sí lleva texto— pertenece al PDF de **factura**,
+no al de presupuesto. El cliente recibiría dos papeles que se llaman igual: exactamente lo que las
+revisiones existen para evitar.
+
+⛔ **Por qué NO se arregla en este ticket, y queda dicho en vez de hecho:**
+
+1. Cambiarlo es **modificar `pdf.service.ts`**, el fichero del camino de emisión — se lee, no se
+   modifica (reglas 38/40).
+2. No es un detalle de formato: es **qué número ve el cliente** en un documento, que es microcopy
+   del fundador (reglas 30/39).
+3. El encargo acotó el alcance a «el endpoint, la llamada desde la pantalla y la entrada». Esto se
+   sale, y el sitio de decirlo es aquí.
+
+El caso queda **fijando el estado de hoy**, no saltado: `tests/scrum688-crear-revision.test.mjs`
+afirma que el PDF **no** lleva el `.1` y **sí** lleva el número base. Si alguien arregla el PDF, ese
+test cae — y su mensaje dice que hay que **girarlo**, no borrarlo.
+
+## 6 · 🔴 El rol lo puso el guard, no yo
+
+La ruta nació sin declarar rol y la red fail-closed de SCRUM-55 dio rojo con su nombre dentro:
+
+```
+🔴 RUTA /admin SIN DECLARAR ROL (1):
+   · POST /admin/quotes/:p/revisiones
+```
+
+Se arregló **el código, no el guard** (regla 41). Se elige `requireRole('admin')` —el default de
+S1— por una razón medida y no por comodidad: crear una revisión **crea un presupuesto**, y
+`POST /admin/quotes` tampoco está en `TECNICO_ALLOWED`. Lo que el Operario sí tiene sobre un
+presupuesto (verlo, su PDF, notas, accept/reject, envíos) se queda igual; esto no le quita nada,
+le cierra una puerta que hasta hoy no existía.
+
+## 7 · ⛔ El texto del botón: centinela, no microcopy mía
+
+Dos textos hacen falta y **ninguno es mío**. Van en un bloque **separado** de los seis aprobados el
+3-sep-2026, para que lo pendiente no se mezcle con lo firmado:
+
+```js
+const TEXTOS_SIN_APROBAR = {
+  crearRevision: '⛔ PENDIENTE DE MICROCOPY (SCRUM-688)',
+  errorCrear:    '⛔ PENDIENTE DE MICROCOPY (SCRUM-688)',
+};
+```
+
+El guard del ticket vigila las dos direcciones: que el centinela **siga** en los pendientes, y que
+`TEXTOS` **siga teniendo seis** entradas — un texto nuevo ahí dentro es microcopy sin aprobar
+disfrazada. Y lo mide **cargando la pantalla** con `cargarDashboard` (el banco de SCRUM-417, que
+corre los scripts del panel en orden con `window === global`), no leyendo su texto: leerlo mide el
+parecido, cargarlo mide lo que el profesional tendrá delante.
+
+## 8 · Las dos cabeceras contradictorias de `revision.ts:15-25`
+
+El fichero llevaba dos cabeceras que se desmentían. Una afirmaba que **`Quote` no tiene columna de
+revisión** — falso desde SCRUM-674. Se sustituyen por una sola que dice lo que el código hace
+**hoy**: leer por `getQuoteDetailAdmin`, crear por `crearRevisionDeQuote` + `POST
+/admin/quotes/:id/revisiones`. La falsa **se corrige diciendo que lo era**, no se borra en silencio:
+quien la escribió tenía razón el día que la escribió, y saber cuándo dejó de tenerla es la mitad
+del valor del comentario.
+
+## 9 · 🔴 Las mutaciones — siete, y cada una tumba SÓLO la suya
+
+Instrumento en `spawnSync({ shell: false })`, sin shell. Cada mutación **demuestra que entró**
+(comparación de contenido; si no cambia, aborta) y el fuente se restaura **byte a byte**
+(`Buffer.compare === 0`) comprobado tras cada pasada.
+
+| | mutación | qué cae |
+|---|---|---|
+| M1 | la ruta no se registra | censo: 178→177 rutas, 67→**66** POST, **0** de revisión |
+| M2 | el `select` deja de derivarse de `REVISION_HEREDA` | el censo de campos heredables |
+| M3 | `siguiente` suma uno a la abierta, no al grupo | el número sale del GRUPO ENTERO |
+| M4 | la revisión hereda la FIRMA | NO escribe en la versión anterior |
+| M5 | el botón desaparece de la pantalla | el botón apunta a la VIGENTE |
+| M6 | se escribe microcopy propia en vez del centinela | el texto sigue MARCADO |
+| M7 | la ruta pierde `requireRole('admin')` | la ruta exige rol `admin` |
+
+⚠️ **Tres defectos del instrumento, encontrados y arreglados antes de fiarme de una sola cifra.**
+Se anotan porque los tres producían un verde o un «cae» que no significaba nada:
+
+1. **El censo ciego de `app._router`** (§1). Daba «✅ CAE» sobre una medición vacía.
+2. **Restaurar el fuente no restaura `dist/`**, y los tests corren contra `dist/`. M5 y M6 —que
+   sólo tocan un `.js` del panel— tumbaban un test de backend: seguían corriendo contra el `dist/`
+   mutado de M4. Ahora se reconstruye tras restaurar.
+3. **M5 anclada en `data-revision-crear=`** dejaba vivo el selector `[data-revision-crear]` del
+   cableado: la mutación entraba y no apagaba nada. El ancla es sin el `=`.
+
+Y una precondición barata **antes** de gastar un `tsc` por mutación: cada `espera` tiene que ser
+substring de un nombre de test real. Cuesta un `readFileSync`; no comprobarlo cuesta una pasada
+entera que declara «no cae» porque el nombre no casa.
+
+## 10 · ✅ Controles negativos
+
+- `tests/scrum55-admin-fail-closed.test.mjs` — la red /admin, **en verde con la ruta nueva dentro**.
+- `tests/scrum263-sin-lineas-409.test.mjs`, `tests/scrum286-censo-nuevo-presupuesto.test.mjs`,
+  `tests/scrum127-paywall-bloquea.test.mjs`, `tests/scrum600-un-solo-front-documento.test.mjs`,
+  `tests/tenancy-permisos.test.mjs` — crear un presupuesto normal sigue funcionando igual.
+- `vistaDeRevisiones` sigue dando la misma vista: **ver** revisiones no ha cambiado.
+
+## 11 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `src/modules/system/quoteAdmin.ts` | `crearRevisionDeQuote` + `SELECT_PARA_REVISION` derivado + `RevisionNoCreable` |
+| `src/modules/system/app/routes/quotesAdmin.routes.ts` | `POST /:id/revisiones` con `requireRole('admin')` |
+| `src/modules/quotes/domain/revision.ts` | las dos cabeceras contradictorias → una, con lo que es falso dicho |
+| `public/dashboard/js/quoteRevisiones.js` | botón sobre la vigente, cableado del POST, centinela de microcopy |
+| `tests/scrum688-crear-revision.test.mjs` | 13 casos (suelo, censo, el que decide, PDF, rol, microcopy, botón) |
+
+**`npm run guards:entrada`: 4 guards, 26 tests, 0 fallos.**
