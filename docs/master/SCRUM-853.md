@@ -253,3 +253,9 @@ cuenta «no sé» como cero, la ventana que deja de filtrar, y las saltadas cont
 
 `scripts/puerta-claude.mjs` · `.github/workflows/claude.yml` ·
 `tests/scrum853d-cortacircuitos.test.mjs` · `docs/master/SCRUM-853.md`
+
+---
+
+# APÉNDICE EXPERIMENTO B — prueba de merge=union (rama desechable, se borra)
+
+Línea que solo escribe la rama B.
