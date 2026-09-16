@@ -91,7 +91,7 @@ function banco({ email = null, telefono = null, wa = 'sent', autoEmail = true } 
   const doble = dobleDeLaBase({
     'charge.findFirst': () => ({ ...cobro }),
     'charge.findUnique': () => ({ ...cobro }),
-    'charge.findMany': () => [{ id: chargeId, status: cobro.status }],
+    'charge.findMany': (args) => (!args?.where?.status || args.where.status === cobro.status ? [{ id: chargeId, status: cobro.status }] : []),
     'charge.update': (args) => { Object.assign(cobro, args?.data ?? {}, { events: undefined, reconciliations: undefined }); return { ...cobro }; },
     'customer.findUnique': () => ({ ...customer }),
     'merchant.findUnique': () => ({ ...merchant }),
@@ -104,8 +104,8 @@ function banco({ email = null, telefono = null, wa = 'sent', autoEmail = true } 
     'quote.findMany': (args) => (args?.select?.Invoice
       ? [{ id: quoteId, charge: { id: chargeId, status: cobro.status, method: cobro.method, amount: cobro.amount, currency: 'EUR' }, Invoice: [{ ...factura }] }]
       : [{ ...presupuesto }]),
-    'whatsappMessage.findMany': (args) => filtraWa(args),
-    'whatsappMessage.findFirst': (args) => filtraWa(args)[0] ?? null,
+    'whatsAppMessage.findMany': (args) => filtraWa(args),
+    'whatsAppMessage.findFirst': (args) => filtraWa(args)[0] ?? null,
   });
   const fPrisma = rutaDe('dist/core/db/prisma.js');
   requiere.cache[fPrisma] = { id: fPrisma, filename: fPrisma, loaded: true, exports: { prisma: doble } };

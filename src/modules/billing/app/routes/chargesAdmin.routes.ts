@@ -10,6 +10,13 @@ import { BASE_URL } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
 import { resolverFechaDeCobro } from '../../domain/fechaDeCobro'; // SCRUM-397
+import { envioDelDocumento } from '../../domain/envioDelDocumento'; // SCRUM-885
+import { tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp';
+
+// SCRUM-885 · cuánto se espera, como mucho, a que el WhatsApp de la confirmación deje su fila.
+// psp lo lanza sin `await`, así que al volver de psp puede no haber vuelto aún de Meta.
+const ESPERA_WHATSAPP_MS = 3_000;
+const PASO_ESPERA_MS = 250;
 
 const router = Router();
 
@@ -21,7 +28,7 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     // Multi-tenant: el cobro debe ser del merchant de la sesión
     const charge = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId },
-      include: { merchant: true, customer: { select: { name: true } } },
+      include: { merchant: true, customer: { select: { name: true, email: true, phone: true, mobile: true } } },
     });
     if (!charge) return res.status(404).json({ error: 'not_found' });
     if (charge.status === 'paid') return res.json({ ok: true, status: 'already_paid' });
@@ -56,11 +63,37 @@ router.post('/:id/confirm-bizum', async (req, res) => {
       ts: fecha.fecha.toISOString(),
     }, { timeout: 10_000, headers: internalHeaders() });
 
-    return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual', paid_at: fecha.fecha.toISOString() });
+    // SCRUM-885 · si el documento no ha salido ni por email ni por WhatsApp, el profesional tiene
+    // que enterarse AQUÍ, que es donde está mirando. Sólo se leen hechos ya guardados: no se
+    // envía nada. Qué se pinta lo decide la regla del dashboard (`avisoDocumentoSinEnviar`).
+    const envioDocumento = await envioDelDocumentoDelCobro(charge.merchantId, id, charge.customer);
+
+    return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual', paid_at: fecha.fecha.toISOString(), envioDocumento });
   } catch (err: any) {
     console.error('[POST /admin/charges/:id/confirm-bizum]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
+
+async function envioDelDocumentoDelCobro(merchantId: number, chargeId: number, customer: { email: string | null; phone: string | null; mobile: string | null } | null) {
+  const leerEstados = async () =>
+    (await prisma.whatsAppMessage.findMany({
+      where: { merchantId, relatedType: 'charge', relatedId: chargeId }, // regla 2
+      select: { status: true },
+    })).map((f) => f.status);
+
+  let estados = await leerEstados();
+  // Sólo merece la pena esperar si el aviso depende de ello: cliente sin email y con número.
+  const dependeDelWhatsapp = !customer?.email && tieneNumeroDeContacto(customer);
+  for (let t = 0; dependeDelWhatsapp && estados.length === 0 && t < ESPERA_WHATSAPP_MS; t += PASO_ESPERA_MS) {
+    await new Promise((r) => setTimeout(r, PASO_ESPERA_MS));
+    estados = await leerEstados();
+  }
+  return envioDelDocumento({
+    clienteEmail: customer?.email,
+    estadosWhatsapp: estados,
+    enCurso: dependeDelWhatsapp && estados.length === 0,
+  });
+}
 
 export default router;
