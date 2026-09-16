@@ -50,7 +50,10 @@ cualquier cambio de infraestructura de producción.
 - Enlace directo y clicable a cada PR, dentro de un bloque de código.
 - En cada PR, si la rama se borra o no.
 - Jira mirado CADA turno, y dicho explícitamente aunque no se pueda cerrar nada.
-- Prompt para TODAS las sesiones cada turno, incluidas las que no tienen novedad.
+- Prompt SOLO para las sesiones que han contestado ese turno; las que siguen ejecutando no
+  reciben nada (lo retiró el 15-sep-2026; ver `orquestador.md` §10.6).
+- Cada prompt dice ARRIBA, en claro, si va a una **conversación nueva** (y en qué carpeta) o a
+  la **misma conversación** (16-sep-2026: «abre una sesión nueva y mándaselo, más claro»).
 - Todo lo que vaya a una sesión, dentro del bloque de código y COMPLETO: sin
   huecos que él tenga que rellenar.
 - Los pasos manuales, de UNO EN UNO. Nunca una lista.
