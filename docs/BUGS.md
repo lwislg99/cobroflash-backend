@@ -574,6 +574,21 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-TMPDIR · 24.740 directorios temporales de la casa abandonados en `TMPDIR` (16-sep-2026, hallazgo colateral de SCRUM-858)
+- **Medido:** `TMPDIR` (`C:Users…AppDataLocalTemp`) tiene **55.229 entradas**, de las que
+  **24.740** llevan prefijo de esta casa: `yaqu*` 15.679 · `scrum723` 3.675 · `scrum385` 1.827 ·
+  `scrum778` 1.230 · `scrum670` 880 · `scrum727` 709 · `scrum846` 524 · `scrum861` 120 · `scrum813` 54.
+  Son `mkdtempSync` que sus tests no borran en un `finally`.
+- **⚠️ NO ralentiza la tanda, y está medido** — se comprobó antes de acusar: el coste de
+  `mkdtempSync` de 0 a 55.000 entradas hermanas sube **×1,3** (0,172 → 0,226 ms). Quien lo lea
+  buscando la causa de SCRUM-858, no es ésta.
+- **Por qué se registra igual:** crece sin techo en la máquina que comparten ~26 worktrees, y un
+  día llena el disco o el perfil. Los prefijos dicen exactamente qué tests limpiar.
+- **⛔ No se borra desde una sesión:** ese directorio lo comparten todas, y puede haber una
+  usándolo en este momento. El barrido lo hace el fundador, o un script con su OK.
+- **Done cuando:** los tests con esos prefijos borren su temporal en un `finally` (el patrón ya
+  está en la casa, p. ej. `scrum835`), y el barrido de lo ya acumulado se haga una vez.
+
 ### [ ] P3-FLAKY-754 · `scrum754b` (el `fs.watch` mudo) cae en TANDA COMPLETA y no se reproduce suelto (15-sep-2026, hallazgo colateral de SCRUM-850)
 - **Hermano del P3-FLAKY-451 de aquí abajo**, y se registra aparte porque es OTRO test y otro
   mecanismo. Se reporta, no se arregla: es de otro carril (regla 37) y **no se toca un test para

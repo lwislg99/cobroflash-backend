@@ -12,17 +12,24 @@
 // dato que puede contradecir a los otros dos —dos filas marcadas vigentes, o ninguna— y esta casa
 // ya sabe cómo acaba eso.
 //
-// ── ⚠️ CADUCADO EL 2-sep-2026 (FASE B) · YA TIENE LLAMADOR ───────────────────────────────
-// Lo de abajo se conserva porque explica POR QUÉ estuvo sin cable, y eso sigue siendo cierto de
-// aquel día. Lo que ya NO es cierto es la premisa: `Quote` SÍ tiene campo de revisión desde
-// SCRUM-674, y `getQuoteDetailAdmin` consume este módulo. El bloque «FASE B» de más abajo lo
-// dice con lo que se midió.
-// ── ⚠️ ESTE MÓDULO NO LO LLAMA NADIE TODAVÍA, Y ES DELIBERADO ─────────────────────────────
-// `Quote` tiene `quoteNumber Int?` y NO tiene campo de revisión (medido). Añadirlo es tocar
-// `prisma/schema.prisma`, que es del fundador: el diff va PREPARADO en `docs/master/SCRUM-655.md`
-// y no se aplica aquí. Mismo trato que `retencionIrpf.ts` (A2) y `recargoEquivalencia.ts` (A3):
-// el mecanismo construido y probado, esperando su campo. Cuando exista, se enchufa y no hay que
-// volver a decidir nada de esto.
+// ── QUIÉN LLAMA A ESTE MÓDULO, HOY (15-sep-2026, SCRUM-688) ──────────────────────────────
+//
+// Las dos mitades están cableadas y `Quote` tiene su columna `revision` desde SCRUM-674:
+//
+//   · LEER  — `getQuoteDetailAdmin` (`system/quoteAdmin.ts`) usa `vistaDeRevisiones` y
+//     `numeroConRevision` para contestar qué versiones hay y cuál está vigente.
+//   · CREAR — `crearRevisionDeQuote` (mismo fichero) usa `nuevaRevisionDe` y `vigenteUnicaDe`,
+//     y lo alcanza `POST /admin/quotes/:id/revisiones` desde la pantalla de revisiones.
+//
+// 🔴 AQUÍ HABÍA DOS CABECERAS QUE SE CONTRADECÍAN, y conviene que conste por qué se corrigen en
+// vez de borrarse. Una decía «CADUCADO… YA TIENE LLAMADOR» y la de debajo, intacta, «ESTE MÓDULO
+// NO LO LLAMA NADIE TODAVÍA, Y ES DELIBERADO» — afirmando además que `Quote` NO tiene campo de
+// revisión, que era falso desde SCRUM-674. Dos afirmaciones opuestas en el mismo fichero, y la
+// segunda describía un árbol que ya no existía.
+//
+// Quien leyera la de abajo habría dado por supuesto que este motor sigue esperando su columna, y
+// habría vuelto a «prepararlo» en vez de usarlo. Un comentario que afirma algo falso no es ruido:
+// se lee como medición, y manda a trabajar en la dirección equivocada.
 
 /** Un presupuesto, reducido a lo que hace falta para hablar de revisiones. */
 export interface RevisionDePresupuesto {

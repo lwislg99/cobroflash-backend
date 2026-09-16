@@ -102,3 +102,116 @@ de pasar desapercibida.
 * `scripts/_cobertura-visual.mjs` — el censo, con el criterio de elección escrito dentro.
 * `tests/scrum628-cobertura-visual-del-dashboard.test.mjs` — la población declarada, el trinquete,
   la vista cubierta y sus controles.
+
+---
+
+# APÉNDICE · 16-sep-2026 · SCRUM-628b · FASE b: cinco vistas más, y el censo que no veía su propia cobertura
+
+**Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `99ea4b5e370b103738714b584d70f570d3a60c02` · 2026-09-16T06:37:11+01:00
+**Tanda:** 6943 tests, 6833 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 829 ficheros · exit 0 — con tope duro, medida DESPUÉS del último cambio y DESPUÉS de recompilar el merge.
+
+> **Un censo que no reconoce la cobertura que se le acaba de añadir no mide la cobertura.**
+
+## 🔴 Lo primero que apareció: el 20 de la fase a estaba INFLADO
+
+Al medir esta fase, `laQueMasPesaSinCubrir()` seguía señalando **`jobDetailView.js`** — la vista
+que la fase a acababa de cubrir.
+
+El defecto estaba en mi propio censo: contaba una vista como cubierta sólo si un `guard:*`
+**nombraba** su fichero, y **no veía los tests de la tanda que la MONTAN** con `pintarVista`. Así
+que su trinquete se habría quedado clavado en 20 para siempre, **pareciendo estable**.
+
+Arreglado el censo para mirar también los tests: **las sin cubrir no eran 20, eran 11.** Había
+**nueve vistas que ya ejercitaban tests anteriores** y nadie las estaba contando.
+
+⚠️ **Es lo contrario del matiz de la fase a, y por eso se dice igual de claro:** allí el número
+sonaba mejor de lo que era; aquí sonaba **peor**. Las dos veces el problema era la unidad de medida.
+
+## 🔴 Y el criterio nuevo se pasó de generoso — medido y descartado
+
+La primera versión del arreglo contaba cualquier literal `renderX` dentro de un fichero que
+importara `pintarVista`. Con eso las sin cubrir bajaban de 11 a **2**, y ese 2 no era cobertura:
+
+```
+renders por llamada LITERAL a pintarVista              : 14
+renders por literal en fichero con pintarVista (ancho) : 28
+de los 14 de diferencia, se montaban de verdad         : 5   ← los de esta fase
+los otros 9                                            : sólo se nombraban
+```
+
+**Es el defecto de SCRUM-511 dentro de mi propio instrumento:** contar menciones en vez de usos. Se
+vuelve al criterio **estricto** —la llamada `pintarVista(x, 'renderXView')`— y **el precio de la
+precisión lo paga el test**: cada vista se monta con su nombre escrito en la llamada. Más verboso
+y comprobable.
+
+## Las cinco de esta fase, por el criterio ya derivado
+
+No se eligen por intuición: son las cinco mayores de las 11 que quedaban, por
+`laQueMasPesaSinCubrir()` en cascada. **Cuántas** es decisión de coste —todas montan y el coste
+marginal es un test más—; **cuáles**, no.
+
+| vista | líneas |
+| --- | --- |
+| `homeView.js` | 1.381 |
+| `quotesDetailView.js` | 1.342 |
+| `productsView.js` | 1.176 |
+| `jobsView.js` | 982 |
+| `invoicesView.js` | 919 |
+
+## El trinquete BAJA, y está comprobado ejecutado
+
+```
+antes (fase a, declarado) : 20 sin cubrir   ← inflado por el censo ciego
+tras arreglar el censo    : 11 sin cubrir
+tras cubrir estas cinco   :  6 sin cubrir
+```
+
+Y el verde lo dice solo:
+
+```
+población: 20 guards visuales · 27 vistas del dashboard · 21 nombradas por algún guard · 6 SIN CUBRIR
+```
+
+Quedan seis, por orden: `expensesView` (576), `providersView` (475), `libroRegistroView` (360),
+`plansView` (267), `parteOficinaView` (228), `quoteRequestsView` (161).
+
+## Verificado en rojo — las cinco, una a una
+
+Se rompe cada vista de verdad (se renombra su `render`), comprobando que **la mutación ENTRÓ** y
+restaurando **byte a byte**:
+
+```
+homeView.js            mutación ENTRÓ: sí · cae «🔴 homeView.js SE MONTA y pinta su contenedor»
+quotesDetailView.js    mutación ENTRÓ: sí · cae «🔴 quotesDetailView.js SE MONTA…»
+productsView.js        mutación ENTRÓ: sí · cae «🔴 productsView.js SE MONTA…»
+jobsView.js            mutación ENTRÓ: sí · cae «🔴 jobsView.js SE MONTA…»
+invoicesView.js        mutación ENTRÓ: sí · cae «🔴 invoicesView.js SE MONTA…»
+   ✅ positivo (banco sano) sigue pasando: SÍ  ×5
+   restaurado byte a byte: ✅  ×5
+```
+
+**El positivo DISCRIMINA en las cinco:** el test de las vistas ya vigiladas siguió pasando en cada
+pasada, así que el rojo era de la vista rota y no del banco. Sin eso, «la vista está mal» y «el
+banco no monta nada» darían el mismo rojo.
+
+⚠️ **Por identidad, no por `includes`:** los asertos cuentan **nodos del árbol pintado**. Es la
+lección de `btn-primary`, que casaba también `btn-primary btn-sm`.
+
+**Y el censo ve la regresión:** al romper una vista caen también el trinquete y el test de
+«cubiertas que vuelven a pendientes» — la cobertura perdida se nota, no se escapa.
+
+## Un cambio de diseño en el trinquete
+
+El test que ataba la elección a un NOMBRE fijo (`jobDetailView.js`) **cayó en cuanto esa vista
+quedó cubierta** — hizo su trabajo. Pero anclar al nombre de la candidata obliga a reescribirlo
+cada fase, que es el defecto de SCRUM-663: *un valor que alguien tiene que actualizar a mano.*
+Ahora se ata la propiedad que no caduca — **lo cubierto sigue cubierto** — y cuál es la siguiente
+candidata va al diagnóstico, no a un aserto.
+
+## Lo que NO cubre
+
+* **Seis vistas siguen sin cubrir**, nombradas arriba y con su orden ya derivado.
+* Las vistas se ejercitan en el **banco (JSDOM)**: comprueban que **montan y pintan**, no contraste
+  ni tamaño táctil ni CLS — eso son los `guard:*` de navegador, fuera de la tanda.
+* **`src/` y `public/` intactos:** las vistas se leen, no se tocan.

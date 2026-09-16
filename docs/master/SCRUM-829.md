@@ -287,8 +287,15 @@ se aplicaron con su lector y su forma de mutar, pero la pasada completa la hace 
 `main` lo tenía en verde en su último run terminado: los 4 ciegos de `scrum850`/`scrum850b` los cerró
 el #1294, y el #1299 (la ③b de SCRUM-836e) entró con `vivas 179 · mudas 0 · ciegas 0`. Desde entonces
 `main` trajo guards nuevos y su run sobre `3e5f58db` seguía en curso al escribir esto. Lo esperado en el
-PR de esta rama es **`vivas 197 · mudas 0 · ciegas 0`**, con las dos líneas de `scrum829b` VIVAS; un
-ciego o un mudo que no sea de este test sería de `main`, y se diría.
+PR de esta rama era **`vivas 197 · mudas 0 · ciegas 0`**.
+
+> 🔴 **CORRECCIÓN (16-sep-2026, SCRUM-868).** Esa cifra NO fue la real: el job del meta-guard del
+> PR #1304 dio **`vivas 196 · mudas 1 · ciegas 0`** (job `104450607217`, 15-sep-2026). Las dos
+> líneas de `scrum829b` salieron **VIVAS**, que era lo que este ticket tenía que demostrar; la muda
+> es de `scrum859` y **ya estaba en `main` antes de este merge** —su run sobre `3e5f58db` dio
+> `vivas 194 · mudas 1 · ciegas 0`—, con ticket propio: **SCRUM-866**, carril de Javier. El párrafo
+> de arriba decía que un mudo ajeno «se diría»: esto es decirlo, y con la cifra corregida en vez de
+> dejar la predicción como si hubiera acertado.
 
 ## 4 · Un vecino que lo acusó, y por qué se DECLARA
 

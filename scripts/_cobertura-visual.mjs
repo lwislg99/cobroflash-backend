@@ -46,13 +46,54 @@ export function ficherosDeGuards(raiz) {
   return [...fuera].sort();
 }
 
+/** Los `render*` que DECLARA una vista. Es lo que un test le pide a `pintarVista`. */
+export function rendersDe(codigoDeLaVista) {
+  return [...new Set((codigoDeLaVista.match(/function\s+(render[A-Za-z0-9_]+)/g) || [])
+    .map((m) => m.replace(/function\s+/, '')))];
+}
+
+/**
+ * Los `render*` que EJERCITA algún test de la tanda: la llamada `pintarVista(x, 'renderXView')`.
+ *
+ * 🔴 SE EXIGE LA LLAMADA LITERAL, y la alternativa se probó y se descartó MIDIENDO. El criterio
+ * ancho —cualquier literal `renderX` dentro de un fichero que importe `pintarVista`— parecía más
+ * justo con los tests que recorren una tabla, pero medido da **28 renders frente a 14**, y de los
+ * 14 de diferencia **sólo 5 se montaban de verdad**: los otros 9 se nombraban y nada más.
+ *
+ *   >>> Con el criterio ancho las «sin cubrir» pasaban de 11 a 2, y ese 2 no era cobertura: era
+ *   >>> el censo contando menciones. Es el defecto de SCRUM-511 en mi propio instrumento. <<<
+ *
+ * Así que el precio de la precisión lo paga el TEST, no el censo: un test que quiera que su vista
+ * cuente, la monta con el nombre escrito en la llamada. Es más verboso y es comprobable.
+ */
+export function rendersEjercitados(raiz) {
+  const dir = path.join(raiz, 'tests');
+  if (!fs.existsSync(dir)) return new Set();
+  const fuera = new Set();
+  for (const f of fs.readdirSync(dir)) {
+    if (!f.endsWith('.mjs')) continue;
+    const cod = fs.readFileSync(path.join(dir, f), 'utf8');
+    for (const m of cod.matchAll(/pintarVista\s*\([^,]+,\s*['"`](render[A-Za-z0-9_]+)['"`]/g)) fuera.add(m[1]);
+  }
+  return fuera;
+}
+
 /**
  * La cobertura, con su población declarada.
  *
- * ⚠️ QUÉ CUENTA COMO CUBIERTA, dicho para que el número se pueda discutir: que **algún guard
- * nombre el fichero de la vista**. Es deliberadamente generoso — nombrarla no es ejercitarla—, y
- * se elige así a propósito: un criterio generoso que aun así deja 20 fuera es un resultado más
- * difícil de discutir que uno estricto. Si mañana se afina, el número sólo puede EMPEORAR.
+ * ⚠️ QUÉ CUENTA COMO CUBIERTA, dicho para que el número se pueda discutir. Dos vías:
+ *
+ *   ① un `guard:*` NOMBRA el fichero de la vista — generoso a propósito: nombrarla no es
+ *     ejercitarla, pero un criterio generoso que aun así deja muchas fuera es más difícil de
+ *     discutir que uno estricto;
+ *   ② un test de la tanda la EJERCITA con `pintarVista(banco, 'renderXView')` — que es más
+ *     exigente que ①: ahí la vista se monta de verdad.
+ *
+ * 🔴 LA VÍA ② FALTABA, y el defecto era visible en el propio resultado de SCRUM-628: aquella
+ * entrega cubrió `jobDetailView.js` con un test de la tanda y **el censo la seguía contando como
+ * sin cubrir**, porque sólo miraba `scripts/guard-*.mjs`. Un censo que no ve la cobertura que se
+ * acaba de añadir mide otra cosa — y su trinquete se habría quedado clavado en 20 para siempre,
+ * pareciendo estable.
  */
 export function cobertura(raiz) {
   const vistas = vistasDelDashboard(raiz);
@@ -60,13 +101,22 @@ export function cobertura(raiz) {
   const codigo = guards.map((f) => fs.readFileSync(path.join(raiz, f), 'utf8')).join('\n');
   const indice = path.join(raiz, 'public', 'dashboard', 'index.html');
   const html = fs.existsSync(indice) ? fs.readFileSync(indice, 'utf8') : '';
+  const ejercitados = rendersEjercitados(raiz);
 
-  const filas = vistas.map((v) => ({
-    vista: v,
-    lineas: fs.readFileSync(path.join(raiz, 'public', 'dashboard', 'js', v), 'utf8').split('\n').length,
-    enIndice: html.includes(v),
-    cubierta: codigo.includes(v),
-  }));
+  const filas = vistas.map((v) => {
+    const cod = fs.readFileSync(path.join(raiz, 'public', 'dashboard', 'js', v), 'utf8');
+    const porGuard = codigo.includes(v);
+    // El render se deriva de la PROPIA vista, no se adivina por el nombre del fichero.
+    const porTest = rendersDe(cod).some((r) => ejercitados.has(r));
+    return {
+      vista: v,
+      lineas: cod.split('\n').length,
+      enIndice: html.includes(v),
+      porGuard,
+      porTest,
+      cubierta: porGuard || porTest,
+    };
+  });
 
   return {
     guards: guards.length,

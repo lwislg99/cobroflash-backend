@@ -121,3 +121,135 @@ de ampliar su lista de ficheros sin probar.
 
 `.github/workflows/avisador-rojo.yml` · `tests/scrum853-lecturas-que-fallan-cerrado.test.mjs` ·
 `docs/master/SCRUM-853.md`
+
+---
+
+# SCRUM-853c · APÉNDICE — el vigía tampoco se cree un error, y un «no lo sé» no es un «no hay»
+
+**Fecha:** 16-sep-2026 · **Carril:** automatización (Sesión 5) · **Gate:** sin gate
+**Medido contra:** `origin/main` = `77ce9d1e86d6ffa921b1c92561ec2d7994f8e5eb` · 2026-09-16T06:42:56Z
+**Rama:** `scrum-853c-fecha-del-vigia`
+**Tanda:** 853c 9/9 · vigía 64/64 · 839c 10/10 · 824 9/9 · guards que leen `.github` 321/321 · mutaciones 3 de 3 vivas
+
+## El defecto
+
+Quedaba pendiente la lectura `FECHA` del vigía, con el patrón de SCRUM-853. Al medir las cinco lecturas
+del workflow, una por una y contra la API real, salieron **dos formas distintas de fallar** y tres
+lecturas rotas, no una:
+
+| lectura | orden | en un error | ¿fallaba abierta? |
+|---|---|---|---|
+| EST | `gh pr view` | stdout VACÍO → `UNKNOWN` | no: el CLI escribe por stderr |
+| SHA | `gh pr view` | stdout VACÍO → vacío | no, por lo mismo |
+| FECHA | `gh api` | el CUERPO del error | 🔴 sí → `MINUTOS=NaN` |
+| NUM | `gh issue list` | vacío → «no hay issue» | 🔴 sí → el publicador **crearía otro issue** |
+| ANTES | `gh issue view` + `sed` | vacío → «memoria vacía» | 🔴 sí → **todo atasco saldría como nuevo** |
+
+`gh api` escribe el cuerpo del error por stdout; los subcomandos del CLI (`pr`, `issue`) no escriben
+nada. Por eso EST y SHA ya fallaban cerradas — medido, no supuesto—, y por eso las otras tres no.
+
+Las dos últimas no son el mecanismo del cuerpo del error, pero son su misma familia y tienen peor
+consecuencia: un fallo pasajero de la API partiría la memoria del vigía entre dos issues, o le haría
+comentar la lista entera como si acabara de aparecer. La regla «solo se avisa cuando EMPEORA» descansa
+sobre esa memoria.
+
+## La decisión, y por qué
+
+- `FECHA` se captura solo si la orden sale bien; si no, queda SIN DATO, que es lo que el clasificador ya
+  sabe tratar (sin ese dato no se regala la gracia del push reciente).
+- `NUM` y `ANTES`: si no se pueden leer, **la pasada para** con su código (`ISSUE-ILEGIBLE`,
+  `MEMORIA-ILEGIBLE`) y sin publicar nada. Reescribir el issue con una memoria en blanco sería perderla.
+- Un vacío LEGÍTIMO sigue pasando, y tiene su control: que el issue no exista todavía (primer día), y
+  que el cuerpo no tenga aún la marca de memoria.
+- EST y SHA se dejan como están, con la medición escrita al lado: arreglar lo que no está roto habría
+  sido cambiar código sin dato que lo pidiera.
+
+## Verificado en rojo
+
+`tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs` ejecuta los DOS pasos reales del vigía —el de
+reunir y el de clasificar— con un `gh` falso que imita las dos formas de fallar medidas. Antes del
+arreglo: 3 rojos (FECHA, NUM, ANTES) y 6 verdes (tres suelos, el control de EST/SHA y dos controles de
+vacío legítimo). Después, 9/9. Tres mutaciones, una por lectura: las tres tumban su test.
+
+## Lo que NO cubre
+
+`gh pr list`, `gh issue create/edit/comment` y la escritura de `reglas.json`/`checks/*.json` no se tocan:
+las tres primeras fallan cerradas por `bash -e` (y el suelo del veredicto lo declara), y las dos últimas
+sobrescriben el fichero con el respaldo, así que el cuerpo del error no sobrevive.
+
+## Ficheros
+
+`.github/workflows/vigia-atascados.yml` · `tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs` ·
+`docs/master/SCRUM-853.md`
+
+---
+
+# SCRUM-853d · APÉNDICE — el cortacircuitos: 6 despertares por ventana de 60 minutos
+
+**Fecha:** 16-sep-2026 · **Carril:** automatización (Sesión 5) · **Gate:** sin gate
+**Medido contra:** `origin/main` = `956be91d588031cd46b68b577968b82c4bc01660` · 2026-09-16T07:30:01Z
+**Rama:** `scrum-853d-cortacircuitos`
+**Tanda:** 853d 16/16 · 853 34/34 · lecturas 11/11 · 853c 9/9 · 824 9/9 · 237 8/8 · mutaciones 4 de 4 vivas
+
+## Por qué, y de dónde sale el número
+
+El 853 quitó el 96% de las causas de despertar (88 de 92 rojos del 15-sep eran de checks NO
+obligatorios). Lo que queda es el bucle con un rojo obligatorio REAL: Claude empuja, CI vuelve a
+rojo, el avisador vuelve a despertar. Contra eso no hay puerta que valga: hace falta un techo.
+
+Los datos sobre los que el orquestador decidió **6 por ventana de 60 minutos**:
+
+| dato | medido |
+|---|---|
+| ejecuciones de `claude.yml` el 15-sep | 116 · 58 saltadas · **58 despertares reales** |
+| pico en una hora | **34**, desde las 09:31Z |
+| coste de UN despertar legítimo (16-sep) | **0,7369 USD** · 31 turnos · 137,7 s · `claude-sonnet-5` |
+| demanda legítima de un día malo entero | **4** rojos obligatorios |
+
+A ese precio el pico de ayer habrían sido ~25 USD en una hora; con el tope, ~4,4 USD. Y 6 por hora
+sigue siendo más que toda la demanda legítima de un día concentrada en sesenta minutos.
+
+## La decisión, y por qué
+
+- **Dónde:** en la puerta de `claude.yml` — donde se DESPIERTA—, no en el avisador, que es solo uno
+  de los que llaman. Una persona que escribe la mención gasta hueco igual.
+- **Qué cuenta:** las ejecuciones de `claude.yml` de los últimos 60 min, EXCEPTO la actual (no se
+  cuenta a sí misma) y las SALTADAS (el `if` del job dio falso: no gastaron nada). Las que están EN
+  MARCHA sí cuentan: ya están gastando.
+- **Falla cerrado:** si la lista no se puede leer, o alguna fecha no se puede leer, NO se despierta
+  (`SIN-CUENTA-DE-DESPERTARES`). Es la misma familia que mordió dos veces: `gh api` escribe el cuerpo
+  del error por stdout, y una cuenta hecha sobre eso daría CERO, que es el número con el que un tope
+  no corta nunca. Por eso la lista se captura solo si la orden sale bien.
+- **Contesta a quien llama:** con cuántos van y **a qué hora se abre el próximo hueco** (cuando el
+  más viejo de la ventana sale de ella). Un tope silencioso se vive como una avería.
+- **Orden:** primero la puerta del PR cerrado —la razón más concreta— y solo si ésa abre, el tope. Un
+  PR ya cerrado no gasta hueco, porque nunca llega a despertar.
+- **No se toca** el tope del avisador (3 avisos por PR), ni la marca, ni la puerta fiscal.
+
+## Verificado en rojo
+
+`tests/scrum853d-cortacircuitos.test.mjs`: 16/16, y antes del código el fichero entero no cargaba
+—faltaban los exports—. Las cuatro propiedades que pidió el orquestador tienen su test: el 7.º no
+despierta y dice cuándo podrá, el 6.º SÍ despierta, sin cuenta no se despierta, y con la ventana
+vacía se despierta como hasta ahora. Más los bordes que deciden si la cuenta es honrada: la actual no
+se cuenta, las saltadas no cuentan, las de 60 min exactos ya están fuera.
+
+El laboratorio ejecuta el paso `puerta` REAL de `claude.yml` con un `gh` falso. **Y ahí se cazó un
+fallo del propio laboratorio**, que se dice porque cambia lo que el verde significa: mi `gh` falso
+devolvía el objeto crudo (`{workflow_runs: …}`) donde el real, con `-q`, devuelve la lista ya
+transformada. El paso contestaba `SIN-CUENTA-DE-DESPERTARES` — el fail-closed funcionando, pero por
+el motivo equivocado. Corregida la fidelidad del falso, los tres casos del laboratorio pasan.
+
+Cuatro mutaciones, las cuatro vivas: `>=` por `>` (el tope que se queda corto), el fail-closed que
+cuenta «no sé» como cero, la ventana que deja de filtrar, y las saltadas contando como despertares.
+
+## Lo que NO cubre
+
+- Solo cuenta despertares de `claude.yml`. Si algún día hay otro camino que gaste cuota, no lo ve.
+- El `action_required` que retiene las ejecuciones disparadas por el bot sigue abierto: la medición
+  de si `yaqu-bot` puede relanzarlas va después de esto, y es solo medición.
+
+## Ficheros
+
+`scripts/puerta-claude.mjs` · `.github/workflows/claude.yml` ·
+`tests/scrum853d-cortacircuitos.test.mjs` · `docs/master/SCRUM-853.md`

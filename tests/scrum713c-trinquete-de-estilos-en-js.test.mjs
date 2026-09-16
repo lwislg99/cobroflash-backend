@@ -97,7 +97,12 @@ function censo() {
 // ESTE contador —el de `contarEnFuente`, no un `grep`—, y las dos cuentas independientes dieron
 // 348. Main no toca ninguna asignación en su lado (su único cambio en `dashboard/js` es un literal
 // de microcopy en `buscadorDeClientes.js`), así que la bajada es entera de SCRUM-831.
-const TECHO = 348;
+// 348 → 340 · 16-sep-2026 (SCRUM-867). Y aquí NADIE ha mudado un estilo a la hoja: se retiró un
+// FICHERO ENTERO. `nuevaFacturaModal.js` estaba muerto —nadie lo abría, pero el índice lo cargaba y
+// el SHELL lo precacheaba— y sus OCHO asignaciones de estilo desde JS se fueron con él. El trinquete
+// lo pidió él solo al bajar: «HAN BAJADO (enhorabuena) … aprieta el número aquí». Recontado con
+// ESTE contador sobre el árbol ya sin el fichero, no deducido restando.
+const TECHO = 340;
 
 test('SCRUM-713c · SUELO: el contador VE lo que tiene que ver, y NO se caza a sí mismo', () => {
   // 🔴 El suelo que no caduca: se prueba contra cadenas fabricadas aquí, así que sigue probando

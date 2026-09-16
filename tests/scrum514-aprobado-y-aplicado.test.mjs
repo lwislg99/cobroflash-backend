@@ -135,7 +135,39 @@ function corpus() {
  * tiene que pasar para que salga de aquí. Una excepción sin eso vuelve a ser el defecto que este
  * ticket cierra — un texto aprobado que nadie aplica y del que nadie se acuerda.
  */
+/**
+ * 🔴 SCRUM-867 (16-sep-2026) · DIEZ TEXTOS QUE SE QUEDARON SIN PANTALLA, NO SIN APROBACIÓN.
+ *
+ * Son los rótulos accesibles y los marcadores del modal viejo de «Nueva factura»
+ * (`nuevaFacturaModal.js`). Ese fichero estaba MUERTO —nadie lo abría desde que la lista navega a
+ * `invoices-new`— pero el índice lo cargaba y el SHELL lo precacheaba, así que se retiró entero.
+ *
+ * NO se han desaprobado: siguen firmados y siguen en su registro. Lo que ya no existe es la pantalla
+ * que los pintaba. Se aparcan aquí —en vez de borrarlos del registro— porque quitarle la firma a un
+ * texto es del fundador (regla 30), y porque la pantalla de hoy tiene los suyos, aprobados aparte.
+ */
+const MOTIVO_MODAL_RETIRADO = 'SU PANTALLA SE RETIRÓ (SCRUM-867, 16-sep-2026). Era un rótulo del '
+  + 'modal viejo de «Nueva factura» (`public/dashboard/js/nuevaFacturaModal.js`), que estaba muerto '
+  + '—cero llamadas, medido montando la pantalla— y que el panel seguía descargando y ejecutando en '
+  + 'cada visita. Sale del árbol con su fichero; NO se desaprueba: la firma se conserva en su '
+  + 'registro. Lo desbloquea el fundador el día que decida retirar los textos del registro, o una '
+  + 'pantalla nueva que los necesite. Registro del ticket: `docs/master/SCRUM-867.md`.';
+
+const DEL_MODAL_RETIRADO = [
+  'Busca por nombre…',
+  'Buscar cliente por nombre',
+  'Cliente al que facturas',
+  'No hemos podido cargar tus clientes. Inténtalo otra vez.',
+  'Trabajo o material',
+  'Concepto de la línea',
+  'Cantidad de unidades',
+  'Precio sin IVA',
+  'Precio por unidad, sin IVA',
+  'Quitar esta línea',
+];
+
 const APARCADOS = [
+  ...DEL_MODAL_RETIRADO.map((texto) => ({ texto, motivo: MOTIVO_MODAL_RETIRADO })),
   {
     texto: 'Se acaba de emitir otra factura de este presupuesto. Vuelve a intentarlo y saldra el tramo siguiente.'.replace('saldra', 'saldrá'),
     motivo: 'APROBADO Y SIN SITIO DONDE PINTARSE (SCRUM-814, 7-sep-2026). Se propuso para el 409 de '

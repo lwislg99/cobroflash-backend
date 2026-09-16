@@ -16,10 +16,18 @@
 // ninguna cifra. Misma lección que `guard:caja-semaforo` (SCRUM-648), de donde sale este patrón.
 //
 // ── 🔴 EL MODAL ES EL DE VERDAD, NO UNA COPIA ────────────────────────────────────────────
-// Se carga `nuevaFacturaModal.js` y `modalHeader.js` del árbol y se llama a
-// `openNuevaFacturaModal` — el mismo código que corre en producción. Medir una reproducción del
-// modal mediría mi reproducción, que es justo el error que este ticket viene a quitar (dos sitios
-// diciendo lo mismo). El shell (`.layout`/`.sidebar`/`.main`) sí se reproduce, como en
+// 🔴 SCRUM-867 · EL MODAL SE RETIRÓ, Y CON ÉL TRES DE LAS CINCO CAJAS. Aquí se cargaba
+// `nuevaFacturaModal.js` y se llamaba a `openNuevaFacturaModal` para medir el título del modal, el
+// botón primario y el error al emitir. Ese modal estaba muerto —nadie lo abría— y salió del árbol.
+//
+// Lo que este guard mide HOY son los DOS rótulos del LISTADO, que siguen exactamente donde
+// estaban. Los otros tres los pinta ahora la PÁGINA del documento suelto, y medirlos exige
+// MONTARLA de verdad en el navegador: reproducirla aquí sería medir mi reproducción, que es el
+// error que esta cabecera lleva prohibiendo desde el principio. Queda dicho como pendiente en
+// `docs/master/SCRUM-867.md`. Mientras tanto el MECANISMO de los siete rótulos lo vigila en cada
+// tanda `tests/scrum776-una-sola-voz.test.mjs`; lo que no se mide hoy es su CAJA.
+//
+// El shell (`.layout`/`.sidebar`/`.main`) sí se reproduce, como en
 // `guard-caja-semaforo`: es donde vive la caja, y el CSS que lo maqueta es el del árbol.
 //
 // ── POR QUÉ FUERA DE `npm test` ──────────────────────────────────────────────────────────
@@ -87,23 +95,14 @@ ${CSS.map((c) => `<link rel="stylesheet" href="${c}">`).join('\n')}
 </div>
 <script>window.appDocumentoSuelto = ${JSON.stringify(modo)};</script>
 <script src="/dashboard/js/rotulosDelDocumento.js"></script>
-<script src="/dashboard/js/modalHeader.js"></script>
-<script>
-  // Dobles DE LA PRUEBA (no del producto): aquí no hay backend y no se mide la red.
-  window.__toast = null;
-  function showToast(t) { window.__toast = t; }
-  async function apiRequest() { return { clientes: [] }; }
-</script>
-<script src="/dashboard/js/nuevaFacturaModal.js"></script>
 <script>
   // El título y la columna se pintan con la MISMA fuente que la vista: si el fichero de rótulos
-  // no existe todavía (antes del arreglo), se cae al texto de hoy y el guard lo DICE.
+  // no existe todavía, se cae al texto de hoy y el guard lo DICE.
   var R = window.rotulosDelDocumento || null;
   document.getElementById('titulo-pagina').textContent = R ? R.tituloListado() : 'Facturas';
   document.getElementById('col-numero').textContent = R ? R.columnaNumero() : 'Nº factura';
   document.getElementById('celda-numero').textContent = '2026-FG-001';
   window.__hayFuenteUnica = !!R;
-  openNuevaFacturaModal(function () {});
 </script>
 </body></html>`;
 }
@@ -169,33 +168,18 @@ try {
             fueraDelViewport: r.right > window.innerWidth + 1,
           };
         };
-        const overlay = document.querySelector('.modal-overlay');
-        const modal = overlay && overlay.querySelector('.modal');
-        const botones = modal ? Array.from(modal.querySelectorAll('button')) : [];
-        const primario = botones.find((b) => b.className.indexOf('btn-primary') >= 0);
-        const errNodo = modal ? modal.querySelector('.alert.error') : null;
-        // El error se mide CON SU TEXTO: es el rótulo más largo de los siete.
-        if (errNodo) {
-          errNodo.textContent = window.rotulosDelDocumento
-            ? window.rotulosDelDocumento.errorAlEmitir()
-            : 'No hemos podido emitir la factura. Inténtalo otra vez.';
-          errNodo.style.display = 'block';
-        }
+        // SCRUM-867: aquí se abría el modal retirado y se medían TRES cajas más —título del modal,
+        // botón primario y error al emitir—. Hoy las pinta la página del documento suelto, y su
+        // medida espera al ticket que sepa montarla de verdad (ver la cabecera).
         return {
           viewport: window.innerWidth,
           anchoSidebar: getComputedStyle(document.querySelector('.sidebar')).width,
           mainMarginLeft: parseFloat(getComputedStyle(document.querySelector('.main')).marginLeft),
           hayFuenteUnica: window.__hayFuenteUnica === true,
-          modalAbierto: !!modal,
           controlDesborde: caja(document.getElementById('control-desborde'), 'control negativo'),
-          ariaDialogo: overlay ? overlay.getAttribute('aria-label') : null,
-          ariaSelector: modal && modal.querySelector('select') ? modal.querySelector('select').getAttribute('aria-label') : null,
           cajas: [
             caja(document.getElementById('titulo-pagina'), 'título de listado'),
             caja(document.getElementById('col-numero'), 'columna Nº'),
-            caja(modal ? modal.querySelector('.modal-title, .modal-header h2, .modal-header h3') : null, 'título del modal'),
-            caja(primario, 'botón primario'),
-            caja(errNodo, 'error al emitir'),
           ],
         };
       });
@@ -203,7 +187,8 @@ try {
       // ── SUELOS ────────────────────────────────────────────────────────────────────────
       if (!servidos.has('/dashboard/css/styles.css')) noSupeMirar('el CSS del dashboard no llegó a servirse.');
       if (parseFloat(m.anchoSidebar) <= 0) noSupeMirar('el sidebar computa 0 px: el CSS no se aplicó como en el producto.');
-      if (!m.modalAbierto) noSupeMirar('el modal no se abrió, así que no hay rótulos que medir.');
+      // SCRUM-867: aquí iba el suelo «el modal se abrió». El modal ya no existe; el suelo que queda
+      // —y que sigue decidiendo— es que el CSS se aplicó y que el control negativo desborda.
       // 🔴 EL DETECTOR TIENE QUE SABER DECIR QUE NO. Si el control negativo —una caja de 80 px
       // con una frase de 59 caracteres y — no sale como desbordada, entonces el «todo
       // cabe» de abajo no vale nada: sería el mismo verde que daría un detector apagado.
@@ -215,8 +200,6 @@ try {
 
       console.log(`\n── MODO ${modo.toUpperCase()} · VIEWPORT ${ancho} px ──`);
       console.log(`   sidebar ${m.anchoSidebar} · .main margin-left ${m.mainMarginLeft} px · fuente única: ${m.hayFuenteUnica ? 'SÍ' : 'NO (rótulos a pelo)'}`);
-      console.log(`   aria diálogo : ${JSON.stringify(m.ariaDialogo)}`);
-      console.log(`   aria selector: ${JSON.stringify(m.ariaSelector)}`);
       for (const c of m.cajas) {
         if (c.ausente) { noSupeMirar(`no se encontró el nodo de «${c.etiqueta}».`); }
         if (c.width <= 0 || c.height <= 0) {
@@ -247,5 +230,7 @@ if (hallazgos.length) {
   console.error('\n   El texto está FIRMADO: la caja se adapta al texto, nunca al revés. PARA y dilo.');
   process.exit(1);
 }
-console.log('   Todos los rótulos caben en su caja, en los dos modos y en los dos anchos.');
+console.log('   Los DOS rótulos del listado caben en su caja, en los dos modos y en los dos anchos.');
+console.log('   (SCRUM-867: los tres del modal retirado —título, acción primaria y error— los pinta');
+console.log('    hoy la página del documento suelto, y su CAJA no se mide aquí todavía.)');
 console.log('   (Envolver en varias líneas NO es un hallazgo; desbordar o salirse del viewport, sí.)');
