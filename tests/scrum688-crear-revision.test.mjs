@@ -276,47 +276,83 @@ test('SCRUM-688 · 🔴 DEFECTO VIVO: el PDF de la revisión NO lleva el «.1» 
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
-// ⛔ EL TEXTO DEL BOTÓN ES DEL FUNDADOR (regla 30) — aquí sólo se vigila que siga marcado
+// ✅ EL TEXTO DEL BOTÓN YA ESTÁ FIRMADO — este caso está GIRADO, no borrado
+//
+// Nació el 15-sep-2026 exigiendo lo CONTRARIO: que el centinela
+// `⛔ PENDIENTE DE MICROCOPY (SCRUM-688)` siguiera puesto mientras el fundador no escribiera los
+// textos, y que no se colara ninguno en `TEXTOS`. Su propio mensaje decía cómo terminaría:
+//
+//     «si el fundador ya aprobó ese texto, se mueve a `TEXTOS`»
+//
+// El 16-sep-2026 los firmó, así que el caso pasa a EXIGIR lo firmado en vez de declarar lo
+// pendiente. Se gira porque el hecho que vigila no ha desaparecido —sigue habiendo dos rótulos de
+// esta pantalla que son del fundador—, sólo ha cambiado de estado.
+//
+// 🔴 Y NO SE FÍA DE MI PALABRA: el literal se contrasta contra el registro de aprobaciones con
+// `constaAprobado()`, la única función que barre `docs/microcopy/` y el registro congelado. Un
+// texto en pantalla sin ficha es exactamente el defecto que la regla 30 persigue, y comprobarlo
+// escribiéndolo dos veces aquí no comprobaría nada.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 // El fichero se CARGA como lo carga el navegador —`cargarDashboard` lo corre en su vm con
 // `ctx.window = ctx`— en vez de leer su texto. Leerlo mediría el parecido; cargarlo mide lo que
 // la pantalla tendrá delante. (Un `require()` no vale: el fichero publica en `window` al final.)
-test('SCRUM-688 · ⛔ el texto del botón sigue MARCADO, y no se cuela en la microcopy aprobada', () => {
+test('SCRUM-688 · ✅ los dos textos del botón están FIRMADOS, y constan en el registro', () => {
   const banco = cargarDashboard(RAIZ);
 
   // SUELO: si el fichero no llegó a cargarse, todo lo de abajo saldría `undefined` y el caso
-  // pasaría por «no hay microcopy sin aprobar», que es la conclusión contraria a la verdadera.
+  // pasaría por «no hay microcopy sin firmar», que es la conclusión contraria a la verdadera.
   const roto = banco.fallos.find((f) => f.fichero.includes('quoteRevisiones'));
   assert.equal(roto, undefined,
     `🔴 CIEGO: la pantalla de revisiones no carga (${roto && roto.error}). Sin cargar, este caso `
     + 'no puede afirmar nada sobre sus textos.');
 
-  const sinAprobar = banco.ctx.REVISIONES_TEXTOS_SIN_APROBAR;
-  assert.equal(typeof sinAprobar, 'object',
-    '🔴 ha desaparecido el bloque de textos sin aprobar: o el fundador ya los escribió —y entonces '
-    + 'van en `TEXTOS` con su ancla— o alguien ha escrito microcopy por su cuenta (regla 30).');
-  assert.ok(Object.keys(sinAprobar).length >= 1,
-    '🔴 el bloque de pendientes está VACÍO, y el botón sigue necesitando dos textos.');
-
-  for (const [clave, txt] of Object.entries(sinAprobar)) {
-    assert.match(String(txt), /PENDIENTE DE MICROCOPY/,
-      `🔴 «${clave}» ya no lleva el centinela: si el fundador ya aprobó ese texto, se mueve a `
-      + '`TEXTOS`; si no, escribirlo aquí es saltarse la regla 30.');
-  }
-
-  // Y las SEIS aprobadas el 3-sep-2026 siguen siendo seis: lo pendiente no se mezcla con lo firmado.
   const aprobadas = banco.ctx.REVISIONES_TEXTOS;
   assert.equal(typeof aprobadas, 'object', '🔴 la pantalla ya no publica sus textos aprobados');
-  assert.equal(Object.keys(aprobadas).length, 6,
-    `🔴 \`TEXTOS\` tiene ${Object.keys(aprobadas).length} entradas y eran 6, las aprobadas por el `
-    + 'fundador el 3-sep-2026. Un texto nuevo ahí dentro es microcopy sin aprobar disfrazada.');
 
-  // Y ninguno de los seis firmados arrastra el centinela: eso sería lo contrario del defecto,
-  // un texto aprobado que sale a pantalla diciendo «PENDIENTE».
+  // Ocho: las SEIS del 3-sep-2026 más las DOS de hoy. Ni una más — un rótulo nuevo aquí dentro
+  // sería microcopy sin firmar disfrazada de firmada, que es lo que este caso existe para impedir.
+  assert.equal(Object.keys(aprobadas).length, 8,
+    `🔴 \`TEXTOS\` tiene ${Object.keys(aprobadas).length} entradas y son 8: las 6 del 3-sep-2026 y `
+    + '`crearRevision` + `errorCrear`, firmadas el 16-sep-2026. Si has añadido una, necesita ficha '
+    + 'en `docs/microcopy/` antes de entrar aquí (regla 30).');
+
+  assert.equal(aprobadas.crearRevision, 'Crear revisión',
+    '🔴 el rótulo del botón no es el literal firmado. El texto es del fundador: no se retoca.');
+  assert.equal(aprobadas.errorCrear, 'No se ha podido crear la revisión. Vuelve a intentarlo.',
+    '🔴 el aviso de fallo no es el literal firmado. Va en la voz pasiva de la casa —«no se ha '
+    + 'podido»—, y cambiarle una palabra es escribir microcopy propia.');
+
+  // 🔴 EL CENTINELA NO SOBREVIVE EN NINGÚN RÓTULO. Un texto firmado que saliera a pantalla
+  // diciendo «PENDIENTE» es el defecto al revés, y se vería en el papel del cliente.
   for (const [clave, txt] of Object.entries(aprobadas)) {
     assert.equal(/PENDIENTE DE MICROCOPY/.test(String(txt)), false,
-      `🔴 «${clave}» está en los APROBADOS y lleva el centinela de pendiente.`);
+      `🔴 «${clave}» está en los APROBADOS y arrastra el centinela de pendiente.`);
+  }
+
+  // Y el bloque de pendientes se fue ENTERO, no se quedó vacío: una caja que ya no distingue nada
+  // sólo puede engañar al que la lea después.
+  assert.equal(banco.ctx.REVISIONES_TEXTOS_SIN_APROBAR, undefined,
+    '🔴 la pantalla sigue publicando un bloque de textos sin aprobar. Si hay uno nuevo, se dice en '
+    + 'el informe; si es el de SCRUM-688, ya está firmado y sobra.');
+});
+
+test('SCRUM-688 · 🔴 los dos literales CONSTAN aprobados en el registro — con su suelo', async () => {
+  const { constaAprobado } = await import('./_microcopy-aprobada.mjs');
+
+  // SUELO DEL INSTRUMENTO: si `constaAprobado` no encontrara NADA de lo que ya está firmado, su
+  // «no consta» de abajo no distinguiría «sin ficha» de «no sé buscar». Se prueba con uno de los
+  // seis del 3-sep-2026, que llevan en registro desde entonces.
+  assert.ok(constaAprobado('No se ha podido leer el historial de revisiones.').length > 0,
+    '🔴 CIEGO: el buscador de aprobaciones no encuentra un literal que SÍ está en registro desde '
+    + 'el 3-sep-2026. Con él ciego, lo de abajo diría «no consta» sin haber mirado.');
+
+  for (const literal of ['Crear revisión', 'No se ha podido crear la revisión. Vuelve a intentarlo.']) {
+    const fichas = constaAprobado(literal);
+    assert.ok(fichas.length > 0,
+      `🔴 «${literal}» se pinta en pantalla y NO consta aprobado por quien puede aprobarlo. `
+      + 'Eso es microcopy sin firma en producción (regla 30): o falta su ficha en `docs/microcopy/`, '
+      + 'o la ficha no lleva la firma del fundador.');
   }
 });
 
