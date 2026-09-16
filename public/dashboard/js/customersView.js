@@ -84,7 +84,11 @@ function renderCustomersView(container) {
   header.appendChild(headLeft);
 
   const headActions = createElement("div");
-  headActions.style.cssText = "display:flex;align-items:center;gap:8px";
+  // SCRUM-886 · `flex-wrap`, MEDIDO: con la tercera acción (exportar), a 360 y 390 px «Nuevo
+  // cliente» quedaba FUERA de la tarjeta, y `.data-card { overflow: hidden }` la cortaba sin
+  // aviso. Con el salto baja a su línea; a 768 y 1280 px la cabecera queda idéntica al píxel.
+  // Banco: `docs/master/evidencias/scrum886/`.
+  headActions.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap";
   const importBtn = createElement("button", "btn-secondary btn-sm", "⬆ Importar CSV");
   importBtn.title = "Importar clientes desde un fichero CSV o Excel";
   // SCRUM-312: un alta MASIVA de clientes es «catálogo entero» → admin, con el criterio ya
