@@ -22,6 +22,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cobertura, lineaDePoblacion, laQueMasPesaSinCubrir, vistasDelDashboard } from '../scripts/_cobertura-visual.mjs';
@@ -83,8 +84,10 @@ test('SCRUM-628 · 🔴 la cobertura visual del dashboard NO ha empeorado', () =
   // por el mismo problema dentro de un mes — **un trinquete en cero es lo único que impide que
   // entre una vista NUEVA sin cubrir**. En cero deja de medir deuda y pasa a ser una puerta.
   //
-  // Comprobado ejecutando, no razonado: se añade una vista sintética sin guard al directorio real
-  // y el número SUBE a 1 (el test `una vista nueva sin cubrir hace SUBIR el trinquete`, abajo).
+  // Comprobado ejecutando, no razonado: sobre un banco sintético se añade una vista sin cubrir y
+  // el número SUBE a 1 (el test `una vista nueva sin cubrir hace SUBIR el trinquete`, abajo). Va
+  // sobre banco y no sobre el árbol porque SCRUM-824 prohíbe crear fixtures dentro, y con razón:
+  // un test que muere antes de su `finally` deja el árbol escrito.
   const c = cobertura(RAIZ);
   const SIN_CUBRIR_HOY = 0;
   assert.equal(c.sinCubrir.length, SIN_CUBRIR_HOY,
@@ -251,26 +254,42 @@ test('SCRUM-628c · 🔴 una vista NUEVA sin cubrir hace SUBIR el trinquete', ()
   // entre una vista sin guard. Eso hay que comprobarlo ejecutándolo, porque un trinquete en cero
   // que no sabe subir y uno que ya no existe se leen exactamente igual.
   //
-  // Se escribe una vista sintética en el directorio REAL —es donde mira el censo— y se borra en
-  // `finally`. No se toca ninguna vista de producto.
-  const dir = path.join(RAIZ, 'public', 'dashboard', 'js');
-  const intrusa = path.join(dir, '__scrum628cIntrusaView.js');
-  const antes = cobertura(RAIZ).sinCubrir.length;
-  assert.equal(antes, 0, `🔴 el trinquete no está en cero antes de empezar (${antes}): este control mediría otra cosa.`);
+  // 🔴 SOBRE UN BANCO SINTÉTICO, NO SOBRE EL ÁRBOL. La primera versión escribía la vista intrusa
+  // en `public/dashboard/js` y la borraba en `finally` — y el guard de SCRUM-824 la cazó, con
+  // razón: un test que crea su fixture dentro del árbol lo deja escrito el día que muera antes del
+  // `finally`. El censo ya recibe la raíz como parámetro, así que se le da otra.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum628c-'));
   try {
-    fs.writeFileSync(intrusa, 'function render__scrum628cIntrusaView() { return null; }\n');
-    const despues = cobertura(RAIZ);
+    const js = path.join(dir, 'public', 'dashboard', 'js');
+    fs.mkdirSync(js, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ scripts: {} }));
+    fs.mkdirSync(path.join(dir, 'tests'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'public', 'dashboard', 'index.html'),
+      '<script src="/dashboard/js/cubiertaView.js"></script><script src="/dashboard/js/intrusaView.js"></script>');
+    fs.writeFileSync(path.join(js, 'cubiertaView.js'), 'function renderCubiertaView() { return null; }\n');
+    // Un test del banco que SÍ la monta: así la cubierta cuenta y el suelo no mide el vacío.
+    fs.writeFileSync(path.join(dir, 'tests', 'x.test.mjs'),
+      "await pintarVista(cargarDashboard(RAIZ), 'renderCubiertaView');\n");
+
+    const antes = cobertura(dir);
+    assert.equal(antes.sinCubrir.length, 0,
+      `🔴 el banco no arranca en cero (${antes.sinCubrir.length}): este control mediría otra cosa.`);
+
+    fs.writeFileSync(path.join(js, 'intrusaView.js'), 'function renderIntrusaView() { return null; }\n');
+    const despues = cobertura(dir);
     assert.equal(despues.sinCubrir.length, 1,
       `🔴 SE HA AÑADIDO UNA VISTA SIN CUBRIR Y EL TRINQUETE NO SE HA MOVIDO (${despues.sinCubrir.length}).\n\n`
       + '  Entonces el cero no es una puerta: es un número que ya no mide nada, y la próxima\n'
       + '  pantalla entrará sin vigilancia sin que nadie se entere.');
-    assert.ok(despues.sinCubrir.some((f) => f.vista === '__scrum628cIntrusaView.js'),
+    assert.equal(despues.sinCubrir[0].vista, 'intrusaView.js',
       '🔴 el trinquete sube pero no nombra a la intrusa: un rojo que no dice cuál manda a buscar.');
   } finally {
-    fs.rmSync(intrusa, { force: true });
-    assert.equal(cobertura(RAIZ).sinCubrir.length, 0,
-      '🔴 el árbol no ha quedado como estaba: la vista sintética sigue ahí.');
+    fs.rmSync(dir, { recursive: true, force: true });
   }
+
+  // Y el árbol REAL sigue en cero: el control no lo ha tocado.
+  assert.equal(cobertura(RAIZ).sinCubrir.length, 0,
+    '🔴 el árbol real ya no está en cero tras el control: algo se ha escrito donde no debía.');
 });
 
 // ═══ ③ CONTROL POSITIVO · los guards existentes siguen cazando lo suyo ═══════════════════════
