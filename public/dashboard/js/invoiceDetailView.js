@@ -81,9 +81,8 @@ async function fetchInvoiceDetail(id) {
     const avisoEnvio = avisoDocumentoSinEnviar(invoice.envioDocumento);
     if (avisoEnvio.mostrar) {
       const banda = document.createElement('div');
-      banda.className = 'alert warning';
+      banda.className = 'alert warning invoice-detail__aviso';
       banda.setAttribute('role', 'status');
-      banda.style.cssText = 'margin:14px 22px 0';
       banda.textContent = avisoEnvio.texto;
       page.appendChild(banda);
     }
