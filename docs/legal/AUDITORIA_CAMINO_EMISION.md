@@ -30,7 +30,7 @@ y el envío— no se han construido nunca.**
 
 | # | Eslabón | Estado | Fichero y línea |
 |---|---|---|---|
-| 1 | Puerta de emisión (el usuario pulsa emitir) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:100` |
+| 1 | Puerta de emisión (usuario y admin) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:100` |
 | 2 | Decide qué documento sale (factura / justificante / ninguno) | **EXISTE** | `src/modules/invoicing/domain/facturaSuelta.ts:74-78` (`modoDocumentoSuelto`) |
 | 3 | Numeración de serie | **EXISTE** | `src/modules/invoicing/domain/invoiceNumber.service.ts:390` (`allocateInvoiceNumber`) |
 | 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:865-866` (`vf_hash`, `vf_prev_hash`) |
