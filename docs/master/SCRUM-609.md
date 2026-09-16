@@ -624,3 +624,119 @@ retirando mi parche estrecho de `name`**, que es exactamente lo que dejé escrit
 * **STAGING tiene 0 productos**, así que no puede validar ningún backfill del catálogo.
 * Se mantienen los de los apéndices anteriores (CSV del tarifario sin `cost`, y el «bloque K» del
   ticket que no es la Parte K del máster).
+
+---
+
+# SCRUM-609 · APÉNDICE S5 · 16-sep-2026 · Las dos ramas vivas: las dos son RESTOS, y la regla 42 medida
+
+**Medido contra:** `origin/main` = `3e5f58db7325058ededc7ba2381140d0be291abc` · 2026-09-15T15:27:37Z
+**Rama:** `scrum-609-ramas-vivas-medidas` · **Carril:** proceso · **Gate:** sin gate
+
+⛔ **No se ha mergeado ni borrado ninguna rama. No se ha reabierto ni cerrado ningún ticket.**
+`src/` intacto. Esto mide; cerrar o reabrir la 609 es del fundador.
+
+---
+
+## 1 · El veredicto de las dos: **(a) restos**, las dos
+
+| rama | commits propios | veredicto |
+|---|---|---|
+| `scrum-609-medir-el-catalogo` | 1 | ✅ **(a)** todo su contenido está ya en `main` |
+| `scrum-609-switch-y-margen` | 5 | ✅ **(a)** su trabajo entró por otra vía; `main` va muy por delante |
+
+### Cómo se midió, y por qué no por sha
+
+Con squash o con un rehecho **el commit no llega pero el código sí**, así que comparar shas diría
+«sin mergear» sobre trabajo que ya está dentro. Se comparó **fichero a fichero, por contenido**,
+entre cada rama y `origin/main`.
+
+### 🔴 Y mi primer comparador dio un FALSO (b) — lo que lo cazó fue la estructura
+
+La comparación por **pertenencia de líneas** dijo que `scrum-609-switch-y-margen` llevaba
+**105 líneas que no están en main**, repartidas en tres ficheros, y concluyó «(b) trabajo real que
+nunca entró». **Era falso.** Lo desmintió preguntar por la ESTRUCTURA en vez de por el parecido:
+
+| pregunta estructural | main | rama |
+|---|---|---|
+| ¿existe `public/dashboard/js/margenCatalogo.js`? | **sí** | sí |
+| ¿cuántas veces se llama a `cablearMargen(`? | **3** | 3 |
+| ¿el `index.html` carga `margenCatalogo`? | **sí** | sí |
+
+El margen **entró en main**. Y midiendo las dos direcciones se ve por qué sobraban esas 105 líneas:
+
+| fichero | sólo en la RAMA | sólo en MAIN |
+|---|---|---|
+| `public/dashboard/index.html` | 9 | **74** |
+| `public/dashboard/js/productsView.js` | 32 | **292** |
+| `tests/_banco-vistas.mjs` | 64 | **723** |
+
+**`main` va muy por delante en los tres.** Las líneas «sólo en la rama» son fragmentos rancios de
+ficheros que `main` ha reescrito desde entonces — no trabajo que falte.
+
+> 🔒 Una comparación por parecido contesta «esto no está» cuando lo que pasa es «esto ya no se
+> escribe así». Es la misma familia que la ventana de seis líneas de anoche: **si la pregunta se
+> puede hacer por estructura, no se hace por proximidad.**
+
+**Conclusión:** las dos ramas son restos. El ticket **no** está mal cerrado por ellas.
+
+### ⚠️ Lo que NO alcanzo a mirar, declarado
+
+* La comparación por contenido cubre los ficheros que cada rama toca. **No sigo renombrados**: si
+  un fichero llegó a main con otro nombre, saldría como «no existe en main».
+* No distingo si una línea ausente es trabajo pendiente o estilo viejo **salvo preguntando por
+  estructura**, y eso lo he hecho sólo para el margen, que es lo que este apéndice necesitaba.
+
+---
+
+## 2 · ③ La regla 42, medida por primera vez
+
+Derivado del árbol, no a mano:
+
+| | |
+|---|---|
+| ramas remotas | **145** |
+| 🔴 **vivas** (no ancestras de `main`) | **127** |
+| · con número de ticket en el nombre | 72 |
+| · **sin** número (no atribuibles) | **55** |
+| tickets distintos con rama viva | **57** |
+| 🔴 **de ellos, CERRADOS** (`statusCategory = done`) | **55** |
+| en revisión | 2 |
+
+> 🔒 **55 de 57.** La 609 no es un caso: **es la norma.** Un ticket cerrado con rama viva es lo
+> normal en este repositorio hoy, y la regla 42 —«un ticket no se cierra mientras su rama siga sin
+> mergear»— describe algo que no está pasando.
+
+Los 55 van desde `SCRUM-37` hasta `SCRUM-820`, y hay entre ellos carril fiscal (`198` XSD, `205`
+sellado, `215` destinatarios, `216` rectificativa, `234` numeración, `240` sobre duplicado) y
+tenencia (`440`).
+
+### 🔴 El suelo y el control positivo
+
+* **SUELO:** el instrumento encuentra **127** ramas vivas. Si encontrara cero se declararía CIEGO —
+  hay dos medidas a mano en este mismo apéndice.
+* **CONTROL POSITIVO:** sobre tickets cerrados **sin** rama tiene que decir «sin rama», y lo dice:
+
+```
+SCRUM-824  ✅ sin rama      SCRUM-856  ✅ sin rama      SCRUM-752  ✅ sin rama
+SCRUM-844  ✅ sin rama      SCRUM-815  ✅ sin rama
+SCRUM-609  🔴 2 vivas: scrum-609-medir-el-catalogo, scrum-609-switch-y-margen
+```
+
+No contesta lo mismo para todos: **distingue**.
+
+### ⚠️ El límite que más pesa sobre ese 55
+
+**La prueba (a)/(b) por contenido se ha hecho SÓLO para las dos ramas de la 609.** Los otros 53
+cerrados están contados por **tener rama viva**, no por llevar trabajo que falte. Si el patrón de
+la 609 se repite —y es lo que yo esperaría, porque el auto-borrado al mergear deja atrás justo las
+ramas que se rehicieron—, **la mayoría serán restos y no agujeros**. Pero eso **no está medido**, y
+contarlo como medido sería exactamente lo que este apéndice viene a evitar.
+
+Lo que sí está medido es el número que importa para la regla 42: **cuántos tickets cerrados tienen
+hoy una rama remota viva. Son 55.**
+
+## 3 · Lo NO tocado
+
+Ninguna rama mergeada ni borrada · ningún ticket reabierto ni cerrado · `src/` · `prisma/schema.prisma` ·
+el camino de emisión fiscal (regla 38) · ningún estado ni flag (27) · ninguna dependencia (36).
+**Nada ejecutado contra producción ni contra staging.**
