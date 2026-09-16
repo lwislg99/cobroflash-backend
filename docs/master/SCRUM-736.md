@@ -147,6 +147,29 @@ que la pérdida siga quedando **por encima** del número a mano (o el defecto ya
 **por debajo** del derivado (o la red no llega). Si alguna deja de cumplirse, el control lo dice en
 vez de seguir afirmando.
 
+### 🔴 Tres rojos más que sacó la tanda entera, y los tres eran míos
+
+**① SCRUM-237 · mi negación era un verde permanente.** Para probar que el camino verde ya no imprime
+la tarea, había escrito un `doesNotMatch(/Subir el suelo/)`. Si esa frase desapareciera del todo del
+árbol, el aserto pasaría **para siempre sin comprobar nada** — es el patrón `scrum73`. Arreglado con
+su **hermano del token**: primero se comprueba que el patrón SÍ caza la frase retirada, y además el
+sujeto se verifica **por contenido** (el detalle tiene que decir de dónde sale el suelo), no sólo por
+ausencia.
+
+**② SCRUM-737 · me cazó dos cifras sin ancla, el mismo guard cuya jerarquía estoy aplicando.** El
+censo pasó de 81 a 83. Las dos eran mías, y se arreglaron **por escalones distintos**, que es el
+punto de esa jerarquía: la del TAP se **ancló** con su fecha (④), y la que decía «el 3% son hoy 208
+tests» se **reformuló para que no diga número** (②) — lo calcula el propio veredicto en cada
+ejecución. ⚠️ Las otras dos cifras que ese guard lista en ficheros que toco (`_evidencia-tanda.mjs`
+y el histórico de `_suelo-de-la-tanda.mjs`) **ya estaban** y no se tocan: son de otro carril
+(regla 9), y el censo seguía en 81 con ellas dentro.
+
+**③ SCRUM-533 · CRLF en dos ficheros que toca la rama.** `_evidencia-tanda.mjs` (553 líneas) y
+`verificar-evidencia-tanda.mjs` (84). Guardados en LF, sin tocar `.gitattributes` — eso sería apagar
+la alarma justo cuando suena por algo mío. **No hay commit de esto**: el blob ya estaba en LF y sólo
+estaba sucio el disco, que es lo que `core.autocrlf` rematerializa en cada checkout en esta máquina.
+Se anota porque el siguiente que toque esos dos ficheros se lo va a encontrar igual.
+
 ### Lo que NO se tocó
 
 - **Ningún tope subido.** `SUELO_TESTS` se queda en 6246 y `SUELO_TOTAL` en 646: la red no los
