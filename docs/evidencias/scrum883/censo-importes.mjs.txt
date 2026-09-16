@@ -1,0 +1,180 @@
+// SCRUM-883 · PASO 0 · censo por AST de dónde se PINTA un importe, por superficie.
+// Solo lee. Uso: node censo-importes.mjs <raiz-worktree> [--json salida.json]
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+const require = createRequire('d:/MILLONARIO/cobroFlash/cobroflash-backend/package.json');
+const ts = require('typescript'); // sólo como parser
+
+const ROOT = path.resolve(process.argv[2]);
+const outJson = process.argv.includes('--json') ? process.argv[process.argv.indexOf('--json') + 1] : null;
+
+// ── superficies (por ruta de fichero) ──────────────────────────────────────────────
+const SUPERFICIES = [
+  ['1-profesional', /^public\/dashboard\/|^public\/admin\.html$/],
+  ['2-whatsapp', /whatsapp|sendQuote\.service|reminder\.service|invoiceReminder|messaging\/|integrations\/mailer|lib\/email|avisoBizum/i],
+  ['3-firma', /quoteDecisionLanding|customerPortal|quotes\/app\/routes\/quotes\.routes/],
+  ['4-cobro', /billing\/app\/routes\/(pay|psp|stripe|charges|mp)|billing\/domain\/(cardCharge|bizumCharge|cobros)|payments\//],
+  ['5-justificante-pdf', /receipt\.routes|pdf|presupuestoParaPdf|presentacionIva|billingPlanView/i],
+];
+function superficie(rel) {
+  for (const [n, re] of SUPERFICIES) if (re.test(rel)) return n;
+  return 'fuera';
+}
+
+// ── recogida de ficheros ───────────────────────────────────────────────────────────
+function walk(dir, acc = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { if (e.name !== 'node_modules') walk(p, acc); }
+    else if (/\.(ts|js|mjs|html)$/.test(e.name)) acc.push(p);
+  }
+  return acc;
+}
+
+function fuentes(file) {
+  const txt = fs.readFileSync(file, 'utf8');
+  if (!file.endsWith('.html')) return [{ code: txt, lineOffset: 0 }];
+  const out = [];
+  const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  while ((m = re.exec(txt))) {
+    const before = txt.slice(0, m.index + m[0].indexOf('>') + 1);
+    out.push({ code: m[1], lineOffset: before.split('\n').length - 1 });
+  }
+  return out;
+}
+
+const MONEY_NAME = /money|euro|importe|\beur\b|^eur|currency|precio|fmtInv|fmtQuote/i;
+
+// ── detección ──────────────────────────────────────────────────────────────────────
+export function escanear(code, fileName, globales = new Set(), soloFormateadores = false) {
+  const sf = ts.createSourceFile(fileName, code, ts.ScriptTarget.Latest, true,
+    fileName.endsWith('.ts') ? ts.ScriptKind.TS : ts.ScriptKind.JS);
+  const hits = [];
+  const formatters = new Set(globales);
+  const line = (n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+  const textOf = (n) => code.slice(n.getStart(sf), n.end).replace(/\s+/g, ' ').slice(0, 110);
+
+  // pasada 1: funciones que FORMATEAN dinero (se derivan del árbol, no de una lista)
+  function esFormateo(n) {
+    let si = false;
+    (function v(x) {
+      if (si) return;
+      if (ts.isCallExpression(x) && ts.isPropertyAccessExpression(x.expression)) {
+        const nm = x.expression.name.text;
+        if (nm === 'toFixed' && x.arguments[0]?.getText(sf) === '2') si = true;
+        if (nm === 'toLocaleString' && x.arguments.length >= 2) si = true;
+        if (nm === 'format' && /NumberFormat|formateador|fmt|nf/i.test(x.expression.expression.getText(sf))) si = true;
+      }
+      if (ts.isCallExpression(x) && ts.isIdentifier(x.expression) && formatters.has(x.expression.text)) si = true;
+      if (ts.isNewExpression(x) && /Intl\.NumberFormat/.test(x.expression.getText(sf))) si = true;
+      if ((ts.isStringLiteral(x) || ts.isNoSubstitutionTemplateLiteral(x) || ts.isTemplateHead(x) || ts.isTemplateMiddle(x) || ts.isTemplateTail(x)) && /€/.test(x.text)) si = true;
+      ts.forEachChild(x, v);
+    })(n);
+    return si;
+  }
+  (function p1(n) {
+    let name = null, body = null;
+    if (ts.isFunctionDeclaration(n) && n.name) { name = n.name.text; body = n.body; }
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer &&
+        (ts.isArrowFunction(n.initializer) || ts.isFunctionExpression(n.initializer))) { name = n.name.text; body = n.initializer.body; }
+    if (ts.isMethodDeclaration(n) && n.name && ts.isIdentifier(n.name)) { name = n.name.text; body = n.body; }
+    if (name && body && esFormateo(body) && (MONEY_NAME.test(name) || /^(fmt|format|eur|money|importe)/i.test(name))) formatters.add(name);
+    ts.forEachChild(n, p1);
+  })(sf);
+
+  if (soloFormateadores) return { hits, formatters: [...formatters] };
+  // pasada 2: sitios
+  (function v(n) {
+    if (ts.isCallExpression(n)) {
+      const callee = n.expression;
+      const nm = ts.isIdentifier(callee) ? callee.text : ts.isPropertyAccessExpression(callee) ? callee.name.text : null;
+      if (nm === 'toFixed' && n.arguments[0]?.getText(sf) === '2') hits.push({ kind: 'toFixed2', line: line(n), text: textOf(n) });
+      else if (nm === 'toLocaleString' && n.arguments.length >= 2) hits.push({ kind: 'toLocaleString', line: line(n), text: textOf(n) });
+      else if (nm && (formatters.has(nm) || (ts.isIdentifier(callee) && /^(fmt|format)(Money|Eur|Euro|Importe|Inv|Quote)|^(eur|euros|money|importe|fmtEuro|fmtImporte)$/i.test(nm))))
+        hits.push({ kind: 'formateador:' + nm, line: line(n), text: textOf(n) });
+    }
+    if (ts.isCallExpression(n)) {
+      const c = n.expression;
+      const MP = /\b(total|amount|importe|price|precio|pending|pendiente|deposit|senal|señal|cobrado|base|cuota|subtotal|iva)\w*$/i;
+      if (ts.isIdentifier(c) && c.text === 'String' && n.arguments[0] && MP.test(n.arguments[0].getText(sf))) hits.push({ kind: 'String(importe)', line: line(n), text: textOf(n) });
+      if (ts.isPropertyAccessExpression(c) && c.name.text === 'toString' && MP.test(c.expression.getText(sf))) hits.push({ kind: 'importe.toString()', line: line(n), text: textOf(n) });
+    }
+    if (ts.isTemplateExpression(n)) {
+      const MP = /\b(total|amount|importe|price|precio|pending|pendiente|deposit|senal|señal|cobrado|base|cuota|subtotal|iva)\w*$/i;
+      for (const sp of n.templateSpans) {
+        const e = sp.expression;
+        if ((ts.isPropertyAccessExpression(e) || ts.isIdentifier(e)) && MP.test(e.getText(sf))) hits.push({ kind: 'interpola-crudo', line: line(sp), text: textOf(sp) });
+      }
+    }
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken && [n.left, n.right].some((x) => ts.isStringLiteral(x) && /€|\bEUR\b/.test(x.text))) hits.push({ kind: 'concat€', line: line(n), text: textOf(n) });
+    if (ts.isNewExpression(n) && /Intl\.NumberFormat/.test(n.expression.getText(sf))) hits.push({ kind: 'Intl.NumberFormat', line: line(n), text: textOf(n) });
+    if (ts.isTemplateExpression(n)) {
+      const lits = [n.head.text, ...n.templateSpans.map((s) => s.literal.text)];
+      if (lits.some((t) => /€|\bEUR\b/.test(t))) hits.push({ kind: 'plantilla€', line: line(n), text: textOf(n) });
+    }
+    ts.forEachChild(n, v);
+  })(sf);
+  return { hits, formatters: [...formatters] };
+}
+
+// ── control positivo / negativo antes de mirar el árbol real ───────────────────────
+const CONTROL = `
+// comentario con toFixed(2) y 12,00 € que NO debe contar
+function fmtEuroX(n) { return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n); }
+const a = total.toFixed(2);
+const b = fmtEuroX(q.total);
+const c = \`Total: \${q.total} €\`;
+const d = x.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+const e = 'sin importe';
+const f = \`Importe \${charge.amount}\`;
+const g = String(quote.total);
+const h = n + ' €';
+`;
+const ctl = escanear(CONTROL, 'control.js');
+const kinds = ctl.hits.map((h) => h.kind).sort();
+const ESPERADO = ['Intl.NumberFormat', 'formateador:fmtEuroX', 'plantilla€', 'toFixed2', 'toLocaleString', 'interpola-crudo', 'String(importe)', 'concat€', 'interpola-crudo'].sort();
+if (JSON.stringify(kinds) !== JSON.stringify(ESPERADO) || ctl.hits.some((h) => h.line === 2)) {
+  console.error('CONTROL FALLIDO', kinds, ctl.hits); process.exit(2);
+}
+console.log('control positivo/negativo OK:', kinds.join(', '));
+
+// ── árbol real ─────────────────────────────────────────────────────────────────────
+const files = [...walk(path.join(ROOT, 'src')), ...walk(path.join(ROOT, 'public'))];
+const GLOBAL = new Set();
+for (let vuelta = 0, antes = -1; GLOBAL.size !== antes; vuelta++) { antes = GLOBAL.size; for (const f of files) for (const { code } of fuentes(f)) for (const n of escanear(code, f, GLOBAL, true).formatters) GLOBAL.add(n); }
+console.log('formateadores de dinero derivados del árbol (' + GLOBAL.size + '):', [...GLOBAL].sort().join(' '));
+const porSup = {};
+let totalFiles = 0;
+const todos = [];
+for (const f of files) {
+  const rel = path.relative(ROOT, f).replace(/\\/g, '/');
+  for (const { code, lineOffset } of fuentes(f)) {
+    const { hits } = escanear(code, f, GLOBAL);
+    if (!hits.length) continue;
+    const sup = superficie(rel);
+    for (const h of hits) {
+      const r = { sup, file: rel, line: h.line + lineOffset, kind: h.kind, text: h.text };
+      todos.push(r);
+      (porSup[sup] ??= {})[rel] = ((porSup[sup] ??= {})[rel] || 0) + 1;
+    }
+  }
+  totalFiles++;
+}
+console.log(`ficheros examinados: ${totalFiles}`);
+if (totalFiles < 300) { console.error('SUELO: menos de 300 ficheros examinados, no supe mirar'); process.exit(3); }
+for (const sup of Object.keys(porSup).sort()) {
+  const entries = Object.entries(porSup[sup]).sort((a, b) => b[1] - a[1]);
+  console.log(`\n## ${sup} · ${entries.reduce((a, [, c]) => a + c, 0)} sitios en ${entries.length} ficheros`);
+  for (const [f, c] of entries) console.log(`  ${String(c).padStart(4)}  ${f}`);
+}
+// control positivo sobre el árbol real: sitios que SÉ que existen
+const conocidos = [
+  ['src/modules/quotes/app/routes/quotes.routes.ts', /totalNum\.toFixed\(2\)/],
+];
+for (const [f, re] of conocidos) {
+  if (!todos.some((t) => t.file === f && re.test(t.text))) { console.error('CONTROL REAL FALLIDO', f, re); process.exit(4); }
+}
+console.log('\ncontrol positivo sobre el árbol real OK');
+if (outJson) fs.writeFileSync(outJson, JSON.stringify(todos, null, 1));
