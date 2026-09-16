@@ -364,3 +364,148 @@ Bajo (A) no desaparece solo: habría que decidir que el lector derive `isDemoMer
 5. **El dictamen de la asesoría** (pregunta 3 del ticket): si el registro sellado de VeriFactu
    basta o el documento entregado también tiene que ser inmutable. **Va antes que la elección**, y
    ninguna medición la sustituye.
+
+---
+
+# APÉNDICE · 16-sep-2026 · (A) Los siete campos del emisor, congelados — con su caducidad puesta
+
+**Fecha:** 16-sep-2026 · **Carril:** fiscal · documento emitido · **Gate:** sin gate, corre en `npm test`
+
+**Medido contra:** `origin/main` = `dc7919946ffd605ab874e541386f2b23bf84cabf` · 2026-09-16T12:04:20+01:00
+**Rama:** `scrum-665a-congelar-el-emisor`
+
+> 🟢 **(A) aprobado por el fundador.** El QUÉ estaba medido en SCRUM-665 (15-sep) y el CÓMO en su
+> apéndice (16-sep). Esto construye el escritor y el lector.
+> ⛔ **`prisma/schema.prisma` NO se ha tocado** y **no se ha aplicado nada a ninguna base**: ni
+> `db push`, ni `migrate dev`, ni `migrate diff`, ni «para comprobar». El diff va **propuesto**.
+> ⛔ Sin estado ni flag nuevos (27) · sin dependencias (36).
+
+---
+
+## 0 · Obligación 0 — y las dos ramas previas eran mediciones
+
+`git ls-remote` → **ninguna rama `scrum-665*` viva**. En `main` hay dos merges con ese número:
+`#1283` (el QUÉ) y `#1339` (el CÓMO). **Los dos mergeados, y los dos midieron sin construir.**
+
+Y se probó **por contenido**, no por el mensaje del commit: ninguna de las siete columnas existe
+hoy en `model Invoice` — lo único que tiene de merchant es `merchantId` y su relación. Así que (A)
+no estaba hecho.
+
+## 1 · El ALTER · **propuesto, no aplicado**
+
+Siete columnas `String?` (TEXT, NULL) con `@map` snake_case, junto a las cinco del cliente
+congelado y con su mismo estilo. El diff literal, el desglose de por qué es aditivo puro y el
+cableado pendiente están en
+**`docs/master/evidencias/scrum665a/ALTER-propuesto.md`**.
+
+🔴 **`merchant_name` va NULLABLE aunque `Merchant.name` sea `NOT NULL`**, y no es un descuido que
+haya que «arreglar»: ese NULL es el **centinela** que distingue «factura anterior al escritor» de
+«factura sin nombre». Un `@default` ahí convertiría el centinela en basura y las facturas viejas
+dejarían de distinguirse de las nuevas.
+
+Tres bases (`_STAGING`, `_DEV`, `_TESTS`) en **una sola PR**; producción, el fundador.
+
+## 2 · El escritor y el lector
+
+`src/modules/invoicing/domain/emisorCongelado.ts`. **Mismo patrón que `clienteCongelado.ts`**
+(SCRUM-729) y que `datosDeAlbaranEmitido`: columnas + escritor al emitir + lector que prefiere la
+columna. Se imita a propósito — un cuarto patrón para el mismo hecho es cómo nacen dos criterios
+que un día discrepan.
+
+- **`congelarEmisor(ficha)`** produce las siete claves, siempre las siete, **sin respaldos**: si el
+  nombre llegara vacío, el documento dice la verdad en vez de inventarse uno.
+- **`emisorDelDocumento(doc, viva)`** mira **`merchantName`, no «los siete a la vez»**. Es la
+  lección literal de `clienteCongelado.ts:215-227`: preguntar por `merchantTaxId` daría un falso
+  «no congelado» en toda factura de un merchant que aún no ha puesto su NIF, que es un caso
+  **normal**, no un error (SCRUM-215).
+- Sin columna y **sin ficha viva**, lanza. Un papel sin emisor es peor que un error: el error lo ve
+  la casa, el papel lo ve el cliente.
+
+## 3 · 🔴 La prueba es el CONTRASTE, no la respuesta
+
+«Con las columnas puestas el PDF no cambia» no demuestra nada solo: un banco roto que devuelve
+siempre el mismo papel también lo diría. Lo que decide es que **las dos ramas respondan distinto al
+mismo estímulo** —el merchant corrige su dirección después de emitir—:
+
+| | rama | resultado |
+|---|---|---|
+| ✅ POSITIVO | fila **con** las siete columnas | el papel **NO cambia** |
+| 🔴 NEGATIVO | la misma fila **con las columnas a NULL** | el papel **SÍ cambia** |
+
+Y el negativo lleva su propio mensaje escrito: *«si no cambia, el banco no está midiendo el
+mecanismo — las dos ramas responden igual y el positivo no prueba nada»*.
+
+**Ninguna factura vieja cambia de aspecto**, y no se afirma: se compara el papel que sale **por el
+lector** contra el que sale **sin pasar por él**, que es literalmente lo que hace hoy
+`src/lib/invoicing.ts`. Salen idénticos.
+
+⚠️ **Por CONTENIDO, no por bytes** — medido en SCRUM-665: dos pasadas del mismo PDF con datos
+idénticos dan ficheros distintos y el tamaño sí es estable.
+⚠️ **Y con testigo de ejecución**, la lección de SCRUM-864: cada papel comprueba que su número es
+legible antes de comparar. Dos textos vacíos coinciden, así que sin ese testigo el «no cambia» del
+positivo sería falso.
+
+## 4 · 🗓️ LA CADUCIDAD · la RED, no la nota
+
+Estas siete columnas existen por **una razón concreta**: hoy el PDF de una factura emitida **se
+regenera**, porque no hay almacenamiento persistente. El día que SCRUM-665(B) guarde el papel de
+verdad —va con la mudanza a Europa, **SCRUM-863**— el PDF deja de regenerarse y **estas columnas
+pierden su lector**: se seguirían escribiendo en cada emisión sin que nadie las lea.
+
+**Sí existe un guard que puede vigilarla, y son dos — uno de ellos ya existía:**
+
+**① El disparador propio, construido aquí** (mecanismo de P-DOC-8: fecha con su motivo **más** un
+disparador evaluable). Un caso por AST afirma que **`ensureInvoicePdf` sigue llamando a
+`generateInvoicePdf`**. El día que (B) aterrice, eso deja de ser cierto y el caso se pone rojo con
+su mensaje dentro:
+
+> *«ESTE ROJO NO ES UN FALLO: ES EL AVISO DE QUE UNA DECISIÓN HA CADUCADO.»* — y enuncia las dos
+> salidas: retirar lector y columnas con su ALTER de baja, o conservarlas **con motivo nuevo
+> escrito** (la salida C del ticket) y girar el caso.
+
+**② El registro de huérfanos de SCRUM-411, que ya estaba.** El día que `emisorDelDocumento` pierda
+su llamador, aparece como export inalcanzable y **alguien tiene que decidir**. No hay que construir
+nada: es automático.
+
+**FECHA LÍMITE: 16-mar-2027** — seis meses desde la firma, el mismo plazo que P-DOC-8 y por el
+mismo motivo: no es sagrada, es un tope para que la decisión no se convierta en olvido. **Quien la
+mueva, que escriba por qué.**
+
+## 5 · 🔴 Un trinquete saltó, y se DECIDIÓ en vez de ensancharlo
+
+`SCRUM-411 · los módulos de dominio inalcanzables NO crecen` se puso rojo: 8 sobre un tope de 7.
+Tenía razón — `emisorCongelado.ts` **nace sin llamador**.
+
+Y nace así por una razón que no está en mi mano: su llamador necesita las siete columnas, y el
+esquema es del fundador. Sin ellas, `prisma.invoice.create({ data: { merchantName… } })` **ni
+compila**.
+
+🔴 **No es un motor sin llamador de los que ese trinquete persigue:** está ejercitado de punta a
+punta sobre PDFs reales. Lo que falta es el ALTER, no la prueba. El tope sube a **8** con el motivo
+escrito en el fichero **y con cuándo vuelve a 7**: el día que se aplique el diff y se cablee el
+escritor, en el mismo commit. Un tope que se queda alto después de que su motivo desaparezca es un
+trinquete que ha dejado de proteger sin que nadie lo note.
+
+## 6 · Lo que esto NO arregla, dicho para que no se lea de más
+
+1. **El eje del CÓDIGO.** El papel se regenera con los mismos **datos**, no con la misma
+   **plantilla**. `generateInvoicePdf` no recibe ninguna versión de formato: cambiar el generador
+   seguirá cambiando papeles emitidos. Declarado en SCRUM-665 §2, sigue sin medir.
+2. **El pasado.** Las facturas ya emitidas no tienen estas columnas y **no se pueden rellenar**: no
+   existe ninguna acción de `AuditLog` que registre una edición del perfil del merchant. Esto
+   promete de su fecha de entrada en adelante, y nada más.
+3. **La marca de agua.** `watermark` se deriva de `isDemoMerchant(...)` en vivo. Con el email
+   congelado *se puede* derivar del dato congelado, pero **eso es una decisión aparte** y aquí no
+   se toma.
+4. **El cableado.** Escritor y lector están construidos y probados; **conectarlos al camino de
+   emisión espera al ALTER**, con los tres puntos exactos ya escritos en el fichero de la
+   propuesta.
+
+## 7 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `src/modules/invoicing/domain/emisorCongelado.ts` | escritor, lector, lista cerrada de los siete |
+| `tests/scrum665a-congelar-el-emisor.test.mjs` | 7 casos: suelo, el contraste, el centinela, la caducidad |
+| `docs/master/evidencias/scrum665a/ALTER-propuesto.md` | el diff propuesto + el cableado pendiente |
+| `tests/scrum411-exports-inalcanzables.test.mjs` | el tope, subido con su motivo y su vuelta a 7 |
