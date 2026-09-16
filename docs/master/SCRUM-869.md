@@ -65,6 +65,21 @@ npm test  →  6.943 tests · 6.833 pass · 0 fail · 110 skipped · 253 s
 De esos **110 saltos**, los que **nombran un gate de base de datos** son **95 — exactamente los 95
 del censo por AST**. Los otros 15 son otra cosa y están explicados en §8.2.
 
+### 1.2 · Y un tercero, escrito por otra sesión sin hablar conmigo
+
+`docs/master/SCRUM-868.md` (Sesión 3, ya en `main`) censó los gateados con **su propio**
+instrumento —uno que ni siquiera lleva la lista de gates escrita a mano— y publicó, en su §2:
+
+| | Sesión 3 (SCRUM-868) | aquí (SCRUM-869) |
+|---|---|---|
+| `QA_DB_TEST` | 93 | 93 |
+| `A55_DB_TEST` | 1 | 1 |
+| `BOT_SUITE_TEST` | 1 | 1 |
+| **total de gates de base** | **95** (su §3, tabla) | **95** |
+
+**Tres instrumentos distintos, en dos carriles que no se coordinaron, dan la misma cifra.** Es la
+mejor prueba que puedo dar de que el 95 no es un artefacto de cómo yo miro.
+
 ---
 
 ## 2 · El censo
@@ -311,6 +326,11 @@ dentro de `npm test`, porque un artefacto que no corre en la tanda no existe.
 líneas de distancia—: `scrum814-carrera-de-tramos-postgres` y `scrum728-serie-ocupada-postgres`.
 Son **2 tests**, uno de tramos y otro de serie ocupada: **camino fiscal**. Coste de arreglarlo: dos
 líneas de `env:` apuntando a la base que ya existe. No lo toco: es `ci.yml`.
+
+🔴 **Y esto no lo encontré yo solo: la Sesión 3 llegó antes.** `docs/master/SCRUM-868.md` §2 ya
+marca las dos variables con «🔴 **NADIE**: no están en ningún workflow, ni en `package.json`, ni en
+ningún script», y su documento entró en `main` antes que éste. Lo dejo escrito aquí porque lo medí
+por mi cuenta y **coincide** —dos carriles, el mismo agujero—, no porque sea mío.
 
 ### 8.2 · Los 15 saltos que no son de este ticket
 
