@@ -236,6 +236,11 @@ Cuando el orquestador firma, firma así:
 10. El turno acaba con «TU LISTA»: lo que tiene que hacer ÉL, numerado
     y corto. Si no hay nada, se dice que no hay nada.
 11. Nunca viñetas para dar una mala noticia. En prosa.
+11bis. 🔴 16-sep-2026, corrección del fundador: cada prompt lleva ENCIMA del bloque, en una
+    línea que se entiende sin saber nada, DÓNDE se pega: «🆕 CHAT NUEVO en la carpeta de la
+    Sesión N» o «↩️ MISMO CHAT de la Sesión N». Escribir «conversación nueva» DENTRO del prompt
+    no sirve: lo lee la sesión cuando ya está pegado en el chat equivocado. Pasó con S2 y S5.
+    Los puestos no se cierran nunca (A19): lo que se cierra es el chat.
 
 ## 10bis · Las reglas de ticket
 
