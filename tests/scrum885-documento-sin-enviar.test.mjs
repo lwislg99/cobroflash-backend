@@ -57,7 +57,7 @@ function doblarModulo(ruta, exports) {
  * Un profesional, un trabajo, un presupuesto con su cobro Bizum pendiente y el cliente del caso.
  *   email      → el cliente tiene email
  *   telefono   → el cliente tiene número (psp intenta el WhatsApp)
- *   wa         → cómo queda la fila del WhatsApp si se intenta: 'sent' | 'failed'
+ *   wa         → cómo queda la fila del WhatsApp si se intenta: 'sent' | 'failed' | 'queued'
  *   autoEmail  → AUTO_EMAIL_INVOICE_ON_PAID
  */
 function banco({ email = null, telefono = null, wa = 'sent', autoEmail = true } = {}) {
@@ -120,7 +120,7 @@ function banco({ email = null, telefono = null, wa = 'sent', autoEmail = true } 
   doblarModulo('dist/integrations/whatsappNotifications.js', {
     // La fila se escribe AL LLAMAR, como la escribiría el envío real al volver de Meta.
     sendPaymentConfirmationInvoice: async (p) => {
-      filasWa.push({ relatedType: 'charge', relatedId: p.chargeId, status: wa });
+      filasWa.push({ relatedType: 'charge', relatedId: p.chargeId, status: wa, createdAt: new Date() });
       return { ok: wa === 'sent' };
     },
     notifyMerchantPaid: async () => ({ ok: true }),
@@ -252,6 +252,32 @@ test('SCRUM-885 · un WhatsApp que falla DESPUÉS (webhook de estado) hace apare
   b.filasWa[0].status = 'failed'; // lo que escribe el webhook de estado de Meta
   const despues = (await b.detalleDelTrabajo()).cuerpo.invoices.find((i) => i.chargeId === b.chargeId);
   assert.equal(avisoVisible(despues.envioDocumento).mostrar, true, 'el fallo posterior tiene que verse');
+});
+
+// ═══ ④ EN COLA (corrección del orquestador, 16-sep) ═════════════════════════════════════════
+// Un WhatsApp en cola TODAVÍA NO HA FALLADO: avisar ahí sería casi siempre una falsa alarma. Pero
+// uno atascado no puede quedarse callado para siempre: pasados 10 minutos en cola, cuenta como no
+// enviado.
+
+test('SCRUM-885 · sin email y WhatsApp EN COLA recién puesto → SIN aviso (todavía no se sabe)', async () => {
+  const { b, enToast, enFila } = await cobrarYMirar({ email: null, telefono: '+34600000885', wa: 'queued' });
+  assert.equal(b.filasWa.length, 1, 'control: el WhatsApp tiene que haberse intentado');
+  assert.equal(b.filasWa[0].status, 'queued', 'control: la fila tiene que seguir en cola');
+  assert.equal(enToast.mostrar, false, '🔴 FALSA ALARMA: un WhatsApp en cola aún no ha fallado y el toast ya avisa.');
+  assert.equal(enFila.mostrar, false, '🔴 FALSA ALARMA: un WhatsApp en cola aún no ha fallado y la fila ya avisa.');
+});
+
+test('SCRUM-885 · sin email y WhatsApp EN COLA más de 10 minutos → CON aviso en la fila (atascado)', async () => {
+  const b = banco({ email: null, telefono: '+34600000885', wa: 'queued' });
+  await b.confirmarBizum();
+  assert.ok(b.emisiones.includes(b.chargeId), '🔴 NO PUDE MIRAR: no se emitió el documento.');
+  const fila = async () => (await b.detalleDelTrabajo()).cuerpo.invoices.find((i) => i.chargeId === b.chargeId);
+  // Control: a los 9 minutos todavía no se sabe. Sin él, un «siempre avisa» pasaría este test.
+  b.filasWa[0].createdAt = new Date(Date.now() - 9 * 60_000);
+  assert.equal(avisoVisible((await fila()).envioDocumento).mostrar, false, 'a los 9 minutos en cola no hay aviso');
+  b.filasWa[0].createdAt = new Date(Date.now() - 11 * 60_000);
+  assert.deepEqual(avisoVisible((await fila()).envioDocumento), { mostrar: true, texto: TEXTO_FIRMADO },
+    '🔴 CALLADO PARA SIEMPRE: un WhatsApp atascado en cola más de 10 minutos no deja aviso en la fila.');
 });
 
 test('SCRUM-885 · flag APAGADO → SIN aviso (que no le llegue a nadie es otro ticket)', async () => {
