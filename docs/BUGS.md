@@ -574,6 +574,41 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-META-859 · `meta-guard` MUDO: el guard de SCRUM-859 no cae ante la mutación que declara (16-sep-2026, hallazgo colateral de SCRUM-888g)
+- **No es de SCRUM-888g** — se registra aparte porque es otro carril (regla 37) y **no se toca un
+  guard ajeno para que la tanda de esta rama pase**. Ya estaba en `main` antes de abrir
+  `scrum-888g-senal-en-la-firma`: `git merge-base --is-ancestor 34317aa7 origin/main` → `YES`. El
+  commit `34317aa7` (SCRUM-649, mezclado hoy vía PR #1371) reescribió
+  `tests/scrum859-identidad-y-motivo-cerrado.test.mjs` y dejó este guard mudo desde entonces.
+- **Lo medido:** el job `meta-guard · los guards caen cuando deben` cae en
+  https://github.com/lwislg99/cobroflash-backend/actions/runs/35136653651 con:
+  ```
+  🔴 GUARDS MUDOS — pasan en verde sobre el defecto que dicen vigilar:
+    · scrum859-identidad-y-motivo-cerrado.test.mjs · el guard NO cayó. Test que debía ponerse
+      rojo: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+  ```
+- **Causa raíz:** el test `SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave`
+  (línea 135) define su PROPIA función `claves()` local que llama a `identidadDeEntrada()`
+  directamente, en vez de usar `entradasTroceadas()` (`tests/scrum267-ancla-de-medicion.test.mjs`,
+  exportada justo para eso). La mutación que este guard declara en
+  `MUTACIONES_QUE_ME_TUMBAN` (línea 36-40) cambia la línea 326 de `scrum267`, **dentro de**
+  `entradasTroceadas()` — una función que ese test concreto nunca ejecuta. La mutación se aplica
+  (la cadena es única en el fichero, verificado), pero nunca alcanza el código que el test mide:
+  guard mudo por duplicación, no por sintaxis rota.
+- **Por qué no se arregla aquí:** el arreglo toca `tests/scrum859-identidad-y-motivo-cerrado.test.mjs`
+  y/o `tests/scrum267-ancla-de-medicion.test.mjs` — ningún fichero de SCRUM-888g — y decidir SI la
+  reimplementación local se sustituye por `entradasTroceadas()` (compartir lector, como pide el
+  canon de SCRUM-649 citado en el propio `34317aa7`) o si es la declaración de la mutación la que
+  hay que apuntar a otro sitio, exige mirar por qué se duplicó a propósito (quizá el suelo del test
+  necesita una entrada de laboratorio que `entradasTroceadas()` no puede darle) — análisis propio,
+  no una edición mecánica de paso.
+- **Impacto:** al estar ya en `main`, este check obligatorio sale en rojo en **cualquier PR**
+  abierto contra la base actual, no sólo en éste — bloquea el auto-merge de toda la cola hasta que
+  se arregle en su propio ticket.
+- **Done cuando:** el guard de SCRUM-859 vuelve a caer con la mutación que declara (mutación
+  re-ejercida, verde de vuelta al restaurar), sin bajar el ámbito del meta-guard ni excluir este
+  test de su barrido.
+
 ### [ ] P3-TMPDIR · 24.740 directorios temporales de la casa abandonados en `TMPDIR` (16-sep-2026, hallazgo colateral de SCRUM-858)
 - **Medido:** `TMPDIR` (`C:Users…AppDataLocalTemp`) tiene **55.229 entradas**, de las que
   **24.740** llevan prefijo de esta casa: `yaqu*` 15.679 · `scrum723` 3.675 · `scrum385` 1.827 ·
