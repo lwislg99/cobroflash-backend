@@ -1,7 +1,7 @@
 # SCRUM-885 · El cobro a un cliente sin email: el documento no salía y el profesional no se enteraba
 
 **Medido contra:** `origin/main` = `4b0d5739bc19e7bad5109a32822ef7039d9ca860` · 2026-09-16T13:36:13Z
-**Rama:** `scrum-885-cliente-sin-email` · **Estado:** EN CURSO — falta la mitad de la vista (ver «Lo que falta»)
+**Rama:** `scrum-885-cliente-sin-email` · **Estado:** EN PR — vista, guards, rojos por mutación y QA visual hechos (sesión 2). Pendiente fuera de la rama: la firma del literal con su comentario de Jira (ver «Microcopy»)
 
 ## PASO 0 · medido corriendo, en local (nunca producción ni staging)
 
@@ -69,14 +69,106 @@ nuevo). Suelo: si el cobro no emite el documento, falla «NO PUDE MIRAR».
 * `public/dashboard/js/avisoDocumentoSinEnviar.js` — la regla y el literal firmado.
 * **`psp.routes.ts` no se toca. Ningún envío nuevo. Sin schema. El camino de emisión, intacto.**
 
-## Lo que falta (traspaso)
+## Sesión 2 · 16-sep-2026 · medido contra GitHub `Date: Wed, 16 Sep 2026 14:46:28 GMT`
 
-1. `jobDetailView.js`: pintar `avisoDocumentoSinEnviar(inv.envioDocumento)` en la fila de la factura
-   (`invoices.forEach`, ~l. 1791) y usar `avisoDocumentoSinEnviar(respuesta.envioDocumento)` en el
-   toast de «Confirmar Bizum» (~l. 1863), reutilizando un componente de aviso del inventario AB3
-   (yaqu-premium-ui). También `invoiceDetailView.js:560`, que llama al mismo endpoint.
-2. Cargar el script en `public/dashboard/index.html` antes de `jobDetailView.js`, y lo que pidan los
-   guards de la lista de scripts y del `SHELL` del service worker.
-3. Añadir al test la atadura vista↔regla (por AST/`_solo-codigo`, no `grep`).
-4. Suite completa, rojos por mutación (quitar `no_enviado` de la regla; quitar el filtro `paid`),
-   QA visual, entrada del literal en la microcopy aplicada, PR.
+Arranque: `git merge origin/main` dentro de la rama (sin rebase), suite de lo mío en verde.
+
+### Corrección del orquestador: EN COLA no es fallo
+
+La regla anterior contaba cualquier `queued` como no enviado, y eso avisaba casi siempre en falso: un
+WhatsApp en cola todavía no ha fallado.
+
+* `queued` con menos de 10 minutos → `en_curso` («todavía no se sabe») → **sin aviso**.
+* `queued` con más de 10 minutos → `no_enviado` → **con aviso** en la fila (atascado: no se calla para siempre).
+* `failed` o sin intento → con aviso. `SENT_OR_MORE` → sin aviso.
+
+Lo decide `estadoWhatsappDeFilas` con el `createdAt` de la fila; la regla del dashboard no cambia
+(`en_curso` sigue sin avisar). Las dos rutas seleccionan `createdAt`.
+
+### Commits de la sesión 2
+
+| sha | qué |
+|---|---|
+| `4fafb054e604e5f11184171e5479590dcd65644d` | ROJO de la cola: los dos casos caen por aserción (toast avisa sobre un `queued` recién puesto; la fila avisa a los 9 min) |
+| `b2c092bb03e55d981d891d58e9d5f6c49531d07e` | cola: `en_curso` hasta 10 min, luego `no_enviado` — 9/9 |
+| `4a68d9f1b354a4690c794a17d507ca76c66571f9` | vista: fila (`.alert.warning`, AB3) + toast `warn` en jobDetailView e invoiceDetailView; script en index.html, SHELL del SW y `SCRIPTS_DEL_DASHBOARD`; atadura vista↔regla por AST |
+| `b2f4062c7fc7da7e2fe1c6e3920c4156316a5c28` | factura aún sin cobrar no avisa (un mutante sobrevivía) |
+| `f9bbd543a1a630b883dcb0fdd27bc66698f79d9f` | guards 860 y 411 de la tanda |
+
+### La vista
+
+* **Componentes reutilizados, ninguno nuevo:** `.alert.warning` dentro de la `.job-doc-row` (sólo un
+  modificador `.job-doc-row__aviso { margin-top: 8px }`, la misma distancia que las acciones) y
+  `showToast(texto, 'warn')`.
+* **Confirmar Bizum (trabajo):** el ✓ se queda —el cobro SÍ está hecho— y el aviso va aparte. Tras el
+  `refresh()` la fila lo conserva.
+* **Confirmar Bizum (ficha de factura, `invoiceDetailView.js`):** toast, porque la pantalla se repinta
+  justo después y se llevaría el aviso de estado.
+* **Declarado:** el toast `warn` dura 3 s (`TOAST_MS_OK`: sólo `error` escala con el largo) y el literal
+  tiene 98 caracteres. En el trabajo no importa (la fila lo deja fijo). **En la ficha de factura es el
+  único sitio** y 3 s es poco para leerlo; no se ha tocado `duracionToast` (afecta a todos los avisos).
+  Queda como hallazgo para el orquestador.
+
+### Atadura vista↔regla (AST, `typescript`)
+
+Las tres superficies llaman a `avisoDocumentoSinEnviar`: la fila con `inv.envioDocumento` dentro de
+`invoices.forEach` y su `.texto` a `textContent`; los dos manejadores de `confirm-bizum` con la
+respuesta de ESA petición y su `.texto` a `showToast`; y ninguna vista lleva una copia del literal.
+Las variables se resuelven **en su función**: el manejador del botón vive dentro del `forEach` de la
+fila y declara otra `avisoEnvio`, así que por nombre a secas los usos de uno contaban como del otro
+(la primera versión del test cayó justo por eso).
+
+### Rojos por mutación (8, todos ROJOS; reverso: 13/13)
+
+| mutante | caen |
+|---|---|
+| la fila no llama a la regla | la atadura de la fila |
+| la fila copia el literal | las ataduras de la fila y del toast del trabajo |
+| el toast del trabajo lee `inv.envioDocumento` | la atadura del toast del trabajo |
+| la ficha de factura no llama a la regla | la atadura de la ficha |
+| la regla sin `no_enviado` | fallido, fallo posterior, cola >10 min |
+| sin el filtro `status: 'paid'` | factura aún sin cobrar (**sobrevivía** hasta `b2f4062c`) |
+| la cola nunca `en_curso` | cola recién puesta, cola >10 min (su control de 9 min) |
+| la cola siempre `en_curso` | cola >10 min |
+
+### Guards de la suite completa
+
+Primera pasada: 7073 tests, **6 rojos, todos por esta rama** — ninguno ajeno:
+
+* **SCRUM-860** (lecturas sin `select` hacia fuera, 82 > suelo 81): ensanchar el `include` del cobro
+  en `confirm-bizum` sacaba el objeto entero hasta la respuesta. El `include` vuelve a ser el de main
+  y el contacto se lee con su `select` **desde el id de la ruta** (pasarle `charge.customerId` seguía
+  contaminando). Medido: 81.
+* **SCRUM-411:** tres exports internos dejan de exportarse, y `SENT_OR_MORE` sale de
+  `_huerfanos-declarados.mjs` porque ahora tiene lector (el trinquete al revés lo exigía).
+* **SCRUM-726:** ver «Microcopy».
+
+### Microcopy — la firma NO está completa
+
+La firma delegada (SCRUM-861) exige en la misma línea la referencia a un comentario de Jira, y
+**SCRUM-885 no tiene ningún comentario** (medido el 16-sep por el MCP). El literal se firmó en el mensaje
+de arranque de la sesión. **No se ha inventado la referencia:** el registro
+`docs/microcopy/2026-09-16-SCRUM-885-documento-sin-enviar.md` está escrito pero **fuera de la rama**
+(con él dentro, SCRUM-726 cae con `firmante: null`). Cuando el orquestador deje el literal en un
+comentario, se añade con su id.
+
+### QA visual — medida en navegador real, no leída
+
+App REAL (`node dist/index.js`, esta rama) contra el Postgres desechable del PASO 0 (`127.0.0.1:55885`,
+`yaqu_885_test`), Edge headless por `puppeteer-core`, `BIZUM_MANUAL_ENABLED=true` sólo en ese proceso.
+Semilla ampliada con facturas `pending` para pulsar los botones de verdad.
+
+| caso | 390 px (móvil) | 1280 px |
+|---|---|---|
+| fila · sin email ni teléfono | aviso dentro de la fila (274×83), sin scroll horizontal | aviso (592×63), sin scroll |
+| fila · WhatsApp `failed` | aviso | aviso |
+| fila · CON email (control) | **sin** aviso | **sin** aviso |
+| Confirmar Bizum · trabajo | toasts `ok` + `warn` con el literal, en vista; la fila avisa tras el refresh | igual |
+| Confirmar Bizum · ficha de factura | toast `warn` con el literal | igual |
+
+Errores de página: 0. **Dos «no pude mirar» en el camino, contados como tales y rehechos:** la primera
+pasada fotografió detrás del modal de onboarding del merchant de la semilla (medidas válidas, fotos
+no), y en la ficha de factura no llegó a pulsar nada (factura en `issued` y bandera apagada: sus
+toasts eran los del trabajo, aún en pantalla). Capturas miradas una a una.
+
+**Negativo cumplido:** ningún envío nuevo, sin schema, `psp.routes.ts` intacto, camino de emisión intacto.
