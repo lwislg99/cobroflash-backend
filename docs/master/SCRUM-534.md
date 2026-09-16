@@ -261,6 +261,7 @@ dicho aquí para que no parezca un descuido de redacción.
 
 **Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `9c90cc89044a20a85defdc0c93feb032e6544ca5` · 2026-09-16T11:16:20+01:00
+**Tanda:** 7016 tests, 6906 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 837 ficheros · exit 0 — con tope duro, compilando DESPUÉS de mergear.
 
 > **Una lista de huecos es una foto. Esto es el inventario.**
 
