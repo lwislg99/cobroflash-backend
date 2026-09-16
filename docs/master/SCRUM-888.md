@@ -98,7 +98,7 @@ Sobre `dist/`, cada mutación casando **una** vez, `dist/` restaurado y comproba
 | M2 · enseña la etiqueta interna del tramo de serie | 8 |
 | M3 · importe también con tiers | 3 |
 | M4 · sin condiciones se resuelve a pago completo | 3 |
-| M5 · ignora el plan propio | 3 |
+| M5 · ignora el plan propio | 3 (4 tras sumar el caso con dto de línea; las demás, iguales) |
 | M6 · MANUAL sin plan pinta el código | 6 |
 | AST · un `distributeStageAmounts` en el fuente de la página | 1 |
 
