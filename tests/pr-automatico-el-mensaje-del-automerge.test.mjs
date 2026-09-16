@@ -241,7 +241,8 @@ function bancoDelPaso({ error, vista }) {
   try {
     const salida = execFileSync('bash', [path.join(dir, 'correr.sh')], {
       cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, NUM: '1181', MODO_COMPLETO: 'true' },
+      // QUIEN_EMPUJA: desde SCRUM-839e solo arma un push de una persona; estos casos son de una.
+      env: { ...process.env, NUM: '1181', MODO_COMPLETO: 'true', QUIEN_EMPUJA: 'User' },
     });
     return { codigo: 0, salida };
   } catch (e) {

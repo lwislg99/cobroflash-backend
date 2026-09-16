@@ -6,6 +6,9 @@
 # llave de la App. El PR vuelve a estar limpio, corre CI y el auto-merge hace el resto.
 #
 # QUÉ NO HACE, Y ES LA MITAD DEL DISEÑO:
+#   · 🔴 NO toca un PR que no tuviera el auto-merge ARMADO antes de la pasada (SCRUM-839e). El
+#     16-sep-2026 la primera pasada empujó a #880 y #399, PR de semanas sin armar; el push los
+#     hizo armar y entraron en `main`. Si no se puede leer el armado, «no pude mirar».
 #   · NO toca un PR con UN SOLO fichero en conflicto fuera de `docs/master/`. Eso lo resuelve
 #     una persona. La decisión —con sus dos cerraduras— vive en `scripts/conflicto-de-registro.mjs`
 #     y la tanda la ejecuta contra repositorios git de verdad.
@@ -109,6 +112,7 @@ jobs:
           SLUG: ${{ steps.token.outputs.app-slug }}
         run: |
           NO_PUDE=0
+          SIN_ARMAR=0
 
           # La identidad del merge: la del bot, para que se vea quién lo hizo.
           ID="$(GH_TOKEN="$APP_TOKEN" gh api "/users/${SLUG}%5Bbot%5D" -q .id 2>/dev/null)" || ID=''
@@ -117,8 +121,10 @@ jobs:
           export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
 
           # 🔴 SUELO de la lista de PR: si no se puede leer, no es «no hay ninguno».
+          # `autoMergeRequest` se lee AQUÍ, antes de empujar nada: es el «ya estaba armado ANTES de
+          # esta pasada» (SCRUM-839e). La decisión lo mira primero y, si falta, no empuja.
           if ! gh pr list --state open --base main --limit 200 \
-                 --json number,headRefName,headRefOid,isCrossRepository > prs.json; then
+                 --json number,headRefName,headRefOid,isCrossRepository,autoMergeRequest > prs.json; then
             echo "::error::no pude mirar: no se pudo leer la lista de PR abiertos. No se empuja nada."
             echo "- **NO PUDE MIRAR** — la lista de PR abiertos no se pudo leer." >> "$GITHUB_STEP_SUMMARY"
             exit 1
@@ -151,7 +157,7 @@ jobs:
               continue
             fi
 
-            V="$(node scripts/conflicto-de-registro.mjs "$N" "$SHA" origin/main)" || V=''
+            V="$(node scripts/conflicto-de-registro.mjs "$N" "$SHA" origin/main prs.json)" || V=''
             ACCION="$(printf '%s' "$V" | node -pe 'try { JSON.parse(require("fs").readFileSync(0,"utf8")).accion } catch { "" }')"
             echo "#$N → ${V:-sin veredicto}"
 
@@ -170,7 +176,13 @@ jobs:
                 fi
                 ;;
               NO-EMPUJA)
-                echo "- #$N · **NO SE TOCA** — $(printf '%s' "$V" | node -pe 'const v=JSON.parse(require("fs").readFileSync(0,"utf8")); v.causa + ": " + (v.fuera || v.quedan || []).join(", ")')" >> "$GITHUB_STEP_SUMMARY"
+                CAUSA="$(printf '%s' "$V" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).causa')"
+                if [ "$CAUSA" = "SIN-AUTO-MERGE" ]; then
+                  # La mayoría de los PR abiertos: se cuentan en una línea, no uno por uno.
+                  SIN_ARMAR=$((SIN_ARMAR + 1))
+                else
+                  echo "- #$N · **NO SE TOCA** — $(printf '%s' "$V" | node -pe 'const v=JSON.parse(require("fs").readFileSync(0,"utf8")); v.causa + ": " + (v.fuera || v.quedan || []).join(", ")')" >> "$GITHUB_STEP_SUMMARY"
+                fi
                 ;;
               *)
                 echo "::error::#$N: no pude mirar. ${V:-la decisión no dio veredicto}"
@@ -179,6 +191,8 @@ jobs:
                 ;;
             esac
           done 3< candidatos.tsv
+
+          echo "- **SIN AUTO-MERGE, NO SE TOCAN**: $SIN_ARMAR PR (nadie prometió mergearlos)." >> "$GITHUB_STEP_SUMMARY"
 
           # Un «no pude mirar» pone el run en rojo: es el instrumento diciendo que no vale, no un
           # PR atascado (eso no falla nunca: lo cuenta el vigía).

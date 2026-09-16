@@ -40,6 +40,66 @@ const { decidir, gitReal } = registro;
 const armadoAntesDeLaPasada = (pr) => registro.armadoAntesDeLaPasada(pr);
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// El rojo de cada pieza, declarado: lo ejecuta `npm run meta:mutaciones`.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El defecto del 16-sep: un PR sin armar pasa como si lo estuviera.
+    fichero: 'scripts/conflicto-de-registro.mjs',
+    de: "if (armado.estado === 'SIN-ARMAR') return { accion: 'NO-EMPUJA', causa: 'SIN-AUTO-MERGE' };",
+    a: "if (false) return { accion: 'NO-EMPUJA', causa: 'SIN-AUTO-MERGE' };",
+    cae: '🔴 ROJO/NEGATIVO: el #880 fabricado — PR viejo SIN auto-merge y choque solo de registro → no se empuja',
+  },
+  {
+    // El suelo apagado: no saber si estaba armado se toma por «adelante».
+    fichero: 'scripts/conflicto-de-registro.mjs',
+    de: "if (armado.estado === 'NO-PUDE-MIRAR') return { accion: 'NO-PUDE-MIRAR', motivo: armado.motivo };",
+    a: "if (false) return { accion: 'NO-PUDE-MIRAR', motivo: armado.motivo };",
+    cae: '🔴 SUELO: si no se puede leer si estaba armado, «no pude mirar» — nunca EMPUJAR',
+  },
+  {
+    // El armado de OTRO PR de la lista vale para este.
+    fichero: 'scripts/conflicto-de-registro.mjs',
+    de: 'prs.find((p) => p && p.number === Number(pr))',
+    a: 'prs.find((p) => p)',
+    cae: '🔴 CLI: lee el armado de la lista de PR que le pasa el workflow, con suelo',
+  },
+  {
+    // El workflow deja de pedir el dato: el suelo lo para todo, también los PR armados.
+    fichero: '.github/workflows/conflicto-de-registro.yml',
+    de: 'isCrossRepository,autoMergeRequest > prs.json',
+    a: 'isCrossRepository > prs.json',
+    cae: '🔴 POSITIVO del job: PR armado con choque solo de registro → se sigue resolviendo solo',
+  },
+  {
+    // El paso de armar vuelve a armar ante cualquier push.
+    fichero: '.github/workflows/pr-automatico.yml',
+    de: 'if [ "$QUIEN_EMPUJA" != "User" ]; then\n            echo "No se arma',
+    a: 'if false; then\n            echo "No se arma',
+    cae: '🔴 ROJO/NEGATIVO: un push de la App (Bot) a un PR existente NO arma el auto-merge',
+  },
+  {
+    // Lista negra en vez de lista blanca: un tipo vacío arma.
+    fichero: '.github/workflows/pr-automatico.yml',
+    de: 'if [ "$QUIEN_EMPUJA" != "User" ]; then\n            echo "No se arma',
+    a: 'if [ "$QUIEN_EMPUJA" = "Bot" ]; then\n            echo "No se arma',
+    cae: '🔴 SUELO: si no se sabe quién empujó, no se arma',
+  },
+  {
+    fichero: '.github/workflows/pr-automatico.yml',
+    de: 'if [ "$QUIEN_EMPUJA" != "User" ]; then\n            echo "No se abre PR',
+    a: 'if false; then\n            echo "No se abre PR',
+    cae: '🔴 ROJO/NEGATIVO: un push de la App a una rama sin PR NO abre PR (p. ej. una rama recreada tras el merge)',
+  },
+  {
+    // Cableado a «persona»: los bancos seguirían verdes porque ponen el tipo a mano.
+    fichero: '.github/workflows/pr-automatico.yml',
+    de: "QUIEN_EMPUJA: ${{ github.event.sender.type }}\n        run: |\n          # 🔴 SOLO UN PUSH",
+    a: "QUIEN_EMPUJA: User\n        run: |\n          # 🔴 SOLO UN PUSH",
+    cae: '🔴 el YAML le pasa a los dos pasos QUIÉN empuja de verdad (`github.event.sender.type`)',
+  },
+];
+
 const SCRIPT = path.join(RAIZ, 'scripts', 'conflicto-de-registro.mjs');
 
 const ARMADO = {
