@@ -163,7 +163,12 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
 
     // A12.4 — el técnico SIEMPRE 403 en la lista admin-only
     for (const r of ADMIN_ONLY_ROUTES) {
-      const path = r.path.replace(':invoiceId', '999999').replace(':planId', '999999');
+      // SCRUM-244 (1b) añadió `/admin/supresion/:merchantId` a la lista y nadie añadió aquí su
+      // reemplazo (SCRUM-876: roto y gateado desde el 10-ago-2026). Va el merchant PROPIO del
+      // técnico y no un id de mentira: el caso que importa es un técnico pidiendo suprimir SU
+      // empresa, y ese tiene que dar 403 por el rol, no 404 por no encontrarla.
+      const path = r.path.replace(':invoiceId', '999999').replace(':planId', '999999')
+        .replace(':merchantId', String(merchantB.id));
 
       // SCRUM-155: ningún placeholder puede sobrevivir a la sustitución.
       //
