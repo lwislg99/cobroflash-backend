@@ -181,3 +181,75 @@ sobrescriben el fichero con el respaldo, así que el cuerpo del error no sobrevi
 
 `.github/workflows/vigia-atascados.yml` · `tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs` ·
 `docs/master/SCRUM-853.md`
+
+---
+
+# SCRUM-853d · APÉNDICE — el cortacircuitos: 6 despertares por ventana de 60 minutos
+
+**Fecha:** 16-sep-2026 · **Carril:** automatización (Sesión 5) · **Gate:** sin gate
+**Medido contra:** `origin/main` = `956be91d588031cd46b68b577968b82c4bc01660` · 2026-09-16T07:30:01Z
+**Rama:** `scrum-853d-cortacircuitos`
+**Tanda:** 853d 16/16 · 853 34/34 · lecturas 11/11 · 853c 9/9 · 824 9/9 · 237 8/8 · mutaciones 4 de 4 vivas
+
+## Por qué, y de dónde sale el número
+
+El 853 quitó el 96% de las causas de despertar (88 de 92 rojos del 15-sep eran de checks NO
+obligatorios). Lo que queda es el bucle con un rojo obligatorio REAL: Claude empuja, CI vuelve a
+rojo, el avisador vuelve a despertar. Contra eso no hay puerta que valga: hace falta un techo.
+
+Los datos sobre los que el orquestador decidió **6 por ventana de 60 minutos**:
+
+| dato | medido |
+|---|---|
+| ejecuciones de `claude.yml` el 15-sep | 116 · 58 saltadas · **58 despertares reales** |
+| pico en una hora | **34**, desde las 09:31Z |
+| coste de UN despertar legítimo (16-sep) | **0,7369 USD** · 31 turnos · 137,7 s · `claude-sonnet-5` |
+| demanda legítima de un día malo entero | **4** rojos obligatorios |
+
+A ese precio el pico de ayer habrían sido ~25 USD en una hora; con el tope, ~4,4 USD. Y 6 por hora
+sigue siendo más que toda la demanda legítima de un día concentrada en sesenta minutos.
+
+## La decisión, y por qué
+
+- **Dónde:** en la puerta de `claude.yml` — donde se DESPIERTA—, no en el avisador, que es solo uno
+  de los que llaman. Una persona que escribe la mención gasta hueco igual.
+- **Qué cuenta:** las ejecuciones de `claude.yml` de los últimos 60 min, EXCEPTO la actual (no se
+  cuenta a sí misma) y las SALTADAS (el `if` del job dio falso: no gastaron nada). Las que están EN
+  MARCHA sí cuentan: ya están gastando.
+- **Falla cerrado:** si la lista no se puede leer, o alguna fecha no se puede leer, NO se despierta
+  (`SIN-CUENTA-DE-DESPERTARES`). Es la misma familia que mordió dos veces: `gh api` escribe el cuerpo
+  del error por stdout, y una cuenta hecha sobre eso daría CERO, que es el número con el que un tope
+  no corta nunca. Por eso la lista se captura solo si la orden sale bien.
+- **Contesta a quien llama:** con cuántos van y **a qué hora se abre el próximo hueco** (cuando el
+  más viejo de la ventana sale de ella). Un tope silencioso se vive como una avería.
+- **Orden:** primero la puerta del PR cerrado —la razón más concreta— y solo si ésa abre, el tope. Un
+  PR ya cerrado no gasta hueco, porque nunca llega a despertar.
+- **No se toca** el tope del avisador (3 avisos por PR), ni la marca, ni la puerta fiscal.
+
+## Verificado en rojo
+
+`tests/scrum853d-cortacircuitos.test.mjs`: 16/16, y antes del código el fichero entero no cargaba
+—faltaban los exports—. Las cuatro propiedades que pidió el orquestador tienen su test: el 7.º no
+despierta y dice cuándo podrá, el 6.º SÍ despierta, sin cuenta no se despierta, y con la ventana
+vacía se despierta como hasta ahora. Más los bordes que deciden si la cuenta es honrada: la actual no
+se cuenta, las saltadas no cuentan, las de 60 min exactos ya están fuera.
+
+El laboratorio ejecuta el paso `puerta` REAL de `claude.yml` con un `gh` falso. **Y ahí se cazó un
+fallo del propio laboratorio**, que se dice porque cambia lo que el verde significa: mi `gh` falso
+devolvía el objeto crudo (`{workflow_runs: …}`) donde el real, con `-q`, devuelve la lista ya
+transformada. El paso contestaba `SIN-CUENTA-DE-DESPERTARES` — el fail-closed funcionando, pero por
+el motivo equivocado. Corregida la fidelidad del falso, los tres casos del laboratorio pasan.
+
+Cuatro mutaciones, las cuatro vivas: `>=` por `>` (el tope que se queda corto), el fail-closed que
+cuenta «no sé» como cero, la ventana que deja de filtrar, y las saltadas contando como despertares.
+
+## Lo que NO cubre
+
+- Solo cuenta despertares de `claude.yml`. Si algún día hay otro camino que gaste cuota, no lo ve.
+- El `action_required` que retiene las ejecuciones disparadas por el bot sigue abierto: la medición
+  de si `yaqu-bot` puede relanzarlas va después de esto, y es solo medición.
+
+## Ficheros
+
+`scripts/puerta-claude.mjs` · `.github/workflows/claude.yml` ·
+`tests/scrum853d-cortacircuitos.test.mjs` · `docs/master/SCRUM-853.md`
