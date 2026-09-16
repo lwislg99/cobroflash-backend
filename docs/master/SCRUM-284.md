@@ -1,6 +1,8 @@
 # SCRUM-284 · B1 — censo derivado de los campos de Configuración
 
 **Fecha:** 4-ago-2026 · **Carril:** B (tooling) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `17289f59f73e041b8989bddd69868aca056eec17`
+**Tanda:** 1280 tests, 1213 pass, 0 fail, 67 skipped (`npm test` con exit **0**)
 **Medido contra:** `origin/main` = `17289f59f73e041b8989bddd69868aca056eec17` · 2026-08-04T15:20:57+01:00
 **Tanda:** 1287 tests, 1220 pass, 0 fail, 67 skipped (`npm test` con exit **0**)
 **Ficheros:** `tests/_censo-configuracion.mjs`, `tests/scrum284-censo-configuracion.test.mjs` (8)
