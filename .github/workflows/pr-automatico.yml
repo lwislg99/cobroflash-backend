@@ -19,6 +19,9 @@
 #     otra vez en el primer paso, a propósito (un filtro de YAML no se lee en el log; un
 #     paso que falla, sí).
 #   · NO corre sobre `main` — `main` no está en el disparador.
+#   · 🔴 NO abre ni arma si quien empuja no es una PERSONA (`github.event.sender.type` distinto
+#     de `User`). Un push de la App —`conflicto-de-registro.yml`— armaba PR que nadie había
+#     prometido mergear (#880 y #399, 16-sep-2026). SCRUM-839e.
 #
 # ─────────────────────────────────────────────────────────────────────────────────────────
 # 🔴 POR QUÉ NO ABRE EL PR CON EL `GITHUB_TOKEN` POR DEFECTO — MEDIDO, NO SUPUESTO
@@ -225,7 +228,17 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           RAMA: ${{ github.ref_name }}
+          QUIEN_EMPUJA: ${{ github.event.sender.type }}
         run: |
+          # 🔴 SOLO UNA PERSONA ABRE PR (SCRUM-839e). Un push de la App (`Bot`) llega a una rama sin PR
+          # si la rama se recreó tras mergearse; abrirle un PR y armarlo lo metería en `main`. El
+          # veredicto lo declara el paso siguiente, que ve lo mismo.
+          if [ "$QUIEN_EMPUJA" != "User" ]; then
+            echo "No se abre PR: quien empuja no es una persona (sender.type='$QUIEN_EMPUJA')."
+            echo "numero=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           # Sin commits por delante de main no hay PR que abrir, y `gh pr create` fallaría
           # con un error que parece roto sin serlo. `origin/main` resuelve porque el paso 2
           # lo trajo explícitamente.
@@ -298,7 +311,19 @@ jobs:
           GH_TOKEN: ${{ steps.token.outputs.token || github.token }}
           NUM: ${{ steps.crear.outputs.numero || steps.pr.outputs.numero }}
           MODO_COMPLETO: ${{ steps.token.outputs.token != '' }}
+          QUIEN_EMPUJA: ${{ github.event.sender.type }}
         run: |
+          # 🔴 SOLO UN PUSH DE UNA PERSONA ARMA (SCRUM-839e). Antes se armaba ante CUALQUIER push. El
+          # 16-sep-2026 `conflicto-de-registro.yml` empujó como la App a #880 y #399 —PR de semanas
+          # que nadie había armado—, este paso los armó y entraron en `main` a los 7 minutos.
+          # Censo de los 270 runs de este workflow: 268 de personas (`User`) y 2 de la App (`Bot`),
+          # los dos del daño. Tipo vacío o desconocido = no se sabe quién empujó = no se arma.
+          if [ "$QUIEN_EMPUJA" != "User" ]; then
+            echo "No se arma el auto-merge: quien empuja no es una persona (sender.type='$QUIEN_EMPUJA')."
+            echo "EMPUJE-SIN-PERSONA" >> "$RUNNER_TEMP/veredicto.txt"
+            echo "- **EMPUJE-SIN-PERSONA** — el push no es de una persona (\`$QUIEN_EMPUJA\`): ni se abre PR ni se arma el auto-merge." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           if [ -z "$NUM" ]; then
             echo "No hay PR sobre el que armar el auto-merge."
             echo "  (En modo degradado esto es lo normal hasta que alguien abra el PR a mano.)"
@@ -450,7 +475,7 @@ jobs:
       #
       # Cada camino verde escribe ahora una línea de vocabulario CERRADO en el resumen del run
       # (`$GITHUB_STEP_SUMMARY`), que se ve sin abrir nada: PR-ABIERTO · SIN-COMMITS · SIN-PR ·
-      # AUTO-MERGE-ARMADO · NO-ARMADO (motivo legítimo).
+      # AUTO-MERGE-ARMADO · NO-ARMADO (motivo legítimo) · EMPUJE-SIN-PERSONA (SCRUM-839e).
       #
       # Y ESTE PASO ES EL SUELO: si el job llegó hasta aquí sin que NINGÚN camino declarara
       # veredicto, es que hay un camino que no lo escribe. No pinta rojo —no ha fallado nada—

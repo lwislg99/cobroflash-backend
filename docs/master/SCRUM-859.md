@@ -154,3 +154,50 @@ meses nadie vuelva a proponer exactamente esto.
 > `scrum267-…test.mjs`, que es donde se exportan. Importar un fichero de tests **ejecuta sus
 > tests**, así que los 10 de SCRUM-267 corren también dentro de éste y el total de la tanda sube
 > en 10. Se dice en vez de dejar que alguien lo descubra contando.
+
+---
+
+# APÉNDICE · SCRUM-859 (16-sep-2026) · Arreglo de paso en la rama SCRUM-839e: la mutación #2 apuntaba al fichero equivocado
+
+**Medido contra:** `origin/main` = `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T19:03:49Z
+
+**Rama:** `scrum-839e-solo-pr-armados` (commit `9f396783`). El trabajo de esa rama es la pieza A de
+SCRUM-839 (ver `docs/master/SCRUM-839.md`, apéndice 839e); esta entrada existe sólo porque el
+guard SCRUM-854 exige expediente de cualquier ticket cuyo número abra el asunto de un commit de la
+rama, y ese commit empieza por `SCRUM-859:` al nombrar el fichero que toca. Norma A7: se escribe
+la entrada, no se relaja el guard.
+
+## Qué pasó
+
+El CI de `scrum-839e-solo-pr-armados` avisó en rojo en el job `meta-guard · los guards caen cuando
+deben`: el test «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave» (en
+`tests/scrum859-identidad-y-motivo-cerrado.test.mjs`) quedaba MUDO frente a su propia mutación
+declarada.
+
+## Por qué
+
+La mutación #2 de `MUTACIONES_QUE_ME_TUMBAN`, en ese mismo fichero, apuntaba a
+`fichero: 'tests/scrum267-ancla-de-medicion.test.mjs'` y mutaba `entradasTroceadas()`. Pero el
+test que dice cazar (`cae`) no llama a esa función: usa su propia reimplementación local
+(`claves()`), declarada dentro del propio fichero. Mutar `entradasTroceadas()` no tocaba el camino
+que el test ejercita, así que el guard quedaba verde sobre el defecto que dice vigilar.
+
+## Qué se cambió
+
+- `tests/scrum859-identidad-y-motivo-cerrado.test.mjs`: la mutación #2 re-apunta a
+  `fichero: 'tests/scrum859-identidad-y-motivo-cerrado.test.mjs'`, sobre la línea real que
+  `claves()` ejercita. Como `const id = identidadDeEntrada(e.tituloCompleto);` se repite tal cual
+  en `entradasReales()` (mismo fichero), el `de` amplía el contexto a dos líneas (incluye la
+  llamada a `trocearEntradas` justo antes) para que `.replace()` — que solo sustituye la primera
+  coincidencia — no mute la ocurrencia equivocada.
+
+No es un caso de «relajar el guard» (regla 41 del máster): la mutación apuntaba al fichero/línea
+equivocados, no exigía de menos. Verificado por lectura de código en la sesión que hizo el
+cambio (sin ejecución local de `node --test`, sin aprobación de sandbox para invocarlo con
+argumentos); lo confirmó la propia CI al re-lanzarse con el push del commit `9f396783`.
+
+## Lo que NO se hizo
+
+- No se tocó `MUTACIONES_QUE_ME_TUMBAN` en ningún otro fichero ni ninguna otra mutación.
+- No se relajó ningún guard ni se bajó ningún umbral.
+- `src/` intacto.
