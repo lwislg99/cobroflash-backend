@@ -85,6 +85,18 @@ test('SCRUM-635 · 🔴 EL QUE DECIDE: la cabecera es `name;description;price;co
 });
 
 test('SCRUM-635 · 🔴 la fila del `vat` vacío —la que parecía dato corrupto— desaparece', async () => {
+  // 🔴 RESPALDO DEL TOKEN (SCRUM-237): una negación sobre un literal sin un hermano que demuestre
+  // que ese literal PUEDE salir es un verde permanente — el día que cambie el separador o el
+  // formato del precio, `no contiene ;;12.00;;` pasaría por no encontrarlo NUNCA, no por estar
+  // arreglado. Así que primero se prueba que el export sabe producirlo: un producto sin
+  // descripción Y sin coste da el hueco doble tal cual.
+  const { lineas: conHueco } = await exportar([
+    { name: 'Material vario', description: '', price: '12.00', cost: null, vat: null, isActive: false },
+  ]);
+  assert.ok(conHueco[1].includes(';;12.00;;'),
+    `🔴 SUELO DEL TOKEN: el export NO sabe producir \`;;12.00;;\` ni cuando faltan los dos campos `
+    + `(\`${conHueco[1]}\`). Entonces la negación de abajo no prueba nada.`);
+
   const { lineas } = await exportar();
   const material = lineas.find((l) => l.startsWith('Material vario'));
   assert.ok(material, '🔴 CIEGO: no está la fila que se mide');

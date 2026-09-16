@@ -246,3 +246,47 @@ impide, para que nadie lo «mejore» mañana.
 `listProducts` (SCRUM-609, otro carril) · `prisma/schema.prisma` · la columna `vat` del modelo ·
 el importador de tarifarios · el camino de emisión · ningún rótulo de pantalla · ningún estado ni
 flag nuevo (27) · ninguna dependencia (36). Datos fabricados; ninguna base real.
+
+## 6 · 🔴 Los dos rojos que trajo la tanda, y los DOS eran míos
+
+Medido antes de acusar a nadie: worktree nuevo desde `origin/main` (`1be773a3`), sólo esos dos
+ficheros → **22/22**. En mi árbol, **2 fallos**. Míos.
+
+### ① `SCRUM-661` · la mutación miraba el fichero, no la función
+
+```
+🔴 DETECTOR TAUTOLÓGICO: sigue diciendo que sí con `cost` quitado del `select`.
+```
+
+Su control anti-tautología hacía `fuente.replace(/\n\s*cost: true,/, '')` — **sin `/g`, o sea la
+PRIMERA aparición del fichero**. Desde que `exportProductsCsv` también selecciona `cost`, esa
+primera es la mía (línea 93) y no la suya (línea 257): la mutación borraba **otra función**,
+`searchProducts` conservaba su `cost`, y el control cantaba «detector tautológico» sobre un
+detector sano.
+
+> **Es EXACTAMENTE el defecto que ese mismo fichero ya había arreglado una capa más arriba**, y lo
+> tiene escrito: *«la primera versión buscaba el primer `select:` DEL FICHERO y cazaba el de
+> `listProducts` … estaba midiendo otra función y no lo decía»*. Arreglaron el **escáner** y
+> dejaron la **mutación** mirando el fichero entero.
+
+**Arreglado dándole puntería, no relajándolo:** la mutación se acota al texto de `searchProducts`
+por AST. Lo que el guard EXIGE no se toca — sigue exigiendo que `searchProducts` devuelva `cost` y
+que el detector sepa decir que no. Cae dentro de este PR por la regla 37: misma zona, bloquea la
+tarea y cabe.
+
+### ② `SCRUM-237` · mi propia negación sin respaldo
+
+```
+negación(es) SIN NINGÚN respaldo (patrón scrum73 — verde permanente)
+  tests/scrum635-el-csv-sin-iva-y-con-coste.test.mjs:91 «;;12.00;;»
+```
+
+El guard tiene razón y el infractor era **mío**: `assert.ok(!material.includes(';;12.00;;'))` es
+una negación sobre un literal **sin nada que demuestre que ese literal puede salir**. El día que
+cambie el separador o el formato del precio, esa negación pasaría **por no encontrarlo nunca**, no
+por estar arreglada.
+
+**Respaldo añadido, que es lo que pedía:** antes de negar, se exporta un producto **sin descripción
+y sin coste** y se exige que salga `;;12.00;;`. Con eso demostrado, su ausencia en la fila real
+significa algo. No se subió ningún número ni se tocó el guard.
+
