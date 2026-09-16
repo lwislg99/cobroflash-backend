@@ -102,6 +102,10 @@ const CENSO_DE_SITIOS = {
   // El censo de SCRUM-402 no se mueve —sigue en 1— y tampoco se movió al añadirlas: cuenta
   // LITERALES por AST, y el único literal de este fichero es la declaración de `MARCADOR`. Ése
   // es exactamente el hueco que este contador existe para tapar.
+  // 🔴 SCRUM-530 · 15-sep-2026 · `reportsView.js` ENTRA con 1 sitio: 29 → 30.
+  // La tarjeta de WhatsApp pasa a decir que no puede pronunciarse cuando la muestra de 7 días no
+  // llega al mínimo, en vez de callarse. El texto es del fundador (regla 30) y va con marcador.
+  'reportsView.js': 1,
   'switchFormaJuridica.js': 4,
   'tipoDestinatarioPendiente.js': 2,
 };
@@ -127,6 +131,7 @@ const PINTAN_Y_NO_CUENTAN = {
   'libroRegistroView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera, y `scrum296-pantalla-libro` la compara ranura a ranura',
   'parteDetailView.js': 'su propio comentario dice que entra en el censo de SCRUM-402 con su número',
   'providersView.js': 'mensajes de error y respaldo de último recurso; `scrum644-trinquete-mensaje-crudo` los vigila',
+  'reportsView.js': 'su única ranura es el aviso de muestra corta de la tarjeta de WhatsApp, y `scrum530-la-alerta-que-no-puede-pronunciarse` la sujeta con su número (3/10) y con los dos controles de alerta',
   'settingsView.js': 'rótulo del modo de emisión, cubierto por `scrum298-modo-visible`',
   'switchFormaJuridica.js': 'los rótulos del control, cubiertos por `scrum574-switch-forma-juridica`',
   'tipoDestinatarioPendiente.js': 'el aviso entero es la ranura; `scrum615` y `scrum622` la sujetan',

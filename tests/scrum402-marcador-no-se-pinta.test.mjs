@@ -226,6 +226,17 @@ const CENSO = Object.freeze({
   // que llegue, este número BAJA a 3 — no se borra la entrada, porque quedan otros marcadores
   // en el fichero (SCRUM-424 / SCRUM-405: la entrada sólo se borra cuando no queda ninguno).
   'quotesView.js': 4,
+  // 🔴 SCRUM-530 · 15-sep-2026 · `reportsView.js` ENTRA con 1, y a conciencia.
+  //
+  // La alerta de tasa de entrega de WhatsApp exige ≥10 envíos en 7 días, así que para un merchant
+  // del Pioneer NO SE ACTIVABA NUNCA — y la tarjeta, que sólo pintaba cuando la alerta estaba
+  // activa, se quedaba CALLADA. Una alerta que nunca se activa y una que no tiene datos se leen
+  // igual y significan lo contrario, así que ahora la pantalla dice que no puede pronunciarse.
+  //
+  // Ese texto es del fundador (regla 30) y NO se escribe aquí: sale con marcador y con
+  // `data-microcopy="PENDIENTE_FUNDADOR"`, como se entregaron los rótulos de albaranes. El día
+  // que se firme, esta entrada SE BORRA —no se pone a 0— porque es el único marcador del fichero.
+  'reportsView.js': 1,
   // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRÓ Y SALIÓ EL MISMO DÍA.
   //
   // Entró con 1 —el rótulo del campo del descuento pactado en la ficha del cliente— y el asesor lo
