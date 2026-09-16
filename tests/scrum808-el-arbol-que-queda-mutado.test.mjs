@@ -32,11 +32,12 @@ import { censar as censarEscritores, analizar as analizarEscritor }
   from '../scripts/censo-escritores-del-arbol.mjs';
 
 import { fileURLToPath } from 'node:url';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Un arbolito de mentira: un fichero «del árbol» y su directorio de marca, los dos temporales. */
 function banco() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum808-'));
+  const raiz = temporal('scrum808-');
   const abs = path.join(raiz, 'victima.mjs');
   const ORIGINAL = Buffer.from('export const x = 1;\r\n', 'utf8'); // con CR: el árbitro son los BYTES
   fs.writeFileSync(abs, ORIGINAL);

@@ -36,6 +36,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { soloEjecutable } from './_guard-texto.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(RAIZ, 'scripts', 'vigilante-de-despliegue.mjs');
@@ -77,7 +78,7 @@ const epochDe = (iso) => Math.trunc(Date.parse(iso) / 1000);
  * faltan, para poder comparar contra el número de verdad y no contra otra suposición.
  */
 function repoConFechasCruzadas() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum824b-'));
+  const dir = temporal('scrum824b-');
   const g = (...a) => String(execFileSync('git', a, { cwd: dir, encoding: 'utf8' })).trim();
   const commit = (iso, msg) => execFileSync('git', ['commit', '--allow-empty', '-q', '-m', msg], {
     cwd: dir, env: { ...process.env, GIT_AUTHOR_DATE: iso, GIT_COMMITTER_DATE: iso },

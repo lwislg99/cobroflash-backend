@@ -41,6 +41,7 @@ import os from 'node:os';
 import path from 'node:path';
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -78,7 +79,7 @@ function pedir(puerto, ruta) {
  * estático. La única variable entre llamadas es el nombre de `carpeta`.
  */
 async function bancoEn(carpeta) {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum822-'));
+  const base = temporal('scrum822-');
   const publicDir = path.join(base, carpeta, 'public');
   fs.mkdirSync(publicDir, { recursive: true });
   fs.writeFileSync(path.join(publicDir, 'pagina.html'), '<h1>contenido</h1>');

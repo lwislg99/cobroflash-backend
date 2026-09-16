@@ -28,6 +28,7 @@ import { execFileSync } from 'node:child_process';
 import { resolverNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 import { baseDeLaRama } from '../tests/_base-de-la-rama.mjs';
+import { temporal } from '../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const TIPOS = {
   '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html',
@@ -199,7 +200,7 @@ export function arbolDePartida(raiz, etiqueta = 'antes') {
   const base = baseDeLaRama(raiz);
   if (!base) return { publico: null, base: null, ficheros: [], limpiar: () => {} };
 
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-816-${etiqueta}-`));
+  const tmp = temporal(`yaqu-816-${etiqueta}-`);
   const ficheros = execFileSync('git', ['ls-tree', '-r', '--name-only', base.sha, 'public'], { cwd: raiz, encoding: 'utf8' })
     .split('\n').map((s) => s.trim()).filter((s) => /\.(html|css|js)$/.test(s));
   for (const f of ficheros) {

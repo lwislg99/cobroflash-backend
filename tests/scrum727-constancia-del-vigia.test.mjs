@@ -31,6 +31,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import ts from 'typescript';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   veredictoDeDespliegue, constanciaDeEjecucion, MARCA_CONSTANCIA, SIN_MEDIR,
   AL_DIA, ATRASADO, NO_SUPE_MIRAR, SALIDA_NO_SUPE_MIRAR,
@@ -304,7 +305,7 @@ test('SCRUM-727 · 🔴 ejecutado de verdad: el renglón sale y aterriza en el r
   // `ps`. Se escribe un arrancador de usar y tirar que fija su propio `process.argv` y luego
   // importa el vigía. Así `ps` sólo vería `node …/arranca.mjs`, que es exactamente la propiedad
   // que aquel guard protege. (Mi primera versión pasaba `--url` en el spawn y él la cazó.)
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum727-'));
+  const dir = temporal('scrum727-');
   const resumen = path.join(dir, 'resumen.md');
   const arrancador = path.join(dir, 'arranca.mjs');
   fs.writeFileSync(arrancador,

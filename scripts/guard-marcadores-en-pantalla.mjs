@@ -42,6 +42,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer-core';
 
 import { rutaDelNavegador, argsDeAislamiento } from './_navegador.mjs';
+import { temporal } from '../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PANEL = path.join(RAIZ, 'public', 'dashboard');
@@ -100,7 +101,7 @@ window.fetch = function(){ return Promise.resolve(new Response(JSON.stringify({
 </script>
 ${scripts.map((s) => `<script src="${url('js/' + s)}"></script>`).join('\n')}
 </body></html>`;
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-722-'));
+  const dir = temporal('yaqu-722-');
   const fichero = path.join(dir, 'banco.html');
   fs.writeFileSync(fichero, html, 'utf8');
   return { fichero, scripts: scripts.length };

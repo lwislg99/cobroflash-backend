@@ -1,0 +1,1206 @@
+[
+  {
+    "fichero": ".agents/skills/impeccable/scripts/live-copy-edit-agent.mjs",
+    "linea": 116,
+    "fn": "mkdtempSync",
+    "destino": null,
+    "guardaRutaDeDentro": false,
+    "ajeno": true,
+    "categoria": "SIN_LIMPIEZA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": ".agents/skills/impeccable/scripts/live-server.mjs",
+    "linea": 2306,
+    "fn": "mkdtempSync",
+    "destino": null,
+    "guardaRutaDeDentro": false,
+    "ajeno": true,
+    "categoria": "SIN_LIMPIEZA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": ".claude/skills/impeccable/scripts/live-copy-edit-agent.mjs",
+    "linea": 116,
+    "fn": "mkdtempSync",
+    "destino": null,
+    "guardaRutaDeDentro": false,
+    "ajeno": true,
+    "categoria": "SIN_LIMPIEZA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": ".claude/skills/impeccable/scripts/live-server.mjs",
+    "linea": 2306,
+    "fn": "mkdtempSync",
+    "destino": null,
+    "guardaRutaDeDentro": false,
+    "ajeno": true,
+    "categoria": "SIN_LIMPIEZA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "scripts/diagnostico-dependencias.mjs",
+    "linea": 160,
+    "fn": "mkdtempSync",
+    "destino": "base",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      181
+    ]
+  },
+  {
+    "fichero": "tests/pr-automatico-el-mensaje-del-automerge.test.mjs",
+    "linea": 212,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      250
+    ]
+  },
+  {
+    "fichero": "tests/scrum182-arbol-movido.test.mjs",
+    "linea": 34,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "FABRICA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum234-censo-reserva-serie.test.mjs",
+    "linea": 227,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      251,
+      274
+    ]
+  },
+  {
+    "fichero": "tests/scrum234-censo-reserva-serie.test.mjs",
+    "linea": 258,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      251,
+      274
+    ]
+  },
+  {
+    "fichero": "tests/scrum245-llamador-declara-merchant.test.mjs",
+    "linea": 263,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      283
+    ]
+  },
+  {
+    "fichero": "tests/scrum252-procedencia-cliente.test.mjs",
+    "linea": 60,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      63,
+      136
+    ]
+  },
+  {
+    "fichero": "tests/scrum252-procedencia-cliente.test.mjs",
+    "linea": 131,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      63,
+      136
+    ]
+  },
+  {
+    "fichero": "tests/scrum253-adopcion.test.mjs",
+    "linea": 208,
+    "fn": "mkdtempSync",
+    "destino": "base",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      232
+    ]
+  },
+  {
+    "fichero": "tests/scrum258-nota-por-sesion.test.mjs",
+    "linea": 65,
+    "fn": "mkdtempSync",
+    "destino": "base",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      81
+    ]
+  },
+  {
+    "fichero": "tests/scrum289-censo-origen-factura.test.mjs",
+    "linea": 23,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum293-cero-literales-retencion.test.mjs",
+    "linea": 110,
+    "fn": "mkdtempSync",
+    "destino": "vacio",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      122
+    ]
+  },
+  {
+    "fichero": "tests/scrum293-cero-literales-retencion.test.mjs",
+    "linea": 159,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      178
+    ]
+  },
+  {
+    "fichero": "tests/scrum332-comparativa-anclas.test.mjs",
+    "linea": 108,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "hook after",
+    "borradoEn": [
+      109
+    ]
+  },
+  {
+    "fichero": "tests/scrum333-tarjetas-gremio.test.mjs",
+    "linea": 63,
+    "fn": "mkdtempSync",
+    "destino": "vacio",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      73
+    ]
+  },
+  {
+    "fichero": "tests/scrum351-diagnostico-dependencias.test.mjs",
+    "linea": 29,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum351-topologia-node-modules.test.mjs",
+    "linea": 451,
+    "fn": "mkdtempSync",
+    "destino": "fuera",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      459
+    ]
+  },
+  {
+    "fichero": "tests/scrum388-censo-mecanismo.test.mjs",
+    "linea": 45,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      53,
+      67
+    ]
+  },
+  {
+    "fichero": "tests/scrum388-censo-mecanismo.test.mjs",
+    "linea": 60,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      53,
+      67
+    ]
+  },
+  {
+    "fichero": "tests/scrum429-cliente-privado.test.mjs",
+    "linea": 51,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      69
+    ]
+  },
+  {
+    "fichero": "tests/scrum454-destructivo-sin-comprobacion.test.mjs",
+    "linea": 144,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "hook after",
+    "borradoEn": [
+      176
+    ]
+  },
+  {
+    "fichero": "tests/scrum471-node-modules-al-dia.test.mjs",
+    "linea": 46,
+    "fn": "mkdtempSync",
+    "destino": "vacio",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      53
+    ]
+  },
+  {
+    "fichero": "tests/scrum471-node-modules-al-dia.test.mjs",
+    "linea": 75,
+    "fn": "mkdtempSync",
+    "destino": "falso",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      101,
+      123,
+      139
+    ]
+  },
+  {
+    "fichero": "tests/scrum471-node-modules-al-dia.test.mjs",
+    "linea": 106,
+    "fn": "mkdtempSync",
+    "destino": "falso",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      101,
+      123,
+      139
+    ]
+  },
+  {
+    "fichero": "tests/scrum471-node-modules-al-dia.test.mjs",
+    "linea": 128,
+    "fn": "mkdtempSync",
+    "destino": "falso",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      101,
+      123,
+      139
+    ]
+  },
+  {
+    "fichero": "tests/scrum476-reconciliar-censos.test.mjs",
+    "linea": 248,
+    "fn": "mkdtempSync",
+    "destino": "fuera",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      254
+    ]
+  },
+  {
+    "fichero": "tests/scrum476-reconciliar-censos.test.mjs",
+    "linea": 271,
+    "fn": "mkdtempSync",
+    "destino": "vacio",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      277
+    ]
+  },
+  {
+    "fichero": "tests/scrum521-resolvedor-de-importadores.test.mjs",
+    "linea": 52,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      63
+    ]
+  },
+  {
+    "fichero": "tests/scrum521-resolvedor-de-importadores.test.mjs",
+    "linea": 161,
+    "fn": "mkdtempSync",
+    "destino": "vacio",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      167
+    ]
+  },
+  {
+    "fichero": "tests/scrum548-peaje-package-json.test.mjs",
+    "linea": 68,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      95
+    ]
+  },
+  {
+    "fichero": "tests/scrum549-nada-publicable-sin-marcar.test.mjs",
+    "linea": 24,
+    "fn": "mkdtempSync",
+    "destino": "vacio",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      31
+    ]
+  },
+  {
+    "fichero": "tests/scrum549-nada-publicable-sin-marcar.test.mjs",
+    "linea": 100,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      111
+    ]
+  },
+  {
+    "fichero": "tests/scrum558-ancla-alcanzable.test.mjs",
+    "linea": 174,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      189
+    ]
+  },
+  {
+    "fichero": "tests/scrum570-cr-en-disco.test.mjs",
+    "linea": 78,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      98,
+      110
+    ]
+  },
+  {
+    "fichero": "tests/scrum570-cr-en-disco.test.mjs",
+    "linea": 103,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      98,
+      110
+    ]
+  },
+  {
+    "fichero": "tests/scrum628-cobertura-visual-del-dashboard.test.mjs",
+    "linea": 261,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      287
+    ]
+  },
+  {
+    "fichero": "tests/scrum670-un-solo-extractor.test.mjs",
+    "linea": 40,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum694c-el-corte-a-pelo.test.mjs",
+    "linea": 195,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      212
+    ]
+  },
+  {
+    "fichero": "tests/scrum709-microcopy-por-fichero.test.mjs",
+    "linea": 84,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      140
+    ]
+  },
+  {
+    "fichero": "tests/scrum716c-la-memoria-del-vigia.test.mjs",
+    "linea": 224,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      322,
+      345,
+      368,
+      395,
+      485
+    ]
+  },
+  {
+    "fichero": "tests/scrum723-guard-contra-su-base.test.mjs",
+    "linea": 63,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum726-quien-firma-la-microcopy.test.mjs",
+    "linea": 36,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      70,
+      89,
+      169
+    ]
+  },
+  {
+    "fichero": "tests/scrum746-barrera-y-punto-de-conexion.test.mjs",
+    "linea": 206,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      226
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 107,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      134,
+      375,
+      387,
+      396,
+      702
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 197,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      211,
+      540,
+      574,
+      598,
+      608,
+      629
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 345,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      134,
+      375,
+      387,
+      396,
+      702
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 533,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      211,
+      540,
+      574,
+      598,
+      608,
+      629
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 544,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      211,
+      540,
+      574,
+      598,
+      608,
+      629
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 578,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      211,
+      540,
+      574,
+      598,
+      608,
+      629
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 602,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      211,
+      540,
+      574,
+      598,
+      608,
+      629
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 612,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      211,
+      540,
+      574,
+      598,
+      608,
+      629
+    ]
+  },
+  {
+    "fichero": "tests/scrum754-el-juez-que-oscila.test.mjs",
+    "linea": 699,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      134,
+      375,
+      387,
+      396,
+      702
+    ]
+  },
+  {
+    "fichero": "tests/scrum757-la-declaracion-que-nadie-lee.test.mjs",
+    "linea": 41,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      44,
+      136,
+      208
+    ]
+  },
+  {
+    "fichero": "tests/scrum757-la-declaracion-que-nadie-lee.test.mjs",
+    "linea": 124,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      44,
+      136,
+      208
+    ]
+  },
+  {
+    "fichero": "tests/scrum757-la-declaracion-que-nadie-lee.test.mjs",
+    "linea": 200,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      44,
+      136,
+      208
+    ]
+  },
+  {
+    "fichero": "tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs",
+    "linea": 107,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      122,
+      259,
+      298
+    ]
+  },
+  {
+    "fichero": "tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs",
+    "linea": 240,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      122,
+      259,
+      298
+    ]
+  },
+  {
+    "fichero": "tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs",
+    "linea": 281,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      122,
+      259,
+      298
+    ]
+  },
+  {
+    "fichero": "tests/scrum762-el-pdf-emitido-se-rehace.test.mjs",
+    "linea": 475,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      508
+    ]
+  },
+  {
+    "fichero": "tests/scrum765-la-puerta-y-el-suelo.test.mjs",
+    "linea": 62,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      96
+    ]
+  },
+  {
+    "fichero": "tests/scrum766-el-grep-que-cuenta-lineas.test.mjs",
+    "linea": 50,
+    "fn": "mkdtempSync",
+    "destino": "tempPropio",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "FABRICA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum778-la-lista-cableada.test.mjs",
+    "linea": 167,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum784-el-cuarto-veredicto.test.mjs",
+    "linea": 103,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      123
+    ]
+  },
+  {
+    "fichero": "tests/scrum801-el-respaldo-de-la-n.test.mjs",
+    "linea": 74,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      91,
+      155
+    ]
+  },
+  {
+    "fichero": "tests/scrum801-el-respaldo-de-la-n.test.mjs",
+    "linea": 135,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      91,
+      155
+    ]
+  },
+  {
+    "fichero": "tests/scrum835-credenciales-en-el-historial.test.mjs",
+    "linea": 128,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      145,
+      163
+    ]
+  },
+  {
+    "fichero": "tests/scrum836-ancla-de-mutacion-viva.test.mjs",
+    "linea": 65,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      69,
+      324,
+      339
+    ]
+  },
+  {
+    "fichero": "tests/scrum836-ancla-de-mutacion-viva.test.mjs",
+    "linea": 308,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      69,
+      324,
+      339
+    ]
+  },
+  {
+    "fichero": "tests/scrum836-ancla-de-mutacion-viva.test.mjs",
+    "linea": 329,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      69,
+      324,
+      339
+    ]
+  },
+  {
+    "fichero": "tests/scrum839c-la-pasada-se-ejecuta.test.mjs",
+    "linea": 102,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      140
+    ]
+  },
+  {
+    "fichero": "tests/scrum846-instrumentos-con-caso-conocido.test.mjs",
+    "linea": 40,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum846b-siembras-a-los-quince.test.mjs",
+    "linea": 53,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum846c-trinquete-instrumentos-con-caso.test.mjs",
+    "linea": 57,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum850b-las-formas-que-mienten.test.mjs",
+    "linea": 73,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      120,
+      148
+    ]
+  },
+  {
+    "fichero": "tests/scrum853-lecturas-que-fallan-cerrado.test.mjs",
+    "linea": 137,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs",
+    "linea": 138,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum853d-cortacircuitos.test.mjs",
+    "linea": 219,
+    "fn": "mkdtempSync",
+    "destino": "tmp",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/scrum861-firma-por-delegacion.test.mjs",
+    "linea": 75,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/_alcance-desde-entradas.mjs",
+    "linea": 385,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      410
+    ]
+  },
+  {
+    "fichero": "tests/_censo-fixture.mjs",
+    "linea": 81,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "ESCAPA",
+    "cobertura": null,
+    "borradoEn": []
+  },
+  {
+    "fichero": "tests/_censo-literales-retencion.mjs",
+    "linea": 124,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      155
+    ]
+  },
+  {
+    "fichero": "tests/_comparador-alcance.mjs",
+    "linea": 261,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      286
+    ]
+  },
+  {
+    "fichero": "tests/_export-que-sobra.mjs",
+    "linea": 239,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      278
+    ]
+  },
+  {
+    "fichero": "tests/_huerfanos-en-modulos-vivos.mjs",
+    "linea": 195,
+    "fn": "mkdtempSync",
+    "destino": "raiz",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "GARANTIZADA",
+    "cobertura": "finally",
+    "borradoEn": [
+      234
+    ]
+  },
+  {
+    "fichero": "tests/_temporal.mjs",
+    "linea": 67,
+    "fn": "mkdtempSync",
+    "destino": "dir",
+    "guardaRutaDeDentro": false,
+    "ajeno": false,
+    "categoria": "NO_GARANTIZADA",
+    "cobertura": null,
+    "borradoEn": [
+      47,
+      77
+    ]
+  }
+]
