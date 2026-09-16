@@ -203,7 +203,12 @@ test('SCRUM-890 · ⛔ lo que NO es un rechazo del documento no saca la firma de
   // Cada uno de estos puede llegarle a una firma BUENA, y por eso se quedan:
   //   401 sesión caducada · 403 prueba caducada o permiso · 404 otra cuenta en el mismo móvil
   //   (el parte es de otro merchant) · 408/429 transitorios · 5xx el servidor · 503 cerrojo.
+  //   Y `invalid_transition`: SCRUM-358 dejó escrito que sacarla de la cola sería perderla. Un
+  //   409 o un 400 con un código que nadie ha pensado tampoco sale.
   const casos = [
+    { status: 409, data: { error: 'invalid_transition' } },
+    { status: 409, data: { error: 'codigo_nuevo' } },
+    { status: 400, data: { error: 'invalid_id_nuevo' } },
     { status: 401, data: { error: 'unauthorized' } },
     { status: 403, data: { error: 'trial_expired' } },
     { status: 404, data: { error: 'not_found' } },
@@ -235,5 +240,35 @@ test('SCRUM-890 · ⛔ `parte_locked` y `albaran_locked` siguen siendo ÉXITO, n
     const res = await b.ctx.drenarFirmasPendientes(b.ctx.subirFirmaDeLaCola);
     assert.equal(res.yaEstaban, 1, `🔴 \`${codigo}\` ha dejado de contar como «el servidor ya la tiene»`);
     assert.equal(res.rechazadas.length, 0, `🔴 \`${codigo}\` se ha contado como rechazo: la firma ESTÁ en el servidor`);
+  }
+});
+
+test('SCRUM-890 · ✅ cada rechazo de la lista SALE de la cola, al firmar y al drenar', async () => {
+  // Se afirma contra lo que escribe el SERVIDOR: si una ruta de firma renombra su código, la cola
+  // vuelve a reintentar para siempre y esto lo dice.
+  const rutas = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/app/routes/partes.routes.ts'), 'utf8');
+  const casos = [
+    { status: 409, data: { error: 'parte_vacio' } },
+    { status: 400, data: { error: 'firma_invalida' } },
+    { status: 413, data: { error: 'firma_demasiado_grande' } },
+    { status: 400, data: { error: 'firma_sin_nombre' } },
+    { status: 400, data: { error: 'calidad_firmante_invalida' } },
+    { status: 400, data: { error: 'calidad_firmante_otro_vacio' } },
+  ];
+  for (const caso of casos.slice(0, 3)) {
+    assert.ok(rutas.includes(`'${caso.data.error}'`), `🔴 la ruta del parte ya no responde \`${caso.data.error}\``);
+  }
+  for (const caso of casos) {
+    const b = banco({ responder: () => { throw errorDeApi(caso); } });
+    b.almacen.set('firma:parte:7', { claveIdempotencia: 'firma:parte:7', albaranId: 7, tipo: 'parte', signatureData: 'x' });
+    const res = await b.ctx.drenarFirmasPendientes(b.ctx.subirFirmaDeLaCola);
+    assert.equal(b.almacen.size, 0, `🔴 un ${caso.status} \`${caso.data.error}\` se queda en la cola para siempre`);
+    assert.equal(res.rechazadas.length, 1);
+
+    const al = banco({ responder: () => { throw errorDeApi(caso); } });
+    const r = await al.ctx.firmarConRedDeSeguridad(7, { signatureData: 'x' },
+      () => al.ctx.apiRequest('/admin/partes/7/firmar', { method: 'POST' }), 'parte');
+    assert.equal(r.rechazada, true, `🔴 al firmar, \`${caso.data.error}\` no se declara rechazo`);
+    assert.equal(al.almacen.size, 0, `🔴 al firmar, \`${caso.data.error}\` se ha quedado en la cola`);
   }
 });

@@ -227,29 +227,35 @@ function elServidorYaLaTiene(error) {
  * 🔴 SCRUM-890 · UN RECHAZO DEFINITIVO: el servidor ha leído la firma y dice que ESE documento no
  * se puede firmar así. Reintentarla da el mismo no, en cada apertura, para siempre.
  *
- * Es una LISTA DE LOS QUE SÍ, no «cualquier 4xx», y la asimetría es la de siempre: un rechazo que
- * se queda en la cola cuesta una petición de más; una firma buena que sale de la cola no la
- * recupera nadie. Por eso NO están —y cada uno puede llegarle a una firma válida—:
- *   · 401 — la sesión caducó; al volver a entrar, sube.
- *   · 403 — prueba caducada o permiso; al pagar o al corregir el rol, sube.
- *   · 404 — otra cuenta abierta en el mismo móvil: el documento es de otro merchant, no «no existe».
- *   · 408 / 429 — transitorios por definición.
- *   · 5xx — el servidor, incluido el 503 del cerrojo saturado.
- *   · un estado que nadie haya pensado: se queda dentro hasta que alguien lo añada aquí.
+ * Es una LISTA DE CÓDIGOS, no «cualquier 4xx» ni «cualquier 409», y la asimetría es la de siempre:
+ * un rechazo que se queda en la cola cuesta una petición de más; una firma buena que sale de la
+ * cola no la recupera nadie. Cada código de la lista depende SÓLO de lo que viaja en la cola —el
+ * trazo, el firmante— o de un documento que no dice qué se hizo, y ninguno cambia reintentando.
  *
- * Los que sí: 400 (la firma o el firmante no valen), 409 que NO es `*_locked` (el documento no está
- * en estado firmable: `parte_vacio`, `invalid_transition`) y 413 (firma demasiado grande).
- * Se mira `status`, nunca el texto; el 409 de «ya la tiene» se descarta ANTES.
+ * Y NO están, porque pueden llegarle a una firma válida:
+ *   · `invalid_transition` (409) — SCRUM-358 lo dejó escrito: el albarán aún no está emitido;
+ *     sacar esa firma de la cola sería perderla.
+ *   · 401 sesión caducada · 403 prueba o permiso · 404 otra cuenta abierta en el mismo móvil (el
+ *     documento es de otro merchant, no «no existe») · 408/429 transitorios · 5xx y el 503 del
+ *     cerrojo.
+ *   · un código que nadie haya pensado: se queda dentro hasta que alguien lo añada aquí.
+ *
+ * `parte_vacio` sale aunque la oficina ponga líneas después, y a propósito: el cliente firmó un
+ * parte SIN líneas; subirla más tarde le haría firmar un contenido que no vio.
+ * Se mira `status` Y `code`, nunca el texto; el 409 de «ya la tiene» se descarta ANTES.
  */
-const ESTADOS_DE_RECHAZO_DEFINITIVO = [
-  400,
-  409,
-  413,
+const RECHAZOS_DEFINITIVOS = [
+  '409:parte_vacio',
+  '400:firma_invalida',
+  '400:firma_sin_nombre',
+  '400:calidad_firmante_invalida',
+  '400:calidad_firmante_otro_vacio',
+  '413:firma_demasiado_grande',
 ];
 
 function elServidorLaRechaza(error) {
   if (!error || error.sinRed || elServidorYaLaTiene(error)) return false;
-  return ESTADOS_DE_RECHAZO_DEFINITIVO.indexOf(error.status) !== -1;
+  return RECHAZOS_DEFINITIVOS.indexOf(error.status + ':' + error.code) !== -1;
 }
 
 
