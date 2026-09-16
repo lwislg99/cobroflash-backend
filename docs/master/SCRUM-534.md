@@ -135,7 +135,8 @@ sobre el texto continuo, recuperando la línea después.
 
 ### ⚠️ Un flaky ajeno, medido dos veces y NO arreglado (regla 9)
 
-La primera pasada dio **2 rojos de **: *«el censo dice 149 ramas y  lista 150»*.
+La primera pasada dio **2 rojos de `SCRUM-804`**: *«el censo dice 149 ramas y `for-each-ref` lista
+150»*.
 Corrido aislado pasa, y la segunda pasada completa da **0 fail**. Es una **carrera**: el censo hace
 dos lecturas y con ~26 worktrees empujando, una rama puede nacer entre una y otra. No es de este
 carril y no se toca — queda nombrado porque un rojo intermitente entrena a relanzar la tanda.
