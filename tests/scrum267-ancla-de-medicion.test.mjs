@@ -915,7 +915,7 @@ test('SCRUM-267 · el formato declarado en el README incluye el ancla', () => {
 // alcanzable localmente. Por eso lo que este guard exige es **resolver en el clon donde corre**,
 // y lo que NO resuelve se lista abajo con su veredicto de la segunda sonda, no se acusa a ciegas.
 //
-// Censo del 16-sep-2026: **513 ficheros · 808 líneas «Medido contra» · 797 con sha de 40 ·
+// Censo del 16-sep-2026: **516 ficheros · 812 líneas «Medido contra» · 800 con sha de 40 ·
 // 395 shas distintos · 394 resuelven en el clon · 1 no**, y ése tampoco existe en `origin`
 // (la API contesta 422 donde para uno real contesta 200).
 const SHA_NO_RESUELVE = 'el sha tiene forma válida pero NO existe: ni en el clon ni en origin — '

@@ -1,12 +1,12 @@
 # SCRUM-649 · El guard comprobaba que el sha tuviera FORMA de sha, no que el commit existiera
 
-**Medido contra:** `origin/main` = `1f18293ed08ed65f467151269c3f1f92f9d52675` · 2026-09-16T04:36:58+01:00
+**Medido contra:** `origin/main` = `26efcf1f2c5886f655c9297fefd35c6aafc2e1d5` · 2026-09-16T04:56:54+01:00
 
 **Carril:** instrumentos · registro · **Gate:** sin gate — corre en `npm test`
 
 ---
 
-**Tanda:** 6884 tests · 6774 pass · **0 fail** · 110 skipped (todos gateados por entorno y con su
+**Tanda:** 6896 tests · 6786 pass · **0 fail** · 110 skipped (todos gateados por entorno y con su
 motivo declarado) · `guards:entrada` 26/26.
 
 ## PASO 0 · el defecto está VIVO, y se comprueba corriendo
@@ -29,23 +29,25 @@ anclas que podían no llevar a ninguna parte.
 
 ## ② El censo, con su población declarada
 
-Medido **después** de mezclar `origin/main` dentro de la rama, que es el árbol que va a correr.
-La columna de la derecha es la de antes del merge, para que se vea qué movió y qué no:
+Medido **después** de mezclar `origin/main`, que es el árbol que va a correr. `main` se movió **dos
+veces** mientras se medía (`1f18293e` → `26b4be6e` → `26efcf1f`), así que la columna de la derecha
+es la primera medición y sirve para lo único que importa aquí: ver que la conclusión no depende del
+momento.
 
-| | ya con `main` dentro | antes del merge |
+| | árbol final (`26efcf1f`) | primera medición |
 |---|---|---|
-| ficheros de `docs/master/` | **513** | 511 |
-| líneas `**Medido contra:**` | **808** | 800 |
-| · con sha de 40 | **797** | 790 |
-| · en otra forma (no son anclas de sha) | **11** | 10 |
+| ficheros de `docs/master/` | **516** | 511 |
+| líneas `**Medido contra:**` | **812** | 800 |
+| · con sha de 40 | **800** | 790 |
+| · en otra forma (no son anclas de sha) | **12** | 10 |
 | **shas DISTINTOS a resolver** | **395** | 389 |
 | · resuelven en este clon | **394** | 388 |
 | · 🔴 **no resuelven** | **1** | 1 |
 
-El merge trajo `SCRUM-861.md` y 7 anclas nuevas, **todas resuelven**. La onceava «en otra forma»
-es de esta misma entrada: la fila de arriba que dice `líneas **Medido contra:**` y que el censo,
-con razón, cuenta como mención en prosa. **La que no resuelve sigue siendo exactamente una, y la
-misma.**
+Entre las dos mediciones entraron en `main` cinco entradas y 10 anclas nuevas, **todas resuelven**.
+Las dos «en otra forma» de más **son de esta entrada**: la fila de la tabla que dice
+`líneas **Medido contra:**` y la frase que lo explica — el censo las cuenta como mención en prosa,
+y hace bien. **La que no apunta a ningún sitio sigue siendo exactamente una, y la misma.**
 
 **El que no apunta a ningún sitio, listado y no corregido (regla 9):**
 
@@ -99,7 +101,7 @@ llegara a resolver, hay que quitarla y bajar el tope.
 
 | control | resultado |
 |---|---|
-| 🔴 **EL QUE DECIDE**: sha bien formado e inexistente | **cae**, y nombra **fichero, línea y sha** — ejercido sobre las 797 anclas reales, cambiando un dígito **en memoria**, y comprobando que los hallazgos suben en **exactamente uno** |
+| 🔴 **EL QUE DECIDE**: sha bien formado e inexistente | **cae**, y nombra **fichero, línea y sha** — ejercido sobre las 800 anclas reales, cambiando un dígito **en memoria**, y comprobando que los hallazgos suben en **exactamente uno** |
 | ✅ **POSITIVO**: las anclas reales siguen pasando | **394 de 394**, una por una, y los números cuadran (no-resuelven = declarados) |
 | ✅ **NEGATIVO**: lo que cerró SCRUM-859 sigue cerrado | tope de 5 · 5 usos · identidad por `tituloCompleto`, **ejercido** insertando una entrada |
 | 🔴 **MUTACIÓN**: apagar la comprobación | **1 rojo**, y es el control que decide — verificando que **la mutación entró en disco** antes de creerse el resultado |
