@@ -73,7 +73,9 @@ window.rotulosDelDocumento = (function () {
     // ── Modal del documento suelto ─────────────────────────────────────────────────────
     tituloModal: function () { return esJustificante() ? 'Nuevo justificante' : 'Nueva factura'; },
     accionPrimaria: function () { return esJustificante() ? 'Emitir justificante' : 'Emitir factura'; },
-    ariaDialogo: function () { return esJustificante() ? 'Crear un justificante nuevo' : 'Crear una factura nueva'; },
+    // SCRUM-875 · aquí estaba `ariaDialogo()`, el `aria-label` del diálogo. Su único consumidor era
+    // el modal viejo, retirado en SCRUM-867, y el fundador decidió retirarlo: una página no es un
+    // diálogo. Si algún día hay un diálogo, su texto se aprueba entonces (regla 30).
     avisoEmitido: function () { return esJustificante() ? 'Justificante emitido' : 'Factura emitida'; },
     errorAlEmitir: function () {
       return esJustificante()

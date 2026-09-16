@@ -15,7 +15,8 @@
 // ── QUÉ VIGILA ESTE FICHERO ──────────────────────────────────────────────────────────────
 // El MECANISMO, que es estático y no caduca:
 //   1. que exista UNA sola fuente y UN solo predicado (no dos formas de decidir el nombre);
-//   2. que los siete rótulos firmados salgan de ella, con sus dos ramas;
+//   2. que los seis rótulos firmados salgan de ella, con sus dos ramas (eran siete; el del
+//      `aria-label` del diálogo se retiró con su diálogo en SCRUM-875);
 //   3. que los consumidores NO reimplementen la decisión;
 //   4. que el merchant DEMO siga leyendo «factura».
 //
@@ -46,7 +47,7 @@ const leer = (rel) => {
 };
 
 /**
- * LOS SIETE, FIRMADOS POR EL ASESOR el 6-sep-2026 (regla 30).
+ * LOS SEIS, FIRMADOS POR EL ASESOR el 6-sep-2026 (regla 30). Eran siete: ver `RETIRADOS`, abajo.
  *
  * Se firmaron DERIVANDO, no inventando: «justificante» ya es término oficial del máster y ya lo
  * decía el botón desde SCRUM-346. No entra palabra nueva; entra que siete sitios digan la que ya
@@ -61,27 +62,23 @@ const FIRMADOS = [
   { fn: 'columnaNumero', factura: 'Nº factura', justificante: 'Nº justificante' },
   { fn: 'tituloModal', factura: 'Nueva factura', justificante: 'Nuevo justificante' },
   { fn: 'accionPrimaria', factura: 'Emitir factura', justificante: 'Emitir justificante' },
-  { fn: 'ariaDialogo', factura: 'Crear una factura nueva', justificante: 'Crear un justificante nuevo' },
   { fn: 'avisoEmitido', factura: 'Factura emitida', justificante: 'Justificante emitido' },
   { fn: 'errorAlEmitir', factura: 'No hemos podido emitir la factura. Inténtalo otra vez.', justificante: 'No hemos podido emitir el justificante. Inténtalo otra vez.' },
 ];
 
 /**
- * 🔴 SCRUM-867 · EL RÓTULO QUE SE QUEDÓ SIN CONSUMIDOR, DICHO Y NO TAPADO.
+ * 🔴 LOS RÓTULOS RETIRADOS, Y QUE NO VUELVEN SIN FIRMA.
  *
- * `ariaDialogo()` lo leía el `aria-label` del modal retirado, y era su ÚNICO consumidor (medido).
- * Una PÁGINA no es un diálogo: cablearlo ahí sería inventarle un uso para que este test pase, que
- * es peor que la ausencia. El texto sigue firmado y sigue en la fuente; lo que no hay es quién lo
- * pinte, y decidir entre retirarlo o darle sitio es del fundador (regla 30).
- *
- * TRINQUETE QUE SÓLO APRIETA: si algún día alguien lo cablea, el test de abajo cae pidiendo que se
- * borre de esta lista. Una excepción que sobrevive a su causa deja de ser una nota y pasa a ser un
- * permiso.
+ * `ariaDialogo()` —el `aria-label` del diálogo: «Crear una factura nueva» / «Crear un justificante
+ * nuevo»— lo leía SÓLO el modal viejo. Al retirarse el modal (SCRUM-867) se quedó sin consumidor, y
+ * se declaró aquí en vez de taparlo. El fundador decidió en SCRUM-875: SE RETIRA. Una página no es
+ * un diálogo, y cablearlo sería inventarle un uso para que un test pase. Si algún día hay un
+ * diálogo, su texto se aprueba entonces.
  */
-const SIN_CONSUMIDOR_DESDE_867 = ['ariaDialogo'];
+const RETIRADOS = ['ariaDialogo'];
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// 1 · LOS SIETE, EJECUTADOS EN LOS TRES MODOS QUE EXISTEN
+// 1 · LOS SEIS, EJECUTADOS EN LOS TRES MODOS QUE EXISTEN
 // ─────────────────────────────────────────────────────────────────────────────────────────
 /**
  * Se CARGA el fichero de verdad y se EJECUTA con un `window` de mentira. No se lee su texto con
@@ -97,7 +94,19 @@ function cargarRotulos(documentoSuelto) {
   return ventana.rotulosDelDocumento;
 }
 
-test('SCRUM-776 · los siete rótulos siguen al documento, en los tres modos', () => {
+test('SCRUM-776 · 🔴 los rótulos RETIRADOS no vuelven a la fuente sin firma (SCRUM-875)', () => {
+  for (const modo of ['justificante', 'factura']) {
+    const r = cargarRotulos(modo);
+    for (const fn of RETIRADOS) {
+      assert.equal(typeof r[fn], 'undefined',
+        `🔴 \`${fn}()\` ha vuelto a \`rotulosDelDocumento\`. Se retiró en SCRUM-875 por decisión del ` +
+        'fundador: su único consumidor era un diálogo que ya no existe. Si hace falta otra vez, su ' +
+        'texto se aprueba entonces (regla 30), no se resucita.');
+    }
+  }
+});
+
+test('SCRUM-776 · los seis rótulos siguen al documento, en los tres modos', () => {
   // 'justificante' = merchant ES real con el flag en su valor por defecto (el 80 % de la
   // clientela). 'factura' = merchant DEMO y merchant no-ES. Los dos valores salen de
   // `modoDocumentoSuelto`, medido en SCRUM-601.
@@ -163,18 +172,12 @@ test('SCRUM-776 · 🔴 la decisión vive en UN sitio: los consumidores no la re
     'Tiene que pedirle el rótulo a `rotulosDelDocumento`, no reimplementar la decisión.');
 });
 
-test('SCRUM-776 · los siete se CONSUMEN, y ninguno se quedó escrito a pelo', () => {
+test('SCRUM-776 · los seis se CONSUMEN, y ninguno se quedó escrito a pelo', () => {
   const pagina = leer(PAGINA);
   const vista = leer(VISTA);
   const juntos = pagina + vista;
 
   for (const r of FIRMADOS) {
-    if (SIN_CONSUMIDOR_DESDE_867.includes(r.fn)) {
-      assert.ok(!juntos.includes(`rotulosDelDocumento.${r.fn}()`),
-        `🟢 \`${r.fn}()\` VUELVE A TENER CONSUMIDOR. Bórralo de \`SIN_CONSUMIDOR_DESDE_867\` en el ` +
-        'mismo commit que lo cablea, para que la lista siga diciendo la verdad.');
-      continue;
-    }
     assert.ok(juntos.includes(`rotulosDelDocumento.${r.fn}()`),
       `🔴 nadie llama a \`${r.fn}()\`: el rótulo existe en la fuente y no llega a la pantalla. ` +
       'Un texto construido y no cableado es el patrón «construido ≠ alcanzable».');
