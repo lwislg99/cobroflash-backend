@@ -149,3 +149,100 @@ fichero—. Si no lo hay, la elección real es entre las dos primeras, y la prim
 es de este carril) · las cabeceras del CSV (regla 30) · `prisma/schema.prisma` · ningún estado ni
 flag (27) · ninguna dependencia (36). Ninguna base real: los datos del §4 están **fabricados**.
 **Nada ejecutado contra producción ni contra staging.**
+
+---
+
+# APÉNDICE · 16-sep-2026 · SCRUM-635b · El fundador decidió: el IVA sale, el coste entra
+
+**Medido contra:** `origin/main` = `1331d5d45d029ebccb328f008935a2d63ec8df43` · 2026-09-16T05:44:56Z
+**Rama:** `scrum-635-el-csv-sin-iva-y-con-coste` · **Carril:** producto · exportaciones
+**Gate:** sin gate — corre en `npm test`
+
+> **DECISIÓN DEL FUNDADOR (16-sep-2026).** Ya no hay nada que medir: el IVA **se retira** del CSV,
+> el coste **se añade**, y el margen **no se exporta calculado**. La cabecera queda
+> `name;description;price;cost;isActive`.
+
+---
+
+## 0 · Obligación 0, y los dos frenos que el trabajo previo dejó puestos
+
+El ticket **no es (a)**: su entrada existe y hay trabajo suyo en `main` (`0e0c6406`, «MEDIDO Y
+PARADO»). Lo que faltaba era la decisión, y ya está.
+
+**① El bloqueo formal, comprobado por mi cuenta** y no heredado: las dos ramas de SCRUM-609 siguen
+**vivas en el remoto** —`scrum-609-medir-el-catalogo` (+1) y `scrum-609-switch-y-margen` (+5)—,
+pero el apéndice de S5 que está **en `main`** las declara **(a) restos**, con su contenido ya
+dentro. El bloqueo no aplica.
+
+**② `cost` YA EXISTE** en el modelo: `prisma/schema.prisma` → `model Product` →
+`cost Decimal? @db.Decimal(12, 2)`. **Ni ALTER ni columna nueva**, que era la condición de parada.
+
+## 1 · 🔴 EL CONTROL QUE DECIDE: el tarifario entero, antes y después
+
+Catálogo de prueba **fabricado** (ni producción ni staging), con las tres formas que importan: IVA
+al 0,21, un IVA tecleado a mano (0,10), y **un `vat` vacío**.
+
+**ANTES** — `name;description;price;vat;isActive`
+
+```
+name;description;price;vat;isActive
+Mano de obra;Hora de fontaneria;35.00;0.2100;true
+Desplazamiento;Zona 1;20.00;0.2100;true
+Grifo monomando;"Serie basica; con instalacion";89.90;0.2100;true
+Revision caldera;Anual;75.00;0.1000;true
+Material vario;;12.00;;false
+```
+
+**DESPUÉS** — `name;description;price;cost;isActive`
+
+```
+name;description;price;cost;isActive
+Mano de obra;Hora de fontaneria;35.00;18.00;true
+Desplazamiento;Zona 1;20.00;12.50;true
+Grifo monomando;"Serie basica; con instalacion";89.90;54.00;true
+Revision caldera;Anual;75.00;;true
+Material vario;;12.00;7.20;false
+```
+
+> **La fila que parecía dato corrupto desaparece con la columna:** `Material vario;;12.00;;false`
+> pasa a `Material vario;;12.00;7.20;false`. El hueco doble no era un fallo del exportador — era
+> un IVA que nadie había rellenado.
+
+Y el hueco que queda ahora está en `Revision caldera`, que **no tiene coste**: sale **vacío, no
+cero**. Un coste inexistente puesto a 0,00 € daría un margen del 100 % inventado.
+
+## 2 · Los controles
+
+| control | resultado |
+|---|---|
+| 🔴 **SUELO** | se exporta un tarifario de verdad —5 filas y el BOM— o CIEGO |
+| 🔴 **EL QUE DECIDE** | la cabecera es la nueva, y `vat` ya no está |
+| 🔴 **la fila del `vat` vacío** | el `;;` desaparece |
+| ✅ **POSITIVO** | `name`, `description`, `price` e `isActive` **idénticas** fila a fila, y el entrecomillado del `;` dentro de una descripción (SCRUM-339) sigue en pie |
+| ✅ **NEGATIVO** | `listProducts` **no se toca**: sigue trayendo su `provider` y no se le ha colado nada del CSV |
+| ⛔ **el margen** | cinco columnas, ni una más: no viaja calculado |
+| 🔴 **MUTACIÓN** | devolver la columna vieja reproduce el defecto **exacto** (`Material vario;;12.00;;false`), **entró en `dist/`** comprobado, y fuente y `dist/` restaurados `IDÉNTICO` |
+
+**7/7 · `# skipped 0`.**
+
+## 3 · ⚠️ Lo que esto cuesta, con su número
+
+**Los merchants que teclean el IVA a mano pierden ese dato en la exportación.** Medido en el
+trabajo previo de este ticket: **58 productos · 46 con 0,21 · 3 a mano**. No es motivo para parar
+—está decidido— pero queda escrito con la cifra delante en vez de como una nota al pie.
+
+⛔ **La columna `vat` NO se borra del modelo**: sólo deja de viajar en este CSV. El dato de esos
+tres profesionales sigue siendo suyo y sigue en la base.
+
+## 4 · Por qué el margen no se exporta
+
+Decisión del asesor: el margen **se deriva** en el catálogo a partir de precio y coste. Traerlo ya
+calculado al CSV crearía un **segundo sitio donde vive el mismo número**, y dos sitios es como uno
+de los dos se queda atrás. Quien abra el fichero tiene `price` y `cost`. Hay un test que lo
+impide, para que nadie lo «mejore» mañana.
+
+## 5 · Lo que NO se ha tocado
+
+`listProducts` (SCRUM-609, otro carril) · `prisma/schema.prisma` · la columna `vat` del modelo ·
+el importador de tarifarios · el camino de emisión · ningún rótulo de pantalla · ningún estado ni
+flag nuevo (27) · ninguna dependencia (36). Datos fabricados; ninguna base real.
