@@ -27,7 +27,18 @@ function ficherosDe(...carpetas) {
 }
 
 const CARPETAS = ['src', 'public', 'scripts', 'tests', 'prisma', 'docs'];
-const ficheros = ficherosDe(...CARPETAS);
+
+// 🔴 SE EXCLUYE SU PROPIA EVIDENCIA, y lo cazo su propio control. Al dejar este script y su
+// salida dentro de `docs/master/evidencias/`, el censo empezo a LEERSE A SI MISMO y encontro su
+// cebo «no existe esta cadena» — o sea que el control salio en rojo y el censo se nego a afirmar
+// nada, que es exactamente lo que tenia que hacer. Es la trampa de autorreferencia de
+// SCRUM-693/694: un censo que se cuenta a si mismo mide su propia sombra.
+//
+// La exclusion va DECLARADA porque es una decision, no un detalle: la evidencia de un censo no es
+// superficie del producto. Si algun dia hubiera que censar `docs/master/evidencias/`, sera otro
+// censo con otro cebo.
+const EXCLUIDAS = ['docs/master/evidencias/'];
+const ficheros = ficherosDe(...CARPETAS).filter((f) => !EXCLUIDAS.some((e) => f.startsWith(e)));
 const texto = new Map();
 for (const f of ficheros) {
   try { texto.set(f, fs.readFileSync(path.join(RAIZ, f), 'utf8')); } catch { /* ilegible */ }

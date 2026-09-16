@@ -1,6 +1,6 @@
 # SCRUM-523 · La declaración responsable del productor: qué exige, qué hay y qué falta
 
-**Medido contra:** `origin/main` = `99ea4b5e370b103738714b584d70f570d3a60c02` · 2026-09-16T06:37:29+01:00
+**Medido contra:** `origin/main` = `1331d5d45d029ebccb328f008935a2d63ec8df43` · 2026-09-16T06:48:11+01:00
 
 **Carril:** normativa · censo · **Gate:** sin gate — no añade código de producto
 
@@ -83,13 +83,24 @@ una**, y está en el bloque ③-4.
 
 ## ② Qué existe HOY en el código — con fichero y línea en cada afirmación
 
-**El censo y su población:** 2208 ficheros de `src/`, `public/`, `scripts/`, `tests/`, `prisma/` y
-`docs/`. Reproducible: `docs/master/evidencias/SCRUM-523/censo-523.mjs`.
+**El censo y su población:** 2183 ficheros de `src/`, `public/`, `scripts/`, `tests/`, `prisma/` y
+`docs/`, **excluida `docs/master/evidencias/`** (por qué, abajo). Reproducible:
+`docs/master/evidencias/SCRUM-523/censo-523.mjs`, con su salida al lado.
 
-🔴 **Cada cero lleva su control**, y no es adorno: el primer intento con `grep` dio **cero** para
-«declaración responsable» en `src/` teniendo **dos** — los acentos. Un instrumento que no ve lo que
-busca da un cero muy creíble. El censo busca sobre texto normalizado (NFD, sin diacríticos) y antes
-de afirmar nada comprueba que **ve** un caso conocido y **no ve** una cadena inventada.
+🔴 **Cada cero lleva su control**, y no es adorno: **el control cazó dos cegueras mías**.
+
+**① Los acentos.** El primer intento con `grep` dio **cero** para «declaración responsable» en `src/`
+teniendo **dos**. Un instrumento que no ve lo que busca da un cero muy creíble. El censo busca sobre
+texto normalizado (NFD, sin diacríticos) y antes de afirmar nada comprueba que **ve** un caso
+conocido y **no ve** una cadena inventada.
+
+**② El censo se leyó a sí mismo.** Al dejar el script y su salida dentro de
+`docs/master/evidencias/`, el censo pasó a escanear su propio fuente y **encontró su cebo** — el
+control salió en **rojo** y el censo **se negó a afirmar nada**, que es exactamente lo que tenía que
+hacer. Es la trampa de autorreferencia de SCRUM-693/694: un censo que se cuenta a sí mismo mide su
+propia sombra. Arreglado excluyendo esa carpeta, **declarado en el script**, y con la población
+bajando de 2211 a 2183. Ninguna conclusión cambió al excluirla — los seis ceros siguen siendo los
+mismos seis.
 
 ### Lo que SÍ existe
 

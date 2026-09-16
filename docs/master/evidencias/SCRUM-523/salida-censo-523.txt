@@ -1,6 +1,6 @@
 POBLACION DEL CENSO
   carpetas            : src, public, scripts, tests, prisma, docs
-  ficheros leidos     : 2208
+  ficheros leidos     : 2183
   ilegibles           : 0
 
 CONTROL DEL INSTRUMENTO
@@ -33,7 +33,7 @@ A4 · una ruta que sirva la declaracion:
    · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:206   **A17 · `DECLARACION_RESPONSABLE.md:39-40`**
    · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:213   **A18 · `DECLARACION_RESPONSABLE.md:48-49`**
    · docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:219   **A19 · `DECLARACION_RESPONSABLE.md:53`**
-   … y 41 mas
+   … y 43 mas
 
 ════════════════════════════════════════════════════════════════════════════════════════
 B · UBICACION EXTERNA — accesible a cliente y potencial cliente
