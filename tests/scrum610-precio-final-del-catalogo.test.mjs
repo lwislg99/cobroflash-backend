@@ -27,29 +27,34 @@ const VISTA = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesView.js
 
 /** Las piezas de la vista de las que depende este fichero, con su texto EXACTO. */
 const ANCLAS = {
-  'selectItem guarda la base del catálogo': '    priceInput.dataset.pfBasePrice = String(base);',
+  // 🔴 DOS ANCLAS MÁS RETIRADAS POR SCRUM-669 (resto 1), y por la misma razón que las cinco de
+  // abajo: NO SE RELAJA NADA, DESAPARECE SU CAUSA. Anclaban las dos escrituras de
+  // `priceInput.dataset.pfBasePrice`, y ese dato se ha retirado de la vista — se escribía en
+  // cinco sitios y no lo leía nadie (CERO lecturas en todo el árbol, medido con dos instrumentos
+  // independientes: texto y AST). Un ancla sobre una línea que ya no existe no vigila: cae por
+  // lo normal, y un guard que cae por lo normal se desactiva en una tarde.
   'selectItem pinta el precio del catálogo': '    priceInput.value = String(base.toFixed(2));',
   // 🔴 TRES ANCLAS RETIRADAS POR SCRUM-598 (DOC-08). No se relaja nada: DESAPARECE SU CAUSA.
   // El doble margen que SCRUM-610 evitaba necesitaba un margen EN LA LÍNEA, y ese campo ya no
   // existe — no hay nada que se pueda aplicar dos veces. El margen vive en el catálogo
   // (CAT-01) desde donde el precio ya sale con él dentro.
-  'tocar el precio a mano REESCRIBE la base': '  priceInput.dataset.pfBasePrice = String(n);',
   // 🔴 DOS ANCLAS MÁS RETIRADAS POR SCRUM-598 (DOC-08), y por la misma razón que las tres de
   // arriba: el documento recomponía el precio desde la base del catálogo y el margen de la línea.
   // Sin margen en la línea, esa recomposición sólo podía devolver el mismo número — así que el
   // precio escrito ES el que viaja, y no hay «base» y «final» que reconciliar.
   //
-  // ⚠️ HALLAZGO DECLARADO, no arreglado aquí: `priceInput.dataset.pfBasePrice` se sigue ESCRIBIENDO
-  // en cinco sitios y ya no lo lee nadie. Es estado muerto, y sacarlo es otro carril.
+  // ✅ AQUEL HALLAZGO YA ESTÁ CERRADO: `pfBasePrice` se escribía en cinco sitios sin que nadie lo
+  // leyera, y SCRUM-669 (resto 1) lo retiró. Por eso arriba faltan sus dos anclas.
   'el DOCUMENTO usa el precio escrito': '        const finalPrice = safePrice;',
 };
 
 test('SCRUM-610 · SUELO: las piezas de la vista siguen donde el modelo las supone', () => {
   // 🔴 SUELO DEL SUELO: sin esto, vaciar `ANCLAS` dejaría el bucle sin iteraciones y el suelo
   // pasaría por no comprobar nada. Un cero de un instrumento vacío se lee como un verde.
-  assert.equal(Object.keys(ANCLAS).length, 4,
-    '🔴 el número de anclas ha cambiado. Eran 4 después de SCRUM-598 (DOC-08), que retiró las '
-    + 'cinco del margen. Si se ha añadido o quitado alguna, hay que volver a mirar el modelo.');
+  assert.equal(Object.keys(ANCLAS).length, 2,
+    '🔴 el número de anclas ha cambiado. Eran 4 tras SCRUM-598 (DOC-08, que retiró las cinco del '
+    + 'margen) y son 2 tras SCRUM-669 (que retiró las dos de `pfBasePrice`, estado muerto). Si se '
+    + 'ha añadido o quitado alguna, hay que volver a mirar el modelo.');
   for (const [que, txt] of Object.entries(ANCLAS)) {
     assert.ok(VISTA.split(txt).length - 1 >= 1,
       `🔴 CIEGO: ya no existe «${que}» en \`quotesView.js\`. El modelo de abajo dejaría de medir la `
@@ -63,7 +68,7 @@ test('SCRUM-610 · SUELO: las piezas de la vista siguen donde el modelo las supo
 });
 
 // ── El modelo, tal cual lo dicen las piezas ancladas ──────────────────────────────────────
-const linea = (over = {}) => ({ precioVisible: '', base: '', seleccionando: false, ...over });
+const linea = (over = {}) => ({ precioVisible: '', seleccionando: false, ...over });
 
 // 🔴 LAS REGLAS SE LEEN DE LA VISTA, NO SE COPIAN — y no es un adorno.
 //
@@ -96,7 +101,6 @@ function elegirDelCatalogo(L, producto) {
   if (producto.price != null && producto.price !== '') {
     const base = Number(producto.price);
     if (Number.isFinite(base)) {
-      L.base = String(base);
       if (PONE_EL_PRECIO) L.precioVisible = String(base.toFixed(2));
     }
   }
@@ -106,12 +110,8 @@ function elegirDelCatalogo(L, producto) {
 
 function escribirPrecioAMano(L, valor) {
   L.precioVisible = valor;
-  if (!L.seleccionando) {
-    const n = Number(String(valor).replace(',', '.').trim());
-    // `pfBasePrice`. La vista lo SIGUE escribiendo y ya no lo lee nadie — es el estado muerto
-    // que este fichero declara arriba. Se modela porque la pantalla lo hace, no porque sirva.
-    L.base = (Number.isFinite(n) && n >= 0) ? String(n) : '';
-  }
+  // SCRUM-669 · aquí el modelo copiaba `pfBasePrice`, que la vista ya no escribe. Se retira con
+  // él: el precio que acaba en el documento sale de `precioVisible`, no de aquella base.
   return L;
 }
 
@@ -157,8 +157,8 @@ test('SCRUM-610 · 🔴 un SERVICIO también, y sin pedir coste', () => {
 test('SCRUM-610 · 🔴 el precio SIGUE SIENDO MODIFICABLE: lo escrito a mano manda', () => {
   const L = escribirPrecioAMano(elegirDelCatalogo(linea(), PRODUCTO), '150');
   assert.equal(precioEnElDocumento(L), 150,
-    '🔴 el precio escrito a mano se ha perdido. El documento parte de `pfBasePrice`, así que si el '
-    + 'listener del precio no la reescribiera, el catálogo pisaría al profesional.');
+    '🔴 el precio escrito a mano se ha perdido. El documento parte del precio VISIBLE, así que lo '
+    + 'que el profesional teclea es lo que viaja: si eso deja de ser cierto, el catálogo le pisa.');
   // Y con decimales en coma, que es como se escribe aquí.
   assert.equal(precioEnElDocumento(escribirPrecioAMano(elegirDelCatalogo(linea(), PRODUCTO), '99,50')), 99.5);
 });
@@ -218,7 +218,9 @@ test('SCRUM-610 · el cambio se limita al bloque del PRECIO dentro de `selectIte
   // S1 lleva el tipo de IVA de la línea (DOC-16) y S3 la cabecera y las observaciones (DOC-03),
   // los tres en la misma pantalla. Que el `if (markupInput)` viva dentro del bloque del precio
   // —y no cerca del IVA— es lo que mantiene los diffs separables.
-  const i = VISTA.indexOf('    priceInput.dataset.pfBasePrice = String(base);');
+  // SCRUM-669 · la marca era la escritura de `pfBasePrice`, retirada con el dato. Se usa la que
+  // queda viva del mismo bloque del precio, que es además un ancla declarada arriba.
+  const i = VISTA.indexOf('    priceInput.value = String(base.toFixed(2));');
   // SCRUM-598 · la marca del medio era el cero del margen, que ya no existe. La FRONTERA que
   // este caso vigila —que lo del precio no se meta en el bloque del IVA (S1, DOC-16)— se sigue
   // comprobando con las dos marcas que quedan.

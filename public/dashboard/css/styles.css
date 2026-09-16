@@ -1558,16 +1558,14 @@ html, body { overflow-x: clip; }
 @media (max-width: 767px) {
   .quote-drag-handle { display: none; }
 }
-/* SCRUM-139 F4 (cierra BUGS.md P3-13): el aviso vive dentro de la etiqueta de PRECIO, no
-   debajo del input. Debajo hacía esa celda más alta que las demás y `align-items:end` le subía
-   el input ~15 px. Aquí no añade alto a nadie. `text-transform:none` porque la etiqueta va en
-   MAYÚSCULAS y "Final: 40,25 €" no debe gritar. */
+/* SCRUM-139 F4 (cierra BUGS.md P3-13): la etiqueta de PRECIO reparte su ancho entre el rótulo y
+   lo que se le cuelgue al lado, en vez de dejar crecer la celda hacia abajo. Debajo del input,
+   un añadido hacía esa celda más alta que las demás y `align-items:end` le subía el input ~15 px.
+   SCRUM-669 (resto 4) · aquí vivía `.price-final-hint`, el estilo del aviso «Final: …». Se retira
+   con su elemento: desde DOC-08 el margen no está en la línea, así que el aviso no tenía nunca
+   nada que decir y el hueco salía siempre vacío. El `flex` de la etiqueta se queda — lo que
+   sostiene es la forma de la celda, no aquel aviso. */
 .quote-line__label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.price-final-hint {
-  font-size: 11px; font-weight: 600; color: var(--muted, #6b756f);
-  text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
 
 /* SCRUM-139 F4 · disparador de la hoja de ajustes. Terciario a propósito: es lo que MENOS se
    toca de la línea (margen casi siempre 0, IVA casi siempre el general), pero se lee sin
