@@ -281,6 +281,7 @@ test('SCRUM-889b · 🔴 la «×» de una línea guardada la quita: lista entera
   const { cont, srv } = await abrirVista();
   const equis = equisGuardadas(cont);
   assert.equal(equis.length, 3, '🔴 NO PUDE MIRAR: no hay tres «×» de líneas guardadas');
+  assert.ok(cont.innerHTML.includes('Cablear línea'), 'control: antes de quitarla, la línea SÍ está pintada');
   const leidas = srv.lecturas();
   const x = equis.find((b) => b.getAttribute('data-indice') === '1');
   assert.ok(x.dispararClick() > 0, '🔴 la «×» de una línea guardada NO TIENE ESCUCHADOR.');
