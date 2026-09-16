@@ -100,7 +100,7 @@ try {
     }
     const lienzo = await pag.$eval('#sig-canvas', (c) => {
       const r = c.getBoundingClientRect();
-      return { ancho: c.width, alto: c.height, anchoPantalla: Math.round(r.width), altoPantalla: Math.round(r.height), dpr: window.devicePixelRatio };
+      return { ancho: c.width, alto: c.height, anchoPantalla: Math.round(r.width), altoPantalla: Math.round(r.height), dpr: globalThis.devicePixelRatio };
     });
     const caja = await (await pag.$('#sig-canvas')).boundingBox();
     if (!caja || caja.width < 10) {
