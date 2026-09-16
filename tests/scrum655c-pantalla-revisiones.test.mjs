@@ -166,10 +166,34 @@ test('SCRUM-655c · 🔴 una revisión FIRMADA no se ofrece para editar', () => 
   const html = contenedor.innerHTML;
   assert.ok(/data-revision-fila="11"[\s\S]*?data-revision-etiqueta="firmada"/.test(html),
     '🔴 la revisión firmada no se marca como tal');
-  // ⛔ Y en ninguna fila hay un camino de edición ni de creación: esta pantalla es SOLO lectura.
-  assert.ok(!/data-revision-editar|data-revision-nueva|Crear revisi/i.test(html),
-    '🔴 la pantalla ofrece crear o editar una revisión. El POST que la crea NO está aprobado, y ' +
-    'un botón que el servidor no atiende es peor que no tenerlo.');
+  // ⛔ NINGÚN CAMINO DE EDICIÓN. Esto NO ha cambiado y es la mitad que importa: un presupuesto
+  // firmado no se reescribe.
+  assert.ok(!/data-revision-editar|data-revision-nueva/i.test(html),
+    '🔴 la pantalla ofrece EDITAR una revisión. Un presupuesto firmado no se reescribe: editarlo ' +
+    'sería cambiar lo que el cliente ya firmó.');
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 PREMISA ANULADA POR EL FUNDADOR · 15-sep-2026 (SCRUM-688)
+  //
+  // Aquí se exigía además que NO hubiera camino de CREACIÓN, con este motivo: «el POST que la
+  // crea NO está aprobado, y un botón que el servidor no atiende es peor que no tenerlo». Era
+  // cierto al escribirlo. El fundador aprobó el POST el 15-sep-2026 y lo atiende
+  // `POST /admin/quotes/:id/revisiones`, así que el motivo ya no existe — el botón SÍ tiene quien
+  // lo atienda. La prohibición que queda es la de EDITAR, que es otra cosa y sigue entera.
+  //
+  // ⚠️ Y CONVIENE SABER POR QUÉ ESTE CASO SIGUIÓ VERDE UN DÍA DE MÁS: su patrón nombraba
+  // `data-revision-editar`, `data-revision-nueva` y el rótulo `Crear revisi`. El botón de
+  // SCRUM-688 se llama `data-revision-crear` y el 15-sep llevaba por texto un centinela de
+  // microcopy sin aprobar, así que **no casaba con ninguno de los tres**. La pantalla ya ofrecía
+  // crear y este test decía que no. No cayó al añadir el botón: cayó al ponerle su texto firmado.
+  //
+  // Por eso ahora se afirma en POSITIVO. Un `!/…/` sólo dice que no vio lo que buscaba, y no
+  // distingue «no está» de «se llama de otra forma»; exigir la presencia sí.
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  assert.ok(/data-revision-crear=/.test(html),
+    '🔴 la pantalla ya NO ofrece crear una revisión. Es la única salida cuando la versión vigente ' +
+    'está firmada y no se puede tocar: sin ella el profesional vuelve a hacer un presupuesto ' +
+    'nuevo desde cero, con otro número base (SCRUM-688).');
 });
 
 test('SCRUM-655c · la versión abierta no se ofrece «ver», y las otras sí', () => {
