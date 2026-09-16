@@ -21,6 +21,8 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cobertura, lineaDePoblacion, laQueMasPesaSinCubrir, vistasDelDashboard } from '../scripts/_cobertura-visual.mjs';
@@ -74,9 +76,20 @@ test('SCRUM-628 · 🔴 la cobertura visual del dashboard NO ha empeorado', () =
   //   >>> Arreglado el censo, las sin cubrir eran 11, no 20: había NUEVE vistas que ya
   //   >>> ejercitaban tests anteriores y nadie las estaba contando. <<<
   //
-  // Y de esas 11 se cubren CINCO en esta fase (la tabla de abajo), por el criterio derivado.
+  // Y de esas 11 se cubrieron CINCO en la fase b y las SEIS restantes en la fase c.
+  //
+  // ── 🔴 EL TRINQUETE ESTÁ EN CERO, Y POR ESO MISMO NO SE BORRA ─────────────────────────────
+  //
+  // Es tentador quitarlo al llegar a cero: ya no queda nada que bajar. Sería cambiar el problema
+  // por el mismo problema dentro de un mes — **un trinquete en cero es lo único que impide que
+  // entre una vista NUEVA sin cubrir**. En cero deja de medir deuda y pasa a ser una puerta.
+  //
+  // Comprobado ejecutando, no razonado: sobre un banco sintético se añade una vista sin cubrir y
+  // el número SUBE a 1 (el test `una vista nueva sin cubrir hace SUBIR el trinquete`, abajo). Va
+  // sobre banco y no sobre el árbol porque SCRUM-824 prohíbe crear fixtures dentro, y con razón:
+  // un test que muere antes de su `finally` deja el árbol escrito.
   const c = cobertura(RAIZ);
-  const SIN_CUBRIR_HOY = 6;
+  const SIN_CUBRIR_HOY = 0;
   assert.equal(c.sinCubrir.length, SIN_CUBRIR_HOY,
     `🔴 LA COBERTURA VISUAL HA CAMBIADO: ${c.sinCubrir.length} vistas sin cubrir, y el censo `
     + `declara ${SIN_CUBRIR_HOY}.\n\n    ${lineaDePoblacion(c)}\n\n`
@@ -191,6 +204,92 @@ test('SCRUM-628b · el censo RECONOCE como cubiertas las cinco de esta fase', ()
     `🔴 EL CENSO NO VE LA COBERTURA QUE ACABA DE AÑADIRSE: ${invisibles.join(', ')}\n\n`
     + '  Un censo que no reconoce la cobertura nueva deja su trinquete clavado, pareciendo\n'
     + '  estable. Es el defecto que tenía el de SCRUM-628 y por el que aquel 20 estaba inflado.');
+});
+
+// ═══ ②c FASE c · LAS SEIS QUE QUEDABAN, y el trinquete a CERO ════════════════════════════════
+//
+// Mismo criterio y mismo orden que las anteriores: salen de `laQueMasPesaSinCubrir()` en cascada.
+//
+// ⚠️ DOS DE ELLAS NECESITAN QUE SE LES DÉ LA FORMA DE SU RUTA, y no es un defecto del producto:
+// el banco devuelve `{}` por defecto y estas dos esperan una LISTA, que es lo que sus rutas
+// devuelven de verdad. `quoteRequestsView` incluso defiende contra `null` y contra lista vacía —
+// lo que no espera es un objeto. Darles su forma es usar el banco bien, no taparles nada.
+
+test('SCRUM-628c · 🔴 expensesView.js SE MONTA y pinta su contenedor', async () => {
+  exigeQueMonte(await pintarVista(cargarDashboard(RAIZ), 'renderExpensesView'), 'expensesView.js', 576);
+});
+
+test('SCRUM-628c · 🔴 providersView.js SE MONTA y pinta su contenedor', async () => {
+  exigeQueMonte(await pintarVista(cargarDashboard(RAIZ), 'renderProvidersView'), 'providersView.js', 475);
+});
+
+test('SCRUM-628c · 🔴 libroRegistroView.js SE MONTA y pinta su contenedor', async () => {
+  exigeQueMonte(await pintarVista(cargarDashboard(RAIZ), 'renderLibroRegistroView'), 'libroRegistroView.js', 360);
+});
+
+test('SCRUM-628c · 🔴 plansView.js SE MONTA y pinta su contenedor', async () => {
+  // La forma sale de su propio consumidor (`buildPlansHtml({ currentPlan, planExpiresAt, plans,
+  // founding })`), no de una suposición: se lee el destructuring y se le da eso.
+  const datos = () => ({
+    currentPlan: 'free', planExpiresAt: null, founding: false,
+    plans: [{ id: 'pro', name: 'Pro', priceCents: 2900, currency: 'EUR', features: [] }],
+  });
+  exigeQueMonte(await pintarVista(cargarDashboard(RAIZ, { datos }), 'renderPlansView'), 'plansView.js', 267);
+});
+
+test('SCRUM-628c · 🔴 parteOficinaView.js SE MONTA y pinta su contenedor', async () => {
+  exigeQueMonte(await pintarVista(cargarDashboard(RAIZ), 'renderPartesOficinaView'), 'parteOficinaView.js', 228);
+});
+
+test('SCRUM-628c · 🔴 quoteRequestsView.js SE MONTA y pinta su contenedor', async () => {
+  // Su ruta devuelve una LISTA; la vista ya defiende el caso vacío, así que se le da vacía.
+  exigeQueMonte(await pintarVista(cargarDashboard(RAIZ, { datos: () => [] }), 'renderQuoteRequestsView'),
+    'quoteRequestsView.js', 161);
+});
+
+// ═══ 🔴 EL CONTROL QUE JUSTIFICA NO BORRAR EL TRINQUETE EN CERO ══════════════════════════════
+
+test('SCRUM-628c · 🔴 una vista NUEVA sin cubrir hace SUBIR el trinquete', () => {
+  // En cero, el trinquete deja de medir deuda y pasa a ser una PUERTA: lo único que impide que
+  // entre una vista sin guard. Eso hay que comprobarlo ejecutándolo, porque un trinquete en cero
+  // que no sabe subir y uno que ya no existe se leen exactamente igual.
+  //
+  // 🔴 SOBRE UN BANCO SINTÉTICO, NO SOBRE EL ÁRBOL. La primera versión escribía la vista intrusa
+  // en `public/dashboard/js` y la borraba en `finally` — y el guard de SCRUM-824 la cazó, con
+  // razón: un test que crea su fixture dentro del árbol lo deja escrito el día que muera antes del
+  // `finally`. El censo ya recibe la raíz como parámetro, así que se le da otra.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum628c-'));
+  try {
+    const js = path.join(dir, 'public', 'dashboard', 'js');
+    fs.mkdirSync(js, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ scripts: {} }));
+    fs.mkdirSync(path.join(dir, 'tests'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'public', 'dashboard', 'index.html'),
+      '<script src="/dashboard/js/cubiertaView.js"></script><script src="/dashboard/js/intrusaView.js"></script>');
+    fs.writeFileSync(path.join(js, 'cubiertaView.js'), 'function renderCubiertaView() { return null; }\n');
+    // Un test del banco que SÍ la monta: así la cubierta cuenta y el suelo no mide el vacío.
+    fs.writeFileSync(path.join(dir, 'tests', 'x.test.mjs'),
+      "await pintarVista(cargarDashboard(RAIZ), 'renderCubiertaView');\n");
+
+    const antes = cobertura(dir);
+    assert.equal(antes.sinCubrir.length, 0,
+      `🔴 el banco no arranca en cero (${antes.sinCubrir.length}): este control mediría otra cosa.`);
+
+    fs.writeFileSync(path.join(js, 'intrusaView.js'), 'function renderIntrusaView() { return null; }\n');
+    const despues = cobertura(dir);
+    assert.equal(despues.sinCubrir.length, 1,
+      `🔴 SE HA AÑADIDO UNA VISTA SIN CUBRIR Y EL TRINQUETE NO SE HA MOVIDO (${despues.sinCubrir.length}).\n\n`
+      + '  Entonces el cero no es una puerta: es un número que ya no mide nada, y la próxima\n'
+      + '  pantalla entrará sin vigilancia sin que nadie se entere.');
+    assert.equal(despues.sinCubrir[0].vista, 'intrusaView.js',
+      '🔴 el trinquete sube pero no nombra a la intrusa: un rojo que no dice cuál manda a buscar.');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  // Y el árbol REAL sigue en cero: el control no lo ha tocado.
+  assert.equal(cobertura(RAIZ).sinCubrir.length, 0,
+    '🔴 el árbol real ya no está en cero tras el control: algo se ha escrito donde no debía.');
 });
 
 // ═══ ③ CONTROL POSITIVO · los guards existentes siguen cazando lo suyo ═══════════════════════
