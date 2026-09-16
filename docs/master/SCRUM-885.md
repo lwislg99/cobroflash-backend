@@ -223,3 +223,17 @@ y `BIZUM_MANUAL_ENABLED` sólo en ese proceso.
 | C · 3,5 s después | toast ya ido (0), **el fijo sigue** | — |
 
 Errores de página: 0. Capturas miradas.
+
+## Sesión 4 · la firma del literal en el registro (16-sep-2026, 21:25 CEST)
+
+La firma existía en Jira y faltaba en el repo: **SCRUM-885 comentario 15615** (20:09 CEST, orquestador por
+delegación del fundador), releído con `fields: comment`; el literal coincide carácter a carácter con
+`AVISO_DOCUMENTO_SIN_ENVIAR`. Registro en `docs/microcopy/2026-09-16-SCRUM-885-documento-sin-enviar.md`,
+con el formato de la entrada vecina de SCRUM-890 (firma delegada), no con el borrador de la sesión 2.
+
+| sha | qué |
+|---|---|
+| `e7e16261b2c7928b828ab6314ab942d947d659eb` | la entrada de microcopy |
+
+**Medido:** `constaAprobado(literal)` → `[]` sin el fichero y → el fichero con él (control en las dos
+direcciones). Guards de microcopy (726, 861, 709, 514) y el de 885: 43/43.
