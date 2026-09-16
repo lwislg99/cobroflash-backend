@@ -1,10 +1,13 @@
 # SCRUM-649 · El guard comprobaba que el sha tuviera FORMA de sha, no que el commit existiera
 
-**Medido contra:** `origin/main` = `1f18293ed08ed65f467151269c3f1f92f9d52675` · 2026-09-15T16:42:43Z
+**Medido contra:** `origin/main` = `1f18293ed08ed65f467151269c3f1f92f9d52675` · 2026-09-16T04:36:58+01:00
 
 **Carril:** instrumentos · registro · **Gate:** sin gate — corre en `npm test`
 
 ---
+
+**Tanda:** 6884 tests · 6774 pass · **0 fail** · 110 skipped (todos gateados por entorno y con su
+motivo declarado) · `guards:entrada` 26/26.
 
 ## PASO 0 · el defecto está VIVO, y se comprueba corriendo
 
@@ -26,15 +29,23 @@ anclas que podían no llevar a ninguna parte.
 
 ## ② El censo, con su población declarada
 
-| | |
-|---|---|
-| ficheros de `docs/master/` | **511** |
-| líneas `**Medido contra:**` | **800** |
-| · con sha de 40 | **790** |
-| · en otra forma (no son anclas de sha) | **10** |
-| **shas DISTINTOS a resolver** | **389** |
-| · resuelven en este clon | **388** |
-| · 🔴 **no resuelven** | **1** |
+Medido **después** de mezclar `origin/main` dentro de la rama, que es el árbol que va a correr.
+La columna de la derecha es la de antes del merge, para que se vea qué movió y qué no:
+
+| | ya con `main` dentro | antes del merge |
+|---|---|---|
+| ficheros de `docs/master/` | **513** | 511 |
+| líneas `**Medido contra:**` | **808** | 800 |
+| · con sha de 40 | **797** | 790 |
+| · en otra forma (no son anclas de sha) | **11** | 10 |
+| **shas DISTINTOS a resolver** | **395** | 389 |
+| · resuelven en este clon | **394** | 388 |
+| · 🔴 **no resuelven** | **1** | 1 |
+
+El merge trajo `SCRUM-861.md` y 7 anclas nuevas, **todas resuelven**. La onceava «en otra forma»
+es de esta misma entrada: la fila de arriba que dice `líneas **Medido contra:**` y que el censo,
+con razón, cuenta como mención en prosa. **La que no resuelve sigue siendo exactamente una, y la
+misma.**
 
 **El que no apunta a ningún sitio, listado y no corregido (regla 9):**
 
@@ -43,7 +54,7 @@ docs/master/SCRUM-652.md:284   01d5c5a03e1f5e1b93d24e9f10b5b6b9a8a3f9c2
 # SCRUM-652 · T3 fase B — el parte de trabajo, construido hasta la puerta del esquema
 ```
 
-Las **10 en otra forma** no son un hallazgo nuevo: tres son **ejemplos de formato** en prosa
+Las **10 en otra forma** que no son mías no son un hallazgo nuevo: tres son **ejemplos de formato** en prosa
 (`SCRUM-267` describiendo el ancla, `SCRUM-532` y `SCRUM-859` citándola), seis son **shas
 abreviados** que ya están en `SIN_HORA_Y_SHA_CORTO`, y una es la `OTRA_BASE` de `SCRUM-821`.
 
@@ -52,7 +63,7 @@ abreviados** que ya están en `SIN_HORA_Y_SHA_CORTO`, y una es la `OTRA_BASE` de
 Un commit puede faltar en un clon y estar en `origin`: una rama autoborrada, un objeto no
 alcanzable localmente. Así que se usan **dos sondas independientes**:
 
-1. **local** — `git cat-file --batch-check`, una sola llamada para los 389. Verificado antes que
+1. **local** — `git cat-file --batch-check`, una sola llamada para los 395. Verificado antes que
    este clon **no es superficial** (`--is-shallow-repository` → `false`).
 2. **origin** — sólo para el que la primera no encuentra: la API pública contesta **200** para un
    sha real y **422** para el inventado, y para `01d5c5a0…` contesta **422**.
@@ -61,7 +72,7 @@ O sea que ese sha **no existe en ninguna de las dos**. Y lo que el guard exige e
 clon donde corre**: si algún día uno falta aquí y está en `origin`, eso se arregla **clonando
 entero**, no añadiéndolo a la lista — y el mensaje del rojo lo dice.
 
-**No hay ningún caso no decidible hoy**: 388 resueltos por la primera sonda, 1 por la segunda.
+**No hay ningún caso no decidible hoy**: 394 resueltos por la primera sonda, 1 por la segunda.
 
 ## Lo que se construye
 
@@ -88,21 +99,55 @@ llegara a resolver, hay que quitarla y bajar el tope.
 
 | control | resultado |
 |---|---|
-| 🔴 **EL QUE DECIDE**: sha bien formado e inexistente | **cae**, y nombra **fichero, línea y sha** — ejecutado sobre un ancla real, restaurada byte a byte |
-| ✅ **POSITIVO**: las anclas reales siguen pasando | **388 de 388**, una por una, y los números cuadran (no-resuelven = declarados) |
+| 🔴 **EL QUE DECIDE**: sha bien formado e inexistente | **cae**, y nombra **fichero, línea y sha** — ejercido sobre las 797 anclas reales, cambiando un dígito **en memoria**, y comprobando que los hallazgos suben en **exactamente uno** |
+| ✅ **POSITIVO**: las anclas reales siguen pasando | **394 de 394**, una por una, y los números cuadran (no-resuelven = declarados) |
 | ✅ **NEGATIVO**: lo que cerró SCRUM-859 sigue cerrado | tope de 5 · 5 usos · identidad por `tituloCompleto`, **ejercido** insertando una entrada |
-| 🔴 **MUTACIÓN**: apagar la comprobación | **1 rojo** — y se verifica que **la mutación entró en disco** antes de creerse el resultado |
+| 🔴 **MUTACIÓN**: apagar la comprobación | **1 rojo**, y es el control que decide — verificando que **la mutación entró en disco** antes de creerse el resultado |
 
-### 🔴 Y una trampa que me volvió a morder, ya medida hoy
+### 🔴 Tres rojos que sacó la tanda, y los tres eran míos
 
-El control que decide falló al primer intento diciendo que el guard seguía verde. No era cierto:
-`node --test` marca a sus hijos con `NODE_TEST_CONTEXT` y, si la ve, **se niega a ejecutar**
-(«run() is being called recursively… skipping running files») **y sale con 0**. Mi control leía
-ese 0 como «el guard pasa» y habría dado por vivo un defecto ya arreglado. Es la familia de
-SCRUM-850 dentro del instrumento escrito para cazarla.
+No salieron del ticket: salieron de mezclar `main` y correr la tanda entera. Van escritos porque
+**el más grave era el instrumento, no lo medido**.
 
-Se limpia la variable en el hijo **y** se exige que la salida no diga `skipping running files`:
-sin eso, un `0` no se distingue de un runner que no corrió.
+**① SCRUM-824 tumbó mi control que decide, y tenía razón.** Su primera versión mutaba
+`docs/master/SCRUM-16.md` **de verdad** y corría el guard en un proceso hijo. La tanda corre a
+**concurrencia 12**: mientras ese fichero tenía un sha inventado dentro, cualquier otro test que
+recorra `docs/master/` lo estaba leyendo. Eso no es un control, es una **fábrica de rojos
+intermitentes** — y un rojo que sale una vez de cada dos enseña a relanzar la tanda y acaba con el
+guard apagado. Es decir: el instrumento que escribí para cerrar un agujero abría otro peor, y el
+trinquete de la casa lo cazó antes que yo.
+
+Rehecho: la decisión se extrae a `anclasMuertas(entradas, resuelve, exentas)` —una función pura— y
+el control la ejerce **sobre el registro real, en memoria, sin escribir un byte**. Gana además las
+dos direcciones en la misma pasada y un número exacto: cambiar un dígito sube los hallazgos de N a
+N+1, ni cero (no lo ve) ni más de uno (acusa a otros de paso).
+
+**② SCRUM-723 me metió en su censo, y también tenía razón.** `scrum267` llevaba tiempo nombrando
+`origin/main` en `RE_ANCLA` —es parte del **texto que valida**, no un objetivo de comparación—,
+pero **no llamaba a git**, y ese censo sólo mira los ficheros que lo llaman. Al añadirle la sonda
+de existencia, sus literales de siempre se hicieron visibles de golpe. El censo no falló: acertó el
+día que tuvo materia. Declarados los dos con su motivo y quién los retira, que es lo que su propio
+rojo pide.
+
+**③ SCRUM-859 declaró sobrante mi lista nueva** — «YA tiene ancla: sobra en la lista». Correcto
+según lo que ese test sabía, y el fallo era de diseño mío: hay **dos familias de lista** y las
+estaba juzgando con la misma vara. Las de SCRUM-859 eximen de **tener** ancla (si la tiene, sobra);
+`ANCLAS_QUE_NO_RESUELVEN` es lo contrario: la entrada **tiene** ancla y lo que falla es que el sha
+no apunta a nada. Ahora cada familia se juzga con su criterio, **y la población de motivos está
+declarada**: un motivo sin clasificar hace caer el test en vez de colarse por una de las dos vías.
+
+### 🔴 Y una trampa que me mordió antes de eso, y que queda escrita aunque el código ya no la tenga
+
+Aquella primera versión con proceso hijo falló diciendo que el guard seguía **verde**. No era
+cierto: `node --test` marca a sus hijos con `NODE_TEST_CONTEXT` y, si la ve, **se niega a ejecutar**
+(«run() is being called recursively… skipping running files») **y sale con 0**. Mi control leía ese
+0 como «el guard pasa» y habría dado por vivo un defecto ya arreglado. Es la familia de SCRUM-850
+dentro del instrumento escrito para cazarla.
+
+El arreglo de entonces fue limpiar la variable en el hijo **y** exigir que la salida no dijera
+`skipping running files` — porque sin eso un `0` no se distingue de un runner que no corrió. Hoy el
+control ya no lanza ningún hijo (ver ① arriba), así que el código no lo necesita; **queda anotado
+porque la trampa sigue ahí para el siguiente que lance un runner dentro de un runner.**
 
 ## Lo que NO se hizo
 
