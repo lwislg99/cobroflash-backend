@@ -254,3 +254,129 @@ dicho aquí para que no parezca un descuido de redacción.
   sería reescribir el pasado — pero quien las lea sigue encontrando rutas que no llevan a nada.
 * **No hay trinquete numérico**, a propósito: esta fase mide. Fijar el número pondría en rojo a
   quien empiece a borrar citas, que es justo lo que debe pasar.
+
+---
+
+# APÉNDICE · 16-sep-2026 · SCRUM-534c · El inventario: las deudas, los 50 agrupados por causa, y el que más pesa
+
+**Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
+**Medido contra:** `origin/main` = `9c90cc89044a20a85defdc0c93feb032e6544ca5` · 2026-09-16T11:16:20+01:00
+
+> **Una lista de huecos es una foto. Esto es el inventario.**
+
+## 🔴 Lo primero: el censo de la fase b tenía un defecto, y el repo ya lo había documentado
+
+Al abrir las «deudas de nombre» apareció `Scrum/SESION_ACTUAL_SCRUM-16.md` — un trozo. La ruta real
+es `docs/Srpint Scrum/SESION_ACTUAL_SCRUM-16.md`, **con un espacio dentro del nombre de carpeta**, y
+mi clase de caracteres no lo admitía: cortaba la ruta por la mitad y acusaba al trozo.
+
+**Y no es un defecto nuevo.** `docs/master/SCRUM-718.md:49` lo dice, para otro censo, con estas
+palabras:
+
+> *«la ruta real es `docs/Sprint Scrum/SESION_ACTUAL_SCRUM-69.md` y **mi clase de caracteres no
+> admitía el espacio**, así que la cortaba en "docs/Sprint"»*
+
+Lo repetí igual. Un defecto que reaparece en otro instrumento es **de la casa, no del instrumento**.
+
+⚠️ Y el primer arreglo se pasó de largo: admitir cualquier palabra antes del espacio hacía casar
+`OK docs/X.md` y `for f in … docs/X.md`, arrastrando prosa — las «deudas» saltaron de 5 a 12 y las
+nuevas eran todas basura. Acotado a que **las dos palabras empiecen por mayúscula**, que es la forma
+de `Sprint Scrum` y no la que produce la prosa.
+
+## ① Las «deudas de nombre»: 23, y **ninguna se arregla**
+
+**19 de las 23 no eran deudas.** Son **citas cortas**: se cita por el nombre, sin ruta, y el fichero
+existe con **ese mismo nombre** en otra carpeta (`METODO_YAQU.md` → `docs/METODO_YAQU.md`,
+`SUITE_REGRESION.md` → `docs/QA/SUITE_REGRESION.md`…). Arreglarlas sería reescribir citas que
+funcionan.
+
+Quedan **3 con ruta equivocada + 1 ambigua**, y las cuatro se leyeron una a una:
+
+| cita | veredicto |
+| --- | --- |
+| `docs/CLAUDE.md` en `SCRUM-538.md:24` | ⛔ **no se toca**: es una **fila de tabla que censa ese error** («🔴 vivo»). Citar el error no es cometerlo. |
+| `P3-7/BUGS.md` en `YAQU_MASTER.md:990` | ⛔ **no se toca**: cita **histórica** dentro de una nota de SCRUM-75 del 22-jul, sobre cómo se llamaba entonces. |
+| `PROJECT_ROOT/PRODUCT.md` en `.claude/skills/impeccable/…` | ⛔ **no se toca**: `PROJECT_ROOT` es un **marcador de plantilla**, y la skill es de terceros. |
+| `cerebro-yaqu/SKILL.md` | ⚠️ **ambigua** (14 candidatos con ese nombre base) — va al bloque ②, sin tocar. |
+
+> **0 arregladas y 4 explicadas.** El encargo pedía preferir preguntar a inventar; medido, no había
+> ninguna que arreglar.
+
+## ② Los 50 fantasmas, agrupados por CAUSA
+
+**Las tres medidas que pedía el encargo** (derivadas de git, no a ojo):
+
+| | |
+| --- | --- |
+| anteriores a SCRUM-273 (3-ago-2026), por la fecha del fichero que cita | **17** |
+| posteriores o de fecha desconocida | **33** |
+| citados desde **UN** solo fichero | **37** |
+| citados desde **VARIOS** | **13** |
+| 🔴 **EXISTIERON alguna vez en git** (se borraron) | **5** |
+| 🔴 **NUNCA existieron** (no se escribieron) | **45** |
+
+**Ésa es la medida que más cambia el trabajo: 45 de 50 nunca se escribieron.** No es documentación
+perdida — es **documentación prometida y no hecha**. Se busca distinto y se decide distinto.
+
+### Los grupos (suman 50, comprobado)
+
+**G1 · Entradas de ticket enlazadas que nunca se escribieron — 21** *(4 existieron)*
+Ejemplo literal, `docs/master/SCRUM-240.md:30`:
+> `Es la forma exacta del defecto de [SCRUM-209](SCRUM-209.md) una capa más arriba`
+
+**Causa:** el registro por fichero nació con SCRUM-273 (3-ago) y **el histórico no se migró**; los
+enlaces a entradas anteriores nunca tuvieron destino. ✅ **La hipótesis de la fase b se confirma, y
+ahora con número: 21 de 50.**
+**Opciones para el grupo:** (a) dejarlos y aceptar que son enlaces muertos conocidos; (b) quitar el
+enlace y dejar el texto (`SCRUM-209` sin corchetes); (c) apuntarlos todos a la sección del máster
+donde vive el histórico.
+
+**G2 · Documentos de análisis o legales prometidos y nunca escritos — 7** *(0 existieron)*
+`docs/VERIFACTU_EVIDENCIAS.md` (11 citas) · `docs/RUNBOOK_PAGOS.md` · `docs/legal/AVISOS_FISCALES.md`
+· `docs/AUDITORIA_SUPERFICIE_PUBLICA.md` · `docs/legal/DPA_PROFESIONAL.md` ·
+`docs/legal/REGISTRO_ACTIVIDADES_TRATAMIENTO.md`
+🔴 **Es el grupo que duele**: dos son de RGPD y uno es el del bloque ③.
+**Opciones:** (a) escribirlos; (b) marcar la cita como pendiente declarado; (c) quitar la cita.
+
+**G3 · Ficheros que un proceso GENERA al correr — 4** *(0 existieron)*
+`aviso.md` · `GRAPH_REPORT.md` · `CENSO-RAMAS.md` · `_EXT.md`. **No son documentación**: se citan por
+su nombre de salida. **Opción única razonable:** excluirlos del censo con su motivo escrito.
+
+**G4 · Sólo citados desde `docs/historico/` — 0.** El cubo existe y hoy está vacío.
+
+**G5 · SIN CLASIFICAR — 18** *(1 existió)*, y **no se reparten a la fuerza**. Dentro hay al menos
+tres cosas distintas: referencias internas de la skill `impeccable` de terceros
+(`responsive-design.md`, `ux-writing.md`, `cognitive-load.md`…), ejemplos genéricos (`FICHERO.md`) y
+documentos de sesión con ruta parcial.
+
+## ③ `docs/VERIFACTU_EVIDENCIAS.md` — el que más pesa
+
+**No existe hoy, y NUNCA existió** (`git log --all --diff-filter=A` no devuelve nada).
+**11 citas en 7 ficheros** — más de las 7 que dije ayer, porque el extractor arreglado ve las rutas
+partidas.
+
+⚠️ **Y hay que descontar lo mío: 4 de las 11 son autocitas** de la entrada que escribí ayer
+documentándolo. Citas ajenas reales: **7, en 6 ficheros**. Lo digo porque inflar un número con las
+propias menciones es justo lo que llevo el día cazando.
+
+**Cruzado con las afirmaciones falsas del censo de la 534 — sí, se tocan:**
+
+| citador | |
+| --- | --- |
+| `docs/RUNBOOKS.md:79` | 🔴 **es A3 replicada**: el runbook R7, que manda leer `VfSubmission.lastError` y «documentar en» este fichero |
+| `docs/YAQU_MASTER.md:1042` | 🔴 **S1-G**, uno de los tres sitios de `VfSubmission` que el comentario del ticket señala |
+| `.claude/skills/yaqu-verifactu-sif/SKILL.md:88` | 🔴 **una skill obligatoria** antes de tocar código VeriFactu |
+
+> **La respuesta a tu pregunta es que sí, y por partida doble.** El documento no existe, y sus
+> citadores no son sitios cualesquiera: el **runbook que se lee con prisa durante una incidencia**,
+> el máster, y **la skill que toda sesión carga antes de tocar VeriFactu**. Quien siga el R7 en una
+> incidencia busca un fichero que nunca se escribió; quien cargue la skill recibe el puntero como
+> si fuera un documento leído.
+
+## Lo que NO cubre
+
+* ⛔ **No se ha creado ningún documento, ni corregido ninguna cita, ni tocada ninguna de las 10
+  afirmaciones** (reglas 9 y 30).
+* **Los 18 SIN CLASIFICAR se declaran como tales**, no se reparten a la fuerza.
+* **Las fechas del cuadro son la del fichero que CITA**, no la del documento citado — que no tiene,
+  porque 45 de 50 nunca existieron. Es una aproximación y va dicha.
