@@ -63,7 +63,7 @@ export const FUENTES = Object.freeze([
  * del instrumento.
  *
  * ⚠️ Y EL ESPACIO SE ACOTA, porque la primera versión del arreglo se pasó de largo: admitir
- * cualquier palabra antes del espacio hacía que `OK docs/X.md` y `for f in … docs/X.md` casaran
+ * cualquier palabra antes del espacio hacía que un `OK` o un `for f in …` pegados a la ruta casaran
  * enteros, arrastrando el texto de delante. Medido: las «deudas» saltaron de 5 a 12, y las nuevas
  * eran todas trozos de prosa.
  *
