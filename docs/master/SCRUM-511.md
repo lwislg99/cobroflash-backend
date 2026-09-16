@@ -2,6 +2,7 @@
 
 **Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `1f18293ed08ed65f467151269c3f1f92f9d52675` · 2026-09-16T04:30:51+01:00
+**Tanda:** 6865 tests, 6755 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 822 ficheros · 267 s · exit 0 — con tope duro, medida DESPUÉS del último cambio.
 
 > **Un censo que sólo ve lo que está bien nombrado mide la nomenclatura, no el código.**
 
