@@ -48,8 +48,29 @@ export const FUENTES = Object.freeze([
   { dir: '.', recursivo: false, solo: ['README.md', 'CLAUDE.md'] },
 ]);
 
-/** Rutas de documento tal y como las escribe esta casa: una ruta con barras y extensión .md */
-const CITA = /(?:^|[\s(`"'«[])((?:[\w./-]+\/)?[A-Za-z0-9_.-]+\.md)\b/g;
+/**
+ * Rutas de documento tal y como las escribe esta casa: una ruta con barras y extensión .md
+ *
+ * 🔴 LOS SEGMENTOS ADMITEN ESPACIO, y no es un capricho: este repo tiene dos carpetas reales que
+ * lo llevan — `docs/Sprint Scrum/` y `docs/Srpint Scrum/` (sí, con la errata dentro del nombre).
+ * Sin el espacio, la clase de caracteres **corta la ruta por la mitad** y el censo acusa de
+ * fantasma a un trozo (`Scrum/SESION_ACTUAL_SCRUM-69.md`) de una cita que estaba perfecta.
+ *
+ * ⚠️ NO ES UN DEFECTO NUEVO: `docs/master/SCRUM-718.md:49` lo documenta para otro censo, con estas
+ * palabras — *«la ruta real es `docs/Sprint Scrum/…` y mi clase de caracteres no admitía el
+ * espacio, así que la cortaba en "docs/Sprint"»*. Esta primera versión lo repitió igual. Queda
+ * escrito aquí porque un defecto que reaparece en otro instrumento es un defecto de la casa, no
+ * del instrumento.
+ *
+ * ⚠️ Y EL ESPACIO SE ACOTA, porque la primera versión del arreglo se pasó de largo: admitir
+ * cualquier palabra antes del espacio hacía que un `OK` o un `for f in …` pegados a la ruta casaran
+ * enteros, arrastrando el texto de delante. Medido: las «deudas» saltaron de 5 a 12, y las nuevas
+ * eran todas trozos de prosa.
+ *
+ * Se admite sólo cuando **las dos palabras empiezan por mayúscula** —la forma de un nombre de
+ * carpeta como `Sprint Scrum`—, que es justo lo que este repo tiene y lo que la prosa no produce.
+ */
+const CITA = /(?:^|[\s(`"'«[])((?:(?:[A-Z][\w.-]*(?: [A-Z][\w.-]*)+|[\w.-]+)\/)*[A-Za-z0-9_.-]+\.md)\b/g;
 
 /** Marcas que declaran que un documento es FUTURO y todavía no existe. No es un defecto. */
 const ES_FUTURO = /(se crea|se creará|se escribirá|pendiente|cuando|futur|todavía no|aún no|no existe|se generará)/i;
