@@ -97,3 +97,18 @@ Misma app y misma base, ahora con `public/` de la rama; misma sonda que el PASO 
 Errores de página: 0. Capturas miradas: la fila nueva es idéntica a una guardada y el foco se ve.
 
 **Negativo cumplido:** sin schema, sin textos nuevos, sin dependencias, ninguna ruta tocada.
+
+## Sesión 2 · 16-sep-2026, 21:30 CEST — estado y el dictado APARCADO
+
+**Medido por el orquestador** (no repetido aquí): #1371 está **desplegado**; producción en `f12c1574`, que lo
+contiene. **El ticket NO se cierra todavía:** falta el segundo PR, la «×» de una línea guardada (abajo).
+
+### El dictado queda APARCADO
+
+No se arregla en SCRUM-889 ni en otro ticket por ahora. Lo único que le falta para funcionar en un entorno
+es **una clave de IA** (`GEMINI_API_KEY` o `ANTHROPIC_API_KEY`): el resto de la cadena está medido de punta
+a punta (PASO 0, arriba). Poner esa clave es **coste → regla 36**, y el fundador todavía no necesita el
+dictado. Mientras, el técnico apunta las líneas a mano con «Añadir línea», que ya funciona.
+
+Se reabre cuando el fundador lo pida; entonces la acción es sólo poner la clave en Railway (la pega él,
+regla 9) y medir el dictado en producción, que hoy está **no medido**.
