@@ -4,31 +4,43 @@
 //   (2) cobro MANUAL real → updateInvoiceStatusAdmin (Bizum/transferencia) mueve el semáforo
 // 1 tramo = 1 Invoice → sin doble conteo; suma desde cero → idempotente.
 //
-// ⚠️ GATEADO (toca la BD del .env con el merchant demo id=1 y LIMPIA lo suyo):
-//   QA_DB_TEST=1 npm run test:staging
+// ⚠️ GATEADO. Dos destinos (SCRUM-876):
+//   QA_DB_TEST=1 npm run test:staging                     → staging, por `_staging-db.mjs` (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test   → el banco desechable que CI levanta para la tanda
+//
+// SCRUM-876 · el merchant es EFÍMERO (`withMerchant`). Antes era `MERCHANT_ID = 1`, el demo que
+// SCRUM-42 quemó a propósito: sobre una base recién creada el primer `create` moría con
+// `customers_merchant_id_fkey`, y el test no llegaba a mirar el cobro. Precedente: SCRUM-159.
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { parseBDSegura } from '../scripts/_db-guard.mjs';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
-const ENABLED = process.env.QA_DB_TEST === '1';
-const MERCHANT_ID = 1;                 // demo (regla 8)
+// SCRUM-876 · el segundo destino NO afloja el primero: con `QA_DB_TEST=1` manda staging y esta
+// variable ni se lee. Fail-closed: una URL que no sea loopback + `*_test` hace FALLAR el fichero,
+// no saltarlo. Nunca se imprime la URL (SCRUM-226).
+const URL_BANCO = process.env.QA_DB_TEST === '1' ? '' : (process.env.LIBRO_PG_URL || '');
+if (URL_BANCO) {
+  const p = parseBDSegura(URL_BANCO);
+  if (!p || !['127.0.0.1', 'localhost', '::1'].includes(p.host) || !p.base.endsWith('_test')) {
+    throw new Error('🔴 LIBRO_PG_URL no es un banco desechable (loopback y base «*_test»). Este test crea facturas: no se toca nada.');
+  }
+  process.env.DATABASE_URL = URL_BANCO;
+}
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 const MARK = '(SCRUM-13 QA) cobro parcial';
 
-test('SCRUM-13/28: totalCobrado = Σ Invoices paid — webhook + manual, idempotente', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-13/28: totalCobrado = Σ Invoices paid — webhook + manual, idempotente', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { recalcJobCobradoForCharge, recalcJobCobradoForInvoice, estadoCobroFor } = await import('../dist/modules/jobs/domain/job.service.js');
   const { updateInvoiceStatusAdmin } = await import('../dist/modules/system/invoiceAdmin.js');
 
-  const cleanup = async () => {
-    await prisma.job.deleteMany({ where: { merchantId: MERCHANT_ID, notes: MARK } }).catch(() => {});
-    await prisma.invoice.deleteMany({ where: { merchantId: MERCHANT_ID, clientComment: MARK } }).catch(() => {});
-    await prisma.charge.deleteMany({ where: { merchantId: MERCHANT_ID, concept: MARK } }).catch(() => {});
-    await prisma.quote.deleteMany({ where: { merchantId: MERCHANT_ID, internalNotes: MARK } }).catch(() => {});
-    await prisma.customer.deleteMany({ where: { merchantId: MERCHANT_ID, notes: MARK } }).catch(() => {});
-  };
-  await cleanup(); // por si una ejecución anterior crasheó
-
+  // La limpieza la garantiza `withMerchant` (job, invoice, charge, quote y customer cuelgan del
+  // merchant), también si un assert revienta a mitad.
   try {
+    await withMerchant(prisma, { name: 'QA SCRUM-13', email: `qa-scrum13-${Date.now()}@test.local` }, async (merchant) => {
+    const MERCHANT_ID = merchant.id;
     const customer = await prisma.customer.create({ data: { merchantId: MERCHANT_ID, name: 'QA SCRUM-13', notes: MARK } });
     const quote = await prisma.quote.create({ data: {
       merchantId: MERCHANT_ID, customerId: customer.id, total: '100.00', currency: 'EUR',
@@ -73,8 +85,8 @@ test('SCRUM-13/28: totalCobrado = Σ Invoices paid — webhook + manual, idempot
     assert.equal(estadoCobroFor(0, 100), 'Pendiente', 'semáforo = Pendiente con 0/100');
 
     console.log('✔ SCRUM-13/28: 50/Parcial (webhook) → idempotente → 100/Pagado (Bizum manual). Σ Invoices paid, desde cero.');
+    });
   } finally {
-    await cleanup();
     await prisma.$disconnect();
   }
 });
