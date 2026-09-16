@@ -103,3 +103,45 @@ queda atrás. Hay un test que lo exige.
 `prisma/schema.prisma` · el camino de emisión · el denominador de la tasa (§1, va aparte) · el
 umbral de 90 % · ningún literal de microcopy · ninguna plantilla de WhatsApp · ningún estado ni
 flag · ninguna dependencia. Ninguna base real, ninguna clave, ni un byte hacia Meta.
+
+## 6 · La tanda, con su población y sus saltos aparte
+
+```
+ARRANQUE 2026-09-16T03:34:52.987Z · concurrencia 1 · tope duro 45 min
+✅ LA TANDA TERMINÓ · 18 minutos · último fichero: whatsappTemplates.test.mjs
+
+# tests 6865 · # pass 6755 · # fail 0 · # skipped 110 · # todo 0
+población: 808 ficheros de tests/     not ok: 0
+```
+
+Los **110 saltados** son los gateados de siempre (base real, navegador), cada uno con su motivo
+declarado; van **aparte del pass** a propósito, porque «0 fail» sin decir sobre cuántos no es un
+verde: es una frase (norma A3, nacida de [SCRUM-850](SCRUM-850.md)).
+
+### 🔴 Los seis rojos que trajo la primera pasada, y cinco eran míos por el mismo motivo
+
+| rojo | de quién |
+|---|---|
+| `SCRUM-402` ×2 · el censo de marcadores PINTABLES no sube | **mío**: `reportsView.js (+1)` |
+| `SCRUM-755` ×3 · el árbol pinta más marcadores de los declarados | **mío**: `30 !== 29` |
+| `SCRUM-854` · esta rama, si toca código, trae su entrada | **mío**, y de los gordos |
+
+Los cinco primeros son **el trinquete haciendo su trabajo**: añadí un marcador y la casa lleva
+censo de qué ficheros los pintan. Aquí **declarar SÍ es el camino**, y es lo contrario de lo que
+tocó en [SCRUM-815](SCRUM-815.md) con `MARCA_CORREO`: allí el export SOBRABA y se quitó; aquí el
+marcador es **obligatorio por la regla 30**, porque el texto es del fundador y no lo escribo yo.
+La subida se declara con su motivo en las tres tablas (`CENSO` de 402, `CENSO_DE_SITIOS` de 755
+—29 → 30— y `PINTAN_Y_NO_CUENTAN` con el porqué). **Ningún guard relajado.**
+
+### 🔴 Y el sexto me pilló en la rama equivocada
+
+```
+rama:     scrum-815-el-correo-una-sola-vez
+ticket:   SCRUM-815 (por rama)
+falta:    docs/master/SCRUM-815.md
+```
+
+**Había hecho toda la 530 encima de la rama de la 815.** Nunca creé la suya. Lo cazó un guard, no
+yo, y es exactamente el defecto «un número, una regla» que este equipo tiene medido. Se resolvió
+limpio porque la 815 ya estaba en `main` y la rama no la adelantaba: el trabajo sin commitear se
+movió a `scrum-530-la-alerta-que-no-puede-pronunciarse` sin reescribir nada ni usar `git stash`.
