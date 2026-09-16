@@ -30,6 +30,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { citasPorLinea } from '../scripts/_documentos-citados.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIR = path.join(RAIZ, 'scripts');
@@ -48,7 +49,15 @@ function referencias() {
   }
   for (const f of ficheros) {
     const codigo = fs.readFileSync(path.join(DIR, f), 'utf8');
-    for (const ruta of new Set([...codigo.matchAll(/docs\/[A-Za-z0-9_/-]+\.md/g)].map((m) => m[0]))) {
+    // 🔴 LA EXTRACCIÓN LA HACE EL MÓDULO COMPARTIDO, y antes la hacía una expresión escrita aquí
+    // a mano. La cazó el guard de SCRUM-534d: aquella expresión **no admitía el espacio**, así que
+    // un `docs/Sprint Scrum/X.md` nombrado por un script se cortaba en `docs/Sprint` — el mismo
+    // agujero que SCRUM-718 documentó el 6-sep-2026 y que el censo de SCRUM-534b repitió.
+    //
+    // El cambio se midió antes de hacerlo (16-sep-2026): **48 rutas `docs/*.md` con la expresión
+    // a mano y 48 con el módulo, cero diferencia en los dos sentidos**, con 7 scripts que llevan
+    // valla de bloque de código —que es lo único que el módulo descuenta y ésta no—.
+    for (const ruta of new Set(citasPorLinea(codigo).citas.map((c) => c.ruta).filter((r) => r.startsWith('docs/')))) {
       // ¿Lo escribe él? Se busca el NOMBRE del fichero dentro de una llamada de escritura del
       // propio script. Derivado, no listado.
       const base = path.basename(ruta);
