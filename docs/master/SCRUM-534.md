@@ -2,6 +2,7 @@
 
 **Fecha:** 16-sep-2026 · **Carril:** documentación / fiscal · **Gate:** sin gate — **no se corrige nada**
 **Medido contra:** `origin/main` = `68aeb3920966a92ffb23c48802aa8f1fb26e2d4d` · 2026-09-16T10:17:30+01:00
+**Tanda:** 6993 tests, 6883 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 835 ficheros · exit 0 — con tope duro, compilando DESPUÉS de mergear.
 
 > ⛔ **ESTA ENTRADA NO CORRIGE NI UNA PALABRA.** Regla 30: todo lo que hay aquí es texto que lee un
 > cliente o un tercero, y lo escribe el fundador. Esta sesión lo encuentra, lo verifica y lo
@@ -131,6 +132,13 @@ sobre el texto continuo, recuperando la línea después.
 * **`docs/VERIFACTU_EVIDENCIAS.md` sigue sin existir** y lo citan el máster (`:448`, `:1042`), el
   runbook y dos skills. Estaba en el comentario del ticket; se confirma hoy.
 * **No se ha corregido nada.** Ni una palabra, ni de las 19 ni del inventario.
+
+### ⚠️ Un flaky ajeno, medido dos veces y NO arreglado (regla 9)
+
+La primera pasada dio **2 rojos de **: *«el censo dice 149 ramas y  lista 150»*.
+Corrido aislado pasa, y la segunda pasada completa da **0 fail**. Es una **carrera**: el censo hace
+dos lecturas y con ~26 worktrees empujando, una rama puede nacer entre una y otra. No es de este
+carril y no se toca — queda nombrado porque un rojo intermitente entrena a relanzar la tanda.
 
 ---
 
