@@ -2707,6 +2707,8 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .job-doc-row__fotos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .job-doc-row__actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+/* SCRUM-885: un `.alert.warning` dentro de la fila, a la misma distancia que las acciones. */
+.job-doc-row__aviso { margin-top: 8px; }
 /* Toolbar de la lista (Nuevo albarán / Consolidar) */
 .job-doc-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 

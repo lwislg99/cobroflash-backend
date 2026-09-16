@@ -68,6 +68,7 @@ import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } fro
 import { SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
 import { sellarTrasEmision } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
+import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 // SCRUM-650 (T1): la asignacion a VARIOS vive en su dominio; aqui no se decide nada de ella.
@@ -661,6 +662,32 @@ async function serializeJobDetail(job: any) {
   // SCRUM-85: payToken (Charge.receiptToken) AÑADIDO para el link público /pay/invoice/:token
   // (IDOR/RGPD — ya no acepta el id numérico). chargeId se CONSERVA: lo sigue usando la
   // acción autenticada /admin/charges/:chargeId/confirm-bizum (no es superficie pública).
+  // SCRUM-885 · ¿le llegó al cliente el documento de ESTE cobro? Los hechos ya guardados, para que
+  // la fila de la factura pueda avisar si no salió ni por email ni por WhatsApp. Se relee en cada
+  // detalle: un WhatsApp que Meta marca fallido DESPUÉS hace aparecer el aviso sin tocar nada.
+  // Sólo lectura y dos consultas para todas las facturas: nada se envía desde aquí.
+  const idsDeCobro = [...new Set(facturasDelTrabajo.map((inv) => inv.chargeId).filter((x): x is number => x != null))];
+  const [cobrosPagados, filasWhatsapp] = idsDeCobro.length === 0
+    ? [[], []]
+    : await Promise.all([
+        prisma.charge.findMany({
+          where: { id: { in: idsDeCobro }, merchantId: job.merchantId, status: 'paid' }, // regla 2
+          select: { id: true },
+        }),
+        prisma.whatsAppMessage.findMany({
+          where: { merchantId: job.merchantId, relatedType: 'charge', relatedId: { in: idsDeCobro } }, // regla 2
+          select: { relatedId: true, status: true, createdAt: true },
+        }),
+      ]);
+  const pagados = new Set(cobrosPagados.map((c) => c.id));
+  const envioDe = (chargeId: number | null) =>
+    chargeId != null && pagados.has(chargeId)
+      ? envioDelDocumento({
+          clienteEmail: customer?.email,
+          filasWhatsapp: filasWhatsapp.filter((w) => w.relatedId === chargeId),
+        })
+      : null;
+
   const invoices = await Promise.all(facturasDelTrabajo.map(async (inv) => ({
     id: inv.id,
     number: inv.number,               // número visible de la factura/justificante
@@ -675,6 +702,7 @@ async function serializeJobDetail(job: any) {
     payToken: inv.chargeId ? await ensureChargeReceiptToken(inv.chargeId, prisma) : null, // ← GAP CERRADO (link /pay/invoice/:token)
     stageLabel: inv.stageLabel,       // SCRUM-27: etiqueta del tramo (custom); null en presets
     rectifiesId: inv.rectifiesId,     // SCRUM-319 (G4): a qué factura rectifica (solo R1)
+    envioDocumento: envioDe(inv.chargeId), // SCRUM-885: null si su cobro no está pagado
   })));
 
   const charge = quote?.charge
