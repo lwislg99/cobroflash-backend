@@ -127,6 +127,7 @@ const CUSTOMER = { id: 2, name: 'Cliente QA', phone: telefonoDePrueba(263) };
 const quoteBase = (lines) => ({
   id: 7, merchantId: 7, customerId: 2, status: 'accepted', currency: 'EUR',
   lines, Invoice: [], billingPlan: null, customBillingPlan: null,
+  discountGlobalAmount: null, // SCRUM-887: la fila real lo trae siempre
   merchant: MERCHANT, customer: CUSTOMER,
 });
 
