@@ -244,9 +244,12 @@ test('🔴 SUELO · el paso de CLASIFICAR, con todo bien, lee la memoria y produ
 test('🔴 FECHA · si no se puede leer cuándo se empujó, no se inventa un NaN: se deja SIN DATO', () => {
   const r = correrPaso({ cabecera: REUNIR, escenario: { FALLA: 'FECHA' } });
   assert.equal(r.status, 0, `el paso no terminó bien: ${r.stderr}`);
+  // La igualdad exacta de la línea ya dice todo lo que hay que decir: el campo de minutos está VACÍO,
+  // no trae `NaN` ni el cuerpo del error. Una negación suelta sobre «NaN» encima de esto no añadiría
+  // nada y sería de la clase que SCRUM-237 persigue: negar un token concreto sin nada que pruebe que
+  // el sujeto es el que se cree.
   assert.equal(r.estados.trim(), '1212|DIRTY|1||null',
     'con el cuerpo del error como fecha, los minutos desde el push salían NaN y el vigía medía la edad desde otro sitio');
-  assert.ok(!/NaN|message/.test(r.estados), `🔴 en estados.txt hay basura: ${JSON.stringify(r.estados)}`);
 });
 
 // ── EST y SHA · medidas y NO rotas: el control que lo deja escrito ──────────────────────────────
