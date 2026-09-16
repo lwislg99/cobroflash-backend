@@ -574,6 +574,31 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-NODEOPTS-850B · `scrum850b` filtra `NODE_OPTIONS` a su `node --test` anidado: bajo CI real escribe en el MISMO `tanda.tap` del proceso padre (16-sep-2026, hallazgo colateral de SCRUM-839e)
+- **Medido:** en el run `35137040565` (job «build + tests (con banco desechable)»), el TAP combinado
+  (`${{ runner.temp }}/tanda.tap`) trae `not ok 1 - ESTE TEST FALLA A PROPOSITO`, en
+  `/tmp/tanda850b-…/rojo.test.mjs:3:1` — el canario siempre-rojo que
+  `tests/scrum850b-las-formas-que-mienten.test.mjs` monta a propósito en un directorio temporal
+  para su propio banco (`bancoDeTanda()`).
+- **Causa:** `.github/workflows/ci.yml` inyecta los reporters por `NODE_OPTIONS` (SCRUM-552), no por
+  argumento de `node --test` — incluye `--test-reporter-destination=${{ runner.temp }}/tanda.tap`.
+  `ENTORNO_LIMPIO` (línea 97 de `scrum850b-las-formas-que-mienten.test.mjs`) sólo borra
+  `NODE_TEST_CONTEXT` del entorno que hereda el `node --test` anidado del banco; no borra
+  `NODE_OPTIONS`. Bajo CI real ese entorno hereda el mismo `--test-reporter-destination`, y el
+  proceso hijo escribe SU tap (con su canario) en el mismo fichero que ya está escribiendo el padre.
+- **No es la causa del rojo de este job hoy** (el rojo real es el guard de SCRUM-854, registrado
+  aparte y ya con su entrada): el proceso padre no cuenta el fallo del hijo como propio, así que el
+  `exit code` de `npm test` no depende de esto. Pero contamina el TAP combinado que lee el paso «Por
+  qué cayó» cada vez que la tanda sale roja por CUALQUIER motivo, y sería un `not ok` fantasma más
+  en cualquier diagnóstico futuro.
+- **Por qué nadie lo vio antes:** sólo se manifiesta con las mismas `NODE_OPTIONS` puestas que CI
+  inyecta (SCRUM-552); una sesión que corre `node --test` suelto en local, sin ese entorno, no lo
+  reproduce.
+- **Done cuando:** `ENTORNO_LIMPIO` (en `bancoDeTanda()`) borre también `NODE_OPTIONS` del entorno
+  que hereda el `node --test` anidado — o el banco le fije su propio `--test-reporter-destination`
+  a un fichero descartable, para que el canario del banco no pueda volver a aterrizar en el TAP del
+  proceso padre.
+
 ### [ ] P3-TMPDIR · 24.740 directorios temporales de la casa abandonados en `TMPDIR` (16-sep-2026, hallazgo colateral de SCRUM-858)
 - **Medido:** `TMPDIR` (`C:Users…AppDataLocalTemp`) tiene **55.229 entradas**, de las que
   **24.740** llevan prefijo de esta casa: `yaqu*` 15.679 · `scrum723` 3.675 · `scrum385` 1.827 ·
