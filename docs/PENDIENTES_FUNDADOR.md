@@ -21,6 +21,17 @@
 > - **Historial de lo ya hecho:** Parte U del master + `docs/BUGS.md` +
 >   `docs/EVIDENCIAS_E2E.md` + `docs/MIGRATIONS_PENDING.md`.
 
+## ✍️ Aprobar textos — 51 de la web, listos y esperándote
+
+- [ ] **Aprobar la microcopy del bloque F** — `docs/MICROCOPY_BLOQUE_F_PARA_APROBAR.md`.
+  Las cuatro secciones nuevas de la web (héroe, comparativa, gremios y contacto) están
+  **construidas y ocultas**: nadie las ve, y hay guards que impiden publicarlas por descuido.
+  Solo falta que digas sí. Los **51 textos** están transcritos ahí uno a uno, con su número
+  corto — basta con contestar «el F5-8 así mejor: …» o «F6-10 vale». No hace falta abrir código.
+  ⚠️ **Llevaba desde el 20-ago-2026 terminado y sin enlazar desde aquí**, que es por lo que no
+  te habías enterado. Desde SCRUM-547 hay un guard que hace caer la tanda si un documento
+  «para aprobar» vuelve a quedarse sin enlace en esta lista.
+
 ## 🆕 Sprint DEMO-READY (3-jul) — activar los WOW construidos (Olas 1 y 2 desplegadas)
 
 El código de CONNECT-1 + Bizum manual + selector de métodos está EN PROD tras
@@ -223,6 +234,7 @@ la cita). Resumen de lo que hay que cerrar allí:
 - `docs/legal/ALCANCE_BETA.md` — alcance founding (para cobrar la beta con respaldo).
 - `docs/legal/DECLARACION_RESPONSABLE.md` — declaración responsable del SIF (S1-E, borrador).
 - `docs/legal/PACK_GESTORIA.md` — one-pager para la gestoría de tus clientes (S1-H, borrador).
+- `docs/MICROCOPY_BLOQUE_F_PARA_APROBAR.md` — los 51 textos del bloque F, **esperando tu sí**.
 - `docs/EVIDENCIAS_E2E.md` · `docs/BUGS.md` · `docs/MIGRATIONS_PENDING.md` — historial/QA.
 
 ---
