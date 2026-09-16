@@ -99,3 +99,37 @@ se comprueba que el build limpio sale 0 antes de creerse nada.
 y los KPI del mes · el umbral de muestra ni el del 90 % · el aviso de muestra corta de SCRUM-530 ·
 `prisma/schema.prisma` · el camino de emisión · ningún literal de microcopy · ninguna plantilla de
 WhatsApp. Ninguna base real, ninguna clave, ni un byte hacia Meta.
+
+## 7 · 🔴 LA TANDA COMPLETA NO TERMINÓ — y eso se nombra, no se redondea
+
+```
+ARRANQUE .................. 2026-09-16T04:21:04.349Z   (concurrencia 1, tope duro 45 min)
+ultimo byte del TAP ....... 2026-09-16T05:05:19.609Z   (1.484.298 bytes)
+ultimo fichero nombrado ... scrum764-margen-negativo.test.mjs
+minutos ................... 45 (tope) · salida 124
+recuento al corte ......... ok 6032 · not ok 0
+```
+
+> **LA TANDA COMPLETA NO TERMINÓ.** «ok 6032 · not ok 0» **no es un verde**: es *cero fallos entre
+> los 6.032 que llegaron a correr*. Y **mis propios tests no están entre ellos**: el corte quedó en
+> `scrum764`, antes de `scrum862` por orden alfabético. Lo que no corrió no sale por ninguna parte.
+
+⚠️ **Dato para [SCRUM-858](SCRUM-858.md), que se apunta y no se investiga (otro carril):** la misma
+suite, en la misma máquina y con la misma invocación, **terminó en 18 minutos hace una hora**
+(SCRUM-530, 6.865 tests) y **no cabe en 45 ahora**. No es un cuelgue —el TAP se estaba escribiendo
+en el segundo del corte, igual que el caso del 15-sep— sino una **variabilidad de más del doble**.
+Son tres muestras ya: 18 min completa · 35 min completa · 45 min sin terminar.
+
+### Lo que SÍ se corrió entero, y es lo que decide este ticket
+
+```
+scrum862 + scrum530 + scrum402 + scrum755 + scrum854 + scrum236
+# tests 40 · # pass 40 · # fail 0 · # skipped 0
+```
+
+Son el fichero del ticket, **el que depende de él** (SCRUM-530, la alerta que lo consume), **los
+dos trinquetes de marcadores que me cazaron ayer**, el guard de rama-ticket y el del embudo, que
+es el otro consumidor de la misma tarjeta. Más `npm run guards:entrada`: **26 tests · 26 pass ·
+0 fail · 0 skipped**. Y `tsc` con salida **0**.
+
+**Lo que NO puedo afirmar:** que la suite entera esté verde con este cambio. No se ha medido.
