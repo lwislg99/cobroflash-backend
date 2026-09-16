@@ -67,3 +67,13 @@ memoria a los 128 s (4 tests reportados en vez de 5). Ahora compara una cuenta, 
   un técnico lo ve y recibe 403.
 - «⬆ Importar CSV» y el nuevo botón miden 30 px de alto: por debajo de los 44 px de AB6. Es la
   medida de `btn-sm` en todo el panel, así que no es de este ticket.
+
+## 5 · La línea base de SCRUM-698
+
+La suite completa dio un solo rojo, de 7.065: `renderCustomersView` monta 69 nodos y la línea base
+decía 68. Es el producto, no el banco. Nodo **por identidad**: `a.btn-secondary.btn-sm` con
+«⬇ Clientes CSV» (subárbol de 1). **Aislado:** sin su `appendChild`, 68 exactos. La igualdad sigue
+siendo exacta; sube la línea base con su motivo escrito en el test.
+
+**Segundo error propio:** mis logs de medición usaban `"$TMPDIR/.."`, y `$TMPDIR` está vacío en
+este shell. Fueron a la raíz `D:\`, fuera del árbol pero no al scratchpad. Se limpiaron.
