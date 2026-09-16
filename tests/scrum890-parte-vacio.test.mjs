@@ -63,6 +63,10 @@ function banco({ responder }) {
   ctx.guardarFirmaPendiente = async (f) => { almacen.set(f.claveIdempotencia, f); return { estado: 'guardado' }; };
   ctx.quitarFirmaPendiente = async (c) => { almacen.delete(c); return { estado: 'guardado' }; };
   ctx.leerFirmasPendientes = async () => ({ estado: 'guardado', firmas: [...almacen.values()] });
+  // PR 2 · la constancia del rechazo: sin ella, una rechazada no sale de la cola.
+  const rechazos = new Map();
+  ctx.guardarRechazoDeFirma = async (r) => { rechazos.set(r.clave, r); return { estado: 'guardado' }; };
+  ctx.olvidarRechazoDeFirma = async (c) => { rechazos.delete(c); return { estado: 'guardado' }; };
   ctx.confirmaElServidor = (r) => !!(r && r.id);
   ctx.esperarLoQueLaRed = async (p) => {
     try { return { valor: await p }; } catch (error) { return { error }; }

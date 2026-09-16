@@ -255,3 +255,32 @@ test('SCRUM-890b · 🔴 cerrar sesión borra también las constancias (art. 32 
   assert.equal(despues.estado, b.ctx.GUARDADO, '🔴 SUELO: no se ha podido releer tras purgar');
   assert.equal(despues.rechazos.length, 0, '🔴 tras cerrar sesión queda en el móvil qué documentos de qué clientes se rechazaron');
 });
+
+test('SCRUM-890b · 🔴 un móvil con la base en v1 y una firma en cola sube a v2 SIN PERDERLA', async () => {
+  // Es el móvil real del día del despliegue: la cola ya tiene firmas y la base está en la versión 1.
+  // Se construye esa base con la forma exacta del tramo 0 y se abre con el código nuevo.
+  const { IDBFactory } = await import('fake-indexeddb');
+  const idb = new IDBFactory();
+  await new Promise((resolve, reject) => {
+    const p = idb.open('yaqu', 1);
+    p.onupgradeneeded = () => {
+      p.result.createObjectStore('albaranesPrecargados', { keyPath: 'id' });
+      p.result.createObjectStore('firmasPendientes', { keyPath: 'claveIdempotencia' });
+    };
+    p.onsuccess = () => {
+      const tx = p.result.transaction('firmasPendientes', 'readwrite');
+      tx.objectStore('firmasPendientes').put({ claveIdempotencia: 'firma:parte:7', albaranId: 7, tipo: 'parte', signatureData: 'x' });
+      tx.oncomplete = () => { p.result.close(); resolve(); };
+      tx.onerror = () => reject(tx.error);
+    };
+    p.onerror = () => reject(p.error);
+  });
+
+  const b = montarAlmacen(RAIZ, { indexedDB: idb });
+  const cola = await b.ctx.leerFirmasPendientes();
+  assert.equal(cola.estado, b.ctx.GUARDADO, '🔴 la base en v1 no abre con el código nuevo: ' + cola.motivo);
+  assert.deepEqual(cola.firmas.map((f) => f.claveIdempotencia), ['firma:parte:7'],
+    '🔴 SUBIR DE VERSIÓN HA PERDIDO LA COLA: la firma de un cliente que ya no está delante.');
+  const rechazos = await b.ctx.leerRechazosDeFirma();
+  assert.equal(rechazos.estado, b.ctx.GUARDADO, '🔴 el tramo 1 no ha creado `firmasRechazadas`: ' + rechazos.motivo);
+});

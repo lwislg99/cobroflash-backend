@@ -28,9 +28,14 @@
 
 // ── La base y sus dos almacenes ────────────────────────────────────────────────────────────
 const NOMBRE_BD = 'yaqu';
-const VERSION_BD = 1;
+const VERSION_BD = 2;
 const ALBARANES_PRECARGADOS = 'albaranesPrecargados';
 const FIRMAS_PENDIENTES = 'firmasPendientes';
+// SCRUM-890 · la constancia de una firma que el servidor RECHAZÓ al vaciar la cola. Es un almacén
+// aparte y no una entrada más de `firmasPendientes`: todo lo que lee la cola la CUENTA (el contador
+// de la home, el desalojo, el tope de espacio) y una constancia contada como firma pendiente sería
+// un aviso que miente y un drenado que la intenta subir.
+const FIRMAS_RECHAZADAS = 'firmasRechazadas';
 
 /**
  * Las cachés que son NUESTRAS, por prefijo.
@@ -176,6 +181,16 @@ const TRAMOS = {
     // El RESTO del contenido no se valida aquí a propósito: qué campos lleva una firma en cola lo
     // decide H3, y adelantarlo sería inventar.
     bd.createObjectStore(FIRMAS_PENDIENTES, { keyPath: 'claveIdempotencia' });
+  },
+  // SCRUM-890 · ADITIVO: crea `firmasRechazadas` y no toca los dos de arriba. Va por la MISMA clave
+  // que la firma (`firma:<tipo>:<id>`): una constancia por documento y por recuadro, y volver a
+  // rechazar el mismo sobrescribe en vez de apilar.
+  //
+  // ⚠️ Una pestaña con el JavaScript de antes (servido por el service worker) abre la base en la
+  // versión 1 y recibe `VersionError`: su almacén pasa a NO_DISPONIBLE hasta que recargue. Firma
+  // igual, sin red de seguridad — es el camino ya decidido para «sin almacén» (`colaDeFirmas.js`).
+  1: (bd) => {
+    bd.createObjectStore(FIRMAS_RECHAZADAS, { keyPath: 'clave' });
   },
 };
 
@@ -364,6 +379,39 @@ function leerFirmasPendientes() {
   });
 }
 
+/**
+ * SCRUM-890 · Deja constancia de que el servidor rechazó la firma de un documento al vaciar la cola.
+ * `{ clave, tipo, documentoId, codigo, rechazadaEn }`. GUARDADO sólo si la transacción confirmó.
+ */
+function guardarRechazoDeFirma(rechazo) {
+  return conElAlmacen((bd) => escribirConfirmando(bd, FIRMAS_RECHAZADAS, rechazo));
+}
+
+/** SCRUM-890 · Las constancias de rechazo que hay en este móvil. */
+function leerRechazosDeFirma() {
+  return conElAlmacen(async (bd) => {
+    const r = await leerTodo(bd, FIRMAS_RECHAZADAS);
+    return { estado: r.estado, motivo: r.motivo, rechazos: r.datos || [] };
+  });
+}
+
+/** SCRUM-890 · Borra la constancia de UN documento: se llama cuando esa firma sube con éxito. */
+function olvidarRechazoDeFirma(clave) {
+  return conElAlmacen((bd) => new Promise((resolve) => {
+    let tx;
+    try {
+      tx = bd.transaction(FIRMAS_RECHAZADAS, 'readwrite');
+      tx.objectStore(FIRMAS_RECHAZADAS).delete(clave);
+    } catch (e) {
+      resolve({ estado: FALLO, motivo: String((e && e.message) || e) });
+      return;
+    }
+    tx.oncomplete = () => resolve({ estado: GUARDADO });
+    tx.onabort = () => resolve({ estado: FALLO, motivo: 'transacción abortada' });
+    tx.onerror = () => resolve({ estado: FALLO, motivo: 'error en la transacción' });
+  }));
+}
+
 /** Guarda un albarán precargado. QUÉ se precarga y cuándo es de SCRUM-357 fase 2. */
 function guardarAlbaranPrecargado(albaran) {
   return conElAlmacen((bd) => escribirConfirmando(bd, ALBARANES_PRECARGADOS, albaran));
@@ -390,7 +438,7 @@ function leerAlbaranesPrecargados() {
  * SE BORRA LO NUESTRO POR SU NOMBRE, no «todo»:
  *   · las claves de `localStorage`/`sessionStorage` del registro `CLAVES_LOCALES` (SCRUM-457), no
  *     `localStorage.clear()`;
- *   · los dos almacenes con `clear()`, uno a uno — no `deleteDatabase`, que se lleva por delante
+ *   · los almacenes con `clear()` (los tres desde SCRUM-890), uno a uno — no `deleteDatabase`, que se lleva por delante
  *     cualquier almacén que otro ticket añada a esta misma base sin enterarse;
  *   · las cachés con el prefijo `yaqu-`, no `caches.keys()` entero.
  *
@@ -447,7 +495,7 @@ async function purgarDatosLocales() {
   }
 
   const enAlmacen = await conElAlmacen((bd) => new Promise((resolve) => {
-    const nombres = [ALBARANES_PRECARGADOS, FIRMAS_PENDIENTES].filter(
+    const nombres = [ALBARANES_PRECARGADOS, FIRMAS_PENDIENTES, FIRMAS_RECHAZADAS].filter(
       (n) => bd.objectStoreNames.contains(n),
     );
     if (!nombres.length) { resolve({ estado: GUARDADO, vaciados: [] }); return; }
@@ -580,6 +628,7 @@ window.NO_DISPONIBLE = NO_DISPONIBLE;
 window.FALLO = FALLO;
 window.ALBARANES_PRECARGADOS = ALBARANES_PRECARGADOS;
 window.FIRMAS_PENDIENTES = FIRMAS_PENDIENTES;
+window.FIRMAS_RECHAZADAS = FIRMAS_RECHAZADAS;   // SCRUM-890
 window.NOMBRE_BD = NOMBRE_BD;
 window.VERSION_BD = VERSION_BD;
 window.TRAMOS = TRAMOS;
@@ -588,6 +637,9 @@ window.abrirAlmacen = abrirAlmacen;
 window.guardarFirmaPendiente = guardarFirmaPendiente;
 window.leerFirmasPendientes = leerFirmasPendientes;
 window.quitarFirmaPendiente = quitarFirmaPendiente;   // SCRUM-358 (H3 fase 2)
+window.guardarRechazoDeFirma = guardarRechazoDeFirma;   // SCRUM-890
+window.leerRechazosDeFirma = leerRechazosDeFirma;
+window.olvidarRechazoDeFirma = olvidarRechazoDeFirma;
 window.guardarAlbaranPrecargado = guardarAlbaranPrecargado;
 window.leerAlbaranesPrecargados = leerAlbaranesPrecargados;
 window.purgarDatosLocales = purgarDatosLocales;
