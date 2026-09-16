@@ -150,3 +150,96 @@ Lo que quedó de esta sesión es lo que a esa versión le faltaba: la ejecución
   encadenada que documenta el propio ticket).
 - **Cero dependencias nuevas** (regla 36), **cero estado o flag nuevo** (regla 27), **cero
   microcopy** (regla 30).
+
+---
+
+# APÉNDICE · SCRUM-839 (16-sep-2026) · El vigía, medido POR EFECTO: dos hallazgos
+
+**Medido contra:** `origin/main` = `77ce9d1e86d6ffa921b1c92561ec2d7994f8e5eb` · 2026-09-16T06:51Z
+
+**Quién y cómo:** Sesión 0, sólo lectura, con `gh` contra la API de GitHub. No se tocó ningún PR, no se
+comentó nada y no se relanzó ningún workflow. Las horas son de GitHub (cabecera `Date:`), no del reloj local.
+
+> Esto NO propone arreglo. Son dos cosas medidas; qué hacer con ellas se decide con el ticket delante.
+
+## Lo que ya está comprobado, para situar los dos hallazgos
+
+El workflow está **activo** y ha corrido **36 veces, todas con éxito**, siempre por `schedule`. Desde que
+entró el #1261 (`2026-09-15T10:28:47Z`) hay cuatro pasadas: 15-sep 13:54, 18:32 y 23:13, y 16-sep 01:52 UTC.
+Reúne los PR, los clasifica con su suelo en verde («los tres cebos sintéticos salen marcados») y reescribe
+el issue #1241 — `updatedAt` 01:52:48 contra una pasada que empezó a las 01:52:10.
+
+**Su camino de AVISO no se ha ejecutado nunca:** el #1241 lleva 0 comentarios desde que se creó el
+9-sep, con 36 pasadas detrás. Las cuatro dicen `empeora false`.
+
+```
+gh run list --workflow vigia-atascados.yml --limit 100 --json databaseId,event,status,conclusion,createdAt
+gh run view <id> --log            # el veredicto: «atascados N · descartados M · empeora …»
+gh api repos/lwislg99/cobroflash-backend/issues/1241/comments
+```
+
+## Hallazgo 1 · El cron dice 3 h y los huecos reales llegan a 7,1 h
+
+El workflow declara `cron: '0 */3 * * *'` y justifica el número por escrito: por debajo de 2 h gritaría
+sobre PR que se resuelven solos, **y por encima de 6 h llegaría tarde**.
+
+Medidos los huecos entre las últimas 12 pasadas, en horas:
+
+```
+2,6 · 4,7 · 4,6 · 5,8 · 6,0 · 4,9 · 5,8 · 7,1 · 6,3 · 3,2 · 2,8
+```
+
+**El máximo es 7,1 h, y la propia justificación del fichero se incumple.** Además, la ranura de las
+03:00Z del 16-sep no llegó a correr: la última pasada fue a las 01:52:10Z y a las 06:51Z no había otra.
+GitHub retrasa y a veces descarta las ejecuciones programadas; el efecto es que la ventana real de
+detección no es la escrita.
+
+```
+gh run list --workflow vigia-atascados.yml --limit 12 --json createdAt
+# y la diferencia entre cada `createdAt` consecutivo
+```
+
+## Hallazgo 2 · Catorce PR, de 185 h a 1019 h, que nadie vigila — por diseño
+
+En **las cuatro pasadas** había 14 PR abiertos por encima del umbral de 168 h. Sus edades en la pasada
+del 16-sep 01:52Z:
+
+| PR | horas abierto | PR | horas abierto |
+| --- | --- | --- | --- |
+| #399 | 1019,0 | #639 | 872,4 |
+| #459 | 995,9 | #709 | 845,4 |
+| #480 | 987,1 | #880 | 347,1 |
+| #486 | 986,2 | #972 | 302,9 |
+| #531 | 943,4 | #1151 | 197,2 |
+| #540 | 942,4 | #1153 | 197,2 |
+| #545 | 941,7 | | |
+| #592 | 876,1 | | |
+
+El vigía los **descarta a propósito**, y lo dice uno a uno en el cuerpo del #1241: «de una persona y sin
+auto-merge: nadie prometió mergearlo (backlog, no atasco)». Es coherente con su regla —vigila promesas
+rotas de la automatización, no el paso del tiempo— y por eso el descarte ocurre ANTES que el umbral de
+edad: entre las pasadas de 13:54 y 18:32, el #399 cruzó las 1008 h y el #880 las 336 h, y las dos
+pasadas registraron `envejecen 0`.
+
+Estado de esos catorce **hoy**, por causa y no por edad: el **#639** tiene el check obligatorio
+(`build + tests (con banco desechable)`) en **failure**; **#709, #545, #486, #480 y #459** están **sin
+checks**; **#592, #540, #531 y #399** no tienen el obligatorio entre los suyos. Ninguno tiene auto-merge
+y todos son de una persona.
+
+⚠️ **Límite declarado:** esos estados de check están medidos HOY, no en el instante de cada pasada; los
+check-runs de entonces no se recuperan. Y el cuerpo del #1241 se reescribe en cada pasada, así que su
+historia tampoco es auditable: lo único que queda de cada pasada es el log de su run.
+
+```
+gh pr list --state all --limit 2000 --json number,state,createdAt,closedAt,author,autoMergeRequest
+gh api repos/lwislg99/cobroflash-backend/rules/branches/main        # el check obligatorio, de las reglas vivas
+gh api repos/lwislg99/cobroflash-backend/commits/<sha>/check-runs
+```
+
+## Un error de medición mío, y cómo se cazó
+
+La primera lista la pedí con `--limit 400` sobre un repo de 1319 PR. Los abiertos VIEJOS se cayeron del
+tope y conté **4 abiertos donde había 15**, sin ningún aviso. Lo destapó el propio run, que decía «PR
+reunidos: 15». Repetida con `--limit 2000` y comprobando el número de PR más alto y más bajo traídos, la
+cuenta cuadra con la del vigía. Queda escrito porque el tope silencioso de `gh pr list` muerde igual a
+quien venga detrás.
