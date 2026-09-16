@@ -85,12 +85,78 @@ export type EstadoParte = (typeof ESTADOS_PARTE)[number];
  * otra pantalla; el técnico no los ve nunca (`lineasParaElTecnico`).
  */
 export interface LineaParte {
+  /**
+   * SCRUM-889 · LA IDENTIDAD de la línea, para casar su precio con ELLA y no con su posición.
+   * Vive dentro del JSON `ParteTrabajo.lineas` (no es schema), NO entra en el sello y no es dinero.
+   * Los partes de antes no lo tienen: ver `idDeLinea`.
+   */
+  id?: string;
   bloque: BloqueParte;
   /** Unidades. El papel dice «UNDS». Admite fracción: 1,5 h de mano de obra es normal. */
   unds: number;
   descripcion: string;
   precioUnitario?: number | null;
   tipoIva?: number | null;
+}
+
+/**
+ * El id con el que viaja una línea. Una línea guardada antes de SCRUM-889 no tiene id: se le da uno
+ * DERIVADO de su posición en la base (`pos-N`), que no se guarda nunca. Al primer guardado cada línea
+ * recibe un id propio (`casarLineasPorIdentidad`), así que un `pos-N` viejo ya no casa con nada:
+ * como mucho una línea pierde su precio, pero ninguno cambia de línea.
+ */
+export function idDeLinea(linea: LineaParte, posicion: number): string {
+  return typeof linea?.id === 'string' && linea.id !== '' ? linea.id : `pos-${posicion}`;
+}
+
+/**
+ * 🔴 SCRUM-889 · LOS PRECIOS DE LA OFICINA SE CASAN POR IDENTIDAD, NO POR ÍNDICE.
+ *
+ * El técnico manda la lista ENTERA. Antes se casaba `previas[i]` con la línea `i`: quitar la del
+ * medio corría las de detrás, y la tercera perdía su precio o se quedaba con el de la segunda.
+ *
+ *   · Una línea que trae `id` casa con la guardada de ese id (cada guardada, UNA vez: un id repetido
+ *     no clona el precio). Un id que no existe es una línea nueva.
+ *   · Una línea SIN `id` —la pantalla de antes, o una recién añadida— casa como siempre: por
+ *     posición, y sólo con el mismo bloque y la misma descripción.
+ *   · El precio se conserva si el bloque y la descripción siguen iguales, como antes: cambiar la
+ *     descripción es cambiar lo que la oficina valoró.
+ *
+ * Toda línea sale con un id propio: el de la guardada si lo tenía, o uno nuevo de `nuevoId`.
+ */
+export function casarLineasPorIdentidad(
+  previas: LineaParte[],
+  nuevas: LineaParte[],
+  nuevoId: () => string,
+): LineaParte[] {
+  const guardadas = Array.isArray(previas) ? previas : [];
+  const posicionPorId = new Map<string, number>();
+  guardadas.forEach((l, i) => posicionPorId.set(idDeLinea(l, i), i));
+  const usadas = new Set<number>();
+  const mismaLinea = (a: LineaParte, b: LineaParte) => a.bloque === b.bloque && a.descripcion === b.descripcion;
+
+  const origen: Array<number | null> = nuevas.map((l) => {
+    if (l.id === undefined) return null;
+    const i = posicionPorId.get(l.id);
+    if (i === undefined || usadas.has(i)) return null;
+    usadas.add(i);
+    return i;
+  });
+  nuevas.forEach((l, k) => {
+    if (l.id !== undefined || k >= guardadas.length || usadas.has(k)) return;
+    if (!mismaLinea(guardadas[k], l)) return;
+    usadas.add(k);
+    origen[k] = k;
+  });
+
+  return nuevas.map((l, k) => {
+    const antes = origen[k] === null ? undefined : guardadas[origen[k] as number];
+    const id = antes && typeof antes.id === 'string' && antes.id !== '' ? antes.id : nuevoId();
+    const linea: LineaParte = { id, bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+    return antes && mismaLinea(antes, l)
+      ? { ...linea, precioUnitario: antes.precioUnitario ?? null, tipoIva: antes.tipoIva ?? null }
+      : linea;
+  });
 }
 
 /** Lo que hace falta para sellar un parte. Todo lo que está aquí, y nada más, entra en el hash. */
@@ -464,9 +530,11 @@ export function totalesPorBloque(lineas: LineaParte[]): {
  * pantalla que los recibe y decide no enseñarlos está a un `console.log` de enseñarlos.
  */
 export function lineasParaElTecnico(lineas: LineaParte[]): Array<{
-  bloque: BloqueParte; unds: number; descripcion: string;
+  id: string; bloque: BloqueParte; unds: number; descripcion: string;
 }> {
-  return (Array.isArray(lineas) ? lineas : []).map((l) => ({
+  return (Array.isArray(lineas) ? lineas : []).map((l, i) => ({
+    // SCRUM-889 · la identidad de la línea, para que al quitarla ningún precio cambie de línea.
+    id: idDeLinea(l, i),
     bloque: l.bloque,
     unds: l.unds,
     descripcion: l.descripcion,
