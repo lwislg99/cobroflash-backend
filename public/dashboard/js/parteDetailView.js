@@ -87,6 +87,11 @@
     // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
     faltaLaFirmaDelCliente: 'Falta la firma del cliente para cerrar el parte.',
     faltaLaFirmaDelTecnico: 'Falta la firma del técnico para cerrar el parte.',
+
+    // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
+    // delegación del fundador (SCRUM-890, comentario 15623). Consta en
+    // `docs/microcopy/2026-09-16-SCRUM-890-parte-vacio-no-se-firma.md`.
+    parteVacioNoSeFirma: 'Este parte está vacío y no se puede firmar. Apunta lo que has hecho y vuelve a intentarlo.',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -583,6 +588,14 @@
     var lineas = lineasOCeguera(parte);
     if (lineas === null) return false;
 
+    // 🔴 SCRUM-890 · UN PARTE VACÍO NO ABRE EL PAD. El servidor lo rechaza seguro (409
+    // `parte_vacio`), así que abrirlo era pedirle al cliente que firmara delante del profesional
+    // para nada. Se dice por qué y qué hacer, junto al botón.
+    if (lineas.length === 0) {
+      if (typeof o.avisar === 'function') o.avisar(TEXTOS.parteVacioNoSeFirma);
+      return false;
+    }
+
     abrirPad({
       title: quien === 'tecnico' ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
       hint: TEXTOS.pistaFirma,
@@ -608,6 +621,13 @@
         // Repinta con lo que dice el SERVIDOR. Se llama también cuando la firma se quedó en la
         // cola: el parte sigue en borrador y la pantalla tiene que seguir diciéndolo.
         if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
+        // 🔴 SCRUM-890 · UN RECHAZO SUBE. `firmar` lo devuelve DENTRO del resultado y el pad sólo
+        // avisa si esto lanza: sin el `throw` se cerraba como si el cliente hubiera firmado. La
+        // pantalla traía líneas y el servidor ya no (las quitó la oficina): el 409 llega aquí.
+        if (r && r.rechazada) {
+          var codigo = r.error && r.error.code;
+          throw new Error(codigo === 'parte_vacio' ? TEXTOS.parteVacioNoSeFirma : ((r.error && r.error.message) || ''));
+        }
         return r;
       },
     });
@@ -908,6 +928,21 @@
       boton.addEventListener('click', function () {
         firmarParte(parte, Object.assign({}, o, {
           alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
+          // SCRUM-890 · el aviso va DENTRO de la sección de firmas, junto al botón que se pulsó.
+          // `.alert warning` y no `error`: no se ha roto nada, al parte le falta contenido.
+          avisar: function (texto) {
+            var seccion = contenedor.querySelector && contenedor.querySelector('[data-parte-firmas]');
+            if (!seccion) return;
+            var previo = seccion.querySelector('[data-parte-firma-rechazada]');
+            if (previo && previo.remove) previo.remove();
+            var aviso = document.createElement('div');
+            aviso.className = 'alert warning';
+            aviso.setAttribute('role', 'alert');
+            aviso.setAttribute('data-parte-firma-rechazada', '1');
+            aviso.style.marginTop = '8px';
+            aviso.textContent = texto;
+            seccion.appendChild(aviso);
+          },
         }), par[1]);
       });
     });
