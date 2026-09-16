@@ -191,4 +191,61 @@ entera que declara «no cae» porque el nombre no casa.
 | `public/dashboard/js/quoteRevisiones.js` | botón sobre la vigente, cableado del POST, centinela de microcopy |
 | `tests/scrum688-crear-revision.test.mjs` | 13 casos (suelo, censo, el que decide, PDF, rol, microcopy, botón) |
 
+## 12 · 🔴 Los cuatro guards que saltaron, y ninguno se relajó
+
+La tanda completa dio **4 rojos, los cuatro míos**. Se arreglaron los cuatro arreglando el código
+(regla 41). Van aquí porque tres de ellos dicen algo que el ticket no sabía.
+
+### a) SCRUM-411 · el registro de huérfanos tenía apuntados EXACTAMENTE los tres que cablé
+
+```
+🔴 HAY 3 DECLARACIÓN(ES) QUE YA NO CORRESPONDEN A NINGÚN HUÉRFANO:
+   src/modules/quotes/domain/revision.ts::vigenteUnicaDe
+   src/modules/quotes/domain/revision.ts::REVISION_HEREDA
+   src/modules/quotes/domain/revision.ts::nuevaRevisionDe
+```
+
+La línea de `nuevaRevisionDe` decía, **textualmente**: *«Se borra esta línea el día que un POST la
+cablee.»* Ese día fue hoy. La deuda duró del **2-sep-2026 al 16-sep-2026**: catorce días con la
+regla «un presupuesto FIRMADO no se reescribe» construida, probada y sin un camino por el que un
+profesional llegara a ella.
+
+Las tres se retiran **con constancia de por qué**, no en silencio: el propio guard avisa de que una
+lista que mengua tiene dos causas —la cableaste, o el detector se quedó ciego— y saber cuál fue es
+lo único que distingue las dos el día que alguien lo relea. `revisionesDe`, `REVISION_NO_HEREDA` y
+`REVISION_LA_PONE_EL_SISTEMA` **siguen** en el registro: no tienen llamador.
+
+### b) SCRUM-421 · un `select` no es una escritura — y el control unitario medía otro algoritmo
+
+El censo de estados leía mi `select: { …, status: true }` como una escritura de `status` cuyo valor
+no sabía resolver, y con una sola sin resolver **el fichero entero se declara CIEGO**. No lo era:
+en Prisma lo que se escribe va bajo `data:`; `select:`/`include:` son proyecciones. Se le enseña a
+distinguirlo **por estructura**, igual que ya distinguía el `res.json` — y con su negativo, que es
+lo que separa «enseñarle a ver» de «taparle un ojo»: la escritura bajo `data:` se sigue contando.
+
+🔴 **Y al escribir ese caso salió algo mayor:** `censarFuente` —la puerta que usan los controles
+unitarios, anunciada como *«igual, pero sobre una fuente suelta»*— **no llamaba a
+`dentroDeEscrituraQuote`**. Miraba todo `status:` viniera de donde viniera, así que los controles
+del guard ejercitaban un algoritmo distinto del que se aplica al árbol. El control del `res.json`
+seguía verde **por una razón que no era la suya**: `status: q.status` no se resuelve, así que caía
+en `sinResolver` —donde ese test no mira— en vez de contarse como escritura. La cuenta salía; el
+motivo, no. Las dos puertas comparten ya el mismo filtro.
+
+### c) SCRUM-713c · el estilo en línea, y el color que además estaba mal
+
+349 sobre un techo de 348: un `style.cssText` mío en `quoteRevisiones.js`. Sale a su clase en
+`styles.css` (regla 4), sin tokens nuevos. Y el trinquete arregló dos cosas de una: el color que
+había puesto era `--danger`, cuando **esta misma hoja ya midió** (línea ~600) que para texto la
+tinta es `--danger-ink` — `--danger` sobre fondo claro no llega a 4,5:1.
+
+### d) SCRUM-533 · CRLF en un fichero que toca esta rama
+
+`tests/_censo-estados-presupuesto.mjs` quedó en CRLF al editarlo (blob en HEAD: **0 bytes CR**;
+disco: **216**). Devuelto a LF y **comprobados los diez ficheros** de la rama, no sólo ése. No se
+tocó `.gitattributes`.
+
+---
+
 **`npm run guards:entrada`: 4 guards, 26 tests, 0 fallos.**
+**Tanda completa: 6917 tests · 6807 pass · 0 fail · 110 skipped** (los gateados de siempre —
+`QA_DB_TEST`, `LIBRO_PG_URL`, staging—; este ticket **no añade ni un salto**).
