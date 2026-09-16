@@ -116,3 +116,22 @@ test('SCRUM-864 · ⚠️ lo que el helper NO promete, dicho en su propia cabece
     + 'mecanismo de limpieza que no declara su límite se lee como una garantía total, y entonces '
     + 'nadie vuelve a mirar el directorio.');
 });
+
+test('SCRUM-864 · 🔴 el helper SIGUE colgando de `os.tmpdir()`, que es lo que el censo da por hecho', () => {
+  // `scripts/_temporales-en-el-arbol.mjs` reconoce `temporal(...)` como raiz TMP. Eso es un hecho
+  // sobre ESTE fichero, no una convencion: si el helper dejara de usar `os.tmpdir()`, el censo de
+  // SCRUM-824 daria por sanos temporales que podrian caer DENTRO DEL ARBOL, y no se enteraria
+  // nadie. El reconocimiento tiene que tener quien lo vigile.
+  const fuente = fs.readFileSync(path.join(RAIZ, 'tests/_temporal.mjs'), 'utf8');
+  assert.match(fuente, /os\.tmpdir\(\)/,
+    'El censo de SCRUM-824 reconoce `temporal()` como raiz TMP porque este helper construye su '
+    + 'ruta con `os.tmpdir()`. Si eso deja de ser cierto, ese reconocimiento pasa a ser falso y '
+    + 'el guard se queda ciego justo donde mas importa. Se arregla aqui o se retira alli.');
+
+  // Y el directorio que devuelve CAE de verdad fuera del arbol: se comprueba, no se deduce.
+  const dir = temporal(PREFIJO);
+  const dentroDelArbol = path.resolve(dir).toLowerCase().startsWith(path.resolve(RAIZ).toLowerCase());
+  borrarTemporal(dir);
+  assert.equal(dentroDelArbol, false,
+    'el temporal ha caido DENTRO del repositorio: es el defecto que vigila SCRUM-824');
+});
