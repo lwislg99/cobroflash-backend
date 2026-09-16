@@ -60,7 +60,7 @@ import {
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-17
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-17: gate fiscal
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
-import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
@@ -92,6 +92,7 @@ const QUOTE_SELECT = {
   id: true, quoteNumber: true, total: true, currency: true,
   paymentTerms: true, customBillingPlan: true, // SCRUM-27: para resolver el plan efectivo
   lines: true, // SCRUM-141: el importe de cada tramo se deriva de las líneas (= lo que se emitirá)
+  discountGlobalAmount: true, // SCRUM-887: `lineasParaFacturar` lo exige para decidir si aplica el dto
   // SCRUM-816 · `createdAt` entra porque la escalera de la siguiente acción (`jobNextAction`,
   // nivel 2) pregunta si hay una factura sin pagar de HACE 7 DÍAS O MÁS. Sin la fecha ese nivel
   // no se puede evaluar en la LISTA, y la lista propondría algo distinto del detalle para el
@@ -1383,7 +1384,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // SCRUM-141: líneas del tramo primero, importe DERIVADO de ellas (el total es consecuencia de
     // las líneas). Antes venía de `distributeStageAmounts` con las líneas escaladas aparte: el
     // desfase de redondeo acababa sellado en la huella VeriFactu. Ver invoiceLines.service.ts.
-    const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
+    const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
 
     // SCRUM-814 · el tramo se DERIVA del recuento, para poder recalcularlo DENTRO del cerrojo.
     // Misma forma exacta que `quotesAdmin.routes.ts`: un solo patrón para los tres caminos.

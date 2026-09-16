@@ -159,7 +159,7 @@ export function normalizePhone(input?: string | null): string {
   };
 
   /** El precio de una línea DESPUÉS de su descuento. Sin `dto`, es el precio tal cual. */
-  function precioConDto(price: unknown, dto: unknown): number {
+  export function precioConDto(price: unknown, dto: unknown): number {
     const p = Number(price);
     if (!Number.isFinite(p)) return 0;
     const d = Number(dto);
