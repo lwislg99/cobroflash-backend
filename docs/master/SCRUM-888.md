@@ -1,6 +1,49 @@
-# SCRUM-888 · Punto 7 (rama 888g): la página de firma enseña el importe de la señal
+# SCRUM-888 · La página de firma no enseña el importe de la señal
 
-**Medido contra:** `origin/main` = `7cab3165369cfd29eadced8e5cb59ab447fe4867` · 2026-09-16T18:30:05Z (cabecera `Date:` de GitHub); rama al día contra `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T18:56:09Z
+**Medido contra:** `origin/main` = `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T20:53:10+02:00
+**Rama:** `scrum-888g-senal-en-la-firma` · **Estado:** EN PR — ROJO (test-first). El defecto está
+documentado y medido; el arreglo del código todavía no está en esta rama.
+
+## SCRUM-888g (punto 7 de SCRUM-888)
+
+**El defecto, medido en staging el 16-sep-2026** (presupuesto #4 del merchant QA, borrador):
+
+- Condiciones `paymentTerms: 'MANUAL'` + plan propio `Señal 30 % / Resto al terminar 70 %`, total
+  970,23 €. La página `/pay/quote/:token` pintaba la píldora de condiciones con el código crudo
+  «MANUAL» y **ningún 291,07 €** — que es exactamente lo que se emitió como señal al aceptar el #6,
+  con las mismas líneas. El cliente firma sin saber cuánto paga.
+- **Causa:** `termsLabel` (`quoteDecisionLanding.routes.ts`) sólo conoce `FIFTY_FIFTY` y
+  `FULL_UPFRONT`, devuelve cualquier otro código TAL CUAL, e ignora `customBillingPlan`.
+- Y el camino normal del editor es peor: un plan propio se guarda con `paymentTerms: null`
+  (`quotesView.js`, opción «CUSTOM»), y con `null` la página no pinta NINGUNA condición.
+
+**La regla del arreglo (ya fijada en el test):** el importe de la señal sale de la MISMA función
+que el cobro. Nada de un segundo cálculo — el importe esperado en el test se recompone
+LITERALMENTE con lo que hace la emisión al aceptar (`resolveBillingPlan` →
+`stageLinesReconciled` → `grossOfLines`), no con lo que pinte la página. Si la página calculara
+por su cuenta y divergiera en un céntimo, el test cae.
+
+## Commits (esta sesión, sólo ROJO)
+
+| sha | qué |
+|---|---|
+| `78c01676` | ROJO — la firma con señal (plan propio, MANUAL/`null`) no enseña el importe |
+| `71e25e58` | ROJO ampliado — planes de serie (FIFTY_FIFTY/FULL_UPFRONT) con importe, tiers con porcentaje (sin importe: aún no hay uno verdadero), MANUAL/SIN_CONDICIONES sin plan pintan igual que sin condiciones, ningún código interno visible, y el guard AST de «sin segundo cálculo» |
+
+`tests/scrum888g-senal-en-la-firma.test.mjs` — 18 rojos por aserción medidos en CI (más los
+controles ✅ que ya pasan: SUELO, «sin señal ni plan la página no cambia», la política de señal
+de V8). No toca `psp.routes.ts` ni el camino de emisión: sólo lee (regla 38).
+
+## Pendiente (fuera de esta rama)
+
+El arreglo de `quoteDecisionLanding.routes.ts` (y de `quotesView.js` para que un plan propio no
+se guarde con `paymentTerms: null`) que pone estos 18 en verde.
+
+---
+
+# APÉNDICE · SCRUM-888g · el arreglo: la página de firma enseña cada tramo con su importe
+
+**Medido contra:** `origin/main` = `7cab3165369cfd29eadced8e5cb59ab447fe4867` · 2026-09-16T18:30:05Z (cabecera `Date:` de GitHub); rama al día contra `f12c1574681338e0d5940815e1ff6622210b3ed5` · 2026-09-16T19:17:39Z
 **Rama:** `scrum-888g-senal-en-la-firma` · **Carril:** Sesión 3 · **Formato firmado:** SCRUM-888 comentario 15624
 
 > El cliente firmaba un presupuesto con señal del 30 % leyendo «MANUAL» donde tenía que leer cuánto
@@ -98,43 +141,16 @@ cuatro casos dentro y sin scroll horizontal** en los dos anchos. ⚠️ La medid
 - **Camino de emisión intacto:** el diff no toca `quotes.routes.ts`, `billingPlan.ts`,
   `billingPlanView.ts` ni `invoiceLines.service.ts`; el test sólo los importa y los ejecuta.
 - **Sin schema.**
-# SCRUM-888 · La página de firma no enseña el importe de la señal
 
-**Medido contra:** `origin/main` = `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T20:53:10+02:00
-**Rama:** `scrum-888g-senal-en-la-firma` · **Estado:** EN PR — ROJO (test-first). El defecto está
-documentado y medido; el arreglo del código todavía no está en esta rama.
+## Sobre la entrada anterior
 
-## SCRUM-888g (punto 7 de SCRUM-888)
+La escribió `claude[bot]` sobre esta rama (`63156546`, 19:06Z) mientras el rojo corría en CI, y se
+conserva tal cual. Su «Pendiente» nombra también `quotesView.js` (que un plan propio no se guarde
+con `paymentTerms: null`): **no se toca**. Lo decidido es que la página lea el plan propio sea cual
+sea `paymentTerms`, y con eso el `null` del editor deja de esconder las condiciones. Sus «18 rojos
+en CI» y los 16 de la pasada local del fichero cuentan el mismo commit `71e25e58` con distinto recuento de
+subtests; no se ha conciliado la diferencia.
 
-**El defecto, medido en staging el 16-sep-2026** (presupuesto #4 del merchant QA, borrador):
-
-- Condiciones `paymentTerms: 'MANUAL'` + plan propio `Señal 30 % / Resto al terminar 70 %`, total
-  970,23 €. La página `/pay/quote/:token` pintaba la píldora de condiciones con el código crudo
-  «MANUAL» y **ningún 291,07 €** — que es exactamente lo que se emitió como señal al aceptar el #6,
-  con las mismas líneas. El cliente firma sin saber cuánto paga.
-- **Causa:** `termsLabel` (`quoteDecisionLanding.routes.ts`) sólo conoce `FIFTY_FIFTY` y
-  `FULL_UPFRONT`, devuelve cualquier otro código TAL CUAL, e ignora `customBillingPlan`.
-- Y el camino normal del editor es peor: un plan propio se guarda con `paymentTerms: null`
-  (`quotesView.js`, opción «CUSTOM»), y con `null` la página no pinta NINGUNA condición.
-
-**La regla del arreglo (ya fijada en el test):** el importe de la señal sale de la MISMA función
-que el cobro. Nada de un segundo cálculo — el importe esperado en el test se recompone
-LITERALMENTE con lo que hace la emisión al aceptar (`resolveBillingPlan` →
-`stageLinesReconciled` → `grossOfLines`), no con lo que pinte la página. Si la página calculara
-por su cuenta y divergiera en un céntimo, el test cae.
-
-## Commits (esta sesión, sólo ROJO)
-
-| sha | qué |
-|---|---|
-| `78c01676` | ROJO — la firma con señal (plan propio, MANUAL/`null`) no enseña el importe |
-| `71e25e58` | ROJO ampliado — planes de serie (FIFTY_FIFTY/FULL_UPFRONT) con importe, tiers con porcentaje (sin importe: aún no hay uno verdadero), MANUAL/SIN_CONDICIONES sin plan pintan igual que sin condiciones, ningún código interno visible, y el guard AST de «sin segundo cálculo» |
-
-`tests/scrum888g-senal-en-la-firma.test.mjs` — 18 rojos por aserción medidos en CI (más los
-controles ✅ que ya pasan: SUELO, «sin señal ni plan la página no cambia», la política de señal
-de V8). No toca `psp.routes.ts` ni el camino de emisión: sólo lee (regla 38).
-
-## Pendiente (fuera de esta rama)
-
-El arreglo de `quoteDecisionLanding.routes.ts` (y de `quotesView.js` para que un plan propio no
-se guarde con `paymentTerms: null`) que pone estos 18 en verde.
+La entrada P3-META-859 que añadió a `docs/BUGS.md` dice que `meta-guard` es un check
+**obligatorio**: por lo medido en SCRUM-876 el único obligatorio es `build + tests`. No se corrige
+aquí (otro carril): se señala.
