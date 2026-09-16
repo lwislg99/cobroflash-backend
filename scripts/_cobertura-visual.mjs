@@ -15,8 +15,10 @@
 // ── ⚠️ Y EL ENUNCIADO DEL TICKET HAY QUE MATIZARLO, MEDIDO (16-sep-2026) ───────────────────
 //
 // «El dashboard entero no tiene ninguno» **no es exacto**, y conviene saberlo antes de construir:
-// 10 de los 20 ficheros de guard tocan ALGUNA ruta del dashboard. Pero casi todos lo hacen
-// cargando su `styles.css` dentro de una página SINTÉTICA — eso ejercita el CSS, no la vista.
+// el 16-sep-2026, 10 de los 20 ficheros de guard tocaban ALGUNA ruta del dashboard. Pero casi
+// todos lo hacen cargando su `styles.css` dentro de una página SINTÉTICA — eso ejercita el CSS, no
+// la vista. (La cifra va con fecha porque es una foto del árbol: el recuento vivo lo da
+// `cobertura()`, y es el que manda.)
 //
 // Por eso aquí la unidad no es «¿toca una ruta del dashboard?» sino **¿hay algún guard que nombre
 // esta VISTA?**, que es la pregunta que se corresponde con lo que un profesional abre.
