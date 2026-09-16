@@ -109,6 +109,7 @@ de pasar desapercibida.
 
 **Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `99ea4b5e370b103738714b584d70f570d3a60c02` · 2026-09-16T06:37:11+01:00
+**Tanda:** 6943 tests, 6833 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 829 ficheros · exit 0 — con tope duro, medida DESPUÉS del último cambio y DESPUÉS de recompilar el merge.
 
 > **Un censo que no reconoce la cobertura que se le acaba de añadir no mide la cobertura.**
 
