@@ -115,18 +115,27 @@ lo toca este ticket.
 
 Un `skipped` y un `pass` se leen igual en la línea de resumen, así que la prueba es el log:
 
-⏳ **Pendiente de leer, y se dice en vez de darlo por hecho.** Esto sólo se puede comprobar
-DESPUÉS de que corra el PR de esta rama. Lo que hay que buscar en el log del job
-`build + tests (con banco desechable)` es que las dos líneas pasen de `﹣` a `✔`:
+> 🔴 **CORRECCIÓN (16-sep-2026, arrastrada en SCRUM-876).** Este apartado se publicó «pendiente de
+> leer» porque sólo se podía comprobar después del PR, y el PR se mergeó antes. Lo que dice ahora
+> es lo que se leyó; lo que decía antes, y lo que predecía mal, queda anotado debajo.
+
+Leído en el log del job `build + tests (con banco desechable)` del PR #1328 (job `104722799796`,
+mergeado el 16-sep-2026 a las 08:39:04Z):
 
 ```
-✔ SCRUM-728 · el aviso del cerrojo saturado           ← en el paso `Tests`
-✔ SCRUM-814 · los dos caminos que el test de staging no cubre   ← en el paso aislado
+✔ SCRUM-728 · el aviso del ce…                        ← dentro del paso `Tests`
+﹣ SCRUM-814 · los dos caminos que el test de staging… ← saltado DENTRO de la tanda, a propósito
+✔ SCRUM-814 · los dos caminos que el test de staging… ← en el paso aislado: 4 tests · 4 pass · 0 fail
+
+tanda:  6986 tests · 6890 pass · 0 fail · 96 skipped
+bancos: yaqu_libro_test · yaqu_serie_test · yaqu_tramos_test — 30 tablas cada uno
 ```
 
-y que el recuento de `skipped` baje en 2 respecto a los 97 de `main`. El resultado se reporta al
-orquestador con el número de job; si esta rama ya estuviera mergeada al leerlo, la anotación se
-arrastra a la siguiente rama del carril, como se hizo con la cifra de SCRUM-829b.
+⚠️ **Y una predicción mía que salió mal.** Aquí se escribió que el recuento de `skipped` bajaría **en
+2** respecto a los 97 de `main`. Bajó **en 1** (97 → 96). Lo correcto era 1, y el error fue mío al
+escribirlo: `scrum814` sale de la tanda pero sigue contando como **saltado dentro de ella** —corre en
+su propio paso—, así que dentro de la tanda sólo deja de saltarse `scrum728`. La cifra corregida no
+cambia nada de lo medido; lo que estaba mal era la predicción, y se deja escrita en vez de borrarla.
 
 ## 5 · Lo que esto NO arregla
 
