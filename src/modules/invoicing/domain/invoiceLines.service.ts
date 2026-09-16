@@ -33,9 +33,55 @@
 // 2 céntimos). Es visible, explicable y NO toca la cadena de huellas. Ver también
 // `docs/COMO_FUNCIONA_YAQU.md` (explicación para el usuario) y la nota de SCRUM-32 en el máster.
 import { calcVatBreakdown, type VatLine, cantidadDeLinea } from './vat.service';
+import { precioConDto } from '../../../core/utils/utils';
 
 /** Línea de factura: `tax` en FRACCIÓN (0.21), igual que en `Quote.lines`/`Invoice.lines`. */
 export type InvoiceLine = VatLine & { [key: string]: unknown };
+
+/**
+ * SCRUM-887 · LAS LÍNEAS DE UN PRESUPUESTO QUE ENTRAN EN SU FACTURA. El único sitio que decide
+ * qué hace la factura con los descuentos: los seis caminos que convierten `Quote.lines` en
+ * `Invoice.lines` —y la vista del plan, que promete su importe— pasan por aquí.
+ *
+ * El defecto que cierra: el cliente firmaba `calcTotal` (que aplica `dto`) y se le cobraba
+ * `calcVatBreakdown(Quote.lines)` (que no lo conoce). Medido en staging: firma 539,05 €, cobro
+ * 628,60 €.
+ *
+ * DECISIÓN (SCRUM-887, comentarios 15616 y 15620, 16-sep-2026), que levanta PARTE de la
+ * acotación de SCRUM-594:
+ *   A · descuento POR LÍNEA → el `dto` se aplica AL PRECIO con `precioConDto`, la misma función
+ *       con la que `calcTotal` calcula lo firmado, y la clave `dto` NO viaja: el precio ya es el
+ *       efectivo, y dejarla sería una segunda fuente que alguien acabaría aplicando dos veces.
+ *       La reconciliación de SCRUM-141 hace el resto contra el total firmado.
+ *   B · descuento GLOBAL con un solo IVA → todavía NO en este cambio (PR 2 de SCRUM-887).
+ *   C · descuento GLOBAL con IVA mezclado → la acotación SE MANTIENE hasta que la asesoría fije
+ *       el reparto. Por eso con global NO SE TOCA NADA, ni siquiera el `dto` de línea: el caso C
+ *       no cambia de cálculo.
+ *
+ * Una línea sin `dto` sale COMO ENTRÓ —el mismo objeto—, así que nada que no tenga descuento se
+ * mueve un céntimo.
+ *
+ * 🔴 `discountGlobalAmount` ES OBLIGATORIO Y NO SE SUPONE. Un `select` que no lo cargue daría
+ * `undefined`, que se leería como «sin global» y aplicaría el `dto` a un caso C en silencio.
+ *
+ * Devuelve `any[]` por lo mismo que `stageLines` es genérico: el resultado acaba en `Invoice.lines`
+ * (Json de Prisma, que rechaza tipos con firma de índice), y los llamadores ya trabajaban con `any[]`.
+ */
+export function lineasParaFacturar(quote: { lines?: unknown; discountGlobalAmount?: unknown }): any[] {
+  if (quote.discountGlobalAmount === undefined) {
+    throw new Error('lineasParaFacturar: el presupuesto llega sin `discountGlobalAmount` cargado');
+  }
+  const lineas = Array.isArray(quote.lines) ? (quote.lines as InvoiceLine[]) : [];
+  const global = Number(quote.discountGlobalAmount);
+  if (Number.isFinite(global) && global > 0) return lineas;
+
+  return lineas.map((l) => {
+    const dto = Number(l.dto);
+    if (!Number.isFinite(dto) || dto <= 0) return l;
+    const { dto: _aplicado, ...resto } = l;
+    return { ...resto, price: precioConDto(l.price, dto) } as InvoiceLine;
+  });
+}
 
 /** Solo se necesita el porcentaje del tramo: no se importa `BillingStage` para no acoplar módulos. */
 export interface StageLike {

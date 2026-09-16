@@ -79,6 +79,7 @@ function banco({ email = null, telefono = null, wa = 'sent', autoEmail = true } 
   const presupuesto = {
     id: quoteId, merchantId, customerId, jobId, chargeId, status: 'accepted', total: '121.00', currency: 'EUR',
     lines: [{ concept: 'Reparación', qty: 1, price: 100, tax: 0.21 }], createdAt: new Date('2026-09-15T10:00:00Z'),
+    discountGlobalAmount: null, // SCRUM-887: la fila real lo trae siempre
   };
   const trabajo = { id: jobId, merchantId, customerId, quoteId, status: 'en_curso', titulo: 'Trabajo 885', createdAt: new Date() };
 

@@ -56,7 +56,7 @@ import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; //
 // ningún otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
 // mala cobertura es el caso NORMAL, no el raro.
 import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
-import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 // SCRUM-805 · el sello del PRESUPUESTO. Canónico PROPIO: el del albarán no sella `total`,
 // `validUntil`, `paymentTerms` ni las cláusulas, que es justo lo que se discute.
@@ -647,7 +647,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // SCRUM-141: el importe se DERIVA de las líneas del tramo — el total de una factura es
         // consecuencia de sus líneas. Antes salía de `distributeStageAmounts` con las líneas
         // escaladas aparte, y el desfase de redondeo quedaba sellado en la huella VeriFactu.
-        const quoteLines = Array.isArray(updatedQuote.lines) ? (updatedQuote.lines as any[]) : [];
+        const quoteLines = lineasParaFacturar(updatedQuote); // SCRUM-887: el dto de línea, aplicado
         const scaledLines = stageLinesReconciled(
           quoteLines, plan, stage.index, distributeStageAmounts(updatedQuote.total, plan)[stage.index],
         );
