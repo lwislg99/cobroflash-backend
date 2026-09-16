@@ -59,7 +59,8 @@ const ES_FUTURO = /(se crea|se creará|se escribirá|pendiente|cuando|futur|toda
  * resolver (bajo `docs/equipo/`) no es un documento que falte — es cómo se escribe «el de tu
  * sesión», y el de la sesión 5 sí existe.
  *
- * Medido: sin este cubo, el censo acusaba 3 citas de esa plantilla como fantasma. Un censo que
+ * Medido el 16-sep-2026: sin este cubo, el censo acusaba 3 citas de esa plantilla como fantasma.
+ * (El recuento vivo lo da `censar()`, que es el que manda; esta cifra es una foto.) Un censo que
  * llama «documento que falta» a una plantilla manda a alguien a crear un fichero que no debe
  * existir.
  */
