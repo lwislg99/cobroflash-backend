@@ -99,10 +99,17 @@ test('SCRUM-726 · ✅ CONTROL POSITIVO: los registros REALES siguen contando, u
   assert.ok(todas.length >= 6,
     `🔴 CIEGO: sólo ${todas.length} registros y había 7 (6 ficheros + el congelado).`);
 
-  const sinFirma = todas.filter((a) => a.firmante !== 'fundador');
+  // SCRUM-861 · el control pregunta lo mismo que el oráculo: ¿CUENTA como aprobación? Antes
+  // preguntaba «¿lo firmó el fundador?», y con la delegación escrita esas dos preguntas dejan de ser
+  // la misma: la primera ficha firmada válidamente por el orquestador habría puesto esto en rojo
+  // siendo legítima. No se afloja nada: una firma «por el asesor», «por el orquestador» a secas, sin
+  // referencia de Jira o con la delegación retirada sigue dando `aprobada: false` y sigue cayendo
+  // aquí, con su firmante escrito en el rojo.
+  const sinFirma = todas.filter((a) => a.aprobada !== true);
   assert.deepEqual(sinFirma.map((a) => `${a.ruta} → firmante: ${a.firmante}`), [],
-    '🔴 HAY REGISTROS SIN FIRMA DEL FUNDADOR. No se borran sus textos: se listan aquí para que los '
-    + 'firme, y hasta entonces sus literales NO cuentan como aprobados.');
+    '🔴 HAY REGISTROS SIN UNA FIRMA QUE CUENTE (la del fundador, o la delegada completa y vigente). '
+    + 'No se borran sus textos: se listan aquí para que se firmen, y hasta entonces sus literales NO '
+    + 'cuentan como aprobados.');
 
   // Y una muestra de literales de VARIOS registros distintos, uno por uno.
   for (const t of [

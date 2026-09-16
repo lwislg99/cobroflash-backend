@@ -36,9 +36,22 @@ Lo que hace falta para que la aprobación sea **verificable por alguien que no e
    **Aprobado por el fundador** el <fecha>, en **SCRUM-<n>**.
    ```
 
-   Si la firma dice otra cosa —«por el asesor», «pendiente»— el registro **se lee igual, pero sus
-   textos NO cuentan como aprobados**: `constaAprobado()` los ignora y `pendientesDeFirma()` los
-   lista para que el fundador los firme. **No se borra nada de la pantalla por esto.**
+   **O la firma delegada** (SCRUM-861), cuando el texto lo aprueba el orquestador por la
+   delegación permanente que el fundador dejó escrita en `docs/equipo/limites-del-fundador.md`:
+
+   ```
+   **Aprobado por el orquestador por delegación del fundador** el <fecha> — SCRUM-<n> comentario <id>.
+   ```
+
+   Cuenta **sólo** con las tres cosas a la vez: esa frase exacta fuera de cita, la referencia al
+   comentario de Jira **en la misma línea**, y la sección «Delegación permanente» de
+   `limites-del-fundador.md` con su línea de microcopy. Si el fundador retira la delegación, estas
+   firmas **dejan de contar solas**. ⛔ Nadie escribe «Aprobado por el fundador» si no es él.
+
+   Si la firma dice otra cosa —«por el asesor», «por el orquestador» a secas, «pendiente»— el
+   registro **se lee igual, pero sus textos NO cuentan como aprobados**: `constaAprobado()` los
+   ignora y `pendientesDeFirma()` los lista para que se firmen. **No se borra nada de la pantalla
+   por esto.**
 
    Hasta SCRUM-726 esa función contestaba «aprobado» en cuanto el texto estuviera escrito aquí,
    **sin mirar quién firmaba** — comprobaba que alguien lo hubiera escrito, no que lo hubiera

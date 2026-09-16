@@ -387,6 +387,12 @@ const INDIRECTAS_DECLARADAS = [
   // Sólo lee: no borra, no empuja, y está fuera de CI.
   // Lo retira: quien borre `scripts/verificacion-s5/`.
   'scripts/verificacion-s5/ramas-sin-mergear.mjs',
+  // SCRUM-829b · el banco de la ref RANCIA. Nombra `refs/remotes/origin/main` en el control de la
+  // poda —«podar no es vaciar: `main` tiene que seguir ahí»—, y ese `main` es el del CLON que el
+  // test fabrica en un directorio temporal, no el de este repositorio: el mismo motivo por el que
+  // está arriba `_fixture-alcanzabilidad.mjs`. No compara nada contra la punta de nadie.
+  // Lo retira: quien quite ese control del test, o el test entero.
+  'tests/scrum829b-la-ref-rancia-se-poda.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
