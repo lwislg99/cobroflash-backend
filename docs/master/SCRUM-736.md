@@ -1,14 +1,21 @@
 # SCRUM-736 · Los suelos de la tanda envejecían solos, y el aviso era un `console.log`
 
-**Medido contra:** `origin/main` = `026677a1bd8260ce073648680a8eb7d7003f4b39` · 2026-09-16T05:38:33+01:00
+**Medido contra:** `origin/main` = `713a29b738966ecb524a25fffbb842e9f3d09a52` · 2026-09-16T05:57:02+01:00
 
 **Carril:** instrumentos · suelos · **Gate:** sin gate — corre en `npm test`, y el CLI en CI
+
+**Tanda:** 6916 tests · 6806 pass · **0 fail** · 110 skipped (todos gateados por entorno y con su
+motivo declarado) · **exit 0** · `guards:entrada` 26/26.
+
+⚠️ El código de salida se lee **del fichero donde se escribió**, no de la línea «exited with code»
+de la tarea de fondo: ésa es la del último eslabón de la cadena. Pasó hoy en esta misma rama — la
+notificación decía 0 y la tanda había salido **1** con tres rojos. Es la familia de SCRUM-850.
 
 ---
 
 ## PASO 0 · el defecto está VIVO, y se comprueba corriendo
 
-Sobre el **TAP real** de la tanda de hoy (`# tests 6903`), bajando el total en 441 tests y pasándolo
+Sobre el **TAP real** de la tanda del 16-sep-2026 (`# tests 6903`), bajando el total en 441 tests y pasándolo
 al instrumento escrito para cazar exactamente eso:
 
 ```
@@ -66,12 +73,16 @@ holgura puesta a propósito y explicada en su propio comentario. No se reabre.
 derivado de SCRUM-810b (`testsDeclaradosEn`, AST, SCRUM-708):
 
 ```
-2026-08-17  3595        2026-09-04  5293  +395        2026-09-09  6358  +167
-2026-08-19  3627  +32   2026-09-05  5405  +112        2026-09-15  6729  +371
-2026-08-20  3847  +220  2026-09-06  5617  +212        2026-09-16  6756  +27
-2026-08-24  3935  +88   2026-09-07  5828  +211
-2026-09-01  4081  +146  2026-09-08  6191  +363    14 pasos · suben 14 · BAJAN 0
-2026-09-02  4728  +647  2026-09-03  4898  +170    media +226/día · pico +647
+día         sha       tests   delta        día         sha       tests   delta
+2026-08-17  71d63575   3595                2026-09-06  7418b7fe   5617   +212
+2026-08-19  946582c1   3627    +32         2026-09-07  b521d0a7   5828   +211
+2026-08-20  3f79d048   3847   +220         2026-09-08  0269e8cd   6191   +363
+2026-08-24  adb8a9df   3935    +88         2026-09-09  07ccd16c   6358   +167
+2026-09-01  f67d9449   4081   +146         2026-09-15  1f18293e   6729   +371
+2026-09-02  b1ae3fd9   4728   +647         2026-09-16  026677a1   6756    +27
+2026-09-03  eb5774af   4898   +170
+2026-09-04  8e590fc2   5293   +395         14 pasos · suben 14 · BAJAN 0
+2026-09-05  590e019d   5405   +112         media +226/día · pico +647
 ```
 
 Control: **15 valores distintos en 15 árboles** — la sonda se mueve, así que el «no baja nunca» no
@@ -116,6 +127,19 @@ más no fabrique un rojo, y suficiente para cazar que la tanda deje de dar cuent
 exige que la fracción declarada caiga en una banda creíble y, si no, lo **dice**: una relación
 absurda significa que el censo por AST se ha roto, y derivar de un censo roto es peor que no derivar.
 
+### 🟢 Y se vio funcionar solo, en la misma vuelta
+
+Entre la primera medición y el merge de `main`, el árbol pasó de declarar 6756 tests a 6769. El
+suelo efectivo subió **de 6554 a 6566 sin que nadie tocara un número**:
+
+```
+antes del merge:  ✅ suelo 6554 · total actual 6903 · margen 349 · derivado
+tras mezclar main: ✅ suelo 6566 · total actual 6910 · margen 344 · derivado
+```
+
+Eso es exactamente lo que el número a mano no podía hacer, y lo que llevaba ocho días pidiéndole a
+quien leyera el log.
+
 ### El suelo efectivo, y qué pasa cuando no se puede medir
 
 `sueloEfectivo()` = **el mayor** entre el número declarado y el derivado. El orden importa: el
@@ -135,17 +159,25 @@ mueve** y `medible` sale `false`.
 **SUELO:** menos de 3000 tests declarados → CIEGO. Y la fracción fuera de (0,5 · 1) → CIEGO, porque
 por debajo no vigila nada y en 1 exacto cualquier bucle fabrica un rojo.
 
-### 🔴 Un error de encuadre mío, cazado por mi propio control
+### 🔴 Dos errores míos en el control que decide, y el segundo era el peligroso
 
-La primera versión del control que decide medía el hueco entre el número a mano y el derivado —315
-tests— y lo comparaba con los 441 del enunciado. Salió **rojo**, y tenía razón: **ésa no es la
-cantidad que importa.** Lo que importa es si una pérdida de 441 **desde una tanda sana** cae, y eso
-se mide contra el total corrido, no contra la distancia entre los dos suelos. Rehecho usando
-`declarados` como **cota inferior** del total sano —SCRUM-702 midió que ningún fichero condiciona el
-registro de un test al entorno, y hoy son 6903 contra 6756—, con las dos precondiciones asertadas:
-que la pérdida siga quedando **por encima** del número a mano (o el defecto ya no se reproduce) y
-**por debajo** del derivado (o la red no llega). Si alguna deja de cumplirse, el control lo dice en
-vez de seguir afirmando.
+**① El primero, de encuadre.** Medía el hueco entre el número a mano y el derivado —315 tests— y lo
+comparaba con los 441 del enunciado. Salió **rojo**, y tenía razón: ésa no es la cantidad que
+importa. Lo que importa es si una pérdida de 441 **desde una tanda sana** cae, y eso se mide contra
+el total corrido, no contra la distancia entre los dos suelos.
+
+**② El segundo casi lo empujo, y era un rojo intermitente a ocho horas vista.** La corrección de ①
+sacaba los tres números del árbol **vivo** y exigía que `declarados − 441` siguiera por encima del
+número a mano. Tras mezclar `main` lo medí: con 6769 declarados, a esa precondición le quedaban
+**82 tests** de margen — **menos de media jornada** a +226/día. O sea que había arreglado un aviso
+que nadie mira instalando un guard que se pondría rojo solo antes de la mañana siguiente; y un rojo
+intermitente enseña a relanzar la tanda y acaba relajado. Exactamente lo que el encargo avisaba.
+
+Arreglado **congelando el caso en literales**, que es el escarmiento que ya dejó escrito SCRUM-775:
+las cifras medidas el 16-sep-2026 (`declarados 6756`, `TAP 6903`, `suelo 6246`) no envejecen ni
+dependen de lo que crezca el árbol. Y sobre el árbol vivo se asserta sólo lo que es
+**permanentemente** cierto y que además se refuerza con el tiempo: que el derivado vaya por encima
+del número a mano, y que un total justo por debajo del derivado caiga.
 
 ### 🔴 Tres rojos más que sacó la tanda entera, y los tres eran míos
 

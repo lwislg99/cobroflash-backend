@@ -80,48 +80,55 @@ test('SCRUM-736 · 🔴 SUELO: el árbol declara tests y la relación con el TAP
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-736 · 🔴 EL QUE DECIDE: perder 441 tests HOY hace caer el suelo, y BLOQUEA', () => {
-  const declarados = testsDeclaradosEn(RAIZ);
-  const derivado = Math.ceil(declarados * CUENTA_DEL_ARBOL_MINIMA);
+  // ══ ① EL CASO REAL, CONGELADO EN LITERALES ══════════════════════════════════════════════
+  //
+  // 🔴 CONGELADO A PROPÓSITO, y es el escarmiento de SCRUM-775: la primera versión de este control
+  // sacaba los tres números del árbol VIVO y exigía que `declarados − 441` siguiera por encima del
+  // número a mano. Medido el 16-sep-2026: al ritmo de crecimiento de la casa eso aguantaba **menos
+  // de media jornada** — el margen que le quedaba no llegaba a la mitad de lo que el árbol crece en
+  // un día. Un control que se pone rojo solo antes de mañana es un rojo intermitente, y un rojo
+  // intermitente se relaja. El caso se congela: son las cifras MEDIDAS el 16-sep-2026, y ni
+  // envejecen ni dependen de lo que crezca el árbol.
+  const CASO = { declarados: 6756, tapSano: 6903, suelo: 6246 };
+  const perdido = CASO.tapSano - PERDIDA_DEL_TICKET;
 
-  // 🔴 LA TANDA SANA, SIN INVENTAR NINGUNA RELACIÓN. El TAP registra AL MENOS lo que el árbol
-  // declara —SCRUM-702 midió que ningún fichero condiciona el registro de un test al entorno, y
-  // hoy son 6903 contra 6764—, así que usar `declarados` como total sano es una COTA INFERIOR: si
-  // la red caza la pérdida sobre esta cota, la caza sobre el total real, que es mayor.
-  const sano = declarados;
-  const menos = sano - PERDIDA_DEL_TICKET;
-
-  // Y las dos condiciones que hacen que esto mida el defecto del ticket y no otra cosa. Si alguna
-  // dejara de cumplirse, el control lo DICE en vez de seguir afirmando.
-  assert.ok(menos > SUELO_TESTS,
-    `🔴 este control ya no reproduce el defecto: perder ${PERDIDA_DEL_TICKET} tests desde ${sano} `
-    + `deja ${menos}, que ya está por debajo del número a mano (${SUELO_TESTS}). Alguien lo subió, `
-    + 'o el árbol encogió: hay que volver a medir antes de creerse lo de abajo.');
-  assert.ok(menos < derivado,
-    `🔴 la red no llega a la pérdida del enunciado: ${menos} sigue por encima del suelo derivado `
-    + `(${derivado}). Con CUENTA_DEL_ARBOL_MINIMA = ${CUENTA_DEL_ARBOL_MINIMA} la red caza `
-    + `pérdidas de más de ${sano - derivado} tests, y el ticket habla de ${PERDIDA_DEL_TICKET}.`);
-
-  // ── ① EL DEFECTO, tal como estaba: con el número a mano, la pérdida pasa en VERDE ──────
-  const conElDeclarado = veredictoDelSuelo(tap(menos), SUELO_TESTS, null);
+  // El defecto, tal como estaba: con el número a mano, perder 441 tests pasa en VERDE.
+  const conElDeclarado = veredictoDelSuelo(tap(perdido), CASO.suelo, null);
   assert.equal(conElDeclarado.ok, true,
-    `🔴 este control ya no reproduce el defecto: con el suelo declarado (${SUELO_TESTS}) y `
-    + `${menos} tests corridos debería salir VERDE, que es lo que hacía que 441 tests pudieran `
-    + 'desaparecer en silencio. Si sale rojo, el defecto se arregló por otra vía y hay que '
-    + 'volver a escribir este control.');
+    `🔴 el caso congelado ya no reproduce el defecto: suelo ${CASO.suelo} con ${perdido} tests `
+    + 'corridos tendría que salir VERDE. Si sale rojo, estas cifras están mal copiadas.');
 
-  // ── ② Y CON LA RED: el mismo total, el mismo TAP, y ahora CAE ──────────────────────────
-  const conLaRed = veredictoDelSuelo(tap(menos), SUELO_TESTS, declarados);
+  // Y con la red puesta, el MISMO TAP y el MISMO número a mano: cae.
+  const conLaRed = veredictoDelSuelo(tap(perdido), CASO.suelo, CASO.declarados);
   assert.equal(conLaRed.ok, false,
-    `🔴 perder ${PERDIDA_DEL_TICKET} tests sigue pasando en verde: el árbol declara ${declarados} `
-    + `y la tanda sólo dio cuenta de ${menos}.`);
+    `🔴 perder ${PERDIDA_DEL_TICKET} tests sigue pasando en verde: el árbol declaraba `
+    + `${CASO.declarados} y la tanda sólo dio cuenta de ${perdido}.`);
   assert.equal(conLaRed.salida, SALIDA_POR_DEBAJO,
     '🔴 tiene que salir con el código del hallazgo: es lo que hace que BLOQUEE en CI en vez de '
     + 'imprimir. Un aviso que no cambia el código de salida no obliga a nadie.');
-  assert.match(conLaRed.titulo, new RegExp(String(declarados)),
-    '🔴 el rojo no dice cuántos tests declara el árbol: sin eso, quien lo lea no sabe contra qué '
-    + 'se le compara y lo primero que hará será bajar el suelo.');
+  assert.match(conLaRed.titulo, new RegExp(String(CASO.declarados)),
+    '🔴 el rojo no dice cuántos tests declara el árbol: sin eso, quien lo lea no sabe contra qué se '
+    + 'le compara y lo primero que hará será bajar el suelo.');
   assert.equal(conLaRed.efectivo.de, 'derivado',
     '🔴 el suelo que rige tiene que ser el DERIVADO: si rige el declarado, la red no está puesta.');
+
+  // ══ ② Y SOBRE EL ÁRBOL VIVO, sólo lo que es PERMANENTEMENTE cierto ══════════════════════
+  //
+  // Que la red rija de verdad aquí y ahora — y esto se refuerza con el tiempo en vez de caducar:
+  // cuanto más crece el árbol, más por encima queda el derivado del número a mano.
+  const declarados = testsDeclaradosEn(RAIZ);
+  const derivado = Math.ceil(declarados * CUENTA_DEL_ARBOL_MINIMA);
+  assert.ok(derivado > SUELO_TESTS,
+    `🔴 el suelo derivado (${derivado}) ya no va por encima del declarado (${SUELO_TESTS}), así que `
+    + 'rige el número a mano y la red no está haciendo nada. O el árbol encogió mucho, o alguien '
+    + 'subió el número: las dos cosas hay que verlas.');
+
+  const justoDebajo = veredictoDelSuelo(tap(derivado - 1), SUELO_TESTS, declarados);
+  assert.equal(justoDebajo.ok, false,
+    `🔴 un total de ${derivado - 1} pasa teniendo el árbol ${declarados} declarados: el suelo `
+    + 'derivado no está rigiendo.');
+  assert.equal(justoDebajo.efectivo.valor, derivado,
+    '🔴 el suelo efectivo no es el derivado del árbol de hoy.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
