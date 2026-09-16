@@ -190,6 +190,7 @@ Un control que no se puede usar y no puede explicar por qué, no se
 deshabilita: se quita.
 Un acto irreversible no es nunca la acción principal.
 Si tu medición tumba una decisión firmada, gana tu medición.
+El coste no es lo que entra en el chat: es lo que el chat arrastra.
 
 ## A16 · Repite el encargo en una línea antes de empezar
 
@@ -312,3 +313,37 @@ ticket decía «a 4 ramas» de un umbral concreto, `dentro.length > 10`, y ese m
 hoy es 57. Dos umbrales distintos con dos márgenes distintos, y atribuirle a uno el número del
 otro es la misma clase de error que la norma viene a cortar: **un número heredado de un
 enunciado no es una medición.**
+
+## A19 · El PUESTO no se cierra; el CHAT sí
+
+La Sesión N es un puesto y dura lo que dure el equipo. Lo que se cierra es la conversación:
+
+- **Chat nuevo** cuando se cierra el ticket, o cuando la conversación pasa de **~300k tokens**. En
+  ese segundo caso, antes de parar se deja el **traspaso en memoria** —qué está en `main` por
+  efecto, qué queda pendiente, ramas y PR abiertos— y se para. No se sigue «un turno más».
+- **Nunca se reanuda un chat viejo.** Ni para «acabar lo que quedaba»: se abre uno nuevo y se lee
+  el traspaso.
+- **El chat nuevo se abre en la MISMA CARPETA.** La memoria va por carpeta: abierto en otra, no
+  encuentra el traspaso y arranca a ciegas creyendo que arranca limpio.
+
+    🔒 El coste no es lo que entra en el chat: es lo que el chat arrastra.
+
+**Medido por la Sesión 0 el 16-sep-2026**, sobre los transcripts de 7 conversaciones (1.146 turnos,
+599,68M de tokens, deduplicados por `message.id`):
+
+- El **94,7 %** es caché LEÍDA: la conversación entera que cada turno vuelve a mandar. Lo que
+  escribo es el 0,5 %. Lo caro no es lo que un turno trae de las herramientas: es el tamaño de la
+  conversación que ese turno reenvía, haga lo que haga.
+- El **62,6 %** del arrastre sale de turnos con el contexto por encima de 600k. Por debajo de 300k,
+  el 8,6 %. Un turno por encima de 600k arrastra de media **762k**; uno por debajo de 100k, **45k**.
+- **39 turnos —el 3,4 %— escriben el 80,7 % de toda la caché creada**, ~598k cada uno: son
+  arranques o reanudaciones de un contexto grande con la caché ya caducada. Reanudar un chat viejo
+  no «sigue donde estaba»: lo vuelve a pagar entero.
+
+El comando, con la ventana fija de la medición, está en la fila del 16-sep de
+`docs/equipo/afirmaciones-verificadas.md`.
+
+⚠️ **Lo que la medición NO dice, declarado:** la ventana pedida eran tres días, pero los turnos que
+caen dentro van del 15-sep 09:15Z al 16-sep 12:49Z — **28 horas**, no tres días. Y el «39» depende
+de un umbral (escribir más de 200k de caché en un turno); con «crea más de lo que lee» salen 46
+turnos y el 82,7 %. La conclusión no cambia con ninguno de los dos; la cifra, sí.
