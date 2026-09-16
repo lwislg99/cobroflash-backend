@@ -222,6 +222,7 @@ candidata va al diagnóstico, no a un aserto.
 
 **Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `a9a1a3382fa74008e7da6da9611289b0ce6165ce` · 2026-09-16T09:40:24+01:00
+**Tanda:** 6988 tests, 6878 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 833 ficheros · exit 0 — con tope duro, medida DESPUÉS del último cambio y DESPUÉS de recompilar el merge.
 
 > **Un trinquete en cero no sobra: es lo único que impide que entre la siguiente sin vigilar.**
 
