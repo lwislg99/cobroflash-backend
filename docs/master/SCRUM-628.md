@@ -2,6 +2,7 @@
 
 **Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `026677a1bd8260ce073648680a8eb7d7003f4b39` · 2026-09-16T05:20:00+01:00
+**Tanda:** 6909 tests, 6799 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 826 ficheros · exit 0 — con tope duro, medida DESPUÉS del último cambio.
 
 > **Un guard que termina sin hallazgos y no dice sobre qué miró es indistinguible de uno que no
 > miró nada.**
