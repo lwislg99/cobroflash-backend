@@ -52,6 +52,23 @@ function clavesExentas() {
     .map((m) => ({ clave: m[1], motivo: m[2] }));
 }
 
+/**
+ * 🔴 DOS FAMILIAS DE LISTA, Y NO SE PUEDEN JUZGAR IGUAL.
+ *
+ * Las de SCRUM-859 eximen a una entrada de **tener** ancla, así que una entrada que ya la tiene
+ * SOBRA en la lista. `ANCLAS_QUE_NO_RESUELVEN` (SCRUM-649) es lo contrario: la entrada TIENE
+ * ancla, y lo que falla es que el sha no apunta a ningún commit. Exigirle «que no tenga ancla»
+ * la declaraba sobrante y tumbaba este test — eso pasó hoy.
+ *
+ * La población se declara para que una TERCERA familia no entre en silencio: si aparece un motivo
+ * que no está clasificado aquí, el test de abajo cae y hay que decidir en qué familia va.
+ */
+const MOTIVOS_SIN_ANCLA = [
+  'ANTERIOR_AL_GUARD', 'INVISIBLE_HASTA_859', 'OTRA_BASE', 'SIN_DATO', 'SIN_HORA',
+  'SIN_HORA_Y_SHA_CORTO',
+];
+const MOTIVOS_CON_ANCLA_QUE_NO_RESUELVE = ['SHA_NO_RESUELVE'];
+
 /** Las entradas reales del árbol, con la MISMA clave que usa el guard. */
 function entradasReales() {
   const out = [];
@@ -87,9 +104,25 @@ test('SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real — una por u
   const huerfanas = [];
   for (const { clave, motivo } of clavesExentas()) {
     const e = porClave.get(clave);
+    // Esta mitad vale para TODAS las familias, y es el corazón de SCRUM-859: una clave por
+    // identidad que ya no case con ninguna entrada es una exención que no exime nada.
     if (!e) { huerfanas.push(`${clave}  [${motivo}] — no existe ninguna entrada con esa identidad`); continue; }
-    // Y apunta a algo que DE VERDAD necesita la exención: si ya tuviera ancla buena, sobra.
-    if (!motivoSinAncla(e.cuerpo)) huerfanas.push(`${clave}  [${motivo}] — YA tiene ancla: sobra en la lista`);
+
+    const sinAncla = MOTIVOS_SIN_ANCLA.includes(motivo);
+    const conAnclaRota = MOTIVOS_CON_ANCLA_QUE_NO_RESUELVE.includes(motivo);
+    if (!sinAncla && !conAnclaRota) {
+      huerfanas.push(`${clave}  [${motivo}] — motivo SIN CLASIFICAR: decide si exime de tener `
+        + 'ancla o de que resuelva, y declárala arriba');
+      continue;
+    }
+    // Y apunta a algo que DE VERDAD necesita la exención, según su familia.
+    if (sinAncla && !motivoSinAncla(e.cuerpo)) {
+      huerfanas.push(`${clave}  [${motivo}] — YA tiene ancla: sobra en la lista`);
+    }
+    if (conAnclaRota && motivoSinAncla(e.cuerpo)) {
+      huerfanas.push(`${clave}  [${motivo}] — NO tiene ancla válida, así que su sha no es lo que `
+        + 'falla: va en una lista de las de «sin ancla», no en ésta');
+    }
   }
   assert.deepEqual(huerfanas, [],
     '🔴 hay claves exentas que no apuntan a lo que decían:\n  ' + huerfanas.join('\n  '));

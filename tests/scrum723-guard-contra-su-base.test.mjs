@@ -393,6 +393,22 @@ const INDIRECTAS_DECLARADAS = [
   // está arriba `_fixture-alcanzabilidad.mjs`. No compara nada contra la punta de nadie.
   // Lo retira: quien quite ese control del test, o el test entero.
   'tests/scrum829b-la-ref-rancia-se-poda.test.mjs',
+  // SCRUM-649 · el guard del ancla, y sus controles. Aquí `origin/main` no es un objetivo de
+  // comparación: es **parte del texto que se valida**. El ancla del máster se escribe literalmente
+  // «**Medido contra:** `origin/main` = `<sha40>` · <instante>», así que la cadena aparece dentro
+  // de `RE_ANCLA` y en la prosa que explica el formato. Lo que el guard compara es el SHA YA
+  // ESCRITO en cada entrada contra `git cat-file --batch-check`: un objeto fijo de 40 caracteres,
+  // el opuesto exacto de una referencia móvil.
+  //
+  // Los dos entraron en esta lista el 16-sep-2026 y no por escribir nada nuevo: `scrum267` llevaba
+  // años nombrando `origin/main` en su regex, pero NO llamaba a git, y este censo —con razón— sólo
+  // mira los ficheros que lo llaman. SCRUM-649 le añadió la sonda de existencia, el fichero pasó a
+  // llamar a git, y sus literales de siempre se hicieron visibles de golpe. El censo no falló:
+  // acertó el día que tuvo materia que mirar.
+  // Lo retira: quien quite la comprobación de existencia de SCRUM-649, o el día que el formato del
+  // ancla deje de nombrar `origin/main`.
+  'tests/scrum267-ancla-de-medicion.test.mjs',
+  'tests/scrum649-el-ancla-que-no-apunta.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
