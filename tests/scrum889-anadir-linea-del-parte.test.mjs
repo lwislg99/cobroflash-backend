@@ -183,27 +183,21 @@ test('SCRUM-889 · pulsar «Añadir línea» dos veces no deja dos líneas vací
 
 // ═══ ② LA «×» ═════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-889 · 🔴 la «×» de una línea GUARDADA la quita (lista entera sin ella) y relee', async () => {
-  const { cont, srv } = await abrir();
-  const x = cont.querySelectorAll('.parte-quitar-linea').find((b) => b.getAttribute('data-indice') === '0');
-  assert.ok(x, '🔴 NO PUDE MIRAR: no hay «×» en la línea guardada');
-  const escuchas = x.dispararClick();
-  await vaciar();
-  assert.ok(escuchas > 0, '🔴 la «×» NO TIENE ESCUCHADOR: se pinta y pulsarla no quita nada.');
-  assert.deepEqual(srv.escrituras().map((e) => e.cuerpo), [{ lineas: [] }], '🔴 la línea no se ha quitado en el servidor');
-  assert.equal(srv.pedidas.filter((p) => p.metodo === 'GET').length, 2, '🔴 tras quitar no se relee el parte');
-});
+// La «×» de una línea YA GUARDADA queda FUERA a propósito (hallazgo en docs/master/SCRUM-889.md): el
+// PATCH conserva los precios de oficina casando por ÍNDICE y los precios se ponen también en
+// borrador, así que quitar una línea le movería el precio a las de detrás. En la primera versión
+// de este rojo había un caso para ella; se retiró al medir ese riesgo, antes de escribir el arreglo.
 
 test('SCRUM-889 · la «×» de la línea NUEVA sin guardar sólo la quita de la pantalla: no escribe', async () => {
   const { cont, srv } = await abrir();
   await anadir(cont, 'mano_obra');
-  const antes = camposDesc(cont).length;
   const x = cont.querySelectorAll('.parte-quitar-linea').find((b) => !b.hasAttribute('data-indice'));
   assert.ok(x, '🔴 la línea nueva no trae su «×»');
-  x.dispararClick();
+  assert.equal(cont.querySelectorAll('[data-parte-linea-nueva]').length, 1, 'control: la fila nueva está');
+  assert.ok(x.dispararClick() > 0, '🔴 la «×» de la línea nueva no tiene escuchador');
   await vaciar();
   assert.equal(srv.escrituras().length, 0, '🔴 quitar una línea que nunca se guardó ha escrito en el servidor');
-  assert.equal(camposDesc(cont).length, antes - 1, '🔴 la línea nueva sigue en pantalla');
+  assert.equal(cont.querySelectorAll('[data-parte-linea-nueva]').length, 0, '🔴 la línea nueva sigue en pantalla');
 });
 
 // ═══ ③ PARTE FIRMADO: no hay botón y nada que escuchar ════════════════════════════════════════
