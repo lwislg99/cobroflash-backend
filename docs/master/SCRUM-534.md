@@ -159,6 +159,7 @@ un documento con régimen jurídico propio.
 
 **Fecha:** 16-sep-2026 · **Carril:** B (guard) · **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `e778e7b232c99b5b46ce44b6c4c90d526b67b175` · 2026-09-16T10:38:44+01:00
+**Tanda:** 7016 tests, 6906 pass, 0 fail, 0 cancelled · **110 skipped, aparte** · POBLACIÓN 837 ficheros · exit 0 — con tope duro, compilando DESPUÉS de mergear.
 
 > 🔒 **Un documento citado que no existe es peor que uno que falta: el que falta se busca, y el
 > citado se da por leído.**
