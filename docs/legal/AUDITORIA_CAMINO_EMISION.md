@@ -30,13 +30,13 @@ y el envío— no se han construido nunca.**
 
 | # | Eslabón | Estado | Fichero y línea |
 |---|---|---|---|
-| 1 | Puerta de emisión (el usuario pulsa emitir) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:81` |
+| 1 | Puerta de emisión (el usuario pulsa emitir) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:100` |
 | 2 | Decide qué documento sale (factura / justificante / ninguno) | **EXISTE** | `src/modules/invoicing/domain/facturaSuelta.ts:74-78` (`modoDocumentoSuelto`) |
 | 3 | Numeración de serie | **EXISTE** | `src/modules/invoicing/domain/invoiceNumber.service.ts:390` (`allocateInvoiceNumber`) |
-| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:102-103` (`vf_hash`, `vf_prev_hash`) |
+| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:865-866` (`vf_hash`, `vf_prev_hash`) |
 | 5 | Sellado en el momento de emitir | **EXISTE** | `src/modules/invoicing/domain/selladoEstado.ts:116` (`sellarTrasEmision`), invocado desde `src/lib/invoicing.ts:17` |
-| 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:152` |
-| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:558` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:535` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:252` y `:556` |
+| 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:141` (`buildVeriFactuQrUrl`) |
+| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:558` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:536` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:252` y `:556` |
 | 8 | Cola de remisión (`VfSubmission`) | **NO EXISTE** | ningún modelo del esquema; ver medición abajo |
 | 9 | Envío telemático a la AEAT | **NO EXISTE** | ninguna llamada de red; ver medición abajo |
 
@@ -58,12 +58,12 @@ pinta el QR. **No se encola y no se envía.**
 * **Instrumento de texto.** Buscando `aeat.es`, `agenciatributaria`, `SistemaFacturacion` y
   similares en `src/`, los únicos aciertos son: dos **espacios de nombres XSD**
   (`src/modules/fiscal/verifactu/registro.builder.ts:10-11`), la **URL del QR que escanea el cliente**
-  (`src/modules/invoicing/domain/verifactu.service.ts:152`) y **enlaces a la especificación dentro de comentarios**
+  (`src/modules/invoicing/domain/verifactu.service.ts:153`) y **enlaces a la especificación dentro de comentarios**
   (`src/modules/invoicing/domain/verifactu.service.ts:8`). Ninguno es un destino de envío.
 * **Instrumento AST.** Contando llamadas de red en `src/modules/fiscal/` y `src/modules/invoicing/`:
   18 aciertos, y al mirarlos uno a uno **ninguno sale a la AEAT** — son definiciones de rutas de
   Express (`router.get` / `router.post`), lecturas de `Map` (`.get`) y una sola llamada real,
-  `src/modules/invoicing/infra/pdf/pdf.service.ts:24`, que es un `axios.get` **para descargar el
+  `src/modules/invoicing/infra/pdf/pdf.service.ts:120`, que es un `axios.get` **para descargar el
   logo del profesional** y ponerlo en el PDF.
 * **Control positivo del detector:** el mismo instrumento encuentra **16** llamadas de red en
   `src/integrations/` (por ejemplo `src/integrations/enviarCorreo.ts:112`, `src/integrations/gemini.ts:43`, `src/integrations/mercadopago.ts:51`). Si
@@ -97,7 +97,7 @@ porque no remite.**
 * `src/modules/invoicing/domain/verifactu.service.ts:527` — otro **comentario** con el mismo aviso.
 * `src/modules/jobs/domain/albaranFirmante.ts:53-63` — «representante» referido a **quién firma un
   albarán en obra**, no a representación ante la AEAT.
-* `src/modules/jobs/infra/albaranPdf.service.ts:72-73` y `src/modules/jobs/domain/albaran.service.ts:843` — «certificado de
+* `src/modules/jobs/infra/albaranPdf.service.ts:382` y `src/modules/jobs/domain/albaran.service.ts:896` — «certificado de
   evidencias» de una **firma en obra**, nada que ver con un certificado digital de la FNMT.
 
 **No hay lectura de ningún fichero de certificado, ni configuración de mTLS, ni ningún campo que
@@ -134,11 +134,11 @@ existe, porque no hay envío.**
 
 | Comprobación | Estado | Fichero y línea |
 |---|---|---|
-| Validación contra los XSD oficiales | **CONSTRUIDA** | `tests/scrum240-sobre-unico.test.mjs` (citado en `src/modules/invoicing/domain/verifactu.service.ts:919`); espacios de nombres en `src/modules/fiscal/verifactu/registro.builder.ts:10-11` |
-| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:102-103`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |
-| Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:98-99` |
+| Validación contra los XSD oficiales | **CONSTRUIDA** | `tests/scrum240-sobre-unico.test.mjs` (citado en `src/modules/invoicing/domain/verifactu.service.ts:947`); espacios de nombres en `src/modules/fiscal/verifactu/registro.builder.ts:10-11` |
+| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:865-866`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |
+| Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:864` |
 | Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:536` (generador único del contenido) |
-| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:97` y `:228` (`exigirDocumentoEmitible`) |
+| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:100` y `:236` (`exigirDocumentoEmitible`) |
 | `Subsanacion` / `RechazoPrevio` / `SinRegistroPrevio` | **NO MEDIDO** | no se buscaron una a una en esta tanda |
 | Cola `VfSubmission` | **INEXISTENTE** | el esquema tiene **25 modelos** (`prisma/schema.prisma`) y **ninguno** se llama `Vf*`, `*Submission` ni `*Verifactu`. Ningún fichero de `src/` menciona `vfSubmission` |
 | Control de flujo de envío (reintentos, ritmo) | **INEXISTENTE** | no hay envío que gobernar |
@@ -166,7 +166,7 @@ si no hay nada, el valor por defecto de arriba.
 > pero la fuente de esa decisión sí está medida: es el código.
 
 **Qué hace `SIF_ENABLED` hoy:** se **consulta y se guarda**, no decide un envío. En
-`src/modules/invoicing/domain/invoiceNumber.service.ts:310` se lee junto a `INVOICING_ES_ENABLED`
+`src/modules/invoicing/domain/invoiceNumber.service.ts:452-457` se lee junto a `INVOICING_ES_ENABLED`
 para **congelar el modo fiscal del momento en el registro de auditoría**. No hay ninguna rama del
 código que, al ponerla en `true`, empiece a transmitir: **ese código no existe**.
 
@@ -207,8 +207,12 @@ código que, al ponerla en `true`, empiece a transmitir: **ese código no existe
 Se anotan porque el encargo lo pide, **y no se arreglan aquí** (SCRUM-513 tiene ticket propio):
 
 * `docs/legal/SEMAFORO_MAPA_EMISION.md` tiene **coordenadas desfasadas** (están en `docs/legal/SEMAFORO_MAPA_EMISION.md:226` y `:258`, que es todo lo que el mapa cita). Constatado, no corregido.
-* `src/modules/invoicing/domain/verifactu.service.ts:673` tiene, según el encargo, un comentario que
-  **miente sobre las rectificativas**. **NO MEDIDO en esta tanda**: no se verificó línea a línea.
+* `src/modules/invoicing/domain/verifactu.service.ts:674` — **MEDIDO el 16-sep-2026 (SCRUM-525c);
+  esto ya no es «NO MEDIDO».** El encargo de aquella tanda daba por hecho que ahí había un comentario
+  que **mentía sobre las rectificativas**. Esa afirmación queda **SIN CONFIRMAR**, porque lo que hay
+  hoy en la 674 afirma lo contrario: «`TipoRectificativa` · **LA R1 SÍ ENTRA HOY EN EL REGISTRO**».
+  La línea 673 que se citaba está **vacía**. No era un problema de ancla: era una afirmación que ya
+  se puede cerrar.
 * `src/modules/invoicing/domain/modoVisible.ts:21` afirma en un comentario que «**se envía** NO
   EXISTE. Cero clientes SOAP/mTLS». **Esta auditoría lo confirma por su cuenta**, con los dos
   instrumentos y el control positivo — no por creerse el comentario.
@@ -223,3 +227,7 @@ Se anotan porque el encargo lo pide, **y no se arreglan aquí** (SCRUM-513 tiene
    `src/modules/invoicing/domain/verifactu.service.ts:674` (la 673 se quedó vacía al reescribirlo)
    y declara él mismo que durante 18 días afirmó en falso que la R1 quedaba excluida del registro.
    Quien vuelva a esta lista no tiene que ir a mirarlo.
+   **El tachado de arriba es deliberado, no un error de formato.** Se conserva la coordenada
+   original —`:673`— tachada al lado de la viva —`:674`— para que la DERIVA de la línea se vea
+   de un vistazo. Borrar el tachado haría que el punto pareciera no haber existido nunca; corregir
+   el número en silencio haría invisible la deriva, que es justo lo que este apéndice mide.
