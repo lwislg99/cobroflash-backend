@@ -1281,14 +1281,12 @@ blockDelivery.appendChild(descWrapper);
   useTemplateBtn.className = "btn-ghost btn-sm quote-header-btn";
   useTemplateBtn.innerHTML = "📋 Usar plantilla";
   useTemplateBtn.title = "Cargar líneas desde una plantilla guardada";
-  // 🛑 SCRUM-600 · LA OTRA MITAD DE LA PARADA DE PLANTILLAS (la primera está en el bloque de
-  // acciones, con `saveTemplateBtn`). Este botón y su rótulo NO nombran el documento, pero la
-  // hoja que abre sí: «Elige una plantilla para cargar sus líneas en el presupuesto actual.».
-  //
-  // Se retiran los DOS juntos a propósito: dejar «Usar» sin «Guardar» sería media función, y
-  // dejar el botón para que la hoja hable del presupuesto dentro de una factura es peor que no
-  // tenerlo. Se enciende el día que el fundador firme esas dos frases; no antes (regla 30).
-  if (!esDocumentoSuelto) linesHeader.appendChild(useTemplateBtn);
+  // ✅ SCRUM-600g · LA PARADA DE PLANTILLAS SE LEVANTA, con sus dos mitades a la vez (la otra está
+  // en el bloque de acciones, con `saveTemplateBtn`). El botón nunca nombró el documento: lo
+  // nombraba la hoja que abre, y esa frase ya tiene texto firmado para el documento suelto
+  // (`rotulosDelDocumento.hojaUsarPlantilla()`, ficha en `docs/microcopy/`, firma delegada de
+  // SCRUM-861). Una plantilla sólo carga LÍNEAS y las pide a `/admin/templates`, no a la emisión.
+  linesHeader.appendChild(useTemplateBtn);
 
   blockLines.appendChild(linesHeader);
 
@@ -1623,15 +1621,13 @@ blockDelivery.appendChild(descWrapper);
 
   actionsRow.appendChild(submitBtn);
   actionsRow.appendChild(resetBtn);
-  // 🛑 SCRUM-600 · PLANTILLAS: PARADA DECLARADA, NO OMISIÓN POR COMODIDAD.
-  //
-  // El mecanismo serviría tal cual —una plantilla sólo carga LÍNEAS, y las líneas son lo único
-  // que el emisor admite—, pero sus dos hojas nombran el documento: «Elige una plantilla para
-  // cargar sus líneas en el presupuesto actual.» y «Dale un nombre a esta plantilla para
-  // reutilizarla en futuros presupuestos.». No hay texto aprobado para su versión de documento
-  // suelto y la regla 30 prohíbe escribirlo. Queda descrito en la entrada del máster como lo
-  // primero que se enciende el día que el fundador firme esas dos frases.
-  if (!esDocumentoSuelto) actionsRow.appendChild(saveTemplateBtn);
+  // ✅ SCRUM-600g · PLANTILLAS TAMBIÉN EN EL DOCUMENTO SUELTO. Hasta aquí fue una parada declarada:
+  // el mecanismo servía tal cual, pero sus dos hojas nombraban el presupuesto y no había texto
+  // firmado para otro documento (regla 30). Con las dos frases firmadas, las hojas las leen de
+  // `rotulosDelDocumento` SÓLO en el documento suelto, y el presupuesto conserva las suyas. Guardar
+  // llama a `/admin/templates` y nunca a `/admin/invoices` (regla 38): lo comprueba `scrum600g`
+  // pulsando, no leyendo.
+  actionsRow.appendChild(saveTemplateBtn);
 
   // Indicador de autoguardado de borrador (FRONT1-4)
   const draftIndicator = document.createElement("span");
@@ -3969,7 +3965,7 @@ if (Number.isFinite(n) && n >= 0) {
     overlay.innerHTML = `
       <div class="modal" style="max-width:480px">
         <div class="modal-body">
-          <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Elige una plantilla para cargar sus líneas en el presupuesto actual.</p>
+          <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">${esDocumentoSuelto ? window.rotulosDelDocumento.hojaUsarPlantilla() : 'Elige una plantilla para cargar sus líneas en el presupuesto actual.'}</p>
           <div style="display:flex;flex-direction:column;gap:8px" id="tpl-list"></div>
         </div>
       </div>
@@ -4037,7 +4033,7 @@ if (Number.isFinite(n) && n >= 0) {
     overlay.innerHTML = `
       <div class="modal" style="max-width:400px">
         <div class="modal-body">
-          <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.</p>
+          <p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">${esDocumentoSuelto ? window.rotulosDelDocumento.hojaGuardarPlantilla() : 'Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.'}</p>
           <div class="alert" id="save-tpl-alert"></div>
           <div class="field">
             <label>Nombre de la plantilla</label>

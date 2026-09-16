@@ -80,5 +80,15 @@ window.rotulosDelDocumento = (function () {
         ? 'No hemos podido emitir el justificante. Inténtalo otra vez.'
         : 'No hemos podido emitir la factura. Inténtalo otra vez.';
     },
+
+    // ── Hojas de plantillas del documento suelto (SCRUM-600g) ──────────────────────────
+    // ⚠️ AQUÍ NO HAY TERNARIO, y no es saltarse la regla de arriba. Ese ternario existe para que un
+    // texto que DEPENDE del modo lleve la condición pegada. Éstos no dependen: se firmaron NEUTROS
+    // («este documento», «sus líneas») para que valgan igual en factura y en justificante, y la
+    // variante justificante se decidió no escribir (SCRUM-825 retira el justificante). Un ternario
+    // con las dos ramas iguales sería ruido con forma de decisión.
+    // Firma: el orquestador por delegación del fundador, SCRUM-600 comentario 15357.
+    hojaUsarPlantilla: function () { return 'Elige una plantilla para cargar sus líneas en este documento.'; },
+    hojaGuardarPlantilla: function () { return 'Dale un nombre a esta plantilla para reutilizar sus líneas más adelante.'; },
   };
 })();

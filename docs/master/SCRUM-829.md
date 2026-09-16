@@ -211,3 +211,100 @@ usó después: copiar el fichero, mutarlo, medir y restaurar por bytes.
 
 El patrón de `numeroDeRama` (se muda, no se reescribe) · `numeroDeClave` para claves de Jira · el
 lector de declaraciones de SCRUM-757 · `HASH_VIEWS` · `src/` · ningún rótulo.
+
+---
+
+# SCRUM-829b · La ref rancia, FABRICADA: la poda y la regla única, probadas por efecto
+
+**Medido contra:** `origin/main` = `3e5f58db7325058ededc7ba2381140d0be291abc` · 2026-09-15T15:28:43Z
+**Rama:** `scrum-829b-la-ref-rancia-fabricada` · **Carril:** `tests/` (Sesión 3) · **Decisión:** del orquestador, 15-sep-2026 — la 4 del rescate del #1212
+
+> Que la palabra `--prune` esté en el fuente no dice que git pode. Y el verde de CI no lo puede
+> decir nunca: CI clona limpio, así que jamás tiene una ref rancia delante.
+
+## 0 · Lo que faltaba, medido en `main`
+
+El #1212 entró el 15-sep-2026 (`c3dce7aa`) con las dos mitades de este ticket. Las dos tenían guard,
+y las dos de la mitad fácil:
+
+| | cómo estaba vigilada | lo que no probaba |
+|---|---|---|
+| la regla única | `scrum753` compara quien agrupa con quien enumera sobre **nombres sueltos** | nunca con una ref rancia delante, leída de un repositorio |
+| la poda | `scrum753` busca `'fetch', '--prune'` en el fuente con una **expresión regular** | que git pode de verdad lo que tiene que podar |
+
+Y **ninguna mutación declarada** sobre esas dos líneas (medido con `git grep` sobre `tests/` el
+15-sep-2026: la única declaración cercana es la de `scrum738`, sobre la cabecera de `numeroDeRama`
+en otro fichero). El meta-guard no las ejercía.
+
+## 1 · El banco
+
+`tests/scrum829b-la-ref-rancia-se-poda.test.mjs`, por el mismo camino que produjo el incidente:
+
+1. un `origen` con `main`, `scrum-824-la-rama-que-sigue-en-origin` y
+   `revert-1192-scrum-824b-el-vigia-que-no-deja-pasar` —el literal del incidente, no uno inventado—;
+2. un `clon` que trae las tres;
+3. `origen` **borra** la de revert, que es lo que hace GitHub al mergear. El clon no se entera.
+
+* ⛔ **Nunca sobre el repositorio real.** Todo en un directorio temporal. El SUELO comprueba que el
+  `.git` del banco está **dentro** de ese directorio, y el test quita `GIT_DIR`, `GIT_WORK_TREE` y
+  compañía del proceso antes de tocar git: heredada de un hook, cualquiera de ellas mandaría el
+  `fetch --prune` al `.git` que comparten todos los worktrees.
+* 🔴 **La poda, apagada en la configuración del clon** (`fetch.prune=false`,
+  `remote.origin.prune=false`). Con un `fetch.prune=true` global, git podaría aunque el código no lo
+  pidiera y el guard saldría verde sin `--prune`. En esta máquina no hay ninguno en ningún nivel
+  (medido el 15-sep-2026), pero lo que se mide es que pode **el código**, no la máquina que corre.
+* **Un banco por test**: el de la poda lo modifica, y compartirlo haría que el orden de los tests
+  decidiera si hay ref rancia delante o no.
+
+## 2 · EN ROJO — cada mutación tumba SU test, y sólo el suyo
+
+Las dos declaraciones, leídas con el **lector oficial** del meta-guard y aplicadas como él las
+aplica (`de` → `a`, una vez):
+
+| mutación | cae | y dice |
+|---|---|---|
+| **①** `traerRefs` sin `--prune` | 🔴 «traerRefs PODA la ref rancia, y sólo ésa» — **sólo ése** | «`traerRefs` NO poda: la ref de una rama que ya no existe en origin sigue en el clon» — la aserción de la poda, **no** el suelo ni el control |
+| **②** `agruparRamas` vuelve a `numeroDeClave` | 🔴 «con la ref rancia DELANTE, quien agrupa y quien enumera dan el mismo número» — **sólo ése** | `agrupa: 824` · `enumera: null` sobre `revert-1192-…` |
+
+Es lo que pedía la decisión: **sin arreglo, las dos reglas discrepan** para `revert-…`; **con arreglo,
+dan lo mismo**; y el control `scrum-824-…` **sigue dando 824** en las dos. Pasada limpia antes y
+después: 3/3. Ficheros restaurados y verificados **byte a byte**, sin `git stash` (A15).
+
+📍 **Dónde se midió.** Primero en un árbol extraído con `git archive` de `f5720e41` —fuera del worktree, sin crear ni mover ninguna ref, mientras el meta-guard de SCRUM-836e corría en el worktree—. Después, **repetido sobre la rama real** (base `570260a2`), con `_censo-alcanzabilidad.mjs`, `_censo-reparto.mjs`, `_numero-de-rama.mjs`, `censo-tablero-vs-arbol.mjs`, `_censo-tickets.mjs` y el propio meta-guard comprobados **idénticos byte a byte** a los del árbol extraído. El mismo resultado las dos veces.
+
+## 3 · Verificación
+
+| | |
+|---|---|
+| test nuevo | **3/3** |
+| lector oficial | **2** declaraciones legibles, 0 cojas, cada ancla presente **una** vez |
+| tests vecinos | `scrum753` · `scrum738` · `scrum836` · `scrum711` · `scrum737` · `scrum267` · `scrum745` en verde. ⚠️ `scrum804` salió **intermitente, y no por esto**: sobre el mismo árbol y ejecutado SOLO —sin este test en el proceso— dio 9/9 y a continuación 7/9 («el censo dice 148 ramas y `for-each-ref` lista 149»). Cuenta dos veces las refs compartidas y otra sesión las movió en medio; en ese momento no había ninguna ref rancia (148 locales, 148 en el remoto, medido el 15-sep-2026). |
+| `meta-guard --solo-censo` | 62 guards · **197** declaraciones sobre el árbol mezclado — `main` (`3e5f58db`): 61 · 195, contados con el lector oficial sobre los blobs de las dos puntas: **+1 guard y +2 declaraciones**, las dos de este test y nada más |
+| tanda completa | **6835 tests · 6725 pass · 0 fail · 0 cancelled** · 110 skipped, aparte · 245 s · exit 0 — sobre el árbol mezclado con `3e5f58db`, con esta sección ya dentro · 15:28:43Z → 15:33:16Z |
+
+⚠️ **El meta-guard entero NO se ha corrido en local para esta rama**, y se dice: las dos mutaciones
+se aplicaron con su lector y su forma de mutar, pero la pasada completa la hace CI sobre el PR.
+`main` lo tenía en verde en su último run terminado: los 4 ciegos de `scrum850`/`scrum850b` los cerró
+el #1294, y el #1299 (la ③b de SCRUM-836e) entró con `vivas 179 · mudas 0 · ciegas 0`. Desde entonces
+`main` trajo guards nuevos y su run sobre `3e5f58db` seguía en curso al escribir esto. Lo esperado en el
+PR de esta rama es **`vivas 197 · mudas 0 · ciegas 0`**, con las dos líneas de `scrum829b` VIVAS; un
+ciego o un mudo que no sea de este test sería de `main`, y se diría.
+
+## 4 · Un vecino que lo acusó, y por qué se DECLARA
+
+La primera tanda completa dio **1 fail**: `scrum723` («quién compara contra una referencia MÓVIL, y
+cada uno con su motivo») acusó a este test por nombrar `refs/remotes/origin/main` fuera de los
+argumentos de git. Tenía razón en verlo y no en el fondo: ese `main` es el del **clon fabricado** en el
+directorio temporal —el control de «podar no es vaciar»—, no el de este repositorio. Es el mismo motivo
+por el que `_fixture-alcanzabilidad.mjs` ya estaba en su lista.
+
+Se **declara** en `INDIRECTAS_DECLARADAS` con su motivo y quién lo retira, en un commit aparte y antes
+de volver a medir. Lo que no se hace es reescribir la cadena para que el censo deje de verla: esconderse
+de un guard es exactamente la avería que ese guard vigila. Tras declararlo, `scrum723` + `scrum829b`
+11/11, y la tanda de arriba.
+
+## ⛔ No tocado
+
+`scripts/_censo-alcanzabilidad.mjs` · `scripts/_censo-reparto.mjs` · `scripts/_numero-de-rama.mjs`
+(se prueban, no se cambian) · `scrum753` · de `scrum723`, nada salvo la entrada declarada del §4 · ninguna ref del repositorio real · ninguna rama
+`claude/*` · ningún stash.
