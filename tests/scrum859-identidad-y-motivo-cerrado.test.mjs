@@ -33,9 +33,16 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO',
   },
   {
-    fichero: 'tests/scrum267-ancla-de-medicion.test.mjs',
-    de: "      const id = identidadDeEntrada(e.tituloCompleto);",
-    a: "      const id = String(e.indice); // vuelta a la clave POSICIONAL, a proposito",
+    // 🔴 SCRUM-839e (registro) · esta mutación vivía sobre `scrum267-ancla-de-medicion.test.mjs`,
+    // pero el test que dice cazar (`cae`, abajo) no llama a `entradasTroceadas()` de ese fichero:
+    // usa su PROPIA reimplementación local (`claves`, en este mismo test). Mutar la de scrum267
+    // no tocaba el camino que el test ejercita, y el guard quedaba MUDO. El `de` incluye la línea
+    // anterior porque `identidadDeEntrada(e.tituloCompleto)` se repite tal cual en `entradasReales`
+    // (arriba, en este fichero): sin ese contexto, `.replace()` habría mutado la ocurrencia
+    // equivocada (la primera del fichero) en vez de la de `claves`.
+    fichero: 'tests/scrum859-identidad-y-motivo-cerrado.test.mjs',
+    de: "    return trocearEntradas(t).map((e) => {\n      const id = identidadDeEntrada(e.tituloCompleto);",
+    a: "    return trocearEntradas(t).map((e) => {\n      const id = String(e.indice); // vuelta a la clave POSICIONAL, a proposito",
     cae: 'SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave',
   },
 ];
