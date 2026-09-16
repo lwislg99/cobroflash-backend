@@ -18,6 +18,10 @@
 // distributeStageAmounts(total, plan)[i])` → `grossOfLines`). Si la página calculara por su
 // cuenta y divergiera en un céntimo, esto cae.
 //
+// ⚠️ LÍMITE DECLARADO: el AST caza cualquier llamada a las funciones de reparto desde la página, y
+// los importes caen si divergen en ESTOS casos. Una aritmética escrita a mano que coincidiera en
+// todos ellos no se vería (con el 30/70 del ticket, «total × %» redondea igual; lo caza FIFTY_FIFTY).
+//
 // ⚠️ MIRA EL HTML RENDERIZADO para lo visible (la trampa de auto-referencia de un guard de
 // texto), y el ÁRBOL (AST) para «no hay segundo cálculo».
 import test from 'node:test';
@@ -82,7 +86,7 @@ test('SCRUM-888g · SUELO: la fixture monta la página y el cobro da la señal m
 // ── LA PÍLDORA, tal cual se lee ─────────────────────────────────────────────────────────────
 /** Texto de la píldora de condiciones, o `null` si no hay. Espacios normalizados (el € va con nbsp). */
 function pildora(html) {
-  const m = html.match(/<span class="terms-badge">([\s\S]*?)<\/span>/);
+  const m = html.match(/<span class="terms-badge"[^>]*>([\s\S]*?)<\/span>/);
   return m ? visible(m[1]).replace(/\s+/g, ' ').trim() : null;
 }
 const euros = (n) => formatMoneyEs(n, 'EUR').replace(/\s/g, ' ');
@@ -167,6 +171,8 @@ for (const paymentTerms of ['MANUAL', 'SIN_CONDICIONES']) {
 test('SCRUM-888g · sin señal ni plan la página NO cambia — ni píldora, ni política, ni importes nuevos', () => {
   const sin = renderQuoteDetail(presupuesto(), 'tok');
   assert.doesNotMatch(sin, /terms-badge|senal-policy/, 'sin condiciones no se pinta ninguna');
+  // Control del detector: con condiciones, el MISMO patrón sí las ve (una negación sin hermano no prueba nada).
+  assert.match(renderQuoteDetail(presupuesto({ paymentTerms: 'FIFTY_FIFTY' }), 'tok'), /terms-badge|senal-policy/, 'el detector de píldora está ciego');
   const importes = (visible(sin).match(/\d{1,3}(?:\.\d{3})*,\d{2}\s?€/g) || []).map((s) => s.replace(/\s/g, ' '));
   assert.deepEqual(
     importes,
