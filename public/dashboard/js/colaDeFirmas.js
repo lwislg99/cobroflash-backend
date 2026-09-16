@@ -136,6 +136,12 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   try {
     respuesta = await subir();
   } catch (error) {
+    // SCRUM-890 · el servidor ha LEÍDO la firma y la rechaza por el documento: reintentarla da el
+    // mismo no. Sale de la cola; el trazo sigue en pantalla porque la vista relanza el error.
+    if (elServidorLaRechaza(error)) {
+      if (encolada) await window.quitarFirmaPendiente(clave);
+      return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, error, rechazada: true };
+    }
     // No se desencola: es justo el caso para el que existe la cola.
     return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, error };
   }
@@ -217,6 +223,35 @@ function elServidorYaLaTiene(error) {
     (error.code === 'albaran_locked' || error.code === 'parte_locked');
 }
 
+/**
+ * 🔴 SCRUM-890 · UN RECHAZO DEFINITIVO: el servidor ha leído la firma y dice que ESE documento no
+ * se puede firmar así. Reintentarla da el mismo no, en cada apertura, para siempre.
+ *
+ * Es una LISTA DE LOS QUE SÍ, no «cualquier 4xx», y la asimetría es la de siempre: un rechazo que
+ * se queda en la cola cuesta una petición de más; una firma buena que sale de la cola no la
+ * recupera nadie. Por eso NO están —y cada uno puede llegarle a una firma válida—:
+ *   · 401 — la sesión caducó; al volver a entrar, sube.
+ *   · 403 — prueba caducada o permiso; al pagar o al corregir el rol, sube.
+ *   · 404 — otra cuenta abierta en el mismo móvil: el documento es de otro merchant, no «no existe».
+ *   · 408 / 429 — transitorios por definición.
+ *   · 5xx — el servidor, incluido el 503 del cerrojo saturado.
+ *   · un estado que nadie haya pensado: se queda dentro hasta que alguien lo añada aquí.
+ *
+ * Los que sí: 400 (la firma o el firmante no valen), 409 que NO es `*_locked` (el documento no está
+ * en estado firmable: `parte_vacio`, `invalid_transition`) y 413 (firma demasiado grande).
+ * Se mira `status`, nunca el texto; el 409 de «ya la tiene» se descarta ANTES.
+ */
+const ESTADOS_DE_RECHAZO_DEFINITIVO = [
+  400,
+  409,
+  413,
+];
+
+function elServidorLaRechaza(error) {
+  if (!error || error.sinRed || elServidorYaLaTiene(error)) return false;
+  return ESTADOS_DE_RECHAZO_DEFINITIVO.indexOf(error.status) !== -1;
+}
+
 
 /**
  * Vacía la cola: sube lo que pueda y deja dentro lo que no.
@@ -224,7 +259,9 @@ function elServidorYaLaTiene(error) {
  * `subirFirma(firma)` hace la petición real; se inyecta para poder ejercitar el camino entero
  * contra el banco de red.
  *
- * Devuelve `{ estado, subidas, yaEstaban, quedan, fallidas }`.
+ * Devuelve `{ estado, subidas, yaEstaban, quedan, fallidas, rechazadas }`. `rechazadas` (SCRUM-890)
+ * son las que el servidor rechazó por el documento y han SALIDO de la cola: se dice cuáles y con
+ * qué código, porque salir en silencio sería otro fallo mudo.
  *
  * 🔴 EL SUELO: si no se consigue LEER la cola, NO se dice «nada pendiente». Se devuelve el estado
  * del almacén tal cual —NO_DISPONIBLE o FALLO— y `quedan: null`. «Cola vacía» y «no supe mirarla»
@@ -238,13 +275,14 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
   if (!cola || cola.estado !== window.GUARDADO || !Array.isArray(cola.firmas)) {
     return {
       estado: (cola && cola.estado) || window.FALLO,
-      subidas: 0, yaEstaban: 0, quedan: null, fallidas: [],
+      subidas: 0, yaEstaban: 0, quedan: null, fallidas: [], rechazadas: [],
     };
   }
 
   let subidas = 0;
   let yaEstaban = 0;
   const fallidas = [];
+  const rechazadas = [];
 
   for (const firma of ordenDeDrenado(cola.firmas)) {
     // 🔴 UNA QUE FALLA NO BLOQUEA A LAS DEMÁS — pero tampoco se salta EN SILENCIO: cae en
@@ -261,6 +299,16 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
         const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
         if (quitada && quitada.estado === window.GUARDADO) yaEstaban += 1;
         else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la tiene y no se pudo sacar de la cola' });
+        continue;
+      }
+      if (elServidorLaRechaza(r.error)) {
+        // SCRUM-890 · rechazada por el documento: el mismo no en cada apertura. Sale, y se DICE.
+        const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
+        if (quitada && quitada.estado === window.GUARDADO) {
+          rechazadas.push({ clave: firma.claveIdempotencia, codigo: r.error.code || null });
+        } else {
+          fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la rechaza y no se pudo sacar de la cola' });
+        }
         continue;
       }
       fallidas.push({ clave: firma.claveIdempotencia, motivo: String((r.error && r.error.message) || r.error) });
@@ -286,7 +334,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
   // Si la cola quedó vacía DE VERDAD —leída y sin nada—, ya no hay nada que perder: se retira la
   // marca. Dejarla puesta haría que el siguiente arranque avisara de una pérdida que no hubo.
   if (quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
-  return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas };
+  return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas, rechazadas };
 }
 
 /**
@@ -364,4 +412,5 @@ window.encolarFirma = encolarFirma;
 window.firmarConRedDeSeguridad = firmarConRedDeSeguridad;
 window.ordenDeDrenado = ordenDeDrenado;
 window.elServidorYaLaTiene = elServidorYaLaTiene;
+window.elServidorLaRechaza = elServidorLaRechaza;
 window.drenarFirmasPendientes = drenarFirmasPendientes;
