@@ -272,3 +272,44 @@ test('SCRUM-890 · ✅ cada rechazo de la lista SALE de la cola, al firmar y al 
     assert.equal(al.almacen.size, 0, `🔴 al firmar, \`${caso.data.error}\` se ha quedado en la cola`);
   }
 });
+
+test('SCRUM-890 · 🔴 EL CABLE: en la pantalla real el aviso aparece junto al botón, visible y anunciado', async () => {
+  // Llamar a `firmarParte` con un `avisar` de mentira prueba la función, no el cable. Aquí se pinta
+  // con `renderParteDetailView`, se pulsa el botón que ella engancha y se mira lo que queda dentro.
+  const b = banco({ responder: (ruta, opts) => {
+    if (!opts || !opts.method) return PARTE([]);
+    throw errorDeApi(RESPUESTA_PARTE_VACIO);
+  } });
+  const creados = [];
+  b.ctx.document.createElement = () => {
+    const el = { style: {}, atributos: {}, className: '', textContent: '', setAttribute(k, v) { this.atributos[k] = v; },
+      remove() { const i = hijos.indexOf(el); if (i !== -1) hijos.splice(i, 1); } };
+    creados.push(el);
+    return el;
+  };
+  const hijos = [];
+  const seccion = { appendChild: (el) => hijos.push(el), querySelector: () => hijos[0] || null };
+  const escuchas = [];
+  const boton = { addEventListener: (ev, fn) => { if (ev === 'click') escuchas.push(fn); } };
+  const cont = {
+    innerHTML: '',
+    querySelectorAll: () => [],
+    querySelector: (sel) => (sel === '[data-parte-firmar]' ? boton : sel === '[data-parte-firmas]' ? seccion : null),
+  };
+  let padAbierto = false;
+  const pintada = await b.ctx.renderParteDetailView(cont, 7, { abrirPad: () => { padAbierto = true; } });
+  assert.equal(pintada, true, '🔴 SUELO: la vista no se ha pintado; este test no ha mirado nada');
+  assert.equal(escuchas.length, 1, '🔴 SUELO: el botón de firmar no tiene escuchador; no se ha podido pulsar');
+
+  escuchas[0]();
+  escuchas[0]();   // dos pulsaciones: un solo aviso, no una pila
+
+  assert.equal(padAbierto, false, '🔴 la pantalla real ha abierto el pad con un parte vacío');
+  assert.equal(hijos.length, 1, '🔴 avisos en la sección de firmas: ' + hijos.length);
+  const aviso = hijos[0];
+  assert.equal(aviso.textContent, b.ctx.PARTE_TEXTOS.parteVacioNoSeFirma, '🔴 el aviso no lleva el literal');
+  assert.match(aviso.className, /\balert\b/, '🔴 sin `.alert` el aviso no tiene la caja del inventario');
+  assert.match(aviso.className, /\bwarning\b/,
+    '🔴 `.alert` sin tono está OCULTA por CSS (styles.css): un aviso invisible es el fallo mudo otra vez');
+  assert.equal(aviso.atributos.role, 'alert', '🔴 el lector de pantalla no anuncia por qué no se firma');
+});
