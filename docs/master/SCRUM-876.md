@@ -184,3 +184,94 @@ local desechable, bases borradas) · las dos mudas de SCRUM-866 (`scrum757`, `sc
 La corrección del registro de **SCRUM-871** (§4): la evidencia leída en el log de CI del PR #1328 y
 la cifra de `skipped` (bajó **1**, no 2). Arrastrada aquí porque el PR se mergeó antes de poder
 leerla — no se abre un PR sólo para eso.
+
+---
+
+# APÉNDICE · SCRUM-876b · T1 — `scrum814-carrera-del-tramo` NO se desgatea, y está medido
+
+**Medido contra:** `origin/main` = `e5e67c013db2c69fa1e4960e15f921e5abd69188` · 2026-09-16T13:19:26Z
+**Rama:** `scrum-876b-el-tramo-en-su-banco` · **Tanda:** T1 · **Resultado:** queda gateado y declarado
+
+> «Pasa contra un banco pelado» no es «vigila contra un banco pelado». Este fichero pasa 3/3 ahí,
+> y también pasa 3/3 con el defecto que existe para cazar.
+
+## Lo que se intentó
+
+Darle a su gate un **segundo destino** sin aflojar el primero: `QA_DB_TEST=1` seguía yendo a
+staging por `_staging-db.mjs`, y `TRAMOS_PG_URL` —el banco desechable que CI ya levanta para su
+hermano `scrum814-carrera-de-tramos-postgres`, sin variable nueva— con su propio guard fail-closed
+(loopback + base `_test`). Iba a correr en el paso aislado de CI, uno tras otro con su hermano.
+
+Los guards que leen el fichero por texto quedaron verdes (`scrum814-carrera-de-tramos-postgres`,
+`scrum814-recuento-dentro`, `scrum838`, `scrum419`: 16 ok, 0 fail, los saltos declarando su variable).
+
+## 🔴 El rojo que NO salió
+
+Mutando `dist/` —nunca `src/`— para reabrir la carrera que SCRUM-814 cerró (dentro de la
+transacción, el tramo se decide con la cuenta leída FUERA, `existingInvoices.length`, en vez de la
+serializada), contra el banco desechable y sobre base recién creada:
+
+| | resultado |
+|---|---|
+| ① verde de referencia | 3 ok · 0 caídos · 0 SKIP |
+| ② **con la carrera reabierta** | **3 ok · 0 caídos · 0 SKIP** — «dos peticiones simultáneas NO pueden emitir el MISMO tramo» sigue verde |
+| ③ restaurado | 3 ok · `dist/` verificado byte a byte |
+
+**Medido dos veces**: sobre un `dist/` compilado antes de que main cambiara `emisorCongelado.ts`, y
+otra vez **recompilado sobre el código de la rama**. Mismo resultado.
+
+**Así que su verde en ese banco no respalda nada.** Por la regla de suelo del encargo, se queda
+gateado y declarado. El cambio del test y el de `ci.yml` se **revirtieron** y se comprobó que los dos
+ficheros son idénticos a `HEAD`: esta rama no entrega ningún verde nuevo.
+
+## Por qué no cae — y lo que está medido y lo que NO
+
+No hay índice único que impida dos facturas del mismo tramo (`@@unique([merchantId, number])` es el
+único del modelo), así que no es otra barrera tapándolo.
+
+⚠️ **La explicación es una inferencia, no una medición:** la carrera es de **latencia**. Contra
+staging cada consulta cuesta ~175 ms y las dos peticiones leen el presupuesto a la vez; contra un
+banco local la emisión entera acaba antes de que la segunda lea, así que la segunda ya ve la factura
+de la primera y la carrera no llega a existir. El suelo del test comprueba que las dos peticiones
+**salgan** juntas (desfase ≤ 120 ms), no que sus **lecturas** se solapen. Es el mismo patrón que
+documenta `scrum728` en su cabecera («en loopback no basta»).
+
+El experimento que lo habría confirmado —imprimir bajo la mutación los tramos emitidos: si salen
+«Anticipo + Final», no hubo carrera— **no llegó a hacerse**: la limpieza del temporal borró
+`pgsql/share/timezone` y `pg_isready.exe` del banco local en plena sesión, y esa pasada dio 0/3 por el
+banco, no por el test. Esa pasada no cuenta.
+
+## Lo que esto le exige a T2, T3 y T4
+
+**Cada desgateo necesita su rojo EN EL DESTINO donde va a correr.** Que un fichero pase contra el
+banco desechable no dice nada si no cae ahí con el defecto que vigila. Y cualquier test de CARRERA es
+sospechoso por construcción en un banco sin latencia.
+
+Opción que **no** se ha hecho y es decisión del fundador: reproducir la latencia de staging con un
+proxy TCP entre el test y el banco desechable. No toca `src/` ni ninguna base del proyecto, pero es
+infraestructura nueva en CI.
+
+## TRASPASO — el estado exacto para quien siga (16-sep-2026)
+
+| tanda | estado |
+|---|---|
+| **T1** · `scrum814-carrera-del-tramo` | **cerrada**: gateada y declarada (este apéndice) |
+| **T2** · `scrum52`, `scrum13`, `scrum692` → `withMerchant` | **sin empezar** |
+| **T3** · 6 obsoletos | **sin empezar**. Cada cambio de aserción cita en el commit la decisión firmada (592 para `ALB-`, 780 para el formato de factura, 844 para el `import`). 🔴 `tenancy-permisos` va aparte: ANTES de tocarlo, medir si la ruta de supresión de SCRUM-244 filtra por `merchantId` (regla 2); si no filtra, es una fuga entre comercios y se para |
+| **T4** · 5 sin atribuir | **sin empezar** |
+| `scrum173` | no se toca: su causa es SCRUM-880 (STOP fiscal) |
+
+**Para cada tanda:** rojo por fichero **en el destino donde va a correr** · los 41 que ya pasaban
+siguen pasando · ningún «pass» que sea un salto, comprobado en el LOG de CI · si el destino
+desechable no acepta el gate, el fichero se queda gateado y declarado. **No se toca:** `src/`,
+`verifactu.service.ts`, `_staging-db.mjs`, ninguna base del proyecto, las mudas de SCRUM-866.
+
+**El banco local está ROTO al cerrar esta sesión.** Faltan `pgsql/share/**` y `bin/pg_isready.exe`,
+y quedan procesos `postgres` vivos que no aceptan conexiones nuevas. Para recuperarlo: parar esos
+procesos, re-extraer `pgsql/bin`, `pgsql/lib` y `pgsql/share` del `pg.zip` guardado con
+`[System.IO.Compression.ZipFile]`, y relanzar con `Start-Process` —nunca desde una tarea en segundo
+plano: al terminar la tarea se lleva el servidor (SCRUM-871 §2)—.
+
+**Los instrumentos vivían en el scratchpad de la sesión y se pierden con ella.** Su diseño está
+escrito en el §1 de esta entrada (censo por experimento controlado, P1-P4, suelo de cuatro
+fabricados) y en este apéndice (rojo mutando `dist/` con restauración por bytes).
