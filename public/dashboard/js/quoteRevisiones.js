@@ -194,7 +194,10 @@
           var msg = (e && e.message) ? e.message : TEXTOS_SIN_APROBAR.errorCrear;
           var aviso = document.createElement('p');
           aviso.setAttribute('data-revision-error', '1');
-          aviso.style.cssText = 'font-size:13px;color:var(--danger,#b3261e)';
+          // La clase vive en `styles.css` (regla 4: ni un estilo en línea, y `style.cssText`
+          // cuenta). Aquí había un `cssText` con `--danger`, y el trinquete de SCRUM-713c lo
+          // cazó: 349 sobre un techo de 348.
+          aviso.className = 'revision-error';
           aviso.textContent = msg;
           contenedor.appendChild(aviso);
         });
