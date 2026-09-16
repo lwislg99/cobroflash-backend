@@ -4,8 +4,8 @@
 // UN PR QUE SOLO CHOCA EN EL REGISTRO SE ARREGLA SOLO. UNO QUE CHOCA EN CÓDIGO, NO.
 //
 // Medido el 16-sep-2026 sobre los 1.928 merges de `main`: 34 merges tuvieron conflicto SOLO en
-// `docs/master/`, y 38 de sus 42 ficheros solo AÑADÍAN líneas. Con `merge=union` los 34 salen
-// limpios. El caso que lo motivó, el #1318: abierto 05:58Z, choque solo en
+// `docs/master/`, casi siempre por dos entradas que añadían líneas en el mismo sitio. Con
+// `merge=union` salen todos limpios. El caso que lo motivó, el #1318: abierto 05:58Z, choque solo en
 // `docs/master/SCRUM-609.md`, resuelto a mano 08:53Z. Tres horas por dos entradas de registro.
 //
 // 🔴 PERO GITHUB NO RESPETA `merge=union`. Medido con dos PR gemelos (#1353 con la regla, #1354
@@ -36,7 +36,6 @@
 // lista de ficheros no vacía. Sin lista, «no pude mirar», y no se empuja.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -46,13 +45,16 @@ export const RUTA_DE_REGISTRO = /^docs\/master\/[^/]+\.md$/;
 
 const OID = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 
-/** Un `core.attributesFile` que no existe: anula el de la máquina sin tocar la configuración. */
-const SIN_ATRIBUTOS_GLOBALES = path.join(os.tmpdir(), 'scrum-839d-sin-atributos-globales');
-
-/** El `git` de verdad. Se inyecta para poder darle al suelo salidas que git no da a voluntad. */
+/**
+ * El `git` de verdad. Se inyecta para poder darle al suelo salidas que git no da a voluntad.
+ *
+ * `core.attributesFile=` VACÍO anula el fichero de atributos de la máquina sin tocar ninguna
+ * configuración ni dejar nada en disco. Medido el 16-sep-2026 con un global de `* merge=union`:
+ * sin la opción, `merge: union`; con ella, `merge: unspecified`.
+ */
 export function gitReal(cwd) {
   return (args, input) => {
-    const r = spawnSync('git', ['-c', `core.attributesFile=${SIN_ATRIBUTOS_GLOBALES}`, ...args], {
+    const r = spawnSync('git', ['-c', 'core.attributesFile=', ...args], {
       cwd, encoding: 'utf8', input, maxBuffer: 64 * 1024 * 1024,
     });
     return { status: r.error ? null : r.status, stdout: r.stdout || '', stderr: r.stderr || '' };

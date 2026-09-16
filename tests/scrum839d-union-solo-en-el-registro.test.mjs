@@ -82,7 +82,7 @@ const sinComentario = (l) => l.trim().replace(/\s+/g, ' ');
 
 /** `merge` de cada ruta según git, con los atributos del árbol y SIN los de la máquina. */
 function atributoMerge(cwd, rutas) {
-  const r = spawnSync('git', ['-c', 'core.attributesFile=' + path.join(os.tmpdir(), 'scrum-839d-nada'),
+  const r = spawnSync('git', ['-c', 'core.attributesFile=',
     'check-attr', '-z', '--stdin', 'merge'], { cwd, input: rutas.join('\0'), encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024 });
   assert.equal(r.status, 0, `🔴 CIEGO: git check-attr no responde (${r.stderr})`);
@@ -145,7 +145,7 @@ test('🔴 EFECTO: git no aplica union a ninguna ruta fuera de docs/master/*.md'
 const REGLA = 'docs/master/*.md merge=union\n';
 
 /** Un repositorio con `main` y una rama `pr` que parten de la misma base. */
-function repo({ base, enPr, enMain, attrsMain = REGLA, attrsPr = '' }) {
+function repo({ base, enPr, enMain, attrsMain = REGLA, attrsPr = '', infoAttributes = '' }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum839d-'));
   const g = (...args) => execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: 'pipe' }).trim();
   const escribir = (ficheros) => {
@@ -161,6 +161,10 @@ function repo({ base, enPr, enMain, attrsMain = REGLA, attrsPr = '' }) {
   g('config', 'user.name', 'scrum839d');
   escribir(base);
   g('commit', '-qm', 'base');
+  if (infoAttributes) {
+    fs.mkdirSync(path.join(dir, '.git', 'info'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.git', 'info', 'attributes'), infoAttributes);
+  }
   g('checkout', '-qb', 'pr');
   escribir({ ...enPr, ...(attrsPr ? { '.gitattributes': attrsPr } : {}) });
   g('commit', '-qm', 'pr');
@@ -343,10 +347,8 @@ test('🔴 SUELO: unos atributos locales con driver de merge invalidan la medida
     base: REGISTRO,
     enPr: { 'src/a.ts': 'export const a = 2;\n' },
     enMain: { 'src/a.ts': 'export const a = 3;\n' },
+    infoAttributes: '* merge=union\n',
   }, (r) => {
-    const info = path.join(r.dir, '.git', 'info', 'attributes');
-    fs.mkdirSync(path.dirname(info), { recursive: true });
-    fs.writeFileSync(info, '* merge=union\n');
     assert.equal(decide(r).accion, 'NO-PUDE-MIRAR');
   });
 });

@@ -306,6 +306,14 @@ const HALLAZGOS_DECLARADOS = [
   // Lo retira: quien borre `scripts/verificacion-s5/`, o el día que haya `gh` y el estado de los
   // PR se pueda consultar de frente, que es lo que este rodeo sustituye.
   'scripts/verificacion-s5/ramas-borrables.mjs [log]',
+  // SCRUM-839d · el job que resuelve los conflictos de solo registro. Su pregunta es sobre la
+  // PUNTA por definición: «¿este PR choca con `main` TAL COMO ESTÁ AHORA?». Es lo que GitHub
+  // mira para marcarlo CONFLICTING, y contra la base de la rama no habría conflicto que ver.
+  // Corre en su workflow en cada push a `main`, no en la tanda. Lo retira quien retire el job.
+  'scripts/conflicto-de-registro.mjs [rev-parse]',
+  // …y su test, que resuelve `main` y `pr` dentro de repositorios SINTÉTICOS creados en el
+  // temporal —su `main` no es el de nadie—, mismo caso que la entrada `[show]` de este fichero.
+  'tests/scrum839d-union-solo-en-el-registro.test.mjs [rev-parse]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -327,6 +335,9 @@ const INDIRECTAS_DECLARADAS = [
   'tests/_censo-eol.mjs',        // la lista de referencias que `merge-base` prueba: es la SOLUCIÓN
   'tests/_censo-tickets.mjs',    // recibe la referencia por parámetro (`ref = 'origin/main'`)
   'tests/scrum723-guard-contra-su-base.test.mjs',  // los mensajes y los comentarios de aquí mismo
+  // SCRUM-839d · construye repositorios SINTÉTICOS en el temporal con una rama `main` y una `pr`, y
+  // nombra `main` al montarlos y al hablar del job. Ninguno es el `main` de este repositorio.
+  'tests/scrum839d-union-solo-en-el-registro.test.mjs',
   // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
   // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
   // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.
