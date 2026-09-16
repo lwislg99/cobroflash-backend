@@ -1,7 +1,7 @@
 # SCRUM-885 · El cobro a un cliente sin email: el documento no salía y el profesional no se enteraba
 
 **Medido contra:** `origin/main` = `4b0d5739bc19e7bad5109a32822ef7039d9ca860` · 2026-09-16T13:36:13Z
-**Rama:** `scrum-885-cliente-sin-email` · **Estado:** EN PR — vista, guards, rojos por mutación y QA visual hechos (sesión 2). Pendiente fuera de la rama: la firma del literal con su comentario de Jira (ver «Microcopy»)
+**Rama:** `scrum-885-cliente-sin-email` · **Estado:** #1364 MERGEADO (`364e7d3a267d8babc49a92244168dc12096ce996`). Remate `scrum-885b-aviso-fijo-factura` EN PR (sesión 3: aviso fijo en la ficha). Pendiente: la firma del literal con su comentario de Jira (ver «Microcopy» y sesión 3)
 
 ## PASO 0 · medido corriendo, en local (nunca producción ni staging)
 
@@ -172,3 +172,54 @@ no), y en la ficha de factura no llegó a pulsar nada (factura en `issued` y ban
 toasts eran los del trabajo, aún en pantalla). Capturas miradas una a una.
 
 **Negativo cumplido:** ningún envío nuevo, sin schema, `psp.routes.ts` intacto, camino de emisión intacto.
+
+## Sesión 3 · 16-sep-2026 · remate 885b · medido contra GitHub `Date: Wed, 16 Sep 2026 18:24:17 GMT`
+
+**Rama:** `scrum-885b-aviso-fijo-factura`, desde `origin/main` = `364e7d3a267d8babc49a92244168dc12096ce996` (el merge de #1364).
+
+### ① La firma del literal: SIGUE SIN COMENTARIO — parado
+
+Medido por el MCP de Jira (`fields: comment`) al arrancar la sesión: **SCRUM-885 tiene 0 comentarios**.
+El orquestador pidió buscar el comentario del fundador y, si no estaba, parar. **No se ha añadido el
+registro de microcopy ni se ha inventado la referencia.** Se añade con su id en cuanto exista.
+
+### ② DECIDIDO (orquestador, 16-sep): aviso FIJO también en la ficha de la factura
+
+98 caracteres en un toast de 3 s no se leen. En la ficha va **también** el `.alert.warning` fijo, con la
+MISMA regla (`avisoDocumentoSinEnviar`) que la fila del trabajo. El toast se queda. **La duración global
+de los toasts no se toca.**
+
+* `GET /admin/invoices/:id` devuelve `envioDocumento`: `null` sin cobro o con el cobro sin pagar; si no,
+  los hechos de `envioDelDocumento` (email del cliente del cobro + filas del WhatsApp del cobro). Dos
+  lecturas con `select` y `merchantId` (regla 2). Nada se envía.
+* `invoiceDetailView.js` pinta `.alert.warning.invoice-detail__aviso` (`role="status"`) bajo la caja de
+  estado. El margen va en CSS (`margin: 14px 22px 0`, el de la caja de estado): escrito desde JS subía el
+  trinquete de SCRUM-713c a 341.
+
+| sha | qué |
+|---|---|
+| `6f1f1f0ebed5eaf285c78482dc1ec26a35c8c278` | ROJO: 4 caen por aserción (la ficha responde 200 sin `envioDocumento`; la vista no llama a la regla fuera del confirm-bizum) |
+| `bad4d3f722e08f7a38dddded7f777a591e19b734` | ruta + vista: 14/14 |
+| `5f790dcbb14e478188c410522680d6169d573f4e` | el margen a CSS (trinquete 713c) |
+
+**Rojos por mutación (4, todos ROJOS; reverso 14/14):** la ruta sin el filtro de pagada → «factura aún
+sin cobrar» (falsa alarma en la ficha); la vista sin llamar a la regla, leyendo otro objeto
+(`invoice.waDelivery`) o sin `warning` en la clase → la atadura por AST de la ficha.
+
+**Suite completa (antes del arreglo del margen):** 7094 tests, 2 rojos, los dos de esta rama — SCRUM-713c
+(arreglado) y SCRUM-854 (esta entrada).
+
+### QA visual — medida en navegador real
+
+App REAL (`node dist/index.js` de la rama) contra un Postgres desechable propio (`127.0.0.1:55889`,
+`yaqu_885b_test`, esquema por `migrate diff --from-empty` con el CLI local), Edge headless, flags de envío
+y `BIZUM_MANUAL_ENABLED` sólo en ese proceso.
+
+| caso | 390 px | 1280 px |
+|---|---|---|
+| A · cobrada, sin email ni teléfono | aviso fijo 320×83, dentro de la página, sin scroll horizontal | aviso fijo 938×42, sin scroll |
+| B · cobrada CON email (control) | **sin** aviso | **sin** aviso |
+| C · «Cobrar por Bizum» en la ficha | toast `warn` con el literal **y** aviso fijo tras el repintado | — |
+| C · 3,5 s después | toast ya ido (0), **el fijo sigue** | — |
+
+Errores de página: 0. Capturas miradas.

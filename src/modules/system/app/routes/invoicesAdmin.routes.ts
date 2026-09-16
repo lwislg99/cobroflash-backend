@@ -27,6 +27,7 @@ import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/doma
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
+import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885b
 // SCRUM-499 · la MISMA lectura del método que Cobros e Informes, y el rótulo del «no consta» que
 // ya vive una sola vez (SCRUM-474, aprobado por el asesor el 10-ago-2026).
 import { metodoDeUnCobro, ROTULO_SIN_METODO } from '../../../billing/domain/metodoDeCobro';
@@ -238,7 +239,10 @@ router.get('/:id', async (req, res) => {
     const asignados = await leerAsignadosDeDocumento(
       prisma as unknown as ClienteDeAsignacionDeDocumento, 'invoice', id,
     );
-    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados };
+    // SCRUM-885b · ¿le llegó al cliente el documento de ESTE cobro? Los mismos hechos que la fila del
+    // trabajo, para que la ficha deje el aviso FIJO: el toast de «Confirmar Bizum» dura 3 s.
+    const envioDocumento = await envioDelDocumentoDeLaFactura(req.merchantId!, invoice.chargeId);
+    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados, envioDocumento };
     // `sinCosteEnDocumento` tapa TAMBIÉN `quote.lines`: este detalle arrastra el presupuesto de
     // origen entero (`include: { quote: true }`), y por ahí salía el mismo coste.
     res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
@@ -247,6 +251,24 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'internal_error' });
   }
 });
+
+/**
+ * SCRUM-885b · `null` si la factura no tiene cobro o su cobro no está pagado: todavía no había nada
+ * que enviar. Sólo lectura, con `select` y filtrado por `merchantId` (regla 2): nada se envía desde aquí.
+ */
+async function envioDelDocumentoDeLaFactura(merchantId: number, chargeId: number | null) {
+  if (chargeId == null) return null;
+  const cobro = await prisma.charge.findFirst({
+    where: { id: chargeId, merchantId }, // regla 2
+    select: { status: true, customer: { select: { email: true } } },
+  });
+  if (cobro?.status !== 'paid') return null;
+  const filasWhatsapp = await prisma.whatsAppMessage.findMany({
+    where: { merchantId, relatedType: 'charge', relatedId: chargeId }, // regla 2
+    select: { status: true, createdAt: true },
+  });
+  return envioDelDocumento({ clienteEmail: cobro.customer?.email, filasWhatsapp });
+}
 
 /**
  * POST /admin/invoices/:id/payment-anomaly — A21.2 (V4/V5)
