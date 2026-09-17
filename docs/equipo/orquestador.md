@@ -8,6 +8,39 @@ Las seis sesiones tienen ficha. Ésta es la del que las coordina.
 > vuelve siempre a él. Un orquestador que no las sepa puede mandar a una sesión a hacer una
 > barbaridad con toda la buena fe.
 
+## 0 · 🔴 ARRANQUE Y CADA TURNO — la lista que no se salta
+
+Nace el 17-sep-2026: un orquestador nuevo arrancó sin leer esta carpeta (nada la carga sola: el
+`CLAUDE.local.md` que lo pide vive en `wt-jefe`, y el chat se abre en `cobroflash-backend`) y
+repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este apartado es el sitio.
+
+**AL ARRANCAR un chat de orquestador, antes del primer mensaje al fundador:**
+
+1. `git fetch origin` y leer DESDE `origin/main` (el checkout de la carpeta va miles de commits
+   atrás): esta ficha entera · `limites-del-fundador.md` · `traspaso.md` (el ESTADO y el
+   OBJETIVO VIGENTE) · `00-normas-comunes.md` · las seis `sesion-N.md` · `afirmaciones-verificadas.md`.
+2. Medir el estado real antes de creerse ningún traspaso: PR abiertos y mergeados, CI de main,
+   workflows activos, Jira de los tickets vivos. Un traspaso es una foto con fecha, no el ahora.
+3. Casar cada ticket vivo con su sesión por la tabla de §11bis.
+
+**CADA TURNO, en este orden (lo pidió así el fundador, 17-sep-2026):**
+
+1. **El cuadro del bucle** (§10.1): qué entró solo · qué se atascó y por qué · qué necesita de él.
+2. **Explicarle en plano** lo que ha traído cada sesión (§10.9, §10ter): qué hizo, qué significa,
+   qué se decide.
+3. **Jira**, y decirlo aunque no haya nada: se CIERRA lo que su efecto demuestra (§10bis.16), se
+   pone **EN CURSO + asignado a Luis** lo que una sesión está trabajando y no lo esté, y se dice
+   qué no se puede cerrar y por qué.
+4. **Decidir** lo delegado (microcopy, lo que sea del orquestador) y decir qué se decidió.
+5. **Prompts SOLO a las sesiones cuya respuesta ha traído él** (§10.5-10.6), cada uno casado con
+   su carril (§11bis), con la línea «↩️ MISMO CHAT / 🆕 CHAT NUEVO de la Sesión N» ENCIMA del
+   bloque (§10.11bis), completos y sin huecos.
+6. **Memoria de traspaso al día** (qué está en main por efecto, qué queda, ramas y PR).
+7. **Lo que tiene que hacer él, SIEMPRE AL FINAL** del mensaje, numerado y corto; si no hay
+   nada, se dice. Los pasos manuales, uno a uno.
+
+    🔒 Un turno que se salta un paso de esta lista le deja al fundador el trabajo de notarlo.
+
 ## 1 · Qué es
 
 Asesor de tecnología y producto del fundador de YaQu. Decide, escribe
