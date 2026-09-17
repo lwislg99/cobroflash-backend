@@ -99,3 +99,41 @@ banco, con un `claude` falso con estado.
 las ramas REMOTAS vivas, y existe `origin/scrum-904`, sin sufijo. **Control:** en un árbol limpio de `origin/main`
 (`2be8fe16`, sin nada de este PR), los dos ficheros de SCRUM-804 dan exactamente el mismo fallo. Es del entorno, no de
 este cambio, que no toca nada de 804.
+
+## ⑤ A19 · el relevo de sesión, escrito en las normas (Sesión 0)
+
+**Medido contra:** `origin/main` = `45eb9b8a97840a8306d494b3d85073e5e7b88756` · 2026-09-17T15:24:27Z
+
+**Encargo del orquestador** (17-sep, por el canal): reescribir la A19 de `docs/equipo/00-normas-comunes.md` con el
+flujo de relevo que el fundador decidió tras la prueba de este ticket. Dentro:
+- puesto fijo y sesión desechable;
+- cuándo se releva y cuándo no;
+- la plantilla del traspaso;
+- «traspaso listo» por el canal, y parar;
+- las autorizaciones que no se heredan.
+
+Con el ajuste del fundador (~15:30Z): **no en cada tarea**, sino al terminar una entrega si el contexto pasa de 300k,
+tras más de 1 h parada o al empezar la tanda del día siguiente; y siempre con seis puestos ocupados.
+
+**Qué cambia (solo `docs/`):**
+- `docs/equipo/00-normas-comunes.md`: A19 reescrita y con la historia conservada. La versión del 16-sep queda citada
+  como SUPERADA, sin borrar sus tres correcciones ni la medición de tokens. A14, punto 3, pasa a nombrar el aviso
+  «traspaso listo».
+- `docs/equipo/traspaso.md` §3bis: la entrada «A19 (chat nuevo)» queda marcada SUPERADA, con fecha y motivo.
+- `docs/equipo/afirmaciones-verificadas.md`: en la fila de la medición de tokens del 16-sep, la lectura «mismo chat»
+  queda marcada SUPERADA; la medición no cambia.
+
+**Revisado sin cambios:** `sesion-0.md` … `sesion-5.md` no dicen «mismo chat» ni «chat nuevo».
+- Comando: `grep -n "chat\|300k\|200k\|relev" docs/equipo/sesion-*.md`. Da 0 coincidencias.
+- **Suelo:** la misma búsqueda sobre `traspaso.md` y `afirmaciones-verificadas.md` SÍ encuentra las líneas 55, 57 y 59,
+  así que no está ciega.
+
+**Visto y NO tocado, por carril:**
+- `orquestador.md` (líneas 40-41 y 283-284: «chat nuevo» y «↩️ MISMO CHAT»). Es el método del orquestador y su §0 lo
+  reescribe él.
+- `orquestador-autonomo.md` (F4 «abrir sesiones nuevas… sigue siendo del fundador», líneas 24 y 68). Es de la S5.
+
+Los dos siguen describiendo el flujo anterior.
+
+**Lo que no está medido:** las frases del fundador llegan transmitidas por el orquestador y por la memoria del proyecto
+(`feedback_relevo_sesion_fresca.md`), no citadas del chat del fundador. La norma lo declara.
