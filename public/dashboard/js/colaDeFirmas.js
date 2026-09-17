@@ -456,8 +456,42 @@ async function drenarAlAbrir() {
 }
 
 // Frontend vanilla, sin bundler: se publica en `window` como el resto del dashboard.
+/**
+ * 🔴 SCRUM-919 · LA COLA TAMBIÉN SE VACÍA AL VOLVER LA RED Y AL VOLVER A PRIMER PLANO.
+ *
+ * Medido por la Sesión 0 con corte real (17-sep-2026): sólo se vaciaba al RECARGAR. Ni el evento
+ * `online` ni sacar el móvil del bolsillo la tocaban, así que una firma hecha en un sótano se quedaba
+ * en el móvil hasta que alguien recargaba la app.
+ *
+ * Sigue sin haber Background Sync ni push (ver `app.js`): esto sólo funciona CON YaQu ABIERTO, y el
+ * texto del pad lo dice así.
+ *
+ * El cerrojo evita dos vaciados a la vez (`online` y `visibilitychange` suelen llegar juntos al salir
+ * de un sótano). Aun sin él, la idempotencia de hoy (clave de idempotencia + `*_locked` = ya la tiene)
+ * impediría una firma doble; el cerrojo ahorra la segunda subida.
+ */
+let vaciadoEnCurso = null;
+function drenarSiNoSeEstaDrenando() {
+  if (vaciadoEnCurso) return vaciadoEnCurso;
+  vaciadoEnCurso = drenarAlAbrir().finally(() => { vaciadoEnCurso = null; });
+  return vaciadoEnCurso;
+}
+
+/** Engancha el vaciado a `online` y a `visibilitychange` → visible. Una sola vez por ventana. */
+function activarDrenadoAlVolver(win, doc) {
+  const w = win || window; const d = doc || document;
+  if (!w || !d || typeof w.addEventListener !== 'function' || typeof d.addEventListener !== 'function') return false;
+  if (w.__yaquDrenadoAlVolver) return false;
+  w.__yaquDrenadoAlVolver = true;
+  w.addEventListener('online', () => { drenarSiNoSeEstaDrenando(); });
+  d.addEventListener('visibilitychange', () => { if (d.visibilityState === 'visible') drenarSiNoSeEstaDrenando(); });
+  return true;
+}
+
 window.subirFirmaDeLaCola = subirFirmaDeLaCola;
 window.drenarAlAbrir = drenarAlAbrir;
+window.drenarSiNoSeEstaDrenando = drenarSiNoSeEstaDrenando;   // SCRUM-919
+window.activarDrenadoAlVolver = activarDrenadoAlVolver;
 window.claveDeFirma = claveDeFirma;
 window.encolarFirma = encolarFirma;
 window.firmarConRedDeSeguridad = firmarConRedDeSeguridad;
