@@ -113,8 +113,16 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // Configuración con un obligatorio vacío en otra pestaña. Solo un navegador valida formularios, y
   // el fallo era justo eso: el navegador frenaba el envío y no podía señalar un campo oculto.
   // Comprobado en rojo contra `018d1807` (17-sep-2026): 6 de 12 casos.
-  assert.equal(fuera.length, 20,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ 20 → ${fuera.length}.\n`
+  // SCRUM-904 · 20 → 21: entra `guard:completar-lleva-al-campo`. PULSA las 4 filas del checklist de
+  // Configuración desde las 9 pestañas. Sube por el motivo de SCRUM-894 —sólo un navegador sabe si
+  // algo SE VE: en el fuente, un `focus()` sobre un campo visible y uno sobre un campo oculto se
+  // leen igual— y por uno propio que ninguno de los veinte tenía: **exige que la superficie que
+  // mide esté MONTADA antes de dar veredicto**. Su primera pasada dejó 9 casos sin medir porque el
+  // banco devolvía `{enabled:false}` y la tarjeta de Connect ni se pintaba; ahora eso es una
+  // ceguera declarada, no un verde. Comprobado en rojo contra el `settingsView.js` de `76c786f6`
+  // (17-sep-2026): exit 1 con 33 fallos de 36 casos.
+  assert.equal(fuera.length, 21,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ 21 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
