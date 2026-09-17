@@ -1317,6 +1317,20 @@ export async function pintarVista(banco, nombreFn, ...argumentos) {
     return { error: new Error(`la vista no publica \`${nombreFn}\` (es ${typeof fn})`), contenedor: null };
   }
   const contenedor = banco.mk('div');
+  // 🔴 SCRUM-901 · LA VISTA SE MONTA DENTRO DEL DOCUMENTO. El contenedor quedaba suelto, así que
+  // `document.querySelector` —que recorre `document.body`— no veía nada de la vista, aunque
+  // `getElementById` sí (tira del registro). Medido sobre 8c354ff3: `renderSetupChecklist` no
+  // encontraba `.kpi-grid` y la Inicio salía sin «Completa tu configuración», −51 frente a Edge.
+  // Como el panel, que pinta cada vista en el MISMO hueco, la montada antes sale del documento,
+  // con sus id.
+  const cuerpo = banco.ctx.document.body;
+  const anterior = banco.montada;
+  if (anterior && anterior._padre === cuerpo) {
+    cuerpo.removeChild(anterior);
+    for (const d of todos(anterior)) if (d._id && banco.reg.porId.get(d._id) === d) banco.reg.porId.delete(d._id);
+  }
+  cuerpo.appendChild(contenedor);
+  banco.montada = contenedor;
   const idsAntes = banco.reg.idsNoResueltos.length;
 
   // 🔴 SCRUM-698 · LOS RECHAZOS HUÉRFANOS SE RECOGEN, NO MATAN EL PROCESO.
