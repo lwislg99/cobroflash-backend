@@ -183,3 +183,91 @@ una carrera entre sus dos lecturas con ~26 worktrees empujando —o sea, estado 
 y el mío, hasta donde llega esta medición, no tiene escritor concurrente ninguno. Lo único que
 comparten es el síntoma. Si mi pista del `tmpdir` se confirmara, entonces sí serían familia
 —los dos serían estado compartido entre worktrees— y ése sería el hallazgo. **Hoy no está medido.**
+
+---
+
+# APÉNDICE · 17-sep-2026 · SCRUM-873c · La pista del PID, DESCARTADA con control positivo — y tres pasadas limpias
+
+**Medido contra:** `origin/main` = `3038dfe7e213890996bc427b7f1828f5bb50d329` · 2026-09-16T20:02:44Z
+**Rama:** `scrum-873-el-intermitente-de-206b` · **Sigue sin reproducirse: el ticket NO se cierra.**
+
+> 🔴 **La corrección del encargo es la que hizo posible el experimento**, y no era un detalle: dos
+> procesos VIVOS nunca comparten PID. El reciclaje ocurre en el TIEMPO, así que el choque sólo
+> podía ser con el **resto de un proceso MUERTO**. Yo lo había planteado como colisión en paralelo
+> —que es imposible— y por eso mi pista era inmedible tal como la escribí.
+
+## ① La pista del PID: descartada, y con el control positivo delante
+
+### a) ¿Borra sus ficheros?
+
+Sí: `fs.rmSync(malo)` y `fs.rmSync(bueno)` en un **`finally`**. Pero un `finally` **no se ejecuta
+si matan el proceso** —lo documentó SCRUM-808—, así que restos *podría* haber.
+
+### b) La foto de hoy: **cero**
+
+```
+TMPDIR ......................... 57.414 entradas
+restos `yaqu-*` en total ....... 16.760      ← el barrido VE (control)
+restos `yaqu-206b-*` ........... 0
+```
+
+**Su limpieza funciona.** No es un productor de restos, a diferencia de otros de la casa.
+
+### c) ¿Qué hace si encuentra el fichero YA EXISTENTE? — con control positivo obligatorio
+
+Para provocarlo a voluntad hay que conocer el PID **antes** de que el test escriba, y con
+`node --test` no se puede (el runner lanza un nieto). Se montó un envoltorio que publica su PID,
+espera la señal y sólo entonces importa el fichero de test:
+
+| escenario | exit | ¿falla? |
+|---|---|---|
+| **A · sin resto (suelo)** | 0 | no ✅ |
+| **B · resto como FICHERO con contenido** | 0 | **no** |
+| **C · resto como DIRECTORIO con el mismo nombre** | 1 | **🔴 sí — `EISDIR`** |
+
+**El control positivo pasa** (C cae), así que el «no» de B **no es un verde permanente**: el banco
+sabe decir que sí.
+
+> **VEREDICTO: la pista se descarta.** `writeFileSync` **sobrescribe**, así que el resto realista
+> —un fichero— se pisa sin consecuencias. La única forma que rompe es un **directorio** con ese
+> nombre exacto, y ese nombre es **exclusivo de `scrum206b`**, que sólo crea ficheros. Nada en el
+> árbol puede producir el resto que haría falta. Y hoy hay **cero** restos de cualquier forma.
+
+## ② ¿Cae siempre en el mismo punto? — **no cayó ninguna vez**
+
+Tres pasadas completas, desatendidas, con el lanzador **fuera del repo**:
+
+| pasada | resultado | minutos | ficheros | ok | fallos |
+|---|---|---|---|---|---|
+| 1 | FIN | **42** | 837 | 7.016 | **0** |
+| 2 | FIN | **35** | 837 | 7.016 | **0** |
+| 3 | FIN | **13** | 837 | 7.016 | **0** |
+
+**Ninguna de las tres cayó, y eso también se registra.** La pregunta «¿cae siempre en el mismo
+punto?» sigue **sin poder contestarse**, porque el fenómeno no se presentó.
+
+⚠️ **Y las tres cuentan para [SCRUM-858](SCRUM-858.md):** la serie pasa a
+**18 · 35 · 45-sin-terminar · 14 · 40 · 42 · 35 · 13**. Las tres de hoy son el mismo árbol, la
+misma invocación y la misma máquina, **seguidas**, y van de **13 a 42 minutos** — ×3,2 sin tocar
+nada. Es la mejor muestra que tiene ese ticket: descarta cualquier explicación que dependa del
+contenido del árbol, porque el árbol fue idéntico en las tres.
+
+## ③ El puente con SCRUM-804: **NO se escribe**
+
+La condición era «sólo si ① confirma el resto **reutilizado**». **No se reutiliza: se sobrescribe.**
+Mantengo la reserva: con lo medido **no puedo afirmar que sean el mismo mecanismo**, y no escribo
+ningún puente.
+
+## Lo que queda
+
+1. **Sigue sin reproducirse**, y por eso el ticket **no se cierra**. Van ya: 0/40 solo · 0/20 con
+   carga · 0/15 en tanda parcial · **0/3 en tanda completa**.
+2. **Descartadas con medición:** el barredor que lee mientras otro escribe (0 escritores en `src/`
+   de 403 sitios) · la colisión por PID (§1) · la carga de CPU/E-S · el crecimiento del árbol.
+3. **Lo único que queda vivo** de lo observado originalmente es que ocurrió **1 de 2 veces** en la
+   sesión que lo vio. Con 78 pasadas limpias acumuladas entre todos los escenarios, o fue algo del
+   estado de aquella máquina en aquel momento, o hace falta una condición que nadie ha nombrado.
+4. **Y un quinto arnés roto por el camino**, que va escrito como los otros cuatro: el envoltorio
+   importaba el test con una ruta `C:\…` y en ESM eso falla sin `pathToFileURL`. Los tres
+   escenarios daban rojo por igual y el **suelo** lo cazó — sin él me habría apuntado un
+   «la pista se confirma» que era un fallo mío de importación.
