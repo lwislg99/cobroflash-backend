@@ -73,6 +73,7 @@ import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaE
 import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../../core/documentos/direccionObra';
 // SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
+import { firmaTieneTrazo, ERROR_FIRMA_VACIA, COPY_FIRMA_VACIA } from '../../domain/firmaConTrazo';
 
 
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
@@ -514,6 +515,13 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         error: 'quote_expired',
         message: 'Este presupuesto caducó. Pide uno actualizado al profesional.',
       });
+    }
+
+    // SCRUM-892 · una firma que LLEGA tiene que tener trazo, en cualquier modo (un precio o «3
+    // opciones»): antes se aceptaba `data:,` y se sellaba la evidencia sobre nada. Mandar la firma
+    // es opcional —«Acepto sin firmar» manda `null` y sigue valiendo—; mandarla vacía, no.
+    if (decision === 'accept' && req.body?.signatureData != null && !firmaTieneTrazo(req.body.signatureData)) {
+      return res.status(422).json({ error: ERROR_FIRMA_VACIA, message: COPY_FIRMA_VACIA });
     }
 
     let updatedQuote: any = quote;

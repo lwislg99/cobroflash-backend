@@ -143,7 +143,9 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // ⚠️ Los DOS de arriba entraron a la vez, en ramas distintas, y el conflicto fue de git y no
   // de criterio: los dos AÑADEN. Se conservan los dos —convención de `//guards` en
   // package.json—, nunca se elige uno.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
+  // SCRUM-892 · `guard:firma-con-tramos`: la página la fabrica él —renderiza la ruta de aceptación
+  // compilada y la sirve en un puerto propio— y no la comparte con ningún otro guard.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:firma-con-tramos', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });
