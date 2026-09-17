@@ -130,7 +130,12 @@ const PORNOMBRE = (() => {
 /**
  * 🔴 ESTE CENSO NO LEE NEGACIONES, y lo dice en vez de acusar.
  *
- * `yaqu-verifactu-sif:88` afirma que `docs/VERIFACTU_EVIDENCIAS.md` **NO existe** — y tiene razón.
+ * `yaqu-verifactu-sif:88` afirma que cierto documento de evidencias **NO existe** — y tiene razón.
+ *
+ * ⚠️ Su ruta NO se escribe aquí, y el motivo es de este mismo ticket: la primera versión de este
+ * comentario la citaba entera y `scrum242-scripts-no-prometen-documentos` me cazó — un script no
+ * puede nombrar un documento que no está en el árbol, ni siquiera para decir que no está. Escribí
+ * el defecto que venía a medir. La ruta se lee en la línea 88 de esa skill, que es su dueña.
  * Mi extractor veía la ruta, comprobaba que no está y la marcaba FALSA: la skill acertaba y el
  * instrumento la acusaba. Una afirmación NEGADA necesita leer la polaridad de la frase, y eso ya
  * no es «el árbol dice sí o no»: es interpretar castellano.

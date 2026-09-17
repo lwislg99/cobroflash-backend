@@ -137,6 +137,12 @@ es mía.
 habría sido acusar a tres skills de decir falsedades que no dicen. **Lo cacé leyendo la lista
 entera antes de creérmela**, no por un control.
 
+**③ Escribí en mi propio instrumento el defecto que venía a medir.** Un comentario del censo citaba
+la ruta entera del documento de evidencias que `yaqu-verifactu-sif` declara inexistente — y
+`scrum242-scripts-no-prometen-documentos` me cazó: **un script no puede nombrar un documento que no
+está en el árbol, ni siquiera para decir que no está.** El arreglo fue en mi comentario, nunca en
+la lista del guard. Es la tercera vez hoy que un instrumento mío se cuela en la población que mide.
+
 **② El heredoc se comió las barras de mi propio control positivo.** Escribí el caso de `gh` con
 `\\` y el fichero quedó con `\`, así que en JS `\P` es `P` y la ruta perdió sus barras: el control
 falló diciendo «no se extrae la RUTA_ABS», que era cierto pero por un motivo que no era el suyo.
