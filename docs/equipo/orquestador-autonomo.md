@@ -94,4 +94,6 @@ denegado es saltarse el permiso del fundador por la puerta de al lado.
 | Dar por el canal el «adelante, empuja» a un PR del camino del cobro con auto-merge (empujar = desplegar a producción) | *Production Deploy* | El **fundador escribe el sí en el chat de esa sesión**. El orquestador prepara, revisa y se lo explica en plano |
 | Un comentario de firma en Jira (SCRUM-890) | *External System Writes*, **una vez**; el mismo comentario, repetido más tarde por petición expresa del fundador, pasó | Si se bloquea, lo pega el fundador |
 
+**Medido después, el mismo 17-sep (~09:38Z):** cuando el fundador escribió en el chat del orquestador una autorización EXPRESA para esas dos acciones («te doy todos los permisos para hacerlo»), la regla de permiso se añadió con Edit y el aviso de despliegue a la S1 pasó. Lo que el clasificador frena es la acción sin autorización expresa del fundador en ese chat. La regla de la casa: el orquestador pide la autorización expresa en una línea, y solo con ella lo hace él mismo. Nunca se rodea sin ella.
+
 🔒 Un bloqueo de permisos no es un fallo a arreglar: es la raya que el fundador aún no ha movido.
