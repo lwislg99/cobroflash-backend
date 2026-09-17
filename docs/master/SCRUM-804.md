@@ -1426,3 +1426,16 @@ El guion existía (SCRUM-738) para que `scrum-72` no casara con el principio de 
 
 ### Verificación
 Los 9 ficheros que consumen la regla (reparto, alcanzabilidad, tablero, rastro, 804, 804f, 738, 753, 387), más 723: en verde. `npm test` completo **no** se ha corrido en local, para no quitarle tiempo a un `main` bloqueado y porque la sonda de SCRUM-858 seguía corriendo; lo corre el CI del PR. La comprobación del PR va en un paso aparte.
+
+### Añadido tras los datos de Javier (orquestador, 17-sep 16:25 CEST)
+- **Lo que midió Javier:** de 150 ramas vivas, 93 con forma de ticket, y sólo `scrum-904` rompía el barrido. `scrum-421-…-INCOMPLETO` y `scrum-474-…-INCOMPLETO` llevan el slug en mayúsculas, pero el guion tras el número ya las delimitaba y el barrido las alcanza. Su propuesta, `^scrum-(\d+)([a-z])?(-|$)`, es equivalente a la aplicada; Javier retira la suya y renombra `scrum-904` → `scrum-904-completar-lleva-al-campo`.
+- **EL LÍMITE, fijado por el orquestador:** una rama **sin número** (`scrum-paso0-dinero`) NO se atribuye a ningún ticket. Queda **declarada** en `sinNumero`, visible y contada en el total, nunca descartada en silencio. Lo fija el nuevo NEGATIVO de `scrum804f` (commit `c48d220183ecc3848bec429b163d8fd8316ac12e`).
+- **M4, inventar un número** (`^scrum-\D*0*(\d+)…`, que convierte `scrum-paso0-dinero` en 0): muerto. Caen el NEGATIVO y el POSITIVO sobre los refs de hoy.
+
+### A12 · quién comparte el lector (y quién NO se ha tocado)
+El lector cambiado es **uno**, `scripts/_numero-de-rama.mjs`. Sus consumidores, por import y no por nombre:
+- `scripts/_censo-reparto.mjs` (`agruparRamas`), y a través de él `scripts/censo-reparto.mjs`, `scripts/_rastro-del-ticket.mjs` (el censo de SCRUM-804) y `scripts/_censo-alcanzabilidad.mjs`;
+- `scripts/censo-tablero-vs-arbol.mjs` (`poblacionDe`, que reexporta la regla), y a través de él `_censo-alcanzabilidad`;
+- tests: `scrum387`, `scrum738`, `scrum753`, `scrum804`, `scrum804f`, `scrum829b`.
+
+**NO comparte el lector, y NO se ha tocado:** `tests/_entrada-de-la-rama.mjs` (SCRUM-854), que tiene su propio `numeroDeRama` (`/^scrum-(\d+)/i`) y ya aceptaba las ramas sin slug. Tampoco el resto de instrumentos que miden sobre ramas remotas con su propio lector: los de la cuenta de Javier (27) que no aparecen arriba no importan esta regla.
