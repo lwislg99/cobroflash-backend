@@ -241,19 +241,70 @@ no sobre el árbol.** Es deliberado: mide sobre la forma que `src/` tiene de ver
 nada. Y la acusación se genera con **una sola función**, `acusacion()`, para que el control
 compruebe el texto que de verdad se emite y no una copia suya que podría decir otra cosa.
 
-### Por qué NO se declara mutación al meta-guard
+### 🔴 La mutación al META-guard: SÍ se ha hecho, y el cerrojo se puso ROJO DE VERDAD
 
-Cualquier mutación que haga saltar el cerrojo tiene que **escribir un campo fiscal en un fichero
-real de `src/`**, y este ticket tiene un STOP sobre `src/` (regla 38). La mutación de dentro del
-test hace el mismo trabajo —cuenta 1, cambia el veredicto, comprueba el texto— **sin tocar el
-árbol**. Queda dicho aquí en vez de omitido.
+*(Esta sección decía antes «por qué NO se declara mutación al meta-guard». Estaba mal razonada: daba
+por bueno que mutar exigía escribir un campo fiscal en `src/`, que es STOP. No lo exige. **Un rojo
+esperado se cree solo**, así que se provocó.)*
 
-## Resultado
+El instrumento se **comiteó ANTES de tocarlo** (`f7466a4a`) y se perturbó sobre el árbol real, con
+`npm test` de verdad, no con una copia del razonamiento. Dos perturbaciones, las dos restauradas:
+
+**P1 · ¿puede el cerrojo ponerse rojo?** `chargeId` se mueve de la lista FICHA a la lista FISCAL
+—una sola línea del clasificador, **cero líneas de `src/`**—:
 
 ```
-11 tests · 11 pasan · 0 fallan
-FISCAL=0 · SELLADO=8 · FICHA=12 · NO_CLASIFICADO=0
+EXIT=1 · 11 tests · 6 pasan · 5 FALLAN
+not ok  9 — SCRUM-878b · 🔒 EL CERROJO
+not ok 10 — CONTROL DEL CERROJO (acusa con fichero y línea)
+not ok  4, 6, 11 — los VERDE REAL y la MUTACIÓN de la fase a
 ```
+
+Y la acusación, **copiada de la salida real**, no parafraseada:
+
+```
+🔴 HAY ESCRITURAS QUE EDITAN CONTENIDO FISCAL DE UNA FACTURA EMITIDA:
+    · src/modules/billing/domain/invoiceWhatsApp.service.ts:78 — toca chargeId
+```
+
+🔴 **Ese fichero es exactamente la escritura por la que se abrió SCRUM-878**: un `invoice.update`
+**de SERVICIO**, el que `scrum124` no puede ver porque censa rutas. El cerrojo lo nombra con
+fichero y línea. La cadena entera —defecto declarado → guard nuevo → rojo que apunta al sitio—
+queda cerrada sobre el caso original, no sobre uno inventado.
+
+**P2 · ¿el suelo aguanta?** El censo se apunta a un modelo inexistente, población 0:
+
+```
+EXIT=1 · not ok 1 — SUELO · not ok 9 — EL CERROJO
+error: '🔴 CIEGO: el censo no ve NINGUNA escritura sobre Invoice en todo `src/`…'
+```
+
+⚠️ **Esto es lo que salva al cerrojo de ser una tautología.** Con población 0 la lista de FISCAL
+sale vacía y el `deepEqual(…, [])` **habría pasado**: el cerrojo daría VERDE sobre la nada. El suelo
+va antes del veredicto y dentro del mismo test, y por eso el test 9 cae en CIEGO en vez de aprobar.
+
+**Restauración:** las dos veces con el diff a la vista y por la puerta que el propio
+`guard-dangerous` prescribe (`.claude/allow-destructivo`, un solo uso) — el hook bloqueó
+`git checkout --` y bloqueó el `>` sobre un fichero versionado, las dos veces con razón. No se
+esquivó por otra herramienta: se miró qué se perdía y sólo era la perturbación.
+
+## Resultado — con la POBLACIÓN, no sólo el veredicto
+
+```
+el fichero:   11 tests · 11 pasan · 0 fallan · 0 saltados
+la tanda:     7.366 tests en 879 ficheros · 7.256 pasan · 0 FALLAN · 110 saltados
+              los 110 saltos, todos gateados por base (QA_DB_TEST / LIBRO_PG_URL /
+              TRAMOS_PG_URL / SERIE_PG_URL). NINGUNO de SCRUM-878.
+guards:entrada: verde (exit 0)
+build:          verde (exit 0), y ANTES que los tests
+FISCAL=0 · SELLADO=8 · FICHA=12 · NO_CLASIFICADO=0   (sobre 20 escrituras / 288 ficheros)
+```
+
+⚠️ **Un tropiezo del instrumento, y se cuenta:** el primer intento de correr la tanda salió
+`EXIT=126` con `Argument list too long` — 879 ficheros no caben en la línea de órdenes de bash. Si
+llego a leer sólo «no veo fallos» habría cantado un verde sobre una tanda **que no llegó a
+arrancar**. Lo cazó mirar el código de salida, que es para lo que está. Se arregla dejando que el
+glob lo expanda node (`"tests/*.test.mjs"` entre comillas), no bash.
 
 El cerrojo entra **en verde y en 0**, que es como debe entrar un trinquete: no arregla nada hoy,
 impide que mañana se rompa sin que nadie lo decida.
