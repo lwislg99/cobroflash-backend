@@ -56,6 +56,31 @@ nos bloquea lo solucionamos al momento y me lo dices».
   sesiones sin que el fundador copie y pegue**, además del bucle PR → CI → merge → aviso.
 - Un bloqueo no se aparca en silencio: se resuelve al momento y se le dice qué bloqueaba.
 
+## Qué es YaQu (17-sep-2026, de viva voz)
+
+**YaQu ES un software de gestión completo —un ERP— para oficios, empresas y autónomos, y quiere abarcarlo
+todo.** Sus palabras: «el máster está antiquísimo, claramente somos un ERP; por una norma de no borrar nada
+del máster hay cosas mega antiguas». El veto «YaQu NO es un ERP ni un CRM» (Parte Z del máster, repetido en
+la skill `cerebro-yaqu`) **queda RETIRADO por el fundador**. Hasta que se cambie el máster manda esta línea,
+y cambiarlo es una propuesta de cambio de máster pendiente.
+
+## Delegaciones del 17-sep-2026
+
+- **El visto bueno de arreglos de producto que tocan el cobro lo da el orquestador** («tú eres jefe de
+  producto, dalas tú»). ⚠️ **Medido el mismo día:** cuando ese visto bueno significa DESPLEGAR a producción (PR
+  con auto-merge), el clasificador de permisos no deja al orquestador darlo por el canal. **El sí lo escribe el
+  fundador en el chat de la sesión**; el orquestador lo prepara y se lo explica (`orquestador-autonomo.md` §7).
+- **Sigue siendo suyo:** coste nuevo, infraestructura de producción, schema (con Javier), el camino de emisión
+  FISCAL y los permisos de Claude Code.
+- **Permiso acotado para SCRUM-899 (sesiones de prueba `control-899-*` y tareas programadas de un solo uso):
+  autorizado por él.** La regla la pone él a mano, porque al orquestador se le bloquea tocar la configuración.
+
+## El horario del equipo (17-sep-2026)
+
+«Que el equipo arranque por la mañana y haga varias tandas al día, cuando haya uso de nuevo.» Provisional:
+cron del orquestador **a las 8:57, 13:57 y 18:57** todos los días (`orquestador-autonomo.md` §2, F5). Lo
+robusto está en SCRUM-899.
+
 ## Cómo quiere trabajar
 
 - El cuadro del bucle SIEMPRE primero, antes de los prompts (sustituye al «bloque de merge»:

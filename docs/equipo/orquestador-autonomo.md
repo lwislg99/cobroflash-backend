@@ -18,18 +18,19 @@ quiere añadir trabajo o tiene que decidir algo reservado para él (§5).
 | pieza | estado | cómo se sabe |
 |---|---|---|
 | **F1 · Canal directo** orquestador ⇄ sesiones | ✅ **FUNCIONA** | **Medido el 17-sep ~08:50Z:** el orquestador escribió a las 7 sesiones locales y **las seis contestaron por el mismo canal en minutos**, sin cortar su trabajo. Desde ese momento los encargos van por ahí |
+| **F1b · Una sesión despierta al orquestador parado** | ✅ **FUNCIONA** | **Medido el 17-sep ~09:02Z:** el informe de la S5 abrió un turno del orquestador, que estaba parado, sin que el fundador escribiera nada. El bucle sesión → orquestador → sesión corre solo **mientras el chat del orquestador siga abierto** |
 | **F2 · Nombres estables** | ⏳ SCRUM-899 | Hoy cada chat tiene un nombre automático (`cobroflash-backend-35`…) que **cambia si el chat se reanuda** (según la documentación, no medido). Con `/rename` se fija un nombre estable |
 | **F3 · Saber cuándo termina una sesión** sin preguntar | 🟡 disponible, sin usar todavía | `SendMessage` con `notify_when_idle`: un aviso cuando la sesión se queda libre. Prohibido mandar mensajes de «¿has terminado?» |
 | **F4 · Abrir sesiones nuevas** | 🔴 **no documentado** | Una sesión no puede abrir otro chat interactivo. Hasta que la S5 mida otra vía, **abrir un chat nuevo sigue siendo del fundador** (§5) |
-| **F5 · Arrancar solo por la mañana** | ⏳ SCRUM-899 | Opciones según la documentación, a MEDIR en local: `/loop` (local, el chat tiene que seguir abierto), tareas programadas de escritorio (locales) y rutinas en la nube (clonan el repo desde cero, sin worktrees ni bancos locales, y gastan del mismo uso de la suscripción) |
-| **F6 · Trabajar mientras haya uso disponible** | ⏳ SCRUM-899 | No hay forma documentada de «seguir cuando se renueve el límite». Se diseñará con horas fijas y un parar limpio |
+| **F5 · Arrancar solo por la mañana** | 🟡 **PROVISIONAL en marcha** · lo robusto en SCRUM-899 | **17-sep:** `CronCreate` en el chat del orquestador, trabajo `80667c74`, **todos los días a las 8:57, 13:57 y 18:57** (hora de Madrid), con la orden de arranque (leer §0, medir, despertar a las libres, Jira, traspaso). **Límites, medidos en la herramienta:** vive solo mientras ese chat esté abierto (no se guarda en disco), se dispara solo con el chat parado y **caduca a los 7 días (renovar antes del 24-sep)**. Lo robusto, a MEDIR por la S5: tarea programada de Windows + CLI `claude` (instalado, 2.1.263). Las rutinas en la nube no sirven para mandar al equipo: clonan GitHub desde cero y no ven los worktrees, los bancos ni los chats locales |
+| **F6 · Trabajar mientras haya uso disponible** | ⏳ SCRUM-899 | La S5 leyó en la documentación el ajuste `autoContinueAtUsageLimit` (≥2.1.234): espera a que se renueve el límite y sigue. **No medido.** Las tres horas del cron de F5 están pensadas para caer en ventanas de uso distintas |
 
 ## 3 · El protocolo del canal
 
 **Direcciones de hoy (17-sep, cambian si el chat se reanuda hasta que haya nombres fijos):**
 `cobroflash-backend-bb` = orquestador · `35` = S0 · `40` = S1 · `9c` = S2 · `7d` = S3 · `02` = S4 ·
-`b9` = S5. Antes de escribir, `ListAgents`, y si una dirección no casa, se pregunta: «dime qué Sesión
-eres, en una línea».
+`b9` = S5 · `a3` = chat del orquestador ANTERIOR, parado, que no cuenta en el equipo. Antes de escribir,
+`ListAgents`, y si una dirección no casa, se pregunta: «dime qué Sesión eres, en una línea».
 
 **Del orquestador a una sesión:**
 - La **primera línea** dice sesión · carril · ticket · qué es. Es lo único que se ve sin desplegar.
@@ -58,8 +59,9 @@ por efecto, desatascar, y dar GO a empujar lo que NO toque lo de §5.
 
 ## 5 · Lo que SIEMPRE vuelve al fundador
 
-- **Dinero y camino fiscal** (regla 38): el orquestador revisa, se lo explica en plano y **espera su GO**
-  antes de que la sesión empuje.
+- **Desplegar un arreglo del cobro**: el visto bueno de producto lo tiene delegado el orquestador (17-sep),
+  pero el sí de EMPUJAR lo escribe el fundador en el chat de la sesión (§7). **Camino de emisión fiscal**
+  (regla 38): STOP, sin delegar.
 - **Coste o dependencia nueva** (regla 36): también rutinas o planes que gasten más.
 - **Schema** (① decisión → ② ALTER de Javier → ③ PR) e **infraestructura de producción**.
 - **Secretos**: nunca por el canal ni por el chat.
@@ -78,3 +80,18 @@ por efecto, desatascar, y dar GO a empujar lo que NO toque lo de §5.
   no contesta, se mira `ListAgents` (ocupada, libre o desaparecida) antes de suponer nada.
 - **Un nombre automático caduca.** Mientras no haya nombres fijos (F2), una dirección vieja puede ser
   otro chat. Si no casa, se pregunta.
+
+## 7 · Lo que el sistema de permisos NO deja hacer al orquestador (medido el 17-sep-2026)
+
+Cada uno salió bloqueado por el clasificador de permisos de Claude Code. **Ninguno se rodea**: se le pasa
+al fundador con los pasos exactos, uno a uno. Pedirle a una sesión que haga lo que al orquestador le han
+denegado es saltarse el permiso del fundador por la puerta de al lado.
+
+| lo que se intentó | motivo del bloqueo | quién lo hace entonces |
+|---|---|---|
+| Añadir una regla de permiso en `.claude/settings.local.json` (para SCRUM-899) | *Self-Modification* | El **fundador**, a mano |
+| Lanzar sesiones de Claude en segundo plano (`claude --bg`, incluso `claude agents --help`) desde la S5 | *Create Unsafe Agents* | Con una regla de permiso acotada que pone el fundador |
+| Dar por el canal el «adelante, empuja» a un PR del camino del cobro con auto-merge (empujar = desplegar a producción) | *Production Deploy* | El **fundador escribe el sí en el chat de esa sesión**. El orquestador prepara, revisa y se lo explica en plano |
+| Un comentario de firma en Jira (SCRUM-890) | *External System Writes*, **una vez**; el mismo comentario, repetido más tarde por petición expresa del fundador, pasó | Si se bloquea, lo pega el fundador |
+
+🔒 Un bloqueo de permisos no es un fallo a arreglar: es la raya que el fundador aún no ha movido.
