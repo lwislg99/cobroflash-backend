@@ -40,6 +40,10 @@ const RAIZ = 'C:/Users/Javier Pereira/cobroflash-b2';
 const SCRATCH = 'C:/Users/JAVIER~1/AppData/Local/Temp/claude/c--Users-Javier-Pereira-cobroflash-b2/55056e52-6eb0-4ece-8997-627308362091/scratchpad';
 process.chdir(RAIZ);
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'recorre866-'));
+// SCRUM-864c · el `rmSync(TMP)` del final sólo corre si todo sale bien, y este script sale antes
+// por `process.exit(2)` cuando el censo queda CIEGO. El enganche de salida lo cubre pase lo que
+// pase; el borrado del final se queda, que no estorba.
+process.on('exit', () => { try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* ya no está */ } });
 const LIMITE = Number(process.env.LIMITE || 0);
 const ESPIA = 'file:///' + (SCRATCH + '/espia-lecturas.mjs').replace(/ /g, '%20');
 

@@ -36,6 +36,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { temporal } from './_temporal.mjs';
 
 import {
   aprobacionesDeMicrocopy, constaAprobado, literalesAprobados, pendientesDeFirma,
@@ -72,7 +73,7 @@ const FICHA = '2026-09-15-SCRUM-600-delegada.md';
 
 /** Un directorio de trabajo en `os.tmpdir()`, con su carpeta de fichas. */
 const escenario = () => {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum861-'));
+  const raiz = temporal('scrum861-');
   const dir = path.join(raiz, 'microcopy');
   fs.mkdirSync(dir);
   return { raiz, dir };

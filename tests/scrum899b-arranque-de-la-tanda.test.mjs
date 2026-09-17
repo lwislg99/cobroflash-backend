@@ -8,10 +8,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { temporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const instalar = await import(pathToFileURL(path.join(RAIZ, 'scripts', 'equipo', 'instalar.mjs')).href);
@@ -49,7 +49,12 @@ const PROMPT = 'Prompt de tanda del banco de SCRUM-899b.';
 const UUID = '1234abcd-0000-4000-8000-00000000abcd';
 
 function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = false } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum899b-'));
+  // SCRUM-864c · `temporal()` y no `fs.mkdtempSync`: el `finally` de cada test llama a
+  // `b.limpiar()`, pero `banco()` crea el directorio ANTES de que su llamador entre en el `try`
+  // —y entre medias hace `git init`, copia ficheros y lanza procesos—. Si algo de eso revienta,
+  // el `finally` no existe todavía y el directorio se queda. El registro del helper sí cubre ese
+  // hueco, y `b.limpiar()` se mantiene para no esperar al final del proceso.
+  const dir = temporal('scrum899b-');
   const git = (cwd, ...a) => execFileSync('git', ['-c', 'core.autocrlf=false', '-C', cwd, ...a], { encoding: 'utf8' });
 
   const repo = path.join(dir, 'repo');

@@ -30,10 +30,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { temporal } from './_temporal.mjs';
 import {
   contarCR, fabricarControl, hallazgosEn, censar, AUTORREFERENCIA, puedeContener,
   clasificarEntorno, veredictoDelEntorno, MSYS_WINDOWS, GNU_LINUX,
@@ -47,7 +47,7 @@ const CON_CR = 3;
 
 /** Un directorio propio en el temporal del sistema. Nunca se fabrica nada dentro del árbol. */
 function tempPropio() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'scrum766-'));
+  return temporal('scrum766-');
 }
 
 /**

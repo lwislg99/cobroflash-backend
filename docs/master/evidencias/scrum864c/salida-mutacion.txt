@@ -1,0 +1,22 @@
+═══ ① MUTACIÓN AL MECANISMO · `tests/_temporal.mjs` sin su enganche de salida ═══
+   ¿ENTRÓ la mutación? sí (contenido distinto)
+   la cobaya DESPUÉS ahora: DESPUÉS (temporal())     : pasa: NO · ¿creó el temporal?: sí · deja tirados: 1  🔴
+   VEREDICTO: ✅ CAE — sin el enganche vuelve el resto. El mecanismo es lo que limpia.
+   restaurado byte a byte: sí
+
+═══ ② MUTACIÓN AL ÁRBOL · `tests/scrum899b` vuelve a `fs.mkdtempSync` a pelo ═══
+   ¿ENTRÓ la mutación? sí (contenido distinto)
+   ¿el guard se pone ROJO? sí
+   ¿NOMBRA al fichero mutado? sí
+   VEREDICTO: ✅ CAE — el guard caza la regresión y dice cuál es, sin que nadie tenga que buscarla.
+   restaurado byte a byte: sí
+
+═══ ③ MUTACIÓN AL ÁRBOL · `tests/scrum182` vuelve a ser una FÁBRICA sin dueño ═══
+   ¿ENTRÓ la mutación? sí (contenido distinto)
+   ¿el guard se pone ROJO? sí
+   ¿lo NOMBRA y dice la categoría? sí, como [FABRICA]
+   VEREDICTO: ✅ CAE — la categoría que SCRUM-864 no juzgaba ya no pasa. Es la parte nueva del guard.
+   restaurado byte a byte: sí
+
+═══ POST-CONDICIÓN · el árbol quedó como estaba ═══
+   el guard vuelve a VERDE: sí ✅
