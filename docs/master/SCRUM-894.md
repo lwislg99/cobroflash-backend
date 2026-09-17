@@ -1,7 +1,7 @@
 # SCRUM-894 · Configuración → Cobros: «Guardar cambios» no guardaba ni avisaba si faltaba el NIF/CIF de otra pestaña
 
 **Medido contra:** `origin/main` = `018d18075c4aefb276dd21a47e1ba2186be630ad` · 2026-09-17T08:23:08Z
-**Rama:** `scrum-894-cobros-nif-aviso` · **Estado:** PARADO — literal propuesto, PENDIENTE de firma del fundador (regla 30). Sin empujar.
+**Rama:** `scrum-894-cobros-nif-aviso` · **Estado:** EN PR — literal firmado por delegación (SCRUM-894 comentario 15672, sin cambios).
 
 Nace de SCRUM-882b (punto b3).
 
@@ -40,8 +40,12 @@ En el **clic** de «Guardar cambios», que corre antes de la validación: se lee
 
 ⛔ No cambia qué es obligatorio. Sin schema, sin backend.
 
-**Literal propuesto (PENDIENTE de firma):** `Para guardar, rellena «{rótulo del campo}». Está en la pestaña {rótulo de la pestaña}.`
+**Literal aprobado** (orquestador por delegación del fundador, comentario 15672; ficha `docs/microcopy/2026-09-17-SCRUM-894-falta-en-otra-pestana.md`): `Para guardar, rellena «{rótulo del campo}». Está en la pestaña {rótulo de la pestaña}.`
 → «Para guardar, rellena «NIF/CIF». Está en la pestaña Empresa.»
+
+Condición de la firma: los dos huecos salen de rótulos visibles, nunca de nombres internos. Se quitó el
+caso de reserva que usaba `name`/`id` si faltaba la etiqueta: sin etiqueta, solo se abre la pestaña.
+Vigilado en `npm test` (rojo comprobado metiendo `campo.name` en la llamada).
 
 ## Rojo, positivo y negativo
 

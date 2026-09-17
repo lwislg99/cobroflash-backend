@@ -55,6 +55,12 @@ test('SCRUM-894 · la pantalla decide en el CLIC de «Guardar cambios», antes d
   for (const pieza of ['pestanaDelQueFalta(', 'pintarNav()', 'avisoFaltaEnOtraPestana(', 'validity.valid']) {
     assert.ok(cuerpo.includes(pieza), `🔴 el escuchador del clic ya no usa \`${pieza}\``);
   }
+  // Condición de la firma (comentario 15672): el nombre del campo sale del rótulo visible, nunca de
+  // `name`/`id`, que son nombres internos (`taxId`).
+  const llamada = cuerpo.slice(cuerpo.indexOf('avisoFaltaEnOtraPestana('));
+  assert.ok(!/\bcampo\.(name|id)\b/.test(llamada.slice(0, llamada.indexOf(';'))),
+    '🔴 el aviso puede nombrar el campo con su nombre interno en vez de con su rótulo');
+  assert.ok(cuerpo.includes('querySelector("label")'), '🔴 el nombre del campo ya no sale de su rótulo');
   // ⛔ No se cambia qué es obligatorio: ni se quita `required` ni se desactiva la validación.
   assert.ok(!/noValidate|novalidate|removeAttribute\(\s*["']required/.test(vista),
     '🔴 se ha tocado la validación en vez de avisar de ella');

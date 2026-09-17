@@ -89,7 +89,9 @@ function pestanaDelQueFalta(submenusDeLoQueFalta, activo) {
  * SCRUM-894 · el texto bajo el campo al que se le ha llevado. Nombra el campo con SU rótulo en
  * pantalla y la pestaña con el suyo: quien pulsó «Guardar» en otra pestaña ve cambiar la pantalla,
  * y sin decir dónde está no sabe por qué.
- * ⚠️ LITERAL PROPUESTO, PENDIENTE DE FIRMA DEL FUNDADOR (regla 30).
+ * Aprobado por el orquestador por delegación del fundador el 17-sep-2026 (SCRUM-894 comentario 15672),
+ * sin cambios, con una condición: los dos huecos salen de rótulos que la pantalla ya muestra, nunca de
+ * nombres internos. Ficha: docs/microcopy/2026-09-17-SCRUM-894-falta-en-otra-pestana.md.
  */
 function avisoFaltaEnOtraPestana(rotuloCampo, rotuloPestana) {
   return 'Para guardar, rellena «' + rotuloCampo + '». Está en la pestaña ' + rotuloPestana + '.';

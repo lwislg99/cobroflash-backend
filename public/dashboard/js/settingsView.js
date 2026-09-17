@@ -772,13 +772,18 @@ function renderSettingsView(container) {
       submenuActivo = destino;
       pintarNav();
       const caja = campo.closest(".field") || campo.parentNode;
+      // Firma (SCRUM-894 comentario 15672): campo y pestaña se nombran SOLO con lo que la pantalla ya
+      // muestra, nunca con un nombre interno. Un campo sin rótulo visible se queda en «abrir su
+      // pestaña» —el navegador lo enfoca y lo señala— en vez de inventarle nombre.
       const rotulo = caja.querySelector("label");
+      const nombreVisible = rotulo ? rotulo.textContent.trim() : "";
+      if (!nombreVisible) return;
       const aviso = document.createElement("p");
       aviso.dataset.avisoFalta = campo.name || campo.id;
       aviso.setAttribute("role", "alert");
       aviso.className = "aviso-falta-campo";
       aviso.textContent = avisoFaltaEnOtraPestana(
-        rotulo ? rotulo.textContent.trim() : (campo.name || campo.id),
+        nombreVisible,
         rotuloDeSubmenu(destino)
       );
       caja.appendChild(aviso);
