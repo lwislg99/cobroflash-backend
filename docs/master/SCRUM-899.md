@@ -240,3 +240,61 @@ cacé yo. Se dejan escritas porque el ticket va precisamente de eso.
 decisiones puras y ficheros de banco; el único camino no ejercido es el que llama a `claude stop` y `claude lanzar`, que
 ya estaba cubierto por el banco del hito 1. **Un relevo real se mide cuando el orquestador instale el lanzador**, no
 antes, y no se da por bueno hasta entonces.
+## ⑥ Hito 3, punto 1 · el relevo escrito en el método del orquestador (SOLO DOCS)
+
+**Medido contra:** `origin/main` = `f5977e8c6d33a436d6d43fd20e345b12120c3977` · 2026-09-17T19:02:28Z
+
+La A19 la escribió la S0 en `00-normas-comunes.md` (#1449). **Ese fichero NO se toca aquí: es suyo.** Lo que faltaba era
+el otro lado: los dos documentos del orquestador seguían describiendo el flujo anterior, y la S0 los dejó marcados
+como «visto y NO tocado, por carril» en ⑤. Esto los alinea.
+
+**Se cita la A19 por NÚMERO Y POR TÍTULO, y no se repite su contenido.**
+
+🔴 **Trampa que casi me come, y por eso el título va siempre al lado del número.** El encargo decía «la A19 nueva», y al
+leer `00-normas-comunes.md` aparece una nota —`⚠️ Nació como A19 y se renumeró a A21`— que parece decir que la norma del
+relevo se movió. **No es así:** esa nota pertenece a OTRA norma (la de la cobaya, hoy A21). El índice real de
+`origin/main` es A19 = «El PUESTO es fijo; la SESIÓN se releva» · A20 = fuera de carril · A21 = la cobaya. Si llego a
+citar «A21» por creerme la nota, habría mandado a todo el mundo a la norma equivocada. El propio fichero lo dice mejor
+que yo:
+
+    🔒 Referenciar por posición caduca. Referenciar por identidad no.
+
+**Qué cambia (solo `docs/`):**
+
+- **`docs/equipo/orquestador-autonomo.md`:**
+  - **§5bis nueva, «El relevo de sesión»**: cuándo (los tres casos de la A19, sin ampliarlos), cómo, el **prompt
+    estándar de siete bloques con el encargo DENTRO**, que solo se lanzan sesiones con trabajo, que las autorizaciones
+    no se heredan, y lo **medido** de `claude --bg` en la prueba de la S0 (`f4dfafd0`, ~14:57Z): **no sale en la barra
+    de VS Code**, se ve con `claude agents --json`, se abre con `claude attach <id>`, se presentó sola en ~2 min, y la
+    convención `sesion-N` es la dirección de `SendMessage`.
+  - **§5ter nueva, «Cierre y arranque por FIN DE USO»**: lo que hasta hoy solo vivía en la memoria del orquestador —
+    pedir traspaso, escribir el suyo, **borrar sus crones** y dejarle al fundador el prompt del orquestador nuevo; y al
+    volver, **medir, parar las viejas y levantar los seis puestos**. Se escribe precisamente porque es lo que se pierde
+    si el uso se corta de golpe.
+  - **F4 (tabla §2)**: 🔴 «no documentado» → ✅ **MEDIDO**. Ya no hace falta el fundador para abrir una sesión.
+  - **§5**: la viñeta «abrir un chat nuevo… mientras F4 no exista» queda **tachada y marcada SUPERADA**, con el puntero
+    a lo que SÍ sigue siendo del fundador: las autorizaciones.
+- **`docs/equipo/orquestador.md`:**
+  - **§0, paso 5bis nuevo del turno: «RELEVAR EN VEZ DE REANUDAR»**, con el umbral de 300k medido, no estimado.
+  - **§0, paso 5**: «si hace falta un chat nuevo se le pide al fundador» → ya no; lo lanza el orquestador.
+  - **regla 11bis (16-sep)**: se **conserva entera**, incluida la frase «los puestos no se cierran nunca: lo que se
+    cierra es el chat», que es la A19 dicha con un día de antelación. Se le añade que el camino normal ya no es pegar un
+    prompt, y que la regla sigue valiendo para los que el fundador SÍ pega a mano.
+  - **§11bis, fila S5**: puesto «automatización» → **«automatización y eficiencia»**, con el gasto de tokens y los
+    fallos del flujo en el carril, y `scripts/equipo/` entre sus ficheros. El ⚠️ de las dos fuentes que se
+    contradecían queda cerrado.
+- **`docs/equipo/sesion-5.md`**: la cabecera pasa a **AUTOMATIZACIÓN Y EFICIENCIA** (ajuste del fundador).
+
+**Lo que NO se toca, por carril:** `00-normas-comunes.md` (S0) y `traspaso.md`.
+
+**Tres cosas que entran aquí y vienen del orquestador, no de mí:**
+1. la instalación del arranque automático **se aplica en el relevo natural**, no parando a nadie a mitad — el fundador
+   dijo el 17-sep que no se releva si no es por nuestras propias normas;
+2. **ni un «acepto» de pasada basta**: el clasificador mide una autorización **expresa y literal** en ese chat;
+3. **una regla duradera no nombra un chat por su nombre automático.** `cobroflash-backend-bb` dejó de existir el mismo
+   día en que se escribió; se nombra el papel.
+
+**Verificación:** es un PR solo de `docs/`. `guards:entrada` en verde y la tanda completa, porque un cambio de texto
+también puede tumbar un guard estructural (SCRUM-242 nombra documentos que no existen; SCRUM-391, tests declarados).
+
+**Tests declarados:** ninguno nuevo. Este punto no añade código.

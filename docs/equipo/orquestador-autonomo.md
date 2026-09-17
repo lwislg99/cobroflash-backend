@@ -21,7 +21,7 @@ quiere añadir trabajo o tiene que decidir algo reservado para él (§5).
 | **F1b · Una sesión despierta al orquestador parado** | ✅ **FUNCIONA** | **Medido el 17-sep ~09:02Z:** el informe de la S5 abrió un turno del orquestador, que estaba parado, sin que el fundador escribiera nada. El bucle sesión → orquestador → sesión corre solo **mientras el chat del orquestador siga abierto** |
 | **F2 · Nombres estables** | ⏳ SCRUM-899 | Hoy cada chat tiene un nombre automático (`cobroflash-backend-35`…) que **cambia si el chat se reanuda** (según la documentación, no medido). Con `/rename` se fija un nombre estable |
 | **F3 · Saber cuándo termina una sesión** sin preguntar | 🟡 disponible, sin usar todavía | `SendMessage` con `notify_when_idle`: un aviso cuando la sesión se queda libre. Prohibido mandar mensajes de «¿has terminado?» |
-| **F4 · Abrir sesiones nuevas** | 🔴 **no documentado** | Una sesión no puede abrir otro chat interactivo. Hasta que la S5 mida otra vía, **abrir un chat nuevo sigue siendo del fundador** (§5) |
+| **F4 · Abrir sesiones nuevas** | ✅ **MEDIDO** (17-sep) | Ya no hace falta el fundador: el orquestador lanza la sesión con `claude --bg -n sesion-N --permission-mode auto`, y a los ~2 min se presenta sola por el canal (prueba de la S0, id `f4dfafd0`). ⚠️ **No sale en la barra de VS Code**: se ve con `claude agents --json` y se abre con `claude attach <id>`. El flujo entero, en **§5bis**; la norma, la **A19** («El PUESTO es fijo; la SESIÓN se releva»). Lo que sigue siendo del fundador son **las autorizaciones, que no se heredan** (§5bis.5) |
 | **F5 · Arrancar solo por la mañana** | 🟡 **PROVISIONAL en marcha** · lo robusto en SCRUM-899 | **17-sep:** `CronCreate` en el chat del orquestador, trabajo `80667c74`, **todos los días a las 8:57, 13:57 y 18:57** (hora de Madrid), con la orden de arranque (leer §0, medir, despertar a las libres, Jira, traspaso). **Límites, medidos en la herramienta:** vive solo mientras ese chat esté abierto (no se guarda en disco), se dispara solo con el chat parado y **caduca a los 7 días (renovar antes del 24-sep)**. Lo robusto, a MEDIR por la S5: tarea programada de Windows + CLI `claude` (instalado, 2.1.263). Las rutinas en la nube no sirven para mandar al equipo: clonan GitHub desde cero y no ven los worktrees, los bancos ni los chats locales |
 | **F6 · Trabajar mientras haya uso disponible** | ⏳ SCRUM-899 | La S5 leyó en la documentación el ajuste `autoContinueAtUsageLimit` (≥2.1.234): espera a que se renueve el límite y sigue. **No medido.** Las tres horas del cron de F5 están pensadas para caer en ventanas de uso distintas |
 
@@ -65,8 +65,115 @@ por efecto, desatascar, y dar GO a empujar lo que NO toque lo de §5.
 - **Coste o dependencia nueva**: también rutinas o planes que gasten más. (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
 - **Schema** (① decisión → ② ALTER de Javier → ③ PR) e **infraestructura de producción**.
 - **Secretos**: nunca por el canal ni por el chat.
-- **Abrir un chat nuevo** de una sesión, mientras F4 no exista.
+- ~~**Abrir un chat nuevo** de una sesión, mientras F4 no exista.~~ **SUPERADO el 17-sep-2026:** F4 está medido y la
+  sesión nueva la lanza el orquestador (§5bis.6). Lo que sigue siendo del fundador no es abrir el chat, sino **las
+  autorizaciones, que no se heredan** (A19 · §5bis.5).
 - **Aprobar un mensaje** si una sesión corre con otro modo de permisos y lo retiene.
+
+## 5bis · El relevo de sesión
+
+La norma es la **A19 de `00-normas-comunes.md`, «El PUESTO es fijo; la SESIÓN se releva»**, que es de la Sesión 0 y
+manda. Aquí **no se repite**: aquí va lo que es del orquestador —el cómo, el prompt y lo medido— y lo que la norma deja
+abierto.
+
+⚠️ **Se cita por número Y por título, a propósito.** `00-normas-comunes.md` lleva dentro el aviso de lo que cuesta lo
+contrario: una norma renumerada rompe todo lo que la cite por posición. Hoy conviven ahí una A19 que es ésta y una A21
+que **nació como A19**. Al leer, se comprueba el título, no el número.
+
+### 5bis.1 · Cuándo se releva
+
+Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 300k**; más de
+**1 hora parada**; o el comienzo de la tanda del día siguiente. **Nunca a mitad de una entrega**, y **no en cada
+tarea**: si una entrega cierra por debajo de 300k, el encargo siguiente entra en la misma sesión.
+
+Para saber si pasa de 300k no se estima: se mide, con `sesion.mjs contexto N`.
+
+### 5bis.2 · Cómo se releva
+
+1. El orquestador **pide** el traspaso por el canal.
+2. La sesión escribe `project_sN_traspaso.md` y su línea en `MEMORY.md`, contesta **«traspaso listo»** y **para**.
+3. El orquestador la **detiene** y lanza la nueva **con el encargo dentro del mismo prompt**.
+4. La nueva lee desde `origin/main` lo suyo y se presenta: «Sesión N lista · <siguiente paso>».
+
+🔴 **Se releva, NO se reanuda.** `--resume` con flags arranca una COPIA, y sin flags arrastra la caché vieja entera
+(medido en SCRUM-899, control 3b). Una sesión nueva con su traspaso cuesta mucho menos que un contexto de 800k, que es
+donde acabó la tanda del 17-sep.
+
+🔴 **No se para a nadie sin traspaso.** Parar antes pierde justo lo que el relevo existe para conservar, y encima en
+silencio: la nueva arranca creyéndose al día. Si el traspaso no está, se dice y no se para.
+
+### 5bis.3 · El prompt estándar
+
+Siete bloques, y **el encargo va dentro**:
+
+1. quién es y cuál es su **puesto fijo**;
+2. el arranque: `git fetch` y leer **desde `origin/main`** (`CLAUDE.md`, `00-normas-comunes.md`, su `sesion-N.md`, su
+   fila de §11bis de `orquestador.md`) y su traspaso, **midiendo antes de creérselo**;
+3. presentarse por el canal con **hora y SHA** (A14);
+4. **el encargo concreto, completo**;
+5. las normas de la tanda, incluida la A19: las autorizaciones no se heredan;
+6. las **trampas del entorno**: `FORCE_COLOR=0` en todo (SCRUM-928), dónde está `gh`, el cloudId de Jira;
+7. qué hacer al cierre.
+
+Sin el punto 4 la sesión arranca sin trabajo y gasta contexto preguntando qué hacer.
+
+### 5bis.4 · Solo se lanzan sesiones CON TRABAJO
+
+Los seis **puestos** existen siempre; las seis **sesiones**, no. Un puesto sin cola no se levanta: una sesión viva sin
+encargo gasta uso y contesta mensajes que no llevan a nada.
+
+### 5bis.5 · 🔴 Las autorizaciones NO se heredan
+
+Está en la A19, y se repite aquí porque es lo primero que se salta al automatizar. Un GO de dinero, un alta en un
+servicio de terceros o un borrado que el fundador autorizó en el chat de una sesión valen **para esa sesión**. La nueva
+no los usa hasta que se los escriban a ella.
+
+Con el matiz medido el 17-sep: **ni un «acepto» dicho de pasada basta**. Lo que el clasificador mide es una
+autorización **expresa y literal** en ese chat. El orquestador pide la frase exacta, y solo con ella actúa él mismo.
+
+Corolario para cualquier regla duradera: **no se nombra un chat por su nombre automático**. `cobroflash-backend-bb` era
+el chat de una mañana y dejó de existir el mismo día. Se nombra el papel: «la sesión que el fundador haya designado
+orquestador, se llame como se llame».
+
+### 5bis.6 · Lo MEDIDO de `claude --bg` (17-sep-2026)
+
+Prueba de relevo de la S0, `claude --bg -n 0 --permission-mode auto`, id `f4dfafd0`, ~14:57Z:
+
+| qué | resultado |
+|---|---|
+| ¿sale en la barra de VS Code? | **NO.** Quien la busque ahí concluirá que no arrancó |
+| cómo se ve | **`claude agents --json`** (sin TTY, `--json` es obligatorio) |
+| cómo se abre su chat | **`claude attach <id>`** |
+| cuánto tardó en presentarse | **~2 min**, por el canal, sola |
+| nombre | convención **`sesion-N`**, que ES la dirección de `SendMessage` |
+
+Esto es lo que cierra **F4**: una sesión ya no necesita al fundador para abrir otra.
+
+## 5ter · Cierre y arranque por FIN DE USO
+
+Hasta el 17-sep esto solo vivía en la memoria del orquestador. Se escribe porque es precisamente lo que se pierde si el
+uso se corta de golpe: lo que no está escrito, no existe.
+
+**Al acercarse el límite de uso, el orquestador:**
+
+1. **pide el traspaso** a cada puesto vivo (A19) y espera el «traspaso listo»;
+2. **escribe el suyo** —el del orquestador— para quien no ha visto su chat;
+3. **borra sus crones**: un `CronCreate` vive solo mientras ese chat esté abierto y caduca a los 7 días, así que dejarlo
+   puesto no da arranque y sí da la falsa sensación de que lo hay;
+4. le deja al fundador, **en un bloque listo para pegar, el prompt del orquestador nuevo**.
+
+**Al volver, el orquestador nuevo:**
+
+1. **mide** antes de creerse ningún traspaso (§0 de `orquestador.md`): PR abiertos y mergeados, CI, Jira, `ListAgents`.
+   Un traspaso es una foto con fecha, no el ahora;
+2. **para las sesiones viejas**. Siguen vivas con su contexto entero y contestarían con un estado caducado;
+3. **levanta los seis puestos**, cada uno con su encargo dentro del prompt (§5bis.3), y solo los que tienen trabajo
+   (§5bis.4).
+
+🔴 **Éste es también el momento de aplicar los cambios de settings y la instalación del arranque automático.** El
+fundador dijo el 17-sep que no se para ni se releva a nadie si no es por nuestras propias normas; así que la instalación
+**no interrumpe a nadie a mitad**: se hace en el relevo natural —fin de tanda o cierre por uso—, que es cuando las
+sesiones están paradas de todos modos.
 
 ## 6 · Riesgos, dichos antes de que pasen
 

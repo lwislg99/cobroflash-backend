@@ -255,14 +255,139 @@ export function mutacionesDeclaradas(codigo, nombre = 'x.mjs') {
   return lecturaDeDeclaraciones(codigo, nombre).buenas;
 }
 
-/** Todos los guards que declaran mutaciones, con las suyas. */
-export function censoDeDeclaraciones(dir = DIR_TESTS) {
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-812 · EL CENSO DECLARA SU POBLACIÓN, NO SÓLO SU RESULTADO.
+ *
+ * Este instrumento le exige a todos los censos de la casa que digan sobre cuántos midieron (A3),
+ * y él publicaba su propio recuento llamándolo «guards», a secas. (La cifra no se copia aquí:
+ * SCRUM-737 ② — una frase sin número no se desincroniza.) Dos cosas estaban mal en esa línea, y
+ * ninguna era el recuento:
+ *
+ *   ① **la palabra.** Contaba a los que DECLARAN y los llamaba «guards», así que su «mudas 0» se
+ *      leía como «todos los guards están cubiertos». Un guard que no declara no entra en el
+ *      denominador ni para bien ni para mal — lo filtra el `if` de abajo.
+ *   ② **el denominador.** Estaba aquí delante y no se publicaba: el `readdirSync` lista `tests/`
+ *      ENTERO y el filtro descarta después. Decir «81 de 885» no cuesta una lectura más.
+ *
+ * Y por eso las dos cifras salen de ESTA función y de una sola pasada: la población y el censo
+ * derivan del MISMO `readdirSync`, así que no pueden divergir. Publicarlas desde dos recorridos
+ * sería dejar preparada la próxima contradicción.
+ *
+ * Lo mismo vale para el subconjunto AUTODECLARADO (`titulados`): se calcula del texto que esta
+ * función YA lee para el AST. Ni un barrido nuevo.
+ *
+ * ⛔ LO QUE AQUÍ NO SE DECIDE: qué es un guard. El árbol no tiene esa definición —no hay una
+ * línea en `docs/` ni en el máster que la dé— y publicar «X de Y guards» sin ella sería cometer
+ * DENTRO del instrumento el defecto que SCRUM-812 vino a denunciar. Se publican los dos
+ * denominadores que SÍ se derivan (ficheros de test, y ficheros auto-titulados GUARD) y no se
+ * inventa el tercero.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+
+/**
+ * ¿Este fichero se llama GUARD a sí mismo, en el título de alguno de sus tests?
+ *
+ * Es la ÚNICA señal auto-declarada que hay en el árbol, y es DÉBIL EN LAS DOS DIRECCIONES —
+ * medido el 17-sep-2026: de los 81 que declaran, sólo 18 se titulan guard; y de los 206 que se
+ * titulan guard, sólo 18 declaran. No es un censo de guards y el rótulo lo dice en voz alta.
+ */
+export function seTitulaGuard(codigo) {
+  return /test\(\s*[`'"][^`'"]*GUARD/i.test(codigo);
+}
+
+/**
+ * El censo Y su población, de UNA sola pasada por `tests/`.
+ *
+ * `poblacion` son los ficheros `.test.mjs` que existen; `censo` los que declaran. Las dos salen
+ * del mismo listado a propósito (ver el bloque de arriba).
+ */
+export function censoConPoblacion(dir = DIR_TESTS) {
+  const ficheros = fs.readdirSync(dir).filter((x) => x.endsWith('.test.mjs'));
   const out = [];
-  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.test.mjs'))) {
-    const { buenas, incompletas } = lecturaDeDeclaraciones(fs.readFileSync(path.join(dir, f), 'utf8'), f);
+  let titulados = 0;
+  let tituladosQueDeclaran = 0;
+  for (const f of ficheros) {
+    const codigo = fs.readFileSync(path.join(dir, f), 'utf8');
+    const { buenas, incompletas } = lecturaDeDeclaraciones(codigo, f);
     if (buenas.length || incompletas.length) out.push({ guard: f, mutaciones: buenas, incompletas });
+    // El subconjunto auto-declarado, del MISMO texto que ya está leído para el AST.
+    //
+    // ⚠️ «Declara» aquí es `buenas.length`, el MISMO criterio con el que el rótulo cuenta a los
+    // declarantes — y no `buenas || incompletas`, que es el criterio de pertenecer al censo. Los
+    // dos coinciden hoy (un fichero con sólo incompletas sale CIEGO antes de imprimir nada), y
+    // precisamente por eso había que elegir uno: dos criterios que hoy dan el mismo número son
+    // la próxima contradicción con fecha puesta.
+    if (seTitulaGuard(codigo)) {
+      titulados += 1;
+      if (buenas.length) tituladosQueDeclaran += 1;
+    }
   }
-  return out;
+  return {
+    poblacion: ficheros.length,
+    declarantes: out.filter((c) => c.mutaciones.length).length,
+    titulados,
+    tituladosQueDeclaran,
+    censo: out,
+  };
+}
+
+/**
+ * Todos los guards que declaran mutaciones, con las suyas.
+ *
+ * Se DERIVA de `censoConPoblacion` en vez de repetir el recorrido: dos recorridos del mismo
+ * directorio son dos cosas que se quedan atrás por separado. La firma no cambia, para no mover a
+ * quien ya la llamaba.
+ */
+export function censoDeDeclaraciones(dir = DIR_TESTS) {
+  return censoConPoblacion(dir).censo;
+}
+
+/**
+ * SUELO ⓿ (SCRUM-812) · ¿he mirado algún fichero? Devuelve el motivo, o `null` si aguanta.
+ *
+ * Vive FUERA del bloque principal por lo mismo que `sueloDelCenso`: un suelo que sólo existe
+ * dentro del `if` de arranque no se le puede exigir el rojo sin pagar los minutos del trabajo
+ * entero, y un guard al que no se le ha visto caer es una decoración.
+ */
+export function sueloDePoblacion({ poblacion }) {
+  if (poblacion > 0) return null;
+  return 'he leído CERO ficheros `.test.mjs` en `tests/`. No es que no haya declaraciones: es que '
+    + 'no he mirado nada, y un censo sobre una población vacía no dice nada del árbol. Comprueba '
+    + 'el directorio y el checkout antes de leer ningún número.';
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-812 · EL RÓTULO, COMO FUNCIÓN PURA — y por qué no se escribe en el `console.log`.
+ *
+ * El defecto que este ticket arregla ES un rótulo. Si el texto vive suelto dentro del bloque
+ * principal, la única forma de comprobarlo es arrancar el script entero, y un guard que cuesta
+ * minutos se acaba quitando. Aquí devuelve LÍNEAS y el bloque de abajo sólo las imprime, así que
+ * su guard (`scrum812`) puede exigirle las palabras en milisegundos — y se las exige a ESTA
+ * función, la misma que el script usa, no a una copia del texto.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function rotuloDelCenso({ poblacion, declarantes, declaraciones, titulados, tituladosQueDeclaran }) {
+  const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
+  return [
+    // La palabra es la mitad del arreglo: el instrumento contaba bien y nombraba mal, y quien
+    // leía «N guards · mudas 0» entendía «todos los guards están cubiertos». Nadie confunde
+    // «declarantes» con «todos». El porcentaje va al entero: decimales sobre una población que
+    // se mueve cada día serían precisión inventada.
+    `censo · ${declarantes} ficheros DECLARANTES de ${poblacion} ficheros de test `
+      + `(${pct(declarantes, poblacion)} %) · ${declaraciones} declaraciones `
+      + `(suelos ${SUELO_GUARDS} / ${SUELO_DECLARACIONES})`,
+    // El subconjunto AUTO-DECLARADO va aparte, porque mide otra cosa.
+    `  subconjunto AUTODECLARADO · ${titulados} ficheros se titulan GUARD en algún test · `
+      + `${tituladosQueDeclaran} de ésos declaran (${pct(tituladosQueDeclaran, titulados)} %)`,
+    // Y su límite PEGADO. Un subconjunto sin su límite al lado se lee como un censo, que es el
+    // defecto de la primera línea otra vez y dos líneas más abajo.
+    `  ⚠️ la señal es DÉBIL EN LAS DOS DIRECCIONES: de los ${declarantes} declarantes sólo `
+      + `${tituladosQueDeclaran} se titulan guard, o sea que ${declarantes - tituladosQueDeclaran} `
+      + 'declaran SIN llamarse guard. Y «guard» no está definido en el árbol: esto NO es un censo '
+      + 'de guards.',
+  ];
 }
 
 /**
@@ -949,7 +1074,20 @@ if (ejecutadoDirectamente(import.meta.url)) {
     process.exit(SALIDA_CIEGO);
   }
 
-  const censo = censoDeDeclaraciones();
+  // SCRUM-812 · el censo llega CON su población: las dos de la misma pasada.
+  const { poblacion, titulados, tituladosQueDeclaran, censo } = censoConPoblacion();
+
+  // ── SUELO ⓿ · ¿HE MIRADO ALGÚN FICHERO? (SCRUM-812) ───────────────────────────────────────
+  // Va ANTES que el suelo del censo porque aquél mide el RESULTADO y éste la POBLACIÓN, y sobre
+  // una población de cero cualquier resultado es un «no he mirado» con forma de dato. Si `tests/`
+  // se queda vacío —un `readdirSync` sobre el directorio equivocado, un checkout a medias—, el
+  // censo saldría 0 y el suelo de abajo diría «ha encogido», acusando al árbol de algo que le
+  // pasa al instrumento.
+  const sinPoblacion = sueloDePoblacion({ poblacion });
+  if (sinPoblacion) {
+    console.error(`🔴 CIEGO · ${sinPoblacion}`);
+    process.exit(SALIDA_CIEGO);
+  }
 
   // ── SUELO ① · EL TAMAÑO DEL CENSO ─────────────────────────────────────────────────────────
   const declaraciones = censo.reduce((n, c) => n + c.mutaciones.length, 0);
@@ -961,8 +1099,12 @@ if (ejecutadoDirectamente(import.meta.url)) {
   }
   if (soloCenso) {
     const expo = censoDeExposicionATypeScript(); // `expo`, no `ts`: `ts` es el compilador de arriba
-    console.log(`censo · ${guardsConDeclaracion} guards · ${declaraciones} declaraciones `
-      + `(suelos ${SUELO_GUARDS} / ${SUELO_DECLARACIONES})`);
+    // 🔴 SCRUM-812 · el rótulo lo escribe `rotuloDelCenso`, no este `console.log`: así su guard
+    // se lo puede exigir sin arrancar el trabajo entero. `declarantes` sale del MISMO sitio que
+    // `guardsConDeclaracion` —el filtro por `mutaciones.length`— y por eso se pasa ése.
+    for (const linea of rotuloDelCenso({
+      poblacion, declarantes: guardsConDeclaracion, declaraciones, titulados, tituladosQueDeclaran,
+    })) console.log(linea);
     console.log(`  sobre la frontera src/ ↔ dist/ (SCRUM-763): ${expo.expuestas.length} de ${expo.poblacion}`);
     for (const e of expo.expuestas) console.log(`    · ${e.guard} → ${e.fichero}`);
     console.log('\n⚠️ MODO CENSO: NO se ha ejecutado ninguna mutación.');
