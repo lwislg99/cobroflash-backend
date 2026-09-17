@@ -617,7 +617,10 @@ document.addEventListener('click', (e) => {
   if (t.dataset.filtro) { filtro = t.dataset.filtro; render(); return; }
   if (t.hasAttribute('data-equipo')) { HAY_EQUIPO = !HAY_EQUIPO; render(); return; }
   if (t.dataset.mas) { e.stopPropagation(); hojaMas(Number(t.dataset.mas)); return; }
-  if (t.dataset.cerrar != null) { $('#capa').innerHTML = ''; return; }
+  // 🔴 Cerrar SÓLO si se ha tocado el fondo o la «×». El `onclick="event.stopPropagation()"` que
+  // llevaba la hoja impedía que sus propios botones llegaran aquí: no hacían nada. Mismo defecto
+  // cazado midiendo el prototipo de SCRUM-916, y arreglado en los dos.
+  if (t.dataset.cerrar != null) { if (t.classList.contains('cerrar') || !e.target.closest('.hoja')) $('#capa').innerHTML = ''; return; }
   if (t.dataset.accion) { e.stopPropagation(); $('#capa').innerHTML = ''; toast('En el prototipo esta acción no hace nada.'); return; }
   if (t.dataset.abrir) { abierto = Number(t.dataset.abrir); tab = 'detalle'; render(); }
 });
@@ -628,7 +631,7 @@ function hojaMas(id) {
   if (j.estado === 'agendado') op.push('Reagendar', '▶ Empezar', '📆 Añadir a mi calendario');
   if (j.estado === 'en_curso') op.push('✅ Marcar terminado');
   if (j.estado === 'terminado') op.push('Cerrar trabajo');
-  $('#capa').innerHTML = `<div class="overlay" data-cerrar><div class="hoja" role="dialog" aria-modal="true" aria-labelledby="ht" onclick="event.stopPropagation()">
+  $('#capa').innerHTML = `<div class="overlay" data-cerrar><div class="hoja" role="dialog" aria-modal="true" aria-labelledby="ht">
     <div class="hoja-cab"><h3 id="ht">${esc(j.trabajo || j.cliente)}</h3><button class="cerrar" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="lista-acc">${op.map((o) => `<button class="btn btn-secondary" data-accion="mas">${o}</button>`).join('')}</div></div></div>`;
 }
