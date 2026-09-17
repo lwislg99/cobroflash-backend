@@ -58,6 +58,7 @@ import {
   validarPeticionParcial,
 } from '../../domain/albaranFacturacion';
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
+import { lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { datosDeAlbaranEmitido } from '../../domain/albaranEmision'; // SCRUM-841
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
@@ -1392,7 +1393,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     const quote = job.quoteId
       ? await prisma.quote.findFirst({
           where: { id: job.quoteId, merchantId: req.merchantId },
-          select: { id: true, quoteNumber: true, lines: true },
+          select: { id: true, quoteNumber: true, lines: true, discountGlobalAmount: true }, // SCRUM-887
         })
       : null;
 
@@ -1410,7 +1411,8 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     const lineasAlbaran = (Array.isArray(albaran.lineas) ? albaran.lineas : []) as any[];
     const casacion = casarLineas(
       lineasAlbaran,
-      (Array.isArray(quote?.lines) ? quote!.lines : []) as any[],
+      // SCRUM-887 · el precio firmado es el de DESPUÉS del dto de línea.
+      (quote ? lineasParaFacturar(quote) : []) as any[],
       yaFacturadoPorLineaDePresupuesto(albaranesDelJob as any, libro as any),
     );
 

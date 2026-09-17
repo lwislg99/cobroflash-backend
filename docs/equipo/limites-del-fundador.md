@@ -44,11 +44,28 @@ Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva
 (regla 36), cualquier cosa que toque dinero o el camino fiscal (regla 38), y
 cualquier cambio de infraestructura de producción.
 
+## El objetivo vigente (17-sep-2026, de viva voz)
+
+**Producto y automatización A LA VEZ, los dos a fuego.** Sus palabras: «quiero en paralelo avanzar a
+fuego con el producto ya, a fuego con la automatización, ya que nos quitará trabajo. Si hay algo que
+nos bloquea lo solucionamos al momento y me lo dices».
+
+- S0-S4 van a producto, cada una en su carril. La S5 va SOLO a automatización.
+- La automatización NO se da por cerrada (eso lo había decidido el orquestador el 16-sep, y queda
+  retirado). Su horizonte incluye que **el orquestador arranque solo por la mañana y hable con las
+  sesiones sin que el fundador copie y pegue**, además del bucle PR → CI → merge → aviso.
+- Un bloqueo no se aparca en silencio: se resuelve al momento y se le dice qué bloqueaba.
+
 ## Cómo quiere trabajar
 
-- Bloque de merge SIEMPRE primero, antes de los prompts.
+- El cuadro del bucle SIEMPRE primero, antes de los prompts (sustituye al «bloque de merge»:
+  desde el 9-sep el merge es automático). Y **lo que tiene que hacer él, SIEMPRE AL FINAL** del
+  mensaje, después de los prompts (17-sep-2026).
 - Enlace directo y clicable a cada PR, dentro de un bloque de código.
-- En cada PR, si la rama se borra o no.
+- «¿Se borra la rama?» solo para un PR que se cierra SIN mergear, y ahí NO se borra
+  (`orquestador.md` §10.3). Al mergear se borran solas.
+- Cada ticket a la sesión de SU puesto, nunca a la que esté libre (17-sep-2026: «la 5 es
+  automatización, eso es raro»; tabla en `orquestador.md` §11bis).
 - Jira mirado CADA turno, y dicho explícitamente aunque no se pueda cerrar nada.
 - Prompt SOLO para las sesiones que han contestado ese turno; las que siguen ejecutando no
   reciben nada (lo retiró el 15-sep-2026; ver `orquestador.md` §10.6).

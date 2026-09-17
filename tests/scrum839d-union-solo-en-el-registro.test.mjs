@@ -179,7 +179,11 @@ function conRepo(opts, fn) {
   try { return fn(r); } finally { fs.rmSync(r.dir, { recursive: true, force: true }); }
 }
 
-const decide = (r) => decidir(gitReal(r.dir), { cabeza: r.cabeza, main: r.main, mensaje: 'merge de prueba' });
+// SCRUM-839e: la decisión solo mira PR que ya estaban armados. Todo lo de este fichero va sobre uno
+// armado; el caso sin armar y su suelo viven en `tests/scrum839e-solo-pr-armados.test.mjs`.
+const ARMADO = { number: 1318, autoMergeRequest: { enabledAt: '2026-09-16T05:58:00Z', mergeMethod: 'MERGE' } };
+
+const decide = (r) => decidir(gitReal(r.dir), { pr: ARMADO, cabeza: r.cabeza, main: r.main, mensaje: 'merge de prueba' });
 
 const REGISTRO = { 'docs/master/SCRUM-609.md': '# SCRUM-609\n\nentrada común\n', 'src/a.ts': 'export const a = 1;\n' };
 
@@ -299,7 +303,7 @@ test('🔴 borrar en un lado y editar en otro no lo arregla union: no se empuja'
   }, (r) => {
     fs.rmSync(path.join(r.dir, 'docs/master/SCRUM-609.md'));
     r.g('commit', '-qam', 'borrado en main');
-    const v = decidir(gitReal(r.dir), { cabeza: r.cabeza, main: r.g('rev-parse', 'main'), mensaje: 'm' });
+    const v = decidir(gitReal(r.dir), { pr: ARMADO, cabeza: r.cabeza, main: r.g('rev-parse', 'main'), mensaje: 'm' });
     assert.equal(v.accion, 'NO-EMPUJA', JSON.stringify(v));
     assert.equal(v.causa, 'UNION-NO-RESUELVE');
   });
@@ -322,7 +326,7 @@ test('🔴 SUELO: salida 1 sin lista de ficheros es «no pude mirar», no confli
     if (args.includes('rev-parse')) return { status: 0, stdout: path.join(os.tmpdir(), 'scrum839d-no-existe') + '\n', stderr: '' };
     return merge;
   };
-  const d = (merge) => decidir(falso(merge), { cabeza: 'c', main: 'm', mensaje: 'x' });
+  const d = (merge) => decidir(falso(merge), { pr: ARMADO, cabeza: 'c', main: 'm', mensaje: 'x' });
 
   // Lo medido: una ref inexistente da salida 1 y NADA por stdout.
   assert.equal(d({ status: 1, stdout: '', stderr: 'not something we can merge' }).accion, 'NO-PUDE-MIRAR');
@@ -337,7 +341,7 @@ test('🔴 SUELO: salida 1 sin lista de ficheros es «no pude mirar», no confli
 
 test('🔴 SUELO: con la ref de la cabeza inexistente, de verdad, «no pude mirar»', () => {
   conRepo({ base: REGISTRO, enPr: { 'x.md': '1\n' }, enMain: { 'y.md': '2\n' } }, (r) => {
-    const v = decidir(gitReal(r.dir), { cabeza: 'b'.repeat(40), main: r.main, mensaje: 'm' });
+    const v = decidir(gitReal(r.dir), { pr: ARMADO, cabeza: 'b'.repeat(40), main: r.main, mensaje: 'm' });
     assert.equal(v.accion, 'NO-PUDE-MIRAR', JSON.stringify(v));
   });
 });

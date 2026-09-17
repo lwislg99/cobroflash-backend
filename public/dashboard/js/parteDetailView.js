@@ -128,6 +128,15 @@
 
   /** Una fila del bloque. DOS columnas: unidades y descripción. No hay una tercera. */
   /**
+   * SCRUM-889 · Una línea guardada, tal y como se devuelve al servidor: con su `id`. El `PATCH`
+   * reemplaza la lista entera y casa los precios de la oficina POR ESE ID; sin él casaría por
+   * posición, y quitar una línea le movería el precio a la de detrás. Ni un importe: no los hay.
+   */
+  function lineaQueSeGuarda(l) {
+    return { id: l.id, bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+  }
+
+  /**
    * Una línea del parte.
    *
    * 🔴 SCRUM-818 · DOS CAMPOS CON BORDE, no `2  Tiempo de espera` a pelo. Con las manos sucias y
@@ -686,7 +695,7 @@
    * ⚠️ Se MANDAN LAS QUE YA HABÍA MÁS LAS NUEVAS: el `PATCH` reemplaza la lista entera, así que
    * enviar sólo las nuevas borraría en silencio lo que el técnico ya tenía apuntado.
    *
-   * ⛔ NI UN IMPORTE, en ninguna dirección: lo que viaja es {bloque, unds, descripcion}, que es lo
+   * ⛔ NI UN IMPORTE, en ninguna dirección: lo que viaja es {id, bloque, unds, descripcion}, que es lo
    * único que esta pantalla tiene. Los precios los pone la oficina, en otra pantalla.
    */
   async function confirmarLoDictado(parte, parteId, contenedor, opciones) {
@@ -698,9 +707,7 @@
     var confirmadas = lineasConfirmadas(caja);
     if (!confirmadas.lineas.length) return false;   // nada que añadir: no se manda una petición vacía
 
-    var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l) {
-      return { bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
-    });
+    var yaHabia = (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
 
     try {
       await pedir('/admin/partes/' + parteId, {
@@ -818,7 +825,7 @@
           var esUnds = casilla.hasAttribute('data-linea-unds');
           var indice = Number(casilla.getAttribute(esUnds ? 'data-linea-unds' : 'data-linea-desc'));
           var lista = (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l, i) {
-            var base = { bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
+            var base = lineaQueSeGuarda(l);
             if (i !== indice) return base;
             if (esUnds) base.unds = casilla.value === '' ? null : Number(casilla.value);
             else base.descripcion = casilla.value;
@@ -848,16 +855,11 @@
     //   · y se RELEE del servidor. Si el guardado falla NO se relee: se perdería lo tecleado. Se
     //     dice con el texto aprobado y la fila se queda como estaba.
     //
-    // ⚠️ La «×» de una línea YA GUARDADA sigue sin cablear, y no es un olvido: el `PATCH` conserva
-    // los precios de la oficina casando por ÍNDICE, y los precios se pueden poner con el parte en
-    // borrador. Quitar una línea corre las de detrás y les movería o borraría el precio en silencio.
-    // Está en docs/master/SCRUM-889.md como hallazgo. La «×» de la fila NUEVA sí va: sólo la quita
-    // de la pantalla, porque nunca llegó al servidor.
+    // La «×» de la fila NUEVA sólo la quita de la pantalla, porque nunca llegó al servidor. La de una
+    // línea YA GUARDADA va más abajo (segundo PR de SCRUM-889).
     // ═══════════════════════════════════════════════════════════════════════════════════
     var lineasGuardadas = function () {
-      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(function (l) {
-        return { bloque: l.bloque, unds: l.unds, descripcion: l.descripcion };
-      });
+      return (Array.isArray(parte.lineas) ? parte.lineas : []).map(lineaQueSeGuarda);
     };
     var laNueva = function () {
       return {
@@ -936,6 +938,41 @@
       (function (boton) {
         boton.addEventListener('click', function () { anadirLinea(boton.getAttribute('data-bloque')); });
       }(botonesAnadir[b]));
+    }
+
+    // SCRUM-889 (segundo PR) · LA «×» DE UNA LÍNEA GUARDADA. Lista entera SIN ella —con los ids de las
+    // demás, que es lo que deja cada precio de la oficina en SU línea— y se relee del servidor. Si
+    // falla no se relee: la línea sigue ahí y se dice con el literal ya aprobado `noSeGuardo`.
+    var quitando = false;
+    var equisGuardadas = contenedor.querySelectorAll ? contenedor.querySelectorAll('.parte-quitar-linea[data-indice]') : [];
+    for (var q = 0; q < equisGuardadas.length; q++) {
+      (function (equis) {
+        equis.addEventListener('click', async function () {
+          if (quitando) return;
+          var indice = Number(equis.getAttribute('data-indice'));
+          var todas = Array.isArray(parte.lineas) ? parte.lineas : [];
+          if (!todas[indice]) return;
+          quitando = true;
+          quitarAvisoNoGuardada();
+          try {
+            await pedir('/admin/partes/' + parteId, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                lineas: todas.filter(function (_, i) { return i !== indice; }).map(lineaQueSeGuarda),
+              }),
+            });
+          } catch (e) {
+            quitando = false;
+            var filas = contenedor.querySelector('[data-parte-filas="' + todas[indice].bloque + '"]');
+            if (filas) {
+              filas.insertAdjacentHTML('beforeend',
+                '<tr><td colspan="3" data-linea-no-guardada="1">' + esc(TEXTOS.noSeGuardo) + '</td></tr>');
+            }
+            return;
+          }
+          await renderParteDetailView(contenedor, parteId, o);
+        });
+      }(equisGuardadas[q]));
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════════

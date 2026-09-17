@@ -105,8 +105,12 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // fila, que no es una caja ni un rótulo sino una decisión de producto. Y lleva una comprobación
   // que ninguno de los diecisiete tenía: que el rótulo no sea un IDENTIFICADOR. Su primera pasada
   // salió verde con «btnConvertirFactura» en pantalla porque contaba acciones sin mirar qué dicen.
-  assert.equal(fuera.length, 18,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ 18 → ${fuera.length}.\n`
+  // SCRUM-892 · 18 → 19: entra `guard:firma-con-tramos`. Un lienzo oculto solo mide 0 con layout
+  // real, así que la firma vacía de «3 opciones» no se ve sin navegador. Dibuja con el ratón y juzga
+  // lo enviado con el criterio del servidor; el modo normal hace de control. Comprobado en rojo
+  // quitando solo el cambio del lienzo: «3 opciones» 0×0 y 6 caracteres sin trazo.
+  assert.equal(fuera.length, 19,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ 19 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

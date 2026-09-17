@@ -34,6 +34,14 @@
 // Medido: `git merge-tree` con una ref que no existe sale con 1 —el MISMO código que un
 // conflicto— y la salida vacía. Así que un conflicto solo se cree con un árbol válido Y una
 // lista de ficheros no vacía. Sin lista, «no pude mirar», y no se empuja.
+//
+// ── 🔴 LA CERRADURA 0, Y VA PRIMERO: SOLO PR QUE YA ESTABAN ARMADOS (SCRUM-839e) ─────────────
+// La primera pasada real (16-sep-2026, 14:37Z) empujó a #880 y #399, dos PR de semanas SIN
+// auto-merge. Su push disparó `pr-automatico.yml`, que los armó, y entraron en `main` a las 14:44Z
+// y 14:45Z. Un PR sin auto-merge es uno que nadie prometió mergear —el criterio del vigía—, y
+// arreglarle el conflicto es empujarlo hacia `main`. Así que se mira ANTES que nada, con el dato
+// de la lista que el workflow lee al empezar la pasada: armado → se sigue; sin armar → no se
+// toca; y si el dato falta o tiene una forma que no se conoce → «no pude mirar».
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
@@ -44,6 +52,23 @@ import { fileURLToPath } from 'node:url';
 export const RUTA_DE_REGISTRO = /^docs\/master\/[^/]+\.md$/;
 
 const OID = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
+
+/**
+ * ¿Tenía el PR el auto-merge armado? Lee `autoMergeRequest` tal como lo da `gh pr list --json`:
+ * `null` si no lo tiene, un objeto con `enabledAt` si lo tiene. Que el campo NO ESTÉ no es «no
+ * armado»: es que la lista no lo pidió o la API no lo dio.
+ *
+ * @returns {{estado:'ARMADO'|'SIN-ARMAR'} | {estado:'NO-PUDE-MIRAR', motivo:string}}
+ */
+export function armadoAntesDeLaPasada(pr) {
+  if (!pr || typeof pr !== 'object' || !Object.hasOwn(pr, 'autoMergeRequest')) {
+    return { estado: 'NO-PUDE-MIRAR', motivo: 'no pude mirar si el PR tenía el auto-merge armado: la lista no trae autoMergeRequest' };
+  }
+  const a = pr.autoMergeRequest;
+  if (a === null) return { estado: 'SIN-ARMAR' };
+  if (typeof a === 'object' && typeof a.enabledAt === 'string' && a.enabledAt) return { estado: 'ARMADO' };
+  return { estado: 'NO-PUDE-MIRAR', motivo: `no pude mirar si el PR tenía el auto-merge armado: autoMergeRequest con forma desconocida (${JSON.stringify(a)})` };
+}
 
 /**
  * El `git` de verdad. Se inyecta para poder darle al suelo salidas que git no da a voluntad.
@@ -97,8 +122,15 @@ export function mezclar(git, { cabeza, main, fuente }) {
  * workflow empuja solo si `accion === 'EMPUJAR'`.
  *
  * Acciones: NADA (no hay conflicto) · EMPUJAR · NO-EMPUJA (con `causa`) · NO-PUDE-MIRAR.
+ *
+ * `pr` es la entrada del PR en la lista leída al empezar la pasada (con `autoMergeRequest`).
  */
-export function decidir(git, { cabeza, main, mensaje }) {
+export function decidir(git, { pr, cabeza, main, mensaje }) {
+  // ── CERRADURA 0 · ¿alguien prometió mergearlo? Antes de mirar ningún fichero ──
+  const armado = armadoAntesDeLaPasada(pr);
+  if (armado.estado === 'NO-PUDE-MIRAR') return { accion: 'NO-PUDE-MIRAR', motivo: armado.motivo };
+  if (armado.estado === 'SIN-ARMAR') return { accion: 'NO-EMPUJA', causa: 'SIN-AUTO-MERGE' };
+
   // El árbol vacío, escrito de verdad: `--attr-source` necesita un objeto que resuelva.
   const vacio = git(['hash-object', '-t', 'tree', '-w', '--stdin'], '');
   const arbolVacio = vacio.stdout.trim();
@@ -143,20 +175,28 @@ export function decidir(git, { cabeza, main, mensaje }) {
 }
 
 // ── CLI, para el workflow ────────────────────────────────────────────────────────────────
-//   node scripts/conflicto-de-registro.mjs <pr> <sha-cabeza> <ref-main>
+//   node scripts/conflicto-de-registro.mjs <pr> <sha-cabeza> <ref-main> <prs.json>
+// `prs.json` es la lista de PR que el workflow leyó al empezar la pasada, con `autoMergeRequest`.
 // Escribe el veredicto en JSON por stdout. Sale en 0 siempre que haya veredicto: qué hacer con
 // él lo decide el workflow, y NO-PUDE-MIRAR es un veredicto, no un fallo del proceso.
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const [pr, cabeza, main] = process.argv.slice(2);
-  if (!/^\d+$/.test(pr || '') || !cabeza || !main) {
-    console.error('uso: node scripts/conflicto-de-registro.mjs <pr> <sha-cabeza> <ref-main>');
+  const [pr, cabeza, main, lista] = process.argv.slice(2);
+  if (!/^\d+$/.test(pr || '') || !cabeza || !main || !lista) {
+    console.error('uso: node scripts/conflicto-de-registro.mjs <pr> <sha-cabeza> <ref-main> <prs.json>');
     process.exit(2);
   }
+  // Una lista ilegible, o sin este PR, deja `entrada` sin definir: la cerradura 0 lo convierte en
+  // «no pude mirar». Nunca en «no está armado» ni, peor, en «da igual».
+  let entrada;
+  try {
+    const prs = JSON.parse(fs.readFileSync(lista, 'utf8'));
+    entrada = Array.isArray(prs) ? prs.find((p) => p && p.number === Number(pr)) : undefined;
+  } catch { entrada = undefined; }
   const mainSha = execFileSync('git', ['rev-parse', '--verify', main + '^{commit}'], { encoding: 'utf8' }).trim();
   // El mensaje no lleva el nombre de la rama: es texto que escribe otra persona.
   const mensaje = `Merge main (${mainSha.slice(0, 8)}) en el PR #${pr}\n\n`
     + 'SCRUM-839d: el conflicto era solo de registro (docs/master/*.md) y se resolvió con\n'
     + 'merge=union. Ningún fichero fuera de docs/master estaba en conflicto.';
-  const v = decidir(gitReal(process.cwd()), { cabeza, main: mainSha, mensaje });
+  const v = decidir(gitReal(process.cwd()), { pr: entrada, cabeza, main: mainSha, mensaje });
   process.stdout.write(JSON.stringify({ pr: Number(pr), ...v }) + '\n');
 }

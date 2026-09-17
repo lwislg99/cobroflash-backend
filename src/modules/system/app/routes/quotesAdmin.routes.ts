@@ -40,7 +40,7 @@ import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; //
 // es `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, el de SCRUM-234/728, y esta función lo
 // expone desde SCRUM-358 para exactamente este uso (comprobar ANTES de consumir número).
 import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
-import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
 import fetch from 'node-fetch';
@@ -50,6 +50,7 @@ import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 // SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
 import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
+import { firmaTieneTrazo } from '../../../quotes/domain/firmaConTrazo';
 
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
@@ -203,7 +204,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // `distributeStageAmounts` y las líneas se escalaban aparte: dos redondeos independientes que
     // podían diferir 1 cént., y esa diferencia quedaba SELLADA en la huella VeriFactu
     // (`importeTotal` del total vs `cuotaTotal` de las líneas). Ver invoiceLines.service.ts.
-    const quoteLines = Array.isArray(quote.lines) ? quote.lines as any[] : [];
+    const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
 
     // ── SCRUM-814 · EL TRAMO ES UNA FUNCIÓN DEL RECUENTO, no un valor decidido una vez ──────
     //
@@ -510,7 +511,7 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     // FAIL-CLOSED 3 — sin líneas no se emite. El guard de SCRUM-149 ya impide SELLAR una factura
     // sin líneas, pero para entonces la factura ya existe y ha consumido número de serie. Aquí se
     // para antes: mejor no crear el documento que crear uno que no se puede sellar.
-    const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : [];
+    const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
     if (quoteLines.length === 0) {
       return res.status(409).json({
         error: 'quote_without_lines',
@@ -888,7 +889,11 @@ router.get('/:id', async (req, res) => {
     const asignados = await leerAsignadosDeDocumento(
       prisma as unknown as ClienteDeAsignacionDeDocumento, 'quote', id,
     );
-    const cuerpo = { ...detail, waDelivery, asignados, ...(maintenance ? { maintenance } : {}) };
+    // SCRUM-892 · el panel solo dice «Firmado digitalmente» si la firma guardada tiene TRAZO. Se
+    // decide aquí, con el mismo criterio que rechaza al aceptar, y no en el navegador a ojo: hay
+    // filas ya guardadas con `signatureUrl = "data:,"` que no se tocan.
+    const firmaConTrazo = firmaTieneTrazo((detail as { signatureUrl?: unknown } | null)?.signatureUrl);
+    const cuerpo = { ...detail, firmaConTrazo, waDelivery, asignados, ...(maintenance ? { maintenance } : {}) };
     return res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
   } catch (err: any) {
     console.error('[GET /admin/quotes/:id]', err);

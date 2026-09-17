@@ -173,7 +173,7 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
         f.appendChild(inp);
         f.appendChild(imp);
         card.appendChild(f);
-        entradas.push({ indice: x.indice, input: inp, importe: imp, unds: x.l.unds });
+        entradas.push({ indice: x.indice, id: x.l.id, input: inp, importe: imp, unds: x.l.unds });
       });
     });
 
@@ -201,7 +201,8 @@ async function pintarParte(id, detalle, container, opts, yaTraido) {
   guardar.onclick = function () {
     guardar.disabled = true;
     const precios = entradas.map(function (e) {
-      return { indice: e.indice, precioUnitario: e.input.value === '' ? null : Number(e.input.value) };
+      // SCRUM-889 · con el id: si el técnico quitó esa línea mientras, el precio no cae en la de detrás.
+      return { indice: e.indice, id: e.id, precioUnitario: e.input.value === '' ? null : Number(e.input.value) };
     });
     apiRequest('/admin/partes/' + parte.id, {
       method: 'PATCH',

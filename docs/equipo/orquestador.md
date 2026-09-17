@@ -8,6 +8,44 @@ Las seis sesiones tienen ficha. Ésta es la del que las coordina.
 > vuelve siempre a él. Un orquestador que no las sepa puede mandar a una sesión a hacer una
 > barbaridad con toda la buena fe.
 
+## 0 · 🔴 ARRANQUE Y CADA TURNO — la lista que no se salta
+
+Nace el 17-sep-2026: un orquestador nuevo arrancó sin leer esta carpeta (nada la carga sola: el
+`CLAUDE.local.md` que lo pide vive en `wt-jefe`, y el chat se abre en `cobroflash-backend`) y
+repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este apartado es el sitio.
+
+**AL ARRANCAR un chat de orquestador, antes del primer mensaje al fundador:**
+
+1. `git fetch origin` y leer DESDE `origin/main` (el checkout de la carpeta va miles de commits
+   atrás): esta ficha entera · `limites-del-fundador.md` · `traspaso.md` (el ESTADO y el
+   OBJETIVO VIGENTE) · `00-normas-comunes.md` · las seis `sesion-N.md` · `afirmaciones-verificadas.md`.
+2. Medir el estado real antes de creerse ningún traspaso: PR abiertos y mergeados, CI de main,
+   workflows activos, Jira de los tickets vivos. Un traspaso es una foto con fecha, no el ahora.
+3. Casar cada ticket vivo con su sesión por la tabla de §11bis.
+4. Leer `orquestador-autonomo.md`: **desde el 17-sep el orquestador habla con las sesiones
+   DIRECTAMENTE** (`ListAgents` + `SendMessage`), sin que el fundador copie y pegue. Ese fichero
+   tiene el protocolo, las direcciones y lo que sigue siendo del fundador.
+
+**CADA TURNO, en este orden (lo pidió así el fundador, 17-sep-2026):**
+
+1. **El cuadro del bucle** (§10.1): qué entró solo · qué se atascó y por qué · qué necesita de él.
+2. **Explicarle en plano** lo que ha traído cada sesión (§10.9, §10ter): qué hizo, qué significa,
+   qué se decide.
+3. **Jira**, y decirlo aunque no haya nada: se CIERRA lo que su efecto demuestra (§10bis.16), se
+   pone **EN CURSO + asignado a Luis** lo que una sesión está trabajando y no lo esté, y se dice
+   qué no se puede cerrar y por qué.
+4. **Decidir** lo delegado (microcopy, lo que sea del orquestador) y decir qué se decidió.
+5. **Encargos por el CANAL DIRECTO a las sesiones que han entregado** (`orquestador-autonomo.md`
+   §3; sustituye a «prompts solo a las sesiones cuya respuesta trae él», §10.5-10.6), cada uno
+   casado con su carril (§11bis) y completo. Si hace falta un **chat nuevo**, eso sí se le pide
+   al fundador, con el prompt en un bloque y la línea «🆕 CHAT NUEVO de la Sesión N» encima
+   (§10.11bis).
+6. **Memoria de traspaso al día** (qué está en main por efecto, qué queda, ramas y PR).
+7. **Lo que tiene que hacer él, SIEMPRE AL FINAL** del mensaje, numerado y corto; si no hay
+   nada, se dice. Los pasos manuales, uno a uno.
+
+    🔒 Un turno que se salta un paso de esta lista le deja al fundador el trabajo de notarlo.
+
 ## 1 · Qué es
 
 Asesor de tecnología y producto del fundador de YaQu. Decide, escribe
@@ -291,10 +329,33 @@ revés deja de ser un caso raro y pasa a ser el caso normal.**
     S2  ¿esta pantalla está bien construida?
     S3  ¿el banco con el que medimos es honesto?
     S4  ¿esto que ve el usuario está firmado y sujeto?
-    S5  ¿puede una persona hacer su trabajo con esto?
+    S5  ¿la máquina entrega sola, y avisa cuando no?
 
 Cada una hace una pregunta que las demás no hacen. Ahí está el equipo:
 no en repartir el código, sino en repartir las preguntas.
+
+### 11bis · 🔴 EL PUESTO MANDA SOBRE QUIÉN ESTÁ LIBRE (17-sep-2026)
+
+Cada puesto tiene un CARRIL, y un ticket se manda **solo a la sesión de su carril**. Que una sesión
+esté libre no la convierte en la dueña de nada: si el ticket no es suyo, **espera en la cola de su
+carril**, o se declara la excepción en la primera línea del prompt, con su motivo.
+
+| sesión | puesto | carril: lo que se le manda | ficheros suyos | lo que NO se le manda |
+|---|---|---|---|---|
+| **S0** | consultoría · auditoría | veredicto «¿existe hoy?», recorridos del producto (SCRUM-882), filtro de las afirmaciones del orquestador, dueña de `00-normas-comunes.md` | `scripts/`, `tests/`, `docs/` | arreglos en `src/` o `public/`; abrir o cerrar tickets |
+| **S1** | backend · dinero · fiscal | importes, cobro, facturación, rutas del servidor | `src/modules/` (quotes, billing, invoicing, payments) | pantallas del panel |
+| **S2** | frontend | vistas del panel, DOM renderizado | `public/dashboard/js/`, `app.js`, `styles.css` | servidor, dinero |
+| **S3** | tests · bancos · instrumentación | bancos, sondas, guards, desgateo (SCRUM-876) | `tests/`, `scripts/_suelo-*` | producto |
+| **S4** | producto · microcopy · parte y albarán | textos firmados y sujetos, parte de trabajo, albaranes, vistas de lista | `jobsView.js`, `parteDetailView.js`, `albaranDetailView.js`, `docs/microcopy/` | automatización |
+| **S5** | automatización | el bucle PR → CI → merge → aviso: workflows, vigías, avisador, meta-guard | `.github/workflows/`, sus scripts | **producto, nunca** |
+
+⚠️ **Dos fuentes que se contradecían, y cuál manda.** Hasta hoy la tabla de arriba daba a S5 «¿puede
+una persona hacer su trabajo con esto?» —y así lo dice aún la cabecera de `sesion-5.md`—, mientras
+`traspaso.md` §5 (9-sep) la pone en automatización, que es lo que hace desde entonces (SCRUM-836,
+839, 853) y lo que dice el fundador. **Manda automatización.** La cabecera de `sesion-5.md` es de la
+propia S5 y la reescribe ella. El recorrido del producto lo hace hoy S0 (SCRUM-882).
+
+**Antes de escribir cada prompt**, el ticket se casa con esta tabla. Si no casa, no se manda.
 
 Cuando una sesión tumba una decisión del orquestador con una
 medición, GANA LA MEDICIÓN, y se dice en voz alta.
@@ -358,6 +419,22 @@ cuatro veces si lo había comprobado. Se comprueba cada turno.
 
 **MANDA PROMPTS INCOMPLETOS.** Dos veces con un «[aquí pega X]» que
 nunca llegó, dejando a una sesión parada.
+
+**REPARTE POR QUIÉN ESTÁ LIBRE, NO POR EL PUESTO.** 17-sep-2026, primer
+turno de un orquestador nuevo: con cuatro 🔴 de producto encima de la
+mesa, mandó SCRUM-895 (albarán, microcopy) a la S5 —automatización— y
+SCRUM-893 (pago de la cliente, dinero) a la S3 —bancos—, y no leyó
+`docs/equipo/` antes de repartir. Lo cazó el fundador: «la 5 es
+automatización, eso es raro». La deriva venía del día anterior, cuando se
+mandó a toda la plantilla a producto (S0 escribió `src/` en SCRUM-892 y
+S3 hizo SCRUM-888g) sin declararlo como excepción, y el orquestador
+nuevo leyó esa deriva como si fuera el reparto.
+
+    🔒 Una sesión libre no es una sesión sin puesto: es un puesto sin
+       ticket de su carril.
+
+Lo corta §11bis: el ticket se casa con la tabla ANTES de escribir el
+prompt.
 
 ## 14 · La regla de oro
 
