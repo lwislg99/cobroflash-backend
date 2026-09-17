@@ -82,6 +82,10 @@ De ahí salen tres consecuencias que no se negocian:
   TRES bases, que aplica el colaborador → ③ un solo PR. NUNCA ③ sin ②.
 - El camino de emisión fiscal: leerlo sí, modificarlo es STOP.
 - Dependencia o coste nuevo.
+- Infraestructura de producción.
+- El sí de DESPLEGAR un arreglo del cobro: el visto bueno de producto es suyo
+  desde el 17-sep, pero el despliegue lo escribe el fundador en el chat de la
+  sesión (`orquestador-autonomo.md` §7).
 - Cualquier cosa que el fundador ya decidiera con su motivo escrito.
   Antes de cambiar una decisión suya, se lee por qué la tomó: la
   excepción que parece un descuido puede ser el único sitio donde una
@@ -256,7 +260,8 @@ Cuando el orquestador firma, firma así:
    tickets otra vez — y eso es lo que se dice, en vez del orden.
 4. SE COMPRUEBA JIRA CADA TURNO y se dice explícitamente, también
    cuando no se puede cerrar nada. Nunca dejarle a él preguntando.
-5. Prompt SOLO para las sesiones cuya respuesta ha traído el fundador
+5. *(SUSTITUIDO el 17-sep-2026 por el canal directo: `orquestador-autonomo.md` §3. Se conserva
+   como historia.)* Prompt SOLO para las sesiones cuya respuesta ha traído el fundador
    en ese turno. La primera línea dice a cuál va.
 6. 🔴 ACTUALIZADO 15-sep-2026, corrección del fundador: las sesiones que
    él dice que «siguen ejecutando» NO reciben prompt. Mandárselo las
@@ -315,8 +320,9 @@ revés deja de ser un caso raro y pasa a ser el caso normal.**
     claramente del orquestador: se DECIDE y se le dice qué se ha
     decidido. No se le devuelve la pregunta. *(Es el §3 «un asesor que
     devuelve todas las preguntas está reenviando», dicho como norma.)*
-20. Vuelven SIEMPRE a él: coste o dependencia nueva (regla 36),
-    cualquier cosa que toque dinero o el camino fiscal (regla 38), y
+20. Vuelven SIEMPRE a él: coste o dependencia nueva, el camino de emisión
+    fiscal, el sí de DESPLEGAR un arreglo del cobro (lo escribe él en el chat
+    de la sesión; `orquestador-autonomo.md` §7) (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep), y
     los cambios de infraestructura de producción.
 21. Brutalmente honesto. Si el orquestador se equivoca, lo dice y lo
     apunta en `afirmaciones-verificadas.md`. Si una sesión le corrige,
@@ -353,7 +359,16 @@ carril**, o se declara la excepción en la primera línea del prompt, con su mot
 una persona hacer su trabajo con esto?» —y así lo dice aún la cabecera de `sesion-5.md`—, mientras
 `traspaso.md` §5 (9-sep) la pone en automatización, que es lo que hace desde entonces (SCRUM-836,
 839, 853) y lo que dice el fundador. **Manda automatización.** La cabecera de `sesion-5.md` es de la
-propia S5 y la reescribe ella. El recorrido del producto lo hace hoy S0 (SCRUM-882).
+propia S5, y ya la reescribió en el #1391 (17-sep). El recorrido del producto lo hace hoy S0 (SCRUM-882).
+
+**Dónde se tocan dos carriles (auditoría de la S0, 17-sep):**
+- Dentro de `public/dashboard/js/`, los ficheros `jobsView.js`, `parteDetailView.js` y `albaranDetailView.js` son
+  de la S4. El resto es de la S2.
+- En `tests/`, los bancos y los instrumentos de medida (`_banco-*`, suelos, mutación) son de la S3. Los scripts
+  de verificación y los censos de consulta son de la S0.
+- **Codex** está cerrado desde el 9-sep (`traspaso.md` §5 antiguo) y no tiene carril.
+- Los documentos de gobierno (`CLAUDE.md`, la skill `cerebro-yaqu` y la Parte AA del máster) derivan del
+  máster: su cambio lo prepara la S0 como propuesta, y lo aprueba el fundador.
 
 **Antes de escribir cada prompt**, el ticket se casa con esta tabla. Si no casa, no se manda.
 

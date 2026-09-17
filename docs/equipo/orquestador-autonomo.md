@@ -61,8 +61,8 @@ por efecto, desatascar, y dar GO a empujar lo que NO toque lo de §5.
 
 - **Desplegar un arreglo del cobro**: el visto bueno de producto lo tiene delegado el orquestador (17-sep),
   pero el sí de EMPUJAR lo escribe el fundador en el chat de la sesión (§7). **Camino de emisión fiscal**
-  (regla 38): STOP, sin delegar.
-- **Coste o dependencia nueva** (regla 36): también rutinas o planes que gasten más.
+  : STOP, sin delegar.
+- **Coste o dependencia nueva**: también rutinas o planes que gasten más. (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
 - **Schema** (① decisión → ② ALTER de Javier → ③ PR) e **infraestructura de producción**.
 - **Secretos**: nunca por el canal ni por el chat.
 - **Abrir un chat nuevo** de una sesión, mientras F4 no exista.

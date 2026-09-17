@@ -40,9 +40,9 @@ El fundador ha delegado, por escrito y de forma permanente:
   dice qué ha decidido, en vez de devolverle la pregunta.
 - Sus palabras: «todo lo que dices que es mío decídelo tú si puedes».
 
-Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva
-(regla 36), cualquier cosa que toque dinero o el camino fiscal (regla 38), y
-cualquier cambio de infraestructura de producción.
+Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva,
+el camino de emisión fiscal y cualquier cambio de infraestructura de producción (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
+El dinero tiene un matiz desde el 17-sep: ver «Delegaciones del 17-sep-2026».
 
 ## El objetivo vigente (17-sep-2026, de viva voz)
 
