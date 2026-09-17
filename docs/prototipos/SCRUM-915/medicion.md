@@ -1,18 +1,19 @@
-# SCRUM-915 · Medición del prototipo
+# SCRUM-915 · Medición del prototipo v2
 
-Chromium 148 local (puppeteer-core), fichero abierto con `file://`, 17-sep-2026, sobre la rama
-`scrum-915-prototipo-editor` (base `0888df9e`). Recorrido completo en cada anchura: buscar cliente
-(«oliv») → elegirlo → describir el trabajo → «✨ Generar sugerencias» → «Añadir líneas seleccionadas» →
-importes → «Plan personalizado (por tramos)» → Opciones (1280) / último paso (390) → «Generar presupuesto»
-→ cerrar → interruptor «Justificante» → pestaña «Inventario».
+Chromium 148 local (puppeteer-core), `file://`, 17-sep-2026, rama `scrum-915b-prototipo-v2`. Recorrido en cada
+anchura: elegir «Comunidad Los Olivos» → foco en la línea vacía (desplegable de conceptos) → escribir «grifo» y
+elegir del catálogo → cantidad 2 → «✨ Sugerir con IA» (modal) → «Añadir líneas seleccionadas» → Continuar →
+Condiciones → «Cambiar» en cobro → «50% al aceptar, 50% al finalizar» → Continuar → (390: «Ver documento») →
+«Generar presupuesto» → cerrar → «Justificante» → «Inventario».
 
-| Anchura | Errores de página | Scroll horizontal | Controles < 44 px | Total tras la IA | Tramos | Pasos del justificante | Filas del inventario |
-|---|---|---|---|---|---|---|---|
-| 1280 × 900 | 0 | no, en los 10 estados | 0 | 303,59 € | «Suman 100 % ✓» | 4 | 46 |
-| 390 × 844 (táctil) | 0 | no, en los 10 estados | 0 | 303,59 € | «Suman 100 % ✓» | 4 | 46 |
+| Anchura | Errores | Scroll horizontal | Controles < 44 px | Total con 1 línea | Total final | Filas en el documento | Pasos del justificante | Filas del inventario |
+|---|---|---|---|---|---|---|---|---|
+| 1280 × 860 | 0 | no (12 estados) | 0 | 157,06 € | 460,65 € | 5 | 3 | 45 |
+| 390 × 844 táctil | 0 | no (13 estados) | 0 | 157,06 € | 460,65 € | 5 | 3 | 45 |
 
-- Total comprobado a mano: 85 + 64,90 + 25 + 2 × 38 = 250,90 € de base; IVA 21 % = 52,69 €; 303,59 €.
-- La barra negra de arriba es del prototipo (no es producto) y no se mide.
-- ⚠️ Primera pasada con 4 tipos de control bajo 44 px (ficha de IVA 36, «Revisado» 32, «Aplicar» 41, enlace del PDF 20): corregidos y repetido.
-- No medido: contraste calculado por herramienta (los colores son los tokens de DESIGN.md, que ya declaran AA), lector de pantalla, móvil real.
-- La cuenta es ILUSTRATIVA (suma × IVA por línea, descuento global prorrateado): al construir manda la de hoy (887/888), ninguna cifra cambia.
+- A mano: 2 × 64,90 = 129,80 € + 21 % = 157,06 €. Con las 4 de la IA: base 380,70 € + IVA 79,95 € = 460,65 €.
+- La vista previa se construye: 0 → 1 → 5 filas y el total cambia en cada paso del recorrido.
+- ⚠️ Pasadas anteriores: «⋯» a 40 px y «Listo»/«Abrir PDF» bajo 44 en móvil (corregidos); el concepto se cortaba a
+  390 (la línea pasa a dos filas con rótulos «Cantidad»/«Precio»); y dos fallos del propio script (el triple clic no
+  selecciona en un `input number`; un clic caía bajo la barra fija) que se corrigieron en el script, no en el prototipo.
+- La cuenta es ILUSTRATIVA: al construir manda la de hoy (887/888).
