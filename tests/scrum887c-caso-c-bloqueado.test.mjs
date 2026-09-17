@@ -27,6 +27,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
@@ -117,7 +118,7 @@ async function invocar(rutaModulo, metodo, ruta, req) {
 }
 
 const MERCHANT = { id: 7, name: 'QA', country: 'ES', taxId: 'B12345678', invoiceSeriesPrefix: 'CF', approvalThreshold: null };
-const CUSTOMER = { id: 2, name: 'Cliente QA', phone: '+34 600 000 887' };
+const CUSTOMER = { id: 2, name: 'Cliente QA', phone: telefonoDePrueba(887) }; // SCRUM-262: rango imposible
 
 /** Deja `prisma` con lo mínimo y ANOTA toda escritura: un rechazo tiene que llegar antes. */
 function prismaDeDoble(quote, escrituras) {
