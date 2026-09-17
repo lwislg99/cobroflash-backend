@@ -137,8 +137,15 @@ test('SCRUM-889 · 🔴 con cantidad y descripción, la línea se GUARDA (lista 
   }, '🔴 el PATCH reemplaza la lista ENTERA: tiene que llevar las que había MÁS la nueva, y ni un importe');
   const gets = srv.pedidas.filter((p) => p.metodo === 'GET').length;
   assert.equal(gets, 2, '🔴 tras guardar no se relee el parte: la pantalla enseñaría lo que creemos que mandamos');
-  assert.equal(camposDesc(cont).filter((x) => x.value === 'Cambio de diferencial').length, 1,
+  // SCRUM-897 · Se mira el ATRIBUTO del marcado repintado, no `.value`. Con el banco anterior, el
+  // único `.value === 'Cambio de diferencial'` era la fila TECLEADA, que la vista ya había
+  // repintado pero el banco seguía apilando: este assert pasaba mirando lo viejo. La línea que
+  // llega del servidor trae `value="…"` en su marcado, y el banco no copia ese atributo a la
+  // propiedad al parsear (el navegador sí), así que por `.value` sale vacía.
+  assert.equal(camposDesc(cont).filter((x) => x.getAttribute('value') === 'Cambio de diferencial').length, 1,
     'la línea guardada vuelve pintada desde el servidor, una sola vez');
+  assert.equal(camposDesc(cont).filter((x) => x.hasAttribute('data-nueva-desc')).length, 0,
+    '🔴 tras releer del servidor sigue en pantalla la fila tecleada: lo que se ve no es lo que se guardó');
 });
 
 test('SCRUM-889 · en «Materiales» la línea va a materiales', async () => {
