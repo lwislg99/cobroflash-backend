@@ -222,7 +222,29 @@ Lo pedido: quién la consume. **Población: 1.557 ficheros.**
 consumidor está **fuera de este repositorio**, donde no sé buscar. Cambiar lo que devuelve es
 cambiar un contrato a ciegas.
 
-## 8 · Ficheros
+## 8 · La tanda, y los dos intermitentes que NO son míos
+
+**`7253 tests · 7142 pass · 1 fail · 110 skipped`** (primera) y **`7253 · 7141 · 2 fail · 110`**
+(segunda). Ninguna limpia, y ninguno de los fallos es de esta rama. Lo que lo demuestra no es mi
+opinión, son **fallos DISJUNTOS**:
+
+| | tanda 1 | tanda 2 | aislado | ¿toca algo mío? |
+|---|---|---|---|---|
+| `scrum451-plazo-de-red` | **cae** | pasa | 12/12 ✅ | no |
+| `scrum804-la-rama-viva` (2 casos) | pasa | **cae** | 9/9 ✅ | no |
+| los 7 casos de SCRUM-893 | **7 ✔** | **7 ✔** | 7/7 ✅ | — |
+
+Una regresión real cae en las dos. Estas se turnan, y cada una declara su propio SUELO en vez de
+dar un verde falso: `451` dice «las cabeceras tenían que haber llegado, o esto no prueba lo del
+cuerpo» (timing bajo carga) y `804` dice «el censo cuenta 148 ramas y `for-each-ref` 149» — refs
+moviéndose bajo los ~26 worktrees que comparten este `.git` mientras la tanda corre.
+
+🔴 **Y la pregunta incómoda, medida en vez de esquivada:** mi banco levanta ~40 servidores HTTP
+efímeros, así que podría ser yo quien añade la carga que tumba a `451`. Control: los tres ficheros
+juntos, dos pasadas → **28 pass · 0 fail** las dos veces. No interfiero. Además `804` ya caía en la
+rama `scrum-864b`, que no lleva una línea de este ticket.
+
+## 9 · Ficheros
 
 | fichero | qué |
 |---|---|
