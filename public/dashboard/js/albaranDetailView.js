@@ -79,6 +79,20 @@ if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFall
 const ROTULOS_ALBARAN = {
   // Aprobados para ESTE ticket (nuevos en el árbol)
   btnFacturar: 'Facturar lo entregado',
+  // SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699), por delegación de la
+  // elección entre tres alternativas. Va pegado a `btnFacturar` porque es de él de quien hay que
+  // distinguirlo: son las DOS mitades excluyentes de la primaria de `firmado` —aquélla para el
+  // albarán VALORADO, ésta para el SIN_VALORAR—, y lo único que las separa a ojos del profesional
+  // es DE DÓNDE SALEN LOS PRECIOS. Por eso el rótulo los nombra: es lo que evita que se ponga a
+  // teclear importes a mano cuando su cliente ya los aceptó.
+  //
+  // 27 caracteres, el más largo de la barra (sus hermanos van de 13 a 21), y se aceptó a sabiendas.
+  // «Facturar este parte» es más corto y calla justo eso; «Facturar lo entregado» se descartó
+  // porque serían dos acciones distintas con el mismo rótulo en el código.
+  //
+  // Hasta hoy esta clave NO EXISTÍA, y `mk()` caía al respaldo `ROTULOS_ALBARAN[id] || MARCADOR`:
+  // el botón principal de un albarán firmado decía literalmente `[PENDIENTE microcopy oficial]`.
+  btnConvertirFactura: 'Facturar con el presupuesto',
   btnFirmarAqui: 'Firmar aquí mismo',
   btnVerTrabajo: 'Ver trabajo',
   // SCRUM-302 · APROBADO por el fundador el 5-ago-2026: es la palabra del ticket y la que usa

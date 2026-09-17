@@ -323,7 +323,14 @@ export async function applyVeriFactu(
     const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx, invoice.id);
     // El instante se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
     // posterior al del registro anterior de la cadena.
-    const timestamp = formatFechaHoraHuso(new Date());
+    //
+    // 🔴 SCRUM-880 · EL INSTANTE SE GUARDA ENTERO Y SE HASHEA TRUNCADO. Antes se persistía
+    // `new Date(timestamp)` —o sea, la cadena YA truncada al segundo, re-parseada—, así que el
+    // sello guardado tenía siempre los milisegundos a cero y dos registros del mismo segundo eran
+    // indistinguibles para el desempate de la cadena. Ahora se conserva `ahora`: la huella sigue
+    // usando el truncado que exige la AEAT, y la columna guarda la precisión que el hash descarta.
+    const ahora = new Date();
+    const timestamp = formatFechaHoraHuso(ahora);
 
     const vfHash = computeVeriFactuHash({
       nif: taxId,
@@ -343,9 +350,14 @@ export async function applyVeriFactu(
     // SCRUM-145: se PERSISTE el instante exacto que entró en la huella. Sin él, el registro
     // emitía `FechaHoraHusoGenRegistro` = fecha de la FACTURA, que NO es lo que se hasheó, y
     // un tercero no podía recomputar la huella para verificarla.
+    //
+    // ⚠️ SCRUM-880 MATIZA ESA PROMESA, y conviene que esté escrito donde se hizo: lo que se
+    // guarda ya no es *exactamente* lo hasheado, sino **lo hasheado MÁS la precisión que el hash
+    // descarta**. La verificación de un tercero no cambia: el XML emite
+    // `formatFechaHoraHuso(inv.vfTimestamp)`, que vuelve a truncar y produce la misma cadena.
     await tx.invoice.update({
       where: { id: invoice.id },
-      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: new Date(timestamp) },
+      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora },
     });
 
     return { vfHash, prevHash, qrUrl };
@@ -407,7 +419,11 @@ export async function applyVeriFactuAnulacion(
     const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx);
     // El sello se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
     // posterior al del eslabón anterior.
-    const timestamp = formatFechaHoraHuso(new Date());
+    //
+    // 🔴 SCRUM-880 · simétrico al alta: el instante se guarda ENTERO y se hashea TRUNCADO. Que la
+    // anulación y su alta cayeran en el mismo segundo era justo el caso que bifurcaba la cadena.
+    const ahora = new Date();
+    const timestamp = formatFechaHoraHuso(ahora);
 
     const vfAnulHash = computeVeriFactuHashAnulacion({
       nif: taxId,
@@ -424,7 +440,7 @@ export async function applyVeriFactuAnulacion(
     // que `vfPrevHash` con el alta. Un dato, no una inferencia.
     await tx.invoice.update({
       where: { id: invoice.id },
-      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: new Date(timestamp) },
+      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: ahora },
     });
 
     return { vfAnulHash, prevHash };
@@ -478,7 +494,29 @@ async function ultimaHuellaDeLaCadena(
   // Se compara por el sello del REGISTRO (cuándo se generó), no por la fecha de la factura.
   const tAlta = (ultimaAlta.vfTimestamp ?? ultimaAlta.createdAt).getTime();
   const tAnul = (ultimaAnul.vfAnulTimestamp as Date).getTime();
-  return tAnul > tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;
+
+  // ═══ SCRUM-880 · EL EMPATE GANA LA ANULACIÓN, Y ESTE `>=` NO ES UN DESCUIDO ════════════════
+  //
+  // 🔴 SI LEES ESTO PENSANDO EN «CORREGIRLO» A `>`, ES JUSTO EL DEFECTO QUE SE ARREGLÓ AQUÍ.
+  //
+  // **Una anulación es SIEMPRE posterior a su alta**: no se puede anular una factura antes de
+  // emitirla. Así que cuando los dos sellos empatan, la anulación es la posterior y tiene que
+  // ganar. Con `>` estricto ganaba el alta, el registro siguiente encadenaba a ella y la huella
+  // de la anulación quedaba huérfana: **la cadena se bifurcaba**.
+  //
+  // Y el empate era posible, medido (SCRUM-880): los dos sellos se persistían truncados al
+  // segundo, así que dos registros del mismo segundo eran indistinguibles aquí. El truncado se
+  // quitó en el mismo ticket —ahora se guarda el instante con milisegundos—, pero este `>=` se
+  // queda por dos motivos: los registros sellados ANTES de aquel cambio siguen teniendo los
+  // milisegundos a cero, y un reloj puede devolver el mismo instante dos veces.
+  //
+  // ⚠️ Lo que este `>=` NO arregla, dicho para que nadie lo dé por cerrado: si el empate fuera
+  // entre una anulación y un alta POSTERIOR no relacionada, ahora quedaría huérfana el alta. Con
+  // dos sellos idénticos no se puede saber cuál fue el último — cualquier desempate por reloj es
+  // una apuesta, y ésta apuesta al único caso que la causalidad garantiza. La solución que
+  // elimina la clase entera (un contador estrictamente monótono) es otro ticket: exige estado
+  // nuevo y cambio de esquema.
+  return tAnul >= tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;
 }
 
 /**
