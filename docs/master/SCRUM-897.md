@@ -67,7 +67,7 @@ Consumidores con el arreglo: 833 tests, 829 verdes, **4 rojos**, uno a uno:
 ## Suite completa y guards de navegador
 
 - `npm test` sobre `5a777d44` (antes del merge): 7.191 tests · 7.080 verdes · 110 saltados · **1 rojo**, SCRUM-854 «esta rama trae su entrada de registro»: faltaba este expediente.
-- Los 6 `guard:*` de navegador que se apoyan en el banco (`albaranes-con-acciones`, `escalera-por-estado`, `lista-trabajos`, `objetivo-tactil`, `portal-en-la-ficha`, `rastro-del-menu`), sobre el árbol arreglado: **los 6 con exit 0**.
+- Los 6 `guard:*` de navegador que se apoyan en el banco (`albaranes-con-acciones`, `escalera-por-estado`, `lista-trabajos`, `objetivo-tactil`, `portal-en-la-ficha`, `rastro-del-menu`), sobre el árbol arreglado: **los 6 con exit 0**. Comparados con los mismos 6 sobre main (`018d1807`, también exit 0) y sin las líneas de tiempos, cambia **una sola línea**: en `objetivo-tactil`, la excepción ya declarada «+ Añadir descuento» (`.btn-sm`) pasa de 29,7 a 29,8 px. Es el editor de presupuesto, que `_pagina-panel.mjs` serializa desde el banco y que ya no lleva las pintadas duplicadas; sigue siendo la misma excepción, sin tocar su lista.
 
 ## Hallazgos (regla 37: se reportan, no se arreglan aquí)
 
