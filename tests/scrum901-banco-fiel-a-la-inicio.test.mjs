@@ -77,6 +77,13 @@ test('SCRUM-901 · el marcado ANIDA: lo de dentro es hijo, y repintar el de dent
   // Un elemento vacío (void) no se traga lo que viene detrás.
   assert.equal(c.querySelectorAll('.esq')[1].parentNode, grid, '🔴 <input> se ha comido a su hermano');
 
+  // Un comentario no pinta, aunque lleve etiquetas; y dentro de <textarea> todo es texto.
+  const otro = banco.mk('div');
+  otro.innerHTML = '<!-- <span class="comentada"></span> --><textarea class="nota"><b>no es nodo</b></textarea><i></i>';
+  assert.equal(otro.querySelector('.comentada'), null, '🔴 una etiqueta dentro de un comentario se ha pintado');
+  assert.equal(otro.querySelector('b'), null, '🔴 el contenido de <textarea> se ha parseado como marcado');
+  assert.equal(otro.children.length, 2, 'control: <textarea> e <i>, los dos hijos directos');
+
   grid.innerHTML = '<b>cargado</b>';
   assert.equal(c.querySelectorAll('.esq').length, 0,
     '🔴 repintar el contenedor interno no quita los esqueletos que llevaba dentro');
