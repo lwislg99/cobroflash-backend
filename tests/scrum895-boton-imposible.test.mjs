@@ -117,16 +117,18 @@ test('SCRUM-895 · el merchant DEMO conserva la factura completa, así que conse
     '  agua, y `getEmissionMode` las distingue. Esconderle el botón sería apagar la demo.');
 });
 
-// ═══ ③ LO QUE NO SE SABE NO SE TRATA COMO UN «NO» ════════════════════════════════════════════
+// ═══ ③ LO QUE NO SE SABE NO AUTORIZA UN DOCUMENTO FISCAL ═════════════════════════════════════
+//
+// 🔴 CAMBIADO EN SCRUM-905 (orquestador, 17-sep-2026), con su motivo. El #1406 conservaba el botón con
+// el modo desconocido para no callar la pantalla de quien SÍ factura por un `/me` corto. SCRUM-905
+// decidió fallar CERRADO: sin saber el modo no se ofrece facturar, igual que `app.js` no se inventa
+// el estado fiscal de nadie. Las pantallas enteras lo miden en `scrum905-facturar-solo-si-se-puede`.
 
-test('SCRUM-895 · con el modo DESCONOCIDO el botón se conserva, y es una decisión', () => {
-  assert.equal(primariaCon(null), 'btnConvertirFactura',
-    '🔴 se está escondiendo la primaria por un modo que el servidor NO dijo. `app.js` deja\n' +
-    '  `appModoEmision` en `null` a propósito antes que inventarse el estado fiscal de alguien, y\n' +
-    '  un `/me` corto no debe dejar sin siguiente paso a un profesional que SÍ factura: eso\n' +
-    '  cambiaría un botón que falla por una pantalla que se calla.');
-  assert.equal(primariaCon(undefined), 'btnConvertirFactura',
-    '🔴 sin el campo puesto tampoco se esconde: sólo se oculta cuando se SABE que es `receipt`.');
+test('SCRUM-895 · con el modo DESCONOCIDO NO se ofrece convertir (SCRUM-905: falla cerrado)', () => {
+  assert.equal(primariaCon(null), null,
+    '🔴 se ofrece convertir en factura sin que el servidor haya dicho el modo de emisión.');
+  assert.equal(primariaCon(undefined), null,
+    '🔴 sin el campo puesto tampoco se ofrece: sólo `fiscal` y `demo` facturan.');
 });
 
 // ═══ ④ UNA SOLA FUENTE · el detalle pregunta, no recalcula ═══════════════════════════════════
