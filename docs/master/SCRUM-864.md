@@ -177,3 +177,88 @@ Lo único que sí se puede decir con datos: **de aquí en adelante, cada tempora
 | `docs/master/evidencias/scrum864/censo-mkdtemp.mjs` | el censo por AST, con sus cinco categorías |
 | `docs/master/evidencias/scrum864/el-que-decide.mjs` | el control que decide y el positivo |
 | `docs/master/evidencias/scrum864/mutacion.mjs` | la mutación del mecanismo |
+
+---
+
+# SCRUM-864b · La vuelta del tope, leída por un guard — y una norma que se escribió en el sitio equivocado
+
+**Medido contra:** `origin/main` = `584f317f394c64d2ed4bf1a80d2a397c2b67ff8f` · 2026-09-17T10:23:30+01:00
+
+**Rama:** `scrum-864b-a19-y-la-vuelta-del-tope`
+
+⚠️ **El ancla se puso a la tercera, y el motivo vale más que el dato:** `main` se movió **dos veces
+mientras se escribía esta entrada** (`1bf1046d` → `8c354ff3` → `584f317f`, 15 commits en la segunda).
+La primera versión de esta sección no llevaba ancla y la cazó `scrum267-ancla-de-medicion` EN ROJO;
+si la hubiera puesto entonces, habría nacido apuntando a un `main` que ya no existía. Se re-mide
+`git rev-parse` + `date` justo antes de escribirla, nunca a ojo y nunca de memoria.
+
+## 1 · Lo que esta rama entrega
+
+Un solo fichero sobre `main`: **`tests/scrum665a-congelar-el-emisor.test.mjs` (+59)**.
+
+`MODULOS_DOMINIO_INALCANZABLES_MAX` subió de 7 a 8 para dejar entrar `emisorCongelado`, que nace
+sin llamador porque su cableado necesita las siete columnas. El motivo estaba escrito, y la
+condición de vuelta también — **en un comentario**. Un tope que sube sigue siendo un tope que sube:
+lo que lo salva es que alguien compruebe que vuelve, y «alguien» no puede ser la buena memoria de
+quien lea el comentario dentro de tres meses.
+
+El caso nuevo lo convierte en mecanismo: **en el momento** en que alguien importe el módulo desde
+`src/`, el guard EXIGE que el tope haya vuelto a 7, en ese mismo commit. Mientras no haya llamador,
+exige que valga 8 exactamente — ni más (sería otro módulo colándose con esta excusa) ni menos.
+Lleva su SUELO: si el módulo no existe, dice CIEGO en vez de dar por bueno un «nadie lo importa»
+que no ha podido comprobar.
+
+## 2 · La norma ENTRA, como **A21** — y el camino hasta el número está medido
+
+`docs/equipo/00-normas-comunes.md` **tiene un solo dueño: la Sesión 0**, y lo dice su primera línea.
+Yo escribí ahí una A19 propia y colisionó de frente con la A19 que la Sesión 0 tenía en `main`
+(«El PUESTO no se cierra; el CHAT sí»). Es exactamente el conflicto que ese encabezado existe para
+evitar, y que el propio fichero documenta con el precedente del PR #1214.
+
+Esto pasó por tres estados, y los tres quedan escritos porque el orden importa:
+
+| cuándo | qué | por qué |
+|---|---|---|
+| al abrir la rama | escribo mi norma como **A19** | error mío: ver §4 |
+| 17-sep, mañana | el fundador manda **retirarla** | correcto **por defecto**: nadie escribe ahí sin permiso |
+| 17-sep | la Sesión 0 —la dueña— **autoriza**: entra como **A21** | `main` ya tiene A19 y, desde hoy, A20 |
+
+La instrucción de quitarla no era un error: era la regla por defecto, y dejó de aplicar en cuanto
+apareció una autorización que no existía cuando se dio.
+
+**Estado final del fichero:** la A19 y la A20 de la Sesión 0 quedan intactas —no se tocan, no se
+mueven, no se renumeran— y mi norma se añade **al final, como A21**, que es donde estaba.
+
+## 3 · El coste de renumerar, que no es cero
+
+El aviso es de Luis y es bueno: **una norma renumerada deja rotos los tests que la citan por
+número.** Medido en este PR, no supuesto:
+
+| comprobación | resultado |
+|---|---|
+| `grep -n "A19\|A20\|A21" tests/scrum665a-congelar-el-emisor.test.mjs` | **0 coincidencias** |
+| otros ficheros de esta rama que citen una norma por número | ninguno (la rama aporta 2 ficheros) |
+
+Así que aquí no rompió nada — **pero eso es suerte de esta rama, no una propiedad del cambio**. Si
+`scrum665a` hubiera citado «A19», renumerar habría dejado un test apuntando a una norma que ya dice
+otra cosa, y en verde: un test no falla por citar mal, sólo deja de significar lo que decía.
+
+    🔒 Referenciar por posición caduca. Referenciar por identidad no.
+
+Es la misma forma que el propio test de esta rama viene a cerrar: un tope justificado por un
+comentario que nadie vuelve a leer. Un número de norma en un comentario es esa misma deuda, una
+capa más arriba.
+
+## 4 · Lo que me corrigió a mí
+
+Yo tenía delante la primera línea del fichero, que decía quién era su dueño, **y escribí igual**.
+El encargo me mandó ahí, pero la norma no la incumplió quien me mandó: la incumplió el commit que
+hice yo. Leer el encabezado de lo que vas a tocar es parte de tocarlo, y el permiso que acabó
+llegando no retroactiva el haber escrito sin él.
+
+## 5 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `tests/scrum665a-congelar-el-emisor.test.mjs` | +59: la condición de vuelta del tope, exigida por un guard |
+| `docs/equipo/00-normas-comunes.md` | **+A21** al final, con autorización de la Sesión 0. A19 y A20 intactas |

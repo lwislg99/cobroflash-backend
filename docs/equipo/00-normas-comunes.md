@@ -390,3 +390,25 @@ El comando, con la ventana fija de la medición, está en la fila del 16-sep de
 caen dentro van del 15-sep 09:15Z al 16-sep 12:49Z — **28 horas**, no tres días. Y el «39» depende
 de un umbral (escribir más de 200k de caché en un turno); con «crea más de lo que lee» salen 46
 turnos y el 82,7 %. La conclusión no cambia con ninguno de los dos; la cifra, sí.
+
+## A21 · Una cobaya que no se ejecuta da el mismo resultado que un arreglo perfecto
+
+Todo banco que compare un ANTES con un DESPUÉS hace que su cobaya deje un **testigo de ejecución**
+—un fichero, una línea en stdout— y **aborta si falta**. Un cero de algo que no llegó a correr se
+lee exactamente igual que un cero de algo que funciona.
+
+    🔒 «Antes de creerte el resultado, comprueba que el sujeto existió.»
+
+**Medido (SCRUM-864):** el banco importaba el helper con una ruta absoluta de Windows sin
+`file://`, así que la cobaya de DESPUÉS no arrancaba y dejaba **0 restos porque no creaba
+ninguno**. Iba a publicarse como «defecto arreglado». Lo cazó el **control positivo**, no el que
+decidía — que es la otra mitad del aviso: el caso que tenía que salir verde es el único que puede
+delatar a un banco mudo.
+
+⚠️ **Nació como A19 y se renumeró a A21** (autorización de la Sesión 0, 17-sep-2026): `main` ya
+tenía una A19 y una A20. La renumeración deja un coste declarado, y el aviso es de Luis: **una
+norma renumerada rompe todo lo que la cite por número.** Aquí no rompió nada —se comprobó:
+`tests/scrum665a-congelar-el-emisor.test.mjs`, el otro fichero de este PR, no cita ninguna norma
+por número— pero el coste existe y es el de siempre:
+
+    🔒 Referenciar por posición caduca. Referenciar por identidad no.
