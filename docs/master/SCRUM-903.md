@@ -188,6 +188,21 @@ albarán **no necesita texto nuevo**: sus seis etiquetas ya están escritas.
 `MARCADOR_MICROCOPY_DESGLOSE` de `EN_EL_PAPEL` en el mismo commit**, o SCRUM-667 se queda esperando
 un marcador que ya no sale.
 
+## 5bis · Hallazgo lateral, sin arreglar: un rojo que sólo existe dentro de la tanda completa
+
+`tests/scrum765-*` · «el meta-guard ARRANCA de verdad al invocarlo por su ruta» falla con
+`spawnSync ETIMEDOUT` **sólo dentro de la tanda completa**. Medido:
+
+- aislado, con la máquina libre: `node scripts/meta-guard-mutaciones.mjs --solo-censo` tarda
+  **38 s** y sale con **código 0**;
+- el caso lo invoca con `timeout: 120000`, y dentro de la tanda —7.248 casos compitiendo— se pasa;
+- **las dos tandas completas de esta rama lo dieron rojo, y las dos veces aisladas pasó**;
+- no hay constancia previa de esto en `docs/BUGS.md` ni en el propio fichero.
+
+No es de este ticket y **no lo he tocado**: es un guard de otro carril, y un timeout que se sube sin
+medir es la forma de ocultar que algo se está volviendo lento. Queda dicho aquí: un caso que sólo es
+rojo cuando hay carga es un rojo intermitente, y de ésos ya sabe esta casa.
+
 ## 6 · Lo que este PR NO hace
 
 1. **No escribe ningún texto.** Los 9 marcadores siguen ahí.
