@@ -33,14 +33,14 @@ const WORKFLOW = '.github/workflows/claude.yml';
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El defecto del 17-sep: el checkout vuelve a dejar el GITHUB_TOKEN como cabecera.
-    fichero: WORKFLOW,
+    fichero: '.github/workflows/claude.yml',
     de: 'persist-credentials: false',
     a: 'persist-credentials: true',
     cae: '🔴 ROJO/POSITIVO: el push de Claude autentica con la llave de la App, no con el GITHUB_TOKEN del checkout',
   },
 ];
 
-const TOKEN_CHECKOUT = 'TOKEN_DEL_CHECKOUT_GITHUB_ACTIONS';
+const TOKEN_CHECKOUT = 'TOKEN_DEL_CHECKOUT';
 const TOKEN_APP = 'TOKEN_DE_LA_APP_YAQU_BOT';
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
