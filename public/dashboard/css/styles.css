@@ -2151,6 +2151,9 @@ html, body { overflow-x: clip; }
   box-shadow: 0 0 0 3px rgba(220,38,38,.16) !important;
 }
 
+/* SCRUM-894: el texto de ayuda en Peligro bajo el campo que falta (DESIGN.md · Inputs · Error). */
+.aviso-falta-campo { font-size: 12.5px; font-weight: 600; color: var(--danger); margin: 2px 0 6px; }
+
 /* Pills de estado más expresivas */
 .status-pill { font-weight: 700; letter-spacing: .02em; }
 .status-pill-accepted { box-shadow: inset 0 0 0 1px rgba(34,197,94,.25); }

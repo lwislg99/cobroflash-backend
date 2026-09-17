@@ -776,7 +776,7 @@ function renderSettingsView(container) {
       const aviso = document.createElement("p");
       aviso.dataset.avisoFalta = campo.name || campo.id;
       aviso.setAttribute("role", "alert");
-      aviso.style.cssText = "font-size:12.5px;font-weight:600;color:var(--danger);margin:2px 0 6px";
+      aviso.className = "aviso-falta-campo";
       aviso.textContent = avisoFaltaEnOtraPestana(
         rotulo ? rotulo.textContent.trim() : (campo.name || campo.id),
         rotuloDeSubmenu(destino)

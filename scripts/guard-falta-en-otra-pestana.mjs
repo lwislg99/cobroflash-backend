@@ -96,7 +96,7 @@ function paginaHtml() {
 function arrancarServidor() {
   const srv = http.createServer((req, res) => {
     const ruta = req.url.split('?')[0];
-    if (ruta === '/medicion.html') {
+    if (ruta === '/__falta-en-otra-pestana.html') {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
       return res.end(paginaHtml());
     }
@@ -110,26 +110,68 @@ function arrancarServidor() {
   return levantarServidor(srv, PUERTO).then((p) => { PUERTO = p; return srv; });
 }
 
-/** Lee el estado de la pantalla. `null` en `ciego` si falta algo sin lo que no se puede juzgar. */
-function leerEstado() {
-  const activa = Array.from(document.querySelectorAll('.settings-panel'))
-    .filter((p) => p.style.display !== 'none').map((p) => p.dataset.submenu);
-  const avisos = Array.from(document.querySelectorAll('[data-aviso-falta]')).map((a) => {
-    const r = a.getBoundingClientRect();
+// ── LO QUE CORRE DENTRO DE LA PÁGINA ─────────────────────────────────────────────────────────
+// En CADENAS y con `new Function`, como guard:vias-de-cobro: es código del navegador, y escrito como
+// función de este módulo usaría `document`/`window` que aquí no existen (censo de SCRUM-258).
+
+const RENDER = new Function(`
+  try { renderSettingsView(document.getElementById('vista')); return null; }
+  catch (e) { return 'renderSettingsView lanzó: ' + (e && e.message ? e.message : String(e)); }
+`);
+
+const CARGADO = new Function(`
+  var i = document.querySelector('input[name="name"]');
+  return !!i && i.value === 'QA 894';
+`);
+
+/** Vacía los campos, abre la pestaña de partida y CALIBRA el detector del aviso (sabe decir no y sí). */
+const PREPARAR = new Function('vaciar', 'desde', `
+  for (var k = 0; k < vaciar.length; k++) {
+    var i = document.querySelector('form [name="' + vaciar[k] + '"]');
+    if (!i) return 'no existe el campo ' + vaciar[k];
+    i.value = '';
+  }
+  var tab = document.querySelector('.settings-nav button[data-submenu="' + desde + '"]');
+  if (!tab) return 'no existe la pestaña ' + desde;
+  tab.click();
+  if (document.querySelectorAll('[data-aviso-falta]').length) return 'hay aviso ANTES de pulsar';
+  var s = document.createElement('p');
+  s.dataset.avisoFalta = 'senuelo';
+  s.textContent = 'SENUELO';
+  document.querySelector('.settings-panel[data-submenu="' + desde + '"]').prepend(s);
+  var ve = document.querySelectorAll('[data-aviso-falta]').length === 1;
+  s.remove();
+  return ve ? null : 'el detector del aviso no ve un aviso sembrado';
+`);
+
+/** Estado de la pantalla tras pulsar: pestaña abierta, avisos (visibles y cabiendo), foco y guardados. */
+const LEER_ESTADO = new Function(`
+  var activa = Array.from(document.querySelectorAll('.settings-panel'))
+    .filter(function (p) { return p.style.display !== 'none'; })
+    .map(function (p) { return p.dataset.submenu; });
+  var avisos = Array.from(document.querySelectorAll('[data-aviso-falta]')).map(function (a) {
+    var r = a.getBoundingClientRect();
     return {
       campo: a.dataset.avisoFalta, texto: a.textContent,
-      visible: r.height > 0 && r.top >= 0 && r.bottom <= innerHeight,
-      cabe: a.scrollWidth <= a.clientWidth && r.left >= 0 && r.right <= innerWidth,
+      visible: r.height > 0 && r.top >= 0 && r.bottom <= window.innerHeight,
+      cabe: a.scrollWidth <= a.clientWidth && r.left >= 0 && r.right <= window.innerWidth
     };
   });
-  const el = document.activeElement;
+  var el = document.activeElement;
   return {
-    activa, avisos,
+    activa: activa, avisos: avisos,
     foco: el && el !== document.body ? (el.name || el.id || el.tagName) : null,
     guardados: window.__guardados.length,
-    guardadoTaxId: window.__guardados.length ? window.__guardados[0].taxId : null,
+    guardadoTaxId: window.__guardados.length ? window.__guardados[0].taxId : null
   };
-}
+`);
+
+const QUEDAN = new Function(`
+  return {
+    avisos: document.querySelectorAll('[data-aviso-falta]').length,
+    marcas: document.querySelectorAll('form .input-error').length
+  };
+`);
 
 const hallazgos = [];
 const ciegos = [];
@@ -145,46 +187,22 @@ try {
       const pag = await navegador.newPage();
       try {
         await pag.setViewport({ width: ancho, height: 844, isMobile: true, hasTouch: true });
-        await pag.goto(`http://127.0.0.1:${PUERTO}/medicion.html`, { waitUntil: 'load' });
-        const fatal = await pag.evaluate(() => {
-          try { renderSettingsView(document.getElementById('vista')); return null; }
-          catch (e) { return 'renderSettingsView lanzó: ' + (e && e.message ? e.message : String(e)); }
-        });
+        await pag.goto(`http://127.0.0.1:${PUERTO}/__falta-en-otra-pestana.html`, { waitUntil: 'load' });
+        const fatal = await pag.evaluate(RENDER);
         if (fatal) { ciegos.push(`${etiqueta} → ${fatal}`); continue; }
-        const cargado = await pag.waitForFunction(
-          () => { const i = document.querySelector('input[name="name"]'); return i && i.value === 'QA 894'; },
-          { timeout: 5000 },
-        ).then(() => true, () => false);
+        const cargado = await pag.waitForFunction(CARGADO, { timeout: 5000 })
+          .then(() => true, () => false);
         if (!cargado) { ciegos.push(`${etiqueta} → los datos del merchant no llegaron a pintarse`); continue; }
 
-        const prep = await pag.evaluate((vaciar, desde) => {
-          for (const n of vaciar) {
-            const i = document.querySelector('form [name="' + n + '"]');
-            if (!i) return 'no existe el campo ' + n;
-            i.value = '';
-          }
-          const tab = document.querySelector('.settings-nav button[data-submenu="' + desde + '"]');
-          if (!tab) return 'no existe la pestaña ' + desde;
-          tab.click();
-          // Control del detector: antes de pulsar no puede haber aviso, y un aviso sembrado tiene
-          // que verse. Si no sabe decir las dos cosas, no se juzga nada con él.
-          if (document.querySelectorAll('[data-aviso-falta]').length) return 'hay aviso ANTES de pulsar';
-          const s = document.createElement('p');
-          s.dataset.avisoFalta = 'senuelo';
-          s.textContent = 'SENUELO';
-          document.querySelector('.settings-panel[data-submenu="' + desde + '"]').prepend(s);
-          const ve = document.querySelectorAll('[data-aviso-falta]').length === 1;
-          s.remove();
-          return ve ? null : 'el detector del aviso no ve un aviso sembrado';
-        }, caso.vaciar, caso.desde);
+        const prep = await pag.evaluate(PREPARAR, caso.vaciar, caso.desde);
         if (prep) { ciegos.push(`${etiqueta} → ${prep}`); continue; }
 
         const boton = await pag.$('form button[type="submit"]');
         if (!boton) { ciegos.push(`${etiqueta} → no hay botón «Guardar cambios»`); continue; }
-        await pag.evaluate((b) => b.scrollIntoView({ block: 'center', behavior: 'instant' }), boton);
+        await boton.evaluate((b) => b.scrollIntoView({ block: 'center', behavior: 'instant' }));
         await boton.click();
         await new Promise((ok) => setTimeout(ok, 400));
-        const r = await pag.evaluate(leerEstado);
+        const r = await pag.evaluate(LEER_ESTADO);
 
         const e = caso.espera;
         const mal = [];
@@ -206,10 +224,7 @@ try {
         // El aviso se va al escribir en el campo: si no, se queda diciendo que falta algo que ya está.
         if (!mal.length && e.aviso !== null) {
           await pag.type(`form [name="${e.foco}"]`, 'X');
-          const quedan = await pag.evaluate(() => ({
-            avisos: document.querySelectorAll('[data-aviso-falta]').length,
-            marcas: document.querySelectorAll('form .input-error').length,
-          }));
+          const quedan = await pag.evaluate(QUEDAN);
           if (quedan.avisos || quedan.marcas) mal.push(`al escribir siguen ${quedan.avisos} aviso(s) y ${quedan.marcas} marca(s) de error`);
         }
 
