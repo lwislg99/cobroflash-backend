@@ -228,10 +228,11 @@ test('SCRUM-895b · la fila del Trabajo deja de pintar el identificador crudo', 
   assert.ok(src.includes('ROTULOS_ALBARAN[primaria.id]'),
     '🔴 la fila del Trabajo ya no lee `ROTULOS_ALBARAN`: si se copió la tabla, hay dos fuentes del\n' +
     '  mismo rótulo y el día que una cambie dirán cosas distintas del mismo botón.');
-  // Su respaldo es `|| primaria.id`, o sea que SIN rótulo pintaba «btnConvertirFactura» tal cual —
-  // medido por la S4 en el PASO 0 (comentario 15664). Con (A) firmado, ese respaldo deja de usarse
-  // para este botón. Lo garantiza el test de (A) de más arriba: si la clave desapareciera, aquí
-  // volvería el identificador.
-  assert.ok(src.includes('|| primaria.id'),
-    '🔴 cambió el respaldo de la fila del Trabajo: revisa qué pinta ahora cuando falta un rótulo.');
+  // Esto medía el respaldo `|| primaria.id` — SIN rótulo pintaba «btnConvertirFactura» tal cual,
+  // medido por la S4 en el PASO 0 (comentario 15664). SCRUM-905 (ya en `main`) fue más allá: quitó
+  // ESE respaldo entero, así que sin rótulo firmado la fila no pinta nada, ni el id ni el marcador.
+  // Comprobar que el respaldo NO haya vuelto es lo que sigue vigilando este test.
+  assert.ok(!src.includes('|| primaria.id'),
+    '🔴 ha vuelto el respaldo al identificador crudo (`|| primaria.id`): SCRUM-905 lo quitó a\n' +
+    '  propósito porque sin rótulo firmado no debe pintarse nada, ni el id ni el marcador.');
 });

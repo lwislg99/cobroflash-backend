@@ -411,3 +411,23 @@ y necesita su propia firma.
 Medido suelto: **5 segundos, rc=0**, y su salida dice `⚠️ MODO CENSO: NO se ha ejecutado ninguna
 mutación`. Era contención de la propia tanda, no un defecto — y se comprobó `git status` antes de
 seguir, porque un meta-guard muerto a mitad es justo lo que deja ficheros mutados en el árbol.
+
+## Apéndice · el CI se puso rojo por deriva de `main`, no por esta PR (17-sep-2026, `@claude`)
+
+El check obligatorio cayó en `tests/scrum895b-literales-firmados.test.mjs`, test ④ («la fila del
+Trabajo deja de pintar el identificador crudo»), que lee `public/dashboard/js/jobDetailView.js` —un
+fichero que esta PR **no toca**. `actions/checkout@v4` en `pull_request` clona el merge sintético
+del PR contra `main`, y `main` se movió: **SCRUM-905** quitó el respaldo `|| primaria.id` de esa
+fila (confirmado con `git diff 749da4bb...origin/main -- public/dashboard/js/jobDetailView.js`) —
+ahora, sin rótulo firmado, la fila no pinta nada, ni el id crudo ni el marcador. Es una mejora ya
+mergeada, no una regresión de esta PR.
+
+No aplica la regla 41 (relajar lo que el guard exige): la premisa del test dejó de ser cierta por un
+cambio ajeno ya mergeado, así que se actualiza el test para exigir lo contrario de lo que exigía —
+que el respaldo NO haya vuelto — igual que ya razona `tests/scrum804-la-rama-viva.test.mjs` en su
+cabecera para el mismo tipo de caso.
+
+El mismo run tenía en rojo, aparte, `tests/scrum804-la-rama-viva.test.mjs` (el censo de ramas no ve
+`scrum-904`). Ese fichero es idéntico en esta rama y en `main`, y depende del estado vivo de refs
+del runner, no de nada que cambie esta PR — queda fuera de este apéndice a propósito, para no
+mezclar dos causas distintas en el mismo commit.
