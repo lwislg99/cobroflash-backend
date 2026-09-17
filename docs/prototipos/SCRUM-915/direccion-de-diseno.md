@@ -45,3 +45,14 @@ rota, no se va creando. Molaba más a un lado, pero moderno y pulido.»
 - Condiciones ya elegidas: tres filas resumen (cobro, formas de pago, validez), cada una con «Cambiar».
 - Opciones y «⋯» (Guardar como plantilla, Limpiar formulario) arriba del editor.
 - Móvil: los mismos pasos, barra inferior con el total, «Ver documento» y «Continuar».
+
+---
+
+## v3 (17-sep-2026) — veredicto del fundador sobre la v2: «me gusta mucho más», con dos cambios (decididos por el orquestador)
+1. **Ajustes a la vista, sin pestaña:** fuera el ⚙︎ de arriba; fila «Ajustes del documento · IVA sumado · sin dirección de
+   obra · Cambiar» dentro de Condiciones (en el justificante, dentro de Revisar), abierta en el sitio como las demás.
+   En el «⋯» quedan Guardar como plantilla y Limpiar formulario.
+2. **WhatsApp es lo primero:** el último paso «Revisar y enviar» tiene como principal «Enviar por WhatsApp» (genera y
+   envía en un gesto); secundarias «⬇ Descargar PDF», «✉ Enviar por email» y «Solo guardar». Confirmación en la misma
+   pantalla, sin modal. Se genera UNA vez: todo reutiliza el mismo presupuesto. En móvil la barra del último paso lleva
+   «Enviar por WhatsApp».

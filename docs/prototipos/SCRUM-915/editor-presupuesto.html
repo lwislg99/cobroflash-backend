@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Editor de presupuesto · prototipo v2</title>
+<title>Editor de presupuesto · prototipo v3</title>
 <meta name="description" content="Prototipo v2 del editor de presupuesto y justificante (SCRUM-915): pasos guiados a la izquierda y el documento vivo a la derecha. Datos de ejemplo; no guarda nada.">
 <style>
 /* Tokens: DESIGN.md (única fuente). */
@@ -165,6 +165,7 @@ body.sin-resaltar .propuesto{text-decoration:none}
   .previa{display:none}
   .barra-abajo{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--border);box-shadow:var(--sh-flotante);padding:10px 16px calc(10px + env(safe-area-inset-bottom));gap:10px;align-items:center}
   .barra-abajo .tot{flex:1;min-width:0}
+  .barra-abajo .tot .label{white-space:nowrap}
   .barra-abajo .tot .cifra{font-size:1.25rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;display:block;line-height:1.15}
   .doc{padding:22px 18px;min-height:0}
   .doc .tot{width:100%}
@@ -219,7 +220,7 @@ body.sin-resaltar .propuesto{text-decoration:none}
 </head>
 <body>
 <div class="proto" role="region" aria-label="Controles del prototipo">
-  <strong>Prototipo v2 · SCRUM-915 · datos de ejemplo, no guarda nada</strong>
+  <strong>Prototipo v3 · SCRUM-915 · datos de ejemplo, no guarda nada</strong>
   <div class="seg" role="group" aria-label="Vista">
     <button type="button" data-vista="proto" aria-pressed="true">Prototipo</button>
     <button type="button" data-vista="inv" aria-pressed="false">Inventario antes → después</button>
@@ -278,7 +279,7 @@ function inicial(tipo){return {
   cond:'FULL_UPFRONT', tramos:[{e:'Anticipo',p:50},{e:'Al finalizar',p:50}], pagos:{tarjeta:true,bizum:true,transferencia:true},
   validez:hoyMas(30), cambiando:null,
   op:{ivaDef:21,ivaModo:'sumar',dir:'no',dirTxt:'',datos:{nombre:true,tel:true,nif:true,email:true},razon:'razon',incDesc:false},
-  generado:null, zona:'cliente'
+  generado:null, envio:null, zona:'cliente'
 };}
 S=inicial();
 
@@ -302,8 +303,8 @@ function totales(){
 }
 const sumaTramos=()=>S.tramos.reduce((a,t)=>a+(Number(t.p)||0),0);
 const PASOS=()=>esPres()
-  ?[{k:'cliente',t:'Cliente',guia:'¿Para quién es el presupuesto?'},{k:'lineas',t:'Conceptos',guia:'Añade lo que vas a hacer, con su cantidad y su precio.'},{k:'condiciones',t:'Condiciones',guia:'Ya van puestas las de siempre. Cámbialas sólo si este cliente es distinto.'},{k:'enviar',t:'Revisar y enviar',guia:'Mira el documento a la derecha y, si está bien, genéralo.'}]
-  :[{k:'cliente',t:'Cliente',guia:'¿Para quién es el justificante?'},{k:'lineas',t:'Conceptos',guia:'Añade lo que has hecho, con su cantidad y su precio.'},{k:'enviar',t:'Revisar y emitir',guia:'Mira el documento a la derecha y, si está bien, emítelo.'}];
+  ?[{k:'cliente',t:'Cliente',guia:'¿Para quién es el presupuesto?'},{k:'lineas',t:'Conceptos',guia:'Añade lo que vas a hacer, con su cantidad y su precio.'},{k:'condiciones',t:'Condiciones',guia:'Ya van puestas las de siempre. Cámbialas sólo si este cliente es distinto.'},{k:'enviar',t:'Revisar y enviar',guia:'Revisa el documento y, si está bien, envíaselo al cliente por WhatsApp.'}]
+  :[{k:'cliente',t:'Cliente',guia:'¿Para quién es el justificante?'},{k:'lineas',t:'Conceptos',guia:'Añade lo que has hecho, con su cantidad y su precio.'},{k:'enviar',t:'Revisar y emitir',guia:'Revisa el documento y, si está bien, emítelo.'}];
 const hecho=(i)=>{const k=PASOS()[i-1].k; if(k==='cliente')return !!S.cliente; if(k==='lineas')return S.lineas.some(valida); if(k==='condiciones')return S.abierto>i&&(S.cond!=='CUSTOM'||sumaTramos()===100); return !!S.generado;};
 const puede=(i)=>{const k=PASOS()[i-1].k; if(k==='cliente')return !!S.cliente; if(k==='lineas')return S.lineas.some(valida); if(k==='condiciones')return S.cond!=='CUSTOM'||sumaTramos()===100; return true;};
 const listo=()=>!!S.cliente&&S.lineas.some(valida)&&(!esPres()||S.cond!=='CUSTOM'||sumaTramos()===100);
@@ -318,7 +319,6 @@ function renderEditor(){
   $('#editor').innerHTML=`
     <div class="cab"><h1>${esPres()?'Nuevo presupuesto':'Nuevo justificante'}</h1>
       ${esPres()?'<span class="guardado" id="guardado" aria-live="polite"></span>':''}
-      <button class="btn btn-ghost" data-accion="opciones" title="${esc('Opciones del documento')}">⚙︎ ${P('Opciones')}</button>
       <button class="menu-linea" data-accion="mas" aria-label="Más acciones">⋯</button></div>
     ${PASOS().map((p,idx)=>renderPaso(p,idx+1,t)).join('')}`;
   if(foco){const el=document.getElementById(foco); if(el){el.focus();try{if(pos!=null)el.setSelectionRange(pos,pos);}catch(e){}}}
@@ -342,7 +342,7 @@ function renderPaso(p,i,t){
     <div class="pie-paso">
       ${!ultimo&&!puede(i)?`<span class="falta">${P(faltaTxt(p.k))}</span>`:''}
       ${i>1?`<button class="btn btn-ghost" data-abrir="${i-1}">${P('Atrás')}</button>`:''}
-      ${ultimo?`<button class="btn btn-primary" data-accion="generar" ${listo()?'':'disabled'}>${esPres()?'Generar presupuesto':'Emitir justificante'}</button>`
+      ${ultimo?(esPres()?botonWa():`<button class="btn btn-primary" data-accion="generar" ${listo()?'':'disabled'}>Emitir justificante</button>`)
         :`<button class="btn btn-primary" data-abrir="${i+1}" ${puede(i)?'':'disabled'}>${P('Continuar')}</button>`}
     </div></div></section>`;
 }
@@ -400,31 +400,62 @@ function listaAuto(q){
   const r=CATALOGO.filter((p)=>p[0].toLowerCase().includes(q.toLowerCase()));
   return r.length?r.map((p,j)=>`<li><button type="button" data-cat="${CATALOGO.indexOf(p)}">${esc(p[0])}<small>${eur(p[2])}</small></button></li>`).join(''):`<li class="nota" style="padding:8px 10px">Sin resultados</li>`;
 }
+function filaRes(k,titulo,valor,detalle){ const ch=S.cambiando;
+  return `<div class="fila-res"><div class="que"><b>${titulo}</b><span>${valor}</span></div>
+      <button class="enlace" data-cambiar="${k}" aria-expanded="${ch===k}">${ch===k?P('Listo'):P('Cambiar')}</button></div>
+    ${ch===k?`<div class="detalle">${detalle}</div>`:''}`; }
+// SCRUM-915 v3 · los ajustes del documento, a la vista como una fila más (decisión del orquestador).
+function filaAjustes(){
+  const o=S.op;
+  const resumen=esPres()
+    ? [o.ivaModo==='sumar'?P('IVA sumado'):'IVA no incluido', o.dir==='no'?P('sin dirección de obra'):P('con dirección de obra')].join(' · ')
+    : P('IVA por defecto')+' '+o.ivaDef+' %';
+  const detalle=`<label><span class="label">IVA por defecto (%)</span><select class="select" data-aj="ivaDef" style="margin-top:6px">${[21,10,4,0].map((v)=>`<option ${o.ivaDef===v?'selected':''}>${v}</option>`).join('')}</select></label>
+    ${esPres()?`<label style="display:block;margin-top:12px"><span class="label">IVA del presupuesto</span><select class="select" data-aj="ivaModo" style="margin-top:6px"><option value="sumar" ${o.ivaModo==='sumar'?'selected':''}>Sumar el IVA al final</option><option value="no_incluido" ${o.ivaModo==='no_incluido'?'selected':''}>IVA no incluido</option></select></label>
+    <label style="display:block;margin-top:12px"><span class="label">Dirección de la obra</span><select class="select" data-aj="dir" style="margin-top:6px"><option value="no" ${o.dir==='no'?'selected':''}>No mostrar</option><option value="fact" ${o.dir==='fact'?'selected':''}>Utilizar dirección de facturación</option><option value="pers" ${o.dir==='pers'?'selected':''}>Personalizada</option></select></label>
+    ${o.dir==='pers'?`<input class="input" data-aj="dirTxt" style="margin-top:8px" maxlength="300" placeholder="${esc(S.cliente?S.cliente.dir:'Dirección de la obra')}" value="${esc(o.dirTxt)}" aria-label="Dirección personalizada">`:''}
+    <div style="margin-top:12px"><span class="label">Datos del cliente en el documento</span>${[['nombre','Nombre'],['tel','Teléfono'],['nif','NIF'],['email','Email']].map(([k,n])=>`<label class="check"><input type="checkbox" data-aj="dato:${k}" ${o.datos[k]?'checked':''}> ${n}</label>`).join('')}
+      <div class="fichas"><label class="check"><input type="radio" name="razon" data-aj="razon" value="razon" ${o.razon==='razon'?'checked':''}> Razón social</label><label class="check"><input type="radio" name="razon" data-aj="razon" value="comercial" ${o.razon==='comercial'?'checked':''}> Nombre comercial</label></div>
+      <p class="nota">Solo aparecen los que el cliente tenga rellenos. Elige con qué nombre sale este cliente en el documento.</p></div>
+    <label class="check"><input type="checkbox" data-aj="incDesc" ${o.incDesc?'checked':''}> Incluir descripción en el PDF</label>`:''}`;
+  return filaRes('ajustes',P('Ajustes del documento'),resumen,detalle);
+}
 function pasoCondiciones(){
-  const c=S.cliente; const ch=S.cambiando; const suma=sumaTramos();
+  const c=S.cliente; const suma=sumaTramos();
   const pagosTxt=Object.keys(PAGO).filter((m)=>S.pagos[m]).map((m)=>PAGO[m]).join(' · ')||'—';
   const pactPagos=c&&c.pagos&&Object.keys(PAGO).some((m)=>S.pagos[m]!==c.pagos.includes(m));
-  const fila=(k,titulo,valor,detalle)=>`<div class="fila-res"><div class="que"><b>${titulo}</b><span>${valor}</span></div>
-      <button class="enlace" data-cambiar="${k}" aria-expanded="${ch===k}">${ch===k?P('Listo'):P('Cambiar')}</button></div>
-    ${ch===k?`<div class="detalle">${detalle}</div>`:''}`;
   return `
-    ${fila('cobro','Condiciones de pago',esc(COND[S.cond]),`<div class="fichas">${Object.entries(COND).map(([v,n])=>`<button class="chip" data-cond="${v}" aria-pressed="${S.cond===v}">${n}</button>`).join('')}</div>
+    ${filaRes('cobro','Condiciones de pago',esc(COND[S.cond]),`<div class="fichas">${Object.entries(COND).map(([v,n])=>`<button class="chip" data-cond="${v}" aria-pressed="${S.cond===v}">${n}</button>`).join('')}</div>
       ${S.cond==='CUSTOM'?`<div style="margin-top:10px"><span class="label">Tramos de cobro</span>${S.tramos.map((tr,i)=>`<div class="tramo"><input class="input" data-te="${i}" placeholder="Etiqueta (p. ej. Anticipo)" value="${esc(tr.e)}" aria-label="Etiqueta del tramo ${i+1}"><input class="input num-in" data-tp="${i}" type="number" placeholder="%" value="${tr.p}" aria-label="Porcentaje del tramo ${i+1}"><button class="menu-linea" data-quitar-tramo="${i}" aria-label="Eliminar tramo" title="Eliminar tramo">🗑️</button></div>`).join('')}
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap"><button class="enlace" data-accion="add-tramo">+ Añadir tramo</button><span id="sumaTramos" style="font-weight:600;font-size:14px;color:${suma===100?'var(--brand-tint-ink)':'var(--danger)'}">${suma===100?`Suman ${suma} % ✓`:`Suman ${suma} % — deben sumar 100 %`}</span></div></div>`:''}`)}
-    ${fila('pagos','Formas de pago que verá el cliente',pagosTxt,`
+    ${filaRes('pagos','Formas de pago que verá el cliente',pagosTxt,`
       ${pactPagos?`<div class="pactado" style="margin:0 0 6px"><span>Formas de pago pactadas · ${c.pagos.map((m)=>PAGO[m]).join(' · ')}</span><button class="btn btn-secondary" data-accion="aplicar-pagos">${P('Aplicar')}</button></div>`:''}
       ${Object.entries(PAGO).map(([m,n])=>`<label class="check"><input type="checkbox" data-pago="${m}" ${S.pagos[m]?'checked':''}> ${n}</label>`).join('')}
       <p class="nota">Solo se muestran las que tengas configuradas (IBAN, Bizum o tarjeta).</p>
       <p class="nota">💳 La tarjeta lleva una comisión del <b>0,9 %</b> por cobro. Bizum y transferencia, gratis.</p>`)}
-    ${fila('validez','Válido hasta',fecha(S.validez),`<input class="input" id="validez" type="date" min="${hoyMas(1)}" value="${S.validez}" aria-label="Válido hasta">
+    ${filaRes('validez','Válido hasta',fecha(S.validez),`<input class="input" id="validez" type="date" min="${hoyMas(1)}" value="${S.validez}" aria-label="Válido hasta">
       <div class="fichas" style="margin-top:8px">${[7,14,30].map((d)=>`<button class="chip" data-dias="${d}">${d} días</button>`).join('')}</div>
-      <p class="nota">Pasada esta fecha el presupuesto caduca solo y el cliente verá "pide uno actualizado".</p>`)}`;
+      <p class="nota">Pasada esta fecha el presupuesto caduca solo y el cliente verá "pide uno actualizado".</p>`)}
+    ${filaAjustes()}`;
 }
 function pasoEnviar(t){
-  return `<div class="fila-res"><div class="que"><b>${esc(S.cliente?S.cliente.nombre:'—')}</b><span>${t.n} ${t.n===1?'concepto':'conceptos'}${esPres()?' · '+esc(COND[S.cond]):''}</span></div><span class="money" style="font-size:1.25rem">${eur(t.total)}</span></div>
-    ${S.generado?`<p class="nota">${esPres()?'Presupuesto':'Justificante'} ${S.generado} ${P('generado')}.</p>`:''}
+  const c=S.cliente; const ev=S.envio;
+  // SCRUM-915 v3 · la confirmación sale AQUÍ, sin modal que tape.
+  const conf=!esPres()||!ev?'':(ev.canal==='whatsapp'
+    ?`<div class="pactado" role="status" style="margin-top:12px"><span>✓ ${P('Enviado por WhatsApp a '+esc(c.nombre)+' · pendiente de firma')}</span></div>`
+    :ev.canal==='email'?`<div class="pactado" role="status" style="margin-top:12px"><span>✓ ${P('Enviado por email a '+esc(c.email))}</span></div>`
+    :`<div class="pactado" role="status" style="margin-top:12px;background:var(--neutral-100);color:var(--body)"><span>${P('Presupuesto '+S.generado+' guardado · sin enviar')}</span></div>`);
+  const secundarias=esPres()?`<div class="secundarias" style="margin-top:12px">
+      <button class="btn btn-ghost" data-accion="descargar-pdf" ${listo()?'':'disabled'}>⬇ Descargar PDF</button>
+      <button class="btn btn-ghost" data-accion="enviar-email" ${listo()?'':'disabled'}>✉ Enviar por email</button>
+      ${ev?'':`<button class="btn btn-ghost" data-accion="solo-guardar" ${listo()?'':'disabled'}>${P('Solo guardar')}</button>`}</div>`:'';
+  return (esPres()?'':filaAjustes())+`<div class="fila-res"><div class="que"><b>${esc(c?c.nombre:'—')}</b><span>${t.n} ${t.n===1?'concepto':'conceptos'}${esPres()?' · '+esc(COND[S.cond]):''}</span></div><span class="money" style="font-size:1.25rem">${eur(t.total)}</span></div>
+    ${conf}${secundarias}
+    ${!esPres()&&S.generado?`<p class="nota">Justificante emitido · ${S.generado}</p>`:''}
     ${movil()?`<button class="btn btn-secondary" data-accion="ver-doc" style="width:100%;margin-top:8px">${P('Ver documento')}</button>`:''}`;
 }
+function botonWa(){ const enviado=S.envio&&S.envio.canal==='whatsapp';
+  return `<button class="btn btn-primary" data-accion="enviar-wa" ${listo()&&!enviado?'':'disabled'}>${enviado?'✓ Enviado por WhatsApp':'Enviar por WhatsApp'}</button>`; }
 
 // ───────────── La vista previa viva ─────────────
 function renderPrevia(){ const html=documento(); $('#previa').innerHTML=`<div class="marco"><div class="marco-t"><span>${P('Así lo verá el cliente')}</span><span>${P('Se actualiza mientras escribes')}</span></div>${html}</div>`; }
@@ -455,13 +486,13 @@ function documento(){
 function renderBarra(){
   const t=totales(); const i=S.abierto; const n=PASOS().length; const ultimo=i===n;
   $('#barraAbajo').innerHTML=`<div class="tot"><span class="label">${P('Paso '+i+' de '+n)}</span><span class="cifra">${eur(t.total)}</span></div>
-    <button class="btn btn-secondary" data-accion="ver-doc">${P('Ver documento')}</button>
-    ${ultimo?`<button class="btn btn-primary" data-accion="generar" ${listo()?'':'disabled'}>${esPres()?'Generar':'Emitir'}</button>`:`<button class="btn btn-primary" data-abrir="${i+1}" ${puede(i)?'':'disabled'}>${P('Continuar')}</button>`}`;
+    ${ultimo?'':`<button class="btn btn-secondary" data-accion="ver-doc">${P('Ver documento')}</button>`}
+    ${ultimo?(esPres()?botonWa():`<button class="btn btn-primary" data-accion="generar" ${listo()?'':'disabled'}>Emitir</button>`):`<button class="btn btn-primary" data-abrir="${i+1}" ${puede(i)?'':'disabled'}>${P('Continuar')}</button>`}`;
 }
 function refrescar(){ // mientras se escribe: previa, totales y barra, sin repintar el editor
   renderPrevia(); renderBarra(); const t=totales(); const st=$('#subtotal'); if(st)st.textContent=eur(t.total);
   const s=$('#sumaTramos'); if(s){const n=sumaTramos();s.style.color=n===100?'var(--brand-tint-ink)':'var(--danger)';s.textContent=n===100?`Suman ${n} % ✓`:`Suman ${n} % — deben sumar 100 %`;}
-  const pie=document.querySelector('.paso.abierto .pie-paso'); if(pie){const i=S.abierto; const b=pie.querySelector('[data-abrir="'+(i+1)+'"]'); if(b)b.disabled=!puede(i); const g=pie.querySelector('[data-accion="generar"]'); if(g)g.disabled=!listo(); const f=pie.querySelector('.falta'); if(f&&puede(i))f.remove();}
+  const pie=document.querySelector('.paso.abierto .pie-paso'); if(pie){const i=S.abierto; const b=pie.querySelector('[data-abrir="'+(i+1)+'"]'); if(b)b.disabled=!puede(i); const g=pie.querySelector('[data-accion="generar"],[data-accion="enviar-wa"]'); if(g&&!(S.envio&&S.envio.canal==='whatsapp'))g.disabled=!listo(); const f=pie.querySelector('.falta'); if(f&&puede(i))f.remove();}
   guardado();
 }
 let tG=null; function guardado(){ if(!esPres())return; clearTimeout(tG); tG=setTimeout(()=>{const g=$('#guardado'); if(g){g.textContent='✓ Guardado automáticamente'; setTimeout(()=>{g.textContent='';},1500);}},700); }
@@ -478,23 +509,6 @@ function modal(titulo,cuerpo,pie,clase=''){
   const m=$('#capa .modal'); (m.querySelector('input,select,textarea,.pie .btn')||m.querySelector('.cerrar')).focus();
 }
 const cerrar=()=>{$('#capa').innerHTML='';};
-function mOpciones(){
-  const o=S.op;
-  modal(`⚙︎ ${P('Opciones del documento')}`,`<p class="nota" style="margin-top:0">${P('Lo que casi nunca cambia. Tócalo sólo si este documento es distinto.')}</p>
-    <div class="grupo"><label><span class="label">IVA por defecto (%)</span><select class="select" id="o-ivaDef" style="margin-top:6px">${[21,10,4,0].map((v)=>`<option ${o.ivaDef===v?'selected':''}>${v}</option>`).join('')}</select></label></div>
-    ${esPres()?`<div class="grupo"><label><span class="label">IVA del presupuesto</span><select class="select" id="o-ivaModo" style="margin-top:6px"><option value="sumar" ${o.ivaModo==='sumar'?'selected':''}>Sumar el IVA al final</option><option value="no_incluido" ${o.ivaModo==='no_incluido'?'selected':''}>IVA no incluido</option></select></label></div>
-    <div class="grupo"><label><span class="label">Dirección de la obra</span><select class="select" id="o-dir" style="margin-top:6px"><option value="no" ${o.dir==='no'?'selected':''}>No mostrar</option><option value="fact" ${o.dir==='fact'?'selected':''}>Utilizar dirección de facturación</option><option value="pers" ${o.dir==='pers'?'selected':''}>Personalizada</option></select></label>
-      <input class="input" id="o-dirTxt" style="margin-top:8px" maxlength="300" placeholder="${esc(S.cliente?S.cliente.dir:'Dirección de la obra')}" value="${esc(o.dirTxt)}" aria-label="Dirección personalizada"></div>
-    <div class="grupo"><span class="label">Datos del cliente en el documento</span>${[['nombre','Nombre'],['tel','Teléfono'],['nif','NIF'],['email','Email']].map(([k,n])=>`<label class="check"><input type="checkbox" data-od="${k}" ${o.datos[k]?'checked':''}> ${n}</label>`).join('')}
-      <div class="fichas"><label class="check"><input type="radio" name="razon" value="razon" ${o.razon==='razon'?'checked':''}> Razón social</label><label class="check"><input type="radio" name="razon" value="comercial" ${o.razon==='comercial'?'checked':''}> Nombre comercial</label></div>
-      <p class="nota">Solo aparecen los que el cliente tenga rellenos. Elige con qué nombre sale este cliente en el documento.</p></div>
-    <div class="grupo"><label class="check"><input type="checkbox" id="o-incDesc" ${o.incDesc?'checked':''}> Incluir descripción en el PDF</label></div>`:''}`,
-    `<button class="btn btn-primary" data-accion="opciones-ok">Listo</button>`);
-}
-function okOpciones(){ const m=$('#capa .modal'); S.op.ivaDef=Number(m.querySelector('#o-ivaDef').value);
-  if(esPres()){S.op.ivaModo=m.querySelector('#o-ivaModo').value;S.op.dir=m.querySelector('#o-dir').value;S.op.dirTxt=m.querySelector('#o-dirTxt').value;
-    m.querySelectorAll('[data-od]').forEach((c)=>{S.op.datos[c.dataset.od]=c.checked;});S.op.razon=(m.querySelector('[name=razon]:checked')||{}).value||'razon';S.op.incDesc=m.querySelector('#o-incDesc').checked;}
-  cerrar(); render(); guardado(); }
 function mMas(){ modal(P('Más acciones'),`<div style="display:flex;flex-direction:column;gap:8px">
     <button class="btn btn-secondary" data-accion="guardar-plantilla">💾 Guardar como plantilla</button>
     <button class="btn btn-secondary" data-accion="limpiar">Limpiar formulario</button></div>`,''); }
@@ -508,7 +522,7 @@ function mAjustes(i){ const l=S.lineas[i];
     ${esPres()?`<div class="grupo"><label class="check"><input type="checkbox" id="a-sup" ${l.sup?'checked':''}> Suplido (pagado por cuenta del cliente)</label><p class="nota">Lo que has pagado por cuenta del cliente y le repercutes tal cual: una tasa, un visado, una licencia. No lleva IVA ni margen. El material que compras tú no es un suplido: ese se vende con su IVA.</p></div>`:''}
     <div class="grupo" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><label><span class="label">IVA %</span><select class="select" id="a-iva" style="margin-top:6px">${[21,10,4,0].map((v)=>`<option ${l.t===v?'selected':''}>${v}</option>`).join('')}</select></label>
       ${esPres()?`<label><span class="label">Dto. %</span><input class="input" id="a-dto" type="number" min="0" max="100" value="${l.dto||''}" style="margin-top:6px"></label><label><span class="label">Coste</span><input class="input" id="a-coste" type="number" min="0" step="0.01" value="${l.coste||''}" style="margin-top:6px"></label>`:''}</div>
-    ${esPres()?`<div class="grupo"><label><span class="label">${P('Descripción')}</span><textarea class="textarea" id="a-desc" rows="2" style="margin-top:6px">${esc(l.desc)}</textarea></label><p class="nota">${P('Sale bajo el concepto si en Opciones marcas «Incluir descripción en el PDF».')}</p></div>`:''}`,
+    ${esPres()?`<div class="grupo"><label><span class="label">${P('Descripción')}</span><textarea class="textarea" id="a-desc" rows="2" style="margin-top:6px">${esc(l.desc)}</textarea></label><p class="nota">${P('Sale bajo el concepto si en «Ajustes del documento» marcas «Incluir descripción en el PDF».')}</p></div>`:''}`,
     `<button class="btn btn-primary" data-accion="ajustes-ok" data-i="${i}">Listo</button>`); }
 function okAjustes(i){ const m=$('#capa .modal'); const l=S.lineas[i]; l.t=Number(m.querySelector('#a-iva').value);
   if(esPres()){l.sup=m.querySelector('#a-sup').checked;l.dto=Number(m.querySelector('#a-dto').value)||0;l.coste=m.querySelector('#a-coste').value;l.desc=m.querySelector('#a-desc').value;}
@@ -527,14 +541,7 @@ function mNuevoCliente(){ modal('+ Nuevo cliente',`<p class="nota" style="margin
   <label><span class="label">Email</span><input class="input" id="nc-email" type="email" style="margin-top:6px"></label><label><span class="label">NIF/CIF (opcional)</span><input class="input" id="nc-nif" style="margin-top:6px"></label></div>`,
   `<button class="btn btn-secondary" data-cerrar>Cancelar</button><button class="btn btn-primary" data-accion="nc-ok">Guardar</button>`); }
 function mDocumento(){ modal(P('Así lo verá el cliente'),documento(),`<button class="btn btn-primary" data-cerrar>${P('Volver al editor')}</button>`,'ancho'); }
-function mGenerado(){
-  const t=totales();
-  if(!esPres()){ S.generado='J-2026-0042'; render(); toast('Justificante emitido'); return; }
-  S.generado='#128'; render();
-  modal('Presupuesto #128 generado',`<p style="margin-top:0">Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente.</p>
-    <div class="fila-res" style="background:var(--bg);border-radius:var(--r-md);padding:12px"><div class="que"><b>${esc(S.cliente.nombre)}</b><span>${t.n} conceptos</span></div><span class="money" style="font-size:1.25rem">${eur(t.total)}</span></div>
-    <p><a href="#" class="enlace" onclick="return false">Abrir PDF en nueva pestaña →</a></p><span class="label">Enviar al cliente</span>`,
-    `<button class="btn btn-ghost" data-cerrar>Seguir editando</button><a class="btn btn-secondary" href="#" onclick="return false">⬇ Descargar PDF</a><button class="btn btn-secondary" data-accion="env-email">✉ Enviar por email</button><button class="btn btn-primary" data-accion="env-wa">Enviar por WhatsApp</button>`); }
+function generar(){ if(!S.generado) S.generado=esPres()?'#128':'J-2026-0042'; }
 
 // ───────────── Eventos ─────────────
 document.addEventListener('click',(e)=>{
@@ -558,7 +565,6 @@ document.addEventListener('click',(e)=>{
   if(d.quitarTramo){S.tramos.splice(Number(d.quitarTramo),1);render();return;}
   const i=Number(d.i);
   switch(d.accion){
-    case 'opciones':mOpciones();break; case 'opciones-ok':okOpciones();break;
     case 'mas':mMas();break;
     case 'nuevo-cliente':mNuevoCliente();break;
     case 'nc-ok':{const c={id:Date.now(),nombre:$('#nc-nombre').value.trim()||'Cliente nuevo',tel:$('#nc-tel').value,email:$('#nc-email').value,nif:$('#nc-nif').value,dir:''};CLIENTES.unshift(c);S.cliente=c;cerrar();abrirPaso(2);break;}
@@ -583,10 +589,12 @@ document.addEventListener('click',(e)=>{
     case 'limpiar':modal(P('¿Vaciar este documento?'),`<p style="margin-top:0">${P('Se quitan el cliente, las líneas y los cambios de este documento. Tus plantillas y tus opciones de siempre no se tocan.')}</p>`,`<button class="btn btn-secondary" data-cerrar>${P('No, seguir')}</button><button class="btn btn-secondary" style="color:var(--danger)" data-accion="limpiar-ok">Limpiar formulario</button>`);break;
     case 'limpiar-ok':S=inicial(S.tipo);cerrar();render();break;
     case 'ver-doc':mDocumento();break;
-    case 'generar':if(!listo())break;if(S.generado&&esPres()){modal(P('Este presupuesto ya está generado'),`<p style="margin-top:0">${P('Generarlo otra vez crearía un segundo presupuesto. ¿Quieres ver el que ya tienes?')}</p>`,`<button class="btn btn-secondary" data-cerrar>Seguir editando</button><button class="btn btn-primary" data-accion="ver-gen">${P('Ver el presupuesto')} ${S.generado}</button>`);break;}mGenerado();break;
-    case 'ver-gen':mGenerado();break;
-    case 'env-wa':b.textContent='✓ Enviado por WhatsApp';b.disabled=true;toast('Presupuesto enviado por WhatsApp.');break;
-    case 'env-email':b.textContent='✓ Enviado por email';b.disabled=true;toast('Presupuesto enviado por email.');break;
+    case 'generar':if(!listo())break;generar();render();toast('Justificante emitido');break;
+    // SCRUM-915 v3 · WhatsApp es lo primero: genera (una sola vez) y envía en el mismo gesto.
+    case 'enviar-wa':if(!listo())break;generar();S.envio={canal:'whatsapp'};render();toast('Presupuesto enviado por WhatsApp.');break;
+    case 'enviar-email':if(!listo())break;if(!S.cliente.email){toast('Este cliente no tiene email; añádelo en su ficha.');break;}generar();S.envio={canal:'email'};render();toast('Presupuesto enviado por email.');break;
+    case 'solo-guardar':if(!listo())break;generar();S.envio={canal:'guardado'};render();break;
+    case 'descargar-pdf':if(!listo())break;generar();render();toast('presupuesto-'+S.generado.replace('#','')+'.pdf');break;
   }
 });
 document.addEventListener('input',(e)=>{
@@ -599,10 +607,15 @@ document.addEventListener('input',(e)=>{
   if(el.dataset.te!==undefined){S.tramos[el.dataset.te].e=el.value;renderPrevia();return;}
   if(el.dataset.tp!==undefined){S.tramos[el.dataset.tp].p=Number(el.value)||0;refrescar();return;}
   if(el.id==='validez'){S.validez=el.value;renderPrevia();return;}
+  if(el.dataset.aj==='dirTxt'){S.op.dirTxt=el.value;renderPrevia();return;}
 });
 document.addEventListener('change',(e)=>{
   const el=e.target;
   if(el.dataset.pago){S.pagos[el.dataset.pago]=el.checked;renderPrevia();guardado();return;}
+  if(el.dataset.aj&&el.dataset.aj!=='dirTxt'){const k=el.dataset.aj;
+    if(k==='ivaDef')S.op.ivaDef=Number(el.value); else if(k==='ivaModo')S.op.ivaModo=el.value; else if(k==='dir')S.op.dir=el.value;
+    else if(k==='incDesc')S.op.incDesc=el.checked; else if(k==='razon')S.op.razon=el.value; else if(k.startsWith('dato:'))S.op.datos[k.slice(5)]=el.checked;
+    S.zona=esPres()?'condiciones':'cliente'; renderEditor(); renderPrevia(); renderBarra(); guardado(); return;}
   if(el.id==='resaltar'){document.body.classList.toggle('sin-resaltar',!el.checked);return;}
 });
 document.addEventListener('focusin',(e)=>{const el=e.target; if(el.dataset&&el.dataset.k==='c'&&S.auto!==Number(el.dataset.i)){S.auto=Number(el.dataset.i);S.zona='lineas';renderEditor();renderPrevia();}});
@@ -621,10 +634,10 @@ const INV=[
  ['buscador «Buscar por nombre, teléfono, email o referencia…»','Paso 1 «Cliente», abierto al entrar; filtra en local','—'],
  ['select Cliente + «+ Nuevo cliente»','Lista de 4 coincidencias como botones grandes + «+ Nuevo cliente» (alta sin salir)','—'],
  ['«Sin resultados para tu búsqueda»','Igual, bajo el buscador','—'],
- ['Dirección de la obra + campo','Opciones; si se muestra, sale en el documento junto al cliente','—'],
+ ['Dirección de la obra + campo','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio; si se muestra, sale en el documento junto al cliente','Decisión v3: a la vista'],
  ['C · 2. Líneas'],
- ['IVA por defecto (%)','Opciones','—'],
- ['IVA del presupuesto','Opciones; el documento lo refleja («IVA no incluido»)','Arregla: hoy sin oyente'],
+ ['IVA por defecto (%)','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio','Decisión v3: a la vista'],
+ ['IVA del presupuesto','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio; resumen «IVA sumado»; el documento lo refleja','Arregla: hoy sin oyente'],
  ['«✨ Sugerir con IA»','Acción SECUNDARIA junto a «+ Añadir línea»; abre el mismo modal','Frase del modal propuesta'],
  ['🎤 Dictar','Dentro del modal de IA, con su condición de hoy','—'],
  ['sugerencias + «Esto lo hemos puesto nosotros…»','Igual en el modal; el aviso se conserva en la línea hasta «Revisado»','Arregla: hoy se pierde'],
@@ -648,34 +661,36 @@ const INV=[
  ['E · 4. Envío'],
  ['Formas de pago + notas IBAN y 0,9 %','Fila «Formas de pago que verá el cliente · … · Cambiar»','—'],
  ['tira de pagos pactados + «[PENDIENTE…]»','Dentro de «Cambiar»: «Aplicar»','MARCADOR → propuesto'],
- ['Datos del cliente en el documento + Razón social / Nombre comercial','Opciones','—'],
- ['Incluir descripción en el PDF','Opciones','—'],
+ ['Datos del cliente en el documento + Razón social / Nombre comercial','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio','Decisión v3: a la vista'],
+ ['Incluir descripción en el PDF','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio','Decisión v3: a la vista'],
  ['F · Totales y descuento'],
  ['Base, IVA, Suma, Descuento','En el documento de la derecha; en el paso Conceptos, el TOTAL','—'],
  ['«+ Añadir descuento» → Descuento global','Secundaria junto a «+ Añadir línea»','—'],
  ['tira del descuento pactado «[PENDIENTE…]» ×2','«Este cliente tiene pactado un descuento del N %» + «Aplicar a las líneas», en el paso Conceptos','2 MARCADORES → propuestos'],
  ['G · KPI del total','Paso Conceptos + documento (escritorio); barra inferior (móvil)','—'],
  ['H · Acciones'],
- ['«Generar presupuesto» / «Emitir justificante»','Último paso «Revisar y enviar» / «Revisar y emitir»','—'],
- ['Generar dos veces = dos presupuestos','Segundo clic avisa y ofrece ver el generado','Textos propuestos'],
+ ['«Generar presupuesto» / «Emitir justificante»','Presupuesto: último paso «Revisar y enviar» con «Enviar por WhatsApp» como principal (genera y envía en un gesto); «Solo guardar» genera sin enviar. Justificante: «Emitir justificante»','Decisión v3: WhatsApp es lo primero'],
+ ['Generar dos veces = dos presupuestos','Se genera UNA vez: enviar, descargar o guardar reutilizan el mismo presupuesto','Arregla el doble'],
  ['«Limpiar formulario» (sin confirmar)','Menú «⋯» de arriba, con confirmación','Textos propuestos'],
  ['«💾 Guardar como plantilla»','Menú «⋯» de arriba','Guardar Dto./suplido/descripción: cambio de servidor a decidir'],
  ['«✓ Guardado automáticamente»','Junto al título','—'],
  ['I · Tarjeta derecha'],
  ['«Vista previa del documento» (no interactiva, incompleta, se «rompe»)','DOCUMENTO VIVO a la derecha, fijo, con aspecto de PDF: se construye mientras escribes y resalta la parte que editas. En móvil, «Ver documento»','Pedido por el fundador'],
- ['«Estado del presupuesto»','Nº en el documento tras generar; estado y envío en el modal','—'],
- ['J · Modal tras generar'],
- ['PDF, WhatsApp, email, Descargar PDF, «Seguir editando», pendiente de aprobación','Igual','Aviso muerto «Has desmarcado…» se retira'],
+ ['«Estado del presupuesto»','Nº en el documento tras generar; «✓ Enviado por WhatsApp a … · pendiente de firma» en el propio paso','Texto propuesto'],
+ ['J · Modal tras generar (desaparece)'],
+ ['«Enviar por WhatsApp», «✉ Enviar por email», «⬇ Descargar PDF»','En el último paso: WhatsApp principal; email y PDF como secundarias; confirmación en la misma pantalla, sin modal','Decisión v3'],
  ['Documento suelto'],
- ['mismo editor sin condiciones/envío/descuentos','3 pasos: Cliente → Conceptos → Revisar y emitir; Opciones sólo IVA por defecto','—'],
+ ['mismo editor sin condiciones/envío/descuentos','3 pasos: Cliente → Conceptos → Revisar y emitir; en Revisar, la fila «Ajustes del documento» sólo con IVA por defecto','—'],
+ ['«Abrir PDF en nueva pestaña», «Seguir editando»','No hacen falta: el documento está siempre a la derecha y no hay modal que cerrar','Decisión v3'],
+ ['pendiente de aprobación (técnico por encima de su límite)','Al construir: «Enviar por WhatsApp» no envía; se guarda y se dice «📋 Enviado a un administrador para aprobación. Podrás mandarlo al cliente cuando lo apruebe.» (texto de hoy)','No simulado en el prototipo'],
  ['Teclado'],
  ['N dentro del editor abre la Cotización rápida','No debe abrirla','Defecto a corregir al construir'],
 ];
 function inventario(){
-  $('#vista-inv').innerHTML=`<div class="inv"><h2>Inventario antes → después (v2)</h2>
-    <p>Todo lo que hace hoy el editor (leído del código; detalle en <code>inventario-hoy.md</code>) y dónde queda en la v2. Ninguna función se pierde.</p>
-    <table><thead><tr><th>Hoy</th><th>En la v2</th><th>Notas</th></tr></thead><tbody>
-    ${INV.map((r)=>r.length===1?`<tr class="grupo"><td colspan="3">${esc(r[0])}</td></tr>`:`<tr><td data-h="Hoy">${esc(r[0])}</td><td data-h="En la v2">${esc(r[1])}</td><td data-h="Notas">${esc(r[2])}</td></tr>`).join('')}
+  $('#vista-inv').innerHTML=`<div class="inv"><h2>Inventario antes → después (v3)</h2>
+    <p>Todo lo que hace hoy el editor (leído del código; detalle en <code>inventario-hoy.md</code>) y dónde queda en la v3. Ninguna función se pierde.</p>
+    <table><thead><tr><th>Hoy</th><th>En la v3</th><th>Notas</th></tr></thead><tbody>
+    ${INV.map((r)=>r.length===1?`<tr class="grupo"><td colspan="3">${esc(r[0])}</td></tr>`:`<tr><td data-h="Hoy">${esc(r[0])}</td><td data-h="En la v3">${esc(r[1])}</td><td data-h="Notas">${esc(r[2])}</td></tr>`).join('')}
     </tbody></table></div>`;
 }
 render();
