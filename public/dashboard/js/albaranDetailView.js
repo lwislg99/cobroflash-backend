@@ -21,7 +21,11 @@
  *
  * `sinRed` lo marca `api.js` al envolver el `fetch` (SCRUM-404).
  */
-function mensajeDeFalloAlFirmar(e) {
+function mensajeDeFalloAlFirmar(e, estado) {
+  // SCRUM-919 · Aprobado por el orquestador por delegación del fundador (SCRUM-919 comentario 15799).
+  // Sin red y con la firma YA guardada en el móvil (estado ①) se dice eso, para que no se vuelva a
+  // firmar. Si no se pudo guardar, se queda el texto de antes, que es el que es verdad.
+  if (e && e.sinRed && estado && estado.encolada) return 'Sin conexión. La firma está guardada en este móvil y se enviará cuando vuelva la señal con YaQu abierto. No hace falta volver a firmar.';
   if (e && e.sinRed) return 'No se ha podido conectar. La firma sigue en pantalla: inténtalo otra vez cuando tengas señal.';
   const detalle = (e && e.data && e.data.message) || '';
   return 'No hemos podido registrar la firma' + (detalle ? ` (${detalle})` : '');
@@ -570,7 +574,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
             throw new Error(mensajeDeFalloAlFirmar(e));
           }
           if (resultado.estado !== window.FIRMA_A_SALVO) {
-            throw new Error(mensajeDeFalloAlFirmar(resultado.error));
+            throw new Error(mensajeDeFalloAlFirmar(resultado.error, { encolada: resultado.encolada }));
           }
           // SCRUM-379 · el peor de los cinco para el profesional, aunque los datos aguanten: sin
           // aviso vuelve a pulsar «Firmar aquí mismo», le pide al cliente que firme POR SEGUNDA VEZ

@@ -77,6 +77,7 @@ async function initApp() {
   window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
   window.appAlbaranRotulos = me.albaranRotulos || {};
   window.appAlbaranAyudas = me.albaranAyudas || {};
+  window.appParteAyudas = me.parteAyudas || null;   // SCRUM-919
   // SCRUM-474 fase 2 · LOS CUBOS DEL FILTRO DE COBROS, derivados de `PAID_VIA` en el servidor
   // (regla 22). El navegador NO decide qué método cae en qué cubo — esa copia en el front es
   // justo lo que este ticket vino a quitar. Mismo criterio que los rótulos del albarán de arriba.
@@ -707,6 +708,8 @@ async function initApp() {
   // Va DESPUÉS del render y SIN `await`: pintar el dashboard no puede esperar a la red. El aviso
   // se repinta solo cuando el drenado termina — `drenarAlAbrir` se encarga, y no lanza nunca.
   if (typeof window.drenarAlAbrir === 'function') window.drenarAlAbrir();
+  // SCRUM-919 · y también al volver la red y al volver a primer plano, sin recargar.
+  if (typeof window.activarDrenadoAlVolver === 'function') window.activarDrenadoAlVolver(window, document);
 
   // 10. SCRUM-360 (H5 · fase 3) · QUE iOS NO SE LLEVE UNA FIRMA EN SILENCIO.
   //
