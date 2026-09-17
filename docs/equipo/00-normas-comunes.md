@@ -124,9 +124,15 @@ resultado, y entonces empuja.
 
 - prisma/schema.prisma sin ALTER aplicado antes.
 - El camino de emisión fiscal: leerlo sí, modificarlo es STOP.
-- Ningún texto que vea el usuario sin firma del fundador. Se propone
-  el literal exacto y SE PARA. Que un texto exista en otra pantalla
-  NO acredita que lo firmara él.
+- Ningún texto que vea el usuario sin firma. Vale la del fundador o la
+  del orquestador por su **delegación permanente**
+  (`docs/equipo/limites-del-fundador.md`, «Delegación permanente»),
+  que SCRUM-861 hace comprobable: la firma delegada es un comentario de
+  Jira y se registra en `docs/microcopy/` con la línea que fija su
+  README («Aprobado por el orquestador por delegación del fundador»,
+  con la fecha, el ticket y el número del comentario). Se propone el
+  literal exacto y SE PARA hasta que llegue una de las dos. Que un
+  texto exista en otra pantalla NO acredita que nadie lo firmara.
 - Ninguna cadena de conexión, usuario, contraseña o clave, en ningún
   fichero, comentario ni mensaje. Ni real ni de ejemplo.
 - Frontend vanilla, sin bundler, sin framework de CSS. Ni un `style=`
@@ -192,41 +198,6 @@ Un acto irreversible no es nunca la acción principal.
 Si tu medición tumba una decisión firmada, gana tu medición.
 El coste no es lo que entra en el chat: es lo que el chat arrastra.
 
-## A16 · Repite el encargo en una línea antes de empezar
-
-Al recibir un encargo, la sesión repite en UNA línea qué cree que se
-le ha pedido, antes de empezar. Si no coincide con lo que el
-orquestador quiso decir, se ve en el momento.
-
-Nace de dos sucesos del 9-sep-2026, y los dos son del mismo tipo: un
-encargo de cuatro puntos que NO llegó a la sesión, y un «el arreglo
-que ya hiciste» sobre algo que estaba a medias. Ninguno de los dos se
-habría visto hasta tres días después. La línea cuesta cinco segundos y
-es el único punto del proceso donde emisor y receptor comparan lo que
-creen que dice el mensaje.
-
-Corolario: si el encargo no te llegó, se dice. NO se reconstruye de
-memoria — un encargo inventado se parece mucho a uno recibido, y
-trabajar sobre él cuesta la tanda entera.
-
-## A20 · Si el encargo cae fuera de tu carril, lo dices y no empiezas
-
-Si el encargo cae fuera de tu carril (tabla §11bis de `docs/equipo/orquestador.md`), lo dices en
-la línea de A16 y no empiezas.
-
-    🔒 Estar libre no te hace dueña del ticket: te hace la que tiene que avisar.
-
-Solo se empieza si la **primera línea del prompt** declara la excepción con su motivo, que es lo
-que la tabla le pide al orquestador. Un encargo fuera de carril sin esa línea es un error del
-reparto, no una orden, y se caza en la línea de A16 o ya no se caza: pasada esa línea, la
-sesión trabaja como si el ticket fuera suyo.
-
-**Medido el 17-sep-2026**, el mismo día en que nació la tabla: la Sesión 5 (automatización)
-recibió un albarán y la Sesión 3 (bancos) un pago. Y la Sesión 0 (consultoría) había dejado
-escrito y listo para empujar un arreglo en `src/` y `public/` (SCRUM-892): nadie lo paró antes de
-la primera línea y acabó siendo una excepción declarada **después**, porque rehacerlo costaba un
-chat entero.
-
 ## A11 · Cómo se actualiza esto
 
 Cuando una sesión comete un error que volvería a cometer, se
@@ -258,7 +229,15 @@ puede ver, y dos sesiones pueden cogerlo a la vez.
 Dos datos, en la PRIMERA línea: la **fecha y hora** en que se midió, y el **SHA
 de `origin/main`** sobre el que se midió.
 
-    9-sep-2026 11:40 · medido sobre origin/main da5ac06a · worktree wt-verif5
+**Orden fijo del arranque de cada mensaje** (17-sep-2026): varias normas pedían «la primera
+línea» y no decían cuál gana.
+
+1. **Primera línea:** hora y SHA (esta norma).
+2. **Segunda línea**, al recibir un encargo: su repetición en una línea (A16), y ahí mismo, si
+   cae fuera de carril, la negativa (A20).
+3. Si Claude Code ya no deja seguir, el aviso de A19 va **justo después de la hora y el SHA**.
+
+    9-sep-2026 11:40 · medido sobre origin/main da5ac06ac169fca5d3692a63b10b01a6aed7d3d6 · worktree wt-verif5
 
 Sin esas dos cosas el orquestador no puede distinguir un informe de hace diez
 minutos de uno de hace seis horas, y ya ha mandado tres veces instrucciones
@@ -298,6 +277,24 @@ la entrada.
 🔒 Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima
 del tuyo.
 
+## A16 · Repite el encargo en una línea antes de empezar
+
+Al recibir un encargo, la sesión repite en UNA línea qué cree que se
+le ha pedido, antes de empezar. Esa línea va justo después de la hora
+y el SHA (orden fijo en A14). Si no coincide con lo que el
+orquestador quiso decir, se ve en el momento.
+
+Nace de dos sucesos del 9-sep-2026, y los dos son del mismo tipo: un
+encargo de cuatro puntos que NO llegó a la sesión, y un «el arreglo
+que ya hiciste» sobre algo que estaba a medias. Ninguno de los dos se
+habría visto hasta tres días después. La línea cuesta cinco segundos y
+es el único punto del proceso donde emisor y receptor comparan lo que
+creen que dice el mensaje.
+
+Corolario: si el encargo no te llegó, se dice. NO se reconstruye de
+memoria — un encargo inventado se parece mucho a uno recibido, y
+trabajar sobre él cuesta la tanda entera.
+
 ## A17 · Un ticket, una rama, un PR, y se empuja el mismo día
 
 Si un ticket no cabe en un día, **se parte**. Nunca se apilan varios tickets en una rama: al
@@ -305,9 +302,10 @@ apilarlos, o entran todos o no entra ninguno.
 
     🔒 Un conflicto no lo causa la herramienta: lo causa una rama que vive demasiado.
 
-**La evidencia, medida:** el **PR #1214** —3 tickets, 17 commits, 2 días, 51 ficheros— lleva horas
-parado por dos conflictos. El **PR #1209** de la Sesión 5 —1 ticket, 1 día— se abrió, se armó,
-pasó CI y **se mergeó solo sin que nadie mirara**.
+**La evidencia, medida el 9-sep-2026:** el **PR #1214** —3 tickets, 17 commits, 2 días, 51
+ficheros— llevaba horas parado por dos conflictos, y no entró hasta el 9-sep a las 08:53Z. El
+**PR #1209** de la Sesión 5 —1 ticket, 1 día— se abrió, se armó, pasó CI y **se mergeó solo sin que
+nadie mirara**.
 
 La diferencia entre los dos no es la suerte ni la complejidad del trabajo: es cuánto tiempo
 estuvo la rama separada de `main` mientras las otras cinco sesiones mergeaban debajo.
@@ -350,8 +348,8 @@ conversación:
      permite continuar.
 - **El traspaso en memoria se lleva al día mientras se trabaja**, no solo al cerrar: qué está en
   `main` por efecto, qué queda pendiente, ramas y PR abiertos. Así el chat nuevo, cuando toque,
-  arranca sin repetir trabajo. Si Claude Code corta la conversación, la primera línea del último
-  informe lo dice: «Claude Code no deja seguir: el siguiente encargo, en chat nuevo».
+  arranca sin repetir trabajo. Si Claude Code corta la conversación, el último informe lo dice justo
+  después de la hora y el SHA (A14): «Claude Code no deja seguir: el siguiente encargo, en chat nuevo».
 - **Nunca se reanuda un chat grande y frío.** Ni para «acabar lo que quedaba»: se abre uno nuevo
   con un prompt corto y se lee el traspaso.
 - **El chat nuevo se abre en la MISMA CARPETA.** La memoria va por carpeta: abierto en otra, no
@@ -390,3 +388,21 @@ El comando, con la ventana fija de la medición, está en la fila del 16-sep de
 caen dentro van del 15-sep 09:15Z al 16-sep 12:49Z — **28 horas**, no tres días. Y el «39» depende
 de un umbral (escribir más de 200k de caché en un turno); con «crea más de lo que lee» salen 46
 turnos y el 82,7 %. La conclusión no cambia con ninguno de los dos; la cifra, sí.
+
+## A20 · Si el encargo cae fuera de tu carril, lo dices y no empiezas
+
+Si el encargo cae fuera de tu carril (tabla §11bis de `docs/equipo/orquestador.md`), lo dices en
+la línea de A16 y no empiezas.
+
+    🔒 Estar libre no te hace dueña del ticket: te hace la que tiene que avisar.
+
+Solo se empieza si la **primera línea del prompt** declara la excepción con su motivo, que es lo
+que la tabla le pide al orquestador. Un encargo fuera de carril sin esa línea es un error del
+reparto, no una orden, y se caza en la línea de A16 o ya no se caza: pasada esa línea, la
+sesión trabaja como si el ticket fuera suyo.
+
+**Medido el 17-sep-2026**, el mismo día en que nació la tabla: la Sesión 5 (automatización)
+recibió un albarán y la Sesión 3 (bancos) un pago. Y la Sesión 0 (consultoría) había dejado
+escrito y listo para empujar un arreglo en `src/` y `public/` (SCRUM-892): nadie lo paró antes de
+la primera línea y acabó siendo una excepción declarada **después**, porque rehacerlo costaba un
+chat entero.

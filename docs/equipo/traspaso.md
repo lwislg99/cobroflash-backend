@@ -47,15 +47,12 @@ marcar el meta-guard como obligatorio (SCRUM-836). Tiene prompt. Tiene además a
 | Meta-guard obligatorio | ⏳ espera a SCRUM-866 (Javier). Con main en verde, el fundador marca la casilla |
 | Push del bot → CI en `action_required`, sin checks | 🔴 volvió a pasar con #1367. **Desaparcado** el 17-sep |
 | Conflictos de código | 🔴 **desaparcado** el 17-sep |
-| Orquestador ↔ sesiones sin que el fundador copie y pegue | 🆕 objetivo del fundador. **Medido el 17-sep:** desde la sesión del orquestador, `ListAgents` ve 7 sesiones locales de `cobroflash-backend` y `SendMessage` podría escribirles. No se ha usado: hacerlo cambia la regla §10.5-10.6 («prompt solo a quien trae el fundador») y lo decide él |
-| Orquestador que arranca solo por la mañana | 🆕 objetivo del fundador. Sin diseñar; si cuesta dinero (rutinas en la nube), regla 36 |
+| Orquestador ↔ sesiones sin que el fundador copie y pegue | ✅ **EN USO desde el 17-sep ~08:50Z** (`orquestador-autonomo.md`). Lo que sigue es la nota de antes de usarlo: **Medido el 17-sep:** desde la sesión del orquestador, `ListAgents` ve 7 sesiones locales de `cobroflash-backend` y `SendMessage` podría escribirles. No se ha usado: hacerlo cambia la regla §10.5-10.6 («prompt solo a quien trae el fundador») y lo decide él |
+| Orquestador que arranca solo por la mañana | 🆕 objetivo del fundador. Sin diseñar; si cuesta dinero (rutinas en la nube), lo decide el fundador. **Actualizado 17-sep:** cron provisional en marcha (`orquestador-autonomo.md` §2, F5) |
 
 ## 3bis · CONTRADICCIONES ABIERTAS EN LO QUE SE LEE AL ARRANCAR
 
-- **A19 (chat nuevo).** `00-normas-comunes.md` dice «chat nuevo si pasa de ~200k o lleva >1 h
-  parado» (commit `ccad89cd`, 16-sep 20:05 CEST). Después, esa misma noche (~21:25), el fundador
-  dijo **«nunca por tamaño: solo >1 h parado o si Claude Code no deja seguir»** (memoria del
-  proyecto). Manda lo último. El fichero es de la S0: se le reporta.
+- ~~**A19 (chat nuevo).**~~ ✅ **CERRADA el 17-sep-2026:** la Sesión 0 alineó A19 con la decisión final del fundador (nunca chat nuevo por tamaño; solo si lleva >1 h parado o Claude Code no deja seguir) en el PR #1395.
 - **Derivados del máster con reglas caducadas** (regla 35: se cambian por cambio de máster):
   `CLAUDE.md` dice «el merge del PR lo hace un HUMANO»; la skill `cerebro-yaqu` dice «`gh` NO está
   instalado, el PR lo abre el fundador» y «entrada en YAQU_MASTER.md». Hoy: auto-merge,

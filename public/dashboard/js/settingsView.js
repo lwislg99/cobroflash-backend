@@ -748,9 +748,53 @@ function renderSettingsView(container) {
     saveBtn.type = "submit";
     saveBtn.className = "btn btn-primary btn-lg";
     saveBtn.textContent = "Guardar cambios";
-  
+
     actions.appendChild(saveBtn);
     form.appendChild(actions);
+
+    // SCRUM-894 · LO QUE FALTA EN OTRA PESTAÑA. Un `required` vacío de un panel oculto frenaba el
+    // envío en silencio: el navegador no puede enfocar un campo con `display:none` y solo lo cuenta
+    // en la consola. Va en el CLIC y no en `invalid` a propósito: el clic corre ANTES de que el
+    // navegador valide, así que abrir aquí la pestaña deja el campo visible y es el propio navegador
+    // quien lo enfoca y lo señala. Enter dentro de un campo también pasa por aquí (envío implícito =
+    // clic en el botón). Qué es obligatorio no se toca: se lee de `validity`, sin disparar eventos.
+    saveBtn.addEventListener("click", () => {
+      form.querySelectorAll("[data-aviso-falta]").forEach((n) => n.remove());
+      const faltan = Array.from(form.elements).filter((el) => el.willValidate && !el.validity.valid);
+      // Fuera de los paneles se ve siempre: cuenta como la pestaña activa (avisa el navegador).
+      const panelDe = (el) => {
+        const p = el.closest(".settings-panel");
+        return p ? p.dataset.submenu : submenuActivo;
+      };
+      const destino = pestanaDelQueFalta(faltan.map(panelDe), submenuActivo);
+      if (!destino) return;
+      const campo = faltan.find((el) => panelDe(el) === destino);
+      submenuActivo = destino;
+      pintarNav();
+      const caja = campo.closest(".field") || campo.parentNode;
+      // Firma (SCRUM-894 comentario 15672): campo y pestaña se nombran SOLO con lo que la pantalla ya
+      // muestra, nunca con un nombre interno. Un campo sin rótulo visible se queda en «abrir su
+      // pestaña» —el navegador lo enfoca y lo señala— en vez de inventarle nombre.
+      const rotulo = caja.querySelector("label");
+      const nombreVisible = rotulo ? rotulo.textContent.trim() : "";
+      if (!nombreVisible) return;
+      const aviso = document.createElement("p");
+      aviso.dataset.avisoFalta = campo.name || campo.id;
+      aviso.setAttribute("role", "alert");
+      aviso.className = "aviso-falta-campo";
+      aviso.textContent = avisoFaltaEnOtraPestana(
+        nombreVisible,
+        rotuloDeSubmenu(destino)
+      );
+      caja.appendChild(aviso);
+      campo.classList.add("input-error");
+      const limpiar = () => {
+        aviso.remove();
+        campo.classList.remove("input-error");
+        campo.removeEventListener("input", limpiar);
+      };
+      campo.addEventListener("input", limpiar);
+    });
 
     // SCRUM-284 · «WhatsApp este mes» dentro de AVISOS, pero FUERA del mapa y fuera del guard.
     // No es un ajuste ni un control: es un contador de consumo y no persiste nada. Por la regla del

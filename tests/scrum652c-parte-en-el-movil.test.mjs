@@ -427,9 +427,11 @@ test('SCRUM-652c · 🔴 LA VISTA le dice a la cola que esto es un PARTE', async
 
   let padAbierto = null;
   const llamadas = [];
+  // SCRUM-890b · la vista sólo deja cerrar el pad con ③: el doble devuelve la constante de verdad.
+  ctx.FIRMA_A_SALVO = 'a_salvo';
   const abierto = ctx.firmarParte(PARTE_PINTABLE, {
     abrirPad: (o) => { padAbierto = o; },
-    firmar: async (id, cuerpo, subir, tipo) => { llamadas.push({ id, tipo }); return { estado: 'ok' }; },
+    firmar: async (id, cuerpo, subir, tipo) => { llamadas.push({ id, tipo }); return { estado: ctx.FIRMA_A_SALVO }; },
     apiRequest: async () => ({ id: 1 }),
   });
   assert.equal(abierto, true, '🔴 la vista no ha abierto el pad de firma');
