@@ -9,7 +9,7 @@
 //
 //   ② UN RECHAZO AL VACIAR LA COLA NO LO VEÍA NADIE. `drenarAlAbrir` descarta su resultado y la
 //     firma rechazada ya ha salido de IndexedDB: la pantalla del parte no tenía qué leer. Decidido
-//     (orquestador, 16-sep): constancia POR DOCUMENTO en el mismo IndexedDB de la cola, que se
+//     (orquestador, 16-sep; 17-sep sin subir la base): constancia POR DOCUMENTO en localStorage, que se
 //     borra cuando ese documento se vuelve a firmar con éxito.
 //
 // Se ejercita con el DASHBOARD ENTERO (`_banco-almacen-local.mjs`): los scripts reales en el orden
