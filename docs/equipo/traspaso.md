@@ -52,10 +52,7 @@ marcar el meta-guard como obligatorio (SCRUM-836). Tiene prompt. Tiene además a
 
 ## 3bis · CONTRADICCIONES ABIERTAS EN LO QUE SE LEE AL ARRANCAR
 
-- **A19 (chat nuevo).** `00-normas-comunes.md` dice «chat nuevo si pasa de ~200k o lleva >1 h
-  parado» (commit `ccad89cd`, 16-sep 20:05 CEST). Después, esa misma noche (~21:25), el fundador
-  dijo **«nunca por tamaño: solo >1 h parado o si Claude Code no deja seguir»** (memoria del
-  proyecto). Manda lo último. El fichero es de la S0: se le reporta.
+- ~~**A19 (chat nuevo).**~~ ✅ **CERRADA el 17-sep-2026:** la Sesión 0 alineó A19 con la decisión final del fundador (nunca chat nuevo por tamaño; solo si lleva >1 h parado o Claude Code no deja seguir) en el PR #1395.
 - **Derivados del máster con reglas caducadas** (regla 35: se cambian por cambio de máster):
   `CLAUDE.md` dice «el merge del PR lo hace un HUMANO»; la skill `cerebro-yaqu` dice «`gh` NO está
   instalado, el PR lo abre el fundador» y «entrada en YAQU_MASTER.md». Hoy: auto-merge,

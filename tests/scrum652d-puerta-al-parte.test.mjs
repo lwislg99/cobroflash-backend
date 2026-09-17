@@ -493,13 +493,17 @@ test('SCRUM-652d · 🔴 SIN RED: se entra al parte y se firma, con LA COLA QUE 
   assert.ok(padAbierto, '🔴 pulsar el botón no abre el pad de firma');
 
   // Y ahora la firma, con la red CAÍDA.
-  const r = await padAbierto.onConfirm('data:image/png;base64,AAA', { firmadoPorNombre: 'Ana Ruiz' });
+  // SCRUM-890b · antes esto RESOLVÍA con ② y el pad se cerraba: era el fallo mudo, fijado aquí como
+  // si fuera lo correcto. Sin ③ `onConfirm` LANZA — el pad sigue abierto con el trazo.
+  let lanzo = null;
+  await padAbierto.onConfirm('data:image/png;base64,AAA', { firmadoPorNombre: 'Ana Ruiz' })
+    .catch((e) => { lanzo = e; });
 
   assert.deepEqual(firmas, [{ id: 7, tipo: 'parte' }],
     '🔴 la firma no llegó a la cola diciendo que es un PARTE. Llegó: ' + JSON.stringify(firmas));
-  assert.equal(r.estado, 'solo_en_este_movil',
-    '🔴 sin red se ha declarado la firma a salvo: es el fallo mudo que el bloque H existe para impedir');
-  assert.equal(r.encolada, true, '🔴 sin red la firma no entró en la cola');
+  assert.ok(lanzo,
+    '🔴 sin red `onConfirm` ha resuelto: el pad se cierra como si la firma hubiera subido — es el fallo ' +
+    'mudo que el bloque H existe para impedir');
 });
 
 test('SCRUM-652d · 🔴 tras firmar, la pantalla se repinta CON LO QUE DICE EL SERVIDOR', async () => {
@@ -515,6 +519,7 @@ test('SCRUM-652d · 🔴 tras firmar, la pantalla se repinta CON LO QUE DICE EL 
     abrirPad: (o) => { padAbierto = o; },
     firmar: async () => ({ estado: 'a_salvo', encolada: false }),
   });
+  ctx.FIRMA_A_SALVO = 'a_salvo';   // SCRUM-890b · lo publica `estadoFirma.js`; este banco no lo carga
   assert.equal(veces, 1);
 
   await cont.boton.pulsar();
