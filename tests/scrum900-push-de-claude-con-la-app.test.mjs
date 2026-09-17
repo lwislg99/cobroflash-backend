@@ -29,8 +29,16 @@ import { fileURLToPath } from 'node:url';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WORKFLOW = '.github/workflows/claude.yml';
 
-// El rojo, declarado: se añade con el arreglo (su ancla `de` todavía no existe en el workflow).
-export const MUTACIONES_QUE_ME_TUMBAN = [];
+// El rojo, declarado: lo ejecuta `npm run meta:mutaciones`.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El defecto del 17-sep: el checkout vuelve a dejar el GITHUB_TOKEN como cabecera.
+    fichero: WORKFLOW,
+    de: 'persist-credentials: false',
+    a: 'persist-credentials: true',
+    cae: '🔴 ROJO/POSITIVO: el push de Claude autentica con la llave de la App, no con el GITHUB_TOKEN del checkout',
+  },
+];
 
 const TOKEN_CHECKOUT = 'TOKEN_DEL_CHECKOUT_GITHUB_ACTIONS';
 const TOKEN_APP = 'TOKEN_DE_LA_APP_YAQU_BOT';
