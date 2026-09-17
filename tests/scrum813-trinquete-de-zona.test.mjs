@@ -36,6 +36,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';   // SCRUM-730: `pathname` no decodifica el espacio
 import { execFileSync } from 'node:child_process'; // SCRUM-813b: contrastar la marca contra git
+// SCRUM-864: crea Y se compromete a borrar. Este fichero es del 8-sep y nacio antes del helper.
+import { temporal } from './_temporal.mjs';
 
 import {
   AUSENTE, CANARIOS, CENSADAS, SALIDA_APAGADA, SALIDA_CIEGO, SALIDA_HABLA, SALIDA_OK, ZONAS,
@@ -227,7 +229,7 @@ test('SCRUM-813 · SUELO: la tanda que el trinquete barre es la MISMA que corre 
 // de este fichero que cuesta segundos, y es la que vale.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-const dirCanarios = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum813-'));
+const dirCanarios = temporal('scrum813-');
 const canarios = escribirCanarios(path.join(dirCanarios, 'canarios'));
 const medidas = ZONAS.map((zona) => medirEnZona({
   zona,

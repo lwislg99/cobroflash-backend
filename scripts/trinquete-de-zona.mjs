@@ -23,6 +23,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';   // SCRUM-730: `pathname` no decodifica el espacio
+// SCRUM-864: crea Y se compromete a borrar. Este fichero es del 8-sep y nacio antes del helper.
+import { temporal } from '../tests/_temporal.mjs';
 
 import {
   CANARIOS, CENSADAS, ESCRITURAS_DE_LA_TANDA, RAIZ, SALIDA_CIEGO, ZONAS,
@@ -77,7 +79,7 @@ if (sondas.some((s) => !s.ok)) {
 }
 
 // ── ③ canarios + tanda ──────────────────────────────────────────────────────────────────────
-const dirTrabajo = fs.mkdtempSync(path.join(os.tmpdir(), 'trinquete-zona-'));
+const dirTrabajo = temporal('trinquete-zona-');
 const canarios = escribirCanarios(path.join(dirTrabajo, 'canarios'));
 const deLaTanda = soloCanarios ? [] : ficherosDeLaTanda(RAIZ);
 const ficheros = [...deLaTanda, ...canarios.map((c) => c.ruta)];

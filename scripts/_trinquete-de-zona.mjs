@@ -91,6 +91,8 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';   // SCRUM-730: `pathname` no decodifica el espacio
+// SCRUM-864: crea Y se compromete a borrar. Este fichero es del 8-sep y nacio antes del helper.
+import { temporal } from '../tests/_temporal.mjs';
 
 const AQUI = fileURLToPath(import.meta.url);
 export const RAIZ = path.resolve(path.dirname(AQUI), '..');
@@ -307,7 +309,7 @@ export function ficherosDeLaTanda(raiz = RAIZ) {
  * ningún fichero de `tests/` puede coincidir con ella ni llamándose igual.
  */
 export function escribirCanarios(
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'trinquete-zona-')), raiz = RAIZ,
+  dir = temporal('trinquete-zona-'), raiz = RAIZ,
 ) {
   fs.mkdirSync(dir, { recursive: true });
   return CANARIOS.map((c) => {
@@ -589,7 +591,7 @@ export function arbolQuieto(antes, despues, declaradas = ESCRITURAS_DE_LA_TANDA)
  */
 export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida }) {
   const destino = salida
-    || path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'trinquete-zona-med-')), 'medida.json');
+    || path.join(temporal('trinquete-zona-med-'), 'medida.json');
   const lista = path.join(path.dirname(destino), 'ficheros.json');
   fs.writeFileSync(lista, JSON.stringify(ficheros));
 
