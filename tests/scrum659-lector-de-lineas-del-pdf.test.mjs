@@ -20,11 +20,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import PDFDocument from 'pdfkit';
 import { extraerTextoPdf, lineasDePdf, lineasConPdf } from './_texto-del-pdf.mjs';
 
-const TMP = path.join(process.env.TEMP || process.env.TMPDIR || '.', 'scrum659');
+const TMP = path.join(os.tmpdir(), `yaqu-659-${process.pid}`);
 fs.mkdirSync(TMP, { recursive: true });
 
 /** Un PDF de una sola llamada a `text`, para poder controlar exactamente qué se pinta. */

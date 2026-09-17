@@ -121,6 +121,20 @@ function valoresDe(expr, sf) {
  */
 function dentroDeEscrituraQuote(nodo) {
   for (let p = nodo.parent; p; p = p.parent) {
+    // 🔴 SCRUM-688 · `select: { status: true }` NO ES UNA ESCRITURA, y el censo la contaba.
+    //
+    // Es la MISMA pregunta que el `res.json` de arriba —estructura, no distancia— con una vuelta
+    // más: aquí el nodo sí cuelga de `quote.create`, así que mirar la llamada que envuelve no
+    // basta. En Prisma lo que se escribe va bajo `data:`; `select:` e `include:` son proyecciones,
+    // dicen qué columnas VUELVEN. Un `status: true` ahí es «devuélveme el estado», no «ponlo a
+    // `true`» — y como `true` no es un estado resoluble, entraba en `sinResolver` y dejaba el
+    // fichero declarándose CIEGO.
+    //
+    // ⚠️ Esto NO abre un hueco, y esa es la línea que no hay que cruzar: no se ignora ningún
+    // `status: true`, se ignora el que cuelga de una proyección. Una escritura de verdad va bajo
+    // `data:` y se sigue contando igual — el control negativo de `scrum421` lo fija.
+    if (ts.isPropertyAssignment(p) && ts.isIdentifier(p.name)
+      && (p.name.text === 'select' || p.name.text === 'include')) return false;
     if (!ts.isCallExpression(p)) continue;
     // ⚠️ `.quote.` y no `prisma.quote.`: dentro de una `$transaction` el cliente se llama `tx`, y
     // la escritura que decide este ticket —`tx.quote.create` con `status: initialStatus`, la ruta
@@ -169,7 +183,19 @@ export function censarEstadosDePresupuesto(raiz) {
   return { escrituras, sinResolver, ficherosMirados: ficheros.length };
 }
 
-/** Igual, pero sobre una fuente suelta: para los controles del test. */
+/**
+ * Igual, pero sobre una fuente suelta: para los controles del test.
+ *
+ * 🔴 Y «igual» NO ERA VERDAD hasta SCRUM-688 (16-sep-2026). Esta función **no llamaba a
+ * `dentroDeEscrituraQuote`**: miraba TODO `status:` de la fuente, viniera de donde viniera. Así
+ * que los controles unitarios de `scrum421` medían un algoritmo distinto del que se aplica al
+ * árbol — y un control que no ejercita el instrumento de verdad no controla nada.
+ *
+ * Se vio al escribir el caso de la proyección: el mismo código daba dos resultados distintos
+ * según por cuál de las dos puertas entrara. El de `res.json` seguía en verde por una razón que
+ * no era la suya: `status: q.status` no se resuelve, así que caía en `sinResolver` —donde nadie
+ * lo miraba— en vez de contarse como escritura. La cuenta salía; el motivo, no.
+ */
 export function censarFuente(nombre, codigo) {
   const sf = ts.createSourceFile(nombre, codigo, ts.ScriptTarget.ES2020, true, ts.ScriptKind.TS);
   const escrituras = [];
@@ -177,7 +203,7 @@ export function censarFuente(nombre, codigo) {
   const visitar = (nodo) => {
     if (ts.isPropertyAssignment(nodo)) {
       const clave = ts.isIdentifier(nodo.name) || ts.isStringLiteral(nodo.name) ? nodo.name.text : null;
-      if (clave === 'status') {
+      if (clave === 'status' && dentroDeEscrituraQuote(nodo)) {
         const vals = valoresDe(nodo.initializer, sf);
         if (vals) escrituras.push({ valores: vals });
         else sinResolver.push({ texto: nodo.getText(sf) });

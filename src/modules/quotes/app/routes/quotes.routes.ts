@@ -49,8 +49,20 @@ import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
-import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+// SCRUM-814 · el MISMO cerrojo de serie que toman `quotesAdmin` y `collect-rest`
+// (`pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, SCRUM-234/728/358). Aquí pesa más que en
+// ningún otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
+// mala cobertura es el caso NORMAL, no el raro.
+import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar, tieneDescuentoGlobalConVariosIva } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_CREAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../../domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+// SCRUM-805 · el sello del PRESUPUESTO. Canónico PROPIO: el del albarán no sella `total`,
+// `validUntil`, `paymentTerms` ni las cláusulas, que es justo lo que se discute.
+import { buildFirmaEvidenciaPresupuesto, contenidoDePresupuesto } from '../../domain/presupuestoSello';
+import { requestIp } from '../../../system/audit.service';
 
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-206b
 import { debeEstarEnLaCadena } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206b
@@ -62,8 +74,12 @@ import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaE
 import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../../core/documentos/direccionObra';
 // SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
+import { firmaTieneTrazo, ERROR_FIRMA_VACIA, COPY_FIRMA_VACIA } from '../../domain/firmaConTrazo';
 
 
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 const router = Router();
 
 // SCRUM-95: rate limit por IP como defensa EN PROFUNDIDAD además del token opaco
@@ -128,6 +144,13 @@ router.post('/create', async (req, res) => {
       // el total. No hay una segunda aritmética: `calcTotal` es quien produce el `Quote.total`
       // que se guarda y que el PDF del presupuesto imprime tal cual (`pdf.service.ts:954`).
       totalNum = calcTotal(canonicalLines, body.discountGlobalAmount ?? null);
+    }
+
+    // SCRUM-887 · UN C NO SE GUARDA (comentario 15697). El editor ya lo impide; esto cierra la API.
+    if (tieneDescuentoGlobalConVariosIva({ lines: canonicalLines, discountGlobalAmount: body.discountGlobalAmount ?? null })) {
+      return res.status(400).json({
+        error: ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, message: COPY_CREAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA,
+      });
     }
 
     // Atribuir el técnico que crea la cotización (null = propietario)
@@ -263,6 +286,10 @@ router.post('/create', async (req, res) => {
       });
     }
     console.error('POST /quote/create error', err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -498,6 +525,13 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
       });
     }
 
+    // SCRUM-892 · una firma que LLEGA tiene que tener trazo, en cualquier modo (un precio o «3
+    // opciones»): antes se aceptaba `data:,` y se sellaba la evidencia sobre nada. Mandar la firma
+    // es opcional —«Acepto sin firmar» manda `null` y sigue valiendo—; mandarla vacía, no.
+    if (decision === 'accept' && req.body?.signatureData != null && !firmaTieneTrazo(req.body.signatureData)) {
+      return res.status(422).json({ error: ERROR_FIRMA_VACIA, message: COPY_FIRMA_VACIA });
+    }
+
     let updatedQuote: any = quote;
     let createdInvoice: any = null;
     // SCRUM-234 · si la EMISIÓN falla, la aceptación NO se pierde: ya está commiteada más
@@ -520,6 +554,43 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         }
       }
 
+      // ── SCRUM-805 · QUÉ FIRMÓ EL CLIENTE ──────────────────────────────────────────────────
+      //
+      // 🔴 SE SELLA EL CONTENIDO **FINAL**, y el orden de estas líneas es la mitad del ticket.
+      // Esta misma ruta reescribe `total` y `lines` cuando el cliente elige un tramo (justo
+      // debajo), así que sellar la fila de ANTES certificaría el presupuesto que el cliente NO
+      // eligió. Es el mismo defecto que SCRUM-734 encontró en el PDF de esta ruta, un paso más
+      // abajo: allí el papel enseñaba el total viejo; aquí el sello lo certificaría.
+      //
+      // Va en el MISMO `update` que la firma: lo que se sella y lo que se guarda salen del mismo
+      // objeto y de la misma escritura. Dos escrituras dejarían una ventana en la que el
+      // documento está firmado y sin sellar (SCRUM-438).
+      //
+      // Sólo se sella SI HAY TRAZO. Una aceptación sin firma no es una firma, y `evidenciaFirma`
+      // es nullable justamente para eso: `null` significa «no se firmó» o «se firmó antes de que
+      // esto existiera», y ninguna de las dos es «firma inválida».
+      const evidenciaFirma = signatureData
+        ? buildFirmaEvidenciaPresupuesto({
+          contenido: contenidoDePresupuesto({
+            ...quote,
+            total: tierTotal ?? quote.total,
+            lines: selectedLines ?? quote.lines,
+          }),
+          contenidoCongelado: {
+            cliente: quote.customer?.legalName || quote.customer?.name || null,
+            emisor: quote.merchant?.legalName || quote.merchant?.name || null,
+            emisorNif: quote.merchant?.taxId || null,
+          },
+          canal: 'remoto',
+          ip: requestIp(req),
+          ua: (req.headers['user-agent'] as string) || null,
+          tokenId: quote.decisionToken,
+          // ⛔ EL RELOJ DEL SERVIDOR (`now`), nunca el del cliente. Una marca de tiempo que pone
+          // quien firma no es una marca de tiempo: es una afirmación suya.
+          firmadoAt: now,
+        })
+        : null;
+
       updatedQuote = await prisma.quote.update({
         where: { id: quote.id },
         data: {
@@ -530,6 +601,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           rejectionReason: null,
           rejectedAt: null,
           ...(signatureData ? { signatureUrl: signatureData } : {}),
+          ...(evidenciaFirma ? { evidenciaFirma: evidenciaFirma as any } : {}),
           ...(tierId ? { selectedTierId: tierId } : {}),
           ...(tierTotal ? { total: tierTotal } : {}),
           ...(selectedLines ? { lines: selectedLines } : {}),
@@ -591,7 +663,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // SCRUM-141: el importe se DERIVA de las líneas del tramo — el total de una factura es
         // consecuencia de sus líneas. Antes salía de `distributeStageAmounts` con las líneas
         // escaladas aparte, y el desfase de redondeo quedaba sellado en la huella VeriFactu.
-        const quoteLines = Array.isArray(updatedQuote.lines) ? (updatedQuote.lines as any[]) : [];
+        const quoteLines = lineasParaFacturar(updatedQuote); // SCRUM-887: el dto de línea, aplicado
         const scaledLines = stageLinesReconciled(
           quoteLines, plan, stage.index, distributeStageAmounts(updatedQuote.total, plan)[stage.index],
         );
@@ -635,29 +707,51 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // ocurrió. Aquí no se entrega ningún documento —`createdInvoice` se queda en null— así
         // que no hay fail-open: hay un aviso donde antes había un error técnico.
         let invoice: any = null;
+        // SCRUM-729 · antes de abrir la transacción: dentro está el cerrojo de serie desde la
+        // primera línea (SCRUM-814) y todo lo de dentro se serializa entre emisiones.
+        const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
         try {
         invoice = await prisma.$transaction(async (tx) => {
+          // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ───────────────────────────
+          //
+          // `stage` se eligió ARRIBA con el recuento de `quote.Invoice`, fuera de la transacción.
+          // Envolver la creación no protege una decisión tomada antes de abrirla, y aquí el
+          // disparador es el CLIENTE FINAL: dos toques con mala cobertura emitían dos facturas
+          // del MISMO tramo. Mismo cerrojo y mismo orden que los otros dos caminos.
+          await tomarCerrojoDeSerie(tx, quote.merchantId);
+          const emitidasAhora = await tx.invoice.count({
+            where: { quoteId: quote.id, merchantId: quote.merchantId }, // regla 2: scoped
+          });
+
+          // 🔴 AQUÍ NO SE RECALCULA EL TRAMO, y es la diferencia con los otros dos caminos.
+          //
+          // En `quotesAdmin` y en «cobrar el resto» quien pierde la carrera emite el tramo
+          // SIGUIENTE, porque quien pulsó pedía «emite lo que toque». Aquí no: lo que el cliente
+          // hizo fue ACEPTAR, una sola vez, aunque el dedo tocara dos. Recalcular emitiría el
+          // «Final» de golpe junto al «Anticipo» —los dos tramos de una tacada por un doble
+          // toque—, que es cobrar antes de tiempo. Se sale sin escribir nada: su factura ya
+          // existe, la emitió su gemela.
+          if (emitidasAhora !== existingInvoices.length) return null;
+
           const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
             camino: 'C1',
             // Quien emite aquí NO es el pro: es el cliente final pulsando en WhatsApp.
             // `ref` nombra la VÍA, nunca el token (sería guardar una credencial).
             actor: { tipo: 'cliente_final', ref: 'quote_token' },
           });
-          return tx.invoice.create({
-            data: {
-              merchantId: quote.merchantId,
-              customerId: quote.customerId,
-              quoteId: quote.id,
-              number: invoiceNumber,
-              type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
-              total: invoiceAmount.toFixed(2),
-              stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
-              currency: quote.currency,
-              lines: scaledLines.length > 0 ? scaledLines : undefined,
-              pdfUrl: 'PENDING_PDF',
-              qrData: 'PENDING_QR',
-              registerId: null,
-            },
+          return crearFacturaEmitida(tx, clienteCongelado, {
+            merchantId: quote.merchantId,
+            customerId: quote.customerId,
+            quoteId: quote.id,
+            number: invoiceNumber,
+            type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+            total: invoiceAmount.toFixed(2),
+            stageLabel: isCustomPlan ? stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
+            currency: quote.currency,
+            lines: scaledLines.length > 0 ? scaledLines : undefined,
+            pdfUrl: 'PENDING_PDF',
+            qrData: 'PENDING_QR',
+            registerId: null,
           });
         });
 
@@ -687,7 +781,10 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // C1 lo dispara el CLIENTE FINAL, y eso es legítimo: el hecho que emite es que ACEPTE
         // el presupuesto, no que abra un PDF. Lo que el ticket corrige es lo segundo.
         // Este camino tampoco sellaba: dependía del sellado perezoso de `ensureInvoicePdf`.
-        await sellarTrasEmision(invoice, quote.merchant, prisma);
+        // SCRUM-814 · si la carrera la ganó la gemela no hay factura que sellar, y llamar aquí
+        // con `null` reventaría: caería en el `catch` de abajo y marcaría `facturaPendiente` por
+        // una factura que SÍ existe — sellada ya por la petición que la creó.
+        if (invoice) await sellarTrasEmision(invoice, quote.merchant, prisma);
 
         } catch (e: any) {
           // El caso conocido es la colisión de serie (P2002 sobre `invoices.number`), que
@@ -698,6 +795,14 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           facturaPendiente = true;
         }
 
+        // SCRUM-814 · `null` = la carrera la ganó la gemela. NO se marca `facturaPendiente`: eso
+        // le diría al cliente «tu factura está en proceso; si no la recibes hoy, coméntaselo al
+        // profesional» por una factura que SÍ existe — una llamada de soporte por algo que no ha
+        // pasado. Y al dejar `createdInvoice` vacío tampoco se manda el segundo `payment_request`
+        // por WhatsApp: el mismo aviso dos veces al mismo cliente (regla 28).
+        if (invoice === null) {
+          console.log('[quote_decision_C1] el tramo lo emitió una petición simultánea; no se repite');
+        }
         createdInvoice = invoice;
 
 

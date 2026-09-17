@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 // SCRUM-598 · F9 no se retira, se MUDA: su detector nuevo vive en el censo, y aquí se prueba en
 // rojo. Ver el bloque «F9 · LA MUDANZA» al final de este fichero.
 import { F9_EN_EL_CATALOGO, faltaEnF9 } from './_censo-dos-fronts.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/quotesView.js');
@@ -31,10 +32,11 @@ const require_ = createRequire(import.meta.url);
 const ts = require_('typescript');
 
 /** El fuente SIN comentarios: este fichero nombra «margen» muchas veces y no puede cazarse a sí mismo. */
-function desnudar(src) {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+function desnudar(src, nombre = 'x.ts') {
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  return soloCodigo(src, nombre);
 }
 
 /**
@@ -221,7 +223,11 @@ const PIEZAS_DE_F9 = [
   ['el campo Margen % de la EDICIÓN', /«Margen %».*EDICIÓN/,
     (f) => mutar(f, 'vista', '<input name="margen" type="number" step="0.01"/>')],
   ['el coste deja de VIAJAR al servidor', /COSTE en lo que se ENV[IÍ]A al servidor/,
-    (f) => mutar(f, 'vista', "cost: costRaw === '' ? null : Number(costRaw),")],
+    // 🔴 RE-ANCLADO en SCRUM-597 (DOC-07). La línea cambió de forma —no de sentido— porque el
+    // campo «Coste» ahora puede NO EXISTIR para quien no ve economía (P-DOC-3), y entonces la
+    // clave no viaja en vez de viajar vacía. El ancla se actualiza al texto de hoy; lo que este
+    // caso vigila sigue siendo lo mismo: que el coste DEJE DE VIAJAR haga caer al detector.
+    (f) => mutar(f, 'vista', "cost: costRaw === null ? undefined : (costRaw === '' ? null : Number(costRaw)),")],
   ['el cableado del margen mientras se teclea', /margenCatalogo\.autocompletar/,
     (f) => mutar(f, 'vista', 'window.margenCatalogo.autocompletar(', 'yaNoSeCablea(')],
   ['el margen derivado al abrir un producto', /margenCatalogo\.margenDesde/,

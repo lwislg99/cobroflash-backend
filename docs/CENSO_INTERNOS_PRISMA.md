@@ -18,7 +18,7 @@
 Las superficies **se solapan a propósito** (quien lanza el CLI nombra también su ruta), así que el
 número que manda es el de **ficheros distintos**, no la suma de las columnas.
 
-### 🟠 `Prisma.dmmf` — el modelo de datos compilado dentro del cliente generado · **9 ficheros**
+### 🟠 `Prisma.dmmf` — el modelo de datos compilado dentro del cliente generado · **13 ficheros**
 
 | fichero | para qué |
 |---|---|
@@ -31,10 +31,19 @@ número que manda es el de **ficheros distintos**, no la suma de las columnas.
 | `tests/scrum235-cliente-por-columnas.test.mjs` | cliente vs schema por nombre de columna |
 | `tests/scrum242-restauracion-cubre-todos-los-tipos.test.mjs` | cobertura de la restauración |
 | `tests/scrum244-cobertura-portabilidad.test.mjs` | cobertura de la portabilidad |
+| `tests/scrum729-el-cliente-congelado-en-el-cliente.test.mjs` | las columnas congeladas del cliente existen en el modelo |
+| `tests/scrum742-internos-de-prisma.test.mjs` | el propio censo: mira quién nombra el DMMF |
+| `tests/scrum805-que-firmo-el-cliente.test.mjs` | los campos de `Quote` que entran en la firma |
+| `tests/scrum815-el-modelo-apunta-a-la-tabla.test.mjs` | los `@map` de `GatewayEvent` contra las columnas reales de `gateway_events` |
 
 **No cuentan, y es el dato que justifica el método:** `scripts/_pares-del-schema.mjs` y
 `tests/scrum461-censo-no-encoge.test.mjs` **sólo lo nombran en un comentario**. Por texto son 11;
 de verdad son 9.
+
+> **Actualizado el 15-sep-2026 (SCRUM-815).** Eran 9 cuando se escribió esta tabla y hoy son 13:
+> `scrum729`, `scrum742` y `scrum805` entraron sin anotarse aquí, y `scrum815` es el de este
+> cambio. Se anotan los cuatro: el censo existe para que la decisión de subir de versión se tome
+> con el número de hoy, y un censo que va por detrás la toma con datos viejos.
 
 ### 🟠 Un FICHERO de dentro del cliente generado · **1 fichero**
 

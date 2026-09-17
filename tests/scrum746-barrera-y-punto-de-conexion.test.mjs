@@ -34,7 +34,7 @@ const llamada = (c) => JSON.stringify({ tool_name: 'Bash', tool_input: { command
 const bloquea = (c) => evaluar(llamada(c), SENTINEL_FALSO).bloqueado;
 
 /** Ficheros de código del árbol, para el censo del punto de conexión. */
-function ficherosDe(dirs) {
+function ficherosDe(dirs, raiz = RAIZ) {
   const out = [];
   const rec = (dir) => {
     if (!fs.existsSync(dir)) return;
@@ -44,7 +44,7 @@ function ficherosDe(dirs) {
       if (/\.(ts|mjs|js)$/.test(e.name) && !/\.d\.ts$/.test(e.name)) out.push(p);
     }
   };
-  for (const d of dirs) rec(path.join(RAIZ, d));
+  for (const d of dirs) rec(path.join(raiz, d));
   return out;
 }
 
@@ -54,14 +54,17 @@ function ficherosDe(dirs) {
  * `acotado` = el fichero nombra una clave `_STAGING`/`_DEV`/`_TESTS`, así que NO puede alcanzar
  * producción se llame como se llame. Es la distinción que decide el riesgo, y por eso se mide
  * en vez de contar constructores a secas.
+ *
+ * La raíz entra por parámetro (SCRUM-846b), con la de siempre por defecto: sin ella no se le
+ * podía poner delante un caso conocido, y su cero no distinguía «no hay» de «no he mirado».
  */
-export function censoDeConexiones() {
+export function censoDeConexiones(raiz = RAIZ) {
   const filas = [];
-  for (const f of ficherosDe(['src', 'scripts', 'prisma'])) {
+  for (const f of ficherosDe(['src', 'scripts', 'prisma'], raiz)) {
     const src = fs.readFileSync(f, 'utf8');
     if (!/new\s+PrismaClient\s*\(/.test(src)) continue;
     filas.push({
-      rel: path.relative(RAIZ, f).replace(/\\/g, '/'),
+      rel: path.relative(raiz, f).replace(/\\/g, '/'),
       acotado: /DATABASE_URL_(STAGING|DEV|TESTS)/.test(src),
       guarda: /exigirDestinoCorrecto|exigirNoProduccion|_clave-vs-destino|parseBDSegura|_db-guard|autorack|acela\.proxy/.test(src),
     });
@@ -192,4 +195,34 @@ test('SCRUM-746 · 🔴 el sentinel se consume al DEJAR PASAR, no al ejecutarse'
     '🟢 el sentinel YA NO se consume al dejar pasar. Si es a propósito, actualiza\n' +
     '  docs/master/SCRUM-746.md: el residuo que ese documento describe ha dejado de existir.\n' +
     '  Si no, la autorización de un solo uso se ha vuelto reutilizable, que es peor.');
+});
+
+// ═══ SCRUM-846b · SIEMBRA: el censo, delante de un árbol que sabe la respuesta ════════════════
+// `censoDeConexiones` leía siempre el árbol de verdad. Ahora recibe la raíz —la de siempre por
+// defecto— y aquí se le da una FABRICADA: un script que alcanza producción sin guarda (tiene que
+// salir expuesto), uno acotado a staging y uno con guarda (no pueden salir expuestos). Se ha visto
+// caer rompiéndolo en los dos sentidos: `node scripts/verificacion-s5/romper-los-quince.mjs`.
+test('SCRUM-846b · siembra:746 · VE un PrismaClient sin guarda y NO acusa al acotado ni al guardado', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum846b-746-'));
+  try {
+    const escribir = (rel, texto) => {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(dir, rel), texto);
+    };
+    escribir('scripts/expuesto.mjs', 'const p = new PrismaClient(); export default p;');
+    escribir('scripts/staging.mjs', 'const p = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL_STAGING }); export default p;');
+    escribir('scripts/guardado.mjs', "import { exigirNoProduccion } from './_db-guard.mjs'; exigirNoProduccion(); export default new PrismaClient();");
+    escribir('scripts/sin-cliente.mjs', 'export const nada = 1;');
+    const filas = censoDeConexiones(dir);
+    const de = (rel) => filas.find((x) => x.rel === rel);
+
+    assert.deepEqual(filas.map((x) => x.rel).sort(), ['scripts/expuesto.mjs', 'scripts/guardado.mjs', 'scripts/staging.mjs'],
+      '🔴 esperaba los tres ficheros que construyen un cliente, y no el que no lo hace.');
+    assert.deepEqual([de('scripts/expuesto.mjs')?.acotado, de('scripts/expuesto.mjs')?.guarda], [false, false],
+      '🔴 un cliente sin clave acotada y sin comprobar el destino no sale expuesto: la barrera no lo vería.');
+    assert.equal(de('scripts/staging.mjs')?.acotado, true, '🔴 un cliente de DATABASE_URL_STAGING sale como si alcanzara producción.');
+    assert.equal(de('scripts/guardado.mjs')?.guarda, true, '🔴 un cliente que comprueba el destino sale sin guarda.');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });

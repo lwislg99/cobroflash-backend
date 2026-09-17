@@ -305,9 +305,11 @@ function literalesVisibles(codigo, ruta) {
 }
 
 test('SCRUM-289b · SUELO del guard de microcopy: encuentra literales visibles de verdad', () => {
-  const vistos = literalesVisibles(fs.readFileSync(MODAL, 'utf8'), MODAL);
+  // SCRUM-867: el suelo se medía sobre `nuevaFacturaModal.js`, retirado por muerto. Se mide sobre
+  // la VISTA, que es la pantalla que el guard de abajo sigue mirando.
+  const vistos = literalesVisibles(fs.readFileSync(VISTA, 'utf8'), VISTA);
   assert.ok(vistos.length >= 8,
-    `🔴 solo ${vistos.length} literales visibles en el modal. El guard de abajo pasaría en verde ` +
+    `🔴 solo ${vistos.length} literales visibles en la vista. El guard de abajo pasaría en verde ` +
     'sin haber mirado la pantalla: cero literales y cero literales MALOS son el mismo resultado.');
 });
 
@@ -369,7 +371,9 @@ test('SCRUM-346 · SUELO: el guard VE las dos ramas de un ternario', () => {
 
 test('SCRUM-289b · MICROCOPY: todo literal visible nuevo es exactamente el marcador (regla 30)', () => {
   const malos = [];
-  for (const f of [MODAL, VISTA]) {
+  // SCRUM-867: eran dos pantallas, el modal y la vista. El modal se retiró por muerto y sus 22
+  // ranuras aprobadas se fueron con él; queda la vista, con el trozo que este incremento añadió.
+  for (const f of [VISTA]) {
     const codigo = fs.readFileSync(f, 'utf8');
     // De la vista SOLO se mira lo que este incremento añadió: el resto es copy ya aprobado de
     // otro carril y exigirle el marcador sería absurdo.

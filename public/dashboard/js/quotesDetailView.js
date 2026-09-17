@@ -180,15 +180,19 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   stateLabel.textContent = 'Estado';
   stateBlock.appendChild(stateLabel);
 
+  // 🔴 SCRUM-820 (encima de d03b1950) · EL MISMO DEFECTO, UN CLIC MÁS ADENTRO.
+  //
+  // Esta ficha es a donde llega el profesional al pinchar una fila de la lista, y tenía COPIADO el
+  // mismo ternario con `st.toUpperCase()`: pintaba `ACCEPTED` cuando la lista, ya arreglada, decía
+  // «Aceptado». Arreglar sólo la lista **mueve la contradicción un clic** en vez de cerrarla — y la
+  // deja en el sitio donde el jefe mira para decidir.
+  //
+  // El barrido por AST lo cazó: era el único `st.toUpperCase()` que quedaba en un camino de
+  // presupuesto después de d03b1950.
+  const meta = quoteStatusMeta(st);
   const statusSpan = document.createElement('span');
-  statusSpan.className = 'status-pill';
-  statusSpan.textContent = st === 'pending_approval' ? 'PENDIENTE APROBACIÓN'
-    : st === 'expired' ? 'CADUCADO' : st.toUpperCase(); // A16.2
-  if (st === 'accepted') statusSpan.classList.add('status-pill-accepted');
-  else if (st === 'rejected') statusSpan.classList.add('status-pill-rejected');
-  else if (st === 'draft' || st === 'expired') statusSpan.classList.add('status-pill-draft');
-  else if (st === 'pending_approval') statusSpan.classList.add('status-pill-approval');
-  else statusSpan.classList.add('status-pill-pending');
+  statusSpan.className = 'status-pill ' + meta.pillClass;
+  statusSpan.textContent = meta.label;
   stateBlock.appendChild(statusSpan);
 
   // WA-0b: chip de entrega del WhatsApp del presupuesto (J4)
@@ -235,7 +239,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   }
 
   // Firma digital — compacta y en línea (la firma completa va en el PDF)
-  if (quote.signatureUrl) {
+  // SCRUM-892 · `firmaConTrazo` lo decide el servidor con el criterio de píxeles: una fila con
+  // `signatureUrl = "data:,"` NO es una firma y aquí no se afirma que lo sea.
+  if (quote.signatureUrl && quote.firmaConTrazo === true) {
     const sigBadge = document.createElement('div');
     sigBadge.className = 'sig-row';
     sigBadge.innerHTML = `
@@ -464,6 +470,33 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   }
   page.appendChild(infoSec);
 
+
+  // ── SCRUM-597 (DOC-07) · QUIÉN LLEVA ESTE DOCUMENTO ─────────────────────────────────────
+  //
+  // Categorización, no permiso: dice de quién es el asunto. No cambia quién puede editar ni
+  // emitir, y no abre coste ni margen — un técnico asignado sigue sin verlos (P-DOC-3).
+  //
+  // Todo el cableado vive en `documentoAsignados.js`, compartido con la factura/el presupuesto:
+  // metido aquí serían dos copias de la misma pantalla y se separarían a la primera.
+  if (typeof cablearAsignadosDeDocumento === 'function') {
+    const asigSec = document.createElement('div');
+    asigSec.className = 'detail-section';
+    asigSec.dataset.seccion = 'asignados';
+    page.appendChild(asigSec);
+    cablearAsignadosDeDocumento(document, {
+      doc: 'quote',
+      documentoId: quote.id,
+      contenedor: asigSec,
+      asignados: quote.asignados || [],
+      // Editar es admin-only, igual que el endpoint (`requireRole('admin')`). Al técnico se le
+      // pinta en solo lectura con los nombres que ya trae el detalle.
+      puedeEditar: window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario',
+      pedir: apiRequest,
+      avisar: setStatus,
+      alGuardar: () => {},
+    });
+  }
+
   // ── Sección: CONCEPTOS + TOTALES ────────────────────────────
   const concSec = document.createElement('div');
   concSec.className = 'detail-section';
@@ -483,6 +516,8 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const lines = Array.isArray(quote.lines) ? quote.lines : [];
   let totalBase = 0;
   let totalIva = 0;
+  // SCRUM-888c · las líneas que cobran (sin cabeceras de apartado), para los totales de abajo.
+  const lineasParaTotales = [];
 
   // SCRUM-655 · La numeración se DERIVA de la posición, de una vez y para todas las líneas.
   // No se teclea nunca: si se tecleara, dos líneas podrían acabar con el mismo 1.02 y «quítame la
@@ -510,11 +545,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const qty = Number(l.qty) || 0;
     const price = Number(l.price) || 0;
     const tax = Number(l.tax ?? 0);
-    const base = qty * price;
-    const ivaAmount = base * tax;
-    const total = base + ivaAmount;
-    totalBase += base;
-    totalIva += ivaAmount;
+    // SCRUM-888c (punto 1) · la fila con la MISMA cuenta que la fila del editor (`importeDeLinea`):
+    // antes era `qty × price × (1 + tax)` sin el dto de la línea, y un 15 % no se veía. Sin dto da
+    // exactamente lo de antes.
+    const importe = window.quoteDescuentos.importeDeLinea(qty, price, l.dto, tax);
+    const total = importe.total;
+    totalBase += importe.base;
+    totalIva += importe.cuota;
+    lineasParaTotales.push(l);
 
     const tr = document.createElement('tr');
     tr.innerHTML =
@@ -541,6 +579,24 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     celda.appendChild(celdaConcepto(document, l.concept || ''));
     tbody.appendChild(tr);
   });
+
+  // SCRUM-888c (punto 1) · CON DESCUENTOS, base e IVA salen de `totalesConDescuento`, la cuenta del
+  // editor y la que produce el total guardado: antes eran la suma a precio de tarifa y no cuadraban
+  // con el total (SCRUM-883 C3: base 539,49 € bajo un total de 539,05 €).
+  //
+  // SIN descuentos se queda la suma de siempre, y es a propósito: entre las dos cuentas cabe un
+  // céntimo de redondeo (el punto 4 de SCRUM-888), y aquí no se cambia una cifra que hoy cuadra.
+  //
+  // ⚠️ EL DESCUENTO GLOBAL se lee de `quote.discountGlobalAmount`. Hoy `GET /admin/quotes/:id` NO lo
+  // devuelve (medido en staging `e437a51f`, 17-sep-2026): hasta que lo mande el servidor, un
+  // presupuesto con descuento global sigue sin restarlo aquí, igual que antes. NO se deduce del total:
+  // eso sería una segunda cuenta. Cuando llegue el campo, esto cuadra sin tocar nada.
+  const descuentoGlobal = quote.discountGlobalAmount ?? null;
+  if (window.quoteDescuentos.hayDescuento(lineasParaTotales, descuentoGlobal)) {
+    const T = window.quoteDescuentos.totalesConDescuento(lineasParaTotales, descuentoGlobal);
+    totalBase = T.baseImponibleCents / 100;
+    totalIva = T.cuotaCents / 100;
+  }
 
   // Totales (base/IVA secundarios, total destacado)
   const totalsWrap = document.createElement('div');
@@ -936,6 +992,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       }
     }, 1200);
   });
+
+  // ── Sección: ETIQUETAS (SCRUM-595, DOC-05) ──────────────────
+  // El bloque lo monta una pieza compartida con la ficha de la FACTURA: el mismo bloque para los
+  // dos documentos, no dos que se parezcan. Va detrás de las notas internas porque es lo mismo
+  // que ellas —cómo el profesional organiza SU documento—, y ninguna de las dos sale en el papel.
+  if (window.montarEtiquetasDelDocumento) {
+    window.montarEtiquetasDelDocumento(page, quote, `/admin/quotes/${quote.id}/tags`);
+  }
 
   // ── Sección: GASTOS Y MARGEN ────────────────────────────────
   const marginSec = document.createElement('div');

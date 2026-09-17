@@ -3,7 +3,7 @@
 **Medido contra:** `origin/main` = `2d826de6d18f7a76be0ef2509c2e469e7b383f54` · 2026-09-04T11:35:11+02:00
 **Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-701-sellar-referencias-por-ast`
 
-## PASO 0 (regla 39) — el defecto existe, pero hoy no rompe nada
+## PASO 0 (cita de regla RETIRADA — SCRUM-637) — el defecto existe, pero hoy no rompe nada
 
 **No estaba arreglado:** `git log -S` sobre el mecanismo devuelve **un solo commit**, el que lo creó
 (SCRUM-274), y el mismo comando con otra aguja devuelve resultados, así que el vacío no era del

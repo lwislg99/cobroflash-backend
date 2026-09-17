@@ -59,30 +59,49 @@ function prismaQueCuenta(devuelve) {
 // REGLA 1 · el criterio: activa de verdad
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-330 · una plaza ocupada exige suscripción ACTIVA, no solo el campo plan', async () => {
-  const vistos = prismaQueCuenta(3);
-  await getFoundingStatus();
-
-  assert.equal(vistos.length, 1, '🔴 no se ha contado nada: el doble no llegó a usarse');
-  const where = vistos[0];
-  assert.equal(where?.plan, 'founding', '🔴 ya no filtra por el plan founding');
-  assert.equal(
-    where?.subscriptionStatus, 'active',
-    '🔴 EL CONTADOR VUELVE A CONTAR EL CAMPO. Sin `subscriptionStatus: active` entran las filas ' +
-      'en past_due (el cobro FALLÓ, y el webhook conserva el plan a propósito) y las puestas a ' +
-      'mano o por seed, que no tienen estado ninguno. Cada una de esas es un «ya compraron» falso ' +
-      'en material publicado.',
-  );
-});
-
-test('SCRUM-330 · el estado de la suscripción NO se deduce del plan: son dos columnas', async () => {
-  // Control de que el criterio no se «simplifica» un día a una sola condición.
-  const vistos = prismaQueCuenta(0);
-  await getFoundingStatus();
-  assert.equal(Object.keys(vistos[0] ?? {}).length, 2,
-    '🔴 el criterio ha dejado de ser dos condiciones. `plan` dice QUÉ compró y `subscriptionStatus` ' +
-    'dice SI sigue pagando: ninguna de las dos sustituye a la otra.');
-});
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 AQUÍ VIVÍAN LOS DOS CASOS DE LA REGLA 1, Y SE FUERON EL 8-SEP-2026. Cada uno por un
+// motivo distinto, y los dos escritos aquí para que no haya que reconstruirlos.
+//
+// ── ① «una plaza ocupada exige suscripción ACTIVA» · RETIRADO POR DECISIÓN DEL FUNDADOR ──
+//
+// Decisión del fundador, 8-sep-2026, literal:
+//
+//   «la plaza se queda con él; si se retrasa en un pago tiene un tiempo para pagarla, y si no,
+//    esa plaza desaparece con el merchant».
+//
+// Ese caso exigía `subscriptionStatus: 'active'` en el criterio, o sea que un `past_due` —alguien
+// que COMPRÓ y va retrasado en un cobro— liberaba su plaza. La firma de arriba dice lo contrario:
+// la plaza no se libera ni al cancelar ni por un cobro fallido. **El caso no se ha relajado: se ha
+// quedado sin premisa.** Y la decisión va DENTRO del test, no en un mensaje de commit, porque un
+// corte justificado por una decisión que no se puede leer aquí es una opinión con fecha de
+// caducidad invisible.
+//
+// ── ② «el estado NO se deduce del plan: son dos columnas» · SE MUDÓ, y sigue vigente ──────
+//
+// 🔒 Lo que protegía —«`plan` dice QUÉ compró y `subscriptionStatus` dice SI sigue pagando:
+// ninguna sustituye a la otra»— **NO se ha retirado: es lo que sostiene el ticket entero.** Lo
+// que caducó fue la FORMA que miraba: contaba las claves de un `where` de dos columnas, y ése
+// dejó de ser el mecanismo.
+//
+// Hoy lo vigila `tests/scrum340-la-plaza-comprada.test.mjs`, contra el par NUEVO
+// (`founding_purchased_at`, `subscriptionStatus`) y sobre la regla pura `plazaOcupada`:
+//   · «⛔ el predicado NO lee `plan` ni `subscriptionStatus` — son OTRA columna»
+//   · «🔴 EL CONTROL QUE DECIDE: un suscriptor PRO activo NO ocupa plaza de fundador»
+//
+// NO se ha dejado aquí una copia a propósito. La misma regla escrita en dos sitios es cómo una de
+// las dos se queda atrás, y ésta ya se quedó atrás una vez: el criterio por ESTADO que proponía
+// `scrum-340-contador-plazas-reales` hacía que **cada suscriptor PRO activo ocupara una plaza de
+// fundador** (medido el 8-sep-2026), que es el bug de SCRUM-327 entrando por la otra puerta.
+//
+// ⚠️ MIENTRAS TANTO, y esto es un HUECO DECLARADO: `getFoundingStatus` sigue contando con
+// `PLAZA_OCUPADA` —el criterio viejo— hasta que exista `merchants.founding_purchased_at`. El ALTER
+// está escrito y SIN APLICAR (`docs/sql/scrum-340-la-plaza-comprada.sql`) porque
+// `prisma/schema.prisma` es del fundador. Hoy eso no publica ninguna mentira: nadie ha comprado
+// plaza (SCRUM-41 abierto, cero clientes de pago), así que la landing dice «20 de 20» y es cierto.
+// Lo retira: quien cablee el contador a la columna, que tendrá que traerse aquí un test del
+// CONTADOR — este fichero vigila lo que PINTA cada página, y aquél vigilará lo que CUENTA.
+// ═════════════════════════════════════════════════════════════════════════════════════════
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // REGLA 2 y 3 · lo que el navegador PINTA, ejecutando la condición real de cada página

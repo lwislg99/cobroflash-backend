@@ -84,11 +84,11 @@ import puppeteer from 'puppeteer-core';
 // SCRUM-562 · el árbitro y el afinado viven en UN solo sitio, con su porqué. Aquí estaban
 // en línea, y una copia en línea es lo que dejó que este guard y el de SCRUM-543 midieran
 // distinto durante dos días.
-import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
+import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL, MINIMO_ESCRITORIO, CORTE_MOVIL, minimoPara } from './_medidor-de-toque.mjs';
 // SCRUM-782 · la vista del panel, montada por el banco y serializada. `scripts/` importando de
 // `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
 // diagnostico-dependencias.
-import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
+import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -105,8 +105,16 @@ import { levantarServidor } from './_servidor.mjs';
 // diciendo con código 4 lo que pasa si un puerto pedido está ocupado.
 let PUERTO = 0;
 
-/** AB6 y la definición de «pulsable» salen del medidor único: aquí no se redeclaran. */
-const MINIMO = MINIMO_TACTIL;
+/**
+ * AB6 y la definición de «pulsable» salen del medidor único: aquí no se redeclaran.
+ *
+ * 🔴 SCRUM-711 · YA NO HAY UN MÍNIMO PARA TODOS LOS ANCHOS. Cada medición pide el suyo con
+ * `minimoPara(ancho)`: 44 px hasta 768 y 36 por encima, que es lo que dice DESIGN.md («≥44px en
+ * móvil; el escritorio se queda en 36px a propósito»). Antes se exigían 44 también a 929 y a 1280,
+ * y eso tumbaba a «Nuevo cliente» a 37 px en escritorio por cumplir la regla de diseño.
+ * Decisión del fundador del 15-sep-2026: alinear el guard con DESIGN.md, no relajarlo — y sin
+ * quedarse ciego en escritorio: las SONDAS DE UMBRAL de más abajo lo comprueban en cada pasada.
+ */
 const ANCHOS = [1280, 360];
 
 /**
@@ -197,6 +205,22 @@ const DATOS_791 = (url) => {
 const SONDA_TEXTO = '·';
 const SONDA_HTML = '<button id="__sonda-791" style="width:12px;height:12px;padding:0;border:0">' + SONDA_TEXTO + '</button>';
 
+/**
+ * SCRUM-711 · LAS SONDAS DE UMBRAL. La de 12 px demuestra que el medidor ve algo pequeño; éstas
+ * demuestran que el guard aplica EL MÍNIMO DE CADA ANCHO, y lo hacen en cada pasada:
+ *     40 px a ≤768 → CAE    ·    30 px a >768 → CAE    ·    37 px a >768 → PASA
+ * La de 30 es la que impide quedarse ciego en escritorio: un `btn-sm` haciendo de acción primaria.
+ * La de 37 es la que impide volver a exigir 44 allí: es exactamente lo que medía «Nuevo cliente».
+ * `min-height:0` y `box-sizing` para que midan lo que dicen, sin reglas de la hoja por medio.
+ */
+const SONDA_40 = 'sonda-40';
+const SONDA_30 = 'sonda-30';
+const SONDA_37 = 'sonda-37';
+const SONDAS_UMBRAL_HTML =
+  '<button style="display:block;box-sizing:border-box;width:120px;height:40px;min-height:0;padding:0;border:0;margin:12px 0">' + SONDA_40 + '</button>'
+  + '<button style="display:block;box-sizing:border-box;width:120px;height:30px;min-height:0;padding:0;border:0;margin:12px 0">' + SONDA_30 + '</button>'
+  + '<button style="display:block;box-sizing:border-box;width:120px;height:37px;min-height:0;padding:0;border:0;margin:12px 0">' + SONDA_37 + '</button>';
+
 const envolver = (cuerpo) => `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
@@ -225,8 +249,41 @@ const SUPERFICIES_791 = [
   // borrar: había dos «+ Añadir línea» idénticos y se queda el de abajo, que mide 44,9 px y por
   // eso nunca estuvo entre los cortos. O sea que la vista no ha dejado de pintar nada que
   // debiera: hay un objetivo menos porque hay un botón menos, y encima uno que no cumplía AB6.
-  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 7 },
-  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo', distintosEsperados: 6 },
+  //
+  // 🔴 SCRUM-711 · 15-sep-2026 · 7 → 4, y los tres que faltan VAN NOMBRADOS. El guard pasó a exigir el
+  // mínimo de CADA ancho (44 hasta 768, 36 por encima, como DESIGN.md) y estos tres sólo eran cortos
+  // en escritorio. Identificados comparando la salida de ESTE guard con 44 fijo y con el mínimo por
+  // ancho, no restando:
+  //     «Generar presupuesto»         BUTTON.btn.btn-primary                    36,7 px a 929 · cumple a 390
+  //     «Limpiar formulario»          BUTTON.btn.btn-secondary                  36,7 px a 929 · cumple a 390
+  //     «💾 Guardar como plantilla»   BUTTON.btn-ghost.btn-sm.quote-header-btn  36,7 px a 929 · cumple a 390
+  // Siguen los cuatro que son cortos TAMBIÉN en móvil: «✨ Sugerir con IA», «📋 Usar plantilla»,
+  // «+ Añadir descuento» y las casillas de 17 px. Nada de la pantalla ha dejado de pintarse.
+  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 4,
+    origen: 'SCRUM-711 (15-sep-2026, con el mínimo de cada ancho)' },
+  // 🔴 SCRUM-848 · `datos` NO es una excepción nueva ni un número tocado: es la SUPERFICIE.
+  //
+  // Sin él, el banco montaba esta ficha con `{}` — un Trabajo SIN `status`, que el producto no
+  // puede producir. Mientras `jobNextAction` caía al nivel 5 con cualquier estado eso pasaba por
+  // una pantalla normal; SCRUM-823 le puso puerta por estado y el CTA del héroe desapareció, así
+  // que el suelo saltó: 5 cortos donde el censo midió 6, y `BUTTON.btn-primary` «caducada».
+  //
+  // El guard tenía razón en ponerse rojo. Lo que no era medible es lo que se ha arreglado: se le
+  // da un Trabajo que EXISTE. `distintosEsperados` sigue en 6 y las cinco excepciones están
+  // intactas — y con la superficie real vuelven a salir exactamente 6, con `BUTTON.btn-primary
+  // «+ Nuevo albarán»` a 37,0 px, que es literalmente lo que su excepción decía. Si el diagnóstico
+  // fuera otro, el número no habría caído justo ahí.
+  //
+  // El fixture es el COMPARTIDO con el censo de SCRUM-787 (`_pagina-panel.mjs`): con uno propio,
+  // el veredicto del guard y el número del censo dejarían de hablar de la misma pantalla.
+  //
+  // 🔴 SCRUM-711 · 15-sep-2026 · 6 → 5, y el que falta es justo el que nombraba el párrafo de arriba:
+  // `BUTTON.btn-primary «+ Nuevo albarán»` a 37,0 px. Sólo era corto a 929; con el mínimo de
+  // escritorio de DESIGN.md (36) cumple, y su excepción se retiró. Siguen los cinco que son cortos
+  // también en móvil: la miga «Trabajos», «+ Nuevo albarán» y «Parte de trabajo» con `btn-sm`,
+  // «Cambiar» y la casilla de 14 px.
+  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo',
+    distintosEsperados: 5, datos: TRABAJO_DE_MUESTRA, origen: 'SCRUM-711 (15-sep-2026, con el mínimo de cada ancho)' },
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -244,7 +301,7 @@ for (const s of SUPERFICIES_791) {
   const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10 });
   s.aviso = p.aviso;
   s.html = p.html && envolver(p.html);
-  s.htmlSonda = p.html && envolver(p.html + SONDA_HTML);
+  s.htmlSonda = p.html && envolver(p.html + SONDA_HTML + SONDAS_UMBRAL_HTML);
 }
 
 const srv = http.createServer((req, res) => {
@@ -360,6 +417,7 @@ const MEDIDOR = `(async (INTERACTIVOS, MIN, DESTAPAR_SELS, CON_SCROLL) => {
 
 for (const ancho of ANCHOS) {
   const page = await navegador.newPage();
+  const MIN = minimoPara(ancho);
   await page.setViewport({ width: ancho, height: 900 });
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });
 
@@ -368,9 +426,9 @@ for (const ancho of ANCHOS) {
   decir('════════════════════════════════════════════════════════════════════════════');
 
   // ── ⓪ CONTROL DEL SCROLL: ¿está el scroll haciendo algo, o me lo estoy creyendo? ─────────
-  const sinScroll = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, false)`);
+  const sinScroll = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, false)`);
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });   // página limpia
-  const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, true)`);
+  const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, true)`);
 
   const pieSin = sinScroll.medidos.filter((m) => m.seccion === 'footer').length;
   const pieCon = r.medidos.filter((m) => m.seccion === 'footer').length;
@@ -418,16 +476,16 @@ for (const ancho of ANCHOS) {
   const excusados = cortos.filter((m) => EXCEPCIONES.some((e) => e.sel === m.sel));
   const culpables = cortos.filter((m) => !EXCEPCIONES.some((e) => e.sel === m.sel));
 
-  decir(`\n③ contra AB6 (${MINIMO} px) · cumplen: ${r.medidos.length - cortos.length}`
+  decir(`\n③ contra AB6 (${MIN} px) · cumplen: ${r.medidos.length - cortos.length}`
     + `  ·  se quedan cortos: ${cortos.length}  ·  de ésos, excusados con motivo: ${excusados.length}`);
   for (const m of culpables) {
-    mal(`   ✖ ${m.tocable}px < ${MINIMO} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
+    mal(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
   }
   for (const m of excusados) {
     const e = EXCEPCIONES.find((x) => x.sel === m.sel);
     decir(`   ⚠️ EXCEPCIÓN ${m.tocable}px · ${m.sel} — ${e.motivo}`);
   }
-  if (!culpables.length) decir('   ✅ todo lo que se puede pulsar llega a 44 px.');
+  if (!culpables.length) decir(`   ✅ todo lo que se puede pulsar llega a ${MIN} px.`);
 
   await page.close();
 }
@@ -456,7 +514,6 @@ for (const ancho of ANCHOS) {
  */
 const EXCEPCIONES_PANEL = [
   { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.' },
-  { sel: 'BUTTON.btn-primary.btn-sm', motivo: 'clase compartida `.btn-sm` — el botón «Nuevo». Pre-existente, medido 31,0 px.' },
   { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` — «📊 Historial». Pre-existente, medido 30,9 px.' },
 ];
 
@@ -475,6 +532,7 @@ if (!PANEL_HTML) {
 } else {
   for (const ancho of ANCHOS_PANEL) {
     const page = await navegador.newPage();
+    const MIN = minimoPara(ancho);
     await page.setViewport({ width: ancho, height: 900 });
     await page.goto(`http://127.0.0.1:${PUERTO}/__panel`, { waitUntil: 'load' });
 
@@ -482,7 +540,7 @@ if (!PANEL_HTML) {
     decir(`PANEL · lista de Clientes · ANCHO ${ancho} px`);
     decir('════════════════════════════════════════════════════════════════════════════');
 
-    const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify([])}, true)`);
+    const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
 
     decir(`① censo derivado · interactivos en el DOM: ${r.total}  ·  medidos: ${r.medidos.length}`
       + `  ·  sin pintar: ${r.sinPintar.length}  ·  presentes pero no tocables: ${r.noTocables.length}`);
@@ -515,10 +573,10 @@ if (!PANEL_HTML) {
     const cortos = r.medidos.filter((m) => !m.cumple);
     const excusados = cortos.filter((m) => EXCEPCIONES_PANEL.some((e) => e.sel === m.sel));
     const culpables = cortos.filter((m) => !EXCEPCIONES_PANEL.some((e) => e.sel === m.sel));
-    decir(`\n③ contra AB6 (${MINIMO} px) · cumplen: ${r.medidos.length - cortos.length}`
+    decir(`\n③ contra AB6 (${MIN} px) · cumplen: ${r.medidos.length - cortos.length}`
       + `  ·  se quedan cortos: ${cortos.length}  ·  de ésos, excusados con motivo: ${excusados.length}`);
     for (const m of culpables) {
-      mal(`   ✖ ${m.tocable}px < ${MINIMO} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
+      mal(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
     }
     // Las excepciones se IMPRIMEN una a una: una deuda que no se ve por pantalla deja de existir.
     for (const m of excusados) {
@@ -530,7 +588,7 @@ if (!PANEL_HTML) {
       if (!vistosEnPanel.has(m.sel)) vistosEnPanel.set(m.sel, { corto: false });
       if (!m.cumple) vistosEnPanel.get(m.sel).corto = true;
     }
-    if (!culpables.length) decir('   ✅ todo lo que se puede pulsar en el panel llega a 44 px (o está excusado con motivo).');
+    if (!culpables.length) decir(`   ✅ todo lo que se puede pulsar en el panel llega a ${MIN} px (o está excusado con motivo).`);
 
     await page.close();
   }
@@ -547,14 +605,16 @@ if (!PANEL_HTML) {
 const EXCEPCIONES_791 = {
   renderQuotesView: [
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (29,5–30,8 px) — «✨ Sugerir con IA», «+ Añadir descuento». Pre-existente. La retira el fundador al decidir sobre `.btn-sm` (SCRUM-787: 57 de los 76 son de esa clase).' },
-    { sel: 'BUTTON.btn-ghost.btn-sm.quote-header-btn', motivo: 'clase compartida `.btn-sm` (30,8 px a 390) — «📋 Usar plantilla», «💾 Guardar como plantilla». Misma decisión que la anterior.' },
-    { sel: 'BUTTON.btn.btn-primary', motivo: 'el BOTÓN BASE mide 36,8 px, no 44 — «Generar presupuesto». NO es `.btn-sm`: es el segundo grupo que destapó SCRUM-787 (14 de 76). Decisión propia del fundador, distinta de la de `.btn-sm`.' },
-    // 🔴 SCRUM-794 · el motivo NOMBRABA DOS VÍCTIMAS y una ya no existe. El detector de sobrantes
-    // de abajo mira el SELECTOR, no el motivo: como «Limpiar formulario» sigue midiendo 36,8 px,
-    // la excepción sigue haciendo falta y NADA habría avisado de que su motivo señala a un botón
-    // borrado. Es la misma avería que este fichero persigue —«una mentira con antigüedad»— por la
-    // cara que el mecanismo no ve, así que se corrige a mano y se deja dicho.
-    { sel: 'BUTTON.btn.btn-secondary', motivo: 'el BOTÓN BASE a 36,8 px — «Limpiar formulario». Mismo grupo que el anterior. (Hasta SCRUM-794 este motivo nombraba también «+ Añadir línea»: era el duplicado de la cabecera de «2. Líneas», y se borró. El que quedó mide 44,9 px y cumple.)' },
+    // 🔴 SCRUM-711 · EL MOTIVO NOMBRABA DOS VÍCTIMAS Y UNA YA CUMPLE — la avería de SCRUM-794 otra
+    // vez: el detector va por SELECTOR y «📋 Usar plantilla» sigue corta, así que nada avisaba.
+    // «💾 Guardar como plantilla» mide 36,7 px a 929 y no era corta a 390: sólo lo era por el
+    // escritorio. Se quita del motivo a mano y se deja dicho.
+    { sel: 'BUTTON.btn-ghost.btn-sm.quote-header-btn', motivo: 'clase compartida `.btn-sm` (30,7 px a 929 y a 390) — «📋 Usar plantilla». Misma decisión que la anterior.' },
+    // 🔴 SCRUM-711 · AQUÍ HABÍA DOS EXCEPCIONES MÁS, y se retiran porque ya no tienen causa:
+    // `BUTTON.btn.btn-primary` «Generar presupuesto» y `BUTTON.btn.btn-secondary` «Limpiar formulario».
+    // Los dos miden 36,7 px a 929 y cumplen a 390: sólo existían porque el guard exigía 44 en
+    // escritorio, más de lo que dice DESIGN.md. Con el mínimo por ancho, el detector de sobrantes
+    // las nombró a las dos. (La de «Limpiar formulario» ya había perdido una víctima en SCRUM-794.)
     { sel: 'INPUT', motivo: 'casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.' },
   ],
   // 🔴 SCRUM-795 · LA FICHA 360 · SIETE CORTOS DE SIETE, y uno lo pongo YO.
@@ -582,7 +642,8 @@ const EXCEPCIONES_791 = {
   renderJobDetailView: [
     { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «Cambiar». Pre-existente; la retira el fundador con `.btn-sm`.' },
     { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «+ Nuevo albarán», «Parte de trabajo». Ídem.' },
-    { sel: 'BUTTON.btn-primary', motivo: 'el BOTÓN BASE a 37,0 px — el CTA del héroe. Segundo grupo de SCRUM-787, decisión aparte de `.btn-sm`.' },
+    // SCRUM-711 · aquí estaba `BUTTON.btn-primary` «+ Nuevo albarán», el CTA del héroe a 37,0 px. Sólo
+    // era corto a 929, por exigir 44 en escritorio: retirada, la nombró el detector de sobrantes.
     { sel: 'BUTTON.detail-miga-link', motivo: '19,6 px de ÁREA DE TOQUE — la miga «Trabajos». Uno de los DOS PEORES del árbol, y su caja CSS no lo delata: es el ejemplo de por qué el árbitro es el área y no la caja. Sin decidir.' },
     { sel: 'INPUT', motivo: '14,0 px — la casilla de precios de la barra de documentos. EL PEOR del árbol entero, y en la pantalla que se usa de pie en obra. Sin decidir.' },
   ],
@@ -600,6 +661,7 @@ for (const s of SUPERFICIES_791) {
 
   for (const ancho of ANCHOS_PANEL) {
     const page = await navegador.newPage();
+    const MIN = minimoPara(ancho);
     await page.setViewport({ width: ancho, height: 900 });
 
     // ✅ LA SONDA, superficie por superficie y anchura por anchura. Un objetivo de 12 px inyectado
@@ -607,25 +669,45 @@ for (const s of SUPERFICIES_791) {
     // y un cero así parecería cobertura. La sonda vive en una página aparte servida en memoria:
     // no se toca ningún fichero del árbol.
     await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}__sonda`, { waitUntil: 'load' });
-    const rs = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify([])}, true)`);
+    const rs = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
     const sonda = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TEXTO);
     if (!sonda) {
       mal(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda de 12 px ni siquiera se ha `
         + 'medido. Todo lo que diga esta superficie es ceguera.');
     } else if (sonda.cumple) {
       mal(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda de 12 px sale como que `
-        + `CUMPLE los ${MINIMO} px. El medidor no está midiendo lo que cree.`);
+        + `CUMPLE los ${MIN} px. El medidor no está midiendo lo que cree.`);
+    }
+    // SCRUM-711 · las sondas de umbral: lo que TIENE que caer y lo que TIENE que pasar a este ancho.
+    const esperadas = ancho <= CORTE_MOVIL
+      ? [[SONDA_40, false]]
+      : [[SONDA_30, false], [SONDA_37, true]];
+    const umbrales = [];
+    for (const [texto, debePasar] of esperadas) {
+      const u = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === texto);
+      if (!u) {
+        mal(`   🔴 SUPERFICIE NO MEDIDA · ${s.vista} @${ancho}px: la sonda «${texto}» ni siquiera se ha medido.`);
+        continue;
+      }
+      umbrales.push(`${texto} ${u.tocable}px ${u.cumple ? 'pasa' : 'cae'}`);
+      if (u.cumple !== debePasar) {
+        mal(`   🔴 UMBRAL MAL APLICADO · ${s.vista} @${ancho}px: «${texto}» mide ${u.tocable} px contra un mínimo de ${MIN} y `
+          + (debePasar
+            ? 'CAE: el guard vuelve a exigir en escritorio más de lo que dice DESIGN.md.'
+            : 'PASA: el guard se ha quedado ciego a ese umbral.'));
+      }
     }
 
     await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}`, { waitUntil: 'load' });
-    const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO}, ${JSON.stringify([])}, true)`);
+    const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
 
     decir('\n════════════════════════════════════════════════════════════════════════════');
     decir(`PANEL · ${s.titulo} (${s.vista}) · ANCHO ${ancho} px`);
     decir('════════════════════════════════════════════════════════════════════════════');
     decir(`① censo derivado · interactivos en el DOM: ${r.total}  ·  medidos: ${r.medidos.length}`
       + `  ·  sin pintar: ${r.sinPintar.length}  ·  presentes pero no tocables: ${r.noTocables.length}`
-      + `  ·  sonda: ${sonda ? (sonda.cumple ? '🔴 NO cazada' : '✅ cazada') : '🔴 ausente'}`);
+      + `  ·  sonda: ${sonda ? (sonda.cumple ? '🔴 NO cazada' : '✅ cazada') : '🔴 ausente'}`
+      + `  ·  umbral (${MIN} px): ${umbrales.join(' · ') || '🔴 sin medir'}`);
 
     if (r.medidos.length === 0) {
       mal(`   🔴 CIEGO: cero táctiles medidos en ${s.vista}. Eso no es «no hay defectos».`);
@@ -641,10 +723,10 @@ for (const s of SUPERFICIES_791) {
     for (const m of cortos) distintos.add(`${m.sel}|${m.texto}`);
     const excusados = cortos.filter((m) => excs.some((e) => e.sel === m.sel));
     const culpables = cortos.filter((m) => !excs.some((e) => e.sel === m.sel));
-    decir(`\n③ contra AB6 (${MINIMO} px) · cumplen: ${r.medidos.length - cortos.length}`
+    decir(`\n③ contra AB6 (${MIN} px) · cumplen: ${r.medidos.length - cortos.length}`
       + `  ·  se quedan cortos: ${cortos.length}  ·  de ésos, excusados con motivo: ${excusados.length}`);
     for (const m of culpables) {
-      mal(`   ✖ ${m.tocable}px < ${MINIMO} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
+      mal(`   ✖ ${m.tocable}px < ${MIN} · [${m.seccion}] ${m.sel} «${m.texto}» (caja CSS ${m.caja}px)`);
     }
     for (const m of excusados) {
       const e = excs.find((x) => x.sel === m.sel);
@@ -654,7 +736,7 @@ for (const s of SUPERFICIES_791) {
       if (!vistos.has(m.sel)) vistos.set(m.sel, { corto: false });
       if (!m.cumple) vistos.get(m.sel).corto = true;
     }
-    if (!culpables.length) decir(`   ✅ todo lo pulsable de ${s.titulo} llega a 44 px (o está excusado con motivo).`);
+    if (!culpables.length) decir(`   ✅ todo lo pulsable de ${s.titulo} llega a ${MIN} px (o está excusado con motivo).`);
     await page.close();
   }
 
@@ -683,7 +765,7 @@ for (const s of SUPERFICIES_791) {
     if (!v) {
       mal(`   🔴 EXCEPCIÓN CADUCA · ${s.vista}: \`${e.sel}\` ya no aparece en esa pantalla. Bórrala.`);
     } else if (!v.corto) {
-      mal(`   🔴 EXCEPCIÓN SOBRANTE · ${s.vista}: \`${e.sel}\` cumple los ${MINIMO} px en TODAS las `
+      mal(`   🔴 EXCEPCIÓN SOBRANTE · ${s.vista}: \`${e.sel}\` cumple su mínimo (${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio) en TODAS las `
         + 'anchuras medidas. Bórrala: mientras esté, ese objetivo no está vigilado.');
     }
   }
@@ -701,7 +783,7 @@ for (const e of EXCEPCIONES_PANEL) {
     mal(`   🔴 EXCEPCIÓN CADUCA: \`${e.sel}\` ya no aparece en el panel. Bórrala: una excepción `
       + 'para algo que no existe es ruido que tapa a la siguiente.');
   } else if (!v.corto) {
-    mal(`   🔴 EXCEPCIÓN SOBRANTE: \`${e.sel}\` cumple los ${MINIMO} px en TODAS las anchuras `
+    mal(`   🔴 EXCEPCIÓN SOBRANTE: \`${e.sel}\` cumple su mínimo (${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio) en TODAS las anchuras `
       + 'medidas. Bórrala de EXCEPCIONES_PANEL: mientras esté, ese botón no está vigilado.');
   }
 }
@@ -711,13 +793,13 @@ srv.close();
 
 decir('\n' + '─'.repeat(76));
 if (fallos) {
-  console.error(`🔴 SCRUM-542 · ${fallos} problema(s). AB6 no se baja: si algún caso no puede llegar a `
-    + `${MINIMO} px, va a EXCEPCIONES con su motivo y quién la retira.`);
+  console.error(`🔴 SCRUM-542 · ${fallos} problema(s). AB6 no se baja: si algún caso no llega a su mínimo `
+    + `—${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio, como dice DESIGN.md—, va a EXCEPCIONES con su motivo y quién la retira.`);
   process.exit(1);
 }
 // El mensaje final NOMBRA LAS CINCO. Un «todo bien» que no dice de qué es cómo este guard
 // empezó: se llamaba «objetivo-tactil» y sólo miraba la landing (SCRUM-782).
-decir('✅ objetivos de toque: todos llegan a los 44 px de AB6 (o están excusados con motivo) — '
+decir('✅ objetivos de toque: todos llegan a su mínimo —44 px de AB6 en móvil, 36 en escritorio como dice DESIGN.md— (o están excusados con motivo) — '
   + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto, ficha de Trabajo y ficha 360 '
   + 'del cliente (929 y 390). SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795. Las otras 15 vistas '
   + 'del panel NO se vigilan aquí: están '

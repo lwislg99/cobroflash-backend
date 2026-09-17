@@ -292,3 +292,859 @@ defecto de hoy para que el arreglo tenga línea base.
 
 `prisma/schema.prisma` · el 400 ante fallo · `isDuplicateStripeEvent` y su `Set` · `psp.routes.ts` ·
 `referral.service.ts` · ninguna base · ninguna clave.
+
+---
+
+# SCRUM-815b · Vigencia de la medición, y el censo por TIPO DE EVENTO que faltaba
+
+**Fecha:** 15-sep-2026 · **Carril:** dinero (webhook de Stripe) · **Gate:** medición · **MIDE Y PARA**
+
+**Medido contra:** `origin/main` = `ef5395bf6fe6b385ae385002a6b1001e8fce4ce0` · 2026-09-15T10:09:51Z
+**Rama:** `scrum-815b-vigencia-y-censo-por-evento`
+**Preámbulo (A1):** `./node_modules/.bin/prisma generate` rc=0 · `git rev-list --count HEAD..origin/main` = **0** · `npm run build` rc=0
+
+> ⛔ **No se construye el escritor.** No se toca `prisma/schema.prisma` —S1 está en él para este
+> mismo ticket—, ni el camino de emisión, ni ninguna clave de Stripe. Aquí sólo se lee y se mide.
+
+---
+
+## 0 · Por qué este apéndice existe, y lo que NO repite
+
+El encargo pedía medir el defecto. **Ya estaba medido y mergeado** (las dos entradas de arriba,
+7-sep-2026), y con más de lo que el encargo pide: el enunciado habla de **dos** modos de pérdida y
+la medición encontró **tres** —el tope de 500 del LRU olvida sin necesidad de reiniciar ni de
+escalar—. Rehacerlo habría sido gastar la tanda (norma A2).
+
+Lo que sí faltaba, y es lo único que aporta este apéndice:
+
+1. **¿Sigue siendo verdad?** Una medición caduca si su objeto se movió.
+2. **El censo por TIPO DE EVENTO.** Lo de arriba censa **clases de EFECTO** (6). El encargo
+   pregunta otra cosa: *cuántos eventos distintos maneja y cuáles no son idempotentes*.
+3. Un **efecto no reversible que el censo anterior no vio**.
+
+---
+
+## 1 · Vigencia: la medición del 7-sep sigue describiendo el código de hoy
+
+| comprobación | resultado |
+|---|---|
+| `git diff af082015 → origin/main -- stripe.routes.ts` | **vacío: el fichero está INTACTO** |
+| Las anclas `:22-29` (el `Set` y la función) y `:42` (la llamada) | siguen donde dice §1 |
+| `tests/scrum815-idempotencia-del-webhook.test.mjs` | **6 pass · 0 fail · `# skipped 0`** |
+| `GatewayEvent`/`gateway_events` en `prisma/schema.prisma` | **no está todavía** (S1 sigue en ello) |
+
+**El defecto sigue vivo y la propuesta de columnas sigue sin aplicar.** Nada de lo escrito el
+7-sep ha caducado.
+
+---
+
+## 2 · 🔴 SIETE tipos de evento, y DOS no son idempotentes
+
+Censado por AST sobre `event.type` —las dos formas de despacho, `=== 'x'` y `[...].includes(...)`—
+con **control positivo** del extractor de efectos sobre fuente sintética (ve 2 de 2) y **suelo**:
+si no encontrara ningún tipo se declara CIEGO con salida 3, que es un dato distinto de cero.
+
+| # | tipo de evento | línea | efectos | ¿idempotente al repetir? |
+|---|---|---|---|---|
+| 1 | `charge.dispute.created` | `:47` | `handleStripeDispute` | 🔴 **NO** — ver §3 |
+| 2 | `checkout.session.completed` | `:53` | `axios.post` + `merchant.update` + referido + **correo** | 🔴 **NO** — el correo no se deshace y el referido tiene carrera (ya medido arriba) |
+| 3 | `payment_intent.payment_failed` | `:96` | `axios.post` → psp | ✅ sí — corta en `already_failed` (`psp.routes.ts:82-86`) |
+| 4 | `customer.subscription.updated` | `:108` | `merchant.update` | ✅ sí — idempotente por valor |
+| 5 | `customer.subscription.created` | `:109` | `merchant.update` | ✅ sí — idempotente por valor |
+| 6 | `customer.subscription.deleted` | `:145` | `merchant.update` | ✅ sí — idempotente por valor |
+| 7 | `checkout.session.expired` | `:155` | `axios.post` → psp | ✅ sí — corta en `already_expired` (`psp.routes.ts:82-86`) |
+
+**Cinco de siete son seguros de repetir.** Eso importa para el tamaño: el arreglo no tiene que
+proteger la ruta entera, sólo los dos tipos que sí muerden.
+
+---
+
+## 3 · 🔴 Lo que el censo anterior NO vio: la disputa manda un WhatsApp
+
+El censo de efectos de arriba anota `handleStripeDispute: 1 // escribe en BD`, y el trinquete del
+banco (`tests/scrum815-…:141`) lo fija así. **Es un censo de PRIMER NIVEL**: mira las llamadas de
+`stripe.routes.ts` y **no entra en la función**. Dentro (`src/modules/payments/disputes.service.ts`)
+hay dos efectos, y el segundo no es una escritura:
+
+* `recordCustomerEvent(...)` → `customerEvent.create` **sin clave de deduplicación**: una fila de
+  línea de tiempo **por cada reintento**.
+* `notifyMerchantAlert(...)` → 🔴 **un WhatsApp al profesional, por cada reintento.** «⚠️ El banco
+  de X ha abierto una disputa por N €.» Repetido tantas veces como Stripe reentregue.
+
+**Esto no contradice la medición anterior: la completa.** Su lista de no reversibles nombraba
+**un** correo; son **dos** canales hacia una persona, y el segundo va al profesional, no al
+cliente. *Un censo que no sigue las envolturas devuelve un número más bajo en vez de declararse
+ciego* — y aquí devolvió «1 escritura en BD» donde hay una fila y un mensaje.
+
+> 📌 **Límite declarado:** este apéndice tampoco ha seguido las envolturas de los otros seis tipos
+> hasta el fondo. Lo medido es un nivel más que antes, no todos los niveles.
+
+---
+
+## 4 · Propuesta: qué encaja, y qué NO cierra `gateway_events`
+
+**La propuesta de columnas y el protocolo de tres pasos ya están escritos arriba** (`SCRUM-815`,
+paso ①, §4) y siguen siendo válidos: `received_at` al recibir, `processed_at` sólo al terminar con
+éxito, `attempts`, `last_error`, y `@@unique([provider, eventId])` como mecanismo. Las tres
+combinaciones de los dos timestamps tienen significado y un booleano no las distingue —«en curso»
+y «murió a medias» se leen igual—, que es exactamente el defecto de hoy guardado en disco.
+
+Este apéndice no la reescribe. Añade **dónde encaja cada tipo** y **qué queda fuera**:
+
+### El orden, aplicado a los 7 tipos
+
+1. **Al recibir**, antes de despachar: `INSERT` con la clave única.
+   * choca y `processed_at` **no nulo** → duplicado real → **200 sin trabajo**;
+   * choca y es **nulo** → el intento anterior no terminó → `attempts++`, `last_error` a la vista,
+     **y se hace el trabajo**;
+   * no choca → primer intento, se hace el trabajo.
+2. **Al terminar bien**: `UPDATE … SET processed_at = now()`. **Nunca antes**, que es el defecto.
+3. **Si falla**: `last_error` y **400**, para que Stripe reintente. El 400 no se toca.
+
+### 🔴 Lo que la tabla NO arregla, y hay que decirlo
+
+`gateway_events` cierra la ventana del **proceso** (reinicio, segunda instancia, tope del LRU).
+**No hace idempotente el trabajo repetido**, y el trabajo se repite a propósito: si el intento
+anterior murió a medias, el reintento vuelve a entrar. Con el protocolo puesto, de los dos tipos
+no idempotentes siguen abiertos:
+
+| hueco | dónde | qué se lleva el usuario |
+|---|---|---|
+| correo de factura duplicado | `psp.routes.ts:38`, rama `already_paid` | otro correo con la misma factura |
+| carrera del referido | `rewardReferralOnFirstPayment`, lee y luego escribe | dos meses gratis |
+| 🔴 **WhatsApp de disputa duplicado** | `disputes.service.ts`, §3 | otro «han disputado tu cobro» |
+| 🔴 **fila de timeline duplicada** | `recordCustomerEvent` en el mismo sitio | ruido en la ficha del cliente |
+
+Los dos primeros ya estaban nombrados arriba; **los dos últimos son de este apéndice**. Ninguno se
+arregla aquí: son de ③, y ③ no es este encargo.
+
+---
+
+## 4bis · 🔴 EL BANCO QUE EL EXPEDIENTE PROMETE NO ESTÁ EN EL REPOSITORIO
+
+La entrada del 7-sep dice, en su §6:
+
+> `docs/master/evidencias/scrum815/idempotencia-webhook.mjs` · salida completa en `salida.txt`
+
+**Ninguno de los dos existe.** Medido sobre `origin/main`, no sobre un árbol de trabajo:
+`git ls-tree -r origin/main -- docs/master/evidencias/` filtrado por `815` devuelve **vacío**,
+mientras que su hermano de la misma tanda sí subió el suyo (`evidencias/scrum814/`, tres ficheros).
+
+**Qué significa y qué no.** La evidencia viva **no se perdió**: el banco de verdad quedó como
+`tests/scrum815-idempotencia-del-webhook.test.mjs`, que corre en la suite y hoy da 6/6. Lo que
+falta es el script suelto del PASO 0 y su salida — el enlace del expediente lleva a la nada.
+*El banco SE SUBE: si no está en git, no existe* (norma A8).
+
+**Por qué ningún guard lo cazó:** `guards:entrada` pasa 22/22. Su comprobación de documentos
+prometidos (SCRUM-242) mira **los scripts**, no las entradas de `docs/master/`. Un expediente
+puede enlazar un fichero inexistente sin que nada proteste. Se reporta, no se arregla aquí.
+
+**No se reconstruye el banco ajeno**: no tengo su script, y fabricar uno y llamarlo como el suyo
+sería inventar una evidencia. Lo que sí queda es la carpeta creada con el banco de ESTE apéndice.
+
+## 4ter · El banco de este apéndice
+
+`docs/master/evidencias/scrum815/censo-por-tipo-de-evento.mjs` · salida en
+`salida-censo-por-tipo.txt`. No necesita base de datos, ni red, ni clave alguna.
+
+* **SUELO, probado:** apuntado a un fichero sin tipos de evento (`roleCapabilities.ts`) dice
+  `🔴 CENSO CIEGO: cero tipos de evento. No es "no maneja ninguno"` y sale con **3** — un dato
+  distinto de cero. Acepta la ruta por `argv` justo para poder enseñar ese rojo.
+* **CONTROL POSITIVO** del extractor de efectos sobre fuente sintética: ve 2 de 2.
+* Cuenta las **dos** formas de despacho (`=== 'x'` y `[…].includes(event.type)`), por AST y no
+  por `grep`: `event.type` aparece también en `console.log` y en comentarios.
+
+## 5 · Lo NO tocado
+
+`prisma/schema.prisma` (S1 está en él) · el escritor · `isDuplicateStripeEvent` y su `Set` ·
+el 400 ante fallo · `psp.routes.ts` · `disputes.service.ts` · el camino de emisión · ninguna base ·
+ninguna clave. **Nada ejecutado contra producción ni contra staging.**
+
+## 6 · Documentos consultados
+
+`docs/master/SCRUM-815.md` (las dos entradas de arriba) · `docs/master/SCRUM-358.md` ·
+`docs/equipo/00-normas-comunes.md` (A1, A2, A7, A8, A16) · `CLAUDE.md`
+
+---
+
+# SCRUM-815 · APÉNDICE · 15-sep-2026 · El efecto ③ cerrado: la disputa avisa UNA vez
+
+**Medido contra:** `origin/main` = `5359f41d9593c22cbba7926bbe5a41510d79f3a1` · 2026-09-15T10:28:46Z
+**Rama:** `scrum-815-disputa-una-sola-vez` · **Carril:** dinero · **Gate:** sin gate — corre en `npm test`
+
+> 📌 Encabezado `# SCRUM-815` y no `# APÉNDICE`, por el delimitador de
+> `tests/scrum267-ancla-de-medicion.test.mjs:147` (misma razón escrita en `SCRUM-825.md:590`).
+
+Este apéndice **no re-mide nada**: parte de la medición del 7-sep y del censo por tipo de evento
+del apéndice 815b, y construye **un solo efecto** — el que tiene víctima visible.
+
+---
+
+## 1 · Lo que estaba roto, con su víctima
+
+`charge.dispute.created` disparaba **dos efectos sin deduplicar**, y Stripe reentrega hasta 3 días:
+
+* un **WhatsApp al profesional** — «⚠️ El banco de X ha abierto una disputa por N €»;
+* una **fila de línea de tiempo** en la ficha del cliente.
+
+La memoria del proceso no lo tapaba: `isDuplicateStripeEvent` (`stripe.routes.ts:22`) es un `Set`
+del módulo con tope 500, y **el webhook de Connect no lo llama siquiera**. En tres días de
+reintentos el proceso se reinicia: cada entrada vuelve a encontrar un `Set` vacío.
+
+### 🔴 EL ROJO, EJECUTADO ANTES DEL ARREGLO
+
+```
+not ok 2 - SCRUM-815 · 🔴 tres entregas del MISMO evento → UN WhatsApp, no tres
+  error: 🔴 EL PROFESIONAL HA RECIBIDO 3 WHATSAPP POR LA MISMA DISPUTA. …
+  3 !== 1
+```
+
+---
+
+## 2 · El arreglo: la marca vive en DISCO, y se escribe AL TERMINAR
+
+La clave se **deriva** del evento (`event.id`, estable entre reintentos) y, si faltara, del id de
+la disputa — que también lo es. **Ninguna se inventa**, y ninguna vive en memoria.
+
+La marca es una fila de `events` —el registro por cobro que ya usan `paid`, `invoiced`,
+`emailed`— con `payload = { stripeEventId, disputeId }`.
+
+> 🔒 **SE ESCRIBE AL TERMINAR, NUNCA ANTES.** Es la semántica de `processed_at` que fija el paso ①
+> §4 de este mismo expediente: **marcar antes de hacer el trabajo es EL defecto del ticket**
+> (`isDuplicateStripeEvent` pregunta y marca en la misma llamada, antes de empezar). Marcando al
+> final, una entrega que muriese a medias no deja marca y el reintento vuelve a entrar: se paga con
+> un aviso repetido en un caso raro, en vez de con **silencio sobre una disputa**, que es dinero.
+
+Y `recordCustomerEvent` pasa a esperarse: una marca escrita mientras el trabajo sigue en vuelo no
+deduplica nada.
+
+### Las dos asimetrías, y las dos van hacia «avisa»
+
+Si la consulta de la marca falla, `yaAtendida` devuelve `false` — «no lo he visto, avisa». Es la
+misma asimetría y el mismo motivo que `existeEventoDePlan` (SCRUM-394), que está a tres funciones
+de distancia: equivocarse hacia un aviso repetido cuesta un WhatsApp; equivocarse hacia el silencio
+cuesta que el profesional no se entere de que le han disputado un cobro.
+
+---
+
+## 3 · El banco: `tests/scrum815-disputa-una-sola-vez.test.mjs`
+
+Sin base, sin claves, sin red — con el doble que YA existe (`tests/_envio-doblado.mjs`:
+`require.cache` para `prisma`, `WHATSAPP_DRY_RUN=1` + `__waDryRunOutbox` para Meta). En dry-run los
+senders pasan **todos** los guards y sólo se saltan el HTTP, así que `handleStripeDispute` entero
+es código de producción sin tocar.
+
+| control | qué fija |
+|---|---|
+| 🔴 SUELO | una entrega → **1** WhatsApp y **1** fila. Si el detector no ve ninguno, se declara CIEGO: lo de abajo se cumpliría sobre un buzón vacío |
+| 🔴 EL DEFECTO | tres entregas del mismo evento → **1**, no 3 |
+| ✅ POSITIVO | **dos disputas distintas siguen avisando DOS veces** — comerse la segunda sería romper el producto por el lado bueno |
+| ✅ POSITIVO | una disputa NUEVA sobre la MISMA charge vuelve a avisar: la clave es el evento, no el cobro |
+| 🔴 EN DISCO | se borra la marca de la base y **vuelve a avisar** — prueba de que lo que corta es la fila leída, no un residuo en memoria |
+
+**Mutación corrida** para probar que no es decoración: con `yaAtendida` devolviendo siempre `false`,
+caen los dos (`3 !== 1` y `2 !== 1`). Fuente restaurada byte a byte — sha256 `3b786ea84f53a40b`
+antes y después.
+
+---
+
+## 4 · ⚠️ Límite declarado: la ventana que esto NO cierra
+
+Entre leer la marca y escribirla hay ventana. **No se puede cerrar aquí sin
+`@@unique([provider, eventId])`**, y esa tabla (`gateway_events`) es de otra sesión y del paso ③.
+Los reintentos de Stripe van espaciados, así que la ventana es estrecha — y lo que este arreglo
+quita, *tres días de avisos repetidos*, no depende de ella.
+
+## 5 · Por qué esto NO es un estado nuevo (regla 27)
+
+`Event.type` **no es una FSM**. La Parte L enumera las máquinas de Quote, Invoice, Charge,
+QuoteRequest, Customer, WhatsAppMessage, VfSubmission, Subscription, Job y Albaran; `events` es un
+registro de **sólo-añadir** por cobro (`paid`, `invoiced`, `emailed`, `bizum_claimed`…). No se ha
+tocado ningún `status`, ninguna transición y ningún flag. Es la misma distinción que el master hace
+en SCRUM-170 —«VOCABULARIO DERIVADO, no una FSM»— y en SCRUM-17 —«FSM Parte L intacta, regla 27».
+
+Y `disputes.service.ts`, `stripe.routes.ts` y `connectWebhook.routes.ts` **no figuran en**
+`docs/legal/AUDITORIA_CAMINO_EMISION.md`: la regla 38 no se dispara.
+
+## 6 · Lo NO tocado
+
+`prisma/schema.prisma` (S1 está en él) · el escritor de `gateway_events` · `isDuplicateStripeEvent`
+y su `Set` · los otros tres efectos (correo de factura, referido, timeline de otros eventos) · **el
+texto del WhatsApp** (regla 30) · el 400 ante fallo · el camino de emisión. Ninguna base, ninguna
+clave. **Nada ejecutado contra producción ni contra staging.**
+# SCRUM-815 · APENDICE · 15-sep-2026 · paso ⑥ — el modelo entra en `schema.prisma`
+
+**Medido contra:** `origin/main` = `d9a05138cb61a30916300951a979db84121d8002` · 2026-09-15T11:19:51+01:00
+**Rama:** `scrum-815-el-modelo-del-evento`
+
+> El orden de la casa es ① decisión → ② DDL en las TRES bases → ③ PR con esquema y código.
+> ① está en la entrada de arriba; ② ya está aplicado (`gateway_events` existe en desarrollo,
+> staging y producción). Esto es **sólo la mitad de ③ que abre el sitio**: el modelo. El
+> protocolo del webhook —insertar, reintentar, decidir— NO se escribe aquí: toca el flujo de
+> cobro en producción y va en su propio trabajo.
+
+---
+
+## 1 · Lo que entra, y es todo
+
+18 líneas al final de `prisma/schema.prisma`: el `model GatewayEvent` del §4 de la entrada
+anterior, copiado de allí. **Cero borrados, cero reordenaciones, cero cambios de formato.** El
+fichero pasa de 1633 a 1651 líneas y el diff no tiene ni una línea de resta.
+
+Los cuatro `@map` **se verificaron contra el DDL que creó la tabla**
+(`docs/sql/scrum-815-el-evento-que-no-se-pierde.sql`), no contra la memoria: `event_id`,
+`received_at`, `processed_at`, `last_error`. Los otros cuatro campos (`id`, `provider`, `type`,
+`attempts`) van sin `@map` porque son de una palabra y ahí camello y guion bajo no se distinguen.
+
+## 2 · 🔴 FORMA CONTRA HECHO — y `validate` sólo contesta la primera
+
+`prisma validate` en verde dice que el fichero está **bien escrito**. No dice que los campos hayan
+llegado a ninguna parte. Lo que decide es el cliente generado, y se comprueba leyendo su DMMF:
+
+```
+modelo   : GatewayEvent -> tabla gateway_events
+  eventId      -> columna event_id        String
+  receivedAt   -> columna received_at      DateTime
+  processedAt  -> columna processed_at     DateTime?
+  lastError    -> columna last_error       String?
+unique   : [["provider","eventId"]]
+delegado en el cliente: object
+```
+
+### ⚠️ Y para que `validate` corriera hizo falta una `DATABASE_URL` que no existe
+
+Ningún worktree tiene `DATABASE_URL` —sólo `_DEV`, `_STAGING` y `_TESTS`, tal y como registra
+`CLAUDE.md`— y `validate` falla con `P1012` sin ella aunque **no conecte a nada**. Se le pasó una
+URL **sintética** (`127.0.0.1:1`, base inexistente) por ENTORNO, no en argv. Si hubiera intentado
+conectar, el puerto 1 del loopback lo habría rechazado al instante; contestó en verde sin demora.
+
+## 3 · 🔴 EL HALLAZGO: `scrum235` NO puede ver este fallo, y no es culpa suya
+
+`scrum235` compara el SCHEMA contra el CLIENTE en los dos sentidos, `@map` incluido. Es un buen
+guard. Pero **sus dos mitades salen del mismo fichero**: si alguien le quita el `@map("event_id")`
+a `eventId` y regenera, el schema y el cliente vuelven a cuadrar al instante.
+
+Medido, no supuesto — con el `@map` arrancado y el cliente regenerado:
+
+```
+pass=25 fail=3     (28 = 7 de scrum815 + 21 de scrum235)
+CAE · SCRUM-815 · 🔴 CADA campo del modelo apunta a una columna que la tabla TIENE
+CAE · SCRUM-815 · 🔴 CADA columna de la tabla tiene su campo (nada queda inalcanzable)
+CAE · SCRUM-815 · 🔴 el UNIQUE (provider, event_id) está en el modelo Y en la tabla
+```
+
+**Los tres que caen son de `scrum815`. Los 21 de `scrum235` siguen en verde.**
+
+> 🔒 Dos copias que se generan la una de la otra siempre cuadran. El tercer extremo —la BASE— es
+> el único que puede decir que el nombre está mal, y ningún guard lo estaba mirando.
+
+Por eso `tests/scrum815-el-modelo-apunta-a-la-tabla.test.mjs` no compara contra `schema.prisma`:
+compara el cliente generado contra el DDL, y **lee** los nombres físicos de ahí en vez de
+escribirlos a mano — una lista copiada sería una cuarta copia que puede divergir como las otras.
+
+Sin `@map`, Prisma pide una columna `"eventId"` que en `gateway_events` no existe. Eso no lo caza
+`tsc` ni `generate`: sale en la **primera consulta**, en ejecución, en el camino de un webhook de
+cobro.
+
+## 4 · Los cuatro rojos, y el árbol después
+
+| rojo | qué cae |
+|---|---|
+| a `eventId` se le quita el `@map` | 3 · los dos sentidos y el único |
+| desaparece el campo `attempts` | 2 · el suelo del modelo y la columna inalcanzable |
+| `processedAt` deja de ser NULLABLE | 1 · el que guarda el ticket entero |
+| se cae el `@@map` de la tabla | 1 · el suelo (el modelo buscaría `GatewayEvent`) |
+
+Cada uno REGENERÓ el cliente antes de juzgar —mutar el `.prisma` sin regenerar no le llega al
+test— y restauró después el fichero **y** el cliente: restaurar el fuente no es restaurar el
+árbol cuando hay un artefacto generado de por medio. `Buffer.compare === 0` sobre
+`prisma/schema.prisma`, y el sha256 al final es el mismo que al principio.
+
+## ⛔ No tocado
+
+**Ninguna base**: ni producción, ni staging, ni desarrollo. Ni con `--dry-run`.
+**Ningún comando de los prohibidos**: `migrate` (dev/deploy/reset/resolve), `db push` y
+`migrate diff` no se han ejecutado — tampoco «para comprobar». `npx` no se ha usado para el CLI de
+Prisma: el binario es el local de `node_modules`.
+**El protocolo del webhook**: ni una línea. El sitio queda abierto y ahí se para.
+**Ningún otro modelo** de `schema.prisma`, y ningún fichero de `src/`.
+
+
+---
+
+# SCRUM-815 · APÉNDICE · 15-sep-2026 · El efecto ② cerrado: la carrera del referido
+
+**Medido contra:** `origin/main` = `e12da8e394102d3f216dcc9b851b91014bf73458` · 2026-09-15T11:01:29Z
+**Rama:** `scrum-815-carrera-del-referido` · **Carril:** dinero · **Gate:** sin gate
+
+> 📌 Encabezado `# SCRUM-815` por el delimitador de `scrum267-ancla-de-medicion.test.mjs:147`.
+> No re-mide nada: parte del paso ① §3 y cierra **un solo efecto**.
+
+---
+
+## 1 · El defecto, y lo que se llevaba
+
+`rewardReferralOnFirstPayment` LEÍA `referralRewardedAt`, comprobaba en JavaScript y DESPUÉS
+escribía. Entre el `if` y el `update` no hay nada. Dos entregas simultáneas del mismo primer pago
+leen `null` las dos, las dos pasan la guarda y las dos incrementan `freeMonthsEarned`.
+
+### 🔴 EL ROJO, EJECUTADO ANTES DEL ARREGLO
+
+```
+not ok 2 - SCRUM-815 · 🔴 dos entregas SIMULTÁNEAS del mismo primer pago → UN mes, no dos
+  error: 🔴 EL REFERIDOR SE HA LLEVADO 2 MESES GRATIS POR UN SOLO REFERIDO. …
+  2 !== 1
+```
+
+---
+
+## 2 · El arreglo: la condición viaja DENTRO del UPDATE
+
+```ts
+const reclamo = await tx.merchant.updateMany({
+  where: { id: referredMerchantId, referralRewardedAt: null },
+  data: { referralRewardedAt: new Date() },
+});
+if (reclamo.count !== 1) return false;   // otra entrega se adelantó
+```
+
+La base comprueba y escribe **de una pieza**; el que llega segundo recibe `count: 0` y se va sin
+cobrar. Es el mismo patrón —y por el mismo motivo— que el guard anti-doble-consolidación de
+`recapitulativa.service.ts:118`, que este máster describe como «lo que hace segura la concurrencia».
+
+> 🔴 **`count` NO ES DECORATIVO.** Es lo único que distingue «he reclamado yo» de «alguien se me
+> adelantó». Medido con mutación: sustituyendo `if (reclamo.count !== 1)` por `if (false)`, el banco
+> vuelve a dar **`2 !== 1`**. Un update condicional cuyo resultado no se mira tiene el mismo defecto
+> con otra forma. Fuente restaurada byte a byte — sha256 `4c9f6cfb3da0972e` antes y después.
+
+La lectura de arriba **se queda, pero como atajo barato**, no como cerrojo: evita abrir transacción
+en el caso normal (la reentrega de días después). Está dicho en el código para que nadie la
+confunda con la guarda.
+
+---
+
+## 3 · El banco: `tests/scrum815-referido-una-sola-vez.test.mjs`
+
+| control | qué fija |
+|---|---|
+| 🔴 SUELO | un primer pago da **1** mes. Sin esto, «no da dos» se cumpliría sobre un sistema que no recompensa nunca |
+| 🔴 LA CARRERA | dos entregas **simultáneas** → **1** mes, no 2 |
+| ✅ LA BASE DECIDE | la segunda llamada afecta a **cero** filas |
+| ✅ POSITIVO | dos referidos **distintos** siguen dando un mes **cada uno** |
+| ✅ POSITIVO | sin referidor no se marca ni se paga a nadie |
+| 🔴 ESTRUCTURAL | la guarda está en el `where` **y** el código mira el `count` |
+
+### 🔴 Por qué este fichero NO usa `tests/_envio-doblado.mjs`
+
+Su doble corta por lo sano con todo lo que empieza por `$`:
+
+```js
+if (nombre.startsWith('$')) return async () => undefined;   // _envio-doblado.mjs:66
+```
+
+O sea que **`$transaction(cb)` devuelve `undefined` sin llamar a `cb`**. Con ese doble el cuerpo de
+la transacción no se ejecuta y el test saldría verde sin haber probado nada. Un doble que se traga
+la transacción no puede arbitrar una carrera que vive dentro de ella. Por eso hay un doble propio
+que modela lo único que decide: que un UPDATE condicional es atómico y devuelve cuántas filas tocó.
+
+> ⚠️ **LÍMITE DECLARADO:** ese doble es un MODELO, no Postgres. Por eso el banco lleva además el
+> control ESTRUCTURAL, que no depende del modelo: si alguien vuelve a leer-y-luego-escribir, el
+> modelo podría no enterarse y la forma sí.
+
+---
+
+## 4 · 🔴 EL PATRÓN SE REPITE: 3 sitios más en este mismo fichero
+
+Se arregla **sólo el del encargo** (regla 9), pero el censo se deja hecho y con línea:
+
+| sitio | forma | qué se lleva |
+|---|---|---|
+| 🔴 `redeemFreeMonth` :73 → :78 → :84 | lee `freeMonthsEarned`, comprueba `< 1`, y **después** `decrement: 1` | **es dinero y es la misma carrera**: dos canjes simultáneos con UN crédito pasan los dos → el saldo queda en **−1** y el merchant estira `planExpiresAt` **dos veces**. Su propio comentario dice «Idempotente por crédito», y la carrera lo desmiente |
+| `ensureReferralCode` :31 → :35 → :37 | lee `referralCode`, y si falta genera y escribe | dos llamadas a la vez generan dos códigos y gana el último. Molesto, no caro |
+| `generateUniqueReferralCode` :21 → :22 | comprueba existencia y el que escribe es otro | TOCTOU **amortiguado por la base**: `referralCode` es `@unique`, así que una colisión real revienta en vez de corromper |
+
+**`redeemFreeMonth` merece ticket propio**: mismo carril (dinero), misma forma, y el arreglo es la
+misma línea —`updateMany({ where: { id, freeMonthsEarned: { gte: 1 } }, data: { decrement: 1 } })`
+mirando el `count`—. No se toca aquí porque no es este encargo.
+
+## 5 · Lo NO tocado
+
+`prisma/schema.prisma` (S1 está en él, rama `scrum-815-el-modelo-del-evento`, viva al medir) · los
+otros huecos (correo de factura, disputa —cerrada en el apéndice anterior—) · el 400 ante fallo ·
+`redeemFreeMonth` y los otros dos del censo · microcopy. Ninguna base, ninguna clave. **Nada
+ejecutado contra producción ni contra staging.**
+
+---
+
+# SCRUM-815 · APENDICE · 15-sep-2026 · ③ el escritor, solo para los cinco seguros
+
+**Medido contra:** `origin/main` = `e96298e66933fef459218889118a2e6f08eff1e6` · 2026-09-15T12:35:08+01:00
+**Y main siguió moviéndose mientras:** a `c3dce7aa`. No se re-ancla porque **no se ha medido
+contra él**; comprobado que su diff no toca `src/modules/billing/`, `prisma/` ni los tests de
+este ticket. El ancla dice el árbol que se midió, no el último que pasó por delante.
+**Rama:** `scrum-815-el-escritor-de-los-cinco`
+
+> ⚠️ **Esta rama sale de `scrum-815-el-modelo-del-evento`, no de `main`.** El modelo
+> `GatewayEvent` está en esa rama y **todavía NO está en `main`** (medido: `merge-base
+> --is-ancestor` dice SIN MERGEAR, y `git show origin/main:prisma/schema.prisma` no lo tiene).
+> Sin el modelo esto no compila, así que la dependencia es real: **este PR no se puede mergear
+> antes que el del modelo.**
+
+---
+
+## 1 · Qué se enciende, y para quién
+
+`src/modules/billing/domain/gatewayEvents.service.ts` — tres pasos, y el orden es toda la
+propiedad:
+
+1. **Al recibir**, antes de despachar: `INSERT`. Choca contra `@@unique([provider, eventId])` →
+   si la fila tiene `processed_at` **no nulo**, duplicado real, ACK sin trabajo; si es **NULL**,
+   el intento anterior no terminó → `attempts++` **y se hace el trabajo**.
+2. **Al terminar con éxito**: `processed_at = now()`. **Nunca antes.**
+3. **Si falla**: `last_error` y el 400 de siempre, que es lo que hace que Stripe reintente.
+
+El `INSERT` es el mecanismo y no hay ventana de comprobar-y-escribir: no se comprueba nada, se
+escribe y se mira el choque. Dos réplicas a la vez → una escribe, la otra choca.
+
+### Los CINCO que entran, y los DOS que no
+
+Del censo por tipo (apéndice de SCRUM-815b): entran `payment_intent.payment_failed`, las tres de
+`customer.subscription.*` y `checkout.session.expired`.
+
+**Quedan FUERA a propósito** `charge.dispute.created` y `checkout.session.completed`, y la
+exclusión está escrita en el código —en `EVENTOS_SIN_REGISTRO`, enumerados, no omitidos— porque
+una exclusión que no se nombra parece un olvido.
+
+> 🔒 **Hoy el defecto es SILENCIOSO: se pierden eventos.** Encender el protocolo para los siete
+> lo volvería RUIDOSO —correo de primer pago reenviado, WhatsApp de disputa repetido, posible mes
+> gratis duplicado—. Cambiar un fallo callado por uno que el cliente ve no es progreso.
+
+Los dos excluidos siguen **exactamente** con el LRU en memoria de la ruta. La disputa, además, ya
+la dedupe su propio servicio en disco (efecto ③ de esta misma jornada): encenderla aquí sería un
+segundo mecanismo sobre el mismo evento.
+
+## 2 · 🔴 El rojo: el defecto, ejecutado contra la función REAL
+
+```
+SCRUM-815c · 🔴 EL DEFECTO: con la memoria, un evento que FALLA pierde su reintento
+  entrega 1 → isDuplicateStripeEvent = false → se hace el trabajo → REVIENTA → 400
+  entrega 2 → isDuplicateStripeEvent = TRUE  → descartada sin trabajo
+  trabajos hechos: 1. El evento se pierde, y nadie se entera: la ruta ya respondió 200.
+```
+
+La marca se pone al **recibir**. El trabajo no se pierde por el fallo: se pierde por la marca
+puesta antes de tiempo. Con el registro, esa misma segunda entrega devuelve `hacer`, el trabajo
+se rehace y `attempts` queda en 2.
+
+## 3 · Los siete rojos del arreglo
+
+| rojo inyectado | qué cae |
+|---|---|
+| se marca procesado AL RECIBIR (el defecto vuelto a nacer) | 2 |
+| el choque devuelve siempre `ya_procesado` (ignora el NULL) | 2 |
+| un excluido se cuela en la lista | 2 |
+| el motivo del fallo deja de recortarse a 500 | 1 |
+| `attempts` deja de subir | 1 |
+| la ruta abre registro FUERA de la puerta | 1 |
+| la ruta deja de marcar procesado al terminar | 1 |
+
+Fuente restaurado y verificado byte a byte tras cada uno.
+
+## 4 · 🔴 TRES COSAS QUE SALIERON MAL EN EL INSTRUMENTO, Y LAS TRES IMPORTAN
+
+**① El banco daba VERDE sobre el defecto central.** La mutación «marcar procesado al recibir»
+—que es literalmente el defecto que este ticket cierra— dejaba la tanda en **10 de 10**. La causa
+no estaba en los tests sino en el doble de la tabla: sus valores por defecto iban **detrás** del
+`...data`, así que machacaban a `null` el `processed_at` que el código mutado escribía. El banco
+se tragaba el defecto y contestaba que todo iba bien.
+
+> 🔒 Un doble que no guarda lo que le mandan no es la tabla: es un sitio donde el defecto no cabe.
+> Y eso no se ve mirando el test — se ve cuando el rojo no cae.
+
+**② Un rojo que no caía destapó un hueco de cobertura.** Envolver la marca de procesado en una
+condición imposible tampoco tumbaba nada: los casos probaban el SERVICIO y el guard de AST
+miraba que la ruta **abriera** el registro, pero **ninguno miraba que lo CERRARA**. De ahí sale
+el caso «LA RUTA CIERRA el registro al terminar, y sin más condiciones», que exige que la única
+guarda de esa llamada sea `entregaConRegistro`.
+
+**③ `import('…?v=1')` NO aísla el módulo.** Se iba a simular el reinicio del proceso con dos
+importaciones distintas del mismo fichero. Medido antes de usarlo:
+`a.isDuplicateStripeEvent === b.isDuplicateStripeEvent` → **`true`**. Habría dado un verde sobre
+la memoria del vecino. Un reinicio es un **proceso** nuevo, así que se mide con subprocesos, que
+además es lo fiel.
+
+## 4bis · 🔴 EL TRINQUETE DE ESTE MISMO TICKET ESTABA ANCLADO A UN NÚMERO DE LÍNEA
+
+`el censo de EFECTOS del manejador no crece sin decirlo` cortaba con **`if (linea >= 47)`** — el
+47 era «donde empieza el despacho» el día que se escribió. Al añadir el registro, todo bajó unas
+líneas y el censo empezó a contar `stripe.webhooks.constructEvent` e `isDuplicateStripeEvent`,
+**que llevan ahí desde siempre**. No midió un cambio del manejador: midió su propio
+desplazamiento.
+
+> 🔒 Un ancla por número de línea no vigila el código: vigila dónde estaba el código. El primer
+> commit que escriba encima la rompe, y lo que denuncia entonces no es un defecto.
+
+Se ancla al CONTENIDO: el despacho empieza donde `event.type` se **compara** con un tipo. Y hubo
+que afinarlo dos veces, lo cual es el propio ejemplo: «el primer `if` que NOMBRA `event.type`» se
+enganchaba a la puerta nueva (`if (llevaRegistro(event.type))`), que lo nombra sin despachar
+nada. La señal no es mencionar el tipo — es compararlo.
+
+Con el ancla arreglada, los efectos que de verdad añade este trabajo son **dos**, y se declaran
+con su motivo: `marcarEventoProcesado` y `anotarFalloDeEvento`. La APERTURA del registro no sale
+en el censo a propósito: vive en la puerta, antes del despacho.
+
+### Y el otro trinquete: cuatro exports huérfanos
+
+`SCRUM-411` los cazó y dijo qué hacer con cada uno, que no era lo mismo para todos:
+`PROVEEDOR_STRIPE`, `MAX_LAST_ERROR` y `EVENTOS_CON_REGISTRO` **pierden el `export`** —su
+consumidor real está dentro del módulo y de fuera sólo entraba su test—; `EVENTOS_SIN_REGISTRO`
+**lo conserva y se declara**, porque nadie la usa dentro: su trabajo es constar.
+
+El test, en consecuencia, ya no importa lo que no es superficie pública: lee la lista de los
+cinco por AST del fuente y **deriva el tope de `last_error` del propio `schema.prisma`**, que es
+mejor ancla que la constante — si la columna cambia de tamaño, el test lo sigue.
+
+## 5 · Lo que esto NO arregla, y sigue abierto
+
+El registro cierra la ventana del **proceso** (reinicio, segunda instancia, tope de 500 del LRU).
+**No hace idempotente el trabajo repetido** — y se repite a propósito: si el intento anterior
+murió a medias, el reintento vuelve a entrar. Los huecos que el apéndice anterior ya nombraba
+(correo de factura duplicado, carrera del referido, WhatsApp de disputa, fila de timeline) siguen
+donde estaban: son de los DOS tipos excluidos, y por eso están excluidos.
+
+## ⛔ No tocado
+
+**Los dos eventos excluidos**: ni su camino ni su deduplicación · **`prisma/schema.prisma`**: no
+se abre (el modelo ya estaba) · **el 400** de la ruta, que es lo que dispara el reintento ·
+**ningún estado ni flag nuevo** (regla 27) · **ninguna dependencia nueva** (regla 36) · **ningún
+microcopy** (regla 30) · **ninguna base**: ni producción, ni staging, ni `--dry-run`.
+
+**El camino de emisión fiscal**: `stripe.routes.ts` vive en `src/modules/billing/`, no bajo
+`src/modules/invoicing/` ni es `src/lib/invoicing.ts` — comprobado antes de escribir. No hay STOP
+de regla 38 que declarar.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-815c · El correo de factura duplicado (el efecto que quedaba)
+
+**Medido contra:** `origin/main` = `e96298e66933fef459218889118a2e6f08eff1e6` · 2026-09-15T12:05:00+02:00
+**Rama:** `scrum-815-el-correo-una-sola-vez` · **Carril:** dinero · webhook · **Gate:** sin gate
+
+> ⛔ El defecto NO se re-mide: está medido en el paso ① §3 y en el apéndice 815b §4 de este mismo
+> expediente. Esto lo arregla.
+
+## 0 · Obligación 0, con las dos causas separadas
+
+```
+git ls-remote --heads origin | grep -E "refs/heads/scrum-815(-|$)"
+  d7a8b276…  refs/heads/scrum-815-el-modelo-del-evento     ← VIVA, +2 commits, FUERA de main
+rastro en main: 12 commits de tres sesiones distintas  ·  docs/master/SCRUM-815.md: EXISTE
+```
+
+**No es (a) ni (b): hay rama viva Y trabajo en `main`.** Y la rama viva es de **otra sesión**, así
+que lo primero fue mirar si chocábamos: toca `prisma/schema.prisma`, `docs/`, `backup-dump.mjs` y
+un test propio. **No toca `psp.routes.ts`.** Cero colisión, y su schema no se toca desde aquí.
+
+El contraste del `ls-remote`: el `grep` suelto de `815` devuelve **2** líneas y el anclado **1**;
+la de más casa dentro de un sha, no en un nombre de rama.
+
+## 1 · 🔴 La comprobación que podía parar el encargo (regla 38)
+
+**`psp.routes.ts` NO figura en `docs/legal/AUDITORIA_CAMINO_EMISION.md`: cero menciones de «psp»
+y cero de «billing».** Control positivo del instrumento: ese mismo documento **sí** cita otros
+tres `*.routes.ts`, así que no está ciego. **No hay STOP.**
+
+> ⚠️ **Y lo que encontré de más, que se dice aunque no lo cambie nada:** `psp.routes.ts` sí
+> aparece en otros dos documentos de `docs/legal/` — **`SEMAFORO_MAPA_EMISION.md` (8 menciones)**
+> y `AUDITLOG_FISCAL_CONTRATO.md` (2). Leídas una a una: son el **mapa de ACTORES** (quién dispara
+> la ruta: «el PSP, no una persona», con su `requireInternalSecret`) y la taxonomía de actores del
+> AuditLog. No declaran la ruta como parte del camino de emisión. La regla que aplica es la del
+> fichero que la nombra, y ése dice que no. Queda dicho por si el fundador lo lee distinto.
+
+## 2 · 🔴 EL ROJO, EJECUTADO ANTES DEL ARREGLO
+
+```
+not ok 2 - SCRUM-815 · 🔴 tres entregas del MISMO cobro → UN correo, no tres
+  🔴 EL CLIENTE HA RECIBIDO 3 CORREOS CON LA MISMA FACTURA.
+  Facturas enviadas: [7000,7000,7000]
+  3 !== 1
+not ok 5 - SCRUM-815 · 🔴 EN DISCO: si se borra la marca de la base, el correo VUELVE a salir
+  2 !== 1
+# tests 5 · # pass 3 · # fail 2 · # skipped 0
+```
+
+La ruta entera es código de producción sin tocar, conducida por su propio `handle`. Se doblan la
+base (con `dobleDeLaBase`, el doble que ya existe), el envío y la emisión. Ni una clave, ni un
+byte de red, ninguna base real.
+
+## 3 · El arreglo
+
+`src/modules/billing/domain/correoDeFacturaEnviado.ts` — `yaSeEnvioElCorreo` y
+`marcarCorreoEnviado`, y dos puntos en `psp.routes.ts`:
+
+| dónde | qué |
+|---|---|
+| rama `already_paid` | **sólo envía si NO consta que ya saliera**. No es «nunca envía»: se conserva el caso en que el cobro llegó a `paid` por otro camino y esta entrega es la primera que puede mandarlo |
+| camino normal, tras `sendInvoiceEmail` | escribe la constancia |
+
+- 🔒 **En DISCO, no en memoria:** una fila de `events` con `type: 'emailed'` —que **ya existe** en
+  el árbol (`dev.routes.ts:93`)— y `payload: { invoiceId }`. La clave es el `invoiceId`, estable
+  entre reintentos porque `ensureInvoiceForCharge` devuelve la existente. Ninguna se inventa.
+- 🔒 **Se escribe AL TERMINAR, nunca antes.** Marcar antes es el defecto que se quita: un envío
+  que muera a medias dejaría la marca puesta y el cliente sin su factura.
+- ✅ **La fila `duplicate:true` SE QUEDA**, y hay un test que lo exige.
+
+### 🔴 Una asimetría INVERTIDA respecto al efecto ③, y a propósito
+
+`yaAtendida` (la disputa) devuelve `false` si la consulta falla — «no lo he visto, avisa».
+**`yaSeEnvioElCorreo` devuelve `true`** — «no lo sé, NO reenvíes». Allí equivocarse hacia el
+silencio cuesta que el profesional no se entere de una disputa; **aquí equivocarse hacia el envío
+cuesta otro correo al cliente final con una factura que ya tiene, que es literalmente el defecto
+que se quita** — y la factura sigue alcanzable por su enlace de recibo. Queda declarado porque dos
+funciones hermanas con asimetrías opuestas se leen como un descuido si no se explica cuál es cuál.
+
+## 4 · El banco · `tests/scrum815-el-correo-una-sola-vez.test.mjs` — 5 tests, `# skipped 0`
+
+| caso | qué sujeta |
+|---|---|
+| 🔴 SUELO | una entrega manda UNO; si el banco no ve **ningún** envío se declara **CIEGO** |
+| 🔴 DEFECTO | tres entregas del mismo cobro → **1**, no 3 |
+| ✅ POSITIVO | **dos facturas DISTINTAS siguen mandando DOS** — comerse la segunda sería romper el producto por el lado bueno |
+| ✅ | la fila `duplicate:true` sigue escribiéndose |
+| 🔴 EN DISCO | se borra la marca **de la base** y el correo VUELVE a salir — es lo que separa una marca en disco de una memoria del proceso |
+
+**Mutación, con su restauración:** con la comparación de la marca cambiada para que nunca case,
+caen dos casos (`3 !== 1` y `2 !== 1`). Fuente **y `dist/`** restaurados y comprobados con
+`Buffer.compare`: **IDÉNTICO** los dos (SCRUM-763: restaurar el fuente no es restaurar el árbol).
+
+## 5 · ⚠️ Los dos flags, y por qué esto NO cierra el ticket
+
+`AUTO_INVOICE_ON_PAID` y `AUTO_EMAIL_INVOICE_ON_PAID` gobiernan la rama, **y su valor en
+producción sigue sin poder leerse desde aquí** — límite declarado en el paso ①, no supuesto.
+
+> **Si los dos flags están APAGADOS en producción, el defecto es LATENTE, no inexistente.** El día
+> que se enciendan, cada reintento de Stripe vuelve a ser un correo. No se usa esto para cerrar el
+> ticket.
+
+## 6 · 🔴 Un verde mío que no valía, y lo cazó la norma A6
+
+La primera pasada tras el arreglo dio **5/5 en verde**… con **`BUILD_EXIT=2`**. Los tests leen
+`dist/`, así que estaban midiendo el **build anterior**: mi tipo `BaseMinima` usaba `unknown` para
+los argumentos y el cliente de Prisma —genérico— no lo cumplía. *Un build roto no es un rojo: es
+un verde que no vale.* Corregido a `any` con el motivo escrito en el propio tipo, `tsc` en 0, y
+los cinco repetidos contra el `dist/` bueno.
+
+## 7 · Lo NO tocado
+
+`prisma/schema.prisma` · `isDuplicateStripeEvent` y su `Set` · el 400 ante fallo · los otros huecos
+(referido, disputa, timeline) · la fila `duplicate:true` · el camino de emisión · microcopy (30) ·
+ningún estado ni flag nuevo (27) · ninguna dependencia (36) · la rama de la otra sesión.
+Nada ejecutado contra producción ni contra staging.
+
+## 8 · 🔴 Los dos rojos de SCRUM-411 eran MÍOS, y se midió antes de acusar a nadie
+
+La tanda completa trajo **dos rojos de `SCRUM-411`**, un fichero que no había tocado. La tentación
+era darlos por heredados del merge de `main`. **Se midió en vez de suponerlo**, y en un árbol que
+no es el mío: worktree nuevo desde `origin/main` (`b63ed424`), corriendo **sólo ese fichero**, que
+es lo que contesta la pregunta sin necesitar la tanda entera.
+
+| árbol | resultado |
+|---|---|
+| `origin/main` limpio, worktree nuevo | **25/25 · 0 fail** |
+| mi árbol, mismo momento | **23/25 · 2 fail** |
+
+**No venían de `main` ni eran de la 411: eran míos, y el guard tenía razón.** Lo dice él mismo:
+
+```
+src/modules/billing/domain/correoDeFacturaEnviado.ts:30  MARCA_CORREO
+→ DECLÁRALO en `_huerfanos-declarados.mjs` con su categoría y su motivo.
+240 !== 241
+```
+
+Exporté `MARCA_CORREO` y **no lo importaba nadie**: un export inalcanzable. El segundo rojo no era
+otro defecto, era **su consecuencia aritmética** — el censo de huérfanos pasaba de 240 a 241 y las
+categorías dejaban de sumar. Entender eso era la diferencia entre arreglar uno y arreglar el par.
+
+**Comprobado por AST antes de tocar, no leído:** 1.649 ficheros (`src/*.ts` + `dist/*.js` +
+`tests/*.mjs` + `scripts/*.mjs`), **0 usos ajenos** de `MARCA_CORREO` — las siete apariciones son
+de su propio fichero y su propio `dist/`. Con control positivo: sobre `marcarCorreoEnviado`, que sí
+se importa fuera, el mismo instrumento ve **5** usos ajenos, así que el cero de arriba no es
+ceguera.
+
+**El arreglo fue quitarle el `export`**, no declararlo en `_huerfanos-declarados.mjs`: esa lista es
+para lo que TIENE que estar sin llamador —como `borrarMerchant` y la promesa del RGPD—, y meter
+ahí algo que sobra es cambiar lo que el guard exige en vez de cambiar el código (regla 41).
+
+**Y se comprobó que el cambio ENTRÓ**, porque una mutación que no entra y una cobertura que no
+existe dan la misma salida: el fuente ya no casa `^export const MARCA_CORREO`, la constante sigue
+declarada, y `dist/` ya no emite `exports.MARCA_CORREO` pero sigue emitiendo las dos funciones.
+
+**Los dos rojos, uno por uno, antes y después:**
+
+| caso | antes | después |
+|---|---|---|
+| `CONTROL POSITIVO: los 190 de hoy, DECLARADOS, no hacen ruido` | ROJO | ✅ verde |
+| `las categorías SUMAN el total` | ROJO | ✅ verde |
+| recuento del fichero | 2 rojos de 25 | **0 de 25** |
+
+> ⚠️ **Y una sonda mía que mentía, dicha porque casi me la creo:** la primera comparación buscaba
+> el nombre del caso con un `includes` y casaba la línea `# Subtest:` en vez de la del veredicto,
+> así que imprimía «🔴 SIGUE» sobre un fichero que ya daba 25/25. El recuento del TAP la desmintió.
+> Un instrumento que mira la línea equivocada no da error: da un veredicto.
+
+## 9 · 🔴 LA TANDA COMPLETA NO TERMINÓ — y eso se nombra, no se redondea
+
+Con el export quitado se relanzó con `--test-concurrency=1` y **tope duro de 25 minutos**. Lo
+medido, para SCRUM-858 (este caso es uno de los dos que lo abrieron; aquí se **apunta**, no se
+investiga — otro carril):
+
+```
+ficheros ..................... 796
+arranque ..................... 2026-09-15T14:16:18.227Z
+ultimo byte del TAP .......... 2026-09-15T14:41:18.190Z   (1.527.488 bytes)
+ultimo fichero nombrado ...... scrum82-zip-verifactu.test.mjs
+minutos ...................... 25 (tope)
+recuento al corte ............ ok 6216 · not ok 0
+salida ....................... 124 (tope, no veredicto)
+```
+
+> **LA TANDA COMPLETA NO TERMINÓ.** «ok 6216 · not ok 0» **no es un verde**: es *cero fallos entre
+> los 6.216 que llegaron a correr*. Lo que no corrió no sale por ninguna parte. Vacía y no-medida
+> se leen igual y significan lo contrario.
+
+⚠️ **Y esta vez NO se colgó, que es un dato distinto del de las 11:08Z.** Aquella se quedó 161
+minutos sin tocar el TAP; ésta lo estaba escribiendo **en el segundo del corte** (último byte a las
+14:41:18, tope a las 14:41:18). O sea: con concurrencia 1 la tanda no se atasca, va lenta — 6.216
+casos en 25 minutos. Son dos fenómenos y se entregan separados.
+
+### Los tres intentos de lanzarla con concurrencia 1, y por qué sólo valió el tercero
+
+| vía | qué pasó |
+|---|---|
+| `--test-concurrency=1` en `NODE_OPTIONS` | **no se admite**: `--test-concurrency= is not allowed in NODE_OPTIONS` |
+| `spawn` con la lista por array de argumentos, sin shell | **`ENAMETOOLONG`**: 34.964 caracteres contra el tope de 32.767 de Windows |
+| **API `run({ files, concurrency: 1 })`** | la única que no pasa por línea de órdenes |
+
+Es el muro de [SCRUM-850](SCRUM-850.md) por un lado nuevo: allí el shell se comía el código de
+salida, aquí la lista de 796 ficheros no cabe **ni siquiera sin shell**. Queda escrito donde lo
+busque quien vuelva a intentarlo.
+
+### 🔴 Un fallo mío, corregido antes de que contaminara la medición
+
+El primer lanzador lo dejé **dentro del repositorio** mientras corría la tanda. Medido antes de
+seguir: **dos tests hacen `readdirSync` sobre la raíz** (`scrum233` y `scrum797`), así que ese
+fichero podía inventarse un rojo — exactamente el defecto de [SCRUM-824](SCRUM-824.md) y
+exactamente el lío del que acababa de salir con la 411. El lanzador se movió **fuera del árbol** y
+la medición buena se hizo con `git status` enseñando sólo los cuatro ficheros del ticket.
+
+## 10 · Qué se entrega, y con qué nombre
+
+| | |
+|---|---|
+| el guard del ticket, suelto | **5 tests · 5 pass · 0 fail · `# skipped 0`** ✅ |
+| su rojo, ejecutado antes del arreglo | `3 !== 1`, pegado en §2 ✅ |
+| su mutación | tumba dos casos; fuente **y `dist/`** restaurados `IDÉNTICO` ✅ |
+| `SCRUM-411` | **25/25**, los dos rojos míos caídos ✅ |
+| `npm run guards:entrada` | **22 tests · 22 pass · 0 fail · 0 skipped** ✅ |
+| `npm run build` (`tsc`) | **0** ✅ |
+| **la tanda completa** | **NO TERMINÓ** (§9) 🔴 |

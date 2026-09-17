@@ -272,11 +272,18 @@
       scroll.className = 'table-scroll';
       body.appendChild(scroll);
       const tabla = document.createElement('table');
-      tabla.className = 'table table--cards-mobile';
+      // SCRUM-831 · `table--albaranes` NO es un componente nuevo: es el modificador que le da al
+      // Trabajo su propia área en la tarjeta de móvil, ahora que las acciones recuperan la suya.
+      // Sin él habría que cambiar la rejilla COMPARTIDA y se moverían las cuatro listas hermanas
+      // de golpe — el mismo razonamiento (y el mismo patrón) que `.table--trabajos` en SCRUM-727b.
+      tabla.className = 'table table--cards-mobile table--albaranes';
       scroll.appendChild(tabla);
       const thead = document.createElement('thead');
+      // SCRUM-831 · entra «Acciones», y NO es un rótulo nuevo: es el que ya usan en producción
+      // `jobsView.js` y `quotesListView.js` para esta misma columna. Se copia tal cual en vez de
+      // estrenar un sinónimo (regla 30). Las otras seis no se tocan.
       thead.innerHTML = '<tr>' +
-        ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado']
+        ['Nº', 'Emisión', 'Entrega', 'Cliente', 'Trabajo', 'Estado', 'Acciones']
           .map((c) => '<th>' + esc(c) + '</th>').join('') + // APROBADAS tal cual
         '</tr>';
       tabla.appendChild(thead);
@@ -339,7 +346,7 @@
         const enlaceNum = document.createElement('a');
         enlaceNum.href = '#';
         enlaceNum.textContent = f.numero;
-        enlaceNum.style.cssText = 'font-weight:600;color:var(--green-700)';
+        enlaceNum.className = 'alb-numero';   // SCRUM-831: a la hoja, era style.cssText
         enlaceNum.addEventListener('click', (e) => {
           e.preventDefault();
           // C2 (SCRUM-302) ya está en main: hay página de detalle a la que llevar.
@@ -376,13 +383,26 @@
         // acciones de verdad, chocan. Entonces las acciones se quedan con `cell-actions` y el
         // Trabajo necesita RANURA PROPIA en la rejilla (area nueva, propuesta a DESIGN.md). No se
         // comparte: dos cosas en la misma area es como estaba esta tabla antes de tener clases.
+        //
+        // ── 🔴 SCRUM-831 · ESE DÍA ES HOY, Y SE HACE LO QUE ESE COMENTARIO DEJÓ ESCRITO ──────
+        //
+        // El censo de las cinco listas midió que ésta era la ÚNICA con `.cell-actions` ocupada por
+        // un enlace a otra pantalla, y la única con CERO acciones en la fila. Se devuelve la
+        // ranura: el Trabajo pasa a `cell-trabajo`, con su propia área en la rejilla de móvil
+        // (`.table--albaranes`, el mismo modificador ACOTADO que usó `.table--trabajos` en
+        // SCRUM-727b para no mover de golpe a las cuatro listas hermanas).
+        //
+        // Sacarlo de la ranura de acciones NO es quitarlo: sigue enlazado, sigue a ancho completo
+        // en la tarjeta y sigue cumpliendo los 44 px de AB6 con su propia regla.
         const tdTrabajo = document.createElement('td');
-        tdTrabajo.className = 'cell-actions';
+        tdTrabajo.className = 'cell-trabajo';
         if (f.jobId != null) {
           const enlaceJob = document.createElement('a');
           enlaceJob.href = '#';
           enlaceJob.textContent = f.trabajo || ('#' + f.jobId);
-          enlaceJob.style.cssText = 'color:var(--green-700)';
+          // SCRUM-831 · a la hoja. Era `style.cssText`, y el trinquete de estilos en línea sólo
+          // baja: tres de esta vista se van con este ticket.
+          enlaceJob.className = 'alb-enlace';
           enlaceJob.addEventListener('click', (e) => {
             e.preventDefault();
             if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: f.jobId });
@@ -402,12 +422,72 @@
         const cls = claseCobro(f.estadoFacturacion);
         if (cls) {
           const chip = document.createElement('span');
-          chip.className = cls;
-          chip.style.cssText = 'margin-left:6px';
+          // SCRUM-831 · el margen a la hoja: era `style.cssText`.
+          chip.className = cls + ' alb-chip-cobro';
           chip.textContent = f.estadoFacturacion;
           tdEstado.appendChild(chip);
         }
         tr.appendChild(tdEstado);
+
+        // ══ 🔴 SCRUM-831 · LA COLUMNA DE ACCIONES, QUE ESTA LISTA NO TENÍA ═══════════════════
+        //
+        // Medido en el censo de las cinco listas: era la ÚNICA con CERO acciones en la fila. Y lo
+        // caro es que **la pantalla ya sabía qué tocaba**: pinta el estado en su columna y lo
+        // cuenta en sus filtros (`Borradores · Emitidos · Firmados`), y no ofrecía el siguiente
+        // paso de ninguno.
+        //
+        // 🔒 Una pantalla se ordena por lo que se hace en ella. Ésta estaba ordenada por lo que se
+        // consulta.
+        //
+        // ── QUÉ SE PINTA: la primaria de su estado, y NADA MÁS ───────────────────────────────
+        // Sale de `primariaDeAlbaran` (`albaranAccion.js`), que lee el registro de SCRUM-302. No
+        // se decide aquí ni una acción: si se decidiera, esta lista sería la tercera fuente de la
+        // misma tabla — que es el defecto que ese registro existe para impedir.
+        //
+        // ⚠️ SIN PRIMARIA NO SE PINTA NADA, y eso es información: en `firmado` sin nada pendiente
+        // no hay siguiente paso. Rellenar la celda para que la columna «se vea completa» sería
+        // inventar un paso que no toca.
+        //
+        // ── POR QUÉ NAVEGA Y NO EJECUTA ──────────────────────────────────────────────────────
+        // 🔒 Un acto irreversible no es nunca la acción principal. **Emitir no tiene vuelta
+        // atrás**: `canTransitionAlbaran` sólo admite `borrador → emitido → firmado`, y emitir
+        // quema número de serie. Un botón que lo dispara con un clic en una lista de veinte filas
+        // es exactamente lo que ese canon prohíbe.
+        //
+        // Así que la fila DICE qué toca y LLEVA hasta donde se hace, que es el precedente que el
+        // fundador aprobó en SCRUM-366 y que la ficha del Trabajo ya usa en sus filas de
+        // documento: un solo ejecutor, en el detalle. Duplicar aquí la ejecución sería el mismo
+        // defecto un nivel más abajo.
+        const tdAcciones = document.createElement('td');
+        tdAcciones.className = 'cell-actions';
+        const primaria = typeof primariaDeAlbaran === 'function' ? primariaDeAlbaran(f) : null;
+        // El rótulo sale de `ROTULOS_ALBARAN` (albaranDetailView.js), que los tiene APROBADOS desde
+        // SCRUM-302. Este ticket no estrena ni una palabra (regla 30).
+        const rotulo = primaria && typeof ROTULOS_ALBARAN !== 'undefined' ? ROTULOS_ALBARAN[primaria.id] : null;
+        // ── 🔴 SIN RÓTULO FIRMADO NO SE PINTA BOTÓN, Y NO ES UN OLVIDO ───────────────────────
+        //
+        // `btnConvertirFactura` —la primaria de un albarán FIRMADO, sin precios y con presupuesto
+        // detrás— **no tiene rótulo aprobado**: el detalle lo pinta hoy con el marcador
+        // `[PENDIENTE microcopy oficial]`. Aquí no se pinta ni el marcador ni el identificador:
+        //   · el identificador es una tubería interna asomando a la pantalla;
+        //   · el marcador lo caza `guard:marcadores-en-pantalla` (SCRUM-722), y con razón.
+        // Y tampoco se inventa un sinónimo para tapar el hueco (regla 30).
+        //
+        // Así que ese caso se queda SIN acción hasta que el fundador firme el texto — propuesto en
+        // `docs/master/SCRUM-831.md`— y entonces son estas dos líneas. El hueco no es silencioso:
+        // `guard:albaranes-con-acciones` lo NOMBRA en cada pasada, así que no se puede olvidar.
+        if (primaria && rotulo) {
+          const b = document.createElement('button');
+          b.className = 'btn-secondary btn-sm';
+          b.textContent = rotulo;
+          b.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: f.id });
+          });
+          tdAcciones.appendChild(b);
+        }
+        tr.appendChild(tdAcciones);
 
         return tr;
       }

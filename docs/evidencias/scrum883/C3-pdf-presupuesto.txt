@@ -1,0 +1,23 @@
+Presupuesto
+Presupuesto #3
+Emisor: QA Staging S.L.
+C/ Staging 1, 28000 Madrid
+WhatsApp 34600000001
+Cliente: SCRUM-883 Cliente electricista
+Tel: 34600883883
+Email: scrum883@example.com
+SCRUM-883 C3
+Detalle del presupuesto:
+Concepto Cant. Precio IVA% Total
+Punto de luz 8 24,95 21% 241,52
+Base de enchufe schuko 11 19,99 10% 241,88
+Boletín eléctrico (CIE) 1 120,00 21% 145,20
+Suma de líneas: 539,49 EUR
+Descuento: -51,93 EUR
+Descuento global: -25,00 EUR
+Base imponible: 462,56 EUR
+IVA 21%: 57,71 EUR
+IVA 10%: 18,78 EUR
+Total presupuesto: 539,05 EUR
+Presupuesto generado automáticamente por YaQu — válido salvo indicación en contrario.
+

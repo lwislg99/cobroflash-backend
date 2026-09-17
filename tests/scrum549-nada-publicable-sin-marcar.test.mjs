@@ -8,6 +8,7 @@ import test from 'node:test';
 import { ejecutableDe } from './_guard-texto.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -20,7 +21,7 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
 test('SCRUM-549 · 🔴 SUELO: sin elementos ocultos, el censo se declara CIEGO', () => {
-  const vacio = fs.mkdtempSync(path.join(RAIZ, 'tests', '.tmp-549-'));
+  const vacio = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-549-${process.pid}-`));
   try {
     fs.mkdirSync(path.join(vacio, 'public'), { recursive: true });
     fs.writeFileSync(path.join(vacio, 'public', 'index.html'), '<html><body><p>nada oculto</p></body></html>');
@@ -96,7 +97,7 @@ test('SCRUM-549 · ✅ CONTROL POSITIVO: el copy YA aprobado no dispara el guard
 });
 
 test('SCRUM-549 · AUTOPRUEBA: un bloque nuevo, oculto y sin marcar, SÍ se ve', () => {
-  const dir = fs.mkdtempSync(path.join(RAIZ, 'tests', '.tmp-549b-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-549b-${process.pid}-`));
   try {
     fs.mkdirSync(path.join(dir, 'public'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'public', 'index.html'),

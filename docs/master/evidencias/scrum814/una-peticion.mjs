@@ -1,27 +1,31 @@
-// SCRUM-814 · UNA petición, disparada en un INSTANTE ACORDADO.
+// SCRUM-814 · UNA petición a UNO de los tres caminos, disparada en un INSTANTE ACORDADO.
 //
-//   node una-peticion.mjs <RAIZ> <quoteId> <merchantId> <epochMsDeSalida> <etiqueta>
+//   node una-peticion.mjs <RAIZ> <ficheroDelRouter> <ruta> <reqEnJSON> <epochMsDeSalida> <etiqueta>
 //
 // Va en su propio proceso a propósito. `Promise.all` dentro de un solo node NO es «dos peticiones
 // simultáneas»: comparten bucle de eventos y pool de conexiones, y la primera medición así dio un
-// falso «no se reproduce». Dos procesos con la misma hora de salida sí es una carrera.
+// falso «no se reproduce» — un falso negativo en el camino del dinero, que es el peor resultado
+// posible porque cierra la pregunta. Dos procesos con la misma hora de salida sí es una carrera.
 //
-// Lo lanza `carrera-de-tramos.mjs`, que es quien valida el destino de la base. La URL llega por
+// Lo lanza quien monta el banco, que es quien valida el destino de la base. La URL llega por
 // entorno heredado; aquí no se escribe ninguna.
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const [RAIZ, quoteId, merchantId, salida, etiqueta] = process.argv.slice(2);
+const [RAIZ, ficheroRouter, ruta, reqJSON, salida, etiqueta] = process.argv.slice(2);
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
 
 const { prisma } = await import(DIST + 'core/db/prisma.js');
-const mod = await import(DIST + 'modules/system/app/routes/quotesAdmin.routes.js');
+// `src/…/x.routes.ts` → `dist/…/x.routes.js`
+const mod = await import(DIST + ficheroRouter.replace(/^src\//, '').replace(/\.ts$/, '.js'));
 const router = mod.default?.default ?? mod.default ?? mod.router;
-const capa = router?.stack?.find((c) => c.route && c.route.path === '/:id/invoice' && c.route.methods.post);
+const capa = router?.stack?.find((c) => c.route && c.route.path === ruta && c.route.methods.post);
 if (!capa) {
-  console.log(JSON.stringify({ etiqueta, code: -1, cuerpo: { error: 'NO ENCUENTRO POST /:id/invoice' } }));
+  console.log(JSON.stringify({ etiqueta, code: -1, cuerpo: { error: 'NO ENCUENTRO POST ' + ruta } }));
   process.exit(3);
 }
+// El ÚLTIMO de la cadena es el handler; los de delante son middlewares (`requireRole`, el
+// limitador de decisiones) y no son lo que se está midiendo.
 const handler = capa.route.stack.map((s) => s.handle).pop();
 
 // Conexión ya abierta ANTES de la hora. Si el primer viaje a la base se pagara dentro de la
@@ -38,13 +42,10 @@ res.status = (c) => { res.code = c; return res; };
 res.json = (b) => { res.cuerpo = b; return res; };
 res.send = (b) => { res.cuerpo = b; return res; };
 
+const base = { params: {}, body: {}, query: {}, teamMemberId: null, ...JSON.parse(reqJSON) };
 const t0 = Date.now();
 try {
-  await handler(
-    { params: { id: String(quoteId) }, merchantId: Number(merchantId), teamMemberId: null, body: {}, query: {} },
-    res,
-    (e) => { throw e; },
-  );
+  await handler(base, res, (e) => { throw e; });
 } catch (e) {
   res.code = 500;
   res.cuerpo = { error: 'excepcion', mensaje: e.message };

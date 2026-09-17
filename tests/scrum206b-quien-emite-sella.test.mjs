@@ -36,6 +36,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
@@ -187,8 +188,8 @@ test('SCRUM-206b · los llamadores de `emitInvoice` sellan (la delegación no es
 test('SCRUM-206b (autoprueba) · el escáner ve una emisión sin sellar, y no confunde la buena', () => {
   // Un guard que nunca se ha visto en rojo es decoración. Dos ficheros sintéticos: uno que
   // emite sin sellar (tiene que salir) y otro con el patrón correcto (no puede salir).
-  const malo = path.join(RAIZ, 'tests', '__tmp-emite-sin-sellar.ts');
-  const bueno = path.join(RAIZ, 'tests', '__tmp-emite-y-sella.ts');
+  const malo = path.join(os.tmpdir(), `yaqu-206b-${process.pid}-emite-sin-sellar.ts`);
+  const bueno = path.join(os.tmpdir(), `yaqu-206b-${process.pid}-emite-y-sella.ts`);
   fs.writeFileSync(malo, [
     'export async function x(prisma: any) {',
     '  const inv = await prisma.$transaction(async (tx: any) => {',

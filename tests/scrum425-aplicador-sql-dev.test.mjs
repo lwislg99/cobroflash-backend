@@ -105,10 +105,11 @@ test('SCRUM-425 · 🔴 ROJO: lo que la lista blanca NO conoce se rechaza — in
   }
 });
 
-test('SCRUM-425 · la lista es BLANCA: solo tres formas declaradas, y el rojo las enumera', () => {
+test('SCRUM-425 · la lista es BLANCA: solo las formas declaradas, y el rojo las enumera', () => {
   assert.deepEqual(
     PERMITIDAS.map((p) => p.nombre),
-    ['ALTER TABLE … ADD COLUMN', 'CREATE [UNIQUE] INDEX', 'CREATE TABLE … ( … )'],
+    ['ALTER TABLE … ADD COLUMN', 'CREATE [UNIQUE] INDEX', 'CREATE TABLE … ( … )',
+      'ALTER TABLE … ALTER COLUMN … DROP DEFAULT'],
     '🔴 la lista de formas permitidas ha cambiado. Ampliarla es una decisión a conciencia: si de ' +
     'verdad hace falta otra forma, actualiza este test CON su caso — no al revés.',
   );
@@ -147,6 +148,39 @@ test('SCRUM-475 · 🔴 y la ampliación NO abre la puerta a nada más', () => {
     assert.equal(revisar(sentencia, { ruta: 'x.sql' }).ok, false,
       `🔴 PASA algo que no debería (${porque}): «${sentencia}». La ampliación de SCRUM-475 se ` +
       'acotó a `CREATE TABLE … ( … )` justamente para que esto siguiera cayendo.');
+  }
+});
+
+// ── LA CUARTA FORMA · SCRUM-797 (7-sep-2026) ────────────────────────────────────────────────
+//
+// EL CASO que la trajo: quitar el `DEFAULT 1` de `customers.merchant_id`. Es la primera forma NO
+// ADITIVA que entra en la lista, y entra con su medición: aplicada de verdad en `yaqu_dev_javier`
+// dentro de una transacción revertida, la huella `sha256(id, merchant_id)` no se movió
+// (`docs/MIGRATIONS_PENDING.md`). Cambia el catálogo, no las filas.
+
+test('SCRUM-797 · ALTER COLUMN … DROP DEFAULT se ACEPTA, y con su nombre de forma', () => {
+  const r = revisar('ALTER TABLE "customers" ALTER COLUMN "merchant_id" DROP DEFAULT;', { ruta: 'x.sql' });
+  assert.equal(r.ok, true, `🔴 la forma que trajo esta ampliación no pasa: ${r.mensaje}`);
+  assert.equal(r.permitidas[0].forma, 'ALTER TABLE … ALTER COLUMN … DROP DEFAULT');
+});
+
+test('SCRUM-797 · 🔴 ROJO: se amplió la FORMA, no la familia `ALTER COLUMN`', () => {
+  // 🔴 ESTE ES EL TEST QUE DISTINGUE AMPLIAR DE APAGAR, y es el que pidió el asesor al firmar la
+  // ampliación. `ALTER COLUMN` cubre también quitar un `NOT NULL` y cambiar el `TYPE`: los dos
+  // pueden perder datos o reescribir la tabla entera. Si al ensanchar pasara cualquier
+  // `ALTER COLUMN`, la lista habría dejado de ser blanca y nadie se enteraría —el SQL que sí
+  // hacía falta seguiría aplicándose igual de bien—.
+  const casos = [
+    ['ALTER TABLE "customers" ALTER COLUMN "merchant_id" DROP NOT NULL;', 'quitar un NOT NULL: la vecina más parecida'],
+    ['ALTER TABLE "customers" ALTER COLUMN "merchant_id" TYPE TEXT;', 'cambiar el TYPE reescribe la tabla'],
+    ['ALTER TABLE "customers" ALTER COLUMN "merchant_id" SET DEFAULT 1;', 'PONER un defecto no es quitarlo, y no está medido'],
+    ['ALTER TABLE "customers" DROP COLUMN "merchant_id";', 'DROP COLUMN, que sí borra datos'],
+    ['ALTER TABLE "customers" ALTER COLUMN "merchant_id" DROP DEFAULT; DROP TABLE "invoices";', 'un DROP escondido tras la forma válida'],
+  ];
+  for (const [sentencia, porque] of casos) {
+    assert.equal(revisar(sentencia, { ruta: 'x.sql' }).ok, false,
+      `🔴 PASA algo que no debería (${porque}): «${sentencia}». La ampliación de SCRUM-797 se ` +
+      'acotó a `… DROP DEFAULT` justamente para que esto siguiera cayendo.');
   }
 });
 

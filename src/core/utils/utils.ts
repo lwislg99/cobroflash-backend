@@ -159,7 +159,7 @@ export function normalizePhone(input?: string | null): string {
   };
 
   /** El precio de una línea DESPUÉS de su descuento. Sin `dto`, es el precio tal cual. */
-  function precioConDto(price: unknown, dto: unknown): number {
+  export function precioConDto(price: unknown, dto: unknown): number {
     const p = Number(price);
     if (!Number.isFinite(p)) return 0;
     const d = Number(dto);
@@ -167,6 +167,36 @@ export function normalizePhone(input?: string | null): string {
     return p * (1 - Math.min(100, d) / 100);
   }
   
+  /**
+   * SCRUM-887 · EL DESCUENTO GLOBAL QUE SE FIRMA, EN CÉNTIMOS: las bases por tipo de IVA (línea a
+   * línea, con su `dto`, sin cabeceras) y el importe a quitar, limitado a la suma de esas bases.
+   * `null` si no hay global o no hay base de la que quitarlo — en los dos casos `calcTotal` lo ignora.
+   *
+   * Vive aquí y la usan `calcTotal` y la factura (`lineasParaFacturar`): lo que se cobra descuenta
+   * el MISMO importe que se firmó porque sale de la MISMA función, no de una copia que pueda divergir.
+   */
+  export function descuentoGlobalEnCentimos(
+    lines: unknown[],
+    descuentoGlobal: unknown,
+  ): { tipos: Array<[number, number]>; sumaBases: number; aRepartir: number } | null {
+    const global = Number(descuentoGlobal);
+    if (!Number.isFinite(global) || global <= 0) return null;
+
+    const porTipo = new Map<number, number>();
+    for (const l of lineasQueSuman(lines as Record<string, unknown>[])) {
+      const rate = Math.round((Number(l.tax) || 0) * 100);
+      const baseCents = Math.round(
+        Number(l.qty) * precioConDto(l.price, l.dto) * 100,
+      );
+      porTipo.set(rate, (porTipo.get(rate) || 0) + (Number.isFinite(baseCents) ? baseCents : 0));
+    }
+    const tipos = [...porTipo.entries()];
+    const sumaBases = tipos.reduce((a, [, c]) => a + c, 0);
+    if (sumaBases <= 0) return null;
+
+    return { tipos, sumaBases, aRepartir: Math.min(Math.round(global * 100), sumaBases) };
+  }
+
   /**
    * El total de un presupuesto.
    *
@@ -205,22 +235,10 @@ export function normalizePhone(input?: string | null): string {
     //
     // ⚠️ REGLA DEL PRESUPUESTO, QUE NO ES DOCUMENTO FISCAL. Antes de que un descuento llegue a
     // una FACTURA, este prorrateo va a la asesoría con SCRUM-619, 623 y 624.
-    const global = Number(descuentoGlobal);
-    if (!Number.isFinite(global) || global <= 0) return Math.round(base * 100) / 100;
+    const reparto = descuentoGlobalEnCentimos(suman, descuentoGlobal);
+    if (!reparto) return Math.round(base * 100) / 100;
 
-    const porTipo = new Map<number, number>();
-    for (const l of suman) {
-      const rate = Math.round((Number(l.tax) || 0) * 100);
-      const baseCents = Math.round(
-        Number(l.qty) * precioConDto(l.price, (l as Record<string, unknown>).dto) * 100,
-      );
-      porTipo.set(rate, (porTipo.get(rate) || 0) + (Number.isFinite(baseCents) ? baseCents : 0));
-    }
-    const tipos = [...porTipo.entries()];
-    const sumaBases = tipos.reduce((a, [, c]) => a + c, 0);
-    if (sumaBases <= 0) return Math.round(base * 100) / 100;
-
-    const aRepartir = Math.min(Math.round(global * 100), sumaBases);
+    const { tipos, sumaBases, aRepartir } = reparto;
     let quitado = 0;
     let acumulado = 0;
     for (let i = 0; i < tipos.length; i++) {

@@ -14,6 +14,8 @@ import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-
 // cálculo sigue siendo `calcVatBreakdown`; estos módulos solo deciden qué se pinta.
 import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentacionIva';
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
+// SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
+import { numeroConRevision } from '../../../quotes/domain/revision';
 // SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
 import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
@@ -155,6 +157,18 @@ export type ParamsPdfPresupuesto = {
   // A1.2: número visible por merchant (el fichero sigue nombrándose con el id
   // global para no romper pdfUrl existentes). Si falta, se muestra el id.
   quoteNumber?: number | null;
+  // SCRUM-688 · LA REVISIÓN, COMO DATO PROPIO — y por eso `quoteNumber` sigue siendo `number`.
+  //
+  // El papel tenía que poder decir `#2004226.1`, y la salida fácil era ensanchar `quoteNumber` a
+  // texto. Eso es lo que habría arrastrado a la FACTURA al cambio, porque un número que a veces
+  // es texto deja de poder sumarse, ordenarse ni compararse en ningún sitio. Se pasa la revisión
+  // aparte y el rótulo se compone abajo, dentro de `generateQuotePdf`.
+  //
+  // ⚠️ OPCIONAL AQUÍ, OBLIGATORIO PARA QUIEN CONSTRUYE LOS PARÁMETROS: `presupuestoParaPdf.ts`
+  // deriva su tipo con `Completo<ParamsPdfPresupuesto>`, que quita el `?` de todas las claves. Así
+  // que este campo no se puede olvidar en el constructor —no compila— y a la vez no rompe a nadie
+  // que llame a este generador con un objeto de antes. La `?` es compatibilidad, no laxitud.
+  revision?: number | null;
   merchant: {
     name: string | null;
     legalName?: string | null;
@@ -218,6 +232,15 @@ export type ParamsPdfPresupuesto = {
   }>;
   signatureData?: string | null;
   signedAt?: Date | null;
+  // SCRUM-805 · el sobre sellado al firmar (`Quote.evidenciaFirma`). Opcional y nullable: los
+  // presupuestos firmados ANTES de que esto existiera no lo tienen y su PDF sale como siempre.
+  // ⚠️ `ip` y `ua` viven en el sobre pero NO se pintan nunca: son dato personal.
+  evidencia?: {
+    canal?: string | null;
+    firmadoAt?: string | null;
+    firmante?: string | null;
+    contentHash?: string | null;
+  } | null;
   country?: string | null;
   // SCRUM-647 · el NOMBRE del impuesto, igual que en la factura (SCRUM-623): un DATO, no una
   // constante de la maqueta. Sin él, el documento sale como hasta hoy.
@@ -718,6 +741,28 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO;
   const QUOTE_LABEL = locale.quote; // "Presupuesto" o "Cotización"
 
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-688 · EL NÚMERO QUE VE EL CLIENTE, CON SU REVISIÓN
+  //
+  // Antes esto era `params.quoteNumber ?? params.quoteId` a pelo, y el papel de una revisión
+  // salía con el MISMO `#2004226` que el original. Medido el 16-sep-2026 generando los dos:
+  // las dos hojas idénticas. El cliente recibía dos documentos que se llaman igual, que es
+  // exactamente lo que las revisiones existen para evitar.
+  //
+  // 🔴 EL NÚMERO NO SE COMPONE AQUÍ: lo compone `numeroConRevision`, que es donde ya vivía.
+  // Escribir `${base}.${revision}` en este fichero sería el segundo sitio que forma el mismo
+  // número, y dos sitios que forman un número acaban formándolo distinto. La regla «sólo con
+  // `revision > 0`» también es suya —devuelve el número pelado cuando no la hay—, así que el
+  // original sigue siendo `#2004226` sin que este documento tenga que saber por qué.
+  //
+  // El respaldo al `quoteId` se conserva igual que estaba: un presupuesto sin número visible
+  // sigue enseñando su id, y sobre un id NO se pinta revisión —no sería un número de documento
+  // sino una clave interna con un sufijo pegado.
+  // ═══════════════════════════════════════════════════════════════════════════════════
+  const numeroVisible = params.quoteNumber == null
+    ? String(params.quoteId)
+    : numeroConRevision({ numero: String(params.quoteNumber), revision: Number(params.revision ?? 0) });
+
   const logoBuf = await loadLogoBuffer(params.merchant.logoUrl);
 
   const doc = new PDFDocument({ size: 'A4', margin: 50 });
@@ -737,7 +782,7 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   doc.fontSize(18).font('Helvetica-Bold').fillColor('#0f172a')
     .text(QUOTE_LABEL, M, hY, { width: W, align: 'right' });
   doc.fontSize(11).font('Helvetica').fillColor('#64748b')
-    .text(`${QUOTE_LABEL} #${params.quoteNumber ?? params.quoteId}`, { align: 'right' });
+    .text(`${QUOTE_LABEL} #${numeroVisible}`, { align: 'right' });
   doc.fillColor('#000');
 
   doc.y = Math.max(doc.y, hY + (logoBuf ? 46 : 0));
@@ -1093,6 +1138,71 @@ if (params.signatureData) {
   } catch (e) {
     // Si la imagen falla, continuamos sin firma
   }
+}
+
+// ── SCRUM-805 · Certificado de evidencias (solo si hay firma SELLADA) ─────────────────
+//
+// Prueba QUIÉN firmó, CUÁNDO (reloj del servidor), por qué CANAL y sobre qué CONTENIDO (hash
+// SHA-256 canónico, no del PDF). ⚠️ NUNCA se imprime ip/ua (dato personal): quedan solo en la BD
+// para requerimiento legal. La fuerza probatoria final la valora la autoridad competente.
+//
+// 🔴 LOS LITERALES SON LOS DEL ALBARÁN, COPIADOS BYTE A BYTE (SCRUM-68, aprobados). No se
+// reescriben, no se acortan, no se les cambia la puntuación: un literal aprobado que se «mejora»
+// al copiarlo es un literal nuevo, y eso necesitaría firma del fundador (regla 30). Los ata el
+// guard de `tests/scrum805-que-firmo-el-cliente.test.mjs`, que los compara contra
+// `albaranPdf.service.ts` LEYENDO EL FICHERO — no contra una copia escrita de memoria.
+//
+// ⛔ Y NO ES VERIFACTU: la huella fiscal es la de la FACTURA, y a ésa no se le añade nada. Aquí
+// se certifica un documento NO FISCAL que el cliente firma, igual que el albarán (regla 24).
+if (params.evidencia && params.evidencia.contentHash) {
+  const ev = params.evidencia;
+  if (doc.y + 120 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+  doc.moveDown(0.8);
+  const boxY = doc.y;
+  // `firmadoAt` viene del sobre, que es Json: si faltara, `new Date(undefined)` daría «Invalid
+  // Date» impreso en el papel. Se cae al vacío y el resto del certificado se pinta igual — un
+  // sello sin fecha es un hueco, no una razón para tirar la prueba de integridad.
+  const sello = ev.firmadoAt
+    ? new Date(ev.firmadoAt).toLocaleString('es-ES', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    })
+    : '—';
+  const canalTxt = ev.canal === 'remoto' ? 'Firma remota (enlace por WhatsApp)' : 'Firma presencial (in situ)';
+  const rows: Array<[string, string]> = [
+    ['Firmante', ev.firmante || 'Cliente'],
+    ['Sello temporal', `${sello} (hora del servidor)`],
+    ['Canal', canalTxt],
+    ['Integridad', `SHA-256: ${ev.contentHash}`],
+  ];
+  doc.fontSize(9).font('Helvetica-Bold').fillColor('black').text('Certificado de evidencias de la firma', CONTENT_X, boxY);
+  doc.moveDown(0.3);
+  for (const [k, v] of rows) {
+    const y = doc.y;
+    doc.fontSize(7.5).font('Helvetica-Bold').fillColor('#666').text(k, CONTENT_X, y, { width: 90 });
+    doc.fontSize(7.5).font('Helvetica').fillColor('#444').text(v, CONTENT_X + 92, y, { width: CONTENT_W - 92 });
+    doc.moveDown(0.15);
+  }
+  doc.moveDown(0.2);
+  doc.fontSize(6.5).font('Helvetica-Oblique').fillColor('#666').text(
+    'El hash certifica la integridad del contenido firmado (no del archivo PDF). YaQu conserva ' +
+    'evidencias técnicas adicionales asociadas a esta firma, disponibles a requerimiento legal. ' +
+    'La valoración de su fuerza probatoria corresponde a la autoridad competente.',
+    CONTENT_X, doc.y, { width: CONTENT_W },
+  );
+  doc.fillColor('#000').font('Helvetica');
+  doc.moveDown(0.5);
+
+  // El rótulo de no-fiscalidad, EXACTO como el del albarán. Medido: el PDF del presupuesto no
+  // tenía ninguno (el de la línea 668 es del justificante de cobro, otra función), así que aquí
+  // no duplica nada — lo dice por primera vez.
+  if (doc.y + 50 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+  doc.moveDown(1);
+  doc.fontSize(9).font('Helvetica-Bold').fillColor('#666').text(
+    'Documento sin validez fiscal. No es una factura.',
+    CONTENT_X, doc.y, { width: CONTENT_W, align: 'center' },
+  );
+  doc.font('Helvetica').fillColor('black');
 }
 
 // ── SCRUM-656 (T7) · LAS CLÁUSULAS DE CIERRE ─────────────────────────────────────────

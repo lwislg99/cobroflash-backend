@@ -132,7 +132,27 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // real— y lo abre por `file://` desde una variable, así que de aquí no sale ningún destino. Su
   // solape es invisible para este detector y se declara en vez de contarse como «no tiene».
   // MEDIDO: la página la fabrica él en un `mkdtemp` y la borra al acabar; no la comparte con nadie.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil', 'guard:marcadores-en-pantalla'],
+  // SCRUM-819 · entra `guard:rastro-del-menu`. Su destino tampoco se deriva: levanta un servidor
+  // propio en un PUERTO EFÍMERO y navega a `http://127.0.0.1:${puerto}/dashboard/index.html`, así
+  // que del fuente no sale ninguna ruta fija. Y una vez dentro no vuelve a hacer `goto`: recorre
+  // las 17 vistas PULSANDO el menú, que es justamente lo que mide.
+  //
+  // MEDIDO: la página la fabrica él —sirve `public/` con `/admin/*` respondido al vuelo— y no la
+  // comparte con ningún otro guard. Se declara para que su solape invisible no se lea como «no
+  // tiene», que es la trampa que este fichero cierra.
+  // ⚠️ Los DOS de arriba entraron a la vez, en ramas distintas, y el conflicto fue de git y no
+  // de criterio: los dos AÑADEN. Se conservan los dos —convención de `//guards` en
+  // package.json—, nunca se elige uno.
+  // SCRUM-892 · `guard:firma-con-tramos`: la página la fabrica él —renderiza la ruta de aceptación
+  // compilada y la sirve en un puerto propio— y no la comparte con ningún otro guard.
+  // SCRUM-904 · entra `guard:completar-lleva-al-campo`, y por el mismo motivo que los anteriores:
+  // sirve su página desde una ruta VIRTUAL (`/__completar-lleva-al-campo.html`, igual que
+  // `guard:falta-en-otra-pestana`), así que su destino no sale de ningún fichero del árbol y este
+  // detector no puede verlo. Se declara para que ese hueco no se lea como «no solapa».
+  // MEDIDO: esa ruta no la sirve ningún otro guard — la fabrica él y no la comparte.
+  // SCRUM-918 · `guard:arranque-sin-red`: sirve el panel en un puerto EFÍMERO y navega con la base en
+  // una variable, así que su destino no se deriva. Lo sirve él y no lo comparte con ningún guard.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:arranque-sin-red', 'guard:firma-con-tramos', 'guard:completar-lleva-al-campo', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

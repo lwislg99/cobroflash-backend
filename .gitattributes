@@ -59,3 +59,11 @@ scripts/db-push-prod text eol=lf
 # SCRUM-201b: la fuente oficial AEAT se guarda BYTE A BYTE (es ISO-8859-1 con CRLF).
 # Si git normaliza saltos, su SHA-256 cambia y deja de casar con el que cita el documento.
 docs/legal/fuentes/aeat-errores.properties -text
+
+# SCRUM-839d · EL REGISTRO SE MEZCLA SUMANDO LÍNEAS, Y SOLO EL REGISTRO.
+# Medido el 16-sep-2026: 34 merges de `main` chocaron SOLO en `docs/master/`, y casi todos porque
+# dos entradas añadían líneas en el mismo sitio. `union` se queda con las dos. En código sería un
+# desastre silencioso —dos versiones de una función pegadas sin marca de conflicto—, así que
+# `tests/scrum839d-union-solo-en-el-registro.test.mjs` cae si esta regla aparece en cualquier
+# otro sitio. ⚠️ GitHub NO la respeta (medido, #1353): la aplica el job conflicto-de-registro.yml.
+docs/master/*.md merge=union

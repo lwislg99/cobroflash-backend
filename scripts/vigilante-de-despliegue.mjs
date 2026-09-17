@@ -64,11 +64,32 @@ if (typeof versionDeProduccion === 'string' && /^[0-9a-f]{40}$/.test(versionDePr
       const n = git('rev-list', '--count', versionDeProduccion + '..' + shaDeMain);
       commitsPorDelante = n === null ? null : Number(n);
       if (commitsPorDelante) {
-        // El MÁS ANTIGUO que falta, que es el que dice desde cuándo estamos parados. `--reverse`
-        // + la primera línea: el primero que main tiene y producción no.
-        const lista = git('log', '--format=%ct', '--reverse', versionDeProduccion + '..' + shaDeMain);
-        const primera = lista && lista.split('\n')[0];
-        epochDelPrimeroSinDesplegar = primera ? Number(primera) : null;
+        // ═══════════════════════════════════════════════════════════════════════════════════
+        // 🔴 SCRUM-824b · EL MÁS ANTIGUO SE CALCULA, NO SE COGE EL PRIMERO DE LA LISTA.
+        //
+        // Aquí había `git log --format=%ct --reverse …` y se tomaba la PRIMERA línea, dando por
+        // hecho que invertir el listado deja el más antiguo arriba. **No es cierto**: `--reverse`
+        // invierte el ORDEN DE RECORRIDO DEL GRAFO, y ese recorrido está obligado a emitir un
+        // hijo antes que su padre. Si un padre tiene fecha MÁS NUEVA que su hijo —lo que dejan un
+        // rebase, un cherry-pick, un `--amend` o dos relojes desfasados— el primero tras invertir
+        // NO es el más antiguo.
+        //
+        // MEDIDO en un repo de tres commits construido a propósito (08-sep-2026):
+        //     --reverse, primera línea : 1788606000  → 05-sep 12:00
+        //     el más antiguo de verdad : 1788336000  → 02-sep 09:00
+        //     diferencia: 75 HORAS
+        //
+        // Y esas horas son el veredicto: este epoch es «desde cuándo estamos parados», y se
+        // compara contra un margen de horas. Setenta y cinco de menos convierten un CONGELADO en
+        // un «aún dentro del margen». Un vigía que se equivoca así no falla ruidosamente: firma
+        // un verde.
+        //
+        // `Math.min` no depende de la topología ni del orden de recorrido: pregunta lo que de
+        // verdad se quiere saber. Y `--reverse` sobra, porque ya no se mira ninguna posición.
+        // ═══════════════════════════════════════════════════════════════════════════════════
+        const lista = git('log', '--format=%ct', versionDeProduccion + '..' + shaDeMain);
+        const epochs = (lista || '').split('\n').map(Number).filter(Number.isFinite);
+        epochDelPrimeroSinDesplegar = epochs.length ? Math.min(...epochs) : null;
       }
     }
   }

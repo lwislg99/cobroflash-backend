@@ -18,23 +18,18 @@
 # usan `fetch-depth: 0` — `ci.yml` (líneas 110, 394, 466), `vigia-despliegue.yml` (60) y
 # `zona-roja.yml` (58). Este es el cuarto y va igual.
 #
-# ⚠️ LÍMITE HONESTO, MEDIDO EN ESTE MISMO REPOSITORIO Y AÚN SIN RESOLVER AQUÍ.
+# 🔴 Y POR ESO VAN DOS PASOS, NO UNO. `fetch-depth: 0` trae la historia completa pero UNA
+# SOLA REF, y eso deja `origin/main` SIN RESOLVER — con lo cual los dos primeros guards de
+# la lista de arriba no pueden medir aunque la historia esté entera. No es hipótesis: es la
+# tabla que `ci.yml` (SCRUM-765, medida el 6-sep-2026) tiene escrita en sus líneas 369-395:
 #
-# `fetch-depth: 0` trae la historia completa pero UNA SOLA REF. En el evento `pull_request`,
-# eso deja `origin/main` SIN RESOLVER, y entonces los dos primeros guards de la lista de
-# arriba no pueden medir aunque la historia esté entera. No es una hipótesis: es la tabla
-# que `ci.yml` (SCRUM-765, medida el 6-sep-2026) tiene escrita en sus líneas 369-395 —
-# «historia completa, UNA ref (fetch-depth: 0) → FALLA», y sólo pasa con «historia completa,
-# UNA ref + `main`». Por eso ese job lleva DOS pasos, y el vigía tuvo que añadir el segundo
-# por el mismo motivo (SCRUM-716b):
+#     forma del clon                                veredicto    colisión   scrum738
+#     historia completa, UNA ref (fetch-depth: 0)   NADA         AUSENTE    FALLA
+#     historia completa, UNA ref + `main`           NO_MEDIBLE   683        PASA
 #
-#     - name: Traer `main`
-#       run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
-#
-# Ese paso NO está aquí a propósito. Los eventos de este workflow son `issue_comment` y
-# `pull_request_review_comment`, no `pull_request`, y no se ha medido si se comportan igual;
-# y el fundador entregó este fichero literal. Añadirlo es una línea y lo decide él. Si un
-# `@claude` responde que un guard salió CIEGO, la primera hipótesis es ésta.
+# Hacen falta LAS DOS COSAS y ninguna basta sola. `ci.yml` lo aprendió ahí y el vigía tuvo
+# que añadir lo mismo por el mismo motivo (SCRUM-716b). Aquí se COPIA ese patrón —la orden
+# es idéntica byte a byte— en vez de inventar una variante: la casa ya lo midió.
 #
 # ⚠️ `actions/checkout@v6` viene del encargo. Los tres workflows de la casa van en `@v4`.
 # Se deja como se pidió; queda anotada la divergencia.
@@ -59,9 +54,273 @@ jobs:
       id-token: write
       actions: read
     steps:
+      # 🔴 SCRUM-900 · EL CHECKOUT NO DEJA SU CREDENCIAL, y de eso depende que el CI arranque.
+      #
+      # Si la credencial se persiste (el valor por defecto), `checkout@v6` guarda el GITHUB_TOKEN
+      # como cabecera `extraheader` en un fichero enlazado por `includeIf`. `claude-code-action` no
+      # la ve al limpiar y solo pone la llave de la App en la URL; git manda la cabecera primero, y
+      # el push de Claude salía como `github-actions[bot]`: CI en `action_required`, 0 jobs, PR
+      # armado parado sin aviso (5 de 6 desde el 14-sep). Medido con git contra un servidor local:
+      # `tests/scrum900-push-de-claude-con-la-app.test.mjs`.
+      #
+      # Sin credencial no se pierde nada: el repositorio es público (el `git fetch` de abajo no
+      # la necesita) y los `gh` de este workflow llevan su propio `GH_TOKEN`.
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
+      # La SEGUNDA mitad. `fetch-depth: 0` sola trae historia completa pero UNA ref, y sin
+      # esto `origin/main` no resuelve: ver la tabla de la cabecera. La orden es la MISMA,
+      # byte a byte, que la de `ci.yml` y `vigia-despliegue.yml` — se copia el patrón de la
+      # casa, que ya está medido, en vez de inventar otro.
+      - name: Traer `main` (los guards lo consultan)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+      # 🔴 `allowed_bots` — SCRUM-834, y va con su riesgo escrito al lado.
+      #
+      # Por defecto la acción NO deja que un bot la dispare: «By default, GitHub Apps and bots
+      # cannot trigger this action for security reasons». Sin esta línea, el avisador de PR en
+      # rojo publicaría su comentario y NO PASARÍA NADA — silencio, no error, que es el peor
+      # modo de fallo posible: parece que funciona.
+      #
+      # ⚠️ Y lo que se paga por ella, medido en la misma doc: «Allowed bots are NOT checked for
+      # repository permissions. A bot that matches an entry does not need to be installed on
+      # your repository or have write access.» Este repositorio es PÚBLICO, así que el comodín
+      # dejaría que la App de cualquiera despertase a Claude con un prompt que él controla.
+      # Por eso va el nombre LITERAL y solo uno. El comodín está prohibido y hay un test que
+      # lo vigila (`tests/scrum834-puerta-avisador-rojo.test.mjs`).
+      #
+      # La comprobación de permisos que esta línea desactiva se vuelve a hacer en la puerta
+      # siguiente: `scripts/puerta-avisador-rojo.mjs` exige que el PR NO sea de un fork Y que
+      # lo haya abierto el bot o una cuenta con escritura.
+      # ── LA LLAVE CON LA QUE CLAUDE EMPUJA ──────────────────────────────────────────────
+      #
+      # 🔴 POR QUÉ HACE FALTA, MEDIDO EL 9-sep-2026 Y NO DEDUCIDO. El PR #1212 llevaba desde
+      # la víspera parado sin que nada lo dijera. No estaba en conflicto ni desactualizado:
+      #
+      #     check-runs para su head faebb1e6 ........ total: 0
+      #     ejecuciones de ci.yml para ese sha ...... 0
+      #
+      # Claude había empujado ese commit desde DENTRO de este workflow, con el `GITHUB_TOKEN`
+      # por defecto. Y los eventos creados con ese token NO crean ejecuciones (doc de GitHub,
+      # la misma que obligó a usar una App en `pr-automatico.yml`). Sin evento no hay CI, sin
+      # CI no aparece el check obligatorio, y el auto-merge espera para siempre.
+      #
+      # No era un PR raro: era TODO commit que Claude empujara. Un robot que arregla y no
+      # puede entregar consume, parece que trabaja, y su trabajo se entierra sin ruido.
+      #
+      # ⚠️ Y esto ENCIENDE el bucle que hasta hoy estaba apagado por avería: si sus pushes
+      # disparan CI, un CI rojo vuelve a despertarlo. Lo único que lo para es el TOPE POR PR
+      # del avisador, demostrado corriendo en `tests/scrum834-puerta-avisador-rojo.test.mjs`
+      # (diez ciclos con sha nuevo cada uno → 3 avisos y luego TOPE-ALCANZADO; con el tope
+      # quitado publican los diez). La dedupe NO sirve aquí: es por `head_sha`, y cada push
+      # crea un sha nuevo.
+      # Los secretos se leen por `env` y solo se mira si están VACÍOS: es la única forma de
+      # consultarlos sin imprimirlos, y la misma que ya se usa en los otros dos workflows.
+      - id: modo
+        name: ¿Hay llave de la App?
+        env:
+          CLIENT_ID: ${{ secrets.YAQU_BOT_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.YAQU_BOT_PRIVATE_KEY }}
+        run: |
+          if [ -n "$CLIENT_ID" ] && [ -n "$PRIVATE_KEY" ]; then
+            echo "hay=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Sin llave de App: lo que Claude empuje NO disparará CI."
+          fi
+
+      - id: token
+        name: Acuñar token de la GitHub App
+        if: steps.modo.outputs.hay == 'true'
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.YAQU_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.YAQU_BOT_PRIVATE_KEY }}
+
+      # Si los secretos están y aun así no acuñan, se dice. Caer al token por defecto en
+      # silencio devolvería el defecto de arriba y con aspecto de funcionar.
+      - name: 🔴 CIEGO — hay secretos pero no acuñan token
+        if: steps.modo.outputs.hay == 'true' && steps.token.outcome != 'success'
+        run: |
+          echo "::error::Los secretos de la App existen pero no acuñan token. Claude empujaría"
+          echo "con el GITHUB_TOKEN y sus commits NO dispararían CI: el PR quedaría enterrado."
+          exit 1
+
+      # ── SCRUM-853 · ¿SIGUE ABIERTO EL PR? — LA PUERTA VA DONDE SE DESPIERTA ─────────────────
+      #
+      # MEDIDO el 15-sep-2026: 47 ramas `claude/pr-*` vivas y en TODAS la hora del nombre es
+      # POSTERIOR al merge de su PR. Con un PR cerrado la acción no escribe en él: crea una rama
+      # nueva (claude-code-action@v1, src/github/operations/branch.ts, «Fall through to create a
+      # new branch»). Sin PR, sin CI, sin nadie que la mire. El avisador era UNO de los que
+      # llamaban; una persona que comenta en un PR ya mergeado produce la misma rama.
+      #
+      # 🔴 Los scripts se toman de MAIN (`git show origin/main:`), NO del checkout: en un
+      # `pull_request_review_comment` el checkout trae el código del PR, y ejecutarlo sería
+      # ejecutar lo que ha escrito quien comenta, con `contents: write`.
+      #
+      # Aquí también se apuntan las ramas `claude/pr-<N>-*` que YA existen, para que el paso de
+      # después declare solo las que deje esta ejecución.
+      - id: puerta
+        name: ¿Sigue abierto el PR? (SCRUM-853)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ES_PR: ${{ github.event.issue.pull_request != null || github.event_name == 'pull_request_review_comment' }}
+          NUM: ${{ github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/puerta"
+          git show origin/main:scripts/puerta-claude.mjs > "$RUNNER_TEMP/puerta/puerta-claude.mjs"
+          git show origin/main:scripts/puerta-avisador-rojo.mjs > "$RUNNER_TEMP/puerta/puerta-avisador-rojo.mjs"
+          git show origin/main:scripts/vigia-atascados.mjs > "$RUNNER_TEMP/puerta/vigia-atascados.mjs"
+
+          PR_API=null
+          if [ "$ES_PR" = "true" ]; then
+            # Solo si sale bien: en un error `gh api -q` escribe el cuerpo del error por stdout.
+            if ! PR_API="$(gh api "repos/$REPO/pulls/$NUM" -q '{state, merged, ramaCabeza: .head.ref, cabezaPR: .head.sha}' 2>/dev/null)"; then PR_API=null; fi
+            gh api "repos/$REPO/git/matching-refs/heads/claude/pr-$NUM-" -q '[.[].ref]' \
+              > "$RUNNER_TEMP/ramas-antes.json" 2>/dev/null || echo null > "$RUNNER_TEMP/ramas-antes.json"
+          fi
+
+          # 🔴 SCRUM-853d · EL CORTACIRCUITOS. Cuántos despertares van en la ventana, contados AQUÍ
+          # —donde se despierta— y sean de quien sean. Se captura SOLO si la orden sale bien: `gh api`,
+          # al fallar, escribe el cuerpo del error por stdout, y una cuenta hecha sobre eso daría CERO,
+          # que es justo el número con el que un tope no corta nunca. `null` = no se sabe = no se arranca.
+          if ! EJECUCIONES="$(gh api "repos/$REPO/actions/workflows/claude.yml/runs?per_page=100" \
+                              -q '[.workflow_runs[] | {id, createdAt: .created_at, conclusion}]' 2>/dev/null)"; then
+            EJECUCIONES=null
+          fi
+
+          ENTRADA="$(printf '{"esPR": %s, "numero": %s, "pr": %s, "idActual": %s, "ejecuciones": %s}' \
+                     "$ES_PR" "${NUM:-null}" "$PR_API" "${GITHUB_RUN_ID:-null}" "$EJECUCIONES")"
+          # Como condición de un `if`: los `run:` van con `bash -e`, y un `exit 1` de la puerta
+          # abortaría el paso antes de poder leer su código.
+          if SALIDA="$(printf '%s' "$ENTRADA" | CUERPO="$RUNNER_TEMP/respuesta.md" node "$RUNNER_TEMP/puerta/puerta-claude.mjs" antes)"; then
+            DESPERTAR=si
+          else
+            DESPERTAR=no
+          fi
+          CODIGO="$(printf '%s' "$SALIDA" | head -1)"
+          MOTIVO="$(printf '%s' "$SALIDA" | tail -1)"
+          echo "$CODIGO — $MOTIVO"
+          echo "despertar=$DESPERTAR" >> "$GITHUB_OUTPUT"
+          echo "es_pr=$ES_PR" >> "$GITHUB_OUTPUT"
+          echo "- **$CODIGO** — $MOTIVO" >> "$GITHUB_STEP_SUMMARY"
+
+      # Lo que no arranca CONTESTA. Con el `GITHUB_TOKEN`, que no crea ejecuciones: aunque el texto
+      # llevara la mención no despertaría a nadie. Y se comprueba igualmente.
+      - name: Contestar sin arrancar (SCRUM-853)
+        if: steps.puerta.outputs.despertar == 'no' && steps.puerta.outputs.es_pr == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          if [ ! -s "$RUNNER_TEMP/respuesta.md" ]; then
+            echo "::error::La puerta dijo que no y no dejó respuesta: la petición quedaría sin contestar."
+            exit 1
+          fi
+          # 1 es «lleva la mención» y 2 «no se pudo comprobar»: un fallo al leer no puede
+          # disfrazarse del otro (ver el paso de la rama muda, donde pasó).
+          set +e
+          node --input-type=module -e "
+            import fs from 'node:fs';
+            try {
+              const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+              process.exit(cuerpoNoDebeDespertar(fs.readFileSync(process.env.RUNNER_TEMP + '/respuesta.md', 'utf8')) ? 0 : 1);
+            } catch (e) { console.error(String(e)); process.exit(2); }"
+          COMPROBACION=$?
+          set -e
+          if [ "$COMPROBACION" -ne 0 ]; then
+            echo "::error::La respuesta NO se publica: la comprobación de la mención dio $COMPROBACION (1 = lleva la mención · 2 = no se pudo comprobar)."
+            exit 1
+          fi
+          gh pr comment "$NUM" --body-file "$RUNNER_TEMP/respuesta.md"
+
       - uses: anthropics/claude-code-action@v1
+        id: accion
+        if: steps.puerta.outputs.despertar == 'si'
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "yaqu-bot[bot]"
+          # «GitHub token with repo and pull request permissions». Con el de la App, lo que
+          # Claude empuje SÍ crea eventos y por tanto SÍ dispara CI. El respaldo al token por
+          # defecto se mantiene para no dejar el workflow muerto si la App no está: en ese
+          # caso vuelve el defecto conocido, y por eso el paso de arriba lo declara.
+          github_token: ${{ steps.token.outputs.token || github.token }}
+
+      # ── SCRUM-853 · ¿QUEDÓ UNA RAMA MUDA? ────────────────────────────────────────────────────
+      #
+      # La puerta de antes deja dos huecos que desde fuera de la acción no se pueden cerrar, solo
+      # DECLARAR: el PR puede entrar en los segundos entre la pregunta y el momento en que la acción
+      # lee su estado (→ rama `claude/pr-*`), y puede entrar mientras Claude trabaja (→ empuja a la
+      # rama del PR, que el repositorio borra al mergear, y la recrea). `always()`: si la acción
+      # falla a medias, la rama también puede haber quedado. Se declara a una PERSONA, y el run
+      # sale en rojo.
+      - name: ¿Quedó una rama muda? (SCRUM-853)
+        if: always() && steps.puerta.outputs.despertar == 'si' && steps.puerta.outputs.es_pr == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ github.event.issue.number || github.event.pull_request.number }}
+          DUENO: ${{ github.repository_owner }}
+          URL_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # `$(gh api … || echo X)` NO vale: en un error, `gh api -q` escribe el CUERPO del error por
+          # stdout y la sustitución se queda con él además del respaldo. Medido el 15-sep con la rama
+          # ya borrada del #1255: la «cabeza remota» salía `{"message":"Not Found",…}`, distinta de
+          # la del PR, y este paso declaraba una rama muda que no existía. Se captura solo si sale bien.
+          if ! PR_API="$(gh api "repos/$REPO/pulls/$NUM" -q '{state, merged, ramaCabeza: .head.ref, cabezaPR: .head.sha}' 2>/dev/null)"; then PR_API=null; fi
+          ANTES="$(cat "$RUNNER_TEMP/ramas-antes.json" 2>/dev/null || echo null)"
+          if ! DESPUES="$(gh api "repos/$REPO/git/matching-refs/heads/claude/pr-$NUM-" -q '[.[].ref]' 2>/dev/null)"; then DESPUES=null; fi
+          RAMA="$(PR_API="$PR_API" node -e "try{console.log(JSON.parse(process.env.PR_API).ramaCabeza||'')}catch{console.log('')}")"
+          # La cabeza remota, con `git ls-remote --exit-code`, que distingue justo lo que importa:
+          # 0 la rama existe · 2 no existe (lo normal tras un merge) · otro código = no se sabe.
+          CABEZA_REMOTA=null
+          if [ -n "$RAMA" ]; then
+            set +e
+            LS="$(git ls-remote --exit-code origin "refs/heads/$RAMA" 2>/dev/null)"
+            CODIGO_LS=$?
+            set -e
+            if [ "$CODIGO_LS" -eq 0 ]; then CABEZA_REMOTA="${LS%%[[:space:]]*}"; fi
+            if [ "$CODIGO_LS" -eq 2 ]; then CABEZA_REMOTA=''; fi
+          fi
+
+          ENTRADA="$(PR_API="$PR_API" ANTES="$ANTES" DESPUES="$DESPUES" CABEZA_REMOTA="$CABEZA_REMOTA" node -e "
+            const json=(t)=>{try{return JSON.parse(t)}catch{return null}};
+            process.stdout.write(JSON.stringify({
+              numero: Number(process.env.NUM), pr: json(process.env.PR_API),
+              ramasAntes: json(process.env.ANTES), ramasDespues: json(process.env.DESPUES),
+              cabezaRemota: process.env.CABEZA_REMOTA === 'null' ? null : process.env.CABEZA_REMOTA,
+              dueno: process.env.DUENO, urlRun: process.env.URL_RUN,
+            }));")"
+
+          CUERPO="$RUNNER_TEMP/aviso-rama-muda.md"
+          if SALIDA="$(printf '%s' "$ENTRADA" | CUERPO="$CUERPO" node "$RUNNER_TEMP/puerta/puerta-claude.mjs" despues)"; then
+            echo "- **$(printf '%s' "$SALIDA" | head -1)** — $(printf '%s' "$SALIDA" | tail -1)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          CODIGO="$(printf '%s' "$SALIDA" | head -1)"
+          MOTIVO="$(printf '%s' "$SALIDA" | tail -1)"
+          echo "- **$CODIGO** — $MOTIVO" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$CODIGO" = "RAMA-MUDA" ] && [ -s "$CUERPO" ]; then
+            # La ruta va EXPLÍCITA en la orden. Lo cazó el laboratorio del 15-sep: sin ella,
+            # `process.env.CUERPO` llegaba vacío a este `node`, la lectura reventaba con código 1
+            # —el mismo que «lleva la mención»—, el paso lo decía así, y el aviso NO salía nunca.
+            # Por eso además: 1 es «lleva la mención» y 2 es «no se pudo comprobar», y se dicen distinto.
+            set +e
+            CUERPO="$CUERPO" node --input-type=module -e "
+              import fs from 'node:fs';
+              try {
+                const { cuerpoNoDebeDespertar } = await import((await import('node:url')).pathToFileURL(process.env.RUNNER_TEMP + '/puerta/puerta-avisador-rojo.mjs').href);
+                process.exit(cuerpoNoDebeDespertar(fs.readFileSync(process.env.CUERPO, 'utf8')) ? 0 : 1);
+              } catch (e) { console.error(String(e)); process.exit(2); }"
+            COMPROBACION=$?
+            set -e
+            if [ "$COMPROBACION" -ne 0 ]; then
+              echo "::error::El aviso de rama muda NO se publica: la comprobación de la mención dio $COMPROBACION (1 = lleva la mención · 2 = no se pudo comprobar)."
+              exit 1
+            fi
+            gh pr comment "$NUM" --body-file "$CUERPO"
+          fi
+          echo "::error::$CODIGO — $MOTIVO"
+          exit 1

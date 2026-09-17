@@ -183,7 +183,7 @@ divergencia de 36,27 / 36,26 queda fijada con números, y si alguien limita los 
 
 **Medido contra:** `origin/main` = `2d826de6d18f7a76be0ef2509c2e469e7b383f54` · 2026-09-04T09:20:00+02:00
 
-## 0 · PASO 0 (regla 39): el defecto EXISTE HOY
+## 0 · PASO 0 (cita de regla RETIRADA — SCRUM-637): el defecto EXISTE HOY
 
 ```
 git ls-tree origin/main | grep -iE 'scrum-?624'
@@ -283,7 +283,7 @@ palabras. Escogí el primero por el nombre y mi propio suelo me lo cazó: sin é
 **Decisión del fundador (4-sep-2026):** gobierna la canónica. El arreglo es **la frontera**, no la
 convención.
 
-## 0 · PASO 0 (regla 39), remedido
+## 0 · PASO 0 (cita de regla RETIRADA — SCRUM-637), remedido
 
 ```
 albaranes.routes.ts:1223  →  const total = totalDeFacturables(facturables);     [1 uso]

@@ -1,9 +1,16 @@
 // src/modules/system/quoteAdmin.ts
 import { prisma } from '../../core/db/prisma';
+import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
 import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRUM-34
 import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
-import { numeroConRevision, vistaDeRevisiones } from '../quotes/domain/revision'; // SCRUM-655 (T6, fase B)
+import { tieneDescuentoGlobalConVariosIva } from '../invoicing/domain/invoiceLines.service'; // SCRUM-887
+import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
+import {
+  numeroConRevision, vistaDeRevisiones,
+  // SCRUM-688 · el llamador que faltaba: crear una revision de verdad.
+  nuevaRevisionDe, vigenteUnicaDe, REVISION_HEREDA,
+} from '../quotes/domain/revision'; // SCRUM-655 (T6, fase B)
 
 /**
  * SCRUM-606 (ALB-01) · EL TOPE DE ESTA LISTA, CON NOMBRE.
@@ -103,8 +110,43 @@ export async function listQuotesAdmin(
       method: q.charge?.method ?? null,
       chargeId: q.charge?.id ?? null,
       internalNotes: q.internalNotes ?? null,
+      // 🔴 SCRUM-595 (DOC-05) · EL QUINTO ESLABON, Y AQUI ES EL QUE MAS FACIL SE PIERDE.
+      //
+      // Esto NO es un `select` de Prisma: es una proyeccion A MANO. La consulta trae la fila
+      // entera y lo que no se copie aqui NO SALE, aunque la columna exista y aunque el guardado
+      // haya funcionado. Sin esta linea, el profesional escribiria la etiqueta, la lista se
+      // recargaria sin ella, volveria a escribirla — y la tanda seguiria VERDE, porque el dato SI
+      // estaria en la base. El defecto seria MUDO. Es el aviso de SCRUM-580, buscado ANTES.
+      //
+      // ⚠️ Y la FACTURA no lo necesita: `listInvoicesAdmin` devuelve `findMany` sin `select`, asi
+      // que alli la columna sale sola. El quinto eslabon NO es simetrico entre los dos documentos.
+      tags: q.tags ?? null,
     };
   });
+}
+
+/**
+ * SCRUM-595 (DOC-05) · LAS ETIQUETAS DE UN PRESUPUESTO.
+ *
+ * Mismo mecanismo que el cliente: la decision es `normalizarTags` y la ortografia del NULL es
+ * `tagsParaPrisma` — las dos compartidas, ninguna reescrita aqui.
+ *
+ * 🔴 LA TENENCIA VIVE EN EL `WHERE`, no en un `if` de JavaScript (regla 2). Es el mismo patron
+ * que `PUT /:id/notes`: con `updateMany` acotado, un id ajeno no escribe nada y devuelve 0 — no
+ * hace falta leer antes para comprobar de quien es, y por tanto no hay hueco entre la lectura y
+ * la escritura.
+ *
+ * Devuelve cuantas filas ha tocado: 0 significa «no es tuyo o no existe», y el llamador lo
+ * traduce a 404. Un `ok: true` sobre cero filas le diria al profesional que ha guardado algo.
+ */
+export async function setQuoteTags(merchantId: number, id: number, tags: unknown): Promise<number> {
+  const valor = tagsParaPrisma(tags);
+  // `undefined` es «no toques el campo», y esta ruta existe justo para tocarlo: si llegara aqui,
+  // escribir seria inventarse una intencion. No pasa —la ruta valida antes—, pero un 0 es una
+  // respuesta y `undefined` no lo es.
+  if (valor === undefined) return 0;
+  const r = await prisma.quote.updateMany({ where: { id, merchantId }, data: { tags: valor } });
+  return r.count;
 }
 
 /**
@@ -191,12 +233,20 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
 
     currency: quote.currency,
     total: quote.total,
+    // SCRUM-888 · el descuento global, en euros (`null` = no hay). Sin él, «Duplicar» copiaba el
+    // presupuesto sin el global y a más precio (D6 de SCRUM-883), y el detalle no podía cuadrar
+    // base e IVA con un `total` que sí lo lleva. Es precio, no margen: lo ve quien ve el total.
+    discountGlobalAmount: quote.discountGlobalAmount ?? null,
     lines: quote.lines,
     pdfUrl: (quote as any).pdfUrl ?? null,
     signatureUrl: quote.signatureUrl ?? null,
     tiers: quote.tiers ?? null,
     selectedTierId: quote.selectedTierId ?? null,
     internalNotes: quote.internalNotes ?? null,
+    // 🔴 SCRUM-595 · EL QUINTO ESLABON, SEGUNDA VEZ. El detalle es OTRA proyeccion explicita, y
+    // se buscaron LAS DOS: sin esta linea la lista ensenaria las etiquetas y la ficha del
+    // presupuesto saldria sin ellas, que es la misma perdida muda en otra pantalla.
+    tags: quote.tags ?? null,
     
     merchant: {
       id: quote.merchant.id,
@@ -372,3 +422,110 @@ export async function rejectQuoteAdmin(
  * El guard que impide que esto vuelva a poder pasar vive en `applyVeriFactu`
  * (`invoicing/domain/verifactu.service.ts`): una factura sin líneas ya no se puede sellar.
  */
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-688 · CREAR UNA REVISIÓN — el llamador que a `nuevaRevisionDe` le faltaba
+//
+// El motor de revisiones existía, estaba probado y tenía su trinquete (SCRUM-655b/661/686), y
+// **ningún profesional podía llegar a él**: medido, 0 llamadores en `src/` y 0 rutas POST de las
+// 93 de la app. «Construido ≠ alcanzable» en su forma pura.
+//
+// Aprobado por el fundador el 15-sep-2026: se crea desde la pantalla de revisiones, sobre la
+// versión VIGENTE.
+//
+// ── 🔴 EL `select` SE DERIVA DE `REVISION_HEREDA`, NO SE ESCRIBE A MANO ───────────────────
+//
+// Es el hueco que SCRUM-688 declaró para este día: `nuevaRevisionDe` copia con
+// `if (campo in anterior)`, así que **un campo clasificado que el llamador no traiga no viaja**,
+// y los tests seguirían verdes. Escribir aquí una lista de campos a mano sería exactamente esa
+// trampa: el día que alguien clasifique una columna nueva, la lista de allí crecería y ésta no.
+//
+// Derivándolo, la pregunta «¿trae el select todo lo clasificado?» no se puede contestar mal:
+// es la MISMA lista. Y `tests/scrum688-crear-revision.test.mjs` lo censa con su suelo.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** Lo que hay que leer de la versión anterior: lo que se hereda + lo que la función necesita. */
+const SELECT_PARA_REVISION = Object.freeze(Object.fromEntries(
+  [...REVISION_HEREDA, 'id', 'merchantId', 'quoteNumber', 'revision', 'signatureUrl']
+    .map((campo) => [campo, true]),
+)) as Record<string, true>;
+
+export class RevisionNoCreable extends Error {
+  constructor(public readonly motivo: string, mensaje: string) {
+    super(mensaje);
+    this.name = 'RevisionNoCreable';
+  }
+}
+
+/**
+ * Crea una revisión NUEVA de un presupuesto. No toca la anterior: la revisión es otra fila.
+ *
+ * 🔴 EL NÚMERO SALE DEL GRUPO ENTERO, no de sumar uno a la que se está mirando. Con dos versiones
+ * y el profesional revisando la `.0`, sumar uno daría `.1` — que ya existe — y el grupo tendría
+ * dos filas con la misma revisión: «cuál está vigente» dejaría de tener respuesta. Lo rechaza
+ * `nuevaRevisionDe` con `RevisionesAmbiguas`, y por eso aquí se calcula sobre el máximo del grupo.
+ *
+ * ⚠️ Y SE CREA SOBRE LA VIGENTE, no sobre la que el profesional tenga abierta. Revisar una versión
+ * vieja y heredar SU contenido perdería lo que se cambió después sin decir nada.
+ */
+export async function crearRevisionDeQuote(merchantId: number, id: number) {
+  const anterior = await prisma.quote.findFirst({
+    where: { id, merchantId },
+    select: SELECT_PARA_REVISION,
+  }) as (Record<string, unknown> & { id: number; quoteNumber: number | null; revision: number }) | null;
+
+  if (!anterior) throw new RevisionNoCreable('quote_not_found', 'El presupuesto no existe.');
+
+  // 🔴 SIN NÚMERO NO HAY GRUPO, y por tanto no hay «.1» del que ser la revisión. Es la misma
+  // regla que `getQuoteDetailAdmin` aplica al leer: `quoteNumber` nulo no es una clave de grupo.
+  if (anterior.quoteNumber == null) {
+    throw new RevisionNoCreable(
+      'quote_sin_numero',
+      'Un presupuesto sin número no tiene una serie de la que ser revisión.',
+    );
+  }
+
+  const hermanas = await prisma.quote.findMany({
+    where: { merchantId, quoteNumber: anterior.quoteNumber },
+    select: { id: true, revision: true, signatureUrl: true },
+    orderBy: { revision: 'asc' },
+  });
+
+  // La VIGENTE del grupo, con la regla del dominio —que LANZA ante un empate en vez de elegir.
+  // `RevisionDePresupuesto` pide `numero` (el identificador SIN la revisión), no `quoteNumber`.
+  const base = String(anterior.quoteNumber);
+  const vigente = vigenteUnicaDe(hermanas.map((q) => ({
+    numero: base, revision: q.revision, id: q.id,
+  })));
+
+  // Si la abierta no es la vigente, se revisa la VIGENTE: hay que releerla con todo su contenido.
+  const origen = vigente.id === anterior.id
+    ? anterior
+    : (await prisma.quote.findFirst({
+        where: { id: vigente.id, merchantId },
+        select: SELECT_PARA_REVISION,
+      })) as Record<string, unknown> & { revision: number };
+
+  // SCRUM-887 · UNA REVISIÓN DE UN C NO SE CREA (comentarios 15697 y 15698): HEREDARÍA el global
+  // con varios tipos de IVA, que es justo lo que no se puede guardar ni facturar. Antes de escribir.
+  if (tieneDescuentoGlobalConVariosIva(origen as { lines?: unknown; discountGlobalAmount?: unknown })) {
+    throw new RevisionNoCreable(ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA);
+  }
+
+  const siguiente = Math.max(...hermanas.map((q) => q.revision)) + 1;
+  const datos = nuevaRevisionDe(origen as any, siguiente);
+
+  const creada = await prisma.quote.create({
+    data: datos as any,
+    select: { id: true, quoteNumber: true, revision: true, status: true },
+  });
+
+  return {
+    id: creada.id,
+    revision: creada.revision,
+    numero: numeroConRevision({ numero: base, revision: creada.revision }),
+    status: creada.status,
+    // De qué versión salió, para que la pantalla pueda decirlo sin adivinarlo.
+    origenId: vigente.id,
+  };
+}

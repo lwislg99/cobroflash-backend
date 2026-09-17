@@ -73,6 +73,9 @@
 // rama se convertiría en un artefacto que se copia entre ramas — lo contrario de una prueba.
 
 import { createHash } from 'node:crypto';
+// SCRUM-736 · la fracción se declara UNA vez, donde está su razonamiento y su medida. Dos copias
+// del mismo umbral divergen en dos semanas (regla 2).
+import { CUENTA_DEL_ARBOL_MINIMA } from './_suelo-de-la-tanda.mjs';
 
 /** Dónde vive el recibo. Local, ignorado por git, escrito solo por el runner. */
 export const RUTA_RECIBO = '.claude/evidencia-tanda.json';
@@ -310,9 +313,14 @@ export function pesadoEsElUltimo(spec = HIJOS_SPEC) {
  *        `null` = no se pudo calcular → falla cerrado (no comparable NO es igual).
  * @param {number} p.ahoraMs
  * @param {number} p.ficherosEsperados    cuántos ficheros debería haber corrido el bloque QA
+ * @param {number} [p.testsEsperados]     SCRUM-736: cuántos tests DECLARA el árbol (por AST). Es
+ *        al recuento de tests lo que `ficherosEsperados` es al de ficheros — «la versión exacta
+ *        del suelo, sin número mágico», que es lo que el bloque ④b de aquí abajo ya decía de sí
+ *        mismo mientras el de al lado seguía siendo `SUELO_TOTAL`. Opcional: si no llega, rige el
+ *        número a mano y se dice.
  * @returns {{ok: boolean, problemas: Array<{clave: string, detalle: string}>, recibo: object|null}}
  */
-export function validarEvidencia({ texto, commitActual, huellaActual, ahoraMs, ficherosEsperados }) {
+export function validarEvidencia({ texto, commitActual, huellaActual, ahoraMs, ficherosEsperados, testsEsperados }) {
   const problemas = [];
   const mal = (clave, detalle) => problemas.push({ clave, detalle });
 
@@ -432,8 +440,21 @@ export function validarEvidencia({ texto, commitActual, huellaActual, ahoraMs, f
   // ④ EL SUELO · sin esto, correr UN fichero produce un recibo impecable.
   if (!Number.isInteger(r.total)) {
     mal('incompleto', 'el recibo no trae `total`');
-  } else if (r.total < SUELO_TOTAL) {
-    mal('suelo', `el recibo dice ${r.total} tests y el suelo de una tanda son ${SUELO_TOTAL}: eso no es la tanda entera`);
+  } else {
+    // 🔴 SCRUM-736 · EL MAYOR DE LOS DOS. `SUELO_TOTAL` llevaba 646 con la tanda por encima de
+    // 6.900: **6.257 de margen**, o sea que estaba DOMINADO — nunca podía hablar antes que
+    // cualquier otra comprobación, y una tanda con el 90% de los tests fuera le pasaba por debajo.
+    // El derivado se mantiene solo, con el mismo criterio que ④b usa para los ficheros.
+    const derivado = Number.isFinite(testsEsperados) && testsEsperados > 0
+      ? Math.ceil(testsEsperados * CUENTA_DEL_ARBOL_MINIMA) : null;
+    const exigido = Math.max(SUELO_TOTAL, derivado ?? 0);
+    if (r.total < exigido) {
+      mal('suelo', `el recibo dice ${r.total} tests y el suelo de una tanda son ${exigido}`
+        + (derivado !== null && derivado === exigido
+          ? ` (DERIVADO: el árbol declara ${testsEsperados} tests y se exige el ${Math.round(CUENTA_DEL_ARBOL_MINIMA * 100)}%)`
+          : ` (declarado a mano: sin censo del árbol no se puede derivar)`)
+        + ': eso no es la tanda entera');
+    }
   }
 
   // ④b LOS FICHEROS · la versión exacta del suelo, sin número mágico: el bloque QA tiene que

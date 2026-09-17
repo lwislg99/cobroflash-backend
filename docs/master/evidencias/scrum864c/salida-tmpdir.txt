@@ -1,0 +1,62 @@
+TMPDIR              : C:\Users\JAVIER~1\AppData\Local\Temp
+entradas totales    : 61330  (directorios: 49422)
+NUESTROS (prefijo)  : 29438
+ajenos / no-dir     : 31892  sin stat: 2
+edad mtime (dias)   : min 0.00 | mediana 11.21 | p90 37.73 | max 51.50
+menos de 1 dia      : 1957
+menos de 1 HORA     : 302
+por prefijo (top 12):
+    18450 · yaqu
+     4205 · scrum723
+     1867 · scrum385
+     1440 · scrum778
+      985 · scrum670
+      936 · scrum846
+      749 · scrum727
+      738 · scrum861
+       54 · scrum813
+        7 · scrum716
+        2 · scrum461
+        1 · scrum607
+coste del recorrido : 11449 ms
+
+════════ POR PREFIJO Y EDAD ════════
+
+restos nuestros con fecha legible: 29461
+
+prefijo      total    ultima HORA ultimas 6 hultimas 24 h ultimos 2 ddesde el 16-sep (SCRUM-864)
+yaqu         18465            157         647        1043        3207        3207
+scrum723      4205             45         175         280         640         640
+scrum385      1867              0           0           0          62          62
+scrum778      1440              9          39          63         250         250
+scrum670       985              9          34          55         127         127
+scrum846       940             36         140         216         496         496
+scrum727       749              0           0           0          61          61
+scrum861       744             60         210         324         744         744
+scrum813        54              0           0           0           0           0
+scrum716         7              0           0           0           1           1
+scrum461         2              0           0           0           0           0
+scrum607         1              0           0           0           0           0
+scrum659         1              0           0           0           0           0
+scrum864         1              1           1           1           1           1
+
+ultima HORA:                        317
+ultimas 6 h:                       1246
+ultimas 24 h:                      1982
+ultimos 2 d:                       5589
+desde el 16-sep (SCRUM-864):       5589
+
+════════ DESGLOSE DEL PREFIJO yaqu- (top) ════════
+
+prefijo completo          total   24h   vacios
+yaqu-182-                  6678   171        0
+yaqu-659                    182    48        0
+yaqu-853c-21960-             18    18        0
+yaqu-853c-7732-              10    10        0
+yaqu-853c-10220-              9     9        0
+yaqu-853c-11452-              9     9        0
+yaqu-853c-19524-              9     9        0
+yaqu-853c-19728-              9     9        0
+yaqu-853c-19844-              9     9        0
+yaqu-853c-20288-              9     9        0
+yaqu-853c-2052-               9     9        0

@@ -118,6 +118,26 @@ export function extraerRanurasVisibles(fuente, ruta) {
   for (const r of repetidas) constantes.delete(r);
 
   const anotar = (nodo, via) => {
+    // 🔴 TERCERA FUGA MEDIDA, y la encontró el propio guard al ponerse rojo — SCRUM-600, 7-sep-2026.
+    //
+    // Al darle a la factura el front del presupuesto, dos rótulos pasaron a elegirse con un
+    // ternario: `cond ? rotulo() : "Crear presupuesto"`. El lado derecho de la asignación dejó de
+    // ser un literal y pasó a ser una ConditionalExpression, así que `textoDe` devolvía `null` y
+    // las ranuras «Crear presupuesto» y «Generar presupuesto» DESAPARECIERON del censo: 27 → 25.
+    //
+    // Es exactamente la forma en que un censo miente sin fallar —dice un número más pequeño— y
+    // aquí además habría apagado la protección justo sobre dos rótulos del presupuesto: si
+    // alguien los cambiara, ya no caería nada. La respuesta NO es bajar el número esperado: es
+    // que el instrumento siga viendo lo que sigue estando en la pantalla.
+    //
+    // Se anotan LAS DOS ramas, no «la que parezca la buena»: las dos llegan a la pantalla, sólo
+    // que en modos distintos, y quien redacta necesita ver las dos. La rama que no es un literal
+    // (una llamada a `rotulosDelDocumento`) devuelve `null` y se descarta sola.
+    if (nodo && ts.isConditionalExpression(nodo)) {
+      anotar(nodo.whenTrue, via);
+      anotar(nodo.whenFalse, via);
+      return;
+    }
     let texto = textoDe(nodo, sf);
     let sufijo = '';
     if (texto === null && nodo && ts.isIdentifier(nodo) && constantes.has(nodo.text)) {

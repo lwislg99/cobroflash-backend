@@ -1,0 +1,23 @@
+JUSTIFICANTE DE COBRO
+Ref. J-20260916-4GEN
+Fecha: 16/09/2026
+EMISOR
+QA Staging S.L.
+C/ Staging 1, 28000 Madrid
+34600000001
+qa@staging.yaqu
+CLIENTE
+SCRUM-883 Cliente electricista
+scrum883@example.com
+34600883883
+CONCEPTO CANT. PRECIO UNIT IVA % TOTAL
+Magnetotérmico 2P 16A 3,00 9,99 21% 36,26
+Diferencial 40A 30mA 1,00 42,35 21% 51,24
+Cable 2,5 mm² (m) 37,00 0,88 21% 39,17
+Mano de obra (h) 2,50 38,50 21% 116,46
+Base imponible: 200,94 EUR
+IVA 21%: 42,20 EUR
+TOTAL COBRADO: 243,14 EUR
+Justificante de cobro — este documento acredita el cobro recibido.
+No constituye una factura. Generado con YaQu · yaqu.app
+

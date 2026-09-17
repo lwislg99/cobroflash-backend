@@ -30,6 +30,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIR = path.join(RAIZ, 'public');
@@ -61,7 +62,7 @@ function noParsea(fichero) {
 
   const src = fs.readFileSync(fichero, 'utf8');
   if (/^\s*(import|export)[\s{*]/m.test(src)) {
-    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-parsea-')), 'x.mjs');
+    const tmp = path.join(temporal('yaqu-parsea-'), 'x.mjs');
     fs.writeFileSync(tmp, src);
     const rm = spawnSync(process.execPath, ['--check', tmp], { encoding: 'utf8' });
     fs.rmSync(path.dirname(tmp), { recursive: true, force: true });

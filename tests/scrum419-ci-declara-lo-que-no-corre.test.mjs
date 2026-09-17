@@ -81,6 +81,18 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum296-libro-postgres.test.mjs': 1,
   'scrum297-evidencias-postgres.test.mjs': 2,
   'scrum389-un-solo-iva.test.mjs': 2,
+  // SCRUM-728d: los tres de la MEDICIÓN en loopback — el suelo (RTT ~0), los cuatro caminos con
+  // 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque cronometran
+  // el trabajo REAL del servidor: sin base no hay nada que cronometrar. Y necesitan que sea
+  // DESECHABLE porque emiten números de serie y crean facturas — 1.000 en el de la pendiente.
+  'scrum728d-ms-en-loopback.test.mjs': 3,
+  // SCRUM-876c (T2): los tres que dependían de `MERCHANT_ID = 1` y pasan a `withMerchant`. Hasta
+  // aquí sólo corrían con `QA_DB_TEST=1` (staging) y ese destino lo conservan; éste es el segundo.
+  // Necesitan banco porque lo que vigilan ES la escritura: la suma de lo cobrado (13), el
+  // operario congelado en el Job (52) y el guardado parcial del cliente (692).
+  'scrum13-cobrado.test.mjs': 1,
+  'scrum52-operario.test.mjs': 1,
+  'scrum692-guardado-parcial-en-base.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

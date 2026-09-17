@@ -2,6 +2,10 @@
 // Helpers de alto nivel para envíos de plantillas concretas.
 // La spec canónica de las plantillas vive en docs/WHATSAPP_TEMPLATES.md.
 import { normalizePhone } from '../core/utils/utils';
+// SCRUM-877: el enlace del recibo salía con el dominio ESCRITO A PELO, así que no seguía a
+// `PUBLIC_BASE_URL` — la raíz que el resto del sistema usa para todo lo que manda al cliente
+// (`env.ts:211`). `BASE_URL` es esa misma variable. El TEXTO del mensaje no cambia: sólo la raíz.
+import { BASE_URL } from '../core/config/env';
 import { sendWhatsAppTemplate, sendWhatsAppText, sendWhatsAppWindowFirst, sendWhatsAppCtaUrl } from './whatsapp';
 import {
   buildPaymentConfirmation,
@@ -94,7 +98,7 @@ export async function sendPaymentConfirmationInvoice(params: {
         `Hemos confirmado tu pago de ${params.amountWithCurrency} (documento de cobro ${params.documentNumber}).\n` +
         `¡Gracias por confiar en ${businessName}!\n` +
         `Tu recibo, aquí 👇\n` +
-        `https://yaqu.app/recibo/${params.receiptToken}`,
+        `${BASE_URL}/recibo/${params.receiptToken}`,
       // A23: en ventana → botón-enlace "Ver recibo" (sin URL cruda)
       windowCta: {
         bodyText:
@@ -102,7 +106,7 @@ export async function sendPaymentConfirmationInvoice(params: {
           `Hemos confirmado tu pago de *${params.amountWithCurrency}* (documento ${params.documentNumber}).\n` +
           `¡Gracias por confiar en *${businessName}*!`,
         buttonText: 'Ver recibo',
-        url: `https://yaqu.app/recibo/${params.receiptToken}`,
+        url: `${BASE_URL}/recibo/${params.receiptToken}`,
       },
       template: buildPaymentConfirmationInvoice({
         customerName,

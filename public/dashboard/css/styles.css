@@ -1558,16 +1558,14 @@ html, body { overflow-x: clip; }
 @media (max-width: 767px) {
   .quote-drag-handle { display: none; }
 }
-/* SCRUM-139 F4 (cierra BUGS.md P3-13): el aviso vive dentro de la etiqueta de PRECIO, no
-   debajo del input. Debajo hacía esa celda más alta que las demás y `align-items:end` le subía
-   el input ~15 px. Aquí no añade alto a nadie. `text-transform:none` porque la etiqueta va en
-   MAYÚSCULAS y "Final: 40,25 €" no debe gritar. */
+/* SCRUM-139 F4 (cierra BUGS.md P3-13): la etiqueta de PRECIO reparte su ancho entre el rótulo y
+   lo que se le cuelgue al lado, en vez de dejar crecer la celda hacia abajo. Debajo del input,
+   un añadido hacía esa celda más alta que las demás y `align-items:end` le subía el input ~15 px.
+   SCRUM-669 (resto 4) · aquí vivía `.price-final-hint`, el estilo del aviso «Final: …». Se retira
+   con su elemento: desde DOC-08 el margen no está en la línea, así que el aviso no tenía nunca
+   nada que decir y el hueco salía siempre vacío. El `flex` de la etiqueta se queda — lo que
+   sostiene es la forma de la celda, no aquel aviso. */
 .quote-line__label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.price-final-hint {
-  font-size: 11px; font-weight: 600; color: var(--muted, #6b756f);
-  text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
 
 /* SCRUM-139 F4 · disparador de la hoja de ajustes. Terciario a propósito: es lo que MENOS se
    toca de la línea (margen casi siempre 0, IVA casi siempre el general), pero se lee sin
@@ -2153,6 +2151,11 @@ html, body { overflow-x: clip; }
   box-shadow: 0 0 0 3px rgba(220,38,38,.16) !important;
 }
 
+/* SCRUM-894: el texto de ayuda en Peligro bajo el campo que falta (DESIGN.md · Inputs · Error). */
+/* SCRUM-918: arrancar sin red. Ámbar de Aviso (DESIGN.md), mismo tinte que .badge-amber. */
+.aviso-sin-cobertura { background: var(--amber-50); border-bottom: 1px solid #fde68a; color: #92400e; padding: 10px 16px; font-size: 13.5px; font-weight: 600; text-align: center; }
+.aviso-falta-campo { font-size: 12.5px; font-weight: 600; color: var(--danger); margin: 2px 0 6px; }
+
 /* Pills de estado más expresivas */
 .status-pill { font-weight: 700; letter-spacing: .02em; }
 .status-pill-accepted { box-shadow: inset 0 0 0 1px rgba(34,197,94,.25); }
@@ -2213,6 +2216,9 @@ html, body { overflow-x: clip; }
 /* Detalle de presupuesto — resumen integrado y menos escalonado */
 .detail-next { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
 .detail-next-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+/* SCRUM-707 · el aviso del estado que no reconocemos. Con su regla desde el primer día: una
+   clase pintada sin regla se ve desnuda, y eso lo caza `scrum666b`. */
+.detail-estado-desconocido { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
 .detail-2col { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 28px; }
 .sig-row { margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -2425,24 +2431,40 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
 
-/* ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
+/* ── SCRUM-597 (DOC-07) · QUIÉN LLEVA EL DOCUMENTO, y SCRUM-650 · quién ejecuta el trabajo
+   Las dos pantallas COMPARTEN estas reglas en vez de tener cada una las suyas: son el mismo
+   componente en dos sitios, y duplicarlas sería duplicar el 44 px táctil de AB6 — dos fuentes
+   para el mismo número, que se separan en cuanto alguien toca una.
+   ⚠️ EL ORDEN DE LOS SELECTORES NO ES ESTÉTICO: `.job-…` va SEGUNDO para que su regla siga
+   empezando línea y terminando en `{`, que es lo que ancla el guard de SCRUM-650d al medir los
+   44 px. Ponerla primera lo dejaba sin encontrar la regla — y el guard no se toca.
+   Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css`.
+   ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
    El campo «Técnico» del parte de papel de Tecnosel dice «Israel, Miguel y Jesús.L».
    Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css` y la
    misma familia visual que `.detail-dl`. El anillo de foco lo pone la regla global de :94. */
+.doc-asignados-titulo,
 .job-asignados-titulo {
   font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
   color: var(--muted); margin-bottom: 4px;
 }
+.doc-asignados-lista,
 .job-asignados-lista { display: grid; gap: 2px; }
 /* 44 px (AB6): se marca de pie, en la obra y con guantes. */
+.doc-asignados-fila,
 .job-asignados-fila {
   display: flex; align-items: center; gap: 10px; min-height: 44px;
   padding: 0 8px; border-radius: var(--radius-md); cursor: pointer;
 }
+.doc-asignados-fila:hover,
 .job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
+.doc-asignados-casilla,
 .job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+.doc-asignados-nombre,
 .job-asignados-nombre { font-size: 14px; color: var(--ink); }
+.doc-asignados-lectura,
 .job-asignados-lectura { font-size: 14px; font-weight: 600; color: var(--ink); }
+.doc-asignados-nota,
 .job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 
 /* Tarjetas de margen (planas, dentro de su sección) */
@@ -2690,6 +2712,10 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .job-doc-row__fotos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .job-doc-row__actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+/* SCRUM-885: un `.alert.warning` dentro de la fila, a la misma distancia que las acciones. */
+.job-doc-row__aviso { margin-top: 8px; }
+/* SCRUM-885b: el mismo `.alert.warning`, fijo en la ficha de la factura, alineado con su caja de estado. */
+.invoice-detail__aviso { margin: 14px 22px 0; }
 /* Toolbar de la lista (Nuevo albarán / Consolidar) */
 .job-doc-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 
@@ -3013,6 +3039,7 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    caja gris con borde de sistema. Es literalmente lo que se veía en producción. */
 .parte-anadir,
 [data-parte-firmar],
+[data-parte-firmar-tecnico],
 [data-dictado-ordenar],
 [data-propuesta-confirmar] {
   display: inline-flex;
@@ -3034,11 +3061,13 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .parte-anadir:active,
 [data-parte-firmar]:active,
+[data-parte-firmar-tecnico]:active,
 [data-dictado-ordenar]:active,
 [data-propuesta-confirmar]:active { transform: scale(.97); }
 
 .parte-anadir:disabled,
 [data-parte-firmar]:disabled,
+[data-parte-firmar-tecnico]:disabled,
 [data-dictado-ordenar]:disabled,
 [data-propuesta-confirmar]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
@@ -3114,6 +3143,7 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    ──────────────────────────────────────────────────────────── */
 .parte-anadir,
 [data-parte-firmar],
+[data-parte-firmar-tecnico],
 [data-dictado-ordenar],
 [data-propuesta-confirmar] { min-height: 44px; }
 
@@ -3234,10 +3264,23 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    `actions`) y no tiene hueco para una sexta. Añadírselo allí habría movido las CUATRO listas
    hermanas de golpe — justo lo que el control positivo de este ticket vigila. `.table--trabajos`
    redefine las áreas SOLO para esta tabla. */
-.jobs-pantalla { max-width: 980px; }
+/* ═══ SCRUM-816 · EL TOPE DE ANCHO SE VA, Y SÓLO SE MUEVE ESTA PANTALLA ═════════════════════
+   Aquí decía `max-width: 980px`, heredado del contenedor de tarjetas que la lista sustituyó en
+   SCRUM-727b. Medido en Edge con `page.setViewport` real el 7-sep-2026, subiendo la cadena de
+   antepasados desde la tabla: a 1700 px de ventana la tabla de Trabajos acababa en **978 px** y
+   las otras cuatro listas de la casa llegaban a **1402**. Media pantalla en blanco, en la
+   pantalla desde la que el jefe reparte el día — y sólo en ésta.
+   🔴 NO ES ESTÉTICA, ES DENSIDAD: una pantalla operativa que enseña la mitad de lo que cabe
+   obliga a hacer scroll para contestar algo que debería verse de un vistazo.
+   ⚠️ Y NO ARRASTRA A NADIE: `.jobs-pantalla` existe en exactamente dos sitios de todo el árbol
+   —esta regla y `jobsView.js`—; las otras cuatro listas van de `.data-card` a `.view-container`
+   sin ningún tope. El control de que siguen idénticas se corre por HASH del DOM pintado en
+   `npm run guard:lista-trabajos`. */
+.jobs-pantalla { max-width: 100%; }
 .jobs-cabecera { margin-bottom: 16px; }
-.jobs-cabecera h2 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--ink); }
-.jobs-cabecera p { margin: 0; font-size: 13px; color: var(--muted); }
+/* Sin subtítulo desde SCRUM-816 (el `<p>` se borró: la explicación vive en el estado vacío), así
+   que el `h2` ya no necesita separarse de nada por debajo. */
+.jobs-cabecera h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink); }
 .jobs-nuevo { margin-bottom: 14px; }
 .jobs-filtros { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
 .jobs-lista { display: flex; flex-direction: column; gap: 12px; }
@@ -3248,6 +3291,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .jobs-filtro-tecnico { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .jobs-filtro-tecnico label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .jobs-filtro-tecnico select { width: auto; min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
+/* SCRUM-816 · la caja de «escribir para buscar». Filtra las opciones del selector de al lado EN
+   CLIENTE, sobre el equipo que la pantalla ya ha cargado: ni una petición nueva. */
+.jobs-filtro-tecnico-buscar { width: 132px; min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
 
 /* Cabecera de grupo dentro de la tabla: los grupos se conservan porque su rótulo lleva el
    importe de «Terminados» y su salvedad, que son microcopy aprobada (SCRUM-428). */
@@ -3264,6 +3310,37 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    deja al jefe sin saber si falta uno o faltan cuatro, que es justo lo que viene a preguntar. */
 .cell-tecnicos { overflow-wrap: anywhere; max-width: 220px; }
 .cell-tecnicos-vacio { color: var(--muted); font-style: italic; }
+
+/* ═══ SCRUM-816 · EL DESPLEGABLE DE TÉCNICOS DE LA FILA ══════════════════════════════════════
+   `<details>/<summary>` nativos: se abren y se cierran solos, van con teclado y con `Escape`, y
+   no estrenan componente. Las casillas de dentro reutilizan `.jobs-asignar-fila`, que es la misma
+   fila de 44 px que ya usa el modal del «⋯» (AB6: el objetivo es la fila entera, no la casilla de
+   13 px). El popover se posiciona `absolute` sobre la celda para no estirar la altura de la fila
+   ni empujar a las de abajo al abrirse. */
+.jobs-tecnicos-menu { position: relative; }
+.jobs-tecnicos-resumen {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 30px; padding: 4px 8px;
+  border: 1px solid var(--neutral-200); border-radius: var(--radius-sm, 8px);
+  background: var(--surface, #fff); color: var(--ink);
+  font-size: 12.5px; cursor: pointer; list-style: none;
+}
+.jobs-tecnicos-resumen::-webkit-details-marker { display: none; }
+.jobs-tecnicos-resumen::after { content: "▾"; font-size: 10px; color: var(--muted); }
+.jobs-tecnicos-resumen:hover { background: var(--neutral-50); }
+.jobs-tecnicos-resumen:focus-visible { outline: 2px solid var(--brand, #0f766e); outline-offset: 2px; }
+.jobs-tecnicos-resumen-vacio { color: var(--muted); font-style: italic; }
+.jobs-tecnicos-lista {
+  position: absolute; z-index: 600; top: calc(100% + 4px); left: 0;
+  min-width: 200px; max-width: min(92vw, 280px);
+  padding: 6px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e7e9e5);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 18px 40px -12px rgba(16,24,40,.18);   /* Flotante (DESIGN.md §4) */
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 280px; overflow-y: auto;
+}
 
 .jobs-importe-total { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .jobs-importe-cobrado { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -3302,13 +3379,20 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   /* La card de móvil de ESTA tabla: se le añade la fila de técnicos que la rejilla compartida
      no tiene. Todo lo demás lo sigue heredando de `.table--cards-mobile`. */
   .table--trabajos tbody tr.jobs-fila {
+    /* SCRUM-816 · el área `status` DESAPARECE porque la celda desapareció: ESTADO y FECHA eran la
+       misma pregunta y se han fundido en `date`. Una rejilla que declare un área sin celda no
+       falla —simplemente queda vacía— y por eso se retira a mano: un hueco reservado para nada
+       es un renglón de aire en una card que a 390 px ya iba justa. */
     grid-template-areas:
       "client   amount"
       "tecnicos amount"
-      "date     status"
+      "date     date"
       "actions  actions";
   }
   .table--trabajos td.cell-tecnicos { grid-area: tecnicos; font-size: 12.5px; color: var(--muted); max-width: none; }
+  /* El desplegable ocupa el ancho de su área en la card: a 390 px un control de 132 px con tres
+     nombres dentro se corta, y el resumen es justo lo que hay que poder leer. */
+  .table--trabajos td.cell-tecnicos .jobs-tecnicos-resumen { max-width: 100%; }
   /* El nombre del cliente ENVUELVE en la card. La tabla hereda `white-space: nowrap`, y medido a
      390 px eso dejaba «Cliente con nombre largo número 2» cortado a media palabra y pegado al
      importe: no se solapaban —hay 12 px de hueco, medidos— pero se leían como una sola cadena.
@@ -3323,3 +3407,59 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   .table--trabajos .jobs-grupo-abrir td { padding-left: 0; padding-right: 0; }
   .jobs-filtro-tecnico { margin-left: 0; width: 100%; }
 }
+
+/* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
+   Medido en el censo de las cinco listas (8-sep-2026): era la ÚNICA con `.cell-actions` ocupada
+   por un enlace a otra pantalla, y la única con CERO acciones en la fila. El enlace al Trabajo
+   pasa a `cell-trabajo` y las acciones recuperan `cell-actions`.
+
+   Los tres de abajo venían como `style.cssText` desde `albaranesView.js`. Mismos valores, sin
+   cambiar un píxel — y el trinquete de estilos en línea SÓLO BAJA. */
+.alb-enlace { color: var(--green-700); }
+.alb-numero { font-weight: 600; color: var(--green-700); }
+.alb-chip-cobro { margin-left: 6px; }
+
+@media (max-width: 640px) {
+  /* La tarjeta de ESTA tabla gana un área para el Trabajo, que hasta hoy tomaba prestada la de
+     `actions`. Se redefine SÓLO para `.table--albaranes`: añadirla a la rejilla COMPARTIDA habría
+     movido las cuatro listas hermanas de golpe, que es justo lo que un modificador evita — el
+     mismo razonamiento y el mismo patrón que `.table--trabajos` en SCRUM-727b.
+
+     El Trabajo se queda a ANCHO COMPLETO, que es lo que pedía su comentario original: un título de
+     obra no cabe en media tarjeta. */
+  .table--albaranes tbody tr {
+    grid-template-areas:
+      "id       status"
+      "client   status"
+      "date     date"
+      "trabajo  trabajo"
+      "actions  actions";
+  }
+  .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; }
+  /* AB6 · el enlace del Trabajo CONSERVA el objetivo de 44 px que tenía por vivir en `actions`.
+     Cambiar de área no puede encoger un objetivo táctil: eso sería pagar el arreglo con un dedo. */
+  .table--albaranes td.cell-trabajo a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* SCRUM-713b/c · el buscador de cliente del presupuesto.
+   Venía como `style.cssText` desde `quotesView.js` (SCRUM-713b lo mudó aquí). El `min-height: 44px`
+   es AB6 y no se toca.
+
+   SCRUM-713c añade `min-width: 0` y `box-sizing`, portados de la OTRA implementación de este mismo
+   ticket: sin ellos el campo se desborda de su columna en pantallas estrechas, y aquella ya lo
+   había medido. Es exactamente lo que se buscaba al leer su trabajo — lo que tiene y main no. */
+.quote-buscador-cliente {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+
+/* SCRUM-688 · El aviso de que no se pudo crear la revision.
+   Cero tokens nuevos. La tinta es `--danger-ink`, NO `--danger`, y no es preferencia: esta hoja
+   ya lo midio mas arriba (linea ~600) — `--danger` (#dc2626) sobre fondo claro se queda corto
+   de 4,5:1 para texto, y `--danger-ink` (#991b1b) lo pasa. El primer intento de este aviso venia
+   con `--danger` en un `style.cssText`, asi que el trinquete de estilos en JS arreglo las dos
+   cosas de una: lo saco a su clase y de paso le quito el color que no contrasta. */
+.revision-error { margin: 6px 0 0; font-size: 13px; color: var(--danger-ink, #991b1b); }

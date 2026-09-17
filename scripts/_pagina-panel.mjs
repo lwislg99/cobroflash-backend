@@ -82,6 +82,41 @@ export const DETALLE_360_DE_MUESTRA = Object.freeze({
   events: [{ type: 'quote_accepted', title: 'Presupuesto aceptado', detail: 'P-2026-0011', createdAt: '2026-04-02T10:00:00.000Z' }],
 });
 
+// ═══ SCRUM-848 · EL TRABAJO DE MUESTRA, Y POR QUÉ HACÍA FALTA ════════════════════════════════
+//
+// Hasta hoy la ficha de Trabajo se montaba con lo que el banco devuelve por defecto: `{}` en el
+// guard y `[]` en el censo. O sea, **un Trabajo SIN `status`** — un objeto que el producto no puede
+// producir: `Job.status` tiene `@default("pendiente_agendar")` en el esquema.
+//
+// Eso pasó desapercibido mientras `jobNextAction` caía al nivel 5 con cualquier estado. SCRUM-823
+// le puso la puerta `JOB_ESTADOS_CON_DOCUMENTOS` —a propósito, y bien— y entonces un Trabajo sin
+// estado dejó de tener acción de héroe: la ficha perdió su `BUTTON.btn-primary` y el suelo de
+// `guard:objetivo-tactil` saltó diciendo que encontraba 5 donde el censo midió 6.
+//
+// 🔴 EL GUARD TENÍA RAZÓN, y el defecto NO estaba en el producto: estaba en que la superficie
+// medida no era una pantalla que exista. Medido: con `status: 'en_curso'` la escalera devuelve
+// «+ Nuevo albarán»; con `'pendiente_agendar'`, «Agendar». Los cinco estados reales dan CTA. El
+// único que no lo da es el que el banco fabricaba.
+//
+// Vive aquí, junto a `DETALLE_360_DE_MUESTRA` y por el mismo motivo: lo usan los DOS instrumentos
+// —el que vigila y el que cuenta—, y con un fixture cada uno acabarían hablando de dos pantallas.
+export const TRABAJO_DE_MUESTRA = Object.freeze({
+  id: 1,
+  title: 'Reforma de baño',
+  // `en_curso` y no otro: es el estado en el que la ficha ofrece MÁS —admite documentos (SCRUM-823)
+  // y sigue teniendo el rail entero—, así que es el que deja más superficie que medir. Un fixture
+  // para un guard de objetivos táctiles se elige por eso: por lo que hace VISIBLE.
+  status: 'en_curso',
+  // El teléfono va en el RANGO IMPOSIBLE `34 0XX XXX XXX`, como los de arriba: ningún abonado
+  // español empieza por 0, así que un dato de prueba nunca puede ser el número de alguien.
+  // 🔴 Lo escribí primero como `+34600000000` —con pinta real— teniendo esa regla tres párrafos
+  // más arriba en este mismo fichero, y me cazó `guard` de SCRUM-262. Queda aquí anotado: leer la
+  // norma y aplicarla son dos actos distintos, y el mecanismo existe porque el primero no basta.
+  customer: Object.freeze({ id: 5, name: 'Ana Ruiz', phone: '34000000005' }),
+  albaranes: Object.freeze([]),
+  invoices: Object.freeze([]),
+});
+
 /** Los argumentos que el PRODUCTO le pasa a cada vista. Hoy sólo la 360 necesita uno (`app.js:314`). */
 export const ARGUMENTOS_DE_VISTA = Object.freeze({
   renderCustomer360View: [DETALLE_360_DE_MUESTRA.customer.id],

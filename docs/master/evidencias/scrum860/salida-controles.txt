@@ -1,0 +1,17 @@
+SCRUM-860 ③ · controles
+==============================================================================================
+🔴 SUELO · la mutación entró: la fila doblada lleva `margenObjetivoInterno`
+
+🔴 EL QUE DECIDE · `listProducts` (clasificada HACIA FUERA, sin `select`)
+   claves servidas: 14
+   ¿sale `margenObjetivoInterno` sin que nadie la nombre?  🔴 SÍ
+
+✅ CONTRASTE · `exportProductsCsv` (CON `select`, mismo doble, misma columna nueva)
+   ¿saca la columna nueva?  ✅ no
+
+✅ NEGATIVO · `listProducts` SIGUE sirviendo `cost` (decisión del fundador, SCRUM-609)
+   cost = 12.00  ✅
+
+🔒 «HACIA FUERA» ES UNA CLASIFICACIÓN, NO UN VEREDICTO DE DEFECTO. Que `listProducts`
+   sirva `cost` está DECIDIDO y es correcto. Lo que esta tanda mide es otra cosa: que
+   la columna de MAÑANA sale sola, sin pasar por ninguna decisión.

@@ -79,6 +79,20 @@ if (typeof window !== 'undefined') window.mensajeDeFalloAlFirmar = mensajeDeFall
 const ROTULOS_ALBARAN = {
   // Aprobados para ESTE ticket (nuevos en el árbol)
   btnFacturar: 'Facturar lo entregado',
+  // SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699), por delegación de la
+  // elección entre tres alternativas. Va pegado a `btnFacturar` porque es de él de quien hay que
+  // distinguirlo: son las DOS mitades excluyentes de la primaria de `firmado` —aquélla para el
+  // albarán VALORADO, ésta para el SIN_VALORAR—, y lo único que las separa a ojos del profesional
+  // es DE DÓNDE SALEN LOS PRECIOS. Por eso el rótulo los nombra: es lo que evita que se ponga a
+  // teclear importes a mano cuando su cliente ya los aceptó.
+  //
+  // 27 caracteres, el más largo de la barra (sus hermanos van de 13 a 21), y se aceptó a sabiendas.
+  // «Facturar este parte» es más corto y calla justo eso; «Facturar lo entregado» se descartó
+  // porque serían dos acciones distintas con el mismo rótulo en el código.
+  //
+  // Hasta hoy esta clave NO EXISTÍA, y `mk()` caía al respaldo `ROTULOS_ALBARAN[id] || MARCADOR`:
+  // el botón principal de un albarán firmado decía literalmente `[PENDIENTE microcopy oficial]`.
+  btnConvertirFactura: 'Facturar con el presupuesto',
   btnFirmarAqui: 'Firmar aquí mismo',
   btnVerTrabajo: 'Ver trabajo',
   // SCRUM-302 · APROBADO por el fundador el 5-ago-2026: es la palabra del ticket y la que usa
@@ -95,6 +109,10 @@ const ROTULOS_ALBARAN = {
   btnEditarLineas: 'Editar líneas',
   btnFoto: '📷 Añadir foto',
 };
+
+// SCRUM-905 · la franja mientras convierte. Aprobado por el orquestador por delegación del fundador
+// (SCRUM-905 comentario 15696): reutiliza «Convirtiendo…», que ya está en producción en la IA de líneas.
+const ESTADO_CONVIRTIENDO = 'Convirtiendo…';
 
 // SCRUM-302 · APROBADO por el fundador el 5-ago-2026. Dice lo que SÍ trae ANTES de lo que no: el
 // profesional necesita saber que su trabajo está ahí, no empezar por una carencia. Y el «nunca»
@@ -444,7 +462,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
      * facturado todo lo que hizo.
      */
     btnConvertirFactura: () => mk('btnConvertirFactura', async () => {
-      setStatus('info', MICROCOPY_PENDIENTE);
+      setStatus('info', ESTADO_CONVIRTIENDO);
       let d;
       try {
         d = await apiRequest(`/admin/albaranes/${alb.id}/convertir-en-factura`, { method: 'POST' });
@@ -630,16 +648,47 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
 
   // El CONTEXTO de la primaria contextual: facturar solo es el siguiente paso si el albarán lleva
   // precios y queda algo pendiente. Sale del derivado de TRES valores, no de un booleano.
-  const ctx = {
-    'valorado-con-pendiente':
-      alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado',
-    // SCRUM-290 (A0.4) · la otra mitad, EXCLUYENTE con la de arriba: el parte SIN precios se
-    // factura contra el presupuesto firmado. Exige presupuesto detrás — sin él no hay precios
-    // aceptados por el cliente y el endpoint responde 409, así que ofrecerlo sería un botón que
-    // solo sabe fallar.
-    'sin-valorar-convertible':
-      alb.modoValoracion !== 'VALORADO' && !!alb.quote && alb.estadoFacturacion !== 'facturado',
-  };
+  //
+  // 🔴 SCRUM-895 · ESTE DERIVADO ESTUVO ESCRITO DOS VECES, y por eso se arregla aquí.
+  //
+  // SCRUM-831 sacó `ctxAlbaranDeFila` a `albaranAccion.js` para que las TRES superficies —la
+  // lista de Albaranes, la ficha del Trabajo y esta pantalla— preguntaran al mismo sitio, pero
+  // esta pantalla se quedó con su copia inline: mismas condiciones, mismo criterio, otro fichero.
+  // Mientras fueron idénticas no se notó. Al añadir la condición del modo de emisión dejarían de
+  // serlo, y la lista escondería el botón imposible mientras el detalle lo seguiría ofreciendo
+  // —o al revés, según a quién le tocara el siguiente arreglo—. Dos resolutores de la misma ley
+  // es justo el defecto que `albaranAccion.js` vino a cerrar.
+  //
+  // ⚠️ Sin contexto se OCULTAN las dos primarias contextuales, que es como falla el resto de esta
+  // pantalla (`destinoEfectivo` devuelve `'oculta'` ante una condición que nadie sabe responder).
+  // Un respaldo que recalculara el criterio aquí volvería a abrir la segunda fuente.
+  const ctx = typeof ctxAlbaranDeFila === 'function' ? ctxAlbaranDeFila(alb) : {};
+
+
+  /**
+   * 🔴 SCRUM-707 · EL ESTADO QUE NO RECONOCEMOS SE DICE, NO SE CALLA.
+   *
+   * Con un estado que la tabla no contempla, `destinoEfectivo` devuelve ahora `'oculta'` para
+   * todas las acciones: cero botones y cero TypeError. Pero cero botones **en silencio** no se
+   * distingue de un documento que legítimamente no admite nada — una factura `annulled` ofrece
+   * dos y podría ofrecer cero mañana. Son dos hechos distintos.
+   *
+   * ⚠️ Sólo cuando el estado NO está en la tabla (`estadoReconocido`), nunca por tener la lista
+   * de acciones vacía: si se disparara por «cero botones», saldría en documentos correctos y en
+   * dos días nadie lo leería.
+   *
+   * ✅ Texto APROBADO por el fundador el 8-sep-2026 (regla 30), en
+   * `docs/microcopy/2026-09-08-SCRUM-707-estado-no-reconocido.md`. LITERAL.
+   */
+  function avisoEstadoNoReconocido(doc, registro, estado) {
+    if (typeof window.estadoReconocido !== 'function') return;
+    if (window.estadoReconocido(registro, estado)) return;
+    const p = doc.createElement('p');
+    p.className = 'detail-estado-desconocido';
+    p.dataset.estadoDesconocido = '1';
+    p.textContent = 'No reconocemos el estado de este documento — no podemos ofrecerte acciones aquí.';
+    return p;
+  }
 
   const cubos = { primaria: [], secundaria: [], overflow: [] };
   for (const accion of (window.ALBARAN_ACTION_REGISTRY || [])) {
@@ -652,6 +701,8 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       : (destino === 'secundaria' ? 'btn-secondary btn-sm' : 'btn-ghost btn-sm');
     cubos[destino].push(b);
   }
+  const avisoA = avisoEstadoNoReconocido(document, window.ALBARAN_ACTION_REGISTRY || [], alb.estado);
+  if (avisoA) acts.appendChild(avisoA);
   for (const b of cubos.primaria) acts.appendChild(b);
   for (const b of cubos.secundaria) acts.appendChild(b);
   if (cubos.overflow.length) {

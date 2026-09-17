@@ -30,6 +30,9 @@
 // import no puede meter clientes en el merchant de otro.
 
 import { trocearCsv, celdaCsv } from '../../../core/csv/csv';
+// SCRUM-884: el teléfono con la MISMA regla que el alta — las dos piezas que ya existen, no otra.
+import { normalizarIdentificadores } from '../customerAdmin';
+import { formasBuscables } from './identificadoresDuplicados';
 
 // ── ① Codificación ───────────────────────────────────────────────────────────
 
@@ -187,17 +190,24 @@ export async function importarClientes(
       continue;
     }
 
-    const phone = leer(celdas, 'phone') || null;
+    // 🔴 SCRUM-884 · el teléfono se GUARDA como lo guarda el alta (`normalizarIdentificadores`) y
+    // se BUSCA por sus formas (`formasBuscables`), como el aviso de duplicado del alta. Hacen falta
+    // las dos: `normalizePhone` sola da `612345678` y `34612345678` para el mismo cliente, porque
+    // no resuelve el prefijo de país — y guardar CON prefijo supuesto no es decisión de este ticket.
+    const telefonoDelCsv = leer(celdas, 'phone') || null;
+    const { phone } = normalizarIdentificadores({ phone: telefonoDelCsv });
     const email = (leer(celdas, 'email') || '').toLowerCase() || null;
     const notes = leer(celdas, 'notes') || null;
 
     try {
-      // Dedup por teléfono o email, SIEMPRE dentro del merchant (regla 2).
+      // Dedup por teléfono o email, SIEMPRE dentro del merchant (regla 2). Las formas salen de la
+      // CELDA, no del número ya limpio: incluyen el texto tal cual, así que una fila vieja guardada
+      // sin normalizar se sigue encontrando con el mismo texto, como antes de este ticket.
       if (phone || email) {
         const existente = await cliente.findFirst({
           where: {
             merchantId,
-            OR: [...(phone ? [{ phone }] : []), ...(email ? [{ email }] : [])],
+            OR: [...formasBuscables(telefonoDelCsv).map((forma) => ({ phone: forma })), ...(email ? [{ email }] : [])],
           },
         });
         if (existente) { base.omitidos++; continue; }

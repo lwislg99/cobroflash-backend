@@ -351,8 +351,24 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     // ③ El filtro de lo ilegible, apagado: un número del fallback de `env.ts` pasaría por sha.
+    // ⚠️ RE-ANCLADA tras SCRUM-824b: el `if` combinado se partió en dos (formato por un lado,
+    // reloj-por-longitud por otro). El ancla sigue el mismo defecto —el reloj cuela como sha—
+    // apagando sólo la línea que lo cazaba, no el filtro de formato (`ES_SHA`) que sigue vivo.
     fichero: 'scripts/_ritmo-de-despliegue.mjs',
-    de: '  if (!ES_SHA.test(s) || TODO_DIGITOS.test(s)) return null;',
+    de: '  if (TODO_DIGITOS.test(s) && LONGITUDES_DE_RELOJ.has(s.length)) return null;',
+    a: '  if (false) return null;',
+    cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
+  },
+  {
+    // ③b El filtro de FORMATO, apagado: lo que ni siquiera tiene forma de sha pasaría por lectura.
+    // 🔴 SCRUM-836e · La ③ de arriba apaga sólo la línea del reloj y deja ésta viva en el código,
+    // pero SIN VIGILAR: el ancla de antes de SCRUM-824b cubría el filtro entero, y al re-anclarla
+    // sólo por el reloj la línea de formato se quedó sin nadie que la tumbe.
+    // Testigo medido el 15-sep-2026: la cadena vacía del mismo test, NO el epoch. Con esta mutación
+    // la línea del reloj sigue en pie y el epoch lo sigue parando; si el rojo saliera por el epoch,
+    // esta declaración estaría mirando la línea de la ③ y no la suya.
+    fichero: 'scripts/_ritmo-de-despliegue.mjs',
+    de: '  if (!ES_SHA.test(s)) return null;',
     a: '  if (false) return null;',
     cae: 'una lectura ilegible da NO SE SABE, no un veredicto a medias',
   },

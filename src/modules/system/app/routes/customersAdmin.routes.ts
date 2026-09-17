@@ -107,6 +107,10 @@ router.post('/', async (req, res) => {
     res.status(201).json(customer);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
+    // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
+    // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
+    if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
     console.error('[POST /admin/customers]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -122,6 +126,10 @@ router.put('/:id', async (req, res) => {
     res.json(updated);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
+    // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
+    // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
+    if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
     console.error('[PUT /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -233,7 +241,10 @@ router.get('/:id/detail', async (req, res) => {
 
     const customer = await prisma.customer.findFirst({
       where: { id, merchantId: req.merchantId },
-      select: { id: true, name: true, phone: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true },
+      // SCRUM-590 (CONT-19): `mobile` también aquí — este `select` es distinto del de
+      // `customerAdmin.ts` y alimenta la ficha 360. Sin él, la ficha enseñaría el fijo y
+      // callaría el número por el que de verdad se le escribe al cliente.
+      select: { id: true, name: true, phone: true, mobile: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true },
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 

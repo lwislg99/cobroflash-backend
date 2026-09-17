@@ -305,12 +305,43 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // subárbol medido es de 1 nodo —`textContent` en el banco es una propiedad, no un hijo—.
   // Medido también el que SE QUEDA (`button.btn-ghost.quote-add-line`): subárbol de 1 nodo, y
   // sigue ahí. O sea que el delta entero es el botón borrado y esta pantalla no ha movido nada más.
-  assert.equal(nodos.length, 262,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 262 `
+  // 🔴 SCRUM-713 · 8-sep-2026 · 262 → 264. Y SÍ se ha tocado el banco en esa rama —entra
+  // `buscadorDeClientes.js` en `SCRIPTS_DEL_DASHBOARD`—, así que la advertencia de abajo aplica de
+  // lleno y por eso el delta se aisló ANTES de mover el número: los DOS nodos son del PRODUCTO.
+  //
+  // IDENTIFICADOS POR IDENTIDAD sobre el árbol montado, no restando 264 − 262:
+  //
+  //   1. `input[type=search]` del bloque «1. Cliente», el buscador. Subárbol medido: 1 nodo.
+  //   2. la `<option disabled>` del selector de cliente. Subárbol medido: 1 nodo. Aparece porque
+  //      este banco monta SIN clientes, y con la lista vacía el desplegable ahora DICE que no hay
+  //      ninguno en vez de quedarse mudo. Con clientes en la lista, esta segunda no se pinta.
+  //
+  // AISLADO: quitando esos dos subárboles el árbol vuelve a 262 exactos, así que el delta entero
+  // vive en el control nuevo y esta pantalla no ha movido nada más. El script añadido al banco no
+  // aporta ningún nodo: sólo publica `window.buscadorDeClientes`.
+  // 🔴 SCRUM-669 · 15-sep-2026 · 264 → 261. LA SEGUNDA BAJADA, y es una RETIRADA medida: el
+  // aviso «Final: …» (`priceHint`) quedaba SIEMPRE vacío desde que DOC-08 sacó el margen de la
+  // línea, así que se retiró con su clase. El banco NO se ha tocado en esta rama.
+  //
+  // IDENTIFICADOS POR IDENTIDAD sobre el árbol montado, no restando 264 − 261: montando la vista
+  // con `priceHint` de vuelta salen 264 y **3 × `span.price-final-hint`**; sin él, 261 y cero.
+  // La diferencia (3) es exactamente el recuento de esa clase, ni un nodo más — uno por cada
+  // línea inicial del presupuesto. Si mañana bajara 4, no sería esto.
+  // 🔴 SCRUM-897 · 17-sep-2026 · 261 → 237. LA PRIMERA VEZ QUE ESTA CIFRA LA MUEVE EL BANCO, y a
+  // propósito: `innerHTML = …` APILABA la pintada nueva sobre la vieja. El número se RECALCULÓ
+  // con este mismo contador sobre el árbol arreglado, no restando. Los 24, POR IDENTIDAD sobre el
+  // árbol de main: las 3 pintadas anteriores de `.quote-totals` (DIV 6 · SPAN 6 · STRONG 6) y de
+  // `.quote-total-kpi` (SPAN 3 · STRONG 3), idénticas a la última. Y una segunda sonda sin
+  // mini-DOM, Edge pintando la vista con los mismos scripts y datos: 227 elementos, que son estos
+  // 237 menos los 10 `#text` del banco, y la diferencia por etiqueta era exactamente esa.
+  assert.equal(nodos.length, 237,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 237 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
-    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794). Un arreglo del BANCO no debe cambiar ni uno: si '
-    + 'has tocado el banco y esto se mueve, el arreglo pinta.');
+    + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
+    + '− los 3 avisos «Final: …» retirados por SCRUM-669, − las 24 pintadas viejas que el banco '
+    + 'apilaba hasta SCRUM-897). Si no has tocado el banco y esto se '
+    + 'mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');

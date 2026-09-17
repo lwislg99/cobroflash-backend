@@ -84,8 +84,19 @@ test('SCRUM-698 · 🔴 y SIN datos, la lista de las que necesitan fixture NO CR
   // datos tiene que seguir haciéndolo, y si aparece una nueva en la lista es que se ha roto.
   const { rotas } = await montarTodas(undefined);
   const nombres = rotas.map((r) => r.split(' → ')[0]).sort();
+  // 🔴 SCRUM-707 · SALE `renderAlbaranDetailView`, Y NO PORQUE ALGUIEN LE HAYA DADO DATOS.
+  //
+  // Nunca los necesitó: **reventaba**. Sin `alb.estado`, `destinoEfectivo` devolvía `undefined` y
+  // `cubos[undefined].push(...)` lanzaba `TypeError: Cannot read properties of undefined`. Medido
+  // el 8-sep-2026 quitando y poniendo la línea del arreglo:
+  //
+  //     sin el arreglo → Cannot read properties of undefined (reading 'push')
+  //     con el arreglo → monta, 23 nodos
+  //
+  // ⚠️ Y ESO ES LO CARO DE ESTA LISTA: la pantalla llevaba tiempo aquí clasificada como «le faltan
+  // datos», que suena a limitación del banco, cuando lo que tenía era un defecto de producto. Una
+  // lista de excepciones sin la CAUSA al lado convierte un fallo en una característica.
   assert.deepEqual(nombres, [
-    'renderAlbaranDetailView',
     'renderPlansView',
     'renderQuoteRequestsView',
     'renderTeamView',
@@ -309,8 +320,37 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // (`button.btn-ghost.quote-add-line`) sigue montándose con su subárbol de 1. El delta entero
   // es el botón borrado: este ticket no ha movido ni un nodo del resto de la pantalla, y las
   // otras tres vistas siguen intactas.
-  for (const [vista, nodos] of [['renderQuotesView', 262], ['renderProductsView', 166],
-    ['renderCustomersView', 68], ['renderHomeView', 109]]) {
+  // 🔴 SCRUM-713 · 8-sep-2026 · `renderQuotesView` 262 → 264, y NINGUNA de las otras tres se mueve
+  // —que es la mitad del valor de este control—. Los dos nodos, POR IDENTIDAD sobre el árbol
+  // montado y no restando 264 − 262: el `input[type=search]` del bloque «1. Cliente» (subárbol de
+  // 1) y la `<option disabled>` que el selector pinta cuando la lista viene VACÍA, que es como
+  // este banco la monta (subárbol de 1). AISLADO: quitando los dos, el árbol vuelve a 262 exactos.
+  // 🔴 SCRUM-669 · 15-sep-2026 · `renderQuotesView` 264 → 261, y NINGUNA de las otras tres se
+  // mueve —que es, otra vez, la mitad del valor de este control—. Los tres nodos, POR IDENTIDAD
+  // sobre el árbol montado y no restando 264 − 261: son `3 × span.price-final-hint`, el aviso
+  // «Final: …» que quedaba siempre vacío desde que DOC-08 sacó el margen de la línea. AISLADO:
+  // devolviendo `priceHint` a la vista el árbol vuelve a 264 y aparecen esos 3 exactos.
+  // 🔴 SCRUM-886 · 16-sep-2026 · `renderCustomersView` 68 → 69, y NINGUNA de las otras tres se
+  // mueve. El nodo, POR IDENTIDAD sobre el árbol montado y no restando: `a.btn-secondary.btn-sm`
+  // con «⬇ Clientes CSV» y `href` a `/admin/exports/customers.csv`, la entrada a la exportación
+  // que el fundador pidió también en Clientes (subárbol de 1). AISLADO: quitando su `appendChild`
+  // el árbol vuelve a 68 exactos y a cero entradas a esa ruta.
+  // 🔴 SCRUM-897 · 17-sep-2026 · `renderQuotesView` 261 → 237, y NINGUNA de las otras tres se
+  // mueve (166, 69 y 109, RECALCULADAS con este contador sobre el árbol arreglado). Lo mueve el
+  // BANCO, no la vista: `innerHTML = …` apilaba la pintada nueva sobre la vieja. Los 24, POR
+  // IDENTIDAD sobre el árbol de main: las 3 pintadas anteriores de `.quote-totals` (18) y de
+  // `.quote-total-kpi` (6). Edge, con los mismos scripts y datos, pinta 227 elementos = 237 − 10
+  // `#text`; en productos y clientes, banco y Edge ya coincidían etiqueta a etiqueta.
+  // 🔴 SCRUM-901 · 17-sep-2026 · `renderHomeView` 109 → 144, y NINGUNA de las otras tres se mueve
+  // (237, 166 y 69, RECALCULADAS con este contador). Lo mueve el BANCO, en dos arreglos medidos
+  // uno a uno con los consumidores: el marcado ANIDA (109 → 93: los 16 esqueletos de `#kpi-grid`
+  // y `#activity-feed` que quedaban como hermanos y ya se van al repintar) y la vista se monta
+  // DENTRO del documento (93 → 144: `renderSetupChecklist` por fin encuentra `.kpi-grid` con
+  // `document.querySelector` y pinta «Completa tu configuración», 51 nodos). Edge, con los mismos
+  // scripts y datos, pinta 143: la Inicio del banco coincide FIRMA A FIRMA salvo UN nodo, el
+  // `.alert.warning` «No hemos podido comprobar…», porque el banco no tiene IndexedDB (declarado).
+  for (const [vista, nodos] of [['renderQuotesView', 237], ['renderProductsView', 166],
+    ['renderCustomersView', 69], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
@@ -341,7 +381,20 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // «+ Añadir línea» duplicado que se borra. Identificado por identidad en el bloque de arriba.
   // Lo que este control vigila —que el fixture no se imponga, o sea que los DOS montajes den el
   // mismo número— sigue intacto: le da igual cuál sea ese número, y por eso baja sin perder nada.
-  assert.equal(todos(desnuda.contenedor).length, 262,
+  // SCRUM-713 (8-sep-2026): la OCTAVA anotación, +2 — el buscador de cliente y la `<option>` con
+  // que el selector avisa de que la lista viene vacía. Identificados por identidad en el bloque de
+  // arriba. Lo que este control vigila —que los DOS montajes den el mismo número— sigue intacto, y
+  // aquí los dos vienen sin clientes: el de `datos` propios manda `{items, quotes}`, que no es una
+  // lista de clientes, y el desnudo no manda nada. Los dos pintan el aviso, y por eso siguen
+  // coincidiendo.
+  // SCRUM-669 (15-sep-2026): la NOVENA anotación, −3 — los tres avisos «Final: …», retirados con
+  // el margen que los justificaba. Identificados por identidad en el bloque de arriba. Lo que este
+  // control vigila —que los DOS montajes den el mismo número— sigue intacto: el aviso se retiró de
+  // la vista, así que no lo pinta ninguno de los dos.
+  // SCRUM-897 (17-sep-2026): la DÉCIMA anotación, −24, y la única que no viene de la vista sino
+  // del banco: `innerHTML` dejó de apilar pintadas. Recalculado sobre el árbol arreglado con los
+  // DOS montajes: el de `datos` propios y el desnudo dan 237 los dos, así que siguen coincidiendo.
+  assert.equal(todos(desnuda.contenedor).length, 237,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

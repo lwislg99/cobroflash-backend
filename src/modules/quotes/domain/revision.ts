@@ -12,17 +12,24 @@
 // dato que puede contradecir a los otros dos —dos filas marcadas vigentes, o ninguna— y esta casa
 // ya sabe cómo acaba eso.
 //
-// ── ⚠️ CADUCADO EL 2-sep-2026 (FASE B) · YA TIENE LLAMADOR ───────────────────────────────
-// Lo de abajo se conserva porque explica POR QUÉ estuvo sin cable, y eso sigue siendo cierto de
-// aquel día. Lo que ya NO es cierto es la premisa: `Quote` SÍ tiene campo de revisión desde
-// SCRUM-674, y `getQuoteDetailAdmin` consume este módulo. El bloque «FASE B» de más abajo lo
-// dice con lo que se midió.
-// ── ⚠️ ESTE MÓDULO NO LO LLAMA NADIE TODAVÍA, Y ES DELIBERADO ─────────────────────────────
-// `Quote` tiene `quoteNumber Int?` y NO tiene campo de revisión (medido). Añadirlo es tocar
-// `prisma/schema.prisma`, que es del fundador: el diff va PREPARADO en `docs/master/SCRUM-655.md`
-// y no se aplica aquí. Mismo trato que `retencionIrpf.ts` (A2) y `recargoEquivalencia.ts` (A3):
-// el mecanismo construido y probado, esperando su campo. Cuando exista, se enchufa y no hay que
-// volver a decidir nada de esto.
+// ── QUIÉN LLAMA A ESTE MÓDULO, HOY (15-sep-2026, SCRUM-688) ──────────────────────────────
+//
+// Las dos mitades están cableadas y `Quote` tiene su columna `revision` desde SCRUM-674:
+//
+//   · LEER  — `getQuoteDetailAdmin` (`system/quoteAdmin.ts`) usa `vistaDeRevisiones` y
+//     `numeroConRevision` para contestar qué versiones hay y cuál está vigente.
+//   · CREAR — `crearRevisionDeQuote` (mismo fichero) usa `nuevaRevisionDe` y `vigenteUnicaDe`,
+//     y lo alcanza `POST /admin/quotes/:id/revisiones` desde la pantalla de revisiones.
+//
+// 🔴 AQUÍ HABÍA DOS CABECERAS QUE SE CONTRADECÍAN, y conviene que conste por qué se corrigen en
+// vez de borrarse. Una decía «CADUCADO… YA TIENE LLAMADOR» y la de debajo, intacta, «ESTE MÓDULO
+// NO LO LLAMA NADIE TODAVÍA, Y ES DELIBERADO» — afirmando además que `Quote` NO tiene campo de
+// revisión, que era falso desde SCRUM-674. Dos afirmaciones opuestas en el mismo fichero, y la
+// segunda describía un árbol que ya no existía.
+//
+// Quien leyera la de abajo habría dado por supuesto que este motor sigue esperando su columna, y
+// habría vuelto a «prepararlo» en vez de usarlo. Un comentario que afirma algo falso no es ruido:
+// se lee como medición, y manda a trabajar en la dirección equivocada.
 
 /** Un presupuesto, reducido a lo que hace falta para hablar de revisiones. */
 export interface RevisionDePresupuesto {
@@ -227,6 +234,25 @@ export const REVISION_HEREDA = [
   // Van LAS DOS y no sólo el texto: heredar `shippingAddress` sin `shippingAddressMode` dejaría
   // una dirección guardada que el documento no imprime, porque el modo manda.
   'shippingAddress', 'shippingAddressMode',
+  // ── 7-sep-2026 · LAS ETIQUETAS DEL DOCUMENTO (SCRUM-595, DOC-05) ─────────────────────────
+  //
+  // Lo cazó este mismo guard, por CUARTA vez y otra vez antes de que costara nada. Una columna
+  // nueva de `Quote` nace SIN clasificar, y sin clasificar simplemente no viaja.
+  //
+  // HEREDA. El precedente exacto está tres líneas más arriba y es `internalNotes`: metadato del
+  // PROFESIONAL sobre el documento, que no sale en el papel ni lo ve el cliente. Una revisión es
+  // otra versión del MISMO trabajo, y el trabajo sigue siendo de la misma obra y del mismo
+  // cliente moroso: la etiqueta no caduca porque cambie un precio.
+  //
+  // 🔴 Y el defecto que evita es MUDO, que es lo que lo decide: sin heredar, revisar un
+  // presupuesto lo SACA del filtro «obra puerto» sin decir nada. El profesional no ve un error —
+  // ve una lista con un documento menos, y no tiene forma de saber que le falta. Heredar es
+  // REVERSIBLE (se quita la etiqueta); no heredar no lo es, porque ya no se sabe cuál llevaba.
+  //
+  // ⚠️ Clasificar NO es que viaje (ver arriba), y aquí no hay viaje que probar: `nuevaRevisionDe`
+  // sigue SIN LLAMADOR (SCRUM-688 abierto). Cuando lo tenga, `tags` tiene que ir en lo que ese
+  // llamador lea, igual que exigió SCRUM-686 para la cabecera y el pie.
+  'tags',
 ] as const;
 
 /**
@@ -236,6 +262,7 @@ export const REVISION_HEREDA = [
 export const REVISION_NO_HEREDA: Readonly<Record<string, string>> = Object.freeze({
   signatureUrl:    'el trazo del cliente cubre LO QUE VIO. Copiarlo a una versión distinta es firmar por él',
   evidence:        'la evidencia técnica de aquella decisión: hora, IP, canal. No es de este documento',
+  evidenciaFirma:  'el SELLO de lo que se firmó (SCRUM-805). Heredarlo sería peor que heredar el trazo: su `contentHash` certifica el contenido de AQUEL documento, así que en esta versión no cuadraría — y un sello que no cuadra se lee como una falsificación que nadie ha cometido',
   acceptedAt:      'aceptó AQUELLO. Esta versión aún no la ha visto nadie',
   rejectedAt:      'rechazó AQUELLO, por lo mismo',
   decisionChannel: 'por dónde decidió aquella vez',

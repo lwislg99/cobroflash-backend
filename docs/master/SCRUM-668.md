@@ -9,7 +9,7 @@
 
 ---
 
-## 1 · PASO 0 (regla 39) — ¿coinciden HOY?
+## 1 · PASO 0 (cita de regla RETIRADA — SCRUM-637) — ¿coinciden HOY?
 
 **Sí, en tres de los cuatro carriles.** Y no hace falta abrir ningún `.env` para saberlo: **lo
 declara el propio repo**, en `scripts/_clave-vs-destino.mjs`, que existe justamente para eso.

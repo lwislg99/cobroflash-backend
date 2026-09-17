@@ -60,6 +60,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { soloCodigo } from '../tests/_solo-codigo.mjs';
 
 export const LANDING = 'public/index.html';
 
@@ -290,9 +291,16 @@ export function defaultsDeLaTablaP(raiz) {
 
   // Los comentarios se quitan ANTES de buscar. Media tabla lleva explicación al lado, y una
   // línea comentada que mencione un flag contaría como declaración.
-  const cuerpo = src.slice(ini, fin)
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  // 🔴 SCRUM-694c · el corte a pelo se retira. `\/\/.*$` no aguanta NINGUNA forma de URL:
+//   `'https://x'` -> se queda en `'https:`  ·  `` `https://wa.me/${t}` `` -> igual
+//   `/^https?:\/\//` -> se queda en `/^https?:\/`  ·  `'//cdn…'` -> se queda en `'`
+  // Medido el 15-sep-2026: hoy no pierde ni una linea de lo que lee, pero eso es suerte del
+// contenido, no del filtro. `soloCodigo()` tokeniza y aguanta las cuatro.
+  //
+  // Y se filtra el fichero ENTERO para cortar DESPUES con los MISMOS indices: `soloCodigo()`
+  // conserva posiciones a proposito, justo para que esto sea legal. Filtrar la rodaja seria
+  // filtrar un fuente cortado por la mitad.
+  const cuerpo = soloCodigo(src, 'flags.ts').slice(ini, fin);
 
   const tabla = {};
   for (const m of cuerpo.matchAll(/^\s*([A-Z][A-Z0-9_]*)\s*:\s*(true|false)\s*,/gm)) {

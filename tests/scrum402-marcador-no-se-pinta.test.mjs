@@ -112,6 +112,11 @@ const CENSO = Object.freeze({
   //
   // El dia que el fundador firme los cuatro textos, esta entrada se BORRA — no se pone a 0.
   'jobAsignados.js': 1,
+  // 🔴 SCRUM-597 · 8-sep-2026 · `documentoAsignados.js` SALE: el fundador firmó los cinco
+  // rótulos («me parecen genial los rótulos»), registrados en
+  // `docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-documento.md`. La entrada se BORRA, no
+  // se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y
+  // el trinquete APRIETA. Un marcador censado sigue en pantalla; uno firmado desaparece.
   // 🔴 SCRUM-748 (4-sep-2026) · SUBIDA A CONCIENCIA: `invoicesView.js` ENTRA con 1.
   //
   // La bandeja de pendientes decidía con `SEMAFORO_META[grupo.semaforo] || SEMAFORO_META.verde`,
@@ -210,7 +215,28 @@ const CENSO = Object.freeze({
   //
   // ⛔ Y esta firma NO alcanza a «[PENDIENTE microcopy oficial] Nuevo albarán» de `atajoNuevo.js`,
   // que es de otro ticket. Comprobado con el censo: sigue en 1 antes y después.
-  'quotesView.js': 3,
+  // 🔴 SCRUM-632 · 8-sep-2026 · `quotesView.js` SUBE de 3 a 4, y a conciencia.
+  //
+  // Entra el rótulo del campo de DESCRIPCIÓN DE LA LÍNEA. El mecanismo no existe sin él: la
+  // línea gana un dato nuevo —distinto de la descripción del PRODUCTO, decisión del fundador del
+  // 8-sep-2026— y un campo sin rótulo no se puede usar; quien lo abra no sabría si escribe la
+  // del catálogo o la del documento, que es justo la confusión que el ticket cierra.
+  //
+  // Sale de UNA sola constante, `MARCA_DESC_LINEA`, así que la firma lo apaga de golpe. El día
+  // que llegue, este número BAJA a 3 — no se borra la entrada, porque quedan otros marcadores
+  // en el fichero (SCRUM-424 / SCRUM-405: la entrada sólo se borra cuando no queda ninguno).
+  'quotesView.js': 4,
+  // 🔴 SCRUM-530 · 15-sep-2026 · `reportsView.js` ENTRA con 1, y a conciencia.
+  //
+  // La alerta de tasa de entrega de WhatsApp exige ≥10 envíos en 7 días, así que para un merchant
+  // del Pioneer NO SE ACTIVABA NUNCA — y la tarjeta, que sólo pintaba cuando la alerta estaba
+  // activa, se quedaba CALLADA. Una alerta que nunca se activa y una que no tiene datos se leen
+  // igual y significan lo contrario, así que ahora la pantalla dice que no puede pronunciarse.
+  //
+  // Ese texto es del fundador (regla 30) y NO se escribe aquí: sale con marcador y con
+  // `data-microcopy="PENDIENTE_FUNDADOR"`, como se entregaron los rótulos de albaranes. El día
+  // que se firme, esta entrada SE BORRA —no se pone a 0— porque es el único marcador del fichero.
+  'reportsView.js': 1,
   // 🔴 SCRUM-587 (CONT-14) · 4-sep-2026 · `customersView.js` ENTRÓ Y SALIÓ EL MISMO DÍA.
   //
   // Entró con 1 —el rótulo del campo del descuento pactado en la ficha del cliente— y el asesor lo

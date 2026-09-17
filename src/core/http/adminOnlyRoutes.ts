@@ -45,6 +45,14 @@ export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; bo
   { method: 'GET', path: '/admin/billing/plans' },
   { method: 'GET', path: '/admin/team' },
   { method: 'POST', path: '/admin/connect/onboard' },
+  // SCRUM-597 (DOC-07) · asignar usuarios a un documento es REPARTO DE TRABAJO, y S1 dice que
+  // el reparto es del Admin — mismo criterio que el selector de asignados de los Trabajos. Las
+  // dos entran, porque son dos rutas y dos `requireRole`: ninguna hereda el 403 de la otra.
+  //
+  // ⚠️ Que estén aquí NO convierte la asignación en un permiso: siguen sin decidir quién edita ni
+  // quién emite. Esto declara quién puede ASIGNAR, no qué gana el asignado — que es nada.
+  { method: 'PATCH', path: '/admin/quotes/999999/asignados',   body: { assignedUserIds: [] } },
+  { method: 'PATCH', path: '/admin/invoices/999999/asignados', body: { assignedUserIds: [] } },
   // Supervisión por operario (SCRUM-24): S1 → equipo/supervisión es Admin
   { method: 'GET', path: '/admin/metrics/operarios' },
   // SCRUM-301 (C1) declaró aquí el listado GLOBAL de albaranes, y **SCRUM-467 RE-DECLARA la

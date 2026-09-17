@@ -11,7 +11,7 @@
 // la emisión (`stageAmountsFromLines`); sin ellas se mantiene el reparto aritmético de SCRUM-32
 // como respaldo (presupuestos sin líneas guardadas).
 import { resolveBillingPlan, distributeStageAmounts } from './billingPlan';
-import { stageAmountsFromLines } from '../../invoicing/domain/invoiceLines.service';
+import { stageAmountsFromLines, lineasParaFacturar } from '../../invoicing/domain/invoiceLines.service';
 
 export interface BillingPlanStageView {
   index: number;
@@ -29,6 +29,8 @@ export function buildBillingPlanView(
     currency: string;
     /** SCRUM-141: si vienen, el importe de cada tramo se deriva de ellas (lo que se emitirá). */
     lines?: unknown;
+    /** SCRUM-887: obligatorio — sin él no se sabe si el `dto` de línea entra en la factura. */
+    discountGlobalAmount: unknown;
   },
   emittedCount: number
 ): {
@@ -38,7 +40,8 @@ export function buildBillingPlanView(
   hasCustomPlan: boolean;
 } {
   const plan = resolveBillingPlan(quote);
-  const quoteLines = Array.isArray(quote.lines) ? (quote.lines as any[]) : null;
+  // SCRUM-887: las MISMAS líneas que factura la emisión, con el dto de línea ya aplicado.
+  const quoteLines = Array.isArray(quote.lines) ? lineasParaFacturar(quote) : null;
   const aritmeticos = distributeStageAmounts(quote.total, plan);
   // SCRUM-141: EXACTAMENTE el mismo cálculo que la emisión (mismas líneas, mismos objetivos),
   // para que la UI no pueda prometer un importe distinto del que acabará en la factura.

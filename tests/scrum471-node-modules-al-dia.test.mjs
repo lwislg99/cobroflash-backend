@@ -23,6 +23,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { avisoDeDesfase, diagnosticar, exigidasPorElLock, instalado } from './_desfase-node-modules.mjs';
 
@@ -42,7 +43,7 @@ test('SCRUM-471 · SUELO: el comprobador LEE el lock, y si no puede se declara c
     '🔴 el lector no ve `typescript` en el lock: está ciego y lo de abajo no mediría nada.');
 
   // Y el ciego, probado: un árbol sin lock tiene que DECIRLO, no pasar.
-  const vacio = fs.mkdtempSync(path.join(RAIZ, '.tmp-471-'));
+  const vacio = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-471-${process.pid}-`));
   try {
     fs.mkdirSync(path.join(vacio, 'node_modules'));
     const aviso = avisoDeDesfase(vacio);
@@ -71,7 +72,7 @@ test('SCRUM-471 · 🔴 CONTROL NEGATIVO: un árbol AL DÍA no dice nada', () =>
 test('SCRUM-471 · 🔴 con una dependencia ausente, el aviso la NOMBRA', () => {
   // Se simula sobre un árbol de mentira —no se toca el `node_modules` de nadie— con el mismo lock
   // real: el caso exacto de `fake-indexeddb`, que produjo cinco rojos y un ticket inexistente.
-  const falso = fs.mkdtempSync(path.join(RAIZ, '.tmp-471-'));
+  const falso = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-471-${process.pid}-`));
   try {
     fs.copyFileSync(path.join(RAIZ, 'package.json'), path.join(falso, 'package.json'));
     fs.copyFileSync(path.join(RAIZ, 'package-lock.json'), path.join(falso, 'package-lock.json'));
@@ -102,7 +103,7 @@ test('SCRUM-471 · 🔴 con una dependencia ausente, el aviso la NOMBRA', () => 
 });
 
 test('SCRUM-471 · una versión DISTINTA también cuenta, no solo la ausencia', () => {
-  const falso = fs.mkdtempSync(path.join(RAIZ, '.tmp-471-'));
+  const falso = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-471-${process.pid}-`));
   try {
     fs.copyFileSync(path.join(RAIZ, 'package.json'), path.join(falso, 'package.json'));
     fs.copyFileSync(path.join(RAIZ, 'package-lock.json'), path.join(falso, 'package-lock.json'));
@@ -124,7 +125,7 @@ test('SCRUM-471 · una versión DISTINTA también cuenta, no solo la ausencia', 
 });
 
 test('SCRUM-471 · el aviso NO recomienda `rmdir /s`, que es lo que arrasó el compartido', () => {
-  const falso = fs.mkdtempSync(path.join(RAIZ, '.tmp-471-'));
+  const falso = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-471-${process.pid}-`));
   try {
     fs.copyFileSync(path.join(RAIZ, 'package.json'), path.join(falso, 'package.json'));
     fs.copyFileSync(path.join(RAIZ, 'package-lock.json'), path.join(falso, 'package-lock.json'));

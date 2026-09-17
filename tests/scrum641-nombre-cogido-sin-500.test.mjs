@@ -28,18 +28,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard } from './_banco-vistas.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTAS = path.join(RAIZ, 'src/modules/products/app/routes/products.routes.ts');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/productsView.js');
 
 /** Quita `//…` y `/*…*\/`. Lo que quede es código, no prosa sobre el código. */
-function desnudar(src) {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n')
-    .map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1'))
-    .join('\n');
+function desnudar(src, nombre = 'x.ts') {
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  return soloCodigo(src, nombre);
 }
 
 /** Trocea el fichero de rutas en bloques, uno por `router.<verbo>(`. */

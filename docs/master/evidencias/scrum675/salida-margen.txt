@@ -1,0 +1,17 @@
+MARGEN DE HOY — «cuanto se puede escribir antes de dejar ciego al guard»
+
+   scrum370 · gastos del Trabajo
+      ventana 1400 · simbolo mas lejano «listExpenses» acaba en 756
+      🔴 MARGEN: 644 caracteres
+
+   scrum856 · canje una sola vez: 🔴 no se puede leer src/modules/billing/domain/referral.service.ts
+EL CASO DEL TICKET (censo de SCRUM-647), COMPROBADO HOY:
+   ¿sigue leyendo por VENTANA FIJA?  NO ✅
+   ¿lee por IDENTIDAD (indexOf→indexOf)? SI ✅
+
+   Y su propio comentario lo dice, citado del fichero:
+   «// de este ticket: `IGIC` ocupa un carácter más que `IVA`. Un `slice` de longitud fija cortaba la»
+
+   -> El caso concreto del ticket YA SE ARREGLO, y con la salida A (ancla por
+      identidad). El ticket ha envejecido en su ejemplo, NO en su tesis: la familia
+      sigue viva en los demas guards.
