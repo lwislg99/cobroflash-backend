@@ -1,0 +1,37 @@
+{
+  "propuestas": [
+    {
+      "id": 312,
+      "merchantId": 2,
+      "customerId": 3927,
+      "type": "maintenance_proposed",
+      "title": "🔧 Propuesta de mantenimiento: Revisión de termo/calentador",
+      "detail": "Borrador #16 creado (320,00 €) · WA al pro falló (not_configured) — el borrador queda en Presupuestos",
+      "meta": null,
+      "createdAt": "2026-09-17T18:40:38.985Z"
+    },
+    {
+      "id": 311,
+      "merchantId": 2,
+      "customerId": 3927,
+      "type": "maintenance_proposed",
+      "title": "🔧 Propuesta de mantenimiento: Revisión de termo/calentador",
+      "detail": "Borrador #15 creado (320,00 €) · WA al pro falló (not_configured) — el borrador queda en Presupuestos",
+      "meta": null,
+      "createdAt": "2026-09-17T18:38:49.006Z"
+    },
+    {
+      "id": 310,
+      "merchantId": 2,
+      "customerId": 3927,
+      "type": "maintenance_proposed",
+      "title": "🔧 Propuesta de mantenimiento: Revisión de termo/calentador",
+      "detail": "Borrador #14 creado (320,00 €) · WA al pro falló (not_configured) — el borrador queda en Presupuestos",
+      "meta": null,
+      "createdAt": "2026-09-17T18:37:12.487Z"
+    }
+  ],
+  "R": {
+    "fichaDelCliente": "funciona"
+  }
+}

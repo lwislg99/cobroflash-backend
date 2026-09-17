@@ -118,6 +118,17 @@ function bloqueDinero(job, fmt) {
   if (cobrado > 0) lineas.push({ etiqueta: 'Cobrado', texto: fmt(cobrado, moneda) });
   if (aceptado > 0) lineas.push({ etiqueta: 'Pendiente', texto: fmt(Math.max(0, aceptado - cobrado), moneda) });
 
+  // SCRUM-907 · «Pendiente 0,00 €» escondía un cobro POR ENCIMA de lo aceptado. El exceso y el texto
+  // salen de `jobCobroHuecos.js`, los MISMOS que usa «Qué falta para cobrar»: dos cuentas del mismo
+  // exceso acabarían avisando en una pieza y no en la otra.
+  const cobro = (typeof importesDeCobro === 'function')
+    ? { importesDeCobro, avisoCobradoDeMas }
+    : (typeof require === 'function' ? require('./jobCobroHuecos.js') : null);
+  if (cobro) {
+    const exceso = cobro.importesDeCobro(job).cobradoDeMas;
+    if (exceso > 0) lineas.push({ texto: cobro.avisoCobradoDeMas(fmt(exceso, moneda)), aviso: true });
+  }
+
   // Se clasifican con `tipoDeFactura`, la MISMA condición que usa la pila para repartir: si aquí
   // se repitiera el `startsWith('J-')` a mano, un cambio en una de las dos copias mandaría el
   // mismo documento a dos sitios, o a ninguno.
