@@ -317,6 +317,13 @@ const HALLAZGOS_DECLARADOS = [
   // SCRUM-839e · mismo caso: `main`, `pr` y la rama del PR en un remoto DESNUDO creado en el
   // temporal; el `rev-parse` mide si esa rama sintética se movió. No es el `main` de nadie.
   'tests/scrum839e-solo-pr-armados.test.mjs [rev-parse]',
+  // SCRUM-899 · la puerta de integridad del equipo de fondo. Su pregunta es sobre la PUNTA por
+  // definición: «¿esta copia instalada es IDÉNTICA a lo que hay HOY en `main`?» — lo que se haya
+  // mergeado después de salir una rama es justo lo que la instalación tiene que llevar. Los dos
+  // tests hacen el `show` dentro de repositorios SINTÉTICOS del temporal, con un `origin/main`
+  // que no es el de nadie: mismo caso que 839d y 839e. Lo retira quien retire `scripts/equipo/`.
+  'tests/scrum899-sesion-lista-blanca.test.mjs [show]',
+  'tests/scrum899b-arranque-de-la-tanda.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -344,6 +351,10 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-839e · lo mismo: nombra `main` al montar sus repositorios sintéticos (y el remoto desnudo
   // del banco del job) y al pasárselo al CLI dentro de ellos. Ninguno es el `main` de este repositorio.
   'tests/scrum839e-solo-pr-armados.test.mjs',
+  // SCRUM-899 · nombran `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
+  // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
+  'tests/scrum899-sesion-lista-blanca.test.mjs',
+  'tests/scrum899b-arranque-de-la-tanda.test.mjs',
   // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
   // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
   // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.
