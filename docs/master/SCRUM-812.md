@@ -240,6 +240,11 @@ censo · 82 ficheros DECLARANTES de 886 ficheros de test (9 %) · 252 declaracio
 *(82/886/252/207/19 y no 81/885/248/206/18 porque el guard nuevo de esta tanda ya está dentro del
 árbol que se mide. Ver ④.)*
 
+> **RE-MEDIDO tras mezclar `origin/main` en la rama**, que es el árbol que se entrega — 17-sep-2026:
+> **889** ficheros · **83** declarantes · **254** declaraciones · **208** titulados · **19** otra
+> vez. 🟢 Que el total creciera y el 19 NO se moviera es la estabilidad que hacía falta para poder
+> clavarlo (④). El ancla del trinquete lleva las dos mediciones, como la de `TOPE_PROSA_MUDA`.
+
 ## ② EL DENOMINADOR · sin una lectura más, y por CONSTRUCCIÓN
 
 `censoDeDeclaraciones` ya listaba `tests/` entero y filtraba **después**. Lo que faltaba era

@@ -47,9 +47,17 @@ function tituladosQueDeclaran() {
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  * EL TRINQUETE · cuántos ficheros se titulan GUARD **y** declaran su mutación.
  *
- * ⚓ ANCLADO: medido el **17-sep-2026 a las 19:0xZ** sobre `origin/main` =
- * `f52ff943e5a0ddff5c07aa760dbd8bc07a6acd8d`. Reparto de ese árbol:
- * 885 ficheros de test · 81 declarantes · 206 se titulan GUARD · **19** cumplen las dos cosas.
+ * ⚓ ANCLADO (SCRUM-737, escalón ④): medido sobre `origin/main` =
+ * `f52ff943e5a0ddff5c07aa760dbd8bc07a6acd8d` — 17-sep-2026: 885 ficheros de test · 81
+ * declarantes · 206 se titulan GUARD · **19** cumplen las dos cosas.
+ *
+ * Y **RE-MEDIDO sin cambio** tras mezclar `origin/main` en la rama — 17-sep-2026: 889 ficheros ·
+ * 83 declarantes · 208 se titulan GUARD · **19** otra vez. Ése es el árbol sobre el que este
+ * suelo se ENTREGA, y por eso se re-mide: un suelo anclado a un árbol anterior al merge está
+ * anclado a un árbol que nadie va a ver.
+ *
+ * 🟢 Que el total creciera (más ficheros, más declarantes, más titulados) y el 19 NO se moviera
+ * es justo la estabilidad que hacía falta para poder clavarlo aquí.
  *
  * ⚠️ **ESTE FICHERO ES UNO DE LOS 19, y hay que decirlo.** Titula sus tests GUARD y declara sus
  * mutaciones, así que entra en la población que mide. Medido antes de escribirlo eran 18; el 19
