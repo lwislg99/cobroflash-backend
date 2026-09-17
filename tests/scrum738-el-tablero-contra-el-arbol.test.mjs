@@ -41,7 +41,18 @@ test('SCRUM-738 · 🔴 «72» NO casa con 720, 727 ni 1727 — se compara el N�
     '🔴 dos de los cuatro números colapsan: el censo propondría cerrar el que no es.');
 
   // El delimitador es obligatorio: sin él, `scrum-72` casaría con el principio de `scrum-727-x`.
-  assert.equal(numeroDeRama('scrum-72'), null, '🔴 una rama sin sufijo se está aceptando');
+  // SCRUM-804f (17-sep-2026): el FIN DEL NOMBRE también delimita. Aquí se exigía `null` para
+  // `scrum-72` a secas, y eso era un efecto de la regla, no su motivo: escondió la rama viva
+  // `scrum-904` y cerró el check obligatorio de `main`. Lo que este bloque protege —que 72 no se
+  // confunda con 727— se sigue comprobando, ahora también sin slug.
+  assert.equal(numeroDeRama('scrum-72'), 72, '🔴 una rama sin slug no se atribuye a su ticket');
+  assert.equal(numeroDeRama('scrum-727'), 727, '🔴 sin slug, `scrum-727` se confunde con 72');
+  // El delimitador sigue siendo OBLIGATORIO: tras el número (y su letra de fase) sólo vale `-` o el
+  // final. Sin él, cualquier cosa pegada al número casaría: `scrum-72.1` o `scrum-72bb` no son
+  // ramas del ticket 72. (SCRUM-804f: esto es lo que distingue a la regla del mutante sin
+  // delimitador, ahora que `scrum-72` a secas ya da 72.)
+  assert.equal(numeroDeRama('scrum-72.1'), null, '🔴 sin delimitador: lo pegado al número se está aceptando');
+  assert.equal(numeroDeRama('scrum-72bb'), null, '🔴 sin delimitador: dos letras tras el número no son una fase');
   assert.equal(numeroDeRama('feature/scrum-72-x'), null, '🔴 no está anclado al principio');
   // La letra de fase pertenece al MISMO ticket.
   assert.equal(numeroDeRama('scrum-684b-albaran-sin-presupuesto'), 684);
@@ -180,6 +191,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // ⚠️ RE-ANCLADA tras SCRUM-829: `numeroDeRama` se mudó a `_numero-de-rama.mjs` (HOJA, sin
     // tocarle un carácter al patrón) para que `_censo-reparto.mjs` la comparta sin cerrar el
     // ciclo de imports que este fichero documenta arriba. Este fichero sólo la re-exporta.
+    // ⚠️ SCRUM-804f (17-sep-2026): desde que el fin del nombre también delimita, `scrum-72` a secas
+    // da 72 con la regla Y con el mutante, así que esa aserción ya no lo distingue (el meta-guard lo
+    // declaró MUDO en el PR #1430). Lo tumban ahora `scrum-72.1` y `scrum-72bb`: con delimitador
+    // obligatorio dan `null`; sin él, 72.
     fichero: 'scripts/_numero-de-rama.mjs',
     de: 'export function numeroDeRama(nombre) {',
     a: 'export function numeroDeRama(nombre) {\n  const mm = /^scrum-0*([0-9]+)/.exec(String(nombre ??0).trim()); return mm ? Number(mm[1]) : null;',

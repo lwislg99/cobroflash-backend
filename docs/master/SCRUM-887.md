@@ -172,3 +172,34 @@ C3-B tras el arreglo, plan entero: `Descuento global 1 × −25` · `Punto de lu
 - **Rojo 2** `867482fbf60bb76f1b8b8252590e611337ad504a` (sin empujar: el GO lo da el fundador): 4 rojos. El descuento de la muestra salía ajustado (−150 → −149,999), el global total emitía +X −X, la línea iba al final y el albarán llevaba el marcador.
 - **Arreglo** `b4dfc1bdf221e4a6a849c58478ba67d9e478050d`. Mutantes: descuento al final → 3 rojos · sin rechazo del global total → 1 · rechazo con el marcador → 1. Revertido: 18/18.
 - **Automerge:** el #1383 lo tiene activado. Empujar esta rama la pone en verde y la despliega. Además, desde el push de claude[bot] (`9ff07948`) el CI está parado en `action_required` con 0 jobs (SCRUM-900). Al empujar hay que comprobar que arranca con jobs.
+
+## PR 2 · verificación en producción (17-sep-2026)
+
+- Push `071579d694cb63f57a72f89007f8e79eaee75452` a las 09:56:10Z, con el GO del fundador escrito en el chat de la sesión y ls-remote justo antes. El CI del #1383 arrancó con jobs (SCRUM-900 confirmado: el push de una persona lo desbloquea).
+- Merge automático a las **10:03:26Z** → `f3ab211d54fb4b04129498985b6a78079cf78448`, con el meta-guard aún en curso: acabó en success (run 35207809289). Staging y yaqu.app sirven ese sha.
+- **Staging, C3-B nuevo:** presupuesto #1881 (firmado 559,70), aceptado por el enlace del cliente a las 10:05:26Z. Justificante `J-20260917-UYIC`, total **559,70**. Líneas: `Descuento global 1 × −25 (21 %)` · `Punto de luz 8 × 21,2075` · `Base de enchufe 11 × 17,991` · `Boletín 1 × 120`. `/pay/invoice` pinta «Importe a pagar **559,70 €**» y `/pay/bank` 559,70 € (cabecera `Date` 10:05:27Z).
+- Visto de paso, fuera de este ticket: la página de firma sigue pintando las líneas sin dto, base 539,49 e IVA 113,29 bajo un total de 559,70 (D3 de SCRUM-883, punto 1 de SCRUM-888).
+
+# PR 3 · caso C (descuento global + varios tipos de IVA): no se guarda, no se revisa, no se factura
+
+**Medido contra:** `origin/main` = `e48c18d57fd495d8929cd983733e18c2ac057e64` · 2026-09-17T10:20:37Z (hora del commit de main; integrado con merge, sin rebase)
+**Rama:** `scrum-887c-bloquear-caso-c` · **Estado:** listo en local, sin empujar hasta la confirmación del orquestador por el canal (autorización del fundador en el chat de la sesión, 17-sep).
+
+## Decisión (orquestador por delegación del fundador)
+
+- **15697 · opción (A) completa.** El bloqueo solo en el editor se cuela por la API, por las revisiones y por los C que ya existen. La opción (B), repartir el global por tipo en proporción a la base, va como pregunta a la asesoría; la (C), pasarlo a descuento por línea, queda descartada.
+- **15698 · L2 y L2r** terminan con la única salida que existe: un presupuesto firmado no se edita y su revisión HEREDA el global, así que se duplica. Hoy «Duplicar» pierde el global (D6 de SCRUM-883, punto 3 de SCRUM-888); aquí no importa, porque el texto pide ponerlo en cada línea.
+
+## Qué cambia
+
+- **A3 · la pieza:** con C, `lineasParaFacturar` deja las líneas a 0 y el portón de SCRUM-246 no emite. El cliente que acepta lee `COPY_PUBLICO_SIN_LINEAS`, ya aprobado (L3). Las tres rutas del profesional (`/admin/quotes/:id/invoice`, `/invoice-manual` y `/admin/jobs/:id/collect-rest`) preguntan antes `tieneDescuentoGlobalConVariosIva` y responden **409 `descuento_global_con_varios_iva`** con L2, sin haber escrito nada.
+- **A2 · el servidor:** `POST /quote/create` responde **400** con L1; `POST /admin/quotes/:id/revisiones` responde **400** con L2r (`RevisionNoCreable` antes de `quote.create`).
+- **A1 · el editor:** `quotesView.js` comprueba C antes de `createQuote` y avisa con `setAlert` y L1. La pieza `quoteDescuentos.descuentoGlobalConVariosIva` copia la agrupación del SERVIDOR (no la de `totalesConDescuento`, que salta las líneas sin precio). Comparada con el servidor en 3.000 casos: 0 discrepancias.
+- **Textos:** `src/modules/quotes/domain/descuentoGlobalConVariosIva.ts`. L2 y L2r componen su remedio desde UNA constante. Aprobaciones en `docs/microcopy/2026-09-17-SCRUM-887-descuento-global-varios-iva-{editor,facturar}.md`; la de L2/L2r registra también sus partes fijas, que es lo que cruza el guard SCRUM-514 (precedente: SCRUM-894).
+- **El negativo de `scrum887`** dejó de afirmar que C cobraba 628,60: afirmarlo protegía de improvisar un reparto mientras no hubo decisión, pero con la decisión tomada congelaba el cobro de más. Ahora afirma que C no se reparte y no se factura.
+
+## Verificación
+
+- **Rojo** `d3eb5f157dbae88030dc0900803676f226b92d0d`, sin empujar, contra main `f3ab211d`: **9 rojos**. `/quote/create` y `/revisiones` llegaban a escribir (`$transaction`, `quote.create`); `/invoice` llegaba a `$transaction`, o sea que un C se emitía; el cliente no leía L3; el editor no reconocía C.
+- **Arreglo** `89860c71c25628a7ecbdabc8091834f499261599`. **Mutantes en src y public**, cada uno aplicado y revertido: la pieza reparte C como B → 3 rojos · el predicado nunca ve C → 5 · `/quote/create` sin rechazo → 1 · revisión sin rechazo → 1 · revisión con 409 en vez de 400 → 1 · collect-rest sin su rechazo → 1 · el editor cuenta las cabeceras → 1 · el editor no avisa → 1. Revertido: 27/27. En los dos mutantes del front salió además un rojo de A3, que era del instrumento: el script no recompilaba `dist` tras revertir el mutante anterior. Recompilado, desaparece.
+- **Sin cambios:** los casos A y B (C3-B sigue en 559,70), y la huella de 10.000 presupuestos sin descuento.
