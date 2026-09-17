@@ -262,3 +262,106 @@ cambiar el veredicto de un guard de otro carril. Regla 9: se mide y se reporta.
 **fuera de un fichero de test y por tanto importable**, que es la mitad del arreglo que sí estaba
 en mi mano. Unificar las dos es un ticket, y la decisión de qué hacer con ese redondeo es del
 fundador.
+
+---
+
+# APÉNDICE · Fase c — `--input-border` sube también, y la jerarquía deja de vivir en un comentario
+
+*17-sep-2026 · rama `scrum-691c-el-borde-del-input`*
+
+**Medido contra:** `origin/main` = `8c354ff3404fb2a093d14b30414bc1a8e564c46a` · 2026-09-17T10:16:40+01:00
+
+⚠️ **ESTA RAMA VA ENCIMA DE `scrum-691b-el-token-que-no-se-ve`, que sigue sin mergear.** No se
+ramificó de `main` a propósito: la jerarquía se mide contra el `--border` nuevo, y desde `main` ese
+valor todavía no existe. Su compare lleva dentro las dos fases.
+
+## ① El valor
+
+| par | antes | ahora |
+| --- | --- | --- |
+| `--input-border` vs `--bg` | **1,43** | **3,86** |
+| `--input-border` vs `--surface` | **1,54** | **4,15** |
+
+🔴 **EL VALOR NO SE ELIGIÓ A OJO NI SE PUSO EN EL MÍNIMO.** Se conserva la **proporción que los dos
+tokens ya tenían** antes de este ticket: 1,429 / 1,137 = **1,256**. Aplicada al `--border` nuevo
+(3,037) da un objetivo de **3,82**, y `#797e77` es el primer valor que lo alcanza conservando el
+matiz del original (R−5 y B−7 respecto a G). Proporción resultante: **1,27**.
+
+No es una relación inventada: es la que el fundador ya tenía entre esos dos tokens, trasladada.
+
+## La jerarquía declarada, y vigilada como número
+
+> **El borde del CAMPO se ve MÁS que el de la tarjeta que lo contiene.**
+
+De dónde sale: **de la propia hoja**, que declara ese token como *«borde de input mas visible
+(legible a pleno sol)»*. No es criterio nuevo; es el que ya estaba escrito y que subir `--border`
+había invertido en silencio.
+
+🔴 **Sí se puede expresar como número, así que el guard la vigila:**
+`contraste(--input-border, fondo) > contraste(--border, fondo)`, **contra los dos fondos** —
+invertirse en uno solo ya es invertirse.
+
+⚠️ **Lo que se vigila es que NO SE INVIERTA, no que la distancia sea la de hoy.** Fijar la
+proporción en 1,27 convertiría en rojo cualquier ajuste legítimo de cualquiera de los dos tokens.
+Lo que no puede volver a pasar es que el orden se dé la vuelta sin que nadie lo note.
+
+## ② Las cinco cifras, y el reparto
+
+```
+población: 19 tokens de color · 4 pares vigilados · 0 POR DEBAJO de 3.00 · 0 no medibles
+           · bloques de tema extra (modo oscuro): 0
+```
+
+| | antes (fase b) | ahora |
+| --- | --- | --- |
+| tokens de color | 19 | **19** |
+| pares vigilados | 2 | **4** |
+| por debajo de 3,00 | 0 | **0** |
+| no medibles | 0 | **0** |
+| bloques de tema extra | 0 | **0** |
+
+### ¿A cuántos tokens le APLICA 1.4.11?
+
+```
+reparto 1.4.11: 19 tokens de color · 4 APLICA · 10 no aplica · 5 NO CLASIFICADO
+                (cuentan del lado malo) · 4 pares vigilados hoy
+```
+
+**El criterio se deriva del USO en las tres hojas, no del nombre del token:** es un límite visual
+quien se pinta en `border*` u `outline*`; quien sólo se usa en `color` es texto y le toca el
+criterio 1.4.3 a 4,5, que ya vigila SCRUM-368; quien sólo se usa en `background*` es una
+superficie, y una superficie no es un límite.
+
+| clase | nº | cuáles |
+| --- | --- | --- |
+| **APLICA** | **4** | `--border` (38 usos) · `--brand` (16) · `--danger` (3) · `--input-border` (3) |
+| no aplica · sólo texto | 5 | `--ink` · `--body` · `--muted` · `--danger-ink` · `--ok-ink` |
+| no aplica · sólo fondo | 5 | `--bg` · `--surface` · `--brand-tint` · `--danger-bg` · `--ok-bg` |
+| **NO CLASIFICADO** | **5** | `--brand-700`, `--brand-ink`, `--brand-tint-ink` (fondo **Y** texto: depende del nodo) · `--brand-bright` (sólo alimenta otra variable) · `--logo-cyan` (**0 usos**: no se pinta en ninguna hoja) |
+
+🔴 **Los 5 NO CLASIFICADOS cuentan del lado malo.** No poder decidir no es poder aprobar.
+
+### 🔴 Se vigilan 4 pares de 2 tokens; APLICA a 4 tokens. Los otros dos, MEDIDOS y no añadidos
+
+`--brand` da **3,07** sobre `--bg` y **3,30** sobre `--surface`. `--danger`, **4,49** y **4,83**.
+**Los dos cumplirían hoy.** No se han añadido al guard: el encargo dice `--input-border` y nada
+más (regla 9), y añadirlos crea un trinquete sobre dos tokens de otro carril. **Queda ofrecido y
+medido**, que es lo contrario de ampliar a ciegas.
+
+## Dónde se ve
+
+`--input-border` se usa en **3 sitios**: `input, select` (`public/auth.css:78`) y dos campos del
+dashboard — `[data-parte-dictado] textarea` y `[data-propuesta] input[type="number"]`
+(`public/dashboard/css/styles.css:3018` y `:3102`).
+
+⚠️ **Y aquí mi `grep` se equivocó y el censo tuvo razón.** Buscar `var(--input-border)` devolvía
+**una** aparición; el censo decía **tres**. Las dos que faltaban están escritas con **respaldo** —
+`var(--input-border, var(--border))`— y el `grep` no las ve porque no cierra el paréntesis ahí.
+Un `grep` de `var(--token)` **subcuenta siempre que alguien use la forma con respaldo**.
+
+## Lo NO tocado
+
+`DESIGN.md` · `docs/equipo/00-normas-comunes.md` · `prisma/schema.prisma` · cualquier otro token,
+incluidos `--brand` y `--danger` que sí cumplirían · ningún estado ni flag (27) · ninguna
+dependencia (36) · ningún bundler, framework de CSS ni `style=` en línea (regla 4) · ningún texto
+de usuario (regla 30 / A7). **Nada ejecutado contra producción ni contra staging.**

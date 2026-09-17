@@ -35,7 +35,18 @@
      original (R-2 y B-4 respecto a G), o sea que cambia el tono, no el color.
      Medido el 17-sep-2026. Lo vigila tests/scrum691-contraste-de-tokens.test.mjs. */
   --border: #8d8f8b;         /* divisores y contornos 1px */
-  --input-border: #cdd2cb;   /* borde de input mas visible (legible a pleno sol) */
+  /* SCRUM-691 fase c · era #cdd2cb, que daba 1,43 sobre --bg. Al subir --border a 3,04 este token
+     se quedaba ATRAS y la jerarquia se INVERTIA: el campo, que esta declarado aqui mismo como
+     "mas visible", pasaba a tener el contorno mas flojo que la tarjeta que lo contiene. Un
+     incumplimiento uniforme es mas facil de leer y de arreglar que uno con la jerarquia del reves.
+     EL VALOR NO SE ELIGE A OJO: se conserva la PROPORCION que los dos tokens ya tenian antes de
+     este ticket — 1,429 / 1,137 = 1,256 — aplicada al --border nuevo. 3,037 x 1,256 = 3,82, y
+     este es el primer valor que lo alcanza conservando el matiz del original (R-5 y B-7 respecto
+     a G). Resultado: 3,86 sobre --bg y 4,15 sobre --surface; proporcion 1,27.
+     La jerarquia ya NO vive solo en este comentario: la vigila el guard como numero, porque una
+     jerarquia escrita en prosa se invierte en cuanto alguien toca un token — que es exactamente
+     lo que acababa de pasar. Medido el 17-sep-2026. */
+  --input-border: #797e77;   /* borde de input mas visible (legible a pleno sol) */
 
   /* Semanticos */
   --danger: #dc2626;

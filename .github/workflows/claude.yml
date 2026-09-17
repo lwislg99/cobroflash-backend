@@ -54,9 +54,21 @@ jobs:
       id-token: write
       actions: read
     steps:
+      # 🔴 SCRUM-900 · EL CHECKOUT NO DEJA SU CREDENCIAL, y de eso depende que el CI arranque.
+      #
+      # Si la credencial se persiste (el valor por defecto), `checkout@v6` guarda el GITHUB_TOKEN
+      # como cabecera `extraheader` en un fichero enlazado por `includeIf`. `claude-code-action` no
+      # la ve al limpiar y solo pone la llave de la App en la URL; git manda la cabecera primero, y
+      # el push de Claude salía como `github-actions[bot]`: CI en `action_required`, 0 jobs, PR
+      # armado parado sin aviso (5 de 6 desde el 14-sep). Medido con git contra un servidor local:
+      # `tests/scrum900-push-de-claude-con-la-app.test.mjs`.
+      #
+      # Sin credencial no se pierde nada: el repositorio es público (el `git fetch` de abajo no
+      # la necesita) y los `gh` de este workflow llevan su propio `GH_TOKEN`.
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
       # La SEGUNDA mitad. `fetch-depth: 0` sola trae historia completa pero UNA ref, y sin
       # esto `origin/main` no resuelve: ver la tabla de la cabecera. La orden es la MISMA,
       # byte a byte, que la de `ci.yml` y `vigia-despliegue.yml` — se copia el patrón de la
