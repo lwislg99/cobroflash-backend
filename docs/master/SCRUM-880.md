@@ -330,3 +330,28 @@ no la afirmación: sigue señalando la misma función.
 ⚠️ **Y deja una lección para el que escriba comentarios largos en el camino fiscal:** explicar bien
 un cambio de una línea cuesta 38 líneas, y esas 38 líneas rompen coordenadas ajenas. El precio no
 es no explicar — es acordarse de que el fichero es un sistema de coordenadas para otros documentos.
+
+### Rojo ajeno en la tanda, demostrado y NO arreglado (regla 9)
+
+`SCRUM-804 · CONTROL POSITIVO DERIVADO` sale en rojo:
+
+```
+🔴 EL INSTRUMENTO NO VE ESTAS RAMAS, que `for-each-ref` sí lista:
+   · scrum-904 → SCRUM-904
+```
+
+**No es el intermitente que ya está registrado**: aquél parpadeaba (9/9, 8/9, 9/9) y éste falla
+**3 de 3 en aislamiento**. Es reproducible, o sea que es otra cosa.
+
+**Y no es mío, demostrado y no afirmado:** con `main` en el árbol —sin ninguno de mis cambios—
+**falla igual**. El test lee refs de git, que son compartidas, así que el veredicto no depende de
+la rama en la que se esté.
+
+La causa: la rama remota **`scrum-904`** (17-sep-2026 11:23, de otra sesión, trabajando en la
+colisión de contador del 522) **se llama sin slug** — `scrum-904` en vez de `scrum-904-<slug>`,
+que es la forma que manda la constitución (`scrum-<n>-<slug>`). El barrido de SCRUM-804 no la
+alcanza, y su propio mensaje lo dice bien: *«un `SIN RASTRO` sobre ellas no dice "no hay trabajo":
+dice que el barrido no llega»*.
+
+**Reportado, no tocado**: es de otro carril y no bloquea esto. Quien lleve el 904 puede renombrar
+la rama, o SCRUM-804 ampliar su criterio — pero esa decisión no es de aquí.
