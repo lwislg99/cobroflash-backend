@@ -20,7 +20,7 @@ encolada sin red se intenta subir al vaciar la cola y el servidor la rechaza por
 borra cuando ese recuadro se vuelve a firmar con éxito.
 
 Si el código del rechazo es `parte_vacio`, no sale este texto sino el ya firmado
-`TEXTOS.parteVacioNoSeFirma` (`2026-09-16-SCRUM-890-parte-vacio-no-se-firma.md`).
+`TEXTOS.parteVacioNoSeFirma` (firmado el 16-sep-2026 en este mismo ticket, comentario 15623).
 
 ## Qué cambió
 
