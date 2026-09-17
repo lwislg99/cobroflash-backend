@@ -201,7 +201,16 @@ Se diferencia en algo importante: **su 409 sí lleva texto real** —«Un albar�
 congelado: no admite fotos nuevas.»—, así que el profesional al menos se entera de por qué. Por eso
 no lo meto aquí: es otro ticket, no un fleco de éste, y tocarlo sería alcance que no me diste.
 
-**No abro el ticket**: el tope A7 es tuyo. Te lo traigo con su medición hecha.
+**`btnFacturar` es el MISMO defecto y tampoco lo toco, por una razón concreta.** Para el albarán
+`VALORADO`, la otra primaria de `firmado` también acaba en 409 `facturacion_no_disponible` en este
+modo (`albaranes.routes.ts:1223` y `:1318`, `facturar-parcial`). Pero ese botón **no llama a la
+API: navega** al detalle del Trabajo, y la cabecera de `albaranDetailView.js` declara un contrato
+con esa pantalla —«mientras estos dos naveguen, la fila NO puede quedarse solo con el enlace»,
+vigilado por `tests/scrum302-sin-callejones.test.mjs`—. Esconderlo aquí cambia el contrato de otra
+pantalla, y eso ya no es este ticket. Su 409, además, **sí lleva texto real**: «La facturación por
+partes no está disponible en este modo.»
+
+**No abro ninguno de los dos tickets**: el tope A7 es tuyo. Te los traigo con su medición hecha.
 
 ---
 
