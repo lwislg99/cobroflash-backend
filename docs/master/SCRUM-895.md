@@ -216,7 +216,13 @@ partes no está disponible en este modo.»
 
 ## 🔴 PROPUESTA DE MICROCOPY — NI APROBADA NI APLICADA
 
-> **Por qué vive aquí y no en `docs/microcopy/`.** El encargo decía ese directorio, y ahí no cabe:
+**Subida al ticket para firma: SCRUM-895, comentario 15689** (17-sep-2026 11:41 +0200).
+
+> **El sitio es DOBLE mientras no exista buzón, y los dos son obligatorios** (corrección del
+> orquestador, 17-sep-2026): el literal aquí, con sus alternativas y contras, **y** un comentario en
+> el ticket para que el fundador firme ahí — como el comentario 15660 de SCRUM-892.
+>
+> **Por qué no en `docs/microcopy/`.** El encargo decía ese directorio, y ahí no cabe:
 > `tests/scrum726-quien-firma-la-microcopy.test.mjs` exige que **todo** registro de
 > `docs/microcopy/` lleve una firma que cuente —la del fundador, o la delegada completa y
 > vigente—, y una propuesta sin firmar lo pone en rojo (`firmante: null`). Ese directorio es el
