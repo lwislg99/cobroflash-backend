@@ -17,7 +17,11 @@
 //   · 🔴 descuento global 25 € → el total cambia y la vista previa dice lo mismo (175,04 €);
 //   · POSITIVO: sin descuentos, total y vista previa 241,52 €, como hoy;
 //   · y el borrador se guarda también al tocar cada descuento (espía de `localStorage.setItem`).
-// Lo que NO juzga: las FILAS de la vista previa (su total por línea no aplica el dto; va en otro PR).
+// SCRUM-888c añade dos cosas que antes quedaban fuera:
+//   · 🔴 la FILA de la vista previa dice lo mismo que la fila del editor (antes hacía su propia
+//     cuenta sin dto: 241,52 € con el 15 % puesto);
+//   · 🔴 al RECARGAR, el borrador devuelve el dto de la línea y el descuento global, y el total es
+//     el mismo (antes `saveDraft` no los guardaba).
 //
 // ── POR QUÉ FUERA DE `npm test` ──────────────────────────────────────────────────────────────
 // Necesita el editor entero pintado y teclado de verdad; el banco de Node repinta el total con
@@ -87,6 +91,13 @@ const LEER = new Function(`
     kpi: t('.quote-total-kpi__cifra'),
     previa: t('.quote-preview .preview-total-row-main strong'),
     filaPrevia: t('.quote-preview .preview-lines-table tr:last-child td:last-child'),
+    filaEditor: t('.quote-line .quote-line__total'),
+    chip: t('.quote-line .quote-line__ajustes'),
+    global: (function () {
+      var c = document.querySelector('.quote-dto-global__campo');
+      var i = c && c.querySelector('input');
+      return i ? { valor: i.value, visible: !c.hidden } : null;
+    })(),
     borradores: window.__borradores
   };
 `);
@@ -164,6 +175,13 @@ try {
       if (!await teclear(pag, '.quote-dto-global__campo input', '25')) { ciegos.push(`${ancho}px → no hay campo de descuento global`); continue; }
       const conGlobal = await paso('descuento global 25 €');
 
+      // SCRUM-888c · EL BORRADOR, RECARGANDO. Se guarda con los dos descuentos dentro, así que al
+      // volver a abrir el editor tienen que estar puestos y el total tiene que ser el mismo.
+      await pag.reload({ waitUntil: 'networkidle0' });
+      const repintado = await pag.waitForSelector('.quote-line .quote-line__price input', { timeout: 10000 }).then(() => true, () => false);
+      if (!repintado) { ciegos.push(`${ancho}px → tras recargar, el editor no se pintó`); continue; }
+      const recargado = await paso('recargado (borrador)');
+
       const mal = [];
       if (base.kpi !== '241,52 €' || base.previa !== '241,52 €') mal.push(`POSITIVO: sin descuentos se esperaba 241,52 € en los dos; total ${base.kpi}, vista previa ${base.previa}`);
       if (conDto.kpi === base.kpi) mal.push(`dto de línea 15 %: el total no se mueve (${conDto.kpi})`);
@@ -172,6 +190,14 @@ try {
       if (conGlobal.kpi !== '175,04 €') mal.push(`descuento global 25 €: total ${conGlobal.kpi}, se esperaba 175,04 € (medido en staging)`);
       if (conGlobal.previa !== conGlobal.kpi) mal.push(`descuento global 25 €: total ${conGlobal.kpi} y vista previa ${conGlobal.previa}`);
       if (conGlobal.borradores <= antesGlobal) mal.push('descuento global 25 €: el borrador no se guarda');
+      // SCRUM-888c (C) · la FILA de la vista previa usa la misma cuenta que la fila del editor.
+      for (const [nombre, r] of [['sin descuentos', base], ['dto de línea 15 %', conDto], ['descuento global 25 €', conGlobal]]) {
+        if (!r.filaEditor || r.filaPrevia !== r.filaEditor) mal.push(`${nombre}: la fila del editor dice ${r.filaEditor} y la de la vista previa ${r.filaPrevia}`);
+      }
+      // SCRUM-888c (borrador) · recargar devuelve los dos descuentos y el mismo total.
+      if (recargado.kpi !== conGlobal.kpi || recargado.previa !== conGlobal.previa) mal.push(`borrador: antes de recargar total ${conGlobal.kpi} / vista previa ${conGlobal.previa}; después ${recargado.kpi} / ${recargado.previa}`);
+      if (!recargado.chip || recargado.chip.indexOf('Dto. 15 %') === -1) mal.push(`borrador: tras recargar la línea no trae su dto (chip «${recargado.chip}»)`);
+      if (!recargado.global || recargado.global.valor !== '25' || !recargado.global.visible) mal.push(`borrador: tras recargar el descuento global no está (${JSON.stringify(recargado.global)})`);
       if (errores.length) mal.push(`errores de página: ${errores.join(' | ')}`);
       if (mal.length) hallazgos.push({ ancho, mal });
     } finally {
@@ -187,7 +213,7 @@ console.log('');
 console.log('  SCRUM-888 · TECLEAR UN DESCUENTO REDIBUJA EL TOTAL Y LA VISTA PREVIA (panel real)');
 console.log('  ' + '─'.repeat(100));
 for (const f of filas) {
-  console.log(`  ${f.ancho}px · ${f.nombre.padEnd(24)} total:${f.kpi}  vista previa:${f.previa}  borradores:${f.borradores}  (fila de la vista previa, no se juzga: ${f.filaPrevia})`);
+  console.log(`  ${f.ancho}px · ${f.nombre.padEnd(24)} total:${f.kpi}  vista previa:${f.previa}  fila editor/previa:${f.filaEditor}/${f.filaPrevia}  global:${f.global ? f.global.valor : '-'}  borradores:${f.borradores}`);
 }
 console.log('  ' + '─'.repeat(100));
 
