@@ -109,8 +109,15 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // real, así que la firma vacía de «3 opciones» no se ve sin navegador. Dibuja con el ratón y juzga
   // lo enviado con el criterio del servidor; el modo normal hace de control. Comprobado en rojo
   // quitando solo el cambio del lienzo: «3 opciones» 0×0 y 6 caracteres sin trazo.
-  assert.equal(fuera.length, 19,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ 19 → ${fuera.length}.\n`
+  // SCRUM-894 · 19 → 20: entra `guard:guardar-sin-callar`. Sube por el motivo de SCRUM-816 —PULSA,
+  // no observa— y por uno propio que ninguno de los diecinueve tenía: lo que falla aquí ES EL
+  // NAVEGADOR. Su validación interactiva aborta el `submit` cuando un control `required` vive en un
+  // panel con `display:none`, así que el aviso puede estar escrito en el fichero y no ocurrir nunca
+  // —lo estaba: era código muerto dentro del `submit` que no se disparaba—. Ningún test de fuente
+  // puede ver eso, y ninguno lo vio. Comprobado en rojo contra el `settingsView.js` de `origin/main`
+  // (`018d1807`): 9 fallos de 18 casos, los nueve del perfil sin NIF.
+  assert.equal(fuera.length, 20,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ 20 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

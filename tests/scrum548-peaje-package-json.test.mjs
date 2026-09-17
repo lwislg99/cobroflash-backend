@@ -99,7 +99,20 @@ test('SCRUM-548 · el detector de solape entiende las DOS formas de escribir el 
 test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se declara', () => {
   const s = censarSolape(RAIZ);
   const resumen = s.solapes.map((x) => `${x.guards.length}×${x.ruta}`).sort();
-  assert.deepEqual(resumen, ['2×/medicion.html', '5×/index.html'],
+  // 🔴 SCRUM-894 · `/medicion.html` pasa de 2× a 3×: entra `guard:guardar-sin-callar`, que se
+  // sirve su página con el MISMO nombre que `guard:aviso-bizum` y `guard:vias-de-cobro` y renderiza
+  // la MISMA pantalla, `renderSettingsView`. MIRADO, que es lo que este censo pide, y NO se
+  // fusionan, por alcance:
+  //
+  //   · `guard:aviso-bizum` y `guard:vias-de-cobro` miden lo que la pantalla PINTA —que el aviso
+  //     esté y que las dos superficies no se contradigan— sobre una pantalla que nadie toca.
+  //   · éste mide lo que PASA AL PULSAR su único botón, desde las nueve pestañas. El defecto de
+  //     SCRUM-894 no existe hasta que alguien pulsa: pintada y sin tocar, la pantalla se ve
+  //     perfecta, y por eso los otros dos estaban verdes mientras el botón callaba.
+  //
+  // Un guard que midiera las dos cosas fallaría por una y se leería como si fallara por la otra,
+  // que es el motivo ya escrito para a11y-landing / a11y-comparativa.
+  assert.deepEqual(resumen, ['3×/medicion.html', '5×/index.html'],
     '🔴 HA CAMBIADO QUIÉN MIDE QUÉ PÁGINA.\n'
     + '  No es un defecto por sí solo —dos guards pueden mirar cosas distintas de la misma\n'
     + '  página—, pero es el sitio donde mirar. SCRUM-546 encontró un solape de dos por pura\n'
