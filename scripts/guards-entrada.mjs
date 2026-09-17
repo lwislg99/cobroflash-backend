@@ -18,7 +18,7 @@
 // ⚠️ Esto NO sustituye a `npm test`. Comprueba la ENTRADA, no el trabajo.
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -44,6 +44,34 @@ const GUARDS = [
 // de la lista de arriba «porque molestaba», esto para.
 const MINIMO = 4;
 
+// Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
+// terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega
+// como `\x1b[34mℹ tests 26\x1b[39m`.
+const ANSI = /\[[0-9;]*[A-Za-z]/g;
+
+/**
+ * El recuento de tests que imprime el runner de node, leído de su salida.
+ *
+ * Está aquí fuera, y exportada, porque es lo único de este script que se puede equivocar en
+ * silencio: si devuelve 0 cuando han corrido 26, el comando dice «tus guards no han corrido» y
+ * manda a quien lo lea a buscar un guard roto que no existe. Pasó de verdad el 17-sep-2026, a tres
+ * sesiones el mismo día (SCRUM-928): el `\x1b[39m` del final rompía el ancla de fin de línea, el
+ * recuento salía 0 y `guards:entrada` moría en rojo **con los 26 tests en verde**.
+ *
+ * Se limpia el color ANTES de leer, y no se afloja la expresión: el ancla es el suelo que
+ * distingue la línea del recuento de cualquier otra que mencione «tests».
+ *
+ * Se arregla AQUÍ, en quien lee, y no en quien llama, porque poner `FORCE_COLOR=0` delante del
+ * comando NO basta: se midió que una sesión lanzada así sigue trayendo `FORCE_COLOR=3` en su
+ * entorno. Un arreglo que depende de que todo el mundo invoque bien no es un arreglo.
+ */
+export function recuentoDeTests(salida) {
+  const limpia = (salida || '').replace(ANSI, '');
+  const m = /^[^\n]*\btests\s+(\d+)\s*$/m.exec(limpia);
+  return m ? Number(m[1]) : 0;
+}
+
+function main() {
 const faltan = GUARDS.filter((g) => !fs.existsSync(path.join(RAIZ, g.fichero)));
 if (faltan.length) {
   console.error('🔴 FALTAN GUARDS DE ENTRADA — no se ejecuta nada:\n');
@@ -71,8 +99,7 @@ process.stderr.write(r.stderr || '');
 // SUELO Nº2: que además de correr, HAYAN CORRIDO. Un fichero que existe pero se quedó sin tests
 // —o un runner que no encuentra nada— saldría con éxito y en silencio, y «0 tests, 0 fallos» es
 // verde. Se lee el recuento que imprime el propio runner.
-const m = /^[^\n]*\btests\s+(\d+)\s*$/m.exec(r.stdout || '');
-const ejecutados = m ? Number(m[1]) : 0;
+const ejecutados = recuentoDeTests(r.stdout || '');
 if (ejecutados < MINIMO) {
   console.error(`\n🔴 solo se ejecutaron ${ejecutados} tests entre ${GUARDS.length} ficheros.`);
   console.error('  Los ficheros están, pero no han corrido: «0 tests, 0 fallos» también sale verde.');
@@ -85,3 +112,10 @@ if (r.status !== 0) {
   process.exit(r.status ?? 1);
 }
 console.log(`\n✓ ${GUARDS.length} guards de entrada en verde (${ejecutados} tests). La entrada puede empujarse.`);
+}
+
+// Solo corre cuando se le llama como comando. Importarlo —para probar el lector de arriba— no
+// debe lanzar 23 s de guards ni, peor, matar a quien lo importa con un `process.exit(1)`.
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+  main();
+}
