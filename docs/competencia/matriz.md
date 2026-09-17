@@ -1,6 +1,7 @@
 # La competencia, función por función · matriz viva
 
-**Medido el 17-sep-2026 18:24:26Z (hora de GitHub) · `origin/main` = `ef332b90728399ab0ee75c9166af63890fda2bfa`.**
+**Última medición: 17-sep-2026 19:39:29Z (hora de GitHub) · `origin/main` = `fa9ff832e5d64a60ea9ef50bf863e138ef4de423`.**
+*(La primera versión de este documento se midió a las 18:24:26Z sobre `ef332b90`.)*
 **Ticket:** SCRUM-906, FASE 2 · **Carril:** consultoría (Sesión 0) · **Encargo:** orquestador, 17-sep-2026.
 
 Este documento **CRECE**: entra un competidor por entrega y el PR se amplía. Lo que ya está escrito
@@ -26,11 +27,14 @@ este puesto, y en este documento se distinguen con marca propia (❓ frente a �
 
 ## Límites de esta medición
 
-- **Los competidores están medidos SOLO por su web pública**: páginas de producto, precios, centro de
-  ayuda y términos. **No hay ninguna cuenta de prueba abierta.** Un alta en un servicio de terceros la
-  autoriza el fundador, y esa autorización no se hereda entre sesiones (A19 de
-  `docs/equipo/00-normas-comunes.md`). Mientras no la haya, todo lo que solo se vería por dentro queda
-  como 🔒 **Sin cuenta**.
+- **Verifacturamos y Quipu están medidos SOLO por su web pública**: páginas de producto, precios,
+  centro de ayuda y términos. Lo que solo se vería por dentro queda como 🔒 **Sin cuenta**.
+- **Holded está medido por fuera Y POR DENTRO** (§6). El fundador autorizó por escrito, el 17-sep-2026
+  y para esa sesión concreta, crear una cuenta de prueba con un alias de su propio correo, con estas
+  condiciones: **parar si piden NIF, DNI, tarjeta o teléfono**, y **no pagar nada**. Se cumplieron las
+  dos. Un alta en un servicio de terceros la autoriza el fundador y esa autorización **no se hereda
+  entre sesiones** (A19 de `docs/equipo/00-normas-comunes.md`): la próxima sesión que quiera entrar en
+  otro producto tiene que pedirla de nuevo.
 - **YaQu está medido en el código** de `origin/main` en el SHA de la cabecera, con `git grep` sobre el
   árbol remoto. Cada celda lleva el fichero. **No está medido en staging**, salvo donde se diga.
 - ⚠️ **`WebFetch` no se ha usado, y no debe usarse para esto.** No devuelve la página: devuelve el
@@ -47,25 +51,25 @@ este puesto, y en este documento se distinguen con marca propia (❓ frente a �
 
 Los detalles, las citas literales y los enlaces, en la ficha de cada competidor más abajo.
 
-| # | Función | **YaQu** | **Verifacturamos** | **Holded** |
-|---|---|---|---|---|
-| 1 | Presupuesto | ✅ | ✅ | ✅ con anticipo (Estándar+) |
-| 2 | Envío y canales | ✅ **WhatsApp con botones** | 🟡 PDF por el WhatsApp del móvil | 🟡 email y portal · ❓ WhatsApp |
-| 3 | Firma del cliente | ✅ | ❌ | ✅ con cupo mensual por plan |
-| 4 | Cobro | 🟡 flags OFF | ❌ | ✅ tarjeta y SEPA · ❓ Bizum |
-| 5 | Tipos de factura | 🟡 | ✅ 23 tipos | ✅ + Facturae |
-| 6 | Recurrentes | ❌ | ✅ | ✅ con tope por plan |
-| 7 | Rectificativas | ✅ | ✅ R1-R5 | ✅ |
-| 8 | VeriFactu | 🟡 **sin remisión** | ✅ vía colaborador | ✅ con certificado propio o suyo |
-| 9 | Gastos y justificantes | 🟡 foto, sin lectura | 🟡 | ✅ **OCR ilimitado en todos los planes** |
-| 10 | Partes y albaranes | ✅ ambos, con firma | 🟡 solo albarán | 🟡 albarán sí · ❓ parte de trabajo |
-| 11 | Fichaje | ❌ | ❓ | ✅ con geolocalización (gema) |
-| 12 | Equipos del cliente | ❌ | ❓ | ❓ solo lote y nº de serie |
-| 13 | Agenda | 🟡 sin calendario | ❓ | ✅ calendario y reservas |
-| 14 | App móvil | ✅ PWA | 🟡 «sin app nativa» | ✅ nativa iOS y Android |
-| 15 | Sin conexión | 🟡 firmar sí | ❌ | ❓ nada, e indicios de que exige red |
-| 16 | IA | ✅ redacta | ❓ | ✅ **conector MCP oficial** |
-| 17 | Precio | 19,90 €/mes | 9 €/mes | desde 15 €/mes + IVA |
+| # | Función | **YaQu** | **Verifacturamos** | **Holded** | **Quipu** |
+|---|---|---|---|---|---|
+| 1 | Presupuesto | ✅ | ✅ | ✅ con anticipo (Estándar+) | ✅ |
+| 2 | Envío y canales | ✅ **WhatsApp con botones** | 🟡 PDF por el WhatsApp del móvil | 🟡 email y portal · ❓ WhatsApp | 🟡 email · ❓ WhatsApp |
+| 3 | Firma del cliente | ✅ | ❌ | ✅ con cupo mensual por plan | ❓ |
+| 4 | Cobro | 🟡 flags OFF | ❌ | ✅ tarjeta y SEPA · ❓ Bizum | 🟡 conecta Stripe/PayPal **para facturar**, no para cobrar · ❓ Bizum |
+| 5 | Tipos de factura | 🟡 | ✅ 23 tipos | ✅ + Facturae | ✅ |
+| 6 | Recurrentes | ❌ | ✅ | ✅ con tope por plan | ✅ |
+| 7 | Rectificativas | ✅ | ✅ R1-R5 | ✅ | ✅ |
+| 8 | VeriFactu | 🟡 **sin remisión** | ✅ vía colaborador | ✅ con certificado propio o suyo | ✅ declaración responsable pública |
+| 9 | Gastos y justificantes | 🟡 foto, sin lectura | 🟡 | ✅ **OCR ilimitado en todos los planes** | ✅ OCR |
+| 10 | Partes y albaranes | ✅ ambos, con firma | 🟡 solo albarán | 🟡 albarán sí · ❓ parte de trabajo | ❓ parte de trabajo |
+| 11 | Fichaje | ❌ | ❓ | ✅ con geolocalización (gema) | ❓ |
+| 12 | Equipos del cliente | ❌ | ❓ | ❓ solo lote y nº de serie | ❓ |
+| 13 | Agenda | 🟡 sin calendario | ❓ | ✅ calendario y reservas | ❓ |
+| 14 | App móvil | ✅ PWA | 🟡 «sin app nativa» | ✅ nativa iOS y Android | ❓ |
+| 15 | Sin conexión | 🟡 firmar sí | ❌ | ❓ nada, e indicios de que exige red | ❓ |
+| 16 | IA | ✅ redacta | ❓ | ✅ **conector MCP oficial** | ✅ OCR y conciliación |
+| 17 | Precio | 19,90 €/mes | 9 €/mes | desde 15 €/mes + IVA | desde 17 €/mes (8,5 € los 3 primeros) |
 
 ---
 
@@ -250,12 +254,139 @@ va a por ese cliente **sin** las cinco cosas de arriba. Ahí está el hueco, y n
 
 ---
 
+## 5 · Quipu
+
+**getquipu.com** · Facturación, gastos y tesorería para autónomos y pymes, muy orientado a la
+**asesoría**. 21 páginas leídas a texto literal el 17-sep-2026. Dos URLs del plan de trabajo dieron
+404 propio de Quipu (`/precios` y `/ayuda`); las buenas son `/es/plan-de-precios` y
+`helpcenter.getquipu.com/es/`, y son las que se leyeron.
+
+| # | Función | Quipu |
+|---|---|---|
+| 1-2 | Presupuesto y envío | Presupuestos sí; el envío documentado es **por email**. WhatsApp ❓ no encontrado. |
+| 3 | Firma | ❓ **NO ENCONTRADO** firma del cliente sobre presupuesto o factura. Lo único que aparece con la palabra «firma» es la autorización VeriFactu del propio usuario ante la AEAT, que es otra cosa. |
+| 4 | Cobro | 🟡 **Matizado tras repaso a mano.** Dicen *«Pasarelas de pago / Conecta con Stripe o PayPal»* (`getquipu.com/es/empresas`), pero la frase que lo explica es *«Conecta tu tienda online, CRM o pasarela de pago y deja que Quipu genere las facturas automáticamente»*: la conexión sirve para **generar facturas a partir de tus ventas**, no para que el cliente final pague desde un enlace. Lo que sí tienen documentado del lado del dinero es **conciliación bancaria** y **remesas SEPA** (éstas solo en Premium). **Bizum: 0 resultados.** |
+| 6-7 | Recurrentes y rectificativas | ✅ ambas. |
+| 8 | VeriFactu | ✅ Publican una **declaración responsable** con detalle técnico real (versión de software, un microservicio propio con colas y reintentos). ⛔ Anotado, no validado. |
+| 9 | Gastos | ✅ OCR de tickets y facturas. |
+| 10-15 | Partes, fichaje, equipos, agenda, app, sin conexión | ❓ **NO ENCONTRADO ninguno.** *Suelo:* las mismas búsquedas sobre facturación, conciliación y OCR sí devuelven páginas suyas en el mismo corpus. Es un facturador y una tesorería; no tiene capa de servicio técnico de campo. |
+| 17 | Precio | **17 €, 30 € y 59 €/mes** (Starter, Solution, Premium), con **50 % los 3 primeros meses** → 8,5 € / 15 € / 29,5 €. Prueba 15 días sin tarjeta. **No dicen en ninguna parte si el IVA está incluido**: 0 coincidencias de «IVA» en sus dos páginas de precios. |
+
+> **Una ambigüedad resuelta con aritmética, no con suposición.** La página enseña el precio con
+> descuento y al lado uno tachado, sin decir qué es el tachado. Lo dice su propio «Ahorra»:
+> `17,0 − 8,5 = 8,5` y `8,5 × 3 = 25,5`, que es exactamente el «Ahorra 25,5€ en 3 meses». Cuadra
+> igual en los otros dos (45,0 y 88,5). Luego **el tachado es el precio mensual normal**, no un total
+> a tres meses. Se deja escrito el cálculo para que cualquiera pueda tumbarlo.
+
+### Lo que no tenemos (frente a Quipu)
+
+Nada nuevo respecto a lo ya listado en Verifacturamos y Holded: recurrentes, OCR de gastos y remisión
+a la AEAT. Quipu **no añade ningún hueco que no estuviera ya**, y eso también es un dato.
+
+### Lo mejor suyo
+
+- **La asesoría como cliente, no como añadido.** Tienen página propia para asesorías y el producto
+  está pensado para que el gestor viva dentro. Es el canal de la Parte H, montado.
+- **La declaración responsable con detalle técnico de verdad**, no una página de marketing.
+- **Conciliación bancaria y remesas SEPA** como eje, en vez del cobro al cliente final.
+
+### Lo que Quipu NO puede hacer, y nosotros sí
+
+Ni firma del cliente, ni parte de trabajo, ni equipos, ni agenda, ni sin conexión, ni cobro por
+enlace al cliente final. Es el mismo patrón que Holded: **son contabilidad, no son la obra.**
+
+---
+
+## 6 · Holded POR DENTRO (cuenta de prueba, 17-sep-2026)
+
+Cuenta de prueba de 14 días, plan sin elegir, sin tarjeta. Perfil «Autónomo sin empleados», España.
+Lo de abajo está visto en la aplicación real, no en su web comercial.
+
+### El alta
+
+Pide **nombre, correo y contraseña**, y nada más: el teléfono está en el formulario pero rotulado
+**«Opcional»**, y el alta se completa sin tocarlo. Después, dos pasos: tipo de negocio
+(Empresa / Autónomo / Asesoría) y *«Solo necesitamos tu país y tu web para configurar tu cuenta de
+autónomo»*. **En ningún momento piden NIF, DNI ni tarjeta.** Luego, un asistente de **8 pasos** antes
+de dejarte trabajar, y una última pantalla que ofrece plan de pago con *«50% de descuento por 3 meses»*
+frente a *«Continuar con prueba de 14 días · Sin tarjeta · Cancela cuando quieras»*.
+
+🔴 **Comparación directa con nosotros:** de registro a poder trabajar hay **2 pasos de alta + 8 de
+asistente + 1 de oferta**. Es la primera medida real de su fricción de entrada, y es el terreno donde
+YaQu compite.
+
+### El presupuesto por dentro — lo que más importa
+
+La pantalla **Nuevo presupuesto** (`/doc/estimate/new`) tiene, contados sobre el DOM, **más de 150
+campos de formulario** en una sola página. Lo visible se organiza así:
+
+- **Cabecera:** Contacto (hay que seleccionarlo), Número de documento (sale `E260001`), Número
+  interno, Fecha, Vencimiento.
+- **Líneas:** Concepto · Descripción · Cantidad · Precio · Impuestos · Total, con **IVA 21 % puesto
+  por defecto**, «Añadir línea» y un campo de **tiempo (`00:00`)** por línea.
+- **Extras de línea:** «Escanear producto» (código de barras), «Seleccionar lote / SN», «Mostrar tipo
+  de unidad», «Añadir productos iguales en una línea».
+- **Descuentos:** por producto o global, y «Mostrar descuento en el documento».
+- **Método de pago:** *No seleccionada · Transferencia bancaria · Pago al contado*, más «Crear /
+  Editar formas de pago».
+- **Categorización:** Cuenta contable (`70000000 Ventas de mercaderías`), cuenta por concepto,
+  etiquetas, etiquetas por concepto, nota interna, asignar usuarios, asignar a proyecto.
+- **Editor de texto enriquecido** completo (negrita, colores, listas, tablas, insertar imagen y vídeo)
+  para el texto del documento y el mensaje final.
+- **Campos personalizados:** existen, pero rotulados **«Mejorar plan»** — están detrás del precio.
+- **Bloque Facturae / FACe** para administración pública: Oficina contable, Órgano gestor, Unidad
+  tramitadora, Órgano proponente, contratos y fechas del emisor y del receptor, Expediente, Número y
+  fecha de albarán, Línea del pedido, Texto legal.
+- **Bloque Kit Digital**, que no habíamos visto por fuera: *«Añadir información Agente digitalizador
+  (KIT…)»*, con fecha de inicio y fin de prestación e **importe subvencionado**.
+
+**Tres lecturas que sirven para decidir:**
+
+1. 🔴 **En el presupuesto de Holded no hay forma de que el cliente pague con tarjeta ni por Bizum.**
+   Las formas de pago que ofrece el documento son **transferencia y contado**. El cobro con tarjeta
+   existe en Holded, pero vive en la factura y en el portal, no aquí. Nuestro foso —presupuesto que se
+   firma y se paga desde el mismo sitio— sigue en pie, y ahora está visto por dentro.
+2. **El Kit Digital y el bloque Facturae son trabajo español de verdad** que nosotros no tenemos. El
+   Kit Digital, además, es dinero público que el cliente ya está cobrando: aparecer ahí es comercial,
+   no solo técnico.
+3. **Su presupuesto es una hoja de contabilidad; el nuestro es un mensaje.** Más de 150 campos, cuenta
+   contable por línea y editor de texto enriquecido es exactamente lo contrario de «presupuesto en 30
+   segundos». No es un defecto suyo: es otro cliente. Conviene no copiarles la pantalla.
+
+### Lo que NO se pudo medir por dentro, y por qué
+
+Honestamente, y sin convertirlo en «no lo tienen»:
+
+- **Envío y canales, firma y VeriFactu desde dentro: NO MEDIDOS.** Para verlos hace falta un documento
+  guardado, y no llegué a guardarlo: el navegador de esta tanda corre **sin ventana visible**, y eso
+  tiene una consecuencia que costó varias vueltas descubrir —está escrita abajo— que hace el trabajo
+  interactivo lento y poco fiable.
+- Lo que la matriz dice de esas tres filas para Holded **sigue viniendo de su web pública**, que es
+  fuente legítima pero distinta. Está marcado como tal.
+
+### Tres trampas medidas, para quien venga detrás
+
+1. 🔴 **`innerText` y `page.screenshot` necesitan MAQUETADO.** Con el navegador sin ventana visible,
+   Chrome no maqueta: `innerText` devuelve **cadena vacía** teniendo el DOM entero cargado (112.820
+   caracteres de HTML, 21 hijos en el `body`) y la captura espera un fotograma que no llega y revienta
+   a los 30 s. **Un `innerText` vacío se lee igual que «la página no cargó», y no es eso.** El respaldo
+   es `textContent`, que no necesita maquetado.
+2. **El panel de Holded vive dentro de un IFRAME.** El documento de arriba solo tiene la barra lateral.
+   Quien lea solo la página principal concluirá «esta pantalla está vacía» teniendo el contenido
+   delante.
+3. **Una opción que es prefijo de otra elige la equivocada.** En su asistente conviven «Otro» y «Otro
+   sitio web», y el botón «Empresa» dice *«…o eres autónomo con empleados»*, así que buscar el botón
+   «Autónomo» por coincidencia parcial **casa con los dos** y coge el primero. Hay que anclar en texto
+   que solo esté en uno («no tienes empleados»).
+
+---
+
 ## Cola de competidores
 
 Uno por entrega, avisando al orquestador al acabar cada uno.
 
-**Hechos:** Verifacturamos ✅ · Holded ✅ (público)
-**Pendientes:** Quipu · Anfix · Billin · Contasimple · FacturaDirecta · Sage (Active o 50) · Odoo ·
+**Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅
+**Pendientes:** Anfix · Billin · Contasimple · FacturaDirecta · Sage (Active o 50) · Odoo ·
 Jobber · Tradify · Fergus · ServiceM8 · Housecall Pro.
 **Excluidos por decisión del orquestador:** STEL Order y Fixner — sus términos **prohíben
 expresamente** usar el producto para competir (cláusula «Uso limitado», recogida en
