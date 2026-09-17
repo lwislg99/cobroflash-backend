@@ -485,3 +485,196 @@ base de desarrollo, deja de taparlo.
 re-fechada ni corregida · `conciliar-auditoria-fiscal.mjs` sin tocar · `CLAUDE.md` sin tocar:
 re-fechar la regla 3 exige medir **los cuatro** worktrees y desde aquí sólo se ve uno.
 **Staging y producción: no tocados, ni para mirar.**
+
+---
+
+# APÉNDICE · Fase d — La verificación POST-MERGE: ¿está el arreglo en `main`, y se cierra?
+
+*17-sep-2026 · rama `scrum-880d-la-prueba-del-empate`*
+
+**Medido contra:** `origin/main` = `5f7b994ef52020193f94560928521c73d4c9472d` · 2026-09-17T16:54:36+01:00
+
+> **Encargo:** VERIFICAR si el arreglo del empate está REALMENTE en `main` y si el ticket puede
+> cerrarse. **No** reimplementarlo. Regla 38 respetada: el camino de emisión se ha LEÍDO, y no se
+> ha modificado ni un byte (huella SHA-256 del fuente comprobada antes y después, más abajo).
+>
+> Ese `main` lleva los tres merges del ticket dentro. **No es una repetición de la fase c:** aquélla midió en su
+> rama, y *CI prueba el MERGE, no la rama*. Ésta es la sonda independiente, después de entrar.
+
+## VEREDICTO · **CERRABLE**
+
+Las tres patas se sostienen sobre evidencia corrida hoy. Lo que faltaba —el punto ③ del ticket—
+no está pendiente: está **escrito y con la premisa desmontada**, no implícito.
+
+## ① El arreglo está en `main`, y las coordenadas se habían movido OTRA VEZ
+
+Leído hoy en `src/modules/invoicing/domain/verifactu.service.ts` (997 líneas):
+
+| qué | el encargo decía | **dónde está HOY** | estado |
+| --- | --- | --- | --- |
+| el desempate | `verifactu.service.ts:481` | **`:519`** · `return tAnul >= tAlta ? …` | ✅ `>=`, no `>` |
+| sello del ALTA | `:326` / `:348` | **`:332`** `const ahora = new Date()` · **`:360`** `vfTimestamp: ahora` | ✅ instante ENTERO |
+| sello de la ANULACIÓN | `:410` / `:427` | **`:425`** · **`:443`** `vfAnulTimestamp: ahora` | ✅ instante ENTERO |
+
+`formatFechaHoraHuso` (`:66-75`) **sigue truncando al segundo**, y eso es lo correcto: es la cadena
+que entra en la huella, que la AEAT exige así. Lo que se quitó fue el truncado al **persistir**.
+
+Y el `>=` no está desnudo: lleva encima 21 líneas (`:498-518`) que explican por qué no es un
+descuido, incluido **lo que NO arregla** (un empate entre una anulación y un alta posterior no
+relacionada). Quien venga a «corregirlo» se topa con el aviso antes que con el operador.
+
+### 🔴 El error de coordenadas de esta vez no es una línea: es el HOGAR
+
+El encargo mandaba a `src/modules/fiscal/verifactu/verifactu.service.ts`. **Ese fichero no existe.**
+Y la trampa es que el directorio **sí**:
+
+    src/modules/fiscal/verifactu/  → productor.ts · registro.builder.ts · 6 XSD   (EXISTE)
+    src/modules/invoicing/domain/verifactu.service.ts                             (el del SELLADO)
+
+Medido: hay **un solo** `verifactu.service.ts` en todo `src/`, y está en `invoicing/domain/`.
+Así que **VeriFactu tiene dos hogares**, y el sellado —huella, cadena, desempate— vive en el
+*viejo*, no en la «capa nueva F1» que `CLAUDE.md:150` anuncia. Un `grep` en la ruta que parece la
+natural devuelve `No such file or directory`, y de ahí a concluir «el arreglo no está» hay un paso.
+
+**Víctima HOY: el propio encargo de esta tanda.** No se arregla aquí (regla 9: hallazgo de otro
+carril; `CLAUDE.md` es documento de gobierno y su cambio lo prepara la S0 — §11bis). **Se reporta.**
+
+## ② La prueba existe, y se ha visto ROJA — aquí, hoy, sobre `main`
+
+`tests/scrum880-el-empate-del-sello.test.mjs` (265 líneas, **6 tests**), y no está gateado: corre en
+la tanda normal.
+
+    LIMPIO        · 6 tests · 6 pass · 0 fail · 0 skipped · EXIT 0
+
+El empate exacto se construye de verdad, y el banco **demuestra que sabe producirlo** antes de
+afirmar nada (`:146-151`, el suelo del experimento).
+
+#### ⚠️ Pero la cadena tiene MÁS vigilancia, y ésa aquí no corre
+
+De los **111 saltos** de la tanda, **11 tocan la cadena VeriFactu** y declaran su motivo:
+
+    SCRUM-173 ② · dos facturas con el MISMO createdAt encadenan de forma determinista   SKIP
+    SCRUM-177  · el alta siguiente a una ANULACIÓN encadena a ELLA, no al alta anterior  SKIP
+    SCRUM-173b · sellar una ANULACIÓN dentro de una transacción está prohibido           SKIP
+    … + 8 más                          sin QA_DB_TEST=1 / sin LIBRO_PG_URL
+
+**Son exactamente el vecindario del empate, y contra Postgres de verdad.** El control de 880 **no**
+está entre ellos —corre siempre, 0 skipped—, así que el veredicto se sostiene. Pero dicho con su
+nombre: *lo que yo he medido es el criterio y lo que se escribe, no la cadena contra un Postgres
+real.* Eso lo corre `npm run test:staging:gated` con el turno de staging, y **desde una sesión no
+se puede**. No es un hueco de este ticket; es el alcance de esta verificación.
+
+### El rojo, provocado y medido — con el código de salida REAL
+
+Las dos mutaciones que el fichero DECLARA (`MUTACIONES_QUE_ME_TUMBAN`, `:39-54`), aplicadas una a
+una. **Se mutó `dist/`, no `src/`:** el test importa de `dist/`, así el camino de emisión no se toca
+(regla 38) y la restauración es verificable por bytes.
+
+| mutación | resultado | EXIT |
+| --- | --- | --- |
+| `tAnul >= tAlta` → `tAnul > tAlta` | **not ok 1** · `A · EL QUE DECIDE` · 5 pass / **1 fail** | **1** |
+| `vfAnulTimestamp: ahora` → `new Date(timestamp)` | **not ok 4** · `B · milisegundos` · 5 pass / **1 fail** | **1** |
+
+Cada una tumba **sólo la suya**, que es lo que prueba que son dos arreglos y no uno. El ancla se
+contó ANTES de sustituir (1 ocurrencia exacta en los dos casos): *una mutación que no entra y un
+guard que no detecta dan la misma salida*.
+
+**Restauración verificada byte a byte**, tras cada mutación:
+
+    src …/invoicing/domain/verifactu.service.ts  6602a6dc…13b3b   ANTES = DESPUÉS  (jamás tocado)
+    dist …/verifactu.service.js                  3aa48ac0…85b37   ANTES = DESPUÉS
+    git status --porcelain                       vacío
+
+### Y la red es permanente, no un favor de esta tanda
+
+    node scripts/meta-guard-mutaciones.mjs --solo-censo
+    censo · 80 guards · 246 declaraciones (suelos 20 / 54) · EXIT 0
+      · scrum880-el-empate-del-sello.test.mjs → …/verifactu.service.ts   (×2)
+
+El guard está **censado con sus dos declaraciones**, así que el meta-guard vuelve a ejercer estas
+mutaciones sin que nadie se acuerde. *(El `--solo-censo` se usa aquí para lo único que sabe
+contestar —quién está en la población—; el rojo se midió mutando de verdad, arriba.)*
+
+## ③ El punto que el ticket dejó sin comprobar: NO está implícito, y la premisa estaba mal
+
+El ticket decía *«NO COMPROBADO: que en staging no empate (deducido de la latencia, no medido)»*.
+Desde una sesión **no se puede medir staging** —cero producción y staging—, así que el hueco se
+declara con su nombre. Pero **ya no es un hueco pendiente**: la fase a no lo rellenó, lo **disolvió**
+(`SCRUM-880.md:25-49`), y eso es mejor que medirlo.
+
+> **La variable estaba mal elegida.** El empate no depende de cuánto se tarde, sino de si los dos
+> instantes caen en el mismo segundo de reloj. **P(empate) = 1 − separación/1000**, y con 900 ms
+> —casi un segundo entero— todavía empata **una de cada diez veces**.
+
+Ninguna latencia por debajo de un segundo es una garantía, así que **medir staging no habría
+cambiado la decisión**: habría dado una cifra de un día concreto para una propiedad que no depende
+de la latencia. La tabla la vigila hoy el test 6 del fichero.
+
+**Lo que queda vivo, dicho para que nadie lo dé por cerrado:** con B aplicado, los sellos NUEVOS
+llevan milisegundos y el empate pasa a ser casi imposible. Los registros sellados **ANTES** de B
+tienen los milisegundos a cero **para siempre**, y para ésos la tabla de arriba sigue vigente. Por
+eso el `>=` se queda, y por eso quitarlo «ahora que hay milisegundos» sería un error.
+
+## Regla 42 · Nada de este ticket se quedó fuera
+
+    scrum-880-el-empate-del-sello                 sin rama remota
+    scrum-880b-afirmaciones-caducadas             sin rama remota
+    scrum-880c-el-desempate-y-los-milisegundos    sin rama remota
+
+    84ccf926 (PR #1410)  DENTRO de main      390995e4 (PR #1420)  DENTRO de main
+    82adb246 (PR #1425)  DENTRO de main
+
+`merge-base --is-ancestor` contra `origin/main`, que es preguntar por la HISTORIA y no por si existe
+una rama con ese número (SCRUM-753). Tres dentro, ninguna viva. **La regla 42 no bloquea el cierre.**
+
+## Rojo ajeno en la tanda, demostrado y NO arreglado (regla 9)
+
+La primera tanda salió **7383 tests · 7262 pass · 10 fail · 111 skipped**. Nueve de los diez fallos
+eran **míos** —el ancla de medición de este mismo apéndice— y están arreglados. La tanda final:
+
+    7383 tests · 7271 pass · 1 fail · 111 skipped     EXIT 1
+
+Ese fallo que queda no es mío:
+
+    not ok 6865 · SCRUM-858b · una tanda MUDA más que el tope sale con 3, y para SOLO su árbol
+                  error: 'spawnSync wmic ENOENT'   (scrum858b…:85)
+
+**No se ha reproducido comparando: se ha medido la CAUSA**, que es mejor evidencia que un A/B.
+
+    which wmic                                          → no wmic in (…)   exit 1
+    scrum858b…:84-86  if (process.platform === 'win32') { execFileSync('wmic', …) }
+    grep -c "docs/|SCRUM-880|master/"  scrum858b…        → 0
+
+`wmic` está **retirado de Windows 11 moderno**, el test lo invoca sin alternativa en `win32`, y no
+lee `docs/` ni una vez: no puede depender de un `.md`. **En CI (Linux) toma la rama `ps` y pasa**, y
+por eso nadie lo ha visto — sólo revienta en el Windows de quien trabaja aquí.
+
+**Víctima HOY:** cualquier sesión en Windows lee un rojo que no es suyo en cada tanda. Es carril
+**S3** (tests e instrumentación). Se reporta y no se toca.
+
+## 🔴 Mis errores, esta tanda
+
+1. **Convertí una observación en un diagnóstico, que es la trampa nº1 del tablero — y la cometí yo.**
+   Al ver `No such file or directory` escribí *«la ruta del encargo no existe»*. Falso:
+   `src/modules/fiscal/verifactu/` **existe** y tiene seis XSD dentro. Lo que no existe es el
+   FICHERO. Me corregí midiendo (`find`) antes de escribirlo aquí, pero lo había dicho ya en voz
+   alta. El hallazgo bueno —que hay **dos hogares** de VeriFactu— sólo apareció al medir bien; la
+   versión perezosa lo habría tapado.
+2. **Etiqueté un instrumento con lo contrario de lo que decía.** Al barrer los saltos escribí
+   `echo "(exit=$? · vacío = ninguno)"` — y `grep` devuelve **0 cuando SÍ encuentra**. La salida
+   imprimió once líneas y debajo, mi etiqueta: *«vacío = ninguno»*. El dato estaba a la vista y la
+   etiqueta decía lo contrario; si llego a fiarme del rótulo en vez de leer las líneas, habría
+   dado por no-gateada la vigilancia de la cadena. *Si tu instrumento y tu conclusión se
+   contradicen, gana el instrumento.* Aquí el que mentía era el rótulo que yo le puse.
+3. **El primer `npm run build` salió `EXIT=1` y no era el build:** redirigí a `"$TMPDIR/…"` con
+   `$TMPDIR` vacío en bash, o sea a `/b5-build.log` → *Permission denied*. Inofensivo porque leí el
+   código de salida; **encadenado con una tubería habría leído un 0** y habría dado por compilado lo
+   que ni se intentó. Es la norma A3 mordiéndome en el primer comando.
+
+## Lo NO tocado
+
+`src/` **entero, byte a byte** (huella comprobada) · `dist/` restaurado y verificado · el `>=` y los
+dos sellos · el test (no se ha añadido ni una aserción: **ya estaba y es bueno**) · `CLAUDE.md`
+(el hallazgo de los dos hogares se REPORTA, no se arregla: es de la S0) · `prisma/schema.prisma` ·
+ningún texto de usuario · Jira (SCRUM-880 sigue *En curso*, como se ordenó).
+**Producción y staging: no tocados, ni para mirar.**
