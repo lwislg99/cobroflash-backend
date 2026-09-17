@@ -48,7 +48,7 @@ export const SIN_PROCEDENCIA = 27;
 
 const MARCA_CANONICA = /(aprobad|autorizad|firmad|validad|refrendad)[oa]s?\s+por\s+(el\s+)?(fundador|asesor|orquestador)/i;
 
-/** El censo se corre UNA vez: recorre 2.400 ficheros y medio millón de líneas. */
+/** El censo se corre UNA vez: recorre el árbol entero, y eso no sale gratis. */
 let CENSO;
 const censo = () => (CENSO ??= censarFirmas(RAIZ));
 const canonicas = () => censo().candidatos.filter((c) => MARCA_CANONICA.test(c.texto));
@@ -141,9 +141,9 @@ test('SCRUM-921 · un tercero en la frase NO tapa una autorización del fundador
 });
 
 test('SCRUM-921 · el bloque contiguo, no una ventana de N líneas', () => {
-  // La versión 1 del censo miraba ±3 líneas y declaró 26 marcas «sin procedencia»; 24 de ellas
-  // tenían su ticket a más de tres líneas, dentro del mismo comentario. Una ventana fija es una
-  // tolerancia disfrazada, y en la dirección mala fabrica acusaciones.
+  // La versión 1 del censo (17-sep-2026) miraba ±3 líneas y declaró 26 marcas «sin procedencia»;
+  // 24 tenían su ticket a más de tres líneas, dentro del mismo comentario. Una ventana fija es
+  // una tolerancia disfrazada, y en la dirección mala fabrica acusaciones.
   const lineas = [
     '/**',
     ' * El rótulo, APROBADO por el fundador el 5-ago-2026.',
