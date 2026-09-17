@@ -181,6 +181,21 @@ justificado. **Eso no se ha conseguido y no se afirma.** Lo que hay:
 
 ---
 
+## LA TANDA
+
+```
+ARBOL QUIETO DESDE: 14:08:24 UTC
+ARBOL QUIETO HASTA: 14:12:17 UTC
+# tests 7324 · # pass 7214 · # fail 0 · # skipped 110 · cero `not ok`
+```
+
+META-GUARD entero, DESPUES del cambio: 13:30:29 → 14:05:37 UTC ·
+`vivas 232 · mudas 0 · ciegas 0 · rc=0`.
+
+> Se mira `# fail` y no solo el codigo de salida.
+
+---
+
 ## LO NO TOCADO
 
 - **`tests/scrum859-…` y `tests/scrum267-…`: ni una línea.** No se ha tocado el test ni su ancla:
