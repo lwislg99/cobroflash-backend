@@ -4474,6 +4474,17 @@ payloadLines.push(lineaParaPayload({
       return;
     }
 
+    // SCRUM-887 · A1 · un descuento global con varios tipos de IVA no se guarda (comentario 15697):
+    // la factura no sabe repartirlo sin la asesoría. El servidor lo rechaza igual con el mismo texto.
+    const descuentoGlobalElegido = (function () {
+      const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
+      return Number.isFinite(v) && v > 0 ? v : null;
+    }());
+    if (window.quoteDescuentos.descuentoGlobalConVariosIva(payloadLines, descuentoGlobalElegido)) {
+      setAlert("error", window.quoteDescuentos.TEXTO_DESCUENTO_GLOBAL_VARIOS_IVA);
+      return;
+    }
+
     try {
       submitBtn.disabled = true;
       submitBtn.textContent = "Generando…";
@@ -4497,10 +4508,7 @@ payloadLines.push(lineaParaPayload({
         // SCRUM-594 (DOC-04) · el descuento global, en euros. Vacío ⇒ `null` y no `0`: son cosas
         // distintas y la columna las distingue. `calcTotal` lo aplica en el servidor, que es
         // quien produce el total que se guarda — la pantalla sólo lo previsualiza.
-        discountGlobalAmount: (function () {
-          const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
-          return Number.isFinite(v) && v > 0 ? v : null;
-        }()),
+        discountGlobalAmount: descuentoGlobalElegido,
         // SCRUM-602 (DOC-12) · la dirección de la obra. El modo viaja SIEMPRE (la columna dice
         // lo que el formulario dijo; `null` queda para los presupuestos anteriores al control) y
         // el texto SÓLO con «Personalizada», para no dejar una dirección fantasma que el

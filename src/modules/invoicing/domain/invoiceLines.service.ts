@@ -61,6 +61,17 @@ export function tieneDescuentoGlobal(quote: { discountGlobalAmount?: unknown }):
 }
 
 /**
+ * SCRUM-887 · ¿Es un caso C? Descuento global con base de la que quitarlo y VARIOS tipos de IVA,
+ * agrupados con la MISMA función con la que `calcTotal` calcula lo firmado. Lo preguntan el
+ * servidor al crear y al revisar, y las rutas del profesional al facturar, para decir por qué no.
+ */
+export function tieneDescuentoGlobalConVariosIva(quote: { lines?: unknown; discountGlobalAmount?: unknown }): boolean {
+  if (!tieneDescuentoGlobal(quote)) return false;
+  const reparto = descuentoGlobalEnCentimos(Array.isArray(quote.lines) ? quote.lines : [], quote.discountGlobalAmount);
+  return reparto !== null && reparto.tipos.length > 1;
+}
+
+/**
  * SCRUM-887 · LAS LÍNEAS DE UN PRESUPUESTO QUE ENTRAN EN SU FACTURA. El único sitio que decide
  * qué hace la factura con los descuentos: los seis caminos que convierten `Quote.lines` en
  * `Invoice.lines` —y la vista del plan, que promete su importe— pasan por aquí.
@@ -81,9 +92,9 @@ export function tieneDescuentoGlobal(quote: { discountGlobalAmount?: unknown }):
  *       suma de bases de las líneas. Con un solo tipo no hay reparto que decidir: la base de ese
  *       tipo baja antes de calcular la cuota, que es lo que `calcTotal` firma. Si el global se come
  *       toda la base, no hay nada que facturar y las líneas salen a 0 (el portón de SCRUM-246).
- *   C · descuento GLOBAL con IVA mezclado → la acotación SE MANTIENE hasta que la asesoría fije
- *       el reparto. Por eso en C NO SE TOCA NADA, ni siquiera el `dto` de línea: el caso C
- *       no cambia de cálculo.
+ *   C · descuento GLOBAL con IVA mezclado → NO SE FACTURA (PR 3, comentario 15697): repartir el
+ *       global entre tipos es la convención que espera a la asesoría, así que las líneas salen a
+ *       0 y el portón de SCRUM-246 no emite. Tampoco se guarda ni se revisa un C nuevo.
  *
  * Una línea sin `dto` sale COMO ENTRÓ —el mismo objeto—, así que nada que no tenga descuento se
  * mueve un céntimo.
@@ -108,12 +119,15 @@ export function lineasParaFacturar(quote: { lines?: unknown; discountGlobalAmoun
   const reparto = descuentoGlobalEnCentimos(lineas, quote.discountGlobalAmount);
   // Sin base que descontar, `calcTotal` ignora el global: aquí tampoco hay línea que añadir.
   if (!reparto) return efectivas();
-  if (reparto.tipos.length !== 1) return lineas; // C: la acotación sigue viva
 
-  // Un global que se come TODA la base firma 0 €: no hay nada que cobrar. Las líneas salen a 0,
+  // C (varios tipos) o un global que se come TODA la base: no se factura. Las líneas salen a 0,
   // como con `dto: 100`, y el portón de SCRUM-246 (`exigirLineasFacturables`) da su 409 antes de
-  // pedir número. Con +X y −X pasaría el portón y se emitiría una factura de 0 € (regla 29).
-  if (reparto.aRepartir >= reparto.sumaBases) return efectivas().map((l) => ({ ...l, price: 0 }));
+  // pedir número. C no se reparte sin la asesoría (15697); y con +X y −X un global total pasaría el
+  // portón y emitiría una factura de 0 € (regla 29). Las rutas del profesional, además, dicen por
+  // qué un C no factura (`tieneDescuentoGlobalConVariosIva`) antes de llegar aquí.
+  if (reparto.tipos.length !== 1 || reparto.aRepartir >= reparto.sumaBases) {
+    return efectivas().map((l) => ({ ...l, price: 0 }));
+  }
 
   // LA PRIMERA, no la última: `reconcileToTarget` ajusta la ÚLTIMA línea para cuadrar con lo
   // firmado, y el descuento tiene que salir EXACTO. Así el ajuste cae en un producto, como sin
