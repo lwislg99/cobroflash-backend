@@ -983,10 +983,115 @@ function renderSettingsView(container) {
       }
     });
 
+    // ── SCRUM-894 · «GUARDAR CAMBIOS» YA NO PUEDE CALLARSE ────────────────────────────────────
+    //
+    // EL DEFECTO, MEDIDO (no leído). Con el NIF vacío y la pestaña «Cobros» delante, el botón no
+    // guardaba y NO DECÍA NADA. Las 9 pestañas × 2 perfiles = 18 casos, en navegador: con el NIF
+    // vacío **0 de 9 guardaban y 8 de 9 eran completamente mudas** — sin aviso, sin foco, sin nada.
+    // La novena (Empresa) no era mérito de la pantalla: es el globo del navegador sobre el campo,
+    // que ahí sí está a la vista.
+    //
+    // 🔴 Y LA CAUSA NO ERA NINGUNA DE LAS DOS QUE PARECÍAN. Ni el servidor callaba, ni la pantalla
+    // dejaba de pintar lo que el servidor decía: **el evento `submit` NO LLEGABA A DISPARARSE**, así
+    // que ni nuestro JS corría ni salía una sola petición. Lo aborta el navegador en su validación
+    // interactiva, porque `taxId` es `required` y vive en un panel con `display:none` — los diez
+    // paneles cuelgan del MISMO form (ver arriba) y sólo uno está visible a la vez. El navegador lo
+    // dice, pero se lo dice a la consola:
+    //
+    //     «An invalid form control with name='taxId' is not focusable.»
+    //
+    // Ese mensaje es para quien programa. El profesional ve un botón que no hace nada. Y el aviso
+    // que este fichero ya tenía escrito para ese caso era CÓDIGO MUERTO: vivía dentro del `submit`
+    // que nunca ocurría.
+    //
+    // POR QUÉ `noValidate` Y NO UN PARCHE. La validación nativa no puede informar sobre un control
+    // que no se ve — es su comportamiento documentado, no un fallo que se pueda rodear. Un
+    // formulario en pestañas y la validación interactiva del navegador son incompatibles: mientras
+    // ésta mande, el caso «falta algo que está en otra pestaña» sólo puede acabar en silencio. Se
+    // apaga la interactiva y valida la pantalla, que SÍ sabe abrir la pestaña que hace falta.
+    //
+    // ⛔ NO CAMBIA QUÉ ES OBLIGATORIO, y eso es decisión de producto, no de este ticket. Los
+    // `required` siguen exactamente donde estaban y son la ÚNICA fuente: la lista ya no se escribe
+    // a mano. La que había enumeraba cinco campos y los `required` del formulario son SIETE
+    // (`defaultCurrency` e `invoiceSeriesPrefix` faltaban), así que la copia a mano ya había
+    // divergido del original — derivarla cierra esa grieta además del silencio.
+    form.noValidate = true;
+
+    /** El rótulo que el profesional LEE para este campo. Sale de la pantalla, no de un diccionario. */
+    function rotuloDelCampo(el) {
+      const ranura = el.closest('.field');
+      const etiqueta = ranura && ranura.querySelector('label');
+      const texto = etiqueta && (etiqueta.textContent || '').trim();
+      return texto || el.name || el.id;
+    }
+
+    /** La pestaña donde vive, por el rótulo con el que aparece en la barra. */
+    function pestanaDelCampo(el) {
+      const panel = el.closest('[data-submenu]');
+      return panel && panel.dataset.submenu ? rotuloDeSubmenu(panel.dataset.submenu) : null;
+    }
+
+    /**
+     * Los controles que el navegador da por inválidos, con su rótulo y su pestaña.
+     *
+     * Se lee `validity`, que NO dispara eventos. `checkValidity()` sí los dispara, y un instrumento
+     * que provoca el evento que mide no puede medirlo (el mismo tropiezo se cazó en la sonda de
+     * este ticket, donde cada campo salía contado dos veces).
+     */
+    function camposInvalidos() {
+      return [...form.querySelectorAll('input,select,textarea')]
+        .filter((el) => el.willValidate && !el.validity.valid)
+        .map((el) => ({ el, rotulo: rotuloDelCampo(el), pestana: pestanaDelCampo(el) }));
+    }
+
+    /**
+     * 🔴 REGLA 30 · AQUÍ NO SE REDACTA NADA, Y NO ES UN OLVIDO.
+     *
+     * Lo que se pinta son DOS RÓTULOS QUE YA ESTÁN EN PANTALLA —el `<label>` del campo y el rótulo
+     * de su pestaña (aprobado el 5-ago-2026 y fijado carácter a carácter en
+     * `tests/scrum284-configuracion-submenus.test.mjs`)— unidos por puntuación. Ni una palabra
+     * nueva: no hay nada que firmar.
+     *
+     * Y TAMPOCO PUEDE LLEVAR MARCADOR: `[PENDIENTE microcopy oficial]` en pantalla es rojo de
+     * `guard:marcadores-en-pantalla` (SCRUM-722), y un literal más en este fichero rompería el
+     * trinquete de `tests/scrum402-marcador-no-se-pinta.test.mjs`, que lo tiene congelado en 1.
+     * Así que el aviso se construye con datos de la pantalla y la prosa queda PROPUESTA y PARADA.
+     *
+     * Cuando el fundador firme el texto, entra AQUÍ y sólo aquí. Vacía significa «sin firmar»,
+     * y el aviso sigue nombrando el campo y su pestaña mientras tanto.
+     */
+    const PROSA_FALTAN = '';
+
+    function avisoDeFaltantes(campos) {
+      const lista = campos
+        .map((c) => (c.pestana ? c.rotulo + ' · ' + c.pestana : c.rotulo))
+        .join('   —   ');
+      return PROSA_FALTAN ? PROSA_FALTAN + ' ' + lista : lista;
+    }
+
+    /** Abre la pestaña donde vive el campo, deja el aviso a la vista y pone el cursor dentro. */
+    function llevarAlCampo(campo) {
+      const panel = campo.el.closest('[data-submenu]');
+      const clave = panel && panel.dataset.submenu;
+      if (clave && clave !== submenuActivo) { submenuActivo = clave; pintarNav(); }
+      // El aviso vive encima de los paneles: se sube a él y el foco entra SIN arrastrar el scroll,
+      // o el mensaje se iría de la pantalla en el mismo gesto que lo enseña.
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try { campo.el.focus({ preventScroll: true }); } catch { campo.el.focus(); }
+    }
+
     form.addEventListener("submit", async (ev) => {
       ev.preventDefault();
       setAlert(null, "");
-  
+
+      // Lo primero, antes de componer nada: si falta algo, se dice QUÉ y se va DÓNDE.
+      const invalidos = camposInvalidos();
+      if (invalidos.length) {
+        llevarAlCampo(invalidos[0]);
+        setAlert("error", avisoDeFaltantes(invalidos));
+        return;
+      }
+
       const payload = {
         name: fName.input.value.trim(),
         legalName: fLegalName.input.value.trim(),
@@ -1028,14 +1133,18 @@ function renderSettingsView(container) {
         clausulasPresupuesto: clausulasDelFormulario(),
       };
   
-      if (!payload.name || !payload.legalName || !payload.taxId || !payload.address || !payload.whatsappPhone) {
-        setAlert(
-          "error",
-          "Nombre comercial, razón social, NIF/CIF, dirección y teléfono de WhatsApp son obligatorios."
-        );
-        return;
-      }
-  
+      // SCRUM-894 · AQUÍ HABÍA UNA COPIA A MANO DE LOS OBLIGATORIOS, Y NO LLEGÓ A CORRER NUNCA:
+      // vivía dentro de un `submit` que el navegador abortaba antes de dispararlo. Decía
+      //
+      //     «Nombre comercial, razón social, NIF/CIF, dirección y teléfono de WhatsApp son
+      //      obligatorios.»
+      //
+      // y enumeraba CINCO campos cuando los `required` del formulario son SIETE. La comprobación
+      // vive ahora arriba, ANTES de componer el payload, y sale de los propios `required`: una
+      // lista derivada no puede quedarse corta sin que se note. El texto de aquella frase queda
+      // PROPUESTO al fundador (regla 30) — no se reutiliza, porque nunca llegó a verse en pantalla
+      // y por tanto no es texto que ya estuviera en producción.
+
       try {
         saveBtn.disabled = true;
         saveBtn.textContent = "Guardando…";
