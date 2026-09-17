@@ -120,6 +120,46 @@ crecer en silencio**: la tabla de verdad de §5 compara las 32 combinaciones con
 
 Es deuda **conocida**, no escondida. La diferencia es que ésta tiene quien la vigile.
 
+### 🔴 CORRECCIÓN (SCRUM-910) · dije DOS sitios. Son TRES
+
+Lo encontró la **Sesión 3** (comentario 15679 de este ticket) y tenía razón. Existe un tercer
+criterio de «¿hay tarjeta?», y **no entró en la tabla de verdad de las 32**:
+
+```ts
+// viasDeCobro.ts:92
+const tarjeta = String(entrada.connectStatus || 'none') === 'active';
+```
+
+Ni mira el flag `PAYMENTS_CONNECT_ENABLED`, ni `stripeAccountId`, ni el merchant demo. Y no es un
+rincón muerto: viaja en `GET /admin/merchant` (`app.ts:697`) al dashboard del **profesional**, que
+lo pinta en `homeView.js` y `settingsView.js`.
+
+**Medido ejecutando los dos dominios sobre las mismas 32: 15 discrepancias.** Dos familias, con
+gravedad muy distinta:
+
+| familia | casos | qué pasa |
+|---|---|---|
+| ① el **demo** | 12 | `viasDeCobro` no sabe de la regla 8 y le dice al merchant demo que NO puede cobrar con tarjeta, cuando sí puede (por plataforma). Un merchant, el nuestro. Cosmético. |
+| ② **`active` a medias** | 3 | `connectStatus='active'` pero flag OFF o sin `stripeAccountId`: el dashboard le dice al PROFESIONAL que puede cobrar con tarjeta, y su clienta se come el 409. **Es el defecto de este ticket del lado del profesional**, y ése sí tiene víctima. |
+
+**No se arregla aquí** (decisión del fundador, 17-sep-2026): cambiar `viasDeCobro` cambia lo que el
+profesional ve sobre su propia cuenta, y eso no es una decisión de código. Lo que sí entra es el
+caso **⑥** del banco: ata el tercer criterio con los otros dos, fija las 15 como **lista cerrada**
+que sólo puede encoger, y cae si el conjunto se mueve — nombrando cuál.
+
+**El trinquete está verificado por los dos lados** con mutaciones reales sobre `viasDeCobro.ts`
+(`docs/master/evidencias/scrum893/rojos-tercer-criterio.mjs`): cae si alguien lo **empeora** (nuevas
+discrepancias) y cae también si alguien lo **arregla** sin limpiar la lista (discrepancias resueltas),
+más un tercer control que comprueba que el assert de ceguera funciona cuando el criterio se vuelve
+constante.
+
+    🔒 Un test que cae no prueba lo que dice hasta que sabes POR CUÁL de sus asserts cayó.
+
+Esa frase salió de aquí: mis dos primeras mutaciones (`tarjeta = false` / `= true`) hacían caer ⑥ y
+me habrían valido — pero caían por el control de **ceguera**, no por la comparación de conjuntos que
+yo creía estar probando. Y el lado «resueltas» no se probaba en absoluto porque el caso tenía dos
+`assert` seguidos y el primero cortaba. Ahora es **un solo veredicto con las dos listas**.
+
 ## 5 · Los controles, ejecutados
 
 ### ② La tabla de verdad · 32 combinaciones
