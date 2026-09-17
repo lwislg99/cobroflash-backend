@@ -610,17 +610,6 @@ export async function generateInvoicePdf(params: {
     } else {
       // El rótulo de la columna de bases es TEXTO NUEVO y no me toca escribirlo (regla 30). Va
       // como marcador y UNA sola vez: la fila la describen el tipo y el importe, que son dato.
-      //
-      // ⚠️ SCRUM-903 · AQUÍ NO VA `textoParaDocumento`, Y NO ES UN OLVIDO. Se intentó hacer que
-      // esto fallara en vez de imprimir el marcador, y **es una decisión ya tomada en otro sitio**:
-      // este marcador está DECLARADO en `EN_EL_PAPEL` (`tests/scrum667-marcador-visible.test.mjs`),
-      // que cuenta los marcadores que llegan al papel del cliente y exige que salgan EXACTAMENTE
-      // los declarados. Hacerlo fallar puso 17 casos en rojo, y con razón: se estaba cambiando por
-      // la puerta de atrás una política que se decidió en SCRUM-667 con su registro y su control.
-      //
-      // Lo que apaga este marcador es ESCRIBIR EL TEXTO (lo firma el fundador, regla 30) y
-      // retirarlo de `EN_EL_PAPEL` en el mismo commit — el propio guard lo dice en su mensaje.
-      // Propuesta del literal: `docs/master/SCRUM-903.md` §5 y comentario 15694 del ticket.
       doc.text(MARCADOR_MICROCOPY_DESGLOSE, totalsX, doc.y, { width: totalsW });
       doc.moveDown(0.3);
 

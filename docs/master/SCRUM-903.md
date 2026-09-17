@@ -125,7 +125,17 @@ Lo que ya existía, medido leyéndolo:
 
 Por eso **la mitad de la factura se ha retirado**: hacerla fallar cambiaba por la puerta de atrás una
 política decidida en SCRUM-667, con su registro y su control negativo. Regla 41: se arregla el
-código, no el guard. Lo que apaga ese marcador es **escribir el texto** y retirarlo de `EN_EL_PAPEL`
+código, no el guard.
+
+⚠️ **Y `pdf.service.ts` queda IDÉNTICO a `main`, byte a byte — ni siquiera un comentario.** Al
+retirar el filtro dejé escrito ahí *por qué* no va, y saltaron otros dos guards (SCRUM-603b y
+SCRUM-723): vigilan que el ámbito que genera la factura no cambie respecto a la base de la rama,
+porque cambiar lo que imprime una factura ya emitida es la regla 29. Miden **caracteres**, así que
+un comentario cuenta. Tienen razón: el sitio para explicar por qué ese fichero no se toca es éste y
+el caso de la tanda, no el fichero. Un tercer guard (SCRUM-838) cazó además una tautología que dejé
+en mis propios casos —`assert.equal(antes, antes)`—, y también tenía razón: se ha sustituido por un
+control que compara con el mismo albarán y una calidad válida, para que el rojo pruebe el filtro y
+no otra avería. Lo que apaga ese marcador es **escribir el texto** y retirarlo de `EN_EL_PAPEL`
 en el mismo commit — el propio guard lo dice en su mensaje de fallo.
 
 **El hueco real, y es el que este ticket cierra:** el banco de SCRUM-667 genera su albarán con

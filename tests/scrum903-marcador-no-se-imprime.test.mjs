@@ -162,14 +162,20 @@ test('SCRUM-903 · 🔴 el `catch` vacío del bloque de firma NO se traga el mar
   // entero**, sin trazo, sin nombre y sin fecha, en silencio. Por eso la etiqueta se resuelve
   // fuera del `try`. Si alguien la devuelve adentro, este caso cae.
   const { generateAlbaranPdf } = await import('../dist/modules/jobs/infra/albaranPdf.service.js');
-  const antes = fs.existsSync(path.join(RAIZ, 'storage')) ? 1 : 0;
 
   await assert.rejects(
     () => generateAlbaranPdf(albaranBase('calidad_que_nadie_ha_definido')),
     /microcopy_sin_firmar/,
     '🔴 el error se ha perdido: o se imprime el marcador, o sale un albarán firmado SIN su firma',
   );
-  assert.equal(antes, antes); // el estado del disco no es lo medido aquí; lo es que el error suba
+
+  // Y el error es el del FILTRO, no uno cualquiera: sin esto, un fallo de otra causa —un PNG que
+  // no se puede leer, un campo que falta— daría este caso por bueno sin que el guard exista.
+  const soloElFiltro = await generateAlbaranPdf(albaranBase('otro:Jefe de obra'));
+  assert.ok(soloElFiltro, '🔴 el mismo albarán con una calidad válida tampoco se genera: el rojo de '
+    + 'arriba no prueba nada, porque este camino estaba roto por otro motivo');
+  const ruta = soloElFiltro.diskPath || soloElFiltro.outPath || soloElFiltro.path;
+  if (ruta) fs.rmSync(ruta, { force: true });
 });
 
 test('SCRUM-903 · ✅ las seis etiquetas están escritas: ninguna devuelve marcador', async () => {
