@@ -213,3 +213,62 @@ de frase que decide el negocio, no el código.
 | `docs/master/evidencias/scrum910/rojos-910.mjs` | las tres mutaciones reales, con su discriminación |
 | `src/modules/billing/app/routes/payBank.routes.ts` | **sin tocar — cero líneas de diff** |
 | `src/modules/billing/domain/viasDeCobro.ts` | **sin tocar** — deuda declarada |
+
+---
+
+# SCRUM-910b · La decisión del criterio, y `admin.html` medido de verdad
+
+**Medido contra:** `origin/main` = `765a15f1c6f1ed75736c25d2dd311bcfc43e303c` · 2026-09-17T15:24:27+01:00
+**Rama:** `scrum-910b-la-nota-de-la-lista`
+
+> ⛔ Ni una línea de `src/` · ningún texto en el producto · ninguna base consultada.
+> Esta sección **sólo registra una decisión y corrige una medición**.
+
+## 1 · DECIDIDO (17-sep-2026): en `viasDeCobro`, manda `payBank`
+
+El criterio que manda es **el del que HACE, no el del que OFRECE**. Es la misma regla que ya
+gobierna la tarjeta (`cardChargeMode` deriva de lo que hace la puerta de cobro) y que gobierna la
+transferencia desde §6 (`transferenciaDisponible` replica lo que hace `payBank`).
+
+La medición lo respalda: arreglar sólo el caso del IBAN habría dejado vivo el de la CLABE, porque
+la condición se estaba copiando del código que ofrece en vez de derivarla del que cumple.
+
+**Lo que NO cambia todavía:** las 15 discrepancias de `viasDeCobro.tarjeta` siguen como lista
+cerrada en `tests/scrum893-solo-lo-que-puede-cobrar.test.mjs` ⑥. Lo decidido es **cuál gana**, no
+cuándo se aplica. La nota del test dice ahora por qué se puede esperar — y con qué caduca.
+
+## 2 · 🔴 TERCERA CORRECCIÓN a mi hallazgo de `admin.html`
+
+Reporté que `admin.html` **pinta** `href="undefined"`. **Medido corriendo la ruta real: hoy no llega
+a pintarlos.** Son dos defectos encadenados, y sólo el segundo es el que yo describí.
+
+| # | dónde | qué pasa |
+|---|---|---|
+| **1** | `admin.html:917` manda `created.id` | `POST /quote/:token/accept` exige el **`decisionToken`** (SCRUM-95: «NUNCA el id autoincremental — era la sexta puerta de la misma fuga»). Y `POST /quote/create` devuelve `{id, number, status, total, currency}`: **el id, no el token**. → **HTTP 404**, `!acceptRes.ok`, `throw`, y la pantalla muestra «Error creando el presupuesto/cobro. Revisa la consola.» |
+| **2** | la respuesta de `accept` | Devuelve `{ok, status, quote_id, accepted_at}` — **sin** `paycard_url`, `paybank_url` ni `charge_id`. Si se arreglara (1), **entonces** sí se pintarían los `undefined`. |
+
+**Medido con control positivo**, y el control hizo su trabajo: la primera pasada dio 404 en los DOS
+casos —incluido el que debía salir bien— porque mi token de ejemplo no era hexadecimal y
+`parseToken` filtra a hex. Con un token válido: **id → 404 · token → 200**. Sin ese control, habría
+reportado «el id da 404» sobre una sonda que daba 404 a todo.
+
+    🔒 Un 404 que también le sale al caso bueno no prueba nada del caso malo.
+
+**Y `public/dashboard/js/api.js:1398` define `acceptQuote(id, …)` con el mismo error de id-por-token
+— pero NADIE la llama.** Código muerto, no una tercera víctima. Se declara para que quien lo lea no
+lo cuente dos veces.
+
+## 3 · Las dos opciones para `admin.html` — SIN elegir
+
+| | **A · que la ruta devuelva los enlaces** | **B · que esos enlaces no se pinten** |
+|---|---|---|
+| **qué se hace** | `POST /quote/:token/accept` añade `charge_id`, `paybank_url` y `paycard_url` a su respuesta. Y `admin.html` pasa a mandar el `decisionToken`. | `admin.html` deja de pintar el bloque de enlaces. Sigue diciendo que el presupuesto se aceptó. |
+| **arrastra** | Es **cambiar un contrato público**: `/quote/:token/accept` es la ruta que usa el **cliente final** desde la landing de decisión, no sólo esta pantalla. Añadir campos es compatible, pero pone **URLs de cobro en una respuesta que hoy no las lleva** — y esa respuesta la recibe el navegador de la clienta. | No toca ninguna ruta. Pero **quita de la pantalla de admin la única forma que tenía de obtener los enlaces de cobro tras aceptar**: quien la use tendría que ir a buscarlos a otro sitio. |
+| **el defecto (1) sigue vivo?** | No: hay que arreglarlo para que A funcione. | **Sí.** B esconde el síntoma pero la pantalla seguiría dando 404 al aceptar. |
+| **superficie** | ruta pública + una pantalla | una pantalla |
+| **regla que roza** | La 22 y el criterio de SCRUM-95: los enlaces de cobro van por token opaco. Hay que comprobar que meterlos aquí no reabre la puerta que aquél cerró. | ninguna |
+
+⚠️ **Lo que no sé y pesa en la decisión: quién usa `public/admin.html` hoy.** No he encontrado quién
+la sirve ni una declaración de acceso para ella. Si no la usa nadie, B es gratis y A es trabajo
+sobre una pantalla muerta; si la usa el fundador para dar de alta cobros a mano, es al revés. **Esa
+respuesta no está en el repositorio.**

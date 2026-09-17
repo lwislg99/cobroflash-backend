@@ -56,7 +56,8 @@ import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; //
 // ningún otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
 // mala cobertura es el caso NORMAL, no el raro.
 import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
-import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar, tieneDescuentoGlobalConVariosIva } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_CREAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../../domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 // SCRUM-805 · el sello del PRESUPUESTO. Canónico PROPIO: el del albarán no sella `total`,
 // `validUntil`, `paymentTerms` ni las cláusulas, que es justo lo que se discute.
@@ -143,6 +144,13 @@ router.post('/create', async (req, res) => {
       // el total. No hay una segunda aritmética: `calcTotal` es quien produce el `Quote.total`
       // que se guarda y que el PDF del presupuesto imprime tal cual (`pdf.service.ts:954`).
       totalNum = calcTotal(canonicalLines, body.discountGlobalAmount ?? null);
+    }
+
+    // SCRUM-887 · UN C NO SE GUARDA (comentario 15697). El editor ya lo impide; esto cierra la API.
+    if (tieneDescuentoGlobalConVariosIva({ lines: canonicalLines, discountGlobalAmount: body.discountGlobalAmount ?? null })) {
+      return res.status(400).json({
+        error: ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, message: COPY_CREAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA,
+      });
     }
 
     // Atribuir el técnico que crea la cotización (null = propietario)
