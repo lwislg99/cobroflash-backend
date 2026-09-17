@@ -206,3 +206,282 @@ usuario (30 / A7), y nada en `docs/microcopy/`, que exige firma válida a todo l
 worktrees llevan `DATABASE_URL_STAGING`, `_DEV` y `_TESTS`»*. **Esa medición ha caducado**, al menos
 para este árbol. Va aquí y no en `CLAUDE.md` porque ése es derivado (regla 35) y porque re-fecharlo
 es trabajo de quien vuelva a medir los cuatro, no de quien mide uno.
+
+---
+
+# APÉNDICE · Fase c — A y B aplicados, con GO del fundador
+
+> *(La **fase b** —las afirmaciones con sello «medido» y el host que parece staging— está más abajo,
+> en este mismo fichero. Las fases quedan en orden c→b porque reordenarlas produciría borrados en el
+> diff, y un movimiento de bloque es indistinguible de una pérdida para quien lo audite.)*
+
+*17-sep-2026 · rama `scrum-880c-el-desempate-y-los-milisegundos`*
+
+**Medido contra:** `origin/main` = `6598e735fb3c8b4fbaa43a236713c51ad2609fdb` · 2026-09-17T14:06:36+01:00
+
+> **GO concedido para A + B. C queda fuera** (estado nuevo y esquema: ticket aparte).
+> El motivo del GO, escrito porque es la mitad del valor de la decisión: **producción tiene CERO
+> facturas y CERO albaranes**, así que no existe ni un sello viejo sin milisegundos con el que los
+> nuevos puedan empatar. **B es un cambio limpio hoy y deja de serlo con la primera factura real.**
+
+## El diff efectivo — cinco líneas, ni una más
+
+```
+-  return tAnul > tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;      A
++  return tAnul >= tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;
+
+-    const timestamp = formatFechaHoraHuso(new Date());                   B · alta
++    const ahora = new Date();
++    const timestamp = formatFechaHoraHuso(ahora);
+-      data: { …, vfTimestamp: new Date(timestamp) },
++      data: { …, vfTimestamp: ahora },
+
+-    const timestamp = formatFechaHoraHuso(new Date());                   B · anulación
++    const ahora = new Date();
++    const timestamp = formatFechaHoraHuso(ahora);
+-      data: { …, vfAnulTimestamp: new Date(timestamp) },
++      data: { …, vfAnulTimestamp: ahora },
+```
+
+⛔ **El `sort` de la construcción del XML NO se ha tocado** — cero líneas suyas en el diff,
+comprobado. Sigue tapiado porque su único consumidor busca por huella desde SCRUM-145d.
+⛔ **Ningún sello ya guardado se reescribe** (regla 29): sólo cambia lo que se guarda de aquí en
+adelante.
+
+## ② La comprobación del esquema, repetida y citada
+
+Antes de escribir una línea, **segunda vez**, sobre `DATABASE_URL_DEV` a las
+`2026-09-17T12:57:41.795Z`:
+
+```sql
+select table_name, column_name, data_type, datetime_precision
+  from information_schema.columns
+ where column_name in ('vf_timestamp','vf_anul_timestamp');
+```
+```
+invoices.vf_anul_timestamp → timestamp without time zone · datetime_precision = 3
+invoices.vf_timestamp      → timestamp without time zone · datetime_precision = 3
+```
+
+**`precision = 3` es milisegundos: NO hace falta ALTER.** Las columnas nunca fueron la
+limitación; el truncado lo ponía el código al re-parsear la cadena de la huella.
+
+Y donde SCRUM-145 prometió *«se PERSISTE el instante exacto que entró en la huella»* queda escrito
+el matiz: ahora se guarda **eso más la precisión que el hash descarta**. La verificación de un
+tercero no cambia, y **eso no se razona: se comprueba recomputando la huella** (abajo).
+
+## ③ Los controles — A y B por separado
+
+| control | qué prueba | |
+| --- | --- | --- |
+| **🔴 A · EL QUE DECIDE** | con alta y anulación empatadas, la cadena **ya no bifurca**: encadena a la anulación | ✅ |
+| **✅ A · VERDE REAL** | con la anulación sellada **ANTES** que el alta, encadena al **alta** | ✅ |
+| **🔴 A · MUTACIÓN** | `>` y `>=` dan respuestas **distintas** sobre el mismo empate, en 3 separaciones | ✅ |
+| **🔴 B · milisegundos** | 50 sellos escritos por el camino real; si todos salieran a 0 sería el truncado de vuelta | ✅ |
+| **🔴 B · invariante** | la huella se **recomputa de verdad** desde el sello guardado, 20 veces | ✅ |
+| **🔴 mecanismo** | la cadena hasheada sigue truncada al segundo — por eso `>=` no sobra | ✅ |
+
+🔴 **EL SUELO DEL EXPERIMENTO VA DENTRO DEL QUE DECIDE:** antes de afirmar nada, el banco comprueba
+que **ha producido el empate** (los dos sellos idénticos, milisegundos a 0). Si no lo produjera,
+el verde sería el suelo del experimento y no una prueba de que el arreglo funciona.
+
+🔴 **Y EL VERDE REAL ES LA RAMA QUE RESPONDE DISTINTO.** «Anulación 1 s después» habría dado la
+misma respuesta con `>` y con `>=` — no mide nada. El caso que discrimina es la **anulación
+sellada ANTES**: ahí tiene que ganar el alta. Sin él, un `>=` mal escrito como «la anulación gana
+siempre» pasaría el control de arriba sin que nadie lo notara.
+
+### Las dos mutaciones declaradas, y que cada una cae SOLA
+
+| mutación | tumba | y NO tumba |
+| --- | --- | --- |
+| devolver `>` estricto | `A · EL QUE DECIDE` | el de B |
+| volver a `new Date(timestamp)` | `B · milisegundos` | el de A |
+
+**Que cada una caiga sola es lo que prueba que son dos arreglos.** Un test que sólo pasara con los
+dos puestos no diría cuál hace el trabajo.
+
+### 🔴 Y la sonda de mutación me cazó a mí primero
+
+Las dos mutaciones salían **`exit 0`**: el guard no caía. No era que el arreglo no funcionara —
+era que **la sonda editaba el `.ts` y los tests importan de `dist/`**. Sin recompilar, una mutación
+sobre código compilado es **MUDA**: da exactamente la misma salida que un guard que no detecta.
+
+El meta-guard de la casa ya lo sabe —SCRUM-763 lo dejó escrito: *«si el fichero que la declaración
+muta se COMPILA, también se emite su `.js` a `dist/`»*— y mi sonda no. Arreglada recompilando entre
+mutación y ejecución, las dos caen. **Si me hubiera fiado del primer `exit 0` habría concluido que
+los controles eran ciegos, y lo ciego era el instrumento que los medía.**
+
+## Lo NO tocado
+
+El resto de `verifactu.service.ts` · el `sort` del XML · `prisma/schema.prisma` (no hace falta
+ALTER, medido) · ningún sello guardado (regla 29) · ningún estado ni flag (27) · ninguna
+dependencia (36) · ningún texto de usuario (30). **Producción y staging: no tocados.**
+
+### 🔴 Y un guard de otro carril cazó la consecuencia que yo no había visto
+
+`SCRUM-525d` salió en rojo en la tanda: **mis 38 líneas de comentario desplazaron el fichero**, y
+`docs/legal/AUDITORIA_CAMINO_EMISION.md:39` citaba `verifactu.service.ts:536` para
+`buildVerifactuRegistrosXml`, que pasó a **574**.
+
+No es un fallo del guard ni una casualidad: **es exactamente para lo que existe**. Una coordenada
+`fichero:línea` en un documento de auditoría se rompe cada vez que alguien escribe encima, y sin
+algo que lo compruebe apunta a otra cosa sin que nadie lo note — el documento sigue pareciendo
+correcto.
+
+**Arreglada la coordenada, no relajado el guard** (regla 41): `536` → `574`. Se cambia el número,
+no la afirmación: sigue señalando la misma función.
+
+⚠️ **Y deja una lección para el que escriba comentarios largos en el camino fiscal:** explicar bien
+un cambio de una línea cuesta 38 líneas, y esas 38 líneas rompen coordenadas ajenas. El precio no
+es no explicar — es acordarse de que el fichero es un sistema de coordenadas para otros documentos.
+
+### Rojo ajeno en la tanda, demostrado y NO arreglado (regla 9)
+
+`SCRUM-804 · CONTROL POSITIVO DERIVADO` sale en rojo:
+
+```
+🔴 EL INSTRUMENTO NO VE ESTAS RAMAS, que `for-each-ref` sí lista:
+   · scrum-904 → SCRUM-904
+```
+
+**No es el intermitente que ya está registrado**: aquél parpadeaba (9/9, 8/9, 9/9) y éste falla
+**3 de 3 en aislamiento**. Es reproducible, o sea que es otra cosa.
+
+**Y no es mío, demostrado y no afirmado:** con `main` en el árbol —sin ninguno de mis cambios—
+**falla igual**. El test lee refs de git, que son compartidas, así que el veredicto no depende de
+la rama en la que se esté.
+
+La causa: la rama remota **`scrum-904`** (17-sep-2026 11:23, de otra sesión, trabajando en la
+colisión de contador del 522) **se llama sin slug** — `scrum-904` en vez de `scrum-904-<slug>`,
+que es la forma que manda la constitución (`scrum-<n>-<slug>`). El barrido de SCRUM-804 no la
+alcanza, y su propio mensaje lo dice bien: *«un `SIN RASTRO` sobre ellas no dice "no hay trabajo":
+dice que el barrido no llega»*.
+
+**Reportado, no tocado**: es de otro carril y no bloquea esto. Quien lleve el 904 puede renombrar
+la rama, o SCRUM-804 ampliar su criterio — pero esa decisión no es de aquí.
+# APÉNDICE · Fase b — Las afirmaciones con sello «medido», y el host que parece staging
+
+*17-sep-2026 · rama `scrum-880b-afirmaciones-caducadas`*
+
+**Medido contra:** `origin/main` = `e437a51f7d58bc8b7bbcf20c1386a9fa9c1acb38` · 2026-09-17T11:19:56+01:00
+
+⛔ **Esto MIDE. No arregla ni re-fecha nada** (regla 9). `docs/equipo/00-normas-comunes.md` se ha
+**leído y no escrito**: tiene un dueño, la Sesión 0.
+
+> 🔒 Una afirmación con el sello «medido» y sin fecha de caducidad es la forma más convincente que
+> tiene un dato viejo de seguir pareciendo cierto.
+
+## ① Las tres cifras
+
+```
+a) POBLACIÓN     55 afirmaciones con marca de medición · 14 ficheros
+b) VERIFICABLES   9 desde este worktree, sin tocar staging ni producción
+c) SIGUEN CIERTAS 3   ·   🔴 CADUCADAS 6
+   NO VERIFICABLE 46, contadas aparte
+```
+
+**La población**, declarada: `CLAUDE.md` + `docs/equipo/*.md`. **No** se mira `docs/master/` ni el
+máster — ahí una medición es el REGISTRO fechado de un trabajo, que es lo que debe ser; en estos
+dos sitios son **instrucciones vivas** que alguien lee para decidir hoy.
+Criterio: participio de medición (`medid*`, `censad*`, `contad*`, `comprobad*`, `verificad*`) como
+palabra. **Descontadas y declaradas:** 4 instrucciones («hay que medir», «mídelo» — mandan hacer,
+no afirman) y 5 apariciones de la palabra dentro de un nombre de fichero.
+Instrumento: `scripts/censo-afirmaciones-medidas.mjs`.
+
+### 🔴 De las 9 comprobables, 6 han caducado
+
+| # | afirmación | hoy | |
+| --- | --- | --- | --- |
+| 1 | `CLAUDE.md:77` (regla 3, **REGISTRO MEDIDO** 10-ago-2026) · «los cuatro worktrees llevan `_STAGING`, `_DEV` y `_TESTS`» | en `cobroflash-b4` **faltan dos** | 🔴 **CADUCADA** |
+| 2 | `sesion-4.md:102` y `:162` · «**A15 NO EXISTE**, la numeración salta de A14 a A16» | **A15 existe**: `00-normas-comunes.md:249`, «`git stash` es estado COMPARTIDO» | 🔴 **CADUCADA** (×2 líneas) |
+| 3 | `sesion-1.md:135` · «66 ficheros de `tests/` gateados, 63 por `QA_DB_TEST`» | **81 gateados · 67 por `QA_DB_TEST`** | 🔴 **CADUCADA** |
+| 4 | `afirmaciones-verificadas.md:59` · «el `CLAUDE.md` del checkout tiene **102 líneas**» | **160** | 🔴 **CADUCADA** |
+| 5 | `afirmaciones-verificadas.md:58` · «el checkout va **3.782 commits** por detrás» | **41** | 🔴 **CADUCADA**, y ver la nota |
+| 6 | `afirmaciones-verificadas.md:31` · «cuatro sitios del atajo N» → **seis** | **6 con tecla**, de 10 botones | ✅ sigue cierta |
+| 7 | `afirmaciones-verificadas.md:50` · «`YAQU_MASTER.md` no está en la raíz» | no está | ✅ sigue cierta |
+| 8 | `sesion-1.md:30` · «en `verifactu.service.ts` el NIF del cliente no se imprime: DECIDE» | `MODO_SIN_DESTINATARIO` sigue ahí y el comentario lo mantiene | ✅ sigue cierta |
+
+⚠️ **La #5 caduca ANUNCIÁNDOLO y hay que decirlo a su favor:** su propia fila dice *«Cierto en su
+momento, y crece»*. Es la única de las seis que lleva su caducidad escrita — el número cambió, pero
+el lector estaba avisado. Lo que sí ha dejado de ser cierto es el «y crece»: **decreció**, de 3.782
+a 41, porque alguien actualizó el checkout.
+
+⚠️ **Y la #6 sigue cierta por poco:** «seis» sigue siendo el número con tecla, pero la población
+pasó de los sitios de entonces a **10 botones de crear**, con **4 sin tecla**. Un número que
+acierta sobre un denominador que ha cambiado envejece sin que se note.
+
+### 🔴 El caso que abrió esto demuestra que la fecha no basta
+
+`CLAUDE.md` regla 3 **lleva fecha** (10-ago-2026) y **aun así caducó**, porque afirma un estado en
+**presente** —«los cuatro worktrees llevan…»— que el lector toma por vigente. Medido sobre el
+propio censo: de las 55, **17 llevan fecha y 38 no**; y **31 no llevan ni fecha ni con qué volver
+a preguntarlo**. La fecha protege del olvido, no de la lectura.
+
+### Las 46 NO VERIFICABLES, y por qué
+
+Contadas aparte, clasificadas **por lectura** (lo que no pude decidir fue al lado malo):
+
+* **~22 no son afirmaciones de estado**: doctrina, encabezados, anclas de medición (`medido sobre
+  origin/main = <sha>`), o líneas que **se declaran a sí mismas como no comprobadas** —
+  `sesion-1.md:193` («lo medido, no un hecho comprobado. Se dice así a propósito»),
+  `sesion-4.md:160-161` («contado por el fundador, **no medido aquí**»), `sesion-4.md:168` («esta
+  sesión NO lo ha comprobado, a propósito»). **Ésas son el modelo**: una afirmación que declara su
+  propio alcance no puede caducar en silencio.
+* **~15 son eventos pasados fechados**: «el 8-sep se barrieron 456 ramas», «el PR #1214 llevó 3
+  tickets». No pueden dejar de ser ciertos: dicen lo que pasó, no lo que hay.
+* **~9 necesitan algo fuera de este worktree**: GitHub/CI (`delete_branch_on_merge`, runs de
+  workflows, PRs), Jira/MCP, transcripts de otras conversaciones, o el runtime del orquestador.
+
+### Lo que esto significa para la decisión
+
+**6 de 9 comprobables han caducado — el 67 %.** Y la muestra no está sesgada hacia lo viejo: dos
+de las seis son de **ayer y de hoy** (`afirmaciones-verificadas.md`, 17-sep). El problema no es
+que las notas sean antiguas: es que **nada vuelve a preguntarlas**.
+
+## ② El host que parece staging
+
+**Resultado: tres mecanismos deciden mirando el HOST. Dos contestan la pregunta correcta; uno la
+equivocada — y ese uno falla CERRADO.**
+
+La clave la deja escrita el propio guard, `_db-guard.mjs:180`: *«staging, y las demás bases del
+mismo Postgres (**SCRUM-84: el criterio es el HOST**)»*. **Son dos preguntas distintas y la casa
+las contesta con dos criterios distintos, a propósito:**
+
+| pregunta | criterio correcto | quién lo usa |
+| --- | --- | --- |
+| **«¿es seguro ESCRIBIR aquí?»** | **HOST** — todo lo que vive en ese Postgres es no-producción, y para un permiso eso es exactamente lo que hace falta saber | `assertSafeStagingUrl` (`_db-guard.mjs:291`) → `marcar-staging`, `test-staging-gated`, `turno-staging` · `DESTINOS_SEMBRABLES` (`:180`, `:260`) |
+| **«¿QUÉ es esto: staging, desarrollo o producción?»** | **DESTINO** — el host aloja dos bases distintas | `_clave-vs-destino.mjs` (SCRUM-418) → `comprobar-claves-bd` |
+
+### 🔴 El único que mezcla las dos
+
+`scripts/conciliar-auditoria-fiscal.mjs:103-104`:
+
+```js
+if (h === PROD_HOST)    return { clase: 'prod',    host: h };
+if (h === STAGING_HOST) return { clase: 'staging', host: h };
+```
+
+Contesta la pregunta de **identidad** con el criterio de **permiso**: una base de **DESARROLLO**
+sale clasificada como `staging`.
+
+✅ **Y no es explotable hoy, porque falla CERRADO** — medido leyendo `:144-147`:
+
+```
+if (clase === 'staging' && !marcada) {
+  console.error('❌ El host dice staging pero la base NO lleva el marcador YAQU_STAGING.');
+  console.error('   Abortado: si no se puede verificar de qué base se trata, no se lee.');
+```
+
+Una base de desarrollo clasificada como `staging` **aborta** en vez de leerse. El mensaje describe
+literalmente la confusión —*«el host dice staging pero…»*— sin saber que la está describiendo.
+
+**El resultado del censo, entonces, no es «hay un defecto»: es «hay un criterio equivocado que hoy
+no hace daño porque otro mecanismo lo tapa».** El día que cambie el host, o que alguien marque la
+base de desarrollo, deja de taparlo.
+
+## Lo NO tocado
+
+`docs/equipo/00-normas-comunes.md` (leído, no escrito — es de la Sesión 0) · ninguna afirmación
+re-fechada ni corregida · `conciliar-auditoria-fiscal.mjs` sin tocar · `CLAUDE.md` sin tocar:
+re-fechar la regla 3 exige medir **los cuatro** worktrees y desde aquí sólo se ve uno.
+**Staging y producción: no tocados, ni para mirar.**
