@@ -79,3 +79,13 @@ Un fallo mío en el rojo 5, corregido en `b1cb56fa`: tomé «9 botones» de la f
 ## Lo que el parser NO hace (declarado en el propio banco)
 
 Cierres implícitos (`<p>`, `<li>` o `<td>` sin cerrar), el `<tbody>` que inserta el navegador, y texto agregado: el texto de un elemento sigue siendo el que va justo detrás de su apertura.
+
+## 901b · Límites conocidos del banco, declarados en su cabecera
+
+**Medido contra:** `origin/main` = `921ad6c03ca24672b5df56ccbabfc84498e4ca80` · 2026-09-17T10:31:08Z
+**Rama:** `scrum-901b-limites-del-banco` · decisión del orquestador del 17-sep-2026, 14:55 CEST.
+
+- **(a) IndexedDB por defecto: NO.** Cambiaría lo que reciben todas las vistas medidas a cambio de un solo nodo explicado. Queda como límite declarado, con su motivo.
+- **(b) Lo que el parser no hace:** se declara en la cabecera de `tests/_banco-vistas.mjs`, **sin ticket mientras ningún test mida mal por eso**. Si aparece uno, se abre ticket con esa víctima.
+
+Los cuatro límites se comprobaron **corriendo**, no leyendo, sobre este main: `<span>a <b>b</b></span>` da `textContent` «a»; un `<tr>` directo en `<table>` tiene por padre `TABLE` (sin `<tbody>`); en `<ul><li>uno<li>dos</ul>` el segundo `<li>` queda dentro del primero; y `ctx.indexedDB` es `undefined`. El cambio es solo de comentario: no toca código del banco.
