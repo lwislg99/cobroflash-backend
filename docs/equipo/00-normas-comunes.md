@@ -235,7 +235,8 @@ línea» y no decían cuál gana.
 1. **Primera línea:** hora y SHA (esta norma).
 2. **Segunda línea**, al recibir un encargo: su repetición en una línea (A16), y ahí mismo, si
    cae fuera de carril, la negativa (A20).
-3. Si Claude Code ya no deja seguir, el aviso de A19 va **justo después de la hora y el SHA**.
+3. Si se acaba el uso o Claude Code ya no deja seguir, el aviso de A19 («traspaso listo») va
+   **justo después de la hora y el SHA**.
 
     9-sep-2026 11:40 · medido sobre origin/main da5ac06ac169fca5d3692a63b10b01a6aed7d3d6 · worktree wt-verif5
 
@@ -330,30 +331,71 @@ hoy es 57. Dos umbrales distintos con dos márgenes distintos, y atribuirle a un
 otro es la misma clase de error que la norma viene a cortar: **un número heredado de un
 enunciado no es una medición.**
 
-## A19 · El PUESTO no se cierra; el CHAT sí
+## A19 · El PUESTO es fijo; la SESIÓN se releva
 
-La Sesión N es un puesto y dura lo que dure el equipo. Lo que se cierra, cuando toca, es la
-conversación:
+Hay seis puestos, de la S0 a la S5, y **siempre están los seis ocupados**. El puesto dura lo que dure
+el equipo. Lo que se cambia, cuando toca, es la sesión que lo ocupa: se lanza una sesión NUEVA en
+segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar su contexto.
 
-- **Por defecto, el MISMO chat.** Cerrar un ticket NO obliga a abrir chat nuevo: el siguiente
-  encargo entra en la conversación que ya está abierta. Un chat recién estrenado no gana nada
-  cambiándose.
-- **El tamaño NO es motivo.** Se sigue en el mismo chat aunque el contexto pase de 200k o de 300k.
-  No se para «por contexto».
-- **Chat nuevo SOLO en dos casos:**
-  1. la conversación lleva **más de 1 hora parada**. La caché de prompt caduca a la hora y el
-     siguiente mensaje reescribe la conversación entera; Claude Code lo avisa con «Idle…
-     re-cache about Nk tokens»;
-  2. **Claude Code no deja seguir**: el límite de contexto real, o una compactación que ya no
-     permite continuar.
-- **El traspaso en memoria se lleva al día mientras se trabaja**, no solo al cerrar: qué está en
-  `main` por efecto, qué queda pendiente, ramas y PR abiertos. Así el chat nuevo, cuando toque,
-  arranca sin repetir trabajo. Si Claude Code corta la conversación, el último informe lo dice justo
-  después de la hora y el SHA (A14): «Claude Code no deja seguir: el siguiente encargo, en chat nuevo».
-- **Nunca se reanuda un chat grande y frío.** Ni para «acabar lo que quedaba»: se abre uno nuevo
-  con un prompt corto y se lee el traspaso.
-- **El chat nuevo se abre en la MISMA CARPETA.** La memoria va por carpeta: abierto en otra, no
+- **Cuándo se releva** (lo decide el orquestador). Hay tres casos:
+  1. al terminar una entrega verificada, **si el contexto de la sesión pasa de 300k**;
+  2. si la sesión lleva **más de 1 hora parada**. La caché de prompt caduca a la hora, y el siguiente
+     mensaje reescribe la conversación entera; Claude Code lo avisa con «Idle… re-cache about Nk
+     tokens»;
+  3. al empezar la tanda del día siguiente.
+- **Cuándo NO se releva:**
+  - **Nunca a mitad de una entrega.**
+  - Tampoco en cada tarea: si una entrega se cierra por debajo de 300k, el siguiente encargo entra
+    en la misma sesión.
+  - Si el uso se acaba o Claude Code no deja seguir, el traspaso se deja ANTES. El último informe
+    lo dice justo después de la hora y el SHA (A14): «traspaso listo: el siguiente encargo, en
+    sesión nueva».
+- **Cómo se releva:**
+  1. el orquestador pide el traspaso;
+  2. la sesión escribe `project_sN_traspaso.md` en la memoria del proyecto, más su línea en
+     `MEMORY.md`, para alguien que NO ha visto su chat;
+  3. contesta **«traspaso listo»** por el canal y **PARA**, sin un comando más;
+  4. el orquestador la detiene y lanza la sesión nueva con el prompt estándar y el encargo concreto;
+  5. la nueva lee desde `origin/main` el `CLAUDE.md`, estas normas, su `sesion-N.md`, su fila de la
+     tabla §11bis y su traspaso, y se presenta por el canal: «Sesión N lista · <siguiente paso>».
+
+  El lanzador y su protocolo son de la S5 (`scripts/equipo/sesion.mjs`, `orquestador-autonomo.md`).
+- **Qué lleva el traspaso.** Es corto, y lo que no esté aquí la sesión nueva no lo sabe:
+  1. **cabecera**: hora de GitHub y SHA de `origin/main` (A14);
+  2. **en `main` por efecto**: PR, qué lleva y SHA de merge de 40 caracteres;
+  3. **a medias**: rama, head, PR si lo hay, y el **siguiente paso exacto** (el comando o la
+     pantalla, no «seguir con»);
+  4. **worktrees y bancos**: ruta, rama, si está empujado, y dónde vive lo que no está en git (el
+     scratchpad se borra con la sesión: A8);
+  5. **cola** de su carril, en orden;
+  6. **autorizaciones que hay que volver a pedir** (punto siguiente).
+- 🔴 **Las autorizaciones del fundador NO se heredan.** Un GO de dinero, un alta en un servicio de
+  terceros o un borrado que el fundador escribió en el chat de una sesión valen para ESA sesión.
+  - La nueva no los usa hasta que el fundador se los escriba a ella.
+  - El traspaso dice qué estaba autorizado y que hay que pedirlo otra vez, **sin copiar datos
+    personales**.
+- **El traspaso se lleva al día mientras se trabaja**, no solo cuando se pide: si el uso se corta de
+  golpe, lo que no esté escrito se pierde.
+- **Nunca se reanuda una sesión grande y fría**, ni para «acabar lo que quedaba»: se lanza una nueva
+  y se lee el traspaso.
+- **La sesión nueva arranca en la MISMA CARPETA.** La memoria va por carpeta: abierta en otra, no
   encuentra el traspaso y arranca a ciegas creyendo que arranca limpio.
+
+⚠️ **Cuarta versión, 17-sep-2026, y SUPERA a la del 16-sep.**
+- **Lo que decía la del 16-sep:** «por defecto el MISMO chat; el tamaño NO es motivo; chat nuevo solo
+  si lleva >1 h parado o Claude Code no deja seguir».
+- **La prueba que lo cambió:** la prueba de relevo de SCRUM-899. Se lanzó una Sesión 0 nueva en segundo
+  plano, que leyó las normas y su traspaso desde `origin/main` y se presentó por el canal (su primer
+  informe lleva la hora de GitHub 14:58:39Z).
+- **La decisión del fundador** (transmitida por el orquestador, sin cita directa en este fichero): «en
+  vez de iniciar con caché antiguo, iniciamos nueva sesión».
+- **El ajuste**, hacia las 15:30Z: NO en cada tarea, sino en los tres casos de arriba, y siempre con
+  los seis puestos ocupados. Consta en la memoria del proyecto, `feedback_relevo_sesion_fresca.md`.
+- *Lectura de la Sesión 0, no palabras del fundador:* el umbral de 300k que el 16-sep se retiró vuelve
+  porque lo que se rechazó entonces era **abrir chats a mano**, y el relevo lo lanza el orquestador
+  sin que el fundador haga nada.
+
+Lo que sigue es la historia anterior, sin tocar:
 
 ⚠️ **Corregida TRES veces por el fundador el 16-sep-2026.** La primera versión decía «chat nuevo
 cuando se cierra el ticket, o cuando la conversación pasa de ~300k». La segunda («¿por qué un chat

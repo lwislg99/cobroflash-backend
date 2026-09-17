@@ -1,0 +1,17 @@
+N DECLARADA = 40
+mutacion #2: tests/scrum267-ancla-de-medicion.test.mjs
+   de:     const id = identidadDeEntrada(e.tituloCompleto);
+    a:     const id = String(vistos.size); // vuelta a la clave POSICIONAL, a proposito
+  cae: SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave
+LINEA BASE: pass=20 fail=0 skip=0 movidos=0
+  ...5/40 (19s) vivas=5 MUDAS=0 ciegas=0
+  ...10/40 (38s) vivas=10 MUDAS=0 ciegas=0
+  ...15/40 (79s) vivas=15 MUDAS=0 ciegas=0
+  ...20/40 (131s) vivas=20 MUDAS=0 ciegas=0
+  ...25/40 (173s) vivas=25 MUDAS=0 ciegas=0
+  ...30/40 (224s) vivas=30 MUDAS=0 ciegas=0
+  ...35/40 (253s) vivas=35 MUDAS=0 ciegas=0
+  ...40/40 (270s) vivas=40 MUDAS=0 ciegas=0
+
+LINEA BASE AL FINAL: pass=20 fail=0 skip=0 movidos=0  (IGUAL: el bloque vale)
+RESULTADO N=40 · vivas 40 · MUDAS 0 · ciegas 0 · muertas 0 · 273s

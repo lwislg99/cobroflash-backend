@@ -1,0 +1,6 @@
+limpia: pass=20 fail=0 skip=0 movidos=0
+VEREDICTO DEL CONTROL INERTE: MUDA
+el guard NO cayó. Test que debía ponerse rojo: «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO»
+    → en la pasada MUTADA ese test: PASÓ (corrió y no falló). Recuento: 20 pasados · 0 caídos · 0 saltados. Y en la LIMPIA: 20 pasados · 0 caídos.
+
+OK: el banco SI sabe decir MUDA.
