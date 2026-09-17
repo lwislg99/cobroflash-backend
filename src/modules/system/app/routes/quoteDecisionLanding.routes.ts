@@ -10,6 +10,9 @@ import { isQuoteExpired } from '../../../quotes/domain/expire.service';
 // cliente se armara por otro sitio, serían dos documentos distintos con el mismo nombre.
 import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+// SCRUM-888g · los tramos que ve el cliente al firmar salen de la MISMA vista que usan el panel y
+// la emisión (`stageAmountsFromLines`): la página no calcula un solo importe por su cuenta.
+import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView';
 // SCRUM-633 · el calendario en el que vive el merchant. Sitio único desde SCRUM-643.
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 
@@ -94,7 +97,9 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
       font-size: 14px; color: #6b756f; padding: 3px 6px; font-variant-numeric: tabular-nums; }
     .totals-row span:last-child { color: #3f4a45; font-weight: 600; }
     .terms-badge { display: inline-block; font-size: 12px; padding: 3px 10px;
-      border-radius: 999px; background: #eff6ff; color: #1d4ed8; margin-bottom: 16px; }
+      border-radius: 999px; background: #eff6ff; color: #1d4ed8; margin-bottom: 16px;
+      /* SCRUM-888g: la píldora lleva los nombres de tramo del profesional; uno sin espacios no desborda */
+      max-width: 100%; overflow-wrap: anywhere; }
     /* V8/N1: política de señal junto a las condiciones (solo cuando hay señal 50/50) */
     .senal-policy { text-align: center; font-size: 12px; color: #6b756f; margin: 0 0 12px; }
     .divider { border: none; border-top: 1px solid #e7e9e5; margin: 16px 0; }
@@ -176,10 +181,51 @@ function renderPage(title: string, body: string, brandColor?: string | null): st
 </html>`;
 }
 
-function termsLabel(terms: string | null): string {
-  if (terms === 'FIFTY_FIFTY') return '50% al aceptar · 50% al finalizar';
-  if (terms === 'FULL_UPFRONT') return 'Pago completo al aceptar';
-  return terms ?? 'Pago completo';
+/**
+ * SCRUM-888g · Nombres que ve el cliente para los tramos de los planes DE SERIE. La vista del plan
+ * los trae con su etiqueta interna (`fifty_fifty_first_50`…), que no se enseña; éstos son los
+ * textos que la píldora ya decía, partidos por tramo. Un plan propio usa los nombres del profesional.
+ */
+const NOMBRE_DE_TRAMO_DE_SERIE: Record<string, string> = {
+  full_upfront_100: 'Pago completo al aceptar',
+  fifty_fifty_first_50: '50% al aceptar',
+  fifty_fifty_second_50: '50% al finalizar',
+};
+
+/**
+ * SCRUM-888g · Condiciones de pago en la página de firma: «{tramo}: {importe} · {tramo}: {importe}»
+ * (formato firmado en SCRUM-888, comentario 15624). Lo único nuestro son «: » y « · ».
+ *
+ * Antes la píldora enseñaba `paymentTerms` —el código crudo «MANUAL» con un plan de señal 30/70— e
+ * ignoraba `customBillingPlan`: el cliente firmaba sin saber cuánto pagaba al aceptar.
+ *
+ * - Importes y tramos: `buildBillingPlanView`, la vista que reparte con las mismas funciones que la
+ *   emisión. Con `emittedCount` 0 porque esta página sólo se firma en draft/sent, antes de emitir nada.
+ * - Con opciones a elegir (tiers) el importe depende de la opción: se enseña el porcentaje.
+ * - Sin plan que pintar —sin condiciones, MANUAL o SIN_CONDICIONES sin plan propio— no hay píldora.
+ *   Sin condiciones no se resuelve a pago completo aquí: la página no lo decía y no lo va a afirmar.
+ * - Un tramo de serie sin nombre aprobado deja la página sin píldora antes que enseñar su etiqueta interna.
+ */
+function condicionesDePago(
+  quote: NonNullable<Awaited<ReturnType<typeof loadQuote>>>,
+  conOpciones: boolean,
+  money: (n: number) => string,
+): string | null {
+  const q = quote as any;
+  const tienePlanPropio = Array.isArray(q.customBillingPlan) && q.customBillingPlan.length > 0;
+  if (!tienePlanPropio && !q.paymentTerms) return null;
+
+  const vista = buildBillingPlanView(q, 0);
+  if (vista.billingPlan.length === 0) return null;
+
+  const partes: string[] = [];
+  for (const tramo of vista.billingPlan) {
+    const nombre = vista.hasCustomPlan ? tramo.label : NOMBRE_DE_TRAMO_DE_SERIE[tramo.label];
+    if (!nombre) return null;
+    const valor = conOpciones ? `${Math.round(tramo.percent * 100)}%` : money(tramo.amount);
+    partes.push(`${nombre}: ${valor}`);
+  }
+  return partes.join(' · ');
 }
 
 async function loadQuote(token: string) {
@@ -344,6 +390,7 @@ function renderQuoteDetail(
     : '';
 
   const terms = (quote as any).paymentTerms ?? null;
+  const condiciones = condicionesDePago(quote, !!tiersInfo, money); // SCRUM-888g
 
   // A16.2: validez REAL de la columna validUntil (fallback legacy: creación+30d)
   let validityHtml = '';
@@ -377,7 +424,7 @@ function renderQuoteDetail(
       <div class="amount-hero-label">${tiersInfo ? 'Elige tu opción abajo 👇' : (hasVat ? 'Total · IVA incluido' : 'Total del presupuesto')}</div>
       <div class="amount-hero-value">${tiersInfo ? `Desde ${money(tiersInfo.min)}` : money(Number(quote.total))}</div>
     </div>
-    ${terms ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(termsLabel(terms))}</span></div>${terms === 'FIFTY_FIFTY' ? `<div class="senal-policy">🔒 La señal no es reembolsable.</div>` : ''}` : ''}
+    ${condiciones ? `<div style="text-align:center;margin-bottom:4px"><span class="terms-badge">${esc(condiciones)}</span></div>${terms === 'FIFTY_FIFTY' ? `<div class="senal-policy">🔒 La señal no es reembolsable.</div>` : ''}` : ''}
   `;
 }
 
@@ -393,8 +440,13 @@ const SIG_JS = `
   let drawing = false;
   let hasSig = false;
 
+  // SCRUM-892 · con «3 opciones» este bloque nace OCULTO (display:none hasta elegir), y medir un
+  // lienzo oculto da 0×0: se quedaba así, la cliente dibujaba sin ver nada y se mandaba \`data:,\`.
+  // Oculto no se toca (conserva su tamaño); y en cuanto se muestra, el ResizeObserver de abajo lo
+  // dimensiona con esta MISMA función, la que ya usaba bien el modo normal al cargar.
   function resize() {
     const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
     const dpr = window.devicePixelRatio || 1;
     const prev = ctx.getImageData(0, 0, canvas.width, canvas.height);
     canvas.width  = rect.width  * dpr;
@@ -408,6 +460,7 @@ const SIG_JS = `
   }
   resize();
   window.addEventListener('resize', resize);
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();

@@ -58,7 +58,7 @@ function montar(lineasAlbaran) {
   // Merchant REAL con el flag, no el demo (`isDemoMerchant` es id === 1): si no, todo corre en
   // modo demo y la puerta de la regla 24 no se ejercita.
   p.merchant = { findUnique: async () => ({ id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, defaultCurrency: 'EUR', taxId: 'B1' }) };
-  p.quote = { findFirst: async () => ({ id: 7, quoteNumber: 'P-1', lines: PRESUPUESTO }) };
+  p.quote = { findFirst: async () => ({ id: 7, quoteNumber: 'P-1', lines: PRESUPUESTO, discountGlobalAmount: null }) }; // SCRUM-887
   p.albaranLineaFacturada = { findMany: async () => [], createMany: async () => {} };
 
   const tx = new Proxy({

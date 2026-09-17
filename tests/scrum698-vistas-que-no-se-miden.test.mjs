@@ -330,8 +330,13 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // sobre el árbol montado y no restando 264 − 261: son `3 × span.price-final-hint`, el aviso
   // «Final: …» que quedaba siempre vacío desde que DOC-08 sacó el margen de la línea. AISLADO:
   // devolviendo `priceHint` a la vista el árbol vuelve a 264 y aparecen esos 3 exactos.
+  // 🔴 SCRUM-886 · 16-sep-2026 · `renderCustomersView` 68 → 69, y NINGUNA de las otras tres se
+  // mueve. El nodo, POR IDENTIDAD sobre el árbol montado y no restando: `a.btn-secondary.btn-sm`
+  // con «⬇ Clientes CSV» y `href` a `/admin/exports/customers.csv`, la entrada a la exportación
+  // que el fundador pidió también en Clientes (subárbol de 1). AISLADO: quitando su `appendChild`
+  // el árbol vuelve a 68 exactos y a cero entradas a esa ruta.
   for (const [vista, nodos] of [['renderQuotesView', 261], ['renderProductsView', 166],
-    ['renderCustomersView', 68], ['renderHomeView', 109]]) {
+    ['renderCustomersView', 69], ['renderHomeView', 109]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,

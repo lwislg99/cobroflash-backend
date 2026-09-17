@@ -41,6 +41,7 @@ const LINEA = { concept: 'Detector de humos', qty: 1, price: 100, costeUnitario:
 const PRESUPUESTO = {
   id: 501, merchantId: MERCHANT, customerId: 3, status: 'sent', total: 100,
   currency: 'EUR', lines: [LINEA], quoteNumber: 5, revision: 0, teamMemberId: null,
+  discountGlobalAmount: null, // SCRUM-887: la fila real lo trae siempre
   createdAt: new Date(), updatedAt: new Date(), internalNotes: null, tiers: null,
   selectedTierId: null, signatureUrl: null, pdfUrl: null, chargeId: null, decisionToken: 'tok',
   customer: { id: 3, name: 'Cliente', phone: '34000000001', email: null },

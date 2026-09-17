@@ -239,7 +239,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   }
 
   // Firma digital — compacta y en línea (la firma completa va en el PDF)
-  if (quote.signatureUrl) {
+  // SCRUM-892 · `firmaConTrazo` lo decide el servidor con el criterio de píxeles: una fila con
+  // `signatureUrl = "data:,"` NO es una firma y aquí no se afirma que lo sea.
+  if (quote.signatureUrl && quote.firmaConTrazo === true) {
     const sigBadge = document.createElement('div');
     sigBadge.className = 'sig-row';
     sigBadge.innerHTML = `

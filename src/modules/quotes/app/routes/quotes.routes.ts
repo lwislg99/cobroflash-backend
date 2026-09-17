@@ -56,7 +56,7 @@ import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; //
 // ningún otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
 // mala cobertura es el caso NORMAL, no el raro.
 import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
-import { stageLinesReconciled, grossOfLines } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 // SCRUM-805 · el sello del PRESUPUESTO. Canónico PROPIO: el del albarán no sella `total`,
 // `validUntil`, `paymentTerms` ni las cláusulas, que es justo lo que se discute.
@@ -73,6 +73,7 @@ import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaE
 import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../../core/documentos/direccionObra';
 // SCRUM-734 · el ÚNICO sitio donde se decide qué lleva el PDF del presupuesto.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
+import { firmaTieneTrazo, ERROR_FIRMA_VACIA, COPY_FIRMA_VACIA } from '../../domain/firmaConTrazo';
 
 
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
@@ -516,6 +517,13 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
       });
     }
 
+    // SCRUM-892 · una firma que LLEGA tiene que tener trazo, en cualquier modo (un precio o «3
+    // opciones»): antes se aceptaba `data:,` y se sellaba la evidencia sobre nada. Mandar la firma
+    // es opcional —«Acepto sin firmar» manda `null` y sigue valiendo—; mandarla vacía, no.
+    if (decision === 'accept' && req.body?.signatureData != null && !firmaTieneTrazo(req.body.signatureData)) {
+      return res.status(422).json({ error: ERROR_FIRMA_VACIA, message: COPY_FIRMA_VACIA });
+    }
+
     let updatedQuote: any = quote;
     let createdInvoice: any = null;
     // SCRUM-234 · si la EMISIÓN falla, la aceptación NO se pierde: ya está commiteada más
@@ -647,7 +655,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // SCRUM-141: el importe se DERIVA de las líneas del tramo — el total de una factura es
         // consecuencia de sus líneas. Antes salía de `distributeStageAmounts` con las líneas
         // escaladas aparte, y el desfase de redondeo quedaba sellado en la huella VeriFactu.
-        const quoteLines = Array.isArray(updatedQuote.lines) ? (updatedQuote.lines as any[]) : [];
+        const quoteLines = lineasParaFacturar(updatedQuote); // SCRUM-887: el dto de línea, aplicado
         const scaledLines = stageLinesReconciled(
           quoteLines, plan, stage.index, distributeStageAmounts(updatedQuote.total, plan)[stage.index],
         );

@@ -169,6 +169,15 @@ const DEL_MODAL_RETIRADO = [
 const APARCADOS = [
   ...DEL_MODAL_RETIRADO.map((texto) => ({ texto, motivo: MOTIVO_MODAL_RETIRADO })),
   {
+    texto: 'Crear una factura nueva',
+    motivo: 'RETIRADO POR DECISIÓN DEL FUNDADOR (SCRUM-875, 16-sep-2026). Era el `aria-label` del '
+      + 'diálogo de «Nueva factura», servido por `rotulosDelDocumento.ariaDialogo()`. Su único '
+      + 'consumidor era el modal viejo, retirado en SCRUM-867; el fundador decidió retirar también el '
+      + 'rótulo: una página no es un diálogo, y cablearlo sería inventarle un uso. NO se desaprueba '
+      + 'en el registro —la firma ocurrió—. Si algún día hay un diálogo, su texto se aprueba entonces. '
+      + 'Registro del ticket: `docs/master/SCRUM-875.md`.',
+  },
+  {
     texto: 'Se acaba de emitir otra factura de este presupuesto. Vuelve a intentarlo y saldra el tramo siguiente.'.replace('saldra', 'saldrá'),
     motivo: 'APROBADO Y SIN SITIO DONDE PINTARSE (SCRUM-814, 7-sep-2026). Se propuso para el 409 de '
       + 'una carrera de tramos y el fundador lo firmo sin cambios. Entre la firma y el merge, otra '

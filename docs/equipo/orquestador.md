@@ -236,6 +236,11 @@ Cuando el orquestador firma, firma así:
 10. El turno acaba con «TU LISTA»: lo que tiene que hacer ÉL, numerado
     y corto. Si no hay nada, se dice que no hay nada.
 11. Nunca viñetas para dar una mala noticia. En prosa.
+11bis. 🔴 16-sep-2026, corrección del fundador: cada prompt lleva ENCIMA del bloque, en una
+    línea que se entiende sin saber nada, DÓNDE se pega: «🆕 CHAT NUEVO en la carpeta de la
+    Sesión N» o «↩️ MISMO CHAT de la Sesión N». Escribir «conversación nueva» DENTRO del prompt
+    no sirve: lo lee la sesión cuando ya está pegado en el chat equivocado. Pasó con S2 y S5.
+    Los puestos no se cierran nunca: lo que se cierra es el chat.
 
 ## 10bis · Las reglas de ticket
 
@@ -286,10 +291,33 @@ revés deja de ser un caso raro y pasa a ser el caso normal.**
     S2  ¿esta pantalla está bien construida?
     S3  ¿el banco con el que medimos es honesto?
     S4  ¿esto que ve el usuario está firmado y sujeto?
-    S5  ¿puede una persona hacer su trabajo con esto?
+    S5  ¿la máquina entrega sola, y avisa cuando no?
 
 Cada una hace una pregunta que las demás no hacen. Ahí está el equipo:
 no en repartir el código, sino en repartir las preguntas.
+
+### 11bis · 🔴 EL PUESTO MANDA SOBRE QUIÉN ESTÁ LIBRE (17-sep-2026)
+
+Cada puesto tiene un CARRIL, y un ticket se manda **solo a la sesión de su carril**. Que una sesión
+esté libre no la convierte en la dueña de nada: si el ticket no es suyo, **espera en la cola de su
+carril**, o se declara la excepción en la primera línea del prompt, con su motivo.
+
+| sesión | puesto | carril: lo que se le manda | ficheros suyos | lo que NO se le manda |
+|---|---|---|---|---|
+| **S0** | consultoría · auditoría | veredicto «¿existe hoy?», recorridos del producto (SCRUM-882), filtro de las afirmaciones del orquestador, dueña de `00-normas-comunes.md` | `scripts/`, `tests/`, `docs/` | arreglos en `src/` o `public/`; abrir o cerrar tickets |
+| **S1** | backend · dinero · fiscal | importes, cobro, facturación, rutas del servidor | `src/modules/` (quotes, billing, invoicing, payments) | pantallas del panel |
+| **S2** | frontend | vistas del panel, DOM renderizado | `public/dashboard/js/`, `app.js`, `styles.css` | servidor, dinero |
+| **S3** | tests · bancos · instrumentación | bancos, sondas, guards, desgateo (SCRUM-876) | `tests/`, `scripts/_suelo-*` | producto |
+| **S4** | producto · microcopy · parte y albarán | textos firmados y sujetos, parte de trabajo, albaranes, vistas de lista | `jobsView.js`, `parteDetailView.js`, `albaranDetailView.js`, `docs/microcopy/` | automatización |
+| **S5** | automatización | el bucle PR → CI → merge → aviso: workflows, vigías, avisador, meta-guard | `.github/workflows/`, sus scripts | **producto, nunca** |
+
+⚠️ **Dos fuentes que se contradecían, y cuál manda.** Hasta hoy la tabla de arriba daba a S5 «¿puede
+una persona hacer su trabajo con esto?» —y así lo dice aún la cabecera de `sesion-5.md`—, mientras
+`traspaso.md` §5 (9-sep) la pone en automatización, que es lo que hace desde entonces (SCRUM-836,
+839, 853) y lo que dice el fundador. **Manda automatización.** La cabecera de `sesion-5.md` es de la
+propia S5 y la reescribe ella. El recorrido del producto lo hace hoy S0 (SCRUM-882).
+
+**Antes de escribir cada prompt**, el ticket se casa con esta tabla. Si no casa, no se manda.
 
 Cuando una sesión tumba una decisión del orquestador con una
 medición, GANA LA MEDICIÓN, y se dice en voz alta.
@@ -353,6 +381,22 @@ cuatro veces si lo había comprobado. Se comprueba cada turno.
 
 **MANDA PROMPTS INCOMPLETOS.** Dos veces con un «[aquí pega X]» que
 nunca llegó, dejando a una sesión parada.
+
+**REPARTE POR QUIÉN ESTÁ LIBRE, NO POR EL PUESTO.** 17-sep-2026, primer
+turno de un orquestador nuevo: con cuatro 🔴 de producto encima de la
+mesa, mandó SCRUM-895 (albarán, microcopy) a la S5 —automatización— y
+SCRUM-893 (pago de la cliente, dinero) a la S3 —bancos—, y no leyó
+`docs/equipo/` antes de repartir. Lo cazó el fundador: «la 5 es
+automatización, eso es raro». La deriva venía del día anterior, cuando se
+mandó a toda la plantilla a producto (S0 escribió `src/` en SCRUM-892 y
+S3 hizo SCRUM-888g) sin declararlo como excepción, y el orquestador
+nuevo leyó esa deriva como si fuera el reparto.
+
+    🔒 Una sesión libre no es una sesión sin puesto: es un puesto sin
+       ticket de su carril.
+
+Lo corta §11bis: el ticket se casa con la tabla ANTES de escribir el
+prompt.
 
 ## 14 · La regla de oro
 

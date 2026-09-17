@@ -332,3 +332,238 @@ documento llevan ruta completa.
 `src/` · el camino de emisión (regla 38) · `prisma/schema.prisma` · el **contenido** de la auditoría
 · ningún ticket cerrado ni reabierto · ningún estado ni flag (27) · ninguna dependencia (36).
 **Nada ejecutado contra producción ni contra staging.**
+
+---
+
+# SCRUM-525 · APÉNDICE c · 16-sep-2026 · Las doce anclas que apuntaban a otra cosa, y la red para mañana
+
+**Medido contra:** `origin/main` = `5135683049a0d002f9aea5efdf13fd9ba837b280` · 2026-09-16T10:05:32Z
+**Rama:** `scrum-525c-anclas-que-apuntan` (continuación de `scrum-525b`, que entró en `main` en el
+PR #1341) · **Carril:** documentación + guard · **Gate:** sin gate
+
+⛔ Sólo **anclas**. Ninguna afirmación de la auditoría cambia una letra salvo la que el fundador
+ordenó reescribir (6a, que dejaba de ser «NO MEDIDO»). `src/` intacto; esquema leído, no tocado
+(regla 40).
+
+---
+
+## 1 · 🔴 EL REPARTO REAL: 6 y 6, no 4 y ~11
+
+El encargo partía de un número mío de la 525b —«cuatro son mecánicas»— que **era una estimación a
+ojo, no una medida**. Aplicado el criterio declarado —*el texto que la afirmación cita existe HOY
+en el fichero, **una sola vez**, y sólo cambió de número de línea*—:
+
+| | anclas distintas | apariciones en el doc |
+|---|---|---|
+| ① **MECÁNICAS** | **6** | 7 |
+| ② **CRITERIO DEL FUNDADOR** | **6** | 8 |
+| **total derivadas de la 525b** | **12** | **15** |
+
+Las dos cuentas son correctas y miden cosas distintas: `prisma/schema.prisma:102-103` salía **dos
+veces** en el documento.
+
+> ⚠️ **Se me había quedado una fuera de la tabla del instrumento.** Al montar el clasificador omití
+> `verifactu.service.ts:919`, una de las 15. Resultó **mecánica**. La cacé al cuadrar apariciones
+> contra anclas (15 = 7 + 8); si no llego a cuadrarlas habría entregado 5 y 6, y nadie lo habría
+> notado, porque 11 también suena razonable.
+
+---
+
+## 2 · ① Las seis mecánicas
+
+Ninguna decide nada: el texto citado existe hoy, **una sola vez**, y sólo cambió de número.
+
+| doc | antes | después | el texto que lo justifica |
+|---|---|---|---|
+| `:36` · `:138` | `prisma/schema.prisma:102-103` | **`:865-866`** | `vf_hash` 1× (865), `vf_prev_hash` 1× (866) |
+| `:139` | `prisma/schema.prisma:98-99` | **`:864`** | `vf_estado` 1× |
+| `:39` | `verifactu.service.ts:535` | **`:536`** | `buildVerifactuRegistrosXml` 1× |
+| `:137` | `verifactu.service.ts:919` | **`:947`** | la cita de `tests/scrum240-sobre-unico.test.mjs` 1× |
+| `:66` | `pdf.service.ts:24` | **`:120`** | el **único** `axios.` del fichero, y descarga el logo |
+| `:100` | `albaran.service.ts:843` | **`:896`** | «certificado de evidencias» 1× |
+
+> ⚠️ **Una candidata se cayó por el propio criterio.** `albaranPdf.service.ts:72-73` cita
+> «certificado de evidencias», y esa frase **no existe** en ese fichero (0 veces). Con el token
+> flojo —la palabra suelta `certificado`— habría pasado por mecánica. Fue al bloque ②.
+
+---
+
+## 3 · ② Las seis que decidió el fundador
+
+**Su regla, literal:** *el ancla apunta a lo que la frase AFIRMA, y el rango cubre TODO lo que la
+frase afirma. No a lo que está cerca, no al comentario que lo explica. Un comentario no es una
+puerta: es el cartel de la puerta.*
+
+| # | doc | resuelto | por qué |
+|---|---|---|---|
+| 1 | `:33` | `invoicesAdmin.routes.ts:81` → **`:100`** | la tabla cita PUERTAS, y una puerta es una ruta. La 150 es el acto |
+| 2 | `:38` → **`:141`** · `:61` → **`:153`** | dos anclas distintas | son dos afirmaciones distintas: el eslabón que EXISTE, y la URL que escanea el cliente |
+| 3 | `:100` | `albaranPdf.service.ts:72-73` → **`:382`** | el propósito de la frase es DESAMBIGUAR, así que el testigo va donde la palabra aparece con ese sentido |
+| 4 | `:141` | `:97` y `:228` → **`:100` y `:236`** | dice CONSTRUIDA, y lo que construye una puerta es la llamada |
+| 5 | `:169` | `:310` → **`:452-457`** | la frase afirma TRES cosas; el rango las cubre las tres |
+| 6a | `:210` | reescrita | dejaba de ser «NO MEDIDO»: ya está medido |
+| 6b | `:220` | conservada + una frase | el tachado era deliberado, y ahora lo dice por escrito |
+
+> 🔒 **La 402 se descartó a propósito** en el caso 3: es texto que ve el cliente, es del fundador
+> (regla 30) y puede cambiar sin avisar. **Un ancla sobre microcopy nace con fecha de caducidad.**
+
+> 🔴 **Una corrección que le debo al fundador, y que cambia su número.** En el caso 5 su decisión
+> decía «453-457», heredando un **error de uno mío** en el informe: el comentario de SCRUM-207 —la
+> línea que dice «congelado en el registro», que es la tercera cosa que la frase afirma— empieza en
+> la **452**, no en la 453. Su REGLA manda sobre mi cifra, así que el rango puesto es **452-457**.
+
+> ⚠️ **Lo que el caso 1 deja incoherente, y él pidió que constara:** la fila dice «el **usuario**
+> pulsa emitir», y la ruta reanclada es `router.post('/', requireRole('admin'), …)`. Ahí quien pulsa
+> es un **admin**, no el profesional. Eso cambia la AFIRMACIÓN, no su ancla: **ticket aparte**.
+
+**Resultado de ① + ②: FIRMES 29 de 44 → 45 de 45.** Ninguna coordenada de la auditoría apunta ya a
+otra cosa.
+
+> ⚠️ **El denominador sube de 44 a 45, y no es un truco.** La fila del portón escribe su segunda
+> cita en forma abreviada —`` `:236` ``— y **eso es una coordenada**, pero mi tabla de la 525b la
+> contaba junto a su hermana en una sola entrada. Al separarlas aparece la que faltaba. Los dos
+> números están bien medidos; el de la 525b contaba filas donde debía contar coordenadas.
+
+---
+
+## 4 · ③ La red: `docs/legal/` entero, con testigo y trinquete
+
+**El problema, dicho antes que el diseño:** mientras el ancla sea sólo `fichero:NN`, ninguna máquina
+puede saber si apunta a lo que dice **sin adivinar la intención de la frase** — y adivinarla es lo
+que produjo mi verde falso en la 525b. Así que el testigo no se infiere: se **exige escrito**, con
+la notación que la auditoría ya usaba. **El guard no inventa convención: hace cumplir la que hay.**
+
+* **Criterio:** `scripts/_anclas-con-testigo.mjs` (un solo sitio) · **Guard:**
+  `tests/scrum525d-anclas-que-apuntan.test.mjs` · **Congelado:**
+  `scripts/_anclas-sin-testigo.congelado.mjs`.
+* **POBLACIÓN, declarada siempre con las dos cifras:** 15 ficheros de `docs/legal/` ·
+  **195 coordenadas vivas · 12 con testigo**. Hoy: **9 FIRMES · 0 DESFASADAS · 81 sin testigo ·
+  102 sin ruta · 3 que no resuelven · 1 tachada exenta.**
+* **Trinquete por PAR documento↔fichero citado** —sin número de línea— que sólo puede **encoger**:
+  **87 pares congelados**. Un par nuevo que cite sin testigo tumba el guard. Añadir una línea al
+  congelado es declarar por escrito que la deuda crece, y el mensaje del rojo lo dice.
+
+> 🔴 **SCRUM-710b me cazó a mí con su propia lección, y tenía razón.** La primera versión de este
+> trinquete congelaba **165 identidades** de la forma `documento#ruta:LÍNEA`. Su guard las vio y
+> cayó: una identidad que lleva la posición dentro **caduca en cuanto alguien edita el fichero por
+> encima**, y entonces lo que se toca para volver al verde es el guard. Rehecho por pares. Lo
+> mismo con mi propio control: escribía a mano las coordenadas rotas de ayer (`:97` y `:228`) y
+> ahora las **deriva del testigo**. **⚠️ Precio que se paga a sabiendas:** el trinquete ya no caza
+> una coordenada nueva sin testigo en un par que YA está congelado.
+* **Cero umbrales escritos a mano** (SCRUM-804), comprobado por AST sobre la propia fuente del
+  guard: 8 comparaciones, todas contra `0`.
+* **Una coordenada tachada (`~~…~~`) está exenta**: su propia tipografía la declara muerta. Es lo
+  que permite que el punto jubilado del caso 6b conserve la `:673` histórica sin poner nada rojo.
+
+**Las cuatro patas del control positivo, todas obligatorias:**
+
+1. **Suelo** — si ve 0 ficheros, 0 coordenadas, 0 testigos o 0 firmes, aborta `CIEGO` en vez de
+   informar «0 desfasadas».
+2. **Verde real** — `selladoEstado.ts:116` (`sellarTrasEmision`) sale FIRME.
+3. **Rojo real** — coge la fila que estuvo rota de verdad hasta ayer, **la del portón**, y mueve
+   sus **dos** anclas a una línea que no lleva su testigo: exige que caigan las dos. La fila se
+   busca **por su testigo**, no por su línea, y el destino se **deriva** del fichero citado: si
+   escribiera aquí las coordenadas rotas de ayer, este control sería el mismo defecto que vigila.
+4. **Mutación, y asegura haber mutado** — desplaza un ancla buena **una** línea y exige que caiga.
+   La sustitución **comprueba que casó**. Es exactamente lo que faltó en SCRUM-844, donde una
+   mutación no casó ni una vez, el fichero quedó intacto y el control pasó en verde.
+
+---
+
+## 5 · Lo que el guard encontró y NO es de este ticket
+
+* **3 coordenadas que no resuelven**, todas en `docs/legal/AUDITLOG_FISCAL_CONTRATO.md`
+  (`:287` ×2, `:639`): citan `lib/invoicing.ts:58` y `:152`, **sin el `src/` delante**. No existe
+  esa ruta. Congeladas, no arregladas: documento ajeno (regla 9).
+* **102 coordenadas citadas por basename, sin ruta**, repartidas por `docs/legal/`. Es el mismo
+  defecto que la 525b cerró **dentro de la auditoría**, vivo en los demás documentos. Hoy resuelven
+  por suerte —ningún basename repetido—; el día que haya dos, dejan de ser coordenadas.
+
+## 6 · Tres defectos MÍOS: dos los cazó el instrumento, el tercero lo cazó otro guard
+
+Los tres primeros números que dio fueron **falsos**, y ninguno lo habría notado nadie:
+
+1. **«171 no resuelven de 285».** Dos causas mías: 166 eran **citas por basename**, que no es «el
+   fichero no existe» —decirlo así manda a buscar lo que no falta—; y 5 «fuera de rango» salían de
+   que la herencia del fichero **cruzaba líneas**: una tabla de `PREGUNTAS_ASESOR.md` cuyas filas son
+   `` `:377` `` —líneas de OTRO fichero— se colgó de un `src/core/flags.ts` de dos líneas más arriba.
+2. **«14 con testigo» cuando eran 12.** Dos paréntesis que contenían `` `:229` `` —una coordenada
+   abreviada, no un símbolo— se contaban como testigo. Eso **regala cobertura**: el ancla quedaba
+   «comprobada» contra un número de línea.
+
+3. **Y el tercero no lo cacé yo: lo cazó SCRUM-710b**, con la lección que este mismo guard
+   predica. Mi congelado guardaba 165 identidades `documento#ruta:LÍNEA` — anclaje por POSICIÓN,
+   exactamente lo que ese guard prohíbe. También me cazó dos coordenadas escritas a mano dentro
+   de mi propio control. **La suite salió en rojo con 2 fallos**, los dos míos, y los dos se
+   arreglaron en mi código: nunca en el guard (regla 41 del máster, `docs/YAQU_MASTER.md`).
+   El otro fallo era de redacción: escribí «la regla 41 **del** revés» y SCRUM-189 lo leyó como
+   una cita numerada que no nombra su documento. Tenía razón: ahora lo nombra.
+
+> 🔒 Los dos primeros los cacé por **mirar la lista, no el contador**. Un «171 de 285» que se
+> acepta sin abrir es el mismo error que este guard existe para impedir. Y el tercero lo cacé
+> porque la tanda se corrió ENTERA y con la salida a fichero: con `| tail` el código de salida
+> habría sido el de la tubería —0— y el rojo no habría existido para mí (SCRUM-850).
+
+## 7 · Lo NO tocado
+
+El **contenido** de la auditoría (salvo 6a, ordenado) · `src/` · el camino de emisión (regla 38) ·
+`prisma/schema.prisma` (leído, no modificado — regla 40) · los 3 ficheros con citas rotas de otros
+documentos · ningún estado ni flag (27) · ninguna dependencia (36). **Nada ejecutado contra
+producción ni contra staging.**
+
+---
+
+# SCRUM-525 · APÉNDICE d · 16-sep-2026 · Faltaba la otra mitad del trinquete, y la vio el fundador
+
+**Medido contra:** `origin/main` = `5135683049a0d002f9aea5efdf13fd9ba837b280` · 2026-09-16T10:05:32Z
+**Rama:** `scrum-525c-anclas-que-apuntan` · **Carril:** documentación + guard · **Gate:** sin gate
+
+---
+
+## 1 · 🔴 LA PREGUNTA QUE NO CONTESTÉ, Y LA RESPUESTA ES «NO ESTABA»
+
+El encargo pedía **trinquete sobre la proporción con testigo** (12 de 195). Yo entregué «cero
+umbrales escritos a mano, 13 comparaciones todas contra `0`» —que es cierto— **como si eso cubriera
+esta mitad. No la cubre.** El fundador lo leyó y preguntó si estaba o no estaba.
+
+**Medido antes de contestar**, en vez de repasar el código de memoria: la auditoría cita
+`selladoEstado.ts` **dos veces**, una con testigo y otra sin, así que su par ya estaba congelado en
+la lista de «sin testigo». **Quitarle el testigo a `sellarTrasEmision` no ponía nada rojo.**
+
+> 🔒 Mi trinquete sólo vigilaba el lado que CRECE. La forma barata de apagar un rojo de «esta ancla
+> no apunta a lo que dice» seguía siendo **borrar el testigo**: el ancla deja de ser comprobable, el
+> guard calla, y el documento queda peor que antes con mejor cara.
+
+## 2 · Puesto — y por IDENTIDAD, que es más fuerte que una proporción
+
+`TESTIGOS_PUESTOS` en `scripts/_anclas-sin-testigo.congelado.mjs`: **12 triples**
+`documento # ruta # testigo`, un conjunto que **sólo puede CRECER**.
+
+* **La identidad es el símbolo, no su línea** (SCRUM-710b): mover la coordenada no toca esta lista;
+  quitar el símbolo, sí.
+* **No es un trinquete de proporción, es de cobertura.** Una proporción se mantiene quitando un
+  testigo aquí y poniendo otro allá, y eso no es lo mismo.
+* **Con su mutación**, porque un trinquete sin prueba de que sabe dispararse es una declaración de
+  intenciones: se borra un testigo real sobre una copia y se exige que su triple desaparezca, con la
+  sustitución comprobada. El guard pasa de 7 a **8 tests**.
+
+## 3 · ⓪ El caso 1, cerrado con una línea
+
+Rótulo de la fila 1: «Puerta de emisión **(usuario y admin)**», conservando las **dos** coordenadas.
+Decisión del fundador —documentación interna de auditoría, no microcopy de producto—, así que no
+hay ticket aparte y lo anotado en el apéndice c queda resuelto aquí.
+
+## 4 · Lo que el fundador corrigió de su propio instrumento
+
+Su plantilla de OBLIGACIÓN 0 usaba `refs/heads/scrum-<n>(-|$)`, que **no casa las ramas de fase**
+(`scrum-525b`). Llevaba semanas devolviendo cero sobre las ramas que más usamos. Corregido a
+`([^0-9]|$)`.
+
+> 🔒 **Un cero producido por un criterio que no alcanza al caso no es un veredicto: es la forma del
+> criterio.** Es la misma lección que este ticket lleva tres tandas midiendo, en otra superficie.
+
+## 5 · Lo NO tocado
+
+El contenido de la auditoría · `src/` · el camino de emisión (regla 38) · `prisma/schema.prisma`
+(leído, no modificado — regla 40) · ningún estado ni flag (27) · ninguna dependencia (36).
+**Nada ejecutado contra producción ni contra staging.**

@@ -272,3 +272,56 @@ producto o por versión. Es interpretación jurídica.
 > mueve por ella. La evidencia (`docs/master/evidencias/SCRUM-523/censo-523.mjs`) es un script que se
 > ejecuta a mano y **no se importa desde ningún test**, justamente para no meter ejecución nueva en
 > `npm test`.
+
+---
+
+# APÉNDICE · ¿Se construye hoy el bloque `SistemaInformatico`?
+
+**Medido contra:** `origin/main` = `9c90cc89044a20a85defdc0c93feb032e6544ca5` · 2026-09-16T11:35:09+01:00
+
+Medición corta pedida por el fundador porque de ella depende que una frase de
+`docs/legal/DECLARACION_RESPONSABLE.md` **se corrija o se caiga entera**. Testigo esperado:
+`construirSobreRegFactu`. **Ese fichero legal NO se toca aquí: sólo se mide.**
+
+Las **dos preguntas van separadas a propósito**: «el módulo lo tiene» y «se ejecuta al emitir» no son
+la misma pregunta, y confundirlas es lo que produce una declaración que afirma un comportamiento que
+no ocurre.
+
+## ¿EXISTE? Sí — y en DOS implementaciones
+
+| qué | dónde |
+|---|---|
+| `construirSobreRegFactu` (el testigo) | `src/modules/fiscal/verifactu/registro.builder.ts:558` |
+| el bloque, **parametrizado** | `registro.builder.ts:375` (`xmlSistema`), usado por `buildRegistroAlta:442` y `buildRegistroAnulacion:510` |
+| el bloque, **cableado** | `src/modules/invoicing/domain/verifactu.service.ts:757` (alta) y `:852` (anulación) |
+
+## ¿SE EJECUTA EN LA EMISIÓN REAL? NO — y se mide en tres pasos
+
+1. **El camino de emisión no lo construye.** Es `applyVeriFactu` (`verifactu.service.ts:194`) y
+   `applyVeriFactuAnulacion` (`:375`), llamados desde `src/modules/invoicing/domain/selladoEstado.ts:47`
+   y `src/lib/invoicing.ts:11`. **En el rango 194–375: CERO menciones** de `SistemaInformatico`,
+   `construirSobre` o `buildRegistro`. Al emitir se calcula la huella y la cadena; el bloque **no**.
+2. **El bloque cableado sólo corre al EXPORTAR.** Vive dentro de `buildVerifactuRegistrosXml`
+   (`:536`), y su **único** llamador en `src/` son las rutas de exportación —
+   `src/modules/exports/app/routes/exports.routes.ts:252` y `:556` — o sea el ZIP para la gestoría.
+3. **El bloque parametrizado no lo alcanza `src/` en absoluto.** `buildRegistroAlta` y
+   `buildRegistroAnulacion` **no se importan en ningún fichero de `src/`** (medido). Sólo los usan
+   `tests/scrum240-sobre-unico.test.mjs` y `scripts/gen-registros-sample.mjs`.
+
+## Lo que esto le hace a la frase legal
+
+`DECLARACION_RESPONSABLE.md:11-12` dice que los valores del sistema «DEBEN coincidir con el bloque
+`SistemaInformatico` que **YaQu remite en cada registro de facturación**».
+
+Ya estaba inventariada como **A16** por dar por hecha una remisión inexistente. Lo que añade esta
+medición es que **falla por un segundo motivo, independiente del primero**: aunque hubiera remisión,
+el bloque **no se construye al emitir** — se construye **al exportar**. «En cada registro de
+facturación» no describe nada de lo que ocurre hoy en ningún camino.
+
+**Y eso decide entre las dos salidas que planteaba el fundador:** la frase no se puede *corregir*
+cambiando «remite» por «construye», porque tampoco construye al emitir. Lo que describe con verdad es
+«el bloque que YaQu incluye en el fichero de registros que exporta», y decidir si eso sirve para una
+declaración responsable **no es técnico**: es de la asesoría.
+
+⚠️ **Lo que no he podido determinar:** si el ZIP de exportación es el artefacto que la asesoría
+considera «el registro de facturación» a estos efectos. No se decide desde el código.

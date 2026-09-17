@@ -99,7 +99,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
       `${businessName} te envía el ${docLabel} ${appendStageLabel(invoice.number, invoice.stageLabel)}.\n` +
       `A pagar: ${amountWithCurrency}\n` +
       `Paga de forma segura desde aquí 👇\n` +
-      `https://yaqu.app/pay/invoice/${payToken}`,
+      `${BASE_URL}/pay/invoice/${payToken}`,
     // A23: en ventana → botón-enlace "Pagar" (sin URL cruda, dinero es-ES)
     windowCta: {
       bodyText:
@@ -107,7 +107,7 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
         `*${businessName}* te envía el ${docLabel} ${appendStageLabel(invoice.number, invoice.stageLabel)}.\n` +
         `A pagar: *${formatMoneyEs(invoice.total, invoice.currency)}*`,
       buttonText: `Pagar ${formatMoneyEs(invoice.total, invoice.currency)}`,
-      url: `https://yaqu.app/pay/invoice/${payToken}`,
+      url: `${BASE_URL}/pay/invoice/${payToken}`,
     },
     // SCRUM-33: sin variable nueva en la plantilla Meta (ya aprobada) — el label del
     // tramo viaja DENTRO del valor de "invoiceNumber", que ya es una variable propia.

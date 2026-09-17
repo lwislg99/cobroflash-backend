@@ -187,3 +187,75 @@ clase de fallo silencioso que el ticket persigue**.
 > ⚠️ **Nota de tanda:** esta entrada **no añade ni un test**; el total de la tanda no se mueve. Los
 > dos scripts de `docs/master/evidencias/SCRUM-863/` se ejecutan a mano y **no los importa ningún
 > test**, así que no entran en `npm test`.
+
+---
+
+# APÉNDICE · Fase b — las diez auto-referencias, acotadas
+
+**Medido contra:** `origin/main` = `9c90cc89044a20a85defdc0c93feb032e6544ca5` · 2026-09-16T11:35:09+01:00
+
+> 🔴 **MIDE, NO ARREGLA.** Regla 9: las diez se listan y **ni una se corrige**. El ticket de arreglo
+> lo abre el fundador cuando sepa el tamaño. `src/` intacto.
+
+**Y un dato que ya no hay que medir**, escrito por el fundador en el ticket: la región real de hoy es
+**US West (California)** para backend **y** PostgreSQL, medido en SCRUM-826 con `SELECT 1` → 175 ms.
+Con eso el punto 1 queda cerrado. Y **la mudanza conserva el dominio `yaqu.app`** — decidido, lo que
+baja la urgencia de esta fase b sin cambiar su contenido.
+
+## a) Las diez, una a una — y la distinción que faltaba
+
+De las 10, **2 llevan respaldo** (`config.PUBLIC_BASE_URL || 'https://yaqu.app'`: respetan la
+convención y sólo caen al literal si la variable no está puesta) y **8 escriben el dominio a pelo**.
+
+| fichero:línea | qué construye | ¿sale al exterior? |
+|---|---|---|
+| `src/integrations/whatsappNotifications.ts:97` · `:105` | enlace al **recibo** — `/recibo/${receiptToken}` | **sí · WhatsApp** |
+| `src/modules/billing/domain/invoiceWhatsApp.service.ts:102` · `:110` | enlace de **pago de factura** — `/pay/invoice/${payToken}` | **sí · WhatsApp** |
+| `src/modules/messaging/domain/emailLayout.ts:69` · `:70` | pie de **todos los correos**: «Enviado con YaQu», Privacidad, Términos | **sí · email** |
+| `src/modules/messaging/domain/lifecycle.service.ts:61` | pie de los correos de ciclo de vida | **sí · email** |
+| `src/modules/system/app/routes/customerPortal.routes.ts:161` | pie del **portal del cliente** | **sí · HTML al cliente** |
+| `src/modules/auth/domain/referral.service.ts:55` | base del enlace de invitación | con **respaldo** |
+| `src/modules/messaging/domain/lifecycle.service.ts:16` | base del panel (`/dashboard/`) | con **respaldo** |
+
+**Ocho de las diez salen al exterior con el dominio cableado.** Ninguna se toca.
+
+## b) El control positivo — ¿hay convención?
+
+**Sí, y bien establecida: 16 usos de `PUBLIC_BASE_URL` en `src/`** fuera de comentarios, más **5**
+ficheros que la nombran fuera de `src/`. Y no es una costumbre informal:
+
+- `src/core/config/env.ts:8` la define con respaldo a `localhost`;
+- `src/core/config/env.ts:211` dice, literal, que **«es la raíz de TODO enlace que el sistema envía»**;
+- `src/core/config/env.ts:208` **valida su forma** (`invalidPublicBaseUrl`) y avisa si está mal.
+
+🔒 **Así que de los dos tickets posibles, es el segundo: «hay convención y ocho se la saltan».** No es
+«no hay convención». La diferencia cambia el arreglo: no hay que inventar un mecanismo, hay que
+llevar ocho sitios al que ya existe.
+
+## c) Regla 29 — el detalle, porque el titular solo engañaría
+
+Las **dos de recibo** (`whatsappNotifications.ts:97,105`) están en una función que **no escribe
+nada**: sólo lee para componer el mensaje.
+
+Las **dos de cobro** (`invoiceWhatsApp.service.ts:102,110`) están en una función que **sí escribe una
+vez** en la factura:
+
+```
+src/modules/billing/domain/invoiceWhatsApp.service.ts:78
+await prisma.invoice.update({ where: { id: invoice.id }, data: { chargeId } });
+```
+
+Un **puntero al cobro** creado para cobrarla. **No es contenido fiscal**: ni número, ni líneas, ni
+totales, ni `vfHash`. Según lo medido, **eso no es editar una factura emitida**.
+
+⚠️ **Pero hay algo que sí hay que saber, y no lo decido yo:** el guard que vigila la regla 29
+(`tests/scrum124-r29-no-borrado-facturas.test.mjs`) censa **rutas** mutantes y permite exactamente
+`PUT /:id/status` y `PUT /:id/tags`. **Esta escritura es de servicio, no de ruta, así que queda fuera
+de su población.** No afirmo que incumpla la 29; afirmo que **el guard de la 29 no la ve**, y eso es
+una decisión del fundador, no una conclusión técnica.
+
+## Lo que NO se hizo
+
+- **Ninguna de las diez corregida.** Se listan (regla 9).
+- **`src/` intacto** · cero dependencias (36) · cero estado o flag (27).
+- Nada ejecutado contra base ni proveedor; ninguna credencial.

@@ -26,11 +26,14 @@
 // que pedir los precios explícitamente, y eso se verá en su diff.
 import { seesAllJobs } from '../../../../core/http/roleCapabilities';
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import {
   BLOQUES_PARTE,
   TIPOS_PARTE,
+  casarLineasPorIdentidad,
+  idDeLinea,
   computeParteContentHash,
   lineasParaElTecnico,
   puedeEditarContenido,
@@ -151,7 +154,7 @@ function serializeParteParaElTecnico(parte: any) {
  */
 function serializeParteParaLaOficina(parte: any) {
   const lineas: LineaParte[] = Array.isArray(parte.lineas) ? parte.lineas : [];
-  const conImporte = lineas.map((l: any) => {
+  const conImporte = lineas.map((l: any, i: number) => {
     const precio = l.precioUnitario === null || l.precioUnitario === undefined ? null : Number(l.precioUnitario);
     const unds = l.unds === null || l.unds === undefined ? null : Number(l.unds);
     // El importe es DERIVADO y viaja calculado: si lo calculara la pantalla, habría dos sitios
@@ -160,6 +163,8 @@ function serializeParteParaLaOficina(parte: any) {
       ? null
       : Math.round(precio * unds * 100) / 100;
     return {
+      // SCRUM-889 · la oficina valora POR IDENTIDAD: si la línea ya no está, su precio no cae en otra.
+      id: idDeLinea(l, i),
       bloque: l.bloque ?? null,
       unds,
       descripcion: l.descripcion ?? null,
@@ -212,7 +217,10 @@ function validarLineasDelTecnico(
     if (!descripcion) return { ok: false, message: 'Cada línea necesita una descripción.' };
     // `precioUnitario` y `tipoIva` NO se leen del cuerpo. No es que se ignoren: es que este camino
     // no los acepta. Si el técnico mandara uno, no entra — los pone la oficina, en otra pantalla.
-    lineas.push({ bloque: bloque as BloqueParte, unds, descripcion });
+    // SCRUM-889 · el `id` sólo sirve para CASAR con una línea guardada; no se guarda el que manda el
+    // cliente (`casarLineasPorIdentidad` guarda el de la base o uno nuevo).
+    const id = l?.id === undefined || l?.id === null ? undefined : String(l.id);
+    lineas.push({ ...(id === undefined ? {} : { id }), bloque: bloque as BloqueParte, unds, descripcion });
   }
   return { ok: true, lineas };
 }
@@ -459,21 +467,19 @@ router.patch('/:id', async (req: any, res) => {
       const v = validarLineasDelTecnico(req.body.lineas);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.message });
       // 🔴 LOS PRECIOS YA PUESTOS NO SE PIERDEN al editar el contenido. El técnico manda
-      // {bloque, unds, descripcion}; si esa misma línea ya tenía precio de oficina, se conserva.
+      // {id, bloque, unds, descripcion}; si esa misma línea ya tenía precio de oficina, se conserva.
       // Sin esto, una corrección del técnico borraría la valoración del jefe EN SILENCIO.
+      // SCRUM-889 · «esa misma línea» es la del mismo ID, no la de la misma posición: si no, quitar
+      // una línea le movería el precio a la de detrás.
       const previas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
-      data.lineas = v.lineas.map((l, i) => {
-        const antes = previas[i];
-        const esLaMisma = antes && antes.bloque === l.bloque && antes.descripcion === l.descripcion;
-        return esLaMisma
-          ? { ...l, precioUnitario: antes.precioUnitario ?? null, tipoIva: antes.tipoIva ?? null }
-          : l;
-      });
+      data.lineas = casarLineasPorIdentidad(previas, v.lineas, randomUUID);
     }
 
     // ── LOS PRECIOS DE LA OFICINA ────────────────────────────────────────────────────
     //
-    // Viajan en su PROPIA clave y por índice de línea: `[{ indice, precioUnitario, tipoIva }]`.
+    // Viajan en su PROPIA clave y por índice de línea: `[{ indice, id?, precioUnitario, tipoIva }]`.
+    // SCRUM-889 · con `id` manda el id: si esa línea ya no está (el técnico la quitó con la pantalla
+    // de la oficina abierta), se rechaza — con el índice, el precio caería en la línea de detrás.
     // No se mezclan con `lineas` a propósito — mezclarlos haría que «esta petición toca precios»
     // fuera una cuestión de mirar dentro de un array, y entonces «mixta» sería opinable.
     if (req.body?.precios !== undefined) {
@@ -483,7 +489,9 @@ router.patch('/:id', async (req: any, res) => {
       const previas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
       const conPrecio = previas.map((l) => ({ ...l }));
       for (const p of req.body.precios) {
-        const i = Number(p?.indice);
+        const i = p?.id === undefined || p?.id === null
+          ? Number(p?.indice)
+          : previas.findIndex((l, j) => idDeLinea(l, j) === String(p.id));
         if (!Number.isInteger(i) || i < 0 || i >= conPrecio.length) {
           return res.status(400).json({
             error: 'precio_sin_linea',

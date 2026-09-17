@@ -75,6 +75,18 @@ async function fetchInvoiceDetail(id) {
     setStatus('', '');
     const st = String(invoice.status || '').toLowerCase();
 
+    // SCRUM-885b · el documento del cobro no le ha llegado al cliente (ni email ni WhatsApp). FIJO, y
+    // no sólo el toast de «Confirmar Bizum»: 3 s no dan para leerlo. Misma regla y mismo componente
+    // que la fila de la factura en el trabajo (AB3: `.alert.warning`).
+    const avisoEnvio = avisoDocumentoSinEnviar(invoice.envioDocumento);
+    if (avisoEnvio.mostrar) {
+      const banda = document.createElement('div');
+      banda.className = 'alert warning invoice-detail__aviso';
+      banda.setAttribute('role', 'status');
+      banda.textContent = avisoEnvio.texto;
+      page.appendChild(banda);
+    }
+
     // V0-0: justificante de cobro (merchant ES real sin facturación activa) — el copy no dice "factura"
     const isReceipt = invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-');
     if (isReceipt) {
@@ -567,6 +579,10 @@ async function fetchInvoiceDetail(id) {
             throw new Error(msgs[d.error] || 'No se pudo confirmar. Inténtalo de nuevo.');
           }
           setStatus('success', '✓ Bizum confirmado: factura cobrada.');
+          // SCRUM-885 · el documento del cobro no ha salido ni por email ni por WhatsApp. Va en un
+          // toast porque la pantalla se repinta justo debajo y se llevaría el aviso de estado.
+          const avisoEnvio = avisoDocumentoSinEnviar(d.envioDocumento);
+          if (avisoEnvio.mostrar) showToast(avisoEnvio.texto, 'warn');
           if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
         } catch (e) {
           setStatus('error', e.message || 'No se pudo confirmar el Bizum.');

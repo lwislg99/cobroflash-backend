@@ -371,8 +371,10 @@ test('SCRUM-600b · 🔴 la ruta se monta con UN argumento: el instrumento tiene
 });
 
 test('SCRUM-600b · 🔴 la tira de propuesta de descuento NO se pinta en el documento suelto', async () => {
-  // El descuento no sobrevive al emisor —`dto` y `discountGlobalAmount` se descartan—, así que
-  // este ticket ya retiró los DOS campos. La tira que PROPONE rellenarlos se había quedado: un
+  // En el DOCUMENTO SUELTO el descuento no sobrevive al emisor —`dto` y `discountGlobalAmount` se
+  // descartan en la puerta—, así que este ticket ya retiró los DOS campos. (SCRUM-887 hace que el
+  // `dto` de línea SÍ llegue a la factura que sale de un PRESUPUESTO, por `lineasParaFacturar`;
+  // este documento no tiene presupuesto detrás y no cambia.) La tira que PROPONE rellenarlos se había quedado: un
   // control que el profesional acepta, que no cambia nada en pantalla porque sus campos no están,
   // y cuyo dato el servidor tiraría igual. Medido en navegador: pintaba 1 nodo por estado.
   const r = await pintarPagina('justificante', true);
