@@ -36,6 +36,17 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  if (false) {',
     cae: 'una tanda que sale con 0 SIN línea de recuento sale con 4',
   },
+  {
+    // El envoltorio que sale con 3 SIN parar su árbol: el hijo mudo se queda vivo.
+    // ⚠️ En WINDOWS esta mutación es EQUIVALENTE, medido el 17-sep-2026: libuv mete a los hijos en un
+    // job object que los mata al salir el padre, así que no queda huérfano con o sin `pararArbol`.
+    // En Linux (donde corre este meta-guard) el hijo va `detached` y SÍ sobrevive: aquí es donde se
+    // mide. Si el meta-guard la diera por muda, el cierre no para nada fuera de Windows.
+    fichero: 'scripts/tanda-con-veredicto.mjs',
+    de: '  pararArbol();\n  process.exit(3);',
+    a: '  process.exit(3);',
+    cae: 'una tanda MUDA más que el tope sale con 3, y para SOLO su árbol',
+  },
 ];
 const ENVOLTORIO = path.join(RAIZ, 'scripts', 'tanda-con-veredicto.mjs');
 
