@@ -92,18 +92,19 @@ test('SCRUM-887b · 🔴 la vista del plan promete lo MISMO que se emite con des
 // LA PIEZA · qué línea añade, con qué rótulo, y qué NO toca
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-887b · 🔴 con global y un IVA sale UNA línea negativa del mismo IVA, AL FINAL, rotulada como el pie', () => {
+test('SCRUM-887b · 🔴 con global y un IVA sale UNA línea negativa del mismo IVA, la PRIMERA, rotulada como el pie', () => {
+  // LA PRIMERA, no la última (orquestador, 17-sep-2026 11:06): la reconciliación de SCRUM-141
+  // ajusta la ÚLTIMA línea, y la del descuento tiene que salir con el importe EXACTO que se firmó.
   // Número, texto y un Decimal de Prisma (se lee por `valueOf`): los tres llegan a la pieza.
   for (const global of [25, '25.00', { toString: () => '25.00', valueOf: () => 25 }]) {
     const salida = lineasParaFacturar({ lines: C3_UN_IVA, discountGlobalAmount: global });
     assert.equal(salida.length, 4, `🔴 global ${String(global)}: se esperaban las 3 líneas y la del descuento`);
-    const ultima = salida[3];
-    assert.deepEqual(ultima, { concept: 'Descuento global', qty: 1, price: -25, tax: 0.21 },
-      `🔴 global ${String(global)}: la línea del descuento no es la esperada`);
+    assert.deepEqual(salida[0], { concept: 'Descuento global', qty: 1, price: -25, tax: 0.21 },
+      `🔴 global ${String(global)}: la primera línea no es la del descuento esperada`);
     // El dto de línea se sigue aplicando, y la clave no viaja (misma regla que el caso A).
-    assert.equal(salida[0].price, 24.95 * (1 - 15 / 100));
-    assert.equal('dto' in salida[0], false, '🔴 la línea conserva `dto` con el precio YA descontado');
-    assert.equal(salida[2], C3_UN_IVA[2], '🔴 una línea SIN descuento no sale como entró');
+    assert.equal(salida[1].price, 24.95 * (1 - 15 / 100));
+    assert.equal('dto' in salida[1], false, '🔴 la línea conserva `dto` con el precio YA descontado');
+    assert.equal(salida[3], C3_UN_IVA[2], '🔴 una línea SIN descuento no sale como entró');
   }
   assert.equal(C3_UN_IVA[0].price, 24.95, '🔴 se ha MUTADO `Quote.lines`');
   assert.equal(C3_UN_IVA.length, 3, '🔴 se ha MUTADO `Quote.lines`');
@@ -111,18 +112,31 @@ test('SCRUM-887b · 🔴 con global y un IVA sale UNA línea negativa del mismo 
   // EL RÓTULO NO SE INVENTA: es el que el cliente ya leyó en el pie del presupuesto que firmó.
   const pie = pieDePresupuesto({ lineas: C3_UN_IVA, modo: 'sumar', nombreImpuesto: 'IVA', descuentoGlobal: 25 });
   const etiquetas = pie.filas.map((f) => f.etiqueta);
-  assert.ok(etiquetas.includes(`${lineasParaFacturar({ lines: C3_UN_IVA, discountGlobalAmount: 25 })[3].concept}:`),
-    `🔴 el rótulo de la factura ya no es el del pie del presupuesto: ${etiquetas.join(' · ')}`);
+  const rotulo = lineasParaFacturar({ lines: C3_UN_IVA, discountGlobalAmount: 25 }).find((l) => l.price < 0)?.concept;
+  assert.ok(etiquetas.includes(`${rotulo}:`),
+    `🔴 el rótulo de la factura (${rotulo}) ya no es el del pie del presupuesto: ${etiquetas.join(' · ')}`);
 });
 
-test('SCRUM-887b · el descuento global nunca pasa de la base: se descuenta lo mismo que en `calcTotal`', () => {
-  // `calcTotal` limita el global a la suma de bases (en céntimos, línea a línea). La línea
-  // negativa usa el MISMO límite: si no, la factura restaría más de lo que el cliente firmó.
-  const lines = [{ concept: 'x', qty: 3, price: 9.99, dto: 10, tax: 0.10 }];
-  const salida = lineasParaFacturar({ lines, discountGlobalAmount: 1000 });
-  assert.equal(salida.at(-1).price, -26.97, '🔴 el descuento no se ha limitado a la base firmada');
-  assert.equal(salida.at(-1).tax, 0.1);
-  assert.equal(calcTotal(lines, 1000), 0, '🔴 CIEGO: calcTotal ya no limita el global');
+test('SCRUM-887b · 🔴 un global que se come TODA la base no emite: 409 como `dto: 100` (portón de SCRUM-246)', async () => {
+  const { exigirLineasFacturables, ERROR_SIN_LINEAS } = await import(DIST + 'modules/invoicing/domain/lineasFacturables.js');
+  // SUELO: se firma 0 €. Si `calcTotal` dejara de limitar el global, este caso no sería el que dice.
+  const lines = [{ concept: 'x', qty: 3, price: 9.99, dto: 10, tax: 0.10 }, { concept: 'y', qty: 1, price: 5, tax: 0.10 }];
+  assert.equal(calcTotal(lines, 1000), 0, '🔴 CIEGO: el presupuesto ya no firma 0 €');
+  // La misma regla que ya existe: una factura que no mueve dinero no se emite. Por los caminos de
+  // tramos (entero y 50/50) y por la factura entera, que es donde entra `exigirLineasFacturables`.
+  for (const global of [1000, 31.97]) {   // mucho más que la base, y justo la base (26,97 + 5,00)
+    const quote = { lines, discountGlobalAmount: global, total: calcTotal(lines, global).toFixed(2) };
+    for (const [nombre, plan] of Object.entries(PLANES)) {
+      for (const f of facturasDe(quote, plan)) {
+        assert.throws(() => exigirLineasFacturables(f.lineas), (e) => e?.code === ERROR_SIN_LINEAS,
+          `🔴 global ${global}, plan ${nombre}: se emitiría una factura de ${f.importe} € con +X y −X`);
+      }
+    }
+  }
+  // Y el que deja UN céntimo de base sí factura: el portón no se ha ensanchado.
+  const casi = { lines, discountGlobalAmount: 31.96, total: calcTotal(lines, 31.96).toFixed(2) };
+  assert.doesNotThrow(() => exigirLineasFacturables(facturasDe(casi, PLANES.entero)[0].lineas),
+    '🔴 un presupuesto que firma algo ha dejado de facturarse');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -155,7 +169,7 @@ function muestraB(semilla, n) {
     }
     const global = pick(globales);
     const total = calcTotal(lines, global).toFixed(2);
-    // Un global que se come TODA la base firma 0 €: eso no es la muestra (se pregunta aparte).
+    // Un global que se come TODA la base firma 0 € y no emite: tiene su propio test, arriba.
     if (Number(total) === 0) continue;
     out.push({ lines, discountGlobalAmount: global, total });
   }
@@ -183,6 +197,33 @@ test('SCRUM-887b · 🔴 caso B (2.000): cobro ≠ firmado sólo por 1-2 céntim
     assert.ok(distintos <= TECHO_DISTINTOS_B[nombre],
       `🔴 ${nombre}: ${distintos} de 2.000 no cobran lo firmado (techo ${TECHO_DISTINTOS_B[nombre]})`);
   }
+});
+
+test('SCRUM-887b · 🔴 la línea «Descuento global» sale EXACTA: el ajuste de redondeo nunca cae en ella (2.000 × 3 planes)', () => {
+  // La reconciliación de SCRUM-141 mueve hasta ±0,05 € de base en UNA línea para cuadrar con lo
+  // firmado. Esa línea puede ser un producto (coste ya aceptado), nunca el descuento: el cliente
+  // firmó «Descuento global −25,00» y la factura tiene que decir −25,00 (o su parte exacta del tramo).
+  const quotes = muestraB(8870, 2000);
+  let vistas = 0;
+  let reconciliadas = 0;
+  for (const [nombre, plan] of Object.entries(PLANES)) {
+    quotes.forEach((q, i) => {
+      const lineas = lineasParaFacturar(q);
+      const objetivos = distributeStageAmounts(q.total, plan);
+      plan.forEach((_, t) => {
+        const sinAjuste = stageLinesReconciled(lineas, plan, t);
+        const conAjuste = stageLinesReconciled(lineas, plan, t, objetivos[t]);
+        const k = sinAjuste.findIndex((l) => l.concept === 'Descuento global');
+        assert.ok(k >= 0, `🔴 CIEGO: el caso ${i} (plan ${nombre}) no lleva línea de descuento`);
+        vistas++;
+        if (conAjuste.some((l, j) => l.price !== sinAjuste[j].price)) reconciliadas++;
+        assert.equal(conAjuste[k].price, sinAjuste[k].price,
+          `🔴 caso ${i}, plan ${nombre}, tramo ${t}: el descuento firmado era ${sinAjuste[k].price} y la factura dice ${conAjuste[k].price}`);
+      });
+    });
+  }
+  // SUELO: tiene que haber casos en los que la reconciliación SÍ ajusta algo; si no, este verde no mira nada.
+  assert.ok(reconciliadas > 100, `🔴 CIEGO: la reconciliación sólo ajustó ${reconciliadas} de ${vistas} facturas`);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -241,6 +282,11 @@ test('SCRUM-887b · 🔴 albarán de un presupuesto con descuento global: 409 co
     const { salida, escrituras } = await convertirAlbaran(quote);
     assert.equal(salida?.code, 409, `🔴 ${nombre}: el albarán se ha convertido (${salida?.code}) — ${JSON.stringify(salida?.body)}`);
     assert.equal(salida.body.error, 'albaran_con_descuento_global', `🔴 ${nombre}: el rechazo no lleva su código propio`);
+    // El texto FIRMADO (SCRUM-887 comentario 15675), en `message`, que es lo que pinta la pantalla.
+    // «Cobrar el resto» es el nombre que la acción de facturar lleva en el Trabajo (`jobNextAction.js`).
+    assert.equal(salida.body.message,
+      'Este albarán no se puede facturar: su presupuesto lleva un descuento global, que no se reparte entre albaranes. Cobra el resto desde el Trabajo.',
+      `🔴 ${nombre}: el rechazo no dice el texto aprobado`);
     assert.deepEqual(escrituras, [], `🔴 ${nombre}: se escribió antes de rechazar: ${escrituras.join(', ')}`);
   }
 });
