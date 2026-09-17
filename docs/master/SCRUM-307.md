@@ -226,3 +226,67 @@ humano:
 propósito** — el guard de SCRUM-242 rechaza una entrada que cite un documento inexistente, que es
 justo la protección que impide convertir una promesa en una referencia. Cuando el fundador lo
 commitee, el mapa bloque→escenario va en `docs/master/SCRUM-362.md`.
+
+---
+
+# 9 · SCRUM-307 · PASO 0 «sin conexión» medido en staging, y el banco que lo mide — 17-sep-2026 (Sesión 0)
+
+**Medido contra:** `origin/main` = `262fd05f934e72472a9a6883999cf407e369f9bf` · 2026-09-17T14:34:10Z
+**Rama:** `scrum-307-banco-sin-red` · **Carril:** consultoría (Sesión 0) · **Gate:** sin gate, solo lee el producto; escribe datos de PRUEBA en staging
+
+⏱ Horas de GitHub. Staging servía `2be8fe16a3245322e64837f789189875e0c9f560` durante la primera medición (13:52Z); las pasadas del banco en `puppeteer-core` son de 14:05Z a 14:32Z.
+
+## El banco: `docs/master/evidencias/SCRUM-307/sin-red/`
+
+| Fichero | Qué hace |
+| --- | --- |
+| `_conductor.mjs` | Arranca Edge (`lanzarNavegador`) a 390 px táctil con TODO el tráfico por un proxy local. `red.cortar()` corta página **y service worker** |
+| `control-red.mjs` | Comprueba que el corte corta antes de creerse nada. Solo lecturas. Sale 0 si corta y 2 si no |
+| `preparar.mjs` | **Escribe** en staging: en un Trabajo de prueba crea y emite un albarán, y crea un parte con una línea |
+| `recorrido-sin-red.mjs` | Los pasos A-H de abajo. Solo con `--firmar` firma sin red. Antes de cada paso que podría escribir vuelve a comprobar que la red está cortada |
+
+`E2E_TEST_LOGIN_SECRET` va en el entorno y no se imprime. El conductor se niega a correr si la URL no es de staging. No corre en `npm test` ni en CI.
+
+### 🔴 Por qué el interruptor «sin red» del navegador NO vale (el aviso de H7, medido)
+
+- **Playwright `setOffline(true)`:** las peticiones del service worker siguieron llegando. Con la red «cortada» se creó un albarán de verdad (`201 POST /admin/jobs/3106/albaranes (SW)`).
+- **Puppeteer `setOfflineMode(true)` como único corte:** ni siquiera la petición directa falla. Es el ROJO de `control-red.mjs`: con esa mutación sale `✗ NO SUPE MIRAR` y exit 2. Con el proxy sale exit 0.
+- **Dos trampas más del instrumento:**
+  - Un perfil de navegador guardado en el scratchpad de Claude tenía la Cache API rota, y el service worker parecía no instalarse.
+  - Un trazo con ratón no activa el pad en emulación móvil: hace falta un PointerEvent táctil.
+
+## Veredicto por acción (con la app YA abierta al perder la señal)
+
+| Paso | Acción | Veredicto | Lo que se ve |
+| --- | --- | --- | --- |
+| A | Abrir el albarán precargado (emitido) | **funciona** | «Sin cobertura no puedes crear albaranes, solo firmar los que ya llevas descargados.» |
+| — | Abrir un albarán no descargado (borrador) | falla, avisado | «Este albarán no está descargado y ahora no hay cobertura. Podrás abrirlo cuando tengas señal.» La precarga solo baja emitidos |
+| B | Foto en el albarán | **falla**, visible | «No se pudo subir la foto.» No hay cola de fotos |
+| C | Firmar el albarán | **funciona**: se encola en `firmasPendientes` | El pad sigue abierto con «No se ha podido conectar. La firma sigue en pantalla: inténtalo otra vez cuando tengas señal.» aunque la firma YA está guardada en el móvil |
+| D | Crear albarán | **falla** | El Trabajo no carga («No pudimos cargar el trabajo.») y no hay botón |
+| E | Abrir un parte | **falla** | «No se ha podido cargar el parte. Vuelve a intentarlo.» Los partes no se precargan |
+| F | Parte ya en pantalla: añadir línea | **falla**, visible | «No se han podido guardar las líneas — vuelve a intentarlo». La línea se pierde |
+| F | Parte ya en pantalla: firmar | **funciona**: se encola | El pad no se cierra y se queda ENCIMA aunque se navegue a otra pantalla |
+| G | Volver la red | **a medias** | 60 s con evento `online` y `visibilitychange`, sin recargar: cola intacta. **Al recargar:** sube todo y el albarán dice «FIRMADO · A SALVO · Guardado en YaQu. Ya no depende de este móvil.» |
+| H | Reabrir o recargar el panel sin red | 🔴 **falla entero** | Pantalla de error del navegador sobre `/login.html`. `app.js:6-7` manda a `/login.html` ante CUALQUIER fallo de `/admin/me`, y `/login.html` no está en el SHELL de `sw.js`. Si el sistema cierra la pestaña, ni el albarán precargado se puede abrir |
+
+Reproducido tres veces: dos con el banco de Playwright del scratchpad y una con este banco (`--firmar`). El paso B se repasó sin `--firmar` tras mover la foto de prueba a la carpeta temporal.
+
+## Frente a lo que pedía este ticket
+
+- **H1 «precarga y creación sin red»:** la precarga funciona para albaranes emitidos. La **creación** sin red no existe y el parte no se precarga → **sigue vivo**.
+- **H2 tres estados:** ③ se ve. ① no se nombra: el texto dice «sigue en pantalla» → matiz vivo (SCRUM-919).
+- **H3 cola con idempotencia:** funciona.
+- **§4 «la cola solo se mueve cuando el pro vuelve a abrir la aplicación»:** **sigue vivo**, medido. Tampoco la mueve el evento `online` en Chromium (SCRUM-919).
+- **Nuevo, fuera de este ticket:** reabrir sin red → pantalla de error (SCRUM-918).
+- **No medido aquí:** H4 (dos relojes), H5 (desalojo y PWA en iOS), H6 (conflictos) y la pasada humana en iPhone del §8, que sigue siendo el gate de cierre. Todo esto es Edge de escritorio emulando 390 px.
+
+## Datos de prueba que quedan en staging (Trabajo 3106, presupuesto 1880)
+
+- **Albaranes:**
+  - `1635` y `1636` firmados en la primera medición. El `1636` nació de la pasada con el corte que no cortaba.
+  - `1637` emitido y sin firmar.
+  - `1638` firmado por el banco.
+- **Partes:** `2`, `3` y `4`, firmados.
+
+Ninguno es de otra sesión. Si estorban, se borran con el Trabajo.
