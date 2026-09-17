@@ -58,7 +58,7 @@ import {
   validarPeticionParcial,
 } from '../../domain/albaranFacturacion';
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
-import { lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-887
+import { lineasParaFacturar, tieneDescuentoGlobal } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { datosDeAlbaranEmitido } from '../../domain/albaranEmision'; // SCRUM-841
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
@@ -1396,6 +1396,14 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
           select: { id: true, quoteNumber: true, lines: true, discountGlobalAmount: true }, // SCRUM-887
         })
       : null;
+
+    // SCRUM-887 · CON DESCUENTO GLOBAL, EL ALBARÁN NO SE CONVIERTE. Un parte factura una PARTE del
+    // presupuesto, y llevarse «una parte» del global es un reparto: justo lo que la decisión
+    // excluye. A precio bruto tampoco, que sería volver a cobrar más de lo firmado. Se rechaza
+    // AQUÍ, antes de leer el libro y de pedir número: una factura emitida no se corrige (regla 29).
+    if (quote && tieneDescuentoGlobal(quote)) {
+      return res.status(409).json({ error: 'albaran_con_descuento_global', message: MICROCOPY_PENDIENTE_290 });
+    }
 
     // Lo ya facturado se acumula sobre TODOS los albaranes del Trabajo, no solo sobre éste: dos
     // partes distintos pueden entregar la misma línea del presupuesto por fases.

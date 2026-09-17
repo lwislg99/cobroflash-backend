@@ -196,6 +196,9 @@ const ESTRECHAMIENTOS = Object.freeze({
   'src/modules/ai/domain/ai.service.ts': 1,
   'src/modules/invoicing/domain/facturaSuelta.ts': 1,
   'src/modules/invoicing/domain/finalInvoice.service.ts': 2,
+  // SCRUM-887 (17-sep-2026) · la línea NEGATIVA del descuento global (caso B). No reconstruye una
+  // línea que entra: la CREA, igual que las negativas de `finalInvoice`, así que no pierde nada.
+  'src/modules/invoicing/domain/invoiceLines.service.ts': 1,
   'src/modules/jobs/app/routes/albaranes.routes.ts': 1,
   'src/modules/jobs/domain/albaranAFactura.ts': 2,
   'src/modules/jobs/domain/recapitulativa.service.ts': 1,
