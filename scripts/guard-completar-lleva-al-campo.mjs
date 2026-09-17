@@ -412,15 +412,32 @@ if (mutadas) {
     + ' de ' + mutadas.length);
 }
 
+// 🔴 EL ORDEN DEL VEREDICTO, Y ME LO ENSEÑÓ ESTE GUARD EN SU PRIMERA PASADA EN ROJO.
+//
+// Primero se imprimían las cegueras y se salía con 2, ANTES de mirar los fallos. Contra el
+// `settingsView.js` de antes del arreglo, el barrido encontró sus 33 acciones mudas —la medición
+// entera, correcta— y el veredicto salió «NO SUPE MEDIR», porque la mutación no encontró su diana:
+// esa línea aún no existía en ese código. Un guard que ha VISTO 33 defectos no puede contestar
+// «no supe medir».
+//
+// La regla, escrita para que no se recoloque sin pensarlo: **un hallazgo real manda sobre la
+// ceguera.** La ceguera decide el veredicto SÓLO cuando no hay fallos, que es el único caso en el
+// que un «0 fallos» podría estar mintiendo. Al revés —ceguera por encima de hallazgo— se pierden
+// defectos reales por un instrumento a medias, que es peor que el verde hueco: aquí el rojo YA
+// estaba encontrado.
+//
+// Las cegueras se siguen imprimiendo SIEMPRE, haya fallos o no: son parte del informe aunque no
+// sean el veredicto.
 if (ciegos.length) {
-  console.error('\n  🔴 NO SUPE MEDIR — y esto NO es «todas las acciones llevan a su sitio»:\n');
+  console.error('\n  ⚠ NO PUDE MEDIRLO TODO'
+    + (fallos.length ? ' (pero lo que sí medí encontró defectos — el veredicto lo dan ellos):' : ' — y esto NO es «todas las acciones llevan a su sitio»:') + '\n');
   for (const c of ciegos) console.error('   · ' + c);
   console.error('');
-  process.exit(SALIDA_CIEGO);
 }
 if (fallos.length) {
   console.error('\n  🔴 ' + fallos.length + ' ACCIÓN(ES) QUE NO LLEVAN A NINGUNA PARTE:\n');
   for (const f of fallos) console.error('   ' + f + '\n');
   process.exit(1);
 }
+if (ciegos.length) process.exit(SALIDA_CIEGO);
 console.log('\n  ✔ las ' + filas.length + ' acciones llevan a su destino, y con la mutación puesta el detector las ve caer.\n');
