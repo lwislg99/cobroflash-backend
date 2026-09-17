@@ -39,6 +39,18 @@ de cada documento de la lista no entran en la cuenta ni aquí ni allí: son de d
 | Grupos | 🔨 En curso · 📅 Hoy · 📅 Esta semana · ⏳ Sin agendar · 🗓 Más adelante · ✅ Terminados — cobra el resto (con su suma y su salvedad) · 🔒 Cerrados |
 | Inventario «antes → después» | 29 filas en 7 grupos, 3 marcadas como **mal decididas** |
 
+## 🔒 Un defecto que las capturas no podían enseñar
+
+La hoja del «⋯» llevaba `onclick="event.stopPropagation()"` para que tocar dentro no la cerrara, y el efecto real era
+que **ningún botón de dentro llegaba al manejador**: las opciones del «⋯» no hacían nada. Las capturas de esta hoja
+estaban perfectas. Lo destapó la medida del prototipo de SCRUM-916 —mismo patrón, mismo defecto— porque allí sí se
+notaba en el estado: «Confirmar firma» no registraba la firma.
+
+> 🔒 **Una captura bonita no prueba que el botón funcione. Lo prueba pulsarlo y mirar el estado después.**
+
+Arreglado en los dos prototipos: la hoja se cierra sólo si se toca el fondo o la «×». Remedido 917 después del
+arreglo: sigue en verde.
+
 ## Tres cosas que encontró la propia medición y hubo que arreglar
 
 No se cuentan aquí para hacer bulto: se cuentan porque la primera versión del prototipo tenía los mismos defectos
