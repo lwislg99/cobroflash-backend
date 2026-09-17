@@ -137,3 +137,129 @@ deja el número a la vista; ponerle el cerrojo es una línea el día que se apru
 |---|---|
 | `tests/_censo-escrituras-albaran.mjs` | generalizado a `escriturasDeModelo`; `escriturasDeAlbaran` delega, intacta |
 | `tests/scrum878-poblacion-del-guard-29.test.mjs` | 8 casos: suelo, población, clasificación, verde/rojo real, mutación, los dos controles del spread |
+
+---
+
+# APÉNDICE · Fase b — el cerrojo: «FISCAL no pasa de 0»
+
+*17-sep-2026 · rama `scrum-878b-el-cerrojo-del-29`*
+
+**Medido contra:** `origin/main` = `1df4b9b9d67b2a1ed9d919bd7e746d6aae2dd219` · 2026-09-17T15:51:35+01:00
+
+⛔ **No toca el camino de emisión (regla 38): clasifica lo que ya está escrito y no modifica ni una
+línea de `src/`.** No toca `scrum124` ni su lista blanca. Ningún sello ni factura se reescribe (29).
+
+## ⓪ La premisa, comprobada ANTES de escribir nada — y con DOS sondas
+
+La fase a dejó escrito, en esta misma entrada, lo que NO había hecho: *«convertir este censo en
+trinquete»*. Antes de ponerlo, se vuelve a medir — la norma nueva de la casa:
+
+```
+ficheros .ts mirados: 288   (find src -name '*.ts' | wc -l → 288: el censo mira el árbol ENTERO)
+escrituras sobre Invoice: 20 · en ficheros de RUTA: 5 · en SERVICIOS y lib: 15
+FISCAL=0 · SELLADO=8 · FICHA=12 · NO_CLASIFICADO=0
+```
+
+🔴 **Y no se comparan CUENTAS, se comparan CONJUNTOS.** Un número igual deja pasar «he perdido una
+y he ganado otra», así que la población se sacó DOS veces con técnicas distintas:
+
+| sonda | técnica | resultado |
+|---|---|---|
+| **A** | el censo AST que ya existe (`escriturasDeModelo`, vía `typescript`) | 20 puntos `fichero:línea` |
+| **B** | texto, deliberadamente **más ancha** que el AST (`invoice\s*\.\s*(update\|delete…)`, sin `\b`, para que cazara también un `recurringInvoice.update` si existiera) | 20 puntos `fichero:línea` |
+
+```
+comm -23 A B → vacío        (nada que el AST vea y el texto no)
+comm -13 A B → vacío        (nada que el texto vea y el AST no)
+```
+
+Las dos coinciden **punto por punto**, en los dos sentidos. Se buscaron además llamadas partidas en
+dos líneas (`invoice` al final de una, `.update(` en la siguiente): **cero**.
+
+⚠️ **Una cifra de la fase a ha cambiado y se re-fecha en vez de copiarse:** decía «283 ficheros
+mirados» y hoy son **288**. `main` se ha movido y `src/` tiene cinco `.ts` más. Las escrituras
+siguen siendo 20 y las clases, idénticas.
+
+**Los dos hechos de paso, re-medidos:** cero `invoice.delete` / `deleteMany` en todo `src/` — las
+20 son `update`.
+
+## ⓪bis · 🔴 QUIÉN AUTORIZA EL CERROJO — y un error propio, confesado
+
+La primera versión de este apéndice y del bloque de test escribió que **«el fundador decide que sí
+se pone»**. **Eso era falso y lo escribí yo.** Medido hoy con la API de Jira:
+
+```
+SCRUM-878 · fields.comment.total = 0
+```
+
+**Cero comentarios.** Ninguna firma, ni del fundador ni delegada. Y el enunciado del propio ticket
+dice, literal: *«Este ticket **mide y propone**»*. Inventar una autorización en un comentario es
+peor defecto que el trinquete que pretendía justificar: el trinquete se discute, una firma falsa
+no se ve.
+
+Lo que **sí** lo autoriza, y es comprobable:
+
+- **Regla 38** — un guard que sólo **LEE** el camino de emisión se hace **sin pedir GO**. Éste sólo
+  lee: **cero líneas de `src/`** tocadas. El STOP es *modificarlo*, y no se modifica.
+- **Regla 29**, firmada en el máster (Parte I) — *«una factura emitida JAMÁS se edita ni borra»*.
+  El cerrojo no inventa regla: le pone **mecanismo** a una ya firmada. *Una prohibición sin
+  mecanismo es una frase.*
+- **El propio encargo** pone la puerta del empuje en *«¿algo NUEVO sin firmar que llegue al
+  USUARIO?»*. Un test no llega al usuario.
+
+🔴 **Aun así queda dicho, y el fundador manda:** si no lo quiere, **quitarlo es borrar un test**.
+El censo y la clasificación de la fase a siguen midiendo igual sin él.
+
+## ① El cerrojo, y por qué su rojo sería correcto
+
+> La regla 29 dice que una factura emitida no se edita, y **una rectificativa se EMITE como
+> documento nuevo, no editando el anterior**. Si algún día una R1 necesita editar, ese rojo es la
+> conversación que hay que tener — no un obstáculo que evitar.
+
+🔒 **Un trinquete en cero no prohíbe el futuro: obliga a que el futuro pase por una DECISIÓN en vez
+de por un descuido.** Eso va escrito en el mensaje del propio guard, para que quien lo encuentre en
+rojo dentro de seis meses no lo lea como un obstáculo.
+
+⚠️ **El suelo va ANTES del veredicto, dentro del mismo test:** un cerrojo sobre una población vacía
+siempre está en verde. Si el censo deja de ver escrituras, el cerrojo dice **CIEGO**, no «0 malas».
+
+## ② Las cuatro patas — dónde estaba cada una
+
+La fase a ya traía SUELO, VERDE REAL, ROJO REAL y MUTACIÓN sobre el **clasificador**. La fase b
+añade las del **cerrojo**, que es otra cosa: el clasificador dice de qué clase es una escritura; el
+cerrojo decide si el árbol pasa.
+
+| pata | qué añade la fase b |
+| --- | --- |
+| **🔴 ROJO REAL + MUTACIÓN** | toma una escritura **REAL** de la población (una de FICHA con `chargeId`), cuenta que el ancla entra **exactamente 1 vez**, sustituye `chargeId` → `total` y comprueba que pasa a FISCAL |
+| **🔴 …y que la acusación DICE DÓNDE** | que el texto emitido nombra **fichero y línea**. Un rojo que no los da manda a buscar por todo `src/`, y eso es lo que apaga un guard |
+| **✅ VERDE REAL** | `invoice.update({ data: { chargeId } })` **no** lo dispara, y con cero acusados la acusación sale **vacía** — sin esto habría escrito «toda escritura es sospechosa», que se desactiva en una semana |
+| **🔴 SUELO** | 0 escrituras → **CIEGO**, dentro del propio cerrojo |
+
+⚠️ **La mutación se hace sobre una fila REAL del censo, en memoria — no sobre un caso inventado y
+no sobre el árbol.** Es deliberado: mide sobre la forma que `src/` tiene de verdad, y no escribe
+nada. Y la acusación se genera con **una sola función**, `acusacion()`, para que el control
+compruebe el texto que de verdad se emite y no una copia suya que podría decir otra cosa.
+
+### Por qué NO se declara mutación al meta-guard
+
+Cualquier mutación que haga saltar el cerrojo tiene que **escribir un campo fiscal en un fichero
+real de `src/`**, y este ticket tiene un STOP sobre `src/` (regla 38). La mutación de dentro del
+test hace el mismo trabajo —cuenta 1, cambia el veredicto, comprueba el texto— **sin tocar el
+árbol**. Queda dicho aquí en vez de omitido.
+
+## Resultado
+
+```
+11 tests · 11 pasan · 0 fallan
+FISCAL=0 · SELLADO=8 · FICHA=12 · NO_CLASIFICADO=0
+```
+
+El cerrojo entra **en verde y en 0**, que es como debe entrar un trinquete: no arregla nada hoy,
+impide que mañana se rompa sin que nadie lo decida.
+
+## Lo NO tocado
+
+`src/` entero — **cero líneas** · `scrum124` y su lista blanca · `prisma/schema.prisma` (ya
+declarado en la 665b) · ningún sello ni factura (regla 29) · ningún estado ni flag (27) · ninguna
+dependencia (36) · ningún texto de usuario (30). **Producción y staging: no tocados.**
