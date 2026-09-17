@@ -1,0 +1,13 @@
+{
+  "quoteId": 1884,
+  "planId": 1,
+  "R": {
+    "flagApagado404": "no pude mirar (ya estaba ON en esta pasada)",
+    "sinAceptarNoSugiere": "funciona",
+    "sugerencia": "funciona",
+    "alta": "funciona",
+    "idempotencia": "funciona",
+    "planEnDetalle": "funciona",
+    "clienteAjeno": "funciona"
+  }
+}

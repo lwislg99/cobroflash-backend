@@ -1,0 +1,9 @@
+{
+  "R": {
+    "bloqueEnElDetalle": "funciona",
+    "borradorEnLaPantalla": "funciona (y enseña 320 €)",
+    "borradorSeAbre": "falla",
+    "importeQueVeElPro": "la pantalla enseña 320 € (sin IVA) para una línea de 320 € + 21 %",
+    "eventoEnLaFicha": "no pude mirar/falla (YQ YaQu Inicio Solicitudes Trabajos VENTA Presupuestos Albaranes Partes por valorar Facturas 5 Cobros NEGOCIO Clientes Productos Proveedores Gastos Informes Libro de registro CUENTA Equipo Planes Conf)"
+  }
+}
