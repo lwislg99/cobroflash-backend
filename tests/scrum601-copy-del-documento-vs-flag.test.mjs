@@ -96,7 +96,30 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // `facturacion_no_disponible` en modo justificante ANTES de llegar a este rechazo, así que sólo
 // lo lee quien emite facturas. Cifra regenerada con el censo, no deducida.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VEREDICTO_AL_MEDIR = { flag: 12, tipo: 7, aPelo: 152 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 152 → 154 · 17-sep-2026 (SCRUM-895) · CUÁLES ENTRARON Y POR QUÉ NO ES REGRESIÓN. Son DOS
+// literales NUEVOS, los dos FIRMADOS (SCRUM-895, comentario 15699), y **ninguno cambió de
+// categoría**: hasta hoy esos dos sitios devolvían la constante `MICROCOPY_PENDIENTE_290`, que no
+// es un literal visible, así que no estaban en ningún cubo. Sustituir un marcador por su texto
+// aprobado SUBE el censo, y eso es lo correcto.
+//
+//   · `albaranes.routes.ts:1395` — «Este parte todavía no está firmado. Solo se factura lo que el
+//     cliente ha firmado.» (409 `albaran_no_firmado`)
+//   · `albaranes.routes.ts:1400` — «Este parte ya está facturado entero.» (409 `albaran_ya_facturado`)
+//
+// **«A pelo» es la categoría correcta para los dos, y no un defecto que se cuela.** Lo que este
+// censo persigue es copy que DEBERÍA derivar del flag —el nombre del documento— y no lo hace.
+// Éstos no nombran el documento que se emite: dicen el ESTADO del parte que se factura, que es el
+// mismo en los tres modos. Por eso el fundador aceptó que la pregunta 25 del asesor no les alcanza.
+//
+// ⚠️ Lo que sí queda anotado y NO se toca (regla 9): estos dos dicen «parte» y su vecino de
+// `:1357` dice «albarán» del mismo objeto. La casa mezcla las dos palabras a pelo en esta ruta.
+// El fundador firmó «parte», así que se aplica «parte»; unificarlo es de otro carril y necesita su
+// propia firma.
+//
+// Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VEREDICTO_AL_MEDIR = { flag: 12, tipo: 7, aPelo: 154 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA

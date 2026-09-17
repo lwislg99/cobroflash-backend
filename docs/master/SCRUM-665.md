@@ -840,3 +840,146 @@ siguiente, no se supuso.
 - `merchantName` sigue **NULLABLE** a propósito: es el centinela, y hay un assert que lo fija.
 - Ningún estado ni flag nuevo (27) · ninguna dependencia (36) · cero producción y cero staging ·
   `git stash` no usado · historia no reescrita.
+
+---
+
+# APÉNDICE (C) · ⓪ PARA: EL ESCRITOR TAMPOCO SE EJECUTA, Y EL ENCHUFE NO ES EL GEMELO DE UNA LÍNEA
+
+**Fecha:** 17-sep-2026 · **Carril:** B · emisión · **Gate:** ⓪ medición — **bloque ① PARADO**
+**Medido contra:** `origin/main` = `e48c18d57fd495d8929cd983733e18c2ac057e64` · 2026-09-17T10:20:37Z
+**Rama:** `scrum-665c-el-enchufe`
+
+> **Preámbulo, en este orden:** `git status` **limpio** y sin `MERGE_HEAD` ni `REBASE_HEAD` antes de
+> tocar nada. 24 worktrees listados, ninguno de ellos éste a medio merge.
+>
+> **Obligación 0:** la única rama `scrum-665*` viva es **la mía de 665b**
+> (`b854c15a…`, Javier Pereira, 17-sep 11:13), **sin mergear**. No es de otra persona, así que no
+> hay que parar por eso — pero sí cambia de dónde se ramifica:
+>
+> 🔴 **Esta rama sale de `scrum-665b-el-esquema-declara`, NO de `main`.** `main` todavía **no
+> declara** las siete columnas (comprobado: 0 apariciones en su `schema.prisma`). Si la 665b se
+> revierte, ésta se va con ella. Se dice en vez de disimularlo.
+
+---
+
+## ⓪ LAS DOS PREGUNTAS, MEDIDAS POR SEPARADO
+
+El encargo avisa de que «el módulo tiene» y «el test pasa por ahí» no son la misma pregunta. Lo son
+aún menos éstas dos:
+
+### ¿EXISTE el escritor en `main`? — **SÍ**
+
+```
+$ git show origin/main:src/modules/invoicing/domain/emisorCongelado.ts | grep -n 'export function congelarEmisor'
+104:export function congelarEmisor(ficha: FichaDeEmisor): EmisorCongelado {
+```
+
+### ¿Se EJECUTA en la emisión real? — **🔴 NO. Nadie lo llama.**
+
+```
+$ grep -rn "congelarEmisor" src/ --include=*.ts | grep -v domain/emisorCongelado.ts
+  (vacío)
+$ grep -rn "emisorCongelado" src/ --include=*.ts | grep -v domain/emisorCongelado.ts
+  (vacío)
+```
+
+**Y tampoco lo escribe nadie por otra vía.** Los siete campos, uno a uno, sobre todo `src/`: las
+únicas apariciones son variables locales y parámetros de WhatsApp, soporte e IA
+(`merchantPhone: merchant.whatsappPhone` para un mensaje, `merchantEmail` para el panel de soporte…).
+**Ni una sola escribe la columna de `invoices`.**
+
+> **La casa ya lo tenía anotado, y eso confirma la medida en vez de contradecirla.**
+> `tests/scrum411-exports-inalcanzables.test.mjs:197` subió su tope a **8** el 16-sep-2026 con su
+> motivo escrito: *«Entra `emisorCongelado.ts` (SCRUM-665 A) … Nace inalcanzable a propósito»*, y
+> deja dicho que quien lo enchufe baje el número en el mismo commit.
+
+### El veredicto de ⓪
+
+**Se para el bloque ①**, y por el motivo exacto que da el encargo: enchufar el LECTOR a unas
+columnas que nadie rellena no arregla nada —el lector caería siempre al perfil vivo, el papel
+seguiría igual que hoy— **con el agravante de que pareceríamos haberlo arreglado**.
+
+---
+
+## 🔴 Y HAY UNA SEGUNDA RAZÓN PARA PARAR: EL GEMELO NO ENCAJA
+
+El encargo dice «no inventes patrón: cópialo; si en algo no encaja, PARA y dime en qué». **No
+encaja, y no en un detalle.** Medido, pieza a pieza:
+
+| pieza | cliente (SCRUM-729) | emisor (SCRUM-665a) |
+|---|---|---|
+| congelar desde una ficha (puro) | `congelarDesdeFicha` | `congelarEmisor` ✅ |
+| **congelar LEYENDO la base** | `congelarCliente(prisma, merchantId, customerId)` | **NO EXISTE** 🔴 |
+| variante para rectificativa | `congelarParaRectificativa` | **NO EXISTE** 🔴 |
+| lector | `clienteDelDocumento` | `emisorDelDocumento` ✅ |
+| **escrito por el embudo** | sí: `...cliente` dentro de `crearFacturaEmitida` | **no** 🔴 |
+
+El cliente no se escribe «en una línea»: se escribe **por un embudo con un tipo que hace imposible
+saltárselo** —`DatosDeFacturaEmitida = Omit<Prisma.InvoiceUncheckedCreateInput, keyof ClienteCongelado>`,
+así que escribir esos campos a mano en `datos` **no compila**— y ese embudo tiene **SIETE llamadas**
+en `src/`, cada una con su `congelarCliente(...)` **antes** de abrir la transacción:
+
+```
+src/lib/invoicing.ts:345
+src/modules/invoicing/domain/invoicing.service.ts:98
+src/modules/jobs/app/routes/jobs.routes.ts:1443
+src/modules/quotes/app/routes/quotes.routes.ts:734
+src/modules/system/app/routes/invoicesAdmin.routes.ts:1022
+src/modules/system/app/routes/quotesAdmin.routes.ts:289
+src/modules/system/app/routes/quotesAdmin.routes.ts:552
+```
+
+### Lo que el enchufe completo exigiría de verdad
+
+No es «el gemelo de una línea». Son, como mínimo:
+
+1. **Una función que lea la ficha del merchant de la base** — el equivalente de `congelarCliente`,
+   que hoy **no existe**. `congelarEmisor` es pura y recibe la ficha ya leída.
+2. **Cambiar la firma del embudo** `crearFacturaEmitida(tx, cliente, datos)` para que acepte también
+   el emisor, y extender su `Omit` a `keyof ClienteCongelado | keyof EmisorCongelado` — porque si no
+   se extiende, el tipo **deja de proteger** a las siete nuevas y alguien podrá escribirlas a mano.
+3. **Tocar las SIETE llamadas**, cada una con su lectura fuera de la transacción (el propio 729 dejó
+   escrito por qué va fuera: para no meter un viaje dentro del cerrojo de serie).
+4. **El lector en `src/lib/invoicing.ts:108` y `:249`**, que es lo único que parecía faltar.
+
+**Todo eso es el camino de emisión fiscal, en siete sitios.** El GO concedido era para *el enchufe*
+descrito como el gemelo de una línea; lo que hay delante es otra cosa y de otro tamaño. Por eso se
+para y se cuenta, en vez de resolverlo sobre la marcha.
+
+---
+
+## ② NO SE HA HECHO, y por qué
+
+Los controles de ② prueban el enchufe. Sin ⓪ no hay enchufe que probar.
+
+**Lo que sí está ya construido y sigue verde** es el contraste que ② pedía reusar: en la 665b,
+`tests/scrum665b-el-esquema-declara.test.mjs` demuestra por CONTENIDO —y con el suelo del
+`{ok, texto}`— que con las siete columnas el papel **no cambia** (`Mayor 1`) y con `merchantName` a
+NULL **sí cambia** (`Nueva 99`). La tercera pata que el encargo pide —**una factura emitida antes de
+todo esto, con las columnas a NULL, se pinta exactamente igual que hoy**— es literalmente ese
+segundo caso, y está en verde: sin copia, el lector cae al perfil vivo y el papel sale como salía.
+
+---
+
+## LA TANDA
+
+```
+ARBOL QUIETO DESDE: 10:23:53 UTC
+ARBOL QUIETO HASTA: 10:37:39 UTC
+# tests 7270 · # pass 7160 · # fail 0 · # skipped 110 · cero `not ok`
+```
+
+> Se mira `# fail` y no sólo el código de salida: hoy un exit 0 con nueve fallos engañó a otra
+> sesión.
+
+---
+
+## LO NO TOCADO
+
+- **`src/`: NI UNA LÍNEA.** No se ha enchufado nada. El defecto de SCRUM-665 sigue vivo y sin
+  disimular.
+- **`prisma/schema.prisma`: ni una línea** — ya quedó declarado en la 665b, como manda el encargo.
+- **Ninguna factura tocada**: no se ha editado, renumerado ni re-sellado nada (regla 29). Cero
+  escrituras en ninguna base.
+- Ningún estado ni flag nuevo (27) · ninguna dependencia (36) · cero producción y staging ·
+  `git stash` no usado · historia no reescrita.

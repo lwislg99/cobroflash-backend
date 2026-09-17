@@ -209,3 +209,147 @@ rojo cuando hay carga es un rojo intermitente, y de ésos ya sabe esta casa.
 2. **No toca los 8 de API**: salen igual que hoy.
 3. **No toca la factura**: su marcador está declarado y vigilado (§3).
 4. **No reescribe ningún documento emitido** (regla 29) — y no hay ninguno.
+
+---
+
+# APÉNDICE · FASE c (17-sep-2026) · ¿Cuántos bancos están fijados en un estado?
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca.
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T14:37:21+01:00
+**Rama:** `scrum-903c` · **Instrumento:** `scripts/censo-bancos-fijados.mjs`
+
+## El patrón que abre esta fase
+
+Un guard puede estar en el sitio correcto, declarar la población correcta, y no ver nada porque
+**su banco fija un estado**. Salió dos veces el mismo día, en dos guards distintos:
+
+* `guard-marcadores-en-pantalla.mjs:194` hace `v.estado = 'borrador'` a todo albarán. La vista
+  `albaran-detail` está entre las 27 vigiladas; su banco nunca sirve un albarán `firmado`, que es
+  donde vivía el marcador de SCRUM-895.
+* el banco de `scrum667-marcador-visible` genera su albarán con `firmadoPorCalidad: null`, así que
+  la rama que pinta la etiqueta de calidad no se ejercita jamás.
+
+## 🔴 Lo primero que midió el instrumento fue que SON DOS FAMILIAS, no una
+
+El primer criterio derivaba el dominio de un campo de los valores que ese campo toma en el árbol.
+**Falló los dos controles positivos, por motivos opuestos:**
+
+* `estado` tiene **44 valores distintos** en el árbol, porque el nombre lo comparten el albarán, la
+  factura, el trabajo, el bot y media docena de censos. Un dominio por nombre de campo no existe:
+  `'borrador'` y `'refunded'` no son el mismo eje.
+* `firmadoPorCalidad` tiene **uno**, `null`, así que no parecía dominio ninguno.
+
+De ahí las dos familias, que se cuentan por separado:
+
+| | qué es | cómo se detecta |
+|---|---|---|
+| **① PARCIAL** | el banco sirve k de N valores de un dominio DECLARADO | enlace por **valor**, no por nombre de campo |
+| **② AUSENTE** | el banco fija un campo en `null`/`''` que en otro sitio sí lleva dato | el campo recibe literal real en ≥1 fichero más |
+
+Sin la ②, el caso de SCRUM-667 no sale. Sin la ①, no sale el de SCRUM-895.
+
+## POBLACIÓN
+
+| | |
+|---|---|
+| ficheros leídos | **1.570** |
+| dominios declarados en el árbol | 91 → **70 útiles**, 21 descartados por ser listas de nombres |
+| ficheros de `tests/` y `scripts/` **con banco** | **851** |
+| · **clasificados** | **422** |
+| · **NO CLASIFICADOS** (cuentan del lado malo) | **429 · 50 %** |
+| bancos acusados en alguna familia | **414 de 851 · 49 %** |
+
+**La mitad no se clasifica**, y eso es la mitad del resultado: son bancos que no asignan ningún
+valor perteneciente a un dominio declarado. No significa que estén sanos — significa que este
+instrumento no puede decir nada de ellos.
+
+## CONTROLES
+
+**✅ POSITIVO — los dos casos, cada uno en su familia:**
+
+```
+① scripts/guard-marcadores-en-pantalla.mjs:194 · schema:estado  sirve 1/3 → falta emitido, firmado
+② tests/scrum667-marcador-visible.test.mjs:237 · firmadoPorCalidad fijado en vacío; lleva dato en 16 ficheros
+```
+
+> 🔴 **El positivo exige el EJE, no sólo el fichero.** La primera versión daba el control por bueno
+> porque `guard-marcadores-en-pantalla` salía acusado… por el eje `schema:plan`. Acertaba la
+> respuesta conocida **por el motivo equivocado**, que es no tener control.
+
+**✅ NEGATIVO:** 113 pares banco·eje recorren su dominio ENTERO y salen limpios (p. ej.
+`tests/albaran.test.mjs · ALBARAN_MODOS_VALORACION` 2/2). El criterio no acusa por existir.
+
+**SUELO:** 0 bancos o 0 dominios declarados → sale CIEGO con código 2.
+
+## HALLAZGO ① · PARCIAL — y por qué va partido en dos listas
+
+| | pares |
+|---|---|
+| **FIABLE** — dominio documentado en una columna del esquema | **329** |
+| **AMBIGUO** — dominio sacado de un array del código | **831** |
+
+**Los 831 ambiguos contienen falsos positivos que no se pueden separar estáticamente**, y esto es
+el límite del instrumento. Un array de literales puede ser un dominio (`FIRMANTE_CALIDAD_IDS`) o
+una lista de nombres (`REVISION_HEREDA`, los campos que hereda una revisión; `ORDEN_BORRADO_MERCHANT`,
+los modelos que se borran en orden). Se probaron **tres** cortes para separarlos —que sus valores se
+asignen, que los asigne un mismo campo, que sean cortos— y **ninguno lo consigue**, por una razón
+que es del lenguaje y no del corte: en este árbol **los identificadores se escriben como cadenas**
+(`modelo: 'invoice'`, `campo: 'lines'`), así que un nombre de campo es un valor asignado igual que
+`'firmado'`.
+
+Los **329 fiables** sí son señal. Cabeza de la lista, por cuánto se pierden:
+
+```
+ 7   1/8   scripts/_pagina-panel.mjs:82 · schema:type  → 7 tipos de evento sin servir
+ 6   1/7   scripts/seed-demo.mjs:209    · schema:trade → 6 oficios sin servir
+ 6   1/7   tests/_tenencia-por-lectura.mjs:95 · schema:trade
+ 6   2/8   scripts/seed-demo.mjs:382    · schema:type
+ …
+ 2   1/3   scripts/guard-marcadores-en-pantalla.mjs:194 · schema:estado → emitido, firmado
+```
+
+**23 de los pares fiables son de `scripts/guard-*`**, que es la población que más importa: un banco
+de semilla que sirva un solo oficio es un dato de prueba pobre; un GUARD que sirve un solo estado
+es una promesa de vigilancia que no se cumple.
+
+## HALLAZGO ② · AUSENTE — 593 pares, y el orden no es el bueno
+
+El criterio ordena por en cuántos ficheros más ese campo sí lleva dato. La cabeza la ocupan campos
+genéricos —`name` (232), `type` (174), `status` (154)— y **el caso conocido de SCRUM-667 cae en el
+puesto 221 de 595**. O sea: el instrumento lo VE, pero no lo destaca.
+
+Fijar `name: null` en un banco casi nunca importa; fijar `firmadoPorCalidad: null` sí, porque hay
+una rama de producto detrás. **Esa diferencia no está en el dato que tengo**: haría falta saber si
+el producto RAMIFICA sobre el campo, y `firmadoPorCalidad` no se compara nunca contra un literal
+—entra por `FIRMANTE_CALIDAD_SET.has(id)`—, que es justo lo que tumbó el primer criterio.
+
+## ③ ¿Se puede vigilar esto con un guard, o sólo leer?
+
+**Con un guard, NO. Sólo se puede leer, y hay que decirlo.**
+
+No es por falta de instrumento: es que el criterio, medido, **no separa lo que acusa**.
+
+1. **La ① ambigua tiene 831 pares con falsos positivos irreducibles.** Un guard que los emitiera
+   daría rojos sobre `REVISION_HEREDA` —una lista de campos que hereda una revisión, donde no hay
+   ningún estado que servir—. Un rojo injusto enseña a desactivar el guard, y entonces se pierde
+   también la parte que sí valía.
+2. **La ② no sabe ordenar por daño.** Con el caso real en el puesto 221, un trinquete sobre su
+   número subiría y bajaría por `name: null` en bancos nuevos, sin relación con el defecto.
+3. **El 50 % no clasificado no mejora solo.** Un guard que no puede hablar de la mitad de su
+   población no está vigilando esa mitad: está callando sobre ella.
+
+> 🔒 Contra un valor ilegible se programa una barrera. Contra uno plausible no hay síntoma — y
+> estas dos listas están llenas de valores plausibles.
+
+**Lo que SÍ es accionable hoy, sin guard:** los **329 pares fiables**, y dentro de ellos los **23
+de `scripts/guard-*`**. Esa lista es corta, está ordenada y cada entrada dice qué estado NO se
+sirve. Se lee, se decide cuál importa, y se arregla el banco de ese guard — uno a uno, con su
+motivo, como se arregló el de SCRUM-895.
+
+**Con qué se compara esta respuesta.** En la novena auto-referencia dije que SÍ se podía vigilar
+porque la distinción era de **posición sintáctica** —una propiedad del texto, decidible—. Aquí la
+distinción es **semántica**: si una lista de cadenas es un dominio o un índice de nombres depende
+de lo que significan, no de dónde están escritas. Por eso allí la respuesta fue sí y aquí es no.
+
+⛔ **No se ha arreglado ningún banco** (regla 9). El censo cuenta y ordena.

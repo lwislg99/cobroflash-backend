@@ -11,6 +11,7 @@ import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { bizumAutoDisponible } from '../../domain/bizumCharge'; // SCRUM-3
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
+import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; // SCRUM-910
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 const router = Router();
@@ -54,7 +55,11 @@ router.get('/invoice/:token', async (req, res) => {
 
   // ── A2.1: métodos disponibles + orden por la matriz W4 (por importe) ──
   const amountNum = Number(charge.amount);
-  const hasTransfer = !!(m?.iban || m?.clabe);
+  // SCRUM-910 · la condición era `!!(m?.iban || m?.clabe)` y NO MIRABA EL PAÍS. Un negocio ES con
+  // sólo CLABE veía «Transferencia bancaria» y aterrizaba en `/pay/bank`, que sólo pinta la CLABE
+  // si el país es MX — así que le decía que el profesional no había configurado su cuenta. Se
+  // pregunta al dominio, que replica la regla de la página destino y está atado a ella por test.
+  const hasTransfer = transferenciaDisponible(m);
 
   // SCRUM-893 · SE PREGUNTA, NO SE SUPONE. Hasta hoy esto era
   //     `!connectFlag ? true : (connectStatus === 'active' || isDemoMerchant(m))`
