@@ -19,6 +19,24 @@ import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import { temporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
+
+/** Lo que el meta-guard de la casa EJECUTA contra este fichero. */
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El envoltorio que SIEMPRE devuelve 0: se come el código de la tanda. Una tanda roja sale verde.
+    fichero: 'scripts/tanda-con-veredicto.mjs',
+    de: '  process.exitCode = codigo ?? 1;',
+    a: '  process.exitCode = 0;',
+    cae: 'NEGATIVO: una tanda con un test ROJO nunca sale 0 por el envoltorio',
+  },
+  {
+    // El envoltorio que NO detecta la falta del resumen: un 0 sin recuento vuelve a pasar por verde.
+    fichero: 'scripts/tanda-con-veredicto.mjs',
+    de: '  if (codigo === 0 && !conResumen) {',
+    a: '  if (false) {',
+    cae: 'una tanda que sale con 0 SIN línea de recuento sale con 4',
+  },
+];
 const ENVOLTORIO = path.join(RAIZ, 'scripts', 'tanda-con-veredicto.mjs');
 
 /** El entorno de una tanda de verdad: sin `NODE_TEST_CONTEXT`, o `node --test` no corre nada y sale 0. */
