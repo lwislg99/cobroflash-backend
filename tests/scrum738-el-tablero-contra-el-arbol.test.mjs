@@ -41,7 +41,12 @@ test('SCRUM-738 · 🔴 «72» NO casa con 720, 727 ni 1727 — se compara el N�
     '🔴 dos de los cuatro números colapsan: el censo propondría cerrar el que no es.');
 
   // El delimitador es obligatorio: sin él, `scrum-72` casaría con el principio de `scrum-727-x`.
-  assert.equal(numeroDeRama('scrum-72'), null, '🔴 una rama sin sufijo se está aceptando');
+  // SCRUM-804f (17-sep-2026): el FIN DEL NOMBRE también delimita. Aquí se exigía `null` para
+  // `scrum-72` a secas, y eso era un efecto de la regla, no su motivo: escondió la rama viva
+  // `scrum-904` y cerró el check obligatorio de `main`. Lo que este bloque protege —que 72 no se
+  // confunda con 727— se sigue comprobando, ahora también sin slug.
+  assert.equal(numeroDeRama('scrum-72'), 72, '🔴 una rama sin slug no se atribuye a su ticket');
+  assert.equal(numeroDeRama('scrum-727'), 727, '🔴 sin slug, `scrum-727` se confunde con 72');
   assert.equal(numeroDeRama('feature/scrum-72-x'), null, '🔴 no está anclado al principio');
   // La letra de fase pertenece al MISMO ticket.
   assert.equal(numeroDeRama('scrum-684b-albaran-sin-presupuesto'), 684);
