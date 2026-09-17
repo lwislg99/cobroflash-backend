@@ -37,9 +37,18 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
 4. **Decidir** lo delegado (microcopy, lo que sea del orquestador) y decir qué se decidió.
 5. **Encargos por el CANAL DIRECTO a las sesiones que han entregado** (`orquestador-autonomo.md`
    §3; sustituye a «prompts solo a las sesiones cuya respuesta trae él», §10.5-10.6), cada uno
-   casado con su carril (§11bis) y completo. Si hace falta un **chat nuevo**, eso sí se le pide
-   al fundador, con el prompt en un bloque y la línea «🆕 CHAT NUEVO de la Sesión N» encima
-   (§10.11bis).
+   casado con su carril (§11bis) y completo. Si hace falta una **sesión nueva**, desde el
+   17-sep-2026 **ya no se le pide al fundador**: la lanza el orquestador (A19 · F4 medido ·
+   `orquestador-autonomo.md` §5bis). Al fundador se le piden las **autorizaciones**, que no se
+   heredan.
+5bis. 🔴 **RELEVAR EN VEZ DE REANUDAR.** Antes de mandarle el encargo siguiente a una sesión, se
+   mira lo que ocupa (`sesion.mjs contexto N`). Si pasa de **300k** tras una entrega verificada, si
+   lleva **más de 1 h parada** o si empieza la **tanda del día siguiente**, no se le escribe: **se
+   la releva** (A19, «El PUESTO es fijo; la SESIÓN se releva» · `orquestador-autonomo.md` §5bis).
+   Nunca a mitad de una entrega, y nunca sin que haya dejado su traspaso.
+
+       🔒 Escribirle a una sesión cargada cuesta su contexto ENTERO en cada mensaje. Relevarla
+          cuesta un traspaso, una vez.
 6. **Memoria de traspaso al día** (qué está en main por efecto, qué queda, ramas y PR).
 7. **Lo que tiene que hacer él, SIEMPRE AL FINAL** del mensaje, numerado y corto; si no hay
    nada, se dice. Los pasos manuales, uno a uno.
@@ -285,6 +294,13 @@ Cuando el orquestador firma, firma así:
     no sirve: lo lee la sesión cuando ya está pegado en el chat equivocado. Pasó con S2 y S5.
     Los puestos no se cierran nunca: lo que se cierra es el chat.
 
+    ⚠️ **17-sep-2026: esto sigue valiendo, pero ya casi no se usa.** El camino normal dejó de ser
+    «el fundador pega un prompt»: las sesiones las lanza el orquestador (A19 · F4 ·
+    `orquestador-autonomo.md` §5bis), y ahí la etiqueta no la lee un humano. La regla se queda
+    **para los prompts que el fundador SÍ pega a mano**, que siguen existiendo. Y la última frase
+    se queda tal cual, porque es la A19 dicha con un día de antelación: *los puestos no se cierran
+    nunca; lo que se cierra es el chat*.
+
 ## 10bis · Las reglas de ticket
 
 12. Una sesión = UN objetivo = cerrar UN ticket concreto. Nada de
@@ -353,13 +369,16 @@ carril**, o se declara la excepción en la primera línea del prompt, con su mot
 | **S2** | frontend | vistas del panel, DOM renderizado | `public/dashboard/js/`, `app.js`, `styles.css` | servidor, dinero |
 | **S3** | tests · bancos · instrumentación | bancos, sondas, guards, desgateo (SCRUM-876) | `tests/`, `scripts/_suelo-*` | producto |
 | **S4** | producto · microcopy · parte y albarán | textos firmados y sujetos, parte de trabajo, albaranes, vistas de lista | `jobsView.js`, `parteDetailView.js`, `albaranDetailView.js`, `docs/microcopy/` | automatización |
-| **S5** | automatización | el bucle PR → CI → merge → aviso: workflows, vigías, avisador, meta-guard | `.github/workflows/`, sus scripts | **producto, nunca** |
+| **S5** | **automatización y eficiencia** | el bucle PR → CI → merge → aviso (workflows, vigías, avisador, meta-guard); **el gasto de tokens por sesión** (`sesion.mjs contexto`, el umbral de relevo de la A19); **los fallos del flujo**, que vigila y mejora sin esperar a que se los manden | `.github/workflows/` y sus scripts, `scripts/equipo/`, `docs/equipo/orquestador-autonomo.md` | **producto, nunca** |
 
 ⚠️ **Dos fuentes que se contradecían, y cuál manda.** Hasta hoy la tabla de arriba daba a S5 «¿puede
 una persona hacer su trabajo con esto?» —y así lo dice aún la cabecera de `sesion-5.md`—, mientras
 `traspaso.md` §5 (9-sep) la pone en automatización, que es lo que hace desde entonces (SCRUM-836,
 839, 853) y lo que dice el fundador. **Manda automatización.** La cabecera de `sesion-5.md` es de la
 propia S5, y ya la reescribió en el #1391 (17-sep). El recorrido del producto lo hace hoy S0 (SCRUM-882).
+**Desde el 17-sep-2026 las dos fuentes ya no se contradicen**, y el puesto se amplía a **automatización
+y eficiencia** por decisión del fundador: además del bucle, mide el gasto de tokens por sesión y vigila
+los fallos del flujo. Sigue sin tocar producto.
 
 **Dónde se tocan dos carriles (auditoría de la S0, 17-sep):**
 - Dentro de `public/dashboard/js/`, los ficheros `jobsView.js`, `parteDetailView.js` y `albaranDetailView.js` son

@@ -127,3 +127,124 @@ Sobre el árbol ya arreglado:
 - No se ha censado si hay un tercer sitio que lea salida con color (el vigía, el avisador). Queda dicho, no medido.
 
 **Tests declarados:** `tests/scrum928-guards-entrada-recuento-con-color.test.mjs`.
+
+---
+
+## SCRUM-928b · punto 1 · el envoltorio de `npm test` leía el recuento con el color puesto
+
+**Medido contra:** `origin/main` = `8b3f26d2cc3a3d1d1de03e1119a38dc0c94d97d7` · 2026-09-17T19:11:17Z (hora de GitHub; las mediciones son de los minutos anteriores, misma máquina)
+**Rama:** `scrum-928b-el-veredicto-que-el-color-tapa` · **Carril:** Sesión 3 (instrumentos) · **Reparto del orquestador:** el punto 1 es de la S3 porque entregó el envoltorio en SCRUM-858b; `scripts/guards-entrada.mjs` es del punto 2 (S5) y **aquí no se toca**. Esto cierra el hueco que la sección ⑨ de arriba deja dicho.
+
+### ① PASO 0 · el defecto existe HOY, y con una tanda de UN test basta
+
+El envoltorio sobre una tanda sana de un solo test que pasa, con la cobaya FUERA del árbol:
+
+| `FORCE_COLOR` | exit del envoltorio | «TANDA SIN RESUMEN» |
+|---|---|---|
+| ausente | 0 | no |
+| `0` | 0 | no |
+| `3` | **4** | **sí** |
+
+Las dos primeras filas no son adorno: son el control positivo del arreglo, y son las que prohíben «arreglarlo» aflojando el umbral. De paso desmienten una frase que yo mismo había puesto en el enunciado del ticket y que **nadie había medido**: `FORCE_COLOR=0` **sí** apaga el color. Contando bytes `ESC` en la salida de `node -e "console.log(7)"`: ausente 0 · `0` 0 · `1` 2 · `3` 2 · `false` 0 · vacío 0. Node no distingue `0` de ausente, así que el defecto del lanzador no es «el 0 no sirve»: es que **el 0 no llega**.
+
+### ② Los bytes, que son los que deciden el arreglo — y DOS ESC distintos, no uno
+
+```
+sin color   E2 84 B9 20 74 65 73 74 73 20 31                                  «ℹ tests 1»
+con color   1B 5B 33 34 6D  E2 84 B9 20 74 65 73 74 73 20 31  1B 5B 33 39 6D
+            ESC[34m         «ℹ tests 1»                       ESC[39m
+```
+
+El reporter pinta la línea **entera**: un `ESC` delante del glifo y otro detrás del número. El glifo y los dígitos no cambian. Probando cada regex contra cada forma de la cadena:
+
+| caso | `RESUMEN` (envoltorio, punto 1) | el lector de `guards-entrada` (punto 2) |
+|---|---|---|
+| sin color | casa | casa |
+| solo `ESC` delante | **NO casa** | casa |
+| solo `ESC` detrás | casa | **NO casa** |
+| los dos (lo real) | **NO casa** | **NO casa** |
+
+🔴 **Son dos defectos con el mismo síntoma y anclas opuestas.** A este envoltorio lo rompe el `ESC` de DELANTE (el `\s*` de `RESUMEN` no se traga un `ESC`); al lector del punto 2 lo rompe el de DETRÁS (su `[^\n]*` sí absorbe el de delante, y lo que no casa es el `\s*$` final contra `ESC[39m`).
+
+⚠️ **Y esto costó una corrección en caliente.** El enunciado del ticket llevaba MI explicación del punto 2 —«tras `tests ` viene un ESC y no un dígito»—, que es **falsa**. Si la S5 hubiera sembrado su rojo con el `ESC` sólo delante, su regex **habría seguido casando y el rojo no se habría encendido**: un guard en verde sobre el defecto vivo. Se avisó por el canal a las 18:56Z, antes de que empujara. La lección no es sobre el color:
+
+    🔒 Un mecanismo leído no es un mecanismo medido. Un regex se prueba contra la cadena real, no se interpreta
+       mirándolo — y menos para decirle a otro dónde tiene que sembrar su rojo.
+
+### ③ Qué cambia
+
+Una función que quita las secuencias CSI **y se usa sólo para LEER**:
+
+- `const CSI = /\[[0-9;?]*[ -\/]*[@-~]/g;` y `sinColor(s)`, aplicada al probar `RESUMEN` sobre la cola.
+- Se quitan las secuencias CSI **completas**, no sólo las de color: un reporter que mueva el cursor partiría el ancla igual.
+- **Lo que se IMPRIME sigue pasando tal cual, byte a byte.** La limpieza no toca la salida; eso lo exige 858b y se comprueba con una aserción de igualdad exacta sobre el stdout, con color y sin él.
+- **No cambia el umbral ni lo que se exige:** un recuento a medias (`tests` sin número) sigue sin valer, y una tanda que de verdad no lo emite sigue saliendo con 4.
+
+### ④ El rojo primero, y lo que lo hace un rojo y no una casualidad
+
+Contra el árbol SIN arreglar (commit `d69a80f1`, el test solo): **5 casos · 3 pass · 2 fail · exit 1**.
+
+| caso | sin arreglo | con arreglo |
+|---|---|---|
+| SUELO · el envoltorio existe, `npm test` pasa por él, y node SÍ colorea | ✔ | ✔ |
+| 🔴 EL CONTROL QUE DECIDE · una tanda sana con el recuento coloreado sale con 0 | **✖ (salió 4)** | ✔ |
+| 🔴 una tanda DE VERDAD con `FORCE_COLOR=3` | **✖ (salió 4)** | ✔ |
+| ✅ POSITIVO · sin color, mismo veredicto y salida byte a byte | ✔ | ✔ |
+| 🔴 NEGATIVO · sin recuento de verdad sigue saliendo 4, con color y sin él | ✔ | ✔ |
+
+Los tres que pasan **ya pasaban antes del arreglo**, que es lo que los hace controles y no consecuencias de él. Y el SUELO lleva dentro la cláusula que impide que este fichero sea una tautología: comprueba que **este** node mete códigos de color, y si dejara de meterlos grita «NO PUDE MIRAR» en vez de pasar en verde sobre un defecto que ya no puede ver. El caso de la tanda de verdad hace lo mismo con su cobaya: exige ver un `ESC` en la salida ANTES de juzgar el código de salida.
+
+### ⑤ Mutantes, los dos declarados y los dos ejecutados
+
+| mutante | qué apaga | tumba | medido |
+|---|---|---|---|
+| `RESUMEN.test(sinColor(cola))` → `RESUMEN.test(cola)` | la limpieza | «EL CONTROL QUE DECIDE» | ✔ 5 · 3 pass · **2 fail** |
+| `sinColor = (s) => s.replace(CSI, '')` → `(s) => ''` | la limpieza se come el recuento | «✅ POSITIVO» | ✔ 5 · 2 pass · **3 fail** |
+
+El segundo es el que vigila el arreglo por el otro lado: una limpieza demasiado ancha convierte todo en «sin resumen». Los dos van en `MUTACIONES_QUE_ME_TUMBAN`.
+
+### ⑥ El byte de escape LITERAL, otra vez, y en otra sesión
+
+Al escribir el regex, `` se guardó como **el byte 0x1B de verdad** en vez de sus seis caracteres. Funcionaba —los 11 tests en verde— y por eso es peligroso. Lo delató leer el fichero y ver la línea como `/\[[0-9;?]*…/`, sin el escape, porque el visor se come el byte al pintarlo; se confirmó contando bytes 0x1B sobre el fichero (1 antes, 0 después) y se pasó a la forma escapada, repitiendo la verificación entera.
+
+🔴 **Lo que hay que quedarse no es el error, es que somos dos:** la sección ⑦bis de arriba cuenta EXACTAMENTE el mismo accidente en la S5, el mismo día, en otro fichero y sin que ninguna de las dos supiera de la otra. Dos veces es un patrón, no un descuido, y la causa es del entorno de edición, no de quien escribe.
+
+    🔒 Lo que no se ve en un diff no se revisa.
+
+### ⑦ Verificación por efecto, sobre el árbol ya arreglado
+
+| comprobación | resultado |
+|---|---|
+| `node --test` de `scrum928b` + `scrum858b` (el fichero que el arreglo no podía romper) | 11 tests · 10 pass · **0 fail** · 1 salto declarado · exit **0** |
+| `scrum853c` + `scrum858b` con `FORCE_COLOR=3` | 15 · 12 pass · **2 fail** (antes 3) · exit 1 — ver ⑧ |
+| `npm test` completo, sin color, sobre el merge de `8b3f26d2` | 7.429 tests · 7.318 pass · **0 fail** · 111 saltos · exit **0** · 406,7 s |
+| `npm run guards:entrada`, sin color, con esta entrada ya escrita | 4 guards · 26 tests · 26 pass · **0 fail** · exit **0** |
+
+Los **111 saltos** son los mismos 111 que la tanda anterior de esta sesión: esta entrada no ha callado ningún test. Y la suite pasa POR el envoltorio que se acaba de tocar, así que su exit 0 es también una comprobación del arreglo sobre 7.429 tests reales y no sólo sobre la cobaya de un test.
+
+⚠️ **Orden de las pasadas, declarado:** el mutante ① se midió sobre la versión con el byte 0x1B crudo y el ② sobre la ya escapada (⑥ pasó por medio). Las dos cadenas que se declaran son idénticas en ambas versiones y los 11 tests salieron verdes en las dos, pero la pasada de los dos mutantes juntos sobre el árbol final es la del meta-guard en CI, no ésta.
+
+### ⑧ Lo que este arreglo NO quita, medido en vez de supuesto
+
+De los **3** rojos que el color provocaba, éste quita **1**: el de `scrum858b` («una tanda sana sale IGUAL que sin envoltorio, y con 0»). Los **2** de `scrum853c` **siguen**, y era predecible porque **no pasan por el envoltorio**: ahí el ANSI viaja DENTRO de un valor que el test compara como cadena (`'1212|DIRTY|\x1B[33m1\x1B[39m||null'`, el amarillo que node le pone a un número al formatearlo). Es un **tercer sitio**, en el paso que produce esa línea, y es el punto 3 del ticket: no se ha tocado, y **no se ha tocado tampoco el test para que pase**.
+
+Los dos casos son «🔴 SUELO · el paso de REUNIR, con todo bien, deja una línea completa por PR» y «🔴 FECHA · si no se puede leer cuándo se empujó, no se inventa un NaN». Se nombran por identidad a propósito: entre la primera medición y ésta se movieron de las líneas 215 y 245 a la 214 y la 244, porque `8db2059e` (SCRUM-864c) quitó una línea del fichero por medio.
+
+    🔒 Referenciar por posición caduca. Referenciar por identidad no.
+
+Tampoco se ha censado si hay un CUARTO sitio que lea salida con color (el vigía, el avisador): queda dicho y no medido, igual que lo dejó el punto 2.
+
+### ⑨ Errores propios de la tanda, que son todos de la misma familia
+
+Tres veces, en una sola tanda, una operación **no se ejecutó y el resultado se leyó igual que un éxito**:
+
+1. El banco del color, escrito como `.cmd`, llamaba a `npm run build` **sin `call`**. En cmd, `npm` es `npm.cmd`: sin `call` transfiere el control y el script muere ahí. Dos celdas no corrieron y **el job salió 0**.
+2. Al corregirlo, un **guion largo en un comentario `rem`** corrompió el script entero: los dos ficheros eran LF sin BOM, pero el que funcionaba tenía 0 bytes >127 y el roto tenía 3. cmd lee por offset y se comía los 2 primeros caracteres de cada línea (`"tlocal"`, `"t"`, `"m"`). **También salió 0.**
+3. `[IO.File]::ReadAllText('scripts/…')` resuelve contra el cwd del PROCESO, no contra la ubicación de PowerShell: leyó fuera del worktree, la mutación no se aplicó, y la línea de traza dijo «MUTANTE puesto» con el `git diff` vacío.
+
+Ninguno lo cazó el código de salida. Los tres los cazó **el testigo que faltaba** en el log —la línea de POBLACIÓN y el `EXIT=`— y, en el tercero, un `git diff --numstat` impreso al lado de la afirmación. Es A21 aplicada al banco en vez de a la cobaya:
+
+    🔒 Un instrumento que sale 0 sin haber medido nada se lee exactamente igual que uno que ha medido y no ha
+       encontrado nada. La única diferencia la pone un testigo.
+
+**Tests declarados:** `tests/scrum928b-el-veredicto-que-el-color-tapa.test.mjs`.
