@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `12ca4167f030987e4d9d5615428fc14c82a92921` · 2026-09-16T19:56:32Z
 **Rama:** `scrum-892-firma-vacia` · **Carril:** producto (Sesión 0) · **Nace de:** SCRUM-882b, punto b1
-**Estado:** ⛔ SIN EMPUJAR. El texto del rechazo espera la firma del fundador (regla 30).
+**Estado:** texto del rechazo FIRMADO (delegación, comentario 15660); pendiente de empujar, desplegar y verificar en staging.
 
 ⏱ Horas de GitHub (cabecera `Date:` de `gh api -i zen`).
 
@@ -85,13 +85,15 @@ y ahora el panel simplemente no dice que esté firmado.
   avanzado y exigía `discountGlobalAmount` en la página. El guard se estrelló antes de medir. Se rehízo
   quitando solo mi cambio del lienzo y el doble trae ahora ese campo.
 
-## El texto del rechazo · ⛔ PENDIENTE DE FIRMA
+## El texto del rechazo · ✅ FIRMADO
 
 Lo lee la cliente en rojo bajo el recuadro de firma (la página pinta `message`):
 
 > No nos ha llegado tu firma. Dibújala otra vez en el recuadro o marca «Acepto sin firmar».
 
-Vive en `COPY_FIRMA_VACIA` (`firmaConTrazo.ts`). No se empuja hasta que el fundador lo firme en Jira.
+Vive en `COPY_FIRMA_VACIA` (`firmaConTrazo.ts`). Propuesto en el comentario 15626 (16-sep 22:01 CEST)
+y **firmado sin cambios por el orquestador por delegación del fundador** en el comentario **15660**
+(17-sep-2026 10:05 CEST). Consta en `docs/microcopy/2026-09-17-SCRUM-892-firma-vacia.md`.
 
 ## Lo que NO cubre, declarado
 

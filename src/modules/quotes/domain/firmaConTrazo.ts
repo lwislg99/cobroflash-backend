@@ -36,8 +36,9 @@ import zlib from 'node:zlib';
 /** Código del rechazo. Se ramifica por CÓDIGO, nunca por el texto (SCRUM-151). */
 export const ERROR_FIRMA_VACIA = 'firma_vacia';
 /**
- * Lo lee la CLIENTE bajo el recuadro de firma (la página pinta `message`). Propuesto por la
- * Sesión 0 el 16-sep-2026 y PENDIENTE DE FIRMA del fundador (regla 30): no se empuja sin ella.
+ * Lo lee la CLIENTE bajo el recuadro de firma (la página pinta `message`). FIRMADO el 17-sep-2026
+ * por delegación del fundador (SCRUM-892, comentario 15660). Consta en
+ * `docs/microcopy/2026-09-17-SCRUM-892-firma-vacia.md`.
  */
 export const COPY_FIRMA_VACIA = 'No nos ha llegado tu firma. Dibújala otra vez en el recuadro o marca «Acepto sin firmar».';
 
