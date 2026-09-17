@@ -159,16 +159,11 @@ for (const modo of ['receipt', null]) {
   });
 }
 
-// ═══ ⑤ literales firmados (SCRUM-905 comentario 15696) ═══════════════════════════════════════
-
-test('SCRUM-905 · 🔴 ⑤ L1: «Convertir en factura» en el botón del detalle y en la fila', async () => {
-  for (const modo of ['fiscal', 'demo']) {
-    const p = await pantallas(modo);
-    assert.equal(p.textosDetalle.SIN_VALORAR.btnConvertirFactura, 'Convertir en factura',
-      `🔴 ${modo}: el botón de convertir del detalle dice ${JSON.stringify(p.textosDetalle.SIN_VALORAR.btnConvertirFactura)}`);
-    assert.ok(p.fila.includes('Convertir en factura'), `🔴 ${modo}: la fila no ofrece «Convertir en factura». Fila: ${JSON.stringify(p.fila)}`);
-  }
-});
+// ═══ ⑤ literal firmado (SCRUM-905 comentario 15696) ═════════════════════════════════════════
+//
+// Sólo L2. El rótulo de `btnConvertirFactura` (L1) NO se pone: está bloqueado por el asesor
+// (`MICROCOPY_BLOQUEADA` en scrum302-rotulos-completos, PREGUNTAS_ASESOR §G). Decisión del orquestador,
+// 17-sep 14:12 CEST: la delegación de microcopy no levanta un bloqueo legal. Ningún test exige L1.
 
 test('SCRUM-905 · 🔴 ⑤ L2: mientras convierte, la franja dice «Convirtiendo…» y no el marcador', async () => {
   let soltar;
