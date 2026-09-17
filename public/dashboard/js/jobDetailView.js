@@ -54,6 +54,8 @@ function pintarBloqueRail(bloque) {
   for (const linea of bloque.lineas || []) {
     const fila = document.createElement('div');
     fila.className = 'detail-rail-linea';
+    // SCRUM-907 · la línea de AVISO (cobrado de más) se distingue por clase, no por estilo en línea.
+    if (linea.aviso) fila.classList.add('detail-rail-linea--aviso');
 
     if (linea.etiqueta) {
       const et = document.createElement('span');
@@ -157,6 +159,16 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
   fila('Cobrado', i.cobrado);
   fila('Te falta por cobrar', i.faltaPorCobrar, 'cobro-linea--total');
   sec.appendChild(tabla);
+
+  // SCRUM-907 · cobrado POR ENCIMA de lo aceptado (más de 0,02 €). La fila de arriba sigue diciendo
+  // 0,00 €, que es verdad —no falta nada—, y este aviso dice lo que esa fila no puede decir.
+  if (i.cobradoDeMas > 0) {
+    const aviso = document.createElement('p');
+    aviso.className = 'cobro-aviso';
+    aviso.setAttribute('role', 'status');
+    aviso.textContent = avisoCobradoDeMas(fmt(i.cobradoDeMas, moneda));
+    sec.appendChild(aviso);
+  }
 
   // ── LOS HUECOS, cada uno con su enlace ────────────────────────────────────────────────
   const TEXTO_HUECO = {
