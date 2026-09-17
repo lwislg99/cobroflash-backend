@@ -209,6 +209,24 @@ Corolario: si el encargo no te llegó, se dice. NO se reconstruye de
 memoria — un encargo inventado se parece mucho a uno recibido, y
 trabajar sobre él cuesta la tanda entera.
 
+## A20 · Si el encargo cae fuera de tu carril, lo dices y no empiezas
+
+Si el encargo cae fuera de tu carril (tabla §11bis de `docs/equipo/orquestador.md`), lo dices en
+la línea de A16 y no empiezas.
+
+    🔒 Estar libre no te hace dueña del ticket: te hace la que tiene que avisar.
+
+Solo se empieza si la **primera línea del prompt** declara la excepción con su motivo, que es lo
+que la tabla le pide al orquestador. Un encargo fuera de carril sin esa línea es un error del
+reparto, no una orden, y se caza en la línea de A16 o ya no se caza: pasada esa línea, la
+sesión trabaja como si el ticket fuera suyo.
+
+**Medido el 17-sep-2026**, el mismo día en que nació la tabla: la Sesión 5 (automatización)
+recibió un albarán y la Sesión 3 (bancos) un pago. Y la Sesión 0 (consultoría) había dejado
+escrito y listo para empujar un arreglo en `src/` y `public/` (SCRUM-892): nadie lo paró antes de
+la primera línea y acabó siendo una excepción declarada **después**, porque rehacerlo costaba un
+chat entero.
+
 ## A11 · Cómo se actualiza esto
 
 Cuando una sesión comete un error que volvería a cometer, se
