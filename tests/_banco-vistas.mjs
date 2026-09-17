@@ -30,6 +30,24 @@
 //
 // > Un banco infiel no mide de menos: mide OTRA COSA, y su rojo se lee igual que un hallazgo.
 //
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ⚠️ LÍMITES CONOCIDOS · lo que este banco NO hace como el navegador, y lo SABE
+//
+// Decisión del orquestador (17-sep-2026, al cerrar SCRUM-901): se declaran aquí y **no llevan
+// ticket mientras ningún test mida mal por su causa**. Si aparece uno, se abre ticket con ESA víctima
+// y se arregla con su rojo: no antes, y no «por si acaso».
+//
+//   1. SIN IndexedDB por defecto. `cargarDashboard` no lo inyecta, así que la Inicio pinta «No hemos
+//      podido comprobar si te queda algo por subir» (+1 nodo frente a Edge, SCRUM-901). Inyectarlo
+//      cambiaría lo que reciben TODAS las vistas medidas a cambio de un solo nodo explicado. Quien lo
+//      necesite lo pide: `_banco-almacen-local.mjs` ya lo monta con `fake-indexeddb`.
+//   2. SIN cierres implícitos. `<p>`, `<li>`, `<td>` u `<option>` sin su `</…>` NO se cierran al abrir
+//      el siguiente: lo que venga detrás queda DENTRO. El navegador sí los cierra.
+//   3. SIN el `<tbody>` que el navegador inserta cuando un `<tr>` va directo en `<table>`. Aquí el
+//      `<tr>` es hijo de la tabla; en Edge, nieto.
+//   4. `textContent` NO se agrega. El texto de un elemento es el que va justo detrás de su etiqueta de
+//      apertura, no la suma de sus descendientes: `<span>a <b>b</b></span>` da «a» y no «a b».
+//
 // Sin dependencias nuevas (regla 36): `node:vm` y un DOM de mentira, como el de SCRUM-296.
 import fs from 'node:fs';
 import path from 'node:path';

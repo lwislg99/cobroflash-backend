@@ -54,19 +54,23 @@
  * (`app.js`, SCRUM-298), que es justo el valor que existe para no reimplementar el modo de
  * emisión en el navegador. Regla 27: ni un estado ni un flag nuevo.
  *
- * ⚠️ SE OCULTA SÓLO CUANDO SE SABE QUE NO PUEDE FUNCIONAR, y no cuando no se sabe. `null` es «el
- * servidor no me lo dijo» (`app.js` lo deja en `null` a propósito antes que inventarse el estado
- * fiscal de alguien), y esconder la primaria de un merchant que SÍ factura, por un `/me` que vino
- * corto, cambiaría un botón que falla por una pantalla que se calla. Un daño por otro.
+ * 🔴 SCRUM-905 · FALLA CERRADO. Se ofrece facturar sólo cuando el servidor dijo `fiscal` o `demo`.
+ * El #1406 lo dejaba abierto con el modo desconocido (`null`) por no callar la pantalla de quien
+ * SÍ factura; el orquestador decidió lo contrario en SCRUM-905: no saber el modo no autoriza a
+ * ofrecer un documento fiscal, igual que `app.js` no se inventa el estado fiscal de nadie.
+ *
+ * Y vale para TODO lo que factura desde un albarán, no sólo para convertir: `facturar-parcial` y
+ * `consolidar-albaranes` también cortan con 409 en `receipt` antes de hacer nada.
  */
 function facturaFiscalDisponible() {
-  if (typeof window === 'undefined') return true;
-  return window.appModoEmision !== 'receipt';
+  return typeof window !== 'undefined' && ['fiscal', 'demo'].includes(window.appModoEmision);
 }
 
 function ctxAlbaranDeFila(alb) {
   return {
-    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado',
+    // SCRUM-905 · «Facturar lo entregado» lleva a la hoja de `facturar-parcial`: 409 en `receipt`.
+    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado'
+      && facturaFiscalDisponible(),
     // La otra mitad, EXCLUYENTE con la de arriba (SCRUM-290): el parte SIN precios se factura
     // contra el presupuesto firmado. Sin presupuesto detrás el endpoint responde 409, así que
     // ofrecerlo sería un botón que sólo sabe fallar.
@@ -97,5 +101,6 @@ function primariaDeAlbaran(alb) {
 // alcancen — la lista de Albaranes, la ficha del Trabajo y el detalle del albarán.
 if (typeof window !== 'undefined') {
   window.ctxAlbaranDeFila = ctxAlbaranDeFila;
+  window.facturaFiscalDisponible = facturaFiscalDisponible;   // SCRUM-905 · consolidar, en la ficha del Trabajo
   window.primariaDeAlbaran = primariaDeAlbaran;
 }
