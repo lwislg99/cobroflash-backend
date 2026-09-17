@@ -45,6 +45,20 @@ test('SCRUM-804f · 🔴 una rama `scrum-<n>` sin slug se agrupa bajo SU ticket,
   assert.deepEqual(agrupadas.sinNumero, [], '🔴 hay ramas de ticket en «sin número»');
 });
 
+test('SCRUM-804f · ✅ NEGATIVO: una rama SIN NÚMERO no se atribuye a ningún ticket, y se declara', () => {
+  // El límite, fijado por el orquestador (17-sep): el número lo leen las máquinas; tolerar su falta
+  // sería INVENTAR a qué ticket pertenece. `scrum-paso0-dinero` existe hoy en el remoto (medido por
+  // Javier sobre 150 ramas vivas).
+  assert.equal(numeroDeRama('scrum-paso0-dinero'), null, '🔴 una rama sin número se ha atribuido a un ticket');
+  assert.equal(numeroDeRama('scrum-'), null);
+  assert.equal(numeroDeRama('scrum'), null);
+  const agrupadas = agruparRamas(['aaa\trefs/heads/scrum-paso0-dinero', 'bbb\trefs/heads/scrum-904'], () => false);
+  assert.deepEqual(agrupadas.sinNumero.map((r) => r.nombre), ['scrum-paso0-dinero'],
+    '🔴 la rama sin número no queda DECLARADA en «sin número»: o se ha atribuido a un ticket o se ha descartado en silencio');
+  assert.equal(agrupadas.total, 2, '🔴 el total no cuenta la rama sin número: se está perdiendo en silencio');
+  assert.equal([...agrupadas.porTicket.values()].flat().some((r) => r.nombre === 'scrum-paso0-dinero'), false);
+});
+
 test('SCRUM-804f · ⛔ la identidad no se afloja: 72 ≠ 727, anclada, y un revert sigue sin ticket', () => {
   assert.equal(numeroDeRama('scrum-72'), 72);
   assert.equal(numeroDeRama('scrum-727'), 727, '🔴 `scrum-727` se está leyendo como 72');
