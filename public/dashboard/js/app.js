@@ -61,6 +61,7 @@ async function initApp() {
   window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
   window.appAlbaranRotulos = me.albaranRotulos || {};
   window.appAlbaranAyudas = me.albaranAyudas || {};
+  window.appParteAyudas = me.parteAyudas || null;   // SCRUM-919
   // SCRUM-474 fase 2 · LOS CUBOS DEL FILTRO DE COBROS, derivados de `PAID_VIA` en el servidor
   // (regla 22). El navegador NO decide qué método cae en qué cubo — esa copia en el front es
   // justo lo que este ticket vino a quitar. Mismo criterio que los rótulos del albarán de arriba.

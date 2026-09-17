@@ -216,6 +216,15 @@ export const ALBARAN_AYUDAS = {
   noSePidio: 'No se pidió al firmar',
 } as const;
 
+/**
+ * SCRUM-919 · LA AYUDA DEL FIRMANTE EN EL PARTE. Aprobado por el orquestador por delegación del fundador
+ * (SCRUM-919 comentario 15799). No dice qué prueba el parte: ese valor está pendiente del asesor
+ * (PREGUNTAS_ASESOR, pregunta 25); sólo pide el nombre.
+ */
+export const PARTE_AYUDAS = {
+  firmadoPorNombre: 'Una firma sin nombre no identifica a nadie. Escribe el nombre de quien firma el parte.',
+} as const;
+
 // ─── TOPES ───────────────────────────────────────────────────────────────────────────────
 //
 // Decisión del asesor (SCRUM-300, 5-ago-2026): el nombre a 160 y no a 120. «El coste de un límite
