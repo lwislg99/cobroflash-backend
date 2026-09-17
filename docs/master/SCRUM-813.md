@@ -512,8 +512,12 @@ bytes del trabajo en curso se devolvieron intactos (`Buffer.compare === 0`, 11.8
 
 # APÉNDICE 2 · 8-sep-2026 — EL SUJETO ACOTADO, ya con el nombre delante
 
-**Medido contra:** `origin/main` = `19360172` · 2026-09-08
+**Medido contra:** `origin/main` = `193601721d3b2098070ef1967905cb217c2c18bf` · 2026-09-08T02:45:17+01:00
 **Rama:** `scrum-813-el-trinquete-de-zona-horaria`
+
+> ⚠️ El sha estaba **abreviado** (`19360172`) y lo cazó `scrum267` al traer `main` el 17-sep-2026.
+> Completado por expansión del propio objeto, no a ojo. El sha corto no vale, y el motivo está
+> medido en el guard: uno de siete posiciones aparece en varias ramas de este repo a la vez.
 
 ## B0 · 🔴 LA CAUSA, Y POR QUÉ NO SE REPRODUCÍA
 

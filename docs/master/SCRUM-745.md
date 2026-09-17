@@ -389,6 +389,14 @@ pone lento, mide cuánto»—: en ejecuciones, ×3,8; en segundos, **no medible 
 
 # APÉNDICE · 8-sep-2026 — 🔴 REGLA DE LA CASA: EL ANCLA DE UNA MUTACIÓN TIENE QUE CASAR **EXACTAMENTE UNA VEZ**
 
+**Medido contra:** `origin/main` = `d271d29aff85ed155d23397b7e6a1fca64a86bb0` · 2026-09-08T02:45:17+01:00
+
+> ⚠️ Este apéndice **entró sin ancla** y lo cazó `scrum267` el 17-sep-2026, al traer `main` a la
+> rama de SCRUM-813. El ancla no se ha inventado: el sha es el `main` que esa rama tenía mergeado
+> cuando se escribió (segundo padre de su merge `cd4616c1`) y la hora es la del commit que lo
+> añadió (`2b317011`). Se recupera del historial, no de la memoria — que es exactamente lo que la
+> regla de este apéndice defiende.
+
 **Subida a regla por el fundador el 8-sep-2026**, tras la segunda vez en la misma semana y por
 caminos distintos.
 

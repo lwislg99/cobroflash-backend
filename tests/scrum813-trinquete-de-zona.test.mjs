@@ -131,13 +131,26 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '      if (true) amparadas.push(movimiento);',
     cae: 'EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue siendo CIEGO',
   },
-  // ⑩ SE QUITA EL SUELO DE LA LISTA VACÍA: vaciar la declaración devolvería la puerta al estado
-  //    de antes —cegando siempre— y encima en verde, sin que nadie lo hubiera decidido.
+  // ⑩ LA LISTA VACÍA SE VUELVE ZONA FRANCA: con cero entradas, el amparo pasa a cubrir CUALQUIER
+  //    ruta y el trinquete deja de cegar justo cuando no tiene ninguna excepción declarada.
+  //
+  //    🔴 REANCLADA EL 17-sep-2026, y el motivo importa. Esta mutación apuntaba a
+  //    `if (!declaradas.length) {` —el suelo «lista vacía ⇒ CIEGO»— y su `cae` citaba un test
+  //    llamado «SUELO: con la lista de escrituras VACÍA es CIEGO». Los dos desaparecieron a la vez
+  //    cuando la última excepción se retiró (SCRUM-824 arregló su causa) y el suelo se fue con
+  //    ella, que era su condición de salida escrita. La mutación se quedó **anclada a texto que ya
+  //    no existe**, o sea MUDA — y `meta:mutaciones` no podía aplicarla, así que nadie comprobaba
+  //    esta mitad del guard.
+  //
+  //    No se restaura el texto viejo: se REANCLA a lo que hoy sostiene la misma promesa —que un
+  //    amparo sólo puede salir de una entrada declarada— y esa es la condición de
+  //    `laEscribeLaTanda`. Con `|| !declaradas.length` ampara todo cuando la lista está vacía,
+  //    que es exactamente el defecto que el caso nuevo vigila.
   {
     fichero: 'scripts/_trinquete-de-zona.mjs',
-    de: '  if (!declaradas.length) {',
-    a: '  if (false) {',
-    cae: 'SUELO: con la lista de escrituras VACÍA es CIEGO, no «árbol limpio»',
+    de: '  return declaradas.some((d) => r === d.ruta',
+    a: '  return !declaradas.length || declaradas.some((d) => r === d.ruta',
+    cae: 'con la lista VACÍA nada se ampara: cualquier ruta sigue cegando',
   },
   // ⑪ NADA SE AMPARA: el acotado deja de existir y el instrumento vuelve a callarse en cada
   //    pasada de CI. Es el defecto que este apartado cierra.
