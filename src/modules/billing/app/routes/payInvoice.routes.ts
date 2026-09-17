@@ -10,7 +10,7 @@ import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { isFlagEnabled } from '../../../../core/flags';
 import { bizumAutoDisponible } from '../../domain/bizumCharge'; // SCRUM-3
-import { isDemoMerchant } from '../../../invoicing/domain/emission.service';
+import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 
 const router = Router();
@@ -56,13 +56,17 @@ router.get('/invoice/:token', async (req, res) => {
   const amountNum = Number(charge.amount);
   const hasTransfer = !!(m?.iban || m?.clabe);
 
-  // Tarjeta: con PAYMENTS_CONNECT_ENABLED, solo merchants con Connect activo
-  // (o el demo, regla 8/18). Con el flag OFF, comportamiento actual (plataforma
-  // = demo/test) sin cambios.
-  const connectFlag = isFlagEnabled('PAYMENTS_CONNECT_ENABLED', { merchant: m });
-  const hasCard = !connectFlag
-    ? true
-    : (m?.connectStatus === 'active' || (m ? isDemoMerchant(m) : false));
+  // SCRUM-893 · SE PREGUNTA, NO SE SUPONE. Hasta hoy esto era
+  //     `!connectFlag ? true : (connectStatus === 'active' || isDemoMerchant(m))`
+  // y con `PAYMENTS_CONNECT_ENABLED` OFF —su valor por defecto— la primera rama ganaba SIEMPRE:
+  // la tarjeta se ofrecía a todos, incluidos los merchants que se comen un 409 al pulsarla. La
+  // clienta se quedaba en un bucle: única opción, RECOMENDADO, 409, «ver otras formas» → aquí.
+  //
+  // Ahora se le pregunta al MISMO dominio que decide en la puerta de cobro, con su vocabulario
+  // (`connect` / `demo_platform` / `refuse`). No es «una condición más estricta»: es que ofrecer
+  // y cobrar han dejado de ser dos preguntas. Reglas 18 y 23, y la 8 para el demo, viven allí y
+  // no se reescriben aquí — reescribirlas sería crear la tercera copia del criterio.
+  const hasCard = cardChargeMode(m) !== 'refuse';
 
   // Bizum manual: flag + móvil del PRO + límites bancarios del pagador (W4:
   // >1.000 € se oculta).
