@@ -251,7 +251,16 @@ function abrirAlmacen() {
       for (let v = desde; v < VERSION_BD; v += 1) TRAMOS[v](bd);
     };
 
-    peticion.onsuccess = () => resolve(peticion.result);
+    // SCRUM-890 · medido con dos pestañas en Chromium (17-sep): una conexión que no atiende
+    // `versionchange` bloquea la subida de versión de otra pestaña. Y al rechazar por `blocked` la
+    // petición NO se cancela: la conexión llega después, y si nadie la cierra la próxima subida no
+    // pasa mientras esta pestaña siga abierta. Toda conexión se cierra sola al pedirse otra versión,
+    // también la que llega tarde.
+    peticion.onsuccess = () => {
+      const bd = peticion.result;
+      bd.onversionchange = () => { try { bd.close(); } catch (_e) { /* ya cerrada */ } };
+      resolve(bd);
+    };
     peticion.onerror = () => reject(peticion.error || new Error('no se pudo abrir el almacén'));
     peticion.onblocked = () => reject(new Error('la apertura quedó bloqueada por otra pestaña'));
   });
