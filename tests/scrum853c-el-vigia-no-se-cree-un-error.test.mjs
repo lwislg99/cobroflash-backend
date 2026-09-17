@@ -219,14 +219,14 @@ test('SCRUM-928c · 🔴 el paso fabricado NO hereda el color del chat: su líne
     // hereda el entorno tiene que colorear. Si no colorea, el caso de abajo pasaría sin medir nada.
     const testigo = spawnSync(process.execPath, ['-e', 'console.log(1)'],
       { env: { ...process.env }, encoding: 'utf8', timeout: 30000 });
-    assert.ok(testigo.stdout.includes(''),
+    assert.ok(testigo.stdout.includes('\u001B'),
       '🔴 NO PUDE MIRAR: con FORCE_COLOR=3 un hijo que hereda el entorno ya no colorea, así que este'
       + ` caso no distingue un laboratorio limpio de uno sucio. stdout: ${JSON.stringify(testigo.stdout)}`);
 
     const r = correrPaso({ cabecera: REUNIR });
     assert.equal(r.status, 0, `el paso no terminó bien: ${r.stderr}`);
     // 🔴 EL CONTROL QUE DECIDE: ni un byte de escape en lo que el paso escribe para el siguiente.
-    assert.ok(r.estados && !r.estados.includes(''),
+    assert.ok(r.estados && !r.estados.includes('\u001B'),
       '🔴 la línea de estado trae códigos de color: el laboratorio le ha pasado su FORCE_COLOR al paso,'
       + ` y el vigía no corre en el entorno que este fichero dice medir. estados: ${JSON.stringify(r.estados)}`);
     // Y el valor, que es lo que el siguiente paso parsea por posición.
