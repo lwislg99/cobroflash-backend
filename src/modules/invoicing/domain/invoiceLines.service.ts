@@ -75,11 +75,12 @@ export function tieneDescuentoGlobal(quote: { discountGlobalAmount?: unknown }):
  *       con la que `calcTotal` calcula lo firmado, y la clave `dto` NO viaja: el precio ya es el
  *       efectivo, y dejarla sería una segunda fuente que alguien acabaría aplicando dos veces.
  *       La reconciliación de SCRUM-141 hace el resto contra el total firmado.
- *   B · descuento GLOBAL con un solo IVA → UNA línea NEGATIVA del mismo IVA, al final, rotulada
- *       `ROTULO_DESCUENTO_GLOBAL` (PR 2, decisión del 17-sep-2026). Su importe es EXACTAMENTE el
- *       que resta `calcTotal`: el global en céntimos, limitado a la suma de bases de las líneas
- *       (redondeadas línea a línea, como allí). Con un solo tipo no hay reparto que decidir: la
- *       base de ese tipo baja antes de calcular la cuota, que es lo que `calcTotal` firma.
+ *   B · descuento GLOBAL con un solo IVA → UNA línea NEGATIVA del mismo IVA, la PRIMERA, rotulada
+ *       `ROTULO_DESCUENTO_GLOBAL` (PR 2, decisiones del 17-sep-2026, SCRUM-887 comentario 15675).
+ *       Su importe es EXACTAMENTE el que resta `calcTotal`: el global en céntimos, limitado a la
+ *       suma de bases de las líneas. Con un solo tipo no hay reparto que decidir: la base de ese
+ *       tipo baja antes de calcular la cuota, que es lo que `calcTotal` firma. Si el global se come
+ *       toda la base, no hay nada que facturar y las líneas salen a 0 (el portón de SCRUM-246).
  *   C · descuento GLOBAL con IVA mezclado → la acotación SE MANTIENE hasta que la asesoría fije
  *       el reparto. Por eso en C NO SE TOCA NADA, ni siquiera el `dto` de línea: el caso C
  *       no cambia de cálculo.
@@ -109,10 +110,18 @@ export function lineasParaFacturar(quote: { lines?: unknown; discountGlobalAmoun
   if (!reparto) return efectivas();
   if (reparto.tipos.length !== 1) return lineas; // C: la acotación sigue viva
 
+  // Un global que se come TODA la base firma 0 €: no hay nada que cobrar. Las líneas salen a 0,
+  // como con `dto: 100`, y el portón de SCRUM-246 (`exigirLineasFacturables`) da su 409 antes de
+  // pedir número. Con +X y −X pasaría el portón y se emitiría una factura de 0 € (regla 29).
+  if (reparto.aRepartir >= reparto.sumaBases) return efectivas().map((l) => ({ ...l, price: 0 }));
+
+  // LA PRIMERA, no la última: `reconcileToTarget` ajusta la ÚLTIMA línea para cuadrar con lo
+  // firmado, y el descuento tiene que salir EXACTO. Así el ajuste cae en un producto, como sin
+  // descuento. Es el cambio más pequeño: la reconciliación, que sirve a todas las facturas, no se toca.
   const [[rate]] = reparto.tipos;
   return [
-    ...efectivas(),
     { concept: ROTULO_DESCUENTO_GLOBAL, qty: 1, price: -reparto.aRepartir / 100, tax: rate / 100 },
+    ...efectivas(),
   ];
 }
 

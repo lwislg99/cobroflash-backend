@@ -1335,6 +1335,14 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
 const MICROCOPY_PENDIENTE_290 = '[PENDIENTE microcopy oficial]';
 
 /**
+ * SCRUM-887 · ✅ TEXTO OFICIAL — aprobado por el orquestador por delegación del fundador, SCRUM-887
+ * comentario 15675 (17-sep-2026). Aprobación en `docs/microcopy/2026-09-17-SCRUM-887-albaran-con-descuento-global.md`.
+ * «Cobra el resto» es el nombre de la acción que factura en el Trabajo (`jobNextAction.js`).
+ */
+const COPY_ALBARAN_CON_DESCUENTO_GLOBAL =
+  'Este albarán no se puede facturar: su presupuesto lleva un descuento global, que no se reparte entre albaranes. Cobra el resto desde el Trabajo.';
+
+/**
  * POST /admin/albaranes/:id/convertir-en-factura — SCRUM-290 (A0.4)
  *
  * CANTIDADES DEL ALBARÁN · PRECIOS DEL PRESUPUESTO FIRMADO. El criterio no vive aquí: vive en
@@ -1402,7 +1410,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     // excluye. A precio bruto tampoco, que sería volver a cobrar más de lo firmado. Se rechaza
     // AQUÍ, antes de leer el libro y de pedir número: una factura emitida no se corrige (regla 29).
     if (quote && tieneDescuentoGlobal(quote)) {
-      return res.status(409).json({ error: 'albaran_con_descuento_global', message: MICROCOPY_PENDIENTE_290 });
+      return res.status(409).json({ error: 'albaran_con_descuento_global', message: COPY_ALBARAN_CON_DESCUENTO_GLOBAL });
     }
 
     // Lo ya facturado se acumula sobre TODOS los albaranes del Trabajo, no solo sobre éste: dos

@@ -26,7 +26,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
 
-const { calcTotal } = await import(DIST + 'core/utils/utils.js');
+const { calcTotal, descuentoGlobalEnCentimos } = await import(DIST + 'core/utils/utils.js');
 const { grossOfLines, stageLinesReconciled, lineasParaFacturar } = await import(DIST + 'modules/invoicing/domain/invoiceLines.service.js');
 const { distributeStageAmounts } = await import(DIST + 'modules/quotes/domain/billingPlan.js');
 const { pieDePresupuesto } = await import(DIST + 'modules/quotes/domain/presentacionIva.js');
@@ -169,17 +169,21 @@ function muestraB(semilla, n) {
     }
     const global = pick(globales);
     const total = calcTotal(lines, global).toFixed(2);
-    // Un global que se come TODA la base firma 0 € y no emite: tiene su propio test, arriba.
-    if (Number(total) === 0) continue;
+    // Un global que se come TODA la base no emite: tiene su propio test, arriba. Se excluye por el
+    // MISMO criterio que la pieza (el global llega a la suma de bases), no por «firma 0,00»: por
+    // redondeo hay casos así que firman ±0,01 €.
+    const reparto = descuentoGlobalEnCentimos(lines, global);
+    if (Number(total) === 0 || (reparto && reparto.aRepartir >= reparto.sumaBases)) continue;
     out.push({ lines, discountGlobalAmount: global, total });
   }
   return out;
 }
 
-// TECHOS medidos el 17-sep-2026 con el arreglo puesto. Sólo pueden BAJAR. Referencia medida el mismo
-// día: esas MISMAS 2.000 líneas SIN el global dan 23 · 31 · 39 (la tasa de SCRUM-141, que existe sin
-// descuento). El caso B no añade una tasa nueva.
-const TECHO_DISTINTOS_B = { entero: 24, '50/50': 29, '30/70': 43 };
+// TECHOS medidos el 17-sep-2026 con el arreglo puesto (línea del descuento la PRIMERA). Sólo pueden
+// BAJAR. Referencia medida el mismo día sobre la misma muestra: esas MISMAS líneas SIN el global dan
+// 21 · 30 · 40 (la tasa de SCRUM-141, que existe sin descuento), y con la línea del descuento AL
+// FINAL darían 25 · 31 · 44. El caso B no añade una tasa nueva.
+const TECHO_DISTINTOS_B = { entero: 23, '50/50': 31, '30/70': 43 };
 
 test('SCRUM-887b · 🔴 caso B (2.000): cobro ≠ firmado sólo por 1-2 céntimos, y con la tasa de SCRUM-141', () => {
   const quotes = muestraB(8870, 2000);
