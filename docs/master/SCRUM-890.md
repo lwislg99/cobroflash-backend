@@ -58,3 +58,67 @@ Captura: `evidencias/scrum890/aviso-parte-vacio-360.png`.
 
 1. Firmar un parte **sin red** también cierra el pad en silencio → igual que el albarán.
 2. `rechazadas` no se enseña en ninguna pantalla → el profesional lo verá en el propio parte.
+
+---
+
+# PR 2 · Firma de parte sin red y rechazo visible en el parte
+
+**Medido contra:** `origin/main` = `74ba2aeb3f669c02a1bd0fb1cc548d6377e82e74` · 2026-09-17T09:01:50Z
+**Rama:** `scrum-890b-firma-sin-red-rechazo` · **Carril:** Sesión 4 · **Gate:** literal firmado por delegación del fundador (SCRUM-890 comentario 15665)
+
+## 5 · Lo construido
+
+- **Sin red el pad del parte no se cierra:** `firmarParte` relanza sin ③ con `mensajeDeFalloAlFirmar`,
+  el literal del albarán (no hay texto nuevo). La firma sigue en la cola, como fijó el PR 1.
+- **El rechazo al vaciar la cola se ve en el parte:** antes de sacar la firma, `colaDeFirmas.js` deja
+  constancia en `localStorage` (`yaqu_firma_rechazada_<claveIdempotencia>`). Si no se puede escribir,
+  la firma **se queda** en la cola. El parte la lee al abrirse y avisa en la sección de firmas:
+  `parte_vacio` → `TEXTOS.parteVacioNoSeFirma`; el resto → `TEXTOS.firmaRechazada`
+  (`docs/microcopy/2026-09-17-SCRUM-890-firma-rechazada.md`). Se borra cuando esa firma sube con
+  éxito y al cerrar sesión (registrada en `CLAVES_LOCALES` con purga).
+- **`400:invalid_id`** entra en los rechazos definitivos (comentarios 15668 y 15670).
+- **Toda conexión a IndexedDB se cierra con `versionchange`**, también la que llega tarde tras un
+  `blocked`. `VERSION_BD` sigue en 1. Sin schema.
+
+## 6 · Por qué la constancia NO está en IndexedDB
+
+La primera versión la guardaba en un almacén nuevo `firmasRechazadas` (base a v2). Medido en Chromium
+con dos pestañas del mismo origen (JS de main y JS de la rama), y con el dashboard de main entero:
+
+- La pestaña vieja bloquea la subida de versión **sólo durante cada operación** (quieta, 0 bloqueos;
+  en operaciones seguidas, 8 de 10 intentos, 2–94 ms). Pero la apertura bloqueada dejaba una conexión
+  huérfana: la subida siguiente seguía bloqueada a los 2 s en 8 de 10 intentos (0 de 10 con
+  `onversionchange`).
+- 🔴 **Tras subir a v2, la pestaña con el JS de main se queda sin almacén (`VersionError`) y un parte
+  firmado sin red cierra el pad y no queda en ninguna cola.** Control sin la subida: sí queda.
+
+Decisión del orquestador (17-sep, 10:50 CEST): medir la constancia sin subir la versión y, si cumple,
+un solo PR. Cumple (§8).
+
+## 7 · Rojo, verde y mutaciones
+
+- Rojos: `0f026ffb` (pad y rechazo mudo), `9764f43a` (`versionchange`), `9ee92e21` (base sube de
+  versión, constancia que no se escribe, `invalid_id`). Arreglos: `e4a5eb26`, `ddbe1ff9`, `c766dce2`.
+- Mutaciones, cada una tumba su test: escritura que devuelve GUARDADO tras fallar, clave sin purga,
+  olvidar que no borra, sin `onversionchange`.
+
+## 8 · Medido en navegador
+
+Chromium real, dashboard de la rama y de main en el mismo origen, sin service worker, red interceptada:
+
+- Sin red → pad abierto con el literal del albarán → la firma en la cola.
+- Vaciar con 400 `firma_invalida` → constancia escrita y firma fuera; **recargar** → el parte avisa;
+  IndexedDB en versión 1.
+- Pestaña con el JS de main a la vez: abre la base sin error y su firma sin red queda en la cola.
+- Firmar ese parte con éxito → constancia borrada, sin aviso.
+- `localStorage` lleno (comprobado que no cabe ni una constancia) → el servidor rechaza y la firma
+  **se queda** en la cola; con sitio, el siguiente vaciado la rechaza y deja la constancia.
+- Cerrar sesión (`purgarDatosLocales`) → constancia borrada; `yaqu_tips_shown` sobrevive.
+- **360 y 390 px** con el `index.html` real: el aviso ocupa 2 líneas (336 / 366 px de ancho, 63 px
+  de alto), sin desbordar la caja ni la página.
+
+⚠️ Dos medidas salieron ciegas y se repitieron: la clave sembrada a mano era `firma:cliente:7` (la
+real es `firma:parte:7`, de `claveDeFirma`), y la red se interceptaba por `/api/` cuando el panel
+llama a `/admin/...`.
+
+**Límite aceptado:** con el parte ya abierto cuando se vacía la cola, el aviso sale al volver a abrirlo.

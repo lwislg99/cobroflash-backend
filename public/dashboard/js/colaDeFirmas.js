@@ -156,6 +156,7 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   // `albaran_locked` del servidor lo para—, pero el estado que se devuelve es el que el servidor
   // ya ha declarado: la firma ESTÁ a salvo, y eso no depende de que el móvil sepa olvidarla.
   if (encolada) await window.quitarFirmaPendiente(clave);
+  await olvidarElRechazo(clave);
   return { estado: window.FIRMA_A_SALVO, encolada, respuesta };
 }
 
@@ -251,11 +252,47 @@ const RECHAZOS_DEFINITIVOS = [
   '400:calidad_firmante_invalida',
   '400:calidad_firmante_otro_vacio',
   '413:firma_demasiado_grande',
+  // SCRUM-890 (com. 15668/15670) · depende sólo de lo que viaja en la cola: reintentar no lo cambia.
+  '400:invalid_id',
 ];
 
 function elServidorLaRechaza(error) {
   if (!error || error.sinRed || elServidorYaLaTiene(error)) return false;
   return RECHAZOS_DEFINITIVOS.indexOf(error.status + ':' + error.code) !== -1;
+}
+
+/**
+ * 🔴 SCRUM-890 · LA CONSTANCIA DE UN RECHAZO AL VACIAR, que es lo que la pantalla del documento lee.
+ *
+ * `drenarAlAbrir` corre al arrancar y nadie mira su resultado; la firma rechazada sale de la cola.
+ * Sin esto, el rechazo existía sólo en una variable que moría al terminar el drenado.
+ *
+ * Devuelve true sólo si la constancia QUEDÓ ESCRITA. Quien llama no saca la firma de la cola si no:
+ * mejor un reintento de más en la próxima apertura que un rechazo que no ve nadie.
+ */
+async function dejarConstanciaDelRechazo(firma, codigo) {
+  if (typeof window.guardarRechazoDeFirma !== 'function') return false;
+  try {
+    const r = await window.guardarRechazoDeFirma({
+      clave: firma.claveIdempotencia,
+      tipo: firma.tipo || 'albaran',
+      documentoId: firma.albaranId,
+      codigo: codigo || null,
+      rechazadaEn: Date.now(),
+    });
+    return !!r && r.estado === window.GUARDADO;
+  } catch (_e) {
+    return false;
+  }
+}
+
+/**
+ * SCRUM-890 · Esa firma ha llegado al servidor: la constancia de un rechazo anterior ya no es verdad.
+ * Best-effort: si no se puede borrar, el aviso sobra hasta la próxima firma buena, y eso no pierde nada.
+ */
+async function olvidarElRechazo(clave) {
+  if (typeof window.olvidarRechazoDeFirma !== 'function') return;
+  try { await window.olvidarRechazoDeFirma(clave); } catch (_e) { /* best-effort */ }
 }
 
 
@@ -303,12 +340,19 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
       if (elServidorYaLaTiene(r.error)) {
         // Ya está a salvo: sale de la cola igual que si la hubiéramos subido nosotros.
         const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
+        await olvidarElRechazo(firma.claveIdempotencia);
         if (quitada && quitada.estado === window.GUARDADO) yaEstaban += 1;
         else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la tiene y no se pudo sacar de la cola' });
         continue;
       }
       if (elServidorLaRechaza(r.error)) {
-        // SCRUM-890 · rechazada por el documento: el mismo no en cada apertura. Sale, y se DICE.
+        // SCRUM-890 · rechazada por el documento: el mismo no en cada apertura. Sale, y se DICE —
+        // primero la constancia y DESPUÉS fuera de la cola: al revés, un proceso que muera en medio
+        // deja un rechazo que no ve nadie.
+        if (!(await dejarConstanciaDelRechazo(firma, r.error.code))) {
+          fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la rechaza y no se pudo dejar constancia' });
+          continue;
+        }
         const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
         if (quitada && quitada.estado === window.GUARDADO) {
           rechazadas.push({ clave: firma.claveIdempotencia, codigo: r.error.code || null });
@@ -328,6 +372,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
 
     // CONFIRMADA. Sólo aquí sale de la cola.
     const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
+    await olvidarElRechazo(firma.claveIdempotencia);
     if (quitada && quitada.estado === window.GUARDADO) subidas += 1;
     else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'subió y no se pudo sacar de la cola' });
   }

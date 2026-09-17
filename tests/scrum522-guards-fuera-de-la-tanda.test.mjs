@@ -109,8 +109,12 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // real, así que la firma vacía de «3 opciones» no se ve sin navegador. Dibuja con el ratón y juzga
   // lo enviado con el criterio del servidor; el modo normal hace de control. Comprobado en rojo
   // quitando solo el cambio del lienzo: «3 opciones» 0×0 y 6 caracteres sin trazo.
-  assert.equal(fuera.length, 19,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ 19 → ${fuera.length}.\n`
+  // SCRUM-894 · 19 → 20: entra `guard:falta-en-otra-pestana`. PULSA, como 816: «Guardar cambios» de
+  // Configuración con un obligatorio vacío en otra pestaña. Solo un navegador valida formularios, y
+  // el fallo era justo eso: el navegador frenaba el envío y no podía señalar un campo oculto.
+  // Comprobado en rojo contra `018d1807` (17-sep-2026): 6 de 12 casos.
+  assert.equal(fuera.length, 20,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ 20 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
