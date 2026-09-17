@@ -324,6 +324,9 @@ const HALLAZGOS_DECLARADOS = [
   // test crea y borra, no el de este repositorio — mismo caso que `[show]` de este mismo fichero
   // y que `scrum839d`/`scrum839e`. Lo retira quien borre `scripts/equipo/sesion.mjs` o su banco.
   'tests/scrum899-sesion-lista-blanca.test.mjs [show]',
+  // SCRUM-899 (hito 2) · mismo caso: el banco de la tanda instala las copias con `git show
+  // origin/main:<fichero>` desde su repositorio SINTÉTICO del temporal. No es el `main` de nadie.
+  'tests/scrum899b-arranque-de-la-tanda.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -351,6 +354,9 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-839e · lo mismo: nombra `main` al montar sus repositorios sintéticos (y el remoto desnudo
   // del banco del job) y al pasárselo al CLI dentro de ellos. Ninguno es el `main` de este repositorio.
   'tests/scrum839e-solo-pr-armados.test.mjs',
+  // SCRUM-899 (hito 2) · nombra `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
+  // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
+  'tests/scrum899b-arranque-de-la-tanda.test.mjs',
   // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
   // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
   // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.

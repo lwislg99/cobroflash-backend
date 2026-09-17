@@ -4,6 +4,8 @@ import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MIS
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
 import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRUM-34
 import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
+import { tieneDescuentoGlobalConVariosIva } from '../invoicing/domain/invoiceLines.service'; // SCRUM-887
+import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import {
   numeroConRevision, vistaDeRevisiones,
   // SCRUM-688 · el llamador que faltaba: crear una revision de verdad.
@@ -499,6 +501,12 @@ export async function crearRevisionDeQuote(merchantId: number, id: number) {
         where: { id: vigente.id, merchantId },
         select: SELECT_PARA_REVISION,
       })) as Record<string, unknown> & { revision: number };
+
+  // SCRUM-887 · UNA REVISIÓN DE UN C NO SE CREA (comentarios 15697 y 15698): HEREDARÍA el global
+  // con varios tipos de IVA, que es justo lo que no se puede guardar ni facturar. Antes de escribir.
+  if (tieneDescuentoGlobalConVariosIva(origen as { lines?: unknown; discountGlobalAmount?: unknown })) {
+    throw new RevisionNoCreable(ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA);
+  }
 
   const siguiente = Math.max(...hermanas.map((q) => q.revision)) + 1;
   const datos = nuevaRevisionDe(origen as any, siguiente);
