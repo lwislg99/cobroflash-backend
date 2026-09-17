@@ -724,7 +724,7 @@
    * 🔴 SCRUM-890 (PR 2) · UNA FIRMA ENCOLADA QUE EL SERVIDOR RECHAZÓ AL VACIAR LA COLA, DICHO AQUÍ.
    *
    * El vaciado corre al abrir la app y nadie mira su resultado; la firma ya no está en la cola. Lo
-   * que queda es la constancia por documento que deja `colaDeFirmas.js` en IndexedDB, y que se borra
+   * que queda es la constancia por documento que deja `colaDeFirmas.js` en localStorage, y que se borra
    * cuando ese recuadro se vuelve a firmar con éxito.
    *
    * Sólo cuenta un recuadro SIN firmar: si el servidor dice que ya está firmado, el rechazo es viejo

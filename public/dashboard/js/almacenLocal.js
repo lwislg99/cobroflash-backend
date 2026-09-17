@@ -28,14 +28,9 @@
 
 // ── La base y sus dos almacenes ────────────────────────────────────────────────────────────
 const NOMBRE_BD = 'yaqu';
-const VERSION_BD = 2;
+const VERSION_BD = 1;
 const ALBARANES_PRECARGADOS = 'albaranesPrecargados';
 const FIRMAS_PENDIENTES = 'firmasPendientes';
-// SCRUM-890 · la constancia de una firma que el servidor RECHAZÓ al vaciar la cola. Es un almacén
-// aparte y no una entrada más de `firmasPendientes`: todo lo que lee la cola la CUENTA (el contador
-// de la home, el desalojo, el tope de espacio) y una constancia contada como firma pendiente sería
-// un aviso que miente y un drenado que la intenta subir.
-const FIRMAS_RECHAZADAS = 'firmasRechazadas';
 
 /**
  * Las cachés que son NUESTRAS, por prefijo.
@@ -103,6 +98,13 @@ const CLAVES_LOCALES = [
       + '`firmasPendientes` a propósito. Si la marca sobreviviera, al volver a entrar veríamos '
       + '«hubo cola» + «almacén vacío» y le diríamos al profesional que ha PERDIDO algo que '
       + 'borramos nosotros. Un aviso que grita en falso se ignora, y entonces no avisa del bueno.',
+  },
+  {
+    // SCRUM-890 · la constancia de una firma encolada que el servidor rechazó al vaciar la cola.
+    patron: /^yaqu_firma_rechazada_/, almacen: 'localStorage', purga: true,
+    motivo: 'SE PURGA: dice qué documento de qué cliente no llegó a firmarse en este móvil, y se '
+      + 'escribió para que lo lea ESTE profesional. Además el logout ya vacía `firmasPendientes`: '
+      + 'un aviso de «vuelve a firmar» de otra sesión sería un aviso sobre algo que ya no es suyo.',
   },
   {
     patron: /^yaqu_tips_shown$/, almacen: 'localStorage', purga: false,
@@ -182,16 +184,6 @@ const TRAMOS = {
     // decide H3, y adelantarlo sería inventar.
     bd.createObjectStore(FIRMAS_PENDIENTES, { keyPath: 'claveIdempotencia' });
   },
-  // SCRUM-890 · ADITIVO: crea `firmasRechazadas` y no toca los dos de arriba. Va por la MISMA clave
-  // que la firma (`firma:<tipo>:<id>`): una constancia por documento y por recuadro, y volver a
-  // rechazar el mismo sobrescribe en vez de apilar.
-  //
-  // ⚠️ Una pestaña con el JavaScript de antes (servido por el service worker) abre la base en la
-  // versión 1 y recibe `VersionError`: su almacén pasa a NO_DISPONIBLE hasta que recargue. Firma
-  // igual, sin red de seguridad — es el camino ya decidido para «sin almacén» (`colaDeFirmas.js`).
-  1: (bd) => {
-    bd.createObjectStore(FIRMAS_RECHAZADAS, { keyPath: 'clave' });
-  },
 };
 
 /**
@@ -253,7 +245,7 @@ function abrirAlmacen() {
 
     // SCRUM-890 · medido con dos pestañas en Chromium (17-sep): una conexión que no atiende
     // `versionchange` bloquea la subida de versión de otra pestaña. Y al rechazar por `blocked` la
-    // petición NO se cancela: la conexión llega después, y si nadie la cierra la próxima subida no
+    // petición NO se cancela: la conexión llega después, y si nadie la cierra la subida siguiente no
     // pasa mientras esta pestaña siga abierta. Toda conexión se cierra sola al pedirse otra versión,
     // también la que llega tarde.
     peticion.onsuccess = () => {
@@ -388,37 +380,74 @@ function leerFirmasPendientes() {
   });
 }
 
-/**
- * SCRUM-890 · Deja constancia de que el servidor rechazó la firma de un documento al vaciar la cola.
- * `{ clave, tipo, documentoId, codigo, rechazadaEn }`. GUARDADO sólo si la transacción confirmó.
- */
-function guardarRechazoDeFirma(rechazo) {
-  return conElAlmacen((bd) => escribirConfirmando(bd, FIRMAS_RECHAZADAS, rechazo));
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-890 · LA CONSTANCIA DE UNA FIRMA RECHAZADA AL VACIAR LA COLA
+//
+// Vive en `localStorage`, una clave por firma (`yaqu_firma_rechazada_<claveIdempotencia>`), y NO en
+// esta base. Medido el 17-sep con el dashboard de main: un almacén nuevo obliga a subir VERSION_BD, y
+// una pestaña que siga abierta con el JS de antes se queda sin almacén —`VersionError`— y un parte
+// firmado sin red cierra el pad y no queda en NINGUNA cola. Aquí no hay firma que perder: sólo un
+// aviso, sin datos del cliente.
+//
+// Tampoco va dentro de `firmasPendientes`: todo lo que lee la cola la CUENTA (el contador de la home,
+// el desalojo, el tope de espacio) y el drenado la intentaría subir.
+//
+// Mismos tres estados que el resto del fichero. `setItem` lanza con la cuota llena o en Safari
+// privado: eso es FALLO, y quien llama deja la firma en la cola.
+const PREFIJO_FIRMA_RECHAZADA = 'yaqu_firma_rechazada_';
+
+function teclasDelNavegador() {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage ? localStorage : null;
+  } catch (_e) {
+    return null;
+  }
 }
 
-/** SCRUM-890 · Las constancias de rechazo que hay en este móvil. */
-function leerRechazosDeFirma() {
-  return conElAlmacen(async (bd) => {
-    const r = await leerTodo(bd, FIRMAS_RECHAZADAS);
-    return { estado: r.estado, motivo: r.motivo, rechazos: r.datos || [] };
-  });
-}
-
-/** SCRUM-890 · Borra la constancia de UN documento: se llama cuando esa firma sube con éxito. */
-function olvidarRechazoDeFirma(clave) {
-  return conElAlmacen((bd) => new Promise((resolve) => {
-    let tx;
-    try {
-      tx = bd.transaction(FIRMAS_RECHAZADAS, 'readwrite');
-      tx.objectStore(FIRMAS_RECHAZADAS).delete(clave);
-    } catch (e) {
-      resolve({ estado: FALLO, motivo: String((e && e.message) || e) });
-      return;
+/** `{ clave, tipo, documentoId, codigo, rechazadaEn }`. GUARDADO sólo si quedó escrita y se relee. */
+async function guardarRechazoDeFirma(rechazo) {
+  const teclas = teclasDelNavegador();
+  if (!teclas) return { estado: NO_DISPONIBLE, motivo: 'este navegador no ofrece localStorage' };
+  if (!rechazo || !rechazo.clave) return { estado: FALLO, motivo: 'constancia sin clave' };
+  try {
+    const valor = JSON.stringify(rechazo);
+    teclas.setItem(PREFIJO_FIRMA_RECHAZADA + rechazo.clave, valor);
+    if (teclas.getItem(PREFIJO_FIRMA_RECHAZADA + rechazo.clave) !== valor) {
+      return { estado: FALLO, motivo: 'la constancia no se relee igual que se escribió' };
     }
-    tx.oncomplete = () => resolve({ estado: GUARDADO });
-    tx.onabort = () => resolve({ estado: FALLO, motivo: 'transacción abortada' });
-    tx.onerror = () => resolve({ estado: FALLO, motivo: 'error en la transacción' });
-  }));
+    return { estado: GUARDADO };
+  } catch (e) {
+    return { estado: FALLO, motivo: String((e && e.message) || e) };
+  }
+}
+
+/** Las constancias de rechazo que hay en este móvil. */
+async function leerRechazosDeFirma() {
+  const teclas = teclasDelNavegador();
+  if (!teclas) return { estado: NO_DISPONIBLE, motivo: 'este navegador no ofrece localStorage', rechazos: [] };
+  try {
+    const rechazos = [];
+    for (let i = 0; i < teclas.length; i += 1) {
+      const k = teclas.key(i);
+      if (typeof k !== 'string' || !k.startsWith(PREFIJO_FIRMA_RECHAZADA)) continue;
+      try { rechazos.push(JSON.parse(teclas.getItem(k))); } catch (_e) { /* ilegible: no se afirma nada */ }
+    }
+    return { estado: GUARDADO, rechazos };
+  } catch (e) {
+    return { estado: FALLO, motivo: String((e && e.message) || e), rechazos: [] };
+  }
+}
+
+/** Borra la constancia de UNA firma: se llama cuando esa firma sube con éxito. */
+async function olvidarRechazoDeFirma(clave) {
+  const teclas = teclasDelNavegador();
+  if (!teclas) return { estado: NO_DISPONIBLE, motivo: 'este navegador no ofrece localStorage' };
+  try {
+    teclas.removeItem(PREFIJO_FIRMA_RECHAZADA + clave);
+    return { estado: GUARDADO };
+  } catch (e) {
+    return { estado: FALLO, motivo: String((e && e.message) || e) };
+  }
 }
 
 /** Guarda un albarán precargado. QUÉ se precarga y cuándo es de SCRUM-357 fase 2. */
@@ -447,7 +476,7 @@ function leerAlbaranesPrecargados() {
  * SE BORRA LO NUESTRO POR SU NOMBRE, no «todo»:
  *   · las claves de `localStorage`/`sessionStorage` del registro `CLAVES_LOCALES` (SCRUM-457), no
  *     `localStorage.clear()`;
- *   · los almacenes con `clear()` (los tres desde SCRUM-890), uno a uno — no `deleteDatabase`, que se lleva por delante
+ *   · los dos almacenes con `clear()`, uno a uno — no `deleteDatabase`, que se lleva por delante
  *     cualquier almacén que otro ticket añada a esta misma base sin enterarse;
  *   · las cachés con el prefijo `yaqu-`, no `caches.keys()` entero.
  *
@@ -504,7 +533,7 @@ async function purgarDatosLocales() {
   }
 
   const enAlmacen = await conElAlmacen((bd) => new Promise((resolve) => {
-    const nombres = [ALBARANES_PRECARGADOS, FIRMAS_PENDIENTES, FIRMAS_RECHAZADAS].filter(
+    const nombres = [ALBARANES_PRECARGADOS, FIRMAS_PENDIENTES].filter(
       (n) => bd.objectStoreNames.contains(n),
     );
     if (!nombres.length) { resolve({ estado: GUARDADO, vaciados: [] }); return; }
@@ -637,7 +666,6 @@ window.NO_DISPONIBLE = NO_DISPONIBLE;
 window.FALLO = FALLO;
 window.ALBARANES_PRECARGADOS = ALBARANES_PRECARGADOS;
 window.FIRMAS_PENDIENTES = FIRMAS_PENDIENTES;
-window.FIRMAS_RECHAZADAS = FIRMAS_RECHAZADAS;   // SCRUM-890
 window.NOMBRE_BD = NOMBRE_BD;
 window.VERSION_BD = VERSION_BD;
 window.TRAMOS = TRAMOS;

@@ -252,6 +252,8 @@ const RECHAZOS_DEFINITIVOS = [
   '400:calidad_firmante_invalida',
   '400:calidad_firmante_otro_vacio',
   '413:firma_demasiado_grande',
+  // SCRUM-890 (com. 15668/15670) · depende sólo de lo que viaja en la cola: reintentar no lo cambia.
+  '400:invalid_id',
 ];
 
 function elServidorLaRechaza(error) {
