@@ -219,14 +219,25 @@ test('SCRUM-290 · el presupuesto se consulta filtrando por merchant (regla 2)',
   assert.ok(where && 'merchantId' in where, '🔴 la consulta del presupuesto NO filtra por merchantId');
 });
 
-test('SCRUM-290 · TODO el texto de pantalla sigue con el marcador (regla 30)', async () => {
-  // La microcopy está bloqueada por `docs/legal/PREGUNTAS_ASESOR.md` §G — un texto que le dice a
-  // un profesional qué puede cobrar no se escribe sobre fuentes públicas. Si alguien la rellena
-  // sin que vuelva el asesor, esto cae.
+// ⚠️ SCRUM-895 (17-sep-2026) · ESTE TEST DECÍA «TODO el texto de pantalla sigue con el marcador»
+// Y ESA AFIRMACIÓN YA NO ES CIERTA — no porque nadie la eludiera, sino porque el fundador FIRMÓ
+// dos de estos mensajes (comentario 15699) y aceptó expresamente que la pregunta 25 del asesor
+// **no les alcanza**: dicen el ESTADO DEL DOCUMENTO, no qué se le puede cobrar a un cliente, que
+// es lo que §G protege.
+//
+// Así que aquí se comprueba lo que sí es verdad hoy: que la puerta firmada devuelve su literal.
+// El deber que este test llevaba —que no entre texto sin aprobar— NO se ha aflojado: lo cubre
+// ahora `tests/scrum895b-literales-firmados.test.mjs`, y más apretado, porque cuenta los CUATRO
+// usos que quedan y exige que el que sigue parado (`facturacion_no_disponible`) conserve su
+// marcador.
+test('SCRUM-290/895 · la puerta firmada devuelve su literal, no el marcador (regla 30)', async () => {
   montar({ albaran: { ...ALBARAN_FIRMADO, estado: 'emitido' } });
   const r = await invocar(REQ());
-  assert.equal(r.body.message, '[PENDIENTE microcopy oficial]',
-    '🔴 hay microcopy escrita sin aprobar en una ruta que decide qué se le puede cobrar a un cliente');
+  assert.equal(r.body.error, 'albaran_no_firmado');
+  assert.equal(r.body.message, 'Este parte todavía no está firmado. Solo se factura lo que el cliente ha firmado.',
+    '🔴 el mensaje no es el literal que firmó el fundador (SCRUM-895, comentario 15699), carácter\n' +
+    '  por carácter. Si ha vuelto el marcador, se ha revertido un texto aprobado; si es otro texto,\n' +
+    '  se ha escrito microcopy sin firma en una ruta que decide qué se le puede cobrar a un cliente.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════

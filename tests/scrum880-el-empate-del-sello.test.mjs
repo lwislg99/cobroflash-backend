@@ -1,59 +1,71 @@
-// tests/scrum880-el-empate-del-sello.test.mjs — SCRUM-880
+// tests/scrum880-el-empate-del-sello.test.mjs — SCRUM-880 (fases a y c)
 //
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-// ⛔ STOP FISCAL: ESTE FICHERO MIDE. NO ARREGLA NADA.
+// LA CADENA SE BIFURCABA CUANDO UN ALTA Y SU ANULACIÓN CAÍAN EN EL MISMO SEGUNDO.
 //
-// SCRUM-880 lleva un STOP escrito: modificar el camino de emisión exige GO del fundador
-// (regla 38). **Aquí no se modifica ni una línea del camino**: se le llama con un cliente de
-// mentira y se observa qué decide. Leer el camino de emisión NO es un STOP; escribirlo sí.
+// El defecto tenía dos mitades y el GO del fundador arregló las dos:
 //
-// ── EL DEFECTO, RE-LEÍDO EN LA FUENTE Y NO HEREDADO ────────────────────────────────────────
+//   **A · el criterio.** `ultimaHuellaDeLaCadena` desempataba con `>` ESTRICTO, así que en un
+//     empate ganaba el ALTA, el registro siguiente encadenaba a ella y la huella de la anulación
+//     quedaba huérfana. Ahora es `>=`: una anulación es SIEMPRE posterior a su alta.
 //
-// `ultimaHuellaDeLaCadena` desempata el último eslabón así (`verifactu.service.ts:481`):
+//   **B · lo que se guarda.** Los dos sellos se persistían como `new Date(formatFechaHoraHuso(…))`
+//     —la cadena ya truncada al segundo, re-parseada—, así que los milisegundos guardados eran
+//     siempre 0 y dos registros del mismo segundo eran indistinguibles. Ahora se guarda el
+//     instante entero; la huella sigue hasheando el truncado que exige la AEAT.
 //
-//     return tAnul > tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;
+// ── 🔴 A Y B SE PRUEBAN POR SEPARADO ───────────────────────────────────────────────────────
 //
-// Con `>` ESTRICTO, el empate cae del lado del ALTA. Y el empate es posible porque los dos sellos
-// se persisten como `new Date(formatFechaHoraHuso(new Date()))` (`:326`/`:348` y `:410`/`:427`), y
-// ese formateador **trunca al segundo** (`:66-75`): los milisegundos guardados son SIEMPRE 0.
+// Son dos arreglos, y un test que sólo pasara con los dos puestos no diría cuál hace el trabajo.
+//   · **A** se prueba con sellos EMPATADOS puestos a mano en el banco — como los tiene cualquier
+//     registro sellado antes de B. No depende de B en absoluto.
+//   · **B** se prueba capturando lo que el camino real ESCRIBE, sin mirar el desempate.
 //
-//   >>> Dos registros del mismo segundo son INDISTINGUIBLES para ese desempate. <<<
-//
-// Consecuencia: si una anulación se sella en el mismo segundo que su alta, el siguiente registro
-// encadena al ALTA y la huella de la anulación queda huérfana — **la cadena se bifurca**.
-//
-// ── 🔴 Y LA PREGUNTA DEL TICKET ESTÁ MAL PLANTEADA, MEDIDO ─────────────────────────────────
-//
-// El ticket deduce que en staging «no empata» **por la latencia**. La latencia no es la variable:
-// el empate no depende de cuánto tarde, sino de si los dos instantes caen **en el mismo segundo
-// de reloj**. Dos sellos separados por 1 ms en un cambio de segundo NO empatan; dos separados por
-// 900 ms dentro del mismo segundo SÍ. Lo que la latencia mueve es la PROBABILIDAD, no el hecho —
-// y eso se mide aquí abajo, no se deduce.
+// ⛔ NO se toca el `sort` de la construcción del XML: SCRUM-880 midió que está tapiado porque su
+// único consumidor (`anulacionPrev`) busca POR HUELLA desde SCRUM-145d. Dos comparaciones con la
+// misma debilidad, una sola puerta abierta — y esa puerta es la que se ha cerrado aquí.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  formatFechaHoraHuso, applyVeriFactuAnulacion,
+  formatFechaHoraHuso, applyVeriFactuAnulacion, computeVeriFactuHashAnulacion,
 } from '../dist/modules/invoicing/domain/verifactu.service.js';
 
 const NIF = '89890001K';
 const MERCHANT = 1;
+const HUELLA_DEL_ALTA = 'A'.repeat(64);
+const HUELLA_DE_LA_ANULACION = 'B'.repeat(64);
 
-/** El sello tal y como se PERSISTE: por el formateador real, no reconstruido a mano. */
-function selloPersistido(d) {
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Devolver el `>` estricto: el empate volvería a ganarlo el alta y la cadena a bifurcarse.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: '  return tAnul >= tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;',
+    a: '  return tAnul > tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;',
+    cae: 'SCRUM-880c · 🔴 A · EL QUE DECIDE: con el empate, la cadena YA NO se bifurca',
+  },
+  {
+    // Volver a guardar el sello truncado: los milisegundos desaparecerían otra vez.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: '      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: ahora },',
+    a: '      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: new Date(timestamp) },',
+    cae: 'SCRUM-880c · 🔴 B · el sello que se ESCRIBE conserva los milisegundos',
+  },
+];
+
+/** El sello tal y como se persistía ANTES de B: por el formateador real, no reconstruido a mano. */
+function selloTruncado(d) {
   return new Date(formatFechaHoraHuso(d));
 }
 
 /**
  * Un `prismaClient` de mentira que entiende EXACTAMENTE las dos consultas de
- * `ultimaHuellaDeLaCadena` y nada más.
- *
- * 🔴 LO QUE NO ENTIENDE, REVIENTA. Es deliberado: un doble que ignora en silencio un filtro que
- * no sabe interpretar contesta otra pregunta y el banco mide algo que no es. Mejor que se caiga
- * ruidosamente el día que la consulta real cambie.
+ * `ultimaHuellaDeLaCadena` y nada más. Lo que no entiende, revienta: un doble que ignora en
+ * silencio un filtro contesta otra pregunta y el banco mide algo que no es.
  */
 function bancoDeCadena(filas) {
   const tabla = filas.map((f) => ({ ...f }));
+  const escrituras = [];
 
   const findFirst = async ({ where, orderBy, select }) => {
     const claves = Object.keys(where).sort().join(',');
@@ -81,36 +93,40 @@ function bancoDeCadena(filas) {
   };
 
   const tx = {
-    $executeRaw: async () => 0,          // el advisory lock: aquí no hay concurrencia que serializar
+    $executeRaw: async () => 0,
     invoice: {
       findFirst,
       update: async ({ where, data }) => {
         const fila = tabla.find((r) => r.id === where.id);
         if (!fila) throw new Error('🔴 el banco no tiene la fila que se actualiza.');
+        escrituras.push({ id: where.id, ...data });
         Object.assign(fila, data);
         return fila;
       },
     },
   };
-  return { cliente: { $transaction: async (fn) => fn(tx), ...tx }, tabla };
+  return { cliente: { $transaction: async (fn) => fn(tx), ...tx }, tabla, escrituras };
 }
 
-/** Una cadena con un ALTA y una ANULACIÓN sellados con la separación que se pida. */
-function cadenaCon(separacionMs, base = new Date('2026-09-17T12:00:00.400+01:00')) {
+/**
+ * Una cadena con un ALTA y una ANULACIÓN cuyos sellos guardados llevan la separación que se pida,
+ * **truncados al segundo** — o sea, exactamente como los tiene cualquier registro sellado antes
+ * de B. Es el banco con el que se prueba A sin depender de B.
+ */
+function cadenaConSellosViejos(separacionMs, base = new Date('2026-09-17T12:00:00.400+01:00')) {
   const tAlta = base;
   const tAnul = new Date(base.getTime() + separacionMs);
   return bancoDeCadena([
     {
       id: 1, merchantId: MERCHANT, number: 'F-0001', createdAt: tAlta,
-      vfHash: 'A'.repeat(64), vfTimestamp: selloPersistido(tAlta),
+      vfHash: HUELLA_DEL_ALTA, vfTimestamp: selloTruncado(tAlta),
       vfAnulHash: null, vfAnulTimestamp: null,
     },
     {
       id: 2, merchantId: MERCHANT, number: 'F-0002', createdAt: tAnul,
       vfHash: null, vfTimestamp: null,
-      vfAnulHash: 'B'.repeat(64), vfAnulTimestamp: selloPersistido(tAnul),
+      vfAnulHash: HUELLA_DE_LA_ANULACION, vfAnulTimestamp: selloTruncado(tAnul),
     },
-    // La factura que va a encadenar detrás: es la que revela a cuál de los dos se enganchó.
     {
       id: 3, merchantId: MERCHANT, number: 'F-0003', createdAt: new Date(tAnul.getTime() + 5000),
       vfHash: null, vfTimestamp: null, vfAnulHash: null, vfAnulTimestamp: null,
@@ -118,93 +134,132 @@ function cadenaCon(separacionMs, base = new Date('2026-09-17T12:00:00.400+01:00'
   ]);
 }
 
-const HUELLA_DEL_ALTA = 'A'.repeat(64);
-const HUELLA_DE_LA_ANULACION = 'B'.repeat(64);
+const tercera = (tabla) => ({ id: 3, number: 'F-0003', createdAt: tabla[2].createdAt, merchantId: MERCHANT });
 
-// ═══ 🔴 CONTROL POSITIVO OBLIGATORIO: el banco SABE producir un empate ═══════════════════════
+// ═══ A · 🔴 EL QUE DECIDE ═══════════════════════════════════════════════════════════════════
 
-test('SCRUM-880 · 🔴 CONTROL POSITIVO: el banco SABE producir dos sellos en el MISMO segundo', () => {
-  const base = new Date('2026-09-17T12:00:00.400+01:00');
-  const a = selloPersistido(base);
-  const b = selloPersistido(new Date(base.getTime() + 300));
+test('SCRUM-880c · 🔴 A · EL QUE DECIDE: con el empate, la cadena YA NO se bifurca', async () => {
+  const { cliente, tabla } = cadenaConSellosViejos(300);
 
-  assert.equal(a.getTime(), b.getTime(),
-    '🔴 EL BANCO NO SABE PRODUCIR UN EMPATE. Dos instantes separados por 300 ms dentro del mismo '
-    + 'segundo tendrían que guardarse con el MISMO sello, porque `formatFechaHoraHuso` trunca al '
-    + 'segundo. Si no empatan, todo lo que este fichero mida después es el suelo del experimento '
-    + 'y no un resultado: un «no ocurre» que sólo dice que no supe provocarlo.');
-  assert.equal(a.getMilliseconds(), 0,
-    '🔴 el sello persistido conserva milisegundos: la premisa del ticket ha dejado de ser cierta '
-    + 'y hay que rehacer esta medición entera.');
-});
-
-// ═══ 🔴 EL DEFECTO, EJERCITANDO EL CAMINO REAL ══════════════════════════════════════════════
-
-test('SCRUM-880 · 🔴 EL EMPATE BIFURCA: con alta y anulación en el mismo segundo, se encadena al ALTA', async () => {
-  const { cliente, tabla } = cadenaCon(300);
-
-  // Primero: que el empate exista de verdad en los datos del banco, no sólo en la intención.
+  // 🔴 SUELO DEL EXPERIMENTO: el banco tiene que SABER producir el empate. Si no lo produce, todo
+  // lo que venga después no prueba que el arreglo funcione — prueba que no supe provocar el caso.
   assert.equal(tabla[0].vfTimestamp.getTime(), tabla[1].vfAnulTimestamp.getTime(),
-    '🔴 los dos sellos NO empatan en este banco: el caso no está montado y el resultado no vale.');
+    '🔴 EL BANCO NO HA PRODUCIDO EL EMPATE y sin empate este control no mide nada. Dos instantes '
+    + 'separados 300 ms dentro del mismo segundo tendrían que dar el MISMO sello truncado. Éste '
+    + 'sería el suelo del experimento, no una prueba de que el arreglo funciona.');
+  assert.equal(tabla[0].vfTimestamp.getMilliseconds(), 0,
+    '🔴 los sellos del banco llevan milisegundos: no reproducen los registros de antes de B.');
 
-  const { vfPrevHash } = await applyVeriFactuAnulacion(
-    { id: 3, number: 'F-0003', createdAt: tabla[2].createdAt, merchantId: MERCHANT }, NIF, cliente,
-  );
+  const { vfPrevHash } = await applyVeriFactuAnulacion(tercera(tabla), NIF, cliente);
 
-  assert.equal(vfPrevHash, HUELLA_DEL_ALTA,
-    '🔴 la premisa del ticket ha dejado de ser cierta: con el empate, el siguiente registro YA NO '
-    + 'encadena al alta. Si se arregló por otra vía, este control sobra y hay que rehacerlo — no '
-    + 'relajarlo.');
-  assert.notEqual(vfPrevHash, HUELLA_DE_LA_ANULACION,
-    '🔴 (imposible: el mismo valor no puede ser los dos)');
-});
-
-test('SCRUM-880 · ✅ CONTROL NEGATIVO: en segundos distintos encadena a la ANULACIÓN, que es lo correcto', async () => {
-  const { cliente, tabla } = cadenaCon(1000);
-  assert.notEqual(tabla[0].vfTimestamp.getTime(), tabla[1].vfAnulTimestamp.getTime(),
-    '🔴 con 1000 ms de separación los sellos siguen empatando: el control negativo no lo es.');
-
-  const { vfPrevHash } = await applyVeriFactuAnulacion(
-    { id: 3, number: 'F-0003', createdAt: tabla[2].createdAt, merchantId: MERCHANT }, NIF, cliente,
-  );
   assert.equal(vfPrevHash, HUELLA_DE_LA_ANULACION,
-    '🔴 con los sellos separados tampoco encadena a la anulación: entonces el defecto no es el '
-    + 'empate y esta medición señala al sitio equivocado.');
+    '🔴 CON EL EMPATE, LA CADENA SIGUE ENCADENANDO AL ALTA. Una anulación es siempre posterior a '
+    + 'su alta, así que en empate debe ganar la anulación: si gana el alta, la huella de la '
+    + 'anulación queda huérfana y la cadena se BIFURCA. Se arregla con `>=` en '
+    + '`ultimaHuellaDeLaCadena`, no bajando esta exigencia.');
 });
 
-// ═══ 🔴 CON QUÉ SEPARACIÓN DEJA DE OCURRIR — medido, no deducido de la latencia ══════════════
+test('SCRUM-880c · ✅ A · VERDE REAL: el `>=` no hace ganar SIEMPRE a la anulación', async () => {
+  // 🔴 LA RAMA QUE TIENE QUE RESPONDER DISTINTO. Con la anulación sellada ANTES que el alta, el
+  // último eslabón es el ALTA y ahí tiene que encadenar. Sin este caso, un `>=` mal escrito como
+  // «la anulación gana siempre» pasaría el control de arriba y nadie lo notaría.
+  const { cliente, tabla } = cadenaConSellosViejos(-2000);
+  assert.ok(tabla[1].vfAnulTimestamp.getTime() < tabla[0].vfTimestamp.getTime(),
+    '🔴 la anulación no ha quedado ANTES que el alta: este control no es el contrario del otro.');
 
-test('SCRUM-880 · 🔴 no es la LATENCIA: es el cambio de segundo, y se mide', (t) => {
-  // Se recorre el segundo entero: para cada milisegundo de inicio dentro del segundo y cada
-  // separación, ¿empatan los sellos persistidos? La respuesta no depende del tiempo transcurrido
-  // sino de si se cruza la frontera del segundo.
-  const SEPARACIONES = [0, 1, 50, 100, 250, 500, 750, 900, 999, 1000, 1500];
+  const { vfPrevHash } = await applyVeriFactuAnulacion(tercera(tabla), NIF, cliente);
+  assert.equal(vfPrevHash, HUELLA_DEL_ALTA,
+    '🔴 con la anulación sellada ANTES, la cadena encadena a la anulación igualmente. Entonces el '
+    + 'desempate no compara nada: la anulación gana siempre y el `>=` es un `true` disfrazado.');
+});
+
+test('SCRUM-880c · 🔴 A · MUTACIÓN: devolver el `>` estricto reabre la bifurcación, y ENTRA', () => {
+  // El ancla se cuenta ANTES de sustituir: una mutación que no entra y un guard que no detecta
+  // dan exactamente la misma salida.
+  const empatados = [0, 300, 999];
+  for (const sep of empatados) {
+    const base = new Date('2026-09-17T12:00:00.000+01:00');
+    const tAlta = selloTruncado(base).getTime();
+    const tAnul = selloTruncado(new Date(base.getTime() + sep)).getTime();
+    assert.equal(tAnul, tAlta, `🔴 con ${sep} ms los sellos truncados ya no empatan.`);
+    // El criterio viejo y el nuevo, sobre el MISMO empate, tienen que dar respuestas DISTINTAS.
+    assert.equal(tAnul > tAlta, false, '🔴 el criterio viejo (`>`) no daría el alta en empate.');
+    assert.equal(tAnul >= tAlta, true, '🔴 el criterio nuevo (`>=`) no daría la anulación en empate.');
+  }
+});
+
+// ═══ B · 🔴 LO QUE SE ESCRIBE ═══════════════════════════════════════════════════════════════
+
+test('SCRUM-880c · 🔴 B · el sello que se ESCRIBE conserva los milisegundos', async () => {
+  // Se mira lo que el camino real ESCRIBE, no a quién encadena: esto prueba B sin tocar A.
+  const CUANTAS = 50;
+  const sellos = [];
+  for (let i = 0; i < CUANTAS; i++) {
+    const { cliente, tabla, escrituras } = cadenaConSellosViejos(5000);
+    await applyVeriFactuAnulacion(tercera(tabla), NIF, cliente);
+    const escrito = escrituras.find((e) => e.vfAnulTimestamp);
+    assert.ok(escrito, '🔴 el camino no ha escrito ningún `vfAnulTimestamp`: no hay nada que medir.');
+    sellos.push(escrito.vfAnulTimestamp);
+  }
+
+  const conMilis = sellos.filter((d) => d.getMilliseconds() !== 0).length;
+  assert.ok(conMilis > 0,
+    `🔴 LOS ${CUANTAS} SELLOS ESCRITOS LLEVAN LOS MILISEGUNDOS A CERO. Eso es lo que hacía el `
+    + 'código de antes (`new Date(formatFechaHoraHuso(new Date()))`, la cadena truncada '
+    + 're-parseada). Que salgan los 50 a cero por azar tiene probabilidad 1e-150: lo que hay es '
+    + 'que el sello se está volviendo a truncar al guardarlo.');
+});
+
+test('SCRUM-880c · 🔴 B · y la HUELLA sigue siendo recomputable desde el sello guardado', async () => {
+  // 🔴 LA INVARIANTE QUE NO SE PUEDE ROMPER. SCRUM-145 persiste el sello para que un tercero pueda
+  // recomputar la huella. Guardar MÁS precisión de la que entró en el hash sólo es legítimo si al
+  // truncar vuelve a salir exactamente la misma cadena — y eso se comprueba recomputando la
+  // huella de verdad, no razonando sobre ella.
+  for (let i = 0; i < 20; i++) {
+    const { cliente, tabla, escrituras } = cadenaConSellosViejos(5000);
+    const { vfAnulHash, vfPrevHash } = await applyVeriFactuAnulacion(tercera(tabla), NIF, cliente);
+    const escrito = escrituras.find((e) => e.vfAnulTimestamp);
+
+    const recomputada = computeVeriFactuHashAnulacion({
+      nif: NIF,
+      serie: 'F-0003',
+      fecha: `${String(tabla[2].createdAt.getDate()).padStart(2, '0')}-`
+        + `${String(tabla[2].createdAt.getMonth() + 1).padStart(2, '0')}-${tabla[2].createdAt.getFullYear()}`,
+      prevHash: vfPrevHash,
+      timestamp: formatFechaHoraHuso(escrito.vfAnulTimestamp),
+    });
+    assert.equal(recomputada, vfAnulHash,
+      '🔴 LA HUELLA YA NO SE PUEDE RECOMPUTAR DESDE EL SELLO GUARDADO. Guardar el instante con '
+      + 'milisegundos sólo vale si `formatFechaHoraHuso` del sello persistido devuelve la MISMA '
+      + 'cadena que se hasheó. Si no coincide, un tercero no puede verificar el registro y hay '
+      + 'que revertir B — no relajar esta comprobación.');
+  }
+});
+
+// ═══ EL MECANISMO, que sigue siendo cierto sobre la CADENA QUE SE HASHEA ════════════════════
+
+test('SCRUM-880 · 🔴 la huella se sigue truncando al segundo, y por eso `>=` no sobra', (t) => {
+  // Esto ya no describe el sello GUARDADO —B se lo llevó— sino la cadena que entra en la huella,
+  // que la AEAT exige truncada. Se conserva porque explica por qué A sigue haciendo falta: los
+  // registros sellados ANTES de B tienen los milisegundos a cero para siempre.
+  const SEPARACIONES = [0, 250, 500, 900, 999, 1000];
   const filas = [];
   for (const sep of SEPARACIONES) {
     let empates = 0;
     for (let ms = 0; ms < 1000; ms += 1) {
       const base = new Date(Date.UTC(2026, 8, 17, 10, 0, 0, ms));
-      if (selloPersistido(base).getTime() === selloPersistido(new Date(base.getTime() + sep)).getTime()) empates += 1;
+      if (selloTruncado(base).getTime() === selloTruncado(new Date(base.getTime() + sep)).getTime()) empates += 1;
     }
-    filas.push({ sep, empates, pct: (empates / 10).toFixed(1) });
+    filas.push({ sep, empates });
   }
-  for (const f of filas) t.diagnostic(`  separación ${String(f.sep).padStart(4)} ms → empata en ${String(f.empates).padStart(4)}/1000 arranques (${f.pct} %)`);
+  for (const f of filas) t.diagnostic(`  separación ${String(f.sep).padStart(4)} ms → la cadena hasheada empata en ${String(f.empates).padStart(4)}/1000 arranques`);
 
-  const a0 = filas.find((f) => f.sep === 0);
-  assert.equal(a0.empates, 1000,
-    '🔴 con separación CERO no empata siempre: el truncado al segundo ha dejado de ser tal.');
-
-  const mil = filas.find((f) => f.sep === 1000);
-  assert.equal(mil.empates, 0,
-    `🔴 con 1000 ms de separación todavía empata en ${mil.empates} de 1000 arranques. El umbral `
-    + 'medido deja de ser un segundo exacto y la propuesta de arreglo tendría que revisarse.');
-
-  // 🔴 LO QUE DESMONTA EL «SE DEDUCE DE LA LATENCIA»: con 999 ms —casi un segundo entero— todavía
-  // empata en una parte de los arranques. Una latencia alta NO es una garantía.
-  const casi = filas.find((f) => f.sep === 999);
-  assert.ok(casi.empates > 0,
-    '🔴 con 999 ms ya no empata nunca: entonces sí bastaría con mirar la latencia, y la premisa '
-    + 'de esta medición sería falsa.');
-  t.diagnostic(`  🔴 con 999 ms de separación todavía empata en ${casi.empates}/1000 arranques `
-    + '(sólo salvan los que cruzan la frontera del segundo)');
+  assert.equal(filas.find((f) => f.sep === 0).empates, 1000,
+    '🔴 con separación CERO la cadena hasheada no empata siempre: el truncado al segundo que exige '
+    + 'la AEAT ha dejado de aplicarse, y eso cambiaría TODAS las huellas.');
+  assert.equal(filas.find((f) => f.sep === 1000).empates, 0,
+    '🔴 con 1000 ms todavía empata: el umbral medido deja de ser un segundo exacto.');
+  assert.ok(filas.find((f) => f.sep === 900).empates > 0,
+    '🔴 con 900 ms ya no empata nunca: entonces bastaría con mirar la latencia, y la medición que '
+    + 'justificó este arreglo sería falsa.');
 });

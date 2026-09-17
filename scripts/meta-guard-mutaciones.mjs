@@ -304,6 +304,37 @@ export function paso(resultado, nombre) {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-908 · POR QUÉ no cayó. «No cayó» tapa CUATRO cosas que no son la misma.
+ *
+ * El veredicto MUDO se calcula con `cayo()`, que sólo sabe decir sí o no. Y detrás de ese «no»
+ * caben cuatro situaciones con arreglos opuestos:
+ *
+ *   · el test CORRIÓ y PASÓ ....... el aserto no ve el defecto. Es la mudez de verdad.
+ *   · el test salió SALTADO ....... no llegó a correr: eso es CEGUERA disfrazada de mudez, que
+ *     es exactamente lo que SCRUM-754c vino a separar.
+ *   · el test NO APARECE .......... ni pasó ni cayó ni se saltó: se perdió el evento, o el
+ *     fichero murió a medias. Acusar al guard aquí es acusar a un inocente.
+ *   · cayó con OTRO nombre ........ `cayo()` casa por FRAGMENTO; si el título cambió, el
+ *     instrumento mira donde ya no hay nada.
+ *
+ * 🔴 ESTO NO CAMBIA NINGÚN VEREDICTO: es texto para el mensaje que ya existía. Se añade porque
+ * SCRUM-908 midió una muda INTERMITENTE en CI —3 de 38 runs— que no reproduce en local (50
+ * pasadas, cero), y en CI **el log no se puede leer sin credenciales**. Lo que no diga este
+ * mensaje no lo sabrá nadie, y la siguiente sesión vuelve a empezar de cero.
+ *
+ * PURA a propósito: se ejercita en `npm test` en milisegundos, sin mutar nada.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function porQueNoCayo(tras, nombre) {
+  if ((tras?.pasados || []).some((n) => n.includes(nombre))) return 'PASÓ (corrió y no falló)';
+  if ((tras?.saltados || []).some((x) => String(x?.nombre || '').includes(nombre))) {
+    return 'SALTADO (no llegó a correr: esto es ceguera, no mudez)';
+  }
+  return 'NO APARECE en la pasada mutada (evento perdido, fichero muerto a medias, o el título cambió)';
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
  * 🔴 SCRUM-784 · EL CUARTO VEREDICTO: «EL FICHERO MURIÓ AL MUTAR».
  *
  * `cayo()` busca el nombre declarado entre los caídos. Cuando el RADIO de una mutación mata el
@@ -785,7 +816,19 @@ export async function aplicarUna(mut, guard, limpia) {
           + 'Acota la mutación, o declara otra que produzca el mismo defecto sin tumbar el proceso.',
       };
     } else {
-      resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»` };
+      // 🔴 SCRUM-908 · LA MUDA SE EXPLICA SOLA, o el siguiente que la vea vuelve a empezar de cero.
+      //
+      // «No cayó» tiene CUATRO causas que se leen igual y no lo son: el test corrió y pasó (el
+      // aserto no ve el defecto), salió SALTADO (no corrió: eso es ceguera, no mudez), NO APARECE
+      // en la pasada (evento perdido o fichero muerto a medias), o cayó con otro nombre. En CI el
+      // log no se puede leer sin credenciales, así que lo que no diga este mensaje no lo sabrá
+      // nadie. Esto AÑADE información y no cambia el veredicto.
+      const donde = porQueNoCayo(tras, mut.cae);
+      resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»`
+        + `\n    → en la pasada MUTADA ese test: ${donde}.`
+        + ` Recuento: ${(tras?.pasados || []).length} pasados · ${(tras?.caidos || []).length} caídos`
+        + ` · ${(tras?.saltados || []).length} saltados.`
+        + ` Y en la LIMPIA: ${(limpia?.pasados || []).length} pasados · ${(limpia?.caidos || []).length} caídos.` };
     }
   } finally {
     const sinRestaurar = restaurarYVerificar(piezas);
