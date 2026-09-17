@@ -207,3 +207,103 @@ Ninguna de las tres cosas la encontró nadie más. Las tres habrían salido como
 - **No ha mirado `public/`**, que no estaba en el alcance; ahí manda `SCRUM-387`.
 - **No ha implementado** la propuesta del §4: el enunciado pide proponer, no construir.
 - **No ha resuelto** qué cuenta de Jira es el fundador. Es la pregunta del §4.
+
+---
+
+# SCRUM-921b · Las 27 sin respaldo, clasificadas contra Jira y el máster
+
+**Medido contra:** `origin/main` = `71c845c92c50c5daff5afa1f3be7c5fe0645de86` · 2026-09-17T18:49:23Z
+
+Fase b. La fase a dejó escrito *«el censo está completo; la clasificación, no»*, y eso es lo que
+cierra esta fase — **sólo para las 27**, que son las accionables. Los 401 tickets citados por el
+resto siguen sin leer y siguen contando del lado malo.
+
+## 0 · Veredicto
+
+De las 27, **16 eran decidibles hoy** (las atribuidas al fundador). Las otras 11 dicen «aprobado
+por el asesor» y esperan a que se escriba qué cuenta como firma delegada.
+
+| | |
+|---|---|
+| ✅ **FIRMA REAL** — evidencia positiva citada | **10** |
+| 🔴 **SIN RESPALDO** — se fue a mirar y no está, o el ticket dice otra cosa | **5** |
+| ⚪ **falso positivo del censo** — es una negación, no una afirmación | **1** |
+| ⏸ **bloqueadas** (las del asesor) | **11** |
+
+🔴 **Dos de las cinco sin respaldo están en `src/`, o sea en producción.**
+
+## 1 · Dónde se buscó, para que se pueda repetir
+
+Tres sondas por afirmación, y **ninguna vale sin su control**:
+
+1. **el literal en `docs/`** — `git grep -F` del texto que la afirmación dice aprobado;
+2. **el literal en Jira** — `text ~ "\"frase\""`, que cubre resumen, descripción y comentarios;
+3. **la atribución** — que el documento o el comentario diga **quién** aprobó, no sólo que el
+   texto exista ahí. Es la diferencia entre SCRUM-593 (*«Literal del fundador»*) y SCRUM-257.
+
+**Control del buscador de Jira, hecho antes de creerse ningún cero:** `comment ~ "vocabulario
+cerrado"` devuelve SCRUM-651 ✅ — y, porque un control sin tilde no absuelve a las frases con
+tilde, **`comment ~ "Tipo de intervención"` también devuelve SCRUM-651** ✅. Es la lección del
+`\b` de la fase a aplicada al instrumento nuevo.
+
+## 2 · Las 10 con FIRMA REAL
+
+| afirmación | respaldo, citado |
+|---|---|
+| `portonDocumento.ts:46` | **máster `YAQU_MASTER.md:1353`** (SCRUM-206): *«LAS TRES DECISIONES DEL FUNDADOR: ① el cliente final ve un 409 con copy oficial —«Esta factura se está registrando en Hacienda…»»*. Literal y fecha (30-jul) coinciden |
+| `botFlow.service.ts:125` | **máster K1, `YAQU_MASTER.md:376`**: *«Copy oficial v2.1 (fundador, 5-jul-2026 tarde — tabla A8.1 completa aprobada en sesión; fuente exacta en `botFlow.service.ts`)»* |
+| `tests/scrum294c:177` | **`docs/MICROCOPY_APROBADA_SIN_APLICAR.md`** («Microcopy APROBADA por el fundador»): «Criterio de caja», «Sí, estoy acogido», «No estoy acogido» |
+| `tests/scrum324:30` | **`docs/master/SCRUM-324.md:307`** (el literal) + **`:310`** *«Aprobada por el fundador»* |
+| `tests/scrum379:64` | **Jira SCRUM-379, comentario `12499`**: *«**Microcopy firmada:** `Hecho. No hemos podido actualizar la pantalla: recárgala para ver cómo ha quedado.`»* — literal idéntico |
+| `tests/scrum404:113` | **`docs/MICROCOPY_APROBADA_SIN_APLICAR.md`**: «No hemos podido registrar la firma» |
+| `tests/scrum428:121` | **`docs/master/SCRUM-428.md:195`**: *«Con el texto aprobado por el fundador (10-ago-2026)»*, y el literal en `:135` y `:202`. La fecha coincide |
+| `tests/scrum581:138` | **`docs/master/SCRUM-581.md:351`**: *«## ✅ MICROCOPY APROBADA POR EL FUNDADOR (2-sep-2026)»*, con los literales debajo. La fecha coincide |
+| `tests/scrum590b:140` | **`docs/master/SCRUM-590.md:658`**: *«**«Móvil (WhatsApp)»** — firmado por el fundador el 7-sep-2026»* |
+| `tests/scrum593b:21` | **`docs/master/SCRUM-593.md:378`**: *«**Literal del fundador:** «…que salga como Añadir texto en el documento…»»* |
+
+⚠️ **Dos matices que no se ocultan.** El comentario `12499` dice «Microcopy firmada» y **no dice
+por quién**: acredita que el texto está firmado, no quién lo firmó. Y el máster dice «copy **v2.1**»
+donde `botFlow.service.ts` dice «copy **v2**».
+
+## 3 · Las 5 SIN RESPALDO
+
+| afirmación | qué se buscó | qué se encontró |
+|---|---|---|
+| 🔴 `src/…/quotesAdmin.routes.ts:339` **(producción)** | «No la entregues todavía» · «La factura se creó pero no se pudo registrar», en `docs/` y en Jira (`comment ~` y `text ~`) | **nada, en ningún sitio.** El máster (SCRUM-206) recoge las tres decisiones del fundador sobre ese 409, y **el literal del mensaje al profesional no es ninguna de ellas** |
+| 🔴 `src/…/parteDictado.ts:402` **(producción)** | «no completes marcas», en `docs/` y en Jira | **nada.** Sólo aparece en este mismo registro. Y la cabecera de su propia sección sigue diciendo «PROPUESTA, PENDIENTE DEL FUNDADOR» cuatro líneas más arriba del «✅ APROBADO» |
+| 🔴 `tests/scrum244:44` | «Descargar todos mis datos» · «TUS DATOS», en `docs/` y en Jira | **0 en todo Jira.** El bloque dice «LOS OCHO TEXTOS APROBADOS POR EL FUNDADOR (4-ago-2026)» y esos ocho textos no constan en ninguna parte |
+| 🔴 `tests/scrum257:26` | «no se puede crear un albarán» | está **en la descripción de SCRUM-257**, pero dentro de *«Alcance — (b) Guard»*, que es la propuesta de implementación. La sección **«Decisiones del fundador (2-ago-2026)»** enumera tres y **ninguna es ese microcopy**. El test dice «aprobado por el fundador en el ticket»: el ticket lo contiene, pero no dice eso |
+| 🔴 `tests/scrum320:36` | «853,05» | está en SCRUM-320 marcado **`[MEDIDO]`**, como medición del defecto. Y la sección «Microcopy» del mismo ticket dice lo contrario de la afirmación: *«`QUÉ FALTA PARA COBRAR` y **cada una de las líneas** son microcopy **sin aprobar** (regla 30)»* |
+
+**El patrón, y es el de SCRUM-315:** en tres de los cinco el ticket **sí existe y sí contiene el
+texto** — lo que no contiene es la aprobación. Un `grep` del literal habría dado por respaldadas
+las cinco. Lo que las separa es preguntar **quién aprobó**, no **dónde aparece**.
+
+⛔ **No se ha tocado ninguna** (punto ③ del enunciado). Siguen las 27 y el trinquete sigue en 27.
+
+## 4 · El falso positivo, declarado
+
+`tests/scrum780:150` dice *«la rectificativa ha salido «…». Su letra R **NO** está firmada por el
+fundador»*. Es una **negación**: no afirma una autorización, afirma que falta. El censo no
+distingue el alcance de un «no», igual que ya quedó declarado para `scrum580:325`. Son **2 de 27**
+(7 %), y **no se descuentan del trinquete**: quitarlas a mano lo convertiría en una opinión.
+
+## 5 · Adelanto sobre las 11 bloqueadas (sin veredicto)
+
+La sonda documental corrió también sobre ellas. **No es un veredicto** —falta saber qué cuenta
+como firma del asesor—, pero ahorra la mitad del trabajo el día que se desbloqueen:
+
+- **con literal en `docs/master/`**: `scrum358:179` (SCRUM-358, los tres literales del 409) ·
+  `scrum575b:301` (SCRUM-575) · `metodoDeCobro.ts:82` («Método no registrado», SCRUM-285/441).
+- **sin nada en `docs/`**: `scrum305:207` (los cinco textos) · `scrum469:109` (el aviso de
+  desalojo). Esas dos son las candidatas serias a SIN RESPALDO cuando se decida.
+
+## 6 · Lo que sigue abierto
+
+1. **Qué cuenta de Jira es el fundador** — y ahora se sabe que **no se podrá resolver por el campo
+   de autor**: el orquestador escribe sus comentarios con la cuenta de Javier. El mecanismo tendrá
+   que apoyarse en **el id del comentario y su contenido**, nunca en quién lo firma.
+2. **Las 2 de producción sin respaldo** (`quotesAdmin.routes.ts:339` y `parteDictado.ts:402`): son
+   texto que ve el profesional y no consta que nadie lo aprobara. **No se tocan** — se firman o se
+   corrigen, y las dos cosas las decide el fundador.
+3. La extensión de SCRUM-387 sigue **propuesta y sin implementar**, como pedía el encargo.
