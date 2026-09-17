@@ -205,6 +205,8 @@ Sonda fuera del árbol (`D:/MILLONARIO/cobroFlash/sonda858-datos/huella601.mjs`)
 | mutante ① primera clave, sin comparar posición | `f21c6680e50267589d54ccccce4b06d80367e45786128c9d04f2548a56335d6c` | **1.503 · 7** | **1.375 · 7** |
 | mutante ② índice congelado al empezar la vuelta | `c8325a868d4c962299a1af637121d8c1110363be1376a6796e696332990618f0` | 1.503 · **16** | 1.375 · **12** |
 
+**Repetida tras mezclar `origin/main` = `e4d88835a57ea0d04651d7709b23ff23c86aec38`** (main se movió 21 commits y SCRUM-918 reancló scrum601; población 384 ficheros · 30.005 definiciones · 1.504 / 1.376 portadores · 7 vueltas): recorrido 40,5 + 40,3 s, índice 1,3 + 1,1 s, y las dos huellas `c243800826efb0bee8c100a67a25259fde8aaa38f2ea2b99080a27d974105813`.
+
 El mutante ① es el que justifica la huella entera: **deja las cuentas idénticas** y sólo cambia qué vía se anota. Una comparación por cuentas lo habría dado por bueno.
 
 ### 4 · 🔴 scrum601 NO ve ninguno de los dos mutantes
