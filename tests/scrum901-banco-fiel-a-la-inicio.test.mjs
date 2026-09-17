@@ -113,7 +113,9 @@ test('SCRUM-901 · la Inicio del banco es la de Edge: sin esqueletos y con la li
   const esqueletos = nodos.filter((n) => clases(n).includes('skeleton'));
   assert.equal(esqueletos.length, 0,
     `🔴 quedan ${esqueletos.length} esqueletos de carga que Edge ya ha sustituido: el banco mide la Inicio a medio cargar`);
-  const irA = nodos.filter((n) => n.tagName === 'BUTTON' && clases(n).includes('btn-ghost') && clases(n).includes('btn-sm'));
+  // `#btn-home-prefs` («⚙ Personalizar») lleva las mismas clases y no es de la lista.
+  const irA = nodos.filter((n) => n.tagName === 'BUTTON' && n._id !== 'btn-home-prefs'
+    && clases(n).includes('btn-ghost') && clases(n).includes('btn-sm'));
   assert.equal(irA.length, 9,
     `🔴 la Inicio tiene ${irA.length} botones «Ir →» y Edge pinta 9: la lista «Completa tu configuración» no está`);
 });
