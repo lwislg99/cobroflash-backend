@@ -509,3 +509,70 @@ trinquete que ha dejado de proteger sin que nadie lo note.
 | `tests/scrum665a-congelar-el-emisor.test.mjs` | 7 casos: suelo, el contraste, el centinela, la caducidad |
 | `docs/master/evidencias/scrum665a/ALTER-propuesto.md` | el diff propuesto + el cableado pendiente |
 | `tests/scrum411-exports-inalcanzables.test.mjs` | el tope, subido con su motivo y su vuelta a 7 |
+
+---
+
+# APÉNDICE · EL ALTER LLEGA A DESARROLLO, QUE ERA LA BASE QUE FALTABA
+
+**Fecha:** 17-sep-2026 · **Carril:** B · esquema · **Gate:** aplicar + verificar
+**Medido contra:** `origin/main` = `53e3db1f541574c4f231c3d196a2874680160d02` · 2026-09-17T08:51:27Z
+**Rama:** `scrum-881-el-detector-sin-fecha`
+
+El fundador ya había aplicado este ALTER en **staging** y en **producción**. Faltaba
+**desarrollo**. Se aplica el texto del encargo sin cambiar nada, con
+`docs/sql/scrum-665-congelar-el-emisor.sql`.
+
+**Herramienta:** `node scripts/aplicar-sql-dev.mjs --file … --go`, que sólo acepta
+`DATABASE_URL_DEV` y sólo formas de su lista blanca. Destino acreditado por el mecanismo, no por
+la vista:
+
+```
+[destino] DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅
+✅ 1 sentencia(s), todas de forma conocida:  línea 7: ALTER TABLE … ADD COLUMN
+```
+
+⛔ **Staging y producción no se han tocado, ni para mirar.**
+
+## LA VERIFICACIÓN — dos controles de tipos distintos, los dos a 7
+
+Se lee el CATÁLOGO, no el mensaje de la herramienta (que además lo dice: *«AHORA VERIFICA LEYENDO
+EL CATÁLOGO, no este mensaje»*). Evidencia ejecutable:
+`docs/master/evidencias/SCRUM-665/verificar-665.mjs`.
+
+| | ① `information_schema.columns` | ② `pg_attribute` + `pg_class` | columnas totales de `invoices` |
+|---|---|---|---|
+| **antes** | **0 de 7** | **0 de 7** | 36 |
+| **después** | **7 de 7** | **7 de 7** | **43** |
+
+36 + 7 = 43, y los dos controles **coinciden**. Las siete salen `text` por las dos vías.
+
+**SUELO:** antes de creerse ningún cero, el censo comprueba que ve columnas de `invoices` (36). Un
+cero con el suelo caído no sería «faltan las siete»: sería «no estoy mirando la tabla».
+
+**Aditivo, comprobado:** `pg_postmaster_start_time()` = `2026-08-23 06:21:29.275761+00` y **5 filas
+en `invoices`**, idénticos antes y después. No reescribió nada.
+
+## ⚠️ DOS COSAS QUE CONSTAN, Y NO SE ARREGLAN AQUÍ
+
+**① `current_database()` SÍ distinguió en esta base.** El encargo avisaba de que devuelve
+`"railway"` en todas las bases de Railway. Aquí devolvió **`yaqu_dev_javier`**. No sé qué devuelve
+en staging ni en producción —no las he tocado—, así que se deja como dato de ésta y nada más. La
+acreditación se hizo igualmente con `pg_postmaster_start_time()` y el recuento, como se pidió.
+
+**② 🔴 `prisma/schema.prisma` NO declara estas siete columnas.** Medido: el modelo `Invoice`
+(`@@map("invoices")`, línea 905) sólo tiene `merchantId`. O sea que la base —las tres— y el esquema
+**divergen**. El esquema es del fundador (regla 40): **se propone el diff, no se aplica**, y este
+apéndice no lo toca. El diff propuesto sería añadir al modelo `Invoice`:
+
+```prisma
+  merchantName      String? @map("merchant_name")
+  merchantLegalName String? @map("merchant_legal_name")
+  merchantTaxId     String? @map("merchant_tax_id")
+  merchantAddress   String? @map("merchant_address")
+  merchantLogoUrl   String? @map("merchant_logo_url")
+  merchantPhone     String? @map("merchant_phone")
+  merchantEmail     String? @map("merchant_email")
+```
+
+⚠️ Eso es una **propuesta**, no una medición de que sea lo que se quiere: los nombres del lado
+Prisma son los que usa el resto del modelo, pero la decisión es del fundador.

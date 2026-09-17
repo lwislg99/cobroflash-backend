@@ -2811,3 +2811,53 @@ esquema que nombre una columna que su propio SQL no crea es exactamente lo que t
 - **El camino de emisión:** una etiqueta **no se copia al emitir**, así que no hace falta escritor
   en `emitInvoice` — que es justo lo que bloqueó el lado factura de SCRUM-602 (DOC-12).
 
+---
+
+## SCRUM-665 · las siete del EMISOR CONGELADO en `invoices` — ✅ **APLICADA EN LAS TRES BASES** (17-sep-2026)
+
+`docs/sql/scrum-665-congelar-el-emisor.sql` · aditiva e idempotente (`ADD COLUMN IF NOT EXISTS`).
+
+### Estado por base — 17-sep-2026, cada casilla CON SU PROCEDENCIA
+
+- [x] **producción · autorack** — aplicado por **el fundador**, antes de este ticket. ⚠️ NO
+  verificado por mí: el encargo prohíbe tocar producción ni para mirar. La casilla se marca por su
+  palabra, y eso queda dicho aquí en vez de disfrazarse de medición propia.
+- [x] **staging · acela** — ídem: aplicado por **el fundador**, no verificado por mí.
+- [x] **desarrollo · acela/yaqu_dev_javier** — aplicado por **esta rama** el 17-sep-2026 con
+  `node scripts/aplicar-sql-dev.mjs --file … --go`, y **verificado leyendo el catálogo** (abajo).
+
+### La medida en dev — ANTES y DESPUÉS, con dos controles de tipos distintos
+
+`docs/master/evidencias/SCRUM-665/verificar-665.mjs`. Se lee el CATÁLOGO, no el mensaje de la
+herramienta.
+
+| | ① `information_schema.columns` | ② `pg_attribute` + `pg_class` | columnas totales de `invoices` |
+|---|---|---|---|
+| antes | **0 de 7** | **0 de 7** | 36 |
+| después | **7 de 7** | **7 de 7** | **43** |
+
+36 + 7 = 43 y los dos controles coinciden. Las siete salen `text` por las dos vías.
+
+**Control de que no reescribió filas:** `pg_postmaster_start_time()` = `2026-08-23 06:21:29.275761+00`
+y **5 filas** en `invoices`, idénticos antes y después.
+
+**SUELO:** el censo comprueba que ve columnas de `invoices` (36) antes de creerse ningún cero. Un
+cero con el suelo caído no es «faltan las siete»: es «no estoy mirando la tabla».
+
+### 🔴 LO QUE QUEDA ABIERTO, Y NO LO CIERRA ESTA RAMA
+
+**`prisma/schema.prisma` NO declara estas siete columnas.** El modelo `Invoice` (`@@map("invoices")`)
+sólo tiene `merchantId`. Las TRES bases tienen las columnas; el esquema no las nombra. El esquema es
+del fundador (regla 40): **se propone el diff, no se aplica**. La propuesta está en el apéndice de
+`docs/master/SCRUM-665.md`.
+
+⚠️ Y el orden importa, por lo mismo que ya está escrito en la entrada de SCRUM-595: `schemaDrift`
+compara **esperado ⊆ real** al arrancar. Aquí el riesgo va en la dirección cómoda —la base va por
+delante del esquema, no al revés—, así que **nada se rompe por no declararlo**; lo que no se puede
+es escribir en esas columnas desde Prisma hasta que estén en el modelo.
+
+### ⚠️ `current_database()` sí distinguió en dev
+
+El aviso del encargo decía que devuelve `"railway"` en todas las bases de Railway. En
+`DATABASE_URL_DEV` devolvió **`yaqu_dev_javier`**. No se afirma nada de las otras dos: no se han
+tocado. La acreditación se hizo con `pg_postmaster_start_time()` y el recuento de `invoices`.
