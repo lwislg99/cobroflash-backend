@@ -42,13 +42,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/sesion.mjs',
     de: '  return tokens === null ? null : { tokens, turnos, cuando };',
     a: '  return { tokens: tokens ?? 0, turnos, cuando };',
-    cae: '🔴 SUELO: sin turnos legibles se devuelve null, no 0 («vacía» ≠ «no pude mirar»)',
+    cae: '🔴 SUELO: sin turnos legibles el contexto es null, NUNCA 0',
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
     de: '  for (const c of carpetas || []) {',
     a: '  for (const c of (carpetas || []).slice(0, 1)) {',
-    cae: '🔴 el jsonl se busca en TODAS las carpetas de proyecto, no solo en la primera',
+    cae: '🔴 el jsonl se busca en TODAS las carpetas de proyecto, no solo en la del repo',
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',

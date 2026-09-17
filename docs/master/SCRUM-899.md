@@ -218,8 +218,15 @@ fichero restaurado byte a byte):
 **Las cinco mutaciones del hito 1 re-verificadas** tras tocar `sesion.mjs`: las cinco siguen cayendo, y
 `scrum899-sesion-lista-blanca` sigue en 10/10.
 
-⚠️ **Corrección propia:** el primer caso de `ESPERANDO` caía justo en el borde del plazo (10 min exactos) y falló. No
-era el código: era el caso, que medía el redondeo en vez de la conducta. Los dos lados se prueban ahora lejos del borde.
+⚠️ **Dos correcciones propias, las dos cazadas por un guard y no por mí.**
+
+1. El primer caso de `ESPERANDO` caía justo en el borde del plazo (10 min exactos) y falló. No era el código: era el
+   caso, que medía el redondeo en vez de la conducta. Los dos lados se prueban ahora lejos del borde.
+2. **`scrum836-ancla-de-mutacion-viva` me tumbó la tanda**, y con razón: el campo `cae` de dos de mis mutaciones no
+   nombraba **literalmente** ningún test de este fichero —lo escribí parafraseando el propósito en vez de copiando el
+   nombre—. Una mutación cuyo `cae` no existe sale **CIEGA** en `meta:mutaciones`: no se mide, y el guard queda sin
+   comprobar **pareciendo cubierto**. Corregido copiando el nombre real, que es el que había salido al probar los
+   mutantes. Es el mismo defecto que este PR denuncia en otro sitio: algo que parece vigilado y no lo está.
 
 **Tests declarados:** `tests/scrum899c-relevar-y-contexto.test.mjs`.
 
