@@ -248,3 +248,62 @@ test('SCRUM-665A · 🗓️ LA PREMISA DE LAS SIETE COLUMNAS SIGUE EN PIE: el PD
     + '  sagrada: es un tope para que la decision no se convierta en olvido. Quien la mueva,\n'
     + '  que escriba por que.');
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 LA CONDICIoN DE VUELTA DEL TOPE, LEGIBLE POR UN GUARD Y NO SoLO POR UNA PERSONA
+//
+// `MODULOS_DOMINIO_INALCANZABLES_MAX` subio de 7 a 8 para dejar entrar este modulo, que nace sin
+// llamador porque su cableado necesita las siete columnas. El motivo esta escrito alli y la
+// condicion de vuelta tambien — pero un tope que sube sigue siendo un tope que sube: **lo que lo
+// salva es que alguien compruebe que vuelve**, y «alguien» no puede ser la buena memoria de
+// quien lea el comentario dentro de tres meses.
+//
+// Esto lo convierte en mecanismo: EN EL MOMENTO en que el modulo deje de ser inalcanzable —es
+// decir, cuando alguien lo importe desde `src/`— este caso EXIGE que el tope haya vuelto a 7.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-665A · 🔴 si el modulo YA tiene llamador en src/, el tope de SCRUM-411 vuelve a 7', async () => {
+  // 🔴 `fileURLToPath`, NO `new URL(...).pathname`: en una ruta con espacio deja
+  // «Javier%20Pereira» y `readdirSync` no la resuelve. Es la tercera vez hoy que muerde el atajo.
+  const pathMod = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const RZ = pathMod.default.join(pathMod.default.dirname(fileURLToPath(import.meta.url)), '..');
+
+  // ¿Lo importa alguien de `src/`? Se busca el nombre del MoDULO en los imports, no el de la
+  // funcion: un `import type` o un re-export tambien lo hacen alcanzable.
+  const conImport = [];
+  const ver = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = pathMod.default.join(dir, e.name);
+      if (e.isDirectory()) { ver(p); continue; }
+      if (!e.name.endsWith('.ts') || e.name === 'emisorCongelado.ts') continue;
+      if (/from\s+['"][^'"]*emisorCongelado['"]/.test(fs.readFileSync(p, 'utf8'))) conImport.push(p);
+    }
+  };
+  ver(pathMod.default.join(RZ, 'src'));
+
+  // SUELO del instrumento: el modulo tiene que EXISTIR para que «nadie lo importa» signifique algo.
+  assert.ok(fs.existsSync(pathMod.default.join(RZ, 'src/modules/invoicing/domain/emisorCongelado.ts')),
+    '🔴 CIEGO: el modulo no existe, asi que «nadie lo importa» no dice nada sobre el tope.');
+
+  const fuenteTope = fs.readFileSync(pathMod.default.join(RZ, 'tests/scrum411-exports-inalcanzables.test.mjs'), 'utf8');
+  const m = /MODULOS_DOMINIO_INALCANZABLES_MAX\s*=\s*(\d+)/.exec(fuenteTope);
+  assert.ok(m, '🔴 CIEGO: no encuentro el tope en scrum411. Sin leerlo no puedo exigir que vuelva.');
+  const tope = Number(m[1]);
+
+  if (conImport.length === 0) {
+    // Sigue sin cablear: el 8 esta justificado. Se comprueba que NO ha subido mas.
+    assert.equal(tope, 8,
+      `🔴 el tope vale ${tope}. Mientras \`emisorCongelado\` siga sin llamador en src/, el valor `
+      + 'acordado es 8 — ni mas (seria otro modulo colandose con esta excusa) ni menos.');
+    return;
+  }
+
+  assert.equal(tope, 7,
+    `🔴 \`emisorCongelado\` YA tiene llamador en src/ (${conImport.length}: `
+    + `${conImport.map((p) => pathMod.default.relative(RZ, p)).join(', ')}) y el tope sigue en ${tope}.\n\n`
+    + '  El 8 se concedio por UNA razon: que este modulo no podia cablearse sin las siete columnas.\n'
+    + '  Esa razon ya no existe, asi que el tope tiene que volver a 7 EN EL MISMO COMMIT que lo\n'
+    + '  cablea. Un tope que se queda alto despues de que su motivo desaparezca es un trinquete\n'
+    + '  que ha dejado de proteger sin que nadie lo note.');
+});

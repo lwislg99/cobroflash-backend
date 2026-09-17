@@ -406,3 +406,25 @@ recibió un albarán y la Sesión 3 (bancos) un pago. Y la Sesión 0 (consultor�
 escrito y listo para empujar un arreglo en `src/` y `public/` (SCRUM-892): nadie lo paró antes de
 la primera línea y acabó siendo una excepción declarada **después**, porque rehacerlo costaba un
 chat entero.
+
+## A21 · Una cobaya que no se ejecuta da el mismo resultado que un arreglo perfecto
+
+Todo banco que compare un ANTES con un DESPUÉS hace que su cobaya deje un **testigo de ejecución**
+—un fichero, una línea en stdout— y **aborta si falta**. Un cero de algo que no llegó a correr se
+lee exactamente igual que un cero de algo que funciona.
+
+    🔒 «Antes de creerte el resultado, comprueba que el sujeto existió.»
+
+**Medido (SCRUM-864):** el banco importaba el helper con una ruta absoluta de Windows sin
+`file://`, así que la cobaya de DESPUÉS no arrancaba y dejaba **0 restos porque no creaba
+ninguno**. Iba a publicarse como «defecto arreglado». Lo cazó el **control positivo**, no el que
+decidía — que es la otra mitad del aviso: el caso que tenía que salir verde es el único que puede
+delatar a un banco mudo.
+
+⚠️ **Nació como A19 y se renumeró a A21** (autorización de la Sesión 0, 17-sep-2026): `main` ya
+tenía una A19 y una A20. La renumeración deja un coste declarado, y el aviso es de Luis: **una
+norma renumerada rompe todo lo que la cite por número.** Aquí no rompió nada —se comprobó:
+`tests/scrum665a-congelar-el-emisor.test.mjs`, el otro fichero de este PR, no cita ninguna norma
+por número— pero el coste existe y es el de siempre:
+
+    🔒 Referenciar por posición caduca. Referenciar por identidad no.
