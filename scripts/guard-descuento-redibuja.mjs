@@ -137,7 +137,11 @@ let navegador;
 try {
   navegador = await lanzarNavegador(puppeteer, { headless: 'new', args: ['--disable-dev-shm-usage'] });
   for (const ancho of ANCHOS) {
-    const pag = await navegador.newPage();
+    // Un contexto POR ANCHO: el borrador vive en `localStorage`, que se comparte dentro de un mismo
+    // contexto, y el de un ancho se restauraría al abrir el siguiente (medido: 1280 arrancaba con
+    // el 175,04 € que dejó 390).
+    const contexto = await navegador.createBrowserContext();
+    const pag = await contexto.newPage();
     const errores = [];
     pag.on('pageerror', (e) => errores.push(String(e.message || e)));
     try {
@@ -201,7 +205,7 @@ try {
       if (errores.length) mal.push(`errores de página: ${errores.join(' | ')}`);
       if (mal.length) hallazgos.push({ ancho, mal });
     } finally {
-      await pag.close();
+      await contexto.close();
     }
   }
 } finally {

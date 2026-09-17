@@ -69,6 +69,23 @@
   }
 
   /**
+   * SCRUM-888c · EL IMPORTE DE UNA LÍNEA, en un solo sitio: `qty × precio efectivo`, y su IVA encima.
+   * `tax` es la FRACCIÓN (0,21), como la guarda el presupuesto.
+   *
+   * Existe porque tres pantallas pintaban la fila cada una con su cuenta: la del editor aplicaba el
+   * dto, la de la vista previa y la del detalle no (241,52 € frente a 205,29 € con un 15 %). Sin dto
+   * da exactamente lo mismo que `qty × price × (1 + tax)`, que es lo que hacían las tres.
+   * Una línea sin cantidad o sin precio legibles vale 0, como en `totalesConDescuento`.
+   */
+  function importeDeLinea(qty, price, dto, tax) {
+    const q = num(qty);
+    if (q === null || num(price) === null) return { base: 0, cuota: 0, total: 0 };
+    const base = q * precioEfectivo(price, dto);
+    const cuota = base * (num(tax) || 0);
+    return { base: base, cuota: cuota, total: base + cuota };
+  }
+
+  /**
    * Reparte `descuentoCents` entre los tipos, proporcional a su base.
    *
    * @param {Array<{rate:number, baseCents:number}>} porTipo
@@ -204,6 +221,7 @@
   root.quoteDescuentos = {
     dtoDeLinea: dtoDeLinea,
     precioEfectivo: precioEfectivo,
+    importeDeLinea: importeDeLinea,
     repartirGlobal: repartirGlobal,
     totalesConDescuento: totalesConDescuento,
     hayDescuento: hayDescuento,
