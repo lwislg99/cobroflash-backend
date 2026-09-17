@@ -46,6 +46,19 @@ const TOPE_MIN = Number.isFinite(pedido) && pedido > 0 ? pedido : 15;
 const TOPE_MS = TOPE_MIN * 60_000;
 const RESUMEN = /(^|\n)\s*(ℹ|#) tests \d+/;
 
+// 🔴 SCRUM-928: el recuento hay que leerlo SIN color. Medido el 17-sep-2026, el reporter pinta la
+// línea entera —`ESC[34m` DELANTE del glifo y `ESC[39m` detrás del número—, y el `\s*` de `RESUMEN`
+// no se traga un ESC. Con `FORCE_COLOR` en el entorno (las sesiones de fondo arrancaban con un 3
+// heredado), una tanda SANA que salía 0 se leía como «sin resumen» y salía con 4: un verde
+// convertido en rojo, y para cualquiera que use `npm test`.
+//   · Se limpia para LEER. Lo que se IMPRIME sigue pasando tal cual, byte a byte (858b lo exige).
+//   · Se quitan las secuencias CSI completas, no sólo las de color: un reporter que mueva el cursor
+//     partiría el ancla igual, y aquí no hay nada que ganar siendo más estrecho.
+//   · Lo que NO cambia: el umbral ni lo que se exige. Un recuento a medias («tests» sin número)
+//     sigue sin valer, y una tanda que de verdad no lo emite sigue saliendo con 4.
+const CSI = /\[[0-9;?]*[ -\/]*[@-~]/g;
+const sinColor = (s) => s.replace(CSI, '');
+
 // `node` se resuelve al MISMO binario que corre esto: sin shell no hay PATH de npm que valga.
 const ejecutable = orden === 'node' ? process.execPath : orden;
 const posix = process.platform !== 'win32';
@@ -60,7 +73,7 @@ hijo.stdout.on('data', (trozo) => {
   ultimaEscritura = Date.now();
   process.stdout.write(trozo);
   cola = (cola + decodificador.write(trozo)).slice(-4000);
-  if (!conResumen && RESUMEN.test(cola)) conResumen = true;
+  if (!conResumen && RESUMEN.test(sinColor(cola))) conResumen = true;
 });
 hijo.stderr.on('data', (trozo) => {
   ultimaEscritura = Date.now();
