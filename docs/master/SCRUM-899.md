@@ -138,6 +138,108 @@ Los dos siguen describiendo el flujo anterior.
 **Lo que no está medido:** las frases del fundador llegan transmitidas por el orquestador y por la memoria del proyecto
 (`feedback_relevo_sesion_fresca.md`), no citadas del chat del fundador. La norma lo declara.
 
+## ⑦ Hito 3.2 · `relevar` y `contexto` en el lanzador
+
+**Medido contra:** `origin/main` = `12b4992f` · 17-sep-2026 · **Rama:** `scrum-899-lanzador-relevar-contexto`
+
+Los dos subcomandos que hacen que el relevo de la A19 se pueda **ejecutar** y no solo describir.
+
+### `contexto <nombre>`
+
+Cuánto ocupa el último turno de una sesión, para decidir si pasa de los 300k. Contexto es lo que se le **mandó** al
+modelo: `input + cache_read + cache_creation`.
+
+Tres decisiones, y las tres salen de una medición, no de una preferencia:
+
+- **el ÚLTIMO turno, no el máximo.** El contexto BAJA al compactarse; un máximo histórico se queda alto para siempre y
+  releva sesiones que acaban de aligerarse.
+- **sin `output_tokens`.** Es lo que contestó, y no ocupa sitio en el turno siguiente. Con un turno de 30k de salida, un
+  contexto de 300k se leería como 330k y cruzaría el umbral sin haberlo cruzado.
+- **`null`, nunca 0, cuando no hay turnos legibles.** Un 0 se leería como «sesión vacía, no hay que relevarla» — la
+  conclusión CONTRARIA a «no he podido mirar». Es literalmente el error que tuvo `guards-entrada.mjs` con el color
+  (SCRUM-928) el mismo día, y por eso está escrito en el código al lado de la función.
+
+🔴 **Y el hallazgo que cambia dónde se busca.** Medido el 17-sep sobre las seis sesiones de la tanda: una sesión de
+FONDO tiene su `cwd` en el scratchpad de quien la lanzó, así que su jsonl vive en
+`~/.claude/projects/C--Users-…-scratchpad-prompts/<sessionId>.jsonl` y **no** en la carpeta del repositorio. Buscar por
+la ruta del repo —que es lo primero que uno hace— **no encuentra ninguna de las seis**: encuentra las de la tanda
+MUERTA, con sus 600-900k, y deja creer que el equipo sigue ahí. Se busca por `sessionId` en **todas** las carpetas de
+proyecto.
+
+**Medición de las seis con esto** (17-sep ~18:47Z): S0 195k · S1 207k · S2 111k · S3 145k · S4 165k · S5 142k. Ninguna
+tocaba el umbral. La tanda anterior murió entre 598k y 888k.
+
+### `relevar <nombre> <fichero-con-el-encargo>`
+
+**Un script de node no puede mandar un `SendMessage`**, así que este subcomando **no pide** el traspaso: lo pide el
+orquestador por el canal y el script **comprueba que está escrito** antes de parar nada. Eso no es una limitación a
+rodear — mantiene la conversación en el canal, donde se puede leer.
+
+🔴 **Es cobarde por defecto, y a propósito: lo más peligroso de este script es que MATA SESIONES**, y lo que mata no es
+el proceso, es lo que la sesión sabía y no había escrito.
+
+| situación | veredicto | ¿para? |
+|---|---|---|
+| traspaso fresco y sesión quieta | `RELEVAR` | sí |
+| sin traspaso legible | `SIN-TRASPASO` | **no** |
+| traspaso anterior al último turno, con plazo | `ESPERANDO` | **no** |
+| ídem, agotado el plazo | `SIN-TRASPASO` | **no** |
+| sesión TRABAJANDO, aunque el traspaso esté fresco | `OCUPADA` | **no** |
+| sesión bloqueada | `BLOQUEADA` | **no** |
+| no hay sesión viva | `LANZAR` | — (no es un error) |
+| sin listado, dos vivas con el mismo nombre, o sin fechar el último turno | `NO-PUDE-MIRAR` | **no** |
+
+**«Fresco» es un número, no una sensación:** `traspasoMtime > ultimoTurno`, dos valores que se comparan. El plazo se
+cuenta desde el último turno —la última vez que contestó—, así que una sesión parada tres horas sin traspaso no espera:
+ya no lo va a escribir. Y el resultado **devuelve en `comprobado` los tres valores que miró**, para que un
+`SIN-TRASPASO` se pueda discutir sin volver a correrlo.
+
+**`OCUPADA` no estaba en el encargo**: lo añadió el orquestador, y es correcto. Un traspaso escrito hace diez minutos no
+describe lo que la sesión está haciendo ahora, y varias han entregado con cosas a medio empujar.
+
+🔴 **Relevar lanza SIEMPRE en modo `nueva`, nunca reanuda.** Es el punto entero de la A19. `decidirLanzar` sí diría
+`REANUDAR` con un registro reciente, así que `relevar` **no puede reutilizarlo** — y el guard lo fija comparando las dos
+respuestas sobre el mismo registro, que es lo único que distingue las dos versiones.
+
+### Mutantes
+
+`tests/scrum899c-relevar-y-contexto.test.mjs`, 13 tests. **Seis mutaciones declaradas, las seis caen** (pasada local,
+fichero restaurado byte a byte):
+
+| mutación | qué destaparía |
+|---|---|
+| el contexto pasa a ser el máximo histórico | relevos sin motivo tras compactar |
+| suma `output_tokens` | cruzar el umbral sin cruzarlo |
+| devuelve `0` en vez de `null` | «no pude mirar» leído como «está vacía» |
+| busca solo en la primera carpeta | las seis sesiones de fondo, invisibles |
+| se para a una sesión TRABAJANDO | cortarla a mitad |
+| se para sin traspaso reescrito | perder lo que el relevo conserva |
+
+**Las cinco mutaciones del hito 1 re-verificadas** tras tocar `sesion.mjs`: las cinco siguen cayendo, y
+`scrum899-sesion-lista-blanca` sigue en 10/10.
+
+⚠️ **Dos correcciones propias, las dos cazadas por un guard y no por mí.**
+
+1. El primer caso de `ESPERANDO` caía justo en el borde del plazo (10 min exactos) y falló. No era el código: era el
+   caso, que medía el redondeo en vez de la conducta. Los dos lados se prueban ahora lejos del borde.
+2. **`scrum836-ancla-de-mutacion-viva` me tumbó la tanda**, y con razón: el campo `cae` de dos de mis mutaciones no
+   nombraba **literalmente** ningún test de este fichero —lo escribí parafraseando el propósito en vez de copiando el
+   nombre—. Una mutación cuyo `cae` no existe sale **CIEGA** en `meta:mutaciones`: no se mide, y el guard queda sin
+   comprobar **pareciendo cubierto**. Corregido copiando el nombre real, que es el que había salido al probar los
+   mutantes. Es el mismo defecto que este PR denuncia en otro sitio: algo que parece vigilado y no lo está.
+3. **SCRUM-237 me tumbó la siguiente**, y también con razón: escribí `doesNotMatch(/--resume/)` sin hermano positivo.
+   Un patrón que no se comprueba en positivo puede ser un token que no aparece nunca, y entonces la negación pasa
+   siempre sin mirar nada. Añadido el canario: el MISMO patrón, sobre los argumentos de reanudar, SÍ casa.
+
+Las tres son del mismo tipo —dar por vigilado lo que no lo está—, las tres las cazó un guard de la casa y ninguna la
+cacé yo. Se dejan escritas porque el ticket va precisamente de eso.
+
+**Tests declarados:** `tests/scrum899c-relevar-y-contexto.test.mjs`.
+
+**Lo que NO se ha hecho:** no se ha ejecutado un relevo de verdad contra una sesión viva. Todo lo de arriba son
+decisiones puras y ficheros de banco; el único camino no ejercido es el que llama a `claude stop` y `claude lanzar`, que
+ya estaba cubierto por el banco del hito 1. **Un relevo real se mide cuando el orquestador instale el lanzador**, no
+antes, y no se da por bueno hasta entonces.
 ## ⑥ Hito 3, punto 1 · el relevo escrito en el método del orquestador (SOLO DOCS)
 
 **Medido contra:** `origin/main` = `f5977e8c6d33a436d6d43fd20e345b12120c3977` · 2026-09-17T19:02:28Z
