@@ -12,6 +12,7 @@ import { BASE_URL, config } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import { fechaDeCobroDeCharge } from '../../domain/instanteDeCobro'; // SCRUM-397
+import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
 
 const router = Router();
 
@@ -98,10 +99,20 @@ router.get('/:token', async (req, res) => {
   const title = `Recibo #${ch.id} — YaQu`;
 
   // SCRUM-85/90: /pay/card y /pay/bank tokenizados (mismo Charge.receiptToken).
+  //
+  // SCRUM-893 · ÉSTA ES LA SEGUNDA DE LAS TRES PUERTAS QUE LLEVAN A /pay/card, y era la que ni
+  // siquiera lo miraba: el botón de tarjeta salía con `status === 'pending'` y nada más. El
+  // selector al menos tenía una condición (rota); aquí no había ninguna. Arreglar sólo el
+  // selector habría dejado a la clienta estrellándose por este botón, con el defecto ya dado por
+  // cerrado — un arreglo parcial de un defecto con tres puertas no lo reduce, reduce su
+  // visibilidad. Misma pregunta, mismo dominio que la puerta de cobro.
+  const puedeTarjeta = cardChargeMode(ch.merchant) !== 'refuse';
   const payBtns =
     ch.status === 'pending'
-      ? `<a href="${BASE_URL}/pay/bank/${token}" class="pay-btn pay-btn-primary">Pagar por transferencia</a>
-       <a href="${BASE_URL}/pay/card/${token}" class="pay-btn pay-btn-secondary">Pagar con tarjeta</a>`
+      ? `<a href="${BASE_URL}/pay/bank/${token}" class="pay-btn pay-btn-primary">Pagar por transferencia</a>`
+        + (puedeTarjeta
+          ? `\n       <a href="${BASE_URL}/pay/card/${token}" class="pay-btn pay-btn-secondary">Pagar con tarjeta</a>`
+          : '')
       : '';
 
   const mailParam =
