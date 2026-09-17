@@ -69,10 +69,20 @@ aplica el descuento de línea.
 **No se arregla en la pantalla.** El dato malo está EN LA COLUMNA: taparlo en el front dejaría el
 importe malo en el WhatsApp al pro, que es donde se toma la decisión de enviar.
 
-### Y la segunda mitad: el ciclo no tenía UN SOLO TEST
+### Y la segunda mitad, que es la lección de verdad: el ciclo no tenía UN SOLO TEST
 
 Medido por AST el 17-sep-2026: `runMaintenanceProposals` la importaba **solo `cron.ts`**. Un
 importe del camino del dinero, escrito por un cron diario, sin una sola prueba que lo mirase.
+
+🔒 **Eso no es un detalle del ticket: es la razón por la que el defecto pudo existir.** La
+multiplicación mala llevaba ahí desde que se escribió MANT-1, y no la encontró ningún guard, ningún
+test y ninguna revisión — la encontró un recorrido manual en staging, mirando una pantalla. Un
+camino que nadie puede probar sin base y sin turno es un camino donde un error de dinero vive
+indefinidamente, y lo que lo mantiene invisible no es que sea difícil: es que **no hay ningún sitio
+donde su número se afirme**.
+
+    🔒 Un importe que ningún test afirma no está «sin cubrir»: está sin decidir, y cualquier
+       aritmética que alguien escriba ahí será la correcta hasta que alguien cuadre las cuentas.
 
 Por eso el bucle acepta ahora `{ prisma, recordCustomerEvent }` **con default al real**. Es el
 patrón que este mismo fichero ya declara dos veces —`seleccionarLotes(now, { prisma })` y
