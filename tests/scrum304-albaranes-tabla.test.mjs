@@ -173,6 +173,8 @@ function decisoresDeLaFila() {
   return new Function('window', `${compartido}\n${src}\nreturn { ctxAlbaranEnFila, primariaDeAlbaran, destinoEnFila };`)({
     ALBARAN_ACTION_REGISTRY: registro.ALBARAN_ACTION_REGISTRY,
     destinoEfectivo: ley.destinoEfectivo,
+    // SCRUM-905 · con facturación disponible; los otros modos los vigila `scrum905-…`.
+    appModoEmision: 'fiscal',
   });
 }
 
