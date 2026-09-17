@@ -74,6 +74,10 @@ Desde entonces: la suite completa antes de cada push, y `ls-remote` + estado del
   - escribe `config.json` ({ repo, claude }) y `arranque.cmd`, que en cada tanda hace `git fetch` + `git show origin/main:`
     de `sesion.mjs`, `orquestador-arranque.mjs` y `docs/equipo/prompt-tanda-orquestador.md`, y lanza el arranque;
   - **imprime** las órdenes de `schtasks` (tres diarias: 08:00, 13:05, 18:10); **no las ejecuta**.
+  - 🔴 `arranque.cmd` hace **`cd /d <repo>`** antes de lanzar. Una tarea programada arranca en `System32`, y sin eso el
+    orquestador nacería fuera del proyecto: sin sus settings ni su CLAUDE.md, y con el diálogo de confianza de carpeta,
+    que en segundo plano bloquea. El control 4 funcionó porque su `.cmd` de prueba SÍ lo hacía; se me escapó al escribir
+    el generador y lo cacé al preparar la orden de instalación. Tiene aserto y mutación (cuatro en total, las cuatro caen).
 - **El prompt de la tanda lo escribe el orquestador:** `docs/equipo/prompt-tanda-orquestador.md`. Sin él, la tanda
   dice NO PUDE MIRAR y no lanza nada.
 - ⚠️ **Límite:** si el orquestador de fondo está vivo y parado, la tanda contesta `YA-VIVA` y no lo despierta:

@@ -32,6 +32,9 @@ export function arranqueCmd({ destino, repo }) {
   return [
     '@echo off',
     'setlocal',
+    // La tarea programada arranca en System32: sin esto, el orquestador nacería FUERA del proyecto (sin
+    // sus settings ni su CLAUDE.md, y con el diálogo de confianza de carpeta, que en segundo plano bloquea).
+    `cd /d "${r}"`,
     `git -C "${r}" fetch --quiet origin main`,
     ...FICHEROS.map(([enRepo, instalado]) => `git -C "${r}" show origin/main:${enRepo} > "${d}\\${instalado}"`),
     `node "${d}\\orquestador-arranque.mjs" >> "${d}\\arranque.log" 2>&1`,

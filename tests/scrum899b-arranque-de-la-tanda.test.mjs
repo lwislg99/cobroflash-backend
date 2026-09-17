@@ -31,6 +31,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: '🔴 ROJO: con sesion.mjs ALTERADO, la tanda no lanza nada',
   },
   {
+    // Sin entrar en el repo, la tarea arranca en System32 y el orquestador nace fuera del proyecto.
+    fichero: 'scripts/equipo/instalar.mjs',
+    de: '    `cd /d "${r}"`,\n',
+    a: '',
+    cae: '🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza el arranque',
+  },
+  {
     fichero: 'scripts/equipo/instalar.mjs',
     de: 'show origin/main:${enRepo}',
     a: 'show HEAD:${enRepo}',
@@ -152,6 +159,10 @@ test('SUELO: sin el prompt del orquestador en origin/main, «no pude mirar» y n
 test('🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza el arranque', () => {
   const cmd = instalar.arranqueCmd({ destino: 'C:/Users/X/AppData/Local/yaqu-equipo', repo: 'D:/repo' });
   const lineas = cmd.split('\r\n');
+  const cd = lineas.indexOf('cd /d "D:\\repo"');
+  assert.ok(cd >= 0 && cd < lineas.findIndex((l) => l.startsWith('node ')),
+    '🔴 arranque.cmd no entra en el repositorio antes de lanzar: la tarea programada arranca en System32 y el\n'
+    + '  orquestador nacería fuera del proyecto (sin settings ni CLAUDE.md, con el diálogo de confianza de carpeta)');
   assert.ok(lineas.some((l) => l === 'git -C "D:\\repo" fetch --quiet origin main'), '🔴 no trae main antes de copiar');
   for (const [enRepo, instalado] of instalar.FICHEROS) {
     assert.ok(lineas.includes(`git -C "D:\\repo" show origin/main:${enRepo} > "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\${instalado}"`),
