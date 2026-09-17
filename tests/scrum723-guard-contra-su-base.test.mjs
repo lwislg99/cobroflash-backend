@@ -317,12 +317,15 @@ const HALLAZGOS_DECLARADOS = [
   // SCRUM-839e · mismo caso: `main`, `pr` y la rama del PR en un remoto DESNUDO creado en el
   // temporal; el `rev-parse` mide si esa rama sintética se movió. No es el `main` de nadie.
   'tests/scrum839e-solo-pr-armados.test.mjs [rev-parse]',
-  // SCRUM-899 · la puerta de integridad del equipo de fondo. Su pregunta es sobre la PUNTA por
-  // definición: «¿esta copia instalada es IDÉNTICA a lo que hay HOY en `main`?» — lo que se haya
-  // mergeado después de salir una rama es justo lo que la instalación tiene que llevar. Los dos
-  // tests hacen el `show` dentro de repositorios SINTÉTICOS del temporal, con un `origin/main`
-  // que no es el de nadie: mismo caso que 839d y 839e. Lo retira quien retire `scripts/equipo/`.
+  // SCRUM-899 · la puerta de las sesiones de fondo. Su `banco()` fabrica un repositorio SINTÉTICO
+  // en el temporal y hace `git show origin/main:scripts/equipo/sesion.mjs` para reproducir EXACTO
+  // lo que hace el instalador real: leer la copia oficial desde la punta de `main` para comparar
+  // contra el fichero instalado. Ese `origin/main` es el del repo de usar y tirar que el propio
+  // test crea y borra, no el de este repositorio — mismo caso que `[show]` de este mismo fichero
+  // y que `scrum839d`/`scrum839e`. Lo retira quien borre `scripts/equipo/sesion.mjs` o su banco.
   'tests/scrum899-sesion-lista-blanca.test.mjs [show]',
+  // SCRUM-899 (hito 2) · mismo caso: el banco de la tanda instala las copias con `git show
+  // origin/main:<fichero>` desde su repositorio SINTÉTICO del temporal. No es el `main` de nadie.
   'tests/scrum899b-arranque-de-la-tanda.test.mjs [show]',
 ];
 
@@ -351,9 +354,8 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-839e · lo mismo: nombra `main` al montar sus repositorios sintéticos (y el remoto desnudo
   // del banco del job) y al pasárselo al CLI dentro de ellos. Ninguno es el `main` de este repositorio.
   'tests/scrum839e-solo-pr-armados.test.mjs',
-  // SCRUM-899 · nombran `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
+  // SCRUM-899 (hito 2) · nombra `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
   // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
-  'tests/scrum899-sesion-lista-blanca.test.mjs',
   'tests/scrum899b-arranque-de-la-tanda.test.mjs',
   // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
   // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
@@ -437,6 +439,11 @@ const INDIRECTAS_DECLARADAS = [
   // ancla deje de nombrar `origin/main`.
   'tests/scrum267-ancla-de-medicion.test.mjs',
   'tests/scrum649-el-ancla-que-no-apunta.test.mjs',
+  // SCRUM-899 · nombra `origin/main` en la prosa (nombre del test «sin config.json, o sin
+  // origin/main») y en la descripción de una mutación que cae sobre una variable local llamada
+  // `main` (`Buffer.from(main.stdoutBuffer)`, el proceso hijo del propio script) — ninguna de las
+  // dos es una comparación contra la punta de este repositorio. Lo retira quien borre esos textos.
+  'tests/scrum899-sesion-lista-blanca.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

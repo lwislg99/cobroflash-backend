@@ -46,7 +46,9 @@ const HOJA = leer('public/dashboard/css/styles.css');
 
 /** El resolutor, EJECUTADO con su registro y su patrón de verdad. */
 function cargarResolutor() {
-  const ctx = { window: {} };
+  // SCRUM-905 · facturar sólo se ofrece si el modo de emisión factura: aquí se mide el registro con
+  // facturación disponible. Los otros modos los vigila `scrum905-facturar-solo-si-se-puede`.
+  const ctx = { window: { appModoEmision: 'fiscal' } };
   vm.createContext(ctx);
   vm.runInContext(PATRON, ctx);
   vm.runInContext(REGISTRO, ctx);

@@ -78,6 +78,15 @@ test('🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte pe
   assert.equal(args.at(-1), 'hola --dangerously-skip-permissions', '🔴 el prompt no viaja como UN argumento: podría inyectar flags');
 });
 
+test('🔴 canario SCRUM-237: el patrón dangerously|bypass SÍ detecta un modo real que se salta permisos', () => {
+  // Respaldo del `doesNotMatch` de arriba: sin esto, el token podría ser tan imposible como el de
+  // scrum73 y la negación pasaría siempre sin comprobar nada.
+  assert.match('--permission-mode bypassPermissions', /dangerously|bypass/i,
+    '🔴 canario roto: el patrón no detecta el modo que argsLanzar tiene que evitar');
+  assert.match('hola --dangerously-skip-permissions', /dangerously|bypass/i,
+    '🔴 canario roto: no detecta el flag real de Claude Code que este guard existe para bloquear');
+});
+
 test('🔴 reanudar va con el sessionId COMPLETO y SIN flags (con flags arranca una copia)', () => {
   assert.deepEqual(s.argsLanzar({ modo: 'reanudar', nombre: 'sesion-1', sessionId: UUID, prompt: 'p' }),
     ['--bg', '--resume', UUID, 'p'],
