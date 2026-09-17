@@ -1813,6 +1813,17 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         rectificaClave: inv.rectifiesId != null ? 'factura:' + inv.rectifiesId : null,
       });
       const acts = item.querySelector('.jobdet-inv-actions');
+      // SCRUM-885 · el documento del cobro no le ha llegado al cliente (ni email ni WhatsApp). Va en
+      // la fila y no sólo en el toast: el toast se va, y un WhatsApp que falla DESPUÉS sólo se ve
+      // aquí al volver a abrir el trabajo. Inventario AB3: `.alert.warning`, cero componentes nuevos.
+      const avisoEnvio = avisoDocumentoSinEnviar(inv.envioDocumento);
+      if (avisoEnvio.mostrar) {
+        const banda = document.createElement('div');
+        banda.className = 'alert warning job-doc-row__aviso';
+        banda.setAttribute('role', 'status');
+        banda.textContent = avisoEnvio.texto;
+        acts.before(banda);
+      }
       if (!paid) {
         // Marcar como PAGADA → PUT /admin/invoices/:id/status. Verificación de importe A21.2:
         // si el importe recibido no cuadra → payment-anomaly y la factura NO se marca pagada.
@@ -1860,8 +1871,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
             bz.disabled = true;
             bz.textContent = 'Confirmando…';
             try {
-              await apiRequest(`/admin/charges/${inv.chargeId}/confirm-bizum`, { method: 'POST' });
+              const confirmado = await apiRequest(`/admin/charges/${inv.chargeId}/confirm-bizum`, { method: 'POST' });
               showToast('✓ Bizum confirmado: factura cobrada.');
+              // SCRUM-885 · el cobro SÍ está hecho, así que el ✓ se queda; si además el documento no
+              // ha salido, se dice aparte. La fila que pinta `refresh()` lo conserva.
+              const avisoEnvio = avisoDocumentoSinEnviar(confirmado && confirmado.envioDocumento);
+              if (avisoEnvio.mostrar) showToast(avisoEnvio.texto, 'warn');
               refresh();
             } catch (e) {
               const msgs = { bizum_disabled: 'Los cobros por Bizum no están activados todavía.', charge_not_pending: 'Este cobro ya no está pendiente.' };

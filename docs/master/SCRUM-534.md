@@ -381,3 +381,121 @@ propias menciones es justo lo que llevo el día cazando.
 * **Los 18 SIN CLASIFICAR se declaran como tales**, no se reparten a la fuerza.
 * **Las fechas del cuadro son la del fichero que CITA**, no la del documento citado — que no tiene,
   porque 45 de 50 nunca existieron. Es una aproximación y va dicha.
+
+---
+
+# APÉNDICE · Fase d — el guard contra los extractores de rutas `.md` escritos a mano
+
+*16-sep-2026 · rama `scrum-534d-guard-extractores`*
+
+**Medido contra:** `origin/main` = `dc7919946ffd605ab874e541386f2b23bf84cabf` · 2026-09-16T12:19:00+01:00
+
+## De dónde sale
+
+`docs/master/SCRUM-718.md:49`, del 6-sep-2026, dejó escrito para su censo: *«la ruta real es
+`docs/Sprint Scrum/…` y **mi clase de caracteres no admitía el espacio**, así que la cortaba en
+"docs/Sprint"»*. Diez días después, el censo de documentos citados de la fase b **nació con el
+mismo fallo**, y acusó de fantasma a un trozo de una cita perfecta.
+
+> **Un defecto que reaparece en otro instrumento no es mala suerte: es que nadie lo tenía atado.**
+
+## Qué mide, y qué NO mide
+
+Mide los **extractores de rutas `.md` escritos a mano**: una expresión regular que saca un `.md`
+con su ruta de dentro de un texto, en un fichero que no usa `scripts/_documentos-citados.mjs`.
+
+🔴 **No persigue el agujero del espacio, persigue la duplicación que lo hace posible.** Mientras
+haya extractores sueltos, cada uno tendrá sus propios agujeros y habrá que descubrirlos de uno en
+uno. El agujero del espacio se mide *además*, y sólo para probar que el instrumento ejecuta de
+verdad la expresión que dice estar mirando.
+
+**No** es «prohibido usar expresiones regulares con `.md`»: el módulo compartido tiene la suya —es
+la única que debe existir— y el guard la reconoce como la fuente, no como una infracción.
+
+## 🔴 El criterio se equivocó dos veces antes de acertar, y las dos veces por lo mismo
+
+| versión | criterio | resultado | por qué era falso |
+| --- | --- | --- | --- |
+| ① | «cualquier expresión que nombre un `.md`» | **17 acusados** | casi todos eran **filtros de nombre**: validan cómo se llama un fichero que ya se tiene, leyendo un `readdir`. No pueden cortar por un espacio porque **no leen prosa** |
+| ② | «la que lleve la barra dentro de una clase de caracteres» | **0 acusados** | la expresión **arreglada de hoy lleva la barra FUERA de la clase**, así que el criterio no reconocía ni al propio módulo compartido |
+| ③ | **se EJECUTA la expresión contra dos sondas** | **1 acusado, de verdad** | no depende de cómo esté escrita |
+
+El ② es el más instructivo: **un criterio que no ve la versión buena tampoco habría visto la mala
+si se hubiera escrito con otra forma.** Es, otra vez, un detector que sólo ve la forma que su autor
+tenía en la cabeza — el mismo defecto que este guard viene a impedir, cometido al escribirlo.
+
+Las dos sondas son el defecto de SCRUM-718 escrito como **dato**, no como opinión sobre un texto:
+
+* `Ver docs/SprintScrum/X.md ahora` → quien de aquí saca una ruta **con barra** es un extractor.
+* `Ver docs/Sprint Scrum/X.md ahora` → quien de aquí la saca **entera** admite el espacio.
+
+## Las cuatro patas
+
+| pata | qué hace | comprobado |
+| --- | --- | --- |
+| **🔴 ROJO REAL** | reconoce el extractor roto **sin que se lo digan**: lo saca de `git show <commit del arreglo>^:scripts/_documentos-citados.mjs` | ✅ |
+| **✅ VERDE REAL** | en la **misma pasada**, acusa al suelto y respeta al que delega; el que usa el módulo sin expresión propia queda **fuera de población**, que no es lo mismo que aprobado | ✅ |
+| **🔴 SUELO** | con 0 extractores aborta **CIEGO**, no informa «0 malos»; y el guard del árbol real exige ver el módulo compartido antes de dar veredicto | ✅ |
+| **🔴 MUTACIÓN** | quita el tramo que admite el espacio y **cuenta el ancla antes de sustituir** (tiene que aparecer exactamente 1) | ✅ |
+
+⚠️ **La versión rota no se escribe a mano: se saca de git.** Copiarla en una cadena obliga a
+reescaparla, y ahí se pierde justo lo que se quiere medir — pasó al construir esto: los escapes se
+perdían y el control acabó evaluando una expresión que no existió nunca, dando un rojo falso.
+
+## La población declarada, y lo que el número no significa
+
+```
+población: 1 fichero con extractor de rutas · 1 módulo · 0 delegan · 0 A MANO · 0 no clasificados
+  MODULO   scripts/_documentos-citados.mjs:73 · admite espacio: true
+```
+
+* **Población:** los `.mjs` de `tests/` y de `scripts/`.
+* **Alcance declarado del lector de literales:** se reconocen los que abren tras `=`, `(`, `,` o
+  `:`. Con sólo `=` —la primera versión— el censo veía 9 literales y **un** extractor; abriendo a
+  los otros tres ve 20 y **dos**, y el segundo era real. Lo que quede fuera de esas cuatro
+  aperturas **no está medido**.
+* **`NO CLASIFICADO` cuenta del lado malo**: si un literal no compila, no se puede sondar, y no
+  poder decidir no es poder aprobar.
+* **Un fichero que usa el módulo y no tiene expresión propia NO entra en población.** Meterlo
+  inflaría el denominador y haría que el porcentaje de sanos pareciera mérito del guard.
+
+## 🔴 Lo que cazó, sin que se lo dijeran
+
+`tests/scrum242-scripts-no-prometen-documentos.test.mjs:51` extraía inline, dentro de un
+`matchAll(…)`, con una expresión propia que **no admitía el espacio**. Un `docs/Sprint Scrum/X.md`
+nombrado por un script se le cortaba en `docs/Sprint`.
+
+**Arreglado el código, no el guard (regla 41).** Ahora delega en `citasPorLinea`. El cambio se
+midió **antes** de hacerlo, el 16-sep-2026: **48 rutas `docs/*.md` con la expresión a mano y 48
+con el módulo, cero diferencia en los dos sentidos**, con 7 scripts que llevan valla de bloque de
+código —que es lo único que el módulo descuenta y aquella expresión no—.
+
+## Las dos mutaciones declaradas (SCRUM-745)
+
+Las dos tocan **el módulo** y no este fichero, a propósito: una declaración que mutara su propio
+test se encontraría a sí misma —el texto de `de` vive también dentro de la declaración— y la
+sustitución caería en la declaración en vez de en el código. Es SCRUM-349 con otra ropa.
+
+| mutación | tumba a |
+| --- | --- |
+| quitar el tramo que admite el espacio | `🔴 MUTACIÓN: quitar el espacio de la expresión reabre el agujero, y ENTRA` |
+| quitarle la barra (deja de ser extractor de rutas y pasa a filtro de nombre) | `🔴 ningún extractor de rutas .md se escribe A MANO` |
+
+Las dos ejecutadas: **exit 1 y cae el test declarado**, con restauración byte a byte verificada
+contra los bytes de disco (SCRUM-570 / SCRUM-808).
+
+## Decisión del fundador registrada en esta tanda
+
+`docs/legal/DPA_PROFESIONAL.md` y `docs/legal/REGISTRO_ACTIVIDADES_TRATAMIENTO.md` —dos de los 50
+fantasmas de la fase b, con 3 citadores cada uno— **no se retiran del censo: se escribirán antes
+del go-live y quedan enlazados a SCRUM-505.** Aquí sólo se anota el enlace; **los documentos no los
+escribe esta sesión** (regla 30: el texto legal es del fundador).
+
+## Lo que NO cubre
+
+* ⛔ No se ha creado ningún documento ni corregido ninguna cita de las fases a/b/c.
+* El censo sólo mira `tests/` y `scripts/`. Un extractor a mano en `src/` o en un `.claude/` no
+  entra en población, y su ausencia de la lista **no significa que no exista**.
+* La marca `DELEGA` es **generosa a propósito**: un fichero que importa el módulo y además arrastra
+  una expresión vieja se cuenta como que delega. El criterio no puede saber cuál de las dos usa de
+  verdad, y un guard que acusa por la duda acaba silenciado.

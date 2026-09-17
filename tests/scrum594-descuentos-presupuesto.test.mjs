@@ -331,10 +331,15 @@ test('SCRUM-594 · con descuento, el papel LO DICE y sigue sumando', async () =>
   assert.ok(r.texto.includes('102,85'), '🔴 el total no cuadra');
 });
 
-test('SCRUM-594 · 🔴 LA ACOTACIÓN, PROBADA: la factura IGNORA el `dto` por completo', async () => {
-  // La propagación del descuento a la factura queda FUERA de este ticket: allí el total se
-  // RECALCULA desde `lines` con un motor distinto del que alimenta el libro registro y VeriFactu
-  // (SCRUM-624, abierto). Esto prueba que no se ha colado por ningún lado.
+test('SCRUM-594 · 🔴 el PDF de la factura IGNORA el `dto`: el descuento de línea llega YA aplicado al precio', async () => {
+  // ── SCRUM-887 (comentarios 15616 y 15620, 16-sep-2026) LEVANTA LA PARTE A DE LA ACOTACIÓN ──
+  // El descuento POR LÍNEA sí entra ya en la factura y en el cobro, pero NO por este documento:
+  // entra ANTES, en `lineasParaFacturar`, que pone el precio efectivo y QUITA la clave `dto`.
+  // Así que lo que este test prueba sigue siendo cierto y ahora importa por otra razón: si el PDF
+  // aplicara `dto`, una línea que lo conservara se descontaría DOS veces.
+  //
+  // Lo que NO levanta: el descuento GLOBAL con IVA mezclado (caso C) sigue sin llegar a la factura
+  // hasta que la asesoría fije el reparto; el global con un solo IVA (caso B) va en otro PR.
   //
   // 🔴 SE COMPARAN LOS DOS DOCUMENTOS, Y NO UNA CIFRA SUELTA. La primera versión de este test
   // comprobaba `texto.includes('121,00')` y era INCAPAZ DE FALLAR: al inyectar el descuento en
@@ -356,9 +361,9 @@ test('SCRUM-594 · 🔴 LA ACOTACIÓN, PROBADA: la factura IGNORA el `dto` por c
   const a = await importesDe(conDto, 5943);
   const b = await importesDe(sinDto, 5944);
   assert.deepEqual(a, b,
-    '🔴 LA FACTURA HA CAMBIADO DE IMPORTES al llegarle una línea con `dto`. Ese documento se '
-    + 'calcula con un motor distinto del que alimenta el libro registro y VeriFactu (SCRUM-624, '
-    + `abierto): el descuento NO entra ahí en este ticket.\n  con dto: ${a}\n  sin dto: ${b}`);
+    '🔴 LA FACTURA HA CAMBIADO DE IMPORTES al llegarle una línea con `dto`. El descuento de línea '
+    + 'se aplica ANTES, en `lineasParaFacturar` (SCRUM-887): si el PDF también lo aplicara, se '
+    + `descontaría dos veces.\n  con dto: ${a}\n  sin dto: ${b}`);
   // Y el suelo del propio control: si no viera importes, la igualdad de arriba sería vacía.
   assert.ok(a.length >= 3, `🔴 sólo veo ${a.length} importes en la factura: no estoy midiendo nada`);
 });

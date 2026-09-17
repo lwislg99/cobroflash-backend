@@ -118,7 +118,8 @@ test('SCRUM-652c · lo que sale hacia el técnico no tiene NI UNA clave de diner
   ];
   const salida = lineasParaElTecnico(conPrecios);
   const claves = Object.keys(salida[0]).sort();
-  assert.deepEqual(claves, ['bloque', 'descripcion', 'unds'],
+  // SCRUM-889 · `id`: la identidad de la línea, no dinero. La lista sigue cerrada.
+  assert.deepEqual(claves, ['bloque', 'descripcion', 'id', 'unds'],
     '🔴 al técnico le llegan claves de más: ' + claves.join(', '));
 });
 

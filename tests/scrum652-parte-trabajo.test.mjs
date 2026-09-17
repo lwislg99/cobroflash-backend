@@ -233,9 +233,12 @@ test('SCRUM-652 · 🔴 CONTROL NEGATIVO: al técnico NO le llega ni un importe,
   for (const estado of ESTADOS_PARTE) {
     const paraElTecnico = lineasParaElTecnico(parte().lineas);
     for (const l of paraElTecnico) {
-      assert.deepEqual(Object.keys(l).sort(), ['bloque', 'descripcion', 'unds'],
+      // SCRUM-889 · `id` es la identidad de la línea (casa los precios de la oficina con SU línea al
+      // quitar una). No es dinero, y la lista sigue CERRADA: cualquier otra clave cae.
+      assert.deepEqual(Object.keys(l).sort(), ['bloque', 'descripcion', 'id', 'unds'],
         `🔴 en estado «${estado}» al técnico le llegan claves de más: ${JSON.stringify(Object.keys(l))}. ` +
         'El papel tiene UNDS y DESCRIPCIÓN, y nada más.');
+      assert.equal(typeof l.id, 'string', '🔴 el id de línea no es un texto opaco.');
       assert.equal(l.precioUnitario, undefined, '🔴 le llega `precioUnitario`.');
       assert.equal(l.tipoIva, undefined, '🔴 le llega `tipoIva`.');
     }

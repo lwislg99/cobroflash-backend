@@ -158,7 +158,7 @@ function page(title: string, body: string) {
 </head>
 <body>
 ${body}
-<p class="pf-footer">Hecho con <a href="https://yaqu.app" style="color:inherit;font-weight:700;text-decoration:none">YaQu</a></p>
+<p class="pf-footer">Hecho con <a href="${BASE_URL}" style="color:inherit;font-weight:700;text-decoration:none">YaQu</a></p>
 <script>
   // Expandir líneas de factura
   document.querySelectorAll('.pf-lines-toggle').forEach(btn => {

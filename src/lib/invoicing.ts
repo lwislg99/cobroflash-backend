@@ -19,6 +19,7 @@ import {
   ERROR_PDF_SIN_SELLAR,
 } from '../modules/invoicing/domain/selladoEstado';
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
+import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarDesdeFicha, clienteDelDocumento } from '../modules/invoicing/domain/clienteCongelado'; // SCRUM-729
@@ -309,10 +310,12 @@ export async function ensureInvoiceForCharge(
 
   // Líneas: desde el quote si existe; si no, línea única del charge
   const quoteLines = quote
-    ? await prisma.quote.findUnique({ where: { id: quote.id }, select: { lines: true } })
+    ? await prisma.quote.findUnique({ where: { id: quote.id }, select: { lines: true, discountGlobalAmount: true } })
     : null;
-  const invoiceLines: any[] = quoteLines && Array.isArray(quoteLines.lines) && (quoteLines.lines as any[]).length > 0
-    ? (quoteLines.lines as any[])
+  // SCRUM-887 · las líneas del presupuesto con su dto de línea YA aplicado, como en los demás caminos.
+  const lineasDelPresupuesto = quoteLines ? lineasParaFacturar(quoteLines) : [];
+  const invoiceLines: any[] = lineasDelPresupuesto.length > 0
+    ? lineasDelPresupuesto
     : [{ concept: ch.concept, qty: 1, price: Number(ch.amount), tax: 0 }];
 
   // SCRUM-246 · ANTES de pedir número. Este camino parecía a salvo por su fallback —si el

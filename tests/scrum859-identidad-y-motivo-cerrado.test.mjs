@@ -33,16 +33,37 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO',
   },
   {
-    // 🔴 SCRUM-866 · ESTA MUTACIÓN NO CAÍA, y no era culpa del ancla: el test recorría una
-    // COPIA del derivador. Ahora la clave se deriva en UN SOLO SITIO —`entradasConClave`, en
-    // scrum267— y este test pasa por él.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-866 · LA MUTACIÓN NO CAÍA POR DOS MOTIVOS. ÉSTE ES EL SEGUNDO.
+    // ═══════════════════════════════════════════════════════════════════════════════════
     //
-    // ⚠️ La sangría baja de 6 a 4 espacios porque el código salió de un `flatMap` anidado. El
-    // ancla se RE-MIDE cuando el código se mueve; heredarla es cómo nacen las que no casan.
+    // ── EL PRIMERO ya lo encontró SCRUM-839e, y tenía razón ──────────────────────────
+    // El ancla vivía sobre `entradasTroceadas()` de scrum267, y este test no la llamaba:
+    // usaba su PROPIA reimplementación local (`claves`). Se mutaba un sitio por el que el
+    // test no pasa. Aquel arreglo reapuntó la mutación a la copia local, con dos líneas de
+    // contexto para no caer en la ocurrencia de `entradasReales()`.
+    //
+    // ── 🔴 PERO REAPUNTAR NO BASTA, Y ESTÁ MEDIDO ────────────────────────────────────
+    // Con el ancla en la línea exacta que el test ejercita, EL TEST SIGUE PASANDO. El
+    // motivo es su aserto, no el ancla: comparaba CONJUNTOS de claves,
+    //     perdidas = antes.filter((c) => !despues.includes(c))
+    // y al insertar una entrada el conjunto CRECE sin perder nada en los dos mundos:
+    //     por identidad → 7 → 8 entradas · claves perdidas: 0
+    //     por posición  → 7 → 8 entradas · claves perdidas: 0
+    // Con claves `0..N-1`, tras insertar quedan `0..N`: ninguna desaparece. Vale para
+    // cualquier renumeración densa, así que ninguna mutación posicional podía tumbarlo —
+    // EN NINGÚN PUNTO. El aserto de abajo es el que se arregló; sin él, este ancla sería
+    // igual de muda que la anterior.
+    //
+    // ── Y POR ESO EL ANCLA VUELVE A scrum267 ────────────────────────────────────────
+    // Ya no hay copia que reapuntar: la clave se deriva en UN SOLO SITIO
+    // (`entradasConClave`) y este test pasa por él. La sangría baja de 6 a 4 espacios
+    // porque el código salió de un `flatMap` anidado: el ancla se RE-MIDE cuando el código
+    // se mueve; heredarla es cómo nacen las que no casan.
     //
     // ⚠️ `vistos.size` y no un índice del `map`: da exactamente la clave posicional 0,1,2…
-    // —el Map está vacío en la primera entrada y crece con cada una— sin cambiar la firma de
-    // la función real. Una mutación que además tuviera que tocar la firma mediría dos cosas.
+    // —el Map está vacío en la primera entrada y crece con cada una— sin cambiar la firma
+    // de la función real. Una mutación que además tocara la firma mediría dos cosas.
     fichero: 'tests/scrum267-ancla-de-medicion.test.mjs',
     de: "    const id = identidadDeEntrada(e.tituloCompleto);",
     a: "    const id = String(vistos.size); // vuelta a la clave POSICIONAL, a proposito",

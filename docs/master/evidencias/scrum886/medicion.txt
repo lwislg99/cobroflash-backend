@@ -1,0 +1,15 @@
+# SCRUM-886 · cabecera de Clientes medida con chrome-headless-shell 1223 (Chromium real, CSS real de public/)
+# antes = sin exportar · despues = exportar sin flex-wrap · arreglo = exportar + flex-wrap
+# CORTADO = el botón acaba fuera de la tarjeta (.data-card { overflow: hidden } lo recorta)
+[antes] vw=360 card=[16,344] acts.scrollW=274 acts.clientW=274 | ⬆ Importar CSV L=37 R=150 H=30 deco=none T=110 | Nuevo cliente L=158 R=311 H=44 deco=none T=103
+[despues] vw=360 card=[16,344] acts.scrollW=389 acts.clientW=389 | ⬆ Importar CSV L=37 R=150 H=30 deco=none T=110 | ⬇ Clientes CSV L=158 R=265 H=30 deco=none T=110 | Nuevo cliente L=273 R=426 H=44 deco=none T=103 CORTADO
+[arreglo] vw=360 card=[16,344] acts.scrollW=286 acts.clientW=286 | ⬆ Importar CSV L=37 R=150 H=30 deco=none T=103 | ⬇ Clientes CSV L=158 R=265 H=30 deco=none T=103 | Nuevo cliente L=37 R=323 H=44 deco=none T=141
+[antes] vw=390 card=[16,374] acts.scrollW=274 acts.clientW=274 | ⬆ Importar CSV L=37 R=150 H=30 deco=none T=110 | Nuevo cliente L=158 R=311 H=44 deco=none T=103
+[despues] vw=390 card=[16,374] acts.scrollW=389 acts.clientW=389 | ⬆ Importar CSV L=37 R=150 H=30 deco=none T=110 | ⬇ Clientes CSV L=158 R=265 H=30 deco=none T=110 | Nuevo cliente L=273 R=426 H=44 deco=none T=103 CORTADO
+[arreglo] vw=390 card=[16,374] acts.scrollW=316 acts.clientW=316 | ⬆ Importar CSV L=37 R=150 H=30 deco=none T=103 | ⬇ Clientes CSV L=158 R=265 H=30 deco=none T=103 | Nuevo cliente L=37 R=353 H=44 deco=none T=141
+[antes] vw=768 card=[16,752] acts.scrollW=274 acts.clientW=274 | ⬆ Importar CSV L=457 R=570 H=30 deco=none T=47 | Nuevo cliente L=578 R=731 H=44 deco=none T=40
+[despues] vw=768 card=[16,752] acts.scrollW=389 acts.clientW=389 | ⬆ Importar CSV L=342 R=455 H=30 deco=none T=47 | ⬇ Clientes CSV L=463 R=570 H=30 deco=none T=47 | Nuevo cliente L=578 R=731 H=44 deco=none T=40
+[arreglo] vw=768 card=[16,752] acts.scrollW=389 acts.clientW=389 | ⬆ Importar CSV L=342 R=455 H=30 deco=none T=47 | ⬇ Clientes CSV L=463 R=570 H=30 deco=none T=47 | Nuevo cliente L=578 R=731 H=44 deco=none T=40
+[antes] vw=1280 card=[16,1264] acts.scrollW=274 acts.clientW=274 | ⬆ Importar CSV L=969 R=1082 H=30 deco=none T=47 | Nuevo cliente L=1090 R=1243 H=36 deco=none T=44
+[despues] vw=1280 card=[16,1264] acts.scrollW=389 acts.clientW=389 | ⬆ Importar CSV L=854 R=967 H=30 deco=none T=47 | ⬇ Clientes CSV L=975 R=1082 H=30 deco=none T=47 | Nuevo cliente L=1090 R=1243 H=36 deco=none T=44
+[arreglo] vw=1280 card=[16,1264] acts.scrollW=389 acts.clientW=389 | ⬆ Importar CSV L=854 R=967 H=30 deco=none T=47 | ⬇ Clientes CSV L=975 R=1082 H=30 deco=none T=47 | Nuevo cliente L=1090 R=1243 H=36 deco=none T=44
