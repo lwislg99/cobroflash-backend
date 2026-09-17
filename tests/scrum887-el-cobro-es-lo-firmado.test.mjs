@@ -194,7 +194,7 @@ test('SCRUM-887 · la línea con dto sale con el precio EFECTIVO y SIN la clave 
   assert.equal(conDto.price, 24.95, '🔴 se ha MUTADO `Quote.lines`');
 });
 
-test('SCRUM-887 · ⛔ NEGATIVO: con descuento GLOBAL no cambia NADA — ni B (PR 2) ni C (acotación viva)', () => {
+test('SCRUM-887 · ⛔ NEGATIVO: con descuento GLOBAL e IVA MEZCLADO (C) no cambia NADA — acotación viva', () => {
   // C3 del SCRUM-883 tal cual: IVA 21 % y 10 % + 25 € global = caso C.
   const lines = [
     { concept: 'Punto de luz', qty: 8, price: 24.95, dto: 15, tax: 0.21 },
