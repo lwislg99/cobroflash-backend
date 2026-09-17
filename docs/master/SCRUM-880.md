@@ -211,6 +211,10 @@ es trabajo de quien vuelva a medir los cuatro, no de quien mide uno.
 
 # APÉNDICE · Fase c — A y B aplicados, con GO del fundador
 
+> *(La **fase b** —las afirmaciones con sello «medido» y el host que parece staging— está más abajo,
+> en este mismo fichero. Las fases quedan en orden c→b porque reordenarlas produciría borrados en el
+> diff, y un movimiento de bloque es indistinguible de una pérdida para quien lo audite.)*
+
 *17-sep-2026 · rama `scrum-880c-el-desempate-y-los-milisegundos`*
 
 **Medido contra:** `origin/main` = `6598e735fb3c8b4fbaa43a236713c51ad2609fdb` · 2026-09-17T14:06:36+01:00
