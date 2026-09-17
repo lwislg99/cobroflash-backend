@@ -317,6 +317,13 @@ const HALLAZGOS_DECLARADOS = [
   // SCRUM-839e · mismo caso: `main`, `pr` y la rama del PR en un remoto DESNUDO creado en el
   // temporal; el `rev-parse` mide si esa rama sintética se movió. No es el `main` de nadie.
   'tests/scrum839e-solo-pr-armados.test.mjs [rev-parse]',
+  // SCRUM-899 · la puerta de las sesiones de fondo. Su `banco()` fabrica un repositorio SINTÉTICO
+  // en el temporal y hace `git show origin/main:scripts/equipo/sesion.mjs` para reproducir EXACTO
+  // lo que hace el instalador real: leer la copia oficial desde la punta de `main` para comparar
+  // contra el fichero instalado. Ese `origin/main` es el del repo de usar y tirar que el propio
+  // test crea y borra, no el de este repositorio — mismo caso que `[show]` de este mismo fichero
+  // y que `scrum839d`/`scrum839e`. Lo retira quien borre `scripts/equipo/sesion.mjs` o su banco.
+  'tests/scrum899-sesion-lista-blanca.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -426,6 +433,11 @@ const INDIRECTAS_DECLARADAS = [
   // ancla deje de nombrar `origin/main`.
   'tests/scrum267-ancla-de-medicion.test.mjs',
   'tests/scrum649-el-ancla-que-no-apunta.test.mjs',
+  // SCRUM-899 · nombra `origin/main` en la prosa (nombre del test «sin config.json, o sin
+  // origin/main») y en la descripción de una mutación que cae sobre una variable local llamada
+  // `main` (`Buffer.from(main.stdoutBuffer)`, el proceso hijo del propio script) — ninguna de las
+  // dos es una comparación contra la punta de este repositorio. Lo retira quien borre esos textos.
+  'tests/scrum899-sesion-lista-blanca.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
