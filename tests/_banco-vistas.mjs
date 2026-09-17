@@ -415,7 +415,19 @@ export function nodo(tag, reg) {
     get textContent() { return n._texto; },
     set innerHTML(v) {
       n._html = String(v);
-      if (v === '') { n.hijos = []; return; }
+      // 🔴 SCRUM-897 · ASIGNAR `innerHTML` REEMPLAZA. Antes se vaciaba SOLO con `''`; con marcado,
+      // lo nuevo se APILABA sobre lo de antes. Medido sobre 018d1807 con dos sondas: la vista de
+      // presupuestos daba 261 nodos en el banco y 227 elementos en Edge (+10 #text del banco), y
+      // los 24 que sobraban eran pintadas viejas de `.quote-totals` y `.quote-total-kpi`.
+      // Lo que se quita sale DEL DOCUMENTO, como en `removeChild` (SCRUM-444): pierde su padre
+      // y los id de todo su subárbol dejan de resolverse.
+      for (const h of n.hijos) {
+        if (!h) continue;
+        h._padre = null;
+        for (const d of todos(h)) if (d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
+      }
+      n.hijos = [];
+      if (v === '') return;
       // Lo que hace el navegador: el marcado se vuelve árbol. Sin esto, toda vista que pinte con
       // `innerHTML` y luego busque por id daría un rojo falso.
       //

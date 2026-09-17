@@ -88,11 +88,86 @@ const ES_FUTURO = /(se crea|se creará|se escribirá|pendiente|cuando|futur|toda
 const ES_PLANTILLA = /(^|[/_-])(N|n|<[^>]+>|\{[^}]+\}|X|nnn?)\.md$|-N\.md$|_N\.md$/;
 
 /**
- * Ficheros que un proceso GENERA al correr (`aviso.md`, salidas de un script). Se citan por su
- * nombre pero no son documentación del repositorio, y exigir que existan sería exigir que alguien
- * haya ejecutado algo antes de leer.
+ * Ficheros que un proceso GENERA al correr. Se citan por su nombre pero no son documentación del
+ * repositorio, y exigir que existan sería exigir que alguien haya ejecutado algo antes de leer.
+ *
+ * 🔴 SE DERIVA DEL CÓDIGO, NO DE LA PROSA QUE RODEA LA CITA. La primera versión buscaba verbos
+ * —`genera|escribe|deja|produce|salida|crea`— en el contexto de la línea, y eso es **eximir por
+ * mencionar**: el defecto que censó SCRUM-511. Medido el 17-sep-2026: con el criterio por prosa
+ * el cubo `generados` tenía **0** entradas mientras había una salida de verdad sin reconocer.
+ *
+ * Ahora la pregunta es la de SCRUM-242, que ya estaba probada: **¿hay algún script del árbol que
+ * ESCRIBA este fichero?** Derivado, no listado — el día que el script deje de escribirlo, la ruta
+ * vuelve a exigirse.
+ *
+ * ⚠️ SE EXIGE LA RUTA CITADA ENTERA, no el nombre base, y el matiz lo cazó una medición: buscando
+ * sólo el nombre, `tests/_censo-fixture.mjs` —que escribe un `LEEME.md` dentro de un árbol
+ * sintético— hacía pasar por «salida generada» a `spike/LEEME.md`, que es un documento que existió
+ * en esa ruta y se borró. Dos cosas distintas con el mismo final de nombre.
  */
-const ES_GENERADO = /(genera|escribe|deja|produce|salida|crea)[^.]{0,40}$/i;
+/** Los ficheros de código donde puede vivir una escritura. Se leen UNA vez por árbol, no por censo. */
+const cacheCodigo = new Map();
+function codigoDelArbol(raiz) {
+  if (cacheCodigo.has(raiz)) return cacheCodigo.get(raiz);
+  const fuera = [];
+  for (const dir of ['scripts', 'tests']) {
+    const abs = path.join(raiz, dir);
+    if (!fs.existsSync(abs)) continue;
+    for (const f of fs.readdirSync(abs)) {
+      if (!/\.(mjs|js)$/.test(f)) continue;
+      fuera.push(fs.readFileSync(path.join(abs, f), 'utf8').replace(/\s+/g, ' '));
+    }
+  }
+  cacheCodigo.set(raiz, fuera);
+  return fuera;
+}
+
+/** ¿Escribe algún script del árbol exactamente esta ruta? */
+function loEscribeUnScript(codigo, ruta) {
+  const esc = ruta.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(writeFileSync|appendFileSync|createWriteStream)\\([^)]{0,200}?${esc}`);
+  return codigo.some((c) => re.test(c));
+}
+
+/**
+ * 🔴 SKILLS DE TERCEROS: su documentación interna NO es documentación de esta casa.
+ *
+ * `.claude/skills/impeccable/reference/adapt.md` cita a sus hermanos (`typography.md`,
+ * `personas.md`, `responsive-design.md`…) y el proveedor los absorbió en línea, así que apuntan a
+ * ficheros que él borró. Son referencias colgadas REALES, pero **no las mantenemos nosotros** y
+ * meterlas en el mismo cubo que un runbook prometido confunde una deuda con un paquete ajeno.
+ *
+ * ⚠️ EL CRITERIO SE DERIVA DEL MÁSTER, que es quien decide (regla 35), y NO de una lista escrita
+ * aquí ni de que la palabra aparezca por ahí. El máster declara, textual: *«`impeccable` es skill
+ * de TERCEROS (regla 36)»* y *«Excepción a la regla 36 (plugins de terceros): la skill
+ * `impeccable`…»*. Se busca el nombre de la carpeta **dentro de una frase que declare "terceros"**,
+ * que es usar la señal en vez de mencionarla — la distinción que midió SCRUM-511.
+ *
+ * 🔴 Y VA APARTE, NO EXENTO, igual que `docs/historico/`: la fuente se sigue leyendo. Una fuente
+ * retirada de la población no puede volver a ponerse roja nunca, y este censo existe precisamente
+ * para que un cero signifique «he mirado».
+ */
+export function skillsDeTerceros(raiz) {
+  const dirSkills = path.join(raiz, '.claude', 'skills');
+  const master = path.join(raiz, 'docs', 'YAQU_MASTER.md');
+  if (!fs.existsSync(dirSkills) || !fs.existsSync(master)) return [];
+  // ⚠️ EL NOMBRE TIENE QUE IR PEGADO A LA PALABRA, no suelto en la misma frase. La primera
+  // versión se quedaba con las frases que contuvieran «terceros» y buscaba el nombre dentro, y
+  // eso marcó como ajenas a CINCO skills nuestras: el máster tiene frases que hablan de terceros
+  // y nombran de paso las de la casa (`.agents/skills/` = `yaqu-*` + `impeccable`). Volvía a ser
+  // eximir por vecindad. Ahora se exige el nombre ENTRECOMILLADO a menos de 60 caracteres de la
+  // palabra, que es la forma en que el máster declara de verdad: «`impeccable` es skill de
+  // TERCEROS», «(plugins de terceros): la skill `impeccable`».
+  const texto = fs.readFileSync(master, 'utf8').replace(/\s+/g, ' ');
+  const declarada = (n) => {
+    const e = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('`' + e + '`[^.]{0,60}terceros|terceros[^.]{0,60}`' + e + '`', 'i').test(texto);
+  };
+  return fs.readdirSync(dirSkills, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && declarada(e.name))
+    .map((e) => e.name)
+    .sort();
+}
 
 /** Las líneas que caen dentro de un bloque cercado. */
 function enCercado(lineas) {
@@ -202,14 +277,20 @@ export function censar(raiz) {
   }
 
   const fantasmas = []; const deudaDeNombre = []; const futuros = []; const existen = [];
-  const plantillas = []; const generados = []; const enHistorico = [];
+  const plantillas = []; const generados = []; const enHistorico = []; const enSkillDeTerceros = [];
+  const codigo = codigoDelArbol(raiz);
+  const ajenas = skillsDeTerceros(raiz).map((s) => `.claude/skills/${s}/`);
   for (const [ruta, citadores] of porRuta) {
     if (citadores.some((c) => resuelve(raiz, ruta, c.fichero))) { existen.push({ ruta, citadores }); continue; }
     const fila = { ruta, citadores };
     // Los cubos que NO son el defecto van antes, y cada uno con su motivo comprobable.
     if (ES_PLANTILLA.test(ruta)) { plantillas.push(fila); continue; }
     if (citadores.every((c) => ES_FUTURO.test(c.contexto))) { futuros.push(fila); continue; }
-    if (citadores.every((c) => ES_GENERADO.test(c.contexto))) { generados.push(fila); continue; }
+    if (loEscribeUnScript(codigo, ruta)) { generados.push(fila); continue; }
+    // Aparte, no exento: la fuente se sigue leyendo y la cifra se sigue publicando.
+    if (ajenas.length && citadores.every((c) => ajenas.some((a) => c.fichero.startsWith(a)))) {
+      enSkillDeTerceros.push(fila); continue;
+    }
     // 🔴 El histórico va APARTE, no exento: `docs/historico/` son copias CONGELADAS de versiones
     // viejas del máster. Citan lo que existía entonces, y corregirlas sería reescribir el pasado.
     // Pero tampoco se esconden: quien las lea hoy sigue encontrando rutas que no llevan a nada.
@@ -230,6 +311,7 @@ export function censar(raiz) {
     plantillas,
     generados,
     enHistorico,
+    enSkillDeTerceros,
     existen,
   };
 }
@@ -239,6 +321,6 @@ export function linea(c) {
   return `población: ${c.fuentes} documentos · ${c.rutasCitadas} rutas .md citadas · `
     + `${c.existen.length} existen · ${c.fantasmas.length} FANTASMA · `
     + `${c.deudaDeNombre.length} deuda de nombre · ${c.futuros.length} futuras · `
-    + `${c.plantillas.length} plantillas · ${c.generados.length} generados · ${c.enHistorico.length} en histórico `
+    + `${c.plantillas.length} plantillas · ${c.generados.length} generados · ${c.enHistorico.length} en histórico · ${c.enSkillDeTerceros.length} en skill de terceros `
     + `(descontadas en bloque de código: ${c.descontadasEnCodigo} · vistas sólo al normalizar: ${c.soloNormalizado})`;
 }
