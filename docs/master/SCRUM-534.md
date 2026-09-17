@@ -499,3 +499,114 @@ escribe esta sesión** (regla 30: el texto legal es del fundador).
 * La marca `DELEGA` es **generosa a propósito**: un fichero que importa el módulo y además arrastra
   una expresión vieja se cuenta como que delega. El criterio no puede saber cuál de las dos usa de
   verdad, y un guard que acusa por la duda acaba silenciado.
+
+---
+
+# APÉNDICE · Fase e — la población del censo, fijada antes de medir sobre ella
+
+*17-sep-2026 · rama `scrum-534e-poblacion-del-censo`*
+
+**Medido contra:** `origin/main` = `aa465cdd6fc64625bc5a4e16d575fd0810064be6` · 2026-09-17T09:32:00+01:00
+
+## Por qué esto va ANTES que arreglar citas
+
+El fundador lo dijo así y tiene razón: *«G5 y G3 no arreglan fantasmas — corrigen la población. Si
+eso se hace después, todos los porcentajes del censo hay que recalcularlos; la población se fija
+antes de medir sobre ella.»*
+
+## Los dos cubos nuevos, con criterio DERIVADO
+
+### `enSkillDeTerceros` — 6
+
+`.claude/skills/impeccable/reference/adapt.md` cita a sus hermanos (`typography`, `personas`, `responsive-design`… todos con extensión `.md`, escritos aquí
+SIN ella a propósito) y el proveedor los absorbió en línea, dejando las referencias colgadas.
+Son referencias rotas de verdad, pero **no las mantenemos nosotros**.
+
+🔴 **El criterio sale del MÁSTER, que es quien decide (regla 35), no de una lista escrita aquí.** El
+máster declara textualmente, en tres sitios: *«`impeccable` es skill de TERCEROS (regla 36)»* y
+*«Excepción a la regla 36 (plugins de terceros): la skill `impeccable`…»*.
+
+⚠️ **Y el criterio falló primero, medido:** quedarse con las frases que contienen «terceros» y
+buscar el nombre dentro marcó como ajenas a **cinco skills nuestras** (`verifactu`,
+`yaqu-premium-ui`, `yaqu-release-check`, `yaqu-sprint`, `yaqu-verifactu-sif`) — porque el máster
+tiene frases que hablan de terceros y nombran de paso las de la casa. Era **eximir por vecindad**:
+SCRUM-511 por tercera vez en este módulo. Ahora se exige el nombre **entrecomillado a menos de 60
+caracteres** de la palabra, que es como el máster declara de verdad.
+
+🔴 **Va APARTE, NO EXENTO**, igual que `docs/historico/`: la fuente se sigue leyendo y la cifra se
+sigue publicando en la línea de población. **Una fuente retirada de la población no puede volver a
+ponerse roja nunca**, y este censo existe para que un cero signifique «he mirado». Si se prefiere el
+borrado literal de `FUENTES`, es una línea — pero entonces deja de haber vigilancia ahí.
+
+### `generados` — 1
+
+Antes se derivaba de los **verbos que rodean la cita**
+(`genera|escribe|deja|produce|salida|crea`), y eso es **eximir por mencionar**. Medido el
+17-sep-2026: con ese criterio el cubo tenía **0** entradas teniendo `aviso.md` delante, que
+`scripts/vigia-pasada.mjs` escribe.
+
+Ahora la pregunta es la que ya probó SCRUM-242: **¿escribe algún script del árbol esta ruta?**
+Derivado, no listado — el día que el script deje de escribirlo, la ruta vuelve a exigirse.
+
+⚠️ **Se exige la ruta ENTERA, no el nombre base**, y el matiz lo cazó una medición: buscando sólo el
+nombre, `tests/_censo-fixture.mjs` —que escribe un `LEEME` suyo (con extensión, partida aquí a propósito) dentro de un árbol sintético— hacía
+pasar por salida generada a `spike/LEEME.md`, que es un documento que **existió en esa ruta y se
+borró**. Dos cosas distintas con el mismo final de nombre.
+
+## El efecto sobre el censo
+
+```
+antes:  50 FANTASMA · 0 generados
+ahora:  43 FANTASMA · 1 generado · 6 en skill de terceros
+```
+
+50 − 6 − 1 = 43. El SUELO de la fase b cazó el cubo nuevo por no estar en la suma de clases; **se
+completó la cuenta, no se relajó el guard** (regla 41).
+
+## 🔴 CORRECCIÓN: tres cifras que el informe de la fase c dio mal
+
+Van aquí porque una cifra mal dada que no se corrige por escrito se convierte en la cifra buena.
+
+| lo que dije | lo medido | por qué falló |
+| --- | --- | --- |
+| `G4 · existieron y se borraron: **0**` | **5** | medí el historial sin `--all`, así que no veía los commits que no cuelgan de `main` |
+| `G3 · salidas generadas: **4**` | **1** derivable | clasifiqué 3 por intuición. `GRAPH_REPORT.md` es salida de una herramienta **externa**; `CENSO-RAMAS.md` se cita para decir que **no debe existir**; `_EXT.md` es un **falso positivo de mi propio extractor** (la cita es `SPRINT_DEMO_READY.md + _EXT.md`, una abreviatura, y el fichero real existe) |
+| `G1 · el destino existe en **10 de los 12**` | **0 de 12** | lo afirmé sin medirlo |
+
+## 🔴 G1 NO es mecánico, y por eso no se ha tocado
+
+Leídas las 12 citas una a una, G1 no es «media ruta»:
+
+* **8 de 12 se citan precisamente para decir que NO deben existir.** Literal, `docs/master/SCRUM-273.md:104`:
+  `` `SCRUM-242-RUNBOOK.md` y `SCRUM-406-canal.md`. El guard cazó los tres — hacía su trabajo. ``
+  Y `docs/master/SCRUM-652.md:9`: `` El fichero se llama `SCRUM-652.md`, no `SCRUM-652-reconocimiento.md`. ``
+  Escribirles la ruta completa crearía la deuda que esas frases celebran haber evitado.
+* **4 de 12** (`SCRUM-209/216/235/250`) son enlaces markdown a entradas hermanas que **nunca
+  existieron** — comprobado contra todo el historial. No son media ruta: son promesas sin cumplir.
+
+**No se ha inventado criterio para ninguno de los dos casos.** Queda como decisión del fundador.
+
+## Lo que NO cubre
+
+* No se ha creado ningún documento ni corregido ninguna cita.
+* El cubo de terceros depende de que **el máster siga declarándolo**. Si alguien retira esa frase,
+  las 6 entradas vuelven a contarse como deuda nuestra — que es el comportamiento correcto.
+* `GRAPH_REPORT.md`, `CENSO-RAMAS.md` y `_EXT.md` **siguen contados como fantasmas**: no hay
+  criterio derivable que los saque, y forzarlos sería inventar la causa.
+
+## ⚠️ Y ESTE APÉNDICE SE CAZÓ A SÍ MISMO
+
+Escrito tal cual, **subía el censo de 43 a 45**: al citar los hermanos de la skill ajena desde
+`docs/master/`, esas rutas dejaban de tener **todos** sus citadores dentro del paquete y volvían al
+cubo de fantasmas. Y una de las menciones —el `LEEME` del fixture— creaba una ruta citada **que no
+tenía ningún otro citador**: inventada por el documento que la explica.
+
+Es SCRUM-349 en el cubo nuevo: *el texto que explica la regla cae bajo la regla*. Se arregla como ya
+se arregló en la cabecera del módulo y en SCRUM-242 — **rompiendo la forma de ruta** en las
+menciones de ejemplo, no relajando el criterio (regla 41). Medido después: **43 · 1 · 6**, igual que
+antes de escribir esto.
+
+⚠️ **Lo que sigue contaminado, y va dicho:** las citas literales que este apéndice reproduce
+—`GRAPH_REPORT`, `CENSO-RAMAS`, y los nombres de ticket de G1— **suman una cita más** a cada una de
+esas rutas. No cambian de cubo, así que el reparto es el mismo, pero el recuento de citadores de
+esas entradas lleva dentro a este documento.

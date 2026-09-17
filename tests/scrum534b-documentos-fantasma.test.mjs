@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { censar, linea, citasPorLinea, citasNormalizadas, FUENTES } from '../scripts/_documentos-citados.mjs';
+import { censar, linea, citasPorLinea, citasNormalizadas, FUENTES, skillsDeTerceros } from '../scripts/_documentos-citados.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -68,7 +68,8 @@ test('SCRUM-534b · 🔴 SUELO: cero citas es CIEGO, no «está limpio»', () =>
 
   // Y las partes SUMAN: un censo cuyas clases no cierran no es un censo.
   const suma = c.existen.length + c.fantasmas.length + c.deudaDeNombre.length
-    + c.futuros.length + c.plantillas.length + c.generados.length + c.enHistorico.length;
+    + c.futuros.length + c.plantillas.length + c.generados.length + c.enHistorico.length
+    + c.enSkillDeTerceros.length;
   assert.equal(suma, c.rutasCitadas,
     `🔴 las clases suman ${suma} y hay ${c.rutasCitadas} rutas citadas: el reparto pierde entradas.`);
 });
@@ -137,6 +138,58 @@ test('SCRUM-534b · una PLANTILLA no es un documento que falte', () => {
     + 'lo crearía.');
   assert.equal(c.fantasmas.some((x) => /sesion-N\.md$/.test(x.ruta)), false,
     '🔴 y además sigue acusada como fantasma: los cubos no son excluyentes.');
+});
+
+// ═══ 🔴 LOS DOS CUBOS DE POBLACIÓN (SCRUM-534e), Y LO QUE NO PUEDEN TRAGARSE ═════════════════
+
+test('SCRUM-534e · 🔴 el cubo de SKILLS DE TERCEROS sale del MÁSTER, y no se traga nada nuestro', () => {
+  const ajenas = skillsDeTerceros(RAIZ);
+  assert.ok(ajenas.length > 0,
+    '🔴 CIEGO: ninguna skill declarada de terceros. El máster declara `impeccable` como tal en tres '
+    + 'sitios (regla 36); si el criterio no la encuentra, el cubo está vacío por ceguera y sus '
+    + 'referencias colgadas vuelven a contarse como deuda nuestra sin que nadie lo diga.');
+
+  // 🔴 LO QUE NO PUEDE PASAR: que una skill NUESTRA acabe eximida. La prueba no es la lista, es
+  // que el máster no la declara de terceros — y las nuestras llevan el prefijo de la casa.
+  const nuestras = ajenas.filter((s) => /^yaqu-|^cerebro-yaqu$|^verifactu$/.test(s));
+  assert.deepEqual(nuestras, [],
+    `🔴 el criterio ha marcado como AJENAS skills de esta casa: ${nuestras.join(', ')}. Sus `
+    + 'referencias colgadas son deuda nuestra y dejarían de contarse.');
+
+  const c = censar(RAIZ);
+  // Y ninguna entrada del cubo puede tener un citador fuera de un paquete ajeno.
+  const prefijos = ajenas.map((s) => `.claude/skills/${s}/`);
+  for (const f of c.enSkillDeTerceros) {
+    const fuera = f.citadores.map((x) => x.fichero).filter((p) => !prefijos.some((a) => p.startsWith(a)));
+    assert.deepEqual(fuera, [],
+      `🔴 \`${f.ruta}\` está en el cubo de terceros pero lo cita ${fuera.join(', ')}, que es nuestro. `
+      + 'Un cubo que se traga una cita propia convierte deuda en paquete ajeno.');
+  }
+});
+
+test('SCRUM-534e · 🔴 GENERADOS se deriva de quién ESCRIBE, no de la prosa que rodea la cita', () => {
+  const c = censar(RAIZ);
+  assert.ok(c.generados.length > 0,
+    '🔴 CIEGO: cero generados. `scripts/vigia-pasada.mjs` escribe `aviso.md` y el censo debería '
+    + 'verlo. Con el criterio viejo —verbos en el contexto— este cubo daba 0 teniendo esa salida '
+    + 'delante: eximir por MENCIONAR es el defecto que censó SCRUM-511.');
+
+  // 🔴 EL CONTROL QUE DECIDE: una ruta que sólo comparte NOMBRE BASE con algo que un script
+  // escribe NO puede colarse. `spike/LEEME.md` existió en esa ruta y se borró; el fixture escribe
+  // un `LEEME.md` suyo dentro de un árbol sintético. Son dos cosas distintas.
+  assert.equal(c.generados.some((x) => x.ruta === 'spike/LEEME.md'), false,
+    '🔴 `spike/LEEME.md` se ha colado como salida generada por coincidir el nombre base con el '
+    + '`LEEME.md` que escribe un fixture. Un documento borrado no es una salida.');
+
+  // Y la prosa NO exime: un contexto lleno de verbos de escritura sobre una ruta que nadie
+  // escribe tiene que seguir siendo fantasma.
+  const porProsa = c.fantasmas.filter((f) => f.citadores.every((x) => /(genera|escribe|produce|salida|crea)/i.test(x.contexto)));
+  assert.ok(c.fantasmas.length > 0,
+    '🔴 cero fantasmas: el censo ha dejado de ver, o se han arreglado todos y hay que rehacer esto.');
+  for (const f of porProsa) {
+    assert.equal(c.generados.some((g) => g.ruta === f.ruta), false,
+      `🔴 \`${f.ruta}\` está en los dos cubos: el reparto no es excluyente.`);
+  }
 });
 
 test('SCRUM-534b · el censo no se cae con un árbol sin documentos', () => {
