@@ -19,17 +19,44 @@ import {
 } from '../scripts/censo-lista-como-fixture.mjs';
 
 // 🔴 MUTACIONES_QUE_ME_TUMBAN · SCRUM-745.
+//
+// ⚠️ ESTAS DOS NACIERON CADUCADAS, Y ES EL MISMO ERROR QUE ARREGLÉ ESTA MAÑANA EN SCRUM-813.
+//
+// Las declaré citando el texto que el censo tenía **mientras lo estaba escribiendo**, y después
+// cambié las dos líneas: el emparejamiento pasó de `txt.includes(...)` a `importaDe(...)` y el
+// umbral de `>= 3` a `>= MINIMO_ELEMENTO`. Las mutaciones quedaron apuntando a texto inexistente,
+// o sea MUDAS — `meta:mutaciones` no podía aplicarlas y nadie comprobaba estos dos ejes. Lo cazó
+// `scrum836` en la tanda, no yo, **teniendo el verificador de anclas escrito desde esta mañana y
+// sin haberlo pasado por mi propio fichero nuevo**.
+//
+//     🔒 Una mutación se declara CUANDO el código ya está quieto, no mientras se escribe.
+//
+// Reancladas al texto de hoy, y comprobadas con el mismo lector por AST antes de commitear.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'scripts/censo-lista-como-fixture.mjs',
-    de: '      if (txt.includes(base) || txt.includes(l.nombre)) consumidores.add(t);',
-    a: '      if (false) consumidores.add(t);',
+    // 🔴 ANCLADA AL VEREDICTO DE `importaDe`, NO A SU LLAMADA — y el porqué es el aprendizaje.
+    //
+    // Primero la anclé a `if (importaDe(txt, modulo, l.nombre)) consumidores.add(t);`, dentro de
+    // `censar()`. **Salió MUDA**: exit 0, cero casos caídos. El caso ④ prueba `importaDe` SUELTA,
+    // y la mutación tocaba su llamada en un camino que ese caso no ejercita — probé la unidad
+    // creyendo probar la integración, que es la familia de fallo de mi propia ficha.
+    //
+    // Se ancla a lo que el caso SÍ mide: el veredicto de la función. `return true` hace que
+    // cualquier fichero cuente como consumidor, que es exactamente el defecto de acusar por
+    // mención. ⚠️ Queda declarado que NADIE vigila hoy la llamada dentro de `censar()`: haría
+    // falta un caso que ejercite el emparejamiento sobre un árbol de prueba, y eso es otra tanda.
+    //
+    //     🔒 Una mutación que no tumba nada no prueba que el guard sea débil: prueba que el caso
+    //        y la mutación miran puertas distintas.
+    de: '  return hay;',
+    a: '  return true;',
     cae: 'el consumidor se resuelve por IMPORT, no por mencionar el nombre',
   },
   {
     fichero: 'scripts/censo-lista-como-fixture.mjs',
-    de: '    if (t.length >= 3 && t.length < TOPE_ELEMENTO) out.add(n.text);',
-    a: '    if (t.length >= 3) out.add(n.text);',
+    de: '    if (t.length >= MINIMO_ELEMENTO && t.length < TOPE_ELEMENTO) out.add(n.text);',
+    a: '    if (t.length >= MINIMO_ELEMENTO) out.add(n.text);',
     cae: 'un MOTIVO en prosa no es un elemento de la lista',
   },
 ];
