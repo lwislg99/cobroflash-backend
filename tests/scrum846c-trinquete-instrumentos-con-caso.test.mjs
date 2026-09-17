@@ -30,6 +30,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { temporal } from './_temporal.mjs';
 import {
   censoDeInstrumentos, sueloDelCenso, controlNegativoSembrado, VERBOS, CARPETAS,
 } from '../scripts/verificacion-s5/censo-instrumentos-sin-caso.mjs';
@@ -54,7 +55,7 @@ const SUELO_MODULOS = 80;
 const creados = [];
 /** Un árbol de mentira en un directorio temporal. Se borran todos al acabar el fichero. */
 function arbolDeMentira(ficheros) {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum846c-'));
+  const raiz = temporal('scrum846c-');
   creados.push(raiz);
   for (const [rel, texto] of Object.entries(ficheros)) {
     const abs = path.join(raiz, rel);
