@@ -1772,7 +1772,7 @@ Ideas validadas por el mercado. **Ya no esperan a los 25 pagantes para poder con
 
 ## AA1. Protocolo de sesión (obligatorio)
 1. Leer `CLAUDE.md` (auto) → abrir `docs/YAQU_MASTER.md` → localizar el **sprint activo en U**. Duda → preguntar, nunca asumir.
-2. Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ commit del máster aparte, misma rama) → PR a `main`. `main` protegida: push directo BLOQUEADO. El merge del PR lo hace un HUMANO, nunca Claude. `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (`/yaqu-sprint`).
+2. Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature ~~(+ commit del máster aparte, misma rama)~~ (retirado el 17-sep-2026: el registro va en `docs/master/SCRUM-<n>.md`, SCRUM-273) → PR a `main`. `main` protegida: push directo BLOQUEADO. ~~El merge del PR lo hace un HUMANO, nunca Claude.~~ (Retirado el 17-sep-2026: desde el 9-sep el PR se abre y se mergea solo en verde —`pr-automatico.yml`, yaqu-bot—; Claude no mergea a mano ni se salta checks.) `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (`/yaqu-sprint`).
 3. Tests relevantes en verde antes de commit; verificación en **yaqu.app** (no localhost) antes de cerrar tarea.
 4. **Stop conditions — parar y pedir OK del fundador si la tarea toca:** claims fiscales/VeriFactu · dinero real o flujo de cobro en producción · plantillas/categoría de Meta · cambios de schema no aditivos · datos de clientes (export/borrado) · flags de P a nivel global.
 5. Prohibido inventar estados, transiciones, flags o textos de landing/bot (L, P, N5, K1; reglas 27 y 30). Necesidad nueva = propuesta de cambio de master.
@@ -1795,7 +1795,8 @@ CLAUDE.md                          ← constitución (~100 líneas): puntero a e
     yaqu-sprint/SKILL.md           ← /yaqu-sprint: registry → sprint activo → plan →
                                       OK → UNA tarea → done/rollback
     yaqu-release-check/SKILL.md    ← /yaqu-release-check: cierre de sprint (AA1.7)
-    yaqu-verifactu-sif/SKILL.md    ← se crea en S1-0b
+    yaqu-verifactu-sif/SKILL.md    ← ~~se crea en S1-0b~~ existe (17-sep-2026)
+    cerebro-yaqu/SKILL.md · impeccable/ · verifactu/   ← existen (17-sep-2026)
     yaqu-payments/SKILL.md         ← se crea en CONNECT-1
     yaqu-premium-ui/SKILL.md       ← se crea en DOCS-F1 (UI-0): obliga a leer DESIGN.md +
                                       Parte AB antes de tocar UI; checklist visual AB6;
