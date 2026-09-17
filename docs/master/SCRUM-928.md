@@ -313,6 +313,8 @@ No se declara mutación en `MUTACIONES_QUE_ME_TUMBAN`: la mutación sería sobre
 |---|---|
 | `scrum853c` **sin** color | 10 tests · 10 pass · **0 fail** · exit **0** |
 | `scrum853c` con **`FORCE_COLOR=3`** (el que fallaba) | 10 tests · 10 pass · **0 fail** · exit **0** |
+| `npm test` completo, sin color, sobre el merge de `fa9ff832` | 7.467 tests · 7.356 pass · **0 fail** · 111 saltos · exit **0** · 344,7 s |
+| `npm run guards:entrada`, sin color, con esta entrada escrita | 4 guards · 26 tests · 26 pass · **0 fail** · exit **0** |
 
 Con esto, de los **3** rojos que el color provocaba en la suite quedan **0**: el de `scrum858b` lo quitó 928b, y estos dos, 928c.
 
