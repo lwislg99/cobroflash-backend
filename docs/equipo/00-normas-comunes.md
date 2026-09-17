@@ -312,3 +312,17 @@ ticket decía «a 4 ramas» de un umbral concreto, `dentro.length > 10`, y ese m
 hoy es 57. Dos umbrales distintos con dos márgenes distintos, y atribuirle a uno el número del
 otro es la misma clase de error que la norma viene a cortar: **un número heredado de un
 enunciado no es una medición.**
+
+## A19 · Una cobaya que no se ejecuta da el mismo resultado que un arreglo perfecto
+
+Todo banco que compare un ANTES con un DESPUÉS hace que su cobaya deje un **testigo de ejecución**
+—un fichero, una línea en stdout— y **aborta si falta**. Un cero de algo que no llegó a correr se
+lee exactamente igual que un cero de algo que funciona.
+
+    🔒 «Antes de creerte el resultado, comprueba que el sujeto existió.»
+
+**Medido (SCRUM-864):** el banco importaba el helper con una ruta absoluta de Windows sin
+`file://`, así que la cobaya de DESPUÉS no arrancaba y dejaba **0 restos porque no creaba
+ninguno**. Iba a publicarse como «defecto arreglado». Lo cazó el **control positivo**, no el que
+decidía — que es la otra mitad del aviso: el caso que tenía que salir verde es el único que puede
+delatar a un banco mudo.
