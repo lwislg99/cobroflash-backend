@@ -2,7 +2,7 @@
 
 **Fecha:** 17-sep-2026 · **Carril:** A · **Gate:** STOP con GO (empujar = desplegar; camino del cobro)
 **Medido contra:** `origin/main` = `12b4992f965ef3af48c9cec0c3bb1ca115faebe3` · 2026-09-17T19:13:32Z
-**Tanda:** 7421 tests, 7309 pass, 0 fail, 111 skipped
+**Tanda:** 7432 tests, 7321 pass, 0 fail, 111 skipped
 
 El defecto se descubrió en STAGING el 17-sep-2026 haciendo el PASO 0 de **SCRUM-911**, contra
 `origin/main` `ef332b90728399ab0ee75c9166af63890fda2bfa`. **Bloquea encender MANT-1 en producción.**
