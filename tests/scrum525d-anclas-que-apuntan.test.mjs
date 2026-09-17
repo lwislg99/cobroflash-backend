@@ -199,15 +199,36 @@ test('SCRUM-525d · 🔴 TRINQUETE: ninguna coordenada NUEVA sin testigo', () =>
     );
   }
 
-  // El otro lado del trinquete: si ha encogido, que se note y se recoja en el mismo commit.
+  // ── El otro lado del trinquete: si ha encogido, SE RECOGE EN EL MISMO COMMIT ──────────────
+  //
+  // 🔴 SCRUM-927b · HASTA HOY ESTO ERA UN `console.log` Y LA TANDA SEGUÍA VERDE.
+  //
+  // La intención estaba bien —el cálculo ya estaba escrito, y hasta explicaba cómo recogerlo—,
+  // pero su consecuencia acababa en un aviso dentro de una tanda de más de siete mil tests.
+  // Nadie lee eso. El censo de SCRUM-927 lo clasificó por lo que hace, no por lo que promete:
+  //
+  //     🔒 Contar no es avisar — y avisar no es exigir.
+  //
+  // Ahora lo exige. Lo que cambia NO es la regla —el conjunto sólo encoge, y eso ya estaba
+  // escrito en la cabecera de `_anclas-sin-testigo.congelado.mjs`—: lo que cambia es que ahora
+  // hay mecanismo detrás. Medido antes de convertir, contra `origin/main` = `a863416b`: cero
+  // muertos, así que esto NO destapa deuda de nadie; nace en verde.
   const vivos = new Set(sinTestigo.map(par));
   const muertos = [...PARES_SIN_TESTIGO_CONGELADOS].filter((p) => !vivos.has(p));
-  if (muertos.length) {
-    console.log(`    · ✅ el conjunto ENCOGIÓ en ${muertos.length}: quita estas líneas de `
-      + '`scripts/_anclas-sin-testigo.congelado.mjs` en este mismo commit — sólo encoge, y así '
-      + 'no pueden volver a entrar.');
-    for (const p of muertos.slice(0, 8)) console.log(`        · ${p}`);
-  }
+  assert.deepEqual(muertos, [],
+    `\n🔴 EL CONJUNTO CONGELADO ENCOGIÓ EN ${muertos.length}, Y SUS LÍNEAS SIGUEN DECLARADAS:\n\n`
+    + muertos.map((p) => `    · ${p}`).join('\n') + '\n\n'
+    + '  QUÉ SIGNIFICA\n'
+    + '    Esos pares ya NO citan sin testigo: o se les puso el testigo, o el documento dejó de\n'
+    + '    citarlos. Mientras sigan en el conjunto se les perdona una deuda que ya no tienen — y\n'
+    + '    el día que alguien vuelva a citarlos sin testigo, el trinquete de arriba lo dejará\n'
+    + '    pasar creyendo que es deuda vieja.\n\n'
+    + '  CÓMO SE ARREGLA (una línea por par, en este mismo commit)\n'
+    + '    Quita esas líneas de `PARES_SIN_TESTIGO_CONGELADOS`, en\n'
+    + '    `scripts/_anclas-sin-testigo.congelado.mjs`. El conjunto SÓLO ENCOGE: así no pueden\n'
+    + '    volver a entrar por la puerta de atrás.\n\n'
+    + '  ⛔ Lo que NO vale es dejarlas «por si acaso»: una excepción que ya no excluye a nadie es\n'
+    + '     una puerta abierta con la etiqueta de otro.\n');
   console.log(`    · ✅ 0 pares nuevos sin testigo · congelados ${PARES_SIN_TESTIGO_CONGELADOS.size}`);
 });
 
