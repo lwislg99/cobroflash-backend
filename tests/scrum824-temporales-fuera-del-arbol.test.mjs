@@ -71,7 +71,6 @@ const SIN_PROBAR_CONOCIDOS = [
   'tests/scrum766-el-grep-que-cuenta-lineas.test.mjs',
   'tests/scrum778-la-lista-cableada.test.mjs',
   'tests/scrum808-el-arbol-que-queda-mutado.test.mjs',
-  'tests/scrum899-sesion-lista-blanca.test.mjs',
 ];
 
 // ═══ ① SUELO — sin esto, un «cero infracciones» podría ser «no he mirado» ═════════════════

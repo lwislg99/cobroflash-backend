@@ -407,11 +407,20 @@ test('SCRUM-893 · 🔴 ⑤ sin Connect y SIN IBAN: ningún método, y la págin
 // su propia cuenta, y eso no es una decisión de código. Mientras tanto el conjunto queda CERRADO:
 // si crece, mengua o se mueve, este caso cae diciendo cuál.
 //
-//   · QUIÉN LO RETIRA: el fundador, cuando decida si `viasDeCobro.tarjeta` debe preguntar a
-//     `cardChargeMode` o seguir contestando otra cosa (y por qué).
-//   · CUÁNDO: al cerrar SCRUM-910. Este bloque se borra entonces, no se amplía.
+//   · QUIÉN LO RETIRA: el fundador. **Y YA DECIDIÓ EL CRITERIO (17-sep-2026): manda `payBank`,
+//     el que PINTA la cuenta** — la misma regla que `cardChargeMode` para la tarjeta: el criterio
+//     que manda es el del que HACE, no el del que OFRECE. Lo que queda pendiente es sólo CUÁNDO
+//     se aplica a `viasDeCobro`, no cuál gana.
+//   · CUÁNDO: cuando ese trabajo se planifique. Este bloque se borra entonces, no se amplía.
 //   · Y SI ALGUIEN AMPLÍA LA LISTA PARA QUE PASE, está apagando la alarma: la lista sólo puede
 //     ENCOGER. Un trinquete que se ensancha es una tolerancia con otro nombre.
+//
+// ⚠️ **POR QUÉ SE PUEDE ESPERAR, dicho con su fecha y su fuente:** las 3 discrepancias de la
+// familia ② son las que tienen víctima —le prometen tarjeta al profesional y su clienta se come el
+// 409—, pero **hoy no tienen a quién herir**: producción está vacía, **0 facturas y 0 albaranes**,
+// medido en consola por el fundador el 17-sep-2026. Eso no las hace menos graves: las hace baratas
+// de arreglar ahora y caras el día que haya datos. Si alguien lee esto con producción ya en uso,
+// la premisa de este párrafo ha caducado — **vuelve a contar antes de fiarte de él**.
 //
 // Las 15 son de DOS familias, y su gravedad no es la misma:
 //

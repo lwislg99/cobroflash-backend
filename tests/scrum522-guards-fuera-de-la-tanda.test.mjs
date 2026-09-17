@@ -132,8 +132,12 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // vuelve a MEDIR corriendo este test**, que imprime lo que `fueraDeLaTanda` devuelve de verdad.
   // No se calculó 21+1: se corrió y se leyó. Los números de los dos comentarios se han quitado
   // justo por eso — el que vale es el del `assert`, y cada comentario dice QUÉ entra, no cuánto.
-  assert.equal(fuera.length, 22,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ 22 → ${fuera.length}.\n`
+  // SCRUM-888c · entra `guard:descuentos-en-el-detalle`. OBSERVA la ficha de un presupuesto
+  // servida por el panel real: líneas, base e IVA pintados con los descuentos, y sin descuentos
+  // idénticos a la cuenta de siempre. La tabla de la ficha se arma con `innerHTML`, que el banco de
+  // Node no reproduce. Comprobado en rojo contra `e437a51f` (17-sep-2026): 3 de 4 casos.
+  assert.equal(fuera.length, 23,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ 23 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

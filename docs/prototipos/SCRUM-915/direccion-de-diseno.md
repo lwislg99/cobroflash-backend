@@ -29,3 +29,19 @@ Vista previa no interactiva y que miente (pie de 30 días fijo, sin Dto. por lí
 
 ## ⛔ Límites
 Ninguna cifra cambia (cuenta 887/888). Textos nuevos: se proponen y se PARA. Sin framework. IA: la gratis actual (SCRUM-912). El orquestador publica el prototipo y el fundador lo aprueba ANTES de construir (construye la S2).
+
+---
+
+## v2 (17-sep-2026) — tras la opinión del fundador (SCRUM-915 comentario 15790)
+«Mola, pero sigue siendo un poco lioso… La IA es una opción, no lo pongas lo primero… la vista previa ahora parece
+rota, no se va creando. Molaba más a un lado, pero moderno y pulido.»
+
+- Escritorio en DOS columnas: izquierda, pasos con SOLO el actual abierto (los hechos, una línea con «Cambiar»; los
+  pendientes, sólo el título); derecha, el DOCUMENTO VIVO fijo con aspecto de PDF que resalta la zona que se edita.
+- Presupuesto: Cliente → Conceptos → Condiciones → Revisar y enviar. Justificante: Cliente → Conceptos → Revisar y emitir.
+- Conceptos: UNA línea lista para escribir + «+ Añadir línea»; «📋 Usar plantilla», «✨ Sugerir con IA» y «+ Añadir
+  descuento» como secundarias discretas; «Tus conceptos más usados» dentro del desplegable del concepto; la ficha de
+  IVA sólo aparece si la línea no va con lo de siempre.
+- Condiciones ya elegidas: tres filas resumen (cobro, formas de pago, validez), cada una con «Cambiar».
+- Opciones y «⋯» (Guardar como plantilla, Limpiar formulario) arriba del editor.
+- Móvil: los mismos pasos, barra inferior con el total, «Ver documento» y «Continuar».
