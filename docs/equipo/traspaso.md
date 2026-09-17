@@ -1,58 +1,65 @@
-9-sep-2026 · medido sobre `origin/main = 0269e8cd24b6a393e23d05db6ac13307b4ac1c1d` · worktree `wt-verif5`
+17-sep-2026 10:30 CEST · medido sobre `origin/main = aa465cdd6fc64625bc5a4e16d575fd0810064be6` · worktree `wt-jefe`
 
 > Este documento nació con dos datos caducados en menos de una hora. Por eso lleva fecha y
 > SHA en la primera línea, y por eso existe la norma A14.
 
-# TRASPASO DEL ORQUESTADOR — estado al 9-sep-2026
+# TRASPASO DEL ORQUESTADOR — estado al 17-sep-2026
 
-Este documento es el ESTADO. `docs/equipo/orquestador.md` es el MÉTODO.
-Y `docs/equipo/limites-del-fundador.md` son los LÍMITES: lo que el fundador decidió de viva
-voz y no está escrito en ningún otro sitio. Se lee antes de mandar nada.
-El método no caduca; esto sí. Si algo de aquí contradice a una medición de hoy,
-gana la medición.
+Este documento es el ESTADO. `docs/equipo/orquestador.md` es el MÉTODO (empieza por su §0:
+arranque y lista de cada turno). `docs/equipo/limites-del-fundador.md` son los LÍMITES y el
+OBJETIVO VIGENTE. Si algo de aquí contradice a una medición de hoy, gana la medición.
 
-Medido sobre `origin/main = da5ac06ac169fca5d3692a63b10b01a6aed7d3d6`.
+*(Sustituye al traspaso del 9-sep, que sigue en el historial de git. Se conservan sus §4, §6 y §7,
+que no caducan.)*
 
-## 1 · LA COLA
+## 1 · EL OBJETIVO VIGENTE
 
-**9-sep-2026: 16 PR mergeados en la semana, main en VERDE, CERO PR abiertos.**
-El tapón que los frenaba era SCRUM-804, cerrado por Javier. Queda SCRUM-833
-(`scrum637:164`) a 4 ramas de caer, con la misma forma.
+**Producto y automatización a la vez, los dos a fuego** (fundador, 17-sep-2026; detalle en
+`limites-del-fundador.md`). S0-S4 van a producto, cada una en su carril. La S5 va solo a
+automatización. La automatización **ya no se da por cerrada**: queda retirada la decisión del
+16-sep («solo #1367 + meta-guard y después todo a producto»).
 
-El auto-borrado al mergear se llevó **~390 ramas**.
+## 2 · QUIÉN ESTÁ EN QUÉ (encargos del 17-sep por la mañana)
 
-Los cuatro verdes que en su día NO mergeaban lo hacían por dos motivos DISTINTOS:
+| sesión | carril | ticket ahora | lo siguiente de su carril |
+|---|---|---|---|
+| S0 | consultoría | SCRUM-892: código en main (#1381, 08:22Z; **excepción declarada**: S0 no toca `src/`). Falta su veredicto en staging; el ticket lo cierra el orquestador | A20 en `00-normas-comunes.md` («encargo fuera de carril → se dice y no se empieza») |
+| S1 | backend · dinero | SCRUM-887 PR 2 (descuento global; un albarán con descuento global NO factura, y el literal del rechazo se propone y se para) | SCRUM-893 (pago de la cliente sin Connect) |
+| S2 | front | SCRUM-894 (Cobros no avisa del NIF que falta) | — |
+| S3 | bancos | SCRUM-897 (`_banco-vistas.mjs` añade en vez de reemplazar) | SCRUM-876 T3/T4 (aparcados el 16-sep) |
+| S4 | microcopy · parte · albarán | SCRUM-890 PR 2 (firma delegada en el comentario 15665; condición: dos pestañas + `onversionchange`) | SCRUM-895 (albarán firmado con marcador) |
+| S5 | automatización | SCRUM-839: probar «Conflicto de registro» por efecto (encendido por el fundador; medido `active` el 17-sep a las 08:20Z) | §3 |
 
-- **auto-merge ARMADO** por `yaqu-bot[bot]`, estado `dirty` → conflicto con main.
-  El auto-merge espera para siempre, y hace bien.
-- **auto-merge NO armado**: el workflow solo arma al recibir un push, y esas ramas
-  no habían recibido ninguno desde que el workflow existe.
+⚠️ El 17-sep a primera hora se mandaron 893 a la S3 y 895 a la S5, fuera de carril. Se corrigió
+el mismo turno: la S3 y la S5 dejan su PASO 0 como comentario en el ticket. Ver `orquestador.md` §13.
 
-`scrum-automerge-rojo-falso` no tiene PR: la rama se empujo antes de que existiera
-`pr-automatico.yml`.
+**Javier (carril B):** SCRUM-866 (la mutación muda de `scrum859`) es lo ÚNICO que falta para
+marcar el meta-guard como obligatorio (SCRUM-836). Tiene prompt. Tiene además abierto el #1379
+(«A19 + SCRUM-665A»).
 
-## 2 · LAS DECISIONES VIVAS
+## 3 · LA AUTOMATIZACIÓN: lo que hay y lo que falta
 
-| ticket | sesion | que falta |
-|---|---|---|
-| SCRUM-830 | S0 | Decidido: re-anclar SIN escribir ningun numero. Falta la frase de que vigilaba «la rama viva» |
-| SCRUM-829 | S3 | Bajado de rojo. La premisa era falsa. Sigue vivo el parseo divergente de las dos reglas |
-| SCRUM-831 | S4 | Albaranes. Decide ella la escalera; microcopy nueva la firma el fundador |
-| SCRUM-832 | S2 | Las tres decisiones ya estan escritas en el ticket (URL, id inexistente, tenencia) |
-| SCRUM-827 | sin asignar | Trinquete del IVA por NOMBRE+VALOR. Reemplaza a SCRUM-706 |
-| SCRUM-828 | sin asignar | Mergeado el arreglo, ticket sin cerrar |
+| pieza | estado |
+|---|---|
+| PR que se abren, arman y mergean solos | ✅ funciona |
+| Aviso de rojo en check obligatorio | ✅ funciona (SCRUM-853) |
+| Conflictos solo de registro, resueltos solos | ⚠️ #1367 en main y workflow encendido el 17-sep; **sin prueba por efecto todavía** (S5, SCRUM-839) |
+| Meta-guard obligatorio | ⏳ espera a SCRUM-866 (Javier). Con main en verde, el fundador marca la casilla |
+| Push del bot → CI en `action_required`, sin checks | 🔴 volvió a pasar con #1367. **Desaparcado** el 17-sep |
+| Conflictos de código | 🔴 **desaparcado** el 17-sep |
+| Orquestador ↔ sesiones sin que el fundador copie y pegue | 🆕 objetivo del fundador. **Medido el 17-sep:** desde la sesión del orquestador, `ListAgents` ve 7 sesiones locales de `cobroflash-backend` y `SendMessage` podría escribirles. No se ha usado: hacerlo cambia la regla §10.5-10.6 («prompt solo a quien trae el fundador») y lo decide él |
+| Orquestador que arranca solo por la mañana | 🆕 objetivo del fundador. Sin diseñar; si cuesta dinero (rutinas en la nube), regla 36 |
 
-## 3 · LO QUE ESPERA A JAVIER
+## 3bis · CONTRADICCIONES ABIERTAS EN LO QUE SE LEE AL ARRANCAR
 
-Regla de la casa: **① decision → ② ALTER aditivo en las TRES bases → ③ un solo PR.
-NUNCA ③ sin ②.**
-
-**SCRUM-729.** Los ALTER están **APLICADOS y verificados en producción y staging**.
-Lo que falta es el **ESCRITOR**, que es camino de emisión y va aparte.
-
-**SCRUM-815** — tabla `gateway_events` con `@@unique([provider, event_id])` y DOS
-timestamps. **Lo aplica Javier el lunes.** El banco que reproduce las dos mitades del
-fallo se puede construir hoy; el arreglo no.
+- **A19 (chat nuevo).** `00-normas-comunes.md` dice «chat nuevo si pasa de ~200k o lleva >1 h
+  parado» (commit `ccad89cd`, 16-sep 20:05 CEST). Después, esa misma noche (~21:25), el fundador
+  dijo **«nunca por tamaño: solo >1 h parado o si Claude Code no deja seguir»** (memoria del
+  proyecto). Manda lo último. El fichero es de la S0: se le reporta.
+- **Derivados del máster con reglas caducadas** (regla 35: se cambian por cambio de máster):
+  `CLAUDE.md` dice «el merge del PR lo hace un HUMANO»; la skill `cerebro-yaqu` dice «`gh` NO está
+  instalado, el PR lo abre el fundador» y «entrada en YAQU_MASTER.md». Hoy: auto-merge,
+  `gh` instalado fuera del PATH y registro en `docs/master/SCRUM-NN.md` (SCRUM-273).
 
 ## 4 · LOS TRECE ERRORES DEL ORQUESTADOR
 
@@ -75,18 +82,10 @@ fallo se puede construir hoy; el arreglo no.
 | tomo por actual un informe ya usado | nada en el informe decia cuando se midio → norma A14 |
 | «RTT a la base = 175 ms» | era la latencia de la MÁQUINA QUE MIDIÓ, desde España; las dos regiones están en US West. El control de los 880 ms arrastraba el mismo sesgo. Casi lleva a mover la base a Netherlands, poniendo 9.000 km entre la app y su base. **Lo paró Javier midiendo.** |
 
-## 5 · QUIEN ES QUIEN, Y QUE FICHEROS TOCA
+## 5 · QUIÉN ES QUIÉN, Y QUÉ FICHEROS TOCA
 
-| sesion | carril | ticket hoy | ficheros suyos |
-|---|---|---|---|
-| S0 | auditoria / head | SCRUM-830 | `scripts/verificacion-s5/`, `_censo-alcanzabilidad.mjs`, `docs/equipo/` |
-| S1 | backend / fiscal | SCRUM-729 | `src/modules/invoicing/`, `invoiceNumber.service.ts` |
-| S2 | frontend | SCRUM-832 | `public/dashboard/js/`, `app.js`, `styles.css` |
-| S3 | tests / instrumentacion | SCRUM-829 | `tests/`, `scripts/_suelo-contra-main.mjs` |
-| S4 | producto / diseño | SCRUM-831 | `jobsView.js`, `jobNextAction.js`, vistas de lista |
-| S5 | automatizacion | auto-update de ramas | `.github/workflows/` |
-
-Codex: cerrada.
+La tabla vive ahora en `orquestador.md` §11bis (17-sep-2026), con lo que NO se le manda a cada
+sesión. La del 9-sep que había aquí daba S5 = automatización y es la que se confirmó.
 
 ## 6 · LA REGLA DEL WORKTREE DEL JEFE
 
