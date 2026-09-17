@@ -27,6 +27,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import ts from 'typescript';
 import { soloEjecutable } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
@@ -223,16 +224,96 @@ test('SCRUM-895b · POBLACIÓN: 7 marcadores antes, 4 después, la diferencia es
 
 // ═══ ④ EL EFECTO DE LADO QUE SÍ ERA UN DEFECTO ══════════════════════════════════════════════
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-732b · ESTE GUARD GOBERNABA TODO `jobDetailView.js` PARA DEFENDER UNA SENTENCIA.
+//
+// Lo escribí yo el 17-sep-2026 y lo cazó mi propio censo (`censo-alcance-vs-sujeto.mjs`) seis
+// horas después: `assert.ok(!src.includes('|| primaria.id'))` sobre el fichero entero. Mientras
+// nadie escriba ese texto en otra parte, alcance y sujeto coinciden; el día que alguien lo
+// escriba legítimamente —otra fila, otro respaldo—, este guard se pone rojo acusando al rótulo
+// del albarán de algo que no ha pasado. Y un rojo que nombra el sitio equivocado se apaga.
+//
+// ⚠️ SE ESTRECHA EL ALCANCE, NO LO QUE EXIGE. Prohíbe EXACTAMENTE lo mismo —que no vuelva el
+// respaldo `|| primaria.id` al rótulo del albarán— sólo que mirando donde debe. Es el mismo
+// movimiento que SCRUM-587 le hizo a `scrum286`: de `FUENTE` entera a `bloques`.
+//
+// EL SUJETO, derivado por AST y no por líneas: las sentencias que LEEN `ROTULOS_ALBARAN`. Se
+// queda la MÁS INTERNA de cada anidamiento — si no, «la sentencia» sería la función entera y no
+// habríamos estrechado nada.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+function sentenciasQueLeenRotulos(fuente) {
+  const sf = ts.createSourceFile('jobDetailView.js', fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const brutas = [];
+  const visitar = (n) => {
+    if (ts.isStatement(n)) {
+      let usa = false;
+      const buscar = (x) => { if (ts.isIdentifier(x) && x.text === 'ROTULOS_ALBARAN') usa = true; ts.forEachChild(x, buscar); };
+      buscar(n);
+      if (usa) brutas.push({ ini: n.getStart(sf), fin: n.getEnd(), texto: n.getText(sf) });
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  // La más interna: se descarta la que CONTIENE estrictamente a otra coincidencia.
+  return brutas
+    .filter((a) => !brutas.some((b) => b !== a && b.ini >= a.ini && b.fin <= a.fin))
+    .map((a) => a.texto);
+}
+
 test('SCRUM-895b · la fila del Trabajo deja de pintar el identificador crudo', () => {
-  const src = soloEjecutable(fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8'));
-  assert.ok(src.includes('ROTULOS_ALBARAN[primaria.id]'),
-    '🔴 la fila del Trabajo ya no lee `ROTULOS_ALBARAN`: si se copió la tabla, hay dos fuentes del\n' +
-    '  mismo rótulo y el día que una cambie dirán cosas distintas del mismo botón.');
-  // Esto medía el respaldo `|| primaria.id` — SIN rótulo pintaba «btnConvertirFactura» tal cual,
-  // medido por la S4 en el PASO 0 (comentario 15664). SCRUM-905 (ya en `main`) fue más allá: quitó
-  // ESE respaldo entero, así que sin rótulo firmado la fila no pinta nada, ni el id ni el marcador.
-  // Comprobar que el respaldo NO haya vuelto es lo que sigue vigilando este test.
-  assert.ok(!src.includes('|| primaria.id'),
-    '🔴 ha vuelto el respaldo al identificador crudo (`|| primaria.id`): SCRUM-905 lo quitó a\n' +
-    '  propósito porque sin rótulo firmado no debe pintarse nada, ni el id ni el marcador.');
+  const src = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
+  const sujeto = sentenciasQueLeenRotulos(src);
+
+  // SUELO: sin sujeto no hay veredicto. Un «no está» sobre cero sentencias pasaría siempre.
+  assert.ok(sujeto.length >= 1,
+    '🔴 ESCÁNER CIEGO: no se encuentra ninguna sentencia que lea `ROTULOS_ALBARAN` en\n' +
+    '  `jobDetailView.js`. Si la fila dejó de leer la tabla, hay dos fuentes del mismo rótulo y el\n' +
+    '  día que una cambie dirán cosas distintas del mismo botón.');
+
+  const texto = sujeto.join('\n');
+  assert.ok(texto.includes('ROTULOS_ALBARAN[primaria.id]'),
+    '🔴 la fila del Trabajo ya no lee `ROTULOS_ALBARAN[primaria.id]`.');
+  // SCRUM-905 (ya en `main`) quitó el respaldo `|| primaria.id` a propósito: sin rótulo firmado la
+  // fila no pinta nada, ni el id ni el marcador. Que no haya vuelto es lo que se vigila — y ahora
+  // se vigila EN SU SITIO.
+  assert.ok(!texto.includes('|| primaria.id'),
+    '🔴 ha vuelto el respaldo al identificador crudo (`|| primaria.id`) al rótulo del albarán:\n' +
+    '  SCRUM-905 lo quitó a propósito porque sin rótulo firmado no debe pintarse nada.');
+});
+
+// ═══ LOS DOS CONTROLES DEL ESTRECHAMIENTO (SCRUM-732b) ══════════════════════════════════════
+//
+// Se mutan COPIAS EN MEMORIA del fuente real, nunca el árbol.
+
+test('SCRUM-895b · 🔴 ROJO: el respaldo DENTRO del sujeto sigue saltando', () => {
+  const src = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
+  const ancla = 'ROTULOS_ALBARAN[primaria.id]';
+  assert.equal(src.split(ancla).length - 1, 1,
+    '🔴 la mutación no entra: el ancla no aparece exactamente una vez.');
+  const mutado = src.replace(ancla, ancla + ' || primaria.id');
+
+  const texto = sentenciasQueLeenRotulos(mutado).join('\n');
+  assert.ok(texto.includes('|| primaria.id'),
+    '🔴 se ha reintroducido el respaldo EN EL SUJETO y el guard estrechado no lo ve. Entonces el\n' +
+    '  estrechamiento no ha estrechado: ha cegado.');
+});
+
+test('SCRUM-895b · ✅ EL VERDE QUE DECIDE: el mismo texto FUERA del sujeto ya no acusa', () => {
+  const src = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
+  // Una línea legítima en otra parte del fichero, que no tiene nada que ver con el rótulo del
+  // albarán. ANTES del estrechamiento esto ponía el guard rojo acusando al rótulo; ahora no.
+  const ANCLA = 'const JOBDET_ALB_PILL = ';
+  assert.equal(src.split(ANCLA).length - 1, 1,
+    '🔴 la mutación no entra: el ancla de inserción no aparece exactamente una vez.');
+  const mutado = src.replace(ANCLA, 'const otroRespaldo = x || primaria.id;\n' + ANCLA);
+  assert.notEqual(mutado, src, '🔴 la mutación no entró: el ancla de inserción ya no existe.');
+  assert.ok(mutado.includes('|| primaria.id'),
+    '🔴 la mutación no contiene el texto que se quiere probar.');
+
+  const texto = sentenciasQueLeenRotulos(mutado).join('\n');
+  assert.ok(!texto.includes('|| primaria.id'),
+    '🔴 EL ESTRECHAMIENTO NO SIRVE: un `|| primaria.id` escrito FUERA del rótulo del albarán\n' +
+    '  sigue acusando. Es exactamente el defecto que SCRUM-732 midió — un rojo que nombra el\n' +
+    '  sitio equivocado — y es el control que decide si esto se ha arreglado o sólo movido.');
 });

@@ -136,6 +136,8 @@ const SHELL = [
   '/dashboard/js/parteDetailView.js',
   '/dashboard/js/parteOficinaView.js',
   '/dashboard/js/resistenciaAlmacen.js',
+  // SCRUM-918 · lo usa `app.js` justo cuando NO hay red: si hubiera que ir a buscarlo, no estaría.
+  '/dashboard/js/arranqueSinCobertura.js',
   '/dashboard/js/app.js',
 ];
 

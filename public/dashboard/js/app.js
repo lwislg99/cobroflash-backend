@@ -3,12 +3,28 @@
 async function initApp() {
   // 1. Auth check
   let me;
-  try { me = await apiRequest('/admin/me'); }
-  catch { window.location.href = '/login.html'; return; }
+  // SCRUM-918 · «SIN RED» NO ES «SESIÓN CADUCADA». Antes, cualquier fallo mandaba a /login.html, que
+  // no está en el service worker: sin red, recargar dejaba la pantalla de error de Chrome y el albarán
+  // descargado para firmar en el sótano, inalcanzable. La decisión vive en `arranqueSinCobertura.js`.
+  let sinCobertura = false;
+  try {
+    me = await apiRequest('/admin/me');
+    guardarCopiaDeSesion(window.localStorage, me);
+  } catch (e) {
+    const arranque = decidirArranque(e, leerCopiaDeSesion(window.localStorage));
+    if (arranque.destino === 'login') { window.location.href = '/login.html'; return; }
+    pintarAvisoSinCobertura();
+    vigilarVueltaDeLaRed();
+    // Sin copia no hay con qué pintar la app: se queda el aviso, que es mejor que un error de Chrome.
+    if (!arranque.me) return;
+    me = arranque.me;
+    sinCobertura = true;
+  }
 
   // SCRUM-360 (H5 fase 2) · SE MANDA EL ENTORNO, y va aquí porque aquí ya sabemos que la sesión
   // es buena. SUELTO Y SIN `await`: es telemetría, y nada de esto puede retrasar ni tumbar el
   // arranque. Quién lo consume es la fase siguiente; lo que esta fase cierra es que el dato LLEGUE.
+  // SCRUM-918 · sin red también se llama: `enviarEntornoDeLaApp` no espera y se traga el fallo.
   enviarEntornoDeLaApp();
 
   window.appMerchantId = me.merchantId;
@@ -745,6 +761,39 @@ async function enviarEntornoDeLaApp() {
   } catch (_e) {
     return null;
   }
+}
+
+/**
+ * SCRUM-918 · el aviso de que la app ha arrancado SIN RED. Una sola vez, arriba de todo, como el de
+ * pago pendiente. `role="status"`: informa, no interrumpe. El texto vive en `arranqueSinCobertura.js`.
+ */
+function pintarAvisoSinCobertura() {
+  if (document.getElementById('sin-cobertura-banner')) return;
+  const aviso = document.createElement('div');
+  aviso.id = 'sin-cobertura-banner';
+  aviso.className = 'aviso-sin-cobertura';
+  aviso.setAttribute('role', 'status');
+  aviso.textContent = AVISO_SIN_COBERTURA;
+  document.body.prepend(aviso);
+}
+
+/**
+ * SCRUM-918 · cuando vuelve la red, se comprueba la sesión DE VERDAD: si el servidor la da por buena
+ * se guarda la copia y se quita el aviso; si responde que no (401…), al login. Un nuevo «sin red»
+ * deja todo como está. No se recarga la página: podría haber una firma a medias.
+ */
+function vigilarVueltaDeLaRed() {
+  window.addEventListener('online', async function alVolver() {
+    try {
+      const me = await apiRequest('/admin/me');
+      guardarCopiaDeSesion(window.localStorage, me);
+      const aviso = document.getElementById('sin-cobertura-banner');
+      if (aviso) aviso.remove();
+      window.removeEventListener('online', alVolver);
+    } catch (e) {
+      if (decidirArranque(e, null).destino === 'login') window.location.href = '/login.html';
+    }
+  });
 }
 
 async function logout() {

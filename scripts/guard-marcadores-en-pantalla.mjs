@@ -139,9 +139,17 @@ await page.setViewport({ width: 1280, height: 900 });
 await page.goto(pathToFileURL(fichero).href, { waitUntil: 'domcontentloaded' });
 await new Promise((r) => setTimeout(r, 1200));
 
-/** Pinta una vista en un estado y cuenta las apariciones en sus nodos de texto. */
-async function medir(vista, fn, arg, estado, inyectar) {
-  return page.evaluate(async (vista, fn, arg, estado, inyectar, MARCADOR) => {
+/**
+ * Pinta una vista en un estado y cuenta las apariciones en sus nodos de texto.
+ *
+ * 🔴 SCRUM-903d · `estadoAlbaran` ES UN PARÁMETRO, Y ANTES ERA UNA CONSTANTE.
+ * Hasta hoy este banco hacía `v.estado = 'borrador'` a TODO albarán, así que `albaran-detail`
+ * estaba entre las vistas vigiladas y su estado `firmado` no se miraba NUNCA — que es justo donde
+ * vivía el marcador de SCRUM-895. MEDIDO antes de tocar nada: con el rótulo de
+ * `btnConvertirFactura` retirado (el defecto exacto), este guard seguía en VERDE.
+ */
+async function medir(vista, fn, arg, estado, inyectar, estadoAlbaran = 'borrador') {
+  return page.evaluate(async (vista, fn, arg, estado, inyectar, MARCADOR, estadoAlbaran) => {
     let cont = document.getElementById('v');
     if (!cont) { cont = document.createElement('div'); cont.id = 'v'; document.body.appendChild(cont); }
     cont.innerHTML = '';
@@ -149,6 +157,14 @@ async function medir(vista, fn, arg, estado, inyectar) {
 
     window.appUserRole = 'admin';
     window.appDocumentoSuelto = 'factura';
+    // 🔴 SCRUM-903d · EL SEGUNDO PIN, Y ERA EL INVISIBLE. `appModoEmision` no se ponía, y desde
+    // SCRUM-905 `facturaFiscalDisponible()` FALLA CERRADO: sin modo, las dos primarias
+    // contextuales del albarán firmado no se pintan. O sea que aunque el banco sirviera el estado
+    // `firmado`, el botón seguiría sin salir — y nada en este fichero decía «modo de emisión»,
+    // así que nadie iría a buscarlo. Un global ausente fija tanto como una constante escrita.
+    // Se sirve `fiscal` porque es el modo donde SÍ se ofrecen: en `receipt` están ocultas a
+    // propósito (SCRUM-895), y una vista sin botones no puede enseñar el marcador de un botón.
+    window.appModoEmision = 'fiscal';
     const rico = (ruta) => {
       if (/\/admin\/billing\/plans/.test(ruta)) {
         return { currentPlan: 'free', planExpiresAt: null, founding: { plazas: 0 },
@@ -191,7 +207,7 @@ async function medir(vista, fn, arg, estado, inyectar) {
         v = { ...v[0] };
         // El albarán elige sus acciones por `alb.estado`, en minúscula: con otro valor,
         // `destinoEfectivo` devuelve un destino que no existe y la vista revienta antes de pintar.
-        if (/\/admin\/albaranes\//.test(limpia)) v.estado = 'borrador';
+        if (/\/admin\/albaranes\//.test(limpia)) v.estado = estadoAlbaran;
       }
       return Promise.resolve(estado === 'sin-datos' ? vaciar(v) : v);
     };
@@ -224,7 +240,7 @@ async function medir(vista, fn, arg, estado, inyectar) {
       if (muestras.length < 3) muestras.push(n.nodeValue.replace(/\s+/g, ' ').trim().slice(0, 60));
     }
     return { apariciones, muestras };
-  }, vista, fn, arg, estado, inyectar, MARCADOR);
+  }, vista, fn, arg, estado, inyectar, MARCADOR, estadoAlbaran);
 }
 
 // ── ② CONTROL NEGATIVO, ANTES DE NADA: el detector tiene que saber ver uno ──────────────────
@@ -239,16 +255,35 @@ if (prueba.ciego) {
   decir(`  ✅ control negativo: el marcador inyectado se detecta (${prueba.apariciones})`);
 }
 
+// ── ①bis · LOS ESTADOS DEL ALBARÁN, DERIVADOS DEL PANEL (SCRUM-903d) ────────────────────────
+//
+// Se preguntan a `window.ALBARAN_STATES`, que es la tabla que ya usa `destinoEfectivo` para
+// decidir las acciones. Escribirlos aquí a mano sería una SEGUNDA copia del dominio, y el día que
+// el albarán gane un estado este banco dejaría de servirlo en silencio — el mismo modo de fallo
+// que este arreglo viene a cerrar, una capa más abajo.
+const ESTADOS_ALBARAN = await page.evaluate(() => window.ALBARAN_STATES || null);
+if (!Array.isArray(ESTADOS_ALBARAN) || ESTADOS_ALBARAN.length < 2) {
+  mal('🔴 CIEGO: no se ha podido leer `window.ALBARAN_STATES` del panel. Sin la tabla de estados\n'
+    + '   este banco volvería a servir uno solo, que es el defecto de SCRUM-903d.');
+  ESTADOS_ALBARAN.length = 0;
+}
+decir(`  · estados de albarán servidos: ${ESTADOS_ALBARAN.join(', ')}`);
+
 // ── ① EL CENSO ──────────────────────────────────────────────────────────────────────────────
 const porVista = {};
 const ciegos = [];
 for (const [vista, fn, arg] of VISTAS) {
+  // El albarán se sirve en TODOS sus estados; el resto de vistas no tiene ese eje.
+  const estadosAlb = vista === 'albaran-detail' ? ESTADOS_ALBARAN : ['borrador'];
   for (const estado of ESTADOS) {
-    const r = await medir(vista, fn, arg, estado, false);
-    if (r.ciego) { ciegos.push(`${vista} · ${estado} → ${r.ciego}`); continue; }
-    if (!r.apariciones) continue;
-    porVista[vista] = (porVista[vista] || 0) + r.apariciones;
-    (porVista['__muestras_' + vista] ||= []).push(...r.muestras);
+    for (const estadoAlb of estadosAlb) {
+      const r = await medir(vista, fn, arg, estado, false, estadoAlb);
+      const etiqueta = vista === 'albaran-detail' ? `${vista}(${estadoAlb})` : vista;
+      if (r.ciego) { ciegos.push(`${etiqueta} · ${estado} → ${r.ciego}`); continue; }
+      if (!r.apariciones) continue;
+      porVista[vista] = (porVista[vista] || 0) + r.apariciones;
+      (porVista['__muestras_' + vista] ||= []).push(...r.muestras);
+    }
   }
 }
 await navegador.close();

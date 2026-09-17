@@ -92,6 +92,10 @@ test('SCRUM-850 · 🔴 CONTROL NEGATIVO: `&&`, el último tramo y los comentari
     'npm run build && npm test',
     'npm test && echo listo',
     'npm ci && npm run build && node --test tests/*.test.mjs',
+    // SCRUM-858b · la forma del script `test` desde que la tanda va envuelta. El envoltorio devuelve
+    // el código de la tanda (y 3/4 si calla o sale 0 sin recuento), así que es SANA: se nombra aquí
+    // para que el censo la siga VIENDO y no la dé por buena sólo por coincidencia de su regex.
+    'npm run build && node scripts/tanda-con-veredicto.mjs node --test --test-force-exit tests/*.test.mjs',
     'cat fichero | npm test',            // la tanda ES el último tramo: su código es el que sale
   ];
   for (const l of sanas) {

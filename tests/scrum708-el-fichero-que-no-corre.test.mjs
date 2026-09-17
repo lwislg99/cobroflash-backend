@@ -63,8 +63,12 @@ export function patronesDeLaTanda(script) {
   const trozos = String(script || '').split('&&');
   const conNode = trozos.find((t) => /(^|\s)node\s+--test(\s|$)/.test(t));
   if (!conNode) return [];
-  return conNode.trim().split(/\s+/)
-    .slice(1)                                   // fuera el propio `node`
+  const palabras = conNode.trim().split(/\s+/);
+  // 🔴 SCRUM-858b · se lee lo que va DETRÁS de `--test`, no detrás del primer `node`. Desde que la
+  // tanda va envuelta (`node scripts/tanda-con-veredicto.mjs node --test …`), el primer `node` es
+  // el del envoltorio, y su `.mjs` salía como un «patrón de tests» que la tanda no expande.
+  return palabras
+    .slice(palabras.indexOf('--test') + 1)      // fuera `node`, el envoltorio si lo hay, y `--test`
     .filter((a) => !a.startsWith('-'))          // fuera las banderas
     .filter((a) => /\.m?js$/.test(a));          // un patrón de ficheros, no un subcomando
 }
@@ -194,6 +198,9 @@ test('SCRUM-708 · 🔴 contar tests por AST no cuenta ni comentarios ni fuentes
 test('SCRUM-708 · 🔴 el lector del script distingue «no hay patrón» de «no he mirado»', () => {
   assert.deepEqual(patronesDeLaTanda('npm run build && node --test --test-force-exit tests/*.test.mjs'),
     ['tests/*.test.mjs']);
+  // SCRUM-858b · la tanda ENVUELTA: el `.mjs` del envoltorio no es un patrón de tests.
+  assert.deepEqual(patronesDeLaTanda('npm run build && node scripts/tanda-con-veredicto.mjs node --test --test-force-exit tests/*.test.mjs'),
+    ['tests/*.test.mjs'], '🔴 el envoltorio se está leyendo como un patrón de ficheros de la tanda');
   // Varios patrones: los coge todos.
   assert.deepEqual(patronesDeLaTanda('node --test tests/*.test.mjs tests/extra/*.test.mjs'),
     ['tests/*.test.mjs', 'tests/extra/*.test.mjs']);

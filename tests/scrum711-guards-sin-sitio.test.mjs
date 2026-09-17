@@ -184,7 +184,10 @@ function leerArbol() {
 function patronesDeLaTanda(script) {
   const conNode = String(script || '').split('&&').find((t) => /(^|\s)node\s+--test(\s|$)/.test(t));
   if (!conNode) return [];
-  return conNode.trim().split(/\s+/).slice(1)
+  // SCRUM-858b · detrás de `--test`, no del primer `node`: la tanda va envuelta
+  // (`node scripts/tanda-con-veredicto.mjs node --test …`) y el `.mjs` del envoltorio no es un patrón.
+  const palabras = conNode.trim().split(/\s+/);
+  return palabras.slice(palabras.indexOf('--test') + 1)
     .filter((a) => !a.startsWith('-') && /\.m?js$/.test(a))
     .map((p) => new RegExp('^' + p.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*') + '$'));
 }

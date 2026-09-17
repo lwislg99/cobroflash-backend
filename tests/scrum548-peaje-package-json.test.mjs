@@ -150,7 +150,9 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // `guard:falta-en-otra-pestana`), así que su destino no sale de ningún fichero del árbol y este
   // detector no puede verlo. Se declara para que ese hueco no se lea como «no solapa».
   // MEDIDO: esa ruta no la sirve ningún otro guard — la fabrica él y no la comparte.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:firma-con-tramos', 'guard:completar-lleva-al-campo', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
+  // SCRUM-918 · `guard:arranque-sin-red`: sirve el panel en un puerto EFÍMERO y navega con la base en
+  // una variable, así que su destino no se deriva. Lo sirve él y no lo comparte con ningún guard.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:arranque-sin-red', 'guard:firma-con-tramos', 'guard:completar-lleva-al-campo', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });
