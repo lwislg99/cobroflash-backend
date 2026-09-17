@@ -411,7 +411,18 @@ export function nodo(tag, reg) {
       },
     },
     getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0 }),
-    set textContent(v) { n._texto = String(v); n.hijos = []; },
+    // 🔴 SCRUM-897 · LO QUE SE QUITA SALE DEL DOCUMENTO, como en `removeChild` (SCRUM-444): pierde
+    // su padre y los id de todo su subárbol dejan de resolverse. Lo usan `innerHTML` y, desde
+    // SCRUM-901, `textContent`, que vaciaba la lista pero dejaba los id vivos y el padre puesto.
+    _soltarHijos() {
+      for (const h of n.hijos) {
+        if (!h) continue;
+        h._padre = null;
+        for (const d of todos(h)) if (d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
+      }
+      n.hijos = [];
+    },
+    set textContent(v) { n._texto = String(v); n._soltarHijos(); },
     get textContent() { return n._texto; },
     set innerHTML(v) {
       n._html = String(v);
@@ -419,14 +430,7 @@ export function nodo(tag, reg) {
       // lo nuevo se APILABA sobre lo de antes. Medido sobre 018d1807 con dos sondas: la vista de
       // presupuestos daba 261 nodos en el banco y 227 elementos en Edge (+10 #text del banco), y
       // los 24 que sobraban eran pintadas viejas de `.quote-totals` y `.quote-total-kpi`.
-      // Lo que se quita sale DEL DOCUMENTO, como en `removeChild` (SCRUM-444): pierde su padre
-      // y los id de todo su subárbol dejan de resolverse.
-      for (const h of n.hijos) {
-        if (!h) continue;
-        h._padre = null;
-        for (const d of todos(h)) if (d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
-      }
-      n.hijos = [];
+      n._soltarHijos();
       if (v === '') return;
       // Lo que hace el navegador: el marcado se vuelve árbol. Sin esto, toda vista que pinte con
       // `innerHTML` y luego busque por id daría un rojo falso.
@@ -451,6 +455,13 @@ export function nodo(tag, reg) {
         for (const a of String(m[2] || '').matchAll(ATRIBUTO)) {
           h.setAttribute(a[1], a[2] !== undefined ? a[2] : (a[3] !== undefined ? a[3] : ''));
         }
+        // 🔴 SCRUM-901 · UN CAMPO RECIÉN PARSEADO PARTE DE SU ATRIBUTO. `REFLEJADOS` deja fuera
+        // `value` y `checked` porque DESPUÉS de escribir la propiedad ya no sigue al atributo, y eso
+        // es fiel. Pero al nacer del marcado el navegador sí los toma de él: un `<input value="X">`
+        // tiene `.value === 'X'`. Aquí salía vacío, y el test de scrum889 tuvo que leer el
+        // atributo porque `.value` decía que la línea repintada estaba en blanco.
+        if (h.hasAttribute('value')) h.value = h.getAttribute('value');
+        if (h.hasAttribute('checked')) h.checked = true;
         const texto = (m[3] || '').trim();
         if (texto) h.textContent = texto;
         // SCRUM-609 · el hijo nacido del marcado SABE QUIÉN ES SU PADRE. No lo sabía: el parser
