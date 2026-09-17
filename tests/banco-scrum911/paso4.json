@@ -1,0 +1,12 @@
+{
+  "planId": 6,
+  "draftId": 1889,
+  "quoteId": 1884,
+  "R": {
+    "detalleMuestraElPlan": "funciona",
+    "borradorEnLaApi": "funciona",
+    "totalQueVeElPro": "FALLA (la API sirve 320 y la línea al 21% suma 387.2)",
+    "borradorEnLaLista": "funciona",
+    "fichaDelCliente": "no pude mirar por esta ruta (status=200)"
+  }
+}
