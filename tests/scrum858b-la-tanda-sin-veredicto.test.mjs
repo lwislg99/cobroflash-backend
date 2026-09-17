@@ -89,6 +89,18 @@ test('SCRUM-858b · 🔴 una tanda MUDA más que el tope sale con 3, y para SOLO
   // Y no deja huérfanos: el hijo que se colgó tiene que estar parado.
   const vivos = nodesVivosCon(dir);
   assert.deepEqual(vivos, [], '🔴 ha quedado un node huérfano de la tanda parada:\n' + vivos.join('\n'));
+
+  // ⚠️ Y el caso que distingue PARAR de NO PARAR. Un `node --test` colgado se muere solo al perder la
+  // tubería en cuanto intenta escribir, así que el caso de arriba pasaría también sin parar el árbol
+  // (medido: el mutante sobrevivía). Un hijo que calla y NO escribe nunca no se entera: sólo lo para
+  // el envoltorio. La marca va en su propia línea de órdenes para encontrarlo por identidad.
+  const marca = path.basename(temporal('yaqu-858b-mudo-'));
+  const mudo = spawnSync(process.execPath,
+    [ENVOLTORIO, 'node', '-e', `/*${marca}*/ setInterval(() => {}, 1000)`],
+    { env: entorno({ TANDA_SILENCIO_MAX_MIN: '0.05' }), encoding: 'utf8', timeout: 120_000 });
+  assert.equal(mudo.status, 3, `🔴 un hijo mudo que no escribe ha salido con ${mudo.status}`);
+  const huerfanos = nodesVivosCon(marca);
+  assert.deepEqual(huerfanos, [], '🔴 el envoltorio sale con 3 pero deja VIVO al hijo mudo:\n' + huerfanos.join('\n'));
 });
 
 test('SCRUM-858b · 🔴 una tanda que sale con 0 SIN línea de recuento sale con 4', () => {
