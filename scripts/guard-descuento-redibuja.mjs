@@ -97,12 +97,7 @@ const ABRIR_HOJA = new Function(`
   b.click();
   return true;
 `);
-const CERRAR_HOJA = new Function(`
-  var b = document.querySelector('.quote-ajustes-modal .modal-footer .btn-primary');
-  if (!b) return false;
-  b.click();
-  return true;
-`);
+const HOJA_ABIERTA = new Function(`return !!document.querySelector('.quote-ajustes-modal');`);
 const ABRIR_GLOBAL = new Function(`
   var b = document.querySelector('.quote-dto-global button');
   if (!b) return false;
@@ -159,7 +154,10 @@ try {
       const antesDto = base.borradores;
       await teclear(pag, '.quote-ajustes-modal .quote-line__dto input', '15');
       const conDto = await paso('dto de línea 15 %');
-      await pag.evaluate(CERRAR_HOJA);
+      // Se cierra como lo cierra un profesional con teclado: Escape.
+      await pag.keyboard.press('Escape');
+      await espera(200);
+      if (await pag.evaluate(HOJA_ABIERTA)) { ciegos.push(`${ancho}px → la hoja de ajustes no se cierra con Escape`); continue; }
 
       if (!await pag.evaluate(ABRIR_GLOBAL)) { ciegos.push(`${ancho}px → no hay botón «+ Añadir descuento»`); continue; }
       const antesGlobal = conDto.borradores;
