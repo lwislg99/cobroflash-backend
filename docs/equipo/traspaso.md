@@ -47,8 +47,8 @@ marcar el meta-guard como obligatorio (SCRUM-836). Tiene prompt. Tiene además a
 | Meta-guard obligatorio | ⏳ espera a SCRUM-866 (Javier). Con main en verde, el fundador marca la casilla |
 | Push del bot → CI en `action_required`, sin checks | 🔴 volvió a pasar con #1367. **Desaparcado** el 17-sep |
 | Conflictos de código | 🔴 **desaparcado** el 17-sep |
-| Orquestador ↔ sesiones sin que el fundador copie y pegue | 🆕 objetivo del fundador. **Medido el 17-sep:** desde la sesión del orquestador, `ListAgents` ve 7 sesiones locales de `cobroflash-backend` y `SendMessage` podría escribirles. No se ha usado: hacerlo cambia la regla §10.5-10.6 («prompt solo a quien trae el fundador») y lo decide él |
-| Orquestador que arranca solo por la mañana | 🆕 objetivo del fundador. Sin diseñar; si cuesta dinero (rutinas en la nube), regla 36 |
+| Orquestador ↔ sesiones sin que el fundador copie y pegue | ✅ **EN USO desde el 17-sep ~08:50Z** (`orquestador-autonomo.md`). Lo que sigue es la nota de antes de usarlo: **Medido el 17-sep:** desde la sesión del orquestador, `ListAgents` ve 7 sesiones locales de `cobroflash-backend` y `SendMessage` podría escribirles. No se ha usado: hacerlo cambia la regla §10.5-10.6 («prompt solo a quien trae el fundador») y lo decide él |
+| Orquestador que arranca solo por la mañana | 🆕 objetivo del fundador. Sin diseñar; si cuesta dinero (rutinas en la nube), lo decide el fundador. **Actualizado 17-sep:** cron provisional en marcha (`orquestador-autonomo.md` §2, F5) |
 
 ## 3bis · CONTRADICCIONES ABIERTAS EN LO QUE SE LEE AL ARRANCAR
 

@@ -40,9 +40,9 @@ El fundador ha delegado, por escrito y de forma permanente:
   dice qué ha decidido, en vez de devolverle la pregunta.
 - Sus palabras: «todo lo que dices que es mío decídelo tú si puedes».
 
-Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva
-(regla 36), cualquier cosa que toque dinero o el camino fiscal (regla 38), y
-cualquier cambio de infraestructura de producción.
+Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva,
+el camino de emisión fiscal y cualquier cambio de infraestructura de producción (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
+El dinero tiene un matiz desde el 17-sep: ver «Delegaciones del 17-sep-2026».
 
 ## El objetivo vigente (17-sep-2026, de viva voz)
 
@@ -55,6 +55,31 @@ nos bloquea lo solucionamos al momento y me lo dices».
   retirado). Su horizonte incluye que **el orquestador arranque solo por la mañana y hable con las
   sesiones sin que el fundador copie y pegue**, además del bucle PR → CI → merge → aviso.
 - Un bloqueo no se aparca en silencio: se resuelve al momento y se le dice qué bloqueaba.
+
+## Qué es YaQu (17-sep-2026, de viva voz)
+
+**YaQu ES un software de gestión completo —un ERP— para oficios, empresas y autónomos, y quiere abarcarlo
+todo.** Sus palabras: «el máster está antiquísimo, claramente somos un ERP; por una norma de no borrar nada
+del máster hay cosas mega antiguas». El veto «YaQu NO es un ERP ni un CRM» (Parte Z del máster, repetido en
+la skill `cerebro-yaqu`) **queda RETIRADO por el fundador**. Hasta que se cambie el máster manda esta línea,
+y cambiarlo es una propuesta de cambio de máster pendiente.
+
+## Delegaciones del 17-sep-2026
+
+- **El visto bueno de arreglos de producto que tocan el cobro lo da el orquestador** («tú eres jefe de
+  producto, dalas tú»). ⚠️ **Medido el mismo día:** cuando ese visto bueno significa DESPLEGAR a producción (PR
+  con auto-merge), el clasificador de permisos no deja al orquestador darlo por el canal. **El sí lo escribe el
+  fundador en el chat de la sesión**; el orquestador lo prepara y se lo explica (`orquestador-autonomo.md` §7).
+- **Sigue siendo suyo:** coste nuevo, infraestructura de producción, schema (con Javier), el camino de emisión
+  FISCAL y los permisos de Claude Code.
+- **Permiso acotado para SCRUM-899 (sesiones de prueba `control-899-*` y tareas programadas de un solo uso):
+  autorizado por él.** La regla la pone él a mano, porque al orquestador se le bloquea tocar la configuración.
+
+## El horario del equipo (17-sep-2026)
+
+«Que el equipo arranque por la mañana y haga varias tandas al día, cuando haya uso de nuevo.» Provisional:
+cron del orquestador **a las 8:57, 13:57 y 18:57** todos los días (`orquestador-autonomo.md` §2, F5). Lo
+robusto está en SCRUM-899.
 
 ## Cómo quiere trabajar
 
