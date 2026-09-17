@@ -2,9 +2,6 @@
 
 **Medido contra:** `origin/main` = `364e7d3a267d8babc49a92244168dc12096ce996` · 2026-09-16T18:13:05Z (tabla y rojo) · suite final tras mergear `origin/main` = `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T18:58:50Z
 **Rama:** `scrum-887-cobro-descuentos` · **Estado:** PR 1 (caso A) mergeado (#1369, 16-sep 19:24Z). PR 2 (B) en `scrum-887b-descuento-global`, parado antes de empujar el arreglo (toca el cobro). Pendientes: PR 3 (bloqueo de C en el editor, literal por firmar), PR 4 (D2, literal por firmar).
-**Rama:** `scrum-887-cobro-descuentos` · **Estado:** PR 1 (caso A) MERGEADO (#1369). PR 2 (B) EN PR
-— ROJO (test-first), ver apéndice. Pendientes: PR 3 (bloqueo de C en el editor, literal por
-firmar), PR 4 (D2, literal por firmar).
 
 Nace de SCRUM-883 (recorrido del electricista en staging): firma 539,05 €, cobro 628,60 €.
 
@@ -153,6 +150,8 @@ global, justo lo excluido — y lo dice con un código propio (`albaran_con_desc
 CERO escrituras antes de rechazar.
 
 ## Pendiente (fuera de esta rama)
+
+> Actualización 17-sep-2026 (sesión del PR 2): el arreglo ya existe, en `ab2a6275f180db168524a134d57cabfd87154ce2`, comiteado en local y SIN empujar hasta el GO del dinero. Detalle en la sección «PR 2 · caso B» de arriba.
 
 El arreglo de `lineasParaFacturar` (añadir la línea negativa con global de un solo IVA) y del
 handler `POST /:id/convertir-en-factura` (rechazo 409 con descuento global) que pone estos rojos
