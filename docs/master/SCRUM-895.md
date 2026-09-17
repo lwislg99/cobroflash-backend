@@ -288,3 +288,126 @@ avería:
 **qué se le puede cobrar al cliente**— y **no** a estos tres, que son operativos: dicen el estado
 del documento. Pero esa lectura es tuya. Si decides que también esperan al asesor, se quedan con el
 marcador y no pasa nada.
+
+---
+
+# APÉNDICE (17-sep-2026) · Los tres literales firmados, aplicados — y el cuarto que se queda
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca: era la propuesta, y así se propuso.
+
+**Medido contra:** `origin/main` = `f3ab211d54fb4b04129498985b6a78079cf78448` · 2026-09-17T11:12:15+01:00
+**Rama:** `scrum-895-literales-firmados` · **Firma:** SCRUM-895, comentario **15699**
+
+## Qué se aplicó, y qué NO
+
+El fundador firmó **tres** y **paró uno**. Los tres entran LITERALES, carácter por carácter.
+
+| | dónde | literal |
+|---|---|---|
+| ✅ **(A)** | `ROTULOS_ALBARAN.btnConvertirFactura` | `Facturar con el presupuesto` |
+| ✅ **(C)** | 409 `albaran_no_firmado` | `Este parte todavía no está firmado. Solo se factura lo que el cliente ha firmado.` |
+| ✅ **(D)** | 409 `albaran_ya_facturado` | `Este parte ya está facturado entero.` |
+| 🔴 **(B)** | 409 `facturacion_no_disponible` | **se queda con el marcador** |
+
+**(B) está parado por lo que NOMBRA, no por cómo está escrito.** La propuesta decía «justificantes
+de cobro» y el justificante está **retirado** (SCRUM-825 y el expediente de enmienda SCRUM-612,
+8-sep-2026: *«solo habrá presupuestos, albaranes, partes y facturas. No es un renombrado: es retirar
+un tipo de documento»*). Lo que falta no es redactar mejor: es un **dato que hoy no existe** — cómo
+se llama lo que emite un merchant ES con la facturación apagada. Un marcador feo que no miente vale
+más que una frase correcta que nombra algo retirado.
+
+## Las líneas del encargo no eran las líneas del árbol
+
+El encargo citaba `l.1368 / 1371 / 1388`. `main` se había movido **97 commits** desde la medición
+anterior y esas líneas ya apuntaban a otra cosa (`try {`, `const albaran = …`). Se aplicó
+**localizando por contenido**, no por número: los sitios reales eran `1376 / 1379 / 1396`.
+
+## El control, con su mitad olvidada
+
+`tests/scrum895b-literales-firmados.test.mjs` — 7 tests. **Invoca el handler real** con un `prisma`
+de doble; no lee el fichero.
+
+- **ROJO REAL:** los tres sitios devuelven el literal firmado, comparado contra una copia escrita a
+  mano en el test. Si se leyera del producto, el test diría «el producto se parece a sí mismo» y
+  una coma cambiada pasaría.
+- **🔴 LA MITAD QUE SE OLVIDA:** (B) **sigue** devolviendo el marcador. Un marcador que se queda a
+  propósito se parece, para quien pasa por ahí, a uno que se olvidó — y el «arreglo de paso»
+  entraría sin que nadie se enterara.
+- **SUELO:** las tres puertas de 409 tienen que dar **tres** códigos de error distintos. Con menos,
+  un fixture está cayendo en la puerta equivocada y los textos se comprobarían sobre otra respuesta.
+
+### POBLACIÓN
+
+| | antes | después |
+|---|---|---|
+| usos de `MICROCOPY_PENDIENTE_290` como `message` | 6 | **4** |
+| botones que la vista crea sin rótulo | 1 | **0** |
+| **total** | **7** | **4** |
+
+**Diferencia: exactamente 3.** El test falla en los dos sentidos: si baja de más, se ha escrito un
+texto sin firmar; si sube, ha entrado un marcador nuevo por otra puerta.
+
+> En la vista el marcador **no es un literal por botón: es un respaldo** (`ROTULOS_ALBARAN[id] ||
+> MICROCOPY_PENDIENTE`). Por eso un botón sin entrada cuenta como marcador aunque el fichero no lo
+> escriba — contar literales daría 0 donde el profesional ve 1.
+
+## Un defecto de lado que (A) arregla, y no era mío
+
+`jobDetailView.js:1761` hace `ROTULOS_ALBARAN[primaria.id] || primaria.id`: sin rótulo, la fila del
+Trabajo pintaba el identificador crudo **`btnConvertirFactura`**. Lo midió la S4 en su PASO 0
+(comentario 15664). Comparten el objeto, así que al firmar (A) esa superficie se arregla sola.
+
+## Un test ajeno cuya premisa cambió
+
+`tests/scrum290-endpoint-convertir.test.mjs` afirmaba *«TODO el texto de pantalla sigue con el
+marcador»* y comprobaba justo la puerta (C). Esa afirmación dejó de ser cierta —no porque nadie la
+eludiera, sino porque el fundador firmó— así que se actualizó para comprobar lo que hoy es verdad.
+
+**No se aflojó nada:** el deber que llevaba —que no entre texto sin aprobar— lo cubre ahora el
+recuento de población de arriba, que es más apretado: cuenta los cuatro usos que quedan y exige que
+el parado conserve su marcador.
+
+## Duplicado con la S4, para que conste
+
+`origin/scrum-895-sin-facturar-no-se-ofrece` (Luis, 11:43) trae un rojo de 242 líneas para el
+defecto que el #1406 ya había arreglado; su base (`4b88ab67`, 09:32) es anterior al merge. Está
+anotado en el comentario 15691 y su PR (#1408) se cerró sin mergear. **No se ha tocado esa rama.**
+
+## Estado del ticket
+
+SCRUM-895 estaba **Finalizada** desde las 12:01 (cerrada por efecto del #1406) y la firma llegó a
+las **12:10**. Este apéndice entra sobre un ticket ya cerrado; reabrirlo o no es del orquestador.
+
+## 🔴 DOS GUARDS AJENOS TOCADOS, y por qué se dice en voz alta
+
+`docs/equipo/00-normas-comunes.md` A7: *«Un guard en rojo se arregla cambiando el CÓDIGO, nunca lo
+que el guard exige. Si el arreglo pasa por relajar el guard, se para y se dice.»* Aquí se tocaron
+dos. **Ninguno se relajó** —los dos quedan igual de apretados o más— pero la decisión es del
+orquestador, no mía, y revertirlas es trivial.
+
+**1 · `tests/scrum290-endpoint-convertir.test.mjs`.** Afirmaba «TODO el texto de pantalla sigue con
+el marcador» y comprobaba justo la puerta (C). Su premisa la cambió **el fundador al firmar**, no
+yo: el texto ya no está sin aprobar. No había salida que aplicara (C) y dejara ese test intacto —
+o se actualiza, o no se aplica el literal firmado. Ahora exige el literal aprobado, carácter por
+carácter, y el deber que llevaba lo recoge el recuento de población de `scrum895b`, que es más
+apretado: cuenta los cuatro usos restantes y exige que el parado conserve su marcador.
+
+**2 · `tests/scrum601-copy-del-documento-vs-flag.test.mjs`.** Trinquete de reparto,
+`aPelo: 152 → 154`. Es su vía de actualización prevista —su propio rojo pide mirar CUÁL se movió
+antes de tocar el número— y se hizo: se regeneró el censo y se identificaron los dos, que son
+**nuevos**, no reclasificados. Hasta hoy esos sitios devolvían la constante del marcador, que no es
+un literal visible y no estaba en ningún cubo.
+
+## Un hallazgo de copy que NO se arregla (regla 9)
+
+Los dos literales firmados dicen **«parte»**, y su vecino de `albaranes.routes.ts:1357` dice
+**«albarán»** del mismo objeto. La ruta mezcla las dos palabras a pelo. El fundador firmó «parte»,
+así que se aplica «parte» sin tocar nada más: unificar el vocabulario del documento es otro carril
+y necesita su propia firma.
+
+## Un rojo de la tanda que NO era un fallo
+
+`SCRUM-765 · el meta-guard ARRANCA de verdad` cayó con `ETIMEDOUT` a los 120 s dentro de la tanda.
+Medido suelto: **5 segundos, rc=0**, y su salida dice `⚠️ MODO CENSO: NO se ha ejecutado ninguna
+mutación`. Era contención de la propia tanda, no un defecto — y se comprobó `git status` antes de
+seguir, porque un meta-guard muerto a mitad es justo lo que deja ficheros mutados en el árbol.
