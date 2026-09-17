@@ -1,0 +1,19 @@
+{
+  "now": "2027-09-18T10:00:00.000Z",
+  "quoteId": 1884,
+  "planId": 1,
+  "draftId": 1885,
+  "res": {
+    "due": 1,
+    "proposed": 1,
+    "skipped": []
+  },
+  "R": {
+    "cicloPropone": "funciona",
+    "borradorCreado": "funciona",
+    "borradorHeredaLinea": "funciona",
+    "planReprogramado": "funciona",
+    "eventoEnFicha": "funciona",
+    "eventoDiceQueElWAFalló": "funciona"
+  }
+}
