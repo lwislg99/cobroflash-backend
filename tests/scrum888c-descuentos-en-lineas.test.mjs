@@ -66,6 +66,16 @@ test('SCRUM-888c · 🔴 el detalle toma base e IVA de `totalesConDescuento` con
     '🔴 el global del detalle ya no sale de `quote.discountGlobalAmount`');
   assert.ok(!/quote\.total\s*-/.test(detalle),
     '🔴 algo resta del total guardado: deducir el descuento global del total es una segunda cuenta');
+
+  // 🔴 LA PUERTA Y SU EFECTO, juntos y ANTES de pintar. Que la llamada exista no basta: medido con
+  // el mutante `if (false)`, la llamada seguía escrita, este test seguía verde y el detalle volvía
+  // a pintar la suma sin descuentos. Lo que se exige es la forma entera: con descuento, base e IVA
+  // se SUSTITUYEN por los de la cuenta compartida.
+  const bloque = /if \(window\.quoteDescuentos\.hayDescuento\(lineasParaTotales, descuentoGlobal\)\) \{\s*const T = window\.quoteDescuentos\.totalesConDescuento\(lineasParaTotales, descuentoGlobal\);\s*totalBase = T\.baseImponibleCents \/ 100;\s*totalIva = T\.cuotaCents \/ 100;\s*\}/.exec(detalle);
+  assert.ok(bloque, '🔴 con descuento, base e IVA del detalle ya no se sustituyen por los de `totalesConDescuento` '
+    + '(o la puerta ya no es `hayDescuento(lineasParaTotales, descuentoGlobal)`)');
+  const pinta = detalle.indexOf('fmtQuoteMoney(totalBase');
+  assert.ok(pinta > bloque.index, '🔴 base e IVA se pintan ANTES de aplicarles los descuentos');
 });
 
 test('SCRUM-888c · 🔴 el borrador guarda y restaura el dto de la línea y el descuento global', () => {
