@@ -22,6 +22,9 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
 2. Medir el estado real antes de creerse ningún traspaso: PR abiertos y mergeados, CI de main,
    workflows activos, Jira de los tickets vivos. Un traspaso es una foto con fecha, no el ahora.
 3. Casar cada ticket vivo con su sesión por la tabla de §11bis.
+4. Leer `orquestador-autonomo.md`: **desde el 17-sep el orquestador habla con las sesiones
+   DIRECTAMENTE** (`ListAgents` + `SendMessage`), sin que el fundador copie y pegue. Ese fichero
+   tiene el protocolo, las direcciones y lo que sigue siendo del fundador.
 
 **CADA TURNO, en este orden (lo pidió así el fundador, 17-sep-2026):**
 
@@ -32,9 +35,11 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
    pone **EN CURSO + asignado a Luis** lo que una sesión está trabajando y no lo esté, y se dice
    qué no se puede cerrar y por qué.
 4. **Decidir** lo delegado (microcopy, lo que sea del orquestador) y decir qué se decidió.
-5. **Prompts SOLO a las sesiones cuya respuesta ha traído él** (§10.5-10.6), cada uno casado con
-   su carril (§11bis), con la línea «↩️ MISMO CHAT / 🆕 CHAT NUEVO de la Sesión N» ENCIMA del
-   bloque (§10.11bis), completos y sin huecos.
+5. **Encargos por el CANAL DIRECTO a las sesiones que han entregado** (`orquestador-autonomo.md`
+   §3; sustituye a «prompts solo a las sesiones cuya respuesta trae él», §10.5-10.6), cada uno
+   casado con su carril (§11bis) y completo. Si hace falta un **chat nuevo**, eso sí se le pide
+   al fundador, con el prompt en un bloque y la línea «🆕 CHAT NUEVO de la Sesión N» encima
+   (§10.11bis).
 6. **Memoria de traspaso al día** (qué está en main por efecto, qué queda, ramas y PR).
 7. **Lo que tiene que hacer él, SIEMPRE AL FINAL** del mensaje, numerado y corto; si no hay
    nada, se dice. Los pasos manuales, uno a uno.
