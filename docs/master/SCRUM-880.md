@@ -206,3 +206,127 @@ usuario (30 / A7), y nada en `docs/microcopy/`, que exige firma válida a todo l
 worktrees llevan `DATABASE_URL_STAGING`, `_DEV` y `_TESTS`»*. **Esa medición ha caducado**, al menos
 para este árbol. Va aquí y no en `CLAUDE.md` porque ése es derivado (regla 35) y porque re-fecharlo
 es trabajo de quien vuelva a medir los cuatro, no de quien mide uno.
+
+---
+
+# APÉNDICE · Fase c — A y B aplicados, con GO del fundador
+
+*17-sep-2026 · rama `scrum-880c-el-desempate-y-los-milisegundos`*
+
+**Medido contra:** `origin/main` = `6598e735fb3c8b4fbaa43a236713c51ad2609fdb` · 2026-09-17T14:06:36+01:00
+
+> **GO concedido para A + B. C queda fuera** (estado nuevo y esquema: ticket aparte).
+> El motivo del GO, escrito porque es la mitad del valor de la decisión: **producción tiene CERO
+> facturas y CERO albaranes**, así que no existe ni un sello viejo sin milisegundos con el que los
+> nuevos puedan empatar. **B es un cambio limpio hoy y deja de serlo con la primera factura real.**
+
+## El diff efectivo — cinco líneas, ni una más
+
+```
+-  return tAnul > tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;      A
++  return tAnul >= tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;
+
+-    const timestamp = formatFechaHoraHuso(new Date());                   B · alta
++    const ahora = new Date();
++    const timestamp = formatFechaHoraHuso(ahora);
+-      data: { …, vfTimestamp: new Date(timestamp) },
++      data: { …, vfTimestamp: ahora },
+
+-    const timestamp = formatFechaHoraHuso(new Date());                   B · anulación
++    const ahora = new Date();
++    const timestamp = formatFechaHoraHuso(ahora);
+-      data: { …, vfAnulTimestamp: new Date(timestamp) },
++      data: { …, vfAnulTimestamp: ahora },
+```
+
+⛔ **El `sort` de la construcción del XML NO se ha tocado** — cero líneas suyas en el diff,
+comprobado. Sigue tapiado porque su único consumidor busca por huella desde SCRUM-145d.
+⛔ **Ningún sello ya guardado se reescribe** (regla 29): sólo cambia lo que se guarda de aquí en
+adelante.
+
+## ② La comprobación del esquema, repetida y citada
+
+Antes de escribir una línea, **segunda vez**, sobre `DATABASE_URL_DEV` a las
+`2026-09-17T12:57:41.795Z`:
+
+```sql
+select table_name, column_name, data_type, datetime_precision
+  from information_schema.columns
+ where column_name in ('vf_timestamp','vf_anul_timestamp');
+```
+```
+invoices.vf_anul_timestamp → timestamp without time zone · datetime_precision = 3
+invoices.vf_timestamp      → timestamp without time zone · datetime_precision = 3
+```
+
+**`precision = 3` es milisegundos: NO hace falta ALTER.** Las columnas nunca fueron la
+limitación; el truncado lo ponía el código al re-parsear la cadena de la huella.
+
+Y donde SCRUM-145 prometió *«se PERSISTE el instante exacto que entró en la huella»* queda escrito
+el matiz: ahora se guarda **eso más la precisión que el hash descarta**. La verificación de un
+tercero no cambia, y **eso no se razona: se comprueba recomputando la huella** (abajo).
+
+## ③ Los controles — A y B por separado
+
+| control | qué prueba | |
+| --- | --- | --- |
+| **🔴 A · EL QUE DECIDE** | con alta y anulación empatadas, la cadena **ya no bifurca**: encadena a la anulación | ✅ |
+| **✅ A · VERDE REAL** | con la anulación sellada **ANTES** que el alta, encadena al **alta** | ✅ |
+| **🔴 A · MUTACIÓN** | `>` y `>=` dan respuestas **distintas** sobre el mismo empate, en 3 separaciones | ✅ |
+| **🔴 B · milisegundos** | 50 sellos escritos por el camino real; si todos salieran a 0 sería el truncado de vuelta | ✅ |
+| **🔴 B · invariante** | la huella se **recomputa de verdad** desde el sello guardado, 20 veces | ✅ |
+| **🔴 mecanismo** | la cadena hasheada sigue truncada al segundo — por eso `>=` no sobra | ✅ |
+
+🔴 **EL SUELO DEL EXPERIMENTO VA DENTRO DEL QUE DECIDE:** antes de afirmar nada, el banco comprueba
+que **ha producido el empate** (los dos sellos idénticos, milisegundos a 0). Si no lo produjera,
+el verde sería el suelo del experimento y no una prueba de que el arreglo funciona.
+
+🔴 **Y EL VERDE REAL ES LA RAMA QUE RESPONDE DISTINTO.** «Anulación 1 s después» habría dado la
+misma respuesta con `>` y con `>=` — no mide nada. El caso que discrimina es la **anulación
+sellada ANTES**: ahí tiene que ganar el alta. Sin él, un `>=` mal escrito como «la anulación gana
+siempre» pasaría el control de arriba sin que nadie lo notara.
+
+### Las dos mutaciones declaradas, y que cada una cae SOLA
+
+| mutación | tumba | y NO tumba |
+| --- | --- | --- |
+| devolver `>` estricto | `A · EL QUE DECIDE` | el de B |
+| volver a `new Date(timestamp)` | `B · milisegundos` | el de A |
+
+**Que cada una caiga sola es lo que prueba que son dos arreglos.** Un test que sólo pasara con los
+dos puestos no diría cuál hace el trabajo.
+
+### 🔴 Y la sonda de mutación me cazó a mí primero
+
+Las dos mutaciones salían **`exit 0`**: el guard no caía. No era que el arreglo no funcionara —
+era que **la sonda editaba el `.ts` y los tests importan de `dist/`**. Sin recompilar, una mutación
+sobre código compilado es **MUDA**: da exactamente la misma salida que un guard que no detecta.
+
+El meta-guard de la casa ya lo sabe —SCRUM-763 lo dejó escrito: *«si el fichero que la declaración
+muta se COMPILA, también se emite su `.js` a `dist/`»*— y mi sonda no. Arreglada recompilando entre
+mutación y ejecución, las dos caen. **Si me hubiera fiado del primer `exit 0` habría concluido que
+los controles eran ciegos, y lo ciego era el instrumento que los medía.**
+
+## Lo NO tocado
+
+El resto de `verifactu.service.ts` · el `sort` del XML · `prisma/schema.prisma` (no hace falta
+ALTER, medido) · ningún sello guardado (regla 29) · ningún estado ni flag (27) · ninguna
+dependencia (36) · ningún texto de usuario (30). **Producción y staging: no tocados.**
+
+### 🔴 Y un guard de otro carril cazó la consecuencia que yo no había visto
+
+`SCRUM-525d` salió en rojo en la tanda: **mis 38 líneas de comentario desplazaron el fichero**, y
+`docs/legal/AUDITORIA_CAMINO_EMISION.md:39` citaba `verifactu.service.ts:536` para
+`buildVerifactuRegistrosXml`, que pasó a **574**.
+
+No es un fallo del guard ni una casualidad: **es exactamente para lo que existe**. Una coordenada
+`fichero:línea` en un documento de auditoría se rompe cada vez que alguien escribe encima, y sin
+algo que lo compruebe apunta a otra cosa sin que nadie lo note — el documento sigue pareciendo
+correcto.
+
+**Arreglada la coordenada, no relajado el guard** (regla 41): `536` → `574`. Se cambia el número,
+no la afirmación: sigue señalando la misma función.
+
+⚠️ **Y deja una lección para el que escriba comentarios largos en el camino fiscal:** explicar bien
+un cambio de una línea cuesta 38 líneas, y esas 38 líneas rompen coordenadas ajenas. El precio no
+es no explicar — es acordarse de que el fichero es un sistema de coordenadas para otros documentos.
