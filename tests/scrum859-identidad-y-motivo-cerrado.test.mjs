@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { trocearEntradas, identidadDeEntrada, motivoSinAncla } from './scrum267-ancla-de-medicion.test.mjs';
+import { trocearEntradas, identidadDeEntrada, motivoSinAncla, entradasConClave } from './scrum267-ancla-de-medicion.test.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR = path.join(RAIZ, 'docs/master');
@@ -33,16 +33,40 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO',
   },
   {
-    // 🔴 SCRUM-839e (registro) · esta mutación vivía sobre `scrum267-ancla-de-medicion.test.mjs`,
-    // pero el test que dice cazar (`cae`, abajo) no llama a `entradasTroceadas()` de ese fichero:
-    // usa su PROPIA reimplementación local (`claves`, en este mismo test). Mutar la de scrum267
-    // no tocaba el camino que el test ejercita, y el guard quedaba MUDO. El `de` incluye la línea
-    // anterior porque `identidadDeEntrada(e.tituloCompleto)` se repite tal cual en `entradasReales`
-    // (arriba, en este fichero): sin ese contexto, `.replace()` habría mutado la ocurrencia
-    // equivocada (la primera del fichero) en vez de la de `claves`.
-    fichero: 'tests/scrum859-identidad-y-motivo-cerrado.test.mjs',
-    de: "    return trocearEntradas(t).map((e) => {\n      const id = identidadDeEntrada(e.tituloCompleto);",
-    a: "    return trocearEntradas(t).map((e) => {\n      const id = String(e.indice); // vuelta a la clave POSICIONAL, a proposito",
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-866 · LA MUTACIÓN NO CAÍA POR DOS MOTIVOS. ÉSTE ES EL SEGUNDO.
+    // ═══════════════════════════════════════════════════════════════════════════════════
+    //
+    // ── EL PRIMERO ya lo encontró SCRUM-839e, y tenía razón ──────────────────────────
+    // El ancla vivía sobre `entradasTroceadas()` de scrum267, y este test no la llamaba:
+    // usaba su PROPIA reimplementación local (`claves`). Se mutaba un sitio por el que el
+    // test no pasa. Aquel arreglo reapuntó la mutación a la copia local, con dos líneas de
+    // contexto para no caer en la ocurrencia de `entradasReales()`.
+    //
+    // ── 🔴 PERO REAPUNTAR NO BASTA, Y ESTÁ MEDIDO ────────────────────────────────────
+    // Con el ancla en la línea exacta que el test ejercita, EL TEST SIGUE PASANDO. El
+    // motivo es su aserto, no el ancla: comparaba CONJUNTOS de claves,
+    //     perdidas = antes.filter((c) => !despues.includes(c))
+    // y al insertar una entrada el conjunto CRECE sin perder nada en los dos mundos:
+    //     por identidad → 7 → 8 entradas · claves perdidas: 0
+    //     por posición  → 7 → 8 entradas · claves perdidas: 0
+    // Con claves `0..N-1`, tras insertar quedan `0..N`: ninguna desaparece. Vale para
+    // cualquier renumeración densa, así que ninguna mutación posicional podía tumbarlo —
+    // EN NINGÚN PUNTO. El aserto de abajo es el que se arregló; sin él, este ancla sería
+    // igual de muda que la anterior.
+    //
+    // ── Y POR ESO EL ANCLA VUELVE A scrum267 ────────────────────────────────────────
+    // Ya no hay copia que reapuntar: la clave se deriva en UN SOLO SITIO
+    // (`entradasConClave`) y este test pasa por él. La sangría baja de 6 a 4 espacios
+    // porque el código salió de un `flatMap` anidado: el ancla se RE-MIDE cuando el código
+    // se mueve; heredarla es cómo nacen las que no casan.
+    //
+    // ⚠️ `vistos.size` y no un índice del `map`: da exactamente la clave posicional 0,1,2…
+    // —el Map está vacío en la primera entrada y crece con cada una— sin cambiar la firma
+    // de la función real. Una mutación que además tocara la firma mediría dos cosas.
+    fichero: 'tests/scrum267-ancla-de-medicion.test.mjs',
+    de: "    const id = identidadDeEntrada(e.tituloCompleto);",
+    a: "    const id = String(vistos.size); // vuelta a la clave POSICIONAL, a proposito",
     cae: 'SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave',
   },
 ];
@@ -80,12 +104,8 @@ const MOTIVOS_CON_ANCLA_QUE_NO_RESUELVE = ['SHA_NO_RESUELVE'];
 function entradasReales() {
   const out = [];
   for (const f of fs.readdirSync(DIR).filter((x) => /^SCRUM-\d+\.md$/.test(x))) {
-    const vistos = new Map();
-    for (const e of trocearEntradas(fs.readFileSync(path.join(DIR, f), 'utf8'))) {
-      const id = identidadDeEntrada(e.tituloCompleto);
-      const n = (vistos.get(id) || 0) + 1;
-      vistos.set(id, n);
-      out.push({ fichero: f, clave: `${f}#${id}${n > 1 ? `~${n}` : ''}`, cuerpo: e.cuerpo, linea: e.linea });
+    for (const e of entradasConClave(f, fs.readFileSync(path.join(DIR, f), 'utf8'))) {
+      out.push({ fichero: f, clave: e.clave, cuerpo: e.cuerpo, linea: e.linea });
     }
   }
   return out;
@@ -146,17 +166,18 @@ test('SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave', (
   const FICHERO = 'SCRUM-244.md';
   const texto = fs.readFileSync(path.join(DIR, FICHERO), 'utf8');
 
-  const claves = (t) => {
-    const vistos = new Map();
-    return trocearEntradas(t).map((e) => {
-      const id = identidadDeEntrada(e.tituloCompleto);
-      const n = (vistos.get(id) || 0) + 1;
-      vistos.set(id, n);
-      return `${FICHERO}#${id}${n > 1 ? `~${n}` : ''}`;
-    });
-  };
+  // 🔴 SCRUM-866 · AQUÍ VIVÍA UNA COPIA DEL DERIVADOR, y por eso este test no podía caer.
+  // La mutación declarada arriba muta `entradasConClave` (scrum267); mientras este test
+  // recorriera su propia copia, mutar el original no le hacía nada. Medido: con la mutación
+  // puesta el test daba `ok` mientras caían SEIS tests de scrum267 — rojo por otro lado y
+  // verde justo donde dice vigilar.
+  //
+  // Se guarda la CLAVE **y a qué entrada apunta**: el segundo aserto necesita las dos cosas.
+  const mapaDeClaves = (t) => new Map(
+    entradasConClave(FICHERO, t).map((e) => [e.clave, identidadDeEntrada(e.tituloCompleto)]));
 
-  const antes = claves(texto);
+  const antesMapa = mapaDeClaves(texto);
+  const antes = [...antesMapa.keys()];
   assert.ok(antes.length >= 3, `🔴 CIEGO: ${FICHERO} sólo trocea en ${antes.length} entradas.`);
 
   // Una entrada NUEVA, con su ancla en regla, metida DESPUÉS de la primera.
@@ -171,14 +192,37 @@ test('SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave', (
   ];
   const conInsercion = [...lineas.slice(0, corte), ...NUEVA, ...lineas.slice(corte)].join('\n');
 
-  const despues = claves(conInsercion);
+  const despuesMapa = mapaDeClaves(conInsercion);
+  const despues = [...despuesMapa.keys()];
   assert.equal(despues.length, antes.length + 1, '🔴 la inserción no ha creado una entrada nueva.');
 
-  // 🔴 LO QUE DECIDE: todas las de antes siguen existiendo con SU MISMA clave.
+  // Primera mitad: ninguna clave DESAPARECE.
   const perdidas = antes.filter((c) => !despues.includes(c));
   assert.deepEqual(perdidas, [],
-    '🔴 insertar una entrada ha DESPLAZADO estas claves:\n  ' + perdidas.join('\n  ')
-    + '\n  Con claves por posición se desplazarían todas las de abajo. Por eso van por identidad.');
+    '🔴 insertar una entrada ha hecho DESAPARECER estas claves:\n  ' + perdidas.join('\n  '));
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-866 · LO QUE DE VERDAD DECIDE, Y QUE ESTE TEST NO MIRABA
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  //
+  // Hasta hoy el test acababa en el aserto de arriba, Y ESE ASERTO NO PUEDE FALLAR. Medido,
+  // reproduciendo el experimento con las dos formas de clave sobre el fichero real:
+  //
+  //     por identidad → 7 → 8 entradas · claves perdidas: 0
+  //     por posición  → 7 → 8 entradas · claves perdidas: 0
+  //
+  // Con claves `0..N-1`, al insertar una entrada quedan `0..N`: el conjunto CRECE y no pierde
+  // nada. Y eso vale para cualquier renumeración densa, así que NINGUNA mutación posicional
+  // podía tumbar este test, en ningún punto. Mirar si la CADENA de la clave sigue en la lista
+  // no es mirar si esa clave sigue señalando LA MISMA ENTRADA — que es lo que dice su nombre.
+  //
+  // 🔒 «Mover una clave» no es que desaparezca: es que pase a nombrar a otra entrada.
+  const movidas = [...antesMapa.entries()]
+    .filter(([clave, titulo]) => despuesMapa.get(clave) !== titulo)
+    .map(([clave, titulo]) => `${clave}` + '\n      antes → ' + titulo + '\n      ahora → ' + despuesMapa.get(clave));
+  assert.deepEqual(movidas, [],
+    '🔴 insertar una entrada ha MOVIDO estas claves a OTRA entrada:\n  ' + movidas.join('\n  ')
+    + '\n  Con claves por posición se desplazan todas las de abajo. Por eso van por identidad.');
 });
 
 test('SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se habrían desplazado', () => {

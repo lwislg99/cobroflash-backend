@@ -1,0 +1,243 @@
+POBLACION DECLARADA: 227 mutaciones en 72 guards
+(SCRUM-836d censo 178; el arbol dice 227 hoy)
+   [1/227] EJECUTA (hits=2) 0.3s · restauracion-del-arbol-ejecutable · la restauración pide DOS piezas cuando el fichero 
+   [2/227] EJECUTA (hits=3) 0.3s · restauracion-del-arbol-ejecutable · devuelve LOS DOS ficheros a sus bytes
+   [3/227] EJECUTA (hits=596) 0.4s · restauracion-del-arbol-ejecutable · el censo distingue EJECUTAR dist/ de nombrarlo
+   [4/227] LEE el fichero (guard estatico) 0.4s · scrum443-toast-legible · TODO mensaje de error cabe en su propia duración
+   [5/227] LEE el fichero (guard estatico) 0.4s · scrum443-toast-legible · lo que NO se cierra solo SIEMPRE se puede cerrar a
+   [6/227] LEE el fichero (guard estatico) 0.1s · scrum534d-extractores-a-mano · SCRUM-534d · 🔴 MUTACIÓN: quitar el espacio de la 
+   [7/227] LEE el fichero (guard estatico) 0.8s · scrum534d-extractores-a-mano · SCRUM-534d · 🔴 ningún extractor de rutas .md se e
+   [8/227] EJECUTA (hits=1) 0.2s · scrum547-el-documento-que-nadie-mira · SCRUM-547 · 🔴 todo documento «para aprobar» está 
+   [9/227] EJECUTA (hits=2) 0.1s · scrum547-el-documento-que-nadie-mira · SCRUM-547 · 🔴 la lista de «sin enlazar» está cerr
+   [10/227] EJECUTA (hits=1) 0.2s · scrum554-el-censo-no-confunde-el-numero · SCRUM-554 · NEGATIVO: un 143 real NO se llama rojo
+   [11/227] LEE el fichero (guard estatico) 0.5s · scrum586-forma-de-pago-por-cliente · EL QUE CIERRA LA DECISIÓN: aplicar NO se alcanza f
+   [12/227] EJECUTA (hits=6) 0.3s · scrum586-forma-de-pago-por-cliente · un valor ILEGIBLE no es una propuesta más pequeña:
+   [13/227] LEE el fichero (guard estatico) 0.4s · scrum586-forma-de-pago-por-cliente · sin IBAN NO se propone transferencia, aunque esté 
+   [14/227] EJECUTA (hits=1) 0.3s · scrum586-forma-de-pago-por-cliente · un pacto de LAS TRES consta, y aun así no propone 
+   [15/227] LEE el fichero (guard estatico) 0.5s · scrum586-forma-de-pago-por-cliente · el texto de la tira es el FIRMADO, literal
+   [16/227] LEE el fichero (guard estatico) 0.4s · scrum586-forma-de-pago-por-cliente · el rótulo del BOTÓN sigue sin firmar, con la grafí
+   [17/227] NO CLASIFICADA (src/→dist/) · scrum596-la-nota-interna-no-sale · SCRUM-596 · 🔴 LA NOTA INTERNA NO PASA EL PROYECTO
+   [18/227] NO CLASIFICADA (src/→dist/) · scrum596-la-nota-interna-no-sale · SCRUM-596 · 🔴 LA LANDING DEL CLIENTE NO LEE LA NO
+   [19/227] LEE el fichero (guard estatico) 0.3s · scrum599-navegacion-documentos-y-atajo · Presupuestos ya NO tiene submenú, y su entrada abr
+   [20/227] LEE el fichero (guard estatico) 0.5s · scrum599-navegacion-documentos-y-atajo · LAS CUATRO LISTAS registran su destino, y Clientes
+   [21/227] LEE el fichero (guard estatico) 0.5s · scrum599-navegacion-documentos-y-atajo · la tecla se pinta EN el botón, en las CUATRO lista
+   [22/227] LEE el fichero (guard estatico) 0.5s · scrum600d-el-envio-tras-emitir · tras emitir, el destino es la FICHA del documento,
+   [23/227] LEE el fichero (guard estatico) 0.5s · scrum600d-el-envio-tras-emitir · tras emitir, el destino es la FICHA del documento,
+   [24/227] LEE el fichero (guard estatico) 0.5s · scrum600d-el-envio-tras-emitir · RESPALDO: si el alta no trae id, se vuelve al list
+   [25/227] EJECUTA (hits=3) 1.8s · scrum608-tipo-de-documento-en-la-cabecera · el ALBARÁN dice ALBARÁN arriba del todo, en sus tr
+   [26/227] EJECUTA (hits=1) 0.7s · scrum608-tipo-de-documento-en-la-cabecera · la FACTURA dice FACTURA arriba del todo
+   [27/227] EJECUTA (hits=3) 0.6s · scrum608-tipo-de-documento-en-la-cabecera · el PRESUPUESTO dice su tipo, y lo dice en el idiom
+   [28/227] NO CLASIFICADA (src/→dist/) · scrum631-la-unicidad-tiene-vigilante · GUARD · src/index.ts ESPERA a assertUnicidadDeNomb
+   [29/227] NO CLASIFICADA (src/→dist/) · scrum631-la-unicidad-tiene-vigilante · GUARD · src/index.ts ESPERA a assertUnicidadDeNomb
+   [30/227] NO CLASIFICADA (src/→dist/) · scrum641-nombre-cogido-sin-500 · toda escritura de UNA FILA contesta 409 al chocar 
+   [31/227] LEE el fichero (guard estatico) 0.4s · scrum641-nombre-cogido-sin-500 · un código SIN mapear cae al respaldo que ya estaba
+   [32/227] EJECUTA (hits=4) 0.6s · scrum649-el-ancla-que-no-apunta · SCRUM-649 · 🔴 EL QUE DECIDE: un sha bien formado 
+   [33/227] EJECUTA (hits=2) 0.3s · scrum716-ritmo-de-despliegue · EL QUE DECIDE: sin lectura anterior es NO SE SABE,
+   [34/227] EJECUTA (hits=1) 0.3s · scrum716-ritmo-de-despliegue · DESPLIEGA: producción se movió entre las dos lectu
+   [35/227] EJECUTA (hits=34) 0.3s · scrum716-ritmo-de-despliegue · una lectura ilegible da NO SE SABE, no un veredict
+   [36/227] EJECUTA (hits=34) 0.3s · scrum716-ritmo-de-despliegue · una lectura ilegible da NO SE SABE, no un veredict
+   [37/227] EJECUTA (hits=1) 0.3s · scrum716-ritmo-de-despliegue · EL CASO DEL 6-sep: RETRASADO PERO DESPLEGANDO, y N
+   [38/227] EJECUTA (hits=1) 0.3s · scrum716-ritmo-de-despliegue · CONGELADO DE VERDAD pasado el margen: CANTA (salid
+   [39/227] EJECUTA (hits=1) 0.3s · scrum716-ritmo-de-despliegue · NO_SE_SABE con hueco: ni verde ni congelado (salid
+   [40/227] EJECUTA (hits=1) 0.3s · scrum716-ritmo-de-despliegue · SIN HUECO sigue verde aunque no haya lectura anter
+   [41/227] EJECUTA (hits=3) 5.1s · scrum736-el-suelo-que-no-avisa · SCRUM-736 · 🔴 EL QUE DECIDE: perder 441 tests HOY
+   [42/227] EJECUTA (hits=1) 0.1s · scrum738-el-tablero-contra-el-arbol · «72» NO casa con 720, 727 ni 1727 — se compara el 
+   [43/227] EJECUTA (hits=1) 0.7s · scrum738-el-tablero-contra-el-arbol · SCRUM-684 NO se da por hecho: su entrada está titu
+   [44/227] LEE el fichero (guard estatico) 0.4s · scrum739-informes-al-sitio-unico · EL QUE DECIDE: con cuatro cifras, Informes escribe
+   [45/227] LEE el fichero (guard estatico) 0.4s · scrum739-informes-al-sitio-unico · Informes ya no formatea dinero por su cuenta
+   [46/227] LEE el fichero (guard estatico) 0.4s · scrum740-carrera-por-el-arbol · TRINQUETE: todo el que barre el árbol lee con el h
+   [47/227] LEE el fichero (guard estatico) 0.4s · scrum740-carrera-por-el-arbol · y cada barredor CIERRA con su suelo
+   [48/227] LEE el fichero (guard estatico) 0.4s · scrum743-tercera-forma · el front y el backend escriben el MISMO número
+   [49/227] LEE el fichero (guard estatico) 0.4s · scrum743-tercera-forma · el rótulo del eje ya pasa por la tercera forma
+   [50/227] LEE el fichero (guard estatico) 0.4s · scrum745-comparar-por-identidad · el meta-guard mira la LÍNEA BASE, y NO reconoce me
+   [51/227] EJECUTA (hits=1) 0.3s · scrum745-comparar-por-identidad · con el FICHERO MUERTO, ni pasó ni cayó
+   [52/227] LEE el fichero (guard estatico) 0.3s · scrum745-comparar-por-identidad · los dos lectores NO cuelgan de ningún reporter
+   [53/227] EJECUTA (hits=1) 4.9s · scrum745-comparar-por-identidad · una declaración INCOMPLETA se DENUNCIA, no se desc
+   [54/227] LEE el fichero (guard estatico) 0.4s · scrum748-no-lo-se-no-es-al-dia · y la LÍNEA que decide ya no lleva el respaldo
+   [55/227] LEE el fichero (guard estatico) 0.4s · scrum748-no-lo-se-no-es-al-dia · NINGÚN estado desconocido se pinta «AL DÍA»
+   [56/227] NO CLASIFICADA (src/→dist/) · scrum749-la-primitiva-que-normaliza · un día que NO EXISTE se RECHAZA, no se normaliza a
+   [57/227] LEE el fichero (guard estatico) 1.8s · scrum750-los-dos-calendarios · EL QUE DECIDE: navegador en Auckland
+   [58/227] LEE el fichero (guard estatico) 0.3s · scrum750-los-dos-calendarios · la VISTA le pasa el merchant al atajo
+   [59/227] LEE el fichero (guard estatico) 0.3s · scrum750-los-dos-calendarios · FAIL-CLOSED: sin la pieza de calendario
+   [60/227] LEE el fichero (guard estatico) 0.3s · scrum750-los-dos-calendarios · DELEGA y no recalcula
+   [61/227] LEE el fichero (guard estatico) 9.4s · scrum751-clave-duplicada-en-silencio · NINGÚN objeto literal del árbol repite una clave
+   [62/227] LEE el fichero (guard estatico) 9.3s · scrum751-clave-duplicada-en-silencio · NINGÚN objeto literal del árbol repite una clave
+   [63/227] EJECUTA (hits=5) 9.1s · scrum753-censo-de-alcanzabilidad · SCRUM-753 · 🔴 CONTROL POSITIVO: un ticket que NO 
+   [64/227] EJECUTA (hits=2) 9.2s · scrum753-censo-de-alcanzabilidad · SCRUM-753 · 🔴 el NO_MEDIBLE lleva SIEMPRE su moti
+   [65/227] EJECUTA (hits=1) 9.1s · scrum753-censo-de-alcanzabilidad · SCRUM-753 · 🔴 el titular agregado sale SIEMPRE co
+   [66/227] EJECUTA (hits=3) 8.9s · scrum753-censo-de-alcanzabilidad · SCRUM-753 · 🔴 la población NO vuelve a preguntarl
+   [67/227] EJECUTA (hits=1) 8.9s · scrum753-censo-de-alcanzabilidad · SCRUM-753 · 🔴 `origin/HEAD` no se cuenta como una
+   [68/227] EJECUTA (hits=1) 0.3s · scrum754-el-juez-que-oscila · el observador VE el transitorio y NO llama movimie
+   [69/227] EJECUTA (hits=3) 0.3s · scrum754-el-juez-que-oscila · el observador VE el transitorio y NO llama movimie
+   [70/227] EJECUTA (hits=2) 0.3s · scrum754-el-juez-que-oscila · PUERTA 0: la línea base movida sale CIEGA NOMBRAND
+   [71/227] LEE el fichero (guard estatico) 0.4s · scrum754-el-juez-que-oscila · PUERTA 3 se consulta ANTES que `cayo()`
+   [72/227] EJECUTA (hits=2) 0.3s · scrum754-el-juez-que-oscila · la MÍA cambiada sí, y con otro nombre
+   [73/227] EJECUTA (hits=1) 0.3s · scrum754-el-juez-que-oscila · SUELO Y TOPE del margen
+   [74/227] EJECUTA (hits=1) 0.3s · scrum754-el-juez-que-oscila · una marca de OTRA pasada VIVA no se repara
+   [75/227] LEE el fichero (guard estatico) 1.2s · scrum755-el-contador-que-cuadro-solo · SCRUM-755 · 🔴 EL ÁRBOL PINTA MÁS MARCADORES DE LO
+   [76/227] LEE el fichero (guard estatico) 1.2s · scrum755-el-contador-que-cuadro-solo · SCRUM-755 · 🔴 UN FICHERO NUEVO EMPIEZA A PINTAR M
+   [77/227] LEE el fichero (guard estatico) 0.4s · scrum756-el-rechazo-se-ve · EL QUE DECIDE: sin pasar por Clientes, el rechazo 
+   [78/227] LEE el fichero (guard estatico) 0.4s · scrum756-el-rechazo-se-ve · LA TRAMPA: tras visitar Clientes, el aviso del DOC
+   [79/227] LEE el fichero (guard estatico) 0.4s · scrum756-el-rechazo-se-ve · el aviso SE TRAE A LA VISTA: una vez, y sobre la c
+   [80/227] EJECUTA (hits=2) 0.3s · scrum757-la-declaracion-que-nadie-lee · una declaración NO EVALUABLE se DENUNCIA con fiche
+   [81/227] EJECUTA (hits=2) 0.3s · scrum757-la-declaracion-que-nadie-lee · una declaración NO EVALUABLE se DENUNCIA con fiche
+   [82/227] EJECUTA (hits=2) 0.3s · scrum757-la-declaracion-que-nadie-lee · una declaración NO EVALUABLE se DENUNCIA con fiche
+   [83/227] EJECUTA (hits=168) 0.3s · scrum757-la-declaracion-que-nadie-lee · NEGATIVO: un objeto cualquiera del fichero NO se d
+   [84/227] LEE el fichero (guard estatico) 0.1s · scrum758-cabecera-no-miente · SCRUM-758 · 🔴 NINGUNA cabecera del log contradice
+   [85/227] LEE el fichero (guard estatico) 0.1s · scrum758-cabecera-no-miente · SCRUM-758 · el log DECLARA que no cubre migracione
+   [86/227] EJECUTA (hits=6) 0.1s · scrum758-cabecera-no-miente · SCRUM-758 · ✅ CONTROL POSITIVO: el detector CAZA u
+   [87/227] LEE el fichero (guard estatico) 0.1s · scrum758-cabecera-no-miente · SCRUM-758 · 🔴 EL SUELO: la zona ciega NO CRECE — 
+   [88/227] EJECUTA (hits=1) 0.1s · scrum758-cabecera-no-miente · SCRUM-758 · 🔴 EL SUELO: la zona ciega NO CRECE — 
+   [89/227] LEE el fichero (guard estatico) 9.2s · scrum759-el-guard-ciego-fuera-de-su-fichero · el rótulo de un adoptante está DERIVADO
+   [90/227] LEE el fichero (guard estatico) 9s · scrum759-el-guard-ciego-fuera-de-su-fichero · lo declarado cuadra con lo leído
+   [91/227] EJECUTA (hits=237) 9.1s · scrum759-el-guard-ciego-fuera-de-su-fichero · no confunde «no hay» con «no vi»
+   [92/227] EJECUTA (hits=573) 9.1s · scrum759-el-guard-ciego-fuera-de-su-fichero · SUELO del censo
+   [93/227] NO CLASIFICADA (src/→dist/) · scrum760-iva-de-voz-rechazado · SCRUM-760 · la puerta de voz LLAMA a `invalidTipoI
+   [94/227] NO CLASIFICADA (src/→dist/) · scrum760-iva-de-voz-rechazado · SCRUM-760 · la puerta de voz LLAMA a `invalidTipoI
+   [95/227] NO CLASIFICADA (src/→dist/) · scrum760-iva-de-voz-rechazado · SCRUM-760 · la lista de tipos españoles vive en UN
+   [96/227] LEE el fichero (guard estatico) 0.6s · scrum760-iva-de-voz-rechazado · SCRUM-760 · 🔴 EL CONTROL QUE DECIDE: el modelo co
+   [97/227] LEE el fichero (guard estatico) 0.6s · scrum760-iva-de-voz-rechazado · SCRUM-760 · ✅ CONTROL POSITIVO: un 0.21 legítimo s
+   [98/227] EJECUTA (hits=1) 0.5s · scrum763-restaurar-el-arbol · el detector caza el desajuste entre el fuente y el
+   [99/227] EJECUTA (hits=7) 0.4s · scrum763-restaurar-el-arbol · sólo se compila lo que se compila
+   [100/227] EJECUTA (hits=1) 0.3s · scrum764-margen-negativo · EL QUE DECIDE: el caso del ticket, 150/100, sale m
+   [101/227] EJECUTA (hits=7) 0.3s · scrum764-margen-negativo · POSITIVO: un margen normal NO se marca, y el cero 
+   [102/227] EJECUTA (hits=5) 0.3s · scrum764-margen-negativo · NEGATIVO: añadir el suelo por abajo NO ha roto el 
+   [103/227] LEE el fichero (guard estatico) 0.3s · scrum764-margen-negativo · y la clase existe en el CSS con esa tinta
+   [104/227] LEE el fichero (guard estatico) 0.4s · scrum764-margen-negativo · Informes decide con el MÓDULO, no con un `< 0` pro
+   [105/227] LEE el fichero (guard estatico) 0.3s · scrum764-margen-negativo · y las dos celdas de Informes usan `--danger-ink`
+   [106/227] EJECUTA (hits=7) 1.6s · scrum765-la-puerta-y-el-suelo · la puerta ABRE en todas las formas de invocación
+   [107/227] EJECUTA (hits=2) 0.3s · scrum765-la-puerta-y-el-suelo · CONTRASTE: la puerta NO abre para nadie que no sea
+   [108/227] EJECUTA (hits=8) 0.3s · scrum765-la-puerta-y-el-suelo · CONTRASTE: la puerta NO abre para nadie que no sea
+   [109/227] EJECUTA (hits=3) 4.8s · scrum765-la-puerta-y-el-suelo · SUELO DEL CENSO: si el censo encoge, es CIEGO
+   [110/227] EJECUTA (hits=4) 0.3s · scrum765-la-puerta-y-el-suelo · SUELO DE EJECUCIÓN: cero mutaciones ejecutadas es 
+   [111/227] EJECUTA (hits=2) 0.2s · scrum766-el-grep-que-cuenta-lineas · SCRUM-766 · 🔴 EL QUE DECIDE: 3 CR en 50 líneas — 
+   [112/227] EJECUTA (hits=1) 0.2s · scrum766-el-grep-que-cuenta-lineas · SCRUM-766 · ✅ CONTROL POSITIVO: el detector caza e
+   [113/227] LEE el fichero (guard estatico) 0.4s · scrum767-portal-token · SCRUM-767 · el SEMBRADOR da de alta por el camino 
+   [114/227] NO CLASIFICADA (src/→dist/) · scrum767-portal-token · SCRUM-767 · el alta REAL pone token, y las que no 
+   [115/227] NO CLASIFICADA (src/→dist/) · scrum767-portal-token · SCRUM-767 · 🔴 EL CENSO QUE DECIDE: qué lee el tok
+   [116/227] LEE el fichero (guard estatico) 1.4s · scrum768-listas-sin-atajo · la lista de vistas con botón de crear y SIN atajo 
+   [117/227] LEE el fichero (guard estatico) 0.4s · scrum769-el-motivo-de-las-dos-que-no · Productos y Proveedores NO registran, y es a propó
+   [118/227] LEE el fichero (guard estatico) 0.4s · scrum769-el-motivo-de-las-dos-que-no · el registro de microcopy declara firmados EXACTAME
+   [119/227] LEE el fichero (guard estatico) 0.3s · scrum769-el-motivo-de-las-dos-que-no · las dos que NO lo llevan dicen POR QUÉ, en su prop
+   [120/227] NO CLASIFICADA (src/→dist/) · scrum771-el-emisor-no-valida-el-tipo · SCRUM-771 · CENSO: toda boca que emite comprueba e
+   [121/227] NO CLASIFICADA (src/→dist/) · scrum771-el-emisor-no-valida-el-tipo · SCRUM-771 · CENSO: toda boca que emite comprueba e
+   [122/227] NO CLASIFICADA (src/→dist/) · scrum771-el-emisor-no-valida-el-tipo · SCRUM-771 · la lista de tipos españoles vive en UN
+   [123/227] EJECUTA (hits=1) 8.2s · scrum775-suelo-que-no-dispara · SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogid
+   [124/227] EJECUTA (hits=1) 10.2s · scrum775-suelo-que-no-dispara · SCRUM-775 · ✅ POSITIVO: con el censo SIN encoger e
+   [125/227] EJECUTA (hits=4) 0.4s · scrum775-suelo-que-no-dispara · SCRUM-775 · 🔴 CONTROL POSITIVO: el censo caza los
+   [126/227] LEE el fichero (guard estatico) 0.4s · scrum777-el-modal-escondido-no-mata-la-n · la pieza distingue un modal ESCONDIDO de uno DELAN
+   [127/227] LEE el fichero (guard estatico) 0.9s · scrum777-el-modal-escondido-no-mata-la-n · la lista de modales que se cierran ESCONDIÉNDOSE n
+   [128/227] EJECUTA (hits=284) 1.7s · scrum778-la-lista-cableada · SCRUM-778 · ✅ CONTROL POSITIVO: el censo ve la boc
+   [129/227] EJECUTA (hits=11428) 1.7s · scrum778-la-lista-cableada · SCRUM-778 · ✅ CONTROL POSITIVO: el censo ve las bo
+   [130/227] EJECUTA (hits=2) 0.3s · scrum778-la-lista-cableada · SCRUM-778 · 🔴 la DIRECCIÓN del portón importa: ll
+   [131/227] EJECUTA (hits=1) 0.1s · scrum781-concurrencia-de-la-factura · SCRUM-781 · 🔴 un número CERCA del umbral con much
+   [132/227] EJECUTA (hits=2) 0.1s · scrum781-concurrencia-de-la-factura · SCRUM-781 · ✅ CONTROL POSITIVO: un número LEJOS de
+   [133/227] EJECUTA (hits=3) 0.1s · scrum781-concurrencia-de-la-factura · SCRUM-781 · SUELO: la dispersión se calcula, y DIS
+   [134/227] LEE el fichero (guard estatico) 0.4s · scrum783-seleccion-sobrevive-navegacion · EL QUE DECIDE: marcar tres, ver una ficha y VOLVER
+   [135/227] LEE el fichero (guard estatico) 1.3s · scrum783-seleccion-sobrevive-navegacion · POSITIVO: BUSCAR sigue RECORTANDO la selección, y 
+   [136/227] EJECUTA (hits=4) 0.3s · scrum784-el-cuarto-veredicto · un caído que es LA RUTA del fichero es una MUERTE,
+   [137/227] EJECUTA (hits=4) 0.3s · scrum784-el-cuarto-veredicto · un caído que es LA RUTA del fichero es una MUERTE,
+   [138/227] EJECUTA (hits=1) 0.3s · scrum784-el-cuarto-veredicto · la ruta se compara RESUELTA, no por texto
+   [139/227] EJECUTA (hits=3) 0.3s · scrum784-el-cuarto-veredicto · `cayo()` sigue exigiendo EL NOMBRE declarado, ni u
+   [140/227] LEE el fichero (guard estatico) 0.4s · scrum785-productos-y-proveedores-descuelgan · Productos: tras EDITAR y cerrar NO queda un modal 
+   [141/227] LEE el fichero (guard estatico) 0.4s · scrum785-productos-y-proveedores-descuelgan · Proveedores: tras EDITAR y cerrar NO queda un moda
+   [142/227] LEE el fichero (guard estatico) 0.3s · scrum792-barra-alcanzable-en-movil · EL UMBRAL VIVE UNA SOLA VEZ: las dos reglas compar
+   [143/227] LEE el fichero (guard estatico) 0.4s · scrum792-barra-alcanzable-en-movil · con CERO la barra se marca VACÍA y dice el literal
+   [144/227] NO CLASIFICADA (src/→dist/) · scrum793-condicion-en-el-where · SCRUM-793 · 🔴 la ESCRITURA lleva la condición DEN
+   [145/227] NO CLASIFICADA (src/→dist/) · scrum793-condicion-en-el-where · SCRUM-793 · 🔴 la ESCRITURA lleva la condición DEN
+   [146/227] NO CLASIFICADA (src/→dist/) · scrum793-condicion-en-el-where · SCRUM-793 · y NO se devuelve el token que este hil
+   [147/227] LEE el fichero (guard estatico) 0.4s · scrum794-un-solo-anadir-linea · EL QUE DECIDE: hay EXACTAMENTE UN «+ Añadir línea»
+   [148/227] LEE el fichero (guard estatico) 0.3s · scrum794-un-solo-anadir-linea · el estado de CERO LÍNEAS no existe: hay cuadernill
+   [149/227] LEE el fichero (guard estatico) 0.3s · scrum795-el-portal-en-la-ficha · SCRUM-795 · 🔴 el botón del portal de la FICHA 360
+   [150/227] LEE el fichero (guard estatico) 0.4s · scrum795-el-portal-en-la-ficha · SCRUM-795 · 🔴 pedir el portal ocurre AL PULSAR, n
+   [151/227] NO CLASIFICADA (src/→dist/) · scrum797-el-dueno-se-escribe · SCRUM-797 · 🔴 ningún alta de Customer se calla de
+   [152/227] EJECUTA (hits=484) 7.6s · scrum797-el-dueno-se-escribe · SCRUM-797 · 🔴 la columna del dueño NO vuelve a se
+   [153/227] EJECUTA (hits=1) 7.6s · scrum797-el-dueno-se-escribe · SCRUM-797 · 🔴 SUELO: si no veo altas, no he medid
+   [154/227] EJECUTA (hits=698) 1.2s · scrum801-el-respaldo-de-la-n · lee `(window.renderX || renderX)(…)`, que es como 
+   [155/227] LEE el fichero (guard estatico) 1.2s · scrum801-el-respaldo-de-la-n · CONTROL POSITIVO: las dos medidas con teclado real
+   [156/227] EJECUTA (hits=3) 0.3s · scrum801-el-respaldo-de-la-n · una MENCIÓN de `registrar` en un comentario no cue
+   [157/227] EJECUTA (hits=72) 0.4s · scrum804-el-guard-no-es-el-numero · la ruta ARMADA con path.join cuenta: es como lee l
+   [158/227] EJECUTA (hits=2) 0.3s · scrum804-el-guard-no-es-el-numero · mencionar una ruta de producto sin LEER nada no pr
+   [159/227] EJECUTA (hits=2) 0.3s · scrum804-el-guard-no-es-el-numero · un guard verde sin aterrizaje no es HECHO
+   [160/227] NO CLASIFICADA (src/→dist/) · scrum805-que-firmo-el-cliente · EL QUE DECIDE: cada campo del contenido mueve el h
+   [161/227] NO CLASIFICADA (src/→dist/) · scrum805-que-firmo-el-cliente · un presupuesto firmado SIN evidencia no puede pasa
+   [162/227] NO CLASIFICADA (src/→dist/) · scrum805-que-firmo-el-cliente · los literales del PDF son BYTE A BYTE los del alba
+   [163/227] EJECUTA (hits=1) 0.3s · scrum808-el-arbol-que-queda-mutado · lo que NO se puede devolver sale NOMBRADO, y la ma
+   [164/227] EJECUTA (hits=1) 0.3s · scrum808-el-arbol-que-queda-mutado · una mutación que sobrevivió a la pasada se REPARA,
+   [165/227] EJECUTA (hits=1) 0.3s · scrum808-el-arbol-que-queda-mutado · una marca ILEGIBLE se denuncia
+   [166/227] EJECUTA (hits=86) 0.3s · scrum808-el-arbol-que-queda-mutado · en `copyFileSync` el destino es el SEGUNDO argumen
+   [167/227] EJECUTA (hits=2) 0.4s · scrum810-el-suelo-a-la-primera · perder UNA declaración ya habla, y nombra el guard
+   [168/227] EJECUTA (hits=2) 0.4s · scrum810-el-suelo-a-la-primera · CRECER no dispara nada: un suelo que salta siempre
+   [169/227] EJECUTA (hits=2) 0.4s · scrum810-el-suelo-a-la-primera · la retirada A PROPÓSITO se puede hacer sin pelears
+   [170/227] EJECUTA (hits=6) 2.4s · scrum810b-los-suelos-derivados · perder UNO de cualquier población ya habla, y la n
+   [171/227] EJECUTA (hits=1) 2.4s · scrum810b-los-suelos-derivados · CRECER sigue siendo gratis en la dirección no-enco
+   [172/227] EJECUTA (hits=1) 2.4s · scrum810b-los-suelos-derivados · un TOPE es el mismo trinquete del revés: lo que vi
+   [173/227] EJECUTA (hits=2) 2.4s · scrum810b-los-suelos-derivados · la retirada A PROPÓSITO también vale para una pobl
+   [174/227] EJECUTA (hits=1) 0.7s · scrum829b-la-ref-rancia-se-poda · traerRefs PODA la ref rancia, y sólo ésa
+   [175/227] EJECUTA (hits=2) 0.5s · scrum829b-la-ref-rancia-se-poda · con la ref rancia DELANTE, quien agrupa y quien en
+   [176/227] EJECUTA (hits=3) 0.3s · scrum839c-la-pasada-se-ejecuta · 🔴 con atascados la pasada sale en 0: el vigía AVI
+   [177/227] EJECUTA (hits=1) 0.2s · scrum839c-la-pasada-se-ejecuta · 🔴 un atasco NUEVO deja aviso, y el aviso menciona
+   [178/227] EJECUTA (hits=1) 0.2s · scrum839c-la-pasada-se-ejecuta · 🔴 pero SÍ falla cuando es ELLA la que no puede ha
+   [179/227] LEE el fichero (guard estatico) 0.1s · scrum839d-union-solo-en-el-registro · 🔴 DECLARACIÓN: ninguna línea pone merge=union fue
+   [180/227] NO CLASIFICADA (no es codigo Node) 0.2s · scrum839d-union-solo-en-el-registro · 🔴 EFECTO: git no aplica union a ninguna ruta fuer
+   [181/227] EJECUTA (hits=1) 0.6s · scrum839d-union-solo-en-el-registro · 🔴 NEGATIVO: un solo fichero fuera de docs/master 
+   [182/227] EJECUTA (hits=1) 0.5s · scrum839d-union-solo-en-el-registro · 🔴 NEGATIVO: un subdirectorio de docs/master no es
+   [183/227] EJECUTA (hits=5) 0.1s · scrum839d-union-solo-en-el-registro · 🔴 SUELO: salida 1 sin lista de ficheros es «no pu
+   [184/227] EJECUTA (hits=1) 0.7s · scrum839d-union-solo-en-el-registro · 🔴 POSITIVO: el #1318 fabricado — choque solo de r
+   [185/227] EJECUTA (hits=2) 0.6s · scrum839e-solo-pr-armados · 🔴 ROJO/NEGATIVO: el #880 fabricado — PR viejo SIN
+   [186/227] EJECUTA (hits=5) 0.5s · scrum839e-solo-pr-armados · 🔴 SUELO: si no se puede leer si estaba armado, «n
+   [187/227] EJECUTA (hits=6) 0.9s · scrum839e-solo-pr-armados · 🔴 CLI: lee el armado de la lista de PR que le pas
+   [188/227] LEE el fichero (guard estatico) 1.8s · scrum839e-solo-pr-armados · 🔴 POSITIVO del job: PR armado con choque solo de 
+   [189/227] LEE el fichero (guard estatico) 0.2s · scrum839e-solo-pr-armados · 🔴 ROJO/NEGATIVO: un push de la App (Bot) a un PR 
+   [190/227] LEE el fichero (guard estatico) 0.2s · scrum839e-solo-pr-armados · 🔴 SUELO: si no se sabe quién empujó, no se arma
+   [191/227] LEE el fichero (guard estatico) 0.9s · scrum839e-solo-pr-armados · 🔴 ROJO/NEGATIVO: un push de la App a una rama sin
+   [192/227] LEE el fichero (guard estatico) 0.1s · scrum839e-solo-pr-armados · 🔴 el YAML le pasa a los dos pasos QUIÉN empuja de
+   [193/227] EJECUTA (hits=1279) 1.4s · scrum850-la-poblacion-del-instrumento · el detector ve cada forma que se come el código
+   [194/227] EJECUTA (hits=131) 1.4s · scrum850-la-poblacion-del-instrumento · ninguna invocación de la tanda descarta su código 
+   [195/227] EJECUTA (hits=64465) 1.4s · scrum850-la-poblacion-del-instrumento · el último tramo y los comentarios NO se marcan
+   [196/227] EJECUTA (hits=3) 0.3s · scrum850b-las-formas-que-mienten · el censo VE el `&` — era el hueco
+   [197/227] EJECUTA (hits=1) 0.1s · scrum853-avisador-solo-obligatorio · CEBO REAL #1255 · rojo SOLO en checks NO obligator
+   [198/227] EJECUTA (hits=4) 0.1s · scrum853-avisador-solo-obligatorio · sin lista de obligatorios NO despierta, y lo DICE 
+   [199/227] EJECUTA (hits=1) 0.1s · scrum853-avisador-solo-obligatorio · CEBO REAL #1255 · el aviso salió 18 s DESPUÉS del 
+   [200/227] EJECUTA (hits=1) 0.1s · scrum853-avisador-solo-obligatorio · CEBO REAL #1255 · claude.yml NO arranca sobre un P
+   [201/227] EJECUTA (hits=1) 0.1s · scrum853-avisador-solo-obligatorio · CEBO REAL #1255 · PR mergeado cuando Claude termin
+   [202/227] LEE el fichero (guard estatico) 0.1s · scrum853-avisador-solo-obligatorio · claude.yml pregunta a la puerta ANTES de la acción
+   [203/227] LEE el fichero (guard estatico) 0.1s · scrum853-avisador-solo-obligatorio · el aviso de rama muda se comprueba sobre el ficher
+   [204/227] EJECUTA (hits=1) 0.1s · scrum853-avisador-solo-obligatorio · un 404 que llega como CUERPO DEL ERROR no es una c
+   [205/227] LEE el fichero (guard estatico) 0.1s · scrum853-avisador-solo-obligatorio · lo que añade el 853 no se queda con la salida de u
+   [206/227] LEE el fichero (guard estatico) 0.2s · scrum853-lecturas-que-fallan-cerrado · PR · si no se puede leer a qué PR pertenece el roj
+   [207/227] LEE el fichero (guard estatico) 0.7s · scrum853-lecturas-que-fallan-cerrado · PERMISO · un 404 no llega a la puerta como «permis
+   [208/227] LEE el fichero (guard estatico) 0.7s · scrum853-lecturas-que-fallan-cerrado · CHECK · si no se puede leer qué check cayó, la mar
+   [209/227] LEE el fichero (guard estatico) 0.7s · scrum853-lecturas-que-fallan-cerrado · FICHEROS · si no se puede leer qué toca el PR, la 
+   [210/227] LEE el fichero (guard estatico) 0.4s · scrum853-lecturas-que-fallan-cerrado · PREVIAS · si no se pueden leer los avisos previos,
+   [211/227] LEE el fichero (guard estatico) 0.5s · scrum853c-el-vigia-no-se-cree-un-error · FECHA · si no se puede leer cuándo se empujó, no s
+   [212/227] LEE el fichero (guard estatico) 0.2s · scrum853c-el-vigia-no-se-cree-un-error · NUM · si no se puede buscar el issue, la pasada PA
+   [213/227] LEE el fichero (guard estatico) 0.2s · scrum853c-el-vigia-no-se-cree-un-error · ANTES · una memoria que no se puede leer NO es una
+   [214/227] EJECUTA (hits=1) 0.1s · scrum853d-cortacircuitos · el 7.º despertar de la ventana NO despierta
+   [215/227] EJECUTA (hits=5) 0.1s · scrum853d-cortacircuitos · si la cuenta de despertares no se puede leer, NO s
+   [216/227] EJECUTA (hits=2) 0.1s · scrum853d-cortacircuitos · lo que ya salió de la ventana no cuenta
+   [217/227] EJECUTA (hits=1) 0.1s · scrum853d-cortacircuitos · una ejecución SALTADA no es un despertar
+   [218/227] EJECUTA (hits=1) 0.1s · scrum859-identidad-y-motivo-cerrado · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado 
+   [219/227] EJECUTA (hits=15) 0.1s · scrum859-identidad-y-motivo-cerrado · SCRUM-859 · 🔴 insertar una entrada en medio NO mu
+   [220/227] EJECUTA (hits=4) 0.3s · scrum877-la-novena-a-pelo · SCRUM-877 · 🔴 EL BANCO: el criterio da las TRES r
+   [221/227] EJECUTA (hits=1) 0.3s · scrum877-la-novena-a-pelo · SCRUM-877 · ✅ ABSUELVE el contenido visible — la c
+   [222/227] NO CLASIFICADA (src/→dist/) · utils · esc: escapa HTML peligroso y tolera null/number
+   [223/227] EJECUTA (hits=1) 0.1s · vigia-atascados · SIN-CHECKS es una causa PROPIA, no «esperando»
+   [224/227] EJECUTA (hits=1) 0.1s · vigia-atascados · 🔴 CEBO REAL #1205 · su obligatorio en FAILURE des
+   [225/227] EJECUTA (hits=1) 0.1s · vigia-atascados · 🔴 CEBO REAL #1212 · con la memoria REAL del issue
+   [226/227] EJECUTA (hits=1) 0.1s · vigia-atascados · 🔴 `gh pr list` devuelve al bot como `app/yaqu-bot
+   [227/227] EJECUTA (hits=1) 0.1s · vigia-atascados · 🔴 CONTROL NEGATIVO REAL #1259 · recién empujado C
+
+══ RESULTADO ═══════════════════════════════════════════════════════════════
+POBLACION: 227 de 227 declaradas en el arbol
+   ✅ la mutacion ALCANZA a su test por el punto declarado : 204
+        · ejecutando la linea            : 122
+        · leyendo el fichero (estaticos) : 82
+   🔴 NO RECORRE el punto                                  : 0
+   ⚠️ NO CLASIFICADAS (cuentan del lado malo)              : 23
+   LADO MALO (no recorre + no clasificadas)                : 23
+   suma: 227 ✅ cuadra
+
+⚠️ NO CLASIFICADAS, por motivo:
+    22 · objetivo en src/: se ejecuta dist/, y las lineas no se corresponden
+     1 · el objetivo NO es codigo cargable por Node (): su efecto puede viajar por una herramienta externa, y ni la cobertura ni el espia de fs la alcanzan
