@@ -440,8 +440,13 @@ const SIG_JS = `
   let drawing = false;
   let hasSig = false;
 
+  // SCRUM-892 · con «3 opciones» este bloque nace OCULTO (display:none hasta elegir), y medir un
+  // lienzo oculto da 0×0: se quedaba así, la cliente dibujaba sin ver nada y se mandaba \`data:,\`.
+  // Oculto no se toca (conserva su tamaño); y en cuanto se muestra, el ResizeObserver de abajo lo
+  // dimensiona con esta MISMA función, la que ya usaba bien el modo normal al cargar.
   function resize() {
     const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
     const dpr = window.devicePixelRatio || 1;
     const prev = ctx.getImageData(0, 0, canvas.width, canvas.height);
     canvas.width  = rect.width  * dpr;
@@ -455,6 +460,7 @@ const SIG_JS = `
   }
   resize();
   window.addEventListener('resize', resize);
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
