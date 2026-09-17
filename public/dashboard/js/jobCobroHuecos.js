@@ -74,6 +74,9 @@ function importesDeCobro(job) {
     // pagar. Contra lo facturado diría otra cosa —y más pequeña— justo cuando aún queda por
     // facturar, que es cuando el pro necesita el número entero.
     faltaPorCobrar: Math.max(0, aceptado - cobrado),
+    // SCRUM-907 · el `Math.max` de arriba ESCONDE el exceso: cobrar 628,60 € de 539,05 € decía «Te
+    // falta por cobrar 0,00 €» y nada más. `cobradoDeMas` lo devuelve para que se pueda avisar.
+    cobradoDeMas: cobradoDeMas(aceptado, cobrado),
     // ⚠️ Los albaranes SIN_VALORAR no llevan importe (`totales` es null y el modo por DEFECTO es
     // SIN_VALORAR). Este contador dice si el importe entregado se pudo medir: sin él, un
     // «Entregado y firmado 0,00 €» con tres albaranes firmados sería una afirmación falsa, no un
@@ -230,7 +233,31 @@ const HUECOS_COBRO = ['sin-firmar', 'sin-facturar', 'sin-facturar-nada', 'sin-en
  * Es la misma regla del hueco de G3 y G4: o está el dato, o no está el bloque.
  */
 function seccionCobroVisible(job) {
-  return huecosDeCobro(job).length > 0;
+  // SCRUM-907 · y también si se ha cobrado DE MÁS. Con todo facturado y pagado no hay huecos, y sin
+  // esto la sección —que es donde va el aviso— no se pintaría justo cuando hay algo que decir.
+  return huecosDeCobro(job).length > 0 || importesDeCobro(job).cobradoDeMas > 0;
+}
+
+/**
+ * SCRUM-907 · cuánto se ha cobrado POR ENCIMA de lo aceptado, en euros con dos decimales exactos.
+ *
+ * DECIDIDO: se avisa si el exceso pasa de 0,02 € —el margen de redondeo ya aceptado en SCRUM-141—.
+ * Se cuenta en CÉNTIMOS enteros: en coma flotante, 0,1 + 0,2 − 0,3 no es 0 y saldría un aviso de un
+ * céntimo que no existe. Sin importe aceptado no hay contra qué medir (la regla de «Pendiente»,
+ * SCRUM-363), y entonces no hay exceso.
+ */
+function cobradoDeMas(aceptado, cobrado) {
+  if (!(aceptado > 0)) return 0;
+  const centimos = Math.round(cobrado * 100) - Math.round(aceptado * 100);
+  return centimos > 2 ? centimos / 100 : 0;
+}
+
+/**
+ * SCRUM-907 · el aviso, en un solo sitio para las dos piezas que lo pintan. Literal firmado por
+ * delegación del fundador (SCRUM-887 comentario 15697, L4). `importeTexto` llega ya formateado.
+ */
+function avisoCobradoDeMas(importeTexto) {
+  return 'Has cobrado ' + importeTexto + ' más de lo aceptado.';
 }
 
 if (typeof window !== 'undefined') {
@@ -238,7 +265,8 @@ if (typeof window !== 'undefined') {
   window.huecosDeCobro = huecosDeCobro;
   window.seccionCobroVisible = seccionCobroVisible;
   window.HUECOS_COBRO = HUECOS_COBRO;
+  window.avisoCobradoDeMas = avisoCobradoDeMas;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { importesDeCobro, huecosDeCobro, seccionCobroVisible, HUECOS_COBRO };
+  module.exports = { importesDeCobro, huecosDeCobro, seccionCobroVisible, HUECOS_COBRO, avisoCobradoDeMas };
 }

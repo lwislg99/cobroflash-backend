@@ -2396,6 +2396,9 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .cobro-linea--total { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); font-weight: 700; }
 .cobro-linea--total .cobro-linea__etiqueta { color: var(--ink); }
 .cobro-linea--total .cobro-linea__importe { font-size: 16px; }
+/* SCRUM-907: cobrado por encima de lo aceptado. Texto de Aviso (ámbar, DESIGN.md), como .badge-amber. */
+.cobro-aviso { margin: 10px 0 0; font-size: 13.5px; font-weight: 600; color: #92400e; }
+.detail-rail-linea--aviso { color: #92400e; font-weight: 600; }
 
 /* Los huecos: cada uno con SU enlace en SU linea. Ninguno es «la» accion — elegir es de la
    cabecera, y hay una sola cabecera. */
