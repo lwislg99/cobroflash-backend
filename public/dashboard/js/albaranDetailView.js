@@ -96,6 +96,10 @@ const ROTULOS_ALBARAN = {
   btnFoto: '📷 Añadir foto',
 };
 
+// SCRUM-905 · la franja mientras convierte. Aprobado por el orquestador por delegación del fundador
+// (SCRUM-905 comentario 15696): reutiliza «Convirtiendo…», que ya está en producción en la IA de líneas.
+const ESTADO_CONVIRTIENDO = 'Convirtiendo…';
+
 // SCRUM-302 · APROBADO por el fundador el 5-ago-2026. Dice lo que SÍ trae ANTES de lo que no: el
 // profesional necesita saber que su trabajo está ahí, no empezar por una carencia. Y el «nunca»
 // hace el trabajo pesado — convierte una ausencia en una REGLA; sin él, se lee como que esta vez
@@ -444,7 +448,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
      * facturado todo lo que hizo.
      */
     btnConvertirFactura: () => mk('btnConvertirFactura', async () => {
-      setStatus('info', MICROCOPY_PENDIENTE);
+      setStatus('info', ESTADO_CONVIRTIENDO);
       let d;
       try {
         d = await apiRequest(`/admin/albaranes/${alb.id}/convertir-en-factura`, { method: 'POST' });
