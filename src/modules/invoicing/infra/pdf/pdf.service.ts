@@ -18,6 +18,7 @@ import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 import { numeroConRevision } from '../../../quotes/domain/revision';
 // SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
 import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
+import { textoParaDocumento } from '../../../../core/documentos/sinMarcadorPendiente'; // SCRUM-903
 
 /**
  * Un importe, con sus dos decimales. SCRUM-604 (DOC-14) · RESUELTO en SCRUM-636.
@@ -610,7 +611,14 @@ export async function generateInvoicePdf(params: {
     } else {
       // El rótulo de la columna de bases es TEXTO NUEVO y no me toca escribirlo (regla 30). Va
       // como marcador y UNA sola vez: la fila la describen el tipo y el importe, que son dato.
-      doc.text(MARCADOR_MICROCOPY_DESGLOSE, totalsX, doc.y, { width: totalsW });
+      //
+      // 🔴 SCRUM-903 · Y HASTA QUE ESE TEXTO EXISTA, EL PDF NO SALE. Antes esto imprimía
+      // `[PENDIENTE microcopy oficial]` en la factura, y una factura ya está en el móvil de un
+      // cliente cuando alguien se da cuenta. `textoParaDocumento` lanza: la generación falla y lo
+      // ve un desarrollador, que es quien puede arreglarlo. Escribir aquí una frase plausible
+      // sería peor que el marcador — parecería aprobada (regla 30).
+      doc.text(textoParaDocumento(MARCADOR_MICROCOPY_DESGLOSE, 'factura · cabecera del desglose de IVA'),
+        totalsX, doc.y, { width: totalsW });
       doc.moveDown(0.3);
 
       // Orden descendente por tipo, igual que `calcVatBreakdown`, para que dos documentos con
