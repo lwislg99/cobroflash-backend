@@ -50,13 +50,20 @@
  * ⛔ ANCLADO Y CON DELIMITADOR, y las dos cosas hacen falta:
  *   · anclado (`^`) → `revert-1192-scrum-824b-…` da `null`, no 824. Un `scrum-` en medio de un
  *     nombre no dice que la rama sea de ese ticket.
- *   · con delimitador (`-` final) → `scrum-72-x` da 72 y `scrum-727-x` da 727, no 72.
+ *   · con delimitador (`-` o FIN DEL NOMBRE) → `scrum-72-x` da 72 y `scrum-727-x` da 727, no 72.
  *   · la letra opcional es una FASE del mismo ticket: `scrum-684b-…` da 684, no otro número.
+ *
+ * 🔴 SCRUM-804f (17-sep-2026) · EL FIN DEL NOMBRE TAMBIÉN DELIMITA. Hasta hoy el delimitador era
+ * SÓLO el `-`, y una rama sin slug (`scrum-904`, PR #1423) salía `null`: el censo decía SIN RASTRO
+ * de un ticket con rama viva, el control de SCRUM-804 —que sí la da por canónica— se puso rojo, y
+ * con él el check obligatorio de `main` para todos los PR. El `-` existía para que `scrum-72` no
+ * casara con el principio de `scrum-727-x`, y eso lo garantiza igual `$`: `\d+` es voraz. Medido
+ * sobre los 831 nombres de rama del 17-sep: cambia de número exactamente 1, `scrum-904`.
  *
  * ⚠️ NO sirve para leer una clave de Jira. Para eso está `numeroDeClave`, y son preguntas
  * distintas: ahí la cadena entera ES la clave; aquí es texto libre que rodea a la clave.
  */
 export function numeroDeRama(nombre) {
-  const m = /^scrum-0*(\d+)[a-z]?-/.exec(String(nombre ?? '').trim());
+  const m = /^scrum-0*(\d+)[a-z]?(?:-|$)/.exec(String(nombre ?? '').trim());
   return m ? Number(m[1]) : null;
 }
