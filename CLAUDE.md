@@ -17,11 +17,15 @@ firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. 
 🔴 **LECTURA OBLIGATORIA, cada tanda: [`docs/equipo/00-normas-comunes.md`](docs/equipo/00-normas-comunes.md)** —
 las normas comunes de todas las sesiones: preámbulo, PASO 0, cómo se mide aquí, git, el orden del
 esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propias, en
-`docs/equipo/sesion-N.md`.
+`docs/equipo/sesion-N.md`, y tu carril en la tabla §11bis de `docs/equipo/orquestador.md`.
+
+⚠️ **Lee estos ficheros desde `origin/main` (`git show origin/main:<ruta>`) o abre el chat en un worktree
+al día:** el checkout compartido `cobroflash-backend` va miles de commits por detrás, y lo que se carga
+desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-sep-2026, auditoría de la S0.)*
 
 1. Leer este archivo → abrir `docs/YAQU_MASTER.md` → localizar el **sprint activo en la Parte U**.
    Duda → preguntar, nunca asumir.
-2. **Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ commit del máster aparte, misma rama) → PR a `main`.** `main` protegida: push directo BLOQUEADO. El merge del PR lo hace un HUMANO, nunca Claude. `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
+2. **Una tarea → una RAMA (`scrum-<n>-<slug>`) → commit de feature (+ registro en `docs/master/SCRUM-<n>.md`, misma rama; nunca en YAQU_MASTER.md, lo bloquea SCRUM-273) → se empuja y el PR se abre y se arma solo (`pr-automatico.yml`; lo mergea yaqu-bot cuando pasa el check obligatorio).** `main` protegida: push directo BLOQUEADO. Claude no mergea a mano ni se salta checks. *(Corregido el 17-sep-2026: decía «el merge lo hace un HUMANO», y desde el 9-sep es automático.)* `git pull` de `main` antes de empezar cada tarea. Plan de archivos ANTES de tocar código (skill `/yaqu-sprint`).
 3. Tests relevantes en verde antes de commit (`npm test`); verificación en **yaqu.app**
    (no localhost) antes de cerrar la tarea.
 3bis. **REGLA 42 del master — un ticket no se cierra mientras su rama siga sin mergear.** El
@@ -66,8 +70,11 @@ esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propia
 
 1. **NUNCA n8n.** WhatsApp solo vía `src/integrations/whatsapp.ts` (Meta Cloud API directa).
 2. **Multi-tenant:** toda query filtra por `req.merchantId` (inyectado por `requireAuth`).
-3. **Prisma sin TTY:** siempre `db push` con preview del diff antes de tocar prod;
-   `migrate dev` está PROHIBIDO (el hook lo bloquea). **Claves de BD — REGISTRO MEDIDO el
+3. **Esquema:** NUNCA `db push` contra PRODUCCIÓN (regla 3 del máster). Orden: ① decisión → ② ALTER
+   aditivo en las tres bases, que aplica el colaborador → ③ un PR con esquema + código + tests (A5 de
+   `docs/equipo/00-normas-comunes.md`). El DDL sale de `node scripts/preview-migracion.mjs`.
+   `migrate dev` está PROHIBIDO (el hook lo bloquea). *(Corregido el 17-sep-2026: decía «siempre db push
+   con preview antes de tocar prod», contra la regla 3.)* **Claves de BD — REGISTRO MEDIDO el
    10-ago-2026 (SCRUM-418), no afirmación de estado:** los cuatro worktrees llevan
    `DATABASE_URL_STAGING`, `_DEV` y `_TESTS`; **ninguno tiene `DATABASE_URL`, ninguno apunta a
    producción, y no existe ningún `.env.local`**. Quien lo vuelva a medir, que lo re-feche aquí:
@@ -130,18 +137,18 @@ npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_S
 # red en silencio y su salida vacía se lee como «sin cambios» (incidente del 5-ago-2026).
 node scripts/preview-migracion.mjs                        # contra la BD del entorno
 node scripts/preview-migracion.mjs --desde viejo.prisma    # offline: schema viejo → actual
-npx prisma db push --accept-data-loss   # solo tras preview aditivo + confirmación
-npx prisma generate      # en Windows: matar node antes si el DLL queda bloqueado
+# db push: NUNCA contra producción (regla 3). Solo staging, con el turno.
+./node_modules/.bin/prisma generate   # nunca `npx prisma` (SCRUM-385); en Windows, matar node antes si el DLL queda bloqueado
 ```
 
 ## Mapa rápido (detalle en master Parte D)
 
 - `src/app.ts` rutas+auth · `src/index.ts` entry+crons · `src/core/` config/db/http/i18n/cron/utils
-- `src/integrations/` whatsapp, stripe, mercadopago, claude, mailer (Resend en prod)
+- `src/integrations/` whatsapp, stripe, mercadopago, claude, gemini, mailer (Resend en prod)
 - `src/modules/` auth · billing · quotes · invoicing (PDF+VeriFactu) · system (admin) · reports ·
   exports · products · expenses · team · messaging · metrics · ai · templates · quoteRequests · search
 - Capas nuevas F1: `src/core/flags.ts` · `src/modules/fiscal/verifactu/` (SIF-1) ·
-  `src/modules/payments/connect/` (CONNECT-1) · `src/modules/voice/` (VOZ-1)
+  `src/modules/payments/connect/` (CONNECT-1) · ~~`src/modules/voice/` (VOZ-1)~~ (no existe; 17-sep-2026)
 - Público: `public/` (landing, auth, dashboard vanilla, `tokens.css` = tokens compartidos)
 - Docs operativos: `docs/RUNBOOKS.md` · `docs/QA_MASTER.md` · `docs/BUGS.md` ·
   `docs/WHATSAPP_TEMPLATES.md` (spec plantillas) · `docs/MIGRATIONS_PENDING.md` (db push log) ·
@@ -157,4 +164,5 @@ npx prisma generate      # en Windows: matar node antes si el DLL queda bloquead
   orden, botón, muestras EUR); usar al recrearlas en Meta o depurar #132000/#132001.
 - `/yaqu-fase-b` — runbook de la WABA de producción (token por Usuario del sistema, 3 vars
   de Railway, 5 plantillas, verificación de empresa, nombre para mostrar).
-- `yaqu-verifactu-sif` (se crea en S1-0b) · `yaqu-payments` (se crea en CONNECT-1)
+- `yaqu-verifactu-sif` (obligatoria al tocar VeriFactu/SIF) · `verifactu` · `yaqu-payments` (se crea en CONNECT-1)
+- `cerebro-yaqu` — arranque, disparadores anti-error y STOPs de cada sesión · `impeccable` — diseño de interfaz
