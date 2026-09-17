@@ -1,0 +1,52 @@
+========================================================================
+CENSO DE LOS PRODUCTORES · SCRUM-665 (D) · SEGUNDA SONDA · SOLO LECTURA
+========================================================================
+POBLACION ............................ 288 ficheros .ts (esperados 288)
+SUELO · tipo ClienteCongelado visto .. SI
+SUELO · tipo EmisorCongelado visto ... SI
+
+① llamadas a crearFacturaEmitida (EMBUDO 1) ..... 7
+     lib/invoicing.ts:345   tx: linea 337
+     modules/invoicing/domain/invoicing.service.ts:98   tx: ninguna
+     modules/jobs/app/routes/jobs.routes.ts:1448   tx: linea 1421
+     modules/quotes/app/routes/quotes.routes.ts:742   tx: linea 714
+     modules/system/app/routes/invoicesAdmin.routes.ts:1022   tx: linea 1018
+     modules/system/app/routes/quotesAdmin.routes.ts:294   tx: linea 261
+     modules/system/app/routes/quotesAdmin.routes.ts:563   tx: linea 559
+
+② llamadas a emitInvoice (EMBUDO 2, anidado en el 1) ... 4
+     modules/jobs/app/routes/albaranes.routes.ts:1266   -> la llamada cae DENTRO de la tx (linea 1265)
+     modules/jobs/app/routes/albaranes.routes.ts:1539   -> la llamada cae DENTRO de la tx (linea 1538)
+     modules/jobs/domain/recapitulativa.service.ts:105   -> la llamada cae DENTRO de la tx (linea 79)
+     modules/system/app/routes/invoicesAdmin.routes.ts:151   -> la llamada cae DENTRO de la tx (linea 150)
+
+③ PRODUCTORES de cliente congelado (el patron ya construido) ... 11
+     lib/invoicing.ts:335   congelarDesdeFicha()   -> FUERA de la tx
+     modules/jobs/app/routes/albaranes.routes.ts:905   congelarCliente()   -> FUERA de la tx
+     modules/jobs/app/routes/albaranes.routes.ts:1263   congelarCliente()   -> FUERA de la tx
+     modules/jobs/app/routes/albaranes.routes.ts:1536   congelarCliente()   -> FUERA de la tx
+     modules/jobs/app/routes/jobs.routes.ts:1419   congelarCliente()   -> FUERA de la tx
+     modules/jobs/domain/recapitulativa.service.ts:77   congelarCliente()   -> FUERA de la tx
+     modules/quotes/app/routes/quotes.routes.ts:712   congelarCliente()   -> FUERA de la tx
+     modules/system/app/routes/invoicesAdmin.routes.ts:161   congelarDesdeFicha()   -> DENTRO de la tx (linea 150)
+     modules/system/app/routes/invoicesAdmin.routes.ts:1016   congelarParaRectificativa()   -> FUERA de la tx
+     modules/system/app/routes/quotesAdmin.routes.ts:259   congelarCliente()   -> FUERA de la tx
+     modules/system/app/routes/quotesAdmin.routes.ts:557   congelarCliente()   -> FUERA de la tx
+
+④ PRODUCTORES de emisor congelado (lo que SCRUM-665 necesitaria) ... 0
+     CERO. Y el suelo esta en pie: el tipo EmisorCongelado SI se ve, y el mismo
+     barrido encuentra los productores de CLIENTE. Luego este cero es "NO HAY",
+     no "no he mirado donde habia".
+
+── ARITMETICA ───────────────────────────────────────────────────────────
+   bocas del embudo 1 .................... 7
+   de ellas, DENTRO de emitInvoice ....... 1  (reenvia, no produce)
+   bocas que PRODUCEN su congelado ....... 6
+   llamadores de emitInvoice (producen) .. 4
+   SITIOS QUE TENDRIAN QUE PRODUCIR EMISOR: 6 + 4 = 10
+
+   CONTROL DE CUADRE — los productores de CLIENTE externos tienen que ser esos
+   mismos sitios, mas los que congelan para algo que NO es una factura:
+   productores de cliente fuera de su propio fichero: 11
+   sitios de FACTURA esperados ....................: 10
+   resto (congelan para un documento que no es factura): 1

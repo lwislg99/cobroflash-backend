@@ -1,0 +1,76 @@
+========================================================================
+CENSO DE LAS BOCAS DEL EMBUDO · SCRUM-665 (D) · SOLO LECTURA
+========================================================================
+POBLACION ....... 288 ficheros .ts bajo src/ del arbol exportado (esperados 288)
+SUELO (a) ....... definicion de crearFacturaEmitida vista: SI
+SUELO (b) ....... llamadas al congelador de CLIENTE vistas: 13
+BOCAS ........... 7
+
+-- BOCA 1 ------------------------------------------------------------
+   lib/invoicing.ts:345
+   quien la llama .............: ensureInvoiceForCharge → inv
+   $transaction que la envuelve: linea 337
+   2o argumento (cliente) .....: clienteCongelado
+   lectura CLIENTE : congelarDesdeFicha @ linea 335 -> FUERA de la tx
+   lectura MERCHANT: prisma.merchant.findUnique @ linea 193 -> FUERA de la tx
+   merchant por rel: charge.findUnique (trae merchant) @ linea 171 -> FUERA de la tx
+
+-- BOCA 2 ------------------------------------------------------------
+   modules/invoicing/domain/invoicing.service.ts:98
+   quien la llama .............: emitInvoice
+   $transaction que la envuelve: NINGUNA
+   2o argumento (cliente) .....: input.clienteCongelado
+   lectura CLIENTE : 0 en esta funcion
+   lectura MERCHANT: 0 en esta funcion
+   merchant por rel: 0 en esta funcion
+
+-- BOCA 3 ------------------------------------------------------------
+   modules/jobs/app/routes/jobs.routes.ts:1448
+   quien la llama .............: invoice
+   ruta HTTP ..................: POST /:id/collect-rest
+   $transaction que la envuelve: linea 1421
+   2o argumento (cliente) .....: clienteCongelado
+   lectura CLIENTE : congelarCliente @ linea 1419 -> FUERA de la tx
+   lectura MERCHANT: prisma.merchant.findUnique @ linea 1498 -> FUERA de la tx
+   merchant por rel: 0 en esta funcion
+
+-- BOCA 4 ------------------------------------------------------------
+   modules/quotes/app/routes/quotes.routes.ts:742
+   quien la llama .............: (nivel de modulo)
+   ruta HTTP ..................: POST /:token/decision
+   $transaction que la envuelve: linea 714
+   2o argumento (cliente) .....: clienteCongelado
+   lectura CLIENTE : congelarCliente @ linea 712 -> FUERA de la tx
+   lectura MERCHANT: 0 en esta funcion
+   merchant por rel: quote.findUnique (trae merchant) @ linea 499 -> FUERA de la tx
+
+-- BOCA 5 ------------------------------------------------------------
+   modules/system/app/routes/invoicesAdmin.routes.ts:1022
+   quien la llama .............: rect
+   ruta HTTP ..................: POST /:id/rectify
+   $transaction que la envuelve: linea 1018
+   2o argumento (cliente) .....: clienteCongelado
+   lectura CLIENTE : congelarParaRectificativa @ linea 1016 -> FUERA de la tx
+   lectura MERCHANT: 0 en esta funcion
+   merchant por rel: invoice.findFirst (trae merchant) @ linea 964 -> FUERA de la tx
+
+-- BOCA 6 ------------------------------------------------------------
+   modules/system/app/routes/quotesAdmin.routes.ts:294
+   quien la llama .............: emision → creada
+   ruta HTTP ..................: POST /:id/invoice
+   $transaction que la envuelve: linea 261
+   2o argumento (cliente) .....: clienteCongelado
+   lectura CLIENTE : congelarCliente @ linea 259 -> FUERA de la tx
+   lectura MERCHANT: 0 en esta funcion
+   merchant por rel: quote.findFirst (trae merchant) @ linea 180 -> FUERA de la tx
+
+-- BOCA 7 ------------------------------------------------------------
+   modules/system/app/routes/quotesAdmin.routes.ts:563
+   quien la llama .............: invoice
+   ruta HTTP ..................: POST /:id/invoice-manual
+   $transaction que la envuelve: linea 559
+   2o argumento (cliente) .....: clienteCongeladoEntera
+   lectura CLIENTE : congelarCliente @ linea 557 -> FUERA de la tx
+   lectura MERCHANT: 0 en esta funcion
+   merchant por rel: quote.findFirst (trae merchant) @ linea 483 -> FUERA de la tx
+
