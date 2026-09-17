@@ -131,7 +131,7 @@ Albarán (`convertir-en-factura`): con global, 409 antes de cualquier escritura.
 - **Literal propuesto** para `albaran_con_descuento_global`: «Este parte no se puede facturar: su presupuesto lleva un descuento global, y ese descuento no se reparte entre partes. Factura el presupuesto desde el Trabajo.» Sin firmar, no entra.
 # APÉNDICE · PR 2 (B) · con descuento global y un IVA, lo cobrado ≠ lo firmado
 
-**Medido contra:** `origin/main` = `018d18075c4aefb276dd21a47e1ba2186be630ad`
+**Medido contra:** `origin/main` = `018d18075c4aefb276dd21a47e1ba2186be630ad` · 2026-09-17T08:39:50Z (hora del commit del bot `9ff07948`)
 **Rama:** `scrum-887b-descuento-global` · **Estado:** EN PR — ROJO (test-first). El defecto está
 documentado y medido; el arreglo del código todavía no está en esta rama.
 
