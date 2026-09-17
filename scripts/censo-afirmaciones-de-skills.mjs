@@ -32,7 +32,6 @@
 //
 //   RUTA      un fichero o directorio del repo           → ¿existe?
 //   COMANDO   `npm run <x>`                              → ¿está en package.json?
-//   BINARIO   un ejecutable nombrado como disponible     → ¿se resuelve en el PATH?
 //   REGLA     `regla <n>` del máster                     → ¿existe esa regla?
 //
 // 🔴 LO NO COMPROBABLE NO CUENTA COMO CIERTO: cuenta del lado malo, y se dice.
@@ -47,7 +46,6 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIR = path.join(RAIZ, '.claude', 'skills');
@@ -102,10 +100,16 @@ try { SCRIPTS = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf
 let MASTER = '';
 try { MASTER = fs.readFileSync(path.join(RAIZ, 'docs', 'YAQU_MASTER.md'), 'utf8'); } catch { /* suelo abajo */ }
 
-function enElPath(bin) {
-  try { execFileSync(process.platform === 'win32' ? 'where' : 'which', [bin], { stdio: ['ignore', 'pipe', 'pipe'] }); return true; }
-  catch { return false; }
-}
+// ⚠️ AQUÍ VIVÍA UN `enElPath()` QUE RESOLVÍA BINARIOS CON `where`/`which`, Y SE HA RETIRADO.
+//
+// Nunca llegó a llamarse: la ruta de `gh` se verifica como RUTA_ABS contra el disco, que es más
+// directo y no depende del `PATH` de quien corra el censo. Dejarlo tenía dos costes, y los dos son
+// de este mismo ticket:
+//
+//   · leía `process.platform`, y `scrum702` me cazó por subir a 18 el tope de 17 ficheros que
+//     dependen del entorno — el arreglo va en mi código, nunca en su tope;
+//   · y la cabecera prometía un verificador de BINARIO que el código no tenía. Una cabecera que
+//     promete lo que no hace es EXACTAMENTE el defecto que este censo mide.
 
 /**
  * Índice de nombres de fichero del árbol. Hace falta porque una skill cita `verifactu.service.ts`
