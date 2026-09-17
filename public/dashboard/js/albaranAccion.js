@@ -41,13 +41,40 @@
  * albarán `firmado` se quedaba sin primaria **por falta de dato, no por no tener siguiente paso**.
  * Los dos significan «no pintes nada» y son cosas distintas: es el defecto de SCRUM-816 otra vez.
  */
+/**
+ * SCRUM-895 · ¿EXISTE LA FACTURA FISCAL EN EL MODO DE EMISIÓN DE ESTE PROFESIONAL?
+ *
+ * `POST /admin/albaranes/:id/convertir-en-factura` emite un documento FISCAL, y en modo
+ * justificante ese documento no existe: la ruta corta con 409 `facturacion_no_disponible`
+ * (`albaranes.routes.ts`, tras `getEmissionMode(merchant) === 'receipt'`). Para un merchant ES
+ * real con `INVOICING_ES_ENABLED` apagado —que es como están los negocios de verdad— ese 409 es
+ * el ÚNICO desenlace posible: no depende del albarán, ni del presupuesto, ni de la hora.
+ *
+ * 🔴 El veredicto NO se recalcula aquí. Viene ya masticado del servidor en `window.appModoEmision`
+ * (`app.js`, SCRUM-298), que es justo el valor que existe para no reimplementar el modo de
+ * emisión en el navegador. Regla 27: ni un estado ni un flag nuevo.
+ *
+ * ⚠️ SE OCULTA SÓLO CUANDO SE SABE QUE NO PUEDE FUNCIONAR, y no cuando no se sabe. `null` es «el
+ * servidor no me lo dijo» (`app.js` lo deja en `null` a propósito antes que inventarse el estado
+ * fiscal de alguien), y esconder la primaria de un merchant que SÍ factura, por un `/me` que vino
+ * corto, cambiaría un botón que falla por una pantalla que se calla. Un daño por otro.
+ */
+function facturaFiscalDisponible() {
+  if (typeof window === 'undefined') return true;
+  return window.appModoEmision !== 'receipt';
+}
+
 function ctxAlbaranDeFila(alb) {
   return {
     'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado',
     // La otra mitad, EXCLUYENTE con la de arriba (SCRUM-290): el parte SIN precios se factura
     // contra el presupuesto firmado. Sin presupuesto detrás el endpoint responde 409, así que
     // ofrecerlo sería un botón que sólo sabe fallar.
-    'sin-valorar-convertible': alb.modoValoracion !== 'VALORADO' && !!alb.quote && alb.estadoFacturacion !== 'facturado',
+    //
+    // SCRUM-895 · y el presupuesto no era la única forma de que sólo supiera fallar: en modo
+    // justificante falla SIEMPRE. Misma razón, segunda causa.
+    'sin-valorar-convertible': alb.modoValoracion !== 'VALORADO' && !!alb.quote && alb.estadoFacturacion !== 'facturado'
+      && facturaFiscalDisponible(),
   };
 }
 
