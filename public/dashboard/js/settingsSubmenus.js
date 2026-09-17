@@ -66,6 +66,35 @@ function rotuloDeSubmenu(clave) {
   return r;
 }
 
+/**
+ * SCRUM-894 · ¿A QUÉ PESTAÑA HAY QUE LLEVAR AL PROFESIONAL CUANDO «Guardar cambios» NO PUEDE GUARDAR?
+ *
+ * Los diez paneles cuelgan del mismo form, así que un campo obligatorio vacío de un panel OCULTO
+ * frena el envío, y el navegador no puede enfocar ni señalar un campo con `display:none`: solo deja
+ * un error en la consola. Medido en staging el 17-sep-2026 a 390 y 360 px: NIF vacío, «Guardar» desde
+ * Cobros → ni aviso, ni foco, ni petición.
+ *
+ * Recibe los submenús de lo que falta EN ORDEN DEL FORMULARIO y el submenú activo. Devuelve `null`
+ * —no tocar nada— si no falta nada o si algo de lo que falta se ve ya: ahí el navegador avisa como
+ * siempre, y ese aviso no se cambia. Si todo lo que falta está escondido, el del primer campo.
+ * No decide QUÉ es obligatorio: eso lo sigue diciendo el `required` de cada campo.
+ */
+function pestanaDelQueFalta(submenusDeLoQueFalta, activo) {
+  if (!submenusDeLoQueFalta.length) return null;
+  if (submenusDeLoQueFalta.indexOf(activo) !== -1) return null;
+  return submenusDeLoQueFalta[0];
+}
+
+/**
+ * SCRUM-894 · el texto bajo el campo al que se le ha llevado. Nombra el campo con SU rótulo en
+ * pantalla y la pestaña con el suyo: quien pulsó «Guardar» en otra pestaña ve cambiar la pantalla,
+ * y sin decir dónde está no sabe por qué.
+ * ⚠️ LITERAL PROPUESTO, PENDIENTE DE FIRMA DEL FUNDADOR (regla 30).
+ */
+function avisoFaltaEnOtraPestana(rotuloCampo, rotuloPestana) {
+  return 'Para guardar, rellena «' + rotuloCampo + '». Está en la pestaña ' + rotuloPestana + '.';
+}
+
 /** Asignación campo → submenú. La clave es la del censo; el valor, una clave de `SUBMENUS`. */
 var ASIGNACION_SUBMENU = {
   // ── empresa ── `taxId`/`address` (antes `fiscales`), `whatsappPhone` (antes `whatsapp`) y
@@ -356,6 +385,8 @@ if (typeof window !== 'undefined') {
   window.submenuDeCampo = submenuDeCampo;
   window.submenuDeSuperficie = submenuDeSuperficie;
   window.rotuloDeSubmenu = rotuloDeSubmenu;
+  window.pestanaDelQueFalta = pestanaDelQueFalta;
+  window.avisoFaltaEnOtraPestana = avisoFaltaEnOtraPestana;
   window.ASIGNACION_SUPERFICIE = ASIGNACION_SUPERFICIE;
 }
 if (typeof module !== 'undefined' && module.exports) {
@@ -371,6 +402,8 @@ if (typeof module !== 'undefined' && module.exports) {
     SUPERFICIES_PROVISIONALES: SUPERFICIES_PROVISIONALES,
     ROTULOS: ROTULOS,
     rotuloDeSubmenu: rotuloDeSubmenu,
+    pestanaDelQueFalta: pestanaDelQueFalta,
+    avisoFaltaEnOtraPestana: avisoFaltaEnOtraPestana,
     submenuDeCampo: submenuDeCampo,
     submenuDeSuperficie: submenuDeSuperficie,
     revisarAsignacion: revisarAsignacion,
