@@ -133,3 +133,132 @@ estilo no puede saber quién es el padre de `.foo`, porque el padre depende de q
 `DESIGN.md` (**leído, no corregido**) · `public/` y su CSS · `src/` · ningún token · ninguna
 herramienta ni bundler (regla 4) · ninguna dependencia (regla 36) · ningún estado ni flag (27).
 **Nada ejecutado contra producción ni contra staging.**
+
+---
+
+# APÉNDICE · El token, subido — decisión del fundador: opción (ii)
+
+*17-sep-2026 · rama `scrum-691b-el-token-que-no-se-ve`*
+
+**Medido contra:** `origin/main` = `1e7d6de20a94bc67cad1dd8b04f00acfb8ec1507` · 2026-09-17T09:58:17+01:00
+
+> **Se sube el TOKEN, no se reescribe la norma.** Las cinco líneas de `DESIGN.md` que la fase de
+> medición señaló (`:154`, `:157`, `:163`, `:194`, `:223`) **no se han tocado**. La Regla
+> Plano-por-Defecto se mantiene: el borde hace el trabajo y la sombra responde a estado. Lo que
+> estaba mal no era la norma, era el valor.
+
+## ① El valor, y contra qué fondo se calculó
+
+Los dos candidatos, **re-medidos y no releídos**:
+
+| par | antes | ahora |
+| --- | --- | --- |
+| `--border` vs `--bg` | **1,14** | **3,04** |
+| `--border` vs `--surface` | **1,22** | **3,26** |
+
+🔴 **APRIETA `--bg`, y está comprobado, no supuesto.** `--bg` (`#f6f7f5`) es más oscuro que
+`--surface` (`#ffffff`), así que un borde oscuro contrasta **menos** contra el lienzo. Con el valor
+viejo: 1,14 contra `--bg` frente a 1,22 contra `--surface`. Un valor elegido contra `--surface` se
+habría quedado corto contra `--bg` — que es justo lo que el encargo pedía descartar.
+
+**Hay un solo valor que cumple los dos**, así que no hay decisión que devolver:
+`--border: #8d8f8b`. Es el **primero** que llega a 3,00 bajando el nivel y **conserva el matiz del
+original** (R−2 y B−4 respecto a G): cambia el tono, no el color.
+
+### Modo oscuro: NO EXISTE, y va medido
+
+Cero `prefers-color-scheme`, cero `data-theme`, cero `color-scheme` en **todo** `public/`. No es
+que no se haya mirado: se ha buscado y no hay. **El guard vigila que siga sin haberlo**: si alguien
+añade un tema, el veredicto no se emite hasta que se le enseñe a medir el otro bloque. Un token que
+cumple en claro y no en oscuro es medio arreglo con nombre de arreglo entero.
+
+## ② El guard — de TOKENS, no de superficies
+
+`tests/scrum691-contraste-de-tokens.test.mjs` sobre `scripts/_contraste-de-tokens.mjs`.
+
+**Por qué tokens.** La fase de medición dejó probado que un guard **no puede** decidir si una
+superficie necesita contorno: depende del anidamiento del DOM, y 42 ficheros de
+`public/dashboard/js/` construyen su marcado con `innerHTML` en ejecución. Un guard que lo
+adivinara le daría rojo a la cabecera de un modal. **El contraste de un token es un número y no
+depende del DOM.**
+
+| pata | qué hace | ✅ |
+| --- | --- | --- |
+| **🔴 ROJO REAL** | con el valor que no se veía, los dos pares quedan por debajo del umbral — y comprueba además que el fondo que aprieta sigue siendo `--bg` | sí |
+| **✅ VERDE REAL** | con el valor de hoy, los **dos** pares cumplen; un par sin medida no cuenta como par que cumple | sí |
+| **🔴 SUELO** | una hoja con tokens que no son color (radios, sombras) → los pares salen **NO MEDIBLES**, no «0 incumplimientos» | sí |
+| **🔴 MUTACIÓN** | el ancla se cuenta **antes** de sustituir (exactamente 1), se comprueba que el texto cambió y que el lector ve el valor nuevo | sí |
+
+Mutación declarada para el meta-guard y **ejecutada**: exit 1, cae el test nombrado, restauración
+byte a byte verificada contra los bytes de disco.
+
+```
+población: 19 tokens de color · 2 pares vigilados · 0 POR DEBAJO de 3.00 · 0 no medibles
+           · bloques de tema extra (modo oscuro): 0
+```
+
+**Lo que este guard NO cubre, dicho y no escondido:** no sabe si una superficie concreta **usa** el
+token. Un `border: 1px solid #ddd` escrito a pelo se le escapa. Vigila que el valor compartido sea
+visible, no que todo el mundo lo use.
+
+## ③ Lo que cambia de aspecto
+
+**Se ve en todas las pantallas a la vez.** Medido sobre las 3 hojas (786 reglas):
+
+* **29 reglas** pintan con `var(--border)`, y **las 29 son contorno** — 27 con `border` / `border-<lado>`
+  y 2 con `border-color`.
+  *(Corrección de mi propia medición: primero conté 27 y dejé 2 como «otras propiedades»; eran
+  `border-color`, que también es contorno.)*
+* **27 clases distintas**, 25 con presencia en el marcado.
+
+**Las tres más usadas**, por veces que aparecen en el marcado de `public/`:
+
+| veces | clase | qué es |
+| --- | --- | --- |
+| **139** | `.card` | la tarjeta: la superficie más repetida del producto |
+| **108** | `.btn-secondary` | el botón secundario — su borde **es** su forma |
+| **96** | `.field` | el campo de formulario |
+
+Detrás: `.detail-section` (43), `.detail-rail` (15), `.segmented` (12).
+
+## 🔴 Hallazgo que NO se ha tocado (regla 9)
+
+**El cambio invierte una jerarquía.** Hoy `--input-border` (`#cdd2cb`) es **más** visible que
+`--border`: 1,43 frente a 1,14. Después, `--border` llega a 3,04 y `--input-border` se queda donde
+estaba — o sea que **los inputs pasan a tener un contorno más flojo que las tarjetas**, al revés de
+lo que declara su propio comentario en la hoja («borde de input mas visible, legible a pleno sol»).
+
+Y 1,43 **también está por debajo** de los 3,00 que pide WCAG 1.4.11: el borde de un input es
+igualmente el límite visual de un componente.
+
+**No se ha ajustado.** El encargo lo prohíbe expresamente y la regla 9 también: se mide y se
+reporta lo de uno. Queda como decisión del fundador.
+
+## Lo NO tocado
+
+`DESIGN.md` · ningún otro token · ningún estado ni flag (regla 27) · ninguna dependencia (36) ·
+ningún bundler ni framework de CSS ni un `style=` en línea (regla 4) · ningún texto de usuario
+(regla 30 / A7) · `docs/equipo/00-normas-comunes.md`, que es de la Sesión 0.
+**Nada ejecutado contra producción ni contra staging.**
+
+## 🔴 Segundo hallazgo, y me lo hago a mí misma
+
+**La aritmética de contraste ya existía y estaba exportada**: `ratio()`, en
+`tests/scrum368-contraste-tokens.test.mjs`. Este apéndice entrega una **segunda implementación**
+de la misma fórmula WCAG — que es exactamente el defecto que persigue el guard de SCRUM-534d, una
+capa más arriba: un cálculo escrito a mano en vez de delegar en el que ya está.
+
+**Por qué no se resuelve importándolo:** ese `ratio()` vive dentro de un fichero `.test.mjs` que
+llama a `test(...)` en el cuerpo del módulo. Importarlo desde `scripts/` **ejecutaría sus tests**
+como efecto de la importación — el mismo motivo por el que `meta-guard-mutaciones` lee las
+declaraciones por AST en vez de importar los ficheros.
+
+**Por qué no se arregla al revés (que 368 delegue en este módulo), que sería lo correcto:** su
+`ratio()` **redondea a dos decimales** (`+(…).toFixed(2)`) y el de aquí no. Un par que hoy mide
+4,497 pasa su `>= 4.5` por el redondeo y con aritmética exacta caería. Eso **no es mecánico**: es
+cambiar el veredicto de un guard de otro carril. Regla 9: se mide y se reporta.
+
+**Lo que sí queda hecho:** la fórmula de aquí vive en `scripts/_contraste-de-tokens.mjs`, o sea
+**fuera de un fichero de test y por tanto importable**, que es la mitad del arreglo que sí estaba
+en mi mano. Unificar las dos es un ticket, y la decisión de qué hacer con ese redondeo es del
+fundador.
