@@ -134,9 +134,9 @@ están los **huecos** («esto nos falta, y lo tienen estos»), allí están las 
 en cada producto»), para poder leerla en columna.
 
 **Entregado hasta ahora:** columna **YaQu** (17 filas re-medidas en el código sobre `origin/main`
-`ef332b90`), **Verifacturamos** y **Holded**, los dos solo por su **web pública**.
+`ef332b90`), **Verifacturamos**, **Quipu** y **Holded**. Los tres por su web pública, y Holded además **POR DENTRO**, con cuenta de prueba.
 
-**Sigue sin hacerse, y es a propósito:** entrar en ningún producto con cuenta de prueba. Un alta en un
+**El gate del fundador se abrió para Holded, y solo para Holded.** El 17-sep-2026 autorizó por escrito, en el chat de esa sesión, crear una cuenta de prueba con un alias de su propio correo, con dos condiciones: **parar si piden NIF, DNI, tarjeta o teléfono**, y **no pagar nada**. Se cumplieron las dos: el alta pidió nombre, correo y contraseña, el teléfono estaba rotulado «Opcional» y se dejó vacío, y se siguió con la prueba de 14 días en vez de elegir plan. La contraseña se generó en memoria y **no se escribió en ningún sitio**. Un alta en un
 servicio de terceros la autoriza el fundador y esa autorización **no se hereda entre sesiones** (A19 de
 `docs/equipo/00-normas-comunes.md`). Mientras no la haya, las celdas que solo se verían por dentro van
 marcadas 🔒 en vez de rellenadas a ojo.
