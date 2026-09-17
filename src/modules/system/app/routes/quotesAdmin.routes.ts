@@ -40,7 +40,8 @@ import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; //
 // es `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, el de SCRUM-234/728, y esta función lo
 // expone desde SCRUM-358 para exactamente este uso (comprobar ANTES de consumir número).
 import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
-import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar, tieneDescuentoGlobalConVariosIva } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../../../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
 import fetch from 'node-fetch';
@@ -205,6 +206,10 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // podían diferir 1 cént., y esa diferencia quedaba SELLADA en la huella VeriFactu
     // (`importeTotal` del total vs `cuotaTotal` de las líneas). Ver invoiceLines.service.ts.
     const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
+    // SCRUM-887 · un C no factura (la pieza deja sus líneas a 0). Antes del portón, para decir POR QUÉ.
+    if (tieneDescuentoGlobalConVariosIva(quote)) {
+      return res.status(409).json({ error: ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, message: COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA });
+    }
 
     // ── SCRUM-814 · EL TRAMO ES UNA FUNCIÓN DEL RECUENTO, no un valor decidido una vez ──────
     //
@@ -423,7 +428,9 @@ router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
     // Los motivos que el dominio distingue viajan tal cual: «no existe» y «no tiene número» son
     // cosas distintas y la pantalla las cuenta distinto.
     if (err?.name === 'RevisionNoCreable') {
-      const status = err.motivo === 'quote_not_found' ? 404 : 409;
+      // SCRUM-887 · un C es un dato que no se puede guardar, no un conflicto de estado: 400.
+      const status = err.motivo === 'quote_not_found' ? 404
+        : err.motivo === ERROR_DESCUENTO_GLOBAL_VARIOS_IVA ? 400 : 409;
       return res.status(status).json({ error: err.motivo, message: err.message });
     }
     // `RevisionesAmbiguas` / `CensoDeRevisionesCiego`: el grupo no puede contestar cuál está
@@ -512,6 +519,10 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     // sin líneas, pero para entonces la factura ya existe y ha consumido número de serie. Aquí se
     // para antes: mejor no crear el documento que crear uno que no se puede sellar.
     const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
+    // SCRUM-887 · un C no factura (la pieza deja sus líneas a 0). Antes del portón, para decir POR QUÉ.
+    if (tieneDescuentoGlobalConVariosIva(quote)) {
+      return res.status(409).json({ error: ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, message: COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA });
+    }
     if (quoteLines.length === 0) {
       return res.status(409).json({
         error: 'quote_without_lines',

@@ -1,16 +1,22 @@
-# SCRUM-910 · Lo que se ofrece sin comprobar su condición — ① medido, y el resto PARADO
+# SCRUM-910 · Lo que se ofrece sin comprobar su condición — la transferencia, arreglada
 
 **Medido contra:** `origin/main` = `0888df9e1e07d9678c87f5555a1d160db1c97eb8` · 2026-09-17T11:33:54+01:00
 **Rama:** `scrum-910-lo-que-se-ofrece-sin-condicion`
 **Carril:** cobro · superficie del cliente final · **Gate:** sin gate
 
-> 🔴 **ESTA ENTREGA ESTÁ PARADA A PROPÓSITO, en el punto donde el encargo mandaba parar.** El caso
-> que el fundador pidió medir **EXISTE**. Los bloques ② (los `href="undefined"` de `admin.html`) y
-> ③ (la propuesta de microcopy) **no se han tocado**: esperan su decisión de prioridad.
+> **Este expediente se escribió en DOS tandas y se lee en ese orden.** §1–§4 son la medición que el
+> encargo pidió **antes** de tocar nada, y que mandaba parar si el caso existía: existe. §5–§7 son
+> lo que vino después, cuando el fundador autorizó el arreglo (17-sep-2026). Las secciones de la
+> primera tanda **no se han reescrito** — §5 corrige una de ellas, y esa corrección es parte del
+> registro.
 >
-> ⛔ `prisma/schema.prisma` intacto · `payCard.routes.ts` intacto · sin flags ni estados nuevos
-> ⛔ **Ni una línea de `src/` modificada en esta rama.** Sólo instrumento y expediente.
-> ⛔ Ningún texto escrito en el producto. Ninguna base consultada. Staging no se ha tocado.
+> ⛔ `prisma/schema.prisma` intacto · `payCard.routes.ts` y `payBank.routes.ts` intactos, cero
+> líneas de diff · sin flags ni estados nuevos (27) · sin dependencias (36)
+> ⛔ **Ningún texto escrito en el producto.** Hay una propuesta de microcopy PARADA en §7.
+> ⛔ Ninguna base consultada. Ninguna credencial. Staging no se ha tocado.
+>
+> **Bloques que siguen esperando decisión:** ② los `href="undefined"` de `admin.html` y ③ la firma
+> del microcopy.
 
 > ⚠️ **DEPENDE DE SCRUM-893, que aún no está en `main`.** Esta rama la lleva mergeada porque el
 > caso **sólo existe después** de aquel arreglo: mientras la tarjeta se siga ofreciendo a todo el
@@ -99,20 +105,170 @@ exactamente 2, las dos dentro de ese bloque.
 
     🔒 Contar texto no es contar cosas. Un prefijo no es un nombre, y una clase CSS tampoco.
 
-## 5 · Lo que NO se ha hecho, y por qué
+## 5 · 🔴 CORRECCIÓN A MI PROPIO CENSO — la fila #2 estaba mal medida
 
-1. **No se ha arreglado nada.** El encargo decía: mídelo, y si el caso existe, para y dilo. Existe.
-2. **② `admin.html` y ③ la propuesta de microcopy: sin tocar.** Esperan la decisión de prioridad.
-3. **No se ha medido cuántos merchants reales están en este estado** (sin Connect y sin IBAN). Eso
-   exige consultar una base, y esta sesión no lo hace. Es la cifra que diría si el defecto tiene
-   una víctima o cien, y **no la tengo**.
-4. **No se ha mirado `/pay/mp`** (Mercado Pago), que es la cuarta ruta de `/pay` y no entró en el
-   censo por no estar en el camino ES. Queda declarado como no medido, no como correcto.
+La Sesión 3 encontró (comentario 15679 de SCRUM-893) que **un negocio ES con sólo CLABE** ve
+«Transferencia» y aterriza en un `/pay/bank` que le dice que el profesional no ha configurado su
+cuenta. Medido corriendo, y confirmado.
 
-## 6 · Ficheros
+**Y eso destapa que mi censo de §2 dio la fila #2 por buena con la condición equivocada.** Declaré
+que la transferencia del selector comprobaba «IBAN o CLABE» ✅ — que es la condición que **el código
+usaba**, no la que hace falta para que la transferencia **sirva**. La de verdad la fija la página
+destino: CLABE **sólo** en México, IBAN en cualquier otro caso.
+
+Un censo que toma la condición del código como si fuera la verdad no puede cazar este defecto:
+pregunta «¿hay un `if`?» en vez de «¿el `if` es el correcto?». Es el error que el censo existía
+para evitar, cometido por el censo.
+
+    🔒 La condición contra la que mides no la pone el código que ofrece: la pone la página que
+       tiene que cumplirlo.
+
+### Y una segunda corrección, sobre lo que yo mismo reporté en §1
+
+Dije que en `/pay/bank` «no hay error» y que la página «parece completa». **Es incompleto**: sí hay
+un aviso — «ℹ️ El profesional aún no ha configurado su cuenta bancaria». Mi detector no lo miró.
+Sigue siendo un callejón sin alternativa, pero **se le avisa**, y eso lo hace menos grave de lo que
+conté. La frase «se confunde con haber terminado» estaba exagerada.
+
+## 6 · El arreglo · la misma pregunta para ofrecer que para poder enseñar la cuenta
+
+Había **CUATRO** criterios para la transferencia — uno más que los tres de la tarjeta:
+
+| dónde | criterio |
+|---|---|
+| `payInvoice.routes.ts:57` · el selector | `!!(iban \|\| clabe)` ← **no miraba el país** |
+| `receipt.routes.ts:110` · el recibo | **ninguno** (`status === 'pending'` y ya) |
+| `payBank.routes.ts:41` · la página destino | `country === 'MX' && clabe` · `else if (iban)` |
+| `viasDeCobro.ts:79` · el dashboard del PRO | **sólo `iban`** — ignora la CLABE |
+
+El que decide es el tercero: es quien pinta —o no— el número de cuenta. Los otros tres opinan.
+`transferenciaDisponible(merchant)` replica esa regla y la usan el selector y el recibo.
+
+**`payBank.routes.ts` conserva cero líneas de diff**, igual que `payCard.routes.ts` en SCRUM-893: el
+banco lo ata contra la ruta **EJECUTADA** —se le pide `/pay/bank/:token` a cada combinación y se
+mira si pinta cuenta—, no contra su fuente.
+
+⚠️ **`viasDeCobro.transferencia` NO se toca**, y es deuda declarada: sigue ignorando la CLABE, igual
+que `viasDeCobro.tarjeta` sigue ignorando el flag y el demo. Cambiarlo altera lo que el PROFESIONAL
+ve sobre su propia cuenta, y eso lo decide el fundador.
+
+### Los controles, ejecutados
+
+- **② la tabla**: 12 combinaciones de país × IBAN × CLABE (tres países, no dos: con sólo ES y MX,
+  «no-MX» y «ES» serían indistinguibles y la regla es «CLABE sólo en MX»), comparadas contra
+  `/pay/bank` ejecutada, con su control de que la página destino no contesta lo mismo a todo.
+- **③ y ④**: rojo y verde real en el selector y en el recibo, y el caso del ticket.
+- **Los tres rojos inyectados en `src/`** (`docs/master/evidencias/scrum910/rojos-910.mjs`):
+
+| mutación | qué tumba |
+|---|---|
+| el dominio deja de mirar el país | ② y los dos ③ |
+| el selector vuelve a su condición vieja | **sólo** ③ el selector |
+| el recibo vuelve a ofrecerla sin mirar nada | ③ el recibo y ④ |
+
+Cada sitio que decide tiene quien lo vigile, y el árbol queda idéntico después.
+
+## 7 · 🔴 PROPUESTA DE MICROCOPY — se propone y SE PARA (regla 30 / A7)
+
+**Este arreglo empeora un texto que ya estaba mal, y hay que decirlo.** `receipt.routes.ts:167` dice,
+para un cobro pendiente:
+
+    Estamos esperando tu pago. Puedes completarlo usando los botones de pago por banco
+    o pago con tarjeta que aparecen más arriba.
+
+Antes, para un merchant sin Connect y sin IBAN, esa frase nombraba **un** botón que no funcionaba.
+Ahora no queda **ninguno**, así que manda a la clienta a buscar dos botones que no existen.
+
+**No lo he tocado.** Las alternativas, con sus contras, para que el fundador elija y firme:
+
+| # | propuesta | contra |
+|---|---|---|
+| **A** | Que la frase nombre sólo lo que se está pintando, variable según los botones disponibles. | El texto deja de ser un literal fijo: hay que firmar **tres** variantes (sólo banco, sólo tarjeta, ninguno), no una. |
+| **B** | Una frase neutra que no nombre botones: «Estamos esperando tu pago.» y nada más. | Pierde la indicación de dónde pulsar para quien **sí** tiene botones, que era lo útil de la frase. |
+| **C** | Frase neutra **+** una línea distinta cuando no hay ningún método, que diga cómo seguir. | Es la que más ayuda a esta clienta y la que **más texto nuevo necesita**: dos literales, no uno. |
+
+⛔ **No he escrito ninguna de las tres en el producto.** Y la línea que haría falta para C —qué se le
+dice a una clienta que no puede pagar por ninguna vía— **no la propongo yo**: es exactamente el tipo
+de frase que decide el negocio, no el código.
+
+## 8 · Lo que NO se ha hecho, y por qué
+
+1. **② `admin.html` (`href="undefined"`) y ③ el microcopy: sin tocar.** Esperan decisión. Lo de §7
+   es una propuesta parada, no un cambio.
+2. **`viasDeCobro` no se toca** (ni `.tarjeta` ni `.transferencia`): decisión del fundador.
+3. **No sé cuántos merchants reales están en este estado.** Producción tiene hoy 0 facturas y 0
+   albaranes —medido por el fundador en consola—, así que hoy la respuesta es **cero**. Eso no lo
+   hace menos urgente: lo hace **barato de arreglar ahora**.
+4. **`/pay/mp` (Mercado Pago) sigue sin medirse.** Declarado como no medido, no como correcto.
+
+## 9 · Ficheros
 
 | fichero | qué |
 |---|---|
-| `docs/master/evidencias/scrum910/censo-formas-de-pago.mjs` | el censo por comportamiento, 7 ofertas con su control positivo |
-| `docs/master/SCRUM-910.md` | esto |
-| `src/` | **sin tocar** |
+| `src/modules/billing/domain/transferenciaDisponible.ts` | **nuevo**: la pregunta, una sola vez |
+| `src/modules/billing/app/routes/payInvoice.routes.ts` | el selector deriva `hasTransfer` del dominio |
+| `src/modules/billing/app/routes/receipt.routes.ts` | el botón de transferencia, condicionado |
+| `tests/scrum910-la-transferencia-que-no-mira.test.mjs` | 5 casos: suelo, tabla de 12, dos puertas, el caso del ticket |
+| `docs/master/evidencias/scrum910/censo-formas-de-pago.mjs` | el censo por comportamiento |
+| `docs/master/evidencias/scrum910/rojos-910.mjs` | las tres mutaciones reales, con su discriminación |
+| `src/modules/billing/app/routes/payBank.routes.ts` | **sin tocar — cero líneas de diff** |
+| `src/modules/billing/domain/viasDeCobro.ts` | **sin tocar** — deuda declarada |
+
+---
+
+# SCRUM-910b · La decisión del criterio, y `admin.html` medido de verdad
+
+**Medido contra:** `origin/main` = `765a15f1c6f1ed75736c25d2dd311bcfc43e303c` · 2026-09-17T15:24:27+01:00
+**Rama:** `scrum-910b-la-nota-de-la-lista`
+
+> ⛔ Ni una línea de `src/` · ningún texto en el producto · ninguna base consultada.
+> Esta sección **sólo registra una decisión y corrige una medición**.
+
+## 1 · DECIDIDO (17-sep-2026): en `viasDeCobro`, manda `payBank`
+
+El criterio que manda es **el del que HACE, no el del que OFRECE**. Es la misma regla que ya
+gobierna la tarjeta (`cardChargeMode` deriva de lo que hace la puerta de cobro) y que gobierna la
+transferencia desde §6 (`transferenciaDisponible` replica lo que hace `payBank`).
+
+La medición lo respalda: arreglar sólo el caso del IBAN habría dejado vivo el de la CLABE, porque
+la condición se estaba copiando del código que ofrece en vez de derivarla del que cumple.
+
+**Lo que NO cambia todavía:** las 15 discrepancias de `viasDeCobro.tarjeta` siguen como lista
+cerrada en `tests/scrum893-solo-lo-que-puede-cobrar.test.mjs` ⑥. Lo decidido es **cuál gana**, no
+cuándo se aplica. La nota del test dice ahora por qué se puede esperar — y con qué caduca.
+
+## 2 · 🔴 TERCERA CORRECCIÓN a mi hallazgo de `admin.html`
+
+Reporté que `admin.html` **pinta** `href="undefined"`. **Medido corriendo la ruta real: hoy no llega
+a pintarlos.** Son dos defectos encadenados, y sólo el segundo es el que yo describí.
+
+| # | dónde | qué pasa |
+|---|---|---|
+| **1** | `admin.html:917` manda `created.id` | `POST /quote/:token/accept` exige el **`decisionToken`** (SCRUM-95: «NUNCA el id autoincremental — era la sexta puerta de la misma fuga»). Y `POST /quote/create` devuelve `{id, number, status, total, currency}`: **el id, no el token**. → **HTTP 404**, `!acceptRes.ok`, `throw`, y la pantalla muestra «Error creando el presupuesto/cobro. Revisa la consola.» |
+| **2** | la respuesta de `accept` | Devuelve `{ok, status, quote_id, accepted_at}` — **sin** `paycard_url`, `paybank_url` ni `charge_id`. Si se arreglara (1), **entonces** sí se pintarían los `undefined`. |
+
+**Medido con control positivo**, y el control hizo su trabajo: la primera pasada dio 404 en los DOS
+casos —incluido el que debía salir bien— porque mi token de ejemplo no era hexadecimal y
+`parseToken` filtra a hex. Con un token válido: **id → 404 · token → 200**. Sin ese control, habría
+reportado «el id da 404» sobre una sonda que daba 404 a todo.
+
+    🔒 Un 404 que también le sale al caso bueno no prueba nada del caso malo.
+
+**Y `public/dashboard/js/api.js:1398` define `acceptQuote(id, …)` con el mismo error de id-por-token
+— pero NADIE la llama.** Código muerto, no una tercera víctima. Se declara para que quien lo lea no
+lo cuente dos veces.
+
+## 3 · Las dos opciones para `admin.html` — SIN elegir
+
+| | **A · que la ruta devuelva los enlaces** | **B · que esos enlaces no se pinten** |
+|---|---|---|
+| **qué se hace** | `POST /quote/:token/accept` añade `charge_id`, `paybank_url` y `paycard_url` a su respuesta. Y `admin.html` pasa a mandar el `decisionToken`. | `admin.html` deja de pintar el bloque de enlaces. Sigue diciendo que el presupuesto se aceptó. |
+| **arrastra** | Es **cambiar un contrato público**: `/quote/:token/accept` es la ruta que usa el **cliente final** desde la landing de decisión, no sólo esta pantalla. Añadir campos es compatible, pero pone **URLs de cobro en una respuesta que hoy no las lleva** — y esa respuesta la recibe el navegador de la clienta. | No toca ninguna ruta. Pero **quita de la pantalla de admin la única forma que tenía de obtener los enlaces de cobro tras aceptar**: quien la use tendría que ir a buscarlos a otro sitio. |
+| **el defecto (1) sigue vivo?** | No: hay que arreglarlo para que A funcione. | **Sí.** B esconde el síntoma pero la pantalla seguiría dando 404 al aceptar. |
+| **superficie** | ruta pública + una pantalla | una pantalla |
+| **regla que roza** | La 22 y el criterio de SCRUM-95: los enlaces de cobro van por token opaco. Hay que comprobar que meterlos aquí no reabre la puerta que aquél cerró. | ninguna |
+
+⚠️ **Lo que no sé y pesa en la decisión: quién usa `public/admin.html` hoy.** No he encontrado quién
+la sirve ni una declaración de acceso para ella. Si no la usa nadie, B es gratis y A es trabajo
+sobre una pantalla muerta; si la usa el fundador para dar de alta cobros a mano, es al revés. **Esa
+respuesta no está en el repositorio.**

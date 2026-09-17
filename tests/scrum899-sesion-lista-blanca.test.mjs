@@ -73,6 +73,8 @@ test('🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte pe
     '🔴 medido en SCRUM-899: `plan` se bloquea esperando un permiso; solo `auto` trabaja sola sin saltarse permisos');
   const flags = args.slice(0, -1).join(' ');
   assert.doesNotMatch(flags, /dangerously|bypass/i, '🔴 un modo que se salta permisos');
+  // Hermano del patrón (SCRUM-237): el MISMO patrón sí ve la cadena cuando está, dentro del prompt.
+  assert.match(args.at(-1), /dangerously|bypass/i, '🔴 CIEGO: el patrón no detecta ni la cadena que está en el prompt');
   assert.equal(args.at(-1), 'hola --dangerously-skip-permissions', '🔴 el prompt no viaja como UN argumento: podría inyectar flags');
 });
 
@@ -127,7 +129,7 @@ test('decidir parar: por id, solo si el nombre casa y es de fondo', () => {
 // Banco: repositorio con origin/main, copia instalada y un `claude` falso
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-function banco({ alterar = false } = {}) {
+function banco({ alterar = false, configEnElRepo = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum899-'));
   const git = (cwd, ...a) => execFileSync('git', ['-c', 'core.autocrlf=false', '-C', cwd, ...a], { encoding: 'utf8' });
 
@@ -151,7 +153,10 @@ function banco({ alterar = false } = {}) {
   const marca = path.join(dir, 'llamadas.txt');
   const falso = path.join(dir, 'claude-falso.mjs');
   fs.writeFileSync(falso, `import fs from 'node:fs'; fs.appendFileSync(${JSON.stringify(marca)}, process.argv.slice(2).join(' ') + '\\n'); process.stdout.write('[]');\n`);
-  fs.writeFileSync(path.join(inst, 'config.json'), JSON.stringify({ repo, claude: [process.execPath, falso] }));
+  const config = JSON.stringify({ repo, claude: [process.execPath, falso] });
+  fs.writeFileSync(path.join(inst, 'config.json'), config);
+  // Para el rojo del árbol: la copia del PROPIO repositorio, con su config al lado.
+  if (configEnElRepo) fs.writeFileSync(path.join(repo, 'scripts', 'equipo', 'config.json'), config);
   return { dir, repo, inst, marca };
 }
 
@@ -182,10 +187,9 @@ test('🔴 ROJO: una copia ALTERADA se niega a actuar y no llama a claude', () =
 });
 
 test('🔴 ROJO: ejecutada desde un árbol de git, no actúa', () => {
-  const b = banco();
+  const b = banco({ configEnElRepo: true });
   try {
     // La del propio repositorio del banco: es la misma de origin/main, pero vive en un árbol.
-    fs.copyFileSync(path.join(b.inst, 'config.json'), path.join(b.repo, 'scripts', 'equipo', 'config.json'));
     const r = correr(path.join(b.repo, 'scripts', 'equipo', 'sesion.mjs'), 'estado');
     assert.equal(r.v?.veredicto, 'DESDE-UN-ARBOL', `🔴 actúa desde un worktree: ${JSON.stringify(r.v)}`);
     assert.equal(fs.existsSync(b.marca), false, '🔴 desde un árbol llegó a llamar a claude');
