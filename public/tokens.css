@@ -24,7 +24,17 @@
   --muted: #6a746e;          /* metadatos, ayudas, placeholders */
   --bg: #f6f7f5;             /* lienzo */
   --surface: #ffffff;        /* cards, inputs, modales */
-  --border: #e7e9e5;         /* divisores y contornos 1px */
+  /* SCRUM-691 · era #e7e9e5, que daba 1,14 sobre --bg y 1,22 sobre --surface. WCAG 1.4.11 pide
+     3,00 para el limite visual de un componente, y un contorno de 1px que separa una tarjeta de
+     su lienzo es exactamente eso. El matiz que lo decide: no era que las superficies no llevaran
+     contorno — es que el contorno que llevaban NO SE VEIA. La norma Plano-por-Defecto de
+     DESIGN.md no estaba mal; el valor si.
+     APRIETA --bg, comprobado y no supuesto: --bg es mas oscuro que --surface, asi que un borde
+     oscuro contrasta MENOS contra el lienzo. Este valor cumple los DOS pares — 3,04 sobre --bg y
+     3,26 sobre --surface — y es el PRIMERO que lo hace bajando el nivel: se conserva el matiz del
+     original (R-2 y B-4 respecto a G), o sea que cambia el tono, no el color.
+     Medido el 17-sep-2026. Lo vigila tests/scrum691-contraste-de-tokens.test.mjs. */
+  --border: #8d8f8b;         /* divisores y contornos 1px */
   --input-border: #cdd2cb;   /* borde de input mas visible (legible a pleno sol) */
 
   /* Semanticos */
