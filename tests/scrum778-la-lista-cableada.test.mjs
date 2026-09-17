@@ -38,7 +38,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';   // SCRUM-730
 import { analizarArbol } from './_embudo-factura.mjs';
@@ -164,7 +163,7 @@ test('SCRUM-778 · ✅ CONTROL POSITIVO: el censo ve la boca que la lista CABLEA
 
 /** Un `src/` sintético: dos bocas protegidas y una tercera SIN portón, en el MISMO fichero. */
 function arbolConTerceraBocaSinPorton() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum778-'));
+  const raiz = temporal('scrum778-');
   const dir = path.join(raiz, 'src', 'modules', 'x');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'rutas.ts'), [

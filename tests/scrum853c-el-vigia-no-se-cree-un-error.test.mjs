@@ -26,7 +26,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -135,7 +134,7 @@ function correrPaso({ cabecera, escenario = {}, previos = {} }) {
   const sondas = guion.split(SONDA).length - 1;
   const pasadas = guion.split(PASADA).length - 1;
   // El temporal se crea aquí y a la vista: el censo de SCRUM-824 no atraviesa lo que devuelve una función.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-853c-${process.pid}-`));
+  const tmp = temporal(`yaqu-853c-${process.pid}-`);
   const bin = path.join(tmp, 'bin');
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, 'gh'), GH_FALSO);
