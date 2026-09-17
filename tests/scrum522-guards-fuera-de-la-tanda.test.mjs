@@ -117,8 +117,12 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // presupuestos con el panel real: un dto de línea y un descuento global tienen que mover el total
   // y la vista previa a la vez. No cabe en el banco de Node, que repinta con `innerHTML` acumulando.
   // Comprobado en rojo contra `7c1f259e` (17-sep-2026): los dos anchos, dto y global.
-  assert.equal(fuera.length, 21,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ 21 → ${fuera.length}.\n`
+  // SCRUM-888c · 21 → 22: entra `guard:descuentos-en-el-detalle`. OBSERVA la ficha de un presupuesto
+  // servida por el panel real: líneas, base e IVA pintados con los descuentos, y sin descuentos
+  // idénticos a la cuenta de siempre. La tabla de la ficha se arma con `innerHTML`, que el banco de
+  // Node no reproduce. Comprobado en rojo contra `e437a51f` (17-sep-2026): 3 de 4 casos.
+  assert.equal(fuera.length, 22,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ 22 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
