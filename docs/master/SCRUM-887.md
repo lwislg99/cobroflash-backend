@@ -2,6 +2,9 @@
 
 **Medido contra:** `origin/main` = `364e7d3a267d8babc49a92244168dc12096ce996` · 2026-09-16T18:13:05Z (tabla y rojo) · suite final tras mergear `origin/main` = `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T18:58:50Z
 **Rama:** `scrum-887-cobro-descuentos` · **Estado:** PR 1 (caso A) mergeado (#1369, 16-sep 19:24Z). PR 2 (B) en `scrum-887b-descuento-global`, parado antes de empujar el arreglo (toca el cobro). Pendientes: PR 3 (bloqueo de C en el editor, literal por firmar), PR 4 (D2, literal por firmar).
+**Rama:** `scrum-887-cobro-descuentos` · **Estado:** PR 1 (caso A) MERGEADO (#1369). PR 2 (B) EN PR
+— ROJO (test-first), ver apéndice. Pendientes: PR 3 (bloqueo de C en el editor, literal por
+firmar), PR 4 (D2, literal por firmar).
 
 Nace de SCRUM-883 (recorrido del electricista en staging): firma 539,05 €, cobro 628,60 €.
 
@@ -129,3 +132,28 @@ Albarán (`convertir-en-factura`): con global, 409 antes de cualquier escritura.
 - **Un global que se come TODA la base** firma 0 € y la factura sale con +X y −X: bruto 0. El portón de SCRUM-246 **no lo para**, porque las líneas no son cero. Antes se facturaba a precio bruto (peor), pero una factura de 0 € tampoco debería emitirse. ¿Se rechaza igual que `dto: 100`?
 - **La reconciliación ajusta la última línea, y ahora esa línea es el descuento:** en el plan entero, 110 de 2.000 casos de la muestra B, hasta ±0,05 € de precio. Es el mismo ajuste que ya se aceptó en SCRUM-141 sobre la última línea de producto. Si la línea negativa va la primera, el descuento queda exacto y el ajuste pasa a un producto, con el mismo número de casos distintos (medido: 18/25/37 contra 20/25/38 en la muestra del prototipo).
 - **Literal propuesto** para `albaran_con_descuento_global`: «Este parte no se puede facturar: su presupuesto lleva un descuento global, y ese descuento no se reparte entre partes. Factura el presupuesto desde el Trabajo.» Sin firmar, no entra.
+# APÉNDICE · PR 2 (B) · con descuento global y un IVA, lo cobrado ≠ lo firmado
+
+**Medido contra:** `origin/main` = `018d18075c4aefb276dd21a47e1ba2186be630ad`
+**Rama:** `scrum-887b-descuento-global` · **Estado:** EN PR — ROJO (test-first). El defecto está
+documentado y medido; el arreglo del código todavía no está en esta rama.
+
+## Commits (esta sesión, sólo ROJO)
+
+| sha | qué |
+|---|---|
+| `22adc3e5` | ROJO — caso B (global, un solo IVA): el cobro no coincide con lo firmado en ningún plan, la pieza `lineasParaFacturar` no añade la línea negativa, la vista del plan de cobro no promete lo mismo que se emite, y el albarán (C7) con global emite en vez de rechazar con 409 |
+
+`tests/scrum887b-descuento-global.test.mjs` — la decisión del orquestador (17-sep-2026, tabla de
+la cabecera de este fichero, punto B): con global y un solo IVA sale **una línea negativa del
+mismo IVA, rotulada «Descuento global»** (el literal que ya pinta el pie del presupuesto) y
+reconciliada como el caso A. El caso C (IVA mezclado) se mantiene fuera; su test vive en
+`tests/scrum887-*` y no se toca. El albarán (C7) con global **no emite** — es un reparto del
+global, justo lo excluido — y lo dice con un código propio (`albaran_con_descuento_global`) y
+CERO escrituras antes de rechazar.
+
+## Pendiente (fuera de esta rama)
+
+El arreglo de `lineasParaFacturar` (añadir la línea negativa con global de un solo IVA) y del
+handler `POST /:id/convertir-en-factura` (rechazo 409 con descuento global) que pone estos rojos
+en verde.
