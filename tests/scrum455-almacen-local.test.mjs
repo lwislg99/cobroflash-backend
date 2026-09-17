@@ -41,12 +41,12 @@ test('SCRUM-455 · 🔴 SUELO: el banco MONTA el almacén, o se declara CIEGO', 
     'que mide este fichero estaría midiendo el vacío.');
 });
 
-test('SCRUM-455 · 🔴 SUELO: la base abre y trae SUS almacenes por su nombre', async () => {
+test('SCRUM-455 · 🔴 SUELO: la base abre y trae LOS DOS almacenes por su nombre', async () => {
   const b = montarAlmacen(RAIZ);
   const bd = await b.ctx.abrirAlmacen();
   const nombres = [...bd.objectStoreNames];
   bd.close();
-  assert.deepEqual(nombres.sort(), ['albaranesPrecargados', 'firmasPendientes', 'firmasRechazadas'],
+  assert.deepEqual(nombres.sort(), ['albaranesPrecargados', 'firmasPendientes'],
     '🔴 los dos almacenes concretos no están. Sin ellos, «no queda ningún dato» sería cierto ' +
     'sobre algo que nunca existió.');
 });
@@ -146,21 +146,19 @@ test('SCRUM-455 · 🔴 subir de versión sin escribir el tramo NO pasa en silen
   assert.deepEqual([...b.ctx.tramosQueFaltan(0, 1)], [],
     '🔴 la instalación desde cero se declara sin tramo: el almacén no se crearía nunca.');
 
-  // Y EL NEGATIVO, con corpus sintético: mirar sólo el salto real sería cierto sobre un conjunto
-  // vacío y verde para siempre. SCRUM-890 · los tramos del corpus van EXPLÍCITOS (sólo el 0): con
-  // los reales, el día que se escribió el tramo 1 este negativo dejó de tener nada que detectar.
-  const SOLO_EL_CERO = { 0: () => {} };
-  assert.deepEqual([...b.ctx.tramosQueFaltan(1, 2, SOLO_EL_CERO)], [1],
+  // Y EL NEGATIVO, con corpus sintético: hoy `VERSION_BD` es 1 y no existe ningún salto posible,
+  // así que mirar sólo el salto real sería cierto sobre un conjunto vacío y verde para siempre.
+  assert.deepEqual([...b.ctx.tramosQueFaltan(1, 2)], [1],
     '🔴 subir a la versión 2 sin escribir su tramo NO se está detectando. Un almacén cuyo número ' +
     'de versión sube sin camino de migración pierde datos en silencio, y lo que se perdería aquí ' +
     'son FIRMAS de un cliente que ya no está delante para volver a firmar.');
-  assert.deepEqual([...b.ctx.tramosQueFaltan(1, 4, SOLO_EL_CERO)], [1, 2, 3],
+  assert.deepEqual([...b.ctx.tramosQueFaltan(1, 4)], [1, 2, 3],
     '🔴 no se enumeran todos los saltos sin tramo.');
 });
 
 test('SCRUM-455 · la versión declarada y los tramos escritos son coherentes', () => {
   const b = montarAlmacen(RAIZ);
-  assert.equal(b.ctx.VERSION_BD, 2);   // SCRUM-890 · tramo 1: `firmasRechazadas`
+  assert.equal(b.ctx.VERSION_BD, 1);
   assert.deepEqual([...b.ctx.tramosQueFaltan(0, b.ctx.VERSION_BD)], [],
     '🔴 se ha subido `VERSION_BD` y falta el tramo. Escríbelo antes de subirla: con el almacén ' +
     'vacío es gratis, después son firmas.');
@@ -267,8 +265,8 @@ test('SCRUM-455 · CONTROL NEGATIVO: se borra LO NUESTRO POR SU NOMBRE, no «tod
     'una y por su nombre; arrasar con todo lo que haya en el origen es efecto colateral.');
   assert.deepEqual([...r.caches].sort(), ['yaqu-v4', 'yaqu-v5'],
     '🔴 el purgado no informa de cuáles borró.');
-  assert.deepEqual([...r.almacenes].sort(), ['albaranesPrecargados', 'firmasPendientes', 'firmasRechazadas'],
-    '🔴 el purgado no vació los almacenes por su nombre.');
+  assert.deepEqual([...r.almacenes].sort(), ['albaranesPrecargados', 'firmasPendientes'],
+    '🔴 el purgado no vació los dos almacenes por su nombre.');
 });
 
 test('SCRUM-455 · purgar dos veces seguidas no revienta', async () => {

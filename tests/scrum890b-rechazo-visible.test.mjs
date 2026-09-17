@@ -250,48 +250,88 @@ test('SCRUM-890b · 🔴 cerrar sesión borra también las constancias (art. 32 
   const antes = await b.ctx.leerRechazosDeFirma();
   assert.equal(antes.rechazos.length, 1, '🔴 SUELO: no había constancia que purgar');
 
-  await b.ctx.purgarDatosLocales();
+  assert.equal(typeof b.ctx.logout, 'function', '🔴 SUELO: `logout` no está publicado');
+  await b.ctx.logout();
   const despues = await b.ctx.leerRechazosDeFirma();
   assert.equal(despues.estado, b.ctx.GUARDADO, '🔴 SUELO: no se ha podido releer tras purgar');
   assert.equal(despues.rechazos.length, 0, '🔴 tras cerrar sesión queda en el móvil qué documentos de qué clientes se rechazaron');
 });
 
-test('SCRUM-890b · 🔴 un móvil con la base en v1 y una firma en cola sube a v2 SIN PERDERLA', async () => {
-  // Es el móvil real del día del despliegue: la cola ya tiene firmas y la base está en la versión 1.
-  // Se construye esa base con la forma exacta del tramo 0 y se abre con el código nuevo.
+// ── 🔴 LA CONSTANCIA NO SUBE LA VERSIÓN DE LA BASE ────────────────────────────────────────────
+//
+// Medido el 17-sep con el dashboard de main entero: si la base sube a v2, una pestaña que siga abierta
+// con el JS de antes se queda sin almacén (`VersionError`) y un parte firmado sin red cierra el pad y
+// NO queda en ninguna cola — la firma de un cliente, perdida en silencio. Por eso la constancia vive en
+// `localStorage`, por clave de documento, y la base se queda en la versión 1 (orquestador, 17-sep).
+
+test('SCRUM-890b · 🔴 dejar constancia de un rechazo NO sube la base: el JS de antes (v1) la sigue abriendo', async () => {
   const { IDBFactory } = await import('fake-indexeddb');
   const idb = new IDBFactory();
-  await new Promise((resolve, reject) => {
-    const p = idb.open('yaqu', 1);
-    p.onupgradeneeded = () => {
-      p.result.createObjectStore('albaranesPrecargados', { keyPath: 'id' });
-      p.result.createObjectStore('firmasPendientes', { keyPath: 'claveIdempotencia' });
-    };
-    p.onsuccess = () => {
-      const tx = p.result.transaction('firmasPendientes', 'readwrite');
-      tx.objectStore('firmasPendientes').put({ claveIdempotencia: 'firma:parte:7', albaranId: 7, tipo: 'parte', signatureData: 'x' });
-      tx.oncomplete = () => { p.result.close(); resolve(); };
-      tx.onerror = () => reject(tx.error);
-    };
-    p.onerror = () => reject(p.error);
-  });
+  const r = red();
+  const b = montarAlmacen(RAIZ, { indexedDB: idb, dashboard: { red: r } });
+  r.alFirmar = null;
+  await firmarConElPad(b);
+  r.alFirmar = { status: 400, data: { error: 'firma_invalida' } };
+  const vaciado = await vaciarLaCola(b, r);
+  assert.equal(vaciado.rechazadas.length, 1, '🔴 SUELO: el vaciado no ha rechazado nada');
+  assert.ok(await pantallaDelParte(b), '🔴 SUELO: no ha quedado constancia que enseñar');
 
-  const b = montarAlmacen(RAIZ, { indexedDB: idb });
-  const cola = await b.ctx.leerFirmasPendientes();
-  assert.equal(cola.estado, b.ctx.GUARDADO, '🔴 la base en v1 no abre con el código nuevo: ' + cola.motivo);
-  assert.deepEqual(cola.firmas.map((f) => f.claveIdempotencia), ['firma:parte:7'],
-    '🔴 SUBIR DE VERSIÓN HA PERDIDO LA COLA: la firma de un cliente que ya no está delante.');
-  const rechazos = await b.ctx.leerRechazosDeFirma();
-  assert.equal(rechazos.estado, b.ctx.GUARDADO, '🔴 el tramo 1 no ha creado `firmasRechazadas`: ' + rechazos.motivo);
+  const abre = await new Promise((resolve) => {
+    const p = idb.open('yaqu', 1);
+    p.onsuccess = () => { const v = p.result.version; p.result.close(); resolve({ ok: true, v }); };
+    p.onerror = () => resolve({ ok: false, error: p.error && p.error.name });
+  });
+  assert.deepEqual(abre, { ok: true, v: 1 },
+    '🔴 la base ha subido de versión: una pestaña con el JS de antes se queda sin cola y un parte firmado ' +
+    'sin red se pierde en silencio. ' + JSON.stringify(abre));
+});
+
+test('SCRUM-890b · 🔴 si la constancia NO se puede escribir, la firma SE QUEDA en la cola', async () => {
+  const { b, red: laRed } = montar();
+  laRed.alFirmar = null;
+  await firmarConElPad(b);
+  assert.deepEqual(await enLaCola(b), ['firma:parte:7'], '🔴 SUELO: la firma no llegó a la cola');
+
+  // Cuota llena o Safari en privado: `setItem` lanza.
+  let intentos = 0;
+  b.ctx.localStorage.setItem = () => { intentos += 1; throw new Error('QuotaExceededError'); };
+  laRed.alFirmar = { status: 400, data: { error: 'firma_invalida' } };
+  await vaciarLaCola(b, laRed);
+  assert.ok(intentos > 0, '🔴 SUELO: la constancia no se ha intentado escribir en localStorage');
+  assert.deepEqual(await enLaCola(b), ['firma:parte:7'],
+    '🔴 la constancia no se escribió y la firma ha salido igual de la cola: un rechazo que no ve nadie.');
+});
+
+test('SCRUM-890b · ✅ la constancia sobrevive a RECARGAR la aplicación', async () => {
+  const { IDBFactory } = await import('fake-indexeddb');
+  const idb = new IDBFactory();
+  const r = red();
+  const antes = montarAlmacen(RAIZ, { indexedDB: idb, dashboard: { red: r } });
+  r.alFirmar = null;
+  await firmarConElPad(antes);
+  r.alFirmar = { status: 400, data: { error: 'firma_invalida' } };
+  await vaciarLaCola(antes, r);
+
+  // Recargar: el mismo IndexedDB y el mismo localStorage, scripts evaluados de nuevo.
+  const despues = montarAlmacen(RAIZ, {
+    indexedDB: idb, dashboard: { red: r, localStorage: antes.ctx.localStorage._contenido() },
+  });
+  const aviso = await pantallaDelParte(despues);
+  assert.ok(aviso, '🔴 tras recargar, el parte ya no dice que la firma se rechazó');
+  assert.equal(aviso.texto, despues.ctx.PARTE_TEXTOS.firmaRechazada);
 });
 
 // ── 🔴 LA PRÓXIMA SUBIDA DE VERSIÓN NO SE PUEDE QUEDAR BLOQUEADA ─────────────────────────────
 //
-// Medido en Chromium real con dos pestañas del mismo origen (JS de main y JS de esta rama, 17-sep):
+// Medido en Chromium real con dos pestañas del mismo origen (JS de main y una rama con v2, 17-sep):
 // la pestaña vieja sólo bloquea la subida DURANTE cada operación (cada llamada abre y cierra). Pero
 // cuando esa apertura queda bloqueada, `abrirAlmacen` rechaza y la petición SIGUE: la conexión llega
-// tarde, nadie la cierra, y la siguiente subida (v3) quedaba bloqueada mientras la pestaña siguiera
-// abierta — 8 de 10 intentos. Por eso toda conexión se cierra al recibir `versionchange`.
+// tarde, nadie la cierra, y la subida siguiente quedaba bloqueada mientras la pestaña siguiera
+// abierta — 8 de 10 intentos. Por eso toda conexión se cierra al recibir `versionchange`, también la
+// que llega tarde (el manejador se pone en `onsuccess`, que es el camino de las dos).
+//
+// Con la base en v1 este código no sube versión, así que la huérfana no se puede construir aquí: el
+// test de abajo vigila el mecanismo, y la próxima subida de VERSION_BD tiene que volver a medirla.
 
 /** Intenta subir la base a `version` desde otra «pestaña». `bloqueada` = llegó a dispararse `blocked`. */
 function subirA(idb, version, ms = 1000) {
@@ -321,37 +361,9 @@ test('SCRUM-890b · 🔴 una conexión del almacén se CIERRA al pedirse otra ve
   const idb = new IDBFactory();
   const b = montarAlmacen(RAIZ, { indexedDB: idb });
   const bd = await b.ctx.abrirAlmacen(); // una operación en curso, en la pestaña que ya no se recarga
-  const r = await subirA(idb, 3);
+  const r = await subirA(idb, 2);
   try { bd.close(); } catch (_e) { /* ya cerrada */ }
   assert.equal(r.subio, true,
     '🔴 la conexión del almacén no se cierra con `versionchange`: la próxima subida de versión se queda ' +
     'esperando a que el profesional cierre la pestaña.');
-});
-
-test('SCRUM-890b · 🔴 la apertura que quedó BLOQUEADA no deja una conexión huérfana', async () => {
-  // La pestaña vieja (JS de main: v1, sin `onversionchange`) está en mitad de una operación cuando la
-  // nueva abre en v2. Ésta rechaza con NO_DISPONIBLE, pero su petición sigue y la conexión llega tarde.
-  const { IDBFactory } = await import('fake-indexeddb');
-  const idb = new IDBFactory();
-  const vieja = await new Promise((resolve) => {
-    const p = idb.open('yaqu', 1);
-    p.onupgradeneeded = () => {
-      p.result.createObjectStore('albaranesPrecargados', { keyPath: 'id' });
-      p.result.createObjectStore('firmasPendientes', { keyPath: 'claveIdempotencia' });
-    };
-    p.onsuccess = () => resolve(p.result);
-  });
-  const b = montarAlmacen(RAIZ, { indexedDB: idb });
-  const bloqueada = await b.ctx.leerRechazosDeFirma();
-  assert.equal(bloqueada.estado, b.ctx.NO_DISPONIBLE,
-    '🔴 SUELO: la apertura no llegó a bloquearse (' + bloqueada.estado + '); lo que sigue no mediría la huérfana.');
-
-  vieja.close(); // la operación de la pestaña vieja termina: la subida a v2 sigue adelante
-  const v2 = await new Promise((resolve) => { const p = idb.open('yaqu'); p.onsuccess = () => { const v = p.result.version; p.result.close(); resolve(v); }; });
-  assert.equal(v2, 2, '🔴 SUELO: la subida a v2 no llegó a completarse');
-
-  const r = await subirA(idb, 3);
-  assert.equal(r.subio, true,
-    '🔴 la apertura rechazada por bloqueo dejó su conexión ABIERTA: la próxima subida de versión no pasa ' +
-    'mientras esa pestaña siga abierta.');
 });

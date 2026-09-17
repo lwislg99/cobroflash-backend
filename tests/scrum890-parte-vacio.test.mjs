@@ -258,8 +258,10 @@ test('SCRUM-890 · ✅ cada rechazo de la lista SALE de la cola, al firmar y al 
     { status: 400, data: { error: 'firma_sin_nombre' } },
     { status: 400, data: { error: 'calidad_firmante_invalida' } },
     { status: 400, data: { error: 'calidad_firmante_otro_vacio' } },
+    // SCRUM-890 comentarios 15668/15670: depende sólo de lo que viaja en la cola; reintentar no lo cambia.
+    { status: 400, data: { error: 'invalid_id' } },
   ];
-  for (const caso of casos.slice(0, 3)) {
+  for (const caso of [...casos.slice(0, 3), casos[casos.length - 1]]) {
     assert.ok(rutas.includes(`'${caso.data.error}'`), `🔴 la ruta del parte ya no responde \`${caso.data.error}\``);
   }
   for (const caso of casos) {
