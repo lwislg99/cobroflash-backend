@@ -1,0 +1,10 @@
+  ...10/60 (40s)
+  ...20/60 (75s)
+  ...30/60 (120s)
+  ...40/60 (362s)
+  ...50/60 (799s)
+  ...60/60 (1082s)
+
+SONDA scrum859-identidad-y-motivo-cerrado.test.mjs · N=60 · 1082s
+   60 x  pass=20 fail=0 skip=0 movidos=0 nombrado=SI
+UNA sola firma: el flujo entrego lo mismo las N veces.

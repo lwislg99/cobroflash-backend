@@ -221,7 +221,7 @@ test('SCRUM-667 · 🔴 CONTROL NEGATIVO: una factura de UN tipo de IVA NO lleva
  * cuenta deja de cuadrar, y la salida fácil habría sido no declararlo: dejar sin declarar
  * justo el marcador que ve el cliente. Se amplía la POBLACIÓN, no se relaja el criterio.
  */
-async function pdfDeAlbaran() {
+async function pdfDeAlbaran(firmante = {}) {
   const { generateAlbaranPdf } = await import('../dist/modules/jobs/infra/albaranPdf.service.js');
   const { referenciaPresupuesto } = await import(
     '../dist/modules/jobs/domain/albaranPrecios.js');
@@ -233,10 +233,24 @@ async function pdfDeAlbaran() {
     emisor: 'QA SL', emisorNif: 'B00000000', cliente: 'Cliente QA',
     obra: 'Obra QA', referenciaTrabajo: 'Trabajo QA',
     lineas: [{ concepto: 'Material', cantidad: 1, unidad: 'ud' }],
-    totales: null, notas: null, signatureData: null, firmadoAt: null,
-    firmadoPorNombre: null, firmadoPorCalidad: null, evidencia: null,
+    totales: null, notas: null, signatureData: null, evidencia: null,
+    // 🔴 SCRUM-903d · EL BANCO SERVÍA UN SOLO ESTADO DE FIRMA, Y ERA EL QUE NO PINTA NADA.
+    //
+    // Hasta hoy estos tres iban clavados a `null`, así que el albarán de prueba nunca estaba
+    // firmado. `albaranPdf.service.ts:349` calcula la etiqueta del firmante **sólo si**
+    // `firmadoPorCalidad` tiene valor, y la imprime en `:398`: con el banco en `null`, ese bloque
+    // no se ejecutaba jamás. Y ahí dentro está `albaranFirmante.ts:269`, que devuelve el MARCADOR
+    // cuando la calidad no está en el conjunto conocido — uno de los nueve sitios de SCRUM-903, y
+    // de los caros: se imprime en el papel que se lleva el cliente.
+    //
+    // Ahora el estado de firma es un PARÁMETRO y el test sirve los dos: sin firmar y firmado.
+    firmadoAt: null, firmadoPorNombre: null, firmadoPorCalidad: null,
     // Con presupuesto de origen: es la condición en la que se imprime el pie.
     presupuestoRef: referenciaPresupuesto({ id: 41, number: 7 }),
+    // El spread va EL ÚLTIMO para que quien pida un albarán firmado pueda además apagar el pie del
+    // presupuesto. Si no, los dos papeles traerían el mismo marcador declarado y el recuento de
+    // abajo —que compara apariciones contra declarados— saldría rojo por duplicado, no por hallazgo.
+    ...firmante,
   });
   try { return fs.readFileSync(outPath); } finally { fs.rmSync(outPath, { force: true }); }
 }
@@ -250,7 +264,21 @@ test('SCRUM-667 · 🔴 al PAPEL del cliente no llega ningún marcador que no es
   const rAlb = lineasDePdf(await pdfDeAlbaran());
   assert.equal(rAlb.ok, true, 'suelo: sin lector del albarán tampoco hay veredicto');
 
-  const impresas = [...r.lineas, ...rAlb.lineas]
+  // 🔴 SCRUM-903d · Y EL ALBARÁN FIRMADO, que hasta hoy no se imprimía nunca en este banco.
+  // El bloque del firmante sólo se pinta si `firmadoPorCalidad` tiene valor
+  // (`albaranPdf.service.ts:349` y `:398`), y ahí dentro vive `albaranFirmante.ts:269`, que
+  // devuelve el MARCADOR cuando la calidad no está en el conjunto conocido. Con el banco clavado
+  // en `null` ese camino no se recorría, así que un marcador impreso en el papel del cliente
+  // salía de este guard sin que se enterara.
+  const rAlbFirmado = lineasDePdf(await pdfDeAlbaran({
+    firmadoAt: new Date(2026, 8, 4),
+    firmadoPorNombre: 'Ana Pérez',
+    firmadoPorCalidad: 'el_propio_cliente',
+    presupuestoRef: null, // el pie ya lo mide el albarán de arriba; aquí sólo interesa el firmante
+  }));
+  assert.equal(rAlbFirmado.ok, true, 'suelo: sin lector del albarán firmado tampoco hay veredicto');
+
+  const impresas = [...r.lineas, ...rAlb.lineas, ...rAlbFirmado.lineas]
     .map((l) => String(l.texto || '')).filter((t) => t.includes(MARCA));
   const declarados = Object.keys(EN_EL_PAPEL).length;
 

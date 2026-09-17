@@ -1,0 +1,12 @@
+═══ SCRUM-864c · EL QUE DECIDE ═══
+
+🔴 LA FÁBRICA REVIENTA A MITAD (el `finally` del llamador aún no existe)
+   HOY     (fs.mkdtempSync) : pasa: NO · ¿creó el temporal?: sí · deja tirados: 1  🔴
+   DESPUÉS (temporal())     : pasa: NO · ¿creó el temporal?: sí · deja tirados: 0  ✅
+
+✅ POSITIVO · LA FÁBRICA TERMINA BIEN Y EL TEST PASA
+   HOY     (fs.mkdtempSync) : pasa: sí · ¿creó el temporal?: sí · deja tirados: 0  ✅
+   DESPUÉS (temporal())     : pasa: sí · ¿creó el temporal?: sí · deja tirados: 0  ✅
+
+VEREDICTO: ✅ CIERRA — hoy el reventón deja el directorio; con `temporal()` no queda ninguno.
+POSITIVO : ✅ un test que termina bien sigue pasando y sigue sin dejar nada, con helper y sin él.

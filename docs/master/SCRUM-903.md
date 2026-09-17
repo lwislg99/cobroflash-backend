@@ -353,3 +353,116 @@ distinción es **semántica**: si una lista de cadenas es un dominio o un índic
 de lo que significan, no de dónde están escritas. Por eso allí la respuesta fue sí y aquí es no.
 
 ⛔ **No se ha arreglado ningún banco** (regla 9). El censo cuenta y ordena.
+
+---
+
+# APÉNDICE · FASE d (17-sep-2026) · Los 24 pares de guards, y los dos arreglados
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca.
+
+**Medido contra:** `origin/main` = `de798f5c9ca710041adf93886f1e63da390e6339` · 2026-09-17T15:43:02+01:00
+**Rama:** `scrum-903d`
+
+**Premisa comprobada antes del PASO 0** (norma nueva): el censo se volvió a correr sobre el main de
+ahora —82 commits por delante de la medición de la fase c— y **sigue en pie**: 1.583 ficheros,
+861 bancos, los dos casos conocidos salen. Las ramas `scrum-903c` y `scrum-895-literales-firmados`
+ya están en main, así que el instrumento estaba en el árbol.
+
+## ① Los 24 pares de `scripts/guard-*`, ordenados por si hay un defecto detrás
+
+No por cuántos estados se pierden: por **si algo conocido vive en el estado que no sirven**.
+
+### A · Defecto conocido y MEDIDO — se arreglan (bloque ②)
+
+| guard | eje | sirve | qué vivía ahí |
+|---|---|---|---|
+| `guard-marcadores-en-pantalla.mjs:194` | `schema:estado` | 1/3 | **SCRUM-895**, en `firmado` |
+| `tests/scrum667-marcador-visible.test.mjs:237` | `firmadoPorCalidad` | sólo vacío | el marcador de `albaranFirmante.ts:269`, **impreso en el papel del cliente** |
+
+### B · Mismo pin, mismo sujeto, defecto plausible sin medir — los que yo arreglaría después
+
+| guard | eje | sirve | por qué importa |
+|---|---|---|---|
+| `guard-objetivo-tactil.mjs:201` | `schema:estado` | 1/3 | **El mismo albarán clavado en `borrador`.** Y SCRUM-895 acaba de meter en la barra de `firmado` el rótulo más largo de las once (`Facturar con el presupuesto`, 27 car.). Este guard mide objetivos táctiles ≥44 px: **nadie ha medido nunca esa barra**. |
+| `guard-vias-de-cobro.mjs:248` | `schema:connectStatus` | 1/4 | Su sujeto **es** si el profesional puede cobrar, y la fila de tarjeta depende de Connect (reglas 18/23). Eje y sujeto coinciden, como en el caso medido. |
+
+### C · El pin no toca el sujeto del guard — bajo valor
+
+`schema:role` → falta `tecnico` (4 guards) · `schema:plan` → falta basic/empresa/trial (4) ·
+`schema:connectStatus` en otros 5 · `schema:status` de equipo (3) · `schema:subscriptionStatus` (2) ·
+`schema:status` de notificación (1). Son guards de maquetación y marcadores: su veredicto no
+depende de esos ejes. El que más me preocuparía de este grupo es `appUserRole = 'admin'`, global y
+fijo en varios: si alguna vista oculta controles a `tecnico`, no se mide en ninguno.
+
+### D · Falso positivo semántico — no hay nada que arreglar
+
+`guard-firma-con-tramos.mjs:46` · `schema:paymentTerms` 1/3. **Su eje real es `tiers`, no
+`paymentTerms`**: el censo acierta el campo y falla el sujeto. Es exactamente el límite que declaré
+en la fase c, ahora con nombre y apellidos.
+
+> **Mi recomendación, y decides tú:** arreglar B1 (`guard-objetivo-tactil`) a continuación, porque
+> SCRUM-895 acaba de hacer que su punto ciego sea load-bearing. Luego B2. C y D no se tocan.
+
+## ② Los dos arreglados, con el control que decide
+
+### El pin visible… y el invisible
+
+`guard-marcadores-en-pantalla` tenía **dos** pins en el mismo eje, no uno:
+
+1. `v.estado = 'borrador'` — explícito, el que estaba medido.
+2. **`window.appModoEmision` sin poner.** Desde SCRUM-905 `facturaFiscalDisponible()` falla cerrado:
+   sin modo, las dos primarias contextuales del albarán firmado no se pintan. O sea que **servir el
+   estado `firmado` no habría bastado**: el botón seguiría sin salir, y nada en el fichero decía
+   «modo de emisión», así que nadie iría a buscarlo.
+
+> 🔒 **Un global ausente fija tanto como una constante escrita, y es peor: no se ve.**
+
+Los estados se leen ahora de `window.ALBARAN_STATES` —la tabla que ya usa `destinoEfectivo`—, no
+escritos a mano: una segunda copia del dominio volvería a quedarse atrás en silencio.
+
+### EL CONTROL QUE DECIDE — medido en cuatro pasadas, no razonado
+
+Se reintrodujo **el defecto exacto de SCRUM-895** (retirar `btnConvertirFactura` de
+`ROTULOS_ALBARAN`) y se corrió el guard antes y después del arreglo:
+
+| | banco | resultado |
+|---|---|---|
+| **A** · defecto puesto, banco VIEJO | `borrador` | **rc=0 · VERDE** — el defecto escapa |
+| **B** · árbol limpio, banco NUEVO | `borrador, emitido, firmado` | rc=0 · verde, **mismos techos** |
+| **C** · defecto puesto, banco NUEVO | `borrador, emitido, firmado` | 🔴 **rc=1** — `albaran-detail` pinta 2 |
+
+**A → C es la prueba**: con el banco arreglado el guard CAZA lo que antes se le escapaba. **B es el
+control negativo**: lo que ya cazaba lo sigue cazando y no salta nada nuevo.
+
+El fichero de producto se restauró **byte a byte** después de cada mutación (`cmp -s`), y se
+comprobó `git status` antes de seguir: un guard muerto a mitad deja ficheros mutados en el árbol.
+
+### El segundo: el banco de SCRUM-667
+
+Servía un albarán **sin firma ninguna** (`firmadoAt`, `firmadoPorNombre`, `firmadoPorCalidad` los
+tres a `null`), y `albaranPdf.service.ts:349` calcula la etiqueta del firmante **sólo si**
+`firmadoPorCalidad` tiene valor. Ese bloque no se ejecutaba jamás — y ahí dentro está
+`albaranFirmante.ts:269`, uno de los nueve sitios de este ticket **y de los caros: se imprime en el
+papel que se lleva el cliente.**
+
+Ahora el estado de firma es un parámetro y el test sirve los dos papeles.
+
+| | resultado |
+|---|---|
+| árbol limpio, banco nuevo | **10/10 verde** — nada nuevo salta |
+| calidad **desconocida**, banco nuevo | 🔴 **rc=1** — caza el marcador impreso en el papel |
+
+Con el banco viejo esa rama era **inalcanzable**, así que no había rojo posible.
+
+### LOS NÚMEROS
+
+| | antes | después |
+|---|---|---|
+| pares (vista, estado) medidos por el guard de marcadores | 81 | **87** |
+| estados de albarán servidos | 1 de 3 | **3 de 3** |
+| apariciones cazadas en árbol limpio | 12 | **12** (mismos techos) |
+| defectos reintroducidos que caza | **0 de 1** | **1 de 1** |
+| papeles del cliente medidos por SCRUM-667 | 2 | **3** |
+| estados de firma servidos | 1 de 2 | **2 de 2** |
+
+⛔ **Ningún fichero de producto tocado.** Sólo los dos instrumentos.

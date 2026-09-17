@@ -9,7 +9,7 @@ import { isFlagEnabled } from './core/flags';
 import { decidirAvisoBizum } from './modules/billing/domain/avisoBizumSinTelefono'; // SCRUM-328
 import { viasDeCobro } from './modules/billing/domain/viasDeCobro'; // SCRUM-519
 // SCRUM-300 (C5): microcopy del albarán servida al dashboard vanilla desde su fuente única.
-import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
+import { ALBARAN_AYUDAS, ALBARAN_ROTULOS, PARTE_AYUDAS, firmanteCalidadOpciones } from './modules/jobs/domain/albaranFirmante';
 import { cubosDeMetodo, opcionesDeMetodoDeclarable, ROTULO_SIN_METODO } from './modules/billing/domain/metodoDeCobro';
 import { tiposIntervencionParaUI } from './modules/jobs/domain/tipoIntervencion';
 // ⚠️ FUSIÓN: C5 importaba `puedeCrearFacturaSuelta`, que SCRUM-346 (A0.5) RETIRÓ de `main`.
@@ -513,6 +513,7 @@ app.get('/admin/me', async (req, res) => {
     albaranFirmanteOpciones: firmanteCalidadOpciones(),
     albaranRotulos: ALBARAN_ROTULOS,
     albaranAyudas: ALBARAN_AYUDAS,
+    parteAyudas: PARTE_AYUDAS,   // SCRUM-919
     // SCRUM-474 fase 2 · LAS OPCIONES DEL FILTRO DE COBROS, derivadas de `PAID_VIA` (regla 22).
     // Viajan AQUÍ y no con la lista de cobros porque son CONSTANTES: el conjunto cerrado de métodos
     // no cambia entre peticiones, así que no es parte de la respuesta de una lista — es

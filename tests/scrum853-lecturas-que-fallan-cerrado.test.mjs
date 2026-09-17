@@ -134,7 +134,7 @@ const barras = (p) => p.split(path.sep).join('/');
 const clavePath = Object.keys(process.env).find((k) => k.toUpperCase() === 'PATH') || 'PATH';
 
 function binDelGhFalso() {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'avisador-853-'));
+  const tmp = temporal('avisador-853-');
   const bin = path.join(tmp, 'bin');
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, 'gh'), GH_FALSO);

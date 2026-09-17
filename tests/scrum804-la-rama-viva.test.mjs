@@ -58,10 +58,96 @@ import { RASTRO, rastroDeLosTickets, rastroDe, motivosParaNoFiarse, esCiego } fr
 
 const RAIZ = path.join(import.meta.dirname, '..');
 const YO = path.join(import.meta.dirname, 'scrum804-la-rama-viva.test.mjs');
-const censo = rastroDeLosTickets({ raiz: RAIZ, traer: false });
-
 const git = (...args) => execFileSync('git', args,
   { cwd: RAIZ, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-925 · POR QUÉ ESTE FICHERO SE PONÍA ROJO SOLO, Y NO ERA POR LOS WORKTREES
+//
+// Daba `129 !== 130` en pasadas en las que nadie había tocado el censo. La hipótesis que traía el
+// ticket —«otra sesión tiene una rama tomada en otro worktree»— se REPRODUJO A PROPÓSITO y quedó
+// FALSADA: con una rama propia tomada en un segundo worktree, este fichero sigue en 9/9. Y no
+// podía ser: aquí no hay ni un `git branch -a`; el censo y `refsCrudas()` leen LOS DOS
+// `refs/remotes/origin/`, o sea la misma pregunta a la misma fuente.
+//
+// La asimetría no era de FUENTE: era de MOMENTO.
+//
+//   · el censo se tomaba AL IMPORTAR el módulo;
+//   · `refsCrudas()` leía EN VIVO dentro de cada test, minutos después;
+//   · y `refs/remotes/origin/*` está COMPARTIDA por los ~26 worktrees del repositorio.
+//
+// Así que el `git fetch --prune` de cualquier compañero entre el import y la aserción movía la
+// lectura viva y no el instantáneo. El comentario de abajo ya prometía «el censo y git contando la
+// MISMA población en la MISMA pasada» — y el código no lo hacía.
+//
+// REPRODUCIDO en un CLON AISLADO (no se toca una ref compartida: provocar esto en el repo de
+// verdad se lo provocaría a las demás sesiones, que es el defecto que se viene a cerrar):
+// instantáneo 710 · llega UNA ref · lectura viva 711 → `710 !== 711`, la forma exacta del fallo.
+//
+// ── EL ARREGLO, Y POR QUÉ NO AFLOJA NADA (regla 41) ──────────────────────────────────────────
+// Se lee la tienda de refs UNA VEZ, pegada al censo, y se vuelve a leer al terminar. Si se movió,
+// la pasada se declara NO FIABLE **nombrando la ref que entró o salió** — no se aprueba nada. Si
+// NO se movió, las comparaciones son las mismas de antes y siguen cayendo igual. Lo que deja de
+// pasar es acusar al censo de perder una rama que llegó después de que el censo mirara.
+//
+// No se puede instantaneizar una tienda de refs compartida: lo que sí se puede es DETECTAR que se
+// movió y decirlo, en vez de convertirlo en un rojo que nombra al inocente.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** La tienda de refs, como una clave por ref: si algo entra, sale o cambia de sha, se nota. */
+const claveDeRefs = (filas) => filas.map((f) => `${f.nombre}\t${f.sha}`).sort();
+
+const censo = rastroDeLosTickets({ raiz: RAIZ, traer: false });
+
+/**
+ * LA POBLACIÓN, DECLARADA Y ÚNICA: las TRES lecturas de `refs/remotes/origin/` se toman aquí,
+ * pegadas al censo y en el mismo bloque. Las pruebas usan ÉSTAS y no vuelven a preguntar a git:
+ * dos lecturas en momentos distintos no son dos opiniones que promediar — son dos poblaciones, y
+ * comparar una contra la otra es lo que producía el rojo del inocente.
+ */
+const CRUDAS = refsCrudasEnVivo();
+const CRUDAS_EN_MAIN = refsCrudasEnVivo(`--merged=${censo.inst.sha}`);
+const CRUDAS_VIVAS = refsCrudasEnVivo(`--no-merged=${censo.inst.sha}`);
+
+/**
+ * Y LA RELECTURA QUE DICE SI LA PASADA VALE. La tienda es compartida: no se puede
+ * instantaneizar. Lo que sí se puede es comprobar si se movió MIENTRAS se medía, y NOMBRAR qué
+ * entró o salió — un rojo que no nombra es el que alguien apaga.
+ */
+function movimientoDeRefs(filasAntes, filasDespues) {
+  const antes = new Set(claveDeRefs(filasAntes));
+  const despues = new Set(claveDeRefs(filasDespues));
+  const entraron = [...despues].filter((k) => !antes.has(k)).map((k) => `+ ${k.split('\t')[0]} (llegó a mitad)`);
+  const salieron = [...antes].filter((k) => !despues.has(k)).map((k) => `- ${k.split('\t')[0]} (se podó a mitad)`);
+  return [...entraron, ...salieron].sort();
+}
+
+const REFS_MOVIDAS = movimientoDeRefs(CRUDAS, refsCrudasEnVivo());
+
+/** El motivo, si la pasada no es fiable. `null` = se puede comparar. */
+const NO_FIABLE = REFS_MOVIDAS.length
+  ? 'otra sesión movió `refs/remotes/origin/` mientras se medía (la tienda es COMPARTIDA por los '
+    + `~26 worktrees del repositorio):\n   · ${REFS_MOVIDAS.join('\n   · ')}\n\n`
+    + '  Esto NO dice que el censo esté mal: dice que el censo y esta lectura vieron dos árboles\n'
+    + '  distintos. Vuelve a correrlo; si persiste, es que alguien está trayendo sin parar.'
+  : null;
+
+/**
+ * Las ramas que `for-each-ref` lista y el censo NO agrupa bajo su ticket. Extraído a función para
+ * que el CONTROL ROJO de abajo pueda ejercerlo sobre un censo mutilado: la detección y su control
+ * tienen que ser el mismo código, o el control no prueba la detección.
+ */
+function ramasPerdidas(cen, crudas) {
+  const perdidas = [];
+  for (const { nombre } of crudas) {
+    const m = /^scrum-(\d+)[a-z]?(?:-|$)/i.exec(nombre);
+    if (!m) continue;
+    const n = Number(m[1]);
+    const v = cen.porTicket.get(n);
+    if (!v || !v.ramas.some((r) => r.nombre === nombre)) perdidas.push(`${nombre} → SCRUM-${n}`);
+  }
+  return perdidas;
+}
+
 
 /**
  * LA POBLACIÓN QUE EL AUTO-BORRADO NO PUEDE ENCOGER.
@@ -106,7 +192,7 @@ function ramasDeLaHistoriaDeMerges(sha) {
  * (SCRUM-753). Y `main` tampoco cuenta: `agruparRamas` la excluye, porque el censo mide ramas
  * CONTRA `main`, no `main` contra sí misma.
  */
-function refsCrudas(bandera = null) {
+function refsCrudasEnVivo(bandera = null) {
   const args = ['for-each-ref', '--format=%(refname:short)%09%(objectname)'];
   if (bandera) args.push(bandera);
   args.push('refs/remotes/origin/');
@@ -131,18 +217,39 @@ test('SCRUM-804 · 🔴 SUELO: el censo cuadra rama a rama con lo que `git` list
   // ramas de margen. Un recuento que se compara con el de `git` en la misma pasada no caduca nunca,
   // y además caza el modo de fallo que el `> 100` no cazaba: que el censo PIERDA ramas concretas
   // sin que el total baje de un umbral cómodo.
-  const crudas = refsCrudas();
-  assert.equal(censo.resumen.total, crudas.length,
-    `🔴 el censo dice ${censo.resumen.total} ramas y \`for-each-ref\` lista ${crudas.length}. `
-    + 'No es una cifra que envejece: es el censo y git contando la MISMA población en la MISMA '
-    + 'pasada y no coincidiendo. Si difieren, la lista entera está incompleta y no se sabe cuánto.');
+  // ④ SUELO: cero refs no es «no hay ramas», es que no he podido mirar.
+  assert.ok(CRUDAS.length > 0,
+    '🔴 CIEGO: `for-each-ref` no ha listado ni una ref de `origin`. Sin población, cuadrar el '
+    + 'censo contra ella es cuadrar dos ceros.');
+
+  // 🔴 SCRUM-925: si la tienda se movió mientras se medía, esta pasada no compara nada — y se dice
+  // CUÁL se movió. No se aprueba: se declara.
+  assert.equal(NO_FIABLE, null, `🔴 PASADA NO FIABLE · ${NO_FIABLE}`);
+
+  // 🔴 Y CUANDO SÍ SE PUEDE COMPARAR, SE COMPARAN CONJUNTOS Y SE NOMBRAN LAS DIFERENCIAS. El
+  // `129 !== 130` de antes mandaba a buscar a ciegas; esto dice qué ref sobra o falta.
+  const enElCenso = new Set();
+  for (const [, v] of censo.porTicket) for (const r of v.ramas) enElCenso.add(r.nombre);
+  const enGit = new Set(CRUDAS.map((f) => f.nombre));
+  const soloEnGit = [...enGit].filter((n) => !enElCenso.has(n) && /^scrum-\d/i.test(n)).sort();
+  const soloEnElCenso = [...enElCenso].filter((n) => !enGit.has(n)).sort();
+
+  assert.deepEqual({ soloEnGit, soloEnElCenso }, { soloEnGit: [], soloEnElCenso: [] },
+    '🔴 el censo y `for-each-ref` no ven la misma población, y éstas son las diferencias:\n'
+    + (soloEnGit.length ? `   git lista y el censo NO ve:\n     · ${soloEnGit.join('\n     · ')}\n` : '')
+    + (soloEnElCenso.length ? `   el censo lista y git NO:\n     · ${soloEnElCenso.join('\n     · ')}\n` : '')
+    + '\n  Si difieren, la lista entera está incompleta y no se sabe cuánto.');
+
+  assert.equal(censo.resumen.total, CRUDAS.length,
+    `🔴 el censo dice ${censo.resumen.total} ramas y \`for-each-ref\` lista ${CRUDAS.length} en la `
+    + 'MISMA lectura. Es el censo y git contando la MISMA población y no coincidiendo.');
 
   // Y los dos cubos, cada uno contra la pregunta que git contesta por su cuenta. Sustituye a los
   // dos `> 0`: aquéllos sólo sabían decir «hay alguno», y con el auto-borrado activo el cubo de
   // mergeadas TIENDE A CERO por diseño — un `> 0` ahí es un rojo con fecha puesta.
-  assert.equal(censo.resumen.enMain, refsCrudas(`--merged=${censo.inst.sha}`).length,
+  assert.equal(censo.resumen.enMain, CRUDAS_EN_MAIN.length,
     '🔴 el censo y `for-each-ref --merged` no cuentan lo mismo dentro de `main`.');
-  assert.equal(censo.resumen.vivas, refsCrudas(`--no-merged=${censo.inst.sha}`).length,
+  assert.equal(censo.resumen.vivas, CRUDAS_VIVAS.length,
     '🔴 el censo y `for-each-ref --no-merged` no cuentan lo mismo fuera de `main`.');
 });
 
@@ -156,7 +263,7 @@ test('SCRUM-804 · 🔴 SUELO: el censo cuadra rama a rama con lo que `git` list
 // y se exige que el censo no haya perdido ni inventado ninguna.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 test('SCRUM-804 · 🔴 CONTROL POSITIVO DERIVADO: la agrupación no pierde ni inventa ramas', () => {
-  const crudas = refsCrudas();
+  const crudas = CRUDAS;
   assert.ok(crudas.length > 0,
     '🔴 CIEGO: `for-each-ref` no ha listado ni una rama de `origin`. Sin población no se puede '
     + 'afirmar que la agrupación no pierda nada: este control pasaría vacío.');
@@ -294,7 +401,8 @@ test('SCRUM-804 · ✅ CONTROL NEGATIVO: una rama mergeada NO se cuenta como tra
   // esa misma tarde: el auto-borrado dejó 15 refs mergeadas y 9 tickets. Ahora la población de
   // referencia se calcula EN CRUDO en esta misma pasada, y el control exige que coincida con la
   // del censo — no que sea grande.
-  const mergeadasCrudas = new Set(refsCrudas(`--merged=${censo.inst.sha}`).map((r) => r.nombre));
+  // SCRUM-925 · de la lectura ÚNICA, no en vivo: en vivo esto era otra población.
+  const mergeadasCrudas = new Set(CRUDAS_EN_MAIN.map((r) => r.nombre));
   const esperado = [...censo.porTicket.entries()]
     .filter(([, v]) => v.ramas.length > 0 && v.ramas.every((r) => mergeadasCrudas.has(r.nombre)))
     .map(([n]) => n).sort((a, b) => a - b);
@@ -434,4 +542,53 @@ test('SCRUM-804 · 🔴 NINGÚN UMBRAL DE ESTE FICHERO ESTÁ ESCRITO A MANO', ()
     + 'tres que cayeron el 8-sep-2026 (`> 100`, `>= 5`, `> 10`) estaban bien medidos y caducaron '
     + 'igual: el auto-borrado de ramas cambió la población debajo. Derívalo de `git` en la misma '
     + 'pasada — o, si de verdad hace falta una constante, el sitio no es un `assert`.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-925 · LOS DOS CONTROLES DEL ARREGLO
+//
+// Se ejercen sobre poblaciones FABRICADAS, no sobre el árbol: el árbol de hoy puede no tener una
+// rama sin slug, y un control que depende de que exista pasa por vacío el día que no está.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-925 · 🔴 ROJO REAL: una rama SIN SLUG que el censo pierde SIGUE cayendo, y se nombra', () => {
+  // `scrum-925` a secas: sin slug. Es el defecto que este fichero vigila de verdad, y arreglar el
+  // falso positivo del tiempo NO puede apagarlo.
+  const crudas = [{ nombre: 'scrum-925', sha: 'a'.repeat(40) }];
+
+  // ✅ La mitad que impide que esto pase por construcción: con el censo COMPLETO no se acusa.
+  const completo = { porTicket: new Map([[925, { ramas: [{ nombre: 'scrum-925' }] }]]) };
+  assert.deepEqual(ramasPerdidas(completo, crudas), [],
+    '🔴 el detector acusa a un censo que SÍ tiene la rama: acusaría siempre y su rojo no diría nada.');
+
+  // 🔴 Y la que decide: si el censo la pierde, cae NOMBRÁNDOLA.
+  const mutilado = { porTicket: new Map() };
+  const perdidas = ramasPerdidas(mutilado, crudas);
+  assert.equal(perdidas.length, 1, '🔴 la mutación no entró: se esperaba exactamente UNA pérdida.');
+  assert.deepEqual(perdidas, ['scrum-925 → SCRUM-925'],
+    '🔴 SE HA APAGADO LA SEÑAL AL QUITAR EL RUIDO. Una rama sin slug que el censo no agrupa tiene\n' +
+    '  que seguir cayendo con su nombre: es el defecto que este guard existe para cazar, y si el\n' +
+    '  arreglo de SCRUM-925 se lo lleva por delante, el guard está roto, no arreglado.');
+});
+
+test('SCRUM-925 · ✅ EL VERDE QUE DECIDE: una ref que llega a mitad NO acusa al censo, se NOMBRA', () => {
+  const antes = [{ nombre: 'scrum-100-una', sha: 'a'.repeat(40) }];
+  const despues = [...antes, { nombre: 'scrum-200-llega-a-mitad', sha: 'b'.repeat(40) }];
+
+  // ✅ Sin movimiento, la pasada es fiable: si esto diera movimiento, TODA pasada saldría no
+  // fiable y el guard dejaría de comparar nunca — apagarlo por la puerta de atrás.
+  assert.deepEqual(movimientoDeRefs(antes, antes), [],
+    '🔴 se declara movimiento donde no hay ninguno: ninguna pasada volvería a comparar nada.');
+
+  // 🔴 Y con movimiento: se nombra la ref, no se acusa al censo de perderla.
+  const movidas = movimientoDeRefs(antes, despues);
+  assert.equal(movidas.length, 1, '🔴 la mutación no entró: se esperaba exactamente UNA ref movida.');
+  assert.deepEqual(movidas, ['+ scrum-200-llega-a-mitad (llegó a mitad)'],
+    '🔴 EL ARREGLO NO SIRVE: una ref que llega mientras se mide tiene que salir NOMBRADA como\n' +
+    '  movimiento de la tienda compartida. Antes producía `129 !== 130` —un rojo que manda a\n' +
+    '  buscar a ciegas y acusa al censo de un defecto que no tiene—, y ése es el que se apaga.');
+
+  // Y la poda también: la otra dirección del mismo movimiento.
+  assert.deepEqual(movimientoDeRefs(despues, antes), ['- scrum-200-llega-a-mitad (se podó a mitad)'],
+    '🔴 una ref PODADA a mitad no se nombra. Entra y sale son el mismo defecto por los dos lados.');
 });

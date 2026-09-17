@@ -24,12 +24,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { scriptsDeLaPagina, rutaDelDashboard, cegueraDelExtractor, sinComentarios } from './_scripts-de-la-pagina.mjs';
 import { scriptsDelDashboard, SCRIPTS_DEL_DASHBOARD } from './_banco-vistas.mjs';
+import { temporal } from './_temporal.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INDICE = path.join(RAIZ, 'public', 'dashboard', 'index.html');
@@ -37,7 +37,7 @@ const MINIMO = 45;
 
 /** Escribe un índice sintético en una raíz temporal y devuelve esa raíz. */
 function raizCon(html) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum670-'));
+  const dir = temporal('scrum670-');
   fs.mkdirSync(path.join(dir, 'public', 'dashboard'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'public', 'dashboard', 'index.html'), html);
   return dir;

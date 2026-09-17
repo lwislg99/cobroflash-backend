@@ -28,16 +28,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { clasificarBlob } from './_censo-eol.mjs';
 import { censarTargetTactil } from './_censo-target-tactil.mjs';
 import { censarMarcadores, censarLectores } from './_censo-marcado-de-cobro.mjs';
 import { correspondencia } from '../scripts/frontera-dist.mjs';
+import { temporal } from './_temporal.mjs';
 
 /** Un árbol de mentira que se borra solo. */
 function arbolDeMentira(ficheros) {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum846-'));
+  const raiz = temporal('scrum846-');
   for (const [rel, texto] of Object.entries(ficheros)) {
     const abs = path.join(raiz, rel);
     fs.mkdirSync(path.dirname(abs), { recursive: true });

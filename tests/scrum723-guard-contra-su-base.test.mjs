@@ -30,13 +30,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { baseDeLaRama, contenidoEnLaBase } from './_base-de-la-rama.mjs';
 import { ambitoDeLaFactura, ENTRADA_FACTURA } from './_ambito-de-la-factura.mjs';
 import { censarReferenciaMovil, analizarFuente } from './_censo-referencia-movil.mjs';
+import { temporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REL_PDF = 'src/modules/invoicing/infra/pdf/pdf.service.ts';
@@ -60,7 +60,7 @@ const modulo = (factura, presupuesto) =>
  * @param {boolean} o.sinOrigin          no se crea ninguna referencia: no hay base que resolver
  */
 function repoDeRamaYMain({ mainTocaLaFactura = true, ramaTocaLaFactura = false, sinOrigin = false } = {}) {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum723-'));
+  const raiz = temporal('scrum723-');
   const g = (...a) => execFileSync('git', a, { cwd: raiz, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   g('init', '-q', '-b', sinOrigin ? 'suelta' : 'main');
   g('config', 'user.email', 'fixture@yaqu.test');

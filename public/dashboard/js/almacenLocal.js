@@ -107,6 +107,12 @@ const CLAVES_LOCALES = [
       + 'un aviso de «vuelve a firmar» de otra sesión sería un aviso sobre algo que ya no es suyo.',
   },
   {
+    patron: /^yaqu_sesion_sin_cobertura$/, almacen: 'localStorage', purga: true,
+    motivo: 'SCRUM-918 · SE PURGA: es la copia de la última respuesta de /admin/me —nombre, negocio, '
+      + 'rol— para poder arrancar la app SIN RED. Tras cerrar sesión no debe arrancar nada: quien '
+      + 'coja el móvil después vería el nombre y el negocio de otro profesional.',
+  },
+  {
     patron: /^yaqu_tips_shown$/, almacen: 'localStorage', purga: false,
     motivo: 'SOBREVIVE. Es el «no me lo vuelvas a enseñar» de los consejos: no hay dato personal '
       + 'ni de negocio, no lleva merchant, y es una preferencia DEL APARATO. Purgarlo devolvería '

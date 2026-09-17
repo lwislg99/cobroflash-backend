@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `f3ab211d54fb4b04129498985b6a78079cf78448` · 2026-09-17T10:14:49Z
 **Rama:** `scrum-906-benchmark-publico` · **Carril:** consultoría (Sesión 0) · **Encargo:** orquestador, 17-sep-2026 13:35 CEST
-**Estado:** FASE 1 (fuentes públicas) entregada. La **FASE 2** de SCRUM-906, mirar la competencia por dentro con cuentas de prueba, tiene gate del fundador y NO está empezada.
+**Estado:** FASE 1 (fuentes públicas) entregada. La **FASE 2** está **EMPEZADA por fuera**: ver §5 al final y el documento vivo [`docs/competencia/matriz.md`](../competencia/matriz.md). Entrar por dentro con cuentas de prueba sigue teniendo **gate del fundador** y NO se ha hecho.
 
 ⏱ Horas de GitHub (cabecera `Date:` de `gh api -i zen`). Webs leídas el 17-sep-2026; el código de YaQu se midió sobre el commit de arriba.
 
@@ -125,3 +125,41 @@ Criterio: qué pesa en la decisión de compra de un oficio pequeño o una pyme c
 - Importar ficheros BC3 (STEL, actualizaciones de agosto de 2026).
 - Leer los documentos del proveedor y crear el albarán de compra (STEL, actualizaciones de julio).
 - Guía de VeriFactu para oficios como captación por SEO (plenia.app/blog/verifactu-autonomos-oficio-guia-2026). ⛔ En YaQu, solo con el guion H2.
+
+## 5 · FASE 2 · la matriz función por función (17-sep-2026)
+
+El documento vivo es **[`docs/competencia/matriz.md`](../competencia/matriz.md)**: una fila por función
+y una columna por competidor, que **crece con un competidor por entrega**. No repite esta FASE 1: aquí
+están los **huecos** («esto nos falta, y lo tienen estos»), allí están las **funciones** («esta función,
+en cada producto»), para poder leerla en columna.
+
+**Entregado hasta ahora:** columna **YaQu** (17 filas re-medidas en el código sobre `origin/main`
+`ef332b90`), **Verifacturamos** y **Holded**, los dos solo por su **web pública**.
+
+**Sigue sin hacerse, y es a propósito:** entrar en ningún producto con cuenta de prueba. Un alta en un
+servicio de terceros la autoriza el fundador y esa autorización **no se hereda entre sesiones** (A19 de
+`docs/equipo/00-normas-comunes.md`). Mientras no la haya, las celdas que solo se verían por dentro van
+marcadas 🔒 en vez de rellenadas a ojo.
+
+**Cuenta huérfana de Holded:** se abrió un alta a medias el 17-sep a las 15:36Z con un alias de correo,
+no se completó, la contraseña no llegó a escribirse nunca y la sesión se perdió. **Se deja caducar sola
+en 14 días**; no se toca y no se borra. El detalle está en el comentario 15812 de SCRUM-906 en Jira.
+
+**Tres cosas medidas en esta fase que cambian lo que creíamos:**
+
+1. **YaQu no tiene remisión a la AEAT, y ahora está medido, no supuesto.**
+   `git grep -n -E "fetch\(|axios|https://www1?\.agenciatributaria" origin/main -- src/modules/fiscal`
+   → **cero resultados**. Existen el registro, su encadenado y los XSD; no existe una sola llamada de
+   red hacia Hacienda. Es el trozo que más pesa de SIF-1 y conviene no darlo por medio hecho.
+2. **YaQu no tiene fichaje: 0 resultados** en `src/`, `prisma/` y `public/`. *Suelo:* la misma forma de
+   búsqueda sobre `albaran` devuelve 32 aciertos solo en `schema.prisma`, así que no es una búsqueda
+   ciega. Es la línea de SCRUM-913.
+3. **Las «recurrentes» de YaQu no existen.** Lo que hay es `billingPeriodicity`, y su propio código
+   dice para qué sirve: *«periodicidad pactada (solo para AVISAR, ver bandeja)»*
+   (`src/modules/system/customerAdmin.ts:39`). Avisa; no factura.
+
+**Y el foso, también medido:** Holded se posiciona en Construcción y, en sus 55 páginas públicas, **no
+aparece** envío por WhatsApp, ni Bizum, ni parte de trabajo de campo, ni ficha del equipo instalado en
+casa del cliente, ni modo sin conexión. Los cinco los tiene YaQu o los tiene a medias.
+
+Los tickets de «lo que no tenemos» **los abre el orquestador**, no la Sesión 0.

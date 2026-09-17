@@ -19,14 +19,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 import { diagnosticarArbol, versionResuelta, arbolesAMirar } from '../scripts/diagnostico-dependencias.mjs';
+import { temporal } from './_temporal.mjs';
 
 /** Un árbol de mentira: `package.json` + `package-lock.json` + lo que se le quiera instalar. */
 function arbolFalso({ pide, instala, sinLock = false, nodeModules = true }) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-351-'));
+  const dir = temporal('yaqu-351-');
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({
     name: 'falso', dependencies: Object.fromEntries(Object.keys(pide).map((k) => [k, '^1.0.0'])),
   }));

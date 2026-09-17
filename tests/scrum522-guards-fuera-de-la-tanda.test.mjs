@@ -136,8 +136,12 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // servida por el panel real: líneas, base e IVA pintados con los descuentos, y sin descuentos
   // idénticos a la cuenta de siempre. La tabla de la ficha se arma con `innerHTML`, que el banco de
   // Node no reproduce. Comprobado en rojo contra `e437a51f` (17-sep-2026): 3 de 4 casos.
-  assert.equal(fuera.length, 23,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ 23 → ${fuera.length}.\n`
+  // SCRUM-918 · entra `guard:arranque-sin-red`. RECARGA sin red con el service worker de
+  // verdad: el corte lo hace el servidor destruyendo cada conexión, porque `setOffline` no corta el
+  // SW. Nada de esto existe fuera de un navegador. Comprobado en rojo contra `2be8fe16`
+  // (17-sep-2026): recargar sin red acababa en la pantalla de error de Chrome.
+  assert.equal(fuera.length, 24,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ 24 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
