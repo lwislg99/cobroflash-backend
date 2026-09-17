@@ -1459,7 +1459,14 @@ blockDelivery.appendChild(descWrapper);
     dtoGlobalBtn.hidden = true;
     try { descuentoGlobalInput.focus({ preventScroll: true }); } catch (_e) {}
   });
-  descuentoGlobalInput.addEventListener("input", function () { recalcTotals(); });
+  // SCRUM-888 (punto 2) · lo mismo que cualquier otro campo del dinero: recalcular, REDIBUJAR la
+  // vista previa y guardar el borrador. Solo recalculaba, y la vista previa se quedaba con el total
+  // de antes del descuento (medido en staging: total 175,04 € y vista previa 241,52 €).
+  descuentoGlobalInput.addEventListener("input", function () {
+    recalcTotals();
+    renderPreview();
+    scheduleDraftSave();
+  });
 
   dtoGlobalWrap.appendChild(dtoGlobalBtn);
   dtoGlobalWrap.appendChild(dtoGlobalCampo);
@@ -3641,6 +3648,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     // producto), y quitarle ese oyente lo habría dejado sin recalcular sin que nada fallara.
     vatInput.addEventListener("input", onChange);
     vatInput.addEventListener("change", onChange);
+    // SCRUM-888 (punto 2) · el dto de línea no tenía NINGÚN oyente: teclear un 15 % no movía ni el
+    // total ni la vista previa hasta tocar otro campo. Mismo `onChange` que cantidad, precio e IVA.
+    dtoInput.addEventListener("input", onChange);
     // SCRUM-500: marcar suplido cambia el IVA de la línea, así que recalcula como cualquier otro
     // campo. Sin esto, el total del pie se quedaría con el IVA de antes hasta el siguiente toque.
     suplidoCheck.addEventListener("change", function () {

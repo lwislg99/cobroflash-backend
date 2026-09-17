@@ -172,3 +172,42 @@ subtests; no se ha conciliado la diferencia.
 La entrada P3-META-859 que añadió a `docs/BUGS.md` dice que `meta-guard` es un check
 **obligatorio**: por lo medido en SCRUM-876 el único obligatorio es `build + tests`. No se corrige
 aquí (otro carril): se señala.
+
+## SCRUM-888b (punto 2 de SCRUM-888) · teclear un descuento no redibujaba el editor
+
+**Medido contra:** staging `4b88ab67` (PASO 0) y `origin/main` `7c1f259e` (rojo), 17-sep-2026.
+**Rama:** `scrum-888b-vista-previa-descuentos` · **Alcance decidido por el orquestador:** A + B.
+
+**PASO 0 en staging** (editor nuevo, una línea de 8 × 24,95 € al 21 %, tecleando; 390 y 1280 px dan lo mismo):
+
+| paso | total grande | vista previa |
+|---|---|---|
+| sin descuentos | 241,52 € | 241,52 € |
+| dto de línea 15 % tecleado en su hoja (abierta y cerrada) | **241,52 €** | **241,52 €** |
+| descuento global 25 € (también tras 6,5 s y un Tab) | 175,04 € | **241,52 €** |
+
+**Causa** (`public/dashboard/js/quotesView.js`):
+
+- **A** · el `input` del descuento global solo llamaba a `recalcTotals()`: ni `renderPreview()` ni `scheduleDraftSave()`.
+- **B** · el dto de línea (`dtoInput`) **no tenía ningún oyente**. Cantidad, precio e IVA llaman a `onChange`;
+  el dto no. De ahí salía el 539,05 € de SCRUM-883: el global recalculó y de paso recogió el dto de línea.
+
+**Arreglo:** A llama a lo mismo que cualquier campo del dinero (recalcular, redibujar, borrador); B escucha
+`input` con el MISMO `onChange` de la línea. Solo front, sin textos, sin servidor.
+
+**Rojo y verde:** `npm run guard:descuento-redibuja` (panel real, `/admin/*` simulado, tecleo real a 390 y
+1280 px). Contra `7c1f259e`: rojo en los dos anchos (dto: nada se mueve; global: 175,04 frente a 241,52; el
+borrador no se guarda). Con el arreglo: 205,29 = 205,29 tras el dto y 175,04 = 175,04 tras el global, y el
+borrador se guarda en cada paso. Mutantes (quitar B; quitar `renderPreview` de A): rojo en el guard y en
+`tests/scrum888b-descuento-redibuja.test.mjs`.
+
+**Fuera de este PR (decidido):**
+
+- **C** · las FILAS de la vista previa hacen su propia cuenta sin dto (`totalLine = cant × precio × (1+IVA)`),
+  mientras la fila del editor sí lo aplica. Siguen en 241,52 € con el dto puesto. Va con el punto 1, después
+  del PR 2 de SCRUM-887.
+- **Punto 3** (duplicar pierde el global): necesita servidor. `GET /admin/quotes/:id` no devuelve
+  `discountGlobalAmount` (medido en staging: la clave no está) y `duplicateQuote` no lo pasa.
+- **Hallazgo sin ticket:** el borrador del editor (`saveDraft`) no guarda ni el dto de línea ni el descuento
+  global. Se guarda al tocarlos (ahora sí), pero sin ellos: al recuperar el borrador vuelven vacíos. Ya pasaba
+  antes de este PR al tocar otro campo después de un descuento.
