@@ -237,7 +237,14 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 // a sí mismo, y ese mismo cuidado es lo que deja la lista cerrada en cuatro. Lo que protege la
 // lista de la autorreferencia es lo mismo que impide que crezca. El blindaje es correcto y no se
 // toca; lo que se amplía es lo que MIRA.
-const TOPE_LEEN_EL_ENTORNO = 15;
+// SCRUM-858b (17-sep-2026) · 15 → 17, y las dos lecturas nuevas son `process.platform`, ninguna
+// asevera en un solo entorno:
+//   · `scripts/tanda-con-veredicto.mjs` para el árbol de la tanda muda con `taskkill /T` en Windows
+//     y con el grupo de procesos en POSIX: son dos mecanismos, no dos veredictos.
+//   · `tests/scrum858b-la-tanda-sin-veredicto.test.mjs` busca huérfanos con `wmic` o `ps`, y salta
+//     la propagación de señales en Windows (no hay señales POSIX que propagar) CON su motivo: el CI
+//     de Linux la mide.
+const TOPE_LEEN_EL_ENTORNO = 17;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este
