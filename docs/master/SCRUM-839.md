@@ -492,3 +492,100 @@ declara `QUIEN_EMPUJA: 'User'` (sus casos son de una persona).
   por posición, las de antes (`#1…#n`) siguen todas presentes tras insertar (`#1…#n+1`); la aserción «ninguna
   clave perdida» no puede ver el desplazamiento. El test es mudo por construcción: el arreglo está en la aserción
   (qué entrada hay detrás de cada clave), no en a qué fichero apunta la mutación.
+
+
+---
+
+# APÉNDICE · SCRUM-839f (17-sep-2026) · Cierre por EFECTO: un PR con choque solo de registro se resolvió solo en GitHub de verdad
+
+**Medido contra:** `origin/main` = `53e3db1f541574c4f231c3d196a2874680160d02` · 2026-09-17T08:51:27Z
+
+**Tanda:** no aplica a este apéndice (solo documentación). La del PR hermano de la ficha (#1391, base
+`aa465cdd6fc6`) dio 7199 tests, 7089 pass, 0 fail, 110 skipped, con los tests del job de 839e dentro.
+
+**Rama:** `scrum-839h-cierre-por-efecto` · Sesión 5 · encargo del orquestador (17-sep 10:20 CEST).
+
+Horas: las de la API de GitHub (cabecera `Date:` o campos de la API), no las del reloj local.
+
+## ① PASO 0 · ¿había corrido desde que se encendió?
+
+El workflow «Conflicto de registro» (id 359729129) figuraba `active` con `updated_at` a las 08:08:58Z. Hasta
+entonces llevaba 5 runs, todos del 16-sep (el último a las 14:56:56Z). Pasadas reales desde que se encendió,
+antes del control:
+
+| run | disparo | resultado |
+|---|---|---|
+| 35199313923 | push `d131d2ca` · 08:22:25Z | success · 14 PR `scrum-*`: #1382 `NADA`; **#1379 `NO-EMPUJA` `FUERA-DE-REGISTRO`** (`docs/equipo/00-normas-comunes.md`, armado); 12 `SIN-AUTO-MERGE` |
+| 35199493840 | push `aa465cdd` · 08:24:28Z | success |
+
+Ningún `EMPUJAR`: no había un caso positivo real. Por eso se fabricó el control.
+
+## ② El control, diseñado por su limpieza
+
+Base común `08ad40766699c4d5ad72fd9450f5d387220376d4`. Desde ella, `main` solo había tocado
+`docs/master/SCRUM-873.md`, `docs/master/SCRUM-878.md` y dos ficheros de `tests/`: **nada de `.github/`**, así
+que el push de la App no podía chocar con el permiso `workflows`.
+
+| PR | rama · cabeza | contenido | estado |
+|---|---|---|---|
+| **#1385** positivo | `scrum-839f-control-positivo` · `01924a995ae53d279538e97846dd2abff6c6f196` | apéndice al final de `SCRUM-873.md` (choca con `main`) + `tests/control-scrum839f-no-mergear.test.mjs` (falla siempre) | armado |
+| **#1384** negativo · código | `scrum-839f-control-codigo` · `50b8e07108397f2f0ff246d523e0984eda7fefce` | lo mismo + una línea en `tests/_censo-escrituras-albaran.mjs` que choca | armado |
+| **#1386** negativo · sin armar | `scrum-839f-control-sin-armar` · `cd03b6c382d275943d578dcee7700312bb42253c` | igual que el positivo | desarmado a mano tras abrirse |
+
+Por qué no puede llegar a `main` aunque todo salga bien: el test que falla deja en rojo el check obligatorio
+`build + tests (con banco desechable)`, y el auto-merge espera a ese check. Mientras el PR está en conflicto,
+GitHub no le corre CI (medido: los tres solo tenían el run de «PR automático»), así que no hay rojo que avise a
+nadie antes de tiempo.
+
+Antes de empujar, la decisión corrió en local sobre esos commits: #1385 `EMPUJAR`, #1384 `FUERA-DE-REGISTRO`,
+#1386 `SIN-AUTO-MERGE`.
+
+⚠️ **Lo que no se hizo:** llenar el tope del avisador con marcas en los PR, para que su rojo no despertara a
+Claude. El clasificador de permisos lo bloqueó como manipulación de registro, y **no se rodeó**. Se sustituyó por
+cerrar el PR antes de que acabara su CI: eso solo evita ruido, la barrera contra `main` es el test.
+
+## ③ ROJO · POSITIVO · NEGATIVO · SUELO
+
+- **ROJO — sin el job, nadie lo resuelve.** #1385 abierto a las 08:27:15Z, armado y `CONFLICTING`. A las
+  08:33:59Z seguía igual (cabeza `01924a99`, `CONFLICTING`), sin ninguna pasada del job entre medias (la última
+  había sido a las 08:24:28Z). GitHub no aplica `merge=union` por sí mismo.
+- **POSITIVO — se resolvió solo, disparado por un push real a `main`.** Run **35200509232** (push
+  `aa0b4d299ee7daa097c8a4f49a21bc6525dbe41c`, que es el merge de #1387, 08:35:40Z → success 08:36:05Z):
+  `#1385 → EMPUJAR (docs/master/SCRUM-873.md)`. **Por efecto:**
+  - la rama pasó a `b85eb3e8be5a8a8c7d1782cc47957f51c880237f`, autor `yaqu-bot[bot]`, padres `01924a99` + `aa0b4d29`;
+  - el PR pasó de `CONFLICTING` a `MERGEABLE` **con el auto-merge aún armado** (`app/yaqu-bot`). Queda cerrado el
+    riesgo abierto de 839e sobre si GitHub desarma tras el push de la App;
+  - 🔴 **el CI arrancó con jobs de verdad, no `action_required`**: CI 35200535850 y Zona roja 35200535855,
+    `actor=yaqu-bot[bot]`, a las 08:35:59Z. Queda cerrado el riesgo de la política de aprobación de Actions
+    **para el push de la App**. El tercer agujero (push de `github-actions[bot]` desde `claude.yml`) es otra
+    cuenta y no se midió aquí;
+  - «PR automático» (run 35200532226) ante ese push: `QUIEN_EMPUJA: Bot` → `EMPUJE-SIN-PERSONA`, no volvió a
+    armar. El arreglo de 839e, confirmado con un evento real;
+  - la pasada siguiente (35200836539, push `46f49587`, 08:39:19Z) dio `#1385 → NADA (sin conflicto)`: no repite.
+- **NEGATIVO — código:** #1384 → `NO-EMPUJA FUERA-DE-REGISTRO` en las dos pasadas; cabeza `50b8e071` sin mover.
+  Y el caso real #1379, en la pasada de las 08:22Z.
+- **NEGATIVO — sin armar:** #1386 → `NO-EMPUJA SIN-AUTO-MERGE` en las dos pasadas; cabeza `cd03b6c3` sin mover.
+- **SUELO:** **no se provocó en GitHub.** Hacerlo exigía lanzar con `workflow_dispatch`, desde una rama sin
+  revisar, una copia mutada del workflow con la llave de la App dentro, y no compensaba el riesgo. Lo cubren
+  «🔴 SUELO del job: si la lista no trae el armado, «no pude mirar», rojo y la rama NO se mueve» y «🔴 SUELO: si no
+  se puede leer si estaba armado…» (`tests/scrum839e-solo-pr-armados.test.mjs`, que ejecuta los pasos reales del
+  YAML), en verde en la tanda citada arriba. Es cobertura por banco, no por efecto, y se declara como tal.
+
+## ④ Limpieza, comprobada aparte
+
+- #1385, #1384 y #1386 cerrados **sin mergear** (`mergedAt: null`) a las 08:40:29Z, 08:40:50Z y 08:41:07Z; ramas
+  borradas (`git ls-remote --heads origin | grep -c 839f` → `0`).
+- Contra `origin/main` = `46f495872b17c2960c4ae21a5d6632f6295266a6`: ninguno de los cuatro commits
+  (`01924a99`, `50b8e071`, `cd03b6c3`, `b85eb3e8`) es ancestro (`merge-base --is-ancestor`); el test de control no
+  existe en `main` (`ls-tree` → 0 líneas) y el texto «CONTROL SCRUM-839f» no aparece en `docs/` ni en `tests/`.
+- El CI de `b85eb3e8` acabó en failure a las 08:45:37Z (el test de control, como estaba diseñado). Avisador
+  35201423607 → `SIN-PR`: no despertó a nadie.
+
+## ⑤ Hallazgos, sin arreglar
+
+- **El avisador lee un PR cerrado con la rama borrada como `SIN-PR`, no como `PR-YA-CERRADO`:**
+  `commits/<sha>/pulls` devuelve `[]` para esa cabeza. El efecto es el mismo (no avisa), pero el veredicto nombra
+  otra causa. Carril S5.
+- **En una mañana con muchos merges, el CI de `main` no llega a terminar:** la concurrencia `ci-refs/heads/main`
+  cancela el run anterior. De `08ad4076` a `1e7d6de2` (07:57Z–08:51Z) terminaron 2 de 8 runs; el resto salió
+  `cancelled`. El meta-guard de `main` solo se puede leer cuando hay un respiro de ~10 min entre merges. Carril S5.
