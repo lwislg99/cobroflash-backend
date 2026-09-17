@@ -50,10 +50,16 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 ];
 const ENVOLTORIO = path.join(RAIZ, 'scripts', 'tanda-con-veredicto.mjs');
 
-/** El entorno de una tanda de verdad: sin `NODE_TEST_CONTEXT`, o `node --test` no corre nada y sale 0. */
+/**
+ * El entorno de una tanda FABRICADA: sin `NODE_TEST_CONTEXT`, o `node --test` no corre nada y sale 0;
+ * y sin `NODE_OPTIONS`, que en el CI trae un reporter `spec` a la salida estándar. Heredado, la tanda
+ * fabricada «sin recuento» SÍ imprimía uno y el envoltorio acertaba al dar 0: el caso no medía lo
+ * que dice (medido en el CI del PR #1441, reproducido en local con el mismo NODE_OPTIONS).
+ */
 const entorno = (extra = {}) => {
   const e = { ...process.env, ...extra };
   delete e.NODE_TEST_CONTEXT;
+  delete e.NODE_OPTIONS;
   return e;
 };
 
