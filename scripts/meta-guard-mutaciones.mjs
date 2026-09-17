@@ -103,7 +103,34 @@ const EN_VUELO = [];
  *
  * SON NÚMEROS QUE SÓLO SUBEN. Se suben al adoptar el mecanismo en un guard nuevo; bajarlos es
  * retirar cobertura, y entonces el diff lo tiene que decir en voz alta. Medido en el árbol del
- * 6-sep-2026 (rama scrum-765-763, tras mezclar main por tercera vez): 20 guards · 54 declaraciones.
+ * 6-sep-2026 (rama scrum-765-763, tras mezclar main por tercera vez): el reparto de entonces está
+ * en el registro de SCRUM-765; aquí no se copia, porque una cifra en prosa envejece (SCRUM-737 ②).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-812c · ESTOS DOS NÚMEROS YA NO SON EL SUELO. NO LOS SUBAS.
+ *
+ * Como SUELO están muertos, y se puede medir: el 17-sep-2026 declaraban 20 y 54 sobre un árbol de
+ * 86 declarantes y 273 declaraciones. Menos de un cuarto. Un suelo tan por debajo **no se puede
+ * disparar nunca**, y leerlos como vigilancia es leerlos mal.
+ *
+ * **Pero no son un resto olvidado, y por eso siguen aquí:** SCRUM-810 los SUSTITUYÓ por un suelo
+ * que se deriva de `origin/main` (`scripts/_suelo-contra-main.mjs`), y ése sí habla **a la
+ * primera pérdida**, no a la 64ª. Crecer no le dispara; retirar A PROPÓSITO cuesta una línea en
+ * `RETIRADAS_A_PROPOSITO`, en el mismo commit. La vigilancia de verdad está allí.
+ *
+ * Lo que estos dos hacen HOY es sostener el CONTROL NEGATIVO de aquel ticket
+ * (`tests/scrum810-el-suelo-a-la-primera.test.mjs`), que mide los dos suelos pegados:
+ *
+ *     · suelo CABLEADO (20 / 54)  → calla hasta la 63ª pérdida. Habla en la 64ª.
+ *     · suelo CONTRA MAIN         → habla en la 1ª.
+ *
+ * 🔴 **SUBIRLOS ROMPE ESE CONTROL Y NO GANA NADA.** Medido el 17-sep-2026: subidos a 86/273, el
+ * test «perder UNA declaración ya habla, y nombra el guard» se pone ROJO —su primer aserto exige
+ * que el cableado siga callado con 63 pérdidas—, y a cambio no se cubre ni un caso nuevo, porque
+ * la retirada de una declaración ya la caza el suelo derivado. Se probó, se midió y se revirtió.
+ *
+ * Si algún día se quieren retirar de verdad, el sitio donde mirar primero es el control de
+ * SCRUM-810: son su patrón de comparación, no un número del árbol.
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  */
 export const SUELO_GUARDS = 20;
@@ -341,6 +368,41 @@ export function censoConPoblacion(dir = DIR_TESTS) {
  */
 export function censoDeDeclaraciones(dir = DIR_TESTS) {
   return censoConPoblacion(dir).censo;
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-812c · EL ANCLA QUE SE CITA A SÍ MISMA.
+ *
+ * Un guard que pone un TOPE o un SUELO declara su mutación copiando la línea de la constante:
+ *
+ *     export const TOPE = N;                       ← la constante, en su línea
+ *     …
+ *     { de: 'export const TOPE = N;', a: '…' }     ← la declaración, que la CITA
+ *
+ * El ancla aparece entonces DOS veces en el mismo fichero, y `aplicarUna` hace
+ * `texto.replace(de, a)`, que toma la PRIMERA. Hoy acierta **por el orden del fichero, no por
+ * contrato**: la constante va antes del array. Si alguien mueve el array arriba, la mutación
+ * reescribe el TEXTO de la declaración, la constante se queda como estaba, el guard no cae y el
+ * veredicto sale **MUDO acusando a un guard sano** — el defecto de SCRUM-839e, mutar un sitio por
+ * el que el test no pasa.
+ *
+ * Censadas el 17-sep-2026: cuatro declaraciones del árbol tienen el ancla ambigua.
+ *
+ * ⚠️ **EL LÍMITE DE ESTA COMPROBACIÓN, y hay que leerlo antes de fiarse:** `primeraEnLineaPropia`
+ * sólo separa «la línea de verdad» de «la cita indentada dentro del array». **No sirve** cuando
+ * las dos ocurrencias son código real en líneas propias —p. ej. dos `where:` idénticos en un
+ * `.ts`—: ahí dice que sí sin probar nada. Para ese caso hace falta otra comprobación, y este
+ * módulo no la tiene.
+ *
+ * Vive AQUÍ, en el módulo dueño del contrato, y no copiada en cada guard: dos copias de la misma
+ * comprobación son la próxima contradicción con fecha puesta.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function ocurrenciasDelAncla(fuente, ancla) {
+  const veces = fuente.split(ancla).length - 1;
+  const i = fuente.indexOf(ancla);
+  return { veces, primeraEnLineaPropia: veces > 0 && (i === 0 || fuente[i - 1] === '\n') };
 }
 
 /**

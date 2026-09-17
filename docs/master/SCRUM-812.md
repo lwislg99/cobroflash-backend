@@ -395,3 +395,208 @@ denominador:
    subiendo el congelado — eso habría sido regla 41. Censo de vuelta en **81**, cero líneas mías.
    Y era doblemente mío: un comentario que cita una cifra del día es lo mismo que el PASO 0 acababa
    de cazarme con el 79.
+
+# SCRUM-812c · Los suelos no estaban olvidados: estaban SUSTITUIDOS — y el sustituto no corre en CI
+
+**Fecha:** 17-sep-2026 · **Carril:** B · instrumentos · **Gate:** 🔴 **CORRIGE MI PROPIO INFORME**
+**Medido contra:** `origin/main` = `7340d33116c5ab168aa7c5a67abee02813014cf8` · 2026-09-17T20:09:36Z
+**Rama:** `scrum-812c-los-suelos-muertos`
+**Preámbulo (A1):** `prisma generate` con el CLI local · `git status` limpio ·
+`git rev-list --count HEAD..origin/main` = **0** al ramificar. Sin `git stash` (A15).
+
+> Antes de ramificar se comprobó que `scrum-812b` **está dentro de `main`**
+> (`git merge-base --is-ancestor 1d928357… origin/main`). **Obligación 0:** sin rama `scrum-812*`
+> viva; fases anteriores mergeadas (PR #1443, #1473). Esta entrada **ANEXA** (A8).
+
+---
+
+## 🔴 LO PRIMERO: ESTA TANDA NO HACE LO QUE VENÍA A HACER, Y EL MOTIVO ES MÍO
+
+El encargo pedía **subir** `SUELO_GUARDS` y `SUELO_DECLARACIONES`, y lo pedía porque **yo** los
+reporté como muertos al cerrar la fase b. El reporte era cierto a medias y la mitad que faltaba lo
+cambia todo:
+
+> **No son un resto olvidado: están SUSTITUIDOS.** SCRUM-810 los reemplazó por un suelo derivado de
+> `origin/main` (`scripts/_suelo-contra-main.mjs`) que habla **en la primera pérdida**. Los 20/54
+> siguen en el fichero porque **sostienen el CONTROL NEGATIVO de aquel ticket**.
+
+Lo pone su propia cabecera, `tests/scrum810-el-suelo-a-la-primera.test.mjs`:
+
+```
+· suelo CABLEADO (20 / 54)  → calla hasta la 63ª pérdida. Habla en la 64ª.
+· suelo CONTRA MAIN         → habla en la 1ª.
+```
+
+**Se subieron a 86/273, se midió lo que pasaba, y se revirtió.** Lo que pasaba:
+
+```
+✖ perder UNA declaración ya habla, y nombra el guard
+  AssertionError: el suelo cableado tendría que seguir callado con 63 pérdidas:
+                  si no, este control no mide nada
+```
+
+Ese aserto es `sueloDelCenso({ guards: 41, declaraciones: 117 - 63 })` — o sea **{41, 54}**, los
+números cableados. Subirlos rompe la prueba de por qué existe el suelo derivado **y no cubre ni un
+caso nuevo**, porque la retirada de una declaración ya la caza el derivado. Regla 41: el rojo se
+arregló cambiando **mi** código, no lo que el guard exige.
+
+Lo que sí queda hecho sobre esas dos constantes: **su comentario dice ahora lo que son**, para que
+nadie —yo el primero— vuelva a leerlas como vigilancia. Cero cambio de comportamiento.
+
+---
+
+## 🔴 ① EL HALLAZGO QUE SÍ VALE: EL SUSTITUTO NO CORRE DONDE SE DECIDE
+
+Al comprobar que el suelo derivado estaba vivo apareció esto, y es más grave que lo que venía a
+arreglar:
+
+| | |
+|---|---|
+| el único test que ejerce el suelo derivado **contra el árbol real** | `✅ CONTROL POSITIVO: con el árbol tal cual, el suelo CALLA` |
+| está gateado por | `skip: BASE ? false : 'sin origin/main en este clon'` |
+| corre dentro de | `npm test`, o sea el job **`build + tests`** de `ci.yml` |
+| ¿ese job trae `origin/main`? | 🔴 **NO.** Líneas 38–316 de `ci.yml`: ni un `git fetch` de `main` |
+| ¿qué jobs sí lo traen? | `guards-visuales`, `meta-mutaciones`, `vigia-despliegue` — ninguno corre `npm test` |
+
+**Conclusión, medida:** en CI, el suelo derivado **se salta**, y el que sí corre allí es el
+cableado, que calla hasta la 63ª pérdida. **En CI, perder declaraciones no lo caza nadie.** La
+vigilancia existe y es buena; lo que no existe es en el sitio donde decide.
+
+Es el defecto nº13 otra vez, y un escalón por encima del que el encargo perseguía: no es que el
+número esté bajo, es que **el instrumento bueno no llega a ejecutarse**.
+
+### ⛔ POR QUÉ NO LO ARREGLO AQUÍ
+
+El arreglo es **una línea** —copiar al job `test` el paso que ya existe tres veces en el mismo
+fichero:
+
+```yaml
+      - name: Traer `main` (el suelo de SCRUM-810 compara contra la base de fusión)
+        run: git fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/main:refs/remotes/origin/main
+```
+
+Pero cambia **lo que corre en TODOS los PR**, y su primer efecto puede ser destapar pérdidas que
+hoy nadie ve: eso es un rojo simultáneo en todas las ramas abiertas, que es exactamente **A12**. Se
+propone y se para. *(Local, con `origin/main` presente, ese control pasa: 31 tests en verde.)*
+
+---
+
+## ② EL ANCLA QUE SE CITA A SÍ MISMA — NO ERA UNA, ERAN CUATRO
+
+Antes de arreglar `TOPE_PROSA_MUDA` a mano se **censó el árbol entero**: arreglar una y dejar tres
+es el mismo defecto con otra ropa. De las **273** declaraciones de hoy:
+
+| | |
+|---|---|
+| anclas que no casan (0 veces) | 0 |
+| 🔴 **ambiguas** (aparecen >1 vez en el fichero que mutan) | **4** |
+
+```
+2x  scrum758  → tests/scrum758-…               "export const TOPE_PROSA_MUDA = 44;"
+2x  scrum758  → tests/scrum758-…               "  if (dice === 'ninguna' && e.marcadas > 0) {"
+2x  scrum767  → src/…/customerPortal.routes.ts "    where: { portalToken: token },"
+2x  scrum812  → tests/scrum812-…               "export const SUELO_GUARD_QUE_DECLARAN = 19;"
+```
+
+`aplicarUna` hace `texto.replace(de, a)`, que toma la **PRIMERA**. Las cuatro aciertan hoy **por el
+orden del fichero, no por contrato**. Si alguien sube `MUTACIONES_QUE_ME_TUMBAN`, la mutación
+reescribe la CITA, el original queda intacto, el test no cae y el veredicto sale **MUDO acusando a
+un guard sano** — SCRUM-839e: mutar un sitio por el que el test no pasa.
+
+**La puerta se cierra UNA sola vez:** `ocurrenciasDelAncla(fuente, ancla)` vive en
+`scripts/meta-guard-mutaciones.mjs`, el módulo dueño del contrato. La usan `scrum812` —que tenía
+una copia propia, ahora retirada— y `scrum758`, que no tenía ninguna. Dos copias de la misma
+comprobación son la próxima contradicción con fecha puesta.
+
+En `scrum758` va **dentro** del bucle que ya recorría sus declaraciones comprobando que el ancla
+existe: es la segunda mitad de la misma pregunta, no un test suelto.
+
+> 🔴 **EL LÍMITE, y va escrito en el helper:** separa «la línea de verdad» de «la cita indentada
+> dentro del array». **NO sirve** para `scrum767`, donde las dos ocurrencias son código real en
+> líneas propias. Ese caso queda **REPORTADO**: necesita otra comprobación y vive en `src/`.
+
+---
+
+## ③ LO QUE SE PUSO ROJO, Y QUÉ ERA CADA COSA
+
+| rojo | qué era |
+|---|---|
+| `perder UNA declaración ya habla, y nombra el guard` (scrum810) | 🔴 **el hallazgo**: mi subida de suelos rompía su control negativo. Revertido |
+| `SCRUM-763 · el árbol ejecutable NO es el fuente` | **mío y de otra causa**: no compilé tras ramificar (A6) |
+| `SCRUM-854 · esta rama trae su entrada` | esperado hasta anexar esta entrada |
+| `SCRUM-858b` (`spawnSync wmic ENOENT`) | **ajeno** — SCRUM-922 |
+
+---
+
+## LA MEDICIÓN QUE SIGUE VALIENDO AUNQUE LA SUBIDA SE REVIRTIERA
+
+Se midió el movimiento real de las dos cifras con el **lector oficial**, commit a commit, sumando
+el delta de los ficheros que cada commit toca:
+
+| | medido el 17-sep-2026 |
+|---|---|
+| commits que tocan `tests/` examinados | **1.078** (ventana ancha: 1.416) |
+| 🔴 peor caída en UN commit / en UN día | **0 / 0**, en las dos cifras |
+| ficheros de test borrados en toda la historia | 2, y **ninguno declaraba** |
+| 🟢 subida media diaria | **+9,6** declarantes · **+30,3** declaraciones |
+
+Sirve para dos cosas: **respalda el diseño de SCRUM-810** (un entero congelado sobre algo que sube
+~30 al día se queda atrás solo, y por eso la referencia se deriva), y deja el dato listo para quien
+vuelva a proponer un suelo cableado.
+
+### 🔴 UNA SONDA CONTRA OTRA, Y LA DISCREPANCIA ERA EL DATO
+
+La primera sonda de la caída fue un **proxy por texto** (líneas `cae:` retiradas en el diff): dio
+**7 commits, hasta 4 en uno**. La exacta dio **0**. No se promediaron: se miró cuál tenía el suelo
+firme. Verificado en los tres commits que el proxy señalaba (`3dfbebfc1`, `913249426`,
+`b676ec8d1`): **delta neto 0 en los tres**, con el control positivo diciendo que el lector veía 4, 6
+y 2 declaraciones ahí. El proxy contaba bloques MOVIDOS, que era el límite que él mismo declaraba.
+
+---
+
+## LOS CONTROLES
+
+| control | resultado |
+|---|---|
+| 🔴 **EL QUE DECIDE** · quitar UNA declaración real (la 2ª de `scrum859`) en el árbol y censar | con **suelos subidos** → `exit 2 · CIEGO`; con los **cableados** → `exit 0` **no salta**. Restaurado y verificado **byte a byte**. Es la prueba de que como SUELO están muertos — y también de por qué scrum810 existe |
+| ✅ **POSITIVO** | árbol intacto → `exit 0`; **31 tests** de `scrum810 + scrum812 + scrum758 + scrum765 + scrum763` en verde tras revertir |
+| 🔴 **MUTACIÓN: ¿entró?** | las **9** declaradas de `scrum758` (5) y `scrum812` (4) salen **VIVA**; ninguna muda, ninguna ciega. Anclas: 1 vez exacta salvo las 4 ambiguas, que son 2 por construcción |
+| **las dos direcciones** | medido: suelo POR ENCIMA de la realidad → salta · EXACTO → no · POR DEBAJO → **no salta**. Un suelo es asimétrico, y ésa es justo la avería que SCRUM-810 resolvió derivando la referencia |
+| **el trinquete de la fase b** | sigue en **19** con el árbol ya en 894 ficheros y 208 titulados |
+
+---
+
+## LO QUE SE REPORTA Y NO SE ARREGLA (A7)
+
+1. 🔴 **El job `test` de `ci.yml` no trae `origin/main`**, así que el suelo de SCRUM-810 se salta en
+   CI. Una línea, y necesita GO porque cambia lo que corre en todos los PR.
+2. **`scrum767` tiene un ancla ambigua que el helper nuevo no cubre** (dos líneas de código reales
+   e idénticas en un `.ts`).
+3. **Mi informe de la fase b indujo este encargo.** Decía «`SUELO_GUARDS` = 20 está muerto» sin
+   comprobar si algo lo había sustituido. Lo estaba, desde SCRUM-810.
+
+## LO NO TOCADO
+
+- ⛔ **No se define «guard».** ⛔ **Ninguna de las declaraciones que faltan**, ni los gateados, ni
+  los no mutables. ⛔ **Ningún guard aflojado** (regla 41): el rojo de scrum810 se arregló
+  revirtiendo mi cambio, y el de scrum763, compilando.
+- `ci.yml` intacto · `src/` intacto · cero texto de usuario (regla 39) · ningún flag ni estado nuevo
+  (27) · ninguna dependencia (36) · cero producción y staging · historia no reescrita.
+
+---
+
+## LO QUE ME SALIÓ MAL (A9)
+
+1. 🔴 **El error de la tanda es de la tanda ANTERIOR, y es mío:** reporté dos suelos como muertos
+   sin buscar si alguien los había sustituido. SCRUM-810 lo había hecho diez días antes, y su
+   ticket se llama, literalmente, «el suelo a la primera». Ese reporte generó un encargo entero
+   para arreglar algo que ya estaba arreglado — dieciséis tandas se gastaron así en una semana,
+   dice A2, y ésta iba camino de ser la diecisiete. Lo que lo paró fue correr la tanda completa y
+   leer el nombre del guard que se puso rojo.
+2. 🔴 **Corrí los tests sin compilar tras ramificar** y casi apunto un rojo de `scrum763` como «lo
+   que se pone rojo al subir el suelo». Habría sido un hallazgo falso. Lo deshizo leer el mensaje
+   del guard —`el árbol ejecutable NO es el fuente`— en vez del nombre del test.
+3. 🔴 **Mi primera sonda de las caídas no llevaba control positivo** y dio «0 caídas en 1.416
+   commits». Un lector ciego da el mismo cero. Sólo la destapó que el proxy anterior dijera 7.
+4. **Iba a arreglar `TOPE_PROSA_MUDA` a mano**, como decía el encargo, sin censar antes. Eran
+   cuatro, y una ni siquiera es del mismo tipo.
