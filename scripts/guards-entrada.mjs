@@ -47,7 +47,7 @@ const MINIMO = 4;
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega
 // como `\x1b[34mℹ tests 26\x1b[39m`.
-const ANSI = /\[[0-9;]*[A-Za-z]/g;
+const ANSI = /\u001B\[[0-9;]*[A-Za-z]/g;
 
 /**
  * El recuento de tests que imprime el runner de node, leído de su salida.

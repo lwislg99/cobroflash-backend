@@ -47,7 +47,7 @@ import { spawnSync } from 'node:child_process';
 
 import { recuentoDeTests } from '../scripts/guards-entrada.mjs';
 
-const ESC = '';
+const ESC = '\u001B';
 
 test('① el recuento se lee igual con color que sin él', () => {
   const sinColor = 'ℹ tests 26';
@@ -91,7 +91,7 @@ test('① el recuento sale de la línea del runner, no de cualquier línea que d
 
 test('② el runner de node de HOY, con el color forzado, se lee bien', () => {
   // Esto es lo que ① no puede probar: que la cadena de arriba sigue siendo la que node imprime.
-  const banco = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum899-color-'));
+  const banco = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum928-color-'));
   try {
     const sonda = path.join(banco, 'sonda.test.mjs');
     fs.writeFileSync(

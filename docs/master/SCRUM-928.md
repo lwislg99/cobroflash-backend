@@ -95,6 +95,20 @@ por stdout**. La primera versión de ② medía una salida VACÍA, con lo que `r
 arreglado —habría pasado por un test y no lo era—. Lo delató la aserción que exige ver un `\x1b[` en la salida ANTES de
 medirla. En el spawn se borra esa variable.
 
+## ⑦bis · Un byte de escape se coló LITERAL en el código, y casi entra así
+
+Al escribir `const ANSI = /\[…/` la secuencia se guardó como el **byte 0x1B de verdad**, no como
+sus seis caracteres. Funciona igual —el guard estaba en verde— y por eso es peligroso: un byte de control invisible en
+un `.mjs` sobrevive mientras nadie normalice el fichero, y desaparece sin ruido en cuanto alguien lo haga.
+
+No lo encontró una revisión: **lo delató un `git diff`**, donde la línea salía como `/\[[0-9;]*[A-Za-z]/` —sin el
+escape— porque la consola se comía el byte al pintarlo. Se comprobó con `String.fromCharCode(27)` sobre el fichero, que
+es lo único que lo distingue de verdad, y aparecía uno en cada fichero: el script y el test. Los dos pasan a la
+secuencia escapada; el comportamiento no cambia y la verificación de ⑧ se repitió entera después.
+
+    🔒 Lo que no se ve en un diff no se revisa. Un carácter de control en el código fuente se escribe escapado,
+       aunque las dos formas funcionen.
+
 ## ⑧ Verificación por efecto
 
 Sobre el árbol ya arreglado:
