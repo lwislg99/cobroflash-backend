@@ -1498,6 +1498,109 @@ la medición y el juicio, no el cambio.
 
 Jira · ningún ticket cerrado · ninguna rama renombrada ni borrada · el criterio de SCRUM-804 sin
 ampliar · producción y staging sin tocar.
+# APÉNDICE · Fase d — lo que cada ticket PROMETÍA, y qué desbloquea a los no decidibles
+
+*17-sep-2026 · rama `scrum-804d-lo-que-prometia`*
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T14:56:04+01:00
+
+⛔ **MIDE. No cierra tickets, no toca Jira, no renombra ni borra ninguna rama.**
+⛔ **El bloque ① (arreglar el barrido) fue RETIRADO por el fundador** — lo lleva la S3 de Luis. Lo
+hecho antes de la retirada queda en un commit de `scrum-804c-el-barrido-alcanza-la-rama`,
+**sin empujar**, para no poner una segunda rama sobre el mismo fichero.
+
+## ② ¿Está hecho lo que cada ticket PROMETÍA?
+
+> «¿Está el trabajo en `main`?» y «¿está hecho lo que el ticket prometía?» **no son la misma
+> pregunta**, y sólo la segunda cierra un ticket.
+
+**Población: 25 mirados · 25 clasificados.**
+
+🔴 **DE DÓNDE SALE LA PROMESA, Y ES LA LIMITACIÓN QUE MANDA:** se lee de la **entrada de registro
+del propio ticket en `main`**, no de Jira — el conector de Atlassian está desconectado en esta
+sesión. Donde la entrada sólo registra una MEDICIÓN, no puedo saber si el enunciado original pedía
+construir. **Esos van a `NO SÉ` y son tuyos**, no míos.
+
+### 🔴 PARCIAL · 13 — y cada uno lo declara ÉL MISMO
+
+| ticket | qué falta, en sus propias palabras |
+| --- | --- |
+| **SCRUM-307** | su propio título: *«SUELO DISPARADO: no he podido leer los tres tickets»* |
+| **SCRUM-328** | dos secciones `## 5 · LO QUE NO SE HA HECHO` · *«sigue sin haber una frase aprobada»* |
+| **SCRUM-523** | el título: *«qué exige, qué hay y qué falta»* |
+| **SCRUM-534** | *«`docs/VERIFACTU_EVIDENCIAS.md` sigue sin existir»* · **las 10 frases sin corregir** |
+| **SCRUM-568** | el título: *«hoy 0 de 9»* · `## ⑩ Lo que NO se ha hecho` · una rama *«todavía no fusionada»* |
+| **SCRUM-635** | el título: *«MEDIDO Y PARADO: sigue bloqueado por su propia condición»* |
+| **SCRUM-665** | *«sigue sin medir»* · **el lector sigue sin llamador** |
+| **SCRUM-688** | en el propio código: `crearRevision: '⛔ PENDIENTE DE MICROCOPY (SCRUM-688)'` |
+| **SCRUM-825** | el título: *«por qué el renombrado NO se puede hacer así»* · *«la variable sigue sin gobernar la llave»* |
+| **SCRUM-863** | **la mudanza sin hacer**; su fase b está declarada y abierta |
+| **SCRUM-878** | *«Lo que NO se ha hecho: convertir este censo en trinquete»* |
+| **SCRUM-903** | — *(ver CUMPLIDO)* |
+| **SCRUM-910** | el título: *«① medido, y el resto PARADO»* · depende de SCRUM-893, que no está en `main` |
+| **SCRUM-16** | *«Sigue sin cablearse nada. `git diff` sobre `src/` y `prisma/` está vacío»* |
+
+✅ **Los tres casos que el fundador dio como control —863, 665 y 534— salen los tres PARCIAL.**
+Si el criterio los hubiera dado por cumplidos, no estaría midiendo.
+
+### ✅ CUMPLIDO · 6
+
+`280` (CAMINO 1 decidido) · `331` (F4, el héroe) · `333` (F6, tarjeta por gremio) · `512` (el
+producto no olvida que alguien pagó; su «diff ②» se declaró **improcedente**, no pendiente) ·
+`554` (las dos copias del medidor, y la deuda medida) · `903` (el marcador que se imprime; el banco
+por estados está declarado **ticket aparte**, que es alcance y no deuda).
+
+### ⚠️ NO SÉ · 6 — **y son tuyos**
+
+| ticket | por qué no puedo decidirlo |
+| --- | --- |
+| **332** · **334** | **no tienen entrada en `main`**: entraron al cubo DENTRO por tener ficheros propios. Sin entrada no puedo leer qué prometían |
+| **322** · **323** · **654** · **811** | su entrada registra un **PASO 0 de medición** y la medición está hecha. Pero si el enunciado de Jira pedía **construir**, esto es PARCIAL y no CUMPLIDO — y el enunciado no lo puedo leer |
+
+## ③ Los 29 NO DECIDIBLES, por lo que los desbloquea
+
+⚠️ **Corrijo un reparto que di mal en la fase b:** dije «6 con commits · 3 anteriores a la
+convención · 20 sin rastro». Recontado uno a uno son **7 · 3 · 19**.
+
+### 🔴 GRUPO A · 7 con commits — **decididos, y sin salir del repo**
+
+Basta mirar **qué ficheros tocaron** esos commits. Todos tocan artefactos reales de `main`:
+
+| ticket | qué tocaron sus commits |
+| --- | --- |
+| 41 | `docs/BUGS.md` · `docs/YAQU_MASTER.md` |
+| 142 | `docs/COMO_FUNCIONA_YAQU.md` · **`docs/master/SCRUM-16.md`** · `package.json` |
+| 276 · 326 | `docs/diseno/bloque-a.md` · `bloque-b.md` |
+| 774 | `scripts/meta-guard-mutaciones.mjs` · dos tests |
+| 786 | `public/dashboard/js/customerDetailView.js` · `scripts/_pagina-panel.mjs` |
+| 20 | `public/dashboard/js/api.js` · `quotesDetailView.js` · `verifactu.service.ts` |
+
+**Pasan a DENTRO** para la pregunta ①. **Qué haría falta: nada — ya estaba, y el ciego era mi
+instrumento.** Le faltaba una tercera señal: *qué tocaron los commits que nombran el ticket*. Sólo
+miraba (a) las rutas citadas por la entrada y (b) ficheros llamados `scrumN`.
+
+> 🔴 **Y SCRUM-142 SÍ TENÍA ENTRADA — bajo el nombre de OTRO ticket.** Vive en
+> `docs/master/SCRUM-16.md`, titulada **«SCRUM-16 / 142»**. Mi criterio buscaba `SCRUM-142.md` y no
+> podía verla. Es *«un trabajo sin número puede estar entero»* otra vez, un piso más abajo: aquí el
+> trabajo tiene número, pero **el de otro**.
+
+### GRUPO B · 3 anteriores a la convención — **tuyos**
+
+`143` · `18` · `19`. Son anteriores a SCRUM-192, así que **no pudieron tener entrada**. No hay nada
+en el repositorio que los decida: hace falta **leer el ticket y preguntarle a una persona**.
+
+### GRUPO C · 19 sin rastro de ninguna clase — **tuyos**
+
+`281 · 335 · 524 · 529 · 540 · 572 · 573 · 612 · 657 · 658 · 678 · 732 · 735 · 773 · 779 · 789 ·
+812 · 891 · 908`. Ni rama, ni entrada, ni ficheros propios, ni commits que los nombren. **El
+repositorio no tiene con qué contestar**, y seguirá sin tenerlo por mucho que se afine el
+instrumento: lo que falta no es una señal mejor, es el enunciado.
+
+## Lo NO tocado
+
+Jira · ningún ticket cerrado · ninguna rama renombrada ni borrada (27 instrumentos miden ahí, A12) ·
+`scripts/_numero-de-rama.mjs` **devuelto a como está en `main`** en esta rama · `CLAUDE.md` regla 3
+sin re-fechar · producción y staging sin tocar.
 ## SCRUM-804f · Una rama `scrum-<n>` sin slug cerró el check obligatorio de `main`
 
 **Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T13:52:18Z
