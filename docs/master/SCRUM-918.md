@@ -1,7 +1,7 @@
 # SCRUM-918 · Sin conexión: reabrir o recargar la app sin red la dejaba muerta
 
 **Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T14:05:41Z
-**Rama:** `scrum-918-arranque-sin-red` · **Estado:** PARADO — literal del aviso propuesto, PENDIENTE de firma (regla 30). Sin empujar.
+**Rama:** `scrum-918-arranque-sin-red` · **Estado:** EN PR — literal firmado por delegación (SCRUM-918 comentario 15792, sin cambios).
 
 Nace del PASO 0 «sin conexión» de la Sesión 0 (17-sep-2026). Carril front (Sesión 2).
 
@@ -28,10 +28,11 @@ Con red: login, `/dashboard/`, el service worker controla la página. Se corta l
 - La copia es la última respuesta buena de `/admin/me`, en `localStorage` (`yaqu_sesion_sin_cobertura`). Se guarda en
   cada arranque con red. **Registrada en `CLAVES_LOCALES` con `purga: true`**: al cerrar sesión se borra.
 - `app.js`: sin red, pinta el aviso (`#sin-cobertura-banner`, `role="status"`, ámbar de Aviso de DESIGN.md), arranca con
-  la copia y no manda la telemetría de entorno. Al volver la red (`online`) revalida `/admin/me`: bien → guarda la copia y
+  la copia. La telemetría de entorno se sigue llamando suelta (no espera y se traga el fallo; SCRUM-360 exige la
+  llamada tal cual). Al volver la red (`online`) revalida `/admin/me`: bien → guarda la copia y
   quita el aviso; respuesta del servidor → login. No recarga la página (podría haber una firma a medias).
 
-**Literal propuesto (PENDIENTE de firma):** «Sin cobertura. Ves lo que ya tenías en el móvil; lo demás se cargará cuando vuelva la conexión.»
+**Literal aprobado** (orquestador por delegación del fundador, comentario 15792; ficha `docs/microcopy/2026-09-17-SCRUM-918-aviso-sin-cobertura.md`): «Sin cobertura. Ves lo que ya tenías en el móvil; lo demás se cargará cuando vuelva la conexión.»
 
 ## Rojo, positivo y negativo
 

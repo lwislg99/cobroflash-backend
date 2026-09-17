@@ -145,7 +145,9 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // package.json—, nunca se elige uno.
   // SCRUM-892 · `guard:firma-con-tramos`: la página la fabrica él —renderiza la ruta de aceptación
   // compilada y la sirve en un puerto propio— y no la comparte con ningún otro guard.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:firma-con-tramos', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
+  // SCRUM-918 · `guard:arranque-sin-red`: sirve el panel en un puerto EFÍMERO y navega con la base en
+  // una variable, así que su destino no se deriva. Lo sirve él y no lo comparte con ningún guard.
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:arranque-sin-red', 'guard:firma-con-tramos', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

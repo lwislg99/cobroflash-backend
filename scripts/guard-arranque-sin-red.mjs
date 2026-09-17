@@ -236,7 +236,8 @@ try {
       await pag.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
       await pag.goto(`${base}/dashboard/`, { waitUntil: 'networkidle0' }).catch(() => {});
       await espera(1500);
-      const ruta = new URL(pag.url()).pathname;
+      // La ruta, sin `new URL` (censo SCRUM-195): se quita el origen y la consulta del texto.
+      const ruta = pag.url().replace(/^[a-z-]+:\/\/[^/]*/i, '').split(/[?#]/)[0];
       filas.push({ caso: 'B · 401 con red', r: { ruta } });
       if (ruta !== '/login.html') hallazgos.push({ caso: 'B · ✅ 401 con red', mal: [`con la sesión caducada no va al login: está en ${ruta}`] });
     } finally {

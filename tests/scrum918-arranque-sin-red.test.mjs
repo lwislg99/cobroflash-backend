@@ -30,6 +30,10 @@ function almacen(inicial) {
   return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), _m: m };
 }
 
+test('SCRUM-918 · el aviso firmado, carácter a carácter (comentario 15792)', () => {
+  assert.equal(A.AVISO_SIN_COBERTURA, 'Sin cobertura. Ves lo que ya tenías en el móvil; lo demás se cargará cuando vuelva la conexión.');
+});
+
 test('SCRUM-918 · 🔴 sin red NO manda al login: arranca con la copia local', () => {
   assert.deepEqual(A.decidirArranque(sinRed(), ME), { destino: 'sin-cobertura', me: ME });
   // Sin copia, se avisa igual —no hay redirección a una página que sin red no carga—, pero sin app.

@@ -24,8 +24,8 @@ async function initApp() {
   // SCRUM-360 (H5 fase 2) · SE MANDA EL ENTORNO, y va aquí porque aquí ya sabemos que la sesión
   // es buena. SUELTO Y SIN `await`: es telemetría, y nada de esto puede retrasar ni tumbar el
   // arranque. Quién lo consume es la fase siguiente; lo que esta fase cierra es que el dato LLEGUE.
-  // SCRUM-918 · sin red no se manda: no hay a quién, y la sesión no se ha comprobado.
-  if (!sinCobertura) enviarEntornoDeLaApp();
+  // SCRUM-918 · sin red también se llama: `enviarEntornoDeLaApp` no espera y se traga el fallo.
+  enviarEntornoDeLaApp();
 
   window.appMerchantId = me.merchantId;
   window.appUserRole   = me.userRole || 'admin';

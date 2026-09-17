@@ -893,6 +893,8 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'almacenLocal.js',
   'api.js',
   'app.js',
+  // SCRUM-918 · la decisión de arrancar sin red. Va ANTES de `app.js`, que la usa al arrancar.
+  'arranqueSinCobertura.js',
   // SCRUM-885 · la regla del aviso «el documento del cobro no ha salido», compartida por el
   // detalle de la factura y el del trabajo. La llaman al confirmar y al pintar, no al cargarse.
   'avisoDocumentoSinEnviar.js',

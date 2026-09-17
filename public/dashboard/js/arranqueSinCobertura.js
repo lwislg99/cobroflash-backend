@@ -14,8 +14,9 @@
 var CLAVE_SESION_SIN_COBERTURA = 'yaqu_sesion_sin_cobertura';
 
 /**
- * ⚠️ LITERAL PROPUESTO, PENDIENTE DE FIRMA (regla 30). Lo lee el profesional arriba de la app cuando
- * ha arrancado sin red.
+ * Lo lee el profesional arriba de la app cuando ha arrancado sin red. Aprobado por el orquestador por
+ * delegación del fundador (SCRUM-918 comentario 15792), sin cambios. Ficha:
+ * docs/microcopy/2026-09-17-SCRUM-918-aviso-sin-cobertura.md.
  */
 var AVISO_SIN_COBERTURA = 'Sin cobertura. Ves lo que ya tenías en el móvil; lo demás se cargará cuando vuelva la conexión.';
 
