@@ -159,7 +159,7 @@ en verde.
 
 ## PR 2 · segunda vuelta (orquestador, 17-sep-2026 11:06 CEST · SCRUM-887 comentario 15675)
 
-**Medido contra:** `origin/main` = `8c354ff3404fb2a093d14b30414bc1a8e564c46a` · 2026-09-17T09:10:00Z (merge de main en la rama, sin rebase)
+**Medido contra:** `origin/main` = `8c354ff3404fb2a093d14b30414bc1a8e564c46a` · 2026-09-17T09:07:08Z (hora del commit de main; integrado con merge, sin rebase)
 
 Las tres preguntas abiertas de arriba quedan **decididas**:
 
