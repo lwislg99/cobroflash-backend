@@ -214,7 +214,7 @@ borrador se guarda en cada paso. Mutantes (quitar B; quitar `renderPreview` de A
 
 # SCRUM-888d · PR de servidor: el descuento global en el detalle (puntos 1 y 3) y la página de firma (punto 1)
 
-**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T14:03:57Z (hora del commit de main)
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T13:21:12Z (hora del commit de main)
 **Rama:** `scrum-888d-servidor-descuentos` · **Carril:** Sesión 1 · **Firma:** SCRUM-888 comentario 15788 · **Estado:** listo en local, sin empujar (va detrás del PR 3 de SCRUM-887).
 
 ## Qué cambia
