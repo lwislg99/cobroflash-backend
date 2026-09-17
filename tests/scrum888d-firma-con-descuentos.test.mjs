@@ -24,10 +24,11 @@ import { presupuesto, FIXTURES_SIN_DESCUENTO } from './_fixtures-firma-888d.mjs'
 
 /** Las filas del bloque de totales de la página, en orden: [rótulo, importe tal cual se ve]. */
 function filasDeTotales(html) {
-  const inicio = html.indexOf('<div class="totals-block">');
+  // Con hueco para atributos en cada etiqueta (SCRUM-553): se leen las filas, no la forma exacta.
+  const inicio = html.search(/<div class="totals-block"[^>]*>/);
   if (inicio < 0) return [];
   const filas = [];
-  const re = /<div class="totals-row"><span>([^<]*)<\/span><span>([^<]*)<\/span><\/div>/g;
+  const re = /<div class="totals-row"[^>]*><span[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)<\/span><\/div>/g;
   let m;
   while ((m = re.exec(html.slice(inicio))) !== null) filas.push([m[1], m[2]]);
   return filas;
