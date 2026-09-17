@@ -375,6 +375,8 @@
   <!-- SCRUM-652 (T3 fase C) · el parte: usa el pad de firma y la cola, va despues de los dos. -->
   <script src="./js/parteDetailView.js"></script>
   <script src="./js/parteOficinaView.js"></script>
+  <!-- SCRUM-918 · antes que `app.js`: decide qué hacer si /admin/me falla sin red. -->
+  <script src="./js/arranqueSinCobertura.js"></script>
   <script src="./js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
