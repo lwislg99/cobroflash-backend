@@ -1,7 +1,7 @@
 # SCRUM-887 · Con descuentos el cliente pagaba más de lo que firmó
 
 **Medido contra:** `origin/main` = `364e7d3a267d8babc49a92244168dc12096ce996` · 2026-09-16T18:13:05Z (tabla y rojo) · suite final tras mergear `origin/main` = `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T18:58:50Z
-**Rama:** `scrum-887-cobro-descuentos` · **Estado:** PR 1 (caso A) EN PR. Pendientes: PR 2 (B), PR 3 (bloqueo de C en el editor, literal por firmar), PR 4 (D2, literal por firmar).
+**Rama:** `scrum-887-cobro-descuentos` · **Estado:** PR 1 (caso A) mergeado (#1369, 16-sep 19:24Z). PR 2 (B) en `scrum-887b-descuento-global`, parado antes de empujar el arreglo (toca el cobro). Pendientes: PR 3 (bloqueo de C en el editor, literal por firmar), PR 4 (D2, literal por firmar).
 
 Nace de SCRUM-883 (recorrido del electricista en staging): firma 539,05 €, cobro 628,60 €.
 
@@ -82,3 +82,93 @@ ningún documento emitido (regla 29).
   que C7 con global no emita la línea negativa y lo diga, hasta decidirlo.
 - El rótulo de la línea negativa: el presupuesto ya enseña **«Descuento global»**
   (`presentacionIva.ts`, fila del pie) → se reutiliza ese literal.
+
+---
+
+# PR 2 · caso B (descuento global, un solo IVA)
+
+**Medido contra:** `origin/main` = `018d18075c4aefb276dd21a47e1ba2186be630ad` · 2026-09-17T08:07:12Z
+**Rama:** `scrum-887b-descuento-global` · **Estado:** rojo empujado; arreglo `ab2a6275f180db168524a134d57cabfd87154ce2` comiteado en local, **sin empujar** (toca el cobro: STOP con el diff por caminos).
+
+## PASO 0 · deuda del PR 1: C3-A en staging (hecho)
+
+- Staging servía `018d18075c4aefb276dd21a47e1ba2186be630ad` (`GET /version`). Turno de staging LIBRE en `railway` (`turno-staging.mjs estado`); todo por la API, ninguna escritura directa en la base.
+- C3-A = C3 con dto de línea y todo al 21 %, sin global. Presupuesto **#1879** (cliente 3927, merchant QA 2): creado → WhatsApp en dry-run → aceptado por el enlace del cliente (`POST /quote/:token/decision`, «Aceptado desde enlace WhatsApp»). `acceptedAt` del servidor **2026-09-17T08:15:35Z**.
+- **Resultado:** justificante `J-20260917-5L2N` con total **589,95**; `/pay/invoice` pinta «Importe a pagar **589,95 €**» y `/pay/bank` **589,95 €** (cabecera `Date` 2026-09-17T08:15:51Z). Lo firmado era 589,95: **cuadra**.
+- Script: el de la sesión (scratchpad, efímero); el secreto se leyó en runtime y no se imprimió. La página de firma NO se leyó con fiabilidad (una regex sacó 539,49, que es la base sin dto: D3, fuera de este PR).
+
+## Decisiones (orquestador, 17-sep-2026 10:10 CEST)
+
+1. Rótulo de la línea negativa: **«Descuento global»**, el literal de la fila del pie (`presentacionIva.ts`, «Descuento global:» sin los dos puntos). Un test compara los dos.
+2. **Albarán con descuento global: NO emite.** Rechazo con código propio `albaran_con_descuento_global`, ANTES de leer el libro y de pedir número. Ni a precio bruto ni con reparto. El literal del rechazo va con el marcador `[PENDIENTE microcopy oficial]` de la ruta hasta que se firme (propuesta abajo).
+3. **Aceptado, al registro:** `dto: 100` deja la línea a 0 € y, si todas lo están, el portón de SCRUM-246 da 409. Correcto: no hay nada que cobrar.
+4. **Pregunta para el asesor antes de SIF-1:** la factura del caso A lleva el precio unitario ya descontado y ninguna fila de descuento. ¿Vale así o debe figurar el descuento?
+
+## Qué cambia
+
+`lineasParaFacturar` con global y **un solo tipo** (los tipos y el importe salen de `descuentoGlobalEnCentimos`, la función que se ha EXTRAÍDO de `calcTotal` para que la usen los dos): las líneas con su dto aplicado y, **al final**, `{ concept: 'Descuento global', qty: 1, price: −g, tax: tipo }`, con `g` = el global en céntimos limitado a la suma de bases redondeadas línea a línea: **el mismo límite, de la misma función**. La extracción no cambia la aritmética de `calcTotal`: diferencial de 200.000 casos (con cabeceras, valores ilegibles y globales raros) contra el `dist` anterior, **0 distintos**; el control que sí difiere (global ×1,01) da 20.000 de 20.000. IVA mezclado (C): sin cambios. Nueva `tieneDescuentoGlobal(quote)`: una sola lectura para la pieza y el albarán, y sigue lanzando si falta `discountGlobalAmount`.
+
+Albarán (`convertir-en-factura`): con global, 409 antes de cualquier escritura. `facturar-parcial` y la recapitulativa no cambian (precios del albarán, fuera por diseño desde el PR 1).
+
+**NO cambia:** `calcTotal`, `calcVatBreakdown`, `reconcileToTarget`, el sellado, la numeración, el PDF, el schema, ninguna aceptación ni factura ya emitida.
+
+## Verificación
+
+- **Rojo** `22adc3e50fc4fc2b7444bb852085d55f1a6273df`, empujado 2026-09-17T08:25:57Z (cabecera `Date` de GitHub) antes del arreglo. Con el código de main: **6 rojos**. C3-B firma **559,70** y cobraría **652,78**; muestra B, caso 1107: firma 22.501,63 y cobraría 44.935,01; el albarán intenta emitir (llega a `$transaction`). El control (albarán sin global llega a emitir) sale verde.
+- **Arreglo:** C3-B cobra 559,70 en los planes entero, 50/50 y 30/70, y la vista del plan promete lo mismo que se emite. Muestra B (semilla 8870, 2.000 casos, un IVA, global de 0,01 a 150 €, sin los que firman 0 €): peor 1-2 céntimos; distintos **24 · 29 · 43** (entero · 50/50 · 30/70) frente a **23 · 31 · 39** con las MISMAS líneas sin global. Son techos que solo bajan.
+- **Mutantes en `src/` real**, cada uno compilado y revertido: sin línea negativa → 5 rojos · un céntimo de más en el descuento → 3 · aplica también a C → 1 (el negativo de 887) · tipo fijo al 21 % → 2 · rótulo distinto → 1 · línea negativa al principio → 2 · albarán sin rechazo → 1. Revertido: 17/17.
+- **Trinquetes que saltaron con la primera versión** (sin tocar importes): 411 (el rótulo exportado sin llamador → deja de exportarse), 624 (la pieza mezclaba dos formas de redondear → la agrupación va a `utils.ts`, que ya las mezclaba) y 619 (la línea creada tiene la firma de cuatro claves → se DECLARA: la crea, no estrecha una entrante, como las negativas de `finalInvoice`).
+- **Positivo:** la huella de 10.000 presupuestos sin descuento de `scrum887` sigue idéntica, y el caso A también.
+- **Negativo:** C3 original (IVA mezclado + 25 €) sigue cobrando 628,60, como antes: su test no cambia, solo el título, que ya no nombra a B.
+
+- **Por camino, C3-B (firmado 559,70):** C1 aceptación 652,78 → **559,70** · tramos 50/50 (`quotesAdmin` y «cobrar el resto») 326,40 + 326,40 = 652,80 → **279,85 + 279,85** · factura entera 652,78 → **559,70** · C6 652,78 → **559,70** · `billingPlanView` promete lo mismo que se emite · C7 albarán: antes facturaba a precio bruto (3 × 24,95 = 90,57), ahora **409**. El caso C (IVA mezclado) sigue firmando 539,05 y cobrando 628,60.
+- **Suite completa con el arreglo y este registro:** 7.195 tests · 7.085 pass · **0 fail** · 110 skipped.
+
+## Abierto: se pregunta, no se decide aquí
+
+- **Un global que se come TODA la base** firma 0 € y la factura sale con +X y −X: bruto 0. El portón de SCRUM-246 **no lo para**, porque las líneas no son cero. Antes se facturaba a precio bruto (peor), pero una factura de 0 € tampoco debería emitirse. ¿Se rechaza igual que `dto: 100`?
+- **La reconciliación ajusta la última línea, y ahora esa línea es el descuento:** en el plan entero, 110 de 2.000 casos de la muestra B, hasta ±0,05 € de precio. Es el mismo ajuste que ya se aceptó en SCRUM-141 sobre la última línea de producto. Si la línea negativa va la primera, el descuento queda exacto y el ajuste pasa a un producto, con el mismo número de casos distintos (medido: 18/25/37 contra 20/25/38 en la muestra del prototipo).
+- **Literal propuesto** para `albaran_con_descuento_global`: «Este parte no se puede facturar: su presupuesto lleva un descuento global, y ese descuento no se reparte entre partes. Factura el presupuesto desde el Trabajo.» Sin firmar, no entra.
+# APÉNDICE · PR 2 (B) · con descuento global y un IVA, lo cobrado ≠ lo firmado
+
+**Medido contra:** `origin/main` = `018d18075c4aefb276dd21a47e1ba2186be630ad` · 2026-09-17T08:39:50Z (hora del commit del bot `9ff07948`)
+**Rama:** `scrum-887b-descuento-global` · **Estado:** EN PR — ROJO (test-first). El defecto está
+documentado y medido; el arreglo del código todavía no está en esta rama.
+
+## Commits (esta sesión, sólo ROJO)
+
+| sha | qué |
+|---|---|
+| `22adc3e5` | ROJO — caso B (global, un solo IVA): el cobro no coincide con lo firmado en ningún plan, la pieza `lineasParaFacturar` no añade la línea negativa, la vista del plan de cobro no promete lo mismo que se emite, y el albarán (C7) con global emite en vez de rechazar con 409 |
+
+`tests/scrum887b-descuento-global.test.mjs` — la decisión del orquestador (17-sep-2026, tabla de
+la cabecera de este fichero, punto B): con global y un solo IVA sale **una línea negativa del
+mismo IVA, rotulada «Descuento global»** (el literal que ya pinta el pie del presupuesto) y
+reconciliada como el caso A. El caso C (IVA mezclado) se mantiene fuera; su test vive en
+`tests/scrum887-*` y no se toca. El albarán (C7) con global **no emite** — es un reparto del
+global, justo lo excluido — y lo dice con un código propio (`albaran_con_descuento_global`) y
+CERO escrituras antes de rechazar.
+
+## Pendiente (fuera de esta rama)
+
+> Actualización 17-sep-2026 (sesión del PR 2): el arreglo ya existe, en `ab2a6275f180db168524a134d57cabfd87154ce2`, comiteado en local y SIN empujar hasta el GO del dinero. Detalle en la sección «PR 2 · caso B» de arriba.
+
+El arreglo de `lineasParaFacturar` (añadir la línea negativa con global de un solo IVA) y del
+handler `POST /:id/convertir-en-factura` (rechazo 409 con descuento global) que pone estos rojos
+en verde.
+
+## PR 2 · segunda vuelta (orquestador, 17-sep-2026 11:06 CEST · SCRUM-887 comentario 15675)
+
+**Medido contra:** `origin/main` = `8c354ff3404fb2a093d14b30414bc1a8e564c46a` · 2026-09-17T09:07:08Z (hora del commit de main; integrado con merge, sin rebase)
+
+Las tres preguntas abiertas de arriba quedan **decididas**:
+
+1. **Literal del albarán**, firmado con una corrección: «albaranes» en vez de «partes», y el nombre real de la acción de facturar del Trabajo, que es «💰 Cobrar el resto» (`jobNextAction.js`). Queda: «Este albarán no se puede facturar: su presupuesto lleva un descuento global, que no se reparte entre albaranes. Cobra el resto desde el Trabajo.» Va en `message` del 409 `albaran_con_descuento_global` (`COPY_ALBARAN_CON_DESCUENTO_GLOBAL`), con su aprobación en `docs/microcopy/2026-09-17-SCRUM-887-albaran-con-descuento-global.md`. La pantalla es de SCRUM-895.
+2. **(a) Un global que se come toda la base no emite.** Las líneas salen a 0, como con `dto: 100`, y el portón de SCRUM-246 da su 409 antes de pedir número. El criterio es el de la pieza (el global llega a la suma de bases), no «firma 0,00»: por redondeo, esos presupuestos firman −0,02 a +0,02 € (medido en 200.000 casos al azar: 31.821 así; 24.318 firman 0,00, 5.062 −0,01, 2.357 +0,01, 69 −0,02 y 15 +0,02). No se cobra ninguno.
+3. **(b) La línea «Descuento global» sale exacta.** Es la forma más pequeña: la línea va la PRIMERA. `reconcileToTarget` ajusta la última línea, así que el ajuste cae en un producto, como sin descuento. La reconciliación, que sirve a todas las facturas, no se toca. Coste: la factura enseña el descuento antes que los productos. Muestra B (2.000 casos, ahora excluyendo por el criterio de la pieza): distintos **23 · 31 · 43** con la línea la primera, **25 · 31 · 44** si fuera al final, **21 · 30 · 40** con las mismas líneas sin global; peor 1-2 céntimos en los tres.
+
+C3-B tras el arreglo, plan entero: `Descuento global 1 × −25` · `Punto de luz 8 × 21,2075` · `Base de enchufe 11 × 17,991` · `Boletín 1 × 120`. Por camino: C1 652,78 → **559,70** · tramos 50/50 326,40 + 326,40 → **279,85 + 279,85** · factura entera y C6 652,78 → **559,70** · la vista del plan promete lo mismo · albarán **409** con el literal. C (IVA mezclado) sigue firmando 539,05 y cobrando 628,60.
+
+- **Rojo 2** `867482fbf60bb76f1b8b8252590e611337ad504a` (sin empujar: el GO lo da el fundador): 4 rojos. El descuento de la muestra salía ajustado (−150 → −149,999), el global total emitía +X −X, la línea iba al final y el albarán llevaba el marcador.
+- **Arreglo** `b4dfc1bdf221e4a6a849c58478ba67d9e478050d`. Mutantes: descuento al final → 3 rojos · sin rechazo del global total → 1 · rechazo con el marcador → 1. Revertido: 18/18.
+- **Automerge:** el #1383 lo tiene activado. Empujar esta rama la pone en verde y la despliega. Además, desde el push de claude[bot] (`9ff07948`) el CI está parado en `action_required` con 0 jobs (SCRUM-900). Al empujar hay que comprobar que arranca con jobs.

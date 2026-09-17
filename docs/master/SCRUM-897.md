@@ -24,7 +24,7 @@ Nace de SCRUM-889: la Sesión 2 lo vio al cerrar y no lo arregló en su PR (regl
 
 ## A12 · censo de lo que mide sobre el banco, antes de tocar
 
-- **Consumidores:** 90 ficheros de `tests/` importan `_banco-vistas`, `_pagina-panel` o `_banco-lista`, y 54 cuentan nodos con `todos()`/`.nodos`. Además hay 14 scripts: 6 son `guard:*` de navegador; `_pagina-panel.mjs` **serializa el árbol del banco** para Edge, así que el defecto también llegaba a esos guards.
+- **Consumidores:** ~~90~~ **80** ficheros de `tests/` (corregido en SCRUM-901: el 91 medido mezclaba 5 módulos auxiliares y los scripts; y el «54» de abajo también cuenta auxiliares y scripts) importan `_banco-vistas`, `_pagina-panel` o `_banco-lista`, y 54 cuentan nodos con `todos()`/`.nodos`. Además hay 14 scripts: 6 son `guard:*` de navegador; `_pagina-panel.mjs` **serializa el árbol del banco** para Edge, así que el defecto también llegaba a esos guards.
 - **Trinquetes con cifra del banco:** `scrum697` (CONTROL NEGATIVO, `renderQuotesView` 261) y `scrum698` (CONTROL POSITIVO: 261/166/69/109; CONTROL NEGATIVO: 261).
 - **Línea base de los 90 consumidores** sobre main: **833 tests, 833 verdes**.
 
