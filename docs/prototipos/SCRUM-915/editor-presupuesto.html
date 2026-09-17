@@ -194,6 +194,17 @@ body.sin-resaltar .propuesto{text-decoration:none}
 .modal .grupo:first-of-type{border-top:0}
 .sug{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);cursor:pointer;margin-top:8px}
 .sug input{width:20px;height:20px;margin-top:2px;accent-color:var(--brand)}
+/* SCRUM-915 v3 (ajuste) · la HOJA DE ENVÍO: enseña el mensaje tal como le llega al cliente.
+   No lleva patrón propio: es el .overlay/.modal de arriba, que a ≤640 px ya es hoja inferior y
+   por encima sale centrado — el mismo patrón de AB3 (bottom sheet de SCRUM-31 F2). */
+.modal.hoja{max-width:460px}
+.wa-msg{background:var(--brand-tint);border:1px solid var(--brand);border-radius:var(--r-md) var(--r-md) var(--r-md) 4px;padding:12px 14px;color:var(--ink);white-space:pre-line;box-shadow:var(--sh-reposo)}
+.wa-msg .pie-msg{display:block;margin-top:8px;font-size:12px;color:var(--muted)}
+.wa-msg .cta-msg{display:block;margin-top:10px;padding-top:9px;border-top:1px solid var(--brand);text-align:center;font-weight:700;color:var(--brand-ink)}
+.btn-wa{width:100%;min-height:52px;font-size:1.0625rem}
+.wa-canales{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.wa-canales .btn{width:100%;justify-content:flex-start}
+.chev{display:inline-block;width:12px;color:var(--muted);font-size:11px}
 @media (max-width:640px){
   .overlay{align-items:flex-end;padding:0}
   .modal{border-radius:var(--r-xl) var(--r-xl) 0 0;max-height:92vh}
@@ -400,8 +411,10 @@ function listaAuto(q){
   const r=CATALOGO.filter((p)=>p[0].toLowerCase().includes(q.toLowerCase()));
   return r.length?r.map((p,j)=>`<li><button type="button" data-cat="${CATALOGO.indexOf(p)}">${esc(p[0])}<small>${eur(p[2])}</small></button></li>`).join(''):`<li class="nota" style="padding:8px 10px">Sin resultados</li>`;
 }
-function filaRes(k,titulo,valor,detalle){ const ch=S.cambiando;
-  return `<div class="fila-res"><div class="que"><b>${titulo}</b><span>${valor}</span></div>
+function filaRes(k,titulo,valor,detalle,plegable){ const ch=S.cambiando;
+  // `plegable` sólo cambia el ASPECTO: un galón ▸/▾ para que la fila se lea como bloque que se abre
+  // en el sitio (ajuste del orquestador a la v3). El comportamiento es el mismo de las demás filas.
+  return `<div class="fila-res"><div class="que"><b>${plegable?`<span class="chev" aria-hidden="true">${ch===k?'▾':'▸'}</span>`:''}${titulo}</b><span>${valor}</span></div>
       <button class="enlace" data-cambiar="${k}" aria-expanded="${ch===k}">${ch===k?P('Listo'):P('Cambiar')}</button></div>
     ${ch===k?`<div class="detalle">${detalle}</div>`:''}`; }
 // SCRUM-915 v3 · los ajustes del documento, a la vista como una fila más (decisión del orquestador).
@@ -418,7 +431,7 @@ function filaAjustes(){
       <div class="fichas"><label class="check"><input type="radio" name="razon" data-aj="razon" value="razon" ${o.razon==='razon'?'checked':''}> Razón social</label><label class="check"><input type="radio" name="razon" data-aj="razon" value="comercial" ${o.razon==='comercial'?'checked':''}> Nombre comercial</label></div>
       <p class="nota">Solo aparecen los que el cliente tenga rellenos. Elige con qué nombre sale este cliente en el documento.</p></div>
     <label class="check"><input type="checkbox" data-aj="incDesc" ${o.incDesc?'checked':''}> Incluir descripción en el PDF</label>`:''}`;
-  return filaRes('ajustes',P('Ajustes del documento'),resumen,detalle);
+  return filaRes('ajustes',P('Ajustes del documento'),resumen,detalle,true);
 }
 function pasoCondiciones(){
   const c=S.cliente; const suma=sumaTramos();
@@ -445,17 +458,46 @@ function pasoEnviar(t){
     ?`<div class="pactado" role="status" style="margin-top:12px"><span>✓ ${P('Enviado por WhatsApp a '+esc(c.nombre)+' · pendiente de firma')}</span></div>`
     :ev.canal==='email'?`<div class="pactado" role="status" style="margin-top:12px"><span>✓ ${P('Enviado por email a '+esc(c.email))}</span></div>`
     :`<div class="pactado" role="status" style="margin-top:12px;background:var(--neutral-100);color:var(--body)"><span>${P('Presupuesto '+S.generado+' guardado · sin enviar')}</span></div>`);
-  const secundarias=esPres()?`<div class="secundarias" style="margin-top:12px">
-      <button class="btn btn-ghost" data-accion="descargar-pdf" ${listo()?'':'disabled'}>⬇ Descargar PDF</button>
-      <button class="btn btn-ghost" data-accion="enviar-email" ${listo()?'':'disabled'}>✉ Enviar por email</button>
-      ${ev?'':`<button class="btn btn-ghost" data-accion="solo-guardar" ${listo()?'':'disabled'}>${P('Solo guardar')}</button>`}</div>`:'';
+  // SCRUM-915 v3 (ajuste) · las secundarias YA NO viven aquí: se fueron a la hoja de envío, junto al
+  // texto del mensaje. Lo que queda en la pantalla después de enviar son las acciones DE DESPUÉS.
+  const secundarias=esPres()&&ev?`<div class="secundarias" style="margin-top:12px">
+      <button class="btn btn-ghost" data-accion="descargar-pdf">⬇ Descargar PDF</button>
+      <button class="btn btn-ghost" data-accion="abrir-envio">${P('Enviar de otra forma')}</button></div>`:'';
   return (esPres()?'':filaAjustes())+`<div class="fila-res"><div class="que"><b>${esc(c?c.nombre:'—')}</b><span>${t.n} ${t.n===1?'concepto':'conceptos'}${esPres()?' · '+esc(COND[S.cond]):''}</span></div><span class="money" style="font-size:1.25rem">${eur(t.total)}</span></div>
     ${conf}${secundarias}
     ${!esPres()&&S.generado?`<p class="nota">Justificante emitido · ${S.generado}</p>`:''}
     ${movil()?`<button class="btn btn-secondary" data-accion="ver-doc" style="width:100%;margin-top:8px">${P('Ver documento')}</button>`:''}`;
 }
+// SCRUM-915 v3 (ajuste) · el botón del último paso ABRE LA HOJA; no envía a ciegas. Por eso ya no
+// puede rotularse «Enviar por WhatsApp»: ese rótulo es el de la hoja, donde sí envía. Un botón que
+// dice lo que NO hace es el mismo defecto que la v2 tenía escondiendo el envío tras «Generar».
 function botonWa(){ const enviado=S.envio&&S.envio.canal==='whatsapp';
-  return `<button class="btn btn-primary" data-accion="enviar-wa" ${listo()&&!enviado?'':'disabled'}>${enviado?'✓ Enviado por WhatsApp':'Enviar por WhatsApp'}</button>`; }
+  return `<button class="btn btn-primary" data-accion="abrir-envio" ${listo()&&!enviado?'':'disabled'}>${enviado?'✓ Enviado por WhatsApp':P('Guardar y enviar')}</button>`; }
+
+// ───────────── La hoja de envío (ajuste del orquestador a la v3) ─────────────
+// El cuerpo del mensaje NO es texto nuevo: es la plantilla FIRMADA `quote_decision_es`
+// (docs/WHATSAPP_TEMPLATES.md §1) con sus 4 variables sustituidas. Por eso no va subrayado.
+// Las plantillas de Meta no se tocan desde aquí: aquí sólo se ENSEÑA lo que ya se envía.
+function textoWa(c,t){
+  return `Hola ${esc(c.nombre)} 👋\n${esc(EMPRESA.nombre)} te ha preparado un presupuesto:\nPresupuesto ${S.generado}\nTotal: ${eur(t.total)}\nTócalo para verlo y responder 👇<span class="pie-msg">Enviado con Yaqu</span><span class="cta-msg">Ver presupuesto</span>`;
+}
+function mEnvio(){
+  const c=S.cliente; const t=totales(); const ev=S.envio;
+  modal(P('Enviar el presupuesto'),
+    `<p class="nota" style="margin:0 0 10px">${P('Presupuesto '+S.generado+' guardado. Elige cómo se lo mandas.')}</p>
+     <span class="label">${P('Así le llega a '+esc(c.nombre)+' por WhatsApp')}</span>
+     <div class="wa-msg" style="margin-top:8px">${textoWa(c,t)}</div>
+     <p class="nota">Plantilla firmada <b>quote_decision_es</b>; cambiarla es cosa de Meta.</p>
+     <button class="btn btn-primary btn-wa" data-accion="enviar-wa" style="margin-top:14px" ${ev&&ev.canal==='whatsapp'?'disabled':''}>📲 ${ev&&ev.canal==='whatsapp'?'Ya enviado por WhatsApp':'Enviar por WhatsApp'}</button>
+     <div style="margin-top:14px"><span class="label">${P('O mándaselo de otra forma')}</span>
+       <div class="wa-canales">
+         <button class="btn btn-secondary" data-accion="enviar-email">✉ Enviar por email</button>
+         <button class="btn btn-secondary" data-accion="descargar-pdf">⬇ Descargar PDF</button>
+         <button class="btn btn-secondary" data-accion="copiar-enlace">🔗 ${P('Copiar enlace')}</button>
+         <button class="btn btn-ghost" data-cerrar>${P('Lo envío luego')}</button>
+       </div></div>`,
+    '','hoja');
+}
 
 // ───────────── La vista previa viva ─────────────
 function renderPrevia(){ const html=documento(); $('#previa').innerHTML=`<div class="marco"><div class="marco-t"><span>${P('Así lo verá el cliente')}</span><span>${P('Se actualiza mientras escribes')}</span></div>${html}</div>`; }
@@ -492,7 +534,7 @@ function renderBarra(){
 function refrescar(){ // mientras se escribe: previa, totales y barra, sin repintar el editor
   renderPrevia(); renderBarra(); const t=totales(); const st=$('#subtotal'); if(st)st.textContent=eur(t.total);
   const s=$('#sumaTramos'); if(s){const n=sumaTramos();s.style.color=n===100?'var(--brand-tint-ink)':'var(--danger)';s.textContent=n===100?`Suman ${n} % ✓`:`Suman ${n} % — deben sumar 100 %`;}
-  const pie=document.querySelector('.paso.abierto .pie-paso'); if(pie){const i=S.abierto; const b=pie.querySelector('[data-abrir="'+(i+1)+'"]'); if(b)b.disabled=!puede(i); const g=pie.querySelector('[data-accion="generar"],[data-accion="enviar-wa"]'); if(g&&!(S.envio&&S.envio.canal==='whatsapp'))g.disabled=!listo(); const f=pie.querySelector('.falta'); if(f&&puede(i))f.remove();}
+  const pie=document.querySelector('.paso.abierto .pie-paso'); if(pie){const i=S.abierto; const b=pie.querySelector('[data-abrir="'+(i+1)+'"]'); if(b)b.disabled=!puede(i); const g=pie.querySelector('[data-accion="generar"],[data-accion="abrir-envio"]'); if(g&&!(S.envio&&S.envio.canal==='whatsapp'))g.disabled=!listo(); const f=pie.querySelector('.falta'); if(f&&puede(i))f.remove();}
   guardado();
 }
 let tG=null; function guardado(){ if(!esPres())return; clearTimeout(tG); tG=setTimeout(()=>{const g=$('#guardado'); if(g){g.textContent='✓ Guardado automáticamente'; setTimeout(()=>{g.textContent='';},1500);}},700); }
@@ -590,11 +632,14 @@ document.addEventListener('click',(e)=>{
     case 'limpiar-ok':S=inicial(S.tipo);cerrar();render();break;
     case 'ver-doc':mDocumento();break;
     case 'generar':if(!listo())break;generar();render();toast('Justificante emitido');break;
-    // SCRUM-915 v3 · WhatsApp es lo primero: genera (una sola vez) y envía en el mismo gesto.
-    case 'enviar-wa':if(!listo())break;generar();S.envio={canal:'whatsapp'};render();toast('Presupuesto enviado por WhatsApp.');break;
-    case 'enviar-email':if(!listo())break;if(!S.cliente.email){toast('Este cliente no tiene email; añádelo en su ficha.');break;}generar();S.envio={canal:'email'};render();toast('Presupuesto enviado por email.');break;
-    case 'solo-guardar':if(!listo())break;generar();S.envio={canal:'guardado'};render();break;
-    case 'descargar-pdf':if(!listo())break;generar();render();toast('presupuesto-'+S.generado.replace('#','')+'.pdf');break;
+    // SCRUM-915 v3 (ajuste) · el último paso GUARDA y abre la hoja; dentro de la hoja se elige canal.
+    // Guardar antes de abrirla no es un paso de más: es lo que hace que el mensaje pueda enseñar el
+    // número de verdad («Presupuesto #128») en vez de prometer uno que aún no existe.
+    case 'abrir-envio':if(!listo())break;generar();if(!S.envio)S.envio={canal:'guardado'};render();mEnvio();break;
+    case 'enviar-wa':if(!listo())break;generar();S.envio={canal:'whatsapp'};cerrar();render();toast('Presupuesto enviado por WhatsApp.');break;
+    case 'enviar-email':if(!listo())break;if(!S.cliente.email){toast('Este cliente no tiene email; añádelo en su ficha.');break;}generar();S.envio={canal:'email'};cerrar();render();toast('Presupuesto enviado por email.');break;
+    case 'copiar-enlace':if(!listo())break;generar();cerrar();render();toast('Enlace copiado: yaqu.app/pay/quote/…');break;
+    case 'descargar-pdf':if(!listo())break;generar();cerrar();render();toast('presupuesto-'+S.generado.replace('#','')+'.pdf');break;
   }
 });
 document.addEventListener('input',(e)=>{
@@ -634,10 +679,10 @@ const INV=[
  ['buscador «Buscar por nombre, teléfono, email o referencia…»','Paso 1 «Cliente», abierto al entrar; filtra en local','—'],
  ['select Cliente + «+ Nuevo cliente»','Lista de 4 coincidencias como botones grandes + «+ Nuevo cliente» (alta sin salir)','—'],
  ['«Sin resultados para tu búsqueda»','Igual, bajo el buscador','—'],
- ['Dirección de la obra + campo','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio; si se muestra, sale en el documento junto al cliente','Decisión v3: a la vista'],
+ ['Dirección de la obra + campo','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio; si se muestra, sale en el documento junto al cliente','Decisión v3: a la vista'],
  ['C · 2. Líneas'],
- ['IVA por defecto (%)','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio','Decisión v3: a la vista'],
- ['IVA del presupuesto','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio; resumen «IVA sumado»; el documento lo refleja','Arregla: hoy sin oyente'],
+ ['IVA por defecto (%)','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio','Decisión v3: a la vista'],
+ ['IVA del presupuesto','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio; resumen «IVA sumado»; el documento lo refleja','Arregla: hoy sin oyente'],
  ['«✨ Sugerir con IA»','Acción SECUNDARIA junto a «+ Añadir línea»; abre el mismo modal','Frase del modal propuesta'],
  ['🎤 Dictar','Dentro del modal de IA, con su condición de hoy','—'],
  ['sugerencias + «Esto lo hemos puesto nosotros…»','Igual en el modal; el aviso se conserva en la línea hasta «Revisado»','Arregla: hoy se pierde'],
@@ -661,16 +706,16 @@ const INV=[
  ['E · 4. Envío'],
  ['Formas de pago + notas IBAN y 0,9 %','Fila «Formas de pago que verá el cliente · … · Cambiar»','—'],
  ['tira de pagos pactados + «[PENDIENTE…]»','Dentro de «Cambiar»: «Aplicar»','MARCADOR → propuesto'],
- ['Datos del cliente en el documento + Razón social / Nombre comercial','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio','Decisión v3: a la vista'],
- ['Incluir descripción en el PDF','Fila «Ajustes del documento · … · Cambiar» dentro de Condiciones (justificante: dentro de Revisar), abierta en el sitio','Decisión v3: a la vista'],
+ ['Datos del cliente en el documento + Razón social / Nombre comercial','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio','Decisión v3: a la vista'],
+ ['Incluir descripción en el PDF','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio','Decisión v3: a la vista'],
  ['F · Totales y descuento'],
  ['Base, IVA, Suma, Descuento','En el documento de la derecha; en el paso Conceptos, el TOTAL','—'],
  ['«+ Añadir descuento» → Descuento global','Secundaria junto a «+ Añadir línea»','—'],
  ['tira del descuento pactado «[PENDIENTE…]» ×2','«Este cliente tiene pactado un descuento del N %» + «Aplicar a las líneas», en el paso Conceptos','2 MARCADORES → propuestos'],
  ['G · KPI del total','Paso Conceptos + documento (escritorio); barra inferior (móvil)','—'],
  ['H · Acciones'],
- ['«Generar presupuesto» / «Emitir justificante»','Presupuesto: último paso «Revisar y enviar» con «Enviar por WhatsApp» como principal (genera y envía en un gesto); «Solo guardar» genera sin enviar. Justificante: «Emitir justificante»','Decisión v3: WhatsApp es lo primero'],
- ['Generar dos veces = dos presupuestos','Se genera UNA vez: enviar, descargar o guardar reutilizan el mismo presupuesto','Arregla el doble'],
+ ['«Generar presupuesto» / «Emitir justificante»','Presupuesto: último paso «Revisar y enviar», y su botón «Guardar y enviar» guarda y abre la HOJA DE ENVÍO. Justificante: «Emitir justificante» (sin hoja: no se envía a nadie)','Decisión v3 + ajuste: WhatsApp es lo primero, dentro de la hoja'],
+ ['Generar dos veces = dos presupuestos','Se genera UNA vez: enviar, descargar, copiar el enlace o dejarlo guardado reutilizan el mismo presupuesto','Arregla el doble'],
  ['«Limpiar formulario» (sin confirmar)','Menú «⋯» de arriba, con confirmación','Textos propuestos'],
  ['«💾 Guardar como plantilla»','Menú «⋯» de arriba','Guardar Dto./suplido/descripción: cambio de servidor a decidir'],
  ['«✓ Guardado automáticamente»','Junto al título','—'],
@@ -678,7 +723,8 @@ const INV=[
  ['«Vista previa del documento» (no interactiva, incompleta, se «rompe»)','DOCUMENTO VIVO a la derecha, fijo, con aspecto de PDF: se construye mientras escribes y resalta la parte que editas. En móvil, «Ver documento»','Pedido por el fundador'],
  ['«Estado del presupuesto»','Nº en el documento tras generar; «✓ Enviado por WhatsApp a … · pendiente de firma» en el propio paso','Texto propuesto'],
  ['J · Modal tras generar (desaparece)'],
- ['«Enviar por WhatsApp», «✉ Enviar por email», «⬇ Descargar PDF»','En el último paso: WhatsApp principal; email y PDF como secundarias; confirmación en la misma pantalla, sin modal','Decisión v3'],
+ ['«Enviar por WhatsApp», «✉ Enviar por email», «⬇ Descargar PDF»','HOJA DE ENVÍO (hoja inferior a 390 px; la misma centrada a 1280 px, patrón de AB3): enseña el MENSAJE tal como le llega al cliente, «📲 Enviar por WhatsApp» en verde a todo el ancho y debajo email · PDF · copiar enlace · «Lo envío luego». La confirmación de estado sale luego en la pantalla, sin modal','Ajuste de la v3 tras PresupuestAPP'],
+ ['—','El texto del mensaje NO es nuevo: es la plantilla firmada quote_decision_es (docs/WHATSAPP_TEMPLATES.md §1) con sus 4 variables puestas. Por eso no va subrayado','Las plantillas de Meta son STOP'],
  ['Documento suelto'],
  ['mismo editor sin condiciones/envío/descuentos','3 pasos: Cliente → Conceptos → Revisar y emitir; en Revisar, la fila «Ajustes del documento» sólo con IVA por defecto','—'],
  ['«Abrir PDF en nueva pestaña», «Seguir editando»','No hacen falta: el documento está siempre a la derecha y no hay modal que cerrar','Decisión v3'],

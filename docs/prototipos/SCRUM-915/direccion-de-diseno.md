@@ -56,3 +56,31 @@ rota, no se va creando. Molaba más a un lado, pero moderno y pulido.»
    envía en un gesto); secundarias «⬇ Descargar PDF», «✉ Enviar por email» y «Solo guardar». Confirmación en la misma
    pantalla, sin modal. Se genera UNA vez: todo reutiliza el mismo presupuesto. En móvil la barra del último paso lleva
    «Enviar por WhatsApp».
+
+---
+
+## v3 · AJUSTE (17-sep-2026, tarde) — tras medir el recorrido de PresupuestAPP (SCRUM-906 comentario 15804)
+Cambia el punto 2 de la v3. El punto 1 (ajustes a la vista) se queda como estaba; sólo se le pone un galón ▸/▾ para que
+se lea como bloque que se abre y se cierra.
+
+1. **El envío pasa a una HOJA INFERIOR que enseña el mensaje.** El último paso sigue llamándose «Revisar y enviar», pero
+   su botón principal es «Guardar y enviar»: guarda el presupuesto —le da su número— y abre una hoja con **el texto tal
+   como le llega al cliente**, «📲 Enviar por WhatsApp» en verde y a todo el ancho, y debajo los demás canales (email,
+   PDF, copiar enlace, «Lo envío luego»). En escritorio la misma hoja sale **centrada**: es el `.overlay/.modal` del
+   prototipo, que a ≤640 px ya se convierte en hoja inferior — el patrón de AB3 (bottom sheet de SCRUM-31 F2). No hubo
+   que construir un «equivalente de escritorio»: estaba dentro del patrón.
+2. **Por qué el botón ya no dice «Enviar por WhatsApp».** Con la hoja delante, ese botón no envía: abre la hoja. Dejarle
+   el rótulo del envío sería el mismo defecto que el fundador señaló en la v2 —el botón que no hace lo que dice— sólo
+   que del revés. «Enviar por WhatsApp» es ahora el rótulo del botón que **sí** envía, dentro de la hoja.
+3. **Se genera UNA vez**, igual que antes: enviar, descargar, copiar el enlace o dejarlo para luego reutilizan el mismo
+   presupuesto. Y la confirmación de estado sigue saliendo **en la pantalla, sin modal**, después de cerrar la hoja.
+4. **«Solo guardar» desaparece** y lo sustituye «Lo envío luego», que es lo único que queda por decir: al abrir la hoja
+   el presupuesto ya está guardado, así que «guardar» no es una decisión pendiente.
+
+**De PresupuestAPP se toma la IDEA, no el diseño.** Lo que se coge: enseñar el mensaje antes de enviar, y «Copiar
+enlace». Lo que NO se coge: «Ya se lo he entregado en mano», porque el producto no tiene ese estado y un rótulo que
+promete un estado inexistente es peor que el hueco (canon de la S4, SCRUM-823).
+
+**Lo que NO se toca, y es deliberado:** el cuerpo del mensaje que enseña la hoja es la plantilla `quote_decision_es`
+(`docs/WHATSAPP_TEMPLATES.md` §1) con sus cuatro variables puestas. No es texto nuevo, no va subrayado y no se propone
+cambiarlo: las plantillas de Meta son STOP.
