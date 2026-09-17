@@ -319,16 +319,30 @@ export function identidadDeEntrada(titulo) {
   return String(titulo).replace(/^#+\s*/, '').replace(/\s+/g, ' ').trim();
 }
 
-export function entradasTroceadas() {
-  return entradas().flatMap((f) => {
-    const vistos = new Map();
-    return trocearEntradas(f.texto).map((e) => {
-      const id = identidadDeEntrada(e.tituloCompleto);
-      const n = (vistos.get(id) || 0) + 1;
-      vistos.set(id, n);
-      return { ...e, fichero: f.nombre, clave: `${f.nombre}#${id}${n > 1 ? `~${n}` : ''}` };
-    });
+/**
+ * 🔴 SCRUM-866 · LAS CLAVES DE UN TEXTO SE DERIVAN AQUÍ, Y SÓLO AQUÍ.
+ *
+ * Esto vivía dentro de `entradasTroceadas()`, y `tests/scrum859-identidad-y-motivo-cerrado`
+ * tenía DOS COPIAS suyas: una en su `entradasReales()` y otra dentro del test que dice vigilar
+ * esta regla. El resultado, medido el 16-sep-2026: la mutación declarada sobre la línea del
+ * `identidadDeEntrada` de abajo **no tumbaba ese test, porque el test no pasaba por aquí** —
+ * recorría su propia copia. Un guard en verde sobre un defecto que su mutación no podía tocar.
+ *
+ * Ahora hay UN SOLO SITIO. No es un guard que vigile que las copias no diverjan —ése es el
+ * escalón de abajo—: es que ya no hay copias que puedan diverger.
+ */
+export function entradasConClave(nombre, texto) {
+  const vistos = new Map();
+  return trocearEntradas(texto).map((e) => {
+    const id = identidadDeEntrada(e.tituloCompleto);
+    const n = (vistos.get(id) || 0) + 1;
+    vistos.set(id, n);
+    return { ...e, fichero: nombre, clave: `${nombre}#${id}${n > 1 ? `~${n}` : ''}` };
   });
+}
+
+export function entradasTroceadas() {
+  return entradas().flatMap((f) => entradasConClave(f.nombre, f.texto));
 }
 
 /** Devuelve el motivo por el que un texto NO lleva ancla válida, o `null` si la lleva. */
