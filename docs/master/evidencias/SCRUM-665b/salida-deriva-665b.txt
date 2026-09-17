@@ -1,0 +1,43 @@
+── POBLACIÓN ───────────────────────────────────────────────────────────
+   base comparada          : DESARROLLO (DATABASE_URL_DEV) · y SÓLO ésa
+   modelos en el esquema   : 30
+   tablas esperadas        : 30
+   columnas esperadas      : 462
+   huella de la base       : arranque 2026-08-23 06:21:29.275761+00 · invoices 5
+   tablas en la base       : 27
+   columnas en la base     : 435
+
+── ⓐ EL ESQUEMA DECLARA Y LA BASE NO TIENE (la que vigila el arranque) ──
+   veredicto de `compararEsquema`: deriva
+   claves que devuelve           : estado, tablasQueFaltan, columnasQueFaltan
+   TABLAS que faltan             : 3 → quote_assignees, invoice_assignees, gateway_events
+   COLUMNAS que faltan           : 14
+     🔴 invoices.customer_name   (modelo Invoice.customerName)
+     🔴 invoices.customer_legal_name   (modelo Invoice.customerLegalName)
+     🔴 invoices.customer_tax_id   (modelo Invoice.customerTaxId)
+     🔴 invoices.customer_email   (modelo Invoice.customerEmail)
+     🔴 invoices.customer_phone   (modelo Invoice.customerPhone)
+     🔴 albaranes.customer_name   (modelo Albaran.customerName)
+     🔴 albaranes.customer_legal_name   (modelo Albaran.customerLegalName)
+     🔴 albaranes.customer_tax_id   (modelo Albaran.customerTaxId)
+     🔴 albaranes.customer_email   (modelo Albaran.customerEmail)
+     🔴 albaranes.customer_phone   (modelo Albaran.customerPhone)
+     🔴 partes_trabajo.signature_url   (modelo ParteTrabajo.signatureUrl)
+     🔴 partes_trabajo.signature_tecnico_url   (modelo ParteTrabajo.signatureTecnicoUrl)
+     🔴 partes_trabajo.firmado_tecnico_at   (modelo ParteTrabajo.firmadoTecnicoAt)
+     🔴 partes_trabajo.firmado_tecnico_nombre   (modelo ParteTrabajo.firmadoTecnicoNombre)
+
+── ⓑ LA BASE TIENE Y EL ESQUEMA NO DECLARA (la de SCRUM-665) ────────────
+   columnas no declaradas: 1
+     ⚠️ customers.pay_methods_por_defecto
+
+── ⓒ TABLAS de la base que el esquema no nombra (informativo) ───────────
+   0
+
+── RESUMEN ─────────────────────────────────────────────────────────────
+   ⓐ esquema→base que faltan : 14
+   ⓑ base→esquema sin declarar: 1
+   ⓒ tablas ajenas al esquema : 0
+
+⛔ Y NO SE ARREGLA NINGUNA (regla 9): una divergencia que alguien arregla de paso es
+   una decisión de esquema tomada sin que el fundador se entere.
