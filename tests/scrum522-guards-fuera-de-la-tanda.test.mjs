@@ -112,7 +112,7 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // SCRUM-894 · 19 → 20: entra `guard:falta-en-otra-pestana`. PULSA, como 816: «Guardar cambios» de
   // Configuración con un obligatorio vacío en otra pestaña. Solo un navegador valida formularios, y
   // el fallo era justo eso: el navegador frenaba el envío y no podía señalar un campo oculto.
-  // Comprobado en rojo contra el main de hoy: 6 de 12 casos.
+  // Comprobado en rojo contra `018d1807` (17-sep-2026): 6 de 12 casos.
   assert.equal(fuera.length, 20,
     `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ 20 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
