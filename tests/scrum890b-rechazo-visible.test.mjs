@@ -284,3 +284,74 @@ test('SCRUM-890b · 🔴 un móvil con la base en v1 y una firma en cola sube a 
   const rechazos = await b.ctx.leerRechazosDeFirma();
   assert.equal(rechazos.estado, b.ctx.GUARDADO, '🔴 el tramo 1 no ha creado `firmasRechazadas`: ' + rechazos.motivo);
 });
+
+// ── 🔴 LA PRÓXIMA SUBIDA DE VERSIÓN NO SE PUEDE QUEDAR BLOQUEADA ─────────────────────────────
+//
+// Medido en Chromium real con dos pestañas del mismo origen (JS de main y JS de esta rama, 17-sep):
+// la pestaña vieja sólo bloquea la subida DURANTE cada operación (cada llamada abre y cierra). Pero
+// cuando esa apertura queda bloqueada, `abrirAlmacen` rechaza y la petición SIGUE: la conexión llega
+// tarde, nadie la cierra, y la siguiente subida (v3) quedaba bloqueada mientras la pestaña siguiera
+// abierta — 8 de 10 intentos. Por eso toda conexión se cierra al recibir `versionchange`.
+
+/** Intenta subir la base a `version` desde otra «pestaña». `bloqueada` = llegó a dispararse `blocked`. */
+function subirA(idb, version, ms = 1000) {
+  return new Promise((resolve) => {
+    const p = idb.open('yaqu', version);
+    let bloqueada = false;
+    p.onblocked = () => { bloqueada = true; };
+    p.onupgradeneeded = () => {};
+    p.onsuccess = () => { p.result.close(); resolve({ subio: true, bloqueada }); };
+    p.onerror = () => resolve({ subio: false, bloqueada, error: p.error && p.error.name });
+    setTimeout(() => resolve({ subio: false, bloqueada }), ms);
+  });
+}
+
+test('SCRUM-890b · 🔴 SUELO: una conexión que NO atiende `versionchange` bloquea la subida (el banco lo ve)', async () => {
+  const { IDBFactory } = await import('fake-indexeddb');
+  const idb = new IDBFactory();
+  const retenida = await new Promise((resolve) => { const p = idb.open('yaqu', 1); p.onsuccess = () => resolve(p.result); });
+  const r = await subirA(idb, 2, 300);
+  assert.equal(r.bloqueada && !r.subio, true,
+    '🔴 BANCO CIEGO: una conexión abierta sin `onversionchange` no bloquea aquí; «no se bloquea» no probaría nada.');
+  retenida.close();
+});
+
+test('SCRUM-890b · 🔴 una conexión del almacén se CIERRA al pedirse otra versión: no bloquea la próxima subida', async () => {
+  const { IDBFactory } = await import('fake-indexeddb');
+  const idb = new IDBFactory();
+  const b = montarAlmacen(RAIZ, { indexedDB: idb });
+  const bd = await b.ctx.abrirAlmacen(); // una operación en curso, en la pestaña que ya no se recarga
+  const r = await subirA(idb, 3);
+  try { bd.close(); } catch (_e) { /* ya cerrada */ }
+  assert.equal(r.subio, true,
+    '🔴 la conexión del almacén no se cierra con `versionchange`: la próxima subida de versión se queda ' +
+    'esperando a que el profesional cierre la pestaña.');
+});
+
+test('SCRUM-890b · 🔴 la apertura que quedó BLOQUEADA no deja una conexión huérfana', async () => {
+  // La pestaña vieja (JS de main: v1, sin `onversionchange`) está en mitad de una operación cuando la
+  // nueva abre en v2. Ésta rechaza con NO_DISPONIBLE, pero su petición sigue y la conexión llega tarde.
+  const { IDBFactory } = await import('fake-indexeddb');
+  const idb = new IDBFactory();
+  const vieja = await new Promise((resolve) => {
+    const p = idb.open('yaqu', 1);
+    p.onupgradeneeded = () => {
+      p.result.createObjectStore('albaranesPrecargados', { keyPath: 'id' });
+      p.result.createObjectStore('firmasPendientes', { keyPath: 'claveIdempotencia' });
+    };
+    p.onsuccess = () => resolve(p.result);
+  });
+  const b = montarAlmacen(RAIZ, { indexedDB: idb });
+  const bloqueada = await b.ctx.leerRechazosDeFirma();
+  assert.equal(bloqueada.estado, b.ctx.NO_DISPONIBLE,
+    '🔴 SUELO: la apertura no llegó a bloquearse (' + bloqueada.estado + '); lo que sigue no mediría la huérfana.');
+
+  vieja.close(); // la operación de la pestaña vieja termina: la subida a v2 sigue adelante
+  const v2 = await new Promise((resolve) => { const p = idb.open('yaqu'); p.onsuccess = () => { const v = p.result.version; p.result.close(); resolve(v); }; });
+  assert.equal(v2, 2, '🔴 SUELO: la subida a v2 no llegó a completarse');
+
+  const r = await subirA(idb, 3);
+  assert.equal(r.subio, true,
+    '🔴 la apertura rechazada por bloqueo dejó su conexión ABIERTA: la próxima subida de versión no pasa ' +
+    'mientras esa pestaña siga abierta.');
+});
