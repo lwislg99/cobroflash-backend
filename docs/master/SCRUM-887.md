@@ -1,7 +1,9 @@
 # SCRUM-887 · Con descuentos el cliente pagaba más de lo que firmó
 
 **Medido contra:** `origin/main` = `364e7d3a267d8babc49a92244168dc12096ce996` · 2026-09-16T18:13:05Z (tabla y rojo) · suite final tras mergear `origin/main` = `e7f155755446b2a848688cd59ba25c8d9bb9fb26` · 2026-09-16T18:58:50Z
-**Rama:** `scrum-887-cobro-descuentos` · **Estado:** PR 1 (caso A) EN PR. Pendientes: PR 2 (B), PR 3 (bloqueo de C en el editor, literal por firmar), PR 4 (D2, literal por firmar).
+**Rama:** `scrum-887-cobro-descuentos` · **Estado:** PR 1 (caso A) MERGEADO (#1369). PR 2 (B) EN PR
+— ROJO (test-first), ver apéndice. Pendientes: PR 3 (bloqueo de C en el editor, literal por
+firmar), PR 4 (D2, literal por firmar).
 
 Nace de SCRUM-883 (recorrido del electricista en staging): firma 539,05 €, cobro 628,60 €.
 
@@ -82,3 +84,31 @@ ningún documento emitido (regla 29).
   que C7 con global no emita la línea negativa y lo diga, hasta decidirlo.
 - El rótulo de la línea negativa: el presupuesto ya enseña **«Descuento global»**
   (`presentacionIva.ts`, fila del pie) → se reutiliza ese literal.
+
+---
+
+# APÉNDICE · PR 2 (B) · con descuento global y un IVA, lo cobrado ≠ lo firmado
+
+**Medido contra:** `origin/main` = `018d18075c4aefb276dd21a47e1ba2186be630ad`
+**Rama:** `scrum-887b-descuento-global` · **Estado:** EN PR — ROJO (test-first). El defecto está
+documentado y medido; el arreglo del código todavía no está en esta rama.
+
+## Commits (esta sesión, sólo ROJO)
+
+| sha | qué |
+|---|---|
+| `22adc3e5` | ROJO — caso B (global, un solo IVA): el cobro no coincide con lo firmado en ningún plan, la pieza `lineasParaFacturar` no añade la línea negativa, la vista del plan de cobro no promete lo mismo que se emite, y el albarán (C7) con global emite en vez de rechazar con 409 |
+
+`tests/scrum887b-descuento-global.test.mjs` — la decisión del orquestador (17-sep-2026, tabla de
+la cabecera de este fichero, punto B): con global y un solo IVA sale **una línea negativa del
+mismo IVA, rotulada «Descuento global»** (el literal que ya pinta el pie del presupuesto) y
+reconciliada como el caso A. El caso C (IVA mezclado) se mantiene fuera; su test vive en
+`tests/scrum887-*` y no se toca. El albarán (C7) con global **no emite** — es un reparto del
+global, justo lo excluido — y lo dice con un código propio (`albaran_con_descuento_global`) y
+CERO escrituras antes de rechazar.
+
+## Pendiente (fuera de esta rama)
+
+El arreglo de `lineasParaFacturar` (añadir la línea negativa con global de un solo IVA) y del
+handler `POST /:id/convertir-en-factura` (rechazo 409 con descuento global) que pone estos rojos
+en verde.
