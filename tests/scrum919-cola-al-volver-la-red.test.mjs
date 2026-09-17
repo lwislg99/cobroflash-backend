@@ -148,3 +148,96 @@ test('SCRUM-919 · 🔴 EL CABLE: app.js engancha el drenado al arrancar', () =>
   assert.ok(llamadas.includes('drenarAlAbrir'), '🔴 SUELO: el lector no ve ni el drenado al abrir, que existe');
   assert.ok(llamadas.includes('activarDrenadoAlVolver'), '🔴 app.js no llama a activarDrenadoAlVolver: el enganche existiría y nadie lo pondría');
 });
+
+// ═══ PUNTO 2 · el pad NOMBRA el estado ① (textos firmados: SCRUM-919 comentario 15799) ═══════════
+//
+// Sin red la firma YA está guardada en el móvil (IndexedDB) y el pad decía «La firma sigue en pantalla:
+// inténtalo otra vez cuando tengas señal», que invita a firmar otra vez. El pad sigue sin cerrarse sin
+// ③ (SCRUM-404): sólo cambia lo que dice. Si NO se pudo guardar en el móvil, se queda el texto de hoy.
+
+const GUARDADA_EN_EL_MOVIL = 'Sin conexión. La firma está guardada en este móvil y se enviará cuando vuelva la señal con YaQu abierto. No hace falta volver a firmar.';
+const SIGUE_EN_PANTALLA = 'No se ha podido conectar. La firma sigue en pantalla: inténtalo otra vez cuando tengas señal.';
+
+const PARTE = {
+  id: 7, numero: 'PT-2026-001', clienteNombre: 'Comunidad Los Olivos', fecha: '2026-09-16T08:00:00.000Z', obra: 'C/ Mayor 3',
+  referencia: null, entrada: null, salida: null, desplazamientos: null, kilometros: null, tecnicos: [], tipo: 'reparacion_asistencia',
+  notas: null, estado: 'borrador', lineas: [{ bloque: 'mano_obra', unds: 2, descripcion: 'Revisión de caldera' }],
+  firmoElCliente: false, firmoElTecnico: false, puedeEditarContenido: { ok: true, motivo: null }, puedeEditarPrecios: { ok: true, motivo: null },
+};
+
+async function firmarParteSinRed(opciones = {}) {
+  const laRed = red();
+  const b = montarAlmacen(RAIZ, { ...opciones, dashboard: { red: laRed } });
+  let onConfirm = null;
+  const abierto = b.ctx.firmarParte(PARTE, { abrirPad: (o) => { onConfirm = o.onConfirm; }, alFirmar: async () => {}, avisar: () => {} }, 'cliente');
+  assert.ok(abierto && onConfirm, '🔴 SUELO: el pad del parte no se abrió');
+  let aviso = null; let cerrado = false;
+  try { await onConfirm('data:image/png;base64,' + 'A'.repeat(300), { firmadoPorNombre: 'Ana Ruiz' }); cerrado = true; } catch (e) { aviso = e.message; }
+  const cola = await b.ctx.leerFirmasPendientes();
+  return { aviso, cerrado, cola };
+}
+
+test('SCRUM-919 · 🔴 PUNTO 2: sin red y con la firma GUARDADA en el móvil, el pad lo dice y no pide firmar otra vez', async () => {
+  const r = await firmarParteSinRed();
+  assert.equal(r.cola.firmas.length, 1, '🔴 SUELO: la firma no quedó guardada en el móvil');
+  assert.equal(r.cerrado, false, '🔴 el pad se ha cerrado sin ③ (SCRUM-404)');
+  assert.equal(r.aviso, GUARDADA_EN_EL_MOVIL, '🔴 el pad dice ' + JSON.stringify(r.aviso));
+});
+
+test('SCRUM-919 · ⛔ PUNTO 2: si NO se pudo guardar en el móvil, se queda el texto de hoy', async () => {
+  const r = await firmarParteSinRed({ sinIndexedDB: true });
+  assert.notEqual(r.cola.estado, 'GUARDADO', '🔴 SUELO: el almacén sí estaba disponible');
+  assert.equal(r.aviso, SIGUE_EN_PANTALLA, '🔴 sin almacén el pad promete que la firma está guardada: ' + JSON.stringify(r.aviso));
+});
+
+test('SCRUM-919 · 🔴 PUNTO 2: el pad del ALBARÁN le pasa al mensaje si la firma quedó guardada', () => {
+  const rel = 'public/dashboard/js/albaranDetailView.js';
+  const sf = ts.createSourceFile(rel, fs.readFileSync(path.join(RAIZ, rel), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const llamadas = [];
+  const visitar = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'mensajeDeFalloAlFirmar') llamadas.push(n.arguments.map((a) => a.getText(sf)));
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  assert.ok(llamadas.length >= 2, '🔴 SUELO: no veo las llamadas del pad del albarán');
+  assert.ok(llamadas.some((args) => args.length === 2 && /encolada/.test(args[1])),
+    '🔴 el albarán llama a mensajeDeFalloAlFirmar sin decirle si la firma quedó guardada: ' + JSON.stringify(llamadas));
+});
+
+// ═══ PUNTO 3 · el pad del PARTE habla del parte (firmado: comentario 15799) ═══════════════════════
+//
+// La ayuda bajo el nombre del firmante venía de `ALBARAN_AYUDAS` para los dos documentos: en el parte
+// decía «el albarán vale como prueba de entrega». No se amplía el valor probatorio al parte (pendiente
+// del asesor): se firma un texto que sólo pide el nombre.
+
+const AYUDA_PARTE = 'Una firma sin nombre no identifica a nadie. Escribe el nombre de quien firma el parte.';
+
+test('SCRUM-919 · 🔴 PUNTO 3: el pad del parte enseña SU ayuda, no la del albarán', async () => {
+  const require = (await import('node:module')).createRequire(import.meta.url);
+  const dom = require('../dist/modules/jobs/domain/albaranFirmante.js');
+  const laRed = red();
+  const b = montarAlmacen(RAIZ, { dashboard: { red: laRed } });
+  b.ctx.appAlbaranRotulos = dom.ALBARAN_ROTULOS;
+  b.ctx.appAlbaranAyudas = dom.ALBARAN_AYUDAS;
+  b.ctx.appAlbaranFirmanteOpciones = dom.firmanteCalidadOpciones();
+  b.ctx.appParteAyudas = dom.PARTE_AYUDAS; // lo que sirve /admin/me
+  assert.equal(typeof b.ctx.openSignaturePad, 'function', '🔴 SUELO: no hay pad real');
+  // El mini-DOM no dibuja: el canvas del pad recibe un contexto que no hace nada (aquí se mira el TEXTO).
+  const crear = b.ctx.document.createElement.bind(b.ctx.document);
+  b.ctx.document.createElement = (tag) => { const n = crear(tag); if (String(tag).toLowerCase() === 'canvas') { const nada = () => {}; n.getContext = () => new Proxy({}, { get: () => nada, set: () => true }); n.getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 150 }); } return n; };
+  b.ctx.firmarParte(PARTE, { alFirmar: async () => {}, avisar: () => {} }, 'cliente');
+  const { todos } = await import('./_banco-vistas.mjs');
+  const textos = todos(b.ctx.document.body).map((n) => n._texto || '').filter(Boolean);
+  assert.ok(textos.includes(dom.ALBARAN_ROTULOS.firmadoPorNombre), '🔴 SUELO: el pad no pinta el bloque del firmante');
+  assert.ok(!textos.some((t) => /albarán vale como prueba/.test(t)), '🔴 el pad del PARTE habla del albarán');
+  assert.ok(textos.includes(AYUDA_PARTE), '🔴 el pad del parte no enseña la ayuda firmada del parte');
+});
+
+test('SCRUM-919 · PUNTO 3: la ayuda del parte viaja por /admin/me y la del albarán no cambia', async () => {
+  const require = (await import('node:module')).createRequire(import.meta.url);
+  const dom = require('../dist/modules/jobs/domain/albaranFirmante.js');
+  assert.equal(dom.PARTE_AYUDAS && dom.PARTE_AYUDAS.firmadoPorNombre, AYUDA_PARTE, '🔴 la ayuda del parte no está en su fuente única');
+  assert.match(dom.ALBARAN_AYUDAS.firmadoPorNombre, /albarán vale como prueba de entrega/, '⛔ se ha tocado el texto del albarán');
+  const app = fs.readFileSync(path.join(RAIZ, 'src/app.ts'), 'utf8');
+  assert.match(app, /parteAyudas:\s*PARTE_AYUDAS/, '🔴 /admin/me no sirve la ayuda del parte');
+});
