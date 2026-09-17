@@ -646,3 +646,117 @@ control positivo (tiene que encontrar `scrum659`). Los dos pasaron.
   reproduce CI**, que es donde ocurrió.
 - **El defecto de origen de `scrum659` no se arregla aquí** (otro carril, regla 37): su respaldo
   debería ser `os.tmpdir()`.
+
+---
+
+# SCRUM-813b-bis · Re-verificado el 17-sep-2026, tras 1.254 commits de `main`
+
+**Medido contra:** `origin/main` = `71c845c92c50c5daff5afa1f3be7c5fe0645de86` · 2026-09-17T19:48:40+01:00
+**Rama:** `scrum-813-el-trinquete-de-zona-horaria`
+
+> El trabajo de este ticket estaba **entero y sin mergear** desde el 8-sep. Lo que faltaba no era
+> construirlo: era que **se pudiera mergear** y que siguiera siendo verdad. Esto es esa mitad.
+
+## 1 · El PASO 0, y por qué la premisa seguía viva
+
+En `main` **no había trinquete de zona**: `scripts/_trinquete-de-zona.mjs`,
+`scripts/trinquete-de-zona.mjs` y `tests/scrum813-trinquete-de-zona.test.mjs` no existían allí.
+Existían en esta rama, sin mergear. **Una rama sin mergear no protege nada.**
+
+## 2 · El merge · un solo conflicto, y se conservaron los dos lados
+
+`package.json`: esta rama añade `//trinquete:zona` y `trinquete:zona`; `main` había añadido
+`//ci:rama`, `ci:rama`, `//censo:gateados` y `censo:gateados`. **Se conservan las SEIS** — sólo se
+quitaron los marcadores. Verificado: el JSON parsea y las seis claves están presentes.
+
+## 3 · 🟢 La excepción `scrum659/` se RETIRÓ — y por donde decía retirarse
+
+Al traer `main`, la red rápida cayó con **un** fallo, y era el bueno:
+
+    `tests/scrum659-lector-de-lineas-del-pdf.test.mjs` ya NO contiene
+    `process.env.TEMP || process.env.TMPDIR || '.'`. O se arregló —y entonces esta entrada
+    SOBRA y hay que retirarla— o se reescribió y la excepción está amparando otra cosa.
+
+**Se arregló.** SCRUM-824 («los temporales de test salen del árbol de trabajo») lo cambió a
+`path.join(os.tmpdir(), …)`; hoy el respaldo `'.'` tiene **0 ocurrencias** en ese fichero.
+
+La entrada estaba anclada por su **EXPRESIÓN** y no por su línea (SCRUM-710b me tumbó la primera
+versión, que citaba `…:27`), y eso es lo que la hizo autoverificable. Su comentario decía: «el día
+que alguien la arregle a `os.tmpdir()`, su test cae y obliga a retirar esta excepción». **Pasó
+exactamente eso, nueve días después.**
+
+Y el suelo de la lista vacía llevaba escrita su propia condición de salida: «si de verdad se
+arregla en origen, se retira la entrada **Y este suelo**, a la vez y diciéndolo». Se hizo así. Sin
+retirarlo, el trinquete habría quedado en **CIEGO permanente por una mejora** — el rojo fijo que el
+siguiente desactiva (SCRUM-559).
+
+    🔒 Cuando la lista tenía una entrada, el peligro era borrarla. Vacía, el peligro es añadir.
+
+La protección no desaparece, cambia de sentido: `SCRUM-813c · la lista declarada es EXACTAMENTE
+ésta` la fija por contenido a `[]`, así que **cualquier entrada nueva tumba ese caso** y obliga a
+escribir su medición. Y un caso nuevo comprueba que con la lista vacía **nada se ampara**: vaciarla
+hace el trinquete más estricto, no una puerta abierta.
+
+## 4 · 🔴 Seis casos estaban atados al DEFECTO, no al mecanismo
+
+Al vaciar la lista, los fallos pasaron de 1 a **7**. Seis casos usaban la lista REAL como fixture,
+así que probaban el **contenido** creyendo probar el **funcionamiento**: el día que la entrada se
+retiró, se quedaron sin sujeto.
+
+Arreglado con una `LISTA_DE_PRUEBA` sintética: el amparo queda probado **aunque la lista real esté
+a cero**, que es justo el estado al que se quería llegar.
+
+    🔒 Un caso que se queda sin sujeto cuando el defecto se arregla estaba atado al defecto,
+       no al mecanismo.
+
+**Red rápida hoy: 28 tests · 28 pass · 0 fail.**
+
+## 5 · Los controles del encargo, ejecutados hoy
+
+**EL QUE DECIDE y el POSITIVO, en la misma pasada** (`--solo-canarios`, exit 0):
+
+| canario | esperado | resultado |
+|---|---|---|
+| `canario-dependiente-oeste` | DENUNCIADO | ✔ denunciado |
+| `canario-dependiente-este` | DENUNCIADO | ✔ denunciado |
+| `canario-fijado` | no denunciado | ✔ no denunciado |
+| `canario-sin-fechas` | no denunciado | ✔ no denunciado |
+
+Un test que depende de la zona **hace hablar al trinquete**; uno que fija la suya **no se denuncia**.
+Los dos sentidos. Y el modo declara que NO ha mirado el árbol («esto NO es un cambian 0»).
+
+**LOS TRES DE SCRUM-592 SIGUEN ROJOS**, que es la condición de que el ticket esté bien hecho:
+
+| zona | exit | pass | fail |
+|---|---|---|---|
+| Europe/Madrid (+01) | 0 | 20 | 0 |
+| **Pacific/Midway (−11)** | **1** | 17 | **3** |
+| Pacific/Kiritimati (+14) | 0 | 20 | 0 |
+
+Los tres: `allocateQuoteNumber: toma el cerrojo ANTES de leer…`, `SCRUM-592 · una mezcla de
+renumerados y sin renumerar no se pisa` y `SCRUM-592 · el display se DERIVA…`. **No se ha tocado
+ninguno**, ni `now.getFullYear()` (SCRUM-643 §A, parado a propósito).
+
+Y el dato confirma la caracterización: caen **sólo al oeste**. `new Date('2027-01-01')` es medianoche
+UTC; en UTC−11 esa fecha es el 2026-12-31 local, así que los componentes locales dan 2026 y sale
+`P260003` donde se espera `P270001`. Al este no cae porque el desfase va en el otro sentido.
+
+## 6 · 🔴 Un error propio: medí en la zona equivocada
+
+Corrí los tres censados **en mi máquina** (Europe/Madrid) y salieron **20/20, exit 0**. Estuve a un
+paso de reportar «se han puesto verdes, he apagado la alarma». No era eso: **eran verdes porque los
+medí donde no fallan.** Lo cazó que el encargo dijera «esos tres rojos **en Midway**» — el dato
+estaba en el enunciado, no en mi medición.
+
+Es la misma forma que el ticket entero persigue: un veredicto que depende de la zona de quien mide,
+presentado como si describiera el código.
+
+    🔒 Un verde medido en una sola zona no dice del árbol: dice de tu reloj.
+
+## 7 · Lo que sigue sin hacerse
+
+- ⛔ **Los tres censados, sin tocar.** Son la única evidencia automática de SCRUM-643 §A.
+- ⛔ **`now.getFullYear()` intacto** en los cuatro servicios.
+- ⛔ **Ningún producto cambiado para que un test pase.**
+- 🟠 **`scrum784` no depende de la zona sino de la GRAFÍA del cwd** (rojo con `c:/…`, verde con
+  `C:/…`). Declarado y no perseguido: su propio suelo salta.

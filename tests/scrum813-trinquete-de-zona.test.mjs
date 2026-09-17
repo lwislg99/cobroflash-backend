@@ -598,12 +598,16 @@ const marcasQueMueven = (rutas) => {
 
 test('SCRUM-813c · ✅ POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto', () => {
   // Es el caso que se estaba comiendo el instrumento: la pasada funcionaba entera y se callaba.
-  const [antes, despues] = marcasQueMueven(['scrum659/']);
-  const q = arbolQuieto(antes, despues);
+  //
+  // Va con `LISTA_DE_PRUEBA` y no con la real (17-sep-2026): lo que este caso prueba es que una
+  // ruta AMPARADA no ciega, y eso no debe depender de que la lista real tenga entradas — hoy está
+  // legítimamente a cero. Antes citaba `scrum659/` y cayó el día que esa entrada se retiró.
+  const [antes, despues] = marcasQueMueven(['fixture-de-prueba/']);
+  const q = arbolQuieto(antes, despues, LISTA_DE_PRUEBA);
 
   assert.deepEqual(q.cambios, [], '🔴 lo que la propia medición ESCRIBE sigue cegando: no se ha acotado nada');
   assert.equal(q.amparadas.length, 1, 'la ruta declarada tiene que salir, no desaparecer');
-  assert.equal(q.amparadas[0].ruta, 'scrum659/');
+  assert.equal(q.amparadas[0].ruta, 'fixture-de-prueba/');
 
   // Y con el árbol así, el veredicto se EMITE: 3 censadas vistas, 3 censadas. Lo que ya salía.
   const v = veredicto({
@@ -638,38 +642,70 @@ test('SCRUM-813c · 🔴 EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE
   assert.ok(v.motivos.some((m) => m.includes('tests/quoteNumber.test.mjs')));
 });
 
+// 🔴 EL MECANISMO DE AMPARO SE PRUEBA CON UNA LISTA PROPIA, NO CON LA REAL — 17-sep-2026.
+//
+// Estos casos usaban la lista real y por tanto dependían de que tuviera `scrum659/` dentro. El día
+// que esa entrada se retiró (porque SCRUM-824 arregló su causa) se quedaron sin sujeto y cayeron
+// SEIS a la vez — no porque el mecanismo se hubiera roto, sino porque estaban midiendo el
+// CONTENIDO de la lista creyendo medir su FUNCIONAMIENTO. Con una lista de prueba, el amparo queda
+// probado aunque la real esté a cero, que es justo el estado al que se quiere llegar.
+//
+//     🔒 Un caso que se queda sin sujeto cuando el defecto se arregla estaba atado al defecto,
+//        no al mecanismo.
+const LISTA_DE_PRUEBA = Object.freeze([Object.freeze({
+  ruta: 'fixture-de-prueba/',
+  quien: 'tests/scrum813-trinquete-de-zona.test.mjs',
+  expresion: '(sintética: sólo para ejercitar el amparo)',
+  porque: 'no describe el árbol real — existe para que estos casos no dependan de que la lista '
+    + 'real tenga entradas.',
+})]);
+
 test('SCRUM-813c · 🔴 la excepción es CERRADA: lo que NO está declarado ciega, aunque se le parezca', () => {
-  // Un `src/` cualquiera, y un directorio con nombre PARECIDO al declarado. Los dos ciegan.
-  for (const ruta of ['src/core/utils/utils.ts', 'scrum659bis/', 'otro/scrum659/']) {
+  // Un `src/` cualquiera, y un directorio con nombre PARECIDO al declarado. Los tres ciegan.
+  for (const ruta of ['src/core/utils/utils.ts', 'fixture-de-prueba-bis/', 'otro/fixture-de-prueba/']) {
     const [antes, despues] = marcasQueMueven([ruta]);
-    const q = arbolQuieto(antes, despues);
+    const q = arbolQuieto(antes, despues, LISTA_DE_PRUEBA);
     assert.equal(q.amparadas.length, 0, `🔴 \`${ruta}\` se está amparando sin estar declarada`);
     assert.equal(q.cambios.length, 1, `🔴 \`${ruta}\` ha dejado de cegar: la lista se ha vuelto una zona franca`);
   }
 
   // Y el directorio declarado SÍ ampara lo que cuelga de él — un fixture no es una ruta sola.
-  const [a2, d2] = marcasQueMueven(['scrum659/pagina-1.pdf']);
-  const q2 = arbolQuieto(a2, d2);
+  const [a2, d2] = marcasQueMueven(['fixture-de-prueba/pagina-1.pdf']);
+  const q2 = arbolQuieto(a2, d2, LISTA_DE_PRUEBA);
   assert.equal(q2.cambios.length, 0, 'un directorio declarado tiene que amparar su contenido');
   assert.equal(q2.amparadas.length, 1);
 });
 
-test('SCRUM-813c · 🔴 SUELO: con la lista de escrituras VACÍA es CIEGO, no «árbol limpio»', () => {
-  // Una lista vacía NO significa «la tanda no escribe nada»: significa que la declaración se
-  // perdió. Sin este suelo, vaciarla devolvería la puerta al estado de antes sin que nadie lo
-  // hubiera decidido — y encima en verde.
-  const [antes, despues] = marcasQueMueven(['scrum659/']);
-  const q = arbolQuieto(antes, despues, []);
-  assert.equal(q.cambios.length, 1, '🔴 con la lista vacía el instrumento da el árbol por quieto');
-  assert.match(q.cambios[0], /VACÍA/, 'el motivo tiene que decir que la declaración se ha perdido');
+test('SCRUM-813c · 🔴 con la lista VACÍA nada se ampara: cualquier ruta sigue cegando', () => {
+  // Éste sustituye al suelo «lista vacía ⇒ CIEGO», retirado el 17-sep-2026 junto con su entrada
+  // (la condición de salida estaba escrita en el propio suelo). Aquel suelo protegía contra BORRAR
+  // la lista; hoy la lista está legítimamente a cero y lo que hay que proteger es lo contrario:
+  // que vaciarla no convierta el árbol en zona franca.
+  for (const ruta of ['scrum659/', 'fixture-de-prueba/', 'src/core/utils/utils.ts']) {
+    const [antes, despues] = marcasQueMueven([ruta]);
+    const q = arbolQuieto(antes, despues, []);
+    assert.equal(q.amparadas.length, 0,
+      `🔴 con la lista VACÍA se está amparando \`${ruta}\`: el amparo no puede salir de la nada.`);
+    assert.equal(q.cambios.length, 1,
+      `🔴 con la lista VACÍA, \`${ruta}\` ha dejado de cegar. Vaciar la lista tiene que hacer el `
+      + 'trinquete MÁS estricto, no convertirlo en una puerta abierta.');
+  }
 });
 
 test('SCRUM-813c · la lista declarada es EXACTAMENTE ésta, y cada entrada dice quién y por qué', () => {
   // Fijada por CONTENIDO: si crece, este caso cae y alguien tiene que escribir el motivo aquí Y
   // en la lista. Una lista de excepciones que engorda sola acaba tapando el defecto que evita.
-  assert.deepEqual(ESCRITURAS_DE_LA_TANDA.map((e) => e.ruta), ['scrum659/'],
+  //
+  // 🟢 HOY ESTÁ VACÍA, y llegó a estarlo por el camino bueno. Tenía `scrum659/`; SCRUM-824 arregló
+  // ese respaldo a `os.tmpdir()` y **la comprobación de identidad de abajo cazó la entrada
+  // caducada** (17-sep-2026) — el guard no se relajó, se retiró la excepción. Vacía es MÁS
+  // estricta que con una entrada: sin excepciones, cualquier ruta que se mueva deja el veredicto
+  // en CIEGO.
+  assert.deepEqual(ESCRITURAS_DE_LA_TANDA.map((e) => e.ruta), [],
     '🔴 HA CAMBIADO LA LISTA DE ESCRITURAS DE LA TANDA. Cada entrada es una ruta que deja de '
-    + 'cegar: se añade con su medición delante, nunca para que el trinquete se calle.');
+    + 'cegar: se añade con su medición delante, nunca para que el trinquete se calle. Y volver a '
+    + 'meter una es RETROCEDER: la lista llegó a cero el 17-sep-2026 porque el defecto de origen '
+    + 'se arregló, no porque se tapara.');
 
   for (const e of ESCRITURAS_DE_LA_TANDA) {
     assert.ok(e.quien && e.porque && e.expresion,

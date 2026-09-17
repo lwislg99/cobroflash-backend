@@ -480,22 +480,30 @@ export function huellaPorRuta(estadoPorcelain, diffHead) {
  * obliga a decirlo en voz alta en vez de dejar la lista vacía en silencio.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const ESCRITURAS_DE_LA_TANDA = Object.freeze([
-  Object.freeze({
-    ruta: 'scrum659/',
-    quien: 'tests/scrum659-lector-de-lineas-del-pdf.test.mjs',
-    // 🔴 ANCLADA POR LO QUE ES, NO POR DÓNDE ESTÁ (SCRUM-710b, que me lo tumbó al primer intento:
-    // esto citaba `…:27`). Un número de línea caduca en cuanto alguien edita por encima, y quien
-    // lo pague no sabrá por qué. La EXPRESIÓN no se mueve — y además hace la entrada
-    // autoverificable: el día que alguien la arregle a `os.tmpdir()`, su test cae y obliga a
-    // retirar esta excepción en vez de dejarla amparando algo que ya no existe.
-    expresion: "process.env.TEMP || process.env.TMPDIR || '.'",
-    porque: 'fixture de PDF. El `finally` borra el FICHERO de dentro, no el DIRECTORIO, así que '
-      + 'éste persiste. Y su respaldo es `.` cuando no hay `TEMP` ni `TMPDIR` (el runner de '
-      + 'Linux), así que nace DENTRO del repo. Defecto de origen: debería usar `os.tmpdir()`. '
-      + 'Medido en CI el 8-sep-2026 con el detalle por ruta de SCRUM-813b.',
-  }),
-]);
+/**
+ * 🟢 LISTA VACÍA, Y ESO ES LA BUENA NOTICIA — retirada el 17-sep-2026.
+ *
+ * Tenía UNA entrada: `scrum659/`, amparada porque
+ * `tests/scrum659-lector-de-lineas-del-pdf.test.mjs` construía su temporal con
+ * `process.env.TEMP || process.env.TMPDIR || '.'` — y ese respaldo `.` hacía nacer el directorio
+ * DENTRO del repo en el runner de Linux.
+ *
+ * **La entrada se ancló por su EXPRESIÓN, no por su línea** (SCRUM-710b me tumbó la primera
+ * versión, que citaba `…:27`), y eso la hizo AUTOVERIFICABLE. Su comentario decía, literalmente:
+ * «el día que alguien la arregle a `os.tmpdir()`, su test cae y obliga a retirar esta excepción».
+ *
+ * **Pasó exactamente eso.** SCRUM-824 («los temporales de test salen del árbol de trabajo, y un
+ * trinquete») lo cambió a `path.join(os.tmpdir(), …)`. Medido el 17-sep-2026 al traer `main`:
+ * el fichero ya no contiene esa expresión —0 ocurrencias del respaldo `'.'`— y el caso
+ * `SCRUM-813c` cayó pidiendo la retirada. No se tocó el guard: se retiró la excepción.
+ *
+ * ⚠️ **Vacía no significa desactivada: significa MÁS estricta.** Sin entradas, cualquier ruta que
+ * se mueva durante la medición deja el veredicto en CIEGO, que es el comportamiento correcto.
+ * Y `arbolQuieto` sigue distinguiendo «lista vacía» de «nada se movió» — lo vigila su propio caso.
+ *
+ *     🔒 Una excepción que sobra es exactamente cómo una lista de excepciones engorda.
+ */
+export const ESCRITURAS_DE_LA_TANDA = Object.freeze([]);
 
 /** ¿Esta ruta la escribe la propia medición? Un directorio declarado ampara lo que cuelga de él. */
 export function laEscribeLaTanda(ruta, declaradas = ESCRITURAS_DE_LA_TANDA) {
@@ -524,16 +532,25 @@ export function arbolQuieto(antes, despues, declaradas = ESCRITURAS_DE_LA_TANDA)
     return { medible: true, cambios, rutas: [], amparadas: [] };
   }
 
-  // 🔴 EL SUELO DE LA PROPIA LISTA. Una lista vacía NO significa «la tanda no escribe nada»:
-  // significa que la declaración se ha perdido. Se midió al menos UNA (`scrum659/`), así que un
-  // cero aquí es una declaración rota, y con ella la puerta pasaría a ser la de antes sin que
-  // nadie lo hubiera decidido. Si de verdad se arregla en origen, se retira la entrada Y este
-  // suelo, a la vez y diciéndolo.
-  if (!declaradas.length) {
-    cambios.push('LA LISTA DE ESCRITURAS DE LA TANDA ESTÁ VACÍA. Se midió al menos una '
-      + '(`scrum659/`, SCRUM-813c): un cero aquí es una declaración perdida, no un árbol limpio.');
-    return { medible: true, cambios, rutas: [], amparadas: [] };
-  }
+  // 🟢 EL SUELO DE LA LISTA VACÍA, RETIRADO EL 17-sep-2026 — y retirado por donde decía retirarlo.
+  //
+  // Aquí había un suelo: lista vacía ⇒ CIEGO, porque «un cero es una declaración perdida, no un
+  // árbol limpio». Era correcto mientras hubiera UNA entrada medida (`scrum659/`): entonces el
+  // peligro era que alguien la borrase y devolviera la puerta al estado de antes en verde. Su
+  // propio comentario dejaba la condición de salida escrita: «si de verdad se arregla en origen,
+  // se retira la entrada Y este suelo, a la vez y diciéndolo». Es lo que se está haciendo.
+  //
+  // SCRUM-824 arregló el respaldo de `scrum659` a `os.tmpdir()`, la entrada quedó sin sujeto y la
+  // lista llegó a cero **por el camino bueno**. Mantener el suelo dejaría el trinquete en CIEGO
+  // permanente: un rojo fijo por una mejora, que es el rojo que el siguiente desactiva (SCRUM-559).
+  //
+  // 🔴 Y LA PROTECCIÓN NO DESAPARECE, CAMBIA DE SENTIDO. Con la lista a cero, borrarla ya no es el
+  // riesgo — el riesgo es AÑADIR. De eso se encarga `SCRUM-813c · la lista declarada es
+  // EXACTAMENTE ésta`, que la fija por contenido a `[]`: cualquier entrada nueva tumba ese caso y
+  // obliga a escribir su medición. Y una ruta no declarada sigue cegando, con la lista vacía o sin
+  // ella, porque `laEscribeLaTanda` sobre una lista vacía no ampara nada.
+  //
+  //     🔒 Cuando la lista tenía una entrada, el peligro era borrarla. Vacía, el peligro es añadir.
 
   const rutas = [];
   const amparadas = [];
