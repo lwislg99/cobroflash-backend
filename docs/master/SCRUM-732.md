@@ -169,3 +169,78 @@ con mi nombre.
 ⛔ No entra en `npm test`: es un censo, se corre a mano
 (`node scripts/censo-alcance-vs-sujeto.mjs`). Salidas: 0 sin hallazgos, 1 hay cazados, 2 el banco no
 responde como debe.
+
+---
+
+# APÉNDICE · FASE b (17-sep-2026) · Los dos cazados, estrechados a su sujeto
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca.
+
+**Medido contra:** `origin/main` = `5f7b994ef52020193f94560928521c73d4c9472d` · 2026-09-17T16:54:57+01:00
+**Rama:** `scrum-732b`
+
+## La línea que no se cruza
+
+**Estrechar el ALCANCE no es relajar lo que el guard EXIGE.** Después del cambio cada uno prohíbe
+**exactamente lo mismo**, sólo que mirando donde debe. Es el mismo movimiento que SCRUM-587 le hizo
+a `scrum286`: de `FUENTE` entera a `bloques`.
+
+## ① `scrum895b-literales-firmados` — el mío
+
+Gobernaba **todo `jobDetailView.js`** (`assert.ok(!src.includes('|| primaria.id'))`) para defender
+**una sentencia**: el rótulo del albarán en la fila del Trabajo.
+
+**El sujeto, derivado por AST:** las sentencias que leen `ROTULOS_ALBARAN`, quedándose con la **más
+interna** de cada anidamiento — si no, «la sentencia» sería la función entera y no se habría
+estrechado nada. Lo prohibido no cambia: que no vuelva el respaldo `|| primaria.id`.
+
+## ② `scrum244-menu-portabilidad` — el del dictamen legal
+
+Prohibía cuatro palabras en el **fichero entero**, comentarios e identificadores incluidos, para
+defender que la pantalla no **ofrece** la supresión del art. 17.
+
+**El sujeto, derivado por AST:** los literales de cadena y de plantilla — lo único que puede llegar
+a los ojos de alguien. Un comentario no ofrece nada; un identificador tampoco.
+
+> ⚠️ **Las cuatro pistas, el dictamen y el mensaje son los mismos.** Eso es contenido legal y no se
+> toca (reglas 30 y 26). Lo único que cambia es dónde se mira.
+
+## LOS CONTROLES, uno por guard y los cuatro EJECUTADOS
+
+| guard | ROJO · dentro del sujeto | VERDE QUE DECIDE · fuera del sujeto, dentro del fichero |
+|---|---|---|
+| `scrum895b` | se inyecta el respaldo en la sentencia del rótulo → **salta** | se escribe el mismo texto en otra declaración del fichero → **ya no salta**, y el fuente crudo SÍ lo contiene: la forma vieja habría saltado |
+| `scrum244` | se mete `borrar` en un literal de la vista → **salta** | se escribe `borrar` en un **comentario** que explica por qué la supresión está bloqueada → **ya no salta** |
+
+Las mutaciones se verifican antes de usarlas (el ancla aparece **exactamente una vez**) y se hacen
+sobre **copias en memoria**: el árbol no se toca. Cada guard lleva además su **suelo** — sin sujeto
+o sin texto pintable se declara ciego, porque un «no está» sobre el conjunto vacío pasa siempre.
+
+El verde es el que decide. **Un rojo esperado se cree solo**: lo que prueba que esto se ha arreglado
+y no sólo movido es que lo de fuera del sujeto haya dejado de acusar.
+
+## VERIFICADO CON EL PROPIO CENSO
+
+```
+guards EXAMINADOS ... 911 · medibles 492 · NO CLASIFICADOS 419
+CAZADOS 0  ·  NO CLASIFICADOS 419   (sobre 911 examinados)
+```
+
+La población no se ha movido —911/492/419, idéntica— así que la bajada de **2 → 0** es el arreglo,
+no un cambio de lo que el instrumento mira.
+
+## Lo que NO se ha tocado
+
+⛔ **Los 419 no clasificados.** No se ha ampliado el instrumento.
+⛔ **El eje B de SCRUM-591.** Sigue sin medirse, y el censo lo sigue diciendo en cada ejecución.
+⛔ **Ningún otro guard.**
+
+### Una idea para el eje B, escrita y NO implementada
+
+El eje B —«permite de menos»— necesita comparar lo que la aserción gobierna contra lo que **nombra
+su mensaje**, y eso es leer castellano. Pero hay un trozo que **sí** parece decidible y que dejo
+apuntado sin tocar: cuando el mensaje de fallo **nombra un símbolo del propio árbol**
+(`declaradosEn402`, un fichero, una función) que la aserción **no invoca**, el guard está ofreciendo
+una vía que no consulta. Eso es comparar dos conjuntos de identificadores —los citados en el mensaje
+contra los llamados en la aserción—, no significado. No lo implemento: no está medido, y medir si
+ese subconjunto vale la pena es otro ticket.
