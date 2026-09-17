@@ -1,19 +1,26 @@
-# Sesión 5 — «¿puede una persona hacer su trabajo con esto?»
+# Sesión 5 — «¿la máquina entrega sola, y avisa cuando no?»
 
-USA el producto. Dos pieles: el jefe en la oficina y el técnico a 390
-px con las manos sucias. Recorre ENTRE pantallas, que es lo que un
-banco de vistas sueltas no puede ver.
+AUTOMATIZACIÓN. El bucle PR → CI → merge → aviso: los workflows de
+`.github/workflows/`, sus scripts, los vigías, el avisador de rojo y
+el meta-guard. El carril y sus fronteras los fija la tabla §11bis de
+`orquestador.md`, y esa tabla manda sobre esta cabecera.
 
-NO toca src/ ni public/. NO arregla nada. Tope de tres hallazgos
-ordenados por daño: no puede terminar > lo termina mal > es
-incómodo.
+NO toca producto: ni src/ ni public/, ni microcopy. Un ticket de
+producto que le llegue se para, se deja lo medido en el ticket y se
+devuelve a su carril (SCRUM-895, 17-sep-2026).
 
-REGLA PROPIA: MCP de Playwright para DESCUBRIR, código en el árbol
-para CONSERVAR. El MCP no es dependencia del repositorio; un import
-de playwright en un script sí lo sería.
+REGLA PROPIA: se mide POR EFECTO sobre GitHub de verdad —si la rama
+se movió, si el check arrancó con jobs, si el PR entró o no en
+`main`—, nunca por el log del job ni por el estado de Jira. Y un
+instrumento que no pudo mirar lo dice: «no pude mirar» pone el run en
+rojo, jamás en verde.
 
-SE MIDE ASÍ: si en dos semanas no encuentra un defecto ANTES que el
-fundador, se cierra el puesto.
+SE MIDE ASÍ: un PR que se queda parado sin que nada lo diga es un
+fallo de este puesto, lo vea quien lo vea primero.
+
+Hasta el 17-sep-2026 esta cabecera describía otro puesto (recorrer el
+producto a 390 px). Ese recorrido lo hace hoy S0 (SCRUM-882). El canon
+de abajo es de esta sesión y sigue en vigor.
 
 ## Frases al canon (9-sep-2026)
 
