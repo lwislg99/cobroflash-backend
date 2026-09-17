@@ -26,8 +26,31 @@ import ts from 'typescript';
  * @returns {{ escrituras: Array<{fichero:string, linea:number, data:string, indirecto:string}>, ficheros:number }}
  */
 export function escriturasDeAlbaran(raiz) {
+  return escriturasDeModelo(raiz, { modelo: 'albaran', verbos: ['update', 'updateMany'] });
+}
+
+/**
+ * 🔴 EL MISMO CENSO, PARA CUALQUIER MODELO — SCRUM-878 (16-sep-2026).
+ *
+ * `escriturasDeAlbaran` queda ARRIBA, intacta en su firma y en lo que devuelve, porque tres tests
+ * dependen de ella (`scrum361`, `scrum462`, `scrum472`). Lo único que ha cambiado es que ahora
+ * delega. **No se ha escrito un segundo censo**: es la regla que este mismo fichero dejó escrita
+ * en su cabecera —«un solo censo, dos preguntas»— aplicada una vez más, y evita lo que su propio
+ * comentario advierte, dos censos del mismo hecho que se desincronizan en cuanto uno mejore.
+ *
+ * Lo que sube con la generalización son las dos lecciones caras que ya llevaba dentro: que un
+ * `data:` con `...spread` hay que seguirlo hasta las asignaciones de la función, y que un `where`
+ * no es una escritura. Quien censa otro modelo las hereda sin volver a pagarlas.
+ *
+ * @param {string} raiz
+ * @param {{modelo:string, verbos?:string[]}} opciones  `verbos` por defecto: update + updateMany.
+ */
+export function escriturasDeModelo(raiz, { modelo, verbos = ['update', 'updateMany'] }) {
   const out = [];
   let ficheros = 0;
+  const reVerbo = new RegExp(`^(${verbos.join('|')})$`);
+  const reModelo = new RegExp(`${modelo}$`, 'i');
+  const reAtajo = new RegExp(`${modelo}\\.(${verbos.join('|')})`, 'i');
 
   const visitarDir = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -36,7 +59,7 @@ export function escriturasDeAlbaran(raiz) {
       if (!e.name.endsWith('.ts')) continue;
       ficheros += 1;
       const src = fs.readFileSync(p, 'utf8');
-      if (!/albaran\.update/i.test(src)) continue;
+      if (!reAtajo.test(src)) continue;
       const sf = ts.createSourceFile('x.ts', src, ts.ScriptTarget.Latest, true);
       // ⚠️ ACTUALIZACIONES, no creaciones — y es una decisión medida, no un olvido. Al extraer este
       // censo se amplió a `create`/`upsert` «por completitud», y eso CAMBIÓ el significado del
@@ -49,8 +72,8 @@ export function escriturasDeAlbaran(raiz) {
       // SCRUM-462 que lo mantiene cierto, porque de eso depende que este censo baste.
       const visitar = (n) => {
         if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) &&
-            /^(update|updateMany)$/.test(n.expression.name.text) &&
-            /albaran$/i.test(n.expression.expression.getText(sf))) {
+            reVerbo.test(n.expression.name.text) &&
+            reModelo.test(n.expression.expression.getText(sf))) {
           const arg = n.arguments[0];
           let data = '';
           if (arg && ts.isObjectLiteralExpression(arg)) {
@@ -68,7 +91,14 @@ export function escriturasDeAlbaran(raiz) {
           //
           // Así que si el `data:` trae un `...ident`, se recogen también las asignaciones
           // `ident.<campo> =` de la función que contiene la escritura.
+          // 🔴 Y `data: updateData` A SECAS ES LA MISMA FORMA, con otra cara — SCRUM-878.
+          // El `data:` no siempre es un literal ni un literal con spread: también puede ser un
+          // identificador pelado que se rellena arriba (`const updateData: any = {}` y luego
+          // `updateData.reminder7SentAt = …`). Mirando solo el texto, eso sale como el campo
+          // «updateData», que no existe, y la escritura acaba en NO CLASIFICADO — del lado malo,
+          // que es lo correcto pero es peor que resolverla. Se sigue igual que el spread.
           const spread = [...data.matchAll(/\.\.\.(\w+)/g)].map((m) => m[1]);
+          if (/^\w+$/.test(data.trim())) spread.push(data.trim());
           let indirecto = '';
           if (spread.length) {
             let fn = n;
