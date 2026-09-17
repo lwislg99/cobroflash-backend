@@ -15,9 +15,9 @@ acto** (regla 30).
 del parte (`.alert warning`, `role="alert"`), al abrir un parte que tiene un recuadro SIN firmar y
 una constancia de rechazo para ese recuadro.
 
-La constancia la deja `colaDeFirmas.js` en IndexedDB (almacén `firmasRechazadas`) cuando una firma
-encolada sin red se intenta subir al vaciar la cola y el servidor la rechaza por el documento. Se
-borra cuando ese recuadro se vuelve a firmar con éxito.
+La constancia la deja `colaDeFirmas.js` en `localStorage` (`yaqu_firma_rechazada_<clave>`) cuando
+una firma encolada sin red se intenta subir al vaciar la cola y el servidor la rechaza por el
+documento. Se borra cuando ese recuadro se vuelve a firmar con éxito y al cerrar sesión.
 
 Si el código del rechazo es `parte_vacio`, no sale este texto sino el ya firmado
 `TEXTOS.parteVacioNoSeFirma` (firmado el 16-sep-2026 en este mismo ticket, comentario 15623).
