@@ -1,0 +1,215 @@
+══ LAS TRES CIFRAS ═════════════════════════════════════════════════════
+   ① ficheros de test que EXISTEN en `tests/`        : 879
+   ② nombran `MUTACIONES_QUE_ME_TUMBAN` en su texto  : 82
+   ③ los que el META-GUARD VE (y por tanto mide)     : 79   (243 declaraciones)
+
+   ②−③ = 3 que nombran el símbolo y el lector NO ve:
+      · scrum606-albaran-desde-presupuesto.test.mjs
+      · scrum708-el-fichero-que-no-corre.test.mjs
+      · scrum836-ancla-de-mutacion-viva.test.mjs
+   (se revisan uno a uno en el expediente: ninguno es una declaración invisible)
+
+══ LOS QUE NO DECLARAN (800) ═══════════════════════════════════════
+   ⛔ imposibilidad DECLARADA en prosa              : 2
+   ⚠️ GATEADOS (el meta-guard corre sin base: CIEGO): 73
+   ⚪ no ejercitan código del repo (nada que mutar)  : 19
+   🔴 SIN VIGILAR (podrían declarar y no lo hacen)   : 706
+   ❔ NO CLASIFICADO (del lado malo)                 : 0
+   suma: 800 ✅ cuadra
+
+══ ¿ANTERIORES A SCRUM-745 (4-sep-2026) O NACIDOS DESPUÉS? ═════════════
+   anteriores al mecanismo  : 650
+   nacidos DESPUÉS y aun así sin declarar : 145
+   sin fecha de alta legible (NO CLASIFICADO): 5
+   suma: 800 ✅ cuadra
+
+   ⚠️ Las dos causas tienen arreglos distintos: el que nació ANTES nunca tuvo el
+      mecanismo delante; el que nació DESPUÉS lo tenía y no lo usó.
+
+   CONTROL · de los 79 que SÍ declaran: 7 nacieron antes de 745 y 72 después.
+   (si ninguno de los anteriores declarara, «anterior a 745» sería una excusa perfecta;
+    con 7 que sí lo hicieron, no lo es.)
+
+══ 🔴 EL LÍMITE: «GUARD» NO ESTÁ DEFINIDO EN EL ÁRBOL ══════════════════
+   de los 706 que no declaran y SÍ se pueden mutar,
+   los que se AUTODECLARAN guard en el título de un test: 177
+   el resto (529) NO se puede afirmar que sean guards: van a NO CLASIFICADO.
+
+🔴 SE LLAMAN GUARD, SE PUEDEN MUTAR Y NO DECLARAN — uno a uno:
+   · pre-745   dashboard-colision-declaraciones.test.mjs
+   · post-745  pr-automatico-el-mensaje-del-automerge.test.mjs
+   · pre-745   public-js-parsea.test.mjs
+   · pre-745   scrum113-migracion-fixtures.test.mjs
+   · pre-745   scrum124-r29-perfil-publico-sin-datos.test.mjs
+   · pre-745   scrum128-frontend-census.test.mjs
+   · pre-745   scrum128-frontend-mira-sent.test.mjs
+   · pre-745   scrum141-factura-final.test.mjs
+   · pre-745   scrum145-verifactu-xsd.test.mjs
+   · pre-745   scrum149-sin-lineas-no-sella.test.mjs
+   · pre-745   scrum152-guard-paquete-completo.test.mjs
+   · pre-745   scrum153b-annulled-vistas.test.mjs
+   · pre-745   scrum161-evidencia-tanda.test.mjs
+   · pre-745   scrum172-cobertura-tenancy.test.mjs
+   · pre-745   scrum183-consola-e2e.test.mjs
+   · pre-745   scrum195-loop-adicional.test.mjs
+   · pre-745   scrum205-sql-a-mano-contra-schema.test.mjs
+   · pre-745   scrum205-un-solo-punto-de-sellado.test.mjs
+   · pre-745   scrum217-failopen-entrada.test.mjs
+   · pre-745   scrum226-url-bd-sin-parseo-a-mano.test.mjs
+   · pre-745   scrum226-url-credencial-en-argv.test.mjs
+   · pre-745   scrum233-prosa-sin-url-insegura.test.mjs
+   · pre-745   scrum235-cliente-por-columnas.test.mjs
+   · pre-745   scrum237-negacion-respaldada.test.mjs
+   · pre-745   scrum239-huella-de-codigo.test.mjs
+   · pre-745   scrum240-sobre-unico.test.mjs
+   · pre-745   scrum242-backup-codec.test.mjs
+   · pre-745   scrum244-cobertura-portabilidad.test.mjs
+   · pre-745   scrum252-procedencia-cliente.test.mjs
+   · pre-745   scrum257-albaran-desde-presupuesto.test.mjs
+   · pre-745   scrum258-nota-por-sesion.test.mjs
+   · pre-745   scrum265-margen-en-recibo.test.mjs
+   · pre-745   scrum265-timeouts-tanda.test.mjs
+   · pre-745   scrum271-cantidad-sin-inventar.test.mjs
+   · pre-745   scrum273-registro-por-fichero.test.mjs
+   · pre-745   scrum274-shell-alineado.test.mjs
+   · pre-745   scrum283-microcopy-marcador.test.mjs
+   · pre-745   scrum284-asignacion-submenus.test.mjs
+   · pre-745   scrum284-configuracion-submenus.test.mjs
+   · pre-745   scrum285-censo-cobro-factura.test.mjs
+   · pre-745   scrum286-bloques-orden.test.mjs
+   · pre-745   scrum289-censo-origen-factura.test.mjs
+   · pre-745   scrum289b-factura-suelta.test.mjs
+   · pre-745   scrum292-nif-antes-de-emitir.test.mjs
+   · pre-745   scrum293-cero-literales-retencion.test.mjs
+   · pre-745   scrum293-retencion-irpf.test.mjs
+   · pre-745   scrum294-recargo-caja.test.mjs
+   · pre-745   scrum296-pantalla-libro.test.mjs
+   · pre-745   scrum298-modo-visible.test.mjs
+   · pre-745   scrum300-firmante-ids-y-microcopy.test.mjs
+   · pre-745   scrum301-albaranes-seccion.test.mjs
+   · pre-745   scrum313-pantalla-numeracion.test.mjs
+   · pre-745   scrum324-aviso-simplificado-ui.test.mjs
+   · pre-745   scrum334-correo-sin-consentimiento.test.mjs
+   · pre-745   scrum336-atribucion-sin-almacenamiento.test.mjs
+   · pre-745   scrum338-carga-de-catalogo-no-muda.test.mjs
+   · pre-745   scrum339-microcopy-import.test.mjs
+   · pre-745   scrum341-condicion-precio-publicada.test.mjs
+   · pre-745   scrum344-cierre-con-saldo.test.mjs
+   · pre-745   scrum350-modal-footer-envuelve.test.mjs
+   · pre-745   scrum351-topologia-node-modules.test.mjs
+   · pre-745   scrum356-tres-estados.test.mjs
+   · pre-745   scrum358-encolar-firma.test.mjs
+   · pre-745   scrum360-entorno-guardado.test.mjs
+   · pre-745   scrum361-version-al-editar.test.mjs
+   · pre-745   scrum361-version-al-firmar.test.mjs
+   · pre-745   scrum364-cambiar-gremio.test.mjs
+   · pre-745   scrum366-una-sola-escalera.test.mjs
+   · pre-745   scrum367-quote-line-index.test.mjs
+   · pre-745   scrum368-anillo-foco-primario.test.mjs
+   · pre-745   scrum37-plan-front-vs-back.test.mjs
+   · pre-745   scrum373-avisos-facturas.test.mjs
+   · pre-745   scrum378-carga-por-pagina.test.mjs
+   · pre-745   scrum37b-agregacion-por-job.test.mjs
+   · pre-745   scrum381-scripts-cargables.test.mjs
+   · pre-745   scrum385-preview-fiable.test.mjs
+   · pre-745   scrum393-marcadores-de-conflicto.test.mjs
+   · pre-745   scrum397-fecha-real-de-cobro.test.mjs
+   · pre-745   scrum398-vocabulario-de-cobro.test.mjs
+   · pre-745   scrum400-conformidad-landing.test.mjs
+   · pre-745   scrum401-anular-no-borra-el-cobro.test.mjs
+   · pre-745   scrum409-fixtures-sin-merchant-demo.test.mjs
+   · pre-745   scrum418-credencial-de-produccion.test.mjs
+   · pre-745   scrum420-barra-navegable-por-hash.test.mjs
+   · pre-745   scrum424-lugar-al-crear.test.mjs
+   · pre-745   scrum427-notas-internas-detalle.test.mjs
+   · pre-745   scrum451-plazo-de-red.test.mjs
+   · pre-745   scrum454-destructivo-sin-comprobacion.test.mjs
+   · pre-745   scrum455-almacen-local.test.mjs
+   · pre-745   scrum460-precarga-al-movil.test.mjs
+   · pre-745   scrum461-censo-no-encoge.test.mjs
+   · pre-745   scrum462-firmado-sin-sobre.test.mjs
+   · pre-745   scrum474-filtro-cobros-un-cubo.test.mjs
+   · pre-745   scrum475-constancia-correo.test.mjs
+   · pre-745   scrum475-receptor-webhook.test.mjs
+   · pre-745   scrum488-un-solo-vocabulario.test.mjs
+   · pre-745   scrum496-anulada-no-vuelve-en-lote.test.mjs
+   · pre-745   scrum497-dato-personal-no-sobrevive.test.mjs
+   · pre-745   scrum498-cifra-derivada.test.mjs
+   · pre-745   scrum499-el-registro-tiene-sitio.test.mjs
+   · pre-745   scrum502-pasarela-no-resucita-anulada.test.mjs
+   · post-745  scrum505-dato-personal-en-contenido.test.mjs
+   · pre-745   scrum522-guards-fuera-de-la-tanda.test.mjs
+   · post-745  scrum525d-anclas-que-apuntan.test.mjs
+   · post-745  scrum527-la-unica-que-eran-siete.test.mjs
+   · pre-745   scrum537-afirmacion-falsa.test.mjs
+   · pre-745   scrum541-comparativa-a11y.test.mjs
+   · pre-745   scrum542-objetivo-tactil.test.mjs
+   · pre-745   scrum543-landing-a11y.test.mjs
+   · pre-745   scrum548-peaje-package-json.test.mjs
+   · pre-745   scrum549-nada-publicable-sin-marcar.test.mjs
+   · pre-745   scrum551-anclas-bloque-f.test.mjs
+   · pre-745   scrum562-arbitro-de-toque.test.mjs
+   · pre-745   scrum563-registro-de-lo-aprobado.test.mjs
+   · pre-745   scrum574-switch-forma-juridica.test.mjs
+   · pre-745   scrum579-direccion-de-facturacion.test.mjs
+   · pre-745   scrum580-tags-por-contacto.test.mjs
+   · pre-745   scrum584-selector-de-columnas.test.mjs
+   · post-745  scrum590b-el-campo-en-la-pantalla.test.mjs
+   · post-745  scrum595-etiquetas-del-documento.test.mjs
+   · post-745  scrum597-asignar-usuario-al-documento.test.mjs
+   · post-745  scrum600b-la-factura-usa-el-front.test.mjs
+   · post-745  scrum600e-condiciones-contra-el-emisor.test.mjs
+   · post-745  scrum600g-plantillas-en-el-documento-suelto.test.mjs
+   · pre-745   scrum602-direccion-obra.test.mjs
+   · pre-745   scrum604-desglose-en-el-pdf.test.mjs
+   · pre-745   scrum609b-switch-tipo-articulo.test.mjs
+   · pre-745   scrum615-pedir-tipo-destinatario.test.mjs
+   · pre-745   scrum615-plazo-con-null.test.mjs
+   · pre-745   scrum616-que-guarda-la-factura.test.mjs
+   · pre-745   scrum624b-guardado-vs-impreso.test.mjs
+   · pre-745   scrum624c-total-canonico.test.mjs
+   · pre-745   scrum636-sitio-unico-dinero.test.mjs
+   · pre-745   scrum645-la-puerta-no-tira-los-tramos.test.mjs
+   · post-745  scrum648b-motivo-del-ambar.test.mjs
+   · pre-745   scrum650-asignacion-a-varios.test.mjs
+   · pre-745   scrum650d-pantalla-asignar.test.mjs
+   · pre-745   scrum651-trabajo-sin-presupuesto.test.mjs
+   · pre-745   scrum652d-puerta-al-parte.test.mjs
+   · pre-745   scrum653-dos-firmas.test.mjs
+   · pre-745   scrum656b-clausulas-configuracion.test.mjs
+   · pre-745   scrum661-el-coste-no-llega-al-papel.test.mjs
+   · pre-745   scrum661b-el-coste-sobrevive-el-viaje.test.mjs
+   · pre-745   scrum670-un-solo-extractor.test.mjs
+   · pre-745   scrum687-constancia-del-alter.test.mjs
+   · pre-745   scrum694-los-guards-migrados.test.mjs
+   · post-745  scrum711-guards-sin-sitio.test.mjs
+   · post-745  scrum711b-escritorio-36.test.mjs
+   · post-745  scrum713-buscar-al-cliente-donde-ya-se-busca.test.mjs
+   · post-745  scrum713c-trinquete-de-estilos-en-js.test.mjs
+   · post-745  scrum716c-la-memoria-del-vigia.test.mjs
+   · pre-745   scrum71c-voz-albaran-ui.test.mjs
+   · pre-745   scrum720-marcadores-en-lo-pintado.test.mjs
+   · pre-745   scrum723-guard-contra-su-base.test.mjs
+   · pre-745   scrum734-una-sola-carga.test.mjs
+   · post-745  scrum746-barrera-y-punto-de-conexion.test.mjs
+   · post-745  scrum815-disputa-una-sola-vez.test.mjs
+   · post-745  scrum815-referido-una-sola-vez.test.mjs
+   · post-745  scrum816-la-lista-no-miente.test.mjs
+   · post-745  scrum819-el-menu-deja-rastro.test.mjs
+   · post-745  scrum823-la-escalera-mira-el-estado.test.mjs
+   · post-745  scrum841-el-escritor-del-albaran.test.mjs
+   · post-745  scrum843-el-ancla-que-no-caduca.test.mjs
+   · post-745  scrum844c-el-xml-que-se-remite.test.mjs
+   · post-745  scrum856-canje-una-sola-vez.test.mjs
+   · post-745  scrum865-un-solo-minimo-para-la-landing.test.mjs
+   · post-745  scrum867-el-modal-muerto.test.mjs
+   · post-745  scrum878-poblacion-del-guard-29.test.mjs
+   · post-745  scrum884-importador-normaliza-telefono.test.mjs
+   · post-745  scrum887c-caso-c-bloqueado.test.mjs
+   · post-745  scrum888b-descuento-redibuja.test.mjs
+   · post-745  scrum888c-descuentos-en-lineas.test.mjs
+   · post-745  scrum889-anadir-linea-del-parte.test.mjs
+   · post-745  scrum889b-quitar-linea-guardada.test.mjs
+   · post-745  scrum892-firma-vacia.test.mjs
+   · post-745  scrum894-falta-en-otra-pestana.test.mjs
+   · post-745  scrum904-completar-lleva-al-campo.test.mjs

@@ -211,3 +211,43 @@ borrador se guarda en cada paso. Mutantes (quitar B; quitar `renderPreview` de A
 - **Hallazgo sin ticket:** el borrador del editor (`saveDraft`) no guarda ni el dto de línea ni el descuento
   global. Se guarda al tocarlos (ahora sí), pero sin ellos: al recuperar el borrador vuelven vacíos. Ya pasaba
   antes de este PR al tocar otro campo después de un descuento.
+
+## SCRUM-888c (C + punto 1 front + borrador) · las filas y los totales con los descuentos
+
+**Medido contra:** `origin/main` `e437a51f` (rojo), 17-sep-2026.
+**Rama:** `scrum-888c-descuentos-en-lineas` · **Alcance decidido por el orquestador:** C + detalle (opción a) + borrador.
+
+**Qué pasaba** (con una línea de 8 × 24,95 € al 21 % y dto 15 %; en el detalle, las tres líneas de SCRUM-883 C3):
+
+| sitio | antes | la cuenta del editor |
+|---|---|---|
+| fila de la vista previa del editor | 241,52 € | 205,29 € |
+| borrador recargado (F5) | sin dto ni global: 241,52 € | 175,04 € con dto y global 25 € |
+| detalle: filas | 241,52 · 241,88 · 145,20 | 205,29 · 217,69 · 145,20 |
+| detalle: base / IVA bajo total 539,05 € | 539,49 / 89,11 | 462,56 / 76,49 |
+
+**Arreglo:**
+
+- `quoteDescuentos.importeDeLinea`: una sola cuenta por línea. Sin dto es EXACTAMENTE `qty × price × (1 + tax)`
+  (igualdad estricta en `npm test`). La usan la fila del editor, la de la vista previa y la del detalle.
+- Detalle: con descuentos, base e IVA de `totalesConDescuento(líneas, quote.discountGlobalAmount)`. Sin descuentos,
+  la suma de siempre: entre las dos cuentas cabe un céntimo (punto 4) y aquí no se cambia una cifra que hoy cuadra.
+- Borrador: `saveDraft` guarda `dto` por línea y `descuentoGlobal`; `loadDraft` los restaura y abre el campo del global.
+
+**⚠️ DECLARADO — el descuento global en el detalle.** `GET /admin/quotes/:id` NO devuelve `discountGlobalAmount`
+(medido en staging `e437a51f`: la clave no está). Hasta que lo mande el servidor (Sesión 1, junto al punto 3 y la
+página de firma), un presupuesto CON descuento global sigue sin restarlo en el detalle: base e IVA aplican el dto de
+línea y no el global, así que siguen sin cuadrar con el total, como antes. No se deduce restando del total (sería una
+segunda cuenta). Cuando llegue el campo, cuadra sin tocar el front: el guard lo prueba con el campo simulado.
+
+**Rojo y verde:**
+
+- `guard:descuento-redibuja` (ampliado): fila de la vista previa = fila del editor, y al recargar vuelven el dto y el
+  global con el mismo total. Un contexto de navegador por ancho (el borrador de un ancho se restauraba en el otro).
+- `guard:descuentos-en-el-detalle` (nuevo, panel real, `/admin/quotes/1` simulado): positivo sin descuentos idéntico
+  a hoy; con dto, cuadra; con dto y global CON el campo, cuadra; SIN el campo, declarado.
+- Contra `e437a51f`: rojo en los dos (2 de 2 anchos; 3 de 4 casos). Con el arreglo: verdes.
+- Mutantes: fila de la vista previa con cuenta propia, borrador sin dto/global y detalle con `if (false)`, sin sustituir
+  la base o ignorando el global del servidor → rojo en `tests/scrum888c-descuentos-en-lineas.test.mjs`. El `if (false)`
+  al principio solo lo cazaba el guard: el test se reforzó para exigir la puerta y su efecto.
+- Trinquete 522 medido: 21 → 22.

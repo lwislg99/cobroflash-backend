@@ -324,6 +324,9 @@ const HALLAZGOS_DECLARADOS = [
   // test crea y borra, no el de este repositorio — mismo caso que `[show]` de este mismo fichero
   // y que `scrum839d`/`scrum839e`. Lo retira quien borre `scripts/equipo/sesion.mjs` o su banco.
   'tests/scrum899-sesion-lista-blanca.test.mjs [show]',
+  // SCRUM-899 (hito 2) · mismo caso: el banco de la tanda instala las copias con `git show
+  // origin/main:<fichero>` desde su repositorio SINTÉTICO del temporal. No es el `main` de nadie.
+  'tests/scrum899b-arranque-de-la-tanda.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -351,6 +354,9 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-839e · lo mismo: nombra `main` al montar sus repositorios sintéticos (y el remoto desnudo
   // del banco del job) y al pasárselo al CLI dentro de ellos. Ninguno es el `main` de este repositorio.
   'tests/scrum839e-solo-pr-armados.test.mjs',
+  // SCRUM-899 (hito 2) · nombra `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
+  // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
+  'tests/scrum899b-arranque-de-la-tanda.test.mjs',
   // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
   // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
   // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.
@@ -388,6 +394,13 @@ const INDIRECTAS_DECLARADAS = [
   // de SCRUM-753 CONGELA. Es el mismo motivo por el que están arriba `scrum753` y `scrum775`.
   // Lo retira: quien borre la dimensión de rama viva del censo del tablero.
   'tests/scrum804-la-rama-viva.test.mjs',
+  // SCRUM-804f · el guard de «una rama `scrum-<n>` sin slug es de su ticket». Nombra `main` en la
+  // PROSA del defecto (el check obligatorio de `main` cerrado por `scrum-904`) y quita el prefijo
+  // `origin/` a los NOMBRES que lista `for-each-ref`. NO compara contra la referencia móvil: su
+  // control positivo sólo lee NOMBRES de rama para comprobar que el cambio de regla no mueve de
+  // número a ninguna que lleve slug; ningún sha ni alcanzabilidad. Lo retira: quien retire ese
+  // control positivo o vuelva a exigir guion en `numeroDeRama`.
+  'tests/scrum804f-la-rama-sin-slug.test.mjs',
   // SCRUM-833 · el guard de los tres instrumentos de SCRUM-637. Entra aquí por el MISMO motivo y
   // con la misma forma que su hermano de arriba: al anclarlo a `git log --merges` nombra `main`
   // en la prosa que explica por qué esa población es permanente, y en el mensaje del suelo del

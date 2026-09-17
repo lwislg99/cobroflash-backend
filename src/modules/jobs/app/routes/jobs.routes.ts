@@ -60,7 +60,8 @@ import {
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-17
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-17: gate fiscal
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
-import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar, tieneDescuentoGlobalConVariosIva } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../../../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
@@ -1385,6 +1386,10 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // las líneas). Antes venía de `distributeStageAmounts` con las líneas escaladas aparte: el
     // desfase de redondeo acababa sellado en la huella VeriFactu. Ver invoiceLines.service.ts.
     const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
+    // SCRUM-887 · un C no factura (la pieza deja sus líneas a 0). Antes del portón, para decir POR QUÉ.
+    if (tieneDescuentoGlobalConVariosIva(quote)) {
+      return res.status(409).json({ error: ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, message: COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA });
+    }
 
     // SCRUM-814 · el tramo se DERIVA del recuento, para poder recalcularlo DENTRO del cerrojo.
     // Misma forma exacta que `quotesAdmin.routes.ts`: un solo patrón para los tres caminos.

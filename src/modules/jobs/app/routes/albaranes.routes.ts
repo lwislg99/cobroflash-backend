@@ -1324,13 +1324,27 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
 });
 
 /**
- * SCRUM-290 · TODO texto de esta ruta está SIN APROBAR y se pinta con el marcador.
+ * SCRUM-290 · el marcador de los textos de esta ruta que SIGUEN sin aprobar.
+ *
+ * ⚠️ DECÍA «TODO texto de esta ruta está SIN APROBAR» Y YA NO ES CIERTO. SCRUM-895 firmó dos el
+ * 17-sep-2026 (comentario 15699) y los escribió en su sitio: `albaran_no_firmado` y
+ * `albaran_ya_facturado`. Quedan estos cuatro usos, y NO todos por el mismo motivo:
+ *
+ *   · `facturacion_no_disponible` (las dos, ésta y la de `facturar-parcial`) — PARADO por lo que
+ *     el texto NOMBRA, no por cómo está escrito: el justificante está retirado (SCRUM-825 /
+ *     SCRUM-612) y lo que se emite en su lugar no tiene nombre todavía. El motivo largo está
+ *     pegado a su `return`.
+ *   · el mensaje de la respuesta de conversión y el de la sellada/adicional — siguen bajo la
+ *     pregunta 25 del asesor.
  *
  * Regla 30, y aquí con una capa más: estos mensajes le dicen a un profesional **qué puede y qué no
  * puede cobrarle a su cliente**. Un texto legal mal escrito no es feo, es peligroso. La procedencia
  * de la aprobación que falta está en `docs/legal/PREGUNTAS_ASESOR.md` §G (preguntas 25-28); la 25
- * es la bloqueante. El marcador es feo A PROPÓSITO: un texto provisional que se lee bien se queda
- * para siempre, y un relleno que se pinta es peor que un hueco porque parece intencionado.
+ * es la bloqueante — y el fundador aceptó en el 15699 que **NO alcanza** a los dos que se firmaron,
+ * porque dicen el ESTADO DEL DOCUMENTO, no qué se le puede cobrar al cliente.
+ *
+ * El marcador es feo A PROPÓSITO: un texto provisional que se lee bien se queda para siempre, y un
+ * relleno que se pinta es peor que un hueco porque parece intencionado.
  */
 const MICROCOPY_PENDIENTE_290 = '[PENDIENTE microcopy oficial]';
 
@@ -1373,10 +1387,17 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     // Solo FIRMADO: un parte sin firmar no prueba lo servido, y facturar lo no probado es
     // exactamente lo que esta pantalla existe para evitar.
     if (albaran.estado !== 'firmado') {
-      return res.status(409).json({ error: 'albaran_no_firmado', message: MICROCOPY_PENDIENTE_290 });
+      // SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699). LITERAL.
+      // La segunda frase es la que hace el trabajo: sin ella, «no está firmado» se lee como que el
+      // sistema perdió la firma, y el profesional se pone a buscar una avería que no existe.
+      return res.status(409).json({
+        error: 'albaran_no_firmado',
+        message: 'Este parte todavía no está firmado. Solo se factura lo que el cliente ha firmado.',
+      });
     }
     if (albaran.invoiceId != null) {
-      return res.status(409).json({ error: 'albaran_ya_facturado', message: MICROCOPY_PENDIENTE_290 });
+      // SCRUM-895 · APROBADO por el fundador el 17-sep-2026 (comentario 15699). LITERAL.
+      return res.status(409).json({ error: 'albaran_ya_facturado', message: 'Este parte ya está facturado entero.' });
     }
 
     const job = await prisma.job.findFirst({
@@ -1393,6 +1414,23 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     // Documento FISCAL puro, igual que la parcial y la recapitulativa: en modo justificante no
     // existe. Mejor no ofrecerla que emitir un J- que después no vale como factura (reglas 24/26).
     if (getEmissionMode(merchant) === 'receipt') {
+      // 🔴 SCRUM-895 · ESTE MARCADOR SE QUEDA A PROPÓSITO, Y NO ES UN OLVIDO.
+      //
+      // Se propuso «Este documento es una factura, y en tu modo actual emites justificantes de
+      // cobro.» y el fundador lo PARÓ el 17-sep-2026 (comentario 15699) — no por la redacción,
+      // sino por lo que nombra: **el justificante está RETIRADO** (SCRUM-825 y el expediente de
+      // enmienda SCRUM-612, 8-sep-2026: «solo habrá presupuestos, albaranes, partes y facturas.
+      // No es un renombrado: es retirar un tipo de documento»).
+      //
+      // Aprobarlo habría metido en el producto, por escrito y de cara al profesional, el nombre de
+      // un documento que ya no existe — y en un mensaje de error, que es lo que la gente lee con
+      // atención. Lo que falta no es redactar mejor: es un DATO que hoy no existe. Con la
+      // facturación ES apagada ese merchant emite algo, y ese algo no tiene nombre nuevo todavía.
+      //
+      // 🔒 NO SE «ARREGLA DE PASO». El día que la retirada del justificante tenga sustituto, la
+      // frase se escribe sola y este marcador cae con ella. Hasta entonces vale más un marcador
+      // feo que no miente que una frase correcta que nombra algo retirado.
+      // Lo vigila `tests/scrum895b-literales-firmados.test.mjs`, que exige que siga aquí.
       return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_290 });
     }
 

@@ -194,8 +194,14 @@ test('SCRUM-887 · la línea con dto sale con el precio EFECTIVO y SIN la clave 
   assert.equal(conDto.price, 24.95, '🔴 se ha MUTADO `Quote.lines`');
 });
 
-test('SCRUM-887 · ⛔ NEGATIVO: con descuento GLOBAL e IVA MEZCLADO (C) no cambia NADA — acotación viva', () => {
+test('SCRUM-887 · ⛔ NEGATIVO: con descuento GLOBAL e IVA MEZCLADO (C) no se REPARTE: no se factura', () => {
   // C3 del SCRUM-883 tal cual: IVA 21 % y 10 % + 25 € global = caso C.
+  //
+  // 🔴 17-sep-2026 (PR 3, SCRUM-887 comentario 15697) · ESTE TEST AFIRMABA QUE C COBRABA 628,60, y
+  // lo afirmaba a propósito: mientras C no tuviera decisión, «no cambia de cálculo» protegía de
+  // improvisar un reparto. Con la decisión tomada (C se BLOQUEA, no se reparte), congelar 628,60
+  // era congelar el cobro de más. Lo que se mantiene es lo que importaba: las líneas NO se reparten
+  // ni se tocan precio a precio con el global; se ponen a 0 y la factura no sale.
   const lines = [
     { concept: 'Punto de luz', qty: 8, price: 24.95, dto: 15, tax: 0.21 },
     { concept: 'Base de enchufe schuko', qty: 11, price: 19.99, dto: 10, tax: 0.10 },
@@ -204,13 +210,13 @@ test('SCRUM-887 · ⛔ NEGATIVO: con descuento GLOBAL e IVA MEZCLADO (C) no camb
   // Número, texto y un Decimal de Prisma (se lee por `valueOf`).
   for (const global of [25, '25.00', { toString: () => '25.00', valueOf: () => 25 }]) {
     const salida = lineasParaFacturar({ lines, discountGlobalAmount: global });
-    assert.equal(salida, lines, `🔴 con global ${String(global)} se han tocado las líneas`);
+    assert.deepEqual(salida.map((l) => l.price), [0, 0, 0], `🔴 con global ${String(global)} un C factura precios`);
+    assert.equal(salida.some((l) => l.price < 0), false, '🔴 a un C se le ha repartido el global en líneas negativas');
   }
-  // Y el cobro de ese caso C sigue siendo EL DE ANTES (medido en staging): no se arregla a medias.
   const quote = { lines, discountGlobalAmount: 25, total: calcTotal(lines, 25).toFixed(2) };
   assert.equal(quote.total, '539.05', '🔴 CIEGO: el firmado de C3 no es el medido');
   const [f] = facturasDe(quote, PLANES.entero);
-  assert.equal(f.importe, 628.6, '🔴 el caso C ha cambiado de cálculo sin decisión de la asesoría');
+  assert.equal(f.importe, 0, `🔴 el caso C sigue cobrando ${f.importe} € (firmado 539,05)`);
 });
 
 test('SCRUM-887 · 🔴 un presupuesto cargado SIN `discountGlobalAmount` no se factura a ciegas', () => {

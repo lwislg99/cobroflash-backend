@@ -3040,6 +3040,7 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    caja gris con borde de sistema. Es literalmente lo que se veía en producción. */
 .parte-anadir,
 [data-parte-firmar],
+[data-parte-firmar-tecnico],
 [data-dictado-ordenar],
 [data-propuesta-confirmar] {
   display: inline-flex;
@@ -3061,11 +3062,13 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .parte-anadir:active,
 [data-parte-firmar]:active,
+[data-parte-firmar-tecnico]:active,
 [data-dictado-ordenar]:active,
 [data-propuesta-confirmar]:active { transform: scale(.97); }
 
 .parte-anadir:disabled,
 [data-parte-firmar]:disabled,
+[data-parte-firmar-tecnico]:disabled,
 [data-dictado-ordenar]:disabled,
 [data-propuesta-confirmar]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
@@ -3141,6 +3144,7 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    ──────────────────────────────────────────────────────────── */
 .parte-anadir,
 [data-parte-firmar],
+[data-parte-firmar-tecnico],
 [data-dictado-ordenar],
 [data-propuesta-confirmar] { min-height: 44px; }
 

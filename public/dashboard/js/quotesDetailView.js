@@ -516,6 +516,8 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const lines = Array.isArray(quote.lines) ? quote.lines : [];
   let totalBase = 0;
   let totalIva = 0;
+  // SCRUM-888c · las líneas que cobran (sin cabeceras de apartado), para los totales de abajo.
+  const lineasParaTotales = [];
 
   // SCRUM-655 · La numeración se DERIVA de la posición, de una vez y para todas las líneas.
   // No se teclea nunca: si se tecleara, dos líneas podrían acabar con el mismo 1.02 y «quítame la
@@ -543,11 +545,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const qty = Number(l.qty) || 0;
     const price = Number(l.price) || 0;
     const tax = Number(l.tax ?? 0);
-    const base = qty * price;
-    const ivaAmount = base * tax;
-    const total = base + ivaAmount;
-    totalBase += base;
-    totalIva += ivaAmount;
+    // SCRUM-888c (punto 1) · la fila con la MISMA cuenta que la fila del editor (`importeDeLinea`):
+    // antes era `qty × price × (1 + tax)` sin el dto de la línea, y un 15 % no se veía. Sin dto da
+    // exactamente lo de antes.
+    const importe = window.quoteDescuentos.importeDeLinea(qty, price, l.dto, tax);
+    const total = importe.total;
+    totalBase += importe.base;
+    totalIva += importe.cuota;
+    lineasParaTotales.push(l);
 
     const tr = document.createElement('tr');
     tr.innerHTML =
@@ -574,6 +579,24 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     celda.appendChild(celdaConcepto(document, l.concept || ''));
     tbody.appendChild(tr);
   });
+
+  // SCRUM-888c (punto 1) · CON DESCUENTOS, base e IVA salen de `totalesConDescuento`, la cuenta del
+  // editor y la que produce el total guardado: antes eran la suma a precio de tarifa y no cuadraban
+  // con el total (SCRUM-883 C3: base 539,49 € bajo un total de 539,05 €).
+  //
+  // SIN descuentos se queda la suma de siempre, y es a propósito: entre las dos cuentas cabe un
+  // céntimo de redondeo (el punto 4 de SCRUM-888), y aquí no se cambia una cifra que hoy cuadra.
+  //
+  // ⚠️ EL DESCUENTO GLOBAL se lee de `quote.discountGlobalAmount`. Hoy `GET /admin/quotes/:id` NO lo
+  // devuelve (medido en staging `e437a51f`, 17-sep-2026): hasta que lo mande el servidor, un
+  // presupuesto con descuento global sigue sin restarlo aquí, igual que antes. NO se deduce del total:
+  // eso sería una segunda cuenta. Cuando llegue el campo, esto cuadra sin tocar nada.
+  const descuentoGlobal = quote.discountGlobalAmount ?? null;
+  if (window.quoteDescuentos.hayDescuento(lineasParaTotales, descuentoGlobal)) {
+    const T = window.quoteDescuentos.totalesConDescuento(lineasParaTotales, descuentoGlobal);
+    totalBase = T.baseImponibleCents / 100;
+    totalIva = T.cuotaCents / 100;
+  }
 
   // Totales (base/IVA secundarios, total destacado)
   const totalsWrap = document.createElement('div');
