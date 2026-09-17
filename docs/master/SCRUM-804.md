@@ -1392,3 +1392,37 @@ y el sujeto era otro; aquí el sujeto está y el número no aparece por ningún 
 
 Jira · `src/` · `prisma/schema.prisma` · ningún guard · ninguna rama ajena · staging.
 El único fichero escrito es éste.
+
+---
+
+## SCRUM-804f · Una rama `scrum-<n>` sin slug cerró el check obligatorio de `main`
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T13:52:18Z
+**Rama:** `scrum-804f-la-rama-sin-slug` · **Carril:** Sesión 3 (instrumentos) · encargo urgente del orquestador (17-sep 15:45 CEST). Los sufijos 804b–804e ya estaban usados.
+
+### PASO 0 · el rojo, reproducido en local contra los refs de hoy
+El CI de `main` (run 35226536503) cayó en «SCRUM-804 · CONTROL POSITIVO DERIVADO: la agrupación no pierde ni inventa ramas». En local, sobre `2be8fe16` con la rama remota `scrum-904` presente (PR #1423), falla exactamente ese test y los otros 8 pasan: `scrum-904 → SCRUM-904`, perdida.
+
+**Causa:** dos reglas para la misma pregunta.
+- El test de 804 da la rama por canónica: `/^scrum-(\d+)[a-z]?(?:-|$)/`.
+- `numeroDeRama` (`scripts/_numero-de-rama.mjs`), que usa `agruparRamas`, exigía guion: `/^scrum-0*(\d+)[a-z]?-/`.
+
+El guion existía (SCRUM-738) para que `scrum-72` no casara con el principio de `scrum-727-x`. Eso lo garantiza igual el fin de cadena, porque `\d+` es voraz.
+
+**Impacto medido antes de cambiar:** sobre los **831** nombres de rama (remotos y locales) cambia de número **exactamente 1**, `scrum-904` (`null` → 904).
+
+### Rojo, arreglo y tests que cambian
+- **Rojo** `e25859347a76334200c304f4f5e0427252fee83c`: `tests/scrum804f-la-rama-sin-slug.test.mjs`. (1) `agruparRamas` con una población fabricada (`scrum-904`, `scrum-905b`), así que no depende de que la rama de Javier siga viva. (2) La identidad: 72 ≠ 727, `scrum-72bb` y `scrum-72.1` sin número, anclada, y un revert sigue sin ticket. (3) POSITIVO sobre los refs de hoy: sólo cambian de número las ramas sin slug.
+- **Arreglo** `519a645fc00847c259773c74a67fd1a66b3f7dee`: `numeroDeRama` acepta `(?:-|$)`.
+- **`scrum738`:** exigía `null` para `scrum-72` a secas. Era un efecto de la regla, no su motivo. Ahora exige 72, y además `scrum-727` → 727, para que la identidad siga comprobada también sin slug.
+- **`scrum723`:** el nuevo guard nombra `main` en su prosa y quita `origin/` a los nombres, así que queda **declarado con su motivo**. No compara contra la referencia móvil: sólo lee nombres.
+
+### Mutantes (con todo comiteado), los 3 muertos
+| Mutante | Cae |
+|---|---|
+| M1 la regla vieja (sólo guion) | 804 ① + 804f (1) y (2) |
+| M2 `agruparRamas` **pierde** las ramas `scrum-9xx` | 804 ① + 804f (1) |
+| M3 `agruparRamas` **inventa** (cada rama también en n+1) | 804 ② + 804f (1) |
+
+### Verificación
+Los 9 ficheros que consumen la regla (reparto, alcanzabilidad, tablero, rastro, 804, 804f, 738, 753, 387), más 723: en verde. `npm test` completo **no** se ha corrido en local, para no quitarle tiempo a un `main` bloqueado y porque la sonda de SCRUM-858 seguía corriendo; lo corre el CI del PR. La comprobación del PR va en un paso aparte.
