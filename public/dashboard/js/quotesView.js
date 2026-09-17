@@ -1952,7 +1952,13 @@ blockDelivery.appendChild(descWrapper);
         // SCRUM-500: sin esto, recuperar el borrador devolvía la línea con su IVA y sin la marca
         // — o sea, un suplido convertido en línea normal por el simple hecho de recargar.
         suplido: !!(l.suplidoCheck && l.suplidoCheck.checked),
+        // SCRUM-888c: el dto de la línea sobrevive a un F5. Sin esto el borrador se guardaba al
+        // teclearlo (SCRUM-888b) pero SIN él: al recargar, la línea volvía a precio de tarifa y el
+        // total subía solo. Cadena tal cual, como el coste: vacío es «sin descuento».
+        dto: (l.dtoInput && l.dtoInput.value) || "",
       })),
+      // SCRUM-888c: y el descuento global, por lo mismo.
+      descuentoGlobal: descuentoGlobalInput.value || "",
     };
     // No guardar borradores vacíos
     const hasContent = snapshot.customerId || snapshot.lines.some((l) => l.concept.trim());
@@ -2004,6 +2010,15 @@ blockDelivery.appendChild(descWrapper);
       // un dato que nadie va a corregir y que sigue viajando». Quitar la interfaz y dejar el
       // dato es exactamente lo que esa regla prohíbe, así que el margen se INCORPORA al precio.
       d.lines.forEach((l) => addLine(drenarMargen(l)));
+      // SCRUM-888c · el dto de cada línea vuelve por `addLine` (lee `initial.dto`). El global se
+      // pone aquí y se ABRE su campo, igual que al pulsar «+ Añadir descuento»: un importe escrito
+      // detrás de un botón cerrado sería un descuento que nadie ve. Un borrador VIEJO no lo trae
+      // y no se inventa nada. Los totales y la vista previa los recalcula quien llama a esto.
+      if (d.descuentoGlobal != null && String(d.descuentoGlobal).trim() !== "") {
+        descuentoGlobalInput.value = d.descuentoGlobal;
+        dtoGlobalCampo.hidden = false;
+        dtoGlobalBtn.hidden = true;
+      }
       if (d.paymentTerms) paymentSelect.value = d.paymentTerms;
       // SCRUM-27: restaurar el editor de tramos si el borrador era "Personalizado".
       if (d.paymentTerms === "CUSTOM" && Array.isArray(d.customStages)) {
@@ -2070,9 +2085,11 @@ blockDelivery.appendChild(descWrapper);
 
       // SCRUM-594 (DOC-04) · el descuento de la línea opera SÓLO sobre el precio. La regla vive
       // en `quoteDescuentos.js`, que es una pieza PURA y la suite EJECUTA — aquí no se repite.
-      const precioTrasDto = window.quoteDescuentos.precioEfectivo(safePrice, line.dtoInput && line.dtoInput.value);
-      const lineBase = safeQty * precioTrasDto;
-      const lineVat = lineBase * (safeVat / 100);
+      // SCRUM-888c · y el importe de la fila sale de `importeDeLinea`, el MISMO que usan la fila de
+      // la vista previa y la del detalle del presupuesto: tres filas, una sola cuenta.
+      const importe = window.quoteDescuentos.importeDeLinea(safeQty, safePrice, line.dtoInput && line.dtoInput.value, safeVat / 100);
+      const lineBase = importe.base;
+      const lineVat = importe.cuota;
 
       // SCRUM-139 F2: una línea EN BLANCO del cuadernillo se ve en blanco.
       // Sin esto, las 3 líneas de salida muestran "0,00 €" cada una y el editor parece tener
@@ -2256,10 +2273,13 @@ blockDelivery.appendChild(descWrapper);
         const finalPrice = safePrice;
 
 
-        const base = safeQty * finalPrice;
-
-        const vat = base * (safeVat / 100);
-        const totalLine = base + vat;
+        // SCRUM-888c (C) · la fila de la vista previa hacía su propia cuenta SIN el dto de la línea
+        // (`cant × precio × (1 + IVA)`): 241,52 € con un 15 % puesto, mientras la fila del editor
+        // decía 205,29 €. Ahora es la misma cuenta que la fila del editor. El precio de la columna
+        // «Precio» sigue siendo el escrito, igual que en el editor.
+        const totalLine = window.quoteDescuentos.importeDeLinea(
+          safeQty, finalPrice, line.dtoInput && line.dtoInput.value, safeVat / 100
+        ).total;
 
         return {
           concept,
@@ -4484,6 +4504,17 @@ payloadLines.push(lineaParaPayload({
       return;
     }
 
+    // SCRUM-887 · A1 · un descuento global con varios tipos de IVA no se guarda (comentario 15697):
+    // la factura no sabe repartirlo sin la asesoría. El servidor lo rechaza igual con el mismo texto.
+    const descuentoGlobalElegido = (function () {
+      const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
+      return Number.isFinite(v) && v > 0 ? v : null;
+    }());
+    if (window.quoteDescuentos.descuentoGlobalConVariosIva(payloadLines, descuentoGlobalElegido)) {
+      setAlert("error", window.quoteDescuentos.TEXTO_DESCUENTO_GLOBAL_VARIOS_IVA);
+      return;
+    }
+
     try {
       submitBtn.disabled = true;
       submitBtn.textContent = "Generando…";
@@ -4507,10 +4538,7 @@ payloadLines.push(lineaParaPayload({
         // SCRUM-594 (DOC-04) · el descuento global, en euros. Vacío ⇒ `null` y no `0`: son cosas
         // distintas y la columna las distingue. `calcTotal` lo aplica en el servidor, que es
         // quien produce el total que se guarda — la pantalla sólo lo previsualiza.
-        discountGlobalAmount: (function () {
-          const v = parseFloat(String(descuentoGlobalInput.value || "").replace(",", "."));
-          return Number.isFinite(v) && v > 0 ? v : null;
-        }()),
+        discountGlobalAmount: descuentoGlobalElegido,
         // SCRUM-602 (DOC-12) · la dirección de la obra. El modo viaja SIEMPRE (la columna dice
         // lo que el formulario dijo; `null` queda para los presupuestos anteriores al control) y
         // el texto SÓLO con «Personalizada», para no dejar una dirección fantasma que el
