@@ -56,7 +56,7 @@ const RESUMEN = /(^|\n)\s*(ℹ|#) tests \d+/;
 //     partiría el ancla igual, y aquí no hay nada que ganar siendo más estrecho.
 //   · Lo que NO cambia: el umbral ni lo que se exige. Un recuento a medias («tests» sin número)
 //     sigue sin valer, y una tanda que de verdad no lo emite sigue saliendo con 4.
-const CSI = /\[[0-9;?]*[ -\/]*[@-~]/g;
+const CSI = /\u001B\[[0-9;?]*[ -\/]*[@-~]/g;
 const sinColor = (s) => s.replace(CSI, '');
 
 // `node` se resuelve al MISMO binario que corre esto: sin shell no hay PATH de npm que valga.
