@@ -9,8 +9,12 @@
 //
 // Los dos caminos que imprimen, medidos en el censo del ticket:
 //   ① `generateInvoicePdf` → cabecera del desglose de IVA, sólo con MÁS DE UN tipo impositivo.
+//      **Ése ya estaba DECLARADO y vigilado** en `EN_EL_PAPEL` (SCRUM-667), así que aquí NO se
+//      toca: se apaga escribiendo el texto, no haciendo fallar el documento.
 //   ② `generateAlbaranPdf` → «En calidad de», cuando el id guardado no es uno de los seis válidos.
-//      Este segundo venía clasificado en el ticket como respuesta de API. No lo es: se imprime.
+//      Este segundo venía clasificado en el ticket como respuesta de API. No lo es: se imprime, y
+//      **no lo cubría nadie** — el banco de SCRUM-667 genera su albarán con `firmadoPorCalidad:
+//      null`, así que esa rama no se ejercita nunca. Ahí es donde este ticket añade algo.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -66,31 +70,34 @@ const facturaBase = (extra) => ({
   ...extra,
 });
 
-test('SCRUM-903 · 🔴 factura con DOS tipos de IVA: el PDF no se genera, y dice por qué', async () => {
-  // Es el camino exacto del ticket: `tiposDeIva.length > 1` entra en el bloque del desglose, y ahí
-  // el rótulo de la cabecera es el marcador. Antes esto producía un PDF con
-  // `[PENDIENTE microcopy oficial]` impreso en una factura.
+test('SCRUM-903 · ⛔ la factura SIGUE imprimiendo su marcador, y eso está DECLARADO', async () => {
+  // 🔴 ESTE CASO DICE QUE NO: aquí NO se pone el filtro, y el motivo hay que dejarlo escrito o
+  // alguien lo «arregla» otra vez dentro de un mes.
+  //
+  // El marcador del desglose está DECLARADO en `EN_EL_PAPEL` (tests/scrum667-marcador-visible),
+  // un registro que cuenta los marcadores que llegan al papel del cliente y exige que salgan
+  // EXACTAMENTE los declarados. Al hacerlo fallar, 17 casos se pusieron en rojo: se estaba
+  // cambiando por la puerta de atrás una política decidida en otro ticket, con su registro y su
+  // control negativo. Lo que apaga este marcador es ESCRIBIR EL TEXTO (lo firma el fundador) y
+  // retirarlo de `EN_EL_PAPEL` en el mismo commit.
   const { generateInvoicePdf } = await import('../dist/lib/pdf.js');
-  await assert.rejects(
-    () => generateInvoicePdf(facturaBase({
-      total: '131.00',
-      lines: [
-        { concept: 'Mano de obra', qty: 1, price: 100, tax: 21 },
-        { concept: 'Material reducido', qty: 1, price: 100, tax: 10 },
-      ],
-    })),
-    /microcopy_sin_firmar/,
-    '🔴 la factura se ha generado CON el marcador impreso dentro. Ese PDF ya no se recupera.',
-  );
+  const { outPath } = await generateInvoicePdf(facturaBase({
+    total: '131.00',
+    lines: [
+      { description: 'Mano de obra', qty: 1, price: 100, tax: 0.21 },
+      { description: 'Material reducido', qty: 1, price: 100, tax: 0.10 },
+    ],
+  }));
+  assert.ok(fs.existsSync(outPath), '🔴 la factura de dos tipos ya no se genera: eso rompe SCRUM-667');
+  fs.rmSync(outPath, { force: true });
 });
 
 test('SCRUM-903 · ✅ factura con UN solo tipo de IVA: se genera como siempre', async () => {
-  // La otra mitad, y la que impide que el arreglo sea «no se generan facturas». El camino de un
-  // solo tipo ni siquiera toca el rótulo del desglose.
+  // El camino de un solo tipo ni siquiera toca el rótulo del desglose.
   const { generateInvoicePdf } = await import('../dist/lib/pdf.js');
   const { outPath } = await generateInvoicePdf(facturaBase({
     total: '121.00',
-    lines: [{ concept: 'Mano de obra', qty: 1, price: 100, tax: 21 }],
+    lines: [{ description: 'Mano de obra', qty: 1, price: 100, tax: 0.21 }],
   }));
   assert.ok(fs.existsSync(outPath), '🔴 se ha roto la generación normal de facturas');
   assert.ok(fs.statSync(outPath).size > 1000, '🔴 el PDF sale vacío');
@@ -205,15 +212,19 @@ test('SCRUM-903 · ⛔ TODO generador de PDF filtra sus marcadores', () => {
     '🔴 ha aparecido (o desaparecido) un generador de PDF. Si es nuevo, NADIE comprueba que no '
     + 'imprima un marcador: revísalo y añádelo aquí.');
 
-  for (const g of generadores) {
-    const src = fs.readFileSync(path.join(RAIZ, g), 'utf8');
-    assert.ok(/textoParaDocumento/.test(src),
-      `🔴 ${g} no filtra: un marcador suyo llegaría al papel`);
-    // Y el filtro tiene que envolver al marcador, no estar puesto en cualquier otro sitio.
-    const sinFiltrar = src.split('\n').filter((l) =>
-      /doc\.text\(/.test(l) && /MARCADOR_MICROCOPY|etiquetaCalidad|\[PENDIENTE/.test(l)
-      && !/textoParaDocumento/.test(l));
-    assert.deepEqual(sinFiltrar, [],
-      `🔴 ${g} imprime un marcador sin pasar por el filtro`);
-  }
+  // El del ALBARÁN filtra. El de la FACTURA no, y está declarado en `EN_EL_PAPEL`: son las dos
+  // políticas que conviven, y cada una tiene que seguir siendo la suya.
+  const albaran = fs.readFileSync(path.join(RAIZ, 'src/modules/jobs/infra/albaranPdf.service.ts'), 'utf8');
+  assert.ok(/textoParaDocumento/.test(albaran),
+    '🔴 el generador del albarán no filtra: «En calidad de» volvería a poder imprimir un marcador');
+  assert.ok(!/doc\.text\(\s*textoParaDocumento\(String\(etiquetaCalidad/.test(albaran),
+    '🔴 la etiqueta se ha vuelto a resolver DENTRO del `try` del bloque de firma: su `catch` vacío '
+    + 'se tragaría el error y saldría un albarán firmado SIN su firma');
+
+  // Y el registro de SCRUM-667 sigue siendo quien decide lo que SÍ puede llegar al papel: si
+  // alguien lo vacía o lo amplía, que sea mirándolo, no por efecto colateral de otro ticket.
+  const guard667 = fs.readFileSync(path.join(RAIZ, 'tests/scrum667-marcador-visible.test.mjs'), 'utf8');
+  assert.ok(/MARCADOR_MICROCOPY_DESGLOSE/.test(guard667),
+    '🔴 el marcador de la factura ha dejado de estar DECLARADO en `EN_EL_PAPEL`. Si se ha escrito '
+    + 'su texto, perfecto — retíralo de allí en ese commit. Si no, nadie lo vigila ya.');
 });
