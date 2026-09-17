@@ -71,6 +71,11 @@ Un fallo mío en el rojo 5, corregido en `b1cb56fa`: tomé «9 botones» de la f
 | M9 contenedor fuera del documento | tests 4 y 5 |
 | M10 la vista anterior se queda | test 4 |
 
+## Suite completa y guards de navegador
+
+- `npm test` sobre el árbol mezclado con main (`38248e41`, main = `7c1f259e`): 7.241 tests · 7.130 verdes · 110 saltados · 1 rojo, SCRUM-854 porque faltaba este expediente. Con el expediente, SCRUM-854 da 6/6.
+- Los 6 `guard:*` de navegador que usan el banco, sobre main (`7c1f259e`) y sobre la rama: **exit 0 en los 12**. Sin las líneas de tiempos, solo cambia `objetivo-tactil`: las **mismas 4 excepciones ya declaradas** de la ficha 360 («✎ Editar», «🔗 Portal», «+ Nuevo presupuesto», «Ver →»), que se mueven entre 0,1 y 0,5 px dentro de sus rangos. Es lo esperable desde que `_pagina-panel.mjs` serializa un árbol anidado y no plano: ninguna excepción nueva y ninguna retirada.
+
 ## Lo que el parser NO hace (declarado en el propio banco)
 
 Cierres implícitos (`<p>`, `<li>` o `<td>` sin cerrar), el `<tbody>` que inserta el navegador, y texto agregado: el texto de un elemento sigue siendo el que va justo detrás de su apertura.
