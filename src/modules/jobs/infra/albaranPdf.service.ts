@@ -18,6 +18,7 @@ import { formatImporteEs } from '../../../core/utils/utils'; // SCRUM-636: el si
 import { TITULO_OBSERVACIONES } from '../../invoicing/infra/pdf/pdf.service'; // SCRUM-593: un solo rotulo
 import { partirConceptoYDescripcion } from '../../invoicing/infra/pdf/conceptoLinea'; // SCRUM-603 (DOC-13)
 import { documentoEnsenaPrecios } from '../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
+import { textoParaDocumento } from '../../../core/documentos/sinMarcadorPendiente'; // SCRUM-903
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -336,6 +337,19 @@ export async function generateAlbaranPdf(params: {
   }
 
   // ── Bloque de firma (solo si firmado) — patrón del PDF del presupuesto ──
+  //
+  // 🔴 SCRUM-903 · LA ETIQUETA SE RESUELVE **FUERA** DEL `try`, Y NO ES UN DETALLE DE ESTILO.
+  //
+  // El `try` de abajo termina en un `catch` VACÍO —está para que un PNG de firma corrupto no
+  // tumbe el documento—, y se traga cualquier cosa que pase dentro. Si la comprobación del
+  // marcador viviera ahí, el resultado de encontrarlo no sería «el PDF no se genera»: sería un
+  // albarán **sin bloque de firma entero** —sin trazo, sin nombre, sin fecha— y sin que nadie se
+  // entere. Un fallo mudo cambiado por otro fallo mudo peor, que es justo lo que este ticket
+  // viene a quitar. Aquí arriba, el error sube.
+  const etiquetaDeCalidad = params.firmadoPorCalidad
+    ? textoParaDocumento(String(etiquetaCalidad(params.firmadoPorCalidad)), 'albarán · en calidad de')
+    : null;
+
   if (params.signatureData) {
     try {
       const base64 = params.signatureData.replace(/^data:image\/\w+;base64,/, '');
@@ -364,12 +378,24 @@ export async function generateAlbaranPdf(params: {
         // reescribir un documento firmado). Lo IMPRESO es su etiqueta, que sale de la fuente
         // única. En la ranura libre la etiqueta ES el texto que escribió el profesional.
         //
-        // 🔴 GATE: mientras las seis etiquetas sigan sin aprobar, esto imprime
-        // `[PENDIENTE microcopy oficial]`. Es deliberado y es el forzador: NO se puede migrar el
-        // esquema —ni firmar nada en v:2— antes de que el fundador apruebe los seis textos, o un
-        // albarán firmado saldría con el marcador impreso. Ver la cabecera de `albaranFirmante.ts`.
+        // ⚠️ SCRUM-903 · ESTE COMENTARIO DECÍA QUE AQUÍ SE IMPRIME `[PENDIENTE microcopy oficial]`
+        // «mientras las seis etiquetas sigan sin aprobar». **Ya no es verdad y se corrige**: las
+        // seis están escritas y medidas el 17-sep-2026 («El propio cliente», «En nombre del
+        // cliente», «Un familiar o conviviente», «Encargado o personal de la obra», «Portero o
+        // conserje», «Otro»). Un comentario que miente sobre el estado es peor que ninguno: el
+        // siguiente que pase deja de creerse los que sí aciertan.
+        //
+        // 🔴 LO QUE SIGUE EN PIE es el camino por el que el marcador SÍ llega al papel:
+        // `etiquetaCalidad` lo devuelve para cualquier id que no sea uno de los seis, y eso no es
+        // teórico —basta con retirar o renombrar un id para que todos los albaranes firmados con
+        // él queden huérfanos—. Hoy las dos rutas de firma validan contra el set, así que un dato
+        // NUEVO no puede entrar mal; los viejos y los que entren por otra vía, sí.
+        //
+        // Por eso pasa por `textoParaDocumento`: si alguna vez vuelve el marcador, el PDF **no se
+        // genera**. El albarán se guarda en disco (`ensureAlbaranPdf`), o sea que lo que se
+        // imprima una vez se queda impreso y se va con el cliente.
         doc.fontSize(9).font('Helvetica-Bold').fillColor(INK).text(ALBARAN_ROTULOS.pdfEnCalidadDe, { continued: true })
-          .font('Helvetica').fillColor(BODY).text(String(etiquetaCalidad(params.firmadoPorCalidad)));
+          .font('Helvetica').fillColor(BODY).text(String(etiquetaDeCalidad));
       }
       doc.fontSize(8).font('Helvetica').fillColor(MUTED).text(`Firmado el ${signDate}`);
       doc.fillColor('#000');

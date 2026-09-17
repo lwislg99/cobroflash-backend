@@ -30,6 +30,24 @@
 //
 // > Un banco infiel no mide de menos: mide OTRA COSA, y su rojo se lee igual que un hallazgo.
 //
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ⚠️ LÍMITES CONOCIDOS · lo que este banco NO hace como el navegador, y lo SABE
+//
+// Decisión del orquestador (17-sep-2026, al cerrar SCRUM-901): se declaran aquí y **no llevan
+// ticket mientras ningún test mida mal por su causa**. Si aparece uno, se abre ticket con ESA víctima
+// y se arregla con su rojo: no antes, y no «por si acaso».
+//
+//   1. SIN IndexedDB por defecto. `cargarDashboard` no lo inyecta, así que la Inicio pinta «No hemos
+//      podido comprobar si te queda algo por subir» (+1 nodo frente a Edge, SCRUM-901). Inyectarlo
+//      cambiaría lo que reciben TODAS las vistas medidas a cambio de un solo nodo explicado. Quien lo
+//      necesite lo pide: `_banco-almacen-local.mjs` ya lo monta con `fake-indexeddb`.
+//   2. SIN cierres implícitos. `<p>`, `<li>`, `<td>` u `<option>` sin su `</…>` NO se cierran al abrir
+//      el siguiente: lo que venga detrás queda DENTRO. El navegador sí los cierra.
+//   3. SIN el `<tbody>` que el navegador inserta cuando un `<tr>` va directo en `<table>`. Aquí el
+//      `<tr>` es hijo de la tabla; en Edge, nieto.
+//   4. `textContent` NO se agrega. El texto de un elemento es el que va justo detrás de su etiqueta de
+//      apertura, no la suma de sus descendientes: `<span>a <b>b</b></span>` da «a» y no «a b».
+//
 // Sin dependencias nuevas (regla 36): `node:vm` y un DOM de mentira, como el de SCRUM-296.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -72,6 +90,11 @@ const ATRIBUTO = /(?:^|\s)([A-Za-z_:][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))
 // FUERA A PROPÓSITO: `value` y `checked`, porque en el navegador el campo NO refleja el
 // atributo después de escribir o de marcar —ahí devolver `false` es lo FIEL, no un hueco—; e
 // `id` y `class`, que el matcher ya resuelve por su campo unas líneas más abajo.
+// SCRUM-901 · para el parser que anida: los elementos que no tienen cierre (no abren nada) y los
+// que guardan TEXTO dentro aunque lleve `<`.
+const VACIOS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+const CRUDOS = new Set(['script', 'style', 'textarea']);
+
 const REFLEJADOS = new Map([
   ['type', ''], ['name', ''], ['href', ''], ['src', ''],
   ['title', ''], ['placeholder', ''], ['download', ''], ['disabled', false],
@@ -411,7 +434,18 @@ export function nodo(tag, reg) {
       },
     },
     getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0 }),
-    set textContent(v) { n._texto = String(v); n.hijos = []; },
+    // 🔴 SCRUM-897 · LO QUE SE QUITA SALE DEL DOCUMENTO, como en `removeChild` (SCRUM-444): pierde
+    // su padre y los id de todo su subárbol dejan de resolverse. Lo usan `innerHTML` y, desde
+    // SCRUM-901, `textContent`, que vaciaba la lista pero dejaba los id vivos y el padre puesto.
+    _soltarHijos() {
+      for (const h of n.hijos) {
+        if (!h) continue;
+        h._padre = null;
+        for (const d of todos(h)) if (d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
+      }
+      n.hijos = [];
+    },
+    set textContent(v) { n._texto = String(v); n._soltarHijos(); },
     get textContent() { return n._texto; },
     set innerHTML(v) {
       n._html = String(v);
@@ -419,14 +453,7 @@ export function nodo(tag, reg) {
       // lo nuevo se APILABA sobre lo de antes. Medido sobre 018d1807 con dos sondas: la vista de
       // presupuestos daba 261 nodos en el banco y 227 elementos en Edge (+10 #text del banco), y
       // los 24 que sobraban eran pintadas viejas de `.quote-totals` y `.quote-total-kpi`.
-      // Lo que se quita sale DEL DOCUMENTO, como en `removeChild` (SCRUM-444): pierde su padre
-      // y los id de todo su subárbol dejan de resolverse.
-      for (const h of n.hijos) {
-        if (!h) continue;
-        h._padre = null;
-        for (const d of todos(h)) if (d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
-      }
-      n.hijos = [];
+      n._soltarHijos();
       if (v === '') return;
       // Lo que hace el navegador: el marcado se vuelve árbol. Sin esto, toda vista que pinte con
       // `innerHTML` y luego busque por id daría un rojo falso.
@@ -434,12 +461,33 @@ export function nodo(tag, reg) {
       // SCRUM-285: se representan TODAS las etiquetas con atributos, no solo las que llevan `id`,
       // y se les copia `id`, `class`, `data-*` y su texto. Antes solo entraban las de `id`, así que
       // un bloque marcado con `data-…` —el estado vacío de Cobros— era invisible para el banco y su
-      // test daba un rojo que era del banco. Es plano a propósito: no anida, y se declara.
+      // test daba un rojo que era del banco.
       // SCRUM-451: se representan TAMBIÉN las etiquetas SIN atributos. Antes se saltaban, y con eso
       // un `card.innerHTML = '<div>…</div>'` seguido de `card.querySelector('div')` devolvía `null`
       // y la vista reventaba —`settingsView` lo hace— por un hueco del banco, no del producto.
-      for (const m of String(v).matchAll(/<(\w+)([^>]*)>([^<]*)/g)) {
-        const h = nodo(m[1], reg);
+      //
+      // 🔴 SCRUM-901 · EL MARCADO ANIDA. Era plano «a propósito»: cada etiqueta, hija directa del
+      // nodo. Medido sobre 8c354ff3, eso dejaba la Inicio a medio cargar: los esqueletos que el
+      // marcado pone DENTRO de `#kpi-grid` eran hermanos suyos, y repintar `#kpi-grid` no los
+      // quitaba (+16 frente a Edge). Y `.kpi-grid .kpi-card` no casaba nunca.
+      // Lo que hace: pila de abiertos; `</x>` cierra hasta el `x` abierto más cercano (y se ignora
+      // si no hay ninguno); los elementos VACÍOS y el `/>` (SVG) no abren; comentarios fuera; en
+      // `script`, `style` y `textarea` lo de dentro es texto. Lo que NO hace, y se declara: cierres
+      // implícitos (`<p>`, `<li>`, `<td>` sin cerrar) ni el `<tbody>` que el navegador inserta.
+      // El texto de cada elemento sigue siendo el que va justo detrás de su apertura.
+      const pila = [n];
+      const marcado = String(v);
+      const TOKEN = /<!--[\s\S]*?(?:-->|$)|<\/([a-zA-Z][\w-]*)[^>]*>|<([a-zA-Z][\w-]*)((?:"[^"]*"|'[^']*'|[^'">])*)>([^<]*)/g;
+      for (let m = TOKEN.exec(marcado); m; m = TOKEN.exec(marcado)) {
+        if (m[0].startsWith('<!--')) continue;
+        if (m[1]) {
+          const nombre = m[1].toUpperCase();
+          for (let i = pila.length - 1; i > 0; i--) if (pila[i].tagName === nombre) { pila.length = i; break; }
+          continue;
+        }
+        const etiqueta = m[2].toLowerCase();
+        const autocerrado = /\/\s*$/.test(m[3] || '');
+        const h = nodo(m[2], reg);
         // SCRUM-634 · SE COPIAN **TODOS** LOS ATRIBUTOS, no solo `id`, `class` y `data-*`.
         //
         // Antes solo entraban esos tres. Y como el matcher SÍ da por soportado un selector
@@ -448,16 +496,36 @@ export function nodo(tag, reg) {
         //
         // Se copian vía `setAttribute` —no como campos sueltos— porque el matcher resuelve
         // por `getAttribute`, y ese método ya refleja `id`, `class` y `data-*` a sus campos.
-        for (const a of String(m[2] || '').matchAll(ATRIBUTO)) {
+        for (const a of String(m[3] || '').matchAll(ATRIBUTO)) {
           h.setAttribute(a[1], a[2] !== undefined ? a[2] : (a[3] !== undefined ? a[3] : ''));
         }
-        const texto = (m[3] || '').trim();
+        // 🔴 SCRUM-901 · UN CAMPO RECIÉN PARSEADO PARTE DE SU ATRIBUTO. `REFLEJADOS` deja fuera
+        // `value` y `checked` porque DESPUÉS de escribir la propiedad ya no sigue al atributo, y eso
+        // es fiel. Pero al nacer del marcado el navegador sí los toma de él: un `<input value="X">`
+        // tiene `.value === 'X'`. Aquí salía vacío, y el test de scrum889 tuvo que leer el
+        // atributo porque `.value` decía que la línea repintada estaba en blanco.
+        if (h.hasAttribute('value')) h.value = h.getAttribute('value');
+        if (h.hasAttribute('checked')) h.checked = true;
+        let texto = m[4] || '';
+        const crudo = CRUDOS.has(etiqueta) && !autocerrado;
+        if (crudo) {
+          // Lo de dentro es texto hasta su cierre, aunque lleve `<`.
+          const desde = m.index + m[0].length - texto.length;
+          const cierre = marcado.toLowerCase().indexOf(`</${etiqueta}`, desde);
+          const hasta = cierre === -1 ? marcado.length : cierre;
+          texto = marcado.slice(desde, hasta);
+          const fin = cierre === -1 ? -1 : marcado.indexOf('>', cierre);
+          TOKEN.lastIndex = fin === -1 ? marcado.length : fin + 1;
+        }
+        texto = texto.trim();
         if (texto) h.textContent = texto;
         // SCRUM-609 · el hijo nacido del marcado SABE QUIÉN ES SU PADRE. No lo sabía: el parser
         // sólo lo metía en `hijos`, así que `h.parentNode` era null y cualquier vista que hiciera
         // `x.parentNode.insertBefore(...)` —DOM de manual— reventaba al montarse.
-        h._padre = n;
-        n.hijos.push(h);
+        const padre = pila[pila.length - 1];
+        h._padre = padre;
+        padre.hijos.push(h);
+        if (!crudo && !autocerrado && !VACIOS.has(etiqueta)) pila.push(h);
       }
     },
     get innerHTML() { return n._html; },
@@ -1267,6 +1335,20 @@ export async function pintarVista(banco, nombreFn, ...argumentos) {
     return { error: new Error(`la vista no publica \`${nombreFn}\` (es ${typeof fn})`), contenedor: null };
   }
   const contenedor = banco.mk('div');
+  // 🔴 SCRUM-901 · LA VISTA SE MONTA DENTRO DEL DOCUMENTO. El contenedor quedaba suelto, así que
+  // `document.querySelector` —que recorre `document.body`— no veía nada de la vista, aunque
+  // `getElementById` sí (tira del registro). Medido sobre 8c354ff3: `renderSetupChecklist` no
+  // encontraba `.kpi-grid` y la Inicio salía sin «Completa tu configuración», −51 frente a Edge.
+  // Como el panel, que pinta cada vista en el MISMO hueco, la montada antes sale del documento,
+  // con sus id.
+  const cuerpo = banco.ctx.document.body;
+  const anterior = banco.montada;
+  if (anterior && anterior._padre === cuerpo) {
+    cuerpo.removeChild(anterior);
+    for (const d of todos(anterior)) if (d._id && banco.reg.porId.get(d._id) === d) banco.reg.porId.delete(d._id);
+  }
+  cuerpo.appendChild(contenedor);
+  banco.montada = contenedor;
   const idsAntes = banco.reg.idsNoResueltos.length;
 
   // 🔴 SCRUM-698 · LOS RECHAZOS HUÉRFANOS SE RECOGEN, NO MATAN EL PROCESO.

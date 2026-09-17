@@ -41,13 +41,44 @@
  * albarán `firmado` se quedaba sin primaria **por falta de dato, no por no tener siguiente paso**.
  * Los dos significan «no pintes nada» y son cosas distintas: es el defecto de SCRUM-816 otra vez.
  */
+/**
+ * SCRUM-895 · ¿EXISTE LA FACTURA FISCAL EN EL MODO DE EMISIÓN DE ESTE PROFESIONAL?
+ *
+ * `POST /admin/albaranes/:id/convertir-en-factura` emite un documento FISCAL, y en modo
+ * justificante ese documento no existe: la ruta corta con 409 `facturacion_no_disponible`
+ * (`albaranes.routes.ts`, tras `getEmissionMode(merchant) === 'receipt'`). Para un merchant ES
+ * real con `INVOICING_ES_ENABLED` apagado —que es como están los negocios de verdad— ese 409 es
+ * el ÚNICO desenlace posible: no depende del albarán, ni del presupuesto, ni de la hora.
+ *
+ * 🔴 El veredicto NO se recalcula aquí. Viene ya masticado del servidor en `window.appModoEmision`
+ * (`app.js`, SCRUM-298), que es justo el valor que existe para no reimplementar el modo de
+ * emisión en el navegador. Regla 27: ni un estado ni un flag nuevo.
+ *
+ * 🔴 SCRUM-905 · FALLA CERRADO. Se ofrece facturar sólo cuando el servidor dijo `fiscal` o `demo`.
+ * El #1406 lo dejaba abierto con el modo desconocido (`null`) por no callar la pantalla de quien
+ * SÍ factura; el orquestador decidió lo contrario en SCRUM-905: no saber el modo no autoriza a
+ * ofrecer un documento fiscal, igual que `app.js` no se inventa el estado fiscal de nadie.
+ *
+ * Y vale para TODO lo que factura desde un albarán, no sólo para convertir: `facturar-parcial` y
+ * `consolidar-albaranes` también cortan con 409 en `receipt` antes de hacer nada.
+ */
+function facturaFiscalDisponible() {
+  return typeof window !== 'undefined' && ['fiscal', 'demo'].includes(window.appModoEmision);
+}
+
 function ctxAlbaranDeFila(alb) {
   return {
-    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado',
+    // SCRUM-905 · «Facturar lo entregado» lleva a la hoja de `facturar-parcial`: 409 en `receipt`.
+    'valorado-con-pendiente': alb.modoValoracion === 'VALORADO' && alb.estadoFacturacion !== 'facturado'
+      && facturaFiscalDisponible(),
     // La otra mitad, EXCLUYENTE con la de arriba (SCRUM-290): el parte SIN precios se factura
     // contra el presupuesto firmado. Sin presupuesto detrás el endpoint responde 409, así que
     // ofrecerlo sería un botón que sólo sabe fallar.
-    'sin-valorar-convertible': alb.modoValoracion !== 'VALORADO' && !!alb.quote && alb.estadoFacturacion !== 'facturado',
+    //
+    // SCRUM-895 · y el presupuesto no era la única forma de que sólo supiera fallar: en modo
+    // justificante falla SIEMPRE. Misma razón, segunda causa.
+    'sin-valorar-convertible': alb.modoValoracion !== 'VALORADO' && !!alb.quote && alb.estadoFacturacion !== 'facturado'
+      && facturaFiscalDisponible(),
   };
 }
 
@@ -70,5 +101,6 @@ function primariaDeAlbaran(alb) {
 // alcancen — la lista de Albaranes, la ficha del Trabajo y el detalle del albarán.
 if (typeof window !== 'undefined') {
   window.ctxAlbaranDeFila = ctxAlbaranDeFila;
+  window.facturaFiscalDisponible = facturaFiscalDisponible;   // SCRUM-905 · consolidar, en la ficha del Trabajo
   window.primariaDeAlbaran = primariaDeAlbaran;
 }

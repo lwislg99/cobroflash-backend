@@ -86,9 +86,13 @@ test('SCRUM-897 · la vista de presupuestos: cada contenedor repintado tiene sol
   assert.equal(totales.length, 1, `🔴 hay ${totales.length} \`.quote-totals\` y Edge pinta 1`);
 
   const etiquetas = (html) => (String(html).match(/<[a-zA-Z][\w-]*/g) || []).length;
+  // SCRUM-901 · se cuentan DESCENDIENTES, no hijos directos. Con el parser plano cada etiqueta del
+  // marcado era hija directa y los dos números coincidían; desde que el marcado anida, `.quote-totals`
+  // tiene 2 hijos y 6 descendientes, que son las 6 etiquetas de su última pintada.
   for (const [nombre, n] of [['.quote-totals', totales[0]], ['.quote-total-kpi', kpi[0]]]) {
-    assert.equal(n.hijos.length, etiquetas(n._html),
-      `🔴 ${nombre} tiene ${n.hijos.length} hijos y su último marcado declara ${etiquetas(n._html)}: `
+    const descendientes = todos(n).length - 1;
+    assert.equal(descendientes, etiquetas(n._html),
+      `🔴 ${nombre} tiene ${descendientes} descendientes y su último marcado declara ${etiquetas(n._html)}: `
       + 'el banco guarda pintadas que el navegador ya quitó (Edge: 227 elementos en esta vista).');
   }
 });

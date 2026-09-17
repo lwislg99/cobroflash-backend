@@ -1339,7 +1339,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // real por mes natural; el modal muestra el preview honesto de cuántas facturas se crearán.
   // (En modo receipt el backend responde 409; ver nota del PR sobre exponer el modo — SCRUM-81.)
   const consolidaEligibles = albaranes.filter((a) => a.estado === 'firmado' && a.modoValoracion === 'VALORADO' && !a.facturado);
-  const consolidaEnabled = job.tipoOperacion === 'OPERACIONES_SUELTAS' && consolidaEligibles.length > 0;
+  // SCRUM-905 · y sólo si el modo de emisión factura: en `receipt` la ruta responde 409 siempre.
+  const consolidaEnabled = job.tipoOperacion === 'OPERACIONES_SUELTAS' && consolidaEligibles.length > 0
+    && typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
   const consolidaSelected = new Set();
   const consolidaCheckboxes = [];
   const CONSOLIDA_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -1757,8 +1759,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // siguiente paso: la celda vacía SIGNIFICA «nada que hacer» y es información. Rellenarla para
     // que la columna «se vea completa» sería inventar un paso que no toca.
     const primaria = primariaDeAlbaran(alb);
-    if (primaria) {
-      const rotulo = (typeof ROTULOS_ALBARAN !== 'undefined' && ROTULOS_ALBARAN[primaria.id]) || primaria.id;
+    // SCRUM-905 · SIN RÓTULO FIRMADO NO SE PINTA: ni el id interno (lo que salía antes con el `||`) ni
+    // el marcador. Mismo criterio que SCRUM-831 en la lista de Albaranes.
+    const rotulo = primaria && typeof ROTULOS_ALBARAN !== 'undefined' ? ROTULOS_ALBARAN[primaria.id] : null;
+    if (primaria && rotulo) {
       if (primaria.id === 'btnFacturar') {
         // El ÚNICO cuyo mecanismo vive aquí (`openFacturarParcialSheet`, anidada en esta vista):
         // éste ejecuta. Es también el puente que `scrum302-sin-callejones` exige conservar.

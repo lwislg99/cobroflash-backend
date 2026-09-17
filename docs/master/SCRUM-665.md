@@ -509,3 +509,334 @@ trinquete que ha dejado de proteger sin que nadie lo note.
 | `tests/scrum665a-congelar-el-emisor.test.mjs` | 7 casos: suelo, el contraste, el centinela, la caducidad |
 | `docs/master/evidencias/scrum665a/ALTER-propuesto.md` | el diff propuesto + el cableado pendiente |
 | `tests/scrum411-exports-inalcanzables.test.mjs` | el tope, subido con su motivo y su vuelta a 7 |
+
+---
+
+# APÉNDICE · EL ALTER LLEGA A DESARROLLO, QUE ERA LA BASE QUE FALTABA
+
+**Fecha:** 17-sep-2026 · **Carril:** B · esquema · **Gate:** aplicar + verificar
+**Medido contra:** `origin/main` = `53e3db1f541574c4f231c3d196a2874680160d02` · 2026-09-17T08:51:27Z
+**Rama:** `scrum-881-el-detector-sin-fecha`
+
+El fundador ya había aplicado este ALTER en **staging** y en **producción**. Faltaba
+**desarrollo**. Se aplica el texto del encargo sin cambiar nada, con
+`docs/sql/scrum-665-congelar-el-emisor.sql`.
+
+**Herramienta:** `node scripts/aplicar-sql-dev.mjs --file … --go`, que sólo acepta
+`DATABASE_URL_DEV` y sólo formas de su lista blanca. Destino acreditado por el mecanismo, no por
+la vista:
+
+```
+[destino] DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅
+✅ 1 sentencia(s), todas de forma conocida:  línea 7: ALTER TABLE … ADD COLUMN
+```
+
+⛔ **Staging y producción no se han tocado, ni para mirar.**
+
+## LA VERIFICACIÓN — dos controles de tipos distintos, los dos a 7
+
+Se lee el CATÁLOGO, no el mensaje de la herramienta (que además lo dice: *«AHORA VERIFICA LEYENDO
+EL CATÁLOGO, no este mensaje»*). Evidencia ejecutable:
+`docs/master/evidencias/SCRUM-665/verificar-665.mjs`.
+
+| | ① `information_schema.columns` | ② `pg_attribute` + `pg_class` | columnas totales de `invoices` |
+|---|---|---|---|
+| **antes** | **0 de 7** | **0 de 7** | 36 |
+| **después** | **7 de 7** | **7 de 7** | **43** |
+
+36 + 7 = 43, y los dos controles **coinciden**. Las siete salen `text` por las dos vías.
+
+**SUELO:** antes de creerse ningún cero, el censo comprueba que ve columnas de `invoices` (36). Un
+cero con el suelo caído no sería «faltan las siete»: sería «no estoy mirando la tabla».
+
+**Aditivo, comprobado:** `pg_postmaster_start_time()` = `2026-08-23 06:21:29.275761+00` y **5 filas
+en `invoices`**, idénticos antes y después. No reescribió nada.
+
+## ⚠️ DOS COSAS QUE CONSTAN, Y NO SE ARREGLAN AQUÍ
+
+**① `current_database()` SÍ distinguió en esta base.** El encargo avisaba de que devuelve
+`"railway"` en todas las bases de Railway. Aquí devolvió **`yaqu_dev_javier`**. No sé qué devuelve
+en staging ni en producción —no las he tocado—, así que se deja como dato de ésta y nada más. La
+acreditación se hizo igualmente con `pg_postmaster_start_time()` y el recuento, como se pidió.
+
+**② 🔴 `prisma/schema.prisma` NO declara estas siete columnas.** Medido: el modelo `Invoice`
+(`@@map("invoices")`, línea 905) sólo tiene `merchantId`. O sea que la base —las tres— y el esquema
+**divergen**. El esquema es del fundador (regla 40): **se propone el diff, no se aplica**, y este
+apéndice no lo toca. El diff propuesto sería añadir al modelo `Invoice`:
+
+```prisma
+  merchantName      String? @map("merchant_name")
+  merchantLegalName String? @map("merchant_legal_name")
+  merchantTaxId     String? @map("merchant_tax_id")
+  merchantAddress   String? @map("merchant_address")
+  merchantLogoUrl   String? @map("merchant_logo_url")
+  merchantPhone     String? @map("merchant_phone")
+  merchantEmail     String? @map("merchant_email")
+```
+
+⚠️ Eso es una **propuesta**, no una medición de que sea lo que se quiere: los nombres del lado
+Prisma son los que usa el resto del modelo, pero la decisión es del fundador.
+
+---
+
+# APÉNDICE (B) · EL PASO ③: EL ESQUEMA DECLARA LAS SIETE QUE LAS TRES BASES YA TIENEN
+
+**Fecha:** 17-sep-2026 · **Carril:** B · esquema · **Gate:** declarar + control del papel
+**Medido contra:** `origin/main` = `76c786f60721e0caeb7eac056b5f65863abb6b6b` · 2026-09-17T09:41:22Z
+**Rama:** `scrum-665b-el-esquema-declara`
+**Preámbulo (A1):** `git rev-list --count HEAD..origin/main` = **0** al ramificar.
+
+> **Obligación 0:** sin rama remota `scrum-665*` viva, sin expediente `SCRUM-665b.md`. Los commits
+> que salen con ese número en `main` son los pasos anteriores (`754bff36` el coste, `270f1b28` el
+> escritor y el lector de 665a) y el mío de 881. Causa **(a)** para este paso.
+
+---
+
+## ⚠️ LO PRIMERO: QUÉ SE HA TOCADO Y QUÉ NO
+
+- **`prisma/schema.prisma`: SÍ, en esta rama.** Es el paso ③ del orden de la casa —un PR con
+  esquema + código + tests— y es lo que el encargo asigna. **El diff exacto va abajo en texto
+  plano** para que se revise sin abrir el fichero.
+- **Ninguna base de datos: NO.** Cero `db push`, cero `migrate diff`, ni «para comprobar». Lo único
+  que se ha ejecutado es `npm run prisma:generate`, que **regenera el cliente desde el esquema y no
+  abre ninguna conexión** — y con el binario **local**, nunca `npx`.
+- **El camino de emisión fiscal: NO**, y eso deja un STOP que se nombra abajo.
+
+---
+
+## ① EL DIFF EXACTO, EN TEXTO PLANO
+
+En `model Invoice`, justo debajo de las cinco del **cliente** congelado (SCRUM-729), que es el
+patrón que se imita:
+
+```diff
+   customerEmail     String? @map("customer_email")
+   customerPhone     String? @map("customer_phone")
+ 
++  /// SCRUM-665 (B) · EL EMISOR CONGELADO. La otra mitad del documento, con el mismo patrón que
++  /// las cinco de arriba (el cliente congelado, SCRUM-729): columnas + escritor al emitir + lector
++  /// que prefiere la columna. Un cuarto patrón para el mismo hecho es cómo nacen dos criterios que
++  /// un día discrepan.
++  ///
++  /// El ALTER aditivo ya está aplicado y VERIFICADO en LAS TRES bases (dos controles de tipos
++  /// distintos, 7 de 7 en ambos): producción y staging por el fundador, desarrollo el 17-sep-2026.
++  /// Ver `docs/MIGRATIONS_PENDING.md`. Esto sólo DECLARA lo que ya existe.
++  ///
++  /// 🔴 `merchantName` es NULLABLE aunque su origen en `Merchant` sea NOT NULL, y no es un
++  /// descuido: ese `null` es el CENTINELA con el que `emisorDelDocumento` distingue «factura
++  /// anterior al escritor» de «factura sin nombre». Ponerlo NOT NULL, o darle un `@default`,
++  /// convierte el centinela en basura y las dos cosas dejan de distinguirse.
++  merchantName      String? @map("merchant_name")
++  merchantLegalName String? @map("merchant_legal_name")
++  merchantTaxId     String? @map("merchant_tax_id")
++  merchantAddress   String? @map("merchant_address")
++  merchantLogoUrl   String? @map("merchant_logo_url")
++  merchantPhone     String? @map("merchant_phone")
++  merchantEmail     String? @map("merchant_email")
++
+   number String
+```
+
+**Verificado por DMMF, no leyendo el fichero que acabo de escribir:** las siete salen `String`,
+`isRequired: false` y con su `dbName` en snake_case. **7 de 7.**
+
+Y un efecto que el árbol obligó a cerrar: `docs/sql/deriva-prod.sql` se **genera** del mismo DMMF
+(SCRUM-222) y `scrum222` exige que el fichero commiteado coincida con lo que se genera hoy. Al
+declarar las siete, ese fichero caducó y el guard se puso rojo. Regenerado con
+`node scripts/generar-sql-deriva.mjs`: **462 columnas**, las siete dentro, guard en verde. **No es
+una base tocada: es una consulta de SOLO LECTURA que el fundador pega donde quiera.**
+
+---
+
+## 🔴 EL STOP QUE QUEDA — el enchufe, que es el gemelo de SCRUM-729
+
+**El lector de 665a sigue sin llamador.** Medido: `emisorDelDocumento` no se invoca en **ningún**
+sitio de `src/`. El PDF sigue leyendo el perfil **vivo**:
+
+```
+src/lib/invoicing.ts:108    merchant: { name: inv.merchant.name, legalName: inv.merchant.legalName, … }
+src/lib/invoicing.ts:249    merchant: { … }            ← el mismo patrón, segunda boca
+```
+
+Y justo al lado, en `:122` y `:260`, el **cliente** ya sale de la columna congelada:
+`customer: clienteDelDocumento(inv, inv.customer)`. El enchufe que falta es su gemelo exacto:
+
+```
+    merchant: emisorDelDocumento(inv, { name: inv.merchant.name, legalName: …, taxId: …,
+                                        address: …, logoUrl: …, phone: inv.merchant.whatsappPhone,
+                                        email: inv.merchant.email }),
+```
+
+**Eso MODIFICA el camino de emisión fiscal, así que es STOP (regla 38) y no se hace aquí.** Se
+nombra con fichero y línea, y se para. Mientras no se enchufe, **las siete columnas están
+declaradas y vacías**: el producto sigue reimprimiendo con datos de hoy.
+
+> ⚠️ Y una consecuencia que conviene no leer de más: este PR **no arregla todavía el defecto de
+> SCRUM-665**. Cierra el paso ③ y deja el ④ —el enchufe— con su coordenada exacta.
+
+---
+
+## EL CONTROL QUE DECIDE — el papel, con las dos mitades
+
+`tests/scrum665b-el-esquema-declara.test.mjs` — **4 pass · 0 fail · `# skipped 0`**.
+
+El papel se ejercita pasándole a `generateInvoicePdf` **lo que el lector devuelve** —que es
+exactamente lo que el enchufe produciría— sin tocar una línea de `src/`.
+
+| | qué exige | resultado |
+|---|---|---|
+| **el esquema** | las siete declaradas, `String?`, con su `@map`, leído del **DMMF** | 7 de 7 |
+| 🔴 **MITAD 1** | fila **con** las siete + cambio de perfil → **el papel NO cambia** (sigue diciendo `Mayor 1`, no entra `Nueva 99`) | ok |
+| ✅ **MITAD 2** | la misma fila con `merchantName` a **NULL** → **el papel SÍ cambia** (pasa a `Nueva 99`) | ok |
+| **665a intacto** | lector y escritor siguen dando lo mismo, y su suelo sigue lanzando | ok |
+
+**Sin la mitad 2, la mitad 1 pasaría porque el papel no cambia nunca**, no porque las columnas lo
+congelen. Ésa es la que convierte el control en control.
+
+**Y por CONTENIDO, no por bytes.** El PDF no es determinista. Se lee el texto con
+`extraerTextoPdf` (SCRUM-604), que **se declara CIEGO** si el documento embebe un tipo propio, y se
+compara normalizado porque las tildes viajan en la codificación del PDF.
+
+> ⚠️ **Mi suelo saltó en la primera pasada, y menos mal.** Traté el resultado de `extraerTextoPdf`
+> como si fuera una cadena, y devuelve `{ok, texto}`. Sin ese suelo, los `includes` habrían dado
+> `false` siempre y el test habría dicho «el papel no trae la dirección» cuando lo que pasaba es
+> que **no lo estaba leyendo**.
+
+---
+
+## ② ¿HAY MÁS DIVERGENCIAS ENTRE EL ESQUEMA Y LAS BASES?
+
+Evidencia: `docs/master/evidencias/SCRUM-665b/censo-deriva-665b.mjs` · salida en
+`salida-deriva-665b.txt`. **Se reusan `tablasEsperadas` y `compararEsquema` del arranque**
+(`src/core/db/schemaDrift.ts`): un censo con su propia idea de qué es una columna daría un número
+distinto del que decide si producción levanta.
+
+> ⛔ **SÓLO SE COMPARA CONTRA DESARROLLO, y se declara.** No tengo credenciales de staging ni de
+> producción, y el encargo prohíbe tocarlas. **Este resultado no dice nada de las otras dos.**
+
+### POBLACIÓN
+
+| | |
+|---|---|
+| modelos en el esquema | **30** |
+| tablas esperadas | 30 |
+| **columnas esperadas** | **462** |
+| tablas en la base de desarrollo | 27 |
+| columnas en la base de desarrollo | 435 |
+| huella de la base | arranque `2026-08-23 06:21:29.275761+00` · 5 facturas |
+
+### RESULTADO — en las DOS direcciones
+
+El arranque sólo vigila **una** (esquema ⊆ base), que es la que tumba el servicio. **SCRUM-665 era
+la otra**, y ésa no rompe nada al arrancar: por eso nadie se entera.
+
+| dirección | n |
+|---|---|
+| ⓐ **el esquema declara y la base NO tiene** — 3 tablas + 14 columnas | **17** |
+| ⓑ **la base tiene y el esquema NO declara** | **1** |
+| ⓒ tablas de la base ajenas al esquema | 0 |
+
+**ⓐ · tablas que faltan en desarrollo:** `quote_assignees`, `invoice_assignees`, `gateway_events`.
+
+**ⓐ · columnas que faltan en desarrollo (14):**
+
+```
+invoices.customer_name              (Invoice.customerName)
+invoices.customer_legal_name        (Invoice.customerLegalName)
+invoices.customer_tax_id            (Invoice.customerTaxId)
+invoices.customer_email             (Invoice.customerEmail)
+invoices.customer_phone             (Invoice.customerPhone)
+albaranes.customer_name             (Albaran.customerName)
+albaranes.customer_legal_name       (Albaran.customerLegalName)
+albaranes.customer_tax_id           (Albaran.customerTaxId)
+albaranes.customer_email            (Albaran.customerEmail)
+albaranes.customer_phone            (Albaran.customerPhone)
+partes_trabajo.signature_url        (ParteTrabajo.signatureUrl)
+partes_trabajo.signature_tecnico_url(ParteTrabajo.signatureTecnicoUrl)
+partes_trabajo.firmado_tecnico_at   (ParteTrabajo.firmadoTecnicoAt)
+partes_trabajo.firmado_tecnico_nombre (ParteTrabajo.firmadoTecnicoNombre)
+```
+
+🔴 **Las diez primeras son el CLIENTE congelado de SCRUM-729** — el gemelo de este ticket. O sea que
+**la base de desarrollo va por detrás** en la misma familia de columnas, y con `schemaDrift`
+comparando *esperado ⊆ real* al arrancar, ese entorno estaría en deriva.
+
+**ⓑ · la única que la base tiene y el esquema no declara:** `customers.pay_methods_por_defecto`.
+
+> ⛔ **Ninguna se arregla** (regla 9). Una divergencia que alguien arregla de paso es una decisión
+> de esquema tomada sin que el fundador se entere. Se cuentan y se traen.
+>
+> ⚠️ Y el dato que da sentido al ticket: **las siete del emisor ya NO aparecen en ⓑ**. Antes de
+> este PR estaban ahí; ése era el defecto.
+
+### ⚠️ UN NÚMERO IMPOSIBLE MÍO, CAZADO ANTES DE PUBLICARLO
+
+La primera pasada dijo **«435 de 435 columnas sin declarar»**, incluida `merchants.name`, al lado de
+«faltan 0». Dos resultados que no pueden ser ciertos a la vez. Causa: `columnas` es un array de
+**objetos** `{campo, columna}` y yo lo metí en un `Set` preguntando por el nombre, que da `false`
+siempre. Y `compararEsquema` devuelve `columnasQueFaltan`/`tablasQueFaltan`, no `faltan` — por eso
+el otro lado daba 0. **Las dos mitades del censo estaban rotas, y se veía porque no cuadraban entre
+ellas.**
+
+---
+
+## LA TANDA
+
+```
+ARBOL QUIETO DESDE: 09:59:27 UTC
+ARBOL QUIETO HASTA: 10:09:26 UTC
+# tests 7243 · # pass 7133 · # fail 0 · # skipped 110
+```
+
+`npm run guards:entrada`: 26 tests, 0 fallos, `# skipped 0`.
+
+> ⚠️ La única edición posterior a la tanda son las cifras de este bloque.
+
+---
+
+## LO QUE LA TANDA DESTAPÓ — cinco rojos, cuatro míos
+
+| guard | qué cazó | ¿mío? |
+|---|---|---|
+| `scrum262` | mi test usaba `+34600000000`, **móvil español ordinario** | sí |
+| `scrum273` | `SCRUM-665b.md` no es nombre válido de expediente | sí |
+| `scrum854` | la rama no traía `docs/master/SCRUM-665.md` | sí, misma raíz |
+| `scrum525d` | mi cambio de esquema **desplazó una coordenada** de la auditoría legal | sí |
+| `scrum804` | «145 ramas y `for-each-ref` lista 144» | **no**: carrera |
+
+**El del teléfono es el que más enseña.** Mi número nunca llega a la base —es un objeto en memoria
+para pintar un PDF—, así que era fácil argumentar que no aplicaba. El guard es categórico a
+propósito y tiene razón: `+34 6XX` es un rango de móvil español ORDINARIO y puede estar asignado a
+alguien que no ha pedido nada; y hay tres crons que envían WhatsApp a teléfonos guardados sin
+filtrar por el merchant demo. **Un rango imposible no depende de que mi razonamiento sobre el
+alcance sea correcto.** Cambiado a `telefonoDePrueba(1)` (`34000000001`).
+
+**El de `scrum525d` es una consecuencia que no habría anticipado:** declarar siete líneas en
+`prisma/schema.prisma` empujó hacia abajo `vf_hash` y `vf_prev_hash`, y
+`docs/legal/AUDITORIA_CAMINO_EMISION.md:36` las citaba por NÚMERO DE LÍNEA. Reanclado
+`865-866` → `886-887`. Es el canon de la casa hecho carne: **referenciar por posición caduca**.
+
+**El de `scrum804` NO reproduce en solitario** (9/9 en verde) y la tanda final lo confirma: su
+censo y `git for-each-ref` contaron la misma población mientras yo traía y creaba ramas, y no
+cuadraron. Se dice que fue una carrera en vez de darlo por bueno — y se vigiló en la tanda
+siguiente, no se supuso.
+
+> ⚠️ **Y una trampa propia, la tercera de esta tanda con la misma forma:** este mismo bloque entró
+> MUTILADO al escribirlo con `node -e` desde bash — los backticks se leyeron como sustitución de
+> comandos y se llevaron por delante cada nombre citado. Se vio al releer lo escrito, no al
+> escribirlo. Repuesto con una herramienta que no pasa por el shell.
+
+> ⚠️ **La tanda anterior NO cuenta:** edité el árbol después de correrla.
+
+---
+
+## LO NO TOCADO
+
+- **Ninguna base de datos.** Cero `db push`, cero `migrate diff`, ni para comprobar. Nunca `npx`
+  para el CLI de Prisma: `npm run prisma:generate` usa el binario local y sólo regenera el cliente.
+- **El camino de emisión fiscal: ni una línea.** El enchufe queda nombrado con fichero y línea
+  arriba, y **parado**.
+- **Las 18 divergencias de ②: ninguna arreglada.** Contadas y traídas.
+- `merchantName` sigue **NULLABLE** a propósito: es el centinela, y hay un assert que lo fija.
+- Ningún estado ni flag nuevo (27) · ninguna dependencia (36) · cero producción y cero staging ·
+  `git stash` no usado · historia no reescrita.

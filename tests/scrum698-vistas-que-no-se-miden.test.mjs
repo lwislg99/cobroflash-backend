@@ -341,8 +341,16 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // IDENTIDAD sobre el árbol de main: las 3 pintadas anteriores de `.quote-totals` (18) y de
   // `.quote-total-kpi` (6). Edge, con los mismos scripts y datos, pinta 227 elementos = 237 − 10
   // `#text`; en productos y clientes, banco y Edge ya coincidían etiqueta a etiqueta.
+  // 🔴 SCRUM-901 · 17-sep-2026 · `renderHomeView` 109 → 144, y NINGUNA de las otras tres se mueve
+  // (237, 166 y 69, RECALCULADAS con este contador). Lo mueve el BANCO, en dos arreglos medidos
+  // uno a uno con los consumidores: el marcado ANIDA (109 → 93: los 16 esqueletos de `#kpi-grid`
+  // y `#activity-feed` que quedaban como hermanos y ya se van al repintar) y la vista se monta
+  // DENTRO del documento (93 → 144: `renderSetupChecklist` por fin encuentra `.kpi-grid` con
+  // `document.querySelector` y pinta «Completa tu configuración», 51 nodos). Edge, con los mismos
+  // scripts y datos, pinta 143: la Inicio del banco coincide FIRMA A FIRMA salvo UN nodo, el
+  // `.alert.warning` «No hemos podido comprobar…», porque el banco no tiene IndexedDB (declarado).
   for (const [vista, nodos] of [['renderQuotesView', 237], ['renderProductsView', 166],
-    ['renderCustomersView', 69], ['renderHomeView', 109]]) {
+    ['renderCustomersView', 69], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
