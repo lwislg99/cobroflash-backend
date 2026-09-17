@@ -21,6 +21,51 @@
 
 ---
 
+## Requisitos previos
+
+### Espacio en disco (medido el 17-sep-2026)
+
+| qué | cuánto | cómo se midió |
+|---|---|---|
+| poner al día el árbol del checkout compartido (paso 2) | **+43 MB** (de 33,8 MB / 864 ficheros a 76,8 MB / 3044) | suma de los tamaños de blob de `git ls-tree -r -l HEAD` frente a `origin/main` |
+| objetos de git que trae el `fetch` | ya descargados (pack de 75,9 MiB) | `git count-objects -vH` |
+| `npm install` en el checkout compartido | **no se hace** (paso 2) | — |
+| un `node_modules` real, por si hiciera falta en otro sitio | **0,40 GB** | tamaño de `wt-839f/node_modules` |
+| instalación en `C:` (`INST`) | < 1 MB, más `arranque.log` | tres `.mjs`, el prompt, `config.json`, `arranque.cmd` |
+
+**Mínimo:** **D: con 1 GB libre** (árbol, `git` y margen) y **C: con 1 GB libre**. Se comprueba con
+`Get-PSDrive -PSProvider FileSystem` antes del paso 1. Si no llega, se PARA. El 17-sep llegó a haber **136 MB** en D:.
+
+🔴 **El `node_modules` del checkout compartido NO se toca.** El 17-sep, **88 worktrees** colgaban de él por junction.
+
+### Convención de nombres (decidida por el orquestador el 17-sep)
+
+- `orquestador` y `sesion-0` … `sesion-5`. Es la lista blanca de `scripts/equipo/sesion.mjs` y **no cambia**.
+- La sesión de prueba lanzada a mano como `0` (f4dfafd0) se relanza como `sesion-0` en cuanto el lanzador esté instalado.
+
+### Lo que ve el fundador (prueba de relevo de la S0, orquestador, 17-sep ~14:57Z)
+
+- Una sesión de fondo **no aparece en la barra lateral de la extensión de VS Code** ni en sus grupos.
+- Se ve con `claude agents` y se abre con `claude attach <id>`, desde un terminal.
+- Las autorizaciones escritas por el fundador en el chat de una sesión VIEJA **no se heredan**: se repiten en la nueva, o
+  se escriben en el chat «fundador» para el orquestador.
+
+### ¿Puede funcionar sin poner al día el checkout compartido?
+
+- **El lanzador sí:** ya vive en `C:` (`INST`). `arranque.cmd` solo usa objetos y refs de git
+  (`git fetch` + `git show origin/main:`), no el árbol de trabajo. Las copias de los scripts y del prompt siempre son las de main.
+- **El orquestador de fondo, no del todo, por dos motivos medidos:**
+  1. **La memoria de Claude Code va por carpeta de trabajo** (`~/.claude/projects/<ruta con guiones>/memory`). Si el
+     orquestador trabajara desde otra carpeta, por ejemplo un worktree al día en `C:`, empezaría **sin memoria**: ni
+     `MEMORY.md` ni traspasos.
+  2. `.claude/settings.local.json` está **versionado**. Un worktree trae la versión de main (51 reglas), no las 59 locales
+     del checkout (ni las de 899).
+  Así que su carpeta de trabajo tiene que seguir siendo el checkout compartido. Sin ponerlo al día arrancaría con el
+  CLAUDE.md, los hooks y las skills de hace ~4000 commits. El prompt ordena leer desde `origin/main`, pero hooks y skills
+  se cargan igual. **Recomendación: ponerlo al día (paso 2), que solo cuesta +43 MB.**
+
+---
+
 ## 0 · Medir antes de tocar nada
 
 **Orden** (solo lectura):
