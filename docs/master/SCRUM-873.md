@@ -183,3 +183,10 @@ una carrera entre sus dos lecturas con ~26 worktrees empujando —o sea, estado 
 y el mío, hasta donde llega esta medición, no tiene escritor concurrente ninguno. Lo único que
 comparten es el síntoma. Si mi pista del `tmpdir` se confirmara, entonces sí serían familia
 —los dos serían estado compartido entre worktrees— y ése sería el hallazgo. **Hoy no está medido.**
+
+---
+
+# CONTROL SCRUM-839f · NO MERGEAR · este apéndice no debe llegar nunca a `main`
+
+Control fabricado el 17-sep-2026 para medir «Conflicto de registro» de extremo a extremo. El PR que lo
+trae se cierra SIN MERGEAR y la rama se borra. Si lees esto en `main`, el control ha fallado.
