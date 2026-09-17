@@ -44,6 +44,7 @@ detrás de «Generar», sólo que al revés.
 | «Presupuesto #N guardado. Elige cómo se lo mandas.» | **NUEVO** |
 | «Así le llega a \<cliente\> por WhatsApp» (rótulo sobre el mensaje) | **NUEVO** |
 | el cuerpo del mensaje (Hola… / te ha preparado un presupuesto / Presupuesto #N / Total / Tócalo para verlo y responder / Enviado con Yaqu / «Ver presupuesto») | **NO es nuevo, y NO se toca**: es la plantilla `quote_decision_es` de `docs/WHATSAPP_TEMPLATES.md` §1 con sus 4 variables. Las plantillas de Meta son STOP |
+| el total dentro del mensaje: «419.87 EUR», no «419,87 €» | **no es elección de estilo**: es lo que `sendQuote.service.ts:89` envía hoy. Que el documento de al lado diga «419,87 €» y el mensaje diga «419.87 EUR» es un hallazgo del prototipo, con ticket propio (SCRUM-931) |
 | «📲 Enviar por WhatsApp» | ya existe |
 | «O mándaselo de otra forma» (rótulo de los canales) | **NUEVO** |
 | «✉ Enviar por email» · «⬇ Descargar PDF» | ya existen |

@@ -478,8 +478,14 @@ function botonWa(){ const enviado=S.envio&&S.envio.canal==='whatsapp';
 // El cuerpo del mensaje NO es texto nuevo: es la plantilla FIRMADA `quote_decision_es`
 // (docs/WHATSAPP_TEMPLATES.md §1) con sus 4 variables sustituidas. Por eso no va subrayado.
 // Las plantillas de Meta no se tocan desde aquí: aquí sólo se ENSEÑA lo que ya se envía.
+// El total NO va con el formato español de la pantalla. La variable {{4}} la construye hoy
+// `sendQuote.service.ts:89` como `${Number(quote.total).toFixed(2)} ${quote.currency}` → «419.87 EUR»,
+// y esta hoja tiene que enseñar LO QUE DE VERDAD SE ENVÍA, no lo que quedaría mejor. Que no cuadre
+// con el «419,87 €» del documento de al lado es el hallazgo, no un fallo del prototipo: unificarlo
+// es SCRUM-931. El día que se unifique, aquí se cambia esta línea y ya.
+const totalDeLaPlantilla=(n)=>`${Number(n).toFixed(2)} EUR`;
 function textoWa(c,t){
-  return `Hola ${esc(c.nombre)} 👋\n${esc(EMPRESA.nombre)} te ha preparado un presupuesto:\nPresupuesto ${S.generado}\nTotal: ${eur(t.total)}\nTócalo para verlo y responder 👇<span class="pie-msg">Enviado con Yaqu</span><span class="cta-msg">Ver presupuesto</span>`;
+  return `Hola ${esc(c.nombre)} 👋\n${esc(EMPRESA.nombre)} te ha preparado un presupuesto:\nPresupuesto ${S.generado}\nTotal: ${totalDeLaPlantilla(t.total)}\nTócalo para verlo y responder 👇<span class="pie-msg">Enviado con Yaqu</span><span class="cta-msg">Ver presupuesto</span>`;
 }
 function mEnvio(){
   const c=S.cliente; const t=totales(); const ev=S.envio;

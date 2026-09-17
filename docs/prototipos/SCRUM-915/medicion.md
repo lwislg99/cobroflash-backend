@@ -35,7 +35,7 @@ pedía el ajuste **no hubo que construirlo: ya salía de ahí**, y lo de arriba 
     Hola Comunidad Los Olivos 👋
     Fontanería Ejemplo te ha preparado un presupuesto:
     Presupuesto #128
-    Total: 419,87 €
+    Total: 419.87 EUR
     Tócalo para verlo y responder 👇
     Enviado con Yaqu
     [Ver presupuesto]
@@ -43,10 +43,15 @@ pedía el ajuste **no hubo que construirlo: ya salía de ahí**, y lo de arriba 
 No es texto nuevo: es la plantilla firmada `quote_decision_es` (`docs/WHATSAPP_TEMPLATES.md` §1) con sus 4 variables
 puestas. Por eso **no va subrayado**.
 
-> ⚠️ **Una diferencia que no decido yo, y la dejo dicha en vez de taparla.** La ficha de la plantilla pone como ejemplo
-> de `{{4}}` el formato `350.00 EUR`, y aquí se pinta `419,87 €`, que es como el profesional lee un importe en
-> castellano. Cuál de los dos manda es del carril de la S1 (importes), no del mío: lo que sí es seguro es que la hoja
-> tiene que enseñar **lo que de verdad se envía**, así que si sale `EUR` con punto, eso es lo que hay que pintar.
+> ⚠️ **El total sale «419.87 EUR» y no «419,87 €», a propósito.** No es una elección de estilo: es lo que el código
+> envía hoy. `src/modules/quotes/domain/sendQuote.service.ts:89` construye la variable `{{4}}` como
+> `${Number(quote.total).toFixed(2)} ${quote.currency}`. Las líneas 73 y 81 del mismo fichero —el texto de sesión que
+> sale cuando la ventana de 24 h está abierta— usan `formatMoneyEs` y dan «419,87 €». O sea: **el mismo presupuesto le
+> llega al cliente de dos formas distintas según algo que el cliente no puede saber.**
+>
+> Decisión del orquestador (17-sep-2026): la hoja pinta lo que de verdad se envía, aunque se lea peor y aunque no cuadre
+> con el «419,87 €» del documento de al lado. Que se vea feo es el dato, no el problema — es justo para lo que sirve un
+> prototipo. Unificarlo es **SCRUM-931**; cuando se cierre, aquí cambia una línea (`totalDeLaPlantilla`) y ya.
 
 **El bloque «Ajustes del documento», medido** (las dos anchuras, idéntico):
 
