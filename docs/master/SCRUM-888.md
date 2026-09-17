@@ -211,3 +211,27 @@ borrador se guarda en cada paso. Mutantes (quitar B; quitar `renderPreview` de A
 - **Hallazgo sin ticket:** el borrador del editor (`saveDraft`) no guarda ni el dto de línea ni el descuento
   global. Se guarda al tocarlos (ahora sí), pero sin ellos: al recuperar el borrador vuelven vacíos. Ya pasaba
   antes de este PR al tocar otro campo después de un descuento.
+
+# SCRUM-888d · PR de servidor: el descuento global en el detalle (puntos 1 y 3) y la página de firma (punto 1)
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T14:03:57Z (hora del commit de main)
+**Rama:** `scrum-888d-servidor-descuentos` · **Carril:** Sesión 1 · **Firma:** SCRUM-888 comentario 15788 · **Estado:** listo en local, sin empujar (va detrás del PR 3 de SCRUM-887).
+
+## Qué cambia
+
+- **`GET /admin/quotes/:id` devuelve `discountGlobalAmount`** (`null` si no hay). Lo medía la Sesión 2 en staging e437a51f: las líneas traían `dto` y el global no. Es precio, no margen: lo ve quien ve el total, y SCRUM-597 sigue verde.
+- **Punto 3 (Duplicar):** en el servidor no hay ninguna ruta de duplicar. «⎘ Duplicar» (`quotesDetailView.js:1172`) lee ese GET y arma la plantilla en el front, así que la parte de servidor era solo el campo. Pasarlo a la plantilla es de la Sesión 2.
+- **Punto 1 · página de firma** (`quoteDecisionLanding.routes.ts`): con descuento, el bloque de totales sale de `pieDePresupuesto`, la cuenta del pie del PDF: «Suma de líneas», «Descuento», «Descuento global» (los rótulos de SCRUM-594 sin los dos puntos), «Base imponible» e «IVA (x%)». Sin descuento se queda el camino de antes: `pieDePresupuesto` redondea la cuota sobre la base del tipo y `calcVatBreakdown` la acumula línea a línea, así que pasar todo por el pie habría movido céntimos de páginas que estaban bien. Aprobación en `docs/microcopy/2026-09-17-SCRUM-888-descuentos-en-la-firma.md`.
+
+## Verificación
+
+- **Rojo del GET** `551ac3566f8af2eeb306e3f590e8891f2c8815fd`, por la app real (HTTP, banco de SCRUM-597): el detalle respondía 200 con las líneas y su `dto`, pero sin la clave. **Arreglo** `0035fcb92c4131aed44623c6faf6833bf35a0860`.
+- **Rojo de la firma** `ee76f08f5507a9bc935e20f3fbda7db176cf4628`: C3-B firmaba 559,70 y la página sumaba Base 539,49 + IVA 113,29 = 652,78; C3 firmaba 539,05 y la página sumaba 628,60. **Arreglo** `8cc2ac948a6d373ecf4fb4d08241a90a1dc2792e`: C3-B suma 462,56 + 97,14 = **559,70**; C3 suma 462,56 + 57,71 + 18,78 = **539,05**; y lo mismo con solo el descuento de línea y con solo el global.
+- **Positivo:** huella sha256 de 8 páginas SIN descuento (C1 con el céntimo del punto 4, C2, C4, dto 0 y global «0.00», todo al 0 %, modo «IVA no incluido», tiers y sin líneas), congelada con el código anterior: idéntica byte a byte tras el arreglo.
+- **Mutantes**, cada uno compilado y revertido (recompilando también al revertir): la firma ignora el global → 1 rojo · la firma pasa TODO por el pie → 1 (la huella) · la firma vuelve a la cuenta sin descuentos → 1 · el IVA con el rótulo del PDF → 1 · el GET sin el campo → 1. Revertido: 3/3.
+
+## Huecos, dichos
+
+- **Modo «IVA no incluido»:** la página sigue siempre en «sumar», como antes (condición (c) de la firma).
+- **Presupuesto con descuento y todo al 0 %:** la página enseña ahora el bloque (Suma de líneas, Descuento…, Base imponible) sin fila de IVA. Antes no había bloque porque la cuota era 0. La etiqueta de la cabecera no cambia («Total del presupuesto»).
+- No se ha mirado la página renderizada en un navegador (ni a 390 px ni a 1280 px): se verifica en staging tras el merge.
