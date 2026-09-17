@@ -1,6 +1,6 @@
 # SCRUM-901 · El banco de vistas, fiel a la Inicio: anida, monta en el documento, y value/textContent
 
-**Medido contra:** `origin/main` = `8c354ff3` · 2026-09-17T09:38:58Z (cabecera `Date` de GitHub, al cerrar la medición)
+**Medido contra:** `origin/main` = `8c354ff3404fb2a093d14b30414bc1a8e564c46a` · 2026-09-17T09:38:58Z (cabecera `Date` de GitHub, al cerrar la medición)
 **Rama:** `scrum-901-banco-inicio-value-textcontent` · **Carril:** Sesión 3 (bancos) · **Estado:** EN PR
 
 Nace de SCRUM-897: son sus tres hallazgos (Inicio 109 frente a 143 en Edge, `value` al parsear y `textContent`).
