@@ -66,7 +66,8 @@
     // lo corrige, guardaríamos un nombre falso — que se impugna y arrastra al documento entero.
     // (La página pública de firma SÍ lo precarga, y no es una incoherencia: allí quien tiene el
     // móvil en la mano es normalmente el cliente. Superficies distintas, riesgos distintos.)
-    const ROT = rotulos(), AYU = ayudas(), CALS = calidades();
+    // SCRUM-919 · cada documento puede traer SUS ayudas (el parte no habla del albarán).
+    const ROT = rotulos(), AYU = (opts && opts.ayudas) || ayudas(), CALS = calidades();
     // Sin microcopy servida no se pinta nada: se firma como se firmaba antes de la 300.
     const hayCopy = !!(ROT.firmadoPorNombre && CALS.length);
     let nombreEl = null, otraEl = null;

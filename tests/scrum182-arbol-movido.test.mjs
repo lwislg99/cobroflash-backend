@@ -17,9 +17,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { temporal } from './_temporal.mjs';
 
 import {
   huellaDe,
@@ -31,7 +31,7 @@ import {
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.join(AQUI, '..');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-182-'));
+const tmp = () => temporal('yaqu-182-');
 
 test('SCRUM-182 · un fichero reescrito cambia la huella', () => {
   const dir = tmp();

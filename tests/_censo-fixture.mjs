@@ -20,8 +20,8 @@
 // Los números van en el rango 9000+ para que no puedan colisionar nunca con un ticket de verdad.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { temporal } from './_temporal.mjs';
 
 /** Los cuatro casos del banco, reproducidos. Cada uno declara qué imita y qué debe dar. */
 export const CASOS = [
@@ -78,7 +78,7 @@ let cache = null;
 /** Crea (una vez) el repo sintético y devuelve su ruta. */
 export function repoFixture() {
   if (cache && fs.existsSync(cache)) return cache;
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'censo-fixture-'));
+  const raiz = temporal('censo-fixture-');
   const g = (...args) => execFileSync('git', args, { cwd: raiz, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 
   g('init', '-q', '-b', 'main');

@@ -1,0 +1,45 @@
+SCRUM-864c · EL CENSO POR AST, ANTES Y DESPUÉS · 17-sep-2026
+════════════════════════════════════════════════════════════════════════════════════════════════
+
+Instrumento: scripts/_censo-mkdtemp.mjs  ·  se corre en la tanda desde
+tests/scrum864c-el-temporal-no-vuelve.test.mjs
+
+── ANTES (árbol tal y como estaba en origin/main) ──────────────────────────────────────────────
+ficheros mirados : 1763
+llamadas         : 103  nuestras: 98  ajenas: 4  declaradas: 1
+GARANTIZADA      : 81
+NO_GARANTIZADA   : 2
+SIN_LIMPIEZA     : 0
+ESCAPA           : 13
+FABRICA          : 2
+suman            : 98 de 98 CUADRA
+suelo            : en verde (ve y distingue)
+
+SIN CIERRE:
+  docs/master/evidencias/SCRUM-866/censo-866.mjs:42 · mkdtempSync(…) → TMP  ·  borra en 171 SIN cobertura
+  tests/scrum899b-arranque-de-la-tanda.test.mjs:52 · mkdtempSync(…) → dir  ·  borra en 104 SIN cobertura
+
+── DOS SONDAS INDEPENDIENTES, SOBRE EL MISMO ÁRBOL ─────────────────────────────────────────────
+El censo de la evidencia de SCRUM-864 (docs/master/evidencias/scrum864/censo-mkdtemp.mjs) dio
+exactamente las mismas cinco cifras: 103 llamadas, 98 nuestras, 81 / 2 / 0 / 13 / 2.
+Única diferencia: 1762 ficheros contra 1763 — el módulo nuevo, que el primero aún no veía.
+Una discrepancia explicada no es una discrepancia; una sin explicar habría parado la tanda.
+
+── DESPUÉS (2 regresiones cerradas + las 15 que SCRUM-864 dejó declaradas) ─────────────────────
+ficheros mirados : 1766
+llamadas         : 87  nuestras: 82  ajenas: 4  declaradas: 1
+GARANTIZADA      : 82
+NO_GARANTIZADA   : 0
+SIN_LIMPIEZA     : 0
+ESCAPA           : 0
+FABRICA          : 0
+suman            : 82 de 82 CUADRA
+suelo            : en verde (ve y distingue)
+
+SIN CIERRE:  (ninguna)
+
+16 llamadas menos: las 2 regresiones del 17-sep y las 14 restantes de ESCAPA/FÁBRICA convertidas
+a `temporal()`, que ya no llaman a `mkdtempSync` y por eso salen de la población.
+
+COSTE del censo dentro de la tanda: ~1,7-3,7 s por pasada sobre 1.766 ficheros. Lo que domina es
+LEER el árbol: sólo 81 ficheros nombran `mkdtemp` y sólo ésos llegan al AST.
