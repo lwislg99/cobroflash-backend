@@ -1542,3 +1542,12 @@ El lector cambiado es **uno**, `scripts/_numero-de-rama.mjs`. Sus consumidores, 
 - tests: `scrum387`, `scrum738`, `scrum753`, `scrum804`, `scrum804f`, `scrum829b`.
 
 **NO comparte el lector, y NO se ha tocado:** `tests/_entrada-de-la-rama.mjs` (SCRUM-854), que tiene su propio `numeroDeRama` (`/^scrum-(\d+)/i`) y ya aceptaba las ramas sin slug. Tampoco el resto de instrumentos que miden sobre ramas remotas con su propio lector: los de la cuenta de Javier (27) que no aparecen arriba no importan esta regla.
+
+## SCRUM-804g · La mutación de 738 que 804f dejó muda
+
+**Medido contra:** `origin/main` = `755d23997bd55ce7aa6d6a1cb6a98616926dfd7e` · 2026-09-17T14:05:18Z
+**Rama:** `scrum-804g-la-mutacion-muda-de-738`
+
+El meta-guard del PR #1430 (run 35230131786, job 105231752255) salió FAILURE con «vivas 235 · mudas 1 · ciegas 0 · ficheros muertos 0». El único ✖ era `scrum738` MUDO: su mutación ①, que quita el delimitador de `numeroDeRama` (`/^scrum-0*([0-9]+)/`), ya no tumbaba «72 NO casa con 720, 727 ni 1727». La cazaba `numeroDeRama('scrum-72') === null`, y desde 804f `scrum-72` da 72 **con la regla y con el mutante**. **Es mío**, no la muda intermitente de scrum859.
+
+**Arreglo** (`a18dc18f`): 738 exige `null` para `scrum-72.1` y `scrum-72bb`. Es lo que la regla sigue exigiendo (delimitador `-` o fin del nombre) y lo que el mutante no cumple. **Verificado aplicando la mutación EXACTA declarada**: cae el test que nombra, y sin mutación 738 da 7/7. Las 4 mutaciones de 804f no daban muda (no están declaradas en el meta-guard; se midieron a mano).
