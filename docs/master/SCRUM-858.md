@@ -107,3 +107,72 @@ ese directorio lo comparten ~26 worktrees y cinco sesiones, y ahora mismo puede 
 
 `src/` · ningún test · la población de la tanda · ningún skip · ningún proceso ajeno · `TMPDIR` ·
 `prisma/schema.prisma` · ninguna rama ajena. Esta tarea sólo mide.
+
+---
+
+## SCRUM-858b · Cuelgue NO reproducido en N pasadas; cierre instalado
+
+**Medido contra:** `origin/main` = `545d5a929a227e2f54eb13c109855a5131989376` · 2026-09-17T14:37:37Z
+**Rama:** `scrum-858b-la-tanda-sin-resumen-falla` · **Carril:** Sesión 3 (instrumentos) · GO del orquestador a la opción (A), tope de 15 min (17-sep 17:45 CEST).
+
+### 1 · PASO 0: la tanda completa, medida con tope
+**Sonda** (fuera del árbol: meterla dentro puso en rojo SCRUM-708, que es justo lo que ese guard debe cazar). Lanza `node --test --test-force-exit --test-reporter=tap tests/*.test.mjs` sin shell, mide los silencios del TAP, cuenta los `node.exe` de la máquina y, si calla más de 20 min, mata SOLO su árbol. **Validada antes de usarla:** con un cuelgue fabricado da «MUDA» y no deja procesos; con una tanda sana da exit 0 y resumen.
+
+| main | PATH | pasada | min | resumen | tests | peor silencio | tras |
+|---|---|---|---|---|---|---|---|
+| `e48c18d5` | sin `bash` | 1 | 9,3 | sí | 7270 | 137 s | SCRUM-600g ⑧ |
+| `e48c18d5` | sin `bash` | 2 | 8,1 | sí | 7270 | 195 s | SCRUM-600g ⑧ |
+| `2be8fe16` | con `bash` | 1 | 6,1 | sí | 7310 | 75 s | SCRUM-530 |
+| `2be8fe16` | con `bash` | 2 | 6,0 | sí | 7310 | 105 s | SCRUM-772 |
+| `2be8fe16` | con `bash` | 3 | 5,0 | sí | 7310 | 77 s | SCRUM-530 |
+
+Además hubo 5 `npm test` completos de ramas el mismo día, todos terminados.
+
+**SUELO: el cuelgue NO se reproduce en 5 pasadas + 5 `npm test`.** Los rojos de las pasadas fueron de montaje y se dicen: sin `bash` en el PATH, 39 tests que lo exigen; y SCRUM-708 por los ficheros de control dentro del árbol. El único rojo de `main` fue SCRUM-804, arreglado en 804f/804g.
+
+### 2 · El silencio tras SCRUM-600g ⑧ es un FICHERO LENTO, no un cuelgue
+Es `tests/scrum601-copy-del-documento-vs-flag.test.mjs`. **Solo, tarda 120 y 152 s**, y todo A NIVEL DE MÓDULO (líneas 42-44): sus tests marcan 1 ms, así que el `duration_ms` del TAP no lo ve, y el reporter retiene la salida de los ficheros que vienen detrás. Por tramos:
+
+| tramo | tiempo | población |
+|---|---|---|
+| `poblacion` | 28 ms | 381 ficheros |
+| `portadoresDelFlag(FLAG)` | 64,9 s | 29.911 definiciones · 1.497 portadores · 7 vueltas |
+| `portadoresDelFlag(TIPO)` | 70,9 s | 1.373 portadores · 7 vueltas |
+| `censoCopy` | 26,3 s | |
+
+Que esto explique las 2,7 y 4,3 horas del 15-sep **no está probado**.
+
+### 3 · El cierre: `npm test` pasa por `scripts/tanda-con-veredicto.mjs`
+**Por qué un envoltorio y no un `--import`:** medido con Node 24.8, con `node --test --import=…` y con `NODE_OPTIONS=--import`, el módulo SOLO se carga en el proceso HIJO (`NODE_TEST_CONTEXT=child-v8`), nunca en el padre que imprime el resumen.
+
+**Script:** `npm run build && node scripts/tanda-con-veredicto.mjs node --test --test-force-exit tests/*.test.mjs`. El envoltorio:
+- lanza la tanda sin shell y pasa su salida tal cual;
+- si calla más de `TANDA_SILENCIO_MAX_MIN` (15 min, 4,6× el peor silencio sano medido), lo dice, para SOLO su árbol y sale con **3**;
+- si sale con 0 sin línea de recuento (`ℹ tests N` / `# tests N`), sale con **4**;
+- en cualquier otro caso devuelve el código de la tanda;
+- reenvía SIGINT/SIGTERM al hijo.
+
+**Tests (`tests/scrum858b-la-tanda-sin-veredicto.test.mjs`, rojo comiteado antes, `153ad293`), con tandas FABRICADAS:**
+- tanda muda → 3, sin `node` huérfanos. Incluye un hijo que no escribe nunca, que es el caso que distingue parar de no parar;
+- 0 sin recuento → 4 (reporter a fichero, y `node -e` a secas);
+- POSITIVO: la tanda sana sale igual, salida enmascarando tiempos y mismo código;
+- NEGATIVO: la tanda roja da el mismo código que sin envoltorio;
+- SEÑAL propagada: sólo POSIX; en Windows se salta con motivo y lo mide el CI (Linux).
+
+**Ajustados, con su motivo:**
+- `scrum708` y `scrum711` leen los patrones detrás de `--test`: el `.mjs` del envoltorio salía como «patrón de tests».
+- `scrum850` nombra la forma envuelta como SANA en su control negativo.
+
+El CI sigue con `npm test`.
+
+**Mutantes:**
+| Mutante | Resultado |
+|---|---|
+| M1 siempre 0 | cae NEGATIVO |
+| M2 no detecta la falta de resumen | cae 0-sin-recuento |
+| M3 sale 3 sin parar el árbol | **equivalente en Windows** (medido: libuv mete a los hijos en un job object que los mata al salir el padre); declarado al meta-guard, que corre en Linux, donde el hijo va `detached` y SÍ sobrevive |
+| M4 708 lee tras el primer `node` | cae el lector de 708 |
+
+M1, M2 y M3 están declarados en `MUTACIONES_QUE_ME_TUMBAN`.
+
+**Suite completa local con `npm test` ya envuelto:** primera pasada (antes de subir el tope de 702 y sin expediente) 7.343 tests, 2 rojos, ambos de esta rama (SCRUM-702 por las dos lecturas nuevas de `process.platform` y SCRUM-854 por faltar esta entrada), y el envoltorio devolvió EXIT=1, el código real de la tanda. La repetición tras arreglar los dos se anota abajo.
