@@ -231,6 +231,10 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
 
     currency: quote.currency,
     total: quote.total,
+    // SCRUM-888 · el descuento global, en euros (`null` = no hay). Sin él, «Duplicar» copiaba el
+    // presupuesto sin el global y a más precio (D6 de SCRUM-883), y el detalle no podía cuadrar
+    // base e IVA con un `total` que sí lo lleva. Es precio, no margen: lo ve quien ve el total.
+    discountGlobalAmount: quote.discountGlobalAmount ?? null,
     lines: quote.lines,
     pdfUrl: (quote as any).pdfUrl ?? null,
     signatureUrl: quote.signatureUrl ?? null,
