@@ -10,6 +10,7 @@ import { isQuoteExpired } from '../../../quotes/domain/expire.service';
 // cliente se armara por otro sitio, serían dos documentos distintos con el mismo nombre.
 import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+import { pieDePresupuesto } from '../../../quotes/domain/presentacionIva'; // SCRUM-888 punto 1
 // SCRUM-888g · los tramos que ve el cliente al firmar salen de la MISMA vista que usan el panel y
 // la emisión (`stageAmountsFromLines`): la página no calcula un solo importe por su cuenta.
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView';
@@ -381,7 +382,33 @@ function renderQuoteDetail(
   // nada cuando no hay cuota: dice «Total del presupuesto» y punto.
   const vat = calcVatBreakdown(lines);
   const hasVat = vat.cuota > 0;
-  const vatHtml = hasVat
+
+  // ── SCRUM-888 (punto 1) · CON DESCUENTOS, LA MISMA CUENTA QUE EL PIE DEL PDF ────────────────
+  // Aquí se pintaban base e IVA de las líneas SIN descuentos bajo un total que SÍ los lleva: C3-B
+  // firmaba 559,70 y la página sumaba 652,78. Con descuento, las filas salen de `pieDePresupuesto`,
+  // la fuente del pie del documento que el cliente recibe, y base + IVA suman el total firmado.
+  // Firma: SCRUM-888 comentario 15788 · (a) «Suma de líneas», «Descuento» y «Descuento global»
+  // (rótulos de SCRUM-594, sin dos puntos) · (b) el IVA con el rótulo de esta página, «IVA (21%)»
+  // · (c) siempre en modo «sumar», como antes: «IVA no incluido» es un hueco declarado.
+  //
+  // 🔴 SIN DESCUENTO NO SE PASA POR EL PIE, y es a propósito: `pieDePresupuesto` redondea la cuota
+  // sobre la base del tipo y `calcVatBreakdown` la acumula línea a línea, así que pasar todo por el
+  // pie movería céntimos de páginas que hoy están bien. Sin descuento, la página es byte a byte la
+  // de antes (huella en `tests/scrum888d-firma-con-descuentos.test.mjs`).
+  const pie = pieDePresupuesto({
+    lineas: lines, modo: 'sumar', nombreImpuesto: 'IVA', descuentoGlobal: (quote as any).discountGlobalAmount,
+  });
+  const conDescuento = pie.filas.some((f) => f.etiqueta === 'Suma de líneas:');
+  const rotuloEnLaPagina = (etiqueta: string) => {
+    const iva = /^IVA (\d+)%:$/.exec(etiqueta);
+    return iva ? `IVA (${iva[1]}%)` : etiqueta.replace(/:$/, '');
+  };
+  const vatHtml = conDescuento
+    ? `<div class="totals-block">
+        ${pie.filas.map((f) => `
+        <div class="totals-row"><span>${esc(rotuloEnLaPagina(f.etiqueta))}</span><span>${money(f.importe)}</span></div>`).join('')}
+      </div>`
+    : hasVat
     ? `<div class="totals-block">
         <div class="totals-row"><span>Base imponible</span><span>${money(vat.base)}</span></div>
         ${vat.entries.filter((e) => e.rate > 0).map((e) => `
