@@ -176,7 +176,8 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // 🔴 SCRUM-867 · ANTES ERA EL `aria-label` DEL MODAL (`nuevaFacturaModal.js:108`, «Cliente al que
   // facturas»). Ese modal se retiró por muerto y su literal se fue con él, así que el negativo se
   // reancla en otro que sí sigue en el árbol: el rótulo de Facturas del menú.
-  const menu = en('public/dashboard/js/app.js', 349);
+  // SCRUM-919 · +1: `app.js` ganó la línea de `appParteAyudas` por encima.
+  const menu = en('public/dashboard/js/app.js', 350);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);
