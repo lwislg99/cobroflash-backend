@@ -1,7 +1,7 @@
 # SCRUM-899 · Orquestador autónomo: el equipo arranca solo y trabaja por tandas
 
 **Fecha:** 17-sep-2026 · **Carril:** S5 · automatización
-**Medido contra:** `origin/main` = `0888df9e1e07d9678c87f5555a1d160db1c97eb8` · 2026-09-17T10:31:22Z
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T13:21:12Z
 **Rama:** `scrum-899-orquestador-autonomo`
 **Horas:** las locales del equipo cuando se dice «local» (el reloj local va ~5 min adelantado); el resto, de GitHub.
 
@@ -89,3 +89,9 @@ banco, con un `claude` falso con estado.
 - **Tres mutaciones declaradas, las tres caen**; las cinco del hito 1 re-verificadas tras tocar su test.
 
 **Tanda completa** (local, sobre `373e9b1f`): 7282 tests, 7172 pass, 0 fail, 110 skipped.
+
+**Tanda completa tras mergear main** (`2be8fe16`, que ya trae el prompt de la tanda, #1419): 7317 tests, 7206 pass,
+**1 fail**, 110 skipped. El fallo es SCRUM-804 («la agrupación no pierde ni inventa ramas: `scrum-904 → SCRUM-904`»): lee
+las ramas REMOTAS vivas, y existe `origin/scrum-904`, sin sufijo. **Control:** en un árbol limpio de `origin/main`
+(`2be8fe16`, sin nada de este PR), los dos ficheros de SCRUM-804 dan exactamente el mismo fallo. Es del entorno, no de
+este cambio, que no toca nada de 804.
