@@ -90,7 +90,13 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 //   · su ÚNICO literal a pelo, el `aria-label` «Cliente al que facturas», que nadie llegó a firmar.
 // La cifra NO se dedujo: se regeneró con el censo sobre el árbol resultante.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VEREDICTO_AL_MEDIR = { flag: 12, tipo: 7, aPelo: 151 };
+// 151 → 152 · 17-sep-2026 (SCRUM-887) · CUÁL ENTRÓ Y POR QUÉ NO ES REGRESIÓN: el 409
+// `albaran_con_descuento_global` de `POST /admin/albaranes/:id/convertir-en-factura`, texto FIRMADO
+// (SCRUM-887 comentario 15675). Dice «facturar» a pelo y está bien: esa ruta ya ha devuelto
+// `facturacion_no_disponible` en modo justificante ANTES de llegar a este rechazo, así que sólo
+// lo lee quien emite facturas. Cifra regenerada con el censo, no deducida.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VEREDICTO_AL_MEDIR = { flag: 12, tipo: 7, aPelo: 152 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -189,7 +195,11 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // correcto—, pero ese arreglo cedió al de `main` y la constante ya no existe. El caso queda
 // anotado en `docs/master/SCRUM-814.md`: un censo que penaliza centralizar copy empuja a
 // duplicarla, y eso hay que verlo venir antes de que empuje a nadie.
-const NO_LEGIBLES_AL_MEDIR = 31;
+// 17-sep-2026 · 31 → 32, MEDIDO (SCRUM-887). Es el mismo caso que describe la nota de arriba, y esta
+// vez se queda: el literal firmado del 409 del albarán con descuento global vive en SU ÚNICA
+// constante (`COPY_ALBARAN_CON_DESCUENTO_GLOBAL`) y llega al `json` por referencia. Duplicarlo en
+// línea para bajar este número sería cambiar una fuente por dos: justo lo que la nota avisa.
+const NO_LEGIBLES_AL_MEDIR = 32;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;
