@@ -691,6 +691,8 @@ async function initApp() {
   // Va DESPUÉS del render y SIN `await`: pintar el dashboard no puede esperar a la red. El aviso
   // se repinta solo cuando el drenado termina — `drenarAlAbrir` se encarga, y no lanza nunca.
   if (typeof window.drenarAlAbrir === 'function') window.drenarAlAbrir();
+  // SCRUM-919 · y también al volver la red y al volver a primer plano, sin recargar.
+  if (typeof window.activarDrenadoAlVolver === 'function') window.activarDrenadoAlVolver(window, document);
 
   // 10. SCRUM-360 (H5 · fase 3) · QUE iOS NO SE LLEVE UNA FIRMA EN SILENCIO.
   //
