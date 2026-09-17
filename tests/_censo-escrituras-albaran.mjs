@@ -26,7 +26,7 @@ import ts from 'typescript';
  * @returns {{ escrituras: Array<{fichero:string, linea:number, data:string, indirecto:string}>, ficheros:number }}
  */
 export function escriturasDeAlbaran(raiz) {
-  const out = [];
+  const out = []; // CONTROL SCRUM-839f · NO MERGEAR
   let ficheros = 0;
 
   const visitarDir = (dir) => {
