@@ -32,13 +32,16 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  TOKENS, UMBRAL_NO_TEXTUAL, PARES, contraste, tokensDeColor, bloquesDeTema, censar, linea,
+  TOKENS, UMBRAL_NO_TEXTUAL, PARES, contraste, tokensDeColor, bloquesDeTema, censar, linea, lineaDeReparto,
 } from '../scripts/_contraste-de-tokens.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** El valor con el que `--border` nació y que NO se veía. Es la sonda del control rojo. */
 const EL_QUE_NO_SE_VEIA = '#e7e9e5';
+
+/** El valor en el que `--input-border` se quedaba cuando `--border` subio: la jerarquia invertida. */
+const EL_CAMPO_QUE_SE_QUEDABA_ATRAS = '#cdd2cb';
 
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
@@ -47,6 +50,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  --border: #8d8f8b;',
     a: '  --border: #e7e9e5;',
     cae: 'SCRUM-691 · 🔴 todo par declarado llega a 3,00 de contraste',
+  },
+  {
+    // Dejar el campo donde estaba: es la jerarquía invertida, no un incumplimiento cualquiera.
+    fichero: 'public/tokens.css',
+    de: '  --input-border: #797e77;',
+    a: '  --input-border: #cdd2cb;',
+    cae: 'SCRUM-691c · 🔴 el borde del CAMPO se ve MÁS que el de su tarjeta, y no al revés',
   },
 ];
 
@@ -129,10 +139,89 @@ test('SCRUM-691 · 🔴 MUTACIÓN: devolver el token a su valor invisible, y ENT
   const tokens = tokensDeColor(mutado);
   assert.equal(tokens.get('--border'), EL_QUE_NO_SE_VEIA,
     '🔴 el texto mutó pero el lector sigue viendo el valor viejo: no está leyendo esa declaración.');
-  const incumplen = PARES.filter((p) => contraste(tokens.get(p.de), tokens.get(p.contra)) < UMBRAL_NO_TEXTUAL);
-  assert.equal(incumplen.length, PARES.length,
+  // ⚠️ SE CUENTAN LOS PARES DE ESE TOKEN, NO TODOS, y el matiz lo cazó la fase c: al añadir los dos
+  // pares de `--input-border` esta pata empezó a fallar exigiendo que cayeran los cuatro. No caen,
+  // y no deben: mutar `--border` no tiene por qué tumbar al campo. Un control que exige de más
+  // acaba relajándose entero; uno que dice exactamente qué debe caer sobrevive a que crezca el
+  // censo.
+  const suyos = PARES.filter((p) => p.de === '--border');
+  const incumplen = suyos.filter((p) => contraste(tokens.get(p.de), tokens.get(p.contra)) < UMBRAL_NO_TEXTUAL);
+  assert.equal(incumplen.length, suyos.length,
     `🔴 CON EL TOKEN DEVUELTO A SU VALOR INVISIBLE, el guard sólo acusa ${incumplen.length} de `
-    + `${PARES.length} pares. Entonces no está mirando la propiedad que dice mirar.`);
+    + `${suyos.length} pares de \`--border\`. Entonces no está mirando la propiedad que dice mirar.`);
+  // Y los del campo NO se tocan: si cayeran, esta mutación estaría moviendo algo que no muta.
+  const delCampo = PARES.filter((p) => p.de === '--input-border')
+    .filter((p) => contraste(tokens.get(p.de), tokens.get(p.contra)) < UMBRAL_NO_TEXTUAL);
+  assert.deepEqual(delCampo, [],
+    '🔴 mutar `--border` ha tumbado también los pares de `--input-border`: la mutación no está '
+    + 'aislada y su rojo no prueba nada sobre el token que dice mutar.');
+});
+
+// ═══ FASE c · 🔴 LA JERARQUÍA, COMO NÚMERO Y NO COMO COMENTARIO ══════════════════════════════
+
+test('SCRUM-691c · 🔴 el borde del CAMPO se ve MÁS que el de su tarjeta, y no al revés', () => {
+  const c = censar(RAIZ);
+  assert.ok(c.jerarquia.length > 0,
+    '🔴 CIEGO: no hay ninguna relación de jerarquía declarada. Sin ella, dos tokens pueden '
+    + 'invertirse sin que nada lo note — que es exactamente lo que pasó al subir `--border`.');
+  for (const j of c.jerarquia) {
+    assert.ok(j.cumple === true,
+      `🔴 JERARQUÍA INVERTIDA sobre \`${j.fondo}\`: \`${j.mas}\` da ${j.razonMas?.toFixed(2)} y `
+      + `\`${j.que}\` da ${j.razonQue?.toFixed(2)}. La hoja declara el primero como «mas visible», `
+      + `y ${j.porque}. Un contorno de campo más flojo que el de la tarjeta que lo contiene se lee `
+      + 'al revés de lo que promete su propio comentario.');
+  }
+});
+
+test('SCRUM-691c · 🔴 CONTROL: la jerarquía se INVIERTE si el campo se queda en el valor de ayer', () => {
+  const fuente = fs.readFileSync(path.join(RAIZ, TOKENS), 'utf8');
+  const DE = '  --input-border: #797e77;';
+  const veces = fuente.split(DE).length - 1;
+  assert.equal(veces, 1,
+    `🔴 LA MUTACIÓN NO PUEDE ENTRAR: el ancla «${DE}» aparece ${veces} veces y debe aparecer 1.`);
+  const mutado = fuente.replace(DE, `  --input-border: ${EL_CAMPO_QUE_SE_QUEDABA_ATRAS};`);
+  assert.notEqual(mutado, fuente, '🔴 la sustitución no ha cambiado el texto: no ha mutado nada.');
+
+  const tokens = tokensDeColor(mutado);
+  assert.equal(tokens.get('--input-border'), EL_CAMPO_QUE_SE_QUEDABA_ATRAS,
+    '🔴 el texto mutó pero el lector sigue viendo el valor nuevo: no lee esa declaración.');
+
+  // Con el valor de ayer, el campo queda POR DEBAJO de la tarjeta: la inversión que motivó la fase.
+  for (const fondo of ['--bg', '--surface']) {
+    const campo = contraste(tokens.get('--input-border'), tokens.get(fondo));
+    const tarjeta = contraste(tokens.get('--border'), tokens.get(fondo));
+    assert.ok(campo < tarjeta,
+      `🔴 EL CONTROL NO ES CONTROL: con el valor de ayer (${EL_CAMPO_QUE_SE_QUEDABA_ATRAS}) el campo `
+      + `da ${campo.toFixed(2)} sobre \`${fondo}\` y la tarjeta ${tarjeta.toFixed(2)}, o sea que NO `
+      + 'se invierte. Entonces esta pata no prueba lo que dice probar.');
+    assert.ok(campo < UMBRAL_NO_TEXTUAL,
+      `🔴 y además ya cumplía el umbral (${campo.toFixed(2)}): la fase c no haría falta.`);
+  }
+});
+
+// ═══ FASE c · 🔴 EL REPARTO: a cuántos tokens APLICA 1.4.11 ══════════════════════════════════
+
+test('SCRUM-691c · 🔴 el censo DECLARA a cuántos tokens aplica 1.4.11, y a cuántos no sabe', (t) => {
+  const c = censar(RAIZ);
+  t.diagnostic(lineaDeReparto(c));
+  for (const x of [...c.clases].sort((a, b) => a.clase.localeCompare(b.clase))) {
+    t.diagnostic(`  ${x.clase.padEnd(15)} ${x.token.padEnd(17)} usos:${String(x.usos).padStart(3)} · ${x.motivo}`);
+  }
+
+  // 🔴 SUELO del reparto: si nada se clasifica, el reparto no dice nada.
+  assert.equal(c.clases.length, c.aplica.length + c.noAplica.length + c.noClasificados.length,
+    '🔴 las clases no suman: el reparto pierde tokens.');
+  assert.ok(c.aplica.length > 0,
+    '🔴 CIEGO: a NINGÚN token le aplicaría 1.4.11, y la hoja tiene dos tokens de borde. El criterio '
+    + 'se deriva del uso en las hojas: si no ve ningún `border`, no está leyendo las hojas.');
+
+  // 🔴 Y los DOS que este guard vigila tienen que estar entre los que APLICAN. Si uno saliera de
+  // ahí, el guard estaría vigilando un token al que ya no le corresponde el criterio.
+  for (const tk of ['--border', '--input-border']) {
+    assert.ok(c.aplica.some((x) => x.token === tk),
+      `🔴 \`${tk}\` ya no se clasifica como límite visual, y sin embargo se le sigue exigiendo `
+      + '3,00. O dejó de pintarse en un borde, o el criterio dejó de verlo.');
+  }
 });
 
 // ═══ EL GUARD DEL ÁRBOL REAL, con su población declarada ════════════════════════════════════
