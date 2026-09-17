@@ -1,0 +1,67 @@
+═══ SCRUM-927 · ① LAS DOS CIFRAS, JUNTAS ═══
+
+   población mirada (ficheros ejecutables de docs/ y scripts/): 277
+   de ellos, CONTIENEN UNA MEDICIÓN ..........................: 166
+
+   de esas 166 mediciones:
+     ✅ LAS EJECUTA ALGO (tanda, CI o hook) ...: 68 (41%)
+     ⚠️  invocables A MANO (npm, nadie las llama): 30 (18%)
+     🔴 NO LAS CORRE NADIE .....................: 68 (41%)
+     ----------------------------------------------------
+     suman: 166 de 166  ✅ cuadra
+
+   semillas por raíz: TANDA=889 · CI=14 · HOOK=2 · ARRANQUE=2
+   raíz declarada fuera del árbol: scripts/equipo/orquestador-arranque.mjs — lo lanza `arranque.cmd` desde una tarea programada de Windows (SCRUM-899)
+   raíz declarada fuera del árbol: scripts/equipo/instalar.mjs — genera ese `arranque.cmd`; se ejecuta a mano al montar un puesto
+
+═══ ② POR QUÉ NO CORREN · tres formas, tres remedios ═══
+
+   (a) NUNCA SE PENSÓ QUE CORRIERAN — actas de un ticket, en docs/master/evidencias/: 44
+       Remedio: ninguno. Un acta fechada es un dato, y está bien que lo sea.
+   (b) CORREN PERO NADIE MIRA SU SALIDA — invocables por npm que CI no lanza: 30
+       Remedio: o las lanza CI y su salida decide, o se admite que son de consulta.
+   (c) SE PUEDEN VOLVER A CORRER Y NADIE LO HACE — en scripts/, reproducibles: 8
+       Remedio: candidatas a guard. Son las únicas que lo son (ver ④).
+
+   de las 98 dormidas, REPRODUCIBLES sobre el árbol solo: 29 · atadas a algo efímero (argumento, ruta absoluta, red, base, navegador): 69
+
+═══ ③ LAS EXCEPCIONES APARCADAS ═══
+
+   listas de excepción declaradas ..................: 132
+     ✅ VIGILADAS · algo AFIRMA sobre ellas; si cambian, salta: 94
+     ⚠️  SÓLO AVISAN · su consecuencia acaba en un console.log : 7
+     🔴 APARCADAS · sólo sirven para excluir; nada las mira ...: 27
+     · vacías (no dejan a nadie fuera) ........................: 15
+   elementos fuera de los números, en listas no vigiladas .....: 220
+   listas sin un motivo escrito al lado ........................: 6
+
+   ⚠️ LAS QUE SÓLO AVISAN (el hallazgo: contar no es avisar)
+        87  PARES_SIN_TESTIGO_CONGELADOS    scripts/_anclas-sin-testigo.congelado.mjs:21
+         5  CONOCIDOS                       docs/master/evidencias/SCRUM-863/censo-region-863.mjs:85
+         4  CONOCIDOS                       scripts/guard-contraste.mjs:65
+         3  SIN_DTO                         scripts/guard-descuentos-en-el-detalle.mjs:50
+         2  CONOCIDOS                       scripts/censo-bancos-fijados.mjs:77
+         1  EXCLUIDAS                       docs/master/evidencias/SCRUM-523/censo-523.mjs:40
+         1  EXCLUIDAS                       docs/master/evidencias/SCRUM-863/censo-region-863.mjs:33
+
+   🔴 APARCADAS con más elementos
+        30  CONOCIDOS_A                     tests/scrum710b-anclaje-por-identidad.test.mjs:268
+        12  DESCONOCIDOS                    tests/scrum622-desconocido-no-es-verde.test.mjs:64
+         6  DESCONOCIDOS                    tests/scrum748-no-lo-se-no-es-al-dia.test.mjs:52
+         6  MOTIVOS_SIN_ANCLA               tests/scrum859-identidad-y-motivo-cerrado.test.mjs:97
+         5  IGNORAR                         scripts/censo-arbitro-de-toque.mjs:43
+         4  MONTAJES_DECLARADOS             tests/scrum337-aviso-atado-al-bloqueo.test.mjs:198
+         4  CONOCIDOS                       tests/scrum622-desconocido-no-es-verde.test.mjs:93
+         4  CONOCIDOS                       tests/scrum624-cuantos-sitios-calculan-dinero.test.mjs:120
+         4  SIN_TRATAMIENTO                 scripts/backup-restore.mjs:70
+         4  CARPETAS_IGNORADAS              scripts/_censo-alta-de-cliente.mjs:44
+         3  LINEA_SIN_IMPORTE               tests/scrum263-sin-lineas-409.test.mjs:118
+         3  NO_DECLARADOS                   tests/scrum707-estado-no-contemplado.test.mjs:41  [SIN MOTIVO ESCRITO]
+
+   🔴 SIN MOTIVO ESCRITO (una excepción sin causa convierte un fallo en una característica)
+      FUENTES_SIN_BLOQUE              tests/scrum438-v3-sobre.test.mjs:501  (2 elem · vigilada)
+      COBRO_PENDIENTE                 tests/scrum448-cobros-estado-de-carga.test.mjs:24  (14 elem · vigilada)
+      NO_DECLARADOS                   tests/scrum707-estado-no-contemplado.test.mjs:41  (3 elem · APARCADA)
+      PERMITIDAS                      tests/scrum762-el-pdf-emitido-se-rehace.test.mjs:334  (2 elem · vigilada)
+      SIN_VALORAR                     tests/scrum905-facturar-solo-si-se-puede.test.mjs:30  (9 elem · vigilada)
+      SIN_DTO                         scripts/guard-descuentos-en-el-detalle.mjs:50  (3 elem · sólo avisa)
