@@ -259,6 +259,15 @@ test('🔴 relevar lanza SIEMPRE una sesión NUEVA, nunca reanuda', () => {
   assert.deepEqual(args.slice(0, 5), ['--bg', '-n', 'sesion-2', '--permission-mode', 'auto']);
   assert.doesNotMatch(args.join(' '), /--resume/, '🔴 relevar reanudaría, y arrastraría el contexto viejo entero');
   assert.equal(args.at(-1), 'tu encargo de hoy', '🔴 el encargo tiene que viajar DENTRO del prompt: sin él la sesión gasta contexto preguntando');
+
+  // Hermano POSITIVO del patrón (SCRUM-237): sin esto, `--resume` podría ser un token que no
+  // aparece nunca y la negación de arriba pasaría siempre sin comprobar nada. El mismo patrón, sobre
+  // los argumentos de reanudar, SÍ tiene que casar.
+  assert.match(
+    s.argsLanzar({ modo: 'reanudar', nombre: 'sesion-2', sessionId: UUID, prompt: 'p' }).join(' '),
+    /--resume/,
+    '🔴 CIEGO: el patrón no detecta ni los argumentos que SÍ reanudan',
+  );
 });
 
 test('la ruta del traspaso sale de un solo sitio y es la que dice la A19', () => {

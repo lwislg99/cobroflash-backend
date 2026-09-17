@@ -227,6 +227,12 @@ fichero restaurado byte a byte):
    nombre—. Una mutación cuyo `cae` no existe sale **CIEGA** en `meta:mutaciones`: no se mide, y el guard queda sin
    comprobar **pareciendo cubierto**. Corregido copiando el nombre real, que es el que había salido al probar los
    mutantes. Es el mismo defecto que este PR denuncia en otro sitio: algo que parece vigilado y no lo está.
+3. **SCRUM-237 me tumbó la siguiente**, y también con razón: escribí `doesNotMatch(/--resume/)` sin hermano positivo.
+   Un patrón que no se comprueba en positivo puede ser un token que no aparece nunca, y entonces la negación pasa
+   siempre sin mirar nada. Añadido el canario: el MISMO patrón, sobre los argumentos de reanudar, SÍ casa.
+
+Las tres son del mismo tipo —dar por vigilado lo que no lo está—, las tres las cazó un guard de la casa y ninguna la
+cacé yo. Se dejan escritas porque el ticket va precisamente de eso.
 
 **Tests declarados:** `tests/scrum899c-relevar-y-contexto.test.mjs`.
 
