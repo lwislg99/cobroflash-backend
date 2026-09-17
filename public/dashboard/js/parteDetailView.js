@@ -92,6 +92,9 @@
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
     // `docs/microcopy/2026-09-16-SCRUM-890-parte-vacio-no-se-firma.md`.
     parteVacioNoSeFirma: 'Este parte está vacío y no se puede firmar. Apunta lo que has hecho y vuelve a intentarlo.',
+    // SCRUM-890 (PR 2) · una firma que se quedó en la cola y el servidor rechazó al vaciarla, con un
+    // código distinto de `parte_vacio`. ⚠️ PROPUESTA, PENDIENTE DE FIRMA (regla 30).
+    firmaRechazada: 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el parte.',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -586,6 +589,16 @@
     tecnico: { tipo: 'parte-tecnico', ruta: function (id) { return '/admin/partes/' + id + '/firmar-tecnico'; } },
   };
 
+  /**
+   * El mensaje de fallo al firmar es EL DEL ALBARÁN (`mensajeDeFalloAlFirmar`, en
+   * `albaranDetailView.js`, que `index.html` carga antes que este fichero). No se copia: dos copias
+   * de un literal se separan en cuanto se toca una. Si no estuviera cargado, el pad pone su aviso por
+   * defecto — que tampoco cierra.
+   */
+  function mensajeDelAlbaran(e) {
+    return typeof window.mensajeDeFalloAlFirmar === 'function' ? window.mensajeDeFalloAlFirmar(e) : '';
+  }
+
   function firmarParte(parte, opciones, quien) {
     var o = opciones || {};
     var cual = FIRMAS[quien || 'cliente'];
@@ -624,19 +637,32 @@
         var cuerpo = Object.assign({ signatureData: dataUri }, declaracion || {});
         // El error SUBE (SCRUM-404): el pad no cierra hasta que esto resuelve, así que un fallo
         // deja el trazo en pantalla y se reintenta sin pedirle al cliente que firme otra vez.
-        var r = await firmar(parte.id, cuerpo, function () {
-          return pedir(cual.ruta(parte.id), { method: 'POST', body: JSON.stringify(cuerpo) });
-        }, cual.tipo);
-        // Repinta con lo que dice el SERVIDOR. Se llama también cuando la firma se quedó en la
-        // cola: el parte sigue en borrador y la pantalla tiene que seguir diciéndolo.
-        if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
+        var r;
+        try {
+          r = await firmar(parte.id, cuerpo, function () {
+            return pedir(cual.ruta(parte.id), { method: 'POST', body: JSON.stringify(cuerpo) });
+          }, cual.tipo);
+        } catch (e) {
+          throw new Error(mensajeDelAlbaran(e));
+        }
         // 🔴 SCRUM-890 · UN RECHAZO SUBE. `firmar` lo devuelve DENTRO del resultado y el pad sólo
         // avisa si esto lanza: sin el `throw` se cerraba como si el cliente hubiera firmado. La
-        // pantalla traía líneas y el servidor ya no (las quitó la oficina): el 409 llega aquí.
+        // pantalla traía líneas y el servidor ya no (las quitó la oficina): el 409 llega aquí, y
+        // se repinta porque el servidor SÍ ha dicho algo nuevo del parte.
         if (r && r.rechazada) {
+          if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
           var codigo = r.error && r.error.code;
           throw new Error(codigo === 'parte_vacio' ? TEXTOS.parteVacioNoSeFirma : ((r.error && r.error.message) || ''));
         }
+        // 🔴 SCRUM-890 (PR 2) · SIN ③ EL PAD NO SE CIERRA, igual que el albarán (SCRUM-358). Sin red
+        // la firma está en la cola, pero cerrar en silencio deja al profesional creyendo que subió.
+        // Se relanza el MISMO mensaje y NO se repinta: sin red, pedir el parte fallaría y taparía la
+        // pantalla con «no se pudo cargar» detrás del pad.
+        if (!r || r.estado !== window.FIRMA_A_SALVO) {
+          throw new Error(mensajeDelAlbaran(r && r.error));
+        }
+        // Confirmada: se repinta con lo que dice el SERVIDOR.
+        if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
         return r;
       },
     });
@@ -699,6 +725,36 @@
     // quedó guardado, no lo que creemos que mandamos. Mismo criterio que tras firmar.
     await renderParteDetailView(contenedor, parteId, o);
     return true;
+  }
+
+  /**
+   * 🔴 SCRUM-890 (PR 2) · UNA FIRMA ENCOLADA QUE EL SERVIDOR RECHAZÓ AL VACIAR LA COLA, DICHO AQUÍ.
+   *
+   * El vaciado corre al abrir la app y nadie mira su resultado; la firma ya no está en la cola. Lo
+   * que queda es la constancia por documento que deja `colaDeFirmas.js` en localStorage, y que se borra
+   * cuando ese recuadro se vuelve a firmar con éxito.
+   *
+   * Sólo cuenta un recuadro SIN firmar: si el servidor dice que ya está firmado, el rechazo es viejo
+   * y no pide nada. Si no se puede leer el almacén no se pinta nada — no hay qué afirmar. Un solo
+   * aviso: el del cliente va primero y el del técnico sale cuando ése se resuelva.
+   */
+  async function avisarDeUnRechazo(parte, avisar) {
+    if (typeof window.leerRechazosDeFirma !== 'function') return;
+    var r;
+    try { r = await window.leerRechazosDeFirma(); } catch (_e) { return; }
+    if (!r || r.estado !== window.GUARDADO || !Array.isArray(r.rechazos)) return;
+    var sinFirmar = [];
+    if (!parte.firmoElCliente) sinFirmar.push(FIRMAS.cliente.tipo);
+    if (!parte.firmoElTecnico) sinFirmar.push(FIRMAS.tecnico.tipo);
+    for (var i = 0; i < sinFirmar.length; i++) {
+      var clave = 'firma:' + sinFirmar[i] + ':' + String(parte.id);
+      for (var j = 0; j < r.rechazos.length; j++) {
+        if (r.rechazos[j] && r.rechazos[j].clave === clave) {
+          avisar(r.rechazos[j].codigo === 'parte_vacio' ? TEXTOS.parteVacioNoSeFirma : TEXTOS.firmaRechazada);
+          return;
+        }
+      }
+    }
   }
 
   async function renderParteDetailView(contenedor, parteId, opciones) {
@@ -959,30 +1015,33 @@
     // Cada recuadro a SU ruta. Se enganchan los dos por separado: con un solo escuchador que
     // mirara un atributo, un fallo de selector mandaría la firma del técnico a la ranura del
     // cliente — y eso, en un documento firmado, no se deshace.
+    // SCRUM-890 · el aviso va DENTRO de la sección de firmas, junto al botón que se pulsó.
+    // `.alert warning` y no `error`: no se ha roto nada, al parte le falta contenido.
+    var avisar = function (texto) {
+      var seccion = contenedor.querySelector && contenedor.querySelector('[data-parte-firmas]');
+      if (!seccion) return;
+      var previo = seccion.querySelector('[data-parte-firma-rechazada]');
+      if (previo && previo.remove) previo.remove();
+      var aviso = document.createElement('div');
+      aviso.className = 'alert warning';
+      aviso.setAttribute('role', 'alert');
+      aviso.setAttribute('data-parte-firma-rechazada', '1');
+      aviso.style.marginTop = '8px';
+      aviso.textContent = texto;
+      seccion.appendChild(aviso);
+    };
     [['[data-parte-firmar]', 'cliente'], ['[data-parte-firmar-tecnico]', 'tecnico']].forEach(function (par) {
       var boton = contenedor.querySelector && contenedor.querySelector(par[0]);
       if (!boton || !boton.addEventListener) return;
       boton.addEventListener('click', function () {
         firmarParte(parte, Object.assign({}, o, {
           alFirmar: function () { return renderParteDetailView(contenedor, parteId, o); },
-          // SCRUM-890 · el aviso va DENTRO de la sección de firmas, junto al botón que se pulsó.
-          // `.alert warning` y no `error`: no se ha roto nada, al parte le falta contenido.
-          avisar: function (texto) {
-            var seccion = contenedor.querySelector && contenedor.querySelector('[data-parte-firmas]');
-            if (!seccion) return;
-            var previo = seccion.querySelector('[data-parte-firma-rechazada]');
-            if (previo && previo.remove) previo.remove();
-            var aviso = document.createElement('div');
-            aviso.className = 'alert warning';
-            aviso.setAttribute('role', 'alert');
-            aviso.setAttribute('data-parte-firma-rechazada', '1');
-            aviso.style.marginTop = '8px';
-            aviso.textContent = texto;
-            seccion.appendChild(aviso);
-          },
+          avisar: avisar,
         }), par[1]);
       });
     });
+
+    await avisarDeUnRechazo(parte, avisar);
     return true;
   }
 

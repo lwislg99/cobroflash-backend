@@ -100,6 +100,13 @@ const CLAVES_LOCALES = [
       + 'borramos nosotros. Un aviso que grita en falso se ignora, y entonces no avisa del bueno.',
   },
   {
+    // SCRUM-890 · la constancia de una firma encolada que el servidor rechazó al vaciar la cola.
+    patron: /^yaqu_firma_rechazada_/, almacen: 'localStorage', purga: true,
+    motivo: 'SE PURGA: dice qué documento de qué cliente no llegó a firmarse en este móvil, y se '
+      + 'escribió para que lo lea ESTE profesional. Además el logout ya vacía `firmasPendientes`: '
+      + 'un aviso de «vuelve a firmar» de otra sesión sería un aviso sobre algo que ya no es suyo.',
+  },
+  {
     patron: /^yaqu_tips_shown$/, almacen: 'localStorage', purga: false,
     motivo: 'SOBREVIVE. Es el «no me lo vuelvas a enseñar» de los consejos: no hay dato personal '
       + 'ni de negocio, no lleva merchant, y es una preferencia DEL APARATO. Purgarlo devolvería '
@@ -236,7 +243,16 @@ function abrirAlmacen() {
       for (let v = desde; v < VERSION_BD; v += 1) TRAMOS[v](bd);
     };
 
-    peticion.onsuccess = () => resolve(peticion.result);
+    // SCRUM-890 · medido con dos pestañas en Chromium (17-sep): una conexión que no atiende
+    // `versionchange` bloquea la subida de versión de otra pestaña. Y al rechazar por `blocked` la
+    // petición NO se cancela: la conexión llega después, y si nadie la cierra la subida siguiente no
+    // pasa mientras esta pestaña siga abierta. Toda conexión se cierra sola al pedirse otra versión,
+    // también la que llega tarde.
+    peticion.onsuccess = () => {
+      const bd = peticion.result;
+      bd.onversionchange = () => { try { bd.close(); } catch (_e) { /* ya cerrada */ } };
+      resolve(bd);
+    };
     peticion.onerror = () => reject(peticion.error || new Error('no se pudo abrir el almacén'));
     peticion.onblocked = () => reject(new Error('la apertura quedó bloqueada por otra pestaña'));
   });
@@ -362,6 +378,76 @@ function leerFirmasPendientes() {
     const r = await leerTodo(bd, FIRMAS_PENDIENTES);
     return { estado: r.estado, motivo: r.motivo, firmas: r.datos || [] };
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-890 · LA CONSTANCIA DE UNA FIRMA RECHAZADA AL VACIAR LA COLA
+//
+// Vive en `localStorage`, una clave por firma (`yaqu_firma_rechazada_<claveIdempotencia>`), y NO en
+// esta base. Medido el 17-sep con el dashboard de main: un almacén nuevo obliga a subir VERSION_BD, y
+// una pestaña que siga abierta con el JS de antes se queda sin almacén —`VersionError`— y un parte
+// firmado sin red cierra el pad y no queda en NINGUNA cola. Aquí no hay firma que perder: sólo un
+// aviso, sin datos del cliente.
+//
+// Tampoco va dentro de `firmasPendientes`: todo lo que lee la cola la CUENTA (el contador de la home,
+// el desalojo, el tope de espacio) y el drenado la intentaría subir.
+//
+// Mismos tres estados que el resto del fichero. `setItem` lanza con la cuota llena o en Safari
+// privado: eso es FALLO, y quien llama deja la firma en la cola.
+const PREFIJO_FIRMA_RECHAZADA = 'yaqu_firma_rechazada_';
+
+function teclasDelNavegador() {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage ? localStorage : null;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/** `{ clave, tipo, documentoId, codigo, rechazadaEn }`. GUARDADO sólo si quedó escrita y se relee. */
+async function guardarRechazoDeFirma(rechazo) {
+  const teclas = teclasDelNavegador();
+  if (!teclas) return { estado: NO_DISPONIBLE, motivo: 'este navegador no ofrece localStorage' };
+  if (!rechazo || !rechazo.clave) return { estado: FALLO, motivo: 'constancia sin clave' };
+  try {
+    const valor = JSON.stringify(rechazo);
+    teclas.setItem(PREFIJO_FIRMA_RECHAZADA + rechazo.clave, valor);
+    if (teclas.getItem(PREFIJO_FIRMA_RECHAZADA + rechazo.clave) !== valor) {
+      return { estado: FALLO, motivo: 'la constancia no se relee igual que se escribió' };
+    }
+    return { estado: GUARDADO };
+  } catch (e) {
+    return { estado: FALLO, motivo: String((e && e.message) || e) };
+  }
+}
+
+/** Las constancias de rechazo que hay en este móvil. */
+async function leerRechazosDeFirma() {
+  const teclas = teclasDelNavegador();
+  if (!teclas) return { estado: NO_DISPONIBLE, motivo: 'este navegador no ofrece localStorage', rechazos: [] };
+  try {
+    const rechazos = [];
+    for (let i = 0; i < teclas.length; i += 1) {
+      const k = teclas.key(i);
+      if (typeof k !== 'string' || !k.startsWith(PREFIJO_FIRMA_RECHAZADA)) continue;
+      try { rechazos.push(JSON.parse(teclas.getItem(k))); } catch (_e) { /* ilegible: no se afirma nada */ }
+    }
+    return { estado: GUARDADO, rechazos };
+  } catch (e) {
+    return { estado: FALLO, motivo: String((e && e.message) || e), rechazos: [] };
+  }
+}
+
+/** Borra la constancia de UNA firma: se llama cuando esa firma sube con éxito. */
+async function olvidarRechazoDeFirma(clave) {
+  const teclas = teclasDelNavegador();
+  if (!teclas) return { estado: NO_DISPONIBLE, motivo: 'este navegador no ofrece localStorage' };
+  try {
+    teclas.removeItem(PREFIJO_FIRMA_RECHAZADA + clave);
+    return { estado: GUARDADO };
+  } catch (e) {
+    return { estado: FALLO, motivo: String((e && e.message) || e) };
+  }
 }
 
 /** Guarda un albarán precargado. QUÉ se precarga y cuándo es de SCRUM-357 fase 2. */
@@ -588,6 +674,9 @@ window.abrirAlmacen = abrirAlmacen;
 window.guardarFirmaPendiente = guardarFirmaPendiente;
 window.leerFirmasPendientes = leerFirmasPendientes;
 window.quitarFirmaPendiente = quitarFirmaPendiente;   // SCRUM-358 (H3 fase 2)
+window.guardarRechazoDeFirma = guardarRechazoDeFirma;   // SCRUM-890
+window.leerRechazosDeFirma = leerRechazosDeFirma;
+window.olvidarRechazoDeFirma = olvidarRechazoDeFirma;
 window.guardarAlbaranPrecargado = guardarAlbaranPrecargado;
 window.leerAlbaranesPrecargados = leerAlbaranesPrecargados;
 window.purgarDatosLocales = purgarDatosLocales;
