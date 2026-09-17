@@ -33,7 +33,7 @@ y el envío— no se han construido nunca.**
 | 1 | Puerta de emisión (usuario y admin) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:100` |
 | 2 | Decide qué documento sale (factura / justificante / ninguno) | **EXISTE** | `src/modules/invoicing/domain/facturaSuelta.ts:74-78` (`modoDocumentoSuelto`) |
 | 3 | Numeración de serie | **EXISTE** | `src/modules/invoicing/domain/invoiceNumber.service.ts:390` (`allocateInvoiceNumber`) |
-| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:865-866` (`vf_hash`, `vf_prev_hash`) |
+| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:886-887` (`vf_hash`, `vf_prev_hash`) |
 | 5 | Sellado en el momento de emitir | **EXISTE** | `src/modules/invoicing/domain/selladoEstado.ts:116` (`sellarTrasEmision`), invocado desde `src/lib/invoicing.ts:17` |
 | 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:141` (`buildVeriFactuQrUrl`) |
 | 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:558` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:536` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:252` y `:556` |
