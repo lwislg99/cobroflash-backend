@@ -209,6 +209,24 @@ Corolario: si el encargo no te llegó, se dice. NO se reconstruye de
 memoria — un encargo inventado se parece mucho a uno recibido, y
 trabajar sobre él cuesta la tanda entera.
 
+## A20 · Si el encargo cae fuera de tu carril, lo dices y no empiezas
+
+Si el encargo cae fuera de tu carril (tabla §11bis de `docs/equipo/orquestador.md`), lo dices en
+la línea de A16 y no empiezas.
+
+    🔒 Estar libre no te hace dueña del ticket: te hace la que tiene que avisar.
+
+Solo se empieza si la **primera línea del prompt** declara la excepción con su motivo, que es lo
+que la tabla le pide al orquestador. Un encargo fuera de carril sin esa línea es un error del
+reparto, no una orden, y se caza en la línea de A16 o ya no se caza: pasada esa línea, la
+sesión trabaja como si el ticket fuera suyo.
+
+**Medido el 17-sep-2026**, el mismo día en que nació la tabla: la Sesión 5 (automatización)
+recibió un albarán y la Sesión 3 (bancos) un pago. Y la Sesión 0 (consultoría) había dejado
+escrito y listo para empujar un arreglo en `src/` y `public/` (SCRUM-892): nadie lo paró antes de
+la primera línea y acabó siendo una excepción declarada **después**, porque rehacerlo costaba un
+chat entero.
+
 ## A11 · Cómo se actualiza esto
 
 Cuando una sesión comete un error que volvería a cometer, se
@@ -322,25 +340,34 @@ conversación:
 - **Por defecto, el MISMO chat.** Cerrar un ticket NO obliga a abrir chat nuevo: el siguiente
   encargo entra en la conversación que ya está abierta. Un chat recién estrenado no gana nada
   cambiándose.
+- **El tamaño NO es motivo.** Se sigue en el mismo chat aunque el contexto pase de 200k o de 300k.
+  No se para «por contexto».
 - **Chat nuevo SOLO en dos casos:**
-  1. la conversación va por **más de ~200k tokens**;
-  2. la conversación lleva **más de 1 hora parada** con un contexto grande. La caché de prompt
-     caduca a la hora y el siguiente mensaje reescribe la conversación entera; Claude Code lo
-     avisa con «Idle… re-cache about Nk tokens».
-- **Antes de cerrar**, se deja el **traspaso en memoria** —qué está en `main` por efecto, qué queda
-  pendiente, ramas y PR abiertos— y se para. No se sigue «un turno más». Si el chat se cierra por
-  tamaño al terminar una tarea, la primera línea del informe lo dice: «chat lleno: el siguiente
-  encargo, en chat nuevo».
+  1. la conversación lleva **más de 1 hora parada**. La caché de prompt caduca a la hora y el
+     siguiente mensaje reescribe la conversación entera; Claude Code lo avisa con «Idle…
+     re-cache about Nk tokens»;
+  2. **Claude Code no deja seguir**: el límite de contexto real, o una compactación que ya no
+     permite continuar.
+- **El traspaso en memoria se lleva al día mientras se trabaja**, no solo al cerrar: qué está en
+  `main` por efecto, qué queda pendiente, ramas y PR abiertos. Así el chat nuevo, cuando toque,
+  arranca sin repetir trabajo. Si Claude Code corta la conversación, la primera línea del último
+  informe lo dice: «Claude Code no deja seguir: el siguiente encargo, en chat nuevo».
 - **Nunca se reanuda un chat grande y frío.** Ni para «acabar lo que quedaba»: se abre uno nuevo
   con un prompt corto y se lee el traspaso.
 - **El chat nuevo se abre en la MISMA CARPETA.** La memoria va por carpeta: abierto en otra, no
   encuentra el traspaso y arranca a ciegas creyendo que arranca limpio.
 
-⚠️ **Corregida dos veces por el fundador el 16-sep-2026** («¿por qué un chat nuevo? no tiene
-sentido»). La primera versión de A19 decía «chat nuevo cuando se cierra el ticket, o cuando la
-conversación pasa de ~300k»: el cierre de ticket como disparador queda RETIRADO, y el umbral de
-tamaño baja a ~200k. La medición de abajo no cambia; lo que cambió es la lectura: lo caro es
-arrastrar un contexto grande o reescribirlo en frío, no seguir en un chat pequeño.
+⚠️ **Corregida TRES veces por el fundador el 16-sep-2026.** La primera versión decía «chat nuevo
+cuando se cierra el ticket, o cuando la conversación pasa de ~300k». La segunda («¿por qué un chat
+nuevo? no tiene sentido») retiró el cierre de ticket y bajó el umbral a ~200k, y así entró en `main`
+(commit `ccad89cd`). **La tercera, esa misma noche hacia las 21:25 CEST, es la
+decisión FINAL y es la que dice esta norma:** «no quiero abrir tantos chats nuevos; nos mantenemos
+y cuando se les acabe el límite de caché, ahí abrimos nuevos». El umbral de tamaño queda RETIRADO.
+Consta en la memoria del proyecto (`feedback_sesion_300k_traspaso.md`), que es donde se apuntó, y
+en `docs/equipo/traspaso.md` §3bis, que marcaba esta norma como contradicción abierta hasta hoy
+(17-sep-2026). La medición de abajo no cambia; lo que cambió es la lectura que hace el fundador de
+ella: acepta el coste de arrastrar el contexto a cambio de no gestionar chats nuevos, y lo que sí
+se evita es reescribirlo en frío.
 
     🔒 El coste no es lo que entra en el chat: es lo que el chat arrastra.
 

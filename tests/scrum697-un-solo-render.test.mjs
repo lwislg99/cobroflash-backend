@@ -327,12 +327,20 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // con `priceHint` de vuelta salen 264 y **3 × `span.price-final-hint`**; sin él, 261 y cero.
   // La diferencia (3) es exactamente el recuento de esa clase, ni un nodo más — uno por cada
   // línea inicial del presupuesto. Si mañana bajara 4, no sería esto.
-  assert.equal(nodos.length, 261,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 261 `
+  // 🔴 SCRUM-897 · 17-sep-2026 · 261 → 237. LA PRIMERA VEZ QUE ESTA CIFRA LA MUEVE EL BANCO, y a
+  // propósito: `innerHTML = …` APILABA la pintada nueva sobre la vieja. El número se RECALCULÓ
+  // con este mismo contador sobre el árbol arreglado, no restando. Los 24, POR IDENTIDAD sobre el
+  // árbol de main: las 3 pintadas anteriores de `.quote-totals` (DIV 6 · SPAN 6 · STRONG 6) y de
+  // `.quote-total-kpi` (SPAN 3 · STRONG 3), idénticas a la última. Y una segunda sonda sin
+  // mini-DOM, Edge pintando la vista con los mismos scripts y datos: 227 elementos, que son estos
+  // 237 menos los 10 `#text` del banco, y la diferencia por etiqueta era exactamente esa.
+  assert.equal(nodos.length, 237,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 237 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
-    + '− los 3 avisos «Final: …» retirados por SCRUM-669). Si no has tocado el banco y esto se '
+    + '− los 3 avisos «Final: …» retirados por SCRUM-669, − las 24 pintadas viejas que el banco '
+    + 'apilaba hasta SCRUM-897). Si no has tocado el banco y esto se '
     + 'mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
