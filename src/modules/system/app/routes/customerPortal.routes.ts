@@ -10,6 +10,7 @@ import { normalizePhone } from '../../../../core/utils/utils';
 import { recordCustomerEvent } from '../../customerEvents.service';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../../quotes/domain/quoteToken.service'; // SCRUM-95
+import { cardChargeMode } from '../../../billing/domain/cardCharge'; // SCRUM-893
 
 const router = Router();
 
@@ -226,7 +227,12 @@ router.get('/:token', async (req, res) => {
     where: { portalToken: token },
     include: {
       merchant: {
-        select: { id: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true, country: true },
+        // SCRUM-893: `connectStatus`, `stripeAccountId` y `flags` entran para poder preguntar si
+        // este negocio puede cobrar con tarjeta HOY. Sin ellos la pregunta no se podía hacer, y
+        // por eso el botón «Pagar ahora» se pintaba sin mirar nada. Es lectura de tres columnas
+        // más: ni esquema, ni camino de cobro.
+        select: { id: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true, country: true,
+          connectStatus: true, stripeAccountId: true, flags: true },
       },
     },
   });
@@ -271,6 +277,10 @@ router.get('/:token', async (req, res) => {
   }
 
   const m          = customer.merchant!;
+  // SCRUM-893: una sola vez para toda la página. Si se preguntara dentro del bucle de facturas,
+  // dos filas del mismo merchant podrían acabar contestando distinto el día que alguien toque el
+  // criterio — y el portal enseñaría el botón en una factura y no en la de al lado.
+  const puedeTarjeta = cardChargeMode(m) !== 'refuse';
   const mName      = esc(m.legalName || m.name || 'Tu proveedor');
   const initial    = esc((m.name || m.legalName || 'Y').trim().charAt(0).toUpperCase());
   const logoHtml   = m.logoUrl
@@ -355,7 +365,10 @@ router.get('/:token', async (req, res) => {
           : null;
         const btnPdf  = pdfUrl ? `<a class="pf-btn pf-btn-pdf" href="${esc(pdfUrl)}" target="_blank">📄 Descargar factura</a>` : '';
         const payToken = inv.charge?.id ? payTokens.get(inv.charge.id) : undefined;
-        const btnPay  = inv.status === 'pending' && payToken
+        // SCRUM-893 · LA TERCERA PUERTA. «Pagar ahora» lleva a /pay/card y tampoco miraba si el
+        // negocio puede cobrar con tarjeta: un merchant sin Stripe Connect mandaba a su cliente a
+        // un 409 desde su propio portal. Misma pregunta y mismo dominio que las otras dos.
+        const btnPay  = inv.status === 'pending' && payToken && puedeTarjeta
           ? `<a class="pf-btn pf-btn-pay" href="/pay/card/${payToken}">💳 Pagar ahora</a>`
           : '';
         const hasActions = btnPay || btnPdf;
