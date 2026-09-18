@@ -105,7 +105,6 @@ Mutantes re-medidos tras el arreglo: 11 de 11.
 - La memoria que lee el prompt de la tanda y lo que dice sobre Jira son de la S0 (951b).
 
 **Tests declarados:** `tests/scrum951a-equipo-configurable.test.mjs`
-# SCRUM-951 · El sistema del equipo, montado para dos equipos (Luis y Javier)
 
 ## SCRUM-951b · Las normas y `dos-equipos.md`
 
