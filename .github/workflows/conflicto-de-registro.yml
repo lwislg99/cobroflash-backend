@@ -158,13 +158,16 @@ jobs:
             fi
 
             V="$(node scripts/conflicto-de-registro.mjs "$N" "$SHA" origin/main prs.json)" || V=''
-            ACCION="$(printf '%s' "$V" | node -pe 'try { JSON.parse(require("fs").readFileSync(0,"utf8")).accion } catch { "" }')"
+            # `String(…)` en cada captura de `node -pe`: sin él, un valor que no sea cadena (un
+            # `undefined`, un número) sale COLOREADO si el entorno trae FORCE_COLOR, y ya no casa
+            # con el `case` de abajo. Misma regla que `vigia-atascados.yml` (18-sep-2026).
+            ACCION="$(printf '%s' "$V" | node -pe 'try { String(JSON.parse(require("fs").readFileSync(0,"utf8")).accion) } catch { "" }')"
             echo "#$N → ${V:-sin veredicto}"
 
             case "$ACCION" in
               NADA) ;;
               EMPUJAR)
-                COMMIT="$(printf '%s' "$V" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).commit')"
+                COMMIT="$(printf '%s' "$V" | node -pe 'String(JSON.parse(require("fs").readFileSync(0,"utf8")).commit)')"
                 if git push origin "$COMMIT:refs/heads/$RAMA"; then
                   echo "- #$N · **EMPUJADO** — conflicto solo de registro resuelto con union (\`${COMMIT:0:8}\`)." >> "$GITHUB_STEP_SUMMARY"
                 else
@@ -176,12 +179,12 @@ jobs:
                 fi
                 ;;
               NO-EMPUJA)
-                CAUSA="$(printf '%s' "$V" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).causa')"
+                CAUSA="$(printf '%s' "$V" | node -pe 'String(JSON.parse(require("fs").readFileSync(0,"utf8")).causa)')"
                 if [ "$CAUSA" = "SIN-AUTO-MERGE" ]; then
                   # La mayoría de los PR abiertos: se cuentan en una línea, no uno por uno.
                   SIN_ARMAR=$((SIN_ARMAR + 1))
                 else
-                  echo "- #$N · **NO SE TOCA** — $(printf '%s' "$V" | node -pe 'const v=JSON.parse(require("fs").readFileSync(0,"utf8")); v.causa + ": " + (v.fuera || v.quedan || []).join(", ")')" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- #$N · **NO SE TOCA** — $(printf '%s' "$V" | node -pe 'String((v => v.causa + ": " + (v.fuera || v.quedan || []).join(", "))(JSON.parse(require("fs").readFileSync(0,"utf8"))))')" >> "$GITHUB_STEP_SUMMARY"
                 fi
                 ;;
               *)
