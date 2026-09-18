@@ -1,0 +1,123 @@
+{
+  "sha": "effc107e047d34a5bc7d2f1cfc1c000952c2de19",
+  "cuando": "2026-09-18T12:38:21.053Z",
+  "lecturas": [
+    {
+      "ticket": "t1-completo-21",
+      "status": 503,
+      "ms": 333,
+      "error": "ai_not_configured",
+      "aciertos": "0/7",
+      "campos": [
+        {
+          "campo": "amount",
+          "esperado": 36.3,
+          "ok": false
+        },
+        {
+          "campo": "baseAmount",
+          "esperado": 30,
+          "ok": false
+        },
+        {
+          "campo": "vatRate",
+          "esperado": 21,
+          "ok": false
+        },
+        {
+          "campo": "vatAmount",
+          "esperado": 6.3,
+          "ok": false
+        },
+        {
+          "campo": "date",
+          "esperado": "2026-09-15",
+          "ok": false
+        },
+        {
+          "campo": "providerInvoiceNumber",
+          "esperado": "T-2026-00481",
+          "ok": false
+        },
+        {
+          "campo": "nifProveedor",
+          "esperado": "B76543214",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "ticket": "t2-dos-tipos",
+      "status": 503,
+      "ms": 274,
+      "error": "ai_not_configured",
+      "aciertos": "0/5",
+      "campos": [
+        {
+          "campo": "amount",
+          "esperado": 10.99,
+          "ok": false
+        },
+        {
+          "campo": "vatRate",
+          "esperado": null,
+          "ok": false
+        },
+        {
+          "campo": "vatAmount",
+          "esperado": null,
+          "ok": false
+        },
+        {
+          "campo": "date",
+          "esperado": "2026-09-16",
+          "ok": false
+        },
+        {
+          "campo": "providerInvoiceNumber",
+          "esperado": "88213",
+          "ok": false
+        }
+      ]
+    },
+    {
+      "ticket": "t3-solo-total",
+      "status": 503,
+      "ms": 256,
+      "error": "ai_not_configured",
+      "aciertos": "0/6",
+      "campos": [
+        {
+          "campo": "amount",
+          "esperado": 58.51,
+          "ok": false
+        },
+        {
+          "campo": "baseAmount",
+          "esperado": null,
+          "ok": false
+        },
+        {
+          "campo": "vatRate",
+          "esperado": null,
+          "ok": false
+        },
+        {
+          "campo": "vatAmount",
+          "esperado": null,
+          "ok": false
+        },
+        {
+          "campo": "nifProveedor",
+          "esperado": null,
+          "ok": false
+        },
+        {
+          "campo": "date",
+          "esperado": "2026-09-17",
+          "ok": false
+        }
+      ]
+    }
+  ]
+}

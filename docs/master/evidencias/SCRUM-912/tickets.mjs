@@ -8,6 +8,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const estilo = `body{margin:0;background:#fff;font-family:'Courier New',monospace;font-size:15px;color:#111}
 .t{width:360px;padding:18px 16px}.c{text-align:center}.r{display:flex;justify-content:space-between}
@@ -49,7 +50,9 @@ export const TICKETS = [
   },
 ];
 
-if (process.argv[2]) {
+// SCRUM-912b · solo como CLI. Antes miraba `process.argv[2]` a secas, y al importarlo `mide.mjs`
+// ese argumento es el SHA: escribía una carpeta con nombre de SHA DENTRO del árbol (18-sep).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href && process.argv[2]) {
   fs.mkdirSync(process.argv[2], { recursive: true });
   for (const t of TICKETS) fs.writeFileSync(path.join(process.argv[2], `${t.id}.html`), t.html);
   console.log(`${TICKETS.length} tickets escritos en ${process.argv[2]}`);
