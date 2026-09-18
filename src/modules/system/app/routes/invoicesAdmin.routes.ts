@@ -1,5 +1,6 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
 import { Router } from 'express';
+import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
 // Quién lo ve se PREGUNTA a la política, no se decide aquí.
 import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
@@ -716,7 +717,8 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
 
     const customerName = invoice.customer?.name || 'Cliente';
     const merchantName = invoice.merchant?.name || 'tu proveedor';
-    const total        = Number(invoice.total).toFixed(2);
+    // SCRUM-931: la forma de la casa, UNA vez, para la plantilla y para el texto libre de abajo.
+    const importe      = formatMoneyEs(invoice.total, invoice.currency);
     const chargeId     = invoice.chargeId;
     // SCRUM-85: token OPACO — NUNCA el chargeId en la URL pública (el botón real de
     // payment_request_es apunta a /pay/invoice/{{1}}, ver WHATSAPP_TEMPLATES.md §2).
@@ -736,7 +738,8 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
           customerName,
           businessName: merchantName,
           invoiceNumber: invoice.number,
-          amountWithCurrency: `${total} ${invoice.currency}`,
+          amount: Number(invoice.total), // SCRUM-931: en bruto; la forma la da el builder
+          currency: invoice.currency,
           urlToken: payToken as string,
         }),
       });
@@ -751,7 +754,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       const result = await sendWhatsAppText({
         to: phone,
         merchantId: invoice.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${total} ${invoice.currency}* de parte de *${merchantName}*.\n\n¡Gracias!`,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${importe}* de parte de *${merchantName}*.\n\n¡Gracias!`,
         // SCRUM-115: si falla, que la fila de WA-0b quede enlazada a ESTA factura/cliente.
         log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });

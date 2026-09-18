@@ -122,7 +122,11 @@ jobs:
               # Si la llamada falla queda `{}` y cuenta como cero checks — que alarma, no calla.
               gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" > "checks/$N.json" 2>/dev/null \
                 || echo '{}' > "checks/$N.json"
-              NCHECKS="$(node -p "require('./checks/$N.json').total_count||0" 2>/dev/null || echo 0)"
+              # `String(…)` en toda captura de `node -p`: sin él, `node -p` imprime con `util.inspect`, que
+              # COLOREA números y booleanos si el entorno trae FORCE_COLOR, y este campo acaba en un
+              # registro que se parsea por posición. Medido el 18-sep-2026: con FORCE_COLOR=1 sale
+              # `\e[33m7\e[39m` (11 bytes) en vez de `7`; con String(), `7` en los dos casos.
+              NCHECKS="$(node -p "String(require('./checks/$N.json').total_count||0)" 2>/dev/null || echo 0)"
 
               # Cuándo se empujó esa cabeza. Sin este dato NO se regala la gracia: no saber
               # cuándo se empujó no es «se empujó hace un momento».
@@ -132,7 +136,7 @@ jobs:
               # apertura del PR sin decirlo — con lo que la gracia del push reciente no se aplicaba.
               if ! FECHA="$(gh api "repos/$REPO/commits/$SHA" -q .commit.committer.date 2>/dev/null)"; then FECHA=''; fi
               if [ -n "$FECHA" ]; then
-                MINUTOS="$(FECHA="$FECHA" node -pe "Math.round((Date.now()-new Date(process.env.FECHA))/60000)")"
+                MINUTOS="$(FECHA="$FECHA" node -pe "String(Math.round((Date.now()-new Date(process.env.FECHA))/60000))")"
               fi
 
               # LA SEGUNDA SONDA, solo si pasó su control. Se trae la cabeza del PR porque
@@ -210,7 +214,10 @@ jobs:
 
           # El aviso lo compone Y LO COMPRUEBA la pasada (SCRUM-839b): aquí solo se publica. Si la
           # pasada dice que empeora y no hay aviso, eso no es «nada que decir»: se declara.
-          EMPEORA="$(node -p "require('./veredicto.json').empeora")"
+          # `String(…)`, y aquí es donde más importa: con FORCE_COLOR el booleano sale como
+          # `\e[33mtrue\e[39m`, no es igual a "true", y el vigía caía en «SIN CAMBIOS A PEOR»
+          # SIN AVISAR a nadie — un aviso que no se publicó leído como un día tranquilo.
+          EMPEORA="$(node -p "String(require('./veredicto.json').empeora)")"
           if [ "$EMPEORA" = "true" ] && [ -s aviso.md ]; then
             gh issue comment "$NUM" --body-file aviso.md > /dev/null
             echo "- **EMPEORA** — comentado en #$NUM." >> "$GITHUB_STEP_SUMMARY"

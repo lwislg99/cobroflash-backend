@@ -81,7 +81,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 export const POBLACIONES = [
   {
     nombre: 'ficheros-js-de-public',
-    guard: 'public-js-parsea.test.mjs', suelo: 'SUELO_FICHEROS = 40',
+    // SCRUM-949 · ya no es un número cableado: su suelo es el cociente entre su recorrido y git.
+    // Este trinquete sigue siendo el OTRO instrumento (pérdida contra la base de fusión).
+    guard: 'public-js-parsea.test.mjs', suelo: 'COCIENTE_MINIMO = 1 contra git (SCRUM-949)',
     censo: (raiz) => {
       const out = [];
       const rec = (d) => {

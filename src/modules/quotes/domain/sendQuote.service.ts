@@ -86,7 +86,11 @@ export async function sendQuoteWhatsAppToCustomer(
       customerName: quote.customer.name ?? 'Cliente',
       businessName,
       quoteNumber: displayNum,
-      totalWithCurrency: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
+      // SCRUM-931: en bruto. La forma la da el builder, la misma que el texto libre de arriba —
+      // antes esta línea mandaba `419.87 EUR` mientras `windowText` mandaba `419,87 €`, así que el
+      // MISMO cliente leía el MISMO presupuesto en dos formatos según si su ventana estaba abierta.
+      amount: Number(quote.total),
+      currency: quote.currency,
       decisionToken, // SCRUM-95: token opaco, no el id global
     }),
     sinPlantilla: opciones.sinPlantilla === true, // SCRUM-195

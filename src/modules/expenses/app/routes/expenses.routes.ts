@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   listExpenses, createExpense, updateExpense, deleteExpense,
   getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError,
+  queFueDelNif, // SCRUM-937
 } from '../../domain/expenses.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { prisma } from '../../../../core/db/prisma';
@@ -144,7 +145,14 @@ router.post('/', async (req, res) => {
       providerInvoiceNumber: expense.providerInvoiceNumber,
       vatDeducible: expense.vatDeducible,
     });
-    return res.status(201).json({ ok: true, item: expense, justificante });
+    // SCRUM-937 · y qué fue del NIF tecleado. Sin proveedor no tiene dónde ir, y el veredicto de
+    // arriba dirá que falta; esto dice POR QUÉ, en vez de dejar que el profesional crea que lo dio.
+    const destinoDelNif = queFueDelNif({
+      nifTecleado: nifProveedor ? String(nifProveedor) : null,
+      providerId: expense.providerId,
+      nifDeLaFicha: proveedor?.taxId ?? null,
+    });
+    return res.status(201).json({ ok: true, item: expense, justificante, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
     console.error('[POST /admin/expenses]', err);
@@ -158,7 +166,7 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
     const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData,
-            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate } = req.body || {};
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate, nifProveedor } = req.body || {};
     const patch: any = {};
     if (concept     !== undefined) patch.concept     = String(concept).trim();
     if (amount      !== undefined) patch.amount      = Number(amount);
@@ -176,10 +184,24 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
       if (vatAmount   !== undefined) patch.vatAmount   = vatAmount   ?? null;
       if (providerInvoiceNumber !== undefined) patch.providerInvoiceNumber = providerInvoiceNumber ? String(providerInvoiceNumber) : null;
       if (providerInvoiceDate   !== undefined) patch.providerInvoiceDate   = providerInvoiceDate ? new Date(providerInvoiceDate) : null;
+    // SCRUM-937 · el modal de edición manda el NIF igual que el alta, y aquí no se leía: se tiraba.
+    if (nifProveedor !== undefined) patch.nifProveedor = nifProveedor ? String(nifProveedor) : null;
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty_update' });
     const updated = await updateExpense(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ error: 'not_found' });
-    return res.json({ ok: true, item: updated });
+    // Lo que quedó en la ficha DESPUÉS de guardar: el destino es un hecho, no una predicción.
+    const fichaTrasEditar = patch.nifProveedor && updated.providerId
+      ? await prisma.provider.findFirst({
+          where: { id: updated.providerId, merchantId: req.merchantId },
+          select: { taxId: true },
+        })
+      : null;
+    const destinoDelNif = queFueDelNif({
+      nifTecleado: patch.nifProveedor ?? null,
+      providerId: updated.providerId,
+      nifDeLaFicha: fichaTrasEditar?.taxId ?? null,
+    });
+    return res.json({ ok: true, item: updated, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
     console.error('[PUT /admin/expenses/:id]', err);
