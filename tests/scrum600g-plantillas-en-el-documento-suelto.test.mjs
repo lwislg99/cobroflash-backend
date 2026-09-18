@@ -216,11 +216,12 @@ test('SCRUM-600g · ③ la hoja «Guardar como plantilla» dice su frase firmada
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-600g · ④ NEGATIVO: «3. Condiciones» y «4. Envío» siguen FUERA del documento suelto', async () => {
-  const bloques = (c) => ['3. Condiciones', '4. Envío'].filter((t) => todos(c).some((n) => texto(n).trim() === t));
+  // SCRUM-915d · los dos bloques se llaman ahora «Condiciones» (paso) y «Ajustes del documento» (su fila).
+  const bloques = (c) => ['Condiciones', 'Ajustes del documento'].filter((t) => todos(c).some((n) => texto(n).trim() === t));
 
   // SUELO: en el presupuesto están los dos. Sin esto, un «no están» podría ser un lector ciego.
   const presupuesto = await montar(null);
-  assert.deepEqual(bloques(presupuesto.contenedor), ['3. Condiciones', '4. Envío'],
+  assert.deepEqual(bloques(presupuesto.contenedor), ['Condiciones', 'Ajustes del documento'],
     '🔴 SUELO: el lector no encuentra los bloques 3 y 4 ni en el presupuesto, así que no sabe mirar.');
 
   for (const modo of ['factura', 'justificante']) {

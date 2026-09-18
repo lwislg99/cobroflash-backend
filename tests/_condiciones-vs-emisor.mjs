@@ -280,6 +280,42 @@ export function censarInsercionesDelSuelto(fuente, ruta = RUTA_PANTALLA) {
 // LA REGLA
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * SCRUM-915d · LO QUE CUELGA DE «CONDICIONES» Y NO ES UN CAMPO, con su motivo.
+ *
+ * Con la v3 del editor (pasos), `blockConditions` lleva el ANDAMIO del paso —resumen, «Cambiar»,
+ * guía— y tres FILAS plegables que contienen los campos de siempre. Nada de esto recoge un dato:
+ * los datos siguen siendo los controles de `CAMPO_A_BLOQUE`, que ahora cuelgan de las filas.
+ *
+ * 🔴 Por eso la regla ② deja de mirar sólo a los HIJOS DIRECTOS del bloque y mira a TODO lo que
+ * cuelga de él: con las filas en medio, un campo nuevo colgado de una fila se le habría escapado
+ * mirando sólo un nivel. Lo que se declara aquí es la única excepción, y cae si un nombre SOBRA.
+ */
+export const NO_SON_CAMPOS = {
+  pasoCondicionesResumen: 'resumen del paso cerrado (texto compuesto de lo elegido)',
+  pasoCondicionesCambiar: 'botón que reabre el paso',
+  pasoCondicionesGuia: 'frase guía del paso',
+  filaCobro: 'fila plegable del plan de cobro', filaCobroCab: 'cabecera de la fila',
+  filaCobroTitulo: 'rótulo de la fila', filaCobroValor: 'lo elegido, en texto', filaCobroBoton: '«Cambiar» / «Listo»',
+  filaCobroDetalle: 'contenedor de los campos de la fila',
+  filaPagos: 'fila plegable de las formas de pago', filaPagosCab: 'cabecera de la fila',
+  filaPagosTitulo: 'rótulo de la fila', filaPagosValor: 'lo elegido, en texto', filaPagosBoton: '«Cambiar» / «Listo»',
+  filaPagosDetalle: 'contenedor de los campos de la fila',
+  filaValidez: 'fila plegable de la validez', filaValidezCab: 'cabecera de la fila',
+  filaValidezTitulo: 'rótulo de la fila', filaValidezValor: 'lo elegido, en texto', filaValidezBoton: '«Cambiar» / «Listo»',
+  filaValidezDetalle: 'contenedor de los campos de la fila',
+};
+
+/**
+ * SCRUM-915d · piezas que son PARTE de un control asignado aunque cuelguen a su lado. Su subárbol
+ * no se cuenta aparte, igual que no se cuenta el de un control asignado (su etiqueta, su botón).
+ */
+export const PARTE_DE_UN_CONTROL = {
+  // La tira de SCRUM-586 PROPONE formas de pago y, al aceptarla, marca las casillas de
+  // `payMethodsWrapper`: su único dato es `payMethods`, que ya está asignado.
+  propuestaPagoWrap: 'payMethodsWrapper',
+};
+
 /** Campo → control, SOLO los del bloque que se mide. No es una lista nueva: es la de SCRUM-286. */
 export function camposDelBloque(bloque = BLOQUE) {
   const pares = Object.entries(CAMPO_A_BLOQUE).filter(([, v]) => v.bloque === bloque);
@@ -319,11 +355,31 @@ export function revisarCondicionesContraEmisor(fuentes) {
 
   // ② Un control colgado del bloque que NADIE ha asignado: la lección de SCRUM-284. Sin esto, un
   //    control nuevo entra sin que suene nada, que es exactamente el hueco del guard por lista.
+  //    🔴 SCRUM-915d · A CUALQUIER PROFUNDIDAD, no sólo los hijos directos (ver `NO_SON_CAMPOS`).
+  //    Lo que cuelga DENTRO de un control asignado es parte de ese control (la etiqueta, la fila de
+  //    casillas) y no se cuenta aparte, igual que antes no se contaba.
   const asignados = new Set(delBloque.map((x) => x.control));
-  const sinAsignar = inserciones
-    .filter((i) => i.padre === BLOQUE && !asignados.has(i.hijo))
+  const colgadoDe = (raices) => {
+    const vistos = new Set(raices);
+    for (let cambio = true; cambio;) {
+      cambio = false;
+      for (const i of inserciones) {
+        if (vistos.has(i.padre) && !vistos.has(i.hijo)) { vistos.add(i.hijo); cambio = true; }
+      }
+    }
+    return vistos;
+  };
+  const dentroDeUnControl = colgadoDe([...asignados, ...Object.keys(PARTE_DE_UN_CONTROL)]);
+  const bajoElBloque = inserciones.filter((i) => colgadoDe([BLOQUE]).has(i.padre));
+  const sinAsignar = bajoElBloque
+    .filter((i) => !asignados.has(i.hijo) && !dentroDeUnControl.has(i.hijo))
     .filter((i) => !/Title$/.test(i.hijo)) // el H3 del título no lleva dato
-    .map((i) => `\`${i.hijo}\` cuelga de \`${BLOQUE}\` (línea ${i.linea}) y no está en CAMPO_A_BLOQUE`);
+    .filter((i) => !Object.hasOwn(NO_SON_CAMPOS, i.hijo))
+    .map((i) => `\`${i.hijo}\` cuelga de \`${i.padre}\`${i.padre === BLOQUE ? '' : ` (dentro de \`${BLOQUE}\`)`} (línea ${i.linea}) y no está en CAMPO_A_BLOQUE`);
+  // Y la excepción no puede quedarse vieja: un nombre declarado que ya no cuelga del bloque SOBRA.
+  const colgados = new Set(bajoElBloque.map((i) => i.hijo));
+  const noSonCamposQueSobran = [...Object.keys(NO_SON_CAMPOS), ...Object.keys(PARTE_DE_UN_CONTROL)]
+    .filter((n) => !colgados.has(n));
 
   // ③ El SUELO del propio mapa: un control asignado que ya no llega ni al PRESUPUESTO. Se mide
   //    contra el presupuesto y no contra el suelto a propósito — en el suelto no llegar es lo
@@ -333,7 +389,7 @@ export function revisarCondicionesContraEmisor(fuentes) {
     .map(({ campo, control }) => `\`${control}\` (campo \`${campo}\`) ya no llega ni al presupuesto`);
 
   return {
-    pidenLoQueSeTira, sinAsignar, asignadosFantasma,
+    pidenLoQueSeTira, sinAsignar, asignadosFantasma, noSonCamposQueSobran,
     opacas: opacas.map((o) => `${o.padre}.appendChild(${o.hijo}) línea ${o.linea}`),
     medicion: {
       raiz,
