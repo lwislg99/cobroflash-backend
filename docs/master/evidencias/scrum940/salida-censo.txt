@@ -1,0 +1,17 @@
+═══ SCRUM-940 · ① LAS DOS CIFRAS ═══
+
+   ficheros de tests/ y scripts/ mirados .....: 1245
+   de ellos, INSTRUMENTOS ....................: 789
+     · con al menos un suelo ..................: 379 (48%)
+     · 🔴 DESNUDOS (ningún suelo) .............: 410 (52%)
+
+   SUELOS hallados ...........................: 861
+     · con un mínimo concreto (>0) ...........: 568
+     · sólo exigen «que haya alguno» (>0) ....: 290
+     · sin valor resoluble ...................: 3
+     · de POBLACIÓN CENSADA (los que envejecen): 496
+
+   cómo se reconocieron (una señal basta, y ninguna es el nombre a solas):
+     por el NOMBRE del tope ..: 68
+     por el MENSAJE de ceguera: 801
+     por ABORTAR (throw/exit) : 43

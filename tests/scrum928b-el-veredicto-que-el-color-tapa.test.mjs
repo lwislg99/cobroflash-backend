@@ -60,7 +60,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
 ];
 
-const ESC = '';
+const ESC = '\u001B';
 const GLIFO = 'ℹ'; // «ℹ», el del reporter `spec`
 const RECUENTO_PLANO = `${GLIFO} tests 1`;
 const RECUENTO_COLOR = `${ESC}[34m${GLIFO} tests 1${ESC}[39m`;
@@ -136,7 +136,7 @@ test('SCRUM-928b · 🔴 y con una tanda DE VERDAD y FORCE_COLOR puesto, `npm te
   assert.ok(r.stdout.includes(ESC),
     '🔴 NO PUDE MIRAR: la tanda fabricada no ha sacado ni un código de color, así que su verde no'
     + ` dice nada sobre el defecto. stdout: ${JSON.stringify(r.stdout.slice(0, 200))}`);
-  assert.match(r.stdout.replace(/\[[0-9;]*m/g, ''), /(ℹ|#) tests \d+/,
+  assert.match(r.stdout.replace(/\u001B\[[0-9;]*m/g, ''), /(ℹ|#) tests \d+/,
     '🔴 NO PUDE MIRAR: la tanda fabricada no ha emitido línea de recuento ni quitándole el color');
   assert.equal(r.status, 0,
     `🔴 una tanda sana con color ha salido con ${r.status}. stderr: ${r.stderr.slice(-300)}`);
