@@ -166,6 +166,16 @@ uso se corta de golpe: lo que no está escrito, no existe.
 
 1. **mide** antes de creerse ningún traspaso (§0 de `orquestador.md`): PR abiertos y mergeados, CI, Jira, `ListAgents`.
    Un traspaso es una foto con fecha, no el ahora;
+   - 🔴 **y corre el censo de huérfanos** (SCRUM-946), que es lo que ningún traspaso puede contar porque lo dejó quien
+     ya no pudo escribirlo:
+
+         node scripts/equipo/huerfanos.mjs
+
+     Lista los worktrees con commits que no están en NINGÚN remoto (siempre) y los que tienen cambios sin commitear
+     tocados en las últimas 72 h; los más viejos los cuenta sin listarlos. Sale con 0 (nada), 1 (hay algo) o 2 (algún
+     worktree no se pudo mirar: eso NO es «limpio»). Solo lee: no empuja, no borra, no cambia de rama.
+     Cada línea de la lista se casa con un puesto y va en su encargo. El 17-sep la tanda murió sin aviso por el límite
+     de uso de la cuenta y dejó tres trabajos que nadie sabía que existían; con este paso habrían salido en una lista.
 2. **para las sesiones viejas**. Siguen vivas con su contexto entero y contestarían con un estado caducado;
 3. **levanta los seis puestos**, cada uno con su encargo dentro del prompt (§5bis.3), y solo los que tienen trabajo
    (§5bis.4).
