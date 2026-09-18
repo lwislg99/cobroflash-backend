@@ -146,11 +146,17 @@ const MEDIR = new Function('inventario', `
   var botonAjustes = ajustes ? botonVisible('Cambiar', ajustes) || botonVisible('Listo', ajustes) : null;
   var textoDe = function (texto) { var b = bloqueDe(texto); return b ? limpio(b.innerText) : null; };
   var modalVisible = Array.prototype.slice.call(document.querySelectorAll('.modal-overlay')).some(ve);
+  // El representante de CONDICIONES es su rótulo «Condiciones de pago» a la vista: con el código
+  // de antes es la etiqueta del selector, y con pasos es la fila, que sólo se ve con el paso
+  // abierto. ⚠️ La primera versión usaba «se ve el bloque de Condiciones», y un paso CERRADO
+  // también se ve —es su fila de resumen—: daba «dos pasos abiertos» contra un editor sano.
+  var rotuloCondiciones = Array.prototype.slice.call(raiz.querySelectorAll('label, span'))
+    .some(function (el) { return limpio(el.textContent) === 'Condiciones de pago' && ve(el); });
   return {
     visibles: {
       cliente: ve(q('select[name="customer_id"]')),
       concepto: ve(q('.quote-line .quote-line__concept input')),
-      condiciones: ve(q('select[name="payment_terms"]')) || ve(bloqueDe('Condiciones')),
+      condiciones: ve(q('select[name="payment_terms"]')) || rotuloCondiciones,
       generar: ve(submit),
       ivaDefecto: ve(q('select[name="vat_default"]')),
       pagoSelect: ve(q('select[name="payment_terms"]'))

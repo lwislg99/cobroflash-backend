@@ -382,21 +382,93 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // `TITULO_PENDIENTE` se BORRA el 17-ago-2026: el fundador aprobó los cuatro títulos de bloque y
   // la fábrica se quedó sin consumidores. Un marcador sin usar es el que alguien vuelve a enchufar.
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-915d · LOS PASOS. El editor se recorre Cliente → Conceptos → Condiciones → Revisar, con
+  // SÓLO EL ACTUAL ABIERTO (v3 del prototipo, aprobada por el fundador: `docs/prototipos/SCRUM-915/`).
+  //
+  // 🔴 LOS PASOS SON LOS BLOQUES DE SIEMPRE, NO UNOS ENVOLTORIOS NUEVOS. Cada paso es uno o dos de
+  // los bloques de SCRUM-286 con una clase más (`quote-paso`, o `quote-paso-parte` si es la segunda
+  // mitad de un paso). Abrir y cerrar un paso cambia CLASES y la hoja de estilos decide qué se ve:
+  // NINGÚN NODO SE MUEVE. Es lo que mantiene vivo todo lo que ya se mide sobre este formulario —el
+  // censo de orden, la asignación campo→bloque, el borrador, la vista previa— y lo que hace que un
+  // paso cerrado siga ENVIANDO sus campos: están en el DOM, sólo que no a la vista.
+  //
+  //   paso 1 «Cliente»        = blockClient
+  //   paso 2 «Conceptos»      = blockLines + blockTotals
+  //   paso 3 «Condiciones»    = blockConditions (tres filas plegables) + blockDelivery, que pasa a
+  //                             ser la fila «Ajustes del documento»
+  //   paso 4 «Revisar…»       = blockActions
+  //
+  // El documento suelto no cuelga Condiciones ni Ajustes (SCRUM-600, igual que antes): le quedan
+  // tres pasos, Cliente · Conceptos · Revisar y emitir.
+  //
+  // ⚠️ El número del paso NO va en el título: lo pinta la hoja de estilos desde `data-numero`.
+  // Así el título es el rótulo firmado a secas y el censo de SCRUM-286 lo lee entero.
+  // Textos: SCRUM-915 comentario 15868 (`docs/microcopy/2026-09-18-SCRUM-915-pasos-del-editor.md`).
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  let pasosMontados = false;
+  let pasoAbierto = 1;
+  let pasoAlcanzado = 1;
+  let filaAbierta = null;
+  let totalDelEditorTexto = "";
+
   const blockClient = document.createElement("div");
-  blockClient.className = "quote-block";
+  blockClient.className = "quote-block quote-paso";
   leftCard.appendChild(blockClient);
   const blockClientTitle = document.createElement("h3");
   blockClientTitle.className = "quote-block-title";
-  blockClientTitle.textContent = "1. Cliente";
+  blockClientTitle.textContent = "Cliente";
+  blockClientTitle.dataset.numero = "1";
   blockClient.appendChild(blockClientTitle);
+  const pasoClienteResumen = document.createElement("span");
+  pasoClienteResumen.className = "quote-paso__resumen";
+  blockClient.appendChild(pasoClienteResumen);
+  const pasoClienteCambiar = document.createElement("button");
+  pasoClienteCambiar.type = "button";
+  pasoClienteCambiar.className = "quote-paso__cambiar";
+  pasoClienteCambiar.textContent = "Cambiar";
+  blockClient.appendChild(pasoClienteCambiar);
+  const pasoClienteGuia = document.createElement("p");
+  pasoClienteGuia.className = "quote-paso__guia";
+  // En el documento suelto, la guía que nombra el documento sólo existe firmada para el
+  // justificante. En modo factura NO hay texto firmado y se omite (regla 30), igual que SCRUM-600
+  // omitió el subtítulo: el paso se entiende por su título, «Cliente».
+  pasoClienteGuia.textContent = esDocumentoSuelto
+    ? (window.rotulosDelDocumento.esJustificante() ? "¿Para quién es el justificante?" : "")
+    : "¿Para quién es el presupuesto?";
+  if (pasoClienteGuia.textContent) blockClient.appendChild(pasoClienteGuia);
 
   const blockLines = document.createElement("div");
-  blockLines.className = "quote-block";
+  blockLines.className = "quote-block quote-paso";
   leftCard.appendChild(blockLines);
   const blockLinesTitle = document.createElement("h3");
   blockLinesTitle.className = "quote-block-title";
-  blockLinesTitle.textContent = "2. Líneas";
+  blockLinesTitle.textContent = "Conceptos";
+  blockLinesTitle.dataset.numero = "2";
   blockLines.appendChild(blockLinesTitle);
+  const pasoConceptosResumen = document.createElement("span");
+  pasoConceptosResumen.className = "quote-paso__resumen";
+  blockLines.appendChild(pasoConceptosResumen);
+  const pasoConceptosCambiar = document.createElement("button");
+  pasoConceptosCambiar.type = "button";
+  pasoConceptosCambiar.className = "quote-paso__cambiar";
+  pasoConceptosCambiar.textContent = "Cambiar";
+  blockLines.appendChild(pasoConceptosCambiar);
+  const pasoConceptosGuia = document.createElement("p");
+  pasoConceptosGuia.className = "quote-paso__guia";
+  pasoConceptosGuia.textContent = esDocumentoSuelto
+    ? "Añade lo que has hecho, con su cantidad y su precio."
+    : "Añade lo que vas a hacer, con su cantidad y su precio.";
+  blockLines.appendChild(pasoConceptosGuia);
+
+  // SCRUM-915d · los TOTALES son la segunda mitad del paso Conceptos, así que se cuelgan AQUÍ,
+  // detrás de las líneas. Antes iban detrás de Condiciones y Envío —«totales DESPUÉS de
+  // condiciones» es uno de los defectos del inventario de hoy— y con un paso abierto a la vez
+  // habrían quedado debajo de un paso cerrado. Se rellenan más abajo, donde siempre (patrón de
+  // SCRUM-286: el orden del DOM lo decide dónde se CUELGA el bloque, no dónde se rellena).
+  const blockTotals = document.createElement("div");
+  blockTotals.className = "quote-block quote-block-totals quote-paso-parte";
+  leftCard.appendChild(blockTotals);
 
   // SCRUM-600 (DOC-10) · LOS DOS BLOQUES QUE EL EMISOR NO PUEDE LLEVAR.
   //
@@ -415,22 +487,125 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // fallar. Un `if` no es una función: el censo los sigue viendo, y el presupuesto —que es lo
   // que ese censo mide— se pinta exactamente igual que antes.
   //
-  // La numeración de los que quedan NO se toca: «1. Cliente» y «2. Líneas» siguen siendo 1 y 2.
+  // SCRUM-915d · la numeración va en `data-numero`, no en el título (ver arriba).
   const blockConditions = document.createElement("div");
-  blockConditions.className = "quote-block";
+  blockConditions.className = "quote-block quote-paso";
   if (!esDocumentoSuelto) leftCard.appendChild(blockConditions);
   const blockConditionsTitle = document.createElement("h3");
   blockConditionsTitle.className = "quote-block-title";
-  blockConditionsTitle.textContent = "3. Condiciones";
+  blockConditionsTitle.textContent = "Condiciones";
+  blockConditionsTitle.dataset.numero = "3";
   blockConditions.appendChild(blockConditionsTitle);
+  const pasoCondicionesResumen = document.createElement("span");
+  pasoCondicionesResumen.className = "quote-paso__resumen";
+  blockConditions.appendChild(pasoCondicionesResumen);
+  const pasoCondicionesCambiar = document.createElement("button");
+  pasoCondicionesCambiar.type = "button";
+  pasoCondicionesCambiar.className = "quote-paso__cambiar";
+  pasoCondicionesCambiar.textContent = "Cambiar";
+  blockConditions.appendChild(pasoCondicionesCambiar);
+  const pasoCondicionesGuia = document.createElement("p");
+  pasoCondicionesGuia.className = "quote-paso__guia";
+  pasoCondicionesGuia.textContent = "Ya van puestas las de siempre. Cámbialas sólo si este cliente es distinto.";
+  blockConditions.appendChild(pasoCondicionesGuia);
 
+  // ── SCRUM-915d · LAS TRES FILAS DE CONDICIONES ─────────────────────────────────────────────
+  // Cada fila es «qué · lo elegido · Cambiar», y al pulsar se abre EN EL SITIO con los controles
+  // de siempre dentro. Los controles no cambian: sólo pasan a colgar de su fila (que cuelga de
+  // `blockConditions`, así que para la asignación de SCRUM-286 siguen en el mismo bloque).
+  // Los títulos de fila son los rótulos que esos mismos campos ya tenían, literales.
+  const filaCobro = document.createElement("div");
+  filaCobro.className = "quote-fila";
+  blockConditions.appendChild(filaCobro);
+  const filaCobroCab = document.createElement("div");
+  filaCobroCab.className = "quote-fila__cab";
+  filaCobro.appendChild(filaCobroCab);
+  const filaCobroTitulo = document.createElement("span");
+  filaCobroTitulo.className = "quote-fila__titulo";
+  filaCobroTitulo.textContent = "Condiciones de pago";
+  filaCobroCab.appendChild(filaCobroTitulo);
+  const filaCobroValor = document.createElement("span");
+  filaCobroValor.className = "quote-fila__valor";
+  filaCobroCab.appendChild(filaCobroValor);
+  const filaCobroBoton = document.createElement("button");
+  filaCobroBoton.type = "button";
+  filaCobroBoton.className = "quote-paso__cambiar";
+  filaCobroBoton.textContent = "Cambiar";
+  filaCobroCab.appendChild(filaCobroBoton);
+  const filaCobroDetalle = document.createElement("div");
+  filaCobroDetalle.className = "quote-fila__detalle";
+  filaCobroDetalle.hidden = true;
+  filaCobro.appendChild(filaCobroDetalle);
+
+  const filaPagos = document.createElement("div");
+  filaPagos.className = "quote-fila";
+  blockConditions.appendChild(filaPagos);
+  const filaPagosCab = document.createElement("div");
+  filaPagosCab.className = "quote-fila__cab";
+  filaPagos.appendChild(filaPagosCab);
+  const filaPagosTitulo = document.createElement("span");
+  filaPagosTitulo.className = "quote-fila__titulo";
+  filaPagosTitulo.textContent = "Formas de pago que verá el cliente";
+  filaPagosCab.appendChild(filaPagosTitulo);
+  const filaPagosValor = document.createElement("span");
+  filaPagosValor.className = "quote-fila__valor";
+  filaPagosCab.appendChild(filaPagosValor);
+  const filaPagosBoton = document.createElement("button");
+  filaPagosBoton.type = "button";
+  filaPagosBoton.className = "quote-paso__cambiar";
+  filaPagosBoton.textContent = "Cambiar";
+  filaPagosCab.appendChild(filaPagosBoton);
+  const filaPagosDetalle = document.createElement("div");
+  filaPagosDetalle.className = "quote-fila__detalle";
+  filaPagosDetalle.hidden = true;
+  filaPagos.appendChild(filaPagosDetalle);
+
+  const filaValidez = document.createElement("div");
+  filaValidez.className = "quote-fila";
+  blockConditions.appendChild(filaValidez);
+  const filaValidezCab = document.createElement("div");
+  filaValidezCab.className = "quote-fila__cab";
+  filaValidez.appendChild(filaValidezCab);
+  const filaValidezTitulo = document.createElement("span");
+  filaValidezTitulo.className = "quote-fila__titulo";
+  filaValidezTitulo.textContent = "Válido hasta";
+  filaValidezCab.appendChild(filaValidezTitulo);
+  const filaValidezValor = document.createElement("span");
+  filaValidezValor.className = "quote-fila__valor";
+  filaValidezCab.appendChild(filaValidezValor);
+  const filaValidezBoton = document.createElement("button");
+  filaValidezBoton.type = "button";
+  filaValidezBoton.className = "quote-paso__cambiar";
+  filaValidezBoton.textContent = "Cambiar";
+  filaValidezCab.appendChild(filaValidezBoton);
+  const filaValidezDetalle = document.createElement("div");
+  filaValidezDetalle.className = "quote-fila__detalle";
+  filaValidezDetalle.hidden = true;
+  filaValidez.appendChild(filaValidezDetalle);
+
+  // ── SCRUM-915d · «AJUSTES DEL DOCUMENTO»: el bloque de «4. Envío», reconvertido en fila ──────
+  // Es la cuarta fila del paso Condiciones (decisión v3 del orquestador: los ajustes A LA VISTA,
+  // sin pestaña ni modal, con un galón ▸/▾ que dice que se abre y se cierra). Recoge lo que decide
+  // CÓMO SALE el documento: el IVA por defecto y el del presupuesto (antes en Líneas), la dirección
+  // de la obra (antes en Cliente), qué datos del cliente se imprimen y la descripción en el PDF.
+  // Las formas de pago se van a su fila de Condiciones: deciden cómo se COBRA, no cómo se ve.
+  // Su cabecera es el título del bloque + el resumen + «Cambiar»; lo demás es el detalle, y la hoja
+  // de estilos lo esconde mientras la fila esté cerrada. Nada se mueve.
   const blockDelivery = document.createElement("div");
-  blockDelivery.className = "quote-block";
+  blockDelivery.className = "quote-block quote-paso-parte quote-ajustes";
   if (!esDocumentoSuelto) leftCard.appendChild(blockDelivery); // SCRUM-600: ver el bloque de arriba
   const blockDeliveryTitle = document.createElement("h3");
   blockDeliveryTitle.className = "quote-block-title";
-  blockDeliveryTitle.textContent = "4. Envío";
+  blockDeliveryTitle.textContent = "Ajustes del documento";
   blockDelivery.appendChild(blockDeliveryTitle);
+  const filaAjustesValor = document.createElement("span");
+  filaAjustesValor.className = "quote-fila__valor";
+  blockDelivery.appendChild(filaAjustesValor);
+  const filaAjustesBoton = document.createElement("button");
+  filaAjustesBoton.type = "button";
+  filaAjustesBoton.className = "quote-paso__cambiar";
+  filaAjustesBoton.textContent = "Cambiar";
+  blockDelivery.appendChild(filaAjustesBoton);
 
   const clientFormRow = document.createElement("div");
   clientFormRow.className = "quote-form-row";
@@ -518,7 +693,12 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // 🔴 Y aquí además se colaba una palabra: una de sus opciones es «Utilizar dirección de
   // FACTURACIÓN», así que en modo justificante la pantalla decía «factura» sin que ninguna
   // ranura del documento lo dijera. Lo cazó el banco montando la vista, no un `grep`.
-  if (!esDocumentoSuelto) clientFormRow.appendChild(fieldDireccionObra.wrapper);
+  //
+  // 🔴 SCRUM-915d · SE MUDA A «AJUSTES DEL DOCUMENTO», y el motivo de arriba no lo contradice: lo
+  // que lo impedía era el NOMBRE «4. Envío», que ya no existe. Ese bloque es ahora «Ajustes del
+  // documento» —cómo SALE impreso—, que es justo donde el profesional busca una dirección que se
+  // imprime. En el paso Cliente queda sólo el cliente (v3 aprobada: una decisión por pantalla).
+  // Se CUELGA más abajo, detrás del IVA, que es el orden de la v3 dentro de la fila.
 
   // El campo libre vive en su PROPIA fila, a ancho completo: `.quote-form-row` es una rejilla de
   // tres columnas y una dirección postal de 300 caracteres en un tercio de ancho se lee mal.
@@ -536,7 +716,23 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // aparte porque también se pinta aparte, y dejarlo suelto sería un `shipping_address` en la
   // pantalla del documento suelto sin nada que lo gobierne — invisible por `hidden`, que es
   // justo la clase de resto que nadie vuelve a mirar.
-  if (!esDocumentoSuelto) blockClient.appendChild(direccionObraWrap);
+  // (SCRUM-915d: se cuelga con su selector, detrás del IVA — ver `linesVatRow`.)
+
+  // ── SCRUM-915d · EL PIE DEL PASO «CLIENTE» ─────────────────────────────────────────────────
+  // «Continuar» se DESHABILITA sin cliente y dice por qué a su lado: un control que no se puede
+  // usar tiene que poder explicarlo (A10). El motivo desaparece en cuanto deja de ser verdad.
+  const pasoClientePie = document.createElement("div");
+  pasoClientePie.className = "quote-paso__pie";
+  blockClient.appendChild(pasoClientePie);
+  const pasoClienteFalta = document.createElement("span");
+  pasoClienteFalta.className = "quote-paso__falta";
+  pasoClienteFalta.textContent = "Elige un cliente para seguir";
+  pasoClientePie.appendChild(pasoClienteFalta);
+  const pasoClienteSeguir = document.createElement("button");
+  pasoClienteSeguir.type = "button";
+  pasoClienteSeguir.className = "btn btn-primary";
+  pasoClienteSeguir.textContent = "Continuar";
+  pasoClientePie.appendChild(pasoClienteSeguir);
 
   /**
    * SCRUM-602 · enseña u oculta el campo libre, y le pone la SUGERENCIA como placeholder.
@@ -607,15 +803,31 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // nueva (`addLine` lo lee como reserva, L~2068/2261). Su sitio es el bloque de Líneas, delante
   // de ellas. Va en su propia `quote-form-row` para conservar el ancho de un tercio que ya tenía:
   // no es un cambio de tamaño disfrazado de reordenado.
+  //
+  // 🔴 SCRUM-915d · EN EL PRESUPUESTO, LOS DOS IVA SE VAN A «AJUSTES DEL DOCUMENTO» (v3 aprobada):
+  // deciden cómo sale el documento y casi nunca se tocan, y en el paso Conceptos la v3 deja sólo
+  // las líneas. En el DOCUMENTO SUELTO el IVA por defecto SE QUEDA en Conceptos —no tiene paso de
+  // Condiciones donde vivir— hasta que 915g rehaga su último paso.
+  //
+  // Son DOS filas y no una fila con dos padres, a propósito: el censo de orden (SCRUM-286) coloca
+  // cada nodo bajo el PRIMER padre que visita, y una sola fila colgada de Líneas y de Ajustes
+  // pondría el IVA del presupuesto en «Líneas» sobre el papel aunque en pantalla esté en Ajustes.
   const linesVatRow = document.createElement("div");
   linesVatRow.className = "quote-form-row";
-  blockLines.appendChild(linesVatRow);
-  linesVatRow.appendChild(fieldVatDefault.wrapper);
+  blockDelivery.appendChild(linesVatRow);
+  const sueltoVatRow = document.createElement("div");
+  sueltoVatRow.className = "quote-form-row";
+  if (esDocumentoSuelto) blockLines.appendChild(sueltoVatRow);
+  if (esDocumentoSuelto) sueltoVatRow.appendChild(fieldVatDefault.wrapper);
+  else linesVatRow.appendChild(fieldVatDefault.wrapper);
   // SCRUM-656: al lado del IVA por defecto, que es su misma familia de decisiones.
   // SCRUM-600 · el IVA POR DOCUMENTO (`ivaModo`) es otra clave que el emisor descarta, y su
   // rótulo dice «presupuesto». El IVA POR LÍNEA sí sobrevive y se queda: es `tax`, la única vía
   // por la que el impuesto llega a la factura.
   if (!esDocumentoSuelto) linesVatRow.appendChild(fieldIvaModo.wrapper);
+  // SCRUM-915d · la dirección de la obra, detrás del IVA (orden de la v3 dentro de la fila).
+  if (!esDocumentoSuelto) blockDelivery.appendChild(fieldDireccionObra.wrapper);
+  if (!esDocumentoSuelto) blockDelivery.appendChild(direccionObraWrap);
 
     // Checkbox WhatsApp
     // A2.3: el checkbox "Enviar por WhatsApp automáticamente" desaparece — al
@@ -638,7 +850,8 @@ descWrapper.appendChild(descLabel);
 
 // SCRUM-286: «Incluir descripción en el PDF» decide QUÉ VE EL CLIENTE en el documento — misma
 // familia que `docFields`. Va al bloque de Envío, no al del cliente.
-blockDelivery.appendChild(descWrapper);
+// SCRUM-915d: ese bloque es hoy «Ajustes del documento»; la casilla se cuelga detrás de los
+// datos del cliente (ver `docFieldsWrapper`), que es el orden de la v3.
 
   
     // ---------- CONDICIONES DE PAGO (SELECT) ----------
@@ -682,7 +895,7 @@ blockDelivery.appendChild(descWrapper);
     // Valor por defecto para el MVP
     paymentSelect.value = "FULL_UPFRONT";
 
-    blockConditions.appendChild(fieldPaymentTerms.wrapper);
+    filaCobroDetalle.appendChild(fieldPaymentTerms.wrapper); // SCRUM-915d: en su fila de Condiciones
 
     // ---------- SCRUM-27: EDITOR DE TRAMOS PERSONALIZADOS (oculto salvo "Personalizado") ----------
     // Clona el patrón addLine/lines[]: filas {etiqueta, %}, añadir/quitar, recolectar a un array,
@@ -775,7 +988,7 @@ blockDelivery.appendChild(descWrapper);
     }
 
     addStageBtn.addEventListener("click", () => addStage());
-    blockConditions.appendChild(stagesWrapper);
+    filaCobroDetalle.appendChild(stagesWrapper); // SCRUM-915d: los tramos, con su plan de cobro
 
     // ---------- A16.2: CADUCIDAD (validUntil, default 30 días) ----------
     const validWrapper = document.createElement("div");
@@ -880,7 +1093,7 @@ blockDelivery.appendChild(descWrapper);
     }
 
     validWrapper.appendChild(validNote);
-    blockConditions.appendChild(validWrapper);
+    filaValidezDetalle.appendChild(validWrapper); // SCRUM-915d: en su fila de Condiciones
 
     // ---------- A2.1: MÉTODOS DE PAGO PARA ESTE PRESUPUESTO ----------
     // ☐ Tarjeta ☐ Bizum ☐ Transferencia — todos marcados por defecto (= null
@@ -918,7 +1131,7 @@ blockDelivery.appendChild(descWrapper);
     pmFee.className = "pay-methods-note";
     pmFee.innerHTML = "💳 La tarjeta lleva una comisión del <strong>0,9 %</strong> por cobro. Bizum y transferencia, gratis.";
     payMethodsWrapper.appendChild(pmFee);
-    blockDelivery.appendChild(payMethodsWrapper);
+    filaPagosDetalle.appendChild(payMethodsWrapper); // SCRUM-915d: cómo se COBRA va a Condiciones
 
     // Devuelve el array para el payload, o undefined si están todas (= sin límite)
     function selectedPayMethods() {
@@ -1012,7 +1225,7 @@ blockDelivery.appendChild(descWrapper);
 
     propuestaPagoWrap.appendChild(propuestaPagoTexto);
     propuestaPagoWrap.appendChild(propuestaPagoBtn);
-    blockDelivery.appendChild(propuestaPagoWrap);
+    filaPagosDetalle.appendChild(propuestaPagoWrap); // SCRUM-915d: con las formas de pago
 
     /**
      * Las casillas marcadas AHORA, todas.
@@ -1209,6 +1422,28 @@ blockDelivery.appendChild(descWrapper);
     dfNote.textContent = "Solo aparecen los que el cliente tenga rellenos. Elige con qué nombre sale este cliente en el documento.";
     docFieldsWrapper.appendChild(dfNote);
     blockDelivery.appendChild(docFieldsWrapper);
+    blockDelivery.appendChild(descWrapper); // SCRUM-915d: detrás de los datos del cliente (v3)
+
+    // ── SCRUM-915d · EL PIE DEL PASO «CONDICIONES» ──────────────────────────────────────────
+    // Va en el ÚLTIMO bloque del paso, que es la fila de Ajustes. Lo único que puede frenarlo es
+    // un plan por tramos que no cuadra, y el motivo es el texto que «Generar» ya da hoy para eso.
+    const pasoCondicionesPie = document.createElement("div");
+    pasoCondicionesPie.className = "quote-paso__pie";
+    blockDelivery.appendChild(pasoCondicionesPie);
+    const pasoCondicionesFalta = document.createElement("span");
+    pasoCondicionesFalta.className = "quote-paso__falta";
+    pasoCondicionesFalta.textContent = "Revisa los tramos: cada uno necesita etiqueta y porcentaje, y deben sumar 100 %.";
+    pasoCondicionesPie.appendChild(pasoCondicionesFalta);
+    const pasoCondicionesAtras = document.createElement("button");
+    pasoCondicionesAtras.type = "button";
+    pasoCondicionesAtras.className = "btn btn-ghost";
+    pasoCondicionesAtras.textContent = "Atrás";
+    pasoCondicionesPie.appendChild(pasoCondicionesAtras);
+    const pasoCondicionesSeguir = document.createElement("button");
+    pasoCondicionesSeguir.type = "button";
+    pasoCondicionesSeguir.className = "btn btn-primary";
+    pasoCondicionesSeguir.textContent = "Continuar";
+    pasoCondicionesPie.appendChild(pasoCondicionesSeguir);
 
     // null = todos (default); objeto solo si el pro desmarca algo
     function selectedDocFields() {
@@ -1405,9 +1640,8 @@ blockDelivery.appendChild(descWrapper);
   }
 
   // ---------- BLOQUE C: TOTALES ----------
-  const blockTotals = document.createElement("div");
-  blockTotals.className = "quote-block quote-block-totals";
-  leftCard.appendChild(blockTotals);
+  // SCRUM-915d: `blockTotals` se crea y se cuelga ARRIBA, detrás de las líneas (es la segunda
+  // mitad del paso Conceptos). Aquí se sigue rellenando, igual que antes.
 
   // SCRUM-139 F3: este bloque ya NO lleva título "Totales". La cifra ES el título.
   // Un h3 "Totales" a 30 px por encima de una etiqueta "TOTAL PRESUPUESTO" dice la misma
@@ -1522,6 +1756,28 @@ blockDelivery.appendChild(descWrapper);
   // No hace falta firmar ningún literal: el que había se va con la tira.
   if (!esDocumentoSuelto) blockTotals.appendChild(propuestaWrap);
 
+  // ── SCRUM-915d · EL PIE DEL PASO «CONCEPTOS» (cierra el paso, así que va detrás de los totales) ──
+  // «Continuar» exige lo MISMO que «Generar» (`lineaValidaParaGenerar`): una regla escrita dos
+  // veces son dos reglas que divergen, y aquí la divergencia dejaría pasar un paso que luego
+  // «Generar» rechaza, o frenaría uno que hoy se genera.
+  const pasoConceptosPie = document.createElement("div");
+  pasoConceptosPie.className = "quote-paso__pie";
+  blockTotals.appendChild(pasoConceptosPie);
+  const pasoConceptosFalta = document.createElement("span");
+  pasoConceptosFalta.className = "quote-paso__falta";
+  pasoConceptosFalta.textContent = "Falta al menos una línea con concepto, cantidad y precio";
+  pasoConceptosPie.appendChild(pasoConceptosFalta);
+  const pasoConceptosAtras = document.createElement("button");
+  pasoConceptosAtras.type = "button";
+  pasoConceptosAtras.className = "btn btn-ghost";
+  pasoConceptosAtras.textContent = "Atrás";
+  pasoConceptosPie.appendChild(pasoConceptosAtras);
+  const pasoConceptosSeguir = document.createElement("button");
+  pasoConceptosSeguir.type = "button";
+  pasoConceptosSeguir.className = "btn btn-primary";
+  pasoConceptosSeguir.textContent = "Continuar";
+  pasoConceptosPie.appendChild(pasoConceptosSeguir);
+
   /** El cliente elegido AHORA, o `null`. Mismo criterio que la vista previa (una sola forma). */
   function clienteElegido() {
     const id = fieldCustomer.select.value;
@@ -1600,12 +1856,41 @@ blockDelivery.appendChild(descWrapper);
 
   // ---------- BLOQUE D: ACCIONES ----------
   const blockActions = document.createElement("div");
-  blockActions.className = "quote-block quote-block-actions";
+  blockActions.className = "quote-block quote-block-actions quote-paso";
   leftCard.appendChild(blockActions);
+  // SCRUM-915d · el ÚLTIMO PASO. Sus botones son los de hoy («Generar presupuesto» / «Emitir…»,
+  // «Limpiar formulario», «Guardar como plantilla»): la hoja de envío es 915f, no esto.
+  const blockActionsTitle = document.createElement("h3");
+  blockActionsTitle.className = "quote-block-title";
+  blockActionsTitle.textContent = esDocumentoSuelto ? "Revisar y emitir" : "Revisar y enviar";
+  blockActionsTitle.dataset.numero = esDocumentoSuelto ? "3" : "4";
+  blockActions.appendChild(blockActionsTitle);
+  const pasoRevisarCambiar = document.createElement("button");
+  pasoRevisarCambiar.type = "button";
+  pasoRevisarCambiar.className = "quote-paso__cambiar";
+  pasoRevisarCambiar.textContent = "Cambiar";
+  blockActions.appendChild(pasoRevisarCambiar);
+  const pasoRevisarGuia = document.createElement("p");
+  pasoRevisarGuia.className = "quote-paso__guia";
+  pasoRevisarGuia.textContent = esDocumentoSuelto
+    ? "Revisa el documento y, si está bien, emítelo."
+    : "Revisa el documento y, si está bien, envíaselo al cliente por WhatsApp.";
+  blockActions.appendChild(pasoRevisarGuia);
+  // Lo que se va a mandar, en una línea: el cliente y cuántos conceptos (y en el presupuesto, cómo
+  // se cobra). Son el nombre del cliente y textos firmados o ya existentes, compuestos.
+  const pasoRevisarResumen = document.createElement("p");
+  pasoRevisarResumen.className = "quote-paso__revision";
+  blockActions.appendChild(pasoRevisarResumen);
 
   const actionsRow = document.createElement("div");
   actionsRow.className = "form-actions";
   blockActions.appendChild(actionsRow);
+
+  const pasoRevisarAtras = document.createElement("button");
+  pasoRevisarAtras.type = "button";
+  pasoRevisarAtras.className = "btn btn-ghost";
+  pasoRevisarAtras.textContent = "Atrás";
+  actionsRow.appendChild(pasoRevisarAtras);
 
   const submitBtn = document.createElement("button");
   submitBtn.type = "button";
@@ -1647,7 +1932,9 @@ blockDelivery.appendChild(descWrapper);
   // de un documento que no las admite. Dos documentos compartiendo una sola ranura de borrador
   // es el defecto; darle otra ranura sería estado nuevo (regla 27) y tampoco es de este ticket.
   // El rótulo se omite porque diría algo que no ocurre: aquí no se guarda nada solo.
-  if (!esDocumentoSuelto) actionsRow.appendChild(draftIndicator);
+  // SCRUM-915d · JUNTO AL TÍTULO, no con las acciones (inventario v3): las acciones sólo se ven en
+  // el último paso, y el aviso tiene que verse mientras se escribe, que es en los otros tres.
+  if (!esDocumentoSuelto) heading.appendChild(draftIndicator);
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
   const previewTitle = document.createElement("h3");
@@ -2227,6 +2514,9 @@ blockDelivery.appendChild(descWrapper);
       <span class="quote-total-kpi__label">${esDocumentoSuelto ? 'Total' : 'Total presupuesto'}</span>
       <strong class="quote-total-kpi__cifra">${fmtMoneyEs(total, cur)}</strong>
     `;
+    // SCRUM-915d · el resumen del paso Conceptos cita ESTA cifra, la del KPI, no una cuenta suya.
+    totalDelEditorTexto = fmtMoneyEs(total, cur);
+    refrescarPasos();
 
     // SCRUM-587 · la tira de la propuesta se decide con los MISMOS datos que acaban de recalcular:
     // así aparece al añadir una línea nueva y desaparece sola en cuanto ya no queda ninguna sin
@@ -4189,6 +4479,186 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-915d · EL CONTROL DE LOS PASOS (ver la cabecera del esqueleto, junto a `blockClient`).
+  //
+  // Todo lo de aquí cambia CLASES, `hidden` de los propios cromos del paso y TEXTOS de resumen.
+  // Ningún control del formulario se mueve ni se vuelve a crear: un paso cerrado sigue teniendo
+  // sus campos en el DOM, así que el borrador, la vista previa y «Generar» los siguen leyendo.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * ¿Esta línea cuenta para «Generar»? Es la condición que el envío aplicaba línea a línea, sacada
+   * aquí para que «Continuar» y «Generar» no puedan discrepar: una línea que Generar descarta no
+   * abre el paso siguiente, y una que Generar acepta no lo frena.
+   */
+  function lineaValidaParaGenerar(line) {
+    const concept = line.conceptInput.value.trim();
+    const qty = parseFloat(String(line.qtyInput.value || "").replace(",", "."));
+    const price = parseFloat(String(line.priceInput.value || "").replace(",", "."));
+    const safeQty = Number.isFinite(qty) ? qty : 0;
+    const safePrice = Number.isFinite(price) ? price : 0;
+    return !(!concept || safeQty <= 0 || safePrice < 0);
+  }
+
+  const cuantasLineasValidas = function () { return lines.filter(lineaValidaParaGenerar).length; };
+  const conceptosTexto = function (n) { return n + " " + (n === 1 ? "concepto" : "conceptos"); };
+  /** «2026-10-18» → «18/10/2026»: el mismo día que eligió el profesional, sin pasar por `Date`. */
+  const fechaCorta = function (iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+    return m ? m[3] + "/" + m[2] + "/" + m[1] : "";
+  };
+  const textoDeCobro = function () {
+    const o = paymentSelect.options[paymentSelect.selectedIndex];
+    return o ? o.textContent : "";
+  };
+
+  const PASOS_DEL_EDITOR = [
+    {
+      bloques: [blockClient], resumen: pasoClienteResumen, cambiar: pasoClienteCambiar,
+      seguir: pasoClienteSeguir, falta: pasoClienteFalta, atras: null,
+      puede: function () { return !!clienteElegido(); },
+      texto: function () { const c = clienteElegido(); return c ? c.name : ""; },
+    },
+    {
+      bloques: [blockLines, blockTotals], resumen: pasoConceptosResumen, cambiar: pasoConceptosCambiar,
+      seguir: pasoConceptosSeguir, falta: pasoConceptosFalta, atras: pasoConceptosAtras,
+      puede: function () { return cuantasLineasValidas() > 0; },
+      texto: function () { return conceptosTexto(cuantasLineasValidas()) + " · " + totalDelEditorTexto; },
+    },
+  ];
+  if (!esDocumentoSuelto) {
+    PASOS_DEL_EDITOR.push({
+      bloques: [blockConditions, blockDelivery], resumen: pasoCondicionesResumen, cambiar: pasoCondicionesCambiar,
+      seguir: pasoCondicionesSeguir, falta: pasoCondicionesFalta, atras: pasoCondicionesAtras,
+      puede: function () { return paymentSelect.value !== "CUSTOM" || customStagesValid(); },
+      texto: function () { return textoDeCobro() + " · válido hasta " + fechaCorta(validInput.value); },
+    });
+  }
+  PASOS_DEL_EDITOR.push({
+    bloques: [blockActions], resumen: null, cambiar: pasoRevisarCambiar,
+    seguir: null, falta: null, atras: pasoRevisarAtras,
+    puede: function () { return true; },
+    texto: function () { return ""; },
+  });
+
+  /** ¿Se pueden dar por buenos los `hasta` primeros pasos? */
+  function puedeHasta(hasta) {
+    for (let k = 0; k < hasta; k++) if (!PASOS_DEL_EDITOR[k].puede()) return false;
+    return true;
+  }
+
+  const FILAS_DE_CONDICIONES = [
+    { clave: "cobro", fila: filaCobro, detalle: filaCobroDetalle, boton: filaCobroBoton },
+    { clave: "pagos", fila: filaPagos, detalle: filaPagosDetalle, boton: filaPagosBoton },
+    { clave: "validez", fila: filaValidez, detalle: filaValidezDetalle, boton: filaValidezBoton },
+    // La de Ajustes no tiene contenedor de detalle: es el bloque entero, y lo que se ve con la
+    // fila cerrada lo decide la hoja de estilos (`.quote-ajustes`).
+    { clave: "ajustes", fila: blockDelivery, detalle: null, boton: filaAjustesBoton },
+  ];
+
+  function pintarFilas() {
+    FILAS_DE_CONDICIONES.forEach(function (f) {
+      const abierta = filaAbierta === f.clave;
+      if (f.detalle) f.detalle.hidden = !abierta;
+      f.fila.classList.toggle("is-desplegado", abierta);
+      f.boton.textContent = abierta ? "Listo" : "Cambiar";
+      f.boton.setAttribute("aria-expanded", abierta ? "true" : "false");
+    });
+  }
+
+  function refrescarPasos() {
+    if (!pasosMontados) return;
+    const n = PASOS_DEL_EDITOR.length;
+    PASOS_DEL_EDITOR.forEach(function (p, idx) {
+      const i = idx + 1;
+      const abierto = i === pasoAbierto;
+      // Se puede VOLVER a un paso ya visitado si todo lo anterior sigue en pie. El último no se da
+      // por «hecho» nunca: hecho sería haberlo generado, y eso lo cuenta su propio aviso.
+      const alcanzable = !abierto && i <= pasoAlcanzado && puedeHasta(idx);
+      const hecho = alcanzable && i < n && p.puede();
+      p.bloques.forEach(function (b) {
+        b.classList.toggle("is-abierto", abierto);
+        b.classList.toggle("is-hecho", hecho);
+        b.classList.toggle("is-pendiente", !abierto && !hecho);
+      });
+      p.cambiar.hidden = !alcanzable;
+      if (p.seguir) {
+        const ok = p.puede();
+        p.seguir.disabled = !ok;
+        p.falta.hidden = ok;
+      }
+      if (p.resumen) p.resumen.textContent = hecho ? p.texto() : "";
+    });
+
+    // Lo elegido en cada fila de Condiciones, en su propia fila.
+    filaCobroValor.textContent = textoDeCobro();
+    const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })
+      .map(function (d) { return d.label; });
+    filaPagosValor.textContent = pagos.length ? pagos.join(" · ") : "—";
+    filaValidezValor.textContent = fechaCorta(validInput.value);
+    filaAjustesValor.textContent = (fieldIvaModo.select.value === "no_incluido" ? "IVA no incluido" : "IVA sumado")
+      + " · "
+      + (fieldDireccionObra.select.value === window.quoteDireccionObra.MODOS.NO_MOSTRAR
+        ? "sin dirección de obra" : "con dirección de obra");
+
+    // El último paso, en una línea: a quién, cuántos conceptos y (en el presupuesto) cómo se cobra.
+    const c = clienteElegido();
+    pasoRevisarResumen.textContent = c
+      ? c.name + " · " + conceptosTexto(cuantasLineasValidas()) + (esDocumentoSuelto ? "" : " · " + textoDeCobro())
+      : "";
+  }
+
+  function abrirPaso(i, conFoco) {
+    const n = PASOS_DEL_EDITOR.length;
+    const destino = Math.max(1, Math.min(n, i));
+    // No se salta hacia delante un paso que no está completo: es lo que «Continuar» deshabilitado
+    // ya dice, y «Cambiar» no puede ser una puerta trasera.
+    if (destino > pasoAbierto && !puedeHasta(destino - 1)) return;
+    pasoAbierto = destino;
+    if (destino > pasoAlcanzado) pasoAlcanzado = destino;
+    filaAbierta = null;
+    pintarFilas();
+    refrescarPasos();
+    if (!conFoco) return;
+    // El foco va al TÍTULO del paso que se abre: quien navega con teclado o lector de pantalla oye
+    // dónde está, y el siguiente Tab entra en el paso.
+    const titulo = PASOS_DEL_EDITOR[destino - 1].bloques[0].querySelector(".quote-block-title");
+    if (titulo) {
+      titulo.tabIndex = -1;
+      try { titulo.focus({ preventScroll: true }); } catch (_e) {}
+      titulo.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  PASOS_DEL_EDITOR.forEach(function (p, idx) {
+    p.cambiar.addEventListener("click", function () { abrirPaso(idx + 1, true); });
+    if (p.seguir) p.seguir.addEventListener("click", function () { abrirPaso(idx + 2, true); });
+    if (p.atras) p.atras.addEventListener("click", function () { abrirPaso(idx, true); });
+  });
+  FILAS_DE_CONDICIONES.forEach(function (f) {
+    f.boton.addEventListener("click", function () {
+      filaAbierta = filaAbierta === f.clave ? null : f.clave;
+      pintarFilas();
+      refrescarPasos();
+    });
+  });
+  // Cualquier cosa que el profesional toque dentro del editor puede cambiar si un paso se puede dar
+  // por bueno o lo que dice su resumen. Se escucha en la tarjeta, DESPUÉS de los manejadores de
+  // cada campo (burbuja), así que se lee el estado ya actualizado.
+  ["input", "change", "click"].forEach(function (evento) {
+    leftCard.addEventListener(evento, refrescarPasos);
+  });
+  // «Limpiar formulario» vacía el cliente y las líneas: se vuelve al primer paso.
+  resetBtn.addEventListener("click", function () {
+    pasoAlcanzado = 1;
+    abrirPaso(1, false);
+  });
+
+  pasosMontados = true;
+  pintarFilas();
+  abrirPaso(1, false);
+
   loadInitialData();
 
   fieldCustomer.select.addEventListener("change", function () {
@@ -4400,7 +4870,9 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       const safePrice = Number.isFinite(price) ? price : 0;
       const safeVat = Number.isFinite(vatPerc) ? vatPerc : 0;
 
-      if (!concept || safeQty <= 0 || safePrice < 0) {
+      // SCRUM-915d · la MISMA regla que decide si se puede pasar del paso Conceptos. Es la condición
+      // de siempre (`!concept || safeQty <= 0 || safePrice < 0`), escrita UNA vez.
+      if (!lineaValidaParaGenerar(line)) {
         return;
       }
 
