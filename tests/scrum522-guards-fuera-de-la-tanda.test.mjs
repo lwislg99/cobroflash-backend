@@ -154,7 +154,7 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // VE después de pulsar (un paso abierto, «Continuar» sólo cuando se puede, resúmenes, «Cambiar»,
   // Ajustes en la página) e incluye el inventario de hoy como control positivo. Sube aquí porque lo
   // que se juzga sólo existe con el CSS resuelto. Comprobado en rojo contra `c60008bd` (18-sep-2026):
-  // 3 de 3 casos con todos los pasos a la vez. Medido corriendo este test: 26.
+  // todos los casos con todos los pasos a la vez. El número de abajo se midió corriendo este test.
   assert.equal(fuera.length, 26,
     `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ 26 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
