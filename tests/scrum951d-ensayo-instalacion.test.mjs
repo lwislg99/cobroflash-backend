@@ -58,6 +58,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "  if (status === 0 && vu?.veredicto === 'VERDE') return false ?",
     cae: '🔴 ROJO: un VERDE leído del uso.json de OTRA carpeta es AVISO, no OK',
   },
+  {
+    // Lo que el CI de Linux del #1516 cazó: con el dirname del host, «\» no parte en posix.
+    fichero: 'scripts/equipo/comprobar-instalacion.mjs',
+    de: "  const dirnameDe = plataforma === 'win32' ? path.win32.dirname : path.posix.dirname;",
+    a: '  const dirnameDe = path.posix.dirname;',
+    cae: 'el uso.json de ESTA instalación sigue siendo OK (en Windows, sin mirar la caja ni las barras)',
+  },
 ];
 
 function banco() {

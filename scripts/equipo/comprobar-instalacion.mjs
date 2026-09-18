@@ -65,8 +65,10 @@ function rutaComparable(p, plataforma) {
  * ensayo del 18-sep-2026: VERDE con el fichero de la máquina, no el del ensayo).
  */
 export function juzgarUso({ status, vu, destino, plataforma = process.platform }) {
+  // El dirname es el de la plataforma JUZGADA, no el del host: el posix de Linux no parte en «\» (CI de #1516).
+  const dirnameDe = plataforma === 'win32' ? path.win32.dirname : path.posix.dirname;
   const deOtra = Boolean(vu?.fichero)
-    && rutaComparable(path.dirname(vu.fichero), plataforma) !== rutaComparable(destino, plataforma);
+    && rutaComparable(dirnameDe(vu.fichero), plataforma) !== rutaComparable(destino, plataforma);
   const donde = vu?.fichero ? ` · ${vu.fichero}` : '';
   const ajeno = `el uso.json que lee no es de esta instalación${donde}: uso.mjs lo guarda siempre en %LOCALAPPDATA%\\yaqu-equipo`;
   // El código de salida y el veredicto escrito tienen que DECIR LO MISMO: un 0 sin su VERDE no es un verde
