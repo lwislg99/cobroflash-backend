@@ -36,10 +36,12 @@
 // nadie ha decidido todavía. Hay un test que fija que siguen fuera.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 
 import { bloquesDeComentario, marcasDe } from './_procedencia-aprobacion.mjs';
 import { indiceDeFuentes, respaldoDe, referenciasRotas, esProsaDistintiva } from './_respaldo-de-firma.mjs';
+import { ABRE, loQueSeLee } from './_cita-declarada.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 
@@ -89,6 +91,23 @@ function niegaLaMarca(texto) {
     .some((frase) => NEGACION.test(frase));
 }
 
+/**
+ * ¿Por qué NO afirma esta marca? El eje es UNO: lo que no afirma no se acusa.
+ *
+ *   'citada' — SCRUM-921d: en un banco, la marca sólo existe entre `[[cita]]` y `[[/cita]]`.
+ *   'negada' — la frase de la marca la niega.
+ *
+ * La negación se mira sobre lo que se LEE: un «no» dentro de una cita no niega nada fuera de ella,
+ * igual que una marca dentro de una cita no afirma nada. `citas: false` existe sólo para que el
+ * banco compare con y sin la regla (ver `_cita-declarada.mjs`).
+ */
+function noAfirma(b, { citas = true } = {}) {
+  const texto = citas ? loQueSeLee(b.texto, b.fichero) : b.texto;
+  if (!MARCA.test(texto)) return 'citada';
+  if (niegaLaMarca(texto)) return 'negada';
+  return null;
+}
+
 // La ventana de literales: de cuántas líneas bajo el comentario se toma la frase que se va a
 // buscar en las fuentes. NO es un número a dedo — medido el 17-sep-2026, el respaldo documental
 // encontrado por ventana es 19 (30 líneas) · 21 (45) · 22 (70): la curva se aplana en 45.
@@ -100,18 +119,16 @@ const VENTANA = 45;
 //
 // ⚠️ La primera medición dijo **27**, y era de un instrumento roto: la negación llevaba `\b`
 // detrás de una vocal acentuada y descartaba `jobRailBlocks.js:19` por accidente — un bloque que
-// atribuye al fundador los cinco rótulos del rail (regla 30) sin decir dónde consta, o sea justo
-// lo que este guard persigue. El 28 no es el 27 «ajustado para que pase»: es lo que mide el
-// instrumento una vez arreglado. Queda escrito porque un número que sube después de tocar el
-// guard es exactamente la forma que tiene un guard relajado, y hay que poder distinguirlos.
+// dice [[cita]]«Rótulos APROBADOS por el fundador (regla 30)»[[/cita]] y no cita dónde consta,
+// o sea justo lo que este guard persigue. El 28 no es el 27 «ajustado para que pase»: es lo que
+// mide el instrumento una vez arreglado. Queda escrito porque un número que sube después de tocar
+// el guard es exactamente la forma que tiene un guard relajado, y hay que poder distinguirlos.
 //
-// 🔴 Y esta frase está redactada así A PROPÓSITO. La primera versión REPRODUCÍA la marca entre
-// comillas para ilustrarla, y el censo de SCRUM-921a —que no distingue una cita de una
-// afirmación— la contó como la afirmación número 28 y paró el CI. Describir la forma no exige
-// escribirla: es el escalón ② de SCRUM-737, reformular para que la frase no diga el número.
-// Si algún día el censo aprende a no acusar las citas declaradas dentro de un banco, esta
-// perífrasis sobra; hasta entonces, un test que documenta el defecto no debe engordar el censo
-// que lo mide.
+// 🔴 La marca de arriba va DECLARADA como cita a propósito. La primera versión la reproducía a
+// pelo, y el censo de SCRUM-921a —que entonces no distinguía una cita de una afirmación— la
+// contó como la afirmación número 28 y paró el CI (SCRUM-921c bis). Aquella noche se esquivó
+// con una perífrasis; desde SCRUM-921d la cita se declara y ningún censo la lee
+// (`_cita-declarada.mjs`). Un test que documenta el defecto ya no engorda el censo que lo mide.
 //
 // ⚠️ Y NO es el 27 de `_censo-firmas-autorizacion.mjs`: aquél cuenta sobre `docs/` incluido y con
 // otra marca. Que los dos rondaran 27 es casualidad, y por eso se dice aquí.
@@ -128,14 +145,21 @@ const censo = () => (CACHE ??= {
   indice: indiceDeFuentes(RAIZ),
 });
 
+/** El respaldo de una marca que afirma, sobre lo que se LEE (SCRUM-921d). */
+function respaldoLeido(b, indice, { citas = true } = {}) {
+  // Lo citado tampoco RESPALDA: un `SCRUM-<n>` dentro de una cita no dice dónde consta ESTA firma.
+  const leido = citas ? { ...b, texto: loQueSeLee(b.texto, b.fichero) } : b;
+  return respaldoDe(leido, indice);
+}
+
 /** El veredicto de cada marca, por el MISMO camino que usa el trinquete. */
-function veredictos() {
+function veredictos({ citas = true } = {}) {
   const { marcas, indice } = censo();
   return marcas
-    .filter((b) => !niegaLaMarca(b.texto))
-    .map((b) => ({ ...b, donde: `${b.fichero}:${b.linea}`, respaldo: respaldoDe(b, indice) }));
+    .filter((b) => !noAfirma(b, { citas }))
+    .map((b) => ({ ...b, donde: `${b.fichero}:${b.linea}`, respaldo: respaldoLeido(b, indice, { citas }) }));
 }
-const sinRespaldo = () => veredictos().filter((v) => v.respaldo.nivel === 'sin-respaldo');
+const sinRespaldo = (opciones) => veredictos(opciones).filter((v) => v.respaldo.nivel === 'sin-respaldo');
 
 /**
  * La lista congelada, EXPORTADA — y no es un adorno.
@@ -153,7 +177,8 @@ export function congeladas() {
 }
 /** El reparto por nivel de respaldo, para el informe. Mismo camino, misma cuenta. */
 export function porNivel() {
-  const n = { negada: censo().marcas.filter((b) => niegaLaMarca(b.texto)).length };
+  const n = { negada: 0, citada: 0 };
+  for (const b of censo().marcas) { const r = noAfirma(b); if (r) n[r] += 1; }
   for (const v of veredictos()) n[v.respaldo.nivel] = (n[v.respaldo.nivel] || 0) + 1;
   return n;
 }
@@ -239,6 +264,53 @@ test('SCRUM-921c · una NEGACIÓN no es una afirmación de autorización', () =>
   for (const d of [...acusadas]) {
     assert.ok(!/NO\s+est[aá]\s+firmad/i.test(d), `🔴 ${d} es una negación y está acusada.`);
   }
+});
+
+test('SCRUM-921d · 🔴 una CITA declarada en un banco no se acusa; fuera de un banco, sí', () => {
+  // Por el MISMO camino que el árbol: el lector de comentarios y `noAfirma`, con la ruta puesta.
+  const citada = '// [[cita]] El rótulo, aprobado por el fundador el 4-ago-2026. [[/cita]]';
+  const bloque = (comentario, fichero) =>
+    bloquesDeComentario(`${comentario}\nconst x = 1;`, fichero).find((b) => MARCA.test(b.texto));
+  assert.equal(noAfirma(bloque(citada, 'tests/p.mjs')), 'citada',
+    '🔴 una cita declarada dentro de un banco se lee como afirmación: la regla de SCRUM-921d no llega a la fase c.');
+  for (const f of ['src/p.ts', 'public/p.js', 'scripts/p.mjs']) {
+    assert.equal(noAfirma(bloque(citada, f)), null,
+      `🔴 el delimitador tapa una marca en ${f}. Fuera de un banco no vale: ahí la marca es una afirmación.`);
+  }
+  // Sin delimitador, la misma marca en un banco se acusa como siempre.
+  assert.equal(noAfirma(bloque('// El rótulo, aprobado por el fundador el 4-ago-2026.', 'tests/p.mjs')), null);
+  // Y lo citado tampoco NIEGA: un «todavía no» dentro de una cita no absuelve la marca de fuera.
+  const noCitado = bloque('// El rótulo, [[cita]]todavía no[[/cita]] aprobado por el fundador el 4-ago-2026.', 'tests/p.mjs');
+  assert.equal(noAfirma(noCitado, { citas: false }), 'negada', 'el caso tiene que caer en la negación SIN la regla, o no prueba nada.');
+  assert.equal(noAfirma(noCitado), null, '🔴 una negación citada absuelve a una marca real: la cita se ha vuelto un comodín.');
+  // Ni RESPALDA: un ticket dentro de una cita no dice dónde consta la marca de fuera.
+  const conTicket = bloque('// [[cita]] SCRUM-878 [[/cita]] El rótulo, aprobado por el fundador el 4-ago-2026.', 'tests/p.mjs');
+  assert.equal(respaldoLeido(conTicket, censo().indice, { citas: false }).nivel, 'rastreable', 'sin la regla el caso tiene respaldo, o no prueba nada.');
+  assert.equal(respaldoLeido(conTicket, censo().indice).nivel, 'sin-respaldo', '🔴 una cita da respaldo a la marca de fuera: la cita blanquea.');
+});
+
+test('SCRUM-921d · ✅ un fichero SIN delimitador se juzga exactamente igual, con la regla y sin ella', () => {
+  // Si la regla cambia el veredicto de algo que no lleva el delimitador, ha tocado el JUICIO y no
+  // el alcance. Se compara el veredicto de cada marca, fichero a fichero, por los dos caminos.
+  const juicio = (opciones) => {
+    const m = new Map(censo().marcas.map((b) => [`${b.fichero}:${b.linea}`, noAfirma(b, opciones)]));
+    for (const v of veredictos(opciones)) m.set(v.donde, v.respaldo.nivel);
+    return m;
+  };
+  const con = juicio({ citas: true });
+  const sin = juicio({ citas: false });
+  const conDelimitador = new Set(censo().marcas.map((b) => b.fichero)
+    .filter((f) => fs.readFileSync(path.join(RAIZ, f), 'utf8').includes(ABRE)));
+  const cambian = [...con.keys()].filter((k) => con.get(k) !== sin.get(k));
+  const ajenos = cambian.filter((k) => !conDelimitador.has(k.slice(0, k.lastIndexOf(':'))));
+  assert.deepEqual(ajenos, [],
+    '🔴 la regla cambia el veredicto de marcas en ficheros SIN delimitador: ha tocado el juicio, no el alcance.');
+  // Un control que se cumple sobre el vacío no es un control: el canario TIENE que cambiar.
+  const canario = cambian.filter((k) => k.startsWith('tests/_cita-declarada.mjs:'));
+  assert.equal(canario.length, 1, `🔴 el canario de _cita-declarada.mjs no cambia de veredicto: ${JSON.stringify(cambian)}`);
+  assert.equal(con.get(canario[0]), 'citada');
+  assert.equal(sin.get(canario[0]), 'sin-respaldo',
+    '🔴 sin la regla, el canario no sale sin respaldo: ya no vigila nada (¿le han puesto un ticket?).');
 });
 
 test('SCRUM-921c · las 11 del ASESOR siguen FUERA, y es una decisión, no un olvido', () => {
