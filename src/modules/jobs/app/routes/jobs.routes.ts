@@ -16,7 +16,7 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; /
 // módulo para que el test use el MISMO y no una copia.
 import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
 // SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
-import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../../domain/trabajoDirecto';
+import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo, tituloPropioDeTrabajo } from '../../domain/trabajoDirecto';
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -469,6 +469,9 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     // podia vigilar comparando texto, y un guard asi pasa en verde en cuanto alguien reescribe la
     // expresion sin cambiar el defecto. Medido en su tanda de rojos.
     titulo: tituloDeTrabajo({ titulo: job.titulo, quote, customer, jobId: job.id }),
+    // SCRUM-917d · aditivo: el nombre que puso el profesional, sin derivar (null si no hay). La
+    // lista ya pinta el cliente aparte y con `titulo` a secas lo repetía.
+    tituloPropio: tituloPropioDeTrabajo(job),
     direccion: job.direccion ?? null,
     totalAceptado: job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : null),
     totalCobrado: Number(job.totalCobrado ?? 0),
