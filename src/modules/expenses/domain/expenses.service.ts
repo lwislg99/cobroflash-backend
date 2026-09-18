@@ -214,12 +214,44 @@ async function guardarNifDelProveedor(merchantId: number, data: Partial<CreateEx
   });
 }
 
+/**
+ * SCRUM-937 · qué fue del NIF que tecleó el usuario, para que la respuesta lo DIGA.
+ *
+ * `guardarNifDelProveedor` tiene dos salidas mudas: sin proveedor no hay ficha donde dejarlo, y
+ * si la ficha ya tenía otro gana el de la ficha. Las dos son correctas (SCRUM-324 E3) y las dos
+ * se tragaban el dato sin avisar: el profesional creía haber completado su justificante.
+ *
+ * Se decide con lo que quedó en la ficha DESPUÉS de guardar, no con lo que se intentó: así el
+ * resultado es un hecho y no una predicción. `null` = no se tecleó ningún NIF.
+ */
+export type DestinoDelNif = 'en_la_ficha' | 'sin_proveedor' | 'la_ficha_tiene_otro';
+
+export function queFueDelNif(p: {
+  nifTecleado?: string | null;
+  providerId?: number | null;
+  nifDeLaFicha?: string | null;
+}): DestinoDelNif | null {
+  const nif = (p.nifTecleado ?? '').trim();
+  if (!nif) return null;
+  if (!p.providerId) return 'sin_proveedor';
+  // Mayúsculas y espacios no hacen de un NIF «otro»: el guardado es el recortado (arriba).
+  const ficha = (p.nifDeLaFicha ?? '').trim();
+  return ficha.toUpperCase() === nif.toUpperCase() ? 'en_la_ficha' : 'la_ficha_tiene_otro';
+}
+
 export async function updateExpense(merchantId: number, id: number, data: Partial<CreateExpenseInput>) {
   const existing = await prisma.expense.findFirst({ where: { id, merchantId } });
   if (!existing) return null;
   // SCRUM-135: el PUT comprobaba la tenencia del GASTO pero no la de las referencias NUEVAS.
   await assertRefsOwned(merchantId, data);
-  return prisma.expense.update({ where: { id }, data });
+  // SCRUM-937 · la edición hace con el NIF lo mismo que el alta. El modal ya lo mandaba y aquí no
+  // llegaba nunca: la otra puerta del mismo silencio. No es columna de `Expense`, así que se aparta
+  // antes del `update` y va a la ficha del proveedor que el gasto tenga DESPUÉS de editarlo — si la
+  // misma edición cambia de proveedor, al nuevo.
+  const { nifProveedor, ...campos } = data;
+  const actualizado = await prisma.expense.update({ where: { id }, data: campos });
+  await guardarNifDelProveedor(merchantId, { providerId: actualizado.providerId, nifProveedor });
+  return actualizado;
 }
 
 export async function deleteExpense(merchantId: number, id: number) {
