@@ -99,3 +99,81 @@ camino de emisión.
 
 Ficheros: `tests/_censo-vistas-dispatch.mjs` (nuevo) · `tests/scrum433-dispatch-sin-camino.test.mjs`
 (nuevo).
+
+---
+
+# SCRUM-433 · apéndice: el censo resuelve UN SALTO, y dice lo que no sabe
+
+**Medido contra:** `origin/main` = `2bab2e582f6d54419394e9c0205685308c1f9b1b` · 2026-08-10T19:29:36+02:00
+**Rama:** `scrum-433-censo-un-salto`
+
+**10-ago-2026, 19:29 CEST (UTC+0200)** · commit `114fbabf9a3bf34429e86983c68adc97367da4b7`
+
+## El defecto no era un falso positivo. Era un PEAJE
+
+El censo no marcaba nada de más, y **por eso parecía correcto**. Lo que hacía es peor de ver y peor
+de vivir: **obligaba a escribir el código de otra manera.**
+
+La forma natural de una tira de pestañas es `renderAppView(p.vista)` desde el bucle. **Dos sesiones
+independientes** —la 4 en su implementación descartada y la de `quotesTabs.js`— renunciaron a ella
+**cada una por su lado** para no chocar con este censo. El comentario de `quotesTabs.js` lo dejó
+escrito sin saber que el otro lado hacía lo mismo:
+
+> *«La primera versión hacía `renderAppView(p.vista)` desde el bucle —más corto, y parecía más
+> limpio— … el censo de SCRUM-433 lee justo eso.»*
+
+**Dos víctimas que no se hablaban es la prueba de que el peaje era del guard, no de una persona.** Un
+guard que moldea el código a su conveniencia cobra un precio que nadie declaró, y el día que alguien
+navegue desde un bucle sin saberlo se lleva un rojo sin motivo.
+
+## El arreglo: un salto, como en SCRUM-245
+
+De regex a **AST**, y se resuelven las dos formas:
+
+| forma | ejemplo |
+|---|---|
+| variable con literal | `const v = 'x'; renderAppView(v)` |
+| propiedad de objeto (la del bucle) | `{ vista: 'x' }` + `renderAppView(p.vista)` |
+
+Se recoge **todo el fichero** y no el ámbito exacto — **misma decisión que en SCRUM-245 y por el
+mismo motivo**: seguir el ámbito de verdad exige un analizador que no tenemos, y errar hacia
+«resuelvo de más» aquí solo puede dar un falso **negativo** en una vista que además tendría que
+llamarse igual que otra. Errar al revés es justo el peaje que esto quita.
+
+## 🔴 El suelo de este ticket: lo que no se puede resolver se DICE
+
+Un salto es un salto: hay expresiones que no se pueden seguir sin ejecutar el programa. Ésas **no se
+acusan y no se callan**. Se devuelven aparte —con fichero, línea y fragmento— y **el veredicto las
+trae pegadas**: si vivieran en otra función, el día que alguien lea solo `huerfanas` volvería el
+silencio, y **el silencio se lee como «todo resuelto»**, que es exactamente la ambigüedad que este
+censo existe para quitar.
+
+El test lo imprime **siempre**, haya o no:
+
+```
+[SCRUM-433] 50 ficheros · huérfanas 0 · navegaciones sin resolver 0
+```
+
+## Verificado — seis casos, por `$?`
+
+| | caso | resultado |
+|---|---|---|
+| ① | mecanismo: un `case` real sin ningún camino | **cae nombrando** `panel-secreto` |
+| ② | el salto: el mismo `case` abierto desde una variable | **no cae** |
+| ③ | el peaje: el mismo `case` desde un bucle con `p.vista` | **no cae** |
+| ④ | control negativo (a): el mismo `case` como alias puro | no cae |
+| ⑤ | suelo: sin localizar el `switch` | `ESCÁNER CIEGO` |
+| ⑥ | **la prueba de que el peaje existía** | con la resolución desactivada —el censo de ayer— el caso ② **sí cae** |
+
+El ⑥ es el que cierra el ticket: **mismo código de producto, antes rojo y ahora verde**. Sin él,
+«ahora sale verde» no distinguiría entre haber quitado el peaje y haber roto el guard.
+
+Más dos tests de la resolución sobre fuentes escritas dentro del propio test —variable, propiedad, y
+una irresoluble que se declara **nombrando el fragmento**—, para que los casos sean exactos y no
+dependan de lo que hoy haya en el árbol.
+
+## Lo que NO toca
+
+El `switch` del dispatch · la barra lateral · `prisma/schema.prisma` · el camino de emisión.
+
+Ficheros: `tests/_censo-vistas-dispatch.mjs` · `tests/scrum433-dispatch-sin-camino.test.mjs`.
