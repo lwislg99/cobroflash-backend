@@ -97,7 +97,7 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `src/modules/system/invoiceAdmin.ts`, `system/app/routes/invoicesAdmin.routes.ts`, `system/domain/flagFiscal.service.ts` | **J1** | viven en `system/`, pero son facturas |
 | `billing/domain/invoiceWhatsApp.service.ts`, `correoDeFacturaEnviado.ts`, `envioDelDocumento.ts` | **J1** | el ENVÍO de la factura. `envioDelDocumento` se comprobó por contenido: lo importan cobros, trabajos y facturas, **no** presupuestos, así que no es de S1 |
 | `src/modules/billing/**` (el resto: pagos, cobros, recibos, Bizum, tarjeta, métodos de cobro, `invoiceReminder`) | **J2** | `invoiceReminder` es el recordatorio de COBRO |
-| `billing/app/routes/stripe.routes.ts` | **J2** (contenedor) | ⚠️ por contenido: UN webhook que atiende pagos del cliente (`mode === 'payment'`) y la suscripción a YaQu (`mode === 'subscription'`). J3 mantiene su bloque marcado. Propuesta de la S0, sin decidir |
+| `billing/app/routes/stripe.routes.ts` | **J2** (contenedor) | ⚠️ por contenido: UN webhook que atiende pagos del cliente (`mode === 'payment'`) y la suscripción a YaQu (`mode === 'subscription'`). J3 mantiene su bloque marcado (decidido por el orquestador, 18-sep) |
 | `billing/app/routes/subscriptions.routes.ts`, `billing/domain/stripePrices.ts`, `billing/domain/founding.ts` | **J3** | la suscripción a YaQu |
 | `src/modules/payments/**`, `src/integrations/stripe.ts`, `src/integrations/mercadopago.ts` | **J2** | |
 | **el canal de WhatsApp:** `src/integrations/whatsapp.ts`, `whatsappTemplates.ts`, `whatsappPolicy.ts`, `whatsappNotifications.ts`, `messaging/domain/whatsappLog.service.ts`, `src/modules/whatsappBot/**` | **J2** | decisión del orquestador (18-sep): es la comunicación con el cliente. Sigue la regla 1 (todo WhatsApp por `whatsapp.ts`) y las **plantillas de Meta son STOP de un jefe**. Presupuestos (S1) y facturas (J1) lo USAN, no lo cambian |
@@ -211,11 +211,9 @@ efecto y se le cuenta al jefe en plano.
 
 1. Merchant QA propio para el equipo de Javier (§5.1).
 2. Si un jefe puede cambiar una decisión escrita por el otro (§1).
-3. `stripe.routes.ts`: un solo webhook para pagos del cliente (J2) y suscripción a YaQu (J3). Propuesta de la
-   S0: J2 dueño y J3 con su bloque marcado (§3.1).
-4. La entrega a la gestoría (SCRUM-280, 322, 323): J1, con revisión de J4 por el RGPD del envío (§2.2).
+3. La entrega a la gestoría (SCRUM-280, 322, 323): J1, con revisión de J4 por el RGPD del envío (§2.2).
 
 **Comprobado contra casos reales:** el censo de los 80 tickets abiertos del orquestador (18-sep ~11:58Z, sobre
 `e76580b1`) casa cada ticket con un área de esta tabla. Salieron cuatro huecos: infraestructura (→ S5) y el
-canal de WhatsApp (→ J2), decididos y escritos arriba; el ALTER (→ Javier como jefe, §3.1) y la gestoría (4,
+canal de WhatsApp (→ J2), decididos y escritos arriba; el ALTER (→ Javier como jefe, §3.1) y la gestoría (3,
 pendiente).

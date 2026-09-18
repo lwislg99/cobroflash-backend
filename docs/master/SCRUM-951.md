@@ -52,8 +52,8 @@ con control positivo.
   **no** presupuestos → J1, no S1. Todo el RGPD que hay hoy en código (supresión, anonimizado, borrado,
   portabilidad) es **del MERCHANT** (SCRUM-244) → J3; la supresión del cliente final no existe.
   `switchFormaJuridica.js` es «este contacto es empresa o persona» → J2, no un ajuste fiscal.
-  **`stripe.routes.ts` es UN webhook para pagos del cliente y para la suscripción a YaQu**: choque nuevo,
-  queda como decisión pendiente.
+  **`stripe.routes.ts` es UN webhook para pagos del cliente y para la suscripción a YaQu**: choque nuevo;
+  decidido por el orquestador con la propuesta de la S0 (J2 dueño, J3 con su bloque marcado).
 - **Jira:** las 14 etiquetas nuevas (`equipo-luis`, `equipo-javier`, `area-s0` … `area-j6`) están en **0**
   tickets; control: la misma consulta con `sesion-J1` da 10. Las etiquetas viejas `sesion-J1`, `sesion-J2`,
   `sesion-L1` … `sesion-L4` están en **22** tickets de agosto con otro significado, y NO se reutilizan.
