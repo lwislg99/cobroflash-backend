@@ -253,6 +253,7 @@ hablar.
 | `scrum522` (guards de navegador fuera de la tanda) | 25 | **25**: no se añade ningún `guard:` ni se toca `package.json` |
 | `scrum702` (ficheros que leen el entorno, tope 17) | — | **sin cambio**: ni el script ni el test leen una señal; la única coincidencia es un `process.platform` en un **comentario** de la fase a, que su censo descarta |
 | `scrum846c` (instrumentos sin caso fabricado) | — | `censar` entra en su población **con caso propio** (la copia sembrada); sin caso: **0** |
+| `scrum824` (temporales que no se puede probar que salgan del árbol) | 13 | **13**, después de caerme en la primera tanda (error ④): el arreglo fue en mi test, no en su lista |
 
 ## LO QUE ESTO NO VE, DECLARADO
 
@@ -285,6 +286,15 @@ Linux era mirar si existe la raíz `C:\` en vez de leer la plataforma: no habrí
 censo y habría dado veredictos distintos en CI y en Windows, que es lo que ese tope existe para
 ver. Lo paró leer `scrum702` antes de escribir, no después. Cumplir la letra de un guard ajeno
 violando su motivo es peor que subirle el tope a la vista.
+
+**④ Medí los trinquetes ajenos que se me ocurrieron, y me cazó uno que no se me ocurrió.** La
+primera tanda completa salió con 2 rojos: `scrum858b` (`wmic` ausente, ajeno y conocido) y
+**`scrum824`**, que exige demostrar que toda creación en disco cuelga de `os.tmpdir()`. Mi siembra
+escribía en una copia que sí cuelga de `temporal()`, pero a través de un ayudante declarado con
+`function`, y su censo sólo sigue a los ayudantes declarados como variable. Su mensaje ofrecía
+declararme en su lista; **el arreglo fue en mi código** (el ayudante pasa a ser una flecha), y su
+lista sigue en 13. Es la quinta vez que un instrumento mío lo caza un guard ajeno y no una revisión
+mía — y la tabla de arriba, que medí antes de empujar, no lo tenía.
 
 ## Lo que NO se ha hecho
 

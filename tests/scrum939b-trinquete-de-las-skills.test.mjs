@@ -184,8 +184,15 @@ function juzgar(censo, declaradas) {
   return { ok: !partes.length, ciego: null, observadas, nuevas, retiradas, mensaje: partes.join('\n\n') };
 }
 
-/** Una copia de los `SKILL.md` en un temporal fuera del árbol. El original no se toca nunca. */
-function copiaDeLasSkills() {
+/**
+ * Una copia de los `SKILL.md` en un temporal fuera del árbol. El original no se toca nunca.
+ *
+ * ⚠️ Es una FLECHA a propósito, no un `function`: `scrum824` (temporales fuera del árbol) sigue un
+ * ayudante local por su único `return` sólo si está declarado como variable, y como `function` la
+ * siembra salía «sin probar». La cazó su trinquete en la primera tanda; el arreglo fue aquí, no en
+ * su lista.
+ */
+const copiaDeLasSkills = () => {
   const copia = temporal('scrum939b-');
   for (const nombre of fs.readdirSync(DIR_SKILLS)) {
     const origen = path.join(DIR_SKILLS, nombre, 'SKILL.md');
@@ -194,7 +201,7 @@ function copiaDeLasSkills() {
     fs.copyFileSync(origen, path.join(copia, nombre, 'SKILL.md'));
   }
   return copia;
-}
+};
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ① SUELO · el censo mira lo que dice mirar
