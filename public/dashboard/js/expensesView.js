@@ -376,8 +376,14 @@ function openExpenseModal(expense, opts) {
                  guarda en la ficha del proveedor, que es donde vive: en el almacén no se entra a
                  una ficha. Si el proveedor ya tenía NIF, este campo lo muestra y no lo pisa. -->
             <label>NIF del proveedor</label>
+            <!-- SCRUM-937b · sin proveedor el NIF no tiene dónde guardarse: el campo se bloquea y la
+                 ayuda lo dice ANTES de teclear (texto firmado, SCRUM-937 comentario 15873). Nace
+                 bloqueado; al llegar la lista de proveedores lo decide aplicarNifSegunProveedor. -->
             <input id="exp-provider-nif" type="text" inputmode="text" autocapitalize="characters"
-                   placeholder="B12345678" value="${escHtml(expense?.provider?.taxId||'')}"/>
+                   placeholder="B12345678" value="${escHtml(expense?.provider?.taxId||'')}"
+                   ${expense?.provider?.taxId ? 'data-origen="ficha"' : ''} readonly
+                   aria-describedby="exp-nif-ayuda"/>
+            <p id="exp-nif-ayuda" class="gasto-nif-ayuda"${expense?.providerId ? ' hidden' : ''}>${AYUDA_NIF_SIN_PROVEEDOR}</p>
           </div>
         </div>
         <div class="field">
@@ -418,6 +424,28 @@ function openExpenseModal(expense, opts) {
   // que borre la vinculación al guardar.
   const provSel = document.getElementById('exp-providerid');
   const nifInput = document.getElementById('exp-provider-nif');
+  const ayudaNif = document.getElementById('exp-nif-ayuda');
+  // SCRUM-937b · el NIF según el proveedor elegido. Tres estados, y ninguno tira nada en silencio:
+  //   · proveedor CON NIF en su ficha → se muestra el de la ficha y no se pisa (SCRUM-324 E3);
+  //   · proveedor SIN NIF → se escribe, y el alta lo guarda en su ficha;
+  //   · SIN proveedor → solo lectura y la ayuda firmada. Lo que ya se hubiera tecleado NO se borra:
+  //     si se guarda así, el servidor dice `sin_proveedor` y el aviso B lo cuenta después.
+  // `data-origen="ficha"` distingue el NIF que puso la ficha (se quita al cambiar de proveedor) del
+  // que tecleó el profesional (se queda).
+  function aplicarNifSegunProveedor() {
+    const op = provSel.selectedOptions[0];
+    const nifFicha = op ? (op.dataset.nif || '') : '';
+    const hayProveedor = !!provSel.value;
+    if (nifFicha) {
+      nifInput.value = nifFicha;
+      nifInput.dataset.origen = 'ficha';
+      nifInput.readOnly = true;
+    } else {
+      if (nifInput.dataset.origen === 'ficha') { nifInput.value = ''; delete nifInput.dataset.origen; }
+      nifInput.readOnly = !hayProveedor;
+    }
+    ayudaNif.hidden = hayProveedor;
+  }
   if (provSel) {
     const actualProv = expense?.provider?.id ?? expense?.providerId ?? null;
     apiRequest('/admin/providers')
@@ -429,19 +457,15 @@ function openExpenseModal(expense, opts) {
             + `${pr.id === actualProv ? ' selected' : ''}>${escHtml(pr.name)}</option>`).join('');
         // Al elegir proveedor, su NIF se rellena solo: el que ya está guardado manda sobre lo que
         // se teclee con prisa, y así el usuario ve que ese proveedor ya está resuelto.
-        provSel.addEventListener('change', () => {
-          const op = provSel.selectedOptions[0];
-          const nif = op ? (op.dataset.nif || '') : '';
-          if (nif) { nifInput.value = nif; nifInput.readOnly = true; }
-          else if (nifInput.readOnly) { nifInput.value = ''; nifInput.readOnly = false; }
-        });
-        provSel.dispatchEvent(new Event('change'));
+        provSel.addEventListener('change', aplicarNifSegunProveedor);
+        aplicarNifSegunProveedor();
       })
       .catch(() => {
         if (!document.getElementById('exp-modal')) return;
         provSel.innerHTML = actualProv != null
           ? `<option value="${actualProv}" selected>Proveedor actual (no se pudo cargar la lista)</option>`
           : '<option value="">No se pudo cargar la lista de proveedores</option>';
+        aplicarNifSegunProveedor();
       });
   }
 
@@ -510,8 +534,9 @@ function openExpenseModal(expense, opts) {
       };
 
       let creado = null;
+      let editado = null;
       if (isEdit) {
-        await apiRequest(`/admin/expenses/${expense.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        editado = await apiRequest(`/admin/expenses/${expense.id}`, { method: 'PUT', body: JSON.stringify(payload) });
       } else {
         creado = await apiRequest('/admin/expenses', { method: 'POST', body: JSON.stringify(payload) });
       }
@@ -521,6 +546,14 @@ function openExpenseModal(expense, opts) {
       // no se pinta — deliberadamente, y dicho, en vez de pintarse a medias.
 
       closeExpModal();
+      // SCRUM-937b · el NIF tecleado sin proveedor no tiene dónde guardarse, y el servidor lo dice
+      // (`destinoDelNif`, #1499). Se avisa ANTES de recargar, para que un fallo al recargar no se
+      // lo coma. Solo `sin_proveedor`: `la_ficha_tiene_otro` no se alcanza desde este modal (el NIF
+      // de una ficha llena es de solo lectura) y su texto, firmado, no se construye hoy.
+      const destinoDelNif = (creado || editado || {}).destinoDelNif;
+      if (destinoDelNif === 'sin_proveedor' && typeof showToast === 'function') {
+        showToast(AVISO_NIF_SIN_PROVEEDOR, 'warn');
+      }
       // SCRUM-135: desde el detalle del Trabajo no existe la vista de Gastos que recargar
       // (y para un técnico esas dos llamadas son 403). El llamador dice qué refrescar.
       if (o.onSaved) await o.onSaved();
@@ -531,6 +564,11 @@ function openExpenseModal(expense, opts) {
     }
   });
 }
+
+// SCRUM-937b · textos firmados por el orquestador por delegación (SCRUM-937 comentario 15873).
+// Ficha en docs/microcopy/2026-09-18-SCRUM-937-nif-del-gasto.md.
+const AYUDA_NIF_SIN_PROVEEDOR = 'Elige antes el proveedor: el NIF se guarda en su ficha.';
+const AVISO_NIF_SIN_PROVEEDOR = 'Gasto guardado. El NIF no se ha guardado: para guardarlo, el gasto necesita un proveedor.';
 
 function closeExpModal() {
   document.getElementById('exp-modal')?.remove();
