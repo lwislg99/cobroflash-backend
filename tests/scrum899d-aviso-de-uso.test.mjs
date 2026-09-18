@@ -29,25 +29,25 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/uso.mjs',
     de: '  if (edadMs > maxEdadMin * 60 * 1000) return',
     a: '  if (false) return',
-    cae: '🔴 una lectura VIEJA es NO_PUDE_MIRAR, nunca verde',
+    cae: '🔴 NO_PUDE_MIRAR · vieja (11 min > 10)',
   },
   {
     fichero: 'scripts/equipo/uso.mjs',
     de: '    if (!visto || visto.api_ms !== apiMs) {',
     a: '    if (true) {',
-    cae: '🔴 un REPINTADO sin llamada a la API no renueva la hora de la lectura',
+    cae: '🔴 un REPINTADO sin llamada a la API no rejuvenece el dato',
   },
   {
     fichero: 'scripts/equipo/uso.mjs',
     de: "  if (texto === null) return noPude('el fichero no existe o no se pudo abrir');",
     a: "  if (texto === null) return { veredicto: 'VERDE', motivo: 'x' };",
-    cae: '🔴 un fichero que no existe es NO_PUDE_MIRAR, nunca verde',
+    cae: '🔴 NO_PUDE_MIRAR · no existe',
   },
   {
     fichero: 'scripts/equipo/uso.mjs',
     de: '  if (cinco.resets_at * 1000 <= ahoraMs) return',
     a: '  if (false) return',
-    cae: '🔴 una ventana ya reiniciada es NO_PUDE_MIRAR: el dato es de la anterior',
+    cae: '🔴 NO_PUDE_MIRAR · ventana ya reiniciada',
   },
 ];
 
@@ -89,7 +89,9 @@ test('CONTROL: una lectura fresca y válida da VERDE — el lector SABE decir ve
   assert.equal(r.usado, 42);
 });
 
-test('lo que no se puede mirar es NO_PUDE_MIRAR, cambiando UNA cosa respecto al control', () => {
+// Lo que no se puede mirar es NO_PUDE_MIRAR, cambiando UNA cosa respecto al control. Un test por
+// caso, para que cada mutación declarada nombre el suyo.
+{
   const control = registroControl();
   const casos = {
     'no existe': () => u.juzgar(null, T0 + MIN),
@@ -105,12 +107,14 @@ test('lo que no se puede mirar es NO_PUDE_MIRAR, cambiando UNA cosa respecto al 
     'parámetro inválido': () => juzgar(control, T0 + MIN, { maxEdadMin: Number('diez') }),
   };
   for (const [nombre, caso] of Object.entries(casos)) {
-    const r = caso();
-    assert.equal(r.veredicto, 'NO_PUDE_MIRAR', `${nombre}: ${JSON.stringify(r)}`);
+    test(`🔴 NO_PUDE_MIRAR · ${nombre}`, () => {
+      const r = caso();
+      assert.equal(r.veredicto, 'NO_PUDE_MIRAR', JSON.stringify(r));
+      // Y el control, en el mismo instante, sigue en VERDE: lo que cambió es lo único que difiere.
+      assert.equal(juzgar(control).veredicto, 'VERDE');
+    });
   }
-  // Y el control, en el mismo instante, sigue en VERDE: lo que cambió es lo único que difiere.
-  assert.equal(juzgar(control).veredicto, 'VERDE');
-});
+}
 
 test('NO_PUDE_MIRAR nunca sale con 0, y AVISO tampoco', () => {
   assert.equal(u.SALIDA.VERDE, 0);
@@ -123,7 +127,7 @@ test('a partir del umbral es AVISO', () => {
   assert.equal(juzgar(u.registrar(null, entradaStatusLine({ usado: 84.9 }), T0)).veredicto, 'VERDE');
 });
 
-test('un REPINTADO sin llamada a la API no rejuvenece el dato; una llamada nueva, sí', () => {
+test('🔴 un REPINTADO sin llamada a la API no rejuvenece el dato; una llamada nueva, sí', () => {
   const primero = u.registrar(null, entradaStatusLine({ apiMs: 12000 }), T0);
   // 11 min después, Claude Code repinta por temporizador: mismo total_api_duration_ms.
   const repintado = u.registrar(primero, entradaStatusLine({ apiMs: 12000 }), T0 + 11 * MIN);
