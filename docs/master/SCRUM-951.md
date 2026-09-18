@@ -59,7 +59,11 @@ con control positivo.
   `sesion-L1` … `sesion-L4` están en **22** tickets de agosto con otro significado, y NO se reutilizan.
 - **Turno de staging:** es un advisory lock de Postgres (`scripts/_staging-lock.mjs:307`), así que vale entre
   máquinas.
-- **Los nombres de fichero que cita `dos-equipos.md` existen** (105 citados, sobre 3.255 del árbol): los únicos
+- **Contra casos reales:** el censo de los 80 tickets abiertos que hizo el orquestador (18-sep ~11:58Z) casa
+  cada ticket con un área. Sus cuatro huecos quedan escritos: infraestructura → S5 y canal de WhatsApp → J2
+  (decididos por el orquestador), el ALTER → Javier como jefe, y la gestoría → pendiente. De ahí sale también
+  el «estado desfasado» de A13 (774, 779 y 864 en «Acción del fundador» sin esperarle).
+- **Los nombres de fichero que cita `dos-equipos.md` existen** (110 citados, sobre 3.260 del árbol): los únicos
   que no, son los ficheros nuevos y las plantillas (`puesto-jN.md`, `traspaso-javier.md`…), y un nombre falso
   de control sale marcado.
 - **Instrumentos que leen estos ficheros (A12):** `scripts/_invocaciones-de-la-tanda.mjs` lee los bloques ```
