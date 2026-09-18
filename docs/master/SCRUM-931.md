@@ -66,7 +66,17 @@ mismo envío por la ventana de 24 h): el texto de ventana y el botón de ventana
 `sendPaymentConfirmationInvoice` (lo usan psp y mpWebhook), el texto de ventana y el texto de
 respaldo de `invoiceReminder`, el texto de ventana de `invoiceWhatsApp` y el texto de respaldo de
 `invoicesAdmin`. **Solo cambia cómo se escribe el número; ni una palabra del copy.** Dejarlos en
-crudo habría sido justo la divergencia que el ticket viene a cerrar.
+crudo habría sido justo la divergencia que el ticket viene a cerrar. El orquestador decidió el
+18-sep que el ensanche se queda dentro, con la condición de que lo de «ni una palabra» esté MEDIDO.
+
+**Medido, fichero por fichero, por AST** (`tests/banco-scrum931/copy-por-ast.cjs`): se sacan todos los
+literales de texto de los diez ficheros de `src/` en la base (`7340d331`) y en el arreglo
+(`d7d83e04`), fuera de comentarios; en cada plantilla, la expresión del importe se cambia por un
+marcador (y la pareja vieja `importe divisa` cuenta como el mismo hueco), y se comparan los
+multiconjuntos. **759 literales en la base. Diferencias: las 3 rutas de `import` nuevas y 8
+plantillas que eran SOLO el importe (`${…toFixed(2)} ${cur}`) y desaparecen. Ni una frase distinta.**
+Control positivo: con `MUTAR=1` se cambia una sola palabra («Hemos confirmado» → «Confirmamos») y el
+instrumento la saca como diferencia; sin ese control, un «idénticos» podría ser un instrumento ciego.
 
 ---
 
@@ -135,5 +145,7 @@ permiso del fundador. Lo que hay es la documentación y el envío de `merchant_a
   para texto, botón y plantilla.
 * Los siete productores + `src/modules/messaging/domain/email.service.ts`.
 * `tests/scrum931-un-solo-importe-de-plantilla.test.mjs` — 25 tests, sin base y sin gate.
+* `tests/banco-scrum931/copy-por-ast.cjs` — la medición de «ni una palabra de copy» (no entra en
+  `npm test`: compara dos commits fijos, es la prueba de esta entrega y no un guard).
 * `tests/whatsappTemplates.test.mjs` — adaptado al contrato nuevo (su «sale tal cual» era el defecto
   escrito como garantía).
