@@ -29,6 +29,16 @@ Se deciden ANTES de empezar y se escriben aquí, en el chat de quien instala. Ni
 
 ⚠️ **`claude.exe`, no `claude.cmd`:** sin shell, Node no ejecuta `.cmd`.
 
+Todas las órdenes de esta guía son de **Git Bash**. Las variables se fijan así, al abrirlo (rutas de Windows con
+barras normales; los valores de ejemplo son de ejemplo):
+```
+export REPO='C:/Users/<tu usuario>/yaqu/cobroflash-backend'
+export INST="$LOCALAPPDATA/yaqu-equipo"
+export CLAUDE="$(npm root -g)/@anthropic-ai/claude-code/bin/claude.exe"
+export PREFIJO='jv-' PUESTOS='<puesto1>,<puesto2>,…' ORQUESTADOR='<puesto1>' TANDAS='08:00,13:05,18:10'
+```
+Un Git Bash nuevo no las recuerda: si se cierra, se vuelven a fijar.
+
 El nombre de cada sesión es `PREFIJO` + puesto (con `PREFIJO=jv-` y el puesto `jefe`, la sesión es `jv-jefe`).
 Un equipo sin prefijo se declara con `--sin-prefijo`: vacío y olvidado no se confunden.
 
@@ -76,9 +86,14 @@ Claude Code guarda la memoria (y en ella los traspasos de cada puesto, `project_
 Claude Code, no el instalador. **Orden:** abrir Claude Code en `REPO`, aceptar el diálogo de confianza de carpeta y
 cerrar.
 
-**Comprobación:** la hace el paso 3: si la carpeta no existe, el instalador se niega y dice cuál esperaba.
+**Comprobación:** la hace el paso 3: si la carpeta no existe, el instalador se niega y dice en su `motivo` la
+ruta EXACTA que esperaba. ⚠️ Puede faltar solo la última parte, `memory`: Claude Code crea la carpeta del proyecto
+al abrir, pero `memory` puede no aparecer hasta que se escribe la primera memoria (no medido en una máquina nueva).
+En ese caso se crea a mano con la ruta que imprimió el instalador, `mkdir -p '<ruta del motivo>'`, y se repite el
+paso 3. Nunca se inventa otra ruta: es ahí donde cada sesión escribirá su traspaso.
 
-**Deshacer:** no aplica.
+**Deshacer:** si se creó `memory` a mano y aún está vacía, borrarla; si ya tiene ficheros, no se toca (son la
+memoria del equipo).
 
 ---
 
@@ -126,6 +141,8 @@ Crear tareas programadas necesita la **autorización expresa** de quien manda en
 imprimió el paso 3 en `schtasks`, una por hora, desde Git Bash (sin `MSYS_NO_PATHCONV=1`, Git Bash convierte
 `/create` en una ruta y falla — medido). El nombre de cada tarea lleva el prefijo: `yaqu-equipo-<PREFIJO>HHMM`.
 
+⚠️ Una tarea creada así corre solo con el PC encendido y la sesión de Windows iniciada: si no, esa tanda no hay.
+
 **Comprobación:** `MSYS_NO_PATHCONV=1 schtasks /query /tn yaqu-equipo-<PREFIJO>HHMM` muestra la tarea, «Diariamente»,
 a su hora.
 
@@ -137,7 +154,9 @@ a su hora.
 
 Lo hace **quien manda en la máquina**:
 - la regla permanente `Bash(node <INST con barras normales>/sesion.mjs *)` — la ÚNICA puerta para lanzar o parar
-  sesiones; nunca `claude` a pelo;
+  sesiones; nunca `claude` a pelo. ⚠️ La regla va con el nombre de la herramienta de shell que usa Claude Code en esa
+  máquina: si es PowerShell (lo es en la de Luis), `PowerShell(node <INST con barras normales>/sesion.mjs *)`. Sin
+  ella, el clasificador de permisos frena el lanzamiento («Create Unsafe Agents», medido el 17-sep) y el 7.2 no pasa;
 - `/config` → **`autoContinueAtUsageLimit` encendido**: si queda apagado, una sesión de fondo que llega al límite se
   queda en un diálogo, bloqueada.
 
@@ -165,19 +184,29 @@ un turno interactivo todavía; «huérfanos» es trabajo sin empujar en algún w
 
 ### 7.2 · Lo que un script no puede: una sesión que CONTESTA por el canal
 
+Necesita la regla del paso 6. El nombre de este chat lo dice `ListAgents` en su primera línea («This session is …»).
+
 1. Escribir en un fichero el prompt de prueba: «Eres una sesión de prueba de la instalación. Manda por SendMessage a
    `<nombre de este chat>` una sola línea: "prueba de instalación: te oigo", y termina.»
 2. `node "$INST/sesion.mjs" lanzar <PREFIJO><un puesto> <fichero>` → `"veredicto": "LANZADA"` con un `sessionId`
    completo.
-3. `ListAgents` la lista con ese nombre, y **en unos 2 minutos llega su mensaje** por el canal.
-4. `node "$INST/sesion.mjs" parar <PREFIJO><ese puesto>` → `"veredicto": "PARADA"`; `claude agents --json` ya no la
-   lista.
+3. `ListAgents` la lista con ese nombre, y **en unos 2 minutos llega su mensaje** por el canal. Si no llega, se mira
+   `node "$INST/sesion.mjs" estado`: si sale como bloqueada, está esperando un permiso que nadie va a contestar.
+4. `node "$INST/sesion.mjs" parar <PREFIJO><ese puesto>` → `"veredicto": "PARADA"`, y `node "$INST/sesion.mjs" estado`
+   ya no la lista.
+
+**Deshacer:** es el punto 4. Si el 2 falló a medias, `estado` dice si quedó algo vivo y `parar` lo quita.
 
 ### 7.3 · La primera tanda, a mano
 
 `cmd //c "<INST con barras invertidas>\arranque.cmd"` → la última línea de `INST/arranque.log` es JSON con
 `"tanda": {"veredicto": "LANZADA", "nombre": "<PREFIJO><ORQUESTADOR>", …}`. Si dice `ALTERADO`, `DESDE-UN-ARBOL` o
 `NO-PUDE-MIRAR`, se para y se lee el motivo: la puerta ha hecho su trabajo.
+
+⚠️ **Esto arranca al orquestador DE VERDAD**, con el prompt de la tanda: se pondrá a leer, medir y repartir. Se hace
+cuando el equipo deba empezar a trabajar, no como prueba suelta.
+
+**Deshacer:** `node "$INST/sesion.mjs" parar <PREFIJO><ORQUESTADOR>` → `"veredicto": "PARADA"`.
 
 ### 7.4 · Rojos conocidos de la suite en local
 
@@ -186,6 +215,23 @@ defecto (declara falsa una ruta que en esa máquina existe). En CI sale verde. H
 SCRUM-939), esos 3 se declaran como conocidos en el informe de la suite; cualquier otro rojo es de verdad.
 
 ---
+
+## Desinstalar entero
+
+En orden inverso, y cada paso con su comprobación:
+
+1. parar las sesiones del equipo: `node "$INST/sesion.mjs" estado` y `parar` para cada una → `estado` sin ninguna;
+2. deshacer el 6 y el 4 en `~/.claude/settings.json` (quien manda en la máquina);
+3. deshacer el 5: `schtasks /delete` de cada tarea → `/query` no la encuentra;
+4. deshacer el 3: borrar a mano la carpeta `INST` → ya no existe.
+
+La memoria del proyecto (`~/.claude/projects/…/memory`) y el clon (`REPO`) **no** se borran al desinstalar: tienen
+los traspasos y el trabajo sin empujar. Antes de tocar el clon, `node scripts/equipo/huerfanos.mjs` desde `REPO`.
+
+## Después de instalar
+
+El Claude de cada sesión lee lo suyo desde `origin/main`: `CLAUDE.md`, `docs/equipo/00-normas-comunes.md`, su ficha y
+`docs/equipo/dos-equipos.md` (cómo trabajan los dos equipos a la vez). Esta guía solo deja la máquina lista.
 
 ## Lo que esta guía NO ha medido
 
