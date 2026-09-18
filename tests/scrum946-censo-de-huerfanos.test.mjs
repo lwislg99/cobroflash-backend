@@ -22,38 +22,39 @@ import {
 
 const CLI = path.resolve(import.meta.dirname, '..', 'scripts', 'equipo', 'huerfanos.mjs');
 const HORA = 3600 * 1000;
-let raiz, principal;
+// A la vista del censo de SCRUM-824: todo lo que este fichero crea cuelga de `os.tmpdir()`.
+const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum946-'));
+const principal = path.join(raiz, 'principal');
 
 function git(cwd, ...args) {
   const r = spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(`git ${args.join(' ')} → ${r.status}: ${r.stderr}`);
   return r.stdout.trim();
 }
-function commit(cwd, fichero, texto, msg) {
-  fs.writeFileSync(path.join(cwd, fichero), texto);
-  git(cwd, 'add', fichero);
-  git(cwd, 'commit', '-q', '-m', msg);
+/** `arbol` es el NOMBRE del worktree dentro de `raiz`, no una ruta: así la escritura se ve colgar de tmpdir. */
+function commit(arbol, fichero, texto, msg) {
+  fs.writeFileSync(path.join(raiz, arbol, fichero), texto);
+  git(path.join(raiz, arbol), 'add', fichero);
+  git(path.join(raiz, arbol), 'commit', '-q', '-m', msg);
 }
 const fila = (c, nombre) => c.filas.find((f) => f.worktree === nombre);
 
 before(() => {
-  raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum946-'));
   const remoto = path.join(raiz, 'remoto.git');
-  principal = path.join(raiz, 'principal');
   spawnSync('git', ['init', '-q', '--bare', remoto]);
   spawnSync('git', ['init', '-q', '-b', 'main', principal]);
   git(principal, 'config', 'user.email', 'censo@example.invalid');
   git(principal, 'config', 'user.name', 'censo');
-  commit(principal, 'a.txt', 'uno\n', 'base');
+  commit('principal', 'a.txt', 'uno\n', 'base');
   git(principal, 'remote', 'add', 'origin', remoto);
   git(principal, 'push', '-q', '-u', 'origin', 'main');
 
   for (const n of ['limpio', 'empujado', 'sinEmpujar', 'sucio', 'viejo', 'borrado']) {
     git(principal, 'worktree', 'add', '-q', '-b', `rama-${n}`, path.join(raiz, n), 'origin/main');
   }
-  commit(path.join(raiz, 'empujado'), 'b.txt', 'dos\n', 'empujado');
+  commit('empujado', 'b.txt', 'dos\n', 'empujado');
   git(path.join(raiz, 'empujado'), 'push', '-q', 'origin', 'rama-empujado');
-  commit(path.join(raiz, 'sinEmpujar'), 'c.txt', 'tres\n', 'sin empujar');
+  commit('sinEmpujar', 'c.txt', 'tres\n', 'sin empujar');
   fs.writeFileSync(path.join(raiz, 'sucio', 'a.txt'), 'tocado\n');
   fs.writeFileSync(path.join(raiz, 'viejo', 'a.txt'), 'tocado hace mucho\n');
   const haceDiez = new Date(Date.now() - 10 * 24 * HORA);
@@ -61,7 +62,7 @@ before(() => {
   fs.rmSync(path.join(raiz, 'borrado'), { recursive: true, force: true });
 });
 
-after(() => { if (raiz) fs.rmSync(raiz, { recursive: true, force: true }); });
+after(() => { fs.rmSync(raiz, { recursive: true, force: true }); });
 
 test('scrum946: POBLACIÓN — mira los siete worktrees, el principal incluido', () => {
   const c = censo({ repo: principal, ventanaMs: 72 * HORA });
