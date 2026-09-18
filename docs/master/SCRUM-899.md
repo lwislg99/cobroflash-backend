@@ -298,3 +298,60 @@ que yo:
 también puede tumbar un guard estructural (SCRUM-242 nombra documentos que no existen; SCRUM-391, tests declarados).
 
 **Tests declarados:** ninguno nuevo. Este punto no añade código.
+
+## ⑧ SCRUM-899d · el aviso de uso
+
+**Medido contra:** `origin/main` = `972b51b384e0b21e0265787392eb5c865b98cc4a` · 2026-09-18T11:34:25Z · **Rama:** `scrum-899-aviso-de-uso`
+
+La pieza 2 del cierre por fin de uso: que el equipo **sepa** cuánto uso le queda antes de que se corte, en vez de
+enterarse cuando ya se cortó. `scripts/equipo/uso.mjs` tiene dos subcomandos:
+
+- **`escribir`** lo ejecuta el `statusLine` de Claude Code en cada repintado: lee el JSON que le llega por stdin y deja
+  la última lectura de `rate_limits` en `uso.json`, junto al script. Pinta la barra y sale SIEMPRE con 0 (una entrada
+  ilegible pinta «sin dato»: la barra no se rompe por esto).
+- **`leer`** lo usa quien tenga que decidir: **VERDE = 0**, **AVISO = 1** desde el 85 % de la ventana de 5 h,
+  **NO_PUDE_MIRAR = 2** si el fichero no existe, no se lee, tiene más de 10 min o su ventana ya se reinició.
+  «No pude mirar» nunca sale con 0.
+
+**Lo medido de Claude Code 2.1.276 — LEÍDO en su binario, NO visto correr** (desde una sesión de fondo no hay
+`statusLine` que mirar). Binario `…/@anthropic-ai/claude-code/bin/claude.exe`, VERSION 2.1.276, BUILD_TIME
+2026-09-18T00:40:43Z:
+
+- arma `rate_limits: { five_hour: { used_percentage, resets_at }, seven_day: {…} }`, **sólo si hay dato**;
+- `used_percentage = round(utilization*1000)/10` (0–100);
+- `resets_at` va en **segundos Unix** (el propio código multiplica por 1000).
+
+🔴 **La trampa, hallada y cubierta.** El `statusLine` se re-ejecuta también por TEMPORIZADOR —al llegar `resets_at` y al
+caducar la caché de prompt— **sin llamar a la API**, con el porcentaje viejo. Fechar la lectura por la hora de
+ejecución haría pasar un dato de hace una hora por uno de hace un segundo. `uso.mjs` sólo renueva `leido_en` si
+`cost.total_api_duration_ms` de esa sesión **cambió**; y una sesión sin dato no pisa la lectura de otra.
+
+**La línea de settings la pone el fundador**, no la sesión (`~/.claude/settings.json`; tocar settings es suyo):
+
+1. copia, desde Git Bash (binario-seguro; NO con `>` de PowerShell 5.1, que mete BOM/UTF-16):
+   `mkdir -p C:/Users/Admin/AppData/Local/yaqu-equipo && git -C <worktree al día> show origin/main:scripts/equipo/uso.mjs > C:/Users/Admin/AppData/Local/yaqu-equipo/uso.mjs`
+2. `"statusLine": { "type": "command", "command": "node C:/Users/Admin/AppData/Local/yaqu-equipo/uso.mjs escribir" }`
+   — sin `refreshInterval`: no aporta lecturas nuevas.
+3. comprobación: `node C:/Users/Admin/AppData/Local/yaqu-equipo/uso.mjs leer` → sale con 2 antes; tras un turno en
+   una sesión INTERACTIVA, 0 o 1 con `usado` = lo que dice `/usage`. **Ésa es la primera medición por efecto.**
+
+### Mutantes
+
+`tests/scrum899d-aviso-de-uso.test.mjs`, 18 tests, un test por caso. **Cuatro mutaciones declaradas, las cuatro tumban
+SU test** (pasada local, mutador que aplica `de → a`, exige ver `✖ <cae>` y restaura):
+
+| mutación | qué destaparía |
+|---|---|
+| se quita el tope de edad (10 min) | un dato viejo leído como vigente |
+| se renueva `leido_en` en cada repintado | el repintado por temporizador rejuvenece el dato |
+| un fichero que no existe no da NO_PUDE_MIRAR | «no pude mirar» leído como verde |
+| se acepta una ventana ya reiniciada | un 90 % de la ventana pasada avisa en la nueva |
+
+**Lo que NO está medido:**
+
+- que corra en una sesión de verdad (ver arriba: leído, no visto);
+- si las sesiones de fondo (`claude --bg`) ejecutan el `statusLine`. Según la documentación sólo las interactivas: sin
+  una interactiva activa el fichero envejece y `leer` dice NO_PUDE_MIRAR, que es lo correcto pero deja sin aviso;
+- dos `statusLine` escribiendo a la vez pueden perder una actualización (la siguiente la repone).
+
+**Tests declarados:** `tests/scrum899d-aviso-de-uso.test.mjs`
