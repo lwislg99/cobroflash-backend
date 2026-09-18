@@ -510,10 +510,10 @@ function openExpenseModal(expense, opts) {
     btn.disabled = true; btn.textContent = 'Guardando…';
 
     try {
-      // Leer foto si se seleccionó
+      // Leer foto si se seleccionó. SCRUM-947: reducida si no cabe (ver `fotoParaGuardar`).
       let receiptData = expense?.receiptData || null;
       if (fileInput.files && fileInput.files[0]) {
-        receiptData = await fileToBase64(fileInput.files[0]);
+        receiptData = await fotoParaGuardar(fileInput.files[0]);
       }
 
       const payload = {
@@ -599,6 +599,76 @@ function fileToBase64(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+// ═══ SCRUM-947 · LA FOTO DEL TICKET TIENE QUE CABER EN LA PETICIÓN ════════════════════════════
+// La foto viaja en base64 DENTRO del JSON, y el servidor corta el cuerpo a 2 MB
+// (`express.json({ limit: '2mb' })`, src/app.ts). El base64 engorda un tercio: una foto de móvil
+// normal (3–5 MB) daba 413 y el gasto no se guardaba. Medido en staging el 18-sep-2026.
+//
+// Se REDUCE aquí, en el panel, y no se sube el límite: el servidor no tiene que recibir ni guardar
+// 5 MB por ticket para leer un importe. Lado largo 2000 px, que sigue dejando legible la letra de
+// un ticket (lo que necesita la lectura con IA de SCRUM-912).
+//
+// ✅ Una foto que YA cabía se manda tal cual, como hasta hoy: no se recomprime lo que funcionaba.
+const FOTO_LADO_MAXIMO = 2000;
+// Caracteres del data-URI. Deja ~0,5 MB para el resto del gasto y la cabecera del JSON.
+const FOTO_TECHO_DATAURI = 1.5 * 1024 * 1024;
+// Texto firmado por el orquestador por delegación (SCRUM-947, 18-sep-2026). Ficha en
+// docs/microcopy/2026-09-18-SCRUM-947-foto-del-gasto.md.
+const AVISO_FOTO_NO_SE_ABRE = 'No hemos podido abrir esta foto. Prueba con otra o haz una captura de pantalla del ticket.';
+
+async function fotoParaGuardar(file) {
+  const original = await fileToBase64(file);
+  if (original.length <= FOTO_TECHO_DATAURI) return original;
+
+  let img;
+  try { img = await abrirFoto(file); } catch { throw new Error(AVISO_FOTO_NO_SE_ABRE); }
+  const ancho = img.naturalWidth || img.width, alto = img.naturalHeight || img.height;
+  if (!ancho || !alto) throw new Error(AVISO_FOTO_NO_SE_ABRE);
+
+  // Primero se baja la calidad (0,8 → 0,6) y, si aún no cabe, el tamaño. Tope de intentos: una
+  // foto que no cabe ni así se dice, no se manda para que el servidor la rechace.
+  let lado = FOTO_LADO_MAXIMO, calidad = 0.8;
+  try {
+    for (let intento = 0; intento < 8; intento++) {
+      const escala = Math.min(1, lado / Math.max(ancho, alto));
+      const lienzo = document.createElement('canvas');
+      lienzo.width = Math.max(1, Math.round(ancho * escala));
+      lienzo.height = Math.max(1, Math.round(alto * escala));
+      const ctx = lienzo.getContext('2d');
+      // Un PNG con transparencia saldría con fondo negro en JPEG: el ticket va sobre blanco.
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+      ctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
+      const uri = lienzo.toDataURL('image/jpeg', calidad);
+      if (uri.length <= FOTO_TECHO_DATAURI) return uri;
+      if (calidad > 0.65) calidad -= 0.1;
+      else lado = Math.round(lado * 0.8);
+    }
+  } finally {
+    if (typeof img.close === 'function') img.close();
+  }
+  throw new Error(AVISO_FOTO_NO_SE_ABRE);
+}
+
+// `createImageBitmap` con `imageOrientation: 'from-image'` respeta el giro EXIF de la cámara del
+// móvil; donde no está (o no abre el formato), se prueba con un <img>, que en Safari sí abre HEIC.
+// Se llama como `window.createImageBitmap` y no a pelo: es la misma función, y así el censo de
+// SCRUM-378 (lo que una página invoca y nadie define) la resuelve contra `window`, que sí conoce.
+async function abrirFoto(file) {
+  if (typeof window.createImageBitmap === 'function') {
+    try { return await window.createImageBitmap(file, { imageOrientation: 'from-image' }); } catch { /* al <img> */ }
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return img;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 // P-A66-3: delega en el formateador es-ES compartido (api.js)
