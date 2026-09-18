@@ -28,6 +28,7 @@
 // como «sí» sería exactamente el error de la v1, y como «no» convertiría el aviso en ruido que el
 // usuario aprende a ignorar.
 import { Prisma } from '@prisma/client';
+import { TIPOS_IVA_ES_BP } from '../../../core/validation/fiscalInput';
 
 /** Qué le falta a un justificante para deducir IVA. Códigos, no frases. */
 export const FALTA = {
@@ -112,6 +113,30 @@ export function aCentimos(v: Prisma.Decimal | number | string | null | undefined
   const n = Number(s);
   if (!Number.isFinite(n)) return null;
   return Math.round(n * 100);
+}
+
+/**
+ * SCRUM-912 · ¿Es un tipo que `Expense.vatRate` puede guardar? El MISMO conjunto que guarda la
+ * puerta del presupuesto (`TIPOS_IVA_ES_BP`, se importa y no se copia) y además ENTERO, porque la
+ * columna es `Int`: un 7,5 existe en España pero no cabe sin cambiar de dato. Vive aquí porque la
+ * convención «entero de porcentaje» de este campo vive aquí (censo de aritmética de IVA, SCRUM-627).
+ */
+export function tipoIvaDeGastoAdmitido(tipo: number): boolean {
+  return Number.isInteger(tipo) && TIPOS_IVA_ES_BP.has(tipo * 100);
+}
+
+/**
+ * SCRUM-912 · ¿Base + cuota da el total, con el céntimo de `TOLERANCIA_CENTIMOS`? En céntimos
+ * enteros, sin coma flotante. `false` si falta alguno: no se puede decir que cuadra.
+ */
+export function baseMasCuotaCuadra(
+  total: number | null, base: number | null, cuota: number | null,
+): boolean {
+  const t = aCentimos(total);
+  const b = aCentimos(base);
+  const c = aCentimos(cuota);
+  if (t === null || b === null || c === null) return false;
+  return Math.abs(b + c - t) <= TOLERANCIA_CENTIMOS;
 }
 
 /** `null` para una cadena que no trae contenido. El vacío y el «no hay» son lo mismo aquí. */
