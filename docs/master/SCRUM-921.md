@@ -462,3 +462,76 @@ miro nada».
 Y el trinquete **subió de 27 a 28** al arreglar el punto 1: `jobRailBlocks.js:19` se descartaba
 por accidente. Queda escrito porque un número que sube después de tocar el guard tiene la misma
 forma que un guard relajado, y hay que poder distinguirlos.
+
+---
+
+# SCRUM-921c bis · Por qué mi verde local no era el verde de CI
+
+**Medido contra:** `origin/main` = `16733a223b3d09d3fdf03bf03c67a2b278b4906c` · 2026-09-17T21:50:54Z
+
+Entregué la fase c en verde y CI la paró: *«28 afirmaciones sin decir dónde constan, y el
+trinquete está en 27»*. **La diferencia es un dato por sí misma**, y se mide antes de arreglar
+nada — si no, mañana vuelve por donde no se miró.
+
+## 1 · Qué guard era, y no era el que yo creía
+
+El rojo **no es del guard de la fase c** (trinquete 28) sino del censo de la **fase a**,
+`tests/scrum921-firmas-con-respaldo.test.mjs`, cuyo trinquete es 27. Los dos números rondan el
+mismo valor sobre poblaciones distintas — el aviso que dejé escrito en la fase c era justo sobre
+esto — y confundirlos habría llevado a subir el trinquete equivocado.
+
+## 2 · Por qué en local dio 27: la población son los ficheros SEGUIDOS
+
+El censo de la fase a deriva su población de `git ls-files`. **Un fichero untracked es invisible
+para él.** Corrí la tanda con `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs` todavía sin
+añadir al índice —aparecía como `??` en el `git status` que yo mismo imprimí minutos antes de
+comitear— así que el censo no lo leyó. Al hacer `git add`, pasó a ser población, y ése es el 28
+que ve CI.
+
+Probado con una sonda, no deducido:
+
+```
+① un fichero con la marca, UNTRACKED  → el censo lo ve: 0   (2.842 seguidos)
+② el MISMO fichero, ya en el índice   → el censo lo ve: 1   (2.843 seguidos)
+```
+
+    🔒 Una tanda corrida antes de `git add` no mide lo que vas a entregar: mide lo que ya había.
+
+No es un defecto del censo —su población es «lo que está en el repo», que es lo correcto— sino
+del orden en que lo usé. **`git add` va ANTES de la tanda**, no después. A6 dice «corre la suite
+después del último cambio»; esto le añade que crear un fichero nuevo **no es el último cambio
+hasta que está en el índice**.
+
+## 3 · El arreglo: reformular, no subir el trinquete
+
+La línea 103 era una **cita** —reproducía la marca entre comillas para ilustrar qué clase de
+bloque es `jobRailBlocks.js:19`— y el censo, que no distingue una cita de una afirmación, la
+contó como la número 28. Se ha reformulado para describir la forma sin escribirla: es el escalón
+② de SCRUM-737.
+
+**No se ha subido el trinquete a 28** (regla 41: el guard rojo se arregla cambiando el código, no
+lo que el guard pide). Y lo escribí yo mismo en la fase c: *un número que sube tras tocar el
+guard tiene la misma forma que un guard relajado*.
+
+Comprobado **por identidad, no por cuenta**: de las 28 se va exactamente una, la mía
+(`…scrum921c-…:103`); **ninguna nueva y ninguna otra ida**. Las 21 afirmaciones reales que viven
+en `tests/` se siguen acusando.
+
+## 4 · Propuesta, escrita y NO implementada
+
+El problema de fondo es real: **si cada test que documenta el defecto engorda el censo que lo
+mide, el instrumento se alimenta solo**. Hoy se ha esquivado con una perífrasis, y eso no escala.
+
+La salida sería una regla de **forma**, no una excepción con nombre propio: una **cita declarada
+dentro de un banco** no es una afirmación, igual que ya se decidió que una negación no lo es. Un
+delimitador explícito —del tipo `[[cita]] … [[/cita]]`— que el censo reconozca en cualquier
+fichero, de cualquiera, y que se pueda probar en rojo.
+
+⛔ **No se implementa aquí.** Cambiar qué cuenta como afirmación es cambiar el criterio del censo,
+y hacerlo a las once y media de la noche para desbloquear una rama propia es exactamente cómo se
+relaja un guard sin querer. Y un «lo de mi fichero no cuenta» sería un agujero con mi nombre.
+
+## 5 · Lo que no se ha tocado
+
+Ninguna de las 27, y en particular **ninguna de las dos de producción** —
+`quotesAdmin.routes.ts:339` y `parteDictado.ts:402`—, que siguen en la mesa del fundador.

@@ -100,10 +100,18 @@ const VENTANA = 45;
 //
 // ⚠️ La primera medición dijo **27**, y era de un instrumento roto: la negación llevaba `\b`
 // detrás de una vocal acentuada y descartaba `jobRailBlocks.js:19` por accidente — un bloque que
-// dice «Rótulos APROBADOS por el fundador (regla 30)» y no cita dónde consta, o sea justo lo que
-// este guard persigue. El 28 no es el 27 «ajustado para que pase»: es lo que mide el instrumento
-// una vez arreglado. Queda escrito porque un número que sube después de tocar el guard es
-// exactamente la forma que tiene un guard relajado, y hay que poder distinguirlos.
+// atribuye al fundador los cinco rótulos del rail (regla 30) sin decir dónde consta, o sea justo
+// lo que este guard persigue. El 28 no es el 27 «ajustado para que pase»: es lo que mide el
+// instrumento una vez arreglado. Queda escrito porque un número que sube después de tocar el
+// guard es exactamente la forma que tiene un guard relajado, y hay que poder distinguirlos.
+//
+// 🔴 Y esta frase está redactada así A PROPÓSITO. La primera versión REPRODUCÍA la marca entre
+// comillas para ilustrarla, y el censo de SCRUM-921a —que no distingue una cita de una
+// afirmación— la contó como la afirmación número 28 y paró el CI. Describir la forma no exige
+// escribirla: es el escalón ② de SCRUM-737, reformular para que la frase no diga el número.
+// Si algún día el censo aprende a no acusar las citas declaradas dentro de un banco, esta
+// perífrasis sobra; hasta entonces, un test que documenta el defecto no debe engordar el censo
+// que lo mide.
 //
 // ⚠️ Y NO es el 27 de `_censo-firmas-autorizacion.mjs`: aquél cuenta sobre `docs/` incluido y con
 // otra marca. Que los dos rondaran 27 es casualidad, y por eso se dice aquí.
