@@ -148,10 +148,16 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // VERDE contra la pantalla rota** —las cajas de los dos rótulos no se cruzan, se cruza el TEXTO
   // que se desborda de una caja de 0 px—, así que la aserción NO es por intersección. Comprobado en
   // rojo contra `8b3f26d2` (17-sep-2026): 7 de 10 anchuras.
+  // SCRUM-947 · entra `guard:foto-del-gasto`. Mete una foto de móvil de 3–5 MB en el modal REAL
+  // del gasto y lo guarda contra un servidor con el MISMO `express.json({ limit: '2mb' })` que
+  // producción. Decodificar y reducir una imagen sólo existe en un navegador (canvas). Comprobado en
+  // rojo contra `e76580b1` (18-sep-2026): 3 de 4 casos con «API 413: Payload Too Large».
+  // ⚠️ La rama de SCRUM-915d (PR #1508) mete OTRO guard aquí a la vez: la que entre segunda
+  // SUMA los dos comentarios y vuelve a MEDIR el número corriendo este test.
   // El número NO se calculó sumando uno: se midió corriendo este test, como dice el párrafo de
   // arriba que ya ha costado cuatro veces.
-  assert.equal(fuera.length, 25,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ 25 → ${fuera.length}.\n`
+  assert.equal(fuera.length, 26,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ 26 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
