@@ -80,6 +80,10 @@ Rojo estable: 4 de 4 pasadas sobre `e76580b1` antes de añadir F; F en rojo sobr
 - **El primer clic del guard era intermitente** («Node is either not clickable», 1 de 3 pasadas del caso
   D): pulsaba mientras el modal aún entraba con su animación. Se espera a que no quede ninguna animación
   en curso, y un clic que falle es «no supe medir», no un reventón. 4 de 4 pasadas estables después.
+- **`createImageBitmap` a pelo tumbó `scrum378`** (lo que una página invoca y nadie define) en la
+  suite completa: es una global real del navegador que la lista de plataforma del censo no tiene. No
+  se tocó el censo (es de otro carril y cambiaría lo que exige): se llama como `window.createImageBitmap`,
+  la misma función. El subconjunto de la primera pasada no lo vio porque 378 no nombra `expensesView.js`.
 - **El guard usaba `document` fuera de las cadenas que corren en la página**; lo cazó el censo de
   SCRUM-258. Pasó a `new Function`, como el resto de guards.
 

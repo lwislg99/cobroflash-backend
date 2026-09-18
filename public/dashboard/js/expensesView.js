@@ -616,9 +616,11 @@ async function fotoParaGuardar(file) {
 
 // `createImageBitmap` con `imageOrientation: 'from-image'` respeta el giro EXIF de la cámara del
 // móvil; donde no está (o no abre el formato), se prueba con un <img>, que en Safari sí abre HEIC.
+// Se llama como `window.createImageBitmap` y no a pelo: es la misma función, y así el censo de
+// SCRUM-378 (lo que una página invoca y nadie define) la resuelve contra `window`, que sí conoce.
 async function abrirFoto(file) {
-  if (typeof createImageBitmap === 'function') {
-    try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch { /* al <img> */ }
+  if (typeof window.createImageBitmap === 'function') {
+    try { return await window.createImageBitmap(file, { imageOrientation: 'from-image' }); } catch { /* al <img> */ }
   }
   const url = URL.createObjectURL(file);
   try {
