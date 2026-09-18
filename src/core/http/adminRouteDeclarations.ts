@@ -244,6 +244,10 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // conjunto no. Solo estas dos quedan abiertas; las otras cinco llevan requireRole.
   { method: 'POST', path: '/admin/expenses', why: 'SCRUM-107: compra material en el almacén y lo registra desde la furgoneta' },
   { method: 'GET',  path: '/admin/expenses/categories', why: 'SCRUM-107: lista estática que necesita el formulario de alta; sin datos del negocio' },
+  // SCRUM-912 · leer la foto del ticket es el PRIMER paso del alta de arriba (mismo permiso, plan
+  // aprobado por el orquestador el 18-sep): LEE y NO GUARDA nada, y solo devuelve lo que está en el
+  // papel que el técnico tiene en la mano. Ningún dato del negocio sale por aquí.
+  { method: 'POST', path: '/admin/expenses/leer-ticket', why: 'SCRUM-912: lee la foto del ticket en el almacén para rellenar el alta; no guarda nada' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
