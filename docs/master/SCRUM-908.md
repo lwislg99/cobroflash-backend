@@ -432,3 +432,360 @@ sin poder hacerse.
   sólo MIDE.
 - Ningún canal de envío automático nuevo (regla 28 / J6): se propone y se para.
 - Sin `db push`, sin tocar staging, sin turno de base.
+
+# SCRUM-908c · La muda no era del guard: se pierde la cola por la tubería
+
+**Fecha:** 18-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición y guard del mecanismo. **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `17b0c86b84fb0544013923314d250d7181d913db` · 2026-09-18T15:25:42Z
+**Rama:** `scrum-908c-la-cola-que-se-pierde`
+**Censo de CI tomado sobre:** `origin/main` = `4d8f3a15f6b3489d7f53bfbde550c587ee9d7c61`, entre las 14:55Z y las 15:10Z (hora de GitHub). Entre las dos bases solo entró #1518 (SCRUM-612, ficheros de `docs/`), que no toca nada de lo medido.
+**Preámbulo (A1):** worktree propio (`cobroflash-jv6`) fijado a `origin/main`, `npm ci` + `prisma generate` con el CLI local. Sin `git stash` en ningún momento (A15).
+
+> **Obligación 0 (A4):** `git ls-remote --heads origin` no tiene ninguna rama `scrum-0*908[a-z]?-`,
+> y el control positivo lo confirma (hay 89 ramas `scrum-` en el remoto, así que la búsqueda no está
+> ciega). `908` (#1434) y `908b` (#1455) están mergeadas, así que esta entrada se ANEXA (A8).
+
+---
+
+## LO PRIMERO: EL RESULTADO
+
+1. **PASO 0 (A2): la muda EXISTE HOY.** La mutación nº 2 de `scrum859` se midió en **49 jobs** del
+   meta-guard en CI (del 17-sep a las 16:00Z al 18-sep a las 14:03Z): **41 VIVA · 8 MUDA** (16,3 %;
+   Wilson 95 %, 8,5 %–29,0 %). La última muda fue **hoy a las 11:42Z**. La nº 1, que es el control,
+   salió **50 de 50 VIVA**.
+2. **Los logs del job SÍ se leen.** 908b ③ decía «403 · Must have admin rights»; con la cuenta
+   `gh` de la máquina de Javier se bajan enteros. Así que la atribución que 908b no pudo medir
+   **ya está medida**, y era correcta: la muda es la nº 2 de `scrum859`.
+3. **Las 4 mudas que traen diagnóstico tienen la MISMA firma:** «NO APARECE · 9 pasados · 7
+   caídos», contra 20 en la pasada limpia. Faltan el test nombrado y **exactamente** los tres que
+   van detrás. Es la cola del fichero, no un evento suelto.
+4. **Hipótesis de mecanismo, SIN DEMOSTRAR:** el hijo de `node:test` corre con
+   `--test-force-exit` y sale con `process.exit()` sin esperar a que stdout se vacíe. En Linux la
+   escritura es asíncrona, así que lo que no quepa en el buffer del transporte se pierde. En
+   Windows es síncrona, y eso es coherente con el 0 de 91 local. 🔴 **El caso fabricado NO lo
+   reprodujo en el CI de Linux** (§⑥): el hijo salió con el padre parado **y llegaron enteros los
+   99.003 bytes**. La hipótesis no queda refutada, porque el caso no llegó a llenar el buffer del
+   transporte (en CI caben al menos 99 KB, no los 64 KiB que supuse). Pero tampoco está demostrada:
+   **no reproducido**, con el caso y el run dichos abajo.
+5. **No se ha arreglado el instrumento**, y no se hará aquí: es de S3. El arreglo propuesto, con su
+   fichero, su línea y su control, está en §⑦. **`scrum859` no se ha tocado**, por decisión del
+   orquestador (18-sep, ~15:40Z): un parche en ese fichero haría desaparecer el síntoma justo donde
+   se mira y dejaría el defecto en todos los demás (A7).
+
+---
+
+## ① LA POBLACIÓN: 148 RUNS, Y SOLO 28 CON VEREDICTO
+
+Todos los runs de `ci.yml` desde el 17-sep a las 16:00Z (`total_count` = 148, traídos 148). Del
+job `meta-guard · los guards caen cuando deben`, clasificado cada uno por su **anotación** y no por
+el `conclusion`, que da `cancelled` en los dos casos:
+
+| el job meta-guard | runs |
+|---|---|
+| `success` | 7 |
+| `failure` (algún guard MUDO: exit 1) | 21 |
+| `cancelled` por el **tope de 10 minutos** («exceeded the maximum execution time of 10m0s»; 611–651 s) | **71** |
+| `cancelled` por **concurrencia** («higher priority waiting request»; 19–616 s) | 41 |
+| el run no tiene el job | 8 |
+| **total** | **148** |
+
+> ⚠️ **Esto corrige a 908b.** 908b contaba los `cancelled` como veredicto desconocido por
+> concurrencia. Resulta que **71 de 112 son el propio tope del job**: el meta-guard tarda entre
+> 467 y 594 s cuando acaba, y el tope son 600. Es del workflow (S5) y no se toca desde aquí. Lo
+> lleva el orquestador a SCRUM-836.
+
+**Qué guard sale mudo en los 21 `failure`**, leído en el log de cada uno:
+
+| guard | jobs | firma |
+|---|---|---|
+| `scrum864c-el-temporal-no-vuelve` | **19** | «PASÓ (corrió y no falló) · 3 pasados · 0 caídos». Es otra muda y otro defecto. El primero, el 17-sep a las 18:22Z; **el último, el 18-sep a las 07:49Z**. Desde entonces no ha vuelto a salir. Se deja al orquestador |
+| `scrum859-identidad-y-motivo-cerrado`, mutación nº 2 | **4** | «NO APARECE · 9 pasados · 7 caídos», las cuatro iguales |
+
+(Dos jobs traen las dos a la vez: 4 + 19 = 23 menciones en 21 jobs.)
+
+**La nº 2 de `scrum859` en TODOS los jobs donde se llegó a imprimir**: **49 jobs, 41 VIVA, 8 MUDA**.
+Son los 28 con veredicto, más 20 de los cortados por tiempo que la imprimieron antes del corte,
+más uno cancelado por concurrencia. Las 8 mudas fueron a estas horas:
+17-sep 16:12Z · 16:22Z · 18:22Z · 18:38Z · 20:20Z · 18-sep 07:04Z · 09:32Z · **11:42Z**.
+
+### ①bis · 🔴 LAS «RACHAS» DE 908b ERAN SOBRE TODO OTRA MUDA: `scrum738`
+
+Con los logs legibles, se ha vuelto a mirar la ventana de 908b, desde el merge de SCRUM-866 (17-sep
+08:35:37Z; `total_count` = 307 runs, traídos 307). Se han leído uno a uno los logs de los 16 jobs del
+meta-guard en `failure` hasta las 16:13Z:
+
+| hora | guard mudo | firma |
+|---|---|---|
+| 08:46:13 · 09:27:06 · 09:33:58 | `scrum859` | (el log de entonces no traía el diagnóstico de 908) |
+| **13:54:06** | `scrum859` | (ídem) |
+| 13:54:59 | `scrum738` | (ídem) |
+| **13:55:45** | `scrum859` | (ídem) |
+| 14:01:56 · 14:03:24 · 14:10:22 · 14:10:27 · 14:10:39 | `scrum738` | (ídem) |
+| 14:13:09 | `scrum738` | «PASÓ (corrió y no falló) · 7 pasados · 0 caídos» |
+| **14:21:43** | `scrum859` | «NO APARECE · 9 pasados · 7 caídos» |
+| 14:24:26 | `scrum738` | «PASÓ · 7 pasados · 0 caídos» |
+| **14:33:03** | `scrum859` | «NO APARECE · 9 pasados · 7 caídos» |
+| **16:12:58** | `scrum859` | «NO APARECE · 9 pasados · 7 caídos» |
+
+De los **12 mudos «en 39 minutos»** que 908b leyó como una racha, **8 son de `scrum738`** y 4 de
+`scrum859`. Así que 908b tenía razón en que algo se agrupaba así, pero se equivocó de guard: la de
+`scrum738` («PASÓ», el test corrió y no cayó) sí se agrupa, y la nº 2 de `scrum859` **gotea**. Se ve en
+toda la ventana: de 17-sep 08:35Z a 18-sep 15:43Z, la nº 2 se midió en **139 jobs: 122 VIVA · 17 MUDA**
+(12,2 %; Wilson 95 %, 7,8 %–18,7 %). Las 17 mudas caen a lo largo de 27 horas, y **la nº 1 salió 141 de
+141 VIVA**. Tres jobs quedaron sin leer: dos devolvieron `404` al pedir su log y uno seguía en
+marcha. Se dicen, y no cuentan en ninguna dirección.
+
+🔒 Lo de 908b no fue un mal cálculo. Contó bien los mudos. Lo que hizo fue tratarlos como si fueran
+del mismo guard sin poder leerlo, y eso ya lo advertía su propio ③.
+
+---
+
+## ② LA FIRMA: SIEMPRE SE PIERDE LA MISMA COLA
+
+Las 4 mudas con diagnóstico dicen, las cuatro con las mismas cifras:
+
+```
+→ en la pasada MUTADA ese test: NO APARECE en la pasada mutada (evento perdido, fichero muerto a
+  medias, o el título cambió). Recuento: 9 pasados · 7 caídos · 0 saltados. Y en la LIMPIA:
+  20 pasados · 0 caídos.
+```
+
+Los 20 tests son los **14 de `scrum267`**, que `scrum859` importa y que se registran primero, más
+los **6 de `scrum859`**. El nombrado («insertar una entrada en medio NO mueve ninguna clave») es el
+**3º** de `scrum859`, y detrás de él van tres más. Cuando sale VIVA, en los 41 casos, la línea es
+«(+7 test(s) más caídos)», o sea 8 caídos. Cuando sale MUDA faltan justo 4 tests: el nombrado y los
+tres de detrás.
+
+🔒 Si fuera un evento perdido al azar, el recuento variaría de una vez a otra. Aquí siempre se pierde
+la misma cola, y eso quiere decir que el corte cae siempre en el mismo sitio.
+
+---
+
+## ③ QUÉ ESCRIBE EL HIJO, BYTE A BYTE (sonda local)
+
+`evidencias/scrum908c/sonda-bytes.mjs` lanza el hijo exactamente como `run()`
+(NODE_TEST_CONTEXT=child-v8, `--test-force-exit`), pero con stdout a FICHERO para ver el flujo
+entero, y trocea el marco del reporter v8 igual que `runner.js`:
+
+| pasada | bytes | mensajes | veredictos |
+|---|---|---|---|
+| limpia | 36.155 | 110 | 20 pass |
+| con la mutación nº 2 (`numstat` 1 1 en `scrum267`, restaurado después: `git status` vacío) | **1.039.081** | 110 | 12 pass · 8 fail |
+
+Los dos mensajes que van **justo antes** del nombrado (`nombres-mut2.out`):
+
+```
+  650339  163822B test:complete :: SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real
+  814487  163809B test:fail     :: SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real
+  978628   26909B test:complete :: SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave
+ 1005855   26896B test:fail     :: SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave
+```
+
+Son 327 KB de una sola ráfaga, y detrás van los 54 KB del nombrado, los tres `pass` y el cierre.
+
+---
+
+## ④ EL MECANISMO, EN EL CÓDIGO DE NODE (la versión del CI es la 24.20.0: «Found in cache @ …/24.20.0»)
+
+1. `lib/internal/test_runner/runner.js` (476-510): cada fichero es un hijo con
+   `stdio: ['pipe','pipe','pipe']` y `NODE_TEST_CONTEXT: 'child-v8'`, y el padre trocea su stdout.
+   Con `forceExit`, al hijo se le pasa `--test-force-exit` (línea 203).
+2. `lib/internal/test_runner/test.js` (24.20.0, 1463-1487): cuando la raíz termina, con
+   `forceExit` espera al `unpipe` del reporter, cierra el destino **solo si tiene `close`** (el
+   stdout de una tubería es un `net.Socket` y no lo tiene) y llama a **`process.exit()`**.
+3. `doc/api/process.md` (24.20.0, línea 4237): «Pipes (and sockets): _synchronous_ on Windows,
+   _asynchronous_ on POSIX». Y en la 24.18.0, líneas 1835-1848: `process.exit()` sale «even if there
+   are still asynchronous operations pending… including I/O operations to `process.stdout`», con
+   el ejemplo de la salida «truncated and lost».
+4. `lib/internal/test_runner/reporter/v8-serializer.js`: **un trozo por evento**.
+   `lib/internal/streams/state.js:12`: la marca de agua por defecto es **64 KiB en POSIX** y 16 KiB
+   en Windows.
+
+**Por qué se pierde siempre la misma cola.** La ráfaga de 327 KB supera la marca de agua, así que
+`write()` devuelve `false` y el reporter espera a `drain`, y ese mensaje acaba entrando entero en la
+tubería. Lo que viene detrás (~54 KB) cabe bajo la marca: se acepta sin esperar. Si en ese momento
+la tubería está llena porque el padre aún no ha leído, eso se queda en la cola de libuv. El hijo
+llega a `process.exit()` y esa cola se pierde. Que ocurra depende de lo rápido que lea el padre:
+es la intermitencia.
+
+---
+
+## ⑤ LO QUE ESTO NO DEMUESTRA (el hueco, declarado)
+
+- El caso **real** (`scrum859` con la mutación) **no se ha reproducido en Linux**: esta máquina
+  es Windows y no tiene WSL ni Docker (comprobado: `wsl.exe -l -v` → «no está instalado»; `docker`
+  no está en el PATH).
+- Que en Windows salga 0 de 91 **es coherente** con la hipótesis, **pero por sí solo no la prueba**.
+- La unión entre el caso real y el fabricado se apoya en tres cosas medidas: el mismo transporte
+  (`run()` → hijo con `--test-force-exit` y tuberías), la misma forma (lo que se pierde es la cola
+  que va detrás de la última escritura que pasa de la marca de agua) y la misma dependencia de la
+  plataforma. **La prueba de que el arreglo funciona en el caso real es la de §⑦**, y la tiene
+  que correr S3.
+
+---
+
+## ⑥ EL CASO FABRICADO: `tests/scrum908c-la-cola-que-se-pierde.test.mjs`
+
+Es un hijo fabricado, fuera del árbol, que se lanza como lo lanza `run()`. Tiene un relleno que
+falla y ocupa ~88 KB, el NOMBRADO que falla, y tres de cola. El padre **se para sin leer** justo
+después de `spawn` (una espera síncrona con `Atomics.wait`) hasta que el hijo sale, o como mucho
+2 s. El testigo de salida (A21) es un fichero que el hijo escribe en `process.on('exit')`.
+
+| brazo | qué exige | Windows (local) | Linux (CI) |
+|---|---|---|---|
+| **SUELO** · stdout a fichero | los 5 veredictos llegan enteros; el NOMBRADO empieza **después** de los 64 KiB; el total queda **por debajo** de tubería + marca de agua | ✔ 99.451 B · 35 mensajes · sobrante 0 | ver abajo |
+| **SIN ARREGLO** · tubería + padre parado | POSIX: el hijo **sale** durante la pausa y el NOMBRADO y la cola **no llegan**. Windows: el hijo **no puede salir** (tubería síncrona) y llega todo | ✔ `salioDuranteLaPausa=false`, 5 de 5 | ver abajo |
+| **CON ARREGLO** · lo mismo + `--import` que pone stdout bloqueante | en las dos: el hijo no sale durante la pausa (está bloqueado) y llega **todo** | ✔ 5 de 5 | ver abajo |
+| **VEHÍCULO** · `run({ execArgv })` | el `--import` llega al hijo que corre los tests | ✔ | ver abajo |
+
+**Tarda ~4,3 s en local** (A23 nº 16). La pausa se agota en dos brazos.
+
+**Lo vi caer en local, con el árbol commiteado antes de cada inyección (A23 nº 9), el
+`numstat` al lado y `git status` vacío después:**
+
+| inyección | resultado |
+|---|---|
+| el conductor sin el `--import` (`execArgv: []`) | ✖ cae VEHÍCULO |
+| relleno de 20.000 | ✖ cae el SUELO: «el hijo escribe 171459 bytes, más de tubería + marca de agua (131072)» |
+| relleno de 3.000 | ✖ cae el SUELO: «el NOMBRADO empieza en el byte 29675, dentro de lo que cabe en la tubería» |
+
+**En Linux (A23 nº 8, con el visto bueno del orquestador):** se empujó primero un commit **ROJO A
+PROPÓSITO** (`f6ac3021b2ea361203f5bda42126ca5250ac7b3c`): el brazo CON ARREGLO **sin** el
+`--import`. En Windows no puede caer, porque ahí el mecanismo no se da; tenía que caer en el CI de
+Linux, y sólo él.
+
+**🔴 Lo que salió, y NO es lo que se esperaba.** Run
+<https://github.com/lwislg99/cobroflash-backend/actions/runs/35364145759/job/105662367169>
+(job «build + tests», Node 24.20.0, 15:49:25Z). Líneas 11069-11076 del log, que se guardan en
+`evidencias/scrum908c/ci-rojo-f6ac3021.txt`:
+
+```
+# SUELO        bytes=99003 mensajes=35 sobrante=0 llegados=[RELLENO,NOMBRADO,COLA-1,COLA-2,COLA-3]
+# SIN ARREGLO  bytes=99003 mensajes=35 sobrante=0 llegados=[…los 5…] salioDuranteLaPausa=true code=1
+# CON ARREGLO  bytes=99002 mensajes=35 sobrante=0 llegados=[…los 5…] salioDuranteLaPausa=true code=1
+✔ SUELO   ✖ SIN ARREGLO   ✖ CON ARREGLO   ✔ vehículo
+```
+
+- **Cayó CON ARREGLO, que era lo pactado**: «el hijo salió con el padre parado aunque su stdout debía
+  ser bloqueante: el arreglo no se aplicó (o el caso ya no llena la tubería: mira el SUELO)». Pero
+  cayó por el **segundo** motivo del mensaje, no por el primero: el brazo SIN ARREGLO lo demuestra.
+- **Cayó también SIN ARREGLO, y eso NO estaba previsto**: «el hijo salió con el padre parado y aun
+  así llegó el NOMBRADO». En Linux el hijo **sí salió** mientras el padre no leía, **y no se perdió
+  nada**. Con este caso, los 99.003 bytes cupieron enteros en el transporte.
+- **Lo que eso dice, y lo que no.** Dice que el caso no llena el buffer del transporte de CI. Supuse
+  una tubería de 64 KiB y no la medí. **Hipótesis, sin medir:** en Linux, `child_process` conecta
+  el stdio con un `socketpair` y no con un `pipe(2)`, y su buffer por defecto es mayor. **No dice**
+  que Node vacíe stdout antes de salir: para eso haría falta un caso que DESBORDE el buffer y aun
+  así llegue entero.
+- **Así que el mecanismo queda NO REPRODUCIDO** por el caso fabricado (A18): 1 intento en Linux,
+  con estas condiciones. El guard de esta rama está **mal calibrado para Linux** y **no puede entrar
+  en `main`** tal como está: su brazo SIN ARREGLO da rojo allí. El PR #1519 se queda en rojo, y es
+  lo correcto.
+
+**El siguiente paso, para quien siga (no se ha hecho):** que el caso se calibre SOLO, midiendo
+primero la capacidad efectiva del transporte en la máquina donde corre. Un hijo que escriba 1 MB
+con `process.stdout.write` y llame a `process.exit()` en seguida, con el padre parado: lo que llegue
+es la capacidad, y si llega menos de 1 MB, eso YA es el mecanismo de Node, sin el reporter por
+medio. Después, el total del caso fabricado se pone entre la capacidad y la capacidad + 64 KiB (la
+marca de agua), y el NOMBRADO justo detrás de la capacidad.
+
+---
+
+## ⑦ LO QUE SE LE PIDE A S3 (el instrumento es suyo, no se toca desde aquí)
+
+**Dónde:** `scripts/meta-guard-mutaciones.mjs`, función `correr()`, la llamada a `run()` de las
+líneas **631-639**:
+
+```js
+  const flujo = run({
+    files: [path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard)],
+    cwd: RAIZ,
+    forceExit: true,
+    timeout: 300000,
+  });
+```
+
+**El cambio propuesto:** que el hijo escriba stdout en modo bloqueante, manteniendo `forceExit`,
+con una línea más:
+
+```js
+    execArgv: ['--import', 'data:text/javascript,' + encodeURIComponent(
+      'process.stdout._handle?.setBlocking?.(true);')],
+```
+
+Es lo que hace el paquete `set-blocking`, y es lo que ya pasa en Windows sin tocar nada.
+**Alternativa:** quitar `forceExit: true`. Con eso el hijo sale solo cuando stdout se ha vaciado,
+pero un guard que deje un handle abierto se colgaría hasta el `timeout` de 300 s por fichero. La
+decisión es de S3.
+
+**Y una segunda propuesta, que es de clasificación:** hoy «NO APARECE» con **menos eventos que la
+pasada limpia** se da por MUDO. Si la pasada mutada trae menos mensajes que la limpia, el
+instrumento no vio el final, así que es **CIEGO** (A3: un instrumento sin salida es ciego, no un
+cero). Con eso, la próxima vez que se pierda la cola saldría CIEGO, que es lo que es, en vez de
+acusar a un guard sano.
+
+**El control que demostraría que el arreglo funciona:**
+
+1. **Determinista, y el que decide:** ⚠️ **todavía no existe.** El brazo CON ARREGLO de
+   `scrum908c` lo demostraría sobre el transporte **cuando el caso esté bien calibrado para Linux**
+   (§⑥), y hoy no lo está. Para el instrumento real: correr `correr()` sobre `scrum859` con la
+   mutación nº 2 y el **padre parado** durante la pasada mutada. Sin el arreglo debe salir MUDA (o
+   CIEGA, con la segunda propuesta), y con el arreglo, VIVA. **Mientras no haya un caso que
+   reproduzca la pérdida, esta propuesta a S3 es una HIPÓTESIS con su literal, no un arreglo
+   demostrado.**
+2. **Estadístico, en CI:** la nº 2 VIVA en **N de N** jobs que lleguen a imprimirla. Con la tasa
+   medida en la ventana larga (17 de 139, cota baja del 95 % en el 7,8 %), P(0 mudas en N | sin
+   arreglo) < 5 % pide **N ≥ 37**. Con la corta (8 de 49, cota baja 8,5 %) serían 34. Se da la
+   cifra prudente. ⚠️ Hoy eso
+   choca con el tope de 10 minutos: 71 de 140 jobs no llegan al final, y de esos 71 solo **20**
+   llegaron a imprimir la nº 2 antes del corte. Valen para contarla, pero no para el veredicto
+   del job.
+
+---
+
+## ⑧ CALIBRACIÓN DEL PUESTO (antes de cualquier «existe hoy»)
+
+Dos tickets que sé ARREGLADOS y dos que sé VIVOS, comprobados corriendo. Las filas, con su comando,
+van a `docs/equipo/afirmaciones-verificadas-javier.md`.
+
+| ticket | veredicto | lo medido |
+|---|---|---|
+| SCRUM-928 | **arreglado** (#1472, #1481) | `npm run guards:entrada` con `FORCE_COLOR=3`: 26 tests, 0 fail, exit 0, y **120 bytes ESC** en el log, o sea que el color SÍ estaba puesto. El defecto era «0 tests» |
+| SCRUM-850 | **arreglado** (su guard vive) | `scrum850`: 6 de 6 sobre 12 invocaciones. Con `\| tail -20` inyectado en el `test` de `package.json` → 2 fail, exit 1. Restaurado: `git status` vacío |
+| SCRUM-942 | **vivo** | bytes de control hoy: `scrum806` **1 NUL**, `scrum807` **4 NUL**. Control fabricado: 1 y 0 |
+| SCRUM-836 ② | **vivo** | el PR #1505 se mergeó a las **09:40:06Z** con la cabeza `03a54c39e5799da2641500f4169d466fdf42ed23`, y el meta-guard de esa cabeza acabó en **failure** a las 09:42:38Z: entró antes de que el check acabara |
+
+---
+
+## LO QUE ME SALIÓ MAL (A9)
+
+1. **Al orquestador le dije «18 jobs» para la muda de `scrum864c`, y son 19.** Lo conté a mano
+   sobre una lista y me salté uno de los dos jobs donde salían las dos a la vez. Lo cazó el
+   recuento por comando que hice para este expediente.
+2. **El primer censo lo lancé con `FORCE_COLOR` puesto** (A6, casilla 1) y su salida de texto
+   salió coloreada. Los datos van en el JSON, que no lleva color. Las salidas que se suben aquí
+   van sin los bytes ESC, y después lo comprobé: 24 ficheros, 0 bytes de control.
+3. **La primera versión del guard medía el borde contra el `test:enqueue`** (byte 372) y daba el
+   caso por mal calibrado sin estarlo. Ahora mide contra el primer mensaje de VEREDICTO.
+4. 🔴 **Calibré el caso fabricado con la capacidad de una tubería de Linux (64 KiB), y no la
+   medí.** En CI cupieron 99 KB enteros, y el brazo que tenía que demostrar el mecanismo lo
+   desmintió para ese tamaño. Es justo lo que A3 prohíbe: un número supuesto metido en un
+   instrumento. Me lo cazó el rojo a propósito, que se pactó para ver caer otra cosa. Sin ese
+   rojo, el guard habría entrado con una afirmación falsa sobre Linux.
+5. **La primera versión del VEHÍCULO llamaba a `run()` desde dentro del propio test**, y `run()`,
+   llamado desde un hijo de `node --test`, se salta los ficheros con un aviso. Salían `pasados=[]` y
+   `caidos=[]`: un cero que no medía nada. Lo cazó el CIEGO que el test ya llevaba. Ahora lo corre un
+   conductor aparte.
+
+---
+
+## LO NO TOCADO
+
+- `scripts/meta-guard-mutaciones.mjs` (S3), `.github/workflows/**` (S5), `tests/scrum859-…` y
+  `tests/scrum267-…`: **ni una línea**.
+- `src/`, `public/`, `prisma/schema.prisma`: nada. Ningún texto que vea el usuario.
+- Ninguna lista de excepciones ensanchada (A7); ningún guard aflojado (regla 41).
+- Sin `git stash`, sin reescribir historia, sin tocar ninguna base.
+- Banco subido (A8): `docs/master/evidencias/scrum908c/`. Son 9 scripts con las rutas en variables de
+  entorno (`J6_908C_DIR`, `GH`) y 14 salidas, sin bytes de control. Los logs de CI no se suben
+  (~80 KB cada uno): se vuelven a bajar con el `job` de cada fila de `censo-meta-ci.json`.
