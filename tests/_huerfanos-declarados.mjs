@@ -387,6 +387,17 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['FALTA', 'INCOHERENCIA', 'TOLERANCIA_CENTIMOS', 'VEREDICTO'] },
+  // SCRUM-912 · la lectura del ticket. El saneado corre dentro de `leerTicket`; se exporta para que
+  // su test fije caso a caso qué se descarta sin pasar por Google. Las dos constantes son la única
+  // fuente de la lista de modelos y del esquema: el test comprueba que la petición lleva ESAS.
+  { modulo: 'src/modules/expenses/domain/lecturaTicket.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-18',
+    motivo: 'SCRUM-912: el saneado de lo que devuelve la IA lo ejecuta `leerTicket`; el export es para que su test fije cada descarte sin red.',
+    exports: ['sanearLectura'] },
+  { modulo: 'src/modules/expenses/domain/lecturaTicket.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-18',
+    motivo: 'SCRUM-912: única fuente de los modelos de la lectura (cupo propio, nunca los de presupuestos) y de su esquema; los lee su módulo y su test.',
+    exports: ['ESQUEMA_LECTURA', 'MODELOS_LECTURA'] },
   { modulo: 'src/modules/exports/domain/exportData.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
