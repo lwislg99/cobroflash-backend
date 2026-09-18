@@ -11,7 +11,9 @@ import { clasificarJustificante } from '../../domain/justificante';
 // SCRUM-912 · leer la foto del ticket. Gemini directo: sin respaldo con Claude (ver el dominio).
 import { isGeminiConfigured } from '../../../../integrations/gemini';
 import { hitRateLimit } from '../../../../core/http/rateLimit';
-import { parsearImagen, leerTicket, LECTURAS_TICKET_POR_DIA, hoyEnMadrid } from '../../domain/lecturaTicket';
+import {
+  parsearImagen, leerTicket, LECTURAS_TICKET_POR_DIA, hoyEnMadrid, corteDeCuota, ERROR_POR_CORTE,
+} from '../../domain/lecturaTicket';
 
 const router = Router();
 
@@ -197,7 +199,11 @@ router.post('/leer-ticket', async (req, res) => {
     const codigo = String(err?.code || err?.message || '');
     // Solo el código: `providerDetail` de Google puede citar el contenido de la petición.
     console.error('[POST /admin/expenses/leer-ticket]', codigo || 'error desconocido');
-    if (codigo === 'gemini_rate_limited') return res.status(429).json({ ok: false, error: 'ai_rate_limited' });
+    // Cuota de Google agotada: código PROPIO, distinto de «no configurado» y de nuestro tope
+    // (`lecturas_agotadas`), y diciendo si es de hoy o de este minuto (orquestador, 18-sep).
+    if (codigo === 'gemini_rate_limited') {
+      return res.status(429).json({ ok: false, error: ERROR_POR_CORTE[corteDeCuota(err?.quotaIds)] });
+    }
     if (codigo === 'gemini_not_configured') return res.status(503).json({ ok: false, error: 'ai_not_configured' });
     if (codigo === 'gemini_bad_key') return res.status(503).json({ ok: false, error: 'ai_bad_key' });
     if (codigo === 'ai_invalid_json' || codigo === 'ai_invalid_format') {

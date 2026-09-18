@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import express from 'express';
 
 const { config } = await import('../dist/core/config/env.js');
-const { partesDelUsuario } = await import('../dist/integrations/gemini.js');
+const { partesDelUsuario, cuotasDelError, geminiComplete, geminiCompleteConModelo } = await import('../dist/integrations/gemini.js');
 const L = await import('../dist/modules/expenses/domain/lecturaTicket.js');
 // dist/ es CommonJS: el `export default` llega envuelto en `default.default`.
 const modRutas = await import('../dist/modules/expenses/app/routes/expenses.routes.js');
@@ -130,10 +130,13 @@ test('SCRUM-912 · la foto sale hacia Gemini como inline_data, con el esquema y 
       await conApp(9122, async (post) => {
         const r = await post({ imagen: FOTO });
         assert.equal(r.status, 200, JSON.stringify(r.json));
+        assert.equal(r.json.modelo, L.MODELOS_LECTURA[0], 'la respuesta dice qué modelo contestó');
       });
     });
     assert.equal(g.salidas.length, 1, '🔴 CIEGO: no salió ninguna petición al modelo');
     assert.ok(g.salidas[0].url.includes('generativelanguage.googleapis.com'), 'la petición va a Google');
+    // La lista PROPIA, no `GEMINI_MODEL` (que aquí vale «modelo-de-test», el de los presupuestos).
+    assert.ok(g.salidas[0].url.includes(`/models/${L.MODELOS_LECTURA[0]}:generateContent`), g.salidas[0].url);
     const cuerpo = JSON.parse(g.salidas[0].body);
     const partes = cuerpo.contents[0].parts;
     assert.deepEqual(partes[0], { inline_data: { mime_type: 'image/jpeg', data: 'QUJDRA==' } });
@@ -144,6 +147,53 @@ test('SCRUM-912 · la foto sale hacia Gemini como inline_data, con el esquema y 
   } finally {
     g.restaurar();
   }
+});
+
+test('SCRUM-912 · 🔴 la lectura NUNCA cae a gemini-2.5-flash (las 20 diarias son de los presupuestos)', async () => {
+  // Todos los modelos de la lista agotados: se prueban TODOS, en orden, y ni uno más.
+  const g = simularGoogle(() => new Response(JSON.stringify({ error: { message: 'quota' } }), { status: 429 }));
+  try {
+    await conClaves({ gemini: 'clave-de-mentira', anthropic: '' }, () => conApp(9126, async (post) => {
+      assert.equal((await post({ imagen: FOTO })).status, 429);
+    }));
+  } finally {
+    g.restaurar();
+  }
+  const modelos = g.salidas.map((s) => s.url.match(/\/models\/([^:]+):/)?.[1]);
+  assert.deepEqual(modelos, [...L.MODELOS_LECTURA]);
+  assert.ok(!L.MODELOS_LECTURA.some((m) => /^gemini-2\.5-flash$|^gemini-flash-latest$/.test(m)),
+    '🔴 un modelo de los presupuestos se ha colado en la lista de la lectura');
+});
+
+test('SCRUM-912 · con `models`, un 404 pasa al siguiente de ESA lista, y se dice cuál contestó', async () => {
+  // El mecanismo, con una lista explícita: la de la lectura hoy tiene un solo modelo.
+  const g = simularGoogle((url) => (url.includes('/models/modelo-a:')
+    ? new Response(JSON.stringify({ error: { message: 'not found' } }), { status: 404 })
+    : respuestaGemini('hola')));
+  try {
+    await conClaves({ gemini: 'clave-de-mentira', anthropic: '' }, async () => {
+      const r = await geminiCompleteConModelo({ system: 's', user: 'u', models: ['modelo-a', 'modelo-b'] });
+      assert.deepEqual(r, { texto: 'hola', modelo: 'modelo-b' });
+    });
+  } finally {
+    g.restaurar();
+  }
+  assert.deepEqual(g.salidas.map((s) => s.url.match(/\/models\/([^:]+):/)?.[1]), ['modelo-a', 'modelo-b'],
+    'ni «modelo-de-test» (GEMINI_MODEL) ni nada fuera de la lista');
+});
+
+test('SCRUM-912 · lo aditivo: sin `models`, geminiComplete sigue usando GEMINI_MODEL (presupuestos)', async () => {
+  const g = simularGoogle(() => respuestaGemini('hola'));
+  try {
+    await conClaves({ gemini: 'clave-de-mentira', anthropic: '' }, async () => {
+      assert.equal(await geminiComplete({ system: 's', user: 'u' }), 'hola');
+    });
+  } finally {
+    g.restaurar();
+  }
+  assert.equal(g.salidas.length, 1);
+  assert.ok(g.salidas[0].url.includes('/models/modelo-de-test:generateContent'), g.salidas[0].url);
+  assert.deepEqual(JSON.parse(g.salidas[0].body).contents[0].parts, [{ text: 'u' }]);
 });
 
 test('SCRUM-912 · parsearImagen: solo data-URL de imagen admitida, con base64', () => {
@@ -258,7 +308,7 @@ function clienteCon(fichas) {
     provider: { findMany: async (args) => { consultas.push(args); return fichas; } },
   };
 }
-const completarCon = (objeto) => async () => JSON.stringify(objeto);
+const completarCon = (objeto) => async () => ({ texto: JSON.stringify(objeto), modelo: 'modelo-doble' });
 
 test('SCRUM-912 · el proveedor se propone solo si su NIF casa con UNA ficha del merchant', async () => {
   const imagen = { mimeType: 'image/jpeg', data: 'QUJD' };
@@ -294,7 +344,7 @@ test('SCRUM-912 · 🔴 la IA NUNCA da un ticket por deducible: como mucho, «fa
 test('SCRUM-912 · lo que devuelve el modelo sin ser JSON es ai_invalid_json', async () => {
   await assert.rejects(
     () => L.leerTicket({ merchantId: 55, imagen: { mimeType: 'image/jpeg', data: 'QUJD' }, ahora: AHORA },
-      { completar: async () => 'esto no es json', cliente: clienteCon([]) }),
+      { completar: async () => ({ texto: 'esto no es json', modelo: 'modelo-doble' }), cliente: clienteCon([]) }),
     /ai_invalid_json/,
   );
 });
@@ -340,9 +390,36 @@ test('SCRUM-912 · 🔴 el tope diario corta en LECTURAS_TICKET_POR_DIA + 1, y e
   }
 });
 
+/** Un 429 con la forma documentada de Google: `error.details[].violations[].quotaId`. */
+const error429 = (...quotaIds) => () => new Response(JSON.stringify({
+  error: {
+    code: 429, message: 'quota', status: 'RESOURCE_EXHAUSTED',
+    details: [
+      { '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: quotaIds.map((quotaId) => ({ quotaId, quotaValue: '20' })) },
+      { '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '13s' },
+    ],
+  },
+}), { status: 429 });
+const DIARIA = 'GenerateRequestsPerDayPerProjectPerModel-FreeTier';
+const POR_MINUTO = 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier';
+
+test('SCRUM-912 · el 429 de Google: la diaria manda sobre la del minuto, y sin quotaId no se adivina', () => {
+  assert.deepEqual(cuotasDelError(JSON.stringify({ error: { details: [{ violations: [{ quotaId: DIARIA }] }] } })), [DIARIA]);
+  assert.deepEqual(cuotasDelError('no es json'), []);
+  assert.deepEqual(cuotasDelError(JSON.stringify({ error: { message: 'x' } })), []);
+  assert.equal(L.corteDeCuota([DIARIA]), 'diaria');
+  assert.equal(L.corteDeCuota([POR_MINUTO]), 'por_minuto');
+  assert.equal(L.corteDeCuota([POR_MINUTO, DIARIA]), 'diaria');
+  assert.equal(L.corteDeCuota([]), 'desconocida');
+  assert.equal(L.corteDeCuota(undefined), 'desconocida');
+});
+
 test('SCRUM-912 · errores de Google → códigos (429, 502, 422), nunca un 500 ni una frase', async () => {
   const casos = [
-    [() => new Response(JSON.stringify({ error: { message: 'quota' } }), { status: 429 }), 429, 'ai_rate_limited'],
+    // La cuota de Google: código PROPIO, distinto de `ai_not_configured` y de `lecturas_agotadas`.
+    [error429(DIARIA), 429, 'ai_cuota_diaria_agotada'],
+    [error429(POR_MINUTO), 429, 'ai_cuota_por_minuto'],
+    [() => new Response(JSON.stringify({ error: { message: 'quota' } }), { status: 429 }), 429, 'ai_cuota_agotada'],
     [() => new Response('fallo', { status: 500 }), 502, 'ai_provider_error'],
     [() => respuestaGemini('esto no es json'), 422, 'ai_could_not_parse'],
     [() => respuestaGemini([1, 2]), 422, 'ai_could_not_parse'],

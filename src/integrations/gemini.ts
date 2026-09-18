@@ -13,8 +13,35 @@ export function isGeminiConfigured(): boolean {
 
 // Error con el MOTIVO exacto que devuelve Google, para diagnosticar sin adivinar.
 export class GeminiError extends Error {
-  constructor(public code: string, public providerDetail?: string, public httpStatus?: number) {
+  constructor(
+    public code: string,
+    public providerDetail?: string,
+    public httpStatus?: number,
+    // SCRUM-912: en un 429, QUÉ cuota se agotó (`…PerDay…` o `…PerMinute…`), leído de
+    // `error.details[].violations[].quotaId`. Es lo que distingue «mañana» de «en un minuto».
+    public quotaIds: string[] = [],
+  ) {
     super(code);
+  }
+}
+
+/**
+ * SCRUM-912 · Los `quotaId` de un 429 de Google. Vacío si el cuerpo no los trae: entonces NO se
+ * sabe si el corte es diario o por minuto, y quien lo lea tiene que decir «no se sabe».
+ */
+export function cuotasDelError(cuerpo: string): string[] {
+  try {
+    const detalles = JSON.parse(cuerpo)?.error?.details;
+    if (!Array.isArray(detalles)) return [];
+    const ids: string[] = [];
+    for (const d of detalles) {
+      for (const v of Array.isArray(d?.violations) ? d.violations : []) {
+        if (typeof v?.quotaId === 'string') ids.push(v.quotaId);
+      }
+    }
+    return ids;
+  } catch {
+    return [];
   }
 }
 
@@ -27,6 +54,9 @@ export type GeminiParams = {
   // sale exactamente como antes, solo texto — `scrum683b` vigila que el dictado no mande otra cosa.
   // `data` es el base64 SIN el prefijo `data:…;base64,`.
   images?: Array<{ mimeType: string; data: string }>;
+  // SCRUM-912: lista de modelos PROPIA de quien llama, en vez de `GEMINI_MODEL`. Google cuenta la
+  // cuota por proyecto Y POR MODELO: una lista propia no gasta el cupo de los presupuestos.
+  models?: string[];
 };
 
 /** Las partes del turno del usuario. Exportada para el test: sin imágenes, UNA parte de texto. */
@@ -74,7 +104,7 @@ async function callGeminiModel(model: string, params: GeminiParams): Promise<str
     try { detail = JSON.parse(bodyText)?.error?.message || detail; } catch { /* texto plano */ }
     console.error(`[gemini:${model}] HTTP ${response.status}: ${detail}`);
     // 429 (cuota) y 404 (modelo no disponible) son RECUPERABLES con otro modelo.
-    if (response.status === 429) throw new GeminiError('gemini_rate_limited', detail, 429);
+    if (response.status === 429) throw new GeminiError('gemini_rate_limited', detail, 429, cuotasDelError(bodyText));
     if (response.status === 404) throw new GeminiError('gemini_model_unavailable', detail, 404);
     if (response.status === 400 && /API key/i.test(detail)) throw new GeminiError('gemini_bad_key', detail, 400);
     throw new GeminiError('gemini_http_error', detail, response.status);
@@ -97,15 +127,25 @@ async function callGeminiModel(model: string, params: GeminiParams): Promise<str
  * un modelo concreto tenga la cuota gratis a 0.
  */
 export async function geminiComplete(params: GeminiParams): Promise<string> {
+  return (await geminiCompleteConModelo(params)).texto;
+}
+
+/**
+ * SCRUM-912 · Lo mismo, diciendo QUÉ modelo contestó. Con una lista de respaldo, el texto solo no
+ * dice si leyó el primero o el tercero, y sin eso no se puede juzgar la calidad de cada uno.
+ */
+export async function geminiCompleteConModelo(params: GeminiParams): Promise<{ texto: string; modelo: string }> {
   if (!config.GEMINI_API_KEY) throw new GeminiError('gemini_not_configured');
 
-  const models = (config.GEMINI_MODEL || 'gemini-2.5-flash,gemini-2.0-flash,gemini-flash-latest')
-    .split(',').map((m) => m.trim()).filter(Boolean);
+  const models = params.models?.length
+    ? params.models
+    : (config.GEMINI_MODEL || 'gemini-2.5-flash,gemini-2.0-flash,gemini-flash-latest')
+      .split(',').map((m) => m.trim()).filter(Boolean);
 
   let lastErr: GeminiError | undefined;
   for (const model of models) {
     try {
-      return await callGeminiModel(model, params);
+      return { texto: await callGeminiModel(model, params), modelo: model };
     } catch (err) {
       const e = err as GeminiError;
       lastErr = e;

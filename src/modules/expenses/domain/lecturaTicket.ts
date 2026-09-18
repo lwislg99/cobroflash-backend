@@ -6,11 +6,11 @@
 // gasto lo guarda el profesional con el alta de siempre, después de mirarlo (decisión del
 // fundador en el ticket: «nada se guarda sin que él lo confirme»).
 //
-// ── POR QUÉ `geminiComplete` Y NO `aiComplete` ──────────────────────────────────────────────
+// ── POR QUÉ `geminiCompleteConModelo` Y NO `aiComplete` ─────────────────────────────────────
 // `ai.service.aiComplete` cae a Claude cuando no hay `GEMINI_API_KEY`, y Claude es de pago. La
 // condición del fundador para 912 es Gemini gratis y SIN respaldo (SCRUM-934 cerrado): si falta la
 // clave, esto falla con `gemini_not_configured` y no gasta un céntimo. La inyección de `completar`
-// es solo para el test; en producción es siempre `geminiComplete`.
+// es solo para el test; en producción es siempre `geminiCompleteConModelo`.
 //
 // ── LO QUE LA IA NO DECIDE ──────────────────────────────────────────────────────────────────
 // · Si el papel lleva el NIF del PROFESIONAL (lo que hace deducible un ticket, ver `justificante.ts`)
@@ -21,7 +21,7 @@
 //   `null` (no se leyó) y descartado (se leyó y no vale) son dos hechos distintos.
 //
 // Sin frases para el usuario: solo códigos (regla 30). Los textos los firma el fundador.
-import { geminiComplete, type GeminiParams } from '../../../integrations/gemini';
+import { geminiCompleteConModelo, type GeminiParams } from '../../../integrations/gemini';
 import { prisma } from '../../../core/db/prisma';
 import { normalizarNif, validarNifEspanol } from '../../../core/validation/nifEspanol';
 import { TIPOS_IVA_ES_BP } from '../../../core/validation/fiscalInput';
@@ -29,11 +29,28 @@ import { clasificarJustificante, TOLERANCIA_CENTIMOS, aCentimos, type Clasificac
 
 /**
  * Lecturas por merchant y día natural (Europe/Madrid). La cuota gratis de Google es UNA para todo
- * el proyecto y la comparten los presupuestos: sin tope, un solo merchant podría dejar sin IA a
- * los demás. **El número lo decide el fundador** (preguntado el 18-sep-2026); 30 es provisional.
+ * el proyecto (y por modelo): sin tope, un solo merchant podría dejar sin lectura a los demás.
+ * **El número lo decide el fundador**; 5 es provisional (orquestador, 18-sep-2026, tras ver que
+ * gemini-2.5-flash tiene 20 peticiones/día para TODO el proyecto).
  * Vive en memoria, como el tope de IA de `ai.routes.ts`: un despliegue lo pone a cero.
  */
-export const LECTURAS_TICKET_POR_DIA = 30;
+export const LECTURAS_TICKET_POR_DIA = 5;
+
+/**
+ * LOS MODELOS DE LA LECTURA, PROPIOS y en orden. Google cuenta la cuota por proyecto Y POR MODELO,
+ * así que leer tickets con estos NO gasta las 20 diarias de `gemini-2.5-flash`, que son de los
+ * presupuestos. Por eso esa familia **no está en la lista**, ni como último recurso (decisión del
+ * orquestador, 18-sep-2026).
+ *
+ * SOLO modelos con cupo MEDIDO y distinto de 0 en el proyecto (captura de AI Studio del fundador,
+ * 18-sep-2026, nivel gratuito): `gemini-2.5-flash-lite` = 10/min, 250K tokens/min, **20/día**,
+ * propios. Una medición pública del 2-sep daba 500/día a los Flash-Lite y NO se confirmó para éste;
+ * los 3.x Flash-Lite y Gemma aún no tienen fila medida, así que no entran hasta tenerla.
+ * (`gemini-2.0-flash` y `-lite`: cupo 0 en el proyecto.)
+ */
+export const MODELOS_LECTURA: readonly string[] = [
+  'gemini-2.5-flash-lite',
+];
 
 /** Los tipos que Gemini admite en línea (guía de imágenes, 17-sep-2026). */
 export const MIME_ADMITIDOS: ReadonlySet<string> = new Set([
@@ -238,22 +255,50 @@ export function sanearLectura(bruto: unknown, ahora: Date): LecturaSaneada {
   };
 }
 
+// ── CUANDO GOOGLE CORTA POR CUOTA ───────────────────────────────────────────────────────────
+
+export type CorteDeCuota = 'diaria' | 'por_minuto' | 'desconocida';
+
+/**
+ * ¿El 429 de Google es de la cuota DIARIA («mañana sí») o de la POR MINUTO («en un minuto»)?
+ * Se lee del `quotaId` (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`, `…PerMinute…`).
+ * Si vienen las dos, manda la diaria: esperar un minuto no la arregla. Si no viene ninguna, NO
+ * se adivina: `desconocida`.
+ */
+export function corteDeCuota(quotaIds: readonly string[] | undefined): CorteDeCuota {
+  const ids = quotaIds ?? [];
+  if (ids.some((q) => /PerDay/.test(q))) return 'diaria';
+  if (ids.some((q) => /PerMinute/.test(q))) return 'por_minuto';
+  return 'desconocida';
+}
+
+export const ERROR_POR_CORTE: Readonly<Record<CorteDeCuota, string>> = {
+  diaria: 'ai_cuota_diaria_agotada',
+  por_minuto: 'ai_cuota_por_minuto',
+  desconocida: 'ai_cuota_agotada',
+};
+
 // ── LA LECTURA ENTERA ───────────────────────────────────────────────────────────────────────
 
 export interface ResultadoLectura extends LecturaSaneada {
   justificante: Clasificacion;
+  /** Qué modelo de `MODELOS_LECTURA` contestó. Diagnóstico, no texto de pantalla. */
+  modelo: string;
 }
 
 type ClienteProveedores = { provider: { findMany: (args: any) => Promise<Array<{ id: number; taxId: string | null }>> } };
 
 export async function leerTicket(
   p: { merchantId: number; imagen: { mimeType: string; data: string }; ahora?: Date },
-  deps: { completar?: (params: GeminiParams) => Promise<string>; cliente?: ClienteProveedores } = {},
+  deps: {
+    completar?: (params: GeminiParams) => Promise<{ texto: string; modelo: string }>;
+    cliente?: ClienteProveedores;
+  } = {},
 ): Promise<ResultadoLectura> {
-  const completar = deps.completar ?? geminiComplete;
+  const completar = deps.completar ?? geminiCompleteConModelo;
   const cliente = deps.cliente ?? prisma;
 
-  const crudo = await completar({
+  const { texto: crudo, modelo } = await completar({
     system: SISTEMA_LECTURA,
     user: USUARIO_LECTURA,
     // Holgado: en los modelos que «piensan», el razonamiento sale de este mismo margen.
@@ -261,6 +306,7 @@ export async function leerTicket(
     temperature: 0,
     jsonSchema: ESQUEMA_LECTURA,
     images: [p.imagen],
+    models: [...MODELOS_LECTURA],
   });
 
   let bruto: unknown;
@@ -293,5 +339,5 @@ export async function leerTicket(
     vatDeducible: null,
   });
 
-  return { propuesta, descartados, justificante };
+  return { propuesta, descartados, justificante, modelo };
 }
