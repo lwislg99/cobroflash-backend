@@ -286,7 +286,11 @@ copy, y la pregunta del cliente se sigue respondiendo sólo con el guion H2 ·
 
 **Medido contra:** `origin/main` = `41bad7c83d84ba2cddcf267480bbd7bcd9bc0b2c` · 2026-09-18T08:43Z
 
-**Tanda:** _(se rellena con la del último cambio)_
+Re-medido sobre el merge con `origin/main` = `4a7ff1ec74c138c74d30a1c7bebc70d67a5d0d1c` (08:56Z): el
+mismo conjunto, y los 40 tests de este ticket en verde.
+
+**Tanda** (sobre ese merge): 7615 tests · 7503 pass · **1 fail** · 111 skipped (los 111 con su motivo) —
+el fallo es el ajeno de SCRUM-922 (`spawnSync wmic ENOENT`), no tocado. `guards:entrada`: 4 en verde.
 
 > **Tampoco esto construye producto.** Cero líneas de `src/`. El camino de emisión se ha **LEÍDO**
 > y sus comprobaciones se han MUTADO **en copias** (en memoria y en un directorio temporal), nunca
