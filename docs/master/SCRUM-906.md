@@ -163,3 +163,22 @@ aparece** envío por WhatsApp, ni Bizum, ni parte de trabajo de campo, ni ficha 
 casa del cliente, ni modo sin conexión. Los cinco los tiene YaQu o los tiene a medias.
 
 Los tickets de «lo que no tenemos» **los abre el orquestador**, no la Sesión 0.
+
+## SCRUM-906d · Consolidado para decidir y Holded por dentro (18-sep-2026)
+
+**Medido el 18-sep-2026 a las 07:00:46Z (hora de GitHub) sobre `origin/main` =
+`ecccf94e8c90ec80eed75b5f3d4e320f90a910a8`.** Rama `scrum-906d-consolidado`. Solo docs.
+
+- **Nuevo §7 en [`docs/competencia/matriz.md`](../competencia/matriz.md)**, por encargo del fundador:
+  lo que nos falta (F1-F10), lo mejor suyo (M1-M8), nuestro foso (Z1-Z4) y lo que no hay que copiar
+  (N1-N6). Van numerados para que el orquestador abra tickets citándolos.
+- **Holded por dentro** (§7.0 de la matriz): **envío y canales y VeriFactu medidos**; **firma, a medias**
+  (el flujo para pedirla no se ha encontrado, y queda como ❓, no como ❌). Todo en solo lectura, sin
+  guardar ni enviar nada.
+- 🔴 **Corrección de la propia FASE 2** (§7.1): el cobro con tarjeta o Bizum desde el presupuesto **no es
+  foso hoy**, porque `flags.ts:18`, `:19` y `:23` (Connect, Bizum manual y Bizum automático) están en
+  `false`. Lo que la §6 llamaba «nuestro foso, visto por dentro» era cierto del lado de Holded y falso
+  del nuestro: está construido y apagado.
+- La cuenta de prueba de Holded sigue viva en un navegador que **no se puede cerrar**; los volcados
+  literales están en la máquina de la Sesión 0 (`s0-906-traspaso/holded-dentro/q*`). No se suben
+  porque contienen el alias de correo del fundador.
