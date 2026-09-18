@@ -143,6 +143,13 @@ async function medirAnchura(nav, a) {
   const anota = (q, ok, detalle) => comportamiento.push({ q, ok, detalle });
 
   await ir('lista');
+  // Cifras de diseño (informativas, no son verde/rojo): cuánto ocupa lo de arriba antes de la primera
+  // fila, medido desde el titular «Gastos» para no contar la barra negra del prototipo.
+  const geometria = await page.evaluate(() => {
+    const y = (s) => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().top + scrollY) : null; };
+    const k = document.querySelector('.kpis').getBoundingClientRect();
+    return { kpisAlto: Math.round(k.height), primeraFilaDesdeTitular: y('.fila') - y('.titular'), alturaFila: Math.round(document.querySelector('.fila').getBoundingClientRect().height) };
+  });
   const filasTotal = await cuantos('.fila');
   anota('La lista pinta las 9 filas', filasTotal === 9, `${filasTotal} filas`);
   const conFoto = await cuantos('.just.si');
@@ -316,7 +323,7 @@ async function medirAnchura(nav, a) {
   }
 
   await page.close();
-  return { errores, positivo, porPantalla, comportamiento };
+  return { errores, positivo, porPantalla, comportamiento, geometria };
 }
 
 const nav = await lanzarNavegador(puppeteer, { headless: 'new', args: ['--allow-file-access-from-files'] });
@@ -333,6 +340,7 @@ for (const a of ANCHURAS) {
   const ciego = !pos.desborde || !pos.pequeno || !pos.vetada;
   console.log(`control positivo (siembra que TIENE que disparar): desborde ${pos.desborde ? 'lo ve' : 'CIEGO'} · <44 px ${pos.pequeno ? 'lo ve' : 'CIEGO'} · frase vetada ${pos.vetada ? 'la ve' : 'CIEGO'}`);
   if (ciego) fallos++;
+  console.log(`geometría de la lista (informativa): KPI ${r.geometria.kpisAlto} px de alto · primera fila a ${r.geometria.primeraFilaDesdeTitular} px del titular · una fila ${r.geometria.alturaFila} px`);
   for (const [p, d] of Object.entries(r.porPantalla)) {
     const mal = d.pagina || d.cajas.length || d.pequenos.length || d.vetadas.length;
     console.log(`  ${p.padEnd(8)} alto ${String(d.alto).padStart(5)} px · scroll-H página: ${d.pagina ? 'SÍ' : 'no'} · cajas que desbordan: ${d.cajas.length}${d.cajas.length ? ' → ' + d.cajas.join(' | ') : ''} · controles <44: ${d.pequenos.length}${d.pequenos.length ? ' → ' + d.pequenos.join(' | ') : ''} · frases vetadas: ${d.vetadas.length}${d.vetadas.length ? ' → ' + d.vetadas.join(', ') : ''}  [población: ${d.total} controles, ${d.cifras} cifras en ${EURO}]`);

@@ -149,6 +149,11 @@ body.sin-resaltar .propuesto{text-decoration:none}
 @media (max-width:900px){
   .fila{grid-template-columns:1fr auto;grid-template-areas:"que imp" "meta meta" "trab mas";gap:8px 12px;padding:14px}
   .fila .que{grid-area:que}
+  /* En móvil las notas y la fecha van en UN renglón («Gasto de prueba · 17 sept»): mismos datos,
+     un renglón menos por fila. */
+  .fila .que span{display:inline}
+  .fila .que b + span::before{content:"";display:block}
+  .fila .que span + span.fecha::before{content:" · "}
   .fila .imp{grid-area:imp}
   .fila .meta{grid-area:meta}
   .fila .trab{grid-area:trab;align-self:center}
@@ -501,7 +506,7 @@ function fila(g) {
   return `<div class="fila" data-abrir="${g.id}">
     <div class="que"><b>${esc(g.concepto)}</b>
       ${g.notas ? `<span>${esc(g.notas)}</span>` : ''}
-      <span>${fechaCorta(g.fecha)}</span></div>
+      <span class="fecha">${fechaCorta(g.fecha)}</span></div>
     <div class="meta"><span class="pill cat-${g.cat}">${CATS[g.cat]}</span>${justificante(g)}</div>
     <div class="trab">${t
       ? `<a href="#" data-trabajo="${t.id}">${esc(t.nombre)}</a>${g.proveedor ? `<span class="prov">${esc(g.proveedor)}</span>` : ''}`
