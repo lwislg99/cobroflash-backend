@@ -31,17 +31,22 @@ if (version.version !== sha) throw new Error(`staging sirve ${version.version}, 
 console.log(`staging /version = ${version.version} ✓`);
 
 // ── Las fotos: el HTML del ticket, fotografiado por chrome-headless-shell ──────────────────
-const dir = fs.mkdtempSync(path.join(process.env.TEMP || '.', 'tickets-912-'));
+// El temporal se borra SIEMPRE (también si algo falla): las fotos se regeneran desde tickets.mjs.
 const fotos = [];
-for (const t of TICKETS.slice(0, n)) {
-  const html = path.join(dir, `${t.id}.html`);
-  const png = path.join(dir, `${t.id}.png`);
-  fs.writeFileSync(html, t.html);
-  spawnSync(CHROME, ['--headless', '--hide-scrollbars', `--screenshot=${png}`, '--window-size=400,520', pathToFileURL(html).href]);
-  if (!fs.existsSync(png) || fs.statSync(png).size < 1000) throw new Error(`no se generó la foto de ${t.id}`);
-  fotos.push({ t, dataUrl: `data:image/png;base64,${fs.readFileSync(png).toString('base64')}`, bytes: fs.statSync(png).size });
+const dir = fs.mkdtempSync(path.join(process.env.TEMP || '.', 'tickets-912-'));
+try {
+  for (const t of TICKETS.slice(0, n)) {
+    const html = path.join(dir, `${t.id}.html`);
+    const png = path.join(dir, `${t.id}.png`);
+    fs.writeFileSync(html, t.html);
+    spawnSync(CHROME, ['--headless', '--hide-scrollbars', `--screenshot=${png}`, '--window-size=400,520', pathToFileURL(html).href]);
+    if (!fs.existsSync(png) || fs.statSync(png).size < 1000) throw new Error(`no se generó la foto de ${t.id}`);
+    fotos.push({ t, dataUrl: `data:image/png;base64,${fs.readFileSync(png).toString('base64')}`, bytes: fs.statSync(png).size });
+  }
+} finally {
+  fs.rmSync(dir, { recursive: true, force: true });
 }
-console.log(`fotos: ${fotos.map((f) => `${f.t.id} ${f.bytes} B`).join(' · ')} (en ${dir})`);
+console.log(`fotos: ${fotos.map((f) => `${f.t.id} ${f.bytes} B`).join(' · ')}`);
 
 // ── Sesión de QA ──────────────────────────────────────────────────────────────────────────
 const linea = fs.readFileSync(SECRETO, 'utf8').split(/\r?\n/).find((l) => l.startsWith('E2E_TEST_LOGIN_SECRET='));

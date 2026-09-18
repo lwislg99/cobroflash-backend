@@ -2,6 +2,7 @@
 
 **Fecha:** 18-sep-2026 · **Carril:** S1 (servidor; la pantalla de gastos es de S2, y reducir la foto antes de subirla es SCRUM-947, también de S2)
 **Medido contra:** `origin/main` = `972b51b384e0b21e0265787392eb5c865b98cc4a` · 2026-09-18T11:38:29Z (hora de GitHub)
+**Tanda:** 7690 tests, 7575 pass, 4 fail, 111 skipped, sobre 910 ficheros de `tests/` — corrida sobre la rama con `origin/main` = `34d06bb4f4e306b11745cf34fbbc85233c5a3299` mergeado (18-sep-2026, turno exclusivo de la Sesión 1). Rojos: 3 de `scrum939b`, conocidos y ajenos (Windows, sobre main puro), y 1 mío (`scrum864c`: `mide.mjs` creaba un temporal sin borrarlo), arreglado y 4/4 verde corrido solo.
 **Condición del fundador que no se negocia:** Gemini GRATIS, sin coste nuevo, **sin respaldo con Claude** (SCRUM-934 cerrado, Jira 15883).
 
 ---

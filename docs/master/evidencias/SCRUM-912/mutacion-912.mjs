@@ -79,6 +79,7 @@ try {
   }
 } finally {
   for (const [f, b] of originales) fs.writeFileSync(f, b);
+  fs.rmSync(tap, { force: true });
   const intactos = [...originales].every(([f, b]) => fs.readFileSync(f).equals(b));
   console.log(`dist/ restaurado byte a byte: ${intactos}`);
   if (!intactos) process.exitCode = 2;
