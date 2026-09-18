@@ -7,7 +7,7 @@
 
 **Fecha:** 18-sep-2026 · **Carril:** S1 (servidor) · **Pedido por:** el orquestador, para la S2b (917c)
 **Medido contra:** `origin/main` = `27a7fb8b3755b9f00f5bcc74bc48b42ff0ed2037` · 2026-09-18T07:36:42Z
-**Tanda:** pendiente de turno (se anota aquí al correrla)
+**Tanda:** 7540 tests, 7429 pass, 0 fail, 111 skipped (turno exclusivo de la Sesión 1, 18-sep-2026)
 
 ### El defecto, medido antes de escribir (PASO 0, staging, solo lectura)
 
