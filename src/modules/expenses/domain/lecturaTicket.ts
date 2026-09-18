@@ -42,13 +42,18 @@ export const LECTURAS_TICKET_POR_DIA = 5;
  * presupuestos. Por eso esa familia **no está en la lista**, ni como último recurso (decisión del
  * orquestador, 18-sep-2026).
  *
- * SOLO modelos con cupo MEDIDO y distinto de 0 en el proyecto (captura de AI Studio del fundador,
- * 18-sep-2026, nivel gratuito): `gemini-2.5-flash-lite` = 10/min, 250K tokens/min, **20/día**,
- * propios. Una medición pública del 2-sep daba 500/día a los Flash-Lite y NO se confirmó para éste;
- * los 3.x Flash-Lite y Gemma aún no tienen fila medida, así que no entran hasta tenerla.
- * (`gemini-2.0-flash` y `-lite`: cupo 0 en el proyecto.)
+ * SOLO modelos con cupo MEDIDO y distinto de 0 en el proyecto (tabla de AI Studio del fundador,
+ * 18-sep-2026, nivel gratuito; por minuto / tokens por minuto / por día), cada uno con SU cupo:
+ *   gemini-3.5-flash-lite  15 / 250K / 500
+ *   gemini-3.1-flash-lite  15 / 250K / 500
+ *   gemini-2.5-flash-lite  10 / 250K /  20
+ * Ids de API comprobados en la ficha de cada modelo de Google (estables; imagen y salida
+ * estructurada, sí). Gemma 4 (14,4K/día) NO entra: 16K tokens/min pueden no bastar para una foto,
+ * y queda como candidato a medir. `gemini-2-flash` y `-lite`: cupo 0.
  */
 export const MODELOS_LECTURA: readonly string[] = [
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
   'gemini-2.5-flash-lite',
 ];
 

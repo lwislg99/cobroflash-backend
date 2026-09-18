@@ -14,12 +14,13 @@
 
    | modelo | cupo |
    |---|---|
-   | gemini-2.5-flash (el de los presupuestos) | 5 / 250K / **20** |
+   | gemini-3.5-flash-lite y gemini-3.1-flash-lite | 15 / 250K / **500** cada uno |
    | gemini-2.5-flash-lite | 10 / 250K / **20** |
-   | gemini-3-flash | 5 / 250K / 20 |
-   | gemini-2-flash y gemini-2-flash-lite | **0 / 0 / 0** |
+   | gemini-2.5-flash (el de los presupuestos), 3, 3.5, 3.6, 3.7 y 3.8 Flash | 5 / 250K / **20** cada uno |
+   | Gemma 4 26B y 31B | 30 / **16K** / 14,4K |
+   | gemini-2-flash, 2-flash-lite, 2.5-pro, 3.1-pro | **0** |
 
-   Google cuenta la cuota **por proyecto Y por modelo**. Una medición pública del 2-sep-2026 daba a los Flash-Lite 500/día: **para 2.5 Flash-Lite NO se confirmó** (20). Las filas de los 3.x Flash-Lite y de Gemma no salían en la captura.
+   Google cuenta la cuota **por proyecto Y por modelo**. La medición pública del 2-sep-2026 (500/día para los Flash-Lite) resultó cierta para los 3.x y **no** para 2.5 Flash-Lite (20). Ids de API comprobados en la ficha de cada modelo (estables; imagen y salida estructurada, sí).
 4. **Tamaño, medido en staging sin credenciales** (sonda de solo lectura, cuerpos de 1 KB / 1,9 MB / 2,2 MB / 5 MB): `/admin/expenses` y cualquier ruta nueva debajo dan 401 / 401 / **413** / **413**. El parser global de 2 MB corta ANTES de la auth. `/admin/albaranes` (8 MB) da 401 en los cuatro. → **El servidor no necesita nada más para SCRUM-947**: la lectura recibe la misma foto que el panel reducirá para guardarla.
 5. **Hallazgo previo, NO de 912:** `public/privacidad.html` §5 nombra a Anthropic como encargado de la IA y **no nombra a Google**, que la hace desde el 6-jul. Lo abre el orquestador como ticket legal aparte.
 
@@ -29,7 +30,7 @@
 
 * `src/integrations/gemini.ts` — **aditivo**. `GeminiParams.images` (partes `inline_data`, delante del texto), `GeminiParams.models` (lista propia de quien llama) y `geminiCompleteConModelo` (dice QUÉ modelo contestó). `GeminiError.quotaIds` lee `error.details[].violations[].quotaId` de un 429. **Sin `images` ni `models`, la petición sale exactamente igual que antes**: lo prueba el test «lo aditivo» y siguen verdes los 25 de `scrum683`/`scrum683b`, que exigen que el dictado viaje SOLO como texto.
 * `src/modules/expenses/domain/lecturaTicket.ts`:
-  - `MODELOS_LECTURA = ['gemini-2.5-flash-lite']`: solo modelos con cupo **medido y distinto de 0**. **Nunca** `gemini-2.5-flash`, ni como último recurso: sus 20 diarias son de los presupuestos (decisión del orquestador).
+  - `MODELOS_LECTURA = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite']`: solo modelos con cupo **medido y distinto de 0**, cada uno con el suyo (500 + 500 + 20 al día). **Nunca** `gemini-2.5-flash`, ni como último recurso: sus 20 diarias son de los presupuestos (decisión del orquestador). Gemma 4 no entra: con 16K tokens/min puede no caber una foto; queda como candidato a medir.
   - `LECTURAS_TICKET_POR_DIA = 5` por merchant y día natural de Madrid, en memoria como el tope de `ai.routes.ts` (un despliegue lo pone a cero). **El número lo decide el fundador.**
   - `sanearLectura`: devuelve una propuesta con los nombres del `POST /admin/expenses`. **Lo que no cuadra se descarta y se dice** (`descartados: [{campo, motivo}]`). No se arregla: un 0,21 no pasa a 21 y un «12,10» no pasa a 12.10. El tipo de IVA sale del mismo `TIPOS_IVA_ES_BP` de la puerta del presupuesto, y además tiene que ser **entero**, porque `Expense.vatRate` es `Int`. Base + cuota tiene que dar el total con el céntimo de `TOLERANCIA_CENTIMOS`. Las fechas futuras (calendario de Madrid) y el NIF con el dígito de control mal (`validarNifEspanol`) se descartan: una letra mal leída en la foto acabaría en la ficha del proveedor.
   - `leerTicket`: llama a `geminiCompleteConModelo` **directo**. Nunca `ai.service.aiComplete`, que cae a Claude. El proveedor se propone **solo por NIF** y solo si casa con UNA ficha del merchant (filtrada por `merchantId`). `clasificarJustificante` con `vatDeducible: null`: **la IA nunca da un ticket por deducible**, como mucho «falta confirmar».
@@ -49,4 +50,4 @@
 * **Una lectura real**: no hay `GEMINI_API_KEY` en local. Después del despliegue, hasta 5 lecturas en staging (permiso del orquestador; la clave de staging es la de producción, así que gastan cupo real).
 * **El cuerpo real de un 429 de Google**: el reparto diaria/minuto sigue el formato documentado (`QuotaFailure.violations[].quotaId`). Si Google no lo trae, sale `ai_cuota_agotada`, no una suposición.
 * 🔴 **ENCENDERLO para usuarios reales espera al ticket de privacidad** (Google como encargado; lo firma el fundador). La ruta no tiene pantalla: la llama la de S2 cuando exista.
-* Hallazgo para un PASO 0 propio, **no arreglado aquí**: el 2.º modelo de la lista por defecto de los presupuestos (`gemini-2.0-flash`) tiene cupo 0 en el proyecto. El día que los presupuestos pasen de 20, no tienen respaldo.
+* Hallazgo para un PASO 0 propio, **no arreglado aquí**: el 2.º modelo de la lista por defecto de los presupuestos (`gemini-2.0-flash`) tiene cupo 0 en el proyecto. El día que los presupuestos pasen de 20, no tienen respaldo. Según la tabla, ese respaldo se puede hacer sin coste: la familia Flash tiene seis modelos de 20/día, cada uno con su cupo, y los dos Flash-Lite 3.x tienen 500.
