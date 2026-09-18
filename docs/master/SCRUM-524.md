@@ -276,3 +276,167 @@ copy, y la pregunta del cliente se sigue respondiendo sólo con el guion H2 ·
 `docs/legal/SEMAFORO_CALIBRACION.md` — leído y medido, **no editado** · `tests/` · Jira: SCRUM-524
 **leído**, no modificado (sigue *En curso*).
 **Producción y staging: no tocados, ni para mirar.**
+
+---
+---
+
+# SCRUM-524b — El trinquete: la tabla la calcula el repo, y no puede bajar
+
+*18-sep-2026 · rama `scrum-524b-el-trinquete` · Sesión 5*
+
+**Medido contra:** `origin/main` = `41bad7c83d84ba2cddcf267480bbd7bcd9bc0b2c` · 2026-09-18T08:43Z
+
+Re-medido sobre el merge con `origin/main` = `4a7ff1ec74c138c74d30a1c7bebc70d67a5d0d1c` (08:56Z): el
+mismo conjunto, y los 40 tests de este ticket en verde.
+
+**Tanda** (sobre ese merge): 7615 tests · 7503 pass · **1 fail** · 111 skipped (los 111 con su motivo) —
+el fallo es el ajeno de SCRUM-922 (`spawnSync wmic ENOENT`), no tocado. `guards:entrada`: 4 en verde.
+
+> **Tampoco esto construye producto.** Cero líneas de `src/`. El camino de emisión se ha **LEÍDO**
+> y sus comprobaciones se han MUTADO **en copias** (en memoria y en un directorio temporal), nunca
+> en el árbol (regla 38). Ni un texto que vea un cliente (26), ni un estado inventado (27).
+
+## ① Lo que hay ahora
+
+| fichero | qué es |
+| --- | --- |
+| `scripts/_tabla-verifactu-catalogo.mjs` | los **41 códigos del ticket**, cada uno con su categoría; los comprobados, con sus **anclas por identidad** (fichero + ámbito + forma del AST, nunca una línea) |
+| `scripts/tabla-verifactu.mjs` | el instrumento: mide las anclas contra `src/` por AST y **publica las tres categorías juntas**. Sale `0` (todo vivo), `1` (algo se ha roto, y dice qué) o `2` (**CIEGO**) |
+| `tests/scrum524b-trinquete-de-la-tabla.test.mjs` | el **suelo**, guardado como CONJUNTO de códigos: si una comprobación desaparece, cae nombrándola; si aparece una nueva, cae pidiendo que se suba el suelo en el mismo PR |
+
+    node scripts/tabla-verifactu.mjs            # las tres categorías, hoy
+    node scripts/tabla-verifactu.mjs --json     # lo mismo, para máquinas
+
+**Cómo se sube:** se añade la comprobación en `src/` (con su firma, que eso sí es producto), se pasa
+el código a `comprobada` en el catálogo con sus anclas, y se añade al `SUELO` del test. Los tres en
+el mismo PR.
+
+## ② 🔴 LA CIFRA ES 14, NO 8 — y la tabla de ayer estaba mal en las dos direcciones
+
+El encargo decía «declara el valor de hoy (8)». **Medido código a código, son 14 de 41.** Y el
+número no es lo importante: **el conjunto de ayer era otro.**
+
+Ayer conté **filas**, no códigos, y mezclé dos poblaciones:
+
+| de las «8 comprobadas» de ayer | ¿es un código del catálogo de 41? |
+| --- | --- |
+| 1130 · 1152 · 1189/1190 | ✅ sí: **4 códigos** |
+| tipo de IVA (1124) · tipos F1/R1 · `TipoHuella` 01 · 1118/1119 · tope de 1.000 | ❌ **no**: son 5 comprobaciones reales, pero **ninguna está en el catálogo del ticket** |
+
+Y en la otra dirección, **me dejé comprobaciones que existen** y un par de códigos sin clasificar:
+
+| código | ayer | hoy | por qué |
+| --- | --- | --- | --- |
+| **1114** · 1115 · 1117 | no comprobada | ✅ **comprobada** | `resolverTipoRectificativa` y la condición `esRectificativa` (SCRUM-216, julio). **Ya estaban ayer; no las vi** |
+| **1195** | *no clasificada* | ✅ **comprobada** | `buildDetallesDesgloseXml` escribe `CalificacionOperacion` siempre (SCRUM-209) |
+| **1196** | *no clasificada* | 🔴 no comprobada (por ausencia) | `OperacionExenta` no se escribe nunca: se cumple, pero nada lo decide |
+| **1207** | no comprobada | ✅ **comprobada** | `clasificarDetalleDesglose` sólo produce S1 |
+| **1177** | ⚪ no decidible | ✅ **comprobada** | `assertVerifactuIdSistema` revienta el ARRANQUE con un id mal formado (SCRUM-217) |
+| **1212 · 1213 · 1226** | ⚪ no decidible | ✅ **comprobada** | el constructor escribe `S` fijo, el único valor válido |
+| **1223** | ⚪ no decidible | ✅ comprobada, con hueco | el emisor lanza `verifactu_productor_no_configurado` sin NIF |
+| 1176 · 1221 | ⚪ no decidible | 🔴 no comprobada | nada valida el NIF del productor · `IDOtro` no se escribe |
+| 4112 | ⬜ fuera de alcance | *(ya no está)* | **no es un código del catálogo del ticket** |
+
+**El «8» de ayer era correcto por casualidad y el conjunto era otro.** Es literalmente la norma A3
+—*un número igual deja pasar «he perdido una y he ganado otra»*— y por eso el suelo del test es un
+conjunto y no una cifra.
+
+**Y el bloque `SistemaInformatico` entero se apoyaba en una premisa falsa.** Ayer escribí que sus
+valores «dependen de configuración que no vive en el código». **Viven en el código desde el
+2-ago-2026**: `src/modules/fiscal/verifactu/productor.ts` (SCRUM-247), cuya cabecera explica
+precisamente por qué son constantes del repo y no variables de entorno.
+
+## ③ Las tres categorías, publicadas juntas · *foto de hoy; la fuente es el catálogo, no esto*
+
+    ✅ COMPROBADAS ......... 14   1114 1115 1117 1130 1152 1177 1189 1190 1195 1207 1212 1213 1223 1226
+                                  (3 con hueco declarado: 1114 · 1152 · 1223)
+    🔴 NO COMPROBADAS ...... 25   sin mecanismo (10) · 2000 2005 2006 2008 1150 1108 1112 1133 1287 1176
+                                  por ausencia   (4) · 1116 1157 1196 1221
+                                  no decidible   (6) · 2002 2003 1237 1238 1179 1220
+                                  requiere AEAT  (5) · 2004 2007 1241 1242 4141
+    ⬜ FUERA DE ALCANCE ....  2   1138 1139 (Macrodato) — con motivo
+                             ──
+                             41
+    ➕ fuera del catálogo, vigiladas igual: 1124 · tipos F1/R1 · TipoHuella 01 · 1118/1119 · tope 1.000
+
+**El criterio, escrito en el catálogo:** cuenta como comprobada si hay, en una puerta viva
+(arranque, entrada o el constructor que usa producción), un punto identificable que impide
+producir el valor prohibido. **Lo que se cumple sólo porque el campo no se escribe NO cuenta**: una
+ausencia no tiene ancla, y el día que alguien escriba el campo nada lo va a parar. Por eso las
+ausencias no suben la cifra, pero **sí se vigilan**: si `OperacionExenta` empieza a escribirse, la
+tabla se pone en rojo pidiendo que se reclasifique 1196.
+
+**Las fronteras donde dudé, y fueron al lado malo:** 1108 (los dos NIF salen de `merchant.taxId`,
+pero en dos expresiones sueltas) · 2006 (misma fuente, sin comprobación que las ate) · 2003
+(`verifactu_cadena_rota` exige una huella propia, no la inmediatamente anterior) · 1237/1238 (hoy
+se cumplen, pero sin el literal de cada uno no sé qué mitad cubre cada código).
+
+## ④ Los controles
+
+| control | resultado |
+| --- | --- |
+| 🔴 **EL QUE DECIDE** · una comprobación quitada en una COPIA | **26 mutaciones**, una por mecanismo: cada una tumba **exactamente** lo que tiene que tumbar y lo nombra con fichero y motivo. `esRectificativa` sin el tipo tumba **1114, 1115 y 1117 a la vez**: un mecanismo, tres códigos, y ahora se ve |
+| 🔴 ídem, **de punta a punta** | copia de `src/` en disco → el CLI sale `0`; se quita la validación de la serie → sale `1` y nombra **1130** |
+| 🔴 **el test del suelo, en rojo** (copia del test fuera del árbol) | con 1130 quitada: *«LA TABLA HA BAJADO: 1130 — schemas.ts: no hay ninguna llamada a `invalidPrefijoSerie`»*. Con el suelo sin 1207: *«EL TRINQUETE HA SUBIDO: 1207. Añádelas al SUELO»* |
+| 🟢 **NEGATIVOS** | un reformateo y un comentario que nombra `OperacionExenta` **no tumban nada** |
+| ✅ **POSITIVO** | 1189/1190 se siguen contando (2/2 y 3/3 anclas) |
+| ⚫ **CIEGO** | sin `src/` → sale `2`. Con un `src/` ajeno → «ninguna de las 14 comprobadas aparece» → `2`, no «0 comprobadas» |
+| la población | 288 `.ts` barridos · 44 anclas en 8 ficheros · 6 ausencias con canario (`FacturasRectificadas`, 2 apariciones) |
+
+**Antes de publicar cada cero, su caso conocido** (la trampa que confesé ayer): `FacturasSustituidas`,
+`Cupon`, `OperacionExenta`, `IDOtro` y `Macrodato` dan **0** con la misma búsqueda que encuentra
+`FacturasRectificadas` (2) y `Destinatarios` (2). Y «ningún test contra el ejemplo oficial de la
+huella» es un cero con control: la búsqueda **sí** encuentra hashes de 64 hex en `tests/`, pero
+ninguno junto a «oficial», «ejemplo» o «AEAT».
+
+## ⑤ Hallazgos · de otros carriles, NO arreglados
+
+**Ninguno tiene víctima hoy**, porque no hay remisión a la AEAT y `INVOICING_ES_ENABLED` está apagado
+para los merchants reales. Por eso van aquí y no a tickets (A7). **Los seis los decide otro.**
+
+1. 🔴 **`VERIFACTU_PRODUCTOR_NOMBRE` empieza por `<` y acaba en `>`** (`productor.ts`). Son dos de
+   los cinco caracteres de **1287**, y el nombre viaja en el bloque `SistemaInformatico` de **CADA**
+   registro. Tiene pinta de marcador de plantilla sin rellenar: entró así el 2-ago-2026 en un commit
+   *«(wip)»* de SCRUM-247 y no ha cambiado. **Cambiarlo es un hecho fiscal** (lo dice la cabecera del
+   propio fichero) y toca el camino de emisión: **STOP, del fundador.** Si la AEAT desescapa antes de
+   validar, que es la pregunta ④.3 de ayer, cada registro llevaría un 1287.
+2. **1152 guarda una puerta de dos.** `/verifactu.xml` pasa por `invalidAnioFiscal`; **`datos.zip` no**:
+   calcula los años a partir de las facturas y llama al constructor directamente. Y además compara el
+   año, no el día.
+3. **1114 tiene un hueco:** una factura con `type` R1 y **sin** `rectifies` se declara R1 **sin**
+   `TipoRectificativa`. La única ruta que crea R1 le pone `rectifiesId`, pero la columna es opcional y
+   el constructor no lo exige.
+4. **1150 es para el dictamen P11.** Si P11 elige `SIMPLIFICADA_F2`, `resolverSinDestinatario` no mira
+   el importe, y saldría una F2 de más de 3.000 €. Conviene que quien prepare P11 lo sepa **antes**.
+5. **2005:** `ImporteTotal` sale de `inv.total` y el desglose de las líneas. Son dos fuentes, y nada
+   comprueba que cuadren.
+6. **1138:** la entrada no tiene tope de importe (`price` y `qty` sin `max`). Sigue fuera de alcance
+   por negocio, pero **no por mecanismo**, y el motivo lo dice.
+
+## 🔴 Mis errores
+
+1. **La tabla de ayer contaba en dos unidades a la vez** (filas y códigos) y **publicó «8 de 41» con
+   5 de esas 8 fuera de los 41.** No lo vi porque sumé categorías en vez de comparar el conjunto con el
+   del ticket. Lo cazó lo primero que hice hoy: leer los 41 de Jira y cruzarlos uno a uno.
+2. **No busqué los propios códigos en `src/`.** Ayer busqué `Subsanacion`, `RechazoPrevio`, `NTP`… y
+   nunca el número de cada código. Esa búsqueda, hecha hoy, encontró **1177 en `env.ts` en medio
+   minuto**, con un guard de arranque que yo había declarado «no decidible». Y **la premisa del
+   bloque `SistemaInformatico` la desmentía la cabecera de un fichero** que no abrí.
+3. **Me dejé 1114/1115/1117**, que llevan comprobados desde julio, y **no clasifiqué 1195/1196**.
+4. **Generalicé en los 2xxx:** escribí que «no pueden comprobarse hoy por construcción». 2004 y 2007
+   sí dependen de la AEAT, pero 2000, 2005, 2006 y 2008 describen contenido que producimos
+   **nosotros** y se podrían comprobar aquí.
+5. **Hoy mismo, el censo de códigos devolvió `2000: 19` y `1177: 6`.** El primero era ruido (el
+   número 2000 en otros sitios) y el segundo, mitad ruido (`HAC/1177/2024`) y mitad la comprobación
+   real. **Un recuento de texto es un puntero, no un veredicto:** cada uno se resolvió leyendo.
+6. **Carril.** En la línea de A16 no dije que un guard sobre el camino fiscal podría ser de la S3
+   (§11bis). Seguí porque es la fase b de mi propio ticket y el encargo me la da con su motivo, pero
+   eso tenía que decirlo al principio y no aquí.
+
+## Lo NO tocado
+
+`src/` entero, cero líneas · `productor.ts`: el hallazgo ① **se reporta, no se toca** (hecho fiscal
+y camino de emisión) · ninguna de las 25 no comprobadas se ha arreglado: **medir que faltan es el
+trabajo, y taparlas necesita firma** · ningún estado ni nombre para «aceptado con errores» (27): sigue
+en la mesa del fundador tal cual · ningún texto de usuario (26/30) · `prisma/schema.prisma` · Jira:
+SCRUM-524 **leído, no modificado** (sigue *En curso*). **Producción y staging: no tocados.**
