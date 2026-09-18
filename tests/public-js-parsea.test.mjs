@@ -51,10 +51,11 @@ const DIR = path.join(RAIZ, 'public');
  * las dos sondas —probado uno a uno en `tests/scrum949-el-suelo-como-cociente.test.mjs`—. Lo único
  * que las separa es que una esté ciega.
  *
- * 🔴 Por qué no un porcentaje fijo por debajo de 1 (medido en SCRUM-949): la ceguera plausible de
- * este recorrido es de tamaño FIJO —mirar sólo `public/dashboard/js` pierde `sw.js` y `public/js/`,
- * 3 ficheros— mientras la población crece dentro de `dashboard/js`. Un 97 % la ve hoy y deja de
- * verla a partir de 100 ficheros; el 81,8 % que da el historial ya no la ve hoy.
+ * 🔴 Por qué no un porcentaje fijo por debajo de 1: la ceguera plausible de este recorrido es de
+ * tamaño FIJO —mirar sólo `public/dashboard/js` pierde `sw.js` y `public/js/`, que no crecen—
+ * mientras la población crece dentro de `dashboard/js`. Cualquier porcentaje menor que 1 acaba
+ * dejándola pasar en cuanto la población crece lo bastante. La tabla, medida y con su fecha, está en
+ * `docs/master/SCRUM-949.md`: aquí no se copian sus cifras, que envejecerían como el suelo viejo.
  */
 const COCIENTE_MINIMO = 1;
 

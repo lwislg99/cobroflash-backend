@@ -84,39 +84,42 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 
 const git = (dir, args) => execFileSync('git', args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
 
-/** Un fichero sintético que parsea. El test de SUELO no lo parsea, pero así la copia es honesta. */
-const escribir = (dir, rel) => {
-  fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
-  fs.writeFileSync(path.join(dir, rel), `var x = ${JSON.stringify(rel)};\n`);
-};
 const vista = (i) => `public/dashboard/js/vista${String(i).padStart(3, '0')}.js`;
 
 /**
  * Un árbol con la FORMA de `public/` de hoy (medida el 18-sep-2026: 93 en `dashboard/js`, 2 en
  * `js/`, 1 suelto) y el instrumento real copiado byte a byte. Todo indexado.
+ *
+ * Devuelve el directorio y los dos únicos modos de escribir en él. Van como CIERRES sobre
+ * `const dir = temporal(…)`, y no como funciones que reciben `dir`, a propósito: así el censo de
+ * SCRUM-824 puede PROBAR que todo lo que se crea aquí cuelga de `os.tmpdir()`. Con `dir` como
+ * parámetro no podía, y lo dijo (lo cazó la primera tanda completa).
  */
-function copia({ vistas = 93 } = {}) {
+const copia = ({ vistas = 93 } = {}) => {
   const dir = temporal('yaqu-949-');
+  /** Un fichero sintético que parsea. El test de SUELO no lo parsea, pero así la copia es honesta. */
+  const escribir = (rel) => {
+    fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+    fs.writeFileSync(path.join(dir, rel), `var x = ${JSON.stringify(rel)};\n`);
+  };
+  /** Cambia UNA línea del instrumento EN LA COPIA. Si el ancla no está exactamente una vez, para. */
+  const mutar = (de, a) => {
+    const texto = fs.readFileSync(path.join(dir, INSTRUMENTO), 'utf8');
+    assert.equal(texto.split(de).length - 1, 1, `el ancla tiene que estar UNA vez en el instrumento: ${de}`);
+    fs.writeFileSync(path.join(dir, INSTRUMENTO), texto.replace(de, a));
+  };
   for (const rel of PIEZAS) {
     fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
     fs.copyFileSync(path.join(RAIZ, rel), path.join(dir, rel));
   }
-  for (let i = 0; i < vistas; i++) escribir(dir, vista(i));
-  escribir(dir, 'public/js/landing.js');
-  escribir(dir, 'public/js/auth.js');
-  escribir(dir, 'public/sw.js');
+  for (let i = 0; i < vistas; i++) escribir(vista(i));
+  escribir('public/js/landing.js');
+  escribir('public/js/auth.js');
+  escribir('public/sw.js');
   git(dir, ['init', '-q']);
   git(dir, ['add', '-A']);
-  return dir;
-}
-
-/** Cambia UNA línea del instrumento EN LA COPIA. Si el ancla no está exactamente una vez, para. */
-function mutarEnLaCopia(dir, de, a) {
-  const f = path.join(dir, INSTRUMENTO);
-  const texto = fs.readFileSync(f, 'utf8');
-  assert.equal(texto.split(de).length - 1, 1, `el ancla tiene que estar UNA vez en el instrumento: ${de}`);
-  fs.writeFileSync(f, texto.replace(de, a));
-}
+  return { dir, escribir, mutar };
+};
 
 const LINEA = /población (\d+) \(recorrido (\d+) · censo (\d+)\) · de acuerdo (\d+) · cociente ([\d.]+) · mínimo ([\d.]+) → umbral (\d+)/;
 
@@ -185,27 +188,27 @@ test('✅ POSITIVO · el árbol de hoy, intacto, sigue verde y declara su poblac
 });
 
 test('🔴 EL QUE DECIDE · crecer mueve el umbral solo, y la ceguera realista sigue saltando', () => {
-  const dir = copia();
+  const c = copia();
   const original = fs.readFileSync(path.join(RAIZ, INSTRUMENTO));
 
-  const hoy = correrSuelo(dir);
+  const hoy = correrSuelo(c.dir);
   assert.equal(hoy.status, 0, hoy.salida);
   assert.deepEqual([hoy.poblacion, hoy.umbral], [96, 96]);
 
   // Crece donde crece de verdad, en `dashboard/js`: 50 indexados y 50 sin `git add`.
-  for (let i = 93; i < 193; i++) escribir(dir, vista(i));
-  git(dir, ['add', '--', ...Array.from({ length: 50 }, (_, k) => vista(93 + k))]);
-  const crecido = correrSuelo(dir);
+  for (let i = 93; i < 193; i++) c.escribir(vista(i));
+  git(c.dir, ['add', '--', ...Array.from({ length: 50 }, (_, k) => vista(93 + k))]);
+  const crecido = correrSuelo(c.dir);
   assert.equal(crecido.status, 0, crecido.salida);
   assert.deepEqual([crecido.poblacion, crecido.umbral], [196, 196], 'el umbral tiene que moverse SOLO con la población');
-  assert.equal(Buffer.compare(fs.readFileSync(path.join(dir, INSTRUMENTO)), original), 0,
+  assert.equal(Buffer.compare(fs.readFileSync(path.join(c.dir, INSTRUMENTO)), original), 0,
     'y sin editar NADA: si hubiera que tocar el instrumento para recalibrarlo, sería el mismo defecto con otra sintaxis');
 
   // La ceguera plausible: el recorrido se estrecha a `dashboard/js`. Pierde 3 ficheros de 196, y
   // esos 3 NO crecen con el árbol. Un porcentaje fijo por debajo de 1 acabaría dejándolos pasar.
-  mutarEnLaCopia(dir, "const DIR = path.join(RAIZ, 'public');",
+  c.mutar("const DIR = path.join(RAIZ, 'public');",
     "const DIR = path.join(RAIZ, 'public', 'dashboard', 'js');");
-  const ciego = correrSuelo(dir);
+  const ciego = correrSuelo(c.dir);
   assert.notEqual(ciego.status, 0, `con 196 ficheros, perder 3 tiene que seguir saltando:\n${ciego.salida.slice(0, 3000)}`);
   assert.equal(ciego.poblacion, 196);
   assert.equal(ciego.recorrido, 193);
@@ -215,11 +218,11 @@ test('🔴 EL QUE DECIDE · crecer mueve el umbral solo, y la ceguera realista s
 });
 
 test('🔴 ROJO · un recorrido ciego salta y NOMBRA lo que no ve', () => {
-  const dir = copia();
+  const c = copia();
   // El recorrido deja de bajar a los subdirectorios: sólo ve `public/sw.js`.
-  mutarEnLaCopia(dir, '    if (e.isDirectory()) out.push(...ficherosJs(p));',
+  c.mutar('    if (e.isDirectory()) out.push(...ficherosJs(p));',
     '    if (e.isDirectory()) continue;');
-  const r = correrSuelo(dir);
+  const r = correrSuelo(c.dir);
   assert.notEqual(r.status, 0, `un recorrido que no ve 95 de 96 tiene que saltar:\n${r.salida.slice(0, 3000)}`);
   assert.deepEqual([r.poblacion, r.recorrido, r.acuerdo], [96, 1, 1]);
   assert.match(r.salida, /el RECORRIDO no ve 95 que el censo sí tiene — por carpeta: public\/dashboard\/js\/ 93 · public\/js\/ 2/,
@@ -228,45 +231,45 @@ test('🔴 ROJO · un recorrido ciego salta y NOMBRA lo que no ve', () => {
 });
 
 test('🔴 ROJO · un censo ciego también salta: ninguna sonda se queda ciega en silencio', () => {
-  const dir = copia();
+  const c = copia();
   // El censo se estrecha a `public/js`: el recorrido ve 96 y el censo 2.
-  mutarEnLaCopia(dir, "const censoDePublic = () => censoDeGit(RAIZ, 'public', (p) => p.endsWith('.js'));",
+  c.mutar("const censoDePublic = () => censoDeGit(RAIZ, 'public', (p) => p.endsWith('.js'));",
     "const censoDePublic = () => censoDeGit(RAIZ, 'public/js', (p) => p.endsWith('.js'));");
-  const r = correrSuelo(dir);
+  const r = correrSuelo(c.dir);
   assert.notEqual(r.status, 0, r.salida.slice(0, 3000));
   assert.deepEqual([r.poblacion, r.censo], [96, 2]);
   assert.match(r.salida, /el CENSO no tiene 94 que el recorrido sí ve/);
 });
 
 test('✅ NEGATIVO · un borrado legítimo pequeño NO dispara', () => {
-  const dir = copia();
-  fs.rmSync(path.join(dir, vista(7))); // borrado a mano, SIN `git rm`: el índice aún lo tiene
-  const r = correrSuelo(dir);
+  const c = copia();
+  fs.rmSync(path.join(c.dir, vista(7))); // borrado a mano, SIN `git rm`: el índice aún lo tiene
+  const r = correrSuelo(c.dir);
   assert.equal(r.status, 0, `un borrado honesto no puede poner el suelo en rojo:\n${r.salida.slice(0, 3000)}`);
   assert.deepEqual([r.poblacion, r.acuerdo], [95, 95]);
 });
 
 test('✅ NEGATIVO · ningún cambio honesto separa las dos sondas', () => {
-  const dir = copia();
+  const c = copia();
   // Un borrado GRANDE, indexado. `-f` porque la copia no tiene commits: sin él, git se niega a
   // borrar ficheros con cambios en el índice (lo cazó la primera ejecución de este control).
-  git(dir, ['rm', '-q', '-f', '--', ...Array.from({ length: 30 }, (_, k) => vista(k))]);
-  escribir(dir, 'public/dashboard/js/nueva-sin-add.js'); // nuevo, sin `git add`
-  escribir(dir, 'public/dashboard/js/nueva-con-add.js');
-  git(dir, ['add', '--', 'public/dashboard/js/nueva-con-add.js']);
-  fs.renameSync(path.join(dir, vista(40)), path.join(dir, 'public/dashboard/js/renombrada.js')); // mv sin git
-  git(dir, ['rm', '-q', '--cached', '--', vista(41)]); // sale del índice, se queda en disco
-  fs.writeFileSync(path.join(dir, '.gitignore'), 'public/generado.js\n');
-  escribir(dir, 'public/generado.js'); // ignorado: el recorrido lo ve, así que el censo también
-  const r = correrSuelo(dir);
+  git(c.dir, ['rm', '-q', '-f', '--', ...Array.from({ length: 30 }, (_, k) => vista(k))]);
+  c.escribir('public/dashboard/js/nueva-sin-add.js'); // nuevo, sin `git add`
+  c.escribir('public/dashboard/js/nueva-con-add.js');
+  git(c.dir, ['add', '--', 'public/dashboard/js/nueva-con-add.js']);
+  fs.renameSync(path.join(c.dir, vista(40)), path.join(c.dir, 'public/dashboard/js/renombrada.js')); // mv sin git
+  git(c.dir, ['rm', '-q', '--cached', '--', vista(41)]); // sale del índice, se queda en disco
+  fs.writeFileSync(path.join(c.dir, '.gitignore'), 'public/generado.js\n');
+  c.escribir('public/generado.js'); // ignorado: el recorrido lo ve, así que el censo también
+  const r = correrSuelo(c.dir);
   assert.equal(r.status, 0, `ningún cambio honesto puede separar las sondas:\n${r.salida.slice(0, 3000)}`);
   assert.deepEqual([r.poblacion, r.acuerdo, r.recorrido, r.censo], [69, 69, 69, 69]);
 });
 
 test('🔴 sin git no hay suelo, y eso es ROJO, no un salto', () => {
-  const dir = copia();
+  const c = copia();
   // `GIT_DIR` a una ruta que no existe: git no contesta, pase lo que pase por encima de la copia.
-  const r = correrSuelo(dir, { GIT_DIR: path.join(dir, 'no-hay-git') });
+  const r = correrSuelo(c.dir, { GIT_DIR: path.join(c.dir, 'no-hay-git') });
   assert.notEqual(r.status, 0, `sin segunda sonda el suelo NO puede salir verde:\n${r.salida.slice(0, 3000)}`);
   // Rojo con su motivo, y no un `skip`: un salto sale 0, que es justo el defecto de SCRUM-948.
   assert.match(r.salida, /CIEGO: no he podido preguntarle a git/);

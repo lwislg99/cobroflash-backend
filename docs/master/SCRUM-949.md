@@ -142,7 +142,7 @@ a cazar.
 | ✅ **POSITIVO** · el árbol de hoy, intacto | verde, y **declara su población**: `población 96 (recorrido 96 · censo 96) · de acuerdo 96 · cociente 1.0000 · mínimo 1 → umbral 96` |
 | ✅ **NEGATIVO** · un borrado a mano, sin `git rm` | calla (95 / 95) |
 | ✅ **NEGATIVO** · todos los cambios honestos a la vez | calla (69 / 69 / 69 / 69) |
-| **MUTACIÓN** · las 6 declaradas, con el bucle del meta-guard (`evidencias/scrum908b/banco-908b.mjs`) | **6/6 VIVA** · árbol restaurado, `git status` idéntico antes y después |
+| **MUTACIÓN** · las 6 declaradas, con el bucle del meta-guard (`evidencias/scrum908b/banco-908b.mjs`) | **6/6 VIVA**, dos veces (antes y después de reescribir los ayudantes del §7) · árbol restaurado, `git status` idéntico antes y después |
 
 Entre las mutaciones hay dos que demuestran algo:
 - **La nº5 sube `COCIENTE_MINIMO` a 0,97**, y la tumba el control que decide. Es la tabla del §3
@@ -196,7 +196,18 @@ Entre las mutaciones hay dos que demuestran algo:
    control (A22): **0** en los cuatro ficheros. Los dos `U+FE0F` que salen son el selector de «⚠️».
 4. **`$TMPDIR` está vacío en este shell**, y el primer log de `prisma generate` apuntó a `/`: exit 1,
    y no llegó a correr. Se repitió con el scratchpad (exit 0).
-5. **Mi primera idea fue derivar el porcentaje del historial entero (0,818).** Era la más «limpia»
+5. 🔴 **Mi propio comentario reprodujo el defecto que el ticket viene a cerrar.** En
+   `public-js-parsea.test.mjs` escribí «3 ficheros… a partir de 100 ficheros»: cifras del árbol, a
+   mano y sin ancla. Lo cazó SCRUM-737 en la primera tanda completa (81 → 83 cifras sin ancla). Se
+   reformuló sin números, que es la opción ② de su propio mensaje. El guard no se tocó (regla 41).
+6. **Mi test creaba ficheros en un `dir` que llegaba como PARÁMETRO**, y el censo de SCRUM-824 no
+   podía probar que colgara de `os.tmpdir()`. Lo dijo en la misma tanda. Se reescribió con cierres
+   sobre `const dir = temporal(…)`, y ahora el censo lo prueba. `SIN_PROBAR_CONOCIDOS` no se tocó.
+7. **Pasé a `node --test` un fichero que no existe** (un nombre de test de SCRUM-737 mal
+   recordado), y salió **0 con «19 pass»**: el patrón que no casa con nada se ignora en silencio. Lo
+   cazó el recuento, 19 = 10 + 9 de los otros dos ficheros, no el código de salida. Se repitió con el
+   nombre real (32/32).
+8. **Mi primera idea fue derivar el porcentaje del historial entero (0,818).** Era la más «limpia»
    (sin parámetros) y la tabla del §3 la deja en *calla · calla · calla*. Habría entregado un suelo
    tan muerto como el que venía a sustituir para la ceguera que importa, y con una derivación
    impecable.
