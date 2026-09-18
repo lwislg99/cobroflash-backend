@@ -39,8 +39,11 @@ Cada puesto es **un empleado con un ÁREA grande que da valor, no una tarea** (r
 
 **Nombres de sesión.** Salen de la configuración de cada instalación (`scripts/equipo/`, SCRUM-951a de la
 S5): **prefijo del equipo + puesto**. El equipo de Luis va sin prefijo (`orquestador`, `sesion-0` …
-`sesion-5`); el de Javier, con el prefijo que declare su configuración (el ejemplo de la guía de la S5 es
-`jv-`). **No se fijan aquí:** los fija su configuración.
+`sesion-5`); el de Javier, con el prefijo que declare su configuración. **Para el equipo de Javier se
+declaran así** (SCRUM-951c, casado con el código de 951a por la S5 el 18-sep): prefijo `jv-` y puestos
+`orquestador,j1,j2,j3,j4,j5,j6`, así que sus sesiones son `jv-orquestador` y `jv-j1` … `jv-j6`, y sus
+traspasos, en la memoria de SU máquina, `project_orquestador_traspaso.md` y `project_j1_traspaso.md` … (el
+lanzador quita el prefijo). Si su configuración declara otros, **manda la configuración** y se corrige aquí.
 
 ### 2.1 · Equipo de Luis
 
@@ -68,8 +71,15 @@ Los tres primeros **CONSTRUYEN** servidor y pantallas de su área. Los tres últ
 | **J5** · Competencia y producto | recorre la competencia y la convierte en propuestas priorizadas en Jira; **hace los PROTOTIPOS** de su equipo (paso 4 de `orquestador.md` §4bis). Hereda `docs/competencia/` | construir código |
 | **J6** · Calidad y seguridad | sus guards nuevos, la seguridad, y **el filtro de su equipo**: el PASO 0 «¿esto existe hoy?» (paso 3 de `orquestador.md` §4bis) y las afirmaciones de SU orquestador, que apunta en `afirmaciones-verificadas-javier.md` con las mismas tres columnas que `afirmaciones-verificadas.md` | `ci.yml` y los vigías (S5); los bancos e instrumentos (S3) |
 
-**La ficha de cada puesto** (`docs/equipo/puesto-j1.md` … `puesto-j6.md`) la escribe el propio puesto en su
-primera tanda, como las `sesion-N.md`. Mientras no exista, **manda esta tabla**.
+**La ficha de cada puesto** (`docs/equipo/puesto-j1.md` … `puesto-j6.md`) y la de su orquestador
+(`docs/equipo/orquestador-javier.md`) las escribió la Sesión 0 en SCRUM-951c, para que el equipo de Javier
+arranque sin haber visto nada: la pregunta del puesto, su área, sus ficheros, lo que no toca, sus STOP y sus
+primeros tickets medidos en Jira. **Desde ahí, cada ficha es de su puesto**, que le añade su canon como en las
+`sesion-N.md`. Si una ficha y esta tabla discrepan, **manda esta tabla**.
+
+⚠️ **Los puestos J1 … J6 no son las secciones J1 … J7 del máster.** La **Parte J** del máster es la
+especificación de WhatsApp (plantillas, opt-in, estados…), y **«J6» en el máster y en `CLAUDE.md` es la
+política anti-spam** (regla 28), que pertenece al canal de J2. Coincidencia de nombre, no de puesto.
 
 ⚠️ **Etiquetas viejas que NO se reutilizan:** en Jira ya existen `sesion-J1`, `sesion-J2` y `sesion-L1` …
 `sesion-L4`, con otro significado (22 tickets de agosto de 2026, contados en Jira el 18-sep; 10 de ellos
@@ -138,7 +148,8 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `docs/equipo/orquestador.md` | **orquestador de Luis** | método común. Mientras no haya otro dueño, cada cambio se avisa al otro equipo con un comentario en Jira |
 | `docs/equipo/traspaso.md` / `traspaso-javier.md` | orquestador de Luis / **orquestador de Javier** | el ESTADO va por equipo; el de Javier lo crea su orquestador |
 | `docs/equipo/limites-del-fundador.md` | **orquestador de Luis** | pasa a «límites de los jefes»: cada decisión lleva quién la tomó y la fecha. El de Javier propone por Jira |
-| `docs/equipo/sesion-N.md` / `puesto-jN.md` | cada puesto, la suya | |
+| `docs/equipo/sesion-N.md` / `puesto-jN.md` | cada puesto, la suya | las `puesto-jN.md` las escribió la S0 (SCRUM-951c); el canon lo añade el puesto |
+| `docs/equipo/orquestador-javier.md` | **orquestador de Javier** | solo lo que cambia para su equipo: el método es `orquestador.md` |
 | `docs/equipo/prompt-tanda-orquestador.md` | contenido **S0**; el cableado, **S5** | UN solo prompt para los dos equipos |
 | `docs/equipo/orquestador-autonomo.md`, `instalacion-*.md`, `scripts/equipo/**` | **S5** | |
 | `.github/workflows/**` (ci, vigías, avisador, PR automático) | **S5** | J6 es dueño de SUS workflows nuevos de seguridad, si los hay |

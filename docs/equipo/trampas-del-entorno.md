@@ -97,6 +97,14 @@ ausente**. Se borra en cada comando (A6) y se escribe en la primera línea de ca
 - **`spawnSync(node --test, …)` con ~800 ficheros no produce salida** (límite de la línea de órdenes) y un
   arnés lo lee como `pass null · fail null`. → lotes de ~120 ficheros, y un proceso sin la línea de resumen
   se declara CIEGO (A3).
+- **La suite completa lanzada con la lista de ficheros ya expandida por el shell no corre NADA y dice
+  exit 0.** Con ~909 ficheros de test, la línea de órdenes pasa del límite de Windows («nombre de archivo
+  demasiado largo»): node no llega a arrancar un solo test, y la tarea en segundo plano termina **con código
+  0**. Le pasó a la Sesión 0 y a la Sesión 1 el mismo día (18-sep-2026), y la primera se creyó el 0. → pasarle
+  a node el **patrón entre comillas simples**, `'tests/*.test.mjs'`, para que lo expanda node y no el shell
+  (así le llega desde `npm test`, porque cmd no expande el patrón). **Cómo se comprueba:** antes de creerse el
+  código de salida, el TAP tiene que existir y traer su línea `# tests N`, con N del orden de los tests de la
+  última suite buena; sin esa línea no hay suite, hay un instrumento que no arrancó (A21).
 
 ## 8 · CI: un «build + tests» que agota el tiempo
 
