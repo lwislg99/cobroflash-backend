@@ -53,6 +53,7 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
   fs.mkdirSync(path.join(repo, 'docs', 'equipo'), { recursive: true });
   fs.copyFileSync(SESION, path.join(repo, 'scripts', 'equipo', 'sesion.mjs'));
   fs.copyFileSync(ARRANQUE, path.join(repo, 'scripts', 'equipo', 'orquestador-arranque.mjs'));
+  fs.copyFileSync(path.join(RAIZ, 'scripts', 'equipo', 'uso.mjs'), path.join(repo, 'scripts', 'equipo', 'uso.mjs'));
   fs.writeFileSync(path.join(repo, 'docs', 'equipo', 'prompt-tanda-orquestador.md'), PROMPT);
   git(repo, 'add', '.');
   git(repo, '-c', 'user.name=banco', '-c', 'user.email=banco@x', 'commit', '-q', '-m', 'banco');
@@ -122,13 +123,12 @@ function correrInstalar(args) {
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('🔴 A2 · el instalador graba en config.json la carpeta de los traspasos y el equipo entero', () => {
-  const dir = temporal('scrum951a-inst-');
+  const b = banco();
   try {
-    const destino = path.join(dir, 'inst');
-    const memoria = path.join(dir, 'memoria');
-    fs.mkdirSync(memoria);
+    const destino = path.join(b.dir, 'inst-nueva');
+    const memoria = b.memoria;
     const r = correrInstalar([
-      '--destino', destino, '--repo', path.join(dir, 'repo'), '--claude', 'C:/claude.exe',
+      '--destino', destino, '--repo', b.repo, '--claude', 'C:/claude.exe',
       '--sin-prefijo', '--puestos', PUESTOS_DE_LUIS.join(','), '--orquestador', 'orquestador',
       '--tandas', '08:00,13:05,18:10', '--prompt', 'docs/equipo/prompt-tanda-orquestador.md',
       '--traspasos', memoria,
@@ -142,7 +142,16 @@ test('🔴 A2 · el instalador graba en config.json la carpeta de los traspasos 
     assert.equal(config.orquestador, 'orquestador');
     assert.deepEqual(config.tandas, ['08:00', '13:05', '18:10']);
     assert.equal(config.prompt, 'docs/equipo/prompt-tanda-orquestador.md');
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+
+    // Y la instalación queda LISTA desde el primer minuto: las copias son las de origin/main.
+    for (const [enRepo, instalado] of instalar.copias(config.prompt)) {
+      assert.ok(execFileSync('git', ['-C', b.repo, 'show', `origin/main:${enRepo}`]).equals(fs.readFileSync(path.join(destino, instalado))),
+        `🔴 ${instalado} no es la copia de origin/main:${enRepo}`);
+    }
+    const salida = JSON.parse(r.stdout);
+    assert.equal(salida.settings.statusLine.command, `node ${destino.replace(/\\/g, '/')}/uso.mjs escribir`,
+      '🔴 la línea del statusLine no apunta al uso.mjs de ESTA instalación');
+  } finally { b.limpiar(); }
 });
 
 test('🔴 A2 · sin `traspasos` en config.json, sesion.mjs dice NO-PUDE-MIRAR y no llama a claude', () => {
@@ -175,18 +184,18 @@ test('la carpeta de memoria se CALCULA desde el repo como la nombra Claude Code'
 });
 
 test('🔴 el instalador se NIEGA si la carpeta de los traspasos no existe, y no escribe nada', () => {
-  const dir = temporal('scrum951a-inst-');
+  const b = banco();
   try {
-    const destino = path.join(dir, 'inst');
+    const destino = path.join(b.dir, 'inst-nueva');
     const r = correrInstalar([
-      '--destino', destino, '--repo', path.join(dir, 'repo'), '--claude', 'C:/claude.exe',
+      '--destino', destino, '--repo', b.repo, '--claude', 'C:/claude.exe',
       '--sin-prefijo', '--puestos', 'orquestador', '--orquestador', 'orquestador',
       '--tandas', '08:00', '--prompt', 'docs/equipo/prompt-tanda-orquestador.md',
-      '--traspasos', path.join(dir, 'no-existe'),
+      '--traspasos', path.join(b.dir, 'no-existe'),
     ]);
     assert.notEqual(r.status, 0, '🔴 instala apuntando a una carpeta de traspasos que no existe');
-    assert.equal(fs.existsSync(path.join(destino, 'config.json')), false, '🔴 dejó una config a medias');
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+    assert.equal(fs.existsSync(destino), false, '🔴 dejó una instalación a medias');
+  } finally { b.limpiar(); }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -194,12 +203,11 @@ test('🔴 el instalador se NIEGA si la carpeta de los traspasos no existe, y no
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('🔴 el prefijo se DECLARA: el instalador exige --prefijo o --sin-prefijo, y no los dos', () => {
-  const dir = temporal('scrum951a-inst-');
+  const b = banco();
+  const dir = b.dir;
   try {
-    const memoria = path.join(dir, 'memoria');
-    fs.mkdirSync(memoria);
-    const base = ['--repo', path.join(dir, 'repo'), '--claude', 'C:/claude.exe', '--puestos', 'orquestador',
-      '--orquestador', 'orquestador', '--tandas', '08:00', '--prompt', 'p.md', '--traspasos', memoria];
+    const base = ['--repo', b.repo, '--claude', 'C:/claude.exe', '--puestos', 'orquestador', '--orquestador', 'orquestador',
+      '--tandas', '08:00', '--prompt', 'docs/equipo/prompt-tanda-orquestador.md', '--traspasos', b.memoria];
     const ninguno = correrInstalar(['--destino', path.join(dir, 'a'), ...base]);
     assert.notEqual(ninguno.status, 0, '🔴 instala sin declarar el prefijo');
     assert.equal(fs.existsSync(path.join(dir, 'a', 'config.json')), false);
