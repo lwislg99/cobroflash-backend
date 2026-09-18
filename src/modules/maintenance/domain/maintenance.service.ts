@@ -13,7 +13,7 @@ import { isFlagEnabled } from '../../../core/flags';
 import { sendWhatsAppButtons, sendWhatsAppText } from '../../../integrations/whatsapp';
 import { sendQuoteWhatsAppToCustomer } from '../../quotes/domain/sendQuote.service';
 import { recordCustomerEvent, existeEventoDePlan } from '../../system/customerEvents.service';
-import { normalizePhone, formatMoneyEs, maskPhone } from '../../../core/utils/utils';
+import { normalizePhone, formatMoneyEs, maskPhone, calcTotal } from '../../../core/utils/utils';
 import { allocateQuoteNumber } from '../../quotes/domain/quoteNumber.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -238,15 +238,51 @@ export async function seleccionarLotes(
   return { aProponer, sinCanalVencidos: mudosPropios, idsSinCanal };
 }
 
-export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
+/**
+ * 🔴 SCRUM-929 · POR QUÉ EL CICLO ACEPTA SUS DEPENDENCIAS, Y POR QUÉ SON DOS Y NO CUATRO.
+ *
+ * El defecto de 929 vive en el `Quote.total` que este bucle ESCRIBE, y hasta hoy **ningún test
+ * tocaba este bucle**: medido por AST el 17-sep-2026, `runMaintenanceProposals` sólo la importaba
+ * `cron.ts`. Un importe mal calculado en el camino del dinero sin una sola prueba que lo mire.
+ *
+ * Es el MISMO patrón que este fichero ya declara dos veces —`seleccionarLotes(now, { prisma })` y
+ * `DepsAviso` treinta líneas más arriba—: «va por parámetro con default al real… así un test puede
+ * inyectar un doble y comprobar que el EFECTO ocurre, sin BD y sin gate». En producción nadie pasa
+ * nada y el comportamiento es idéntico.
+ *
+ * ⚠️ Y son exactamente DOS, no todas las que se podrían:
+ *   · `prisma` — es por donde sale el `quote.create` cuyo `total` hay que poder leer. Se pasa
+ *     también a `seleccionarLotes`, que antes lo cogía del módulo: dos clientes distintos en el
+ *     mismo ciclo darían un lote de una base y una escritura en otra.
+ *   · `recordCustomerEvent` — no porque haga falta observarlo, sino porque el bucle lo llama SIN
+ *     `await` (abajo). Con el cliente real y sin base, esa promesa se rechaza sola y se lleva por
+ *     delante la tanda entera con un fallo que no es del test.
+ *
+ * `sendWhatsAppButtons` NO se inyecta a propósito: el bucle no lo llama si el merchant no tiene
+ * `whatsappPhone`, así que un doble sin teléfono ya cierra esa puerta sin tocar el código. Y
+ * `allocateQuoteNumber` tampoco: recibe el `tx` de la transacción, o sea que el doble del `tx` ya
+ * lo gobierna. Una dependencia que se puede evitar desde el fixture no se inyecta: cada inyección
+ * es una rama más que producción no recorre.
+ */
+export type DepsCiclo = {
+  prisma: typeof prisma;
+  recordCustomerEvent: typeof recordCustomerEvent;
+};
+
+export async function runMaintenanceProposals(
+  now: Date = new Date(),
+  deps: Partial<DepsCiclo> = {},
+): Promise<{
   due: number; proposed: number; skipped: string[];
 }> {
+  const db = deps.prisma ?? prisma;
+  const registrarEvento = deps.recordCustomerEvent ?? recordCustomerEvent;
   const skipped: string[] = [];
   if (isQuietHoursMadrid(now)) {
     return { due: 0, proposed: 0, skipped: ['quiet_hours'] };
   }
 
-  const { aProponer, sinCanalVencidos } = await seleccionarLotes(now);
+  const { aProponer, sinCanalVencidos } = await seleccionarLotes(now, { prisma: db });
 
   // Los MUDOS primero, y en su propio recorrido: no se proponen, pero se les avisa. Éste es el
   // sitio que SCRUM-394 necesita y que un filtro a secas habría borrado.
@@ -259,7 +295,7 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
   let proposed = 0;
 
   for (const plan of due) {
-    const merchant = await prisma.merchant.findUnique({
+    const merchant = await db.merchant.findUnique({
       where: { id: plan.merchantId },
       select: { id: true, name: true, country: true, flags: true, whatsappPhone: true, trade: true },
     });
@@ -268,7 +304,7 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
       continue;
     }
 
-    const customer = await prisma.customer.findUnique({
+    const customer = await db.customer.findUnique({
       where: { id: plan.customerId },
       select: { id: true, name: true, phone: true, waOptOut: true, merchantId: true },
     });
@@ -320,14 +356,14 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
     }
 
     // 1 propuesta/CLIENTE/90d — cuenta cualquier plan del mismo cliente.
-    const lastForCustomer = await prisma.maintenancePlan.aggregate({
+    const lastForCustomer = await db.maintenancePlan.aggregate({
       where: { merchantId: plan.merchantId, customerId: plan.customerId, lastProposedAt: { not: null } },
       _max: { lastProposedAt: true },
     });
     const last = lastForCustomer._max.lastProposedAt;
     if (last && now.getTime() - last.getTime() < PROPOSAL_COOLDOWN_DAYS * DAY_MS) {
       const resumeAt = new Date(last.getTime() + PROPOSAL_COOLDOWN_DAYS * DAY_MS);
-      await prisma.maintenancePlan.update({ where: { id: plan.id }, data: { nextDueAt: resumeAt } });
+      await db.maintenancePlan.update({ where: { id: plan.id }, data: { nextDueAt: resumeAt } });
       skipped.push(`plan ${plan.id}: customer_cooldown_90d`);
       continue;
     }
@@ -337,13 +373,38 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
     // (borrador SIEMPRE editable — el pro aprueba antes de que salga nada).
     let line: QuoteLine = { concept: plan.title, qty: 1, price: 0, tax: 0 };
     if (plan.quoteId) {
-      const src = await prisma.quote.findUnique({ where: { id: plan.quoteId }, select: { lines: true } });
+      const src = await db.quote.findUnique({ where: { id: plan.quoteId }, select: { lines: true } });
       const match = suggestMaintenance(merchant.trade, src?.lines);
       if (match?.line) line = { ...match.line, concept: `${plan.title}` };
     }
-    const price = Number(line.price ?? 0) * Number(line.qty ?? 1);
+    // ── 🔴 SCRUM-929 · EL IMPORTE SALE DE `calcTotal`, QUE ES LA ARITMÉTICA DE LA CASA ───────
+    //
+    // Aquí ponía `Number(line.price ?? 0) * Number(line.qty ?? 1)`, y esa multiplicación es la
+    // ÚNICA aritmética del árbol que produce un `Quote.total` sin pasar por `calcTotal`. La misma
+    // línea entrando por `POST /quote/create` sí pasa, y `calcTotal` (`utils.ts:224-228`)
+    // multiplica por `(1 + tax)` y aplica el `dto` de la línea con `precioConDto`.
+    //
+    // El defecto NO era «se olvida el IVA»: era **que había dos aritméticas**, y la de aquí se
+    // deja fuera todo lo que la de la casa sabe. Medido línea a línea (SCRUM-929.md):
+    //
+    //     320 € al 21 % ................ guardaba 320,00 · son 387,20   ← 21 % DE MENOS
+    //     150 € ×2 al 10 % ............. guardaba 300,00 · son 330,00
+    //     320 € con dto 50 %, IVA 0 .... guardaba 320,00 · son 160,00   ← EL DOBLE, al cliente
+    //     IVA 0, sin `tax`, cabecera, suplido .......... igual que antes
+    //
+    // Las dos direcciones duelen y por motivos distintos: sin el IVA el profesional cobra un 21 %
+    // menos de lo que le cuesta el trabajo; sin el descuento se le pide al CLIENTE un importe que
+    // no es el que se pactó. Y ninguna de las dos se ve: el número es coherente consigo mismo en
+    // la lista, en el detalle y en el WhatsApp al pro, porque los tres leen esta misma columna.
+    //
+    // ⚠️ `calcTotal` recibe la línea EN UN ARRAY de uno, que es su contrato. Eso trae de regalo lo
+    // que ya sabe hacer: `lineasQueSuman` descarta una cabecera de apartado (que puede colarse
+    // aquí, porque `suggestMaintenance` casa contra el `concept` y una cabecera tiene concepto) y
+    // `precioConDto` aplica el descuento de línea. No se toca `calcTotal`: es la buena, y la usa
+    // todo lo demás.
+    const price = calcTotal([line as Parameters<typeof calcTotal>[0][number]]);
 
-    const draft = await prisma.$transaction(async (tx) => {
+    const draft = await db.$transaction(async (tx) => {
       // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
       const { seq: quoteNumber } = await allocateQuoteNumber(tx, plan.merchantId);
       return tx.quote.create({
@@ -383,7 +444,7 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
         : `WA al pro falló (${(result as { reason?: string }).reason || 'meta_error'}) — el borrador queda en Presupuestos`;
     }
 
-    await prisma.maintenancePlan.update({
+    await db.maintenancePlan.update({
       where: { id: plan.id },
       data: {
         lastProposedAt: now,
@@ -392,7 +453,7 @@ export async function runMaintenanceProposals(now: Date = new Date()): Promise<{
       },
     });
 
-    recordCustomerEvent({
+    registrarEvento({
       merchantId: plan.merchantId,
       customerId: plan.customerId,
       type: 'maintenance_proposed',
