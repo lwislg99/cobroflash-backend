@@ -23,7 +23,18 @@ export type GeminiParams = {
   // Si se pasa un esquema, Gemini DEVUELVE JSON válido garantizado (structured
   // output): nada de markdown ni texto alrededor. Se usa para las líneas.
   jsonSchema?: unknown;
+  // SCRUM-912: imágenes en línea (la foto del ticket de gasto). ADITIVO: sin `images` el cuerpo
+  // sale exactamente como antes, solo texto — `scrum683b` vigila que el dictado no mande otra cosa.
+  // `data` es el base64 SIN el prefijo `data:…;base64,`.
+  images?: Array<{ mimeType: string; data: string }>;
 };
+
+/** Las partes del turno del usuario. Exportada para el test: sin imágenes, UNA parte de texto. */
+export function partesDelUsuario(params: Pick<GeminiParams, 'user' | 'images'>): unknown[] {
+  const imagenes = (params.images ?? []).map((i) => ({ inline_data: { mime_type: i.mimeType, data: i.data } }));
+  // La imagen delante del texto: es el orden que recomienda Google para una sola imagen.
+  return [...imagenes, { text: params.user }];
+}
 
 // Una sola llamada a un modelo concreto.
 async function callGeminiModel(model: string, params: GeminiParams): Promise<string> {
@@ -45,7 +56,7 @@ async function callGeminiModel(model: string, params: GeminiParams): Promise<str
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: params.system }] },
-        contents: [{ role: 'user', parts: [{ text: params.user }] }],
+        contents: [{ role: 'user', parts: partesDelUsuario(params) }],
         generationConfig,
       }),
       signal: AbortSignal.timeout(20_000),
