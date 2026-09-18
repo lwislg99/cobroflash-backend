@@ -459,11 +459,14 @@ sin poder hacerse.
 3. **Las 4 mudas que traen diagnóstico tienen la MISMA firma:** «NO APARECE · 9 pasados · 7
    caídos», contra 20 en la pasada limpia. Faltan el test nombrado y **exactamente** los tres que
    van detrás. Es la cola del fichero, no un evento suelto.
-4. **Mecanismo:** el hijo de `node:test` corre con `--test-force-exit` y sale con `process.exit()`
-   sin esperar a que stdout se vacíe. En Linux la tubería es asíncrona, así que lo que el padre
-   no ha leído todavía se pierde. En Windows es síncrona, y eso es coherente con el 0 de 91 local.
-   Lo **demuestra un caso fabricado** (`tests/scrum908c-la-cola-que-se-pierde.test.mjs`) en el
-   CI de Linux (§⑥).
+4. **Hipótesis de mecanismo, SIN DEMOSTRAR:** el hijo de `node:test` corre con
+   `--test-force-exit` y sale con `process.exit()` sin esperar a que stdout se vacíe. En Linux la
+   escritura es asíncrona, así que lo que no quepa en el buffer del transporte se pierde. En
+   Windows es síncrona, y eso es coherente con el 0 de 91 local. 🔴 **El caso fabricado NO lo
+   reprodujo en el CI de Linux** (§⑥): el hijo salió con el padre parado **y llegaron enteros los
+   99.003 bytes**. La hipótesis no queda refutada, porque el caso no llegó a llenar el buffer del
+   transporte (en CI caben al menos 99 KB, no los 64 KiB que supuse). Pero tampoco está demostrada:
+   **no reproducido**, con el caso y el run dichos abajo.
 5. **No se ha arreglado el instrumento**, y no se hará aquí: es de S3. El arreglo propuesto, con su
    fichero, su línea y su control, está en §⑦. **`scrum859` no se ha tocado**, por decisión del
    orquestador (18-sep, ~15:40Z): un parche en ese fichero haría desaparecer el síntoma justo donde
@@ -504,6 +507,36 @@ el `conclusion`, que da `cancelled` en los dos casos:
 Son los 28 con veredicto, más 20 de los cortados por tiempo que la imprimieron antes del corte,
 más uno cancelado por concurrencia. Las 8 mudas fueron a estas horas:
 17-sep 16:12Z · 16:22Z · 18:22Z · 18:38Z · 20:20Z · 18-sep 07:04Z · 09:32Z · **11:42Z**.
+
+### ①bis · 🔴 LAS «RACHAS» DE 908b ERAN SOBRE TODO OTRA MUDA: `scrum738`
+
+Con los logs legibles, se ha vuelto a mirar la ventana de 908b, desde el merge de SCRUM-866 (17-sep
+08:35:37Z; `total_count` = 307 runs, traídos 307). Se han leído uno a uno los logs de los 16 jobs del
+meta-guard en `failure` hasta las 16:13Z:
+
+| hora | guard mudo | firma |
+|---|---|---|
+| 08:46:13 · 09:27:06 · 09:33:58 | `scrum859` | (el log de entonces no traía el diagnóstico de 908) |
+| **13:54:06** | `scrum859` | (ídem) |
+| 13:54:59 | `scrum738` | (ídem) |
+| **13:55:45** | `scrum859` | (ídem) |
+| 14:01:56 · 14:03:24 · 14:10:22 · 14:10:27 · 14:10:39 | `scrum738` | (ídem) |
+| 14:13:09 | `scrum738` | «PASÓ (corrió y no falló) · 7 pasados · 0 caídos» |
+| **14:21:43** | `scrum859` | «NO APARECE · 9 pasados · 7 caídos» |
+| 14:24:26 | `scrum738` | «PASÓ · 7 pasados · 0 caídos» |
+| **14:33:03** | `scrum859` | «NO APARECE · 9 pasados · 7 caídos» |
+| **16:12:58** | `scrum859` | «NO APARECE · 9 pasados · 7 caídos» |
+
+De los **12 mudos «en 39 minutos»** que 908b leyó como una racha, **8 son de `scrum738`** y 4 de
+`scrum859`. Así que 908b tenía razón en que algo se agrupaba así, pero se equivocó de guard: la de
+`scrum738` («PASÓ», el test corrió y no cayó) sí se agrupa, y la nº 2 de `scrum859` **gotea**. Se ve en
+toda la ventana: de 17-sep 08:35Z a 18-sep 15:43Z, la nº 2 se midió en **139 jobs: 122 VIVA · 17 MUDA**
+(12,2 %; Wilson 95 %, 7,8 %–18,7 %). Las 17 mudas caen a lo largo de 27 horas, y **la nº 1 salió 141 de
+141 VIVA**. Tres jobs quedaron sin leer: dos devolvieron `404` al pedir su log y uno seguía en
+marcha. Se dicen, y no cuentan en ninguna dirección.
+
+🔒 Lo de 908b no fue un mal cálculo. Contó bien los mudos. Lo que hizo fue tratarlos como si fueran
+del mismo guard sin poder leerlo, y eso ya lo advertía su propio ③.
 
 ---
 
@@ -617,10 +650,44 @@ después de `spawn` (una espera síncrona con `Atomics.wait`) hasta que el hijo 
 | relleno de 3.000 | ✖ cae el SUELO: «el NOMBRADO empieza en el byte 29675, dentro de lo que cabe en la tubería» |
 
 **En Linux (A23 nº 8, con el visto bueno del orquestador):** se empujó primero un commit **ROJO A
-PROPÓSITO**, el brazo CON ARREGLO **sin** el `--import`. En Windows no puede caer, porque ahí el
-mecanismo no se da; tiene que caer en el CI de Linux, **por su nombre**.
+PROPÓSITO** (`f6ac3021b2ea361203f5bda42126ca5250ac7b3c`): el brazo CON ARREGLO **sin** el
+`--import`. En Windows no puede caer, porque ahí el mecanismo no se da; tenía que caer en el CI de
+Linux, y sólo él.
 
-<!-- J6-908c-CI -->
+**🔴 Lo que salió, y NO es lo que se esperaba.** Run
+<https://github.com/lwislg99/cobroflash-backend/actions/runs/35364145759/job/105662367169>
+(job «build + tests», Node 24.20.0, 15:49:25Z). Líneas 11069-11076 del log, que se guardan en
+`evidencias/scrum908c/ci-rojo-f6ac3021.txt`:
+
+```
+# SUELO        bytes=99003 mensajes=35 sobrante=0 llegados=[RELLENO,NOMBRADO,COLA-1,COLA-2,COLA-3]
+# SIN ARREGLO  bytes=99003 mensajes=35 sobrante=0 llegados=[…los 5…] salioDuranteLaPausa=true code=1
+# CON ARREGLO  bytes=99002 mensajes=35 sobrante=0 llegados=[…los 5…] salioDuranteLaPausa=true code=1
+✔ SUELO   ✖ SIN ARREGLO   ✖ CON ARREGLO   ✔ vehículo
+```
+
+- **Cayó CON ARREGLO, que era lo pactado**: «el hijo salió con el padre parado aunque su stdout debía
+  ser bloqueante: el arreglo no se aplicó (o el caso ya no llena la tubería: mira el SUELO)». Pero
+  cayó por el **segundo** motivo del mensaje, no por el primero: el brazo SIN ARREGLO lo demuestra.
+- **Cayó también SIN ARREGLO, y eso NO estaba previsto**: «el hijo salió con el padre parado y aun
+  así llegó el NOMBRADO». En Linux el hijo **sí salió** mientras el padre no leía, **y no se perdió
+  nada**. Con este caso, los 99.003 bytes cupieron enteros en el transporte.
+- **Lo que eso dice, y lo que no.** Dice que el caso no llena el buffer del transporte de CI. Supuse
+  una tubería de 64 KiB y no la medí. **Hipótesis, sin medir:** en Linux, `child_process` conecta
+  el stdio con un `socketpair` y no con un `pipe(2)`, y su buffer por defecto es mayor. **No dice**
+  que Node vacíe stdout antes de salir: para eso haría falta un caso que DESBORDE el buffer y aun
+  así llegue entero.
+- **Así que el mecanismo queda NO REPRODUCIDO** por el caso fabricado (A18): 1 intento en Linux,
+  con estas condiciones. El guard de esta rama está **mal calibrado para Linux** y **no puede entrar
+  en `main`** tal como está: su brazo SIN ARREGLO da rojo allí. El PR #1519 se queda en rojo, y es
+  lo correcto.
+
+**El siguiente paso, para quien siga (no se ha hecho):** que el caso se calibre SOLO, midiendo
+primero la capacidad efectiva del transporte en la máquina donde corre. Un hijo que escriba 1 MB
+con `process.stdout.write` y llame a `process.exit()` en seguida, con el padre parado: lo que llegue
+es la capacidad, y si llega menos de 1 MB, eso YA es el mecanismo de Node, sin el reporter por
+medio. Después, el total del caso fabricado se pone entre la capacidad y la capacidad + 64 KiB (la
+marca de agua), y el NOMBRADO justo detrás de la capacidad.
 
 ---
 
@@ -659,13 +726,17 @@ acusar a un guard sano.
 
 **El control que demostraría que el arreglo funciona:**
 
-1. **Determinista, y el que decide:** el brazo CON ARREGLO de `scrum908c` ya lo demuestra sobre el
-   transporte. Para el instrumento real, correr `correr()` sobre `scrum859` con la mutación nº 2 y
-   el **padre parado** durante la pasada mutada: sin el arreglo debe salir MUDA (o CIEGA, con la
-   segunda propuesta), y con el arreglo, VIVA.
+1. **Determinista, y el que decide:** ⚠️ **todavía no existe.** El brazo CON ARREGLO de
+   `scrum908c` lo demostraría sobre el transporte **cuando el caso esté bien calibrado para Linux**
+   (§⑥), y hoy no lo está. Para el instrumento real: correr `correr()` sobre `scrum859` con la
+   mutación nº 2 y el **padre parado** durante la pasada mutada. Sin el arreglo debe salir MUDA (o
+   CIEGA, con la segunda propuesta), y con el arreglo, VIVA. **Mientras no haya un caso que
+   reproduzca la pérdida, esta propuesta a S3 es una HIPÓTESIS con su literal, no un arreglo
+   demostrado.**
 2. **Estadístico, en CI:** la nº 2 VIVA en **N de N** jobs que lleguen a imprimirla. Con la tasa
-   medida (8 de 49, cota baja del 95 % en el 8,5 %), P(0 mudas en N | sin arreglo) < 5 % pide
-   **N ≥ 34** (con la tasa puntual del 16,3 % bastarían 17; se da la cifra prudente). ⚠️ Hoy eso
+   medida en la ventana larga (17 de 139, cota baja del 95 % en el 7,8 %), P(0 mudas en N | sin
+   arreglo) < 5 % pide **N ≥ 37**. Con la corta (8 de 49, cota baja 8,5 %) serían 34. Se da la
+   cifra prudente. ⚠️ Hoy eso
    choca con el tope de 10 minutos: 71 de 140 jobs no llegan al final, y de esos 71 solo **20**
    llegaron a imprimir la nº 2 antes del corte. Valen para contarla, pero no para el veredicto
    del job.
@@ -696,7 +767,12 @@ van a `docs/equipo/afirmaciones-verificadas-javier.md`.
    van sin los bytes ESC, y después lo comprobé: 24 ficheros, 0 bytes de control.
 3. **La primera versión del guard medía el borde contra el `test:enqueue`** (byte 372) y daba el
    caso por mal calibrado sin estarlo. Ahora mide contra el primer mensaje de VEREDICTO.
-4. **La primera versión del VEHÍCULO llamaba a `run()` desde dentro del propio test**, y `run()`,
+4. 🔴 **Calibré el caso fabricado con la capacidad de una tubería de Linux (64 KiB), y no la
+   medí.** En CI cupieron 99 KB enteros, y el brazo que tenía que demostrar el mecanismo lo
+   desmintió para ese tamaño. Es justo lo que A3 prohíbe: un número supuesto metido en un
+   instrumento. Me lo cazó el rojo a propósito, que se pactó para ver caer otra cosa. Sin ese
+   rojo, el guard habría entrado con una afirmación falsa sobre Linux.
+5. **La primera versión del VEHÍCULO llamaba a `run()` desde dentro del propio test**, y `run()`,
    llamado desde un hijo de `node --test`, se salta los ficheros con un aviso. Salían `pasados=[]` y
    `caidos=[]`: un cero que no medía nada. Lo cazó el CIEGO que el test ya llevaba. Ahora lo corre un
    conductor aparte.

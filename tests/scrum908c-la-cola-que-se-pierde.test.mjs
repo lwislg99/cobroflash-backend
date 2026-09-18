@@ -200,7 +200,7 @@ const medir = (async () => {
     try { await correrAFichero(hijo, fd, path.join(dir, 'marca-suelo')); } finally { fs.closeSync(fd); }
     const suelo = trocear(fs.readFileSync(rutaSuelo));
     const sinArreglo = await correrConPadreParado(hijo, path.join(dir, 'marca-sin'));
-    const conArreglo = await correrConPadreParado(hijo, path.join(dir, 'marca-con'), []);
+    const conArreglo = await correrConPadreParado(hijo, path.join(dir, 'marca-con'), ['--import', PRELOAD]);
     // POBLACIÓN (A3): qué se midió y sobre cuántos mensajes.
     console.log(`# SCRUM-908c · node=${process.version} pausa=${PAUSA_MS}ms relleno=${TAM_RELLENO}`);
     console.log(`# SUELO        ${resumen(suelo)}`);
