@@ -72,11 +72,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '    if (false) return null;',
     cae: '🔴 ① CASO CONOCIDO: el censo distingue las cinco formas que le pongo delante, y no acusa a quien limpia',
   },
+  // SCRUM-933: esta segunda nombraba el test ①, y con ella puesta ① seguía VERDE. Ninguno de sus
+  // nueve casos borra una variable que no sea la del temporal, así que «cualquier borrado vale»
+  // y «sólo vale el mío» le contestan lo mismo. La mata ①b, que existe para eso.
   {
     fichero: 'scripts/_censo-mkdtemp.mjs',
     de: "      if (!b.ids.has(d.nombre)) return false;",
     a: '      if (!b.ids.has(d.nombre)) return true;',
-    cae: '🔴 ① CASO CONOCIDO: el censo distingue las cinco formas que le pongo delante, y no acusa a quien limpia',
+    cae: '🔴 ①b EL BORRADO DE OTRO NO ES EL MÍO: un finally que borra otra variable no cubre mi temporal',
   },
 ];
 
@@ -181,6 +184,75 @@ test('SCRUM-864c · 🔴 ① CASO CONOCIDO: el censo distingue las cinco formas 
     '🔴 el censo ACUSA a un fichero que no crea ningún temporal: contesta lo mismo a todo.');
   assert.deepEqual(clasificaFuente('mencion.mjs', "// aquí se habla de mkdtempSync y no se llama\nconst s = 'mkdtempSync';"), [],
     '🔴 el censo cuenta una MENCIÓN como una llamada: eso es lo que hace `grep`, y por eso esto va por AST.');
+});
+
+// ═══ ①b EL EMPAREJAMIENTO POR NOMBRE (SCRUM-933) ════════════════════════════════════════════
+//
+// El censo decide qué borrado es de qué temporal POR EL NOMBRE de la variable. Los nueve casos de
+// ① no lo ponen a prueba: en todos, el único `rmSync` del fichero borra la variable del temporal.
+// Así que un censo que aceptara CUALQUIER borrado como limpieza de CUALQUIER temporal los pasaba
+// igual. Medido el 18-sep-2026: con `return false` → `return true` en el filtro de
+// `scripts/_censo-mkdtemp.mjs`, `scrum864c` seguía 3/3 en verde y salía con 0.
+//
+// Y es la dirección peligrosa: un fichero que no borra su temporal pero borra OTRA cosa en un
+// `finally` salía GARANTIZADO. El trinquete ③ tampoco podía verlo: esa mutación sólo quita
+// acusaciones, y sobre un árbol que ya está en cero no hay ninguna que quitar.
+//
+// Los cuatro casos se diferencian en QUÉ variable borra el `finally`, nada más.
+
+const DE_OTRO = [
+  {
+    espera: 'GARANTIZADA',
+    porque: 'CONTROL: la misma forma borrando MI variable en el `finally`. Sin él, los SIN_LIMPIEZA de '
+      + 'abajo podrían ser un censo que ya no reconoce el `finally` en esta forma',
+    fuente: [
+      "const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'caso-'));",
+      'const otro = rutaDeOtraCosa();',
+      'try { usar(dir, otro); } finally { fs.rmSync(dir, { recursive: true, force: true }); }',
+    ],
+  },
+  {
+    espera: 'SIN_LIMPIEZA',
+    porque: 'el `finally` borra OTRA variable: mi temporal no se borra en ninguna parte',
+    fuente: [
+      "const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'caso-'));",
+      'const otro = rutaDeOtraCosa();',
+      'try { usar(dir, otro); } finally { fs.rmSync(otro, { recursive: true, force: true }); }',
+    ],
+  },
+  {
+    espera: 'NO_GARANTIZADA',
+    porque: 'el mío se borra por el camino feliz; el `finally` que hay es de otro y no lo asciende',
+    fuente: [
+      "const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'caso-'));",
+      'const otro = rutaDeOtraCosa();',
+      'try { usar(dir, otro); } finally { fs.rmSync(otro, { recursive: true, force: true }); }',
+      'fs.rmSync(dir, { recursive: true, force: true });',
+    ],
+  },
+  {
+    espera: 'SIN_LIMPIEZA',
+    porque: 'el nombre guarda una ruta DE DENTRO y el `finally` sube con `dirname`… pero desde OTRA variable',
+    fuente: [
+      "const copia = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'caso-')), 'x.mjs');",
+      'const otro = rutaDeOtraCosa();',
+      'try { usar(copia, otro); } finally { fs.rmSync(path.dirname(otro), { recursive: true, force: true }); }',
+    ],
+  },
+];
+
+test('SCRUM-864c · 🔴 ①b EL BORRADO DE OTRO NO ES EL MÍO: un finally que borra otra variable no cubre mi temporal', () => {
+  const dichas = DE_OTRO.map((c) => {
+    const r = clasificaFuente('fabricado.mjs', c.fuente.join(NL));
+    return { espera: c.espera, dice: r.length === 1 ? r[0].categoria : `🔴 ${r.length} llamadas, esperaba 1`, porque: c.porque };
+  });
+  assert.deepEqual(
+    dichas.filter((d) => d.dice !== d.espera),
+    [],
+    '🔴 EL CENSO CUENTA COMO LIMPIEZA DE MI TEMPORAL EL BORRADO DE OTRA VARIABLE. Un fichero que no borra '
+    + 'su directorio pero borra otra cosa en un `finally` saldría GARANTIZADO, y el trinquete ③ no lo '
+    + 'vería nunca. Mira el filtro de `suyos` en `clasificaFuente` (`scripts/_censo-mkdtemp.mjs`).',
+  );
 });
 
 // ═══ ② EL SUELO ══════════════════════════════════════════════════════════════════════════════
