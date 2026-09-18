@@ -20,6 +20,7 @@
 // Solo lee y pregunta: no crea tareas, no toca settings, no lanza sesiones.
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -50,8 +51,88 @@ function ultimoJson(texto) {
   try { return JSON.parse(String(texto || '').trim().split('\n').at(-1)); } catch { return null; }
 }
 
+/** Una ruta comparable: barras normales, sin barra final y, en Windows, sin mayúsculas. */
+function rutaComparable(p, plataforma) {
+  const r = String(p || '').replace(/\\/g, '/').replace(/\/+$/, '');
+  return plataforma === 'win32' ? r.toLowerCase() : r;
+}
+
+/**
+ * SCRUM-951d · ¿de quién es la lectura del aviso de uso? `uso.mjs` guarda SIEMPRE en
+ * `%LOCALAPPDATA%\yaqu-equipo\uso.json`, esté donde esté la instalación. Con `--destino` en otro
+ * sitio, `leer` contesta con el `uso.json` de OTRA instalación, y el OK no era de ésta (medido en el
+ * ensayo del 18-sep-2026: VERDE con el fichero de la máquina, no el del ensayo).
+ */
+export function juzgarUso({ status, vu, destino, plataforma = process.platform }) {
+  const deOtra = Boolean(vu?.fichero)
+    && rutaComparable(path.dirname(vu.fichero), plataforma) !== rutaComparable(destino, plataforma);
+  const donde = vu?.fichero ? ` · ${vu.fichero}` : '';
+  const ajeno = `el uso.json que lee no es de esta instalación${donde}: uso.mjs lo guarda siempre en %LOCALAPPDATA%\\yaqu-equipo`;
+  // El código de salida y el veredicto escrito tienen que DECIR LO MISMO: un 0 sin su VERDE no es un verde
+  // (SCRUM-622: «no lo sé» nunca se rellena con «todo bien»).
+  if (status === 0 && vu?.veredicto === 'VERDE') return deOtra ? ['AVISO', ajeno] : ['OK', `${vu.motivo}${donde}`];
+  if (status === 1 && vu?.veredicto === 'AVISO') return deOtra ? ['AVISO', ajeno] : ['OK', `lee y AVISA: ${vu.motivo}${donde}`];
+  if (status === 2 && vu?.veredicto === 'NO_PUDE_MIRAR') {
+    return ['AVISO', `sin lectura vigente (${vu.motivo})${donde}: falta el statusLine o un turno en una sesión interactiva`];
+  }
+  return ['FALLA', `uso.mjs salió con ${status} y veredicto ${vu?.veredicto ?? '(ninguno)'}: no cuadran`];
+}
+
+/** Lee un JSON que puede no existir. `undefined` = no existe; `null` = existe pero no se entiende. */
+function leerJsonSiExiste(f) {
+  let texto;
+  try { texto = fs.readFileSync(f, 'utf8'); } catch (e) { return e.code === 'ENOENT' ? undefined : null; }
+  // Los settings del repo llevan BOM (medido en `.claude/settings.local.json` de origin/main, 18-sep-2026).
+  try { return JSON.parse(texto.replace(/^﻿/, '')); } catch { return null; }
+}
+
+/**
+ * SCRUM-951d · los servidores MCP que declara el repo (`.mcp.json`), y si alguien los ha DECIDIDO.
+ *
+ * Medido en el ensayo del 18-sep-2026: una sesión de fondo lanzada en un clon NUEVO no llega a
+ * arrancar. Se queda `blocked` con «approve 1 new project MCP server (playwright) — attach to
+ * respond», y en segundo plano nadie va a contestar. El checkout de Luis no lo sufre porque tiene
+ * `disabledMcpjsonServers: ["playwright"]` en su `.claude/settings.local.json`, pero como cambio
+ * LOCAL sin commitear: `origin/main` no decide nada, así que ningún clon lo hereda.
+ *
+ * Decidido = el servidor está en `enabledMcpjsonServers` o `disabledMcpjsonServers`, o hay
+ * `enableAllProjectMcpServers: true`, en los settings del proyecto, en los del usuario o en la
+ * entrada del proyecto en `~/.claude.json`.
+ */
+export function juzgarMcp({ repo, casa, plataforma = process.platform }) {
+  const mcp = leerJsonSiExiste(path.join(repo, '.mcp.json'));
+  if (mcp === undefined) return ['OK', 'el repo no declara servidores MCP de proyecto'];
+  if (mcp === null) return ['NO-PUDE-MIRAR', `no se entiende ${path.join(repo, '.mcp.json')}`];
+  const servidores = Object.keys(mcp.mcpServers || {});
+  if (servidores.length === 0) return ['OK', '`.mcp.json` sin servidores'];
+
+  const fuentes = [];
+  for (const f of [path.join(repo, '.claude', 'settings.local.json'), path.join(repo, '.claude', 'settings.json'),
+    path.join(casa, '.claude', 'settings.json')]) {
+    const j = leerJsonSiExiste(f);
+    if (j === null) return ['NO-PUDE-MIRAR', `no se entiende ${f}`];
+    if (j) fuentes.push(j);
+  }
+  const estado = leerJsonSiExiste(path.join(casa, '.claude.json'));
+  if (estado === null) return ['NO-PUDE-MIRAR', `no se entiende ${path.join(casa, '.claude.json')}`];
+  for (const [clave, p] of Object.entries(estado?.projects || {})) {
+    if (p && rutaComparable(clave, plataforma) === rutaComparable(repo, plataforma)) fuentes.push(p);
+  }
+
+  if (fuentes.some((j) => j.enableAllProjectMcpServers === true)) {
+    return ['OK', `${servidores.join(', ')}: aprobados todos (enableAllProjectMcpServers)`];
+  }
+  const decidido = (s) => fuentes.some((j) => [j.enabledMcpjsonServers, j.disabledMcpjsonServers]
+    .some((l) => Array.isArray(l) && l.includes(s)));
+  const sinDecidir = servidores.filter((s) => !decidido(s));
+  if (sinDecidir.length === 0) return ['OK', `${servidores.join(', ')}: decididos`];
+  return ['FALLA', `servidor(es) MCP del proyecto sin decidir: ${sinDecidir.join(', ')}. Una sesión de fondo lanzada en el `
+    + 'repo se queda bloqueada en «approve new project MCP server» y nadie contesta (medido el 18-sep-2026). '
+    + 'Se decide una vez, en el paso 2 de la guía'];
+}
+
 /** Todas las comprobaciones, en orden. Cada una: `{ id, veredicto, detalle }`. */
-export function comprobar({ destino, plataforma = process.platform }) {
+export function comprobar({ destino, plataforma = process.platform, casa = os.homedir() }) {
   const lista = [];
   const poner = (id, veredicto, detalle) => lista.push({ id, veredicto, detalle });
 
@@ -111,14 +192,10 @@ export function comprobar({ destino, plataforma = process.platform }) {
 
   // 8 · el aviso de uso
   const uso = ejecutar(process.execPath, [path.join(destino, 'uso.mjs'), 'leer']);
-  const vu = ultimoJson(uso.stdout);
-  // El código de salida y el veredicto escrito tienen que DECIR LO MISMO: un 0 sin su VERDE no es un verde
-  // (SCRUM-622: «no lo sé» nunca se rellena con «todo bien»).
-  if (uso.status === 0 && vu?.veredicto === 'VERDE') poner('aviso de uso', 'OK', vu.motivo);
-  else if (uso.status === 1 && vu?.veredicto === 'AVISO') poner('aviso de uso', 'OK', `lee y AVISA: ${vu.motivo}`);
-  else if (uso.status === 2 && vu?.veredicto === 'NO_PUDE_MIRAR') {
-    poner('aviso de uso', 'AVISO', `sin lectura vigente (${vu.motivo}): falta el statusLine o un turno en una sesión interactiva`);
-  } else poner('aviso de uso', 'FALLA', `uso.mjs salió con ${uso.status} y veredicto ${vu?.veredicto ?? '(ninguno)'}: no cuadran`);
+  poner('aviso de uso', ...juzgarUso({ status: uso.status, vu: ultimoJson(uso.stdout), destino, plataforma }));
+
+  // 8b · los servidores MCP del proyecto, decididos (SCRUM-951d)
+  poner('MCP del proyecto', ...juzgarMcp({ repo: config.repo, casa, plataforma }));
 
   // 9 · el censo de huérfanos
   const hu = ejecutar(process.execPath, [path.join(config.repo, 'scripts', 'equipo', 'huerfanos.mjs'), '--repo', config.repo]);
@@ -132,7 +209,9 @@ export function comprobar({ destino, plataforma = process.platform }) {
     for (const hora of config.tandas) {
       const tn = `yaqu-equipo-${e.equipo.prefijo}${String(hora).replace(':', '')}`;
       const q = ejecutar('schtasks', ['/query', '/tn', tn]);
-      poner(`tarea ${tn}`, q.status === 0 ? 'OK' : 'AVISO', q.status === 0 ? 'creada' : 'no está creada (paso de las tareas de la guía)');
+      // Sin proceso (status null) no se ha preguntado nada: no es «no está creada».
+      if (q.status === null) poner(`tarea ${tn}`, 'NO-PUDE-MIRAR', `schtasks no arrancó${q.error ? ` (${q.error.code})` : ''}`);
+      else poner(`tarea ${tn}`, q.status === 0 ? 'OK' : 'AVISO', q.status === 0 ? 'creada' : 'no está creada (paso de las tareas de la guía)');
     }
   }
 
