@@ -29,7 +29,8 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { cargarDashboard, pintarVista, todos, reglasQueOcultan, ocultoPorCss } from './_banco-vistas.mjs';
+import vm from 'node:vm';
+import { cargarDashboard, pintarVista, todos, reglasQueOcultan, ocultoPorCss, datosDeMuestra } from './_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -85,6 +86,77 @@ async function pantalla() {
   const r = await pintarVista(banco, 'renderQuotesView');
   // La hoja de ajustes se monta en el `body`, no dentro del contenedor de la vista.
   return { ...r, banco, body: banco.ctx.document.body };
+}
+
+// ═══ 🔴 SCRUM-915d · LO QUE ESTE FICHERO MIDE DEL SELECTOR DEL DOCUMENTO, CAMBIA ═══════════════
+// Antes: «se VE nada más abrir la pantalla». Ahora: «se ALCANZA por el camino del profesional, y
+// ENTONCES se ve». Lo cambia la v3 del editor, APROBADA por el fundador (docs/prototipos/SCRUM-915/):
+// el IVA por defecto vive en «Ajustes del documento», plegado, dentro del paso Condiciones. Decisión
+// del orquestador del 18-sep-2026, escrita en docs/master/SCRUM-915.md como CAMBIO de lo medido.
+//
+// El fin de 660 no cambia —construido ≠ alcanzable— y se mide igual que el IVA de la LÍNEA en este
+// mismo fichero: PULSANDO, como el profesional. Si un eslabón del camino falta, el camino se corta
+// y se dice DÓNDE; y si el banco no sabe resolver una regla, sigue declarándose CIEGO (nunca verde).
+const CLIENTE_DEL_CAMINO = { id: 7, name: 'Comunidad Los Olivos', phone: '600111222' };
+
+async function pantallaConCliente(fuenteMutada = null) {
+  const banco = cargarDashboard(RAIZ, {
+    datos: (url) => {
+      const u = String(url || '');
+      if (/\/admin\/merchant/.test(u)) return { id: 1, name: 'QA 660', defaultCurrency: 'EUR' };
+      if (/\/admin\/customers/.test(u)) return [CLIENTE_DEL_CAMINO];
+      return datosDeMuestra(u);
+    },
+  });
+  // Un mutante se carga ENCIMA del fichero real, en el mismo contexto, y redefine `renderQuotesView`.
+  // Va envuelto en una función porque el fichero declara `let` de nivel superior y volver a
+  // declararlos en el mismo contexto es un SyntaxError (medido: «already been declared»).
+  if (fuenteMutada) {
+    vm.runInContext(`(function () {\n${fuenteMutada}\n;globalThis.renderQuotesView = renderQuotesView;\n})();`,
+      banco.ctx, { filename: 'js/quotesView.js' });
+  }
+  const r = await pintarVista(banco, 'renderQuotesView');
+  return { ...r, banco, body: banco.ctx.document.body };
+}
+
+const botones = (c, texto) => todos(c).filter((n) => n.tagName === 'BUTTON' && String(n.textContent || '').trim() === texto);
+const bloqueConTitulo = (c, titulo) => {
+  const h = todos(c).find((n) => n.tagName === 'H3' && String(n.textContent || '').trim() === titulo);
+  return h ? h._padre : null;
+};
+
+/** Pulsa como el profesional: sólo si el botón está insertado, habilitado y a la vista. */
+function pulsar(r, boton, que) {
+  if (!boton || !estaInsertado(boton, r.contenedor)) return `no hay ${que}`;
+  if (boton.disabled) return `${que} está deshabilitado`;
+  const q = quienLoEsconde(boton);
+  if (q) return `${que} está escondido por ${q}`;
+  if (boton.disparar('click') < 1) return `${que} no tiene oyente de click`;
+  return null;
+}
+
+/**
+ * El camino: cliente → «Continuar» → una línea → «Continuar» → «Cambiar» en «Ajustes del documento».
+ * Devuelve dónde se corta, o `null` si se llega.
+ */
+async function recorrerHastaElIvaDelDocumento(r) {
+  await new Promise((ok) => setTimeout(ok, 0)); // la lista de clientes llega en una promesa
+  const cliente = todos(r.contenedor).find((n) => n.tagName === 'SELECT' && n.name === 'customer_id');
+  if (!cliente) return 'no hay selector de cliente';
+  cliente.value = String(CLIENTE_DEL_CAMINO.id);
+  cliente.disparar('change');
+  let corte = pulsar(r, botones(r.contenedor, 'Continuar')[0], '«Continuar» del paso Cliente');
+  if (corte) return corte;
+  const concepto = todos(r.contenedor).find((n) => n.tagName === 'INPUT' && String((n._padre && n._padre.className) || '').includes('quote-line__concept'));
+  const precio = todos(r.contenedor).find((n) => n.tagName === 'INPUT' && String((n._padre && n._padre.className) || '').includes('quote-line__price'));
+  if (!concepto || !precio) return 'no hay concepto o precio en la primera línea';
+  concepto.value = 'Mano de obra (hora)'; concepto.disparar('input');
+  precio.value = '38'; precio.disparar('input');
+  corte = pulsar(r, botones(r.contenedor, 'Continuar')[1], '«Continuar» del paso Conceptos');
+  if (corte) return corte;
+  const ajustes = bloqueConTitulo(r.contenedor, 'Ajustes del documento');
+  if (!ajustes) return 'no hay «Ajustes del documento»';
+  return pulsar(r, botones(ajustes, 'Cambiar')[0], '«Cambiar» de Ajustes del documento');
 }
 
 /**
@@ -153,13 +225,18 @@ test('SCRUM-660 · 🔴 los DOS selectores están INSERTADOS y se pueden alcanza
 });
 
 test('SCRUM-660 · 🔴 los DOS selectores se VEN: nadie los esconde, ni a ellos ni a sus padres', async () => {
-  const r = await pantalla();
-  const doc = selectDelDocumento(r.contenedor);
+  // El del DOCUMENTO, por el camino del profesional (SCRUM-915d, ver arriba).
+  const rc = await pantallaConCliente();
+  const corte = await recorrerHastaElIvaDelDocumento(rc);
+  assert.equal(corte, null, `🔴 el camino hasta el IVA por defecto se CORTA: ${corte}. Construido no es alcanzable.`);
+  const doc = selectDelDocumento(rc.contenedor);
+  assert.ok(doc && estaInsertado(doc, rc.contenedor), '🔴 al final del camino no hay selector del DOCUMENTO insertado');
   const escondeDoc = quienLoEsconde(doc);
   assert.equal(escondeDoc, null,
     `🔴 el selector del DOCUMENTO está ESCONDIDO por ${escondeDoc}. Construido no es alcanzable: `
     + 'un campo que no se ve deja el valor anterior sin que nadie pueda cambiarlo.');
 
+  const r = await pantalla();
   abrirAjustesDeLaPrimeraLinea(r);
   const linea = selectsDeLinea(r.body);
   assert.equal(linea.length, 1, '🔴 sin el selector de línea, esta comprobación no mide nada');
@@ -173,7 +250,9 @@ test('SCRUM-660 · 🔴 los DOS selectores se VEN: nadie los esconde, ni a ellos
 test('SCRUM-660 · 🔴 CONTROL del detector de ocultación: sabe ver las tres formas, y el padre', async () => {
   // Sin esto, un detector que devolviera siempre `null` daría verde con todo escondido — que es
   // exactamente el hueco que este fichero dice cerrar.
-  const r = await pantalla();
+  // SCRUM-915d · se mide al final del camino, que es donde el selector se ve.
+  const r = await pantallaConCliente();
+  assert.equal(await recorrerHastaElIvaDelDocumento(r), null, '🔴 sin llegar al selector, este control no mide nada');
   const s = selectDelDocumento(r.contenedor);
 
   const padre = s._padre;
@@ -196,6 +275,33 @@ test('SCRUM-660 · 🔴 CONTROL del detector de ocultación: sabe ver las tres f
   // Y el control NEGATIVO del propio detector: sin nada de eso, dice que se ve.
   assert.equal(quienLoEsconde(s), null,
     '🔴 el detector dice que está escondido cuando NO lo está: entonces sus rojos no valen nada');
+});
+
+// ═══ 🔴 SCRUM-915d · LOS DOS MUTANTES QUE TIENEN QUE DAR ROJO (condición del orquestador) ═══════
+// El camino nuevo sólo vale si SE CORTA cuando el selector deja de ser alcanzable. Se muta la
+// fuente REAL en memoria y se comprueba que la mutación se aplicó: un patrón que ya no existiera
+// dejaría el fichero igual y el «rojo» no probaría nada.
+const FUENTE_EDITOR = readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesView.js'), 'utf8');
+function mutante(buscar, poner) {
+  assert.ok(FUENTE_EDITOR.includes(buscar), `🔴 el patrón a mutar ya no existe: ${buscar}`);
+  const m = FUENTE_EDITOR.replace(buscar, poner);
+  assert.notEqual(m, FUENTE_EDITOR, 'la mutación no cambió nada');
+  return m;
+}
+
+test('SCRUM-915d · MUTANTE ①: sin el selector colgado, el camino llega y NO hay IVA por defecto → ROJO', async () => {
+  const r = await pantallaConCliente(mutante('  else linesVatRow.appendChild(fieldVatDefault.wrapper);', '  else void 0;'));
+  await recorrerHastaElIvaDelDocumento(r);
+  const doc = selectDelDocumento(r.contenedor);
+  assert.ok(!doc || !estaInsertado(doc, r.contenedor),
+    '🔴 con el selector descolgado, el control de arriba lo seguiría dando por alcanzable');
+});
+
+test('SCRUM-915d · MUTANTE ②: sin «Cambiar» en Ajustes del documento, el camino SE CORTA → ROJO', async () => {
+  const r = await pantallaConCliente(mutante('  blockDelivery.appendChild(filaAjustesBoton);', '  void 0;'));
+  const corte = await recorrerHastaElIvaDelDocumento(r);
+  assert.match(String(corte), /«Cambiar» de Ajustes del documento/,
+    `🔴 sin el botón que abre los ajustes, el camino tendría que cortarse ahí, y dice: ${corte}`);
 });
 
 // ═══ ③ LO QUE NO PUEDE ROMPERSE: un valor que no está en la lista NO se pierde ═════════════

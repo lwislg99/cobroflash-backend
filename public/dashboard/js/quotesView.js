@@ -4508,8 +4508,10 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
     return m ? m[3] + "/" + m[2] + "/" + m[1] : "";
   };
+  // Por `children` y no por `options[selectedIndex]`: es el mismo `<option>` en el navegador, y el
+  // banco de vistas de la suite (SCRUM-451) monta el editor sin esas dos propiedades.
   const textoDeCobro = function () {
-    const o = paymentSelect.options[paymentSelect.selectedIndex];
+    const o = Array.prototype.find.call(paymentSelect.children || [], function (x) { return x.value === paymentSelect.value; });
     return o ? o.textContent : "";
   };
 
@@ -4562,6 +4564,7 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       const abierta = filaAbierta === f.clave;
       if (f.detalle) f.detalle.hidden = !abierta;
       f.fila.classList.toggle("is-desplegado", abierta);
+      f.fila.classList.toggle("is-plegado", !abierta);
       f.boton.textContent = abierta ? "Listo" : "Cambiar";
       f.boton.setAttribute("aria-expanded", abierta ? "true" : "false");
     });
@@ -4579,6 +4582,7 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       const hecho = alcanzable && i < n && p.puede();
       p.bloques.forEach(function (b) {
         b.classList.toggle("is-abierto", abierto);
+        b.classList.toggle("is-cerrado", !abierto); // explícita: ver la nota de la hoja de estilos
         b.classList.toggle("is-hecho", hecho);
         b.classList.toggle("is-pendiente", !abierto && !hecho);
       });
@@ -4627,7 +4631,7 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     if (titulo) {
       titulo.tabIndex = -1;
       try { titulo.focus({ preventScroll: true }); } catch (_e) {}
-      titulo.scrollIntoView({ block: "nearest" });
+      if (typeof titulo.scrollIntoView === "function") titulo.scrollIntoView({ block: "nearest" });
     }
   }
 

@@ -1345,12 +1345,29 @@ html, body { overflow-x: clip; }
    lo decide esta hoja y NINGÚN nodo se mueve, así que un paso cerrado sigue enviando sus campos.
    Tokens de DESIGN.md; el número del paso sale de `data-numero`, no del texto del título. */
 
+/* ⚠️ Los estados van en clases EXPLÍCITAS (`is-cerrado`, `is-plegado`) y no en `:not(.is-abierto)`
+   donde se puede: el banco de vistas de la suite (tests/_banco-vistas.mjs, `ocultoPorCss`) sabe
+   resolver clases compuestas y descendencia, y NO `>` ni `:not`. Una regla que no sabe resolver
+   sobre un campo lo deja CIEGO, y el control de SCRUM-660 lo trata como fallo. */
+
 /* Un paso cerrado es UNA fila: número (o ✓), título, resumen y «Cambiar». Lo demás no se ve. */
-.quote-paso-parte:not(.is-abierto) { display: none; }
-.quote-paso:not(.is-abierto) { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
-.quote-paso:not(.is-abierto) > :not(.quote-block-title):not(.quote-paso__resumen):not(.quote-paso__cambiar) { display: none; }
-.quote-paso:not(.is-abierto) > .quote-block-title { margin: 0; }
-.quote-paso.is-abierto > .quote-paso__resumen { display: none; }
+.quote-paso-parte.is-cerrado { display: none; }
+.quote-paso.is-cerrado { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+/* Lo que un paso CERRADO no enseña, por su nombre y no con `> :not(…)`, que el banco no resuelve.
+   Son los hijos de los cuatro bloques de paso; si un bloque gana un hijo con otra clase, se añade
+   aquí (y guard:pasos-del-editor lo caza si un paso cerrado deja ver su control representativo). */
+.quote-paso.is-cerrado .quote-paso__guia,
+.quote-paso.is-cerrado .quote-paso__pie,
+.quote-paso.is-cerrado .quote-paso__revision,
+.quote-paso.is-cerrado .quote-form-row,
+.quote-paso.is-cerrado .quote-lines-header,
+.quote-paso.is-cerrado .quote-plantillas,
+.quote-paso.is-cerrado .quote-conceptos,
+.quote-paso.is-cerrado .quote-lines,
+.quote-paso.is-cerrado .quote-add-line,
+.quote-paso.is-cerrado .quote-fila,
+.quote-paso.is-cerrado .form-actions { display: none; }
+.quote-paso.is-cerrado .quote-block-title { margin: 0; }
 
 .quote-paso > .quote-block-title {
   display: flex; align-items: center; gap: 10px;
@@ -1378,9 +1395,10 @@ html, body { overflow-x: clip; }
 .quote-paso__guia { margin: 0 0 14px 38px; font-size: 14px; color: var(--muted); }
 .quote-paso__revision { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
 
-/* «Cambiar» / «Listo»: enlace de texto con 44 px de blanco de toque (AB6), no un btn-sm de 30. */
+/* «Cambiar» / «Listo»: enlace de texto con 44 px de blanco de toque (AB6), no un btn-sm de 30.
+   Sin `display` propio A PROPÓSITO: así el atributo `hidden` lo sigue escondiendo sin una regla
+   `.clase[hidden]` (trinquete de SCRUM-731). Un botón ya es `inline-block` y centra su texto. */
 .quote-paso__cambiar {
-  display: inline-flex; align-items: center; justify-content: center;
   min-height: 44px; min-width: 44px; padding: 0 8px; margin-left: auto;
   border: 0; border-radius: var(--radius-sm); background: none;
   font: inherit; font-size: 14px; font-weight: 700; color: var(--brand-tint-ink);
@@ -1388,8 +1406,6 @@ html, body { overflow-x: clip; }
 }
 .quote-paso__cambiar:hover { text-decoration: underline; }
 .quote-paso__cambiar:focus-visible { outline: none; box-shadow: var(--ring); }
-.quote-paso__cambiar[hidden],
-.quote-paso__falta[hidden] { display: none; }
 
 .quote-paso__pie {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end;
@@ -1408,12 +1424,11 @@ html, body { overflow-x: clip; }
 .quote-fila__valor { grid-column: 1; font-size: 14px; color: var(--body); overflow-wrap: anywhere; }
 .quote-fila__cab > .quote-paso__cambiar { grid-column: 2; grid-row: 1 / span 2; }
 .quote-fila__detalle { padding: 4px 0 12px; }
-/* Dentro de la fila abierta, el rótulo del campo repite el título de la fila: se quita de la
-   VISTA y se queda para el lector de pantalla, que es quien lo necesita para nombrar el control. */
-.quote-fila__detalle > .field > label:first-child {
-  position: absolute; width: 1px; height: 1px; overflow: hidden;
-  clip: rect(0 0 0 0); white-space: nowrap;
-}
+/* Con la fila abierta, su título y lo elegido los dice ya el propio campo (su rótulo y su valor):
+   la cabecera se queda sólo con «Listo». Así no se esconde el rótulo del campo, que es el que
+   nombra el control para el lector de pantalla. */
+.quote-fila.is-desplegado .quote-fila__titulo,
+.quote-fila.is-desplegado .quote-fila__valor { display: none; }
 
 /* «Ajustes del documento» es la cuarta fila, y es un bloque entero: cerrado enseña su título con
    el galón ▸, su resumen y «Cambiar»; abierto (▾) enseña los ajustes debajo, EN LA PÁGINA. */
@@ -1424,9 +1439,11 @@ html, body { overflow-x: clip; }
 .quote-ajustes.is-desplegado > .quote-block-title::before { content: "▾"; }
 .quote-ajustes > .quote-fila__valor { grid-column: 1; grid-row: 2; }
 .quote-ajustes > .quote-paso__cambiar { grid-column: 2; grid-row: 1 / span 2; }
-.quote-ajustes:not(.is-desplegado) > :not(.quote-block-title):not(.quote-fila__valor):not(.quote-paso__cambiar):not(.quote-paso__pie) { display: none; }
-.quote-ajustes.is-desplegado > .quote-form-row,
-.quote-ajustes.is-desplegado > .field { margin-top: 10px; }
+/* Plegada, se esconden los AJUSTES (las filas de campos y los campos), no el pie del paso. */
+.quote-ajustes.is-plegado .quote-form-row,
+.quote-ajustes.is-plegado .field { display: none; }
+.quote-ajustes.is-desplegado .quote-form-row,
+.quote-ajustes.is-desplegado .field { margin-top: 10px; }
 
 @media (max-width: 420px) {
   .quote-paso__guia { margin-left: 0; }
