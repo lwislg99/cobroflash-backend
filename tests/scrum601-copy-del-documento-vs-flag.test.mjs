@@ -119,7 +119,10 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 //
 // Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VEREDICTO_AL_MEDIR = { flag: 12, tipo: 7, aPelo: 154 };
+// SCRUM-915d (18-sep-2026) · flag 12 → 13: entra la guía del paso Cliente del editor, que SÍ deriva
+// del flag («¿Para quién es el presupuesto?» / «…el justificante?», firmadas en SCRUM-915
+// comentario 15868). Regenerada con el censo, no deducida.
+const VEREDICTO_AL_MEDIR = { flag: 13, tipo: 7, aPelo: 154 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -267,7 +270,9 @@ const PENDIENTES_DE_FIRMA = [
   //
   // 🔴 LO QUE QUEDA DECLARADO es de otra clase, y por eso lleva su motivo: el censo lo ve «a pelo»
   // porque contiene la diana, pero NO nombra el documento que se emite.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 672, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-915d · la línea pasa de 672 a 885 porque el esqueleto de los pasos se escribe encima;
+  // el texto y el motivo no cambian. Cifra MEDIDA sobre el árbol resultante, no deducida.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 885, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];

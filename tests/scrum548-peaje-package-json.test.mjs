@@ -104,7 +104,10 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // miden cosas que no se parecen —uno teclea descuentos y comprueba que el total y la vista previa
   // dicen lo mismo; el otro no teclea ningún descuento y mide ANCHOS de columna en 10 anchuras— y
   // juntarlos daría un guard que, cuando cae, no dice cuál de las dos cosas se rompió.
-  assert.deepEqual(resumen, ['2×/dashboard/index.html#quotes-new', '2×/medicion.html', '5×/index.html'],
+  // SCRUM-915d · y entra un tercero sobre el editor: `guard:pasos-del-editor`. Tampoco se fusiona,
+  // por el mismo motivo: no teclea descuentos ni mide anchos, RECORRE los pasos y juzga qué se ve
+  // tras cada clic. Su segundo destino (`#invoices-new`) no lo comparte con nadie.
+  assert.deepEqual(resumen, ['2×/medicion.html', '3×/dashboard/index.html#quotes-new', '5×/index.html'],
     '🔴 HA CAMBIADO QUIÉN MIDE QUÉ PÁGINA.\n'
     + '  No es un defecto por sí solo —dos guards pueden mirar cosas distintas de la misma\n'
     + '  página—, pero es el sitio donde mirar. SCRUM-546 encontró un solape de dos por pura\n'
