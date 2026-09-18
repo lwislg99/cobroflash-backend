@@ -28,6 +28,65 @@ const INSTALAR = path.join(RAIZ, 'scripts', 'equipo', 'instalar.mjs');
 const s = await import(pathToFileURL(SESION).href);
 const instalar = await import(pathToFileURL(INSTALAR).href);
 
+// El rojo de cada pieza, declarado: lo ejecuta `npm run meta:mutaciones`. El `cae` es un trozo
+// LITERAL del nombre del test que tiene que caer: una paráfrasis dejaría la mutación ciega.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: "  if (typeof config.traspasos !== 'string' || !config.traspasos) {",
+    a: '  if (false) {',
+    cae: '🔴 A2 · sin `traspasos` en config.json, sesion.mjs dice NO-PUDE-MIRAR',
+  },
+  {
+    fichero: 'scripts/equipo/instalar.mjs',
+    de: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt, traspasos };',
+    a: '  const config = { repo, claude, prefijo, puestos, orquestador, tandas, prompt };',
+    cae: '🔴 A2 · el instalador graba en config.json la carpeta de los traspasos',
+  },
+  {
+    fichero: 'scripts/equipo/instalar.mjs',
+    de: '  if (!fs.existsSync(traspasos)) {',
+    a: '  if (false) {',
+    cae: '🔴 el instalador se NIEGA si la carpeta de los traspasos no existe',
+  },
+  {
+    fichero: 'scripts/equipo/instalar.mjs',
+    de: '  if (conPrefijo === sinPrefijo) fallar(',
+    a: '  if (false) fallar(',
+    cae: '🔴 el prefijo se DECLARA',
+  },
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: "  if (typeof prefijo !== 'string') return no(",
+    a: '  if (false) return no(',
+    cae: '🔴 una config de equipo inválida no actúa',
+  },
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: 'sesiones: agentes.filter((a) => validarNombre(a.name, equipo) === null)',
+    a: 'sesiones: agentes.filter((a) => validarNombre(a.name) === null)',
+    cae: '🔴 con prefijo, `estado` solo lista las sesiones de SU equipo',
+  },
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo });',
+    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now() });',
+    cae: '🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo',
+  },
+  {
+    fichero: 'scripts/equipo/orquestador-arranque.mjs',
+    de: 'return { ok: true, nombre: `${config.prefijo}${config.orquestador}` };',
+    a: "return { ok: true, nombre: 'orquestador' };",
+    cae: '🔴 la tanda lanza al orquestador DEL CONFIG, con su prefijo',
+  },
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: 'const fichero = n ? `project_s${n[1]}_traspaso.md` : `project_${puesto}_traspaso.md`;',
+    a: "const fichero = n ? `project_s${n[1]}_traspaso.md` : 'project_traspaso.md';",
+    cae: '🔴 rutaDelTraspaso: sesion-N → project_sN, cualquier otro puesto → project_<puesto>',
+  },
+];
+
 const UUID = '1234abcd-0000-4000-8000-00000000abcd';
 const PROMPT = 'Prompt de tanda del banco de SCRUM-951a.';
 const PUESTOS_DE_LUIS = ['orquestador', 'sesion-0', 'sesion-1', 'sesion-2', 'sesion-3', 'sesion-4', 'sesion-5'];
