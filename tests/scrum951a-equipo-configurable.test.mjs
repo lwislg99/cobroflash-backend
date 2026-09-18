@@ -181,7 +181,11 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
     try { v = JSON.parse((r.stdout || '').trim().split('\n').at(-1)); } catch { /* sin veredicto */ }
     return { status: r.status, v };
   };
-  return { dir, repo, inst, memoria, leerLlamadas, correr, limpiar: () => fs.rmSync(dir, { recursive: true, force: true }) };
+  // Toda escritura de los tests pasa por aquí, colgando de `dir` (que es `temporal()`): así el censo de
+  // SCRUM-824 ve de dónde sale cada fichero, en vez de un `b.dir` que no puede seguir.
+  const escribir = (rel, contenido) => { const f = path.join(dir, rel); fs.writeFileSync(f, contenido); return f; };
+  const anadir = (rel, contenido) => fs.appendFileSync(path.join(dir, rel), contenido);
+  return { dir, repo, inst, memoria, leerLlamadas, correr, escribir, anadir, limpiar: () => fs.rmSync(dir, { recursive: true, force: true }) };
 }
 
 const lanzamientos = (llamadas) => llamadas.filter((a) => a[0] === '--bg');
@@ -326,8 +330,7 @@ test('🔴 con prefijo, `estado` solo lista las sesiones de SU equipo', () => {
 test('🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo y lanza el suyo con el nombre completo', () => {
   const b = banco({ equipo: EQUIPO_JV });
   try {
-    const promptF = path.join(b.dir, 'encargo.md');
-    fs.writeFileSync(promptF, 'encargo');
+    const promptF = b.escribir('encargo.md', 'encargo');
     const ajeno = b.correr('sesion.mjs', 'lanzar', 'orquestador', promptF);
     assert.equal(ajeno.v?.veredicto, 'NOMBRE-NO-PERMITIDO', `🔴 lanza una sesión con el nombre del otro equipo: ${JSON.stringify(ajeno.v)}`);
     assert.deepEqual(lanzamientos(b.leerLlamadas()), [], '🔴 llegó a lanzar con un nombre ajeno');
@@ -391,10 +394,9 @@ function instalarEnBanco(b, extra = []) {
   ]);
   assert.equal(r.status, 0, `🔴 NO PUDE MIRAR: el instalador no instaló en el banco (${r.stdout})`);
   // El `claude` del config pasa a ser el falso del banco (por la CLI solo viaja una ruta).
-  const f = path.join(destino, 'config.json');
-  const config = JSON.parse(fs.readFileSync(f, 'utf8'));
+  const config = JSON.parse(fs.readFileSync(path.join(destino, 'config.json'), 'utf8'));
   config.claude = JSON.parse(fs.readFileSync(path.join(b.inst, 'config.json'), 'utf8')).claude;
-  fs.writeFileSync(f, JSON.stringify(config, null, 2));
+  b.escribir(path.join('inst-nueva', 'config.json'), JSON.stringify(config, null, 2));
   return destino;
 }
 
@@ -428,7 +430,7 @@ test('🔴 ROJO: con la copia instalada de sesion.mjs TOCADA, la lista da FALLA 
   const b = banco({ equipo: EQUIPO_JV });
   try {
     const destino = instalarEnBanco(b);
-    fs.appendFileSync(path.join(destino, 'sesion.mjs'), '\n// tocado\n');
+    b.anadir(path.join('inst-nueva', 'sesion.mjs'), '\n// tocado\n');
     const lista = comprobarMod.comprobar({ destino, plataforma: 'linux' });
     const estado = lista.find((c) => c.id === 'sesion.mjs estado');
     assert.equal(estado?.veredicto, 'FALLA', `🔴 una copia alterada pasa la lista: ${JSON.stringify(estado)}`);

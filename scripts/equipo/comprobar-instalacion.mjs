@@ -112,10 +112,13 @@ export function comprobar({ destino, plataforma = process.platform }) {
   // 8 · el aviso de uso
   const uso = ejecutar(process.execPath, [path.join(destino, 'uso.mjs'), 'leer']);
   const vu = ultimoJson(uso.stdout);
-  if (uso.status === 0) poner('aviso de uso', 'OK', vu?.motivo || 'VERDE');
-  else if (uso.status === 1) poner('aviso de uso', 'OK', `lee y AVISA: ${vu?.motivo || 'uso alto'}`);
-  else if (uso.status === 2) poner('aviso de uso', 'AVISO', `sin lectura vigente (${vu?.motivo || 'no pude mirar'}): falta el statusLine o un turno en una sesión interactiva`);
-  else poner('aviso de uso', 'FALLA', 'uso.mjs no arrancó');
+  // El código de salida y el veredicto escrito tienen que DECIR LO MISMO: un 0 sin su VERDE no es un verde
+  // (SCRUM-622: «no lo sé» nunca se rellena con «todo bien»).
+  if (uso.status === 0 && vu?.veredicto === 'VERDE') poner('aviso de uso', 'OK', vu.motivo);
+  else if (uso.status === 1 && vu?.veredicto === 'AVISO') poner('aviso de uso', 'OK', `lee y AVISA: ${vu.motivo}`);
+  else if (uso.status === 2 && vu?.veredicto === 'NO_PUDE_MIRAR') {
+    poner('aviso de uso', 'AVISO', `sin lectura vigente (${vu.motivo}): falta el statusLine o un turno en una sesión interactiva`);
+  } else poner('aviso de uso', 'FALLA', `uso.mjs salió con ${uso.status} y veredicto ${vu?.veredicto ?? '(ninguno)'}: no cuadran`);
 
   // 9 · el censo de huérfanos
   const hu = ejecutar(process.execPath, [path.join(config.repo, 'scripts', 'equipo', 'huerfanos.mjs'), '--repo', config.repo]);
