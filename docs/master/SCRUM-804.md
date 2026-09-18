@@ -1395,6 +1395,109 @@ El único fichero escrito es éste.
 
 ---
 
+# APÉNDICE · Fase b — el barrido de la regla 42
+
+*17-sep-2026 · rama `scrum-804b-el-barrido-de-la-42`*
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T14:39:35+01:00
+
+⛔ **MIDE. No cierra ningún ticket, no toca Jira, no renombra ni borra ninguna rama.**
+
+## ① El censo — `27 DENTRO · 3 FUERA · 29 NO DECIDIBLE`
+
+```
+población: 59 tickets mirados · 59 clasificados · 27 DENTRO · 3 FUERA · 29 NO DECIDIBLE
+           (lado malo) · leídas 150 ramas remotas, 2999 ficheros de main y 564 entradas
+           de registro (la convención empieza en SCRUM-192)
+```
+
+**FUERA · 3 — y son los únicos que el censo puede PROBAR que están fuera:**
+
+| ticket | evidencia positiva |
+| --- | --- |
+| SCRUM-813 | rama viva sin mergear `scrum-813-el-trinquete-de-zona-horaria` |
+| SCRUM-864 | rama viva sin mergear `scrum-864b-a19-y-la-vuelta-del-tope` |
+| SCRUM-880 | rama viva sin mergear `scrum-880c-el-desempate-y-los-milisegundos` |
+
+**DENTRO · 25 de la lista** — 280 · 307 · 322 · 323 · 328 · 331 · 332 · 333 · 334 · 512 · 523 ·
+534 · 554 · 568 · 635 · 654 · 665 · 688 · 811 · 825 · 863 · 878 · 903 · 910 · 16. Casi todos con
+entrada en `main` **y sus artefactos presentes** (328 → 30/30 · 825 → 35/37 · 665 → 25/25).
+
+### 🔴 Y aquí es donde este censo casi miente: la primera versión daba 32 FUERA
+
+Los **32 con el mismo motivo**: *«sin rama, sin entrada y sin ficheros propios»*. Eso no es un
+veredicto — es **«no he encontrado marca»**. El encargo lo avisaba con estas palabras:
+
+> *«Un commit que lleva el número no prueba que el trabajo esté; y un trabajo sin número puede
+> estar entero.»*
+
+**Mandar esos 32 a `FUERA` habría hecho reabrir trabajo ya hecho.**
+
+Y había una razón **de construcción** que el primer criterio no podía ver: **las entradas de
+`docs/master/` empiezan en SCRUM-192** (sólo existe una por debajo, derivado del árbol y no
+escrito a mano). Los tickets anteriores — 41, 142, 143, 16, 18, 19, 20 — **no PUDIERON tener
+entrada**: se les exigía una regla que no existía cuando se hicieron.
+
+**Corregido:** `FUERA` exige **evidencia positiva de ausencia** — una rama viva sin mergear, que es
+lo único que este censo puede probar de ese lado. Todo lo demás es `NO DECIDIBLE`, del lado malo,
+con el motivo separado porque cada uno se acciona distinto:
+
+| motivo | nº | qué hacer con ellos |
+| --- | --- | --- |
+| commits de `main` lo nombran pero ningún artefacto comprobable | 6 | 41 · 142 · 276 · 326 · 774 · 786 · 20 — mirar el ticket en Jira y decidir a mano |
+| anterior a la convención de `docs/master/` | 3 | 143 · 18 · 19 — el censo no puede ayudar aquí |
+| el censo no ve NADA | 20 | ni rama, ni entrada, ni ficheros, ni commits |
+
+## ② El suelo y los controles
+
+| control | resultado |
+| --- | --- |
+| ✅ POSITIVO · SCRUM-866 y SCRUM-881 (cerrados y mergeados) | **DENTRO** los dos |
+| 🔴 NEGATIVO · SCRUM-880 (rama empujada hoy, sin mergear) | **FUERA**, y se comprueba que sale por el motivo correcto y no por casualidad |
+| 🔴 SUELO · 0 en DENTRO | aborta **CIEGO** |
+| 🔴 EXTRA · un ticket inventado (999999) | **NO DECIDIBLE**, nunca FUERA — el defecto de la primera versión, atado para que no vuelva |
+
+## ③ Las ramas sin slug — **una, no tres**
+
+De **150 ramas vivas**, 93 tienen forma de ticket. Incumplen `scrum-<n>-<slug>` **3**, pero son
+**tres cosas distintas y sólo una rompe el barrido**:
+
+| rama | qué le pasa | ¿la alcanza el barrido? |
+| --- | --- | --- |
+| `scrum-904` | **sin slug** | 🔴 **no** |
+| `scrum-421-registro-presupuesto-INCOMPLETO` | slug en MAYÚSCULAS | sí |
+| `scrum-474-fase2-INCOMPLETO` | slug en MAYÚSCULAS | sí |
+
+Y una cuarta forma fuera de esa cuenta: **`scrum-paso0-dinero`, sin número**.
+
+### Quién mide sobre esta población: **27 instrumentos**, no 8
+
+10 scripts (`censo-alcanzabilidad`, `censo-reparto`, `censo-tablero-vs-arbol`,
+`enlace-ticket-rama`, `ramas-borrables`, `_barrido-de-credenciales`, `_rastro-del-ticket`…),
+14 tests (267, 387, 716b, 716c, 723, 753, 775, 804, 824b, 829b, 839e, 853, 899, 900) y 3 bancos.
+**Con eso encima, no se ha renombrado ni borrado nada** (A12).
+
+### ¿Puede el barrido tolerar las dos formas sin perder precisión?
+
+**Sí para «número sin slug». No para «sin número». Y la diferencia no es de grado:**
+
+* **El barrido necesita EL NÚMERO, no el slug.** `^scrum-(\d+)([a-z])?(-|$)` reconoce `scrum-904`
+  sin ninguna ambigüedad, y sigue sin casar `scrum-41` dentro de `scrum-410`. Está atado con un
+  test en `tests/scrum804b-el-barrido-de-la-42.test.mjs`. **Tolerarlo es gratis.**
+* **`scrum-paso0-dinero` no tiene ticket al que mapear.** Tolerar eso no es relajar una forma: es
+  **inventar la asociación**. Ahí sí se pierde precisión, y es la puerta que no hay que abrir.
+
+> La regla `scrum-<n>-<slug>` junta dos exigencias de peso muy distinto: **el número lo leen las
+> máquinas y es la que aguanta; el slug es para las personas.** Un barrido que pierde una rama por
+> no llevar slug está fallando por una propiedad que no tiene nada que ver con lo que mide.
+
+**Reportado y no arreglado**: ampliar el criterio de SCRUM-804 es de su carril, y el encargo pedía
+la medición y el juicio, no el cambio.
+
+## Lo NO tocado
+
+Jira · ningún ticket cerrado · ninguna rama renombrada ni borrada · el criterio de SCRUM-804 sin
+ampliar · producción y staging sin tocar.
 # APÉNDICE · Fase d — lo que cada ticket PROMETÍA, y qué desbloquea a los no decidibles
 
 *17-sep-2026 · rama `scrum-804d-lo-que-prometia`*
