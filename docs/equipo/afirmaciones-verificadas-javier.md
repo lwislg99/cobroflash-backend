@@ -42,6 +42,18 @@ Medidas por J6 sobre `origin/main` = `4d8f3a15f6b3489d7f53bfbde550c587ee9d7c61`,
 las 15:45Z. El detalle está en `docs/master/SCRUM-908.md`, § 908c, y el banco en
 `docs/master/evidencias/scrum908c/`.
 
+⚠️ **Ni la § 908c ni el banco están en `main`.** Medido el 18-sep a las 15:56Z sobre `origin/main` =
+`17b0c86b84fb0544013923314d250d7181d913db`: **0 ficheros** bajo `docs/master/evidencias/scrum908c/`, y la
+misma consulta SÍ ve `docs/master/evidencias/SCRUM-307/`, así que no está ciega. Viven en la rama
+`scrum-908c-la-cola-que-se-pierde` (PR #1519), que sigue **en rojo a propósito** hasta que el caso se
+recalibre. Mientras no entre, los scripts de estas filas y el de la fila de SCRUM-942 se sacan de su
+cabeza empujada, `d0295b0d21d2d46a30cb575a1eebce43c1858a83`, que no se reescribe. Son `.mjs` sueltos que
+solo usan módulos de node, así que basta con sacarlos a una carpeta temporal y correrlos desde la raíz
+del repo:
+`git show d0295b0d21d2d46a30cb575a1eebce43c1858a83:docs/master/evidencias/scrum908c/<script>.mjs > "<carpeta temporal>/<script>.mjs"`.
+Probado así con `bytes-control.mjs`: da los mismos 1 y 4 NUL que su fila. Cuando #1519 entre, esta nota
+sobra y se quita.
+
 | lo que se afirmó | lo que se midió | comando exacto |
 | --- | --- | --- |
 | «el log del job del meta-guard no se puede leer sin permisos de admin: 403» (SCRUM-908b ③) | **FALSO en esta máquina**: se baja entero con la cuenta de `gh` de Javier (scopes `repo`), 83.130 bytes y exit 0. ⚠️ **La trampa:** sin `--allow-escape-sequences`, `gh` sale con **1** y el mensaje «the response contains terminal escape sequences», que parece un «no tienes acceso» y no lo es. **[re-medido por J6]** | `"C:/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/105552194145/logs > log.txt; echo $?` |
