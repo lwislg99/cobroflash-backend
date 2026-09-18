@@ -20,9 +20,14 @@ const GEM = D('integrations/gemini.js');
 const TEST = path.join(RAIZ, 'tests', 'scrum912-leer-ticket-gasto.test.mjs');
 
 const MUTANTES = [
-  { id: 'M1 respaldo de pago', f: DOM, de: 'const completar = deps.completar ?? gemini_1.geminiComplete;',
-    a: "const completar = deps.completar ?? (async (x) => { if (!require('../../../core/config/env').config.GEMINI_API_KEY) { await fetch('https://api.anthropic.com/v1/messages', { method: 'POST' }); return '{}'; } return gemini_1.geminiComplete(x); });",
+  { id: 'M1 respaldo de pago', f: DOM, de: 'const completar = deps.completar ?? gemini_1.geminiCompleteConModelo;',
+    a: "const completar = deps.completar ?? (async (x) => { if (!require('../../../core/config/env').config.GEMINI_API_KEY) { await fetch('https://api.anthropic.com/v1/messages', { method: 'POST' }); return { texto: '{}', modelo: 'claude' }; } return gemini_1.geminiCompleteConModelo(x); });",
     cae: 'sin clave de Gemini' },
+  { id: 'M13 cae a 2.5-flash', f: DOM, de: "'gemini-2.5-flash-lite',", a: "'gemini-2.5-flash-lite', 'gemini-2.5-flash',", cae: 'NUNCA cae a gemini-2.5-flash' },
+  { id: 'M14 ignora la lista', f: DOM, de: 'models: [...exports.MODELOS_LECTURA],', a: '', cae: 'inline_data' },
+  { id: 'M15 models ignorado', f: GEM, de: 'const models = params.models?.length', a: 'const models = false', cae: 'pasa al siguiente de ESA lista' },
+  { id: 'M16 cuota sin leer', f: GEM, de: "429, cuotasDelError(bodyText));", a: '429);', cae: 'errores de Google' },
+  { id: 'M17 diaria no manda', f: DOM, de: 'if (ids.some((q) => /PerDay/.test(q)))', a: 'if (false)', cae: 'la diaria manda' },
   { id: 'M2 la foto no viaja', f: GEM, de: 'const imagenes = (params.images ?? []).map(', a: 'const imagenes = ([]).map(', cae: 'inline_data' },
   { id: 'M3 sin temperatura 0', f: DOM, de: 'temperature: 0,', a: '', cae: 'inline_data' },
   { id: 'M4 tipo no entero', f: DOM, de: 'if (!Number.isInteger(t) || !fiscalInput_1', a: 'if (!fiscalInput_1', cae: 'no cuadra se DESCARTA' },
