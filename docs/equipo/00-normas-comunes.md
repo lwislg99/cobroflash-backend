@@ -1,11 +1,14 @@
 # Normas comunes del equipo de sesiones
 
-> 🔴 **ESTE FICHERO TIENE UN SOLO DUEÑO: LA SESIÓN 0.** Nadie más lo edita — ni las otras cinco
-> sesiones, ni Codex, ni el orquestador.
+> 🔴 **ESTE FICHERO TIENE UN SOLO DUEÑO: LA SESIÓN 0 DEL EQUIPO DE LUIS, Y VALE PARA LOS DOS
+> EQUIPOS.** Nadie más lo edita — ni las otras sesiones, ni Codex, ni los orquestadores, ni ningún
+> puesto del equipo de Javier.
 >
 > **Quien descubra una norma la escribe en SU informe y se la reporta a la Sesión 0**, que la mete
-> aquí. Las frases de canon propias de cada sesión van a su `docs/equipo/sesion-N.md`, que no
-> choca con nadie.
+> aquí. El equipo de Javier no puede escribirle a la S0 (otra máquina, otra cuenta): **propone por
+> Jira**, con un ticket con las etiquetas `equipo-javier` y `area-s0` y el texto exacto que propone
+> (`dos-equipos.md` §5). Las frases de canon propias de cada puesto van a su ficha, que no choca con
+> nadie.
 >
 > El motivo está medido: en una semana se mandó a CUATRO sesiones distintas escribir normas en
 > este mismo fichero (A12, A13, A14, A15, A16 y varias frases de canon). El resultado fue el
@@ -13,8 +16,13 @@
 > fichero es un conflicto garantizado**, y no lo causó la herramienta: lo causó repartir el
 > trabajo mal.
 
-Estas normas aplican a todas las sesiones, sin excepción.
-Tu identidad y tus trampas propias están en docs/equipo/sesion-N.md.
+Estas normas aplican a todas las sesiones de los DOS equipos, sin excepción.
+Tu identidad y tus trampas propias están en la ficha de tu puesto
+(docs/equipo/sesion-N.md en el equipo de Luis; los puestos de los dos
+equipos, en docs/equipo/dos-equipos.md).
+Las trampas de la MÁQUINA (Windows, Git Bash, PowerShell 5.1, gh), que
+valen para los dos equipos porque usan la misma máquina tipo, están en
+docs/equipo/trampas-del-entorno.md.
 Quien coordina también tiene ficha, y con sus trampas medidas dentro:
 docs/equipo/orquestador.md.
 
@@ -33,6 +41,14 @@ creíbles de árboles que ya no existían.
 Nunca `npx prisma`: descarga un CLI distinto (SCRUM-385). El cliente
 de Prisma se comparte entre worktrees y se desfasa — da errores de
 «columna que no existe» sobre columnas que sí están en el esquema.
+
+**Un agente o un workflow que MIDE trabaja en un worktree fijado a
+`origin/main`** (`git worktree add <ruta ABSOLUTA> origin/main`), nunca
+en un árbol compartido ni en uno que otra sesión pueda mover. ✗ Falla:
+el 29-jul-2026 un censo de 12 agentes concluyó que dos funciones «no
+existen en el repositorio»; existían desde hacía dos horas, pero los
+agentes leyeron un árbol compartido que otra sesión había dejado 9
+commits atrás.
 
 ## A2 · PASO 0 — ¿el defecto existe HOY?
 
@@ -79,6 +95,21 @@ arreglados.
 - Corrido o no cuenta. «Debería funcionar» no es un veredicto.
 - Si tu instrumento y tu conclusión se contradicen, gana el
   instrumento — después de comprobar el instrumento.
+- 🔴 **«No tengo X» es una afirmación sobre el entorno, y se mide
+  como cualquier otra ANTES de decirla.** Una herramienta diferida se
+  busca con `ToolSearch`; un binario que no está en el PATH, por su
+  ruta completa. «No está en el PATH» no es «no está». ✗ Falla, tres
+  veces medidas: «no hay acceso a Jira» (el MCP estaba conectado,
+  29-jul), «`gh` no está instalado» repetido durante días (estaba en
+  `C:\Program Files\GitHub CLI\gh.exe`, 15-sep) y «no hay Playwright»
+  (el MCP existía, 7-sep).
+- **Auditar por mutación: primero la BASE sin mutar.** Sin ella, un
+  test inestable que cae se lee como un mutante que muere. Y un
+  instrumento que no produce salida (un proceso lanzado con demasiados
+  ficheros en Windows, por ejemplo) es **CIEGO**, no una fila con
+  `null`: se declara ciego e invalida la fila. ✗ Falla: SCRUM-844
+  (15-sep), cinco mutantes dieron «pass null · fail null» y parecían
+  resultados.
 
 ## A4 · Git (AA2)
 
@@ -98,6 +129,29 @@ arreglados.
   despliegue está verde.
 - `git stash` NO se usa para apartar trabajo: su almacén es COMPARTIDO
   entre worktrees y `stash@{0}` puede ser de otra sesión. Ver **A15**.
+- 🔴 **El control del sufijo va en SU PROPIO comando, justo antes del
+  PRIMER push, y el push en el comando SIGUIENTE** solo si salió vacío.
+  El control, entero: los PR en CUALQUIER estado cuyo head case
+  `^scrum-0*NNN[a-z]?-`, `git ls-remote --heads origin` anclado al
+  NOMBRE de la ref (no a una subcadena: «858» casó dentro de un SHA),
+  y `git log origin/main --grep=SCRUM-NNN` (un PR mergeado borra su
+  rama y `ls-remote` ya no lo ve). Con un control positivo sobre una
+  rama que EXISTA HOY. ✗ Falla: 17-sep, SCRUM-895; el control MOSTRÓ
+  el PR ajeno, pero iba encadenado con `;` al `git push` y el push salió
+  igual. Un sufijo libre al empezar caduca en minutos (15-sep: 836d).
+- **Cada push siguiente, también en su propio comando, después de
+  `git ls-remote --heads origin <rama>`.** El repo auto-mergea y BORRA
+  la rama al mergear: si ya no existe y tu punta está en `main`
+  (`merge-base --is-ancestor`), NO se empuja — un push así recrea la
+  rama y abre un PR residuo. Y se empuja con `git push origin
+  HEAD:<rama>`, no con el nombre a secas, que empuja la rama LOCAL
+  homónima aunque estés en otra. Nunca un push detrás de un `git merge`
+  en la misma orden: si el merge falla, el push sale igual.
+- **Un conflicto en una cifra derivada** (censos, trinquetes, conteos)
+  no se resuelve eligiendo lado ni sumando: se conservan las dos
+  explicaciones y el número se **regenera** con su generador sobre el
+  árbol fusionado, DESPUÉS de resolver todo lo demás. ✗ Falla:
+  SCRUM-814, se dedujo 153 y el censo dijo 152.
 
 ## A5 · El orden del esquema
 
@@ -119,6 +173,33 @@ BUILD primero, y miras su código de salida ANTES que los tests.
 Luego suite completa + `guards:entrada`. Y NO encadenes el push a
 otra cosa: corre la suite después del último cambio, mira el
 resultado, y entonces empuja.
+
+**La lista de antes de correr una suite COMPLETA** (cada casilla, sí o no):
+
+1. ¿He borrado `FORCE_COLOR` del entorno **en este mismo comando** y lo
+   he comprobado (`-not (Test-Path Env:FORCE_COLOR)` da `True`)? El
+   entorno desde el que se lanzan las sesiones lo trae puesto y lo
+   heredan los hijos. ✗ Falla: SCRUM-928, tres instrumentos daban rojo
+   sobre un árbol sano solo por el color.
+2. ¿Tengo el **TURNO** del orquestador? Las suites completas van de UNA
+   en UNA por máquina.
+3. ¿He medido la **memoria libre en un comando APARTE**, y pasa el
+   umbral del equipo (hoy 2.200 MB y ninguna otra suite en marcha)? Se
+   lanza solo si pasa. ✗ Falla: una pasada murió a mitad con 2.101 MB y
+   tres suites a la vez; relanzarla sin medir es la tercera muerte.
+   No se baja el umbral para que quepa la tuya, ni se cierran programas
+   del escritorio del jefe.
+4. ¿Va el TAP a un fichero **FUERA del árbol**, y leo el código de
+   salida de node en un SEGUNDO comando? (A3)
+5. ¿Es la suite **posterior al último cambio**, incluido el expediente?
+   Si escribes el expediente después, `npm run guards:entrada` otra vez.
+
+**Y una pantalla no se da por buena con una captura: se mide el ESTADO
+después de pulsar.** Una captura bonita no prueba que el botón funcione.
+✗ Falla: 17-sep, SCRUM-917 se publicó con los botones del «⋯» muertos,
+y las capturas eran perfectas. La medida es la del navegador (el DOM
+ejecutado, el tamaño real, lo que cambia al pulsar), nunca la del CSS
+leído: una caja CSS no es lo que ocupa.
 
 ## A7 · Lo que no se toca, nunca
 
@@ -198,6 +279,12 @@ Un acto irreversible no es nunca la acción principal.
 Si tu medición tumba una decisión firmada, gana tu medición.
 El coste no es lo que entra en el chat: es lo que el chat arrastra.
 Un carácter que no se ve no lo caza una revisión: lo caza un recuento.
+Una operación que no se ejecutó se lee exactamente igual que un éxito.
+Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.
+Una captura bonita no prueba que el botón funcione.
+«No está en el PATH» no es «no está».
+Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.
+Una idea de un jefe es una hipótesis con su literal, no una orden de construir.
 
 ## A11 · Cómo se actualiza esto
 
@@ -218,12 +305,32 @@ todas con su trabajo dentro de `main`— y el suelo de SCRUM-804, que exigía «
 ramas remotas», dejó el check obligatorio en rojo **para los 22 PR abiertos a la
 vez**. La orden era buena; lo que faltó fue mirar quién medía sobre eso.
 
-## A13 · Nada más coger un ticket: EN CURSO + ASIGNADO A LUIS
+## A13 · El ticket: abrir, coger, soltar y cerrar — como departamentos
 
-En Jira, **antes de la primera línea de código, no después.**
+*(Hasta el 18-sep-2026 decía «nada más coger un ticket: EN CURSO + ASIGNADO A LUIS». Con dos equipos
+y dos jefes pasa a ser el ciclo entero, igual para los dos. Lo pidió el fundador: «dejar muy clara la
+metodología de abrir tickets, como con departamentos, y ponerlos SIEMPRE en curso para no pisarnos».)*
 
-Un ticket que se trabaja sin estar En curso es trabajo que el colaborador no
-puede ver, y dos sesiones pueden cogerlo a la vez.
+Los dos equipos **no se hablan**: lo único que ven los dos es Jira y el repo. Por eso el ticket no es
+papeleo, es el único canal. Cinco pasos, y cada uno con lo que lo haría fallar:
+
+1. **ABRIR.** Todo ticket nace con **DOS etiquetas**: la del equipo (`equipo-luis` o `equipo-javier`) y
+   la del área dueña según `dos-equipos.md` §3 (`area-s0` … `area-s5`, `area-j1` … `area-j6`). Si no casa
+   con ningún área, **no se abre**: se le pregunta al orquestador. El título empieza por la zona en
+   mayúsculas («GASTOS · …»). ✗ Falla: un ticket sin etiqueta de área; o con `sesion-J1`, que es una
+   etiqueta VIEJA de agosto con otro significado (21 tickets la llevan) y no se reutiliza.
+2. **COGER.** Antes de la primera línea, **se mira el ticket**. Si está En curso y es de otro puesto u
+   otro equipo, **no se toca** y se avisa al orquestador. Si está libre: **En curso + asignado al JEFE
+   del equipo que lo trabaja** (Luis o Javier: las sesiones no tienen cuenta de Jira) + un comentario
+   «lo coge <puesto> · <hora de GitHub> · <SHA de origin/main>». ✗ Falla: 17-sep, SCRUM-890 y SCRUM-895,
+   una sesión del otro equipo cogió dos tickets que el nuestro estaba trabajando sin que constara, y
+   los dos lados hicieron el mismo trabajo.
+3. **SOLTAR.** Si una sesión lo deja a medias (relevo, fin de uso), lo dice en un **comentario** con el
+   punto exacto: rama, último SHA y el siguiente paso. ✗ Falla: un ticket En curso que nadie trabaja y
+   que el otro equipo no se atreve a tocar.
+4. **CERRAR.** Solo por **efecto medido**, con el comentario de la evidencia. **Cierra el orquestador del
+   equipo dueño**, nunca una sesión y nunca el otro equipo (A18; `orquestador.md` §10bis.16).
+5. **LIMPIAR.** Una vez por semana, cada orquestador revisa SUS abiertos: hechos, duplicados, superados.
 
 ## A14 · Todo informe empieza con la hora y el SHA
 
@@ -240,6 +347,11 @@ línea» y no decían cuál gana.
    **justo después de la hora y el SHA**.
 
     9-sep-2026 11:40 · medido sobre origin/main da5ac06ac169fca5d3692a63b10b01a6aed7d3d6 · worktree wt-verif5
+
+**La hora sale de GitHub, nunca del reloj de la máquina:** la cabecera `Date:` de `gh api -i zen`
+(en Git Bash, SIN barra delante: MSYS convierte `/zen` en una ruta y la cabecera sale vacía). ✗ Falla:
+el 15-sep-2026 el reloj de la máquina de Luis iba **5 min 33 s adelantado**, y un PR salía «creado»
+cinco minutos antes del push que lo abrió. El desfase cambia: no se corrige, se evita.
 
 Sin esas dos cosas el orquestador no puede distinguir un informe de hace diez
 minutos de uno de hace seis horas, y ya ha mandado tres veces instrucciones
@@ -362,8 +474,8 @@ cierre no puede afirmar la causa», no como «no se cierra».
 
 ## A19 · El PUESTO es fijo; la SESIÓN se releva
 
-Hay seis puestos, de la S0 a la S5, y **siempre están los seis ocupados**. El puesto dura lo que dure
-el equipo. Lo que se cambia, cuando toca, es la sesión que lo ocupa: se lanza una sesión NUEVA en
+Cada equipo tiene sus puestos (el de Luis, de la S0 a la S5; el de Javier, de J1 a J6: `dos-equipos.md`),
+y **siempre están ocupados**. El puesto dura lo que dure el equipo. Lo que se cambia, cuando toca, es la sesión que lo ocupa: se lanza una sesión NUEVA en
 segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar su contexto.
 
 - **Cuándo se releva** (lo decide el orquestador). Hay tres casos:
@@ -381,8 +493,11 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
     sesión nueva».
 - **Cómo se releva:**
   1. el orquestador pide el traspaso;
-  2. la sesión escribe `project_sN_traspaso.md` en la memoria del proyecto, más su línea en
-     `MEMORY.md`, para alguien que NO ha visto su chat;
+  2. la sesión escribe su traspaso en la memoria del proyecto (`project_sN_traspaso.md` para
+     `sesion-N`; `project_<puesto>_traspaso.md` para el resto, y `project_orquestador_traspaso.md` el
+     orquestador), más su línea en `MEMORY.md`, para alguien que NO ha visto su chat. ⚠️ La memoria es
+     de la MÁQUINA y de la CARPETA: el otro equipo no la ve nunca. Lo que tenga que saber el otro
+     equipo va al repo o a Jira, no aquí;
   3. contesta **«traspaso listo»** por el canal y **PARA**, sin un comando más;
   4. el orquestador la detiene y lanza la sesión nueva con el prompt estándar y el encargo concreto;
   5. la nueva lee desde `origin/main` el `CLAUDE.md`, estas normas, su `sesion-N.md`, su fila de la
@@ -398,9 +513,10 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
      scratchpad se borra con la sesión: A8);
   5. **cola** de su carril, en orden;
   6. **autorizaciones que hay que volver a pedir** (punto siguiente).
-- 🔴 **Las autorizaciones del fundador NO se heredan.** Un GO de dinero, un alta en un servicio de
-  terceros o un borrado que el fundador escribió en el chat de una sesión valen para ESA sesión.
-  - La nueva no los usa hasta que el fundador se los escriba a ella.
+- 🔴 **Las autorizaciones de un jefe NO se heredan.** Un GO de dinero, un alta en un servicio de
+  terceros o un borrado que un jefe (Luis o Javier) escribió en el chat de una sesión valen para ESA
+  sesión.
+  - La nueva no los usa hasta que un jefe se los escriba a ella.
   - El traspaso dice qué estaba autorizado y que hay que pedirlo otra vez, **sin copiar datos
     personales**.
 - **El traspaso se lleva al día mientras se trabaja**, no solo cuando se pide: si el uso se corta de
@@ -486,6 +602,30 @@ lee exactamente igual que un cero de algo que funciona.
 
     🔒 «Antes de creerte el resultado, comprueba que el sujeto existió.»
 
+### La familia entera: una operación que NO se ejecutó se lee igual que un éxito
+
+*(Añadido el 18-sep-2026 desde el traspaso de la Sesión 3 del 17-sep: cuatro veces en una tanda, y
+ninguna la cazó el código de salida.)* No es solo la cobaya del banco: **cualquier operación** puede no
+ejecutarse y dejar exactamente la misma salida que si hubiera ido bien. Por eso todo log de un banco,
+una sonda o una suite lleva en su primera línea la **POBLACIÓN** y en la última el **`EXIT=`**, y el
+informe cita las dos. Los cuatro casos medidos:
+
+1. `npm` en un `.cmd` sin `call`: el script muere ahí y el job sale 0.
+2. Un comentario largo con acentos en un `.cmd`: cmd lee por posición y se come dos caracteres de cada
+   línea; sale 0.
+3. `[IO.File]::ReadAllText('ruta/relativa')` resuelve contra el directorio del PROCESO: la mutación no
+   se aplicó y la traza decía «mutante puesto» con el `git diff` vacío. → rutas ABSOLUTAS y el
+   `git diff --numstat` impreso al lado de la afirmación.
+4. Un `NODE_OPTIONS` puesto para el sujeto mató al `node --test` que lo corría: exit 1 y cero recuentos.
+
+- **Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.** Un exit 1 con
+  cero recuentos se parece muchísimo a un descubrimiento.
+- **Un control positivo puede salir VACÍO y no disparar.** Un testigo tiene que EXISTIR HOY: el control
+  del sufijo con una rama ya mergeada y borrada salía vacío, y su «0» no valía nada.
+- **Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.** El entorno del sujeto se
+  construye a mano, no con `{ ...process.env }` a pelo (SCRUM-928c: el color del chat entraba en el
+  sujeto).
+
 **Medido (SCRUM-864):** el banco importaba el helper con una ruta absoluta de Windows sin
 `file://`, así que la cobaya de DESPUÉS no arrancaba y dejaba **0 restos porque no creaba
 ninguno**. Iba a publicarse como «defecto arreglado». Lo cazó el **control positivo**, no el que
@@ -536,3 +676,30 @@ también está medida: **no puede usar `git grep -I`**. Un NUL convierte el fich
 el `-I` se lo salta, así que quedaría ciego justo ante el caso peor.
 
     🔒 Un carácter que no se ve no lo caza una revisión: lo caza un recuento.
+
+## A23 · Cómo se escribe un guard — la lista de comprobación
+
+*(18-sep-2026, SCRUM-951b.)* Hasta hoy esto vivía en la memoria de UNA máquina, en cuatro notas que
+mordieron una y otra vez; el equipo de Javier no la tiene. Un guard se da por bueno cuando **todas**
+las casillas dicen sí. Cada una lleva el caso que la haría fallar.
+
+| # | la pregunta (sí / no) | ✗ falla si… |
+|---|---|---|
+| 1 | ¿He **barrido antes** de escribirlo, por si la prohibición ya está rota hoy? Si lo está, es un **hallazgo que se reporta aparte**, antes que el guard. | el guard nace con la violación dentro, callada en una excepción |
+| 2 | Si busca un patrón **por texto**, ¿lee el código **SIN comentarios**? El comentario que explica por qué se retiró algo CONTIENE lo que se retiró. | nace verde con la regresión puesta, o rojo contra su propia prosa (mordió 4 veces el 27-jul) |
+| 3 | ¿El recorte de comentarios parte por líneas (`/\r?\n/`) y no usa `.*$`? En JS `.` no casa `\r`, y el repo tiene ficheros CRLF. | el recorte no quita nada en un fichero CRLF y el guard vuelve a leerse a sí mismo (SCRUM-406) |
+| 4 | ¿Los selectores CSS van **anclados a principio de línea** (`'\n.clase {'`)? | `.clase {` casa con `.otra > .clase {` |
+| 5 | ¿Cuenta **cosas** y no texto: nombres por AST, en su ámbito, y no por regex sobre el fichero? (A3) | un `for-of` en otra parte del fichero «liga» cualquier nombre (SCRUM-846) |
+| 6 | ¿Declara su **POBLACIÓN** y tiene **SUELO** («no pude mirar» no da verde)? (A3, A21) | dice «0 violaciones» sin decir sobre cuántos ficheros |
+| 7 | Si es un **trinquete**, ¿tiene sus DOS mitades: «no sube» Y «no baja en silencio»? Una bajada que nadie ha hecho es un instrumento roto hasta que se demuestre lo contrario. | el número de deuda baja de 9 a 8 porque el escáner se descarriló, y nadie mira dos veces un número que mejora (SCRUM-814) |
+| 8 | ¿Lo he visto en **ROJO** antes de darlo por bueno, con una violación REAL del tipo que dice prevenir, y comprobando que la inyección **se aplicó** (el `git diff --numstat` al lado)? (`docs/METODO_YAQU.md`) | un rojo que no se inyectó y un verde son indistinguibles |
+| 9 | Antes de inyectar, ¿he hecho **commit de TODO el árbol** (`git add -A`) y he puesto **su SHA en el informe**? Incluido el fichero que estoy editando en ese momento. | `git checkout -- f` para deshacer la inyección se lleva el arreglo sin commitear (4 roturas: SCRUM-316, 415, 474, 441) |
+| 10 | ¿He hecho **`npm run build`** entre una inyección y la siguiente? Los tests corren contra `dist/`. | revertir el fuente deja la inyección dentro del build y el rojo siguiente sale contaminado (SCRUM-367) |
+| 11 | ¿He revertido con `git restore --source=HEAD` y comprobado con `git status --porcelain` que lo mío sigue ahí? Y tras un merge con conflicto, ¿he repetido **TODOS** los rojos? | entra en main un guard incapaz de fallar con un registro que dice lo contrario |
+| 12 | Si el rojo no llega ni a compilar, ¿he añadido una aserción PERMANENTE del mecanismo por otra vía? | la afirmación de runtime que justificaba el guard se queda en prosa (SCRUM-500) |
+| 13 | ¿Los **datos de prueba** ejercitan el camino? Un fixture cómodo (`id: 1`, el merchant demo) apaga puertas sin tocar el guard. | la regla del ticket no la comprueba ninguna línea de prueba (SCRUM-290) |
+| 14 | ¿Las **excepciones** van en una ALLOWLIST visible con su motivo al lado, y se le dicen al jefe? | una excepción silenciosa convierte un fallo en una característica |
+| 15 | Si guarda arrays con números, ¿van **uno por línea**? (lo vigila `tests/scrum710b`) | dos tickets cambian números de la misma línea y el conflicto parece que se pisan |
+| 16 | ¿Cuánto **tarda**? Un guard de minutos acaba fuera de la tanda (canon de `sesion-0.md`). | 1.200 procesos de `git` y 366 s donde un solo `rev-list` daba 14 s (SCRUM-833) |
+
+    🔒 Un guard que nunca has visto fallar es un guard que no sabes si funciona.
