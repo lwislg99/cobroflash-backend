@@ -127,6 +127,10 @@ const LINEA = /población (\d+) \(recorrido (\d+) · censo (\d+)\) · de acuerdo
 function correrSuelo(dir, envExtra = {}) {
   const env = { ...process.env, ...envExtra };
   delete env.NODE_TEST_CONTEXT; // heredada de la tanda, cambia la salida del hijo (scrum trinquete-zona)
+  // La tanda de CI fija sus propios reporters en NODE_OPTIONS (ci.yml); heredarlos aquí suma un
+  // tercer `--test-reporter` al explícito de abajo sin destino a juego y Node lo rechaza
+  // (ERR_INVALID_ARG_VALUE) antes de correr nada. La copia pone los suyos, no los de la tanda.
+  delete env.NODE_OPTIONS;
   const r = spawnSync(process.execPath,
     ['--test', '--test-reporter=spec', '--test-name-pattern=SUELO', path.join(dir, INSTRUMENTO)],
     { cwd: dir, env, encoding: 'utf8', timeout: 60_000 });
