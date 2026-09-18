@@ -69,7 +69,12 @@ con control positivo.
 - **Instrumentos que leen estos ficheros (A12):** `scripts/_invocaciones-de-la-tanda.mjs` lee los bloques ```
   de `00-normas-comunes.md` (no se añade ninguno: su población no cambia) y el oráculo de microcopy lee
   `limites-del-fundador.md` («Delegación permanente», sin tocar). Tests que los leen, corridos sobre la rama:
-  `scrum861`, `scrum850`, `scrum850b`, `scrum711` → **29 tests · 29 pass · 0 fail**, exit 0.
+  `scrum861`, `scrum850`, `scrum850b`, `scrum711` → **29 tests · 29 pass · 0 fail**, exit 0. Y los 9 que barren
+  `docs/` entero (`scrum233`, `387`, `534b`, `637`, `705`, `753`, `775`, `810b` y el que importa
+  `_documentos-a-la-espera.mjs`) → **88 tests · 88 pass · 0 fail · 0 saltados**, exit 0. `npm run guards:entrada`
+  → **26 · 26 · 0**, exit 0.
+- **La suite COMPLETA no se ha corrido en local** (el worktree no tiene `node_modules` y la suite va con turno):
+  es un PR solo de docs, y la suite entera la corre el CI sobre el merge.
 - Bytes de control (A22) y CR en los 6 ficheros: **0 y 0**.
 
 ### Lo que NO se ha hecho, y por qué
