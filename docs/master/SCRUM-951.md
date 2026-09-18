@@ -7,7 +7,8 @@ sesiones en segundo plano. **Los dos son jefes.** Dos partes: **951a** (Sesión 
 
 ## SCRUM-951a · el equipo sale del config, no del código
 
-**Medido contra:** `origin/main` = `34d06bb4f4e306b11745cf34fbbc85233c5a3299` · 2026-09-18T12:09:26Z ·
+**Medido contra:** `origin/main` = `34d06bb4f4e306b11745cf34fbbc85233c5a3299` · 2026-09-18T12:09:26Z
+
 **Rama:** `scrum-951a-equipo-configurable`
 
 ### PASO 0 (solo lectura, enviado al orquestador antes de construir)
