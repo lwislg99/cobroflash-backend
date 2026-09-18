@@ -80,6 +80,21 @@ no de un banco roto. A3 cae por `'\memoria\project_traspaso.md'` frente a `proje
 - **Control negativo del mutador**: una mutación inocua (un comentario) sale **VIVE** y la pasada da «9 de 10» con
   salida 1. El instrumento sabe decir que no.
 
+### La suite con turno cazó tres cosas mías (y las tres las arregla el código, no el guard)
+
+Primera pasada, sobre `926001a4`: 7.707 tests · 7.590 pass · **6 fail** · 111 skip. Tres son los conocidos de
+`scrum939b` (ajenos: `gh` existe en esta máquina). Los otros tres eran de este PR:
+
+- **SCRUM-622** — `comprobar-instalacion.mjs` hacía `vu?.motivo || 'VERDE'`: un veredicto que falta se rellenaba con
+  «verde». Ahora el código de salida y el veredicto escrito de `uso.mjs` tienen que CUADRAR, o es `FALLA`.
+- **SCRUM-824** — tres escrituras del test colgaban de `b.dir`, que el censo de temporales no sabe seguir. Ahora pasan
+  por ayudantes de `banco()` que cuelgan de `temporal()`. No se declaró nada en `SIN_PROBAR_CONOCIDOS`.
+- **SCRUM-723** — `instalar.mjs` y `comprobar-instalacion.mjs` leen `origin/main` **por diseño** (copian y comparan
+  contra la copia oficial, que es la que exige la puerta de `sesion.mjs`). Ese censo existe para declararlos con su
+  motivo, como a los bancos de 899; declarados, y el banco de 951a también.
+
+Mutantes re-medidos tras el arreglo: 11 de 11.
+
 ### Lo que NO se ha hecho
 
 - **Ninguna instalación real**, ni en la máquina de Luis ni en la de Javier. Todo está probado en bancos (repositorio
