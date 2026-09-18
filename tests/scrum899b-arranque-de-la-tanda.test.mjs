@@ -59,7 +59,7 @@ function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = fal
 
   const repo = path.join(dir, 'repo');
   execFileSync('git', ['init', '-q', repo]);
-  for (const [enRepo] of instalar.FICHEROS) fs.mkdirSync(path.join(repo, path.dirname(enRepo)), { recursive: true });
+  for (const [enRepo] of instalar.copias('docs/equipo/prompt-tanda-orquestador.md')) fs.mkdirSync(path.join(repo, path.dirname(enRepo)), { recursive: true });
   fs.copyFileSync(path.join(RAIZ, 'scripts/equipo/sesion.mjs'), path.join(repo, 'scripts/equipo/sesion.mjs'));
   fs.copyFileSync(path.join(RAIZ, 'scripts/equipo/orquestador-arranque.mjs'), path.join(repo, 'scripts/equipo/orquestador-arranque.mjs'));
   if (!sinPrompt) fs.writeFileSync(path.join(repo, 'docs/equipo/prompt-tanda-orquestador.md'), PROMPT);
@@ -70,7 +70,8 @@ function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = fal
   // La instalación, como la hace `arranque.cmd`: `git show origin/main:<fichero>` a la carpeta.
   const inst = path.join(dir, 'instalacion');
   fs.mkdirSync(inst);
-  for (const [enRepo, instalado] of instalar.FICHEROS) {
+  // SCRUM-951a: el prompt ya no es un fichero fijo; su ruta sale del config (`instalar.copias`).
+  for (const [enRepo, instalado] of instalar.copias('docs/equipo/prompt-tanda-orquestador.md')) {
     const r = spawnSync('git', ['-C', repo, 'show', `origin/main:${enRepo}`]);
     if (r.status === 0) fs.writeFileSync(path.join(inst, instalado), r.stdout);
   }
@@ -97,7 +98,14 @@ function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = fal
     '}',
     'process.exit(1);',
   ].join('\n'));
-  fs.writeFileSync(path.join(inst, 'config.json'), JSON.stringify({ repo, claude: [process.execPath, falso] }));
+  // SCRUM-951a: la puerta exige el equipo y la carpeta de los traspasos; aquí, el equipo de Luis.
+  const memoria = path.join(dir, 'memoria');
+  fs.mkdirSync(memoria);
+  fs.writeFileSync(path.join(inst, 'config.json'), JSON.stringify({
+    repo, claude: [process.execPath, falso],
+    prefijo: '', puestos: ['orquestador', 'sesion-0', 'sesion-1', 'sesion-2', 'sesion-3', 'sesion-4', 'sesion-5'],
+    orquestador: 'orquestador', traspasos: memoria,
+  }));
 
   const leerLlamadas = () => (fs.existsSync(llamadas) ? fs.readFileSync(llamadas, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
   const tanda = () => {
@@ -162,14 +170,15 @@ test('SUELO: sin el prompt del orquestador en origin/main, «no pude mirar» y n
 });
 
 test('🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza el arranque', () => {
-  const cmd = instalar.arranqueCmd({ destino: 'C:/Users/X/AppData/Local/yaqu-equipo', repo: 'D:/repo' });
+  const prompt = 'docs/equipo/prompt-tanda-orquestador.md';
+  const cmd = instalar.arranqueCmd({ destino: 'C:/Users/X/AppData/Local/yaqu-equipo', repo: 'D:/repo', prompt });
   const lineas = cmd.split('\r\n');
   const cd = lineas.indexOf('cd /d "D:\\repo"');
   assert.ok(cd >= 0 && cd < lineas.findIndex((l) => l.startsWith('node ')),
     '🔴 arranque.cmd no entra en el repositorio antes de lanzar: la tarea programada arranca en System32 y el\n'
     + '  orquestador nacería fuera del proyecto (sin settings ni CLAUDE.md, con el diálogo de confianza de carpeta)');
   assert.ok(lineas.some((l) => l === 'git -C "D:\\repo" fetch --quiet origin main'), '🔴 no trae main antes de copiar');
-  for (const [enRepo, instalado] of instalar.FICHEROS) {
+  for (const [enRepo, instalado] of instalar.copias(prompt)) {
     assert.ok(lineas.includes(`git -C "D:\\repo" show origin/main:${enRepo} > "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\${instalado}"`),
       `🔴 ${instalado} no se copia desde origin/main: la tanda actuaría con una copia que nadie ha revisado`);
   }
@@ -181,8 +190,8 @@ test('🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza
 });
 
 test('las órdenes de schtasks: tres tareas diarias, a las horas decididas, sobre arranque.cmd', () => {
-  const ordenes = instalar.ordenesSchtasks({ destino: 'C:/Users/X/AppData/Local/yaqu-equipo' });
-  assert.deepEqual(instalar.TANDAS, ['08:00', '13:05', '18:10']);
+  // SCRUM-951a: las horas ya no viven en el código; éstas son las del equipo de Luis, que da la guía.
+  const ordenes = instalar.ordenesSchtasks({ destino: 'C:/Users/X/AppData/Local/yaqu-equipo', tandas: ['08:00', '13:05', '18:10'], prefijo: '' });
   assert.deepEqual(ordenes, [
     'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-0800 /st 08:00 /tr "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"',
     'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-1305 /st 13:05 /tr "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"',
