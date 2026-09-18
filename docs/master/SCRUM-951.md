@@ -294,3 +294,16 @@ escribe la S0, y desde ahí son de cada puesto.
   de plugins y skills de terceros (`limites-del-fundador.md` lo avisa). Corregido a A7 antes del commit.
 - Conté «17 más» por etiquetar en la ficha del orquestador; recontados eran **16** (se me había colado SCRUM-328,
   que está En curso en el equipo de Luis y no se re-etiqueta). Corregido antes del commit.
+
+## SCRUM-951e · La nota de navegador
+
+Commit `5330af5203b8adeeaebc75271cd4800bd1a49140`, 18-sep-2026 13:46:10Z (cabecera `Date:` de `gh api -i zen`).
+Sesión 5.
+
+- `docs/equipo/instalacion-maquina-nueva.md`: sección «Navegador». Las mediciones usan Edge con `puppeteer-core`
+  (`scripts/_navegador.mjs`, lo instala `npm ci`); el MCP `playwright` de `.mcp.json` no hace falta y se deja
+  desactivado porque bloquea las sesiones de fondo; la librería Playwright solo para recorrer la competencia
+  (J5 / S0), con `npx -y playwright install chromium` y un script del scratchpad; contraseñas nunca al chat ni al repo.
+- `docs/equipo/puesto-j5.md`: una línea que remite a esa sección.
+- Comprobado antes de escribir: `puppeteer-core` está en `package.json` y `playwright` no; `.mcp.json` declara el
+  servidor `playwright` (`@playwright/mcp`).

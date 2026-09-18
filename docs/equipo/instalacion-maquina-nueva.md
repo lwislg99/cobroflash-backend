@@ -166,6 +166,18 @@ Lo hace **quien manda en la máquina**:
 
 ---
 
+## Navegador (SCRUM-951e)
+
+- **Lo que usan las mediciones del proyecto:** Microsoft Edge, que viene con Windows, manejado con `puppeteer-core`,
+  que ya instala `npm ci`. Dónde se busca el navegador lo decide `scripts/_navegador.mjs`. No hay que instalar nada más.
+- **El MCP `playwright` de `.mcp.json` NO hace falta y se deja desactivado:** es el que bloquea las sesiones de fondo.
+- **La LIBRERÍA Playwright** solo la usa quien recorre la competencia (J5 en el equipo de Javier, S0 en el de Luis).
+  Se instala cuando se necesita, con `npx -y playwright install chromium` (los navegadores van a
+  `AppData\Local\ms-playwright`, fuera del repo), y se lanza desde un script del scratchpad, nunca desde el repo.
+- **Las contraseñas de las cuentas de prueba nunca van al chat ni al repo.**
+
+---
+
 ## 7 · Lista de verificación final — la corre el propio Claude
 
 ### 7.1 · Lo mecánico, con un comando

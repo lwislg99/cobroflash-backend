@@ -60,5 +60,7 @@ de la landing, de J3).
 Lo que muestra la competencia no es lo que tu profesional necesita: un patrón bueno para miles de clientes
 puede ser malo para cuatro técnicos (`orquestador.md` §6). Y un prototipo se prueba en el navegador, midiendo:
 la S4 publicó uno con los botones del «⋯» muertos y las capturas perfectas (SCRUM-917).
+Para recorrer la competencia necesitas la librería Playwright: cómo se instala y se lanza está en
+`instalacion-maquina-nueva.md`, sección «Navegador».
 
     🔒 Una captura bonita no prueba que el botón funcione: se mide el ESTADO después de pulsar.
