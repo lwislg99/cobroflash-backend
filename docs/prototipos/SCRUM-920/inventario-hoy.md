@@ -7,6 +7,12 @@ Capturas en `capturas/`. **Este documento es sólo el inventario: el prototipo l
 > (ver §6). Sin ellos, la lista sólo se podía medir en su estado vacío, y sacar conclusiones de ahí sería el mismo
 > «cero que se lee como limpio» que ya nos mordió hoy en otra medición.
 
+> 🔴 **CORREGIDO el 18-sep-2026 (SCRUM-920b), tres cosas que este inventario daba mal.** Detalle en §8.
+> ① §2 citaba mal un texto FIRMADO. ② Los cuatro gastos sembrados llevan categorías **en inglés** que el producto no
+> reconoce: las píldoras «Otros» y el KPI «materials» de las capturas son **suciedad de la siembra**, no
+> comportamiento de la pantalla. ③ El enlace «Trabajo» de las capturas es el nombre por defecto de un trabajo sin
+> título, y la pantalla de Trabajos llama a ese mismo trabajo de otra forma.
+
 ## 1 · La lista
 
 | | 1280 | 390 |
@@ -54,7 +60,9 @@ proveedor · 7. Fecha de la factura · 8. Fecha · 9. Categoría · 10. Trabajo 
 El ticket pide «apuntar un gasto en segundos desde el móvil, foto del ticket primero». Hoy la foto es **el campo
 catorce de catorce**, y sólo dos son obligatorios. El alto del modal es 760 px a 390 y 860 a 1280.
 
-Textos de hoy que se conservan: «Guardamos la foto como tu copia. Los datos fiscales los pones tú», «Vincula este
+Textos de hoy que se conservan: «Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.»
+(`expensesView.js:392`, SCRUM-324 E3 — *corregido el 18-sep: aquí ponía «…Los datos fiscales los pones tú», que no
+es lo que dice la pantalla*), «Vincula este
 gasto a un trabajo para calcular el margen.», «— Sin trabajo —», «— Sin proveedor —», «Añadir gasto»,
 «Guardar cambios», «Guardando…».
 
@@ -118,3 +126,65 @@ Con este inventario delante: prototipo HTML con las tres piezas que pide el tick
 primero**, **lista por mes con totales y filtro por trabajo**, y **detalle del gasto con su justificante visible**—,
 medido a 390 y 1280 con 0 scroll horizontal (también **dentro** de la tabla) y 0 controles por debajo de 44 px.
 Textos nuevos subrayados y propuestos. **Nada fiscal afirmado**: lo de §3 se propone, no se decide.
+
+> **Hecho el 18-sep** (`gastos.html`). Y con una decisión del orquestador del mismo día que acota §3: la «cuarta
+> vía» —enseñar los códigos de `faltan`— **tampoco** se enseña en el prototipo. Todo lo del motor del justificante
+> queda en manos del fundador (SCRUM-324 E3).
+
+## 8 · Re-medido el 18-sep-2026 (SCRUM-920b), y lo que corrige
+
+Sobre `origin/main = 16733a223b3d09d3fdf03bf03c67a2b278b4906c`: el código leído de `origin/main` y la base de staging
+leída con un `SELECT` (sólo lectura, merchant 2).
+
+**① El texto firmado estaba mal citado en §2.** Lo que dice la pantalla (`expensesView.js:392`) es «Guardamos la foto
+como tu copia. Los datos fiscales salen de los campos de arriba.» Importa, y mucho: con la foto PRIMERO, «de arriba»
+deja de ser verdad. Ver `textos-propuestos.md`.
+
+**② Las categorías de los cuatro gastos de prueba no existen en el producto.**
+
+| id | concepto | `category` guardada | la que quería decir |
+|---|---|---|---|
+| 230 | Material de almacén (ticket) | `materials` | `materiales` |
+| 231 | Compresor (factura del proveedor) | `materials` | `materiales` |
+| 232 | Gasolina | `travel` | `desplazamiento` |
+| 233 | Subcontrata de albañilería | `subcontractor` | `subcontrata` |
+
+Son los **únicos cuatro gastos de toda la base de staging**. Las válidas son `materiales · desplazamiento ·
+herramientas · subcontrata · otros` (`EXPENSE_CATEGORIES`). Por eso las cuatro filas pintan «Otros» (`catPill` cae a
+`otros`) y el KPI «Mayor categoría» pinta la clave cruda «materials» (`topCat` cae a `top.category`): se ve en
+`capturas/390-lista.png`, que **desde el 18-sep ya no describe la pantalla**. Debajo hay dos defectos de verdad, ya
+con ticket: la ruta guarda `String(category)` **sin validar** (SCRUM-943, S1) y el KPI enseña una clave interna
+(SCRUM-944).
+
+**La corrección de las cuatro filas, con la cadena entera.** Los datos los sembró la Sesión 4 el 17-sep. El 18-sep el
+orquestador autorizó corregir la categoría de esas cuatro filas (ni crear ni borrar). A la Sesión 4 **se lo denegó el
+clasificador de permisos** de Claude Code, y no lo rodeó: dejó un script con transacción (cada `UPDATE` acotado por id
++ categoría vieja + merchant 2 + concepto `SCRUM-920%`, y si alguno no toca exactamente una fila se deshace todo).
+**Lo ejecutó el fundador a mano el 18-sep-2026**, antes de las 06:54Z. Su salida, literal, transmitida por el
+orquestador:
+
+    ANTES:   230 materials  · 231 materials  · 232 travel          · 233 subcontractor
+    DESPUÉS: 230 materiales · 231 materiales · 232 desplazamiento  · 233 subcontrata
+    Censo de toda la base: desplazamiento 1 · materiales 2 · subcontrata 1
+
+Verificado por la Sesión 4 con un `SELECT` de sólo lectura a las **06:54:20Z** (hora de GitHub): las cuatro filas con
+esas categorías y **cero categorías inválidas** en toda la base de staging.
+
+> 🔴 **El defecto de la API SIGUE VIVO. SCRUM-943 no está arreglado.** Hoy la base está limpia **porque alguien la
+> limpió, no porque la ruta valide**. Si alguien vuelve a sembrar con una categoría que no existe, vuelve a entrar,
+> y la pantalla vuelve a pintar «Otros» y la clave cruda.
+
+**Re-medida la lista en pantalla** (`medir-hoy.mjs`, sesión QA, sólo lectura; `capturas/390-lista-18sep.png` y
+`capturas/1280-lista-18sep.png`): las cuatro píldoras dicen ya Materiales · Materiales · Desplazamiento · Subcontrata,
+el KPI dice «Materiales», la columna Trabajo sigue diciendo «Trabajo · Trabajo · — · —» (③), y **la caja de la tabla
+sigue desbordando a 390: 600 px de contenido en 366 de caja**; a 1280, no (984 = 984).
+
+**③ «Trabajo» es el nombre por defecto, y Trabajos lo llama de otra forma.** Los gastos 230 y 231 apuntan a la
+cotización 1876, cuyo trabajo (Job 3099) tiene `titulo = null`. Gastos lee el `titulo` crudo
+(`expenses.service.ts:78`) y el front cae a la palabra «Trabajo»; la pantalla de Trabajos usa `tituloDeTrabajo()`
+(`jobs.routes.ts:471`) y lo llama **«Presupuesto #5 · María López»**. En el merchant de QA, **10 de 13 trabajos** no
+tienen título. SCRUM-944.
+
+**④ Hoy NO hay detalle del gasto.** Tocar la fila abre el modal de EDICIÓN (`expensesView.js:251`,
+`openExpenseModal`), y la foto sale como miniatura de 120 px de alto (`:393`) debajo de los trece campos anteriores.
+Y la foto acepta sólo imagen (`accept="image/*"`, `:394`).
