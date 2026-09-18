@@ -626,10 +626,6 @@ function pasaFiltroTecnico(j, filtro) {
   return (Array.isArray(j.asignados) ? j.asignados : []).some((a) => a && String(a.id) === String(filtro));
 }
 
-// SCRUM-917c · las columnas, en UN sitio: la cabecera y el `colSpan` de las filas de grupo salen de
-// aquí, y así no pueden descuadrarse (el defecto de los dos `colSpan = 8` a mano de SCRUM-584).
-const COLUMNAS_TRABAJOS = [['Cliente', ''], ['Importe', 'jobs-th-importe'], ['Fecha', ''], ['Acciones', '']];
-
 function renderJobRows(list, jobs, container, todos, equipo) {
   list.innerHTML = '';
 
@@ -697,15 +693,13 @@ function renderJobRows(list, jobs, container, todos, equipo) {
   // ── SCRUM-917c · Y SE RETIRA «Técnicos» COMO COLUMNA ──────────────────────────────────────
   // Baja a la línea del cliente (ver `celdaTecnicos`). La alineación del importe pasa a la hoja:
   // el `style=` en línea que llevaba este `<th>` se va con él.
-  const trCab = document.createElement('tr');
-  for (const [rotulo, clase] of COLUMNAS_TRABAJOS) {
-    const th = document.createElement('th');
-    th.textContent = rotulo;
-    if (clase) th.className = clase;
-    trCab.appendChild(th);
-  }
-  thead.appendChild(trCab);
+  thead.innerHTML =
+    '<tr><th>Cliente</th><th class="jobs-th-importe">Importe</th>'
+    + '<th>Fecha</th><th>Acciones</th></tr>';
   table.appendChild(thead);
+  // El `colSpan` de las filas de grupo se CUENTA de esta cabecera, no se escribe: dos números a
+  // mano para lo mismo se descuadran (los dos `colSpan = 8` de SCRUM-584). Aquí pasa de 5 a 4.
+  const columnas = thead.querySelectorAll('th').length;
 
   for (const g of groups) {
     if (!g.items.length) continue;
@@ -722,7 +716,7 @@ function renderJobRows(list, jobs, container, todos, equipo) {
     const trTitulo = document.createElement('tr');
     trTitulo.className = 'jobs-grupo-titulo';
     const tdTitulo = document.createElement('td');
-    tdTitulo.colSpan = COLUMNAS_TRABAJOS.length;
+    tdTitulo.colSpan = columnas;
     tdTitulo.textContent = `${g.title} · ${g.items.length}${importe}`;
     trTitulo.appendChild(tdTitulo);
     tbody.appendChild(trTitulo);
@@ -731,7 +725,7 @@ function renderJobRows(list, jobs, container, todos, equipo) {
       const trSalvedad = document.createElement('tr');
       trSalvedad.className = 'jobs-grupo-salvedad';
       const tdSalvedad = document.createElement('td');
-      tdSalvedad.colSpan = COLUMNAS_TRABAJOS.length;
+      tdSalvedad.colSpan = columnas;
       // ⚠️ TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). Ni se reescribe ni se «mejora».
       tdSalvedad.textContent =
         `${resumen.sinImporte} sin importe de referencia: no se sabe cuánto falta y no entran en el total.`;
@@ -743,7 +737,7 @@ function renderJobRows(list, jobs, container, todos, equipo) {
       const tr = document.createElement('tr');
       tr.className = 'jobs-grupo-abrir';
       const td = document.createElement('td');
-      td.colSpan = COLUMNAS_TRABAJOS.length;
+      td.colSpan = columnas;
       const btn = document.createElement('button');
       btn.className = 'btn-ghost btn-sm';
       btn.textContent = `Ver ${g.items.length} cerrado${g.items.length !== 1 ? 's' : ''}`;

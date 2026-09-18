@@ -66,9 +66,10 @@ const DECLARADAS = {
     'MODAL. El «Guardar» del diálogo de técnicos, y es el CANDADO del ticket: asignar no puede '
     + 'dispararse con el mismo gesto con el que se navega, así que hay que entrar en el menú y '
     + 'confirmar aquí.',
-  'jobsView.js:bSiguiente':
-    'FILA. Una por trabajo: la acción siguiente que dicta `jobNextAction`, y NAVEGA al detalle, '
-    + 'no ejecuta. Hay tantas como filas tenga la lista.',
+  // SCRUM-917c · SALE `jobsView.js:bSiguiente`: ya no es primaria. El prototipo aprobado por el
+  // fundador (18-sep-2026) deja UNA sola primaria en la lista —la del dinero, `cobrarBtn`— y pasa
+  // la acción siguiente de la escalera a secundaria («doce "Agendar" verdes idénticos no
+  // jerarquizan»). Se va de esta lista porque se ARREGLÓ, que es lo que este censo pide.
   'jobsView.js:cobrarBtn':
     'FILA. El «Cobrar el resto» de cada trabajo terminado con saldo. Es el momento de dinero, '
     + 'pero va por fila: la pantalla no existe para cobrar UNO en concreto.',

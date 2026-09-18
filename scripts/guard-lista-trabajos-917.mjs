@@ -161,6 +161,23 @@ const estado = (page) => page.evaluate(() => ({
   menus: [...document.querySelectorAll('.overflow-menu, .overflow-sheet')].map((m) => [...m.children].map((c) => c.textContent.trim())),
 }));
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+/**
+ * Pulsar con el ratón, PERO con el control ya a la vista.
+ *
+ * 🔴 Medido en la segunda pasada: `ElementHandle.click()` desplaza la página para llegar al
+ * control, y el evento `scroll` llega DESPUÉS de que el «⋯» se haya abierto — el menú (overflowMenu,
+ * api.js) se cierra con el scroll, a propósito, y el guard leía un menú vacío. El rojo era del
+ * instrumento, no de la pantalla: una persona no desplaza y pulsa en el mismo fotograma. Se lleva
+ * el control a la vista, se deja asentar, y entonces se pulsa.
+ */
+async function pulsar(el) {
+  // `behavior: 'instant'` a propósito: la hoja del panel declara `scroll-behavior: smooth`, y con
+  // él el desplazamiento dura más que la espera y sus `scroll` siguen llegando con el menú ya
+  // abierto. La tercera pasada lo enseñó: 3 de 4 menús vacíos, justo los que había que desplazar.
+  await el.evaluate((e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await espera(120);
+  await el.click();
+}
 
 // ═══ ⓪ SUELO ════════════════════════════════════════════════════════════════════════════════
 titulo('⓪ SUELO · ¿hay pantalla, con sus filas, sus grupos y sus controles?');
@@ -233,7 +250,7 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
   const bPend = await page.evaluateHandle(() => [...document.querySelectorAll('#jobs-filter > button')].find((b) => b.textContent.startsWith('Pendiente')) || null);
   if (!bPend.asElement()) nosupe('no encontré el filtro «Pendiente» para pulsarlo');
   else {
-    await bPend.asElement().click();
+    await pulsar(bPend.asElement());
     const tras = await page.evaluate((sel) => ({
       filas: document.querySelectorAll(sel).length,
       pulsado: ([...document.querySelectorAll('#jobs-filter > button')].find((b) => b.textContent.startsWith('Pendiente')) || {}).getAttribute?.('aria-pressed'),
@@ -249,12 +266,12 @@ titulo('A · arriba: título y botones (A.1) · las DOS cifras (A.2) · filtros 
 
   // A.1 · y los dos botones de arriba HACEN lo suyo.
   const antes = await estado(page);
-  await (await page.$('#jobs-partes-valorar'))?.click();
+  await pulsar(await page.$('#jobs-partes-valorar'));
   const trasValorar = await estado(page);
   const nav = trasValorar.navegaciones.slice(antes.navegaciones.length);
   if (nav.length === 1 && nav[0].vista === 'partes-oficina') bien('A.1 «Partes por valorar» lleva a partes-oficina');
   else mal(`A.1 «Partes por valorar» no navegó bien: ${JSON.stringify(nav)}`);
-  await (await page.$('#jobs-nuevo-btn'))?.click();
+  await pulsar(await page.$('#jobs-nuevo-btn'));
   await espera(150);
   const trasNuevo = await estado(page);
   if (trasNuevo.modales.length > trasValorar.modales.length) bien('A.1 «Nuevo trabajo» abre su modal');
@@ -396,7 +413,7 @@ titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.
     else {
       const clase = await b.evaluate((x) => x.className);
       const antes = await estado(page);
-      await b.click();
+      await pulsar(b);
       await espera(100);
       const d = await estado(page);
       if (/btn-primary/.test(clase)) mal(`C.1 «Agendar» sigue siendo primaria (${clase})`);
@@ -411,7 +428,7 @@ titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.
     if (!b) mal('C.1 la fila agendada no tiene «▶ Empezar»');
     else {
       const antes = await estado(page);
-      await b.click();
+      await pulsar(b);
       await espera(100);
       const d = await estado(page);
       const nuevas = d.peticiones.slice(antes.peticiones.length);
@@ -427,7 +444,7 @@ titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.
     if (!b) mal('C.1 no encuentro «💰 Cobrar el resto» en el terminado con saldo');
     else {
       const antes = await estado(page);
-      await b.click();
+      await pulsar(b);
       await espera(150);
       const d = await estado(page);
       const p = d.peticiones.slice(antes.peticiones.length).find((x) => x.metodo === 'POST');
@@ -444,7 +461,7 @@ titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.
     const tr = await filaDe(page, Number(id));
     const disparador = tr && (await tr.$('.overflow-trigger'));
     if (!disparador) { mal(`C.2 la fila de ${POR_ID.get(Number(id)).customer.name} no tiene «⋯»`); continue; }
-    await disparador.click();
+    await pulsar(disparador);
     await espera(60);
     const d = await estado(page);
     const menu = d.menus[0] || [];
@@ -456,13 +473,13 @@ titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.
   // Y se PULSA una entrada de dentro: «✅ Marcar terminado» tiene que escribir.
   {
     const tr = await filaDe(page, 1);
-    await (await tr.$('.overflow-trigger')).click();
+    await pulsar(await tr.$('.overflow-trigger'));
     await espera(60);
     const item = (await page.evaluateHandle(() => [...document.querySelectorAll('.overflow-menu > *')].find((x) => x.textContent.trim() === '✅ Marcar terminado') || null)).asElement();
     const antes = await estado(page);
     if (!item) mal('C.2 no encuentro «✅ Marcar terminado» dentro del «⋯» abierto');
     else {
-      await item.click();
+      await pulsar(item);
       await espera(100);
       const d = await estado(page);
       const p = d.peticiones.slice(antes.peticiones.length).find((x) => x.metodo === 'PATCH');
@@ -473,12 +490,12 @@ titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.
   // …y «Técnicos» abre su modal.
   {
     const tr = await filaDe(page, 4);
-    await (await tr.$('.overflow-trigger')).click();
+    await pulsar(await tr.$('.overflow-trigger'));
     await espera(60);
     const item = (await page.evaluateHandle(() => [...document.querySelectorAll('.overflow-menu > *')].find((x) => x.textContent.trim() === 'Técnicos') || null)).asElement();
     if (!item) mal('C.2 no encuentro «Técnicos» dentro del «⋯»');
     else {
-      await item.click();
+      await pulsar(item);
       await espera(150);
       const d = await estado(page);
       if (!d.modales.some((m) => m.startsWith('Técnicos'))) mal(`C.2 pulsar «Técnicos» del «⋯» no abrió su modal: ${JSON.stringify(d.modales)}`);
@@ -495,7 +512,7 @@ titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.
   const antes = await estado(page);
   if (!celda) mal('C.3 no encuentro la celda de importe para pulsar la fila');
   else {
-    await celda.click();
+    await pulsar(celda);
     const d = await estado(page);
     const nav = d.navegaciones.slice(antes.navegaciones.length);
     const escrituras = d.peticiones.slice(antes.peticiones.length).filter((p) => p.metodo !== 'GET');
