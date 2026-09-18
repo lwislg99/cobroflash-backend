@@ -84,4 +84,11 @@ for (const f of fotos) {
 
 const salida = path.join(import.meta.dirname, 'lecturas-staging.json');
 fs.writeFileSync(salida, JSON.stringify({ sha, cuando: new Date().toISOString(), lecturas: resultados }, null, 2) + '\n');
-console.log(`\n${resultados.length} lecturas gastadas · resultado en ${salida}`);
+// SCRUM-912b · «N lecturas gastadas» salía igual con 3 respuestas 503 de antes del modelo (staging sin
+// GEMINI_API_KEY, 18-sep): una operación que no se ejecutó se leía como hecha. Se cuenta lo que LLEGÓ.
+const conModelo = resultados.filter((f) => f.modelo).length;
+console.log(`\n${resultados.length} peticiones · ${conModelo} contestadas por un modelo · resultado en ${salida}`);
+if (conModelo === 0) {
+  console.error('❌ NINGUNA lectura llegó a un modelo: esto no mide la IA.');
+  process.exitCode = 1;
+}
