@@ -181,7 +181,10 @@ router.post('/', async (req, res) => {
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
-          amountWithCurrency: `${amt} ${cur}`,
+          // SCRUM-931: en bruto. `amt` sigue vivo debajo para el `detail` del panel, que queda
+          // FUERA del alcance decidido de este ticket y se deja como estaba.
+          amount: Number(updated.amount),
+          currency: cur,
           documentNumber,
           businessName: merchant?.legalName || merchant?.name,     // P1-7
           chargeId: updated.id, // log interno (WhatsAppMessage.relatedId), NO la URL pública

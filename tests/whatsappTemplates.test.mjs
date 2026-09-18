@@ -12,6 +12,14 @@ import {
   WA_TEMPLATES,
   WA_TEMPLATE_SPECS,
 } from '../dist/integrations/whatsappTemplates.js';
+// SCRUM-931: el importe entra en BRUTO (`amount` + `currency`) y la forma la da el builder. Este
+// fichero sigue midiendo la ESTRUCTURA —nº de variables, orden, botón, cabecera—, que es lo que
+// Meta rechaza; del FORMATO se ocupa tests/scrum931-un-solo-importe-de-plantilla.test.mjs.
+// Antes estas pruebas pasaban `EUR350` y comprobaban que salía tal cual: era el contrato
+// viejo, y ese «sale tal cual» era justo el defecto de SCRUM-931 escrito como garantía.
+import { formatMoneyEs } from '../dist/core/utils/utils.js';
+const EUR350 = formatMoneyEs(350, 'EUR');
+const EUR120 = formatMoneyEs(120, 'EUR');
 
 // Helpers de aserción de estructura (lo que Meta valida → #132000/#132001).
 function bodyTexts(msg) {
@@ -32,42 +40,42 @@ function urlButtonSuffix(msg) {
 test('quote_decision_es: nombre, idioma, 4 vars en orden y botón = decisionToken (SCRUM-95: token opaco, no el id)', () => {
   const msg = buildQuoteDecision({
     customerName: 'María', businessName: 'Fontanería García',
-    quoteNumber: 128, totalWithCurrency: '350.00 EUR', decisionToken: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
+    quoteNumber: 128, amount: 350, currency: 'EUR', decisionToken: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
   });
   assert.equal(msg.templateName, WA_TEMPLATES.quoteDecision);
   assert.equal(msg.templateName, 'quote_decision_es');
   assert.equal(msg.languageCode, 'es');
-  assert.deepEqual(bodyTexts(msg), ['María', 'Fontanería García', '128', '350.00 EUR']);
+  assert.deepEqual(bodyTexts(msg), ['María', 'Fontanería García', '128', EUR350]);
   assert.equal(urlButtonSuffix(msg), 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5'); // sufijo → /pay/quote/{{1}}
 });
 
 test('payment_request_es: 4 vars en orden y botón = urlToken (SCRUM-85: token opaco, no el id)', () => {
   const msg = buildPaymentRequest({
     customerName: 'María', businessName: 'Fontanería García',
-    invoiceNumber: 'F-2025-014', amountWithCurrency: '350.00 EUR', urlToken: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
+    invoiceNumber: 'F-2025-014', amount: 350, currency: 'EUR', urlToken: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
   });
   assert.equal(msg.templateName, 'payment_request_es');
   assert.equal(msg.languageCode, 'es');
-  assert.deepEqual(bodyTexts(msg), ['María', 'Fontanería García', 'F-2025-014', '350.00 EUR']);
+  assert.deepEqual(bodyTexts(msg), ['María', 'Fontanería García', 'F-2025-014', EUR350]);
   assert.equal(urlButtonSuffix(msg), 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'); // sufijo → /pay/invoice/{{1}}
 });
 
 test('payment_confirmation_es: 4 vars (orden distinto) y SIN botones', () => {
   const msg = buildPaymentConfirmation({
-    customerName: 'María', amountWithCurrency: '350.00 EUR',
+    customerName: 'María', amount: 350, currency: 'EUR',
     invoiceNumber: 'F-2025-014', businessName: 'Fontanería García',
   });
   assert.equal(msg.templateName, 'payment_confirmation_es');
   assert.equal(msg.languageCode, 'es');
   // Orden distinto a las otras: nombre · importe · nº · negocio
-  assert.deepEqual(bodyTexts(msg), ['María', '350.00 EUR', 'F-2025-014', 'Fontanería García']);
+  assert.deepEqual(bodyTexts(msg), ['María', EUR350, 'F-2025-014', 'Fontanería García']);
   assert.equal(urlButtonSuffix(msg), null, 'confirmación NO lleva botón');
 });
 
 test('todas: cuerpo de exactamente 4 variables (lo que exige Meta)', () => {
-  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
-  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef' });
-  const pc = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' });
+  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, amount: 350, currency: 'EUR', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
+  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amount: 350, currency: 'EUR', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef' });
+  const pc = buildPaymentConfirmation({ customerName: 'a', amount: 350, currency: 'EUR', invoiceNumber: 'c', businessName: 'd' });
   assert.equal(bodyTexts(qd).length, 4);
   assert.equal(bodyTexts(pr).length, 4);
   assert.equal(bodyTexts(pc).length, 4);
@@ -76,9 +84,9 @@ test('todas: cuerpo de exactamente 4 variables (lo que exige Meta)', () => {
 // --- Validación J7: expectedVarCount ANTES de llamar a Meta ---
 
 test('validación J7: lo que sale de los builders pasa la validación', () => {
-  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
-  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amountWithCurrency: 'd', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef' });
-  const pc = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' });
+  const qd = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, amount: 350, currency: 'EUR', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
+  const pr = buildPaymentRequest({ customerName: 'a', businessName: 'b', invoiceNumber: 'c', amount: 350, currency: 'EUR', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef' });
+  const pc = buildPaymentConfirmation({ customerName: 'a', amount: 350, currency: 'EUR', invoiceNumber: 'c', businessName: 'd' });
   assert.equal(validateTemplateComponents(qd.templateName, qd.components), null);
   assert.equal(validateTemplateComponents(pr.templateName, pr.components), null);
   assert.equal(validateTemplateComponents(pc.templateName, pc.components), null);
@@ -93,16 +101,16 @@ test('validación J7: nº de vars incorrecto se detecta (evita #132000)', () => 
 });
 
 test('validación J7: variable vacía o "undefined" se detecta', () => {
-  const msg = buildQuoteDecision({ customerName: '', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
+  const msg = buildQuoteDecision({ customerName: '', businessName: 'b', quoteNumber: 1, amount: 350, currency: 'EUR', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
   assert.match(validateTemplateComponents(msg.templateName, msg.components), /variable 1.*vacía/);
-  const msg2 = buildQuoteDecision({ customerName: String(undefined), businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
+  const msg2 = buildQuoteDecision({ customerName: String(undefined), businessName: 'b', quoteNumber: 1, amount: 350, currency: 'EUR', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' });
   assert.match(validateTemplateComponents(msg2.templateName, msg2.components), /variable 1/);
 });
 
 test('validación J7: botón obligatorio que falta / botón de más se detectan', () => {
-  const sinBoton = buildPaymentConfirmation({ customerName: 'a', amountWithCurrency: 'b', invoiceNumber: 'c', businessName: 'd' }).components;
+  const sinBoton = buildPaymentConfirmation({ customerName: 'a', amount: 350, currency: 'EUR', invoiceNumber: 'c', businessName: 'd' }).components;
   assert.match(validateTemplateComponents(WA_TEMPLATES.quoteDecision, sinBoton), /botón/);
-  const conBoton = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, totalWithCurrency: 'c', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' }).components;
+  const conBoton = buildQuoteDecision({ customerName: 'a', businessName: 'b', quoteNumber: 1, amount: 350, currency: 'EUR', decisionToken: 'aa11bb22cc33dd44ee55ff66aa11bb22' }).components;
   assert.match(validateTemplateComponents(WA_TEMPLATES.paymentConfirmation, conBoton), /botón/);
 });
 
@@ -120,12 +128,12 @@ test('specs J7: todas las plantillas tienen spec registrada', () => {
 
 test('payment_confirmation_invoice_es: 4 vars + botón = urlToken (→ /recibo/{{1}}, SCRUM-74: token opaco, no el id)', () => {
   const msg = buildPaymentConfirmationInvoice({
-    customerName: 'María', amountWithCurrency: '350.00 EUR',
+    customerName: 'María', amount: 350, currency: 'EUR',
     documentNumber: '2026-CF-001', businessName: 'Fontanería García', urlToken: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
   });
   assert.equal(msg.templateName, 'payment_confirmation_invoice_es');
   assert.equal(msg.languageCode, 'es');
-  assert.deepEqual(bodyTexts(msg), ['María', '350.00 EUR', '2026-CF-001', 'Fontanería García']);
+  assert.deepEqual(bodyTexts(msg), ['María', EUR350, '2026-CF-001', 'Fontanería García']);
   assert.equal(urlButtonSuffix(msg), 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4');
   // pasa la validación J7
   assert.equal(validateTemplateComponents(msg.templateName, msg.components), null);
@@ -134,10 +142,10 @@ test('payment_confirmation_invoice_es: 4 vars + botón = urlToken (→ /recibo/{
 test('payment_confirmation_invoice_es: copy neutro — el builder no impone la palabra "factura"', () => {
   // el nº de documento puede ser un justificante J-… (no factura) y el builder lo acepta igual
   const msg = buildPaymentConfirmationInvoice({
-    customerName: 'Ana', amountWithCurrency: '120,00 €',
+    customerName: 'Ana', amount: 120, currency: 'EUR',
     documentNumber: 'J-20260611-AB3C', businessName: 'Reformas Sur', urlToken: 'deadbeefdeadbeefdeadbeefdeadbeef',
   });
-  assert.deepEqual(bodyTexts(msg), ['Ana', '120,00 €', 'J-20260611-AB3C', 'Reformas Sur']);
+  assert.deepEqual(bodyTexts(msg), ['Ana', EUR120, 'J-20260611-AB3C', 'Reformas Sur']);
 });
 
 test('merchant_alert_es: 3 vars (cliente, acción, detalle), SIN botón', () => {

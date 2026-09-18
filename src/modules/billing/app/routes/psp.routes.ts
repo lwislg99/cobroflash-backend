@@ -262,7 +262,10 @@ router.post('/', async (req, res) => {
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
-          amountWithCurrency: `${amt} ${cur}`,
+          // SCRUM-931: en bruto. `amt` sigue vivo debajo para el `detail` del panel y el aviso al
+          // PRO, que quedan FUERA del alcance decidido de este ticket y se dejan como estaban.
+          amount: Number(body.amount ?? updated.amount),
+          currency: cur,
           documentNumber,
           // P1-7: nombre del negocio como en presupuesto/factura/landing (legalName||name).
           businessName: merchant?.legalName || merchant?.name,

@@ -1,0 +1,25 @@
+SUELO ✅ las 7 de la fase a siguen localizables · convertida exactamente 1: PARES_SIN_TESTIGO_CONGELADOS
+
+LA REGLA DE TRES, CONTRA LAS 7 QUE SÓLO AVISAN
+
+elem  lista                          ①tanda ②sin-externo ③víctima  veredicto
+----------------------------------------------------------------------------------------------------
+  87  PARES_SIN_TESTIGO_CONGELADOS  true   true         SÍ        CONVERTIR
+      scripts/_anclas-sin-testigo.congelado.mjs  ·  ③: perdona una deuda que ya no existe; el trinquete tomaría por vieja una cita nueva sin testigo
+   5  CONOCIDOS                     false  false        no        acta fechada — no se toca
+      docs/master/evidencias/SCRUM-863/censo-region-863.mjs  ·  ③: acta fechada de un ticket cerrado: su valor es histórico
+   4  CONOCIDOS                     false  false        ?         fuera de alcance: no se puede medir aquí
+      scripts/guard-contraste.mjs  ·  ③: no se puede saber sin arrancar Edge y medirlo
+   3  SIN_DTO                       false  false        ?         fuera de alcance: no se puede medir aquí
+      scripts/guard-descuentos-en-el-detalle.mjs  ·  ③: idem
+   2  CONOCIDOS                     false  true         no        los DOS defectos a la vez
+      scripts/censo-bancos-fijados.mjs  ·  ③: nadie lo corre: su rotura no la vería nadie igual
+   1  EXCLUIDAS                     false  false        no        acta fechada — no se toca
+      docs/master/evidencias/SCRUM-523/censo-523.mjs  ·  ③: acta fechada
+   1  EXCLUIDAS                     false  false        no        acta fechada — no se toca
+      docs/master/evidencias/SCRUM-863/censo-region-863.mjs  ·  ③: acta fechada
+
+¿SOSTIENE? Los tres criterios NO son independientes: ③ depende de ①.
+Si nadie la corre, su rotura no tiene víctima hoy — no porque la propiedad no importe,
+sino porque nadie se enteraría igual. El caso puro es `censo-bancos-fijados.mjs`:
+sólo avisa Y no lo corre nadie, o sea los dos defectos del ticket en el mismo fichero.
