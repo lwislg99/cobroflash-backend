@@ -82,9 +82,13 @@ function tituladosQueDeclaran() {
  *
  * ⛔ NO se sube este número escribiendo declaraciones a granel. Se sube de una en una, cada una
  * con su medición de que la mutación imita el defecto que su guard promete cazar.
+ *
+ * ⬆️ **20** (SCRUM-951d, 18-sep-2026): lo sube `scrum951d-ensayo-instalacion.test.mjs`, que titula
+ * GUARD y declara 5 mutaciones medidas (5/5 caen, evidencia en `docs/master/evidencias/scrum951d/`).
+ * Medido sobre la rama mezclada con `origin/main` = `988264d032840edcbf5b612d3d91d1c07e8f9f2f`.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 19;
+export const SUELO_GUARD_QUE_DECLARAN = 20;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -267,8 +271,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 19;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 18;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 20;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 19;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
 ];

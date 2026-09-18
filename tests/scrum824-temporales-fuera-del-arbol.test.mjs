@@ -71,6 +71,8 @@ const SIN_PROBAR_CONOCIDOS = [
   'tests/scrum766-el-grep-que-cuenta-lineas.test.mjs',
   'tests/scrum778-la-lista-cableada.test.mjs',
   'tests/scrum808-el-arbol-que-queda-mutado.test.mjs',
+  // SCRUM-951d: su `banco()` cuelga de `temporal()` (tests/_temporal.mjs), que el análisis no atraviesa.
+  'tests/scrum951d-ensayo-instalacion.test.mjs',
 ];
 
 // ═══ ① SUELO — sin esto, un «cero infracciones» podría ser «no he mirado» ═════════════════
