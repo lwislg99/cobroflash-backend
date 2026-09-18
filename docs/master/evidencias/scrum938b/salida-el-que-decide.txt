@@ -1,0 +1,61 @@
+═══ SCRUM-938 fase b · EL QUE DECIDE ═══
+
+POBLACIÓN · 133 listas · 157 pares examinados · 62 candidatos
+           10 candidatos de clase (a) según el censo
+
+① AL VACIAR LA LISTA, ¿EL FALLO NOMBRA UN FIXTURE O UN ELEMENTO REAL?
+
+✅ tests/scrum405-descarga-verificada.test.mjs · `EXCEPCIONES` · caen 1 de 6
+     nombra "settingsView.js:" → guard sobre el árbol real: el `.blob()` de settingsView queda sin amparo
+       ✗ SCRUM-405 · 🔴 R3: NADIE llama a `.blob()` fuera de la forma común
+✅ tests/scrum419-ci-declara-lo-que-no-corre.test.mjs · `GATEADOS_DECLARADOS` · caen 2 de 8
+     nombra "\"scrum324-cadena-hasta-el-libro.test.mjs\":2" → trinquete (c): el inventario REAL de gateados contra el declarado
+       ✗ SCRUM-419 · el inventario de lo que NO corre está declarado, fichero por fichero
+       ✗ SCRUM-419 · 🔴 CI DECLARA lo que no ha ejecutado, en vez de callarlo
+✅ tests/scrum491-metodo-y-registro.test.mjs · `A_MANO_SIN_METODO` · caen 2 de 12
+     nombra "ESCÁNER CIEGO: sin facturas marcadas a mano SIN método" → NO es una lista de excepciones: es un banco YA fabricado, y su suelo avisa de que está vacío
+       ✗ SCRUM-491 · SUELO: el banco trae las TRES poblaciones, y ninguna está vacía
+       ✗ SCRUM-491 · ③ 🔴 una factura marcada a mano SIN método NO desaparece y NO se cuela en otro cubo
+✅ tests/scrum497-dato-personal-no-sobrevive.test.mjs · `FUERA_DE_ANONIMIZADO` · caen 1 de 8
+     nombra "product.name" → guard sobre el esquema real: `product.name` queda sin clasificar
+       ✗ SCRUM-497 · 🔴 ninguna columna personal del esquema queda SIN CLASIFICAR
+✅ tests/scrum497-dato-personal-no-sobrevive.test.mjs · `SIN_DECIDIR` · caen 2 de 8
+     nombra "teamMember.name" → guard sobre el esquema real + trinquete (c) de quince
+       ✗ SCRUM-497 · 🔴 ninguna columna personal del esquema queda SIN CLASIFICAR
+       ✗ SCRUM-497 · 🔴 TRINQUETE: quince datos personales siguen sin decidir, y van NOMBRADOS
+✅ tests/scrum624b-guardado-vs-impreso.test.mjs · `DIVERGENCIAS_DECLARADAS` · caen 3 de 5
+     nombra "IMPRESO EN EL PAPEL: 36,26" → guard sobre el PDF real: la divergencia existe y queda sin declarar
+       ✗ SCRUM-624b · 🔴 EL PAPEL Y LA BASE: el total impreso es el GUARDADO
+       ✗ SCRUM-624b · 🔴 el OTRO camino, sobre el papel: decimales del precio
+       ✗ SCRUM-624b · las divergencias declaradas son EXACTAMENTE dos, y la lista no puede crecer
+✅ tests/scrum629-telefono-que-no-se-destruye.test.mjs · `RECORTES_DECLARADOS` · caen 1 de 7
+     nombra "tests/scrum578-duplicados-identificador.test.mjs" → guard sobre el árbol real: el recorte de scrum578 queda sin declarar
+       ✗ SCRUM-629 · 🔴 nadie recorta el prefijo A MANO sin declararlo
+✅ tests/scrum644-trinquete-mensaje-crudo.test.mjs · `CENSO_HEREDADO` · caen 2 de 13
+     nombra "public/dashboard/js/albaranDetailView.js:" → trinquete (c) de techos sobre el dashboard real
+       ✗ SCRUM-644 · 🔴 EL TRINQUETE: ningún fichero pinta MÁS `.message` crudos que su techo
+       ✗ SCRUM-644 · 🔴 y el censo heredado NO CRECE por la puerta de atrás
+
+② LA COPIA IDÉNTICA · si cae sin vaciar nada, su «confirmado» lo produjo la sonda
+
+🔴 CAE SIN VACIAR  tests/scrum629-telefono-que-no-se-destruye.test.mjs (1 de 7)
+     └ |- 🔴 ALGUIEN RECORTA EL PREFIJO A MANO: · tests/_938b-sonda-7684.mjs (5) `telefonoDePrueba(n).slice(2)` con un índice pequeño devuelve un tramo que la normalización conv
+🔴 CAE SIN VACIAR  scripts/guard-objetivo-tactil.mjs (1 de 1)
+     └ 'test failed'
+🔴 CAE SIN VACIAR  docs/master/evidencias/SCRUM-863/censo-region-863.mjs (1 de 1)
+     └ 'test failed'
+
+   46 ficheros decidibles · 43 copias limpias · 3 caen sin vaciar (5 pares) · 0 sin ningún caso
+
+③ ¿CUÁNTAS PRUEBAS DE LA FORMA ③ SON LITERALES DE LA PROPIA DECLARACIÓN?
+
+   control ✅ scrum405·EXCEPCIONES sale como autodeclaración · scrum413·TIPOS_DECLARADOS no
+
+   62 candidatos · 42 con forma ③ · 22 cuya ③ es SÓLO su propia declaración
+     al quitarla: (b) DEGRADA → LIMPIO · 14
+     al quitarla: (a) MIENTE → (b) DEGRADA · 8
+
+VEREDICTO
+  pares (a) cuyo fallo nombra un elemento REAL o su propio banco: 8 de 8
+  fixtures de clase (a) que sustituir por banco fabricado: 0 de 8 (los que NO nombran lo real)
+  copias sin ningún caso: 0 · pares cuyo «confirmado» lo produce la sonda: 5
