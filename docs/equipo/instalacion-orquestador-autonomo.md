@@ -7,6 +7,13 @@
 >
 > Medido para este guion el 17-sep-2026 sobre `origin/main` = `262fd05f`. Si pasa un día o más, se repite la
 > medición del paso 0 antes de empezar.
+>
+> 🔴 **SCRUM-951a (18-sep-2026): esta guía es la de la máquina de LUIS**, con su checkout compartido y sus
+> valores. Para una máquina que no ha visto nada —la de Javier— la guía es
+> **`docs/equipo/instalacion-maquina-nueva.md`**, y ninguna ruta de aquí vale allí. Desde 951a el equipo sale del
+> `config.json` (prefijo, puestos, orquestador, tandas, prompt, traspasos), no del código; los valores del equipo
+> de Luis están en el paso 4. Y un dato medido: **esta guía no se ha ejecutado nunca** (no existía
+> `C:/Users/Admin/AppData/Local/yaqu-equipo` el 18-sep).
 
 **Rutas** (Windows; en Git Bash, con barras normales):
 
@@ -40,7 +47,10 @@
 
 ### Convención de nombres (decidida por el orquestador el 17-sep)
 
-- `orquestador` y `sesion-0` … `sesion-5`. Es la lista blanca de `scripts/equipo/sesion.mjs` y **no cambia**.
+- `orquestador` y `sesion-0` … `sesion-5`, **sin prefijo**. Desde SCRUM-951a la lista blanca de
+  `scripts/equipo/sesion.mjs` es prefijo + puesto y sale del `config.json` (paso 4); para el equipo de Luis los
+  nombres **no cambian**. Un puesto que no esté declarado no entra: el 18-sep corría una `sesion-2b`, y para
+  lanzarla o pararla con el lanzador tendría que estar en `--puestos`.
 - La sesión de prueba lanzada a mano como `0` (f4dfafd0) se relanza como `sesion-0` en cuanto el lanzador esté instalado.
 
 ### Lo que ve el fundador (prueba de relevo de la S0, orquestador, 17-sep ~14:57Z)
@@ -164,18 +174,21 @@ cp C:/Users/Admin/AppData/Local/yaqu-equipo-respaldo/settings.local.json D:/MILL
 
 Requiere la regla de UN SOLO USO `Bash(node scripts/equipo/instalar.mjs *)`.
 
-**Orden** (desde el checkout, ya al día):
+**Orden** (desde el checkout, ya al día; los valores del equipo de Luis, SCRUM-951a):
 ```
-node scripts/equipo/instalar.mjs --destino C:/Users/Admin/AppData/Local/yaqu-equipo --repo D:/MILLONARIO/cobroFlash/cobroflash-backend --claude C:/Users/Admin/AppData/Roaming/npm/node_modules/@anthropic-ai/claude-code/bin/claude.exe
+node scripts/equipo/instalar.mjs --destino C:/Users/Admin/AppData/Local/yaqu-equipo --repo D:/MILLONARIO/cobroFlash/cobroflash-backend --claude C:/Users/Admin/AppData/Roaming/npm/node_modules/@anthropic-ai/claude-code/bin/claude.exe --sin-prefijo --puestos orquestador,sesion-0,sesion-1,sesion-2,sesion-3,sesion-4,sesion-5 --orquestador orquestador --tandas 08:00,13:05,18:10 --prompt docs/equipo/prompt-tanda-orquestador.md
 ```
+La carpeta de los traspasos la calcula el instalador desde `--repo`
+(`C:/Users/Admin/.claude/projects/D--MILLONARIO-cobroFlash-cobroflash-backend/memory`) y se niega si no existe.
 
 **Comprobación:**
-- la salida es `"veredicto": "INSTALADO"` y lista las tres órdenes de `schtasks`;
-- en `INST` están `config.json` (con `repo` y `claude`) y `arranque.cmd`;
+- la salida es `"veredicto": "INSTALADO"`, con el `config`, las tres órdenes de `schtasks` y la línea del `statusLine`;
+- en `INST` están `config.json` (con `repo`, `claude`, `prefijo` `""`, `puestos`, `orquestador`, `tandas`, `prompt` y
+  `traspasos`), `arranque.cmd`, y las copias de `origin/main`: `sesion.mjs`, `orquestador-arranque.mjs`, `uso.mjs` y
+  `prompt-tanda.md` (cada tanda las vuelve a copiar);
 - `arranque.cmd` tiene `cd /d "D:\MILLONARIO\cobroFlash\cobroflash-backend"` **antes** de la línea `node`;
-- `C:/Users/Admin/AppData/Roaming/npm/node_modules/@anthropic-ai/claude-code/bin/claude.exe --version` responde (el 17-sep: 2.1.274).
-
-Los `.mjs` y el prompt **no** están todavía: los copia `arranque.cmd` desde `origin/main` en cada tanda.
+- `node scripts/equipo/comprobar-instalacion.mjs --destino C:/Users/Admin/AppData/Local/yaqu-equipo` sale sin
+  `FALLA` ni `NO-PUDE-MIRAR` (las tareas saldrán como `AVISO` hasta el paso 5).
 
 **Deshacer:** borrar a mano la carpeta `C:\Users\Admin\AppData\Local\yaqu-equipo`. El hook bloquea `rm -rf` con ruta
 absoluta fuera del workspace.

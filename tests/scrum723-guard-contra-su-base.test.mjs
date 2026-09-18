@@ -327,6 +327,21 @@ const HALLAZGOS_DECLARADOS = [
   // SCRUM-899 (hito 2) · mismo caso: el banco de la tanda instala las copias con `git show
   // origin/main:<fichero>` desde su repositorio SINTÉTICO del temporal. No es el `main` de nadie.
   'tests/scrum899b-arranque-de-la-tanda.test.mjs [show]',
+  // SCRUM-951a · el instalador del equipo de fondo. Su pregunta es sobre la PUNTA por diseño: copia a
+  // la instalación los scripts y el prompt OFICIALES, que son los de `origin/main`, y no los del árbol
+  // de trabajo de quien instala (que puede estar tocado o ser una rama). Es la misma lectura que hace
+  // `arranque.cmd` en cada tanda y la misma contra la que compara la puerta de `sesion.mjs`: si copiara
+  // desde la base de una rama, la puerta rechazaría su propia instalación. No corre en CI; se ejecuta a
+  // mano al montar un puesto. Lo retira quien retire el instalador.
+  'scripts/equipo/instalar.mjs [show]',
+  // SCRUM-951a · la lista de verificación de la instalación. Pregunta «¿la copia instalada es IDÉNTICA a
+  // la oficial de AHORA?», que es exactamente lo que la puerta de `sesion.mjs` exige para actuar; contra
+  // otra referencia contestaría a una pregunta que nadie hace. Herramienta de mano, no corre en CI.
+  // Lo retira quien retire `comprobar-instalacion.mjs`.
+  'scripts/equipo/comprobar-instalacion.mjs [show]',
+  // SCRUM-951a · su banco: mismo caso que los de 899 — un repositorio SINTÉTICO en el temporal cuyo
+  // `origin/main` no es el de nadie, para comprobar que el instalador copió exactamente de ahí.
+  'tests/scrum951a-equipo-configurable.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -357,6 +372,10 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-899 (hito 2) · nombra `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
   // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
   'tests/scrum899b-arranque-de-la-tanda.test.mjs',
+  // SCRUM-951a · la lista de verificación nombra `origin/main` también FUERA de los argumentos de git: en
+  // los detalles que imprime («idéntica a origin/main:…») y en la prosa de su cabecera. Su llamada
+  // directa está declarada arriba, con su motivo.
+  'scripts/equipo/comprobar-instalacion.mjs',
   // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
   // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
   // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.
