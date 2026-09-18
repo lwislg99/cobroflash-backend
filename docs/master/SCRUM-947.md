@@ -101,3 +101,6 @@ Rojo estable: 4 de 4 pasadas sobre `e76580b1` antes de añadir F; F en rojo sobr
 - `tests/scrum522-guards-fuera-de-la-tanda.test.mjs` — 25 → 27 con SCRUM-915d, sumando los dos
   comentarios y MEDIDO tras el merge.
 - `docs/microcopy/2026-09-18-SCRUM-947-foto-del-gasto.md` — la ficha del texto.
+- `docs/master/evidencias/scrum947/medir-en-staging.mjs` — la medición que cierra, para después del
+  despliegue: crea 1 gasto en el merchant QA con una foto de 3–5 MB por el modal, comprueba que se
+  guarda y que se ve al reabrirlo desde la lista, y lo borra. Lee el secreto en tiempo de ejecución.
