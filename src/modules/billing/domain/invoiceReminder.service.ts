@@ -132,7 +132,10 @@ async function sendReminderWA(
 
   const customerName  = inv.customer?.name  || 'Cliente';
   const merchantName  = inv.merchant?.name  || 'tu proveedor';
-  const total         = Number(inv.total.toString()).toFixed(2);
+  // SCRUM-931 · la forma de la casa, UNA vez. Este fichero era el caso más claro del defecto: el
+  // texto de ventana (abajo) mandaba `419.87 EUR` y el botón de ventana, en la rama de al lado,
+  // `419,87 €`. Mismo recordatorio, mismo cliente, mismo día: dos formatos según la rama.
+  const importe       = formatMoneyEs(inv.total, inv.currency);
   const chargeId      = inv.chargeId ?? inv.charge?.id ?? null;
   // Regla 24/26: un J-… es un JUSTIFICANTE — el copy propio nunca dice "factura" pre-SIF
   const docLabel      = isReceiptNumber(inv.number) ? 'justificante' : 'factura';
@@ -151,7 +154,7 @@ async function sendReminderWA(
         windowText:
           `Hola ${customerName} 👋\n` +
           `Te recordamos que tienes pendiente el pago del ${docLabel} ${appendStageLabel(inv.number, inv.stageLabel)} ` +
-          `por ${total} ${inv.currency} de parte de ${merchantName}.${urgency}\n` +
+          `por ${importe} de parte de ${merchantName}.${urgency}\n` +
           `Paga de forma segura desde aquí 👇\n` +
           `${BASE_URL}/pay/invoice/${payToken}\n` +
           `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
@@ -159,7 +162,7 @@ async function sendReminderWA(
         windowCta: {
           bodyText:
             `Hola ${customerName} 👋\n` +
-            `Te recordamos el pago pendiente del ${docLabel} ${appendStageLabel(inv.number, inv.stageLabel)} por *${formatMoneyEs(inv.total, inv.currency)}* de parte de *${merchantName}*.${urgency}\n` +
+            `Te recordamos el pago pendiente del ${docLabel} ${appendStageLabel(inv.number, inv.stageLabel)} por *${importe}* de parte de *${merchantName}*.${urgency}\n` +
             `Si ya lo has pagado, ignora este mensaje. ¡Gracias!`,
           buttonText: 'Pagar ahora',
           url: `${BASE_URL}/pay/invoice/${payToken}`,
@@ -170,7 +173,8 @@ async function sendReminderWA(
           customerName,
           businessName: merchantName,
           invoiceNumber: appendStageLabel(inv.number, inv.stageLabel),
-          amountWithCurrency: `${total} ${inv.currency}`,
+          amount: Number(inv.total.toString()), // SCRUM-931: en bruto; la forma la da el builder
+          currency: inv.currency,
           urlToken: payToken,
         }),
         log: { customerId: inv.customerId, relatedType: 'invoice', relatedId: inv.id },
@@ -197,7 +201,7 @@ async function sendReminderWA(
       const result = await sendWhatsAppText({
         to: phone,
         merchantId: inv.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago del ${docLabel} *${inv.number}* por *${total} ${inv.currency}* de parte de *${merchantName}*.\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago del ${docLabel} *${inv.number}* por *${importe}* de parte de *${merchantName}*.\n${urgency}\nSi ya has realizado el pago, por favor ignora este mensaje. ¡Gracias!`,
       });
       if (result?.ok) {
         console.log(`[invoiceReminder] ✓ texto ${day}d → inv #${inv.number}`); // SCRUM-101: sin nombre del cliente

@@ -38,7 +38,6 @@ export async function sendPendingReminders(): Promise<void> {
 
     const customerName = quote.customer?.name || 'Cliente';
     const merchantName = quote.merchant?.name || 'Tu proveedor';
-    const total = Number(quote.total).toFixed(2);
 
     try {
       // Reusa quote_decision_es como recordatorio (estructura en whatsappTemplates.ts)
@@ -52,7 +51,8 @@ export async function sendPendingReminders(): Promise<void> {
           customerName,
           businessName: merchantName,
           quoteNumber: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
-          totalWithCurrency: `${total} ${quote.currency}`,
+          amount: Number(quote.total), // SCRUM-931: en bruto; la forma la da el builder
+          currency: quote.currency,
           decisionToken, // SCRUM-95: token opaco, no el id global
         }),
       });

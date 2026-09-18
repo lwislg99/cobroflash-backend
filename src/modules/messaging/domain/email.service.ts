@@ -8,6 +8,7 @@ import { config, BASE_URL } from '../../../core/config/env';
 import { ensureInvoicePdf } from '../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { renderEmailLayout, escEmail } from './emailLayout';
+import { formatMoneyEs } from '../../../core/utils/utils'; // SCRUM-931: el TERCER canal, misma forma
 import { enviarPorResend } from '../../../integrations/enviarCorreo'; // SCRUM-475: el emisor unico
 // SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
 import { CLASES_DE_CORREO } from './registroDeEnvios';
@@ -134,7 +135,10 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
 
   const business = quote.merchant?.legalName || quote.merchant?.name || 'Tu proveedor';
   const displayNum = `#${(quote as any).quoteNumber ?? quote.id}`;
-  const total = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
+  // SCRUM-931 · el TERCER canal. El ticket hablaba de WhatsApp, pero el mismo presupuesto sale
+  // también por correo, y salía con el mismo `419.87 EUR` — y en el sitio más visible del mensaje
+  // (26 px, negrita, centrado). Arreglar sólo WhatsApp habría movido la divergencia de canal.
+  const total = formatMoneyEs(quote.total, quote.currency);
   // SCRUM-95: token opaco (Quote.decisionToken), NUNCA el id — sexta puerta de la
   // misma fuga (SCRUM-72/74/85/87/90).
   const decisionToken = await ensureQuoteDecisionToken(quoteId, prisma);
