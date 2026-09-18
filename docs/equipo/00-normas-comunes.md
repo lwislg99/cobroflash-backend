@@ -331,6 +331,10 @@ papeleo, es el único canal. Cinco pasos, y cada uno con lo que lo haría fallar
 4. **CERRAR.** Solo por **efecto medido**, con el comentario de la evidencia. **Cierra el orquestador del
    equipo dueño**, nunca una sesión y nunca el otro equipo (A18; `orquestador.md` §10bis.16).
 5. **LIMPIAR.** Una vez por semana, cada orquestador revisa SUS abiertos: hechos, duplicados, superados.
+   Y **el estado se cambia en cuanto deja de ser verdad**, no en la limpieza: un ticket en «Acción del
+   fundador» que ya no espera a ningún jefe pasa a su estado real ese mismo turno. ✗ Falla: el 18-sep, el
+   censo de los 80 abiertos encontró SCRUM-774, 779 y 864 en «Acción del fundador» sin esperarle ya; un
+   estado desfasado es justo el pisotón que este ciclo existe para evitar.
 
 ## A14 · Todo informe empieza con la hora y el SHA
 

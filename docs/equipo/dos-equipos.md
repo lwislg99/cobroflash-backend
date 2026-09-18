@@ -61,7 +61,7 @@ Los tres primeros **CONSTRUYEN** servidor y pantallas de su área. Los tres últ
 
 | puesto | área: lo que se le manda | lo que NO se le manda |
 |---|---|---|
-| **J1** · Facturación y VeriFactu | facturas, VeriFactu, rectificativas (R1) y anulación, libros. **Prioridad nº 1 del máster** (SIF-1). Revisa todo lo que borre o anonimice datos (regla 29: una factura emitida no se borra NUNCA) | presupuestos, medios de pago |
+| **J1** · Facturación y VeriFactu | facturas, VeriFactu, rectificativas (R1) y anulación, libros, y la entrega a la gestoría (SCRUM-280, 322, 323; con revisión de J4 porque salen datos de clientes a un tercero: propuesta de la S0, sin decidir). **Prioridad nº 1 del máster** (SIF-1). Revisa todo lo que borre o anonimice datos (regla 29: una factura emitida no se borra NUNCA) | presupuestos, medios de pago |
 | **J2** · Clientes y cobro (el CRM) | ficha de cliente completa; historial de presupuestos, trabajos y facturas; seguimiento y recordatorios; qué debe cada cliente; los medios de pago (Stripe Connect, Bizum, webhooks) hasta encender el cobro; la supresión y la portabilidad de los datos del CLIENTE FINAL | la emisión de la factura (J1) |
 | **J3** · Alta y crecimiento | registro, prueba, suscripción a YaQu, configuración, del alta al primer presupuesto enviado, y retención; el borrado y la anonimización de la cuenta del MERCHANT; construye las páginas legales (los textos los propone J4) | lo fiscal, el cobro al cliente final |
 | **J4** · Legal y cumplimiento | privacidad, RGPD, textos legales, preguntas al asesor. **Propone; firma un jefe.** Primer caso: SCRUM-950 | construir código |
@@ -100,6 +100,7 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `billing/app/routes/stripe.routes.ts` | **J2** (contenedor) | ⚠️ por contenido: UN webhook que atiende pagos del cliente (`mode === 'payment'`) y la suscripción a YaQu (`mode === 'subscription'`). J3 mantiene su bloque marcado. Propuesta de la S0, sin decidir |
 | `billing/app/routes/subscriptions.routes.ts`, `billing/domain/stripePrices.ts`, `billing/domain/founding.ts` | **J3** | la suscripción a YaQu |
 | `src/modules/payments/**`, `src/integrations/stripe.ts`, `src/integrations/mercadopago.ts` | **J2** | |
+| **el canal de WhatsApp:** `src/integrations/whatsapp.ts`, `whatsappTemplates.ts`, `whatsappPolicy.ts`, `whatsappNotifications.ts`, `messaging/domain/whatsappLog.service.ts`, `src/modules/whatsappBot/**` | **J2** | decisión del orquestador (18-sep): es la comunicación con el cliente. Sigue la regla 1 (todo WhatsApp por `whatsapp.ts`) y las **plantillas de Meta son STOP de un jefe**. Presupuestos (S1) y facturas (J1) lo USAN, no lo cambian |
 | `system/customerAdmin.ts`, `customerEvents.service.ts`, `tagsDelCliente.ts`, `system/app/routes/customersAdmin.routes.ts`, `customerPortal.routes.ts`, `system/domain/importarClientes.service.ts`, `identificadoresDuplicados.ts` | **J2** | |
 | `src/modules/auth/**`, `messaging/domain/lifecycle.service.ts`, `weeklyDigest.service.ts`, `system/domain/soporte.ts` | **J3** | |
 | `system/merchantAdmin.ts` | **J3** (contenedor) | ajustes del negocio; la parte de la serie fiscal es un bloque de J1 |
@@ -111,8 +112,8 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `src/core/documentos/**` | **S1** | los usan presupuesto y factura |
 | `src/core/flags.ts` | **S1** | Parte P cerrada: **un flag nuevo es un cambio de máster, y lo decide un jefe** |
 | `src/modules/reports/**` | **S1** | |
-| todo lo demás de `src/` (quotes, jobs, expenses, maintenance, products, providers, metrics, search, team, templates, quoteRequests, ai, whatsappBot, el resto de messaging y system, `core/`, `integrations/whatsapp*`, `claude`, `gemini`, `mailer`) | **S1** | |
-| `prisma/schema.prisma` | **nadie** | A5 igual para los dos equipos: decisión → ALTER aditivo en las TRES bases, **que aplica Javier también para el equipo de Luis** → un PR. El sí lo da cualquier jefe |
+| todo lo demás de `src/` (quotes, jobs, expenses, maintenance, products, providers, metrics, search, team, templates, quoteRequests, ai, el resto de messaging y system, `core/`, `claude`, `gemini`, `mailer`) | **S1** | |
+| `prisma/schema.prisma` | **nadie** | A5 igual para los dos equipos: decisión → ALTER aditivo en las TRES bases, **que aplica Javier también para el equipo de Luis** → un PR. El sí lo da cualquier jefe. En un ticket que espera un ALTER, **esa parte es de Javier como jefe**, no de un puesto |
 
 ### 3.2 · Pantallas (`public/`)
 
@@ -141,6 +142,7 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `docs/equipo/prompt-tanda-orquestador.md` | contenido **S0**; el cableado, **S5** | UN solo prompt para los dos equipos |
 | `docs/equipo/orquestador-autonomo.md`, `instalacion-*.md`, `scripts/equipo/**` | **S5** | |
 | `.github/workflows/**` (ci, vigías, avisador, PR automático) | **S5** | J6 es dueño de SUS workflows nuevos de seguridad, si los hay |
+| **infraestructura y despliegue** (Railway, región, secretos de producción, tareas sobre la base de producción: p. ej. SCRUM-863 y el fondo de SCRUM-789) | **S5** prepara y mide | decisión del orquestador (18-sep). **Lo EJECUTA un jefe**: infraestructura de producción y secretos no se delegan |
 | `tests/`: bancos e instrumentos (`_banco-*`, `_suelo-*`, mutación) | **S3** | |
 | `tests/`: guards nuevos de J6 | **J6** | |
 | `tests/`: el test de un ticket | el puesto que trabaja el ticket | |
@@ -211,3 +213,9 @@ efecto y se le cuenta al jefe en plano.
 2. Si un jefe puede cambiar una decisión escrita por el otro (§1).
 3. `stripe.routes.ts`: un solo webhook para pagos del cliente (J2) y suscripción a YaQu (J3). Propuesta de la
    S0: J2 dueño y J3 con su bloque marcado (§3.1).
+4. La entrega a la gestoría (SCRUM-280, 322, 323): J1, con revisión de J4 por el RGPD del envío (§2.2).
+
+**Comprobado contra casos reales:** el censo de los 80 tickets abiertos del orquestador (18-sep ~11:58Z, sobre
+`e76580b1`) casa cada ticket con un área de esta tabla. Salieron cuatro huecos: infraestructura (→ S5) y el
+canal de WhatsApp (→ J2), decididos y escritos arriba; el ALTER (→ Javier como jefe, §3.1) y la gestoría (4,
+pendiente).
