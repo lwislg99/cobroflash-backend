@@ -45,6 +45,17 @@
 
 **Mutación** (`docs/master/evidencias/SCRUM-912/mutacion-912.mjs`, sobre el JS compilado; aborta si un texto a mutar no aparece exactamente una vez; restaura `dist/` y comprueba que queda byte a byte): **17 mutantes, 17 muertos**, cada uno por el test que le toca. Entre ellos: un respaldo que llama a Anthropic sin clave de Gemini; la lista de la lectura cayendo a `gemini-2.5-flash`; la lista propia ignorada; el `quotaId` sin leer; la diaria sin prioridad sobre la del minuto; el tope global en vez de por merchant; lo leído escrito en el log; la IA marcando deducible; el proveedor elegido entre dos fichas; la búsqueda sin `merchantId`.
 
+### Lo que cazó la suite, y cómo se arregló (sin tocar un solo guard)
+
+La primera tanda completa **no llegó a arrancar**: con 909 ficheros, la línea de comandos de Windows es demasiado larga, y el comando salió con código 0 igualmente. La segunda (patrón entre comillas, lo expande node) la paró Claude Code por falta de memoria del sistema, con 6.874 ok / 10 rojos medidos. De esos rojos, cinco guards eran por 912. Los rojos de 837 y 853 salieron verdes corriendo solos.
+
+| guard | qué vio | arreglo |
+|---|---|---|
+| SCRUM-55 y SCRUM-365 | `POST /admin/expenses/leer-ticket` abierto al técnico y sin declarar | declarada en `TECNICO_ALLOWED` (`adminRouteDeclarations.ts`) con su motivo: es el permiso del alta, aprobado en el plan |
+| SCRUM-627 | `t * 100` en `lecturaTicket.ts`: aritmética de IVA en un fichero nuevo | la regla va a `justificante.ts` (ya censado), con `tipoIvaDeGastoAdmitido` y `baseMasCuotaCuadra`; la lectura solo pregunta |
+| SCRUM-411 | 6 exports huérfanos | 3 sin `export` (solo los usaba su módulo); 3 declarados en `_huerfanos-declarados.mjs` (`sanearLectura` como pieza interna; `MODELOS_LECTURA` y `ESQUEMA_LECTURA` como vocabulario) |
+| SCRUM-237 | «la foto no está en el log» sin respaldo | positivo hermano: la foto SÍ viajó a Google en esa misma prueba |
+
 ## Lo que NO está medido, y lo que queda
 
 * **Una lectura real**: no hay `GEMINI_API_KEY` en local. Después del despliegue, hasta 5 lecturas en staging (permiso del orquestador; la clave de staging es la de producción, así que gastan cupo real).

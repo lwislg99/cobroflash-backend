@@ -17,6 +17,7 @@ const D = (p) => path.join(RAIZ, 'dist', p);
 const DOM = D('modules/expenses/domain/lecturaTicket.js');
 const RUTA = D('modules/expenses/app/routes/expenses.routes.js');
 const GEM = D('integrations/gemini.js');
+const JUS = D('modules/expenses/domain/justificante.js');
 const TEST = path.join(RAIZ, 'tests', 'scrum912-leer-ticket-gasto.test.mjs');
 
 const MUTANTES = [
@@ -30,8 +31,8 @@ const MUTANTES = [
   { id: 'M17 diaria no manda', f: DOM, de: 'if (ids.some((q) => /PerDay/.test(q)))', a: 'if (false)', cae: 'la diaria manda' },
   { id: 'M2 la foto no viaja', f: GEM, de: 'const imagenes = (params.images ?? []).map(', a: 'const imagenes = ([]).map(', cae: 'inline_data' },
   { id: 'M3 sin temperatura 0', f: DOM, de: 'temperature: 0,', a: '', cae: 'inline_data' },
-  { id: 'M4 tipo no entero', f: DOM, de: 'if (!Number.isInteger(t) || !fiscalInput_1', a: 'if (!fiscalInput_1', cae: 'no cuadra se DESCARTA' },
-  { id: 'M5 base sin cuadrar', f: DOM, de: 'if (diferencia > justificante_1.TOLERANCIA_CENTIMOS)', a: 'if (false)', cae: 'céntimo de tolerancia' },
+  { id: 'M4 tipo no entero', f: JUS, de: 'return Number.isInteger(tipo) && fiscalInput_1', a: 'return fiscalInput_1', cae: 'no cuadra se DESCARTA' },
+  { id: 'M5 base sin cuadrar', f: JUS, de: 'return Math.abs(b + c - t) <= exports.TOLERANCIA_CENTIMOS;', a: 'return true;', cae: 'céntimo de tolerancia' },
   { id: 'M6 fecha futura', f: DOM, de: "descarta('date', 'fecha_futura');", a: 'fecha = s;', cae: 'no cuadra se DESCARTA' },
   { id: 'M7 NIF sin control', f: DOM, de: 'if (!(0, nifEspanol_1.validarNifEspanol)(nif).valido)', a: 'if (false)', cae: 'no cuadra se DESCARTA' },
   { id: 'M8 elige entre dos', f: DOM, de: 'if (casan.length === 1)', a: 'if (casan.length >= 1)', cae: 'UNA ficha del merchant' },
@@ -41,7 +42,7 @@ const MUTANTES = [
   { id: 'M12 log de lo leído', f: RUTA, de: 'return res.json({ ok: true, ...lectura });', a: 'console.log(JSON.stringify(lectura)); return res.json({ ok: true, ...lectura });', cae: 'acaban en el log' },
 ];
 
-const originales = new Map([DOM, RUTA, GEM].map((f) => [f, fs.readFileSync(f)]));
+const originales = new Map([DOM, RUTA, GEM, JUS].map((f) => [f, fs.readFileSync(f)]));
 const tap = path.join(os.tmpdir(), `mutantes-912-${process.pid}.tap`);
 
 function correr() {

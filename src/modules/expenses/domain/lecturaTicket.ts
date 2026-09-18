@@ -24,8 +24,11 @@
 import { geminiCompleteConModelo, type GeminiParams } from '../../../integrations/gemini';
 import { prisma } from '../../../core/db/prisma';
 import { normalizarNif, validarNifEspanol } from '../../../core/validation/nifEspanol';
-import { TIPOS_IVA_ES_BP } from '../../../core/validation/fiscalInput';
-import { clasificarJustificante, TOLERANCIA_CENTIMOS, aCentimos, type Clasificacion } from './justificante';
+// La aritmética del IVA de un gasto (tipo admitido, base + cuota = total) vive en `justificante.ts`
+// y aquí solo se pregunta: una segunda copia de esa regla es lo que vigila el censo de SCRUM-627.
+import {
+  clasificarJustificante, tipoIvaDeGastoAdmitido, baseMasCuotaCuadra, type Clasificacion,
+} from './justificante';
 
 /**
  * Lecturas por merchant y día natural (Europe/Madrid). La cuota gratis de Google es UNA para todo
@@ -58,7 +61,7 @@ export const MODELOS_LECTURA: readonly string[] = [
 ];
 
 /** Los tipos que Gemini admite en línea (guía de imágenes, 17-sep-2026). */
-export const MIME_ADMITIDOS: ReadonlySet<string> = new Set([
+const MIME_ADMITIDOS: ReadonlySet<string> = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
@@ -86,7 +89,7 @@ export function parsearImagen(
 
 // ── LO QUE SE LE PIDE AL MODELO ─────────────────────────────────────────────────────────────
 
-export const SISTEMA_LECTURA = `Lees la foto de un ticket o factura de COMPRA de un profesional en España.
+const SISTEMA_LECTURA =`Lees la foto de un ticket o factura de COMPRA de un profesional en España.
 Devuelve SOLO lo que está escrito en el papel. Si un dato no aparece o no se lee con claridad,
 devuelve null: nunca lo deduzcas, lo calcules ni lo inventes.
 - total: importe TOTAL pagado, IVA incluido, en euros, como número (12.10).
@@ -99,7 +102,7 @@ devuelve null: nunca lo deduzcas, lo calcules ni lo inventes.
 - nifProveedor: NIF o CIF del establecimiento que VENDE, nunca el del cliente.
 - concepto: qué se ha comprado, en ocho palabras como mucho.`;
 
-export const USUARIO_LECTURA = 'Lee este ticket.';
+const USUARIO_LECTURA ='Lee este ticket.';
 
 const ANULABLE = { nullable: true } as const;
 export const ESQUEMA_LECTURA = {
@@ -200,21 +203,20 @@ export function sanearLectura(bruto: unknown, ahora: Date): LecturaSaneada {
   let baseAmount = importe(r.base, 'baseAmount', false);
   const vatAmount = importe(r.cuota, 'vatAmount', false);
 
-  // El tipo: el MISMO conjunto que guarda la puerta del presupuesto (se importa, no se copia),
-  // y además ENTERO, porque `Expense.vatRate` es `Int` y un 7,5 no cabe sin cambiar de dato.
+  // El tipo: el que `Expense.vatRate` puede guardar (español y entero).
   let vatRate: number | null = null;
   if (r.tipoIva !== null && r.tipoIva !== undefined) {
     const t = r.tipoIva;
     if (typeof t !== 'number' || !Number.isFinite(t)) descarta('vatRate', 'no_es_numero');
-    else if (!Number.isInteger(t) || !TIPOS_IVA_ES_BP.has(t * 100)) descarta('vatRate', 'tipo_iva_no_admitido');
+    else if (!tipoIvaDeGastoAdmitido(t)) descarta('vatRate', 'tipo_iva_no_admitido');
     else vatRate = t;
   }
 
   // Base + cuota tiene que dar el total. Si no, la base es la que sobra: el total es lo que se
   // pagó, y la cuota la juzga `clasificarJustificante` contra el tipo.
-  if (amount !== null && baseAmount !== null && vatAmount !== null) {
-    const diferencia = Math.abs((aCentimos(baseAmount) ?? 0) + (aCentimos(vatAmount) ?? 0) - (aCentimos(amount) ?? 0));
-    if (diferencia > TOLERANCIA_CENTIMOS) baseAmount = descarta('baseAmount', 'no_cuadra_con_el_total');
+  if (amount !== null && baseAmount !== null && vatAmount !== null
+      && !baseMasCuotaCuadra(amount, baseAmount, vatAmount)) {
+    baseAmount = descarta('baseAmount', 'no_cuadra_con_el_total');
   }
 
   let fecha: string | null = null;

@@ -466,6 +466,8 @@ test('SCRUM-912 · 🔴 ni la foto ni lo leído acaban en el log', async () => {
   }
   const todo = escrito.join('\n');
   assert.ok(escrito.length > 0, 'CONTROL: el camino del error SÍ escribe en el log (si no, esto es ciego)');
+  const enviadoAGoogle = g.salidas.map((s) => s.body).join('\n');
+  assert.ok(enviadoAGoogle.includes('QUJDRA=='), 'CONTROL: la foto SÍ estaba en la mano: viajó a Google');
   assert.ok(!todo.includes(NIF_MALO), '🔴 el NIF del proveedor ha acabado en el log');
   assert.ok(!todo.includes('QUJDRA=='), '🔴 la foto ha acabado en el log');
   assert.ok(!todo.includes('Almacén Pérez'), '🔴 el nombre del proveedor ha acabado en el log');
