@@ -26,7 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  censoConPoblacion, seTitulaGuard, sueloDePoblacion, rotuloDelCenso,
+  censoConPoblacion, seTitulaGuard, sueloDePoblacion, rotuloDelCenso, ocurrenciasDelAncla,
 } from '../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -213,21 +213,21 @@ test('SCRUM-812 · 🔴 mi ancla ④ muta la CONSTANTE, no el texto que la cita'
   // que sí vigila. Es el defecto de SCRUM-839e (mutar un sitio por el que el test no pasa), y
   // aquí se cierra por el orden en vez de por la suerte.
   //
-  // `TOPE_PROSA_MUDA` (scrum758) tiene la misma forma y el mismo riesgo sin vigilar: si esto
-  // aguanta, allí conviene copiarlo — se REPORTA, no se arregla de paso.
+  // 🔴 SCRUM-812c · la comprobación ya NO vive aquí: la hace `ocurrenciasDelAncla`, en el módulo
+  // dueño del contrato de mutación. Aquí vivía una copia, y `scrum758` necesitaba otra — dos
+  // copias de la misma comprobación son la próxima contradicción con fecha puesta.
   const yo = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
   const ANCLA = `export const SUELO_GUARD_QUE_DECLARAN = ${SUELO_GUARD_QUE_DECLARAN};`;
+  const { veces, primeraEnLineaPropia } = ocurrenciasDelAncla(yo, ANCLA);
 
-  // SUELO del control: que el ancla exista, o lo de abajo sería cierto sobre la nada.
-  const veces = yo.split(ANCLA).length - 1;
+  // SUELO del control: que el ancla exista DOS veces, o lo de abajo sería cierto sobre la nada.
   assert.equal(veces, 2, `🔴 el ancla aparece ${veces} veces y se esperaban 2 (la constante y su `
     + 'declaración). Si aparece 1, la declaración ha dejado de citarla y la mutación ④ está '
     + 'CIEGA; si aparece 3, hay una copia de más y `replace` puede tocar cualquiera.');
 
-  // EL QUE DECIDE: la PRIMERA ocurrencia es la línea de la constante, o sea empieza en columna 0.
-  // La copia de la declaración va indentada dentro del array, así que nunca lo está.
-  const i = yo.indexOf(ANCLA);
-  assert.ok(i === 0 || yo[i - 1] === '\n',
+  // EL QUE DECIDE: la PRIMERA ocurrencia es la línea de la constante. La copia de la declaración
+  // va indentada dentro del array, así que nunca empieza en línea propia.
+  assert.ok(primeraEnLineaPropia,
     '🔴 la PRIMERA ocurrencia del ancla ya no es la declaración de la constante: está indentada, '
     + 'o sea que es la copia de dentro de `MUTACIONES_QUE_ME_TUMBAN`. La mutación ④ mutaría ese '
     + 'texto en vez de la constante, el trinquete no caería y el meta-guard diría MUDO de un '

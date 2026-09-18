@@ -1,0 +1,15 @@
+═══ ① ANTES · el conjunto encoge y la tanda NO se entera (forma vieja: console.log) ═══
+   ¿ENTRÓ la mutación? sí, las dos (contenido distinto)
+   ¿el conjunto tiene un MUERTO dentro? sí (docs/legal/NO-EXISTE-927B.md # fichero-inventado-927b.ts)
+   ¿la tanda se entera? 🔴 NO — sigue VERDE con la deuda muerta dentro
+   restaurado byte a byte: sí
+
+═══ ② DESPUÉS · el mismo muerto, con el `assert` puesto ═══
+   ¿ENTRÓ la mutación? sí (contenido distinto)
+   ¿la tanda CAE? sí
+   ¿el mensaje NOMBRA el elemento? sí
+   VEREDICTO: ✅ CIERRA — lo que ayer se imprimía, hoy se exige, y dice cuál es.
+   restaurado byte a byte: sí
+
+═══ ③ POST-CONDICIÓN · con el árbol intacto, sigue verde ═══
+   la tanda pasa: sí ✅
