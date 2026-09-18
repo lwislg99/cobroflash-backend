@@ -1638,12 +1638,80 @@ html, body { overflow-x: clip; }
     /* SCRUM-594 (DOC-04): la rejilla NO cambia. «Dto. %» se montó primero aquí, junto al precio,
        y la medición en navegador a 390 px dijo +77 px POR FILA — el número exacto que F4 midió y
        rechazó para margen e IVA. Vive en la hoja de ajustes, con IVA y Coste, y el chip lo dice. */
-    grid-template-columns: minmax(0, 3fr) 90px 120px 168px minmax(96px, auto) auto;
+    /* 🔴 SCRUM-909: AQUÍ VIVÍA `minmax(0, 3fr)` PARA EL CONCEPTO, Y ESE `0` ES EL DEFECTO.
+       Las cinco columnas fijas suman 546 px y sus cinco huecos 60 px: 606 px antes de que el
+       concepto ocupe nada. En cuanto la línea mide menos que eso, el `0` de mínimo le da permiso
+       al concepto para DESAPARECER, y desaparece. Medido en navegador el 17-sep-2026:
+           768 px → 69,9 · 1024 → 53,9 · 1180 → 0,0 · 1280 → 0,0 · 1366 → 0,0 · 1440 → 9,6
+       El rótulo «Concepto» necesita 72 px, así que se pintaba FUERA de su caja, encima de la
+       columna de al lado; y a 1180, 1280 y 1366 la fila además DESBORDABA de lado, que es justo
+       lo que el comentario de aquí arriba promete que no pasa.
+       La banda rota era 768 → 1600 px: todo el escritorio menos los monitores grandes, con los
+       portátiles de 1366 y 1440 dentro. El ticket decía «a 1280 px» y se quedaba corto.
+       Así que por DEFECTO el escritorio PLIEGA la línea en dos filas, igual que el móvil: el
+       concepto arriba a todo lo ancho —que es el contrato que AB3 le escribió a este componente,
+       «concepto a ancho completo (protagonista)»— y los números debajo. NO se inventa lenguaje
+       nuevo: es el pliegue que la pantalla ya hacía en el móvil. */
+    /* El reparto de columnas ya NO lo decide esta consulta de ventana, sino las DOS consultas de
+       contenedor de aquí abajo, que le preguntan a la línea. Lo que queda aquí es lo que sí
+       depende del dispositivo. */
     align-items: end;
     gap: 12px;
   }
-  .quote-line__concept, .quote-line__actions, .quote-line__ajustes { grid-column: auto; }
+}
+
+/* ── SCRUM-909 · LA LÍNEA SE PLIEGA SEGÚN LO QUE MIDE ELLA, NO LA VENTANA ─────────────────────
+   Medido, de 1280 a 1440 px de VENTANA la columna del concepto sólo creció 9,6 px: el ancho de la
+   línea no lo decide el navegador, lo decide el reparto entre el editor y la vista previa. Un
+   umbral en `@media` sería un número que habla de otra cosa, y caducaría el día que la vista
+   previa cambie de anchura.
+
+       🔒 Referenciar por posición caduca. Referenciar por identidad no.
+
+   Y los umbrales NO se eligen, SE CALCULAN, de la propia rejilla:
+
+     · los cinco campos numéricos miden 90 + 120 + 168 + 96 + 72 = 546 px, y sus cuatro huecos
+       48 px  →  594 px es lo que necesita UNA fila de números;
+     · más el relleno de la tarjeta (24 px)  →  618 px de contenedor. Se deja en **640**.
+     · para volver a la fila ÚNICA hace falta además un mínimo REAL de 180 px de concepto y el
+       quinto hueco: 594 + 12 + 180 + 24 = 810 px. Se deja en **880**, ~70 px de margen para que
+       el chip de ajustes pueda crecer («IVA 21 % · Margen 15 %» es más largo que «IVA 21 %») sin
+       que la fila vuelva a desbordar.
+
+   Quien toque estos números tiene `npm run guard:rotulos-de-la-linea`, que lo comprueba en 10
+   anchuras. Y si un navegador no entendiera `@container`, todo cae a la rejilla de móvil: más
+   alta, pero entera — nunca al concepto invisible de antes.
+
+   `container-type: inline-size` es CSS de la casa: ni build, ni framework, ni dependencia. No
+   afecta a la hoja de ajustes, que cuelga de `document.body` y es `position: fixed`. */
+.quote-lines { container-type: inline-size; container-name: linea-presupuesto; }
+
+/* ≥640 px de línea: los números CABEN en una fila. El concepto se queda arriba, a todo lo ancho
+   — que es el contrato que AB3 le escribió a este componente: «concepto a ancho completo
+   (protagonista)». No se inventa lenguaje nuevo: es el pliegue que el móvil ya hacía. */
+@container linea-presupuesto (min-width: 640px) {
+  .quote-line { grid-template-columns: 90px 120px 168px minmax(96px, auto) auto; }
+  /* `.quote-line__concept` NO vuelve a `auto` aquí: conserva el `grid-column: 1 / -1` de la regla
+     base, que es lo que lo pone en su propia fila a todo lo ancho. */
+  .quote-line__actions, .quote-line__ajustes { grid-column: auto; }
   .quote-line__actions { justify-content: flex-start; justify-self: auto; }
+}
+
+/* ≥880 px de línea: vuelve la fila ÚNICA de SCRUM-139 F4, con la densidad de la tabla. La
+   densidad no se pierde: se condiciona a que haya sitio de verdad. */
+@container linea-presupuesto (min-width: 880px) {
+  .quote-line {
+    /* 🔴 AQUÍ VIVÍA `minmax(0, 3fr)`, Y ESE `0` ERA EL DEFECTO DE SCRUM-909: le daba permiso al
+       concepto para DESAPARECER, y desaparecía. Medido el 17-sep-2026, columna del concepto:
+           768 px → 69,9 · 1024 → 53,9 · 1180 → 0,0 · 1280 → 0,0 · 1366 → 0,0 · 1440 → 9,6
+       El rótulo «Concepto» necesita 72 px, así que se pintaba FUERA de su caja, encima de la
+       columna de al lado; y a 1180, 1280 y 1366 la fila además DESBORDABA de lado. La banda rota
+       era 768 → 1600 px —todo el escritorio menos los monitores grandes, con los portátiles de
+       1366 y 1440 dentro—: el ticket decía «a 1280 px» y se quedaba corto.
+       El mínimo ya no es 0: el concepto puede encogerse, nunca desaparecer. */
+    grid-template-columns: minmax(180px, 3fr) 90px 120px 168px minmax(96px, auto) auto;
+  }
+  .quote-line__concept { grid-column: auto; }
 }
 
 /* SCRUM-133: "+ Añadir línea" DEBAJO de la última fila — añadir es la acción más

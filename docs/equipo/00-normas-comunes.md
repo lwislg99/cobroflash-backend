@@ -197,6 +197,7 @@ deshabilita: se quita.
 Un acto irreversible no es nunca la acción principal.
 Si tu medición tumba una decisión firmada, gana tu medición.
 El coste no es lo que entra en el chat: es lo que el chat arrastra.
+Un carácter que no se ve no lo caza una revisión: lo caza un recuento.
 
 ## A11 · Cómo se actualiza esto
 
@@ -330,6 +331,34 @@ ticket decía «a 4 ramas» de un umbral concreto, `dentro.length > 10`, y ese m
 hoy es 57. Dos umbrales distintos con dos márgenes distintos, y atribuirle a uno el número del
 otro es la misma clase de error que la norma viene a cortar: **un número heredado de un
 enunciado no es una medición.**
+
+### Un suelo de «no reproducido» limita lo que el cierre AFIRMA, no si el ticket se cierra
+
+*(SCRUM-941, 18-sep-2026.)* Si el síntoma no se reproduce:
+
+1. se declara **«no reproducido»**, con cuántos intentos y en qué condiciones;
+2. se cierra **SOLO** si lo entregado no depende de reproducirlo —el mecanismo que convierte la
+   próxima vez en un rojo ruidoso, probado con un caso fabricado y su mutación— y está en `main`
+   por efecto;
+3. el cierre dice **«cerrado, causa no demostrada»**, con la hipótesis y la condición de
+   reapertura.
+
+Si nada de lo entregado se sostiene sin reproducir, **NO se cierra**: se aparca como «no
+reproducido», con fecha.
+
+Nace de **SCRUM-858**. Su suelo decía «si no se consigue reproducir el cuelgue, se declara así y
+no se cierra el ticket», y juntaba dos reglas. La primera («no reproducirlo no prueba que esté
+arreglado») es correcta y se cumplió en cinco comentarios seguidos. La segunda ataba el cierre a
+algo que el equipo no controla —que el cuelgue volviera solo— y contradecía al punto 4 del propio
+ticket, que existía para que la próxima vez **no** hiciera falta reproducirlo. El orquestador lo
+cerró contra ese suelo por escrito, con su motivo y sin afirmar la causa, y mandó la norma a su
+dueña: ése es el procedimiento para un suelo mal escrito. **Lo que no puede volverse costumbre es
+saltarse un suelo por decisión propia**, o ningún suelo vale nada. Por eso se arregla la
+redacción, no la obediencia: el suelo se escribe como «si no se reproduce, se declara así y el
+cierre no puede afirmar la causa», no como «no se cierra».
+
+    🔒 Un ticket que solo se puede cerrar si el fallo vuelve solo no se cierra nunca, y un ticket
+       que no se cierra nunca también miente.
 
 ## A19 · El PUESTO es fijo; la SESIÓN se releva
 
@@ -470,3 +499,40 @@ norma renumerada rompe todo lo que la cite por número.** Aquí no rompió nada 
 por número— pero el coste existe y es el de siempre:
 
     🔒 Referenciar por posición caduca. Referenciar por identidad no.
+
+## A22 · Los caracteres de control se escriben con `\x`, nunca con `\u`
+
+Lo que una sesión escribe como `\uXXXX` **aterriza en disco como el carácter LITERAL**. Funciona
+igual, y por eso es peligroso: no se ve en un diff, ni en el visor, ni en una revisión a ojo, y
+**un NUL convierte el fichero en binario para git y para GitHub** («Binary file not shown»).
+
+- Se escribe `\x1b`, `\x00`, `\x1f`, `\x08`. Esas formas aterrizan intactas.
+- Y se **CUENTA**, no se relee: después de escribir, los bytes de control del fichero (todos
+  menos TAB, LF y CR) tienen que ser **0**:
+
+      ([IO.File]::ReadAllBytes($f) | Where-Object { ($_ -lt 32 -and $_ -notin 9,10,13) -or $_ -eq 127 }).Count
+
+- Si hace falta el byte de verdad (un separador de `git log --format`, por ejemplo), se construye
+  en tiempo de ejecución (`String.fromCharCode(31)`), no se escribe.
+
+**Medido por la Sesión 0 el 18-sep-2026** (SCRUM-941), en su propia escritura y en el árbol:
+
+1. **Reproducido escribiendo:** 7 de 7 secuencias `\u` probadas aterrizaron como el carácter
+   (ESC, NUL, BEL, TAB, DEL, …); las formas `\x07`, `\x1b` y `\033`, 3 de 3 intactas. Es de la
+   herramienta, no un descuido. Según sus traspasos, el 17-sep les pasó a dos sesiones
+   independientes (la 3 y la 5), con 17 bytes entre las dos.
+2. **`main` llevó un ESC literal en su línea principal durante 16 merges seguidos**, de #1467
+   (17-sep, 19:08Z) a #1480 (20:11Z), hasta que lo limpió #1481.
+3. **Dos tests de `main` son binarios para git** (al escribir esto; el arreglo va en SCRUM-942):
+   `tests/scrum806-el-pdf-del-portal.test.mjs` (1 NUL) y
+   `tests/scrum807-esquemas-del-href.test.mjs` (4 NUL). El `--numstat` de sus commits de entrada
+   da «- -»: **su contenido no lo ha visto nadie nunca en un diff.**
+4. **Ya había costado un guard ciego:** `docs/master/SCRUM-428.md` cuenta un metacarácter de
+   regex que entró como retroceso (0x08) y dejó un patrón que «no casa con nada».
+
+⚠️ **Lo que sostiene esta norma es un guard, no la buena voluntad** (SCRUM-942, carril de la
+Sesión 3): una prohibición sin mecanismo es una frase. Y la trampa que decide si ese guard sirve
+también está medida: **no puede usar `git grep -I`**. Un NUL convierte el fichero en «binario» y
+el `-I` se lo salta, así que quedaría ciego justo ante el caso peor.
+
+    🔒 Un carácter que no se ve no lo caza una revisión: lo caza un recuento.

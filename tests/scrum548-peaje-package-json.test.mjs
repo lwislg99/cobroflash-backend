@@ -99,7 +99,12 @@ test('SCRUM-548 · el detector de solape entiende las DOS formas de escribir el 
 test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se declara', () => {
   const s = censarSolape(RAIZ);
   const resumen = s.solapes.map((x) => `${x.guards.length}×${x.ruta}`).sort();
-  assert.deepEqual(resumen, ['2×/medicion.html', '5×/index.html'],
+  // SCRUM-909 · entra el tercer solape: `guard:descuento-redibuja` y `guard:rotulos-de-la-linea`
+  // abren los dos el editor de presupuestos. Se declara, y se declara POR QUÉ no se fusionan:
+  // miden cosas que no se parecen —uno teclea descuentos y comprueba que el total y la vista previa
+  // dicen lo mismo; el otro no teclea ningún descuento y mide ANCHOS de columna en 10 anchuras— y
+  // juntarlos daría un guard que, cuando cae, no dice cuál de las dos cosas se rompió.
+  assert.deepEqual(resumen, ['2×/dashboard/index.html#quotes-new', '2×/medicion.html', '5×/index.html'],
     '🔴 HA CAMBIADO QUIÉN MIDE QUÉ PÁGINA.\n'
     + '  No es un defecto por sí solo —dos guards pueden mirar cosas distintas de la misma\n'
     + '  página—, pero es el sitio donde mirar. SCRUM-546 encontró un solape de dos por pura\n'

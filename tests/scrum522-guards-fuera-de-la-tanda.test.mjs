@@ -140,8 +140,18 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // verdad: el corte lo hace el servidor destruyendo cada conexión, porque `setOffline` no corta el
   // SW. Nada de esto existe fuera de un navegador. Comprobado en rojo contra `2be8fe16`
   // (17-sep-2026): recargar sin red acababa en la pantalla de error de Chrome.
-  assert.equal(fuera.length, 24,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ 24 → ${fuera.length}.\n`
+  // SCRUM-909 · entra `guard:rotulos-de-la-linea`. Mide el ANCHO REAL de la columna del concepto
+  // en el editor y si el rótulo CABE en su caja, en 10 anchuras. Sube aquí porque el defecto es un
+  // número que sólo existe cuando el navegador resuelve la rejilla: en el fuente, un
+  // `minmax(0, 3fr)` que funciona y uno que deja la columna en 0 px se leen igual. Y trae su propio
+  // motivo, que no tenía ninguno de los anteriores: **el guard evidente para este defecto sale
+  // VERDE contra la pantalla rota** —las cajas de los dos rótulos no se cruzan, se cruza el TEXTO
+  // que se desborda de una caja de 0 px—, así que la aserción NO es por intersección. Comprobado en
+  // rojo contra `8b3f26d2` (17-sep-2026): 7 de 10 anchuras.
+  // El número NO se calculó sumando uno: se midió corriendo este test, como dice el párrafo de
+  // arriba que ya ha costado cuatro veces.
+  assert.equal(fuera.length, 25,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ 25 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
