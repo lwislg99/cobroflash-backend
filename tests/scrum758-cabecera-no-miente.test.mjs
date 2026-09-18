@@ -373,7 +373,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 ];
 
 test('SCRUM-758 · EL LECTOR OFICIAL me ve TODAS mis declaraciones, con sus cuatro campos', async () => {
-  const { mutacionesDeclaradas } = await import('../scripts/meta-guard-mutaciones.mjs');
+  const { mutacionesDeclaradas, ocurrenciasDelAncla } = await import('../scripts/meta-guard-mutaciones.mjs');
   const yo = fileURLToPath(import.meta.url);
   const vistas = mutacionesDeclaradas(fs.readFileSync(yo, 'utf8'), path.basename(yo));
 
@@ -387,9 +387,36 @@ test('SCRUM-758 · EL LECTOR OFICIAL me ve TODAS mis declaraciones, con sus cuat
     '🔴 el lector oficial lee algo distinto de lo que está escrito aquí',
   );
   for (const m of MUTACIONES_QUE_ME_TUMBAN) {
+    const fuente = fs.readFileSync(path.join(RAIZ, m.fichero), 'utf8');
     assert.ok(
-      fs.readFileSync(path.join(RAIZ, m.fichero), 'utf8').includes(m.de),
+      fuente.includes(m.de),
       `🔴 el ancla ya no está en ${m.fichero}: «${m.de.trim().slice(0, 70)}…»`,
     );
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 SCRUM-812c · Y QUE `replace` TOQUE LA LÍNEA DE VERDAD, NO EL TEXTO QUE LA CITA.
+    //
+    // Dos de mis anclas aparecen DOS veces en este mismo fichero, y por construcción: la línea
+    // real, y la copia que la declaración hace de ella para poder mutarla. `aplicarUna` usa
+    // `texto.replace(de, a)`, que toma la PRIMERA — y hoy acierta **por el orden del fichero**,
+    // porque la constante y el `if` van antes del array. Eso era suerte, no contrato.
+    //
+    // Si alguien mueve `MUTACIONES_QUE_ME_TUMBAN` arriba, la mutación reescribiría la CITA, el
+    // original se quedaría intacto, el test no caería y el meta-guard diría **MUDO de un guard
+    // sano**. Es el defecto de SCRUM-839e: mutar un sitio por el que el test no pasa.
+    //
+    // La comprobación la hace `ocurrenciasDelAncla` y no vive copiada aquí: la comparten este
+    // guard y `scrum812`, y dos copias serían la próxima contradicción con fecha puesta.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    const { veces, primeraEnLineaPropia } = ocurrenciasDelAncla(fuente, m.de);
+    if (veces > 1) {
+      assert.ok(
+        primeraEnLineaPropia,
+        `🔴 el ancla de ${m.fichero} aparece ${veces} veces y la PRIMERA está indentada, o sea que `
+        + 'es la copia de dentro de `MUTACIONES_QUE_ME_TUMBAN`. `replace` mutaría ese texto en vez '
+        + `del original, el test «${m.cae.slice(0, 50)}…» no caería, y el veredicto saldría MUDO `
+        + 'acusando a este guard de no vigilar algo que sí vigila. Deja el original ANTES del array.',
+      );
+    }
   }
 });

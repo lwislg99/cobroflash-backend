@@ -26,8 +26,16 @@
 //   node scripts/turno-staging.mjs tomar  [--ref <rama-o-ticket>] [--minutos <N>]
 //   node scripts/turno-staging.mjs soltar [--marca <marca>]
 //
+// Y desde SCRUM-932, `--base tests|staging` en todos menos `quien-soy`: hay DOS turnos, uno por
+// base, y cuál quieres lo declaras tú. El defecto es `tests`, o sea que nada cambia para quien ya
+// lo usaba. NO hay cadena entre las dos claves: si falta la de la base que pediste, se PARA.
+//
 // Regla 9: no imprime NUNCA la URL. Solo el nombre de la base y el marcador.
-import 'dotenv/config';
+// SCRUM-932 · sustituye a `import 'dotenv/config'`, que solo miraba el `.env` del directorio
+// actual. Hoy no hay `.env` en NINGÚN árbol de esta máquina, así que ese import cargaba CERO
+// claves y el turno moría con «falta DATABASE_URL_TESTS» sin poder decir dónde había buscado.
+// El porqué completo —y por qué el nombre de la clave NO era el defecto— está en `_cargar-env.mjs`.
+import { cargarEnvDelEquipo, resumenDeEnv } from './_cargar-env.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -45,6 +53,10 @@ import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
 // test ejecuta este CLI. Lo cierra el guard de `tests/scrum258-nota-por-sesion.test.mjs`.
 import { dueñoActual } from './_identidad-sesion.mjs';
 import { guardarNota, leerNota, borrarNota } from './_turno-nota.mjs';
+
+// Se carga ANTES de leer ninguna clave, y el informe se guarda: el camino de error lo imprime,
+// porque «no encontré la clave» sin «y miré en estos sitios» no se puede accionar (A3).
+const informeEnv = cargarEnvDelEquipo();
 
 // Dónde se recuerda la marca propia entre `tomar` y `soltar`. El pid cambia entre invocaciones,
 // así que `soltar` no puede recomponerla: o se recuerda, o se pasa a mano. Si el fichero se
@@ -72,6 +84,10 @@ if (!['estado', 'tomar', 'soltar', 'ceder', 'quien-soy'].includes(modo)) {
   console.error('      node scripts/turno-staging.mjs soltar [--marca <marca>]');
   console.error('      node scripts/turno-staging.mjs ceder  --a <id-de-sesion> [--minutos <N>]');
   console.error('      node scripts/turno-staging.mjs quien-soy');
+  console.error('\n  Todos menos `quien-soy` aceptan  --base tests|staging  (defecto: tests).');
+  console.error('  Hay DOS turnos, uno por base, y el turno se toma sobre la que vas a ESCRIBIR:');
+  console.error('      tests   → DATABASE_URL_TESTS   · la base de pruebas de este carril');
+  console.error('      staging → DATABASE_URL_STAGING · staging, la base compartida del equipo');
   console.error('\n  soltar = «he terminado, queda libre para quien lo pille».');
   console.error('  ceder  = «he terminado y es TUYO»: nadie más puede cogerlo (SCRUM-268).\n');
   process.exit(2);
@@ -93,9 +109,58 @@ if (modo === 'quien-soy') {
 // marcador (el turno se escribe DENTRO de la base, no en un servicio aparte). Por eso hay DOS
 // turnos y no uno: el del árbol principal en `yaqu_dev_javier` y el que comparten b1/b2/b3 en
 // `railway`. No es un descuido — el reparto por carril es deliberado (23-jul-2026).
-const urlStaging = process.env.DATABASE_URL_TESTS;
+//
+// ── SCRUM-932 · CUÁL DE LOS DOS TURNOS, DICHO POR QUIEN LLAMA ────────────────────────────
+//
+// Hay DOS turnos, y hasta hoy este CLI solo podía dirigirse a aquel que `DATABASE_URL_TESTS`
+// nombrara en ese árbol. En `b1`/`b2`/`b3` esa clave era `acela/railway` —la MISMA base que
+// `DATABASE_URL_STAGING`, y así lo dice `RUNBOOKS`—, así que el turno de staging se tomaba de
+// rebote. Esos tres árboles ya no existen, y la clave canónica no está en esta máquina.
+//
+// 🔴 Lo que NO se hace, y es el negativo del ticket: **encadenar las dos claves**. Un
+// `DATABASE_URL_TESTS || DATABASE_URL_STAGING` arrancaría siempre, y en el checkout principal
+// movería el turno de `yaqu_dev_javier` a `railway` sin decírselo a nadie: tomarías el turno de
+// una base y escribirías en otra. Eso es exactamente el accidente de SCRUM-383 —un nombre, dos
+// bases, y nada que te lo recuerde— y volverlo a montar para que el comando arranque sería
+// cambiar un turno por una ceremonia.
+//
+// Así que la base la DECLARA quien llama, y si la clave de la base que pidió no está, se PARA.
+// El mensaje dice qué claves sí hay: eso es información para decidir, no un camino alternativo
+// que el script tome por su cuenta.
+const BASES = Object.freeze({
+  // `tests` sigue siendo el defecto: quien hoy tiene su `.env` con la clave canónica corre
+  // exactamente igual que antes, sin flag y contra la misma base.
+  tests: { clave: 'DATABASE_URL_TESTS', comoSeLlama: 'la base de pruebas de este carril' },
+  staging: { clave: 'DATABASE_URL_STAGING', comoSeLlama: 'STAGING, la base compartida del equipo' },
+});
+
+const basePedida = opcion('base') || 'tests';
+if (!Object.prototype.hasOwnProperty.call(BASES, basePedida)) {
+  console.error(`\n❌ «--base ${basePedida}» no es una base conocida.`);
+  console.error(`   Son: ${Object.keys(BASES).map((b) => `${b} (${BASES[b].clave})`).join(' · ')}`);
+  console.error('   El turno se toma sobre la base en la que vas a ESCRIBIR, y esa la declaras tú.\n');
+  process.exit(2);
+}
+
+const { clave: claveBase, comoSeLlama: nombreDeLaBase } = BASES[basePedida];
+const urlStaging = process.env[claveBase];
 if (!urlStaging) {
-  console.error('\n❌ falta DATABASE_URL_TESTS en el entorno. Sin ella no hay turno.\n');
+  console.error(`\n❌ falta ${claveBase} en el entorno. Sin ella no hay turno, y el turno no se salta.`);
+  console.error(`   Pediste --base ${basePedida} → ${nombreDeLaBase}.`);
+  console.error(resumenDeEnv(informeEnv, { conNombres: true }));
+  const otras = Object.entries(BASES)
+    .filter(([nombre, b]) => nombre !== basePedida && process.env[b.clave])
+    .map(([nombre, b]) => `--base ${nombre} (${b.clave})`);
+  if (otras.length) {
+    console.error(`\n   SÍ hay credencial para: ${otras.join(', ')}.`);
+    console.error('   Ese es OTRO turno, sobre OTRA base. Si es la que vas a escribir, pídela por su');
+    console.error('   nombre; si no, no la uses: el turno de una base no protege la de al lado.');
+  } else {
+    console.error('\n   No hay credencial para NINGUNA de las dos bases en este entorno.');
+  }
+  console.error('\n   Si el fichero de credenciales vive fuera de los árboles, dilo con YAQU_ENV_FILE:');
+  console.error('       YAQU_ENV_FILE=<ruta> node scripts/turno-staging.mjs estado --base <base>');
+  console.error('   La credencial la pone el fundador en ese fichero, NUNCA en el chat (regla 9).\n');
   process.exit(2);
 }
 {
@@ -103,7 +168,9 @@ if (!urlStaging) {
   // SCRUM-118. El contrato devuelve `safe`, no `ok` — leerlo mal da un rechazo con motivo vacío.
   const check = assertSafeStagingUrl(urlStaging, process.env.DATABASE_URL);
   if (!check.safe) {
-    console.error(`\n❌ DATABASE_URL_TESTS no es una URL de pruebas segura (${check.reason}).`);
+    // SCRUM-932 · nombra la clave QUE SE USÓ, no una fija: con `--base` puede ser cualquiera de
+    // las dos, y un mensaje que nombra la que no era manda a revisar el fichero equivocado.
+    console.error(`\n❌ ${claveBase} no es una URL de pruebas segura (${check.reason}).`);
     console.error(`   Solo se opera contra el host de STAGING: ${STAGING_HOST}.\n`);
     process.exit(2);
   }

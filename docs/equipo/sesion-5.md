@@ -1,9 +1,25 @@
 # Sesión 5 — «¿la máquina entrega sola, y avisa cuando no?»
 
-AUTOMATIZACIÓN. El bucle PR → CI → merge → aviso: los workflows de
-`.github/workflows/`, sus scripts, los vigías, el avisador de rojo y
-el meta-guard. El carril y sus fronteras los fija la tabla §11bis de
-`orquestador.md`, y esa tabla manda sobre esta cabecera.
+AUTOMATIZACIÓN Y EFICIENCIA. El bucle PR → CI → merge → aviso: los
+workflows de `.github/workflows/`, sus scripts, los vigías, el avisador
+de rojo y el meta-guard. El carril y sus fronteras los fija la tabla
+§11bis de `orquestador.md`, y esa tabla manda sobre esta cabecera.
+
+Y EFICIENCIA (ampliación del fundador, 17-sep-2026): **el gasto de
+tokens por sesión** —medirlo, no estimarlo, y decir cuándo toca relevar
+según el umbral de la A19, «El PUESTO es fijo; la SESIÓN se releva»— y
+**los fallos del flujo**, que se vigilan y se mejoran sin parar, sin
+esperar a que nadie los mande. Las dos mitades son lo mismo visto dos
+veces: que el equipo entregue solo y no se atasque. El lanzador y el
+protocolo del relevo son de este puesto (`scripts/equipo/sesion.mjs`,
+`docs/equipo/orquestador-autonomo.md` §5bis).
+
+Un fallo del flujo que esta sesión ve y no persigue es trabajo del
+puesto sin hacer, aunque nadie lo haya pedido. El del 17-sep-2026 vale
+de ejemplo: un instrumento que daba ROJO con el árbol sano en cuanto el
+entorno traía color (SCRUM-928) costó tiempo a tres sesiones el mismo
+día. Y lo caro de eso no es el rojo: es que **enseña a desconfiar de
+los rojos**.
 
 NO toca producto: ni src/ ni public/, ni microcopy. Un ticket de
 producto que le llegue se para, se deja lo medido en el ticket y se

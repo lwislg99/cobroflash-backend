@@ -13,6 +13,13 @@
 // escrito que la deuda crece — y la salida barata que eso evita es borrar el testigo para
 // apagar un rojo, que es la regla 41 del máster leída al revés.
 //
+// 🔴 Y DESDE SCRUM-927b, ENCOGER TAMBIÉN LO TUMBA SI NO SE RECOGE. Cuando un par de aquí deja
+// de citar sin testigo, hay que quitarlo de esta lista EN EL MISMO COMMIT. Hasta entonces eso
+// se avisaba por `console.log` y la tanda seguía verde, así que el aviso se perdía entre miles
+// de líneas: contar no es avisar. Una entrada que ya no excluye a nadie no es inofensiva — deja
+// una puerta abierta con la etiqueta de otro, y el trinquete de arriba la tomaría por deuda
+// vieja el día que alguien vuelva a citar ese par sin testigo.
+//
 // ⚠️ LO QUE ESTE TRINQUETE **NO** CAZA, y hay que saberlo: una coordenada nueva sin testigo
 // en un par que YA está aquí. Es el precio de no anclar por posición, y se paga a sabiendas.
 //
