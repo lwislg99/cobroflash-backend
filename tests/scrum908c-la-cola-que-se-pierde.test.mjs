@@ -29,9 +29,15 @@
 //
 //   SUELO ......... stdout a FICHERO (síncrono): los 5 mensajes llegan enteros. Si no, el caso
 //                   fabricado no sirve para nada de lo que viene detrás.
-//   SIN ARREGLO ... tubería + padre parado: en POSIX el NOMBRADO se pierde; en Windows llega.
-//   CON ARREGLO ... lo mismo, con stdout bloqueante en el hijo (`--import` de una línea): llega
-//                   todo, en las dos plataformas. Es la forma del arreglo que se le propone a S3.
+//   SIN ARREGLO ... tubería + padre parado. La ley que se exige es la MISMA en las dos
+//                   plataformas: si el hijo SALE mientras el padre no lee, la cola se pierde; si
+//                   no puede salir, llega entera. En Linux sale (y se pierde); en Windows no
+//                   puede salir, porque la tubería es síncrona (y llega). No se lee la plataforma:
+//                   se mide lo que pasó (SCRUM-702 — una comprobación que asevera cosas distintas
+//                   según el entorno no se comprueba en el otro).
+//   CON ARREGLO ... lo mismo, con stdout bloqueante en el hijo (`--import` de una línea): el hijo
+//                   no puede salir con datos pendientes y llega todo. Es el arreglo que se le
+//                   propone a S3.
 //
 // ⛔ NO toca el instrumento (`scripts/meta-guard-mutaciones.mjs`, de S3), ni `scrum859`, ni el
 //    workflow (S5). Mide la tubería con un caso propio, fuera del árbol.
@@ -39,13 +45,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import v8 from 'node:v8';
 import { spawn } from 'node:child_process';
-import { run } from 'node:test';
-import { temporal, borrarTemporal } from './_temporal.mjs';
-
-const POSIX = process.platform !== 'win32';
 
 // Los títulos van en ASCII a propósito: V8 serializa una cadena de un byte como latin1, así que el
 // título aparece LITERAL en los bytes del mensaje y se puede buscar sin deserializar (los mensajes
@@ -66,8 +69,8 @@ const TAM_RELLENO = 11000;
 const TUBERIA = 64 * 1024;
 const MARCA_DE_AGUA = 64 * 1024;
 
-// La pausa del padre. En el brazo SIN ARREGLO de Linux el hijo sale en ~0,2 s; en los otros dos
-// casos el hijo se queda BLOQUEADO (tubería síncrona o stdout bloqueante) y la pausa se agota.
+// La pausa del padre. En el brazo SIN ARREGLO de Linux el hijo sale en ~0,2 s; cuando el hijo se
+// queda BLOQUEADO (tubería síncrona o stdout bloqueante) la pausa se agota.
 const PAUSA_MS = 2000;
 
 // El arreglo que se mide: stdout bloqueante en el hijo, cargado antes que nada con `--import`.
@@ -75,12 +78,11 @@ const PAUSA_MS = 2000;
 const PRELOAD = 'data:text/javascript,' + encodeURIComponent(
   'process.stdout._handle?.setBlocking?.(true); globalThis.__j6StdoutBloqueante = true;');
 
-function escribirHijo(dir) {
-  const f = path.join(dir, 'hijo-908c.mjs');
-  const cuerpo = [
+/** El hijo fabricado. El testigo de SALIDA (A21): escribe su marca en `exit`. */
+function cuerpoDelHijo() {
+  return [
     "import test from 'node:test';",
     "import fs from 'node:fs';",
-    // El testigo de SALIDA (A21): el padre sabe si el hijo ya salió mientras él estaba parado.
     'const MARCA = process.env.J6_908C_MARCA;',
     "if (MARCA) process.on('exit', () => { try { fs.writeFileSync(MARCA, 'salio'); } catch {} });",
     `test(${JSON.stringify(RELLENO)}, () => { throw new Error('r'.repeat(${TAM_RELLENO})); });`,
@@ -88,8 +90,6 @@ function escribirHijo(dir) {
     ...COLA.map((c) => `test(${JSON.stringify(c)}, () => {});`),
     '',
   ].join('\n');
-  fs.writeFileSync(f, cuerpo);
-  return f;
 }
 
 /** El hijo, como lo lanza `run()`. El entorno se construye A MANO (A21), sin heredar el color. */
@@ -154,22 +154,18 @@ function offsetDe({ mensajes }, titulo) {
   return -1;
 }
 
-/** SUELO: stdout a fichero. Escritura síncrona en las dos plataformas: aquí no se pierde nada. */
-function correrAFichero(hijo, dir) {
-  const salida = path.join(dir, 'suelo.bin');
-  const fd = fs.openSync(salida, 'w');
-  const marca = path.join(dir, 'marca-suelo');
+/** SUELO: stdout a un descriptor de FICHERO. Escritura síncrona: aquí no se pierde nada. */
+function correrAFichero(hijo, fd, marca) {
   return new Promise((ok, ko) => {
     const c = spawn(process.execPath, ['--test-force-exit', hijo],
       { env: entornoDelHijo(marca), stdio: ['ignore', fd, 'ignore'] });
     c.on('error', ko);
-    c.on('exit', () => { fs.closeSync(fd); ok(trocear(fs.readFileSync(salida))); });
+    c.on('exit', ok);
   });
 }
 
 /** Tubería, y el padre PARADO sin leer desde el primer instante. */
-function correrConPadreParado(hijo, dir, etiqueta, extra = []) {
-  const marca = path.join(dir, `marca-${etiqueta}`);
+function correrConPadreParado(hijo, marca, extra = []) {
   const c = spawn(process.execPath, [...extra, '--test-force-exit', hijo],
     { env: entornoDelHijo(marca), stdio: ['pipe', 'pipe', 'pipe'] });
   const trozos = [];
@@ -192,22 +188,28 @@ const resumen = (r) => `bytes=${r.bytes} mensajes=${r.mensajes.length} sobrante=
   + ('salioDuranteLaPausa' in r ? ` salioDuranteLaPausa=${r.salioDuranteLaPausa} code=${r.code}` : '');
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-// Una sola pasada de cada brazo, compartida: los tres tests juzgan la misma medición.
+// Una sola pasada de cada brazo, compartida: los tests juzgan la misma medición.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-const DIR = temporal('yaqu-908c-');
-const HIJO = escribirHijo(DIR);
 const medir = (async () => {
-  const suelo = await correrAFichero(HIJO, DIR);
-  const sinArreglo = await correrConPadreParado(HIJO, DIR, 'sin');
-  const conArreglo = await correrConPadreParado(HIJO, DIR, 'con', ['--import', PRELOAD]);
-  borrarTemporal(DIR);
-  // POBLACIÓN (A3): qué se midió, sobre cuántos mensajes, en qué plataforma.
-  console.log(`# SCRUM-908c · plataforma=${process.platform} node=${process.version} `
-    + `pausa=${PAUSA_MS}ms relleno=${TAM_RELLENO}`);
-  console.log(`# SUELO        ${resumen(suelo)}`);
-  console.log(`# SIN ARREGLO  ${resumen(sinArreglo)}`);
-  console.log(`# CON ARREGLO  ${resumen(conArreglo)}`);
-  return { suelo, sinArreglo, conArreglo };
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-908c-${process.pid}-`));
+  try {
+    const hijo = path.join(dir, 'hijo-908c.mjs');
+    fs.writeFileSync(hijo, cuerpoDelHijo());
+    const rutaSuelo = path.join(dir, 'suelo.bin');
+    const fd = fs.openSync(rutaSuelo, 'w');
+    try { await correrAFichero(hijo, fd, path.join(dir, 'marca-suelo')); } finally { fs.closeSync(fd); }
+    const suelo = trocear(fs.readFileSync(rutaSuelo));
+    const sinArreglo = await correrConPadreParado(hijo, path.join(dir, 'marca-sin'));
+    const conArreglo = await correrConPadreParado(hijo, path.join(dir, 'marca-con'), ['--import', PRELOAD]);
+    // POBLACIÓN (A3): qué se midió y sobre cuántos mensajes.
+    console.log(`# SCRUM-908c · node=${process.version} pausa=${PAUSA_MS}ms relleno=${TAM_RELLENO}`);
+    console.log(`# SUELO        ${resumen(suelo)}`);
+    console.log(`# SIN ARREGLO  ${resumen(sinArreglo)}`);
+    console.log(`# CON ARREGLO  ${resumen(conArreglo)}`);
+    return { suelo, sinArreglo, conArreglo };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 })();
 
 test('SCRUM-908c · 🔴 SUELO: el hijo fabricado emite sus 5 veredictos, y el caso cae donde debe', async () => {
@@ -225,38 +227,37 @@ test('SCRUM-908c · 🔴 SUELO: el hijo fabricado emite sus 5 veredictos, y el c
     + `(${TUBERIA + MARCA_DE_AGUA}). Esperaría un \`drain\` que el padre parado no da, y no saldría.`);
 });
 
-test('SCRUM-908c · 🔴 SIN ARREGLO: con el padre parado, en POSIX la cola SE PIERDE (y en Windows no)', async () => {
+test('SCRUM-908c · 🔴 SIN ARREGLO: si el hijo sale mientras el padre no lee, la cola SE PIERDE; si no puede salir, llega', async () => {
   const { sinArreglo: r } = await medir;
   const vistos = llegados(r);
-  assert.ok(vistos.has(RELLENO) || r.bytes > 0,
-    `🔴 CIEGO: por la tubería no llegó nada. ${resumen(r)} stderr=${r.stderr}`);
-  if (POSIX) {
-    // El testigo: el hijo SALIÓ mientras el padre no leía. Sin esto, el experimento no montó su
-    // condición y un «llegó todo» no diría nada del mecanismo.
-    assert.equal(r.salioDuranteLaPausa, true,
-      `🔴 CIEGO: el hijo no salió durante la pausa de ${PAUSA_MS} ms. ${resumen(r)}`);
+  assert.ok(r.bytes > 0, `🔴 CIEGO: por la tubería no llegó nada. ${resumen(r)} stderr=${r.stderr}`);
+  if (r.salioDuranteLaPausa) {
+    // Linux: la tubería es asíncrona. El hijo SALIÓ con el padre parado, y lo que no cupo en la
+    // tubería se quedó en la cola de libuv, que `process.exit()` tira.
     assert.equal(vistos.has(NOMBRADO), false,
-      '🔴 el mecanismo NO se reproduce: el hijo salió con el padre parado y aun así llegó el '
-      + `NOMBRADO. Si Node vacía ya stdout antes de salir, este ticket cambia de causa. ${resumen(r)}`);
-    for (const c of COLA) assert.equal(vistos.has(c), false, `🔴 llegó ${c} detrás de un NOMBRADO perdido. ${resumen(r)}`);
+      '🔴 el hijo salió con el padre parado y aun así llegó el NOMBRADO: Node ya vacía stdout '
+      + `antes de salir, y la causa de SCRUM-908 no es ésta. ${resumen(r)}`);
+    for (const c of COLA) {
+      assert.equal(vistos.has(c), false, `🔴 llegó ${c} detrás de un NOMBRADO perdido. ${resumen(r)}`);
+    }
+    assert.ok(r.sobrante > 0 || r.bytes <= TUBERIA,
+      `🔴 se perdió la cola pero lo recibido ni acaba a medias ni cabe en la tubería. ${resumen(r)}`);
   } else {
-    // Windows: la tubería es síncrona, el hijo se bloquea y no puede salir con datos pendientes.
-    // Es la razón medida de que la muda no se reprodujera nunca en local (0 de 91).
-    // ⚠️ Sólo vale porque el SUELO garantiza que el hijo escribe MÁS de lo que cabe en la tubería.
-    // MEDIDO con un relleno de 3.000 (35 KB en total): el hijo sale durante la pausa porque todo
-    // cabe, y no se pierde nada. Por eso el mensaje nombra las dos causas posibles.
-    assert.equal(r.salioDuranteLaPausa, false,
-      '🔴 en Windows el hijo salió con el padre parado: o la tubería no era síncrona, o el caso ya '
-      + `no la llena (mira el SUELO). ${resumen(r)}`);
-    assert.deepEqual([...vistos].sort(), [...TODOS].sort(), `🔴 en Windows se perdió la cola. ${resumen(r)}`);
+    // Windows: la tubería es síncrona, el hijo se bloquea al llenarla y no puede salir con datos
+    // pendientes. Es la razón medida de que la muda no se reprodujera nunca en local (0 de 91).
+    assert.deepEqual([...vistos].sort(), [...TODOS].sort(),
+      `🔴 el hijo NO salió durante la pausa y aun así se perdió la cola. ${resumen(r)}`);
+    assert.equal(r.sobrante, 0, `🔴 la tubería acabó a medio mensaje. ${resumen(r)}`);
   }
 });
 
-test('SCRUM-908c · ✅ CON ARREGLO: stdout bloqueante en el hijo y llega TODO, en las dos plataformas', async () => {
+test('SCRUM-908c · ✅ CON ARREGLO: stdout bloqueante en el hijo, no sale con datos pendientes y llega TODO', async () => {
   const { conArreglo: r } = await medir;
+  // Sólo vale porque el SUELO garantiza que el hijo escribe MÁS de lo que cabe en la tubería: con
+  // stdout bloqueante, llenarla lo detiene hasta que el padre lea.
   assert.equal(r.salioDuranteLaPausa, false,
-    '🔴 el hijo salió con el padre parado aunque su stdout era bloqueante: el arreglo no se '
-    + `aplicó. ${resumen(r)} stderr=${r.stderr}`);
+    '🔴 el hijo salió con el padre parado aunque su stdout debía ser bloqueante: el arreglo no se '
+    + `aplicó (o el caso ya no llena la tubería: mira el SUELO). ${resumen(r)} stderr=${r.stderr}`);
   assert.equal(r.sobrante, 0, `🔴 la tubería acabó a medio mensaje. ${resumen(r)}`);
   assert.deepEqual([...llegados(r)].sort(), [...TODOS].sort(),
     `🔴 con stdout bloqueante se perdió algo. ${resumen(r)}`);
@@ -271,40 +272,43 @@ test('SCRUM-908c · ✅ el vehículo del arreglo: `run({ execArgv })` le pasa el
   // (`runner.js`, 956-960). MEDIDO: la primera versión de este test daba `pasados=[]` y
   // `caidos=[]` — un cero que el CIEGO de abajo cazó. Por eso lo corre un conductor aparte, sin
   // esa variable, que es como corre el meta-guard (`npm run meta:mutaciones`).
-  const dir = temporal('yaqu-908c-run-');
-  const f = path.join(dir, 'vehiculo-908c.mjs');
-  fs.writeFileSync(f, [
-    "import test from 'node:test';",
-    "import assert from 'node:assert/strict';",
-    "test('VEHICULO-908c', () => { assert.equal(globalThis.__j6StdoutBloqueante, true); });",
-    '',
-  ].join('\n'));
-  const conductor = path.join(dir, 'conductor-908c.mjs');
-  fs.writeFileSync(conductor, [
-    "import { run } from 'node:test';",
-    'const [f, pre] = process.argv.slice(2);',
-    'const pasados = []; const caidos = [];',
-    "for await (const ev of run({ files: [f], forceExit: true, execArgv: ['--import', pre] })) {",
-    "  if (ev.type === 'test:pass' && !ev.data.skip) pasados.push(ev.data.name);",
-    "  if (ev.type === 'test:fail') caidos.push(ev.data.name);",
-    '}',
-    "process.stdout.write('RESULTADO ' + JSON.stringify({ pasados, caidos }) + '\\n');",
-    '',
-  ].join('\n'));
-  const env = entornoDelHijo('');
-  delete env.NODE_TEST_CONTEXT;
-  delete env.J6_908C_MARCA;
-  const salida = await new Promise((ok, ko) => {
-    const c = spawn(process.execPath, [conductor, f, PRELOAD], { env, stdio: ['ignore', 'pipe', 'pipe'] });
-    const out = [];
-    c.stdout.on('data', (d) => out.push(d));
-    c.on('error', ko);
-    c.on('close', () => ok(Buffer.concat(out).toString('utf8')));
-  });
-  borrarTemporal(dir);
-  const linea = salida.split(/\r?\n/).find((l) => l.startsWith('RESULTADO '));
-  assert.ok(linea, `🔴 CIEGO: el conductor no dejó su línea de resultado. Salida: ${salida.slice(0, 300)}`);
-  const { pasados, caidos } = JSON.parse(linea.slice('RESULTADO '.length));
-  assert.deepEqual(caidos, [], `🔴 el preload no llegó al hijo: cayeron ${JSON.stringify(caidos)}`);
-  assert.deepEqual(pasados, ['VEHICULO-908c'], `🔴 CIEGO: pasados=${JSON.stringify(pasados)}`);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-908c-run-${process.pid}-`));
+  try {
+    const f = path.join(dir, 'vehiculo-908c.mjs');
+    fs.writeFileSync(f, [
+      "import test from 'node:test';",
+      "import assert from 'node:assert/strict';",
+      "test('VEHICULO-908c', () => { assert.equal(globalThis.__j6StdoutBloqueante, true); });",
+      '',
+    ].join('\n'));
+    const conductor = path.join(dir, 'conductor-908c.mjs');
+    fs.writeFileSync(conductor, [
+      "import { run } from 'node:test';",
+      'const [f, pre] = process.argv.slice(2);',
+      'const pasados = []; const caidos = [];',
+      "for await (const ev of run({ files: [f], forceExit: true, execArgv: ['--import', pre] })) {",
+      "  if (ev.type === 'test:pass' && !ev.data.skip) pasados.push(ev.data.name);",
+      "  if (ev.type === 'test:fail') caidos.push(ev.data.name);",
+      '}',
+      "process.stdout.write('RESULTADO ' + JSON.stringify({ pasados, caidos }) + '\\n');",
+      '',
+    ].join('\n'));
+    const env = entornoDelHijo('');
+    delete env.NODE_TEST_CONTEXT;
+    delete env.J6_908C_MARCA;
+    const salida = await new Promise((ok, ko) => {
+      const c = spawn(process.execPath, [conductor, f, PRELOAD], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+      const out = [];
+      c.stdout.on('data', (d) => out.push(d));
+      c.on('error', ko);
+      c.on('close', () => ok(Buffer.concat(out).toString('utf8')));
+    });
+    const linea = salida.split(/\r?\n/).find((l) => l.startsWith('RESULTADO '));
+    assert.ok(linea, `🔴 CIEGO: el conductor no dejó su línea de resultado. Salida: ${salida.slice(0, 300)}`);
+    const { pasados, caidos } = JSON.parse(linea.slice('RESULTADO '.length));
+    assert.deepEqual(caidos, [], `🔴 el preload no llegó al hijo: cayeron ${JSON.stringify(caidos)}`);
+    assert.deepEqual(pasados, ['VEHICULO-908c'], `🔴 CIEGO: pasados=${JSON.stringify(pasados)}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
