@@ -83,7 +83,8 @@ function leerJsonSiExiste(f) {
   let texto;
   try { texto = fs.readFileSync(f, 'utf8'); } catch (e) { return e.code === 'ENOENT' ? undefined : null; }
   // Los settings del repo llevan BOM (medido en `.claude/settings.local.json` de origin/main, 18-sep-2026).
-  try { return JSON.parse(texto.replace(/^﻿/, '')); } catch { return null; }
+  const sinBom = texto.charCodeAt(0) === 0xfeff ? texto.slice(1) : texto;
+  try { return JSON.parse(sinBom); } catch { return null; }
 }
 
 /**
