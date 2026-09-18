@@ -72,6 +72,20 @@ Después del despliegue, UNA sugerencia real con el merchant demo o de prueba, c
 
 ---
 
+---
+
+## Plan APROBADO (orquestador, 18-sep 12:55Z) · el banco, construido y probado SIN red
+
+`docs/master/evidencias/SCRUM-952/banco.mjs` (Paso 1 del plan). **No ha hecho ni una petición real**: espera la clave.
+- Un proceso hijo por modelo (`GEMINI_MODEL=<ese>`), los 5 casos en serie con 13 s entre peticiones (5 por minuto en los Flash). El hijo deja un testigo en stdout; sin testigo, el padre sale 1 (A21).
+- Por petición guarda las líneas, `modelVersion`, `usageMetadata`, ms y el código de error. La clave se lee de un fichero, se pasa al hijo por entorno y se tapa en cualquier texto que salga.
+- El juez (`juzgar`) es puro: 34 comprobaciones sobre los 5 casos.
+- **Autoprueba `--simulado`**: `sim-perfecto` saca **34/34**; `sim-malo` (un error por caso) suspende los 5 casos, **26/34**. Sale 1 si el perfecto no llega al 100 % o si el malo aprueba un caso entero.
+- **Rojo inyectado** en el juez (todas las comprobaciones de caso a `true`): el control negativo salta y sale 1.
+- **Camino de error, contra Google real y con una clave FALSA** (gratis): 5 × `gemini_bad_key`, «ninguna petición llegó a un modelo», sale 1, y la clave no aparece ni en la salida ni en el JSON. Con la clave mala se para en el primer modelo.
+
+Lo que NO prueba la autoprueba: que Google conteste en el formato que espera el banco con un modelo 3.x (el `modelVersion` y `usageMetadata` son del formato documentado), ni la varianza (una pasada por caso).
+
 ## Lo que necesito para seguir (y quién lo decide)
 
 1. **Aprobación del plan** (orquestador / fundador).
