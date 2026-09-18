@@ -97,7 +97,7 @@ async function pantalla() {
 // El fin de 660 no cambia —construido ≠ alcanzable— y se mide igual que el IVA de la LÍNEA en este
 // mismo fichero: PULSANDO, como el profesional. Si un eslabón del camino falta, el camino se corta
 // y se dice DÓNDE; y si el banco no sabe resolver una regla, sigue declarándose CIEGO (nunca verde).
-const CLIENTE_DEL_CAMINO = { id: 7, name: 'Comunidad Los Olivos', phone: '600111222' };
+const CLIENTE_DEL_CAMINO = { id: 7, name: 'Comunidad Los Olivos', phone: '34000000001' };
 
 async function pantallaConCliente(fuenteMutada = null) {
   const banco = cargarDashboard(RAIZ, {

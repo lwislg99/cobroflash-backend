@@ -126,6 +126,10 @@ control se pierde: lo que cambia es CUÁNDO se ve.
 - **La segunda copia del contador (`scrum697`) se quedó fuera del subconjunto de la primera pasada**:
   se movió 698 y no 697. Lo cazó re-correr el subconjunto tras mergear main (la sesión que relevó),
   no el diseño: el subconjunto se elige por texto y el 697 no nombra el editor.
+- **El cliente de prueba de la rama llevaba un móvil ordinario (`600111222`)** en 4 sitios (el guard
+  de pasos, `_abrir-conceptos.mjs`, `scrum660` y `scrum915d`). Lo cazó `scrum262` en la suite
+  completa, no el subconjunto. Se cambió el DATO al rango imposible (`34000000001`), no el guard, y
+  se re-corrieron los 4 guards de navegador que usan ese cliente (todos en verde) y la suite entera.
 
 ### Lo que NO cubre
 

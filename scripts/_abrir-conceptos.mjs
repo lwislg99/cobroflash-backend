@@ -8,7 +8,7 @@
 // Un solo sitio para el camino: si mañana cambia, cambia aquí y no en cada guard.
 
 /** El cliente que las maquetas de `/admin/customers` sirven para poder elegir uno. */
-export const CLIENTE_DE_PASO = { id: 7, name: 'Cliente QA', phone: '600111222' };
+export const CLIENTE_DE_PASO = { id: 7, name: 'Cliente QA', phone: '34000000001' };
 
 /**
  * Elige el cliente y pulsa «Continuar». Devuelve `null` si llega a Conceptos, o el motivo si no.

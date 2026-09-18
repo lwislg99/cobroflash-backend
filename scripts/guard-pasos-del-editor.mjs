@@ -60,7 +60,7 @@ export const SALIDA_NO_SUPE_MEDIR = 2;
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 let PUERTO = Number(process.env.PASOS_PUERTO || 0);
 
-const CLIENTE = { id: 7, name: 'Comunidad Los Olivos', phone: '600111222', email: 'olivos@correo.es' };
+const CLIENTE = { id: 7, name: 'Comunidad Los Olivos', phone: '34000000001', email: 'olivos@correo.es' };
 let modoSuelto = 'no';
 const me = () => ({
   id: 1, email: 'demo@yaqu.app', name: 'QA 915', plan: 'pro', role: 'admin',

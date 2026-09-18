@@ -115,7 +115,7 @@ test('SCRUM-915d · ③ «Continuar» de Conceptos y «Generar» usan la MISMA r
 });
 
 // ── ④ montado en el banco ────────────────────────────────────────────────────────────────────
-const CLIENTE = { id: 7, name: 'Comunidad Los Olivos', phone: '600111222' };
+const CLIENTE = { id: 7, name: 'Comunidad Los Olivos', phone: '34000000001' };
 
 async function montar(fuente = null) {
   const banco = cargarDashboard(RAIZ, {
