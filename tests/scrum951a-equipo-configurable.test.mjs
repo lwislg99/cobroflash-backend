@@ -85,6 +85,18 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "const fichero = n ? `project_s${n[1]}_traspaso.md` : 'project_traspaso.md';",
     cae: '🔴 rutaDelTraspaso: sesion-N → project_sN, cualquier otro puesto → project_<puesto>',
   },
+  {
+    fichero: 'scripts/equipo/comprobar-instalacion.mjs',
+    de: "  if (comprobaciones.some((c) => c.veredicto === 'NO-PUDE-MIRAR')) return { codigo: 2, veredicto: 'NO-PUDE-MIRAR' };\n",
+    a: '',
+    cae: 'veredicto global: NO-PUDE-MIRAR gana a FALLA',
+  },
+  {
+    fichero: 'scripts/equipo/comprobar-instalacion.mjs',
+    de: "if (estado.status === 0 && ve?.veredicto === 'ESTADO') poner(",
+    a: 'if (true) poner(',
+    cae: '🔴 ROJO: con la copia instalada de sesion.mjs TOCADA, la lista da FALLA',
+  },
 ];
 
 const UUID = '1234abcd-0000-4000-8000-00000000abcd';
@@ -113,6 +125,7 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
   fs.copyFileSync(SESION, path.join(repo, 'scripts', 'equipo', 'sesion.mjs'));
   fs.copyFileSync(ARRANQUE, path.join(repo, 'scripts', 'equipo', 'orquestador-arranque.mjs'));
   fs.copyFileSync(path.join(RAIZ, 'scripts', 'equipo', 'uso.mjs'), path.join(repo, 'scripts', 'equipo', 'uso.mjs'));
+  fs.copyFileSync(path.join(RAIZ, 'scripts', 'equipo', 'huerfanos.mjs'), path.join(repo, 'scripts', 'equipo', 'huerfanos.mjs'));
   fs.writeFileSync(path.join(repo, 'docs', 'equipo', 'prompt-tanda-orquestador.md'), PROMPT);
   git(repo, 'add', '.');
   git(repo, '-c', 'user.name=banco', '-c', 'user.email=banco@x', 'commit', '-q', '-m', 'banco');
@@ -144,6 +157,7 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
     "fs.appendFileSync(LL, JSON.stringify(args) + '\\n');",
     "const vivas = JSON.parse(fs.readFileSync(V, 'utf8'));",
     "if (args[0] === 'agents') { process.stdout.write(JSON.stringify(vivas)); process.exit(0); }",
+    "if (args[0] === '--version') { process.stdout.write('2.1.276 (Claude Code, falso del banco)\\n'); process.exit(0); }",
     "if (args[0] === '--bg') {",
     "  const nombre = args[args.indexOf('-n') + 1];",
     `  vivas.push({ id: '1234abcd', name: nombre, kind: 'background', state: 'working', sessionId: ${JSON.stringify(UUID)} });`,
@@ -359,4 +373,75 @@ test('las órdenes de schtasks salen de las tandas del config, con el prefijo en
   assert.deepEqual(instalar.ordenesSchtasks({ destino, tandas: ['08:00'], prefijo: '' }), [
     'MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-0800 /st 08:00 /tr "C:\\Users\\X\\AppData\\Local\\yaqu-equipo\\arranque.cmd"',
   ], 'el equipo de Luis conserva los nombres de tarea de la guía');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// La lista de verificación ejecutable (`comprobar-instalacion.mjs`)
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const comprobarMod = await import(pathToFileURL(path.join(RAIZ, 'scripts', 'equipo', 'comprobar-instalacion.mjs')).href);
+
+/** Una instalación de verdad, hecha por el instalador sobre el repo del banco; `claude` = el falso. */
+function instalarEnBanco(b, extra = []) {
+  const destino = path.join(b.dir, 'inst-nueva');
+  const r = correrInstalar([
+    '--destino', destino, '--repo', b.repo, '--claude', 'C:/claude.exe', '--prefijo', 'jv-',
+    '--puestos', 'jefe,s1', '--orquestador', 'jefe', '--tandas', '07:30',
+    '--prompt', 'docs/equipo/prompt-tanda-orquestador.md', '--traspasos', b.memoria, ...extra,
+  ]);
+  assert.equal(r.status, 0, `🔴 NO PUDE MIRAR: el instalador no instaló en el banco (${r.stdout})`);
+  // El `claude` del config pasa a ser el falso del banco (por la CLI solo viaja una ruta).
+  const f = path.join(destino, 'config.json');
+  const config = JSON.parse(fs.readFileSync(f, 'utf8'));
+  config.claude = JSON.parse(fs.readFileSync(path.join(b.inst, 'config.json'), 'utf8')).claude;
+  fs.writeFileSync(f, JSON.stringify(config, null, 2));
+  return destino;
+}
+
+test('veredicto global: NO-PUDE-MIRAR gana a FALLA, FALLA a AVISO, y una lista vacía no es un OK', () => {
+  const g = comprobarMod.veredictoGlobal;
+  assert.equal(g([]).codigo, 2, '🔴 una lista vacía sale OK: un instrumento que no miró nada daría verde');
+  assert.equal(g([{ veredicto: 'OK' }, { veredicto: 'FALLA' }, { veredicto: 'NO-PUDE-MIRAR' }]).codigo, 2);
+  assert.equal(g([{ veredicto: 'OK' }, { veredicto: 'FALLA' }, { veredicto: 'AVISO' }]).codigo, 1);
+  assert.equal(g([{ veredicto: 'OK' }, { veredicto: 'AVISO' }]).codigo, 0);
+});
+
+test('POSITIVO: sobre una instalación recién hecha por el instalador, la lista sale sin FALLA y declara su población', () => {
+  const b = banco({ equipo: EQUIPO_JV });
+  try {
+    const destino = instalarEnBanco(b);
+    const lista = comprobarMod.comprobar({ destino, plataforma: 'linux' });
+    const malas = lista.filter((c) => c.veredicto === 'FALLA' || c.veredicto === 'NO-PUDE-MIRAR');
+    assert.deepEqual(malas, [], `🔴 una instalación buena no pasa su propia lista: ${JSON.stringify(malas)}`);
+    const ids = lista.map((c) => c.id);
+    for (const id of ['config', 'claude', 'repo', 'copia:sesion.mjs', 'copia:uso.mjs', 'copia:prompt-tanda.md', 'arranque.cmd',
+      'traspasos', 'sesion.mjs estado', 'aviso de uso', 'huérfanos', 'tareas programadas', 'gh']) {
+      assert.ok(ids.includes(id), `🔴 la lista no comprueba «${id}»`);
+    }
+    assert.equal(lista.find((c) => c.id === 'sesion.mjs estado').veredicto, 'OK',
+      '🔴 la copia instalada no ACTÚA: la lista no ha ejecutado la puerta');
+    assert.equal(comprobarMod.veredictoGlobal(lista).codigo, 0);
+  } finally { b.limpiar(); }
+});
+
+test('🔴 ROJO: con la copia instalada de sesion.mjs TOCADA, la lista da FALLA (ejecuta la puerta, no la describe)', () => {
+  const b = banco({ equipo: EQUIPO_JV });
+  try {
+    const destino = instalarEnBanco(b);
+    fs.appendFileSync(path.join(destino, 'sesion.mjs'), '\n// tocado\n');
+    const lista = comprobarMod.comprobar({ destino, plataforma: 'linux' });
+    const estado = lista.find((c) => c.id === 'sesion.mjs estado');
+    assert.equal(estado?.veredicto, 'FALLA', `🔴 una copia alterada pasa la lista: ${JSON.stringify(estado)}`);
+    assert.match(estado.detalle, /ALTERADO/, '🔴 la FALLA no viene de la puerta de integridad');
+    assert.equal(comprobarMod.veredictoGlobal(lista).codigo, 1);
+  } finally { b.limpiar(); }
+});
+
+test('SUELO: sin config.json, la lista dice NO-PUDE-MIRAR y sale con 2', () => {
+  const b = banco();
+  try {
+    const lista = comprobarMod.comprobar({ destino: path.join(b.dir, 'no-instalado'), plataforma: 'linux' });
+    assert.equal(lista[0]?.veredicto, 'NO-PUDE-MIRAR');
+    assert.equal(comprobarMod.veredictoGlobal(lista).codigo, 2);
+  } finally { b.limpiar(); }
 });
