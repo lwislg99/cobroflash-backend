@@ -535,3 +535,148 @@ relaja un guard sin querer. Y un «lo de mi fichero no cuenta» sería un agujer
 
 Ninguna de las 27, y en particular **ninguna de las dos de producción** —
 `quotesAdmin.routes.ts:339` y `parteDictado.ts:402`—, que siguen en la mesa del fundador.
+
+---
+
+# SCRUM-921d · Una cita declarada dentro de un banco no afirma
+
+**Medido contra:** `origin/main` = `41bad7c83d84ba2cddcf267480bbd7bcd9bc0b2c` · 2026-09-18T08:47:13Z
+
+Fase d. Construye la regla que la fase c bis dejó escrita y sin implementar (su §4). Anoche no era
+el momento, con una rama propia bloqueada por ese mismo censo; hoy no hay ninguna.
+
+## 0 · Veredicto
+
+La regla existe, la aplican los dos censos que leen `tests/`, y **ningún trinquete se ha movido**:
+
+| | antes | después | por identidad |
+|---|---|---|---|
+| fase a — `SIN_PROCEDENCIA` | 27 | **27** | las mismas 27; no entra ni sale ninguna; las 21 de `tests/`, intactas |
+| fase c — `SIN_RESPALDO` | 28 | **28** | las mismas 28; `negada` sigue en 13 |
+
+**Sin la regla, el árbol de esta rama daría 28 y 29.** La diferencia es UNA línea en los dos
+censos, y es el canario de `tests/_cita-declarada.mjs` (§3): una cita puesta a propósito para que
+la regla se pruebe sobre el árbol y no sólo en el laboratorio. No es una afirmación legitimada.
+
+## 1 · La regla
+
+Vive una sola vez, en **`tests/_cita-declarada.mjs`**, y la importan los dos censos.
+
+1. Lo que va entre `[[cita]]` y `[[/cita]]` **no se lee**: ni afirma, ni niega, ni respalda. El
+   censo juzga su unidad de lectura como si lo citado no estuviera.
+2. **Sólo en un banco**, que es un fichero bajo `tests/`. En `src/`, `public/`, `scripts/` y
+   `docs/` el delimitador no hace nada.
+3. El par abre y cierra **dentro de la misma unidad de lectura** del censo que la aplica: el bloque
+   contiguo en la fase a, el bloque de comentario en la fase c. Sin cierre no tapa nada, y una
+   línea en blanco lo corta.
+4. **Exacto y en minúscula.** `[[CITA]]` o `[cita]` no son el delimitador.
+
+Todo lo que falla, falla **acusando**: un delimitador mal puesto deja la línea a la vista.
+
+**Es de forma, no de nombre.** No hay lista de ficheros exentos: cualquiera puede usarlo en
+cualquier banco, y queda a la vista en el diff.
+
+**Es el mismo eje que las negaciones.** En la fase a entra como cuarto descarte con nombre,
+`cita-declarada`, junto a `norma-no-afirmacion`, y se publica con su cuenta como los otros tres. En
+la fase c, `noAfirma` devuelve `citada` o `negada` en el mismo filtro donde antes sólo se miraba
+`niegaLaMarca`, y `porNivel` publica las dos.
+
+**Lo citado tampoco respalda ni niega.** Un `SCRUM-<n>` dentro de una cita no da procedencia a la
+firma de fuera, y un «nunca» o un «todavía no» citados no la descartan. Si no, la cita sería un
+comodín para blanquear la línea de al lado.
+
+## 2 · Los tres controles del encargo
+
+| control | cómo | resultado |
+|---|---|---|
+| 🔴 una cita DENTRO de un banco no se acusa | casos por el mismo clasificador que el árbol, en las dos fases | ✅ en una línea, partida en varias, y en la fase c |
+| 🔴 una afirmación REAL en un test se sigue acusando, por identidad | el 27 con y sin la regla, comparado como conjunto `fichero · texto` | ✅ lo que la regla quita es, una a una, cita declarada; las de `tests/` siguen todas |
+| ✅ un fichero SIN delimitador se comporta exactamente como hoy | cada fila del bruto (fase a) y cada veredicto (fase c), con y sin la regla | ✅ cambian 7 filas en la fase a y 1 veredicto en la fase c, **todos** en ficheros con delimitador |
+
+Y una **sonda independiente**, fuera de la suite: el censo de la fase a **tal como está en
+`origin/main`**, copiado sin tocar, sobre el árbol de esta rama. Da 28 donde el nuevo da 27, y la
+que sobra es el canario. El bruto es idéntico (1.578 filas en los dos), y las 7 filas que cambian
+están en los 3 ficheros que llevan el delimitador.
+
+Fuera de los tres controles, también está probado que **fuera de un banco no vale** (`src/`,
+`public/`, `scripts/`, `docs/`); que **no se estira** (sin cierre, a través de una línea en blanco,
+sobre lo que va detrás del cierre o entre dos citas); y que **no admite variantes**.
+
+## 3 · El canario
+
+`tests/_cita-declarada.mjs` lleva una cita de verdad —la marca de `jobRailBlocks.js` que motivó
+todo esto— en un bloque **sin ticket ni ruta**, a propósito. Si la regla se rompe, los **dos**
+trinquetes suben en uno y lo nombran. Hay un test que comprueba que el canario no tiene
+procedencia: si alguien le pone un ticket, deja de vigilar, porque se exculpa solo.
+
+## 4 · Probado en rojo
+
+**Por mutación.** Doce maneras de romper la regla, cada una sobre código commiteado, con un
+`node --check` que confirma que el mutante compila, y restaurada después con `git checkout`:
+
+| mutación | qué cae |
+|---|---|
+| `esBanco` siempre falso · `sinCitas` que no borra | 8 tests, **los dos trinquetes incluidos** |
+| `esBanco` siempre verdadero | «fuera de un banco no vale», en las dos fases |
+| el par, codicioso · el par, sin distinguir mayúsculas | «no se estira, no admite variantes» |
+| fase a: procedencia o descartes sobre el texto crudo | «lo citado no niega ni respalda» |
+| fase a: la cita cruza el bloque · la cita no descarta | «no se estira» · 4 tests |
+| fase c: `noAfirma` ignora las citas · negación o respaldo sobre el crudo | el caso de la fase c y, en el primero, su trinquete |
+
+**Caen las 12.** En la primera pasada sobrevivieron **dos**: el par codicioso (no había un caso con
+dos citas en la misma unidad) y el respaldo de la fase c (se calculaba dentro de un `map` al que no
+llegaba ningún caso). Los dos tienen ya el suyo.
+
+**De extremo a extremo.** Una cobaya nueva en `tests/`, de nadie y en ninguna lista, con testigo de
+que el censo la ve antes de creerse el resultado, y con `git add` antes de cada tanda:
+
+```
+con el delimitador   → 27 pass · 0 fail · exit 0
+sin el delimitador   → exit 1
+   🔴 28 afirmaciones de firma sin decir dónde constan, y el trinquete está en 27.
+       tests/_cobaya-cita.mjs:3
+   🔴 29 marcas de aprobación al fundador sin respaldo, y el trinquete está en 28.
+       tests/_cobaya-cita.mjs:3
+```
+
+La cobaya no está en la rama.
+
+## 5 · La cita de anoche, devuelta
+
+La línea de `scrum921c-…` que anoche se reformuló vuelve a decir la marca **literal**, ahora
+declarada como cita. El comentario que decía «hasta entonces, un test que documenta el defecto no
+debe engordar el censo que lo mide» se actualiza: ese «entonces» es esta fase.
+
+## 6 · Errores propios
+
+1. **Mi banco de mutaciones me mintió primero.** Lo escribí con un heredoc, y el shell se comió
+   las barras invertidas (`\\` quedó como `\`). Cinco mutaciones **no se aplicaron**, y una sexta dio
+   un **rojo que era un error de sintaxis**: un `'\n'` convertido en salto de línea real dentro de
+   una cadena. Ese rojo se lee exactamente igual que uno bueno. Lo cazaron dos cosas: que el banco
+   declarara «NO APLICA» en vez de callarse, y que el rojo de M8 tumbara el fichero entero en vez de
+   un test. La segunda versión se escribió con la herramienta de ficheros y comprueba que cada
+   mutante compila antes de contar su rojo.
+2. **Dos huecos en mis propios controles**: el par codicioso y el respaldo de la fase c. Los
+   encontró la mutación, no la lectura.
+3. **Anoche atribuí mal la bajada de 28 a 27.** La fase c bis dice que la cita salió del censo por
+   reformularla. Medido hoy con el censo de `origin/main`: el párrafo explicativo que añadí **en el
+   mismo commit** menciona `SCRUM-921a`, y eso da procedencia a **todo el bloque**. Con la cita
+   original de vuelta, sale `procedencia = true`. La perífrasis sobraba: la causa estaba
+   sobredeterminada, y el control por identidad de anoche no lo distinguía. Es otra vez la cobaya
+   que se exculpa sola, y por eso el canario de hoy vive en un bloque sin ticket.
+
+## 7 · Hallazgos, reportados y no arreglados
+
+1. **La fase c exime por nombre.** Su `EXCLUIR` deja fuera todo `tests/scrum921…`, así que un test
+   futuro `scrum921x-…` con una firma real escaparía de la fase c (no de la fase a). Es un «lo de mi
+   fichero no cuenta» que puse yo en la fase c. Con el delimitador ya existe la alternativa de
+   forma, pero cambiar la población de la fase c mueve su número y es otra decisión.
+2. **Las dos fases miden poblaciones distintas en un árbol sucio.** La fase a deriva la suya de
+   `git ls-files`; la fase c recorre el **disco**. Un fichero sin seguir cuenta en local para la fase
+   c y no para CI: el reverso exacto de lo que me pasó anoche con la fase a.
+
+## 8 · Lo que no se ha tocado
+
+Ninguna de las 27 ni de las 28, y en particular **ninguna de las dos de producción**
+(`quotesAdmin.routes.ts:339`, `parteDictado.ts:402`). Tampoco `_procedencia-aprobacion.mjs`, que
+comparte SCRUM-387: su trinquete de 17 y sus 5 tests siguen en verde.
