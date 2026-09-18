@@ -35,8 +35,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
-    de: 'export const NOMBRES = /^(orquestador|sesion-[0-5])$/;',
-    a: 'export const NOMBRES = /^.+$/;',
+    // SCRUM-951a: la lista blanca ya no es una regex fija, es prefijo + puesto del equipo del config.
+    de: "if (typeof nombre === 'string' && equipo.puestos.some((p) => equipo.prefijo + p === nombre)) return null;",
+    a: "if (typeof nombre === 'string') return null;",
     cae: '🔴 la lista blanca rechaza cualquier nombre que no sea del equipo',
   },
   {
@@ -153,7 +154,10 @@ function banco({ alterar = false, configEnElRepo = false } = {}) {
   const marca = path.join(dir, 'llamadas.txt');
   const falso = path.join(dir, 'claude-falso.mjs');
   fs.writeFileSync(falso, `import fs from 'node:fs'; fs.appendFileSync(${JSON.stringify(marca)}, process.argv.slice(2).join(' ') + '\\n'); process.stdout.write('[]');\n`);
-  const config = JSON.stringify({ repo, claude: [process.execPath, falso] });
+  // SCRUM-951a: la puerta exige el equipo y la carpeta de los traspasos; aquí, el equipo de Luis.
+  const memoria = path.join(dir, 'memoria');
+  fs.mkdirSync(memoria);
+  const config = JSON.stringify({ repo, claude: [process.execPath, falso], ...s.EQUIPO_DE_LUIS, traspasos: memoria });
   fs.writeFileSync(path.join(inst, 'config.json'), config);
   // Para el rojo del árbol: la copia del PROPIO repositorio, con su config al lado.
   if (configEnElRepo) fs.writeFileSync(path.join(repo, 'scripts', 'equipo', 'config.json'), config);
