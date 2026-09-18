@@ -1,0 +1,194 @@
+# Instalar el equipo de fondo en una máquina NUEVA — guion (SCRUM-951a)
+
+> Para una máquina Windows que **no ha visto nada** del proyecto: la de Javier, o la de Luis si se reinstala.
+> Lo ejecuta el Claude de quien instala, paso a paso. Cada paso trae **orden**, **comprobación** (si no da lo
+> esperado, se PARA y no se sigue) y **cómo se deshace**. Al final, una **lista de verificación** que el propio
+> Claude corre para demostrar que todo funciona.
+>
+> Los valores concretos del equipo de Luis y la historia de su checkout están en
+> `docs/equipo/instalacion-orquestador-autonomo.md`. Cómo conviven los dos equipos (quién es jefe de qué,
+> nombres, Jira) lo dice `docs/equipo/dos-equipos.md`, que es de la Sesión 0.
+>
+> ⚠️ **Nunca se ha instalado todavía en ninguna máquina** (medido el 18-sep-2026: no existía la carpeta de
+> instalación ni en la de Luis). La primera instalación ES la prueba: si un paso no da lo que dice aquí, se para
+> y se cuenta, no se improvisa.
+
+## Variables
+
+Se deciden ANTES de empezar y se escriben aquí, en el chat de quien instala. Ningún script las lleva dentro.
+
+| variable | qué es | cómo se saca |
+|---|---|---|
+| `REPO` | el clon del repositorio | la carpeta donde se clona (paso 1) |
+| `INST` | la instalación, FUERA del repo | `%LOCALAPPDATA%\yaqu-equipo` (en Git Bash: `$LOCALAPPDATA/yaqu-equipo`) |
+| `CLAUDE` | el binario de Claude Code, **`claude.exe`** | `"$(npm root -g)/@anthropic-ai/claude-code/bin/claude.exe"` |
+| `PREFIJO` | lo que llevan delante los nombres de sesión del equipo | lo aprueba el fundador. Ejemplo en tests y aquí: `jv-` |
+| `PUESTOS` | los puestos del equipo, separados por comas | los aprueba el fundador (`dos-equipos.md`) |
+| `ORQUESTADOR` | cuál de los puestos es el orquestador | uno de `PUESTOS` |
+| `TANDAS` | horas de arranque diario, `HH:MM` separadas por comas | las decide el orquestador de ese equipo |
+
+⚠️ **`claude.exe`, no `claude.cmd`:** sin shell, Node no ejecuta `.cmd`.
+
+El nombre de cada sesión es `PREFIJO` + puesto (con `PREFIJO=jv-` y el puesto `jefe`, la sesión es `jv-jefe`).
+Un equipo sin prefijo se declara con `--sin-prefijo`: vacío y olvidado no se confunden.
+
+---
+
+## 0 · Requisitos
+
+| qué | comprobación | lo esperado |
+|---|---|---|
+| Windows 10/11 con **Git for Windows** (trae Git Bash) | `git --version` | responde |
+| **Node** 20 o más (medido con v24.8.0) | `node --version` | `v20` o más |
+| **Claude Code** instalado y con sesión iniciada con la cuenta de quien instala | `"$CLAUDE" --version` | responde (el 18-sep: 2.1.276) |
+| **gh** instalado y autenticado | `gh auth status` (o `"C:/Program Files/GitHub CLI/gh.exe" auth status`) | «Logged in» |
+| acceso al repositorio `lwislg99/cobroflash-backend` como colaborador | `git ls-remote https://github.com/lwislg99/cobroflash-backend.git HEAD` | una línea con un SHA |
+| disco: **1 GB libre** en la unidad del repo, más **0,4 GB** por cada `node_modules` | `Get-PSDrive -PSProvider FileSystem` | llega |
+
+Si algo no llega, se PARA aquí. **Secretos:** las claves de base de datos o de servicios las da el fundador
+directamente, fuera del chat y fuera del canal. Nunca se piden ni se pegan en una conversación.
+
+**Deshacer:** no aplica.
+
+---
+
+## 1 · Clonar y preparar el repo
+
+**Orden** (Git Bash):
+```
+git clone https://github.com/lwislg99/cobroflash-backend.git "$REPO"
+cd "$REPO" && npm ci
+```
+
+**Comprobación:**
+- `git -C "$REPO" rev-parse --verify origin/main` da un SHA;
+- `ls "$REPO/scripts/equipo"` lista `sesion.mjs`, `instalar.mjs`, `orquestador-arranque.mjs`, `uso.mjs`,
+  `huerfanos.mjs` y `comprobar-instalacion.mjs`.
+
+**Deshacer:** borrar la carpeta `REPO` a mano.
+
+---
+
+## 2 · Abrir Claude Code UNA vez en el repo
+
+Claude Code guarda la memoria (y en ella los traspasos de cada puesto, `project_*_traspaso.md`) en
+`~/.claude/projects/<ruta del repo con cada carácter no alfanumérico cambiado por ->/memory`. Esa carpeta la crea
+Claude Code, no el instalador. **Orden:** abrir Claude Code en `REPO`, aceptar el diálogo de confianza de carpeta y
+cerrar.
+
+**Comprobación:** la hace el paso 3: si la carpeta no existe, el instalador se niega y dice cuál esperaba.
+
+**Deshacer:** no aplica.
+
+---
+
+## 3 · Instalar
+
+**Orden** (desde `REPO`; con prefijo, o `--sin-prefijo` en su lugar):
+```
+node scripts/equipo/instalar.mjs --destino "$INST" --repo "$REPO" --claude "$CLAUDE" \
+  --prefijo "$PREFIJO" --puestos "$PUESTOS" --orquestador "$ORQUESTADOR" --tandas "$TANDAS" \
+  --prompt docs/equipo/prompt-tanda-orquestador.md
+```
+El prompt de la tanda es UNO para los dos equipos (decisión de la Sesión 0, 18-sep-2026).
+`--traspasos <carpeta>` solo si la memoria no está donde la calcula el instalador.
+
+**Comprobación:**
+- la salida es `"veredicto": "INSTALADO"`, con el `config` escrito, las órdenes de `schtasks` y la línea del
+  `statusLine` (se usan en los pasos 4 y 5, tal cual);
+- en `INST` están `config.json`, `arranque.cmd`, `sesion.mjs`, `orquestador-arranque.mjs`, `uso.mjs` y
+  `prompt-tanda.md`, copiados de `origin/main` (no del árbol de trabajo);
+- si dice `NO-INSTALADO`, se lee el `motivo` y **no se escribió nada**: el instalador valida todo antes.
+
+**Deshacer:** borrar a mano la carpeta `INST`.
+
+---
+
+## 4 · El aviso de uso en la barra de estado
+
+Lo pone **quien manda en la máquina** en su `~/.claude/settings.json` (tocar settings no lo hace una sesión sin
+su autorización expresa en ese chat). La línea exacta es la que imprimió el paso 3 en `settings`:
+```
+"statusLine": { "type": "command", "command": "node <INST con barras normales>/uso.mjs escribir" }
+```
+Sin `refreshInterval`: no aporta lecturas nuevas.
+
+**Comprobación:** `node "$INST/uso.mjs" leer` sale con **2** antes; tras un turno en una sesión **interactiva**, con
+**0** (verde) o **1** (aviso, desde el 85 %), y `usado` coincide con lo que dice `/usage`.
+
+**Deshacer:** quitar la línea de `statusLine`.
+
+---
+
+## 5 · Las tareas diarias
+
+Crear tareas programadas necesita la **autorización expresa** de quien manda en la máquina. **Orden:** las que
+imprimió el paso 3 en `schtasks`, una por hora, desde Git Bash (sin `MSYS_NO_PATHCONV=1`, Git Bash convierte
+`/create` en una ruta y falla — medido). El nombre de cada tarea lleva el prefijo: `yaqu-equipo-<PREFIJO>HHMM`.
+
+**Comprobación:** `MSYS_NO_PATHCONV=1 schtasks /query /tn yaqu-equipo-<PREFIJO>HHMM` muestra la tarea, «Diariamente»,
+a su hora.
+
+**Deshacer:** `MSYS_NO_PATHCONV=1 schtasks /delete /tn yaqu-equipo-<PREFIJO>HHMM /f`, y `/query` dice que no la encuentra.
+
+---
+
+## 6 · Permisos y límite de uso
+
+Lo hace **quien manda en la máquina**:
+- la regla permanente `Bash(node <INST con barras normales>/sesion.mjs *)` — la ÚNICA puerta para lanzar o parar
+  sesiones; nunca `claude` a pelo;
+- `/config` → **`autoContinueAtUsageLimit` encendido**: si queda apagado, una sesión de fondo que llega al límite se
+  queda en un diálogo, bloqueada.
+
+**Comprobación:** el JSON de settings es válido y la regla está una vez.
+
+**Deshacer:** quitar la regla.
+
+---
+
+## 7 · Lista de verificación final — la corre el propio Claude
+
+### 7.1 · Lo mecánico, con un comando
+
+```
+node scripts/equipo/comprobar-instalacion.mjs --destino "$INST"
+```
+
+Ejecuta cada pieza y dice qué vio: el config y el equipo, `claude --version`, `origin/main`, que cada copia sea
+idéntica a `origin/main`, `arranque.cmd`, la carpeta de los traspasos, **la copia instalada de `sesion.mjs`
+ejecutando su propia puerta** (`estado`), el aviso de uso, el censo de huérfanos, las tareas programadas y `gh`.
+Termina con la población («N comprobaciones») y sale con **0** si no hay ninguna `FALLA` ni `NO-PUDE-MIRAR`.
+
+Un `AVISO` no bloquea, pero se lee: «tareas sin crear» es el paso 5; «aviso de uso sin lectura» es el paso 4 sin
+un turno interactivo todavía; «huérfanos» es trabajo sin empujar en algún worktree.
+
+### 7.2 · Lo que un script no puede: una sesión que CONTESTA por el canal
+
+1. Escribir en un fichero el prompt de prueba: «Eres una sesión de prueba de la instalación. Manda por SendMessage a
+   `<nombre de este chat>` una sola línea: "prueba de instalación: te oigo", y termina.»
+2. `node "$INST/sesion.mjs" lanzar <PREFIJO><un puesto> <fichero>` → `"veredicto": "LANZADA"` con un `sessionId`
+   completo.
+3. `ListAgents` la lista con ese nombre, y **en unos 2 minutos llega su mensaje** por el canal.
+4. `node "$INST/sesion.mjs" parar <PREFIJO><ese puesto>` → `"veredicto": "PARADA"`; `claude agents --json` ya no la
+   lista.
+
+### 7.3 · La primera tanda, a mano
+
+`cmd //c "<INST con barras invertidas>\arranque.cmd"` → la última línea de `INST/arranque.log` es JSON con
+`"tanda": {"veredicto": "LANZADA", "nombre": "<PREFIJO><ORQUESTADOR>", …}`. Si dice `ALTERADO`, `DESDE-UN-ARBOL` o
+`NO-PUDE-MIRAR`, se para y se lee el motivo: la puerta ha hecho su trabajo.
+
+### 7.4 · Rojos conocidos de la suite en local
+
+`tests/scrum939b-trinquete-de-las-skills.test.mjs` da **3 rojos** en cualquier Windows con `gh` en su ruta por
+defecto (declara falsa una ruta que en esa máquina existe). En CI sale verde. Hasta que se arregle (comentario en
+SCRUM-939), esos 3 se declaran como conocidos en el informe de la suite; cualquier otro rojo es de verdad.
+
+---
+
+## Lo que esta guía NO ha medido
+
+- Una instalación de principio a fin en una máquina real: todo lo de arriba está probado en bancos (repositorio
+  de prueba, `claude` falso) — ver `docs/master/SCRUM-951.md`.
+- Si las sesiones de fondo ejecutan el `statusLine` (según la documentación, solo las interactivas).
