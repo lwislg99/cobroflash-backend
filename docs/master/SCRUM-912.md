@@ -63,3 +63,32 @@ La primera tanda completa **no llegó a arrancar**: con 909 ficheros, la línea 
 * **El cuerpo real de un 429 de Google**: el reparto diaria/minuto sigue el formato documentado (`QuotaFailure.violations[].quotaId`). Si Google no lo trae, sale `ai_cuota_agotada`, no una suposición.
 * 🔴 **ENCENDERLO para usuarios reales espera al ticket de privacidad** (Google como encargado; lo firma el fundador). La ruta no tiene pantalla: la llama la de S2 cuando exista.
 * Hallazgo para un PASO 0 propio, **no arreglado aquí**: el 2.º modelo de la lista por defecto de los presupuestos (`gemini-2.0-flash`) tiene cupo 0 en el proyecto. El día que los presupuestos pasen de 20, no tienen respaldo. Según la tabla, ese respaldo se puede hacer sin coste: la familia Flash tiene seis modelos de 20/día, cada uno con su cupo, y los dos Flash-Lite 3.x tienen 500.
+
+---
+
+## SCRUM-912b · Las lecturas reales en staging: NO llegaron al modelo
+
+**Medido:** 18-sep-2026 ~12:32:50Z (hora de GitHub; el reloj local va ~5,5 min por delante y el JSON dice 12:38:21Z) · `origin/main` = staging `/version` = `effc107e047d34a5bc7d2f1cfc1c000952c2de19` · Sesión 1 (relevo) · rama `scrum-912b-lecturas-staging`.
+**Turno:** POR EL CANAL, exclusivo, dado por el orquestador (cobroflash-backend-1c; su mensaje dice «~13:36Z», que no casa con la hora de GitHub de ~12:32Z). **SIN el lock de base**: `scripts/turno-staging.mjs` sale 2 por falta de `DATABASE_URL_STAGING` en este árbol, y buscar el fichero de credenciales lo denegó el clasificador; no se rodeó. `mide.mjs` va solo por HTTP.
+**Queda en staging:** 1 `authSession` del `test-login` de `qa@staging.yaqu`.
+
+### Resultado
+
+| ticket | HTTP | ms | error | modelo |
+|---|---|---|---|---|
+| t1-completo-21 | 503 | 333 | `ai_not_configured` | — |
+| t2-dos-tipos | 503 | 274 | `ai_not_configured` | — |
+| t3-solo-total | 503 | 256 | `ai_not_configured` | — |
+
+**Staging NO tiene `GEMINI_API_KEY`.** El 503 sale de la primera línea de la ruta (`if (!isGeminiConfigured())`, `expenses.routes.ts`), antes de contar el tope y antes de salir a Google: **cero cupo gastado, cero lecturas del tope de 5**. Lo que se sabía de antes («la clave de staging es la de producción», arriba y en el traspaso) **era falso o ha dejado de ser verdad**: no se había medido.
+
+Lo que SÍ queda probado, por efecto y no por test: en el entorno desplegado sin clave la ruta contesta el código y no cae a Claude (staging no dio ni un 500 ni una lectura).
+
+Lo que NO está medido y sigue abierto: **si Gemini lee bien importe, IVA y NIF**. Para medirlo hace falta una de dos, y las dos son del fundador: poner `GEMINI_API_KEY` en el servicio de staging de Railway (regla 9: directo en Railway), o permiso para las 3 lecturas contra yaqu.app con un merchant de prueba.
+
+Evidencia: `docs/master/evidencias/SCRUM-912/lecturas-staging-18sep-sin-clave.json`.
+
+### Dos defectos del instrumento, míos, arreglados en esta rama
+
+1. **`tickets.mjs` escribía al importarse.** Su modo CLI miraba `process.argv[2]` a secas, y cuando lo importa `mide.mjs` ese argumento es el SHA: creó una carpeta `effc107e…/` con los tres HTML **dentro del árbol**. Borrada (la creé yo). Ahora solo actúa si es el script principal. Rojo visto en vivo (la carpeta apareció); verde medido: importado con un argumento no crea nada, y como CLI sigue escribiendo 3 ficheros.
+2. **`mide.mjs` decía «3 lecturas gastadas»** con tres 503 que no llegaron a ningún modelo: una operación que no se ejecutó se leía como hecha. Ahora cuenta las que contestó un modelo y sale con 1 si son cero.
