@@ -1,0 +1,247 @@
+{
+  "medidoContra": {
+    "ref": "origin/main",
+    "sha": "4a7ff1ec74c138c74d30a1c7bebc70d67a5d0d1c",
+    "fecha": "2026-09-18T09:04:39.009Z"
+  },
+  "poblacionHoyEnLaRef": 96,
+  "casoConocido": {
+    "commits": [
+      "8933c31d 2026-09-16 SCRUM-867: el modal muerto, retirado — y el guard que impide que vuelva"
+    ]
+  },
+  "porCommit": {
+    "nombre": "commits sin merge que tocan public/ (cota por commit)",
+    "commits": 688,
+    "conBajas": 3,
+    "J": {
+      "min": 0,
+      "p01": 0.9411764705882353,
+      "p05": 0.9767441860465116,
+      "mediana": 1
+    },
+    "maxBajas": 1,
+    "maxAltas": 9,
+    "maxCambiosConPoblacion": {
+      "max": 2,
+      "commits": 4,
+      "deCuantos": 683
+    },
+    "peores": [
+      {
+        "J": 0,
+        "P": 0,
+        "altas": 9,
+        "bajas": 0,
+        "commit": "5142388b 2025-11-26 Muchisimas cosas"
+      },
+      {
+        "J": 0.8182,
+        "P": 9,
+        "altas": 2,
+        "bajas": 0,
+        "commit": "688fb6dd 2026-05-19 neuvo"
+      },
+      {
+        "J": 0.8571,
+        "P": 12,
+        "altas": 2,
+        "bajas": 0,
+        "commit": "fc679ed9 2026-05-21 Sprint 2: Auth magic link, multi-tenant real, onboarding, Stripe billing"
+      },
+      {
+        "J": 0.9167,
+        "P": 11,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "15311818 2026-05-21 Sprint 1: Home metrics, Quick Quote, mobile CSS, WA notifications, landing mejorada"
+      },
+      {
+        "J": 0.9333,
+        "P": 14,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "647104b8 2026-05-22 docs+feat(Sprint 5): doc master v2 + PWA instalable + top clientes/servicios"
+      },
+      {
+        "J": 0.9375,
+        "P": 15,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "73417aff 2026-05-22 feat(5.4): módulo de gastos — CRUD, margen por trabajo, beneficio neto en Home"
+      },
+      {
+        "J": 0.9412,
+        "P": 16,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "55ee9c95 2026-05-22 feat(sprint-6): múltiples usuarios por merchant con roles admin/técnico"
+      },
+      {
+        "J": 0.9444,
+        "P": 17,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "fed55b60 2026-05-22 feat(sprint-9): AI Quote Assistant — sugerencia de líneas y mensajes WhatsApp con Claude"
+      }
+    ],
+    "conPoblacionDe50oMas": {
+      "commits": 321,
+      "min": 0.9775280898876404,
+      "peores": [
+        {
+          "J": 0.9775,
+          "P": 87,
+          "altas": 2,
+          "bajas": 0,
+          "commit": "e69ec153 2026-09-07 SCRUM-597 (DOC-07): asignar usuarios al documento, y cerrar la puerta de coste y margen"
+        },
+        {
+          "J": 0.9804,
+          "P": 50,
+          "altas": 1,
+          "bajas": 0,
+          "commit": "faa0b4cd 2026-08-10 SCRUM-428: «terminado y sin cobrar» — el motor ya estaba, faltaba decir CUANTO"
+        },
+        {
+          "J": 0.9808,
+          "P": 51,
+          "altas": 1,
+          "bajas": 0,
+          "commit": "9762a3b9 2026-08-10 wip(SCRUM-432): pestana + retirada, en VERDE (comiteado ANTES de inyectar)"
+        },
+        {
+          "J": 0.9811,
+          "P": 52,
+          "altas": 1,
+          "bajas": 0,
+          "commit": "9fa0e064 2026-08-10 wip(SCRUM-285): pantalla de Cobros + entrada, en VERDE (ANTES de inyectar)"
+        },
+        {
+          "J": 0.9815,
+          "P": 53,
+          "altas": 1,
+          "bajas": 0,
+          "commit": "66bd0d3b 2026-08-10 feat(SCRUM-455): el almacén local del bloque H, y su purgado en el logout"
+        }
+      ]
+    }
+  },
+  "porPR": {
+    "nombre": "línea de primer padre (cota por PR)",
+    "commits": 566,
+    "conBajas": 3,
+    "J": {
+      "min": 0,
+      "p01": 0.9375,
+      "p05": 0.971830985915493,
+      "mediana": 1
+    },
+    "maxBajas": 1,
+    "maxAltas": 9,
+    "maxCambiosConPoblacion": {
+      "max": 2,
+      "commits": 6,
+      "deCuantos": 561
+    },
+    "peores": [
+      {
+        "J": 0,
+        "P": 0,
+        "altas": 9,
+        "bajas": 0,
+        "commit": "5142388b 2025-11-26 Muchisimas cosas"
+      },
+      {
+        "J": 0.8182,
+        "P": 9,
+        "altas": 2,
+        "bajas": 0,
+        "commit": "688fb6dd 2026-05-19 neuvo"
+      },
+      {
+        "J": 0.8571,
+        "P": 12,
+        "altas": 2,
+        "bajas": 0,
+        "commit": "fc679ed9 2026-05-21 Sprint 2: Auth magic link, multi-tenant real, onboarding, Stripe billing"
+      },
+      {
+        "J": 0.9167,
+        "P": 11,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "15311818 2026-05-21 Sprint 1: Home metrics, Quick Quote, mobile CSS, WA notifications, landing mejorada"
+      },
+      {
+        "J": 0.9333,
+        "P": 14,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "647104b8 2026-05-22 docs+feat(Sprint 5): doc master v2 + PWA instalable + top clientes/servicios"
+      },
+      {
+        "J": 0.9375,
+        "P": 15,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "73417aff 2026-05-22 feat(5.4): módulo de gastos — CRUD, margen por trabajo, beneficio neto en Home"
+      },
+      {
+        "J": 0.9412,
+        "P": 16,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "55ee9c95 2026-05-22 feat(sprint-6): múltiples usuarios por merchant con roles admin/técnico"
+      },
+      {
+        "J": 0.9444,
+        "P": 17,
+        "altas": 1,
+        "bajas": 0,
+        "commit": "fed55b60 2026-05-22 feat(sprint-9): AI Quote Assistant — sugerencia de líneas y mensajes WhatsApp con Claude"
+      }
+    ],
+    "conPoblacionDe50oMas": {
+      "commits": 236,
+      "min": 0.971830985915493,
+      "peores": [
+        {
+          "J": 0.9718,
+          "P": 69,
+          "altas": 2,
+          "bajas": 0,
+          "commit": "558765ad 2026-09-02 Merge pull request #904 from lwislg99/scrum-609-switch-y-margen-rebasada"
+        },
+        {
+          "J": 0.9783,
+          "P": 90,
+          "altas": 2,
+          "bajas": 0,
+          "commit": "1bbf60af 2026-09-08 Merge pull request #1172 from lwislg99/scrum-597-asignar-usuario-al-documento"
+        },
+        {
+          "J": 0.9787,
+          "P": 92,
+          "altas": 2,
+          "bajas": 0,
+          "commit": "45e30121 2026-09-09 Merge pull request #1214 from lwislg99/scrum-831-albaranes-sin-acciones"
+        },
+        {
+          "J": 0.9804,
+          "P": 50,
+          "altas": 1,
+          "bajas": 0,
+          "commit": "fac68c44 2026-08-10 Merge pull request #611 from lwislg99/scrum-428-terminado-sin-cobrar"
+        },
+        {
+          "J": 0.9808,
+          "P": 51,
+          "altas": 1,
+          "bajas": 0,
+          "commit": "b3a480d1 2026-08-10 Merge pull request #623 from lwislg99/scrum-432-plantillas-pestana"
+        }
+      ]
+    }
+  }
+}
