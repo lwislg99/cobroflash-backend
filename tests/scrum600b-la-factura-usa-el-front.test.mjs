@@ -280,9 +280,14 @@ test('SCRUM-600b · ✅ EL PRESUPUESTO NO PIERDE NADA al compartir la página', 
   const r = await pintarPagina('justificante', undefined); // sin tercer argumento = presupuesto
   const todas = ranurasLegibles(r.contenedor).map((x) => x.texto);
   const hay = (t) => todas.some((x) => x.includes(t));
+  // SCRUM-915d · los bloques son ahora PASOS con los títulos firmados en SCRUM-915 comentario 15868.
+  // Se comprueban por IGUALDAD: «Condiciones» por subcadena lo daría por bueno «Condiciones de pago».
+  const TITULOS_DE_PASO = ['Cliente', 'Conceptos', 'Condiciones', 'Ajustes del documento', 'Revisar y enviar'];
+  const titulosPerdidos = TITULOS_DE_PASO.filter((t) => !todas.some((x) => x === t));
+  assert.deepEqual(titulosPerdidos, [], '🔴 el presupuesto ha perdido pasos: ' + titulosPerdidos.join(', '));
 
   const IMPRESCINDIBLES = [
-    '1. Cliente', '2. Líneas', '3. Condiciones', '4. Envío',   // los cuatro bloques, en su sitio
+    // (los cuatro bloques, que eran '1. Cliente'…'4. Envío', se comprueban arriba como PASOS)
     'Estado del presupuesto',                                   // el panel de estado
     'Total presupuesto',                                        // el KPI y el pie de la vista previa
     'Generar presupuesto',                                      // la acción primaria, reversible
@@ -308,8 +313,9 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
   const r = await pintarPagina('justificante', true);
   const todas = ranurasLegibles(r.contenedor).map((x) => x.texto);
   const NO_DEBEN_ESTAR = [
-    '3. Condiciones',          // plazos y formas de pago: no viajan
-    '4. Envío',                // qué datos salen y textos libres: no viajan
+    // SCRUM-915d · «Condiciones» por subcadena caza el paso Y sus filas («Condiciones de pago»).
+    'Condiciones',             // plazos y formas de pago: no viajan
+    'Ajustes del documento',   // qué datos salen, dirección e IVA del documento: no viajan (era «4. Envío»)
     'Estado del presupuesto',  // el documento nace emitido y no cambia de estado (regla 29)
     // «Guardar como plantilla» y «Usar plantilla» SALIERON de esta lista con SCRUM-600g. Eran
     // parada declarada porque sus hojas nombraban el presupuesto, no porque su dato no viajara: una
@@ -366,7 +372,7 @@ test('SCRUM-600b · 🔴 la ruta se monta con UN argumento: el instrumento tiene
   const textos = ranurasLegibles(porLaPuerta.contenedor).map((x) => x.texto);
   assert.ok(textos.some((t) => t.includes('Emitir justificante')),
     '🔴 montada por la puerta, la pantalla no es la del documento suelto');
-  assert.ok(!textos.some((t) => t.includes('3. Condiciones')),
+  assert.ok(!textos.some((t) => t.includes('Condiciones')), // SCRUM-915d: era «3. Condiciones»
     '🔴 montada por la puerta, la pantalla trae bloques del presupuesto');
 });
 
