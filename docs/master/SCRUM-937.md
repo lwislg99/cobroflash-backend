@@ -2,7 +2,7 @@
 
 **Fecha:** 18-sep-2026 · **Carril:** S1 (mitad de servidor; la de pantalla va a S2 con firma de copy)
 **Medido contra:** `origin/main` = `c60008bdc857873b69c8a56fb47087f79b3bae6b` · 2026-09-18T06:56:46Z
-**Tanda:** pendiente de turno (se anota aquí al correrla)
+**Tanda:** 7550 tests, 7439 pass, 0 fail, 111 skipped — corrida sobre la rama con `origin/main` = `27a7fb8b3755b9f00f5bcc74bc48b42ff0ed2037` mergeado (18-sep-2026, turno exclusivo de la Sesión 1)
 
 ---
 
