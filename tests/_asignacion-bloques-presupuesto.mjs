@@ -27,11 +27,18 @@ export const MARCA_MICROCOPY = '[PENDIENTE microcopy oficial]';
  * Los CUATRO bloques, en el orden de la decisión humana: a quién · qué · cómo se paga · cómo
  * se envía. La variable es el contrato con el código; el borrador del título es microcopy.
  */
+//
+// 🔴 SCRUM-915d (18-sep-2026) · LOS TÍTULOS Y LA ASIGNACIÓN CAMBIAN, POR DECISIÓN Y NO POR COMODIDAD:
+// la v3 del editor (APROBADA por el fundador, `docs/prototipos/SCRUM-915/`) convierte los bloques en
+// PASOS. Los títulos son los firmados en SCRUM-915 comentario 15868 (el número va aparte, en
+// `data-numero`), y «4. Envío» pasa a ser la fila «Ajustes del documento» del paso Condiciones.
+// Lo que se mueve de bloque, y por qué, está en `docs/master/SCRUM-915.md`. Lo que este censo
+// EXIGE no cambia: que ningún campo deje de viajar ni se quede sin sitio o en el bloque equivocado.
 export const BLOQUES_EN_ORDEN = [
-  { variable: 'blockClient', borrador: '1. Cliente' },
-  { variable: 'blockLines', borrador: '2. Líneas' },
-  { variable: 'blockConditions', borrador: '3. Condiciones' },
-  { variable: 'blockDelivery', borrador: '4. Envío' },
+  { variable: 'blockClient', borrador: 'Cliente' },
+  { variable: 'blockLines', borrador: 'Conceptos' },
+  { variable: 'blockConditions', borrador: 'Condiciones' },
+  { variable: 'blockDelivery', borrador: 'Ajustes del documento' },
 ];
 
 /**
@@ -49,12 +56,15 @@ export const CAMPO_A_BLOQUE = {
   paymentTerms: { control: 'fieldPaymentTerms', bloque: 'blockConditions' },
   customBillingPlan: { control: 'stagesWrapper', bloque: 'blockConditions' },
   validUntil: { control: 'validWrapper', bloque: 'blockConditions' },
-  payMethods: { control: 'payMethodsWrapper', bloque: 'blockDelivery' },
+  // SCRUM-915d · las formas de pago deciden cómo se COBRA: pasan a su fila del paso Condiciones.
+  payMethods: { control: 'payMethodsWrapper', bloque: 'blockConditions' },
   docFields: { control: 'docFieldsWrapper', bloque: 'blockDelivery' },
   // SCRUM-656 (T7) · CÓMO se presenta el IVA en ESTE presupuesto. Va al bloque de LÍNEAS, junto
   // al «IVA por defecto», porque es su misma familia: los dos deciden qué impuesto enseña el
   // documento. En «Condiciones» quedaría al lado del plan de cobro, que es OTRA conversación.
-  ivaModo: { control: 'fieldIvaModo', bloque: 'blockLines' },
+  // SCRUM-915d · sigue junto al IVA por defecto, y los dos se van a «Ajustes del documento»
+  // (`blockDelivery`): deciden cómo SALE el documento, que es lo que esa fila agrupa en la v3.
+  ivaModo: { control: 'fieldIvaModo', bloque: 'blockDelivery' },
   // SCRUM-594 (DOC-04) · el descuento GLOBAL, en euros. Va al bloque de TOTALES y no al de
   // Líneas: no es un ajuste de una línea, es una rebaja sobre el conjunto —se negocia a bulto—,
   // y su efecto se lee justo donde se pinta, entre la suma y la base imponible. El `Dto. %` de
@@ -65,8 +75,10 @@ export const CAMPO_A_BLOQUE = {
   // distintas con el mismo nombre en la misma pantalla es cómo se aprende mal un producto.
   // Son DOS claves porque son dos datos —el modo y el texto— y el texto sólo existe con
   // «Personalizada»; el control que gobierna cada una es distinto, así que se listan las dos.
-  shippingAddressMode: { control: 'fieldDireccionObra', bloque: 'blockClient' },
-  shippingAddress: { control: 'direccionObraWrap', bloque: 'blockClient' },
+  // SCRUM-915d · el choque de nombres que lo impedía («4. Envío») ya no existe: el bloque es ahora
+  // «Ajustes del documento», que es cómo SALE impreso, y ahí va la dirección que se imprime.
+  shippingAddressMode: { control: 'fieldDireccionObra', bloque: 'blockDelivery' },
+  shippingAddress: { control: 'direccionObraWrap', bloque: 'blockDelivery' },
 };
 
 /**

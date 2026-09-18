@@ -177,7 +177,8 @@ export const CAPACIDADES = [
   { id: 'E2', que: 'condiciones de pago (select de plazos)',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'blockConditions', argumento: null }) },
   { id: 'E3', que: 'caducidad / fecha propia del documento',
-    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'blockConditions', argumento: 'validWrapper' }) },
+    // SCRUM-915d · la caducidad cuelga de SU FILA del paso Condiciones (que cuelga del bloque).
+    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'filaValidezDetalle', argumento: 'validWrapper' }) },
   { id: 'E4', que: 'que datos del cliente salen en el documento',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'blockDelivery', argumento: 'docFieldsWrapper' }) },
   { id: 'E5', que: 'estado del documento en el panel derecho',

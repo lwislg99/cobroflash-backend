@@ -50,7 +50,9 @@ function conLasTresColumnas(schema) {
   return schema.replace(ancla, ancla + '\n'
     + '  paymentTerms      String?\n'
     + '  customBillingPlan Json?\n'
-    + '  validUntil        DateTime?\n');
+    + '  validUntil        DateTime?\n'
+    // SCRUM-915d · las formas de pago se mudaron a Condiciones: la cuarta columna que el bloque pide.
+    + '  payMethods        Json?\n');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -113,6 +115,10 @@ test('SCRUM-600e · 🔴 EL CONTROL QUE DECIDE: la pantalla no pide NADA que el 
   assert.deepEqual(r.asignadosFantasma, [],
     '🔴 un control asignado ya no llega ni al presupuesto: el mapa de bloques está mintiendo.\n  '
     + r.asignadosFantasma.join('\n  '));
+  // SCRUM-915d · la excepción del andamio de los pasos no puede quedarse vieja.
+  assert.deepEqual(r.noSonCamposQueSobran, [],
+    '🔴 `NO_SON_CAMPOS` declara piezas que ya no cuelgan de Condiciones: una excepción que sobra es\n'
+    + '  un hueco por el que mañana entra otra cosa con ese nombre.\n  ' + r.noSonCamposQueSobran.join('\n  '));
 });
 
 test('SCRUM-600e · 🔴 LA MEDICIÓN DEL TICKET: los tres campos del bloque NO existen en `Invoice`', () => {
@@ -138,10 +144,11 @@ test('SCRUM-600e · 🔴 ROJO ①: encender el bloque SIN las columnas cae, y NO
     [RUTA_PANTALLA]: conCondicionesEncendidas(leer(RUTA_PANTALLA)),
     // LADO B intacto, leído del disco: la mutación es de UN solo fichero.
   });
-  assert.equal(r.pidenLoQueSeTira.length, 3,
-    `🔴 el guard NO ha cazado el encendido a medias (dijo ${r.pidenLoQueSeTira.length} de 3). Un `
+  // SCRUM-915d · son CUATRO desde que las formas de pago viven en Condiciones (un campo más vigilado).
+  assert.equal(r.pidenLoQueSeTira.length, 4,
+    `🔴 el guard NO ha cazado el encendido a medias (dijo ${r.pidenLoQueSeTira.length} de 4). Un `
     + 'guard que no se ha visto en rojo no está probado.');
-  for (const campo of ['paymentTerms', 'customBillingPlan', 'validUntil']) {
+  for (const campo of ['paymentTerms', 'customBillingPlan', 'validUntil', 'payMethods']) {
     assert.ok(r.pidenLoQueSeTira.some((m) => m.includes(campo)),
       `🔴 el rojo no nombra \`${campo}\`. Un rojo que no dice qué falta obliga a buscarlo a mano.`);
   }
@@ -159,21 +166,35 @@ test('SCRUM-600e · ✅ NEGATIVO APUNTADO: con las columnas puestas, el MISMO en
     '🔴 el guard sigue en rojo DESPUÉS de darle las columnas. Entonces no está midiendo el schema:\n'
     + '  estaría prohibiendo el bloque por su nombre, y el día del ALTER bloquearía la función\n'
     + '  correcta en vez de dejarla pasar.\n  ' + r.pidenLoQueSeTira.join('\n  '));
-  assert.deepEqual(r.medicion.lleganAlSuelto, ['fieldPaymentTerms', 'stagesWrapper', 'validWrapper'],
+  assert.deepEqual(r.medicion.lleganAlSuelto, ['fieldPaymentTerms', 'stagesWrapper', 'validWrapper', 'payMethodsWrapper'],
     '🔴 con la puerta abierta los tres controles tienen que llegar al documento suelto; si no, la '
     + 'mutación del LADO A no ha hecho nada y el verde de arriba es vacío.');
 });
 
 test('SCRUM-600e · 🔴 ROJO ②: un control NUEVO en el bloque que nadie asignó también cae', () => {
   // El hueco exacto del guard por lista de rótulos: esto NO está en `NO_DEBEN_ESTAR`.
-  const pantalla = leer(RUTA_PANTALLA).replace(
-    'blockConditions.appendChild(fieldPaymentTerms.wrapper);',
-    'blockConditions.appendChild(fieldPaymentTerms.wrapper);\n    blockConditions.appendChild(campoRecienInventado);');
+  // SCRUM-915d · el ancla es la línea de hoy (el control cuelga de su fila) y se comprueba que la
+  // mutación SE APLICÓ: con el ancla vieja el `replace` no hacía nada y el rojo no probaba nada.
+  const ANCLA = 'filaCobroDetalle.appendChild(fieldPaymentTerms.wrapper);';
+  const original = leer(RUTA_PANTALLA);
+  assert.ok(original.includes(ANCLA), `🔴 el ancla de la mutación ya no existe: ${ANCLA}`);
+  const pantalla = original.replace(ANCLA, ANCLA + '\n    blockConditions.appendChild(campoRecienInventado);');
   const r = revisarCondicionesContraEmisor({ [RUTA_PANTALLA]: pantalla });
   assert.equal(r.sinAsignar.length, 1,
     '🔴 un control nuevo ha entrado en «3. Condiciones» sin que el guard lo vea. Ése es justo el '
     + 'caso que una lista de rótulos escrita a mano no puede cazar.');
   assert.match(r.sinAsignar[0], /campoRecienInventado/);
+});
+
+test('SCRUM-915d · 🔴 ROJO ②b: un control nuevo colgado DE UNA FILA de Condiciones también cae', () => {
+  // El hueco que abrían las filas: mirando sólo los hijos directos del bloque, esto pasaba.
+  const ANCLA = 'filaPagosDetalle.appendChild(payMethodsWrapper);';
+  const original = leer(RUTA_PANTALLA);
+  assert.ok(original.includes(ANCLA), `🔴 el ancla de la mutación ya no existe: ${ANCLA}`);
+  const pantalla = original.replace(ANCLA, ANCLA + '\n    filaPagosDetalle.appendChild(campoEnUnaFila);');
+  const r = revisarCondicionesContraEmisor({ [RUTA_PANTALLA]: pantalla });
+  assert.equal(r.sinAsignar.length, 1, `🔴 un control colgado de una fila no se ve: ${JSON.stringify(r.sinAsignar)}`);
+  assert.match(r.sinAsignar[0], /campoEnUnaFila.*filaPagosDetalle/);
 });
 
 test('SCRUM-600e · 🔴 ROJO ③: si la guarda toma una forma que el censo no sabe leer, se DECLARA', () => {
@@ -195,7 +216,7 @@ test('SCRUM-600e · ✅ POSITIVO: «3. Condiciones» sigue ENTERO en el presupue
   // factura no es quitarlo del presupuesto, que es donde los tres campos sí tienen dónde ir.
   const r = revisarCondicionesContraEmisor();
   assert.deepEqual(r.medicion.lleganAlPresupuesto,
-    ['fieldPaymentTerms', 'stagesWrapper', 'validWrapper'],
+    ['fieldPaymentTerms', 'stagesWrapper', 'validWrapper', 'payMethodsWrapper'],
     '🔴 el presupuesto ha PERDIDO controles de «3. Condiciones». Ahí sí se guardan: `Quote` tiene '
     + 'las tres columnas.');
   assert.deepEqual(r.medicion.lleganAlSuelto, [],
