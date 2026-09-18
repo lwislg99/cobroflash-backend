@@ -73,8 +73,12 @@ con control positivo.
   `docs/` entero (`scrum233`, `387`, `534b`, `637`, `705`, `753`, `775`, `810b` y el que importa
   `_documentos-a-la-espera.mjs`) → **88 tests · 88 pass · 0 fail · 0 saltados**, exit 0. `npm run guards:entrada`
   → **26 · 26 · 0**, exit 0.
-- **La suite COMPLETA no se ha corrido en local** (el worktree no tiene `node_modules` y la suite va con turno):
-  es un PR solo de docs, y la suite entera la corre el CI sobre el merge.
+- **Suite COMPLETA, con turno del orquestador**, en `wt-839f` (detached, `node_modules` propio), tras mergear
+  `origin/main` = `34d06bb4f4e306b11745cf34fbbc85233c5a3299`: la primera pasada completa dio **7.669 tests ·
+  7.554 pass · 4 fail · 111 saltados**. Tres de los fallos son de `scrum939b`, ya conocidos en main. **El cuarto
+  era MÍO:** `scrum766` («ningún instrumento ni receta del árbol cuenta control con `grep`») cazó en
+  `trampas-del-entorno.md` la receta mala citada LITERAL como ejemplo de trampa. Se arregló el texto (se describe
+  sin escribir el comando y se apunta a `contarCR`), no el guard (regla 41). La pasada final va abajo.
 - Bytes de control (A22) y CR en los 6 ficheros: **0 y 0**.
 
 ### Lo que NO se ha hecho, y por qué
@@ -93,3 +97,9 @@ con control positivo.
   corregí en el mensaje siguiente; los choques no cambiaban.
 - Escribí «21 tickets» con las etiquetas viejas; contados en Jira eran **22**. Corregido antes del commit.
 - Un comando de PowerShell con `'\]\('` lo paró el hook; no se ejecutó nada. Rehecho con un `.mjs`.
+- **Mi censo de «qué tests leen estos ficheros» no vio `scrum766`**: busqué por nombre de fichero y por
+  `readdirSync` de `docs`, y ese guard barre el árbol por otro camino. Lo cazó la suite completa, que es
+  exactamente para lo que la pide la A6.
+- **La primera suite no llegó a ejecutarse y la tarea dijo «exit 0»:** pasé 909 ficheros por la línea de
+  órdenes y Windows la rechazó por larga. Sin TAP y sin recuentos no hay verde. Relanzada con el glob que
+  expande node (`'tests/*.test.mjs'`), igual que `npm test`. Es la familia de la A21, en mi propia mano.
