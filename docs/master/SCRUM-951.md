@@ -212,3 +212,75 @@ con control positivo.
 - **La primera suite no llegó a ejecutarse y la tarea dijo «exit 0»:** pasé 909 ficheros por la línea de
   órdenes y Windows la rechazó por larga. Sin TAP y sin recuentos no hay verde. Relanzada con el glob que
   expande node (`'tests/*.test.mjs'`), igual que `npm test`. Es la familia de la A21, en mi propia mano.
+
+## SCRUM-951d · el ENSAYO de la instalación, antes de que la haga Javier
+
+**Medido contra:** `origin/main` = `d44f4faf0061f2f861ebc4888a2a12a2adacbe41` · 2026-09-18T13:07:33Z
+
+Sesión 5. La guía `docs/equipo/instalacion-maquina-nueva.md` (951a, #1512, merge `d44f4faf`) no se había seguido nunca
+en ninguna máquina. Se siguió al pie de la letra, «como Javier», en la de Luis: Git Bash (`bin/bash.exe -l`), clon
+NUEVO de GitHub, `claude.exe` real (2.1.276), prefijo `ensayo-`, puestos `jefe,prueba`, una tanda `03:17` que no se
+programó. `REPO` e `INST` en el scratch del job, nunca en `%LOCALAPPDATA%\yaqu-equipo` (la real). Sin tareas
+programadas, sin tocar settings y UNA sola sesión de prueba. Horas de GitHub salvo donde se diga.
+
+### Paso a paso
+
+| paso | resultado | lo medido |
+|---|---|---|
+| 0 · requisitos | hizo lo que dice, **menos el disco** | git 2.51, node v24.8.0, claude 2.1.276, `gh auth status` «Logged in», `ls-remote` da SHA. `Get-PSDrive` → «command not found» (es de PowerShell, en una guía «todo Git Bash»); `df -h C:` también falla; `df -h /c` sí |
+| 1 · clonar + `npm ci` | hizo lo que dice | 76 s en total, 564 MB. El clon se hizo a las ~12:51Z sobre `b2c82c71` (antes del merge de #1512) y se puso al día con `git pull --ff-only` a `d44f4faf`: mismo `package-lock` |
+| 2 · abrir Claude Code una vez | **no se pudo probar aquí** la parte interactiva (sesión de fondo) | se hizo el `mkdir -p` de `memory` con la ruta EXACTA del `motivo` del paso 3. Medido además: 5 de 5 carpetas de proyecto de `~/.claude/projects` sin memorias escritas NO tienen `memory` → el `mkdir` es el camino normal, no la excepción |
+| 3 · instalar | hizo lo que dice | antes del paso 2: `NO-INSTALADO` con la ruta de `memory` y **nada escrito** (`ls INST` no existe). Después: `INSTALADO`; las 4 copias, idénticas a `origin/main` por `cmp`; `arranque.cmd` entra en el repo, copia y lanza |
+| 4 · statusLine | no se pudo probar aquí (settings) | `uso.mjs leer` dio **0 VERDE** con el `uso.json` de la MÁQUINA (`%LOCALAPPDATA%\yaqu-equipo`), no «2 antes» como dice la guía: `uso.mjs` no guarda junto a `INST` |
+| 5 · tareas | no se pudo probar aquí (tareas prohibidas); solo `/query` | `schtasks /query` sin `MSYS_NO_PATHCONV=1` → «Argumento u opción no válido - "D:/Program files D/Git/query"»; con él, «no encuentra» (control positivo: `/query` lista las tareas que existen). «Desinstalar» mandaba `schtasks /delete` sin la variable |
+| 6 · permisos | no se pudo probar aquí (settings) | el lanzamiento del 7.2 pasó sin la regla, con los permisos de la sesión que lanzaba: no prueba nada para una máquina nueva |
+| 7.1 · comprobar | **dio un verde que no lo era** | «OK · 14 comprobaciones, exit 0», con el «aviso de uso» OK por el `uso.json` de otra instalación… y la sesión del 7.2 se bloqueó igual |
+| 7.2 · sesión que contesta | **no lo hizo** | `lanzar ensayo-prueba` → `LANZADA` con `sessionId` completo; `estado` la vio `working` y a los ~75 s `blocked`; el mensaje no llegó; `ListAgents` no la listaba; sin jsonl. Su `~/.claude/jobs/<id>/state.json`: `"needs": "approve 1 new project MCP server (playwright) — attach to respond"`. `parar` → `PARADA`, `stop` 0, `rm` 0, `estado` vacío y su carpeta de job borrada |
+| 7.3 · primera tanda | no se pudo probar aquí | arranca al orquestador de verdad (lo dice la propia guía) |
+
+### El hallazgo: un clon nuevo bloquea toda sesión de fondo
+
+`.mcp.json` (en el repo) declara `playwright`. Claude Code pide aprobar cada servidor MCP de proyecto, y en segundo
+plano nadie contesta: la sesión se queda `blocked` antes de su primer turno. El checkout de Luis no lo sufre porque
+su `.claude/settings.local.json` lleva `disabledMcpjsonServers: ["playwright"]`, pero como **modificación local sin
+commitear**: medido con `git show origin/main:.claude/settings.local.json` (solo `permissions`) y
+`git diff HEAD -- .claude/settings.local.json` en el checkout. Ningún clon lo hereda. En la máquina de Javier, el
+orquestador de la PRIMERA tanda se habría quedado ahí, sin decir nada a nadie.
+
+### Qué cambia
+
+- `scripts/equipo/comprobar-instalacion.mjs`:
+  - comprobación nueva **«MCP del proyecto»** (`juzgarMcp`): cada servidor de `.mcp.json` tiene que estar decidido
+    —`enabledMcpjsonServers`, `disabledMcpjsonServers` o `enableAllProjectMcpServers`— en los settings del repo, en
+    los del usuario o en la entrada del proyecto de `~/.claude.json`. Sin decidir = `FALLA`; un fichero ilegible =
+    `NO-PUDE-MIRAR`. Sobre datos reales: el clon del ensayo da **FALLA** y el checkout de Luis, **OK**;
+  - **«aviso de uso»** (`juzgarUso`): un VERDE leído de un `uso.json` fuera de `destino` pasa a `AVISO` y dice qué
+    fichero leyó. Para `INST` en su sitio no cambia nada;
+  - `schtasks` que no llega a arrancar (`status null`) es `NO-PUDE-MIRAR`, no «no está creada».
+- `docs/equipo/instalacion-maquina-nueva.md`: los dos diálogos del paso 2 (el MCP, con el porqué medido), `df -h /c`
+  en el paso 0, dónde vive `uso.json` (paso 4), qué dice la 7.1 ahora, cómo se ve una sesión bloqueada (7.2),
+  `MSYS_NO_PATHCONV=1` en «Desinstalar», y lo que el ensayo NO pudo probar.
+- `tests/scrum951d-ensayo-instalacion.test.mjs` (8 tests, funciones puras sobre un temporal: no lee la máquina).
+  Mutantes 5 de 5 caen, con base verde (`docs/master/evidencias/scrum951d/salida-mutar.txt`).
+
+### Lo que NO se ha hecho, y por qué
+
+- **No se ha decidido el MCP en el repo.** Commitear `disabledMcpjsonServers: ["playwright"]` en `.claude/` quitaría
+  el bloqueo en TODO clon sin que nadie tenga que acordarse, pero `.claude/*` y los settings son del fundador
+  (regla 35; normas de esta tanda). Queda propuesto.
+- No se ha medido dónde guarda Claude Code la decisión al contestar el diálogo ni si la confianza de carpeta
+  bloquea también en fondo (ver «Lo que esta guía NO ha medido»).
+
+### El ensayo, deshecho
+
+Sesión `ensayo-prueba` parada y borrada con la propia puerta. Carpeta del ensayo (`REPO` + `INST`) y la
+`memory` creada a mano, borradas. Queda UNA huella que no se tocó a propósito: la entrada de la ruta del clon del
+ensayo en `~/.claude.json` (la escribió Claude Code al lanzar la sesión; editar ese fichero con siete sesiones vivas
+escribiéndolo es más arriesgado que la entrada, que no apunta a nada).
+
+### Errores propios
+
+- **A22 en mi mano:** escribí `\uFEFF` en una regex de `comprobar-instalacion.mjs` y aterrizó como el carácter BOM
+  literal, invisible. Lo cazó un recuento (1 carácter U+FEFF), no la lectura. Rehecho con `charCodeAt(0) === 0xfeff`.
+- La primera orden del paso 0 la paró un hook: un here-string de PowerShell con `"C:/Program Files/…"` dentro se
+  leyó como un borrado de una ruta de sistema. No se ejecutó nada; rehecho con ficheros `.sh`.

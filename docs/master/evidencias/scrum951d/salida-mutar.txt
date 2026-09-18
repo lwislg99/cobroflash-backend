@@ -1,0 +1,7 @@
+﻿BASE verde · 5 mutaciones declaradas
+#1 CAE · scripts/equipo/comprobar-instalacion.mjs · «🔴 ROJO: un servidor de .mcp.json sin decidir da FALLA»
+#2 CAE · scripts/equipo/comprobar-instalacion.mjs · «enableAllProjectMcpServers en los settings del usuario lo decide todo»
+#3 CAE · scripts/equipo/comprobar-instalacion.mjs · «la decisión guardada en la entrada del proyecto de ~/.claude.json cuenta»
+#4 CAE · scripts/equipo/comprobar-instalacion.mjs · «unos settings con BOM (como los de origin/main) se leen»
+#5 CAE · scripts/equipo/comprobar-instalacion.mjs · «🔴 ROJO: un VERDE leído del uso.json de OTRA carpeta es AVISO, no OK»
+5 de 5 cayeron

@@ -5,7 +5,8 @@
 // La lista de verificación del final de la guía (`docs/equipo/instalacion-maquina-nueva.md`), en
 // ejecutable: la corre el propio Claude de quien instala para DEMOSTRAR que la instalación actúa, no
 // para describirla. Cada comprobación EJECUTA la pieza (la copia instalada de `sesion.mjs`, el aviso
-// de uso, el censo de huérfanos, `claude --version`) y dice qué vio.
+// de uso, el censo de huérfanos, `claude --version`) y dice qué vio. SCRUM-951d añade los servidores MCP
+// del proyecto: el ensayo del 18-sep-2026 dio «OK» aquí y su primera sesión de fondo se bloqueó en uno.
 //
 // Veredictos, por comprobación:
 //   OK             la pieza respondió como debe;

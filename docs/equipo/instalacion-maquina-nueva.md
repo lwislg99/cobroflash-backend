@@ -9,9 +9,11 @@
 > `docs/equipo/instalacion-orquestador-autonomo.md`. Cómo conviven los dos equipos (quién es jefe de qué,
 > nombres, Jira) lo dice `docs/equipo/dos-equipos.md`, que es de la Sesión 0.
 >
-> ⚠️ **Nunca se ha instalado todavía en ninguna máquina** (medido el 18-sep-2026: no existía la carpeta de
-> instalación ni en la de Luis). La primera instalación ES la prueba: si un paso no da lo que dice aquí, se para
-> y se cuenta, no se improvisa.
+> ⚠️ **Nunca se ha instalado todavía en ninguna máquina de verdad.** El 18-sep-2026 la Sesión 5 hizo un
+> **ensayo** entero en la máquina de Luis, en una carpeta de prueba y con el prefijo `ensayo-`, sin crear tareas
+> ni tocar settings (SCRUM-951d, `docs/master/SCRUM-951.md`). Lo que el ensayo cazó ya está en los pasos 0, 2, 4,
+> 7 y en «Desinstalar»; lo que no pudo probar, al final. Si un paso no da lo que dice aquí, se para y se cuenta,
+> no se improvisa.
 
 ## Variables
 
@@ -53,7 +55,10 @@ Un equipo sin prefijo se declara con `--sin-prefijo`: vacío y olvidado no se co
 | **Claude Code** instalado y con sesión iniciada con la cuenta de quien instala | `"$CLAUDE" --version` | responde (el 18-sep: 2.1.276) |
 | **gh** instalado y autenticado | `gh auth status` (o `"C:/Program Files/GitHub CLI/gh.exe" auth status`) | «Logged in» |
 | acceso al repositorio `lwislg99/cobroflash-backend` como colaborador | `git ls-remote https://github.com/lwislg99/cobroflash-backend.git HEAD` | una línea con un SHA |
-| disco: **1 GB libre** en la unidad del repo, más **0,4 GB** por cada `node_modules` | `Get-PSDrive -PSProvider FileSystem` | llega |
+| disco: **1 GB libre** en la unidad del repo, más **0,4 GB** por cada `node_modules` | `df -h /c` (la letra de la unidad del repo, en minúscula: `/d` para D:) | llega en `Avail` (el ensayo: clon + `node_modules` = 564 MB) |
+
+⚠️ En Git Bash, `df -h C:` falla («No such file or directory») y `Get-PSDrive` no existe: es de PowerShell
+(medido en el ensayo).
 
 Si algo no llega, se PARA aquí. **Secretos:** las claves de base de datos o de servicios las da el fundador
 directamente, fuera del chat y fuera del canal. Nunca se piden ni se pegan en una conversación.
@@ -83,17 +88,33 @@ cd "$REPO" && npm ci
 
 Claude Code guarda la memoria (y en ella los traspasos de cada puesto, `project_*_traspaso.md`) en
 `~/.claude/projects/<ruta del repo con cada carácter no alfanumérico cambiado por ->/memory`. Esa carpeta la crea
-Claude Code, no el instalador. **Orden:** abrir Claude Code en `REPO`, aceptar el diálogo de confianza de carpeta y
-cerrar.
+Claude Code, no el instalador.
+
+**Orden:** abrir Claude Code en `REPO` (interactivo, NO en segundo plano) y contestar los DOS diálogos que salgan:
+
+1. **la confianza de carpeta**: aceptar;
+2. 🔴 **el servidor MCP del proyecto** (`.mcp.json` declara `playwright`): **decidirlo**, sí o no. Lo decide quien
+   manda en la máquina. El equipo de Luis lo tiene APAGADO (`disabledMcpjsonServers: ["playwright"]`).
+
+Después, cerrar.
+
+🔴 **Por qué el segundo diálogo no se puede saltar — medido en el ensayo del 18-sep-2026:** una sesión de fondo
+lanzada en un clon nuevo **no llegó a arrancar**. `sesion.mjs estado` la dio `blocked`, y su
+`~/.claude/jobs/<id>/state.json` decía `"needs": "approve 1 new project MCP server (playwright) — attach to
+respond"`. En segundo plano nadie contesta ese diálogo, así que el orquestador de la primera tanda se quedaría
+ahí para siempre. El checkout de Luis no lo sufre porque tiene la decisión en su `.claude/settings.local.json`,
+pero como cambio LOCAL sin commitear: `origin/main` no decide nada y **ningún clon lo hereda**. El paso 7.1 lo
+comprueba («MCP del proyecto»).
 
 **Comprobación:** la hace el paso 3: si la carpeta no existe, el instalador se niega y dice en su `motivo` la
-ruta EXACTA que esperaba. ⚠️ Puede faltar solo la última parte, `memory`: Claude Code crea la carpeta del proyecto
-al abrir, pero `memory` puede no aparecer hasta que se escribe la primera memoria (no medido en una máquina nueva).
-En ese caso se crea a mano con la ruta que imprimió el instalador, `mkdir -p '<ruta del motivo>'`, y se repite el
-paso 3. Nunca se inventa otra ruta: es ahí donde cada sesión escribirá su traspaso.
+ruta EXACTA que esperaba. ⚠️ Lo normal es que falte la última parte, `memory`: medido el 18-sep-2026 en
+`~/.claude/projects` de la máquina de Luis, las **5 de 5** carpetas de proyecto donde nunca se escribió una memoria
+no tienen `memory` (Claude Code crea la del proyecto, no la de la memoria). Se crea a mano con la ruta que imprimió
+el instalador, `mkdir -p '<ruta del motivo>'` (en Git Bash vale con las barras invertidas si va entre comillas
+simples), y se repite el paso 3. Nunca se inventa otra ruta: es ahí donde cada sesión escribirá su traspaso.
 
 **Deshacer:** si se creó `memory` a mano y aún está vacía, borrarla; si ya tiene ficheros, no se toca (son la
-memoria del equipo).
+memoria del equipo). La decisión del MCP se deshace en el mismo sitio donde quedó guardada.
 
 ---
 
@@ -128,8 +149,13 @@ su autorización expresa en ese chat). La línea exacta es la que imprimió el p
 ```
 Sin `refreshInterval`: no aporta lecturas nuevas.
 
-**Comprobación:** `node "$INST/uso.mjs" leer` sale con **2** antes; tras un turno en una sesión **interactiva**, con
-**0** (verde) o **1** (aviso, desde el 85 %), y `usado` coincide con lo que dice `/usage`.
+⚠️ `uso.mjs` guarda su lectura SIEMPRE en `%LOCALAPPDATA%\yaqu-equipo\uso.json`, esté donde esté `INST`. Con `INST` en
+su sitio (la variable de arriba) es la misma carpeta; con `INST` en otro sitio, la lectura es de la máquina, no de
+esa instalación (medido en el ensayo: VERDE con el `uso.json` de Luis). La salida de `leer` dice en `fichero` cuál leyó.
+
+**Comprobación:** `node "$INST/uso.mjs" leer` sale con **2** antes —si ninguna otra sesión de la máquina escribe ya
+en ese `uso.json`—; tras un turno en una sesión **interactiva**, con **0** (verde) o **1** (aviso, desde el 85 %), y
+`usado` coincide con lo que dice `/usage`.
 
 **Deshacer:** quitar la línea de `statusLine`.
 
@@ -176,11 +202,16 @@ node scripts/equipo/comprobar-instalacion.mjs --destino "$INST"
 
 Ejecuta cada pieza y dice qué vio: el config y el equipo, `claude --version`, `origin/main`, que cada copia sea
 idéntica a `origin/main`, `arranque.cmd`, la carpeta de los traspasos, **la copia instalada de `sesion.mjs`
-ejecutando su propia puerta** (`estado`), el aviso de uso, el censo de huérfanos, las tareas programadas y `gh`.
-Termina con la población («N comprobaciones») y sale con **0** si no hay ninguna `FALLA` ni `NO-PUDE-MIRAR`.
+ejecutando su propia puerta** (`estado`), el aviso de uso, **los servidores MCP del proyecto**, el censo de
+huérfanos, las tareas programadas y `gh`. Termina con la población («N comprobaciones», 15 en el ensayo) y sale con
+**0** si no hay ninguna `FALLA` ni `NO-PUDE-MIRAR`.
+
+`FALLA · MCP del proyecto` es el segundo diálogo del paso 2 sin contestar: se vuelve al paso 2. En el ensayo, la
+lista de ANTES de esta comprobación salió «OK · 14 comprobaciones» y la primera sesión de fondo se bloqueó igual.
 
 Un `AVISO` no bloquea, pero se lee: «tareas sin crear» es el paso 5; «aviso de uso sin lectura» es el paso 4 sin
-un turno interactivo todavía; «huérfanos» es trabajo sin empujar en algún worktree.
+un turno interactivo todavía; «el uso.json que lee no es de esta instalación» es `INST` fuera de su sitio (paso 4);
+«huérfanos» es trabajo sin empujar en algún worktree.
 
 ### 7.2 · Lo que un script no puede: una sesión que CONTESTA por el canal
 
@@ -190,8 +221,11 @@ Necesita la regla del paso 6. El nombre de este chat lo dice `ListAgents` en su 
    `<nombre de este chat>` una sola línea: "prueba de instalación: te oigo", y termina.»
 2. `node "$INST/sesion.mjs" lanzar <PREFIJO><un puesto> <fichero>` → `"veredicto": "LANZADA"` con un `sessionId`
    completo.
-3. `ListAgents` la lista con ese nombre, y **en unos 2 minutos llega su mensaje** por el canal. Si no llega, se mira
-   `node "$INST/sesion.mjs" estado`: si sale como bloqueada, está esperando un permiso que nadie va a contestar.
+3. **En unos 2 minutos llega su mensaje** por el canal, y `ListAgents` la lista con ese nombre. Si no llega, se mira
+   `node "$INST/sesion.mjs" estado`: si sale como `blocked`, está esperando algo que nadie va a contestar, y **qué**
+   lo dice el campo `needs` de `~/.claude/jobs/<id>/state.json` (el `id` de 8 caracteres de `estado`). ⚠️ Medido en
+   el ensayo: una sesión bloqueada antes de su primer turno **no sale en `ListAgents`** y no tiene jsonl; `estado`
+   es lo único que la ve.
 4. `node "$INST/sesion.mjs" parar <PREFIJO><ese puesto>` → `"veredicto": "PARADA"`, y `node "$INST/sesion.mjs" estado`
    ya no la lista.
 
@@ -222,7 +256,9 @@ En orden inverso, y cada paso con su comprobación:
 
 1. parar las sesiones del equipo: `node "$INST/sesion.mjs" estado` y `parar` para cada una → `estado` sin ninguna;
 2. deshacer el 6 y el 4 en `~/.claude/settings.json` (quien manda en la máquina);
-3. deshacer el 5: `schtasks /delete` de cada tarea → `/query` no la encuentra;
+3. deshacer el 5: `MSYS_NO_PATHCONV=1 schtasks /delete /tn <tarea> /f` de cada tarea → `/query` (también con
+   `MSYS_NO_PATHCONV=1`) no la encuentra. Sin esa variable, Git Bash convierte `/delete` y `/query` en rutas
+   (medido en el ensayo: «Argumento u opción no válido - "D:/Program files D/Git/query"»);
 4. deshacer el 3: borrar a mano la carpeta `INST` → ya no existe.
 
 La memoria del proyecto (`~/.claude/projects/…/memory`) y el clon (`REPO`) **no** se borran al desinstalar: tienen
@@ -235,6 +271,19 @@ El Claude de cada sesión lee lo suyo desde `origin/main`: `CLAUDE.md`, `docs/eq
 
 ## Lo que esta guía NO ha medido
 
-- Una instalación de principio a fin en una máquina real: todo lo de arriba está probado en bancos (repositorio
-  de prueba, `claude` falso) — ver `docs/master/SCRUM-951.md`.
+El ensayo del 18-sep-2026 (SCRUM-951d) corrió los pasos 0, 1, 3, 7.1 y 7.2 de verdad, con el `claude.exe` real y un
+clon nuevo, en la máquina de Luis. Lo que NO pudo probar:
+
+- **El paso 2 interactivo**: el ensayo corría en segundo plano. Se hizo la mitad que no es interactiva (el `mkdir`
+  de `memory`); los dos diálogos, no. Por eso no está medido **dónde guarda Claude Code la decisión del MCP** al
+  contestar el diálogo (en el checkout de Luis está en `.claude/settings.local.json`, que va en el repo: si es ahí,
+  el clon queda con ese fichero modificado y el censo de huérfanos puede avisar por él), ni si la **confianza de
+  carpeta** bloquea también a una sesión de fondo (la del ensayo se paró antes, en el MCP).
+- **Los pasos 4, 5 y 6**: tocan settings y tareas programadas, que el ensayo tenía prohibidos. Del 5 solo se midió
+  `/query`. Tampoco si el lanzamiento necesita la regla del 6: en el ensayo pasó sin ella, pero con los permisos
+  de la sesión que lo lanzaba, que no son los de una máquina nueva.
+- **El 7.2 completo**: la sesión de prueba no llegó a mandar su mensaje (el bloqueo del paso 2). Sí se midieron
+  `lanzar` (`LANZADA` con `sessionId`), `estado` (la vio, primero `working` y luego `blocked`) y `parar` (`PARADA`,
+  `stop` y `rm` con 0, y `estado` vacío después).
+- **El 7.3**: arranca al orquestador de verdad con el prompt de la tanda.
 - Si las sesiones de fondo ejecutan el `statusLine` (según la documentación, solo las interactivas).
