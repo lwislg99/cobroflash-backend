@@ -150,8 +150,13 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // rojo contra `8b3f26d2` (17-sep-2026): 7 de 10 anchuras.
   // El número NO se calculó sumando uno: se midió corriendo este test, como dice el párrafo de
   // arriba que ya ha costado cuatro veces.
-  assert.equal(fuera.length, 25,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ 25 → ${fuera.length}.\n`
+  // SCRUM-915d · entra `guard:pasos-del-editor`. RECORRE el editor con clics de verdad y juzga qué se
+  // VE después de pulsar (un paso abierto, «Continuar» sólo cuando se puede, resúmenes, «Cambiar»,
+  // Ajustes en la página) e incluye el inventario de hoy como control positivo. Sube aquí porque lo
+  // que se juzga sólo existe con el CSS resuelto. Comprobado en rojo contra `c60008bd` (18-sep-2026):
+  // 3 de 3 casos con todos los pasos a la vez. Medido corriendo este test: 26.
+  assert.equal(fuera.length, 26,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ 26 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

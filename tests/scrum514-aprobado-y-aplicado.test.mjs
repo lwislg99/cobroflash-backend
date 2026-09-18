@@ -217,6 +217,14 @@ const APARCADOS = [
       + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
   },
   {
+    texto: '2. Líneas',
+    motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-915d, 18-sep-2026). Era el título del bloque '
+      + 'de líneas del editor. La v3 del editor, APROBADA por el fundador, convierte los bloques en '
+      + 'pasos, y sus títulos se firmaron en SCRUM-915 comentario 15868: este bloque es el paso '
+      + '«Conceptos» (el número lo pinta la hoja de estilos, aparte). NO se desaprueba en el '
+      + 'registro —la firma ocurrió—; ya no tiene dónde pintarse. Registro: `docs/master/SCRUM-915.md`.',
+  },
+  {
     texto: 'Modo no reconocido',
     motivo: 'RESPALDO del modo de emisión (`settingsView.js:213`). Aparcado por la REGLA 26: el '
       + 'texto que explica qué emite una cuenta toca claims fiscales y se responde sólo con el '

@@ -4595,16 +4595,20 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       if (p.resumen) p.resumen.textContent = hecho ? p.texto() : "";
     });
 
-    // Lo elegido en cada fila de Condiciones, en su propia fila.
-    filaCobroValor.textContent = textoDeCobro();
-    const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })
-      .map(function (d) { return d.label; });
-    filaPagosValor.textContent = pagos.length ? pagos.join(" · ") : "—";
-    filaValidezValor.textContent = fechaCorta(validInput.value);
-    filaAjustesValor.textContent = (fieldIvaModo.select.value === "no_incluido" ? "IVA no incluido" : "IVA sumado")
-      + " · "
-      + (fieldDireccionObra.select.value === window.quoteDireccionObra.MODOS.NO_MOSTRAR
-        ? "sin dirección de obra" : "con dirección de obra");
+    // Lo elegido en cada fila de Condiciones, en su propia fila. SÓLO en el presupuesto: el
+    // documento suelto no cuelga Condiciones ni Ajustes, y calcular aquí sus textos sería hacer
+    // pasar por su flujo rótulos que dicen «presupuesto» (lo vigila el censo de SCRUM-601).
+    if (!esDocumentoSuelto) {
+      filaCobroValor.textContent = textoDeCobro();
+      const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })
+        .map(function (d) { return d.label; });
+      filaPagosValor.textContent = pagos.length ? pagos.join(" · ") : "—";
+      filaValidezValor.textContent = fechaCorta(validInput.value);
+      filaAjustesValor.textContent = (fieldIvaModo.select.value === "no_incluido" ? "IVA no incluido" : "IVA sumado")
+        + " · "
+        + (fieldDireccionObra.select.value === window.quoteDireccionObra.MODOS.NO_MOSTRAR
+          ? "sin dirección de obra" : "con dirección de obra");
+    }
 
     // El último paso, en una línea: a quién, cuántos conceptos y (en el presupuesto) cómo se cobra.
     const c = clienteElegido();
