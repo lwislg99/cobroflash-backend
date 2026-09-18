@@ -3524,6 +3524,15 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .jobs-pantalla .jobs-filtro-tecnico-buscar,
 .jobs-pantalla .jobs-tecnicos-resumen { min-height: 44px; }
 
+@media (max-width: 640px) {
+  /* La cabecera de grupo y su salvedad ENVUELVEN en la card. Heredaban `white-space: nowrap` de la
+     tabla y, medido a 390 px (guard G.3), «✅ Terminados — cobra el resto · 4 · 740,00 € por
+     cobrar» se salía 84 px de su caja. La salvedad aprobada ya se cortaba ANTES de este ticket
+     («…y no entran» sin su «en el total.»): mismo arreglo, porque es la misma causa. */
+  .table--trabajos .jobs-grupo-titulo td,
+  .table--trabajos .jobs-grupo-salvedad td { white-space: normal; }
+}
+
 /* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
    Medido en el censo de las cinco listas (8-sep-2026): era la ÚNICA con `.cell-actions` ocupada
    por un enlace a otra pantalla, y la única con CERO acciones en la fila. El enlace al Trabajo
