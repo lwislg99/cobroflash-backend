@@ -318,7 +318,7 @@ papeleo, es el único canal. Cinco pasos, y cada uno con lo que lo haría fallar
    la del área dueña según `dos-equipos.md` §3 (`area-s0` … `area-s5`, `area-j1` … `area-j6`). Si no casa
    con ningún área, **no se abre**: se le pregunta al orquestador. El título empieza por la zona en
    mayúsculas («GASTOS · …»). ✗ Falla: un ticket sin etiqueta de área; o con `sesion-J1`, que es una
-   etiqueta VIEJA de agosto con otro significado (21 tickets la llevan) y no se reutiliza.
+   etiqueta VIEJA de agosto con otro significado (10 tickets la llevan) y no se reutiliza.
 2. **COGER.** Antes de la primera línea, **se mira el ticket**. Si está En curso y es de otro puesto u
    otro equipo, **no se toca** y se avisa al orquestador. Si está libre: **En curso + asignado al JEFE
    del equipo que lo trabaja** (Luis o Javier: las sesiones no tienen cuenta de Jira) + un comentario
