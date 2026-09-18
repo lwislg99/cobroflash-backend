@@ -264,6 +264,20 @@ escribe la S0, y desde ahí son de cada puesto.
   corrieron: 101 tests · 101 pass · 0 fail**; **9 no arrancaron** porque este worktree no tiene
   `node_modules` (`Cannot find package 'typescript'`). Esos 9 no son rojos: son un instrumento que no arrancó, y
   los cubre la suite completa de abajo.
+- **Suite COMPLETA, con turno del orquestador** (13:03Z), en `wt-839f` en detached (`node_modules` propio), sobre
+  `877a7d035aa2af06955a9abb150eb954c3eb0cd9` = esta rama con `origin/main` =
+  `3b53c92fbc278fbe2c66e0b42300860fa21ed6f2` mergeado (ya con 951a). Memoria medida aparte: 6.522 MB libres. Build
+  con salida 0; `FORCE_COLOR` ausente comprobado en el mismo comando; el patrón `'tests/*.test.mjs'` entre comillas
+  simples: **7.707 tests · 7.593 pass · 3 fail · 111 saltados**, y el TAP trae su `# tests 7707`. Los 3 son de
+  `scrum939b` (las skills, que este PR no toca). Los 9 ficheros de docs que no arrancaron arriba corrieron aquí
+  sin un fallo (`scrum387` ×2, `705` ×2, `711`, `753`, `775`, `810b`, `850`, `850b`, comprobados por nombre en el
+  TAP). `npm run guards:entrada` → **26 · 26 · 0**, salida 0.
+- **El merge de 951a** entró sin conflicto de git, pero dejó `docs/master/SCRUM-951.md` con DOS títulos de primer
+  nivel (951a creó el fichero con el suyo; `origin/main` ya los traía así). Se quitó el segundo; las tres
+  secciones (951a, 951b, 951c) siguen enteras. Un merge sin conflictos no es un merge correcto (A4).
+- **Nombres, contra lo que ya está en `main`:** la guía nueva de 951a (`instalacion-maquina-nueva.md`) deja los
+  puestos como variable y usa `jv-jefe` como EJEMPLO de nombre; `dos-equipos.md` fija ahora los valores del
+  equipo de Javier (`jv-orquestador`, `jv-j1` … `jv-j6`), y manda la configuración si declara otros.
 
 ### Lo que NO se ha hecho, y por qué
 
