@@ -174,3 +174,19 @@ export function tituloDeTrabajo(entrada: {
   }
   return cliente || `#${entrada.jobId}`;
 }
+
+/**
+ * SCRUM-917d · el nombre PROPIO del Trabajo, a secas: `Job.titulo` tal cual, o `null` si no lo tiene.
+ *
+ * `tituloDeTrabajo` contesta otra pregunta —«cómo se titula esta fila»— y por eso cae al
+ * presupuesto y al cliente. La lista de Trabajos pinta el cliente en su propia columna, así que con
+ * sólo ese campo no podía saber si «Presupuesto #5 · María López» es un nombre que alguien escribió
+ * o uno derivado, y lo repetía.
+ *
+ * 🔒 EL CRITERIO ES EL MISMO que la primera línea de `tituloDeTrabajo` (`if (entrada.titulo)`): si
+ * éste devuelve texto, `tituloDeTrabajo` devuelve ESE texto. Dos criterios de «tiene nombre» serían
+ * dos pantallas contestando distinto; lo vigila su test.
+ */
+export function tituloPropioDeTrabajo(job: { titulo?: string | null }): string | null {
+  return job.titulo ? job.titulo : null;
+}

@@ -35,6 +35,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
+import { loQueSeLee } from './_cita-declarada.mjs';
+
 // ── Los agentes que en ESTE proyecto pueden autorizar algo ───────────────────────────────
 // Salen de docs/equipo/orquestador.md §1 (el asesor ES el orquestador) y de A7 de
 // docs/equipo/00-normas-comunes.md (vale la del fundador, o la del orquestador por su
@@ -100,6 +102,11 @@ const DESCARTES = [
   // 3. Modo deóntico, condicional o interrogativo: EXIGE una firma, no afirma tenerla.
   ['norma-no-afirmacion', /(?:hace\s+falta|har[aá]\s+falta|hay\s+que|se\s+necesita|necesita|exige|exigir|requiere|requerir|debe(?:r[aá]n?)?|tiene\s+que|tendr[aá]\s+que|se\s+para\b|pedir|se\s+pide|sin\s+(?:la\s+)?firma|sin\s+(?:el\s+)?(?:OK|GO|permiso)|no\s+se\s+(?:toca|hereda|usa|construye|manda|empieza)|nunca|jam[aá]s|prohibid|s[oó]?lo\s+(?:vale|cuenta|se)|si\s+no\b|hasta\s+que|mientras\s+no|\?|¿)/i],
 ];
+// 4. `cita-declarada` (SCRUM-921d): dentro de un banco, la forma sólo existe entre `[[cita]]` y
+//    `[[/cita]]`. No es una expresión sobre la LÍNEA sino sobre su BLOQUE, así que no cabe en la
+//    lista de arriba: vive en `_cita-declarada.mjs` y se aplica en `clasificarLinea`, en el mismo
+//    punto donde se decide si la línea afirma. Se publica con su cuenta, como los otros tres.
+const CITA_DECLARADA = 'cita-declarada';
 
 const RE_JIRA = /\bSCRUM[-\s]?(\d{1,4})\b/gi;
 // Procedencia RASTREABLE, con el criterio que este proyecto YA tiene firmado y en uso
@@ -145,10 +152,10 @@ export function bloqueContiguo(lineas, i) {
 
 /**
  * @param {string} raiz  la raíz del repo
- * @param {{dirs?:string[]}} [opciones]
+ * @param {{dirs?:string[], citas?:boolean}} [opciones]  `citas`: ver `clasificarLinea`.
  * @returns {{poblacion:object, bruto:Array, descartes:Array, candidatos:Array}}
  */
-export function censarFirmas(raiz, { dirs = ['tests', 'src', 'scripts', 'docs'] } = {}) {
+export function censarFirmas(raiz, { dirs = ['tests', 'src', 'scripts', 'docs'], citas = true } = {}) {
   const seguidos = execFileSync('git', ['ls-files', '-z', ...dirs], { cwd: raiz, maxBuffer: 1 << 28 })
     .toString('utf8').split('\0').filter(Boolean);
 
@@ -168,7 +175,7 @@ export function censarFirmas(raiz, { dirs = ['tests', 'src', 'scripts', 'docs'] 
     poblacion.lineasLeidas += lineas.length;
 
     for (let i = 0; i < lineas.length; i++) {
-      const fila = clasificarLinea(lineas[i], { fichero: rel, linea: i + 1, lineas, i });
+      const fila = clasificarLinea(lineas[i], { fichero: rel, linea: i + 1, lineas, i, citas });
       if (!fila) continue;
       bruto.push(fila);
       (fila.motivo ? descartes : candidatos).push(fila);
@@ -184,21 +191,34 @@ export function censarFirmas(raiz, { dirs = ['tests', 'src', 'scripts', 'docs'] 
  * controlan nada: un control que corre por otro camino sólo demuestra que ese otro camino
  * funciona. Por eso esta función se exporta, y por eso el banco le pasa casos conocidos.
  *
+ * `citas: false` lee también lo citado, como antes de SCRUM-921d. Existe para UN uso: que el
+ * banco compare el árbol con y sin la regla y demuestre que sólo cambian los ficheros que llevan
+ * el delimitador. No lo uses para medir.
+ *
  * @returns {null|{fichero:string, linea:number, texto:string, formas:string[], ids:string[], motivo?:string}}
  */
-export function clasificarLinea(linea, { fichero = '(caso)', linea: nLinea = 0, lineas = [linea], i = 0 } = {}) {
+export function clasificarLinea(linea, { fichero = '(caso)', linea: nLinea = 0, lineas = [linea], i = 0, citas = true } = {}) {
   const formas = FORMAS.filter(([, re]) => re.test(linea)).map(([n]) => n);
   if (!formas.length) return null;
 
   const bloque = bloqueContiguo(lineas, i);
+  // SCRUM-921d · Dentro de un banco, lo citado no se lee: ni afirma, ni niega, ni respalda
+  // (`_cita-declarada.mjs`). Sin un par completo en el bloque, `leido` ES el bloque y
+  // `propia` ES la línea, así que todo lo de abajo corre exactamente igual que antes de la regla.
+  const leido = citas ? loQueSeLee(bloque.texto, fichero) : bloque.texto;
+  const propia = leido === bloque.texto ? linea : leido.split('\n')[i - bloque.desde];
+
   const ids = new Set();
-  for (const fuente of [linea, bloque.texto, fichero]) {
+  for (const fuente of [propia, leido, fichero]) {
     for (const m of String(fuente).matchAll(RE_JIRA)) ids.add(`SCRUM-${m[1]}`);
   }
-  const idsEnLaLinea = [...new Set([...linea.matchAll(RE_JIRA)].map((m) => `SCRUM-${m[1]}`))];
+  const idsEnLaLinea = [...new Set([...propia.matchAll(RE_JIRA)].map((m) => `SCRUM-${m[1]}`))];
   // Procedencia = ticket o documento, en el BLOQUE o en el nombre del fichero (SCRUM-387).
-  const procedencia = RE_PROCEDENCIA.test(bloque.texto) || RE_PROCEDENCIA.test(fichero);
-  const motivo = (DESCARTES.find(([, re]) => re.test(linea)) || [])[0];
+  const procedencia = RE_PROCEDENCIA.test(leido) || RE_PROCEDENCIA.test(fichero);
+  // El mismo eje que la norma: lo que no afirma se descarta con su motivo. Si, quitado lo citado,
+  // la línea ya no tiene forma de autorización, lo único que la hacía candidata era la cita.
+  const afirma = propia === linea || FORMAS.some(([, re]) => re.test(propia));
+  const motivo = afirma ? (DESCARTES.find(([, re]) => re.test(propia)) || [])[0] : CITA_DECLARADA;
 
   const fila = {
     fichero, linea: nLinea, texto: linea.trim().slice(0, 300), formas,
@@ -215,4 +235,4 @@ export function porMotivo(descartes) {
 }
 
 export const _formas = FORMAS.map(([n]) => n);
-export const _descartes = DESCARTES.map(([n]) => n);
+export const _descartes = [...DESCARTES.map(([n]) => n), CITA_DECLARADA];

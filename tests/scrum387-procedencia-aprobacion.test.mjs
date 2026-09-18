@@ -32,9 +32,9 @@
 // lenguaje de dominio y no tiene nada que ver. Se extraen con el escáner de TypeScript.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import path from 'node:path';
-import ts from 'typescript';
+
+import { bloquesDeComentario, censarProcedencia } from './_procedencia-aprobacion.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIRS = ['src', 'public'];
@@ -45,94 +45,25 @@ const MARCA = /aprobad[oa]s?\s+por\s+el\s+fundador/i;
 // Procedencia RASTREABLE: un ticket o un documento. Una fecha sola no dice dónde mirar.
 const PROCEDENCIA = /SCRUM-\d+|docs\/[\w./ -]+/i;
 
-function ficheros(dir) {
-  const out = [];
-  (function andar(d) {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      const p = path.join(d, e.name);
-      if (e.isDirectory()) { if (e.name !== 'node_modules') andar(p); }
-      else if (/\.(ts|js|mjs)$/.test(e.name)) out.push(p);
-    }
-  })(path.join(RAIZ, dir));
-  return out;
-}
-
 /**
- * Los COMENTARIOS de un fuente, agrupados en bloques: `//` seguidos cuentan como uno solo.
+ * 🔴 EL CENSO VIVE AHORA EN `_procedencia-aprobacion.mjs` (SCRUM-921c) — y este fichero NO
+ * cambia de comportamiento: mismas `DIRS`, misma `MARCA`, misma `PROCEDENCIA`, mismo 17.
  *
- * ─────────────────────────────────────────────────────────────────────────────────────────
- * 🔴 SE LEEN CON EL PARSER, NO CON `createScanner` A PELO — y no es una preferencia de estilo.
+ * Se extrajo porque SCRUM-921 midió que el caso de una autorización inventada se le escapó a
+ * este guard por DOS ejes A LA VEZ —vivía en `tests/`, que no recorre, y decía «el fundador
+ * DECIDE», que su marca no reconoce— y la fase c amplía los dos. Copiar este censo para
+ * tocarle los parámetros a la copia habría dejado dos censos del mismo hecho que se
+ * desincronizan en cuanto uno mejore, que es la familia de defectos que esta casa persigue.
  *
- * SCRUM-814 (7-sep-2026) lo destapó al meter un `` tx.$executeRaw`… ${x} …` `` en
- * `quotesAdmin.routes.ts`. Un escáner suelto no sabe de gramática: ante un template literal CON
- * SUSTITUCIONES hace falta `reScanTemplateToken`, y sin eso se descarrila y deja de reconocer
- * los tokens siguientes. Medido sobre ese mismo fichero:
+ * Lo que lee (comentarios con el parser, no con `createScanner` a pelo) y por qué, está en la
+ * cabecera de ese módulo, con la medición de SCRUM-814 que lo obligó.
  *
- *     sin el template  → 143 comentarios vistos, 1 con marca de aprobación
- *     con el template  →  72 comentarios vistos, 0 con marca      ← CIEGO
- *
- * O sea: **toda marca de aprobación situada DESPUÉS del primer template con `${}` de su fichero
- * era invisible para este censo** — y no sólo la de SCRUM-814: `invoiceNumber.service.ts` ya
- * tenía uno. El modo de fallo es el peor posible: el número BAJA, y una bajada se lee como una
- * mejora. Lo cazó la mitad del trinquete que vigila las BAJADAS, no la que vigila las subidas —
- * que es exactamente para lo que esa mitad existe.
- *
- * El parser sí conoce la gramática. Se recogen los comentarios adheridos a cada nodo (delante y
- * detrás), deduplicando por posición.
+ *     🔒 Un solo censo, dos preguntas.
  */
-function bloquesDeComentario(codigo, nombre) {
-  const sf = ts.createSourceFile(nombre, codigo, ts.ScriptTarget.Latest, true);
-  const porInicio = new Map();
-  const recoger = (rangos) => {
-    for (const r of rangos ?? []) {
-      if (porInicio.has(r.pos)) continue;
-      porInicio.set(r.pos, {
-        texto: codigo.slice(r.pos, r.end),
-        inicio: r.pos,
-        fin: r.end,
-        suelto: r.kind === ts.SyntaxKind.SingleLineCommentTrivia,
-      });
-    }
-  };
-  const visitar = (n) => {
-    recoger(ts.getLeadingCommentRanges(codigo, n.getFullStart()));
-    recoger(ts.getTrailingCommentRanges(codigo, n.getEnd()));
-    // 🔴 sin `return`: `forEachChild` corta el recorrido en cuanto el callback devuelve truthy.
-    ts.forEachChild(n, (h) => { visitar(h); });
-  };
-  visitar(sf);
-  const trozos = [...porInicio.values()].sort((a, b) => a.inicio - b.inicio);
-  // Unir los `//` consecutivos: la marca y su `(SCRUM-264)` suelen ir en líneas distintas del
-  // mismo comentario, y separarlas convertiría una procedencia válida en un falso positivo.
-  const bloques = [];
-  for (const t of trozos) {
-    const ult = bloques[bloques.length - 1];
-    const entre = ult ? codigo.slice(ult.fin, t.inicio) : null;
-    if (ult && ult.suelto && t.suelto && /^\s*$/.test(entre) && (entre.match(/\n/g) || []).length <= 1) {
-      ult.texto += '\n' + t.texto; ult.fin = t.fin;
-    } else {
-      bloques.push({ ...t, fichero: nombre, linea: codigo.slice(0, t.inicio).split('\n').length });
-    }
-  }
-  return bloques;
+function censar() {
+  return censarProcedencia(RAIZ, { dirs: DIRS, marca: MARCA, procedencia: PROCEDENCIA });
 }
 
-function censar() {
-  const conProcedencia = [];
-  const sinProcedencia = [];
-  for (const dir of DIRS) {
-    for (const f of ficheros(dir)) {
-      const codigo = fs.readFileSync(f, 'utf8');
-      if (!MARCA.test(codigo)) continue; // atajo barato; el escáner solo corre donde puede haber algo
-      for (const b of bloquesDeComentario(codigo, path.relative(RAIZ, f).replace(/\\/g, '/'))) {
-        if (!MARCA.test(b.texto)) continue;
-        const donde = `${b.fichero}:${b.linea}`;
-        if (PROCEDENCIA.test(b.texto)) conProcedencia.push(donde); else sinProcedencia.push(donde);
-      }
-    }
-  }
-  return { conProcedencia, sinProcedencia };
-}
 
 // ── EL TRINQUETE ─────────────────────────────────────────────────────────────────────────────
 // Marcas de aprobación SIN procedencia rastreable que había cuando se encendió el guard.
