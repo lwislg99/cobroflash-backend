@@ -155,8 +155,14 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // Ajustes en la página) e incluye el inventario de hoy como control positivo. Sube aquí porque lo
   // que se juzga sólo existe con el CSS resuelto. Comprobado en rojo contra `c60008bd` (18-sep-2026):
   // todos los casos con todos los pasos a la vez. El número de abajo se midió corriendo este test.
-  assert.equal(fuera.length, 26,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ 26 → ${fuera.length}.\n`
+  // SCRUM-937b · entra `guard:nif-del-gasto`. Teclea en el NIF del modal del gasto con y sin
+  // proveedor y guarda contra un servidor cuyo veredicto sale de `queFueDelNif` compilado. Sube aquí
+  // porque el banco no frena el teclado en un campo de solo lectura ni pinta el aviso flotante.
+  // Comprobado en rojo contra `34d06bb4` (18-sep-2026): 3 de 4 casos, con el positivo en verde.
+  // ⚠️ SCRUM-947 (rama `scrum-947-foto-del-gasto`) mete OTRO guard aquí a la vez: la que entre
+  // segunda SUMA los dos comentarios y vuelve a MEDIR el número corriendo este test.
+  assert.equal(fuera.length, 27,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ 27 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
