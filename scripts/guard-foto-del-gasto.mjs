@@ -57,6 +57,7 @@ const CSS = ['/tokens.css', '/dashboard/css/styles.css'];
 const CASOS = [
   { id: 'A · foto de 3–5 MB apaisada', foto: { ancho: 4000, alto: 3000 }, espera: 'reducida' },
   { id: 'B · foto de 3–5 MB vertical', foto: { ancho: 3000, alto: 4000 }, espera: 'reducida' },
+  { id: 'F · foto con mucho detalle: ni a 2000 px cabe a la primera', foto: { ancho: 2400, alto: 1800, ruidoFino: true, calidad: 0.5 }, espera: 'reducida' },
   { id: 'D · POSITIVO · foto pequeña que ya cabía', foto: { ancho: 800, alto: 600, pequena: true }, espera: 'intacta' },
   { id: 'E · NEGATIVO · fichero grande que no se abre', foto: { roto: true }, espera: 'aviso' },
 ];
@@ -118,6 +119,19 @@ const PONER_FOTO = new Function('f', `
       var basura = new Uint8Array(2600000);
       var s = 7; for (var i = 0; i < basura.length; i++) { s = (s * 1103515245 + 12345) >>> 0; basura[i] = s >>> 24; }
       file = new File([basura], 'ticket.heic', { type: 'image/heic' });
+    } else if (f.ruidoFino) {
+      // Detalle por píxel: ni a 2000 px cabe a la primera. Es el caso que obliga a bajar más.
+      var cf = document.createElement('canvas'); cf.width = f.ancho; cf.height = f.alto;
+      var xf = cf.getContext('2d');
+      var datos = xf.createImageData(f.ancho, f.alto), d = datos.data, s3 = 5;
+      for (var p = 0; p < d.length; p += 4) {
+        s3 = (s3 * 1103515245 + 12345) >>> 0; d[p] = s3 >>> 24;
+        s3 = (s3 * 1103515245 + 12345) >>> 0; d[p + 1] = s3 >>> 24;
+        s3 = (s3 * 1103515245 + 12345) >>> 0; d[p + 2] = s3 >>> 24; d[p + 3] = 255;
+      }
+      xf.putImageData(datos, 0, 0);
+      var bf = await new Promise(function (ok) { cf.toBlob(ok, 'image/jpeg', f.calidad); });
+      file = new File([bf], 'IMG_0948.jpg', { type: 'image/jpeg' });
     } else {
       var c = document.createElement('canvas'); c.width = f.ancho; c.height = f.alto;
       var x = c.getContext('2d');
@@ -214,7 +228,11 @@ try {
       if (fatal) { ciegos.push(`${caso.id} → ${fatal}`); continue; }
       const foto = await pag.evaluate(PONER_FOTO, caso.foto);
       if (foto.error) { ciegos.push(`${caso.id} → ${foto.error}`); continue; }
-      if (!caso.foto.roto && !caso.foto.pequena && (foto.bytes < 3e6 || foto.bytes > 5.2e6)) {
+      if (caso.foto.ruidoFino && foto.dataUri.length <= 2 * 1048576) {
+        ciegos.push(`${caso.id} → la foto de detalle pesa ${MB(foto.bytes)}: hoy CABRÍA, así que no obliga a reducir`);
+        continue;
+      }
+      if (!caso.foto.roto && !caso.foto.pequena && !caso.foto.ruidoFino && (foto.bytes < 3e6 || foto.bytes > 5.2e6)) {
         ciegos.push(`${caso.id} → la foto sintética pesa ${MB(foto.bytes)}: no es una foto de móvil de 3–5 MB`);
         continue;
       }
