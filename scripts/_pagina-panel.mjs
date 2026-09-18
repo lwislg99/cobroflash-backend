@@ -175,7 +175,7 @@ export async function paginaDeClientes(raiz, { extra = '', seleccionar = true } 
  * cumplimiento. Por eso se exige un mínimo de nodos y, si no llega, se devuelve `aviso` y decide
  * quien llama. Es la misma lección que dejó escrita SCRUM-787 con sus ocho vistas sin fixture.
  */
-export async function paginaDeVista(raiz, nombreFn, { datos = null, minimoNodos = 20, extra = '', args = [] } = {}) {
+export async function paginaDeVista(raiz, nombreFn, { datos = null, minimoNodos = 20, extra = '', args = [], preparar = null } = {}) {
   let r;
   try {
     // SCRUM-795 · `args` son los argumentos que el producto le pasa a la vista (la ficha 360 va con
@@ -189,5 +189,8 @@ export async function paginaDeVista(raiz, nombreFn, { datos = null, minimoNodos 
   if (nodos < minimoNodos) {
     return { html: null, aviso: `${nombreFn} montó ${nodos} nodos (mínimo ${minimoNodos}): está a medias con estos datos` };
   }
+  // SCRUM-915d · `preparar` deja al que llama poner la superficie en el estado que quiere medir
+  // ANTES de serializar (p. ej. el editor con sus pasos abiertos). Sin `preparar`, igual que siempre.
+  if (typeof preparar === 'function') preparar(r.contenedor);
   return { html: serializar(r.contenedor) + extra, aviso: null, nodos };
 }

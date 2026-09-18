@@ -334,13 +334,20 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // `.quote-total-kpi` (SPAN 3 · STRONG 3), idénticas a la última. Y una segunda sonda sin
   // mini-DOM, Edge pintando la vista con los mismos scripts y datos: 227 elementos, que son estos
   // 237 menos los 10 `#text` del banco, y la diferencia por etiqueta era exactamente esa.
-  assert.equal(nodos.length, 237,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 237 `
+  // 🔴 SCRUM-915d · 18-sep-2026 · 237 → 282, y NO es del banco: la rama no toca
+  // `tests/_banco-vistas.mjs` (comprobado con `git diff origin/main...HEAD --stat`). Son los 45
+  // nodos del andamio de los pasos del editor, IDENTIFICADOS POR IDENTIDAD en el bloque SCRUM-915d
+  // de `scrum698-vistas-que-no-se-miden.test.mjs` (Cliente 6 · Conceptos 3 · pie de totales 4 ·
+  // Condiciones 21 · Ajustes 6 · Revisar 5), que mide este mismo árbol con el mismo `todos` y da
+  // 282. Este fichero es la segunda copia de esa cifra y se quedó fuera del subconjunto de la
+  // primera pasada: lo cazó la re-pasada tras mergear main, no el diseño.
+  assert.equal(nodos.length, 282,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 282 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
     + '− los 3 avisos «Final: …» retirados por SCRUM-669, − las 24 pintadas viejas que el banco '
-    + 'apilaba hasta SCRUM-897). Si no has tocado el banco y esto se '
+    + 'apilaba hasta SCRUM-897, + los 45 del andamio de los pasos de SCRUM-915d). Si no has tocado el banco y esto se '
     + 'mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');

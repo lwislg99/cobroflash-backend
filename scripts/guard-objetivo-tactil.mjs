@@ -89,6 +89,17 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL, MINIMO_ESCRITORIO, CORTE_M
 // `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
 // diagnostico-dependencias.
 import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
+import { todos } from '../tests/_banco-vistas.mjs';
+
+/** SCRUM-915d · abre, sólo por clases de estado, todos los pasos del editor y la fila de Ajustes. */
+function abrirTodosLosPasos(contenedor) {
+  for (const n of todos(contenedor)) {
+    const c = String(n.className || '');
+    if (/\bquote-paso(-parte)?\b/.test(c)) n.className = c.replace(/\bis-cerrado\b/, 'is-abierto');
+    if (/\bquote-(ajustes|fila)\b/.test(n.className)) n.className = n.className.replace(/\bis-plegado\b/, 'is-desplegado');
+    if (/\bquote-fila__detalle\b/.test(c)) n.hidden = false;
+  }
+}
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -259,8 +270,15 @@ const SUPERFICIES_791 = [
   //     «💾 Guardar como plantilla»   BUTTON.btn-ghost.btn-sm.quote-header-btn  36,7 px a 929 · cumple a 390
   // Siguen los cuatro que son cortos TAMBIÉN en móvil: «✨ Sugerir con IA», «📋 Usar plantilla»,
   // «+ Añadir descuento» y las casillas de 17 px. Nada de la pantalla ha dejado de pintarse.
+  // 🔴 SCRUM-915d · EL EDITOR SE MIDE CON TODOS SUS PASOS ABIERTOS, y es una decisión declarada.
+  // Desde los pasos (v3), al entrar sólo se ve el paso Cliente: medido tal cual, este guard veía 5
+  // pulsables y se declaraba CIEGO (sus cortos declarados viven en Conceptos y en Condiciones). El
+  // tamaño de un botón no depende de qué paso esté abierto, así que `abrirTodosLosPasos` cambia
+  // SÓLO las clases de estado antes de serializar y la población vuelve a ser la de siempre. Lo que
+  // esto provoca —la visibilidad— no es lo que juzga; que los pasos se abran y se cierren como deben
+  // lo juzga `guard:pasos-del-editor`.
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 4,
-    origen: 'SCRUM-711 (15-sep-2026, con el mínimo de cada ancho)' },
+    origen: 'SCRUM-711 (15-sep-2026, con el mínimo de cada ancho)', preparar: abrirTodosLosPasos },
   // 🔴 SCRUM-848 · `datos` NO es una excepción nueva ni un número tocado: es la SUPERFICIE.
   //
   // Sin él, el banco montaba esta ficha con `{}` — un Trabajo SIN `status`, que el producto no
@@ -298,7 +316,7 @@ const SUPERFICIES_791 = [
     origen: 'SCRUM-795 (7-sep-2026, con la lista de excepciones VACÍA)' },
 ];
 for (const s of SUPERFICIES_791) {
-  const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10 });
+  const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10, preparar: s.preparar || null });
   s.aviso = p.aviso;
   s.html = p.html && envolver(p.html);
   s.htmlSonda = p.html && envolver(p.html + SONDA_HTML + SONDAS_UMBRAL_HTML);
