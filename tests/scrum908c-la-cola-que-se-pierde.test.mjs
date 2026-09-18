@@ -242,8 +242,12 @@ test('SCRUM-908c · 🔴 SIN ARREGLO: con el padre parado, en POSIX la cola SE P
   } else {
     // Windows: la tubería es síncrona, el hijo se bloquea y no puede salir con datos pendientes.
     // Es la razón medida de que la muda no se reprodujera nunca en local (0 de 91).
+    // ⚠️ Sólo vale porque el SUELO garantiza que el hijo escribe MÁS de lo que cabe en la tubería.
+    // MEDIDO con un relleno de 3.000 (35 KB en total): el hijo sale durante la pausa porque todo
+    // cabe, y no se pierde nada. Por eso el mensaje nombra las dos causas posibles.
     assert.equal(r.salioDuranteLaPausa, false,
-      `🔴 en Windows el hijo salió con el padre parado: la tubería no era síncrona. ${resumen(r)}`);
+      '🔴 en Windows el hijo salió con el padre parado: o la tubería no era síncrona, o el caso ya '
+      + `no la llena (mira el SUELO). ${resumen(r)}`);
     assert.deepEqual([...vistos].sort(), [...TODOS].sort(), `🔴 en Windows se perdió la cola. ${resumen(r)}`);
   }
 });

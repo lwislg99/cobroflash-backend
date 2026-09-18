@@ -1,0 +1,28 @@
+POBLACION bytes-stdout=1039081 mensajes=110 sobrante=0 basura=16 status=1
+test:pass=12 test:fail=0
+    7531     386B acum=   7917 test:pass SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala
+    8846     340B acum=   9186 test:pass SCRUM-267 · ② el barrido encuentra entradas de verdad
+    9460  175600B acum= 185060 undefined undefined
+  185320  175587B acum= 360907 undefined undefined
+  362046     410B acum= 362456 test:pass SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien
+  363559     398B acum= 363957 test:pass SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados
+  364294   26420B acum= 390714 undefined undefined
+  391037   26407B acum= 417444 undefined undefined
+  424963   96094B acum= 521057 undefined undefined
+  521297   96081B acum= 617378 undefined undefined
+  618553     422B acum= 618975 test:pass SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard
+  619769     295B acum= 620064 test:pass SCRUM-267 · el formato declarado en el README incluye el ancla
+  621167     398B acum= 621565 test:pass SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada
+  621864    8559B acum= 630423 undefined undefined
+  630708    8546B acum= 639254 undefined undefined
+  640285     374B acum= 640659 test:pass SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una
+  649679     320B acum= 649999 test:pass SCRUM-859 · SUELO: hay exentas que examinar y entradas contra las que casarlas
+  650339  163822B acum= 814161 undefined undefined
+  814487  163809B acum= 978296 undefined undefined
+  978628   26909B acum=1005537 undefined undefined
+ 1005855   26896B acum=1032751 undefined undefined
+ 1033827     389B acum=1034216 test:pass SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se habrían desplazado
+ 1035202     359B acum=1035561 test:pass SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO
+ 1036637     389B acum=1037026 test:pass SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hace CAER el guard
+bytes por tipo: {"test:enqueue":6464,"test:dequeue":6464,"test:complete":4636,"test:start":6184,"test:pass":4480,"undefined":1008798,"test:plan":172,"test:diagnostic":1620,"test:summary":263}
+EXIT=0

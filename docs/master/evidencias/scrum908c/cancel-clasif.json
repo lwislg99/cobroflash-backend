@@ -1,0 +1,898 @@
+[
+ {
+  "job": 105628680787,
+  "run": 35353877511,
+  "creado": "2026-09-18T14:03:25Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105626162458,
+  "run": 35353225648,
+  "creado": "2026-09-18T13:56:59Z",
+  "rama": "scrum-951d-ensayo-instalacion",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105626055158,
+  "run": 35353194531,
+  "creado": "2026-09-18T13:56:40Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 439
+ },
+ {
+  "job": 105624048085,
+  "run": 35352593358,
+  "creado": "2026-09-18T13:50:33Z",
+  "rama": "scrum-951e-navegador",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105621833727,
+  "run": 35351918095,
+  "creado": "2026-09-18T13:43:43Z",
+  "rama": "scrum-951d-ensayo-instalacion",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105614867008,
+  "run": 35349745102,
+  "creado": "2026-09-18T13:21:31Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105613172708,
+  "run": 35349260260,
+  "creado": "2026-09-18T13:16:31Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 315
+ },
+ {
+  "job": 105612631004,
+  "run": 35349096274,
+  "creado": "2026-09-18T13:14:49Z",
+  "rama": "scrum-937b-nif-en-el-modal",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105608576690,
+  "run": 35347817148,
+  "creado": "2026-09-18T13:01:32Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105608048574,
+  "run": 35347692660,
+  "creado": "2026-09-18T13:00:17Z",
+  "rama": "scrum-937b-nif-en-el-modal",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105606730250,
+  "run": 35347289902,
+  "creado": "2026-09-18T12:55:56Z",
+  "rama": "scrum-947-foto-del-gasto",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105606260541,
+  "run": 35347134707,
+  "creado": "2026-09-18T12:54:08Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 457
+ },
+ {
+  "job": 105604176189,
+  "run": 35346493876,
+  "creado": "2026-09-18T12:46:51Z",
+  "rama": "scrum-951a-equipo-configurable",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105603142566,
+  "run": 35346129010,
+  "creado": "2026-09-18T12:42:51Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105601923958,
+  "run": 35345789060,
+  "creado": "2026-09-18T12:38:59Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 247
+ },
+ {
+  "job": 105597784039,
+  "run": 35344492403,
+  "creado": "2026-09-18T12:24:28Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105596308319,
+  "run": 35344032316,
+  "creado": "2026-09-18T12:19:15Z",
+  "rama": "scrum-912-leer-ticket-gasto",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105591897142,
+  "run": 35342656588,
+  "creado": "2026-09-18T12:03:09Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105589828567,
+  "run": 35342013861,
+  "creado": "2026-09-18T11:55:26Z",
+  "rama": "scrum-915d-pasos-del-editor",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105588404863,
+  "run": 35341564195,
+  "creado": "2026-09-18T11:49:54Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105586471275,
+  "run": 35340947864,
+  "creado": "2026-09-18T11:42:22Z",
+  "rama": "scrum-899-aviso-de-uso",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105554218060,
+  "run": 35330729222,
+  "creado": "2026-09-18T09:40:09Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105551258677,
+  "run": 35329797196,
+  "creado": "2026-09-18T09:29:27Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105549278916,
+  "run": 35329174740,
+  "creado": "2026-09-18T09:22:15Z",
+  "rama": "scrum-938b-banco-fabricado",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105548082735,
+  "run": 35328803518,
+  "creado": "2026-09-18T09:18:00Z",
+  "rama": "scrum-949-el-suelo-como-cociente",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105548075086,
+  "run": 35328773551,
+  "creado": "2026-09-18T09:17:39Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105547069721,
+  "run": 35328454927,
+  "creado": "2026-09-18T09:13:58Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 211
+ },
+ {
+  "job": 105545580743,
+  "run": 35328022896,
+  "creado": "2026-09-18T09:09:03Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 307
+ },
+ {
+  "job": 105544944848,
+  "run": 35327827131,
+  "creado": "2026-09-18T09:06:48Z",
+  "rama": "scrum-921d-la-cita-no-afirma",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105543934658,
+  "run": 35327516662,
+  "creado": "2026-09-18T09:03:16Z",
+  "rama": "scrum-939b-el-trinquete-que-solo-baja",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105537614433,
+  "run": 35325542899,
+  "creado": "2026-09-18T08:40:11Z",
+  "rama": "scrum-933-el-caso-de-la-segunda-mutacion",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105531905236,
+  "run": 35323744584,
+  "creado": "2026-09-18T08:18:55Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 611
+ },
+ {
+  "job": 105529929271,
+  "run": 35323127954,
+  "creado": "2026-09-18T08:11:37Z",
+  "rama": "scrum-921c-el-guard-ampliado",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105522369232,
+  "run": 35320715053,
+  "creado": "2026-09-18T07:42:22Z",
+  "rama": "scrum-917d-titulo-propio-en-la-lista",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105521500979,
+  "run": 35320407064,
+  "creado": "2026-09-18T07:38:37Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105520662089,
+  "run": 35320164404,
+  "creado": "2026-09-18T07:35:34Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 194
+ },
+ {
+  "job": 105519940901,
+  "run": 35319928416,
+  "creado": "2026-09-18T07:32:42Z",
+  "rama": "scrum-937-el-nif-no-se-tira-en-silencio",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105518892316,
+  "run": 35319589882,
+  "creado": "2026-09-18T07:28:32Z",
+  "rama": "scrum-946-censo-de-huerfanos",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105514967066,
+  "run": 35318358502,
+  "creado": "2026-09-18T07:12:54Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 72
+ },
+ {
+  "job": 105513491149,
+  "run": 35317893317,
+  "creado": "2026-09-18T07:06:51Z",
+  "rama": "scrum-931-un-solo-importe-de-plantilla",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105512911119,
+  "run": 35317708289,
+  "creado": "2026-09-18T07:04:25Z",
+  "rama": "scrum-929-el-total-sin-iva",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105510441572,
+  "run": 35316880391,
+  "creado": "2026-09-18T06:53:38Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 411
+ },
+ {
+  "job": 105510314994,
+  "run": 35316865394,
+  "creado": "2026-09-18T06:53:26Z",
+  "rama": "scrum-945-node-p-sin-color",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105509721712,
+  "run": 35316651405,
+  "creado": "2026-09-18T06:50:32Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 182
+ },
+ {
+  "job": 105509518874,
+  "run": 35316606974,
+  "creado": "2026-09-18T06:49:58Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 36
+ },
+ {
+  "job": 105508964070,
+  "run": 35316429879,
+  "creado": "2026-09-18T06:47:32Z",
+  "rama": "scrum-932-turno-sin-credencial",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105507979280,
+  "run": 35316107622,
+  "creado": "2026-09-18T06:43:13Z",
+  "rama": "scrum-941-normas-a22-y-suelos",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105507826592,
+  "run": 35316054269,
+  "creado": "2026-09-18T06:42:32Z",
+  "rama": "scrum-909-rotulos-que-se-pisan",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105390673348,
+  "run": 35277159315,
+  "creado": "2026-09-17T21:31:33Z",
+  "rama": "scrum-921c-el-guard-ampliado",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105388650261,
+  "run": 35276609785,
+  "creado": "2026-09-17T21:25:47Z",
+  "rama": "scrum-921c-el-guard-ampliado",
+  "clase": "concurrencia",
+  "s": 373
+ },
+ {
+  "job": 105387489187,
+  "run": 35276245269,
+  "creado": "2026-09-17T21:21:58Z",
+  "rama": "scrum-940-suelos-que-no-pueden-saltar",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105384335457,
+  "run": 35275261486,
+  "creado": "2026-09-17T21:11:30Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105383909417,
+  "run": 35275039004,
+  "creado": "2026-09-17T21:09:10Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 73
+ },
+ {
+  "job": 105382991367,
+  "run": 35274857673,
+  "creado": "2026-09-17T21:07:15Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 120
+ },
+ {
+  "job": 105382139974,
+  "run": 35274641738,
+  "creado": "2026-09-17T21:05:02Z",
+  "rama": "scrum-921c-el-guard-ampliado",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105381893911,
+  "run": 35274564508,
+  "creado": "2026-09-17T21:04:16Z",
+  "rama": "scrum-938-la-lista-como-fixture",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105381105462,
+  "run": 35274324946,
+  "creado": "2026-09-17T21:01:55Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 337
+ },
+ {
+  "job": 105378738038,
+  "run": 35273617301,
+  "creado": "2026-09-17T20:54:39Z",
+  "rama": "scrum-812c-los-suelos-muertos",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105375265801,
+  "run": 35272503163,
+  "creado": "2026-09-17T20:43:13Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105374312121,
+  "run": 35272280938,
+  "creado": "2026-09-17T20:41:02Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 165
+ },
+ {
+  "job": 105372732011,
+  "run": 35271802026,
+  "creado": "2026-09-17T20:36:14Z",
+  "rama": "scrum-927b-contar-no-es-avisar",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105371905085,
+  "run": 35271496052,
+  "creado": "2026-09-17T20:33:13Z",
+  "rama": "scrum-773b-el-backfill-en-seco",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105369774069,
+  "run": 35270928164,
+  "creado": "2026-09-17T20:27:38Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105369590405,
+  "run": 35270747403,
+  "creado": "2026-09-17T20:25:49Z",
+  "rama": "scrum-773b-el-backfill-en-seco",
+  "clase": "concurrencia",
+  "s": 390
+ },
+ {
+  "job": 105368137187,
+  "run": 35270449835,
+  "creado": "2026-09-17T20:22:51Z",
+  "rama": "scrum-773b-el-backfill-en-seco",
+  "clase": "concurrencia",
+  "s": 232
+ },
+ {
+  "job": 105367318697,
+  "run": 35270205450,
+  "creado": "2026-09-17T20:20:24Z",
+  "rama": "scrum-936",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105366837534,
+  "run": 35270060017,
+  "creado": "2026-09-17T20:18:58Z",
+  "rama": "scrum-909-rotulos-que-se-pisan",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105364363752,
+  "run": 35269311406,
+  "creado": "2026-09-17T20:11:29Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 651
+ },
+ {
+  "job": 105361885482,
+  "run": 35268588094,
+  "creado": "2026-09-17T20:04:09Z",
+  "rama": "scrum-928c-el-paso-que-hereda-el-color",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105361751319,
+  "run": 35268461610,
+  "creado": "2026-09-17T20:02:53Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 465
+ },
+ {
+  "job": 105360783981,
+  "run": 35268227277,
+  "creado": "2026-09-17T20:00:32Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 140
+ },
+ {
+  "job": 105359075511,
+  "run": 35267644183,
+  "creado": "2026-09-17T19:54:29Z",
+  "rama": "scrum-917-prototipo",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105358342897,
+  "run": 35267538111,
+  "creado": "2026-09-17T19:53:23Z",
+  "rama": "scrum-899-lanzador-relevar-contexto",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105357735522,
+  "run": 35267357921,
+  "creado": "2026-09-17T19:51:34Z",
+  "rama": "scrum-917-prototipo",
+  "clase": "concurrencia",
+  "s": 239
+ },
+ {
+  "job": 105357399975,
+  "run": 35267115142,
+  "creado": "2026-09-17T19:49:05Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 616
+ },
+ {
+  "job": 105355650997,
+  "run": 35266634799,
+  "creado": "2026-09-17T19:44:13Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 250
+ },
+ {
+  "job": 105354540751,
+  "run": 35266393999,
+  "creado": "2026-09-17T19:41:42Z",
+  "rama": "scrum-906c-holded-dentro-quipu",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105352995245,
+  "run": 35265933469,
+  "creado": "2026-09-17T19:36:59Z",
+  "rama": "scrum-917-prototipo",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105352946364,
+  "run": 35265919378,
+  "creado": "2026-09-17T19:36:51Z",
+  "rama": "scrum-907b-evidencias-staging",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105352295391,
+  "run": 35265720755,
+  "creado": "2026-09-17T19:34:49Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 614
+ },
+ {
+  "job": 105351740266,
+  "run": 35265515223,
+  "creado": "2026-09-17T19:32:44Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 89
+ },
+ {
+  "job": 105349196831,
+  "run": 35264809742,
+  "creado": "2026-09-17T19:25:35Z",
+  "rama": "scrum-927-censos-que-no-corre-nadie",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105348297138,
+  "run": 35264455851,
+  "creado": "2026-09-17T19:22:04Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 615
+ },
+ {
+  "job": 105347309008,
+  "run": 35264098254,
+  "creado": "2026-09-17T19:18:27Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 165
+ },
+ {
+  "job": 105345043901,
+  "run": 35263481077,
+  "creado": "2026-09-17T19:12:23Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 390
+ },
+ {
+  "job": 105344091285,
+  "run": 35263159564,
+  "creado": "2026-09-17T19:09:08Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 164
+ },
+ {
+  "job": 105343532738,
+  "run": 35263082794,
+  "creado": "2026-09-17T19:08:21Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 19
+ },
+ {
+  "job": 105342264310,
+  "run": 35262750205,
+  "creado": "2026-09-17T19:05:04Z",
+  "rama": "scrum-786",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105342564703,
+  "run": 35262716707,
+  "creado": "2026-09-17T19:04:44Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 166
+ },
+ {
+  "job": 105341846164,
+  "run": 35262583380,
+  "creado": "2026-09-17T19:03:28Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 89
+ },
+ {
+  "job": 105341343816,
+  "run": 35262472982,
+  "creado": "2026-09-17T19:02:23Z",
+  "rama": "scrum-928-guards-entrada-color",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105341204998,
+  "run": 35262430430,
+  "creado": "2026-09-17T19:01:59Z",
+  "rama": "scrum-921b-las-27-contra-jira",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105339801539,
+  "run": 35262009624,
+  "creado": "2026-09-17T18:57:54Z",
+  "rama": "scrum-911-mantenimientos-encender",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105340085680,
+  "run": 35262002747,
+  "creado": "2026-09-17T18:57:49Z",
+  "rama": "scrum-915c-prototipo-v3",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105339454517,
+  "run": 35261908247,
+  "creado": "2026-09-17T18:56:52Z",
+  "rama": "scrum-811b-la-skill-que-nadie-carga",
+  "clase": "timeout",
+  "s": 617
+ },
+ {
+  "job": 105339174310,
+  "run": 35261824913,
+  "creado": "2026-09-17T18:56:02Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 465
+ },
+ {
+  "job": 105338862618,
+  "run": 35261731666,
+  "creado": "2026-09-17T18:55:08Z",
+  "rama": "scrum-907-cobrado-de-mas",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105338275888,
+  "run": 35261555729,
+  "creado": "2026-09-17T18:53:22Z",
+  "rama": "scrum-915c-prototipo-v3",
+  "clase": "concurrencia",
+  "s": 315
+ },
+ {
+  "job": 105336765441,
+  "run": 35261110268,
+  "creado": "2026-09-17T18:48:53Z",
+  "rama": "scrum-858c-el-cierre-con-indice",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105334768465,
+  "run": 35260515656,
+  "creado": "2026-09-17T18:43:05Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 91
+ },
+ {
+  "job": 105332265868,
+  "run": 35259770110,
+  "creado": "2026-09-17T18:35:37Z",
+  "rama": "scrum-919-cola-al-volver-la-red",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105329711852,
+  "run": 35258955096,
+  "creado": "2026-09-17T18:27:42Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 45
+ },
+ {
+  "job": 105329152956,
+  "run": 35258703527,
+  "creado": "2026-09-17T18:25:12Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 90
+ },
+ {
+  "job": 105326988364,
+  "run": 35258191574,
+  "creado": "2026-09-17T18:20:10Z",
+  "rama": "scrum-925",
+  "clase": "timeout",
+  "s": 616
+ },
+ {
+  "job": 105326911795,
+  "run": 35258065503,
+  "creado": "2026-09-17T18:18:55Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 390
+ },
+ {
+  "job": 105326088109,
+  "run": 35257924820,
+  "creado": "2026-09-17T18:17:31Z",
+  "rama": "scrum-921-censo-firmas-autorizacion",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105325944052,
+  "run": 35257881481,
+  "creado": "2026-09-17T18:17:06Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 165
+ },
+ {
+  "job": 105323395530,
+  "run": 35257121948,
+  "creado": "2026-09-17T18:09:44Z",
+  "rama": "scrum-908b-quien-era-el-mudo",
+  "clase": "timeout",
+  "s": 618
+ },
+ {
+  "job": 105287244575,
+  "run": 35246168583,
+  "creado": "2026-09-17T16:22:23Z",
+  "rama": "main",
+  "clase": "timeout",
+  "s": 615
+ },
+ {
+  "job": 105286255975,
+  "run": 35245965744,
+  "creado": "2026-09-17T16:20:26Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 118
+ },
+ {
+  "job": 105284111853,
+  "run": 35245377429,
+  "creado": "2026-09-17T16:14:47Z",
+  "rama": "scrum-732b",
+  "clase": "timeout",
+  "s": 614
+ },
+ {
+  "job": 105283472937,
+  "run": 35245190062,
+  "creado": "2026-09-17T16:12:59Z",
+  "rama": "main",
+  "clase": "concurrencia",
+  "s": 465
+ }
+]
