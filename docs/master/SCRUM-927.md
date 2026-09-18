@@ -231,3 +231,187 @@ una cadena muerta sigue muerta, y separa VIGILADA / SÓLO AVISA / APARCADA.
 | `docs/master/evidencias/scrum927/censar.mjs` | el acta de esta tanda, y lo dice en su cabecera |
 | `docs/master/evidencias/scrum927/salida-censo.txt` | las cifras de arriba, tal y como salieron |
 | `tests/scrum746-barrera-y-punto-de-conexion.test.mjs` | +1 línea en `NO_SON_PROBLEMA`, con su motivo (§7.6) |
+
+---
+
+# SCRUM-927b · Contar no es avisar: la única que estaba en la tanda, exigida
+
+**Medido contra:** `origin/main` = `a863416b5d303b4016e68a6134eac2908627679f` · 2026-09-17T21:25:53+01:00
+
+**Rama:** `scrum-927b-contar-no-es-avisar`
+
+> ⛔ **Sólo se convierte UNA.** Las otras seis quedan nombradas con su motivo (§2) y sin tocar.
+> ⛔ Ninguna de las 94 ya vigiladas · ninguna evidencia fechada borrada · sin estado ni flag
+> nuevos (27) · sin dependencias (36).
+
+---
+
+## 1 · ① Lo convertido, y por qué era la única
+
+`PARES_SIN_TESTIGO_CONGELADOS` — 87 elementos, `scripts/_anclas-sin-testigo.congelado.mjs`,
+exigido desde `tests/scrum525d-anclas-que-apuntan.test.mjs`.
+
+Ese test tenía **dos mitades y sólo una con dientes**:
+
+| | qué vigila | antes | ahora |
+|---|---|---|---|
+| un par NUEVO sin testigo | que la deuda no crezca | `assert.fail` | igual, no se toca |
+| el conjunto que **ENCOGE** | que una línea que ya no hace falta se recoja | 🔴 `console.log` | ✅ `assert.deepEqual` |
+
+La intención estaba bien: el cálculo ya estaba escrito, y el mensaje hasta explicaba cómo
+recogerlo. Lo que faltaba era el mecanismo. Un aviso dentro de una tanda de más de siete mil
+tests no lo lee nadie.
+
+    🔒 Contar no es avisar — y avisar no es exigir.
+
+**Y NO destapa deuda de nadie.** Antes de convertir se volvió a medir contra el `main` de ahora
+—no contra la medición de hace unas horas, que es lo que el encargo avisaba— y salió en verde:
+`0 pares nuevos sin testigo · congelados 87`, sin un solo muerto. Nace en verde.
+
+### Por qué importa que encoja, y no es cosmética
+
+Una entrada que ya no excluye a nadie **no es inofensiva**: deja una puerta abierta con la
+etiqueta de otro. El día que alguien vuelva a citar ese par sin testigo, el trinquete de arriba lo
+tomará por deuda vieja y lo dejará pasar. Es la misma forma del defecto de SCRUM-864, una capa más
+arriba: la excepción sobrevive a su motivo.
+
+## 2 · ② Las otras seis · por qué NO se tocan
+
+| lista | elem | dónde | por qué no |
+|---|---|---|---|
+| `CONOCIDOS` | 5 | `docs/…/SCRUM-863/censo-region-863.mjs` | **Acta fechada.** Un acta con su fecha es un dato, no un defecto |
+| `EXCLUIDAS` | 1 | `docs/…/SCRUM-863/censo-region-863.mjs` | Acta fechada |
+| `EXCLUIDAS` | 1 | `docs/…/SCRUM-523/censo-523.mjs` | Acta fechada |
+| `CONOCIDOS` | 4 | `scripts/guard-contraste.mjs` | **Fuera de alcance:** necesita Edge para saber si quedaría verde |
+| `SIN_DTO` | 3 | `scripts/guard-descuentos-en-el-detalle.mjs` | Fuera de alcance, por lo mismo |
+| `CONOCIDOS` | 2 | `scripts/censo-bancos-fijados.mjs` | 🔴 **Los dos defectos a la vez** (abajo) |
+
+### Los dos guards de navegador · qué haría falta EXACTAMENTE para decidirlos
+
+No es que «no dé tiempo»: es que **no se puede medir desde aquí**. Los dos corren fuera de
+`npm test` y los lanza CI a través de `npm run guards:visuales`, que deriva su lista de los
+`guard:*` de `package.json`. Convertir su aviso en un rojo sin poder ejecutarlos antes es
+**fabricar cobertura aparente**: quedaría un `assert` cuyo resultado nadie ha visto nunca, en un
+job que sí corre en CI.
+
+Para decidirlos hace falta, en una máquina con Edge:
+
+1. `npm run guard:contraste` y `npm run guard:descuentos-en-el-detalle`, y **leer si sus listas
+   `CONOCIDOS` / `SIN_DTO` tienen hoy algún elemento muerto**;
+2. si lo tienen, eso es deuda que alguien decide —no se convierte y ya—;
+3. si no, la conversión es la misma línea que la de aquí, y entonces sí.
+
+Son dos comandos. Lo que no vale es escribir el `assert` a ciegas y descubrirlo en CI.
+
+### 🔴 `censo-bancos-fijados.mjs` es un HALLAZGO, no un pendiente
+
+Está en la **intersección de los dos defectos que mide este ticket**: su lista **sólo avisa** Y
+**no lo corre nadie**. Convertir su `console.log` en un `assert` no cambiaría absolutamente nada,
+porque no hay quien ejecute el fichero donde ese `assert` viviría.
+
+Es el ejemplo puro de por qué las dos mitades de SCRUM-927 son el mismo problema: **una medición
+sin mecanismo y un mecanismo que nadie dispara son la misma frase, dicha de dos maneras.** Y
+enseña el orden correcto: darle dientes a algo que nadie corre es empezar por el final.
+
+## 3 · ③ La regla · qué debe acabar en `assert` y qué informa legítimamente
+
+El criterio propuesto era de tres, y se ha comprobado contra las siete, con ① y ② **medidos** por
+el instrumento de la fase a y ③ **declarado** con su motivo (no es derivable del código):
+
+```
+elem  lista                          ①tanda ②sin-externo ③víctima  veredicto
+  87  PARES_SIN_TESTIGO_CONGELADOS   true   true         SÍ        CONVERTIR
+   5  CONOCIDOS   (SCRUM-863)        false  false        no        acta fechada — no se toca
+   4  CONOCIDOS   (guard-contraste)  false  false        ?         fuera de alcance
+   3  SIN_DTO     (guard-descuentos) false  false        ?         fuera de alcance
+   2  CONOCIDOS   (censo-bancos)     false  true         no        los DOS defectos a la vez
+   1  EXCLUIDAS   (SCRUM-523)        false  false        no        acta fechada — no se toca
+   1  EXCLUIDAS   (SCRUM-863)        false  false        no        acta fechada — no se toca
+```
+
+**Sí sostiene** — clasifica las siete sin dejar ninguna a medias. Pero con una precisión que la
+tabla hace visible y que el enunciado no tenía:
+
+> 🔴 **Los tres criterios NO son independientes: ③ depende de ①.** Si nadie la corre, su rotura no
+> tiene víctima hoy — y no porque la propiedad no importe, sino porque **nadie se enteraría
+> igual**. Por eso `censo-bancos-fijados` sale «sin víctima» teniendo una propiedad perfectamente
+> razonable detrás.
+
+Así que la regla se aplica **en orden, y ① es una puerta, no un factor**:
+
+1. **¿Está en la tanda?** Si no → no se convierte *todavía*; primero se decide si debe correr.
+   Convertir aquí no añade cobertura: añade un `assert` que nadie ejecuta.
+2. **¿Es comprobable sin nada externo?** Si necesita navegador, red o base → no se convierte sin
+   haberlo medido antes en un sitio donde se pueda. Un rojo que nadie ha visto no es un control.
+3. **¿Su rotura tiene víctima hoy?** Si la propiedad ya no le importa a nadie, lo honesto es
+   retirar la lista, no ascenderla a guard.
+
+Y una cuarta pregunta que no decide *si*, pero sí *en qué orden*: **¿el cálculo ya está escrito?**
+Donde el aviso ya computa su consecuencia —como aquí— convertir cuesta una línea. Donde no, hay
+que escribir el instrumento antes, y eso es otra tanda.
+
+    🔒 Un acta que informa está bien. Lo que no vale es una promesa de vigilancia sin mecanismo.
+
+## 4 · Los controles, EJECUTADOS
+
+### 🔴 EL QUE DECIDE · se le mete un MUERTO al conjunto, y se compara antes con después
+
+Un par que no cita en ninguna parte (`docs/legal/NO-EXISTE-927B.md # fichero-inventado-927b.ts`):
+en cuanto entra en la lista, es exactamente lo que el trinquete dice vigilar.
+
+```
+① ANTES (forma vieja, console.log)  →  ¿la tanda se entera? 🔴 NO — sigue VERDE con el muerto dentro
+② DESPUÉS (con el assert)           →  ¿la tanda CAE? sí   ·   ¿NOMBRA el elemento? sí
+③ POST-CONDICIÓN (árbol intacto)    →  pasa ✅
+```
+
+Los dos sentidos: **rota → cae · intacta → pasa**. Y el ① es el que da sentido al ②: sin él,
+«ahora cae» no diría si antes también caía.
+
+### MUTACIÓN · que entró, y que entró UNA vez
+
+El banco no acepta un `replace` que no encuentre su texto **ni uno que lo encuentre dos veces**:
+exige exactamente una ocurrencia y aborta con el motivo. Todo se restaura byte a byte, verificado
+por SHA-256.
+
+### SUELO · y disparó de verdad
+
+La primera versión del suelo exigía «que sigan siendo 7 las que sólo avisan» y **se puso CIEGO**:
+ya eran 6, porque esta misma fase acababa de convertir una. El suelo tenía razón y el enunciado
+estaba mal. Ahora comprueba lo correcto y es más fuerte: **que las siete de la fase a sigan
+localizables y que exactamente UNA haya pasado a vigilada.** Si mañana alguien convierte otra sin
+decirlo, salta.
+
+### ✅ POSITIVO · el árbol de hoy sigue verde
+
+`tests/scrum525d` — 8 de 8, con `0 pares nuevos sin testigo · congelados 87`.
+
+## 5 · Lo que esta fase NO ha medido
+
+1. **Si las listas de los dos guards de navegador tienen muertos hoy.** Hace falta Edge; queda
+   escrito en §2 qué dos comandos lo contestan.
+2. **Si las 27 aparcadas de la fase a siguen siendo correctas.** Eso es mirar el sujeto de cada
+   una, y no es esta fase.
+3. **Cuánto tarda en aparecer el primer muerto** en el conjunto de 87. Hoy son cero; si dentro de
+   unas semanas siguen siendo cero, la conversión no habrá costado nada y tampoco habrá probado
+   nada. Eso sólo lo dice el tiempo.
+
+## 6 · Errores míos
+
+1. **Escribí el suelo contra el estado de antes de mi propio cambio**, así que se puso CIEGO en su
+   primera ejecución. Es un error real —el suelo de un banco tiene que aguantar el cambio que ese
+   banco mide— y, de paso, la prueba de que el suelo funciona. Reescrito a algo más fuerte que lo
+   que pedía el encargo.
+2. **Mi frase de la fase a era optimista**: «primero las 7 que sólo avisan, porque el cálculo ya
+   está hecho». Medido: sólo **1 de 7** está en la tanda. La corregí yo mismo anoche, antes de
+   que llegara este encargo, y el orquestador la asumió; queda escrita aquí porque una frase
+   optimista repetida por otro se convierte en un plan.
+
+## 7 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `tests/scrum525d-anclas-que-apuntan.test.mjs` | el `console.log` pasa a `assert.deepEqual`, con el mensaje que NOMBRA los pares |
+| `scripts/_anclas-sin-testigo.congelado.mjs` | su cabecera decía media verdad: ahora encoger sin recoger también tumba el guard |
+| `docs/master/evidencias/scrum927b/el-que-decide.mjs` | el antes y el después, con el muerto inyectado |
+| `docs/master/evidencias/scrum927b/la-regla.mjs` | la regla de tres, comprobada contra las 7, con su suelo |

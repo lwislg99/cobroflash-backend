@@ -97,7 +97,7 @@ medirla. En el spawn se borra esa variable.
 
 ## ⑦bis · Un byte de escape se coló LITERAL en el código, y casi entra así
 
-Al escribir `const ANSI = /\[…/` la secuencia se guardó como el **byte 0x1B de verdad**, no como
+Al escribir `const ANSI = /\u001B\[…/` la secuencia se guardó como el **byte 0x1B de verdad**, no como
 sus seis caracteres. Funciona igual —el guard estaba en verde— y por eso es peligroso: un byte de control invisible en
 un `.mjs` sobrevive mientras nadie normalice el fichero, y desaparece sin ruido en cuanto alguien lo haga.
 
@@ -175,7 +175,7 @@ El reporter pinta la línea **entera**: un `ESC` delante del glifo y otro detrá
 
 Una función que quita las secuencias CSI **y se usa sólo para LEER**:
 
-- `const CSI = /\[[0-9;?]*[ -\/]*[@-~]/g;` y `sinColor(s)`, aplicada al probar `RESUMEN` sobre la cola.
+- `const CSI = /\u001B\[[0-9;?]*[ -\/]*[@-~]/g;` y `sinColor(s)`, aplicada al probar `RESUMEN` sobre la cola.
 - Se quitan las secuencias CSI **completas**, no sólo las de color: un reporter que mueva el cursor partiría el ancla igual.
 - **Lo que se IMPRIME sigue pasando tal cual, byte a byte.** La limpieza no toca la salida; eso lo exige 858b y se comprueba con una aserción de igualdad exacta sobre el stdout, con color y sin él.
 - **No cambia el umbral ni lo que se exige:** un recuento a medias (`tests` sin número) sigue sin valer, y una tanda que de verdad no lo emite sigue saliendo con 4.
@@ -205,7 +205,7 @@ El segundo es el que vigila el arreglo por el otro lado: una limpieza demasiado 
 
 ### ⑥ El byte de escape LITERAL, otra vez, y en otra sesión
 
-Al escribir el regex, `` se guardó como **el byte 0x1B de verdad** en vez de sus seis caracteres. Funcionaba —los 11 tests en verde— y por eso es peligroso. Lo delató leer el fichero y ver la línea como `/\[[0-9;?]*…/`, sin el escape, porque el visor se come el byte al pintarlo; se confirmó contando bytes 0x1B sobre el fichero (1 antes, 0 después) y se pasó a la forma escapada, repitiendo la verificación entera.
+Al escribir el regex, `\u001B` se guardó como **el byte 0x1B de verdad** en vez de sus seis caracteres. Funcionaba —los 11 tests en verde— y por eso es peligroso. Lo delató leer el fichero y ver la línea como `/\[[0-9;?]*…/`, sin el escape, porque el visor se come el byte al pintarlo; se confirmó contando bytes 0x1B sobre el fichero (1 antes, 0 después) y se pasó a la forma escapada, repitiendo la verificación entera.
 
 🔴 **Lo que hay que quedarse no es el error, es que somos dos:** la sección ⑦bis de arriba cuenta EXACTAMENTE el mismo accidente en la S5, el mismo día, en otro fichero y sin que ninguna de las dos supiera de la otra. Dos veces es un patrón, no un descuido, y la causa es del entorno de edición, no de quien escribe.
 
@@ -248,3 +248,111 @@ Ninguno lo cazó el código de salida. Los tres los cazó **el testigo que falta
        encontrado nada. La única diferencia la pone un testigo.
 
 **Tests declarados:** `tests/scrum928b-el-veredicto-que-el-color-tapa.test.mjs`.
+
+---
+
+## SCRUM-928c · punto 3 · el laboratorio del vigía le pasaba su propio entorno al sujeto
+
+**Medido contra:** `origin/main` = `fa9ff832e5d64a60ea9ef50bf863e138ef4de423` · 2026-09-17T19:38:46Z (hora de GitHub; las mediciones son de los minutos anteriores, misma máquina)
+**Rama:** `scrum-928c-el-paso-que-hereda-el-color` · **Carril:** Sesión 3 (instrumentos) · **Reparto:** el punto 3 lo asignó el orquestador a la S3 a las 19:31Z, con la condición de que nadie más entre en `scrum853c` mientras. Cierra el ticket: ① y ② ya están en `main`.
+
+### ① El defecto NO estaba donde parecía
+
+Los dos rojos que quedaban vivían en `tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs`, que ejecuta los `run:` REALES de `.github/workflows/vigia-atascados.yml`. La tentación era arreglar el YAML —carril de la S5— o aflojar la aserción. **Ninguna de las dos.** El defecto estaba en el laboratorio: `correrPaso` construía el entorno del paso con
+
+```js
+const env = { ...process.env, /* … */ };
+```
+
+y le colaba al sujeto el `FORCE_COLOR` de quien lanzaba la tanda. El paso **no corría en el entorno que este fichero dice medir**: en GitHub Actions esa variable no existe.
+
+    🔒 Un laboratorio que le presta su entorno al sujeto no mide el sujeto: mide la suma de los dos.
+
+### ② PASO 0 · una sola variable, y el defecto aparece
+
+Mismo árbol, sin tocar nada, cambiando **sólo** la variable:
+
+| entorno | resultado de `scrum853c` |
+|---|---|
+| sin `FORCE_COLOR` | 9 tests · 9 pass · **0 fail** · exit 0 |
+| `FORCE_COLOR=3` | 9 tests · 7 pass · **2 fail** · exit 1 |
+
+### ③ Y eran DOS campos coloreados, no uno
+
+El enunciado del ticket (y mi propio informe) decían que el ANSI salía en el campo de checks. Al sembrar el rojo, el mensaje del guard enseñó la línea entera:
+
+```
+1212|DIRTY|\u001B[33m1\u001B[39m|\u001B[33m2261\u001B[39m|null
+```
+
+El color va en **los checks Y en los minutos**: node pinta de amarillo todos los NÚMEROS que formatea. Eso importa porque el segundo caso comparaba los minutos con holgura (`Number(minutos)`), así que ese rojo no era «una cadena distinta»: era un `NaN` esperando. Por eso el guard nuevo no comprueba campo por campo, sino que **no haya ni un byte de escape en la línea**: un aserto por campo habría dejado pasar el campo que aún no se mira.
+
+### ④ Qué cambia, y qué no
+
+- `tests/scrum853c-…`: tras construir `env`, se borran **`FORCE_COLOR`, `NODE_OPTIONS` y `NODE_TEST_CONTEXT`** salvo que un `escenario` los pida a propósito (el escenario sigue mandando y se respeta).
+- **NO se toca `.github/workflows/vigia-atascados.yml`** (carril S5) ni ninguna aserción. Los dos casos que fallaban no se han modificado: pasan porque el sujeto corre por fin en su entorno.
+- Alcance de lo medido, declarado por variable: **`FORCE_COLOR` es lo medido aquí.** `NODE_OPTIONS` y `NODE_TEST_CONTEXT` van por el precedente **medido en SCRUM-858b** (CI del #1441: un reporter heredado le regalaba un recuento a una tanda fabricada) y **no se han vuelto a medir sobre este fichero**. El método no llega: ponerle a la tanda de fuera un `NODE_OPTIONS=--test-reporter=spec` mata al propio `node --test` que la corre (`ERR_INVALID_ARG_VALUE: '--test-reporter' must match the number of specified '--test-reporter-destination'`). Queda dicho, no medido — y el instrumento que lo intentó se declara inválido en vez de publicar su rojo como hallazgo.
+
+### ⑤ El rojo primero, y por qué no depende del entorno de quien lo corre
+
+El guard nuevo **pone él mismo `FORCE_COLOR=3`** y lo restaura en un `finally`, así que cae igual lo lance quien lo lance. Quitando el bloque de saneado:
+
+```
+✖ SCRUM-928c · el paso fabricado NO hereda el color del chat: su línea de estado sale sin ANSI
+  AssertionError: 🔴 la línea de estado trae códigos de color: …
+  estados: "1212|DIRTY|\u001B[33m1\u001B[39m|\u001B[33m2261\u001B[39m|null\n"
+```
+
+Y lleva dentro su **control anti-tautología**: antes de juzgar, lanza un hijo que SÍ hereda el entorno y exige ver un `ESC` en su salida. Si un día node deja de colorear, el caso dice «NO PUDE MIRAR» en vez de pasar en verde sobre un defecto que ya no puede ver.
+
+No se declara mutación en `MUTACIONES_QUE_ME_TUMBAN`: la mutación sería sobre el propio fichero de test que la ejecuta, y el meta-guard no mide eso. El rojo se probó a mano, está arriba, y las tres entradas que ese array ya tenía (las del YAML) no se tocan.
+
+### ⑥ Verificación por efecto
+
+| comprobación | resultado |
+|---|---|
+| `scrum853c` **sin** color | 10 tests · 10 pass · **0 fail** · exit **0** |
+| `scrum853c` con **`FORCE_COLOR=3`** (el que fallaba) | 10 tests · 10 pass · **0 fail** · exit **0** |
+| `npm test` completo, sin color, sobre el merge de `fa9ff832` | 7.467 tests · 7.356 pass · **0 fail** · 111 saltos · exit **0** · 344,7 s |
+| `npm run guards:entrada`, sin color, con esta entrada escrita | 4 guards · 26 tests · 26 pass · **0 fail** · exit **0** |
+
+Con esto, de los **3** rojos que el color provocaba en la suite quedan **0**: el de `scrum858b` lo quitó 928b, y estos dos, 928c.
+
+### ⑦ El byte 0x1B no fue un descuido: es SISTEMÁTICO, y esta sección lo midió al escribirse
+
+La sección ⑦bis de arriba y la ⑥ de 928b lo contaban como un accidente —«se me coló uno»—. **Las dos se quedaron cortas.** Cada vez que se escribe el texto `\u001B` en un fichero desde esta herramienta, lo que aterriza en disco es **el byte 0x1B**, no sus seis caracteres. Medido hoy contando bytes con `[IO.File]::ReadAllBytes`:
+
+| fichero | bytes 0x1B | dónde |
+|---|---|---|
+| `docs/master/SCRUM-928.md` antes de esta sección | **3** | 1 en ⑦bis (S5) y 2 en 928b (S3) — **las dos ya en `main`** |
+| `docs/master/SCRUM-928.md` al escribir ESTA sección | **10 más** | los bloques de código y las citas de aquí mismo |
+| `tests/scrum928b-…test.mjs` | **2** | la constante del escape y el regex de limpieza — **ya en `main`** |
+| `tests/scrum853c-…test.mjs` | **2** | los dos `includes(…)` del guard nuevo |
+| `scripts/tanda-con-veredicto.mjs` | **0** | ya corregido en 928b |
+
+Los 17 pasan a la forma escapada, y se comprobó que el comportamiento **no cambia**: 21 tests (853c + 928b + 858b) · 20 pass · 0 fail · 1 salto · exit **0**, con `FORCE_COLOR=3` y sin él.
+
+Y hay una prueba de que la causa es la herramienta y no el descuido: al intentar corregir ESTA sección con el editor, la operación se negó avisando de que «también probó intercambiando los escapes `\uXXXX` y sus caracteres», sin casar en ninguna de las dos formas. La transformación ocurre **en los dos sentidos**, y no se ve en el texto que uno cree estar escribiendo.
+
+🔴 **La conclusión no es «tener más cuidado», porque el cuidado ya falló cuatro veces seguidas, dos de ellas DENTRO del párrafo que avisaba del problema.** La única defensa que funciona es un CONTEO después de cada escritura:
+
+```powershell
+([IO.File]::ReadAllBytes($f) | Where-Object { $_ -eq 27 }).Count   # tiene que ser 0
+```
+
+Ni el visor, ni la consola, ni una revisión a ojo lo ven: el byte se traga al pintarlo. Sólo lo ve quien cuenta bytes.
+
+    🔒 Contra un fallo de la herramienta que ESCRIBE no vale releer lo escrito: hay que contar los bytes de lo que
+       quedó en disco. Y una advertencia redactada con el mismo defecto que advierte no es una advertencia: es una
+       demostración.
+
+⚠️ **Uno de los 3 primeros está en una sección que no es mía** (la ⑦bis de la S5), y se dice en vez de hacerlo en silencio: es una corrección mecánica que deja esa frase diciendo lo que evidentemente quería decir, no un cambio de contenido, y es revertible en un commit si la dueña de esa sección prefiere hacerlo ella. Los 2 del fichero de test de 928b también estaban ya en `main`, y son míos.
+### ⑧ Errores propios de esta parte
+
+1. **El sitio que señalé estaba mal.** En mi informe del punto 1 escribí que los dos rojos de 853c eran «un tercer sitio, en el paso que produce esa línea», o sea en el YAML. Era falso: el paso produce lo que produce porque el laboratorio le pasa el color. El arreglo no estaba en el productor, sino en quien le fabrica el entorno. Si hubiera trabajado sobre mi propia frase, habría entrado en un fichero de otro carril a arreglar algo que no estaba roto.
+2. **Conté un campo coloreado y eran dos** (③).
+3. **Construí un instrumento inválido, y lo delató su FORMA de fallar, no su resultado:** el probe de `NODE_OPTIONS` salió con exit 1 y CERO recuentos, y un exit 1 sin población se parece mucho a un hallazgo.
+
+    🔒 Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.
+
+**Tests declarados:** `tests/scrum853c-el-vigia-no-se-cree-un-error.test.mjs`.
