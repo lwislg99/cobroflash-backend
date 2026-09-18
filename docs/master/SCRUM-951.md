@@ -78,7 +78,9 @@ con control positivo.
   7.554 pass · 4 fail · 111 saltados**. Tres de los fallos son de `scrum939b`, ya conocidos en main. **El cuarto
   era MÍO:** `scrum766` («ningún instrumento ni receta del árbol cuenta control con `grep`») cazó en
   `trampas-del-entorno.md` la receta mala citada LITERAL como ejemplo de trampa. Se arregló el texto (se describe
-  sin escribir el comando y se apunta a `contarCR`), no el guard (regla 41). La pasada final va abajo.
+  sin escribir el comando y se apunta a `contarCR`), no el guard (regla 41). **Pasada final**, sobre
+  `8a2ead51d5c5a4a636f60bdb6bef3bc88b4571c2`, 909 ficheros: **7.669 tests · 7.555 pass · 3 fail · 111 saltados**;
+  los 3 son los de `scrum939b` (las skills, que este PR no toca).
 - Bytes de control (A22) y CR en los 6 ficheros: **0 y 0**.
 
 ### Lo que NO se ha hecho, y por qué
