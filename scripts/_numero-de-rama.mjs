@@ -1,4 +1,4 @@
-// scripts/_numero-de-rama.mjs — SCRUM-829
+﻿// scripts/_numero-de-rama.mjs — SCRUM-829
 //
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // EL NÚMERO DE TICKET DE UN NOMBRE DE RAMA. UNA SOLA REGLA, Y EN UN SITIO.
@@ -52,6 +52,25 @@
  *     nombre no dice que la rama sea de ese ticket.
  *   · con delimitador (`-` o FIN DEL NOMBRE) → `scrum-72-x` da 72 y `scrum-727-x` da 727, no 72.
  *   · la letra opcional es una FASE del mismo ticket: `scrum-684b-…` da 684, no otro número.
+ *   · y la fase puede llevar CORTE: `scrum-915e1-…` da 915. La letra es la fase, los dígitos que
+ *     la siguen son el corte dentro de ella.
+ *
+ * 🔴 SCRUM-804h (20-sep-2026) · LA FASE PUEDE LLEVAR NÚMERO DETRÁS. `main` volvió a quedarse con
+ * su check obligatorio en rojo (run 35533496437, `soloEnGit: [ 'scrum-915e1-documento-vivo' ]`) y
+ * con seis PR sin poder mergear: la partición de SCRUM-915 en siete cortes nombra sus ramas
+ * `scrum-915e1-…`, `scrum-915e2-…`, y aquí la fase era UN SOLO carácter. Es el MISMO borde que
+ * cerró 804f tres días antes, en esta misma línea, y se cierra igual —en la regla, no renombrando
+ * la rama— por el motivo que 804f dejó escrito: la siguiente rama con esa forma lo traería otra vez.
+ *
+ * ⛔ Se ensancharon los DÍGITOS, no la letra. `[a-z]+` también habría arreglado `915e1` y habría
+ * roto una decisión de 804f que nadie pidió relajar: `scrum-72bb → null`, «dos letras no son una
+ * fase». Con `[a-z]?\d*` las cuatro afirmaciones de identidad de 804f siguen intactas.
+ *
+ * 🔴 Y NO RE-ATRIBUYE A NADIE, por construcción: `0*` come los ceros y `\d+` es voraz, así que el
+ * grupo 1 se lleva la tirada ENTERA de dígitos. Partirla dejaría al `\d*` delante de un dígito,
+ * que no es `-` ni fin, así que ninguna partición alternativa casa. Ensanchar el sufijo sólo puede
+ * convertir un `null` en ESE MISMO número, nunca un número en otro. Medido igualmente sobre los
+ * refs del 20-sep en `tests/scrum804h-la-fase-con-corte.test.mjs`: 0 re-atribuidas.
  *
  * 🔴 SCRUM-804f (17-sep-2026) · EL FIN DEL NOMBRE TAMBIÉN DELIMITA. Hasta hoy el delimitador era
  * SÓLO el `-`, y una rama sin slug (`scrum-904`, PR #1423) salía `null`: el censo decía SIN RASTRO
@@ -64,6 +83,6 @@
  * distintas: ahí la cadena entera ES la clave; aquí es texto libre que rodea a la clave.
  */
 export function numeroDeRama(nombre) {
-  const m = /^scrum-0*(\d+)[a-z]?(?:-|$)/.exec(String(nombre ?? '').trim());
+  const m = /^scrum-0*(\d+)[a-z]?\d*(?:-|$)/.exec(String(nombre ?? '').trim());
   return m ? Number(m[1]) : null;
 }
