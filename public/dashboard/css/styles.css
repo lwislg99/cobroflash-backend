@@ -2599,6 +2599,11 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* Objetivo tactil de 44 px (AB6): se pulsan de pie y con prisa. */
 .cobro-hueco button { min-height: 44px; }
 @media (max-width: 720px) { .cobro-hueco { align-items: flex-start; } }
+/* SCRUM-917f · el hueco que enuncia una AUSENCIA lleva segunda linea. Las dos van en la misma
+   caja para que al envolver no se separen: la explicacion es de SU linea, no de la tarjeta.
+   Ni un token nuevo — --muted y el 12px son los que ya usa el subtitulo del detalle. */
+.cobro-hueco__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cobro-hueco__s { font-size: 12px; color: var(--muted); }
 
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }

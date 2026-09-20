@@ -132,7 +132,16 @@ function pintarBloqueRail(bloque) {
  */
 function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
   const i = importesDeCobro(job);
-  sec.innerHTML = '<h3 class="detail-section-title">Qué falta para cobrar</h3>';
+  // 🔴 SCRUM-917f · EL RÓTULO YA NO AFIRMA «PARA COBRAR». Esta tarjeta se pinta siempre que haya
+  // CUALQUIER hueco, y no todos son dinero: un albarán sin firmar y una línea sin entregar no son
+  // «lo que falta para cobrar». En un Trabajo cobrado del todo con un albarán pendiente de firma,
+  // el rótulo viejo afirmaba algo FALSO. Son dos preguntas distintas y la tarjeta contesta a las
+  // dos, así que el rótulo tiene que admitirlo. Texto firmado (com. 15881).
+  //
+  // ⚠️ El id interno de la sección —`que-falta-para-cobrar` en `SECCIONES_CUERPO`— NO cambia: es
+  // una clave de reparto, no un texto, y renombrarla movería la sección de sitio en el ciclo sin
+  // que nadie lo pidiera.
+  sec.innerHTML = '<h3 class="detail-section-title">Lo que falta</h3>';
 
   // 🔴 SCRUM-917e (D) · AQUÍ ESTABA LA TABLA DE IMPORTES — Aceptado / Entregado y firmado /
   // Facturado / Cobrado / Te falta por cobrar — y se ha ido ENTERA a la franja del cuerpo.
@@ -166,6 +175,11 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
 
   // ── LOS HUECOS, cada uno con su enlace ────────────────────────────────────────────────
   const TEXTO_HUECO = {
+    // SCRUM-917f · el caso SIN PRESUPUESTO ACEPTADO, que hasta este corte no se nombraba: sin
+    // huecos la sección entera no se pintaba, así que la pantalla callaba. Un silencio se lee
+    // igual que «no falta nada», y aquí son cosas opuestas — no es que no falte, es que no se
+    // puede saber. Los dos literales están FIRMADOS (com. 15881); aquí no se escribe copy.
+    'sin-presupuesto': () => 'Este trabajo no tiene presupuesto aceptado',
     'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
     'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
     'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
@@ -196,10 +210,22 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
   };
   const TEXTO_ACCION = {
+    'hacer-presupuesto': 'Hacer presupuesto',
     'ver-albaranes': 'Ver albaranes',
     'facturar-lo-entregado': 'Facturar lo entregado',
     'facturar-el-trabajo': 'Facturar el trabajo',
     'registrar-cobro': 'Registrar cobro',
+  };
+
+  // SCRUM-917f · SÓLO este hueco lleva una segunda línea, y por una razón concreta: los otros
+  // cinco enuncian una CANTIDAD que se entiende sola («2 albaranes sin firmar»), y éste enuncia
+  // una AUSENCIA, que no se entiende sin decir qué consecuencia tiene. Literal firmado.
+  //
+  // 🔴 A `sin-entregar` NO se le añade la suya aunque esté propuesta: SCRUM-423 dejó escrito que
+  // su número y su salvedad van en UNA SOLA CADENA a propósito, para que un truncado no deje a
+  // nadie leyendo el número solo. Partirla en dos nodos aquí sería deshacer eso de rebote.
+  const SUBTEXTO_HUECO = {
+    'sin-presupuesto': 'Sin un importe de referencia no se puede saber cuánto falta por cobrar.',
   };
 
   const lista = document.createElement('div');
@@ -209,7 +235,23 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     f.className = 'cobro-hueco';
     f.dataset.hueco = h.id;
     const t = document.createElement('span');
-    t.textContent = TEXTO_HUECO[h.id](h);
+    // SCRUM-917f: con subtexto, el hueco pasa a DOS líneas. Se envuelven juntas para que la
+    // segunda no se separe de la primera al envolver en móvil — es una explicación de SU línea,
+    // no una nota de la tarjeta.
+    const sub2 = SUBTEXTO_HUECO[h.id];
+    if (sub2) {
+      t.className = 'cobro-hueco__texto';
+      // Sin clase: hereda el tamaño y el color del hueco, que es lo que tiene que hacer. Una
+      // clase sin regla es justo lo que caza `scrum666b`.
+      const q = document.createElement('span');
+      q.textContent = TEXTO_HUECO[h.id](h);
+      const s = document.createElement('span');
+      s.className = 'cobro-hueco__s';
+      s.textContent = sub2;
+      t.append(q, s);
+    } else {
+      t.textContent = TEXTO_HUECO[h.id](h);
+    }
     const a = document.createElement('button');
     a.type = 'button';
     a.className = 'btn-ghost btn-sm';
@@ -218,6 +260,14 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     // facturas ya tienen su sección tras G4). Navegar, no ejecutar — ejecutar es de la cabecera y
     // de la fila de cada documento, que ya lo hacen y no se duplica aquí.
     a.addEventListener('click', () => {
+      // SCRUM-917f · `hacer-presupuesto` es el ÚNICO que sale de esta pantalla, y tiene que
+      // hacerlo: lo que falta no está en ninguna sección de este Trabajo, es que no existe el
+      // documento. Se navega por el mismo camino que ya usan el detalle de cliente y la lista de
+      // facturas —`renderAppView('quotes-new')`, sin estado—, no por uno nuevo.
+      if (h.accion === 'hacer-presupuesto') {
+        if (window.renderAppView) window.renderAppView('quotes-new');
+        return;
+      }
       // ⚠️ `facturar-el-trabajo` va a ALBARANES, no a FACTURAS: ese hueco sale precisamente cuando
       // NO hay ninguna factura, así que la sección FACTURAS no está pintada y el enlace no llevaría
       // a ningún sitio. La de albaranes se monta siempre, y es donde se empieza a documentar el
