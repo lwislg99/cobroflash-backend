@@ -367,6 +367,33 @@ fusiona con los otros tres: los tres miran el EDITOR de la izquierda y éste mir
   anclar a una fecha sería un contrato con caducidad. Los dos siguen siendo imprescindibles: cambia
   lo que dicen, no que estén. 28/28 en verde.
 
+### El rojo del CI, y el hueco del instrumento que destapó (#1545)
+
+`scrum514-aprobado-y-aplicado` tumbó el PR con **«Presupuesto válido hasta el dd/mm/aaaa.»**: cruza
+cada texto firmado contra el código y ése no aparece literal en ninguna parte, porque el código lo
+**compone**. El texto sí está aplicado; lo que no existía era una forma de decirlo.
+
+El propio fichero ya tenía la respuesta escrita, para el otro extractor: `celdasDeTabla` salta las
+**plantillas** (`{…}`) con este motivo medido — «un texto como `{N} facturas` NUNCA aparece literal
+porque el código lo COMPONE; lo que el guard puede afirmar de una plantilla es que su parte fija
+esté». Esa regla nunca se trajo a `citasDeTextoAprobado`, que es la que lee las fichas. Así que las
+fichas podían firmar plantillas pero no declararlas.
+
+Se arregla en los dos sitios, y ninguno es una rebaja:
+
+- la ficha escribe el pie como lo que es, **«Presupuesto válido hasta el {dd/mm/aaaa}.»**, con la
+  notación de plantilla que este repositorio ya usa;
+- `citasDeTextoAprobado` aplica la MISMA exención que su hermana, y **sólo con llaves**: un texto
+  sin ellas se sigue cruzando byte a byte. Los dos SUELOS del fichero —«la fuente se lee y tiene
+  textos de sobra» y «el cruce sabe decir SÍ y sabe decir NO»— siguen en verde, que es el control
+  de que la exención no ha cegado al instrumento.
+
+La parte fija del pie la siguen vigilando `scrum600` (la ranura) y `scrum600b` (el documento
+renderizado), y la fecha entera el caso D del guard de navegador, que la cambia dos veces.
+
+    🔒 Un instrumento que no sabe expresar una categoría que él mismo reconoce en otro sitio no
+       está midiendo de más: está obligando a mentirle.
+
 ### Errores propios
 
 - **Di por muerta la casilla C antes de medirla.** Al escribir el guard supuse que «se construye
