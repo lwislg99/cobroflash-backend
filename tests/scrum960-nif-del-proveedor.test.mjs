@@ -5,8 +5,8 @@
 // tiraba el campo en silencio, y la edición con solo el NIF daba 400 `empty_update`. Medido
 // corriendo en `docs/master/evidencias/SCRUM-960/paso0.mjs` antes de tocar nada.
 //
-// Sin red y sin base: el router REAL de `dist/` sobre un express de verdad, y la base doblada por
-// `global.prisma` (la costura que `dist/core/db/prisma.js` ya tiene).
+// Sin red, sin socket y sin base: se invoca el router REAL de `dist/` en proceso, con la base
+// doblada por `global.prisma` (la costura que `dist/core/db/prisma.js` ya tiene).
 //
 // Lo que sostiene este fichero, por orden de lo que costaría romperlo:
 //   ① Se puede PONER y se puede CORREGIR: son los dos casos del profesional.
@@ -18,7 +18,6 @@
 //      exactamente como antes de este ticket.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import express from 'express';
 
 // ── El doble, puesto ANTES de cargar el router ──────────────────────────────────────────────
 const escrituras = [];
@@ -45,27 +44,51 @@ const router = mod.default?.default ?? mod.default;
 const NIF_BUENO = 'A58818501';
 const NIF_MALO = 'A58818502';
 
-async function conApp(fn) {
-  const app = express();
-  app.use(express.json());
-  app.use((req, _res, next) => { req.merchantId = 1; next(); });
-  app.use('/admin/providers', router);
-  const server = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });
-  const base = `http://127.0.0.1:${server.address().port}/admin/providers`;
-  try {
-    return await fn(async (metodo, ruta, cuerpo) => {
-      escrituras.length = 0;
-      const r = await fetch(base + ruta, {
-        method: metodo,
-        headers: { 'Content-Type': 'application/json' },
-        ...(cuerpo === undefined ? {} : { body: JSON.stringify(cuerpo) }),
-      });
-      return { status: r.status, json: await r.json().catch(() => null), escrituras: escrituras.slice() };
-    });
-  } finally {
-    await new Promise((ok) => server.close(ok));
-  }
+// ⚠️ AQUÍ NO SE ABRE UN SERVIDOR, Y ES A PROPÓSITO. La primera versión levantaba un express real
+// por test (8 sockets) y la tanda salía así:
+//
+//     not ok 1 - tests\scrum960-nif-del-proveedor.test.mjs   exitCode 3221226505 (0xC0000409)
+//     # tests 9 · # pass 8 · # fail 1
+//
+// O sea: el FICHERO en ROJO con sus OCHO TESTS EN VERDE. El aborto de node dice qué pasa —
+// `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)` —: `--test-force-exit` mata el proceso
+// mientras un handle de socket está vivo o a medio cerrar. Lo medido, en orden:
+//
+//     un servidor por test, cerrando con await ......... 1 de 5 y 2 de 8 pasadas en rojo
+//     + closeAllConnections() y `Connection: close` .... 2 de 8   (no era el keep-alive)
+//     un solo servidor, sin cerrar .................... 10 de 10  (peor, pero DETERMINISTA)
+//     sin socket, router en proceso ................... 0 de 10 ✅
+//
+// El contraste que lo acotó: `scrum912`, con el arnés de servidor pero menos ciclos de cierre,
+// dio 0 fallos en 8 pasadas. No era «el arnés está mal»: era la cantidad de sockets.
+//
+// 🔒 Un fichero de test puede salir ROJO con todos sus tests en VERDE; ese rojo no habla del
+//    código, habla del arnés. Y como empezó siendo una CARRERA, la primera pasada salió verde:
+//    de habérmela creído, esto entraba en la tanda de todos los días como un intermitente
+//    de nadie, de los que se miran seis veces y se culpa a «Windows».
+//
+// Se invoca el router REAL en proceso, SIN abrir un socket. `express.Router` es una función
+// `(req, res, next)`: enruta por `req.method` y `req.url` y rellena `req.params` él mismo, así que
+// lo que se ejercita es el handler de verdad, con su enrutado y sus códigos.
+//
+// Lo que este arnés NO cubre, dicho: el `express.json()` de la aplicación. Aquí el cuerpo se le
+// entrega ya parseado, igual que se lo entregaría el parser. El camino HTTP completo —incluido el
+// parser y los códigos por la red— está medido aparte, en `docs/master/evidencias/SCRUM-960/paso0.mjs`.
+function pedir(metodo, ruta, cuerpo) {
+  escrituras.length = 0;
+  return new Promise((resolve, reject) => {
+    const req = { method: metodo, url: ruta, body: cuerpo === undefined ? {} : cuerpo, merchantId: 1, headers: {} };
+    const res = {
+      statusCode: 200,
+      status(c) { this.statusCode = c; return this; },
+      json(cuerpoJson) { resolve({ status: this.statusCode, json: cuerpoJson, escrituras: escrituras.slice() }); return this; },
+    };
+    router(req, res, (err) => (err ? reject(err) : resolve({ status: 404, json: null, escrituras: escrituras.slice() })));
+  });
 }
+
+/** Se conserva la forma `conApp(fn)` para que cada test se lea igual. */
+const conApp = (fn) => fn(pedir);
 
 // ── ① PONER y CORREGIR ──────────────────────────────────────────────────────────────────────
 
