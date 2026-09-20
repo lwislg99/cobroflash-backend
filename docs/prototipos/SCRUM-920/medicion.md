@@ -109,3 +109,19 @@ ningún blanco estaba tapado.
 - **Qué campos lee la lectura del ticket**: SCRUM-912. Aquí se dibujan dos (importe y fecha).
 - **El nombre del trabajo y la clave cruda del KPI**: SCRUM-944. **La ruta que no valida la categoría**: SCRUM-943.
 - **La tabla que se recorre de lado en otras pantallas**: `patron-tabla-de-lado.md`.
+
+## 7 · Repetición sobre el árbol fusionado (20-sep-2026)
+
+Lo de arriba se midió el 18-sep sobre `origin/main = 16733a22`. La rama estuvo dos días sólo en local; el
+20-sep, a las 13:05 Z (hora de GitHub), se mergeó `origin/main = f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4` (184
+commits, 0 conflictos) y se volvió a correr `medir.mjs` sobre el árbol fusionado, con la salida a un fichero fuera del
+árbol y el código de salida leído aparte.
+
+- **Veredicto: TODO EN VERDE, `EXIT=0`, 84 comprobaciones de comportamiento (42 por anchura × 2), 0 rojos.**
+- **Población, por anchura (1280 y 390 salen igual):** lista 22 controles y 11 cifras en €; alta 21 y 0; detalle 7 y 3;
+  inventario 0 y 0. Errores de consola: 0 en las dos.
+- **Controles positivos: los tres disparan en las dos anchuras** (desborde · controles < 44 px · frase vetada). Sin eso,
+  los ceros de arriba no valdrían nada.
+- **Ningún blanco tapado al pulsarlo** (0), y las 4 opciones del «⋯» cambian el estado al pulsarlas.
+- Este fichero es el único cambio de esta sección: el prototipo (`gastos.html`) y el instrumento no se tocaron entre
+  las dos pasadas.
