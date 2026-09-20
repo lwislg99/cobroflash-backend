@@ -167,3 +167,93 @@ orquestador → `[]` (control negativo).
 * `public/dashboard/css/styles.css` — `.gasto-nif-ayuda`.
 * `scripts/guard-nif-del-gasto.mjs` + su entrada en `package.json`; `scrum522` 26 → 27, medido.
 * `docs/microcopy/2026-09-18-SCRUM-937-nif-del-gasto.md`.
+
+---
+
+## SCRUM-937c · el recorrido en staging, que es lo que faltaba
+
+**Fecha:** 20-sep-2026 13:19:55Z (GitHub) · **Carril:** S2 (panel) · **Pedido por:** el orquestador
+**Medido contra:** `origin/main` = `f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4`
+**Rama:** `scrum-937c-recorrido-staging` · **Banco:** `docs/master/evidencias/scrum937/recorrido-staging-937c.mjs`
+
+Los dos apartados «Lo que NO cubre» de arriba terminaban en la misma frase —**«no se ha recorrido en
+staging»**— y era el único hueco que quedaba para cerrar el ticket. Esto lo cierra.
+
+### Que staging sirve 937b, comprobado por CONTENIDO y no por el SHA
+
+`/version` de staging y de producción dan los dos `f2fa091b`, el mismo `origin/main`. Pero un SHA
+igual es una etiqueta: lo que se mide es el fichero servido. El `expensesView.js` que staging
+devuelve trae `aplicarNifSegunProveedor` y **los dos literales firmados**, y es idéntico al del
+árbol (35.557 caracteres, normalizando fin de línea). El merge de 937b, `988264d0` (PR #1514), es
+ancestro de `origin/main`.
+
+### Lo medido, en el modal real a 390 px
+
+Se lee el **ESTADO del DOM** —`readOnly`, `hidden`, `checkVisibility()`, la altura real, el texto y
+el color— nunca una captura, y **después** de cada gesto.
+
+| casilla | resultado |
+|---|---|
+| **A** · sin proveedor, el NIF es de solo lectura | ✔ `readOnly` = true |
+| **A** · la ayuda firmada se ve, y es el literal | ✔ `hidden` false, `checkVisibility()` true, 34 px |
+| **A** · teclear «B87654321» no deja nada | ✔ el campo queda en «» |
+| **P0** · control positivo del tecleador | ✔ el mismo gesto sobre `#exp-concept` SÍ escribe |
+| **P1** · proveedor sin NIF: el campo se escribe y la ayuda se esconde | ✔ `readOnly` false, ayuda 0 px |
+| **P1** · control positivo: el tecleo entra | ✔ el campo queda en «B87654321» |
+| **B** · al quitar el proveedor, el NIF tecleado NO se borra | ✔ sigue «B87654321» |
+| **B** · y vuelve a bloquearse con la ayuda a la vista | ✔ `readOnly` true, ayuda 34 px |
+| **B** · tras guardar sale el aviso ámbar con el literal firmado | ✔ `data-kind="warn"`, fondo `rgb(180, 83, 9)` |
+| **B** · el servidor dijo `sin_proveedor` | ✔ leído de la respuesta del POST |
+| **B** · el gasto se guardó sin proveedor | ✔ gasto 235, `providerId` null |
+| **B** · y la ficha del proveedor sigue SIN NIF | ✔ `taxId` null |
+| limpieza · el gasto de prueba está borrado | ✔ DELETE 200, ya no está |
+| limpieza · los proveedores de prueba están borrados | ✔ 91 y 92, DELETE 200, `siguenVivos: []` |
+
+**POBLACIÓN: 15 casillas · 14 evaluadas · 14 verdes · 1 no evaluable · EXIT=0.**
+
+Los datos de prueba, con el permiso del orquestador por el canal (20-sep) y sus cuatro condiciones:
+proveedores **91** («ZZZ PRUEBA 937 sin NIF») y **92** («ZZZ PRUEBA 937 con NIF»), creados y
+borrados en la misma tanda, y el gasto **235**, borrado. Nada queda vivo en staging.
+
+### La casilla que NO se pudo evaluar, y por qué es un hallazgo
+
+**P2** —proveedor CON NIF en su ficha: sale el de la ficha, de solo lectura y sin ayuda— **no se
+recorrió**, y no por falta de ganas: **ni `POST` ni `PUT /admin/providers` aceptan `taxId`**
+(`src/modules/providers/app/routes/providers.routes.ts`: los dos destructuran sólo
+`name/phone/email/notes/isActive`). El **único** escritor del NIF de una ficha es
+`guardarNifDelProveedor`, o sea el mecanismo que este banco venía a probar. Fabricar el caso exigía
+crear un gasto de más, que no estaba autorizado, así que se declara en vez de darlo por verde.
+
+No deja a 937 cojo: ese camino ya está cubierto en local por `guard:nif-del-gasto` con sus cuatro
+mutantes (937b), y el propio 937 dice que `la_ficha_tiene_otro` no se alcanza desde el modal.
+Queda dicho por si alguien quiere darle un ticket al hueco de la API.
+
+### El error de esta sesión, porque es el del jueves otra vez
+
+**La primera pasada dio el caso A en VERDE con población CERO.** El merchant QA no tenía ningún
+proveedor, así que los dos controles positivos previstos (P1 y P2) no llegaron a correr — y las tres
+casillas de A salieron verdes igualmente. Dos de ellas eran sólidas (leen `readOnly` y la ayuda,
+propiedades del DOM que no dependen de mí). **La tercera no:** «teclear no deja nada en el campo» y
+«mi banco no ha llegado a teclear» **se leen exactamente igual**, y estuve a punto de publicar la
+primera.
+
+Lo cazó mirar la **población**, no el resultado. El arreglo fue un control positivo que no necesita
+datos: teclear con el MISMO gesto en `#exp-concept`, que no es de solo lectura (P0). Si P0 escribe,
+el vacío de A es del `readOnly` y no del banco.
+
+Es, punto por punto, lo que publicó los botones muertos de SCRUM-917 el jueves: **un verde que no
+prueba que el mecanismo funcione.**
+
+    🔒 Un verde sin control positivo no dice «funciona»: dice «no he visto fallar nada», que es
+       lo mismo que diría un instrumento apagado.
+
+Y antes de creerme el cero, dos sondas independientes (`censo-proveedores-937c.mjs`): la respuesta
+cruda de `/admin/providers` (`{"ok":true,"items":[]}`, 0) y las opciones del desplegable ya pintado
+(sólo «— Sin proveedor —»), con control positivo sobre `/admin/expenses`, que devolvía 4 con el
+mismo sobre `{ok,items}`. Las dos coincidieron: el cero era real y no mi parseo.
+
+### Ficheros (937c)
+
+* `docs/master/evidencias/scrum937/recorrido-staging-937c.mjs` — el recorrido, con P0/P1/P2 y la
+  limpieza. Sin `--crear-proveedores` no toca ningún dato.
+* `docs/master/evidencias/scrum937/censo-proveedores-937c.mjs` — las dos sondas que explican el cero.
