@@ -4741,6 +4741,32 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
   }
   
 
+  /**
+   * SCRUM-965 · EL PRESUPUESTO QUE YA SE CREÓ DESDE ESTE FORMULARIO, Y CON QUÉ CONTENIDO.
+   *
+   * ── EL DEFECTO ────────────────────────────────────────────────────────────────────────────
+   * Generar no navegaba ni limpiaba: la hoja se cerraba con «Seguir editando» y el botón volvía a
+   * estar armado. Un segundo clic —sin tocar NADA— creaba otro presupuesto, con otro número.
+   * Medido contando los `POST /quote/create` de verdad: dos clics, dos documentos (nº 101 y 102).
+   *
+   * ── LA REGLA, Y POR QUÉ ES LA HUELLA Y NO UN «YA GENERADO» ────────────────────────────────
+   * Un simple «ya se generó una vez» sería falso en cuanto el profesional cambie una línea y
+   * vuelva a pulsar: ahí SÍ quiere otro documento, y negárselo sería un defecto nuevo. Lo que
+   * distingue los dos casos no es cuántas veces ha pulsado, es SI LO QUE VA A MANDAR ES LO MISMO.
+   * Por eso se guarda la huella del payload: idéntica ⇒ es el mismo presupuesto y se reabre el que
+   * ya existe; distinta ⇒ es otro y se crea.
+   *
+   * 🔴 No es un estado nuevo del producto (Parte L/P): no se guarda en ningún sitio, no viaja al
+   * servidor y muere con la pantalla. Es memoria de un formulario dentro de su propia vista.
+   *
+   * ── LO QUE NO SE PUEDE PERDER ──────────────────────────────────────────────────────────────
+   * Que no duplique no puede costar que el profesional se quede SIN llegar a su presupuesto. Por
+   * eso el camino corto no es «no hacer nada»: es volver a abrir la MISMA hoja, con el mismo
+   * número, que es a lo que iba. Lo comprueba `npm run guard:un-solo-presupuesto`, que tras el
+   * segundo clic exige hoja abierta y el mismo nº.
+   */
+  let presupuestoYaCreado = null;
+
    // ---------- ENVÍO: CREATE (y luego modal para WhatsApp/PDF) ----------
    submitBtn.addEventListener("click", async function () {
     setAlert(null, "");
@@ -5040,6 +5066,16 @@ payloadLines.push(lineaParaPayload({
         ivaModo: fieldIvaModo.select.value || undefined,
       };
 
+      // SCRUM-965 · SI ES EXACTAMENTE LO MISMO QUE YA SE CREÓ, NO SE CREA OTRO: SE REABRE AQUEL.
+      // La comparación va aquí y no antes del `try` para que la huella se saque del MISMO objeto
+      // que se manda: si se calculara aparte serían dos sitios que tienen que decir lo mismo, y uno
+      // se quedaría atrás. El `return` pasa por el `finally`, que devuelve el botón a su rótulo.
+      const huellaDeEstePresupuesto = JSON.stringify(quotePayload);
+      if (presupuestoYaCreado && presupuestoYaCreado.huella === huellaDeEstePresupuesto) {
+        openQuoteModal(presupuestoYaCreado.hoja);
+        return;
+      }
+
       const quote = await createQuote(quotePayload);
       const quoteId = quote.id || quote.quote_id || quote.quoteId;
       const quoteNumber = quote.number ?? quoteId; // A1.2: número por merchant
@@ -5064,7 +5100,11 @@ payloadLines.push(lineaParaPayload({
       // modal lo explica y no ofrece el envío. A2.3: sin checkbox — el modal
       // siempre ofrece WhatsApp/email/PDF/seguir editando.
       const pendingApproval = quote.status === 'pending_approval';
-      openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp: true, pendingApproval });
+      // SCRUM-965 · se guarda la hoja EXACTA que se acaba de abrir, no sus trozos: el segundo clic
+      // tiene que reabrir esto mismo, y reconstruirlo a mano sería la segunda fuente que deriva.
+      const hojaDeEstePresupuesto = { quoteId, quoteNumber, pdfUrl, allowWhatsapp: true, pendingApproval };
+      presupuestoYaCreado = { huella: huellaDeEstePresupuesto, hoja: hojaDeEstePresupuesto };
+      openQuoteModal(hojaDeEstePresupuesto);
 
       // 4) Actualizamos cajita de estado a la derecha (de momento sin WhatsApp)
       setAlert("success", pendingApproval
