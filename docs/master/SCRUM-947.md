@@ -108,3 +108,39 @@ Rojo estable: 4 de 4 pasadas sobre `e76580b1` antes de añadir F; F en rojo sobr
 - `docs/master/evidencias/scrum947/medir-en-staging.mjs` — la medición que cierra, para después del
   despliegue: crea 1 gasto en el merchant QA con una foto de 3–5 MB por el modal, comprueba que se
   guarda y que se ve al reabrirlo desde la lista, y lo borra. Lee el secreto en tiempo de ejecución.
+
+## SCRUM-947b · la medición que cierra, en staging
+
+**Fecha:** 18-sep-2026, hacia las 13:06Z (hora de GitHub: `gh api -i zen` dio 13:07:19Z justo
+después; el concepto lleva la marca del reloj local, 13:12:00Z, que va unos 5 min adelantado).
+**Medido contra:** `origin/main` = `3b53c92fbc278fbe2c66e0b42300860fa21ed6f2` (el merge del #1513);
+staging `/version` = el mismo SHA, y el `expensesView.js` que sirve staging trae `fotoParaGuardar`.
+**Quién:** Sesión 2 (relevo), con turno de staging exclusivo y permiso del orquestador por el canal
+dados a esta sesión (crear 1 gasto en el merchant QA, comprobarlo y borrarlo).
+**Instrumento:** `node docs/master/evidencias/scrum947/medir-en-staging.mjs` desde un worktree en
+`3b53c92f` con el merge de main · salida 0.
+
+```json
+{
+  "concepto": "QA 947 foto 1789737120181",
+  "login": 200,
+  "version": "3b53c92fbc278fbe2c66e0b42300860fa21ed6f2",
+  "despliegueTieneElArreglo": true,
+  "fotoMiB": 3.73,
+  "modalCerrado": true,
+  "id": 234,
+  "guardadoMiB": 0.73,
+  "guardadoEsJpeg": true,
+  "guardadoPx": "2000×1500",
+  "seVeAlReabrir": { "naturalWidth": 2000, "alto": 120, "visible": true },
+  "borrado": { "status": 200, "sigue": false }
+}
+✔ la foto de 3–5 MB se GUARDA en staging, se VE al reabrir, y el gasto de prueba está BORRADO
+```
+
+- **Población:** 1 gasto, 1 foto sintética de 3,73 MiB (4000×3000), por el modal real con clic en
+  «Añadir gasto», a 390 px.
+- **Estado después de pulsar, no captura:** el gasto `234` existe con la foto guardada (0,73 MiB, JPEG,
+  2000×1500); al reabrirlo desde la lista la imagen CARGA (`naturalWidth` 2000, visible); el `DELETE`
+  devolvió 200 y una lectura posterior ya no lo encuentra.
+- **Lo que sigue sin medir:** una foto REAL de móvil (orientación EXIF), como ya decía «Lo que NO cubre».
