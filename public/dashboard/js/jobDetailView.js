@@ -700,20 +700,41 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // raro pero es un dato que existe. Lo que se calla es lo que NO CONSTA, que es otra cosa.
   // Sin franja, ese caso se queda sin decir cuánto falta: lo recoge la tarjeta «Lo que falta»
   // (SCRUM-917f, bloque E), que para eso pregunta si hay franja antes de repetir una cifra.
+  // 🔴 SCRUM-917e (D) · RE-ANCLAJE DE SCRUM-318/363 — SIN EJE NO SE AFIRMA NADA DEL DINERO.
+  // El bloque DINERO del rail, que esta franja sustituye, tenía este contrato escrito y medido:
+  // con `totalAceptado` 0 y 300 € cobrados pintaba SOLO «Cobrado», y NUNCA «Pendiente», porque un
+  // importe derivado sin eje contra el que medirlo es una afirmación que no se puede sostener (es
+  // el mismo defecto que SCRUM-363 quitó del chip de cobro). Al bajar el dinero a la franja, ese
+  // contrato se quedó sin superficie y la franja lo rompió: medido hoy, con aceptado 0 y cobrado
+  // 300 € decía «Cobrado del todo · 0,00 €» encima de un «Cobrado 300,00 €» — la pantalla
+  // contradiciéndose en cuatro centímetros.
+  //
+  // Así que el eje manda sobre el FOCO, no sobre la franja entera: los lados son DATOS MEDIDOS
+  // (lo aceptado y lo cobrado, cada uno el suyo) y se siguen diciendo; lo que se calla es lo
+  // DERIVADO. Ni un rótulo nuevo: se omite el que había.
+  //
+  // ⚠️ LA CONDICIÓN DE LA FRANJA NO SE TOCA, y esto NO es un detalle de estilo. El primer intento
+  // fue `!= null && (hayEje || cobrado > 0)`, y lo tumbó el control positivo de SCRUM-651: un
+  // presupuesto aceptado por 0 € es raro pero es un dato que CONSTA, y esa condición lo escondía.
+  // Los dos contratos caben a la vez porque hablan de cosas distintas — 651 de si el dato consta
+  // (la franja), 318/363 de si hay eje para derivar (el foco).
+  const hayEje = aceptado > 0;
   if (job.totalAceptado != null) {
     const franja = document.createElement('div');
     franja.className = 'detail-dinero';
 
     const foco = document.createElement('div');
-    const rot = document.createElement('span');
-    rot.className = 'detail-dinero__rotulo';
-    // «Cobrado del todo» en vez de «Te falta por cobrar 0,00 €»: enseñar un cero donde se espera
-    // una deuda obliga a leer el número para entender que no hay nada que hacer.
-    rot.textContent = pendiente > 0 ? 'Te falta por cobrar' : 'Cobrado del todo';
-    const gr = document.createElement('div');
-    gr.className = 'detail-dinero__grande' + (pendiente > 0 ? '' : ' detail-dinero__grande--ok');
-    gr.textContent = fmtMoneyEs(pendiente > 0 ? pendiente : aceptado, cur);
-    foco.append(rot, gr);
+    if (hayEje) {
+      const rot = document.createElement('span');
+      rot.className = 'detail-dinero__rotulo';
+      // «Cobrado del todo» en vez de «Te falta por cobrar 0,00 €»: enseñar un cero donde se espera
+      // una deuda obliga a leer el número para entender que no hay nada que hacer.
+      rot.textContent = pendiente > 0 ? 'Te falta por cobrar' : 'Cobrado del todo';
+      const gr = document.createElement('div');
+      gr.className = 'detail-dinero__grande' + (pendiente > 0 ? '' : ' detail-dinero__grande--ok');
+      gr.textContent = fmtMoneyEs(pendiente > 0 ? pendiente : aceptado, cur);
+      foco.append(rot, gr);
+    }
 
     // Aceptado y Cobrado, al lado y en este orden. Son el contexto de la cifra grande, no su
     // competencia: por eso van juntos, pequeños, y NO se repiten en ningún otro sitio.

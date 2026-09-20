@@ -398,12 +398,40 @@ test('SCRUM-320 · el importe entregado se OMITE si no se pudo medir, en vez de 
     '🔴 se cuenta como medido un albarán SIN_VALORAR, que no lleva importe.',
   );
   assert.equal(i.entregadoFirmado, 0, '🔴 se inventa un importe para un albarán sin valorar');
-  // Y la vista omite la línea en ese caso.
+  // ── 🔴 RE-ANCLADO EN SCRUM-917e (corte D), 20-sep-2026 ────────────────────────────────
+  // QUÉ SUPERFICIE DESAPARECIÓ: la fila «Entregado y firmado» de esta sección, y con ella toda la
+  // tabla de importes (Aceptado / Entregado y firmado / Facturado / Cobrado / Te falta), que se
+  // fue a la franja del cuerpo. Aquí se leía del FUENTE que esa fila llevaba su guarda
+  // (`if (i.albaranesFirmadosConImporte > 0) fila('Entregado y firmado'…)`), y al irse la fila el
+  // contrato se quedó apuntando a una cadena que ya no existe.
+  //
+  // QUÉ PRINCIPIO SOBREVIVE: **un cero ESCRITO parece un cero MEDIDO.** Los albaranes
+  // SIN_VALORAR —el modo por defecto— no llevan importe, así que un «0,00 €» sobre entregas
+  // firmadas de verdad no es un hueco: es una cifra inventada.
+  //
+  // DÓNDE VIVE AHORA: en `huecosDeCobro`, que es donde quedó ese dato. El comentario del corte D
+  // lo AFIRMA («sigue viva donde ahora vive ese dato: `huecosDeCobro`, que ya distingue ausencia
+  // de cero»); esto lo convierte en algo comprobable, que es la diferencia entre una garantía y
+  // una frase. Y se prueba por COMPORTAMIENTO, no por la forma del código: un guard atado a una
+  // cadena del fuente es justo el que acaba de romperse al mover la fila de sitio.
+  const huecos = G5.huecosDeCobro(sinValorar).map((h) => h.id);
   assert.ok(
-    /if \(i\.albaranesFirmadosConImporte > 0\) fila\('Entregado y firmado'/.test(VISTA),
-    '🔴 la vista pinta «Entregado y firmado» sin comprobar que se pudo medir: escribiría 0,00 € ' +
-      'sobre albaranes firmados de verdad.',
+    !huecos.includes('sin-facturar'),
+    '🔴 SE ESCRIBE UN IMPORTE QUE NO SE HA MEDIDO. Con un albarán firmado y SIN VALORAR sale el ' +
+      'hueco «0,00 € entregados sin facturar»: un cero escrito se lee como un cero medido, y aquí ' +
+      'lo que pasa es que no se sabe cuánto vale lo entregado. Se OMITE, no se escribe cero.',
   );
+  assert.deepEqual(huecos, ['sin-facturar-nada'],
+    '🔴 al callar el importe que no se pudo medir se ha callado también lo que SÍ consta: los ' +
+      '500 € aceptados y sin facturar. Omitir no es enmudecer.');
+
+  // Y no ha reaparecido por la otra puerta: la fila con su importe ya no se pinta en la sección.
+  assert.ok(
+    !/'Entregado y firmado'/.test(VISTA),
+    '🔴 la fila «Entregado y firmado» ha vuelto a la sección. Si vuelve, vuelve con su guarda: ' +
+      'este contrato se re-ancló porque la fila se fue, no porque dejara de importar.',
+  );
+
   // Contraste: con uno VALORADO sí se cuenta.
   const valorado = { ...sinValorar, albaranes: [{ id: 1, estado: 'firmado', facturado: false, totales: { total: 400 } }] };
   assert.equal(G5.importesDeCobro(valorado).albaranesFirmadosConImporte, 1, '🔴 tampoco cuenta el valorado');
