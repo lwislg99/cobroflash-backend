@@ -182,3 +182,103 @@ Los tickets de «lo que no tenemos» **los abre el orquestador**, no la Sesión 
 - La cuenta de prueba de Holded sigue viva en un navegador que **no se puede cerrar**; los volcados
   literales están en la máquina de la Sesión 0 (`s0-906-traspaso/holded-dentro/q*`). No se suben
   porque contienen el alias de correo del fundador.
+
+## SCRUM-906e · La firma de Holded, recorrida por dentro (20-sep-2026)
+
+**Medido el 20-sep-2026 a las 13:26:07Z (hora de GitHub) sobre `origin/main` =
+`f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4`.** Rama `scrum-906e-firma-holded`, worktree
+`D:/MILLONARIO/cobroFlash/wt-906e`. Solo docs. El detalle entero está en
+[`docs/competencia/matriz.md`](../competencia/matriz.md) **§8**; aquí queda lo que decide.
+
+**Encargo:** cerrar la ❓ que dejó abierta §7.0 de la matriz — *«el flujo para PEDIR la firma de un
+presupuesto NO se ha encontrado»*.
+
+**Veredicto: ❓ RESUELTA, y al revés de lo que apuntaba.** Holded **sí** pide la firma de un
+presupuesto. La función estaba; lo que no habíamos encontrado era la pantalla donde se enciende:
+`Configuración > CRM > Firma digital`. Los **cinco** tipos de documento (Presupuestos, Facturas,
+Proformas, Pedidos de venta, Albaranes de venta) **nacen apagados** —los seis interruptores leídos del
+DOM dan `estado=false`—, y por eso el 18-sep no aparecía la firma en el presupuesto, ni en su modal de
+envío, ni en el portal del cliente.
+
+    🔒 Un producto que nace apagado se mide igual que un producto que no lo tiene, si solo se mira la
+       pantalla donde se usaría.
+
+**Las tres pantallas del 18-sep, vueltas a medir hoy, cada una con su suelo:** presupuesto 0 bloques
+(suelo «Convertir» → 5), modal de envío 0 (suelo «Enviar desde Holded» → 1), portal 0 (suelo «Aceptar
+presupuesto» → 1). Los ceros eran reales; lo que fallaba era el sitio donde buscábamos.
+
+**Lo que se aprendió del método, y ahorra la próxima vez:**
+
+- **El ancla de palabra no es cosmética:** «Confirmar» **contiene** «firmar», y Holded tiene un botón
+  «Confirmar» en casi todas sus pantallas. Un barrido por subcadena habría dado positivo en las tres
+  pantallas donde no hay firma. *(A3: un prefijo no es un nombre, y una subcadena tampoco.)*
+- **Un clic que dice «ok» y no cambia el DOM no se ejecutó.** Dos veces hoy: un «Enviar» y un
+  «Acciones» devolvieron `ok` con el recuento de nodos idéntico antes y después (1.235 → 1.235 y
+  1.338 → 1.338). El que sí funcionó se vio porque el recuento subió (1.235 → 1.338). *(A21.)*
+- **La respuesta estaba en la Store, no en el documento.** La ficha de la gema dice *«desde el Portal
+  del Cliente»*, y esa frase es la que mandó a mirar en el sitio correcto. Cuando la pantalla donde
+  esperas una función no la tiene, la ficha que la vende sí dice dónde vive.
+- ⚠️ **Trampa de la máquina, cazada hoy y de la familia de SCRUM-958:** `Set-Content -Encoding utf8`
+  en PowerShell 5.1 escribe **BOM**, y un JSON con BOM revienta el `JSON.parse` del instrumento
+  (`Unexpected token '\ufeff'`). Se escribe con `[IO.File]::WriteAllText`.
+
+**Lo que NO se midió, declarado:** el flujo de petición en sí —elegir firmante, qué ve el cliente en el
+portal, qué email llega, cómo queda el PDF— **no se recorrió**, porque para verlo hay que **encender**
+el interruptor de Presupuestos, y eso es **escribir** en la cuenta. Lo que el fundador autorizó el
+17-sep fue el **alta**, no la configuración, y las autorizaciones **no se heredan entre sesiones**
+(A19). Se pidió por el canal y se dejó sin hacer. Tampoco se envió nada a firmar, ni se validó nada de
+lo fiscal. **La cuenta marcaba 2 / 14 días:** caduca sola a primeros de octubre.
+
+**Para el orquestador, sin abrir tickets (los abre él):** la fila 3 de la matriz pasa a «✅ desde el
+Portal del cliente, apagada de fábrica, con cupo por plan». Y queda una pregunta que esta entrega
+**no** contesta: **si la firma de YaQu tiene o no tope**, porque el cupo mensual (5/20/50/100/400) es la
+palanca de precio que ellos usan y nosotros no hemos mirado.
+
+## SCRUM-906f · Con la firma de presupuestos ENCENDIDA (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `d17825645813deb7406d8c6cc3fdd7f3a06e1657`.** Rama
+`scrum-906f-firma-holded-medida`. Solo docs. El detalle está en
+[`docs/competencia/matriz.md`](../competencia/matriz.md) **§9**.
+
+Unas horas después de §906e **llegó el GO del fundador**, literal: *«autorizo encender la firma de
+presupuestos en Holded mientras sea gratis»*, con la condición dura de **parar ante cualquier precio,
+plan, tarjeta o crédito** y cuatro condiciones del orquestador (solo ese interruptor · cualquier correo
+a una dirección nuestra · no tocar nada más de la configuración · dejarlo como estaba al terminar).
+⚠️ **No se hereda** (A19).
+
+**Lo que se hizo, y cómo se comprobó que se hizo lo que se quería:** se pulsó **solo** el interruptor de
+Presupuestos, con un instrumento que **aborta si la etiqueta del índice no coincide** con la esperada y
+que compara los seis estados antes y después. Resultado: `CAMBIARON: 0` — exactamente el que se pulsó y
+ninguno más. No apareció nada de pago (se buscó precio, plan, «mejora tu plan», tarjeta y créditos: solo
+el banner de prueba que ya estaba, 2 / 14 días).
+
+    🔒 Un mensaje de error tampoco es una medición: dice que algo tardó, no que algo no pasara.
+
+Esa frase nace aquí: al guardar, la pantalla dijo *«La petición está tardando más de lo esperado»* **y
+había guardado igual**, comprobado recargando la página entera. Es la hermana del aviso de siempre —una
+operación que no se ejecutó se lee como un éxito (A21)— pero **al revés**, y por eso engaña distinto.
+
+**Lo que NO cambió al encenderlo, que es la parte que decide:**
+
+1. El panel del presupuesto sigue con **0 bloques de firma** tras recargar el documento entero.
+2. El portal del cliente sigue **exactamente igual**: «Aceptar presupuesto» y «Rechazar presupuesto».
+   **Encender el tipo de documento no pone por sí solo el botón en el portal**: hay que pedir la firma
+   de ese documento, uno a uno.
+3. **Tercera medición del mismo defecto:** con Presupuestos ENCENDIDO y Facturas APAGADO, el único
+   botón del módulo de Firma digital **sigue llevando a Facturas de venta**. La ruta está clavada.
+
+**Y ahora son tres fuentes suyas que no concuerdan** sobre qué se puede firmar (Store, ayuda y pantalla
+de ajustes), más una cuarta sobre el portal: su artículo de acciones del Portal del cliente enumera
+nueve y **firmar no está**. *Lectura de la Sesión 0:* no es que no lo tengan; **lo tienen a medio
+montar**, y para decidir eso pesa más que la lista de funciones.
+
+**Dónde se paró y por qué, declarado:** la petición sale de la caja de envío del documento, y **ese clic
+no se hizo**. No lo impidió Holded: lo impide el **clasificador de permisos de la máquina**, que bloquea
+interactuar con un control de envío de una app de facturación de terceros. Se intentó por dos vías
+legítimas y bloqueó las dos; **no se buscó la vuelta**, que es la conducta correcta ante un guard.
+Sigue sin medirse —y por tanto sin afirmarse— cómo se elige al firmante, qué ve el cliente en el portal,
+qué correo llega y cómo queda el documento firmado.
+
+**Cómo queda la cuenta:** el interruptor de **Presupuestos se deja ENCENDIDO a propósito**, por decisión
+del orquestador (el recorrido no terminó y apagarlo obligaría a repetirlo); los otros cuatro, apagados.
+Es reversible en un comando y está medido.

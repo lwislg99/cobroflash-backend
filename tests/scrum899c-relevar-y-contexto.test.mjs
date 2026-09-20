@@ -249,11 +249,13 @@ test('bloqueada, sin nadie vivo, nombre ajeno y el suelo', () => {
 
 test('🔴 relevar lanza SIEMPRE una sesión NUEVA, nunca reanuda', () => {
   // Es el punto entero de la A19: reanudar arrastraría la caché que el relevo viene a soltar.
-  // `decidirLanzar`, en cambio, SÍ diría REANUDAR con un registro reciente — por eso `relevar` no
-  // puede reutilizarlo, y por eso este caso compara las dos respuestas.
+  // Hasta SCRUM-954 (20-sep-2026) el control de este caso era que `decidirLanzar` SI reanudaba con
+  // un registro reciente, y `relevar` no. Ya no vale: desde 954 tampoco reanuda `lanzar`, asi que
+  // el contraste se hace contra `argsLanzar({modo:"reanudar"})`, que sigue existiendo y sigue
+  // siendo lo que NO se puede construir aqui (el hermano positivo, abajo).
   const registroReciente = { 'sesion-2': { sessionId: UUID, ultimaTanda: ahora - 5 * 60 * 1000 } };
-  assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: registroReciente, ahora }).veredicto, 'REANUDAR',
-    'control: con la caché caliente, `lanzar` reanuda — y eso es lo que `relevar` NO debe hacer');
+  assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: registroReciente, ahora }).veredicto, 'NUEVA',
+    'SCRUM-954: ni `relevar` ni `lanzar` reanudan ya; el arrastre de contexto no entra por ninguna de las dos');
 
   const args = s.argsLanzar({ modo: 'nueva', nombre: 'sesion-2', prompt: 'tu encargo de hoy' });
   assert.deepEqual(args.slice(0, 5), ['--bg', '-n', 'sesion-2', '--permission-mode', 'auto']);

@@ -1,7 +1,7 @@
 # La competencia, función por función · matriz viva
 
-**Última medición: 17-sep-2026 19:39:29Z (hora de GitHub) · `origin/main` = `fa9ff832e5d64a60ea9ef50bf863e138ef4de423`.**
-*(La primera versión de este documento se midió a las 18:24:26Z sobre `ef332b90`.)*
+**Última medición: 20-sep-2026 · `origin/main` = `d17825645813deb7406d8c6cc3fdd7f3a06e1657`** (§9, la firma de Holded con el interruptor encendido). *(El §8 se midió a las 13:26:07Z, hora de GitHub, sobre `f2fa091b`.)*
+*(La primera versión de este documento se midió el 17-sep a las 18:24:26Z sobre `ef332b90`; el §7 consolidado, el 18-sep a las 07:00:46Z sobre `ecccf94e`.)*
 **Ticket:** SCRUM-906, FASE 2 · **Carril:** consultoría (Sesión 0) · **Encargo:** orquestador, 17-sep-2026.
 
 Este documento **CRECE**: entra un competidor por entrega y el PR se amplía. Lo que ya está escrito
@@ -55,7 +55,7 @@ Los detalles, las citas literales y los enlaces, en la ficha de cada competidor 
 |---|---|---|---|---|---|
 | 1 | Presupuesto | ✅ | ✅ | ✅ con anticipo (Estándar+) | ✅ |
 | 2 | Envío y canales | ✅ **WhatsApp con botones** | 🟡 PDF por el WhatsApp del móvil | 🟡 email y portal · ❓ WhatsApp | 🟡 email · ❓ WhatsApp |
-| 3 | Firma del cliente | ✅ | ❌ | ✅ con cupo mensual por plan | ❓ |
+| 3 | Firma del cliente | ✅ | ❌ | ✅ desde el Portal del cliente, **apagada de fábrica**, con cupo mensual por plan (§8) | ❓ |
 | 4 | Cobro | 🟡 flags OFF | ❌ | ✅ tarjeta y SEPA · ❓ Bizum | 🟡 conecta Stripe/PayPal **para facturar**, no para cobrar · ❓ Bizum |
 | 5 | Tipos de factura | 🟡 | ✅ 23 tipos | ✅ + Facturae | ✅ |
 | 6 | Recurrentes | ❌ | ✅ | ✅ con tope por plan | ✅ |
@@ -416,6 +416,9 @@ Solo lectura: no se guardó nada, no se envió nada y no se cambió ninguna conf
   la tarjeta «Activa la firma digital» y no la sustituyó nada), ni en el modal de envío, ni en el
   portal. Y el botón «Enviar documento» del módulo lleva a Facturas de venta, que están vacías. ❓ **Es
   «no lo encuentro», no «no lo tiene»**: su ayuda dice que sí.
+  - *(20-sep-2026: **esta ❓ está RESUELTA y la resolvió «no lo tiene» al revés.** La pantalla existe,
+    está en `Configuración > CRM > Firma digital`, y los cinco tipos de documento **nacen apagados**.
+    Lo de arriba queda como historia de dónde NO está. Ver §8.)*
 
 ### 7.1 · 🔴 Una corrección antes de nada: el cobro NO es foso hoy
 
@@ -496,6 +499,224 @@ la regla 18); en producto, es el foso más grande **el día que se encienda**.
 
 **El juicio, en una línea:** los que acercan dinero son **F1, F4, F5 y F7**, más **encender Z4**. **F2 no
 es opcional**: es la puerta de 2027. Todo lo demás, después.
+
+---
+
+## 8 · La firma de Holded, recorrida por dentro (20-sep-2026)
+
+**Medido el 20-sep-2026 a las 13:26:07Z (hora de GitHub) sobre `origin/main` =
+`f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4`.** Misma cuenta de prueba del 17-sep, en el navegador que
+sigue vivo. **Solo lectura: no se activó ni se desactivó ningún ajuste, no se guardó nada y no se
+envió ningún documento a firmar.**
+
+**Resuelve la ❓ de §7.0, y la resuelve al revés de lo que parecía:** Holded **sí** pide la firma de un
+presupuesto. Lo que faltaba no era la función: era la pantalla donde se enciende.
+
+### 8.1 · Dónde estaba, y por qué no aparecía en ninguna parte
+
+`Configuración > CRM > Firma digital` (`app.holded.com/home#settings:/crm/settings/digitalsignature`):
+*«Elige qué documentos podrán firmarse online de forma rápida y segura.»* Cinco interruptores, con el
+estado leído del DOM —no de una captura— en esta cuenta, con la gema ya activada desde el 18-sep:
+
+| interruptor | estado |
+|---|---|
+| Presupuestos | `false` |
+| Facturas | `false` |
+| Proformas | `false` |
+| Pedidos de venta | `false` |
+| Albaranes de venta | `false` |
+| Utilizar la fecha de expiración predeterminada | `false` |
+
+    node interruptores.mjs "app.holded"   → POBLACION interruptores=6 · los 6 en estado=false
+
+**Los cinco tipos nacen apagados.** Por eso el 18-sep no había rastro de la firma en el presupuesto, ni
+en su modal de envío, ni en el portal: la gema estaba puesta y el tipo de documento, no.
+
+    🔒 Un producto que nace apagado se mide igual que un producto que no lo tiene, si solo se mira la
+       pantalla donde se usaría.
+
+La misma pantalla fija la caducidad: **«Días para que expire la firma»** con 1 / 2 / 7 / 15 / 30 días.
+
+### 8.2 · Las tres pantallas, vueltas a medir hoy, con población y suelo
+
+| dónde | bloques con «firma» | suelo: la misma búsqueda que SÍ encuentra |
+|---|---|---|
+| Panel del presupuesto `E260001` | **0** · 3 marcos, 2.100 nodos | «Convertir» → **5** bloques |
+| Modal «Enviar vía email» del presupuesto | **0** · 3 marcos | «Enviar desde Holded» → **1** bloque |
+| Portal del cliente del presupuesto | **0** · 1 marco, 644 nodos | «Aceptar presupuesto» → **1** bloque |
+
+El patrón va **anclado a palabra** (`\b(firma|firmar|firmado|firmante|firmas)\b`) porque **«Confirmar»
+contiene «firmar»**: sin el ancla, el barrido devuelve falsos positivos en todas las pantallas de
+Holded, que tienen un botón «Confirmar» en casi todas.
+
+### 8.3 · Un defecto de su producto que se ve desde fuera
+
+El módulo **Firma digital** está vacío, y su único botón —el del estado vacío,
+`data-ref="digital_signature-no_rows_overlay-cta"`, rotulado **«Enviar documento»**— lleva a
+**Facturas de venta**. Medido dos veces, el 18-sep y el 20-sep.
+
+Y ahí hay una contradicción entre sus dos fuentes propias, las dos leídas hoy:
+
+- su **ayuda** (`help.holded.com/es/articles/10900972`) enumera como firmables *Presupuestos, Facturas
+  proforma, Pedidos de venta y Albaranes de venta* — **las facturas de venta no están**;
+- su **pantalla de ajustes** ofrece un interruptor **«Facturas»** además de «Proformas».
+
+No se resuelve desde fuera cuál manda, y no se resuelve aquí. *Lectura de la Sesión 0, no medición:*
+el único camino que su producto le ofrece a quien estrena la firma desemboca justo en el tipo de
+documento cuya firmabilidad se contradicen ellos mismos.
+
+### 8.4 · Su ficha de producto, literal (Holded Store, dentro de la app)
+
+> «Permite que tus clientes firmen **presupuestos, albaranes y otros documentos desde el Portal del
+> Cliente**, sin necesidad de herramientas externas. Controla el estado de cada solicitud con un
+> registro detallado de actividad. La firma se añadirá automáticamente al documento PDF y ambas partes
+> recibirán una notificación por email al completarse el proceso.
+> **(Por ahora, solo podrás enviar documentos para que te los firmen, no podrás firmarlos tú mismo).**»
+>
+> Registro detallado de firmas y control de estados y versiones firmadas · **Envío a múltiples
+> destinatarios (firma única)** · Avisos y notificaciones automáticas por email · Firmas gratis de tus
+> clientes a través del Portal del cliente, **según tu plan**.
+
+Precio **Gratis**, desarrollador Holded, tags *Facturación* y *CRM*. Esa frase —«desde el Portal del
+Cliente»— es la que mandó a mirar en el sitio correcto: estaba en la Store, no en el documento.
+
+### 8.5 · Cupos, estados, permisos y qué clase de firma es
+
+De su ayuda, leída hoy en el navegador (no con `WebFetch`). Los cupos ya estaban en §4 por su web
+pública y **hoy se confirman sin cambio**; lo nuevo son los estados y los permisos:
+
+- **Estados de una firma:** Pendiente · Firmado · Expirado · Cancelado · No requiere firma.
+- **Cupo mensual por plan:** Freelance PRO 5 · Básico 20 · Estándar 50 · Avanzado 100 · Premium 400
+  firmas/mes. *«Una vez alcanzado el límite mensual, no podrás solicitar nuevas firmas hasta el
+  siguiente periodo.»*
+- **Permisos:** hace falta ser **miembro CRM** o tener un **rol personalizado** con ese apartado.
+- **Qué firma es, en sus palabras:** *«La firma digital se basa en evidencias electrónicas como el
+  correo electrónico del firmante, la dirección IP, el hash del documento y la fecha y hora de la
+  firma. Estas evidencias permiten demostrar el acuerdo entre las partes, aunque **no equivale a una
+  firma electrónica cualificada**.»*
+- **Varios firmantes:** sí, *«Puedes añadir varios firmantes al enviar el documento»*.
+
+⛔ Todo esto **se anota, no se valida**: es lo que ellos dicen de su producto.
+
+### 8.6 · Qué deja para decidir
+
+1. **Su firma es de evidencias y lo dicen por escrito** (correo, IP, hash, fecha y hora), igual familia
+   que la nuestra. No es una ventaja suya ni nuestra: es el suelo del mercado, y quien lo cuente mejor
+   gana. ⛔ Cualquier frase que YaQu escriba sobre esto es texto que ve el usuario y va con firma.
+2. **Racionar por cupo en vez de capar la función** (ya recogido como M1 en §7.3) tiene aquí su segundo
+   caso medido: 5 / 20 / 50 / 100 / 400 firmas al mes. **Si YaQu tiene o no tope de firmas hoy NO se ha
+   medido en esta entrega**, y hasta que se mida no se afirma.
+3. **Nacer apagado tiene un precio.** Su gema se instala, no se ve nada, y el único botón que ofrece
+   lleva al sitio equivocado. Es el mismo riesgo que corre YaQu con todo lo que está construido y
+   detrás de una bandera (§7.1).
+
+### 8.7 · Lo que NO se midió, y por qué
+
+- 🔴 **El flujo de petición sigue sin recorrerse**: cómo se elige al firmante, qué ve el cliente en el
+  portal, qué email le llega y cómo queda el PDF. Para verlo hay que **encender el interruptor de
+  Presupuestos**, y eso es **escribir** en la cuenta: lo que el fundador autorizó el 17-sep fue el
+  **alta**, no la configuración, y las autorizaciones **no se heredan entre sesiones** (A19). Queda
+  pedido por el canal y no se hizo. La ❓ de §7.0 está resuelta —la función existe y se sabe dónde
+  vive—; lo que queda abierto es distinto y más pequeño: **cómo es por dentro la petición**.
+  - *(20-sep-2026, unas horas después: **el fundador dio el GO y el interruptor se encendió**. Lo que
+    se midió con él encendido está en §9, y el flujo de petición **sigue sin recorrerse**, ahora por
+    otro motivo.)*
+- No se envió ningún documento a firmar, ni se pulsó nada que mandara un correo.
+- Cupos, estados y permisos son **su ayuda**, no están comprobados en la cuenta.
+- De la tabla «Permisos necesario según el rol» solo se leyeron las dos etiquetas («miembro CRM»,
+  «rol personalizado»); el detalle de la tabla no llegó a renderizarse.
+- La cuenta de prueba marcaba **2 / 14 días** el 20-sep: caduca sola a primeros de octubre, y con ella
+  la posibilidad de recorrer lo de arriba sin un alta nueva.
+
+---
+
+## 9 · Con la firma de presupuestos ENCENDIDA (20-sep-2026, con GO del fundador)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `d17825645813deb7406d8c6cc3fdd7f3a06e1657`.** Continúa el
+§8 y **no lo repite**.
+
+**La autorización, y sus condiciones.** El fundador dio el GO, literal: *«autorizo encender la firma de
+presupuestos en Holded mientras sea gratis»*, con la condición dura de **parar en cuanto apareciera un
+precio, un plan, un "mejora tu plan", una tarjeta o un aviso de créditos**; más cuatro del orquestador:
+solo ese interruptor, cualquier correo a una dirección nuestra, no tocar nada más de la configuración
+(nadie sabe la contraseña de esa cuenta) y dejarlo como estaba al terminar. ⚠️ **Ese GO fue para esa
+sesión y no se hereda** (A19).
+
+### 9.1 · El cambio, medido antes y después
+
+| interruptor | antes | después |
+|---|---|---|
+| **Presupuestos** | `false` | **`true`** |
+| Facturas | `false` | `false` |
+| Proformas | `false` | `false` |
+| Pedidos de venta | `false` | `false` |
+| Albaranes de venta | `false` | `false` |
+| Utilizar la fecha de expiración predeterminada | `false` | `false` |
+
+El pulsador **comprueba la etiqueta del índice antes de tocar y aborta si no coincide**, y compara los
+seis estados: `CAMBIARON: 0`, es decir **exactamente el que se pulsó y ninguno más**.
+
+**No apareció nada de pago.** Se buscaron precio, plan, «mejora tu plan», tarjeta y créditos: lo único
+que sale es el banner de prueba que ya estaba antes (**2 / 14 días**). No hubo que parar.
+
+🔴 **Y una trampa que vale para toda la casa:** al guardar, la pantalla mostró *«La petición está
+tardando más de lo esperado — recargar la página — contactar con nosotros»*… **y había guardado
+igual**. Se comprobó recargando la página entera: `Presupuestos = true`, los otros cuatro en `false`.
+
+    🔒 Un mensaje de error tampoco es una medición: dice que algo tardó, no que algo no pasara.
+
+### 9.2 · Lo que NO cambió al encenderlo
+
+- **El panel del presupuesto sigue con 0 bloques de firma**, y no por caché: se midió tras **recargar
+  el documento entero** (3 marcos, 2.100 nodos).
+- **El portal del cliente sigue exactamente igual**: «Aceptar presupuesto» y «Rechazar presupuesto», y
+  nada más (587 nodos, el suelo los ve en los clicables). **Encender el tipo de documento no pone por
+  sí solo el botón de firma en el portal**: hace falta pedir la firma de ESE documento, una a una.
+- 🔴 **Tercera medición del mismo defecto:** con **Presupuestos ENCENDIDO** y **Facturas APAGADO**, el
+  único botón del módulo de Firma digital (`data-ref="digital_signature-no_rows_overlay-cta"`) **sigue
+  llevando a Facturas de venta**. La ruta no depende de la configuración: está clavada.
+
+### 9.3 · Tres fuentes suyas que no concuerdan entre sí
+
+Las tres medidas, ninguna deducida:
+
+| fuente | qué dice de los documentos firmables |
+|---|---|
+| **Ficha de la Store**, dentro de la app | «presupuestos, **albaranes** y otros documentos desde el Portal del Cliente» |
+| **Ayuda**, artículo `10900972` | Presupuestos · Facturas **proforma** · Pedidos de venta · Albaranes de venta — **las facturas de venta NO** |
+| **Pantalla de ajustes**, en la propia cuenta | Presupuestos · **Facturas** · Proformas · Pedidos de venta · Albaranes de venta |
+
+Y una cuarta, sobre el portal: el artículo `9382835`, *«Acciones disponibles en el Portal del
+cliente»*, enumera **nueve** acciones del cliente —resumen, pagos, aceptar presupuestos, descargar,
+comentar, catálogo, pedidos, contraseña e idioma— y **firmar no está entre ellas**.
+
+*Lectura de la Sesión 0, no medición:* no es que a Holded le falte la firma. **La tiene y está a medio
+montar**: nace apagada, su único atajo lleva al sitio equivocado y sus propias fuentes no se ponen de
+acuerdo en qué se puede firmar. Para la decisión de producto eso importa más que la lista de
+funciones: es la diferencia entre «lo tienen» y «les funciona».
+
+### 9.4 · Dónde se paró, y por qué
+
+Todo apunta a que la petición de firma sale de la **caja de envío del documento**. **Ese clic no se
+hizo.** No lo impidió Holded: lo impide el **clasificador de permisos de la máquina del equipo**, que
+bloquea cualquier interacción con un control de envío de una aplicación de facturación de terceros. Se
+intentó por dos vías legítimas —el botón de correo y el desplegable de acciones, que solo abre un
+menú— y bloqueó las dos. **No se buscó la vuelta**, y esa es la conducta correcta: el guard existe
+justo para esto.
+
+Para cerrarlo hacen falta dos cosas, y las decide un jefe: permitir **ese** clic, y saber **a qué
+dirección iría el correo** antes de abrir la caja (condición 2 del encargo).
+
+Sigue **sin medir**, y por tanto sin afirmarse: cómo se elige al firmante · qué ve el cliente en el
+portal · qué correo le llega · cómo queda el documento firmado.
+
+### 9.5 · Cómo queda la cuenta
+
+**El interruptor de Presupuestos se deja ENCENDIDO a propósito**, por decisión del orquestador del
+20-sep: el recorrido no terminó, apagarlo obligaría a repetirlo y el cambio es reversible y está
+medido. Los otros cuatro siguen apagados. Se apaga en un comando, volviendo a pulsar esa misma casilla
+en `Configuración > CRM > Firma digital` y comprobando los seis estados. La cuenta caduca sola a
+primeros de octubre.
 
 ---
 

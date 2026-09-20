@@ -105,6 +105,8 @@ function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = fal
     repo, claude: [process.execPath, falso],
     prefijo: '', puestos: ['orquestador', 'sesion-0', 'sesion-1', 'sesion-2', 'sesion-3', 'sesion-4', 'sesion-5'],
     orquestador: 'orquestador', traspasos: memoria,
+    // SCRUM-954: `jobs` propio — sin él, la CLI leería los trabajos REALES de la máquina.
+    jobs: path.join(dir, 'jobs'),
   }));
 
   const leerLlamadas = () => (fs.existsSync(llamadas) ? fs.readFileSync(llamadas, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
