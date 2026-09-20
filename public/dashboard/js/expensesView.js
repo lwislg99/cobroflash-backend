@@ -396,7 +396,14 @@ function openExpenseModal(expense, opts) {
                reescribe ni se «mejora». Describe lo que hace el SOFTWARE y no afirma nada sobre lo
                que Hacienda admite: eso último espera al asesor. -->
           <p style="margin:0 0 6px;font-size:12.5px;color:var(--muted)">Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.</p>
-          ${expense?.receiptData ? `<img src="${expense.receiptData}" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--neutral-200);margin-bottom:6px"/>` : ''}
+          <!-- SCRUM-964 · la foto se pide POR SU RUTA, no viene en la fila de la lista. La lista
+               traía la foto de CADA gasto (medido: 300 MiB con la página llena) para que este
+               modal enseñara UNA. `tieneFoto` dice si hay; la imagen la sirve
+               `GET /admin/expenses/:id/foto` con la cookie de sesión, que es `same-origin`.
+               Mismo sitio, mismo tamaño y mismos estilos que antes: no hay cambio visual.
+               `onerror` la esconde en vez de dejar el icono de imagen rota del navegador — sin
+               texto nuevo, que tendría que estar firmado (regla 30). -->
+          ${expense?.tieneFoto ? `<img src="/admin/expenses/${expense.id}/foto" alt="" onerror="this.remove()" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--neutral-200);margin-bottom:6px"/>` : ''}
           <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px"/>
         </div>
         <div id="exp-error" class="alert error" style="display:none"></div>
@@ -511,7 +518,14 @@ function openExpenseModal(expense, opts) {
 
     try {
       // Leer foto si se seleccionó. SCRUM-947: reducida si no cabe (ver `fotoParaGuardar`).
-      let receiptData = expense?.receiptData || null;
+      //
+      // 🔴 SCRUM-964 · SOLO SE MANDA SI SE HA ELEGIDO UNA NUEVA, y esto NO es cosmético: antes se
+      // reenviaba la foto que traía la fila de la lista (`expense.receiptData`). Desde que la lista
+      // no la trae, ese atajo mandaría `null` y el `PUT` BORRARÍA la foto guardada en CADA edición
+      // del gasto — el profesional perdería su justificante por corregir un importe.
+      // `undefined` no viaja en el JSON, y el servidor distingue «no lo mandes» (no se toca) de
+      // «bórralo» (`null`) desde SCRUM-324: por eso omitir la clave es exactamente «no la toques».
+      let receiptData;
       if (fileInput.files && fileInput.files[0]) {
         receiptData = await fotoParaGuardar(fileInput.files[0]);
       }
@@ -529,7 +543,11 @@ function openExpenseModal(expense, opts) {
         vatAmount:   numeroONull(document.getElementById('exp-vatamount').value),
         providerInvoiceNumber: document.getElementById('exp-provinvnum').value.trim() || null,
         providerInvoiceDate:   document.getElementById('exp-provinvdate').value || null,
-        receiptData,
+        // SCRUM-964 · la clave NO VIAJA si no se ha elegido foto nueva (ver arriba). Explícito y no
+        // `receiptData,` a secas: que `JSON.stringify` se coma los `undefined` es cierto, pero es
+        // un detalle del serializador, y aquí la decisión —no tocar la foto guardada— tiene que
+        // verse en el código.
+        ...(receiptData !== undefined ? { receiptData } : {}),
         currency: window.appLocale?.currency || 'EUR',
       };
 
