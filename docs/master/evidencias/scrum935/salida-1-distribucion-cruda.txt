@@ -1,0 +1,33 @@
+﻿POBLACIÓN · runs pedidos=100 · recibidos=100
+FILAS con job meta-guard y duración medible: 97 de 100 · ciegos 0 · sin job 1
+DURACIÓN DEL JOB por conclusión:
+  success  (duración REAL, sin censurar): n=8 · mín 8 min 03 s (483 s) · mediana 9 min 33 s (573 s) · media 9 min 14 s (554 s) · máx 9 min 57 s (597 s)
+  cancelled(censurada: tocó el techo o la cancelación): n=83 · mín 0 min 08 s (8 s) · mediana 10 min 15 s (615 s) · media 8 min 19 s (499 s) · máx 10 min 17 s (617 s)
+  failure: n=6 · mín 8 min 07 s (487 s) · mediana 9 min 47 s (587 s) · media 9 min 18 s (558 s) · máx 9 min 50 s (590 s)
+  otros: 0
+
+Todas las pasadas EN VERDE, de más lenta a más rápida:
+  9 min 57 s (597 s)       run 35513983254 · pull_request · scrum-912c-lecturas-staging · 2026-09-20T13:36:05Z
+  9 min 54 s (594 s)       run 35348529850 · pull_request · scrum-951c-fichas-javier · 2026-09-18T13:09:00Z
+  9 min 53 s (593 s)       run 35365472651 · push · main · 2026-09-18T15:56:37Z
+  9 min 33 s (573 s)       run 35328124095 · pull_request · scrum-524b-el-trinquete · 2026-09-18T09:10:13Z
+  9 min 11 s (551 s)       run 35514349302 · push · main · 2026-09-20T13:43:42Z
+  9 min 07 s (547 s)       run 35326170938 · push · main · 2026-09-18T08:47:29Z
+  8 min 11 s (491 s)       run 35345152758 · pull_request · scrum-951b-normas-dos-equipos · 2026-09-18T12:31:51Z
+  8 min 03 s (483 s)       run 35345618271 · pull_request · scrum-912b-lecturas-staging · 2026-09-18T12:37:01Z
+
+Pasos de la pasada verde MÁS LENTA (run 35513983254):
+      1 s  success  Set up job
+      4 s  success  Run actions/checkout@v4
+      1 s  success  Traer `main` (el censo de tickets lo consulta)
+      0 s  success  Run actions/setup-node@v4
+     13 s  success  Run npm ci
+      7 s  success  Compilar (tsc)
+    567 s  success  Cada guard cae con la mutación que declara
+      0 s  success  Post Run actions/setup-node@v4
+      0 s  success  Post Run actions/checkout@v4
+      0 s  success  Complete job
+
+Cancelados: 83 · de ellos 58 duraron ≥ 600 s (el techo de timeout-minutes: 10).
+  rango: 0 min 08 s (8 s) … 10 min 17 s (617 s)
+EXIT=0

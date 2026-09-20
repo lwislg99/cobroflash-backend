@@ -1,0 +1,312 @@
+# SCRUM-935 · perfil de una pasada completa del meta-guard
+# mutaciones en el log: 307 · censo que declara el propio instrumento: 307
+# fase de mutación: 576.7 s
+#
+# n	seg_desde_la_1a	fraccion_del_trabajo	veredicto	mutacion
+1	0.0	0.0000	cae	restauracion-del-arbol-ejecutable.test.mjs · la restauración pide DOS piezas cuando el fichero se compila   (+1 test(s) más caídos)
+2	1.5	0.0027	cae	restauracion-del-arbol-ejecutable.test.mjs · devuelve LOS DOS ficheros a sus bytes
+3	3.1	0.0054	cae	restauracion-del-arbol-ejecutable.test.mjs · el censo distingue EJECUTAR dist/ de nombrarlo
+4	4.3	0.0074	cae	scrum443-toast-legible.test.mjs · TODO mensaje de error cabe en su propia duración   (+2 test(s) más caídos)
+5	4.8	0.0083	cae	scrum443-toast-legible.test.mjs · lo que NO se cierra solo SIEMPRE se puede cerrar a mano
+6	5.7	0.0099	cae	scrum534d-extractores-a-mano.test.mjs · SCRUM-534d · 🔴 MUTACIÓN: quitar el espacio de la expresión reabre el agujero, y ENTRA
+7	6.1	0.0106	cae	scrum534d-extractores-a-mano.test.mjs · SCRUM-534d · 🔴 ningún extractor de rutas .md se escribe A MANO   (+1 test(s) más caídos)
+8	6.8	0.0118	cae	scrum547-el-documento-que-nadie-mira.test.mjs · SCRUM-547 · 🔴 todo documento «para aprobar» está enlazado desde donde el fundador mira   (+1 test(s) más caídos)
+9	7.2	0.0125	cae	scrum547-el-documento-que-nadie-mira.test.mjs · SCRUM-547 · 🔴 la lista de «sin enlazar» está cerrada, y ninguna entrada sobra
+10	9.6	0.0166	cae	scrum554-el-censo-no-confunde-el-numero.test.mjs · SCRUM-554 · NEGATIVO: un 143 real NO se llama rojo
+11	11.4	0.0198	cae	scrum586-forma-de-pago-por-cliente.test.mjs · EL QUE CIERRA LA DECISIÓN: aplicar NO se alcanza fuera de un clic   (+1 test(s) más caídos)
+12	12.4	0.0214	cae	scrum586-forma-de-pago-por-cliente.test.mjs · un valor ILEGIBLE no es una propuesta más pequeña: no hay propuesta
+13	13.3	0.0230	cae	scrum586-forma-de-pago-por-cliente.test.mjs · sin IBAN NO se propone transferencia, aunque esté pactada
+14	14.2	0.0246	cae	scrum586-forma-de-pago-por-cliente.test.mjs · un pacto de LAS TRES consta, y aun así no propone nada
+15	15.1	0.0262	cae	scrum586-forma-de-pago-por-cliente.test.mjs · el texto de la tira es el FIRMADO, literal
+16	16.0	0.0278	cae	scrum586-forma-de-pago-por-cliente.test.mjs · el rótulo del BOTÓN sigue sin firmar, con la grafía que el censo CUENTA   (+1 test(s) más caídos)
+17	17.5	0.0303	cae	scrum596-la-nota-interna-no-sale.test.mjs · SCRUM-596 · 🔴 LA NOTA INTERNA NO PASA EL PROYECTOR, y la fila SÍ la traía
+18	18.2	0.0316	cae	scrum596-la-nota-interna-no-sale.test.mjs · SCRUM-596 · 🔴 LA LANDING DEL CLIENTE NO LEE LA NOTA INTERNA
+19	19.6	0.0341	cae	scrum599-navegacion-documentos-y-atajo.test.mjs · Presupuestos ya NO tiene submenú, y su entrada abre la LISTA
+20	20.3	0.0353	cae	scrum599-navegacion-documentos-y-atajo.test.mjs · LAS CUATRO LISTAS registran su destino, y Clientes es una de ellas
+21	21.0	0.0365	cae	scrum599-navegacion-documentos-y-atajo.test.mjs · la tecla se pinta EN el botón, en las CUATRO listas
+22	23.9	0.0414	cae	scrum600d-el-envio-tras-emitir.test.mjs · tras emitir, el destino es la FICHA del documento, con su id   (+4 test(s) más caídos)
+23	25.3	0.0439	cae	scrum600d-el-envio-tras-emitir.test.mjs · tras emitir, el destino es la FICHA del documento, con su id   (+3 test(s) más caídos)
+24	26.8	0.0464	cae	scrum600d-el-envio-tras-emitir.test.mjs · RESPALDO: si el alta no trae id, se vuelve al listado — nunca a una ficha vacía
+25	28.3	0.0491	cae	scrum608-tipo-de-documento-en-la-cabecera.test.mjs · el ALBARÁN dice ALBARÁN arriba del todo, en sus tres modos   (+1 test(s) más caídos)
+26	29.1	0.0505	cae	scrum608-tipo-de-documento-en-la-cabecera.test.mjs · la FACTURA dice FACTURA arriba del todo   (+1 test(s) más caídos)
+27	29.9	0.0518	cae	scrum608-tipo-de-documento-en-la-cabecera.test.mjs · el PRESUPUESTO dice su tipo, y lo dice en el idioma del país
+28	30.9	0.0536	cae	scrum631-la-unicidad-tiene-vigilante.test.mjs · GUARD · src/index.ts ESPERA a assertUnicidadDeNombre ANTES de app.listen
+29	31.4	0.0545	cae	scrum631-la-unicidad-tiene-vigilante.test.mjs · GUARD · src/index.ts ESPERA a assertUnicidadDeNombre ANTES de app.listen
+30	32.6	0.0565	cae	scrum641-nombre-cogido-sin-500.test.mjs · toda escritura de UNA FILA contesta 409 al chocar con el nombre
+31	33.1	0.0574	cae	scrum641-nombre-cogido-sin-500.test.mjs · un código SIN mapear cae al respaldo que ya estaba escrito, no al código
+32	35.2	0.0611	cae	scrum649-el-ancla-que-no-apunta.test.mjs · SCRUM-649 · 🔴 EL QUE DECIDE: un sha bien formado e INEXISTENTE hace caer el guard
+33	35.9	0.0622	cae	scrum691-contraste-de-tokens.test.mjs · SCRUM-691 · 🔴 todo par declarado llega a 3,00 de contraste   (+3 test(s) más caídos)
+34	36.2	0.0628	cae	scrum691-contraste-de-tokens.test.mjs · SCRUM-691c · 🔴 el borde del CAMPO se ve MÁS que el de su tarjeta, y no al revés   (+4 test(s) más caídos)
+35	37.2	0.0646	cae	scrum716-ritmo-de-despliegue.test.mjs · EL QUE DECIDE: sin lectura anterior es NO SE SABE, y NO «congelado»   (+1 test(s) más caídos)
+36	37.7	0.0654	cae	scrum716-ritmo-de-despliegue.test.mjs · DESPLIEGA: producción se movió entre las dos lecturas   (+8 test(s) más caídos)
+37	38.2	0.0663	cae	scrum716-ritmo-de-despliegue.test.mjs · una lectura ilegible da NO SE SABE, no un veredicto a medias
+38	38.7	0.0672	cae	scrum716-ritmo-de-despliegue.test.mjs · una lectura ilegible da NO SE SABE, no un veredicto a medias
+39	39.2	0.0681	cae	scrum716-ritmo-de-despliegue.test.mjs · EL CASO DEL 6-sep: RETRASADO PERO DESPLEGANDO, y NO bloquea
+40	39.7	0.0689	cae	scrum716-ritmo-de-despliegue.test.mjs · CONGELADO DE VERDAD pasado el margen: CANTA (salida 1)
+41	40.3	0.0698	cae	scrum716-ritmo-de-despliegue.test.mjs · NO_SE_SABE con hueco: ni verde ni congelado (salida 2)
+42	40.8	0.0707	cae	scrum716-ritmo-de-despliegue.test.mjs · SIN HUECO sigue verde aunque no haya lectura anterior
+43	46.0	0.0797	cae	scrum736-el-suelo-que-no-avisa.test.mjs · SCRUM-736 · 🔴 EL QUE DECIDE: perder 441 tests HOY hace caer el suelo, y BLOQUEA
+44	47.5	0.0824	cae	scrum738-el-tablero-contra-el-arbol.test.mjs · «72» NO casa con 720, 727 ni 1727 — se compara el NÚMERO
+45	48.3	0.0838	cae	scrum738-el-tablero-contra-el-arbol.test.mjs · SCRUM-684 NO se da por hecho: su entrada está titulada para OTRO
+46	49.5	0.0858	cae	scrum739-informes-al-sitio-unico.test.mjs · EL QUE DECIDE: con cuatro cifras, Informes escribe el punto de millar   (+3 test(s) más caídos)
+47	50.0	0.0868	cae	scrum739-informes-al-sitio-unico.test.mjs · Informes ya no formatea dinero por su cuenta
+48	52.8	0.0915	cae	scrum740-carrera-por-el-arbol.test.mjs · TRINQUETE: todo el que barre el árbol lee con el helper
+49	54.1	0.0938	cae	scrum740-carrera-por-el-arbol.test.mjs · y cada barredor CIERRA con su suelo
+50	55.2	0.0958	cae	scrum743-tercera-forma.test.mjs · el front y el backend escriben el MISMO número
+51	55.8	0.0968	cae	scrum743-tercera-forma.test.mjs · el rótulo del eje ya pasa por la tercera forma
+52	60.8	0.1054	cae	scrum745-comparar-por-identidad.test.mjs · el meta-guard mira la LÍNEA BASE, y NO reconoce mensajes de error
+53	63.4	0.1099	cae	scrum745-comparar-por-identidad.test.mjs · con el FICHERO MUERTO, ni pasó ni cayó   (+1 test(s) más caídos)
+54	65.9	0.1142	cae	scrum745-comparar-por-identidad.test.mjs · los dos lectores NO cuelgan de ningún reporter
+55	67.8	0.1175	cae	scrum745-comparar-por-identidad.test.mjs · una declaración INCOMPLETA se DENUNCIA, no se descarta en silencio
+56	69.3	0.1201	cae	scrum748-no-lo-se-no-es-al-dia.test.mjs · y la LÍNEA que decide ya no lleva el respaldo   (+1 test(s) más caídos)
+57	70.0	0.1214	cae	scrum748-no-lo-se-no-es-al-dia.test.mjs · NINGÚN estado desconocido se pinta «AL DÍA»   (+1 test(s) más caídos)
+58	70.9	0.1230	cae	scrum749-la-primitiva-que-normaliza.test.mjs · un día que NO EXISTE se RECHAZA, no se normaliza a otro   (+2 test(s) más caídos)
+59	77.4	0.1342	cae	scrum750-los-dos-calendarios.test.mjs · EL QUE DECIDE: navegador en Auckland   (+3 test(s) más caídos)
+60	81.6	0.1416	cae	scrum750-los-dos-calendarios.test.mjs · la VISTA le pasa el merchant al atajo
+61	85.8	0.1487	cae	scrum750-los-dos-calendarios.test.mjs · FAIL-CLOSED: sin la pieza de calendario
+62	90.0	0.1561	cae	scrum750-los-dos-calendarios.test.mjs · DELEGA y no recalcula
+63	93.9	0.1628	cae	scrum751-clave-duplicada-en-silencio.test.mjs · NINGÚN objeto literal del árbol repite una clave
+64	95.8	0.1662	cae	scrum751-clave-duplicada-en-silencio.test.mjs · NINGÚN objeto literal del árbol repite una clave
+65	102.8	0.1782	cae	scrum753-censo-de-alcanzabilidad.test.mjs · SCRUM-753 · 🔴 CONTROL POSITIVO: un ticket que NO está en `main`, y el censo lo DICE   (+4 test(s) más caídos)
+66	107.4	0.1862	cae	scrum753-censo-de-alcanzabilidad.test.mjs · SCRUM-753 · 🔴 el NO_MEDIBLE lleva SIEMPRE su motivo, y los motivos se distinguen   (+2 test(s) más caídos)
+67	111.3	0.1929	cae	scrum753-censo-de-alcanzabilidad.test.mjs · SCRUM-753 · 🔴 el titular agregado sale SIEMPRE con su salvedad, del mismo valor   (+1 test(s) más caídos)
+68	114.3	0.1981	cae	scrum753-censo-de-alcanzabilidad.test.mjs · SCRUM-753 · 🔴 la población NO vuelve a preguntarle a git: sale de la MISMA instantánea
+69	118.3	0.2051	cae	scrum753-censo-de-alcanzabilidad.test.mjs · SCRUM-753 · 🔴 `origin/HEAD` no se cuenta como una rama (respuesta conocida: `ls-remote`)
+70	123.4	0.2139	cae	scrum754-el-juez-que-oscila.test.mjs · el observador VE el transitorio y NO llama movimiento a una lectura
+71	125.9	0.2183	cae	scrum754-el-juez-que-oscila.test.mjs · el observador VE el transitorio y NO llama movimiento a una lectura   (+2 test(s) más caídos)
+72	128.5	0.2229	cae	scrum754-el-juez-que-oscila.test.mjs · PUERTA 0: la línea base movida sale CIEGA NOMBRANDO el movimiento
+73	131.1	0.2273	cae	scrum754-el-juez-que-oscila.test.mjs · PUERTA 3 se consulta ANTES que `cayo()`
+74	133.5	0.2315	cae	scrum754-el-juez-que-oscila.test.mjs · la MÍA cambiada sí, y con otro nombre
+75	136.2	0.2362	cae	scrum754-el-juez-que-oscila.test.mjs · SUELO Y TOPE del margen
+76	138.8	0.2406	cae	scrum754-el-juez-que-oscila.test.mjs · una marca de OTRA pasada VIVA no se repara
+77	141.2	0.2449	cae	scrum755-el-contador-que-cuadro-solo.test.mjs · SCRUM-755 · 🔴 EL ÁRBOL PINTA MÁS MARCADORES DE LOS DECLARADOS
+78	142.4	0.2470	cae	scrum755-el-contador-que-cuadro-solo.test.mjs · SCRUM-755 · 🔴 UN FICHERO NUEVO EMPIEZA A PINTAR MARCADOR   (+2 test(s) más caídos)
+79	144.2	0.2501	cae	scrum756-el-rechazo-se-ve.test.mjs · EL QUE DECIDE: sin pasar por Clientes, el rechazo SE VE   (+2 test(s) más caídos)
+80	145.2	0.2517	cae	scrum756-el-rechazo-se-ve.test.mjs · LA TRAMPA: tras visitar Clientes, el aviso del DOCUMENTO no va a su caja   (+3 test(s) más caídos)
+81	146.1	0.2533	cae	scrum756-el-rechazo-se-ve.test.mjs · el aviso SE TRAE A LA VISTA: una vez, y sobre la caja   (+1 test(s) más caídos)
+82	149.8	0.2598	cae	scrum757-la-declaracion-que-nadie-lee.test.mjs · una declaración NO EVALUABLE se DENUNCIA con fichero y línea   (+2 test(s) más caídos)
+83	151.7	0.2630	cae	scrum757-la-declaracion-que-nadie-lee.test.mjs · una declaración NO EVALUABLE se DENUNCIA con fichero y línea
+84	153.6	0.2664	cae	scrum757-la-declaracion-que-nadie-lee.test.mjs · una declaración NO EVALUABLE se DENUNCIA con fichero y línea
+85	155.0	0.2688	cae	scrum757-la-declaracion-que-nadie-lee.test.mjs · NEGATIVO: un objeto cualquiera del fichero NO se denuncia   (+1 test(s) más caídos)
+86	156.1	0.2706	cae	scrum758-cabecera-no-miente.test.mjs · SCRUM-758 · 🔴 NINGUNA cabecera del log contradice a su propio cuerpo   (+1 test(s) más caídos)
+87	156.6	0.2715	cae	scrum758-cabecera-no-miente.test.mjs · SCRUM-758 · el log DECLARA que no cubre migraciones de DATOS   (+1 test(s) más caídos)
+88	157.1	0.2725	cae	scrum758-cabecera-no-miente.test.mjs · SCRUM-758 · ✅ CONTROL POSITIVO: el detector CAZA una cabecera que miente (fabricada)
+89	157.7	0.2734	cae	scrum758-cabecera-no-miente.test.mjs · SCRUM-758 · 🔴 EL SUELO: la zona ciega NO CRECE — una entrada nueva en prosa muda es ROJO   (+1 test(s) más caídos)
+90	158.2	0.2743	cae	scrum758-cabecera-no-miente.test.mjs · SCRUM-758 · 🔴 EL SUELO: la zona ciega NO CRECE — una entrada nueva en prosa muda es ROJO   (+1 test(s) más caídos)
+91	163.7	0.2838	cae	scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs · el rótulo de un adoptante está DERIVADO
+92	166.4	0.2886	cae	scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs · lo declarado cuadra con lo leído
+93	169.2	0.2934	cae	scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs · no confunde «no hay» con «no vi»
+94	171.9	0.2980	cae	scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs · SUELO del censo   (+1 test(s) más caídos)
+95	174.0	0.3017	cae	scrum760-iva-de-voz-rechazado.test.mjs · SCRUM-760 · la puerta de voz LLAMA a `invalidTipoIva`, no reimplementa la regla   (+2 test(s) más caídos)
+96	175.1	0.3036	cae	scrum760-iva-de-voz-rechazado.test.mjs · SCRUM-760 · la puerta de voz LLAMA a `invalidTipoIva`, no reimplementa la regla
+97	176.2	0.3055	cae	scrum760-iva-de-voz-rechazado.test.mjs · SCRUM-760 · la lista de tipos españoles vive en UN solo fichero de `src/`
+98	177.3	0.3074	cae	scrum760-iva-de-voz-rechazado.test.mjs · SCRUM-760 · 🔴 EL CONTROL QUE DECIDE: el modelo contesta 21 y la pantalla NO pinta 100 %   (+1 test(s) más caídos)
+99	178.4	0.3093	cae	scrum760-iva-de-voz-rechazado.test.mjs · SCRUM-760 · ✅ CONTROL POSITIVO: un 0.21 legítimo sigue dando 21 %, exactamente como hoy
+100	183.4	0.3181	cae	scrum763-restaurar-el-arbol.test.mjs · el detector caza el desajuste entre el fuente y el árbol ejecutable
+101	184.8	0.3205	cae	scrum763-restaurar-el-arbol.test.mjs · sólo se compila lo que se compila   (+4 test(s) más caídos)
+102	185.9	0.3224	cae	scrum764-margen-negativo.test.mjs · EL QUE DECIDE: el caso del ticket, 150/100, sale marcado como bajo coste   (+1 test(s) más caídos)
+103	186.5	0.3233	cae	scrum764-margen-negativo.test.mjs · POSITIVO: un margen normal NO se marca, y el cero tampoco   (+1 test(s) más caídos)
+104	187.0	0.3243	cae	scrum764-margen-negativo.test.mjs · NEGATIVO: añadir el suelo por abajo NO ha roto el techo por arriba
+105	187.6	0.3253	cae	scrum764-margen-negativo.test.mjs · y la clase existe en el CSS con esa tinta
+106	188.1	0.3262	cae	scrum764-margen-negativo.test.mjs · Informes decide con el MÓDULO, no con un `< 0` propio   (+1 test(s) más caídos)
+107	188.7	0.3273	cae	scrum764-margen-negativo.test.mjs · y las dos celdas de Informes usan `--danger-ink`   (+1 test(s) más caídos)
+108	196.7	0.3410	cae	scrum765-la-puerta-y-el-suelo.test.mjs · la puerta ABRE en todas las formas de invocación   (+2 test(s) más caídos)
+109	200.1	0.3470	cae	scrum765-la-puerta-y-el-suelo.test.mjs · CONTRASTE: la puerta NO abre para nadie que no sea el fichero de entrada   (+1 test(s) más caídos)
+110	203.5	0.3529	cae	scrum765-la-puerta-y-el-suelo.test.mjs · CONTRASTE: la puerta NO abre para nadie que no sea el fichero de entrada   (+1 test(s) más caídos)
+111	206.2	0.3576	cae	scrum765-la-puerta-y-el-suelo.test.mjs · SUELO DEL CENSO: si el censo encoge, es CIEGO   (+1 test(s) más caídos)
+112	209.6	0.3635	cae	scrum765-la-puerta-y-el-suelo.test.mjs · SUELO DE EJECUCIÓN: cero mutaciones ejecutadas es CIEGO, no verde   (+1 test(s) más caídos)
+113	211.5	0.3667	cae	scrum766-el-grep-que-cuenta-lineas.test.mjs · SCRUM-766 · 🔴 EL QUE DECIDE: 3 CR en 50 líneas — el contador por BYTES dice 3   (+1 test(s) más caídos)
+114	212.4	0.3683	cae	scrum766-el-grep-que-cuenta-lineas.test.mjs · SCRUM-766 · ✅ CONTROL POSITIVO: el detector caza el grep que YA SABEMOS que está mal   (+3 test(s) más caídos)
+115	213.6	0.3705	cae	scrum767-portal-token.test.mjs · SCRUM-767 · el SEMBRADOR da de alta por el camino real, no con un `create` a pelo   (+1 test(s) más caídos)
+116	214.3	0.3715	cae	scrum767-portal-token.test.mjs · SCRUM-767 · el alta REAL pone token, y las que no lo ponen están DECLARADAS   (+1 test(s) más caídos)
+117	214.9	0.3726	cae	scrum767-portal-token.test.mjs · SCRUM-767 · 🔴 EL CENSO QUE DECIDE: qué lee el token SIN pasar por la cura
+118	219.9	0.3814	cae	scrum768-listas-sin-atajo.test.mjs · la lista de vistas con botón de crear y SIN atajo no CRECE   (+1 test(s) más caídos)
+119	221.2	0.3836	cae	scrum769-el-motivo-de-las-dos-que-no.test.mjs · Productos y Proveedores NO registran, y es a propósito
+120	221.8	0.3847	cae	scrum769-el-motivo-de-las-dos-que-no.test.mjs · el registro de microcopy declara firmados EXACTAMENTE los dos
+121	222.5	0.3858	cae	scrum769-el-motivo-de-las-dos-que-no.test.mjs · las dos que NO lo llevan dicen POR QUÉ, en su propio fichero
+122	225.8	0.3916	cae	scrum771-el-emisor-no-valida-el-tipo.test.mjs · SCRUM-771 · CENSO: toda boca que emite comprueba el tipo de IVA antes de pedir número   (+1 test(s) más caídos)
+123	227.5	0.3945	cae	scrum771-el-emisor-no-valida-el-tipo.test.mjs · SCRUM-771 · CENSO: toda boca que emite comprueba el tipo de IVA antes de pedir número   (+2 test(s) más caídos)
+124	229.3	0.3976	cae	scrum771-el-emisor-no-valida-el-tipo.test.mjs · SCRUM-771 · la lista de tipos españoles vive en UN solo fichero de `src/`
+125	243.0	0.4213	cae	scrum775-suelo-que-no-dispara.test.mjs · SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogido el CLI sale con 2 y DICE por qué   (+2 test(s) más caídos)
+126	248.8	0.4315	cae	scrum775-suelo-que-no-dispara.test.mjs · SCRUM-775 · ✅ POSITIVO: con el censo SIN encoger el CLI sigue saliendo con 0   (+2 test(s) más caídos)
+127	256.2	0.4443	cae	scrum775-suelo-que-no-dispara.test.mjs · SCRUM-775 · 🔴 CONTROL POSITIVO: el censo caza los DOS casos conocidos, el roto y el bueno
+128	258.2	0.4477	cae	scrum777-el-modal-escondido-no-mata-la-n.test.mjs · la pieza distingue un modal ESCONDIDO de uno DELANTE
+129	259.1	0.4494	cae	scrum777-el-modal-escondido-no-mata-la-n.test.mjs · la lista de modales que se cierran ESCONDIÉNDOSE no CRECE   (+1 test(s) más caídos)
+130	262.6	0.4554	cae	scrum778-la-lista-cableada.test.mjs · SCRUM-778 · ✅ CONTROL POSITIVO: el censo ve la boca que la lista CABLEADA no veía   (+3 test(s) más caídos)
+131	264.4	0.4585	cae	scrum778-la-lista-cableada.test.mjs · SCRUM-778 · ✅ CONTROL POSITIVO: el censo ve las bocas del embudo, no sólo las de `emitInvoice`   (+3 test(s) más caídos)
+132	266.1	0.4614	cae	scrum778-la-lista-cableada.test.mjs · SCRUM-778 · 🔴 la DIRECCIÓN del portón importa: llamarlo DESPUÉS no protege
+133	267.2	0.4633	cae	scrum781-concurrencia-de-la-factura.test.mjs · SCRUM-781 · 🔴 un número CERCA del umbral con mucha dispersión SE RETIRA
+134	267.7	0.4642	cae	scrum781-concurrencia-de-la-factura.test.mjs · SCRUM-781 · ✅ CONTROL POSITIVO: un número LEJOS del umbral NO se retira
+135	268.3	0.4653	cae	scrum781-concurrencia-de-la-factura.test.mjs · SCRUM-781 · SUELO: la dispersión se calcula, y DISTINGUE mediana de extremos
+136	272.4	0.4723	cae	scrum783-seleccion-sobrevive-navegacion.test.mjs · EL QUE DECIDE: marcar tres, ver una ficha y VOLVER deja los TRES   (+3 test(s) más caídos)
+137	274.4	0.4758	cae	scrum783-seleccion-sobrevive-navegacion.test.mjs · POSITIVO: BUSCAR sigue RECORTANDO la selección, y el recorte es DEFINITIVO
+138	277.2	0.4807	cae	scrum784-el-cuarto-veredicto.test.mjs · un caído que es LA RUTA del fichero es una MUERTE, no un silencio   (+1 test(s) más caídos)
+139	278.6	0.4832	cae	scrum784-el-cuarto-veredicto.test.mjs · un caído que es LA RUTA del fichero es una MUERTE, no un silencio
+140	280.2	0.4858	cae	scrum784-el-cuarto-veredicto.test.mjs · la ruta se compara RESUELTA, no por texto
+141	281.7	0.4885	cae	scrum784-el-cuarto-veredicto.test.mjs · `cayo()` sigue exigiendo EL NOMBRE declarado, ni uno más
+142	283.1	0.4910	cae	scrum785-productos-y-proveedores-descuelgan.test.mjs · Productos: tras EDITAR y cerrar NO queda un modal colgado del body   (+1 test(s) más caídos)
+143	283.9	0.4922	cae	scrum785-productos-y-proveedores-descuelgan.test.mjs · Proveedores: tras EDITAR y cerrar NO queda un modal colgado del body   (+1 test(s) más caídos)
+144	285.0	0.4942	cae	scrum792-barra-alcanzable-en-movil.test.mjs · EL UMBRAL VIVE UNA SOLA VEZ: las dos reglas comparten el MISMO `@media`
+145	285.6	0.4952	cae	scrum792-barra-alcanzable-en-movil.test.mjs · con CERO la barra se marca VACÍA y dice el literal YA APROBADO   (+1 test(s) más caídos)
+146	286.6	0.4971	cae	scrum793-condicion-en-el-where.test.mjs · SCRUM-793 · 🔴 la ESCRITURA lleva la condición DENTRO de su `where`   (+1 test(s) más caídos)
+147	287.2	0.4980	cae	scrum793-condicion-en-el-where.test.mjs · SCRUM-793 · 🔴 la ESCRITURA lleva la condición DENTRO de su `where`   (+1 test(s) más caídos)
+148	287.7	0.4989	cae	scrum793-condicion-en-el-where.test.mjs · SCRUM-793 · y NO se devuelve el token que este hilo generó sin comprobar que ganó   (+1 test(s) más caídos)
+149	289.0	0.5011	cae	scrum794-un-solo-anadir-linea.test.mjs · EL QUE DECIDE: hay EXACTAMENTE UN «+ Añadir línea», y es el de abajo   (+2 test(s) más caídos)
+150	289.7	0.5023	cae	scrum794-un-solo-anadir-linea.test.mjs · el estado de CERO LÍNEAS no existe: hay cuadernillo al montar y suelo al borrar
+151	290.7	0.5041	cae	scrum795-el-portal-en-la-ficha.test.mjs · SCRUM-795 · 🔴 el botón del portal de la FICHA 360 no cuelga de `portalUrl`
+152	291.2	0.5050	cae	scrum795-el-portal-en-la-ficha.test.mjs · SCRUM-795 · 🔴 pedir el portal ocurre AL PULSAR, nunca al abrir la ficha
+153	294.8	0.5112	cae	scrum797-el-dueno-se-escribe.test.mjs · SCRUM-797 · 🔴 ningún alta de Customer se calla de quién es
+154	296.6	0.5143	cae	scrum797-el-dueno-se-escribe.test.mjs · SCRUM-797 · 🔴 la columna del dueño NO vuelve a ser donante
+155	298.3	0.5174	cae	scrum797-el-dueno-se-escribe.test.mjs · SCRUM-797 · 🔴 SUELO: si no veo altas, no he medido   (+1 test(s) más caídos)
+156	300.8	0.5216	cae	scrum801-el-respaldo-de-la-n.test.mjs · lee `(window.renderX || renderX)(…)`, que es como se pintan dos vistas
+157	302.0	0.5237	cae	scrum801-el-respaldo-de-la-n.test.mjs · CONTROL POSITIVO: las dos medidas con teclado real siguen cayendo   (+1 test(s) más caídos)
+158	303.2	0.5258	cae	scrum801-el-respaldo-de-la-n.test.mjs · una MENCIÓN de `registrar` en un comentario no cuenta como destino
+159	304.2	0.5276	cae	scrum804-el-guard-no-es-el-numero.test.mjs · la ruta ARMADA con path.join cuenta: es como lee la casa (el caso del 806)
+160	304.8	0.5285	cae	scrum804-el-guard-no-es-el-numero.test.mjs · mencionar una ruta de producto sin LEER nada no prueba nada
+161	305.3	0.5294	cae	scrum804-el-guard-no-es-el-numero.test.mjs · un guard verde sin aterrizaje no es HECHO
+162	306.8	0.5321	cae	scrum805-que-firmo-el-cliente.test.mjs · EL QUE DECIDE: cada campo del contenido mueve el hash   (+1 test(s) más caídos)
+163	307.6	0.5334	cae	scrum805-que-firmo-el-cliente.test.mjs · un presupuesto firmado SIN evidencia no puede pasar
+164	308.5	0.5349	cae	scrum805-que-firmo-el-cliente.test.mjs · los literales del PDF son BYTE A BYTE los del albarán
+165	312.2	0.5414	cae	scrum808-el-arbol-que-queda-mutado.test.mjs · lo que NO se puede devolver sale NOMBRADO, y la marca se queda
+166	314.1	0.5447	cae	scrum808-el-arbol-que-queda-mutado.test.mjs · una mutación que sobrevivió a la pasada se REPARA, y se dice
+167	316.0	0.5480	cae	scrum808-el-arbol-que-queda-mutado.test.mjs · una marca ILEGIBLE se denuncia
+168	317.9	0.5512	cae	scrum808-el-arbol-que-queda-mutado.test.mjs · en `copyFileSync` el destino es el SEGUNDO argumento
+169	321.4	0.5573	cae	scrum810-el-suelo-a-la-primera.test.mjs · perder UNA declaración ya habla, y nombra el guard   (+1 test(s) más caídos)
+170	323.1	0.5602	cae	scrum810-el-suelo-a-la-primera.test.mjs · CRECER no dispara nada: un suelo que salta siempre se desactiva
+171	324.8	0.5632	cae	scrum810-el-suelo-a-la-primera.test.mjs · la retirada A PROPÓSITO se puede hacer sin pelearse con el suelo
+172	329.5	0.5714	cae	scrum810b-los-suelos-derivados.test.mjs · perder UNO de cualquier población ya habla, y la nombra   (+2 test(s) más caídos)
+173	331.8	0.5754	cae	scrum810b-los-suelos-derivados.test.mjs · CRECER sigue siendo gratis en la dirección no-encoger   (+1 test(s) más caídos)
+174	334.2	0.5795	cae	scrum810b-los-suelos-derivados.test.mjs · un TOPE es el mismo trinquete del revés: lo que viola es CRECER
+175	336.6	0.5837	cae	scrum810b-los-suelos-derivados.test.mjs · la retirada A PROPÓSITO también vale para una población
+176	339.2	0.5882	cae	scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 GUARD del rótulo: dice DECLARANTES y publica su DENOMINADOR
+177	340.5	0.5904	cae	scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 EL QUE DECIDE: el subconjunto auto-declarado lleva su LÍMITE PEGADO
+178	341.8	0.5927	cae	scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 SUELO del GUARD: sobre población CERO se declara CIEGO, no cero
+179	343.1	0.5950	cae	scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA
+180	344.8	0.5978	cae	scrum813-trinquete-de-zona.test.mjs · el trinquete HABLA: un test que depende de la zona sale denunciado   (+2 test(s) más caídos)
+181	345.5	0.5991	cae	scrum813-trinquete-de-zona.test.mjs · el trinquete NO denuncia a los tests que YA fijan su zona   (+1 test(s) más caídos)
+182	346.2	0.6003	cae	scrum813-trinquete-de-zona.test.mjs · SUELO: la zona LLEGA al proceso hijo, y se comprueba antes de medir   (+4 test(s) más caídos)
+183	346.9	0.6015	cae	scrum813-trinquete-de-zona.test.mjs · una CENSADA que deja de cambiar de veredicto pone el trinquete en ROJO   (+1 test(s) más caídos)
+184	347.6	0.6027	cae	scrum813-trinquete-de-zona.test.mjs · SUELO: CERO dependientes teniendo censadas NO es un cero — es CIEGO
+185	348.3	0.6039	cae	scrum813-trinquete-de-zona.test.mjs · SUELO: si el detalle por ruta NO ve nada pero la huella global cambió, sigue siendo CIEGO   (+1 test(s) más caídos)
+186	349.0	0.6051	cae	scrum813-trinquete-de-zona.test.mjs · EL QUE DECIDE: un fichero de TEST tocado durante la medición sigue siendo CIEGO   (+1 test(s) más caídos)
+187	349.7	0.6064	cae	scrum813-trinquete-de-zona.test.mjs · la marca REAL trae el detalle, y cuadra con lo que dice git
+188	350.4	0.6076	cae	scrum813-trinquete-de-zona.test.mjs · EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue siendo CIEGO   (+3 test(s) más caídos)
+189	351.1	0.6088	cae	scrum813-trinquete-de-zona.test.mjs · con la lista VACÍA nada se ampara: cualquier ruta sigue cegando   (+2 test(s) más caídos)
+190	351.8	0.6100	cae	scrum813-trinquete-de-zona.test.mjs · POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto   (+1 test(s) más caídos)
+191	352.9	0.6119	cae	scrum829b-la-ref-rancia-se-poda.test.mjs · traerRefs PODA la ref rancia, y sólo ésa
+192	353.5	0.6129	cae	scrum829b-la-ref-rancia-se-poda.test.mjs · con la ref rancia DELANTE, quien agrupa y quien enumera dan el mismo número
+193	354.7	0.6151	cae	scrum839c-la-pasada-se-ejecuta.test.mjs · 🔴 con atascados la pasada sale en 0: el vigía AVISA, no falla   (+6 test(s) más caídos)
+194	355.4	0.6162	cae	scrum839c-la-pasada-se-ejecuta.test.mjs · 🔴 un atasco NUEVO deja aviso, y el aviso menciona a alguien   (+1 test(s) más caídos)
+195	356.0	0.6174	cae	scrum839c-la-pasada-se-ejecuta.test.mjs · 🔴 pero SÍ falla cuando es ELLA la que no puede hacer su trabajo
+196	359.9	0.6241	cae	scrum839d-union-solo-en-el-registro.test.mjs · 🔴 DECLARACIÓN: ninguna línea pone merge=union fuera de docs/master/*.md   (+1 test(s) más caídos)
+197	361.7	0.6272	cae	scrum839d-union-solo-en-el-registro.test.mjs · 🔴 EFECTO: git no aplica union a ninguna ruta fuera de docs/master/*.md   (+1 test(s) más caídos)
+198	363.7	0.6306	cae	scrum839d-union-solo-en-el-registro.test.mjs · 🔴 NEGATIVO: un solo fichero fuera de docs/master y no se empuja   (+4 test(s) más caídos)
+199	364.8	0.6326	cae	scrum839d-union-solo-en-el-registro.test.mjs · 🔴 NEGATIVO: un subdirectorio de docs/master no es registro
+200	365.9	0.6345	cae	scrum839d-union-solo-en-el-registro.test.mjs · 🔴 SUELO: salida 1 sin lista de ficheros es «no pude mirar», no conflicto
+201	367.0	0.6364	cae	scrum839d-union-solo-en-el-registro.test.mjs · 🔴 POSITIVO: el #1318 fabricado — choque solo de registro → merge limpio y se empuja   (+1 test(s) más caídos)
+202	371.3	0.6439	cae	scrum839e-solo-pr-armados.test.mjs · 🔴 ROJO/NEGATIVO: el #880 fabricado — PR viejo SIN auto-merge y choque solo de registro → no se empuja   (+2 test(s) más caídos)
+203	373.5	0.6477	cae	scrum839e-solo-pr-armados.test.mjs · 🔴 SUELO: si no se puede leer si estaba armado, «no pude mirar» — nunca EMPUJAR   (+2 test(s) más caídos)
+204	375.6	0.6513	cae	scrum839e-solo-pr-armados.test.mjs · 🔴 CLI: lee el armado de la lista de PR que le pasa el workflow, con suelo
+205	377.3	0.6543	cae	scrum839e-solo-pr-armados.test.mjs · 🔴 POSITIVO del job: PR armado con choque solo de registro → se sigue resolviendo solo   (+1 test(s) más caídos)
+206	379.2	0.6576	cae	scrum839e-solo-pr-armados.test.mjs · 🔴 ROJO/NEGATIVO: un push de la App (Bot) a un PR existente NO arma el auto-merge   (+1 test(s) más caídos)
+207	381.0	0.6606	cae	scrum839e-solo-pr-armados.test.mjs · 🔴 SUELO: si no se sabe quién empujó, no se arma
+208	382.6	0.6635	cae	scrum839e-solo-pr-armados.test.mjs · 🔴 ROJO/NEGATIVO: un push de la App a una rama sin PR NO abre PR (p. ej. una rama recreada tras el merge)
+209	384.4	0.6666	cae	scrum839e-solo-pr-armados.test.mjs · 🔴 el YAML le pasa a los dos pasos QUIÉN empuja de verdad (`github.event.sender.type`)
+210	386.5	0.6702	cae	scrum850-la-poblacion-del-instrumento.test.mjs · el detector ve cada forma que se come el código   (+1 test(s) más caídos)
+211	388.4	0.6735	cae	scrum850-la-poblacion-del-instrumento.test.mjs · ninguna invocación de la tanda descarta su código de salida   (+1 test(s) más caídos)
+212	389.5	0.6754	cae	scrum850-la-poblacion-del-instrumento.test.mjs · el último tramo y los comentarios NO se marcan
+213	395.1	0.6852	cae	scrum850b-las-formas-que-mienten.test.mjs · el censo VE el `&` — era el hueco
+214	395.8	0.6864	cae	scrum853-avisador-solo-obligatorio.test.mjs · CEBO REAL #1255 · rojo SOLO en checks NO obligatorios → NO despierta
+215	396.2	0.6870	cae	scrum853-avisador-solo-obligatorio.test.mjs · sin lista de obligatorios NO despierta, y lo DICE con su código
+216	396.5	0.6876	cae	scrum853-avisador-solo-obligatorio.test.mjs · CEBO REAL #1255 · el aviso salió 18 s DESPUÉS del merge   (+2 test(s) más caídos)
+217	396.9	0.6882	cae	scrum853-avisador-solo-obligatorio.test.mjs · CEBO REAL #1255 · claude.yml NO arranca sobre un PR ya mergeado   (+1 test(s) más caídos)
+218	397.2	0.6888	cae	scrum853-avisador-solo-obligatorio.test.mjs · CEBO REAL #1255 · PR mergeado cuando Claude termina y rama claude/pr-* nueva → RAMA-MUDA
+219	397.5	0.6894	cae	scrum853-avisador-solo-obligatorio.test.mjs · claude.yml pregunta a la puerta ANTES de la acción
+220	397.9	0.6899	cae	scrum853-avisador-solo-obligatorio.test.mjs · el aviso de rama muda se comprueba sobre el fichero que de verdad se va a publicar
+221	398.2	0.6905	cae	scrum853-avisador-solo-obligatorio.test.mjs · un 404 que llega como CUERPO DEL ERROR no es una cabeza remota   (+1 test(s) más caídos)
+222	398.5	0.6911	cae	scrum853-avisador-solo-obligatorio.test.mjs · lo que añade el 853 no se queda con la salida de un `gh api` que ha FALLADO
+223	400.4	0.6944	cae	scrum853-lecturas-que-fallan-cerrado.test.mjs · PR · si no se puede leer a qué PR pertenece el rojo → PR-ILEGIBLE
+224	401.4	0.6960	cae	scrum853-lecturas-que-fallan-cerrado.test.mjs · PERMISO · un 404 no llega a la puerta como «permiso»
+225	402.3	0.6976	cae	scrum853-lecturas-que-fallan-cerrado.test.mjs · CHECK · si no se puede leer qué check cayó, la marca es
+226	403.4	0.6995	cae	scrum853-lecturas-que-fallan-cerrado.test.mjs · FICHEROS · si no se puede leer qué toca el PR, la puerta fiscal ESCALA
+227	404.4	0.7013	cae	scrum853-lecturas-que-fallan-cerrado.test.mjs · PREVIAS · si no se pueden leer los avisos previos, no se avisa
+228	430.1	0.7459	cae	scrum853c-el-vigia-no-se-cree-un-error.test.mjs · FECHA · si no se puede leer cuándo se empujó, no se inventa un NaN
+229	443.0	0.7682	cae	scrum853c-el-vigia-no-se-cree-un-error.test.mjs · NUM · si no se puede buscar el issue, la pasada PARA
+230	455.9	0.7905	cae	scrum853c-el-vigia-no-se-cree-un-error.test.mjs · ANTES · una memoria que no se puede leer NO es una memoria vacía
+231	456.8	0.7922	cae	scrum853d-cortacircuitos.test.mjs · el 7.º despertar de la ventana NO despierta   (+3 test(s) más caídos)
+232	457.3	0.7930	cae	scrum853d-cortacircuitos.test.mjs · si la cuenta de despertares no se puede leer, NO se despierta   (+2 test(s) más caídos)
+233	457.8	0.7939	cae	scrum853d-cortacircuitos.test.mjs · lo que ya salió de la ventana no cuenta
+234	458.3	0.7948	cae	scrum853d-cortacircuitos.test.mjs · una ejecución SALTADA no es un despertar
+235	476.0	0.8254	cae	scrum858b-la-tanda-sin-veredicto.test.mjs · NEGATIVO: una tanda con un test ROJO nunca sale 0 por el envoltorio   (+1 test(s) más caídos)
+236	484.9	0.8408	cae	scrum858b-la-tanda-sin-veredicto.test.mjs · una tanda que sale con 0 SIN línea de recuento sale con 4
+237	493.9	0.8564	cae	scrum858b-la-tanda-sin-veredicto.test.mjs · una tanda MUDA más que el tope sale con 3, y para SOLO su árbol
+238	494.9	0.8582	cae	scrum858c-el-cierre-con-indice.test.mjs · la vía es la clave de MENOR posición, no la del primer identificador que casa   (+1 test(s) más caídos)
+239	495.4	0.8590	cae	scrum858c-el-cierre-con-indice.test.mjs · una cadena dentro de un fichero se cierra en la MISMA vuelta   (+2 test(s) más caídos)
+240	497.4	0.8625	cae	scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)
+241	498.3	0.8642	cae	scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)
+242	500.0	0.8670	cae	scrum864c-el-temporal-no-vuelve.test.mjs · 🔴 ① CASO CONOCIDO: el censo distingue las cinco formas que le pongo delante, y no acusa a quien limpia   (+2 test(s) más caídos)
+243	500.8	0.8684	cae	scrum864c-el-temporal-no-vuelve.test.mjs · 🔴 ①b EL BORRADO DE OTRO NO ES EL MÍO: un finally que borra otra variable no cubre mi temporal
+244	503.2	0.8725	cae	scrum877-la-novena-a-pelo.test.mjs · SCRUM-877 · 🔴 EL BANCO: el criterio da las TRES respuestas, y son distintas
+245	504.4	0.8746	cae	scrum877-la-novena-a-pelo.test.mjs · SCRUM-877 · ✅ ABSUELVE el contenido visible — la condición que evita que lo apaguen   (+1 test(s) más caídos)
+246	505.1	0.8759	cae	scrum880-el-empate-del-sello.test.mjs · SCRUM-880c · 🔴 A · EL QUE DECIDE: con el empate, la cadena YA NO se bifurca
+247	505.5	0.8765	cae	scrum880-el-empate-del-sello.test.mjs · SCRUM-880c · 🔴 B · el sello que se ESCRIBE conserva los milisegundos
+248	506.2	0.8777	cae	scrum881-el-detector-sin-fecha.test.mjs · SCRUM-881 · 🔴 ROJO REAL: una F26… posterior al corte es PROPIA, no ajena   (+3 test(s) más caídos)
+249	507.6	0.8801	cae	scrum899-sesion-lista-blanca.test.mjs · 🔴 ROJO: una copia ALTERADA se niega a actuar y no llama a claude
+250	508.2	0.8812	cae	scrum899-sesion-lista-blanca.test.mjs · 🔴 ROJO: ejecutada desde un árbol de git, no actúa
+251	509.0	0.8826	cae	scrum899-sesion-lista-blanca.test.mjs · 🔴 la lista blanca rechaza cualquier nombre que no sea del equipo   (+1 test(s) más caídos)
+252	509.9	0.8842	cae	scrum899-sesion-lista-blanca.test.mjs · 🔴 reanudar va con el sessionId COMPLETO y SIN flags (con flags arranca una copia)
+253	511.1	0.8864	cae	scrum899-sesion-lista-blanca.test.mjs · 🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte permisos
+254	513.6	0.8907	cae	scrum899b-arranque-de-la-tanda.test.mjs · 🔴 ROJO: un orquestador-arranque ALTERADO no lanza nada   (+1 test(s) más caídos)
+255	514.7	0.8926	cae	scrum899b-arranque-de-la-tanda.test.mjs · 🔴 ROJO: con sesion.mjs ALTERADO, la tanda no lanza nada
+256	515.7	0.8943	cae	scrum899b-arranque-de-la-tanda.test.mjs · 🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza el arranque
+257	516.7	0.8961	cae	scrum899b-arranque-de-la-tanda.test.mjs · 🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza el arranque
+258	517.4	0.8972	cae	scrum899c-relevar-y-contexto.test.mjs · 🔴 el contexto es el del ÚLTIMO turno, no el máximo histórico
+259	517.7	0.8977	cae	scrum899c-relevar-y-contexto.test.mjs · 🔴 el contexto NO incluye output_tokens: es lo que se manda, no lo que contesta
+260	518.0	0.8983	cae	scrum899c-relevar-y-contexto.test.mjs · 🔴 SUELO: sin turnos legibles el contexto es null, NUNCA 0
+261	518.3	0.8988	cae	scrum899c-relevar-y-contexto.test.mjs · 🔴 el jsonl se busca en TODAS las carpetas de proyecto, no solo en la del repo   (+1 test(s) más caídos)
+262	518.7	0.8994	cae	scrum899c-relevar-y-contexto.test.mjs · 🔴 no se para una sesión que está TRABAJANDO, aunque el traspaso esté fresco
+263	519.0	0.8999	cae	scrum899c-relevar-y-contexto.test.mjs · 🔴 no se para una sesión cuyo traspaso no se ha reescrito
+264	520.0	0.9017	cae	scrum899d-aviso-de-uso.test.mjs · 🔴 NO_PUDE_MIRAR · vieja (11 min > 10)   (+1 test(s) más caídos)
+265	520.5	0.9026	cae	scrum899d-aviso-de-uso.test.mjs · 🔴 un REPINTADO sin llamada a la API no rejuvenece el dato
+266	520.9	0.9033	cae	scrum899d-aviso-de-uso.test.mjs · 🔴 NO_PUDE_MIRAR · no existe   (+1 test(s) más caídos)
+267	521.4	0.9042	cae	scrum899d-aviso-de-uso.test.mjs · 🔴 NO_PUDE_MIRAR · ventana ya reiniciada
+268	522.3	0.9057	cae	scrum900-push-de-claude-con-la-app.test.mjs · 🔴 ROJO/POSITIVO: el push de Claude autentica con la llave de la App, no con el GITHUB_TOKEN del checkout
+269	523.3	0.9074	cae	scrum908-la-muda-se-explica.test.mjs · SCRUM-908 · 🔴 EL QUE DECIDE: las tres situaciones NO dan la misma respuesta   (+2 test(s) más caídos)
+270	524.9	0.9102	cae	scrum928b-el-veredicto-que-el-color-tapa.test.mjs · 🔴 EL CONTROL QUE DECIDE: una tanda sana cuyo recuento viene con color sale con 0   (+1 test(s) más caídos)
+271	525.6	0.9114	cae	scrum928b-el-veredicto-que-el-color-tapa.test.mjs · ✅ POSITIVO: sin color el envoltorio sigue dando exactamente el mismo veredicto que antes   (+2 test(s) más caídos)
+272	526.7	0.9133	cae	scrum938-la-lista-como-fixture.test.mjs · el consumidor se resuelve por IMPORT, no por mencionar el nombre
+273	527.2	0.9142	cae	scrum938-la-lista-como-fixture.test.mjs · un MOTIVO en prosa no es un elemento de la lista
+274	528.0	0.9155	cae	scrum939b-trinquete-de-las-skills.test.mjs · EL QUE DECIDE
+275	528.3	0.9161	cae	scrum939b-trinquete-de-las-skills.test.mjs · SUELO en la copia
+276	528.7	0.9169	cae	scrum939b-trinquete-de-las-skills.test.mjs · los tres controles   (+2 test(s) más caídos)
+277	529.2	0.9176	cae	scrum939b-trinquete-de-las-skills.test.mjs · los tres controles   (+2 test(s) más caídos)
+278	529.7	0.9185	cae	scrum939b-trinquete-de-las-skills.test.mjs · los tres controles   (+1 test(s) más caídos)
+279	532.2	0.9229	cae	scrum949-el-suelo-como-cociente.test.mjs · el cociente cruza CONJUNTOS: perder uno y ganar otro no cuadra   (+3 test(s) más caídos)
+280	533.6	0.9253	cae	scrum949-el-suelo-como-cociente.test.mjs · cero sobre cero es CERO: dos sondas vacías no están de acuerdo, no han mirado
+281	534.9	0.9276	cae	scrum949-el-suelo-como-cociente.test.mjs · ✅ NEGATIVO · un borrado legítimo pequeño NO dispara   (+1 test(s) más caídos)
+282	536.2	0.9299	cae	scrum949-el-suelo-como-cociente.test.mjs · ✅ NEGATIVO · ningún cambio honesto separa las dos sondas   (+1 test(s) más caídos)
+283	537.6	0.9323	cae	scrum949-el-suelo-como-cociente.test.mjs · 🔴 EL QUE DECIDE · crecer mueve el umbral solo, y la ceguera realista sigue saltando
+284	539.5	0.9356	cae	scrum949-el-suelo-como-cociente.test.mjs · 🔴 ROJO · un recorrido ciego salta y NOMBRA lo que no ve   (+2 test(s) más caídos)
+285	545.4	0.9458	cae	scrum951a-equipo-configurable.test.mjs · 🔴 A2 · sin `traspasos` en config.json, sesion.mjs dice NO-PUDE-MIRAR
+286	547.5	0.9494	cae	scrum951a-equipo-configurable.test.mjs · 🔴 A2 · el instalador graba en config.json la carpeta de los traspasos   (+2 test(s) más caídos)
+287	550.9	0.9552	cae	scrum951a-equipo-configurable.test.mjs · 🔴 el instalador se NIEGA si la carpeta de los traspasos no existe
+288	553.2	0.9594	cae	scrum951a-equipo-configurable.test.mjs · 🔴 el prefijo se DECLARA
+289	555.2	0.9628	cae	scrum951a-equipo-configurable.test.mjs · 🔴 una config de equipo inválida no actúa
+290	557.8	0.9673	cae	scrum951a-equipo-configurable.test.mjs · 🔴 con prefijo, `estado` solo lista las sesiones de SU equipo
+291	561.5	0.9737	cae	scrum951a-equipo-configurable.test.mjs · 🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo   (+1 test(s) más caídos)
+292	563.6	0.9774	cae	scrum951a-equipo-configurable.test.mjs · 🔴 la tanda lanza al orquestador DEL CONFIG, con su prefijo
+293	566.2	0.9819	cae	scrum951a-equipo-configurable.test.mjs · 🔴 rutaDelTraspaso: sesion-N → project_sN, cualquier otro puesto → project_<puesto>
+294	568.7	0.9862	cae	scrum951a-equipo-configurable.test.mjs · veredicto global: NO-PUDE-MIRAR gana a FALLA   (+1 test(s) más caídos)
+295	570.9	0.9900	cae	scrum951a-equipo-configurable.test.mjs · 🔴 ROJO: con la copia instalada de sesion.mjs TOCADA, la lista da FALLA
+296	571.5	0.9911	cae	scrum951d-ensayo-instalacion.test.mjs · 🔴 ROJO: un servidor de .mcp.json sin decidir da FALLA   (+1 test(s) más caídos)
+297	572.0	0.9919	cae	scrum951d-ensayo-instalacion.test.mjs · enableAllProjectMcpServers en los settings del usuario lo decide todo
+298	572.3	0.9924	cae	scrum951d-ensayo-instalacion.test.mjs · la decisión guardada en la entrada del proyecto de ~/.claude.json cuenta
+299	573.4	0.9944	cae	scrum951d-ensayo-instalacion.test.mjs · unos settings con BOM (como los de origin/main) se leen   (+4 test(s) más caídos)
+300	573.7	0.9949	cae	scrum951d-ensayo-instalacion.test.mjs · 🔴 ROJO: un VERDE leído del uso.json de OTRA carpeta es AVISO, no OK
+301	574.1	0.9955	cae	scrum951d-ensayo-instalacion.test.mjs · el uso.json de ESTA instalación sigue siendo OK (en Windows, sin mirar la caja ni las barras)
+302	574.7	0.9966	cae	utils.test.mjs · esc: escapa HTML peligroso y tolera null/number
+303	575.4	0.9977	cae	vigia-atascados.test.mjs · SIN-CHECKS es una causa PROPIA, no «esperando»   (+3 test(s) más caídos)
+304	575.7	0.9983	cae	vigia-atascados.test.mjs · 🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-OBLIGATORIO, no ESPERANDO   (+4 test(s) más caídos)
+305	576.0	0.9989	cae	vigia-atascados.test.mjs · 🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad   (+4 test(s) más caídos)
+306	576.4	0.9994	cae	vigia-atascados.test.mjs · 🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot
+307	576.7	1.0000	cae	vigia-atascados.test.mjs · 🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa

@@ -1,0 +1,6235 @@
+{
+ "medido": "2026-09-20T14:23:09.850Z",
+ "repo": "lwislg99/cobroflash-backend",
+ "limite": 100,
+ "runs": 100,
+ "filas": [
+  {
+   "run": 35515765161,
+   "rama": "scrum-960-taxid-del-proveedor",
+   "evento": "pull_request",
+   "creado": "2026-09-20T14:12:21Z",
+   "runConcl": "",
+   "jobId": 106091318569,
+   "jobConcl": null,
+   "jobStatus": "in_progress",
+   "seg": null,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": null,
+     "concl": null
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": null,
+     "concl": null
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": null,
+     "concl": null
+    }
+   ]
+  },
+  {
+   "run": 35515580752,
+   "rama": "scrum-926-duplicar-conserva",
+   "evento": "pull_request",
+   "creado": "2026-09-20T14:08:45Z",
+   "runConcl": "",
+   "jobId": 106090848578,
+   "jobConcl": null,
+   "jobStatus": "in_progress",
+   "seg": null,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": null,
+     "concl": null
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": null,
+     "concl": null
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": null,
+     "concl": null
+    }
+   ]
+  },
+  {
+   "run": 35515331832,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T14:03:43Z",
+   "runConcl": "failure",
+   "jobId": 106090228657,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35515279534,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T14:02:42Z",
+   "runConcl": "cancelled",
+   "jobId": 106090101183,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 54,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 19,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35515062481,
+   "rama": "scrum-960-taxid-del-proveedor",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:58:35Z",
+   "runConcl": "failure",
+   "jobId": 106089497313,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 614,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35515050350,
+   "rama": "scrum-906f-firma-holded-medida",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:58:19Z",
+   "runConcl": "failure",
+   "jobId": 106089465263,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 614,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35515017897,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:57:37Z",
+   "runConcl": "cancelled",
+   "jobId": 106089381942,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 316,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 15,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 287,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35514935799,
+   "rama": "scrum-920g-encargo-punto-944",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:55:51Z",
+   "runConcl": "failure",
+   "jobId": 106089163562,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35514754503,
+   "rama": "scrum-954-vivo-no-es-listado",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:52:02Z",
+   "runConcl": "failure",
+   "jobId": 106088695846,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 578,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 1,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35514349302,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:43:42Z",
+   "runConcl": "failure",
+   "jobId": 106087678459,
+   "jobConcl": "success",
+   "jobStatus": "completed",
+   "seg": 551,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 526,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35514300924,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:42:39Z",
+   "runConcl": "cancelled",
+   "jobId": 106087555546,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 57,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 22,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35514207070,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:40:40Z",
+   "runConcl": "cancelled",
+   "jobId": 106087312685,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 111,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 15,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 83,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35514065362,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:37:47Z",
+   "runConcl": "cancelled",
+   "jobId": 106086943737,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 168,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 13,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 142,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513983254,
+   "rama": "scrum-912c-lecturas-staging",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:36:05Z",
+   "runConcl": "failure",
+   "jobId": 106086731326,
+   "jobConcl": "success",
+   "jobStatus": "completed",
+   "seg": 597,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 13,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 567,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513935711,
+   "rama": "scrum-906e-firma-holded",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:35:09Z",
+   "runConcl": "failure",
+   "jobId": 106086562957,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513932459,
+   "rama": "scrum-orquestador-cierre-por-uso",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:35:05Z",
+   "runConcl": "failure",
+   "jobId": 106086554109,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 14,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 586,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513850794,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:33:24Z",
+   "runConcl": "cancelled",
+   "jobId": 106086379650,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 256,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 16,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 224,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513796434,
+   "rama": "scrum-912c-lecturas-staging",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:32:18Z",
+   "runConcl": "cancelled",
+   "jobId": 106086192765,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 237,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 205,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513779695,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:31:58Z",
+   "runConcl": "cancelled",
+   "jobId": 106086157751,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 94,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 58,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513760782,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:31:35Z",
+   "runConcl": "cancelled",
+   "jobId": 106086133629,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 8,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513670530,
+   "rama": "scrum-920b-prototipo-gastos",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:29:52Z",
+   "runConcl": "failure",
+   "jobId": 106085908418,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 578,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513564382,
+   "rama": "scrum-920b-prototipo-gastos",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:27:38Z",
+   "runConcl": "cancelled",
+   "jobId": 106085582961,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 117,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 82,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513498039,
+   "rama": "scrum-937c-recorrido-staging",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:26:16Z",
+   "runConcl": "failure",
+   "jobId": 106085409415,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 16,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 580,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513442466,
+   "rama": "scrum-952-paso0-plan",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:25:10Z",
+   "runConcl": "failure",
+   "jobId": 106085264063,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 13,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 585,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 1,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513429033,
+   "rama": "scrum-947b-medido-en-staging",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:24:54Z",
+   "runConcl": "failure",
+   "jobId": 106085229005,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 16,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513408926,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-20T13:24:28Z",
+   "runConcl": "cancelled",
+   "jobId": 106085176081,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 439,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 14,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 411,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35513029757,
+   "rama": "scrum-917c-lista-trabajos",
+   "evento": "pull_request",
+   "creado": "2026-09-20T13:16:46Z",
+   "runConcl": "failure",
+   "jobId": 106084182942,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 14,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 585,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35367072915,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T16:12:24Z",
+   "runConcl": "cancelled",
+   "jobId": 105672011914,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35366350609,
+   "rama": "scrum-956-afirmaciones-javier",
+   "evento": "pull_request",
+   "creado": "2026-09-18T16:05:17Z",
+   "runConcl": "cancelled",
+   "jobId": 105669649112,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 580,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35365472651,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T15:56:37Z",
+   "runConcl": "success",
+   "jobId": 105666749838,
+   "jobConcl": "success",
+   "jobStatus": "completed",
+   "seg": 593,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 558,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35365054060,
+   "rama": "scrum-908c-la-cola-que-se-pierde",
+   "evento": "pull_request",
+   "creado": "2026-09-18T15:52:24Z",
+   "runConcl": "failure",
+   "jobId": 105665603344,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 580,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35364861983,
+   "rama": "scrum-612-borrador-enmienda",
+   "evento": "pull_request",
+   "creado": "2026-09-18T15:50:28Z",
+   "runConcl": "cancelled",
+   "jobId": 105664713291,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 614,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 575,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35364145759,
+   "rama": "scrum-908c-la-cola-que-se-pierde",
+   "evento": "pull_request",
+   "creado": "2026-09-18T15:43:21Z",
+   "runConcl": "cancelled",
+   "jobId": 105662367042,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 586,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 553,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35362335572,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T15:25:33Z",
+   "runConcl": "cancelled",
+   "jobId": 105656372540,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 614,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 578,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35361515773,
+   "rama": "scrum-612-e1-medido-hoy",
+   "evento": "pull_request",
+   "creado": "2026-09-18T15:17:29Z",
+   "runConcl": "cancelled",
+   "jobId": 105653651731,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 16,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 583,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35353877511,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T14:03:25Z",
+   "runConcl": "cancelled",
+   "jobId": 105628680787,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 614,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35353225648,
+   "rama": "scrum-951d-ensayo-instalacion",
+   "evento": "pull_request",
+   "creado": "2026-09-18T13:56:59Z",
+   "runConcl": "cancelled",
+   "jobId": 105626162458,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35353194531,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T13:56:40Z",
+   "runConcl": "cancelled",
+   "jobId": 105626055158,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 439,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 14,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 413,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35352593358,
+   "rama": "scrum-951e-navegador",
+   "evento": "pull_request",
+   "creado": "2026-09-18T13:50:33Z",
+   "runConcl": "cancelled",
+   "jobId": 105624048085,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 617,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 577,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35351918095,
+   "rama": "scrum-951d-ensayo-instalacion",
+   "evento": "pull_request",
+   "creado": "2026-09-18T13:43:43Z",
+   "runConcl": "failure",
+   "jobId": 105621833727,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 578,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35349745102,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T13:21:31Z",
+   "runConcl": "cancelled",
+   "jobId": 105614867008,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35349260260,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T13:16:31Z",
+   "runConcl": "cancelled",
+   "jobId": 105613172708,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 315,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 280,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35349096274,
+   "rama": "scrum-937b-nif-en-el-modal",
+   "evento": "pull_request",
+   "creado": "2026-09-18T13:14:49Z",
+   "runConcl": "cancelled",
+   "jobId": 105612631004,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 20,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 573,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35348529850,
+   "rama": "scrum-951c-fichas-javier",
+   "evento": "pull_request",
+   "creado": "2026-09-18T13:09:00Z",
+   "runConcl": "success",
+   "jobId": 105610793874,
+   "jobConcl": "success",
+   "jobStatus": "completed",
+   "seg": 594,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 15,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 565,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 1,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35347817148,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T13:01:32Z",
+   "runConcl": "cancelled",
+   "jobId": 105608576690,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 1,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35347692660,
+   "rama": "scrum-937b-nif-en-el-modal",
+   "evento": "pull_request",
+   "creado": "2026-09-18T13:00:17Z",
+   "runConcl": "failure",
+   "jobId": 105608048574,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 583,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35347289902,
+   "rama": "scrum-947-foto-del-gasto",
+   "evento": "pull_request",
+   "creado": "2026-09-18T12:55:56Z",
+   "runConcl": "cancelled",
+   "jobId": 105606730250,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 16,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 580,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35347134707,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T12:54:08Z",
+   "runConcl": "cancelled",
+   "jobId": 105606260541,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 457,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 423,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35346493876,
+   "rama": "scrum-951a-equipo-configurable",
+   "evento": "pull_request",
+   "creado": "2026-09-18T12:46:51Z",
+   "runConcl": "cancelled",
+   "jobId": 105604176189,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 617,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 16,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35346129010,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T12:42:51Z",
+   "runConcl": "cancelled",
+   "jobId": 105603142566,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 575,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35345789060,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T12:38:59Z",
+   "runConcl": "cancelled",
+   "jobId": 105601923958,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 247,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 216,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35345618271,
+   "rama": "scrum-912b-lecturas-staging",
+   "evento": "pull_request",
+   "creado": "2026-09-18T12:37:01Z",
+   "runConcl": "success",
+   "jobId": 105601372874,
+   "jobConcl": "success",
+   "jobStatus": "completed",
+   "seg": 483,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 10,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 460,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35345152758,
+   "rama": "scrum-951b-normas-dos-equipos",
+   "evento": "pull_request",
+   "creado": "2026-09-18T12:31:51Z",
+   "runConcl": "success",
+   "jobId": 105599880153,
+   "jobConcl": "success",
+   "jobStatus": "completed",
+   "seg": 491,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 10,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 467,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35344492403,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T12:24:28Z",
+   "runConcl": "cancelled",
+   "jobId": 105597784039,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 580,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35344032316,
+   "rama": "scrum-912-leer-ticket-gasto",
+   "evento": "pull_request",
+   "creado": "2026-09-18T12:19:15Z",
+   "runConcl": "cancelled",
+   "jobId": 105596308319,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 617,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 579,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35342656588,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T12:03:09Z",
+   "runConcl": "cancelled",
+   "jobId": 105591897142,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35342013861,
+   "rama": "scrum-915d-pasos-del-editor",
+   "evento": "pull_request",
+   "creado": "2026-09-18T11:55:26Z",
+   "runConcl": "cancelled",
+   "jobId": 105589828567,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 577,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35341564195,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T11:49:54Z",
+   "runConcl": "cancelled",
+   "jobId": 105588404863,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35340947864,
+   "rama": "scrum-899-aviso-de-uso",
+   "evento": "pull_request",
+   "creado": "2026-09-18T11:42:22Z",
+   "runConcl": "cancelled",
+   "jobId": 105586471275,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 573,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35330729222,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T09:40:09Z",
+   "runConcl": "cancelled",
+   "jobId": 105554218060,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 579,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35330089811,
+   "rama": "scrum-949-el-suelo-como-cociente",
+   "evento": "pull_request",
+   "creado": "2026-09-18T09:32:46Z",
+   "runConcl": "failure",
+   "jobId": 105552194145,
+   "jobConcl": "failure",
+   "jobStatus": "completed",
+   "seg": 589,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 16,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 559,
+     "concl": "failure"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35329797196,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T09:29:27Z",
+   "runConcl": "cancelled",
+   "jobId": 105551258677,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 617,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 20,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 577,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35329174740,
+   "rama": "scrum-938b-banco-fabricado",
+   "evento": "pull_request",
+   "creado": "2026-09-18T09:22:15Z",
+   "runConcl": "cancelled",
+   "jobId": 105549278916,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 617,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35328803518,
+   "rama": "scrum-949-el-suelo-como-cociente",
+   "evento": "pull_request",
+   "creado": "2026-09-18T09:18:00Z",
+   "runConcl": "failure",
+   "jobId": 105548082735,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 577,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35328773551,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T09:17:39Z",
+   "runConcl": "cancelled",
+   "jobId": 105548075086,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 579,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35328454927,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T09:13:58Z",
+   "runConcl": "cancelled",
+   "jobId": 105547069721,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 211,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 14,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 184,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 1,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35328124095,
+   "rama": "scrum-524b-el-trinquete",
+   "evento": "pull_request",
+   "creado": "2026-09-18T09:10:13Z",
+   "runConcl": "success",
+   "jobId": 105545914268,
+   "jobConcl": "success",
+   "jobStatus": "completed",
+   "seg": 573,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 15,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 539,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35328022896,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T09:09:03Z",
+   "runConcl": "cancelled",
+   "jobId": 105545580743,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 307,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 270,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35327827131,
+   "rama": "scrum-921d-la-cita-no-afirma",
+   "evento": "pull_request",
+   "creado": "2026-09-18T09:06:48Z",
+   "runConcl": "cancelled",
+   "jobId": 105544944848,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 614,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35327516662,
+   "rama": "scrum-939b-el-trinquete-que-solo-baja",
+   "evento": "pull_request",
+   "creado": "2026-09-18T09:03:16Z",
+   "runConcl": "cancelled",
+   "jobId": 105543934658,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 577,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35326170938,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T08:47:29Z",
+   "runConcl": "success",
+   "jobId": 105539611336,
+   "jobConcl": "success",
+   "jobStatus": "completed",
+   "seg": 547,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 14,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 519,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35325542899,
+   "rama": "scrum-933-el-caso-de-la-segunda-mutacion",
+   "evento": "pull_request",
+   "creado": "2026-09-18T08:40:11Z",
+   "runConcl": "cancelled",
+   "jobId": 105537614433,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 614,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 577,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35323744584,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T08:18:55Z",
+   "runConcl": "cancelled",
+   "jobId": 105531905236,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 611,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 574,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35323127954,
+   "rama": "scrum-921c-el-guard-ampliado",
+   "evento": "pull_request",
+   "creado": "2026-09-18T08:11:37Z",
+   "runConcl": "cancelled",
+   "jobId": 105529929271,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 21,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 573,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35321320040,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T07:49:43Z",
+   "runConcl": "failure",
+   "jobId": 105524228237,
+   "jobConcl": "failure",
+   "jobStatus": "completed",
+   "seg": 526,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 11,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 501,
+     "concl": "failure"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35320715053,
+   "rama": "scrum-917d-titulo-propio-en-la-lista",
+   "evento": "pull_request",
+   "creado": "2026-09-18T07:42:22Z",
+   "runConcl": "cancelled",
+   "jobId": 105522369232,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35320407064,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T07:38:37Z",
+   "runConcl": "cancelled",
+   "jobId": 105521500979,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 614,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 579,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35320164404,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T07:35:34Z",
+   "runConcl": "cancelled",
+   "jobId": 105520662089,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 194,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 161,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35319928416,
+   "rama": "scrum-937-el-nif-no-se-tira-en-silencio",
+   "evento": "pull_request",
+   "creado": "2026-09-18T07:32:42Z",
+   "runConcl": "cancelled",
+   "jobId": 105519940901,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 9,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 579,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35319589882,
+   "rama": "scrum-946-censo-de-huerfanos",
+   "evento": "pull_request",
+   "creado": "2026-09-18T07:28:32Z",
+   "runConcl": "cancelled",
+   "jobId": 105518892316,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35318441517,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T07:13:58Z",
+   "runConcl": "failure",
+   "jobId": 105515283222,
+   "jobConcl": "failure",
+   "jobStatus": "completed",
+   "seg": 587,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 15,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 557,
+     "concl": "failure"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35318434714,
+   "rama": "main",
+   "ciego": "sin job meta-guard"
+  },
+  {
+   "run": 35318358502,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T07:12:54Z",
+   "runConcl": "cancelled",
+   "jobId": 105514967066,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 72,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 11,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 49,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35317893317,
+   "rama": "scrum-931-un-solo-importe-de-plantilla",
+   "evento": "pull_request",
+   "creado": "2026-09-18T07:06:51Z",
+   "runConcl": "cancelled",
+   "jobId": 105513491149,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 580,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35317804332,
+   "rama": "scrum-906d-consolidado",
+   "evento": "pull_request",
+   "creado": "2026-09-18T07:05:39Z",
+   "runConcl": "failure",
+   "jobId": 105513207771,
+   "jobConcl": "failure",
+   "jobStatus": "completed",
+   "seg": 566,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 534,
+     "concl": "failure"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35317708289,
+   "rama": "scrum-929-el-total-sin-iva",
+   "evento": "pull_request",
+   "creado": "2026-09-18T07:04:25Z",
+   "runConcl": "cancelled",
+   "jobId": 105512911119,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 579,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35317407798,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T07:00:36Z",
+   "runConcl": "failure",
+   "jobId": 105512073763,
+   "jobConcl": "failure",
+   "jobStatus": "completed",
+   "seg": 590,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 2,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 7,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 546,
+     "concl": "failure"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35316880391,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T06:53:38Z",
+   "runConcl": "cancelled",
+   "jobId": 105510441572,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 411,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 372,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35316865394,
+   "rama": "scrum-945-node-p-sin-color",
+   "evento": "pull_request",
+   "creado": "2026-09-18T06:53:26Z",
+   "runConcl": "cancelled",
+   "jobId": 105510314994,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 577,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35316651405,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T06:50:32Z",
+   "runConcl": "cancelled",
+   "jobId": 105509721712,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 182,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 113,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35316606974,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-18T06:49:58Z",
+   "runConcl": "cancelled",
+   "jobId": 105509518874,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 36,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35316429879,
+   "rama": "scrum-932-turno-sin-credencial",
+   "evento": "pull_request",
+   "creado": "2026-09-18T06:47:32Z",
+   "runConcl": "failure",
+   "jobId": 105508964070,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35316107622,
+   "rama": "scrum-941-normas-a22-y-suelos",
+   "evento": "pull_request",
+   "creado": "2026-09-18T06:43:13Z",
+   "runConcl": "cancelled",
+   "jobId": 105507979280,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 616,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 581,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35316054269,
+   "rama": "scrum-909-rotulos-que-se-pisan",
+   "evento": "pull_request",
+   "creado": "2026-09-18T06:42:32Z",
+   "runConcl": "cancelled",
+   "jobId": 105507826592,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35277159315,
+   "rama": "scrum-921c-el-guard-ampliado",
+   "evento": "pull_request",
+   "creado": "2026-09-17T21:31:33Z",
+   "runConcl": "failure",
+   "jobId": 105390673348,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 578,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35276934560,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-17T21:29:14Z",
+   "runConcl": "failure",
+   "jobId": 105389707486,
+   "jobConcl": "failure",
+   "jobStatus": "completed",
+   "seg": 487,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 10,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 5,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 463,
+     "concl": "failure"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35276609785,
+   "rama": "scrum-921c-el-guard-ampliado",
+   "evento": "pull_request",
+   "creado": "2026-09-17T21:25:47Z",
+   "runConcl": "cancelled",
+   "jobId": 105388650261,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 373,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 18,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 337,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 1,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35276245269,
+   "rama": "scrum-940-suelos-que-no-pueden-saltar",
+   "evento": "pull_request",
+   "creado": "2026-09-17T21:21:58Z",
+   "runConcl": "cancelled",
+   "jobId": 105387489187,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 17,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 582,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35275261486,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-17T21:11:30Z",
+   "runConcl": "cancelled",
+   "jobId": 105384335457,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 615,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 3,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 19,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 8,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 578,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  },
+  {
+   "run": 35275039004,
+   "rama": "main",
+   "evento": "push",
+   "creado": "2026-09-17T21:09:10Z",
+   "runConcl": "cancelled",
+   "jobId": 105383909417,
+   "jobConcl": "cancelled",
+   "jobStatus": "completed",
+   "seg": 73,
+   "pasos": [
+    {
+     "n": "Set up job",
+     "seg": 1,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/checkout@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Traer `main` (el censo de tickets lo consulta)",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Run actions/setup-node@v4",
+     "seg": 4,
+     "concl": "success"
+    },
+    {
+     "n": "Run npm ci",
+     "seg": 13,
+     "concl": "success"
+    },
+    {
+     "n": "Compilar (tsc)",
+     "seg": 6,
+     "concl": "success"
+    },
+    {
+     "n": "Cada guard cae con la mutación que declara",
+     "seg": 42,
+     "concl": "cancelled"
+    },
+    {
+     "n": "Post Run actions/setup-node@v4",
+     "seg": 0,
+     "concl": "skipped"
+    },
+    {
+     "n": "Post Run actions/checkout@v4",
+     "seg": 0,
+     "concl": "success"
+    },
+    {
+     "n": "Complete job",
+     "seg": 0,
+     "concl": "success"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,95 @@
+[
+  {
+    "pid": 10112,
+    "cwd": "d:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "interactive",
+    "startedAt": 1789730543011,
+    "sessionId": "916afbe4-3b26-49c6-a8c6-d4d93c6f5e57",
+    "name": "cobroflash-backend-1c",
+    "status": "idle"
+  },
+  {
+    "id": "df2fa38f",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789738788767,
+    "sessionId": "df2fa38f-f8b8-482e-a040-22b56ab065e9",
+    "name": "sesion-5",
+    "state": "working"
+  },
+  {
+    "pid": 3384,
+    "cwd": "d:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "interactive",
+    "startedAt": 1789909409760,
+    "sessionId": "9e884936-8f25-4f3d-ae60-93423c13a5d1",
+    "name": "cobroflash-backend-73",
+    "status": "idle"
+  },
+  {
+    "pid": 5268,
+    "id": "ac89ffa1",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789909835229,
+    "sessionId": "ac89ffa1-a706-4d36-ab41-87b466dc6fcb",
+    "name": "s2b-20",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 16576,
+    "id": "621e0f80",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789909837871,
+    "sessionId": "621e0f80-c2ad-4b8f-9e15-e546d130fa84",
+    "name": "s1-20",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 11832,
+    "id": "b4d5ecc1",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789909845867,
+    "sessionId": "b4d5ecc1-7110-4cc4-a089-f87a29238857",
+    "name": "s2-20",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 14420,
+    "id": "068af1ca",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789909849035,
+    "sessionId": "068af1ca-1fb6-493e-8171-689e6115e2f1",
+    "name": "s0-20",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 24792,
+    "id": "a88eaf95",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789909883515,
+    "sessionId": "a88eaf95-bc57-4d95-8aef-c1f2aec73395",
+    "name": "s5-20b",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 1924,
+    "id": "c81e8979",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789910122875,
+    "sessionId": "c81e8979-05e9-4730-8277-f9247efe041a",
+    "name": "s4-20",
+    "status": "busy",
+    "state": "working"
+  }
+]

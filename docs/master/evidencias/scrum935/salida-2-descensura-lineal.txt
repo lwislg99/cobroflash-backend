@@ -1,0 +1,53 @@
+﻿POBLACIÓN · runs con job medible 97 · acabados (success/failure) 14 · cancelados EN EL TECHO (≥600 s) 58
+MUESTRA que se baja: 34 logs (14 acabados + 20 del techo, 1 de cada 2)
+
+CIEGOS: 0 de 34
+
+① PASADAS QUE LLEGARON AL FINAL (duración REAL, sin censurar)
+  dur.job  mutaciones  s/mutación  rama · run
+     8:03   290/290        1.57  scrum-912b-lecturas-staging · 35345618271 · 2026-09-18T12:37 · success
+     8:07   274/275        1.68  main · 35276934560 · 2026-09-17T21:29 · failure
+     8:11   290/290        1.60  scrum-951b-normas-dos-equipos · 35345152758 · 2026-09-18T12:31 · success
+     8:46   274/275        1.82  main · 35321320040 · 2026-09-18T07:49 · failure
+     9:07   275/275        1.87  main · 35326170938 · 2026-09-18T08:47 · success
+     9:11   307/307        1.70  main · 35514349302 · 2026-09-20T13:43 · success
+     9:26   274/275        1.93  scrum-906d-consolidado · 35317804332 · 2026-09-18T07:05 · failure
+     9:33   280/280        1.91  scrum-524b-el-trinquete · 35328124095 · 2026-09-18T09:10 · success
+     9:47   274/275        2.02  main · 35318441517 · 2026-09-18T07:13 · failure
+     9:49   285/286        1.95  scrum-949-el-suelo-como-cociente · 35330089811 · 2026-09-18T09:32 · failure
+     9:50   274/275        1.98  main · 35317407798 · 2026-09-18T07:00 · failure
+     9:53   307/307        1.81  main · 35365472651 · 2026-09-18T15:56 · success
+     9:54   301/301        1.87  scrum-951c-fichas-javier · 35348529850 · 2026-09-18T13:09 · success
+     9:57   307/307        1.83  scrum-912c-lecturas-staging · 35513983254 · 2026-09-20T13:36 · success
+    10:15   307/307        1.88  scrum-947b-medido-en-staging · 35513429033 · 2026-09-20T13:24 · cancelled
+
+② PASADAS CORTADAS POR EL TECHO — proyección de lo que habrían durado
+  (proyección = tiempo antes de la 1ª mutación + TOTAL × s/mutación de esa misma pasada)
+  dur.job  hechas  s/mutación  proyectado  rama · run
+    10:15     235       2.41       13:11  scrum-949-el-suelo-como-cociente · 35328803518 · 2026-09-18T09:18
+    10:17     235       2.42       13:14  main · 35329797196 · 2026-09-18T09:29
+    10:16     286       1.99       10:60  scrum-899-aviso-de-uso · 35340947864 · 2026-09-18T11:42
+    10:16     234       2.42       13:15  scrum-915d-pasos-del-editor · 35342013861 · 2026-09-18T11:55
+    10:17     235       2.42       13:14  scrum-912-leer-ticket-gasto · 35344032316 · 2026-09-18T12:19
+    10:16     234       2.40       13:14  main · 35346129010 · 2026-09-18T12:42
+    10:16     250       2.30       12:29  scrum-947-foto-del-gasto · 35347289902 · 2026-09-18T12:55
+    10:15     234       2.42       13:14  main · 35347817148 · 2026-09-18T13:01
+    10:15     278       2.07       11:17  main · 35349745102 · 2026-09-18T13:21
+    10:17     229       2.45       13:31  scrum-951e-navegador · 35352593358 · 2026-09-18T13:50
+    10:14     234       2.40       13:12  main · 35353877511 · 2026-09-18T14:03
+    10:14     227       2.52       13:38  main · 35362335572 · 2026-09-18T15:25
+    10:15     234       2.39       13:12  scrum-908c-la-cola-que-se-pierde · 35365054060 · 2026-09-18T15:52
+    10:16     266       2.17       11:47  main · 35367072915 · 2026-09-18T16:12
+    10:16     256       2.25       12:13  scrum-937c-recorrido-staging · 35513498039 · 2026-09-20T13:26
+    10:15     291       2.00       10:49  scrum-orquestador-cierre-por-uso · 35513932459 · 2026-09-20T13:35
+    10:15     234       2.42       13:14  scrum-954-vivo-no-es-listado · 35514754503 · 2026-09-20T13:52
+    10:14     234       2.42       13:13  scrum-906f-firma-holded-medida · 35515050350 · 2026-09-20T13:58
+    10:15     235       2.44       13:13  main · 35515331832 · 2026-09-20T14:03
+  (TOTAL de referencia usado para proyectar: 307 mutaciones, el censo de las pasadas que sí acabaron)
+
+③ DISTRIBUCIÓN COMPLETA (reales + proyectadas), n=34
+  mín 8:03 · p50 11:17 · p90 13:14 · p95 13:31 · máx 13:38
+  s/mutación: mín 1.57 · p50 2.07 · máx 2.52 (n=34)
+  ⇒ el runner más lento tarda un 60 % más que el más rápido por la MISMA población de mutaciones
+  ⇒ cada mutación declarada nueva cuesta ~2.1 s a TODOS los PR, para siempre
+EXIT=0

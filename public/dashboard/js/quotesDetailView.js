@@ -587,10 +587,16 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   // SIN descuentos se queda la suma de siempre, y es a propósito: entre las dos cuentas cabe un
   // céntimo de redondeo (el punto 4 de SCRUM-888), y aquí no se cambia una cifra que hoy cuadra.
   //
-  // ⚠️ EL DESCUENTO GLOBAL se lee de `quote.discountGlobalAmount`. Hoy `GET /admin/quotes/:id` NO lo
-  // devuelve (medido en staging `e437a51f`, 17-sep-2026): hasta que lo mande el servidor, un
-  // presupuesto con descuento global sigue sin restarlo aquí, igual que antes. NO se deduce del total:
-  // eso sería una segunda cuenta. Cuando llegue el campo, esto cuadra sin tocar nada.
+  // EL DESCUENTO GLOBAL se lee de `quote.discountGlobalAmount`, y el servidor YA LO MANDA:
+  // `getQuoteDetailAdmin` lo devuelve desde SCRUM-888d. NO se deduce del total: eso sería una
+  // segunda cuenta.
+  //
+  // ⚠️ Aquí vivía un aviso que decía «hoy GET /admin/quotes/:id NO lo devuelve». Estaba CADUCADO y
+  // se midió con `git log -L` (SCRUM-926): el aviso se escribió el 17-sep a las 12:42 y el campo
+  // empezó a llegar el MISMO DÍA a las 15:54. Tres horas. Nadie volvió a borrarlo, y dos días
+  // después mandó a una sesión a pedirle al servidor algo que ya hacía.
+  //     🔒 Un aviso caducado en el código es peor que ninguno: el que no está no engaña a nadie.
+  // Un comentario que dice «hasta que X» tiene que morir el día que X ocurre.
   const descuentoGlobal = quote.discountGlobalAmount ?? null;
   if (window.quoteDescuentos.hayDescuento(lineasParaTotales, descuentoGlobal)) {
     const T = window.quoteDescuentos.totalesConDescuento(lineasParaTotales, descuentoGlobal);
@@ -1206,6 +1212,12 @@ async function duplicateQuote(quoteId) {
     lines: detail.lines || [],
     tiers: detail.tiers || null,
     paymentTerms: detail.paymentTerms || null,
+    // SCRUM-926 · EL DESCUENTO GLOBAL VIAJA EN LA COPIA. Sin esta línea, duplicar un presupuesto
+    // con descuento abría el editor SIN él: el profesional creía estar copiando lo pactado y
+    // mandaba el presupuesto **a más precio del acordado** — el D6 de SCRUM-883. No se perdía un
+    // campo cualquiera: se perdía una rebaja que el cliente ya había aceptado.
+    // `?? null` y no `|| null`: un descuento de 0 es una decisión escrita, no «no hay descuento».
+    discountGlobalAmount: detail.discountGlobalAmount ?? null,
   };
   // SCRUM-140: la copia va como ARGUMENTO (antes por sessionStorage + sello `_ts`). Este camino
   // ya tenía el orden correcto y nunca falló, pero compartía el canal global con "Usar plantilla":
