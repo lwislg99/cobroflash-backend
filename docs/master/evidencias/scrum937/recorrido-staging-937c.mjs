@@ -149,6 +149,16 @@ try {
   await teclear(NIF_TECLEADO);
   informe.fases.A_despuesDeTeclear = await pag.evaluate(LEER);
 
+  // ── P0 · CONTROL POSITIVO DEL TECLEADOR, y no necesita ningún proveedor ────────────────────
+  // «Teclear no dejó nada» y «no he llegado a teclear» se leen IGUAL. Con el mismo gesto (clic +
+  // teclado) sobre un campo del MISMO modal que NO es de solo lectura: si aquí entra, el vacío de
+  // A es del `readOnly` y no de este banco.
+  await pag.click('#exp-concept');
+  await pag.keyboard.type('CONTROL TECLEADOR', { delay: 12 });
+  await new Promise((r) => setTimeout(r, 100));
+  informe.fases.P0_tecleadorFunciona = await pag.evaluate(() => document.getElementById('exp-concept').value);
+  await pag.evaluate(() => { document.getElementById('exp-concept').value = ''; });
+
   // ── P1 · control positivo: proveedor SIN NIF, el campo se escribe y mi tecleo ENTRA ────────
   if (sinNif) {
     await elegirProveedor(sinNif.id);
@@ -243,6 +253,7 @@ const casillas = {
     && f.A_antesDeTeclear?.ayudaTexto === AYUDA && f.A_antesDeTeclear?.ayudaSeVe === true
     && f.A_antesDeTeclear?.ayudaAlto > 0,
   'A · teclear NO deja nada en el campo': f.A_despuesDeTeclear?.nifValor === '',
+  'P0 · CONTROL POSITIVO: el tecleador de este banco SÍ escribe': f.P0_tecleadorFunciona === 'CONTROL TECLEADOR',
   'P1 · proveedor sin NIF: el campo se escribe': f.P1_alElegir?.nifSoloLectura === false && f.P1_alElegir?.ayudaHidden === true,
   'P1 · CONTROL POSITIVO: mi tecleo SÍ entra': f.P1_despuesDeTeclear?.nifValor === NIF_TECLEADO,
   'P2 · CONTROL POSITIVO: con NIF en ficha sale el de la ficha, bloqueado y sin ayuda':
@@ -258,12 +269,25 @@ const casillas = {
   'el gasto de prueba está BORRADO': informe.borrado?.status === 200 && informe.borrado?.sigue === false,
 };
 
+// Una casilla que NO SE HA PODIDO EVALUAR no es un fallo ni un acierto: se declara. Contarla como
+// roja convertiría «no hay datos» en «la pantalla falla», que es una afirmación distinta y falsa.
+// El borrado también depende de B: sin proveedor no se crea ningún gasto, y una casilla roja por
+// «no había nada que borrar» diría que el borrado falla, que es otra afirmación y es falsa.
+const NECESITAN_PROVEEDOR = new Set(Object.keys(casillas).filter((k) => /^(P1|P2|B) /.test(k) || /BORRADO/.test(k)));
+const hayProveedores = (informe.poblacionProveedores?.total || 0) > 0;
+
 console.log(JSON.stringify(informe, null, 2));
 console.log('\n── VEREDICTO ──');
-for (const [k, v] of Object.entries(casillas)) console.log((v ? '✔ ' : '🔴 ') + k);
-const verdes = Object.values(casillas).filter(Boolean).length;
-const ok = !informe.error && verdes === Object.keys(casillas).length;
-console.log(`\nPOBLACION casillas=${Object.keys(casillas).length} verdes=${verdes} · proveedores=${JSON.stringify(informe.poblacionProveedores)}`);
+const evaluadas = [];
+for (const [k, v] of Object.entries(casillas)) {
+  if (!hayProveedores && NECESITAN_PROVEEDOR.has(k)) { console.log('— ' + k + '  (NO EVALUABLE: 0 proveedores en el merchant QA)'); continue; }
+  evaluadas.push(v);
+  console.log((v ? '✔ ' : '🔴 ') + k);
+}
+const verdes = evaluadas.filter(Boolean).length;
+const ok = !informe.error && evaluadas.length > 0 && verdes === evaluadas.length;
+console.log(`\nPOBLACION casillas=${Object.keys(casillas).length} evaluadas=${evaluadas.length} verdes=${verdes} · no evaluables=${Object.keys(casillas).length - evaluadas.length} · proveedores=${JSON.stringify(informe.poblacionProveedores)}`);
+if (!hayProveedores) console.log('🔶 CASO B NO RECORRIDO: el merchant QA no tiene proveedores, y sin un proveedor sin NIF el campo nunca se desbloquea desde la pantalla.');
 if (informe.error) console.log('ERROR: ' + informe.error);
 console.log('EXIT=' + (ok ? 0 : 1));
 process.exit(ok ? 0 : 1);
