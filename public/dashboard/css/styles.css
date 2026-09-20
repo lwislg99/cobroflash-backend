@@ -2335,6 +2335,8 @@ html, body { overflow-x: clip; }
 /* SCRUM-918: arrancar sin red. Ámbar de Aviso (DESIGN.md), mismo tinte que .badge-amber. */
 .aviso-sin-cobertura { background: var(--amber-50); border-bottom: 1px solid #fde68a; color: #92400e; padding: 10px 16px; font-size: 13.5px; font-weight: 600; text-align: center; }
 .aviso-falta-campo { font-size: 12.5px; font-weight: 600; color: var(--danger); margin: 2px 0 6px; }
+/* SCRUM-937b: ayuda bajo el NIF del gasto mientras no hay proveedor (mismo tono que .qq-help, AA). */
+.gasto-nif-ayuda { font-size: 12px; color: var(--muted); margin: 2px 0 0; line-height: 1.4; }
 
 /* Pills de estado más expresivas */
 .status-pill { font-weight: 700; letter-spacing: .02em; }

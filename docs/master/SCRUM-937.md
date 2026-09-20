@@ -100,3 +100,70 @@ mide. Se llama al último manejador de cada ruta: `requireRole` no es de este ti
 * `src/modules/expenses/domain/expenses.service.ts` — `queFueDelNif` y el NIF en `updateExpense`.
 * `src/modules/expenses/app/routes/expenses.routes.ts` — `destinoDelNif` en POST y PUT; el PUT lee el NIF.
 * `tests/scrum937-el-nif-no-se-tira-en-silencio.test.mjs` — 13 tests, sin base y sin gate.
+
+---
+
+## SCRUM-937b · la mitad de pantalla
+
+**Fecha:** 18-sep-2026 · **Carril:** S2 (panel) · **Pedido por:** el orquestador
+**Medido contra:** `origin/main` = `34d06bb4f4e306b11745cf34fbbc85233c5a3299` · 2026-09-18T12:26:38Z
+**Rama:** `scrum-937b-nif-en-el-modal`
+
+### El defecto de pantalla, medido antes de escribir
+
+`npm run guard:nif-del-gasto` (nuevo) sobre el modal REAL con el `expensesView.js` de main, a 390 px:
+
+```
+🔴 A · sin proveedor, el NIF se puede escribir · no se ve la ayuda · teclear dejó «B87654321»
+🔴 B · alta: NIF tecleado y proveedor quitado → la respuesta dice sin_proveedor y no se avisa
+🔴 B · edición (PUT): lo mismo
+✔  POSITIVO · proveedor sin NIF + NIF tecleado → a la ficha, sin aviso
+```
+
+El caso B se alcanza hoy desde la pantalla con un gesto normal: elegir un proveedor sin NIF, teclearlo y
+volver a «— Sin proveedor —». El NIF tecleado se quedaba en el campo y el servidor lo descartaba.
+
+### Lo que se hace (solo `expensesView.js` y una regla de `styles.css`)
+
+- **A** · `aplicarNifSegunProveedor()` decide el campo por el proveedor elegido: con NIF en la ficha, se
+  muestra el de la ficha y queda de solo lectura (como hasta hoy); sin NIF, se escribe; **sin proveedor,
+  solo lectura y la ayuda firmada**. El campo nace bloqueado y la lista de proveedores lo decide al
+  llegar, también si la lista falla.
+- Lo que el profesional ya hubiera tecleado **no se borra** al quitar el proveedor (borrarlo sería otra
+  forma de tirarlo en silencio): si guarda así, lo cuenta B. El NIF que puso la ficha de otro proveedor
+  sí se quita (`data-origen="ficha"`), para no atribuírselo a nadie.
+- **B** · tras guardar, en el alta y en la edición, si la respuesta trae `destinoDelNif = 'sin_proveedor'`,
+  aviso ámbar (`showToast(…, 'warn')`) con el texto firmado, antes de recargar.
+- **C** no se construye: desde el modal no se alcanza (firmado en el mismo comentario, no pedido).
+- Textos: SCRUM-937 comentario 15873, ficha `docs/microcopy/2026-09-18-SCRUM-937-nif-del-gasto.md`.
+
+### Verificado en rojo
+
+El guard monta el modal real (`expensesView.js` + `api.js` + `modalHeader.js`), elige, teclea y guarda
+de verdad. El servidor local calcula `destinoDelNif` con **`queFueDelNif` compilado de `dist/`** —el
+veredicto no se inventa— y sólo imita la otra mitad (`guardarNifDelProveedor`: la ficha se rellena si
+estaba vacía). Con el arreglo: **4 de 4**. Mutantes, cada uno con su ancla comprobada:
+
+| mutante | cae |
+|---|---|
+| M1 · sin proveedor el NIF sigue escribible | A |
+| M2 · la ayuda nunca se ve | A |
+| M3 · el aviso B sólo en el alta | B edición |
+| M4 · el NIF de la ficha anterior se queda al quitar el proveedor | A |
+
+Firmas comprobadas con `constaAprobado`: A y B → la ficha nueva; la propuesta sin el cambio del
+orquestador → `[]` (control negativo).
+
+### Lo que NO cubre (pantalla)
+
+- Si la lista de proveedores no carga y no había proveedor, el NIF queda bloqueado con una ayuda que pide
+  elegir un proveedor que no se puede elegir. Es el mismo estado del selector (dice que no se pudo
+  cargar); no se ha añadido texto nuevo para ese caso.
+- No se ha recorrido en staging.
+
+### Ficheros (937b)
+
+* `public/dashboard/js/expensesView.js` — `aplicarNifSegunProveedor`, la ayuda y el aviso B.
+* `public/dashboard/css/styles.css` — `.gasto-nif-ayuda`.
+* `scripts/guard-nif-del-gasto.mjs` + su entrada en `package.json`; `scrum522` 26 → 27, medido.
+* `docs/microcopy/2026-09-18-SCRUM-937-nif-del-gasto.md`.

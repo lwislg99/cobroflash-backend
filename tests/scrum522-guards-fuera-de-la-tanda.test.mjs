@@ -148,23 +148,36 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // VERDE contra la pantalla rota** —las cajas de los dos rótulos no se cruzan, se cruza el TEXTO
   // que se desborda de una caja de 0 px—, así que la aserción NO es por intersección. Comprobado en
   // rojo contra `8b3f26d2` (17-sep-2026): 7 de 10 anchuras.
-  // El número NO se calculó sumando uno: se midió corriendo este test, como dice el párrafo de
-  // arriba que ya ha costado cuatro veces.
   // SCRUM-915d · entra `guard:pasos-del-editor`. RECORRE el editor con clics de verdad y juzga qué se
   // VE después de pulsar (un paso abierto, «Continuar» sólo cuando se puede, resúmenes, «Cambiar»,
   // Ajustes en la página) e incluye el inventario de hoy como control positivo. Sube aquí porque lo
   // que se juzga sólo existe con el CSS resuelto. Comprobado en rojo contra `c60008bd` (18-sep-2026):
   // todos los casos con todos los pasos a la vez. El número de abajo se midió corriendo este test.
+  // SCRUM-947 · entra `guard:foto-del-gasto`. Mete una foto de móvil de 3–5 MB en el modal REAL
+  // del gasto y lo guarda contra un servidor con el MISMO `express.json({ limit: '2mb' })` que
+  // producción. Decodificar y reducir una imagen sólo existe en un navegador (canvas). Comprobado en
+  // rojo contra `e76580b1` (18-sep-2026): 4 de 5 casos con «API 413: Payload Too Large».
+  // ⚠️ SCRUM-915d y SCRUM-947 escribieron LOS DOS «25 → 26» a la vez, cada uno por su guard: es la
+  // quinta colisión de este contador. Resuelta como manda el párrafo de arriba: se SUMAN los dos
+  // comentarios y el número se vuelve a MEDIR corriendo este test tras el merge (18-sep-2026).
+  // SCRUM-937b · entra `guard:nif-del-gasto`. Teclea en el NIF del modal del gasto con y sin
+  // proveedor y guarda contra un servidor cuyo veredicto sale de `queFueDelNif` compilado. Sube aquí
+  // porque el banco no frena el teclado en un campo de solo lectura ni pinta el aviso flotante.
+  // Comprobado en rojo contra `34d06bb4` (18-sep-2026): 3 de 4 casos, con el positivo en verde.
+  // ⚠️ SCRUM-937b y SCRUM-947 escribieron LOS DOS «26 → 27» a la vez: sexta colisión. Entró 947
+  // primero; 937b, al mergear main, sumó los dos comentarios y MIDIÓ el número corriendo este test.
   // SCRUM-917c · entra `guard:lista-trabajos-917`. PULSA, como 816: mide la lista de Trabajos
   // rediseñada contra su inventario «antes → después» fila a fila, y cada acción de la fila se
   // pulsa con el ratón y se juzga por el ESTADO después (la petición, el modal, la navegación):
   // la lección del «⋯» del prototipo, cuyas capturas eran perfectas con los botones muertos.
   // Comprobado en rojo contra `e76580b1` (18-sep-2026): 24 de 47 comprobaciones.
-  // ⚠️ QUINTA VEZ: 915d y 917c escribieron LOS DOS «26», cada uno por su guard. Resuelto como dice
-  // el párrafo de arriba: los dos comentarios se quedan y el número se MIDIÓ corriendo este test
-  // después del merge, no se sumó.
-  assert.equal(fuera.length, 27,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ 27 → ${fuera.length}.\n`
+  // ⚠️ SÉPTIMA colisión, y la SEGUNDA que se lleva 917c: el 18-sep chocó con 915d en el «26», y hoy
+  // 20-sep, al mergear main, se ha encontrado con que 947 y 937b habían movido el contador a 28
+  // mientras esta rama estaba sin empujar. Resuelto las dos veces igual, como manda el párrafo de
+  // arriba: NINGÚN comentario se tira, los tres se quedan, y el número NO se suma —se vuelve a
+  // MEDIR corriendo este test sobre el árbol ya fusionado.
+  assert.equal(fuera.length, 29,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ 29 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

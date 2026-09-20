@@ -1,0 +1,19 @@
+clave DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier  (host de producción declarado: autorack.proxy.rlwy.net · distinto: sí)
+sentencias: 7
+
+── 1 · SELECT current_database() AS base, now() AS medido_en
+   {"base":"yaqu_dev_javier","medido_en":"2026-09-18T15:10:10.456Z"}
+── 2 · SELECT (SELECT count(*) FROM invoices)        AS facturas_total,
+   {"facturas_total":5,"cobros_total":8,"merchants_total":6,"auditoria_total":5,"correos_total":0}
+── 3 · SELECT count(*) FILTER (WHERE type = 'JUST')      AS tipo_just,
+   {"tipo_just":0,"numero_j":0,"tipo_f1":5,"tipo_r1":0,"tipo_otro":0}
+── 4 · SELECT "merchantId" AS merchant_id,
+   (0 filas)
+── 5 · SELECT (SELECT count(*) FROM audit_log
+   {"auditoria_con_just":0,"correos_justificante":0,"cobros_concepto_justificante":0}
+── 6 · SELECT id AS merchant_id, flags->>'INVOICING_ES_ENABLED' AS invoicing_es, flags->>'SIF_ENA
+   (0 filas)
+── 7 · SELECT meta->'flagsFiscales'->>'INVOICING_ES_ENABLED' AS invoicing_es_al_emitir,
+   {"invoicing_es_al_emitir":"false","tipo_pedido":"F1","emisiones":5}
+
+EXIT=0
