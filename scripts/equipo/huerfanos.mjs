@@ -34,9 +34,25 @@
 //
 // ⚠️ Mide contra las ramas remotas QUE ESTE CLON CONOCE (`--remotes`): no hace `fetch`, así que un
 // commit empujado desde otra máquina y aún no traído saldría como SIN-EMPUJAR. Es el lado seguro.
-// ⚠️ Mira el HEAD de cada worktree, no las ramas locales sin worktree.
 //
-// Salida: 0 = nada que salvar · 1 = hay algo listado · 2 = algún worktree NO SE PUDO MIRAR (gana).
+// ── SCRUM-966 · TAMBIÉN LAS RAMAS LOCALES SIN WORKTREE ────────────────────────────────────────
+// Hasta el 20-sep-2026 esto miraba el HEAD de cada worktree y nada más. Ese día la Sesión 4 dejó
+// `scrum-944b-nombre-del-trabajo` con CINCO commits en ningún remoto: su worktree estaba en otra
+// rama, así que el censo la dio por inexistente. Cinco commits invisibles es justo lo que este
+// censo existe para impedir, y decirlo en un comentario («mira el HEAD, no las ramas») no lo
+// impedía. Así que ahora hay un SEGUNDO censo, el de ramas:
+//
+//   RAMA-SIN-EMPUJAR  rama local que NO es HEAD de ningún worktree y cuyos commits no alcanza
+//                     ningún remoto. Se lista siempre, sea cual sea su edad.
+//
+// Las ramas que SÍ son HEAD de un worktree no entran aquí: ya las nombra el censo de arriba, y un
+// censo que cuenta lo mismo dos veces enseña a no leerlo.
+//
+// El coste importa, porque esto corre lo primero de cada tanda y hay ~770 ramas locales: se mide
+// con DOS órdenes de git (`for-each-ref` y un solo `rev-list --branches --not --remotes`) y sólo
+// después se cuenta de una en una las poquísimas candidatas. No 770 procesos.
+//
+// Salida: 0 = nada que salvar · 1 = hay algo listado · 2 = algo NO SE PUDO MIRAR (gana siempre).
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,6 +61,7 @@ import { fileURLToPath } from 'node:url';
 
 export const HORAS_POR_DEFECTO = 72;
 export const SIN_EMPUJAR = 'SIN-EMPUJAR';
+export const RAMA_SIN_EMPUJAR = 'RAMA-SIN-EMPUJAR';
 export const SUCIO = 'SUCIO';
 export const SUCIO_ANTIGUO = 'SUCIO-ANTIGUO';
 export const LIMPIO = 'LIMPIO';
@@ -81,6 +98,35 @@ export function entradasDeStatus(salidaZ) {
     if (codigo[0] === 'R' || codigo[0] === 'C') i++; // la ruta de origen del renombrado
   }
   return out;
+}
+
+/** Las ramas que YA son HEAD de un worktree: las nombra el censo de arriba y aquí no se repiten. */
+export function ramasConWorktree(porcelana) {
+  const PREFIJO = 'branch refs/heads/';
+  return new Set(String(porcelana).split(/\r?\n/)
+    .filter((l) => l.startsWith(PREFIJO))
+    .map((l) => l.slice(PREFIJO.length).trim())
+    .filter(Boolean));
+}
+
+/** La salida de `for-each-ref --format=%(objectname) %(refname:short)` → [{sha, rama}]. */
+export function ramasDeForEachRef(salida) {
+  const out = [];
+  for (const linea of String(salida).split(/\r?\n/)) {
+    const l = linea.trim();
+    const i = l.indexOf(' ');
+    if (i > 0 && i < l.length - 1) out.push({ sha: l.slice(0, i), rama: l.slice(i + 1) });
+  }
+  return out;
+}
+
+/**
+ * Las ramas que hay que contar de una en una: las que no tienen worktree y cuya PUNTA está entre
+ * los commits que no alcanza ningún remoto. La punta basta: si el último commit de una rama no lo
+ * alcanza un remoto, esa rama tiene trabajo sin empujar, y si lo alcanza, no lo tiene.
+ */
+export function candidatas(ramas, conWorktree, shasHuerfanos) {
+  return ramas.filter((r) => !conWorktree.has(r.rama) && shasHuerfanos.has(r.sha));
 }
 
 /**
@@ -143,23 +189,60 @@ export function medirWorktree(ruta, { git = gitReal, ahoraMs = Date.now(), venta
   };
 }
 
+/**
+ * SCRUM-966 · el censo de las RAMAS locales sin worktree. Declara su población (cuántas ramas
+ * miró y cuántas no tienen worktree) y, si no pudo mirar, lo dice: no devuelve una lista vacía.
+ */
+export function censoDeRamas(repo, porcelana, git = gitReal) {
+  const fer = git(repo, ['for-each-ref', '--format=%(objectname) %(refname:short)', 'refs/heads']);
+  if (fer.status !== 0) return { ok: false, motivo: 'git for-each-ref falló: no sé cuántas ramas locales hay' };
+  const ramas = ramasDeForEachRef(fer.stdout);
+  const conWorktree = ramasConWorktree(porcelana);
+  const sinWorktree = ramas.filter((r) => !conWorktree.has(r.rama)).length;
+  if (!ramas.length) return { ok: true, miradas: 0, sinWorktree: 0, filas: [] };
+
+  // Una sola orden para las ~770: los commits de cualquier rama local que no alcanza ningún remoto.
+  const rl = git(repo, ['rev-list', '--branches', '--not', '--remotes']);
+  if (rl.status !== 0) return { ok: false, motivo: 'git rev-list de las ramas locales falló' };
+  const huerfanos = new Set(String(rl.stdout).split(/\r?\n/).map((s) => s.trim()).filter(Boolean));
+
+  const filas = [];
+  for (const { rama } of candidatas(ramas, conWorktree, huerfanos)) {
+    const c = git(repo, ['rev-list', '--count', rama, '--not', '--remotes']);
+    const n = c.status === 0 ? Number(String(c.stdout).trim()) : NaN;
+    if (!Number.isInteger(n) || n < 0) {
+      filas.push({ rama, estado: NO_PUDE_MIRAR, motivo: 'git rev-list --count no devolvió un número' });
+      continue;
+    }
+    if (n === 0) continue; // la punta se empujó entre las dos órdenes: ya no hay nada que salvar
+    const log = git(repo, ['log', '-1', '--format=%cI', rama]);
+    filas.push({ rama, estado: RAMA_SIN_EMPUJAR, sinEmpujar: n, ultimoCommit: log.status === 0 ? log.stdout.trim() : null });
+  }
+  return { ok: true, miradas: ramas.length, sinWorktree, filas };
+}
+
 /** El censo entero. Si ni siquiera se pueden listar los worktrees, eso es NO-PUDE-MIRAR del todo. */
 export function censo({ repo, git = gitReal, ahoraMs = Date.now(), ventanaMs }) {
   const wl = git(repo, ['worktree', 'list', '--porcelain']);
   const rutas = wl.status === 0 ? rutasDeWorktrees(wl.stdout) : null;
   if (!rutas) return { ok: false, motivo: `no se pudo listar los worktrees de ${repo}`, filas: [] };
   const filas = rutas.map((r) => medirWorktree(r, { git, ahoraMs, ventanaMs }));
-  return { ok: true, filas };
+  return { ok: true, filas, ramas: censoDeRamas(repo, wl.stdout, git) };
 }
 
-export function resumen({ ok, motivo, filas }, horas) {
+export function resumen({ ok, motivo, filas, ramas }, horas) {
   if (!ok) return { codigo: 2, texto: `🔴 NO PUDE MIRAR: ${motivo}. Esto NO es «sin huérfanos».` };
   const de = (e) => filas.filter((f) => f.estado === e);
   const sinEmpujar = de(SIN_EMPUJAR), sucios = de(SUCIO), antiguos = de(SUCIO_ANTIGUO), noPude = de(NO_PUDE_MIRAR);
+  const ramasHuerfanas = (ramas?.filas ?? []).filter((f) => f.estado === RAMA_SIN_EMPUJAR);
+  const ramasCiegas = (ramas?.filas ?? []).filter((f) => f.estado === NO_PUDE_MIRAR);
   const l = [];
   l.push(`censo de huérfanos · ${filas.length} worktrees mirados · ${sinEmpujar.length} con commits SIN EMPUJAR · ` +
     `${sucios.length} sucios recientes (<${horas} h) · ${antiguos.length} sucios antiguos (no listados) · ` +
     `${noPude.length} NO PUDE MIRAR`);
+  l.push(ramas?.ok
+    ? `   y ${ramas.sinWorktree} ramas locales sin worktree (de ${ramas.miradas}) · ${ramasHuerfanas.length} con commits SIN EMPUJAR`
+    : `   🔴 las ramas locales NO PUDE MIRARLAS: ${ramas?.motivo ?? 'sin motivo'}`);
   if (sinEmpujar.length) {
     l.push('', '🔴 COMMITS QUE NO ESTÁN EN NINGÚN REMOTO (se listan siempre):');
     for (const f of [...sinEmpujar].sort((a, b) => String(b.ultimoCommit).localeCompare(String(a.ultimoCommit)))) {
@@ -173,12 +256,22 @@ export function resumen({ ok, motivo, filas }, horas) {
       l.push(`   ${f.worktree} · ${f.rama} · ${f.modificados} modificado(s), ${f.sinSeguir} sin seguir · tocado ${f.ultimoToque ?? '(sin fecha legible)'}`);
     }
   }
-  if (noPude.length) {
+  if (ramasHuerfanas.length) {
+    l.push('', '🔴 RAMAS LOCALES SIN WORKTREE CON COMMITS QUE NO ESTÁN EN NINGÚN REMOTO:');
+    for (const f of [...ramasHuerfanas].sort((a, b) => String(b.ultimoCommit).localeCompare(String(a.ultimoCommit)))) {
+      l.push(`   ${f.rama} · ${f.sinEmpujar} commit(s) · último ${f.ultimoCommit ?? '?'}`);
+    }
+  }
+  if (noPude.length || ramasCiegas.length || ramas?.ok === false) {
     l.push('', '🔴 NO PUDE MIRAR (no cuentan como limpios):');
     for (const f of noPude) l.push(`   ${f.worktree} · ${f.motivo}`);
+    for (const f of ramasCiegas) l.push(`   rama ${f.rama} · ${f.motivo}`);
+    if (ramas?.ok === false) l.push(`   las ramas locales · ${ramas.motivo}`);
   }
-  if (!sinEmpujar.length && !sucios.length && !noPude.length) l.push('✅ nada que salvar en la ventana.');
-  const codigo = noPude.length ? 2 : (sinEmpujar.length || sucios.length) ? 1 : 0;
+  const ciego = noPude.length || ramasCiegas.length || ramas?.ok === false;
+  const listado = sinEmpujar.length || sucios.length || ramasHuerfanas.length;
+  if (!ciego && !listado) l.push('✅ nada que salvar en la ventana.');
+  const codigo = ciego ? 2 : listado ? 1 : 0;
   return { codigo, texto: l.join('\n') };
 }
 
