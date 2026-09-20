@@ -1626,6 +1626,29 @@ La rama iba a llamarse `scrum-804g-…`. El control de sufijo por ramas vivas **
 
 🔒 **Para el sufijo de un ticket con historia, la fuente es `docs/master/SCRUM-<n>.md`, no el remoto ni los PR.** Las dos listas que se borran solas dan un vacío que parece un hueco libre.
 
+### Segunda mitad, encargada por el orquestador: el fichero DECLARA sus formas legales
+
+Su motivo, y es el dato que lo justifica: **es la TERCERA vez** que este fichero cierra el check obligatorio de `main` por no saber leer una forma de nombre que alguien usó de buena fe — `revert-…` (829), sin slug (804f) y la fase con corte (804h). *Tres veces no es mala suerte*: las formas legales no estaban escritas en ninguna parte y se descubrían a golpes, un `main` bloqueado por vez.
+
+Va un bloque `FORMAS:` … `:FIN` junto al patrón, con **12 ejemplos y su resultado**, las dos clases (con número y `null`) y el motivo de cada uno.
+
+🔒 **Y no es un comentario: es un mecanismo.** El cuarto test de `scrum804h` **lee el bloque del fuente** y ejercita cada línea. Una forma añadida ahí que la regla no cumpla pone el guard en rojo; una regla que deje la lista atrás, también. Un comentario sólo avisa a quien pasa por delante — esta sesión ya tiene esa lección del 964, donde el aviso estaba escrito en la línea 113 y el accidente se repitió igual.
+
+**Los dos rojos de esa mitad, inyectados y medidos** (y con mensajes distintos, que es lo que prueba que miden cosas distintas):
+
+| Inyección | Lo que dijo |
+|---|---|
+| Declarar `scrum-72bb-x → 72` (una forma que la regla NO cumple) | «el fichero declara formas que su propia regla NO cumple» |
+| Quitar la marca `:FIN` | «NO PUDE MIRAR: no encuentro el bloque `FORMAS:` … `:FIN`» — el suelo, no un verde |
+
+### Lo medido por s2f-20, y por qué el patrón NO es el suyo
+
+s2f-20 midió por su cuenta, sobre diez nombres de control, que con `(?:[a-z]+\d*)?` cambian **exactamente dos**, los dos al valor correcto (915), y que no se mueven `scrum-904`, `scrum-727-x`, `scrum-72-x`, `scrum-839e-…` ni `revert-1192-scrum-824b-…`. Coincide con la monotonía de arriba y vale como control independiente.
+
+**Su patrón, sin embargo, no se aplicó**, y la diferencia es de una letra: `[a-z]+` lee `scrum-72bb` como **72**, y 804f exige ahí `null` («dos letras no son una fase»). Los diez nombres de control de s2f no incluían ninguno de dos letras, así que su medición no podía verlo. Con `[a-z]?\d*` el borde queda fuera y las cuatro afirmaciones de 804f siguen en pie.
+
+🔒 **Una medición sobre diez nombres de control no dice nada de la forma que no está entre los diez.** No es un fallo de la medición: es su alcance, y por eso el control que decide se hace sobre los refs REALES y no sobre una lista escrita a mano.
+
 ### Lo que NO toca
 
 - `tests/_entrada-de-la-rama.mjs` (SCRUM-854) tiene **su propio** `numeroDeRama` (`/^scrum-(\d+)/i`), que ya leía `scrum-915e1-…` como 915. No se ha tocado.

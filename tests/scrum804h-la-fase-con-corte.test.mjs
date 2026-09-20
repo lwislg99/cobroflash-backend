@@ -47,12 +47,14 @@
 // demostración que no se ejercita es una opinión con forma de demostración.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { agruparRamas } from '../scripts/_censo-reparto.mjs';
 import { numeroDeRama } from '../scripts/_numero-de-rama.mjs';
 
 const RAIZ = path.join(import.meta.dirname, '..');
+const FUENTE_DE_LA_REGLA = path.join(RAIZ, 'scripts', '_numero-de-rama.mjs');
 
 test('SCRUM-804h · 🔴 una fase `scrum-<n><letra><dígito>` se agrupa bajo SU ticket, no se pierde', () => {
   const agrupadas = agruparRamas([
@@ -97,6 +99,40 @@ test('SCRUM-804h · ⛔ LA IDENTIDAD NO SE AFLOJA: las cuatro de 804f siguen en 
   assert.equal(numeroDeRama('scrum-915e1b-x'), null, '🔴 una letra DESPUÉS de los dígitos del corte no es una fase');
   assert.equal(numeroDeRama('scrum-915e1.2-x'), null, '🔴 un punto dentro del corte no es un delimitador');
   assert.equal(numeroDeRama('scrum-9151-x'), 9151, '🔴 `scrum-9151` es el ticket 9151, no el 915 con corte 1');
+});
+
+test('SCRUM-804h · ⛔ LAS FORMAS DECLARADAS EN EL FICHERO SE CUMPLEN, UNA A UNA', () => {
+  // La segunda mitad del encargo del orquestador (20-sep): el fichero DECLARA qué formas de nombre
+  // reconoce, en vez de irlas descubriendo a golpes de `main` bloqueado. Para que esa lista sea un
+  // mecanismo y no una decoración, se lee DESDE AQUÍ y se ejercita línea a línea: si alguien añade
+  // una forma que la regla no cumple, o cambia la regla y deja la lista atrás, esto cae.
+  const fuente = fs.readFileSync(FUENTE_DE_LA_REGLA, 'utf8');
+  const bloque = /^\/\/\s+FORMAS:$([\s\S]*?)^\/\/\s+:FIN$/m.exec(fuente);
+  assert.ok(bloque,
+    '🔴 NO PUDE MIRAR: no encuentro el bloque `FORMAS:` … `:FIN` en scripts/_numero-de-rama.mjs. '
+    + 'O se ha borrado la declaración, o se le han cambiado las marcas y esto dejó de leerla.');
+
+  const declaradas = [];
+  for (const linea of bloque[1].split('\n')) {
+    const m = /^\/\/\s+(\S+)\s+→\s+(\d+|null)\b/.exec(linea);
+    if (m) declaradas.push({ nombre: m[1], espera: m[2] === 'null' ? null : Number(m[2]) });
+  }
+
+  // ④ SUELO: un bloque que se lee y del que no sale ninguna línea saldría verde por no medir nada.
+  // El número no es un umbral escrito a ojo: es «las que hay», y se exige que haya de las DOS
+  // clases, porque una lista de puros `null` comprobaría sólo que la regla sabe decir que no.
+  assert.ok(declaradas.length >= 8,
+    `🔴 NO PUDE MIRAR: del bloque de formas sólo he sabido leer ${declaradas.length} líneas. `
+    + 'El formato es `//   <ejemplo> → <número|null>   <motivo>`.');
+  assert.ok(declaradas.some((d) => d.espera !== null) && declaradas.some((d) => d.espera === null),
+    '🔴 la lista declarada no tiene las dos clases: sin alguna que dé número y alguna que dé null, '
+    + 'no comprueba que la regla DISTINGA, sólo que sabe contestar una cosa.');
+
+  const incumplidas = declaradas
+    .filter((d) => numeroDeRama(d.nombre) !== d.espera)
+    .map((d) => `${d.nombre}: declarado ${d.espera}, la regla da ${numeroDeRama(d.nombre)}`);
+  assert.deepEqual(incumplidas, [],
+    '🔴 el fichero declara formas que su propia regla NO cumple:\n   · ' + incumplidas.join('\n   · '));
 });
 
 test('SCRUM-804h · ✅ EL CONTROL QUE DECIDE: sobre los refs de HOY, quien ya casaba da el MISMO número', () => {

@@ -44,6 +44,35 @@
 // 8-sep-2026: **cambia de número exactamente 1**, el `revert-…`, de 824 a `null`. Ninguna rama
 // legítima se mueve, así que esto no reparte ningún trabajo de otra manera.
 
+// ── 🔴 LAS FORMAS QUE ESTA REGLA RECONOCE, DECLARADAS (SCRUM-804h) ──────────────────────────
+//
+// Van aquí porque es la TERCERA vez que este fichero cierra el check obligatorio de `main` por no
+// saber leer una forma de nombre que alguien usó de buena fe: `revert-…` (829), sin slug (804f) y
+// la fase con corte (804h). Tres veces no es mala suerte — es que las formas legales no estaban
+// escritas en ninguna parte y se iban descubriendo a golpes, un `main` bloqueado por vez.
+//
+// ⛔ Y NO ES UN COMENTARIO: `tests/scrum804h-la-fase-con-corte.test.mjs` LEE este bloque y ejercita
+// cada línea. Una forma que se añada aquí sin que la regla la cumpla pone el guard en rojo, y una
+// forma que la regla deje de cumplir también. La lista no puede quedarse desfasada en silencio.
+//
+// Antes de estrenar una forma de nombre que no esté aquí: pruébala, y si la regla no la lee,
+// añádela con su ticket en vez de renombrar la rama — renombrar arregla hoy y no mañana.
+//
+//   FORMAS:
+//   scrum-904                          → 904    sin slug (SCRUM-804f)
+//   scrum-904-completar-lleva-al-campo → 904    con slug, el caso de toda la vida
+//   scrum-839e-union-solo-registro     → 839    con fase
+//   scrum-905b                         → 905    con fase y sin slug
+//   scrum-915e1-documento-vivo         → 915    fase con corte (SCRUM-804h)
+//   scrum-915e12-documento-vivo        → 915    y el corte puede llevar dos dígitos
+//   scrum-0072-ceros-delante           → 72     los ceros a la izquierda no hacen otro ticket
+//   scrum-paso0-dinero                 → null   sin número: NO se inventa a qué ticket va
+//   scrum-72bb-x                       → null   dos letras no son una fase
+//   scrum-72.1-x                       → null   un punto no delimita
+//   revert-1192-scrum-824b-el-vigia    → null   un revert es el deshacer, no el trabajo (SCRUM-829)
+//   feature/scrum-72                   → null   no anclada al principio
+//   :FIN
+
 /**
  * El número de ticket de un NOMBRE DE RAMA, o `null` si el nombre no es de un ticket.
  *
