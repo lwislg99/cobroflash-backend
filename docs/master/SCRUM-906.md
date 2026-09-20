@@ -379,7 +379,79 @@ nueva** —la caja de envío (bloqueada por permisos) y **su escáner de gastos 
 §7.2 y que nadie ha visto por dentro—. Lo decide el orquestador; la cuenta caduca a primeros de
 octubre.
 
-**Holded queda cerrado** tras cuatro entregas por dentro (§906d, §906e, §906f, §906g). Lo que sigue
+### Segunda pasada del mismo día: su escáner de gastos (matriz §11)
+
+El orquestador reabrió una de las dos filas de §10.5 antes de pasar a Jobber, acotada a una hora,
+porque toca tres tickets vivos (lectura del ticket con IA, fotos reales y rediseño de Gastos). Su
+escáner vive en `Compras > Escáner`, que por dentro es **`/inbox`** — el nombre comercial y la ruta no
+coinciden, y por eso la conjetura `/purchases/scanner` devuelve su 404. **Nadie lo había visto por
+dentro**; va con captura.
+
+**Tres propuestas más**, en §11.4: el gasto entra **por WhatsApp** (mediano) · una **bandeja** donde no
+se pierda lo que entra (grande) · **decir por qué un campo vino vacío** (pequeño, y pequeño *hoy*
+porque la pantalla de Gastos se está construyendo justo ahora).
+
+**Y un resultado que no es un hueco:** nuestra lectura extrae **once** campos donde su ayuda documenta
+cuatro, y descarta campo a campo con motivo medido —incluido `no_cuadra_con_el_total`, una
+comprobación aritmética— frente a su «alto nivel de confianza» sin enseñar.
+
+    🔒 No todo lo que se mide de la competencia es un hueco. Decir dónde vamos por delante evita
+       reconstruir lo que ya está bien.
+
+**Dos cosas que esta sesión estuvo a punto de reportar mal, y no lo hizo porque midió el suelo:**
+
+1. `git grep "leer-ticket" -- public` da **0**, y eso **sí** se sostiene: el suelo son nueve ficheros
+   del árbol con esa cadena (ruta, declaraciones, test, expediente). Queda escrito como hecho —
+   **hoy ninguna pantalla llama a la lectura**— y **no** como defecto: puede ser el reparto deliberado
+   entre SCRUM-912 (motor) y SCRUM-920 (pantalla). Lo decide quien lleve esos tickets.
+2. En `app.js` el menú de **Gastos** se oculta con `style.display='none'`… **solo para los técnicos**, y
+   a propósito (SCRUM-107: la lista completa y los márgenes son economía del negocio). Leer la línea
+   sin su `if` habría producido un defecto inventado contra un sistema sano, que es exactamente lo que
+   este puesto existe para evitar.
+
+**Holded queda cerrado** tras cinco entregas por dentro (§906d, §906e, §906f, §906g y la pasada del
+escáner).
+
+---
+
+## SCRUM-906h · Jobber, el primero que hace lo mismo que nosotros (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `35d25d1c58954930b529ad9f736878018c0f9870`.** Rama
+`scrum-906h-jobber`. Solo docs. El detalle está en
+[`docs/competencia/matriz.md`](../competencia/matriz.md) **§12**, y las capturas en
+[`docs/competencia/capturas/jobber/`](../competencia/capturas/jobber/README.md).
+
+**Por qué Jobber.** De la cola quedaban dos familias: los españoles que faltan son **más
+facturación**, y Quipu ya midió que esa familia *«no añade ningún hueco que no estuviera ya»*. Jobber,
+ServiceM8 y Housecall Pro son **field service para oficios** — presupuesto, trabajo, firma y cobro en
+la obra—, que es literalmente lo que hace YaQu. Jobber es el mayor, y **Electrical** es una de sus
+industrias con página propia.
+
+    🔒 Holded es contabilidad que se asoma a la obra; Jobber ES la obra. Por eso sus propuestas no
+       salen de funciones que falten, sino de MOMENTOS DEL DÍA convertidos en producto.
+
+**Tres propuestas** (§12.3): **«Voy de camino»** con franja de minutos, en WhatsApp (mediano) ·
+**quién va a ir y en qué franja**, en el portal del cliente (mediano) · **el dinero que aún no es
+factura, en el resumen del lunes** (pequeño, y la más barata de las seis de hoy: una línea en un
+correo que ya se envía, llamando a un servicio que ya existe).
+
+**Y el resultado de método que más pesa de toda la tanda:** de seis candidatas que salían de Jobber,
+**tres murieron al medir nuestra columna** —los recordatorios automáticos de presupuesto y factura ya
+existen (`reminder.service.ts` + dos crons), la bandeja de «hecho y sin facturar» ya existe y
+distingue **tres** huecos por documento frente a su vista única, y su *Request Work* es nuestro
+`POST /cliente/:token/quote-request`—.
+
+    🔒 Tres de tres candidatas muertas por estar ya construidas. Medirnos a nosotros no es una
+       formalidad del método: es la mitad del trabajo.
+
+**Declarado como no medido, y es la mitad del §12:** **no se entró en el producto**. No hay cuenta y
+no se pidió, porque un alta en un tercero la autoriza el fundador (A19). Todo el §12 es **su web
+comercial**, y las tres capturas son **maquetas suyas de marketing**, no pantallas en uso. No se han
+leído sus reseñas ni se ha mirado su parte fiscal (es anglosajón, sin VeriFactu: para lo fiscal manda
+la familia española ya medida).
+
+**Siguientes:** ServiceM8 y Housecall Pro, la misma familia. Los españoles que quedan van detrás, por
+el motivo medido de arriba. Lo que sigue
 sin medirse de su firma —cómo se elige al firmante, qué correo llega, cómo queda el PDF— sigue
 declarado en §8.7 y §9.4, y sigue bloqueado por el clasificador de la máquina, no por Holded.
 Siguiente competidor: **Jobber**, aprobado por el orquestador el 20-sep, y elegido porque los que

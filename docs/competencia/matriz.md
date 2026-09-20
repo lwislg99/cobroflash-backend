@@ -892,13 +892,309 @@ que si se vuelve, se vuelve por la 3.
 
 ---
 
+## 11 · Su escáner de gastos, por dentro · tres propuestas más (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `8f63a2c5da10daf7d368d1ec781cf56e67268c8b`.** Encargo del
+orquestador, acotado a una hora: era una de las dos filas de §10.5 que podían dar propuesta nueva, y
+la que más toca a tres tickets vivos (la lectura del ticket con IA, las fotos reales y el rediseño de
+Gastos). **Solo lectura: no se subió ningún documento, no se tocó ningún ajuste.**
+
+Su escáner vive en `Compras > Escáner`, que por dentro es la ruta **`/inbox`** (el nombre comercial y
+el nombre real no coinciden, y por eso `app.holded.com/purchases/scanner` da su 404).
+📷 [`capturas/holded/escaner-inbox-por-dentro.png`](capturas/holded/escaner-inbox-por-dentro.png) —
+nadie lo había visto por dentro hasta hoy.
+
+### 11.1 · Lo que se ve en su pantalla, y no estaba escrito en ninguna parte
+
+- **La dirección de correo del buzón preside la pantalla**, al lado del título y no enterrada en
+  ajustes: `luislara@holdedbox.com`.
+- Arriba, un triaje de tres contadores: **Nuevos · Pendientes de revisar · Errores**.
+- Botones **Historial**, **Subir archivo** y engranaje de configuración.
+- Zona de arrastre: *«Los formatos soportados son PDF, PNG y JPEG de hasta 20MB»*.
+- Dos caminos rotulados abajo: *«Recibe los gastos en tu Mailbox»* y *«Sube un archivo desde tu
+  dispositivo»*.
+
+🔴 **Y una quinta fuente suya que no concuerda** (van cinco, contando las cuatro de §9.3): la pantalla
+dice **PDF, PNG y JPEG hasta 20 MB**; su ayuda dice **PDF, JPEG, TIFF y PNG**, con **5 MB** por subida
+manual y **17 MB** por correo. Ni los formatos ni el tamaño coinciden. No se resuelve desde fuera cuál
+manda, y no se resuelve aquí.
+
+### 11.2 · Su flujo, en sus palabras
+
+De `help.holded.com/es/articles/6908098`, leído en el navegador. 📷
+[`capturas/holded/escaner-estados-del-documento.png`](capturas/holded/escaner-estados-del-documento.png)
+y [`capturas/holded/escaner-borrador-solo-si-hay-confianza.png`](capturas/holded/escaner-borrador-solo-si-hay-confianza.png).
+
+- **Tres puertas de entrada:** subida manual · **correo a un buzón `@holdedbox.com`** (20 ficheros por
+  correo) · **foto desde la app móvil**, y solo ésta *«estarán certificados por la AEAT, y no será
+  necesario conservar sus copias físicas»*. Más una cuarta: **Holded-to-Holded**, si tu proveedor
+  también usa Holded te manda el documento directo al Inbox.
+- **Qué extrae el OCR:** *«los datos principales (emisor, importe, fecha, impuestos)»*. Cuatro.
+- **Cinco estados:** Procesando · **Revisar** · Hecho · Error · **Descartado**, este último *«el
+  sistema ha detectado que el archivo no es un documento válido (por ejemplo, un logo o una imagen de
+  un email) y lo ha excluido automáticamente. No requiere ninguna acción»*.
+- **Dos pestañas:** Bandeja de entrada (lo pendiente) e **Historial**, *«el registro completo de todo
+  lo que ha entrado»*.
+- **La puerta de la confianza:** *«los documentos escaneados se generarán automáticamente como
+  borradores **siempre que el sistema no detecte inconsistencias y tenga un alto nivel de confianza en
+  la lectura**»*.
+- **Cupo:** *«El número de escaneos automáticos disponibles al año es ilimitado en cada plan.»*
+
+### 11.3 · Nuestra columna, medida hoy (y aquí gana YaQu, que también hay que decirlo)
+
+`SCRUM-912` ya está en main: `src/modules/expenses/domain/lecturaTicket.ts` y
+`POST /admin/expenses/leer-ticket`.
+
+**Lo nuestro extrae ONCE campos donde ellos documentan cuatro:** `concept`, `amount`, `baseAmount`,
+`vatRate`, `vatAmount`, `date`, `providerInvoiceDate`, `providerInvoiceNumber`, `proveedorNombre`,
+`nifProveedor` y `providerId`. Y **descarta campo a campo con motivo medido** —`no_es_numero`,
+`fuera_de_rango`, `tipo_iva_no_admitido`, **`no_cuadra_con_el_total`**, `fecha_invalida`,
+`fecha_futura`, `nif_invalido`, `demasiado_largo`, `no_es_texto`—, que es una comprobación aritmética
+de verdad y no un «nivel de confianza» sin enseñar. El proveedor **solo** se propone si el NIF casa
+con uno, no por nombre.
+
+    🔒 No todo lo que se mide de la competencia es un hueco. Aquí el motor nuestro es mejor que el
+       suyo documentado, y decirlo evita reconstruir lo que ya está bien.
+
+**Lo que sí nos falta, medido:**
+
+| qué | cómo se midió |
+|---|---|
+| **Solo hay UNA puerta**, y es el panel autenticado | `POST /leer-ticket` es la única ruta de entrada de `expenses.routes.ts` |
+| **No hay bandeja ni historial de lo que entra** | `git grep -i -E "bandeja\|inbox" -- src/modules/expenses prisma/schema.prisma` → solo un comentario de otra cosa (SCRUM-69) |
+| **Tope de 5 lecturas al día** frente a su «ilimitado en cada plan» | `lecturaTicket.ts` · `LECTURAS_TICKET_POR_DIA = 5` |
+
+🔴 **Y un hecho que hay que decir con su suelo, porque es de los que ve el profesional:** hoy
+**ninguna pantalla llama a esa lectura**. `git grep "leer-ticket" -- public` → **0**. *Suelo:* la misma
+cadena aparece en **nueve** ficheros del árbol (la ruta, `adminRouteDeclarations.ts`, su test
+`scrum912-leer-ticket-gasto.test.mjs`, su expediente…), así que la búsqueda no está ciega; y buscar
+`ticket` en el panel junto a `apiRequest`/`fetch` da **0**. No se afirma que sea un defecto —puede ser
+el reparto deliberado entre SCRUM-912 (motor) y SCRUM-920 (pantalla)—, pero **mientras siga así, la
+lectura del ticket no existe para el profesional**, que es el tercer caso hoy de lo mismo que se le
+midió a Holded en §8.3 y a nosotros en §10.1.
+
+*(Comprobado antes de decirlo, y casi me cuela un falso hallazgo: el menú de Gastos se oculta en
+`app.js`, pero **solo para los técnicos** y a propósito —SCRUM-107, la lista completa y los márgenes
+son economía del negocio—. El admin lo ve. Un `style.display='none'` sin leer su `if` de arriba
+habría sido un defecto inventado.)*
+
+### 11.4 · Las tres propuestas
+
+Ordenadas por lo que más le cambia el día al electricista.
+
+#### 11.4.1 · El gasto entra por WhatsApp, como todo lo demás · **MEDIANO**
+
+**En Holded**, la pantalla del escáner tiene **su propia dirección de correo presidiéndola**
+(`…@holdedbox.com`): el profesional —o directamente su proveedor— reenvía la factura ahí y el gasto
+aparece solo, sin abrir la aplicación.
+
+**Nosotros tenemos una sola puerta y obliga a sentarse delante del panel:** `POST /leer-ticket` es una
+ruta autenticada del dashboard.
+
+**El profesional gana:** el albarán del almacén a las 7 de la mañana, la factura del mayorista que
+llega por correo, el ticket de gasolina en la gasolinera. Hoy todo eso **espera a que se siente**, y
+lo que espera se pierde: el papel se queda en la furgoneta, que es justo el problema que el OCR venía
+a resolver. Y nuestro canal ya existe y ya es el bueno: **le hace la foto al ticket y la manda al
+mismo WhatsApp por el que manda los presupuestos.**
+
+**Se construye así, a grandes rasgos:** el webhook de WhatsApp ya recibe mensajes
+(`src/integrations/whatsapp.ts`); enrutar una **imagen entrante** desde el número de un merchant a
+`leerTicket`, guardar el resultado como **gasto propuesto pendiente de confirmar** y contestar con el
+resumen y un botón de confirmar. El motor, los once campos y los descartes **ya están escritos**: lo
+nuevo es la puerta. ⛔ **STOP:** canal nuevo (regla 28, tabla J6, tope 3/cliente/día) y muy
+probablemente plantilla de Meta.
+
+#### 11.4.2 · La bandeja: que no se pierda nada de lo que entra · **GRANDE**
+
+**En Holded**, todo lo que entra vive en dos pestañas —**Bandeja de entrada** e **Historial**, *«el
+registro completo de todo lo que ha entrado»*— con cinco estados y tres contadores arriba. Lo que el
+OCR no entiende no desaparece: se queda en **Revisar**, o el sistema lo marca **Descartado** él solo
+cuando ve que no es un documento (*«un logo o una imagen de un email»*).
+
+**Nosotros no tenemos bandeja ni historial de entradas.** Una lectura que sale mal es una respuesta de
+error y se acabó: no queda rastro, no hay a dónde volver, y el ticket de papel ya se ha tirado.
+
+**El profesional gana:** dejar de tener que acordarse. Hace la foto, y si la lectura no sale, el gasto
+sigue ahí esperando en vez de evaporarse. Es lo que convierte «probé el OCR una vez» en «meto todos
+mis gastos aquí».
+
+**Se construye así, a grandes rasgos:** un modelo de **documento entrante** con su estado
+(`procesando` / `revisar` / `hecho` / `error` / `descartado`), la imagen guardada, y la propuesta de
+`leerTicket` colgando de él; una pantalla con los pendientes y su historial. ⛔ **Esquema: ALTER
+antes**, y la foto pesa — enlaza con lo que ya está abierto sobre las fotos reales y el peso de la
+lista de Gastos.
+
+#### 11.4.3 · Decir por qué un campo vino vacío · **PEQUEÑO**
+
+**En Holded**, cuando el OCR no se fía no rellena y lo dice con un estado: **Revisar**, y el
+automatismo solo crea el borrador *«siempre que el sistema no detecte inconsistencias y tenga un alto
+nivel de confianza»*. El profesional sabe que hay algo que mirar.
+
+**Nosotros calculamos algo bastante mejor que eso y lo tiramos:** `sanearLectura` devuelve
+`Descartado { campo, motivo }` con nueve motivos, incluido **`no_cuadra_con_el_total`**, que es una
+comprobación aritmética real. Hoy eso no llega a ninguna pantalla.
+
+**El profesional gana:** la diferencia entre un hueco en blanco —que le obliga a coger el ticket otra
+vez y teclear— y una línea que dice *«el IVA que leí no cuadraba con el total»* o *«la fecha salía en
+el futuro»*. Lo segundo se corrige en cinco segundos y **enseña a hacer mejor la foto**.
+
+**Se construye así, a grandes rasgos:** pasar los `Descartado` a la respuesta —si no van ya— y pintar
+el motivo junto al campo vacío, con el texto en `es-ES` de los nueve motivos. Sin schema, sin dinero,
+sin fiscal, sin Meta. 🔴 **Es pequeño HOY porque la pantalla de Gastos se está construyendo justo
+ahora**: entra como un requisito de ese diseño. Cuando la pantalla esté hecha, añadirlo cuesta el
+doble.
+
+### 11.5 · Lo que NO se midió de su escáner, y por qué
+
+**No se subió ningún documento.** Por tanto **no se ha visto** el OCR leyendo de verdad: ni su
+precisión, ni la pantalla de revisión campo a campo, ni qué hace exactamente con una foto mala, ni el
+Historial con filas dentro (los tres contadores estaban a cero). Lo de §11.2 es **su ayuda**, no su
+comportamiento observado, y así queda marcado. Subir un ticket de verdad sería meter un documento
+nuestro en un producto de terceros, y eso lo decide el fundador, no esta sesión.
+
+---
+
+## 12 · Jobber · el primero que hace lo mismo que nosotros (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `35d25d1c58954930b529ad9f736878018c0f9870`**, por sus
+páginas públicas leídas **a texto literal en el navegador** (nunca con `WebFetch`, por el motivo de
+«Límites»). Sin alta, sin dar ningún dato y sin entrar en el producto: **todo lo de aquí es su web
+comercial**, y así queda marcado.
+
+**Por qué éste y no otro.** De la cola quedaban dos familias. Los españoles que faltan (Anfix, Billin,
+Contasimple, FacturaDirecta, Sage) son **más facturación**, y Quipu ya dejó medido que esa familia
+*«no añade ningún hueco que no estuviera ya»*. Jobber, ServiceM8 y Housecall Pro son **field service
+para oficios**: presupuesto, trabajo, firma y cobro **en la obra**, que es exactamente lo que hace
+YaQu. Jobber es el mayor de los tres (*«trusted by 400.000 service pros»*, y **Electrical** es una de
+sus industrias con página propia).
+
+🔴 **La diferencia con Holded, en una línea:** Holded es contabilidad que se asoma a la obra; **Jobber
+es la obra**. Por eso aquí las propuestas no salen de funciones que nos falten, sino de **momentos del
+día** que ellos han convertido en producto y nosotros no.
+
+### 12.1 · Lo que hacen, en sus palabras
+
+- **On-my-way Texts** — *«Customize your on-my-way text message, and Jobber will make it easy to send
+  it to customers on the go.»*
+- **Automated Visit Reminders** — *«Prevent no-shows and prepare clients for visits… Customers can
+  click through to client hub… to review details, **view assigned team members**, and more.»*
+- **Client hub** — *«where they can request work, approve quotes, review scheduled jobs, make
+  payments, and refer their friends»*; y *«Your clients can see the details of their past and upcoming
+  appointments, **as well as photos of the team members assigned to the work**.»* En su propia captura,
+  las citas se enseñan como **franja**: *«Arriving between 9:00 am – 10:00 am»*, con distintivo
+  *Confirmed*.
+- **Automated Quote Follow-ups** y **Automated Invoice Follow-ups** — recordatorios automáticos por
+  email o SMS.
+- **Invoice Reminders** — *«See all jobs requiring invoicing in one glance… Jobber will prompt you to
+  invoice at the right time.»*
+- **Online Booking** con dos controles de oficio: cuánto margen dejar entre citas y *«setting a limit
+  on what area you service and how far you'll drive between appointments»*.
+- **Job Forms and Checklists** — inspecciones, autorizaciones de servicio y listas que *«share with
+  customers to confirm the work you've done»*.
+
+### 12.2 · Tres candidatas que murió midiendo nuestra columna
+
+Antes de proponer nada, el paso que impone §10:
+
+| candidata | qué la mató |
+|---|---|
+| **Recordatorios automáticos de presupuesto y de factura** | **Ya los tenemos.** `src/modules/quotes/domain/reminder.service.ts`, con cron **horario** para presupuestos y **diario a las 10:00** para facturas impagadas (`cron.ts:58` y `:73`). |
+| **«Ver de un vistazo el trabajo hecho y sin facturar»** | **Ya lo tenemos, y más fino que lo suyo.** `pendientesFacturar.service.ts` (SCRUM-69) y `jobCobroHuecos.js`, que distingue **tres** huecos por documento y no restando totales: *«entregados sin facturar»*, *«aceptados y sin facturar»* y el parcial. |
+| **Portal donde el cliente pide trabajo** | **Ya lo tenemos:** `POST /cliente/:token/quote-request` (§10.1). Su *Request Work* es eso mismo. |
+
+    🔒 Tres de tres candidatas muertas por estar ya construidas. El paso de medirnos a nosotros no es
+       una formalidad: es la mitad del trabajo.
+
+### 12.3 · Las tres propuestas
+
+#### 12.3.1 · «Voy de camino» · **MEDIANO**
+
+**En Jobber**, el técnico abre la visita y pulsa **Send on my way text**: elige el número de retorno,
+toca **una franja de minutos —5 · 10 · 15 · 30 · 45 · 60—** y sale un mensaje ya escrito (*«Hello!
+This is Clean Pros. We will arrive in approximately 5 minutes…»*). Es la pantalla entera: dos toques.
+📷 [`capturas/jobber/voy-de-camino-y-aviso-de-visita.png`](capturas/jobber/voy-de-camino-y-aviso-de-visita.png).
+
+**Nosotros no tenemos nada.** Medido: `git grep -i -E "de camino|onMyWay|llegada"` sobre `src`,
+`public` y `prisma` no devuelve **ni una** ocurrencia que sea esto (las que salen son la palabra
+«camino» en otros sentidos). *Suelo:* `scheduledAt` aparece en **once** ficheros entre `src`, `public`
+y `prisma`, así que la agenda existe y la búsqueda no está ciega.
+
+**El profesional gana:** dejar de recibir *«¿a qué hora vienes?»* y dejar de encontrarse la casa
+vacía. Es **la llamada más frecuente del día** de un oficio, y la única función de esta lista que se
+usa **varias veces cada jornada**. Y encaja con lo nuestro mejor que con lo suyo: ellos mandan un SMS;
+nosotros ya hablamos con ese cliente **por WhatsApp**, en el mismo hilo donde está su presupuesto.
+
+**Se construye así, a grandes rasgos:** en la ficha del trabajo, un botón con las franjas de minutos
+que manda un mensaje al cliente del `Job`; el texto sale de plantilla, no se teclea. `scheduledAt`, el
+cliente y el canal ya están. ⛔ **STOP:** es un envío automático nuevo → tabla J6 y regla 28, y
+plantilla de Meta (hay que mirar si cabe en una existente o hace falta una nueva).
+
+#### 12.3.2 · Que el cliente sepa quién va a ir, y en qué franja · **MEDIANO**
+
+**En Jobber**, el portal del cliente enseña sus citas con **franja horaria** (*«Arriving between 9:00
+am – 10:00 am»*), un distintivo **Confirmed**, y *«photos of the team members assigned to the work»*.
+📷 [`capturas/jobber/client-hub-quien-va-a-ir.png`](capturas/jobber/client-hub-quien-va-a-ir.png).
+
+**Nosotros tenemos las dos mitades y no están unidas:** hay equipo con ficha
+(`teamMemberId` sale **26 veces** solo en `schema.prisma`) y hay portal del cliente, pero **el portal
+no dice quién va a ir**: `git grep -i -E "asignado|teamMember"` sobre `customerPortal.routes.ts` y
+`sendQuote.service.ts` → **0**.
+
+**El profesional gana:** menos visitas fallidas y menos desconfianza en la puerta. En España esto
+tiene un nombre concreto: **quien abre suele estar solo en casa**, y saber de antemano el nombre y la
+cara de quien llama al timbre es la diferencia entre abrir y no abrir. Para un electricista con dos o
+tres técnicos, además, es lo que evita el *«pensaba que venías tú»*.
+
+**Se construye así, a grandes rasgos:** añadir al portal la cita con su **franja** —no una hora
+exacta, que en un oficio no se cumple— y el nombre y la foto del técnico asignado. ⛔ Es **dato
+personal de un empleado enseñado a un cliente**: la foto va con su consentimiento y se puede
+desactivar; esa decisión no la toma esta sesión.
+
+#### 12.3.3 · El dinero que aún no es factura, en el resumen del lunes · **PEQUEÑO**
+
+**En Jobber** el sistema **empuja**: *«Jobber will prompt you to invoice at the right time»*, además de
+la pantalla donde se ve todo junto.
+📷 [`capturas/jobber/avisar-de-que-toca-facturar.png`](capturas/jobber/avisar-de-que-toca-facturar.png).
+
+**Nosotros tenemos la pantalla (mejor que la suya) pero solo TIRA, no EMPUJA.** El resumen semanal que
+ya sale todos los lunes a las 9:00 (`weeklyDigest.service.ts`) cuenta facturas emitidas, presupuestos
+creados y aceptados, clientes nuevos y **⏳ pendiente de cobro**… que es dinero **ya facturado**. El
+trabajo **firmado y todavía sin facturar** —el que ni siquiera ha llegado a ser una factura— **no
+aparece en ese correo**, y `getPendientesFacturar` solo lo consume una ruta del panel
+(`albaranes.routes.ts:38`).
+
+**El profesional gana:** el dinero que se queda sin facturar no se pierde porque no se sepa, sino
+porque **nadie lo recuerda el lunes**. Un albarán firmado en una obra de hace tres semanas no vuelve
+a la cabeza de nadie. Una línea en un correo que ya se envía lo pone delante.
+
+**Se construye así, a grandes rasgos:** una línea más en el digest —*«X € entregados y sin
+facturar»*— llamando a `getPendientesFacturar`, que **ya existe y ya está probado**. Sin schema, sin
+canal nuevo (el correo del lunes ya sale), sin Meta, sin fiscal: es un importe informativo para el
+profesional, no un documento. Es la más barata de las seis propuestas de hoy.
+
+### 12.4 · Lo que NO se midió de Jobber, y por qué
+
+- **No se entró en el producto.** No hay cuenta y no se pidió: su alta es *«Start Free Trial»* y un
+  alta en un servicio de terceros la autoriza el fundador, no esta sesión (A19). **Todo el §12 es su
+  web comercial**, que es fuente legítima pero distinta de haberlo visto funcionar.
+- Por tanto **no se sabe** cómo es de verdad su *client hub* por dentro, ni si el on-my-way manda SMS
+  o notificación, ni sus precios reales en España (no operan aquí con precios en euros publicados).
+- **No se ha mirado su parte fiscal**, y no tiene sentido mirarla: es un producto anglosajón sin
+  VeriFactu. Para lo fiscal manda la familia española ya medida.
+- Sus **reseñas** no se han leído. Lo de aquí es lo que ellos dicen de sí mismos.
+- Quedan sin abrir **ServiceM8** y **Housecall Pro**, los otros dos de la misma familia.
+
+---
+
 ## Cola de competidores
 
 Uno por entrega, avisando al orquestador al acabar cada uno.
 
-**Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅
+**Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅ ·
+**Jobber ✅ (solo público)**
 **Pendientes:** Anfix · Billin · Contasimple · FacturaDirecta · Sage (Active o 50) · Odoo ·
-Jobber · Tradify · Fergus · ServiceM8 · Housecall Pro.
+Tradify · Fergus · **ServiceM8** · **Housecall Pro** — estos dos, los siguientes: son la misma familia
+que Jobber (la obra, no la contabilidad) y ahí es donde salen propuestas.
 **Excluidos por decisión del orquestador:** STEL Order y Fixner — sus términos **prohíben
 expresamente** usar el producto para competir (cláusula «Uso limitado», recogida en
 `docs/master/SCRUM-906.md` §2).
