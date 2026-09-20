@@ -181,6 +181,60 @@ El segundo es el que importa: sin él, C podría estar comprobando sólo que exi
 ### Y la lección que se lleva la sesión
 
 🔒 **El guard de navegador encontró esto en 9,6 segundos y sin turno de staging.** El recorrido manual sigue haciendo falta —está abajo, pendiente—, pero **ya no es donde se descubre**: es donde se confirma. Los tres casos habrían llegado a staging para que una persona viera lo mismo media hora después.
+## ANEXO (rama `scrum-964c-parsea-antes-de-empujar`) · `public-js-parsea` entra en `guards:entrada`
+
+**Medido contra:** `origin/main` = `35d25d1c58954930b529ad9f736878018c0f9870` · 2026-09-20T19:45:07Z
+**Aprobado por el orquestador por el canal**, 20-sep-2026, con excepción de carril declarada
+(`scripts/guards-entrada.mjs` no es de S1; el hallazgo es mío y el arreglo es de cinco líneas).
+
+### El hueco, medido antes y después con EL MISMO fallo inyectado
+
+Se añade al final de `expensesView.js` una función con un literal de plantilla sin cerrar — el
+mismo mecanismo que me mordió arriba:
+
+```
+ANTES  npm run guards:entrada  ->  «✓ 4 guards de entrada en verde (26 tests).
+                                     La entrada puede empujarse.»   EXITCODE=0
+       node --test tests/public-js-parsea.test.mjs
+                               ->  1 pass, 1 FAIL
+                                   public/dashboard/js/expensesView.js:? — SyntaxError: Unexpected end of input
+```
+
+O sea: **el guard que caza el defecto existía y lo cazaba; el comando que se corre antes de empujar
+no lo llamaba.** El fallo pasaba la puerta con un «puede empujarse» explícito.
+
+```
+DESPUÉS  árbol limpio      ->  «✓ 5 guards de entrada en verde (28 tests).»  EXITCODE=0  (5,1 s)
+         mismo fallo       ->  «🔴 Algún guard de entrada está en rojo.»      EXITCODE=1
+```
+
+Sin falsos positivos en el árbol de hoy, y el comando sigue tardando segundos (3,2 s → 5,1 s), que
+es la condición que el propio script se puso: *uno que tarde un minuto no se ejecuta*.
+
+### Lo que se cambia, y lo que NO
+
+- Entra `tests/public-js-parsea.test.mjs` en `GUARDS` y **`MINIMO` sube de 4 a 5**: sin eso, el
+  suelo nº1 del script dejaría borrar la línea nueva sin que nada parase.
+- **Se reescribe el criterio de la cabecera, y no es cosmético.** Hasta hoy la lista se explicaba
+  como «los guards de la ENTRADA DE REGISTRO». El quinto no es de la entrada: mira el código del
+  front. Añadirlo sin reescribir el criterio dejaría un fichero que dice una cosa y hace otra, y el
+  sexto se decidiría a ojo. El criterio pasa a ser el que de verdad los unía: **lo que puede poner
+  un PR en rojo, se comprueba leyendo ficheros sin compilar ni base, y se mira en segundos.**
+- No se toca `public-js-parsea` ni ningún otro guard. No se quita nada de la lista.
+
+### Por qué un comentario no bastaba (y esto es lo que hay que leer dentro de un mes)
+
+Es la **cuarta** vez que el mismo mecanismo muerde (`plansView` en SCRUM-345, `exportView` en el
+ticket del guard, un tercero la misma mañana, y `expensesView` aquí). La cuarta la cometió una
+sesión que **tenía el aviso escrito en el propio fichero, en su línea 113**, puesto ahí por la
+segunda. No lo leyó porque editó por búsqueda en la línea 399.
+
+🔒 **Un comentario solo avisa a quien pasa por delante.** El mecanismo que sí funcionó fue el
+guard; lo que fallaba era **cuándo** se corría — después de empujar, no antes. El arreglo no es
+escribir el aviso más grande: es mover el guard a la puerta por la que se pasa siempre.
+
+Guards vecinos en verde tras el cambio: `scrum711-guards-sin-sitio`, `scrum928`, `scrum928b`,
+`scrum522-guards-fuera-de-la-tanda`, `scrum548-peaje-package-json` (52 tests).
 
 ## Lo que NO se ha mirado
 
