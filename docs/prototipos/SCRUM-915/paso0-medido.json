@@ -1,0 +1,436 @@
+{
+  "poblacion": 48,
+  "grupos": 13,
+  "cuenta": {
+    "ya": 16,
+    "parcial": 4,
+    "falta": 20,
+    "no-medible": 8,
+    "sin-predicado": 0
+  },
+  "lineas": [
+    {
+      "grupo": "A · Cabecera"
+    },
+    {
+      "grupo": "A · Cabecera",
+      "hoy": "título «Crear presupuesto» / tituloModal()",
+      "v3": "«Nuevo presupuesto» / «Nuevo justificante» arriba del editor (textos que ya usa la app en su cabecera)",
+      "nota": "—",
+      "estado": "falta",
+      "prueba": "el h2 del editor dice «Crear presupuesto»; la v3 pide «Nuevo presupuesto» arriba del editor"
+    },
+    {
+      "grupo": "A · Cabecera",
+      "hoy": "subtítulo «Genera un presupuesto… link de pago por WhatsApp.»",
+      "v3": "Se retira: cada paso lleva su frase guía",
+      "nota": "Guías propuestas",
+      "estado": "parcial",
+      "prueba": "subtítulo viejo presente=true · frases guía por paso=4"
+    },
+    {
+      "grupo": "A · Cabecera",
+      "hoy": "datos de empresa",
+      "v3": "Cabecera del DOCUMENTO de la derecha, como en el PDF",
+      "nota": "—",
+      "estado": "falta",
+      "prueba": "datos de empresa en la izquierda=true · en el documento de la derecha=false"
+    },
+    {
+      "grupo": "A · Cabecera",
+      "hoy": "aviso global",
+      "v3": "Avisos donde ocurren + toasts",
+      "nota": "—",
+      "estado": "no-medible",
+      "prueba": "la v3 dice «avisos donde ocurren + toasts»: no hay un estado del DOM que lo decida sin provocar cada error uno a uno"
+    },
+    {
+      "grupo": "B · 1. Cliente"
+    },
+    {
+      "grupo": "B · 1. Cliente",
+      "hoy": "buscador «Buscar por nombre, teléfono, email o referencia…»",
+      "v3": "Paso 1 «Cliente», abierto al entrar; filtra en local",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "buscador presente y paso 1 abierto al entrar (pasos abiertos: cliente)"
+    },
+    {
+      "grupo": "B · 1. Cliente",
+      "hoy": "select Cliente + «+ Nuevo cliente»",
+      "v3": "Lista de 4 coincidencias como botones grandes + «+ Nuevo cliente» (alta sin salir)",
+      "nota": "—",
+      "estado": "falta",
+      "prueba": "sigue siendo un <select> (true); botones grandes de coincidencia=0. «+ Nuevo cliente» presente=true"
+    },
+    {
+      "grupo": "B · 1. Cliente",
+      "hoy": "«Sin resultados para tu búsqueda»",
+      "v3": "Igual, bajo el buscador",
+      "nota": "—",
+      "estado": "no-medible",
+      "prueba": "exige teclear una búsqueda sin coincidencias y el banco sólo sirve un cliente; se mide en el corte que la toque"
+    },
+    {
+      "grupo": "B · 1. Cliente",
+      "hoy": "Dirección de la obra + campo",
+      "v3": "Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio; si se muestra, sale en el documento junto al cliente",
+      "nota": "Decisión v3: a la vista",
+      "estado": "ya",
+      "prueba": "«Ajustes del documento» llega cerrado (aria-expanded=false) con resumen «Ajustes del documento IVA sumado · sin dirección de obra Cambiar Atrás»"
+    },
+    {
+      "grupo": "C · 2. Líneas"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "IVA por defecto (%)",
+      "v3": "Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio",
+      "nota": "Decisión v3: a la vista",
+      "estado": "ya",
+      "prueba": "el IVA por defecto se ve con Ajustes cerrado=false"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "IVA del presupuesto",
+      "v3": "Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio; resumen «IVA sumado»; el documento lo refleja",
+      "nota": "Arregla: hoy sin oyente",
+      "estado": "parcial",
+      "prueba": "resumen de Ajustes=«Ajustes del documento IVA sumado · sin dirección de obra Cambiar Atrás». La v3 pide además que EL DOCUMENTO lo refleje y arreglar que hoy no tiene oyente: eso es del documento vivo"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "«✨ Sugerir con IA»",
+      "v3": "Acción SECUNDARIA junto a «+ Añadir línea»; abre el mismo modal",
+      "nota": "Frase del modal propuesta",
+      "estado": "ya",
+      "prueba": "«✨ Sugerir con IA» está en el mismo contenedor que «+ Añadir línea», dentro del paso Conceptos. ⚠️ lo que se mide es el CONTENEDOR COMPARTIDO, no la adyacencia visual: esa la juzga la captura de AB6"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "🎤 Dictar",
+      "v3": "Dentro del modal de IA, con su condición de hoy",
+      "nota": "—",
+      "estado": "no-medible",
+      "prueba": "vive dentro del modal de IA y depende de VOICE_QUOTE_ENABLED + SpeechRecognition + https: el banco no puede dárselos"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "sugerencias + «Esto lo hemos puesto nosotros…»",
+      "v3": "Igual en el modal; el aviso se conserva en la línea hasta «Revisado»",
+      "nota": "Arregla: hoy se pierde",
+      "estado": "no-medible",
+      "prueba": "exige una respuesta real de /admin/ai/suggest-quote; la fila pide además conservar «supuestos» en la línea hasta «Revisado», que hoy no existe en el DOM"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "«📋 Usar plantilla» + modal + fichas",
+      "v3": "«📋 Usar plantilla» secundaria junto a «+ Añadir línea» (modal igual). Las fichas de plantilla se quitan de la vista: menos a la vez",
+      "nota": "Decisión v2",
+      "estado": "ya",
+      "prueba": "«Usar plantilla» junto a «+ Añadir línea»=true · fichas de plantilla aún en la vista=0"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "«Tus conceptos más usados»",
+      "v3": "Dentro del desplegable del concepto al enfocar una línea vacía",
+      "nota": "—",
+      "estado": "no-medible",
+      "prueba": "el bloque sólo se pinta si hay señal de uso (conceptos repetidos en presupuestos previos) y el banco no la sirve: medido, bloque en la vista=false. Un «no está» aquí sería del banco, no del producto"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "3 líneas en blanco",
+      "v3": "UNA línea lista para escribir",
+      "nota": "—",
+      "estado": "falta",
+      "prueba": "al entrar hay 3 línea(s); la v3 pide UNA"
+    },
+    {
+      "grupo": "C · 2. Líneas",
+      "hoy": "«+ Añadir línea»",
+      "v3": "Igual",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "«+ Añadir línea» presente en Conceptos"
+    },
+    {
+      "grupo": "C.1 · Cada línea"
+    },
+    {
+      "grupo": "C.1 · Cada línea",
+      "hoy": "Concepto con autocompletado",
+      "v3": "Igual; «Sin resultados»",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "el autocompletado es de hoy y la v3 lo deja «igual»: no cambia en este rediseño"
+    },
+    {
+      "grupo": "C.1 · Cada línea",
+      "hoy": "Cantidad · Precio · Total por línea",
+      "v3": "Cantidad y Precio en la línea; el total de cada línea se ve en el documento",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "el total de cada línea se ve en el documento de la derecha=true"
+    },
+    {
+      "grupo": "C.1 · Cada línea",
+      "hoy": "ficha «IVA 21 % · Dto.» / «Suplido»",
+      "v3": "Sólo aparece si la línea NO va con lo de siempre (otro IVA, descuento, suplido)",
+      "nota": "Menos a la vista",
+      "estado": "falta",
+      "prueba": "la ficha se ve en una línea que va con lo de siempre=true; la v3 la quiere sólo si la línea NO va con lo de siempre"
+    },
+    {
+      "grupo": "C.1 · Cada línea",
+      "hoy": "asa ⠿ (sólo ratón)",
+      "v3": "Se retira; «↑ Subir / ↓ Bajar» en el menú ⋯",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "asas de arrastre en las líneas=0; la v3 la retira"
+    },
+    {
+      "grupo": "C.1 · Cada línea",
+      "hoy": "menú ⋯ Subir/Bajar/Eliminar",
+      "v3": "Menú ⋯: Ajustes, Subir, Bajar, Eliminar línea",
+      "nota": "—",
+      "estado": "falta",
+      "prueba": "items del menú ⋯ de la línea: [\"↑ Subir\",\"↓ Bajar\",\"🗑️ Eliminar línea\"]; la v3 pide Ajustes · Subir · Bajar · Eliminar"
+    },
+    {
+      "grupo": "C.2 · Ajustes de la línea"
+    },
+    {
+      "grupo": "C.2 · Ajustes de la línea",
+      "hoy": "Suplido · IVA % · Coste · Dto. % · Listo",
+      "v3": "Igual",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "la v3 lo deja «igual»: la hoja de ajustes de la línea no cambia"
+    },
+    {
+      "grupo": "C.2 · Ajustes de la línea",
+      "hoy": "«[PENDIENTE microcopy oficial] descripción»",
+      "v3": "«Descripción» + nota",
+      "nota": "MARCADOR → propuesto",
+      "estado": "falta",
+      "prueba": "con la hoja de ajustes de la línea ABIERTA (se pulsó «IVA 21 %»), el rótulo de su campo de descripción dice «[PENDIENTE microcopy oficial] descripción»"
+    },
+    {
+      "grupo": "D · 3. Condiciones"
+    },
+    {
+      "grupo": "D · 3. Condiciones",
+      "hoy": "Condiciones de pago (5)",
+      "v3": "Paso «Condiciones»: YA ELEGIDA por defecto, una fila «Condiciones de pago · Pago 100% al aceptar · Cambiar»",
+      "nota": "Decisión v2",
+      "estado": "ya",
+      "prueba": "fila de cobro cerrada con su resumen=Condiciones Ya van puestas las de siempre. Cámbialas sólo si este clie · el selector se ve=false"
+    },
+    {
+      "grupo": "D · 3. Condiciones",
+      "hoy": "Tramos de cobro",
+      "v3": "Dentro de «Cambiar» con «Plan personalizado»",
+      "nota": "—",
+      "estado": "no-medible",
+      "prueba": "vive dentro de «Cambiar» con «Plan personalizado»: hace falta cambiar la condición de pago, que es otro gesto del recorrido; se mide en el corte que lo toque"
+    },
+    {
+      "grupo": "D · 3. Condiciones",
+      "hoy": "Válido hasta + 7/14/30 días + nota",
+      "v3": "Fila «Válido hasta · fecha · Cambiar»; también en el documento",
+      "nota": "Arregla el «30 días» fijo de hoy",
+      "estado": "parcial",
+      "prueba": "resumen de Condiciones=«Condiciones Pago 100% al aceptar · válido hasta 20/10/2026 Cambiar» · el pie fijo «válido durante 30 días» sigue en el documento=true"
+    },
+    {
+      "grupo": "E · 4. Envío"
+    },
+    {
+      "grupo": "E · 4. Envío",
+      "hoy": "Formas de pago + notas IBAN y 0,9 %",
+      "v3": "Fila «Formas de pago que verá el cliente · … · Cambiar»",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "filas con «Cambiar» en Condiciones=8 · resumen=«Condiciones Ya van puestas las de siempre. Cámbialas sólo si este cliente es dis»"
+    },
+    {
+      "grupo": "E · 4. Envío",
+      "hoy": "tira de pagos pactados + «[PENDIENTE…]»",
+      "v3": "Dentro de «Cambiar»: «Aplicar»",
+      "nota": "MARCADOR → propuesto",
+      "estado": "falta",
+      "prueba": "el botón de la tira de pagos pactados dice «[PENDIENTE microcopy oficial]»; la v3 lo quiere dentro de «Cambiar» y rotulado «Aplicar»"
+    },
+    {
+      "grupo": "E · 4. Envío",
+      "hoy": "Datos del cliente en el documento + Razón social / Nombre comercial",
+      "v3": "Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio",
+      "nota": "Decisión v3: a la vista",
+      "estado": "ya",
+      "prueba": "los datos del cliente viven en «Ajustes del documento»=true"
+    },
+    {
+      "grupo": "E · 4. Envío",
+      "hoy": "Incluir descripción en el PDF",
+      "v3": "Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio",
+      "nota": "Decisión v3: a la vista",
+      "estado": "ya",
+      "prueba": "«incluir descripción» dentro de «Ajustes del documento»=true"
+    },
+    {
+      "grupo": "F · Totales y descuento"
+    },
+    {
+      "grupo": "F · Totales y descuento",
+      "hoy": "Base, IVA, Suma, Descuento",
+      "v3": "En el documento de la derecha; en el paso Conceptos, el TOTAL",
+      "nota": "—",
+      "estado": "falta",
+      "prueba": "«Base imponible» en el documento de la derecha=true · todavía en el editor de la izquierda=true"
+    },
+    {
+      "grupo": "F · Totales y descuento",
+      "hoy": "«+ Añadir descuento» → Descuento global",
+      "v3": "Secundaria junto a «+ Añadir línea»",
+      "nota": "—",
+      "estado": "falta",
+      "prueba": "botones en el contenedor de «+ Añadir línea»: [\"Cambiar\",\"✨ Sugerir con IA\",\"📋 Usar plantilla\",\"IVA 21 %\",\"⋯\",\"IVA 21 %\",\"⋯\",\"IVA 21 %\",\"⋯\",\"+ Añadir línea\"] — «+ Añadir descuento» no está entre ellos: hoy vive en el bloque de totales"
+    },
+    {
+      "grupo": "F · Totales y descuento",
+      "hoy": "tira del descuento pactado «[PENDIENTE…]» ×2",
+      "v3": "«Este cliente tiene pactado un descuento del N %» + «Aplicar a las líneas», en el paso Conceptos",
+      "nota": "2 MARCADORES → propuestos",
+      "estado": "falta",
+      "prueba": "la tira del descuento pactado dice «[PENDIENTE microcopy oficial] · 10 %» y su botón «[PENDIENTE microcopy oficial]»; la v3 pide «Este cliente tiene pactado un descuento del N %» + «Aplicar a las líneas»"
+    },
+    {
+      "grupo": "F · Totales y descuento",
+      "hoy": "G · KPI del total",
+      "v3": "Paso Conceptos + documento (escritorio); barra inferior (móvil)",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "KPI en Conceptos=275,88 € · elementos fijos con importe a 390 px=1 · «Ver documento» a 390=false"
+    },
+    {
+      "grupo": "H · Acciones"
+    },
+    {
+      "grupo": "H · Acciones",
+      "hoy": "«Generar presupuesto» / «Emitir justificante»",
+      "v3": "Presupuesto: último paso «Revisar y enviar», y su botón «Guardar y enviar» guarda y abre la HOJA DE ENVÍO. Justificante: «Emitir justificante» (sin hoja: no se envía a nadie)",
+      "nota": "Decisión v3 + ajuste: WhatsApp es lo primero, dentro de la hoja",
+      "estado": "falta",
+      "prueba": "el botón del último paso dice «Generar presupuesto»; la v3 pide «Guardar y enviar», que abre la HOJA DE ENVÍO"
+    },
+    {
+      "grupo": "H · Acciones",
+      "hoy": "Generar dos veces = dos presupuestos",
+      "v3": "Se genera UNA vez: enviar, descargar, copiar el enlace o dejarlo guardado reutilizan el mismo presupuesto",
+      "nota": "Arregla el doble",
+      "estado": "falta",
+      "prueba": "pulsar la acción primaria dos veces creó 2 presupuesto(s) (segundo clic: deshabilitado)"
+    },
+    {
+      "grupo": "H · Acciones",
+      "hoy": "«Limpiar formulario» (sin confirmar)",
+      "v3": "Menú «⋯» de arriba, con confirmación",
+      "nota": "Textos propuestos",
+      "estado": "falta",
+      "prueba": "menús «⋯» arriba del editor=0 · «Limpiar formulario» suelto en el último paso=true"
+    },
+    {
+      "grupo": "H · Acciones",
+      "hoy": "«💾 Guardar como plantilla»",
+      "v3": "Menú «⋯» de arriba",
+      "nota": "Guardar Dto./suplido/descripción: cambio de servidor a decidir",
+      "estado": "falta",
+      "prueba": "menús «⋯» arriba=0 · «Guardar como plantilla» suelto en el último paso=true"
+    },
+    {
+      "grupo": "H · Acciones",
+      "hoy": "«✓ Guardado automáticamente»",
+      "v3": "Junto al título",
+      "nota": "—",
+      "estado": "ya",
+      "prueba": "«Guardado automáticamente» junto al título={\"existe\":true,\"dentroDelHeading\":true}"
+    },
+    {
+      "grupo": "I · Tarjeta derecha"
+    },
+    {
+      "grupo": "I · Tarjeta derecha",
+      "hoy": "«Vista previa del documento» (no interactiva, incompleta, se «rompe»)",
+      "v3": "DOCUMENTO VIVO a la derecha, fijo, con aspecto de PDF: se construye mientras escribes y resalta la parte que editas. En móvil, «Ver documento»",
+      "nota": "Pedido por el fundador",
+      "estado": "falta",
+      "prueba": "el título de la derecha sigue siendo «Vista previa del documento» · resaltes de la zona editada=0 · «Ver documento» en móvil=false"
+    },
+    {
+      "grupo": "I · Tarjeta derecha",
+      "hoy": "«Estado del presupuesto»",
+      "v3": "Nº en el documento tras generar; «✓ Enviado por WhatsApp a … · pendiente de firma» en el propio paso",
+      "nota": "Texto propuesto",
+      "estado": "falta",
+      "prueba": "el panel «Estado del presupuesto» sigue en la derecha=true; la v3 lo lleva al documento y al propio paso"
+    },
+    {
+      "grupo": "J · Modal tras generar (desaparece)"
+    },
+    {
+      "grupo": "J · Modal tras generar (desaparece)",
+      "hoy": "«Enviar por WhatsApp», «✉ Enviar por email», «⬇ Descargar PDF»",
+      "v3": "HOJA DE ENVÍO (hoja inferior a 390 px; la misma centrada a 1280 px, patrón de AB3): enseña el MENSAJE tal como le llega al cliente, «📲 Enviar por WhatsApp» en verde a todo el ancho y debajo email · PDF · copiar enlace · «Lo envío luego». La confirmación de estado sale luego en la pantalla, sin modal",
+      "nota": "Ajuste de la v3 tras PresupuestAPP",
+      "estado": "falta",
+      "prueba": "tras generar: modal visible=true · enseña el mensaje al cliente=false · «Copiar enlace»=false · «Lo envío luego»=false"
+    },
+    {
+      "grupo": "J · Modal tras generar (desaparece)",
+      "hoy": "—",
+      "v3": "El texto del mensaje NO es nuevo: es la plantilla firmada quote_decision_es (docs/WHATSAPP_TEMPLATES.md §1) con sus 4 variables puestas. Por eso no va subrayado",
+      "nota": "Las plantillas de Meta son STOP",
+      "estado": "no-medible",
+      "prueba": "la fila dice que el texto del mensaje es la plantilla firmada quote_decision_es: se comprueba cuando exista la hoja de envío que lo pinta"
+    },
+    {
+      "grupo": "Documento suelto"
+    },
+    {
+      "grupo": "Documento suelto",
+      "hoy": "mismo editor sin condiciones/envío/descuentos",
+      "v3": "3 pasos: Cliente → Conceptos → Revisar y emitir; en Revisar, la fila «Ajustes del documento» sólo con IVA por defecto",
+      "nota": "—",
+      "estado": "parcial",
+      "prueba": "los pasos del justificante son [\"Cliente\",\"Conceptos\",\"Revisar y emitir\"] · fila «Ajustes del documento» en Revisar=false · el IVA por defecto sigue en Conceptos=true"
+    },
+    {
+      "grupo": "Documento suelto",
+      "hoy": "«Abrir PDF en nueva pestaña», «Seguir editando»",
+      "v3": "No hacen falta: el documento está siempre a la derecha y no hay modal que cerrar",
+      "nota": "Decisión v3",
+      "estado": "falta",
+      "prueba": "tras generar siguen «Abrir PDF en nueva pestaña»=true y «Seguir editando»=true"
+    },
+    {
+      "grupo": "Documento suelto",
+      "hoy": "pendiente de aprobación (técnico por encima de su límite)",
+      "v3": "Al construir: «Enviar por WhatsApp» no envía; se guarda y se dice «📋 Enviado a un administrador para aprobación. Podrás mandarlo al cliente cuando lo apruebe.» (texto de hoy)",
+      "nota": "No simulado en el prototipo",
+      "estado": "no-medible",
+      "prueba": "exige un usuario con límite de aprobación y la respuesta del servidor que lo declara; el banco no lo monta"
+    },
+    {
+      "grupo": "Teclado"
+    },
+    {
+      "grupo": "Teclado",
+      "hoy": "N dentro del editor abre la Cotización rápida",
+      "v3": "No debe abrirla",
+      "nota": "Defecto a corregir al construir",
+      "estado": "falta",
+      "prueba": "pulsar N con el editor abierto deja un modal encima=true"
+    }
+  ]
+}

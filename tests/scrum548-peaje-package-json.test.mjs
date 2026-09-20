@@ -171,7 +171,16 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // MEDIDO: esa ruta no la sirve ningún otro guard — la fabrica él y no la comparte.
   // SCRUM-918 · `guard:arranque-sin-red`: sirve el panel en un puerto EFÍMERO y navega con la base en
   // una variable, así que su destino no se deriva. Lo sirve él y no lo comparte con ningún guard.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:arranque-sin-red', 'guard:firma-con-tramos', 'guard:completar-lleva-al-campo', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
+  // SCRUM-965 · entra `guard:un-solo-presupuesto`, y por el mismo motivo que `guard:arranque-sin-red`
+  // y `guard:rastro-del-menu`: levanta servidor propio en un puerto EFÍMERO (`GUARD965_PUERTO || 0`)
+  // y navega a `http://127.0.0.1:${PUERTO}/dashboard/index.html#${ruta}`, con el puerto Y la ruta en
+  // variables, así que del fuente no sale ningún destino fijo y este detector no puede verlo.
+  // MEDIDO: abre `#quotes-new` y `#invoices-new`, las dos por esa plantilla. Por `#quotes-new` pasan
+  // ya tres guards declarados arriba (`descuento-redibuja`, `rotulos-de-la-linea`, `pasos-del-editor`),
+  // pero NINGUNO por este servidor: el suyo responde las peticiones al vuelo para poder CONTARLAS,
+  // que es lo que mide. No se fusiona con los tres: ellos observan el editor, éste cuenta peticiones.
+  // Se declara para que ese solape invisible no se lea como «no tiene».
+  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:arranque-sin-red', 'guard:un-solo-presupuesto', 'guard:firma-con-tramos', 'guard:completar-lleva-al-campo', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });
