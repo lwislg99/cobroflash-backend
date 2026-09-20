@@ -159,7 +159,7 @@ export class ExpenseRefError extends Error {
 //
 // No se normaliza ni se traduce nada: «materials» no se convierte en «materiales». Rechazar es
 // arreglar el defecto; traducir lo taparía. Y las filas ya escritas no se tocan (saneo aparte).
-export function esCategoriaDeGasto(valor: unknown): valor is ExpenseCategory {
+function esCategoriaDeGasto(valor: unknown): valor is ExpenseCategory {
   return typeof valor === 'string' && (EXPENSE_CATEGORIES as readonly string[]).includes(valor);
 }
 
