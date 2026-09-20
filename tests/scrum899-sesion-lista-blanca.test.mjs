@@ -100,14 +100,18 @@ test('🔴 reanudar va con el sessionId COMPLETO y SIN flags (con flags arranca 
 // Decisiones
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('decidir lanzar: viva, bloqueada, reanudar, nueva, y no pude mirar', () => {
+test('decidir lanzar: viva, bloqueada, NUEVA siempre, y no pude mirar', () => {
   const ahora = 10 * 60 * 60 * 1000;
   const viva = { id: 'aaaaaaaa', name: 'sesion-2', kind: 'background', state: 'working' };
   assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [viva], registro: {}, ahora }).veredicto, 'YA-VIVA');
   assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [{ ...viva, state: 'blocked', waitingFor: 'permission prompt' }], registro: {}, ahora }).veredicto,
     'BLOQUEADA', '🔴 una sesión bloqueada se trata como viva y nadie lo dice');
   const reciente = { 'sesion-2': { sessionId: UUID, ultimaTanda: ahora - 30 * 60 * 1000 } };
-  assert.deepEqual(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: reciente, ahora }), { veredicto: 'REANUDAR', sessionId: UUID });
+  // SCRUM-954 (20-sep-2026): esto decia REANUDAR. Ya no. `lanzar` lanza SIEMPRE una sesion nueva,
+  // y el motivo es la A19: reanudar dentro de la hora arrastra la conversacion entera, que es
+  // justo lo que el relevo viene a soltar. Decision del orquestador, con su motivo escrito.
+  assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: reciente, ahora }).veredicto, 'NUEVA',
+    'SCRUM-954: con la cache caliente TAMPOCO se reanuda');
   const vieja = { 'sesion-2': { sessionId: UUID, ultimaTanda: ahora - 2 * 60 * 60 * 1000 } };
   assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: vieja, ahora }).veredicto, 'NUEVA', '🔴 reanuda una sesión con la caché fría');
   assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: {}, ahora }).veredicto, 'NUEVA');
@@ -157,7 +161,8 @@ function banco({ alterar = false, configEnElRepo = false } = {}) {
   // SCRUM-951a: la puerta exige el equipo y la carpeta de los traspasos; aquí, el equipo de Luis.
   const memoria = path.join(dir, 'memoria');
   fs.mkdirSync(memoria);
-  const config = JSON.stringify({ repo, claude: [process.execPath, falso], ...s.EQUIPO_DE_LUIS, traspasos: memoria });
+  // SCRUM-954: `jobs` propio — sin él, la CLI leería los trabajos REALES de la máquina.
+  const config = JSON.stringify({ repo, claude: [process.execPath, falso], ...s.EQUIPO_DE_LUIS, traspasos: memoria, jobs: path.join(dir, 'jobs') });
   fs.writeFileSync(path.join(inst, 'config.json'), config);
   // Para el rojo del árbol: la copia del PROPIO repositorio, con su config al lado.
   if (configEnElRepo) fs.writeFileSync(path.join(repo, 'scripts', 'equipo', 'config.json'), config);
