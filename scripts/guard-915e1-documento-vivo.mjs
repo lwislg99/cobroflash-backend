@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 /**
- * SCRUM-915e1 · EL DOCUMENTO DE LA DERECHA SE CONSTRUYE MIENTRAS ESCRIBES, Y NO MIENTE.
+ * SCRUM-915e1 + 915e2 · EL DOCUMENTO DE LA DERECHA SE CONSTRUYE MIENTRAS ESCRIBES, NO MIENTE,
+ * SE ALCANZA EN EL MÓVIL Y DICE CUÁL DE SUS FILAS SE ACABA DE MOVER.
+ *
+ * Los dos cortes comparten guard a propósito: miden el MISMO documento, y separarlos daría dos
+ * guards que abren el mismo editor por el mismo sitio para preguntarle cosas de la misma caja.
  *
  * Guard de NAVEGADOR. Mide el árbol RENDERIZADO del editor de presupuestos, porque las tres cosas
  * que vigila son invisibles en el fuente:
@@ -93,6 +97,56 @@ const PULSAR = new Function('texto', `
  * diga X?» contesta que sí en cuanto alguien escriba X en cualquier parte de la pantalla. Se lee
  * el rótulo y se compara después, que es lo que distingue «pone lo que toca» de «pone algo».
  */
+/** ¿Está «Ver documento» a la vista, y dónde vive? Se lee por su CLASE, no por su texto. */
+const VER_DOCUMENTO = new Function(`
+  var limpio = function (t) { return String(t || '').replace(/\\s+/g, ' ').trim(); };
+  var ve = function (el) { return !!el && el.isConnected && el.checkVisibility(); };
+  var bs = Array.prototype.slice.call(document.querySelectorAll('.quote-ver-documento'));
+  var visibles = bs.filter(ve);
+  return {
+    enElDom: bs.length,
+    visibles: visibles.length,
+    textos: bs.map(function (b) { return limpio(b.textContent); }),
+    // De qué pie cuelga cada uno: el prototipo lo pone en los pasos que NO son el último.
+    enPieDePaso: bs.filter(function (b) { return b.parentElement && b.parentElement.classList.contains('quote-paso__pie'); }).length,
+  };
+`);
+
+/** El estado DESPUÉS de pulsar: dónde está el documento y qué dice la hoja. */
+const ESTADO_HOJA = new Function(`
+  var limpio = function (t) { return String(t || '').replace(/\\s+/g, ' ').trim(); };
+  var ve = function (el) { return !!el && el.isConnected && el.checkVisibility(); };
+  var hoja = document.querySelector('.quote-documento-modal');
+  var caja = document.querySelector('.quote-preview');
+  return {
+    hojaAbierta: ve(hoja),
+    tituloDeLaHoja: hoja ? limpio((hoja.querySelector('.modal-title') || {}).textContent || '') : null,
+    // LA PREGUNTA QUE DECIDE: el documento, ¿está DENTRO de la hoja o fuera?
+    documentoDentroDeLaHoja: !!(hoja && caja && hoja.contains(caja)),
+    documentoEnLaTarjeta: !!(caja && caja.closest('.quotes-right-card')),
+    documentoVisible: ve(caja),
+    botonVolver: (function () {
+      if (!hoja) return null;
+      var bs = hoja.querySelectorAll('.modal-footer button');
+      return bs.length ? limpio(bs[0].textContent) : null;
+    })(),
+  };
+`);
+
+/** Las filas del documento, con la marca de «recién editada» que pone el resalte. */
+const FILAS = new Function(`
+  var limpio = function (t) { return String(t || '').replace(/\\s+/g, ' ').trim(); };
+  var tabla = document.querySelector('.quote-preview .preview-lines-table tbody');
+  var out = [];
+  if (!tabla) return out;
+  for (var i = 0; i < tabla.children.length; i++) {
+    var tr = tabla.children[i];
+    var td = tr.querySelector('td');
+    out.push({ concepto: td ? limpio(td.textContent) : '', editada: tr.classList.contains('preview-line--editada') });
+  }
+  return out;
+`);
+
 const DOCUMENTO = new Function(`
   var limpio = function (t) { return String(t || '').replace(/\\s+/g, ' ').trim(); };
   var ve = function (el) { return !!el && el.isConnected && el.checkVisibility(); };
@@ -321,6 +375,121 @@ const CASOS = [
       }
     },
   },
+
+  // ─── SCRUM-915e2 ──────────────────────────────────────────────────────────────────────────────
+  {
+    clave: 'ver-doc-donde',
+    titulo: 'F · «Ver documento» sale donde el papel NO cabe al lado, y NO sale donde sí cabe',
+    async correr(pag, etiqueta) {
+      // A 1280 px el documento está AL LADO: el botón sobraría, y un botón que abre una hoja para
+      // enseñar lo que ya se ve es ruido. Éste es el control NEGATIVO del caso.
+      await pag.setViewport({ width: 1280, height: 900 });
+      if (!await abrirEditor(pag, etiqueta)) return;
+      const ancho = await pag.evaluate(VER_DOCUMENTO);
+      informe.push(`${etiqueta} · a 1280 px: ${ancho.enElDom} en el DOM, ${ancho.visibles} visibles`);
+      if (ancho.enElDom === 0) {
+        // SUELO: si no existe en ninguno de los dos anchos, no estoy midiendo dónde sale — estoy
+        // midiendo que no está, que es el otro caso.
+        hallazgos.push(`${etiqueta} -> «Ver documento» no existe en el DOM a ningún ancho`);
+        return;
+      }
+      if (ancho.visibles !== 0) {
+        hallazgos.push(`${etiqueta} -> a 1280 px el documento ya está al lado y aun así se ven ${ancho.visibles} «Ver documento»`);
+      }
+
+      // A 390 px el documento se ha ido DEBAJO del editor entero: ahí el botón es el único camino.
+      await pag.setViewport({ width: 390, height: 844 });
+      await espera(400);
+      const movil = await pag.evaluate(VER_DOCUMENTO);
+      informe.push(`${etiqueta} · a 390 px: ${movil.visibles} visibles de ${movil.enElDom} · textos=${JSON.stringify(movil.textos)} · en pie de paso=${movil.enPieDePaso}`);
+      if (movil.visibles < 1) {
+        hallazgos.push(`${etiqueta} -> a 390 px el documento no está al lado y NO hay ningún «Ver documento» a la vista: el papel es inalcanzable mientras se escribe`);
+      }
+      const malRotulados = movil.textos.filter((t) => t !== 'Ver documento');
+      if (malRotulados.length) {
+        hallazgos.push(`${etiqueta} -> hay botones con la clase del documento y otro texto: ${JSON.stringify(malRotulados)}; el firmado (com. 15868) es «Ver documento»`);
+      }
+      if (movil.enPieDePaso !== movil.enElDom) {
+        hallazgos.push(`${etiqueta} -> ${movil.enElDom - movil.enPieDePaso} «Ver documento» cuelgan de algo que no es el pie de un paso`);
+      }
+    },
+  },
+  {
+    clave: 'ver-doc-pulsar',
+    titulo: 'G · pulsarlo trae el DOCUMENTO DE VERDAD, y «Volver al editor» lo devuelve a su sitio',
+    async correr(pag, etiqueta) {
+      await pag.setViewport({ width: 390, height: 844 });
+      if (!await abrirEditor(pag, etiqueta)) return;
+      const antes = await pag.evaluate(ESTADO_HOJA);
+      if (!antes.documentoEnLaTarjeta) { ciegos.push(`${etiqueta} -> el documento no estaba en la tarjeta derecha ANTES de pulsar`); return; }
+
+      if (await pag.evaluate(PULSAR, 'Ver documento') !== 'pulsado') { ciegos.push(`${etiqueta} -> no pude pulsar «Ver documento»`); return; }
+      await espera(500);
+      const dentro = await pag.evaluate(ESTADO_HOJA);
+      informe.push(`${etiqueta} · tras pulsar: hoja=${dentro.hojaAbierta}, título=«${dentro.tituloDeLaHoja}», documento dentro=${dentro.documentoDentroDeLaHoja}, visible=${dentro.documentoVisible}, botón=«${dentro.botonVolver}»`);
+      if (!dentro.hojaAbierta) { hallazgos.push(`${etiqueta} -> pulsado «Ver documento», no se abre ninguna hoja`); return; }
+      if (dentro.tituloDeLaHoja !== 'Así lo verá el cliente') {
+        hallazgos.push(`${etiqueta} -> la hoja se titula «${dentro.tituloDeLaHoja}»; el texto firmado es «Así lo verá el cliente»`);
+      }
+      // LO QUE DECIDE: el documento tiene que estar DENTRO de la hoja. Una copia se vería igual en
+      // una captura y se quedaría con los datos de antes en cuanto el profesional volviera a teclear.
+      if (!dentro.documentoDentroDeLaHoja) {
+        hallazgos.push(`${etiqueta} -> la hoja se abre pero el documento no está dentro: lo que enseña no es el papel de verdad`);
+      }
+      if (!dentro.documentoVisible) hallazgos.push(`${etiqueta} -> el documento está dentro de la hoja pero no se ve`);
+      if (dentro.botonVolver !== 'Volver al editor') {
+        hallazgos.push(`${etiqueta} -> el botón de la hoja dice «${dentro.botonVolver}»; el firmado es «Volver al editor»`);
+      }
+
+      // Y AL CERRAR: el documento vuelve a la tarjeta. Si se fuera con la hoja, la tarjeta derecha
+      // se quedaría vacía para siempre y en escritorio no habría documento nunca más.
+      if (await pag.evaluate(PULSAR, 'Volver al editor') !== 'pulsado') { ciegos.push(`${etiqueta} -> no pude pulsar «Volver al editor»`); return; }
+      await espera(400);
+      const despues = await pag.evaluate(ESTADO_HOJA);
+      informe.push(`${etiqueta} · tras cerrar: hoja=${despues.hojaAbierta}, documento en la tarjeta=${despues.documentoEnLaTarjeta}`);
+      if (despues.hojaAbierta) hallazgos.push(`${etiqueta} -> «Volver al editor» no cierra la hoja`);
+      if (!despues.documentoEnLaTarjeta) {
+        hallazgos.push(`${etiqueta} -> al cerrar la hoja el documento NO ha vuelto a la tarjeta derecha: se fue con la hoja`);
+      }
+    },
+  },
+  {
+    clave: 'resalte',
+    titulo: 'H · la fila que cambia queda marcada, y la que no cambia NO (control negativo dentro)',
+    async correr(pag, etiqueta) {
+      if (!await abrirEditor(pag, etiqueta)) return;
+      if (!await teclear(pag, '.quote-line .quote-line__concept input', 'Mano de obra (hora)')
+        || !await teclear(pag, '.quote-line .quote-line__qty input', '6')
+        || !await teclear(pag, '.quote-line .quote-line__price input', '38')) {
+        ciegos.push(`${etiqueta} -> no encontré los campos de la primera línea`); return;
+      }
+      await espera(400);
+
+      // ── CONTROL NEGATIVO · un repintado que no cambia NADA no puede marcar nada ──────────────
+      // Se provoca un evento que pasa por la misma delegación (un clic en la tarjeta) sin tocar
+      // ningún dato. Sin esta mitad, un resalte que marcara SIEMPRE pasaría la casilla de abajo.
+      await pag.evaluate(new Function(`
+        var c = document.querySelector('.quotes-left-card');
+        if (c) c.dispatchEvent(new Event('input', { bubbles: true }));
+      `));
+      await espera(300);
+      const quieto = await pag.evaluate(FILAS);
+      informe.push(`${etiqueta} · sin tocar nada: ${JSON.stringify(quieto)}`);
+      if (!quieto.length) { ciegos.push(`${etiqueta} -> el documento no tiene filas: no hay nada que marcar`); return; }
+      if (quieto.some((f) => f.editada)) {
+        hallazgos.push(`${etiqueta} -> sin cambiar ningún dato hay filas marcadas como recién editadas: el resalte marca siempre y no dice nada`);
+      }
+
+      // ── Y AHORA SÍ: se cambia el precio de esa línea ────────────────────────────────────────
+      if (!await teclear(pag, '.quote-line .quote-line__price input', '52')) { ciegos.push(`${etiqueta} -> no pude cambiar el precio`); return; }
+      await espera(400);
+      const movida = await pag.evaluate(FILAS);
+      informe.push(`${etiqueta} · tras cambiar el precio: ${JSON.stringify(movida)}`);
+      if (!movida.some((f) => f.editada)) {
+        hallazgos.push(`${etiqueta} -> cambiado el precio de la línea, ninguna fila del documento queda marcada: el papel se rehace entero y nada dice cuál se movió`);
+      }
+    },
+  },
 ];
 
 async function main() {
@@ -354,15 +523,20 @@ async function main() {
   console.log(`  POBLACIÓN: ${CASOS.length} casos, ${CASOS.length} corridos · ${CASOS.map((c) => c.titulo.split(' · ')[0]).join(' · ')}`);
   informe.forEach((l) => console.log(`   · ${l}`));
 
-  if (ciegos.length) {
-    console.log(`\n  ⬜ NO SUPE MEDIR ${ciegos.length}:`);
-    ciegos.forEach((l) => console.log(`   ⬜ ${l}`));
-    console.log(`\n  Un ciego no es un verde: no se ha juzgado nada.\n${ancho}`);
-    process.exit(SALIDA_NO_SUPE_MEDIR);
-  }
+  // Los hallazgos se imprimen SIEMPRE, también cuando hay ciegos. Callarlos hasta que no quede
+  // ningún ciego esconde defectos reales detrás de un caso que no llegó a arrancar — y es
+  // justamente al medir el rojo cuando conviven los dos.
   if (hallazgos.length) {
     console.log(`\n  🔴 HALLAZGOS ${hallazgos.length}:`);
     hallazgos.forEach((l) => console.log(`   🔴 ${l}`));
+  }
+  if (ciegos.length) {
+    console.log(`\n  ⬜ NO SUPE MEDIR ${ciegos.length}:`);
+    ciegos.forEach((l) => console.log(`   ⬜ ${l}`));
+    console.log(`\n  Un ciego no es un verde: de esos casos no se ha juzgado nada.\n${ancho}`);
+    process.exit(SALIDA_NO_SUPE_MEDIR);
+  }
+  if (hallazgos.length) {
     console.log(`\n${ancho}`);
     process.exit(SALIDA_HALLAZGO);
   }

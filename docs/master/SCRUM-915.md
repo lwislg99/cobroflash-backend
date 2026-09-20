@@ -390,3 +390,80 @@ fusiona con los otros tres: los tres miran el EDITOR de la izquierda y éste mir
   porque mueve la tarjeta de totales, que es lo que toca **915h**.
 - Capturas AB6: cambia el texto del papel y una línea de rótulo; ni un componente nuevo, ni un
   token nuevo, ni un color nuevo.
+
+---
+
+## SCRUM-915e2 · el documento se alcanza en el móvil, y dice cuál de sus filas se acaba de mover
+
+**Fecha:** 20-sep-2026 19:58:06 GMT · **Carril:** S2 (frontend) · **Corte:** 2.º de la partición aprobada
+**Medido contra:** `origin/main` = `8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`
+**Rama:** `scrum-915e2-ver-documento` · **Rojo medido sobre:** `19fff106f514c9ca8b299f750f0171c82b335abd`
+**Instrumento:** los casos F, G y H de `scripts/guard-915e1-documento-vivo.mjs`
+**Microcopy:** `docs/microcopy/2026-09-20-SCRUM-915e2-ver-documento.md` (comentario 15868)
+
+### El defecto: en un teléfono el documento NO se ve pequeño, no se ve
+
+Por debajo de 1100 px `.quotes-layout` pasa a UNA columna, así que el documento deja de estar al
+lado del editor y se va **debajo** de él: debajo de los cuatro pasos, las líneas y los totales. En
+un teléfono son varias pantallas de scroll. El profesional escribe a ciegas, y el rótulo «Se
+actualiza mientras escribes» que 915e1 acaba de poner le habla de algo que no tiene delante.
+
+Medido: a 390 px había **0** «Ver documento» — no existía en el DOM a ningún ancho.
+
+### Qué entra
+
+| | antes | ahora |
+|---|---|---|
+| llegar al documento en móvil | bajar por todo el editor | «Ver documento» en el pie de Cliente, Conceptos y Condiciones |
+| lo que abre | — | hoja con el título ya firmado «Así lo verá el cliente» y el **documento de verdad** dentro |
+| salir | — | «Volver al editor», que devuelve el documento a la tarjeta |
+| qué fila se acaba de mover | nada: el papel se rehace entero y todo se ve igual | la fila que cambia queda resaltada y se desvanece |
+
+### Dos decisiones, y por qué
+
+1. **El botón lo enseña el CSS, no un `matchMedia`.** Sale por debajo del mismo 1100 px en el que
+   `.quotes-layout` pasa a una columna, y ese número vive UNA vez, en `styles.css`. Con
+   `matchMedia` habría dos sitios sabiendo el mismo número y separándose sin que nadie lo note.
+   El prototipo usa 999 px; aquí manda el breakpoint real de esta app, que es donde el documento
+   se va de al lado de verdad.
+2. **La hoja MUEVE el documento, no lo copia** — el patrón de la hoja de ajustes de la línea
+   (SCRUM-139 F4). Una copia se vería idéntica en una captura y se quedaría con los datos de antes
+   en cuanto el profesional volviera a teclear. Por eso el caso G no pregunta «¿hay un documento en
+   la hoja?» sino **«¿el documento está DENTRO de la hoja?»**, y al cerrar comprueba que ha vuelto
+   a la tarjeta: si se fuera con la hoja, en escritorio no habría documento nunca más.
+
+### 🔴 El defecto que sólo se ve en navegador: el resalte que se borraba a sí mismo
+
+El caso H salió rojo **con el resalte ya escrito y aparentemente bien**. La causa: cada evento del
+profesional repinta el documento **dos veces** — el manejador del propio campo y la delegación de
+la tarjeta que entró en 915e1, las dos llaman a `renderPreview`. El primer pintado veía el cambio
+y marcaba la fila; el segundo, con la firma ya guardada, no veía ningún cambio y **borraba la
+marca**. En pantalla el resalte no existía. En el fuente se leía perfectamente bien.
+
+Arreglado dándole a la marca **un pintado de gracia**: sobrevive a un repintado sin cambios, y a
+uno sólo. Al segundo quieto se apaga, que es lo que la diferencia de un resalte pegado para
+siempre.
+
+    🔒 Un mecanismo correcto leído dos veces seguidas puede deshacerse a sí mismo, y el fuente
+       lo cuenta igual de bien en los dos casos.
+
+### El rojo
+
+**ROJO de partida** (`19fff106`, el árbol de 915e1 sin nada de e2): **2 hallazgos y 1 ciego** en
+8 de 8 casos. El ciego es G, que no puede medir un botón que no existe — y **un ciego no es un
+verde**: por eso G no cuenta como «pasó». La salida se cambió para imprimir los hallazgos también
+cuando hay ciegos: callarlos escondía defectos reales detrás de un caso que no llegó a arrancar.
+
+**VERDE con el arreglo:** 8/8, y el control negativo del resalte sigue en pie (un repintado que no
+cambia nada no marca ninguna fila).
+
+### Lo que NO cubre
+
+- El **número del documento** («Nº al generar»): sigue sin sitio donde pintarse.
+- Los **totales fuera del editor** de la izquierda: es 915h.
+- El resalte marca filas de **conceptos**. Cambiar el descuento global o las condiciones repinta el
+  documento pero no marca nada: no hay fila que señalar, y pintar el papel entero de verde sería
+  ruido.
+- Capturas AB6: un botón secundario del inventario AB3 y una hoja `.modal-overlay` + `.modal`
+  también del inventario. Ni un componente nuevo; el único color es `--brand-tint`, el token que
+  ya existe para «fondos de realce suaves». `guard:objetivo-tactil` en verde con el botón nuevo.
