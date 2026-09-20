@@ -1,5 +1,12 @@
 # SCRUM-920 · Textos NUEVOS, propuestos y SIN firmar
 
+> ✅ **FIRMADOS el 20-sep-2026 por el orquestador (firma delegada): SCRUM-920 comentario 15992** (creado en Jira el
+> 2026-09-20T15:22:54+02:00, es decir 13:22:54 Z; el propio comentario dice «~13:50Z», que no es la hora de Jira). Con tres
+> cambios que ya están aplicados abajo: ① fuera «justificante» («La foto del ticket», «Ver la foto»); ② fuera el
+> triángulo («Sin foto»); ③ singular «<Mes> de <año> · 1 gasto» y plural «· N gastos». Además «Ver el trabajo» pasa a
+> **«Ver trabajo»**, literal ya firmado (SCRUM-302). Los dos textos de la lectura del ticket (912) NO entran en esa firma.
+> La ficha de registro es `ficha-microcopy-DRAFT.md`; la mueve la S2 a `docs/microcopy/` en el PR que los pinta.
+
 En `gastos.html` salen subrayados (interruptor «Resaltar textos nuevos» de la barra negra). Todo lo que NO está aquí
 ya existe hoy en el producto y se reutiliza **literal**. Pendientes de firma (regla 30). Las opciones de un `<select>`
 no se pueden subrayar: las nuevas van marcadas aquí con **(select)**.
@@ -45,8 +52,8 @@ Estos dos son de 912 más que de 920: se proponen aquí sólo para que el hueco 
 
 | texto | qué es |
 |---|---|
-| «Todos · 9» · «Sin foto · 3» | los dos chips del justificante, con su cuenta |
-| «Foto guardada» (con la miniatura) · «⚠︎ Sin foto» | el justificante en cada fila |
+| «Todos · 9» · «Sin foto · 3» | los dos chips de la foto, con su cuenta |
+| «Foto guardada» (con la miniatura) · «Sin foto» | la foto en cada fila (sin triángulo: 20-sep, cambio 2 del orquestador) |
 | «Sin trabajo» | sustituye al «—» de la celda Trabajo: un guion no dice si no hay trabajo o si no se pudo cargar |
 | «Todos los trabajos» · «Sin trabajo» **(select)** | el filtro por trabajo, que hoy no existe |
 | «Es la suma de lo que estás viendo, no la del mes.» | la salvedad de la suma filtrada; **no repite el total del mes**, que ya está en el KPI |
@@ -60,18 +67,18 @@ Estos dos son de 912 más que de 920: se proponen aquí sólo para que el hueco 
 
 | texto | qué es |
 |---|---|
-| «El justificante» | título de la tarjeta de la foto |
+| «La foto del ticket» | título de la tarjeta de la foto (era «El justificante»: 20-sep, cambio 1 del orquestador, «justificante» es un término fiscal) |
 | «Ver a tamaño completo» · «Cambiar la foto» | acciones sobre la foto |
 | «De este gasto no guardaste ninguna foto.» · «📷 Añadir la foto ahora» | el gasto sin foto |
 | «Datos de la factura del proveedor» | título de la tarjeta; **sólo se pinta si hay alguno apuntado** |
-| «Editar» · «Ver el trabajo» | acciones de la cabecera («Editar gasto» existe hoy como título del modal) |
+| «Editar» · «Ver trabajo» | acciones de la cabecera. «Ver trabajo» **ya está firmado** (`btnVerTrabajo`, SCRUM-302): se reutiliza el literal exacto en vez de «Ver el trabajo». «Editar gasto» existe hoy como título del modal |
 | «Sin trabajo» · «Este gasto no cuenta para el margen de ningún trabajo.» · «Vincular a un trabajo» | el gasto suelto |
 
 ## El «⋯» de la fila
 
 | texto | qué es |
 |---|---|
-| «Editar» · «Ver el justificante» / «📷 Añadir la foto» · «Ver el trabajo» / «Vincular a un trabajo» | las opciones; «🗑 Eliminar» y su confirmación «¿Eliminar este gasto?» **ya existen** |
+| «Editar» · «Ver la foto» / «📷 Añadir la foto» · «Ver trabajo» / «Vincular a un trabajo» | las opciones («Ver la foto» era «Ver el justificante»); «🗑 Eliminar» y su confirmación «¿Eliminar este gasto?» **ya existen** |
 
 ## Lo que se queda EXACTAMENTE como está
 

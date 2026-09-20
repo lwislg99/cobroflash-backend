@@ -59,7 +59,7 @@ Y cuatro defectos que el instrumento del borrador **no miraba**:
 | Caja de la lista que se recorre de lado a 390 | **600 px de contenido en 366 de caja** | **0 cajas que desbordan** |
 | Controles < 44 px (sin el menú lateral) | **10** a 1280 · **9** a 390 (17-sep) | **0 · 0** |
 | La papelera de cada fila | 21 × 29 px, pegada a una fila que navega | en el «⋯», a 44 px, con su confirmación |
-| ¿Se ve si el gasto tiene su foto? | **no**, en ninguna columna | **sí**, en cada fila: miniatura + «Foto guardada», o «⚠︎ Sin foto»; y un chip «Sin foto · 3» |
+| ¿Se ve si el gasto tiene su foto? | **no**, en ninguna columna | **sí**, en cada fila: miniatura + «Foto guardada», o «Sin foto»; y un chip «Sin foto · 3» |
 | Posición de la foto en el alta | campo **14 de 14** | **la primera**: a 390, la foto en y=437 y el concepto en y=849 |
 | Campos del alta | 14 | **14** (ninguno se retira) |
 | «Añadir gasto» en móvil | al final de un modal de 760 px | fijo abajo, visible siempre |
@@ -139,6 +139,11 @@ commits, 0 conflictos) y se volvió a correr `medir.mjs` sobre el árbol fusiona
   cambiada, `git diff --numstat` 1/1) `medir.mjs` sale con `EXIT=1` y marca ✗; restaurada, `EXIT=0`. Commit del arreglo
   `5dfcde5a`. Las capturas de `capturas-prototipo/` **no se regeneraron**: el NIF vive dentro del bloque plegado y no
   sale en ninguna.
+- **Tercera pasada, tras la firma de la microcopy (SCRUM-920 comentario 15992):** el prototipo pasa a los textos
+  firmados —«La foto del ticket», «Ver la foto», «Sin foto» sin triángulo, «Ver trabajo», «Todos · N» con su
+  espacio— y **se quita «N gastos de M»** (texto sin firmar). Vuelve a dar **86 comprobaciones ✓, 0 ✗, `EXIT=0`, TODO
+  EN VERDE**, con la misma población (22/11, 21/0, 7/3, inventario 0/0) y los tres controles positivos disparando. Se
+  regeneraron las capturas de lista y detalle (las únicas donde cambia un texto visible).
 - **Lo que llegó a `main` y no es visible en el prototipo:** SCRUM-947 (la foto grande se reduce antes de guardar y,
   si no se puede abrir, dice «No hemos podido abrir esta foto. Prueba con otra o haz una captura de pantalla del
   ticket.», firmado). No cambia el diseño, pero la construcción tiene que **conservarlo** (ver

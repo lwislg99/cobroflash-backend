@@ -1,10 +1,25 @@
-# SCRUM-920 · Encargo de construcción para la Sesión 2 (BORRADOR: no entra en la cola hasta que lo decida el orquestador)
+# SCRUM-920 · Encargo de construcción para la Sesión 2 (no entra en la cola hasta que lo decida el orquestador)
 
-20-sep-2026 13:15 Z (hora de GitHub) · `origin/main = f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4` · autora: Sesión 4.
+20-sep-2026 13:15 Z (hora de GitHub; puesta al día tras la firma de 13:22:54 Z) · `origin/main =
+f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4` · autora: Sesión 4.
 
 El ticket lo dice: «la construcción es de la Sesión 2». Este documento es lo que la Sesión 4 le pasa. **No se construye
 nada hasta que (1) el orquestador lo meta en la cola de la S2 y (2) el fundador haya aprobado el prototipo** (lo pide el
 orquestador, no la S4).
+
+## 🔴 Decisiones YA tomadas (orquestador, 20-sep-2026, SCRUM-920 comentario 15992)
+
+1. **El alta de gasto sigue siendo MODAL**, no pantalla nueva: es lo que ya está construido y medido (el NIF de 937b vive
+   ahí), y cambiarlo es rediseño total contra la norma «una pantalla o un componente por vez». Lo que decide el «en
+   segundos» es el número de gestos, no el marco. Se reabre sólo si se demuestra, medido, que el modal cuesta más gestos.
+   **El prototipo dibuja el alta como pantalla; la S2 construye el MISMO orden de bloques dentro del modal**
+   (`openExpenseModal`, con la firma `openExpenseModal(expense, {job, onSaved})` intacta).
+2. **La microcopy está FIRMADA** (firma delegada, comentario 15992), con tres cambios ya aplicados: fuera «justificante»
+   («La foto del ticket», «Ver la foto»), fuera el triángulo («Sin foto») y el singular «1 gasto». **«Ver trabajo»**
+   reutiliza el literal ya firmado (SCRUM-302), no «Ver el trabajo». La ficha, completa, está en
+   `ficha-microcopy-DRAFT.md`: **la S2 la mueve a `docs/microcopy/2026-09-20-SCRUM-920-textos-de-gastos.md` EN EL MISMO PR
+   que pinta los textos** (si entrara antes, `scrum514-aprobado-y-aplicado` se pone rojo con razón).
+3. **Sigue SIN firmar:** los dos textos de lectura del ticket (SCRUM-912), aceptar PDF, y cualquier cosa del motor.
 
 Prototipo: `docs/prototipos/SCRUM-920/gastos.html` (se abre con doble clic; la barra negra de arriba cambia de
 pantalla y resalta los textos nuevos). Cuentas: `medicion.md`. Dirección: `direccion-de-diseno.md`. Textos:
@@ -42,17 +57,17 @@ existe y está firmado (se reutiliza literal) · **P = propuesto, SIN FIRMAR** (
 | L3 | selector de mes (6 meses) | `getMonthOptions` `:168` | igual | nada | F |
 | L4 | filtro de categoría | `:95-98` | igual | nada | F |
 | L5 | **filtro por trabajo** | no existe | `select` «Todos los trabajos» · «Sin trabajo» · un trabajo por opción | filtrar en el cliente con `item.job` (ya viaja en cada gasto, `:221`); no pedir `/admin/jobs` aquí | **P** «Todos los trabajos», «Sin trabajo» |
-| L6 | **chips del justificante** | no existe | «Todos · 9» y «Sin foto · 3», con `aria-pressed` | contar los gastos con y sin `receiptData` | **P** |
+| L6 | **chips de la foto** | no existe | «Todos · 9» y «Sin foto · 3», con `aria-pressed` | contar los gastos con y sin `receiptData` | **P→firmado** |
 | L7 | «Nuevo gasto» + atajo «N» + «⬇ CSV» | `:99-100`, `:118-129` | a 390 «Nuevo gasto» va **fijo abajo**; el CSV se queda arriba | **mantener** `atajoNuevo.etiquetar/registrar` (SCRUM-769) y `updateExportLink` (el CSV lleva mes y categoría; **decidir** si el filtro por trabajo/foto viaja: hoy no se le pasa a la ruta) | F («Nuevo gasto», «⬇ CSV») |
 | L8 | cabecera del mes | no existe | «Septiembre de 2026 · 9 gastos»; con filtros, la **suma de lo que se ve** con su salvedad | pintar; **el total del mes sale UNA vez (en el KPI)** | **P** «Es la suma de lo que estás viendo, no la del mes.» y la cabecera |
 | L9 | la lista | `<table min-width:600px>` dentro de `table-scroll` `:238-239`: **600 px en 366 de caja a 390**, se recorre de lado | filas en **rejilla**: a 1280, cinco columnas; a 390, tres renglones. **0 cajas que desbordan** | sustituir la tabla; **no** tocar `.table-scroll .table` global (es de otros 15 usos, ver `patron-tabla-de-lado.md`) | — |
 | L10 | concepto + notas + fecha | `:253-255` | igual, sin recortar | nada | F |
 | L11 | píldora de categoría | `catPill` `:11-14`, **con `style=` en línea** | mismos cinco colores (`CATEGORY_LABELS`) | mover a clases con los tokens; la norma A7 prohíbe el `style=` | F |
-| L12 | **el justificante en la fila** | no existe: nada dice si hay foto | miniatura + «Foto guardada», o «⚠︎ Sin foto» | pintar desde `receiptData`. **Ojo, no medido:** `receiptData` (base64) viaja en cada gasto de la lista; con foto de ~1,5 MB por fila el peso de `/admin/expenses` puede ser un problema. Medir antes de pintar miniaturas; si pesa, pedirlo a la S1 (¿un booleano `tieneFoto`?) | **P** «Foto guardada», «⚠︎ Sin foto» (es un hecho sobre el archivo, no una afirmación fiscal) |
+| L12 | **la foto en la fila** | no existe: nada dice si hay foto | miniatura + «Foto guardada», o «Sin foto» | pintar desde `receiptData`. **Ojo, no medido:** `receiptData` (base64) viaja en cada gasto de la lista; con foto de ~1,5 MB por fila el peso de `/admin/expenses` puede ser un problema. Medir antes de pintar miniaturas; si pesa, pedirlo a la S1 (¿un booleano `tieneFoto`?) | **P→firmado** «Foto guardada», «Sin foto» (un hecho sobre el archivo, sin triángulo) |
 | L13 | celda Trabajo | `expenseJobCell` `:66-72`; sin trabajo, «—» | el nombre del trabajo como en Trabajos; sin trabajo, «Sin trabajo»; el proveedor debajo | enlace a 44 px; el nombre «Presupuesto #5 · María López» es **SCRUM-944 punto 1** (hoy `jobLabel` `:31` cae a «Trabajo») | «Presupuesto sin trabajo» F · «Sin trabajo» **P** |
 | L14 | importe | `:262` | a la derecha, `amount` | nada | — |
 | L15 | **papelera** | 🗑 de 21 × 29 px pegada a una fila que navega (`:264`), con `confirm()` nativo (`:278`) | va al **«⋯» de la fila** (hoja inferior), a 44 px, con su confirmación | usar `overflowMenu` de AB3 (`api.js:1200`); el borrado y su «¿Eliminar este gasto?» **se conservan**; el 🗑 deja de ser un botón suelto | «🗑 Eliminar» y «¿Eliminar este gasto?» F |
-| L16 | las opciones del «⋯» | no existe | Editar · Ver el justificante / 📷 Añadir la foto · Ver el trabajo / Vincular a un trabajo · 🗑 Eliminar | cada opción tiene que **cambiar el estado al pulsarla** (es el defecto con el que se publicó 917) | **P** las tres primeras |
+| L16 | las opciones del «⋯» | no existe | Editar · Ver la foto / 📷 Añadir la foto · Ver trabajo / Vincular a un trabajo · 🗑 Eliminar | cada opción tiene que **cambiar el estado al pulsarla** (es el defecto con el que se publicó 917) | **P** las tres primeras |
 | L17 | tocar la fila | abre el **modal de edición** (`:251`) | abre el **detalle** de ese gasto | cambiar el destino del clic | — |
 | L18 | vacío del mes | `:227-234` | **palabra por palabra** | nada | F |
 | L19 | vacío de los filtros | no existe | «Ningún gasto con esos filtros» + «Quitar los filtros» | nuevo | **P** |
@@ -62,7 +77,7 @@ existe y está firmado (se reutiliza literal) · **P = propuesto, SIN FIRMAR** (
 
 | # | pieza | en el prototipo | qué hay que construir | texto |
 |---|---|---|---|---|
-| D1 | cabecera | concepto, fecha, categoría, justificante, importe; «Editar» y «Ver el trabajo»; el resto en «⋯» | vista nueva. **Hay que darla de alta**: `app.js:444` (título) y `:517` (lista de vistas), y si es un fichero nuevo, la lista de `sw.js`/SHELL y los censos | «Editar», «Ver el trabajo» **P** |
+| D1 | cabecera | concepto, fecha, categoría, la foto, importe; «Editar» y «Ver trabajo»; el resto en «⋯» | vista nueva. **Hay que darla de alta**: `app.js:444` (título) y `:517` (lista de vistas), y si es un fichero nuevo, la lista de `sw.js`/SHELL y los censos | «Editar» y «Ver trabajo» (**ya firmado**, SCRUM-302) |
 | D2 | el justificante grande | tarjeta con la foto, «Ver a tamaño completo», «Cambiar la foto» | pintar `receiptData` | **P** |
 | D3 | gasto sin foto | «De este gasto no guardaste ninguna foto.» + «📷 Añadir la foto ahora» | bloque propio | **P** |
 | D4 | datos de la factura | tarjeta con **sólo los apuntados** (proveedor, NIF, nº, fecha, base, tipo, cuota); sin ninguno, **no hay tarjeta** | pintar por presencia, nunca «—» | «Datos de la factura del proveedor» **P** |
@@ -73,10 +88,10 @@ existe y está firmado (se reutiliza literal) · **P = propuesto, SIN FIRMAR** (
 
 | # | pieza | hoy | en el prototipo | qué hay que construir | texto |
 |---|---|---|---|---|---|
-| A1 | contenedor | modal de 480 px (`openExpenseModal` `:293-409`), 760 px de alto a 390 | una pantalla con tres bloques y «Añadir gasto» fijo abajo en móvil | **PREGUNTA ABIERTA para el orquestador/S2: ¿modal en escritorio y pantalla en móvil, o pantalla siempre?** Lo que **no** puede cambiar: la firma `openExpenseModal(expense, {job, onSaved})` con la que el detalle del Trabajo (SCRUM-135) y el técnico dan de alta un gasto | — |
+| A1 | contenedor | modal de 480 px (`openExpenseModal` `:293-409`), 760 px de alto a 390 | una pantalla con tres bloques y «Añadir gasto» fijo abajo en móvil | **DECIDIDO (orquestador, comentario 15992): MODAL.** Los mismos tres bloques dentro del modal, con «Añadir gasto» siempre visible (pie del modal). Lo que **no** puede cambiar: la firma `openExpenseModal(expense, {job, onSaved})` con la que el detalle del Trabajo (SCRUM-135) y el técnico dan de alta un gasto | — |
 | A2 | **bloque 1 · la foto, PRIMERO** (hoy es el campo 14 de 14) | `:393-401` | «📷 Hacer foto», «Elegir foto o archivo», «Ahora no tengo el ticket»; con foto: «Foto guardada», «Verla», «Quitarla» | `input type=file` de siempre (oculto) representado por los botones; **conservar `fotoParaGuardar` y `AVISO_FOTO_NO_SE_ABRE` (SCRUM-947) sin tocar** | **P** (todos) |
 | A3 | «foto o archivo» (PDF) | `accept="image/*"` `:400` | `image/*,application/pdf` | **NO construir.** `fotoParaGuardar` redimensiona con `canvas` y un PDF no se abre ahí: caería en «No hemos podido abrir esta foto». Necesita decisión de la S1 (tamaño en `receiptData`) y del fundador. Se queda `image/*` | — |
-| A4 | **la frase firmada** | «…salen de los campos **de arriba**.» `:398` (SCRUM-324 E3) | «…de **abajo**.» y **entera, una sola vez**, en el bloque de la foto | **necesita firma antes de construir el alta** (ver §2, F1). Sin ella, «de arriba» sería falso con la foto primero | F → **P** una palabra |
+| A4 | **la frase firmada** | «…salen de los campos **de arriba**.» `:398` (SCRUM-324 E3) | «…de **abajo**.» y **entera, una sola vez**, en el bloque de la foto | **FIRMADO** (F1, comentario 15992). «de arriba» sería falso con la foto primero | F → firmado, una palabra |
 | A5 | bloque 2 · qué es y cuánto | Concepto\*, Importe\* + Fecha, Categoría, Trabajo | los cinco juntos, el importe grande | reordenar; mismos `id` y mismo `payload` | F |
 | A6 | «cuándo se puede parar» | no existe | «✓ Con esto ya se guarda. Lo de abajo es opcional.» | nuevo | **P** |
 | A7 | bloque 3 plegado · datos de la factura | siete campos sueltos | los siete en un `<details>`: Proveedor, **NIF**, Nº, Fecha factura, Base, Tipo IVA, Cuota | mover; **`numeroONull` intacto** (un 0 escrito llega como 0, uno en blanco como `null`) | «3 · Datos de la factura del proveedor», «Opcional» **P** |
@@ -86,25 +101,39 @@ existe y está firmado (se reutiliza literal) · **P = propuesto, SIN FIRMAR** (
 | A11 | editar un gasto | el mismo modal, con la foto de 120 px | el mismo alta con todo rellenado | `isEdit` sigue funcionando; la foto ya guardada se enseña en el bloque 1 | «Editar gasto», «Guardar cambios», «Guardando…» F |
 | A12 | el técnico | Gastos se oculta del menú (`app.js:146-152`, SCRUM-107) pero **el alta desde el Trabajo sigue abierta** | — | probar el alta como técnico: la lista/KPI dan 403 y **no deben romper el alta** (`onSaved`) | — |
 
-## 2 · Lo que necesita firma, explícito (nada de esto está firmado)
+## 2 · Firmas: qué está firmado y qué NO
 
-| # | qué | quién firma | consecuencia si no llega |
-|---|---|---|---|
-| F1 | **«de arriba» → «de abajo»**: una palabra en un texto que el fundador firmó el 10-ago (SCRUM-324 E3) | el fundador; **que la delegación permanente del orquestador lo cubra NO está comprobado** (`limites-del-fundador.md`): no darlo por hecho | el alta con la foto primero no se puede construir (dejaría una frase falsa) |
-| F2 | **todos los textos «P» de arriba** (`textos-propuestos.md`, salvo los dos de SCRUM-912) | fundador o orquestador por delegación, con su ficha en `docs/microcopy/` (A7, README) | sin firma, la pieza que los lleva no se pinta |
-| F3 | los dos textos de la lectura del ticket («Hemos leído el importe y la fecha…», «leído de la foto») | quien firme **SCRUM-912** | no se construyen; no son de esta serie |
-| F4 | **aceptar PDF** en la foto | S1 (tamaño) + fundador | se queda `image/*` |
-| F5 | **la aprobación del prototipo entero** | fundador, pedida por el orquestador | no se empieza |
-| F6 | cualquier frase sobre deducibilidad, «qué falta» o veredicto | **no se propone**: espera al asesor (SCRUM-324 E3) | — |
+**Leyenda de las tablas de arriba:** «P» = texto nuevo; **desde el 20-sep está FIRMADO** (firma delegada, SCRUM-920
+comentario 15992, con los tres cambios de arriba). «F» = ya existía y estaba firmado.
+
+| # | qué | estado |
+|---|---|---|
+| F1 | «de arriba» → «de abajo» (texto firmado por el fundador el 10-ago, SCRUM-324 E3) | **FIRMADO** por el orquestador, comentario 15992 |
+| F2 | todos los textos «P» (`textos-propuestos.md`, ya con los cambios; la ficha completa en `ficha-microcopy-DRAFT.md`) | **FIRMADOS**, comentario 15992. La ficha pasa a `docs/microcopy/` **en el PR que los pinta** |
+| F3 | los dos textos de la lectura del ticket («Hemos leído el importe y la fecha…», «leído de la foto») | **SIN FIRMAR**: los firma quien firme **SCRUM-912**. No se construyen |
+| F4 | aceptar PDF en la foto | **SIN DECIDIR** (S1: tamaño; fundador). Se queda `image/*` |
+| F5 | la aprobación del prototipo entero | **PENDIENTE** del fundador, la pide el orquestador. No se empieza sin ella |
+| F6 | cualquier frase sobre deducibilidad, «qué falta» o veredicto | **no se propone**: espera al asesor (SCRUM-324 E3) |
+
+⚠️ **Un texto de la lista que NO está firmado y que el prototipo ya no pinta:** «N gastos de M» (la cuenta con filtros).
+Se quitó del prototipo el 20-sep: los chips ya dicen cuántos hay. Si la S2 lo quiere, hay que pedir su firma.
 
 ## 3 · Orden sugerido (un ticket, una rama, un PR: A17) y lo que vigila
 
-1. **920c · la lista sin tabla**: rejilla, «⋯» con 44 px, KPI compactos, «Sin trabajo» — lo que se puede hacer **sin
-   ningún texto nuevo** salvo el del «⋯» (F2). Es el que quita el desborde a 390.
-2. **920d · el justificante en la lista y los filtros** (L5, L6, L8, L12, L19): depende de F2 y de medir el peso de la
-   lista (L12).
-3. **920e · el detalle** (D1-D6): depende de F2.
-4. **920f · el alta**: depende de **F1**, de la pregunta A1 y de F2.
+1. **920c · la lista sin tabla**: rejilla, «⋯» con 44 px, KPI compactos, «Sin trabajo». Es el que quita el desborde a 390.
+2. **920d · la foto en la lista y los filtros** (L5, L6, L8, L12, L19): depende de medir el peso de la lista (L12).
+3. **920e · el detalle** (D1-D6).
+4. **920f · el alta dentro del modal** (A2-A12): con F1 firmado; sin PDF (F4) y sin lectura (F3).
+
+Cada PR que pinta textos **mueve la ficha** (`ficha-microcopy-DRAFT.md` → `docs/microcopy/…`) **o la parte que le toca**:
+`scrum514-aprobado-y-aplicado` exige que todo «Texto aprobado» esté ya pintado, así que si se reparte en cuatro PR hay
+que decidir cómo (una ficha por PR con sus literales, o la ficha entera en el último). **Pregunta abierta para el
+orquestador.**
+
+🔴 **Corrección de la S4 (20-sep):** `scrum302-rotulos-completos` **NO aplica a Gastos**: sólo lee
+`albaranDetailView.js` (`mk('btnX')` contra `ROTULOS_ALBARAN`). Los botones nuevos de Gastos **no** entran ahí. Lo que
+SÍ vigila lo nuevo es `scrum514-aprobado-y-aplicado` (todo texto aprobado, pintado), el guard del marcador sin aprobar
+(SCRUM-402) y `scrum324-aviso-simplificado-ui`.
 
 **Guards que ya miran `expensesView.js`** (13 tests: `grep expensesView tests/`), y que un cambio de estas piezas
 moverá o pondrá en rojo: `scrum324-aviso-simplificado-ui` (nada de veredicto en pantalla), `scrum769-*` y `scrum768-*`

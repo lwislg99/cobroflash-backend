@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gastos · lista, alta y detalle · prototipo</title>
-<meta name="description" content="Prototipo de la pantalla de Gastos (SCRUM-920): apuntar un gasto en segundos con la foto primero, verlos por mes con sus totales, y abrir uno con su justificante delante. Datos de ejemplo tomados de staging; no guarda nada.">
+<meta name="description" content="Prototipo de la pantalla de Gastos (SCRUM-920): apuntar un gasto en segundos con la foto primero, verlos por mes con sus totales, y abrir uno con su foto delante. Datos de ejemplo tomados de staging; no guarda nada.">
 <style>
 /* Tokens: DESIGN.md (única fuente). Los mismos que los prototipos de SCRUM-915 y SCRUM-917:
    un cuarto prototipo con tokens propios enseñaría una casa distinta a la de al lado. */
@@ -466,7 +466,7 @@ function pintarLista() {
         <option value="null"${fJob === 'null' ? ' selected' : ''}>Sin trabajo</option>
       </select>
       <!-- 🔴 EL JUSTIFICANTE, QUE HOY NO SE VE. Dos chips, y la cuenta a la vista. -->
-      <button class="chip" data-just="todos" aria-pressed="${fJust === 'todos'}">${P('Todos')} ·${delMes.length}</button>
+      <button class="chip" data-just="todos" aria-pressed="${fJust === 'todos'}">${P('Todos')} · ${delMes.length}</button>
       <button class="chip" data-just="sinfoto" aria-pressed="${fJust === 'sinfoto'}">${P('Sin foto')} · ${sinFoto}</button>
     </div>
 
@@ -476,7 +476,7 @@ function pintarLista() {
           <button class="btn btn-secondary btn-sm" data-limpiar>${P('Quitar los filtros')}</button></div></div>`
       : `<div class="mescab">
           <b>${MESES[0].charAt(0).toUpperCase() + MESES[0].slice(1)}</b>
-          <span class="cuenta">${v.length} gasto${v.length !== 1 ? 's' : ''}${filtrando ? ` de ${delMes.length}` : ''}</span>
+          <span class="cuenta">${v.length} gasto${v.length !== 1 ? 's' : ''}</span>
           ${/* Sin filtros, la suma de la cabecera ES el «Gasto del mes» del KPI: se omite, para que
                el total salga UNA vez. Con filtros es otra cifra, y se dice qué es sin repetir la
                del mes, que ya está arriba. */ ''}
@@ -521,7 +521,7 @@ function fila(g) {
 function justificante(g) {
   return g.foto
     ? `<span class="just si"><img class="mini" src="${TICKET}" alt="">${P('Foto guardada')}</span>`
-    : `<span class="just no">⚠︎ ${P('Sin foto')}</span>`;
+    : `<span class="just no">${P('Sin foto')}</span>`;
 }
 
 // ── PANTALLA 2 · EL ALTA, CON LA FOTO PRIMERO ────────────────────────────────
@@ -683,7 +683,7 @@ function pintarDetalle() {
           <div class="cifra money">${eur(g.importe)}</div>
           <div class="acc">
             <button class="btn btn-secondary btn-sm" data-accion="editar">${P('Editar')}</button>
-            ${t ? `<button class="btn btn-secondary btn-sm" data-trabajo="${t.id}">${P('Ver el trabajo')}</button>` : ''}
+            ${t ? `<button class="btn btn-secondary btn-sm" data-trabajo="${t.id}">Ver trabajo</button>` : ''}
             <button class="kebab" data-mas="${g.id}" aria-label="Más acciones">⋯</button>
           </div>
         </div>
@@ -692,7 +692,7 @@ function pintarDetalle() {
              matriz de competencia: «gastos y justificantes», y el justificante era lo único que
              no se veía. -->
         <div class="tarjeta">
-          <h2>${P('El justificante')}</h2>
+          <h2>${P('La foto del ticket')}</h2>
           ${g.foto
             ? `<div class="justificante">
                  <img src="${TICKET}" alt="Foto del ticket de ${esc(g.concepto)}">
@@ -753,7 +753,7 @@ const INV = [
  ['Total del mes visible sólo como KPI', 'El KPI sigue siendo el total del mes, y sale UNA vez. Encima de las filas, la cuenta de gastos; con filtros, además la suma DE LO QUE SE VE y su salvedad', 'Lo pide el ticket. Una suma filtrada sin decirlo es una cifra que miente; la misma cifra dos veces es la que quitó SCRUM-917'],
  ['B · La lista: las columnas'],
  ['5 columnas en `<table style="min-width:600px">` dentro de `.table-scroll`', 'Filas en grid; a ≤860 px se reordenan en dos líneas', '🔴 A 390 px las columnas suman 628 px: HAY QUE ARRASTRAR DE LADO para ver el importe (SCRUM-139 F1)'],
- ['El justificante NO aparece en ninguna columna', 'Cada fila dice «Foto guardada» con la miniatura, o «⚠︎ Sin foto»', '🔴 En la matriz de competencia esta fila se llama «gastos y justificantes». El dato ya viaja: `receiptData`'],
+ ['El justificante NO aparece en ninguna columna', 'Cada fila dice «Foto guardada» con la miniatura, o «Sin foto»', '🔴 En la matriz de competencia esta fila se llama «gastos y justificantes». El dato ya viaja: `receiptData`'],
  ['No se puede filtrar por si tiene foto', 'Dos chips: «Todos · N» y «Sin foto · N»', 'La cuenta es lo que hace accionable el dato'],
  ['Concepto + notas + fecha en la misma celda', 'Igual, en la misma zona', 'No se toca'],
  ['Categoría: píldora de color (5 colores)', 'Los mismos 5 colores y las mismas 5 etiquetas', '`CATEGORY_LABELS` no se reinventa'],
@@ -878,7 +878,7 @@ function accion(q) {
 
 function hojaFoto() {
   $('#capa').innerHTML = `<div class="overlay" data-cerrar><div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hf">
-    <div class="hoja-cab"><h3 id="hf">${P('El justificante')}</h3><button class="cerrar" data-cerrar aria-label="Cerrar">×</button></div>
+    <div class="hoja-cab"><h3 id="hf">${P('La foto del ticket')}</h3><button class="cerrar" data-cerrar aria-label="Cerrar">×</button></div>
     <img class="grande" src="${TICKET}" alt="Foto del ticket">
   </div></div>`;
 }
@@ -891,9 +891,9 @@ function hojaMas(id) {
     <div class="hoja-cab"><h3 id="hm">${esc(g.concepto)}</h3><button class="cerrar" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="lista-acc">
       <button class="btn btn-secondary" data-accion="editar">${P('Editar')}</button>
-      ${g.foto ? `<button class="btn btn-secondary" data-accion="verfoto">${P('Ver el justificante')}</button>`
+      ${g.foto ? `<button class="btn btn-secondary" data-accion="verfoto">${P('Ver la foto')}</button>`
                : `<button class="btn btn-secondary" data-accion="anadirfoto">📷 ${P('Añadir la foto')}</button>`}
-      ${t ? `<button class="btn btn-secondary" data-accion="vertrabajo">${P('Ver el trabajo')}</button>`
+      ${t ? `<button class="btn btn-secondary" data-accion="vertrabajo">Ver trabajo</button>`
           : `<button class="btn btn-secondary" data-accion="vincular">${P('Vincular a un trabajo')}</button>`}
       <button class="btn btn-danger" data-accion="borrar">🗑 Eliminar</button>
     </div>

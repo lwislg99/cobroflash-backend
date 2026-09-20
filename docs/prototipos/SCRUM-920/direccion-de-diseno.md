@@ -54,7 +54,7 @@ El ticket dice «foto o archivo», y la factura del proveedor llega en PDF. Hoy 
 
 ## 3 · La lista: el justificante a la vista, y sin recorrerla de lado
 
-- **El justificante, en cada fila**: «Foto guardada» con la miniatura del ticket, o «⚠︎ Sin foto». Es un HECHO sobre
+- **El justificante, en cada fila**: «Foto guardada» con la miniatura del ticket, o «Sin foto». Es un HECHO sobre
   el archivo que guardamos —la foto está o no está—, no una afirmación sobre lo que Hacienda admite.
 - **Dos chips con su cuenta**: «Todos · 9» y «Sin foto · 3». La cuenta es lo que hace accionable el dato.
 - **Filtro por trabajo**, que pide el ticket y hoy no existe (el dato ya viaja en `item.job`).
@@ -72,7 +72,7 @@ El ticket dice «foto o archivo», y la factura del proveedor llega en PDF. Hoy 
 
 ## 4 · El detalle: lo que hoy no existe
 
-Cabecera con concepto, fecha, categoría, justificante e importe; «Editar» y «Ver el trabajo» a mano; el resto en «⋯».
+Cabecera con concepto, fecha, categoría, justificante e importe; «Editar» y «Ver trabajo» a mano; el resto en «⋯».
 Debajo, **el justificante grande**, en su tarjeta, lo primero. Sin foto, un bloque propio que lo dice y ofrece
 «📷 Añadir la foto ahora».
 
