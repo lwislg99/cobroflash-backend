@@ -62,7 +62,20 @@ export const JOB_SIN_PRESUPUESTO = {
   totalCobrado: 0,
 };
 
-export const CASOS = [JOB_PAGADO, JOB_A_MEDIAS, JOB_SIN_PRESUPUESTO];
+// Cuarto caso: se ha cobrado MÁS de lo aceptado. No es del rediseño —lo decide la S1— pero
+// SCRUM-887 ya puso aquí un aviso FIRMADO («Has cobrado {importe} más de lo aceptado.»,
+// jobCobroHuecos.js:260) y una franja nueva que se lo comiera sería una pérdida silenciosa.
+// Está para que la pérdida sea ruidosa, no para construir nada nuevo.
+export const JOB_COBRADO_DE_MAS = {
+  ...JOB_PAGADO,
+  id: 3102,
+  status: 'completed',
+  customer: { id: 44, name: 'Bar El Puente', phone: '600555666', email: null },
+  totalAceptado: 539.05,
+  totalCobrado: 628.60,
+};
+
+export const CASOS = [JOB_PAGADO, JOB_A_MEDIAS, JOB_SIN_PRESUPUESTO, JOB_COBRADO_DE_MAS];
 const POR_ID = new Map(CASOS.map((j) => [j.id, j]));
 
 /**
