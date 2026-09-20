@@ -16,16 +16,18 @@
 //
 // Sólo escribe en el temporal del SISTEMA (SCRUM-824) y no toca el repositorio.
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+// SCRUM-864c · el temporal se pide por aquí, no con `mkdtempSync` a pelo: este helper lo borra al
+// salir el proceso pase lo que pase, sin depender de que este script llegue al final.
+import { temporal } from '../../../../tests/_temporal.mjs';
 
 const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i !== -1 ? process.argv[i + 1] : null; };
 const RAIZ = path.resolve(import.meta.dirname, '..', '..', '..', '..');
 const FICHERO = arg('fichero') || path.join(RAIZ, 'tests', 'scrum522-guards-fuera-de-la-tanda.test.mjs');
 
 const base = fs.readFileSync(FICHERO, 'utf8');
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum970-'));
+const tmp = temporal('scrum970-');
 
 /** La forma VIEJA: una cifra a mano en el `assert`, y comentarios encima. */
 function ramaVieja(txt, ticket, guard) {
@@ -96,5 +98,4 @@ if (fs.existsSync(LISTA)) {
 } else {
   console.log(`\n(todavía no existe ${path.relative(RAIZ, LISTA)}: sólo se mide la forma vieja)`);
 }
-fs.rmSync(tmp, { recursive: true, force: true });
-process.exit(peor);
+process.exit(peor); // el temporal lo borra `temporal()` al salir, también si esto sale con 1 o 2
