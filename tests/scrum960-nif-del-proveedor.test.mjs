@@ -18,10 +18,15 @@
 //      exactamente como antes de este ticket.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262
+const TELEFONO_PRUEBA = telefonoDePrueba(1);
+
+// SCRUM-409: 71 (no 1, el merchant DEMO) — esta ficha no prueba nada específico del demo.
+const MERCHANT_ID = 71;
 
 // ── El doble, puesto ANTES de cargar el router ──────────────────────────────────────────────
 const escrituras = [];
-const FILA = { id: 7, merchantId: 1, name: 'Almacén Pérez', phone: null, email: null, notes: null,
+const FILA = { id: 7, merchantId: MERCHANT_ID, name: 'Almacén Pérez', phone: null, email: null, notes: null,
   legalName: null, taxId: null, isActive: true };
 
 global.prisma = {
@@ -77,7 +82,7 @@ const NIF_MALO = 'A58818502';
 function pedir(metodo, ruta, cuerpo) {
   escrituras.length = 0;
   return new Promise((resolve, reject) => {
-    const req = { method: metodo, url: ruta, body: cuerpo === undefined ? {} : cuerpo, merchantId: 1, headers: {} };
+    const req = { method: metodo, url: ruta, body: cuerpo === undefined ? {} : cuerpo, merchantId: MERCHANT_ID, headers: {} };
     const res = {
       statusCode: 200,
       status(c) { this.statusCode = c; return this; },
@@ -115,7 +120,7 @@ test('SCRUM-960 · la EDICIÓN corrige el NIF, y solo con el NIF basta', async (
 
 test('SCRUM-960 · alta con NIF inválido: 400 taxId_invalido y NO se crea el proveedor', async () => {
   await conApp(async (pedir) => {
-    const r = await pedir('POST', '/', { name: 'Almacén Pérez', phone: '600111222', taxId: NIF_MALO });
+    const r = await pedir('POST', '/', { name: 'Almacén Pérez', phone: TELEFONO_PRUEBA, taxId: NIF_MALO });
     assert.equal(r.status, 400);
     assert.equal(r.json.error, 'taxId_invalido');
     // Lo que de verdad importa: no se queda a medias. Un alta que creara el proveedor sin NIF
@@ -147,10 +152,10 @@ test('SCRUM-960 · null y "" dejan el NIF sin constar: validar no es obligar', a
 
 test('SCRUM-960 · un alta SIN NIF sigue funcionando igual que antes', async () => {
   await conApp(async (pedir) => {
-    const r = await pedir('POST', '/', { name: 'Sin NIF', phone: '600111222' });
+    const r = await pedir('POST', '/', { name: 'Sin NIF', phone: TELEFONO_PRUEBA });
     assert.equal(r.status, 201);
     assert.equal(r.escrituras[0].data.taxId, null);
-    assert.equal(r.escrituras[0].data.phone, '600111222', 'el resto del alta no cambia');
+    assert.equal(r.escrituras[0].data.phone, TELEFONO_PRUEBA, 'el resto del alta no cambia');
   });
 });
 
