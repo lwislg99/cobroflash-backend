@@ -166,8 +166,18 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // Comprobado en rojo contra `34d06bb4` (18-sep-2026): 3 de 4 casos, con el positivo en verde.
   // ⚠️ SCRUM-937b y SCRUM-947 escribieron LOS DOS «26 → 27» a la vez: sexta colisión. Entró 947
   // primero; 937b, al mergear main, sumó los dos comentarios y MIDIÓ el número corriendo este test.
-  assert.equal(fuera.length, 28,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ 28 → ${fuera.length}.\n`
+  // SCRUM-917c · entra `guard:lista-trabajos-917`. PULSA, como 816: mide la lista de Trabajos
+  // rediseñada contra su inventario «antes → después» fila a fila, y cada acción de la fila se
+  // pulsa con el ratón y se juzga por el ESTADO después (la petición, el modal, la navegación):
+  // la lección del «⋯» del prototipo, cuyas capturas eran perfectas con los botones muertos.
+  // Comprobado en rojo contra `e76580b1` (18-sep-2026): 24 de 47 comprobaciones.
+  // ⚠️ SÉPTIMA colisión, y la SEGUNDA que se lleva 917c: el 18-sep chocó con 915d en el «26», y hoy
+  // 20-sep, al mergear main, se ha encontrado con que 947 y 937b habían movido el contador a 28
+  // mientras esta rama estaba sin empujar. Resuelto las dos veces igual, como manda el párrafo de
+  // arriba: NINGÚN comentario se tira, los tres se quedan, y el número NO se suma —se vuelve a
+  // MEDIR corriendo este test sobre el árbol ya fusionado.
+  assert.equal(fuera.length, 29,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ 29 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

@@ -2,13 +2,9 @@
 // "Esta semana": LISTA simple por fecha (la spec PROHÍBE el calendario grid).
 // El momento de dinero: terminado + tramo pendiente → "💰 Cobrar el resto".
 
-const JOB_STATE_META = {
-  pendiente_agendar: { label: 'Sin agendar', pill: 'background:var(--neutral-100);color:var(--neutral-600)' },
-  agendado:          { label: 'Agendado',    pill: 'background:#eff6ff;color:#1d4ed8' },
-  en_curso:          { label: 'En curso',    pill: 'background:#fffbeb;color:#b45309' },
-  terminado:         { label: 'Terminado',   pill: 'background:var(--brand-tint,#ecfdf5);color:#166534' },
-  cerrado:           { label: 'Cerrado',     pill: 'background:var(--neutral-100);color:var(--neutral-500)' },
-};
+// SCRUM-917c · aquí vivía `JOB_STATE_META`. Su único lector era la píldora «Sin agendar» de la
+// columna Fecha, que repetía la cabecera de su grupo y se retira. El estado del Trabajo con su
+// etiqueta y su clase canónica está en `jobStatusMeta` (api.js), que es el que usa el detalle.
 
 // SCRUM-11: semáforo de COBRO (distinto del estado FSM de arriba) → .status-pill
 // canónico, mismo mapeo que invoicesView: Pagado→accepted (verde), Parcial→pending
@@ -56,6 +52,7 @@ async function renderJobsView(container) {
         <h2>Trabajos</h2>
       </div>
       <div id="jobs-nuevo" class="jobs-nuevo"></div>
+      <div id="jobs-cifras" class="jobs-cifras"></div>
       <div id="jobs-filter" class="jobs-filtros"></div>
       <div id="jobs-list" class="jobs-lista"></div>
     </div>
@@ -100,7 +97,8 @@ async function renderJobsView(container) {
     const bValorar = document.createElement("button");
     bValorar.className = "btn-secondary btn-sm";
     bValorar.id = "jobs-partes-valorar";
-    bValorar.style.marginLeft = "8px";
+    // SCRUM-917c · el margen que iba aquí en línea (`style.marginLeft`) lo pone ahora el `gap` de
+    // `.jobs-nuevo` en la hoja: mismo hueco, sin estilo en línea.
     bValorar.textContent = "Partes por valorar";
     bValorar.addEventListener("click", () => {
       if (window.renderAppView) window.renderAppView("partes-oficina");
@@ -134,6 +132,11 @@ async function renderJobsView(container) {
     const r = await apiRequest('/admin/team');
     equipo = (Array.isArray(r) ? r : (r && r.miembros) || []).filter((m) => m && m.id != null);
   } catch { equipo = []; }
+
+  // SCRUM-917c · las dos preguntas del fundador, contestadas ANTES de la lista. Se pintan UNA vez
+  // y con TODOS los Trabajos, no con los del filtro: «cuánto me deben» no cambia porque esté
+  // mirando sólo los pendientes.
+  pintarCifrasDeLaLista(document.getElementById('jobs-cifras'), jobs);
 
   // SCRUM-11: filtro por estado de cobro (segmentado; reutiliza botones del inventario,
   // NO crea componente nuevo). Filtra el array ANTES del agrupado → no rompe los grupos.
@@ -254,6 +257,129 @@ function eurosJobs(n) {
   return fmtMoneyEs(n);
 }
 
+// ══ SCRUM-917c · LA LISTA CONTESTA LAS DOS PREGUNTAS ANTES DE ENSEÑAR FILAS ═══════════════════
+//
+// El prototipo que aprobó el fundador (18-sep-2026) nace de su frase: quiere ver de un vistazo
+// **qué toca hacer hoy** y **cuánto falta por cobrar**. Medido en staging el 17-sep: la segunda
+// NO ESTABA en ningún sitio de esta pantalla — los filtros cuentan TRABAJOS, no euros, y para
+// saber que le debían 4.197,51 € había que salirse de Trabajos. No era estilo: el dato no estaba.
+
+/** Mismo día en la hora LOCAL de quien mira: «hoy» es el suyo, no el del servidor. */
+function mismoDiaLocal(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/**
+ * El grupo de un Trabajo. UNA sola regla para las dos cosas que la usan —las cabeceras de la
+ * lista y la cifra «Para hoy»—, porque si fueran dos, la cifra de arriba podría decir «2» y el
+ * grupo de abajo enseñar tres filas.
+ *
+ * Es la de SCRUM-428 sin tocar un criterio, más `hoy`: lo agendado para hoy se separa de «Esta
+ * semana», que es lo que el fundador quiere ver primero.
+ */
+function grupoDeTrabajo(j, ahora) {
+  if (j.status === 'en_curso') return 'en_curso';
+  if (j.status === 'terminado') return 'terminado';
+  if (j.status === 'cerrado') return 'cerrado';
+  const d = j.scheduledAt ? new Date(j.scheduledAt) : null;
+  const t = d ? d.getTime() : null;
+  if (j.status === 'agendado' && d && mismoDiaLocal(d, ahora)) return 'hoy';
+  if (j.status === 'agendado' && t !== null && t <= ahora.getTime() + 7 * 86400000) return 'semana';
+  if (j.status === 'pendiente_agendar') return 'sin';
+  return 'adelante';
+}
+
+// El `take` de `GET /admin/jobs` (jobs.routes.ts). Con la lista llena NO se sabe si hay más.
+const JOBS_TOPE_DE_LA_LISTA = 200;
+
+/**
+ * Las dos cifras, calculadas SÓLO con lo que ya llega (decisión del orquestador, 18-sep-2026: sin
+ * servidor nuevo). «Por cobrar» es la suma de `faltaPorCobrarDe` —la MISMA función que ya suma la
+ * cabecera de Terminados (SCRUM-428)— sobre los Trabajos sin cerrar: una sola definición de «lo que
+ * falta», no dos que un día discrepen.
+ *
+ * 🔴 CUÁNDO NO SE PUEDE DECIR, y entonces `porCobrar` sale `null` y no se pinta:
+ *   · la lista llega con 200 filas — el tope del servidor —: la suma sería la de una parte y se
+ *     leería como el todo;
+ *   · hay más de una moneda: sumar euros y dólares no da un importe.
+ * «Sin importe» no es cero (SCRUM-363): esos Trabajos no entran y se CUENTAN aparte.
+ */
+function resumenDeLaLista(jobs, ahora) {
+  const lista = Array.isArray(jobs) ? jobs : [];
+  const vivos = lista.filter((j) => j && j.status !== 'cerrado');
+  const deHoy = vivos.filter((j) => {
+    const g = grupoDeTrabajo(j, ahora);
+    return g === 'en_curso' || g === 'hoy';
+  });
+  let importe = 0;
+  let conFalta = 0;
+  let sinImporte = 0;
+  const monedas = new Set();
+  for (const j of vivos) {
+    const falta = faltaPorCobrarDe(j);
+    if (falta === null) { sinImporte++; continue; }
+    if (falta > 0) {
+      conFalta++;
+      importe += falta;
+      monedas.add((j.quote && j.quote.currency) || 'EUR');
+    }
+  }
+  const sePuedeSumar = lista.length < JOBS_TOPE_DE_LA_LISTA && monedas.size <= 1;
+  return {
+    deHoy,
+    porCobrar: sePuedeSumar
+      ? { importe: Math.round(importe * 100) / 100, moneda: [...monedas][0] || 'EUR', conFalta, sinImporte }
+      : null,
+  };
+}
+
+/** Una cifra: rótulo, valor y pie. Tres nodos de texto; ni un `innerHTML` con datos. */
+function cifraDeLaLista(rotulo, valor, pie, extra) {
+  const caja = document.createElement('div');
+  caja.className = 'jobs-cifra' + (extra ? ' ' + extra : '');
+  const r = document.createElement('span');
+  r.className = 'jobs-cifra-rotulo';
+  r.textContent = rotulo;
+  const v = document.createElement('b');
+  v.className = 'jobs-cifra-valor';
+  v.textContent = valor;
+  caja.appendChild(r);
+  caja.appendChild(v);
+  if (pie) {
+    const p = document.createElement('span');
+    p.className = 'jobs-cifra-pie';
+    p.textContent = pie;
+    caja.appendChild(p);
+  }
+  return caja;
+}
+
+function pintarCifrasDeLaLista(zona, jobs) {
+  if (!zona) return;
+  zona.innerHTML = '';
+  const { deHoy, porCobrar } = resumenDeLaLista(jobs, new Date());
+
+  // Textos firmados (SCRUM-917, comentario 15881): «Para hoy», «N trabajos» / «1 trabajo»,
+  // «Nada para hoy.». El pie con los clientes es DATO, no microcopy.
+  const n = deHoy.length;
+  zona.appendChild(cifraDeLaLista(
+    'Para hoy',
+    `${n} ${n === 1 ? 'trabajo' : 'trabajos'}`,
+    n ? deHoy.map((j) => (j.customer && j.customer.name) || 'Cliente').join(' · ') : 'Nada para hoy.',
+  ));
+
+  if (!porCobrar) return;
+  const partes = [];
+  if (porCobrar.conFalta) partes.push(`en ${porCobrar.conFalta} ${porCobrar.conFalta === 1 ? 'trabajo' : 'trabajos'} sin cerrar`);
+  if (porCobrar.sinImporte) partes.push(`${porCobrar.sinImporte} sin importe de referencia, ${porCobrar.sinImporte === 1 ? 'no entra' : 'no entran'}`);
+  zona.appendChild(cifraDeLaLista(
+    'Por cobrar',
+    fmtMoneyEs(porCobrar.importe, porCobrar.moneda),
+    partes.join(' · '),
+    'jobs-cifra-dinero',
+  ));
+}
+
 /**
  * SCRUM-644 · UN SOLO SITIO por el que el mensaje del servidor puede asomar a la pantalla.
  *
@@ -301,26 +427,30 @@ function tecnicosDeTrabajo(j) {
 }
 
 /**
- * La celda de técnicos. Aguanta VARIOS sin romper la fila y con CERO dice algo.
+ * Los técnicos de la fila SIN equipo dado de alta: los nombres que constan, o NADA.
  *
  * 🔴 Aquí NO se lee `assignedUserId`, y es lo que decide el ticket: esa columna es el espejo del
  * PRIMER asignado, así que un Trabajo con tres técnicos habría enseñado uno — no incompleto,
  * MINTIENDO con cara de estar bien. El dato bueno es `asignados`, que ahora viaja en el lote.
+ *
+ * ── SCRUM-917c · YA NO ES UNA COLUMNA, Y SIN EQUIPO NO DICE «Sin asignar» ─────────────────────
+ * Medido en staging el 17-sep-2026: con el equipo vacío, la columna Técnicos decía «Sin asignar»
+ * en 13 de 13 filas — 122 px que no distinguían una fila de otra. Baja a la línea del cliente, y
+ * con el equipo vacío **no se pinta**: es la regla que el producto ya aplica con el chip de cobro
+ * (SCRUM-363) y con «Total aceptado» (SCRUM-651) — ausente no es cero, y lo que no consta no se
+ * afirma. Lo que SÍ consta se sigue diciendo: un Trabajo asignado a alguien que ya no está en el
+ * equipo enseña su nombre, porque eso es un dato y no un hueco.
  */
 function celdaTecnicos(j) {
-  const td = document.createElement('td');
-  td.className = 'cell-tecnicos';
   const nombres = tecnicosDeTrabajo(j);
-  if (!nombres.length) {
-    td.textContent = 'Sin asignar';           // microcopy firmada (fundador, 4-sep-2026)
-    td.className += ' cell-tecnicos-vacio';
-    return td;
-  }
-  // Se pintan TODOS. Envuelven en varias líneas dentro de su celda en vez de recortar: recortar
-  // a «Israel…» deja al jefe sin saber si faltan uno o cuatro, que es la pregunta que hace.
-  td.textContent = nombres.join(', ');
-  td.title = nombres.join(', ');
-  return td;
+  if (!nombres.length) return null;
+  const span = document.createElement('span');
+  span.className = 'jobs-fila-tecnicos';
+  // Se pintan TODOS, envolviendo: recortar a «Israel…» deja al jefe sin saber si faltan uno o
+  // cuatro, que es la pregunta que hace.
+  span.textContent = nombres.join(', ');
+  span.title = nombres.join(', ');
+  return span;
 }
 
 /** Lo que dice el resumen del desplegable: los nombres, o el rótulo aprobado con cero. */
@@ -367,8 +497,10 @@ function celdaTecnicosConDesplegable(j, equipo, refrescar) {
   const miembros = (Array.isArray(equipo) ? equipo : []).filter((m) => m && m.id != null);
   if (!miembros.length) return celdaTecnicos(j);
 
-  const td = document.createElement('td');
-  td.className = 'cell-tecnicos';
+  // SCRUM-917c · el control es el MISMO de SCRUM-816 —con su candado y su vuelta atrás—; sólo
+  // cambia dónde vive: en la línea del cliente, no en una columna propia.
+  const caja = document.createElement('span');
+  caja.className = 'jobs-fila-tecnicos';
 
   const menu = document.createElement('details');
   menu.className = 'jobs-tecnicos-menu';
@@ -458,8 +590,8 @@ function celdaTecnicosConDesplegable(j, equipo, refrescar) {
     if (!menu.open && hayCambios) { hayCambios = false; refrescar(); }
   });
 
-  td.appendChild(menu);
-  return td;
+  caja.appendChild(menu);
+  return caja;
 }
 
 /**
@@ -510,25 +642,21 @@ function renderJobRows(list, jobs, container, todos, equipo) {
     return;
   }
 
-  const now = Date.now();
-  const in7d = now + 7 * 86400000;
+  // SCRUM-917c · entra «📅 Hoy» (texto firmado, comentario 15881), separado de «Esta semana»: lo
+  // que el fundador quiere ver primero es lo de hoy. El criterio vive en `grupoDeTrabajo`, que es
+  // el mismo que cuenta la cifra «Para hoy» de arriba.
+  const ahora = new Date();
   const groups = [
     { key: 'en_curso',  title: '🔨 En curso',         items: [] },
+    { key: 'hoy',       title: '📅 Hoy',               items: [] },
     { key: 'semana',    title: '📅 Esta semana',       items: [] },
     { key: 'sin',       title: '⏳ Sin agendar',       items: [] },
     { key: 'adelante',  title: '🗓 Más adelante',      items: [] },
     { key: 'terminado', title: '✅ Terminados — cobra el resto', items: [] },
     { key: 'cerrado',   title: '🔒 Cerrados', items: [], collapsed: true },
   ];
-  for (const j of jobs) {
-    const t = j.scheduledAt ? new Date(j.scheduledAt).getTime() : null;
-    if (j.status === 'en_curso') groups[0].items.push(j);
-    else if (j.status === 'terminado') groups[4].items.push(j);
-    else if (j.status === 'cerrado') groups[5].items.push(j);
-    else if (j.status === 'agendado' && t !== null && t <= in7d) groups[1].items.push(j);
-    else if (j.status === 'pendiente_agendar') groups[2].items.push(j);
-    else groups[3].items.push(j);
-  }
+  const porClave = new Map(groups.map((g) => [g.key, g]));
+  for (const j of jobs) porClave.get(grupoDeTrabajo(j, ahora)).items.push(j);
 
   const card = document.createElement('div');
   card.className = 'customers-card jobs-card';
@@ -561,10 +689,17 @@ function renderJobRows(list, jobs, container, todos, equipo) {
   // lo deja donde ya estaba dicho, en vez de repetirlo veinte veces.
   //
   // Se retira el `<th>Estado</th>`. No se estrena ni un rótulo: «Fecha» ya estaba.
+  //
+  // ── SCRUM-917c · Y SE RETIRA «Técnicos» COMO COLUMNA ──────────────────────────────────────
+  // Baja a la línea del cliente (ver `celdaTecnicos`). La alineación del importe pasa a la hoja:
+  // el `style=` en línea que llevaba este `<th>` se va con él.
   thead.innerHTML =
-    '<tr><th>Cliente</th><th>Técnicos</th><th style="text-align:right">Importe</th>'
+    '<tr><th>Cliente</th><th class="jobs-th-importe">Importe</th>'
     + '<th>Fecha</th><th>Acciones</th></tr>';
   table.appendChild(thead);
+  // El `colSpan` de las filas de grupo se CUENTA de esta cabecera, no se escribe: dos números a
+  // mano para lo mismo se descuadran (los dos `colSpan = 8` de SCRUM-584). Aquí pasa de 5 a 4.
+  const columnas = thead.querySelectorAll('th').length;
 
   for (const g of groups) {
     if (!g.items.length) continue;
@@ -575,11 +710,13 @@ function renderJobRows(list, jobs, container, todos, equipo) {
     const resumen = g.key === 'terminado' && typeof resumenTerminadoSinCobrar === 'function'
       ? resumenTerminadoSinCobrar(g.items)
       : null;
-    const importe = resumen && resumen.cuantos > 0 ? ` · ${eurosJobs(resumen.importe)}` : '';
+    // SCRUM-917c · «por cobrar» junto a la suma (dos palabras firmadas, comentario 15881): sin
+    // ellas el importe de la cabecera no decía de qué era.
+    const importe = resumen && resumen.cuantos > 0 ? ` · ${eurosJobs(resumen.importe)} por cobrar` : '';
     const trTitulo = document.createElement('tr');
     trTitulo.className = 'jobs-grupo-titulo';
     const tdTitulo = document.createElement('td');
-    tdTitulo.colSpan = 5;
+    tdTitulo.colSpan = columnas;
     tdTitulo.textContent = `${g.title} · ${g.items.length}${importe}`;
     trTitulo.appendChild(tdTitulo);
     tbody.appendChild(trTitulo);
@@ -588,7 +725,7 @@ function renderJobRows(list, jobs, container, todos, equipo) {
       const trSalvedad = document.createElement('tr');
       trSalvedad.className = 'jobs-grupo-salvedad';
       const tdSalvedad = document.createElement('td');
-      tdSalvedad.colSpan = 5;
+      tdSalvedad.colSpan = columnas;
       // ⚠️ TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). Ni se reescribe ni se «mejora».
       tdSalvedad.textContent =
         `${resumen.sinImporte} sin importe de referencia: no se sabe cuánto falta y no entran en el total.`;
@@ -600,7 +737,7 @@ function renderJobRows(list, jobs, container, todos, equipo) {
       const tr = document.createElement('tr');
       tr.className = 'jobs-grupo-abrir';
       const td = document.createElement('td');
-      td.colSpan = 5;
+      td.colSpan = columnas;
       const btn = document.createElement('button');
       btn.className = 'btn-ghost btn-sm';
       btn.textContent = `Ver ${g.items.length} cerrado${g.items.length !== 1 ? 's' : ''}`;
@@ -767,45 +904,59 @@ async function abrirAsignar(j, refrescar) {
   });
 }
 
-function jobRow(j, container, equipo) {
-  const tr = document.createElement('tr');
-  tr.className = 'jobs-fila';
+/**
+ * ═══ SCRUM-917c · LA CIFRA GRANDE ES LO QUE FALTA ════════════════════════════════════════════
+ *
+ * Hoy lo grande era el total del presupuesto y lo que falta iba debajo, pequeño y gris, y dicho al
+ * revés: «0,00 € de 417,45 €» obliga a restar (medido: 9 de 13 filas empezaban así). La pregunta
+ * del jefe es cuánto le deben, así que eso es lo grande y el total va debajo: «de 417,45 €».
+ *
+ * `faltaPorCobrarDe` es la MISMA resta que suman la cabecera de Terminados y la cifra «Por
+ * cobrar»: la fila y las sumas no pueden contar cosas distintas. El total de referencia es
+ * `importeReferencia`, el eje del chip de cobro (SCRUM-363), no el del presupuesto original.
+ *
+ * Los tres casos, con los textos firmados en el comentario 15881 de SCRUM-917:
+ *   · falta algo      → «740,00 €» / «de 1.240,00 €»
+ *   · no falta nada   → «✓ Cobrado» / «1.240,00 €»
+ *   · no hay eje      → «Sin importe» / «no hay presupuesto aceptado» (hoy era un «—» mudo)
+ *
+ * 🔴 Y UN CUARTO QUE NO SE CONSTRUYE: cobrado MAYOR que la referencia. Si cobrar de más es
+ * legítimo o un defecto lo decide la Sesión 1, y hasta entonces esas filas se pintan COMO HOY
+ * (orquestador, 18-sep-2026). Por eso `importeComoHoy` es el código de antes, sin tocar.
+ */
+function celdaImporte(j) {
+  const td = document.createElement('td');
+  td.className = 'cell-amount';
+  const cur = j.quote?.currency || 'EUR';
+  const falta = faltaPorCobrarDe(j);
+  const cobrado = Number(j.totalCobrado || 0);
+  const linea = (clase, texto) => {
+    const d = document.createElement('div');
+    d.className = clase;
+    d.textContent = texto;
+    td.appendChild(d);
+  };
+  if (falta === null) {
+    linea('jobs-importe-falta jobs-importe-sin', 'Sin importe');
+    linea('jobs-importe-de', 'no hay presupuesto aceptado');
+  } else if (cobrado > Number(j.importeReferencia) + 0.005) {
+    importeComoHoy(td, j);
+  } else if (falta <= 0) {
+    linea('jobs-importe-falta jobs-importe-al-dia', '✓ Cobrado');
+    linea('jobs-importe-de', fmtMoneyEs(j.importeReferencia, cur));
+  } else {
+    linea('jobs-importe-falta', fmtMoneyEs(falta, cur));
+    linea('jobs-importe-de', `de ${fmtMoneyEs(j.importeReferencia, cur)}`);
+  }
+  return td;
+}
 
-  const fecha = j.scheduledAt
-    ? new Date(j.scheduledAt).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-    : '—';
-
+/** El importe de antes de SCRUM-917c, VERBATIM. Sólo lo usa el caso que aún no se decide. */
+function importeComoHoy(tdImporte, j) {
   const cobrado = Number(j.totalCobrado || 0);
   const cur = j.quote?.currency || 'EUR';
   const referencia = Number(j.importeReferencia ?? 0);
   const showCobro = !!j.estadoCobro && referencia > 0;
-  const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: el dinero es admin-only (403)
-
-  const refresh = () => renderJobsView(container);
-  const patch = async (body, okMsg) => {
-    try {
-      await apiRequest(`/admin/jobs/${j.id}`, { method: 'PATCH', body: JSON.stringify(body) });
-      if (okMsg) showToast(okMsg);
-      refresh();
-    } catch (err) {
-      if (err?.data?.error === 'invalid_transition') showToast('Ese cambio de estado no está permitido.', 'error');
-      else avisoDeFallo('No se pudo guardar', err);
-    }
-  };
-
-  // ① Cliente
-  const tdCliente = document.createElement('td');
-  tdCliente.className = 'cell-client';
-  tdCliente.textContent = j.customer?.name || 'Cliente';
-  tr.appendChild(tdCliente);
-
-  // ② Técnicos — el dato que hasta hoy no llegaba a esta pantalla, y desde SCRUM-816 el control
-  // que lo cambia sin salir de la fila. Con cero equipo cae a la celda de siempre (su SUELO).
-  tr.appendChild(celdaTecnicosConDesplegable(j, equipo, refresh));
-
-  // ③ Importe y cobrado
-  const tdImporte = document.createElement('td');
-  tdImporte.className = 'cell-amount';
   if (j.quote) {
     const total = document.createElement('div');
     total.className = 'jobs-importe-total';
@@ -820,7 +971,71 @@ function jobRow(j, container, equipo) {
     cob.textContent = `${fmtMoneyEs(cobrado, cur)} de ${fmtMoneyEs(referencia, cur)}`;
     tdImporte.appendChild(cob);
   }
-  tr.appendChild(tdImporte);
+}
+
+function jobRow(j, container, equipo) {
+  const tr = document.createElement('tr');
+  tr.className = 'jobs-fila';
+
+  const fecha = j.scheduledAt
+    ? new Date(j.scheduledAt).toLocaleString('es-ES', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : '';
+
+  const isTecnico = window.appUserRole === 'tecnico'; // SCRUM-89: el dinero es admin-only (403)
+
+  const refresh = () => renderJobsView(container);
+  const patch = async (body, okMsg) => {
+    try {
+      await apiRequest(`/admin/jobs/${j.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+      if (okMsg) showToast(okMsg);
+      refresh();
+    } catch (err) {
+      if (err?.data?.error === 'invalid_transition') showToast('Ese cambio de estado no está permitido.', 'error');
+      else avisoDeFallo('No se pudo guardar', err);
+    }
+  };
+
+  // ① Cliente, y debajo lo que distingue la fila: el nombre del trabajo y quién lo ejecuta.
+  //
+  // SCRUM-917c · `tituloPropio` es el nombre que puso el profesional, crudo o `null` (servidor,
+  // SCRUM-917d). NO se usa `titulo`, que cae al nombre del cliente cuando no hay otro y repetiría
+  // la línea de encima. Los técnicos llegan aquí desde su columna, que desaparece.
+  const tdCliente = document.createElement('td');
+  tdCliente.className = 'cell-client';
+  const nombre = document.createElement('b');
+  nombre.className = 'jobs-fila-cliente';
+  nombre.textContent = j.customer?.name || 'Cliente';
+  tdCliente.appendChild(nombre);
+  const piezas = [];
+  if (j.tituloPropio) {
+    const t = document.createElement('span');
+    t.className = 'jobs-fila-trabajo';
+    t.textContent = j.tituloPropio;
+    piezas.push(t);
+  }
+  // Con equipo, el desplegable de SCRUM-816 (su candado y su vuelta atrás, intactos); sin equipo,
+  // los nombres que consten, o nada.
+  const tecnicos = celdaTecnicosConDesplegable(j, equipo, refresh);
+  if (tecnicos) piezas.push(tecnicos);
+  if (piezas.length) {
+    const linea = document.createElement('div');
+    linea.className = 'jobs-fila-linea';
+    piezas.forEach((p, i) => {
+      if (i) {
+        const sep = document.createElement('span');
+        sep.className = 'jobs-fila-sep';
+        sep.setAttribute('aria-hidden', 'true');
+        sep.textContent = '·';
+        linea.appendChild(sep);
+      }
+      linea.appendChild(p);
+    });
+    tdCliente.appendChild(linea);
+  }
+  tr.appendChild(tdCliente);
+
+  // ② Importe
+  tr.appendChild(celdaImporte(j));
 
   // ── ④ CUÁNDO — la columna que antes eran dos ────────────────────────────────────────────
   //
@@ -833,18 +1048,15 @@ function jobRow(j, container, equipo) {
   // La insignia decía lo mismo con una palabra en vez de con las dos cifras. El control de que no
   // se pierde está escrito como test: con eje de cobro, la fila SIGUE diciendo cuánto va cobrado.
   //
-  // Con fecha se pinta la fecha; sin ella, «Sin agendar» — el MISMO literal que llevaba la
-  // insignia (`JOB_STATE_META`), en el mismo sitio donde antes había un guion que no informaba.
+  // ── SCRUM-917c · Y SIN FECHA, NADA ────────────────────────────────────────────────────────
+  // Aquí iba una píldora «Sin agendar» cuando no había fecha. Medido en staging el 17-sep-2026:
+  // salía en 12 de 13 filas, y las doce vivían bajo la cabecera «⏳ Sin agendar · 12», tres
+  // píxeles más arriba. SCRUM-816 fundió ESTADO y FECHA porque FECHA salía vacía en 11 de 12
+  // filas; hoy ya no estaba vacía, pero repetía su cabecera en 12 de 13 — cambió el relleno, no el
+  // problema. El grupo ya lo dice; la fila no lo repite.
   const tdFecha = document.createElement('td');
   tdFecha.className = 'cell-date';
-  if (j.scheduledAt) {
-    tdFecha.textContent = fecha;
-  } else {
-    const pill = document.createElement('span');
-    pill.className = 'jobs-estado-pill jobs-estado-pendiente_agendar';
-    pill.textContent = JOB_STATE_META.pendiente_agendar.label;
-    tdFecha.appendChild(pill);
-  }
+  if (j.scheduledAt) tdFecha.textContent = fecha;
   tr.appendChild(tdFecha);
 
   // ⑤ Acción principal + el «⋯»
@@ -862,7 +1074,12 @@ function jobRow(j, container, equipo) {
   const siguiente = typeof jobNextAction === 'function' ? jobNextAction(j, !isTecnico) : null;
   if (siguiente && !cobraAqui) {
     const bSiguiente = document.createElement('button');
-    bSiguiente.className = 'btn-primary btn-sm';
+    // ── SCRUM-917c · SECUNDARIA: UNA SOLA PRIMARIA EN LA LISTA, Y ES LA DEL DINERO ─────────────
+    // Medido en staging el 17-sep-2026: doce «Agendar» verdes idénticos en la misma pantalla. Si
+    // todo es primario, nada lo es. La acción NO cambia —la misma escalera, el mismo sitio, el
+    // mismo ejecutor—; cambia cuánto pesa. La primaria se reserva para «💰 Cobrar el resto», que
+    // es el momento del dinero (AB1).
+    bSiguiente.className = 'btn-secondary btn-sm';
     bSiguiente.textContent = siguiente.label;
     // ── SCRUM-823 · «Agendar» y «▶ Empezar» SE EJECUTAN AQUÍ, no llevan al detalle ─────────
     //
