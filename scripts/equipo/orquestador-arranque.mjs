@@ -45,6 +45,11 @@ export function puertas({ dir, git = gitReal }) {
   if (!config || typeof config.repo !== 'string' || !config.repo) {
     return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'no hay config.json con la ruta del repositorio' };
   }
+  // SCRUM-951a: a quién se lanza sale del config (prefijo + puesto del orquestador), no del código.
+  // Aquí solo se comprueba que ESTÁ; la validación entera la repite `sesion.mjs` en su puerta.
+  if (typeof config.prefijo !== 'string' || typeof config.orquestador !== 'string' || !config.orquestador) {
+    return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'config.json no declara `prefijo` y `orquestador`' };
+  }
   for (const [instalado, enRepo] of COMPROBADOS) {
     const main = git(config.repo, ['show', `origin/main:${enRepo}`], true);
     if (main.status !== 0) return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: `no se pudo leer origin/main:${enRepo}` };
@@ -59,7 +64,7 @@ export function puertas({ dir, git = gitReal }) {
   let texto = '';
   try { texto = fs.readFileSync(path.join(dir, PROMPT_INSTALADO), 'utf8'); } catch { /* se dice abajo */ }
   if (!texto.trim()) return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: `el prompt de la tanda (${PROMPT_INSTALADO}) falta o está vacío` };
-  return { ok: true };
+  return { ok: true, nombre: `${config.prefijo}${config.orquestador}` };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -70,7 +75,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     process.stdout.write(JSON.stringify({ cuando, ...p }) + '\n');
     process.exit(2);
   }
-  const r = spawnSync(process.execPath, [path.join(dir, 'sesion.mjs'), 'lanzar', 'orquestador', path.join(dir, PROMPT_INSTALADO)], { encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [path.join(dir, 'sesion.mjs'), 'lanzar', p.nombre, path.join(dir, PROMPT_INSTALADO)], { encoding: 'utf8' });
   const ultima = (r.stdout || '').trim().split('\n').at(-1) || '';
   let veredicto;
   try { veredicto = JSON.parse(ultima); } catch { veredicto = { veredicto: 'NO-PUDE-MIRAR', motivo: 'sesion.mjs no devolvió veredicto', salida: ultima.slice(-300) }; }

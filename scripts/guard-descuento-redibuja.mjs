@@ -38,6 +38,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
+import { abrirConceptos, CLIENTE_DE_PASO } from './_abrir-conceptos.mjs';
 
 export const SALIDA_HALLAZGO = 1;
 export const SALIDA_NO_SUPE_MEDIR = 2;
@@ -58,7 +59,8 @@ function arrancarServidor() {
     const u = req.url.split('?')[0];
     if (u === '/admin/me') return json(res, ME);
     if (u === '/admin/merchant') return json(res, MERCHANT);
-    if (u === '/admin/customers') return json(res, []);
+    // SCRUM-915d · un cliente que elegir: sin él no se sale del paso Cliente y no hay líneas que teclear.
+    if (u === '/admin/customers') return json(res, [CLIENTE_DE_PASO]);
     if (u.startsWith('/admin/')) return json(res, { items: [], rows: [], data: [] });
     // El panel se sirve en SU ruta: `index.html` pide sus scripts con rutas relativas a /dashboard/.
     const rel = u.replace(/^\//, '');
@@ -151,6 +153,9 @@ try {
       const pintado = await pag.waitForSelector('.quote-line .quote-line__price input', { timeout: 10000 }).then(() => true, () => false);
       if (!pintado) { ciegos.push(`${ancho}px → el editor no se pintó (errores: ${errores.join(' | ') || 'ninguno'})`); continue; }
       await espera(500);
+      // SCRUM-915d · las líneas y los descuentos viven en el paso Conceptos: se llega como el profesional.
+      const corte = await abrirConceptos(pag);
+      if (corte) { ciegos.push(`${ancho}px → no llegué al paso Conceptos: ${corte}`); continue; }
 
       const paso = async (nombre) => { await espera(900); const r = await pag.evaluate(LEER); filas.push({ ancho, nombre, ...r }); return r; };
 

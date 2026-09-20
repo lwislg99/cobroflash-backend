@@ -41,14 +41,37 @@
 // de falsas sin que nada mejore. El extractor la deja fuera POR CONSTRUCCIÓN —no contiene ningún
 // token con dueño— y hay un control que lo comprueba.
 //
-// SUELO: cero skills obligatorias = CIEGO, salida 2.
+// SUELO: si falta cualquiera de las CUATRO obligatorias conocidas = CIEGO, salida 2.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-939b · ESTO YA NO SÓLO MIDE: ALIMENTA UN TRINQUETE
+//
+// `tests/scrum939b-trinquete-de-las-skills.test.mjs` corre `censar()` en cada tanda y cae si
+// aparece una falsa que no está declarada, o si una declarada deja de salir sin que nadie baje el
+// censo. El trinquete SÓLO BAJA. Este script sigue siendo el censo que se corre a mano; el
+// trinquete mide por el MISMO camino (`censar`), no por otro.
+//
+// 🔴 EL ÁRBOL ES EL ÍNDICE DE GIT, NO EL DISCO. «Este fichero existe» se comprueba contra
+// `git ls-files`: un fichero sin añadir existe en MI disco pero no en el repo, y daría CIERTA aquí
+// y FALSA en CI. Medido al cambiarlo (18-sep-2026, 34 afirmaciones RUTA): cero veredictos distintos
+// entre el recorrido de disco de la fase a y el índice. Las skills que se LEEN, en cambio, salen
+// del directorio que se le pase: es lo que deja al trinquete sembrar en una COPIA.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIR = path.join(RAIZ, '.claude', 'skills');
+
+/**
+ * 🔴 EL SUELO DE CEGUERA. Las cuatro que el léxico encontró el 17-sep-2026. Si falta UNA, el
+ * barrido no mira lo que dice mirar: o el léxico dejó de verla o alguien cambió su descripción, y
+ * en los dos casos un «0 falsas» sería «no he mirado». Una QUINTA no ciega nada: entra sola y sus
+ * falsas cuentan.
+ */
+export const OBLIGATORIAS_CONOCIDAS = Object.freeze(['cerebro-yaqu', 'verifactu', 'yaqu-premium-ui', 'yaqu-verifactu-sif']);
 
 // ── ① Las obligatorias, derivadas del frontmatter ────────────────────────────────────────────
 
@@ -112,24 +135,35 @@ try { MASTER = fs.readFileSync(path.join(RAIZ, 'docs', 'YAQU_MASTER.md'), 'utf8'
 //     promete lo que no hace es EXACTAMENTE el defecto que este censo mide.
 
 /**
- * Índice de nombres de fichero del árbol. Hace falta porque una skill cita `verifactu.service.ts`
- * sin su carpeta, y eso NO afirma «está en la raíz»: afirma «este fichero existe».
+ * El árbol del repo, del ÍNDICE de git: ficheros, directorios que los contienen, y un índice por
+ * nombre. El índice por nombre hace falta porque una skill cita `verifactu.service.ts` sin su
+ * carpeta, y eso NO afirma «está en la raíz»: afirma «este fichero existe».
+ *
+ * Sin git, o con el índice vacío, devuelve `ficheros.size === 0` y `censar()` se declara CIEGO: un
+ * árbol vacío haría FALSA cada ruta, y eso no es verificar: es acusar.
  */
-const PORNOMBRE = (() => {
-  const m = new Map();
-  const rec = (d) => {
-    let e;
-    try { e = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
-    for (const x of e) {
-      if (x.isDirectory()) { if (!['node_modules', 'dist', '.git'].includes(x.name)) rec(path.join(d, x.name)); continue; }
-      const rel = path.relative(RAIZ, path.join(d, x.name)).split(path.sep).join('/');
-      if (!m.has(x.name)) m.set(x.name, []);
-      m.get(x.name).push(rel);
-    }
-  };
-  rec(RAIZ);
-  return m;
-})();
+const ARBOLES = new Map();
+export function arbolDe(raiz = RAIZ) {
+  if (ARBOLES.has(raiz)) return ARBOLES.get(raiz);
+  let lista = [];
+  try {
+    lista = execFileSync('git', ['ls-files', '-z'], { cwd: raiz, encoding: 'utf8', maxBuffer: 1 << 28 })
+      .split('\0').filter(Boolean);
+  } catch { /* suelo en censar() */ }
+  const ficheros = new Set(lista);
+  const dirs = new Set();
+  const porNombre = new Map();
+  for (const f of lista) {
+    const partes = f.split('/');
+    for (let i = 1; i < partes.length; i++) dirs.add(partes.slice(0, i).join('/'));
+    const nombre = partes[partes.length - 1];
+    if (!porNombre.has(nombre)) porNombre.set(nombre, []);
+    porNombre.get(nombre).push(f);
+  }
+  const arbol = { ficheros, dirs, porNombre };
+  ARBOLES.set(raiz, arbol);
+  return arbol;
+}
 
 /**
  * 🔴 ESTE CENSO NO LEE NEGACIONES, y lo dice en vez de acusar.
@@ -149,7 +183,7 @@ const PORNOMBRE = (() => {
  */
 const NIEGA = /\bno existe\b|\bno hay\b|\bNO CONSTRUIDO\b|\bno está\b|\bya no\b/i;
 
-export function verificar(a, linea = '') {
+export function verificar(a, linea = '', arbol = arbolDe(RAIZ)) {
   if (NIEGA.test(linea)) {
     return { veredicto: 'NO COMPROBABLE', evidencia: 'la línea NIEGA, y este censo no lee polaridad' };
   }
@@ -160,17 +194,27 @@ export function verificar(a, linea = '') {
     if (/[<>{}*]/.test(a.valor)) {
       return { veredicto: 'NO COMPROBABLE', evidencia: 'es una plantilla con hueco, no una ruta concreta' };
     }
-    // Con carpeta: la ruta se afirma entera. Sin carpeta: se afirma que el fichero EXISTE.
+    // Con carpeta: la ruta se afirma entera (fichero o directorio). Sin carpeta: se afirma que el
+    // fichero EXISTE.
     if (a.valor.includes('/')) {
-      const ok = fs.existsSync(path.join(RAIZ, a.valor));
+      const rel = a.valor.replace(/\/+$/, '');
+      const ok = arbol.ficheros.has(rel) || arbol.dirs.has(rel);
       return { veredicto: ok ? 'CIERTA' : 'FALSA', evidencia: ok ? 'existe en el árbol' : 'no existe en el árbol' };
     }
-    const donde = PORNOMBRE.get(a.valor);
+    const donde = arbol.porNombre.get(a.valor);
     return donde
       ? { veredicto: 'CIERTA', evidencia: `existe: ${donde[0]}${donde.length > 1 ? ` (+${donde.length - 1})` : ''}` }
       : { veredicto: 'FALSA', evidencia: 'no existe ningún fichero con ese nombre en el árbol' };
   }
   if (a.tipo === 'RUTA_ABS') {
+    // ⚠️ EL DISCO ES EL DE QUIEN CORRE ESTO, y se declara en vez de disimularlo (SCRUM-939b).
+    //
+    // En CI (ubuntu) una ruta `C:\…` no existe POR CONSTRUCCIÓN: allí la de `gh` sale FALSA igual
+    // que aquí, pero sin discriminar — también saldría FALSA una ruta de Windows cierta. Hoy hay UNA
+    // RUTA_ABS en las cuatro skills, y es la falsa. Distinguir «no existe» de «este disco no es
+    // Windows» pide leer la plataforma, y eso sube el tope de `scrum702` (ficheros que leen el
+    // entorno): un trinquete ajeno se sube avisando, no de paso. Y convertirla en NO COMPROBABLE
+    // en Linux daría un veredicto distinto en cada sitio, que es lo que ese tope existe para ver.
     const ok = fs.existsSync(a.valor);
     return { veredicto: ok ? 'CIERTA' : 'FALSA', evidencia: ok ? 'existe en el disco' : 'NO existe en el disco' };
   }
@@ -187,26 +231,38 @@ export function verificar(a, linea = '') {
 
 // ── Barrido ──────────────────────────────────────────────────────────────────────────────────
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename)) {
+/**
+ * EL CENSO, como función: la corre el script a mano y la corre el trinquete de la tanda, por el
+ * mismo camino. `dirSkills` es de dónde se LEEN las skills —el trinquete le pasa una COPIA para
+ * sembrar, nunca el original—; `raiz` es el árbol contra el que se VERIFICA.
+ *
+ * Devuelve la población entera, no sólo el resultado: carpetas, obligatorias, líneas, filas. Y
+ * `ciego` con el motivo si no ha podido mirar — entonces `filas` no dice nada y nadie debe leerlas.
+ */
+export function censar({ dirSkills = DIR, raiz = RAIZ } = {}) {
   let carpetas = [];
-  try { carpetas = fs.readdirSync(DIR, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch { /* suelo */ }
+  try { carpetas = fs.readdirSync(dirSkills, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch { /* suelo */ }
 
   const obligatorias = [];
   for (const nombre of carpetas) {
-    const f = path.join(DIR, nombre, 'SKILL.md');
+    const f = path.join(dirSkills, nombre, 'SKILL.md');
     if (!fs.existsSync(f)) continue;
     const fuente = fs.readFileSync(f, 'utf8');
     const por = obliga(descripcionDe(fuente));
-    if (por) obligatorias.push({ nombre, f, fuente, por });
+    if (por) obligatorias.push({ nombre, fuente, por });
   }
 
-  if (obligatorias.length === 0) {
-    console.error(`🔴 CIEGO: 0 skills obligatorias sobre ${carpetas.length} carpetas. El barrido no encuentra el léxico.`);
-    process.exit(2);
+  const vacio = { carpetas: carpetas.length, obligatorias: obligatorias.map(({ nombre, por }) => ({ nombre, por })), lineasTotales: 0, lineasConAfirmacion: 0, filas: [] };
+  const faltan = OBLIGATORIAS_CONOCIDAS.filter((n) => !obligatorias.some((s) => s.nombre === n));
+  if (faltan.length) {
+    return { ...vacio, ciego: `faltan ${faltan.length} de las ${OBLIGATORIAS_CONOCIDAS.length} obligatorias conocidas (${faltan.join(', ')}) sobre ${carpetas.length} carpetas: el barrido no mira lo que dice mirar` };
   }
   if (!Object.keys(SCRIPTS).length || !MASTER) {
-    console.error('🔴 CIEGO: sin `package.json#scripts` o sin el máster no se puede verificar nada.');
-    process.exit(2);
+    return { ...vacio, ciego: 'sin `package.json#scripts` o sin el máster no se puede verificar nada' };
+  }
+  const arbol = arbolDe(raiz);
+  if (!arbol.ficheros.size) {
+    return { ...vacio, ciego: '`git ls-files` no devuelve nada: sin árbol, cada ruta saldría FALSA' };
   }
 
   const filas = [];
@@ -221,9 +277,22 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.met
       const afs = afirmacionesDe(l);
       if (!afs.length) continue;
       lineasConAfirmacion++;
-      for (const a of afs) filas.push({ skill: s.nombre, linea: i + 1, ...a, ...verificar(a, l) });
+      for (const a of afs) filas.push({ skill: s.nombre, linea: i + 1, ...a, ...verificar(a, l, arbol) });
     }
   }
+  if (!filas.length) {
+    return { ...vacio, lineasTotales, ciego: `${lineasTotales} líneas leídas y ninguna afirmación extraída: el extractor no ve` };
+  }
+  return { ...vacio, lineasTotales, lineasConAfirmacion, filas, ciego: null };
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename)) {
+  const censo = censar();
+  if (censo.ciego) {
+    console.error(`🔴 CIEGO: ${censo.ciego}.`);
+    process.exit(2);
+  }
+  const { carpetas, obligatorias, lineasTotales, lineasConAfirmacion, filas } = censo;
 
   const ciertas = filas.filter((f) => f.veredicto === 'CIERTA');
   const falsas = filas.filter((f) => f.veredicto === 'FALSA');
@@ -243,7 +312,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.met
   }
   console.log('');
   console.log('── ① LAS OBLIGATORIAS (léxico derivado del corpus) ──');
-  console.log(`carpetas de skill examinadas ......... ${carpetas.length}`);
+  console.log(`carpetas de skill examinadas ......... ${carpetas}`);
   console.log(`OBLIGATORIAS ......................... ${obligatorias.length}`);
   for (const s of obligatorias) console.log(`   · ${s.nombre.padEnd(20)} (obliga por «${s.por}»)`);
   console.log('');

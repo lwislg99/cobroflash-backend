@@ -2,11 +2,18 @@ import { Router } from 'express';
 import {
   listExpenses, createExpense, updateExpense, deleteExpense,
   getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError,
+  queFueDelNif, // SCRUM-937
 } from '../../domain/expenses.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { prisma } from '../../../../core/db/prisma';
 // SCRUM-324 (E3) · la regla fiscal vive en el dominio, no en cada pantalla que da de alta un gasto.
 import { clasificarJustificante } from '../../domain/justificante';
+// SCRUM-912 · leer la foto del ticket. Gemini directo: sin respaldo con Claude (ver el dominio).
+import { isGeminiConfigured } from '../../../../integrations/gemini';
+import { hitRateLimit } from '../../../../core/http/rateLimit';
+import {
+  parsearImagen, leerTicket, LECTURAS_TICKET_POR_DIA, hoyEnMadrid, corteDeCuota, ERROR_POR_CORTE,
+} from '../../domain/lecturaTicket';
 
 const router = Router();
 
@@ -144,11 +151,66 @@ router.post('/', async (req, res) => {
       providerInvoiceNumber: expense.providerInvoiceNumber,
       vatDeducible: expense.vatDeducible,
     });
-    return res.status(201).json({ ok: true, item: expense, justificante });
+    // SCRUM-937 · y qué fue del NIF tecleado. Sin proveedor no tiene dónde ir, y el veredicto de
+    // arriba dirá que falta; esto dice POR QUÉ, en vez de dejar que el profesional crea que lo dio.
+    const destinoDelNif = queFueDelNif({
+      nifTecleado: nifProveedor ? String(nifProveedor) : null,
+      providerId: expense.providerId,
+      nifDeLaFicha: proveedor?.taxId ?? null,
+    });
+    return res.status(201).json({ ok: true, item: expense, justificante, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
     console.error('[POST /admin/expenses]', err);
     return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// POST /admin/expenses/leer-ticket — SCRUM-912
+// Body: { imagen: 'data:image/jpeg;base64,…' } → { ok, propuesta, descartados, justificante }
+//
+// LEE y NO GUARDA: ni la foto ni lo leído, y nada de ello va al log (lleva NIF y nombre de un
+// tercero). El gasto se guarda después con el POST de arriba, cuando el profesional lo ha mirado.
+// Mismo permiso que el alta: es trabajo de campo, el técnico está en el almacén con el ticket.
+// Solo CÓDIGOS de error: los textos los firma el fundador (regla 30).
+// La foto viaja por el parser global de 2 MB (medido en staging el 18-sep: 2,2 MB → 413 antes de
+// la auth): la pantalla manda la misma foto reducida que luego guarda (SCRUM-947).
+router.post('/leer-ticket', async (req, res) => {
+  if (!isGeminiConfigured()) return res.status(503).json({ ok: false, error: 'ai_not_configured' });
+
+  const imagen = parsearImagen(req.body?.imagen);
+  if (!imagen.ok) return res.status(400).json({ ok: false, error: imagen.error });
+
+  // Por día natural de Madrid: la clave lleva la fecha, así que al cambiar de día el contador es
+  // otro. Se cuenta DESPUÉS de validar la foto: un cuerpo malo no gasta cuota de Google.
+  const ahora = new Date();
+  if (hitRateLimit(`leer-ticket:${req.merchantId}:${hoyEnMadrid(ahora)}`, LECTURAS_TICKET_POR_DIA, 24 * 60 * 60_000)) {
+    return res.status(429).json({ ok: false, error: 'lecturas_agotadas' });
+  }
+
+  try {
+    const lectura = await leerTicket({
+      merchantId: req.merchantId,
+      imagen: { mimeType: imagen.mimeType, data: imagen.data },
+      ahora,
+    });
+    return res.json({ ok: true, ...lectura });
+  } catch (err: any) {
+    const codigo = String(err?.code || err?.message || '');
+    // Solo el código: `providerDetail` de Google puede citar el contenido de la petición.
+    console.error('[POST /admin/expenses/leer-ticket]', codigo || 'error desconocido');
+    // Cuota de Google agotada: código PROPIO, distinto de «no configurado» y de nuestro tope
+    // (`lecturas_agotadas`), y diciendo si es de hoy o de este minuto (orquestador, 18-sep).
+    if (codigo === 'gemini_rate_limited') {
+      return res.status(429).json({ ok: false, error: ERROR_POR_CORTE[corteDeCuota(err?.quotaIds)] });
+    }
+    if (codigo === 'gemini_not_configured') return res.status(503).json({ ok: false, error: 'ai_not_configured' });
+    if (codigo === 'gemini_bad_key') return res.status(503).json({ ok: false, error: 'ai_bad_key' });
+    if (codigo === 'ai_invalid_json' || codigo === 'ai_invalid_format') {
+      return res.status(422).json({ ok: false, error: 'ai_could_not_parse' });
+    }
+    if (codigo.startsWith('gemini_')) return res.status(502).json({ ok: false, error: 'ai_provider_error' });
+    return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
 
@@ -158,7 +220,7 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
     const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData,
-            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate } = req.body || {};
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate, nifProveedor } = req.body || {};
     const patch: any = {};
     if (concept     !== undefined) patch.concept     = String(concept).trim();
     if (amount      !== undefined) patch.amount      = Number(amount);
@@ -176,10 +238,24 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
       if (vatAmount   !== undefined) patch.vatAmount   = vatAmount   ?? null;
       if (providerInvoiceNumber !== undefined) patch.providerInvoiceNumber = providerInvoiceNumber ? String(providerInvoiceNumber) : null;
       if (providerInvoiceDate   !== undefined) patch.providerInvoiceDate   = providerInvoiceDate ? new Date(providerInvoiceDate) : null;
+    // SCRUM-937 · el modal de edición manda el NIF igual que el alta, y aquí no se leía: se tiraba.
+    if (nifProveedor !== undefined) patch.nifProveedor = nifProveedor ? String(nifProveedor) : null;
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty_update' });
     const updated = await updateExpense(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ error: 'not_found' });
-    return res.json({ ok: true, item: updated });
+    // Lo que quedó en la ficha DESPUÉS de guardar: el destino es un hecho, no una predicción.
+    const fichaTrasEditar = patch.nifProveedor && updated.providerId
+      ? await prisma.provider.findFirst({
+          where: { id: updated.providerId, merchantId: req.merchantId },
+          select: { taxId: true },
+        })
+      : null;
+    const destinoDelNif = queFueDelNif({
+      nifTecleado: patch.nifProveedor ?? null,
+      providerId: updated.providerId,
+      nifDeLaFicha: fichaTrasEditar?.taxId ?? null,
+    });
+    return res.json({ ok: true, item: updated, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
     console.error('[PUT /admin/expenses/:id]', err);

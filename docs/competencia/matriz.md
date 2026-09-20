@@ -363,6 +363,8 @@ Honestamente, y sin convertirlo en «no lo tienen»:
   interactivo lento y poco fiable.
 - Lo que la matriz dice de esas tres filas para Holded **sigue viniendo de su web pública**, que es
   fuente legítima pero distinta. Está marcado como tal.
+- *(18-sep-2026: **envío y canales y VeriFactu ya están medidos por dentro**, y la firma a medias. Ver
+  §7.0. Lo de arriba queda como historia de lo que no se pudo el 17-sep.)*
 
 ### Tres trampas medidas, para quien venga detrás
 
@@ -378,6 +380,122 @@ Honestamente, y sin convertirlo en «no lo tienen»:
    sitio web», y el botón «Empresa» dice *«…o eres autónomo con empleados»*, así que buscar el botón
    «Autónomo» por coincidencia parcial **casa con los dos** y coge el primero. Hay que anclar en texto
    que solo esté en uno («no tienes empleados»).
+
+---
+
+## 7 · Consolidado para decidir (18-sep-2026)
+
+**Medido el 18-sep-2026 a las 07:00:46Z (hora de GitHub) sobre `origin/main` =
+`ecccf94e8c90ec80eed75b5f3d4e320f90a910a8`.** Encargo del fundador, a través del orquestador: *¿qué
+estamos sacando de la competencia para copiar, y qué nos falta para estar completos?* Consolida
+Verifacturamos, Holded y Quipu. Las marcas ❓ y 🔒 se mantienen, y el juicio de si algo **acerca a
+tener clientes pagando** es de la Sesión 0 y va escrito. Las propuestas van numeradas para poder
+citarlas: **los tickets los abre el orquestador**.
+
+### 7.0 · Holded por dentro, lo medido el 18-sep
+
+Solo lectura: no se guardó nada, no se envió nada y no se cambió ninguna configuración.
+
+- **Envío y canales.** El presupuesto guardado (`E260001`) se envía **solo por email**: «Enviar desde
+  Holded», Para, CC/CCO y asunto en **«Solo lectura»** en este plan (editarlo es de pago), más
+  «Copiar enlace», «Ver portal» e «Imprimir». **WhatsApp y SMS: 0 apariciones** en todo el DOM del
+  presupuesto y del portal del cliente, incluido lo oculto. *Suelo:* la misma búsqueda sí encuentra
+  «Enviar vía email».
+- **Portal del cliente.** Enseña el PDF, «Descargar», «Imprimir» y **«Aceptar presupuesto» /
+  «Rechazar presupuesto»**. No hay botón de pago en el presupuesto.
+- **VeriFactu (configuración).** Ajustes → Facturación → Conformidad: *«Tu cuenta cumple con la
+  normativa RRSIF (RD 1007/2023)»*. Se configura **por periodo**, con tres opciones: «Verifactu»,
+  «No Verifactu» y «Exento». **Una cuenta nueva nace «Exento» hasta el 31/12/2026**, con el motivo
+  «Otros» y el texto «Configuración inicial automática», sin que el usuario elija nada. Su
+  declaración responsable, leída en la aplicación: *«Indicación de si el sistema solo funciona como
+  «VERI\*FACTU»: No»*. En Facturas hay un modal de *«Envío requerimiento No verifactu»*. **No se midió**
+  el QR ni el envío de una factura, a propósito: exigiría declarar otra cosa y mandar registros a la
+  AEAT. ⛔ Todo esto se anota; no se valida.
+- **Firma.** La app «Firma digital» existe, es gratis y se activó. **El flujo para PEDIR la firma de un
+  presupuesto NO se ha encontrado**: no está en el panel del presupuesto (al activar la app desapareció
+  la tarjeta «Activa la firma digital» y no la sustituyó nada), ni en el modal de envío, ni en el
+  portal. Y el botón «Enviar documento» del módulo lleva a Facturas de venta, que están vacías. ❓ **Es
+  «no lo encuentro», no «no lo tiene»**: su ayuda dice que sí.
+
+### 7.1 · 🔴 Una corrección antes de nada: el cobro NO es foso hoy
+
+Es cierto que en el presupuesto de Holded las formas de pago son solo *Transferencia bancaria* y *Pago
+al contado*, y que su portal no tiene botón de pago en el presupuesto (§6 y §7.0). **Pero YaQu hoy
+tampoco cobra al cliente final ni con tarjeta ni con Bizum**:
+
+    git grep -n -E "PAYMENTS_CONNECT_ENABLED|BIZUM_MANUAL_ENABLED|BIZUM_AUTO_ENABLED" origin/main -- src/core/flags.ts
+    → flags.ts:18 PAYMENTS_CONNECT_ENABLED: false · :19 BIZUM_MANUAL_ENABLED: false · :23 BIZUM_AUTO_ENABLED: false
+
+Nos queda la transferencia, igual que al presupuesto de Holded. Y Holded sí cobra con tarjeta **en la
+factura** (§4, fila 4). **Un foso construido y apagado no es un foso: es una promesa.**
+Consecuencias: en marketing no se dice «cobra con tarjeta o Bizum» hasta CONNECT-1 / C1-4 (además es
+la regla 18); en producto, es el foso más grande **el día que se encienda**.
+
+### 7.2 · Lo que nos falta
+
+| # | Qué | Quién lo tiene | Para qué le sirve al profesional | ¿Acerca a tener clientes pagando? |
+|---|---|---|---|---|
+| F1 | Lectura con IA del ticket de gasto | Holded (ilimitada en todos los planes), Quipu; en la FASE 1, además Contasimple, Plenia, Fixner y STEL | Quitar el papel de la furgoneta. Se usa cada semana | **SÍ, la primera.** Todos los de nuestro precio la dan por hecha, y Gemini ya está integrado. Que **proponga** el gasto y la persona lo confirme |
+| F2 | Remisión a la AEAT | Los tres (Holded como colaborador social; Verifacturamos a través de Verifacti) | Cumplir VeriFactu | **No es una ventaja: es la condición.** Sin ella no se vende facturación en España desde 2027. Antes de escribir código hay que decidir: directo o por colaborador social. ⛔ Fiscal |
+| F3 | Facturas recurrentes | Verifacturamos · Holded (con cupo; el plan más barato no las tiene) · Quipu | La cuota de mantenimiento | **SÍ, detrás de SIF-1**: sin factura fiscal no hay cuota fiscal. Sale mejor de `MaintenancePlan`, que ya existe. ⛔ Dinero y fiscal |
+| F4 | Importar desde el software anterior conservando la numeración | Verifacturamos (Holded, Quipu, Anfix, Factusol) | Cambiarse sin perder la serie | **SÍ.** Es la barrera de cambio de quien ya factura. ⛔ La numeración es fiscal |
+| F5 | La gestoría dentro: acceso del gestor o envío automático | Quipu (vive de ello) · Holded · Verifacturamos (email o Drive) | Quitarse el «¿y mi gestoría?» | **SÍ.** Es una objeción de compra, y la gestoría es un canal (Parte H) |
+| F6 | Fichaje con geolocalización | Holded (gema, desde 1,5 €/empleado) | Obligación legal con empleados | **Solo para quien tiene empleados**, pero para ése es obligatorio. Ya es SCRUM-913. ⛔ Esquema |
+| F7 | IVA del oficio automático (la regla del 40 % de materiales) y solo los tipos de factura del oficio | Verifacturamos | Acertar el IVA sin saber de IVA | **SÍ**: barato y de oficio. ⛔ Fiscal: el criterio lo valida el fundador con un gestor |
+| F8 | Calendario sincronizado y cita previa pública | Holded | Agenda | **No a corto**: el oficio agenda por WhatsApp |
+| F9 | Conector MCP | Holded | Hablar con los datos desde un asistente | **No hoy.** Si sale, se copia su regla: lo que mueve dinero o tiene efecto fiscal, en solo lectura |
+| F10 | Facturae / FACe | Holded · Contasimple · Fixner | Facturar a la administración | **No**: el oficio pequeño casi no factura a la administración |
+
+### 7.3 · Lo mejor suyo (cómo lo resuelven, no qué tienen)
+
+- **M1 · Racionar por cupo, no por módulo.** Holded pone la misma función en todos los planes con
+  distinto techo: firmas 5/20/50/100/400 al mes y recurrentes 0/10/100/300/1.000 al año. Es una palanca
+  de precio que no usamos.
+- **M2 · Regalar la función que engancha** (el escáner ilimitado) y cobrar por el resto.
+- **M3 · Alta sin NIF ni tarjeta** (Holded: nombre, correo y contraseña; el teléfono pone «Opcional»).
+  Se copia esa mitad y no la otra (N2).
+- **M4 · Enfocarse y decirlo** (Verifacturamos: VeriFactu y nada más, a 9 €).
+- **M5 · Páginas por oficio con la regla del oficio dentro** (Verifacturamos, «electricistas y
+  fontaneros»): captación y demostración en la misma página.
+- **M6 · Decir «sin app nativa»** (Verifacturamos). Nos da permiso para defender la PWA como ventaja.
+- **M7 · Declaración responsable legible** (Quipu y Verifacturamos, en una URL pública; Holded, dentro
+  de la aplicación). ⛔ En YaQu, nada hasta SIF-1 8/8 (regla 17).
+- **M8 · Apoyarse en un colaborador social** para la remisión en vez de construirla. Es el dato que
+  falta para decidir F2.
+
+### 7.4 · Nuestro foso, con la medición que lo sostiene
+
+- **Z1 · El presupuesto por WhatsApp con botones.** `src/integrations/whatsapp.ts` y
+  `flags.ts:15` `WHATSAPP_TEMPLATES_ENABLED: true`. Holded, medido por dentro: solo email (§7.0).
+  Verifacturamos: el PDF por el WhatsApp del móvil. Quipu: email. ⚠️ **Desde aquí no se puede medir si
+  la cuenta de WhatsApp de producción manda hoy a clientes reales**: es una pregunta para el fundador,
+  no un hecho.
+- **Z2 · El cliente firma desde el móvil sin instalar nada** (`signaturePad.js`). Verifacturamos ❌;
+  Quipu ❓; Holded ❓ (§7.0: existe, pero no se encontró cómo pedirla).
+- **Z3 · Parte de trabajo con firma, y firmar sin red** (`colaDeFirmas.js`). Holded ❓; Quipu ❓. Son
+  contabilidad, no son la obra.
+- **Z4 · Cobrar con tarjeta o Bizum desde el presupuesto: FOSO APAGADO** (§7.1). No se vende hasta que
+  se encienda.
+- *No se pone como foso lo que no se ha medido:* nuestra fricción de alta frente a sus 2 + 8 + 1 pasos.
+  Para compararla hay que contar la nuestra.
+
+### 7.5 · Lo que NO hay que copiar
+
+- **N1 · Su pantalla de presupuesto**: más de 150 campos, cuenta contable por línea, editor enriquecido,
+  y Facturae y Kit Digital en la misma hoja. **Su presupuesto es una hoja de contabilidad; el nuestro es
+  un mensaje.** Vale para toda la cola de rediseños.
+- **N2 · El asistente de 8 pasos** antes de dejar trabajar.
+- **N3 · Capar lo básico por plan** (el asunto del email en «Solo lectura»). Racionar cupos sí (M1);
+  capar lo que todo el mundo espera, no.
+- **N4 · La exención VeriFactu automática.** Marcar al usuario como exento sin que lo elija sería, en
+  YaQu, decidir algo fiscal por el profesional. Ni se copia ni se sugiere. ⛔ Regla 17.
+- **N5 · El bloque de Kit Digital del presupuesto.** *Lectura de la Sesión 0, sin medir:* sirve para
+  facturar **como agente digitalizador**, y eso no es lo que hace un fontanero. Que YaQu entre como
+  solución del Kit Digital es otra cosa, de negocio, y la decide el fundador.
+- **N6 · Contabilidad completa, nóminas, TPV y los 23 tipos de factura**: son de otro cliente.
+
+**El juicio, en una línea:** los que acercan dinero son **F1, F4, F5 y F7**, más **encender Z4**. **F2 no
+es opcional**: es la puerta de 2027. Todo lo demás, después.
 
 ---
 
