@@ -1,0 +1,475 @@
+{
+  "cuando": "2026-09-18T12:54:07.053Z",
+  "modo": "simulado",
+  "casos": [
+    {
+      "id": "c1-cisterna-y-horas",
+      "dictado": "eh mira ponme cambiar la cisterna del váter y dos horas de mano de obra"
+    },
+    {
+      "id": "c2-calentador-precio-dictado",
+      "dictado": "cambiar el calentador por uno de ochenta litros, la instalación son unos doscientos euros"
+    },
+    {
+      "id": "c3-dos-grifos",
+      "dictado": "dos grifos monomando uno en la cocina y otro en el baño"
+    },
+    {
+      "id": "c4-desague-y-desplazamiento",
+      "dictado": "desagüe embozado en el fregadero y apúntame el desplazamiento"
+    },
+    {
+      "id": "c5-fuera-de-catalogo",
+      "dictado": "pintar un salón de veinte metros cuadrados con la pintura incluida"
+    }
+  ],
+  "resultados": [
+    {
+      "modelo": "sim-perfecto",
+      "nota": "34/34",
+      "pct": 100,
+      "contestadas": 5,
+      "versiones": [
+        "sim-perfecto-fingido"
+      ],
+      "errores": [],
+      "casos": [
+        {
+          "caso": "c1-cisterna-y-horas",
+          "ms": 27,
+          "lineas": [
+            {
+              "concept": "Cisterna completa",
+              "qty": 1,
+              "price": 95,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Mano de obra fontanería (hora)",
+              "qty": 2,
+              "price": 40,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-perfecto",
+              "status": 200,
+              "modelVersion": "sim-perfecto-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 2 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "Cisterna completa ×1 a 95": true,
+            "Mano de obra ×2 a 40, UNA línea": true,
+            "sin desplazamiento (no se dijo)": true,
+            "sin muletillas como concepto": true
+          },
+          "bien": 8,
+          "de": 8
+        },
+        {
+          "caso": "c2-calentador-precio-dictado",
+          "ms": 0,
+          "lineas": [
+            {
+              "concept": "Termo eléctrico 80 L",
+              "qty": 1,
+              "price": 320,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Instalación termo",
+              "qty": 1,
+              "price": 200,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-perfecto",
+              "status": 200,
+              "modelVersion": "sim-perfecto-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 2 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "Termo eléctrico 80 L ×1 a 320 (sinónimo)": true,
+            "la instalación a 200 (precio dictado)": true,
+            "sin desatasco": true
+          },
+          "bien": 7,
+          "de": 7
+        },
+        {
+          "caso": "c3-dos-grifos",
+          "ms": 1,
+          "lineas": [
+            {
+              "concept": "Grifo monomando",
+              "qty": 2,
+              "price": 65,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-perfecto",
+              "status": 200,
+              "modelVersion": "sim-perfecto-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 1 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "Grifo monomando ×2 a 65, UNA línea": true,
+            "sin termo ni cisterna": true
+          },
+          "bien": 6,
+          "de": 6
+        },
+        {
+          "caso": "c4-desague-y-desplazamiento",
+          "ms": 0,
+          "lineas": [
+            {
+              "concept": "Desatasco",
+              "qty": 1,
+              "price": 90,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Desplazamiento",
+              "qty": 1,
+              "price": 25,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-perfecto",
+              "status": 200,
+              "modelVersion": "sim-perfecto-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 2 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "Desatasco ×1 a 90 (sinónimo)": true,
+            "Desplazamiento ×1 a 25": true,
+            "sin cisterna ni grifo": true
+          },
+          "bien": 7,
+          "de": 7
+        },
+        {
+          "caso": "c5-fuera-de-catalogo",
+          "ms": 1,
+          "lineas": [
+            {
+              "concept": "Pintura plástica salón 20 m²",
+              "qty": 1,
+              "price": 120,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Mano de obra pintura",
+              "qty": 1,
+              "price": 280,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-perfecto",
+              "status": 200,
+              "modelVersion": "sim-perfecto-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 2 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "ninguna línea del catálogo": true,
+            "total entre 150 y 900 €": true
+          },
+          "bien": 6,
+          "de": 6
+        }
+      ]
+    },
+    {
+      "modelo": "sim-malo",
+      "nota": "26/34",
+      "pct": 76.5,
+      "contestadas": 5,
+      "versiones": [
+        "sim-malo-fingido"
+      ],
+      "errores": [],
+      "casos": [
+        {
+          "caso": "c1-cisterna-y-horas",
+          "ms": 27,
+          "lineas": [
+            {
+              "concept": "Cisterna completa",
+              "qty": 1,
+              "price": 95,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Mano de obra fontanería (hora)",
+              "qty": 1,
+              "price": 40,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Mano de obra fontanería (hora)",
+              "qty": 1,
+              "price": 40,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Desplazamiento",
+              "qty": 1,
+              "price": 25,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-malo",
+              "status": 200,
+              "modelVersion": "sim-malo-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 2 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "Cisterna completa ×1 a 95": true,
+            "Mano de obra ×2 a 40, UNA línea": false,
+            "sin desplazamiento (no se dijo)": false,
+            "sin muletillas como concepto": true
+          },
+          "bien": 6,
+          "de": 8
+        },
+        {
+          "caso": "c2-calentador-precio-dictado",
+          "ms": 1,
+          "lineas": [
+            {
+              "concept": "Termo eléctrico 80 L",
+              "qty": 1,
+              "price": 320,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Instalación termo",
+              "qty": 1,
+              "price": 150,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-malo",
+              "status": 200,
+              "modelVersion": "sim-malo-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 2 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "Termo eléctrico 80 L ×1 a 320 (sinónimo)": true,
+            "la instalación a 200 (precio dictado)": false,
+            "sin desatasco": true
+          },
+          "bien": 6,
+          "de": 7
+        },
+        {
+          "caso": "c3-dos-grifos",
+          "ms": 0,
+          "lineas": [
+            {
+              "concept": "Grifo monomando",
+              "qty": 1,
+              "price": 65,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Grifo monomando",
+              "qty": 1,
+              "price": 65,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-malo",
+              "status": 200,
+              "modelVersion": "sim-malo-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 1 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "Grifo monomando ×2 a 65, UNA línea": false,
+            "sin termo ni cisterna": true
+          },
+          "bien": 5,
+          "de": 6
+        },
+        {
+          "caso": "c4-desague-y-desplazamiento",
+          "ms": 1,
+          "lineas": [
+            {
+              "concept": "Desplazamiento",
+              "qty": 1,
+              "price": 25,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [
+            {
+              "concept": "Desatasco",
+              "motivo": "iva_ilegible"
+            }
+          ],
+          "google": [
+            {
+              "pedido": "sim-malo",
+              "status": 200,
+              "modelVersion": "sim-malo-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 2 y 8 líneas": false,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": false,
+            "Desatasco ×1 a 90 (sinónimo)": false,
+            "Desplazamiento ×1 a 25": true,
+            "sin cisterna ni grifo": true
+          },
+          "bien": 4,
+          "de": 7
+        },
+        {
+          "caso": "c5-fuera-de-catalogo",
+          "ms": 0,
+          "lineas": [
+            {
+              "concept": "Mano de obra fontanería (hora)",
+              "qty": 8,
+              "price": 40,
+              "tax": 0.21,
+              "supuestos": []
+            },
+            {
+              "concept": "Pintura",
+              "qty": 1,
+              "price": 60,
+              "tax": 0.21,
+              "supuestos": []
+            }
+          ],
+          "descartadas": [],
+          "google": [
+            {
+              "pedido": "sim-malo",
+              "status": 200,
+              "modelVersion": "sim-malo-fingido",
+              "uso": {
+                "promptTokenCount": 0
+              }
+            }
+          ],
+          "juicio": {
+            "respondió": true,
+            "entre 2 y 8 líneas": true,
+            "IVA 0,21 en todas": true,
+            "ninguna descartada ni supuesta": true,
+            "ninguna línea del catálogo": false,
+            "total entre 150 y 900 €": true
+          },
+          "bien": 5,
+          "de": 6
+        }
+      ]
+    }
+  ]
+}
