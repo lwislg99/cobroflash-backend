@@ -3,6 +3,7 @@
 **Fecha:** 20-sep-2026 · **Carril:** S5 (automatización, eficiencia e infraestructura) · **Gate:** sin gate
 **Medido contra:** `origin/main` = `f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4` · 2026-09-20T13:19:47Z (hora de GitHub)
 **Rama:** `scrum-954-vivo-no-es-listado` · worktree `D:/MILLONARIO/cobroFlash/wt-954` · CLI de Claude Code **2.1.278**
+**Tanda:** 7.727 tests, 7.613 pass, 3 fail, 111 skipped — los 3 son de `scrum939b` y son ajenos y conocidos
 
 > Todo el PASO 0 de abajo se midió contra ese `f2fa091b`. La rama mergeó después `origin/main`
 > `79061a9b6890c5f214695dd6614fe26836be5459` (28 commits, sin conflictos y sin tocar ninguno de sus
@@ -173,6 +174,33 @@ MUTANTES VIVOS: 0 de 3
 ```
 
 Registro entero: `docs/master/evidencias/scrum954/rojos.txt`.
+
+### 3.2 · La tanda, y los tres guards de la casa que cazaron este trabajo
+
+Suite completa con turno exclusivo del orquestador, memoria medida en comando aparte (3.763 MB
+libres, umbral 2.200), `FORCE_COLOR` comprobado ausente, TAP a fichero fuera del árbol y el código de
+salida leído en un segundo comando:
+
+```
+ℹ tests 7727 · pass 7613 · fail 3 · skipped 111 · duration_ms 278698
+los 3 fail son de `scrum939b`: ajenos y conocidos desde el 18-sep.
+```
+
+En la **primera** pasada eran **14**, y once eran míos. Los cazaron tres guards de la casa, y
+ninguno se relajó — se arregló lo que cada uno pedía:
+
+- **SCRUM-267** · el expediente no declaraba su ancla. Ahora lleva `**Medido contra:**` con el sha de
+  40 posiciones y la hora con huso, que es el formato del `docs/master/README.md`.
+- **SCRUM-723** · el banco de §3 llama a `git show origin/main:…`, o sea compara contra una
+  referencia MÓVIL, y eso va declarado con su motivo. El motivo es que la puerta de `sesion.mjs`
+  exige ser idéntica a esa referencia: contra cualquier otra, el banco no ejercitaría lo que la
+  puerta comprueba.
+- **SCRUM-836** · los tres `cae:` de las mutaciones nombraban una frase descriptiva, no un test
+  existente. Ahora nombran los tres casos que de verdad caen, que es lo que el meta-guard va a
+  ejecutar.
+
+    🔒 Tres guards escritos hace semanas cazaron, en una sola pasada, tres descuidos de un trabajo
+       que ya se creía terminado. Eso es lo que cuesta no tenerlos.
 
 ### 3.1 · 🔴 El error propio: en la primera pasada, el mutante 1 SOBREVIVIÓ
 
