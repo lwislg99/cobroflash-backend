@@ -2857,7 +2857,11 @@ tr.appendChild(tdConcept);
     const diaValidez = fechaCorta(validInput.value);
     const footer = document.createElement("div");
     footer.className = "preview-footer";
-    footer.textContent = "Presupuesto válido hasta el " + diaValidez + ".";
+    // Plantilla y no suma de cadenas, y el motivo es el censo: `ranurasDelDocumento` (SCRUM-600)
+    // junta las RANURAS que nombran el presupuesto para que el fundador tenga la lista entera
+    // delante. Concatenada, el extractor no la veía y la cuenta bajaba de 30 a 29 — y un censo que
+    // pierde una ranura no dice «no la veo», dice un número más pequeño. La frase es la misma.
+    footer.textContent = `Presupuesto válido hasta el ${diaValidez}.`;
     // 🔴 SCRUM-600 · EN EL DOCUMENTO SUELTO NO SE IMPRIME NINGUNA COLETILLA, y la omisión es la
     // decisión prudente, no la perezosa. Ésta es una frase LEGAL estampada en el papel que ve el
     // cliente del profesional; la del presupuesto habla de la validez de una OFERTA, que en un

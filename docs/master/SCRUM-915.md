@@ -275,3 +275,118 @@ marcadores. Cada corte sólo tiene que **registrar en su propia ficha** los que 
 
 **Orden que propongo:** 915e1 → 915e2 → 915h → 915i → 915g → 915k → 915j → 915f. El envío el
 último, porque es el único que necesita un GO del fundador y no conviene que bloquee a los demás.
+
+---
+
+## SCRUM-915e1 · el documento de la derecha deja de mentir y se rehace mientras escribes
+
+**Fecha:** 20-sep-2026 19:41:07 GMT · **Carril:** S2 (frontend) · **Corte:** 1.º de la partición aprobada
+**Medido contra:** `origin/main` = `8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`
+**Rama:** `scrum-915e1-documento-vivo` · **Rojo medido sobre:** `e73e1630084f0cfc1096d2812eb05368c1252f1e`
+**Instrumento:** `scripts/guard-915e1-documento-vivo.mjs` (`npm run guard:documento-vivo`)
+**Microcopy:** `docs/microcopy/2026-09-20-SCRUM-915e1-documento-vivo.md` (comentario 15868)
+
+### El defecto que abre el corte, y por qué no era un rótulo desactualizado
+
+El pie del documento de la derecha decía, fijo:
+
+> Presupuesto válido durante 30 días salvo indicación en contrario.
+
+Mientras tanto, el campo «Válido hasta» de Condiciones acepta **cualquier fecha** desde A16.2, se
+guarda en `validUntil` y ya se enseña en el resumen del paso. O sea que el profesional podía poner
+una semana, verlo bien en su editor, y mandarle al cliente un papel que prometía un mes.
+
+No era un texto viejo: era **el único sitio del documento donde la caducidad se afirmaba**, y
+afirmaba otra cosa que la caducidad guardada. Es la fila que el PASO 0 marcó como `parcial` con la
+nota «Arregla el “30 días” fijo de hoy».
+
+### Qué entra
+
+| | antes | ahora |
+|---|---|---|
+| pie del papel | «Presupuesto válido durante 30 días salvo indicación en contrario.» | «Presupuesto válido hasta el dd/mm/aaaa.», con la fecha que se guarda |
+| rótulo | «Vista previa del documento» | «Así lo verá el cliente» + «Se actualiza mientras escribes» |
+| hueco de la tabla | «Añade al menos una línea con concepto, cantidad y precio.» | «Aquí aparecerán los conceptos que añadas.» |
+| cuándo se repinta | una lista de campos escrita a mano | la misma delegación (`input`/`change`/`click` en `leftCard`) que ya refresca los pasos |
+| cuerpo de la tabla | `createElement('linesBody')` | `createElement('tbody')` |
+
+Los cuatro textos estaban firmados desde el 18-sep; esta entrega sólo los aplica y los registra.
+
+### Tres cosas que el fuente no distingue, y por eso el guard es de navegador
+
+1. **La delegación.** «Válido hasta» no tenía **ni un oyente**: se cambiaba la fecha y el papel no
+   se enteraba. Una lista de campos escrita a mano se queda corta el día que entra el campo número
+   once y nadie se acuerda de esa línea; la delegación no se queda corta nunca.
+2. **`linesBody` no es una etiqueta de HTML.** El código creaba un elemento desconocido dentro de
+   la `<table>` y las `<tr>` colgaban de él. Y no era inofensivo: `styles.css` lleva desde siempre
+   `.preview-lines-table tbody tr:nth-child(even)` —la cebra del documento— **que no ha pintado
+   nunca**, porque aquí nunca hubo un `tbody` al que casar. Medido: los hijos de la tabla eran
+   `["thead","linesbody"]`. En el fuente las dos versiones se leen igual.
+3. **`fechaCorta` pasa de `const` a declaración de función.** No es estilo: `renderPreview` corre
+   2.000 líneas antes y con `const` la función estaba en zona muerta. Se iza para que haya **una
+   sola forma** de escribir una fecha en esta pantalla, que es lo que evita que el resumen de
+   Condiciones y el papel del cliente empiecen a decir la misma fecha de dos maneras.
+
+### El rojo, y la mutación que decide
+
+**ROJO de partida** (`e73e1630`, sin ninguno de estos cambios): **7 hallazgos en 5 de 5 casos**.
+Entre ellos, el pie contestando la MISMA coletilla con tres fechas distintas puestas
+(20/10, 02/10, 20/11) y la tabla con hijos `["thead","linesbody"]`.
+
+**VERDE con el arreglo:** 5/5.
+
+**Mutante que decide** — se quita SÓLO la delegación y se deja todo lo demás:
+
+| mutante | qué cae | qué NO cae |
+|---|---|---|
+| sin la delegación en `leftCard` | `D.2` y `D.3`: el pie se queda con **la primera fecha** (20/10) con 02/10 y 20/11 puestas | las otras 5 casillas siguen verdes |
+
+O sea que cada mitad del arreglo sostiene lo suyo y el guard es específico: no cae en bloque.
+
+### Los censos que cobra el guard nuevo, corridos por su nombre
+
+| censo | antes | ahora |
+|---|---|---|
+| `scrum258-nota-por-sesion` | ✅ | ✅ |
+| `scrum522-guards-fuera-de-la-tanda` | 🔴 31 | ✅ 32, medido |
+| `scrum548-peaje-package-json` | 🔴 `3×#quotes-new` | ✅ `4×#quotes-new`, declarado |
+
+Éste **sí** se deriva —el puerto va en variable pero la ruta `#quotes-new` está escrita literal—,
+así que entra en el solape del editor en vez de declararse como «destino no resuelto». No se
+fusiona con los otros tres: los tres miran el EDITOR de la izquierda y éste mira el DOCUMENTO.
+
+### Los contratos de SCRUM-600, RE-ANCLADOS (no borrados)
+
+- `scrum600` · la ranura del pie sigue en la lista del fundador, con su texto nuevo. Para eso el
+  pie se escribe con **plantilla y no con suma de cadenas**: concatenado, `ranurasDelDocumento` no
+  lo veía y la cuenta bajaba de 30 a **29**. Un censo que pierde una ranura no dice «no la veo»:
+  dice un número más pequeño, y la lista que el fundador tiene delante deja de ser cierta sin que
+  salte nada.
+- `scrum600b` · «Vista previa del documento» → «Así lo verá el cliente», y la coletilla se ancla al
+  trozo FIJO («Presupuesto válido hasta el »), porque la fecha cambia cada día que corre la suite y
+  anclar a una fecha sería un contrato con caducidad. Los dos siguen siendo imprescindibles: cambia
+  lo que dicen, no que estén. 28/28 en verde.
+
+### Errores propios
+
+- **Di por muerta la casilla C antes de medirla.** Al escribir el guard supuse que «se construye
+  mientras escribes» iba a salir roja y que la delegación era lo que la arreglaba. El rojo dijo que
+  **C ya estaba verde** contra el código viejo: teclear un concepto ya repintaba el documento por
+  los oyentes de cada línea. Lo que la delegación arregla es **la fecha**, no el concepto. Si no
+  llego a correr el rojo, el expediente habría atribuido a este cambio una mejora que no era suya.
+
+    🔒 Un arreglo al que no se le mide el rojo se queda con el mérito del de al lado.
+
+- **El primer pie iba concatenado** y bajó el censo de ranuras de 30 a 29 sin que yo lo buscara.
+  Lo cazó el propio contrato de SCRUM-600, no yo.
+
+### Lo que NO cubre
+
+- **«Nº al generar»**, firmado para este mismo bloque: hoy el documento no tiene dónde pintar un
+  número, y dárselo es estructura nueva. Va con el corte que traiga el número.
+- El **resalte de la zona que se edita** y el **«Ver documento»** de móvil: son **915e2**.
+- Los **totales que se sacan del editor** de la izquierda (fila F del PASO 0): el desglose ya vive
+  en el documento, lo que falta es quitarlo de la izquierda dejando sólo el KPI. No entra aquí
+  porque mueve la tarjeta de totales, que es lo que toca **915h**.
+- Capturas AB6: cambia el texto del papel y una línea de rótulo; ni un componente nuevo, ni un
+  token nuevo, ni un color nuevo.

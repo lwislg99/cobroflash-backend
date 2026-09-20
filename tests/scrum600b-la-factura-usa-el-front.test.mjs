@@ -291,12 +291,20 @@ test('SCRUM-600b · ✅ EL PRESUPUESTO NO PIERDE NADA al compartir la página', 
     'Estado del presupuesto',                                   // el panel de estado
     'Total presupuesto',                                        // el KPI y el pie de la vista previa
     'Generar presupuesto',                                      // la acción primaria, reversible
-    'Presupuesto válido durante 30 días salvo indicación en contrario.', // la coletilla del papel
+    // 🔴 SCRUM-915e1 · RE-ANCLADA, no borrada: la coletilla del papel sigue ahí y sigue siendo
+    // imprescindible; lo que cambia es que ahora lleva DENTRO la fecha que el profesional puso
+    // (antes prometía «30 días» dijera lo que dijera el campo «Válido hasta»). Se ancla al trozo
+    // fijo con `includes`: la fecha cambia cada día que corre la suite, y anclar a una fecha sería
+    // un contrato con caducidad. Si el pie desapareciera —o se quedara sin fecha, que es cuando no
+    // se pinta— esta línea sigue cayendo, que es para lo que está.
+    'Presupuesto válido hasta el ',                             // la coletilla del papel
     'Guardar como plantilla', 'Usar plantilla',                 // F11
     'Guardado automáticamente',                                 // el borrador
     'IVA del presupuesto',                                      // el IVA por documento
     'Añade los conceptos que vas a presupuestar.',              // la pista del bloque de líneas
-    'Vista previa del documento',                               // F7
+    // SCRUM-915e1 · el rótulo del documento pasa a ser el texto firmado en el comentario 15868.
+    // Sigue siendo F7 y sigue teniendo que estar: cambia lo que dice, no que esté.
+    'Así lo verá el cliente',                                   // F7
     'Dirección de la obra',                                     // DOC-12
   ];
   const perdidas = IMPRESCINDIBLES.filter((t) => !hay(t));
