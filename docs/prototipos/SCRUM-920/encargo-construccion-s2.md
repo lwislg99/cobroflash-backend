@@ -39,8 +39,11 @@ pantalla y resalta los textos nuevos). Cuentas: `medicion.md`. Dirección: `dire
 - **El NIF del proveedor** y por qué no alimenta el veredicto: SCRUM-937 (S1).
 - **La lectura del ticket con IA** (SCRUM-912, S1, parada): el andamio de la pestaña «Alta» del prototipo (el
   interruptor «Con lectura del ticket») **no se lleva a producción**.
-- **La ruta que no valida la categoría** (SCRUM-943, S1) y **la clave cruda del KPI / el nombre del trabajo**
-  (SCRUM-944: su punto 1 lo lleva la S2, coordinar con ese PR; la S4 no lo toca).
+- **La ruta que no valida la categoría** (SCRUM-943: servidor, PR `scrum-943-categoria-validada`, lo lleva la S4 por encargo del
+  orquestador) y **SCRUM-944**, que tiene DOS puntos (leídos del ticket, 20-sep): el **punto 1** es **la clave cruda del KPI
+  «Mayor categoría»** (front, **lo lleva la S2**, coordinar con ese PR); el **punto 2** es **el nombre del trabajo** (servidor,
+  PR `scrum-944b-nombre-del-trabajo`, lo lleva la S4 por encargo del orquestador). 🔴 Una versión anterior de este
+  documento los llamaba al revés.
 - **Aceptar PDF** en la foto: ver la fila A3. No se construye sin decisión.
 
 ## 1 · Inventario fila a fila
@@ -63,8 +66,8 @@ existe y está firmado (se reutiliza literal) · **P = propuesto, SIN FIRMAR** (
 | L9 | la lista | `<table min-width:600px>` dentro de `table-scroll` `:238-239`: **600 px en 366 de caja a 390**, se recorre de lado | filas en **rejilla**: a 1280, cinco columnas; a 390, tres renglones. **0 cajas que desbordan** | sustituir la tabla; **no** tocar `.table-scroll .table` global (es de otros 15 usos, ver `patron-tabla-de-lado.md`) | — |
 | L10 | concepto + notas + fecha | `:253-255` | igual, sin recortar | nada | F |
 | L11 | píldora de categoría | `catPill` `:11-14`, **con `style=` en línea** | mismos cinco colores (`CATEGORY_LABELS`) | mover a clases con los tokens; la norma A7 prohíbe el `style=` | F |
-| L12 | **la foto en la fila** | no existe: nada dice si hay foto | miniatura + «Foto guardada», o «Sin foto» | pintar desde `receiptData`. **Ojo, no medido:** `receiptData` (base64) viaja en cada gasto de la lista; con foto de ~1,5 MB por fila el peso de `/admin/expenses` puede ser un problema. Medir antes de pintar miniaturas; si pesa, pedirlo a la S1 (¿un booleano `tieneFoto`?) | **P→firmado** «Foto guardada», «Sin foto» (un hecho sobre el archivo, sin triángulo) |
-| L13 | celda Trabajo | `expenseJobCell` `:66-72`; sin trabajo, «—» | el nombre del trabajo como en Trabajos; sin trabajo, «Sin trabajo»; el proveedor debajo | enlace a 44 px; el nombre «Presupuesto #5 · María López» es **SCRUM-944 punto 1** (hoy `jobLabel` `:31` cae a «Trabajo») | «Presupuesto sin trabajo» F · «Sin trabajo» **P** |
+| L12 | **la foto en la fila** | no existe: nada dice si hay foto | miniatura + «Foto guardada», o «Sin foto» | pintar desde `receiptData`. **MEDIDO el 20-sep (`sonda-peso-lista-gastos.mjs`, ruta y servicio reales, base doblada):** la lista pide los gastos con `include` y **sin `select`**, así que trae TODAS las columnas —`receipt_data` (Text, base64) incluida— de hasta 200 filas, y no hay `compression` en `package.json`. Respuesta con foto en cada fila: **20 gastos × 0,49 MiB = 9,8 MiB · 20 × 1,5 MiB = 30 MiB · 60 × 0,49 = 29 MiB · 60 × 1,5 = 90 MiB · 200 × 1,5 = 300 MiB** (el tope de la foto es `FOTO_TECHO_DATAURI` = 1,5 MiB). **NO está medido el tamaño real de una foto guardada ni el peso en staging/producción.** Pintar miniaturas SIN cambiar la ruta empeora esto: antes de 920d hace falta que el servidor no mande la foto en la lista (p. ej. un booleano `tieneFoto` y la foto por otra ruta); el modal de edición hoy lee `expense.receiptData` de la fila de la lista (`expensesView.js:399`, `:514`), así que ese cambio toca también el front. Es un ticket de servidor (S1) + front (S2) por abrir: **920d no debe empezar sin él** | **P→firmado** «Foto guardada», «Sin foto» (un hecho sobre el archivo, sin triángulo) |
+| L13 | celda Trabajo | `expenseJobCell` `:66-72`; sin trabajo, «—» | el nombre del trabajo como en Trabajos; sin trabajo, «Sin trabajo»; el proveedor debajo | enlace a 44 px; el nombre «Presupuesto #5 · María López» es **SCRUM-944 punto 2, de SERVIDOR** (rama `scrum-944b-nombre-del-trabajo`): cuando entre, `job.titulo` ya llega compuesto con `tituloDeTrabajo` y **el front lo pinta tal cual, sin recomponerlo** (hoy `jobLabel` `:31` cae a «Trabajo»; ese respaldo queda sin uso) | «Presupuesto sin trabajo» F · «Sin trabajo» **P** |
 | L14 | importe | `:262` | a la derecha, `amount` | nada | — |
 | L15 | **papelera** | 🗑 de 21 × 29 px pegada a una fila que navega (`:264`), con `confirm()` nativo (`:278`) | va al **«⋯» de la fila** (hoja inferior), a 44 px, con su confirmación | usar `overflowMenu` de AB3 (`api.js:1200`); el borrado y su «¿Eliminar este gasto?» **se conservan**; el 🗑 deja de ser un botón suelto | «🗑 Eliminar» y «¿Eliminar este gasto?» F |
 | L16 | las opciones del «⋯» | no existe | Editar · Ver la foto / 📷 Añadir la foto · Ver trabajo / Vincular a un trabajo · 🗑 Eliminar | cada opción tiene que **cambiar el estado al pulsarla** (es el defecto con el que se publicó 917) | **P** las tres primeras |
@@ -174,4 +177,6 @@ dibujado como hueco y no existe; (4) aceptar PDF queda propuesto, no decidido.
 
 - El peso real de `/admin/expenses` con fotos (L12).
 - Si algún guard de `sw.js`/SHELL obliga a registrar la vista nueva del detalle (D1): se sabrá al construirla.
-- Qué es exactamente el «punto 1» de SCRUM-944 que lleva la S2 (lo he leído del encargo, no del ticket).
+- ~~Qué es exactamente el «punto 1» de SCRUM-944~~ → **resuelto el 20-sep leyendo el ticket**: punto 1 = el KPI con la clave cruda
+  (S2, front); punto 2 = el nombre del trabajo (servidor, S4). Ver §0.
+- ~~El peso de `/admin/expenses` con fotos (L12)~~ → **medido el 20-sep** (fila L12): el mecanismo sí; el tamaño real de una foto guardada y el peso contra staging, no.
