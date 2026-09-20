@@ -92,3 +92,61 @@ Evidencia: `docs/master/evidencias/SCRUM-912/lecturas-staging-18sep-sin-clave.js
 
 1. **`tickets.mjs` escribía al importarse.** Su modo CLI miraba `process.argv[2]` a secas, y cuando lo importa `mide.mjs` ese argumento es el SHA: creó una carpeta `effc107e…/` con los tres HTML **dentro del árbol**. Borrada (la creé yo). Ahora solo actúa si es el script principal. Rojo visto en vivo (la carpeta apareció); verde medido: importado con un argumento no crea nada, y como CLI sigue escribiendo 3 ficheros.
 2. **`mide.mjs` decía «3 lecturas gastadas»** con tres 503 que no llegaron a ningún modelo: una operación que no se ejecutó se leía como hecha. Ahora cuenta las que contestó un modelo y sale con 1 si son cero.
+
+---
+
+## SCRUM-912c · Dos días después: repetido sobre otro SHA, **mismo resultado**
+
+**Medido:** 2026-09-20 13:26:24Z (hora de GitHub) · `origin/main` = staging `/version` =
+`17a1ec5736dabd19e2638c2d3a3cc17fcc88a02b` · Sesión 1 (relevo del relevo) · rama `scrum-912c-lecturas-staging`.
+**Turno de staging:** por el canal, dado por el orquestador cuando lo soltó la S2. Sin lock de base (misma
+razón que en 912b: `turno-staging.mjs` no funciona desde un worktree).
+**Queda en staging:** 1 `authSession` del `test-login` de `qa@staging.yaqu`. Nada más.
+
+### Resultado
+
+| ticket | HTTP | ms | error | modelo |
+|---|---|---|---|---|
+| t1-completo-21 | 503 | 311 | `ai_not_configured` | — |
+| t2-dos-tipos | 503 | 247 | `ai_not_configured` | — |
+| t3-solo-total | 503 | 250 | `ai_not_configured` | — |
+
+**3 peticiones · 0 contestadas por un modelo · exit 1.** Es un rojo CON población, no un instrumento que
+no arrancó. **Coste cero:** el 503 sale antes de salir a Google, así que no se gastó cupo ni una de las 5
+lecturas del tope.
+
+**Staging SIGUE sin `GEMINI_API_KEY`, 48 horas después.** Comparados los dos JSON de evidencia byte a
+byte, lo único que cambia entre el 18 y el 20 de septiembre es el SHA, la marca de tiempo y los
+milisegundos: **los tres códigos de error son idénticos**. Lo que falta no es código — el código lleva
+desde el 18 en `main` y desplegado. Falta que el fundador ponga la variable en el servicio de STAGING de
+Railway (regla 9: directo en Railway, nunca por el chat). Mientras no esté, **912 no se puede cerrar por
+«lee bien»**, porque nadie ha visto todavía a un modelo leer un ticket.
+
+Evidencia: `docs/master/evidencias/SCRUM-912/lecturas-staging-20sep-sin-clave.json`.
+
+### 🔒 Un SHA leído hace un minuto no es el SHA de ahora
+
+**El primer intento de hoy abortó**, y esa aborción es el hallazgo. La secuencia, entera:
+
+1. Leí `GET /version` de staging: `f2fa091b…`, idéntico a mi `origin/main`. Anoté «staging sirve el
+   código de 912 ✓».
+2. **Un minuto después** lancé `mide.mjs f2fa091b… qa@staging.yaqu 3`.
+3. El propio instrumento se paró: *«staging sirve `17a1ec57…`, no `f2fa091b…`: el código nuevo no está»*.
+
+Entre mis dos comandos entró un PR, `main` se movió y Railway redesplegó. **Con auto-merge armado y seis
+sesiones empujando, `origin/main` se mueve debajo de ti entre dos comandos.** Lo que lo cortó no fue el
+cuidado: fue que `mide.mjs` compara el SHA **en el momento de medir**, no el que le sonaba de antes. Sin
+ese corte habría leído el código viejo y lo habría publicado como «las tres lecturas de SCRUM-912».
+
+Nótese la forma del fallo, que es la de siempre en este repositorio: **las tres peticiones habrían salido
+bien, con su HTTP y sus milisegundos**. No habría habido ningún error que leer. Una medición del sujeto
+equivocado no se parece a un fallo: se parece a una medición.
+
+    🔒 Una comprobación de versión que se hace una vez al principio no protege un comando que se lanza
+       después. El corte va DENTRO del instrumento, contra el servidor, en el instante de medir.
+
+### Lo que esta entrada NO afirma
+
+Que Gemini lea bien importe, IVA, fecha o NIF. **Sigue sin medirse desde el 18-sep**, y no se puede medir
+sin la variable. Los `0/7`, `0/5` y `0/6` aciertos de la tabla **no son un suspenso del modelo**: no hubo
+modelo. Leerlos como calidad sería exactamente el error que 912b ya cazó una vez.
