@@ -1,4 +1,4 @@
-﻿node : ⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+node : ⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
 En línea: 1 Carácter: 409
 + ... sh/wt-917c; node scripts/guard-detalle-trabajo-917.mjs > "C:\Users\Ad ...
 +                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

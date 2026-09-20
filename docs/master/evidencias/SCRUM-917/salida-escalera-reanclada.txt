@@ -1,4 +1,4 @@
-﻿navegador: Edge (Windows)
+navegador: Edge (Windows)
 
 ══════════════════════════════════════════════════════════════════════════════════════
 ① LA LISTA Y EL DETALLE DICEN LO MISMO, ESTADO POR ESTADO

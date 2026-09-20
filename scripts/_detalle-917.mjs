@@ -14,6 +14,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { scriptsDelDashboard, hojasDelDashboard } from '../tests/_banco-vistas.mjs';
+// 🔴 Los teléfonos de los casos salen de aquí y NO se escriben a mano. `+34 6XX` es rango de móvil
+// español ORDINARIO: un número inventado ahí puede ser el de alguien de verdad, y además se
+// confunde con un cliente real si se cuela en una base. El rango imposible es 34 + 0 + 8 dígitos.
+// Lo vigila `tests/scrum262-telefonos-de-prueba.test.mjs`, que me cazó los tres que había puesto
+// a mano (600111222, 600333444, 600555666).
+import { telefonoDePrueba } from './_telefonos-prueba.mjs';
 
 export const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -27,7 +33,7 @@ export const JOB_PAGADO = {
   createdAt: '2026-09-01T09:00:00Z',
   scheduledAt: '2026-09-25T08:00:00Z',
   titulo: '',                       // sin nombre propio: el detalle cae al del cliente
-  customer: { id: 41, name: 'María López', phone: '600111222', email: 'maria@example.com' },
+  customer: { id: 41, name: 'María López', phone: telefonoDePrueba(1), email: 'maria@example.com' },
   asignados: [],
   operario: null,
   direccion: 'C/ Alcalá 120, Madrid',
@@ -46,7 +52,7 @@ export const JOB_A_MEDIAS = {
   ...JOB_PAGADO,
   id: 3100,
   status: 'in_progress',
-  customer: { id: 42, name: 'Talleres Ortega SL', phone: '600333444', email: null },
+  customer: { id: 42, name: 'Talleres Ortega SL', phone: telefonoDePrueba(2), email: null },
   totalAceptado: 417.45,
   totalCobrado: 100,
 };
@@ -70,7 +76,7 @@ export const JOB_COBRADO_DE_MAS = {
   ...JOB_PAGADO,
   id: 3102,
   status: 'completed',
-  customer: { id: 44, name: 'Bar El Puente', phone: '600555666', email: null },
+  customer: { id: 44, name: 'Bar El Puente', phone: telefonoDePrueba(3), email: null },
   totalAceptado: 539.05,
   totalCobrado: 628.60,
 };
