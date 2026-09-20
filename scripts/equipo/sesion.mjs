@@ -30,7 +30,22 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export const NOMBRES = /^(orquestador|sesion-[0-5])$/;
+/**
+ * EL EQUIPO SALE DE `config.json` (SCRUM-951a): un nombre de sesión admitido es `prefijo` + uno de
+ * sus `puestos`. Así dos equipos —el de Luis y el de Javier— nunca comparten nombres, ni en el canal
+ * ni en esta lista blanca.
+ *
+ * Este valor es el equipo de Luis tal y como estaba escrito antes en una regex, y SOLO lo usan las
+ * llamadas puras de los tests. La CLI pasa SIEMPRE el equipo validado de su config: una instalación
+ * sin equipo declarado no actúa (`puertaDeIntegridad`).
+ */
+export const EQUIPO_DE_LUIS = Object.freeze({
+  prefijo: '',
+  puestos: Object.freeze(['orquestador', 'sesion-0', 'sesion-1', 'sesion-2', 'sesion-3', 'sesion-4', 'sesion-5']),
+  orquestador: 'orquestador',
+});
+const PREFIJO = /^[a-z0-9-]{0,16}$/;
+const PUESTO = /^[a-z0-9][a-z0-9-]{0,31}$/;
 export const RUTA_EN_EL_REPO = 'scripts/equipo/sesion.mjs';
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 /** Más de esto parada → sesión nueva en vez de reanudar: la caché ya está fría. */
@@ -44,18 +59,40 @@ export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
 // Decisiones puras
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
+/**
+ * El equipo de un config, validado. Todo se DECLARA: un `prefijo` vacío es el equipo de Luis, y uno
+ * ausente es un config sin terminar — si se aceptaran igual, «vacío» y «olvidado» se leerían igual.
+ *
+ * @returns {{ok:true, equipo:{prefijo:string, puestos:string[], orquestador:string}} | {ok:false, veredicto:'NO-PUDE-MIRAR', motivo:string}}
+ */
+export function validarEquipo(config) {
+  const no = (motivo) => ({ ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: `config.json: ${motivo}` });
+  if (!config || typeof config !== 'object') return no('no es un objeto');
+  const { prefijo, puestos, orquestador } = config;
+  if (typeof prefijo !== 'string') return no('falta `prefijo` (vacío "" para el equipo sin prefijo, pero declarado)');
+  if (!PREFIJO.test(prefijo)) return no(`prefijo «${prefijo}» inválido: minúsculas, números y guiones, hasta 16`);
+  if (!Array.isArray(puestos) || puestos.length === 0) return no('falta `puestos`, o está vacío');
+  for (const p of puestos) {
+    if (typeof p !== 'string' || !PUESTO.test(p)) return no(`puesto «${p}» inválido: minúsculas, números y guiones`);
+  }
+  if (new Set(puestos).size !== puestos.length) return no('hay puestos repetidos');
+  if (typeof orquestador !== 'string' || !puestos.includes(orquestador)) return no(`el orquestador «${orquestador}» no es uno de los puestos`);
+  return { ok: true, equipo: { prefijo, puestos: [...puestos], orquestador } };
+}
+
 /** @returns {null | {veredicto:'NOMBRE-NO-PERMITIDO', motivo:string}} */
-export function validarNombre(nombre) {
-  if (typeof nombre === 'string' && NOMBRES.test(nombre)) return null;
-  return { veredicto: 'NOMBRE-NO-PERMITIDO', motivo: `«${nombre}» no está en la lista blanca (orquestador, sesion-0…sesion-5)` };
+export function validarNombre(nombre, equipo = EQUIPO_DE_LUIS) {
+  if (typeof nombre === 'string' && equipo.puestos.some((p) => equipo.prefijo + p === nombre)) return null;
+  const lista = equipo.puestos.map((p) => equipo.prefijo + p).join(', ');
+  return { veredicto: 'NOMBRE-NO-PERMITIDO', motivo: `«${nombre}» no está en la lista blanca del equipo (${lista})` };
 }
 
 /**
  * Los argumentos de `claude` para lanzar. Nunca recibe flags de fuera: solo el nombre (validado),
  * el sessionId (validado) y el texto del prompt, que va como UN argumento y no se interpreta.
  */
-export function argsLanzar({ modo, nombre, sessionId, prompt }) {
-  if (validarNombre(nombre)) throw new Error('nombre fuera de la lista blanca');
+export function argsLanzar({ modo, nombre, sessionId, prompt, equipo }) {
+  if (validarNombre(nombre, equipo)) throw new Error('nombre fuera de la lista blanca');
   if (typeof prompt !== 'string' || !prompt.trim()) throw new Error('prompt vacío');
   if (modo === 'nueva') return ['--bg', '-n', nombre, '--permission-mode', 'auto', prompt];
   if (modo === 'reanudar') {
@@ -73,8 +110,8 @@ export function argsLanzar({ modo, nombre, sessionId, prompt }) {
  *   `agentes`: la salida de `claude agents --json`, o `null` si no se pudo leer.
  *   `registro`: `{ [nombre]: { sessionId, ultimaTanda } }`, o `null` si no se pudo leer.
  */
-export function decidirLanzar({ nombre, agentes, registro, ahora }) {
-  const malo = validarNombre(nombre);
+export function decidirLanzar({ nombre, agentes, registro, ahora, equipo }) {
+  const malo = validarNombre(nombre, equipo);
   if (malo) return malo;
   if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
   if (!registro || typeof registro !== 'object') return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer el registro de sesiones' };
@@ -202,8 +239,8 @@ export function decidirRelevo({ contexto, ultimaActividad, ahora, tandaNueva = f
  * resultado los devuelve en `comprobado` para que un `SIN-TRASPASO` se pueda discutir sin volver a
  * correrlo.
  */
-export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora, esperaMs = ESPERA_TRASPASO_MS }) {
-  const malo = validarNombre(nombre);
+export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora, esperaMs = ESPERA_TRASPASO_MS, equipo }) {
+  const malo = validarNombre(nombre, equipo);
   if (malo) return malo;
   if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
 
@@ -239,8 +276,8 @@ export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ah
 }
 
 /** Qué hacer al parar `nombre`: siempre por id, y solo si el nombre casa. */
-export function decidirParar({ nombre, agentes }) {
-  const malo = validarNombre(nombre);
+export function decidirParar({ nombre, agentes, equipo }) {
+  const malo = validarNombre(nombre, equipo);
   if (malo) return malo;
   if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
   const vivas = agentes.filter((a) => a && a.name === nombre && a.kind === 'background');
@@ -275,6 +312,13 @@ export function puertaDeIntegridad({ rutaPropia, rutaEnElRepo = RUTA_EN_EL_REPO,
   if (!config || typeof config.repo !== 'string' || !config.repo) {
     return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'config.json no trae la ruta del repositorio' };
   }
+  // SCRUM-951a (A2): sin la carpeta de los traspasos, su ruta salía RELATIVA y `relevar` decía
+  // SIN-TRASPASO para siempre — un «no» seguro que se lee igual que «la sesión no lo ha escrito».
+  if (typeof config.traspasos !== 'string' || !config.traspasos) {
+    return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'config.json no trae la carpeta de los traspasos (`traspasos`)' };
+  }
+  const e = validarEquipo(config);
+  if (!e.ok) return { ok: false, veredicto: e.veredicto, motivo: e.motivo };
   const main = git(config.repo, ['show', `origin/main:${rutaEnElRepo}`], { binario: true });
   if (main.status !== 0) {
     return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: `no se pudo leer origin/main:${rutaEnElRepo}` };
@@ -283,7 +327,7 @@ export function puertaDeIntegridad({ rutaPropia, rutaEnElRepo = RUTA_EN_EL_REPO,
   if (!Buffer.from(main.stdoutBuffer).equals(propio)) {
     return { ok: false, veredicto: 'ALTERADO', motivo: `esta copia no es idéntica a origin/main:${rutaEnElRepo}` };
   }
-  return { ok: true, config };
+  return { ok: true, config, equipo: e.equipo };
 }
 
 function gitReal(cwd, args, { binario = false } = {}) {
@@ -334,13 +378,23 @@ function carpetasDeProyecto(config) {
 }
 
 /**
- * Dónde escribe su traspaso cada puesto: `project_sN_traspaso.md` en la memoria del proyecto
- * (`config.traspasos`), que es lo que dice la A19. Es el fichero cuya fecha decide si se para o no,
- * así que la ruta se calcula en un solo sitio y se imprime en el resultado.
+ * Dónde escribe su traspaso cada puesto, en la memoria del proyecto (`config.traspasos`), que es lo
+ * que dice la A19. Es el fichero cuya fecha decide si se para o no, así que la ruta se calcula en un
+ * solo sitio y se imprime en el resultado.
+ *
+ *   `sesion-N`       → `project_sN_traspaso.md`
+ *   cualquier otro   → `project_<puesto>_traspaso.md`  (el orquestador: `project_orquestador_traspaso.md`)
+ *
+ * SIN el prefijo del equipo: la memoria es de cada máquina, y el nombre del fichero es el del puesto.
+ * SCRUM-951a (A3): el orquestador se buscaba en `project_traspaso.md`, que no existe; su traspaso de
+ * verdad se llama `project_orquestador_traspaso.md` (medido el 18-sep-2026).
  */
 export function rutaDelTraspaso(config, nombre) {
   const base = (config && config.traspasos) || '';
-  const fichero = nombre === 'orquestador' ? 'project_traspaso.md' : `project_s${nombre.slice(-1)}_traspaso.md`;
+  const prefijo = (config && config.prefijo) || '';
+  const puesto = prefijo && nombre.startsWith(prefijo) ? nombre.slice(prefijo.length) : nombre;
+  const n = /^sesion-(\d+)$/.exec(puesto);
+  const fichero = n ? `project_s${n[1]}_traspaso.md` : `project_${puesto}_traspaso.md`;
   return path.join(base, fichero);
 }
 
@@ -367,18 +421,18 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const rutaPropia = fileURLToPath(import.meta.url);
   const puerta = puertaDeIntegridad({ rutaPropia });
   if (!puerta.ok) salir(2, puerta);
-  const { config } = puerta;
+  const { config, equipo } = puerta;
   const dir = path.dirname(rutaPropia);
   const [accion, nombre, ficheroPrompt] = process.argv.slice(2);
 
   if (accion === 'estado') {
     const agentes = leerAgentes(config);
     if (!agentes) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' });
-    salir(0, { veredicto: 'ESTADO', sesiones: agentes.filter((a) => NOMBRES.test(a.name || '')) });
+    salir(0, { veredicto: 'ESTADO', sesiones: agentes.filter((a) => validarNombre(a.name, equipo) === null) });
   }
 
   if (accion === 'contexto') {
-    const malo = validarNombre(nombre);
+    const malo = validarNombre(nombre, equipo);
     if (malo) salir(1, malo);
     const c = leerContexto(config, nombre, leerAgentes(config));
     if (c.veredicto !== 'CONTEXTO') salir(2, c);
@@ -391,6 +445,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
 
   if (accion === 'relevar') {
+    const malo = validarNombre(nombre, equipo);
+    if (malo) salir(1, malo);
     // El encargo viene en un fichero, igual que el prompt de `lanzar`: por la línea de órdenes
     // viajaría troceado por el shell, y es justo lo que NO puede faltar (una sesión sin encargo
     // gasta contexto preguntando qué hacer).
@@ -407,7 +463,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     let traspasoMtime;
     try { traspasoMtime = fs.statSync(traspaso).mtimeMs; } catch { traspasoMtime = undefined; }
 
-    const d = decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora: Date.now() });
+    const d = decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora: Date.now(), equipo });
     if (d.veredicto !== 'RELEVAR' && d.veredicto !== 'LANZAR') salir(1, d);
 
     if (d.veredicto === 'RELEVAR') {
@@ -417,7 +473,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
 
     // 🔴 SIEMPRE 'nueva', NUNCA 'reanudar': ese es el punto entero de la A19. Reanudar arrastraría
     // la caché que el relevo viene a soltar.
-    const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo });
+    const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo, equipo });
     const r = claude(config, args);
     const m = /backgrounded · ([0-9a-f]{8}) · /.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
@@ -429,7 +485,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
 
   if (accion === 'parar') {
-    const d = decidirParar({ nombre, agentes: leerAgentes(config) });
+    const d = decidirParar({ nombre, agentes: leerAgentes(config), equipo });
     if (d.veredicto !== 'PARAR') salir(d.veredicto === 'NADA' ? 0 : 1, d);
     const stop = claude(config, ['stop', d.id]);
     const rm = claude(config, ['rm', d.id]);
@@ -440,9 +496,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     let prompt;
     try { prompt = fs.readFileSync(ficheroPrompt, 'utf8'); } catch { salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer el fichero del prompt' }); }
     const registro = leerRegistro(dir);
-    const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now() });
+    const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo });
     if (d.veredicto !== 'NUEVA' && d.veredicto !== 'REANUDAR') salir(d.veredicto === 'YA-VIVA' ? 0 : 1, d);
-    const args = argsLanzar({ modo: d.veredicto === 'NUEVA' ? 'nueva' : 'reanudar', nombre, sessionId: d.sessionId, prompt });
+    const args = argsLanzar({ modo: d.veredicto === 'NUEVA' ? 'nueva' : 'reanudar', nombre, sessionId: d.sessionId, prompt, equipo });
     const r = claude(config, args);
     const m = /backgrounded · ([0-9a-f]{8}) · /.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });

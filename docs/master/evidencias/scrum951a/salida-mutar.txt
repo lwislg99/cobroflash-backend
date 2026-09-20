@@ -1,0 +1,51 @@
+=== mut951.txt
+BASE verde · 11 mutaciones declaradas
+#1 CAE · scripts/equipo/sesion.mjs · «🔴 A2 · sin `traspasos` en config.json, sesion.mjs dice NO-PUDE-MIRAR»
+#2 CAE · scripts/equipo/instalar.mjs · «🔴 A2 · el instalador graba en config.json la carpeta de los traspasos»
+#3 CAE · scripts/equipo/instalar.mjs · «🔴 el instalador se NIEGA si la carpeta de los traspasos no existe»
+#4 CAE · scripts/equipo/instalar.mjs · «🔴 el prefijo se DECLARA»
+#5 CAE · scripts/equipo/sesion.mjs · «🔴 una config de equipo inválida no actúa»
+#6 CAE · scripts/equipo/sesion.mjs · «🔴 con prefijo, `estado` solo lista las sesiones de SU equipo»
+#7 CAE · scripts/equipo/sesion.mjs · «🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo»
+#8 CAE · scripts/equipo/orquestador-arranque.mjs · «🔴 la tanda lanza al orquestador DEL CONFIG, con su prefijo»
+#9 CAE · scripts/equipo/sesion.mjs · «🔴 rutaDelTraspaso: sesion-N → project_sN, cualquier otro puesto → project_<puesto>»
+#10 CAE · scripts/equipo/comprobar-instalacion.mjs · «veredicto global: NO-PUDE-MIRAR gana a FALLA»
+#11 CAE · scripts/equipo/comprobar-instalacion.mjs · «🔴 ROJO: con la copia instalada de sesion.mjs TOCADA, la lista da FALLA»
+11 de 11 cayeron
+=== mut-scrum899-sesion-lista-blanca.test.mjs.txt
+BASE verde · 5 mutaciones declaradas
+#1 CAE · scripts/equipo/sesion.mjs · «🔴 ROJO: una copia ALTERADA se niega a actuar y no llama a claude»
+#2 CAE · scripts/equipo/sesion.mjs · «🔴 ROJO: ejecutada desde un árbol de git, no actúa»
+#3 CAE · scripts/equipo/sesion.mjs · «🔴 la lista blanca rechaza cualquier nombre que no sea del equipo»
+#4 CAE · scripts/equipo/sesion.mjs · «🔴 reanudar va con el sessionId COMPLETO y SIN flags (con flags arranca una copia)»
+#5 CAE · scripts/equipo/sesion.mjs · «🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte permisos»
+5 de 5 cayeron
+=== mut-scrum899b-arranque-de-la-tanda.test.mjs.txt
+BASE verde · 4 mutaciones declaradas
+#1 CAE · scripts/equipo/orquestador-arranque.mjs · «🔴 ROJO: un orquestador-arranque ALTERADO no lanza nada»
+#2 CAE · scripts/equipo/orquestador-arranque.mjs · «🔴 ROJO: con sesion.mjs ALTERADO, la tanda no lanza nada»
+#3 CAE · scripts/equipo/instalar.mjs · «🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza el arranque»
+#4 CAE · scripts/equipo/instalar.mjs · «🔴 arranque.cmd copia desde origin/main los scripts y el prompt, y lanza el arranque»
+4 de 4 cayeron
+=== mut-scrum899c-relevar-y-contexto.test.mjs.txt
+BASE verde · 6 mutaciones declaradas
+#1 CAE · scripts/equipo/sesion.mjs · «🔴 el contexto es el del ÚLTIMO turno, no el máximo histórico»
+#2 CAE · scripts/equipo/sesion.mjs · «🔴 el contexto NO incluye output_tokens: es lo que se manda, no lo que contesta»
+#3 CAE · scripts/equipo/sesion.mjs · «🔴 SUELO: sin turnos legibles el contexto es null, NUNCA 0»
+#4 CAE · scripts/equipo/sesion.mjs · «🔴 el jsonl se busca en TODAS las carpetas de proyecto, no solo en la del repo»
+#5 CAE · scripts/equipo/sesion.mjs · «🔴 no se para una sesión que está TRABAJANDO, aunque el traspaso esté fresco»
+#6 CAE · scripts/equipo/sesion.mjs · «🔴 no se para una sesión cuyo traspaso no se ha reescrito»
+6 de 6 cayeron
+=== mutctl.txt
+BASE verde · 10 mutaciones declaradas
+#1 VIVE · scripts/equipo/instalar.mjs · «🔴 A2 · el instalador graba»
+#2 CAE · scripts/equipo/sesion.mjs · «🔴 A2 · sin `traspasos` en config.json, sesion.mjs dice NO-PUDE-MIRAR»
+#3 CAE · scripts/equipo/instalar.mjs · «🔴 A2 · el instalador graba en config.json la carpeta de los traspasos»
+#4 CAE · scripts/equipo/instalar.mjs · «🔴 el instalador se NIEGA si la carpeta de los traspasos no existe»
+#5 CAE · scripts/equipo/instalar.mjs · «🔴 el prefijo se DECLARA»
+#6 CAE · scripts/equipo/sesion.mjs · «🔴 una config de equipo inválida no actúa»
+#7 CAE · scripts/equipo/sesion.mjs · «🔴 con prefijo, `estado` solo lista las sesiones de SU equipo»
+#8 CAE · scripts/equipo/sesion.mjs · «🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo»
+#9 CAE · scripts/equipo/orquestador-arranque.mjs · «🔴 la tanda lanza al orquestador DEL CONFIG, con su prefijo»
+#10 CAE · scripts/equipo/sesion.mjs · «🔴 rutaDelTraspaso: sesion-N → project_sN, cualquier otro puesto → project_<puesto>»
+9 de 10 cayeron

@@ -230,6 +230,7 @@ leído: una caja CSS no es lo que ocupa.
 ## A8 · Cómo se entrega
 
 Rama y SHA de 40 caracteres COMPLETO. No lo cortes.
+El informe de entrega dice SIEMPRE tu contexto medido, con la cifra (la comprobación de A19).
 El banco SE SUBE: el scratchpad es efímero y ya se perdió uno, y
 costó una tanda entera. Si no está en git, no existe. Y los
 instrumentos se comitean ANTES de tocarlos.
@@ -488,8 +489,24 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
      mensaje reescribe la conversación entera; Claude Code lo avisa con «Idle… re-cache about Nk
      tokens»;
   3. al empezar la tanda del día siguiente.
+- 🔴 **La COMPROBACIÓN al entregar — la hace la propia sesión, no espera a que se la pidan.** Tres
+  casillas, cada una sí o no, después de cada entrega (push hecho o plan entregado):
+  1. ¿He **medido** mi contexto? Es el `usage` del ÚLTIMO mensaje de mi propio jsonl: `input_tokens` +
+     `cache_read_input_tokens` + `cache_creation_input_tokens`. Desde fuera, `sesion.mjs contexto <nombre>`
+     (el lanzador de la S5) lee lo mismo. Estimarlo no vale.
+  2. ¿Lo **digo en el informe de entrega**, con la cifra, aunque sea bajo? Un informe sin la cifra no pasa
+     esta casilla.
+  3. ¿Pasa de **300k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
+
+  Y **en mitad de una entrega**, si pasa de **500k**: busco el primer punto seguro (un commit local, nunca
+  a medio editar), escribo el traspaso y pido el relevo. Es la única excepción a «nunca a mitad de una
+  entrega» de abajo, y existe porque seguir hasta el final a ese tamaño cuesta más que un traspaso.
+
+  ✗ **Falla:** el 18-sep-2026 todas las sesiones pasaban de 350k y ninguna lo medía; la Sesión 0 llegó a
+  ~560k entregando SCRUM-951b **sin decirlo en ningún informe**, y el relevo se pidió desde fuera. La norma
+  existía; lo que faltaba era una casilla que se contesta al entregar.
 - **Cuándo NO se releva:**
-  - **Nunca a mitad de una entrega.**
+  - **Nunca a mitad de una entrega** (salvo el caso de 500k de arriba, y siempre en un punto seguro).
   - Tampoco en cada tarea: si una entrega se cierra por debajo de 300k, el siguiente encargo entra
     en la misma sesión.
   - Si el uso se acaba o Claude Code no deja seguir, el traspaso se deja ANTES. El último informe

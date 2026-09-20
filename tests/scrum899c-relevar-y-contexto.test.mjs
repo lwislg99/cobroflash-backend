@@ -274,7 +274,10 @@ test('la ruta del traspaso sale de un solo sitio y es la que dice la A19', () =>
   const config = { traspasos: path.join('/memoria') };
   assert.equal(s.rutaDelTraspaso(config, 'sesion-5'), path.join('/memoria', 'project_s5_traspaso.md'));
   assert.equal(s.rutaDelTraspaso(config, 'sesion-0'), path.join('/memoria', 'project_s0_traspaso.md'));
-  assert.equal(s.rutaDelTraspaso(config, 'orquestador'), path.join('/memoria', 'project_traspaso.md'));
+  // SCRUM-951a: aquí decía `project_traspaso.md`, y el test FIJABA el defecto. El traspaso del
+  // orquestador se llama `project_orquestador_traspaso.md` en la memoria de verdad (medido el
+  // 18-sep-2026); con el nombre viejo, `relevar orquestador` daba SIN-TRASPASO para siempre.
+  assert.equal(s.rutaDelTraspaso(config, 'orquestador'), path.join('/memoria', 'project_orquestador_traspaso.md'));
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
