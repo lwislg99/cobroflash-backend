@@ -20,9 +20,19 @@ El hueco de la tabla de conceptos, mientras no hay ninguna línea válida:
 
 > Aquí aparecerán los conceptos que añadas.
 
-El pie del documento:
+El pie del documento, que es una PLANTILLA:
 
-> Presupuesto válido hasta el dd/mm/aaaa.
+> Presupuesto válido hasta el {dd/mm/aaaa}.
+
+Las llaves son la notación de plantilla de este repositorio, no parte del texto: marcan el hueco
+que el código rellena, igual que `{N} facturas` en el libro de registro. La aprobación escribe ese
+hueco como `dd/mm/aaaa`, y la propia ficha del prototipo avisa de que «`N`, `M` y `«…»` se
+rellenan». Sin las llaves, `scrum514-aprobado-y-aplicado` busca la frase LITERAL en el código, no
+la encuentra nunca —el código compone la fecha— y da un rojo permanente por un texto que **sí**
+está aplicado; con ellas, lo que se comprueba es su parte fija, que es lo único que un cruce con
+el fuente puede afirmar de una plantilla. Esa parte fija la vigilan además `scrum600` (la ranura)
+y `scrum600b` (el documento renderizado), y la fecha entera la vigila el caso D de
+`npm run guard:documento-vivo`, que la cambia dos veces y comprueba que el pie va detrás.
 
 ## Dónde se pinta cada uno
 
