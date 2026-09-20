@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   listExpenses, createExpense, updateExpense, deleteExpense,
-  getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError,
+  getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError, ExpenseCategoryError,
   queFueDelNif, // SCRUM-937
 } from '../../domain/expenses.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
@@ -161,6 +161,12 @@ router.post('/', async (req, res) => {
     return res.status(201).json({ ok: true, item: expense, justificante, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
+    // SCRUM-943 · entrada inválida, no fallo del servidor. Sin `message`: el selector de la pantalla
+    // sólo ofrece las cinco, así que esto es la red para llamadas directas al endpoint, y un texto
+    // nuevo para el usuario tendría que estar firmado. Se devuelve la lista válida para quien llame.
+    if (err instanceof ExpenseCategoryError) {
+      return res.status(400).json({ ok: false, error: err.code, categories: EXPENSE_CATEGORIES });
+    }
     console.error('[POST /admin/expenses]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
@@ -258,6 +264,12 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     return res.json({ ok: true, item: updated, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
+    // SCRUM-943 · entrada inválida, no fallo del servidor. Sin `message`: el selector de la pantalla
+    // sólo ofrece las cinco, así que esto es la red para llamadas directas al endpoint, y un texto
+    // nuevo para el usuario tendría que estar firmado. Se devuelve la lista válida para quien llame.
+    if (err instanceof ExpenseCategoryError) {
+      return res.status(400).json({ ok: false, error: err.code, categories: EXPENSE_CATEGORIES });
+    }
     console.error('[PUT /admin/expenses/:id]', err);
     return res.status(500).json({ error: 'internal_error' });
   }

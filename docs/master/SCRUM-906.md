@@ -282,3 +282,107 @@ qué correo llega y cómo queda el documento firmado.
 **Cómo queda la cuenta:** el interruptor de **Presupuestos se deja ENCENDIDO a propósito**, por decisión
 del orquestador (el recorrido no terminó y apagarlo obligaría a repetirlo); los otros cuatro, apagados.
 Es reversible en un comando y está medido.
+
+---
+
+## SCRUM-906g · Holded CERRADO: tres propuestas de producto (20-sep-2026)
+
+**Escrito el 20-sep-2026 a las 19:20:38Z (hora de GitHub) sobre `origin/main` =
+`8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`.** Rama `scrum-906g-propuestas-holded`. Solo docs.
+El detalle está en [`docs/competencia/matriz.md`](../competencia/matriz.md) **§10**.
+
+### Por qué esta entrega tiene otra forma que las seis anteriores
+
+El fundador dijo el 20-sep que **la consultoría no está sacando cosas reales que cambiar**, y el
+orquestador lo recogió como un fallo del encargo, no de la sesión: hasta aquí se pedía *«recorre y
+mide»*, y una matriz describe el mercado pero no dice qué construir el lunes. Desde aquí, el
+entregable de una pasada de competencia son **propuestas concretas de producto**, con forma fija —
+*en tal competidor la pantalla X hace esto · nosotros hacemos esto otro · el profesional gana esto ·
+se construye así · tamaño*—, un mínimo de tres, ordenadas por lo que más le cambia el día al
+profesional y con al menos una pequeña. La medición no se va: pasa a ser el **respaldo** de cada
+propuesta.
+
+**Los tickets los abre el orquestador.** Esta sesión no abre ninguno (norma de la tanda: lo que se
+encuentra va al expediente del ticket que se tiene en la mano, y solo se propone como ticket propio
+lo que ve el profesional o lo que bloquea a alguien).
+
+### Las tres, en una línea cada una
+
+| # | propuesta | tamaño | qué la sostiene |
+|---|---|---|---|
+| 10.1 | El **enlace del portal del cliente** viaja en el mensaje, en vez de copiarse a mano | mediano | `/cliente/:token` no aparece en **ningún** envío de `src` |
+| 10.2 | El presupuesto llega **a quien decide**, no solo a un móvil | grande | Holded admite varios destinatarios; `sendQuote.service.ts` manda a uno |
+| 10.3 | **Caducidad en un toque** (7 / 15 / 30 días) en vez de un calendario | pequeño | Holded la ofrece como lista cerrada; nosotros tenemos toda la maquinaria y falta la pantalla |
+
+### 🔴 El hallazgo que más vale de esta entrega, y no es de Holded
+
+Es nuestro, y es de los que **ve el profesional**, así que va señalado para que el orquestador decida
+si merece ticket propio:
+
+**YaQu tiene un portal del cliente completo y el cliente no recibe nunca su enlace.**
+
+    git grep -n "/cliente/" origin/main -- src
+
+Devuelve el propio portal, su declaración de ruta pública, `customersAdmin.routes.ts:144` (el endpoint
+`/portal-url`, que sirve el botón «copiar enlace» del panel) y dos comentarios. **Cero apariciones en
+`src/integrations`, `src/modules/quotes`, `src/modules/jobs` y `src/modules/messaging`.** *Suelo:* la
+misma búsqueda sí encuentra `${BASE_URL}/albaran/${token}` y `${BASE_URL}/pay/quote/${decisionToken}`,
+que sí se mandan solos — la búsqueda no está ciega. Y con eso se queda apagado de hecho el
+`POST /cliente/:token/quote-request`, que es **trabajo entrante** ya construido.
+
+Es exactamente el defecto que se le midió a Holded en §906e y §906f —una función que nace apagada se
+mide igual que una que no existe—, esta vez en nuestra casa y por otro motivo: la nuestra está
+encendida, pero nadie le da la dirección al cliente.
+
+### Método: la regla nueva que sale de aquí
+
+De cinco candidatas que salían de Holded, **dos murieron al medir nuestra propia columna** (caducidad
+y portal: las dos ya construidas) y una tercera se redujo de un módulo a tres botones. La tabla está
+en §10.4 de la matriz.
+
+    🔒 Medir su producto dice qué existe en el mercado. Medir el nuestro dice qué hay que construir.
+       Sin lo segundo, la mitad de las propuestas son cosas que ya están hechas.
+
+### Capturas: la norma nueva, y de dónde sale
+
+El fundador preguntó si había capturas de Holded en el repo. **No había ninguna** —`git ls-tree`
+sobre todo el árbol: 0 ficheros con «holded» en el nombre—, así que seis entregas de competencia se
+sostenían solo en texto. Van tres, una por propuesta, en
+[`docs/competencia/capturas/holded/`](../competencia/capturas/holded/README.md), con su README
+diciendo qué prueba cada una **y qué no**.
+
+    🔒 Una afirmación sobre el producto de otro, sin imagen, es un recuerdo.
+
+Vale desde ya para Jobber y los que vengan: **cada propuesta nace con su captura.** Y la tercera se
+etiqueta como lo que es —su **fuente escrita**, no la caja de envío—, porque ese clic sigue bloqueado
+por el clasificador de la máquina y no se busca la vuelta.
+
+### 🔴 Una medición de hoy que tumba lo escrito ayer
+
+Al abrir la pantalla de ajustes para fotografiarla, **los seis interruptores de firma están en
+`false`**, incluido Presupuestos, que §906f dejó **encendido a propósito** y verificado tras recargar
+la página entera. Leído del DOM, no de la imagen: `POBLACION interruptores=6 · los 6 en estado=false`.
+Nadie lo tocó desde esta casa; **por qué se apagó no se sabe y no se inventa**. No se ha vuelto a
+encender: la autorización describía un interruptor que ya estaba puesto, no daba permiso para
+ponerlo (A19). Queda corregido en la matriz §9.5, **sin borrar lo anterior**, que es la regla.
+
+    🔒 Verificar recargando la página demuestra que se guardó entonces, no que siga guardado después.
+
+Es la hermana de la trampa de §906f: allí un mensaje de error tapaba un guardado que **sí** ocurrió;
+aquí una verificación correcta tapa un estado que **dejó** de ser cierto. Las dos se arreglan igual —
+volver a medir en el momento en que se va a afirmar algo.
+
+### Lo que de Holded no se ha recorrido
+
+En la matriz, §10.5: diez filas con el motivo de cada una y si daría propuesta. **Solo dos darían una
+nueva** —la caja de envío (bloqueada por permisos) y **su escáner de gastos con OCR**, que es F1 de
+§7.2 y que nadie ha visto por dentro—. Lo decide el orquestador; la cuenta caduca a primeros de
+octubre.
+
+**Holded queda cerrado** tras cuatro entregas por dentro (§906d, §906e, §906f, §906g). Lo que sigue
+sin medirse de su firma —cómo se elige al firmante, qué correo llega, cómo queda el PDF— sigue
+declarado en §8.7 y §9.4, y sigue bloqueado por el clasificador de la máquina, no por Holded.
+Siguiente competidor: **Jobber**, aprobado por el orquestador el 20-sep, y elegido porque los que
+quedaban en la cola española son más facturación —Quipu ya midió que esa familia *«no añade ningún
+hueco que no estuviera ya»*— mientras que Jobber, ServiceM8 y Housecall Pro hacen lo mismo que YaQu:
+presupuesto, trabajo, firma y cobro **en la obra**.
