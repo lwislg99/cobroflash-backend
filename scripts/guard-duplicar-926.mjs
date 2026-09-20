@@ -97,6 +97,41 @@ const LEER = new Function(`
   };
 `);
 
+// 🔴 TODO lo que corre DENTRO del navegador va en `new Function`, nunca en una flecha suelta.
+// No es manía: el censo de SCRUM-258 cuenta identificadores sin declarar, y un `document`
+// lexical en un script de Node es indistinguible —para el censo y para quien lea— de un
+// `ReferenceError` esperando a que alguien ejecute ese camino.
+const BUSCAR_DUPLICAR = new Function(
+  'return Array.from(document.querySelectorAll("button")).find(function (b) { return /Duplicar/.test(b.textContent); });',
+);
+const EDITOR_YA_TIENE_LINEAS = new Function(
+  'return Array.from(document.querySelectorAll("input, textarea")).some(function (x) { return /QA 926/.test(x.value); });',
+);
+
+// Los dos controles positivos, también en `new Function` y por el mismo motivo.
+const ABRIR_Y_ESCRIBIR_GLOBAL = new Function('v', `
+  var btn = null;
+  Array.prototype.forEach.call(document.querySelectorAll('button'), function (b) {
+    if (/Añadir descuento/.test(b.textContent)) btn = b;
+  });
+  if (btn) btn.click();
+  var inp = document.querySelector('.quote-dto-global__campo input');
+  if (!inp) return { leido: null, nota: 'no hay campo que abrir' };
+  inp.value = String(v);
+  inp.dispatchEvent(new Event('input', { bubbles: true }));
+  var campo = document.querySelector('.quote-dto-global__campo');
+  return { leido: inp.value, abierto: campo ? !campo.hidden : null };
+`);
+const PONER_COBRO_A_MANO = new Function('v', `
+  var sel = null;
+  Array.prototype.forEach.call(document.querySelectorAll('select'), function (s) {
+    if (s.querySelector('option[value="FIFTY_FIFTY"]')) sel = s;
+  });
+  if (!sel) return { leido: null, nota: 'no hay desplegable de cobro' };
+  sel.value = v;
+  return { leido: sel.value };
+`);
+
 const abrirEditorDuplicando = async (nav, c) => {
   caso = c;
   const pag = await nav.newPage();
@@ -104,16 +139,10 @@ const abrirEditorDuplicando = async (nav, c) => {
   pag.on('pageerror', (e) => errores.push(String(e.message || e)));
   await pag.setViewport({ width: 1280, height: 900 });
   await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#quotes-detail/1`, { waitUntil: 'networkidle0' });
-  const btn = await pag.waitForFunction(
-    () => Array.from(document.querySelectorAll('button')).find((b) => /Duplicar/.test(b.textContent)),
-    { timeout: 15000 },
-  ).catch(() => null);
+  const btn = await pag.waitForFunction(BUSCAR_DUPLICAR, { timeout: 15000 }).catch(() => null);
   if (!btn) { await pag.close(); return { ciego: 'no encuentro el boton «Duplicar»', errores }; }
   await btn.asElement().click();
-  const listo = await pag.waitForFunction(
-    () => Array.from(document.querySelectorAll('input, textarea')).some((x) => /QA 926/.test(x.value)),
-    { timeout: 15000 },
-  ).then(() => true, () => false);
+  const listo = await pag.waitForFunction(EDITOR_YA_TIENE_LINEAS, { timeout: 15000 }).then(() => true, () => false);
   await new Promise((r) => setTimeout(r, 400));
   return { pag, listo, errores };
 };
@@ -128,17 +157,7 @@ try {
     else {
       informe.casos.G = { editorConLineas: listo, ...await pag.evaluate(LEER), errores };
       // CONTROL POSITIVO G, en la MISMA pantalla: se abre el campo a mano y se teclea.
-      informe.controles.G = await pag.evaluate((v) => {
-        let btn = null;
-        document.querySelectorAll('button').forEach((b) => { if (/Añadir descuento/.test(b.textContent)) btn = b; });
-        if (btn) btn.click();
-        const inp = document.querySelector('.quote-dto-global__campo input');
-        if (!inp) return { leido: null, nota: 'no hay campo que abrir' };
-        inp.value = String(v);
-        inp.dispatchEvent(new Event('input', { bubbles: true }));
-        const campo = document.querySelector('.quote-dto-global__campo');
-        return { leido: inp.value, abierto: campo ? !campo.hidden : null };
-      }, GLOBAL);
+      informe.controles.G = await pag.evaluate(ABRIR_Y_ESCRIBIR_GLOBAL, GLOBAL);
       await pag.close();
     }
   }
@@ -149,13 +168,7 @@ try {
     else {
       informe.casos.P = { editorConLineas: listo, ...await pag.evaluate(LEER), errores };
       // CONTROL POSITIVO P: se pone a mano el valor y se vuelve a leer con el MISMO lector.
-      informe.controles.P = await pag.evaluate((v) => {
-        let sel = null;
-        document.querySelectorAll('select').forEach((s) => { if (s.querySelector('option[value="FIFTY_FIFTY"]')) sel = s; });
-        if (!sel) return { leido: null, nota: 'no hay desplegable de cobro' };
-        sel.value = v;
-        return { leido: sel.value };
-      }, PAGO);
+      informe.controles.P = await pag.evaluate(PONER_COBRO_A_MANO, PAGO);
       await pag.close();
     }
   }

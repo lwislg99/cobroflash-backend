@@ -117,6 +117,34 @@ su propio contrario: el instrumento no miente, es que **no se le ha pedido nada 
 ya solo**. Por eso la casilla «el valor del caso NO es el de nacimiento» está dentro del guard y no
 en un comentario: una comprobación que vive en la prosa no se ejecuta.
 
+## La tanda, y el rojo de 952 fallos que no era un rojo
+
+**Primera pasada: 5.230 tests, 952 fail.** Casi se publica como catástrofe. No lo era:
+
+> 🔒 **Un build que falta no da un verde que no vale: da un ROJO que no vale** — y con 952 fallos
+> tiene toda la pinta de ser culpa del cambio que acabas de hacer.
+
+Lo que lo destapó **no fue leer los fallos, fue mirar el RECUENTO contra la población conocida
+antes de leerlos**: la referencia de la tanda anterior eran **7.727** tests y aquí había **5.230**.
+Dos mil quinientos tests que no llegaron a correr. Un instrumento que no arranca, no un hallazgo.
+
+La causa, medida y dicha por los propios tests en su mensaje de fallo: **`dist/` no existía en este
+worktree.** Un worktree recién creado nace sin `dist`, y la junction de `node_modules` no lo trae;
+además, llamar al runner por `scripts/tanda-con-veredicto.mjs` **se salta la compilación que hace
+`npm test`**. `npm run build` (EXIT=0, 288 ficheros) y a correr otra vez.
+
+**Segunda pasada, con `dist` construido: 7.715 tests · 7.599 pass · 5 fail · 111 skip.** De los
+cinco, **tres son los de `scrum939b`** (ajenos y conocidos) y **dos eran míos**, los dos por añadir
+un guard nuevo:
+
+| test | qué pedía | qué se hizo |
+|---|---|---|
+| **SCRUM-258** · identificadores sin declarar | `guard-duplicar-926.mjs` usaba `document` léxico en las flechas de puppeteer | **se cambió el CÓDIGO, no el censo** (A7): todo lo que corre dentro del navegador pasa a `new Function`, que es la convención de la casa |
+| **SCRUM-548** · quién mide qué página | el guard estrena solape sobre `#quotes-detail/1` con `guard:descuentos-en-el-detalle` | se DECLARA el solape nuevo, que es para lo que existe ese censo, **con el motivo de no fusionarlos**: uno observa la ficha, el otro la usa de puerta para pulsar «Duplicar» y juzgar el editor |
+
+Tras los dos arreglos: `scrum258` + `scrum548` 18/18, y el guard de 926 sigue 9/9 — el paso a
+`new Function` no le quitó vista.
+
 ## Lo que NO cubre
 
 * `tiers` y `currency`, por lo dicho en la tabla.
