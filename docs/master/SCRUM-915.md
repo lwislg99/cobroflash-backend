@@ -465,7 +465,7 @@ Tras el arreglo, corridos por su nombre y con la población declarada: **120 pru
 **Medido contra:** `origin/main` = `8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`
 **Rama:** `scrum-915e2-ver-documento` · **Rojo medido sobre:** `19fff106f514c9ca8b299f750f0171c82b335abd`
 **Instrumento:** los casos F, G y H de `scripts/guard-915e1-documento-vivo.mjs`
-**Microcopy:** `docs/microcopy/2026-09-20-SCRUM-915e2-ver-documento.md` (comentario 15868)
+**Microcopy:** `docs/microcopy/2026-09-20-SCRUM-915-ver-documento.md` (comentario 15868)
 
 ### El defecto: en un teléfono el documento NO se ve pequeño, no se ve
 
@@ -533,3 +533,42 @@ cambia nada no marca ninguna fila).
 - Capturas AB6: un botón secundario del inventario AB3 y una hoja `.modal-overlay` + `.modal`
   también del inventario. Ni un componente nuevo; el único color es `--brand-tint`, el token que
   ya existe para «fondos de realce suaves». `guard:objetivo-tactil` en verde con el botón nuevo.
+
+### El rojo del CI del #1550, medido por la S2 del relevo (20-sep-2026 20:14 GMT)
+
+Sobre `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b`. La puerta obligatoria traía **8
+hallazgos**: los 6 del #1545 (los cinco arreglados en su sección + el `scrum804` ajeno, que no es de
+este PR) **más dos propios**. Reproducidos en local con la población declarada — 45 pruebas, 6 rojas
+— y, la primera vez, con un rojo que NO valía: `Cannot find module '../dist/…'`, porque un worktree
+nuevo nace **sin `dist`** y el banco de vistas lo necesita. Con `npm run build` delante, 45/6.
+
+| hallazgo | qué era | arreglo |
+|---|---|---|
+| `scrum697` · `scrum698` × 2 | cifra derivada de nodos: **283 → 286** | se regenera; los tres nodos IDENTIFICADOS (abajo) |
+| `scrum709` · nombre e índice | la ficha de este corte repetía los dos defectos del #1545: sufijo en el nombre y cita a sus hermanas | `2026-09-20-SCRUM-915-ver-documento.md`, y sin citar a nadie |
+| `scrum601` · rótulo nuevo a pelo | **falso positivo de un ANCLAJE POR LÍNEA**: «Solo presupuesto (facturación manual)» no se ha tocado, pero el «Ver documento» del pie de los pasos se escribe 150 líneas más arriba y lo bajó de **885 a 889** | se corrige el anclaje con la cifra que da el propio censo. Corregir un anclaje no es añadirlo (`scrum710b`) |
+| `scrum350` · cobertura del pie | `scripts/guard-915e1-documento-vivo.mjs` nombraba `.modal-footer` y el censo de pies mira el front, no `scripts/` | el guard ancla al botón primario **de esa hoja**, que es lo que de verdad mide |
+
+**Los tres nodos, POR IDENTIDAD.** Se comparan las FIRMAS (etiqueta + clase + texto) de los dos
+árboles montados con el mismo contador, en vez de restar 286 − 283:
+
+```
+POBLACIÓN  base = 283   rama = 286   delta = 3
+SOBRA en la rama:  +3  BUTTON.btn btn-secondary quote-ver-documento|Ver documento
+FALTA en la rama:  (nada)
+```
+
+Que la lista de «falta» esté vacía es la mitad que importa: un delta de +3 podría ser +5 y −2, y
+entonces la anotación estaría contando mal dos cosas a la vez.
+
+**Lo que el `scrum350` no sabe distinguir, y es un hallazgo del instrumento (no abre ticket, CAMBIO
+3):** su cobertura exige que todo fichero que NOMBRE `.modal-footer` esté dentro de su censo de
+pies, y el censo mira las fuentes del front. Un guard de NAVEGADOR no construye un pie: lo **lee**.
+Hoy hay uno; el día que haya tres, los tres tropezarán con lo mismo, y el rojo dirá «pie sin medir»
+cuando lo que pasa es «lector fuera del censo».
+
+    🔒 Un anclaje por número de línea no falla cuando su línea cambia de contenido: falla cuando
+       OTRO escribe encima. El fichero acusa al que no tocó nada.
+
+Tras el arreglo, corridos por su nombre: **147 pruebas, 147 en verde, 0 rojas** (350, 601, 697, 698,
+709, 514, 726, 700, 237, 258, 267, 522, 548, 723) · `npm run build` y `npm run guards:entrada` en 0.

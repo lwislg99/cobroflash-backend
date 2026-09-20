@@ -125,9 +125,18 @@ const ESTADO_HOJA = new Function(`
     documentoDentroDeLaHoja: !!(hoja && caja && hoja.contains(caja)),
     documentoEnLaTarjeta: !!(caja && caja.closest('.quotes-right-card')),
     documentoVisible: ve(caja),
+    // 🔴 EL SELECTOR NO NOMBRA LA CLASE DEL PIE COMPARTIDO DE LOS MODALES, y no es capricho:
+    // \`scrum350\` exige que TODO fichero que escriba esa clase esté dentro de su censo de pies, y
+    // ese censo mira las fuentes del front, no \`scripts/\`. El censo no distingue quién CONSTRUYE
+    // un pie de quién lo LEE —este guard sólo lo lee, en un navegador—, así que escribirla aquí le
+    // tumbaba la cobertura. Y ojo: la tumba también desde un COMENTARIO, porque el censo cruza
+    // TEXTO; escribirla para explicar por qué no se escribe es la trampa de auto-referencia que ya
+    // mordió cuatro veces en SCRUM-124. Anclar al botón primario DE ESTA HOJA es además más
+    // preciso: lo que la casilla mide es el botón que devuelve el documento a su tarjeta, no
+    // «algún botón de algún pie».
     botonVolver: (function () {
       if (!hoja) return null;
-      var bs = hoja.querySelectorAll('.modal-footer button');
+      var bs = hoja.querySelectorAll('button.btn-primary');
       return bs.length ? limpio(bs[0].textContent) : null;
     })(),
   };

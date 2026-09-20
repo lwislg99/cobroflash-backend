@@ -361,7 +361,12 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // `origin/main`; subárbol de 1, sin hijos. Lo demás del corte no cuenta nodos: `.preview-footer`
   // sigue siendo 1 en los dos (cambia su TEXTO, a la fecha real de «Válido hasta»), y el
   // `createElement("linesBody")` → `"tbody"` renombra la etiqueta de un nodo que ya estaba.
-  for (const [vista, nodos] of [['renderQuotesView', 283], ['renderProductsView', 166],
+  // 🔴 SCRUM-915e2 · 20-sep-2026 · `renderQuotesView` 283 → 286, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. Los tres nodos, POR IDENTIDAD: comparando las FIRMAS (etiqueta +
+  // clase + texto) de los dos árboles, lo único que sobra en la rama es 3 ×
+  // `button.quote-ver-documento` = «Ver documento», uno por cada paso que no es el último. En el
+  // otro lado no falta nada, así que el delta no esconde una resta compensada.
+  for (const [vista, nodos] of [['renderQuotesView', 286], ['renderProductsView', 166],
     ['renderCustomersView', 69], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -412,7 +417,11 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // escribes» (`p.quote-preview-subtitle`), identificado por identidad en el bloque de arriba. Lo
   // que este control vigila —que los DOS montajes den el mismo número— sigue intacto: el rótulo es
   // fijo y no depende de los datos, así que lo pintan los dos. Los dos dan 283.
-  assert.equal(todos(desnuda.contenedor).length, 283,
+  // SCRUM-915e2 (20-sep-2026): la DECIMOTERCERA anotación, +3 — los tres «Ver documento»
+  // (`button.quote-ver-documento`), identificados por identidad en el bloque de arriba. Lo que este
+  // control vigila —que los DOS montajes den el mismo número— sigue intacto: los botones cuelgan
+  // del pie de los pasos, que no depende de los datos. Los dos dan 286.
+  assert.equal(todos(desnuda.contenedor).length, 286,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

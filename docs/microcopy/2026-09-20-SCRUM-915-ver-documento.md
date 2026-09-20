@@ -4,9 +4,11 @@
 
 Firmados todos los textos de `docs/prototipos/SCRUM-915/textos-propuestos.md` menos UNO
 («Con su descripción, descuento y suplido.», que **no se construye**). Esta ficha registra los que
-entran con el corte **915e2**, y se crea **en el mismo acto** en que se aplican (regla 30). Las
-fichas hermanas son `2026-09-18-SCRUM-915-pasos-del-editor.md` (915d) y
-`2026-09-20-SCRUM-915e1-documento-vivo.md` (915e1).
+entran con el corte **915e2**, y se crea **en el mismo acto** en que se aplican (regla 30). Cada
+corte de SCRUM-915 registra los suyos en su propia ficha, y aquí no se nombra a ninguna: el listado
+de este directorio ES el índice, y un fichero que cita a otro es el índice a mano que
+`scrum709-microcopy-por-fichero` prohíbe —porque devuelve el punto único de escritura que este
+mecanismo vino a quitar—.
 
 ## Texto aprobado, literal
 

@@ -350,15 +350,20 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // que DICE —«válido durante 30 días» → «válido hasta el 20/10/2026»— no cuántos nodos es), y
   // `createElement("linesBody")` → `createElement("tbody")` cambia la ETIQUETA de un nodo que ya
   // existía. Si mañana subiera 2, no es esto.
-  assert.equal(nodos.length, 283,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 283 `
+  // 🔴 SCRUM-915e2 · 20-sep-2026 · 283 → 286, y lo mueve la VISTA. LOS TRES NODOS, POR IDENTIDAD y
+  // no restando: se comparan las FIRMAS (etiqueta + clase + texto) de los dos árboles montados con
+  // el mismo contador, y lo único que SOBRA en la rama es **3 × `button.quote-ver-documento`** con
+  // «Ver documento» — uno en el pie de cada paso que no es el último (Cliente, Conceptos,
+  // Condiciones). Y no falta nada en el otro lado: el delta no esconde una resta compensada.
+  assert.equal(nodos.length, 286,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 286 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
     + '− los 3 avisos «Final: …» retirados por SCRUM-669, − las 24 pintadas viejas que el banco '
     + 'apilaba hasta SCRUM-897, + los 45 del andamio de los pasos de SCRUM-915d, + el rótulo «Se '
-    + 'actualiza mientras escribes» de SCRUM-915e1). Si no has tocado el banco y esto se '
-    + 'mueve, el arreglo pinta.');
+    + 'actualiza mientras escribes» de SCRUM-915e1, + los 3 «Ver documento» de SCRUM-915e2). Si no '
+    + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');
