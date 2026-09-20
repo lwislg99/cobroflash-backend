@@ -1,6 +1,8 @@
 # La competencia, función por función · matriz viva
 
-**Última medición: 20-sep-2026 · `origin/main` = `d17825645813deb7406d8c6cc3fdd7f3a06e1657`** (§9, la firma de Holded con el interruptor encendido). *(El §8 se midió a las 13:26:07Z, hora de GitHub, sobre `f2fa091b`.)*
+**Última entrega: 20-sep-2026 a las 19:20:38Z · `origin/main` = `8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`** (§10, las tres propuestas que cierran Holded). *(El §9 se midió sobre `d1782564`; el §8, a las 13:26:07Z sobre `f2fa091b`.)*
+
+🔴 **Desde el §10 cambia el entregable de este documento:** una pasada de competencia ya no entrega una matriz, entrega **propuestas concretas de producto** con su respaldo medido. El porqué y la forma, en el §10.
 *(La primera versión de este documento se midió el 17-sep a las 18:24:26Z sobre `ef332b90`; el §7 consolidado, el 18-sep a las 07:00:46Z sobre `ecccf94e`.)*
 **Ticket:** SCRUM-906, FASE 2 · **Carril:** consultoría (Sesión 0) · **Encargo:** orquestador, 17-sep-2026.
 
@@ -717,6 +719,122 @@ portal · qué correo le llega · cómo queda el documento firmado.
 medido. Los otros cuatro siguen apagados. Se apaga en un comando, volviendo a pulsar esa misma casilla
 en `Configuración > CRM > Firma digital` y comprobando los seis estados. La cuenta caduca sola a
 primeros de octubre.
+
+---
+
+## 10 · Lo que se hace con Holded: tres propuestas de producto (20-sep-2026)
+
+**Escrito el 20-sep-2026 a las 19:20:38Z (hora de GitHub) sobre `origin/main` =
+`8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`.** Cierra el recorrido de Holded (§4, §6, §7.0, §8, §9).
+
+**Por qué cambia la forma de este documento.** Hasta aquí las entregas de competencia eran
+mediciones: matrices, celdas y suelos. El fundador dijo el 20-sep que *la consultoría no está
+sacando cosas reales que cambiar*, y tenía razón: una matriz dice cómo está el mercado, no qué
+construir el lunes. A partir de §10 el entregable de una pasada es un puñado de **propuestas
+concretas**, con esta forma: *en tal competidor la pantalla X hace esto · nosotros hacemos esto otro ·
+el profesional gana esto · se construye así · tamaño*. La medición no desaparece: pasa a ser el
+respaldo de cada propuesta, y sigue distinguiendo ❓ de ❌.
+
+🔴 **Y la primera regla de la forma nueva: se mide NUESTRA columna antes de escribir la propuesta.**
+De las cinco candidatas que salieron de Holded, **dos murieron al medirnos a nosotros** —las dos
+estaban ya construidas— y una tercera se redujo a una décima parte de lo que parecía. Eso está
+abajo, en §10.4, porque es el trabajo que más ahorra: *una propuesta de copiar algo que ya tenemos
+es exactamente lo que el fundador dice que no le sirve.*
+
+Van ordenadas por **lo que más le cambia el día al profesional**, no por tamaño.
+**Los tickets los abre el orquestador**, no esta sesión.
+
+### 10.1 · El portal del cliente, en el mensaje · **MEDIANO**
+
+**En Holded**, el Portal del Cliente es la dirección fija del cliente, no la página de un documento:
+su artículo `9382835` enumera **nueve** acciones —resumen, pagos, aceptar presupuestos, descargar,
+comentar, catálogo, pedidos, contraseña e idioma— y le enlazan ahí desde cada envío (§7.0).
+
+**Nosotros lo tenemos construido, y el cliente NO RECIBE NUNCA EL ENLACE.** Medido:
+
+    git grep -n "/cliente/" origin/main -- src
+
+Las únicas apariciones son el propio portal (`customerPortal.routes.ts`), su declaración de ruta
+pública (`publicAccessDeclarations.ts:136-137`) y `customersAdmin.routes.ts:144` —el endpoint
+`GET /admin/customers/:id/portal-url`—, más dos comentarios. **Cero en `src/integrations`,
+`src/modules/quotes`, `src/modules/jobs` y `src/modules/messaging`**: o sea, en ningún envío.
+*Suelo:* la misma búsqueda sí encuentra `${BASE_URL}/albaran/${token}`
+(`albaranWhatsApp.service.ts:158`) y `${BASE_URL}/pay/quote/${decisionToken}`
+(`sendQuote.service.ts:75`), que **sí** se mandan solos; la búsqueda no está ciega.
+Lo único que hay es un botón de **copiar enlace** en la ficha y en la lista de clientes
+(`customerDetailView.js:103`, `customersView.js:671`): copiar y pegar, cliente a cliente, a mano.
+
+**El profesional gana:** deja de recibir *«mándame otra vez el presupuesto»*, *«¿cuánto te debo?»*,
+*«pásame la factura de junio»* — el WhatsApp que le come la tarde. Y el **«pedir presupuesto nuevo»
+que YA está construido** (`POST /cliente/:token/quote-request`) empieza a traerle trabajo: hoy no
+puede, porque nadie llega a esa pantalla.
+
+**Se construye así, a grandes rasgos:** `ensurePortalToken` ya existe y el token se genera al crear
+el cliente (`customerAdmin.ts:242`). Falta (a) el enlace en el pie del mensaje de WhatsApp del
+presupuesto y del albarán, y (b) el mismo enlace en el correo y en la pantalla de «gracias» tras
+firmar. ⛔ **STOP del fundador para (a):** es texto de plantilla de Meta y canal nuevo
+(regla 28 y tabla J6; spec en `docs/WHATSAPP_TEMPLATES.md`). Si eso frena, **(b) se hace sin tocar
+Meta** y ya se nota.
+
+🔴 Y conviene decirlo con todas las letras, porque es el mismo defecto que le medimos a ellos en
+§8.3 y §9.2: **un portal que el cliente no recibe está tan apagado como una gema que nace apagada.**
+
+### 10.2 · Que el presupuesto llegue a quien decide · **GRANDE**
+
+**En Holded**, la caja de envío admite varios destinatarios: su ficha de la Store dice *«Envío a
+múltiples destinatarios (firma única)»* (§8.4) y su ayuda *«Puedes añadir varios firmantes al enviar
+el documento»* (§8.5).
+
+**Nosotros mandamos el presupuesto a UN número:** `sendQuote.service.ts` construye un `decisionToken`
+y lo manda por WhatsApp a un teléfono. En el albarán vamos **por delante de ellos** —
+`albaranFirmante.ts` distingue *«el propio cliente»*, *«un familiar o conviviente»*, *«portero o
+conserje»*—, pero eso es **quién firma en la puerta**, no a quién se le pide la decisión.
+
+**El profesional gana:** comunidad de vecinos, administrador de fincas, la pareja que decide junta,
+la empresa donde el que llama no es el que paga. Hoy el presupuesto muere en el móvil equivocado y
+el profesional **no se entera**: solo ve que no le contestan, y no distingue *«no le interesa»* de
+*«no le ha llegado»*.
+
+**Se construye así, a grandes rasgos:** un segundo destinatario opcional al enviar, mismo documento y
+**un token por destinatario** para saber quién abrió y quién decidió; respeta J6 (tope 3/cliente/día)
+y `waOptOut`; el panel enseña «visto por X, decidido por Y». ⛔ **STOP:** canal nuevo (regla 28) y
+con toda probabilidad plantilla.
+
+### 10.3 · Caducidad en un toque: 7 / 15 / 30 días · **PEQUEÑO**
+
+**En Holded**, la caducidad de la firma se elige de una **lista cerrada** —1 / 2 / 7 / 15 / 30 días—
+en `Configuración > CRM > Firma digital` (§8.1). No se escribe una fecha: se toca un número.
+
+**Nosotros tenemos la caducidad de verdad y entera**, y eso es lo que hace pequeña esta propuesta:
+`validUntil` con defecto de +30 días (`quotes.routes.ts:223`), cron horario `expireQuotes()` que pasa
+`sent` → `expired` (`cron.ts:61`, `expire.service.ts`), etiqueta «Caducado» en el panel
+(`api.js:1156`) y el cliente viendo *«pide uno actualizado»*. Lo que falta es **solo la pantalla**:
+hoy es un `<input type="date">` con la fecha ya puesta a 30 días (`quotesView.js:993`), que se cambia
+abriendo un calendario y contando días.
+
+**El profesional gana:** **30 días es mucho para un presupuesto de oficio.** «Caduca el viernes»
+cierra ventas; uno que dura un mes se enfría y se pierde. Con tres botones lo pone en 7 días sin
+pensarlo.
+
+**Se construye así, a grandes rasgos:** tres chips (7 / 15 / 30) al lado del campo que ya existe, que
+escriben en `validInput` llamando a `window.quoteCaducidad.diaPorDefecto(zona, n)` — que **ya está
+escrito y ya resuelve la zona del NEGOCIO**, que es la parte difícil de esto y está hecha (SCRUM-633).
+Marcar cuál está activo. Sin schema, sin dinero, sin fiscal, sin Meta. Es UI: quien lo haga pasa por
+`yaqu-premium-ui` y `DESIGN.md` (Parte AB), y respeta la advertencia del propio fichero — *«los cinco
+sitios se arreglan juntos»*— no tocando la regla, solo llamándola.
+
+### 10.4 · Las que murieron al medirnos a nosotros
+
+Se dejan escritas porque el ahorro está aquí, y porque la próxima pasada empieza por este paso:
+
+| candidata, salida de Holded | qué la mató |
+|---|---|
+| «Copiar la caducidad del presupuesto» | **Ya la tenemos entera**, cron y estado incluidos. Quedó reducida a §10.3, que es solo la pantalla: de un módulo a tres botones. |
+| «Hacer un portal del cliente como el suyo» | **Ya está hecho** (`/cliente/:token`, con contacto, presupuestos, facturas y petición de presupuesto). El problema era otro y más barato: nadie se lo manda. Es §10.1. |
+| «Racionar las firmas por cupo, 5/20/50/100/400» (M1 de §7.3) | No es de producto sino de precio, y **no le cambia el día a nadie**. Sigue viva como palanca comercial en §7.3; no se asciende a propuesta. |
+
+    🔒 Medir su producto dice qué existe en el mercado. Medir el nuestro dice qué hay que construir.
+       Sin lo segundo, la mitad de las propuestas son cosas que ya están hechas.
 
 ---
 
