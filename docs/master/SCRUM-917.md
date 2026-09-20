@@ -360,6 +360,7 @@ se construye con él al lado era el riesgo mayor.
 ### Tests y censos cambiados, con su motivo
 
 - `scrum522-guards-fuera-de-la-tanda`: **30** por `guard:detalle-trabajo-917`, medido corriendo el test.
+  (Al mergear main el 20-sep pasa a **31**; ver «917e · segunda parte».)
 
 ### Lo que NO cubre este corte
 
@@ -372,3 +373,96 @@ se construye con él al lado era el riesgo mayor.
   así que **D.8 no comprueba «el bloque ya no existe» sino «el rail no repite cifras»**, que es la afirmación
   que sí se sostiene con este fixture.
 - Sin verificar en staging todavía (se hace tras el merge).
+
+---
+
+## 917e · segunda parte: los NUEVE contratos que la suite completa cazó
+
+*20-sep-2026, 19:39 GMT (cabecera `Date:` de `gh api -i zen`). Sesión 2b, «s2e-20».*
+Commits: `66085437` (817), `b2f92b68` (los cuatro re-anclajes), `74a38f73` (merge de `origin/main`
+`8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`). Evidencias:
+`docs/master/evidencias/SCRUM-917/salida-reanclajes-917e.txt`.
+
+**El corte D se dio por bueno con `guard:detalle-trabajo-917` en 92/92 y la suite completa sacó
+NUEVE regresiones suyas.** Ésa es la lección entera y va aquí arriba: *un guard nuevo en verde no
+dice nada de los contratos viejos; mide lo que tú decidiste mirar*. Tres eran mecánicos y se
+arreglaron el mismo día; los seis que quedaban son los de abajo.
+
+### La regla con la que se resolvieron: RE-ANCLAR, no borrar
+
+El rediseño se lleva la SUPERFICIE; el PRINCIPIO se queda y ahora lo tiene que cumplir la franja.
+Un contrato que se borra porque su superficie desapareció es **una decisión perdida**; uno
+re-anclado sigue vigilando. Cada uno lleva, en el mismo cambio, (a) qué superficie desapareció,
+qué principio sobrevive y dónde vive ahora, y (b) **el rojo que demuestra que caza la pérdida**.
+
+| contrato | superficie que desapareció | dónde vive ahora | su rojo |
+|---|---|---|---|
+| `SCRUM-651` · ausente ≠ cero | el titular «Total aceptado» (`detail-total-label`) | la franja, guardada por `totalAceptado != null`, **medida en el DOM montado** | quitar la guarda → «Aceptado 0,00 € · Cobrado 0,00 €» en un Trabajo sin presupuesto |
+| `SCRUM-320` · un cero escrito parece un cero medido | la fila «Entregado y firmado» de «Qué falta para cobrar» | `huecosDeCobro`, que ya distingue ausencia de cero | `> 0` → `>= 0` → aparece «0,00 € entregados sin facturar» |
+| `SCRUM-318` · sin eje no se afirma nada | el bloque DINERO del rail con «Cobrado» y «Pendiente» | la franja: el eje manda sobre el **foco** | quitar `if (hayEje)` → la franja afirma sin eje |
+| `SCRUM-907` · el aviso **con su importe** | la línea `aviso` del bloque DINERO del rail | «Qué falta para cobrar», medido en el DOM montado | dos: el aviso que no se pinta, **y el aviso que se pinta SIN su importe** |
+
+### 🔴 El re-anclaje de 318 cazó un defecto del corte D
+
+No es teoría: al mudar el principio se midió la franja con `totalAceptado: 0` y 300 € cobrados, y
+decía **«Cobrado del todo · 0,00 €» justo encima de «Cobrado 300,00 €»** — la pantalla
+contradiciéndose en cuatro centímetros, y es exactamente el defecto que SCRUM-363 quitó del chip de
+cobro. Arreglado en el mismo cambio, y el arreglo es el principio, no un parche: **el eje manda
+sobre lo DERIVADO (el rótulo y la cifra grande), no sobre lo MEDIDO (los dos lados)**. Ni un rótulo
+nuevo: se omite el que había.
+
+### Los dos de SCRUM-817 no eran de orden: la vista NO MONTABA
+
+Nadie los había diagnosticado. `l.append(e, ' ', v)` pasaba una **cadena suelta** al DOM. Es DOM
+válido en el navegador —por eso el guard en Chrome salía 92/92— pero el banco de vistas no la
+atiende, `renderJobDetailView` reventaba con `Cannot create property '_padre' on string ' '`, y los
+dos contratos caían en su **SUELO sin llegar a mirar el orden que vigilan**. Un suelo que salta es
+lo contrario de un contrato roto, y distinguirlo ahorró buscar un defecto de producto inexistente.
+Arreglado con `document.createTextNode(' ')`, que es el idioma que el propio fichero ya usa en la
+casilla de la factura: era la ÚNICA aparición de la forma con cadena en todo `public/`.
+
+**Hallazgo del banco, que NO se arregla aquí** (`tests/_banco-vistas.mjs` es de la S3): su `append`
+hace `x._padre = n` sobre cada argumento, así que muere con los strings que `ParentNode.append` sí
+acepta. Le pasará a la siguiente vista que use la forma corta. Va al orquestador, no a un ticket
+propio.
+
+### Errores propios
+
+1. **Mi primer arreglo del caso sin eje se pasó de largo, y lo tumbó otro contrato.** Condicioné la
+   franja entera a `!= null && (hayEje || cobrado > 0)`, y el control positivo de SCRUM-651 saltó:
+   *un presupuesto aceptado por 0 € es raro pero CONSTA, y eso lo escondía*. Los dos contratos caben
+   a la vez porque hablan de cosas distintas — 651 de si el dato consta (la franja), 318/363 de si
+   hay eje para derivar (el foco). **Es el argumento de esta sección entera sucediendo en vivo:** el
+   contrato que no borré me corrigió a mí.
+2. **La primera pasada de los cinco rojos no midió nada.** Escribí el `.ps1` con caracteres
+   no-ASCII; PowerShell 5.1 lee un `.ps1` sin BOM como ANSI, el patrón `^ℹ (tests|pass|fail)` no casó
+   NUNCA y la salida vino mojibake. Las cinco inyecciones se aplicaron y se revirtieron bien, pero de
+   su resultado no se supo nada. **Un rojo sin población no es un hallazgo: es un instrumento que no
+   llegó a arrancar.** Rehecho en ASCII.
+3. Un `git commit -m` con un here-string lo bloqueó el hook (`Remove-Item on system path '/'`) por lo
+   que llevaba escrito dentro. Se pasó a `-F <fichero>`. Anotado por si le pasa a otra sesión.
+
+### El contador de `scrum522`: la OCTAVA colisión, y la que más engaña
+
+`917e` y `926` escribieron los dos su comentario sobre el mismo «29 → 30». El merge marcó conflicto
+en los **comentarios**… y dejó pasar la **cifra** sin conflicto, diciendo 30 cuando ya había 31.
+🔒 **El conflicto que sí ves te tapa el que no.** Resuelto como manda el fichero: los dos comentarios
+se quedan, ninguno se tira, y el número **se vuelve a medir corriendo el test** sobre el árbol
+fusionado — **31**, no «30 + 1».
+
+### Medido, con su población
+
+- Los cinco ficheros de contratos: **55 tests, 49 pass / 6 fail** antes → **55 pass / 0 fail** después.
+- Cinco rojos, repetidos ENTEROS tras el merge con conflicto (A23 #11), cada uno con su
+  `git diff --numstat` al lado y el árbol limpio después.
+- Censos por su nombre: `scrum258` 10/10 · `scrum522` 26/26 (cifra medida: **31**) · `scrum548` 8/8.
+- `npm run build` EXIT 0 · `guards:entrada` 4 guards / 26 tests EXIT 0.
+- Guards de navegador: `detalle-trabajo-917` **92/92** · `lista-trabajos-917` **49/49** ·
+  `escalera-por-estado` verde (el que estaba CIEGO en `main`; ésta es la entrega que lo cura).
+
+### Lo que NO cubre
+
+- **La suite completa no se ha corrido en local**: por la norma nueva del 20-sep, la corre el PR.
+  La entrega anterior se cayó justo por ahí, así que el PR se mira antes de darla por buena.
+- Sin verificar en staging todavía (se hace tras el merge).
+- El hueco del banco de vistas con `append('texto')` sigue vivo: reportado, no arreglado (otro carril).
