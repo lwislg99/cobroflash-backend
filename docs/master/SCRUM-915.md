@@ -137,3 +137,127 @@ control se pierde: lo que cambia es CUÁNDO se ve.
   que los aplique.
 - El IVA por defecto del justificante sigue en Conceptos (915g).
 - Capturas antes/después (AB6) a 390 y 1280: no son condición del guard y no se hicieron en este corte.
+
+---
+
+## SCRUM-915 · PASO 0 — cuánto queda de la v3, medido fila a fila
+
+**Fecha:** 20-sep-2026 · **Carril:** S2 (frontend) · **Pedido por:** el orquestador
+**Medido contra:** `origin/main` = `102370c9aebac27cd770c1f109c509b4ff47b956` · 2026-09-20T14:32:12Z
+**Rama:** `scrum-915-paso0-inventario` · **Instrumento:** `scripts/sonda-915-inventario-v3.mjs`
+
+Esto NO construye nada. Contesta la pregunta que el orquestador puso delante de 915: **de la v3 que
+aprobó el fundador, ¿qué parte está ya en la pantalla y qué parte falta?** Sin eso no se sabe si son
+dos horas o dos días, y 915d entró hace una semana sin que nadie midiera lo que dejó fuera.
+
+### Cómo se midió
+
+La población **no se copia a mano**: la sonda PARSEA el array `INV` del propio prototipo aprobado
+(`docs/prototipos/SCRUM-915/editor-presupuesto.html`), que es el inventario «antes → después» que
+el fundador vio. Son **48 filas de contenido en 13 grupos**. Una fila nueva allí sale aquí como
+«sin predicado»; hoy no hay ninguna.
+
+Cada fila se juzga **en un navegador de verdad**, sobre los ficheros de `public/` que sirve el
+panel, recorriendo el camino del profesional y **midiendo el estado después de pulsar**: cliente →
+Continuar → línea → Continuar → abrir la hoja de ajustes de la línea → Continuar → Revisar →
+pulsar la acción primaria dos veces. Tres recorridos: presupuesto a 1280 y a 390 px y justificante
+a 1280 px.
+
+**Dos controles positivos, los dos en verde:**
+
+1. el instrumento **ve 16/16** controles del inventario de hoy (el censo de 915d). Si no los viera
+   no estaría mirando el editor y ningún «falta» valdría nada;
+2. de las **8 filas que 915d entregó** y están en `main`, salen «ya está» **8**. Un «falta» sobre
+   algo que ya está en main es una sonda ciega, no un hallazgo. **Visto en ROJO:** con `3 líneas en
+   blanco` metida en esa lista, la sonda sale con **2 (NO SUPE MEDIR)** y nombra la fila
+   (`git diff --numstat` = `1 0` al inyectar; revertido con `git restore --source=HEAD` y
+   `git status --porcelain` vacío).
+
+### El resultado
+
+| | filas |
+|---|---|
+| ✅ **ya está** | **16** |
+| 🟡 **parcial** (lo de 915d está, falta la otra mitad) | **4** |
+| 🔴 **falta** | **20** |
+| ⬜ **no medible con este banco** (con su motivo en la salida) | **8** |
+| ❓ sin predicado | **0** |
+| **suma** | **48 de 48** |
+
+Detalle fila a fila, en `docs/prototipos/SCRUM-915/paso0-medido.json` (lo escribe la sonda).
+
+**O sea: 915d entregó una tercera parte de la v3 (16 de 48). Quedan 24 filas por construir.**
+
+### Las 8 «no medibles», declaradas — no son huecos, son límites del banco
+
+aviso global · «Sin resultados para tu búsqueda» · 🎤 Dictar · sugerencias de la IA y su aviso
+«Revisado» · «Tus conceptos más usados» · Tramos de cobro · el cuerpo del mensaje de WhatsApp ·
+«pendiente de aprobación». Cada una necesita un dato o un gesto que este banco no monta (una
+respuesta real de la IA, un usuario con límite de aprobación, señal de uso de conceptos…). Se dice
+cuál y por qué en la salida de la sonda; ninguna se calla.
+
+### Dos hallazgos que la medición confirmó pulsando, no leyendo
+
+- **Generar dos veces crea DOS presupuestos.** El banco cuenta los `POST /quote/create` de verdad:
+  dos clics en la acción primaria → **2 creaciones**. Es el defecto que `inventario-hoy.md` daba por
+  conocido; ahora está medido.
+- **La tecla `N` dentro del editor abre la Cotización rápida encima.** Medido pulsándola con el
+  editor abierto: queda un modal delante.
+
+### Errores propios de esta sonda, y por qué se cuentan
+
+La primera pasada dio **tres rojos que eran míos, no del producto**, y los tres se leían como
+hallazgos perfectamente creíbles:
+
+1. **«el menú ⋯ de la línea no tiene nada»** (items `[]`). `querySelector('.overflow-trigger,
+   [aria-haspopup]')` **no tiene prioridad**: devuelve el primero del documento, y dentro de una
+   línea el input del autocompletado lleva `aria-haspopup` y va antes. Pulsaba el input. Con el
+   selector partido en dos, el menú contesta `["↑ Subir","↓ Bajar","🗑️ Eliminar línea"]` — y el
+   rojo REAL es otro: no ofrece «Ajustes», que es lo que pide la v3.
+2. **«"✓ Guardado automáticamente" no está junto al título»**. El encabezado es
+   `div.quotes-header-block` (QV:72), no el `<h2>`. Preguntarle al `h2` si contenía el aviso daba
+   «no» con el aviso dentro. Es un **YA ESTÁ** que 915d había entregado.
+3. **«los datos de empresa están en el documento de la derecha»**, buscándolos por el texto
+   `/NIF|Cargando datos de empresa/`. El merchant del banco no tiene NIF y el rótulo de carga ya se
+   había sustituido: el regex daba falso con los datos delante. Por identidad
+   (`.quotes-merchant-info`) la respuesta se da la vuelta: siguen en el editor, y es un **FALTA**.
+
+Y **dos verdes sobre población vacía**, que son peores: las dos tiras de «pactado» y la etiqueta de
+la descripción de la línea salían «ya está» porque se preguntaba si se VEÍAN, y las tres viven
+dentro de filas que llegan cerradas. Se pasaron a medir el **rótulo del control**, se vea o no, y
+las tres son rojo: los cuatro marcadores `[PENDIENTE microcopy oficial]` siguen puestos.
+
+    🔒 Preguntarle a un control si se ve, cuando llega cerrado a propósito, es preguntarle al armario
+       si la camisa existe.
+
+### Lo que NO he mirado
+
+- Las capturas AB6 antes/después: esta entrega no cambia un píxel, así que no hay «después».
+- El rendimiento del editor con muchas líneas.
+- Si el CI de #1534 (SCRUM-926) pasó: quedó `BLOCKED` esperando «build + tests» y sigue OPEN.
+
+### PROPUESTA de partición en cortes — pendiente de que la apruebe el orquestador
+
+Las **24 filas** que faltan, repartidas en **7 cortes**, cada uno con su guard en rojo, su población
+declarada y su estado medido después de pulsar. Los tres primeros nombres ya los reservaba el
+expediente de 915d (915e, 915f, 915g) y se respetan.
+
+| corte | qué monta | filas | riesgo |
+|---|---|---|---|
+| **915e · el documento vivo** | el documento de la derecha con aspecto de PDF que se construye mientras escribes y resalta la zona que editas; su cabecera con los datos de empresa; los totales (suma, descuento, base, IVA) **dentro** del documento y fuera del editor; el IVA del presupuesto reflejado (y con oyente, que hoy no lo tiene); «Presupuesto válido hasta el dd/mm/aaaa.» en lugar del pie fijo que miente; el nº y el estado en el documento; «Ver documento» en móvil | 6 | **el más grande.** Es el que pidió el fundador por su nombre («la vista previa parece rota, no se va creando»). Propongo **partirlo en dos**: 915e1 el documento que se construye, 915e2 el resalte + el móvil |
+| **915f · la hoja de envío** | «Guardar y enviar» abre la hoja con el mensaje tal como le llega al cliente; WhatsApp en verde a todo el ancho; email · PDF · copiar enlace · «Lo envío luego»; **se genera UNA vez**; desaparecen el modal, «Abrir PDF en nueva pestaña» y «Seguir editando» | 4 | 🔴 **STOP.** Toca el flujo de envío/cobro. Necesita el **GO escrito del fundador en mi chat** antes de desplegar (CLAUDE.md, y `orquestador.md` §20). El cuerpo del mensaje es la plantilla `quote_decision_es` y **no se toca**: las plantillas de Meta son STOP |
+| **915g · el justificante al día** | la fila «Ajustes del documento» dentro de Revisar, con el IVA por defecto dentro (hoy sigue suelto en Conceptos) | 1 | bajo. Ya estaba nombrado así en 915d |
+| **915h · los conceptos, más limpios** | UNA línea en blanco en vez de tres; la ficha de IVA sólo si la línea NO va con lo de siempre; «Ajustes» dentro del menú ⋯ de la línea; «+ Añadir descuento» junto a «+ Añadir línea»; la tecla `N` deja de abrir la Cotización rápida encima | 5 | bajo, y es el que más se nota al escribir |
+| **915i · la cabecera y el menú ⋯** | el título arriba del editor; se retira el subtítulo (cada paso ya lleva su frase guía); «Limpiar formulario» y «💾 Guardar como plantilla» se van al menú «⋯» de arriba, y limpiar **pide confirmación** | 4 | bajo |
+| **915j · el cliente por botones** | las coincidencias como botones grandes en vez del `<select>`, con «+ Nuevo cliente» y «Sin resultados para tu búsqueda» | 1 | **medio-alto**: del selector cuelgan el borrador, las dos propuestas pactadas, la pista de dirección y el documento. Corte propio por eso, no por tamaño |
+| **915k · los cuatro marcadores** | «Descripción» · «Aplicar» · «Este cliente tiene pactado un descuento del N %» · «Aplicar a las líneas» | 3 | bajo. No es diseño: es sustituir marcador por texto **ya firmado** |
+
+**El microcopy NO es un freno, y conviene decirlo alto:** la ficha del 18-sep
+(`docs/microcopy/2026-09-18-SCRUM-915-pasos-del-editor.md`, comentario 15868) firmó **todos** los
+textos de `textos-propuestos.md` **menos uno** — «Con su descripción, descuento y suplido.», que
+exige cambio de servidor y lo decide el fundador. Eso incluye «Guardar y enviar», la hoja de envío
+entera, «Lo envío luego», «🔗 Copiar enlace», «¿Vaciar este documento?», «Más acciones» y los cuatro
+marcadores. Cada corte sólo tiene que **registrar en su propia ficha** los que aplique.
+
+**Orden que propongo:** 915e1 → 915e2 → 915h → 915i → 915g → 915k → 915j → 915f. El envío el
+último, porque es el único que necesita un GO del fundador y no conviene que bloquee a los demás.
