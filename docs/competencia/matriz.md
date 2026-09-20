@@ -1,6 +1,6 @@
 # La competencia, función por función · matriz viva
 
-**Última medición: 20-sep-2026 13:26:07Z (hora de GitHub) · `origin/main` = `f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4`** (§8, la firma de Holded por dentro).
+**Última medición: 20-sep-2026 · `origin/main` = `d17825645813deb7406d8c6cc3fdd7f3a06e1657`** (§9, la firma de Holded con el interruptor encendido). *(El §8 se midió a las 13:26:07Z, hora de GitHub, sobre `f2fa091b`.)*
 *(La primera versión de este documento se midió el 17-sep a las 18:24:26Z sobre `ef332b90`; el §7 consolidado, el 18-sep a las 07:00:46Z sobre `ecccf94e`.)*
 **Ticket:** SCRUM-906, FASE 2 · **Carril:** consultoría (Sesión 0) · **Encargo:** orquestador, 17-sep-2026.
 
@@ -618,12 +618,105 @@ pública y **hoy se confirman sin cambio**; lo nuevo son los estados y los permi
   **alta**, no la configuración, y las autorizaciones **no se heredan entre sesiones** (A19). Queda
   pedido por el canal y no se hizo. La ❓ de §7.0 está resuelta —la función existe y se sabe dónde
   vive—; lo que queda abierto es distinto y más pequeño: **cómo es por dentro la petición**.
+  - *(20-sep-2026, unas horas después: **el fundador dio el GO y el interruptor se encendió**. Lo que
+    se midió con él encendido está en §9, y el flujo de petición **sigue sin recorrerse**, ahora por
+    otro motivo.)*
 - No se envió ningún documento a firmar, ni se pulsó nada que mandara un correo.
 - Cupos, estados y permisos son **su ayuda**, no están comprobados en la cuenta.
 - De la tabla «Permisos necesario según el rol» solo se leyeron las dos etiquetas («miembro CRM»,
   «rol personalizado»); el detalle de la tabla no llegó a renderizarse.
 - La cuenta de prueba marcaba **2 / 14 días** el 20-sep: caduca sola a primeros de octubre, y con ella
   la posibilidad de recorrer lo de arriba sin un alta nueva.
+
+---
+
+## 9 · Con la firma de presupuestos ENCENDIDA (20-sep-2026, con GO del fundador)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `d17825645813deb7406d8c6cc3fdd7f3a06e1657`.** Continúa el
+§8 y **no lo repite**.
+
+**La autorización, y sus condiciones.** El fundador dio el GO, literal: *«autorizo encender la firma de
+presupuestos en Holded mientras sea gratis»*, con la condición dura de **parar en cuanto apareciera un
+precio, un plan, un "mejora tu plan", una tarjeta o un aviso de créditos**; más cuatro del orquestador:
+solo ese interruptor, cualquier correo a una dirección nuestra, no tocar nada más de la configuración
+(nadie sabe la contraseña de esa cuenta) y dejarlo como estaba al terminar. ⚠️ **Ese GO fue para esa
+sesión y no se hereda** (A19).
+
+### 9.1 · El cambio, medido antes y después
+
+| interruptor | antes | después |
+|---|---|---|
+| **Presupuestos** | `false` | **`true`** |
+| Facturas | `false` | `false` |
+| Proformas | `false` | `false` |
+| Pedidos de venta | `false` | `false` |
+| Albaranes de venta | `false` | `false` |
+| Utilizar la fecha de expiración predeterminada | `false` | `false` |
+
+El pulsador **comprueba la etiqueta del índice antes de tocar y aborta si no coincide**, y compara los
+seis estados: `CAMBIARON: 0`, es decir **exactamente el que se pulsó y ninguno más**.
+
+**No apareció nada de pago.** Se buscaron precio, plan, «mejora tu plan», tarjeta y créditos: lo único
+que sale es el banner de prueba que ya estaba antes (**2 / 14 días**). No hubo que parar.
+
+🔴 **Y una trampa que vale para toda la casa:** al guardar, la pantalla mostró *«La petición está
+tardando más de lo esperado — recargar la página — contactar con nosotros»*… **y había guardado
+igual**. Se comprobó recargando la página entera: `Presupuestos = true`, los otros cuatro en `false`.
+
+    🔒 Un mensaje de error tampoco es una medición: dice que algo tardó, no que algo no pasara.
+
+### 9.2 · Lo que NO cambió al encenderlo
+
+- **El panel del presupuesto sigue con 0 bloques de firma**, y no por caché: se midió tras **recargar
+  el documento entero** (3 marcos, 2.100 nodos).
+- **El portal del cliente sigue exactamente igual**: «Aceptar presupuesto» y «Rechazar presupuesto», y
+  nada más (587 nodos, el suelo los ve en los clicables). **Encender el tipo de documento no pone por
+  sí solo el botón de firma en el portal**: hace falta pedir la firma de ESE documento, una a una.
+- 🔴 **Tercera medición del mismo defecto:** con **Presupuestos ENCENDIDO** y **Facturas APAGADO**, el
+  único botón del módulo de Firma digital (`data-ref="digital_signature-no_rows_overlay-cta"`) **sigue
+  llevando a Facturas de venta**. La ruta no depende de la configuración: está clavada.
+
+### 9.3 · Tres fuentes suyas que no concuerdan entre sí
+
+Las tres medidas, ninguna deducida:
+
+| fuente | qué dice de los documentos firmables |
+|---|---|
+| **Ficha de la Store**, dentro de la app | «presupuestos, **albaranes** y otros documentos desde el Portal del Cliente» |
+| **Ayuda**, artículo `10900972` | Presupuestos · Facturas **proforma** · Pedidos de venta · Albaranes de venta — **las facturas de venta NO** |
+| **Pantalla de ajustes**, en la propia cuenta | Presupuestos · **Facturas** · Proformas · Pedidos de venta · Albaranes de venta |
+
+Y una cuarta, sobre el portal: el artículo `9382835`, *«Acciones disponibles en el Portal del
+cliente»*, enumera **nueve** acciones del cliente —resumen, pagos, aceptar presupuestos, descargar,
+comentar, catálogo, pedidos, contraseña e idioma— y **firmar no está entre ellas**.
+
+*Lectura de la Sesión 0, no medición:* no es que a Holded le falte la firma. **La tiene y está a medio
+montar**: nace apagada, su único atajo lleva al sitio equivocado y sus propias fuentes no se ponen de
+acuerdo en qué se puede firmar. Para la decisión de producto eso importa más que la lista de
+funciones: es la diferencia entre «lo tienen» y «les funciona».
+
+### 9.4 · Dónde se paró, y por qué
+
+Todo apunta a que la petición de firma sale de la **caja de envío del documento**. **Ese clic no se
+hizo.** No lo impidió Holded: lo impide el **clasificador de permisos de la máquina del equipo**, que
+bloquea cualquier interacción con un control de envío de una aplicación de facturación de terceros. Se
+intentó por dos vías legítimas —el botón de correo y el desplegable de acciones, que solo abre un
+menú— y bloqueó las dos. **No se buscó la vuelta**, y esa es la conducta correcta: el guard existe
+justo para esto.
+
+Para cerrarlo hacen falta dos cosas, y las decide un jefe: permitir **ese** clic, y saber **a qué
+dirección iría el correo** antes de abrir la caja (condición 2 del encargo).
+
+Sigue **sin medir**, y por tanto sin afirmarse: cómo se elige al firmante · qué ve el cliente en el
+portal · qué correo le llega · cómo queda el documento firmado.
+
+### 9.5 · Cómo queda la cuenta
+
+**El interruptor de Presupuestos se deja ENCENDIDO a propósito**, por decisión del orquestador del
+20-sep: el recorrido no terminó, apagarlo obligaría a repetirlo y el cambio es reversible y está
+medido. Los otros cuatro siguen apagados. Se apaga en un comando, volviendo a pulsar esa misma casilla
+en `Configuración > CRM > Firma digital` y comprobando los seis estados. La cuenta caduca sola a
+primeros de octubre.
 
 ---
 

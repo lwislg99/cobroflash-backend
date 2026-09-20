@@ -402,8 +402,14 @@ jobs:
   # sabemos hoy porque la arreglamos hoy. Con checkout propio, lo que muta es suyo y de nadie más.
   #
   # ── Y POR QUÉ NO CUESTA RELOJ ──────────────────────────────────────────────────────────────
-  # Los jobs de un workflow corren EN PARALELO. Éste tarda unos segundos (medido: 4 s con las dos
-  # mutaciones declaradas hoy) frente a los varios minutos del job de tests.
+  # Los jobs de un workflow corren EN PARALELO, así que éste no alarga el PR: le cuesta máquina,
+  # no espera.
+  #
+  # ⚠️ AQUÍ PONÍA «tarda unos segundos (medido: 4 s con las dos mutaciones declaradas hoy)». Era
+  # verdad el día que se escribió y hoy es falso por dos órdenes de magnitud: el 20-sep-2026 son
+  # **307 mutaciones** y el job tarda entre 8 y 14 minutos. La frase no envejeció por descuido —
+  # envejeció porque la magnitud que describe CRECE con cada guard nuevo, y nadie la volvió a
+  # medir. Lo que la sustituye no es otra cifra fija, es el paso «¿cuánto ha tardado?» del final.
   #
   # ⚠️ SIN SECRETOS: no toca ninguna base. Muta ficheros de `tests/` y corre `node --test` sobre
   #    el guard que declara, nada más.
@@ -413,7 +419,40 @@ jobs:
   meta-mutaciones:
     name: meta-guard · los guards caen cuando deben
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # ── 🔴 SCRUM-935 · 30, Y NO 10 · POR QUÉ, Y QUÉ NO ARREGLA ─────────────────────────────────
+    #
+    # Hasta el 20-sep-2026 esto ponía `10`. Ese techo NO cortaba un caso raro: cortaba la mitad de
+    # las pasadas, y al hacerlo se llevaba por delante la lectura del CI entero, porque **un
+    # timeout de job GitHub lo reporta como `cancelled`, no como `failure`** y envenena la
+    # conclusión del run.
+    #
+    # MEDIDO (población declarada: 100 runs de `ci.yml`, 97 con este job medible, ventana
+    # 17-sep 21:09Z → 20-sep 14:03Z; 34 logs descargados, 0 ciegos):
+    #
+    #   · Sólo 14 pasadas llegaron al final: 8:03 … 9:57. Las otras 58 murieron EN el techo.
+    #   · 🔴 Esa muestra de 14 estaba CENSURADA POR EL PROPIO TECHO. La media de «lo que tarda»
+    #     sacada de los que sobrevivieron al corte es una media que no existe. Des-censurada con
+    #     el perfil real de una pasada completa —el log imprime UNA LÍNEA POR MUTACIÓN con su
+    #     hora, así que se sabe en qué punto del trabajo murió cada una—:
+    #
+    #         p50 11:06 · p75 12:38 · p90 12:40 · p95 13:06 · máx 14:16 · 20 de 34 > 10 min
+    #
+    #     No es que rozara el techo: la mitad ya vivía al otro lado.
+    #   · La duración es N mutaciones × 1,6-2,5 s. N pasó de **275 (17-sep) a 307 (18-sep)**, y el
+    #     runner más lento tarda un **60 % más** que el más rápido por la MISMA N.
+    #
+    # ⚠️ SUBIR EL TIEMPO NO HACE EL TRABAJO MÁS RÁPIDO. Es presupuesto, no mejora. Cada guard
+    # nuevo que declara su mutación le suma ~2 s a TODOS los PR, para siempre; por eso un techo
+    # fijo se vuelve a cruzar solo, y por eso el día que este job vuelva a acercarse a los 30 min
+    # lo que toca es MEDIR (¿qué mutación se ha vuelto cara? ¿hay que repartir el job?), no
+    # regalar otro minuto. Eso no se queda escrito aquí y ya: lo AVISA el último paso.
+    #
+    # ⚠️ Y LO QUE ESTE CAMBIO NO ARREGLA, para que nadie lea «935 hecho» como «main ya no se
+    # cancela»: de las 83 cancelaciones medidas, 58 son este techo y 25 son la concurrencia. En
+    # `pull_request` el techo explica el 91 % (legibles hoy 13 % → 92 %); en `push` a `main`, sólo
+    # el 43 % (16 % → 52 %). La otra mitad de `main` es el `cancel-in-progress` de arriba, que es
+    # una decisión de COSTE del fundador y aquí no se toca (SCRUM-935, enunciado del ticket).
+    timeout-minutes: 30
 
     steps:
       # ── SCRUM-765 · ESTE JOB CORRE LOS MISMOS GUARDS QUE LA TANDA, Y NECESITA SU MISMO ÁRBOL ──
@@ -481,8 +520,52 @@ jobs:
       - name: Compilar (tsc)
         run: npm run build
 
+      # El reloj se toma AQUÍ y no dentro del paso siguiente a propósito: si `meta:mutaciones`
+      # falla, ese paso no llega a escribir nada, y justo entonces es cuando interesa saber
+      # cuánto llevaba. Una medición que sólo existe cuando todo va bien no mide nada.
+      - name: Marca de arranque del trabajo de mutación
+        run: echo "META_INICIO=$(date +%s)" >> "$GITHUB_ENV"
+
       - name: Cada guard cae con la mutación que declara
         run: npm run meta:mutaciones
+
+      # ── 🔴 SCRUM-935 · EL AVISO, PORQUE UN PRESUPUESTO SIN AVISO SE GASTA EN SILENCIO ─────────
+      #
+      # El techo de arriba pasó de 10 a 30 min con su motivo medido. El riesgo de un presupuesto
+      # holgado es el contrario del que arregla: que la población de mutaciones siga creciendo
+      # —~2 s por guard nuevo— y nadie se entere hasta que vuelva a chocar, otra vez en forma de
+      # `cancelled` que nadie sabe leer. «Si vuelve a acercarse al techo, es que hay algo que
+      # medir» escrito sólo en el expediente es una frase; aquí es un paso que corre solo.
+      #
+      #   · AVISO a los 20 min (2/3 del presupuesto): margen de sobra sobre el máximo medido hoy
+      #     (14:16) y aviso mucho antes de la pared.
+      #   · `if: always()` NO es opcional: el caso que más interesa —el job que se está yendo de
+      #     tiempo— suele venir con el paso anterior en rojo o cortado.
+      #   · AVISA, no veta. Un veto por lentitud sería inestable: el mismo árbol tarda un 60 %
+      #     más en un runner lento que en uno rápido, y un guard que cae por sorteo enseña a
+      #     desconfiar de los rojos (canon de `sesion-5.md`).
+      #   · Y deja la cifra SIEMPRE en el resumen del job, no sólo cuando avisa: la próxima
+      #     medición de esta serie no debería tener que bajarse 34 logs para saber qué tardó.
+      - name: ¿Cuánto ha tardado? (y aviso si se acerca al techo)
+        if: always()
+        env:
+          PRESUPUESTO_S: '1800'
+          AVISO_S: '1200'
+        run: |
+          if [ -z "${META_INICIO:-}" ]; then
+            echo "::warning title=meta-guard sin medir::No pude mirar cuánto tardó: no llegó a tomarse la marca de arranque."
+            echo "meta-guard · NO PUDE MIRAR la duración (sin marca de arranque)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          seg=$(( $(date +%s) - META_INICIO ))
+          pct=$(( 100 * seg / PRESUPUESTO_S ))
+          echo "meta-guard · ${seg} s ($(( seg / 60 )) min $(( seg % 60 )) s) · ${pct} % del presupuesto de $(( PRESUPUESTO_S / 60 )) min" >> "$GITHUB_STEP_SUMMARY"
+          echo "meta-guard · ${seg} s · ${pct} % del presupuesto"
+          if [ "$seg" -ge "$AVISO_S" ]; then
+            echo "::warning title=El meta-guard se acerca a su techo::${seg} s de un presupuesto de ${PRESUPUESTO_S} s (${pct} %). Esto NO se arregla subiendo el techo otra vez: toca medir qué mutación se ha vuelto cara o repartir el job (SCRUM-935)."
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "🔴 **Se acerca al techo.** No se arregla subiendo el presupuesto: toca medir (SCRUM-935)." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
   # 🔴 SCRUM-813 · EL TRINQUETE DE ZONA HORARIA · BLOQUEANTE, Y ÉSE ES EL PUNTO

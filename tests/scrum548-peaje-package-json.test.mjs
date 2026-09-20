@@ -107,7 +107,18 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // SCRUM-915d · y entra un tercero sobre el editor: `guard:pasos-del-editor`. Tampoco se fusiona,
   // por el mismo motivo: no teclea descuentos ni mide anchos, RECORRE los pasos y juzga qué se ve
   // tras cada clic. Su segundo destino (`#invoices-new`) no lo comparte con nadie.
-  assert.deepEqual(resumen, ['2×/medicion.html', '3×/dashboard/index.html#quotes-new', '5×/index.html'],
+  // SCRUM-926 · entra un solape NUEVO, y sobre una página que hasta hoy sólo miraba un guard:
+  // la FICHA del presupuesto (`#quotes-detail/1`), donde coinciden `guard:descuentos-en-el-detalle`
+  // y `guard:duplicar-conserva`. No se fusionan, y el motivo es el de siempre: uno OBSERVA la ficha
+  // —que base e IVA cuadren con el total cuando hay descuentos— y el otro no mira la ficha, la usa
+  // de puerta: PULSA «Duplicar» y se va a juzgar el EDITOR que sale. Comparten la URL de partida y
+  // nada más, y juntarlos daría un guard que al caer no dice si se rompió la ficha o la copia.
+  assert.deepEqual(resumen, [
+    '2×/dashboard/index.html#quotes-detail/1',
+    '2×/medicion.html',
+    '3×/dashboard/index.html#quotes-new',
+    '5×/index.html',
+  ],
     '🔴 HA CAMBIADO QUIÉN MIDE QUÉ PÁGINA.\n'
     + '  No es un defecto por sí solo —dos guards pueden mirar cosas distintas de la misma\n'
     + '  página—, pero es el sitio donde mirar. SCRUM-546 encontró un solape de dos por pura\n'
