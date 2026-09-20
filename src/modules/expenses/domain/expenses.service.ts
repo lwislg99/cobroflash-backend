@@ -97,9 +97,10 @@ export async function listExpenses(
  *
  * Los Trabajos CON título no cuestan nada: `tituloDeTrabajo` devuelve ese título y no se consulta.
  * Para el resto, tres consultas por página —Trabajos, presupuestos y clientes—, nunca una por gasto
- * (el coste constante que fijó SCRUM-135). Cliente inyectable, como `trabajosPorQuote`.
+ * (el coste constante que fijó SCRUM-135). No se exporta: nadie de fuera la usa (`listExpenses` la llama
+ * y su test entra por `listExpenses`), y un `export` sin consumidor lo caza `scrum411`.
  */
-export async function nombresDeTrabajos(
+async function nombresDeTrabajos(
   merchantId: number,
   trabajos: Array<{ id: number; titulo: string | null }>,
   prismaClient = prisma,

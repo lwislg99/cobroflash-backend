@@ -65,3 +65,5 @@ el verde sería una frase.
 - Dije al orquestador «contexto propio ~120k» sin medirlo: medido en mi jsonl eran ~158k. La cifra se mide, no se estima (A19).
 - Al cambiar de rama en el mismo árbol, un `node --test` con la ruta de un test que ya no existía en esa rama corrió el
   resto sin quejarse (47 tests; con los 9 del otro ticket habrían sido 56): lo cazó la población, no el código de salida. Un fichero que no existe no es un fallo, es una ausencia.
+- Exporté 
+ombresDeTrabajos para poder probarla y scrum411-exports-inalcanzables cayó (un export sin consumidor de fuera): la salida fue cambiar el código —no exportarla; el test entra por listExpenses—, no declararla huérfana. Lo cazó correr los guards vecinos antes de empujar, no la suite.
