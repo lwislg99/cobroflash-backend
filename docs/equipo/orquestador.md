@@ -106,6 +106,70 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
 
     🔒 Un turno que se salta un paso de esta lista le deja al fundador el trabajo de notarlo.
 
+### 0bis · 🔴 CIERRE POR FIN DE USO, y arranque de la tanda siguiente
+
+*(Norma del fundador del 17-sep-2026, con la casilla obligatoria que añadió el 18-sep. Vivía en la
+memoria de UNA máquina; entra aquí el 20-sep-2026 para que la tenga también el orquestador de Javier,
+que no ve esa memoria. Vale para los dos equipos.)*
+
+**El disparador no es que el fundador dé la orden.** Es que el uso se acerca al límite: él lo dice
+(«vamos al 9x %», «nos acercamos al final») **o lo ve el propio orquestador**. En cuanto aparece, se
+ejecuta la parte A sin preguntar.
+
+    🔒 El límite de uso no avisa: corta. Lo que no esté commiteado y escrito cuando corte, no existió.
+
+**El cierre empieza al 80 %**, medido —no estimado— con
+`node C:/Users/Admin/AppData/Local/yaqu-equipo/uso.mjs leer`. El trabajo que quede a medias se deja
+**commiteado en local** y apuntado en el traspaso.
+
+**A · CIERRE (orquestador saliente)**
+
+1. A **cada puesto vivo**, por `SendMessage`: «CIERRE POR FIN DE USO: punto limpio (nada a medio
+   empujar), `project_sN_traspaso.md` para alguien que no ha visto tu chat, su línea en `MEMORY.md`,
+   contesta "Sesión N · traspaso listo" y PARA».
+2. Escribe **su** traspaso (`project_orquestador_traspaso.md`): estado real medido y con SHA · qué
+   sesión ocupaba cada puesto (nombre e id) · decisiones pendientes del fundador · lo prometido y no
+   hecho.
+3. Borra sus crones si los hay (`CronList` / `CronDelete`).
+4. Manda el último mensaje al fundador con la casilla obligatoria de abajo.
+5. Si el uso se corta antes de que lleguen todos los «traspaso listo», **no pasa nada**: el
+   orquestador nuevo lo mide.
+
+**🔴 LA CASILLA OBLIGATORIA DEL CIERRE.** El último mensaje lleva **SIEMPRE**, al final y dentro de
+«Para ti», estas tres cosas, en este orden:
+
+1. el **PROMPT LITERAL del orquestador nuevo**, listo para copiar y pegar (el vigente, abajo);
+2. la **frase de autorización para lanzar sesiones**, porque **no se hereda** (A19): el orquestador
+   nuevo no puede levantar los puestos hasta que un jefe se lo escriba a él;
+3. qué chats viejos puede cerrar, y sus pendientes numerados.
+
+**Un cierre sin ese prompt no es un cierre.** Lo pidió el fundador con esas palabras el 18-sep-2026.
+
+> **Prompt vigente del orquestador nuevo:** «Eres la sesión ORQUESTADORA de YaQu. Lee en este orden
+> estas memorias: `feedback_formato_mensajes_fundador`, `project_orquestador_traspaso` y
+> `feedback_arranque_orquestador`. Lee `docs/equipo/orquestador.md` §0 desde `origin/main`. Mide el
+> estado real (PR, CI, Jira) y el contexto de cada sesión antes de creerte el traspaso. Después dime
+> en plano cómo está todo y lo mío al final.»
+
+**B · ARRANQUE (orquestador nuevo, cuando vuelve el uso)**
+
+0. 🔴 **CENSO DE HUÉRFANOS ANTES QUE NADA** (SCRUM-946): `node scripts/equipo/huerfanos.mjs` — el
+   trabajo commiteado que no está en ningún remoto, y el sucio reciente. La tanda del 17-sep murió
+   **sin aviso** y dejó tres trabajos invisibles; se salvaron por suerte. Y un «0» sin población es
+   «no he mirado».
+1. El arranque normal de §0, entero.
+2. `ListAgents`: las sesiones de la tanda anterior siguen registradas. Llevan más de 1 h paradas, así
+   que **NO se reanudan** (A19): se paran.
+3. Levanta los **puestos fijos** en segundo plano, cada uno con el prompt estándar (rol del puesto ·
+   leer desde `origin/main` el `CLAUDE.md`, `00-normas-comunes.md`, su ficha y su fila de §11bis ·
+   leer su `project_sN_traspaso.md` · presentarse por el canal · no preguntar de forma interactiva ·
+   dejar traspaso antes de que se acabe el uso) **más su encargo concreto**. El encargo avisa de que
+   **los GO de chats viejos no se heredan**.
+4. Espera los «Sesión N lista» y le dice al fundador qué chats viejos puede cerrar.
+
+El cableado (lanzador, protocolo y direcciones) es de la S5: `orquestador-autonomo.md` y
+`scripts/equipo/`. Esta ficha dice **qué** se hace y **cuándo**; aquel dice **con qué**.
+
 ## 1 · Qué es
 
 Asesor de tecnología y producto del fundador de YaQu. Decide, escribe
