@@ -130,12 +130,66 @@ veces**. R2 mata cuatro y deja el peso en pie; R1 mata el peso y deja `tieneFoto
    ya no existía. El rojo era mío, no un defecto — es la trampa que la ficha de la S1 ya describe
    («una tanda larga lee el repositorio»). **Entre dos rojos va un `npm run build`.**
 
+## 🔴 El guard de navegador salió ROJO, y el defecto era del INSTRUMENTO (20-sep, 20:24Z)
+
+**Medido contra:** `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b` · rama `scrum-964-lista-sin-fotos`
+**Quién lo dijo, y en cuánto:** `guard:foto-del-gasto` (SCRUM-947), **9,6 s**, sin turno de staging.
+
+### Lo que decía, y la atribución por diferencial
+
+| dónde | `guard:foto-del-gasto` |
+|---|---|
+| `main` `c5d642fe` (run 35533496437) | ✔ **verde**, 9,6 s |
+| `#1544` (este PR, run 35533279614) | 🔴 **rojo**, «C · al reabrir no hay `<img>` de la foto» en A, B y F |
+
+O sea: lo traía este PR. No se dedujo leyendo el diff — se leyó **el mismo guard a los dos lados**.
+
+### El primer número era engañoso, y por qué
+
+El informe decía «3 DE 5 CASOS», y con los pesos al lado (`0,03 MiB` se ve, `0,72 MiB` no) parecía un defecto **dependiente del tamaño**. No lo era: **el caso D no ejecuta el control C**, porque C vive dentro del `else` de `if (caso.espera === 'intacta')`, y E es el negativo. Los casos que corren C son tres, y **cayeron los tres**. 100 %, no 60 %.
+
+🔒 **Un denominador que incluye a quien no se midió convierte un fallo total en uno parcial, y un fallo parcial invita a buscar una causa que no existe.** Diez minutos de hipótesis sobre límites de tamaño, por no mirar primero a quién se le aplica el control.
+
+### La causa: el control C reabría con una forma de fila QUE ESTE TICKET RETIRÓ
+
+C hacía `openExpenseModal(recibidos[0])` — **el cuerpo del POST**, que lleva `receiptData` dentro. Eso valía cuando la fila de la lista también lo llevaba: el cuerpo servía de doble fiel. Desde 964 la fila manda `tieneFoto` y la imagen la sirve su ruta, así que el modal —que pinta la `<img>` sólo con `expense?.tieneFoto`— no tenía de dónde.
+
+**No es un defecto del producto, y se comprobó en vez de suponerlo:** tras guardar, `expensesView.js` llama a `loadExpenses()`, o sea **recarga la lista**; el objeto con el que el panel reabre siempre es una fila con `id` y `tieneFoto`. El camino real nunca pasa por el cuerpo del POST.
+
+### Lo que se hizo, que NO es «ajustar el guard para que pase»
+
+La regla 41 dice: guard en rojo → se arregla el código. Aquí la premisa del control —«lo que devuelve el POST es la fila»— **dejó de ser cierta por el ticket mismo**, que es la excepción que este repositorio ya tiene escrita (804f). Y aun así **el control no se relaja: se le sube la exigencia.** C ahora:
+
+1. pide **la LISTA**, que es lo que el panel recarga al guardar;
+2. **afirma que la fila NO trae `receiptData`** — el defecto de los 300 MiB, ahora vigilado desde el navegador y no sólo desde el banco;
+3. afirma que la fila dice `tieneFoto: true`;
+4. reabre con **esa fila** y exige el píxel: `naturalWidth > 0`, visible y con alto.
+
+Antes C probaba que el modal sabe pintar un data-URI que le dan. Ahora prueba que **la foto guardada vuelve por la red y se pinta**. El servidor del banco reproduce el contrato entero (lista sin foto + ruta binaria con `no-store` y `nosniff`, espejo de `expenses.routes.ts`); lo que **no** reproduce, y queda dicho, es el permiso `admin` y el filtro por `merchantId` — eso lo miden los tests del servidor, aquí no hay sesión.
+
+### Los dos rojos del control nuevo, inyectados en el PRODUCTO
+
+Un control que se estrena en verde no es un control. Los dos fallos se inyectaron en `expensesView.js`, no en el banco, y **dan mensajes distintos** — que es lo que prueba que no es el mismo verde dos veces:
+
+| inyección en `expensesView.js` | lo que dijo C |
+|---|---|
+| que el modal no pinte la `<img>` (`tieneFoto` → `false`) | «al reabrir no hay `<img>` de la foto» |
+| que el `src` apunte a `/foto` **X** (ruta que no existe) | «al reabrir, la foto no se ve (naturalWidth 0, alto 2)» |
+
+El segundo es el que importa: sin él, C podría estar comprobando sólo que existe un elemento.
+
+### Y la lección que se lleva la sesión
+
+🔒 **El guard de navegador encontró esto en 9,6 segundos y sin turno de staging.** El recorrido manual sigue haciendo falta —está abajo, pendiente—, pero **ya no es donde se descubre**: es donde se confirma. Los tres casos habrían llegado a staging para que una persona viera lo mismo media hora después.
+
 ## Lo que NO se ha mirado
 
 - **No se ha verificado en staging ni en yaqu.app.** Lo medido es el mecanismo, con la ruta y el
   servicio reales pero con la base doblada. Un recorrido real —abrir Gastos, abrir el modal, ver la
   foto, guardar sin tocarla y comprobar que sigue ahí— **sigue pendiente** y es lo que confirmaría
   la mitad de la pantalla.
+- **El permiso y el filtro por `merchantId` de la ruta de la foto NO los mide el guard de
+  navegador**: su servidor no tiene sesión. Los miden los tests del servidor (R3).
 - **El tamaño REAL de una foto guardada no está medido**: el tope (1,5 MiB) sí. Las cifras del
   PASO 0 son el techo del mecanismo, no la media de un profesional real.
 - **La caché de la foto.** Va `no-store` a propósito, por no tener `ETag`. Con `ETag` la vista
