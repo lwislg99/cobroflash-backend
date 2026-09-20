@@ -179,6 +179,18 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // La lista pasa a UN ELEMENTO POR LÍNEA (misma razón que `tests/scrum710b`): en una sola línea,
   // dos tickets que añadan su guard a la vez chocan en la misma línea física y el conflicto no
   // dice que son independientes. Aquí ya han entrado seis tickets distintos.
+  // SCRUM-965 · entra `guard:un-solo-presupuesto`, y por el mismo motivo que `guard:arranque-sin-red`
+  // y `guard:rastro-del-menu`: levanta servidor propio en un puerto EFÍMERO (`GUARD965_PUERTO || 0`)
+  // y navega a `http://127.0.0.1:${PUERTO}/dashboard/index.html#${ruta}`, con el puerto Y la ruta en
+  // variables, así que del fuente no sale ningún destino fijo y este detector no puede verlo.
+  // MEDIDO: abre `#quotes-new` y `#invoices-new`, las dos por esa plantilla. Por `#quotes-new` pasan
+  // ya tres guards declarados arriba (`descuento-redibuja`, `rotulos-de-la-linea`, `pasos-del-editor`),
+  // pero NINGUNO por este servidor: el suyo responde las peticiones al vuelo para poder CONTARLAS,
+  // que es lo que mide. No se fusiona con los tres: ellos observan el editor, éste cuenta peticiones.
+  // Se declara para que ese solape invisible no se lea como «no tiene».
+  // ⚠️ 917e y 965 entraron a la vez y los DOS AÑADEN: se conservan los dos comentarios y los dos
+  // guards. La lista queda en UN ELEMENTO POR LÍNEA —que es justo lo que evita la próxima—, y su
+  // contenido y su ORDEN se vuelven a MEDIR corriendo este test sobre el árbol ya fusionado.
   assert.deepEqual(s.noResueltos, [
     'guard:contraste',
     'guard:caja-semaforo',
@@ -186,6 +198,7 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
     'guard:portal-en-la-ficha',
     'guard:caja-datos-del-cliente',
     'guard:arranque-sin-red',
+    'guard:un-solo-presupuesto',
     'guard:firma-con-tramos',
     'guard:completar-lleva-al-campo',
     'guard:objetivo-tactil',
