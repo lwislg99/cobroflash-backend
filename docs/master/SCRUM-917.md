@@ -131,7 +131,9 @@ del botón de esa barra, **1.664 px² de solape a 390, 360 y 640 px**. El orques
 ### Tests y censos cambiados, con su motivo
 
 - `scrum412-primaria-nunca-es-sm`: sale `jobsView.js:bSiguiente` de las declaradas: **ya no es primaria**.
-- `scrum522-guards-fuera-de-la-tanda`: 25 → 26 por `guard:lista-trabajos-917`, **medido corriendo el test**.
+- `scrum522-guards-fuera-de-la-tanda`: por `guard:lista-trabajos-917`. El 18-sep se midió 26; el 20-sep,
+  al mergear main (ver «El rescate del 20-sep» al final), el contador estaba ya en 28 y volvió a medirse:
+  **29**. Las dos veces corriendo el test, nunca sumando.
 - `scripts/guard-lista-trabajos.mjs` (816): su caso «sin equipo» leía `td.cell-tecnicos`, que ya no
   existe, y daba «» como si fuera una respuesta; ahora lee la línea del cliente. Todo lo demás, verde sin
   tocar (candado en las dos direcciones, vuelta atrás, hermanas idénticas por hash).
@@ -165,3 +167,39 @@ del botón de esa barra, **1.664 px² de solape a 390, 360 y 640 px**. El orques
   salvo que haya más de 200 agendados antes; no se ha medido con datos reales.
 - El técnico (rol) ve las cifras igual que ve hoy los importes de las filas; no se ha probado con su sesión.
 - No verificado aún en staging (se hace tras el merge).
+
+## 917c · El rescate del 20-sep-2026
+
+*(Sesión 2b, relevo. La sesión que construyó 917c cerró por fin de uso el 18-sep con la rama
+**commiteada en local y sin empujar**, y no hubo tanda el 19. Ocho commits vivieron dos días en un
+solo disco. Esto es lo que costó sacarlos, y lo que enseñó.)*
+
+**Punto de partida medido, no heredado** (20-sep-2026 13:05:23Z GitHub · `origin/main`
+`f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4`): `wt-917c` existía, árbol limpio, head
+`bb5b9317850ff74bf2e1342cababadb8c3baa46e`, 8 commits por delante de `origin/main`. Lo primero de la
+tanda fue comprobar las cuatro cosas, porque **un traspaso de dos días es una foto vieja**: podía no
+estar el worktree, podía estar sucio, podía haberlo empujado alguien.
+
+**El merge.** `git merge origin/main` (nunca rebase). Auto-mergearon `package.json` y
+`public/dashboard/css/styles.css`; el único conflicto fue `tests/scrum522-guards-fuera-de-la-tanda.test.mjs`,
+que era exactamente lo que el traspaso avisaba.
+
+**La cifra derivada, otra vez.** Es la **séptima** colisión de ese contador y la **segunda** que se lleva
+917c: el 18-sep chocó con 915d en el «26», y estos dos días 947 y 937b lo movieron a **28** mientras la
+rama estaba parada en local. Resuelto como manda A4 y como ya decía el propio fichero: **los tres
+comentarios se quedan —ninguno se tira— y el número NO se suma: se vuelve a MEDIR** corriendo el test
+sobre el árbol fusionado. Salió **29**, con el test entero en 26/26 y con su control anti-constante («la
+lista sale DERIVADA de `package.json`, no escrita aquí») en verde, que es lo que impide que el trinquete
+esté midiendo una constante. La tentación era escribir 28 + 1; el valor de la regla es justo que 28 + 1
+y la medición podrían no coincidir y nadie se enteraría.
+
+**Que un merge sin conflictos no pierda trabajo en silencio** (A4): se comprobó a mano que los **tres**
+guards conviven en `package.json` tras el auto-merge — `guard:foto-del-gasto` (947), `guard:nif-del-gasto`
+(937b) y `guard:lista-trabajos-917` (917c) —, porque un auto-merge de un JSON con entradas nuevas por los
+dos lados es donde se cae una.
+
+**Verificación tras el merge.** `npm run build` primero y mirando su código de salida antes que ningún
+test (A6: un build roto no es un rojo, es un verde que no vale) → EXIT=0. Después
+`npm run guard:lista-trabajos-917`: **49 de 49**, con su población declarada (49 comprobaciones sobre 12
+trabajos + 200 + 2 monedas + sin equipo, a 1280 y a 390). Es el mismo 49/49 del 18-sep, ahora contra un
+árbol dos días más nuevo: **el rediseño no lo ha roto nada de lo que entró mientras tanto.**
