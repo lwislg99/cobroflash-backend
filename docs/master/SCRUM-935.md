@@ -2,7 +2,8 @@
 
 **Fecha:** 20-sep-2026 · **Carril:** Sesión 5 (automatización) · **Gate:** sin gate
 **Medido contra:** `origin/main` = `cd0739d3bf36952e4c379fa306cf4eef6964bfce` · 2026-09-20T14:31:34+00:00
-**Tanda:** pendiente (va con turno del orquestador; se anota al cerrar)
+**Tanda:** 7.735 tests · 7.620 pass · 3 fail · 111 skipped — los 3 son de `scrum939b`, ajenos y
+conocidos (venían de antes de esta rama). Hubo un 4.º, mío, y está contado abajo.
 
 ## El defecto
 
@@ -151,7 +152,16 @@ bash, en tres casos (`salida-6-aviso-tres-casos.txt`, `probar-aviso.sh`):
 
 Más `bash -n` sobre **los 5** pasos con `run:` del job: 0 rotos.
 
-⚠️ **Error propio, y lo cazó el control, no yo.** La primera pasada dio el caso «suelo» en rojo
+⚠️ **Segundo error propio: la tanda me cazó a mí.** La primera pasada completa salió 7.735 · 7.620
+pass · **4 fail** · 111 skip. Tres son los de `scrum939b`, ajenos y conocidos. El cuarto era mío:
+`SCRUM-533 · los ficheros que TOCA ESTA RAMA no llevan ni un CR en disco` (en
+`tests/scrum480-fin-de-linea.test.mjs`), con **8 de mis ficheros de evidencia en CRLF**. La causa
+está escrita en las trampas del puesto y la pisé igual: **la redirección `>` de PowerShell escribe
+CRLF**, y siete de esas salidas se capturaron así. Arreglado pasándolos a LF con node y
+**contando** los CR después (0 de 0), no releyéndolos. Ni se tocó `.gitattributes` ni se añadió
+excepción: eso sería apagar la alarma justo cuando suena por algo que he hecho yo.
+
+⚠️ **Primer error propio, y lo cazó el control, no yo.** La primera pasada dio el caso «suelo» en rojo
 sobre un paso sano: mi aserción buscaba «NO PUDE MIRAR» en **stdout**, y ahí va el `::warning`
 con otra grafía mientras la frase va al **resumen del job**. No era un hallazgo, era la aserción
 mirando otro sitio. Queda escrito en el propio banco.
