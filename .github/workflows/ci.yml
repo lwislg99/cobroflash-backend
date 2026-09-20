@@ -85,11 +85,44 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
-    # Tope de seguridad: la suite tarda ~30 s. Si algo se queda colgado esperando una red
-    # que aquí no existe, se corta pronto en vez de consumir minutos de Actions.
-    timeout-minutes: 10
+    # ── 🔴 SCRUM-963b · EL TECHO DE LA ÚNICA PUERTA DE `main`, SUBIDO ANTES DE QUE SE MUERA ────
+    #
+    # Hasta hoy aquí ponía «la suite tarda ~30 s» y un techo de 10 minutos. Las dos cosas eran
+    # falsas o peligrosas, y la primera explicaba la segunda: nadie volvió a mirar.
+    #
+    # MEDIDO el 20-sep-2026 sobre los **100 últimos runs de `ci.yml`** (98 con este job medido ·
+    # 2 sin él · **0 NO PUDE MIRAR**), de punta a punta del job, no de la suite sola:
+    #
+    #     p50 6:13 · p95 7:25 · máx 9:16        techo 10:00
+    #     por encima del 80 % del techo (8 min): 1 de 98 (run 35317708289, 9:16, `success`)
+    #
+    # O sea: **la peor pasada se quedó a 44 segundos del techo.** No es que tarde 30 s: tarda seis
+    # minutos de mediana, porque el job hace `npm ci`, levanta Postgres, genera Prisma, compila y
+    # corre 7.7xx tests.
+    #
+    # 🔴 POR QUÉ ESTE TECHO NO ES COMO LOS DEMÁS: éste es el **único check obligatorio del ruleset
+    # `protect-main`** (SCRUM-963). En cualquier otro job, morir en el techo es un check en rojo;
+    # aquí, morir en el techo es **`main` sin ninguna puerta**. Y un timeout de job GitHub se
+    # reporta como `cancelled`, la palabra que durante semanas se leyó como «la concurrencia»
+    # (SCRUM-935). Se pagaría dos veces: sin puerta y sin saber por qué.
+    #
+    # El margen es a propósito MAYOR que el de 935 (que subió de 10 a 30 con 2,1× su máximo): aquí
+    # van **2,7× el máximo medido**, porque lo que está en juego no es la legibilidad de un rojo
+    # sino que la puerta exista. Sigue siendo un tope de verdad — el propósito original, cortar un
+    # job colgado esperando una red que aquí no existe, se mantiene: 25 minutos acotan, 0 no.
+    # En dinero no cuesta nada: el repositorio es PÚBLICO y `/timing` devuelve 0 ms facturables.
+    #
+    # ⚠️ Y SUBIR EL TECHO NO ES EL ARREGLO DE NADA, es ganar tiempo para medir. Por eso abajo va el
+    # aviso: un presupuesto sin aviso se gasta en silencio y se vuelve a chocar igual.
+    timeout-minutes: 25
 
     steps:
+      # El reloj se toma como PRIMER paso para que mida el job entero —`npm ci`, Prisma, compilar y
+      # la tanda—, que es lo que el techo acota. Medir sólo la suite diría que sobra tiempo justo
+      # cuando el que se acaba es el del job.
+      - name: Marca de arranque de la puerta
+        run: echo "PUERTA_INICIO=$(date +%s)" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v4
         with:
           # SCRUM-388 · EL CENSO DE TICKETS NECESITA EL REPOSITORIO ENTERO PARA PODER MIRAR.
@@ -289,6 +322,41 @@ jobs:
           path: ${{ runner.temp }}/tanda.tap
           retention-days: 7
           if-no-files-found: warn
+
+      # ── 🔴 SCRUM-963b · EL AVISO DE LA PUERTA ──────────────────────────────────────────────
+      #
+      # Mismo mecanismo que el de `meta-guard` (SCRUM-935) y por el mismo motivo medido: el riesgo
+      # de un presupuesto holgado es el contrario del que arregla — que el job siga engordando y
+      # nadie se entere hasta que vuelva a chocar, otra vez en forma de `cancelled` ilegible.
+      #
+      #   · AVISO a los 15 min (60 % del presupuesto): **1,6× el máximo medido hoy (9:16)**, así
+      #     que hoy no salta ni una vez, y cuando salte quedan 10 minutos de margen para actuar.
+      #   · `if: always()` NO es opcional: el caso que más interesa —el job que se está yendo de
+      #     tiempo— viene con el paso anterior en rojo o cortado.
+      #   · AVISA, no veta. Este job ES la puerta: un veto por lentitud aquí dejaría a `main` sin
+      #     puerta por una tarde de runners lentos, que es exactamente lo que se viene a evitar.
+      #   · Y deja la cifra SIEMPRE en el resumen, también en verde: la próxima medición de esta
+      #     serie no debería tener que bajarse 98 logs para saber qué tardó.
+      - name: ¿Cuánto ha tardado la puerta? (y aviso si se acerca al techo)
+        if: always()
+        env:
+          PRESUPUESTO_S: '1500'
+          AVISO_S: '900'
+        run: |
+          if [ -z "${PUERTA_INICIO:-}" ]; then
+            echo "::warning title=la puerta sin medir::No pude mirar cuánto tardó: no llegó a tomarse la marca de arranque."
+            echo "build + tests · NO PUDE MIRAR la duración (sin marca de arranque)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          seg=$(( $(date +%s) - PUERTA_INICIO ))
+          pct=$(( 100 * seg / PRESUPUESTO_S ))
+          echo "build + tests · ${seg} s ($(( seg / 60 )) min $(( seg % 60 )) s) · ${pct} % del presupuesto de $(( PRESUPUESTO_S / 60 )) min" >> "$GITHUB_STEP_SUMMARY"
+          echo "build + tests · ${seg} s · ${pct} % del presupuesto"
+          if [ "$seg" -ge "$AVISO_S" ]; then
+            echo "::warning title=La puerta de main se acerca a su techo::${seg} s de un presupuesto de ${PRESUPUESTO_S} s (${pct} %). Este es el UNICO check obligatorio de main: si muere en su techo, main se queda sin puerta. No se arregla subiendo el techo otra vez (SCRUM-963b)."
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "🔴 **La puerta se acerca a su techo.** Es el único check obligatorio de \`main\`: si muere ahí, \`main\` se queda sin puerta. No se arregla subiendo el presupuesto (SCRUM-963b)." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   # ═══════════════════════════════════════════════════════════════════════════════════════
   # SCRUM-522 · LOS GUARDS DE NAVEGADOR, QUE HASTA HOY NO CORRÍAN EN NINGÚN SITIO
