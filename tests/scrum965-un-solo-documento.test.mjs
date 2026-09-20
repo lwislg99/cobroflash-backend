@@ -24,23 +24,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { soloEjecutable } from './_guard-texto.mjs';
+
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FICHERO = path.join(RAIZ, 'public', 'dashboard', 'js', 'quotesView.js');
 
-/**
- * El fuente sin comentarios. Se parte por LÍNEAS (`/\r?\n/`) y no con `.*$`: en JS el punto no casa
- * `\r` y este repo tiene ficheros CRLF, así que un recorte por regex de línea no quitaría nada y el
- * guard volvería a leerse a sí mismo (A23 #3, SCRUM-406).
- */
-function sinComentarios(txt) {
-  const sinBloque = txt.replace(/\/\*[\s\S]*?\*\//g, ' ');
-  return sinBloque
-    .split(/\r?\n/)
-    .map((l) => l.replace(/\/\/.*/, ''))
-    .join('\n');
-}
-
-const FUENTE = sinComentarios(fs.readFileSync(FICHERO, 'utf8'));
+const FUENTE = soloEjecutable(fs.readFileSync(FICHERO, 'utf8'));
 
 test('SCRUM-965 · CONTROL: el recorte de comentarios funciona sobre este fichero', () => {
   const crudo = fs.readFileSync(FICHERO, 'utf8');
