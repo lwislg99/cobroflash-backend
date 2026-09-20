@@ -1054,13 +1054,147 @@ nuestro en un producto de terceros, y eso lo decide el fundador, no esta sesión
 
 ---
 
+## 12 · Jobber · el primero que hace lo mismo que nosotros (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `35d25d1c58954930b529ad9f736878018c0f9870`**, por sus
+páginas públicas leídas **a texto literal en el navegador** (nunca con `WebFetch`, por el motivo de
+«Límites»). Sin alta, sin dar ningún dato y sin entrar en el producto: **todo lo de aquí es su web
+comercial**, y así queda marcado.
+
+**Por qué éste y no otro.** De la cola quedaban dos familias. Los españoles que faltan (Anfix, Billin,
+Contasimple, FacturaDirecta, Sage) son **más facturación**, y Quipu ya dejó medido que esa familia
+*«no añade ningún hueco que no estuviera ya»*. Jobber, ServiceM8 y Housecall Pro son **field service
+para oficios**: presupuesto, trabajo, firma y cobro **en la obra**, que es exactamente lo que hace
+YaQu. Jobber es el mayor de los tres (*«trusted by 400.000 service pros»*, y **Electrical** es una de
+sus industrias con página propia).
+
+🔴 **La diferencia con Holded, en una línea:** Holded es contabilidad que se asoma a la obra; **Jobber
+es la obra**. Por eso aquí las propuestas no salen de funciones que nos falten, sino de **momentos del
+día** que ellos han convertido en producto y nosotros no.
+
+### 12.1 · Lo que hacen, en sus palabras
+
+- **On-my-way Texts** — *«Customize your on-my-way text message, and Jobber will make it easy to send
+  it to customers on the go.»*
+- **Automated Visit Reminders** — *«Prevent no-shows and prepare clients for visits… Customers can
+  click through to client hub… to review details, **view assigned team members**, and more.»*
+- **Client hub** — *«where they can request work, approve quotes, review scheduled jobs, make
+  payments, and refer their friends»*; y *«Your clients can see the details of their past and upcoming
+  appointments, **as well as photos of the team members assigned to the work**.»* En su propia captura,
+  las citas se enseñan como **franja**: *«Arriving between 9:00 am – 10:00 am»*, con distintivo
+  *Confirmed*.
+- **Automated Quote Follow-ups** y **Automated Invoice Follow-ups** — recordatorios automáticos por
+  email o SMS.
+- **Invoice Reminders** — *«See all jobs requiring invoicing in one glance… Jobber will prompt you to
+  invoice at the right time.»*
+- **Online Booking** con dos controles de oficio: cuánto margen dejar entre citas y *«setting a limit
+  on what area you service and how far you'll drive between appointments»*.
+- **Job Forms and Checklists** — inspecciones, autorizaciones de servicio y listas que *«share with
+  customers to confirm the work you've done»*.
+
+### 12.2 · Tres candidatas que murió midiendo nuestra columna
+
+Antes de proponer nada, el paso que impone §10:
+
+| candidata | qué la mató |
+|---|---|
+| **Recordatorios automáticos de presupuesto y de factura** | **Ya los tenemos.** `src/modules/quotes/domain/reminder.service.ts`, con cron **horario** para presupuestos y **diario a las 10:00** para facturas impagadas (`cron.ts:58` y `:73`). |
+| **«Ver de un vistazo el trabajo hecho y sin facturar»** | **Ya lo tenemos, y más fino que lo suyo.** `pendientesFacturar.service.ts` (SCRUM-69) y `jobCobroHuecos.js`, que distingue **tres** huecos por documento y no restando totales: *«entregados sin facturar»*, *«aceptados y sin facturar»* y el parcial. |
+| **Portal donde el cliente pide trabajo** | **Ya lo tenemos:** `POST /cliente/:token/quote-request` (§10.1). Su *Request Work* es eso mismo. |
+
+    🔒 Tres de tres candidatas muertas por estar ya construidas. El paso de medirnos a nosotros no es
+       una formalidad: es la mitad del trabajo.
+
+### 12.3 · Las tres propuestas
+
+#### 12.3.1 · «Voy de camino» · **MEDIANO**
+
+**En Jobber**, el técnico abre la visita y pulsa **Send on my way text**: elige el número de retorno,
+toca **una franja de minutos —5 · 10 · 15 · 30 · 45 · 60—** y sale un mensaje ya escrito (*«Hello!
+This is Clean Pros. We will arrive in approximately 5 minutes…»*). Es la pantalla entera: dos toques.
+📷 [`capturas/jobber/voy-de-camino-y-aviso-de-visita.png`](capturas/jobber/voy-de-camino-y-aviso-de-visita.png).
+
+**Nosotros no tenemos nada.** Medido: `git grep -i -E "de camino|onMyWay|llegada"` sobre `src`,
+`public` y `prisma` no devuelve **ni una** ocurrencia que sea esto (las que salen son la palabra
+«camino» en otros sentidos). *Suelo:* `scheduledAt` aparece en **once** ficheros entre `src`, `public`
+y `prisma`, así que la agenda existe y la búsqueda no está ciega.
+
+**El profesional gana:** dejar de recibir *«¿a qué hora vienes?»* y dejar de encontrarse la casa
+vacía. Es **la llamada más frecuente del día** de un oficio, y la única función de esta lista que se
+usa **varias veces cada jornada**. Y encaja con lo nuestro mejor que con lo suyo: ellos mandan un SMS;
+nosotros ya hablamos con ese cliente **por WhatsApp**, en el mismo hilo donde está su presupuesto.
+
+**Se construye así, a grandes rasgos:** en la ficha del trabajo, un botón con las franjas de minutos
+que manda un mensaje al cliente del `Job`; el texto sale de plantilla, no se teclea. `scheduledAt`, el
+cliente y el canal ya están. ⛔ **STOP:** es un envío automático nuevo → tabla J6 y regla 28, y
+plantilla de Meta (hay que mirar si cabe en una existente o hace falta una nueva).
+
+#### 12.3.2 · Que el cliente sepa quién va a ir, y en qué franja · **MEDIANO**
+
+**En Jobber**, el portal del cliente enseña sus citas con **franja horaria** (*«Arriving between 9:00
+am – 10:00 am»*), un distintivo **Confirmed**, y *«photos of the team members assigned to the work»*.
+📷 [`capturas/jobber/client-hub-quien-va-a-ir.png`](capturas/jobber/client-hub-quien-va-a-ir.png).
+
+**Nosotros tenemos las dos mitades y no están unidas:** hay equipo con ficha
+(`teamMemberId` sale **26 veces** solo en `schema.prisma`) y hay portal del cliente, pero **el portal
+no dice quién va a ir**: `git grep -i -E "asignado|teamMember"` sobre `customerPortal.routes.ts` y
+`sendQuote.service.ts` → **0**.
+
+**El profesional gana:** menos visitas fallidas y menos desconfianza en la puerta. En España esto
+tiene un nombre concreto: **quien abre suele estar solo en casa**, y saber de antemano el nombre y la
+cara de quien llama al timbre es la diferencia entre abrir y no abrir. Para un electricista con dos o
+tres técnicos, además, es lo que evita el *«pensaba que venías tú»*.
+
+**Se construye así, a grandes rasgos:** añadir al portal la cita con su **franja** —no una hora
+exacta, que en un oficio no se cumple— y el nombre y la foto del técnico asignado. ⛔ Es **dato
+personal de un empleado enseñado a un cliente**: la foto va con su consentimiento y se puede
+desactivar; esa decisión no la toma esta sesión.
+
+#### 12.3.3 · El dinero que aún no es factura, en el resumen del lunes · **PEQUEÑO**
+
+**En Jobber** el sistema **empuja**: *«Jobber will prompt you to invoice at the right time»*, además de
+la pantalla donde se ve todo junto.
+📷 [`capturas/jobber/avisar-de-que-toca-facturar.png`](capturas/jobber/avisar-de-que-toca-facturar.png).
+
+**Nosotros tenemos la pantalla (mejor que la suya) pero solo TIRA, no EMPUJA.** El resumen semanal que
+ya sale todos los lunes a las 9:00 (`weeklyDigest.service.ts`) cuenta facturas emitidas, presupuestos
+creados y aceptados, clientes nuevos y **⏳ pendiente de cobro**… que es dinero **ya facturado**. El
+trabajo **firmado y todavía sin facturar** —el que ni siquiera ha llegado a ser una factura— **no
+aparece en ese correo**, y `getPendientesFacturar` solo lo consume una ruta del panel
+(`albaranes.routes.ts:38`).
+
+**El profesional gana:** el dinero que se queda sin facturar no se pierde porque no se sepa, sino
+porque **nadie lo recuerda el lunes**. Un albarán firmado en una obra de hace tres semanas no vuelve
+a la cabeza de nadie. Una línea en un correo que ya se envía lo pone delante.
+
+**Se construye así, a grandes rasgos:** una línea más en el digest —*«X € entregados y sin
+facturar»*— llamando a `getPendientesFacturar`, que **ya existe y ya está probado**. Sin schema, sin
+canal nuevo (el correo del lunes ya sale), sin Meta, sin fiscal: es un importe informativo para el
+profesional, no un documento. Es la más barata de las seis propuestas de hoy.
+
+### 12.4 · Lo que NO se midió de Jobber, y por qué
+
+- **No se entró en el producto.** No hay cuenta y no se pidió: su alta es *«Start Free Trial»* y un
+  alta en un servicio de terceros la autoriza el fundador, no esta sesión (A19). **Todo el §12 es su
+  web comercial**, que es fuente legítima pero distinta de haberlo visto funcionar.
+- Por tanto **no se sabe** cómo es de verdad su *client hub* por dentro, ni si el on-my-way manda SMS
+  o notificación, ni sus precios reales en España (no operan aquí con precios en euros publicados).
+- **No se ha mirado su parte fiscal**, y no tiene sentido mirarla: es un producto anglosajón sin
+  VeriFactu. Para lo fiscal manda la familia española ya medida.
+- Sus **reseñas** no se han leído. Lo de aquí es lo que ellos dicen de sí mismos.
+- Quedan sin abrir **ServiceM8** y **Housecall Pro**, los otros dos de la misma familia.
+
+---
+
 ## Cola de competidores
 
 Uno por entrega, avisando al orquestador al acabar cada uno.
 
-**Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅
+**Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅ ·
+**Jobber ✅ (solo público)**
 **Pendientes:** Anfix · Billin · Contasimple · FacturaDirecta · Sage (Active o 50) · Odoo ·
-Jobber · Tradify · Fergus · ServiceM8 · Housecall Pro.
+Tradify · Fergus · **ServiceM8** · **Housecall Pro** — estos dos, los siguientes: son la misma familia
+que Jobber (la obra, no la contabilidad) y ahí es donde salen propuestas.
 **Excluidos por decisión del orquestador:** STEL Order y Fixner — sus términos **prohíben
 expresamente** usar el producto para competir (cláusula «Uso limitado», recogida en
 `docs/master/SCRUM-906.md` §2).
