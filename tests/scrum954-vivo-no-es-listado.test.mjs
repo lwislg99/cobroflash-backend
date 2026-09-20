@@ -74,11 +74,16 @@ const CAPTURA = [
   { id: 'df2fa38f', cwd: 'D:\\MILLONARIO\\cobroFlash\\cobroflash-backend', kind: 'background', startedAt: 1789738788767, sessionId: 'df2fa38f-f8b8-482e-a040-22b56ab065e9', name: 'sesion-5', state: 'working' },
   { pid: 5268, id: 'ac89ffa1', cwd: 'D:\\MILLONARIO\\cobroFlash\\cobroflash-backend', kind: 'background', startedAt: 1789909835229, sessionId: 'ac89ffa1-a706-4d36-ab41-87b466dc6fcb', name: 's2b-20', status: 'busy', state: 'working' },
   { pid: 3384, cwd: 'd:\\MILLONARIO\\cobroFlash\\cobroflash-backend', kind: 'interactive', startedAt: 1789909409760, sessionId: '9e884936-8f25-4f3d-ae60-93423c13a5d1', name: 'cobroflash-backend-73', status: 'busy' },
+  // La sesión de prueba del PASO 0, tal y como se midió: proceso VIVO y, a la vez, su `state.json`
+  // TERMINAL. Una sesión de fondo escribe `done` y `firstTerminalAt` cada vez que acaba un turno,
+  // así que el `state.json` por sí solo daría por muerta a media plantilla. Por eso manda el `pid`.
+  { pid: 8756, id: '07e54b18', cwd: 'D:\\MILLONARIO\\cobroFlash\\cobroflash-backend', kind: 'background', sessionId: '07e54b18-3eab-4c07-95cd-2400e1cb9818', name: 'prueba-954-20s', status: 'idle', state: 'done' },
 ];
-// Lo que dice el `state.json` de cada uno. El de `df2fa38f` es literal: terminal desde el 18-sep.
+// Lo que dice el `state.json` de cada uno. Los tres son literales de lo medido el 20-sep.
 const JOBS = {
   df2fa38f: { leido: true, terminal: true, cuando: '2026-09-18T13:50:15.562Z', estado: 'done' },
   ac89ffa1: { leido: true, terminal: false, cuando: null, estado: 'working' },
+  '07e54b18': { leido: true, terminal: true, cuando: '2026-09-20T13:23:20.652Z', estado: 'done' },
 };
 const job = (id) => JOBS[id] || { leido: false, motivo: 'no hay state.json en el banco' };
 // 🔴 La lista blanca es la de ESE DÍA, con sus nombres mezclados: `sesion-5` del 18-sep y `s2b-20`
@@ -124,6 +129,24 @@ test('🔴 CONTROL POSITIVO: una sesión con proceso VIVO sigue bloqueando su pu
   const r = s.decidirRelevar({ nombre: 's2b-20', agentes: CAPTURA, traspasoMtime: ahora, ultimoTurno: ahora - 60_000, ahora, equipo: EQUIPO, job });
   assert.equal(r.veredicto, 'OCUPADA', '🔴 se pararía a una sesión a mitad de su entrega');
   assert.equal(s.decidirParar({ nombre: 's2b-20', agentes: CAPTURA, equipo: EQUIPO, job }).veredicto, 'PARAR');
+});
+
+test('🔴 EL CASO PELIGROSO: proceso VIVO con el `state.json` ya TERMINAL manda el `pid`', () => {
+  // Es el caso medido, no uno inventado: entre turno y turno, una sesión de fondo VIVA escribe
+  // `state: "done"` y `firstTerminalAt` en su `state.json`. Si el criterio fuera el `state.json`,
+  // media plantilla saldría «muerta» y `olvidar` borraría conversaciones de gente trabajando.
+  const viva = CAPTURA.find((a) => a.id === '07e54b18');
+  assert.equal(viva.pid > 0, true);
+  assert.equal(JOBS['07e54b18'].terminal, true, 'el banco ya no reproduce el caso: su state.json no es terminal');
+  const c = s.clasificarAgente(viva, job('07e54b18'));
+  assert.equal(c.estado, 'VIVA', '🔴 una sesión con su proceso vivo se está dando por muerta');
+  assert.match(c.motivo, /pid 8756/, 'el motivo tiene que decir POR QUÉ se la da por viva');
+
+  const equipo = { ...EQUIPO, puestos: [...EQUIPO.puestos, 'prueba-954-20s'] };
+  assert.equal(s.decidirOlvidar({ nombre: 'prueba-954-20s', agentes: CAPTURA, equipo, job }).veredicto,
+    'ESTA-VIVA', '🔴 `olvidar` borraría la conversación de una sesión con el proceso vivo');
+  assert.equal(s.decidirLanzar({ nombre: 'prueba-954-20s', agentes: CAPTURA, registro: {}, ahora, equipo, job }).veredicto,
+    'YA-VIVA', '🔴 se lanzaría una segunda sesión encima de ella');
 });
 
 test('🔴 SUELO: la duda NO mata — sin `state.json` legible, la entrada cuenta como viva', () => {
@@ -267,7 +290,11 @@ test('🔴 `estado` enseña los RESTOS y las sesiones de fondo que no son del eq
     const sinNombre = v.otras.find((a) => a.id === 'dddddddd');
     assert.equal(sinNombre.nombre, null);
     assert.equal(sinNombre.clasificacion, 'NO-PUDE-MIRAR', 'sin state.json en el banco, la duda NO la mata');
-    assert.match(v.otras.find((a) => a.id === '07e54b18').porque, /pid/, 'de la viva se dice que lo es POR el pid');
+    // Por CLASIFICACIÓN, no por una subcadena del motivo: «sin pid» también casa con /pid/, y una
+    // aserción así habría pasado con el criterio invertido. (Pasó: el mutante 1 sobrevivió a ella.)
+    const pruebaViva = v.otras.find((a) => a.id === '07e54b18');
+    assert.equal(pruebaViva.clasificacion, 'VIVA', '🔴 una sesión con proceso vivo sale como resto');
+    assert.equal(pruebaViva.pid, 8756);
   } finally { b.limpiar(); }
 });
 
