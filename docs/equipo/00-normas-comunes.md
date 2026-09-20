@@ -724,3 +724,30 @@ las casillas dicen sí. Cada una lleva el caso que la haría fallar.
 | 16 | ¿Cuánto **tarda**? Un guard de minutos acaba fuera de la tanda (canon de `sesion-0.md`). | 1.200 procesos de `git` y 366 s donde un solo `rev-list` daba 14 s (SCRUM-833) |
 
     🔒 Un guard que nunca has visto fallar es un guard que no sabes si funciona.
+
+## A24 · El PR lo abre el bot, no tú: le editas el cuerpo
+
+*(20-sep-2026, de SCRUM-973, con el texto que dejó la sesión de herramientas.)* Lo descubrió sola cada
+sesión que lo pisó: tres el mismo día.
+
+**Al empujar una rama, `.github/workflows/pr-automatico.yml` abre el PR y le arma el auto-merge.** Por eso
+`gh pr create` rebota con *«a pull request for branch … already exists»*, y **eso no es un error tuyo**.
+Lo que se hace es **editar el título y el cuerpo del PR que ya existe**:
+
+    gh pr edit <n> --title "…" --body-file <fichero>
+
+- Si empujas y creas el PR muy seguido, a veces sí te deja crearlo a ti; entonces es el bot quien le arma
+  el auto-merge después. Son dos caminos que acaban igual, y no hay que forzar ninguno.
+- **Quien abre el PR no es quien lo va a firmar**: no lo cuentes como «PR abierto por mí» en el informe;
+  di el número y que le editaste el cuerpo.
+- El **título** lo pone el bot con el **primer commit propio** de la rama, no con el último (arreglo de
+  SCRUM-973, PR #1555 al escribir esto: hasta que entre, el título puede salir con el texto de un commit
+  intermedio, y se corrige con `gh pr edit`).
+
+    🔒 Un error que rebota con «ya existe» no es un fallo: es una operación que ya alguien hizo por ti.
+       Lo peligroso es la contraria — la que NO se ejecutó y se lee igual que un éxito.
+
+Las dos trampas de PowerShell que se midieron el mismo día, y son de la misma familia («una operación que
+no se ejecutó se lee igual que un éxito»), están en `docs/equipo/trampas-del-entorno.md` §2:
+`ReadAllBytes` con ruta relativa devuelve un recuento de **0** que se lee como «limpio», y un `$` dentro de
+comillas dobles no llega a node.
