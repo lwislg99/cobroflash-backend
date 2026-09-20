@@ -1,0 +1,28 @@
+﻿POBLACIÓN · D:\MILLONARIO\cobroFlash\wt-935\.github\workflows\ci.yml · 805 líneas · bloque meta-mutaciones = líneas 419-601 (183)
+  del bloque, 49 líneas NO son comentario (se juzga sobre ÉSTAS: A23 #2)
+
+COMPROBACIONES:
+  ✔ el job meta-mutaciones existe
+  ✔ el job declara UN timeout-minutes (encontrados 1: timeout-minutes: 30)
+  ✔ y vale 30
+  ✔ ya no queda ningún timeout-minutes: 10 en el bloque (fuera de comentarios)
+
+  pasos con nombre (5):
+      · Traer `main` (el censo de tickets lo consulta)
+      · Compilar (tsc)
+      · Marca de arranque del trabajo de mutación
+      · Cada guard cae con la mutación que declara
+      · ¿Cuánto ha tardado? (y aviso si se acerca al techo)
+
+  ✔ existe el paso de la marca de arranque
+  ✔ sigue existiendo el paso que corre meta:mutaciones
+  ✔ existe el paso que mide y avisa
+  ✔ el orden es marca → mutaciones → medición
+  ✔ el paso que mide lleva `if: always()`
+  ✔ declara PRESUPUESTO_S: 1800 (los 30 min, en segundos)
+  ✔ declara AVISO_S: 1200 (avisa a los 20 min)
+  ✔ el aviso sale como ::warning de Actions
+  ✔ y si no hay marca de arranque, dice «NO PUDE MIRAR» en vez de callar (suelo)
+
+Volcados 5 pasos con `run:` a C:\Users\Admin\.claude\jobs\55ad30a2\tmp\sh (para `bash -n`). Si n=0, el instrumento NO ha mirado nada.
+EXIT=0
