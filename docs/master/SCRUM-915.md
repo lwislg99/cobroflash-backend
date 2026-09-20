@@ -284,7 +284,7 @@ marcadores. Cada corte sólo tiene que **registrar en su propia ficha** los que 
 **Medido contra:** `origin/main` = `8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`
 **Rama:** `scrum-915e1-documento-vivo` · **Rojo medido sobre:** `e73e1630084f0cfc1096d2812eb05368c1252f1e`
 **Instrumento:** `scripts/guard-915e1-documento-vivo.mjs` (`npm run guard:documento-vivo`)
-**Microcopy:** `docs/microcopy/2026-09-20-SCRUM-915e1-documento-vivo.md` (comentario 15868)
+**Microcopy:** `docs/microcopy/2026-09-20-SCRUM-915-documento-vivo.md` (comentario 15868)
 
 ### El defecto que abre el corte, y por qué no era un rótulo desactualizado
 
@@ -393,6 +393,45 @@ renderizado), y la fecha entera el caso D del guard de navegador, que la cambia 
 
     🔒 Un instrumento que no sabe expresar una categoría que él mismo reconoce en otro sitio no
        está midiendo de más: está obligando a mentirle.
+
+### SEGUNDO rojo del CI del #1545, medido por la S2 del relevo (20-sep-2026 20:14 GMT)
+
+Sobre `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b`. La puerta obligatoria
+—«build + tests (con banco desechable)»— seguía en rojo con **6 hallazgos**, y ninguno era el 514.
+Reproducidos en local en la rama (población: 34 líneas de resultado, 5 rojas) y **verdes sobre
+`origin/main` con los mismos tres ficheros**, que es lo que dice que eran de la rama y no heredados:
+
+| hallazgo | qué era | arreglo |
+|---|---|---|
+| `scrum697` · control negativo · `scrum698` × 2 | la cifra derivada de nodos de `renderQuotesView`: **282 → 283** | se REGENERA con su generador y se anota con el nodo identificado (abajo) |
+| `scrum709` · nombre fuera de convención | la ficha se llamaba `2026-09-20-SCRUM-915e1-…`, y `PATRON_NOMBRE` es `SCRUM-(\d+)` | la ficha pasa a `2026-09-20-SCRUM-915-documento-vivo.md`: el ticket es **915**, el corte lo dice la ranura |
+| `scrum709` · índice a mano | la ficha NOMBRABA a `2026-09-18-SCRUM-915-pasos-del-editor.md` | se quita la cita: el listado del directorio ES el índice |
+| `scrum804` · suelo del censo de ramas | **NO es de este PR**: el censo no entiende los sufijos de dos caracteres (`scrum-915e1`, `scrum-915e2`) y tumba la puerta de TODOS los PR abiertos | lo arregla S1 en `scrum-804g-…`; aquí se declara y no se toca |
+
+**El nodo, POR IDENTIDAD y no restando** (la regla de las cifras derivadas: no se elige lado ni se
+deduce la suma). Montando el editor en el banco de vistas con el MISMO contador en los dos árboles:
+
+| | `origin/main` | rama |
+|---|---|---|
+| nodos totales | **282** | **283** |
+| `p.quote-preview-subtitle` | **0** | **1** — «Se actualiza mientras escribes» |
+| `.preview-footer` | 1 | 1 (cambia su TEXTO, no cuántos nodos es) |
+
+O sea: el delta entero es el rótulo firmado que este corte estrena, subárbol de 1 y sin hijos. El
+`createElement("linesBody")` → `"tbody"` renombra la etiqueta de un nodo que ya existía, y por eso
+no cuenta. Si mañana subiera 2, no es esto.
+
+Tras el arreglo, corridos por su nombre y con la población declarada: **120 pruebas, 120 en verde,
+0 rojas** (697, 698, 709, 514, 726, 700, 237, 258, 267, 522, 548, 723) · `npm run build` y
+`npm run guards:entrada` en 0.
+
+    🔒 Dos instrumentos distintos se quedaron ciegos ante lo MISMO —un sufijo de dos caracteres en
+       un nombre— y ninguno dijo «no sé leer esto»: uno dijo «fuera de convención» y el otro, un
+       número de ramas más pequeño. Un instrumento que no entiende una forma nueva no calla: acusa.
+
+    🔒 Y el aviso de un fichero se queda donde se escribió: la ficha declaraba ser «la hermana de»
+       otra, que es exactamente el índice a mano que su propio guard prohíbe. La cita amable es la
+       forma que toma un punto único de escritura cuando nace.
 
 ### Errores propios
 
