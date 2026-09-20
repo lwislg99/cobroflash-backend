@@ -57,13 +57,13 @@ el verde sería una frase.
 - La medición contra staging (sólo el banco sin base). El caso con y sin `titulo` en staging se comprobará al
   desplegar con la lista real de gastos.
 - Si el orden de `quotesDeJob` (original primero, luego por `Quote.jobId` sin `ORDER BY`) coincide siempre con «el
-  primero por id» cuando falta `Job.quoteId`: se asumió; sólo importa en Trabajos sin `Job.quoteId`, que son los
-  posteriores al paso 1 de SCRUM-195.
+  primero por id» cuando falta `Job.quoteId`: se asumió, no se midió. Sólo importa en Trabajos sin `Job.quoteId`.
 
 ## Errores propios
 
 - Dije al orquestador «contexto propio ~120k» sin medirlo: medido en mi jsonl eran ~158k. La cifra se mide, no se estima (A19).
 - Al cambiar de rama en el mismo árbol, un `node --test` con la ruta de un test que ya no existía en esa rama corrió el
   resto sin quejarse (47 tests; con los 9 del otro ticket habrían sido 56): lo cazó la población, no el código de salida. Un fichero que no existe no es un fallo, es una ausencia.
-- Exporté 
-ombresDeTrabajos para poder probarla y scrum411-exports-inalcanzables cayó (un export sin consumidor de fuera): la salida fue cambiar el código —no exportarla; el test entra por listExpenses—, no declararla huérfana. Lo cazó correr los guards vecinos antes de empujar, no la suite.
+- Exporté `nombresDeTrabajos` para poder probarla y `scrum411-exports-inalcanzables` cayó (un `export` sin consumidor
+  de fuera): la salida fue cambiar el código —no exportarla; el test entra por `listExpenses`—, no declararla huérfana.
+  Lo cazó correr los guards vecinos antes de empujar, no la suite.
