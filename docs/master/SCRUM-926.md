@@ -56,8 +56,13 @@ campo a campo, no supuesto:
 
 ⚠️ **Esto corrige a la baja lo que esta sesión había dicho antes.** Se habló de «otros tres
 campos»; medido, los que tienen dónde restaurarse son **dos**. `tiers` y `currency` se declaran
-aquí en vez de fingir que se arreglan — y `tiers` es candidato a ticket propio el día que el
-editor tenga tramos.
+aquí en vez de fingir que se arreglan.
+
+**`tiers` es un LÍMITE DECLARADO, y a propósito no lleva ticket** (decisión del orquestador,
+20-sep): un ticket que nadie puede coger es ruido, porque no hay editor de tramos donde
+restaurarlo. Queda anotado aquí y remitido a **SCRUM-37** (el editor de tramos): el día que el
+editor tenga tramos, esto ya está escrito — **la copia YA los trae y el editor los tira**, así que
+ese trabajo se lleva medio arreglo hecho y la otra mitad identificada.
 
 ## El arreglo, dos mitades y quince líneas
 
@@ -103,6 +108,14 @@ escrito con `FULL_UPFRONT` habría salido **verde sin que nadie restaurara nada*
 coincidencia. Es la trampa que la ficha de esta sesión ya tiene escrita —«lo que funciona por
 casualidad se rompe el día que alguien hace lo correcto»— y aquí habría funcionado al revés: lo
 roto se habría leído como bueno.
+
+    🔒 Un caso de prueba cuyo valor coincide con el valor de NACIMIENTO de la pantalla sale verde
+       aunque nadie restaure nada.
+
+Es la misma familia que el contador que nunca se ha visto disparar y que la aserción que casa con
+su propio contrario: el instrumento no miente, es que **no se le ha pedido nada que no se cumpliera
+ya solo**. Por eso la casilla «el valor del caso NO es el de nacimiento» está dentro del guard y no
+en un comentario: una comprobación que vive en la prosa no se ejecuta.
 
 ## Lo que NO cubre
 
