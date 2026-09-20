@@ -3491,10 +3491,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .jobs-grupo-abrir td { padding: 6px 14px 12px; border-bottom: 0; }
 .jobs-fila { cursor: pointer; }
 
-/* La columna nueva. Aguanta VARIOS nombres envolviendo dentro de su celda: recortar a «Israel…»
-   deja al jefe sin saber si falta uno o faltan cuatro, que es justo lo que viene a preguntar. */
-.cell-tecnicos { overflow-wrap: anywhere; max-width: 220px; }
-.cell-tecnicos-vacio { color: var(--muted); font-style: italic; }
+/* SCRUM-917c · aquí vivían `.cell-tecnicos` y `.cell-tecnicos-vacio`, la columna de técnicos de
+   SCRUM-727b. La columna ya no existe: los técnicos bajan a la línea del cliente
+   (`.jobs-fila-tecnicos`, en el bloque SCRUM-917c de abajo). */
 
 /* ═══ SCRUM-816 · EL DESPLEGABLE DE TÉCNICOS DE LA FILA ══════════════════════════════════════
    `<details>/<summary>` nativos: se abren y se cierran solos, van con teclado y con `Escape`, y
@@ -3530,17 +3529,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .jobs-importe-total { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 .jobs-importe-cobrado { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-/* El estado de la FSM, por CLASE. Antes venía como `style=` en línea desde el JS
-   (`JOB_STATE_META.pill`): los mismos colores, ahora en la hoja y sin inline. */
-.jobs-estado-pill {
-  display: inline-block; white-space: nowrap; font-size: 11px; font-weight: 700;
-  padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em;
-}
-.jobs-estado-pendiente_agendar { background: var(--neutral-100); color: var(--neutral-600); }
-.jobs-estado-agendado          { background: #eff6ff; color: #1d4ed8; }
-.jobs-estado-en_curso          { background: #fffbeb; color: #b45309; }
-.jobs-estado-terminado         { background: var(--brand-tint, #ecfdf5); color: #166534; }
-.jobs-estado-cerrado           { background: var(--neutral-100); color: var(--neutral-500); }
+/* SCRUM-917c · aquí vivía `.jobs-estado-pill` con sus cinco colores. La lista sólo pintaba una
+   —«Sin agendar», en la columna Fecha— y repetía la cabecera de su grupo en 12 de 13 filas
+   (medido en staging el 17-sep-2026). Se retira de la fila y, sin nadie que la pinte, de la hoja. */
 
 .jobs-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .jobs-vacio-filtro { text-align: center; color: var(--muted); font-size: 13px; padding: 18px; }
@@ -3568,22 +3559,21 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
        misma pregunta y se han fundido en `date`. Una rejilla que declare un área sin celda no
        falla —simplemente queda vacía— y por eso se retira a mano: un hueco reservado para nada
        es un renglón de aire en una card que a 390 px ya iba justa. */
+    /* SCRUM-917c · el área `tecnicos` se va con su celda: los técnicos viven ahora DENTRO de
+       `client`, en su segunda línea. */
     grid-template-areas:
       "client   amount"
-      "tecnicos amount"
       "date     date"
       "actions  actions";
   }
-  .table--trabajos td.cell-tecnicos { grid-area: tecnicos; font-size: 12.5px; color: var(--muted); max-width: none; }
-  /* El desplegable ocupa el ancho de su área en la card: a 390 px un control de 132 px con tres
+  /* El desplegable ocupa el ancho de su línea en la card: a 390 px un control de 132 px con tres
      nombres dentro se corta, y el resumen es justo lo que hay que poder leer. */
-  .table--trabajos td.cell-tecnicos .jobs-tecnicos-resumen { max-width: 100%; }
+  .table--trabajos .jobs-fila-tecnicos .jobs-tecnicos-resumen { max-width: 100%; }
   /* El nombre del cliente ENVUELVE en la card. La tabla hereda `white-space: nowrap`, y medido a
      390 px eso dejaba «Cliente con nombre largo número 2» cortado a media palabra y pegado al
      importe: no se solapaban —hay 12 px de hueco, medidos— pero se leían como una sola cadena.
      En una card el nombre del cliente es el identificador de la fila; cortarlo es perder la fila. */
-  .table--trabajos td.cell-client,
-  .table--trabajos td.cell-tecnicos { white-space: normal; }
+  .table--trabajos td.cell-client { white-space: normal; }
   .table--trabajos .jobs-grupo-titulo,
   .table--trabajos .jobs-grupo-salvedad,
   .table--trabajos .jobs-grupo-abrir { display: block; margin: 10px 12px 0; }
@@ -3591,6 +3581,70 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   .table--trabajos .jobs-grupo-salvedad td,
   .table--trabajos .jobs-grupo-abrir td { padding-left: 0; padding-right: 0; }
   .jobs-filtro-tecnico { margin-left: 0; width: 100%; }
+}
+
+/* ══ SCRUM-917c · LA LISTA DE TRABAJOS, REDISEÑADA (prototipo aprobado por el fundador, 18-sep-2026)
+   Bloque propio a propósito: la Sesión 2 toca esta misma hoja con el editor de presupuestos, y
+   un bloque aparte es un conflicto que no llega a pasar. Todo va acotado a `.jobs-pantalla`,
+   `.jobs-*` o `.table--trabajos`: no se mueve ninguna de las cuatro listas hermanas.
+   Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. */
+
+/* «Nuevo trabajo» + «Partes por valorar»: el hueco lo pone el `gap`, no un margen en línea. */
+.jobs-nuevo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Las dos cifras, ANTES de la lista: «Para hoy» y «Por cobrar». La segunda no existía en ningún
+   sitio de esta pantalla. En una columna a 390 px; en dos, en cuanto caben. */
+.jobs-cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.jobs-cifras:empty { display: none; }
+.jobs-cifra {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 13px 16px; box-shadow: var(--shadow-sm);
+}
+.jobs-cifra-rotulo { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.jobs-cifra-valor { font-size: 1.6rem; font-weight: 800; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+.jobs-cifra-pie { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+/* La del dinero, sobre el tinte de marca (AB1: la pantalla habla del dinero del usuario). Sobre
+   ese fondo el gris de metadatos queda justo; el texto va en `--brand-tint-ink`, que es el que
+   tokens.css declara para escribir encima de `--brand-tint`. */
+.jobs-cifra-dinero { background: var(--brand-tint); }
+.jobs-cifra-dinero .jobs-cifra-valor { color: var(--brand-ink); }
+.jobs-cifra-dinero .jobs-cifra-rotulo,
+.jobs-cifra-dinero .jobs-cifra-pie { color: var(--brand-tint-ink); }
+
+/* La celda del cliente: el nombre, y debajo lo que distingue la fila (el trabajo · los técnicos). */
+.jobs-fila-cliente { display: block; font-weight: 700; color: var(--ink); }
+.jobs-fila-linea {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin-top: 2px;
+  font-size: 13px; font-weight: 400; color: var(--muted); white-space: normal;
+}
+.jobs-fila-tecnicos { overflow-wrap: anywhere; }
+
+/* El importe: lo que FALTA en grande, el total debajo y pequeño. */
+.table--trabajos th.jobs-th-importe,
+.table--trabajos td.cell-amount { text-align: right; }
+.jobs-importe-falta { font-size: 1.0625rem; font-weight: 800; line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums; }
+.jobs-importe-al-dia { font-size: .95rem; color: var(--brand-tint-ink); }
+.jobs-importe-sin { font-size: .95rem; font-weight: 600; color: var(--muted); }
+.jobs-importe-de { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* AB6 · objetivo al pulgar: TODO control de esta pantalla a 44 px, también en escritorio. Medido
+   en staging el 17-sep-2026: 32 controles por debajo a 1280 px (los `btn-sm` se quedan en 30). */
+.jobs-pantalla .btn-primary,
+.jobs-pantalla .btn-secondary,
+.jobs-pantalla .btn-ghost { min-height: 44px; }
+.jobs-pantalla .overflow-trigger { min-width: 44px; }
+.jobs-pantalla .jobs-filtro-tecnico select,
+.jobs-pantalla .jobs-filtro-tecnico-buscar,
+.jobs-pantalla .jobs-tecnicos-resumen { min-height: 44px; }
+
+@media (max-width: 640px) {
+  /* La cabecera de grupo y su salvedad ENVUELVEN en la card. Heredaban `white-space: nowrap` de la
+     tabla y, medido a 390 px (guard G.3), «✅ Terminados — cobra el resto · 4 · 740,00 € por
+     cobrar» se salía 84 px de su caja. La salvedad aprobada ya se cortaba ANTES de este ticket
+     («…y no entran» sin su «en el total.»): mismo arreglo, porque es la misma causa. */
+  .table--trabajos .jobs-grupo-titulo td,
+  .table--trabajos .jobs-grupo-salvedad td { white-space: normal; }
 }
 
 /* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
