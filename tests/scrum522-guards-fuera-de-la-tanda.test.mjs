@@ -176,8 +176,17 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // mientras esta rama estaba sin empujar. Resuelto las dos veces igual, como manda el párrafo de
   // arriba: NINGÚN comentario se tira, los tres se quedan, y el número NO se suma —se vuelve a
   // MEDIR corriendo este test sobre el árbol ya fusionado.
-  assert.equal(fuera.length, 29,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ 29 → ${fuera.length}.\n`
+  // SCRUM-917e · entra `guard:detalle-trabajo-917`. Cuenta cuántas VECES se lee un importe en el
+  // DETALLE pintado, que es el ticket entero: el mismo «590,00 €» salía siete veces en la misma
+  // pantalla. Sube aquí porque eso no se puede contar en el fuente — el importe sale de una
+  // plantilla, de `progressBar()` en otro fichero y del rail en un tercero, y sólo el DOM resuelto
+  // sabe cuántas veces lo lee una persona. Trae dos controles que ninguno de los anteriores tenía:
+  // uno de DISCRIMINACIÓN (cuatro Trabajos distintos tienen que pintar cuatro pantallas distintas,
+  // comprobado ANTES de leer ningún resultado) y uno de NO PÉRDIDA (el aviso firmado de SCRUM-887
+  // no puede desaparecer al retirar el bloque DINERO del rail). Comprobado en rojo contra el árbol
+  // sin tocar (20-sep-2026): 32 de 92. El número de abajo se midió corriendo este test.
+  assert.equal(fuera.length, 30,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ 30 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
