@@ -355,7 +355,13 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // pie de los totales 4 (pie, aviso, «Atrás», «Continuar») · Condiciones 21 (resumen, «Cambiar»,
   // guía, y 3 filas × fila/cabecera/título/valor/botón/detalle) · Ajustes 6 (valor, «Cambiar», pie,
   // aviso, «Atrás», «Continuar») · Revisar 5 (título, «Cambiar», guía, resumen, «Atrás») = 45.
-  for (const [vista, nodos] of [['renderQuotesView', 282], ['renderProductsView', 166],
+  // 🔴 SCRUM-915e1 · 20-sep-2026 · `renderQuotesView` 282 → 283, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. El nodo, POR IDENTIDAD sobre los dos árboles y no restando:
+  // `p.quote-preview-subtitle` = «Se actualiza mientras escribes», que sale **1** aquí y **0** en
+  // `origin/main`; subárbol de 1, sin hijos. Lo demás del corte no cuenta nodos: `.preview-footer`
+  // sigue siendo 1 en los dos (cambia su TEXTO, a la fecha real de «Válido hasta»), y el
+  // `createElement("linesBody")` → `"tbody"` renombra la etiqueta de un nodo que ya estaba.
+  for (const [vista, nodos] of [['renderQuotesView', 283], ['renderProductsView', 166],
     ['renderCustomersView', 69], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -402,7 +408,11 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // DOS montajes: el de `datos` propios y el desnudo dan 237 los dos, así que siguen coincidiendo.
   // SCRUM-915d (18-sep-2026): la UNDÉCIMA anotación, +45 — el andamio de los pasos, identificado
   // por identidad en el bloque de arriba. Los DOS montajes siguen dando el mismo número: 282.
-  assert.equal(todos(desnuda.contenedor).length, 282,
+  // SCRUM-915e1 (20-sep-2026): la DUODÉCIMA anotación, +1 — el rótulo «Se actualiza mientras
+  // escribes» (`p.quote-preview-subtitle`), identificado por identidad en el bloque de arriba. Lo
+  // que este control vigila —que los DOS montajes den el mismo número— sigue intacto: el rótulo es
+  // fijo y no depende de los datos, así que lo pintan los dos. Los dos dan 283.
+  assert.equal(todos(desnuda.contenedor).length, 283,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });
