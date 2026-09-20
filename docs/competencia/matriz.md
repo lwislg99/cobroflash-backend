@@ -1183,6 +1183,151 @@ profesional, no un documento. Es la más barata de las seis propuestas de hoy.
   VeriFactu. Para lo fiscal manda la familia española ya medida.
 - Sus **reseñas** no se han leído. Lo de aquí es lo que ellos dicen de sí mismos.
 - Quedan sin abrir **ServiceM8** y **Housecall Pro**, los otros dos de la misma familia.
+  - *(ServiceM8 se abrió unas horas después, el mismo día: §13.)*
+
+---
+
+## 13 · ServiceM8 · el que sí tiene la ficha de la caldera (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b`**, por sus
+páginas públicas y su **documentación de soporte**, leídas a texto literal en el navegador. Sin alta y
+sin entrar en el producto.
+
+**Encargo con foco:** el fundador marcó el **CRM como área de primera** del producto, y «equipos del
+cliente» —cada caldera, cada cuadro, cada instalación con su historial— es el corazón de eso para un
+oficio. Está en **❌ desde la primera matriz** (fila 12). Así que aquí se mira su gestión de activos
+**con más detalle que el resto**: qué es una ficha de activo, qué cuelga de ella, cómo se llega y qué
+hace el técnico en la obra.
+
+### 13.1 · Su ficha de activo, por dentro
+
+De `features-asset-management` y de su artículo de soporte «How to get started with the Asset
+Management add-on». 📷 tres capturas en [`capturas/servicem8/`](capturas/servicem8/README.md).
+
+- **Un activo es de un `Asset Type`, y el tipo define los campos.** Ejemplos suyos: *Appliance, Fire
+  Extinguisher, Smoke Alarm, Vehicle*. Los campos son **Texto, Numérico, Fecha o Elección múltiple**,
+  y los pone el profesional: *«an Appliance may have Make, Model and Serial Number. For a Vehicle, you
+  might want to track the odometer reading, the VIN number, or the engine capacity.»*
+- **`Name` viene de serie** en todos los activos. **Todos los campos del tipo son OBLIGATORIOS** al
+  crear un activo — y ellos mismos avisan del precio de eso: *«only add fields which will be
+  applicable to all Assets»*, y que conviene incluir una opción *«None / Not Applicable»*.
+- **Cuelga del cliente y de un sitio:** *«Create new assets against a client and save their location
+  on site»*, con vista de mapa a ojo de pájaro.
+- **La identidad es física: una etiqueta QR única por activo.** *«Every asset is created from, and
+  linked to, a globally unique QR Code label.»* Venden las etiquetas, duraderas y resistentes a los
+  rayos UV, desde su panel.
+- **Lo que hace el técnico en la obra**, literal: *«Assets can only be created in the ServiceM8 mobile
+  app»* → pega la etiqueta en el aparato → abre el trabajo → menú **Assets** → **escanea** → el
+  sistema detecta que esa etiqueta no tiene activo y abre la ficha nueva → **ajusta el punto en el
+  mapa arrastrando** → **hace una foto del aparato** → rellena los campos. Para servir uno ya
+  existente, **escanea y listo**, sin buscarlo en ninguna lista.
+- **El historial se genera solo:** *«Service Reports of assets serviced on a job are automatically
+  generated and saved upon job completion»*, más **registros de activos** por cliente.
+- **Las revisiones se hacen con formularios contra el activo**, y los activos *«are checked off in the
+  Asset List and marked as green on the Asset Map as forms are completed»*: en una finca con veinte
+  aparatos, se ve lo que falta.
+- **Y el cliente tiene su propia puerta:** *«Customers can scan an asset's unique QR Code with their
+  own smartphone camera to open a special web page»*.
+- En obras grandes, localización de los demás activos en **realidad aumentada** desde la cámara.
+
+### 13.2 · Nuestra columna, medida hoy
+
+| qué | cómo se midió |
+|---|---|
+| **No hay modelo de equipo, activo ni instalación** | `git grep -E "^model (Equipment\|Asset\|Device\|Instalacion\|Aparato\|Maquina)" -- prisma/schema.prisma` → **0**. *Suelo:* el mismo ancla cuenta **30** modelos en ese fichero |
+| 🔴 **El plan de mantenimiento cuelga del CLIENTE, y el equipo es texto libre** | `model MaintenancePlan` tiene `customerId`, `title` (String), `intervalMonths`, `nextDueAt`. **No hay `equipmentId`.** Y está apagado: `flags.ts` `MAINTENANCE_ENABLED: false` |
+| **Las fotos cuelgan del trabajo, nunca del cliente** | `model Attachment` tiene `entityType` con valores `quote_request \| job`. El cliente no existe como sujeto |
+| **La ficha del cliente no enseña sus fotos** | `git grep -i -E "foto\|photo\|attachment" -- public/dashboard/js/customerDetailView.js` → **0**. *Suelo:* esa misma vista hace **3** llamadas a la API, así que sí pinta otras cosas del cliente |
+
+🔴 **La frase que resume el hueco:** *tenemos la periodicidad, pero no tenemos la cosa.* Si un cliente
+tiene dos calderas, hoy son **dos planes con dos títulos escritos a mano** y ningún historial que las
+distinga.
+
+### 13.3 · Las tres propuestas
+
+#### 13.3.1 · La ficha del equipo: la caldera, el cuadro, el aire · **GRANDE**
+
+**En ServiceM8**, el equipo es una entidad de primera: cuelga del cliente y de un punto del mapa,
+tiene tipo, campos propios, foto, historial de intervenciones e informe de servicio generado solo.
+📷 [`capturas/servicem8/ficha-de-activo-y-tipos.png`](capturas/servicem8/ficha-de-activo-y-tipos.png).
+
+**Nosotros no tenemos la cosa, solo su periodicidad** (§13.2). Es la fila 12 de la matriz, en ❌ desde
+el primer día, y ahora **área de primera** del producto.
+
+**El profesional gana** lo que hoy lleva en la cabeza o en una libreta: *qué caldera tiene este
+cliente, de qué año, qué le hice la última vez y qué le toca ahora*. Es lo que convierte una lista de
+clientes en un CRM de oficio, y lo que hace que el mantenimiento recurrente —el ingreso que se repite
+solo— pueda existir de verdad en vez de ser un aviso con un título escrito a mano.
+
+**Se construye así, a grandes rasgos:** un modelo `Equipment` colgando de `Customer` (tipo, nombre,
+marca, modelo, nº de serie, fecha de instalación, dónde está en el domicilio, foto); `MaintenancePlan`
+gana un `equipmentId` opcional; `ParteTrabajo` y `Albaran` pueden apuntar a uno, y de ahí sale el
+historial **sin inventar nada**, porque lo que se hizo ya se guarda. ⛔ **Esquema: ALTER aditivo con
+preview antes.** Y su lección de los tipos se copia **al revés**: sus campos son todos obligatorios y
+ellos mismos avisan del problema — en un oficio **los campos se rellenan cuando se saben**, que es la
+mitad de las veces en la segunda visita.
+
+#### 13.3.2 · La pegatina con QR: la escanea el técnico, y también el cliente · **MEDIANO**
+
+**En ServiceM8**, la identidad del equipo es **física**: una etiqueta QR pegada en el aparato. El
+técnico escanea para darlo de alta y para servirlo, sin buscarlo en ninguna lista. Y **el cliente
+escanea esa misma pegatina con su móvil y se le abre una página suya**.
+📷 [`capturas/servicem8/qr-escanear-y-portal-del-equipo.png`](capturas/servicem8/qr-escanear-y-portal-del-equipo.png)
+y [`capturas/servicem8/alta-del-equipo-en-la-obra.png`](capturas/servicem8/alta-del-equipo-en-la-obra.png).
+
+**El profesional gana** los dos lados de lo mismo. En la obra: no hay que acertar cuál de los tres
+aparatos de la finca es éste — se escanea. Y el día que el cliente tenga una avería, **escanea la
+pegatina de su propia caldera y la petición nos llega con el equipo ya identificado**, en vez de un
+WhatsApp que dice «no va el agua caliente».
+
+**Se construye así, a grandes rasgos:** un código opaco por equipo que resuelva a una URL pública —
+**ese camino ya existe y está probado**: `/cliente/:token` con su token opaco de 128 bits, y
+`POST /cliente/:token/quote-request`, que es literalmente «pedir trabajo». La pegatina se imprime
+desde el panel en una hoja de etiquetas; no hay que comprárselas a nadie. ⛔ Es **superficie pública
+nueva**: pasa por `publicAccessDeclarations.ts` y su guard, como las demás.
+
+#### 13.3.3 · Las fotos de esta casa, juntas · **PEQUEÑO**
+
+**En ServiceM8**, la foto del aparato se hace **una vez** al darlo de alta y vive en su ficha para
+siempre.
+
+**Nosotros hacemos las fotos y las repartimos.** `Attachment.entityType` solo admite
+`quote_request | job`: una foto pertenece a **un trabajo**, nunca al cliente. Y la ficha del cliente
+**no enseña ninguna**.
+
+**El profesional gana** lo que más se nota al **volver**: llega a una casa ocho meses después y hoy
+tiene que abrir trabajo por trabajo para encontrar la foto de cómo estaba el cuadro. Con las fotos de
+ese cliente juntas y por fecha lo ve en el momento — **y eso es el historial del equipo antes de que
+exista el equipo**, que es lo que la convierte en el primer paso barato de §13.3.1.
+
+**Se construye así, a grandes rasgos:** una pestaña de **Fotos** en la ficha del cliente que consulta
+los `Attachment` de los trabajos de ese cliente, por fecha y diciendo de qué trabajo salen.
+**Sin schema** —`@@index([merchantId, entityType, entityId])` ya está—, sin canal, sin fiscal, sin
+Meta. ⚠️ Ojo al peso: hay una medición abierta de que la lista de Gastos se trae las fotos enteras;
+ésta se hace con miniaturas y paginada, o repite ese mismo defecto.
+
+### 13.4 · Aparte, y NO es producto: cómo se venden
+
+Separado a propósito, porque es marketing y no funciones: ServiceM8 tiene **una página por oficio** —
+`/industries/electrician-software`, y otras de fontanería, climatización, limpieza, cerrajería,
+piscinas y control de plagas—. Es el mismo patrón que ya enseñó Verifacturamos (M5 de §7.3, «páginas
+por oficio con la regla del oficio dentro»), y con Jobber —que tiene *Electrical* entre sus
+industrias— **van tres de cuatro**. Eso lo convierte en un patrón del sector, no en la ocurrencia de
+uno.
+
+### 13.5 · Lo que NO se midió de ServiceM8, y por qué
+
+- **No se entró en el producto**: no hay cuenta y no se pidió (A19). Todo el §13 son sus páginas y su
+  documentación de soporte — **fuente suya, no comportamiento observado**. En particular **nadie ha
+  visto un activo real**, ni su app móvil, que es donde viven.
+- **No se ha mirado su precio**, ni si la gestión de activos es un *add-on* de pago. Su documentación
+  la coloca bajo «Add-ons», lo que lo sugiere, pero **no se ha comprobado y no se afirma**.
+- Sus **formularios** están leídos por encima: su editor construye un PDF desde una plantilla de Word,
+  con preguntas de tipo foto, firma, fecha, elección y texto, y pueden hacerse obligatorias al empezar
+  o al terminar el trabajo. **No sale propuesta de ahí hoy**: nuestro parte y nuestro albarán cubren
+  el caso del oficio, y un constructor de formularios es otro producto.
+- **Dato suelto que corrobora lo de Jobber:** ServiceM8 tiene *«Track My Arrival»*. Dos de los tres de
+  esta familia avisan de la llegada al cliente, así que **no es una ocurrencia de Jobber**.
 
 ---
 
@@ -1191,10 +1336,10 @@ profesional, no un documento. Es la más barata de las seis propuestas de hoy.
 Uno por entrega, avisando al orquestador al acabar cada uno.
 
 **Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅ ·
-**Jobber ✅ (solo público)**
+**Jobber ✅** · **ServiceM8 ✅** (los dos, solo público)
 **Pendientes:** Anfix · Billin · Contasimple · FacturaDirecta · Sage (Active o 50) · Odoo ·
-Tradify · Fergus · **ServiceM8** · **Housecall Pro** — estos dos, los siguientes: son la misma familia
-que Jobber (la obra, no la contabilidad) y ahí es donde salen propuestas.
+Tradify · Fergus · **Housecall Pro** — el siguiente, por ser de la misma familia (la obra, no la
+contabilidad), que es donde han salido las propuestas.
 **Excluidos por decisión del orquestador:** STEL Order y Fixner — sus términos **prohíben
 expresamente** usar el producto para competir (cláusula «Uso limitado», recogida en
 `docs/master/SCRUM-906.md` §2).
