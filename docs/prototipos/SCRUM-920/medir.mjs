@@ -293,6 +293,13 @@ async function medirAnchura(nav, a) {
   const abiertoDespues = await page.$eval('#p-factura', (e) => e.open);
   anota('Los campos del proveedor llegan plegados y se abren', abiertoAntes === false && abiertoDespues === true, 'plegado → abierto');
 
+  // SCRUM-937b (en main tras el prototipo): sin proveedor el NIF está bloqueado y lo dice; con proveedor se escribe.
+  const nifSin = await page.evaluate(() => ({ ro: document.querySelector('#a-nif').readOnly, ayuda: !document.querySelector('#a-nif-ayuda').hidden && getComputedStyle(document.querySelector('#a-nif-ayuda')).display !== 'none' }));
+  await page.select('#a-proveedor', 'Suministros El Centro');
+  const nifCon = await page.evaluate(() => ({ ro: document.querySelector('#a-nif').readOnly, ayuda: !document.querySelector('#a-nif-ayuda').hidden && getComputedStyle(document.querySelector('#a-nif-ayuda')).display !== 'none' }));
+  anota('🔴 NIF: sin proveedor bloqueado y con su ayuda; con proveedor se escribe y la ayuda se va', nifSin.ro === true && nifSin.ayuda === true && nifCon.ro === false && nifCon.ayuda === false, `sin: ro=${nifSin.ro} ayuda=${nifSin.ayuda} · con: ro=${nifCon.ro} ayuda=${nifCon.ayuda}`);
+  await page.select('#a-proveedor', '');
+
   // ── El inventario no trae dentro el defecto que quita ─────────────────────
   await ir('inv');
   anota('El inventario no inyecta HTML de sus propias celdas', (await cuantos('.inv td table')) === 0, `${await cuantos('.inv td table')} tablas dentro de celdas`);

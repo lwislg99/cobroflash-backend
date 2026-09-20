@@ -184,6 +184,7 @@ body.sin-resaltar .propuesto{text-decoration:none}
 .campo input,.campo select,.campo textarea{width:100%;min-height:44px;padding:11px 13px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--ink)}
 .campo textarea{resize:vertical}
 .campo .pista{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.campo .pista[hidden]{display:none}
 .dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 @media (max-width:560px){.dos,.tres{grid-template-columns:1fr}}
@@ -578,9 +579,12 @@ function pintarAlta() {
         <div class="cuerpo">
           <div class="dos">
             <label class="campo"><span class="label">Proveedor (opcional)</span>
-              <select><option value="">— Sin proveedor —</option><option>Suministros El Centro</option><option>Clima y Frío S.L.</option><option>Andamios Vega</option></select></label>
+              <select id="a-proveedor"><option value="">— Sin proveedor —</option><option>Suministros El Centro</option><option>Clima y Frío S.L.</option><option>Andamios Vega</option></select></label>
+            <!-- SCRUM-937b (en main): sin proveedor el NIF no tiene dónde guardarse, así que nace bloqueado y
+                 la ayuda —texto ya firmado, no es nuevo— lo dice ANTES de teclear. -->
             <label class="campo"><span class="label">NIF del proveedor</span>
-              <input type="text" inputmode="text" autocapitalize="characters" placeholder="B12345678"></label>
+              <input id="a-nif" type="text" inputmode="text" autocapitalize="characters" placeholder="B12345678" readonly aria-describedby="a-nif-ayuda">
+              <span class="pista" id="a-nif-ayuda">Elige antes el proveedor: el NIF se guarda en su ficha.</span></label>
           </div>
           <div class="dos">
             <label class="campo"><span class="label">Nº de factura del proveedor</span><input type="text" placeholder="A-2026/114"></label>
@@ -783,6 +787,7 @@ const INV = [
  ['El gasto se vincula por `quoteId`, y el selector lo resuelve desde el Job', 'Igual', 'SCRUM-135: el modelo no cambia'],
  ['Trabajo sin presupuesto: opción deshabilitada con su motivo', 'Igual', 'SCRUM-89: que el pro sepa POR QUÉ no puede'],
  ['Al elegir proveedor, su NIF se rellena solo y queda de sólo lectura', 'Igual', 'SCRUM-324 E3: no se toca'],
+ ['Sin proveedor, el NIF nace bloqueado y dice «Elige antes el proveedor: el NIF se guarda en su ficha.»', 'Igual (se añadió el 20-sep: entró en main con SCRUM-937b después del prototipo)', 'Texto ya firmado (SCRUM-937, comentario 15873): no se subraya'],
  ['El aviso del simplificado NO se enciende y no hay contenedor vacío esperándolo', 'Igual: no se enciende, y este prototipo tampoco lo enciende', '🔴 Afirmación fiscal: espera al asesor (SCRUM-324 E3, fundador 10-ago-2026)'],
  ['G · Objetivo táctil'],
  ['10 controles por debajo de 44 px a 1280 y 9 a 390 (sin contar el menú lateral)', 'Todos a 44 px o más, también en escritorio', 'AB6. Se declara la excepción de `btn-sm` de DESIGN.md en vez de aprovecharla'],
@@ -908,6 +913,11 @@ $('#lectura').addEventListener('change', (e) => { LECTURA = e.target.checked; if
 document.addEventListener('change', (e) => {
   if (e.target.id === 'f-cat') { fCat = e.target.value; render(); }
   if (e.target.id === 'f-job') { fJob = e.target.value; render(); }
+  if (e.target.id === 'a-proveedor') {
+    const hay = !!e.target.value;
+    $('#a-nif').readOnly = !hay;
+    $('#a-nif-ayuda').hidden = hay;
+  }
 });
 render();
 </script>
