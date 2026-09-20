@@ -151,6 +151,26 @@ export class ExpenseRefError extends Error {
   }
 }
 
+// SCRUM-943 · la categoría se valida AQUÍ, en el dominio, por la misma razón que las referencias
+// de arriba (SCRUM-135): un tercer llamador de createExpense/updateExpense no se la salta por
+// olvido. Hasta hoy las rutas hacían `String(category)` y la escribían tal cual, así que la API
+// aceptaba cualquier cadena. Una categoría que el producto no conoce no desaparece: se cuela en
+// la base, cuenta en los totales bajo «Otros» y nadie la ve.
+//
+// No se normaliza ni se traduce nada: «materials» no se convierte en «materiales». Rechazar es
+// arreglar el defecto; traducir lo taparía. Y las filas ya escritas no se tocan (saneo aparte).
+function esCategoriaDeGasto(valor: unknown): valor is ExpenseCategory {
+  return typeof valor === 'string' && (EXPENSE_CATEGORIES as readonly string[]).includes(valor);
+}
+
+export class ExpenseCategoryError extends Error {
+  readonly code = 'category_invalid' as const;
+  constructor() {
+    super('category_invalid');
+    this.name = 'ExpenseCategoryError';
+  }
+}
+
 // MISMA respuesta para "no existe" y "no es tuya" a propósito: distinguirlas convertiría el
 // endpoint en un oráculo para enumerar ids de otros merchants.
 async function assertRefsOwned(merchantId: number, data: Partial<CreateExpenseInput>) {
@@ -171,6 +191,9 @@ async function assertRefsOwned(merchantId: number, data: Partial<CreateExpenseIn
 }
 
 export async function createExpense(merchantId: number, data: CreateExpenseInput) {
+  // Sin categoría (`undefined`/`null`) sigue siendo «otros», como siempre; lo que se rechaza es una
+  // categoría que llega y no es de las cinco.
+  if (data.category != null && !esCategoriaDeGasto(data.category)) throw new ExpenseCategoryError();
   await assertRefsOwned(merchantId, data);
   const gasto = await prisma.expense.create({
     data: {
@@ -240,6 +263,8 @@ export function queFueDelNif(p: {
 }
 
 export async function updateExpense(merchantId: number, id: number, data: Partial<CreateExpenseInput>) {
+  // En la edición `undefined` es «no lo toques»; cualquier otro valor tiene que ser de las cinco.
+  if (data.category !== undefined && !esCategoriaDeGasto(data.category)) throw new ExpenseCategoryError();
   const existing = await prisma.expense.findFirst({ where: { id, merchantId } });
   if (!existing) return null;
   // SCRUM-135: el PUT comprobaba la tenencia del GASTO pero no la de las referencias NUEVAS.
