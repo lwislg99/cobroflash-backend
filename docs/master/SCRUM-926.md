@@ -1,8 +1,11 @@
 # SCRUM-926 · DUPLICAR NO PUEDE PERDER LO QUE COBRA
 
-**Fecha:** 20-sep-2026 13:32:53Z (GitHub) · **Carril:** S2 (panel)
-**Medido contra:** `origin/main` = `17a1ec5736dabd19e2638c2d3a3cc17fcc88a02b`
-**Rama:** `scrum-926-duplicar-conserva` · **Banco:** `scripts/guard-duplicar-926.mjs`
+**Carril:** S2 (panel) · **Rama:** `scrum-926-duplicar-conserva` · **Banco:** `scripts/guard-duplicar-926.mjs`
+**Medido contra:** `origin/main` = `79061a9b6890c5f214695dd6614fe26836be5459` · 2026-09-20T13:34:59Z
+
+El **rojo** de más abajo se midió contra `17a1ec5736dabd19e2638c2d3a3cc17fcc88a02b`, que era
+`origin/main` al empezar; el árbol final es el de arriba, con `main` mergeado, y sobre él se
+volvieron a correr el guard (9/9) y el contador de `scrum522` (30, remedido tras el merge).
 
 ---
 
