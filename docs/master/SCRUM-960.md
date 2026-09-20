@@ -1,7 +1,10 @@
 # SCRUM-960 · El NIF del proveedor se pone y se corrige desde SU FICHA
 
 **Fecha:** 20-sep-2026 · **Carril:** S1 (servidor). La pantalla de proveedores es de S2 y **no se toca aquí**.
-**Medido contra:** `origin/main` = `c0be103fe10f17759069aaac893b9a81b1610811` · rama `scrum-960-taxid-del-proveedor`.
+**Medido contra:** `origin/main` = `d17825645813deb7406d8c6cc3fdd7f3a06e1657` · 2026-09-20T13:57:13Z
+Rama `scrum-960-taxid-del-proveedor`. *(El PASO 0 y los rojos se midieron sobre
+`c0be103fe10f17759069aaac893b9a81b1610811`; `main` se movió 9 commits mientras se escribía esto y se
+mergeó antes de empujar. Ninguno de los 9 toca `src/`, `tests/` ni el módulo de proveedores.)*
 **Lo encontró** la Sesión 2 recorriendo SCRUM-937 en staging. Lo que sigue es la medición **local, corriendo**.
 
 ---
