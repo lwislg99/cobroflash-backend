@@ -92,3 +92,149 @@ Evidencia: `docs/master/evidencias/SCRUM-912/lecturas-staging-18sep-sin-clave.js
 
 1. **`tickets.mjs` escribía al importarse.** Su modo CLI miraba `process.argv[2]` a secas, y cuando lo importa `mide.mjs` ese argumento es el SHA: creó una carpeta `effc107e…/` con los tres HTML **dentro del árbol**. Borrada (la creé yo). Ahora solo actúa si es el script principal. Rojo visto en vivo (la carpeta apareció); verde medido: importado con un argumento no crea nada, y como CLI sigue escribiendo 3 ficheros.
 2. **`mide.mjs` decía «3 lecturas gastadas»** con tres 503 que no llegaron a ningún modelo: una operación que no se ejecutó se leía como hecha. Ahora cuenta las que contestó un modelo y sale con 1 si son cero.
+
+---
+
+## SCRUM-912c · Dos días después: repetido sobre otro SHA, **mismo resultado**
+
+**Medido:** 2026-09-20 13:26:24Z (hora de GitHub) · `origin/main` = staging `/version` =
+`17a1ec5736dabd19e2638c2d3a3cc17fcc88a02b` · Sesión 1 (relevo del relevo) · rama `scrum-912c-lecturas-staging`.
+**Turno de staging:** por el canal, dado por el orquestador cuando lo soltó la S2. Sin lock de base (misma
+razón que en 912b: `turno-staging.mjs` no funciona desde un worktree).
+**Queda en staging:** 1 `authSession` del `test-login` de `qa@staging.yaqu`. Nada más.
+
+### Resultado
+
+| ticket | HTTP | ms | error | modelo |
+|---|---|---|---|---|
+| t1-completo-21 | 503 | 311 | `ai_not_configured` | — |
+| t2-dos-tipos | 503 | 247 | `ai_not_configured` | — |
+| t3-solo-total | 503 | 250 | `ai_not_configured` | — |
+
+**3 peticiones · 0 contestadas por un modelo · exit 1.** Es un rojo CON población, no un instrumento que
+no arrancó. **Coste cero:** el 503 sale antes de salir a Google, así que no se gastó cupo ni una de las 5
+lecturas del tope.
+
+**Staging SIGUE sin `GEMINI_API_KEY`, 48 horas después.** Comparados los dos JSON de evidencia byte a
+byte, lo único que cambia entre el 18 y el 20 de septiembre es el SHA, la marca de tiempo y los
+milisegundos: **los tres códigos de error son idénticos**. Lo que falta no es código — el código lleva
+desde el 18 en `main` y desplegado. Falta que el fundador ponga la variable en el servicio de STAGING de
+Railway (regla 9: directo en Railway, nunca por el chat). Mientras no esté, **912 no se puede cerrar por
+«lee bien»**, porque nadie ha visto todavía a un modelo leer un ticket.
+
+Evidencia: `docs/master/evidencias/SCRUM-912/lecturas-staging-20sep-sin-clave.json`.
+
+### 🔒 Un SHA leído hace un minuto no es el SHA de ahora
+
+**El primer intento de hoy abortó**, y esa aborción es el hallazgo. La secuencia, entera:
+
+1. Leí `GET /version` de staging: `f2fa091b…`, idéntico a mi `origin/main`. Anoté «staging sirve el
+   código de 912 ✓».
+2. **Un minuto después** lancé `mide.mjs f2fa091b… qa@staging.yaqu 3`.
+3. El propio instrumento se paró: *«staging sirve `17a1ec57…`, no `f2fa091b…`: el código nuevo no está»*.
+
+Entre mis dos comandos entró un PR, `main` se movió y Railway redesplegó. **Con auto-merge armado y seis
+sesiones empujando, `origin/main` se mueve debajo de ti entre dos comandos.** Lo que lo cortó no fue el
+cuidado: fue que `mide.mjs` compara el SHA **en el momento de medir**, no el que le sonaba de antes. Sin
+ese corte habría leído el código viejo y lo habría publicado como «las tres lecturas de SCRUM-912».
+
+Nótese la forma del fallo, que es la de siempre en este repositorio: **las tres peticiones habrían salido
+bien, con su HTTP y sus milisegundos**. No habría habido ningún error que leer. Una medición del sujeto
+equivocado no se parece a un fallo: se parece a una medición.
+
+    🔒 Una comprobación de versión que se hace una vez al principio no protege un comando que se lanza
+       después. El corte va DENTRO del instrumento, contra el servidor, en el instante de medir.
+
+### Lo que esta entrada NO afirma
+
+Que Gemini lea bien importe, IVA, fecha o NIF. **Sigue sin medirse desde el 18-sep**, y no se puede medir
+sin la variable. Los `0/7`, `0/5` y `0/6` aciertos de la tabla **no son un suspenso del modelo**: no hubo
+modelo. Leerlos como calidad sería exactamente el error que 912b ya cazó una vez.
+
+---
+
+## SCRUM-912d · LAS TRES LECTURAS REALES, POR FIN: 3/3 y 18/18 campos
+
+**Medido:** 2026-09-20 ~13:33Z (hora de GitHub) · staging `/version` = `70bd2def50e45a5b654630ee262ef79eeffd4a8b`
+(que es el merge de SCRUM-952, #1524) · Sesión 1 · turno de staging por el canal.
+**Lo que lo desbloqueó:** el fundador puso `GEMINI_API_KEY` en el servicio de STAGING de Railway, hoy
+sobre las 13:30Z. Era lo único que faltaba desde el 18-sep; ni una línea de código cambió entre medias.
+
+### Resultado
+
+| ticket | HTTP | ms | modelo | aciertos | veredicto |
+|---|---|---|---|---|---|
+| t1-completo-21 | 200 | 2865 | `gemini-3.5-flash-lite` | **7/7** | `falta_confirmar` |
+| t2-dos-tipos | 200 | 1720 | `gemini-3.5-flash-lite` | **5/5** | `no_deducible` |
+| t3-solo-total | 200 | 1663 | `gemini-3.5-flash-lite` | **6/6** | `no_deducible` |
+
+**3 peticiones · 3 contestadas por un modelo · exit 0 · 18 de 18 campos correctos · ningún 429.**
+
+Lo que queda probado **por efecto en el entorno desplegado**, y no por un test con dobles:
+
+1. **Contestó el primer modelo de `MODELOS_LECTURA`**, `gemini-3.5-flash-lite` — el de 500/día, no
+   `gemini-2.5-flash`. La regla «las 20 diarias de los presupuestos no se tocan» se cumple **de verdad**,
+   no solo en el mutante que la vigila.
+2. **Leyó bien los tres campos que importan.** Importe (36,30 · 10,99 · 58,51), desglose de IVA (base 30 +
+   cuota 6,30 al 21 %) y **el NIF `B76543214`**, que es el campo con dígito de control y el que más caro
+   sale si se lee mal.
+3. **Los nulos son nulos.** En t2 y t3, donde el ticket no da tipo ni cuota de IVA, la propuesta viene a
+   `null`: no se inventó un 21 % plausible. Es la mitad que más se olvida comprobar, porque un campo
+   inventado se lee igual de bien que uno leído.
+4. **La IA no dio ni un ticket por deducible**: `falta_confirmar` / `no_deducible` / `no_deducible`, como
+   manda `clasificarJustificante` con `vatDeducible: null`.
+
+**Coste:** 3 peticiones del cupo diario de `gemini-3.5-flash-lite` (500/día, el suyo propio) y 3 de las 5
+del tope por merchant y día. **Queda en staging** 1 `authSession` de `qa@staging.yaqu` y **ningún gasto**:
+la ruta lee y no guarda.
+
+Evidencia: `docs/master/evidencias/SCRUM-912/lecturas-staging-20sep-con-clave.json`.
+
+### 🔴 Lo que este 18/18 NO dice, y hay que leerlo antes de celebrarlo
+
+**Los tres tickets son SINTÉTICOS.** Salen de `tickets.mjs`: HTML renderizado a PNG por
+`chrome-headless-shell`, con texto vectorial nítido, fondo blanco, sin arrugas, sin sombras, sin
+inclinación, sin reflejos y sin recortes. Es el caso **fácil**, y un 18/18 sobre el caso fácil es lo
+mínimo exigible, no una nota.
+
+    🔒 Un 100 % sobre tres casos que yo mismo he dibujado mide mi generador de casos tanto como el modelo.
+
+Lo que sigue **sin medir**, declarado:
+
+- una **foto de verdad** hecha con un móvil a un ticket de papel real (arrugado, torcido, con flash);
+- tickets con **más de un tipo de IVA** desglosado de verdad (t2 se llama «dos tipos» pero el ticket no
+  trae desglose: por eso su verdad son nulos);
+- el **reparto diaria/minuto de un 429** de Google, que sigue sin verse en vivo (912b ya lo dejaba dicho);
+- la **varianza**: una pasada por ticket. Tres aciertos no son tres aciertos repetibles.
+- el **caso de proveedor**: `providerId` viene **vacío en las tres** lecturas. El NIF se leyó, pero en
+  staging no hay ninguna ficha con ese NIF, así que **el emparejamiento por NIF no se ha ejercitado** —
+  solo la lectura. Es justo la parte que decide si un gasto se cuelga del proveedor equivocado.
+
+#### Y un defecto del banco, no del modelo, que encontré persiguiendo una sospecha falsa
+
+Al mirar las propuestas vi que **t2 devolvía el mismo NIF que t1** (`B76543214`) siendo otro proveedor, y
+pensé que el modelo se lo había arrastrado de la lectura anterior. **Fui a la fuente antes de escribirlo:
+`tickets.mjs` pone literalmente `NIF: B76543214` en el HTML de t2.** El modelo leyó bien; la sospecha era
+mía y era falsa. Lo que queda, que sí es real y es del banco:
+
+1. **Dos de los tres tickets comparten NIF**, así que el NIF se ha probado con **un solo valor**. Y dos
+   proveedores distintos con el mismo NIF es una situación que no existe en la realidad: el día que se
+   ejercite el emparejamiento, ese fixture puede tapar precisamente el fallo de coger la ficha que no es.
+2. **La verdad de t2 no incluye `nifProveedor`**, así que ese campo leído **no lo juzga nadie**: no suma
+   ni resta en el `5/5`. Un campo que el modelo rellena y el banco no mira es un campo sin cubrir que
+   parece cubierto.
+
+No lo arreglo aquí (es el banco de otro ticket y el tope de hallazgos por tanda es 3): queda dicho.
+
+#### Una trampa del instrumento, mía, para que no se repita
+
+Leyendo ese JSON con `Get-Content` vi `FONTANERÃA` y estuve a punto de apuntar un defecto de codificación.
+No lo hay: **en PowerShell 5.1 `Get-Content` lee en ANSI por defecto**, y el fichero es UTF-8 correcto —
+`[IO.File]::ReadAllText($f, [Text.Encoding]::UTF8)` devuelve `SUMINISTROS FONTANERÍA RUIZ S.L.`. Es la
+misma familia que el `€` corrompido que el 18-sep le dio a otra sesión el verde que quería leer.
+
+    🔒 Antes de declarar corrupto un dato, comprueba con qué codificación lo estás leyendo.
+
+Y una nota de alcance que no cambia con esto: **encenderlo para usuarios reales sigue esperando al ticket
+de privacidad** (Google como encargado, `public/privacidad.html` §5 nombra a Anthropic y no a Google).
+Que lea bien no autoriza a encenderlo.
