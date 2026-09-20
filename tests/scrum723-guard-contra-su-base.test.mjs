@@ -342,6 +342,12 @@ const HALLAZGOS_DECLARADOS = [
   // SCRUM-951a · su banco: mismo caso que los de 899 — un repositorio SINTÉTICO en el temporal cuyo
   // `origin/main` no es el de nadie, para comprobar que el instalador copió exactamente de ahí.
   'tests/scrum951a-equipo-configurable.test.mjs [show]',
+  // SCRUM-954 · su banco: mismo caso que los de 899 y 951a — un repositorio SINTÉTICO en el temporal
+  // cuyo `origin/main` no es el de nadie. Existe para montar una instalación que la puerta de
+  // `sesion.mjs` acepte (exige ser idéntica, byte a byte, a `origin/main:scripts/equipo/sesion.mjs`);
+  // contra cualquier otra referencia el banco no podría ejercitar lo que la puerta comprueba, que es
+  // justo lo que los casos de `estado` y `olvidar` necesitan por EFECTO.
+  'tests/scrum954-vivo-no-es-listado.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */

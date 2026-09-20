@@ -1,8 +1,12 @@
 # SCRUM-954 · Una sesión VIVA no es una sesión LISTADA
 
-> 20-sep-2026 · medido sobre `origin/main` `f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4` ·
-> worktree `D:/MILLONARIO/cobroFlash/wt-954` · rama `scrum-954-vivo-no-es-listado` ·
-> Sesión 5 (automatización, eficiencia e infraestructura) · CLI de Claude Code **2.1.278**.
+**Fecha:** 20-sep-2026 · **Carril:** S5 (automatización, eficiencia e infraestructura) · **Gate:** sin gate
+**Medido contra:** `origin/main` = `f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4` · 2026-09-20T13:19:47Z (hora de GitHub)
+**Rama:** `scrum-954-vivo-no-es-listado` · worktree `D:/MILLONARIO/cobroFlash/wt-954` · CLI de Claude Code **2.1.278**
+
+> Todo el PASO 0 de abajo se midió contra ese `f2fa091b`. La rama mergeó después `origin/main`
+> `79061a9b6890c5f214695dd6614fe26836be5459` (28 commits, sin conflictos y sin tocar ninguno de sus
+> ficheros), y la tanda de §3.2 corrió sobre esa fusión.
 >
 > El ticket lo abrió el orquestador del equipo de Javier el 18-sep-2026 (`dos-equipos.md` §5.1),
 > medido sobre `4d8f3a15` con la CLI **2.1.276**. Dueño del área: S5 (`scripts/equipo/**`).

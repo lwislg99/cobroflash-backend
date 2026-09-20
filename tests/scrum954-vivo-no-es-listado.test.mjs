@@ -50,19 +50,19 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/sesion.mjs',
     de: "  if (typeof agente.pid === 'number' && agente.pid > 0) return { estado: 'VIVA',",
     a: "  if (false) return { estado: 'VIVA',",
-    cae: '🔴 el `pid` es lo que dice que una sesión está viva; sin él, una viva se daría por muerta',
+    cae: '🔴 EL CASO PELIGROSO: proceso VIVO con el `state.json` ya TERMINAL manda el `pid`',
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
     de: '  if (!job || job.leido !== true) {',
     a: '  if (false) {',
-    cae: '🔴 SUELO: sin poder leer el state.json NO se declara muerta a nadie',
+    cae: '🔴 SUELO: la duda NO mata — sin `state.json` legible, la entrada cuenta como viva',
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
     de: "    (c.estado === 'MUERTA' ? restos : cuentan).push",
     a: "    (c.estado !== 'VIVA' ? restos : cuentan).push",
-    cae: '🔴 sólo cuenta como resto la que las DOS sondas dan por muerta, no la dudosa',
+    cae: '🔴 `olvidar` NO borra: ni una viva, ni una dudosa, ni cuando no hay nada',
   },
 ];
 
