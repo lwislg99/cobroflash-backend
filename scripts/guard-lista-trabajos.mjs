@@ -269,7 +269,9 @@ titulo('④ aguanta VARIOS técnicos · con cero dice «Sin asignar» · sin equ
   const r = await page.evaluate(`(() => ({
     filas: document.querySelectorAll('${SEL_FILA}').length,
     desplegables: document.querySelectorAll('${SEL_RESUMEN}').length,
-    celda: (document.querySelector('${SEL_FILA} td.cell-tecnicos') || {}).textContent || null,
+    // SCRUM-917c · los técnicos ya no son columna (td.cell-tecnicos): viven en la línea del
+    // cliente. Leer la celda vieja daba «» siempre, que parecía una respuesta y era un vacío.
+    celda: (document.querySelector('${SEL_FILA} td.cell-client .jobs-fila-linea') || {}).textContent || null,
   }))()`);
   if (r.filas < 1) nosupe('   🔴 NO SUPE MIRAR: la pantalla sin equipo no pintó filas.');
   else if (r.desplegables !== 0) mal(`   🔴 con CERO técnicos asignables se pintaron ${r.desplegables} desplegables. Un control sin opciones promete lo que no puede dar.`);
