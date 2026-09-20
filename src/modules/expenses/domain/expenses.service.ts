@@ -82,7 +82,9 @@ export async function listExpenses(
   const nombres = await nombresDeTrabajos(merchantId, [...porQuote.values()]);
   return items.map((e) => {
     const j = e.quoteId != null ? porQuote.get(e.quoteId) : null;
-    return { ...e, job: j ? { id: j.id, titulo: nombres.get(j.id) ?? j.titulo } : null };
+    if (!j) return { ...e, job: null };
+    const nombre = nombres.get(j.id);
+    return { ...e, job: { id: j.id, titulo: nombre !== undefined ? nombre : j.titulo } };
   });
 }
 
