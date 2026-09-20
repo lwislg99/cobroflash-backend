@@ -99,11 +99,48 @@ con **`POBLACION` al lado** y con **ruta absoluta** en la propia norma.
 
     🔒 Un recuento sin población no dice que no haya nada: dice que no se contó nada.
 
-## 5 · Lo que NO se ha hecho, y por qué
+## 5 · SCRUM-958b · El BOM del máster, quitado (20-sep-2026)
+
+Decisión del orquestador tras verificarlo él mismo, y la asume por escrito: **no es un cambio de
+contenido, es una reparación de tres bytes.** No toca una palabra, no borra nada —regla 35 intacta— y
+devuelve la vista a un ancla que hoy no ve la fuente de verdad del proyecto. **Los trece de evidencias
+NO se tocan**: son de tickets de otras sesiones, son inertes, y limpiarlos de paso abriría un frente
+que nadie ha pedido.
+
+**Cómo se hizo, que es la mitad del asunto:** se reescribieron los **bytes** tal cual
+(`[IO.File]::WriteAllBytes` sobre `$b[3..fin]`), **sin reinterpretar el texto**. Así no hay
+reencodado, ni normalización de finales de línea, ni ninguna otra cosa capaz de cambiar algo por el
+camino.
+
+**Antes y después, medido:**
+
+| | antes | después |
+|---|---|---|
+| bytes | **494.324** | **494.321** (exactamente **−3**) |
+| primeros 6 bytes | `239 187 191 35 32 89` | `35 32 89 65 81 85` |
+| sha256 del contenido **desde el byte 4** | `87B5CD1F…67431D` | *(del fichero entero)* `87B5CD1F…67431D` |
+
+**Los dos hashes son idénticos**, así que el contenido a partir del cuarto byte es el mismo bit a bit.
+Y lo corrobora git por otro camino, que es una segunda sonda independiente:
+
+    git diff --numstat  →  1  1  docs/YAQU_MASTER.md      ← UNA línea, la primera. Nada más.
+
+**El arreglo funciona, con su control negativo:**
+
+    docs/YAQU_MASTER.md             primer codepoint 35     casa el ancla de cabecera: TRUE
+                                    primera línea: «# YAQU — DOCUMENTO MAESTRO v5.3 UNIFICADO»
+    CONTROL NEGATIVO, un fichero
+    de evidencias que SIGUE con BOM  primer codepoint 65279  casa: FALSE
+
+El control negativo importa más que el positivo: demuestra que la comprobación **sabe decir que no**,
+y por tanto que su `TRUE` de arriba significa algo.
+
+## 6 · Lo que NO se ha hecho, y por qué
 
 - **No se ha extendido el guard de A22** (SCRUM-942) para que cace BOMs. El ticket pedía la norma, y
-  extender el guard exige decidir antes qué se hace con los 14 que ya están — si no, nacería rojo,
+  extender el guard exige decidir antes qué se hace con los que ya están — si no, nacería rojo,
   que es justo lo que prohíbe A23 nº 1.
-- **No se han limpiado los 14 ficheros** (§2).
+- **No se han limpiado los 13 ficheros de evidencias** (§2), por decisión del orquestador: son de
+  otros tickets e inertes. El guard va **detrás** de ese barrido, no delante.
 - **No se han buscado los bytes ≥ 128 mal codificados**, que es el otro borde que A22.1 declara y que
   nadie ha medido todavía.

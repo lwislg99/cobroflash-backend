@@ -717,8 +717,15 @@ de escribirla (A23 nº 1): de los **3.415** ficheros seguidos por git (3.415 le�
 **14 empiezan con BOM**, y uno es **`docs/YAQU_MASTER.md`**. No es cosmético: la **primera línea del
 máster no casa con `/^# /`** por culpa del BOM, mientras que la de un `.md` sin BOM sí — o sea,
 cualquier guard anclado a la primera cabecera del máster está ciego a ella. Los otros trece son
-ficheros de evidencias (`scrum907b`, `scrum935`, `scrum954`). **Limpiarlos no entra en esta norma:**
-es un cambio sobre ficheros de otros tickets y sobre el máster, y lo reparte quien coordina.
+ficheros de evidencias (`scrum907b`, `scrum935`, `scrum954`).
+
+**El del máster se quitó el mismo día** (SCRUM-958b), por decisión del orquestador y como lo que es:
+una **reparación de tres bytes**, no un cambio de contenido. Se reescribieron los bytes tal cual, sin
+reinterpretar el texto; el fichero pasó de 494.324 a 494.321 bytes, el sha256 del contenido **desde el
+byte 4 es idéntico** antes y después, `git diff --numstat` dice **1 1** (una línea, la primera) y la
+primera cabecera ya casa con su ancla, con un fichero que aún lleva BOM como **control negativo**.
+**Los trece de evidencias siguen ahí a propósito**: son de otros tickets y son inertes. Y el guard que
+cace BOMs va **detrás** de ese barrido, nunca delante — si naciera hoy, nacería rojo (A23 nº 1).
 
 ### 🔴 A22.2 · El control positivo se siembra con `[char]27`, NUNCA con `` `e ``
 
