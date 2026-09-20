@@ -105,7 +105,6 @@ Mutantes re-medidos tras el arreglo: 11 de 11.
 - La memoria que lee el prompt de la tanda y lo que dice sobre Jira son de la S0 (951b).
 
 **Tests declarados:** `tests/scrum951a-equipo-configurable.test.mjs`
-# SCRUM-951 · El sistema del equipo, montado para dos equipos (Luis y Javier)
 
 ## SCRUM-951b · Las normas y `dos-equipos.md`
 
@@ -212,3 +211,170 @@ con control positivo.
 - **La primera suite no llegó a ejecutarse y la tarea dijo «exit 0»:** pasé 909 ficheros por la línea de
   órdenes y Windows la rechazó por larga. Sin TAP y sin recuentos no hay verde. Relanzada con el glob que
   expande node (`'tests/*.test.mjs'`), igual que `npm test`. Es la familia de la A21, en mi propia mano.
+
+## SCRUM-951d · el ENSAYO de la instalación, antes de que la haga Javier
+
+**Medido contra:** `origin/main` = `d44f4faf0061f2f861ebc4888a2a12a2adacbe41` · 2026-09-18T13:07:33Z
+
+Sesión 5. La guía `docs/equipo/instalacion-maquina-nueva.md` (951a, #1512, merge `d44f4faf`) no se había seguido nunca
+en ninguna máquina. Se siguió al pie de la letra, «como Javier», en la de Luis: Git Bash (`bin/bash.exe -l`), clon
+NUEVO de GitHub, `claude.exe` real (2.1.276), prefijo `ensayo-`, puestos `jefe,prueba`, una tanda `03:17` que no se
+programó. `REPO` e `INST` en el scratch del job, nunca en `%LOCALAPPDATA%\yaqu-equipo` (la real). Sin tareas
+programadas, sin tocar settings y UNA sola sesión de prueba. Horas de GitHub salvo donde se diga.
+
+### Paso a paso
+
+| paso | resultado | lo medido |
+|---|---|---|
+| 0 · requisitos | hizo lo que dice, **menos el disco** | git 2.51, node v24.8.0, claude 2.1.276, `gh auth status` «Logged in», `ls-remote` da SHA. `Get-PSDrive` → «command not found» (es de PowerShell, en una guía «todo Git Bash»); `df -h C:` también falla; `df -h /c` sí |
+| 1 · clonar + `npm ci` | hizo lo que dice | 76 s en total, 564 MB. El clon se hizo a las ~12:51Z sobre `b2c82c71` (antes del merge de #1512) y se puso al día con `git pull --ff-only` a `d44f4faf`: mismo `package-lock` |
+| 2 · abrir Claude Code una vez | **no se pudo probar aquí** la parte interactiva (sesión de fondo) | se hizo el `mkdir -p` de `memory` con la ruta EXACTA del `motivo` del paso 3. Medido además: 5 de 5 carpetas de proyecto de `~/.claude/projects` sin memorias escritas NO tienen `memory` → el `mkdir` es el camino normal, no la excepción |
+| 3 · instalar | hizo lo que dice | antes del paso 2: `NO-INSTALADO` con la ruta de `memory` y **nada escrito** (`ls INST` no existe). Después: `INSTALADO`; las 4 copias, idénticas a `origin/main` por `cmp`; `arranque.cmd` entra en el repo, copia y lanza |
+| 4 · statusLine | no se pudo probar aquí (settings) | `uso.mjs leer` dio **0 VERDE** con el `uso.json` de la MÁQUINA (`%LOCALAPPDATA%\yaqu-equipo`), no «2 antes» como dice la guía: `uso.mjs` no guarda junto a `INST` |
+| 5 · tareas | no se pudo probar aquí (tareas prohibidas); solo `/query` | `schtasks /query` sin `MSYS_NO_PATHCONV=1` → «Argumento u opción no válido - "D:/Program files D/Git/query"»; con él, «no encuentra» (control positivo: `/query` lista las tareas que existen). «Desinstalar» mandaba `schtasks /delete` sin la variable |
+| 6 · permisos | no se pudo probar aquí (settings) | el lanzamiento del 7.2 pasó sin la regla, con los permisos de la sesión que lanzaba: no prueba nada para una máquina nueva |
+| 7.1 · comprobar | **dio un verde que no lo era** | «OK · 14 comprobaciones, exit 0», con el «aviso de uso» OK por el `uso.json` de otra instalación… y la sesión del 7.2 se bloqueó igual |
+| 7.2 · sesión que contesta | **no lo hizo** | `lanzar ensayo-prueba` → `LANZADA` con `sessionId` completo; `estado` la vio `working` y a los ~75 s `blocked`; el mensaje no llegó; `ListAgents` no la listaba; sin jsonl. Su `~/.claude/jobs/<id>/state.json`: `"needs": "approve 1 new project MCP server (playwright) — attach to respond"`. `parar` → `PARADA`, `stop` 0, `rm` 0, `estado` vacío y su carpeta de job borrada |
+| 7.3 · primera tanda | no se pudo probar aquí | arranca al orquestador de verdad (lo dice la propia guía) |
+
+### El hallazgo: un clon nuevo bloquea toda sesión de fondo
+
+`.mcp.json` (en el repo) declara `playwright`. Claude Code pide aprobar cada servidor MCP de proyecto, y en segundo
+plano nadie contesta: la sesión se queda `blocked` antes de su primer turno. El checkout de Luis no lo sufre porque
+su `.claude/settings.local.json` lleva `disabledMcpjsonServers: ["playwright"]`, pero como **modificación local sin
+commitear**: medido con `git show origin/main:.claude/settings.local.json` (solo `permissions`) y
+`git diff HEAD -- .claude/settings.local.json` en el checkout. Ningún clon lo hereda. En la máquina de Javier, el
+orquestador de la PRIMERA tanda se habría quedado ahí, sin decir nada a nadie.
+
+### Qué cambia
+
+- `scripts/equipo/comprobar-instalacion.mjs`:
+  - comprobación nueva **«MCP del proyecto»** (`juzgarMcp`): cada servidor de `.mcp.json` tiene que estar decidido
+    —`enabledMcpjsonServers`, `disabledMcpjsonServers` o `enableAllProjectMcpServers`— en los settings del repo, en
+    los del usuario o en la entrada del proyecto de `~/.claude.json`. Sin decidir = `FALLA`; un fichero ilegible =
+    `NO-PUDE-MIRAR`. Sobre datos reales: el clon del ensayo da **FALLA** y el checkout de Luis, **OK**;
+  - **«aviso de uso»** (`juzgarUso`): un VERDE leído de un `uso.json` fuera de `destino` pasa a `AVISO` y dice qué
+    fichero leyó. Para `INST` en su sitio no cambia nada;
+  - `schtasks` que no llega a arrancar (`status null`) es `NO-PUDE-MIRAR`, no «no está creada».
+- `docs/equipo/instalacion-maquina-nueva.md`: los dos diálogos del paso 2 (el MCP, con el porqué medido), `df -h /c`
+  en el paso 0, dónde vive `uso.json` (paso 4), qué dice la 7.1 ahora, cómo se ve una sesión bloqueada (7.2),
+  `MSYS_NO_PATHCONV=1` en «Desinstalar», y lo que el ensayo NO pudo probar.
+- `tests/scrum951d-ensayo-instalacion.test.mjs` (8 tests, funciones puras sobre un temporal: no lee la máquina).
+  Mutantes 5 de 5 caen, con base verde (`docs/master/evidencias/scrum951d/salida-mutar.txt`).
+
+### Lo que NO se ha hecho, y por qué
+
+- **No se ha decidido el MCP en el repo.** Commitear `disabledMcpjsonServers: ["playwright"]` en `.claude/` quitaría
+  el bloqueo en TODO clon sin que nadie tenga que acordarse, pero `.claude/*` y los settings son del fundador
+  (regla 35; normas de esta tanda). Queda propuesto.
+- No se ha medido dónde guarda Claude Code la decisión al contestar el diálogo ni si la confianza de carpeta
+  bloquea también en fondo (ver «Lo que esta guía NO ha medido»).
+
+### El ensayo, deshecho
+
+Sesión `ensayo-prueba` parada y borrada con la propia puerta. Carpeta del ensayo (`REPO` + `INST`) y la
+`memory` creada a mano, borradas. Queda UNA huella que no se tocó a propósito: la entrada de la ruta del clon del
+ensayo en `~/.claude.json` (la escribió Claude Code al lanzar la sesión; editar ese fichero con siete sesiones vivas
+escribiéndolo es más arriesgado que la entrada, que no apunta a nada).
+
+### Errores propios
+
+- **A22 en mi mano:** escribí `\uFEFF` en una regex de `comprobar-instalacion.mjs` y aterrizó como el carácter BOM
+  literal, invisible. Lo cazó un recuento (1 carácter U+FEFF), no la lectura. Rehecho con `charCodeAt(0) === 0xfeff`.
+- La primera orden del paso 0 la paró un hook: un here-string de PowerShell con `"C:/Program Files/…"` dentro se
+  leyó como un borrado de una ruta de sistema. No se ejecutó nada; rehecho con ficheros `.sh`.
+## SCRUM-951c · Las fichas del equipo de Javier
+
+**Medido contra:** `origin/main` = `b2c82c7137c87782242188829442895bc6269ba3` · 2026-09-18T12:46:50Z
+**Rama:** `scrum-951c-fichas-javier` · **Carril:** consultoría (Sesión 0, un relevo que no vio 951b), dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md` · **Encargo:** orquestador, 18-sep-2026
+**Solo docs.** El índice de lo que se iba a escribir se entregó al orquestador ANTES de escribirlo, y lo aprobó
+(12:52Z) con una corrección: SCRUM-789 y SCRUM-863 son de infraestructura (S5), no de J1.
+
+⏱ Horas de GitHub (cabecera `Date:` de `gh api -i zen`).
+
+### Por qué
+
+Javier tiene que arrancar su equipo **sin haber visto nada**: su Claude no tiene la memoria de la máquina de
+Luis ni el historial de este chat. `dos-equipos.md` decía que cada puesto escribiría su ficha en su primera
+tanda; un puesto que arranca sin ficha no sabe qué es suyo, qué no toca ni por dónde empieza. Por eso las
+escribe la S0, y desde ahí son de cada puesto.
+
+### Qué cambia
+
+| fichero | qué |
+|---|---|
+| `docs/equipo/puesto-j1.md` … `puesto-j6.md` | **nuevos**: la pregunta del puesto, su área, sus ficheros (con sus bloques en contenedores ajenos), lo que NO toca, sus STOP y **sus primeros tickets medidos en Jira**, con el primero señalado; lo que está En curso en el equipo de Luis va aparte, «no se toca hoy» |
+| `docs/equipo/orquestador-javier.md` | **nuevo**: SOLO lo que cambia respecto a `orquestador.md`. Lo primero al arrancar: buscar en Jira `equipo-javier` + `decision-jefe` y presentárselo a Javier, con su suelo (hoy devuelve 1: SCRUM-612); después, etiquetar su zona |
+| `docs/equipo/dos-equipos.md` | los nombres del equipo de Javier (`jv-` + `orquestador,j1…j6`, casados con 951a por la S5); quién escribió las fichas y de quién son; fila de `orquestador-javier.md`; ⚠️ **los puestos J1-J6 no son las secciones J1-J7 del máster** |
+| `docs/equipo/00-normas-comunes.md` | **A19: la COMPROBACIÓN al entregar** (medir el contexto, decirlo en el informe, >300k → traspaso; >500k a mitad → punto seguro y relevo), con su caso que falla; A8: el informe de entrega dice siempre el contexto |
+| `docs/equipo/trampas-del-entorno.md` | §7: la suite con la lista de ficheros expandida por el shell no corre nada y dice exit 0 |
+| `docs/equipo/prompt-tanda-orquestador.md` | el paso 1 manda leer la ficha propia del orquestador si su equipo la tiene |
+
+### Medido para escribirlo
+
+- **Nombres:** `scripts/equipo/sesion.mjs` de la rama de 951a (`926001a4`, sin mergear): el equipo sale de
+  `config.json` (prefijo + puestos), y `rutaDelTraspaso` quita el prefijo. La S5 confirmó por el canal
+  (18-sep) que `jv-` + `orquestador,j1,…,j6` casa con su validación (`[a-z0-9][a-z0-9-]{0,31}`, sin repetir, el
+  orquestador entre los puestos).
+- **Jira, 18-sep ~12:40Z:** estado de los 42 tickets de la zona de Javier que daba el censo del orquestador
+  (11:58Z, sobre `e76580b1`), releídos uno a uno. **3 ya Finalizada** (SCRUM-16, 540 y 891). Quedan **20
+  propios** (J1 10 · J2 3 + 893 · J3 2 + 809 y 904 · J5 906 · J6 908; 4 de ellos En curso en el equipo de Luis)
+  y **18 de decisión de un jefe** (J1 6 · J2 6 · J3 3 · J4 3), una vez quitados 789 y 863 (infraestructura, S5).
+  El «15» del encargo contaba solo los de decisión de jefe; lo confirmó el orquestador.
+- **Etiquetas:** `labels = equipo-javier OR labels = decision-jefe OR labels in (area-j1 … area-j6)` devuelve
+  **1** ticket, SCRUM-612. Es el suelo que la ficha del orquestador le da a su búsqueda de arranque.
+- **Choque de nombres:** en `docs/YAQU_MASTER.md` las secciones `## J1.` … `## J7.` son la Parte J (WhatsApp) y
+  «J6» es el anti-spam (regla 28), que `CLAUDE.md` cita como «Anti-spam J6». Por eso el aviso va en
+  `dos-equipos.md` y en las fichas de J2 y J6.
+- **Rutas citadas en las fichas:** comprobadas en el árbol (`docs/SIF_SPEC_NOTES.md`, las skills,
+  `docs/competencia/matriz.md`, `docs/legal/PREGUNTAS_ASESOR.md`, `docs/ERRORES_ASESOR.md`,
+  `tests/scrum302-rotulos-completos.test.mjs`, `docs/master/SCRUM-825.md`, `SCRUM-524.md`, `SCRUM-328.md`,
+  `docs/SPRINT_DEMO_READY_EXT.md`…). Las que no existen y se nombran a propósito son las que crean otros:
+  `afirmaciones-verificadas-javier.md` (J6) y `traspaso-javier.md` (su orquestador), igual que en 951b.
+- **Tests que leen docs**, sueltos sobre la rama (TAP a un fichero fuera del árbol): de 20 ficheros, **11
+  corrieron: 101 tests · 101 pass · 0 fail**; **9 no arrancaron** porque este worktree no tiene
+  `node_modules` (`Cannot find package 'typescript'`). Esos 9 no son rojos: son un instrumento que no arrancó, y
+  los cubre la suite completa de abajo.
+- **Suite COMPLETA, con turno del orquestador** (13:03Z), en `wt-839f` en detached (`node_modules` propio), sobre
+  `877a7d035aa2af06955a9abb150eb954c3eb0cd9` = esta rama con `origin/main` =
+  `3b53c92fbc278fbe2c66e0b42300860fa21ed6f2` mergeado (ya con 951a). Memoria medida aparte: 6.522 MB libres. Build
+  con salida 0; `FORCE_COLOR` ausente comprobado en el mismo comando; el patrón `'tests/*.test.mjs'` entre comillas
+  simples: **7.707 tests · 7.593 pass · 3 fail · 111 saltados**, y el TAP trae su `# tests 7707`. Los 3 son de
+  `scrum939b` (las skills, que este PR no toca). Los 9 ficheros de docs que no arrancaron arriba corrieron aquí
+  sin un fallo (`scrum387` ×2, `705` ×2, `711`, `753`, `775`, `810b`, `850`, `850b`, comprobados por nombre en el
+  TAP). `npm run guards:entrada` → **26 · 26 · 0**, salida 0.
+- **El merge de 951a** entró sin conflicto de git, pero dejó `docs/master/SCRUM-951.md` con DOS títulos de primer
+  nivel (951a creó el fichero con el suyo; `origin/main` ya los traía así). Se quitó el segundo; las tres
+  secciones (951a, 951b, 951c) siguen enteras. Un merge sin conflictos no es un merge correcto (A4).
+- **Nombres, contra lo que ya está en `main`:** la guía nueva de 951a (`instalacion-maquina-nueva.md`) deja los
+  puestos como variable y usa `jv-jefe` como EJEMPLO de nombre; `dos-equipos.md` fija ahora los valores del
+  equipo de Javier (`jv-orquestador`, `jv-j1` … `jv-j6`), y manda la configuración si declara otros.
+
+### Lo que NO se ha hecho, y por qué
+
+- **Ningún ticket tocado en Jira.** Etiquetar la zona de Javier es del orquestador (A13); la ficha de su
+  orquestador se lo pone como primer trabajo.
+- **La firma de Holded** (cola de la S0, para J5) sigue pendiente: va después de este PR.
+- `orquestador.md` y `limites-del-fundador.md` no se tocan: son del orquestador de Luis.
+
+### Errores propios
+
+- El traspaso que heredé ponía «~13:35Z (hora de GitHub)» y GitHub daba 12:35Z: una hora de más. Lo avisé al
+  orquestador en la primera línea; la S5 me mandó otra hora igual de adelantada (13:55Z a las ~12:45Z).
+- En la ficha de J2 escribí «regla 36» para el coste nuevo, copiándolo del censo; la regla 36 del máster es la
+  de plugins y skills de terceros (`limites-del-fundador.md` lo avisa). Corregido a A7 antes del commit.
+- Conté «17 más» por etiquetar en la ficha del orquestador; recontados eran **16** (se me había colado SCRUM-328,
+  que está En curso en el equipo de Luis y no se re-etiqueta). Corregido antes del commit.
+
+## SCRUM-951e · La nota de navegador
+
+Commit `5330af5203b8adeeaebc75271cd4800bd1a49140`, 18-sep-2026 13:46:10Z (cabecera `Date:` de `gh api -i zen`).
+Sesión 5.
+
+- `docs/equipo/instalacion-maquina-nueva.md`: sección «Navegador». Las mediciones usan Edge con `puppeteer-core`
+  (`scripts/_navegador.mjs`, lo instala `npm ci`); el MCP `playwright` de `.mcp.json` no hace falta y se deja
+  desactivado porque bloquea las sesiones de fondo; la librería Playwright solo para recorrer la competencia
+  (J5 / S0), con `npx -y playwright install chromium` y un script del scratchpad; contraseñas nunca al chat ni al repo.
+- `docs/equipo/puesto-j5.md`: una línea que remite a esa sección.
+- Comprobado antes de escribir: `puppeteer-core` está en `package.json` y `playwright` no; `.mcp.json` declara el
+  servidor `playwright` (`@playwright/mcp`).
