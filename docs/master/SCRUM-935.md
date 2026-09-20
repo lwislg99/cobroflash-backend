@@ -2,8 +2,10 @@
 
 **Fecha:** 20-sep-2026 · **Carril:** Sesión 5 (automatización) · **Gate:** sin gate
 **Medido contra:** `origin/main` = `cd0739d3bf36952e4c379fa306cf4eef6964bfce` · 2026-09-20T14:31:34+00:00
-**Tanda:** 7.735 tests · 7.620 pass · 3 fail · 111 skipped — los 3 son de `scrum939b`, ajenos y
-conocidos (venían de antes de esta rama). Hubo un 4.º, mío, y está contado abajo.
+**Tanda:** 7.735 tests · **7.621 pass · 3 fail · 111 skipped** — los 3 son de `scrum939b` (skills),
+ajenos a esta rama: la tanda de SCRUM-954, anterior a ella, ya traía esos mismos 3. Hubo un 4.º en
+la primera pasada, mío, y está contado abajo. **No he vuelto a medirlos sobre un árbol limpio**:
+me apoyo en la tanda de 954 y lo digo en vez de afirmarlo.
 
 ## El defecto
 
