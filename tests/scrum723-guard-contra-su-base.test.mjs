@@ -378,6 +378,10 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-899 (hito 2) · nombra `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
   // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
   'tests/scrum899b-arranque-de-la-tanda.test.mjs',
+  // SCRUM-966 · el banco del censo de ramas. Nombra `origin/main` al montar los worktrees y las ramas
+  // de su repositorio SINTÉTICO del temporal, que tiene su propio remoto desnudo: ese `origin/main` no
+  // es el de este repositorio. Mismo caso que 839d, 839e y 899b. Lo retira quien borre el banco.
+  'tests/scrum966-censo-ve-las-ramas.test.mjs',
   // SCRUM-951a · la lista de verificación nombra `origin/main` también FUERA de los argumentos de git: en
   // los detalles que imprime («idéntica a origin/main:…») y en la prosa de su cabecera. Su llamada
   // directa está declarada arriba, con su motivo.
