@@ -727,7 +727,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       const v = document.createElement('b');
       v.className = 'detail-dinero__lado-cifra';
       v.textContent = fmtMoneyEs(valor, cur);
-      l.append(e, ' ', v);
+      // El separador va como NODO DE TEXTO, no como cadena suelta. `append(' ')` es DOM válido en
+      // el navegador —por eso el guard en Chrome salía verde—, pero era la ÚNICA aparición de esa
+      // forma en `public/` (la otra separación del fichero, en la casilla de la factura, ya usa
+      // `createTextNode`) y el banco de vistas no la atiende: la vista REVENTABA al montarse y los
+      // dos contratos de SCRUM-817 caían en su SUELO, sin llegar a mirar el orden que vigilan.
+      l.append(e, document.createTextNode(' '), v);
       lat.appendChild(l);
     }
     franja.append(foco, lat);
