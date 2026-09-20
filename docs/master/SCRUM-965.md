@@ -115,6 +115,26 @@ viaja · la comparación va **antes** del POST · la condición mira la **huella
 
     🔒 Un arreglo que sólo se prueba por el lado que fallaba no se ha probado: se ha confirmado.
 
+## Los tres censos que cobra un guard de navegador nuevo (20-sep, al empujar)
+
+Un guard nuevo **no entra solo**: hay tres trinquetes que lo cobran, y los tres salieron en ROJO
+contra esta rama antes de tocarlos. Se corrieron **por su nombre**, como ficheros sueltos —norma
+nueva del orquestador de esta tanda, que sustituye al turno de suite completa para este caso—:
+
+| censo | qué cobra | estado |
+|---|---|---|
+| `tests/scrum258-nota-por-sesion.test.mjs` | que el `//guard:` del `package.json` esté escrito | ✅ verde ya |
+| `tests/scrum522-guards-fuera-de-la-tanda.test.mjs` | el recuento de guards que nadie corre salvo esa puerta | 🔴 `30 → 31` |
+| `tests/scrum548-peaje-package-json.test.mjs` | los guards cuyo **destino no se deriva** del fuente | 🔴 faltaba declararlo |
+
+Los dos rojos se resolvieron **midiendo, no sumando**: el 31 salió de correr el test sobre el árbol
+ya fusionado con `origin/main`, y la declaración del 548 se justificó leyendo el fuente del guard,
+no suponiéndolo — levanta servidor en puerto EFÍMERO (`GUARD965_PUERTO || 0`) y navega con el
+puerto **y** la ruta en variables (`#quotes-new` / `#invoices-new`), que es exactamente la familia
+de `guard:arranque-sin-red` y `guard:rastro-del-menu`. Tras los dos ajustes: **44/44 en verde**.
+
+🔒 Un guard nuevo que no cruza sus censos entrega el arreglo y rompe el trinquete del de al lado.
+
 ## Lo que NO cubre
 
 - La v3 quiere además que **enviar, descargar o copiar el enlace reutilicen el mismo presupuesto**

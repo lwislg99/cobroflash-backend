@@ -183,8 +183,15 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // que no sabe mirarlo se leen igual. Comprobado en rojo contra `17a1ec57` (20-sep-2026): 3 de 9
   // casillas, con los dos positivos en verde; y por mutación, cada mitad del arreglo tumba SOLO
   // sus casillas. El número de abajo se midió corriendo este test, no sumando uno.
-  assert.equal(fuera.length, 30,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ 30 → ${fuera.length}.\n`
+  // SCRUM-965 · entra `guard:un-solo-presupuesto`. PULSA «Generar presupuesto» DOS veces y cuenta
+  // las peticiones que llegan al SERVIDOR, que es donde se ve el defecto: en pantalla los dos clics
+  // se leen igual. Sube aquí porque necesita navegador —el estado que decide (la huella del payload
+  // y la hoja abierta) sólo existe en tiempo de render— y porque lleva su control NEGATIVO dentro:
+  // si entre los dos clics cambia el precio, tienen que salir DOS documentos, no uno. Sin ese caso,
+  // un arreglo que bloqueara SIEMPRE el segundo clic habría pasado por bueno.
+  // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
+  assert.equal(fuera.length, 31,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ 31 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
