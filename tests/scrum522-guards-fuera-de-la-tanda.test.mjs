@@ -185,8 +185,20 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // comprobado ANTES de leer ningún resultado) y uno de NO PÉRDIDA (el aviso firmado de SCRUM-887
   // no puede desaparecer al retirar el bloque DINERO del rail). Comprobado en rojo contra el árbol
   // sin tocar (20-sep-2026): 32 de 92. El número de abajo se midió corriendo este test.
-  assert.equal(fuera.length, 30,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ 30 → ${fuera.length}.\n`
+  // SCRUM-926 · entra `guard:duplicar-conserva`. PULSA «Duplicar» de verdad y lee el editor que
+  // sale: mide que la copia no pierde el descuento global ni las condiciones de pago. Sube aquí
+  // porque el campo del descuento se juzga por `hidden` con el CSS resuelto y el duplicado pasa
+  // por `renderAppView`. Cada campo lleva SU control positivo, porque un campo vacío y un lector
+  // que no sabe mirarlo se leen igual. Comprobado en rojo contra `17a1ec57` (20-sep-2026): 3 de 9
+  // casillas, con los dos positivos en verde; y por mutación, cada mitad del arreglo tumba SOLO
+  // sus casillas. El número de abajo se midió corriendo este test, no sumando uno.
+  // ⚠️ OCTAVA colisión (20-sep-2026, SCRUM-917e): 917e y 926 escribieron los dos su comentario
+  // sobre el mismo «29 → 30», y el merge dejó los COMENTARIOS en conflicto pero la CIFRA no —
+  // la línea de abajo bajó limpia diciendo 30 cuando ya hay 31 guards. Es el caso que más
+  // engaña de este contador: el conflicto que sí ves te tapa el que no. Los dos comentarios se
+  // quedan, y el número se vuelve a MEDIR corriendo este test sobre el árbol ya fusionado.
+  assert.equal(fuera.length, 31,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ 31 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
