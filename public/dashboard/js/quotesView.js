@@ -4402,6 +4402,22 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         linesBody.innerHTML = '';
         lines = [];
         template.lines.forEach(function (l) { addLine(l); });
+        // SCRUM-926 · LA COPIA NO ES SOLO LAS LÍNEAS. Hasta aquí una plantilla restauraba
+        // `lines` y nada más, así que duplicar un presupuesto abría el editor a precio de tarifa
+        // y con las condiciones de cobro por defecto. Se restaura con EL MISMO gesto que ya usa
+        // el borrador (`loadDraft`), no con uno nuevo: el importe se pone y su campo se ABRE,
+        // porque un descuento detrás de un botón cerrado es un descuento que nadie ve.
+        if (template.discountGlobalAmount != null && String(template.discountGlobalAmount).trim() !== '') {
+          descuentoGlobalInput.value = template.discountGlobalAmount;
+          dtoGlobalCampo.hidden = false;
+          dtoGlobalBtn.hidden = true;
+        }
+        // Las condiciones de pago: el editor NACE en `FULL_UPFRONT`, así que no restaurarlas no
+        // dejaba el campo vacío —eso se ve— sino puesto en OTRA COSA, que no se ve.
+        if (template.paymentTerms) paymentSelect.value = template.paymentTerms;
+        // `tiers` y `currency` viajan en la plantilla y NO se restauran aquí, y está medido:
+        // el editor no tiene tramos (esta vista no nombra `tiers` ni una vez) ni selector de
+        // moneda (usa la del merchant). No se inventa un campo para meterlos.
         setAlert('success', `Plantilla "${template.name}" cargada — completa los datos del cliente y genera el presupuesto.`);
       }
 
