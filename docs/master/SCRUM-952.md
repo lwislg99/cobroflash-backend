@@ -93,3 +93,38 @@ Lo que NO prueba la autoprueba: que Google conteste en el formato que espera el 
    - **(a, recomendada)** una clave de un **proyecto NUEVO** de AI Studio, en el nivel gratis y sin facturación. Tiene sus propios cupos: el banco **no toca** las 20 diarias de producción. La deja en un fichero FUERA del repo, y el banco lo lee al arrancar sin imprimirlo.
    - **(b)** la clave de producción, igual por fichero. Gasta 5 de las 20 diarias de producción (la referencia) y del cupo de cada candidato del mismo proyecto.
 3. **Que el fundador mire en Railway (producción) si existe `GEMINI_MODEL`** y qué lista tiene.
+
+---
+
+## SCRUM-952b · La entrada sale de la máquina dos días tarde (20-sep-2026)
+
+**Medido contra:** `origin/main` = `f2fa091bfeb8c754ab0dcba5ddb95d0ed3d987d4` · 2026-09-20T13:05:24Z (hora de GitHub)
+**Carril:** S1 · **No se ha tocado `src/`, `public/` ni `prisma/`.** Esta entrada es SOLO documentos.
+
+**Por qué existe esta sección.** Los cuatro commits de arriba se quedaron **en local desde el 18-sep**:
+la sesión anterior los dejó sin empujar a propósito (no había turno de suite) y cerró por fin de uso
+esa misma tarde. El censo de huérfanos del 20-sep los encontró en el worktree
+`.claude/worktrees/scrum-912-leer-ticket-gasto`, rama `scrum-952-paso0-plan`, head `020b0020`, **fuera
+de todo remoto**. Un trabajo que solo existe en un disco no existe (A8).
+
+    🔒 Una rama sin empujar no está «a medias»: está a una máquina de distancia de no existir.
+
+**Lo hecho hoy, y nada más:**
+1. `git merge origin/main` dentro de la rama (**nunca rebase**, A4): 65 commits por detrás, **57 ficheros,
+   sin conflictos**. Comprobado que el merge no se come a nadie en silencio: `origin/main` es ancestro de
+   `HEAD` (`merge-base --is-ancestor`, exit 0) y el delta `origin/main...HEAD` son **exactamente los 4
+   ficheros de 952** y ninguno más.
+2. A1 tras el merge: `prisma generate` exit 0 y `git rev-list --count HEAD..origin/main` = **0**.
+3. `npm run guards:entrada`: **4 guards, 26 tests, 0 fail** (población declarada por el propio comando).
+4. `.claude/settings.local.json` aparece modificado en el árbol y **NO es de este trabajo**: no se comitea.
+   Queda tal cual, como lo dejó la sesión anterior.
+
+**Lo que sigue BLOQUEADO, medido hoy y no heredado:**
+- **El Paso 1 del plan no se puede correr.** `Test-Path C:\Users\Admin\Documents\yaqu-gemini-pruebas.txt`
+  = **False** a las 13:05Z: la clave del punto 2 de «Lo que necesito para seguir» **no está en la máquina**.
+  El banco **no ha hecho ni una sola petición real**, y nada de lo que dice arriba sobre los modelos
+  candidatos se ha medido contra Google todavía. Sigue siendo un plan.
+- El punto 3 (`GEMINI_MODEL` en Railway de producción) **sigue sin respuesta del fundador**.
+
+**Lo que esta entrada NO afirma:** que la lista de modelos del plan sea la buena, que `gemini-flash-latest`
+tenga o no respaldo, y que los ids de API de los 3.x existan. Las tres cosas esperan a la clave.
