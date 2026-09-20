@@ -69,8 +69,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
-    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo });',
-    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now() });',
+    // SCRUM-954: la linea gano el argumento `job` (el state.json de cada trabajo). El ancla se
+    // re-ancla; lo que la mutacion quita sigue siendo `equipo`, y sigue teniendo que matar.
+    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, job: (id) => estadoDeJob(config, id) });',
+    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), job: (id) => estadoDeJob(config, id) });',
     cae: '🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo',
   },
   {
@@ -168,7 +170,8 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
     'process.exit(1);',
   ].join('\n'));
 
-  const config = { repo, claude: [process.execPath, falso], ...(equipo || {}) };
+  // SCRUM-954: `jobs` propio — sin él, la CLI leería los trabajos REALES de la máquina.
+  const config = { repo, claude: [process.execPath, falso], jobs: path.join(dir, 'jobs'), ...(equipo || {}) };
   if (conTraspasos) config.traspasos = memoria;
   fs.writeFileSync(path.join(inst, 'config.json'), JSON.stringify(config));
 
