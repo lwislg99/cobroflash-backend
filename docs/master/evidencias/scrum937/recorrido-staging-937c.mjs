@@ -62,6 +62,7 @@ const nav = await lanzarNavegador(puppeteer, { headless: 'new', args: ['--disabl
 const pag = await nav.newPage();
 const informe = { concepto: CONCEPTO, fases: {} };
 let creadoId = null;
+let creadosProveedores = [];
 let respuestaDelAlta = null;
 
 // Quietos los animados antes de tocar nada (trampa de los guards de navegador).
@@ -120,12 +121,38 @@ try {
     throw new Error('staging no sirve 937b (o los textos firmados han cambiado)');
   }
 
+  // ── Los proveedores de prueba ─────────────────────────────────────────────────────────────
+  // Permiso del orquestador por el canal (20-sep-2026) y sus cuatro condiciones: exactamente 2,
+  // el nombre empieza por «ZZZ PRUEBA 937» para que se vean de lejos, se borran en la misma tanda
+  // y sólo en staging. Se crean sólo con `--crear-proveedores`: sin la bandera esto no toca nada.
+  //
+  // ⚠️ Medido en la ruta (`src/modules/providers/app/routes/providers.routes.ts`): NI el POST NI el
+  // PUT aceptan `taxId` — sólo name/phone/email/notes/isActive. El ÚNICO que escribe el NIF de una
+  // ficha es `guardarNifDelProveedor`, o sea el mecanismo que este banco viene a probar. Por eso el
+  // proveedor CON NIF no se puede fabricar sin crear otro gasto, y P2 se queda sin evaluar.
+  if (process.argv.includes('--crear-proveedores')) {
+    informe.proveedoresCreados = await pag.evaluate(async () => {
+      const crear = async (name) => {
+        const r = await fetch('/admin/providers', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name }),
+        });
+        const j = await r.json().catch(() => null);
+        return { name, status: r.status, id: j && j.item ? j.item.id : null, error: j && j.error };
+      };
+      return [await crear('ZZZ PRUEBA 937 sin NIF'), await crear('ZZZ PRUEBA 937 con NIF')];
+    });
+    creadosProveedores = informe.proveedoresCreados.filter((p) => p.id != null).map((p) => p.id);
+  }
+
   // ── POBLACIÓN: los proveedores del merchant QA ────────────────────────────────────────────
   const provs = await pag.evaluate(async () => {
     const r = await (await fetch('/admin/providers')).json();
     return (Array.isArray(r) ? r : (r.items || [])).map((p) => ({ id: p.id, name: p.name, taxId: p.taxId || null }));
   });
-  const sinNif = provs.find((p) => !p.taxId) || null;
+  // Por NOMBRE y no por posición: si algún día el merchant QA tiene proveedores de verdad, este
+  // banco tiene que seguir cogiendo los suyos y no los del negocio.
+  const sinNif = provs.find((p) => !p.taxId && /ZZZ PRUEBA 937 sin NIF/.test(p.name)) || provs.find((p) => !p.taxId) || null;
   const conNif = provs.find((p) => p.taxId) || null;
   informe.poblacionProveedores = { total: provs.length, conNif: provs.filter((p) => p.taxId).length, sinNif: provs.filter((p) => !p.taxId).length };
   informe.elegidos = { sinNif: sinNif && { id: sinNif.id, name: sinNif.name }, conNif: conNif && { id: conNif.id, name: conNif.name } };
@@ -242,6 +269,20 @@ try {
       return { status: r.status, sigue: (lista.items || []).some((x) => x.id === id) };
     }, creadoId).catch((e) => ({ error: e.message }));
   }
+  // Condición 3 del permiso: se borran en la misma tanda, y el resultado del borrado se DICE con su
+  // id. Un proveedor «supuestamente borrado» es justo lo que el fundador tuvo que limpiar a mano.
+  if (creadosProveedores.length) {
+    informe.proveedoresBorrados = await pag.evaluate(async (ids) => {
+      const out = [];
+      for (const id of ids) {
+        const r = await fetch('/admin/providers/' + id, { method: 'DELETE' });
+        out.push({ id, status: r.status, error: r.ok ? null : (await r.json().catch(() => ({}))).error || null });
+      }
+      const lista = await (await fetch('/admin/providers')).json();
+      const vivos = (Array.isArray(lista) ? lista : (lista.items || [])).map((p) => p.id);
+      return { borrados: out, siguenVivos: ids.filter((i) => vivos.includes(i)) };
+    }, creadosProveedores).catch((e) => ({ error: e.message }));
+  }
   await nav.close();
 }
 
@@ -267,27 +308,35 @@ const casillas = {
   'B · el gasto se guardó sin proveedor': f.B_gasto?.providerId === null,
   'B · y la ficha del proveedor sigue SIN NIF': f.B_fichaDelProveedorSigueSinNif === null,
   'el gasto de prueba está BORRADO': informe.borrado?.status === 200 && informe.borrado?.sigue === false,
+  'los proveedores de prueba están BORRADOS': informe.proveedoresBorrados?.siguenVivos?.length === 0
+    && informe.proveedoresBorrados?.borrados?.every((b) => b.status === 200),
 };
 
 // Una casilla que NO SE HA PODIDO EVALUAR no es un fallo ni un acierto: se declara. Contarla como
 // roja convertiría «no hay datos» en «la pantalla falla», que es una afirmación distinta y falsa.
-// El borrado también depende de B: sin proveedor no se crea ningún gasto, y una casilla roja por
-// «no había nada que borrar» diría que el borrado falla, que es otra afirmación y es falsa.
-const NECESITAN_PROVEEDOR = new Set(Object.keys(casillas).filter((k) => /^(P1|P2|B) /.test(k) || /BORRADO/.test(k)));
-const hayProveedores = (informe.poblacionProveedores?.total || 0) > 0;
+// Cada casilla dice de QUÉ dato depende. Una casilla sin su dato no es roja: es no evaluable, y
+// contarla roja diría «la pantalla falla» cuando lo que pasa es «no hay con qué probarla».
+const falta = (k) => {
+  if (/^(P1|B) /.test(k) && !informe.elegidos?.sinNif) return 'no hay proveedor SIN NIF en el merchant QA';
+  if (/^P2 /.test(k) && !informe.elegidos?.conNif) return 'no hay proveedor CON NIF: la API de proveedores no deja escribir taxId (ni POST ni PUT)';
+  if (/gasto de prueba está BORRADO/.test(k) && !informe.fases?.B_gasto) return 'no se creó ningún gasto, no había nada que borrar';
+  if (/proveedores de prueba están BORRADOS/.test(k) && !informe.proveedoresCreados) return 'no se creó ningún proveedor en esta pasada';
+  return null;
+};
 
 console.log(JSON.stringify(informe, null, 2));
 console.log('\n── VEREDICTO ──');
 const evaluadas = [];
 for (const [k, v] of Object.entries(casillas)) {
-  if (!hayProveedores && NECESITAN_PROVEEDOR.has(k)) { console.log('— ' + k + '  (NO EVALUABLE: 0 proveedores en el merchant QA)'); continue; }
+  const porque = falta(k);
+  if (porque) { console.log('— ' + k + '  (NO EVALUABLE: ' + porque + ')'); continue; }
   evaluadas.push(v);
   console.log((v ? '✔ ' : '🔴 ') + k);
 }
 const verdes = evaluadas.filter(Boolean).length;
 const ok = !informe.error && evaluadas.length > 0 && verdes === evaluadas.length;
 console.log(`\nPOBLACION casillas=${Object.keys(casillas).length} evaluadas=${evaluadas.length} verdes=${verdes} · no evaluables=${Object.keys(casillas).length - evaluadas.length} · proveedores=${JSON.stringify(informe.poblacionProveedores)}`);
-if (!hayProveedores) console.log('🔶 CASO B NO RECORRIDO: el merchant QA no tiene proveedores, y sin un proveedor sin NIF el campo nunca se desbloquea desde la pantalla.');
+if (informe.proveedoresCreados) console.log('PROVEEDORES DE PRUEBA creados=' + JSON.stringify(informe.proveedoresCreados) + ' · borrados=' + JSON.stringify(informe.proveedoresBorrados));
 if (informe.error) console.log('ERROR: ' + informe.error);
 console.log('EXIT=' + (ok ? 0 : 1));
 process.exit(ok ? 0 : 1);
