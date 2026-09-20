@@ -72,6 +72,7 @@ export const DECLARADOS = [
   'guard:duplicar-conserva',
   'guard:rastro-del-menu',
   'guard:marcadores-en-pantalla',
+  'guard:un-solo-presupuesto',
   // 👆 EL TUYO VA AQUÍ, EN SU PROPIA LÍNEA, Y NO SE TOCA NINGUNA DE LAS DE ARRIBA.
   //    Si al mergear sale conflicto en esta línea es que otra rama añadió el suyo a la vez:
   //    se quedan LOS DOS. Es el conflicto que se buscaba, no un problema.

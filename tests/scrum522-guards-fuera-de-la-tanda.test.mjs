@@ -185,6 +185,19 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // que no sabe mirarlo se leen igual. Comprobado en rojo contra `17a1ec57` (20-sep-2026): 3 de 9
   // casillas, con los dos positivos en verde; y por mutación, cada mitad del arreglo tumba SOLO
   // sus casillas. El número de abajo se midió corriendo este test, no sumando uno.
+  // SCRUM-965 · entra `guard:un-solo-presupuesto`. PULSA «Generar presupuesto» DOS veces y cuenta
+  // las peticiones que llegan al SERVIDOR, que es donde se ve el defecto: en pantalla los dos clics
+  // se leen igual. Sube aquí porque necesita navegador —el estado que decide (la huella del payload
+  // y la hoja abierta) sólo existe en tiempo de render— y porque lleva su control NEGATIVO dentro:
+  // si entre los dos clics cambia el precio, tienen que salir DOS documentos, no uno. Sin ese caso,
+  // un arreglo que bloqueara SIEMPRE el segundo clic habría pasado por bueno.
+  //
+  // ⚠️ NOVENA COLISIÓN, Y ÉSTA SE RESOLVIÓ EN VIVO MIENTRAS SE ARREGLABA LA OCTAVA: SCRUM-965
+  // entró en `main` con «30 → 31» mientras esta rama tenía 30. Resuelta como manda el párrafo de
+  // arriba y como manda el arreglo de abajo: **el comentario de 965 se queda entero**, su guard se
+  // apunta en su propia línea de la lista declarada, y el número **NO se suma: se vuelve a MEDIR**
+  // corriendo este test sobre el árbol ya fusionado. Que la colisión número nueve ocurriera dentro
+  // del ticket que la arregla no es casualidad: es la frecuencia del defecto.
   //
   // ══════════════════════════════════════════════════════════════════════════════════════════
   // 🔴 SCRUM-970 · Y AQUÍ YA NO HAY NINGÚN NÚMERO ESCRITO A MANO. Ésta era la OCTAVA colisión.
