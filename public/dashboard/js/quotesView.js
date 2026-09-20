@@ -1937,10 +1937,21 @@ descWrapper.appendChild(descLabel);
   if (!esDocumentoSuelto) heading.appendChild(draftIndicator);
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
+  // SCRUM-915e1 · «Vista previa del documento» describía la PANTALLA; «Así lo verá el cliente»
+  // describe el DOCUMENTO, que es lo que el profesional necesita saber antes de mandarlo. Los dos
+  // textos están firmados en el comentario 15868 (`docs/prototipos/SCRUM-915/textos-propuestos.md`,
+  // «El documento de la derecha»). La segunda línea no es decoración: es la promesa que el resto
+  // de este corte cumple —el documento se rehace en cada tecla— y sin ella nadie sabe que mirar
+  // ahí mientras escribe sirve para algo.
   const previewTitle = document.createElement("h3");
-  previewTitle.textContent = "Vista previa del documento";
+  previewTitle.textContent = "Así lo verá el cliente";
   previewTitle.className = "quote-preview-title";
   rightCard.appendChild(previewTitle);
+
+  const previewSubtitle = document.createElement("p");
+  previewSubtitle.textContent = "Se actualiza mientras escribes";
+  previewSubtitle.className = "quote-preview-subtitle";
+  rightCard.appendChild(previewSubtitle);
 
   const previewBox = document.createElement("div");
   previewBox.className = "quote-preview";
@@ -2740,14 +2751,22 @@ descWrapper.appendChild(descLabel);
     ptHead.appendChild(ptr);
     linesTable.appendChild(ptHead);
 
-    const ptBody = document.createElement("linesBody");
+    // 🔴 SCRUM-915e1 · ERA `createElement("linesBody")`, que no es una etiqueta de HTML: creaba un
+    // elemento desconocido dentro de la `<table>` y las `<tr>` del documento colgaban de él. Y no
+    // era inofensivo: `styles.css` lleva desde siempre una regla de cebra
+    // —`.preview-lines-table tbody tr:nth-child(even)`— escrita para este documento que NO HA
+    // PINTADO NUNCA, porque aquí nunca hubo un `tbody` al que casar. En el fuente los dos se leen
+    // igual; la diferencia sólo existe en el árbol renderizado, que es donde se mira.
+    const ptBody = document.createElement("tbody");
 
     if (previewLines.length === 0) {
       const trEmpty = document.createElement("tr");
       const tdEmpty = document.createElement("td");
       tdEmpty.colSpan = 4;
-      tdEmpty.textContent =
-        "Añade al menos una línea con concepto, cantidad y precio.";
+      // SCRUM-915e1 · el hueco del documento no es el sitio donde se dan instrucciones: para eso
+      // está el pie del paso Conceptos, que ya dice qué falta para poder seguir. Aquí se describe
+      // lo que va a pasar en ESTE trozo de papel. Texto firmado (comentario 15868).
+      tdEmpty.textContent = "Aquí aparecerán los conceptos que añadas.";
       trEmpty.appendChild(tdEmpty);
       ptBody.appendChild(trEmpty);
     } else {
@@ -2822,16 +2841,30 @@ tr.appendChild(tdConcept);
     previewBox.appendChild(totalsBlock);
 
     // Pie legal sencillo (podremos hacerlo configurable después)
+    // 🔴 SCRUM-915e1 · ESTE PIE MENTÍA, Y MENTÍA EN EL PAPEL DEL CLIENTE. Decía «válido durante
+    // 30 días» fijo mientras el campo «Válido hasta» de Condiciones lleva desde A16.2 aceptando
+    // CUALQUIER fecha: quien ponía una semana mandaba un documento que prometía un mes, y el que
+    // manda es el papel. No era un rótulo desactualizado — era el único sitio del documento donde
+    // la caducidad se afirmaba, y afirmaba otra cosa que la caducidad guardada (`validUntil`).
+    //
+    // Ahora el pie LEE la misma fecha que se guarda y que ya se enseña en el resumen de
+    // Condiciones (`fechaCorta(validInput.value)`, la misma función: una sola forma de escribir
+    // una fecha en esta pantalla). Texto firmado en el comentario 15868, y la propia ficha dice
+    // que «sustituye al fijo “…válido durante 30 días…”».
+    //
+    // Si no hay fecha legible, NO se inventa ninguna y el pie no se pinta: un documento sin
+    // coletilla es un hueco, y uno con la coletilla equivocada es lo que este ticket arregla.
+    const diaValidez = fechaCorta(validInput.value);
     const footer = document.createElement("div");
     footer.className = "preview-footer";
-    footer.textContent = "Presupuesto válido durante 30 días salvo indicación en contrario.";
+    footer.textContent = "Presupuesto válido hasta el " + diaValidez + ".";
     // 🔴 SCRUM-600 · EN EL DOCUMENTO SUELTO NO SE IMPRIME NINGUNA COLETILLA, y la omisión es la
     // decisión prudente, no la perezosa. Ésta es una frase LEGAL estampada en el papel que ve el
     // cliente del profesional; la del presupuesto habla de la validez de una OFERTA, que en un
     // documento ya emitido no significa nada. Y escribir otra en su sitio sería redactar una
     // afirmación en un documento fiscal: reglas 7 y 17, y microcopy del fundador (regla 30).
     // Si ahí tiene que ir algo, lo decide él; hasta entonces, no va nada.
-    if (!esDocumentoSuelto) previewBox.appendChild(footer);
+    if (!esDocumentoSuelto && diaValidez) previewBox.appendChild(footer);
   }
 
   // ---------- GESTIÓN DE LÍNEAS ----------
@@ -4520,10 +4553,16 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
   const cuantasLineasValidas = function () { return lines.filter(lineaValidaParaGenerar).length; };
   const conceptosTexto = function (n) { return n + " " + (n === 1 ? "concepto" : "conceptos"); };
   /** «2026-10-18» → «18/10/2026»: el mismo día que eligió el profesional, sin pasar por `Date`. */
-  const fechaCorta = function (iso) {
+  // SCRUM-915e1 · DECLARACIÓN DE FUNCIÓN, no `const`, y el motivo es de alcance y no de estilo:
+  // `renderPreview` vive 2.000 líneas más arriba y corre desde el primer pintado, mucho antes de
+  // que esta línea se ejecute. Con `const` estaba en zona muerta y el pie del documento habría
+  // reventado con «Cannot access before initialization»; declarada así se iza y hay UNA sola forma
+  // de escribir una fecha en esta pantalla, que es lo que evita que el resumen de Condiciones y el
+  // papel del cliente empiecen a decir la misma fecha de dos maneras.
+  function fechaCorta(iso) {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
     return m ? m[3] + "/" + m[2] + "/" + m[1] : "";
-  };
+  }
   // Por `children` y no por `options[selectedIndex]`: es el mismo `<option>` en el navegador, y el
   // banco de vistas de la suite (SCRUM-451) monta el editor sin esas dos propiedades.
   const textoDeCobro = function () {
@@ -4672,6 +4711,22 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
   // cada campo (burbuja), así que se lee el estado ya actualizado.
   ["input", "change", "click"].forEach(function (evento) {
     leftCard.addEventListener(evento, refrescarPasos);
+  });
+  // 🔴 SCRUM-915e1 · EL DOCUMENTO SE REHACE CON LO MISMO QUE LOS PASOS, y no es un extra: es el
+  // contrato que firma el rótulo «Se actualiza mientras escribes» de la derecha.
+  //
+  // Hasta hoy `renderPreview` colgaba de UNA LISTA DE CAMPOS elegidos a mano —las líneas, el
+  // descuento global, las dos propuestas pactadas, el alta de cliente—, así que había campos del
+  // editor que cambiaban el papel y no repintaban el papel. El más caro era «Válido hasta», que
+  // no tenía NI UN oyente: se podía poner una semana, ver el pie del documento seguir hablando de
+  // otra fecha y mandarlo así. Una lista escrita a mano se queda corta el día que alguien añade
+  // el campo número once y no se acuerda de esta línea; la delegación no se queda corta nunca.
+  //
+  // Va DESPUÉS de `refrescarPasos` y por el mismo motivo que él: en la burbuja, con el estado de
+  // los campos ya actualizado. Las llamadas directas que ya existen se conservan —las que corren
+  // sin evento del usuario (cargar un borrador, reordenar líneas) no burbujean por aquí.
+  ["input", "change", "click"].forEach(function (evento) {
+    leftCard.addEventListener(evento, renderPreview);
   });
   // «Limpiar formulario» vacía el cliente y las líneas: se vuelve al primer paso.
   resetBtn.addEventListener("click", function () {

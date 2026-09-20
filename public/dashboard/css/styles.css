@@ -1909,7 +1909,12 @@ html, body { overflow-x: clip; }
 .preview-total-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
 .preview-total-row-main strong { font-size: 15px; }
 .preview-footer { margin-top: 12px; font-size: 11px; color: var(--neutral-400); }
-.quote-preview-title { font-size: 14px; font-weight: 700; color: var(--neutral-800); margin-bottom: 10px; }
+.quote-preview-title { font-size: 14px; font-weight: 700; color: var(--neutral-800); margin-bottom: 2px; }
+/* SCRUM-915e1 · la segunda línea del rótulo del documento. Tokens ya existentes (`--neutral-400`,
+   el mismo gris del pie del documento) y el tamaño de nota que ya usa `.preview-footer`: no entra
+   ningún token nuevo, ni un color ni una sombra. El margen del título baja de 10 a 2 px porque el
+   aire lo pone ahora esta línea, y el bloque entero sigue separado del papel los mismos 10 px. */
+.quote-preview-subtitle { font-size: 11px; color: var(--neutral-400); margin: 0 0 10px; }
 .quote-preview-block { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--neutral-200); }
 
 /* Inline form elements */
