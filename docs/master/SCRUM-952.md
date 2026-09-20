@@ -128,3 +128,46 @@ de todo remoto**. Un trabajo que solo existe en un disco no existe (A8).
 
 **Lo que esta entrada NO afirma:** que la lista de modelos del plan sea la buena, que `gemini-flash-latest`
 tenga o no respaldo, y que los ids de API de los 3.x existan. Las tres cosas esperan a la clave.
+
+---
+
+### Error propio de esta entrada, y lo que destapó: **el recuento de A22 NO ve el BOM**
+
+Es la misma familia que el escape de color que estuvo 16 merges en la línea principal de `main`
+(A22), así que va escrito con lo que hace falta para cazarlo: qué lo mete, cómo se ve y cómo se cuenta.
+
+**Qué lo mete.** El mensaje de commit se escribió a fichero con `Out-File -Encoding utf8`. En
+**PowerShell 5.1** ese `utf8` es UTF-8 **CON BOM**: antepone los bytes `239,187,191` (U+FEFF). `git
+commit -F` se los traga como parte del asunto, así que el commit `dcc1089a` nació con un carácter
+invisible pegado delante de `SCRUM-952b:`.
+
+**Cómo se ve.** No se ve. No sale en el diff, ni en el visor, ni en una revisión a ojo. Lo delató que
+el propio `git commit` devolvió el asunto por pantalla y ahí el carácter sí se dibujó. Se arregló con
+`[IO.File]::WriteAllText($f, $msg, (New-Object Text.UTF8Encoding $false))` y un `--amend`
+**antes de cualquier push**: no se reescribe historia publicada (A4).
+
+**Cómo se cuenta — y aquí está el hallazgo.** El recuento que A22 manda usar es
+
+    ([IO.File]::ReadAllBytes($f) | Where-Object { ($_ -lt 32 -and $_ -notin 9,10,13) -or $_ -eq 127 }).Count
+
+y **un BOM le da 0**, porque sus tres bytes (`239,187,191`) están todos por encima de 32. Medido hoy,
+con el control positivo disparando primero para que el 0 signifique algo:
+
+| fichero | bytes | recuento A22 |
+|---|---|---|
+| ESC real (`[char]27`) | `72,111,108,97,` **`27`** `,91,51,49,109` | **1** ✅ el contador SÍ funciona |
+| NUL real (`[char]0`) | `72,111,108,97,` **`0`** | **1** ✅ |
+| BOM (`Out-File -Encoding utf8`) | **`239,187,191`** `,72,111,108,97,13,10` | **0** ❌ **ciego** |
+
+⚠️ **El primer intento de este control salió VACÍO y casi me lo creo.** Escribí el ESC como
+`` `e[31m ``, que es sintaxis de **PowerShell 6+**: en la 5.1 no existe y aterrizó una `e` normal. El
+contador dio 0 sobre un fichero *sin* ESC, y ese 0 se lee exactamente igual que «el contador no ve el
+ESC». Sin repetirlo con `[char]27`, la conclusión de esta tabla habría sido la contraria y falsa.
+
+    🔒 Un contador que no has visto disparar no da ceros: da silencio.
+
+**Lo que esto NO dice:** que haya BOMs en el árbol. No lo he barrido — sería otro ticket, y el tope de
+hallazgos por tanda es 3. Lo que dice es que **el recuento de A22, tal y como está escrito, no puede
+encontrarlos**, y que un carácter invisible que la propia norma no cuenta es justo el que sobrevive.
+La norma A22 es de `00-normas-comunes.md`, cuya dueña es la **Sesión 0**: esto se le reporta, no se
+edita desde aquí.
