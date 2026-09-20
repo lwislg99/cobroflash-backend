@@ -215,7 +215,7 @@ hallazgos perfectamente creíbles:
    selector partido en dos, el menú contesta `["↑ Subir","↓ Bajar","🗑️ Eliminar línea"]` — y el
    rojo REAL es otro: no ofrece «Ajustes», que es lo que pide la v3.
 2. **«"✓ Guardado automáticamente" no está junto al título»**. El encabezado es
-   `div.quotes-header-block` (QV:72), no el `<h2>`. Preguntarle al `h2` si contenía el aviso daba
+   `div.quotes-header-block`, no el `<h2>`. Preguntarle al `h2` si contenía el aviso daba
    «no» con el aviso dentro. Es un **YA ESTÁ** que 915d había entregado.
 3. **«los datos de empresa están en el documento de la derecha»**, buscándolos por el texto
    `/NIF|Cargando datos de empresa/`. El merchant del banco no tiene NIF y el rótulo de carga ya se
@@ -229,6 +229,20 @@ las tres son rojo: los cuatro marcadores `[PENDIENTE microcopy oficial]` siguen 
 
     🔒 Preguntarle a un control si se ve, cuando llega cerrado a propósito, es preguntarle al armario
        si la camisa existe.
+
+Y dos más, de la casa, que cazaron los mecanismos y no yo:
+
+4. **`scrum710b` me puso en rojo por anclar por número de línea.** Los comentarios de la sonda
+   citaban `api.js:1204`, `QV:72`, `descuentoPorDefecto.js:63`… Se arregló **el código, no el
+   guard** (A7): ahora cita `overflowMenu`, `.quotes-header-block` y `propuestaPara`, que es lo que
+   las cosas SON. Censos en verde después: 74 tests, 0 fail.
+5. **`Set-Content -Encoding utf8` de PowerShell 5.1 me destrozó el fichero entero** al quitar esos
+   anclajes: leyó UTF-8 como ANSI y lo reescribió doble-codificado (`—` → `â€"`), con BOM y con
+   CRLF. El `git diff --numstat` decía **200/199** en un cambio de cuatro líneas, y eso fue lo que
+   lo destapó — mirar el TAMAÑO del diff antes que su contenido. Se restauró con
+   `git restore --source=HEAD` y se rehizo con la herramienta de edición: **5/4**.
+
+    🔒 Un diff que no cabe en el cambio que has hecho no es un cambio grande: es otra cosa.
 
 ### Lo que NO he mirado
 

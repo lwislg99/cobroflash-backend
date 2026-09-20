@@ -68,7 +68,8 @@ function leerInventarioAprobado() {
 // 🔴 EL CLIENTE LLEVA LO PACTADO A PROPÓSITO. Sin `dtoPorDefecto` ni `payMethodsPorDefecto` las dos
 // TIRAS de propuesta (SCRUM-587 y SCRUM-586) no se pintan nunca, y sus dos filas del inventario
 // saldrían «no medible» por culpa del banco, no del producto. Los nombres salen de
-// `descuentoPorDefecto.js:63` y `formaDePagoPorDefecto.js:80`. El teléfono va en el rango imposible
+// `descuentoPorDefecto.propuestaPara` y `formaDePagoPorDefecto.propuestaPara`, que son quienes los
+// leen — anclado al NOMBRE, no a la línea (SCRUM-710b). El teléfono va en el rango imposible
 // `34 0XX XXX XXX` (SCRUM-262).
 const CLIENTE = {
   id: 7, name: 'Comunidad Los Olivos', phone: '34000000001', email: 'olivos@correo.es',
@@ -191,13 +192,13 @@ const FOTO = new Function('inventario', `
     subtituloViejo: (function () { var p = q('.quotes-desc'); return !!p && ve(p); })(),
     // 🔴 POR IDENTIDAD, NO POR TEXTO. La primera versión buscaba /NIF|Cargando datos de empresa/ en
     // el innerText, y daba FALSO con los datos DELANTE: el merchant del banco no tiene NIF y el
-    // rótulo de carga ya se había sustituido. El elemento es '.quotes-merchant-info' (QV:94).
+    // rótulo de carga ya se había sustituido. El elemento es '.quotes-merchant-info'.
     datosEmpresaIzq: (function () { var p = q('.quotes-merchant-info'); return !!p && ve(p); })(),
     datosEmpresaDer: !!(der && der.querySelector('.quotes-merchant-info')),
     guardadoJuntoAlTitulo: (function () {
       var e = qa('span').filter(function (s) { return limpio(s.textContent).indexOf('Guardado automaticamente') >= 0 || limpio(s.textContent).indexOf('Guardado automáticamente') >= 0; })[0];
       if (!e) return null;
-      // 🔴 El encabezado es 'div.quotes-header-block' (QV:72), NO el h2. Preguntarle al h2 si
+      // 🔴 El encabezado es 'div.quotes-header-block', NO el h2. Preguntarle al h2 si
       // contiene el aviso daba «no» con el aviso dentro del encabezado: defecto de la sonda.
       var h = document.querySelector('.quotes-header-block');
       return { existe: true, dentroDelHeading: !!(h && h.contains(e)) };
@@ -343,7 +344,7 @@ const ABRIR_MENU_LINEA = new Function(`
   var l = document.querySelector('.quote-line');
   if (!l) return { error: 'sin linea' };
   // 🔴 EL TRIGGER ES \`.overflow-trigger\` Y LOS ITEMS SON BOTONES SUELTOS DENTRO DE UN
-  // \`[role="menu"]\` (api.js:1204 y 1256-1258): no llevan \`role="menuitem"\` ni clase propia. La
+  // \`[role="menu"]\` que monta \`overflowMenu\` en api.js: no llevan \`role="menuitem"\` ni clase. La
   // primera versión los buscaba por \`.overflow-menu__item, [role="menuitem"]\` y devolvía [] con el
   // menú ABIERTO delante — un cero que se leía como «el menú no tiene nada».
   // 🔴 PRIMERO POR CLASE, Y SOLO DESPUÉS POR ATRIBUTO, Y ADEMÁS QUE SEA UN BOTÓN. Una lista de
