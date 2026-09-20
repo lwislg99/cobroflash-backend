@@ -331,9 +331,24 @@ en los cinco, y «Agendar» y «▶ Empezar» ejecutables en las dos.
     🔒 Un guard anclado al peso visual de un botón se queda ciego el día que alguien reordene la jerarquía
        — y reordenar la jerarquía es cosa que pasa y debe poder pasar.
 
-De paso, dos cosas medidas: **CIEGO no es ROJO** (distinguirlo es lo que evitó buscar un defecto de producto
-que no existía), y un comentario con acentos graves **dentro de un template literal** lo cierra — el guard no
-compilaba y el `SyntaxError` señalaba a `overflowMenu`, que no tenía nada que ver.
+**Y el hallazgo del arreglo: había TRES anclajes a `.btn-primary`, y el log de CI sólo enseñaba el primero.**
+Arreglar ése habría dejado el bloque ② igual de ciego **y el guard en verde**, que es peor que dejarlo roto.
+Se vio corriendo el guard, no leyendo su log.
+
+    🔒 Un arreglo guiado por el log arregla lo que el log enseña, no lo que está roto.
+
+De paso, tres cosas medidas: **CIEGO no es ROJO** (distinguirlo es lo que evitó buscar un defecto de producto
+que no existía); un comentario con acentos graves **dentro de un template literal** lo cierra — el guard no
+compilaba y el `SyntaxError` señalaba a `overflowMenu`, que no tenía nada que ver, o sea que te manda a
+investigar el sitio equivocado; y la clase del «⋯» no era la que yo suponía sino `overflow-trigger`, que se
+comprobó **leyendo** `api.js:overflowMenu` (que devuelve el propio botón, no un envoltorio).
+
+### La rama mergeada no se vuelve a empujar
+
+Este corte sale en una rama NUEVA, `scrum-917e-franja-del-dinero`, y no en la de 917c. El motivo está
+documentado en el equipo y aun así ha mordido varias veces: **el repo borra la rama al mergear**, así que
+empujar `scrum-917c-lista-trabajos` otra vez la **recrea** y abre un PR residuo detrás de un PR ya cerrado.
+La defensa es `git ls-remote --heads origin <rama>` **justo antes** del push, no al empezar la tarea.
 
 ### Hallazgo ajeno, arreglado aquí por orden del orquestador
 
