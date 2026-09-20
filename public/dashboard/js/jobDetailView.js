@@ -486,6 +486,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   head.className = 'detail-head';
   page.appendChild(head);
   const headLeft = document.createElement('div');
+  // SCRUM-917f: la columna del título necesita clase propia por una razón mecánica, no estética.
+  // `.detail-head` es flex, y dentro de un flex un hijo NO encoge por debajo de su contenido: sin
+  // `min-width: 0` aquí, el `text-overflow: ellipsis` del título y del subtítulo no llega a actuar
+  // NUNCA y un nombre largo sigue empujando el chip de estado y la barra de acciones.
+  headLeft.className = 'detail-head-izq';
   // ── SCRUM-317 (G2) · migas + título, en vez de un botón de volver ────────────────────
   //
   // El subtítulo anterior —«Detalle del trabajo, cobros y documentos.»— desaparece: describía
@@ -506,11 +511,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   migaSep.className = 'detail-miga-sep';
   migaSep.setAttribute('aria-hidden', 'true');
   migaSep.textContent = '›';
-  const migaActual = document.createElement('span');
-  migaActual.className = 'detail-miga-actual';
+  // SCRUM-917f: aquí vivía `migaActual`, que repetía «cliente · trabajo» tres píxeles encima del
+  // título y del subtítulo, que dicen lo mismo. Las migas contestan DÓNDE ESTÁS; QUÉ ESTÁS MIRANDO
+  // lo contesta el título, y con más tamaño. Con ella, el nombre del cliente salía CINCO veces en
+  // la pantalla, tres de ellas en los 139 px de la cabecera.
   migas.appendChild(migaTrabajos);
   migas.appendChild(migaSep);
-  migas.appendChild(migaActual);
   headLeft.appendChild(migas);
   const h2 = document.createElement('h2');
   headLeft.appendChild(h2);
@@ -583,10 +589,17 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const refresh = () => renderJobDetailView(container, job.id);
 
   // ── SCRUM-317 (G2) · el Trabajo se llama por su nombre ───────────────────────────────
+  //     SCRUM-917f · …y el que manda es el nombre DEL TRABAJO, no el del cliente.
   //
-  // TÍTULO = el CLIENTE, siempre. Es el único dato que no puede faltar (`customerId` es NOT NULL
-  // en el modelo) y es como el profesional piensa en el trabajo: «lo de Francisco».
-  // SUBTÍTULO = el nombre que le haya puesto el pro + la fecha.
+  // TÍTULO = el NOMBRE DEL TRABAJO; si el pro no le ha puesto ninguno, el CLIENTE. Las dos ramas
+  // salen de datos que el presupuesto no puede quitar (`customerId` es NOT NULL), que es el
+  // principio entero de SCRUM-317: un Trabajo sin presupuesto no se queda sin título.
+  // SUBTÍTULO = cliente · fecha · presupuesto.
+  //
+  // ⚠️ POR QUÉ SE DA LA VUELTA: medido en el PASO 0 de 917f, con el Trabajo #3104 el nombre del
+  // cliente salía CINCO veces en la pantalla, TRES de ellas dentro de los 139 px de la cabecera
+  // (miga, título y subtítulo). El cliente ya vive entero en el rail de la derecha, con su
+  // teléfono. Lo que no estaba en ningún sitio destacado era de QUÉ trabajo es esto.
   //
   // ⚠️ EL SEPARADOR SOLO SE PINTA SI HAY ALGO A LOS DOS LADOS. `unirCon` es la única forma de
   // componer estas líneas en esta vista, precisamente para que no exista el camino que produce
@@ -611,11 +624,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // si al salir del campo hay algo que guardar. NO se pinta en la cabecera: eso es el rail.
   const direccionObra = (job.direccion || '').trim();
 
-  h2.textContent = nombreCliente || 'Trabajo';
-  sub.textContent = unirCon(' · ', nombreTrabajo, fechaCorta(job.createdAt));
+  // La referencia del presupuesto de origen, si lo hay. Un Trabajo puede no tenerlo
+  // (`Job.quoteId` es `Int?`), y por eso pasa por `unirCon` como una parte más: si falta, no
+  // cuelga ningún separador.
+  const refPresupuesto = job.quote?.number != null ? `Presupuesto #${job.quote.number}` : '';
+
+  h2.textContent = nombreTrabajo || nombreCliente || 'Trabajo';
+  sub.textContent = unirCon(' · ', nombreCliente, fechaCorta(job.createdAt), refPresupuesto);
   // Un subtítulo vacío no deja un párrafo en blanco empujando la pantalla.
   sub.style.display = sub.textContent ? '' : 'none';
-  migaActual.textContent = unirCon(' · ', nombreCliente, nombreTrabajo);
 
   // SCRUM-57: "Responsable" en la cabecera = autoría del operario (job.operario, ya en el
   // serializer tras SCRUM-22). Si el Trabajo es del propietario (operario null), el nombre del
