@@ -17,8 +17,8 @@ orquestador, no la S4).
 2. **La microcopy está FIRMADA** (firma delegada, comentario 15992), con tres cambios ya aplicados: fuera «justificante»
    («La foto del ticket», «Ver la foto»), fuera el triángulo («Sin foto») y el singular «1 gasto». **«Ver trabajo»**
    reutiliza el literal ya firmado (SCRUM-302), no «Ver el trabajo». La ficha, completa, está en
-   `ficha-microcopy-DRAFT.md`: **la S2 la mueve a `docs/microcopy/2026-09-20-SCRUM-920-textos-de-gastos.md` EN EL MISMO PR
-   que pinta los textos** (si entrara antes, `scrum514-aprobado-y-aplicado` se pone rojo con razón).
+   `ficha-microcopy-DRAFT.md`: **la S2 la mueve a `docs/microcopy/2026-09-20-SCRUM-920-textos-de-gastos.md` ENTERA, en el
+   ÚLTIMO PR (920f), cuando ya está todo pintado** (si entrara antes, `scrum514-aprobado-y-aplicado` se pone rojo con razón).
 3. **Sigue SIN firmar:** los dos textos de lectura del ticket (SCRUM-912), aceptar PDF, y cualquier cosa del motor.
 
 Prototipo: `docs/prototipos/SCRUM-920/gastos.html` (se abre con doble clic; la barra negra de arriba cambia de
@@ -125,10 +125,11 @@ Se quitó del prototipo el 20-sep: los chips ya dicen cuántos hay. Si la S2 lo 
 3. **920e · el detalle** (D1-D6).
 4. **920f · el alta dentro del modal** (A2-A12): con F1 firmado; sin PDF (F4) y sin lectura (F3).
 
-Cada PR que pinta textos **mueve la ficha** (`ficha-microcopy-DRAFT.md` → `docs/microcopy/…`) **o la parte que le toca**:
-`scrum514-aprobado-y-aplicado` exige que todo «Texto aprobado» esté ya pintado, así que si se reparte en cuatro PR hay
-que decidir cómo (una ficha por PR con sus literales, o la ficha entera en el último). **Pregunta abierta para el
-orquestador.**
+**La ficha (`ficha-microcopy-DRAFT.md` → `docs/microcopy/2026-09-20-SCRUM-920-textos-de-gastos.md`) entra ENTERA en el
+ÚLTIMO PR (920f), no partida** (decisión del orquestador, 20-sep). Motivo: `scrum514-aprobado-y-aplicado` comprueba una sola
+dirección —que todo «Texto aprobado» que esté en `docs/microcopy/` esté pintado en el código—. Pintar antes de que exista
+la ficha no lo dispara; meter la ficha antes de pintar, sí. Así que en 920c, d y e **no hay ficha**, y entra cuando ya está
+todo pintado. La firma va citada por su NÚMERO (comentario 15992), no por la hora.
 
 🔴 **Corrección de la S4 (20-sep):** `scrum302-rotulos-completos` **NO aplica a Gastos**: sólo lee
 `albaranDetailView.js` (`mk('btnX')` contra `ROTULOS_ALBARAN`). Los botones nuevos de Gastos **no** entran ahí. Lo que
