@@ -309,6 +309,32 @@ Los tres son del instrumento, y los tres tenían forma de resultado bueno.
    «Total aceptado», pintado en versalitas, se leía «TOTAL ACEPTADO» y el guard lo daba por retirado. Los dos
    se cazaron porque **contradecían al PASO 0**: sin esa medición previa, los habría publicado.
 
+### 🔴 917c dejó un guard CIEGO en main, y la lección es A12
+
+El PR #1522 (917c) **entró en `main` con el check «guards de navegador» en FAILURE**, que no bloquea.
+`guard:escalera-por-estado` salía **CIEGO (salida 2), no rojo**: «los cinco estados dan 1 rótulo distinto» y
+«LISTA: no encuentro el primario que pulsar». No estaba diciendo que el producto fallara — estaba diciendo
+que no había mirado nada. Sin su propio SUELO, esto habría pasado por un verde.
+
+**La causa es mía y es exactamente A12: cambié una población y no censé quién medía sobre ella.** Ese guard
+buscaba la acción de la fila con `.jobs-acciones > button.btn-primary`, y 917c cambió eso **a propósito**:
+una sola primaria en la lista, la del dinero, y la acción repetida del grupo a secundaria, porque doce
+«Agendar» verdes idénticos no jerarquizan. Revisé el guard 816, que también lee la lista, y no revisé éste.
+
+**Arreglado aquí, con el criterio que decidió el orquestador:** lo que ese guard defiende es que las dos
+pantallas propongan el **MISMO RÓTULO**, no el peso visual del botón — y el peso es justo lo que 917c decidió
+cambiar, decisión que se queda. Se reancla a `button:not(.overflow-trigger)` en los **tres** sitios que
+pulsaban la fila (no sólo en el que salía en el log; el primero arreglado dejaba el segundo ciego, y se vio
+corriendo). Tras el arreglo **mide y está verde**: 5 estados, 4 rótulos distintos, lista y detalle de acuerdo
+en los cinco, y «Agendar» y «▶ Empezar» ejecutables en las dos.
+
+    🔒 Un guard anclado al peso visual de un botón se queda ciego el día que alguien reordene la jerarquía
+       — y reordenar la jerarquía es cosa que pasa y debe poder pasar.
+
+De paso, dos cosas medidas: **CIEGO no es ROJO** (distinguirlo es lo que evitó buscar un defecto de producto
+que no existía), y un comentario con acentos graves **dentro de un template literal** lo cierra — el guard no
+compilaba y el `SyntaxError` señalaba a `overflowMenu`, que no tenía nada que ver.
+
 ### Hallazgo ajeno, arreglado aquí por orden del orquestador
 
 `scripts/capturar-detalle-trabajo.mjs:69` pasaba `{ jobId: 7 }`, la misma forma equivocada. No se notaba
