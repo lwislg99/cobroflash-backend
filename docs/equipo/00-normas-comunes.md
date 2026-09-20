@@ -676,6 +676,68 @@ igual, y por eso es peligroso: no se ve en un diff, ni en el visor, ni en una re
 - Si hace falta el byte de verdad (un separador de `git log --format`, por ejemplo), se construye
   en tiempo de ejecución (`String.fromCharCode(31)`), no se escribe.
 
+### 🔴 A22.1 · Qué cubre ese recuento y qué NO
+
+*(20-sep-2026, SCRUM-958, medido por la Sesión 0.)* La orden de arriba es buena y **tiene un borde que
+hay que decir en voz alta**, porque un cero suyo se lee como «el fichero está limpio» y no es eso lo
+que significa.
+
+**Cubre** exactamente los bytes **0-31 salvo 9 (TAB), 10 (LF) y 13 (CR)**, más el **127 (DEL)**.
+
+**NO cubre**, y éstos son los que muerden:
+
+| lo que NO ve | bytes | por qué importa |
+|---|---|---|
+| **El BOM de UTF-8** | **239 187 191** (`EF BB BF`) | Los tres son ≥ 32, así que **pasan el filtro enteros**. Es lo que escribe `Set-Content -Encoding utf8` en PowerShell 5.1 **sin avisar**. |
+| Cualquier byte ≥ 128 | 128-255 | Acentos mal codificados, espacios finos, guiones largos raros. |
+
+**Medido, con su suelo, para que nadie tenga que fiarse:**
+
+    Set-Content -Path $f -Value '{"a":1}' -Encoding utf8
+    [IO.File]::ReadAllBytes($f) | Select-Object -First 3   → 239 187 191
+    el recuento de A22 sobre ese fichero                   → 0     ← CIEGO
+    el MISMO recuento sobre el MISMO fichero + un ESC      → 1     ← SUELO: no está roto; está ciego a ESO
+    node -e "JSON.parse(fs.readFileSync(f,'utf8'))"        → revienta: Unexpected token
+
+Así que **el recuento de A22 va acompañado del del BOM**, que es una línea:
+
+    ([IO.File]::ReadAllBytes($f)[0..2] -join ' ') -eq '239 187 191'   # ¿empieza con BOM?
+
+⚠️ **Y el recuento se da con su POBLACIÓN al lado**, siempre (A3): `$b.Count`. Pasó escribiendo esta
+misma norma — `[IO.File]::ReadAllBytes` usa el directorio del PROCESO, **no** el `$PWD` de
+PowerShell, así que una ruta relativa tras un `cd` **lanza**, `$b` se queda vacío… y
+`(@() | Where-Object {…}).Count` devuelve **0**, que se lee como «fichero limpio». Con ficheros va
+siempre **ruta absoluta**, y un `POBLACION=0` invalida el recuento en vez de aprobarlo.
+
+Y se escribe con **`[IO.File]::WriteAllText($f, $texto)`**, que no pone BOM. **Nunca**
+`Set-Content -Encoding utf8` ni `Out-File` para un fichero que vaya a leer otra herramienta.
+
+**El árbol no estaba limpio cuando se escribió esto**, y se dice porque una prohibición se barre antes
+de escribirla (A23 nº 1): de los **3.415** ficheros seguidos por git (3.415 leídos, 0 ilegibles),
+**14 empiezan con BOM**, y uno es **`docs/YAQU_MASTER.md`**. No es cosmético: la **primera línea del
+máster no casa con `/^# /`** por culpa del BOM, mientras que la de un `.md` sin BOM sí — o sea,
+cualquier guard anclado a la primera cabecera del máster está ciego a ella. Los otros trece son
+ficheros de evidencias (`scrum907b`, `scrum935`, `scrum954`). **Limpiarlos no entra en esta norma:**
+es un cambio sobre ficheros de otros tickets y sobre el máster, y lo reparte quien coordina.
+
+### 🔴 A22.2 · El control positivo se siembra con `[char]27`, NUNCA con `` `e ``
+
+Ésta es la parte que convierte la norma en una trampa, y hay que leerla dos veces:
+
+    PowerShell 5.1:   "`e"       →  la LETRA «e» (código 101).  El escape `e llegó en PowerShell 6.
+                      [char]27   →  ESC (código 27).   ✅
+
+Un control positivo escrito con `` `e `` **no siembra nada**, y entonces el recuento devuelve **0**…
+que es **exactamente lo que devuelve un instrumento ciego**. Medido: el fichero sembrado con `` `e ``
+da 0; el sembrado con `[char]27`, 1.
+
+    🔒 Un control positivo que no llega a sembrar nada da el MISMO número que el fallo que busca.
+       Por eso un control positivo se comprueba a sí mismo: primero se mira que el veneno ENTRÓ
+       (que el byte está), y sólo después que el instrumento lo VE.
+
+Es la misma familia que A21 —una operación que no se ejecutó se lee igual que un éxito— pero aplicada
+al **instrumento de medida**, y ahí es peor: el error no se nota nunca, porque su síntoma es un verde.
+
 **Medido por la Sesión 0 el 18-sep-2026** (SCRUM-941), en su propia escritura y en el árbol:
 
 1. **Reproducido escribiendo:** 7 de 7 secuencias `\u` probadas aterrizaron como el carácter
