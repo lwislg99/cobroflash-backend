@@ -10,7 +10,8 @@ Chromium local (puppeteer-core), `file://`, 18-sep-2026, rama `scrum-920b-protot
 | 1280 × 900 | 0 | no | **0** en las 4 pantallas | **0** | **0** |
 | 390 × 844 táctil | 0 | no | **0** en las 4 pantallas | **0** | **0** |
 
-**Resultado: TODO EN VERDE, 42 comprobaciones de comportamiento por anchura, 0 rojos.**
+**Resultado: TODO EN VERDE, 42 comprobaciones de comportamiento por anchura, 0 rojos** (18-sep; el 20-sep son 43 —§7—
+y la pestaña de inventario queda «no medida» en controles y cifras).
 
 ## 1 · El instrumento, y por qué hay que creerle
 
@@ -95,8 +96,8 @@ ningún blanco estaba tapado.
 
 - **`btn-sm` a 44 px de alto.** `DESIGN.md` la exime a 30 px con su motivo; aquí se mide contra el pulgar en obra
   y no se aprovecha la exención (como en 915, 917 y 916).
-- **La pestaña de inventario tiene 0 controles**: no es ceguera, no tiene ninguno. Sus frases vetadas no cuentan
-  porque describe lo que no se puede decir.
+- **La pestaña de inventario tiene 0 controles y 0 cifras: en ella esos dos detectores están «NO MEDIDO», no «en
+  verde»** (ver §7). Sus frases vetadas no cuentan porque describe lo que no se puede decir.
 - **Datos de ejemplo:** los 4 primeros gastos son los reales de staging (merchant QA Staging, SELECT de sólo lectura
   del 18-sep). Los 5 siguientes se AÑADEN, y se dice: con cuatro filas no se puede enseñar el filtro por trabajo ni un
   total que merezca la pena. Ninguno inventa un campo que la pantalla de hoy no tenga.
@@ -117,11 +118,28 @@ Lo de arriba se midió el 18-sep sobre `origin/main = 16733a22`. La rama estuvo 
 commits, 0 conflictos) y se volvió a correr `medir.mjs` sobre el árbol fusionado, con la salida a un fichero fuera del
 árbol y el código de salida leído aparte.
 
-- **Veredicto: TODO EN VERDE, `EXIT=0`, 84 comprobaciones de comportamiento (42 por anchura × 2), 0 rojos.**
+- **Veredicto sobre lo que SÍ se midió: TODO EN VERDE, `EXIT=0`, 86 comprobaciones de comportamiento (43 por
+  anchura × 2), 0 rojos.** La primera pasada del 20-sep dio 84 (42 × 2); la 43.ª es la del NIF, de abajo.
 - **Población, por anchura (1280 y 390 salen igual):** lista 22 controles y 11 cifras en €; alta 21 y 0; detalle 7 y 3;
-  inventario 0 y 0. Errores de consola: 0 en las dos.
+  **inventario 0 y 0**. Errores de consola: 0 en las dos.
+- 🔴 **Lo que NO está medido, dicho con su nombre.** En la pestaña de inventario los detectores de «controles < 44 px» y
+  de «cifras» tienen **población 0: ahí NO SE HAN MEDIDO, no están «en verde»** (corrección del orquestador, 20-sep).
+  Tiene 0 controles porque es un texto, pero un cero sobre una población vacía no prueba nada. Las frases vetadas
+  tampoco cuentan ahí: describe lo que no se puede decir. Lo único que se mide en esa pestaña es geometría (scroll
+  horizontal de la página y cajas que desbordan), y el instrumento **no imprime la población de ese detector**: hueco
+  declarado, no arreglado en esta sesión.
 - **Controles positivos: los tres disparan en las dos anchuras** (desborde · controles < 44 px · frase vetada). Sin eso,
   los ceros de arriba no valdrían nada.
 - **Ningún blanco tapado al pulsarlo** (0), y las 4 opciones del «⋯» cambian el estado al pulsarlas.
-- Este fichero es el único cambio de esta sección: el prototipo (`gastos.html`) y el instrumento no se tocaron entre
-  las dos pasadas.
+- **Lo que cambió entre las dos pasadas (y por qué):** al mergear se vio que `main` había avanzado en la pantalla que
+  el prototipo imita. **SCRUM-937b** (ya en `main`) bloquea el «NIF del proveedor» mientras no haya proveedor y lo dice
+  con un texto ya firmado («Elige antes el proveedor: el NIF se guarda en su ficha.»); el prototipo lo tenía editable
+  siempre. Se corrigió el prototipo y se añadió la comprobación 43 (`medir.mjs`): sin proveedor, bloqueado y con su
+  ayuda; con proveedor, se escribe y la ayuda se va. **Vista en rojo:** con la inyección de quitar `readonly` (1 línea
+  cambiada, `git diff --numstat` 1/1) `medir.mjs` sale con `EXIT=1` y marca ✗; restaurada, `EXIT=0`. Commit del arreglo
+  `5dfcde5a`. Las capturas de `capturas-prototipo/` **no se regeneraron**: el NIF vive dentro del bloque plegado y no
+  sale en ninguna.
+- **Lo que llegó a `main` y no es visible en el prototipo:** SCRUM-947 (la foto grande se reduce antes de guardar y,
+  si no se puede abrir, dice «No hemos podido abrir esta foto. Prueba con otra o haz una captura de pantalla del
+  ticket.», firmado). No cambia el diseño, pero la construcción tiene que **conservarlo** (ver
+  `encargo-construccion-s2.md`).
