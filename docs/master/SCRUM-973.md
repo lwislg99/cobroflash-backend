@@ -75,6 +75,13 @@ hace lo que promete — y ése es justo el error que trajo este ticket.
   Con el mecanismo viejo el PR se llamaría **«SCRUM-973: expediente…»**; con el nuevo, **«SCRUM-973:
   el título del PR sale del primer commit propio…»**. Predicción escrita **antes** de empujar.
 
+  **RESULTADO, medido después de empujar:** el bot abrió el **PR #1555** y lo tituló
+
+      SCRUM-973: el titulo del PR sale del primer commit propio de la rama, no del ultimo
+
+  que es el **primer** commit, no el último. La predicción se cumple, y las dos salidas posibles
+  eran distinguibles de antemano — que es lo que hace que este control valga algo.
+
 ## ⑤ Lo que NO se ha tocado, y una cosa que NO me toca
 
 - No se toca el cuerpo del PR, ni el armado del auto-merge, ni el clasificador de SCRUM-828, ni la
