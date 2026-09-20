@@ -134,34 +134,28 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
   const i = importesDeCobro(job);
   sec.innerHTML = '<h3 class="detail-section-title">Qué falta para cobrar</h3>';
 
-  const tabla = document.createElement('div');
-  tabla.className = 'cobro-lineas';
+  // 🔴 SCRUM-917e (D) · AQUÍ ESTABA LA TABLA DE IMPORTES — Aceptado / Entregado y firmado /
+  // Facturado / Cobrado / Te falta por cobrar — y se ha ido ENTERA a la franja del cuerpo.
+  //
+  // Por qué, medido: entre estas filas, el titular «Total aceptado», la barra y el rail, el mismo
+  // «590,00 €» se leía SIETE veces en la misma pantalla. La franja dice las tres cifras que
+  // importan (lo que falta, el aceptado y el cobrado) una sola vez cada una.
+  //
+  // ⚠️ Y NO SE PIERDE INFORMACIÓN, que es la pregunta que hay que hacerse al borrar filas:
+  // «Facturado» y «Entregado y firmado» no eran cifras de contexto, eran SÍNTOMAS, y ya se dicen
+  // —mejor, porque dicen qué hacer— en los huecos de abajo: «X entregados sin facturar», «X
+  // facturados sin cobrar». Lo que desaparece es el número repetido, no el dato.
+  // Lo vigila `guard:detalle-trabajo-917` (D.5), que cuenta apariciones en el DOM pintado.
+  //
+  // La salvedad de SCRUM-423 sobre «Entregado y firmado» —los albaranes SIN_VALORAR no llevan
+  // importe, así que un 0,00 € ahí sería una afirmación falsa y no un hueco— sigue viva donde
+  // ahora vive ese dato: `huecosDeCobro`, que ya distingue ausencia de cero.
 
-  const fila = (etiqueta, importe, clase) => {
-    const f = document.createElement('div');
-    f.className = 'cobro-linea' + (clase ? ' ' + clase : '');
-    const e = document.createElement('span');
-    e.className = 'cobro-linea__etiqueta';
-    e.textContent = etiqueta;
-    const v = document.createElement('span');
-    v.className = 'cobro-linea__importe';
-    v.textContent = fmt(importe, moneda);
-    f.append(e, v);
-    tabla.appendChild(f);
-  };
-
-  fila('Aceptado', i.aceptado);
-  // ⚠️ La línea del entregado se OMITE si no se pudo medir. Los albaranes SIN_VALORAR —el modo por
-  // DEFECTO— no llevan importe, así que con tres albaranes firmados y sin valorar el número sería
-  // «0,00 €»: una afirmación falsa, no un hueco. Ausencia antes que un cero que parece medido.
-  if (i.albaranesFirmadosConImporte > 0) fila('Entregado y firmado', i.entregadoFirmado);
-  fila('Facturado', i.facturado);
-  fila('Cobrado', i.cobrado);
-  fila('Te falta por cobrar', i.faltaPorCobrar, 'cobro-linea--total');
-  sec.appendChild(tabla);
-
-  // SCRUM-907 · cobrado POR ENCIMA de lo aceptado (más de 0,02 €). La fila de arriba sigue diciendo
-  // 0,00 €, que es verdad —no falta nada—, y este aviso dice lo que esa fila no puede decir.
+  // SCRUM-907 · cobrado POR ENCIMA de lo aceptado (más de 0,02 €). La franja dice «Cobrado del
+  // todo», que es verdad —no falta nada—, y este aviso dice lo que esa franja no puede decir.
+  // 🔴 El literal está FIRMADO (SCRUM-887, comentario 15697) y vive en `jobCobroHuecos.js`. No se
+  // reescribe ni se le busca una forma nueva: 917 propuso «Se ha cobrado de más» / «El cobro supera
+  // el importe aceptado…» y esos dos NO están firmados y no se construyen.
   if (i.cobradoDeMas > 0) {
     const aviso = document.createElement('p');
     aviso.className = 'cobro-aviso';
@@ -687,33 +681,79 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // «Parcial» era una afirmación FALSA que además no se podía deshacer nunca (la pestaña
     // «Pagado» no lo enseñaba jamás, así que el pro perseguía un pago que ya tenía).
     (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : '');
-  // 🔴 SCRUM-651 · AUSENTE Y CERO NO SON LO MISMO, y aqui se veia en el titular del dinero.
+  // 🔴 SCRUM-917e (D) · EL DINERO SE DICE UNA VEZ. Aquí había un titular «Total aceptado» a 2,2 rem
+  // y, debajo, una barra que repetía «Cobrado X de Y». Entre eso, las cuatro filas de importes de
+  // «Qué falta para cobrar» y el bloque DINERO del rail, **«590,00 €» se leía SIETE veces en la
+  // misma pantalla** — medido hoy, no heredado del prototipo:
+  // `docs/master/evidencias/SCRUM-917/salida-paso0-detalle.txt`. Nueve importes para dos valores.
+  // Eso es, medido, la sensación de «rudimentario»: no hay nada mal calculado, hay una pantalla que
+  // no elige.
   //
-  // Esto se pintaba SIEMPRE. En un Trabajo sin presupuesto `totalAceptado` llega `null`, el
-  // `|| 0` de arriba lo volvia 0 y la pantalla anunciaba **«Total aceptado 0,00 €»** a 2,2 rem:
-  // se lee como «presupuestaste cero», que es una afirmacion, y falsa. No hay presupuesto.
+  // Ahora es UNA franja y se acabó: la cifra grande es LO QUE FALTA —que es la pregunta del jefe—,
+  // al lado el aceptado y el cobrado una sola vez cada uno, y debajo la barra SIN texto, porque las
+  // dos cifras que decía acaban de darse dos centímetros más arriba.
   //
-  // La guarda mira `totalAceptado != null` y NO `aceptado > 0`: un presupuesto aceptado por 0 €
-  // es raro pero es un dato que existe, y ocultarlo cambiaria el camino de siempre. Lo que se
-  // calla es lo que NO CONSTA, que es otra cosa.
-  //
-  // ⚠️ El chip de cobro y la barra ya estaban bien (SCRUM-363 y el `aceptado > 0` de abajo);
-  // este titular era el unico hueco por el que el cero se colaba a la pantalla.
+  // ⚠️ SCRUM-651 SE CONSERVA, y es la razón de la guarda: en un Trabajo sin presupuesto
+  // `totalAceptado` llega `null`, el `|| 0` de arriba lo volvía 0 y la pantalla anunciaba
+  // «Total aceptado 0,00 €», que se lee como «presupuestaste cero» — una afirmación, y falsa.
+  // La guarda mira `totalAceptado != null` y NO `aceptado > 0`: un presupuesto aceptado por 0 € es
+  // raro pero es un dato que existe. Lo que se calla es lo que NO CONSTA, que es otra cosa.
+  // Sin franja, ese caso se queda sin decir cuánto falta: lo recoge la tarjeta «Lo que falta»
+  // (SCRUM-917f, bloque E), que para eso pregunta si hay franja antes de repetir una cifra.
   if (job.totalAceptado != null) {
-    const totBlock = document.createElement('div');
-    totBlock.style.textAlign = 'right';
-    totBlock.innerHTML = `<div class="detail-total-label">Total aceptado</div><div class="detail-total-amount">${fmtMoneyEs(aceptado, cur)}</div>`;
-    sumRow.appendChild(totBlock);
+    const franja = document.createElement('div');
+    franja.className = 'detail-dinero';
+
+    const foco = document.createElement('div');
+    const rot = document.createElement('span');
+    rot.className = 'detail-dinero__rotulo';
+    // «Cobrado del todo» en vez de «Te falta por cobrar 0,00 €»: enseñar un cero donde se espera
+    // una deuda obliga a leer el número para entender que no hay nada que hacer.
+    rot.textContent = pendiente > 0 ? 'Te falta por cobrar' : 'Cobrado del todo';
+    const gr = document.createElement('div');
+    gr.className = 'detail-dinero__grande' + (pendiente > 0 ? '' : ' detail-dinero__grande--ok');
+    gr.textContent = fmtMoneyEs(pendiente > 0 ? pendiente : aceptado, cur);
+    foco.append(rot, gr);
+
+    // Aceptado y Cobrado, al lado y en este orden. Son el contexto de la cifra grande, no su
+    // competencia: por eso van juntos, pequeños, y NO se repiten en ningún otro sitio.
+    const lat = document.createElement('div');
+    lat.className = 'detail-dinero__lados';
+    for (const [etiqueta, valor] of [['Aceptado', aceptado], ['Cobrado', cobrado]]) {
+      const l = document.createElement('div');
+      l.className = 'detail-dinero__lado';
+      const e = document.createElement('span');
+      e.textContent = etiqueta;
+      const v = document.createElement('b');
+      v.className = 'detail-dinero__lado-cifra';
+      v.textContent = fmtMoneyEs(valor, cur);
+      l.append(e, ' ', v);
+      lat.appendChild(l);
+    }
+    franja.append(foco, lat);
+    sumRow.appendChild(franja);
+
+    // La barra, debajo y MUDA. No se usa `progressBar()` a propósito: esa función escribe
+    // «Cobrado X de Y» dentro, la comparten otras cuatro pantallas y cambiarla aquí las movería a
+    // todas. Aquí hace falta la barra sin su texto, así que se pinta la barra, no se toca la
+    // función. El ancho es un DATO (el porcentaje cobrado), no un estilo: va por `.style.width`,
+    // igual que hace `progressBar`, y es lo único que no puede vivir en la hoja.
+    if (aceptado > 0) {
+      const barra = document.createElement('div');
+      barra.className = 'detail-dinero__barra';
+      barra.setAttribute('role', 'progressbar');
+      barra.setAttribute('aria-valuemin', '0');
+      barra.setAttribute('aria-valuemax', '100');
+      barra.setAttribute('aria-valuenow', String(Math.round(pct)));
+      // El lector de pantalla SÍ necesita el texto que la vista ya no repite.
+      barra.setAttribute('aria-label', `Cobrado ${fmtMoneyEs(cobrado, cur)} de ${fmtMoneyEs(aceptado, cur)}`);
+      const relleno = document.createElement('i');
+      relleno.className = 'detail-dinero__barra-relleno';
+      relleno.style.width = Math.max(0, Math.min(100, pct)) + '%';
+      barra.appendChild(relleno);
+      sumSec.appendChild(barra);
+    }
   }
-  if (aceptado > 0) {
-    const bar = document.createElement('div');
-    bar.style.marginTop = '14px';
-    bar.innerHTML = progressBar(pct, job.estadoCobro, { cobrado, aceptado, currency: cur });
-    sumSec.appendChild(bar);
-  }
-  // SCRUM-318 (G3): «Cobrado» y «Pendiente» pasan al rail (bloque DINERO). El titular «Total
-  // aceptado» se queda AQUÍ, a 2,2 rem: es el momento del dinero (AB1) y meterlo en una columna de
-  // 220 px lo encogería. Por eso `Aceptado` no se repite en el rail — ver `bloqueDinero`.
 
   // ── CTA primario del HÉROE — la SIGUIENTE acción del Trabajo (SCRUM-31 F4). jobNextAction
   // decide CUÁL por la escalera aprobada; aquí SOLO se ejecuta, reutilizando endpoints existentes

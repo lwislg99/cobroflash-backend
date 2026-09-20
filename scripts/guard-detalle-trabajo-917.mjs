@@ -51,9 +51,12 @@ const ESPERADO = new Map([
     grande: eur(590),                    // con la deuda a cero, la cifra grande es el total
     aceptado: eur(590),
     cobrado: eur(590),
-    // La franja dice 590 tres veces (grande + Aceptado + Cobrado) y NADIE MÁS puede decirlo.
-    // Hoy son SIETE, medidas: docs/master/evidencias/SCRUM-917/salida-paso0-detalle.txt
-    vecesAceptado: 3,
+    // La franja dice 590 tres veces (grande + Aceptado + Cobrado). La cuarta es el HUECO
+    // («590,00 € facturados sin cobrar»), y ésa la quita el corte E — el prototipo lo dice con
+    // todas las letras: «Lo que falta» NO repite la cifra que la franja acaba de decir
+    // (trabajos.html:423-426). Hoy son SIETE, medidas en el PASO 0.
+    vecesAceptado: 4,
+    metaFinalE: 3,
     aviso887: false,
   }],
   [JOB_A_MEDIAS.id, {
@@ -63,7 +66,10 @@ const ESPERADO = new Map([
     grande: eur(317.45),
     aceptado: eur(417.45),
     cobrado: eur(100),
-    vecesAceptado: 1,                    // sólo el «Aceptado» de al lado; la grande es lo que falta
+    // El «Aceptado» de al lado (la grande es lo que falta, 317,45 €) + el hueco «417,45 €
+    // aceptados y sin facturar», que se va en E.
+    vecesAceptado: 2,
+    metaFinalE: 1,
     aviso887: false,
   }],
   [JOB_SIN_PRESUPUESTO.id, {
@@ -82,6 +88,18 @@ const ESPERADO = new Map([
     vecesAceptado: 3,
     aviso887: true,                      // el literal de SCRUM-887 NO puede perderse por el camino
   }],
+]);
+
+// 🔴 ALLOWLIST VISIBLE · la deuda de 44 px que el detalle YA tenía antes de SCRUM-917e.
+// Medida hoy sobre el árbol SIN TOCAR (PASO 0), no heredada de ningún documento. No la arregla
+// este corte; está aquí para que no pueda empeorar y para que no baje sin que alguien lo diga.
+// Reportada al orquestador el 20-sep-2026 como hallazgo aparte (A23 #1).
+// Un número por línea, que dos tickets no choquen en la misma línea física (A23 #15).
+const DEUDA_44PX = new Map([
+  [JOB_PAGADO.id, 8],
+  [JOB_A_MEDIAS.id, 8],
+  [JOB_SIN_PRESUPUESTO.id, 6],
+  [JOB_COBRADO_DE_MAS.id, 8],
 ]);
 
 const banco = await levantarBanco();
@@ -138,7 +156,13 @@ for (const ancho of ANCHOS) {
         // respeta `text-transform`, así que el literal «Total aceptado» se lee «TOTAL ACEPTADO».
         titularViejo: /total aceptado/i.test(texto),
         barraConTexto: /cobrado\s+[\d.,]+\s*€\s+de\s+[\d.,]+\s*€/i.test(texto),
-        railDinero: [...c.querySelectorAll('.detail-rail-bloque')].some((e) => /^dinero/i.test(txt(e) || '')),
+        // Lo que se comprueba NO es «el bloque DINERO ya no existe» —eso saldría verde solo, porque
+        // estos cuatro Trabajos no tienen justificantes y el bloque se devuelve `null` cuando se
+        // queda sin líneas—, sino la afirmación de verdad: el rail ya no repite las cifras de la
+        // franja. Un aserto que se cumple por la forma del fixture no comprueba nada (A23 #13).
+        railRepiteCifras: [...c.querySelectorAll('.detail-rail-linea')]
+          .map((e) => txt(e) || '')
+          .filter((t) => /^(Cobrado|Pendiente)\b/.test(t)),
         faltaCero: /te falta por cobrar 0,00/i.test(texto),
         // Lo que NO se puede perder.
         aviso887: /Has cobrado .* más de lo aceptado\./.test(texto),
@@ -196,10 +220,16 @@ for (const ancho of ANCHOS) {
     }
 
     // D.5 · EL CENSO, que es el ticket entero: cuántas veces se lee el importe aceptado.
+    // ⚠️ El número de aquí es el de ESTE corte, no el del rediseño terminado, y la diferencia se
+    // dice en voz alta en vez de esconderse: lo que falta por bajar es el importe que todavía
+    // repite el HUECO, y eso lo quita el corte E. Dejar sólo el objetivo final habría hecho un
+    // guard que no puede estar verde nunca; dejar sólo el de hoy habría perdido la meta.
     if (m.vecesAceptado === e.vecesAceptado) {
-      bien(`D.5 ${q} «${e.aceptado || '—'}» se lee ${m.vecesAceptado} ${m.vecesAceptado === 1 ? 'vez' : 'veces'}`);
+      const pend = e.metaFinalE != null && e.metaFinalE !== e.vecesAceptado
+        ? ` (E lo bajará a ${e.metaFinalE}: el hueco no debe repetir la cifra de la franja)` : '';
+      bien(`D.5 ${q} «${e.aceptado || '—'}» se lee ${m.vecesAceptado} ${m.vecesAceptado === 1 ? 'vez' : 'veces'}${pend}`);
     } else {
-      mal(`D.5 ${q} «${e.aceptado || '—'}» se lee ${m.vecesAceptado} veces, el inventario dice ${e.vecesAceptado}`);
+      mal(`D.5 ${q} «${e.aceptado || '—'}» se lee ${m.vecesAceptado} veces, este corte exige ${e.vecesAceptado}`);
     }
 
     // D.6-D.9 · lo que el rediseño retira porque ya lo dice la franja.
@@ -209,8 +239,8 @@ for (const ancho of ANCHOS) {
     if (!m.barraConTexto) bien(`D.7 ${q} la barra no repite «Cobrado X de Y»`);
     else mal(`D.7 ${q} la barra sigue diciendo «Cobrado X de Y»: son dos cifras que la franja ya dio`);
 
-    if (!m.railDinero) bien(`D.8 ${q} el rail ya no lleva bloque DINERO`);
-    else mal(`D.8 ${q} el rail sigue con su bloque DINERO: la misma verdad dicha dos veces`);
+    if (!m.railRepiteCifras.length) bien(`D.8 ${q} el rail no repite ninguna cifra de la franja`);
+    else mal(`D.8 ${q} el rail repite cifras que la franja ya dio: ${m.railRepiteCifras.join(' · ')}`);
 
     if (!m.faltaCero) bien(`D.9 ${q} no se dice «Te falta por cobrar 0,00 €»`);
     else mal(`D.9 ${q} sigue diciendo «Te falta por cobrar 0,00 €» en un Trabajo que no debe nada`);
@@ -231,8 +261,28 @@ for (const ancho of ANCHOS) {
     const q = `[${ESPERADO.get(caso.id).nombre}]`;
     if (!m.desborda) bien(`G.1 ${q} sin scroll horizontal`);
     else mal(`G.1 ${q} la pantalla desborda a lo ancho`);
-    if (m.pequenos === 0) bien(`G.2 ${q} 0 de ${m.controles} controles por debajo de 44 px`);
-    else mal(`G.2 ${q} ${m.pequenos} de ${m.controles} controles por debajo de 44 px`);
+
+    // G.2 · 🔴 DEUDA HEREDADA, DECLARADA, Y CON TRINQUETE — no un verde.
+    // El detalle YA incumplía los 44 px de AB6 antes de este ticket: el PASO 0 de hoy, sobre el
+    // árbol sin tocar, midió los MISMOS 8 de 14 (6 de 9 en el caso pobre). Ver
+    // `docs/master/evidencias/SCRUM-917/salida-paso0-detalle.txt`.
+    // Este corte no lo arregla y no finge lo contrario: una excepción silenciosa convierte un
+    // fallo en una característica (A23 #14), así que va en una ALLOWLIST visible, con su número.
+    // Las DOS mitades (A23 #7), porque un trinquete con una sola no sirve:
+    //   · no SUBE  → si alguien mete un control pequeño más, rojo;
+    //   · no BAJA en silencio → si baja, también rojo, porque una mejora que nadie ha hecho es un
+    //     instrumento roto hasta que se demuestre lo contrario, y aquí bajaría solo si el guard
+    //     dejara de ver controles.
+    const techo = DEUDA_44PX.get(caso.id);
+    if (m.pequenos === 0) {
+      bien(`G.2 ${q} 0 de ${m.controles} controles por debajo de 44 px`);
+    } else if (m.pequenos === techo) {
+      bien(`G.2 ${q} ${m.pequenos} de ${m.controles} por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja`);
+    } else if (m.pequenos > techo) {
+      mal(`G.2 ${q} ${m.pequenos} de ${m.controles} por debajo de 44 px: SUBE desde ${techo}. Este corte ha metido controles pequeños nuevos`);
+    } else {
+      mal(`G.2 ${q} ${m.pequenos} de ${m.controles} por debajo de 44 px: BAJA desde ${techo} sin que nadie lo haya arreglado. Di CUÁL y por qué, y baja el número a mano`);
+    }
   }
 
   await page.close();
