@@ -343,6 +343,42 @@ en §10.4 de la matriz.
     🔒 Medir su producto dice qué existe en el mercado. Medir el nuestro dice qué hay que construir.
        Sin lo segundo, la mitad de las propuestas son cosas que ya están hechas.
 
+### Capturas: la norma nueva, y de dónde sale
+
+El fundador preguntó si había capturas de Holded en el repo. **No había ninguna** —`git ls-tree`
+sobre todo el árbol: 0 ficheros con «holded» en el nombre—, así que seis entregas de competencia se
+sostenían solo en texto. Van tres, una por propuesta, en
+[`docs/competencia/capturas/holded/`](../competencia/capturas/holded/README.md), con su README
+diciendo qué prueba cada una **y qué no**.
+
+    🔒 Una afirmación sobre el producto de otro, sin imagen, es un recuerdo.
+
+Vale desde ya para Jobber y los que vengan: **cada propuesta nace con su captura.** Y la tercera se
+etiqueta como lo que es —su **fuente escrita**, no la caja de envío—, porque ese clic sigue bloqueado
+por el clasificador de la máquina y no se busca la vuelta.
+
+### 🔴 Una medición de hoy que tumba lo escrito ayer
+
+Al abrir la pantalla de ajustes para fotografiarla, **los seis interruptores de firma están en
+`false`**, incluido Presupuestos, que §906f dejó **encendido a propósito** y verificado tras recargar
+la página entera. Leído del DOM, no de la imagen: `POBLACION interruptores=6 · los 6 en estado=false`.
+Nadie lo tocó desde esta casa; **por qué se apagó no se sabe y no se inventa**. No se ha vuelto a
+encender: la autorización describía un interruptor que ya estaba puesto, no daba permiso para
+ponerlo (A19). Queda corregido en la matriz §9.5, **sin borrar lo anterior**, que es la regla.
+
+    🔒 Verificar recargando la página demuestra que se guardó entonces, no que siga guardado después.
+
+Es la hermana de la trampa de §906f: allí un mensaje de error tapaba un guardado que **sí** ocurrió;
+aquí una verificación correcta tapa un estado que **dejó** de ser cierto. Las dos se arreglan igual —
+volver a medir en el momento en que se va a afirmar algo.
+
+### Lo que de Holded no se ha recorrido
+
+En la matriz, §10.5: diez filas con el motivo de cada una y si daría propuesta. **Solo dos darían una
+nueva** —la caja de envío (bloqueada por permisos) y **su escáner de gastos con OCR**, que es F1 de
+§7.2 y que nadie ha visto por dentro—. Lo decide el orquestador; la cuenta caduca a primeros de
+octubre.
+
 **Holded queda cerrado** tras cuatro entregas por dentro (§906d, §906e, §906f, §906g). Lo que sigue
 sin medirse de su firma —cómo se elige al firmante, qué correo llega, cómo queda el PDF— sigue
 declarado en §8.7 y §9.4, y sigue bloqueado por el clasificador de la máquina, no por Holded.

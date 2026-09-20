@@ -720,6 +720,24 @@ medido. Los otros cuatro siguen apagados. Se apaga en un comando, volviendo a pu
 en `Configuración > CRM > Firma digital` y comprobando los seis estados. La cuenta caduca sola a
 primeros de octubre.
 
+> 🔴 **TUMBADO unas horas después, el mismo 20-sep (19:20:38Z), al ir a fotografiar esa pantalla.**
+> En una pestaña recién abierta, leyendo el DOM y no la imagen, **los seis interruptores están en
+> `false`**, Presupuestos incluido:
+>
+>     node interruptores.mjs "digitalsignature"  → POBLACION interruptores=6 · los 6 en estado=false
+>
+> Lo confirma la captura [`capturas/holded/caducidad-firma-lista-cerrada.png`](capturas/holded/caducidad-firma-lista-cerrada.png),
+> donde los cinco tipos salen apagados. **Nadie lo tocó desde esta casa.** Por qué se apagó no se
+> sabe desde aquí y **no se inventa una causa**: el hecho medido es el estado, no el motivo.
+> **No se ha vuelto a encender:** la autorización del 20-sep describía un interruptor que ya estaba
+> puesto, no daba permiso para ponerlo, y una autorización no se estira (A19).
+>
+>     🔒 Verificar recargando la página demuestra que se guardó entonces, no que siga guardado después.
+>
+> Es hermana de la trampa de §9.1 y del aviso de siempre: allí un mensaje de error tapaba un guardado
+> que sí ocurrió; aquí una verificación correcta tapa un estado que **dejó** de ser cierto. Las dos se
+> arreglan igual: **volver a medir en el momento en que se va a afirmar algo.**
+
 ---
 
 ## 10 · Lo que se hace con Holded: tres propuestas de producto (20-sep-2026)
@@ -749,6 +767,9 @@ Van ordenadas por **lo que más le cambia el día al profesional**, no por tama�
 **En Holded**, el Portal del Cliente es la dirección fija del cliente, no la página de un documento:
 su artículo `9382835` enumera **nueve** acciones —resumen, pagos, aceptar presupuestos, descargar,
 comentar, catálogo, pedidos, contraseña e idioma— y le enlazan ahí desde cada envío (§7.0).
+📷 [`capturas/holded/portal-cliente-nueve-acciones.png`](capturas/holded/portal-cliente-nueve-acciones.png).
+La octava —**crear y modificar contraseña**— es la que lo convierte en una dirección suya y no en un
+enlace de usar y tirar.
 
 **Nosotros lo tenemos construido, y el cliente NO RECIBE NUNCA EL ENLACE.** Medido:
 
@@ -784,6 +805,9 @@ Meta** y ya se nota.
 **En Holded**, la caja de envío admite varios destinatarios: su ficha de la Store dice *«Envío a
 múltiples destinatarios (firma única)»* (§8.4) y su ayuda *«Puedes añadir varios firmantes al enviar
 el documento»* (§8.5).
+📷 [`capturas/holded/varios-firmantes-ayuda-10900972.png`](capturas/holded/varios-firmantes-ayuda-10900972.png).
+⚠️ Esa captura es su **fuente escrita**, no la caja de envío: el clic que la abre sigue bloqueado por
+el clasificador de la máquina (§9.4), y no se busca la vuelta.
 
 **Nosotros mandamos el presupuesto a UN número:** `sendQuote.service.ts` construye un `decisionToken`
 y lo manda por WhatsApp a un teléfono. En el albarán vamos **por delante de ellos** —
@@ -804,6 +828,13 @@ con toda probabilidad plantilla.
 
 **En Holded**, la caducidad de la firma se elige de una **lista cerrada** —1 / 2 / 7 / 15 / 30 días—
 en `Configuración > CRM > Firma digital` (§8.1). No se escribe una fecha: se toca un número.
+📷 [`capturas/holded/caducidad-firma-lista-cerrada.png`](capturas/holded/caducidad-firma-lista-cerrada.png),
+con los cinco valores leídos del DOM: `<select> n=5 actual=«15» · 1 Día | 2 Días | 7 Días | 15 Días | 30 Días`.
+
+🔴 **Y ahí sale un dato nuevo que afina la propuesta: su defecto son 15 días; el nuestro, 30**
+(`quotes.routes.ts:223`). No es solo que ellos dejen elegir y nosotros no: es que **arrancan en la
+mitad de tiempo**. El defecto es una decisión de producto, y la nuestra empuja al presupuesto que se
+enfría.
 
 **Nosotros tenemos la caducidad de verdad y entera**, y eso es lo que hace pequeña esta propuesta:
 `validUntil` con defecto de +30 días (`quotes.routes.ts:223`), cron horario `expireQuotes()` que pasa
@@ -835,6 +866,29 @@ Se dejan escritas porque el ahorro está aquí, y porque la próxima pasada empi
 
     🔒 Medir su producto dice qué existe en el mercado. Medir el nuestro dice qué hay que construir.
        Sin lo segundo, la mitad de las propuestas son cosas que ya están hechas.
+
+### 10.5 · Lo que de Holded NO hemos recorrido, y si daría propuesta
+
+Pedido por el orquestador para decidir **con la lista delante** si se vuelve a Holded o se pasa a
+Jobber. Junta lo que ya estaba disperso en §6 y §8.7, y dice de cada cosa si podría dar propuesta.
+
+| # | lo que queda sin recorrer | por qué no se hizo | ¿daría propuesta? |
+|---|---|---|---|
+| 1 | **La caja de envío del documento** (a quién se manda, varios destinatarios, qué correo sale) | El clic lo bloquea el clasificador de la máquina (§9.4) | **Sí, y es la única gorda.** Es el respaldo directo de §10.2 |
+| 2 | **El recorrido de la firma de punta a punta**: elegir firmante, qué ve el cliente, qué email llega, cómo queda el PDF | Depende de la 1 | Sí, pero **refina** §10.1 y §10.2; no abre una propuesta nueva |
+| 3 | **Su escáner de gastos con OCR** por subida, por email a `@holdedbox.com` y por foto | Nunca se entró: exige subir un documento real | **Sí, y es de las buenas.** Es F1 de §7.2, el hueco más grande, y nadie lo ha visto por dentro |
+| 4 | **Sus facturas recurrentes** por dentro | No se entró | Sí, pero F3 ya está decidida y va detrás de SIF-1 |
+| 5 | **Su app móvil nativa** (fichaje, foto de gasto, Wallet) | Hace falta instalarla en un teléfono | Quizá; es el terreno donde defendemos la PWA |
+| 6 | **Su Portal del Cliente de cuenta**, entrando como cliente con contraseña | Haría falta un segundo usuario | Refina §10.1; lo esencial ya está en su artículo `9382835`, que sí se leyó y fotografió |
+| 7 | **Emitir una factura de verdad** y ver QR, VFAC y envío a la AEAT | ⛔ **A propósito, y no se hará**: exigiría declarar otra cosa y mandar registros reales a Hacienda | **No.** Y es la decisión correcta |
+| 8 | **La tabla «Permisos necesario según el rol»** completa | No llegó a renderizarse (§8.7) | No |
+| 9 | **Recordatorios automáticos de impago** (gema gratuita, solo Avanzado y Premium) | Plan de prueba sin esa gema | Puede que sí, y toca J6 (anti-spam) de lleno |
+| 10 | **Sus cupos de verdad** (que 5 firmas/mes sean 5) | Solo tenemos su ayuda, no la cuenta llena | No: es su precio, no nuestro producto |
+
+**El juicio de la Sesión 0, en una línea:** de las diez, **solo dos darían propuesta nueva** —la caja
+de envío (1, bloqueada por permisos, no por Holded) y **su escáner de gastos (3)**—; las demás refinan
+lo que ya está escrito o son suyas, no nuestras. Y la cuenta **caduca sola a primeros de octubre**, así
+que si se vuelve, se vuelve por la 3.
 
 ---
 
