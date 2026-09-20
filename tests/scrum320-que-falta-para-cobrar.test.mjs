@@ -425,6 +425,19 @@ test('SCRUM-320 · el importe entregado se OMITE si no se pudo medir, en vez de 
     '🔴 al callar el importe que no se pudo medir se ha callado también lo que SÍ consta: los ' +
       '500 € aceptados y sin facturar. Omitir no es enmudecer.');
 
+  // HERMANO DEL TOKEN (SCRUM-237): la negación de arriba sola sería un VERDE PERMANENTE — si
+  // mañana el hueco se llamara de otra forma, «no está `sin-facturar`» pasaría sin mirar nada.
+  // Con el MISMO albarán VALORADO el hueco SÍ sale, así que el par distingue de verdad.
+  const conImporte = { ...sinValorar, albaranes: [{ id: 1, estado: 'firmado', facturado: false, totales: { total: 400 } }] };
+  const huecosConImporte = G5.huecosDeCobro(conImporte).map((h) => h.id);
+  assert.ok(
+    huecosConImporte.includes('sin-facturar'),
+    '🔴 con un albarán firmado, sin facturar y CON importe tampoco sale el hueco: entonces el ' +
+      '«no sale» de arriba no prueba nada, porque no sale nunca.',
+  );
+  assert.deepEqual(huecosConImporte, ['sin-facturar', 'sin-facturar-nada'],
+    '🔴 el caso medible ya no enumera los dos huecos que le tocan.');
+
   // Y no ha reaparecido por la otra puerta: la fila con su importe ya no se pinta en la sección.
   assert.ok(
     !/'Entregado y firmado'/.test(VISTA),
