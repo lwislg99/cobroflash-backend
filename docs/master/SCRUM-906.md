@@ -379,7 +379,38 @@ nueva** —la caja de envío (bloqueada por permisos) y **su escáner de gastos 
 §7.2 y que nadie ha visto por dentro—. Lo decide el orquestador; la cuenta caduca a primeros de
 octubre.
 
-**Holded queda cerrado** tras cuatro entregas por dentro (§906d, §906e, §906f, §906g). Lo que sigue
+### Segunda pasada del mismo día: su escáner de gastos (matriz §11)
+
+El orquestador reabrió una de las dos filas de §10.5 antes de pasar a Jobber, acotada a una hora,
+porque toca tres tickets vivos (lectura del ticket con IA, fotos reales y rediseño de Gastos). Su
+escáner vive en `Compras > Escáner`, que por dentro es **`/inbox`** — el nombre comercial y la ruta no
+coinciden, y por eso la conjetura `/purchases/scanner` devuelve su 404. **Nadie lo había visto por
+dentro**; va con captura.
+
+**Tres propuestas más**, en §11.4: el gasto entra **por WhatsApp** (mediano) · una **bandeja** donde no
+se pierda lo que entra (grande) · **decir por qué un campo vino vacío** (pequeño, y pequeño *hoy*
+porque la pantalla de Gastos se está construyendo justo ahora).
+
+**Y un resultado que no es un hueco:** nuestra lectura extrae **once** campos donde su ayuda documenta
+cuatro, y descarta campo a campo con motivo medido —incluido `no_cuadra_con_el_total`, una
+comprobación aritmética— frente a su «alto nivel de confianza» sin enseñar.
+
+    🔒 No todo lo que se mide de la competencia es un hueco. Decir dónde vamos por delante evita
+       reconstruir lo que ya está bien.
+
+**Dos cosas que esta sesión estuvo a punto de reportar mal, y no lo hizo porque midió el suelo:**
+
+1. `git grep "leer-ticket" -- public` da **0**, y eso **sí** se sostiene: el suelo son nueve ficheros
+   del árbol con esa cadena (ruta, declaraciones, test, expediente). Queda escrito como hecho —
+   **hoy ninguna pantalla llama a la lectura**— y **no** como defecto: puede ser el reparto deliberado
+   entre SCRUM-912 (motor) y SCRUM-920 (pantalla). Lo decide quien lleve esos tickets.
+2. En `app.js` el menú de **Gastos** se oculta con `style.display='none'`… **solo para los técnicos**, y
+   a propósito (SCRUM-107: la lista completa y los márgenes son economía del negocio). Leer la línea
+   sin su `if` habría producido un defecto inventado contra un sistema sano, que es exactamente lo que
+   este puesto existe para evitar.
+
+**Holded queda cerrado** tras cinco entregas por dentro (§906d, §906e, §906f, §906g y la pasada del
+escáner). Lo que sigue
 sin medirse de su firma —cómo se elige al firmante, qué correo llega, cómo queda el PDF— sigue
 declarado en §8.7 y §9.4, y sigue bloqueado por el clasificador de la máquina, no por Holded.
 Siguiente competidor: **Jobber**, aprobado por el orquestador el 20-sep, y elegido porque los que
