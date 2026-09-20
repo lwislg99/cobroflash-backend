@@ -56,10 +56,16 @@ export interface CreateExpenseInput {
  * 🔴 ES UNA LISTA CERRADA A PROPÓSITO, Y POR ESO LLEVA GUARD. Un `select` explícito deja fuera
  * cualquier columna NUEVA de `Expense` sin decir nada — el defecto siguiente, con cara de
  * arreglo. `tests/scrum964-la-lista-no-carga-las-fotos.test.mjs` lee `prisma/schema.prisma` y
- * exige que esta lista sea EXACTAMENTE los escalares del modelo menos `receiptData`: la columna
- * nueva pone el guard en rojo y obliga a decidir, en vez de desaparecer en silencio.
+ * exige que el `select` que sale hacia la base sea EXACTAMENTE los escalares del modelo menos
+ * `receiptData`: la columna nueva pone el guard en rojo y obliga a decidir, en vez de desaparecer
+ * en silencio.
+ *
+ * ⚠️ SIN `export`, y es del censo de SCRUM-411: su único consumidor real está en este fichero. El
+ * test lo mira donde importa —en los argumentos que `listExpenses` le manda a la base—, no en una
+ * constante exportada para poder verla: un export que solo existe para el test es código que el
+ * test se ha inventado, y entonces mide lo que él añadió.
  */
-export const CAMPOS_DE_LA_LISTA = {
+const CAMPOS_DE_LA_LISTA = {
   id: true,
   merchantId: true,
   quoteId: true,

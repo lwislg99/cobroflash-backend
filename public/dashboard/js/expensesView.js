@@ -298,6 +298,16 @@ function openExpenseModal(expense, opts) {
   const isEdit = !!expense;
   const today = new Date().toISOString().slice(0, 10);
 
+  // SCRUM-964 · LA VISTA PREVIA DEL TICKET SE PIDE POR SU RUTA, no viene en la fila de la lista.
+  // La lista traía la foto de CADA gasto —medido: 300 MiB con la página llena— para que este modal
+  // enseñara UNA. Ahora la lista dice `tieneFoto` y la imagen la sirve
+  // `GET /admin/expenses/<id>/foto`, con la cookie de sesión, que viaja sola por ser same-origin.
+  // Mismo sitio, mismo tamaño y mismos estilos que antes: no hay cambio visual. El `onerror` la
+  // quita en vez de dejar el icono de imagen rota — sin texto nuevo, que tendría que ir firmado.
+  //
+  // ⚠️ Va AQUÍ FUERA y no como comentario HTML dentro de la plantilla, por lo mismo que el bloque
+  // de SCRUM-769 de más arriba: lleva acentos graves y dentro del literal lo CIERRAN. Escrito
+  // dentro, el fichero dejaba de parsear y la vista desaparecía — lo cazó `public-js-parsea`.
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-overlay';
   backdrop.id = 'exp-modal';
@@ -396,13 +406,6 @@ function openExpenseModal(expense, opts) {
                reescribe ni se «mejora». Describe lo que hace el SOFTWARE y no afirma nada sobre lo
                que Hacienda admite: eso último espera al asesor. -->
           <p style="margin:0 0 6px;font-size:12.5px;color:var(--muted)">Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.</p>
-          <!-- SCRUM-964 · la foto se pide POR SU RUTA, no viene en la fila de la lista. La lista
-               traía la foto de CADA gasto (medido: 300 MiB con la página llena) para que este
-               modal enseñara UNA. `tieneFoto` dice si hay; la imagen la sirve
-               `GET /admin/expenses/:id/foto` con la cookie de sesión, que es `same-origin`.
-               Mismo sitio, mismo tamaño y mismos estilos que antes: no hay cambio visual.
-               `onerror` la esconde en vez de dejar el icono de imagen rota del navegador — sin
-               texto nuevo, que tendría que estar firmado (regla 30). -->
           ${expense?.tieneFoto ? `<img src="/admin/expenses/${expense.id}/foto" alt="" onerror="this.remove()" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--neutral-200);margin-bottom:6px"/>` : ''}
           <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px"/>
         </div>

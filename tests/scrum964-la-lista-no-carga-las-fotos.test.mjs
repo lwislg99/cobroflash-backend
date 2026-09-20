@@ -194,15 +194,21 @@ test('SCRUM-964 · 🔴 SUELO: el lector del esquema encuentra columnas de verda
 });
 
 test('SCRUM-964 · 🔴 el select de la lista es EXACTAMENTE Expense menos `receiptData`', async () => {
-  const { CAMPOS_DE_LA_LISTA } = moduloDeDist(SERVICIO);
-  assert.ok(CAMPOS_DE_LA_LISTA, 'CIEGO: `CAMPOS_DE_LA_LISTA` no se exporta del servicio');
-  const declarados = Object.keys(CAMPOS_DE_LA_LISTA).sort();
+  // Se mide en los ARGUMENTOS que salen hacia la base, no en una constante exportada para poder
+  // verla: un export que solo existe para el test es código que el test se inventó (y el censo de
+  // SCRUM-411 lo caza). Esto es lo que la base recibe de verdad.
+  const banco = bancoDeLaLista([filaDeGasto(1)]);
+  await banco.pedir();
+  const { select } = banco.llamadas[0];
+
+  // `quote` y `provider` son relaciones, no columnas: se piden con su propio select anidado.
+  const columnas = Object.keys(select).filter((k) => typeof select[k] !== 'object').sort();
   const deberian = escalaresDelModelo('Expense').filter((c) => c !== 'receiptData').sort();
-  assert.deepEqual(declarados, deberian,
+  assert.deepEqual(columnas, deberian,
     'El select de la lista y las columnas de `Expense` ya no cuadran. Si es una columna NUEVA: se '
-    + 'decide si la lista la devuelve y se añade a CAMPOS_DE_LA_LISTA. Lo que no puede pasar es que '
-    + 'desaparezca de la API en silencio, que es el defecto que este guard existe para impedir.');
-  assert.equal('receiptData' in CAMPOS_DE_LA_LISTA, false);
+    + 'decide si la lista la devuelve y se añade a `CAMPOS_DE_LA_LISTA`. Lo que no puede pasar es '
+    + 'que desaparezca de la API en silencio, que es el defecto que este guard existe para impedir.');
+  assert.deepEqual(Object.keys(select).filter((k) => typeof select[k] === 'object').sort(), ['provider', 'quote']);
 });
 
 // ── 5 · `tieneFoto` ─────────────────────────────────────────────────────────────────────────
