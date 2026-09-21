@@ -73,6 +73,7 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // `GET /admin/customers`, que también es de campo.
   { method: 'GET',  path: '/admin/customers/duplicados', why: 'Avisar del duplicado a quien da de alta desde la obra' },
   { method: 'GET',  path: '/admin/customers/:id/detail', why: 'Ficha e historial del cliente que va a visitar' },
+  { method: 'GET',  path: '/admin/customers/:id/historial', why: 'SCRUM-980: los trabajos del cliente que va a visitar (solo los suyos)' },
   { method: 'GET',  path: '/admin/customers/:id/portal-url', why: 'Link del portal para dárselo al cliente en mano' },
 
   // Presupuestos — S1: "quotes crear-ver · enviar WA" ✅. EMITIR FACTURA no (ver /invoice).

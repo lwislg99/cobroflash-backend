@@ -19,6 +19,9 @@ import {
   type Codificacion, type CampoCliente,
 } from '../../domain/importarClientes.service';
 
+import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
+import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
+
 const router = Router();
 
 router.get('/', async (req, res) => {
@@ -230,6 +233,31 @@ router.post('/import', requireRole('admin'), async (req, res) => {
     }
     console.error('[POST /admin/customers/import]', err);
     return res.status(500).json({ error: 'internal_error', message: 'No hemos podido importar el archivo.' });
+  }
+});
+
+/**
+ * GET /admin/customers/:id/historial — SCRUM-980 · el historial de TRABAJO del cliente (hermana de
+ * `/detail`, que trae presupuestos y facturas). `?despuesDe=<jobId>` pide la página siguiente.
+ * La lógica, con su tenencia y el recorte del técnico, vive en `historialDelCliente`.
+ */
+router.get('/:id/historial', async (req: any, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const despuesDe = req.query.despuesDe === undefined ? null : Number(req.query.despuesDe);
+    if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
+      return res.status(400).json({ error: 'invalid_cursor' });
+    }
+    const historial = await historialDelCliente(req.merchantId, id, {
+      despuesDe,
+      ...(seesOnlyOwnJobs(req.userRole) ? { soloTrabajosDe: req.teamMemberId ?? null } : {}),
+    });
+    if (!historial) return res.status(404).json({ error: 'not_found' });
+    return res.json(historial);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/historial]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
