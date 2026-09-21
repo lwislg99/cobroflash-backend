@@ -227,3 +227,40 @@ en una vista, se lo encuentra.
 ## Suite
 
 `npm run build` **exit 0** (tras `prisma generate`: el cliente compartido de este worktree estaba desfasado y `tsc` daba errores de `revision`/`tags` que NO son de este PR: 0 cambios en `src/`). **87 ficheros de test** (los que leen `expensesView.js`/`styles.css`/el guard, más los censos y trinquetes que barren `tests/`): **866 tests, 864 pasan, 0 fallan, 2 saltados** (`SCRUM-324` × 2, sin `LIBRO_PG_URL`: banco desechable, ajeno). En el camino cayeron **3 guards de entrada, todos por mi código y arreglados en el CÓDIGO, no en el guard**: `SCRUM-666b` (`.gastos-chip-n` se pintaba sin regla → regla de cifras tabulares), `SCRUM-258` (mis esperas del guard usaban `document` dentro de una flecha → ahora expresiones de texto) y `SCRUM-267` (mi ancla de «Medido contra» llevaba texto dentro de las comillas del sha). **La suite COMPLETA no la he corrido** (sin turno, cinco sesiones más en la máquina): el CI es la puerta.
+
+# SCRUM-920i · el recorrido de staging de 920c/920d a 390 px (solo lectura) y lo que destapó
+
+**Fecha:** 21-sep-2026 · **Carril:** front (S2); lo mide S4 por encargo del orquestador (excepción de carril, como 920c y 920d)
+**Medido contra:** `origin/main` = `b6cde0517649d991a1b08eabb50017a81a03acfb` · 2026-09-21T17:25:34Z (cabecera `Date:` de GitHub). Staging sirve esa misma versión (`GET /version`) y lleva #1613 (920d) dentro: merge `cdc3282298c84502964f2a7f15ff8ae223323d79`, 17:12:43Z.
+**Rama:** `scrum-920i-recorrido-staging-920d` · **Solo docs y evidencias:** 0 cambios en `src/`, `public/` y `prisma/`. Autorización: GO de staging solo lectura del orquestador para este recorrido (21-sep); no se hereda.
+
+## Qué se hizo
+
+- `docs/master/evidencias/scrum920/recorrido-staging-920d.mjs`: login de QA (`POST /auth/test-login`, secreto leído en tiempo de ejecución, regla 9) y después SOLO pantalla, con Edge, 390×844, dpr 2, táctil. Abre Gastos, pulsa los chips y el filtro por trabajo, abre el alta de «Nuevo gasto» y la cierra sin guardar. No pulsa filas, ni «Eliminar», ni «Guardar».
+- **Población:** merchant QA, mes 2026-09, **4 gastos** (3 con foto, 1 sin ella; 2 con trabajo y 2 sin él), contados antes por la API y comparados con lo que pinta la pantalla.
+- **23 ✅ · 1 🔴** (`recorrido-staging-920d-salida.txt`; 7 capturas en `recorrido-staging-920d/`). Lo que sale bien, medido: 4 filas = 4 de la API; **0 px de scroll lateral**; 3 «Foto guardada» y 1 «Sin foto»; **0 `<img>` y 0 descargas de `/foto`** en todo el recorrido; cabecera «Septiembre de 2026 · 4 gastos»; chips «Todos · 4» (pulsado) y «Sin foto · 1»; «Sin foto» deja 1 fila y la cabecera lleva la suma con su salvedad; «Sin trabajo» deja 2 filas y el trabajo elegido 2, las mismas que dice la API; la barra de «Nuevo gasto» es `fixed`, con el borde inferior en 834 de 844, botón de **44 px**, no se mueve al recorrer la lista y no tapa la última fila (acaba en 755, la barra empieza en 779); el alta abre y se cierra.
+
+## 🔴 Hallazgo: el «?» de ayuda tapa el extremo derecho del botón «Nuevo gasto»
+
+Sonda `sonda-flotantes-staging.mjs` (salida en `sonda-flotantes-staging-salida.txt`): en Gastos a 390×844 hay tres elementos fijos (el menú lateral fuera de pantalla, la barra y `#tut-help-btn`).
+
+- `#tut-help-btn` (`tutorial.js:196`, estilo en línea: `position:fixed; bottom:20px; right:20px; z-index:350`, 48×48) ocupa x 322-370, y 776-824. El botón de la barra ocupa x 16-374, y 790-834. **Se solapan 1.632 px²** (el 10 % del botón) y el «?» va por encima (z 350 frente a 25).
+- `elementFromPoint` en cinco puntos a lo ancho del botón: 4 llegan al botón; **x=353 lo recibe `#tut-help-btn`**. El rótulo «Nuevo gasto» está centrado y no se tapa: lo que se pierde es el extremo derecho del botón y el aspecto de la barra.
+- **Por qué mi guard no lo vio (77 ✅ · 0 🔴):** el banco de `guard-lista-gastos` no carga `tutorial.js`, así que no hay «?». El 77/0 era cierto para lo que veía. Las medidas de 920d se hicieron en un banco sin la ayuda, y en producción el botón está en todos los dashboards.
+- **De dónde viene:** `styles.css` ya lo decía —el hueco inferior de 80 px del `.view-container` existe justo porque ahí flota el «?» (SCRUM-720e)—; la barra fija nueva ocupa ese mismo hueco. Es un defecto de 920d, no del botón de ayuda.
+- **Sin cambio en este PR** (no se toca el diseño aprobado ni se decide por el propietario del diseño). Opciones, con lo que cuesta cada una:
+  1. **Dejar sitio a la derecha en la barra** (`padding-right` ≈ 78 px a ≤560 px: el botón termina en x=312, 8 px antes del «?», que queda sobre la propia barra). Es CSS de 920d, sin texto nuevo; cambia el ancho del botón respecto al prototipo firmado.
+  2. **Ocultar el «?» en esta pantalla** con `body:has(.gastos-barra) #tut-help-btn { display: none !important }` (hace falta `!important` por el estilo en línea; ya hay un precedente: `body:has(.modal-overlay) #tut-help-btn`). Quita la ayuda de Gastos en el móvil: decisión de producto.
+  3. **Subir el «?» sobre la barra** (`bottom: ~84px`): no vale; cae sobre el «⋯» de las filas (x 320-362), justo lo que el hueco de SCRUM-720e evita.
+  La recomendación es la 1. Cuando se arregle, el guard tiene que llevar el «?» de verdad (o un doble con su mismo estilo en línea) y medir `elementFromPoint` en el botón, como hace el recorrido.
+
+## Errores propios
+
+- **Dos rojos del primer intento eran del instrumento, no del producto:** busqué la cabecera del mes como un elemento «hoja» y es un contenedor con un `<span>` hijo (lo confirmó la captura: «Septiembre de 2026 · 4 gastos» se ve bien); y conté como escritura el `POST /admin/entorno`, que **lo manda la propia app al cargar** (`enviarEntornoDeLaApp`, `app.js:762`, SCRUM-360: marca el «último entorno visto» de la sesión, sin datos de negocio). Lo cuento como excepción declarada (una por carga del dashboard: 4 en total, tres recorridos y una sonda), no lo oculto: cualquier otra escritura sigue siendo rojo.
+- Un `textContent` no lleva el espacio antes del «·» (lo pone el hueco entre los dos `<span>`): mi regex exigía un espacio literal.
+
+## No hecho / declarado
+
+- **1280 px** no se recorrió (el encargo era 390). La lista sin tabla de 920c se comprobó por sus efectos (sin scroll lateral, filas y píldoras); **no se abrió el «⋯»** de las filas.
+- **La foto real sigue sin medirse:** staging solo tiene fixtures de 0,1 KiB.
+- No se probó guardar un gasto (recorrido de solo lectura).

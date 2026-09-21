@@ -29,10 +29,14 @@ on:
   push:
     branches: [main]
 
-# Un push nuevo a la misma rama cancela la ejecución anterior: la que importa es la última.
+# En una rama de PR, un push nuevo cancela la ejecución anterior: la que importa es la última.
+# En `main` NO (SCRUM-935b, opción B, decisión del 21-sep): cada commit de main es un estado ya
+# desplegado y cancelar su CI no ahorra trabajo, decide que no se comprueba nunca. GitHub sigue
+# sustituyendo al run PENDIENTE del grupo, pero deja de matar al que corre. Lo fija
+# `tests/scrum935b-main-no-cancela.test.mjs`.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test:
@@ -519,7 +523,7 @@ jobs:
     # cancela»: de las 83 cancelaciones medidas, 58 son este techo y 25 son la concurrencia. En
     # `pull_request` el techo explica el 91 % (legibles hoy 13 % → 92 %); en `push` a `main`, sólo
     # el 43 % (16 % → 52 %). La otra mitad de `main` es el `cancel-in-progress` de arriba, que es
-    # una decisión de COSTE del fundador y aquí no se toca (SCRUM-935, enunciado del ticket).
+    # una decisión de COSTE del fundador, tomada el 21-sep (SCRUM-935b): el `concurrency` de arriba ya no cancela en `main`.
     timeout-minutes: 30
 
     steps:
