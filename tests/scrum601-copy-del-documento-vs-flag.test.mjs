@@ -272,7 +272,11 @@ const PENDIENTES_DE_FIRMA = [
   // porque contiene la diana, pero NO nombra el documento que se emite.
   // SCRUM-915d · la línea pasa de 672 a 885 porque el esqueleto de los pasos se escribe encima;
   // el texto y el motivo no cambian. Cifra MEDIDA sobre el árbol resultante, no deducida.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 885, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-915e2 · y de 885 a 889 por lo mismo: el «Ver documento» del pie de los pasos se escribe
+  // 150 líneas más arriba. CORREGIR un anclaje no es añadirlo (regla de `scrum710b`), y la cifra
+  // sale del propio censo sobre el árbol resultante —dice 889— no de contar el diff. El texto es
+  // byte a byte el mismo y el motivo sigue siendo el suyo.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 889, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];
