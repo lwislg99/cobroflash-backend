@@ -37,10 +37,22 @@ test('SCRUM-139 F2 · re-anclado por SCRUM-915h: el editor arranca con UNA líne
 
 test('SCRUM-139 F2: el cuadernillo se dibuja al arrancar Y al reiniciar el formulario', () => {
   const llamadas = (src.match(/dibujarCuadernillo\(\)/g) || []).length;
-  // 1 definición + arranque + reset = 3 apariciones mínimo.
+  // 1 definición + arranque = 2 apariciones mínimo.
+  // 🔁 RE-ANCLADO en SCRUM-915i (21-sep-2026), con el procedimiento de 915d con SCRUM-660: la v3
+  // aprobada manda sobre F2. Antes el reset devolvía los campos UNO A UNO y tenía que llamar él al
+  // cuadernillo (3 apariciones). Ahora «Limpiar formulario» pide confirmación y, al confirmar, vuelve
+  // a PINTAR LA PANTALLA ENTERA (`vaciarDocumento`), así que el cuadernillo lo dibuja el mismo
+  // arranque. Lo que F2 protegía —empezar de cero da el cuadernillo— se sigue exigiendo: que el
+  // arranque lo dibuje, y que vaciar pase por el arranque.
   assert.ok(
-    llamadas >= 3,
-    `dibujarCuadernillo() aparece ${llamadas} veces; "empezar de cero" debe devolver el cuadernillo, no una línea suelta`
+    llamadas >= 2,
+    `dibujarCuadernillo() aparece ${llamadas} veces; el arranque tiene que dibujar el cuadernillo`
+  );
+  const vaciar = src.match(/function\s+vaciarDocumento\s*\(\)\s*\{([\s\S]*?)\n  \}/);
+  assert.ok(vaciar, 'falta vaciarDocumento(): "empezar de cero" ya no tiene un único camino');
+  assert.ok(
+    /renderQuotesView\(\s*container\s*,\s*null\s*,\s*esDocumentoSuelto\s*\)/.test(vaciar[1]),
+    'vaciarDocumento() no vuelve a pintar la pantalla: "empezar de cero" no devolvería el cuadernillo'
   );
 });
 
