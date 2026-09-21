@@ -782,6 +782,11 @@ SOBRA en 915i:  DIV.quotes-header-row
    (`a2c53547`: la cifra va en la línea de su fecha).
 4. **Corrí la sonda del PASO 0 sin mirar que escribe**: reescribió `paso0-medido.json`. Lo vi en
    `git status` y lo devolví a HEAD antes de comitear.
+5. **El guard nombraba la clase del pie de los modales en un selector**, y el censo de SCRUM-350
+   exige mirar a todo fichero que la nombre: rojo en `scrum350`. Ahora lee los botones de la hoja por
+   su propia clase y sin los de la cabecera; al cambiarlo salió un tercer botón, la ayuda «?» de
+   `cabeceraModal`, que tampoco es del pie. Repetidos el rojo contra 915h (6 hallazgos) y M1 (cae).
+   `scrum939b` también sale rojo aquí, y sale igual sobre 915h sin mi rama: no es de este corte.
 
 ### Lo que NO cubre
 
