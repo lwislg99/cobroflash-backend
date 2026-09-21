@@ -646,8 +646,12 @@ async function initApp() {
     const A = window.atajoNuevo;
     if (!A || !A.sePuedeDisparar(e, document)) return;
     e.preventDefault();
-    const accion = A.accionDe(window.appState && window.appState.view);
+    const vista = window.appState && window.appState.view;
+    const accion = A.accionDe(vista);
     if (accion) { accion(); return; }
+    // SCRUM-915h · dentro de una creación (el editor) el respaldo NO abre la Cotización rápida
+    // encima de lo que se está escribiendo. La regla es pura y vive en `atajoNuevo.esUnaCreacion`.
+    if (A.esUnaCreacion && A.esUnaCreacion(vista)) return;
     if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
   });
 

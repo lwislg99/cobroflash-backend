@@ -366,7 +366,19 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // clase + texto) de los dos árboles, lo único que sobra en la rama es 3 ×
   // `button.quote-ver-documento` = «Ver documento», uno por cada paso que no es el último. En el
   // otro lado no falta nada, así que el delta no esconde una resta compensada.
-  for (const [vista, nodos] of [['renderQuotesView', 286], ['renderProductsView', 166],
+  // 🔴 SCRUM-915h · 21-sep-2026 · `renderQuotesView` 286 → 245, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. Los −41, POR IDENTIDAD (firmas etiqueta + clase de los dos árboles):
+  // −34 son las DOS líneas en blanco que el editor ya no abre (la v3 pide UNA; 17 nodos cada una:
+  // `div.quote-line` + 4 `label` con su `span` + 3 `input` + total + ficha + acciones + asa + ⋯) y
+  // −7 son `div.quote-totals` con sus dos filas de apoyo (Base imponible e IVA: `div` + `span` +
+  // `strong` cada una), que se van al documento de la derecha. Lo único que SOBRA en la rama es la
+  // ficha de la línea que queda con la clase `is-de-siempre`: el MISMO nodo con otra clase, no uno
+  // nuevo. No falta nada más, así que el delta no esconde una resta compensada.
+  // 🔴 SCRUM-915i · 21-sep-2026 · `renderQuotesView` 245 → 244, y las otras tres intactas. Por
+  // identidad (firmas de los dos árboles): faltan el subtítulo `p.quotes-desc` y los dos botones que
+  // se van al menú «⋯» de arriba («Limpiar formulario», «💾 Guardar como plantilla»), y sobran
+  // `div.quotes-header-row` y el `button.overflow-trigger` «⋯». El título es el mismo `h2`.
+  for (const [vista, nodos] of [['renderQuotesView', 244], ['renderProductsView', 166],
     ['renderCustomersView', 69], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -421,7 +433,13 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // (`button.quote-ver-documento`), identificados por identidad en el bloque de arriba. Lo que este
   // control vigila —que los DOS montajes den el mismo número— sigue intacto: los botones cuelgan
   // del pie de los pasos, que no depende de los datos. Los dos dan 286.
-  assert.equal(todos(desnuda.contenedor).length, 286,
+  // SCRUM-915h (21-sep-2026): la DECIMOCUARTA anotación, −41 — dos líneas en blanco menos y el
+  // bloque `.quote-totals` fuera del editor, identificados por identidad en el bloque de arriba. Lo
+  // que este control vigila —que los DOS montajes den el mismo número— sigue intacto: ni el número
+  // de líneas al abrir ni el bloque de totales dependen de los datos. Los dos dan 245.
+  // SCRUM-915i (21-sep-2026): la DECIMOQUINTA, −1 — la cabecera (sin subtítulo, con su fila y su
+  // «⋯»), identificada por identidad en el bloque de arriba. Tampoco depende de los datos: 244.
+  assert.equal(todos(desnuda.contenedor).length, 244,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

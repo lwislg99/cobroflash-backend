@@ -184,8 +184,11 @@ test(`SCRUM-600 · 🔴 F9 NO SE PIERDE: ${F9_EN_EL_CATALOGO.que}`, () => {
 // Las lineas van en la entrada del master, fechadas contra su sha.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 const RANURAS_A = [
-  ["textContent", "Crear presupuesto"],
-  ["textContent", "Genera un presupuesto con varias líneas, calcula los totales y envía el link de pago por WhatsApp."],
+  // 🔁 SCRUM-915i (21-sep-2026) · el título pasa de «Crear presupuesto» a «Nuevo presupuesto», el
+  // rótulo que la app ya pone a esta ruta (`L.quoteNew`); y el subtítulo «Genera un presupuesto con
+  // varias líneas…» SALE de la lista porque sale de la pantalla (la v3 lo retira: cada paso lleva su
+  // guía). Una ranura menos, y ningún texto nuevo.
+  ["textContent", "Nuevo presupuesto"],
   ["cabeceraModal(titulo)", "Presupuesto #${displayNum} generado"],
   ["textContent", "Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente."],
   ["title", "PDF Presupuesto #${displayNum}"],
@@ -253,7 +256,7 @@ test('SCRUM-600 · SUELO: el extractor de ranuras VE la pantalla entera', () => 
   assert.ok(q.length >= 100, `🔴 EXTRACTOR CIEGO sobre el presupuesto: ${q.length} ranuras visibles`);
 });
 
-test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 30 posiciones, 28 textos', () => {
+test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 29 posiciones, 27 textos', () => {
   const ranuras = ranurasDelDocumento(leer(FRONT_PRESUPUESTO), 'quotesView.js');
 
   assert.equal(ranuras.length, RANURAS_A.length,
@@ -282,8 +285,9 @@ test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 30 posiciones, 28 t
   // dos ramas de un ternario y destapó los dos `setAlert` del alta que estaban escondidos ahí.
   // 27 → 28 (SCRUM-915d, 18-sep-2026): entra la guía del paso Cliente, FIRMADA en SCRUM-915
   // comentario 15868 con su variante del justificante. 30 posiciones, 28 textos.
-  assert.equal(distintos.size, 28,
-    `🔴 textos distintos: ${distintos.size}. Son 30 posiciones menos las dos parejas que `
+  // 28 → 27 (SCRUM-915i, 21-sep-2026): sale el subtítulo, que la v3 retira. 29 posiciones, 27 textos.
+  assert.equal(distintos.size, 27,
+    `🔴 textos distintos: ${distintos.size}. Son 29 posiciones menos las dos parejas que `
     + 'comparten texto («Generar presupuesto» en el boton y al restaurarlo; el vacio del panel de '
     + 'estado, que sale dos veces de la MISMA constante).');
 });

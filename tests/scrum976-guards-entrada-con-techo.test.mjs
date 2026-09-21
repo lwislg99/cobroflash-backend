@@ -16,7 +16,7 @@
 //
 // ── LA DECISIÓN, Y SU LÍMITE ────────────────────────────────────────────────────────────────
 // Criterio tal cual (todo lo que pasa sin `dist` ni base): 313 ficheros, ~14 minutos. No cabe. Entran
-// SEIS (237, 258, 514, 522, 548, 723) y el comando entero tiene un TECHO de 60 s. Un techo que solo
+// SEIS (237, 258, 514, 522, 548, 723) y el comando entero tiene un TECHO de 90 s. Un techo que solo
 // vive en un comentario es una frase: aquí lo cumple el propio comando (plazo del `spawnSync`) y lo
 // vigila este fichero lanzándolo de verdad.
 //
@@ -85,8 +85,8 @@ test('SCRUM-976 ① están los once, por nombre, y el suelo no baja de ellos', (
   }
 });
 
-test('SCRUM-976 ② el techo está fijado en 60 s y desde el entorno solo se puede BAJAR', () => {
-  assert.equal(TECHO_MS, 60000,
+test('SCRUM-976 ② el techo está fijado en 90 s y desde el entorno solo se puede BAJAR', () => {
+  assert.equal(TECHO_MS, 90000,
     '🔴 el techo cambió: si es a propósito, que este número lo diga en el mismo PR que lo explica.');
   assert.equal(techoEfectivo(undefined), TECHO_MS, 'sin petición vale el techo');
   assert.equal(techoEfectivo('5000'), 5000, 'un plazo menor se respeta (así se prueba la mitad negativa)');

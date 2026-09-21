@@ -1365,6 +1365,7 @@ html, body { overflow-x: clip; }
 .quote-paso.is-cerrado .quote-conceptos,
 .quote-paso.is-cerrado .quote-lines,
 .quote-paso.is-cerrado .quote-add-line,
+.quote-paso.is-cerrado .quote-dto-global,
 .quote-paso.is-cerrado .quote-fila,
 .quote-paso.is-cerrado .form-actions { display: none; }
 .quote-paso.is-cerrado .quote-block-title { margin: 0; }
@@ -1699,6 +1700,12 @@ html, body { overflow-x: clip; }
   cursor: pointer;
 }
 .quote-line__ajustes:hover { color: var(--ink, #0f1c17); background: var(--bg, #f6f7f5); }
+/* SCRUM-915h · la ficha sólo se ve si la línea NO va con lo de siempre (otro IVA, descuento,
+   suplido). En móvil va en su propia fila a lo ancho, así que se quita entera; en la rejilla de
+   ≥640 px tiene COLUMNA, y quitarla correría el total y el ⋯ de esa fila bajo la columna de al lado:
+   ahí se queda el hueco, invisible y fuera del orden de tabulación (`visibility`). La hoja se abre
+   siempre desde «Ajustes» del menú ⋯. */
+.quote-line__ajustes.is-de-siempre { display: none; }
 .quote-line__ajustes:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
 
 /* La hoja: los dos campos apilados y a lo ancho — es su pantalla, no una columna estrecha. */
@@ -1807,6 +1814,7 @@ html, body { overflow-x: clip; }
      base, que es lo que lo pone en su propia fila a todo lo ancho. */
   .quote-line__actions, .quote-line__ajustes { grid-column: auto; }
   .quote-line__actions { justify-content: flex-start; justify-self: auto; }
+  .quote-line__ajustes.is-de-siempre { display: block; visibility: hidden; } /* SCRUM-915h: el hueco */
 }
 
 /* ≥880 px de línea: vuelve la fila ÚNICA de SCRUM-139 F4, con la densidad de la tabla. La
@@ -1841,16 +1849,9 @@ html, body { overflow-x: clip; }
 }
 .quote-add-line:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
 
-/* SCRUM-139 F3: sin fondo ni borde propios. Era una caja gris DENTRO de la tarjeta blanca
-   del bloque —caja dentro de caja— y con el título "Totales" fuera se notaba el doble marco.
-   Ahora la tarjeta del bloque es el único contenedor y esto es solo el desglose de apoyo. */
-.quote-totals { padding: 0; font-size: 13px; }
-.quote-totals > div { display: flex; justify-content: space-between; margin-bottom: 4px; }
-
-/* SCRUM-139 F3 · EL TOTAL COMO SIGNATURE KPI (DESIGN.md §5).
-   Base e IVA son APOYO: se consultan, no se buscan. */
-.quote-totals__apoyo { color: var(--muted, #6b756f); }
-.quote-totals__apoyo strong { color: var(--ink, #0f1c17); font-variant-numeric: tabular-nums; font-weight: 600; }
+/* SCRUM-915h · aquí vivían `.quote-totals` y `.quote-totals__apoyo`, el desglose de apoyo del
+   editor (Base, IVA, descuentos). Se fue con él al documento de la derecha, que lo pinta con
+   `.preview-total-row`. En Conceptos queda sólo el TOTAL (SCRUM-139 F3 · Signature KPI). */
 
 /* El KPI: Label arriba, cifra Display debajo — NO una fila `space-between` donde el rótulo
    pelea por el ancho con su propia cifra (así estaba en `.quote-vat-calc`). */
@@ -2192,6 +2193,14 @@ html, body { overflow-x: clip; }
 .quotes-desc { margin: 0 0 4px 0; font-size: 13.5px; color: var(--neutral-500); }
 .quotes-header-block { margin-bottom: 10px; }
 .quotes-header-block .quotes-title { margin: 0 0 4px 0; font-size: 17px; font-weight: 700; }
+/* SCRUM-915i · el título, el «Guardado automáticamente» y el «⋯» de arriba, en una fila. */
+.quotes-header-row { display: flex; align-items: center; gap: 8px; }
+.quotes-header-row .quotes-title { flex: 1 1 auto; min-width: 0; }
+/* El «⋯» de arriba es un objetivo NUEVO: nace con su área de toque (AB6, 44 px), no con la
+   excepción de `.btn-sm` que arrastran los de cada línea (guard:objetivo-tactil). */
+.quotes-header-row .overflow-trigger { min-width: 44px; min-height: 44px; }
+.hoja-vaciar { max-width: 420px; }
+.hoja-vaciar__frase { margin: 0; font-size: 14px; color: var(--neutral-600); }
 .quotes-header-block .quotes-merchant-info { font-size: 12.5px; color: var(--neutral-400); }
 .quote-result { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--neutral-100); font-size: 13.5px; }
 .quote-result h3 { margin: 0 0 6px; font-size: 15px; }

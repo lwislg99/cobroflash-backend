@@ -669,6 +669,19 @@ function openEdit360Modal(customer, customerId, container) {
     if (mobile) payload.mobile = mobile;
     if (email) payload.email = email;
 
+    // ═══ 🔴 SCRUM-983 · LO QUE NO SE CARGÓ, NO VIAJA ═══════════════════════════════════════
+    //
+    // Un control vacío puede significar dos cosas: «el profesional lo ha vaciado» o «el dato nunca
+    // llegó a este formulario». La primera tiene que viajar como `null` —vaciar a propósito sigue
+    // siendo posible (SCRUM-692 ⑤)—; la segunda, NO: sería convertir «no lo sé» en «bórralo».
+    // Medido en staging el 21-sep-2026: el /detail no traía el NIF ni otros cinco campos, el modal
+    // los pintaba vacíos y editar sólo la nota los borraba. El /detail ya los trae; esto es la
+    // otra mitad, para que el día que alguien añada un campo al modal y no al `select`, el
+    // resultado sea que ese campo no se guarda, no que se borra.
+    for (const k of Object.keys(payload)) {
+      if (!Object.prototype.hasOwnProperty.call(customer, k)) delete payload[k];
+    }
+
     const btn = $('#e360-save');
     btn.disabled = true;
     btn.textContent = 'Guardando…';
