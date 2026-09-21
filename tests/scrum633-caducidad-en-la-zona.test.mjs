@@ -241,16 +241,33 @@ test('SCRUM-633 · las CUATRO impresiones de la landing llevan `timeZone` explí
   // mismo defecto. Entran las cuatro juntas por el mismo motivo por el que los cinco sitios entran
   // juntos: dejar dos fuera imprimiría unas fechas en el calendario del negocio y otras en el de la
   // máquina, dentro de la MISMA página. Eso es peor que tenerlas todas mal a la vez.
+  //
+  // 🔧 RE-ANCLADO EN SCRUM-987 (21-sep-2026), y NO se relaja: siguen siendo CUATRO impresiones en la
+  // página, pero la de «Válido hasta el…» YA NO se escribe en la landing. Se movió a
+  // `quotes/domain/validez.ts` para que el PDF del presupuesto diga la MISMA fecha con la MISMA
+  // frase; la landing la pide con `textoDeValidez`. Así que el censo ahora es TRES en la landing +
+  // UNA en `validez.ts`, cada una con su zona, y además se exige que la landing le PASE el merchant a
+  // esa función: si no, la fecha del cliente saldría en UTC y la del papel en la zona del negocio.
   const src = soloCodigo(leer('src/modules/system/app/routes/quoteDecisionLanding.routes.ts'));
   const usos = [...src.matchAll(/toLocaleDateString\s*\(/g)];
-  assert.equal(usos.length, 4,
-    `🔴 hay ${usos.length} \`toLocaleDateString\` en la landing y se midieron CUATRO. Si aparece una `
-    + 'quinta, tiene que pasar por la zona igual — o el cliente leerá dos calendarios en la misma '
-    + 'página.');
+  assert.equal(usos.length, 3,
+    `🔴 hay ${usos.length} \`toLocaleDateString\` en la landing y se midieron TRES (la cuarta vive en `
+    + '`validez.ts`). Si aparece otra, tiene que pasar por la zona igual — o el cliente leerá dos '
+    + 'calendarios en la misma página.');
   const conZona = [...src.matchAll(/timeZone:\s*zonaDelMerchant\(/g)];
-  assert.equal(conZona.length, 4,
-    `🔴 sólo ${conZona.length} de las 4 impresiones pasan la zona del merchant. Sin \`timeZone\`, `
-    + '`toLocaleDateString` usa la del PROCESO — y nadie la fija en el despliegue.');
+  assert.equal(conZona.length, 3,
+    `🔴 sólo ${conZona.length} de las 3 impresiones de la landing pasan la zona del merchant. Sin `
+    + '`timeZone`, `toLocaleDateString` usa la del PROCESO — y nadie la fija en el despliegue.');
+
+  const validez = soloCodigo(leer('src/modules/quotes/domain/validez.ts'));
+  assert.equal([...validez.matchAll(/toLocaleDateString\s*\(/g)].length, 1,
+    '🔴 `validez.ts` tiene que imprimir la fecha en UN solo sitio.');
+  assert.equal([...validez.matchAll(/timeZone:\s*zonaDelMerchant\(/g)].length, 1,
+    '🔴 la fecha de «Válido hasta el…» ya no pasa por la zona del merchant: la landing y el PDF '
+    + 'volverían a leerse en el calendario de la máquina.');
+  assert.match(src, /textoDeValidez\(\{[^}]*merchant:/,
+    '🔴 la landing pide la validez SIN pasarle el merchant: `zonaDelMerchant(undefined)` es UTC, '
+    + 'y el cliente leería una fecha distinta de la del papel cerca de la medianoche.');
 });
 
 test('SCRUM-633 · el formulario ya no calcula el día en UTC, y en DOS tiempos', () => {

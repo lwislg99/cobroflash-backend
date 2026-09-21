@@ -16,6 +16,8 @@ import { pieDePresupuesto } from '../../../quotes/domain/presentacionIva'; // SC
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView';
 // SCRUM-633 · el calendario en el que vive el merchant. Sitio único desde SCRUM-643.
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
+// SCRUM-987 · «Válido hasta el …»: la frase y su fecha, en el sitio que comparte con el PDF.
+import { textoDeValidez } from '../../../quotes/domain/validez';
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -419,22 +421,16 @@ function renderQuoteDetail(
   const terms = (quote as any).paymentTerms ?? null;
   const condiciones = condicionesDePago(quote, !!tiersInfo, money); // SCRUM-888g
 
-  // A16.2: validez REAL de la columna validUntil (fallback legacy: creación+30d)
-  let validityHtml = '';
-  const untilRaw = (quote as any).validUntil
-    ? new Date((quote as any).validUntil)
-    : ((quote as any).createdAt ? new Date(new Date((quote as any).createdAt).getTime() + 30 * 86_400_000) : null);
-  if (untilRaw) {
-    // 🔴 SCRUM-633 · `timeZone` EXPLÍCITO. Sin él, `toLocaleDateString` usa la zona del PROCESO,
-    // y nadie la fija en el despliegue: la fecha que lee el cliente salía de con qué zona
-    // arrancara el contenedor. Ahora sale de la del NEGOCIO — que es de quien es la validez, no
-    // del dispositivo que la mira ni de la máquina que la sirve.
-    const untilStr = untilRaw.toLocaleDateString('es-ES', {
-      timeZone: zonaDelMerchant((quote as any).merchant),
-      day: '2-digit', month: 'long', year: 'numeric',
-    });
-    validityHtml = `<div class="validity-badge">⏳ Válido hasta el ${untilStr}</div>`;
-  }
+  // A16.2: validez REAL de la columna validUntil (fallback legacy: creación+30d).
+  // SCRUM-987 · la fecha, su zona (SCRUM-633) y el rótulo ya NO se componen aquí: los dice
+  // `textoDeValidez`, la MISMA función que pone «Válido hasta el …» en el PDF, para que la página y
+  // el papel no puedan decir dos fechas. El ⏳ es de la página: el PDF no lo dibuja.
+  const textoValidez = textoDeValidez({
+    validUntil: (quote as any).validUntil,
+    createdAt: (quote as any).createdAt,
+    merchant: (quote as any).merchant,
+  });
+  const validityHtml = textoValidez ? `<div class="validity-badge">⏳ ${textoValidez}</div>` : '';
 
   return `
     <div class="merchant-hero">
