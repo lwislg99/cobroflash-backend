@@ -173,13 +173,16 @@ async function renderCustomer360View(container, customerId) {
   kpiGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px';
 
   // A18.3 (AB4 "deuda/pagos/presupuestos"): la DEUDA es lo primero que se ve
-  const debt = (invoices || [])
-    .filter((i) => String(i.status).toLowerCase() === 'pending')
-    .reduce((a, i) => a + Number(i.total || 0), 0);
+  // SCRUM-1035: la deuda la suma el SERVIDOR sobre todas las facturas del cliente (la lista trae 20).
+  const debt = stats.totalPending !== undefined
+    ? Number(stats.totalPending)
+    : (invoices || [])
+      .filter((i) => String(i.status).toLowerCase() === 'pending')
+      .reduce((a, i) => a + Number(i.total || 0), 0);
 
   const kpis = [
     { label: 'Pendiente de cobro', value: fmt(debt),
-      sub: debt > 0 ? `${invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : 'al día ✓',
+      sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : 'al día ✓',
       color: debt > 0 ? 'var(--red-600)' : 'var(--green-600)' },
     { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
     { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },

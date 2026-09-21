@@ -288,7 +288,9 @@ router.get('/:id/detail', async (req, res) => {
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
-    const [quotes, invoices, expenses, events] = await Promise.all([
+    // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
+    // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
+    const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente] = await Promise.all([
       prisma.quote.findMany({
         where: { customerId: id, merchantId: req.merchantId },
         orderBy: { createdAt: 'desc' },
@@ -306,10 +308,16 @@ router.get('/:id/detail', async (req, res) => {
         _sum: { amount: true },
       }),
       listCustomerEvents(req.merchantId, id, 50),
+      // `where` LITERALES a propósito: los censos de tenencia (SCRUM-289/348) leen el filtro del texto.
+      prisma.quote.count({ where: { customerId: id, merchantId: req.merchantId } }),
+      prisma.quote.count({ where: { customerId: id, merchantId: req.merchantId, status: 'accepted' } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId }, _sum: { total: true } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'paid' }, _sum: { total: true } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'pending' }, _sum: { total: true }, _count: true }),
     ]);
 
-    const totalBilled = invoices.reduce((a, i) => a + Number(i.total), 0);
-    const totalPaid   = invoices.filter(i => i.status === 'paid').reduce((a, i) => a + Number(i.total), 0);
+    const totalBilled = Number(facturado._sum.total ?? 0);
+    const totalPaid   = Number(cobrado._sum.total ?? 0);
     const portalUrl   = customer.portalToken
       ? `${config.PUBLIC_BASE_URL}/cliente/${customer.portalToken}`
       : null;
@@ -320,10 +328,14 @@ router.get('/:id/detail', async (req, res) => {
       invoices,
       events,
       stats: {
-        totalQuotes:   quotes.length,
-        acceptedQuotes: quotes.filter(q => q.status === 'accepted').length,
+        totalQuotes,
+        acceptedQuotes,
         totalBilled,
         totalPaid,
+        // SCRUM-1035 · lo que el cliente debe (facturas `pending`): la misma cifra que la ficha
+        // sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
+        totalPending: Number(pendiente._sum.total ?? 0),
+        pendingCount: pendiente._count,
         totalExpenses: Number(expenses._sum.amount ?? 0),
         profit: totalPaid - Number(expenses._sum.amount ?? 0),
       },
