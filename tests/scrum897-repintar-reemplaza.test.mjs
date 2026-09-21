@@ -78,18 +78,24 @@ test('SCRUM-897 · la vista de presupuestos: cada contenedor repintado tiene sol
   const nodos = todos(r.contenedor);
   const conClase = (c) => nodos.filter((n) => String(n.className).split(/\s+/).includes(c));
   // Por clase EXACTA: `.quote-block` a secas son siete bloques y el primero no se repinta.
+  // 🔴 SCRUM-915h · `.quote-totals` SALIÓ DEL EDITOR (su desglose vive ahora en el documento de la
+  // derecha, pintado nodo a nodo), así que de los dos repintados por innerHTML que medía este caso
+  // queda uno: `.quote-total-kpi`, el TOTAL. Y se exige que el otro NO exista: si volviera, tiene que
+  // volver a medirse aquí, no pasar sin mirar.
   const totales = conClase('quote-totals');
   const kpi = conClase('quote-total-kpi');
-  assert.ok(totales.length && kpi.length && totales[0]._html && kpi[0]._html,
-    '🔴 NO PUDE MIRAR: la vista ya no pinta `.quote-totals`/`.quote-total-kpi` por innerHTML; '
+  assert.equal(totales.length, 0,
+    '🔴 ha vuelto `.quote-totals` al editor: 915h lo sacó al documento. Si vuelve, este caso tiene que medirlo otra vez.');
+  assert.ok(kpi.length && kpi[0]._html,
+    '🔴 NO PUDE MIRAR: la vista ya no pinta `.quote-total-kpi` por innerHTML; '
     + 'este test tiene que buscarse otro repintado real, no darse por bueno');
-  assert.equal(totales.length, 1, `🔴 hay ${totales.length} \`.quote-totals\` y Edge pinta 1`);
+  assert.equal(kpi.length, 1, `🔴 hay ${kpi.length} \`.quote-total-kpi\` y Edge pinta 1`);
 
   const etiquetas = (html) => (String(html).match(/<[a-zA-Z][\w-]*/g) || []).length;
   // SCRUM-901 · se cuentan DESCENDIENTES, no hijos directos. Con el parser plano cada etiqueta del
-  // marcado era hija directa y los dos números coincidían; desde que el marcado anida, `.quote-totals`
-  // tiene 2 hijos y 6 descendientes, que son las 6 etiquetas de su última pintada.
-  for (const [nombre, n] of [['.quote-totals', totales[0]], ['.quote-total-kpi', kpi[0]]]) {
+  // marcado era hija directa y los dos números coincidían; desde que el marcado anida, un contenedor
+  // tiene menos hijos que descendientes, y éstos son las etiquetas de su última pintada.
+  for (const [nombre, n] of [['.quote-total-kpi', kpi[0]]]) {
     const descendientes = todos(n).length - 1;
     assert.equal(descendientes, etiquetas(n._html),
       `🔴 ${nombre} tiene ${descendientes} descendientes y su último marcado declara ${etiquetas(n._html)}: `
