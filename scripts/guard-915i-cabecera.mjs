@@ -120,9 +120,12 @@ const MENU_ARRIBA = new Function('texto', `
 
 // Abre el «⋯», pulsa «Limpiar formulario» y CONFIRMA, todo en la misma llamada: sin una sola espera
 // entre la última tecla y el vaciado, el autoguardado de 700 ms de la pantalla vieja sigue PENDIENTE
-// cuando se vacía. Es el único modo de que el caso C ejercite esa carrera (medido: con las esperas
-// de `abrirHoja` el temporizador ya había saltado antes de confirmar, y un mutante sin
-// `clearTimeout` sobrevivía).
+// cuando se vacía.
+// ⚠️ LO QUE ESTE GUARD NO CAZA, DECLARADO: el mutante que quita el `clearTimeout` de
+// `vaciarDocumento` SOBREVIVE (medido 2 de 2 pasadas, 21-sep-2026, con y sin esta llamada sin
+// esperas). Causa NO demostrada; hipótesis: la pantalla nueva escribe su propio borrador DESPUÉS del
+// temporizador viejo y lo pisa. El `clearTimeout` se queda porque no depende de esa suerte; lo que
+// no se afirma es que aquí haya una red que lo sujete.
 const VACIAR_YA = new Function(`
   var limpio = function (t) { return String(t || '').replace(/\\s+/g, ' ').trim(); };
   var t = document.querySelector('.quotes-header-row button.overflow-trigger');
