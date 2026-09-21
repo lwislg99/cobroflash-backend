@@ -542,6 +542,10 @@ async function initApp() {
     'invoice-detail': { clave: 'invoiceId',     lista: 'invoices',    ruta: (id) => '/admin/invoices/' + id,   aviso: 'Esa factura ya no existe.' },
     'albaran-detail': { clave: 'albaranId',     lista: 'albaranes',   ruta: (id) => '/admin/albaranes/' + id,  aviso: 'Ese albarán ya no existe.' },
     'customer-360':   { clave: 'customerId360', lista: 'customers',   ruta: (id) => '/admin/customers/' + id,  aviso: 'Ese cliente ya no existe.' },
+    // SCRUM-980 · la ficha del parte, que ahora se abre desde el historial del cliente: sin esto,
+    // recargar estando en ella la perdía. Vuelve a Trabajos, que es donde viven los partes.
+    // Aviso firmado por delegación (SCRUM-980, P8).
+    'parte-detail':   { clave: 'parteId',       lista: 'jobs',        ruta: (id) => '/admin/partes/' + id,     aviso: 'Ese parte ya no existe.' },
   };
 
   /** El hash, partido por la PRIMERA barra: `#quotes-detail/123` → `{ view, id }`. */

@@ -1,6 +1,43 @@
 // public/dashboard/js/customerDetailView.js
 // Vista Customer 360: historial completo de un cliente
 
+/**
+ * SCRUM-980 · EL HISTORIAL DE TRABAJO: las piezas sin DOM de la pestaña «Trabajos».
+ *
+ * ✅ TEXTOS FIRMADOS por el orquestador por delegación del fundador (21-sep-2026, SCRUM-980;
+ * registro en `docs/microcopy/2026-09-21-SCRUM-980-historial-del-cliente.md`). Viven aquí juntos
+ * para poder fijarlos con `===` desde un solo test.
+ *
+ * Los datos salen de `GET /admin/customers/:id/historial` (SCRUM-980, primera mitad): el técnico
+ * recibe solo sus trabajos, así que esta pieza no filtra nada por rol.
+ */
+const HISTORIAL_CLIENTE = {
+  TEXTOS: {
+    pestana: 'Trabajos',
+    vacio: 'Sin trabajos',
+    proxima: 'Próxima visita: ',
+    columnas: ['Fecha', 'Trabajo', 'Estado', 'Documentos'],
+    verMas: 'Ver más trabajos',
+    sueltos: 'Partes sin trabajo',
+  },
+  /** «Trabajos (n)», o «Trabajos (20+)» cuando el servidor dice que hay más páginas. */
+  tituloPestana(n, hayMas) {
+    return HISTORIAL_CLIENTE.TEXTOS.pestana + ' (' + (hayMas ? n + '+' : n) + ')';
+  },
+  /** «5 oct 2026, 10:00». `null` si no hay fecha o no es una fecha: la línea NO se pinta. */
+  fechaProxima(v) {
+    if (v === null || v === undefined || v === '') return null;
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  },
+  /** El nombre accesible del «📷 n». */
+  ariaFotos(n) { return n === 1 ? '1 foto' : n + ' fotos'; },
+  /** La fecha de la fila: la agendada; si no la hay, la de alta. */
+  fechaDeTrabajo(t) { return (t && (t.scheduledAt || t.createdAt)) || null; },
+};
+if (typeof window !== 'undefined') window.historialCliente = HISTORIAL_CLIENTE;
+
 async function renderCustomer360View(container, customerId) {
   container.innerHTML = '';
 
@@ -38,8 +75,14 @@ async function renderCustomer360View(container, customerId) {
   alertEl.textContent = 'Cargando…';
 
   let data;
+  // SCRUM-980 · el historial de trabajo, EN PARALELO y a parte: si falla, la ficha sale igual que
+  // antes —sin pestaña «Trabajos» ni «Próxima visita»— en vez de caerse entera por él.
+  let historial = null;
   try {
-    data = await apiRequest(`/admin/customers/${id}/detail`);
+    [data, historial] = await Promise.all([
+      apiRequest(`/admin/customers/${id}/detail`),
+      apiRequest(`/admin/customers/${id}/historial`).catch(() => null),
+    ]);
   } catch {
     alertEl.textContent = 'Error al cargar el historial del cliente.';
     alertEl.className = 'alert error';
@@ -57,6 +100,8 @@ async function renderCustomer360View(container, customerId) {
   header.className = 'customers-card';
   header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap';
 
+  // SCRUM-980 · sin próxima visita la clave no viene y la línea NO se pinta: ausente no es cero.
+  const proximaVisita = historial && historial.proximaVisita ? HISTORIAL_CLIENTE.fechaProxima(historial.proximaVisita.fecha) : null;
   const initials = (customer.name || 'C').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   header.innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
@@ -69,6 +114,7 @@ async function renderCustomer360View(container, customerId) {
           <span style="color:var(--neutral-400)">Cliente desde ${new Date(customer.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
         </div>
         ${customer.notes ? `<div style="font-size:12.5px;color:var(--neutral-500);margin-top:6px;font-style:italic">${escC(customer.notes)}</div>` : ''}
+        ${proximaVisita ? `<div class="historial-proxima" style="font-size:13px;font-weight:600;color:var(--neutral-700);margin-top:6px">${escC(HISTORIAL_CLIENTE.TEXTOS.proxima + proximaVisita)}</div>` : ''}
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
@@ -218,6 +264,13 @@ async function renderCustomer360View(container, customerId) {
   const tabInvoices = makeTab(`Facturas (${invoices.length})`, 'invoices');
   tabsWrap.appendChild(tabQuotes);
   tabsWrap.appendChild(tabInvoices);
+  // SCRUM-980 · la tercera, con el MISMO mecanismo que las otras dos. Solo si el historial llegó.
+  const trabajos = historial && Array.isArray(historial.trabajos) ? historial.trabajos.slice() : null;
+  let siguiente = historial ? historial.siguiente ?? null : null;
+  const tabJobs = trabajos
+    ? makeTab(HISTORIAL_CLIENTE.tituloPestana(trabajos.length, !!siguiente), 'jobs')
+    : null;
+  if (tabJobs) tabsWrap.appendChild(tabJobs);
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
 
@@ -262,6 +315,8 @@ async function renderCustomer360View(container, customerId) {
         tbody.appendChild(tr);
       });
       table.appendChild(tbody);
+    } else if (key === 'jobs') {
+      pintarTrabajos(card, table);
     } else {
       table.innerHTML = `<thead><tr><th>Nº</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>`;
       const tbody = document.createElement('tbody');
@@ -294,6 +349,123 @@ async function renderCustomer360View(container, customerId) {
         tbody.appendChild(tr);
       });
       table.appendChild(tbody);
+    }
+  }
+
+  // ── SCRUM-980 · LA PESTAÑA «TRABAJOS» ─────────────────────────────────────────────────
+  // Fecha · trabajo · estado · documentos. El estado sale de `jobStatusMeta` (api.js), la MISMA
+  // etiqueta y pastilla que el resto del panel: aquí no se escribe ni un rótulo de estado.
+  // Todo con `textContent`: el título y los números los escribe el profesional.
+  function abrir(vista, clave, valor) {
+    if (!window.renderAppView) return;
+    window.appState[clave] = valor;
+    renderAppView(vista);
+  }
+  function enlace(texto, alPulsar) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn-ghost btn-sm';
+    b.textContent = texto;
+    b.addEventListener('click', (e) => { e.stopPropagation(); alPulsar(); });
+    return b;
+  }
+
+  function pintarTrabajos(card, table) {
+    const T = HISTORIAL_CLIENTE.TEXTOS;
+    const thead = document.createElement('thead');
+    const trh = document.createElement('tr');
+    T.columnas.forEach((c) => { const th = document.createElement('th'); th.textContent = c; trh.appendChild(th); });
+    thead.appendChild(trh);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+
+    if (trabajos.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = T.columnas.length;
+      td.style.cssText = 'text-align:center;color:var(--neutral-400);padding:24px';
+      td.textContent = T.vacio;
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+
+    trabajos.forEach((t) => {
+      const tr = document.createElement('tr');
+      tr.dataset.trabajo = String(t.id);
+      const tdFecha = document.createElement('td');
+      tdFecha.style.color = 'var(--muted)';
+      const f = HISTORIAL_CLIENTE.fechaDeTrabajo(t);
+      tdFecha.textContent = f ? new Date(f).toLocaleDateString('es-ES') : '';
+      tr.appendChild(tdFecha);
+
+      const tdTitulo = document.createElement('td');
+      const bTitulo = enlace(t.titulo, () => abrir('jobs-detail', 'jobId', t.id));
+      bTitulo.className = 'btn-ghost btn-sm cell-title';
+      tdTitulo.appendChild(bTitulo);
+      tr.appendChild(tdTitulo);
+
+      const tdEstado = document.createElement('td');
+      const meta = jobStatusMeta(t.estado);
+      const pill = document.createElement('span');
+      pill.className = 'status-pill ' + meta.pillClass;
+      pill.textContent = meta.label;
+      tdEstado.appendChild(pill);
+      tr.appendChild(tdEstado);
+
+      const tdDocs = document.createElement('td');
+      const docs = document.createElement('div');
+      docs.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+      (t.partes || []).forEach((p) => docs.appendChild(enlace(p.numero, () => abrir('parte-detail', 'parteId', p.id))));
+      (t.albaranes || []).forEach((a) => {
+        const b = enlace(a.numero, () => abrir('albaran-detail', 'albaranId', a.id));
+        if (a.fotos > 0) {
+          const fotos = document.createElement('span');
+          fotos.className = 'historial-fotos';
+          fotos.textContent = ' 📷 ' + a.fotos;
+          fotos.setAttribute('aria-label', HISTORIAL_CLIENTE.ariaFotos(a.fotos));
+          b.appendChild(fotos);
+        }
+        docs.appendChild(b);
+      });
+      tdDocs.appendChild(docs);
+      tr.appendChild(tdDocs);
+      tbody.appendChild(tr);
+    });
+
+    if (siguiente) {
+      const mas = document.createElement('button');
+      mas.type = 'button';
+      mas.className = 'btn-secondary btn-sm historial-ver-mas';
+      mas.style.cssText = 'margin:12px 16px';
+      mas.textContent = T.verMas;
+      mas.addEventListener('click', async () => {
+        mas.disabled = true;
+        try {
+          const r = await apiRequest(`/admin/customers/${id}/historial?despuesDe=${encodeURIComponent(siguiente)}`);
+          (r.trabajos || []).forEach((x) => trabajos.push(x));
+          siguiente = r.siguiente ?? null;
+          tabJobs.textContent = HISTORIAL_CLIENTE.tituloPestana(trabajos.length, !!siguiente);
+          renderTab('jobs');
+        } catch {
+          mas.disabled = false; // se puede reintentar: la página que ya estaba sigue en pantalla
+        }
+      });
+      card.appendChild(mas);
+    }
+
+    // Los partes sin trabajo (el servidor solo los manda a quien puede verlos).
+    const sueltos = historial.partesSueltos || [];
+    if (sueltos.length) {
+      const h = document.createElement('h3');
+      h.className = 'historial-sueltos';
+      h.style.cssText = 'margin:16px 16px 8px;font-size:13px;font-weight:700;color:var(--neutral-600)';
+      h.textContent = T.sueltos;
+      card.appendChild(h);
+      const lista = document.createElement('div');
+      lista.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:0 16px 16px';
+      sueltos.forEach((p) => lista.appendChild(enlace(p.numero, () => abrir('parte-detail', 'parteId', p.id))));
+      card.appendChild(lista);
     }
   }
 
