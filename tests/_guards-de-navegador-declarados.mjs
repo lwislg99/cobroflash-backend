@@ -76,6 +76,7 @@ export const DECLARADOS = [
   'guard:documento-vivo',
   'guard:detalle-trabajo-917',
   'guard:conceptos-limpios',
+  'guard:cabecera-del-editor',
   'guard:lista-gastos',
   // 👆 EL TUYO VA AQUÍ, EN SU PROPIA LÍNEA, Y NO SE TOCA NINGUNA DE LAS DE ARRIBA.
   //    Si al mergear sale conflicto en esta línea es que otra rama añadió el suyo a la vez:
