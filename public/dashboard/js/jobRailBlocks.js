@@ -31,6 +31,10 @@ const JOB_RAIL_TITULOS = {
 // era `[PENDIENTE microcopy oficial]`, y ese marcador se descuenta del censo de SCRUM-402.
 const ROTULO_ABRIR_EN_MAPA = 'Abrir en mapa';
 
+// SCRUM-982 · rótulo de la nota del cliente en el bloque CLIENTE. FIRMADO por el orquestador por
+// delegación del fundador (SCRUM-982, comentario 16065): etiqueta pequeña, sin dos puntos ni icono.
+const ROTULO_NOTA_DEL_CLIENTE = 'Nota del cliente';
+
 const limpio = (v) => (v == null ? '' : String(v).trim());
 
 /**
@@ -43,7 +47,10 @@ const limpio = (v) => (v == null ? '' : String(v).trim());
 function bloqueCliente(job) {
   const nombre = limpio(job && job.customer && job.customer.name);
   const telefono = limpio(job && job.customer && job.customer.phone);
-  if (!nombre && !telefono) return null;
+  // SCRUM-982 · la nota del cliente, tal cual la escribió el profesional: se recortan los extremos
+  // y NADA más — los saltos de línea de dentro son suyos y se pintan. Sin nota, sin línea.
+  const nota = limpio(job && job.customer && job.customer.notes);
+  if (!nombre && !telefono && !nota) return null;
 
   const lineas = [];
   if (nombre) lineas.push({ texto: nombre, fuerte: true });
@@ -53,6 +60,7 @@ function bloqueCliente(job) {
     lineas.push({ texto: telefono, icono: '📞', href: `tel:${marcable}` });
     lineas.push({ texto: 'WhatsApp', icono: '💬', href: `https://wa.me/${marcable}` });
   }
+  if (nota) lineas.push({ texto: nota, etiqueta: ROTULO_NOTA_DEL_CLIENTE, nota: true });
   return { id: 'cliente', titulo: JOB_RAIL_TITULOS.cliente, lineas };
 }
 
@@ -192,7 +200,7 @@ if (typeof window !== 'undefined') {
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    construirBloquesRail, JOB_RAIL_TITULOS,
+    construirBloquesRail, JOB_RAIL_TITULOS, ROTULO_NOTA_DEL_CLIENTE,
     bloqueCliente, bloqueDonde, bloqueDinero, bloquePresupuesto, bloqueResponsable,
   };
 }

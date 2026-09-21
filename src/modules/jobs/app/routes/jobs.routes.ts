@@ -544,13 +544,22 @@ async function serializeJobDetail(job: any) {
   // de solo lectura, igual que el email: `Customer.taxId` ya existe y ya se edita desde la ficha.
   // No toca el camino de emisión (regla 38) — el tipo de factura lo sigue derivando quien lo
   // derivaba; esto solo permite preguntar por el dato que falta ANTES de llegar ahí.
+  // SCRUM-982: y `notes`, la nota del cliente («timbre roto, llamar al móvil»), para el bloque
+  // CLIENTE del rail: el que llega a la puerta la lee donde mira al llegar. Va AQUÍ y no en
+  // `CUSTOMER_SELECT` a propósito: ése alimenta la LISTA (hasta 200 filas) y nada la pinta allí —
+  // texto libre viajando a cambio de nada—. Este serializador no se exporta y su router sólo se
+  // monta bajo `/admin` (lo vigila `tests/scrum982-la-nota-del-cliente-en-el-trabajo`).
   let customer: any = base.customer;
   if (customer && job.customerId) {
     const c = await prisma.customer.findUnique({
       where: { id: job.customerId },
-      select: { email: true, taxId: true },
+      select: {
+        email: true,
+        taxId: true,
+        notes: true,
+      },
     });
-    customer = { ...customer, email: c?.email ?? null, taxId: c?.taxId ?? null };
+    customer = { ...customer, email: c?.email ?? null, taxId: c?.taxId ?? null, notes: c?.notes ?? null };
   }
   // ── SCRUM-650 (T1) · QUIÉN EJECUTA, EN PLURAL ────────────────────────────────────────────
   //
