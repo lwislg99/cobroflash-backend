@@ -1079,3 +1079,93 @@ ocurre», significaba «no ocurrió esta vez». La diferencia la trajo un aviso 
 en rojo), no una segunda medición propia planeada. **Correspondía haber corrido el caso fabricado varias
 veces en CI antes de escribir un veredicto, no una.** Queda dicho para quien siga: con este caso, N=1 en
 Linux no alcanza para ningún veredicto, ni «reproducido» ni «no reproducido».
+
+# SCRUM-908c-4 · N=5 declarada antes de correr: el arreglo aguanta, y el techo que deja sobre la tasa
+
+**Fecha:** 21-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición, con N declarada ANTES de correr (A3, y pedido explícito del orquestador). **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `6a91b1aad2777e59100bee2f9a666886550ca393` · 2026-09-21T15:36:15Z
+**Rama:** ninguna para las 5 tiradas — son re-corridas del job `build + tests (con banco desechable)` vía
+`gh run rerun <run> --job <job>`, sobre el commit `3c86277b2242d0951d8ee993e99c69797d70aae5` (PR #1591),
+ya en `origin/main` desde § 908c-2/908c-3. Esta entrada se anexa desde la rama `scrum-908c4-n5-declarada`.
+
+> **N=5 SE DECLARÓ ANTES DE VER NINGÚN RESULTADO**, con su límite dicho también antes: con las tasas ya
+> medidas del mecanismo original (12,2 % en 908c, hasta 35 % en el dato de hoy de la S5), **5 tiradas con
+> cero eventos es el resultado más probable y no demuestra que el mecanismo no ocurra** — el techo Wilson
+> 95 % para 0 eventos en 5 tiradas es **≈ 43,4 %**, calculado antes de correr:
+> `z=1{,}96, p̂=0, n=5 → centro=0,2173, semiancho=0,2173 → [0 % , 43{,}4 %]`. Aviso y cálculo, del
+> orquestador y re-verificado por mí, ANTES de la primera tirada.
+
+---
+
+## LOS 5 RESULTADOS, TAL CUAL SALIERON
+
+| tirada | job | SIN ARREGLO `colaAlSalir` | CON ARREGLO `colaAlSalir` |
+|---|---|---|---|
+| 1 | `106384186315` | 0 | 0 |
+| 2 | `106387021200` | 0 | 0 |
+| 3 | `106390241882` | **7236** | **0** |
+| 4 | `106393212540` | 0 | 0 |
+| 5 | `106396271326` | 0 | 0 |
+
+Verificado por API en cada tirada (`gh api …/jobs/<id>/logs`, grep de las líneas `# SIN ARREGLO` / `# CON
+ARREGLO`), no de memoria ni de un resumen.
+
+---
+
+## LO QUE ESTO ESTABLECE, Y LO QUE NO
+
+**① El arreglo (`--import`) aguantó las 5 de 5, INCLUIDA la tirada donde el mecanismo se disparó de
+verdad.** La tirada 3 es el dato que importa: en el MISMO proceso padre, milisegundos aparte, el hijo SIN
+ARREGLO perdió 7.236 bytes (idéntico al de PR #1589, § 908c-3) y el hijo CON ARREGLO, ejecutado justo
+después con el mismo tamaño de relleno, no perdió nada. No es que la condición para perder algo no se diera
+esa vez: se dio, medida en el hermano sin arreglo, y el arreglo la neutralizó de todos modos. **Es la
+primera vez que el arreglo se pone a prueba contra una tirada donde SIN ARREGLO demuestra que las
+condiciones estaban dadas**, y sostiene.
+
+**② Lo que 5/5 NO establece, dicho con el mismo cálculo de arriba:** 5 éxitos seguidos del arreglo tienen
+el MISMO techo Wilson (≈ 43,4 %) sobre una tasa de fallo del arreglo que 0/5 tenía sobre la tasa del
+mecanismo. Estadísticamente, cinco tiradas no descartan que el arreglo falle hasta un 43 % de las veces.
+**Lo que sí distingue esta vez del caso de § 908c-2/908c-3 (donde 1 sola tirada bastó para hablar de más
+o de menos) es el MECANISMO, no sólo el número:** `--import` con `setBlocking(true)` hace que cada
+`write()` del hijo se vacíe SÍNCRONAMENTE antes de devolver el control — no hay ventana de tiempo en la
+que pueda quedar cola pendiente, por construcción, no por suerte de la tirada. La tirada 3 es la
+CONFIRMACIÓN de que el mecanismo entendido es el correcto (coincide con que SIN ARREGLO sí perdiera datos
+esa vez), no la ÚNICA razón para creer que el arreglo sostiene.
+
+**③ La tasa de SIN ARREGLO en estas 5 tiradas: 1/5 = 20 %**, dentro del rango ya medido (12,2 %–35 %) pero
+con un intervalo demasiado ancho para decir nada nuevo por sí solo (Wilson 95 % de 1/5, recalculado con
+node antes de escribirlo: **[3,6 % , 62,4 %]**). **No cambia la estimación de la tasa**, sólo la confirma
+sin refinarla.
+
+**④ El hueco declarado, tal como se pidió antes de correr:** las 5 tiradas son del MISMO commit — aíslan
+la varianza del ENTORNO de ejecución (el runner de GitHub, el momento, la carga de la máquina), pero no
+dicen nada sobre si la tasa cambia en otro árbol o con otro contenido de PR. La mudez original de
+`scrum859` se vio en árboles distintos a lo largo de días; esto no es eso.
+
+**⑤ Sobre la pregunta original de § 908c-2 ⑥** («por qué el hijo con `node:test` necesita escribir más
+que el doble de la capacidadBase para perder algo, si el hijo pelado la pierde nada más verla»): estas 5
+tiradas NO la contestan — no varían el tamaño del relleno, sólo repiten el mismo. Sigue sin medirse. Lo
+que sí aportan es la primera confirmación de que, cuando el mecanismo se dispara con este tamaño fijo, el
+arreglo lo neutraliza — que era la pregunta más urgente hoy (¿aguanta el arreglo que ya está en `main`?),
+no la más profunda (¿por qué este umbral y no otro?).
+
+---
+
+## DECISIÓN, CON EL PRESUPUESTO DE CI COMPARTIDO DECLARADO
+
+**No se ampliá la N por cuenta propia** (instrucción explícita del orquestador: cada tirada gasta CI
+compartido con el equipo de Luis). Si se quisiera acotar la tasa de fallo del arreglo con precisión, harían
+falta del orden de **N ≥ 30-40** tiradas (con el mismo cálculo de Wilson que exige 908c §⑦.2 para la tasa
+original), y eso se pide al orquestador con el número antes de correr, no se decide aquí. **Alternativa más
+barata, para quien siga:** reproducir en LOCAL, si se consigue una máquina Linux (WSL/Docker), donde una
+tirada cuesta segundos y no minutos de CI compartido — declarado como hueco desde § 908c-2 ⑥ y sigue sin
+resolverse en esta máquina (Windows, sin WSL ni Docker).
+
+---
+
+## LO NO TOCADO
+
+- Ningún push nuevo, ninguna rama nueva: las 5 tiradas son re-corridas de un job ya existente sobre un
+  commit ya en `main`.
+- `tests/scrum859-…`, `scripts/meta-guard-mutaciones.mjs` (S3), `.github/workflows/**` (S5): ni una línea.
+- Ninguna N ampliada sin pedirlo antes con el número (instrucción explícita, respetada).
