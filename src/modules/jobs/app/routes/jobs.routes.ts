@@ -1329,6 +1329,11 @@ router.post('/:id/albaranes', async (req, res) => {
   }
 });
 
+// SCRUM-1027 · mismo marcador que `albaranes.routes.ts:MICROCOPY_PENDIENTE_290` e
+// `invoicesAdmin.routes.ts:MICROCOPY_PENDIENTE_308` — el TEXTO es lo que reconoce
+// `sinMarcadorPendiente.ts`, no el nombre de la constante. Regla 30: lo firma el fundador.
+const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
+
 // POST /admin/jobs/:id/collect-rest — A13.3: EL momento de dinero.
 // terminado + tramo pendiente → genera la factura del resto (misma maquinaria
 // getNextBillingStage del accept) y envía payment_request. V2: SIEMPRE acción
@@ -1345,6 +1350,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     if (job.status !== 'terminado') {
       return res.status(409).json({ error: 'job_not_finished', message: 'Marca el trabajo como terminado para cobrar el resto.' });
     }
+
     // ─────────────────────────────────────────────────────────────────────────
     // SCRUM-195 (rebanada 2) · AQUÍ ESTABA LA TRAMPA, y merece leerse entera.
     //
@@ -1360,14 +1366,28 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     //
     // Ahora se pregunta por el CONJUNTO. El 409 de «sin presupuesto» solo procede si el
     // Trabajo no tiene NINGUNO — que es lo que ese error siempre quiso decir.
+    //
+    // SCRUM-1027 · `merchant: true` se añade AQUÍ (no una consulta aparte) para el gate de abajo:
+    // los presupuestos de este Trabajo son todos del MISMO merchant (`merchantId: req.merchantId`
+    // en el `where`), así que el primero ya trae el dato que hace falta, sin un viaje más.
     const quotesConPlan = await prisma.quote.findMany({
       where: {
         merchantId: req.merchantId, // regla 2
         OR: [{ jobId: job.id }, ...(job.quoteId != null ? [{ id: job.quoteId }] : [])],
       },
-      include: { Invoice: { select: { id: true } } },
+      include: { Invoice: { select: { id: true } }, merchant: true },
     });
     if (quotesConPlan.length === 0) return res.status(409).json({ error: 'job_without_quote' });
+
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, no se
+    // emite NINGÚN documento ni se cobra por YaQu. Sin este gate, `allocateInvoiceNumber` seguiría
+    // rechazando el modo `receipt` (SCRUM-1027, punto único), pero DESPUÉS de que esta ruta ya
+    // hubiera contado el tramo y abierto la transacción — y el rechazo saldría como 500, no 409.
+    // Mismo patrón EXACTO que `/consolidar-albaranes` (línea ~1580 de este fichero).
+    if (!quotesConPlan[0].merchant) return res.status(404).json({ error: 'not_found' });
+    if (getEmissionMode(quotesConPlan[0].merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
+    }
 
     // ORIGINAL primero, adicionales después por id: el orden es determinista a propósito —
     // «cobrar el resto» tiene que emitir siempre el mismo tramo si se pulsa dos veces.

@@ -90,6 +90,16 @@ const CENSO_SERVIDOR = Object.freeze({
   // Mensajes de error de API (409): los lee el profesional en un aviso del panel.
   'src/modules/jobs/app/routes/albaranes.routes.ts': 1,
   'src/modules/system/app/routes/invoicesAdmin.routes.ts': 1,
+  // ── SCRUM-1027 · 21-sep-2026 · ENTRAN A CONCIENCIA CON 1 CADA UNO ──────────────────────
+  //
+  // Regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, ya no se emite
+  // NINGÚN documento. Dos rutas que antes emitían un justificante ahora cortan ANTES de pedir
+  // número, con el mismo error nombrado (`facturacion_no_disponible`) y el mismo marcador que
+  // ya llevan `albaranes.routes.ts` e `invoicesAdmin.routes.ts` arriba, MISMO MOTIVO: no hay
+  // texto firmado todavía para «este merchant ya no emite nada» (regla 39). Mensajes de error
+  // de API (409): los lee el profesional en un aviso del panel, nunca en un PDF.
+  'src/modules/jobs/app/routes/jobs.routes.ts': 1,
+  'src/modules/system/app/routes/quotesAdmin.routes.ts': 1,
   // Etiqueta de la calidad del firmante y aviso de dirección del trabajo.
   'src/modules/jobs/domain/albaranFirmante.ts': 1,
   'src/modules/jobs/domain/jobDireccion.ts': 1,

@@ -117,7 +117,13 @@ async function invocar(rutaModulo, metodo, ruta, req) {
   return salida;
 }
 
-const MERCHANT = { id: 7, name: 'QA', country: 'ES', taxId: 'B12345678', invoiceSeriesPrefix: 'CF', approvalThreshold: null };
+// SCRUM-1027 · `flags: { INVOICING_ES_ENABLED: true }` AÑADIDO. Sin él, `getEmissionMode` da
+// 'receipt' (ES real sin flag) y desde la enmienda de la regla 24 (SCRUM-612c) eso ya rechaza
+// ANTES de llegar al caso C — con el propio marcador `[PENDIENTE microcopy oficial]`, no con L2.
+// Este fichero mide el bloqueo del CASO C (descuento global + varios IVA) en un merchant que SÍ
+// puede facturar; el bloqueo por «este merchant no emite nada» es otro mecanismo y tiene su
+// propia cobertura (tests/scrum1027-*, tests/scrum346-*, tests/scrum263-*).
+const MERCHANT = { id: 7, name: 'QA', country: 'ES', taxId: 'B12345678', invoiceSeriesPrefix: 'CF', approvalThreshold: null, flags: { INVOICING_ES_ENABLED: true } };
 const CUSTOMER = { id: 2, name: 'Cliente QA', phone: telefonoDePrueba(887) }; // SCRUM-262: rango imposible
 
 /** Deja `prisma` con lo mínimo y ANOTA toda escritura: un rechazo tiene que llegar antes. */
