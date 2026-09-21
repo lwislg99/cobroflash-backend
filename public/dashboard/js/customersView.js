@@ -250,10 +250,9 @@ function renderCustomersView(container) {
   // Mismo componente y misma conducta que el de etiquetas: se oculta si ningún cliente del lote
   // tiene visita (un control que no puede filtrar nada no se ofrece). Textos firmados, en la pieza.
   const visitaSelect = document.createElement("select");
-  visitaSelect.className = "input";
-  // Sin el tope de 220 px de los otros dos: a 390 px cortaba «Sin visitar desde hace 12 m…»
-  // (medido en Edge). Mide lo que su opción más larga y nunca más que la barra.
-  visitaSelect.style.cssText = "max-width:100%";
+  // Sin el tope de 220 px de los otros dos (a 390 px cortaba «Sin visitar desde hace 12 m…», medido
+  // en Edge): la regla va en `styles.css`, no escrita desde aquí (SCRUM-713c).
+  visitaSelect.className = "input clientes-filtro-visita";
   // Nace OCULTO: hasta que llega el lote no se sabe si hay visitas, y un filtro visible sobre los
   // esqueletos de carga se puede pulsar sin efecto (medido en Edge a 390 px).
   visitaSelect.hidden = true;
@@ -687,8 +686,10 @@ function renderCustomersView(container) {
 
         // SCRUM-979 · «Última visita», con el mismo formato que «Alta». Sin visita, celda vacía.
         const visita = FC.ultimaVisitaDe(c);
-        const visitaCell = addCell(tr, visita ? visita.toLocaleDateString() : "", FC.claseDeColumna("visita", columnasEncendidas));
-        visitaCell.style.color = "var(--muted)";
+        // `cell-visita` lleva el color (styles.css) y es además la marca con la que el guard de la
+        // lista de Trabajos reconoce esta celda como el cambio declarado de SCRUM-979.
+        addCell(tr, visita ? visita.toLocaleDateString() : "",
+          (FC.claseDeColumna("visita", columnasEncendidas) + " cell-visita").trim());
 
         const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", FC.claseDeColumna("alta", columnasEncendidas));
         altaCell.style.color = "var(--muted)";

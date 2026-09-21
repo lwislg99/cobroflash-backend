@@ -9,17 +9,19 @@ Todos viven en `public/dashboard/js/filtroClientes.js` (`TEXTOS_VISITA`, `FILTRO
 
 **C1** · cabecera de la columna (elegible en «Columnas», oculta en el móvil por defecto):
 
-    Última visita
+> Última visita
 
 **F0** · opción sin filtro del selector nuevo:
 
-    Cualquier fecha de visita
+> Cualquier fecha de visita
 
 **F6 / F12 / F24** · las tres opciones del filtro:
 
-    Sin visitar desde hace 6 meses
-    Sin visitar desde hace 12 meses
-    Sin visitar desde hace 24 meses
+> Sin visitar desde hace 6 meses
+
+> Sin visitar desde hace 12 meses
+
+> Sin visitar desde hace 24 meses
 
 La celda lleva la fecha con el mismo formato que «Alta», y va vacía si el cliente no tiene ningún
 trabajo terminado o cerrado.

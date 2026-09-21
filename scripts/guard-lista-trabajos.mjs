@@ -78,8 +78,13 @@ const RUTAS = [
 // exigiendo el hash; a Albaranes se le exige que su cambio sea EXACTAMENTE el declarado —una
 // acción en `.cell-actions` y el Trabajo en `.cell-trabajo`—, que es más fuerte que un hash: un
 // hash sólo dice «cambió», esto dice «cambió en lo que dijo y en nada más que importe».
+// ── SCRUM-979 · CLIENTES TAMPOCO SE COMPARA POR HASH A SECAS, por el mismo motivo que Albaranes ──
+//
+// SCRUM-979 le da A PROPÓSITO la columna «Última visita» y el filtro de 6/12/24 meses, así que su
+// hash cambia. No se retira del control: se le exige que su diferencia con la base sea EXACTAMENTE
+// la declarada — quitadas esas tres piezas, el HTML tiene que salir IDÉNTICO al de la base. Es más
+// fuerte que el hash de antes: dice «cambió solo en lo que dijo».
 const HERMANAS = [
-  { ruta: '/clientes', rotulo: 'Clientes' },
   { ruta: '/presupuestos', rotulo: 'Presupuestos' },
   { ruta: '/facturas', rotulo: 'Facturas' },
 ];
@@ -460,6 +465,41 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
         + `Trabajo en su celda: ${tieneTrabajo}`);
     } else {
       di('   ✅ Albaranes trae LO DECLARADO: acción en `.cell-actions`, Trabajo en `.cell-trabajo`');
+    }
+
+    // ── SCRUM-979 · Clientes: su diferencia con la base es EXACTAMENTE la declarada ──────────
+    // Las cuatro piezas, cada una por su marca y con las veces que TIENE que aparecer: una cada una
+    // de las tres de la barra y la cabecera, y la celda de la fila UNA POR FILA. Si no cuadra, no se
+    // sabe qué se ha quitado y el «idéntico» no valdría nada.
+    const cA = await huella(puertoMain, '/clientes');
+    const cB = await huella(puerto, '/clientes');
+    const filasCli = (cA._html.match(/<tr[\s>]/g) || []).length;
+    const filasDeDatos = (cB._html.match(/<td class="cell-title">/g) || []).length;
+    const PIEZAS_979 = [
+      ['el <th> de «Última visita»', /<th[^>]*data-columna="visita"[^>]*>[^<]*<\/th>/g, 1],
+      ['el <select> del filtro', /<select[^>]*>(?:(?!<\/select>)[\s\S])*?Cualquier fecha de visita(?:(?!<\/select>)[\s\S])*?<\/select>/g, 1],
+      ['su casilla en «Columnas»', /<label class="columnas-opcion"[^>]*>(?:(?!<\/label>)[\s\S])*?Última visita(?:(?!<\/label>)[\s\S])*?<\/label>/g, 1],
+      ['la celda de cada fila', /<td class="(?:col-hide-mobile )?cell-visita"[^>]*>[^<]*<\/td>/g, filasDeDatos],
+    ];
+    let sinLoDeclarado = cB._html;
+    const cuentas = PIEZAS_979.map(([nombre, re, esperadas]) => {
+      const n = (sinLoDeclarado.match(re) || []).length;
+      sinLoDeclarado = sinLoDeclarado.replace(re, '');
+      return [nombre, n, esperadas];
+    });
+    const shaSin = crypto.createHash('sha256').update(sinLoDeclarado).digest('hex').slice(0, 16);
+    if (filasCli < 2 || filasDeDatos < 1) {
+      nosupe(`   🔴 NO SUPE MIRAR · Clientes: la base pintó ${filasCli} <tr> y hoy ${filasDeDatos} filas de cliente.`);
+    } else if (cuentas.some(([, n, esperadas]) => n !== esperadas)) {
+      mal('   🔴 Clientes NO trae lo declarado por SCRUM-979 · '
+        + cuentas.map(([nombre, n, esperadas]) => `${nombre}: ${n} de ${esperadas}`).join(' · '));
+    } else if (cA.sha === cB.sha) {
+      // La base ya trae 979: entonces lo que se exige es lo de siempre, que no haya cambiado nada.
+      di(`   ✅ Clientes · ${cA.sha} · idéntico a la base (que ya trae SCRUM-979)`);
+    } else if (shaSin !== cA.sha) {
+      mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979 · base ${cA.sha} ≠ hoy sin lo declarado ${shaSin}`);
+    } else {
+      di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979) y nada más · sin esas cuatro piezas (${filasDeDatos} celdas), idéntico a la base ${cA.sha}`);
     }
     srvMain.close();
   }

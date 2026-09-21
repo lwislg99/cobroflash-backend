@@ -64,6 +64,20 @@ defecto; sin scroll horizontal (ancho del documento = ancho de la ventana).
 **No medido:** staging, y el selector mide 36 px de alto, como los otros dos de la barra (el
 objetivo AB6 es 44): es del componente `.input` y no se cambia en este ticket.
 
+## El primer CI salió rojo, y los dos rojos eran de este ticket
+
+1. **713c (estilos escritos desde JS, techo 340)**: el `style.cssText` del selector lo subía a 341.
+   Arreglo: la regla va en `styles.css` (`.clientes-filtro-visita`), y el color de la celda también
+   (`.cell-visita`), en vez de escribirlos desde JS.
+2. **`guard:lista-trabajos` §⑥ congelaba Clientes por hash**, y este ticket la cambia a propósito.
+   Mismo trato que SCRUM-831 dio a Albaranes: Clientes sale de la comparación por hash y se le exige
+   que su diferencia con la base sea **exactamente la declarada** —el `th`, el `select`, su casilla en
+   «Columnas» y una celda `cell-visita` por fila—; quitadas esas piezas, el HTML tiene que salir
+   idéntico al de la base. Probado en rojo dos veces: un `<hr>` no declarado → «ha cambiado MÁS de
+   lo declarado»; sin la celda → «la celda de cada fila: 0 de 2». Base en verde antes y después.
+
+(El meta-guard también salía rojo, pero igual en otro PR del mismo momento, el de 976b: no es de este ticket.)
+
 ## Hueco declarado
 
 Si un filtro deja la lista vacía, se pinta el vacío de pestaña, cuya segunda línea («Marca cada
