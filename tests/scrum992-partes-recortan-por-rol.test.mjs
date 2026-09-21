@@ -91,6 +91,37 @@ test('SCRUM-992 · `findParte` mira el rol y la pertenencia (los tres ejes viven
   assert.ok(llama(findParteNode, 'esSuyoElTrabajo'), '🔴 `findParte` no comprueba de quién es el trabajo');
 });
 
+test('SCRUM-992 · la LISTA y el DETALLE miran los mismos ejes: lo que lee `esSuyoElTrabajo` es lo que escribe `whereSuyoElTrabajo`', () => {
+  // Dos funciones, una pregunta (¿es suyo?): sobre UN trabajo ya leído y sobre una LISTA. Si alguien añade
+  // un eje a una y no a la otra, el técnico vería en la lista lo que no puede abrir, o al revés. Los ejes
+  // se derivan del CUERPO de cada una —no de una constante a su lado, que sería una segunda fuente—.
+  const ruta = path.join(RAIZ, 'src', 'modules', 'jobs', 'domain', 'accesoAlTrabajo.ts');
+  const sf = ts.createSourceFile(ruta, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true);
+  const fn = {};
+  sf.forEachChild((n) => { if (ts.isFunctionDeclaration(n) && n.name) fn[n.name.text] = n; });
+  assert.ok(fn.esSuyoElTrabajo?.body && fn.whereSuyoElTrabajo?.body, 'no se encuentran las dos funciones: el guard no sabe qué comparar');
+
+  const leidos = new Set();
+  (function anda(n) {
+    if (ts.isPropertyAccessExpression(n) && n.expression.getText() === 'trabajo') leidos.add(n.name.text);
+    n.forEachChild(anda);
+  })(fn.esSuyoElTrabajo.body);
+
+  const escritos = new Set();
+  (function anda(n) {
+    if (ts.isPropertyAssignment(n) && n.name.getText() === 'OR' && ts.isArrayLiteralExpression(n.initializer)) {
+      for (const e of n.initializer.elements) {
+        if (ts.isObjectLiteralExpression(e) && e.properties[0]?.name) escritos.add(e.properties[0].name.getText());
+      }
+    }
+    n.forEachChild(anda);
+  })(fn.whereSuyoElTrabajo.body);
+
+  assert.ok(leidos.size >= 3, `el extractor está ciego: solo derivó ${leidos.size} ejes de \`esSuyoElTrabajo\``);
+  assert.deepEqual([...escritos].sort(), [...leidos].sort(),
+    '🔴 la lista y el detalle han divergido: uno mira ejes que el otro no');
+});
+
 test('SCRUM-992 · toda ruta de partes que no es de admin o pasa por `findParte`, o lee la tabla mirando el rol', () => {
   const { rutas, miraElRol, llama, leeDirecto } = censo();
   const culpables = [];
