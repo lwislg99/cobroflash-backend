@@ -69,7 +69,7 @@ test('SCRUM-917g · cada texto NUEVO consta aprobado, por quien puede aprobarlo,
     'Lo que necesites recordar de este trabajo.', 'Dar de alta a alguien',
     '1 gasto', 'N gastos',
   ];
-  const ficha = 'docs/microcopy/2026-09-21-SCRUM-917g-el-trabajo-plegable.md';
+  const ficha = 'docs/microcopy/2026-09-21-SCRUM-917-el-trabajo-plegable.md';
   for (const t of nuevos) {
     assert.ok(constaAprobado(t).includes(ficha),
       `🔴 «${t}» NO consta aprobado en ${ficha}: o no se firmó, o la ficha no lo lista con su firma completa.`);

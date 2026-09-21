@@ -667,7 +667,8 @@ Firmas: SCRUM-917 **comentario 15881** (todos los textos de `docs/prototipos/SCR
 salvo los dos de «cobrado de más», que el 15994 deja sin firmar) y **comentario 16142** del orquestador,
 21-sep-2026: (1) «1 gasto» / «N gastos» para la línea plegada de gastos cuando los hay, (2) se quita la
 casilla «Incluir precios en el parte» de la barra de Documentos y se deja SÓLO la de dentro de la hoja de
-alta del albarán, (3) GO de staging de 982. Ficha: `docs/microcopy/2026-09-21-SCRUM-917g-el-trabajo-plegable.md`.
+alta del albarán, (3) GO de staging de 982. Ficha: `docs/microcopy/2026-09-21-SCRUM-917-el-trabajo-plegable.md`
+(sin la «g» en el nombre: la convención de SCRUM-709 sólo admite dígitos entre `SCRUM-` y la ranura).
 
 | paso | sha completo |
 |---|---|

@@ -188,8 +188,9 @@ test('SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal', (
   //     ya no vive en la vista: es el valor cerrado de la línea (`TEXTOS_EL_TRABAJO.notasPrivadas`).
   //     La igualdad se conserva, leyendo del sitio nuevo.
   //   · EL PLACEHOLDER ya NO es el de Presupuestos, A PROPÓSITO: el fundador firmó otro para esta
-  //     pantalla (SCRUM-917, com. 15881; ficha `docs/microcopy/2026-09-21-SCRUM-917g-el-trabajo-
-  //     plegable.md`). El principio de la regla 30 no se mueve —«ningún texto sin firma»— y por eso
+  //     pantalla (SCRUM-917, com. 15881). Su ficha, la ruta ENTERA en una sola línea:
+  //     docs/microcopy/2026-09-21-SCRUM-917-el-trabajo-plegable.md
+  //     El principio de la regla 30 no se mueve —«ningún texto sin firma»— y por eso
   //     esta divergencia se DECLARA aquí, con su firma, en vez de quedar como una excepción muda:
   //     se exige que el literal del detalle sea EXACTAMENTE el firmado y que el viejo no siga en el
   //     código del detalle (dos marcadores en la misma pantalla serían uno sin firma).
@@ -210,7 +211,7 @@ test('SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal', (
   assert.ok(!soloEjecutable(detalle).includes('Anota detalles del trabajo, acuerdos verbales'),
     '🔴 ha vuelto al detalle el placeholder de Presupuestos: son dos marcadores en la misma pantalla y '
     + 'el que no es el firmado no tiene firma.');
-  assert.ok(fs.existsSync(path.join(RAIZ, 'docs/microcopy/2026-09-21-SCRUM-917g-el-trabajo-plegable.md')),
+  assert.ok(fs.existsSync(path.join(RAIZ, 'docs/microcopy/2026-09-21-SCRUM-917-el-trabajo-plegable.md')),
     '🔴 falta la ficha de microcopy de SCRUM-917g (docs/microcopy/): el texto firmado no está registrado.');
 });
 
