@@ -24,7 +24,7 @@
 //
 // La pantalla de la oficina —la que sí valora— es otra ruta y otro ticket. Cuando llegue, tendrá
 // que pedir los precios explícitamente, y eso se verá en su diff.
-import { seesAllJobs, seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities';
+import { seesAllJobs, seesOnlyOwnJobs, adminOnlyParteField } from '../../../../core/http/roleCapabilities';
 import { esSuyoElTrabajo, SELECT_DUENOS, whereSuyoElTrabajo } from '../../domain/accesoAlTrabajo'; // SCRUM-992
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { randomUUID } from 'node:crypto';
@@ -459,6 +459,14 @@ router.patch('/:id', async (req: any, res) => {
       return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     }
     const { parte } = found;
+
+    // SCRUM-1078: `precios` es del admin; el técnico, con uno solo, ve rechazada la petición entera.
+    if (!seesAllJobs(req.userRole)) {
+      const campoAdmin = adminOnlyParteField(req.body);
+      if (campoAdmin) {
+        return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: campoAdmin });
+      }
+    }
 
     // 🔴 EL PERMISO SE COMPRUEBA POR CAMPO, NO POR PETICIÓN.
     //
