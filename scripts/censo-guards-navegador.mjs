@@ -31,6 +31,11 @@ import { fileURLToPath } from 'node:url';
 // SIN levantar navegador: la revision manual que encontro el solape de SCRUM-546 costaba
 // un conflicto de merge, y esto cuesta milisegundos.
 import { censarSolape } from './_solape-de-guards.mjs';
+// SCRUM-554 (rebote) · QUE SIGNIFICA EL NUMERO CON EL QUE TERMINO UN GUARD. Aqui se pintaba
+// `rojo(N)` cualquier cosa que no fuera 0 ni 2 — y eso llamaba «defecto medido» tanto a una
+// ceguera declarada (3, 4) como a un codigo IMPUESTO desde fuera. El 143 que este censo
+// reporto el 16-sep-2026 no era de su guard: lo puso un `timeout` que envolvia al censo.
+import { estadoDeLaSalida } from './_salida-de-guard.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SOLO_CENSO = process.argv.includes('--solo-censo');
@@ -106,7 +111,7 @@ for (const g of navegador) {
   const r = spawnSync(process.execPath, [ficheroDe(g)], { cwd: RAIZ, timeout: TOPE_MS, encoding: 'utf8' });
   const ms = Date.now() - t0;
   total += ms;
-  const estado = r.error && r.error.code === 'ETIMEDOUT' ? 'TOPE' : (r.status === 0 ? 'verde' : (r.status === 2 ? 'CIEGO' : 'rojo(' + r.status + ')'));
+  const estado = estadoDeLaSalida(r);
   filas.push({ g, s: Math.round(ms / 100) / 10, estado });
   console.log('   ' + g.padEnd(26) + String(Math.round(ms / 100) / 10).padStart(6) + ' s   ' + estado);
 }
@@ -116,6 +121,10 @@ console.log('   ' + navegador.length + ' guards de navegador · ' + Math.round(t
 const verdes = filas.filter((f) => f.estado === 'verde').length;
 console.log('   verdes: ' + verdes + ' · no verdes: ' + (filas.length - verdes)
   + (filas.length - verdes ? ' (' + filas.filter((f) => f.estado !== 'verde').map((f) => f.g + '=' + f.estado).join(', ') + ')' : ''));
+console.log('');
+console.log('⚠️ Sólo «verde» y «rojo(N)» son veredictos DEL GUARD. «CIEGO», «NO ARRANCA»,');
+console.log('   «SIN SERVIDOR», «TOPE», «MATADO» y «FUERA DEL VOCABULARIO» significan que NO');
+console.log('   llegó a medir — y ninguno de ésos es un defecto que buscar (SCRUM-554).');
 console.log('\n⚠️ Un «rojo» o un «CIEGO» aquí NO es necesariamente el coste: varios de estos guards');
 console.log('   necesitan la app levantada o una sesión. El número que vale para SCRUM-522 es el');
 console.log('   TIEMPO, que se paga igual acierten o no.');

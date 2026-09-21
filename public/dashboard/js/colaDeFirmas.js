@@ -136,6 +136,12 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   try {
     respuesta = await subir();
   } catch (error) {
+    // SCRUM-890 · el servidor ha LEÍDO la firma y la rechaza por el documento: reintentarla da el
+    // mismo no. Sale de la cola; el trazo sigue en pantalla porque la vista relanza el error.
+    if (elServidorLaRechaza(error)) {
+      if (encolada) await window.quitarFirmaPendiente(clave);
+      return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, error, rechazada: true };
+    }
     // No se desencola: es justo el caso para el que existe la cola.
     return { estado: window.FIRMA_SOLO_EN_ESTE_MOVIL, encolada, error };
   }
@@ -150,6 +156,7 @@ async function firmarConRedDeSeguridad(documentoId, cuerpo, subir, tipo) {
   // `albaran_locked` del servidor lo para—, pero el estado que se devuelve es el que el servidor
   // ya ha declarado: la firma ESTÁ a salvo, y eso no depende de que el móvil sepa olvidarla.
   if (encolada) await window.quitarFirmaPendiente(clave);
+  await olvidarElRechazo(clave);
   return { estado: window.FIRMA_A_SALVO, encolada, respuesta };
 }
 
@@ -217,6 +224,77 @@ function elServidorYaLaTiene(error) {
     (error.code === 'albaran_locked' || error.code === 'parte_locked');
 }
 
+/**
+ * 🔴 SCRUM-890 · UN RECHAZO DEFINITIVO: el servidor ha leído la firma y dice que ESE documento no
+ * se puede firmar así. Reintentarla da el mismo no, en cada apertura, para siempre.
+ *
+ * Es una LISTA DE CÓDIGOS, no «cualquier 4xx» ni «cualquier 409», y la asimetría es la de siempre:
+ * un rechazo que se queda en la cola cuesta una petición de más; una firma buena que sale de la
+ * cola no la recupera nadie. Cada código de la lista depende SÓLO de lo que viaja en la cola —el
+ * trazo, el firmante— o de un documento que no dice qué se hizo, y ninguno cambia reintentando.
+ *
+ * Y NO están, porque pueden llegarle a una firma válida:
+ *   · `invalid_transition` (409) — SCRUM-358 lo dejó escrito: el albarán aún no está emitido;
+ *     sacar esa firma de la cola sería perderla.
+ *   · 401 sesión caducada · 403 prueba o permiso · 404 otra cuenta abierta en el mismo móvil (el
+ *     documento es de otro merchant, no «no existe») · 408/429 transitorios · 5xx y el 503 del
+ *     cerrojo.
+ *   · un código que nadie haya pensado: se queda dentro hasta que alguien lo añada aquí.
+ *
+ * `parte_vacio` sale aunque la oficina ponga líneas después, y a propósito: el cliente firmó un
+ * parte SIN líneas; subirla más tarde le haría firmar un contenido que no vio.
+ * Se mira `status` Y `code`, nunca el texto; el 409 de «ya la tiene» se descarta ANTES.
+ */
+const RECHAZOS_DEFINITIVOS = [
+  '409:parte_vacio',
+  '400:firma_invalida',
+  '400:firma_sin_nombre',
+  '400:calidad_firmante_invalida',
+  '400:calidad_firmante_otro_vacio',
+  '413:firma_demasiado_grande',
+  // SCRUM-890 (com. 15668/15670) · depende sólo de lo que viaja en la cola: reintentar no lo cambia.
+  '400:invalid_id',
+];
+
+function elServidorLaRechaza(error) {
+  if (!error || error.sinRed || elServidorYaLaTiene(error)) return false;
+  return RECHAZOS_DEFINITIVOS.indexOf(error.status + ':' + error.code) !== -1;
+}
+
+/**
+ * 🔴 SCRUM-890 · LA CONSTANCIA DE UN RECHAZO AL VACIAR, que es lo que la pantalla del documento lee.
+ *
+ * `drenarAlAbrir` corre al arrancar y nadie mira su resultado; la firma rechazada sale de la cola.
+ * Sin esto, el rechazo existía sólo en una variable que moría al terminar el drenado.
+ *
+ * Devuelve true sólo si la constancia QUEDÓ ESCRITA. Quien llama no saca la firma de la cola si no:
+ * mejor un reintento de más en la próxima apertura que un rechazo que no ve nadie.
+ */
+async function dejarConstanciaDelRechazo(firma, codigo) {
+  if (typeof window.guardarRechazoDeFirma !== 'function') return false;
+  try {
+    const r = await window.guardarRechazoDeFirma({
+      clave: firma.claveIdempotencia,
+      tipo: firma.tipo || 'albaran',
+      documentoId: firma.albaranId,
+      codigo: codigo || null,
+      rechazadaEn: Date.now(),
+    });
+    return !!r && r.estado === window.GUARDADO;
+  } catch (_e) {
+    return false;
+  }
+}
+
+/**
+ * SCRUM-890 · Esa firma ha llegado al servidor: la constancia de un rechazo anterior ya no es verdad.
+ * Best-effort: si no se puede borrar, el aviso sobra hasta la próxima firma buena, y eso no pierde nada.
+ */
+async function olvidarElRechazo(clave) {
+  if (typeof window.olvidarRechazoDeFirma !== 'function') return;
+  try { await window.olvidarRechazoDeFirma(clave); } catch (_e) { /* best-effort */ }
+}
+
 
 /**
  * Vacía la cola: sube lo que pueda y deja dentro lo que no.
@@ -224,7 +302,9 @@ function elServidorYaLaTiene(error) {
  * `subirFirma(firma)` hace la petición real; se inyecta para poder ejercitar el camino entero
  * contra el banco de red.
  *
- * Devuelve `{ estado, subidas, yaEstaban, quedan, fallidas }`.
+ * Devuelve `{ estado, subidas, yaEstaban, quedan, fallidas, rechazadas }`. `rechazadas` (SCRUM-890)
+ * son las que el servidor rechazó por el documento y han SALIDO de la cola: se dice cuáles y con
+ * qué código, porque salir en silencio sería otro fallo mudo.
  *
  * 🔴 EL SUELO: si no se consigue LEER la cola, NO se dice «nada pendiente». Se devuelve el estado
  * del almacén tal cual —NO_DISPONIBLE o FALLO— y `quedan: null`. «Cola vacía» y «no supe mirarla»
@@ -238,13 +318,14 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
   if (!cola || cola.estado !== window.GUARDADO || !Array.isArray(cola.firmas)) {
     return {
       estado: (cola && cola.estado) || window.FALLO,
-      subidas: 0, yaEstaban: 0, quedan: null, fallidas: [],
+      subidas: 0, yaEstaban: 0, quedan: null, fallidas: [], rechazadas: [],
     };
   }
 
   let subidas = 0;
   let yaEstaban = 0;
   const fallidas = [];
+  const rechazadas = [];
 
   for (const firma of ordenDeDrenado(cola.firmas)) {
     // 🔴 UNA QUE FALLA NO BLOQUEA A LAS DEMÁS — pero tampoco se salta EN SILENCIO: cae en
@@ -259,8 +340,25 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
       if (elServidorYaLaTiene(r.error)) {
         // Ya está a salvo: sale de la cola igual que si la hubiéramos subido nosotros.
         const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
+        await olvidarElRechazo(firma.claveIdempotencia);
         if (quitada && quitada.estado === window.GUARDADO) yaEstaban += 1;
         else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la tiene y no se pudo sacar de la cola' });
+        continue;
+      }
+      if (elServidorLaRechaza(r.error)) {
+        // SCRUM-890 · rechazada por el documento: el mismo no en cada apertura. Sale, y se DICE —
+        // primero la constancia y DESPUÉS fuera de la cola: al revés, un proceso que muera en medio
+        // deja un rechazo que no ve nadie.
+        if (!(await dejarConstanciaDelRechazo(firma, r.error.code))) {
+          fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la rechaza y no se pudo dejar constancia' });
+          continue;
+        }
+        const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
+        if (quitada && quitada.estado === window.GUARDADO) {
+          rechazadas.push({ clave: firma.claveIdempotencia, codigo: r.error.code || null });
+        } else {
+          fallidas.push({ clave: firma.claveIdempotencia, motivo: 'el servidor la rechaza y no se pudo sacar de la cola' });
+        }
         continue;
       }
       fallidas.push({ clave: firma.claveIdempotencia, motivo: String((r.error && r.error.message) || r.error) });
@@ -274,6 +372,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
 
     // CONFIRMADA. Sólo aquí sale de la cola.
     const quitada = await window.quitarFirmaPendiente(firma.claveIdempotencia);
+    await olvidarElRechazo(firma.claveIdempotencia);
     if (quitada && quitada.estado === window.GUARDADO) subidas += 1;
     else fallidas.push({ clave: firma.claveIdempotencia, motivo: 'subió y no se pudo sacar de la cola' });
   }
@@ -286,7 +385,7 @@ async function drenarFirmasPendientes(subirFirma, opciones) {
   // Si la cola quedó vacía DE VERDAD —leída y sin nada—, ya no hay nada que perder: se retira la
   // marca. Dejarla puesta haría que el siguiente arranque avisara de una pérdida que no hubo.
   if (quedan === 0 && typeof window.olvidarQueHuboCola === 'function') window.olvidarQueHuboCola();
-  return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas };
+  return { estado: window.GUARDADO, subidas, yaEstaban, quedan, fallidas, rechazadas };
 }
 
 /**
@@ -307,14 +406,27 @@ function subirFirmaDeLaCola(firma) {
   // SCRUM-652 no tiene `tipo`, y es de un albarán por construcción —era lo único que se podía
   // firmar—. Sin el default se quedaría sin ruta y sin subir, después de haber sobrevivido a la
   // falta de cobertura que la puso ahí.
-  const RUTAS = { albaran: '/admin/albaranes', parte: '/admin/partes' };
+  // 🔴 SCRUM-653 · EL MAPA GUARDA LA RUTA ENTERA, NO LA BASE.
+  //
+  // Antes era `{ albaran: '/admin/albaranes', parte: '/admin/partes' }` y se le pegaba
+  // `/${id}/firmar`. La firma del TÉCNICO no cambia la base: cambia el SUFIJO
+  // (`/firmar-tecnico`), así que con el mapa viejo no había forma de expresarla sin meter un `if`
+  // aquí dentro. Con la ruta entera, añadir un tipo es añadir una línea.
+  //
+  // ⚠️ `albaran` sigue PRIMERO y sigue siendo el default: una firma encolada por una versión
+  // anterior no tiene `tipo`, y es de un albarán por construcción.
+  const RUTAS = {
+    albaran: (id) => `/admin/albaranes/${id}/firmar`,
+    parte: (id) => `/admin/partes/${id}/firmar`,
+    'parte-tecnico': (id) => `/admin/partes/${id}/firmar-tecnico`,
+  };
   const base = RUTAS[firma.tipo || 'albaran'];
   if (!base) {
     // Ni se adivina ni se cae al albarán: subir la firma de un documento desconocido a la ruta
     // equivocada es peor que no subirla. Se queda en la cola y se dice cuál.
     return Promise.reject(Object.assign(new Error(`tipo de documento desconocido: ${firma.tipo}`), { tipoDesconocido: true }));
   }
-  return window.apiRequest(`${base}/${firma.albaranId}/firmar`, {
+  return window.apiRequest(base(firma.albaranId), {
     method: 'POST',
     body: JSON.stringify(cuerpo),
   });
@@ -344,11 +456,46 @@ async function drenarAlAbrir() {
 }
 
 // Frontend vanilla, sin bundler: se publica en `window` como el resto del dashboard.
+/**
+ * 🔴 SCRUM-919 · LA COLA TAMBIÉN SE VACÍA AL VOLVER LA RED Y AL VOLVER A PRIMER PLANO.
+ *
+ * Medido por la Sesión 0 con corte real (17-sep-2026): sólo se vaciaba al RECARGAR. Ni el evento
+ * `online` ni sacar el móvil del bolsillo la tocaban, así que una firma hecha en un sótano se quedaba
+ * en el móvil hasta que alguien recargaba la app.
+ *
+ * Sigue sin haber Background Sync ni push (ver `app.js`): esto sólo funciona CON YaQu ABIERTO, y el
+ * texto del pad lo dice así.
+ *
+ * El cerrojo evita dos vaciados a la vez (`online` y `visibilitychange` suelen llegar juntos al salir
+ * de un sótano). Aun sin él, la idempotencia de hoy (clave de idempotencia + `*_locked` = ya la tiene)
+ * impediría una firma doble; el cerrojo ahorra la segunda subida.
+ */
+let vaciadoEnCurso = null;
+function drenarSiNoSeEstaDrenando() {
+  if (vaciadoEnCurso) return vaciadoEnCurso;
+  vaciadoEnCurso = drenarAlAbrir().finally(() => { vaciadoEnCurso = null; });
+  return vaciadoEnCurso;
+}
+
+/** Engancha el vaciado a `online` y a `visibilitychange` → visible. Una sola vez por ventana. */
+function activarDrenadoAlVolver(win, doc) {
+  const w = win || window; const d = doc || document;
+  if (!w || !d || typeof w.addEventListener !== 'function' || typeof d.addEventListener !== 'function') return false;
+  if (w.__yaquDrenadoAlVolver) return false;
+  w.__yaquDrenadoAlVolver = true;
+  w.addEventListener('online', () => { drenarSiNoSeEstaDrenando(); });
+  d.addEventListener('visibilitychange', () => { if (d.visibilityState === 'visible') drenarSiNoSeEstaDrenando(); });
+  return true;
+}
+
 window.subirFirmaDeLaCola = subirFirmaDeLaCola;
 window.drenarAlAbrir = drenarAlAbrir;
+window.drenarSiNoSeEstaDrenando = drenarSiNoSeEstaDrenando;   // SCRUM-919
+window.activarDrenadoAlVolver = activarDrenadoAlVolver;
 window.claveDeFirma = claveDeFirma;
 window.encolarFirma = encolarFirma;
 window.firmarConRedDeSeguridad = firmarConRedDeSeguridad;
 window.ordenDeDrenado = ordenDeDrenado;
 window.elServidorYaLaTiene = elServidorYaLaTiene;
+window.elServidorLaRechaza = elServidorLaRechaza;
 window.drenarFirmasPendientes = drenarFirmasPendientes;

@@ -1,0 +1,29 @@
+VENTANAS QUE DECIDEN (las 21 de la fase a, re-examinadas): 21
+  · sobre texto YA LIMPIO de comentarios -> un comentario NO las ciega: 5
+  · 🔴 sobre el fichero CRUDO -> un comentario SI las ciega ...........: 16
+
+LAS FRAGILES DE VERDAD (fuente cruda):
+     🔴 tests/scrum162-conceptos-frecuentes.test.mjs:142  cuerpo = ventana 1600
+     🔴 tests/scrum180-fixtures-nunca-a-meta.test.mjs:116  antes = ventana 500
+     🔴 tests/scrum228-desglose-empleado-suma.test.mjs:232  contexto = ventana 120
+     🔴 tests/scrum325-libros-por-periodo.test.mjs:318  expense = ventana 2600
+     🔴 tests/scrum325-libros-por-periodo.test.mjs:325  provider = ventana 1200
+   🔴🔴 tests/scrum338-carga-de-catalogo-no-muda.test.mjs:87  bloque = ventana 1800  (ceguera SILENCIOSA)
+     🔴 tests/scrum341-condicion-precio-publicada.test.mjs:58  ventana = ventana 120
+     🔴 tests/scrum599-navegacion-documentos-y-atajo.test.mjs:363  bloque = ventana 400
+     🔴 tests/scrum626-calentar-el-navegador.test.mjs:205  trozo = ventana 1500
+     🔴 tests/scrum633-caducidad-en-la-zona.test.mjs:275  cuerpo = ventana 700
+     🔴 tests/scrum677b-el-vigia-esta-cableado.test.mjs:57  job = ventana 200
+     🔴 tests/scrum716c-la-memoria-del-vigia.test.mjs:94  antes = ventana 300
+     🔴 tests/scrum727b-asignados-en-la-lista.test.mjs:70  trozo = ventana 400
+     🔴 tests/scrum727b-asignados-en-la-lista.test.mjs:85  antes = ventana 400
+     🔴 tests/scrum734-una-sola-carga.test.mjs:304  bloque = ventana 1600
+     🔴 tests/scrum856-canje-una-sola-vez.test.mjs:266  cabecera = ventana 1400
+
+CONTROL POSITIVO — los dos casos ya medidos a mano en la fase b:
+   scrum338 (medido: lee CRUDO)        -> el censo dice cruda ✅
+   scrum819 (medido: lee SIN comentarios) -> el censo dice limpia ✅
+
+LIMITE DECLARADO: la pregunta «¿limpia?» se hace por FICHERO, no por variable. Un
+fichero que mezclara los dos lectores saldria como limpio entero. No se ha medido si
+alguno lo hace: se dice en vez de darlo por imposible.

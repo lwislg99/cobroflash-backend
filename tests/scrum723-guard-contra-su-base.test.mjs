@@ -30,13 +30,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { baseDeLaRama, contenidoEnLaBase } from './_base-de-la-rama.mjs';
 import { ambitoDeLaFactura, ENTRADA_FACTURA } from './_ambito-de-la-factura.mjs';
 import { censarReferenciaMovil, analizarFuente } from './_censo-referencia-movil.mjs';
+import { temporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REL_PDF = 'src/modules/invoicing/infra/pdf/pdf.service.ts';
@@ -60,7 +60,7 @@ const modulo = (factura, presupuesto) =>
  * @param {boolean} o.sinOrigin          no se crea ninguna referencia: no hay base que resolver
  */
 function repoDeRamaYMain({ mainTocaLaFactura = true, ramaTocaLaFactura = false, sinOrigin = false } = {}) {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum723-'));
+  const raiz = temporal('scrum723-');
   const g = (...a) => execFileSync('git', a, { cwd: raiz, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   g('init', '-q', '-b', sinOrigin ? 'suelta' : 'main');
   g('config', 'user.email', 'fixture@yaqu.test');
@@ -186,6 +186,12 @@ test('SCRUM-723 · sin base que resolver dice que NO SABE, y no cae hacia `origi
 //
 // LAS PIEZAS DE HOY, medidas el 4-sep-2026 sobre `origin/main` = bf8cef31. Se declaran por NOMBRE
 // y no por línea: referenciar por posición caduca al primer commit (SCRUM-710).
+// 🔴 SCRUM-716c (8-sep-2026) · entra `tests/scrum716c-la-memoria-del-vigia.test.mjs`.
+//
+// Nombra `refs/remotes/origin/main` para FABRICAR esa referencia en un repo de usar y tirar,
+// no para compararse contra la de este repositorio. El vigía hace `git rev-parse origin/main`,
+// así que sin esa ref el repo de prueba no serviría para ejercitarlo. Es una referencia móvil
+// de un repo que vive tres segundos dentro del temporal del sistema y se borra al acabar.
 const AMBITO_DECLARADO = [
   'MARCADOR_MICROCOPY_DESGLOSE',
   'NOMBRE_IMPUESTO_POR_DEFECTO',
@@ -275,6 +281,78 @@ const HALLAZGOS_DECLARADOS = [
   // dentro de un repo SINTÉTICO —su `origin/main` no es el de nadie— y desaparece el día que se
   // borre el caso ①, no antes: sin ella, «ahora está verde» no se puede contrastar con nada.
   'tests/scrum723-guard-contra-su-base.test.mjs [show]',
+  // SCRUM-637 · el enlace ticket↔rama. Su pregunta es literalmente sobre la PUNTA: «¿esta rama ya
+  // está DENTRO de main, y qué commits de este ticket son ancestros de `origin/main` HOY?». La
+  // referencia móvil es el SUJETO de la pregunta, no un descuido — misma familia que
+  // `censo-reparto.mjs` y `vigilante-de-despliegue.mjs`. Anclarlo a `merge-base` NO lo arreglaría:
+  // contestaría a otra pregunta (qué había cuando la rama salió) y su respuesta sería siempre «no
+  // está mergeada», que es justo el dato inútil. No corre en CI: es herramienta de mano y lo dice
+  // en su cabecera.
+  // 🔴 ENTRÓ EN SILENCIO Y ESTE GUARD LO CAZÓ, que es para lo que existe: la rama
+  // `scrum-637-verificacion-s5` pasó su suite en verde en su propio árbol y CI la tumbó al probar
+  // el MERGE. El guard acertó y la rama estaba mal declarada, no al revés.
+  // Lo retira: quien borre `scripts/verificacion-s5/`, o quien lleve el enlace ticket↔rama a un
+  // mecanismo que no necesite consultar la punta de `main`.
+  'scripts/verificacion-s5/enlace-ticket-rama.mjs [log]',
+  // SCRUM-637 · el generador del borrado de ramas. Ya estaba en la lista de INDIRECTAS por su
+  // `branch -r --merged origin/main`; ahora lee además el HISTÓRICO DE MERGES de la punta
+  // (`git log --merges origin/main`) y por eso asciende también a ésta.
+  //
+  // El motivo es el mismo y sigue siendo el sujeto de la pregunta: para saber si borrar una rama
+  // cerraría un PR abierto hay que mirar si ALGÚN merge de `main` la nombra, y eso sólo existe en
+  // la punta. Contra la base de una rama el histórico estaría truncado justo por donde importa —
+  // los merges recientes— y el apartado saldría vacío, que es la respuesta peligrosa: diría «no
+  // hay ninguna de riesgo» sin haber mirado.
+  // Lo retira: quien borre `scripts/verificacion-s5/`, o el día que haya `gh` y el estado de los
+  // PR se pueda consultar de frente, que es lo que este rodeo sustituye.
+  'scripts/verificacion-s5/ramas-borrables.mjs [log]',
+  // SCRUM-839d · el job que resuelve los conflictos de solo registro. Su pregunta es sobre la
+  // PUNTA por definición: «¿este PR choca con `main` TAL COMO ESTÁ AHORA?». Es lo que GitHub
+  // mira para marcarlo CONFLICTING, y contra la base de la rama no habría conflicto que ver.
+  // Corre en su workflow en cada push a `main`, no en la tanda. Lo retira quien retire el job.
+  'scripts/conflicto-de-registro.mjs [rev-parse]',
+  // …y su test, que resuelve `main` y `pr` dentro de repositorios SINTÉTICOS creados en el
+  // temporal —su `main` no es el de nadie—, mismo caso que la entrada `[show]` de este fichero.
+  'tests/scrum839d-union-solo-en-el-registro.test.mjs [rev-parse]',
+  // SCRUM-839e · mismo caso: `main`, `pr` y la rama del PR en un remoto DESNUDO creado en el
+  // temporal; el `rev-parse` mide si esa rama sintética se movió. No es el `main` de nadie.
+  'tests/scrum839e-solo-pr-armados.test.mjs [rev-parse]',
+  // SCRUM-899 · la puerta de las sesiones de fondo. Su `banco()` fabrica un repositorio SINTÉTICO
+  // en el temporal y hace `git show origin/main:scripts/equipo/sesion.mjs` para reproducir EXACTO
+  // lo que hace el instalador real: leer la copia oficial desde la punta de `main` para comparar
+  // contra el fichero instalado. Ese `origin/main` es el del repo de usar y tirar que el propio
+  // test crea y borra, no el de este repositorio — mismo caso que `[show]` de este mismo fichero
+  // y que `scrum839d`/`scrum839e`. Lo retira quien borre `scripts/equipo/sesion.mjs` o su banco.
+  'tests/scrum899-sesion-lista-blanca.test.mjs [show]',
+  // SCRUM-899 (hito 2) · mismo caso: el banco de la tanda instala las copias con `git show
+  // origin/main:<fichero>` desde su repositorio SINTÉTICO del temporal. No es el `main` de nadie.
+  'tests/scrum899b-arranque-de-la-tanda.test.mjs [show]',
+  // SCRUM-951a · el instalador del equipo de fondo. Su pregunta es sobre la PUNTA por diseño: copia a
+  // la instalación los scripts y el prompt OFICIALES, que son los de `origin/main`, y no los del árbol
+  // de trabajo de quien instala (que puede estar tocado o ser una rama). Es la misma lectura que hace
+  // `arranque.cmd` en cada tanda y la misma contra la que compara la puerta de `sesion.mjs`: si copiara
+  // desde la base de una rama, la puerta rechazaría su propia instalación. No corre en CI; se ejecuta a
+  // mano al montar un puesto. Lo retira quien retire el instalador.
+  'scripts/equipo/instalar.mjs [show]',
+  // SCRUM-951a · la lista de verificación de la instalación. Pregunta «¿la copia instalada es IDÉNTICA a
+  // la oficial de AHORA?», que es exactamente lo que la puerta de `sesion.mjs` exige para actuar; contra
+  // otra referencia contestaría a una pregunta que nadie hace. Herramienta de mano, no corre en CI.
+  // Lo retira quien retire `comprobar-instalacion.mjs`.
+  'scripts/equipo/comprobar-instalacion.mjs [show]',
+  // SCRUM-951a · su banco: mismo caso que los de 899 — un repositorio SINTÉTICO en el temporal cuyo
+  // `origin/main` no es el de nadie, para comprobar que el instalador copió exactamente de ahí.
+  'tests/scrum951a-equipo-configurable.test.mjs [show]',
+  // SCRUM-954 · su banco: mismo caso que los de 899 y 951a — un repositorio SINTÉTICO en el temporal
+  // cuyo `origin/main` no es el de nadie. Existe para montar una instalación que la puerta de
+  // `sesion.mjs` acepte (exige ser idéntica, byte a byte, a `origin/main:scripts/equipo/sesion.mjs`);
+  // contra cualquier otra referencia el banco no podría ejercitar lo que la puerta comprueba, que es
+  // justo lo que los casos de `estado` y `olvidar` necesitan por EFECTO.
+  'tests/scrum954-vivo-no-es-listado.test.mjs [show]',
+  // SCRUM-959b · su banco: mismo caso que los de 899, 951a y 954 — un repositorio SINTÉTICO en el
+  // temporal cuyo `origin/main` no es el de nadie, para que la puerta de `sesion.mjs` acepte la
+  // instalación del banco y se pueda medir POR EFECTO qué llamadas recibe `claude` (si con el equipo
+  // vivo `lanzar orquestador` llama o no a `claude --bg`). Lo retira quien borre `sesion.mjs`.
+  'tests/scrum959b-el-arranque-no-duplica-el-equipo.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -296,6 +374,23 @@ const INDIRECTAS_DECLARADAS = [
   'tests/_censo-eol.mjs',        // la lista de referencias que `merge-base` prueba: es la SOLUCIÓN
   'tests/_censo-tickets.mjs',    // recibe la referencia por parámetro (`ref = 'origin/main'`)
   'tests/scrum723-guard-contra-su-base.test.mjs',  // los mensajes y los comentarios de aquí mismo
+  // SCRUM-839d · construye repositorios SINTÉTICOS en el temporal con una rama `main` y una `pr`, y
+  // nombra `main` al montarlos y al hablar del job. Ninguno es el `main` de este repositorio.
+  'tests/scrum839d-union-solo-en-el-registro.test.mjs',
+  // SCRUM-839e · lo mismo: nombra `main` al montar sus repositorios sintéticos (y el remoto desnudo
+  // del banco del job) y al pasárselo al CLI dentro de ellos. Ninguno es el `main` de este repositorio.
+  'tests/scrum839e-solo-pr-armados.test.mjs',
+  // SCRUM-899 (hito 2) · nombra `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
+  // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
+  'tests/scrum899b-arranque-de-la-tanda.test.mjs',
+  // SCRUM-966 · el banco del censo de ramas. Nombra `origin/main` al montar los worktrees y las ramas
+  // de su repositorio SINTÉTICO del temporal, que tiene su propio remoto desnudo: ese `origin/main` no
+  // es el de este repositorio. Mismo caso que 839d, 839e y 899b. Lo retira quien borre el banco.
+  'tests/scrum966-censo-ve-las-ramas.test.mjs',
+  // SCRUM-951a · la lista de verificación nombra `origin/main` también FUERA de los argumentos de git: en
+  // los detalles que imprime («idéntica a origin/main:…») y en la prosa de su cabecera. Su llamada
+  // directa está declarada arriba, con su motivo.
+  'scripts/equipo/comprobar-instalacion.mjs',
   // SCRUM-775 · el guard del suelo decorativo. NO llama a git contra la referencia móvil: la
   // NOMBRA en la prosa que explica por qué NO la usa, y dentro del fragmento congelado del caso
   // roto —donde `ref = 'origin/main'` es el valor por defecto que tenía el original—.
@@ -316,7 +411,105 @@ const INDIRECTAS_DECLARADAS = [
   // resuelta en la instantánea—, y una lista que declara de más deja de describir el árbol.
   'scripts/_censo-alcanzabilidad.mjs',
   'tests/_fixture-alcanzabilidad.mjs',             // el `origin/main` del repo SINTÉTICO, que no es el de nadie
-  'tests/scrum753-censo-de-alcanzabilidad.test.mjs',  // los mensajes que explican la regla R10
+  'tests/scrum753-censo-de-alcanzabilidad.test.mjs',
+  'tests/scrum716c-la-memoria-del-vigia.test.mjs',  // los mensajes que explican la regla R10
+  // SCRUM-637 · el generador del borrado de ramas ya mergeadas. Nombra `origin/main` en
+  // `git branch -r --merged origin/main` —un subcomando que no está en `LECTORES`, así que llega
+  // aquí y no a la lista de arriba— y en la prosa que explica por qué cruza DOS fuentes.
+  // Su pregunta es «¿esta rama ya está DENTRO de la punta de main?»: la referencia móvil es el
+  // sujeto, igual que en SCRUM-753. Contra la base de una rama respondería que ninguna está
+  // mergeada, que es la respuesta inútil. EN SECO por defecto y fuera de CI.
+  // Lo retira: quien borre `scripts/verificacion-s5/`.
+  'scripts/verificacion-s5/ramas-borrables.mjs',
+  // SCRUM-804 · el guard de la dimensión «rama viva». Nombra `main` en la PROSA que explica la
+  // regla —«¿el trabajo de este ticket está dentro de `main`?»— y en la clase `'en-main'` que
+  // devuelve el clasificador de SCRUM-387. NO compara contra la referencia móvil: su árbitro le
+  // pregunta a `git merge-base --is-ancestor` contra `censo.inst.sha`, el sha que la instantánea
+  // de SCRUM-753 CONGELA. Es el mismo motivo por el que están arriba `scrum753` y `scrum775`.
+  // Lo retira: quien borre la dimensión de rama viva del censo del tablero.
+  'tests/scrum804-la-rama-viva.test.mjs',
+  // SCRUM-804f · el guard de «una rama `scrum-<n>` sin slug es de su ticket». Nombra `main` en la
+  // PROSA del defecto (el check obligatorio de `main` cerrado por `scrum-904`) y quita el prefijo
+  // `origin/` a los NOMBRES que lista `for-each-ref`. NO compara contra la referencia móvil: su
+  // control positivo sólo lee NOMBRES de rama para comprobar que el cambio de regla no mueve de
+  // número a ninguna que lleve slug; ningún sha ni alcanzabilidad. Lo retira: quien retire ese
+  // control positivo o vuelva a exigir guion en `numeroDeRama`.
+  'tests/scrum804f-la-rama-sin-slug.test.mjs',
+  // SCRUM-804h · el guard de «una fase con corte (`scrum-915e1-…`) es de su ticket». Entra por el
+  // MISMO motivo y con la misma forma que `scrum804f`, que es su hermano: nombra `main` en la
+  // PROSA del defecto (el check obligatorio de `main` cerrado, esta vez por `scrum-915e1-…`, con
+  // seis PR esperando) y quita el prefijo `origin/` a los NOMBRES que lista `for-each-ref`.
+  // **NO compara contra la referencia móvil**: su control positivo lee sólo NOMBRES de rama —para
+  // comprobar que el ensanche no re-atribuye a ninguna que YA tuviera ticket— y ni un sha ni una
+  // alcanzabilidad. Lo retira: quien retire ese control positivo o vuelva a leer la fase como un
+  // solo carácter en `numeroDeRama`.
+  'tests/scrum804h-la-fase-con-corte.test.mjs',
+  // SCRUM-833 · el guard de los tres instrumentos de SCRUM-637. Entra aquí por el MISMO motivo y
+  // con la misma forma que su hermano de arriba: al anclarlo a `git log --merges` nombra `main`
+  // en la prosa que explica por qué esa población es permanente, y en el mensaje del suelo del
+  // clon superficial. **NO compara contra la referencia móvil**: le pasa a `git` el `inst.sha` que
+  // la instantánea de SCRUM-753 CONGELA, nunca `origin/main`. Si comparase contra la punta, el
+  // histórico saldría truncado justo por los merges recientes y su suelo pasaría sobre el vacío.
+  // Lo retira: quien devuelva ese guard a una población de ramas vivas — que es el defecto que
+  // SCRUM-833 vino a quitar, así que no debería pasar.
+  'tests/scrum637-la-rama-que-nadie-mira.test.mjs',
+  // SCRUM-637 · la pregunta CONTRARIA a la de arriba: qué ramas NO están dentro de main, con su
+  // edad. Nombra `origin/main` en la prosa y como valor por defecto de `instantanea({ ref })`.
+  //
+  // 🔴 Y AQUÍ LA REFERENCIA MÓVIL ES EL SUJETO, no un descuido: «¿qué trabajo hay esperando fuera
+  // de la punta de main?» sólo se puede contestar contra la punta de main. Anclarlo a la base de
+  // esta rama respondería que TODAS las ramas están fuera —incluidas las que se mergearon ayer—,
+  // que es la respuesta inútil de SCRUM-753 con el signo cambiado.
+  //
+  // Lo que sí hace, y por eso no reintroduce el defecto que este guard vigila: **congela el sha**
+  // en `instantanea()` y mide todo contra ESE objeto, imprimiéndolo en la primera línea de su
+  // salida. La referencia se resuelve una vez; a partir de ahí la pregunta ya no es móvil.
+  // Sólo lee: no borra, no empuja, y está fuera de CI.
+  // Lo retira: quien borre `scripts/verificacion-s5/`.
+  'scripts/verificacion-s5/ramas-sin-mergear.mjs',
+  // SCRUM-996 · `norma.mjs`, que imprime las normas por SECCIONES en vez del fichero entero. Nombra
+  // `origin/main` como valor por defecto de `--origen` y en la línea donde declara de dónde leyó.
+  // Aquí la referencia móvil es el SUJETO, no un descuido: la pregunta es «¿qué dicen las normas
+  // AHORA?», y el checkout compartido de la máquina puede ir miles de commits por detrás (medido
+  // el 21-sep-2026: 4.740), así que contra el árbol de trabajo serviría normas fósiles.
+  // **NO compara ni emite veredicto sobre ninguna rama**: solo lee un fichero con
+  // `git show <ref>:<ruta>` y imprime el origen y el sha256 en su primera línea. No corre en CI.
+  // Lo retira: quien retire `norma.mjs`, o el día que las sesiones lean las normas de otro modo.
+  'scripts/equipo/norma.mjs',
+  // SCRUM-829b · el banco de la ref RANCIA. Nombra `refs/remotes/origin/main` en el control de la
+  // poda —«podar no es vaciar: `main` tiene que seguir ahí»—, y ese `main` es el del CLON que el
+  // test fabrica en un directorio temporal, no el de este repositorio: el mismo motivo por el que
+  // está arriba `_fixture-alcanzabilidad.mjs`. No compara nada contra la punta de nadie.
+  // Lo retira: quien quite ese control del test, o el test entero.
+  'tests/scrum829b-la-ref-rancia-se-poda.test.mjs',
+  // SCRUM-649 · el guard del ancla, y sus controles. Aquí `origin/main` no es un objetivo de
+  // comparación: es **parte del texto que se valida**. El ancla del máster se escribe literalmente
+  // «**Medido contra:** `origin/main` = `<sha40>` · <instante>», así que la cadena aparece dentro
+  // de `RE_ANCLA` y en la prosa que explica el formato. Lo que el guard compara es el SHA YA
+  // ESCRITO en cada entrada contra `git cat-file --batch-check`: un objeto fijo de 40 caracteres,
+  // el opuesto exacto de una referencia móvil.
+  //
+  // Los dos entraron en esta lista el 16-sep-2026 y no por escribir nada nuevo: `scrum267` llevaba
+  // años nombrando `origin/main` en su regex, pero NO llamaba a git, y este censo —con razón— sólo
+  // mira los ficheros que lo llaman. SCRUM-649 le añadió la sonda de existencia, el fichero pasó a
+  // llamar a git, y sus literales de siempre se hicieron visibles de golpe. El censo no falló:
+  // acertó el día que tuvo materia que mirar.
+  // Lo retira: quien quite la comprobación de existencia de SCRUM-649, o el día que el formato del
+  // ancla deje de nombrar `origin/main`.
+  'tests/scrum267-ancla-de-medicion.test.mjs',
+  'tests/scrum649-el-ancla-que-no-apunta.test.mjs',
+  // SCRUM-899 · nombra `origin/main` en la prosa (nombre del test «sin config.json, o sin
+  // origin/main») y en la descripción de una mutación que cae sobre una variable local llamada
+  // `main` (`Buffer.from(main.stdoutBuffer)`, el proceso hijo del propio script) — ninguna de las
+  // dos es una comparación contra la punta de este repositorio. Lo retira quien borre esos textos.
+  'tests/scrum899-sesion-lista-blanca.test.mjs',
+  // SCRUM-973 · mismo caso que 839d, 839e, 899b y 966: un repositorio SINTÉTICO en el temporal con
+  // su PROPIO `refs/remotes/origin/main`, avanzado a mano con `update-ref` para reproducir «el
+  // último commit es el merge de main». Nombra `origin/main` en el mensaje de merge fabricado
+  // (`EL_MERGE`, una cadena que imita el título por defecto de un merge de verdad) y al montar y
+  // leer ese remoto sintético — ninguno de los dos es el `origin/main` de este repositorio.
+  // Lo retira quien borre el banco.
+  'tests/scrum973-titulo-del-pr.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

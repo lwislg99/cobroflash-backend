@@ -70,6 +70,31 @@ test('SCRUM-421 · el falso positivo del `res.json` no vuelve', () => {
   assert.deepEqual(r.escrituras[0].valores, ['draft']);
 });
 
+test('SCRUM-421 · el `select: { status: true }` no se cuenta como escritura — con su negativo', () => {
+  // 🔴 SCRUM-688 lo destapó: `crearRevisionDeQuote` pide de vuelta el estado de la fila recién
+  // creada (`select: { …, status: true }`) y el censo lo leía como una escritura cuyo valor no
+  // sabía resolver. Eso NO es un estado fuera de la tabla: es «devuélveme la columna». Y el efecto
+  // era el peor posible — el fichero entero se declaraba CIEGO por una proyección.
+  const r = censarFuente('proyeccion.ts', [
+    'async function h() {',
+    "  const a = await prisma.quote.create({ data: { status: 'draft' }, select: { id: true, status: true } });",
+    '  const b = await prisma.quote.findFirst({ where: { id: 1 }, select: { status: true } });',
+    '  return [a, b];',
+    '}',
+  ].join('\n'));
+
+  assert.deepEqual(r.sinResolver, [],
+    `🔴 el censo sigue sin poder resolver ${r.sinResolver.length} nodo(s): una proyección lo deja `
+    + 'ciego, y un fichero ciego da verde diciendo «no supe mirar».');
+
+  // 🔴 EL NEGATIVO, que es lo que separa «enseñarle a ver» de «taparle un ojo»: la escritura de
+  // verdad —la que va bajo `data:`— se sigue contando, y con su valor.
+  assert.equal(r.escrituras.length, 1,
+    `🔴 el censo cuenta ${r.escrituras.length} escrituras y hay UNA: la de \`data:\`. Si cuenta 0, `
+    + 'la corrección no distingue proyección de escritura — se ha comido las dos.');
+  assert.deepEqual(r.escrituras[0].valores, ['draft']);
+});
+
 // ── EL CONTRASTE: la tabla contra el árbol ───────────────────────────────────────────────────
 
 test('SCRUM-421 · 🔴 CONTRASTE: ningún estado escrito se queda fuera de la tabla', () => {
@@ -154,18 +179,25 @@ test('SCRUM-421 · cada fila cubre TODOS los estados (la ranura no queda vacía 
     + '\n\n  Una celda ausente no es «oculta»: es una decisión que nadie tomó.');
 });
 
-test('SCRUM-421 · los doce rótulos son EXACTAMENTE los aprobados (regla 30)', () => {
+test('SCRUM-421 · los trece rótulos son EXACTAMENTE los aprobados (regla 30)', () => {
   // 17-ago-2026 · APROBADOS los doce. Este guard exigía el marcador «se aprueban antes de
   // encenderse»; ya están aprobados, así que pasa a exigir el TEXTO — no se borra, porque entonces
   // los doce rótulos se quedarían sin vigilar el día que por fin tienen texto.
   //
   // Tres cambiaron al aprobarse, y el criterio se conserva porque vale para el siguiente registro:
   // MISMA ACCIÓN, MISMAS PALABRAS que en el detalle de factura.
+  //
+  // 21-sep-2026 · SCRUM-984, opción R (firmada por el orquestador por delegación, comentario 16105):
+  // `btnCrearTrabajo` («Crear trabajo») SALE — el Trabajo ya nace al aceptar, no en un botón — y
+  // entran `btnCobrar` («Cobrar ahora», el rótulo que la pantalla ya pintaba) y `btnNuevoAlbaran`
+  // («Nuevo albarán», el firmado en SCRUM-722). Doce − 1 + 2 = trece. Registro en
+  // `docs/microcopy/2026-09-21-SCRUM-984-del-presupuesto-al-albaran.md`.
   const src = fs.readFileSync(REGISTRO, 'utf8');
   const APROBADOS = {
     btnEnviarAprobacion: 'Enviar a aprobación', btnEnviar: 'Enviar al cliente', btnAprobar: 'Aprobar',
-    btnRecordar: 'Enviar recordatorio', btnCrearTrabajo: 'Crear trabajo', btnDuplicar: 'Duplicar',
+    btnRecordar: 'Enviar recordatorio', btnCobrar: 'Cobrar ahora', btnDuplicar: 'Duplicar',
     btnPdf: 'Descargar PDF', btnEditarLineas: 'Editar líneas', btnWhatsApp: 'Enviar por WhatsApp',
+    btnNuevoAlbaran: 'Nuevo albarán',
     btnVerCliente: 'Ver cliente', btnMarcarRechazado: 'Marcar como rechazado', btnBorrar: 'Borrar',
   };
   for (const [id, texto] of Object.entries(APROBADOS)) {

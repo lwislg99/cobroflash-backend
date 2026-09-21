@@ -32,9 +32,9 @@
 // lenguaje de dominio y no tiene nada que ver. Se extraen con el escáner de TypeScript.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import path from 'node:path';
-import ts from 'typescript';
+
+import { bloquesDeComentario, censarProcedencia } from './_procedencia-aprobacion.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIRS = ['src', 'public'];
@@ -45,59 +45,25 @@ const MARCA = /aprobad[oa]s?\s+por\s+el\s+fundador/i;
 // Procedencia RASTREABLE: un ticket o un documento. Una fecha sola no dice dónde mirar.
 const PROCEDENCIA = /SCRUM-\d+|docs\/[\w./ -]+/i;
 
-function ficheros(dir) {
-  const out = [];
-  (function andar(d) {
-    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-      const p = path.join(d, e.name);
-      if (e.isDirectory()) { if (e.name !== 'node_modules') andar(p); }
-      else if (/\.(ts|js|mjs)$/.test(e.name)) out.push(p);
-    }
-  })(path.join(RAIZ, dir));
-  return out;
-}
-
-/** Los COMENTARIOS de un fuente, agrupados en bloques: `//` seguidos cuentan como uno solo. */
-function bloquesDeComentario(codigo, nombre) {
-  const escaner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, codigo);
-  const trozos = [];
-  let k;
-  while ((k = escaner.scan()) !== ts.SyntaxKind.EndOfFileToken) {
-    if (k === ts.SyntaxKind.SingleLineCommentTrivia || k === ts.SyntaxKind.MultiLineCommentTrivia) {
-      trozos.push({ texto: escaner.getTokenText(), inicio: escaner.getTokenStart(), fin: escaner.getTokenEnd(), suelto: k === ts.SyntaxKind.SingleLineCommentTrivia });
-    }
-  }
-  // Unir los `//` consecutivos: la marca y su `(SCRUM-264)` suelen ir en líneas distintas del
-  // mismo comentario, y separarlas convertiría una procedencia válida en un falso positivo.
-  const bloques = [];
-  for (const t of trozos) {
-    const ult = bloques[bloques.length - 1];
-    const entre = ult ? codigo.slice(ult.fin, t.inicio) : null;
-    if (ult && ult.suelto && t.suelto && /^\s*$/.test(entre) && (entre.match(/\n/g) || []).length <= 1) {
-      ult.texto += '\n' + t.texto; ult.fin = t.fin;
-    } else {
-      bloques.push({ ...t, fichero: nombre, linea: codigo.slice(0, t.inicio).split('\n').length });
-    }
-  }
-  return bloques;
-}
-
+/**
+ * 🔴 EL CENSO VIVE AHORA EN `_procedencia-aprobacion.mjs` (SCRUM-921c) — y este fichero NO
+ * cambia de comportamiento: mismas `DIRS`, misma `MARCA`, misma `PROCEDENCIA`, mismo 17.
+ *
+ * Se extrajo porque SCRUM-921 midió que el caso de una autorización inventada se le escapó a
+ * este guard por DOS ejes A LA VEZ —vivía en `tests/`, que no recorre, y decía «el fundador
+ * DECIDE», que su marca no reconoce— y la fase c amplía los dos. Copiar este censo para
+ * tocarle los parámetros a la copia habría dejado dos censos del mismo hecho que se
+ * desincronizan en cuanto uno mejore, que es la familia de defectos que esta casa persigue.
+ *
+ * Lo que lee (comentarios con el parser, no con `createScanner` a pelo) y por qué, está en la
+ * cabecera de ese módulo, con la medición de SCRUM-814 que lo obligó.
+ *
+ *     🔒 Un solo censo, dos preguntas.
+ */
 function censar() {
-  const conProcedencia = [];
-  const sinProcedencia = [];
-  for (const dir of DIRS) {
-    for (const f of ficheros(dir)) {
-      const codigo = fs.readFileSync(f, 'utf8');
-      if (!MARCA.test(codigo)) continue; // atajo barato; el escáner solo corre donde puede haber algo
-      for (const b of bloquesDeComentario(codigo, path.relative(RAIZ, f).replace(/\\/g, '/'))) {
-        if (!MARCA.test(b.texto)) continue;
-        const donde = `${b.fichero}:${b.linea}`;
-        if (PROCEDENCIA.test(b.texto)) conProcedencia.push(donde); else sinProcedencia.push(donde);
-      }
-    }
-  }
-  return { conProcedencia, sinProcedencia };
+  return censarProcedencia(RAIZ, { dirs: DIRS, marca: MARCA, procedencia: PROCEDENCIA });
 }
+
 
 // ── EL TRINQUETE ─────────────────────────────────────────────────────────────────────────────
 // Marcas de aprobación SIN procedencia rastreable que había cuando se encendió el guard.
@@ -105,7 +71,35 @@ function censar() {
 // SCRUM-404 (7-ago-2026): 10 → 9. Al reescribir el fallo de firma en `albaranDetailView.js`, el
 // `'No se pudo firmar: ' + e.message` —texto suelto, sin ticket detrás— pasó a ser un marcador
 // `[PENDIENTE microcopy oficial · …]` con su ticket. Una marca menos sin procedencia.
-export const SIN_PROCEDENCIA = 9;
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-814 (7-sep-2026): 9 → 17, Y SUBE. Es la única subida legítima de este número, y hay
+// que leerla al revés de como se lee normalmente.
+//
+// NO han aparecido ocho marcas nuevas: han aparecido ocho que YA ESTABAN y que el censo no
+// podía ver. El lector de comentarios usaba `ts.createScanner` a pelo y se descarrilaba en el
+// primer template literal con `${}` de cada fichero — desde ahí, ciego (ver
+// `bloquesDeComentario`). Todo lo que estuviera detrás de un `$executeRaw` o de cualquier
+// plantilla con sustituciones no se contaba.
+//
+// Las OCHO que estaban tapadas, enumeradas y no contadas:
+//     public/dashboard/js/albaranDetailView.js:155
+//     public/dashboard/js/homeView.js:643
+//     public/dashboard/js/jobDetailView.js:302
+//     public/dashboard/js/jobDetailView.js:385
+//     public/dashboard/js/reportsView.js:940
+//     src/modules/fiscal/librosAeat/librosAeat.ts:183
+//     src/modules/jobs/domain/parteDictado.ts:401
+//     src/modules/system/app/routes/invoicesAdmin.routes.ts:1116
+//
+// Ninguna es de SCRUM-814: son deuda vieja que el instrumento no alcanzaba. Este número NO
+// vuelve a subir por nada que no sea otro arreglo del instrumento, y baja según se les ponga
+// su ticket o su documento.
+//
+// 📌 Y la lección, que vale más que el número: el fallo se manifestó como una BAJADA —de 9 a 8—,
+// o sea con la forma de una mejora. Lo cazó la mitad del trinquete que vigila que no baje en
+// silencio, que hasta hoy parecía la mitad menos útil.
+export const SIN_PROCEDENCIA = 17;
 
 test('SCRUM-387 · SUELO: el censo encuentra marcas de aprobación de verdad', () => {
   const { conProcedencia, sinProcedencia } = censar();

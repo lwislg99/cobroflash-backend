@@ -158,13 +158,31 @@ test('SCRUM-662 · 🔴 un consumidor cargado ANTES de su pieza cae nombrando a 
   movido.splice(movido.indexOf(d.despues) + 1, 0, d.antes); // la pieza, DESPUÉS de su consumidor
 
   const rotas = dependenciasRotas(movido);
-  assert.equal(rotas.length, 1,
+
+  // 🔴 SCRUM-595 (7-sep-2026) · AQUÍ PONÍA `rotas.length === 1`, Y ESO CADUCÓ.
+  //
+  // Era cierto mientras cada pieza tenía UN consumidor declarado. SCRUM-595 hace que
+  // `filtroClientes.js` sea el `antes` de CINCO dependencias —las dos listas de documento, las dos
+  // fichas y la pieza del bloque de etiquetas—, así que moverlo detrás de uno de sus consumidores
+  // rompe varias A LA VEZ. Eso es el detector funcionando, no fallando.
+  //
+  // Lo que este caso afirma NO ha cambiado —«se detecta, y nombrando los dos»—: lo que se retira
+  // es una aritmética incidental que dependía de que ninguna pieza tuviera dos consumidores. Y
+  // queda MÁS apretado que antes, porque ahora además se exige que el detector no se invente
+  // ninguna: todo lo que reporte tiene que colgar del fichero que se ha movido.
+  const mia = rotas.filter((r) => r.antes === d.antes && r.despues === d.despues);
+  assert.equal(mia.length, 1,
     `🔴 mover \`${d.antes}\` detrás de \`${d.despues}\` no lo detecta nadie. Los scripts clásicos `
     + 'comparten ámbito y se ejecutan en el orden del índice: el consumidor se ejecutaría antes de '
     + 'que exista lo que consume.');
-  assert.equal(rotas[0].antes, d.antes);
-  assert.equal(rotas[0].despues, d.despues);
-  assert.ok(rotas[0].motivo && rotas[0].motivo.length > 5,
+
+  const ajenas = rotas.filter((r) => r.antes !== d.antes);
+  assert.deepEqual(ajenas, [],
+    '🔴 el detector reporta dependencias rotas que NO cuelgan del fichero movido: '
+    + JSON.stringify(ajenas) + '. Sólo se ha movido uno, así que ninguna otra pieza puede haber '
+    + 'quedado detrás de su consumidor. Si aparecen, el detector está inventando.');
+
+  assert.ok(mia[0].motivo && mia[0].motivo.length > 5,
     '🔴 la dependencia rota no dice su MOTIVO: sin él, quien la lee no sabe cuál de los dos mover.');
 });
 

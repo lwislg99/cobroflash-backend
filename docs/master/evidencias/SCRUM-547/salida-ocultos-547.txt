@@ -1,0 +1,31 @@
+ELEMENTOS CON EL ATRIBUTO `hidden` (no `aria-hidden`)
+   405  <div #announce>  🔴 SIN marcador de microcopy
+   503  <section #heroe-f4>  MARCADO
+   646  <section #gremios>  MARCADO
+   695  <section #comparativa>  MARCADO
+   744  <div #founding-banner>  🔴 SIN marcador de microcopy
+   786  <section #contacto-publico>  MARCADO
+  total: 6  ·  marcados: 4  ·  SIN marcador: 2
+
+LOS QUE NO LLEVAN MARCADOR — su texto, tal cual
+
+  #announce  (linea 405)
+    <div class="announce" id="announce" hidden> <div class="wrap announce-in"> <span>Oferta de lanzamiento: <b>9,90&nbsp;€/mes para siempre</b>, mientras mantengas la suscripción activa <span class="hide-sm">para los primeros profesionales</span></span> <!-- SCRUM-330: la escasez, envuelta para poder ocultarla sin tocar la oferta. N
+
+  #founding-banner  (linea 744)
+    <div class="founding" id="founding-banner" hidden>Oferta fundadores: <b>9,90 €/mes para siempre</b>, mientras mantengas la suscripción activa<span id="founding-plazas"> — quedan <b id="founding-left">–</b> plazas</span></div> <span class="price-tag">YaQu Pro</span> <div class="price-amt tnum">19,90 €<span> /mes</span></div> <ul>
+
+¿QUE LOS ENSEÑA?
+  #announce : 1 referencia(s) desde el JS de la pagina
+  #founding-banner : 1 referencia(s) desde el JS de la pagina
+
+  lineas que QUITAN el hidden:
+    867  if(ab)ab.hidden=false; if(fb)fb.hidden=false;
+
+¿EL CSS RESPETA EL `hidden`?
+  🔴 .announce[hidden] { display:block;visibility:hidden }   ← el CSS lo redefine
+
+¿LO RECOGE ALGUN DOCUMENTO?  (666 .md bajo docs/)
+  «Oferta fundadores» -> 0 documento(s)
+  «Oferta de lanzamiento» -> 1 documento(s):  docs/master/SCRUM-330.md
+  «9,90» -> 6 documento(s):  docs/legal/ALCANCE_BETA.md · docs/master/SCRUM-327.md · docs/master/SCRUM-330.md · docs/master/SCRUM-341.md · docs/master/SCRUM-473.md · docs/YAQU_MASTER.md

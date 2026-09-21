@@ -1,0 +1,37 @@
+﻿== bash -n de todos los pasos volcados ==
+  OK sintaxis  paso-1.sh
+  OK sintaxis  paso-2.sh
+  OK sintaxis  paso-3.sh
+  OK sintaxis  paso-4.sh
+  OK sintaxis  paso-5.sh
+  pasos revisados: 5 · rotos: 0
+
+== CASO positivo ==
+  EXIT=0
+  --- stdout ---
+  meta-guard · 1300 s · 72 % del presupuesto
+  ::warning title=El meta-guard se acerca a su techo::1300 s de un presupuesto de 1800 s (72 %). Esto NO se arregla subiendo el techo otra vez: toca medir qué mutación se ha vuelto cara o repartir el job (SCRUM-935).
+  --- resumen del job ---
+  meta-guard · 1300 s (21 min 40 s) · 72 % del presupuesto de 30 min
+  
+  🔴 **Se acerca al techo.** No se arregla subiendo el presupuesto: toca medir (SCRUM-935).
+
+== CASO negativo ==
+  EXIT=0
+  --- stdout ---
+  meta-guard · 100 s · 5 % del presupuesto
+  --- resumen del job ---
+  meta-guard · 100 s (1 min 40 s) · 5 % del presupuesto de 30 min
+
+== CASO suelo ==
+  EXIT=0
+  --- stdout ---
+  ::warning title=meta-guard sin medir::No pude mirar cuánto tardó: no llegó a tomarse la marca de arranque.
+  --- resumen del job ---
+  meta-guard · NO PUDE MIRAR la duración (sin marca de arranque)
+
+VEREDICTO:
+  (a) positivo avisa: 1 (tiene que ser >=1)
+  (b) negativo avisa: 0 (tiene que ser 0)
+  (c) suelo dice NO PUDE MIRAR: 2 (tiene que ser >=1)
+EXIT=0

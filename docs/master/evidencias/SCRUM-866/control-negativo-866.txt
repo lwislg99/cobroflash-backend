@@ -1,0 +1,23 @@
+fichero de partida: 8e93d2fe69fc580d
+
+línea base del guard (una vez, como hace la puerta)…
+   tests caídos en limpio: 0  ✅
+
+── ① ESTADO REAL DE LAS DOS DECLARACIONES ────────────────────────────────
+   VIVA   · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO
+   VIVA   · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave
+
+── ② SE ROMPE A MANO LA PRIMERA (viva) ───────────────────────────────────
+   la rotura ENTRÓ: 8e93d2fe69fc580d → 5b9c0a6e0a5f39f4
+   (el valor sigue siendo 5: cambian los bytes, no el comportamiento)
+   el lector la lee como: a = "const TOPE_INVISIBLE_HASTA_859 = 5; // ROTA a proposito: control negativo de SCRUM-866"
+   VEREDICTO: MUDA
+   el guard NO cayó. Test que debía ponerse rojo: «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO»
+
+── ③ SE DESHACE ──────────────────────────────────────────────────────────
+   sha: 8e93d2fe69fc580d  restaurado byte a byte: true
+   VEREDICTO tras deshacer: VIVA
+
+── ¿SABE EL INSTRUMENTO DETECTAR UNA MUDA? ───────────────────────────────
+   viva → rota → deshecha :  VIVA → MUDA → VIVA
+   ✅ SÍ: cambia de veredicto con la rotura y vuelve al soltarla. La negación tiene prueba.

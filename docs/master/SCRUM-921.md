@@ -1,0 +1,682 @@
+# SCRUM-921 · Las afirmaciones de autorización del árbol, censadas y contrastadas con Jira
+
+**Medido contra:** `origin/main` = `adaef3c4aee5d72f02d39037edf133d09e37e2b5` · 2026-09-17T17:55:23Z
+
+Rama `scrum-921-censo-firmas-autorizacion` · Sesión 3 (bancos e instrumentación).
+
+> **Origen:** la confesión de S4 en SCRUM-878b. Un bloque de test decía «el fundador decide que
+> sí se pone». Esa autorización no existe: **SCRUM-878 tiene `comment.total = 0`**, comprobado
+> hoy contra Jira. Lo escribió una sesión y llevaba desde entonces en el árbol pareciendo firma.
+
+---
+
+## 0 · El veredicto en una línea
+
+**El censo está completo. La clasificación contra Jira, no — y eso cuenta del lado malo.**
+De 1.321 afirmaciones de autorización censadas, **27 llevan la marca canónica de firma y no
+dicen dónde consta la decisión**. De los 401 tickets que el resto cita, se han leído **5**: los
+tres veredictos aparecieron en esos cinco, así que los tres cubos existen de verdad y ninguno es
+teórico. Los otros 396 quedan **NO DECIDIBLES**, que por la regla del encargo cuenta como malo.
+
+---
+
+## 1 · La población examinada, declarada
+
+No se censa por substring. Medido sobre este árbol **antes** de escribir el instrumento:
+
+| se busca | líneas que casan | qué son en realidad |
+|---|---|---|
+| `firma` | 11.226 | casi todo huella encadenada de VeriFactu |
+| `firmad` | 2.970 | casi todo albaranes y partes firmados **por el cliente** |
+| `fundador` | 3.656 | en su mayoría **norma**: «hace falta firma del fundador» |
+
+Ninguna de las tres mide lo que el ticket pregunta. Lo que se busca no es la palabra: es la
+**forma** — un agente con potestad (fundador, asesor/orquestador) como sujeto o complemento
+agente de un verbo de autorización **en modo declarativo**.
+
+```
+ficheros seguidos en tests/ src/ scripts/ docs/ ....... 2.720
+ficheros LEÍDOS ....................................... 2.417
+ficheros saltados ..................................... 303   (288 .png, 6 .xsd, 2 .pdf,
+                                                               y .xml .tsv .toml .ps1
+                                                               .properties .diff y un
+                                                               ejecutable sin extensión)
+líneas leídas ......................................... 525.690
+```
+
+| capa | cuenta |
+|---|---|
+| **bruto** — líneas que casan alguna forma de autorización | **1.480** |
+| **descartadas**, con su motivo nombrado | **159** |
+| · `norma-no-afirmacion` (exige una firma, no afirma tenerla) | 154 |
+| · `firma-del-producto` (el cliente firma un albarán) | 4 |
+| · `agente-externo` (autoriza Meta, la AEAT…) | 1 |
+| **candidatos** — afirmaciones de autorización sobre este proyecto | **1.321** |
+
+Candidatos por directorio: `docs` 713 · `tests` 440 · `src` 135 · `scripts` 33.
+
+---
+
+## 2 · La clasificación
+
+El criterio de **respaldo** no se ha inventado: es el que este proyecto ya tiene firmado y en uso
+en `tests/scrum387-procedencia-aprobacion.test.mjs` — **procedencia rastreable = un `SCRUM-<n>` o
+un `docs/…`** en la misma unidad de lectura. Una fecha sola no vale, porque no dice dónde mirar.
+
+| cubo | cuántas | criterio |
+|---|---|---|
+| **FIRMA REAL** | **1 verificada** | existe comentario del ticket que respalda la afirmación, con su id |
+| **SIN RESPALDO** | **2 verificadas** (una de ellas ya corregida y fuera del árbol) | se fue a mirar y el ticket no la respalda |
+| **NO DECIDIBLE** | **el resto (1.319)** | **94** no dicen dónde mirar · **1.225** lo dicen y **nadie ha ido a mirar todavía** |
+
+### 2.1 · Lo verificado contra Jira, con su id
+
+| afirmación en el árbol | ticket | qué hay en Jira | veredicto |
+|---|---|---|---|
+| `tipoIntervencion.ts:5` — «Vocabulario CERRADO, aprobado por el fundador el 2-sep-2026 (regla 27)» | SCRUM-651 | **comentario `14229`**, 2-sep-2026: *«Las tres decisiones del fundador — 1 · «Tipo de intervención»: APROBADO, con columna nueva y vocabulario cerrado (regla 27)»*, y enumera los tres valores | ✅ **FIRMA REAL** |
+| *(el caso conocido, ya corregido)* «el fundador decide que sí se pone» | SCRUM-878 | **`comment.total = 0`**. Ninguna firma, ni del fundador ni delegada | 🔴 **SIN RESPALDO** |
+| `docs/master/SCRUM-315.md:22` — «Microcopy aprobada por el fundador, literal (regla 30)» | SCRUM-315 | 1 comentario: un informe de cierre de 5-ago-2026. **No aprueba ninguna microcopy ni cita ningún texto** | 🔴 **SIN RESPALDO en el ticket citado** |
+| `docs/master/SCRUM-423.md:56` — «Microcopy — APROBADA por el asesor el 10-ago-2026 (regla 30)» | SCRUM-423 | 1 comentario; dice «confirmado por el fundador» **referido al merge**, no a ningún texto | ⚠️ **NO DECIDIBLE** |
+| `docs/microcopy/2026-09-04-SCRUM-605-…:3` — «**Aprobado por el fundador** el 4-sep-2026, en **SCRUM-605**» | SCRUM-605 | 5 comentarios; uno trata explícitamente de la firma pendiente de esos textos | ⚠️ **NO DECIDIBLE** por sí solo · **sale limpio del censo, que es lo que aquí se comprobaba** |
+
+**SCRUM-315 es el hallazgo que confirma que esto no era un caso aislado:** un registro de máster
+afirma una aprobación de microcopy citando un ticket cuyo único comentario no aprueba nada.
+
+### 2.2 · Las 27 que no dicen dónde consta la decisión
+
+**No se ha borrado ninguna, y no se deben borrar** (punto ③ del ticket): una firma sin respaldo
+puede ser una firma real mal registrada, y borrarla perdería la decisión. Se congelan en el
+trinquete `SIN_PROCEDENCIA = 27` y se listan aquí. **16 se atribuyen al fundador y 11 al
+asesor** — y esa distinción importa, porque el README de `docs/microcopy/` dice que la firma del
+orquestador sólo cuenta con la delegación permanente **y su número de comentario de Jira**.
+
+**6 viven en `src/`, o sea en producción:**
+
+| dónde | qué afirma |
+|---|---|
+| `src/modules/billing/domain/metodoDeCobro.ts:82` | «El rótulo de ese cubo, APROBADO por el asesor el 10-ago-2026 (regla 30).» |
+| `src/modules/invoicing/domain/portonDocumento.ts:46` | «Copy OFICIAL para el cliente final, aprobado por el fundador el 30-jul-2026 (regla 30).» |
+| `src/modules/jobs/domain/albaranIdempotencia.ts:48` | «MICROCOPY DEL 409 — **APROBADA por el asesor el 11-ago-2026** (regla 30). NO se reformula.» |
+| `src/modules/jobs/domain/parteDictado.ts:402` | «✅ APROBADO por el fundador el 2-sep-2026 (regla 30), con la línea de “no completes marcas”.» |
+| `src/modules/system/app/routes/quotesAdmin.routes.ts:339` | «Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30).» |
+| `src/modules/whatsappBot/domain/botFlow.service.ts:125` | «Menú oficial K1 (lista) — copy v2 aprobado por el fundador (5-jul-2026).» |
+
+**21 en `tests/`** — `scrum244:43` · `scrum257:26` · `scrum294c:177` · `scrum305:207` ·
+`scrum320:36` · `scrum324:30` · `scrum358:179` · `scrum379:64` · `scrum404:113` ·
+`scrum428:121` · `scrum469:109` · `scrum575b:301` · `scrum580:318` y `:325` · `scrum581:138` ·
+`scrum587:202` · `scrum590b:140` · `scrum593b:21` · `scrum726:150` · `scrum772:40` ·
+`scrum780:150`.
+
+⚠️ **Dos de esas 21 no son deuda y conviene decirlo**, porque un informe que no separa lo que
+mide de lo que su instrumento no distingue empuja a arreglar lo que está bien:
+`scrum726:150` es un **fixture** (`const alReves = '…**Aprobado por el ASESOR**…'`, un registro
+de mentira que ese test construye a propósito), y `scrum580:325` es una advertencia que dice
+justo lo contrario de una firma: *«**aprobada por el asesor» NO es «firmada por el fundador»**»*.
+Se dejan dentro de la cuenta porque **quitarlas a mano convertiría el trinquete en una opinión**,
+y porque bajarlo exige tocar la línea y explicarlo, que es el mecanismo.
+
+Otras **67** afirmaciones (fuera de la marca canónica: «decisión del fundador», «con el OK
+de…», «el fundador decidió») tampoco dicen dónde constan. **No entran en el trinquete**: su tasa
+de falso positivo no está medida, y congelar un número que no se ha auditado es fabricar una
+cifra que nadie podrá bajar con criterio.
+
+---
+
+## 3 · Por qué el mecanismo que ya existe no lo cazó
+
+`SCRUM-387` lleva desde el 7-ago-2026 exigiendo exactamente esto — procedencia rastreable junto a
+toda marca de aprobación, con trinquete bidireccional. **Su test pasa hoy, 5/5.** No falló: es
+que el caso conocido caía fuera **por dos ejes a la vez**.
+
+| eje | lo que cubre SCRUM-387 | dónde estaba el caso de SCRUM-878b |
+|---|---|---|
+| **población** | `['src', 'public']` | `tests/` |
+| **léxico** | `aprobad[oa]s? por el fundador` | «el fundador **decide**» |
+
+**Arreglar un solo eje no lo habría cazado.** Por eso este ticket no toca aquel guard: lo
+complementa. `SCRUM-387` sigue siendo la autoridad en `src/` y `public/` — y de hecho su
+criterio es **más estricto** que el de este censo, porque sólo mira el texto del comentario
+mientras que éste acepta también el id en el nombre del fichero. Donde los dos miran lo mismo,
+**manda el suyo**.
+
+---
+
+## 4 · ¿Admite mecanismo? Sí, y es una extensión, no un invento
+
+**Propuesta, sin implementar** (punto ④). Lo que hace falta **ya está construido**; lo que falta
+es alcance:
+
+1. **Ampliar la población de `SCRUM-387`** de `['src','public']` a `['src','public','tests','scripts','docs']`. Es un cambio de una línea en un guard que ya existe y ya tiene trinquete.
+2. **Ampliar su marca** a las formas que hoy no ve: `el fundador decide/decidió/aprobó`, `decisión del fundador`, `con el OK/GO del fundador`, `autorizado por`, `firmado por`. El léxico derivado del árbol está en `tests/_censo-firmas-autorizacion.mjs`, con cada forma nombrada.
+3. **Subir el listón de «procedencia» a «respaldo»** sólo donde hoy es verificable: `docs/microcopy/` ya exige, por su README y por `SCRUM-861`, la firma **con número de comentario de Jira**. Ahí un guard puede comprobar que el comentario **existe**.
+
+**Lo que NO admite mecanismo, y hay que decirlo:** un guard **no puede comprobar que una
+autorización sea cierta**. Puede comprobar que sea rastreable, y que el comentario citado exista.
+Creerlo capaz de más sería el mismo error con otra cara.
+
+🔴 **Y hay un requisito previo que hoy no se cumple.** Para exigir «firma del fundador con id de
+comentario» hay que saber **qué cuenta de Jira es el fundador**, y eso no está escrito en ningún
+sitio del árbol. Los comentarios del proyecto los firman dos cuentas, *Luis Lara* y *Javier
+Pereira Fernández*, y de la lectura de los propios comentarios **no se deduce sin ambigüedad**
+cuál es la del fundador y cuál la del asesor. **No lo invento.** Mientras eso no esté escrito, un
+guard que distinga «aprobado por el fundador» de «aprobado por el asesor» no puede comprobar la
+diferencia que él mismo exige — y son 11 de las 27 de arriba. **Es una pregunta para el
+fundador**, y es barata: una línea en `docs/equipo/limites-del-fundador.md`.
+
+---
+
+## 5 · Los tres defectos del instrumento, míos, medidos y corregidos antes de publicar
+
+Ninguna de las tres cosas la encontró nadie más. Las tres habrían salido como hallazgos.
+
+1. **Ventana fija de ±3 líneas.** La versión 1 (commit `eeac08f7`) declaró **26 marcas sin
+   procedencia**; al mirar el bloque entero, **24 tenían su `SCRUM-<n>` a más de tres líneas**.
+   24 acusaciones falsas, con la forma más peligrosa que puede tener un hallazgo: una lista de
+   nombres propios que parece trabajo pendiente. *Una ventana fija es una tolerancia disfrazada.*
+2. **El límite de palabra no entiende los acentos.** En JavaScript `\w` es `[A-Za-z0-9_]`, así
+   que `aprob[oó]\b` casa «aprobo» y **no casa «aprobó»**. El censo estaba ciego a **todos los
+   pretéritos con tilde** — la forma natural en castellano de decir que alguien ya autorizó algo.
+   Al arreglarlo, el bruto pasó de **1.206 a 1.480**: había un **21 % invisible**. *No lo cazó el
+   control positivo*, porque el caso conocido dice «decide» y la «e» sí es carácter de palabra.
+3. **Un tercero en la frase tapaba al fundador.** El descarte de agente externo miraba si la
+   línea *nombraba* a un tercero en vez de mirar *quién autoriza*, y se comía cuatro líneas de
+   `docs/MIGRATIONS_PENDING.md` del tipo «`prisma db push` aplicado contra **Railway**,
+   **autorizado por el fundador**» — de lo más serio que puede afirmar este árbol.
+
+---
+
+## 6 · Controles
+
+| control | qué exige | resultado |
+|---|---|---|
+| **SUELO** | 0 apariciones ⇒ CIEGO, con población declarada | ✅ 1.480 sobre 2.415 ficheros y 525.046 líneas |
+| **POSITIVO** | el caso conocido sale, **y por el eje correcto** (forma `agente+verbo`, no por contener «fundador»), sin procedencia y sin ser descartado | ✅ |
+| **NEGATIVO** | un texto que cite una decisión **con su id de Jira** sale limpio — de laboratorio y del árbol real (`docs/microcopy/`, 0 marcados) | ✅ |
+| **ROJO PROVOCADO** | con una cobaya sin procedencia, el trinquete cae y **nombra fichero y línea** | ✅ `not ok 7`, salida 1 |
+| **testigo de la cobaya** | comprobar que la cobaya EXISTE para el censo antes de creerse el rojo | ✅ — y cazó que la primera cobaya **se autoexculpaba**, porque su cabecera decía `SCRUM-921` en la línea contigua |
+| **sonda independiente** | cruce con `SCRUM-387`, que mide lo mismo por otro camino | ✅ su test 5/5; la discrepancia se explica y **manda el suyo** en `src/` |
+
+`tests/scrum921-firmas-con-respaldo.test.mjs` — **8 tests, 0 fallos**, exit 0 leído sin tubería.
+
+---
+
+## 7 · Lo que este ticket NO ha hecho
+
+- **No ha borrado ni reescrito una sola afirmación.** Punto ③ del enunciado.
+- **No ha leído 396 de los 401 tickets citados.** Cuentan como NO DECIDIBLE, del lado malo.
+- **No ha mirado `public/`**, que no estaba en el alcance; ahí manda `SCRUM-387`.
+- **No ha implementado** la propuesta del §4: el enunciado pide proponer, no construir.
+- **No ha resuelto** qué cuenta de Jira es el fundador. Es la pregunta del §4.
+
+---
+
+# SCRUM-921b · Las 27 sin respaldo, clasificadas contra Jira y el máster
+
+**Medido contra:** `origin/main` = `71c845c92c50c5daff5afa1f3be7c5fe0645de86` · 2026-09-17T18:49:23Z
+
+Fase b. La fase a dejó escrito *«el censo está completo; la clasificación, no»*, y eso es lo que
+cierra esta fase — **sólo para las 27**, que son las accionables. Los 401 tickets citados por el
+resto siguen sin leer y siguen contando del lado malo.
+
+## 0 · Veredicto
+
+De las 27, **16 eran decidibles hoy** (las atribuidas al fundador). Las otras 11 dicen «aprobado
+por el asesor» y esperan a que se escriba qué cuenta como firma delegada.
+
+| | |
+|---|---|
+| ✅ **FIRMA REAL** — evidencia positiva citada | **10** |
+| 🔴 **SIN RESPALDO** — se fue a mirar y no está, o el ticket dice otra cosa | **5** |
+| ⚪ **falso positivo del censo** — es una negación, no una afirmación | **1** |
+| ⏸ **bloqueadas** (las del asesor) | **11** |
+
+🔴 **Dos de las cinco sin respaldo están en `src/`, o sea en producción.**
+
+## 1 · Dónde se buscó, para que se pueda repetir
+
+Tres sondas por afirmación, y **ninguna vale sin su control**:
+
+1. **el literal en `docs/`** — `git grep -F` del texto que la afirmación dice aprobado;
+2. **el literal en Jira** — `text ~ "\"frase\""`, que cubre resumen, descripción y comentarios;
+3. **la atribución** — que el documento o el comentario diga **quién** aprobó, no sólo que el
+   texto exista ahí. Es la diferencia entre SCRUM-593 (*«Literal del fundador»*) y SCRUM-257.
+
+**Control del buscador de Jira, hecho antes de creerse ningún cero:** `comment ~ "vocabulario
+cerrado"` devuelve SCRUM-651 ✅ — y, porque un control sin tilde no absuelve a las frases con
+tilde, **`comment ~ "Tipo de intervención"` también devuelve SCRUM-651** ✅. Es la lección del
+`\b` de la fase a aplicada al instrumento nuevo.
+
+## 2 · Las 10 con FIRMA REAL
+
+| afirmación | respaldo, citado |
+|---|---|
+| `portonDocumento.ts:46` | **máster `YAQU_MASTER.md:1353`** (SCRUM-206): *«LAS TRES DECISIONES DEL FUNDADOR: ① el cliente final ve un 409 con copy oficial —«Esta factura se está registrando en Hacienda…»»*. Literal y fecha (30-jul) coinciden |
+| `botFlow.service.ts:125` | **máster K1, `YAQU_MASTER.md:376`**: *«Copy oficial v2.1 (fundador, 5-jul-2026 tarde — tabla A8.1 completa aprobada en sesión; fuente exacta en `botFlow.service.ts`)»* |
+| `tests/scrum294c:177` | **`docs/MICROCOPY_APROBADA_SIN_APLICAR.md`** («Microcopy APROBADA por el fundador»): «Criterio de caja», «Sí, estoy acogido», «No estoy acogido» |
+| `tests/scrum324:30` | **`docs/master/SCRUM-324.md:307`** (el literal) + **`:310`** *«Aprobada por el fundador»* |
+| `tests/scrum379:64` | **Jira SCRUM-379, comentario `12499`**: *«**Microcopy firmada:** `Hecho. No hemos podido actualizar la pantalla: recárgala para ver cómo ha quedado.`»* — literal idéntico |
+| `tests/scrum404:113` | **`docs/MICROCOPY_APROBADA_SIN_APLICAR.md`**: «No hemos podido registrar la firma» |
+| `tests/scrum428:121` | **`docs/master/SCRUM-428.md:195`**: *«Con el texto aprobado por el fundador (10-ago-2026)»*, y el literal en `:135` y `:202`. La fecha coincide |
+| `tests/scrum581:138` | **`docs/master/SCRUM-581.md:351`**: *«## ✅ MICROCOPY APROBADA POR EL FUNDADOR (2-sep-2026)»*, con los literales debajo. La fecha coincide |
+| `tests/scrum590b:140` | **`docs/master/SCRUM-590.md:658`**: *«**«Móvil (WhatsApp)»** — firmado por el fundador el 7-sep-2026»* |
+| `tests/scrum593b:21` | **`docs/master/SCRUM-593.md:378`**: *«**Literal del fundador:** «…que salga como Añadir texto en el documento…»»* |
+
+⚠️ **Dos matices que no se ocultan.** El comentario `12499` dice «Microcopy firmada» y **no dice
+por quién**: acredita que el texto está firmado, no quién lo firmó. Y el máster dice «copy **v2.1**»
+donde `botFlow.service.ts` dice «copy **v2**».
+
+## 3 · Las 5 SIN RESPALDO
+
+| afirmación | qué se buscó | qué se encontró |
+|---|---|---|
+| 🔴 `src/…/quotesAdmin.routes.ts:339` **(producción)** | «No la entregues todavía» · «La factura se creó pero no se pudo registrar», en `docs/` y en Jira (`comment ~` y `text ~`) | **nada, en ningún sitio.** El máster (SCRUM-206) recoge las tres decisiones del fundador sobre ese 409, y **el literal del mensaje al profesional no es ninguna de ellas** |
+| 🔴 `src/…/parteDictado.ts:402` **(producción)** | «no completes marcas», en `docs/` y en Jira | **nada.** Sólo aparece en este mismo registro. Y la cabecera de su propia sección sigue diciendo «PROPUESTA, PENDIENTE DEL FUNDADOR» cuatro líneas más arriba del «✅ APROBADO» |
+| 🔴 `tests/scrum244:44` | «Descargar todos mis datos» · «TUS DATOS», en `docs/` y en Jira | **0 en todo Jira.** El bloque dice «LOS OCHO TEXTOS APROBADOS POR EL FUNDADOR (4-ago-2026)» y esos ocho textos no constan en ninguna parte |
+| 🔴 `tests/scrum257:26` | «no se puede crear un albarán» | está **en la descripción de SCRUM-257**, pero dentro de *«Alcance — (b) Guard»*, que es la propuesta de implementación. La sección **«Decisiones del fundador (2-ago-2026)»** enumera tres y **ninguna es ese microcopy**. El test dice «aprobado por el fundador en el ticket»: el ticket lo contiene, pero no dice eso |
+| 🔴 `tests/scrum320:36` | «853,05» | está en SCRUM-320 marcado **`[MEDIDO]`**, como medición del defecto. Y la sección «Microcopy» del mismo ticket dice lo contrario de la afirmación: *«`QUÉ FALTA PARA COBRAR` y **cada una de las líneas** son microcopy **sin aprobar** (regla 30)»* |
+
+**El patrón, y es el de SCRUM-315:** en tres de los cinco el ticket **sí existe y sí contiene el
+texto** — lo que no contiene es la aprobación. Un `grep` del literal habría dado por respaldadas
+las cinco. Lo que las separa es preguntar **quién aprobó**, no **dónde aparece**.
+
+⛔ **No se ha tocado ninguna** (punto ③ del enunciado). Siguen las 27 y el trinquete sigue en 27.
+
+## 4 · El falso positivo, declarado
+
+`tests/scrum780:150` dice *«la rectificativa ha salido «…». Su letra R **NO** está firmada por el
+fundador»*. Es una **negación**: no afirma una autorización, afirma que falta. El censo no
+distingue el alcance de un «no», igual que ya quedó declarado para `scrum580:325`. Son **2 de 27**
+(7 %), y **no se descuentan del trinquete**: quitarlas a mano lo convertiría en una opinión.
+
+## 5 · Adelanto sobre las 11 bloqueadas (sin veredicto)
+
+La sonda documental corrió también sobre ellas. **No es un veredicto** —falta saber qué cuenta
+como firma del asesor—, pero ahorra la mitad del trabajo el día que se desbloqueen:
+
+- **con literal en `docs/master/`**: `scrum358:179` (SCRUM-358, los tres literales del 409) ·
+  `scrum575b:301` (SCRUM-575) · `metodoDeCobro.ts:82` («Método no registrado», SCRUM-285/441).
+- **sin nada en `docs/`**: `scrum305:207` (los cinco textos) · `scrum469:109` (el aviso de
+  desalojo). Esas dos son las candidatas serias a SIN RESPALDO cuando se decida.
+
+## 6 · Lo que sigue abierto
+
+1. **Qué cuenta de Jira es el fundador** — y ahora se sabe que **no se podrá resolver por el campo
+   de autor**: el orquestador escribe sus comentarios con la cuenta de Javier. El mecanismo tendrá
+   que apoyarse en **el id del comentario y su contenido**, nunca en quién lo firma.
+2. **Las 2 de producción sin respaldo** (`quotesAdmin.routes.ts:339` y `parteDictado.ts:402`): son
+   texto que ve el profesional y no consta que nadie lo aprobara. **No se tocan** — se firman o se
+   corrigen, y las dos cosas las decide el fundador.
+3. La extensión de SCRUM-387 sigue **propuesta y sin implementar**, como pedía el encargo.
+
+---
+
+# SCRUM-921c · El guard ampliado: población, léxico y las TRES fuentes de respaldo
+
+**Medido contra:** `origin/main` = `2242683172bad64e4cc9f591e5c81b43fe5dc52e` · 2026-09-17T20:31:29Z
+
+Fase c. Las fases a y b midieron y clasificaron; ésta **construye el mecanismo**. Entra en verde,
+con trinquete: **no pone `main` en rojo**.
+
+## 0 · Qué hay ahora que no había
+
+| | antes (SCRUM-387) | ahora |
+|---|---|---|
+| población | `src`, `public` — **384 ficheros** | `src`, `public`, `tests`, `scripts` — **1.628** |
+| léxico | `aprobado por el fundador` | + `autorizado/firmado/validado por el fundador`, + `el fundador decide/decidió/aprueba/aprobó/autoriza/firma/valida` |
+| respaldo | ¿cita un ticket o un documento? | **tres fuentes**, y se va a mirar si el texto consta |
+| negaciones | no las distinguía | «NO está firmada», «NINGUNO ESTÁ APROBADO» no se acusan |
+| referencias | no se comprobaban | un `docs/….md` citado **tiene que existir** |
+
+**SCRUM-387 no cambia de comportamiento.** Sólo pasa a delegar en `_procedencia-aprobacion.mjs`:
+mismas `DIRS`, misma `MARCA`, mismo trinquete **17**, sus 5 tests en verde. Se extrajo en vez de
+copiarse porque dos censos del mismo hecho se desincronizan en cuanto uno mejore — es el mismo
+movimiento que hizo `_censo-escrituras-albaran.mjs` en SCRUM-878.
+
+## 1 · Los dos ejes: probado, no razonado
+
+El caso conocido —«el fundador decide que sí se pone», en `tests/`— escapaba por **dos** ejes.
+El test `🔴 UN SOLO EJE NO BASTABA` lo fija en las dos direcciones: con la marca estrecha de
+SCRUM-387 el caso **no casa** aunque se mire en `tests/`; y con la marca ancha **no se lee**
+porque `tests/` no estaba en su población. Sólo los dos juntos lo cazan.
+
+La magnitud, medida sobre el árbol (marcas sin procedencia, léxico incluyendo al asesor):
+
+```
+hoy (src+public · marca estrecha) ............ 17
+sólo POBLACIÓN (+tests+scripts) .............. 33
+sólo LÉXICO (marca ancha) .................... 28
+LOS DOS ...................................... 82
+```
+
+## 2 · Las tres fuentes, y por qué no basta Jira
+
+SCRUM-921b verificó a mano 10 firmas reales. **Sólo UNA** se respalda en un comentario de Jira
+(SCRUM-379, comentario `12499`); las otras nueve, en el máster o en el registro congelado de
+microcopy. **Un guard que exigiera un id de Jira habría producido nueve rojos falsos**, y un
+guard que da rojos que no se reproducen es un guard que alguien apaga.
+
+1. **Jira** — `SCRUM-<n> comentario <id>`. ⚠️ **No se consulta desde la suite**: no hay red ni
+   credenciales en CI y sería un rojo intermitente. Se comprueba la **forma**, que es la que ya
+   exige el README de `docs/microcopy/` para la firma delegada.
+2. **El máster** — `docs/YAQU_MASTER.md` y `docs/master/SCRUM-<n>.md`.
+3. **El registro congelado** — `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` y `docs/microcopy/`.
+
+De 2 y 3 se comprueba que **existen** y que **atribuyen**: no basta con que el documento contenga
+el texto. Ésa es justo la diferencia que la fase b midió entre SCRUM-593 («*Literal del
+fundador*») y SCRUM-257, que contiene el literal en su sección «Alcance», que es la propuesta del
+asesor.
+
+🔴 **El ancla es el id del comentario y su contenido, NUNCA el autor**, porque el campo de autor
+no distingue nada en este proyecto: el orquestador escribe sus comentarios con la cuenta de
+Javier. Está escrito en la cabecera de `_respaldo-de-firma.mjs` para que no se vuelva a intentar.
+
+## 3 · El reparto, sobre 192 marcas del fundador
+
+| nivel | cuántas | qué significa |
+|---|---|---|
+| `anclado` | **2** | cita el ticket **y** el id del comentario de Jira |
+| `documental` | **24** | su literal consta en el máster o en el registro, con atribución |
+| `rastreable` | **125** | cita un ticket o un documento: se puede ir a mirar |
+| negadas | **13** | «NO está firmada…» — no son afirmaciones, se descartan |
+| 🔴 **sin respaldo** | **28** | ni lo dicen ni su texto aparece en ninguna fuente |
+
+**Las 26 de `anclado` + `documental` son exactamente las que un guard de sólo-Jira habría
+acusado en falso.** Ése es el valor de que las fuentes sean tres.
+
+### Las 28 congeladas
+
+La lista la **exporta el propio guard** (`congeladas()`), no un script aparte: al escribir esto,
+un script de medición paralelo dijo **29** donde el guard decía **28**, por un escapado distinto
+de la misma expresión. Publicar la lista de un segundo medidor es fabricar la próxima
+contradicción.
+
+```
+src/modules/jobs/domain/parteDictado.ts:138          public/dashboard/js/customersView.js:817
+src/modules/jobs/domain/parteDictado.ts:401          public/dashboard/js/homeView.js:648
+src/modules/system/app/routes/invoicesAdmin.routes.ts:1212   public/dashboard/js/jobRailBlocks.js:19
+src/modules/system/app/routes/quotesAdmin.routes.ts:339      public/dashboard/js/quoteActionsRegistry.js:54
+src/modules/whatsappBot/domain/botFlow.service.ts:1          public/dashboard/js/quoteMargen.js:64
+scripts/seed-video.mjs:1                             public/dashboard/js/reportsView.js:956
+tests/scrum151-motivo-sin-tramo.test.mjs:53          public/dashboard/js/settingsSubmenus.js:36
+tests/scrum283-censo-acciones-factura.test.mjs:118   tests/scrum586-forma-de-pago-por-cliente.test.mjs:178
+tests/scrum291-series-huecos.test.mjs:99             tests/scrum586-forma-de-pago-por-cliente.test.mjs:392
+tests/scrum294c-criterio-del-merchant.test.mjs:175   tests/scrum593b-superficie-texto-del-documento.test.mjs:89
+tests/scrum320-que-falta-para-cobrar.test.mjs:36     tests/scrum609b-switch-tipo-articulo.test.mjs:75
+tests/scrum320-que-falta-para-cobrar.test.mjs:249    tests/scrum651-trabajo-sin-presupuesto.test.mjs:289
+tests/scrum377-plural-de-programador.test.mjs:72     tests/scrum683-parte-dictado.test.mjs:85
+tests/scrum568-promesa-con-mecanismo.test.mjs:200    tests/scrum715-consta-por-identidad.test.mjs:147
+                                                     tests/scrum716-ritmo-de-despliegue.test.mjs:127
+```
+
+Coinciden con la clasificación a mano de la fase b donde se solapan: `quotesAdmin.routes.ts:339`
+y `parteDictado.ts:401` —las dos de producción verificadas como SIN RESPALDO— están dentro, y
+hay un test que lo fija por nombre.
+
+⛔ **No se ha tocado ninguna** (punto ③ del ticket). ⛔ El trinquete de 27 del censo de la fase a
+sigue en 27 y no se ha bajado.
+
+## 4 · La referencia rota
+
+**1**, congelada y con nombre: `scripts/voice-eval.mjs:1` cita `docs/evidencias/voice-eval/RESULTS.md`,
+que **no existe**. Su marca dice «10 transcripciones FIJAS (aprobadas por el fundador,
+5-jul-2026)» y su procedencia no lleva a ninguna parte — que es peor que no tenerla, porque
+parece rastreable y nadie va a mirar. No se arregla aquí: tocar esa línea es editar una
+atribución de aprobación.
+
+## 5 · Las 11 del ASESOR, fuera a propósito
+
+La marca del guard dice **sólo «fundador»**. Las 11 marcas del asesor no se cuentan, no se
+clasifican y no entran en ningún veredicto, porque la pregunta de qué cuenta como firma delegada
+está en la mesa del fundador **y sin respuesta**; incluirlas sería inventar el criterio. Hay un
+test (`las 11 del ASESOR siguen FUERA`) que lo fija como decisión y no como olvido — y que
+comprueba a la vez que la del fundador **sí** se caza, para que ese cero no sea un cero de «no
+miro nada».
+
+## 6 · Controles
+
+| control | resultado |
+|---|---|
+| **SUELO** — 0 marcas o 0 fuentes ⇒ CIEGO | ✅ 192 marcas · 620 fuentes (201 atribuyen) |
+| **POSITIVO** — el caso de SCRUM-878b, cazado y por el eje correcto | ✅ |
+| **LOS DOS EJES** — con uno solo el caso sigue escapando | ✅ probado en ambas direcciones |
+| **NEGATIVO** — SCRUM-651 (`14229`) y SCRUM-379 (`12499`) no acusados | ✅ |
+| **SEGUNDO NEGATIVO** — `botFlow.service.ts:125`, respaldado en el MÁSTER, limpio | ✅ `documental → docs/YAQU_MASTER.md` |
+| **FALSOS POSITIVOS** — las negaciones no se acusan | ✅ 13 descartadas |
+| **ROJO PROVOCADO** — cobaya sin respaldo ⇒ el trinquete cae y la nombra | ✅ `not ok 9`, salida 1 |
+| **testigo de la cobaya** — que el guard la VEA antes de creerse el rojo | ✅ |
+| **SCRUM-387 intacto** — sus 5 tests y su 17 | ✅ |
+
+## 7 · Los tres defectos propios de esta fase
+
+1. **Volví a escribir `\b` detrás de una vocal acentuada.** `NO\s+est[aá]\b` no casa «NO está» —
+   el mismo defecto que yo mismo medí y documenté unas horas antes, en este mismo ticket. Lo cazó
+   el test de negaciones. *Medir no te inmuniza contra lo que mides.*
+2. **El guard ABSOLVÍA, que es peor que acusar.** Aceptaba cualquier literal de 14 caracteres como
+   frase de respaldo, así que `internal_error` —que está en el máster por otras razones— daba por
+   respaldada la microcopy de `quotesAdmin.routes.ts:339`, verificada a mano como SIN RESPALDO.
+   Ahora sólo respalda **prosa**: 25 caracteres y tres palabras.
+3. **Empecé a ajustar el guard hasta que pasara.** Al aplicar la negación al bloque entero, el
+   trinquete bajó por debajo de su suelo y dos casos verificados a mano dejaron de acusarse. La
+   unidad correcta es la **frase que contiene la marca**, no el bloque.
+
+Y el trinquete **subió de 27 a 28** al arreglar el punto 1: `jobRailBlocks.js:19` se descartaba
+por accidente. Queda escrito porque un número que sube después de tocar el guard tiene la misma
+forma que un guard relajado, y hay que poder distinguirlos.
+
+---
+
+# SCRUM-921c bis · Por qué mi verde local no era el verde de CI
+
+**Medido contra:** `origin/main` = `16733a223b3d09d3fdf03bf03c67a2b278b4906c` · 2026-09-17T21:50:54Z
+
+Entregué la fase c en verde y CI la paró: *«28 afirmaciones sin decir dónde constan, y el
+trinquete está en 27»*. **La diferencia es un dato por sí misma**, y se mide antes de arreglar
+nada — si no, mañana vuelve por donde no se miró.
+
+## 1 · Qué guard era, y no era el que yo creía
+
+El rojo **no es del guard de la fase c** (trinquete 28) sino del censo de la **fase a**,
+`tests/scrum921-firmas-con-respaldo.test.mjs`, cuyo trinquete es 27. Los dos números rondan el
+mismo valor sobre poblaciones distintas — el aviso que dejé escrito en la fase c era justo sobre
+esto — y confundirlos habría llevado a subir el trinquete equivocado.
+
+## 2 · Por qué en local dio 27: la población son los ficheros SEGUIDOS
+
+El censo de la fase a deriva su población de `git ls-files`. **Un fichero untracked es invisible
+para él.** Corrí la tanda con `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs` todavía sin
+añadir al índice —aparecía como `??` en el `git status` que yo mismo imprimí minutos antes de
+comitear— así que el censo no lo leyó. Al hacer `git add`, pasó a ser población, y ése es el 28
+que ve CI.
+
+Probado con una sonda, no deducido:
+
+```
+① un fichero con la marca, UNTRACKED  → el censo lo ve: 0   (2.842 seguidos)
+② el MISMO fichero, ya en el índice   → el censo lo ve: 1   (2.843 seguidos)
+```
+
+    🔒 Una tanda corrida antes de `git add` no mide lo que vas a entregar: mide lo que ya había.
+
+No es un defecto del censo —su población es «lo que está en el repo», que es lo correcto— sino
+del orden en que lo usé. **`git add` va ANTES de la tanda**, no después. A6 dice «corre la suite
+después del último cambio»; esto le añade que crear un fichero nuevo **no es el último cambio
+hasta que está en el índice**.
+
+## 3 · El arreglo: reformular, no subir el trinquete
+
+La línea 103 era una **cita** —reproducía la marca entre comillas para ilustrar qué clase de
+bloque es `jobRailBlocks.js:19`— y el censo, que no distingue una cita de una afirmación, la
+contó como la número 28. Se ha reformulado para describir la forma sin escribirla: es el escalón
+② de SCRUM-737.
+
+**No se ha subido el trinquete a 28** (regla 41: el guard rojo se arregla cambiando el código, no
+lo que el guard pide). Y lo escribí yo mismo en la fase c: *un número que sube tras tocar el
+guard tiene la misma forma que un guard relajado*.
+
+Comprobado **por identidad, no por cuenta**: de las 28 se va exactamente una, la mía
+(`…scrum921c-…:103`); **ninguna nueva y ninguna otra ida**. Las 21 afirmaciones reales que viven
+en `tests/` se siguen acusando.
+
+## 4 · Propuesta, escrita y NO implementada
+
+El problema de fondo es real: **si cada test que documenta el defecto engorda el censo que lo
+mide, el instrumento se alimenta solo**. Hoy se ha esquivado con una perífrasis, y eso no escala.
+
+La salida sería una regla de **forma**, no una excepción con nombre propio: una **cita declarada
+dentro de un banco** no es una afirmación, igual que ya se decidió que una negación no lo es. Un
+delimitador explícito —del tipo `[[cita]] … [[/cita]]`— que el censo reconozca en cualquier
+fichero, de cualquiera, y que se pueda probar en rojo.
+
+⛔ **No se implementa aquí.** Cambiar qué cuenta como afirmación es cambiar el criterio del censo,
+y hacerlo a las once y media de la noche para desbloquear una rama propia es exactamente cómo se
+relaja un guard sin querer. Y un «lo de mi fichero no cuenta» sería un agujero con mi nombre.
+
+## 5 · Lo que no se ha tocado
+
+Ninguna de las 27, y en particular **ninguna de las dos de producción** —
+`quotesAdmin.routes.ts:339` y `parteDictado.ts:402`—, que siguen en la mesa del fundador.
+
+---
+
+# SCRUM-921d · Una cita declarada dentro de un banco no afirma
+
+**Medido contra:** `origin/main` = `41bad7c83d84ba2cddcf267480bbd7bcd9bc0b2c` · 2026-09-18T08:47:13Z
+
+Fase d. Construye la regla que la fase c bis dejó escrita y sin implementar (su §4). Anoche no era
+el momento, con una rama propia bloqueada por ese mismo censo; hoy no hay ninguna.
+
+## 0 · Veredicto
+
+La regla existe, la aplican los dos censos que leen `tests/`, y **ningún trinquete se ha movido**:
+
+| | antes | después | por identidad |
+|---|---|---|---|
+| fase a — `SIN_PROCEDENCIA` | 27 | **27** | las mismas 27; no entra ni sale ninguna; las 21 de `tests/`, intactas |
+| fase c — `SIN_RESPALDO` | 28 | **28** | las mismas 28; `negada` sigue en 13 |
+
+**Sin la regla, el árbol de esta rama daría 28 y 29.** La diferencia es UNA línea en los dos
+censos, y es el canario de `tests/_cita-declarada.mjs` (§3): una cita puesta a propósito para que
+la regla se pruebe sobre el árbol y no sólo en el laboratorio. No es una afirmación legitimada.
+
+## 1 · La regla
+
+Vive una sola vez, en **`tests/_cita-declarada.mjs`**, y la importan los dos censos.
+
+1. Lo que va entre `[[cita]]` y `[[/cita]]` **no se lee**: ni afirma, ni niega, ni respalda. El
+   censo juzga su unidad de lectura como si lo citado no estuviera.
+2. **Sólo en un banco**, que es un fichero bajo `tests/`. En `src/`, `public/`, `scripts/` y
+   `docs/` el delimitador no hace nada.
+3. El par abre y cierra **dentro de la misma unidad de lectura** del censo que la aplica: el bloque
+   contiguo en la fase a, el bloque de comentario en la fase c. Sin cierre no tapa nada, y una
+   línea en blanco lo corta.
+4. **Exacto y en minúscula.** `[[CITA]]` o `[cita]` no son el delimitador.
+
+Todo lo que falla, falla **acusando**: un delimitador mal puesto deja la línea a la vista.
+
+**Es de forma, no de nombre.** No hay lista de ficheros exentos: cualquiera puede usarlo en
+cualquier banco, y queda a la vista en el diff.
+
+**Es el mismo eje que las negaciones.** En la fase a entra como cuarto descarte con nombre,
+`cita-declarada`, junto a `norma-no-afirmacion`, y se publica con su cuenta como los otros tres. En
+la fase c, `noAfirma` devuelve `citada` o `negada` en el mismo filtro donde antes sólo se miraba
+`niegaLaMarca`, y `porNivel` publica las dos.
+
+**Lo citado tampoco respalda ni niega.** Un `SCRUM-<n>` dentro de una cita no da procedencia a la
+firma de fuera, y un «nunca» o un «todavía no» citados no la descartan. Si no, la cita sería un
+comodín para blanquear la línea de al lado.
+
+## 2 · Los tres controles del encargo
+
+| control | cómo | resultado |
+|---|---|---|
+| 🔴 una cita DENTRO de un banco no se acusa | casos por el mismo clasificador que el árbol, en las dos fases | ✅ en una línea, partida en varias, y en la fase c |
+| 🔴 una afirmación REAL en un test se sigue acusando, por identidad | el 27 con y sin la regla, comparado como conjunto `fichero · texto` | ✅ lo que la regla quita es, una a una, cita declarada; las de `tests/` siguen todas |
+| ✅ un fichero SIN delimitador se comporta exactamente como hoy | cada fila del bruto (fase a) y cada veredicto (fase c), con y sin la regla | ✅ cambian 7 filas en la fase a y 1 veredicto en la fase c, **todos** en ficheros con delimitador |
+
+Y una **sonda independiente**, fuera de la suite: el censo de la fase a **tal como está en
+`origin/main`**, copiado sin tocar, sobre el árbol de esta rama. Da 28 donde el nuevo da 27, y la
+que sobra es el canario. El bruto es idéntico (1.578 filas en los dos), y las 7 filas que cambian
+están en los 3 ficheros que llevan el delimitador.
+
+Fuera de los tres controles, también está probado que **fuera de un banco no vale** (`src/`,
+`public/`, `scripts/`, `docs/`); que **no se estira** (sin cierre, a través de una línea en blanco,
+sobre lo que va detrás del cierre o entre dos citas); y que **no admite variantes**.
+
+## 3 · El canario
+
+`tests/_cita-declarada.mjs` lleva una cita de verdad —la marca de `jobRailBlocks.js` que motivó
+todo esto— en un bloque **sin ticket ni ruta**, a propósito. Si la regla se rompe, los **dos**
+trinquetes suben en uno y lo nombran. Hay un test que comprueba que el canario no tiene
+procedencia: si alguien le pone un ticket, deja de vigilar, porque se exculpa solo.
+
+## 4 · Probado en rojo
+
+**Por mutación.** Doce maneras de romper la regla, cada una sobre código commiteado, con un
+`node --check` que confirma que el mutante compila, y restaurada después con `git checkout`:
+
+| mutación | qué cae |
+|---|---|
+| `esBanco` siempre falso · `sinCitas` que no borra | 8 tests, **los dos trinquetes incluidos** |
+| `esBanco` siempre verdadero | «fuera de un banco no vale», en las dos fases |
+| el par, codicioso · el par, sin distinguir mayúsculas | «no se estira, no admite variantes» |
+| fase a: procedencia o descartes sobre el texto crudo | «lo citado no niega ni respalda» |
+| fase a: la cita cruza el bloque · la cita no descarta | «no se estira» · 4 tests |
+| fase c: `noAfirma` ignora las citas · negación o respaldo sobre el crudo | el caso de la fase c y, en el primero, su trinquete |
+
+**Caen las 12.** En la primera pasada sobrevivieron **dos**: el par codicioso (no había un caso con
+dos citas en la misma unidad) y el respaldo de la fase c (se calculaba dentro de un `map` al que no
+llegaba ningún caso). Los dos tienen ya el suyo.
+
+**De extremo a extremo.** Una cobaya nueva en `tests/`, de nadie y en ninguna lista, con testigo de
+que el censo la ve antes de creerse el resultado, y con `git add` antes de cada tanda:
+
+```
+con el delimitador   → 27 pass · 0 fail · exit 0
+sin el delimitador   → exit 1
+   🔴 28 afirmaciones de firma sin decir dónde constan, y el trinquete está en 27.
+       tests/_cobaya-cita.mjs:3
+   🔴 29 marcas de aprobación al fundador sin respaldo, y el trinquete está en 28.
+       tests/_cobaya-cita.mjs:3
+```
+
+La cobaya no está en la rama.
+
+## 5 · La cita de anoche, devuelta
+
+La línea de `scrum921c-…` que anoche se reformuló vuelve a decir la marca **literal**, ahora
+declarada como cita. El comentario que decía «hasta entonces, un test que documenta el defecto no
+debe engordar el censo que lo mide» se actualiza: ese «entonces» es esta fase.
+
+## 6 · Errores propios
+
+1. **Mi banco de mutaciones me mintió primero.** Lo escribí con un heredoc, y el shell se comió
+   las barras invertidas (`\\` quedó como `\`). Cinco mutaciones **no se aplicaron**, y una sexta dio
+   un **rojo que era un error de sintaxis**: un `'\n'` convertido en salto de línea real dentro de
+   una cadena. Ese rojo se lee exactamente igual que uno bueno. Lo cazaron dos cosas: que el banco
+   declarara «NO APLICA» en vez de callarse, y que el rojo de M8 tumbara el fichero entero en vez de
+   un test. La segunda versión se escribió con la herramienta de ficheros y comprueba que cada
+   mutante compila antes de contar su rojo.
+2. **Dos huecos en mis propios controles**: el par codicioso y el respaldo de la fase c. Los
+   encontró la mutación, no la lectura.
+3. **Anoche atribuí mal la bajada de 28 a 27.** La fase c bis dice que la cita salió del censo por
+   reformularla. Medido hoy con el censo de `origin/main`: el párrafo explicativo que añadí **en el
+   mismo commit** menciona `SCRUM-921a`, y eso da procedencia a **todo el bloque**. Con la cita
+   original de vuelta, sale `procedencia = true`. La perífrasis sobraba: la causa estaba
+   sobredeterminada, y el control por identidad de anoche no lo distinguía. Es otra vez la cobaya
+   que se exculpa sola, y por eso el canario de hoy vive en un bloque sin ticket.
+
+## 7 · Hallazgos, reportados y no arreglados
+
+1. **La fase c exime por nombre.** Su `EXCLUIR` deja fuera todo `tests/scrum921…`, así que un test
+   futuro `scrum921x-…` con una firma real escaparía de la fase c (no de la fase a). Es un «lo de mi
+   fichero no cuenta» que puse yo en la fase c. Con el delimitador ya existe la alternativa de
+   forma, pero cambiar la población de la fase c mueve su número y es otra decisión.
+2. **Las dos fases miden poblaciones distintas en un árbol sucio.** La fase a deriva la suya de
+   `git ls-files`; la fase c recorre el **disco**. Un fichero sin seguir cuenta en local para la fase
+   c y no para CI: el reverso exacto de lo que me pasó anoche con la fase a.
+
+## 8 · Lo que no se ha tocado
+
+Ninguna de las 27 ni de las 28, y en particular **ninguna de las dos de producción**
+(`quotesAdmin.routes.ts:339`, `parteDictado.ts:402`). Tampoco `_procedencia-aprobacion.mjs`, que
+comparte SCRUM-387: su trinquete de 17 y sus 5 tests siguen en verde.

@@ -1,0 +1,36 @@
+VENTANAS FIJAS (>= 100 caracteres) EN tests/ Y scripts/: 26
+  · que solo TRUNCAN para imprimir (inocuas) .......: 5
+  · 🔴 que ACOTAN UNA BUSQUEDA (pueden cegar) ......: 21
+
+  · 🔴🔴 de esas, con CEGUERA SILENCIOSA (assert negativo: si el simbolo sale de la
+        ventana, el guard PASA en verde en vez de caer) ..: 2
+
+LAS QUE PUEDEN CEGAR (🔴🔴 = ceguera silenciosa, en verde):
+     🔴 tests/scrum162-conceptos-frecuentes.test.mjs:142  cuerpo = ventana de 1600
+     🔴 tests/scrum180-fixtures-nunca-a-meta.test.mjs:116  antes = ventana de 500
+     🔴 tests/scrum228-desglose-empleado-suma.test.mjs:232  contexto = ventana de 120
+     🔴 tests/scrum325-libros-por-periodo.test.mjs:318  expense = ventana de 2600
+     🔴 tests/scrum325-libros-por-periodo.test.mjs:325  provider = ventana de 1200
+   🔴🔴 tests/scrum338-carga-de-catalogo-no-muda.test.mjs:87  bloque = ventana de 1800
+     🔴 tests/scrum341-condicion-precio-publicada.test.mjs:58  ventana = ventana de 120
+     🔴 tests/scrum370-gastos-del-trabajo.test.mjs:104  bloqueUI = ventana de 2600
+     🔴 tests/scrum424-donde-tiene-dato.test.mjs:262  trozo = ventana de 500
+     🔴 tests/scrum599-navegacion-documentos-y-atajo.test.mjs:363  bloque = ventana de 400
+     🔴 tests/scrum626-calentar-el-navegador.test.mjs:205  trozo = ventana de 1500
+     🔴 tests/scrum633-caducidad-en-la-zona.test.mjs:275  cuerpo = ventana de 700
+     🔴 tests/scrum651-trabajo-sin-presupuesto.test.mjs:207  antes = ventana de 400
+     🔴 tests/scrum677b-el-vigia-esta-cableado.test.mjs:57  job = ventana de 200
+     🔴 tests/scrum716c-la-memoria-del-vigia.test.mjs:94  antes = ventana de 300
+     🔴 tests/scrum727b-asignados-en-la-lista.test.mjs:70  trozo = ventana de 400
+     🔴 tests/scrum727b-asignados-en-la-lista.test.mjs:85  antes = ventana de 400
+     🔴 tests/scrum734-una-sola-carga.test.mjs:304  bloque = ventana de 1600
+   🔴🔴 tests/scrum819-el-menu-deja-rastro.test.mjs:83  bloque = ventana de 700
+     🔴 tests/scrum823-la-escalera-mira-el-estado.test.mjs:280  rama = ventana de 700
+     🔴 tests/scrum856-canje-una-sola-vez.test.mjs:266  cabecera = ventana de 1400
+
+CONTROL POSITIVO (fuente sintetica: 1 peligrosa de 1400 + 1 truncado de 120):
+   ve la ventana de 1400: SI ✅
+   la marca como que DECIDE: SI ✅
+   NO cuenta el truncado de 80 (bajo el umbral): correcto ✅
+   el truncado de 300 entra como ventana: SI (correcto: mide >= 100)
+   …pero NO como peligrosa: correcto ✅

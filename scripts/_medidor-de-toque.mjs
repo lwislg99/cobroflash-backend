@@ -55,6 +55,28 @@ export const INTERACTIVOS = 'a[href], button, [role="button"], summary, input[ty
 export const MINIMO_TACTIL = 44;
 
 /**
+ * SCRUM-711 · EL MÍNIMO DEPENDE DEL ANCHO, porque así lo dice DESIGN.md §5 (Buttons):
+ *
+ *     «Altura cómoda al pulgar: ≥44px en móvil (el escritorio se queda en 36px a propósito —
+ *      con ratón cumple, y subirlo sería un cambio de aspecto que nadie ha pedido).»
+ *
+ * Decisión del fundador del 15-sep-2026 (opción B): el guard exigía 44 también en escritorio, más de
+ * lo que dice la única fuente de tokens. No es bajar AB6: en móvil sigue siendo `MINIMO_TACTIL`.
+ *
+ * Las dos cifras NO se eligen aquí. `tests/scrum711b-escritorio-36.test.mjs` las ata a su fuente:
+ *   · `MINIMO_ESCRITORIO` al texto de DESIGN.md;
+ *   · `CORTE_MOVIL` al `@media (max-width: …)` de styles.css que sube los botones a 44. Con dos cortes
+ *     distintos habría una franja donde el guard exige lo que el CSS no da.
+ */
+export const MINIMO_ESCRITORIO = 36;
+export const CORTE_MOVIL = 768;
+
+/** El mínimo que se exige a un ancho de ventana: móvil hasta el corte incluido, escritorio por encima. */
+export function minimoPara(ancho) {
+  return ancho <= CORTE_MOVIL ? MINIMO_TACTIL : MINIMO_ESCRITORIO;
+}
+
+/**
  * El medidor, como FUENTE para inyectar en la página con `page.evaluate(FUENTE_MEDIDOR)`.
  *
  * Instala `window.__areaDeToque(el, sel, opciones)` → `{ caja, tocable, error }`.

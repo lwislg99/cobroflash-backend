@@ -219,7 +219,8 @@ test('SCRUM-286 · ROJO: si se descuelga el control de un bloque, se dice CUÁL'
 });
 
 test('SCRUM-286 · ROJO: si un control acaba en el bloque equivocado, se dice CUÁL y DÓNDE', () => {
-  const r = mutar('    blockDelivery.appendChild(payMethodsWrapper);',
+  // SCRUM-915d · el control vive en su fila de Condiciones; la mutación lo cuelga del CLIENTE.
+  const r = mutar('    filaPagosDetalle.appendChild(payMethodsWrapper);',
     '    blockClient.appendChild(payMethodsWrapper);');
   assert.equal(r.enElBloqueEquivocado.length, 1);
   assert.match(r.enElBloqueEquivocado[0], /^payMethods: `payMethodsWrapper` está en `blockClient`/);
@@ -235,9 +236,10 @@ test('SCRUM-286 · ROJO: un campo NUEVO que nadie coloca no pasa en silencio', (
 test('SCRUM-286 · ROJO: quitar un bloque entero cae nombrando SUS campos', () => {
   // El caso literal del ticket. `blockConditions` gobierna tres campos del envío.
   let mutada = FUENTE
-    .replace('    blockConditions.appendChild(fieldPaymentTerms.wrapper);', '')
-    .replace('    blockConditions.appendChild(stagesWrapper);', '')
-    .replace('    blockConditions.appendChild(validWrapper);', '');
+    // SCRUM-915d · los tres cuelgan ahora de sus filas del paso Condiciones (que cuelgan del bloque).
+    .replace('    filaCobroDetalle.appendChild(fieldPaymentTerms.wrapper);', '')
+    .replace('    filaCobroDetalle.appendChild(stagesWrapper);', '')
+    .replace('    filaValidezDetalle.appendChild(validWrapper);', '');
   assert.notEqual(mutada, FUENTE, 'la mutación no se aplicó');
   const r = revisarAsignacionDeBloques(mutada, 'quotesView.js');
   assert.deepEqual(r.sinControlEnPantalla, [
@@ -277,8 +279,8 @@ test('SCRUM-286 · NEGATIVO: reordenar DENTRO de un bloque no es un campo perdid
   // Mover un control dentro de su propio bloque es una decisión de diseño legítima; sólo cambia
   // de bloque lo que este guard vigila. Si tumbara esto, nadie podría volver a tocar el orden
   // interno sin pelearse con el test.
-  const r = mutar('    blockConditions.appendChild(validWrapper);',
-    '    blockConditions.appendChild(validWrapper); // mismo bloque, otro sitio');
+  const r = mutar('    filaValidezDetalle.appendChild(validWrapper);',
+    '    filaValidezDetalle.appendChild(validWrapper); // mismo bloque, otro sitio');
   assert.deepEqual([r.dejaronDeViajar, r.enElBloqueEquivocado], [[], []]);
 });
 

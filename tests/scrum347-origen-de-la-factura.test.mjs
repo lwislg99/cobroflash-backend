@@ -45,7 +45,7 @@ function fakeTx() {
       update: async () => ({}),
     },
     auditLog: { create: async (args) => { auditados.push(args); return {}; } },
-    invoice: { create: async (args) => ({ id: 1, number: args.data.number, ...args.data }) },
+    invoice: { findMany: async () => [], create: async (args) => ({ id: 1, number: args.data.number, ...args.data }) },
   };
 }
 

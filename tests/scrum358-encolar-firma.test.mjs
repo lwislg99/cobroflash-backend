@@ -293,7 +293,8 @@ test('SCRUM-358 · 🔴 el camino de firma de la VISTA pasa por la cola', () => 
 
   // Y SCRUM-404 no se ha roto por el camino: el error tiene que SEGUIR subiendo, o el pad cerraría
   // en silencio y el pro se iría creyendo que subió.
-  assert.match(src, /throw new Error\(mensajeDeFalloAlFirmar\(resultado\.error\)\)/,
+  // SCRUM-919 · el mensaje recibe además si la firma quedó guardada en el móvil.
+  assert.match(src, /throw new Error\(mensajeDeFalloAlFirmar\(resultado\.error(?:, \{ encolada: resultado\.encolada \})?\)\)/,
     '🔴 sin confirmación del servidor ya no se relanza el error. El pad cerraría, el trazo ' +
     'desaparecería de la pantalla y el profesional no sabría que su firma no ha subido — que es el ' +
     'fallo mudo que este bloque existe para evitar.');

@@ -253,7 +253,10 @@ async function invocarDuplicar(origen) {
   };
   const hs = capa.route.stack;
   await hs[hs.length - 1].handle(
-    { params: { id: '7' }, body: {}, merchantId: 7, query: {}, headers: {} }, res, () => {},
+    // SCRUM-849 · `userRole` anadido: `findAlbaran` comprueba ahora la pertenencia del Trabajo,
+    // y sin rol el allowlist deja al llamante del lado restringido (fail-closed). No cambia lo que
+    // este test mide —que el duplicado no hereda la firma—, arregla un doble que no era realista.
+    { params: { id: '7' }, body: {}, merchantId: 7, userRole: 'admin', query: {}, headers: {} }, res, () => {},
   );
   return { salida, creado, numeroPedidoDentroDeTx };
 }

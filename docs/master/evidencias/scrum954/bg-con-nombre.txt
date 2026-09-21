@@ -1,0 +1,5 @@
+backgrounded · 07e54b18 · prueba-954-20s
+  claude agents             list sessions
+  claude attach 07e54b18    open in this terminal
+  claude logs 07e54b18      show recent output
+  claude stop 07e54b18      stop this session

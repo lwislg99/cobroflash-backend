@@ -5,6 +5,10 @@ type CreateProviderInput = {
   phone?: string | null;
   email?: string | null;
   notes?: string | null;
+  // SCRUM-960 · el NIF del proveedor. `Provider.taxId` existe desde E4 y el listado YA lo devuelve,
+  // pero hasta hoy no había forma de escribirlo desde la ficha: la única puerta era apuntar un
+  // gasto (`guardarNifDelProveedor`). `undefined` = no se toca · `null` = se deja sin constar.
+  taxId?: string | null;
   isActive?: boolean;
 };
 
@@ -33,6 +37,7 @@ export async function createProvider(merchantId: number, input: CreateProviderIn
       phone: input.phone ?? null,
       email: input.email ?? null,
       notes: input.notes ?? null,
+      taxId: input.taxId ?? null,
       isActive: input.isActive ?? true,
     },
   });
@@ -46,6 +51,7 @@ export async function updateProvider(
     phone?: string | null;
     email?: string | null;
     notes?: string | null;
+    taxId?: string | null; // SCRUM-960
     isActive?: boolean;
   },
 ) {

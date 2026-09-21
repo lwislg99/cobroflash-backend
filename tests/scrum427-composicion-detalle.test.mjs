@@ -81,7 +81,12 @@ test('SCRUM-427 · la composición del detalle CUADRA con el diseño de G — en
 test('SCRUM-427 · CONTROL POSITIVO: las cuatro del diseño están, una a una', () => {
   // Sin esto, «faltan: []» podría venir de un diseño que no se supo leer. Se nombran las cuatro.
   const { diseno, pintadas } = compararComposicion(RAIZ);
-  for (const s of ['que falta para cobrar', 'albaranes', 'gastos', 'notas internas']) {
+  // SCRUM-917f: «que falta para cobrar» → «lo que falta». El rótulo viejo afirmaba algo falso en
+  // un Trabajo PAGADO con un albarán sin firmar: la tarjeta contesta a DOS preguntas y sólo
+  // nombraba una. Enmendado en `docs/diseno/bloque-g.md` §5 con su motivo, y firmado (com. 15881).
+  // Esta lista está escrita a mano A PROPÓSITO: derivarla del diseño haría que un renombrado en el
+  // documento se propagara solo y este control dejaría de controlar nada.
+  for (const s of ['lo que falta', 'albaranes', 'gastos', 'notas internas']) {
     assert.ok(diseno.includes(s), `🔴 «${s}» ya no se lee del §4 del diseño.`);
     assert.ok(pintadas.some((p) => p.includes(s) || s.includes(p)), `🔴 «${s}» no se pinta.`);
   }

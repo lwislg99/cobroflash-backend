@@ -278,6 +278,12 @@ test('SCRUM-599 · el microcopy es el APROBADO, literal, y sin marcadores', () =
     // `docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md`.
     ['jobs', 'Nuevo trabajo'],
     ['expenses', 'Nuevo gasto'],
+    // ✅ SCRUM-722 · FIRMADO el 7-sep-2026, un día después de que el fundador RETIRARA su firma en
+    // SCRUM-769. Aquella retirada valía para los botones que CONFIRMAN («N abre, no guarda»); el
+    // de albaranes ABRE un modal —medido corriendo en el barrido de SCRUM-721—, así que vuelve.
+    // El registro nuevo está en `docs/microcopy/2026-09-07-SCRUM-722-nuevo-albaran.md`, que
+    // explica la reposición SIN reescribir el del 6-sep.
+    ['albaranes', 'Nuevo albarán'],
   ];
   for (const [vista, texto] of APROBADOS) {
     assert.equal(A.textoDe(vista), texto,
@@ -305,8 +311,14 @@ test('SCRUM-599 · el microcopy es el APROBADO, literal, y sin marcadores', () =
   // predijo el 4-sep, palabra por palabra. El uno tampoco se puede mover en silencio: sigue
   // siendo una igualdad exacta, y el día de la firma vuelve a 0 a la vez que se retira el
   // marcador del literal — un contador a 0 con un marcador vivo es peor que no llevar cuenta.
-  assert.equal(A.SIN_APROBAR, 1,
-    '🔴 el recuento de ranuras a la espera de la firma del fundador ya no es uno: o ha entrado '
+  // ✅ 7-sep-2026 · 1 → 0 (SCRUM-722): el fundador firma «Nuevo albarán». Se hace lo que el
+  // comentario de arriba dejó escrito, y a la vez: vuelve a 0 **y** se retira el marcador del
+  // literal — un contador a 0 con un marcador vivo es peor que no llevar cuenta.
+  //
+  // El cero sigue sin relajar nada: es una igualdad exacta, y el día que una lista nueva estrene
+  // su atajo con un rótulo sin firma, este número sube y esto cae. Ya pasó una vez, el 5-sep.
+  assert.equal(A.SIN_APROBAR, 0,
+    '🔴 el recuento de ranuras a la espera de la firma del fundador ya no es cero: o ha entrado '
     + 'un rótulo nuevo sin firmar, o alguien ha movido el número sin decir por qué.');
   assert.equal(A.TECLA, 'N', '🔴 la tecla que se pinta ha dejado de ser la «N».');
 });

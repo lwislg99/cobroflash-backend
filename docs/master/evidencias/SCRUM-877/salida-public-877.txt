@@ -1,0 +1,31 @@
+POBLACION
+  ficheros en public/ (html/js/css/json/webmanifest) : 107
+
+EL NUMERO
+  `yaqu.app` absolutos en public/ : 11
+    · en posicion de URL          : 7
+    · en METADATOS (meta/link)    : 4
+    · en CONTENIDO visible        : 0
+    · ⚠️ indeterminadas            : 0
+  cubos con contenido             : 2  OK (discrimina)
+
+POR FICHERO
+    7  public/index.html   {"META":4,"URL":3}
+    2  public/privacidad.html   {"URL":2}
+    2  public/terminos.html   {"URL":2}
+
+MUESTRA de cada clase
+
+  URL (7)
+    public/index.html:36   "url": "https://yaqu.app",
+    public/index.html:47   "url": "https://yaqu.app",
+    public/index.html:48   "logo": "https://yaqu.app/icons/icon-512.pn
+
+  META (4)
+    public/index.html:18   ta property="og:url" content="https://yaqu.app"/>
+    public/index.html:19   property="og:image" content="https://yaqu.app/img/og.png"/>
+    public/index.html:25   name="twitter:image" content="https://yaqu.app/img/og.png"/>
+
+  CONTENIDO (0)
+
+  INDETERMINADA (0)

@@ -212,18 +212,51 @@ export function portadoresDelFlag(raiz, semilla = SEMILLA_FLAG) {
   const portadores = new Map();
   const visibleDesde = (clave, rel) =>
     clave.startsWith('EXPORT::') || clave.startsWith('WINDOW::') || clave.startsWith('WIRE::') || clave.startsWith(rel + '::');
+
+  // ── EL ÍNDICE, y por qué da EXACTAMENTE la misma vía (SCRUM-858c) ──────────────────────
+  //
+  // Antes, cada definición recorría TODAS las claves portadoras buscando la primera, en orden
+  // de inserción, que fuese visible y cuyo nombre final estuviera entre sus identificadores:
+  // 29.965 definiciones × hasta 1.503 claves × 7 vueltas, y así scrum601 tardaba 80 s de sus 83.
+  // Ahora se va del nombre a sus claves. La vía elegida es la de MENOR posición de inserción
+  // entre las que casan, que es por definición la primera que encontraba el recorrido.
+  //
+  // 🔴 El índice se actualiza EN CADA inserción, no una vez por vuelta: el recorrido del Map
+  // veía las claves añadidas por las definiciones anteriores de la MISMA vuelta, y congelarlo
+  // cambia las vueltas y los portadores. La huella de 858c lo pone en rojo (mutante ②).
+  const porNombre = new Map(); // nombre final → claves portadoras con ese nombre, en orden de inserción
+  const posicion = new Map();  // clave → posición de inserción en `portadores`
+  const inserta = (clave, valor) => {
+    posicion.set(clave, portadores.size);
+    portadores.set(clave, valor);
+    const nombre = clave.split('::').pop();
+    const lista = porNombre.get(nombre);
+    if (lista) lista.push(clave); else porNombre.set(nombre, [clave]);
+  };
+  const primeraVia = (d) => {
+    let via = null, mejor = Infinity;
+    const mira = (lista) => {
+      for (const clave of lista) {
+        if (!visibleDesde(clave, d.rel)) continue;
+        if (posicion.get(clave) < mejor) { mejor = posicion.get(clave); via = clave; }
+        return; // la lista va en orden de inserción: la primera visible es la menor de su nombre
+      }
+    };
+    if (d.ids.size <= porNombre.size) {
+      for (const id of d.ids) { const lista = porNombre.get(id); if (lista) mira(lista); }
+    } else {
+      for (const [nombre, lista] of porNombre) if (d.ids.has(nombre)) mira(lista);
+    }
+    return via;
+  };
+
   let vueltas = 0, cambia = true;
   while (cambia && vueltas < 20) {
     cambia = false; vueltas += 1;
     for (const d of defs) {
       if (d.claves.every((c) => portadores.has(c))) continue;
       let via = d.flag ? semilla.nombre : null;
-      if (!via) {
-        for (const clave of portadores.keys()) {
-          if (!visibleDesde(clave, d.rel)) continue;
-          if (d.ids.has(clave.split('::').pop())) { via = clave; break; }
-        }
-      }
+      if (!via) via = primeraVia(d);
       if (!via) continue;
       const claves = [...d.claves];
       // ── EL PUENTE back→front, y por qué es TAN estrecho ──────────────────────────────────
@@ -240,7 +273,7 @@ export function portadoresDelFlag(raiz, semilla = SEMILLA_FLAG) {
       if (d.clavePropiedad && d.rel === ficheroArranque && accesosEnPublic.has(d.clavePropiedad)) {
         claves.push(`WIRE::${d.clavePropiedad}`);
       }
-      for (const c of claves) if (!portadores.has(c)) { portadores.set(c, { rel: d.rel, linea: d.linea, via }); cambia = true; }
+      for (const c of claves) if (!portadores.has(c)) { inserta(c, { rel: d.rel, linea: d.linea, via }); cambia = true; }
     }
   }
   const cables = [...portadores.keys()].filter((k) => k.startsWith('WIRE::'));

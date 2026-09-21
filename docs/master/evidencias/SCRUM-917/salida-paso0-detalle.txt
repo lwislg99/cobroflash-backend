@@ -1,0 +1,72 @@
+node : ⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+En línea: 1 Carácter: 409
++ ... sh/wt-917c; node docs/master/evidencias/SCRUM-917/paso0-detalle.mjs > ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⟦arranque⟧ 0.5 ...ra-página 0.0 s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+# SCRUM-917e · PASO 0 — el detalle del Trabajo, medido HOY
+POBLACIÓN: 3 casos (3099, 3100, 3101) × 2 anchuras (1280, 390)
+
+## Trabajo 3099 (María López) a 1280px
+   nodos 131 · alto 1263 px · 12 secciones · 14 controles
+   secciones: María López · Qué falta para cobrar · Albaranes · Tipo de trabajo · Datos · Notas internas · Gastos de este trabajo · CLIENTE · DÓNDE · DINERO · PRESUPUESTO · RESPONSABLE
+   «590,00 €» en pantalla: 7 veces
+   «María López» en pantalla: 3 veces
+   controles < 44 px: 8 de 14
+   «QUÉ FALTA PARA COBRAR» presente: true · dice «te falta 0,00»: true
+   «Incluir precios en el parte» presente: true
+   aviso firmado de SCRUM-887 presente: false
+
+## Trabajo 3100 (Talleres Ortega SL) a 1280px
+   nodos 131 · alto 1263 px · 12 secciones · 14 controles
+   secciones: Talleres Ortega SL · Qué falta para cobrar · Albaranes · Tipo de trabajo · Datos · Notas internas · Gastos de este trabajo · CLIENTE · DÓNDE · DINERO · PRESUPUESTO · RESPONSABLE
+   «417,45 €» en pantalla: 4 veces
+   «Talleres Ortega SL» en pantalla: 3 veces
+   controles < 44 px: 8 de 14
+   «QUÉ FALTA PARA COBRAR» presente: true · dice «te falta 0,00»: false
+   «Incluir precios en el parte» presente: true
+   aviso firmado de SCRUM-887 presente: false
+
+## Trabajo 3101 (Ana Ruiz) a 1280px
+   nodos 80 · alto 921 px · 9 secciones · 9 controles
+   secciones: Ana Ruiz · Albaranes · Tipo de trabajo · Datos · Notas internas · Gastos de este trabajo · CLIENTE · DÓNDE · RESPONSABLE
+   «—» en pantalla: 0 veces
+   «Ana Ruiz» en pantalla: 3 veces
+   controles < 44 px: 6 de 9
+   «QUÉ FALTA PARA COBRAR» presente: false · dice «te falta 0,00»: false
+   «Incluir precios en el parte» presente: true
+   aviso firmado de SCRUM-887 presente: false
+
+## Trabajo 3099 (María López) a 390px
+   nodos 131 · alto 1925 px · 12 secciones · 14 controles
+   secciones: María López · Qué falta para cobrar · Albaranes · Tipo de trabajo · Datos · Notas internas · Gastos de este trabajo · CLIENTE · DÓNDE · DINERO · PRESUPUESTO · RESPONSABLE
+   «590,00 €» en pantalla: 7 veces
+   «María López» en pantalla: 3 veces
+   controles < 44 px: 8 de 14
+   «QUÉ FALTA PARA COBRAR» presente: true · dice «te falta 0,00»: true
+   «Incluir precios en el parte» presente: true
+   aviso firmado de SCRUM-887 presente: false
+
+## Trabajo 3100 (Talleres Ortega SL) a 390px
+   nodos 131 · alto 1925 px · 12 secciones · 14 controles
+   secciones: Talleres Ortega SL · Qué falta para cobrar · Albaranes · Tipo de trabajo · Datos · Notas internas · Gastos de este trabajo · CLIENTE · DÓNDE · DINERO · PRESUPUESTO · RESPONSABLE
+   «417,45 €» en pantalla: 4 veces
+   «Talleres Ortega SL» en pantalla: 3 veces
+   controles < 44 px: 8 de 14
+   «QUÉ FALTA PARA COBRAR» presente: true · dice «te falta 0,00»: false
+   «Incluir precios en el parte» presente: true
+   aviso firmado de SCRUM-887 presente: false
+
+## Trabajo 3101 (Ana Ruiz) a 390px
+   nodos 80 · alto 1273 px · 9 secciones · 9 controles
+   secciones: Ana Ruiz · Albaranes · Tipo de trabajo · Datos · Notas internas · Gastos de este trabajo · CLIENTE · DÓNDE · RESPONSABLE
+   «—» en pantalla: 0 veces
+   «Ana Ruiz» en pantalla: 3 veces
+   controles < 44 px: 6 de 9
+   «QUÉ FALTA PARA COBRAR» presente: false · dice «te falta 0,00»: false
+   «Incluir precios en el parte» presente: true
+   aviso firmado de SCRUM-887 presente: false
+
+SUELO: 0 casos no se pudieron medir.
+EXIT=0

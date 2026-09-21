@@ -59,15 +59,57 @@ const JS = path.join(RAIZ, 'public/dashboard/js');
  */
 const CENSO_DE_SITIOS = {
   'albaranDesdePresupuestoModal.js': 6,
-  'atajoNuevo.js': 1,
+  // 🔴 SCRUM-597 · 8-sep-2026 · `documentoAsignados.js` SALE: el fundador firmó los cinco
+  // rótulos («me parecen genial los rótulos»), registrados en
+  // `docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-documento.md`. La entrada se BORRA, no
+  // se pone a 0 (SCRUM-424 / SCRUM-405): `censoActual()` sólo lista ficheros CON marcadores, y
+  // el trinquete APRIETA. Un marcador censado sigue en pantalla; uno firmado desaparece.
+  // 🔴 SCRUM-722 · 7-sep-2026 · `atajoNuevo.js` SALE: el fundador firmó «Nuevo albarán». La
+  // entrada se borra, no se pone a 0. 29 → 28 sitios.
+  //
+  // ⚠️ Y DE PASO, LO QUE ESTE FICHERO VINO A EVITAR ESTUVO A PUNTO DE REPETIRSE: ese marcador
+  // llevaba TRES DÍAS en pantalla y lo encontró de rebote un barrido que medía otra cosa. Este
+  // censo lo tenía contado —hacía su trabajo—, pero contar no es avisar: mientras el número
+  // cuadre, nadie mira si lo que cuenta está delante de un cliente. Ese eje lo cubre desde hoy
+  // `guard:marcadores-en-pantalla` (SCRUM-722), que mide el DOM renderizado y no el árbol.
   'exportView.js': 2,
   'invoicesView.js': 1,
   'libroRegistroView.js': 1,
   'parteDetailView.js': 1,
   'productsView.js': 3,
   'providersView.js': 3,
-  'quotesView.js': 3,
+  // 🔴 SCRUM-632 · 8-sep-2026 · `quotesView.js` SUBE de 3 a 4, y a conciencia.
+  //
+  // Entra el rótulo del campo de DESCRIPCIÓN DE LA LÍNEA. El mecanismo no existe sin él: la
+  // línea gana un dato nuevo —distinto de la descripción del PRODUCTO, decisión del fundador del
+  // 8-sep-2026— y un campo sin rótulo no se puede usar; quien lo abra no sabría si escribe la
+  // del catálogo o la del documento, que es justo la confusión que el ticket cierra.
+  //
+  // Sale de UNA sola constante, `MARCA_DESC_LINEA`, así que la firma lo apaga de golpe. El día
+  // que llegue, este número BAJA a 3 — no se borra la entrada, porque quedan otros marcadores
+  // en el fichero (SCRUM-424 / SCRUM-405: la entrada sólo se borra cuando no queda ninguno).
+  //
+  // 🔴 SCRUM-915k · 21-sep-2026 · `quotesView.js` SALE: el fundador firmó sus cuatro textos
+  // (SCRUM-915, comentario 15868, 18-sep-2026) y los marcadores se retiraron en el mismo commit. La
+  // entrada se BORRA, no se pone a 0. Total: 30 → 26 sitios (21-sep-2026, medido por este test, no
+  // restado). Registro de la firma: `docs/microcopy/2026-09-21-SCRUM-915-marcadores-firmados.md`.
   'settingsView.js': 2,
+  // SCRUM-576 (CONT-03) · 4 → 6 y de vuelta a 4. El campo «Empresa» del lado Persona entró con
+  // sus dos ranuras marcadas (rótulo y opción de «ninguna») el 7-sep-2026, y el fundador **firmó
+  // los dos textos esa misma noche**: «Empresa» y «Sin empresa». Salen ya sin marca.
+  //
+  // 🔴 EL NÚMERO BAJA A 4, NO A 0, Y LA ENTRADA SE QUEDA — que es la diferencia que importa. Las
+  // cuatro que quedan son de SCRUM-574 y **no están firmadas**: la pregunta «Este contacto es»,
+  // sus dos etiquetas, y las dos posiciones donde `MARCADOR` se expone. Borrar la entrada aquí
+  // (precedente SCRUM-424/405) diría «este fichero ya no tiene nada que vigilar», y es falso.
+  //
+  // El censo de SCRUM-402 no se mueve —sigue en 1— y tampoco se movió al añadirlas: cuenta
+  // LITERALES por AST, y el único literal de este fichero es la declaración de `MARCADOR`. Ése
+  // es exactamente el hueco que este contador existe para tapar.
+  // 🔴 SCRUM-530 · 15-sep-2026 · `reportsView.js` ENTRA con 1 sitio: 29 → 30.
+  // La tarjeta de WhatsApp pasa a decir que no puede pronunciarse cuando la muestra de 7 días no
+  // llega al mínimo, en vez de callarse. El texto es del fundador (regla 30) y va con marcador.
+  'reportsView.js': 1,
   'switchFormaJuridica.js': 4,
   'tipoDestinatarioPendiente.js': 2,
 };
@@ -93,6 +135,7 @@ const PINTAN_Y_NO_CUENTAN = {
   'libroRegistroView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera, y `scrum296-pantalla-libro` la compara ranura a ranura',
   'parteDetailView.js': 'su propio comentario dice que entra en el censo de SCRUM-402 con su número',
   'providersView.js': 'mensajes de error y respaldo de último recurso; `scrum644-trinquete-mensaje-crudo` los vigila',
+  'reportsView.js': 'su única ranura es el aviso de muestra corta de la tarjeta de WhatsApp, y `scrum530-la-alerta-que-no-puede-pronunciarse` la sujeta con su número (3/10) y con los dos controles de alerta',
   'settingsView.js': 'rótulo del modo de emisión, cubierto por `scrum298-modo-visible`',
   'switchFormaJuridica.js': 'los rótulos del control, cubiertos por `scrum574-switch-forma-juridica`',
   'tipoDestinatarioPendiente.js': 'el aviso entero es la ranura; `scrum615` y `scrum622` la sujetan',

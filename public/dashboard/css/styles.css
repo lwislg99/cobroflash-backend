@@ -762,6 +762,10 @@ html, body { overflow-x: clip; }
 
    `aria-pressed` ya anunciaba el estado al lector de pantalla antes que este CSS: aquí
    sólo se hace visible lo que el marcado ya decía. */
+/* SCRUM-979: el select de «última visita» no lleva el tope de 220 px de los otros dos filtros
+   de la toolbar — a 390 px cortaba «Sin visitar desde hace 12 m…» (medido en Edge). Mide lo que
+   su opción más larga y nunca más que la barra. */
+.customers-filtro-visita { max-width: 100%; }
 .customers-tabs {
   display: flex;
   gap: 4px;
@@ -1337,6 +1341,120 @@ html, body { overflow-x: clip; }
 .quote-form-row { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 @media (max-width: 900px) { .quote-form-row { grid-template-columns: 1fr; } }
 
+/* ── SCRUM-915d · LOS PASOS DEL EDITOR ────────────────────────────────────────────────────────
+   Cliente → Conceptos → Condiciones → Revisar, con SÓLO EL ACTUAL ABIERTO (v3 aprobada,
+   docs/prototipos/SCRUM-915/). Los pasos SON los bloques de siempre: `.quote-paso` es el bloque
+   que lleva el título del paso y `.quote-paso-parte` la segunda mitad de un paso (los totales en
+   Conceptos, «Ajustes del documento» en Condiciones). Abrir y cerrar cambia CLASES; lo que se ve
+   lo decide esta hoja y NINGÚN nodo se mueve, así que un paso cerrado sigue enviando sus campos.
+   Tokens de DESIGN.md; el número del paso sale de `data-numero`, no del texto del título. */
+
+/* ⚠️ Los estados van en clases EXPLÍCITAS (`is-cerrado`, `is-plegado`) y no en `:not(.is-abierto)`
+   donde se puede: el banco de vistas de la suite (tests/_banco-vistas.mjs, `ocultoPorCss`) sabe
+   resolver clases compuestas y descendencia, y NO `>` ni `:not`. Una regla que no sabe resolver
+   sobre un campo lo deja CIEGO, y el control de SCRUM-660 lo trata como fallo. */
+
+/* Un paso cerrado es UNA fila: número (o ✓), título, resumen y «Cambiar». Lo demás no se ve. */
+.quote-paso-parte.is-cerrado { display: none; }
+.quote-paso.is-cerrado { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+/* Lo que un paso CERRADO no enseña, por su nombre y no con `> :not(…)`, que el banco no resuelve.
+   Son los hijos de los cuatro bloques de paso; si un bloque gana un hijo con otra clase, se añade
+   aquí (y guard:pasos-del-editor lo caza si un paso cerrado deja ver su control representativo). */
+.quote-paso.is-cerrado .quote-paso__guia,
+.quote-paso.is-cerrado .quote-paso__pie,
+.quote-paso.is-cerrado .quote-paso__revision,
+.quote-paso.is-cerrado .quote-form-row,
+.quote-paso.is-cerrado .quote-lines-header,
+.quote-paso.is-cerrado .quote-plantillas,
+.quote-paso.is-cerrado .quote-conceptos,
+.quote-paso.is-cerrado .quote-lines,
+.quote-paso.is-cerrado .quote-add-line,
+.quote-paso.is-cerrado .quote-dto-global,
+.quote-paso.is-cerrado .quote-fila,
+.quote-paso.is-cerrado .quote-ajustes,
+.quote-paso.is-cerrado .form-actions { display: none; }
+.quote-paso.is-cerrado .quote-block-title { margin: 0; }
+
+.quote-paso > .quote-block-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -.01em;
+}
+.quote-paso.is-abierto > .quote-block-title { font-size: 1.125rem; margin-bottom: 4px; }
+.quote-paso.is-pendiente > .quote-block-title { color: var(--muted); font-weight: 600; }
+.quote-paso > .quote-block-title::before {
+  content: attr(data-numero);
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  font-size: 13px; font-weight: 700;
+  background: var(--neutral-100); color: var(--muted);
+}
+.quote-paso.is-abierto > .quote-block-title::before { background: var(--brand-tint); color: var(--brand-ink); }
+/* Blanco sobre --brand-tint-ink y no sobre --brand: con 13 px, sobre el verde de marca no llega a
+   AA (DESIGN.md, «Primary (small)»: 3,30:1 frente a 5,48:1). */
+.quote-paso.is-hecho > .quote-block-title::before { content: "✓"; background: var(--brand-tint-ink); color: #fff; }
+
+.quote-paso__resumen {
+  flex: 1 1 12rem; min-width: 0;
+  font-size: 14px; color: var(--body);
+  overflow-wrap: anywhere;
+}
+.quote-paso__guia { margin: 0 0 14px 38px; font-size: 14px; color: var(--muted); }
+.quote-paso__revision { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+
+/* «Cambiar» / «Listo»: enlace de texto con 44 px de blanco de toque (AB6), no un btn-sm de 30.
+   Sin `display` propio A PROPÓSITO: así el atributo `hidden` lo sigue escondiendo sin una regla
+   `.clase[hidden]` (trinquete de SCRUM-731). Un botón ya es `inline-block` y centra su texto. */
+.quote-paso__cambiar {
+  min-height: 44px; min-width: 44px; padding: 0 8px; margin-left: auto;
+  border: 0; border-radius: var(--radius-sm); background: none;
+  font: inherit; font-size: 14px; font-weight: 700; color: var(--brand-tint-ink);
+  cursor: pointer;
+}
+.quote-paso__cambiar:hover { text-decoration: underline; }
+.quote-paso__cambiar:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.quote-paso__pie {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+  gap: 8px 12px; margin-top: 16px;
+}
+.quote-paso__falta { margin-right: auto; font-size: 13px; color: var(--muted); }
+
+/* Las filas de Condiciones: «qué · lo elegido» a la izquierda y «Cambiar» a la derecha. */
+.quote-fila { border-top: 1px solid var(--neutral-100); }
+.quote-fila:first-of-type { border-top: 0; }
+.quote-fila__cab {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px; align-items: center; padding: 6px 0;
+}
+.quote-fila__titulo { grid-column: 1; font-size: 14px; font-weight: 600; color: var(--ink); }
+.quote-fila__valor { grid-column: 1; font-size: 14px; color: var(--body); overflow-wrap: anywhere; }
+.quote-fila__cab > .quote-paso__cambiar { grid-column: 2; grid-row: 1 / span 2; }
+.quote-fila__detalle { padding: 4px 0 12px; }
+/* Con la fila abierta, su título y lo elegido los dice ya el propio campo (su rótulo y su valor):
+   la cabecera se queda sólo con «Listo». Así no se esconde el rótulo del campo, que es el que
+   nombra el control para el lector de pantalla. */
+.quote-fila.is-desplegado .quote-fila__titulo,
+.quote-fila.is-desplegado .quote-fila__valor { display: none; }
+
+/* «Ajustes del documento» es la cuarta fila, y es un bloque entero: cerrado enseña su título con
+   el galón ▸, su resumen y «Cambiar»; abierto (▾) enseña los ajustes debajo, EN LA PÁGINA. */
+.quote-ajustes { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: center; }
+.quote-ajustes > * { grid-column: 1 / -1; }
+.quote-ajustes > .quote-block-title { grid-column: 1; grid-row: 1; margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+.quote-ajustes > .quote-block-title::before { content: "▸"; display: inline-block; width: 14px; color: var(--muted); }
+.quote-ajustes.is-desplegado > .quote-block-title::before { content: "▾"; }
+.quote-ajustes > .quote-fila__valor { grid-column: 1; grid-row: 2; }
+.quote-ajustes > .quote-paso__cambiar { grid-column: 2; grid-row: 1 / span 2; }
+/* Plegada, se esconden los AJUSTES (las filas de campos y los campos), no el pie del paso. */
+.quote-ajustes.is-plegado .quote-form-row,
+.quote-ajustes.is-plegado .field { display: none; }
+.quote-ajustes.is-desplegado .quote-form-row,
+.quote-ajustes.is-desplegado .field { margin-top: 10px; }
+
+@media (max-width: 420px) {
+  .quote-paso__guia { margin-left: 0; }
+}
+
 .quote-lines-header {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 8px; font-size: 12.5px; color: var(--neutral-500); font-weight: 600;
@@ -1558,16 +1676,14 @@ html, body { overflow-x: clip; }
 @media (max-width: 767px) {
   .quote-drag-handle { display: none; }
 }
-/* SCRUM-139 F4 (cierra BUGS.md P3-13): el aviso vive dentro de la etiqueta de PRECIO, no
-   debajo del input. Debajo hacía esa celda más alta que las demás y `align-items:end` le subía
-   el input ~15 px. Aquí no añade alto a nadie. `text-transform:none` porque la etiqueta va en
-   MAYÚSCULAS y "Final: 40,25 €" no debe gritar. */
+/* SCRUM-139 F4 (cierra BUGS.md P3-13): la etiqueta de PRECIO reparte su ancho entre el rótulo y
+   lo que se le cuelgue al lado, en vez de dejar crecer la celda hacia abajo. Debajo del input,
+   un añadido hacía esa celda más alta que las demás y `align-items:end` le subía el input ~15 px.
+   SCRUM-669 (resto 4) · aquí vivía `.price-final-hint`, el estilo del aviso «Final: …». Se retira
+   con su elemento: desde DOC-08 el margen no está en la línea, así que el aviso no tenía nunca
+   nada que decir y el hueco salía siempre vacío. El `flex` de la etiqueta se queda — lo que
+   sostiene es la forma de la celda, no aquel aviso. */
 .quote-line__label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.price-final-hint {
-  font-size: 11px; font-weight: 600; color: var(--muted, #6b756f);
-  text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
 
 /* SCRUM-139 F4 · disparador de la hoja de ajustes. Terciario a propósito: es lo que MENOS se
    toca de la línea (margen casi siempre 0, IVA casi siempre el general), pero se lee sin
@@ -1589,6 +1705,12 @@ html, body { overflow-x: clip; }
   cursor: pointer;
 }
 .quote-line__ajustes:hover { color: var(--ink, #0f1c17); background: var(--bg, #f6f7f5); }
+/* SCRUM-915h · la ficha sólo se ve si la línea NO va con lo de siempre (otro IVA, descuento,
+   suplido). En móvil va en su propia fila a lo ancho, así que se quita entera; en la rejilla de
+   ≥640 px tiene COLUMNA, y quitarla correría el total y el ⋯ de esa fila bajo la columna de al lado:
+   ahí se queda el hueco, invisible y fuera del orden de tabulación (`visibility`). La hoja se abre
+   siempre desde «Ajustes» del menú ⋯. */
+.quote-line__ajustes.is-de-siempre { display: none; }
 .quote-line__ajustes:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
 
 /* La hoja: los dos campos apilados y a lo ancho — es su pantalla, no una columna estrecha. */
@@ -1640,12 +1762,81 @@ html, body { overflow-x: clip; }
     /* SCRUM-594 (DOC-04): la rejilla NO cambia. «Dto. %» se montó primero aquí, junto al precio,
        y la medición en navegador a 390 px dijo +77 px POR FILA — el número exacto que F4 midió y
        rechazó para margen e IVA. Vive en la hoja de ajustes, con IVA y Coste, y el chip lo dice. */
-    grid-template-columns: minmax(0, 3fr) 90px 120px 168px minmax(96px, auto) auto;
+    /* 🔴 SCRUM-909: AQUÍ VIVÍA `minmax(0, 3fr)` PARA EL CONCEPTO, Y ESE `0` ES EL DEFECTO.
+       Las cinco columnas fijas suman 546 px y sus cinco huecos 60 px: 606 px antes de que el
+       concepto ocupe nada. En cuanto la línea mide menos que eso, el `0` de mínimo le da permiso
+       al concepto para DESAPARECER, y desaparece. Medido en navegador el 17-sep-2026:
+           768 px → 69,9 · 1024 → 53,9 · 1180 → 0,0 · 1280 → 0,0 · 1366 → 0,0 · 1440 → 9,6
+       El rótulo «Concepto» necesita 72 px, así que se pintaba FUERA de su caja, encima de la
+       columna de al lado; y a 1180, 1280 y 1366 la fila además DESBORDABA de lado, que es justo
+       lo que el comentario de aquí arriba promete que no pasa.
+       La banda rota era 768 → 1600 px: todo el escritorio menos los monitores grandes, con los
+       portátiles de 1366 y 1440 dentro. El ticket decía «a 1280 px» y se quedaba corto.
+       Así que por DEFECTO el escritorio PLIEGA la línea en dos filas, igual que el móvil: el
+       concepto arriba a todo lo ancho —que es el contrato que AB3 le escribió a este componente,
+       «concepto a ancho completo (protagonista)»— y los números debajo. NO se inventa lenguaje
+       nuevo: es el pliegue que la pantalla ya hacía en el móvil. */
+    /* El reparto de columnas ya NO lo decide esta consulta de ventana, sino las DOS consultas de
+       contenedor de aquí abajo, que le preguntan a la línea. Lo que queda aquí es lo que sí
+       depende del dispositivo. */
     align-items: end;
     gap: 12px;
   }
-  .quote-line__concept, .quote-line__actions, .quote-line__ajustes { grid-column: auto; }
+}
+
+/* ── SCRUM-909 · LA LÍNEA SE PLIEGA SEGÚN LO QUE MIDE ELLA, NO LA VENTANA ─────────────────────
+   Medido, de 1280 a 1440 px de VENTANA la columna del concepto sólo creció 9,6 px: el ancho de la
+   línea no lo decide el navegador, lo decide el reparto entre el editor y la vista previa. Un
+   umbral en `@media` sería un número que habla de otra cosa, y caducaría el día que la vista
+   previa cambie de anchura.
+
+       🔒 Referenciar por posición caduca. Referenciar por identidad no.
+
+   Y los umbrales NO se eligen, SE CALCULAN, de la propia rejilla:
+
+     · los cinco campos numéricos miden 90 + 120 + 168 + 96 + 72 = 546 px, y sus cuatro huecos
+       48 px  →  594 px es lo que necesita UNA fila de números;
+     · más el relleno de la tarjeta (24 px)  →  618 px de contenedor. Se deja en **640**.
+     · para volver a la fila ÚNICA hace falta además un mínimo REAL de 180 px de concepto y el
+       quinto hueco: 594 + 12 + 180 + 24 = 810 px. Se deja en **880**, ~70 px de margen para que
+       el chip de ajustes pueda crecer («IVA 21 % · Margen 15 %» es más largo que «IVA 21 %») sin
+       que la fila vuelva a desbordar.
+
+   Quien toque estos números tiene `npm run guard:rotulos-de-la-linea`, que lo comprueba en 10
+   anchuras. Y si un navegador no entendiera `@container`, todo cae a la rejilla de móvil: más
+   alta, pero entera — nunca al concepto invisible de antes.
+
+   `container-type: inline-size` es CSS de la casa: ni build, ni framework, ni dependencia. No
+   afecta a la hoja de ajustes, que cuelga de `document.body` y es `position: fixed`. */
+.quote-lines { container-type: inline-size; container-name: linea-presupuesto; }
+
+/* ≥640 px de línea: los números CABEN en una fila. El concepto se queda arriba, a todo lo ancho
+   — que es el contrato que AB3 le escribió a este componente: «concepto a ancho completo
+   (protagonista)». No se inventa lenguaje nuevo: es el pliegue que el móvil ya hacía. */
+@container linea-presupuesto (min-width: 640px) {
+  .quote-line { grid-template-columns: 90px 120px 168px minmax(96px, auto) auto; }
+  /* `.quote-line__concept` NO vuelve a `auto` aquí: conserva el `grid-column: 1 / -1` de la regla
+     base, que es lo que lo pone en su propia fila a todo lo ancho. */
+  .quote-line__actions, .quote-line__ajustes { grid-column: auto; }
   .quote-line__actions { justify-content: flex-start; justify-self: auto; }
+  .quote-line__ajustes.is-de-siempre { display: block; visibility: hidden; } /* SCRUM-915h: el hueco */
+}
+
+/* ≥880 px de línea: vuelve la fila ÚNICA de SCRUM-139 F4, con la densidad de la tabla. La
+   densidad no se pierde: se condiciona a que haya sitio de verdad. */
+@container linea-presupuesto (min-width: 880px) {
+  .quote-line {
+    /* 🔴 AQUÍ VIVÍA `minmax(0, 3fr)`, Y ESE `0` ERA EL DEFECTO DE SCRUM-909: le daba permiso al
+       concepto para DESAPARECER, y desaparecía. Medido el 17-sep-2026, columna del concepto:
+           768 px → 69,9 · 1024 → 53,9 · 1180 → 0,0 · 1280 → 0,0 · 1366 → 0,0 · 1440 → 9,6
+       El rótulo «Concepto» necesita 72 px, así que se pintaba FUERA de su caja, encima de la
+       columna de al lado; y a 1180, 1280 y 1366 la fila además DESBORDABA de lado. La banda rota
+       era 768 → 1600 px —todo el escritorio menos los monitores grandes, con los portátiles de
+       1366 y 1440 dentro—: el ticket decía «a 1280 px» y se quedaba corto.
+       El mínimo ya no es 0: el concepto puede encogerse, nunca desaparecer. */
+    grid-template-columns: minmax(180px, 3fr) 90px 120px 168px minmax(96px, auto) auto;
+  }
+  .quote-line__concept { grid-column: auto; }
 }
 
 /* SCRUM-133: "+ Añadir línea" DEBAJO de la última fila — añadir es la acción más
@@ -1663,16 +1854,9 @@ html, body { overflow-x: clip; }
 }
 .quote-add-line:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
 
-/* SCRUM-139 F3: sin fondo ni borde propios. Era una caja gris DENTRO de la tarjeta blanca
-   del bloque —caja dentro de caja— y con el título "Totales" fuera se notaba el doble marco.
-   Ahora la tarjeta del bloque es el único contenedor y esto es solo el desglose de apoyo. */
-.quote-totals { padding: 0; font-size: 13px; }
-.quote-totals > div { display: flex; justify-content: space-between; margin-bottom: 4px; }
-
-/* SCRUM-139 F3 · EL TOTAL COMO SIGNATURE KPI (DESIGN.md §5).
-   Base e IVA son APOYO: se consultan, no se buscan. */
-.quote-totals__apoyo { color: var(--muted, #6b756f); }
-.quote-totals__apoyo strong { color: var(--ink, #0f1c17); font-variant-numeric: tabular-nums; font-weight: 600; }
+/* SCRUM-915h · aquí vivían `.quote-totals` y `.quote-totals__apoyo`, el desglose de apoyo del
+   editor (Base, IVA, descuentos). Se fue con él al documento de la derecha, que lo pinta con
+   `.preview-total-row`. En Conceptos queda sólo el TOTAL (SCRUM-139 F3 · Signature KPI). */
 
 /* El KPI: Label arriba, cifra Display debajo — NO una fila `space-between` donde el rótulo
    pelea por el ancho con su propia cifra (así estaba en `.quote-vat-calc`). */
@@ -1731,8 +1915,39 @@ html, body { overflow-x: clip; }
 .preview-total-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
 .preview-total-row-main strong { font-size: 15px; }
 .preview-footer { margin-top: 12px; font-size: 11px; color: var(--neutral-400); }
-.quote-preview-title { font-size: 14px; font-weight: 700; color: var(--neutral-800); margin-bottom: 10px; }
+.quote-preview-title { font-size: 14px; font-weight: 700; color: var(--neutral-800); margin-bottom: 2px; }
+/* SCRUM-915e1 · la segunda línea del rótulo del documento. Tokens ya existentes (`--neutral-400`,
+   el mismo gris del pie del documento) y el tamaño de nota que ya usa `.preview-footer`: no entra
+   ningún token nuevo, ni un color ni una sombra. El margen del título baja de 10 a 2 px porque el
+   aire lo pone ahora esta línea, y el bloque entero sigue separado del papel los mismos 10 px. */
+.quote-preview-subtitle { font-size: 11px; color: var(--neutral-400); margin: 0 0 10px; }
 .quote-preview-block { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--neutral-200); }
+
+/* SCRUM-915e2 · «Ver documento», y el resalte de la fila que se está editando.
+
+   El botón sólo existe cuando el documento NO está al lado: por debajo de 1100 px `.quotes-layout`
+   pasa a una columna y el papel se va DEBAJO del editor entero, que en un teléfono son varias
+   pantallas de scroll. El número no se elige aquí — es el mismo de aquella `@media`—, y los dos
+   viven en este fichero y no uno aquí y otro en un `matchMedia` de JavaScript, que es como dos
+   sitios acaban sabiendo el mismo número y separándose sin que nadie lo note. */
+.quote-ver-documento { display: none; }
+@media (max-width: 1100px) { .quote-ver-documento { display: inline-flex; } }
+
+/* La hoja del documento reutiliza `.modal-overlay` + `.modal` del inventario AB3 tal cual —la casa
+   ya los convierte en hoja inferior por debajo de 640 px—; lo único propio es que el papel pueda
+   desplazarse sin arrastrar la hoja entera. */
+.quote-documento-modal .modal-body { max-height: 70vh; overflow-y: auto; }
+
+/* El resalte. `--brand-tint` es el token de «fondos de realce suaves» que ya existe: ni un color
+   nuevo. No codifica ningún estado —sólo dice «esto se acaba de mover»—, así que el color no es
+   canal único de nada. La duración es la del prototipo v3 aprobado, 1,2 s: no es una transición de
+   interfaz, de esas manda el `.2s` de DESIGN.md, sino un realce que se desvanece, y a 200 ms no
+   daría tiempo a verlo. Con `prefers-reduced-motion` no hay animación y no queda fondo pegado. */
+@keyframes yaqu-resalta-fila { from { background: var(--brand-tint); } to { background: transparent; } }
+.preview-lines-table tr.preview-line--editada { animation: yaqu-resalta-fila 1.2s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .preview-lines-table tr.preview-line--editada { animation: none; }
+}
 
 /* Inline form elements */
 .inline-checkbox { font-size: 13px; margin: 10px 0 2px; } /* respiro: iba pegado al campo de arriba */
@@ -1812,27 +2027,17 @@ html, body { overflow-x: clip; }
 
   .topbar-hamburger { display: flex; }
 
-  /* Bottom nav (keep for quick access) */
-  .sidebar-nav-bottom {
-    display: flex;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: var(--neutral-900);
-    padding: 8px 4px;
-    z-index: 35;
-    justify-content: space-around;
-    border-top: 1px solid var(--neutral-800);
-  }
-  .bottom-nav-item {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 6px 10px; border-radius: var(--radius-sm);
-    border: none; background: transparent;
-    color: var(--neutral-500); font-size: 10px; font-weight: 600;
-    cursor: pointer; transition: color .12s;
-  }
-  .bottom-nav-item svg { width: 20px; height: 20px; }
-  .bottom-nav-item.active { color: var(--green-500); }
+  /* SCRUM-727 · AQUÍ VIVÍA UNA BARRA DE NAVEGACIÓN INFERIOR QUE NO EXISTE.
+     `.sidebar-nav-bottom` y `.bottom-nav-item` se estilizaban enteros —posición fija, fondo,
+     iconos, estado activo— y **ningún HTML ni ningún JS los pinta**: 4 apariciones en la hoja,
+     0 en todo lo que se sirve al navegador y 0 en `src/`. Se quitan.
 
+     ⚠️ EL RELLENO INFERIOR NO SE QUITA CON ELLAS, y por una razón medida. Estaba puesto «para
+     bottom-nav», pero lo que de verdad hay flotando ahí abajo es el botón de ayuda
+     (`#tut-help-btn`: fijo, 48 px, a 20 del borde). Cuando en SCRUM-720e se comprobó que ese
+     botón no tapa ningún control ni ninguna cifra, lo que lo impedía era ESTE hueco. Quitarlo
+     por muerto habría creado el defecto que aquel ticket midió que no existía. Cambia el motivo,
+     no la medida. */
   .view-container { padding: 16px 14px 80px; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
 
@@ -1966,6 +2171,8 @@ html, body { overflow-x: clip; }
   transition: border-color .12s;
 }
 .input:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
+/* SCRUM-979 · la celda «Última visita» de la lista de Clientes: mismo tono que «Alta». */
+.cell-visita { color: var(--muted); }
 
 /* ── Búsqueda global ─────────────────────────────────────────── */
 #global-search-wrap { display: flex; flex-direction: column; }
@@ -1993,6 +2200,14 @@ html, body { overflow-x: clip; }
 .quotes-desc { margin: 0 0 4px 0; font-size: 13.5px; color: var(--neutral-500); }
 .quotes-header-block { margin-bottom: 10px; }
 .quotes-header-block .quotes-title { margin: 0 0 4px 0; font-size: 17px; font-weight: 700; }
+/* SCRUM-915i · el título, el «Guardado automáticamente» y el «⋯» de arriba, en una fila. */
+.quotes-header-row { display: flex; align-items: center; gap: 8px; }
+.quotes-header-row .quotes-title { flex: 1 1 auto; min-width: 0; }
+/* El «⋯» de arriba es un objetivo NUEVO: nace con su área de toque (AB6, 44 px), no con la
+   excepción de `.btn-sm` que arrastran los de cada línea (guard:objetivo-tactil). */
+.quotes-header-row .overflow-trigger { min-width: 44px; min-height: 44px; }
+.hoja-vaciar { max-width: 420px; }
+.hoja-vaciar__frase { margin: 0; font-size: 14px; color: var(--neutral-600); }
 .quotes-header-block .quotes-merchant-info { font-size: 12.5px; color: var(--neutral-400); }
 .quote-result { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--neutral-100); font-size: 13.5px; }
 .quote-result h3 { margin: 0 0 6px; font-size: 15px; }
@@ -2066,6 +2281,20 @@ html, body { overflow-x: clip; }
 }
 /* Solo clipa las cards que envuelven tablas */
 .data-card { overflow: hidden; }
+
+/* ── SCRUM-980 · La pestaña «Trabajos» de la ficha del cliente (customerDetailView.js) ───────
+   Mismos valores que llevaban como estilo en línea desde JS; salen a la hoja para que el
+   trinquete de 713c no suba. La línea «Próxima visita» va en la cabecera de la ficha.
+   Las dos celdas llevan `.table td` delante porque `.table td` (y su versión móvil) pone su
+   propio padding y color, y una clase sola perdía contra ellos, que es lo que el estilo en
+   línea no hacía. */
+.historial-proxima { font-size: 13px; font-weight: 600; color: var(--neutral-700); margin-top: 6px; }
+.table td.historial-vacio { text-align: center; color: var(--neutral-400); padding: 24px; }
+.table td.historial-fecha { color: var(--muted); }
+.historial-docs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.historial-ver-mas { margin: 12px 16px; }
+.historial-sueltos { margin: 16px 16px 8px; font-size: 13px; font-weight: 700; color: var(--neutral-600); }
+.historial-sueltos-lista { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 16px 16px; }
 
 /* ── Settings form: responsive ──────────────────────────────── */
 @media (max-width: 640px) {
@@ -2163,6 +2392,13 @@ html, body { overflow-x: clip; }
   box-shadow: 0 0 0 3px rgba(220,38,38,.16) !important;
 }
 
+/* SCRUM-894: el texto de ayuda en Peligro bajo el campo que falta (DESIGN.md · Inputs · Error). */
+/* SCRUM-918: arrancar sin red. Ámbar de Aviso (DESIGN.md), mismo tinte que .badge-amber. */
+.aviso-sin-cobertura { background: var(--amber-50); border-bottom: 1px solid #fde68a; color: #92400e; padding: 10px 16px; font-size: 13.5px; font-weight: 600; text-align: center; }
+.aviso-falta-campo { font-size: 12.5px; font-weight: 600; color: var(--danger); margin: 2px 0 6px; }
+/* SCRUM-937b: ayuda bajo el NIF del gasto mientras no hay proveedor (mismo tono que .qq-help, AA). */
+.gasto-nif-ayuda { font-size: 12px; color: var(--muted); margin: 2px 0 0; line-height: 1.4; }
+
 /* Pills de estado más expresivas */
 .status-pill { font-weight: 700; letter-spacing: .02em; }
 .status-pill-accepted { box-shadow: inset 0 0 0 1px rgba(34,197,94,.25); }
@@ -2223,6 +2459,9 @@ html, body { overflow-x: clip; }
 /* Detalle de presupuesto — resumen integrado y menos escalonado */
 .detail-next { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
 .detail-next-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+/* SCRUM-707 · el aviso del estado que no reconocemos. Con su regla desde el primer día: una
+   clase pintada sin regla se ve desnuda, y eso lo caza `scrum666b`. */
+.detail-estado-desconocido { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
 .detail-2col { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px 28px; }
 .sig-row { margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -2311,8 +2550,21 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   gap: 12px; flex-wrap: wrap;
   padding: 18px 22px; border-bottom: 1px solid var(--border);
 }
-.detail-head h2 { font-size: 18px; margin: 0 0 2px; }
-.detail-head .detail-sub { font-size: 13px; color: var(--muted); margin: 0; }
+/* SCRUM-917f · la columna del título encoge. `.detail-head` es flex, y un hijo de flex NO baja
+   de su contenido: sin esto, el `ellipsis` de abajo no actúa nunca y un nombre largo empuja el
+   chip de estado y la barra de acciones fuera de la pantalla. */
+.detail-head-izq { min-width: 0; flex: 1 1 auto; }
+/* SCRUM-917f · el nombre largo TRUNCA, no empuja. Las mismas cuatro propiedades que llevaba
+   `.detail-miga-actual` hasta este corte: el principio no se mueve, se muda a donde vive ahora
+   el nombre largo — el título (que lo escribe el pro a mano) y el subtítulo (tres partes). */
+.detail-head h2 {
+  font-size: 18px; margin: 0 0 2px;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.detail-head .detail-sub {
+  font-size: 13px; color: var(--muted); margin: 0;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* SCRUM-317 (G2) · migas del detalle del Trabajo. Sustituyen al botón «← Volver a Trabajos»:
    dicen dónde estás Y qué es esto, en la misma línea y sin gastar un botón.
@@ -2327,13 +2579,10 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 }
 .detail-miga-link:hover { color: var(--ink); }
 .detail-miga-sep { color: var(--muted); }
-/* La miga actual se TRUNCA en vez de romper la línea: un nombre de cliente largo más un nombre
-   de trabajo largo no deben empujar el título ni el chip de estado — es el caso que más falla
-   en el pase de dispositivos. */
-.detail-miga-actual {
-  color: var(--ink); min-width: 0; max-width: 100%;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+/* SCRUM-917f · aquí vivía `.detail-miga-actual`. La miga repetía «cliente · trabajo» encima del
+   título y del subtítulo, que dicen lo mismo, así que se retira con su elemento. Su regla de
+   truncado NO se pierde: sube a `.detail-head h2` y `.detail-head .detail-sub`, que es donde
+   está ahora el nombre largo. */
 /* SCRUM-316 (G1) · cabecera del patrón: chips de los dos ejes + barra de acciones.
    Ni un token nuevo: gap/radios/colores son los que ya usa .detail-head. */
 .detail-head-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -2360,13 +2609,25 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* La etiqueta de DINERO va a ancho fijo para que los importes queden alineados en columna. */
 .detail-rail-etiqueta { color: var(--muted); min-width: 76px; }
 .detail-rail-fuerte { color: var(--ink); font-weight: 600; }
+/* SCRUM-982 · la NOTA del cliente («timbre roto, llamar al móvil»): texto libre, de varias líneas.
+   La etiqueta va ENCIMA y el texto ocupa todo el ancho del rail, en vez de quedarse en una columna
+   estrecha al lado. Se lee ENTERA (sin recorte) y respeta los saltos que escribió el profesional;
+   `anywhere` parte una palabra larga (una URL, un código) en vez de ensanchar el rail en 360 px.
+   Y 8 px de aire por encima (el `sm` de DESIGN.md): pegada al enlace de WhatsApp se leía como su
+   subtítulo, y no lo es. Ni un token nuevo. */
+.detail-rail-linea--nota { flex-direction: column; align-items: stretch; gap: 2px; margin-top: 8px; }
+.detail-rail-linea--nota .detail-rail-etiqueta { min-width: 0; }
+.detail-rail-linea--nota span:not(.detail-rail-etiqueta) { white-space: pre-line; overflow-wrap: anywhere; }
 /* SCRUM-368: mismo caso que .home-hero-ok — verde de TEXTO, no el de fondo. */
 .detail-rail-enlace { color: var(--brand-tint-ink, #047857); font-weight: 600; text-decoration: none; }
 .detail-rail-enlace:hover { text-decoration: underline; }
 .detail-rail-enlace--suelto { display: inline-block; margin-top: 6px; font-size: 13px; }
 /* Objetivo táctil de 44 px (AB6): el teléfono y el mapa se pulsan con las manos sucias, de pie y
-   con el motor en marcha. Es el único sitio del rail donde el tamaño del área importa. */
-.detail-rail-linea a { min-height: 44px; display: inline-flex; align-items: center; }
+   con el motor en marcha. Es el único sitio del rail donde el tamaño del área importa.
+   SCRUM-917h · y también de ANCHO: un enlace de texto corto («1 sept», el del presupuesto) medía
+   35,8 px con la fuente de Windows y ≥ 44 con la del runner de Linux, así que el mismo árbol daba
+   dos cifras de deuda según la máquina. Con el mínimo, el área ya no depende del texto. */
+.detail-rail-linea a { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; }
 
 /* Móvil: el rail deja de ser columna. Un rail de 220 px al lado del cuerpo en un Android de gama
    media deja las dos columnas ilegibles.
@@ -2400,6 +2661,9 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .cobro-linea--total { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); font-weight: 700; }
 .cobro-linea--total .cobro-linea__etiqueta { color: var(--ink); }
 .cobro-linea--total .cobro-linea__importe { font-size: 16px; }
+/* SCRUM-907: cobrado por encima de lo aceptado. Texto de Aviso (ámbar, DESIGN.md), como .badge-amber. */
+.cobro-aviso { margin: 10px 0 0; font-size: 13.5px; font-weight: 600; color: #92400e; }
+.detail-rail-linea--aviso { color: #92400e; font-weight: 600; }
 
 /* Los huecos: cada uno con SU enlace en SU linea. Ninguno es «la» accion — elegir es de la
    cabecera, y hay una sola cabecera. */
@@ -2408,6 +2672,11 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* Objetivo tactil de 44 px (AB6): se pulsan de pie y con prisa. */
 .cobro-hueco button { min-height: 44px; }
 @media (max-width: 720px) { .cobro-hueco { align-items: flex-start; } }
+/* SCRUM-917f · el hueco que enuncia una AUSENCIA lleva segunda linea. Las dos van en la misma
+   caja para que al envolver no se separen: la explicacion es de SU linea, no de la tarjeta.
+   Ni un token nuevo — --muted y el 12px son los que ya usa el subtitulo del detalle. */
+.cobro-hueco__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cobro-hueco__s { font-size: 12px; color: var(--muted); }
 
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }
@@ -2430,29 +2699,87 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
 }
 
+/* ── SCRUM-917e (D) · LA FRANJA DEL DINERO ───────────────────────────────────────────────────
+   El dinero se dice UNA vez. Antes, entre el titular «Total aceptado», la barra con «Cobrado X de
+   Y», las cuatro filas de importes y el bloque DINERO del rail, el mismo importe se leía SIETE
+   veces en la misma pantalla (medido hoy:
+   docs/master/evidencias/SCRUM-917/salida-paso0-detalle.txt). Aquí hay tres cifras y cada una sale
+   una vez: la grande es LO QUE FALTA —la pregunta del jefe—, y a su lado, pequeños, el aceptado y
+   el cobrado, que le dan contexto sin competir con ella.
+   Sin tokens nuevos: reutiliza --ink, --body, --muted, --ok y --line. */
+.detail-dinero {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; width: 100%;
+}
+.detail-dinero__rotulo {
+  display: block; font-size: 11.5px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px;
+}
+.detail-dinero__grande {
+  font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 800; color: var(--ink);
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+/* Cobrado del todo: la cifra deja de ser una deuda y pasa a ser una confirmación. */
+.detail-dinero__grande--ok { color: var(--ok, #0f7b4f); }
+.detail-dinero__lados {
+  display: grid; gap: 4px; text-align: right; font-size: 13px; color: var(--muted);
+}
+.detail-dinero__lado-cifra { color: var(--body); font-variant-numeric: tabular-nums; }
+/* La barra, MUDA: las dos cifras que antes escribía dentro están dos centímetros más arriba.
+   El ancho lo pone el JS porque es un dato, no un estilo; el texto para lectores de pantalla va en
+   `aria-label`, que es donde no le estorba a quien sí ve la pantalla. */
+.detail-dinero__barra {
+  margin-top: 14px; height: 8px; border-radius: 999px;
+  background: var(--line, #e6e8ec); overflow: hidden;
+}
+.detail-dinero__barra-relleno {
+  display: block; height: 100%; border-radius: 999px; background: var(--ok, #0f7b4f);
+}
+/* A 390 px las cifras de contexto vuelven a la izquierda: alineadas a la derecha en una columna
+   estrecha quedaban colgando lejos de la cifra a la que acompañan. */
+@media (max-width: 560px) {
+  .detail-dinero__lados { text-align: left; }
+}
+
 /* Lista de definición para datos (cliente, decisión) — oculta vacíos vía JS */
 .detail-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
 
-/* ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
+/* ── SCRUM-597 (DOC-07) · QUIÉN LLEVA EL DOCUMENTO, y SCRUM-650 · quién ejecuta el trabajo
+   Las dos pantallas COMPARTEN estas reglas en vez de tener cada una las suyas: son el mismo
+   componente en dos sitios, y duplicarlas sería duplicar el 44 px táctil de AB6 — dos fuentes
+   para el mismo número, que se separan en cuanto alguien toca una.
+   ⚠️ EL ORDEN DE LOS SELECTORES NO ES ESTÉTICO: `.job-…` va SEGUNDO para que su regla siga
+   empezando línea y terminando en `{`, que es lo que ancla el guard de SCRUM-650d al medir los
+   44 px. Ponerla primera lo dejaba sin encontrar la regla — y el guard no se toca.
+   Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css`.
+   ── SCRUM-650 (T1) · QUIÉN EJECUTA EL TRABAJO — y pueden ser tres ──────────────────────
    El campo «Técnico» del parte de papel de Tecnosel dice «Israel, Miguel y Jesús.L».
    Cero componentes nuevos y cero colores inventados (Parte AB): tokens de `tokens.css` y la
    misma familia visual que `.detail-dl`. El anillo de foco lo pone la regla global de :94. */
+.doc-asignados-titulo,
 .job-asignados-titulo {
   font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
   color: var(--muted); margin-bottom: 4px;
 }
+.doc-asignados-lista,
 .job-asignados-lista { display: grid; gap: 2px; }
 /* 44 px (AB6): se marca de pie, en la obra y con guantes. */
+.doc-asignados-fila,
 .job-asignados-fila {
   display: flex; align-items: center; gap: 10px; min-height: 44px;
   padding: 0 8px; border-radius: var(--radius-md); cursor: pointer;
 }
+.doc-asignados-fila:hover,
 .job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
+.doc-asignados-casilla,
 .job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+.doc-asignados-nombre,
 .job-asignados-nombre { font-size: 14px; color: var(--ink); }
+.doc-asignados-lectura,
 .job-asignados-lectura { font-size: 14px; font-weight: 600; color: var(--ink); }
+.doc-asignados-nota,
 .job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 
 /* Tarjetas de margen (planas, dentro de su sección) */
@@ -2700,6 +3027,10 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .job-doc-row__fotos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .job-doc-row__actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+/* SCRUM-885: un `.alert.warning` dentro de la fila, a la misma distancia que las acciones. */
+.job-doc-row__aviso { margin-top: 8px; }
+/* SCRUM-885b: el mismo `.alert.warning`, fijo en la ficha de la factura, alineado con su caja de estado. */
+.invoice-detail__aviso { margin: 14px 22px 0; }
 /* Toolbar de la lista (Nuevo albarán / Consolidar) */
 .job-doc-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 
@@ -3023,6 +3354,7 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    caja gris con borde de sistema. Es literalmente lo que se veía en producción. */
 .parte-anadir,
 [data-parte-firmar],
+[data-parte-firmar-tecnico],
 [data-dictado-ordenar],
 [data-propuesta-confirmar] {
   display: inline-flex;
@@ -3044,11 +3376,13 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .parte-anadir:active,
 [data-parte-firmar]:active,
+[data-parte-firmar-tecnico]:active,
 [data-dictado-ordenar]:active,
 [data-propuesta-confirmar]:active { transform: scale(.97); }
 
 .parte-anadir:disabled,
 [data-parte-firmar]:disabled,
+[data-parte-firmar-tecnico]:disabled,
 [data-dictado-ordenar]:disabled,
 [data-propuesta-confirmar]:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
@@ -3061,7 +3395,13 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 [data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
 
-/* Quitar una línea: presente, pero nunca compitiendo con la acción principal. */
+/* Quitar una línea: presente, pero nunca compitiendo con la acción principal.
+   ⚠️ AQUÍ ESTÁ TODO LO DE ESTA CLASE, y en un solo sitio a propósito (SCRUM-818). Vivía partida en
+   dos reglas —el aspecto aquí y el área táctil 50 líneas más abajo— y no eran duplicadas sino
+   COMPLEMENTARIAS: borrar cualquiera de las dos rompía algo. Se tropezó con eso una búsqueda que
+   encontró sólo la primera y concluyó que la «×» no llegaba a 44 px cuando sí llega. Un CSS que
+   dice una cosa en un sitio y otra cincuenta líneas más abajo hace que el siguiente lector
+   concluya lo contrario de lo que ocurre. */
 .parte-quitar-linea {
   border: 0;
   background: transparent;
@@ -3071,6 +3411,12 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   padding: 2px 6px;
   border-radius: var(--radius-full);
   cursor: pointer;
+  /* De 22 a 44 px SIN engordar el dibujo ni la fila: crece el área, no la «×» (SCRUM-720d). */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .parte-quitar-linea:hover { background: var(--danger-bg, #fef2f2); color: var(--danger, #dc2626); }
 
@@ -3112,17 +3458,108 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    ──────────────────────────────────────────────────────────── */
 .parte-anadir,
 [data-parte-firmar],
+[data-parte-firmar-tecnico],
 [data-dictado-ordenar],
 [data-propuesta-confirmar] { min-height: 44px; }
 
-/* La «×» pasa de 22 a 44 sin engordar la fila: crece el área, no el dibujo. */
-.parte-quitar-linea {
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+/* La «×» ya no se estiliza aquí: su regla ENTERA —aspecto y área táctil— vive junto a las demás
+   de `.parte-quitar-linea`, más arriba en este mismo fichero (SCRUM-818). */
+
+/* ══ SCRUM-818 · LA CABECERA DEL PARTE DEJA DE MENTIR ════════════════════════════════════════
+   Los siete de arriba —obra, REF, entrada, salida, desplazamiento, kilómetros, técnicos— se
+   pintaban como un rótulo con un guion debajo: PARECÍAN campos y no se podían tocar. Los siete
+   existen en la base y los siete tienen camino de escritura (medido en el PASO 0), así que pasan
+   a ser campos de verdad. Si algo parece un campo, la gente escribe; si no puede, la pantalla ha
+   mentido y se deja de fiar del resto.
+
+   Una columna a 390 px —que es donde se usa, de pie y con una mano— y dos en cuanto hay sitio. */
+.parte-datos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
 }
+@media (min-width: 560px) { .parte-datos { grid-template-columns: 1fr 1fr; } }
+
+.parte-campo { display: block; }
+.parte-campo-rotulo {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  margin-bottom: 3px;
+}
+.parte-campo input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  font-size: 16px;              /* 16 evita el zoom automático de iOS al enfocar */
+  color: var(--ink);
+  background: var(--surface, #fff);
+}
+.parte-campo input:focus {
+  outline: none;
+  border-color: var(--brand-600, var(--brand));
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+/* Un parte FIRMADO no se edita (T3, SCRUM-652): el dato se enseña, y se ve que no es un hueco. */
+.parte-campo-dato {
+  display: block;
+  min-height: 44px;
+  padding: 10px 0;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+/* El grupo de los tres tipos ya dice de qué es (rótulo firmado en SCRUM-703). */
+.parte-tipo legend {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+/* ── Las líneas: dos campos con borde y dos cabeceras ──────────────────────────────────────
+   Hoy es `2  Tiempo de espera ×` sin bordes: con las manos sucias no se ve dónde acaba la
+   cantidad y dónde empieza la descripción. Los dos campos se ven, y la cantidad abre teclado
+   numérico en el móvil. */
+.parte-linea-unds,
+.parte-linea-desc {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--surface, #fff);
+}
+.parte-linea-unds { width: 100%; text-align: right; }
+.parte-linea-desc { width: 100%; }
+.parte-linea-unds:focus,
+.parte-linea-desc:focus {
+  outline: none;
+  border-color: var(--brand-600, var(--brand));
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+/* La columna de la cantidad, estrecha: el número cabe y la descripción se queda con el ancho. */
+.parte-bloque th.parte-col-unds,
+.parte-bloque td.parte-col-unds { width: 88px; }
+.parte-bloque th.parte-col-quitar,
+.parte-bloque td.parte-col-quitar { width: 48px; }
+.parte-bloque th {
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--neutral-600, var(--muted));
+  padding: 0 8px 4px 0;
+}
+.parte-bloque th.parte-col-unds { text-align: right; }
+.parte-bloque td { padding: 5px 8px 5px 0; vertical-align: top; }
 
 /* Las tres casillas de tipo: el objetivo es la etiqueta entera, que es lo que ya recibe el toque. */
 .parte-tipo label { min-height: 44px; box-sizing: border-box; }
@@ -3130,3 +3567,475 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 /* El campo del dictado y las cantidades de la propuesta, al mismo mínimo. */
 [data-parte-dictado] textarea { min-height: 88px; }
 [data-propuesta] input[type="number"] { min-height: 44px; }
+
+/* ══ SCRUM-727b · LA LISTA DE TRABAJOS ═══════════════════════════════════════════════════════
+   Barrido del PASO 0: Clientes, Presupuestos, Albaranes y Facturas usan las cuatro
+   `table-scroll` + `table.table--cards-mobile`; Trabajos, ninguno. Así que aquí NO se estrena
+   componente: se usa el de la casa y solo se añade lo que esa pantalla tiene y las otras no —
+   una columna de técnicos.
+
+   ⚠️ POR QUÉ UN MODIFICADOR Y NO TOCAR LA REJILLA COMPARTIDA. La card de móvil de
+   `.table--cards-mobile` declara sus áreas (`id`, `client`, `amount`, `date`, `status`,
+   `actions`) y no tiene hueco para una sexta. Añadírselo allí habría movido las CUATRO listas
+   hermanas de golpe — justo lo que el control positivo de este ticket vigila. `.table--trabajos`
+   redefine las áreas SOLO para esta tabla. */
+/* ═══ SCRUM-816 · EL TOPE DE ANCHO SE VA, Y SÓLO SE MUEVE ESTA PANTALLA ═════════════════════
+   Aquí decía `max-width: 980px`, heredado del contenedor de tarjetas que la lista sustituyó en
+   SCRUM-727b. Medido en Edge con `page.setViewport` real el 7-sep-2026, subiendo la cadena de
+   antepasados desde la tabla: a 1700 px de ventana la tabla de Trabajos acababa en **978 px** y
+   las otras cuatro listas de la casa llegaban a **1402**. Media pantalla en blanco, en la
+   pantalla desde la que el jefe reparte el día — y sólo en ésta.
+   🔴 NO ES ESTÉTICA, ES DENSIDAD: una pantalla operativa que enseña la mitad de lo que cabe
+   obliga a hacer scroll para contestar algo que debería verse de un vistazo.
+   ⚠️ Y NO ARRASTRA A NADIE: `.jobs-pantalla` existe en exactamente dos sitios de todo el árbol
+   —esta regla y `jobsView.js`—; las otras cuatro listas van de `.data-card` a `.view-container`
+   sin ningún tope. El control de que siguen idénticas se corre por HASH del DOM pintado en
+   `npm run guard:lista-trabajos`. */
+.jobs-pantalla { max-width: 100%; }
+.jobs-cabecera { margin-bottom: 16px; }
+/* Sin subtítulo desde SCRUM-816 (el `<p>` se borró: la explicación vive en el estado vacío), así
+   que el `h2` ya no necesita separarse de nada por debajo. */
+.jobs-cabecera h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink); }
+.jobs-nuevo { margin-bottom: 14px; }
+.jobs-filtros { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.jobs-lista { display: flex; flex-direction: column; gap: 12px; }
+.jobs-card { padding: 0; overflow: hidden; }
+
+/* El filtro de técnico, con su etiqueta visible: un desplegable sin rótulo obliga a abrirlo
+   para saber qué filtra. */
+.jobs-filtro-tecnico { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.jobs-filtro-tecnico label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.jobs-filtro-tecnico select { width: auto; min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
+/* SCRUM-816 · la caja de «escribir para buscar». Filtra las opciones del selector de al lado EN
+   CLIENTE, sobre el equipo que la pantalla ya ha cargado: ni una petición nueva. */
+.jobs-filtro-tecnico-buscar { width: 132px; min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
+
+/* Cabecera de grupo dentro de la tabla: los grupos se conservan porque su rótulo lleva el
+   importe de «Terminados» y su salvedad, que son microcopy aprobada (SCRUM-428). */
+.jobs-grupo-titulo td {
+  font-size: 12px; font-weight: 700; color: var(--neutral-600);
+  text-transform: uppercase; letter-spacing: .04em;
+  padding: 14px 14px 6px; border-bottom: 0;
+}
+.jobs-grupo-salvedad td { font-size: 12px; color: var(--muted); padding: 0 14px 8px; border-bottom: 0; }
+.jobs-grupo-abrir td { padding: 6px 14px 12px; border-bottom: 0; }
+.jobs-fila { cursor: pointer; }
+
+/* SCRUM-917c · aquí vivían `.cell-tecnicos` y `.cell-tecnicos-vacio`, la columna de técnicos de
+   SCRUM-727b. La columna ya no existe: los técnicos bajan a la línea del cliente
+   (`.jobs-fila-tecnicos`, en el bloque SCRUM-917c de abajo). */
+
+/* ═══ SCRUM-816 · EL DESPLEGABLE DE TÉCNICOS DE LA FILA ══════════════════════════════════════
+   `<details>/<summary>` nativos: se abren y se cierran solos, van con teclado y con `Escape`, y
+   no estrenan componente. Las casillas de dentro reutilizan `.jobs-asignar-fila`, que es la misma
+   fila de 44 px que ya usa el modal del «⋯» (AB6: el objetivo es la fila entera, no la casilla de
+   13 px). El popover se posiciona `absolute` sobre la celda para no estirar la altura de la fila
+   ni empujar a las de abajo al abrirse. */
+.jobs-tecnicos-menu { position: relative; }
+.jobs-tecnicos-resumen {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 30px; padding: 4px 8px;
+  border: 1px solid var(--neutral-200); border-radius: var(--radius-sm, 8px);
+  background: var(--surface, #fff); color: var(--ink);
+  font-size: 12.5px; cursor: pointer; list-style: none;
+}
+.jobs-tecnicos-resumen::-webkit-details-marker { display: none; }
+.jobs-tecnicos-resumen::after { content: "▾"; font-size: 10px; color: var(--muted); }
+.jobs-tecnicos-resumen:hover { background: var(--neutral-50); }
+.jobs-tecnicos-resumen:focus-visible { outline: 2px solid var(--brand, #0f766e); outline-offset: 2px; }
+.jobs-tecnicos-resumen-vacio { color: var(--muted); font-style: italic; }
+.jobs-tecnicos-lista {
+  position: absolute; z-index: 600; top: calc(100% + 4px); left: 0;
+  min-width: 200px; max-width: min(92vw, 280px);
+  padding: 6px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e7e9e5);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 18px 40px -12px rgba(16,24,40,.18);   /* Flotante (DESIGN.md §4) */
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 280px; overflow-y: auto;
+}
+
+.jobs-importe-total { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.jobs-importe-cobrado { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* SCRUM-917c · aquí vivía `.jobs-estado-pill` con sus cinco colores. La lista sólo pintaba una
+   —«Sin agendar», en la columna Fecha— y repetía la cabecera de su grupo en 12 de 13 filas
+   (medido en staging el 17-sep-2026). Se retira de la fila y, sin nadie que la pinte, de la hoja. */
+
+.jobs-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.jobs-vacio-filtro { text-align: center; color: var(--muted); font-size: 13px; padding: 18px; }
+
+/* El modal de la casa, con su cuerpo. `.modal-overlay`/`.modal` ya existen: esto solo viste lo
+   de dentro. */
+.jobs-modal { max-width: 420px; }
+.jobs-modal-titulo { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 12px; }
+.jobs-modal-cuerpo { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.jobs-modal-label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.jobs-modal-vacio { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.jobs-modal-pie { display: flex; gap: 8px; justify-content: flex-end; }
+.jobs-asignar-fila {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 6px; border-radius: var(--radius-sm); cursor: pointer;
+  min-height: 44px; /* AB6: la fila entera es el objetivo, no solo la casilla de 13px */
+}
+.jobs-asignar-fila:hover { background: var(--neutral-100); }
+
+@media (max-width: 640px) {
+  /* La card de móvil de ESTA tabla: se le añade la fila de técnicos que la rejilla compartida
+     no tiene. Todo lo demás lo sigue heredando de `.table--cards-mobile`. */
+  .table--trabajos tbody tr.jobs-fila {
+    /* SCRUM-816 · el área `status` DESAPARECE porque la celda desapareció: ESTADO y FECHA eran la
+       misma pregunta y se han fundido en `date`. Una rejilla que declare un área sin celda no
+       falla —simplemente queda vacía— y por eso se retira a mano: un hueco reservado para nada
+       es un renglón de aire en una card que a 390 px ya iba justa. */
+    /* SCRUM-917c · el área `tecnicos` se va con su celda: los técnicos viven ahora DENTRO de
+       `client`, en su segunda línea. */
+    grid-template-areas:
+      "client   amount"
+      "date     date"
+      "actions  actions";
+  }
+  /* El desplegable ocupa el ancho de su línea en la card: a 390 px un control de 132 px con tres
+     nombres dentro se corta, y el resumen es justo lo que hay que poder leer. */
+  .table--trabajos .jobs-fila-tecnicos .jobs-tecnicos-resumen { max-width: 100%; }
+  /* El nombre del cliente ENVUELVE en la card. La tabla hereda `white-space: nowrap`, y medido a
+     390 px eso dejaba «Cliente con nombre largo número 2» cortado a media palabra y pegado al
+     importe: no se solapaban —hay 12 px de hueco, medidos— pero se leían como una sola cadena.
+     En una card el nombre del cliente es el identificador de la fila; cortarlo es perder la fila. */
+  .table--trabajos td.cell-client { white-space: normal; }
+  .table--trabajos .jobs-grupo-titulo,
+  .table--trabajos .jobs-grupo-salvedad,
+  .table--trabajos .jobs-grupo-abrir { display: block; margin: 10px 12px 0; }
+  .table--trabajos .jobs-grupo-titulo td,
+  .table--trabajos .jobs-grupo-salvedad td,
+  .table--trabajos .jobs-grupo-abrir td { padding-left: 0; padding-right: 0; }
+  .jobs-filtro-tecnico { margin-left: 0; width: 100%; }
+}
+
+/* ══ SCRUM-917c · LA LISTA DE TRABAJOS, REDISEÑADA (prototipo aprobado por el fundador, 18-sep-2026)
+   Bloque propio a propósito: la Sesión 2 toca esta misma hoja con el editor de presupuestos, y
+   un bloque aparte es un conflicto que no llega a pasar. Todo va acotado a `.jobs-pantalla`,
+   `.jobs-*` o `.table--trabajos`: no se mueve ninguna de las cuatro listas hermanas.
+   Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. */
+
+/* «Nuevo trabajo» + «Partes por valorar»: el hueco lo pone el `gap`, no un margen en línea. */
+.jobs-nuevo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Las dos cifras, ANTES de la lista: «Para hoy» y «Por cobrar». La segunda no existía en ningún
+   sitio de esta pantalla. En una columna a 390 px; en dos, en cuanto caben. */
+.jobs-cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.jobs-cifras:empty { display: none; }
+.jobs-cifra {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 13px 16px; box-shadow: var(--shadow-sm);
+}
+.jobs-cifra-rotulo { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.jobs-cifra-valor { font-size: 1.6rem; font-weight: 800; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+.jobs-cifra-pie { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+/* La del dinero, sobre el tinte de marca (AB1: la pantalla habla del dinero del usuario). Sobre
+   ese fondo el gris de metadatos queda justo; el texto va en `--brand-tint-ink`, que es el que
+   tokens.css declara para escribir encima de `--brand-tint`. */
+.jobs-cifra-dinero { background: var(--brand-tint); }
+.jobs-cifra-dinero .jobs-cifra-valor { color: var(--brand-ink); }
+.jobs-cifra-dinero .jobs-cifra-rotulo,
+.jobs-cifra-dinero .jobs-cifra-pie { color: var(--brand-tint-ink); }
+
+/* La celda del cliente: el nombre, y debajo lo que distingue la fila (el trabajo · los técnicos). */
+.jobs-fila-cliente { display: block; font-weight: 700; color: var(--ink); }
+.jobs-fila-linea {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; margin-top: 2px;
+  font-size: 13px; font-weight: 400; color: var(--muted); white-space: normal;
+}
+.jobs-fila-tecnicos { overflow-wrap: anywhere; }
+
+/* El importe: lo que FALTA en grande, el total debajo y pequeño. */
+.table--trabajos th.jobs-th-importe,
+.table--trabajos td.cell-amount { text-align: right; }
+.jobs-importe-falta { font-size: 1.0625rem; font-weight: 800; line-height: 1.2; color: var(--ink); font-variant-numeric: tabular-nums; }
+.jobs-importe-al-dia { font-size: .95rem; color: var(--brand-tint-ink); }
+.jobs-importe-sin { font-size: .95rem; font-weight: 600; color: var(--muted); }
+.jobs-importe-de { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* AB6 · objetivo al pulgar: TODO control de esta pantalla a 44 px, también en escritorio. Medido
+   en staging el 17-sep-2026: 32 controles por debajo a 1280 px (los `btn-sm` se quedan en 30). */
+.jobs-pantalla .btn-primary,
+.jobs-pantalla .btn-secondary,
+.jobs-pantalla .btn-ghost { min-height: 44px; }
+.jobs-pantalla .overflow-trigger { min-width: 44px; }
+.jobs-pantalla .jobs-filtro-tecnico select,
+.jobs-pantalla .jobs-filtro-tecnico-buscar,
+.jobs-pantalla .jobs-tecnicos-resumen { min-height: 44px; }
+
+@media (max-width: 640px) {
+  /* La cabecera de grupo y su salvedad ENVUELVEN en la card. Heredaban `white-space: nowrap` de la
+     tabla y, medido a 390 px (guard G.3), «✅ Terminados — cobra el resto · 4 · 740,00 € por
+     cobrar» se salía 84 px de su caja. La salvedad aprobada ya se cortaba ANTES de este ticket
+     («…y no entran» sin su «en el total.»): mismo arreglo, porque es la misma causa. */
+  .table--trabajos .jobs-grupo-titulo td,
+  .table--trabajos .jobs-grupo-salvedad td { white-space: normal; }
+}
+
+/* ═══ SCRUM-831 · LA LISTA DE ALBARANES RECUPERA SU RANURA DE ACCIONES ═══════════════════════
+   Medido en el censo de las cinco listas (8-sep-2026): era la ÚNICA con `.cell-actions` ocupada
+   por un enlace a otra pantalla, y la única con CERO acciones en la fila. El enlace al Trabajo
+   pasa a `cell-trabajo` y las acciones recuperan `cell-actions`.
+
+   Los tres de abajo venían como `style.cssText` desde `albaranesView.js`. Mismos valores, sin
+   cambiar un píxel — y el trinquete de estilos en línea SÓLO BAJA. */
+.alb-enlace { color: var(--green-700); }
+.alb-numero { font-weight: 600; color: var(--green-700); }
+.alb-chip-cobro { margin-left: 6px; }
+
+@media (max-width: 640px) {
+  /* La tarjeta de ESTA tabla gana un área para el Trabajo, que hasta hoy tomaba prestada la de
+     `actions`. Se redefine SÓLO para `.table--albaranes`: añadirla a la rejilla COMPARTIDA habría
+     movido las cuatro listas hermanas de golpe, que es justo lo que un modificador evita — el
+     mismo razonamiento y el mismo patrón que `.table--trabajos` en SCRUM-727b.
+
+     El Trabajo se queda a ANCHO COMPLETO, que es lo que pedía su comentario original: un título de
+     obra no cabe en media tarjeta. */
+  .table--albaranes tbody tr {
+    grid-template-areas:
+      "id       status"
+      "client   status"
+      "date     date"
+      "trabajo  trabajo"
+      "actions  actions";
+  }
+  .table--albaranes td.cell-trabajo { grid-area: trabajo; font-size: 12.5px; }
+  /* AB6 · el enlace del Trabajo CONSERVA el objetivo de 44 px que tenía por vivir en `actions`.
+     Cambiar de área no puede encoger un objetivo táctil: eso sería pagar el arreglo con un dedo. */
+  .table--albaranes td.cell-trabajo a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* SCRUM-713b/c · el buscador de cliente del presupuesto.
+   Venía como `style.cssText` desde `quotesView.js` (SCRUM-713b lo mudó aquí). El `min-height: 44px`
+   es AB6 y no se toca.
+
+   SCRUM-713c añade `min-width: 0` y `box-sizing`, portados de la OTRA implementación de este mismo
+   ticket: sin ellos el campo se desborda de su columna en pantallas estrechas, y aquella ya lo
+   había medido. Es exactamente lo que se buscaba al leer su trabajo — lo que tiene y main no. */
+.quote-buscador-cliente {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+
+/* SCRUM-915j · el cliente por BOTONES (prototipo v3 aprobado, `.lista-cli`). Hasta 4 coincidencias
+   como botones grandes —nombre y, debajo, teléfono · referencia— y «+ Nuevo cliente» al final.
+   Cero tokens nuevos: todo sale de `tokens.css`. `min-height: 52px` es AB6 con margen (mínimo 44).
+   El `<select name="customer_id">` sigue en el DOM con `hidden` (la regla global `[hidden]` de
+   arriba lo apaga): es el portador del valor, y aquí NO se le escribe un `display`. */
+.quote-clientes { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+/* El campo del cliente ocupa la FILA ENTERA de `.quote-form-row` (tres columnas desde 901 px): en una sola,
+   el buscador medía 172 px y «Comunidad Los Olivos» se partía en dos líneas (captura de 915j a 1280 px). */
+.quote-form-row > .quote-cliente-campo { grid-column: 1 / -1; }
+.quote-cliente-opcion {
+  display: block; width: 100%; min-width: 0; min-height: 52px; box-sizing: border-box;
+  padding: 8px 12px; text-align: left;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface);
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.quote-cliente-opcion:hover { border-color: var(--brand); }
+.quote-cliente-opcion:focus-visible { outline: none; box-shadow: var(--ring); }
+/* Marcado = borde de marca + un píxel más por dentro + fondo suave: NO sólo un cambio de color
+   (WCAG 1.4.1), y el grosor se ve aunque el fondo no se distinga. */
+.quote-cliente-opcion[aria-pressed="true"] {
+  border-color: var(--brand); background: var(--brand-tint);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+.quote-cliente-opcion[aria-pressed="true"]:focus-visible { box-shadow: inset 0 0 0 1px var(--brand), var(--ring); }
+.quote-cliente-opcion b { display: block; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.quote-cliente-opcion small { display: block; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.quote-cliente-opcion--nuevo { border-style: dashed; color: var(--brand-tint-ink); font-weight: 700; }
+.quote-clientes__nota { padding: 8px 0; font-size: 14px; color: var(--muted); }
+
+/* SCRUM-688 · El aviso de que no se pudo crear la revision.
+   Cero tokens nuevos. La tinta es `--danger-ink`, NO `--danger`, y no es preferencia: esta hoja
+   ya lo midio mas arriba (linea ~600) — `--danger` (#dc2626) sobre fondo claro se queda corto
+   de 4,5:1 para texto, y `--danger-ink` (#991b1b) lo pasa. El primer intento de este aviso venia
+   con `--danger` en un `style.cssText`, asi que el trinquete de estilos en JS arreglo las dos
+   cosas de una: lo saco a su clase y de paso le quito el color que no contrasta. */
+.revision-error { margin: 6px 0 0; font-size: 13px; color: var(--danger-ink, #991b1b); }
+
+/* ═══ SCRUM-920c · LA LISTA DE GASTOS, SIN TABLA (y sin `style=` en línea) ════════════════════════
+   Prototipo aprobado: docs/prototipos/SCRUM-920/gastos.html. Bloque propio y todo acotado a
+   `.gastos-pantalla`, `.gastos-*` o `.gasto-*`: no se toca `.table-scroll .table`, que es de otros
+   usos (patron-tabla-de-lado.md). Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. */
+
+/* SCRUM-920d · la cabecera lleva las acciones a la derecha, como el prototipo: «Nuevo gasto» (que a 390 px
+   pasa a la barra de abajo) y «⬇ CSV» (que se queda arriba, en las dos anchuras). */
+.gastos-cabecera { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; margin-bottom: 16px; }
+.gastos-titulo { flex: 1 1 240px; min-width: 0; }
+.gastos-cabecera h2 { margin: 0; font-size: 18px; }
+.gastos-cabecera p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.gastos-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gastos-barra { display: flex; }
+.gastos-cargando { color: var(--muted); font-size: 14px; }
+.gastos-error { color: var(--danger-ink, #991b1b); font-size: 14px; }
+.gastos-vacio-cta { margin-top: 14px; }
+
+/* Los TRES KPI de siempre: tres tarjetas a escritorio, UNA de tres renglones a 390 px (abajo). */
+.gastos-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.gasto-kpi {
+  min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 13px 16px; box-shadow: var(--shadow-sm);
+}
+.gasto-kpi--dinero { background: var(--brand-tint); }
+.gasto-kpi-rotulo { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.gasto-kpi-valor {
+  display: block; margin-top: 2px; font-size: 1.5rem; font-weight: 800; line-height: 1.15; color: var(--ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.gasto-kpi-valor--texto { font-size: 1.0625rem; line-height: 1.25; }
+/* «Sin asignar»: ámbar si hay dinero sin trabajo, verde si no. El ámbar es el `warning` de DESIGN.md
+   (#b45309), que sí pasa el contraste; el `#d97706` de antes se quedaba en 3,2:1. */
+.gasto-kpi-valor--aviso { color: #b45309; }
+.gasto-kpi-valor--ok { color: var(--brand); }
+.gasto-kpi-pie { display: block; margin-top: 3px; font-size: 12.5px; color: var(--muted); }
+.gasto-kpi--dinero .gasto-kpi-valor { color: var(--brand-ink); }
+.gasto-kpi--dinero .gasto-kpi-rotulo,
+.gasto-kpi--dinero .gasto-kpi-pie { color: var(--brand-tint-ink); }
+
+.gastos-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.gastos-filtros select.input { width: auto; max-width: 100%; }
+
+/* SCRUM-920d · los dos chips de la foto («Todos · N» y «Sin foto · N»). El pulsado va en Tinta y no en verde:
+   la Regla de Una Sola Voz deja el verde para el botón primario de la pantalla. La cuenta es lo que hace
+   accionable al chip, y es la de lo que verás al pulsarlo. */
+.gastos-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px;
+  border-radius: var(--r-full); border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.gastos-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.gastos-chip:focus-visible { outline: none; box-shadow: var(--ring); }
+/* La cuenta del chip en cifras de ancho fijo: al pulsar «Sin foto» cambian los números y el chip no baila. */
+.gastos-chip-n { font-variant-numeric: tabular-nums; }
+
+/* La cabecera del mes: el mes y la cuenta de lo que se ve. Con un filtro puesto lleva además la suma de
+   ESO y dice que no es la del mes (el total del mes sale una sola vez, en el KPI). */
+.gastos-mes { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 0 4px 8px; }
+.gastos-mes b { font-size: 15px; color: var(--ink); }
+.gastos-mes-n { font-size: 13.5px; color: var(--muted); }
+.gastos-mes-suma { margin-left: auto; font-size: 15px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.gastos-mes-salvedad { width: 100%; font-size: 12.5px; color: var(--muted); }
+/* AB6 · objetivo al pulgar: todo control de esta pantalla a 44 px, también en escritorio. */
+.gastos-pantalla .btn-primary,
+.gastos-pantalla .btn-secondary,
+.gastos-pantalla .btn-ghost,
+.gastos-pantalla select.input { min-height: 44px; }
+.gastos-pantalla .overflow-trigger { min-width: 44px; min-height: 44px; }
+/* SCRUM-920d · 🔴 UNA TRAMPA MEDIDA. `#view-container > *` (más arriba) anima con `yaqu-fade-in`, cuyo último
+   fotograma es `transform: translateY(0)`, y `both` lo MANTIENE al acabar. Un `transform` que no es `none` hace
+   de esa pantalla el bloque contenedor de todo `position: fixed` que lleve dentro: la barra de «Nuevo gasto» se
+   dibujaba al final de la lista (bottom 2021 en una pantalla de 844) y se movía con el scroll. Aquí la aparición
+   es sólo de opacidad, que no crea ese bloque. */
+#view-container > .gastos-pantalla { animation-name: yaqu-fade-in-opacidad; }
+@keyframes yaqu-fade-in-opacidad { from { opacity: 0; } to { opacity: 1; } }
+
+/* La lista: filas en REJILLA. Cinco columnas a escritorio; a 900 px se reordenan en tres renglones
+   (qué y cuánto · categoría · trabajo y «⋯») y a 390 px NO desbordan. */
+.gastos-filas {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.gasto-fila {
+  display: grid; grid-template-columns: minmax(0, 1fr) 150px 200px 110px 44px; gap: 10px; align-items: center;
+  padding: 12px 14px; border-top: 1px solid var(--neutral-200); cursor: pointer;
+}
+.gasto-fila:first-child { border-top: 0; }
+.gasto-fila:hover { background: var(--bg); }
+.gasto-que { min-width: 0; }
+.gasto-que b { display: block; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.gasto-notas, .gasto-fecha { display: block; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+/* SCRUM-920d · la categoría y la foto, UNA debajo de la otra en la columna de cinco (150 px no dan para las dos
+   en fila y, en fila, unas filas las llevarían juntas y otras no); en los tres renglones de abajo, en fila. */
+.gasto-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.gasto-trab { min-width: 0; font-size: 13.5px; }
+.gasto-trab-enlace {
+  display: inline-flex; align-items: center; min-height: 44px;
+  color: var(--brand-tint-ink); font-weight: 600; text-decoration: none; overflow-wrap: anywhere;
+}
+.gasto-trab-enlace:hover { text-decoration: underline; }
+.gasto-trab-suelto { color: var(--muted); }
+.gasto-trab-prov { display: block; margin-top: -8px; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.gasto-trab-suelto + .gasto-trab-prov { margin-top: 0; }
+.gasto-imp { text-align: right; font-size: 1.0625rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.gasto-mas { justify-self: end; }
+.gasto-opcion-eliminar { color: var(--danger-ink, #991b1b); }
+
+/* La píldora de categoría. Los cinco colores son los de siempre —el profesional ya los reconoce—,
+   con el TEXTO un tono más oscuro de la misma familia para pasar el contraste (AA, 4,5:1). */
+.gasto-cat {
+  display: inline-block; padding: 3px 10px; border-radius: var(--r-full);
+  font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+}
+.gasto-cat--materiales { background: #dbeafe; color: #1d4ed8; }
+.gasto-cat--desplazamiento { background: #fef3c7; color: #92400e; }
+.gasto-cat--herramientas { background: #ede9fe; color: #6d28d9; }
+.gasto-cat--subcontrata { background: #fee2e2; color: #b91c1c; }
+.gasto-cat--otros { background: var(--neutral-100); color: var(--neutral-600); }
+
+/* SCRUM-920d · la foto del ticket en la fila: un HECHO sobre el archivo que guardamos («Foto guardada» /
+   «Sin foto»), sin triángulo y sin decir nada de lo que Hacienda admite. Sin miniatura A PROPÓSITO: la foto
+   entera pesa hasta 1,1 MiB y la fila no puede pedirla (docs/master/SCRUM-920.md, «920d»). */
+.gasto-foto {
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: var(--r-full);
+  font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+}
+.gasto-foto--si { background: var(--brand-tint); color: var(--brand-tint-ink); }
+.gasto-foto--no { background: #fff7ed; color: #b45309; }
+
+@media (max-width: 900px) {
+  .gasto-fila {
+    grid-template-columns: 1fr auto; grid-template-areas: "que imp" "meta meta" "trab mas";
+    gap: 8px 12px; padding: 14px;
+  }
+  .gasto-que { grid-area: que; }
+  .gasto-imp { grid-area: imp; }
+  .gasto-meta { grid-area: meta; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .gasto-trab { grid-area: trab; align-self: center; }
+  .gasto-mas { grid-area: mas; align-self: center; }
+  /* Las notas y la fecha van en UN renglón («Gasto de prueba · 17 sept»): mismos datos, un renglón menos. */
+  .gasto-que .gasto-notas, .gasto-que .gasto-fecha { display: inline; }
+  .gasto-que b + .gasto-notas::before,
+  .gasto-que b + .gasto-fecha::before { content: ""; display: block; }
+  .gasto-notas + .gasto-fecha::before { content: " · "; }
+}
+@media (max-width: 560px) {
+  /* Una tarjeta, tres renglones «rótulo … cifra»: apilados en tres tarjetas, la primera fila de
+     gastos caía por debajo de la mitad de la pantalla. Los tres rótulos y las tres cuentas siguen. */
+  .gastos-kpis {
+    grid-template-columns: 1fr; gap: 0; padding: 4px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+  }
+  .gasto-kpi, .gasto-kpi--dinero {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; padding: 9px 0;
+    background: transparent; border: 0; border-top: 1px solid var(--neutral-200); border-radius: 0; box-shadow: none;
+  }
+  .gasto-kpi:first-child { border-top: 0; }
+  .gasto-kpi-valor, .gasto-kpi-valor--texto { order: 2; margin: 0 0 0 auto; font-size: 1.0625rem; }
+  .gasto-kpi-pie { order: 3; width: 100%; margin: 0; }
+  /* Filtros en rejilla de dos: el mes a lo ancho (a media columna se cortaba en «septiembre de 202» y
+     perdía el año) · categoría | trabajo · los dos chips juntos. SCRUM-920d: sueltos en fila salían cuatro
+     renglones y la primera fila de gastos no entraba en la primera pantalla. */
+  .gastos-filtros { display: grid; grid-template-columns: 1fr 1fr; }
+  .gastos-filtros select.input { width: 100%; min-width: 0; }
+  .gastos-filtros .gastos-filtro-mes { grid-column: 1 / -1; }
+  .gastos-chip { justify-content: center; }
+  /* SCRUM-920d · «Nuevo gasto» FIJO ABAJO, al alcance del pulgar y con la lista pasando por debajo. Es EL MISMO
+     botón de arriba (con su atajo «N», SCRUM-769), no una copia: sólo cambia dónde se dibuja. La barra va por
+     debajo de las hojas y los avisos (z-index). El sitio para la última fila ya lo deja el `padding-bottom: 88px`
+     de `.view-container` a esta anchura (la barra mide 64 px); aquí sólo se suma la muesca del móvil. */
+  .gastos-pantalla { padding-bottom: env(safe-area-inset-bottom); }
+  .gastos-barra {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--border); box-shadow: var(--shadow-lg);
+  }
+  .gastos-barra .gastos-nuevo { flex: 1 1 0; justify-content: center; }
+}

@@ -1,0 +1,205 @@
+POBLACION DEL CENSO
+  carpetas        : src, scripts, tests, public, prisma, .github, docs
+  ficheros leidos : 2266
+
+🔴 CONTROL QUE DECIDE: endpoints externos conocidos encontrados
+   graph.facebook.com · api.mercadopago.com · aeat.es · yaqu.app
+✅ CONTROL POSITIVO: «https://yaqu.app» -> ENCONTRADA
+
+② URLs ESCRITAS EN EL ARBOL
+  total              : 434
+  codigo             : 285
+  comentario         : 43
+  prosa              : 106
+  hosts distintos    : 62
+
+  HOSTS EN CODIGO (los unicos que pueden ser endpoint configurado):
+     75  (no parseable)
+           scripts/_banco-lista.mjs:258
+           scripts/capturar-detalle-trabajo.mjs:59
+     51  yaqu.app
+           public/index.html:18
+           public/index.html:19
+     33  fonts.googleapis.com
+           public/dashboard/index.html:7
+           public/dashboard/index.html:9
+     16  fonts.gstatic.com
+           public/dashboard/index.html:8
+           public/index.html:11
+     14  wa.me
+           public/dashboard/js/homeView.js:293
+           public/dashboard/js/jobRailBlocks.js:54
+      5  127.0.0.1
+           scripts/guard-aviso-bizum.mjs:270
+           scripts/guard-caja-semaforo.mjs:147
+      5  github.com
+           scripts/verificacion-s5/ramas-sin-mergear.mjs:87
+           tests/scrum637-la-rama-que-nadie-mira.test.mjs:158
+      5  otra.com
+           tests/scrum336-atribucion-sin-almacenamiento.test.mjs:205
+           tests/scrum336-atribucion-sin-almacenamiento.test.mjs:273
+      5  ejemplo.invalid
+           tests/scrum700-filtros-de-comentario.test.mjs:74
+           tests/scrum807-esquemas-del-href.test.mjs:60
+      4  www.google.com
+           public/dashboard/js/jobRailBlocks.js:86
+           tests/scrum318-rail-contenido.test.mjs:134
+      4  g.page
+           public/dashboard/js/settingsView.js:613
+           scripts/seed-demo.mjs:225
+      4  ejemplo.test
+           scripts/guard-portal-en-la-ficha.mjs:53
+           scripts/guard-portal-en-la-ficha.mjs:93
+      4  www2.agenciatributaria.gob.es
+           src/modules/fiscal/verifactu/registro.builder.ts:10
+           src/modules/fiscal/verifactu/registro.builder.ts:11
+      4  ejemplo.com
+           tests/_cifras-sin-ancla.mjs:138
+           tests/scrum334-destino-de-los-cta.test.mjs:259
+      4  127.0.0.1:3457
+           tests/scrum183-consola-e2e.test.mjs:54
+           tests/scrum183-consola-e2e.test.mjs:54
+      4  qa.invalid
+           tests/scrum295-modelo-303-postgres.test.mjs:45
+           tests/scrum296-libro-postgres.test.mjs:82
+      4  x.com
+           tests/scrum693-filtro-de-comentarios.test.mjs:118
+           tests/scrum693-filtro-de-comentarios.test.mjs:120
+      4  docs.github.com
+           tests/scrum853-avisador-solo-obligatorio.test.mjs:356
+           tests/scrum853-lecturas-que-fallan-cerrado.test.mjs:109
+      3  localhost:3000
+           public/dashboard/js/api.js:4
+           src/modules/system/app/routes/quoteDecisionLanding.routes.ts:19
+      3  www.w3.org
+           public/dashboard/js/reportsView.js:850
+           scripts/seed-demo.mjs:181
+      3  x
+           scripts/guard-contraste.mjs:212
+           tests/scrum693-filtro-de-comentarios.test.mjs:208
+      3  api.resend.com
+           src/integrations/enviarCorreo.ts:113
+           tests/scrum475-constancia-correo.test.mjs:42
+      2  graph.facebook.com
+           scripts/wa-test.mjs:36
+           src/integrations/whatsapp.ts:18
+      2  $
+           src/core/validation/schemas.ts:483
+           tests/scrum694b-el-filtro-que-no-ve-la-url.test.mjs:124
+      2  cdn.ejemplo.test
+           tests/scrum670-un-solo-extractor.test.mjs:124
+           tests/scrum670-un-solo-extractor.test.mjs:132
+      2  banco.local
+           tests/scrum704-el-cuerpo-llega.test.mjs:38
+           tests/scrum704-el-cuerpo-llega.test.mjs:127
+      2  127.0.0.1:1
+           tests/scrum716c-la-memoria-del-vigia.test.mjs:377
+           tests/scrum727-constancia-del-vigia.test.mjs:313
+      1  tudominio.com
+           public/admin.html:473
+      1  schema.org
+           public/index.html:31
+      1  www.aepd.es
+           public/privacidad.html:89
+      1  api.github.com
+           scripts/ci-de-la-rama.mjs:55
+      1  127.0.0.1:3399
+           scripts/recorrido-entre-vistas.mjs:46
+      1  generativelanguage.googleapis.com
+           src/integrations/gemini.ts:8
+      1  api.mercadopago.com
+           src/integrations/mercadopago.ts:9
+      1  www.mercadopago.com
+           src/modules/billing/app/routes/payMp.routes.ts:43
+      1  sandbox.mercadopago.com
+           src/modules/billing/app/routes/payMp.routes.ts:44
+      1  tu-url-de-produccion
+           tests/scrum163-base-url-guard.test.mjs:26
+      1  example.com
+           tests/scrum163-base-url-guard.test.mjs:27
+      1  yaqu-staging-production.up.railway.app
+           tests/scrum163-base-url-guard.test.mjs:40
+      1  cdn.example
+           tests/scrum342-dispute-package-quote-nulo.test.mjs:55
+      1  x.es
+           tests/scrum400-conformidad-landing.test.mjs:104
+      1  sede.agenciatributaria.gob.es
+           tests/scrum538-skills-no-prometen-ficheros.test.mjs:94
+      1  gitlab.com
+           tests/scrum637-la-rama-que-nadie-mira.test.mjs:176
+      1  x.invalid
+           tests/scrum815-el-correo-una-sola-vez.test.mjs:78
+      1  api.proveedor.com
+           tests/scrum835-credenciales-en-el-historial.test.mjs:113
+
+⚠️ FORMAS DE URL COMPUESTA — declaradas, con lo que encuentra cada una
+
+  · plantilla con hueco -> 104
+      public/dashboard/js/jobRailBlocks.js:54   `https://wa.me/${marcable}`
+      public/dashboard/js/jobRailBlocks.js:86   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion)
+      scripts/_banco-lista.mjs:258   `http://127.0.0.1:${puerto}${ruta}`
+      scripts/capturar-detalle-trabajo.mjs:59   `http://127.0.0.1:${srv.address().port}/`
+      scripts/censo-escalera-por-estado.mjs:56   `http://127.0.0.1:${PORT}`
+      scripts/censo-escalera-por-estado.mjs:69   `http://127.0.0.1:${PORT}`
+      … y 98 mas
+
+  · concatenacion -> 12
+      public/dashboard/js/settingsView.js:1013   'https://' +
+      public/js/contacto-publico.js:47   'https://wa.me/' +
+      scripts/guard-aviso-bizum.mjs:270   'http://127.0.0.1:' +
+      scripts/guard-cls-barra-anuncio.mjs:108   'http://127.0.0.1:' +
+      scripts/guard-primera-pantalla.mjs:89   'http://127.0.0.1:' +
+      src/modules/system/app/routes/customerPortal.routes.ts:388   "https://wa.me/${esc(waPhone.replace('+
+      … y 6 mas
+
+  · new URL(base) -> 81
+      public/dashboard/js/invoicesView.js:45   new URL(
+      public/js/atribucion.js:88   new URL(
+      public/sw.js:156   new URL(
+      scripts/_db-guard.mjs:29   new URL(
+      scripts/_db-guard.mjs:62   new URL(
+      scripts/_db-guard.mjs:101   new URL(
+      … y 75 mas
+
+  · base desde el entorno -> 70
+      .github/workflows/claude.yml:282   process.env.URL_RUN
+      prisma/seed.ts:28   process.env.DATABASE_URL
+      scripts/backfill-job-assignees.mjs:111   process.env.SCRUM650_DATABASE_URL
+      scripts/backfill-quote-jobid.mjs:37   process.env.DATABASE_URL
+      scripts/backup-bd.mjs:90   process.env.BACKUP_BD_URL
+      scripts/backup-bd.mjs:90   process.env.DATABASE_URL
+      … y 64 mas
+
+  · ruta relativa a la propia app -> 50
+      public/admin.html:690   fetch('/
+      public/admin.html:758   fetch('/
+      public/admin.html:784   fetch('/
+      public/admin.html:882   fetch('/
+      public/admin.html:917   fetch(`/
+      public/dashboard/js/app.js:758   fetch('/
+      … y 44 mas
+
+① QUE DECLARA EL ARBOL SOBRE LO DESPLEGADO
+
+  ficheros de despliegue en el arbol:
+    🔴 NINGUNO. La region NO se puede leer del codigo: se DECLARA como no determinable.
+
+  variables de entorno que nombran un SERVICIO (18):
+      3  AUTO_EMAIL_INVOICE_ON_PAID
+      1  BACKUP_BD_URL
+      1  BACKUP_PG_BIN
+      1  BACKUP_VERIFICACION_URL
+     44  DATABASE_URL
+      2  DATABASE_URL_STAGING
+      6  DATABASE_URL_TESTS
+      1  E2E_QA_EMAIL
+      2  E2E_TEST_LOGIN_EMAILS
+      1  EMAIL_FROM
+      7  LIBRO_PG_URL
+      2  OWNER_EMAILS
+      5  PUBLIC_BASE_URL
+      1  SCRUM650_DATABASE_URL
+      1  SERIE_PG_URL
+      1  SMTP_URL
+      1  TRAMOS_PG_URL
+      1  URL_RUN

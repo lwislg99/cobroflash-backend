@@ -248,7 +248,11 @@ test('SCRUM-765 · el meta-guard ARRANCA de verdad al invocarlo por su ruta', ()
     [path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs'), '--solo-censo'],
     { cwd: RAIZ, encoding: 'utf8', timeout: 120000 });
 
-  assert.match(salida, /censo · \d+ guards · \d+ declaraciones/,
+  // El ancla sigue siendo la línea del censo, y su propósito sigue siendo el mismo: que el script
+  // ARRANQUE y diga algo. SCRUM-812 le cambió el rótulo —«guards» contaba a los que DECLARAN y se
+  // leía como «todos»—, así que el ancla se re-mide con el texto de hoy. Queda MÁS específica que
+  // la de antes, no más laxa: exige también el denominador, que es lo que SCRUM-812 añadió.
+  assert.match(salida, /censo · \d+ ficheros DECLARANTES de \d+ ficheros de test \(\d+ %\) · \d+ declaraciones/,
     '🔴 el script ha salido sin decir nada: la puerta no ha abierto. Es el defecto de SCRUM-765 '
     + 'otra vez — un exit 0 sobre cero trabajo.');
   assert.match(salida, /NO se ha ejecutado ninguna mutación/,

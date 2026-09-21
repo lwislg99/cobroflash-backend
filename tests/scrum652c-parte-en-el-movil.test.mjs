@@ -118,7 +118,8 @@ test('SCRUM-652c · lo que sale hacia el técnico no tiene NI UNA clave de diner
   ];
   const salida = lineasParaElTecnico(conPrecios);
   const claves = Object.keys(salida[0]).sort();
-  assert.deepEqual(claves, ['bloque', 'descripcion', 'unds'],
+  // SCRUM-889 · `id`: la identidad de la línea, no dinero. La lista sigue cerrada.
+  assert.deepEqual(claves, ['bloque', 'descripcion', 'id', 'unds'],
     '🔴 al técnico le llegan claves de más: ' + claves.join(', '));
 });
 
@@ -426,9 +427,11 @@ test('SCRUM-652c · 🔴 LA VISTA le dice a la cola que esto es un PARTE', async
 
   let padAbierto = null;
   const llamadas = [];
+  // SCRUM-890b · la vista sólo deja cerrar el pad con ③: el doble devuelve la constante de verdad.
+  ctx.FIRMA_A_SALVO = 'a_salvo';
   const abierto = ctx.firmarParte(PARTE_PINTABLE, {
     abrirPad: (o) => { padAbierto = o; },
-    firmar: async (id, cuerpo, subir, tipo) => { llamadas.push({ id, tipo }); return { estado: 'ok' }; },
+    firmar: async (id, cuerpo, subir, tipo) => { llamadas.push({ id, tipo }); return { estado: ctx.FIRMA_A_SALVO }; },
     apiRequest: async () => ({ id: 1 }),
   });
   assert.equal(abierto, true, '🔴 la vista no ha abierto el pad de firma');
@@ -503,15 +506,52 @@ test('SCRUM-652c · 🔴 un parte sin líneas legibles NO se pinta como «parte 
   assert.equal(contenedor.innerHTML, '', '🔴 y además ha dejado marcado pintado');
 });
 
-test('SCRUM-652c · firmado: la pantalla no ofrece firmar otra vez', () => {
+// 🔴 SCRUM-653 · ESTE TEST SE ACTUALIZA AL HECHO, NO SE RELAJA.
+//
+// Decía: «si `estado === 'firmado'`, no se ofrece firmar». Con UNA firma eso era cierto. Con DOS
+// **`firmado` ya no significa «el cliente firmó»**: significa que firmó ALGUIEN, y el contenido se
+// congeló. Si el técnico firmó primero, el estado ya es `firmado` y el cliente **tiene que poder
+// firmar** — con el aserto viejo, el segundo firmante se quedaba fuera según el orden.
+//
+// Así que lo que se comprueba pasa a ser POR RANURA, que es más fuerte: cada firma se ofrece si y
+// sólo si falta la SUYA.
+test('SCRUM-653 · 🔴 cada firma se ofrece SOLO si falta la suya (no según el estado)', () => {
   const { ctx, contenedor } = montar();
-  const firmado = Object.assign({}, PARTE_PINTABLE, {
+
+  // ① Nadie ha firmado: se ofrecen las DOS.
+  ctx.renderParte(contenedor, Object.assign({}, PARTE_PINTABLE, {
+    firmoElCliente: false, firmoElTecnico: false,
+  }));
+  assert.match(contenedor.innerHTML, /data-parte-firmar="1"/,
+    '🔴 sin firmas no se ofrece la del cliente');
+  assert.match(contenedor.innerHTML, /data-parte-firmar-tecnico="1"/,
+    '🔴 sin firmas no se ofrece la del técnico');
+
+  // ② EL TÉCNICO FIRMÓ PRIMERO. El estado ya es `firmado` — y el cliente TIENE que poder firmar.
+  ctx.renderParte(contenedor, Object.assign({}, PARTE_PINTABLE, {
     estado: 'firmado',
     puedeEditarContenido: { ok: false, motivo: 'el parte está firmado' },
-  });
-  ctx.renderParte(contenedor, firmado);
-  assert.ok(!contenedor.innerHTML.includes('data-parte-firmar'),
-    '🔴 un parte ya firmado sigue ofreciendo el botón de firmar');
-  assert.ok(contenedor.innerHTML.includes('data-parte-firmado'),
-    '🔴 y no dice que ya está firmado');
+    firmoElCliente: false, firmoElTecnico: true, firmadoTecnicoNombre: 'Israel',
+  }));
+  assert.match(contenedor.innerHTML, /data-parte-firmar="1"/,
+    '🔴 el técnico firmó primero y ahora EL CLIENTE NO PUEDE FIRMAR. El candado se puso al ' +
+    'estado en vez de a la ranura, y el segundo firmante se queda fuera según el orden — justo lo ' +
+    'que `ordenDeFirmaExigido()` dice que no se exige.');
+  assert.match(contenedor.innerHTML, /data-parte-firmar-tecnico-hecha/,
+    '🔴 no dice que el técnico ya firmó');
+  assert.ok(!/data-parte-firmar-tecnico="1"/.test(contenedor.innerHTML),
+    '🔴 el técnico puede firmar DOS veces: la segunda pisaría el trazo de la primera, y de eso ' +
+    'no queda rastro.');
+
+  // ③ Las dos puestas: ningún botón, y ya no falta ninguna.
+  ctx.renderParte(contenedor, Object.assign({}, PARTE_PINTABLE, {
+    estado: 'firmado',
+    puedeEditarContenido: { ok: false, motivo: 'el parte está firmado' },
+    firmoElCliente: true, firmoElTecnico: true,
+    firmadoPorNombre: 'Ana Ruiz', firmadoTecnicoNombre: 'Israel',
+  }));
+  assert.ok(!/data-parte-firmar="1"/.test(contenedor.innerHTML), '🔴 ofrece firmar al cliente otra vez');
+  assert.ok(!/data-parte-firmar-tecnico="1"/.test(contenedor.innerHTML), '🔴 ofrece firmar al técnico otra vez');
+  assert.ok(!/data-parte-falta-firma/.test(contenedor.innerHTML),
+    '🔴 con las dos firmas puestas sigue diciendo que falta una');
 });

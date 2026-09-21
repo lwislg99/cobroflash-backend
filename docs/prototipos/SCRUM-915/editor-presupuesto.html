@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor de presupuesto · prototipo v3</title>
+<meta name="description" content="Prototipo v2 del editor de presupuesto y justificante (SCRUM-915): pasos guiados a la izquierda y el documento vivo a la derecha. Datos de ejemplo; no guarda nada.">
+<style>
+/* Tokens: DESIGN.md (única fuente). */
+:root{
+  --brand:#16a34a; --brand-hover:#15803d; --brand-ink:#052e16; --brand-tint:#ecfdf5; --brand-tint-ink:#166534;
+  --ink:#0f1c17; --body:#3f4a45; --muted:#6b756f; --bg:#f6f7f5; --surface:#fff; --border:#e7e9e5; --neutral-100:#eef0ec;
+  --danger:#dc2626; --warning:#b45309; --warning-bg:#fff7ed;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:22px; --r-full:9999px;
+  --sh-reposo:0 1px 2px rgba(16,24,40,.04);
+  --sh-elevado:0 4px 12px -2px rgba(16,24,40,.08),0 2px 6px -2px rgba(16,24,40,.05);
+  --sh-flotante:0 18px 40px -12px rgba(16,24,40,.18);
+  --sh-foco:0 0 0 3px rgba(34,197,94,.30);
+  --font:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--body);font:400 15px/1.55 var(--font);font-feature-settings:"cv11","ss01";-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:none;box-shadow:var(--sh-foco)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:12px 20px;border-radius:var(--r-full);border:1px solid transparent;font-weight:700;cursor:pointer;transition:background .15s,transform .15s,box-shadow .15s;white-space:nowrap;text-decoration:none}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-hover);transform:translateY(-1px)}
+.btn-primary[disabled]{background:var(--neutral-100);color:var(--muted);transform:none;cursor:not-allowed}
+.btn-secondary{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.btn-secondary:hover{background:var(--bg)}
+.btn-ghost{background:transparent;color:var(--body);padding:12px 14px}
+.btn-ghost:hover{color:var(--ink);background:var(--neutral-100)}
+.enlace{display:inline-flex;align-items:center;justify-content:center;min-width:44px;background:none;border:0;color:var(--brand-tint-ink);font-weight:700;cursor:pointer;min-height:44px;padding:0 6px;text-decoration:none}
+.enlace:hover{text-decoration:underline}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border-radius:var(--r-full);border:1px solid var(--border);background:var(--surface);color:var(--ink);font-weight:600;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brand-tint);border-color:var(--brand);color:var(--brand-ink)}
+.label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.input,.select,.textarea{width:100%;min-height:44px;padding:11px 13px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--ink)}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--brand);box-shadow:var(--sh-foco);outline:none}
+.nota{font-size:13px;color:var(--muted);margin:6px 0 0}
+.money{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.check{display:flex;gap:10px;align-items:center;min-height:44px}
+.check input{width:20px;height:20px;accent-color:var(--brand)}
+.propuesto{text-decoration:underline dashed var(--warning) 1.5px;text-underline-offset:3px}
+body.sin-resaltar .propuesto{text-decoration:none}
+
+/* Barra del prototipo (no es producto) */
+.proto{background:var(--ink);color:#fff;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:8px 16px}
+.proto strong{font-size:13px}
+.proto .seg{display:inline-flex;background:rgba(255,255,255,.1);border-radius:var(--r-full);padding:3px}
+.proto .seg button{min-height:36px;padding:6px 12px;border:0;border-radius:var(--r-full);background:transparent;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.proto .seg button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.proto label{font-size:13px;display:inline-flex;gap:6px;align-items:center;min-height:36px}
+.proto .leyenda{font-size:12px;opacity:.85}
+.proto .leyenda span{text-decoration:underline dashed #fbbf24 1.5px;text-underline-offset:3px}
+
+/* Dos columnas */
+.app{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:32px;max-width:1320px;margin:0 auto;padding:24px}
+.editor{min-width:0}
+.cab{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.cab h1{margin:0;font-size:1.25rem;letter-spacing:-.01em;color:var(--ink);flex:1}
+.cab .guardado{font-size:13px;color:var(--brand-tint-ink);min-width:0}
+
+/* Pasos */
+.paso{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:10px;box-shadow:var(--sh-reposo)}
+.paso-cerrado{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 16px;min-height:60px}
+.paso .num{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--neutral-100);color:var(--muted)}
+.paso.hecho .num{background:var(--brand);color:#fff}
+.paso-cerrado .que{flex:1;min-width:0}
+.paso-cerrado .que b{display:block;color:var(--ink);font-size:14px;font-weight:600}
+.paso-cerrado .que span{display:block;color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.paso.pendiente{background:transparent;border-style:dashed;box-shadow:none}
+.paso.pendiente .que b{color:var(--muted)}
+.paso.abierto{border-color:var(--brand);box-shadow:var(--sh-elevado)}
+.paso-abierto{padding:18px 20px 20px}
+.paso-abierto .tit{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.paso-abierto h2{margin:0;font-size:1.125rem;color:var(--ink);letter-spacing:-.01em}
+.paso-abierto .guia{margin:0 0 14px 40px;color:var(--muted);font-size:14px}
+.pie-paso{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
+.pie-paso .falta{font-size:13px;color:var(--muted);margin-right:auto}
+
+/* Cliente */
+.lista-cli{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.lista-cli button{width:100%;min-height:52px;text-align:left;border:1px solid var(--border);background:var(--surface);border-radius:var(--r-md);padding:8px 12px;cursor:pointer}
+.lista-cli button:hover{border-color:var(--brand)}
+.lista-cli small{display:block;color:var(--muted);font-size:13px}
+.lista-cli .nuevo{border-style:dashed;color:var(--brand-tint-ink);font-weight:700}
+
+/* Líneas */
+.lineas-cab,.linea{display:grid;grid-template-columns:minmax(0,1fr) 64px 92px 44px;gap:6px;align-items:center}
+.lineas-cab{padding:0 2px 4px}
+.lineas-cab span:nth-child(2),.lineas-cab span:nth-child(3){text-align:right}
+.linea{margin-bottom:6px;animation:entra .18s ease-out}
+@keyframes entra{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.linea .num-in{text-align:right;font-variant-numeric:tabular-nums}
+.linea .extra{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:-2px 2px 4px;font-size:13px}
+.menu-linea{flex:none;width:44px;min-width:44px;height:44px;border-radius:50%;border:0;background:transparent;cursor:pointer;font-size:18px;color:var(--muted)}
+.menu-linea:hover{background:var(--bg);color:var(--ink)}
+.ajuste{min-height:32px;padding:2px 10px;border-radius:var(--r-full);border:0;background:var(--neutral-100);color:var(--body);font-size:12.5px;font-weight:600;cursor:pointer}
+.aviso-ia{color:var(--warning);background:var(--warning-bg);border-radius:var(--r-sm);padding:2px 8px}
+.add-linea{width:100%;min-height:48px;border:1.5px dashed var(--border);border-radius:var(--r-md);background:transparent;color:var(--brand-tint-ink);font-weight:700;cursor:pointer;margin-top:2px}
+.add-linea:hover{border-color:var(--brand)}
+.secundarias{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.auto{position:relative}
+.desplegable{position:absolute;left:0;right:-160px;top:calc(100% + 4px);z-index:20;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);box-shadow:var(--sh-flotante);padding:6px;margin:0;list-style:none}
+.desplegable .grupo-t{padding:6px 10px 2px}
+.desplegable button{width:100%;min-height:44px;text-align:left;border:0;background:transparent;padding:6px 10px;border-radius:var(--r-sm);cursor:pointer;display:flex;justify-content:space-between;gap:12px}
+.desplegable button:hover{background:var(--bg)}
+.desplegable small{color:var(--muted)}
+.subtotal{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.subtotal .cifra{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
+.pactado{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 12px;border-radius:var(--r-md);background:var(--brand-tint);color:var(--brand-ink);margin-top:10px;flex-wrap:wrap;font-size:14px}
+
+/* Condiciones: filas resumen */
+.fila-res{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--border)}
+.fila-res:first-of-type{border-top:0}
+.fila-res .que{flex:1;min-width:0}
+.fila-res .que b{display:block;color:var(--ink);font-size:14px;font-weight:600}
+.fila-res .que span{color:var(--body);font-size:14px}
+.detalle{padding:4px 0 12px}
+.fichas{display:flex;gap:8px;flex-wrap:wrap}
+.tramo{display:grid;grid-template-columns:minmax(0,1fr) 84px 44px;gap:8px;margin-top:8px}
+
+/* La vista previa viva */
+.previa{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto;border-radius:var(--r-lg)}
+.previa .marco{padding:18px;background:linear-gradient(180deg,#eef0ec,#e7e9e5);border-radius:var(--r-lg)}
+.previa .marco-t{display:flex;justify-content:space-between;align-items:center;margin:0 4px 10px;font-size:12px;color:var(--muted)}
+.doc{background:#fff;border-radius:6px;box-shadow:0 1px 3px rgba(16,24,40,.08),0 12px 32px -12px rgba(16,24,40,.22);padding:36px 38px;min-height:620px;font-size:13px;color:#333d38}
+.doc-cab{display:flex;justify-content:space-between;gap:16px;padding-bottom:18px;border-bottom:2px solid var(--ink)}
+.doc .logo{width:40px;height:40px;border-radius:10px;background:var(--brand-tint);color:var(--brand-ink);display:grid;place-items:center;font-weight:800;margin-bottom:8px}
+.doc .emp b{color:var(--ink);font-size:14px}
+.doc .emp div{color:var(--muted);font-size:11.5px}
+.doc .meta{text-align:right}
+.doc .meta .tipo{font-size:20px;font-weight:800;letter-spacing:.02em;color:var(--ink)}
+.doc .meta div{font-size:11.5px;color:var(--muted)}
+.doc .para{margin:18px 0;display:flex;justify-content:space-between;gap:16px}
+.doc .para .label{font-size:10px}
+.doc .para b{color:var(--ink);font-size:14px}
+.hueco{display:inline-block;height:10px;border-radius:4px;background:var(--neutral-100);vertical-align:middle}
+.doc table{width:100%;border-collapse:collapse;margin-top:6px}
+.doc th{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:1px solid var(--border)}
+.doc td{padding:9px 6px;border-bottom:1px solid #f0f1ee;vertical-align:top}
+.doc th:nth-child(n+2),.doc td:nth-child(n+2){text-align:right;white-space:nowrap}
+.doc td .d{display:block;color:var(--muted);font-size:11.5px}
+.doc tr.nueva{animation:resalta 1.2s ease-out}
+@keyframes resalta{from{background:var(--brand-tint)}to{background:transparent}}
+.doc .vacio td{color:var(--muted);font-style:italic;text-align:left!important}
+.doc .tot{margin-left:auto;width:250px;margin-top:14px}
+.doc .tot div{display:flex;justify-content:space-between;padding:3px 0}
+.doc .tot .grande{border-top:2px solid var(--ink);margin-top:6px;padding-top:8px;font-size:17px;font-weight:800;color:var(--ink)}
+.doc .condic{margin-top:22px;padding-top:12px;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);display:grid;gap:4px}
+.doc .condic b{color:var(--body)}
+.zona{border-radius:6px;transition:box-shadow .2s,background .2s}
+.zona.activa{box-shadow:0 0 0 2px rgba(22,163,74,.35);background:rgba(236,253,245,.5)}
+.agua{margin-top:16px;text-align:center;font-size:10.5px;color:var(--muted);letter-spacing:.04em}
+
+/* Móvil */
+.barra-abajo{display:none}
+@media (max-width:999px){
+  .app{grid-template-columns:1fr;padding:16px 16px 100px}
+  .previa{display:none}
+  .barra-abajo{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--border);box-shadow:var(--sh-flotante);padding:10px 16px calc(10px + env(safe-area-inset-bottom));gap:10px;align-items:center}
+  .barra-abajo .tot{flex:1;min-width:0}
+  .barra-abajo .tot .label{white-space:nowrap}
+  .barra-abajo .tot .cifra{font-size:1.25rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;display:block;line-height:1.15}
+  .doc{padding:22px 18px;min-height:0}
+  .doc .tot{width:100%}
+  .desplegable{right:0}
+}
+@media (max-width:420px){
+  .lineas-cab{display:none}
+  .linea{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;grid-template-areas:"c c m" "q p .";gap:6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .linea .auto{grid-area:c} .linea .l-q{grid-area:q} .linea .l-p{grid-area:p} .linea .menu-linea{grid-area:m}
+  .linea .l-q::before,.linea .l-p::before{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 2px 2px}
+  .linea .l-q::before{content:"Cantidad"} .linea .l-p::before{content:"Precio"}
+  .cab h1{font-size:1.0625rem}
+  .paso-abierto{padding:16px 14px}
+  .paso-abierto .guia{margin-left:0}
+}
+
+/* Modales / hojas */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(15,28,23,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-flotante);width:100%;max-width:560px;max-height:calc(100vh - 32px);overflow:auto;padding:20px}
+.modal.ancho{max-width:760px;background:var(--bg)}
+.modal-cab{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.modal-cab h3{margin:0;color:var(--ink);font-size:1.125rem}
+.cerrar{width:44px;height:44px;border-radius:50%;border:0;background:transparent;font-size:22px;cursor:pointer;color:var(--muted)}
+.modal .pie{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+.modal .grupo{padding:14px 0;border-top:1px solid var(--border)}
+.modal .grupo:first-of-type{border-top:0}
+.sug{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);cursor:pointer;margin-top:8px}
+.sug input{width:20px;height:20px;margin-top:2px;accent-color:var(--brand)}
+/* SCRUM-915 v3 (ajuste) · la HOJA DE ENVÍO: enseña el mensaje tal como le llega al cliente.
+   No lleva patrón propio: es el .overlay/.modal de arriba, que a ≤640 px ya es hoja inferior y
+   por encima sale centrado — el mismo patrón de AB3 (bottom sheet de SCRUM-31 F2). */
+.modal.hoja{max-width:460px}
+.wa-msg{background:var(--brand-tint);border:1px solid var(--brand);border-radius:var(--r-md) var(--r-md) var(--r-md) 4px;padding:12px 14px;color:var(--ink);white-space:pre-line;box-shadow:var(--sh-reposo)}
+.wa-msg .pie-msg{display:block;margin-top:8px;font-size:12px;color:var(--muted)}
+.wa-msg .cta-msg{display:block;margin-top:10px;padding-top:9px;border-top:1px solid var(--brand);text-align:center;font-weight:700;color:var(--brand-ink)}
+.btn-wa{width:100%;min-height:52px;font-size:1.0625rem}
+.wa-canales{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.wa-canales .btn{width:100%;justify-content:flex-start}
+.chev{display:inline-block;width:12px;color:var(--muted);font-size:11px}
+@media (max-width:640px){
+  .overlay{align-items:flex-end;padding:0}
+  .modal{border-radius:var(--r-xl) var(--r-xl) 0 0;max-height:92vh}
+  .modal .pie .btn{flex:1}
+}
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-full);font-weight:600;box-shadow:var(--sh-flotante);max-width:calc(100vw - 32px)}
+
+/* Inventario */
+.inv{max-width:1240px;margin:0 auto;padding:24px}
+.inv h2{color:var(--ink);margin:0 0 8px}
+.inv table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);font-size:14px}
+.inv th,.inv td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.inv th{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+.inv .grupo td{background:var(--brand-tint);color:var(--brand-ink);font-weight:700}
+@media (max-width:999px){
+  .inv{padding:16px}
+  .inv thead{display:none}
+  .inv tr{display:block;border-bottom:1px solid var(--border);padding:8px 0}
+  .inv td{display:block;border:0;padding:2px 12px}
+  .inv td::before{content:attr(data-h) " · ";font-size:12px;color:var(--muted);font-weight:600}
+  .inv .grupo td::before{content:""}
+}
+</style>
+</head>
+<body>
+<div class="proto" role="region" aria-label="Controles del prototipo">
+  <strong>Prototipo v3 · SCRUM-915 · datos de ejemplo, no guarda nada</strong>
+  <div class="seg" role="group" aria-label="Vista">
+    <button type="button" data-vista="proto" aria-pressed="true">Prototipo</button>
+    <button type="button" data-vista="inv" aria-pressed="false">Inventario antes → después</button>
+  </div>
+  <div class="seg" role="group" aria-label="Documento">
+    <button type="button" data-tipo="presupuesto" aria-pressed="true">Presupuesto</button>
+    <button type="button" data-tipo="justificante" aria-pressed="false">Justificante</button>
+  </div>
+  <label><input type="checkbox" id="resaltar" checked> Resaltar textos nuevos</label>
+  <span class="leyenda"><span>subrayado</span> = texto nuevo, propuesto y sin firmar</span>
+</div>
+
+<div id="vista-proto">
+  <div class="app">
+    <main class="editor" id="editor" aria-label="Editor"></main>
+    <aside class="previa" id="previa" aria-label="Vista previa del documento" aria-live="polite"></aside>
+  </div>
+  <div class="barra-abajo" id="barraAbajo"></div>
+</div>
+<div id="vista-inv" hidden></div>
+<div id="capa"></div>
+
+<script>
+(function(){
+"use strict";
+// ───────────── Datos de ejemplo ─────────────
+const EMPRESA={nombre:'Fontanería Ejemplo',razon:'Fontanería Ejemplo S.L.',nif:'B00000000',dir:'C/ Mayor 12, 41001 Sevilla',wa:'600 000 000'};
+const CLIENTES=[
+  {id:1,nombre:'Comunidad Los Olivos',tel:'600 111 222',email:'olivos@correo.es',nif:'H00000000',ref:'CLI-014',dir:'Av. Los Olivos 4, 41005 Sevilla',dto:5,pagos:['bizum','transferencia']},
+  {id:2,nombre:'Ana Ruiz',tel:'611 222 333',email:'',nif:'',ref:'',dir:'C/ Feria 20, 41003 Sevilla'},
+  {id:3,nombre:'Talleres Martín S.L.',tel:'622 333 444',email:'admin@talleres.es',nif:'B11111111',ref:'CLI-031',dir:'Pol. Store, nave 7, 41008 Sevilla'}
+];
+const PLANTILLAS=[
+  {nombre:'Revisión caldera estándar',lineas:[['Revisión anual de caldera',1,90,21],['Limpieza de quemador',1,35,21],['Desplazamiento',1,20,21]]},
+  {nombre:'Cambio de grifo',lineas:[['Grifo monomando',1,64.9,21],['Mano de obra (hora)',1,38,21]]},
+  {nombre:'Desatasco',lineas:[['Desatasco con máquina',1,120,21],['Desplazamiento',1,20,21]]}
+];
+const FRECUENTES=[['Mano de obra (hora)',38,14],['Desplazamiento',20,11],['Grifo monomando',64.9,6]];
+const CATALOGO=[['Grifo monomando','Grifería cocina cromada',64.9,21],['Grifo termostático ducha','Con barra',119,21],['Mano de obra (hora)','',38,21],['Desplazamiento','Zona urbana',20,21],['Latiguillo flexible 40 cm','',6.5,21]];
+const IA=[
+  {c:'Reparación de fuga en tubería de cocina',q:1,p:85,t:21},
+  {c:'Grifo mezclador monomando',q:1,p:64.9,t:21},
+  {c:'Revisión de sifón',q:1,p:25,t:21,sup:['price']},
+  {c:'Mano de obra (hora)',q:2,p:38,t:21,sup:['qty']}
+];
+const COND={FULL_UPFRONT:'Pago 100% al aceptar',FIFTY_FIFTY:'50% al aceptar, 50% al finalizar',CUSTOM:'Plan personalizado (por tramos)',MANUAL:'Solo presupuesto (facturación manual)','':'Sin condiciones específicas'};
+const COND_DOC={FULL_UPFRONT:'Pago 100% al aceptar el presupuesto.',FIFTY_FIFTY:'50% al aceptar, 50% al finalizar el trabajo.',MANUAL:'Solo presupuesto, facturación manual.','':''};
+const PAGO={tarjeta:'💳 Tarjeta',bizum:'📲 Bizum',transferencia:'🏦 Transferencia'};
+
+// ───────────── Estado ─────────────
+const hoyMas=(d)=>{const x=new Date();x.setDate(x.getDate()+d);return x.toISOString().slice(0,10);};
+let S;
+function inicial(tipo){return {
+  tipo:tipo||'presupuesto', abierto:1, cliente:null, busca:'',
+  lineas:[{c:'',q:1,p:'',t:21,dto:0,sup:false,desc:''}], nueva:-1, auto:null, dtoGlobal:null, verDto:false,
+  cond:'FULL_UPFRONT', tramos:[{e:'Anticipo',p:50},{e:'Al finalizar',p:50}], pagos:{tarjeta:true,bizum:true,transferencia:true},
+  validez:hoyMas(30), cambiando:null,
+  op:{ivaDef:21,ivaModo:'sumar',dir:'no',dirTxt:'',datos:{nombre:true,tel:true,nif:true,email:true},razon:'razon',incDesc:false},
+  generado:null, envio:null, zona:'cliente'
+};}
+S=inicial();
+
+// ───────────── Utilidades ─────────────
+const eur=(n)=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(n||0);
+const num=(n)=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(n||0);
+const fecha=(iso)=>new Date(iso).toLocaleDateString('es-ES');
+const esc=(s)=>String(s??'').replace(/[&<>"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=(sel,el=document)=>el.querySelector(sel);
+const P=(t)=>`<span class="propuesto">${t}</span>`;
+const esPres=()=>S.tipo==='presupuesto';
+const movil=()=>matchMedia('(max-width:999px)').matches;
+const valida=(l)=>l.c.trim()&&Number(l.q)>0&&l.p!==''&&Number(l.p)>=0;
+const baseL=(l)=>Number(l.q)*Number(l.p)*(1-(l.dto||0)/100);
+function totales(){
+  const v=S.lineas.filter(valida); const suma=v.reduce((a,l)=>a+baseL(l),0);
+  const dto=esPres()&&S.dtoGlobal?Math.min(S.dtoGlobal,suma):0; const f=suma?(suma-dto)/suma:0;
+  const iva=v.reduce((a,l)=>a+baseL(l)*f*((l.sup?0:l.t)/100),0); const base=suma-dto;
+  const sinIva=esPres()&&S.op.ivaModo==='no_incluido';
+  return {suma,dto,base,iva:sinIva?0:iva,total:sinIva?base:base+iva,n:v.length,sinIva};
+}
+const sumaTramos=()=>S.tramos.reduce((a,t)=>a+(Number(t.p)||0),0);
+const PASOS=()=>esPres()
+  ?[{k:'cliente',t:'Cliente',guia:'¿Para quién es el presupuesto?'},{k:'lineas',t:'Conceptos',guia:'Añade lo que vas a hacer, con su cantidad y su precio.'},{k:'condiciones',t:'Condiciones',guia:'Ya van puestas las de siempre. Cámbialas sólo si este cliente es distinto.'},{k:'enviar',t:'Revisar y enviar',guia:'Revisa el documento y, si está bien, envíaselo al cliente por WhatsApp.'}]
+  :[{k:'cliente',t:'Cliente',guia:'¿Para quién es el justificante?'},{k:'lineas',t:'Conceptos',guia:'Añade lo que has hecho, con su cantidad y su precio.'},{k:'enviar',t:'Revisar y emitir',guia:'Revisa el documento y, si está bien, emítelo.'}];
+const hecho=(i)=>{const k=PASOS()[i-1].k; if(k==='cliente')return !!S.cliente; if(k==='lineas')return S.lineas.some(valida); if(k==='condiciones')return S.abierto>i&&(S.cond!=='CUSTOM'||sumaTramos()===100); return !!S.generado;};
+const puede=(i)=>{const k=PASOS()[i-1].k; if(k==='cliente')return !!S.cliente; if(k==='lineas')return S.lineas.some(valida); if(k==='condiciones')return S.cond!=='CUSTOM'||sumaTramos()===100; return true;};
+const listo=()=>!!S.cliente&&S.lineas.some(valida)&&(!esPres()||S.cond!=='CUSTOM'||sumaTramos()===100);
+const faltaTxt=(k)=>k==='cliente'?'Elige un cliente para seguir':k==='lineas'?'Falta al menos una línea con concepto, cantidad y precio':'Revisa los tramos: cada uno necesita etiqueta y porcentaje, y deben sumar 100 %.';
+
+// ───────────── Render ─────────────
+function render(){ renderEditor(); renderPrevia(); renderBarra(); }
+function renderEditor(){
+  const foco=document.activeElement&&(document.activeElement.id||'');
+  const pos=document.activeElement&&document.activeElement.selectionStart;
+  const t=totales();
+  $('#editor').innerHTML=`
+    <div class="cab"><h1>${esPres()?'Nuevo presupuesto':'Nuevo justificante'}</h1>
+      ${esPres()?'<span class="guardado" id="guardado" aria-live="polite"></span>':''}
+      <button class="menu-linea" data-accion="mas" aria-label="Más acciones">⋯</button></div>
+    ${PASOS().map((p,idx)=>renderPaso(p,idx+1,t)).join('')}`;
+  if(foco){const el=document.getElementById(foco); if(el){el.focus();try{if(pos!=null)el.setSelectionRange(pos,pos);}catch(e){}}}
+}
+function renderPaso(p,i,t){
+  const abierto=S.abierto===i;
+  const estado=abierto?'abierto':(hecho(i)?'hecho':(i<S.abierto?'hecho':'pendiente'));
+  if(!abierto){
+    const res=resumen(p.k,t);
+    return `<section class="paso ${estado}" aria-label="${esc(p.t)}"><div class="paso-cerrado">
+      <span class="num">${estado==='hecho'?'✓':i}</span>
+      <div class="que"><b>${P(p.t)}</b>${res?`<span>${res}</span>`:''}</div>
+      ${estado==='hecho'||(i<S.abierto)?`<button class="enlace" data-abrir="${i}">${P('Cambiar')}</button>`:''}
+    </div></section>`;
+  }
+  const ultimo=i===PASOS().length;
+  return `<section class="paso abierto" aria-labelledby="tp-${i}"><div class="paso-abierto">
+    <div class="tit"><span class="num">${i}</span><h2 id="tp-${i}">${P(p.t)}</h2></div>
+    <p class="guia">${P(p.guia)}</p>
+    ${p.k==='cliente'?pasoCliente():p.k==='lineas'?pasoLineas(t):p.k==='condiciones'?pasoCondiciones():pasoEnviar(t)}
+    <div class="pie-paso">
+      ${!ultimo&&!puede(i)?`<span class="falta">${P(faltaTxt(p.k))}</span>`:''}
+      ${i>1?`<button class="btn btn-ghost" data-abrir="${i-1}">${P('Atrás')}</button>`:''}
+      ${ultimo?(esPres()?botonWa():`<button class="btn btn-primary" data-accion="generar" ${listo()?'':'disabled'}>Emitir justificante</button>`)
+        :`<button class="btn btn-primary" data-abrir="${i+1}" ${puede(i)?'':'disabled'}>${P('Continuar')}</button>`}
+    </div></div></section>`;
+}
+function resumen(k,t){
+  if(k==='cliente')return S.cliente?esc(S.cliente.nombre):'';
+  if(k==='lineas')return t.n?`${t.n} ${t.n===1?'concepto':'conceptos'} · ${eur(t.total)}`:'';
+  if(k==='condiciones')return esc(COND[S.cond])+' · '+P('válido hasta')+' '+fecha(S.validez);
+  return '';
+}
+function pasoCliente(){
+  const q=S.busca.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const res=CLIENTES.filter((c)=>!q||[c.nombre,c.tel,c.email,c.ref].join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(q));
+  return `<label class="sr" for="busca">Cliente</label>
+    <input class="input" id="busca" type="search" autocomplete="off" placeholder="Buscar por nombre, teléfono, email o referencia…" value="${esc(S.busca)}">
+    <ul class="lista-cli">
+      ${res.slice(0,4).map((c)=>`<li><button type="button" data-cliente="${c.id}" ${S.cliente&&S.cliente.id===c.id?'aria-pressed="true" style="border-color:var(--brand)"':''}><b style="color:var(--ink)">${esc(c.nombre)}</b><small>${esc(c.tel)}${c.ref?' · '+c.ref:''}</small></button></li>`).join('')}
+      ${res.length?'':`<li class="nota">Sin resultados para tu búsqueda</li>`}
+      <li><button type="button" class="nuevo" data-accion="nuevo-cliente">+ Nuevo cliente</button></li>
+    </ul>`;
+}
+function pasoLineas(t){
+  return `<div class="lineas-cab" aria-hidden="true"><span class="label">Concepto</span><span class="label">Cant.</span><span class="label">Precio</span><span></span></div>
+    ${S.lineas.map(renderLinea).join('')}
+    <button class="add-linea" data-accion="add-linea">+ Añadir línea</button>
+    <div class="secundarias">
+      <button class="btn btn-ghost" data-accion="usar-plantilla">📋 Usar plantilla</button>
+      <button class="btn btn-ghost" data-accion="ia">✨ Sugerir con IA</button>
+      ${esPres()&&!S.verDto&&!S.dtoGlobal?`<button class="btn btn-ghost" data-accion="ver-dto">+ Añadir descuento</button>`:''}
+    </div>
+    ${esPres()&&(S.verDto||S.dtoGlobal)?`<label class="check" style="gap:12px"><span class="label" style="min-width:120px">Descuento global</span><input class="input" id="dtoGlobal" type="number" min="0" step="0.01" value="${S.dtoGlobal??''}" placeholder="0,00 €" style="max-width:160px"></label>`:''}
+    ${pactado()}
+    <div class="subtotal"><span class="label">${esPres()?'Total presupuesto':'Total'}</span><span class="cifra" id="subtotal">${eur(t.total)}</span></div>`;
+}
+function pactado(){
+  const c=S.cliente; if(!esPres()||!c||!c.dto||!S.lineas.some((l)=>valida(l)&&!l.dto))return '';
+  return `<div class="pactado"><span>${P('Este cliente tiene pactado un descuento del '+c.dto+' %')}</span><button class="btn btn-secondary" data-accion="aplicar-dto">${P('Aplicar a las líneas')}</button></div>`;
+}
+function renderLinea(l,i){
+  const auto=S.auto===i?listaAuto(l.c):null;
+  const chip=l.sup?'Suplido · sin IVA':`IVA ${l.t} %${l.dto?' · Dto. '+l.dto+' %':''}`;
+  const extra=(l.t!==S.op.ivaDef||l.dto||l.sup||l.sup2&&!l.rev);
+  return `<div class="linea" data-linea="${i}">
+    <div class="auto"><label class="sr" for="c-${i}">Concepto</label>
+      <input class="input" id="c-${i}" data-k="c" data-i="${i}" placeholder="Concepto / servicio" value="${esc(l.c)}" autocomplete="off">
+      ${auto?`<ul class="desplegable" role="listbox">${auto}</ul>`:''}</div>
+    <div class="l-q"><label class="sr" for="q-${i}">Cantidad</label><input class="input num-in" id="q-${i}" data-k="q" data-i="${i}" type="number" min="0" step="1" value="${l.q}" inputmode="decimal"></div>
+    <div class="l-p"><label class="sr" for="p-${i}">Precio</label><input class="input num-in" id="p-${i}" data-k="p" data-i="${i}" type="number" min="0" step="0.01" value="${l.p}" placeholder="0,00" inputmode="decimal"></div>
+    <button type="button" class="menu-linea" data-menu="${i}" aria-label="Acciones de la línea">⋯</button>
+    ${extra?`<div class="extra">${l.t!==S.op.ivaDef||l.dto||l.sup?`<button class="ajuste" data-ajustes="${i}" title="Ajustes de la línea">${chip}</button>`:''}
+      ${l.sup2&&!l.rev?`<span class="aviso-ia">${P('Propuesto por la IA: '+l.sup2.map((x)=>x==='qty'?'cantidad':'precio').join(' y ')+'. Revísalo antes de enviar.')}</span><button class="enlace" data-rev="${i}">${P('Revisado')}</button>`:''}</div>`:''}
+  </div>`;
+}
+function listaAuto(q){
+  if(!q||q.length<2) return `<li class="grupo-t label">Tus conceptos más usados</li>`+FRECUENTES.map((f,j)=>`<li><button type="button" data-frec="${j}">${esc(f[0])}<small>en ${f[2]} presupuestos · ${eur(f[1])}</small></button></li>`).join('');
+  const r=CATALOGO.filter((p)=>p[0].toLowerCase().includes(q.toLowerCase()));
+  return r.length?r.map((p,j)=>`<li><button type="button" data-cat="${CATALOGO.indexOf(p)}">${esc(p[0])}<small>${eur(p[2])}</small></button></li>`).join(''):`<li class="nota" style="padding:8px 10px">Sin resultados</li>`;
+}
+function filaRes(k,titulo,valor,detalle,plegable){ const ch=S.cambiando;
+  // `plegable` sólo cambia el ASPECTO: un galón ▸/▾ para que la fila se lea como bloque que se abre
+  // en el sitio (ajuste del orquestador a la v3). El comportamiento es el mismo de las demás filas.
+  return `<div class="fila-res"><div class="que"><b>${plegable?`<span class="chev" aria-hidden="true">${ch===k?'▾':'▸'}</span>`:''}${titulo}</b><span>${valor}</span></div>
+      <button class="enlace" data-cambiar="${k}" aria-expanded="${ch===k}">${ch===k?P('Listo'):P('Cambiar')}</button></div>
+    ${ch===k?`<div class="detalle">${detalle}</div>`:''}`; }
+// SCRUM-915 v3 · los ajustes del documento, a la vista como una fila más (decisión del orquestador).
+function filaAjustes(){
+  const o=S.op;
+  const resumen=esPres()
+    ? [o.ivaModo==='sumar'?P('IVA sumado'):'IVA no incluido', o.dir==='no'?P('sin dirección de obra'):P('con dirección de obra')].join(' · ')
+    : P('IVA por defecto')+' '+o.ivaDef+' %';
+  const detalle=`<label><span class="label">IVA por defecto (%)</span><select class="select" data-aj="ivaDef" style="margin-top:6px">${[21,10,4,0].map((v)=>`<option ${o.ivaDef===v?'selected':''}>${v}</option>`).join('')}</select></label>
+    ${esPres()?`<label style="display:block;margin-top:12px"><span class="label">IVA del presupuesto</span><select class="select" data-aj="ivaModo" style="margin-top:6px"><option value="sumar" ${o.ivaModo==='sumar'?'selected':''}>Sumar el IVA al final</option><option value="no_incluido" ${o.ivaModo==='no_incluido'?'selected':''}>IVA no incluido</option></select></label>
+    <label style="display:block;margin-top:12px"><span class="label">Dirección de la obra</span><select class="select" data-aj="dir" style="margin-top:6px"><option value="no" ${o.dir==='no'?'selected':''}>No mostrar</option><option value="fact" ${o.dir==='fact'?'selected':''}>Utilizar dirección de facturación</option><option value="pers" ${o.dir==='pers'?'selected':''}>Personalizada</option></select></label>
+    ${o.dir==='pers'?`<input class="input" data-aj="dirTxt" style="margin-top:8px" maxlength="300" placeholder="${esc(S.cliente?S.cliente.dir:'Dirección de la obra')}" value="${esc(o.dirTxt)}" aria-label="Dirección personalizada">`:''}
+    <div style="margin-top:12px"><span class="label">Datos del cliente en el documento</span>${[['nombre','Nombre'],['tel','Teléfono'],['nif','NIF'],['email','Email']].map(([k,n])=>`<label class="check"><input type="checkbox" data-aj="dato:${k}" ${o.datos[k]?'checked':''}> ${n}</label>`).join('')}
+      <div class="fichas"><label class="check"><input type="radio" name="razon" data-aj="razon" value="razon" ${o.razon==='razon'?'checked':''}> Razón social</label><label class="check"><input type="radio" name="razon" data-aj="razon" value="comercial" ${o.razon==='comercial'?'checked':''}> Nombre comercial</label></div>
+      <p class="nota">Solo aparecen los que el cliente tenga rellenos. Elige con qué nombre sale este cliente en el documento.</p></div>
+    <label class="check"><input type="checkbox" data-aj="incDesc" ${o.incDesc?'checked':''}> Incluir descripción en el PDF</label>`:''}`;
+  return filaRes('ajustes',P('Ajustes del documento'),resumen,detalle,true);
+}
+function pasoCondiciones(){
+  const c=S.cliente; const suma=sumaTramos();
+  const pagosTxt=Object.keys(PAGO).filter((m)=>S.pagos[m]).map((m)=>PAGO[m]).join(' · ')||'—';
+  const pactPagos=c&&c.pagos&&Object.keys(PAGO).some((m)=>S.pagos[m]!==c.pagos.includes(m));
+  return `
+    ${filaRes('cobro','Condiciones de pago',esc(COND[S.cond]),`<div class="fichas">${Object.entries(COND).map(([v,n])=>`<button class="chip" data-cond="${v}" aria-pressed="${S.cond===v}">${n}</button>`).join('')}</div>
+      ${S.cond==='CUSTOM'?`<div style="margin-top:10px"><span class="label">Tramos de cobro</span>${S.tramos.map((tr,i)=>`<div class="tramo"><input class="input" data-te="${i}" placeholder="Etiqueta (p. ej. Anticipo)" value="${esc(tr.e)}" aria-label="Etiqueta del tramo ${i+1}"><input class="input num-in" data-tp="${i}" type="number" placeholder="%" value="${tr.p}" aria-label="Porcentaje del tramo ${i+1}"><button class="menu-linea" data-quitar-tramo="${i}" aria-label="Eliminar tramo" title="Eliminar tramo">🗑️</button></div>`).join('')}
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap"><button class="enlace" data-accion="add-tramo">+ Añadir tramo</button><span id="sumaTramos" style="font-weight:600;font-size:14px;color:${suma===100?'var(--brand-tint-ink)':'var(--danger)'}">${suma===100?`Suman ${suma} % ✓`:`Suman ${suma} % — deben sumar 100 %`}</span></div></div>`:''}`)}
+    ${filaRes('pagos','Formas de pago que verá el cliente',pagosTxt,`
+      ${pactPagos?`<div class="pactado" style="margin:0 0 6px"><span>Formas de pago pactadas · ${c.pagos.map((m)=>PAGO[m]).join(' · ')}</span><button class="btn btn-secondary" data-accion="aplicar-pagos">${P('Aplicar')}</button></div>`:''}
+      ${Object.entries(PAGO).map(([m,n])=>`<label class="check"><input type="checkbox" data-pago="${m}" ${S.pagos[m]?'checked':''}> ${n}</label>`).join('')}
+      <p class="nota">Solo se muestran las que tengas configuradas (IBAN, Bizum o tarjeta).</p>
+      <p class="nota">💳 La tarjeta lleva una comisión del <b>0,9 %</b> por cobro. Bizum y transferencia, gratis.</p>`)}
+    ${filaRes('validez','Válido hasta',fecha(S.validez),`<input class="input" id="validez" type="date" min="${hoyMas(1)}" value="${S.validez}" aria-label="Válido hasta">
+      <div class="fichas" style="margin-top:8px">${[7,14,30].map((d)=>`<button class="chip" data-dias="${d}">${d} días</button>`).join('')}</div>
+      <p class="nota">Pasada esta fecha el presupuesto caduca solo y el cliente verá "pide uno actualizado".</p>`)}
+    ${filaAjustes()}`;
+}
+function pasoEnviar(t){
+  const c=S.cliente; const ev=S.envio;
+  // SCRUM-915 v3 · la confirmación sale AQUÍ, sin modal que tape.
+  const conf=!esPres()||!ev?'':(ev.canal==='whatsapp'
+    ?`<div class="pactado" role="status" style="margin-top:12px"><span>✓ ${P('Enviado por WhatsApp a '+esc(c.nombre)+' · pendiente de firma')}</span></div>`
+    :ev.canal==='email'?`<div class="pactado" role="status" style="margin-top:12px"><span>✓ ${P('Enviado por email a '+esc(c.email))}</span></div>`
+    :`<div class="pactado" role="status" style="margin-top:12px;background:var(--neutral-100);color:var(--body)"><span>${P('Presupuesto '+S.generado+' guardado · sin enviar')}</span></div>`);
+  // SCRUM-915 v3 (ajuste) · las secundarias YA NO viven aquí: se fueron a la hoja de envío, junto al
+  // texto del mensaje. Lo que queda en la pantalla después de enviar son las acciones DE DESPUÉS.
+  const secundarias=esPres()&&ev?`<div class="secundarias" style="margin-top:12px">
+      <button class="btn btn-ghost" data-accion="descargar-pdf">⬇ Descargar PDF</button>
+      <button class="btn btn-ghost" data-accion="abrir-envio">${P('Enviar de otra forma')}</button></div>`:'';
+  return (esPres()?'':filaAjustes())+`<div class="fila-res"><div class="que"><b>${esc(c?c.nombre:'—')}</b><span>${t.n} ${t.n===1?'concepto':'conceptos'}${esPres()?' · '+esc(COND[S.cond]):''}</span></div><span class="money" style="font-size:1.25rem">${eur(t.total)}</span></div>
+    ${conf}${secundarias}
+    ${!esPres()&&S.generado?`<p class="nota">Justificante emitido · ${S.generado}</p>`:''}
+    ${movil()?`<button class="btn btn-secondary" data-accion="ver-doc" style="width:100%;margin-top:8px">${P('Ver documento')}</button>`:''}`;
+}
+// SCRUM-915 v3 (ajuste) · el botón del último paso ABRE LA HOJA; no envía a ciegas. Por eso ya no
+// puede rotularse «Enviar por WhatsApp»: ese rótulo es el de la hoja, donde sí envía. Un botón que
+// dice lo que NO hace es el mismo defecto que la v2 tenía escondiendo el envío tras «Generar».
+function botonWa(){ const enviado=S.envio&&S.envio.canal==='whatsapp';
+  return `<button class="btn btn-primary" data-accion="abrir-envio" ${listo()&&!enviado?'':'disabled'}>${enviado?'✓ Enviado por WhatsApp':P('Guardar y enviar')}</button>`; }
+
+// ───────────── La hoja de envío (ajuste del orquestador a la v3) ─────────────
+// El cuerpo del mensaje NO es texto nuevo: es la plantilla FIRMADA `quote_decision_es`
+// (docs/WHATSAPP_TEMPLATES.md §1) con sus 4 variables sustituidas. Por eso no va subrayado.
+// Las plantillas de Meta no se tocan desde aquí: aquí sólo se ENSEÑA lo que ya se envía.
+// El total NO va con el formato español de la pantalla. La variable {{4}} la construye hoy
+// `sendQuote.service.ts:89` como `${Number(quote.total).toFixed(2)} ${quote.currency}` → «419.87 EUR»,
+// y esta hoja tiene que enseñar LO QUE DE VERDAD SE ENVÍA, no lo que quedaría mejor. Que no cuadre
+// con el «419,87 €» del documento de al lado es el hallazgo, no un fallo del prototipo: unificarlo
+// es SCRUM-931. El día que se unifique, aquí se cambia esta línea y ya.
+const totalDeLaPlantilla=(n)=>`${Number(n).toFixed(2)} EUR`;
+function textoWa(c,t){
+  return `Hola ${esc(c.nombre)} 👋\n${esc(EMPRESA.nombre)} te ha preparado un presupuesto:\nPresupuesto ${S.generado}\nTotal: ${totalDeLaPlantilla(t.total)}\nTócalo para verlo y responder 👇<span class="pie-msg">Enviado con Yaqu</span><span class="cta-msg">Ver presupuesto</span>`;
+}
+function mEnvio(){
+  const c=S.cliente; const t=totales(); const ev=S.envio;
+  modal(P('Enviar el presupuesto'),
+    `<p class="nota" style="margin:0 0 10px">${P('Presupuesto '+S.generado+' guardado. Elige cómo se lo mandas.')}</p>
+     <span class="label">${P('Así le llega a '+esc(c.nombre)+' por WhatsApp')}</span>
+     <div class="wa-msg" style="margin-top:8px">${textoWa(c,t)}</div>
+     <p class="nota">Plantilla firmada <b>quote_decision_es</b>; cambiarla es cosa de Meta.</p>
+     <button class="btn btn-primary btn-wa" data-accion="enviar-wa" style="margin-top:14px" ${ev&&ev.canal==='whatsapp'?'disabled':''}>📲 ${ev&&ev.canal==='whatsapp'?'Ya enviado por WhatsApp':'Enviar por WhatsApp'}</button>
+     <div style="margin-top:14px"><span class="label">${P('O mándaselo de otra forma')}</span>
+       <div class="wa-canales">
+         <button class="btn btn-secondary" data-accion="enviar-email">✉ Enviar por email</button>
+         <button class="btn btn-secondary" data-accion="descargar-pdf">⬇ Descargar PDF</button>
+         <button class="btn btn-secondary" data-accion="copiar-enlace">🔗 ${P('Copiar enlace')}</button>
+         <button class="btn btn-ghost" data-cerrar>${P('Lo envío luego')}</button>
+       </div></div>`,
+    '','hoja');
+}
+
+// ───────────── La vista previa viva ─────────────
+function renderPrevia(){ const html=documento(); $('#previa').innerHTML=`<div class="marco"><div class="marco-t"><span>${P('Así lo verá el cliente')}</span><span>${P('Se actualiza mientras escribes')}</span></div>${html}</div>`; }
+function documento(){
+  const t=totales(); const c=S.cliente; const o=S.op; const zona=S.zona;
+  const nombreCli=c?(o.razon==='razon'?c.nombre:c.nombre):'';
+  const filas=S.lineas.filter(valida);
+  return `<article class="doc">
+    <header class="doc-cab"><div class="emp"><div class="logo" aria-hidden="true">FE</div><b>${EMPRESA.nombre}</b><div>${EMPRESA.razon} · NIF ${EMPRESA.nif}</div><div>${EMPRESA.dir}</div><div>WhatsApp ${EMPRESA.wa}</div></div>
+      <div class="meta"><div class="tipo">${esPres()?'PRESUPUESTO':'JUSTIFICANTE'}</div><div>${S.generado?'Nº '+S.generado:P('Nº al generar')}</div><div>Fecha ${fecha(new Date().toISOString())}</div>${esPres()?`<div>Válido hasta ${fecha(S.validez)}</div>`:''}</div></header>
+    <section class="para zona ${zona==='cliente'?'activa':''}"><div><div class="label">Cliente</div>
+      ${c?`<b>${esc(nombreCli)}</b>${o.datos.nif&&c.nif?`<div>NIF ${esc(c.nif)}</div>`:''}${o.datos.tel?`<div>Tel: ${esc(c.tel)}</div>`:''}${o.datos.email&&c.email?`<div>${esc(c.email)}</div>`:''}`
+        :`<div style="margin-top:6px"><span class="hueco" style="width:160px"></span></div><div style="margin-top:6px"><span class="hueco" style="width:110px"></span></div>`}</div>
+      ${esPres()&&c&&o.dir!=='no'?`<div style="text-align:right"><div class="label">Obra</div><div>${esc(o.dir==='fact'?c.dir:(o.dirTxt||'—'))}</div></div>`:''}</section>
+    <section class="zona ${zona==='lineas'?'activa':''}"><table><thead><tr><th>Concepto</th><th>Cant.</th><th>Precio</th><th>Total</th></tr></thead><tbody>
+      ${filas.length?filas.map((l)=>{const idx=S.lineas.indexOf(l);return `<tr class="${idx===S.nueva?'nueva':''}"><td>${esc(l.c)}${l.desc&&o.incDesc?`<span class="d">${esc(l.desc)}</span>`:''}${l.sup?'<span class="d">Suplido</span>':''}</td><td>${num(l.q)}</td><td>${eur(l.p)}</td><td>${eur(baseL(l))}</td></tr>`;}).join('')
+        :`<tr class="vacio"><td colspan="4">${P('Aquí aparecerán los conceptos que añadas.')}</td></tr>`}
+    </tbody></table>
+    <div class="tot">${t.dto?`<div><span>Suma de líneas</span><span>${eur(t.suma)}</span></div><div><span>Descuento global</span><span>−${eur(t.dto)}</span></div>`:''}
+      <div><span>Base imponible</span><span>${eur(t.base)}</span></div><div><span>${t.sinIva?'IVA no incluido':'IVA'}</span><span>${t.sinIva?'—':eur(t.iva)}</span></div>
+      <div class="grande"><span>${esPres()?'Total presupuesto':'Total'}</span><span>${eur(t.total)}</span></div></div></section>
+    ${esPres()?`<section class="condic zona ${zona==='condiciones'?'activa':''}">
+      <div><b>Condiciones de pago:</b> ${S.cond==='CUSTOM'?S.tramos.map((tr)=>esc(tr.e||'Tramo')+' '+tr.p+'%').join(' · '):esc(COND_DOC[S.cond]||COND[S.cond])}</div>
+      <div><b>Formas de pago:</b> ${Object.keys(PAGO).filter((m)=>S.pagos[m]).map((m)=>PAGO[m].replace(/^\S+\s/,'')).join(', ')||'—'}</div>
+      <div>${P('Presupuesto válido hasta el '+fecha(S.validez)+'.')}</div></section>`:''}
+  </article>`;
+}
+function renderBarra(){
+  const t=totales(); const i=S.abierto; const n=PASOS().length; const ultimo=i===n;
+  $('#barraAbajo').innerHTML=`<div class="tot"><span class="label">${P('Paso '+i+' de '+n)}</span><span class="cifra">${eur(t.total)}</span></div>
+    ${ultimo?'':`<button class="btn btn-secondary" data-accion="ver-doc">${P('Ver documento')}</button>`}
+    ${ultimo?(esPres()?botonWa():`<button class="btn btn-primary" data-accion="generar" ${listo()?'':'disabled'}>Emitir</button>`):`<button class="btn btn-primary" data-abrir="${i+1}" ${puede(i)?'':'disabled'}>${P('Continuar')}</button>`}`;
+}
+function refrescar(){ // mientras se escribe: previa, totales y barra, sin repintar el editor
+  renderPrevia(); renderBarra(); const t=totales(); const st=$('#subtotal'); if(st)st.textContent=eur(t.total);
+  const s=$('#sumaTramos'); if(s){const n=sumaTramos();s.style.color=n===100?'var(--brand-tint-ink)':'var(--danger)';s.textContent=n===100?`Suman ${n} % ✓`:`Suman ${n} % — deben sumar 100 %`;}
+  const pie=document.querySelector('.paso.abierto .pie-paso'); if(pie){const i=S.abierto; const b=pie.querySelector('[data-abrir="'+(i+1)+'"]'); if(b)b.disabled=!puede(i); const g=pie.querySelector('[data-accion="generar"],[data-accion="abrir-envio"]'); if(g&&!(S.envio&&S.envio.canal==='whatsapp'))g.disabled=!listo(); const f=pie.querySelector('.falta'); if(f&&puede(i))f.remove();}
+  guardado();
+}
+let tG=null; function guardado(){ if(!esPres())return; clearTimeout(tG); tG=setTimeout(()=>{const g=$('#guardado'); if(g){g.textContent='✓ Guardado automáticamente'; setTimeout(()=>{g.textContent='';},1500);}},700); }
+function toast(m){const d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),2400);}
+function abrirPaso(i){ S.abierto=Math.max(1,Math.min(PASOS().length,i)); S.cambiando=null; S.zona=PASOS()[S.abierto-1].k; render();
+  const k=PASOS()[S.abierto-1].k; const el=k==='cliente'?$('#busca'):k==='lineas'?$(`#c-${S.lineas.findIndex((l)=>!l.c.trim())>=0?S.lineas.findIndex((l)=>!l.c.trim()):0}`):null; if(el&&!movil())el.focus();
+  if(movil())window.scrollTo({top:0}); }
+const nuevaLinea=(c='',q=1,p='',t)=>{S.lineas.push({c,q,p,t:t??S.op.ivaDef,dto:0,sup:false,desc:''}); S.nueva=S.lineas.length-1;};
+const quitarVacias=()=>{S.lineas=S.lineas.filter((l)=>l.c.trim()||l.p!=='');};
+
+// ───────────── Modales ─────────────
+function modal(titulo,cuerpo,pie,clase=''){
+  $('#capa').innerHTML=`<div class="overlay" data-fuera><div class="modal ${clase}" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="modal-cab"><h3 id="mt">${titulo}</h3><button class="cerrar" data-cerrar aria-label="Cerrar">×</button></div>${cuerpo}${pie?`<div class="pie">${pie}</div>`:''}</div></div>`;
+  const m=$('#capa .modal'); (m.querySelector('input,select,textarea,.pie .btn')||m.querySelector('.cerrar')).focus();
+}
+const cerrar=()=>{$('#capa').innerHTML='';};
+function mMas(){ modal(P('Más acciones'),`<div style="display:flex;flex-direction:column;gap:8px">
+    <button class="btn btn-secondary" data-accion="guardar-plantilla">💾 Guardar como plantilla</button>
+    <button class="btn btn-secondary" data-accion="limpiar">Limpiar formulario</button></div>`,''); }
+function mMenuLinea(i){ const n=S.lineas.length; modal(`${P('Línea')} ${i+1}`,`<div style="display:flex;flex-direction:column;gap:8px">
+    <button class="btn btn-secondary" data-ajustes="${i}">${P('Ajustes (IVA, descuento, descripción…)')}</button>
+    <button class="btn btn-secondary" data-accion="subir" data-i="${i}" ${i===0?'disabled':''}>↑  Subir</button>
+    <button class="btn btn-secondary" data-accion="bajar" data-i="${i}" ${i===n-1?'disabled':''}>↓  Bajar</button>
+    <button class="btn btn-secondary" data-accion="eliminar" data-i="${i}" style="color:var(--danger)">🗑️  Eliminar línea</button></div>`,''); }
+function mAjustes(i){ const l=S.lineas[i];
+  modal('Ajustes de la línea',`<p style="margin-top:0;color:var(--ink);font-weight:600">${esc(l.c)||'Línea sin concepto todavía'}</p>
+    ${esPres()?`<div class="grupo"><label class="check"><input type="checkbox" id="a-sup" ${l.sup?'checked':''}> Suplido (pagado por cuenta del cliente)</label><p class="nota">Lo que has pagado por cuenta del cliente y le repercutes tal cual: una tasa, un visado, una licencia. No lleva IVA ni margen. El material que compras tú no es un suplido: ese se vende con su IVA.</p></div>`:''}
+    <div class="grupo" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><label><span class="label">IVA %</span><select class="select" id="a-iva" style="margin-top:6px">${[21,10,4,0].map((v)=>`<option ${l.t===v?'selected':''}>${v}</option>`).join('')}</select></label>
+      ${esPres()?`<label><span class="label">Dto. %</span><input class="input" id="a-dto" type="number" min="0" max="100" value="${l.dto||''}" style="margin-top:6px"></label><label><span class="label">Coste</span><input class="input" id="a-coste" type="number" min="0" step="0.01" value="${l.coste||''}" style="margin-top:6px"></label>`:''}</div>
+    ${esPres()?`<div class="grupo"><label><span class="label">${P('Descripción')}</span><textarea class="textarea" id="a-desc" rows="2" style="margin-top:6px">${esc(l.desc)}</textarea></label><p class="nota">${P('Sale bajo el concepto si en «Ajustes del documento» marcas «Incluir descripción en el PDF».')}</p></div>`:''}`,
+    `<button class="btn btn-primary" data-accion="ajustes-ok" data-i="${i}">Listo</button>`); }
+function okAjustes(i){ const m=$('#capa .modal'); const l=S.lineas[i]; l.t=Number(m.querySelector('#a-iva').value);
+  if(esPres()){l.sup=m.querySelector('#a-sup').checked;l.dto=Number(m.querySelector('#a-dto').value)||0;l.coste=m.querySelector('#a-coste').value;l.desc=m.querySelector('#a-desc').value;}
+  cerrar(); render(); guardado(); }
+function mPlantillas(){ modal('📋 Usar plantilla',`<p style="margin-top:0">Elige una plantilla para cargar sus líneas en el presupuesto actual.</p>
+  ${PLANTILLAS.map((p,i)=>`<div class="grupo" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><b style="color:var(--ink)">${esc(p.nombre)}</b><br><small style="color:var(--muted)">${p.lineas.length} línea(s) · EUR</small></div><button class="btn btn-secondary" data-plantilla="${i}">Usar →</button></div>`).join('')}`,''); }
+function mIA(fase){
+  if(fase==='sug'){ modal('✨ Sugerir líneas con IA',`<b style="color:var(--ink)">Sugerencias (selecciona las que quieras añadir):</b>
+    ${IA.map((s,i)=>`<label class="sug"><input type="checkbox" data-sug="${i}" checked><span><b style="color:var(--ink)">${esc(s.c)}</b><br>Cantidad: ${s.q} · Precio: ${eur(s.p)} · IVA: ${s.t}%${s.sup?`<br><span class="aviso-ia">Esto lo hemos puesto nosotros: ${s.sup.map((x)=>x==='qty'?'cantidad':'precio').join(' y ')}. Revísalo antes de enviar.</span>`:''}</span></label>`).join('')}`,
+    `<button class="btn btn-primary" data-accion="ia-anadir">Añadir líneas seleccionadas</button>`); return; }
+  modal('✨ Sugerir líneas con IA',`<p style="margin-top:0">${P('Descríbelo con tus propias palabras y te proponemos las líneas usando tu catálogo de productos.')}</p>
+    <label><span class="label">Descripción del trabajo</span><textarea class="textarea" id="ia-txt" rows="5" style="margin-top:6px" placeholder="Ej: Reparar avería en tubería de cocina, cambiar grifo mezclador y revisar sifón. También verificar el calentador de agua."></textarea></label>`,
+    `<button class="btn btn-secondary" data-accion="dictar">🎤 Dictar</button><button class="btn btn-primary" data-accion="ia-generar">✨ Generar sugerencias</button>`); }
+function mNuevoCliente(){ modal('+ Nuevo cliente',`<p class="nota" style="margin-top:0">${P('El mismo formulario de Clientes, sin salir del documento.')}</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><label><span class="label">Nombre</span><input class="input" id="nc-nombre" style="margin-top:6px"></label><label><span class="label">Teléfono</span><input class="input" id="nc-tel" inputmode="tel" style="margin-top:6px"></label>
+  <label><span class="label">Email</span><input class="input" id="nc-email" type="email" style="margin-top:6px"></label><label><span class="label">NIF/CIF (opcional)</span><input class="input" id="nc-nif" style="margin-top:6px"></label></div>`,
+  `<button class="btn btn-secondary" data-cerrar>Cancelar</button><button class="btn btn-primary" data-accion="nc-ok">Guardar</button>`); }
+function mDocumento(){ modal(P('Así lo verá el cliente'),documento(),`<button class="btn btn-primary" data-cerrar>${P('Volver al editor')}</button>`,'ancho'); }
+function generar(){ if(!S.generado) S.generado=esPres()?'#128':'J-2026-0042'; }
+
+// ───────────── Eventos ─────────────
+document.addEventListener('click',(e)=>{
+  const b=e.target.closest('button,[data-fuera]'); if(!b)return;
+  if(b.matches('[data-fuera]')){ if(e.target===b)cerrar(); return; }
+  const d=b.dataset;
+  if(d.vista){document.querySelectorAll('[data-vista]').forEach((x)=>x.setAttribute('aria-pressed',x===b));$('#vista-proto').hidden=d.vista!=='proto';$('#vista-inv').hidden=d.vista!=='inv';if(d.vista==='inv')inventario();return;}
+  if(d.tipo){const cli=S.cliente,lin=S.lineas;S=inicial(d.tipo);S.cliente=cli;S.lineas=lin;document.querySelectorAll('[data-tipo]').forEach((x)=>x.setAttribute('aria-pressed',x===b));render();return;}
+  if(b.hasAttribute('data-cerrar')){cerrar();return;}
+  if(d.abrir){if(Number(d.abrir)>S.abierto&&!puede(S.abierto))return;abrirPaso(Number(d.abrir));return;}
+  if(d.cliente){S.cliente=CLIENTES.find((c)=>c.id==d.cliente);S.busca='';S.zona='cliente';guardado();abrirPaso(2);return;}
+  if(d.frec){const f=FRECUENTES[d.frec];const i=S.auto;Object.assign(S.lineas[i],{c:f[0],p:f[1]});S.nueva=i;S.auto=null;if(i===S.lineas.length-1)nuevaLinea();render();$(`#q-${i}`).focus();return;}
+  if(d.cat){const p=CATALOGO[d.cat];const i=S.auto;Object.assign(S.lineas[i],{c:p[0],p:p[2],t:p[3],desc:S.lineas[i].desc||p[1]});S.nueva=i;S.auto=null;if(i===S.lineas.length-1)nuevaLinea();render();$(`#q-${i}`).focus();return;}
+  if(d.menu){mMenuLinea(Number(d.menu));return;}
+  if(d.ajustes){mAjustes(Number(d.ajustes));return;}
+  if(d.rev){S.lineas[d.rev].rev=true;render();return;}
+  if(d.plantilla){const p=PLANTILLAS[d.plantilla];quitarVacias();p.lineas.forEach(([c,q,pr,t])=>nuevaLinea(c,q,pr,t));cerrar();render();toast(`Plantilla "${p.nombre}" cargada — ${p.lineas.length} líneas añadidas.`);guardado();return;}
+  if(d.cambiar){S.cambiando=S.cambiando===d.cambiar?null:d.cambiar;S.zona='condiciones';render();return;}
+  if(d.cond!==undefined){S.cond=d.cond;render();guardado();return;}
+  if(d.dias){S.validez=hoyMas(Number(d.dias));render();return;}
+  if(d.quitarTramo){S.tramos.splice(Number(d.quitarTramo),1);render();return;}
+  const i=Number(d.i);
+  switch(d.accion){
+    case 'mas':mMas();break;
+    case 'nuevo-cliente':mNuevoCliente();break;
+    case 'nc-ok':{const c={id:Date.now(),nombre:$('#nc-nombre').value.trim()||'Cliente nuevo',tel:$('#nc-tel').value,email:$('#nc-email').value,nif:$('#nc-nif').value,dir:''};CLIENTES.unshift(c);S.cliente=c;cerrar();abrirPaso(2);break;}
+    case 'add-linea':nuevaLinea();render();$(`#c-${S.lineas.length-1}`).focus();break;
+    case 'usar-plantilla':mPlantillas();break;
+    case 'ia':mIA();break;
+    case 'dictar':toast('Dictado: sólo con la voz activada en este negocio y navegador compatible.');break;
+    case 'ia-generar':{const tx=$('#ia-txt').value.trim();if(!tx){toast('Escribe una descripción del trabajo.');break;}b.textContent='⏳ Pensando…';b.disabled=true;setTimeout(()=>mIA('sug'),800);break;}
+    case 'ia-anadir':{const sel=[...document.querySelectorAll('[data-sug]')].filter((x)=>x.checked).map((x)=>IA[x.dataset.sug]);if(!sel.length){toast('Selecciona al menos una línea.');break;}
+      quitarVacias();sel.forEach((s)=>{nuevaLinea(s.c,s.q,s.p,s.t);if(s.sup)S.lineas[S.lineas.length-1].sup2=s.sup;});cerrar();render();guardado();break;}
+    case 'ver-dto':S.verDto=true;render();$('#dtoGlobal').focus();break;
+    case 'aplicar-dto':S.lineas.forEach((l)=>{if(valida(l)&&!l.dto)l.dto=S.cliente.dto;});render();break;
+    case 'aplicar-pagos':Object.keys(PAGO).forEach((m)=>{S.pagos[m]=S.cliente.pagos.includes(m);});render();break;
+    case 'add-tramo':S.tramos.push({e:'',p:0});render();break;
+    case 'subir':[S.lineas[i-1],S.lineas[i]]=[S.lineas[i],S.lineas[i-1]];cerrar();render();break;
+    case 'bajar':[S.lineas[i+1],S.lineas[i]]=[S.lineas[i],S.lineas[i+1]];cerrar();render();break;
+    case 'eliminar':S.lineas.splice(i,1);if(!S.lineas.length)nuevaLinea();cerrar();render();break;
+    case 'ajustes-ok':okAjustes(i);break;
+    case 'guardar-plantilla':{const n=S.lineas.filter(valida).length;if(!n){cerrar();toast('Añade al menos una línea con concepto y precio antes de guardar la plantilla.');break;}
+      modal('💾 Guardar plantilla',`<p style="margin-top:0">Dale un nombre a esta plantilla para reutilizarla en futuros presupuestos.</p><label><span class="label">Nombre de la plantilla</span><input class="input" id="nomPl" placeholder="Ej. Revisión caldera estándar" style="margin-top:6px"></label><p class="nota">${n} línea(s) se guardarán. ${P('Con su descripción, descuento y suplido.')}</p>`,`<button class="btn btn-primary" data-accion="pl-ok">Guardar plantilla</button>`);break;}
+    case 'pl-ok':{const n=$('#nomPl').value.trim();if(!n){toast('Escribe un nombre para la plantilla.');break;}cerrar();toast(`Plantilla "${n}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);break;}
+    case 'limpiar':modal(P('¿Vaciar este documento?'),`<p style="margin-top:0">${P('Se quitan el cliente, las líneas y los cambios de este documento. Tus plantillas y tus opciones de siempre no se tocan.')}</p>`,`<button class="btn btn-secondary" data-cerrar>${P('No, seguir')}</button><button class="btn btn-secondary" style="color:var(--danger)" data-accion="limpiar-ok">Limpiar formulario</button>`);break;
+    case 'limpiar-ok':S=inicial(S.tipo);cerrar();render();break;
+    case 'ver-doc':mDocumento();break;
+    case 'generar':if(!listo())break;generar();render();toast('Justificante emitido');break;
+    // SCRUM-915 v3 (ajuste) · el último paso GUARDA y abre la hoja; dentro de la hoja se elige canal.
+    // Guardar antes de abrirla no es un paso de más: es lo que hace que el mensaje pueda enseñar el
+    // número de verdad («Presupuesto #128») en vez de prometer uno que aún no existe.
+    case 'abrir-envio':if(!listo())break;generar();if(!S.envio)S.envio={canal:'guardado'};render();mEnvio();break;
+    case 'enviar-wa':if(!listo())break;generar();S.envio={canal:'whatsapp'};cerrar();render();toast('Presupuesto enviado por WhatsApp.');break;
+    case 'enviar-email':if(!listo())break;if(!S.cliente.email){toast('Este cliente no tiene email; añádelo en su ficha.');break;}generar();S.envio={canal:'email'};cerrar();render();toast('Presupuesto enviado por email.');break;
+    case 'copiar-enlace':if(!listo())break;generar();cerrar();render();toast('Enlace copiado: yaqu.app/pay/quote/…');break;
+    case 'descargar-pdf':if(!listo())break;generar();cerrar();render();toast('presupuesto-'+S.generado.replace('#','')+'.pdf');break;
+  }
+});
+document.addEventListener('input',(e)=>{
+  const el=e.target;
+  if(el.id==='busca'){S.busca=el.value;renderEditor();return;}
+  if(el.dataset.k){const l=S.lineas[el.dataset.i];const k=el.dataset.k;S.zona='lineas';
+    if(k==='c'){l.c=el.value;S.auto=Number(el.dataset.i);renderEditor();refrescar();return;}
+    l[k]=el.value===''?'':Number(el.value);S.nueva=Number(el.dataset.i);refrescar();return;}
+  if(el.id==='dtoGlobal'){S.dtoGlobal=el.value===''?null:Number(el.value);refrescar();return;}
+  if(el.dataset.te!==undefined){S.tramos[el.dataset.te].e=el.value;renderPrevia();return;}
+  if(el.dataset.tp!==undefined){S.tramos[el.dataset.tp].p=Number(el.value)||0;refrescar();return;}
+  if(el.id==='validez'){S.validez=el.value;renderPrevia();return;}
+  if(el.dataset.aj==='dirTxt'){S.op.dirTxt=el.value;renderPrevia();return;}
+});
+document.addEventListener('change',(e)=>{
+  const el=e.target;
+  if(el.dataset.pago){S.pagos[el.dataset.pago]=el.checked;renderPrevia();guardado();return;}
+  if(el.dataset.aj&&el.dataset.aj!=='dirTxt'){const k=el.dataset.aj;
+    if(k==='ivaDef')S.op.ivaDef=Number(el.value); else if(k==='ivaModo')S.op.ivaModo=el.value; else if(k==='dir')S.op.dir=el.value;
+    else if(k==='incDesc')S.op.incDesc=el.checked; else if(k==='razon')S.op.razon=el.value; else if(k.startsWith('dato:'))S.op.datos[k.slice(5)]=el.checked;
+    S.zona=esPres()?'condiciones':'cliente'; renderEditor(); renderPrevia(); renderBarra(); guardado(); return;}
+  if(el.id==='resaltar'){document.body.classList.toggle('sin-resaltar',!el.checked);return;}
+});
+document.addEventListener('focusin',(e)=>{const el=e.target; if(el.dataset&&el.dataset.k==='c'&&S.auto!==Number(el.dataset.i)){S.auto=Number(el.dataset.i);S.zona='lineas';renderEditor();renderPrevia();}});
+document.addEventListener('focusout',(e)=>{ if(e.target.dataset&&e.target.dataset.k==='c'){setTimeout(()=>{const a=document.activeElement; if(!a||!(a.dataset.frec||a.dataset.cat||a.dataset.k==='c')){if(S.auto!==null){S.auto=null;renderEditor();}}},150);} });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ if($('#capa').innerHTML)cerrar(); else if(S.auto!==null){S.auto=null;renderEditor();} } });
+let eraMovil=movil(); addEventListener('resize',()=>{if(movil()!==eraMovil){eraMovil=movil();render();}});
+
+// ───────────── Inventario antes → después (v2) ─────────────
+const INV=[
+ ['A · Cabecera'],
+ ['título «Crear presupuesto» / tituloModal()','«Nuevo presupuesto» / «Nuevo justificante» arriba del editor (textos que ya usa la app en su cabecera)','—'],
+ ['subtítulo «Genera un presupuesto… link de pago por WhatsApp.»','Se retira: cada paso lleva su frase guía','Guías propuestas'],
+ ['datos de empresa','Cabecera del DOCUMENTO de la derecha, como en el PDF','—'],
+ ['aviso global','Avisos donde ocurren + toasts','—'],
+ ['B · 1. Cliente'],
+ ['buscador «Buscar por nombre, teléfono, email o referencia…»','Paso 1 «Cliente», abierto al entrar; filtra en local','—'],
+ ['select Cliente + «+ Nuevo cliente»','Lista de 4 coincidencias como botones grandes + «+ Nuevo cliente» (alta sin salir)','—'],
+ ['«Sin resultados para tu búsqueda»','Igual, bajo el buscador','—'],
+ ['Dirección de la obra + campo','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio; si se muestra, sale en el documento junto al cliente','Decisión v3: a la vista'],
+ ['C · 2. Líneas'],
+ ['IVA por defecto (%)','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio','Decisión v3: a la vista'],
+ ['IVA del presupuesto','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio; resumen «IVA sumado»; el documento lo refleja','Arregla: hoy sin oyente'],
+ ['«✨ Sugerir con IA»','Acción SECUNDARIA junto a «+ Añadir línea»; abre el mismo modal','Frase del modal propuesta'],
+ ['🎤 Dictar','Dentro del modal de IA, con su condición de hoy','—'],
+ ['sugerencias + «Esto lo hemos puesto nosotros…»','Igual en el modal; el aviso se conserva en la línea hasta «Revisado»','Arregla: hoy se pierde'],
+ ['«📋 Usar plantilla» + modal + fichas','«📋 Usar plantilla» secundaria junto a «+ Añadir línea» (modal igual). Las fichas de plantilla se quitan de la vista: menos a la vez','Decisión v2'],
+ ['«Tus conceptos más usados»','Dentro del desplegable del concepto al enfocar una línea vacía','—'],
+ ['3 líneas en blanco','UNA línea lista para escribir','—'],
+ ['«+ Añadir línea»','Igual','—'],
+ ['C.1 · Cada línea'],
+ ['Concepto con autocompletado','Igual; «Sin resultados»','—'],
+ ['Cantidad · Precio · Total por línea','Cantidad y Precio en la línea; el total de cada línea se ve en el documento','—'],
+ ['ficha «IVA 21 % · Dto.» / «Suplido»','Sólo aparece si la línea NO va con lo de siempre (otro IVA, descuento, suplido)','Menos a la vista'],
+ ['asa ⠿ (sólo ratón)','Se retira; «↑ Subir / ↓ Bajar» en el menú ⋯','—'],
+ ['menú ⋯ Subir/Bajar/Eliminar','Menú ⋯: Ajustes, Subir, Bajar, Eliminar línea','—'],
+ ['C.2 · Ajustes de la línea'],
+ ['Suplido · IVA % · Coste · Dto. % · Listo','Igual','—'],
+ ['«[PENDIENTE microcopy oficial] descripción»','«Descripción» + nota','MARCADOR → propuesto'],
+ ['D · 3. Condiciones'],
+ ['Condiciones de pago (5)','Paso «Condiciones»: YA ELEGIDA por defecto, una fila «Condiciones de pago · Pago 100% al aceptar · Cambiar»','Decisión v2'],
+ ['Tramos de cobro','Dentro de «Cambiar» con «Plan personalizado»','—'],
+ ['Válido hasta + 7/14/30 días + nota','Fila «Válido hasta · fecha · Cambiar»; también en el documento','Arregla el «30 días» fijo de hoy'],
+ ['E · 4. Envío'],
+ ['Formas de pago + notas IBAN y 0,9 %','Fila «Formas de pago que verá el cliente · … · Cambiar»','—'],
+ ['tira de pagos pactados + «[PENDIENTE…]»','Dentro de «Cambiar»: «Aplicar»','MARCADOR → propuesto'],
+ ['Datos del cliente en el documento + Razón social / Nombre comercial','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio','Decisión v3: a la vista'],
+ ['Incluir descripción en el PDF','Bloque plegable «▸ Ajustes del documento · … · Cambiar», CERRADO por defecto, dentro de Condiciones (justificante: dentro de Revisar); se abre en el sitio','Decisión v3: a la vista'],
+ ['F · Totales y descuento'],
+ ['Base, IVA, Suma, Descuento','En el documento de la derecha; en el paso Conceptos, el TOTAL','—'],
+ ['«+ Añadir descuento» → Descuento global','Secundaria junto a «+ Añadir línea»','—'],
+ ['tira del descuento pactado «[PENDIENTE…]» ×2','«Este cliente tiene pactado un descuento del N %» + «Aplicar a las líneas», en el paso Conceptos','2 MARCADORES → propuestos'],
+ ['G · KPI del total','Paso Conceptos + documento (escritorio); barra inferior (móvil)','—'],
+ ['H · Acciones'],
+ ['«Generar presupuesto» / «Emitir justificante»','Presupuesto: último paso «Revisar y enviar», y su botón «Guardar y enviar» guarda y abre la HOJA DE ENVÍO. Justificante: «Emitir justificante» (sin hoja: no se envía a nadie)','Decisión v3 + ajuste: WhatsApp es lo primero, dentro de la hoja'],
+ ['Generar dos veces = dos presupuestos','Se genera UNA vez: enviar, descargar, copiar el enlace o dejarlo guardado reutilizan el mismo presupuesto','Arregla el doble'],
+ ['«Limpiar formulario» (sin confirmar)','Menú «⋯» de arriba, con confirmación','Textos propuestos'],
+ ['«💾 Guardar como plantilla»','Menú «⋯» de arriba','Guardar Dto./suplido/descripción: cambio de servidor a decidir'],
+ ['«✓ Guardado automáticamente»','Junto al título','—'],
+ ['I · Tarjeta derecha'],
+ ['«Vista previa del documento» (no interactiva, incompleta, se «rompe»)','DOCUMENTO VIVO a la derecha, fijo, con aspecto de PDF: se construye mientras escribes y resalta la parte que editas. En móvil, «Ver documento»','Pedido por el fundador'],
+ ['«Estado del presupuesto»','Nº en el documento tras generar; «✓ Enviado por WhatsApp a … · pendiente de firma» en el propio paso','Texto propuesto'],
+ ['J · Modal tras generar (desaparece)'],
+ ['«Enviar por WhatsApp», «✉ Enviar por email», «⬇ Descargar PDF»','HOJA DE ENVÍO (hoja inferior a 390 px; la misma centrada a 1280 px, patrón de AB3): enseña el MENSAJE tal como le llega al cliente, «📲 Enviar por WhatsApp» en verde a todo el ancho y debajo email · PDF · copiar enlace · «Lo envío luego». La confirmación de estado sale luego en la pantalla, sin modal','Ajuste de la v3 tras PresupuestAPP'],
+ ['—','El texto del mensaje NO es nuevo: es la plantilla firmada quote_decision_es (docs/WHATSAPP_TEMPLATES.md §1) con sus 4 variables puestas. Por eso no va subrayado','Las plantillas de Meta son STOP'],
+ ['Documento suelto'],
+ ['mismo editor sin condiciones/envío/descuentos','3 pasos: Cliente → Conceptos → Revisar y emitir; en Revisar, la fila «Ajustes del documento» sólo con IVA por defecto','—'],
+ ['«Abrir PDF en nueva pestaña», «Seguir editando»','No hacen falta: el documento está siempre a la derecha y no hay modal que cerrar','Decisión v3'],
+ ['pendiente de aprobación (técnico por encima de su límite)','Al construir: «Enviar por WhatsApp» no envía; se guarda y se dice «📋 Enviado a un administrador para aprobación. Podrás mandarlo al cliente cuando lo apruebe.» (texto de hoy)','No simulado en el prototipo'],
+ ['Teclado'],
+ ['N dentro del editor abre la Cotización rápida','No debe abrirla','Defecto a corregir al construir'],
+];
+function inventario(){
+  $('#vista-inv').innerHTML=`<div class="inv"><h2>Inventario antes → después (v3)</h2>
+    <p>Todo lo que hace hoy el editor (leído del código; detalle en <code>inventario-hoy.md</code>) y dónde queda en la v3. Ninguna función se pierde.</p>
+    <table><thead><tr><th>Hoy</th><th>En la v3</th><th>Notas</th></tr></thead><tbody>
+    ${INV.map((r)=>r.length===1?`<tr class="grupo"><td colspan="3">${esc(r[0])}</td></tr>`:`<tr><td data-h="Hoy">${esc(r[0])}</td><td data-h="En la v3">${esc(r[1])}</td><td data-h="Notas">${esc(r[2])}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+render();
+})();
+</script>
+</body>
+</html>

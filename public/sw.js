@@ -41,7 +41,9 @@ const SHELL = [
   '/dashboard/js/modalHeader.js', // SCRUM-446
   '/dashboard/js/switchFormaJuridica.js', // SCRUM-574
   '/dashboard/js/filtroClientes.js', // SCRUM-581
+  '/dashboard/js/etiquetasDelDocumento.js', // SCRUM-595 (DOC-05)
   '/dashboard/js/jobNextAction.js',
+  '/dashboard/js/jobAgendar.js', // SCRUM-823: agendar, compartido por la lista y el detalle
   '/dashboard/js/semaforoFiscal.js',
   '/dashboard/js/homeView.js',
   '/dashboard/js/onboardingView.js',
@@ -64,24 +66,31 @@ const SHELL = [
   '/dashboard/js/quoteAtajosVencimiento.js',
   '/dashboard/js/tiposDeIva.js', // SCRUM-611 (DOC-16)
   '/dashboard/js/textoDelDocumento.js', // SCRUM-593 (DOC-03)
+  '/dashboard/js/cuerpoDelDocumentoSuelto.js', // SCRUM-600 (DOC-10)
+  '/dashboard/js/buscadorDeClientes.js', // SCRUM-713
   '/dashboard/js/quotesView.js',
   '/dashboard/js/quotesDetailView.js',
   '/dashboard/js/switchTipoArticulo.js', // SCRUM-609 (CAT-01)
+  '/dashboard/js/economiaVisible.js', // SCRUM-597 (DOC-07): quién ve coste y margen
+  '/dashboard/js/documentoAsignados.js', // SCRUM-597 (DOC-07): quién lleva el documento
   '/dashboard/js/margenCatalogo.js', // SCRUM-609
   '/dashboard/js/productsView.js',
   '/dashboard/js/providersView.js',
   '/dashboard/js/tipoDestinatarioPendiente.js', // SCRUM-615
-  // SCRUM-776: la fuente única de cómo se llama el documento; va ANTES de invoicesView y
-  // nuevaFacturaModal, igual que en el índice — los dos la leen al pintar.
+  // SCRUM-776: la fuente única de cómo se llama el documento; la leen al pintar `invoicesView` y
+  // `quotesView`, y en el índice va por delante de las dos (SCRUM-867).
   '/dashboard/js/rotulosDelDocumento.js',
   '/dashboard/js/invoicesView.js',
   '/dashboard/js/cobrosView.js', // SCRUM-285 (B4)
-  '/dashboard/js/nuevaFacturaModal.js', // SCRUM-289 (A0.3)
+  // SCRUM-867: aquí estaba `/dashboard/js/nuevaFacturaModal.js` (SCRUM-289 A0.3). Salió con el
+  // fichero, y tenía que salir a la vez: `addAll` es ATÓMICO y una ruta que ya no resuelve tumba
+  // el precache ENTERO, dejando sin cobertura la primera visita (SCRUM-274).
   // SCRUM-302 (C2): la LEY del patrón va antes que los registros que la consumen — el mismo
   // orden que en el shell HTML, porque el registro lee sus globales al cargarse.
   '/dashboard/js/patronDetalleAcciones.js',
   '/dashboard/js/invoiceActionsRegistry.js',
   '/dashboard/js/quoteActionsRegistry.js',
+  '/dashboard/js/avisoDocumentoSinEnviar.js', // SCRUM-885
   '/dashboard/js/invoiceDetailView.js',
   '/dashboard/js/jobActionsRegistry.js', // SCRUM-316 (G1)
   '/dashboard/js/jobDocsReparto.js', // SCRUM-319 (G4)
@@ -90,6 +99,8 @@ const SHELL = [
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
   '/dashboard/js/jobAsignados.js', // SCRUM-650 (T1): quien EJECUTA el trabajo
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
+  '/dashboard/js/albaranAccion.js', // SCRUM-831: el siguiente paso de un albarán, compartido
+  '/dashboard/js/invoiceAccion.js', // SCRUM-845: qué se puede hacer con una factura, compartido
   '/dashboard/js/albaranDetailView.js',
   '/dashboard/js/albaranDesdePresupuestoModal.js', // SCRUM-606 (ALB-01)
   '/dashboard/js/albaranesView.js', // SCRUM-301 (C1)
@@ -125,6 +136,8 @@ const SHELL = [
   '/dashboard/js/parteDetailView.js',
   '/dashboard/js/parteOficinaView.js',
   '/dashboard/js/resistenciaAlmacen.js',
+  // SCRUM-918 · lo usa `app.js` justo cuando NO hay red: si hubiera que ir a buscarlo, no estaría.
+  '/dashboard/js/arranqueSinCobertura.js',
   '/dashboard/js/app.js',
 ];
 

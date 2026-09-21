@@ -75,6 +75,18 @@ async function fetchInvoiceDetail(id) {
     setStatus('', '');
     const st = String(invoice.status || '').toLowerCase();
 
+    // SCRUM-885b · el documento del cobro no le ha llegado al cliente (ni email ni WhatsApp). FIJO, y
+    // no sólo el toast de «Confirmar Bizum»: 3 s no dan para leerlo. Misma regla y mismo componente
+    // que la fila de la factura en el trabajo (AB3: `.alert.warning`).
+    const avisoEnvio = avisoDocumentoSinEnviar(invoice.envioDocumento);
+    if (avisoEnvio.mostrar) {
+      const banda = document.createElement('div');
+      banda.className = 'alert warning invoice-detail__aviso';
+      banda.setAttribute('role', 'status');
+      banda.textContent = avisoEnvio.texto;
+      page.appendChild(banda);
+    }
+
     // V0-0: justificante de cobro (merchant ES real sin facturación activa) — el copy no dice "factura"
     const isReceipt = invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-');
     if (isReceipt) {
@@ -219,6 +231,48 @@ async function fetchInvoiceDetail(id) {
     dataSec.appendChild(dl);
     page.appendChild(dataSec);
 
+    // --- Sección: etiquetas (SCRUM-595, DOC-05) ---
+    // LA MISMA PIEZA que la ficha del presupuesto. Es el punto del ticket: el bloque aplica a los
+    // DOS documentos y con el mismo mecanismo.
+    //
+    // 🔴 Y NO ES EDITAR UNA FACTURA EMITIDA (regla 29). Escribe un campo de la FICHA que no sale
+    // del documento por ningún lado: la huella de VeriFactu es una lista cerrada de ocho campos y
+    // los parámetros del PDF son lista blanca — las dos cosas MEDIDAS en
+    // `tests/scrum595-etiquetas-del-documento.test.mjs`, no supuestas. Va DESPUÉS de «Datos» y
+    // ANTES de «Acciones» a propósito: es un dato de la ficha, no una acción sobre el documento.
+    if (window.montarEtiquetasDelDocumento) {
+      window.montarEtiquetasDelDocumento(page, invoice, `/admin/invoices/${invoice.id}/tags`);
+    }
+
+    // ── SCRUM-597 (DOC-07) · QUIÉN LLEVA ESTE DOCUMENTO ───────────────────────────────────
+    //
+    // Categorización, no permiso: dice de quién es el asunto. No cambia quién puede editar ni
+    // emitir, y no abre coste ni margen — un técnico asignado sigue sin verlos (P-DOC-3).
+    //
+    // 🔴 Y NO TOCA LA FACTURA (regla 29). El PATCH escribe SOLO en `invoice_assignees`: asignar
+    // una factura EMITIDA no puede cambiar su número, su total ni su PDF. Por eso esta sección
+    // puede existir en el detalle de una factura ya sellada sin ser una excepción a nada.
+    //
+    // El cableado vive en `documentoAsignados.js`, compartido con el presupuesto.
+    if (typeof cablearAsignadosDeDocumento === 'function') {
+      const asigSec = document.createElement('div');
+      asigSec.className = 'detail-section';
+      asigSec.dataset.seccion = 'asignados';
+      page.appendChild(asigSec);
+      cablearAsignadosDeDocumento(document, {
+        doc: 'invoice',
+        documentoId: invoice.id,
+        contenedor: asigSec,
+        asignados: invoice.asignados || [],
+        // Editar es admin-only, igual que el endpoint (`requireRole('admin')`). Al técnico se le
+        // pinta en solo lectura con los nombres que ya trae el detalle.
+        puedeEditar: window.appUserRole !== 'tecnico' && window.appUserRole !== 'operario',
+        pedir: apiRequest,
+        avisar: setStatus,
+        alGuardar: () => {},
+      });
+    }
+
     // --- Sección: acciones (SCRUM-283 · la LEY del patrón: 1 primaria + ≤2 secundarias + ⋮) ---
     // Se PINTA desde el registro declarativo (invoiceActionsRegistry.js), la MISMA fuente que el
     // guard verifica: nadie escribe la tabla dos veces. El estado decide el destino de cada acción;
@@ -233,35 +287,64 @@ async function fetchInvoiceDetail(id) {
     actions.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center';
     actionsSec.appendChild(actions);
 
-    // pending · paid · annulled · R1 (Parte L). `expired` es un pending vencido → se trata como pending.
-    const estadoFactura = invoice.type === 'R1' ? 'R1'
-      : (st === 'annulled' ? 'annulled' : (st === 'paid' ? 'paid' : 'pending'));
-    // SCRUM-402: el contexto de la ranura ya no es solo «¿hay cobro en vuelo?». La primaria de
-    // `pending` depende también de si Bizum manual PUEDE funcionar: con la bandera apagada, el
-    // ocupante `con-chargeId` no es una acción, es un callejón. Los dos predicados son
-    // COMPLEMENTARIOS por construcción —uno es la negación del otro— así que la ranura nunca queda
-    // vacía: siempre hay exactamente una primaria. Un estado sin primaria es el callejón sin
-    // salida que C2 vino a quitar.
-    const bizumDisponible = !!invoice.chargeId && window.appBizumManualEnabled === true;
-    const ctxAcciones = {
-      hayCharge: !!invoice.chargeId,
-      'bizum-disponible': bizumDisponible,
-      'bizum-no-disponible': !bizumDisponible,
-    };
-    const REGISTRO_ACC = (typeof window !== 'undefined' && window.INVOICE_ACTION_REGISTRY) || [];
+    // ── SCRUM-845 · EL ESTADO Y EL CONTEXTO YA NO SE CALCULAN AQUÍ ──────────────────────────
+    //
+    // Vivían en estas constantes LOCALES, dentro de esta función, así que la lista de Facturas no
+    // tenía forma de preguntar qué se puede hacer con una factura: no había ni un nombre que
+    // llamar. Es la cuarta vez de la misma familia (366 · 823 · 831) y la primera que encontró un
+    // instrumento —`npm run censo:decisiones-encerradas`, SCRUM-837— en vez de una persona.
+    //
+    // Se han mudado VERBATIM a `js/invoiceAccion.js` (`estadoDeFactura` · `ctxAccionesFactura`):
+    // mismo mapeo de los cuatro estados de la Parte L —`R1` manda porque es el `type`, columna
+    // distinta de `status`; `expired` es un `pending` vencido— y los mismos dos predicados
+    // COMPLEMENTARIOS de Bizum de SCRUM-402, que garantizan que la ranura primaria nunca queda
+    // vacía. Aquí no cambia ni un destino.
+    // Sólo `estadoFactura` se queda, y NO para las acciones: lo lee el selector de método de cobro
+    // (l.711). El contexto ya no se calcula aquí — lo pide `destinoDeAccionFactura` cuando le toca.
+    // Dejarlo declarado «por si acaso» habría dejado en pantalla dos contextos donde hay uno, que
+    // es el mismo aspecto que tenía el defecto de este ticket.
+    const estadoFactura = window.estadoDeFactura(invoice);
     // `MARCA_MICRO` se BORRA el 17-ago-2026: ya no tenía ningún consumidor, y desde hoy los ocho
     // rótulos de acción de esta pantalla están aprobados. Dejar la constante habría dejado a mano
     // un marcador que alguien vuelve a enchufar sin querer.
+
+  /**
+   * 🔴 SCRUM-707 · EL ESTADO QUE NO RECONOCEMOS SE DICE, NO SE CALLA.
+   *
+   * Con un estado que la tabla no contempla, `destinoEfectivo` devuelve ahora `'oculta'` para
+   * todas las acciones: cero botones y cero TypeError. Pero cero botones **en silencio** no se
+   * distingue de un documento que legítimamente no admite nada — una factura `annulled` ofrece
+   * dos y podría ofrecer cero mañana. Son dos hechos distintos.
+   *
+   * ⚠️ Sólo cuando el estado NO está en la tabla (`estadoReconocido`), nunca por tener la lista
+   * de acciones vacía: si se disparara por «cero botones», saldría en documentos correctos y en
+   * dos días nadie lo leería.
+   *
+   * ✅ Texto APROBADO por el fundador el 8-sep-2026 (regla 30), en
+   * `docs/microcopy/2026-09-08-SCRUM-707-estado-no-reconocido.md`. LITERAL.
+   */
+  function avisoEstadoNoReconocido(doc, registro, estado) {
+    if (typeof window.estadoReconocido !== 'function') return;
+    if (window.estadoReconocido(registro, estado)) return;
+    const p = doc.createElement('p');
+    p.className = 'detail-estado-desconocido';
+    p.dataset.estadoDesconocido = '1';
+    p.textContent = 'No reconocemos el estado de este documento — no podemos ofrecerte acciones aquí.';
+    return p;
+  }
+
     const cubosAcc = { primaria: [], secundaria: [], overflow: [] };
 
     // Coloca un botón YA CREADO (con su handler intacto) según su destino en este estado. `oculta` no
     // se pinta; `seccion-propia` (Anular) lo pinta su propio código. El rótulo lo pone cada botón al
     // crearse, con el marcador (regla 30); el censo lo capta y el guard de microcopy lo verifica.
+    //
+    // SCRUM-845: el destino se PREGUNTA a `destinoDeAccionFactura` (`invoiceAccion.js`) en vez de
+    // resolverse aquí con una copia local del registro. El criterio es idéntico —el mismo registro
+    // y el mismo `destinoEfectivo`—; lo que cambia es que ahora la respuesta tiene un nombre que la
+    // lista de Facturas también puede decir.
     function ubicarAccion(btn, id) {
-      const a = REGISTRO_ACC.find((x) => x.id === id);
-      const destino = a && typeof window.destinoEfectivo === 'function'
-        ? window.destinoEfectivo(a, estadoFactura, ctxAcciones)
-        : 'oculta';
+      const destino = window.destinoDeAccionFactura(id, invoice);
       if (destino === 'oculta' || destino === 'seccion-propia') return;
       btn.className = destino === 'primaria' ? 'btn-primary btn-sm'
         : (destino === 'secundaria' ? 'btn-secondary btn-sm' : 'btn-ghost btn-sm');
@@ -496,6 +579,10 @@ async function fetchInvoiceDetail(id) {
             throw new Error(msgs[d.error] || 'No se pudo confirmar. Inténtalo de nuevo.');
           }
           setStatus('success', '✓ Bizum confirmado: factura cobrada.');
+          // SCRUM-885 · el documento del cobro no ha salido ni por email ni por WhatsApp. Va en un
+          // toast porque la pantalla se repinta justo debajo y se llevaría el aviso de estado.
+          const avisoEnvio = avisoDocumentoSinEnviar(d.envioDocumento);
+          if (avisoEnvio.mostrar) showToast(avisoEnvio.texto, 'warn');
           if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: invoice.id });
         } catch (e) {
           setStatus('error', e.message || 'No se pudo confirmar el Bizum.');
@@ -669,6 +756,13 @@ async function fetchInvoiceDetail(id) {
     if (estadoFactura === 'pending' && typeof window.pintarSelectorMetodo === 'function') {
       selMetodo = window.pintarSelectorMetodo(actions, { id: 'metodo-cobro-factura' });
     }
+    // 🔴 Al fusionar SCRUM-707 con main, esta línea seguía pasando `REGISTRO_ACC`: una constante
+    // local que SCRUM-845 retiró al sacar el resolutor a `invoiceAccion.js`. Git lo fusionó SIN
+    // conflicto —las dos ramas tocaban líneas distintas— y la ficha no montaba: `ReferenceError`,
+    // que cazó `scrum600d`. Se pasa el registro por su nombre global, igual que hace
+    // `albaranDetailView.js` con el suyo. Un merge sin conflictos no es un merge correcto.
+    const avisoF = avisoEstadoNoReconocido(document, window.INVOICE_ACTION_REGISTRY || [], estadoFactura);
+    if (avisoF) actions.appendChild(avisoF);
     cubosAcc.primaria.forEach((b) => actions.appendChild(b));
     cubosAcc.secundaria.forEach((b) => actions.appendChild(b));
     if (cubosAcc.overflow.length) {

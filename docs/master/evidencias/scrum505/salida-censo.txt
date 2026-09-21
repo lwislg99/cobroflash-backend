@@ -1,0 +1,43 @@
+CONTROL POSITIVO — los tres de texto libre que el ticket nombra:
+   job.notes: VISTO ✅
+   quote.internalNotes: VISTO ✅
+   expense.notes: VISTO ✅
+
+MODELOS: 30
+CAMPOS String: 195
+  · de forma CERRADA (id, token, hash, url, estado…): 67
+  · 🔴 TEXTO LIBRE: 128   <- el tamano real
+
+DE ESOS 128 DE TEXTO LIBRE:
+   cubiertos hoy por CAMPOS_PERSONALES: 11
+   🔴 SIN CUBRIR: 117
+
+   ⚠️ Y «cubierto» aqui significa que el guard REDACTA esa columna entera al
+      anonimizar. NO significa que sepa mirar lo que hay dentro de los demas.
+
+LOS SIN CUBRIR, por modelo:
+   merchant: trade, defaultCurrency, invoiceSeriesPrefix, asesorPrograma, connectStatus, bizumPhone, subscriptionStatus, plan, country, timezone, iban, clabe, acquisitionSource, brandColor, brandAccentColor
+   quote: origin, docHeaderText, docFooterText, shippingAddress, shippingAddressMode, paymentTerms, createdVia, decisionChannel, decisionComment, rejectionReason, internalNotes, ivaModo
+   invoice: customerName, customerLegalName, customerEmail, customerPhone, shippingAddress, shippingAddressMode, qrData, paidVia, clientComment, stageLabel, vfEstado
+   albaran: customerName, customerLegalName, customerEmail, customerPhone, lugarEntrega, modoValoracion, firmadoPorNombre, firmadoPorCalidad, notas, docHeaderText, claveIdempotencia
+   customer: contactKind, mobile, tipoDestinatario, billingPeriodicity, billingAddress, billingCity, billingProvince, billingCountry, internalRef
+   parteTrabajo: obra, referencia, entrada, salida, notas, firmadoPorNombre, firmadoPorCalidad, firmadoTecnicoNombre
+   expense: concept, category, notes, receiptData, providerInvoiceNumber
+   provider: name, phone, email, legalName, notes
+   job: notes, titulo, direccion, tipoOperacion, tipoIntervencion
+   product: name, nameSearch, description, itemKind
+   charge: concept, method, reference
+   quoteRequest: description, zone, source
+   whatsAppMessage: templateName, error, relatedType
+   legalAcceptance: version, ip, userAgent
+   auditLog: action, entityType, ip
+   attachment: entityType, url, mime
+   botSession: phone, state
+   quoteTemplate: name, paymentTerms
+   teamMember: name, email
+   customerEvent: title, detail
+   emailMessage: error, relatedType
+   authSession: token
+   reconciliation: bankRef
+   maintenancePlan: title
+   gatewayEvent: lastError

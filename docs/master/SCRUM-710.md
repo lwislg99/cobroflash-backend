@@ -272,7 +272,7 @@ un elemento por línea, no entra.
 
 ---
 
-## 1 · PASO 0 (regla 39)
+## 1 · PASO 0 (cita de regla RETIRADA — SCRUM-637)
 
 `main` se movió tres veces mientras se trabajaba. Remedido sobre el árbol ya mezclado:
 **835 ficheros leídos, 40 anclajes por número de línea** (descontando el censo declarado del propio

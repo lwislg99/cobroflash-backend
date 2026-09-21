@@ -8,7 +8,8 @@ import fetch from 'node-fetch';
 import { prisma } from '../../../core/db/prisma';
 import { BASE_URL } from '../../../core/config/env';
 import { internalHeaders } from '../../../core/http/internalAuth';
-import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
+import { formatMoneyEs } from '../../../core/utils/utils';
+import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
@@ -35,9 +36,10 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   if (!invoice) return { ok: false, reason: 'invoice_not_found' };
   // SCRUM-126: "customer_missing_phone" (no "customer_without_phone") — mismo código que
   // usan albaranWhatsApp.service.ts y sendQuote.service.ts para la misma condición.
-  if (!invoice.customer?.phone) return { ok: false, reason: 'customer_missing_phone' };
+  // SCRUM-590 (CONT-19): móvil si consta, fijo si no. Los dos guards siguen diciendo cosas distintas.
+  if (!tieneNumeroDeContacto(invoice.customer)) return { ok: false, reason: 'customer_missing_phone' };
 
-  const to = normalizePhone(invoice.customer.phone);
+  const to = canalDeWhatsApp(invoice.customer);
   if (!to) return { ok: false, reason: 'invalid_phone_format' };
 
   // Asegurar cobro (idempotente): reutiliza el existente o crea uno nuevo.
@@ -81,7 +83,11 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
   }
 
   const businessName = invoice.merchant?.legalName || invoice.merchant?.name || 'Tu proveedor';
-  const amountWithCurrency = `${Number(invoice.total).toFixed(2)} ${invoice.currency}`;
+  // SCRUM-931 · UN solo importe para los tres caminos de este envío. Antes esta línea daba
+  // `419.87 EUR` y alimentaba el texto de ventana, mientras el botón de ventana —dos líneas más
+  // abajo, con su comentario «dinero es-ES»— ya llamaba a `formatMoneyEs`. La misma factura, al
+  // mismo cliente, en dos formatos según el camino; y la diferencia no la decidía nadie.
+  const importe = formatMoneyEs(invoice.total, invoice.currency);
   // Regla 24/26: en el texto de ventana (copy nuestro, no de Meta) un J-… es "justificante"
   const docLabel = isReceiptNumber(invoice.number) ? 'justificante' : 'factura';
   // SCRUM-85: token OPACO del cobro (Charge.receiptToken) — NUNCA el chargeId en la URL pública.
@@ -95,17 +101,17 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
     windowText:
       `Hola ${invoice.customer.name || 'Cliente'} 👋\n` +
       `${businessName} te envía el ${docLabel} ${appendStageLabel(invoice.number, invoice.stageLabel)}.\n` +
-      `A pagar: ${amountWithCurrency}\n` +
+      `A pagar: ${importe}\n` +
       `Paga de forma segura desde aquí 👇\n` +
-      `https://yaqu.app/pay/invoice/${payToken}`,
+      `${BASE_URL}/pay/invoice/${payToken}`,
     // A23: en ventana → botón-enlace "Pagar" (sin URL cruda, dinero es-ES)
     windowCta: {
       bodyText:
         `Hola ${invoice.customer.name || 'Cliente'} 👋\n` +
         `*${businessName}* te envía el ${docLabel} ${appendStageLabel(invoice.number, invoice.stageLabel)}.\n` +
-        `A pagar: *${formatMoneyEs(invoice.total, invoice.currency)}*`,
-      buttonText: `Pagar ${formatMoneyEs(invoice.total, invoice.currency)}`,
-      url: `https://yaqu.app/pay/invoice/${payToken}`,
+        `A pagar: *${importe}*`,
+      buttonText: `Pagar ${importe}`,
+      url: `${BASE_URL}/pay/invoice/${payToken}`,
     },
     // SCRUM-33: sin variable nueva en la plantilla Meta (ya aprobada) — el label del
     // tramo viaja DENTRO del valor de "invoiceNumber", que ya es una variable propia.
@@ -113,7 +119,8 @@ export async function sendInvoicePaymentRequest(invoiceId: number): Promise<Send
       customerName: invoice.customer.name || 'Cliente',
       businessName,
       invoiceNumber: appendStageLabel(invoice.number, invoice.stageLabel),
-      amountWithCurrency,
+      amount: Number(invoice.total), // SCRUM-931: en bruto; la forma la da el builder
+      currency: invoice.currency,
       urlToken: payToken,
     }),
     log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: invoice.id }, // WA-0b

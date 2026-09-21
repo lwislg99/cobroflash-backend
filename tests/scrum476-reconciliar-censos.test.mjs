@@ -19,6 +19,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { avisoDeDesfase, diagnosticar } from './_desfase-node-modules.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   ERRNOS_BENIGNOS,
   QUE_CUENTA,
@@ -33,7 +34,7 @@ const RAIZ = path.resolve(import.meta.dirname, '..');
 
 /** Un banco de árboles de mentira, con lock de verdad y paquetes de juguete. */
 function banco() {
-  const base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'scrum476-')));
+  const base = fs.realpathSync.native(temporal('scrum476-'));
   return {
     base,
     /** Árbol con su `package.json` + `package-lock.json` exigiendo `deps` = {nombre: version}. */

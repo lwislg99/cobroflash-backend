@@ -73,12 +73,24 @@ window.rotulosDelDocumento = (function () {
     // ── Modal del documento suelto ─────────────────────────────────────────────────────
     tituloModal: function () { return esJustificante() ? 'Nuevo justificante' : 'Nueva factura'; },
     accionPrimaria: function () { return esJustificante() ? 'Emitir justificante' : 'Emitir factura'; },
-    ariaDialogo: function () { return esJustificante() ? 'Crear un justificante nuevo' : 'Crear una factura nueva'; },
+    // SCRUM-875 · aquí estaba `ariaDialogo()`, el `aria-label` del diálogo. Su único consumidor era
+    // el modal viejo, retirado en SCRUM-867, y el fundador decidió retirarlo: una página no es un
+    // diálogo. Si algún día hay un diálogo, su texto se aprueba entonces (regla 30).
     avisoEmitido: function () { return esJustificante() ? 'Justificante emitido' : 'Factura emitida'; },
     errorAlEmitir: function () {
       return esJustificante()
         ? 'No hemos podido emitir el justificante. Inténtalo otra vez.'
         : 'No hemos podido emitir la factura. Inténtalo otra vez.';
     },
+
+    // ── Hojas de plantillas del documento suelto (SCRUM-600g) ──────────────────────────
+    // ⚠️ AQUÍ NO HAY TERNARIO, y no es saltarse la regla de arriba. Ese ternario existe para que un
+    // texto que DEPENDE del modo lleve la condición pegada. Éstos no dependen: se firmaron NEUTROS
+    // («este documento», «sus líneas») para que valgan igual en factura y en justificante, y la
+    // variante justificante se decidió no escribir (SCRUM-825 retira el justificante). Un ternario
+    // con las dos ramas iguales sería ruido con forma de decisión.
+    // Firma: el orquestador por delegación del fundador, SCRUM-600 comentario 15357.
+    hojaUsarPlantilla: function () { return 'Elige una plantilla para cargar sus líneas en este documento.'; },
+    hojaGuardarPlantilla: function () { return 'Dale un nombre a esta plantilla para reutilizar sus líneas más adelante.'; },
   };
 })();

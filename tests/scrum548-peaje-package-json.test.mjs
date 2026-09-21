@@ -99,7 +99,58 @@ test('SCRUM-548 · el detector de solape entiende las DOS formas de escribir el 
 test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se declara', () => {
   const s = censarSolape(RAIZ);
   const resumen = s.solapes.map((x) => `${x.guards.length}×${x.ruta}`).sort();
-  assert.deepEqual(resumen, ['2×/medicion.html', '5×/index.html'],
+  // SCRUM-909 · entra el tercer solape: `guard:descuento-redibuja` y `guard:rotulos-de-la-linea`
+  // abren los dos el editor de presupuestos. Se declara, y se declara POR QUÉ no se fusionan:
+  // miden cosas que no se parecen —uno teclea descuentos y comprueba que el total y la vista previa
+  // dicen lo mismo; el otro no teclea ningún descuento y mide ANCHOS de columna en 10 anchuras— y
+  // juntarlos daría un guard que, cuando cae, no dice cuál de las dos cosas se rompió.
+  // SCRUM-915d · y entra un tercero sobre el editor: `guard:pasos-del-editor`. Tampoco se fusiona,
+  // por el mismo motivo: no teclea descuentos ni mide anchos, RECORRE los pasos y juzga qué se ve
+  // tras cada clic. Su segundo destino (`#invoices-new`) no lo comparte con nadie.
+  // SCRUM-926 · entra un solape NUEVO, y sobre una página que hasta hoy sólo miraba un guard:
+  // la FICHA del presupuesto (`#quotes-detail/1`), donde coinciden `guard:descuentos-en-el-detalle`
+  // y `guard:duplicar-conserva`. No se fusionan, y el motivo es el de siempre: uno OBSERVA la ficha
+  // —que base e IVA cuadren con el total cuando hay descuentos— y el otro no mira la ficha, la usa
+  // de puerta: PULSA «Duplicar» y se va a juzgar el EDITOR que sale. Comparten la URL de partida y
+  // nada más, y juntarlos daría un guard que al caer no dice si se rompió la ficha o la copia.
+  // SCRUM-915e1 · el editor pasa a CUATRO: entra `guard:documento-vivo`. Éste SÍ se deriva —el
+  // puerto va en variable pero la ruta `#quotes-new` está escrita literal—, y por eso cuenta aquí
+  // en vez de declararse abajo. No se fusiona con los otros tres, y el motivo es el de siempre:
+  // los tres miran el EDITOR de la izquierda (descuentos que redibujan, anchos de columna, los
+  // pasos), y éste mira el DOCUMENTO de la derecha —lo que el cliente recibe—: si su pie miente
+  // sobre la caducidad, los tres siguen verdes y el papel sale mal igual. Juntarlos daría un guard
+  // que al caer no dice si se rompió el editor o el papel.
+  // SCRUM-915h · el editor pasa a CINCO: entra `guard:conceptos-limpios`. No se fusiona con
+  // `guard:pasos-del-editor` aunque mire el mismo paso: aquél juzga el ANDAMIO (qué paso está
+  // abierto, qué se puede pulsar para avanzar) y éste lo que hay DENTRO de Conceptos (cuántas
+  // líneas, qué ficha se ve, qué ofrece el menú ⋯, dónde va el desglose del dinero). Juntarlos daría
+  // un guard que al caer no dice si se rompió el recorrido o el contenido del paso.
+  // SCRUM-915i · el editor pasa a SEIS y `#invoices-new` a DOS: entra `guard:cabecera-del-editor`,
+  // que abre las dos páginas del mismo editor (presupuesto y documento suelto). No se fusiona con
+  // ninguno: los cinco miran lo que hay DENTRO de los pasos o del documento, y éste mira la CABECERA
+  // (título, el «⋯» de arriba) y lo que pasa al vaciar y recargar — el borrador. Con
+  // `guard:pasos-del-editor` comparte `#invoices-new` y nada más: aquél recorre los pasos del suelto,
+  // éste sólo lee su cabecera y su menú.
+  // SCRUM-915g · `#invoices-new` pasa a TRES: entra `guard:ajustes-del-justificante`, que abre sólo el
+  // documento suelto (el editor de presupuestos no lo toca). No se fusiona con los otros dos: el de
+  // pasos RECORRE los tres pasos del justificante y juzga el andamio (cuál está abierto, qué deja
+  // pulsar); el de la cabecera lee su título y su «⋯»; éste mide UNA fila del último paso —la de
+  // «Ajustes del documento»— tras pulsarla: qué se ve abierta y cerrada, qué dice su resumen y cuánto
+  // mide su botón a 390 px. Juntarlos daría un guard que al caer no dice si se rompió el recorrido,
+  // la cabecera o la fila. Su `goto` va con la URL literal (sin `about:blank` previo: cada caso abre
+  // su propia página en un contexto nuevo).
+  // ⚠️ Y `2×about:blank` NO ES UN SOLAPE: es la página en blanco por la que 915h y 915i pasan ANTES
+  // de cada `goto` (trampa medida en 915h: `goto` a otro hash de la misma página no recarga y un
+  // modal abierto se queda delante). Ninguno de los dos mide nada en ella; el censo la cuenta
+  // porque lee los `goto`. Se declara aquí para que no se lea como dos guards mirando lo mismo.
+  assert.deepEqual(resumen, [
+    '2×/dashboard/index.html#quotes-detail/1',
+    '2×/medicion.html',
+    '2×about:blank',
+    '3×/dashboard/index.html#invoices-new',
+    '5×/index.html',
+    '6×/dashboard/index.html#quotes-new',
+  ],
     '🔴 HA CAMBIADO QUIÉN MIDE QUÉ PÁGINA.\n'
     + '  No es un defecto por sí solo —dos guards pueden mirar cosas distintas de la misma\n'
     + '  página—, pero es el sitio donde mirar. SCRUM-546 encontró un solape de dos por pura\n'
@@ -127,7 +178,66 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // construida a partir del nombre del caso (`${base}/${caso.nombre…}`). De una variable no sale
   // ningún destino, así que su solape es INVISIBLE para este detector y se declara en vez de
   // contarse como «no tiene». Lo que sí se sabe es que su página la fabrica él y no la comparte.
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:objetivo-tactil'],
+  // SCRUM-722 · entra `guard:marcadores-en-pantalla`, por lo mismo: no visita ninguna página del
+  // árbol. Se FABRICA su banco en un temporal —derivando la lista de scripts del `index.html`
+  // real— y lo abre por `file://` desde una variable, así que de aquí no sale ningún destino. Su
+  // solape es invisible para este detector y se declara en vez de contarse como «no tiene».
+  // MEDIDO: la página la fabrica él en un `mkdtemp` y la borra al acabar; no la comparte con nadie.
+  // SCRUM-819 · entra `guard:rastro-del-menu`. Su destino tampoco se deriva: levanta un servidor
+  // propio en un PUERTO EFÍMERO y navega a `http://127.0.0.1:${puerto}/dashboard/index.html`, así
+  // que del fuente no sale ninguna ruta fija. Y una vez dentro no vuelve a hacer `goto`: recorre
+  // las 17 vistas PULSANDO el menú, que es justamente lo que mide.
+  //
+  // MEDIDO: la página la fabrica él —sirve `public/` con `/admin/*` respondido al vuelo— y no la
+  // comparte con ningún otro guard. Se declara para que su solape invisible no se lea como «no
+  // tiene», que es la trampa que este fichero cierra.
+  // ⚠️ Los DOS de arriba entraron a la vez, en ramas distintas, y el conflicto fue de git y no
+  // de criterio: los dos AÑADEN. Se conservan los dos —convención de `//guards` en
+  // package.json—, nunca se elige uno.
+  // SCRUM-892 · `guard:firma-con-tramos`: la página la fabrica él —renderiza la ruta de aceptación
+  // compilada y la sirve en un puerto propio— y no la comparte con ningún otro guard.
+  // SCRUM-904 · entra `guard:completar-lleva-al-campo`, y por el mismo motivo que los anteriores:
+  // sirve su página desde una ruta VIRTUAL (`/__completar-lleva-al-campo.html`, igual que
+  // `guard:falta-en-otra-pestana`), así que su destino no sale de ningún fichero del árbol y este
+  // detector no puede verlo. Se declara para que ese hueco no se lea como «no solapa».
+  // MEDIDO: esa ruta no la sirve ningún otro guard — la fabrica él y no la comparte.
+  // SCRUM-918 · `guard:arranque-sin-red`: sirve el panel en un puerto EFÍMERO y navega con la base en
+  // una variable, así que su destino no se deriva. Lo sirve él y no lo comparte con ningún guard.
+  // SCRUM-917e · `guard:detalle-trabajo-917`: levanta su propio servidor en un puerto EFÍMERO
+  // (`_detalle-917.mjs`) y navega con la base en una variable, así que su destino no sale de
+  // ningún fichero del árbol y este detector no puede verlo. Mismo motivo que `arranque-sin-red`.
+  // MEDIDO: ese puerto lo elige el sistema en cada pasada y no lo comparte con ningún otro guard.
+  //
+  // La lista pasa a UN ELEMENTO POR LÍNEA (misma razón que `tests/scrum710b`): en una sola línea,
+  // dos tickets que añadan su guard a la vez chocan en la misma línea física y el conflicto no
+  // dice que son independientes. Aquí ya han entrado seis tickets distintos.
+  // SCRUM-965 · entra `guard:un-solo-presupuesto`, y por el mismo motivo que `guard:arranque-sin-red`
+  // y `guard:rastro-del-menu`: levanta servidor propio en un puerto EFÍMERO (`GUARD965_PUERTO || 0`)
+  // y navega a `http://127.0.0.1:${PUERTO}/dashboard/index.html#${ruta}`, con el puerto Y la ruta en
+  // variables, así que del fuente no sale ningún destino fijo y este detector no puede verlo.
+  // MEDIDO: abre `#quotes-new` y `#invoices-new`, las dos por esa plantilla. Por `#quotes-new` pasan
+  // ya tres guards declarados arriba (`descuento-redibuja`, `rotulos-de-la-linea`, `pasos-del-editor`),
+  // pero NINGUNO por este servidor: el suyo responde las peticiones al vuelo para poder CONTARLAS,
+  // que es lo que mide. No se fusiona con los tres: ellos observan el editor, éste cuenta peticiones.
+  // Se declara para que ese solape invisible no se lea como «no tiene».
+  // ⚠️ 917e y 965 entraron a la vez y los DOS AÑADEN: se conservan los dos comentarios y los dos
+  // guards. La lista queda en UN ELEMENTO POR LÍNEA —que es justo lo que evita la próxima—, y su
+  // contenido y su ORDEN se vuelven a MEDIR corriendo este test sobre el árbol ya fusionado.
+  assert.deepEqual(s.noResueltos, [
+    'guard:contraste',
+    'guard:caja-semaforo',
+    'guard:caja-documento-suelto',
+    'guard:portal-en-la-ficha',
+    'guard:caja-datos-del-cliente',
+    'guard:arranque-sin-red',
+    'guard:un-solo-presupuesto',
+    'guard:firma-con-tramos',
+    'guard:completar-lleva-al-campo',
+    'guard:objetivo-tactil',
+    'guard:detalle-trabajo-917',
+    'guard:rastro-del-menu',
+    'guard:marcadores-en-pantalla',
+  ],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

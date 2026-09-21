@@ -1,0 +1,21 @@
+TESTIGO · banco de mutacion 920d · HEAD ac9c9a05b0cacae723961e5be2b0df847fb4c296
+BASE sin mutar · guard exit=0 · ✅ 77 · 🔴 0
+M10 · la barra pasa POR ENCIMA del modal (z-index 900 y sin el contexto de apilado de la animacion)
+     aplicada=true (ocurrencias por cambio: 1+1) · diff 2 2 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=false · restaurado=true → VIVA
+M12 · la suma de la cabecera pierde el primer gasto
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+M13 · «1 gastos» (el singular deja de existir)
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+M14 · el texto de «Sin foto» pasa a un ambar que no llega a 4,5:1
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+M15 · el chip pulsado no cambia su aria-pressed
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=false · restaurado=true → VIVA
+M16 · la barra crece hasta tapar la ultima fila
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+M17 · un segundo boton con el id #exp-new-btn (una copia del de arriba, no el mismo)
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+M18 · el filtro por trabajo ofrece un mismo trabajo una vez por gasto
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+
+POBLACION mutaciones=8 · aplicadas=8 · caen=6 · vivas=[M10, M15] · sin restaurar=[]
+EXIT=1

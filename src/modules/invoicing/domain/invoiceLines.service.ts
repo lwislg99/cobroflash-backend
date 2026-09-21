@@ -33,9 +33,111 @@
 // 2 céntimos). Es visible, explicable y NO toca la cadena de huellas. Ver también
 // `docs/COMO_FUNCIONA_YAQU.md` (explicación para el usuario) y la nota de SCRUM-32 en el máster.
 import { calcVatBreakdown, type VatLine, cantidadDeLinea } from './vat.service';
+import { precioConDto, descuentoGlobalEnCentimos } from '../../../core/utils/utils';
 
 /** Línea de factura: `tax` en FRACCIÓN (0.21), igual que en `Quote.lines`/`Invoice.lines`. */
 export type InvoiceLine = VatLine & { [key: string]: unknown };
+
+/**
+ * SCRUM-887 · el rótulo de la línea negativa del descuento global. NO es texto nuevo: es la fila
+ * «Descuento global:» que el cliente ya leyó en el pie del presupuesto que firmó
+ * (`pieDePresupuesto`), sin los dos puntos de la fila. Un test compara los dos.
+ */
+const ROTULO_DESCUENTO_GLOBAL = 'Descuento global';
+
+/**
+ * ¿Lleva el presupuesto descuento global? Una sola lectura para la pieza y para quien tenga que
+ * rechazar por él (el albarán, C7). Un `Decimal` de Prisma se lee por `valueOf`.
+ *
+ * 🔴 `discountGlobalAmount` ES OBLIGATORIO Y NO SE SUPONE. Un `select` que no lo cargue daría
+ * `undefined`, que se leería como «sin global» y facturaría a ciegas.
+ */
+export function tieneDescuentoGlobal(quote: { discountGlobalAmount?: unknown }): boolean {
+  if (quote.discountGlobalAmount === undefined) {
+    throw new Error('lineasParaFacturar: el presupuesto llega sin `discountGlobalAmount` cargado');
+  }
+  const global = Number(quote.discountGlobalAmount);
+  return Number.isFinite(global) && global > 0;
+}
+
+/**
+ * SCRUM-887 · ¿Es un caso C? Descuento global con base de la que quitarlo y VARIOS tipos de IVA,
+ * agrupados con la MISMA función con la que `calcTotal` calcula lo firmado. Lo preguntan el
+ * servidor al crear y al revisar, y las rutas del profesional al facturar, para decir por qué no.
+ */
+export function tieneDescuentoGlobalConVariosIva(quote: { lines?: unknown; discountGlobalAmount?: unknown }): boolean {
+  if (!tieneDescuentoGlobal(quote)) return false;
+  const reparto = descuentoGlobalEnCentimos(Array.isArray(quote.lines) ? quote.lines : [], quote.discountGlobalAmount);
+  return reparto !== null && reparto.tipos.length > 1;
+}
+
+/**
+ * SCRUM-887 · LAS LÍNEAS DE UN PRESUPUESTO QUE ENTRAN EN SU FACTURA. El único sitio que decide
+ * qué hace la factura con los descuentos: los seis caminos que convierten `Quote.lines` en
+ * `Invoice.lines` —y la vista del plan, que promete su importe— pasan por aquí.
+ *
+ * El defecto que cierra: el cliente firmaba `calcTotal` (que aplica `dto`) y se le cobraba
+ * `calcVatBreakdown(Quote.lines)` (que no lo conoce). Medido en staging: firma 539,05 €, cobro
+ * 628,60 €.
+ *
+ * DECISIÓN (SCRUM-887, comentarios 15616 y 15620, 16-sep-2026), que levanta PARTE de la
+ * acotación de SCRUM-594:
+ *   A · descuento POR LÍNEA → el `dto` se aplica AL PRECIO con `precioConDto`, la misma función
+ *       con la que `calcTotal` calcula lo firmado, y la clave `dto` NO viaja: el precio ya es el
+ *       efectivo, y dejarla sería una segunda fuente que alguien acabaría aplicando dos veces.
+ *       La reconciliación de SCRUM-141 hace el resto contra el total firmado.
+ *   B · descuento GLOBAL con un solo IVA → UNA línea NEGATIVA del mismo IVA, la PRIMERA, rotulada
+ *       `ROTULO_DESCUENTO_GLOBAL` (PR 2, decisiones del 17-sep-2026, SCRUM-887 comentario 15675).
+ *       Su importe es EXACTAMENTE el que resta `calcTotal`: el global en céntimos, limitado a la
+ *       suma de bases de las líneas. Con un solo tipo no hay reparto que decidir: la base de ese
+ *       tipo baja antes de calcular la cuota, que es lo que `calcTotal` firma. Si el global se come
+ *       toda la base, no hay nada que facturar y las líneas salen a 0 (el portón de SCRUM-246).
+ *   C · descuento GLOBAL con IVA mezclado → NO SE FACTURA (PR 3, comentario 15697): repartir el
+ *       global entre tipos es la convención que espera a la asesoría, así que las líneas salen a
+ *       0 y el portón de SCRUM-246 no emite. Tampoco se guarda ni se revisa un C nuevo.
+ *
+ * Una línea sin `dto` sale COMO ENTRÓ —el mismo objeto—, así que nada que no tenga descuento se
+ * mueve un céntimo.
+ *
+ * Devuelve `any[]` por lo mismo que `stageLines` es genérico: el resultado acaba en `Invoice.lines`
+ * (Json de Prisma, que rechaza tipos con firma de índice), y los llamadores ya trabajaban con `any[]`.
+ */
+export function lineasParaFacturar(quote: { lines?: unknown; discountGlobalAmount?: unknown }): any[] {
+  const conGlobal = tieneDescuentoGlobal(quote);
+  const lineas = Array.isArray(quote.lines) ? (quote.lines as InvoiceLine[]) : [];
+
+  const efectivas = (): InvoiceLine[] => lineas.map((l) => {
+    const dto = Number(l.dto);
+    if (!Number.isFinite(dto) || dto <= 0) return l;
+    const { dto: _aplicado, ...resto } = l;
+    return { ...resto, price: precioConDto(l.price, dto) } as InvoiceLine;
+  });
+  if (!conGlobal) return efectivas();
+
+  // Los tipos y el importe, de la MISMA función con la que `calcTotal` calcula lo firmado: si aquí
+  // saliera un solo tipo y allí dos, se descontaría un importe distinto del firmado.
+  const reparto = descuentoGlobalEnCentimos(lineas, quote.discountGlobalAmount);
+  // Sin base que descontar, `calcTotal` ignora el global: aquí tampoco hay línea que añadir.
+  if (!reparto) return efectivas();
+
+  // C (varios tipos) o un global que se come TODA la base: no se factura. Las líneas salen a 0,
+  // como con `dto: 100`, y el portón de SCRUM-246 (`exigirLineasFacturables`) da su 409 antes de
+  // pedir número. C no se reparte sin la asesoría (15697); y con +X y −X un global total pasaría el
+  // portón y emitiría una factura de 0 € (regla 29). Las rutas del profesional, además, dicen por
+  // qué un C no factura (`tieneDescuentoGlobalConVariosIva`) antes de llegar aquí.
+  if (reparto.tipos.length !== 1 || reparto.aRepartir >= reparto.sumaBases) {
+    return efectivas().map((l) => ({ ...l, price: 0 }));
+  }
+
+  // LA PRIMERA, no la última: `reconcileToTarget` ajusta la ÚLTIMA línea para cuadrar con lo
+  // firmado, y el descuento tiene que salir EXACTO. Así el ajuste cae en un producto, como sin
+  // descuento. Es el cambio más pequeño: la reconciliación, que sirve a todas las facturas, no se toca.
+  const [[rate]] = reparto.tipos;
+  return [
+    { concept: ROTULO_DESCUENTO_GLOBAL, qty: 1, price: -reparto.aRepartir / 100, tax: rate / 100 },
+    ...efectivas(),
+  ];
+}
 
 /** Solo se necesita el porcentaje del tramo: no se importa `BillingStage` para no acoplar módulos. */
 export interface StageLike {

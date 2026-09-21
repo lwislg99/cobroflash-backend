@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 // SCRUM-598 · F9 no se retira, se MUDA: su detector nuevo vive en el censo, y aquí se prueba en
 // rojo. Ver el bloque «F9 · LA MUDANZA» al final de este fichero.
 import { F9_EN_EL_CATALOGO, faltaEnF9 } from './_censo-dos-fronts.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/quotesView.js');
@@ -31,10 +32,11 @@ const require_ = createRequire(import.meta.url);
 const ts = require_('typescript');
 
 /** El fuente SIN comentarios: este fichero nombra «margen» muchas veces y no puede cazarse a sí mismo. */
-function desnudar(src) {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .split('\n').map((l) => l.replace(/(^|[^:])\/\/.*$/, '$1')).join('\n');
+function desnudar(src, nombre = 'x.ts') {
+  // SCRUM-694b · filtro a mano retirado: `(^|[^:])//` libraba a `https://` por los dos
+  // puntos, pero se comia la linea entera ante un regex de URL (`/^https?:\/\//`), que es
+  // como las URLs aparecen en el codigo de verdad. `soloCodigo()` tokeniza y no depende de eso.
+  return soloCodigo(src, nombre);
 }
 
 /**
@@ -56,8 +58,14 @@ const PUERTAS = Object.freeze({
       const m = /resumenAjustes\([\s\S]{0,240}?safeVat,\s*([^,)\s]+)/.exec(limpio);
       return !m || m[1].trim() !== '0';
     },
+  // 🔴 SCRUM-915h · RE-ANCLADA: el bloque de totales salió del editor (`.quote-totals__apoyo`) y vive
+  // en el documento de la derecha (`.preview-total-row`, filas por `filaDoc`). La puerta sigue siendo
+  // la misma —una fila «Margen» entre los totales—; lo que cambia es dónde está ese bloque.
   'la línea «Margen» del bloque de totales':
-    (limpio) => /quote-totals__apoyo[^`]*>Margen</.test(limpio) || /\btextoMargen\(/.test(limpio),
+    (limpio) => /quote-totals__apoyo[^`]*>Margen</.test(limpio)
+      || /preview-total-row[^`]*>Margen</.test(limpio)
+      || /filaDoc\(\s*["'`]Margen/.test(limpio)
+      || /\btextoMargen\(/.test(limpio),
 });
 
 test('SCRUM-598 · SUELO: el desnudado quita prosa y NO se come el código', () => {
@@ -67,7 +75,9 @@ test('SCRUM-598 · SUELO: el desnudado quita prosa y NO se come el código', () 
   assert.ok(!limpio.includes('SCRUM-598'), '🔴 el desnudado NO está quitando comentarios: este '
     + 'guard se cazaría a sí mismo en la prosa que explica la prohibición.');
   assert.ok(limpio.includes('resumenAjustes('), '🔴 el desnudado se ha comido el código.');
-  assert.ok(limpio.includes('quote-totals__apoyo'), '🔴 el desnudado se ha comido los totales.');
+  // SCRUM-915h · el suelo mira los totales donde viven ahora (el documento), no el editor.
+  assert.ok(limpio.includes('preview-total-row') && limpio.includes('filaDoc('),
+    '🔴 el desnudado se ha comido los totales.');
 });
 
 test('SCRUM-598 · 🔴 EL MARGEN NO ESTÁ EN NINGUNA DE LAS TRES PUERTAS', () => {
@@ -221,7 +231,11 @@ const PIEZAS_DE_F9 = [
   ['el campo Margen % de la EDICIÓN', /«Margen %».*EDICIÓN/,
     (f) => mutar(f, 'vista', '<input name="margen" type="number" step="0.01"/>')],
   ['el coste deja de VIAJAR al servidor', /COSTE en lo que se ENV[IÍ]A al servidor/,
-    (f) => mutar(f, 'vista', "cost: costRaw === '' ? null : Number(costRaw),")],
+    // 🔴 RE-ANCLADO en SCRUM-597 (DOC-07). La línea cambió de forma —no de sentido— porque el
+    // campo «Coste» ahora puede NO EXISTIR para quien no ve economía (P-DOC-3), y entonces la
+    // clave no viaja en vez de viajar vacía. El ancla se actualiza al texto de hoy; lo que este
+    // caso vigila sigue siendo lo mismo: que el coste DEJE DE VIAJAR haga caer al detector.
+    (f) => mutar(f, 'vista', "cost: costRaw === null ? undefined : (costRaw === '' ? null : Number(costRaw)),")],
   ['el cableado del margen mientras se teclea', /margenCatalogo\.autocompletar/,
     (f) => mutar(f, 'vista', 'window.margenCatalogo.autocompletar(', 'yaNoSeCablea(')],
   ['el margen derivado al abrir un producto', /margenCatalogo\.margenDesde/,

@@ -1,0 +1,24 @@
+BYTES   pasada1: 5209  ·  pasada2: 5212  ·  pasada3: 5212
+
+🔴 CONTROL POSITIVO (a) — ¿ENTRO el cambio?
+   PDF 1 contiene la direccion DE ENTONCES: SI ✅
+   PDF 2 contiene la direccion DE HOY .....: SI ✅
+   PDF 2 YA NO contiene la de entonces ....: correcto ✅
+
+CONTROL (b) — el instrumento distingue CAMBIO de RUIDO, y aqui hay ruido:
+   pasada2 vs pasada3, MISMOS datos:
+     por BYTES ....: ⚠️ DISTINTOS — el PDF no es determinista
+     por CONTENIDO : IDENTICO ✅
+
+   ⚠️ LEIDO CON CUIDADO: dos pasadas IDENTICAS ya difieren en BYTES (el PDF lleva
+      dentro algo que cambia solo, p. ej. la fecha de creacion del fichero). Por eso
+      EL VEREDICTO NO SE APOYA EN LOS BYTES: se apoya en el CONTENIDO, que con datos
+      iguales SI sale identico — y por tanto una diferencia ahi es del dato, no del ruido.
+
+═══ EL VEREDICTO ═══
+   pasada1 vs pasada2 (el merchant corrigio su direccion):
+     por BYTES ....: 🔴 DISTINTOS
+     por CONTENIDO : 🔴 DISTINTO
+
+   🔴 -> EL PDF DE UNA FACTURA EMITIDA SALE DISTINTO. El papel que se reimprime hoy no es
+         el que se entrego el dia de la emision, y nadie ha hecho nada mal.

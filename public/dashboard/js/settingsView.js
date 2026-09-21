@@ -748,9 +748,53 @@ function renderSettingsView(container) {
     saveBtn.type = "submit";
     saveBtn.className = "btn btn-primary btn-lg";
     saveBtn.textContent = "Guardar cambios";
-  
+
     actions.appendChild(saveBtn);
     form.appendChild(actions);
+
+    // SCRUM-894 · LO QUE FALTA EN OTRA PESTAÑA. Un `required` vacío de un panel oculto frenaba el
+    // envío en silencio: el navegador no puede enfocar un campo con `display:none` y solo lo cuenta
+    // en la consola. Va en el CLIC y no en `invalid` a propósito: el clic corre ANTES de que el
+    // navegador valide, así que abrir aquí la pestaña deja el campo visible y es el propio navegador
+    // quien lo enfoca y lo señala. Enter dentro de un campo también pasa por aquí (envío implícito =
+    // clic en el botón). Qué es obligatorio no se toca: se lee de `validity`, sin disparar eventos.
+    saveBtn.addEventListener("click", () => {
+      form.querySelectorAll("[data-aviso-falta]").forEach((n) => n.remove());
+      const faltan = Array.from(form.elements).filter((el) => el.willValidate && !el.validity.valid);
+      // Fuera de los paneles se ve siempre: cuenta como la pestaña activa (avisa el navegador).
+      const panelDe = (el) => {
+        const p = el.closest(".settings-panel");
+        return p ? p.dataset.submenu : submenuActivo;
+      };
+      const destino = pestanaDelQueFalta(faltan.map(panelDe), submenuActivo);
+      if (!destino) return;
+      const campo = faltan.find((el) => panelDe(el) === destino);
+      submenuActivo = destino;
+      pintarNav();
+      const caja = campo.closest(".field") || campo.parentNode;
+      // Firma (SCRUM-894 comentario 15672): campo y pestaña se nombran SOLO con lo que la pantalla ya
+      // muestra, nunca con un nombre interno. Un campo sin rótulo visible se queda en «abrir su
+      // pestaña» —el navegador lo enfoca y lo señala— en vez de inventarle nombre.
+      const rotulo = caja.querySelector("label");
+      const nombreVisible = rotulo ? rotulo.textContent.trim() : "";
+      if (!nombreVisible) return;
+      const aviso = document.createElement("p");
+      aviso.dataset.avisoFalta = campo.name || campo.id;
+      aviso.setAttribute("role", "alert");
+      aviso.className = "aviso-falta-campo";
+      aviso.textContent = avisoFaltaEnOtraPestana(
+        nombreVisible,
+        rotuloDeSubmenu(destino)
+      );
+      caja.appendChild(aviso);
+      campo.classList.add("input-error");
+      const limpiar = () => {
+        aviso.remove();
+        campo.classList.remove("input-error");
+        campo.removeEventListener("input", limpiar);
+      };
+      campo.addEventListener("input", limpiar);
+    });
 
     // SCRUM-284 · «WhatsApp este mes» dentro de AVISOS, pero FUERA del mapa y fuera del guard.
     // No es un ajuste ni un control: es un contador de consumo y no persiste nada. Por la regla del
@@ -1127,6 +1171,56 @@ async function renderWaFairUseCard(container) {
   container.appendChild(card);
 }
 
+/**
+ * SCRUM-904 · EL BLOQUE DE «Cobros con tarjeta», PEDIDO POR SU IDENTIDAD.
+ *
+ * 🔴 ANTES SE BUSCABA ASÍ, y no casaba NUNCA:
+ *
+ *     const c = [...document.querySelectorAll('h2')].find((h) => /tarjeta|Stripe|Connect/i.test(h.textContent));
+ *
+ * MEDIDO en el DOM pintado, con la tarjeta de Connect renderizada de verdad: los `<h2>` que casan
+ * esa expresión son **CERO**. Los cinco `<h2>` de la pantalla son «Tu cuenta, lista para cobrar»,
+ * «Datos de la empresa», «WhatsApp este mes», «Tu página pública» e «Invita y gana meses gratis».
+ * El rótulo del bloque de Connect es un **`<p>`**, no un `<h2>`, así que `c` salía `undefined` y
+ * las NUEVE pestañas caían en la rama de reserva.
+ *
+ * Y es un fallo DISTINTO al de las otras tres filas: aquéllas apuntan bien y el panel está oculto;
+ * ésta apuntaba a algo que no existe. Por eso no bastaba con abrir la pestaña.
+ *
+ * 🔒 Referenciar por posición —o por el texto de una etiqueta— caduca. Referenciar por identidad no.
+ */
+function bloqueDeConnect() {
+  const cuerpo = document.getElementById('connect-status-body');
+  return cuerpo ? cuerpo.parentNode : null;
+}
+
+/**
+ * SCRUM-904 · ABRE LA PESTAÑA DONDE VIVE `destino` Y LO DEJA A LA VISTA.
+ *
+ * Devuelve `true` sólo si de verdad se llegó: si el elemento no existe, o sigue sin verse después
+ * de abrir su panel, devuelve `false` **y no miente**. Quien llama decide qué hacer entonces —lo
+ * que no puede pasar es que el clic termine en silencio dando por hecho que funcionó.
+ *
+ * La pestaña se abre PULSANDO LA DEL PRODUCTO, no tocando su estado por dentro: `pintarNav` y
+ * `submenuActivo` viven en el cierre de `renderSettingsView` y esta tarjeta es de fuera. Pulsar el
+ * mismo botón que pulsa el profesional deja UN solo sitio decidiendo qué significa «abrir una
+ * pestaña»; replicarlo aquí sería la segunda fuente de siempre.
+ */
+function llevarASuPestana(destino) {
+  if (!destino) return false;
+  const panel = destino.closest('[data-submenu]');
+  if (panel && panel.dataset.submenu) {
+    const pestana = document.querySelector(`button[data-submenu="${panel.dataset.submenu}"]`);
+    if (pestana) pestana.click();
+  }
+  // `offsetParent === null` = no se ve. Se comprueba DESPUÉS de abrir la pestaña, que es lo que
+  // distingue «no estaba visible» de «no se puede mostrar» (el bloque de Connect con el flag
+  // apagado sigue oculto aunque su panel esté abierto).
+  if (destino.offsetParent === null) return false;
+  destino.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return true;
+}
+
 // ── A18.5 · Checklist de readiness (Parte M, AB4 Configuración) ─────────────
 // Estados CLAROS de lo que desbloquea cada cosa: WhatsApp, cobro (IBAN/Bizum),
 // tarjeta (Connect) y datos fiscales. Copys del master M — jamás "factura" sin
@@ -1218,16 +1312,27 @@ async function renderReadinessCard(container, mainFormCard) {
       </span>
       ${r.ok ? '' : '<span style="margin-left:auto;flex:none;font-size:12.5px;font-weight:600;color:var(--green-700,#15803d)">Completar →</span>'}
     `;
+    // ── SCRUM-904 · «COMPLETAR →» LLEVA A DONDE ESTÁ EL CAMPO ───────────────────────────────
+    //
+    // MEDIDO, no leído. 4 filas × 9 pestañas = 36 casos, en navegador: **33 no hacían NADA** y
+    // sólo 3 funcionaban —cada fila desde la pestaña donde ya vive su campo—. Es la causa de
+    // SCRUM-894 otra vez: los diez paneles se pintan con `display:none` salvo el activo, y
+    // `scrollIntoView`+`focus()` sobre un elemento oculto no hacen nada y no lo dicen.
+    //
+    // Una lista que dice «qué te falta para poder cobrar» y en la que dos de cada tres flechas no
+    // llevan a ninguna parte no es una ayuda con fallos: enseña a no fiarse de ella.
+    //
+    // ⛔ NO cambia QUÉ es obligatorio ni qué filas salen: sólo A DÓNDE va el clic.
     row.addEventListener('click', () => {
-      if (r.scrollConnect) {
-        const h2s = [...document.querySelectorAll('h2')];
-        const c = h2s.find((h) => /tarjeta|Stripe|Connect/i.test(h.textContent));
-        (c ? c.closest('.customers-card') || c : mainFormCard).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const destino = r.scrollConnect ? bloqueDeConnect() : mainFormCard.querySelector(`[name="${r.focus}"]`);
+      if (llevarASuPestana(destino)) {
+        // El foco va DESPUÉS del desplazamiento suave, como estaba: enfocar antes lo interrumpe.
+        // El bloque de Connect no es un campo y no se enfoca — se muestra.
+        if (!r.scrollConnect) setTimeout(() => destino.focus(), 350);
         return;
       }
-      const input = mainFormCard.querySelector(`[name="${r.focus}"]`);
-      if (input) { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => input.focus(), 350); }
-      else mainFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // No se pudo llevar a ninguna parte. Se hace lo de siempre, que al menos mueve la pantalla.
+      mainFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     box.appendChild(row);
   });

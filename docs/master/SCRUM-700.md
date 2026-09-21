@@ -3,7 +3,7 @@
 **Medido contra:** `origin/main` = `2c161c38cfba4ad81479dd302a933412d496f58c` · 2026-09-04T12:41:16+02:00
 **Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-700-censo-filtros-de-comentario`
 
-## PASO 0 (regla 39)
+## PASO 0 (cita de regla RETIRADA — SCRUM-637)
 
 **No estaba arreglado.** `git log -S "soloEjecutable"` devuelve seis commits, todos de migraciones en
 curso; el mismo comando con otra aguja (`referenciasDe`) también devuelve resultados, así que el
@@ -69,7 +69,7 @@ verificable. Los **47 que sólo encogen** pueden esperar: hacen ruido, no silenc
 **Medido contra:** `origin/main` = `5bfc11360ba26146369d6f994812de665996f566` · 2026-09-04T13:23:48+02:00
 **Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-700b-migrar-los-31`
 
-## PASO 0 (regla 39)
+## PASO 0 (cita de regla RETIRADA — SCRUM-637)
 
 **Remedido antes de tocar**, porque `main` se había movido y SCRUM-700 ya estaba dentro: el
 trinquete pasaba en verde, así que seguían siendo **exactamente 31**.

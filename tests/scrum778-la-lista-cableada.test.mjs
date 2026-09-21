@@ -38,10 +38,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';   // SCRUM-730
 import { analizarArbol } from './_embudo-factura.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import {
   bocasDeEmision, motivosParaNoFiarse, desprotegidas, fuentesTs, EMBUDO, EMISOR, DELEGA,
 } from './_bocas-de-emision.mjs';
@@ -75,7 +75,9 @@ const LO_QUE_VEIA_LA_LISTA_VIEJA = [
 
 test('SCRUM-778 · SUELO: la población derivada ni está vacía ni ha encogido, y cuadra con SCRUM-203', () => {
   const bocas = bocasDeEmision({ raiz: RAIZ });
-  const creaciones = analizarArbol(path.join(RAIZ, 'src'));
+  // SCRUM-729 · fuera la IMPLEMENTACIÓN del envoltorio `crearFacturaEmitida`: es el `create` que
+  // ejecuta la creación, no una boca que pida número. La marca viene del analizador de SCRUM-203.
+  const creaciones = analizarArbol(path.join(RAIZ, 'src')).filter((c) => !c.implementacion);
   const motivos = motivosParaNoFiarse({
     bocas, creaciones, minimoEmbudo: MINIMO_EMBUDO, minimoEmisor: MINIMO_EMISOR,
   });
@@ -161,7 +163,7 @@ test('SCRUM-778 · ✅ CONTROL POSITIVO: el censo ve la boca que la lista CABLEA
 
 /** Un `src/` sintético: dos bocas protegidas y una tercera SIN portón, en el MISMO fichero. */
 function arbolConTerceraBocaSinPorton() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum778-'));
+  const raiz = temporal('scrum778-');
   const dir = path.join(raiz, 'src', 'modules', 'x');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'rutas.ts'), [
@@ -222,7 +224,7 @@ test('SCRUM-778 · 🔴 EL QUE DECIDE: una tercera boca SIN portón en un ficher
 test('SCRUM-778 · 🔴 la DIRECCIÓN del portón importa: llamarlo DESPUÉS no protege', () => {
   // Un portón que se ejecuta después de pedir número no protege nada: el número ya está gastado,
   // y las dos salidas son malas (modificar una factura numerada, o dejar un hueco en la serie).
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum778b-'));
+  const raiz = temporal('scrum778b-');
   const dir = path.join(raiz, 'src');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'tarde.ts'), [

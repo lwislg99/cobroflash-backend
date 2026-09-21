@@ -1,0 +1,48 @@
+TESTIGO · banco de mutacion 920d · HEAD 0470d6aad15cade2b87453f13d30a618f9f2b804
+BASE sin mutar · guard exit=0 · ✅ 77 · 🔴 0
+M10 · la barra pasa POR ENCIMA del modal (z-index 900 y sin el contexto de apilado de la animacion)
+     aplicada=true (ocurrencias por cambio: 1+1) · diff 2 2 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 390px · la pregunta es [] y tiene que ser «¿Eliminar este gasto?»
+       🔴 390px · «Eliminar» no borró el gasto 5: []
+       🔴 390px · con el alta abierta la barra sigue POR ENCIMA del modal
+M11 · «Sin trabajo» deja fuera al gasto que tiene presupuesto pero no trabajo
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · «Sin trabajo» deja ["Gasolina","Varios","MaterialdeconstruccionmuylargosinespaciosparaprobarquenodesbordalacajaMaterialdeconstruccionmuylargosinespaciosparapr
+       🔴 390px · «Sin trabajo» deja ["Gasolina","Varios","MaterialdeconstruccionmuylargosinespaciosparaprobarquenodesbordalacajaMaterialdeconstruccionmuylargosinespaciosparapro
+       🔴 2 hallazgos.
+M12 · la suma de la cabecera pierde el primer gasto
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · cabecera con «Sin foto»: {"mes":"Septiembre de 2026","cuenta":"· 5 gastos","suma":"10.026,19 €","salvedad":"Es la suma de lo que estás viendo, no la del mes."
+       🔴 1280px · «Presupuesto #5 · María López» · cabecera {"mes":"Septiembre de 2026","cuenta":"· 2 gastos","suma":"3,00 €","salvedad":"Es la suma de lo que estás viendo, no 
+       🔴 1280px · «Sin trabajo» · cabecera {"mes":"Septiembre de 2026","cuenta":"· 4 gastos","suma":"26,20 €","salvedad":"Es la suma de lo que estás viendo, no la del mes."} y 
+M13 · «1 gastos» (el singular deja de existir)
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · «Reforma baño» · cabecera {"mes":"Septiembre de 2026","cuenta":"· 1 gastos","suma":"129,90 €","salvedad":"Es la suma de lo que estás viendo, no la del mes."} 
+       🔴 390px · «Reforma baño» · cabecera {"mes":"Septiembre de 2026","cuenta":"· 1 gastos","suma":"129,90 €","salvedad":"Es la suma de lo que estás viendo, no la del mes."} y
+       🔴 2 hallazgos.
+M14 · el texto de «Sin foto» pasa a un ambar que no llega a 4,5:1
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 píldoras por debajo de 4,5:1: [["gasto-foto--no",2.02]]
+       🔴 1 hallazgos.
+M15 · el chip pulsado no cambia su aria-pressed
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · tras pulsar «Sin foto» el chip pulsado es [{"texto":"Todos · 8","pulsado":"true"},{"texto":"Sin foto · 5","pulsado":"false"}]
+       🔴 390px · tras pulsar «Sin foto» el chip pulsado es [{"texto":"Todos · 8","pulsado":"true"},{"texto":"Sin foto · 5","pulsado":"false"}]
+       🔴 2 hallazgos.
+M16 · la barra crece hasta tapar la ultima fila
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 390px · «Nuevo gasto» no está pegado al borde de abajo: bottom 784 en una pantalla de 844
+       🔴 390px · la barra tapa la última fila (su borde inferior 755, la barra empieza en 679)
+       🔴 2 hallazgos.
+M17 · un segundo boton con el id #exp-new-btn (una copia del de arriba, no el mismo)
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 hay más de un botón #exp-new-btn: «Nuevo gasto» tiene que ser UNO (el del atajo «N»)
+       🔴 1 hallazgos.
+M18 · el filtro por trabajo ofrece un mismo trabajo una vez por gasto
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · el filtro por trabajo ofrece ["Todos los trabajos","Sin trabajo","Cocina Ruiz","Presupuesto #5 · María López","Presupuesto #5 · María López","Reforma baño"] y
+       🔴 1280px · «Presupuesto #5 · María López» deja [] y esperaba ["Tubo de cobre 22 mm","Silicona"]
+       🔴 1280px · «Reforma baño» deja [] y esperaba ["Taladro percutor"]
+
+POBLACION mutaciones=9 · aplicadas=9 · caen=9 · vivas=[] · sin restaurar=[]
+EXIT=0

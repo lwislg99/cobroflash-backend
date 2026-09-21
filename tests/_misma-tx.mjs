@@ -60,7 +60,19 @@ function paramDeTransaction(fn) {
   return p && ts.isIdentifier(p.name) ? p.name.text : null;
 }
 
-/** Todas las llamadas `<algo>.invoice.create(...)` dentro de `fn`, con su receptor. */
+/**
+ * SCRUM-729 · El envoltorio por el que pasan los siete caminos. `crearFacturaEmitida(tx, …)`
+ * recibe el cliente transaccional como PRIMER argumento, así que la pregunta de este guard —«¿el
+ * create usa el mismo cliente que reservó el número?»— se responde igual de bien mirando ese
+ * argumento que mirando el `tx.invoice.create` que dejó de estar aquí.
+ *
+ * Se reconoce el envoltorio, no se le hace una excepción: si alguien lo llamara con `prisma` en
+ * vez de con el `tx` de la transacción, esto seguiría saliendo en rojo — que es exactamente lo
+ * que este fichero existe para impedir.
+ */
+export const ENVOLTORIO_CREACION = 'crearFacturaEmitida';
+
+/** Todas las creaciones de factura dentro de `fn`, con el cliente que las ejecuta. */
 function creacionesEn(fn, sf) {
   const out = [];
   const visitar = (n) => {
@@ -70,6 +82,13 @@ function creacionesEn(fn, sf) {
         n.expression.expression.name.text === 'invoice') {
       out.push({
         receptor: nombreDe(n.expression.expression.expression),
+        linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
+      });
+    }
+    // SCRUM-729 · el envoltorio: el receptor es su PRIMER argumento.
+    if (ts.isCallExpression(n) && nombreDe(n.expression) === ENVOLTORIO_CREACION) {
+      out.push({
+        receptor: nombreDe(n.arguments[0]),
         linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
       });
     }

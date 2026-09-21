@@ -35,6 +35,7 @@ import {
   RegistroNoEmitibleError,
   resolverSinDestinatario,
 } from '../../fiscal/verifactu/registro.builder';
+import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
 
 // SCRUM-145: los namespaces oficiales de los XSD de la AEAT vivían aquí (`NS_LR`, `NS_INFO`)
 // SOLO para el sobre que se armaba en este fichero. SCRUM-240 se llevó el sobre a
@@ -322,7 +323,14 @@ export async function applyVeriFactu(
     const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx, invoice.id);
     // El instante se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
     // posterior al del registro anterior de la cadena.
-    const timestamp = formatFechaHoraHuso(new Date());
+    //
+    // 🔴 SCRUM-880 · EL INSTANTE SE GUARDA ENTERO Y SE HASHEA TRUNCADO. Antes se persistía
+    // `new Date(timestamp)` —o sea, la cadena YA truncada al segundo, re-parseada—, así que el
+    // sello guardado tenía siempre los milisegundos a cero y dos registros del mismo segundo eran
+    // indistinguibles para el desempate de la cadena. Ahora se conserva `ahora`: la huella sigue
+    // usando el truncado que exige la AEAT, y la columna guarda la precisión que el hash descarta.
+    const ahora = new Date();
+    const timestamp = formatFechaHoraHuso(ahora);
 
     const vfHash = computeVeriFactuHash({
       nif: taxId,
@@ -342,9 +350,14 @@ export async function applyVeriFactu(
     // SCRUM-145: se PERSISTE el instante exacto que entró en la huella. Sin él, el registro
     // emitía `FechaHoraHusoGenRegistro` = fecha de la FACTURA, que NO es lo que se hasheó, y
     // un tercero no podía recomputar la huella para verificarla.
+    //
+    // ⚠️ SCRUM-880 MATIZA ESA PROMESA, y conviene que esté escrito donde se hizo: lo que se
+    // guarda ya no es *exactamente* lo hasheado, sino **lo hasheado MÁS la precisión que el hash
+    // descarta**. La verificación de un tercero no cambia: el XML emite
+    // `formatFechaHoraHuso(inv.vfTimestamp)`, que vuelve a truncar y produce la misma cadena.
     await tx.invoice.update({
       where: { id: invoice.id },
-      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: new Date(timestamp) },
+      data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora },
     });
 
     return { vfHash, prevHash, qrUrl };
@@ -406,7 +419,11 @@ export async function applyVeriFactuAnulacion(
     const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx);
     // El sello se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
     // posterior al del eslabón anterior.
-    const timestamp = formatFechaHoraHuso(new Date());
+    //
+    // 🔴 SCRUM-880 · simétrico al alta: el instante se guarda ENTERO y se hashea TRUNCADO. Que la
+    // anulación y su alta cayeran en el mismo segundo era justo el caso que bifurcaba la cadena.
+    const ahora = new Date();
+    const timestamp = formatFechaHoraHuso(ahora);
 
     const vfAnulHash = computeVeriFactuHashAnulacion({
       nif: taxId,
@@ -423,7 +440,7 @@ export async function applyVeriFactuAnulacion(
     // que `vfPrevHash` con el alta. Un dato, no una inferencia.
     await tx.invoice.update({
       where: { id: invoice.id },
-      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: new Date(timestamp) },
+      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: ahora },
     });
 
     return { vfAnulHash, prevHash };
@@ -477,7 +494,29 @@ async function ultimaHuellaDeLaCadena(
   // Se compara por el sello del REGISTRO (cuándo se generó), no por la fecha de la factura.
   const tAlta = (ultimaAlta.vfTimestamp ?? ultimaAlta.createdAt).getTime();
   const tAnul = (ultimaAnul.vfAnulTimestamp as Date).getTime();
-  return tAnul > tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;
+
+  // ═══ SCRUM-880 · EL EMPATE GANA LA ANULACIÓN, Y ESTE `>=` NO ES UN DESCUIDO ════════════════
+  //
+  // 🔴 SI LEES ESTO PENSANDO EN «CORREGIRLO» A `>`, ES JUSTO EL DEFECTO QUE SE ARREGLÓ AQUÍ.
+  //
+  // **Una anulación es SIEMPRE posterior a su alta**: no se puede anular una factura antes de
+  // emitirla. Así que cuando los dos sellos empatan, la anulación es la posterior y tiene que
+  // ganar. Con `>` estricto ganaba el alta, el registro siguiente encadenaba a ella y la huella
+  // de la anulación quedaba huérfana: **la cadena se bifurcaba**.
+  //
+  // Y el empate era posible, medido (SCRUM-880): los dos sellos se persistían truncados al
+  // segundo, así que dos registros del mismo segundo eran indistinguibles aquí. El truncado se
+  // quitó en el mismo ticket —ahora se guarda el instante con milisegundos—, pero este `>=` se
+  // queda por dos motivos: los registros sellados ANTES de aquel cambio siguen teniendo los
+  // milisegundos a cero, y un reloj puede devolver el mismo instante dos veces.
+  //
+  // ⚠️ Lo que este `>=` NO arregla, dicho para que nadie lo dé por cerrado: si el empate fuera
+  // entre una anulación y un alta POSTERIOR no relacionada, ahora quedaría huérfana el alta. Con
+  // dos sellos idénticos no se puede saber cuál fue el último — cualquier desempate por reloj es
+  // una apuesta, y ésta apuesta al único caso que la causalidad garantiza. La solución que
+  // elimina la clase entera (un contador estrictamente monótono) es otro ticket: exige estado
+  // nuevo y cambio de esquema.
+  return tAnul >= tAlta ? ultimaAnul.vfAnulHash : ultimaAlta.vfHash;
 }
 
 /**
@@ -556,6 +595,12 @@ export async function buildVerifactuRegistrosXml(
     // SCRUM-145: vfTimestamp (sello real de la huella) y los campos de ANULACIÓN.
     include: {
       // SCRUM-145 (gap 6): el NIF del cliente decide si se puede emitir `Destinatarios`.
+      //
+      // SCRUM-729 · SE SIGUE CARGANDO, pero ya NO manda: es el respaldo para las facturas
+      // anteriores al escritor. El destinatario sale de las columnas congeladas de la propia
+      // factura (`clienteDelDocumento`). Hasta hoy este `include` decidía, para el ejercicio
+      // ENTERO y en el momento de EXPORTAR, qué NIF se le declaraba a la AEAT — así que
+      // corregir la ficha de un cliente cambiaba registros de facturas ya selladas.
       customer:  { select: { name: true, taxId: true } },
       // SCRUM-216: `lines` de la factura RECTIFICADA — de ahi salen la base y la cuota
       // SUSTITUIDAS que exige `ImporteRectificacion` en las rectificativas por sustitucion
@@ -790,7 +835,27 @@ export async function buildVerifactuRegistrosXml(
       );
     }
     const tipoBase: 'F1' | 'R1' = veredicto.tipoAeat;
-    const sinDestinatario = !inv.customer?.taxId
+
+    // ── 🔴 SCRUM-729 · EL DESTINATARIO SALE DE LA FACTURA, NO DE LA FICHA DE HOY ──────────────
+    //
+    // Éste es el lector que más dolía de los cuatro, y no es el PDF. Aquí el NIF del cliente NO
+    // sólo se imprime: DECIDE. Con `MODO_SIN_DESTINATARIO = 'SIN_DICTAMEN'`, una factura cuyo
+    // cliente no tiene NIF queda FUERA del registro de la AEAT. Leyendo en vivo, eso significaba:
+    //
+    //   · rellenar el NIF de un cliente en septiembre METÍA en el registro una factura de marzo
+    //     que se emitió sin destinatario identificado;
+    //   · y borrarlo o corregirlo la SACABA, o le cambiaba el `TipoFactura` a F2.
+    //
+    // Y `TipoFactura` es uno de los OCHO campos de `computeVeriFactuHash`. Al sellar sale de
+    // `invoice.type` (columna congelada, línea 333); al exportar salía de aquí. O sea que editar
+    // una ficha de cliente podía dejar el XML declarando un `TipoFactura` distinto del que está
+    // dentro de la huella que ese mismo XML lleva firmada.
+    //
+    // Un documento firmado cuyo contenido se recalcula al exportarlo no está firmado: está
+    // sellado sobre algo que ya no existe.
+    const destinatario = clienteDelDocumento(inv, inv.customer);
+
+    const sinDestinatario = !destinatario.taxId
       ? resolverSinDestinatario(tipoBase, inv.number, opts.modoSinDestinatario ?? MODO_SIN_DESTINATARIO)
       : null;
 
@@ -798,11 +863,11 @@ export async function buildVerifactuRegistrosXml(
     // Va entre `DescripcionOperacion` y `Destinatarios`: es el orden del XSD (sequence).
     const marcadorSinDestinatario = sinDestinatario ? sinDestinatario.marcadorXml : '';
 
-    const destinatarios = inv.customer?.taxId ? `
+    const destinatarios = destinatario.taxId ? `
       <sum1:Destinatarios>
         <sum1:IDDestinatario>
-          <sum1:NombreRazon>${xmlEscape(inv.customer.name || 'Cliente')}</sum1:NombreRazon>
-          <sum1:NIF>${xmlEscape(inv.customer.taxId)}</sum1:NIF>
+          <sum1:NombreRazon>${xmlEscape(destinatario.name || 'Cliente')}</sum1:NombreRazon>
+          <sum1:NIF>${xmlEscape(destinatario.taxId)}</sum1:NIF>
         </sum1:IDDestinatario>
       </sum1:Destinatarios>` : '';
 

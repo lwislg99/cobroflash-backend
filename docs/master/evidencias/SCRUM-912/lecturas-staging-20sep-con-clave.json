@@ -1,0 +1,186 @@
+{
+  "sha": "70bd2def50e45a5b654630ee262ef79eeffd4a8b",
+  "cuando": "2026-09-20T13:38:49.685Z",
+  "lecturas": [
+    {
+      "ticket": "t1-completo-21",
+      "status": 200,
+      "ms": 2865,
+      "modelo": "gemini-3.5-flash-lite",
+      "aciertos": "7/7",
+      "campos": [
+        {
+          "campo": "amount",
+          "esperado": 36.3,
+          "leido": 36.3,
+          "ok": true
+        },
+        {
+          "campo": "baseAmount",
+          "esperado": 30,
+          "leido": 30,
+          "ok": true
+        },
+        {
+          "campo": "vatRate",
+          "esperado": 21,
+          "leido": 21,
+          "ok": true
+        },
+        {
+          "campo": "vatAmount",
+          "esperado": 6.3,
+          "leido": 6.3,
+          "ok": true
+        },
+        {
+          "campo": "date",
+          "esperado": "2026-09-15",
+          "leido": "2026-09-15",
+          "ok": true
+        },
+        {
+          "campo": "providerInvoiceNumber",
+          "esperado": "T-2026-00481",
+          "leido": "T-2026-00481",
+          "ok": true
+        },
+        {
+          "campo": "nifProveedor",
+          "esperado": "B76543214",
+          "leido": "B76543214",
+          "ok": true
+        }
+      ],
+      "descartados": [],
+      "veredicto": "falta_confirmar",
+      "propuesta": {
+        "concept": "Codo cobre 15mm y Tubo multicapa 16mm",
+        "amount": 36.3,
+        "baseAmount": 30,
+        "vatRate": 21,
+        "vatAmount": 6.3,
+        "date": "2026-09-15",
+        "providerInvoiceDate": "2026-09-15",
+        "providerInvoiceNumber": "T-2026-00481",
+        "proveedorNombre": "SUMINISTROS FONTANERÍA RUIZ S.L.",
+        "nifProveedor": "B76543214",
+        "providerId": null
+      }
+    },
+    {
+      "ticket": "t2-dos-tipos",
+      "status": 200,
+      "ms": 1720,
+      "modelo": "gemini-3.5-flash-lite",
+      "aciertos": "5/5",
+      "campos": [
+        {
+          "campo": "amount",
+          "esperado": 10.99,
+          "leido": 10.99,
+          "ok": true
+        },
+        {
+          "campo": "vatRate",
+          "esperado": null,
+          "leido": null,
+          "ok": true
+        },
+        {
+          "campo": "vatAmount",
+          "esperado": null,
+          "leido": null,
+          "ok": true
+        },
+        {
+          "campo": "date",
+          "esperado": "2026-09-16",
+          "leido": "2026-09-16",
+          "ok": true
+        },
+        {
+          "campo": "providerInvoiceNumber",
+          "esperado": "88213",
+          "leido": "88213",
+          "ok": true
+        }
+      ],
+      "descartados": [],
+      "veredicto": "no_deducible",
+      "propuesta": {
+        "concept": "Silicona sanitaria y Botella agua 1,5L",
+        "amount": 10.99,
+        "baseAmount": null,
+        "vatRate": null,
+        "vatAmount": null,
+        "date": "2026-09-16",
+        "providerInvoiceDate": "2026-09-16",
+        "providerInvoiceNumber": "88213",
+        "proveedorNombre": "FERRETERÍA Y DROGUERÍA LÓPEZ",
+        "nifProveedor": "B76543214",
+        "providerId": null
+      }
+    },
+    {
+      "ticket": "t3-solo-total",
+      "status": 200,
+      "ms": 1663,
+      "modelo": "gemini-3.5-flash-lite",
+      "aciertos": "6/6",
+      "campos": [
+        {
+          "campo": "amount",
+          "esperado": 58.51,
+          "leido": 58.51,
+          "ok": true
+        },
+        {
+          "campo": "baseAmount",
+          "esperado": null,
+          "leido": null,
+          "ok": true
+        },
+        {
+          "campo": "vatRate",
+          "esperado": null,
+          "leido": null,
+          "ok": true
+        },
+        {
+          "campo": "vatAmount",
+          "esperado": null,
+          "leido": null,
+          "ok": true
+        },
+        {
+          "campo": "nifProveedor",
+          "esperado": null,
+          "leido": null,
+          "ok": true
+        },
+        {
+          "campo": "date",
+          "esperado": "2026-09-17",
+          "leido": "2026-09-17",
+          "ok": true
+        }
+      ],
+      "descartados": [],
+      "veredicto": "no_deducible",
+      "propuesta": {
+        "concept": "Diésel",
+        "amount": 58.51,
+        "baseAmount": null,
+        "vatRate": null,
+        "vatAmount": null,
+        "date": "2026-09-17",
+        "providerInvoiceDate": "2026-09-17",
+        "providerInvoiceNumber": null,
+        "proveedorNombre": "GASOLINERA EL CRUCE",
+        "nifProveedor": null,
+        "providerId": null
+      }
+    }
+  ]
+}

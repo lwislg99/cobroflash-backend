@@ -6,6 +6,24 @@
 // componentes por su cuenta y se desincronicen → un desajuste de nº de variables
 // o de botones hace que Meta rechace el envío (#132000 / #132001).
 // tests/whatsappTemplates.test.mjs blinda esta estructura.
+//
+// ── SCRUM-931 · EL IMPORTE TAMBIÉN, Y POR QUÉ FALTABA JUSTO ÉSE ──────────────────────────────
+//
+// Este fichero centralizó el NÚMERO DE VARIABLES —lo que Meta comprueba y rechaza— y dejó a cada
+// llamante el FORMATO DEL IMPORTE, que Meta NO comprueba. Medido: los siete productores escribían
+// `${Number(x).toFixed(2)} ${cur}` a mano, así que el cliente leía «419.87 EUR» en su móvil, con el
+// punto —que en español es el separador de MILES— donde va la coma de los decimales.
+//
+// 🔴 EL IMPORTE ENTRA COMO `number` + `currency`, NUNCA YA FORMATEADO. No es cosmética del tipo:
+// mientras la propiedad fuese `string`, formatear era una COSTUMBRE del llamante y el octavo sitio
+// la rompía sin que nada cayera (es el defecto que SCRUM-577 dejó vivo contando ocurrencias por
+// fichero). Con `amount: number` el compilador rechaza la cadena hecha a mano: la puerta no la
+// vigila un guard, la cierra el tipo.
+//
+// La forma la da `formatMoneyEs`, que YA era la de la casa para dinero client-facing (A6.6) y cuyo
+// propio comentario dice «nunca "2383.70 EUR"». No entra una cuarta forma de escribir dinero —los
+// trinquetes de SCRUM-636/743 exigen que sean TRES—: entra la llamada que faltaba.
+import { formatMoneyEs } from '../core/utils/utils';
 
 export const WA_TEMPLATES = {
   quoteDecision: 'quote_decision_es',
@@ -126,14 +144,15 @@ export function buildQuoteDecision(p: {
   customerName: string;
   businessName: string;
   quoteNumber: string | number;
-  totalWithCurrency: string;
+  amount: number;
+  currency: string;
   decisionToken: string;
 }): WaTemplateMessage {
   return {
     templateName: WA_TEMPLATES.quoteDecision,
     languageCode: 'es',
     components: [
-      body(p.customerName, p.businessName, p.quoteNumber, p.totalWithCurrency),
+      body(p.customerName, p.businessName, p.quoteNumber, formatMoneyEs(p.amount, p.currency)),
       urlButton(p.decisionToken),
     ],
   };
@@ -146,14 +165,15 @@ export function buildPaymentRequest(p: {
   customerName: string;
   businessName: string;
   invoiceNumber: string;
-  amountWithCurrency: string;
+  amount: number;
+  currency: string;
   urlToken: string;
 }): WaTemplateMessage {
   return {
     templateName: WA_TEMPLATES.paymentRequest,
     languageCode: 'es',
     components: [
-      body(p.customerName, p.businessName, p.invoiceNumber, p.amountWithCurrency),
+      body(p.customerName, p.businessName, p.invoiceNumber, formatMoneyEs(p.amount, p.currency)),
       urlButton(p.urlToken),
     ],
   };
@@ -162,7 +182,8 @@ export function buildPaymentRequest(p: {
 // 3. payment_confirmation_es — cuerpo 4 vars, SIN botones
 export function buildPaymentConfirmation(p: {
   customerName: string;
-  amountWithCurrency: string;
+  amount: number;
+  currency: string;
   invoiceNumber: string;
   businessName: string;
 }): WaTemplateMessage {
@@ -170,7 +191,7 @@ export function buildPaymentConfirmation(p: {
     templateName: WA_TEMPLATES.paymentConfirmation,
     languageCode: 'es',
     components: [
-      body(p.customerName, p.amountWithCurrency, p.invoiceNumber, p.businessName),
+      body(p.customerName, formatMoneyEs(p.amount, p.currency), p.invoiceNumber, p.businessName),
     ],
   };
 }
@@ -185,7 +206,8 @@ export function buildPaymentConfirmation(p: {
 //    ¡Gracias por confiar en {{4}}!\nPuedes ver tu recibo en el botón de abajo."
 export function buildPaymentConfirmationInvoice(p: {
   customerName: string;
-  amountWithCurrency: string;
+  amount: number;
+  currency: string;
   documentNumber: string;
   businessName: string;
   urlToken: string;
@@ -194,7 +216,7 @@ export function buildPaymentConfirmationInvoice(p: {
     templateName: WA_TEMPLATES.paymentConfirmationInvoice,
     languageCode: 'es',
     components: [
-      body(p.customerName, p.amountWithCurrency, p.documentNumber, p.businessName),
+      body(p.customerName, formatMoneyEs(p.amount, p.currency), p.documentNumber, p.businessName),
       urlButton(p.urlToken),
     ],
   };

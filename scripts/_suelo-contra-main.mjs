@@ -43,6 +43,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { lecturaDeDeclaraciones } from './meta-guard-mutaciones.mjs';
+import { temporal } from '../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 export const RAMA_DE_REFERENCIA = 'origin/main';
 
@@ -74,6 +75,15 @@ export function referenciaDe(raiz = process.cwd()) {
  */
 export const RETIRADAS_A_PROPOSITO = [
   // { guard: 'scrumNNN-lo-que-sea.test.mjs', motivo: 'por qué se retiró', fecha: '2026-09-07' },
+  //
+  // 🔴 SCRUM-867 · LAS DOS POBLACIONES BAJAN UNA PORQUE SE RETIRÓ UN FICHERO, Y ESO SE DICE AQUÍ.
+  // `public/dashboard/js/nuevaFacturaModal.js` estaba MUERTO —nadie lo abría desde que la lista de
+  // Facturas navega a `invoices-new`— pero el índice lo cargaba y el SHELL lo precacheaba, así que
+  // el navegador se bajaba y ejecutaba 266 líneas en cada visita. Medido con suelo en
+  // `docs/master/evidencias/SCRUM-867/censo-modal-muerto.mjs`; el guard que impide que vuelva es
+  // `tests/scrum867-el-modal-muerto.test.mjs`. No es cobertura perdida: es una pantalla menos.
+  { guard: 'ficheros-js-de-public', motivo: 'SCRUM-867: se retiró `nuevaFacturaModal.js`, muerto por uso y vivo por carga (95 → 94)', fecha: '2026-09-16' },
+  { guard: 'scripts-del-dashboard', motivo: 'SCRUM-867: el mismo fichero sale del índice y del SHELL del service worker a la vez, porque `cache.addAll` es atómico (92 → 91)', fecha: '2026-09-16' },
 ];
 
 /** Los ficheros CANDIDATOS de una ref. El grep sólo preselecciona: quien cuenta es el AST. */
@@ -208,7 +218,7 @@ export function arbolDeLaBase(raiz = process.cwd(), base = null) {
   // temporal — que es exactamente el defecto de la nota de turno que aquel ticket persigue.
   // El precio es no poder cachear entre procesos: 1,6 s por proceso. Barato al lado de que dos
   // sesiones se pisen un árbol.
-  const destino = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-base-'));
+  const destino = temporal('yaqu-base-');
   const testigo = path.join(destino, 'package.json');
   const tar = path.join(destino, 'arbol.tar');
   try {

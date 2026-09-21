@@ -247,7 +247,9 @@ test('SCRUM-580 · 🔴 la vista MONTA el campo, la columna y el filtro', () => 
   assert.equal(colEtiquetas.ocultaEnMovil, true,
     '🔴 la columna de etiquetas ha dejado de nacer oculta en móvil: eso cambia la pantalla de '
     + 'todo el mundo sin que nadie lo pida.');
-  assert.match(v, /FC\.aplicar\(lote, pestanaActiva, ordenActivo, etiquetaActiva\)/,
+  // SCRUM-979: `aplicar` recibe DETRÁS un filtro más (la última visita). Lo que este test vigila
+  // —que la etiqueta llega en su posición— no cambia; por eso se admite `,` además de `)`.
+  assert.match(v, /FC\.aplicar\(lote, pestanaActiva, ordenActivo, etiquetaActiva[,)]/,
     '🔴 la lista no pasa la etiqueta al filtro: el selector no filtraría nada.');
 });
 

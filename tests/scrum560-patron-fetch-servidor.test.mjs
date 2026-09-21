@@ -54,7 +54,10 @@ const CON_EL_PATRON_YA = [
   'scrum171a-consolidar-cliente.test.mjs',
   'scrum178-emision-manual.test.mjs',
   'scrum221-export-fiscal-cero-bytes.test.mjs',
-  'scrum329-legal-pagina-publica.test.mjs',
+  // 🔴 `scrum329-legal-pagina-publica.test.mjs` SALE DE AQUÍ (SCRUM-822, 8-sep-2026). Era el
+  // «segundo que aborta» que esta lista se dejó anotado como condición para reabrirse: 24 de 24
+  // instancias en paralelo caían con `fetch failed`, y su rojo tenía forma de 404, así que acusó
+  // a la landing y se abrió un Highest contra un sistema sano. Arreglado con este mismo patrón.
   'scrum49-firma-remota.test.mjs',
   'scrum51-job-sin-quote.test.mjs',
   'scrum57-operario-propagacion.test.mjs',

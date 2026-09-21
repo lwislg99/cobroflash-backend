@@ -69,14 +69,101 @@
  * tests se han perdido y a decidirlo a la vista del número.
  *
  * ⚠️ CONFLICTO ENTRE RAMAS: **se queda el MÁS ALTO** (ver la cabecera).
+ *
+ * ── 🔴 SCRUM-708 (8-sep-2026) · SUBIDO DE 4798 A 6246, Y LO QUE SE APRENDIÓ SUBIÉNDOLO ──────
+ *
+ * Estuvo en 4798 desde el 2-sep-2026. El 8-sep-2026 la tanda daba 6246: margen +1448 ese día. Se
+ * podían perder mil cuatrocientos cuarenta y ocho tests y esto seguía verde. **Margen al declararlo
+ * hoy: 0.**
+ *
+ * Y lo caro no es que estuviera rancio: es que **la compensación elegida para que no lo estuviera
+ * era IMPRIMIR EL MARGEN** en cada ejecución — está escrito ahí arriba, «un suelo rancio tiene que
+ * verse sin que nadie vaya a buscarlo». Llevaba seis días imprimiéndolo en CI y nadie lo subió. Y
+ * el precedente que esa misma cabecera cita seguía igual el 8-sep-2026: el `SUELO_TOTAL` de
+ * `_evidencia-tanda.mjs`, con la tanda por encima de seis mil.
+ *
+ * 🔒 IMPRIMIR NO ES UN MECANISMO. Un dato que sólo sirve si alguien lo lee depende de que alguien
+ * se acuerde, que es justo lo que este número no podía permitirse.
+ *
+ * ── ✅ Y ESO YA NO DEPENDE DE QUE NADIE SE ACUERDE ──────────────────────────────────────────
+ * No por ESTE número, que volverá a envejecer: por el de al lado. SCRUM-708 conectó la población
+ * `tests-declarados` al registro de suelos DERIVADOS de SCRUM-810 (`scripts/_suelo-contra-main.mjs`,
+ * usado desde `tests/scrum810b-los-suelos-derivados.test.mjs`), que compara contra la **base de
+ * fusión con `main`** en vez de contra un número escrito: **no caduca**, porque main se mueve solo,
+ * y **habla a la PRIMERA pérdida** en vez de esperar a que el margen se agote.
+ *
+ * Los dos números tienen trabajos distintos y ninguno sobra:
+ *   · éste (declarado) → CEGUERA: un TAP a medias, una tanda que ni arrancó, media suite fuera.
+ *   · el derivado      → PÉRDIDA: esta rama trae menos tests que la base de la que salió.
+ *
+ * Que éste se vuelva a quedar corto ya no deja la vigilancia en nada.
+ *
+ * ── ✅ Y DESDE SCRUM-736 YA NO HAY QUE SUBIRLO ──────────────────────────────────────────────
+ * Donde antes decía «súbelo igual cuando lo veas» —un `console.log` con forma de tarea— ahora hay
+ * una red que BLOQUEA: el suelo que rige es el mayor entre este número y el que se deriva de los
+ * tests que el árbol DECLARA (ver `CUENTA_DEL_ARBOL_MINIMA` más abajo). Este 6246 se queda como
+ * mínimo histórico y como respaldo para cuando el censo del árbol no se pueda hacer; **no hay que
+ * mantenerlo, y dejarlo rancio ya no afloja nada.**
  */
-export const SUELO_TESTS = 4798;
+export const SUELO_TESTS = 6246;
 
 /** Contra qué se midió, para que el suelo no sea un número sin procedencia. */
-export const MEDIDO_CONTRA = 'origin/main = 80db312b · 2026-09-02';
+export const MEDIDO_CONTRA = 'origin/main = fd290d4a · 2026-09-08';
 
 export const SALIDA_POR_DEBAJO = 1;
 export const SALIDA_NO_SUPE_MIRAR = 2;
+
+/**
+ * 🔴 SCRUM-736 · LA RED QUE BLOQUEA, PORQUE UN AVISO QUE NADIE ESTÁ OBLIGADO A MIRAR NO ES UN AVISO
+ *
+ * Lo de arriba acaba diciendo «súbelo igual cuando lo veas». Eso es un `console.log` en una tanda
+ * de casi 7.000 tests: llevaba ocho días imprimiendo el margen y nadie lo subió — otra vez.
+ *
+ * ── LO QUE SE MIDIÓ ANTES DE ELEGIR NADA (16-sep-2026) ──────────────────────────────────────
+ * `tests-declarados` en `origin/main`, un commit por día, con el MISMO censo del trinquete
+ * derivado de SCRUM-810b: **3595 → 6756 en 14 pasos medidos. Suben 14, bajan 0.** Media **+226 al
+ * día**, y un salto de **+647** en una sola jornada.
+ *
+ * 🔒 ESO REFUTA LAS DOS SALIDAS OBVIAS, y con números:
+ *   · **una banda de margen no sirve.** Al ritmo medido, un 5% de holgura caduca en 1,5 días y un
+ *     25% en 7,5. Cualquier banda convierte el suelo en un trinquete que hay que tocar cada pocos
+ *     días — el trinquete a mano que se sube por inercia, sólo que con más ceremonia.
+ *   · **y «subirlo al número de hoy» caduca mañana**: +226 al día.
+ *
+ * ── ENTONCES QUÉ, Y POR QUÉ ESTO NO ES «DERIVARLO DEL ÁRBOL» ────────────────────────────────
+ * Derivar un suelo de la población que ese mismo suelo vigila lo borra: coincidiría siempre
+ * consigo mismo y no podría caer nunca. **Aquí son DOS poblaciones independientes:**
+ *
+ *     lo que el ÁRBOL DECLARA (`test(`/`it(` por AST, SCRUM-708)   →  6756
+ *     lo que la TANDA REGISTRÓ (`# tests` del TAP)                 →  6903
+ *
+ * Una tanda a medias hunde el segundo y **no toca el primero**. Por eso esta comparación SÍ puede
+ * caer, y cae: está ejercida en `tests/scrum736-…`, quitando 441 tests del TAP.
+ *
+ * Y no es un patrón nuevo en la casa: es el del bloque ④b de `_evidencia-tanda.mjs`, que ya exige
+ * «AL MENOS tantos ficheros como hay hoy en `tests/`» y lo llama, con estas palabras, **la versión
+ * exacta del suelo, sin número mágico**. Lo que faltaba era aplicárselo al OTRO número, el de
+ * tests, que se quedó a mano justo al lado.
+ *
+ * ── LA DECISIÓN QUE SIGUE SIENDO UNA DECISIÓN ───────────────────────────────────────────────
+ * Ésta: **cuánta divergencia entre lo declarado y lo corrido se tolera.** Es una FRACCIÓN, y por
+ * eso no envejece — no depende del tamaño de la suite, así que crece con ella sola.
+ *
+ * Se elige en 0,97 con la relación medida delante: hoy la tanda registra un **1,022×** lo que el
+ * árbol declara (el TAP cuenta los subtests y los tests que nacen dentro de un bucle, que el AST
+ * ve como una sola llamada). O sea que 0,97 deja **5 puntos por debajo de la relación observada**:
+ * holgado para que un bucle de más no fabrique un rojo, y suficiente para cazar que la tanda deje
+ * de dar cuenta del 3% de lo que el árbol declara. **No se escribe aquí a cuántos tests equivale
+ * ese 3%**: sería una cifra que caduca mañana, y la calcula el propio veredicto en cada ejecución
+ * (`sueloEfectivo`, y el título lo imprime). Que la frase no diga un número es el escalón ② de la
+ * jerarquía de SCRUM-737, y es mejor que anclarlo: no hay nada que mantener.
+ *
+ * ⚠️ Y UN PUNTO ES UN PUNTO: la relación 1,022 está medida sobre UN árbol. Por eso el suelo del
+ * guard exige que la relación observada caiga dentro de una banda ancha, y si se sale, lo DICE
+ * en vez de callarse: una relación absurda significa que el censo por AST se ha roto, no que la
+ * tanda esté mal.
+ */
+export const CUENTA_DEL_ARBOL_MINIMA = 0.97;
 
 /**
  * El total de una salida TAP. `null` si no se pudo leer — que **no** es cero.
@@ -130,9 +217,28 @@ export function ficherosMudosDelTap(texto) {
  * Separarlo del disco es lo que permite ejercitar el rojo, el control negativo y el mensaje del
  * margen en milisegundos, sin correr la tanda dentro de la tanda.
  */
-export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
+/**
+ * El suelo que de verdad rige, y de dónde sale.
+ *
+ * 🔴 EL MAYOR DE LOS DOS, y el orden importa: el número declarado es un MÍNIMO histórico que no
+ * baja, y el derivado es el que se mantiene solo. Mientras el árbol crezca, rige el derivado y
+ * **nadie tiene que acordarse de nada**; si el censo por AST no se puede hacer, rige el declarado
+ * y se DICE en el título — que es distinto de callarse y seguir con un número rancio.
+ */
+export function sueloEfectivo(suelo, declaradosEnElArbol) {
+  if (!Number.isFinite(declaradosEnElArbol) || declaradosEnElArbol <= 0) {
+    return { valor: suelo, de: 'declarado', derivado: null, medible: false };
+  }
+  const derivado = Math.ceil(declaradosEnElArbol * CUENTA_DEL_ARBOL_MINIMA);
+  return derivado > suelo
+    ? { valor: derivado, de: 'derivado', derivado, medible: true }
+    : { valor: suelo, de: 'declarado', derivado, medible: true };
+}
+
+export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS, declaradosEnElArbol = null) {
   const total = totalDelTap(textoTap);
   const mudos = ficherosMudosDelTap(textoTap);
+  const efectivo = sueloEfectivo(suelo, declaradosEnElArbol);
 
   // ── 🔴 SUELO DEL PROPIO GUARD ───────────────────────────────────────────────────────────
   // Sin total no hay veredicto. «No supe leer el TAP» y «la tanda no tiene tests» son el mismo
@@ -147,7 +253,9 @@ export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
     };
   }
 
-  const margen = total - suelo;
+  // 🔴 DESDE SCRUM-736 el margen se mide contra el suelo EFECTIVO, no contra el declarado. Si se
+  // midiera contra el declarado, el margen volvería a crecer solo y volveríamos a imprimirlo.
+  const margen = total - efectivo.valor;
 
   // ── 🔴 PRIMERO LO QUE ES SEGURO, Y LUEGO LO QUE ES UN INDICIO ───────────────────────────
   // El fichero mudo se decide con el TAP en la mano: es el defecto, visto. El margen negativo
@@ -172,8 +280,11 @@ export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
 
   if (margen < 0) {
     return {
-      ok: false, salida: SALIDA_POR_DEBAJO, total, suelo, margen, mudos,
-      titulo: `🔴 LA TANDA ESTÁ ${-margen} TEST(S) POR DEBAJO DEL SUELO: ${total} corridos, suelo ${suelo}.`,
+      ok: false, salida: SALIDA_POR_DEBAJO, total, suelo, margen, mudos, efectivo,
+      titulo: `🔴 LA TANDA ESTÁ ${-margen} TEST(S) POR DEBAJO DEL SUELO: ${total} corridos, suelo `
+        + `${efectivo.valor}` + (efectivo.de === 'derivado'
+          ? ` (DERIVADO: el árbol declara ${declaradosEnElArbol} y se exige el ${Math.round(CUENTA_DEL_ARBOL_MINIMA * 100)}%).`
+          : ` (declarado a mano; el censo del árbol no se pudo hacer).`),
       detalle: '   Un test que desaparece no es un test que falla: no grita, el recuento baja y el\n'
         + '   porcentaje de verdes puede incluso MEJORAR. Por eso esto se mira aparte del `fail`.\n\n'
         + '   🔴 Y ANTES DE BUSCAR UN TEST PERDIDO, DESCARTA QUE SEA OTRO ÁRBOL. Esto compara un\n'
@@ -189,7 +300,10 @@ export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
         + '     · ¿tu rama sale de un `main` ANTERIOR al que declaró este suelo? Entonces no falta\n'
         + '       nada: mezcla `main` y vuelve a mirar.\n'
         + '     · ¿se ha renombrado o movido un fichero de `tests/` y ya no casa con el patrón?\n'
-        + '       (ése es el único caso que este número ve y los ficheros mudos no.)\n'
+        + '       SCRUM-708: eso YA NO hay que deducirlo de este número. `scrum708-el-fichero-que-\n'
+        + '       no-corre` lo dice DIRECTAMENTE y nombra el fichero — cruza quién registra tests\n'
+        + '       (por AST) con el patrón que `npm test` expande de verdad. Si ese guard está en\n'
+        + '       verde, no es esto.\n'
         + '     · ¿se han borrado tests A PROPÓSITO? Entonces esto es correcto: BAJA el suelo\n'
         + '       conscientemente, en el mismo commit y diciendo cuántos y por qué.\n\n'
         + `   Suelo medido contra: ${MEDIDO_CONTRA}.`,
@@ -197,10 +311,23 @@ export function veredictoDelSuelo(textoTap, suelo = SUELO_TESTS) {
   }
 
   return {
-    ok: true, salida: 0, total, suelo, margen, mudos,
-    // 🔴 EL MARGEN SE IMPRIME SIEMPRE, no sólo cuando falla. Es la compensación de haber elegido
-    // un suelo y no un espejo: sin esto, un suelo rancio no se ve hasta que ya no vigila nada.
-    titulo: `✅ suelo ${suelo} · total actual ${total} · margen ${margen}`,
-    detalle: margen === 0 ? '' : `   Subir el suelo a ${total} es una línea, y lo puede hacer cualquier sesión.`,
+    ok: true, salida: 0, total, suelo, margen, mudos, efectivo,
+    // El margen se sigue imprimiendo, pero ya NO es la protección: desde SCRUM-736 el suelo que
+    // rige se mantiene solo, así que este número es información, no una tarea pendiente para
+    // quien lo lea. Lo que protege está arriba, y bloquea.
+    // ⚠️ EL ORDEN NO ES COSMÉTICO: `scrum672` exige las tres cifras SEGUIDAS
+    // (`suelo N · total actual N · margen N`) porque su promesa es que un suelo rancio se VEA.
+    // La procedencia va detrás para no romper ese contrato — se añade información, no se mueve
+    // la que otro guard ya vigila.
+    titulo: `✅ suelo ${efectivo.valor} · total actual ${total} · margen ${margen} · ${efectivo.de}`,
+    detalle: efectivo.medible
+      ? (efectivo.de === 'derivado'
+        ? `   Sale del árbol: declara ${declaradosEnElArbol} tests y se exige el `
+          + `${Math.round(CUENTA_DEL_ARBOL_MINIMA * 100)}%. No hay nada que subir a mano.`
+        : `   Rige el declarado (${suelo}) porque va por encima del derivado `
+          + `(${efectivo.derivado}, del ${Math.round(CUENTA_DEL_ARBOL_MINIMA * 100)}% de `
+          + `${declaradosEnElArbol} declarados en el árbol).`)
+      : '   ⚠️ SIN CENSO DEL ÁRBOL: rige el número declarado, que envejece. Esto no es «todo bien»:\n'
+        + '      es que la mitad que se mantiene sola no se ha podido calcular.',
   };
 }

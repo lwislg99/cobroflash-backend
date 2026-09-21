@@ -1,0 +1,19 @@
+TESTIGO · banco de mutacion 920d · HEAD 77d90d201105a0a62d48c4ae6b9c0d254f00d35f
+BASE sin mutar · guard exit=0 · ✅ 77 · 🔴 0
+M07 · «Quitar los filtros» no suelta la categoria
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 «Quitar los filtros» deja categoría «herramientas», 0 filas y la última petición {"ruta":"/admin/expenses?month=2026-09&category=herramientas","metodo":"GET","cuerpo":
+       🔴 1 hallazgos.
+M08 · una categoria sin gastos dice «Sin gastos este mes»
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=2 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 con una categoría sin gastos la pantalla dice {"titulo":"Sin gastos este mes","desc":"Registra materiales, desplazamientos y subcontratas para conocer el margen real d
+       🔴 NO SUPE MIRAR: no encuentro «Quitar los filtros» tras el vacío por categoría
+       🔴 NO SUPE MIRAR en 1 sitios: esto NO es «de acuerdo».
+M10 · la barra pasa POR ENCIMA del modal (z-index 900 y sin el contexto de apilado de la animacion)
+     aplicada=true (ocurrencias por cambio: 1+1) · diff 2 2 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 390px · la pregunta es [] y tiene que ser «¿Eliminar este gasto?»
+       🔴 390px · «Eliminar» no borró el gasto 5: []
+       🔴 390px · con el alta abierta la barra sigue POR ENCIMA del modal
+
+POBLACION mutaciones=3 · aplicadas=3 · caen=3 · vivas=[] · sin restaurar=[]
+EXIT=0

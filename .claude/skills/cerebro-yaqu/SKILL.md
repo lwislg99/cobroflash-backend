@@ -23,6 +23,8 @@ mecanismo.
 4. Sin cabecera ni marcador (formato anterior) no se puede comprobar: dilo, no lo des por entero.
 5. 🔴 JAMÁS adivines lo que falta. Rellenar huecos de contexto es el patrón que causó esto.
 Herramienta: `npm run comprobar:encargo <fichero>` (o por tubería). Sale 1 si hay que parar.
+*(17-sep-2026: esto aplica a los encargos PEGADOS a mano en un chat. Los que llegan del orquestador por
+`SendMessage` no se cortan y no llevan el marcador: no se declaran «no comprobables» por eso.)*
 
 ## Revertir un cambio sin mentirse — el blob NO siempre es la referencia (SCRUM-570)
 Los encargos exigen «verifica con `Buffer.compare` contra el blob». Vale para UN caso y no para
@@ -35,12 +37,13 @@ el otro, y creerlo universal da un verde falso. **Antes de tocar, siempre:**
   `ORIGINAL`. Restaurar el blob «revierte» y además NORMALIZA — un cambio que nadie pidió.
 - Y **comprobar el blob no basta**: el guard de SCRUM-533 mira EL DISCO. Se puede tener el blob
   con CR: 0 y la tanda caída igual. No era falso: era incompleto.
-- Medido: **1.355 ficheros del checkout tienen CR en disco y no en el blob**, 1.336 normalizados.
+- Medido **en agosto de 2026** (cifra fechada; re-medir con `npm run cr:tecnica`): **1.355 ficheros del checkout tienen CR en disco y no en el blob**, 1.336 normalizados.
   Cuál es el tuyo: `npm run cr:tecnica -- <fichero>` · quitárselo: `npm run cr:limpiar -- <fichero>`.
 
 ## Al arrancar (siempre, en este orden)
-1. Lee CLAUDE.md (en la RAÍZ, no en docs/), docs/YAQU_MASTER.md (gobierna), docs/ASESOR.md,
-   docs/ERRORES_ASESOR.md.
+1. Lee, DESDE `origin/main` (el checkout compartido va miles de commits atrás): CLAUDE.md (en la RAÍZ),
+   docs/equipo/00-normas-comunes.md, tu ficha de sesión (docs/equipo/sesion-0.md … sesion-5.md) y tu carril (§11bis de
+   docs/equipo/orquestador.md); después docs/YAQU_MASTER.md (gobierna), docs/ASESOR.md y docs/ERRORES_ASESOR.md.
 2. `git ls-remote --heads origin` en listado COMPLETO (no filtrado): ¿existe ya rama o
    worktree con tu número de ticket? Si sí → PARA y repórtalo. Han pasado 4 duplicados.
 3. Worktree PROPIO siempre. Jamás trabajes en main.
@@ -63,8 +66,8 @@ el otro, y creerlo universal da un verde falso. **Antes de tocar, siempre:**
   el error salga, no redactando mensajes).
 
 ## STOPs — para y pide GO del fundador con diff/preview
-Schema (orden: staging → yaqu_dev_javier → producción; prisma/schema.prisma es dominio
-exclusivo del fundador) · Dinero · Fiscal · Superficie pública.
+Schema (regla 3 del máster + A5 de 00-normas: ① decisión → ② ALTER aditivo en las TRES bases, que
+aplica el colaborador → ③ un PR; nunca db push contra producción) · Dinero · Fiscal · Superficie pública.
 
 ## Hallazgos (regla 37)
 Se arregla DENTRO solo si las TRES: misma zona que tocas + bloquea tu tarea + cabe en el
@@ -73,7 +76,9 @@ se reporta, no se arregla (regla 9).
 
 ## Antes de abrir el PR
 - Compare completo: https://github.com/lwislg99/cobroflash-backend/compare/main...<rama>
-- `gh` NO está instalado a propósito: el PR lo abre el fundador. Deja el cuerpo escrito.
+- `gh` está instalado FUERA del PATH (`"C:\Program Files\GitHub CLI\gh.exe"`). El PR lo abre
+  `pr-automatico.yml` al empujar y le arma el auto-merge. Antes del primer push: ls-remote y los PR
+  en cualquier estado. *(Corregido el 17-sep-2026: decía «gh NO está instalado, el PR lo abre el fundador».)*
 - Microcopy: solo textos oficiales del máster (regla 30). Dependencia nueva: OK del
   fundador (regla 36). Suite completa en verde.
 - Entrada del trabajo en `docs/master/SCRUM-<n>.md`, UN FICHERO POR TICKET. Si ya existe,
@@ -85,7 +90,7 @@ se reporta, no se arregla (regla 9).
 - Descripciones de Jira <1.500 caracteres.
 
 ## Vetos permanentes
-YaQu NO es un ERP ni un CRM (parte Z) · WhatsApp = Meta Cloud API directa, jamás
+WhatsApp = Meta Cloud API directa, jamás
 WATI/Zoko/n8n · INVOICING_ES_ENABLED OFF para merchants reales · VeriFactu se responde
 SOLO con el guion H2 · Semáforo fiscal: se impide solo lo ROJO (irreversible); un ÁMBAR
 jamás se bloquea — se avisa y se registra en AuditLog.

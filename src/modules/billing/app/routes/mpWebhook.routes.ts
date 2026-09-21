@@ -5,7 +5,7 @@ import { config } from '../../../../core/config/env';
 import { verifyMpWebhookSignature, getMpPayment } from '../../../../integrations/mercadopago';
 import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { sendWhatsAppCtaUrl } from '../../../../integrations/whatsapp';
 import { sendPaymentConfirmationInvoice, notifyMerchantPaid } from '../../../../integrations/whatsappNotifications';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
@@ -173,15 +173,18 @@ router.post('/', async (req, res) => {
         ? await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { number: true } }).catch(() => null)
         : null;
       const documentNumber = invConf?.number || String(updated.id);   // P1-6: sin '#'
-      if (updated.customer?.phone) {
+      if (updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
         // SCRUM-74: token OPACO del recibo público, NUNCA el chargeId (IDOR/RGPD).
         const receiptToken = await ensureChargeReceiptToken(updated.id, prisma);
         sendPaymentConfirmationInvoice({
-          toPhone: updated.customer.phone,
+          toPhone: canalDeWhatsApp(updated.customer),
           customerName: updated.customer.name,
           merchantId: updated.merchantId, // J3: respeta waOptOut
           customerId: updated.customerId ?? undefined, // A5.3: vía ventana (0 €) si hay entrante <24 h
-          amountWithCurrency: `${amt} ${cur}`,
+          // SCRUM-931: en bruto. `amt` sigue vivo debajo para el `detail` del panel, que queda
+          // FUERA del alcance decidido de este ticket y se deja como estaba.
+          amount: Number(updated.amount),
+          currency: cur,
           documentNumber,
           businessName: merchant?.legalName || merchant?.name,     // P1-7
           chargeId: updated.id, // log interno (WhatsAppMessage.relatedId), NO la URL pública
@@ -199,8 +202,8 @@ router.post('/', async (req, res) => {
       }
 
       // Notificaciones WhatsApp al merchant y reseña al cliente
-      if (merchant?.googleReviewUrl && updated.customer?.phone) {
-        const phone = normalizePhone(updated.customer.phone);
+      if (merchant?.googleReviewUrl && updated.customer && tieneNumeroDeContacto(updated.customer)) { // SCRUM-590 (CONT-19)
+        const phone = canalDeWhatsApp(updated.customer);
         if (phone) {
           sendWhatsAppCtaUrl({
             to: phone,

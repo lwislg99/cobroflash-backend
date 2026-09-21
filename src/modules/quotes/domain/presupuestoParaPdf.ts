@@ -39,6 +39,7 @@
 import type { ParamsPdfPresupuesto } from '../../invoicing/infra/pdf/pdf.service';
 import { leerClausulasDelMerchant } from './clausulas';
 import { getLocale } from '../../../core/i18n/locales';
+import { textoDeValidez } from './validez';
 
 /** Todas las claves, obligatorias. Lo que hace que «se me olvidó una» no compile. */
 export type Completo<T> = { [K in keyof T]-?: T[K] };
@@ -71,6 +72,16 @@ function clausulasDelMerchantParaPdf(merchant: any) {
   return leido.clausulas;
 }
 
+// NO SE EXPORTA, por lo mismo que la de arriba: sólo la usa el constructor.
+//
+// «Firmado» son las TRES marcas que deja la firma en la fila: cuándo (`acceptedAt`), el trazo
+// (`signatureUrl`) y el sobre sellado (`evidenciaFirma`, SCRUM-805). Se miran las tres porque los
+// presupuestos firmados antes de SCRUM-805 no tienen sobre, y los aceptados sin trazo no tienen
+// firma: el cuidado es el mismo, que un papel ya firmado no cambie de aspecto.
+function estaFirmado(quote: any): boolean {
+  return !!(quote?.acceptedAt || quote?.signatureUrl || quote?.evidenciaFirma);
+}
+
 /** Lo mínimo que hace falta saber para pintar el documento. Deliberadamente laxo (`any` en los
  *  campos que Prisma tipa como `JsonValue`): lo que se vigila aquí es que NO FALTE NINGUNO, no
  *  volver a declarar el modelo. */
@@ -94,6 +105,14 @@ export function paramsDePresupuestoParaPdf(f: FuentesDelPresupuesto): ParamsComp
     quoteId: quote.id,
     // A1.2: número visible por merchant; si falta, el documento muestra el id.
     quoteNumber: quote.quoteNumber ?? null,
+    // SCRUM-688 · LA REVISIÓN, para que el papel pueda decir `#2004226.1`.
+    //
+    // Hasta hoy esta función no la pasaba —medido: `hasOwnProperty('revision')` daba `false`—, así
+    // que el documento no tenía forma de saber de qué versión era y pintaba el mismo número para
+    // la original y para su revisión. El `?? 0` no es un valor por defecto cómodo: `Quote.revision`
+    // es `Int @default(0)`, así que 0 es lo que dice la fila de un presupuesto sin revisar, y
+    // `numeroConRevision` con 0 devuelve el número pelado.
+    revision: quote.revision ?? 0,
     merchant: {
       name: merchant.name,
       legalName: merchant.legalName ?? null,
@@ -129,6 +148,9 @@ export function paramsDePresupuestoParaPdf(f: FuentesDelPresupuesto): ParamsComp
     // La firma sale de la FILA y no de la petición: cuando P2 llega aquí ya la ha escrito.
     signatureData: quote.signatureUrl ?? null,
     signedAt: quote.acceptedAt ?? null,
+    // SCRUM-805 · el sobre sellado al firmar. Null en todo lo firmado ANTES de este ticket, y su
+    // PDF sale exactamente como salía: el bloque sólo se pinta si hay `contentHash`.
+    evidencia: (quote.evidenciaFirma as any) ?? null,
     country: merchant.country ?? null,
     // SCRUM-647 · la resolución por PAÍS vive aquí y no dentro del documento: es la que miente en
     // Canarias (IGIC) y en Ceuta y Melilla (IPSI). Cuando SCRUM-646 traiga el territorio, se
@@ -139,5 +161,15 @@ export function paramsDePresupuestoParaPdf(f: FuentesDelPresupuesto): ParamsComp
     clausulas: clausulasDelMerchantParaPdf(merchant),
     clausulasExcluidas: (quote.clausulasExcluidas as any) ?? null,
     tiers: (quote.tiers as any) ?? null,
+    // SCRUM-987 · «Válido hasta el …» en el papel. LA REGLA CONSERVADORA: un presupuesto YA FIRMADO
+    // sale SIN la línea. Añadirla no toca ningún hash —el sello de SCRUM-805 ya sella `validUntil`
+    // como DATO, no los bytes del PDF—, pero `GET /admin/quotes/:id/pdf` regenera y SOBRESCRIBE el
+    // `pdfUrl` de una fila firmada, y su papel no puede cambiar de aspecto por debajo. La validez
+    // ya la vio el cliente en la landing donde firmó. Fecha, zona y respaldo: `textoDeValidez`.
+    validez: estaFirmado(quote) ? null : textoDeValidez({
+      validUntil: quote.validUntil,
+      createdAt: quote.createdAt,
+      merchant,
+    }),
   };
 }

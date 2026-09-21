@@ -87,7 +87,10 @@ export async function exportProductsCsv(merchantId: number) {
       name: true,
       description: true,
       price: true,
-      vat: true,
+      // 🔴 SCRUM-635 · DECISIÓN DEL FUNDADOR (16-sep-2026): el IVA SALE del tarifario y el COSTE
+      // ENTRA. El `vat` no se borra del modelo —lo teclean a mano tres merchants y su dato es
+      // suyo—, sólo deja de viajar en este CSV. Ver la entrada del máster para lo que eso cuesta.
+      cost: true,
       isActive: true,
     },
   });
@@ -103,7 +106,11 @@ export async function exportProductsCsv(merchantId: number) {
   };
 
   const rows: string[] = [];
-  rows.push('name;description;price;vat;isActive');
+  // ⛔ EL MARGEN NO SE EXPORTA CALCULADO, y es decisión del asesor (SCRUM-635): el margen se
+  // deriva en el catálogo a partir de precio y coste. Traerlo aquí ya calculado crearía un SEGUNDO
+  // sitio donde vive el mismo número — y dos sitios es como uno de los dos se queda atrás. Quien
+  // abra el CSV tiene `price` y `cost`: el margen sale de ahí.
+  rows.push('name;description;price;cost;isActive');
 
   for (const p of products) {
     rows.push(
@@ -111,7 +118,7 @@ export async function exportProductsCsv(merchantId: number) {
         escapeCsv(p.name),
         escapeCsv(p.description ?? ''),
         escapeCsv(p.price),
-        escapeCsv(p.vat ?? ''),
+        escapeCsv(p.cost ?? ''),
         escapeCsv(p.isActive),
       ].join(';'),
     );
@@ -305,10 +312,11 @@ export async function updateProduct(
 }
 
 
-export async function deleteProduct(merchantId: number, id: number) {
-  const existing = await prisma.product.findFirst({ where: { id, merchantId } });
-  if (!existing) return null;
-
-  await prisma.product.delete({ where: { id } });
-  return { id };
-}
+// 🛑 SCRUM-614 · AQUÍ VIVÍA `deleteProduct`, UN BORRADO FÍSICO. Se retira con su ruta.
+//
+// Se va la FUNCIÓN, no sólo la ruta, y es deliberado: un servicio de dominio sin llamadores pasa
+// todos los tests, entra verde y desde fuera es indistinguible de una función entregada — así se
+// cerraron en falso `cambiarFlagFiscal` y `borrarMerchant` (SCRUM-411). Dejar aquí un
+// `prisma.product.delete` huérfano sería dejar el borrado a un `import` de distancia.
+//
+// Quien retire un producto usa `updateProduct` con `isActive: false`, que ya existía.

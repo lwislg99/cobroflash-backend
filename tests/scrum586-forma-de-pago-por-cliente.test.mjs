@@ -448,22 +448,23 @@ test('SCRUM-586 · ✅ el texto de la tira es el FIRMADO, literal', async () => 
     + 'la pantalla diciendo que su propio texto está sin aprobar.');
 });
 
-test('SCRUM-586 · 🔴 el rótulo del BOTÓN sigue sin firmar, con la grafía que el censo CUENTA', async () => {
-  // 🔴 QUÉ VIGILA ESTO AHORA. Antes vigilaba los DOS textos de la tira; el 6-sep-2026 el asesor
-  // firmó el del texto y aquí queda sólo el del BOTÓN, que NO estaba entre los tres literales
-  // firmados. No se relaja el control: se estrecha al hueco que de verdad sigue abierto.
+test('SCRUM-586 · 🔴 el rótulo del BOTÓN es el FIRMADO («Aplicar»), sin marcador', async () => {
+  // 🔴 QUÉ VIGILA ESTO AHORA. Hasta SCRUM-915k (21-sep-2026) vigilaba lo contrario: que el botón
+  // siguiera SIN firmar y con la grafía que el censo cuenta. El comentario 15868 de SCRUM-915 firmó
+  // «Aplicar» y el marcador se retiró en el mismo commit, así que el control se DA LA VUELTA en vez
+  // de relajarse: el texto se compara ENTERO y con `===` —un `includes` dejaría colar «Aplicar
+  // formas de pago» o «Aplicar todo»— y no puede quedar rastro de marcador.
   const r = await pintarVista(banco(), 'renderQuotesView');
   const tira = tiraDe(r)[0];
   assert.ok(tira, '🔴 no hay tira que mirar');
   const boton = todos(tira).find((n) => n.tagName === 'BUTTON');
   assert.ok(boton, '🔴 GUARD CIEGO: la tira no tiene botón.');
-  assert.match(String(boton.textContent), /\[PENDIENTE/,
-    '🔴 el rótulo del botón NO lleva marcador, o lleva una grafía que el censo del 402 no cuenta '
-    + '(cuenta `[PENDIENTE`). Si se ha firmado, hay que bajar `FORMA_DE_PAGO_SIN_APROBAR` y la '
-    + 'entrada del trinquete EN EL MISMO COMMIT; si no, un marcador invisible se queda dormido.');
-  const dentro = todos(tira).map((n) => String(n.textContent || '')).join(' | ');
-  assert.doesNotMatch(dentro, /forma de pago habitual|como siempre|aplicar formas/i,
-    '🔴 se ha inventado microcopy oficial (regla 30). El texto lo firma el asesor.');
+  assert.equal(String(boton.textContent), 'Aplicar',
+    '🔴 el rótulo del botón ya no es el texto firmado («Aplicar», SCRUM-915 comentario 15868). Si lo '
+    + 'has cambiado, la microcopy firmada no es de una sesión (regla 30).');
+  assert.doesNotMatch(String(boton.textContent), /\[PENDIENTE/,
+    '🔴 el botón vuelve a pintar un marcador: si hay un texto nuevo sin firma, sube '
+    + '`FORMA_DE_PAGO_SIN_APROBAR` y declara la ranura en el censo del 402 A CONCIENCIA.');
 });
 
 test('SCRUM-586 · 🔴 la firma del ASESOR **no** va a `docs/microcopy/`', () => {
@@ -491,11 +492,15 @@ test('SCRUM-586 · 🔴 el CONTADOR de ranuras sin firmar dice cuántas hay en E
   const m = ejecutableDe(vista, { donde: 'quotesView.js', ancla: 'FORMA_DE_PAGO_SIN_APROBAR' })
     .match(/const FORMA_DE_PAGO_SIN_APROBAR = (\d+);/);
   assert.ok(m, '🔴 no hay contador de ranuras sin firmar: «sin marcador» se leería como «aprobado».');
-  // 6-sep-2026 · DOS → UNA: el asesor firmó el texto de la tira; el botón sigue sin firmar. El
-  // contador NO baja a 0 y por eso sigue sirviendo: «ya no veo marcador» no es «está aprobado».
-  assert.equal(Number(m[1]), 1,
-    `🔴 el contador dice ${m[1]} y la ranura sin firma de la tira es UNA: el rótulo del botón. `
-    + 'El texto se firmó el 6-sep-2026 y su marcador se retiró en el mismo commit.');
+  // 6-sep-2026 · DOS → UNA: el asesor firmó el texto de la tira; el botón seguía sin firmar. El
+  // contador NO bajó a 0 y por eso sirvió: «ya no veo marcador» no es «está aprobado».
+  // 21-sep-2026 · UNA → CERO (SCRUM-915k): el comentario 15868 de SCRUM-915 firmó el rótulo del
+  // botón, «Aplicar». La constante SE QUEDA aunque valga cero: sigue diciendo «no hay ninguna
+  // ranura sin firmar en esta tira» en vez de callarse, y si entra otra tiene dónde subir.
+  assert.equal(Number(m[1]), 0,
+    `🔴 el contador dice ${m[1]} y en la tira ya no queda ninguna ranura sin firma: el botón dice `
+    + '«Aplicar» (21-sep-2026, SCRUM-915k). Si ha entrado un texto nuevo sin firma, se declara aquí y '
+    + 'en el censo del 402; si no, esto no tiene que moverse.');
 
   // Y que el número CUADRE con lo que se pinta de verdad: un contador que nadie contrasta es una
   // cifra escrita a mano.
@@ -731,11 +736,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'el texto de la tira es el FIRMADO, literal',
   },
   {
-    // ⑥ 6-sep-2026 · al botón le quitan el marcador SIN firmarlo. Es el defecto que SCRUM-726
-    // cerró un nivel más arriba: un hueco sin firma que deja de verse pasa por aprobado.
+    // ⑥ 21-sep-2026 (SCRUM-915k) · el texto FIRMADO del botón deriva solo: alguien lo «mejora» a
+    // «Usar estas formas de pago». Hasta 915k este mutante era el contrario (6-sep-2026): al botón le
+    // quitaban el marcador SIN firmarlo, el defecto que SCRUM-726 cerró un nivel más arriba. Dejó de
+    // existir cuando el comentario 15868 de SCRUM-915 firmó «Aplicar»; se da la vuelta en vez de
+    // borrarse, porque un texto firmado que se mueve sin que nadie lo note deja de estar firmado.
     fichero: 'public/dashboard/js/quotesView.js',
-    de: '    propuestaPagoBtn.textContent = "[PENDIENTE microcopy oficial]";',
+    de: '    propuestaPagoBtn.textContent = "Aplicar";',
     a: '    propuestaPagoBtn.textContent = "Usar estas formas de pago";',
-    cae: 'el rótulo del BOTÓN sigue sin firmar, con la grafía que el censo CUENTA',
+    cae: 'el rótulo del BOTÓN es el FIRMADO («Aplicar»), sin marcador',
   },
 ];

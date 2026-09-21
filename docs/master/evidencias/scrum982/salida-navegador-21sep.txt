@@ -1,0 +1,143 @@
+# SCRUM-982 - salida de medir-nota-en-navegador.mjs (Edge real, puppeteer-core)
+# Date: Mon, 21 Sep 2026 11:08:49 GMT (cabecera de gh api -i zen)
+# medido sobre la rama en HEAD 38849170fb91c9e1f8deb811c7729b8a80278763, que contiene origin/main 5820ad9259054032ef0966c8101288b9f76e8248 (el de las 11:06:23 GMT; el #1573 entro despues y NO esta en esta medida)
+# arranque del navegador: 0.5 s COMPLETA (proceso+ws 0.5 s, primera-pagina 0.0 s)
+# EXIT=0
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+DESPUES · hoja del repo
+══════════════════════════════════════════════════════════════════════════════════════════════
+
+· a 1280 px
+   ✅ la ficha pinta el rail
+   ✅ hay exactamente UNA línea de nota (hay 1)
+   ✅ el rótulo es el firmado («Nota del cliente»)
+   ✅ el texto pintado es la nota tal cual, sin recortar
+   ✅ la etiqueta va en columna con el texto (flex-direction: column)
+   ✅ la etiqueta va ENCIMA del texto (etiqueta.bottom 332.5 ≤ texto.top 334.5)
+   ✅ el texto cabe DENTRO del rail (1002–1257 en 979–1279)
+   ✅ el rail no desborda (scrollWidth 299 ≤ clientWidth 299)
+   ✅ la página no tiene scroll horizontal a 1280 px (scrollWidth 1280 ≤ 1280)
+   ✅ respeta los saltos: alto 201 ≥ 6 líneas × 20.1 px
+   ✅ no hay contenido escondido (scrollHeight 201 ≤ clientHeight 201)
+   ✅ la última línea de texto cae dentro de su caja
+   ✅ sin max-height ni overflow (max-height none, overflow-y visible)
+   ✅ lo que se PINTA (innerText) llega hasta el último carácter de la nota
+   ✅ siguen los dos enlaces (teléfono y WhatsApp): 2
+   ✅ los enlaces del rail miden ≥ 44 px (44, 44)
+   ✅ SUELO del control: sin nota la ficha SÍ pinta el rail
+   ✅ sin nota NO hay línea de nota (hay 0)
+   ✅ sin nota NO aparece el rótulo «Nota del cliente» en pantalla
+
+· a 390 px
+   ✅ la ficha pinta el rail
+   ✅ hay exactamente UNA línea de nota (hay 1)
+   ✅ el rótulo es el firmado («Nota del cliente»)
+   ✅ el texto pintado es la nota tal cual, sin recortar
+   ✅ la etiqueta va en columna con el texto (flex-direction: column)
+   ✅ la etiqueta va ENCIMA del texto (etiqueta.bottom 332.5 ≤ texto.top 334.5)
+   ✅ el texto cabe DENTRO del rail (23–367 en 1–389)
+   ✅ el rail no desborda (scrollWidth 388 ≤ clientWidth 388)
+   ✅ la página no tiene scroll horizontal a 390 px (scrollWidth 390 ≤ 390)
+   ✅ respeta los saltos: alto 181 ≥ 6 líneas × 20.1 px
+   ✅ no hay contenido escondido (scrollHeight 181 ≤ clientHeight 181)
+   ✅ la última línea de texto cae dentro de su caja
+   ✅ sin max-height ni overflow (max-height none, overflow-y visible)
+   ✅ lo que se PINTA (innerText) llega hasta el último carácter de la nota
+   ✅ siguen los dos enlaces (teléfono y WhatsApp): 2
+   ✅ los enlaces del rail miden ≥ 44 px (44, 44)
+   ✅ SUELO del control: sin nota la ficha SÍ pinta el rail
+   ✅ sin nota NO hay línea de nota (hay 0)
+   ✅ sin nota NO aparece el rótulo «Nota del cliente» en pantalla
+
+· a 360 px
+   ✅ la ficha pinta el rail
+   ✅ hay exactamente UNA línea de nota (hay 1)
+   ✅ el rótulo es el firmado («Nota del cliente»)
+   ✅ el texto pintado es la nota tal cual, sin recortar
+   ✅ la etiqueta va en columna con el texto (flex-direction: column)
+   ✅ la etiqueta va ENCIMA del texto (etiqueta.bottom 332.5 ≤ texto.top 334.5)
+   ✅ el texto cabe DENTRO del rail (23–337 en 1–359)
+   ✅ el rail no desborda (scrollWidth 358 ≤ clientWidth 358)
+   ✅ la página no tiene scroll horizontal a 360 px (scrollWidth 360 ≤ 360)
+   ✅ respeta los saltos: alto 201 ≥ 6 líneas × 20.1 px
+   ✅ no hay contenido escondido (scrollHeight 201 ≤ clientHeight 201)
+   ✅ la última línea de texto cae dentro de su caja
+   ✅ sin max-height ni overflow (max-height none, overflow-y visible)
+   ✅ lo que se PINTA (innerText) llega hasta el último carácter de la nota
+   ✅ siguen los dos enlaces (teléfono y WhatsApp): 2
+   ✅ los enlaces del rail miden ≥ 44 px (44, 44)
+   ✅ SUELO del control: sin nota la ficha SÍ pinta el rail
+   ✅ sin nota NO hay línea de nota (hay 0)
+   ✅ sin nota NO aparece el rótulo «Nota del cliente» en pantalla
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+ANTES · hoja SIN las reglas de la nota (CONTROL NEGATIVO: el instrumento tiene que caer)
+══════════════════════════════════════════════════════════════════════════════════════════════
+
+· a 1280 px
+   ✅ la ficha pinta el rail
+   ✅ hay exactamente UNA línea de nota (hay 1)
+   ✅ el rótulo es el firmado («Nota del cliente»)
+   ✅ el texto pintado es la nota tal cual, sin recortar
+   ❌ la etiqueta va en columna con el texto (flex-direction: row)
+   ❌ la etiqueta va ENCIMA del texto (etiqueta.bottom 348.7 ≤ texto.top 308.4)
+   ❌ el texto cabe DENTRO del rail (1086–1716 en 979–1279)
+   ❌ el rail no desborda (scrollWidth 736 ≤ clientWidth 299)
+   ✅ la página no tiene scroll horizontal a 1280 px (scrollWidth 1280 ≤ 1280)
+   ❌ respeta los saltos: alto 60 ≥ 6 líneas × 20.1 px
+   ✅ no hay contenido escondido (scrollHeight 60 ≤ clientHeight 60)
+   ✅ la última línea de texto cae dentro de su caja
+   ✅ sin max-height ni overflow (max-height none, overflow-y visible)
+   ✅ lo que se PINTA (innerText) llega hasta el último carácter de la nota
+   ✅ siguen los dos enlaces (teléfono y WhatsApp): 2
+   ✅ los enlaces del rail miden ≥ 44 px (44, 44)
+   ✅ SUELO del control: sin nota la ficha SÍ pinta el rail
+   ✅ sin nota NO hay línea de nota (hay 0)
+   ✅ sin nota NO aparece el rótulo «Nota del cliente» en pantalla
+
+· a 390 px
+   ✅ la ficha pinta el rail
+   ✅ hay exactamente UNA línea de nota (hay 1)
+   ✅ el rótulo es el firmado («Nota del cliente»)
+   ✅ el texto pintado es la nota tal cual, sin recortar
+   ❌ la etiqueta va en columna con el texto (flex-direction: row)
+   ❌ la etiqueta va ENCIMA del texto (etiqueta.bottom 348.7 ≤ texto.top 308.4)
+   ✅ el texto cabe DENTRO del rail (107–737 en 1–759)
+   ✅ el rail no desborda (scrollWidth 758 ≤ clientWidth 758)
+   ✅ la página no tiene scroll horizontal a 390 px (scrollWidth 390 ≤ 390)
+   ❌ respeta los saltos: alto 60 ≥ 6 líneas × 20.1 px
+   ✅ no hay contenido escondido (scrollHeight 60 ≤ clientHeight 60)
+   ✅ la última línea de texto cae dentro de su caja
+   ✅ sin max-height ni overflow (max-height none, overflow-y visible)
+   ✅ lo que se PINTA (innerText) llega hasta el último carácter de la nota
+   ✅ siguen los dos enlaces (teléfono y WhatsApp): 2
+   ✅ los enlaces del rail miden ≥ 44 px (44, 44)
+   ✅ SUELO del control: sin nota la ficha SÍ pinta el rail
+   ✅ sin nota NO hay línea de nota (hay 0)
+   ✅ sin nota NO aparece el rótulo «Nota del cliente» en pantalla
+
+· a 360 px
+   ✅ la ficha pinta el rail
+   ✅ hay exactamente UNA línea de nota (hay 1)
+   ✅ el rótulo es el firmado («Nota del cliente»)
+   ✅ el texto pintado es la nota tal cual, sin recortar
+   ❌ la etiqueta va en columna con el texto (flex-direction: row)
+   ❌ la etiqueta va ENCIMA del texto (etiqueta.bottom 348.7 ≤ texto.top 308.4)
+   ✅ el texto cabe DENTRO del rail (107–737 en 1–759)
+   ✅ el rail no desborda (scrollWidth 758 ≤ clientWidth 758)
+   ✅ la página no tiene scroll horizontal a 360 px (scrollWidth 360 ≤ 360)
+   ❌ respeta los saltos: alto 60 ≥ 6 líneas × 20.1 px
+   ✅ no hay contenido escondido (scrollHeight 60 ≤ clientHeight 60)
+   ✅ la última línea de texto cae dentro de su caja
+   ✅ sin max-height ni overflow (max-height none, overflow-y visible)
+   ✅ lo que se PINTA (innerText) llega hasta el último carácter de la nota
+   ✅ siguen los dos enlaces (teléfono y WhatsApp): 2
+   ✅ los enlaces del rail miden ≥ 44 px (44, 44)
+   ✅ SUELO del control: sin nota la ficha SÍ pinta el rail
+   ✅ sin nota NO hay línea de nota (hay 0)
+   ✅ sin nota NO aparece el rótulo «Nota del cliente» en pantalla
+
+población: 114 comprobaciones · 2 estados (despues, antes) × 3 anchuras (1280, 390, 360) · nota de 6 líneas
+DESPUÉS: 0 caídas (tiene que ser 0) · ANTES (control negativo): 11 caídas, por anchura [[1280,5],[390,3],[360,3]] (tiene que ser ≥ 1 en CADA una)
+RESULTADO: ✅ la nota se lee entera y el rail aguanta

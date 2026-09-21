@@ -69,6 +69,22 @@ function funcionDeLaVista(nombre) {
  * rojo sobre un `cost` que sí estaba puesto — o sea que estaba midiendo otra función y no lo
  * decía. La población no es «el fichero»: es la función que se afirma.
  */
+/**
+ * El TEXTO de una función del servicio, por AST. Lo usa la mutación del control de abajo para
+ * acotarse a la función que se afirma en vez de al fichero entero (SCRUM-635).
+ */
+function textoDeLaFuncion(fuente, nombre) {
+  const sf = ts.createSourceFile('products.service.ts', fuente, ts.ScriptTarget.Latest, true);
+  let txt = null;
+  const recorrer = (n) => {
+    if (ts.isFunctionDeclaration(n) && n.name && n.name.text === nombre) txt = n.getText(sf);
+    n.forEachChild(recorrer);
+  };
+  recorrer(sf);
+  assert.ok(txt, `🔴 CIEGO: no encuentro la función \`${nombre}\` para acotar la mutación.`);
+  return txt;
+}
+
 function seleccionDeSearchProducts(fuente) {
   const sf = ts.createSourceFile('products.service.ts', fuente, ts.ScriptTarget.Latest, true);
   const recorrer = (n, fn) => { fn(n); n.forEachChild((h) => recorrer(h, fn)); };
@@ -111,7 +127,22 @@ test('SCRUM-661 · ① el catálogo DEVUELVE el coste (y el escáner sabe declar
 
   // 🔴 EL ROJO, por el mecanismo: se le quita al fuente EN MEMORIA y el detector cambia de
   // respuesta. Un detector que no sabe decir «no» no vigila nada.
-  const sinCoste = fuente.replace(/\n\s*cost: true,/, '');
+  //
+  // 🔴 SCRUM-635 · LA MUTACIÓN SE ACOTA AL CUERPO DE `searchProducts`, Y ES EL MISMO DEFECTO QUE
+  // ARREGLÓ EL ESCÁNER DE AQUÍ ARRIBA, UNA CAPA MÁS ABAJO. `replace` sin `/g` quita la PRIMERA
+  // aparición DEL FICHERO, y desde que `exportProductsCsv` también selecciona `cost` (SCRUM-635,
+  // el tarifario exporta coste) esa primera ya no es la suya: la mutación borraba la de otra
+  // función, `searchProducts` conservaba su `cost`, y el control cantaba «DETECTOR TAUTOLÓGICO»
+  // sobre un detector sano. El escáner ya se había acotado a la función por esto mismo; la
+  // mutación se había quedado mirando el fichero entero.
+  //
+  // ⛔ No se relaja lo que el guard EXIGE —sigue exigiendo que `searchProducts` devuelva `cost`,
+  // y sigue exigiendo que el detector sepa decir que no—: se le devuelve la puntería.
+  const cuerpoTexto = textoDeLaFuncion(fuente, 'searchProducts');
+  const cuerpoSinCoste = cuerpoTexto.replace(/\n\s*cost: true,/, '');
+  assert.notEqual(cuerpoSinCoste, cuerpoTexto,
+    '🔴 la mutación no ha tocado el cuerpo de `searchProducts`: no prueba nada.');
+  const sinCoste = fuente.replace(cuerpoTexto, cuerpoSinCoste);
   assert.notEqual(sinCoste, fuente, '🔴 la mutación no ha tocado el fuente: no prueba nada.');
   assert.equal(seleccionDeSearchProducts(sinCoste).includes('cost'), false,
     '🔴 DETECTOR TAUTOLÓGICO: sigue diciendo que sí con `cost` quitado del `select`.');

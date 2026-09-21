@@ -24,6 +24,32 @@
 // diverjan lo sostiene un test que compara las dos con los mismos casos.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
+import { Prisma } from '@prisma/client';
+
+/**
+ * SCRUM-595 (DOC-05) · «SIN ETIQUETAS» EN EL LENGUAJE DE PRISMA, EN UN SOLO SITIO.
+ *
+ * Lo que decide sigue siendo `normalizarTags`, arriba. Esto solo TRADUCE su respuesta al borde de
+ * la base, y existe porque a partir de hoy hay TRES escritores —cliente, presupuesto y factura— y
+ * la traduccion tiene tres nulls posibles de los que solo uno vale:
+ *
+ *   · `Prisma.DbNull`   → NULL de SQL: «no se declararon etiquetas». ESTE.
+ *   · `Prisma.JsonNull` → el valor JSON `null` DENTRO de la columna. La columna NO quedaria NULL,
+ *                          asi que un `IS NOT NULL` diria que ese documento TIENE etiquetas.
+ *   · `undefined`       → «no toques el campo».
+ *
+ * Confundir los dos primeros es «ausente ≠ vacio» con otro nombre. Con tres escritores, dejar esa
+ * eleccion en cada uno es garantizar que uno de los tres la haga distinta.
+ *
+ * ⚠️ Importar `Prisma` NO abre ninguna conexion: es el espacio de nombres del cliente generado.
+ * Este modulo se sigue pudiendo ejercitar en `npm test` sin base y sin navegador.
+ */
+export function tagsParaPrisma(valor: unknown): string[] | typeof Prisma.DbNull | undefined {
+  const v = normalizarTags(valor);
+  if (v === undefined) return undefined;
+  return v === null ? Prisma.DbNull : v;
+}
+
 /** Tope por etiqueta. Una etiqueta no es una nota: si no cabe en la columna, no es una etiqueta. */
 export const LARGO_MAXIMO = 40;
 

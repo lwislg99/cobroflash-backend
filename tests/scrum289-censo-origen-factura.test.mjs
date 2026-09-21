@@ -11,16 +11,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sitiosQueAtanAlOrigen, clavesDe, CENSO, ATADURAS } from './_censo-origen-factura.mjs';
+import { temporal } from './_temporal.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Árbol de mentira con UN fichero en src/, para ejercitar el analizador sin tocar el repo. */
 function arbolConFuente(codigo) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'censo-origen-'));
+  const dir = temporal('censo-origen-');
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'src', 'fixture.ts'), codigo, 'utf8');
   return dir;

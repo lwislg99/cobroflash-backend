@@ -88,6 +88,39 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-805 · el sello del PRESUPUESTO, y por qué sus cuatro exports son distintos ───
+  //
+  // Nacen en el mismo módulo y NO son el mismo caso, así que van en tres categorías. El guard
+  // proponía quitarles el `export` y medir por superficie pública: aquí eso rompería justo lo
+  // que el fundador exigió comprobar.
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE", desde: "2026-09-07",
+    motivo: "El canónico del presupuesto ES la regla: qué se firmó. Su test lo CORRE campo a "
+      + "campo —muta cada clave del contenido y exige que el hash se mueva— y ése es el control "
+      + "que el fundador puso como condición de que el ticket esté hecho. Medirlo sólo por la "
+      + "superficie pública (el sellador) probaría que el sobre se escribe, NO que cubre el "
+      + "total, la validez, las condiciones de pago y las cláusulas, que es el ticket entero.",
+    exports: ["computePresupuestoContentHash"],
+  },
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "VOCABULARIO_DEL_MODULO", desde: "2026-09-07",
+    motivo: "La única fuente del número de versión del canónico. Viaja DENTRO de cada evidencia "
+      + "sellada, así que quien verifique un presupuesto firmado hoy dentro de dos años tiene "
+      + "que poder nombrarla. Su test comprueba que el sobre la lleva.",
+    exports: ["PRESUPUESTO_CONTENIDO_VERSION_ACTUAL"],
+  },
+  {
+    modulo: "src/modules/quotes/domain/presupuestoSello.ts",
+    cat: "MOTOR_EN_ESPERA", desde: "2026-09-07",
+    motivo: "La mitad VERIFICADORA del sello. Sellar sin poder verificar es guardar una huella "
+      + "que nadie compara —el defecto que SCRUM-369 encontró en el albarán, donde el hash se "
+      + "calculaba en un solo sitio y nada lo recalculaba—. Se construyen con el sellador y en "
+      + "el mismo commit, a propósito: su consumidor (enseñar la verificación al profesional) es "
+      + "trabajo de otro ticket y no se cablea de paso.",
+    exports: ["recomputarHashDeEvidenciaPresupuesto", "verificarEvidenciaPresupuesto"],
+  },
   // ── SCRUM-624 (fase C) · lo que destapa MOVER LA FRONTERA ──────────────────────────────
   //
   // `totalDeFacturables` se queda sin llamador porque el camino albarán→factura **deja de usarla
@@ -146,6 +179,19 @@ export const DECLARADOS = [
     motivo: 'La convención de redondeo POR LÍNEA del albarán, escrita y ejecutable. Perdió su llamador al mover la frontera albarán→factura (SCRUM-624): el total de la FACTURA sale ahora de la canónica. Se conserva porque es donde la convención del albarán está declarada, y su test la corre.',
     exports: ['totalDeFacturables'],
   },
+
+  // SCRUM-653 · `ordenDeFirmaExigido` no tiene llamador Y NO SE LE QUITA EL `export`.
+  //
+  // Devuelve `null` a propósito: es la DECISIÓN de que el orden de firma no se exige, escrita en
+  // un sitio y no repartida por dos rutas. Su consumidor es el test que la fija — el día que
+  // alguien quiera exigir un orden, lo cambia aquí y el rojo dice dónde mirar.
+  //
+  // Es exactamente la categoría de «la regla vive en la función»: borrarla no quita código muerto,
+  // quita la única constancia de que esa decisión se tomó.
+  { modulo: 'src/modules/jobs/domain/parteTrabajo.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-03',
+    motivo: 'Es la decisión ESCRITA de que las dos firmas no llevan orden: la corre su test, y borrarla borraría la única constancia de esa decisión.',
+    exports: ['ordenDeFirmaExigido'] },
   // ── SCRUM-683 (cableado) · lo que destapa DARLE SUPERFICIE AL DICTADO ──────────────────
   //
   // Mismo efecto que el bloque de abajo: al cablear `parteDictado.ts`, el censo deja de contarlo
@@ -227,20 +273,25 @@ export const DECLARADOS = [
     exports: ['RevisionesAmbiguas', 'CensoDeRevisionesCiego'] },
   { modulo: 'src/modules/quotes/domain/revision.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
-    motivo: 'SCRUM-655 fase B. Las dos piezas que compone `vistaDeRevisiones` —el suelo de ceguera y el que no elige ante un empate—. El endpoint llama a la compuesta; estas van exportadas para que el test fije CADA regla por separado sin montar la vista entera, que es como se sabe cual de las dos cayo.',
-    exports: ['vigenteUnicaDe', 'revisionesDe'] },
+    motivo: 'SCRUM-655 fase B. Las dos piezas que compone `vistaDeRevisiones` —el suelo de ceguera y el que no elige ante un empate—. El endpoint llama a la compuesta; estas van exportadas para que el test fije CADA regla por separado sin montar la vista entera, que es como se sabe cual de las dos cayo. · SCRUM-688 (16-sep-2026): `vigenteUnicaDe` SALE de esta linea porque ya tiene llamador vivo — `crearRevisionDeQuote` la usa para decidir sobre QUE version se crea la revision, y ante un empate PARA, que es justo para lo que se escribio. `revisionesDe` sigue sin uno.',
+    exports: ['revisionesDe'] },
   { modulo: 'src/modules/quotes/domain/revision.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-02',
     motivo: 'SCRUM-655 fase B. `vistaDeRevisiones` lo ejecuta dentro del modulo, asi que el consejo del guard —quitarle el `export`— es correcto en su forma general. NO se le quita, y con motivo: el test de la fase A lo llama DIRECTO para fijar «la vigente es la mas alta, y las demas siguen ahi» sobre un grupo escrito a mano, sin pasar por la vista. Ese test es de este mismo ticket y esta verde sin tocarlo; reescribirlo para medir por la superficie publica seria cambiar una prueba que ya funciona por otra equivalente, y la unica ganancia seria una linea menos en este registro.',
     exports: ['esVigente'] },
   { modulo: 'src/modules/quotes/domain/revision.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-02',
-    motivo: 'SCRUM-655 fase B. La clasificacion de los campos de `Quote` al revisar: que hereda una revision, que NO hereda (la firma, la evidencia, la decision) y que pone el sistema. Es la UNICA fuente de ese reparto y el test la contrasta contra `prisma/schema.prisma`: una columna nueva sin clasificar cae en rojo, que es lo que impide que una revision pierda un dato en silencio.',
-    exports: ['REVISION_HEREDA', 'REVISION_NO_HEREDA', 'REVISION_LA_PONE_EL_SISTEMA'] },
-  { modulo: 'src/modules/quotes/domain/revision.ts',
-    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-02',
-    motivo: 'SCRUM-655 fase B. La regla «un presupuesto FIRMADO no se reescribe»: los datos de la fila NUEVA, sin `id` — no tiene forma de tocar la anterior aunque se lo pidan. No tiene endpoint todavia (crear la revision desde pantalla no estaba en el encargo y abre superficie de escritura), asi que hoy su consumidor es su test, y ahi es donde vive la regla. Se borra esta linea el dia que un POST la cablee.',
-    exports: ['nuevaRevisionDe'] },
+    motivo: 'SCRUM-655 fase B. La clasificacion de los campos de `Quote` al revisar: que hereda una revision, que NO hereda (la firma, la evidencia, la decision) y que pone el sistema. Es la UNICA fuente de ese reparto y el test la contrasta contra `prisma/schema.prisma`: una columna nueva sin clasificar cae en rojo, que es lo que impide que una revision pierda un dato en silencio. · SCRUM-688 (16-sep-2026): `REVISION_HEREDA` SALE de esta linea, y no por casualidad: `crearRevisionDeQuote` DERIVA de ella su `select` de Prisma en vez de escribir una lista paralela. Ese era el hueco (a) del ticket — `nuevaRevisionDe` copia con `if (campo in anterior)`, asi que un campo clasificado que el llamador no pidiera no viajaba y nada se ponia rojo. Los otros dos siguen sin llamador.',
+    exports: ['REVISION_NO_HEREDA', 'REVISION_LA_PONE_EL_SISTEMA'] },
+  // 🔴 SCRUM-688 (16-sep-2026) · AQUI VIVIA `nuevaRevisionDe`, y la linea decia textualmente:
+  // «Se borra esta linea el dia que un POST la cablee.» Ese dia fue hoy.
+  //
+  // `POST /admin/quotes/:id/revisiones` la llama a traves de `crearRevisionDeQuote`. La deuda duro
+  // del 2-sep-2026 al 16-sep-2026: catorce dias con la regla «un presupuesto FIRMADO no se
+  // reescribe» construida, probada y sin un solo camino por el que un profesional llegara a ella.
+  // Se deja escrito el rastro en vez de borrarlo a secas, porque el guard de SCRUM-411 avisa de
+  // que una lista que MENGUA tiene dos causas —la cableaste, o el detector se quedo ciego— y la
+  // constancia de cual fue es lo unico que distingue las dos el dia que alguien lo relea.
   { modulo: 'src/modules/auth/domain/referral.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -336,6 +387,17 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['FALTA', 'INCOHERENCIA', 'TOLERANCIA_CENTIMOS', 'VEREDICTO'] },
+  // SCRUM-912 · la lectura del ticket. El saneado corre dentro de `leerTicket`; se exporta para que
+  // su test fije caso a caso qué se descarta sin pasar por Google. Las dos constantes son la única
+  // fuente de la lista de modelos y del esquema: el test comprueba que la petición lleva ESAS.
+  { modulo: 'src/modules/expenses/domain/lecturaTicket.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-18',
+    motivo: 'SCRUM-912: el saneado de lo que devuelve la IA lo ejecuta `leerTicket`; el export es para que su test fije cada descarte sin red.',
+    exports: ['sanearLectura'] },
+  { modulo: 'src/modules/expenses/domain/lecturaTicket.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-18',
+    motivo: 'SCRUM-912: única fuente de los modelos de la lectura (cupo propio, nunca los de presupuestos) y de su esquema; los lee su módulo y su test.',
+    exports: ['ESQUEMA_LECTURA', 'MODELOS_LECTURA'] },
   { modulo: 'src/modules/exports/domain/exportData.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -384,6 +446,18 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['ERROR_LINEAS_INVALIDAS'] },
+  // SCRUM-728 · el aviso del cerrojo saturado. `cuerpoCerrojoSaturado()` es lo que usan las seis
+  // rutas; estos dos son su CONTRATO, y se exportan para que el guard compare contra ellos por
+  // identidad en vez de copiar el literal. Copiarlo seria tener dos fuentes del mismo texto
+  // aprobado, que es justo lo que la regla 30 evita.
+  { modulo: 'src/modules/invoicing/domain/clienteCongelado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-09',
+    motivo: 'SCRUM-729 · los cinco nombres del cliente congelado, en un solo sitio. Ningun otro modulo de `src/` los enumera a proposito: el codigo derrama el objeto entero. Su lector es el banco, que comprueba con esta lista que el envoltorio escribe LOS CINCO — una copia escrita a mano en el test podria quedarse atras sin que nadie lo notara, y congelar cuatro de cinco deja un documento mitad congelado y mitad vivo.',
+    exports: ['CAMPOS_CONGELADOS'] },
+  { modulo: 'src/modules/invoicing/domain/cerrojoSaturado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-08',
+    motivo: 'Codigo y texto oficial del 503 `serie_ocupada`; su lector de fuera es el guard, que los compara por identidad para no duplicar el literal aprobado.',
+    exports: ['ERROR_CERROJO_SATURADO', 'COPY_CERROJO_SATURADO'] },
   { modulo: 'src/modules/invoicing/domain/invoiceLines.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -400,6 +474,20 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'La lista de orígenes de C7. Ni siquiera su propio módulo la usa: su único lector es su test.',
     exports: ['ORIGENES_C7'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-07',
+    motivo: 'SCRUM-780 · LA FECHA DE CORTE AL FORMATO F, firmada por el fundador. Se exporta para '
+      + 'que exista UN solo sitio donde vive ese dato y para que su test pueda comprobar que sigue '
+      + 'siendo la firmada: moverla renumeraría facturas ya emitidas, que es la regla 29. Hoy la '
+      + 'leen su propio módulo (por defecto de `usaFormatoF`) y su test.',
+    exports: ['CORTE_FORMATO_F'] },
+  { modulo: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-07',
+    motivo: 'SCRUM-780 · la mitad PURA del contador de la serie F. La consume `leerSeqDeLaSerieF` '
+      + 'de su propio módulo, que es quien pone la consulta; se exporta aparte para poder probar la '
+      + 'aritmética —máximo y no recuento, y el reinicio anual— sin base de datos, que es donde '
+      + 'está el error que costaría un número repetido.',
+    exports: ['siguienteSeqDeLaSerieF'] },
   { modulo: 'src/modules/invoicing/domain/lineasFacturables.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -672,7 +760,8 @@ export const DECLARADOS = [
   { modulo: 'src/modules/messaging/domain/whatsappLog.service.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
-    exports: ['DELIVERED_OR_MORE', 'SENT_OR_MORE', 'WA_UTILITY_COST_ES', 'WA_WINDOW_SAFETY_MS'] },
+    // SCRUM-885 (16-sep-2026): sale `SENT_OR_MORE` — lo lee `billing/domain/envioDelDocumento.ts`.
+    exports: ['DELIVERED_OR_MORE', 'WA_UTILITY_COST_ES', 'WA_WINDOW_SAFETY_MS'] },
   { modulo: 'src/modules/billing/domain/avisoBizumSinTelefono.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'SCRUM-328: el veredicto lo consume `app.ts` por `decidirAvisoBizum`; `hayQueAvisar` es el predicado de las DOS puertas que avisan, y hoy solo lo ejercita su test. Se exporta para que la regla —«no se pudo leer» tambien avisa— quede en un sitio y no repartida en comparaciones sueltas. SCRUM-515: sigue aqui a proposito. `scripts/guard-aviso-bizum.mjs` necesita el mismo predicado, pero importarlo desde `scripts/` —que ES entrada viva para los dos censos de alcance— lo sacaria de esta lista y abriria una discrepancia sin clase en el comparador de SCRUM-493. El guard lleva su propia copia ACOTADA y `tests/scrum515-aviso-bizum-render.test.mjs` la pincha contra esta funcion.',
@@ -761,6 +850,49 @@ export const DECLARADOS = [
     cat: 'SUPLANTADO_POR_UNA_COPIA', desde: '2026-08-12',
     motivo: 'El profesional SÍ ve su equipo: lo sirven `teamOverview.service.ts:58` y consultas inline en rutas (`jobs.routes.ts:133`, `reports.routes.ts:99`). No es una promesa rota, es la misma consulta escrita en varios sitios, con varios sitios donde divergir.',
     exports: ['listTeamMembers'] },
+  // ── SCRUM-340 · la regla de la plaza de fundador, escrita ANTES que su columna ──────────
+  //
+  // El fundador firmó el 8-sep-2026 que «la plaza se queda con él; si se retrasa en un pago tiene
+  // un tiempo para pagarla, y si no, esa plaza desaparece con el merchant». Ocupa quien tiene
+  // `founding_purchased_at` NOT NULL — y esa columna NO EXISTE todavía: el ALTER está escrito y
+  // sin aplicar (`docs/sql/scrum-340-la-plaza-comprada.sql`) porque `prisma/schema.prisma` es
+  // dominio del fundador. Sin la columna, `getFoundingStatus` no puede seleccionarla y el
+  // predicado se queda sin cable.
+  //
+  // NO es código muerto y NO se borra: es la regla que repara el significado que se rompió dos
+  // veces —por `plan` (se resetea al cancelar y LIBERA la plaza) y por `subscriptionStatus` (lo
+  // comparten `pro` y `founding`, así que cada PRO activo ocupaba una plaza)—. Está probada con
+  // sus dos rojos en `tests/scrum340-la-plaza-comprada.test.mjs`.
+  //
+  // Lo retira: quien cablee `getFoundingStatus` a la columna, el día que se aplique el ALTER.
+  { modulo: 'src/modules/billing/domain/founding.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-09-08',
+    motivo: 'La regla firmada de quién ocupa plaza de fundador, construida antes que su columna: '
+      + '`merchants.founding_purchased_at` no existe todavía y `prisma/schema.prisma` es del '
+      + 'fundador, así que el contador no puede leerla. Pura y con sus dos rojos; su cable es el '
+      + 'ALTER de SCRUM-340.',
+    exports: ['plazaOcupada'] },
+
+  // ── SCRUM-815 (③) · la exclusión que se nombra para no parecer un olvido ────────────────
+  //
+  // El protocolo de `gateway_events` se enciende SOLO para los cinco tipos de evento seguros de
+  // repetir. Los DOS que no lo son quedan fuera por decisión del asesor (15-sep-2026): hoy el
+  // defecto es silencioso —se pierden eventos— y encenderlo ahí lo volvería ruidoso: correo de
+  // primer pago reenviado, WhatsApp de disputa repetido, posible mes gratis duplicado.
+  //
+  // `EVENTOS_CON_REGISTRO` NO está aquí, y es la diferencia: aquélla la consume `llevaRegistro`
+  // dentro del propio módulo, así que se le quitó el `export` en vez de declararla. Ésta no la
+  // consume nadie dentro —su trabajo es CONSTAR— y por eso se declara en vez de des-exportarla.
+  //
+  // Lo retira: quien cablee la exclusión a algo que la lea de verdad (un panel de eventos
+  // atascados, o el día que los dos tipos dejen de tener efectos irreversibles y entren).
+  { modulo: 'src/modules/billing/domain/gatewayEvents.service.ts',
+    cat: 'ESPECIFICACION_EJECUTABLE_SIN_SUPERFICIE', desde: '2026-09-15',
+    motivo: 'La lista de los dos eventos que NO llevan registro de idempotencia, enumerados a '
+      + 'propósito: una exclusión que no se nombra se lee como un descuido, y la siguiente '
+      + 'sesión la «arregla» encendiéndolos. Su test la recorre y exige que `llevaRegistro` diga '
+      + 'que no a los dos, que es el control positivo de la decisión.',
+    exports: ['EVENTOS_SIN_REGISTRO'] },
 ];
 
 /** Los pares `módulo::export` declarados, aplanados. */

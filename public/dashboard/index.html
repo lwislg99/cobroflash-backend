@@ -242,10 +242,15 @@
   <script src="./js/contacto.js"></script>
   <script src="./js/modalHeader.js"></script>
   <script src="./js/switchFormaJuridica.js"></script> <!-- SCRUM-574: el switch Empresa/Persona, una pieza para los dos modales -->
-  <script src="./js/filtroClientes.js"></script> <!-- SCRUM-581: pestañas y orden de la lista; va ANTES de customersView.js, que lo consume -->
+  <script src="./js/filtroClientes.js"></script> <!-- SCRUM-581: pestañas y orden de la lista; va ANTES de customersView.js, que lo consume. SCRUM-595: y ANTES de quotesListView.js / invoicesView.js / etiquetasDelDocumento.js, que consumen su filtro por etiqueta -->
+  <script src="./js/etiquetasDelDocumento.js"></script> <!-- SCRUM-595 (DOC-05): el bloque de etiquetas de la ficha, compartido por quotesDetailView.js e invoiceDetailView.js; va DESPUÉS de filtroClientes.js, que es de donde saca las decisiones y los textos -->
   <!-- SCRUM-366: la escalera de la siguiente accion, compartida por el listado y el detalle.
        Detras de api.js porque usa fmtMoneyEs; delante de las dos vistas que la consumen. -->
   <script src="./js/jobNextAction.js"></script>
+  <!-- SCRUM-823: agendar un Trabajo. Va JUNTO a la escalera y por el mismo motivo — la escalera
+       propone «Agendar» y las DOS vistas tienen que poder ejecutarlo. Detras de api.js porque usa
+       showToast; delante de jobsView.js y jobDetailView.js, sus dos consumidores. -->
+  <script src="./js/jobAgendar.js"></script>
   <!-- SCRUM-210: detrás de api.js a propósito — reutiliza su `copyRojo` (copy aprobado). -->
   <script src="./js/semaforoFiscal.js"></script>
   <script src="./js/homeView.js"></script>
@@ -277,7 +282,14 @@
   <script src="./js/quoteRevisiones.js"></script>
   <script src="./js/quoteAtajosVencimiento.js"></script> <!-- SCRUM-605: atajos de «Válido hasta» -->
   <script src="./js/tiposDeIva.js"></script> <!-- SCRUM-611 (DOC-16): los tipos del selector de la linea, UN solo sitio; va ANTES de quotesView.js -->
+  <script src="./js/economiaVisible.js"></script> <!-- SCRUM-597 (DOC-07 · P-DOC-3): quien ve coste y margen; va ANTES de quotesView.js, productsView.js e invoiceDetailView.js, que lo consumen -->
+  <script src="./js/documentoAsignados.js"></script> <!-- SCRUM-597 (DOC-07): el selector de usuarios asignados al documento; va ANTES de quotesDetailView.js e invoiceDetailView.js -->
   <script src="./js/textoDelDocumento.js"></script> <!-- SCRUM-593 (DOC-03): los dos textos libres del documento; va ANTES de quotesView.js, que los consumira en la fase 3 (schema+cableado) -->
+  <script src="./js/cuerpoDelDocumentoSuelto.js"></script> <!-- SCRUM-600 (DOC-10): la UNICA composicion del cuerpo de POST /admin/invoices; va ANTES de quotesView.js, la UNICA pantalla que la llama desde SCRUM-867 (el modal viejo se retiro) -->
+  <script src="./js/buscadorDeClientes.js"></script> <!-- SCRUM-713: filtrar clientes al teclear (textos + regla de comparacion); va ANTES de quotesView.js, que lo llama al MONTAR el selector -->
+  <!-- SCRUM-776: cómo se llama el documento (factura/justificante), UNA sola fuente. SCRUM-867: sube
+       aquí, por delante de quotesView.js, para que se cargue ANTES que TODOS sus consumidores. -->
+  <script src="./js/rotulosDelDocumento.js"></script>
   <script src="./js/quotesView.js"></script>
   <script src="./js/quotesDetailView.js"></script>
   <script src="./js/switchTipoArticulo.js"></script> <!-- SCRUM-609 (CAT-01): el switch Producto/Servicio, una pieza para los dos formularios -->
@@ -285,16 +297,26 @@
   <script src="./js/productsView.js"></script>
   <script src="./js/providersView.js"></script>
   <script src="./js/tipoDestinatarioPendiente.js"></script> <!-- SCRUM-615: la pregunta y el aviso de la bandeja -->
-  <script src="./js/rotulosDelDocumento.js"></script> <!-- SCRUM-776: cómo se llama el documento (factura/justificante), UNA sola fuente; va ANTES de invoicesView.js y nuevaFacturaModal.js, que lo consumen -->
   <script src="./js/invoicesView.js"></script>
   <!-- SCRUM-285 (B4): la pantalla de Cobros -->
   <script src="./js/cobrosView.js"></script>
-  <script src="./js/nuevaFacturaModal.js"></script>
+  <!-- SCRUM-867: aquí se cargaba `nuevaFacturaModal.js`, el modal viejo de «Nueva factura». Se
+       retiró con su fichero: nadie lo abría desde que la lista navega a `invoices-new`. -->
+
   <!-- SCRUM-302 (C2): la LEY del patrón va PRIMERO — los registros la consumen al cargarse. -->
   <script src="./js/patronDetalleAcciones.js"></script>
   <script src="./js/invoiceActionsRegistry.js"></script>
   <script src="./js/quoteActionsRegistry.js"></script>
   <script src="./js/albaranActionsRegistry.js"></script>
+  <!-- SCRUM-831: el siguiente paso de un albarán, compartido por las TRES superficies (la lista,
+       la ficha del Trabajo y el detalle). Detrás del registro y de patronDetalleAcciones, que son
+       de quienes lee; delante de albaranesView.js y jobDetailView.js, que lo consumen. -->
+  <script src="./js/albaranAccion.js"></script>
+  <!-- SCRUM-845: qué se puede hacer con una FACTURA, compartido por la lista y el detalle. Mismo
+       sitio y mismo motivo que albaranAccion.js: detrás del registro y de patronDetalleAcciones,
+       que son de quienes lee. `invoicesView.js` carga ANTES que este fichero y no pasa nada: lo
+       llama al PINTAR la tabla, no al cargarse — y para entonces el documento ya está entero. -->
+  <script src="./js/invoiceAccion.js"></script>
   <script src="./js/albaranDetailView.js"></script>
   <!-- SCRUM-301 (C1): el listado global. Después del detalle porque enlaza a él. -->
   <!-- SCRUM-606 (ALB-01): el buscador de presupuesto de «Nuevo albarán». ANTES de
@@ -302,6 +324,9 @@
        lee la cabecera del modal y el rótulo con su marcador. -->
   <script src="./js/albaranDesdePresupuestoModal.js"></script>
   <script src="./js/albaranesView.js"></script>
+  <!-- SCRUM-885: la regla del aviso «el documento del cobro no ha salido». Antes de sus dos consumidores,
+       invoiceDetailView.js y jobDetailView.js, que la llaman al confirmar el Bizum y al pintar la fila. -->
+  <script src="./js/avisoDocumentoSinEnviar.js"></script>
   <script src="./js/invoiceDetailView.js"></script>
   <!-- SCRUM-316 (G1): la ley del patrón aplicada al Trabajo. Carga ANTES de jobDetailView.js, que pinta desde ella. -->
   <script src="./js/jobActionsRegistry.js"></script>
@@ -350,6 +375,8 @@
   <!-- SCRUM-652 (T3 fase C) · el parte: usa el pad de firma y la cola, va despues de los dos. -->
   <script src="./js/parteDetailView.js"></script>
   <script src="./js/parteOficinaView.js"></script>
+  <!-- SCRUM-918 · antes que `app.js`: decide qué hacer si /admin/me falla sin red. -->
+  <script src="./js/arranqueSinCobertura.js"></script>
   <script src="./js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

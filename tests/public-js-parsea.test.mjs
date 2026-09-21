@@ -21,22 +21,50 @@
 // **Derivado, no enumerado:** recorre `public/` y comprueba TODOS los `.js` que encuentre. No hay
 // lista que mantener, así que un fichero nuevo entra solo.
 //
-// **SUELO:** si encuentra menos de `SUELO_FICHEROS`, FALLA. «Todos parsean» y «no supe encontrar
-// los ficheros» dan el mismo verde, y este guard existe precisamente porque un verde hueco duró
-// cuatro commits.
+// **SUELO:** si su recorrido y git no coinciden en qué `.js` hay en `public/`, FALLA. «Todos
+// parsean» y «no supe encontrar los ficheros» dan el mismo verde, y este guard existe precisamente
+// porque un verde hueco duró cuatro commits.
+//
+// SCRUM-949 · Hasta el 18-sep-2026 el suelo era `SUELO_FICHEROS = 40`, un número escrito a mano con
+// la población de su día. Con 96 ficheros, el recorrido podía perder 56 sin que saltara. Ahora es
+// un COCIENTE entre dos sondas de la misma población (`scripts/_suelo-por-cociente.mjs`), y el
+// umbral sale de la población de cada ejecución: crecer lo mueve solo.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
+import {
+  censoDeGit, medirCociente, explicarCociente, poblacionDeclarada,
+} from '../scripts/_suelo-por-cociente.mjs'; // SCRUM-949 · el suelo como cociente
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const DIR = path.join(RAIZ, 'public');
 
-/** Hoy son 50. El suelo va por debajo para que un borrado legítimo no lo dispare, pero no tanto
- *  como para que un recorrido roto —que devolvería 0 o 3— se cuele. */
-const SUELO_FICHEROS = 40;
+/**
+ * El cociente mínimo entre lo que RECORRE este guard y lo que GIT sabe que hay en el disco.
+ *
+ * Es 1 y no «un poco menos, por si acaso», y no es una intuición: la segunda sonda cuenta los
+ * ficheros sin `git add` y descuenta los borrados sin `git rm`, así que un cambio honesto no separa
+ * las dos sondas —probado uno a uno en `tests/scrum949-el-suelo-como-cociente.test.mjs`—. Lo único
+ * que las separa es que una esté ciega.
+ *
+ * 🔴 Por qué no un porcentaje fijo por debajo de 1: la ceguera plausible de este recorrido es de
+ * tamaño FIJO —mirar sólo `public/dashboard/js` pierde `sw.js` y `public/js/`, que no crecen—
+ * mientras la población crece dentro de `dashboard/js`. Cualquier porcentaje menor que 1 acaba
+ * dejándola pasar en cuanto la población crece lo bastante. La tabla, medida y con su fecha, está en
+ * `docs/master/SCRUM-949.md`: aquí no se copian sus cifras, que envejecerían como el suelo viejo.
+ */
+const COCIENTE_MINIMO = 1;
+
+/**
+ * La población, declarada POR SEPARADO del recorrido: el literal `'public'` y el filtro de aquí
+ * abajo NO se derivan de `DIR` ni de `ficherosJs`, y es a propósito. Si alguien estrecha el
+ * recorrido, el censo sigue mirando `public/` entero y la diferencia es justo lo que salta.
+ */
+const censoDePublic = () => censoDeGit(RAIZ, 'public', (p) => p.endsWith('.js'));
 
 function ficherosJs(dir) {
   const out = [];
@@ -61,7 +89,7 @@ function noParsea(fichero) {
 
   const src = fs.readFileSync(fichero, 'utf8');
   if (/^\s*(import|export)[\s{*]/m.test(src)) {
-    const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-parsea-')), 'x.mjs');
+    const tmp = path.join(temporal('yaqu-parsea-'), 'x.mjs');
     fs.writeFileSync(tmp, src);
     const rm = spawnSync(process.execPath, ['--check', tmp], { encoding: 'utf8' });
     fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
@@ -85,13 +113,19 @@ function noParsea(fichero) {
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 
-test('public/ · SUELO: el guard encuentra los ficheros que dice comprobar', () => {
+test('public/ · SUELO: el guard encuentra los ficheros que dice comprobar', (t) => {
   assert.ok(fs.existsSync(DIR), '🔴 no existe public/: el guard no puede mirar, y FALLA.');
-  const n = ficherosJs(DIR).length;
-  assert.ok(n >= SUELO_FICHEROS,
-    `🔴 el recorrido solo ha encontrado ${n} ficheros .js en public/ (suelo ${SUELO_FICHEROS}).\n\n` +
-    '  «Todos parsean» y «no supe encontrar los ficheros» son el mismo verde. Si el front se ha\n' +
-    '  reorganizado, arregla el recorrido ANTES de creerte nada de lo de abajo.');
+  // El colector del suelo es EL MISMO que usa el guard de abajo, no una copia: una copia del
+  // recorrido no se entera de que el recorrido de verdad se ha roto (el defecto del registro de
+  // SCRUM-810b, que lleva su propio `rec` para esta misma población).
+  const vistos = ficherosJs(DIR).map((f) => path.relative(RAIZ, f).split(path.sep).join('/'));
+  const censados = censoDePublic();
+  assert.ok(censados,
+    '🔴 CIEGO: no he podido preguntarle a git qué `.js` hay en public/. Sin la segunda sonda no hay\n' +
+    '  suelo, y un suelo que no se puede calcular NO es un verde: es no haber mirado.');
+  const m = medirCociente(vistos, censados);
+  t.diagnostic(poblacionDeclarada('los .js de public/', m, COCIENTE_MINIMO));
+  assert.ok(m.cociente >= COCIENTE_MINIMO, explicarCociente('los .js de public/', m, COCIENTE_MINIMO));
 });
 
 // ── EL GUARD ─────────────────────────────────────────────────────────────────────────────────

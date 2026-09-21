@@ -319,6 +319,44 @@
 
 ## P1 — Bugs visibles al cliente / datos incorrectos
 
+### [ ] P1-WA-TASA · La tasa de entrega de WhatsApp lee **100 %** con 9 de 10 mensajes FALLIDOS (15-sep-2026, hallazgo colateral de SCRUM-530)
+- **Medido sobre el servicio real**, con la base doblada y filas fabricadas (ni una base, ni una
+  clave, ni un byte de red). `getWhatsAppMetrics`, ventana de 7 días:
+
+  | filas de la semana | `sample` | `deliveryRate7d` | `alert.active` |
+  |---|---|---|---|
+  | 1 entregado + 2 fallidos | **1** | **100** | false |
+  | **1 entregado + 9 fallidos** | **1** | **100** | false |
+  | 20 enviados, 10 entregados | 20 | 50 | true |
+
+- **Causa raíz, con fichero y línea.** En `src/modules/messaging/domain/whatsappLog.service.ts`:
+  `SENT_OR_MORE = {sent, delivered, read}` y `DELIVERED_OR_MORE = {delivered, read}`. El estado
+  `failed` **no está en ninguno de los dos**, así que un mensaje fallido no entra en el
+  denominador. La «tasa de entrega» no mide entregas sobre envíos: mide entregas sobre **los que
+  no fallaron**, y por construcción no puede bajar por culpa de un fallo.
+- **La víctima.** Es la misma de SCRUM-530 y es peor de lo que decía el ticket: al fontanero cuyos
+  mensajes fallan no sólo no le salta la alerta — **la pantalla le enseña un 100 %**. Y explica por
+  qué bajar el umbral de 10 no habría arreglado nada: con 9 fallos, `sample` sigue valiendo 1.
+- **Por qué NO se arregla en SCRUM-530.** Cambiar el denominador cambia **a quién se avisa**, y eso
+  es decisión de producto (regla 9, otro carril). Además el mes SÍ cuenta los fallos por separado
+  (`month.failed`), así que puede que la separación fuera deliberada y haya que leer por qué antes
+  de uniformar.
+- **Tampoco se ha pinchado en un test**, a propósito: un límite declarado y fijado con un assert
+  deja de ser una advertencia y pasa a ser un permiso (SCRUM-827). Queda aquí, sin `[x]`.
+- **Done cuando:** se decida si `failed` entra en el denominador, y —si entra— se mida a cuántos
+  merchants empieza a alertar. Una alerta que salta para todos se apaga, y entonces no protege a nadie.
+- **ARREGLADO EN CÓDIGO (16-sep-2026, SCRUM-862) — pero NO marcado `[x]`.** La regla de este
+  fichero dice `[x]` cuando está *hecho **y verificado*** en `yaqu.app`, y esa comprobación es de
+  producción: desde una sesión no se toca. Queda a medias a propósito, no por olvido.
+  - **Causa raíz / qué se cambió:** el denominador de las dos tasas (7 días y por plantilla) pasa a
+    contar INTENTOS con `esIntentoDeEntrega` = `SENT_OR_MORE` ∪ `{failed}`. **No** se metió
+    `failed` dentro de `SENT_OR_MORE`, que era lo obvio: ese conjunto alimenta `month.sent` y la
+    tarjeta habría enseñado «Enviados 10 · Fallidos 9» contando los mismos nueve dos veces.
+  - **Medido:** 1 entregado + 9 fallidos pasa de `sample 1 · 100 % · alerta apagada` a
+    `sample 10 · 10 % · alerta ACTIVA`. 20/10 sigue en 50 % y todo-entregado sigue en 100 % sin
+    alerta, así que **no empieza a alertar a todo el mundo**: lo que se movió es lo que estaba mal.
+  - **Falta:** verlo en `yaqu.app` con datos reales, y entonces marcar `[x]`.
+
 ### [x] P1-BIZUM-PAIDVIA · El webhook de Connect grava `method:'card'` a fuego: un Bizum se registraría como tarjeta
 - **✅ ARREGLADO 28-jul-2026 (SCRUM-191, con la decisión del fundador):** se añade `bizum_auto` al conjunto cerrado de la regla 22 —`bizum_manual` sería falso (nadie confirmó a mano) y `card` era el bug— y el webhook **lee** el método real (`payment_method_details.type` del cargo, expandiendo `latest_charge`). Si no se puede resolver, se OMITE en vez de inventarlo. **Apareció una hermana** que no estaba en el diagnóstico: el camino de `payment_intent.payment_failed` fijaba el método igual, y la cazó el guard, no la vista.
 - **Encontrado:** 28-jul-2026, al ir a hacer visible el Bizum automático en el selector (SCRUM-3 / W4). **Bloquea ese cambio**, no es un hallazgo lateral.
@@ -391,6 +429,29 @@
 
 ---
 
+### [ ] P1-CONT-19b · el alta de cliente RECHAZA un cliente sin email (y sin teléfono)
+- **Síntoma:** en el modal de Clientes, guardar un cliente dejando el **email** vacío devuelve
+  **400 `validation_error`**. Con el **teléfono** vacío, igual. El profesional ve «Error guardando
+  cliente: …» y no puede dar de alta a alguien de quien sólo tiene el nombre y un número.
+- **Causa raíz:** `customersView.js` construye el payload con `email: fieldEmail.input.value.trim()`
+  y `phone: telefonoCompleto()`, que devuelven **cadena vacía** cuando el campo está vacío. Los dos
+  esquemas los declaran `.optional()` pero NO `.nullable()`, así que Zod recibe `""` y lo rechaza:
+  `email` por formato y `phone` por `min(5)`. **Medido ejecutando `customerCreateSchema`:**
+  `""` RECHAZA · `null` RECHAZA · **ausente ACEPTA**.
+- **Cómo se destapó:** el test de SCRUM-590b recorre el alta por el camino REAL (modal → payload →
+  esquema → guardado) y chocó con esto. Ningún test lo veía porque los de formulario comprobaban el
+  payload, no la puerta.
+- **Arreglo:** omitir la clave cuando el valor está vacío, que es lo que YA hace la ficha 360
+  (`if (phone) payload.phone = phone;`) y lo que hace `mobile` desde SCRUM-590b. **No se arregló de
+  paso a propósito:** cambia el comportamiento de dos campos que aquel ticket no tenía encargados,
+  y la casa prohíbe los arreglos «de paso» sin registrar.
+- **⚠️ Y hay una decisión detrás, no es sólo un `if`:** con la clave omitida, **vaciar** un email o
+  un teléfono que ya existen no los borra (ausente = «no toques»). Borrarlos de verdad pide
+  `.nullable()` en el esquema, y eso son los TRES campos a la vez (`phone`, `email`, `mobile`).
+- **Done cuando:** desde el modal se guarda un cliente con sólo nombre y teléfono, y otro con sólo
+  nombre y email, sin error; y el test de SCRUM-590b puede dejar el email vacío.
+
+---
 ## P2 — Mejoras de producto / UX
 
 ### [x] P2-1 · Acciones sobre presupuestos rechazados
@@ -512,6 +573,151 @@
 ---
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
+
+### [ ] P3-NODEOPTS-850B · `scrum850b` filtra `NODE_OPTIONS` a su `node --test` anidado: bajo CI real escribe en el MISMO `tanda.tap` del proceso padre (16-sep-2026, hallazgo colateral de SCRUM-839e)
+- **Medido:** en el run `35137040565` (job «build + tests (con banco desechable)»), el TAP combinado
+  (`${{ runner.temp }}/tanda.tap`) trae `not ok 1 - ESTE TEST FALLA A PROPOSITO`, en
+  `/tmp/tanda850b-…/rojo.test.mjs:3:1` — el canario siempre-rojo que
+  `tests/scrum850b-las-formas-que-mienten.test.mjs` monta a propósito en un directorio temporal
+  para su propio banco (`bancoDeTanda()`).
+- **Causa:** `.github/workflows/ci.yml` inyecta los reporters por `NODE_OPTIONS` (SCRUM-552), no por
+  argumento de `node --test` — incluye `--test-reporter-destination=${{ runner.temp }}/tanda.tap`.
+  `ENTORNO_LIMPIO` (línea 97 de `scrum850b-las-formas-que-mienten.test.mjs`) sólo borra
+  `NODE_TEST_CONTEXT` del entorno que hereda el `node --test` anidado del banco; no borra
+  `NODE_OPTIONS`. Bajo CI real ese entorno hereda el mismo `--test-reporter-destination`, y el
+  proceso hijo escribe SU tap (con su canario) en el mismo fichero que ya está escribiendo el padre.
+- **No es la causa del rojo de este job hoy** (el rojo real es el guard de SCRUM-854, registrado
+  aparte y ya con su entrada): el proceso padre no cuenta el fallo del hijo como propio, así que el
+  `exit code` de `npm test` no depende de esto. Pero contamina el TAP combinado que lee el paso «Por
+  qué cayó» cada vez que la tanda sale roja por CUALQUIER motivo, y sería un `not ok` fantasma más
+  en cualquier diagnóstico futuro.
+- **Por qué nadie lo vio antes:** sólo se manifiesta con las mismas `NODE_OPTIONS` puestas que CI
+  inyecta (SCRUM-552); una sesión que corre `node --test` suelto en local, sin ese entorno, no lo
+  reproduce.
+- **Done cuando:** `ENTORNO_LIMPIO` (en `bancoDeTanda()`) borre también `NODE_OPTIONS` del entorno
+  que hereda el `node --test` anidado — o el banco le fije su propio `--test-reporter-destination`
+  a un fichero descartable, para que el canario del banco no pueda volver a aterrizar en el TAP del
+  proceso padre.
+
+### [ ] P3-META-859 · `meta-guard` MUDO: el guard de SCRUM-859 no cae ante la mutación que declara (16-sep-2026, hallazgo colateral de SCRUM-888g)
+- **No es de SCRUM-888g** — se registra aparte porque es otro carril (regla 37) y **no se toca un
+  guard ajeno para que la tanda de esta rama pase**. Ya estaba en `main` antes de abrir
+  `scrum-888g-senal-en-la-firma`: `git merge-base --is-ancestor 34317aa7 origin/main` → `YES`. El
+  commit `34317aa7` (SCRUM-649, mezclado hoy vía PR #1371) reescribió
+  `tests/scrum859-identidad-y-motivo-cerrado.test.mjs` y dejó este guard mudo desde entonces.
+- **Lo medido:** el job `meta-guard · los guards caen cuando deben` cae en
+  https://github.com/lwislg99/cobroflash-backend/actions/runs/35136653651 con:
+  ```
+  🔴 GUARDS MUDOS — pasan en verde sobre el defecto que dicen vigilar:
+    · scrum859-identidad-y-motivo-cerrado.test.mjs · el guard NO cayó. Test que debía ponerse
+      rojo: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+  ```
+- **Causa raíz:** el test `SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave`
+  (línea 135) define su PROPIA función `claves()` local que llama a `identidadDeEntrada()`
+  directamente, en vez de usar `entradasTroceadas()` (`tests/scrum267-ancla-de-medicion.test.mjs`,
+  exportada justo para eso). La mutación que este guard declara en
+  `MUTACIONES_QUE_ME_TUMBAN` (línea 36-40) cambia la línea 326 de `scrum267`, **dentro de**
+  `entradasTroceadas()` — una función que ese test concreto nunca ejecuta. La mutación se aplica
+  (la cadena es única en el fichero, verificado), pero nunca alcanza el código que el test mide:
+  guard mudo por duplicación, no por sintaxis rota.
+- **Por qué no se arregla aquí:** el arreglo toca `tests/scrum859-identidad-y-motivo-cerrado.test.mjs`
+  y/o `tests/scrum267-ancla-de-medicion.test.mjs` — ningún fichero de SCRUM-888g — y decidir SI la
+  reimplementación local se sustituye por `entradasTroceadas()` (compartir lector, como pide el
+  canon de SCRUM-649 citado en el propio `34317aa7`) o si es la declaración de la mutación la que
+  hay que apuntar a otro sitio, exige mirar por qué se duplicó a propósito (quizá el suelo del test
+  necesita una entrada de laboratorio que `entradasTroceadas()` no puede darle) — análisis propio,
+  no una edición mecánica de paso.
+- **Impacto:** al estar ya en `main`, este check obligatorio sale en rojo en **cualquier PR**
+  abierto contra la base actual, no sólo en éste — bloquea el auto-merge de toda la cola hasta que
+  se arregle en su propio ticket.
+- **Done cuando:** el guard de SCRUM-859 vuelve a caer con la mutación que declara (mutación
+  re-ejercida, verde de vuelta al restaurar), sin bajar el ámbito del meta-guard ni excluir este
+  test de su barrido.
+
+### [ ] P3-TMPDIR · 24.740 directorios temporales de la casa abandonados en `TMPDIR` (16-sep-2026, hallazgo colateral de SCRUM-858)
+- **Medido:** `TMPDIR` (`C:Users…AppDataLocalTemp`) tiene **55.229 entradas**, de las que
+  **24.740** llevan prefijo de esta casa: `yaqu*` 15.679 · `scrum723` 3.675 · `scrum385` 1.827 ·
+  `scrum778` 1.230 · `scrum670` 880 · `scrum727` 709 · `scrum846` 524 · `scrum861` 120 · `scrum813` 54.
+  Son `mkdtempSync` que sus tests no borran en un `finally`.
+- **⚠️ NO ralentiza la tanda, y está medido** — se comprobó antes de acusar: el coste de
+  `mkdtempSync` de 0 a 55.000 entradas hermanas sube **×1,3** (0,172 → 0,226 ms). Quien lo lea
+  buscando la causa de SCRUM-858, no es ésta.
+- **Por qué se registra igual:** crece sin techo en la máquina que comparten ~26 worktrees, y un
+  día llena el disco o el perfil. Los prefijos dicen exactamente qué tests limpiar.
+- **⛔ No se borra desde una sesión:** ese directorio lo comparten todas, y puede haber una
+  usándolo en este momento. El barrido lo hace el fundador, o un script con su OK.
+- **Done cuando:** los tests con esos prefijos borren su temporal en un `finally` (el patrón ya
+  está en la casa, p. ej. `scrum835`), y el barrido de lo ya acumulado se haga una vez.
+
+### [ ] P3-FLAKY-754 · `scrum754b` (el `fs.watch` mudo) cae en TANDA COMPLETA y no se reproduce suelto (15-sep-2026, hallazgo colateral de SCRUM-850)
+- **Hermano del P3-FLAKY-451 de aquí abajo**, y se registra aparte porque es OTRO test y otro
+  mecanismo. Se reporta, no se arregla: es de otro carril (regla 37) y **no se toca un test para
+  que la tanda pase**.
+- **Lo medido, las cuatro pasadas, sin redondear:**
+
+  | qué se corrió | resultado |
+  |---|---|
+  | tanda completa en `scrum-850-la-poblacion-del-instrumento` (base `9b1392b5`), con reporters `spec`+`tap` | **`exit 1` · 1 fail** |
+  | **la misma tanda, misma base, sólo reporter `tap`** | **`exit 0` · 0 fail** |
+  | tanda completa en `origin/main` limpio (`d9a05138`), reporter `tap` | `exit 0` · 0 fail |
+  | `tests/scrum754-el-juez-que-oscila.test.mjs` suelto (en `main` y en la rama) y junto al guard nuevo | 22/22 y 28/28, verde |
+
+  ```
+  not ok 5830 - SCRUM-754b · 🔴 con `fs.watch` MUDO (la condición de CI) el control positivo SIGUE pasando
+    location: 'tests/scrum754-el-juez-que-oscila.test.mjs:532:1'
+    error: 'con la vigilancia en vivo muda el control positivo NO pasa …'  false !== true
+  ```
+
+- **Pista, no causa:** el test compara **huellas de `readdir` + `stat` sobre `tests/`**, y el test
+  de al lado (`SCRUM-754b · EL CASO QUE DECIDE`) documenta que esta familia era no determinista
+  —*«2 fallos de 5 pasadas»*— porque `mkdirSync` y el transitorio pueden caer en el **mismo tic de
+  `mtime`**, y lo arregla empujando el directorio al pasado con `utimesSync`. **El que cae no hace
+  eso.** No se afirma que sea la causa: no se ha provocado.
+- **🔴 Una hipótesis MÍA que se cayó, y queda escrita para que nadie la repita:** propuse que lo
+  explicaba el arreglo de SCRUM-824 (temporales fuera de `tests/`, `ef5395bf`), que `main` limpio
+  tenía y mi base no. **La segunda pasada sobre esa misma base salió verde**, así que la hipótesis
+  no se sostiene: la atribución fue prematura. Lo único que las cuatro pasadas sostienen es que es
+  **intermitente**, y el único confundidor que cambió entre la roja y la verde fue el **número de
+  reporters** (dos contra uno), no el código.
+- **Done cuando:** se provoque el rojo a voluntad —N pasadas con y sin carga de reporters— y se
+  decida si es el tic de `mtime` o la carga de E/S. Mientras, **una tanda roja en este test no es
+  prueba de nada hasta repetirla**.
+
+### [ ] P3-FLAKY-451 · `scrum451-plazo-de-red` cae ~1 de cada 10 TANDAS COMPLETAS, y no se reproduce suelto (15-sep-2026, hallazgo colateral de SCRUM-824)
+- **Medido, no supuesto.** Diez tandas completas seguidas sobre la rama
+  `scrum-824-temporales-dentro-del-arbol` (`origin/main` = `07ccd16c`): **nueve verdes y la décima
+  roja**, siempre el mismo test.
+
+  ```
+  not ok 3086 - SCRUM-451 · el plazo cubre TAMBIÉN el cuerpo, no solo las cabeceras
+    tests/scrum451-plazo-de-red.test.mjs:133
+    suelo: las cabeceras tenían que haber llegado, o esto no prueba lo del cuerpo
+    (1 petición · 0 resueltas · 0 fallidas · 0 colgadas · 1 ABORTADAS · 0 cuerpos entregados)
+  ```
+- **NO es la carrera de temporales de SCRUM-824, y no lo causa su arreglo.** `scrum451` no importa
+  ninguno de los ficheros de ese diff, y hace **cero** `mkdtemp` / `writeFileSync` / `tmpdir`. Es un
+  plazo de red, no un fichero.
+- **El test se porta BIEN al caer.** No da un veredicto falso: su propio SUELO dice que no pudo
+  medir —la petición se abortó antes de que llegaran las cabeceras—. El defecto es que el plazo se
+  agota bajo carga, no que el aserto mienta.
+- **No se reproduce en aislamiento, y eso es lo que falta por entender:**
+
+  | escenario | fallos |
+  |---|---|
+  | `scrum451` solo, 30 pasadas | **0 / 30** |
+  | `scrum451` con 12 quemadores de CPU, 30 pasadas | **0 / 30** |
+  | dentro de la tanda completa (781 ficheros, concurrencia 12) | **1 / 10** |
+
+  La contención de CPU sola NO basta. La sospecha es presión de E/S o de sockets del resto de la
+  tanda —en la corrida medida había además un vigía golpeando el sistema de ficheros, que CI no
+  tiene—, pero **es una sospecha y no se ha medido**; quien lo coja, que la mida antes de creerla.
+- ⛔ **NO se arregla subiendo el plazo a ojo ni reintentando:** un reintento sobre una carrera la
+  esconde, y subir el número lo convierte en una foto de la máquina donde se subió. Y NO se baja a
+  `skip`: un test saltado se cuenta como pasado (SCRUM-754).
+- **Por qué se registra y no se arregla aquí:** SCRUM-824 iba de los temporales dentro del árbol, y
+  eso queda cerrado y vigilado por su trinquete. Éste es un tercer rojo intermitente de la misma
+  FAMILIA —la tanda no es determinista— con mecánica distinta, igual que el segundo caso del propio
+  824 lo era del primero. Arreglarlo de paso sin medirlo sería justo lo que ese ticket prohíbe.
 
 ### [x] P3-CENSO-402 · `CENSO` de SCRUM-402 tenia una CLAVE REPETIDA, y JavaScript se comia una
 - **Medido el 5-sep-2026** desde la rama de SCRUM-606, sobre `origin/main` = `28b04585` SIN

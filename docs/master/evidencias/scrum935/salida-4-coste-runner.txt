@@ -1,0 +1,19 @@
+﻿POBLACIÓN · 97 runs de ci.yml con /timing legible (de 97) · ciegos 0
+VENTANA · 2026-09-17T21:09:10Z → 2026-09-20T14:03:43Z = 64.9 h
+
+LO QUE CUESTA HOY EL WORKFLOW ENTERO (todos sus jobs):
+  0 min facturables en 64.9 h
+  = 0 min/día = 0 min/mes
+  = 0.0 min por run, de media
+
+EL SOBRECOSTE DE DEJARLOS ACABAR:
+  runs cuyo meta-guard murió en el techo: 58 de 97 en 64.9 h
+  hoy ese job dura de media 615 s → se factura 11 min
+  con 30 min de presupuesto duraría 730 s (proyección por perfil) → 13 min
+  ⇒ +2 min facturables por run afectado
+  ⇒ +1287 min/mes al ritmo de merges de esta ventana
+  ⇒ SOBRE CERO NO SE CALCULA UN PORCENTAJE: GitHub declara 0 ms FACTURABLES en los 97 runs.
+     Eso no es que el instrumento no mire —mira y contesta 0— : es que el repositorio es PÚBLICO
+     (medido: gh repo view → visibility PUBLIC) y los runners estándar no se facturan ahí.
+     Los minutos de arriba son MÁQUINA, no dinero.
+EXIT=0

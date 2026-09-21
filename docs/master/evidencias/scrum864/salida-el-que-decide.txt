@@ -1,0 +1,22 @@
+═══ 🔴 EL QUE DECIDE · un test que crea un temporal y FALLA A MITAD ═══
+
+   HOY (mkdtempSync a pelo)
+     ¿llegó a EJECUTARSE el cuerpo? .: sí
+     ¿el test pasa? ................: no — falla a propósito, ése es el caso
+     directorios que deja tirados ..: 1  🔴
+
+   DESPUÉS (con `temporal()`)
+     ¿llegó a EJECUTARSE el cuerpo? .: sí
+     ¿el test pasa? ................: no — sigue fallando, y debe
+     directorios que deja tirados ..: 0  ✅
+
+   VEREDICTO: ✅ el defecto se reproduce HOY y desaparece DESPUÉS, y los dos cuerpos se ejecutaron.
+
+   ⚠️ Y el test sigue FALLANDO en los dos casos, que es lo correcto: el arreglo es de higiene,
+      no de comportamiento. Si el de después hubiera pasado, habría tapado el fallo.
+
+═══ ✅ POSITIVO · un test que termina bien sigue limpiando y sigue pasando ═══
+
+   HOY     · pasa: true · deja: 0
+   DESPUÉS · pasa: true · deja: 0
+   VEREDICTO: ✅ sigue pasando y sigue sin dejar nada.
