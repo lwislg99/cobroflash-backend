@@ -189,9 +189,17 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // y la hoja abierta) sólo existe en tiempo de render— y porque lleva su control NEGATIVO dentro:
   // si entre los dos clics cambia el precio, tienen que salir DOS documentos, no uno. Sin ese caso,
   // un arreglo que bloqueara SIEMPRE el segundo clic habría pasado por bueno.
+  // SCRUM-915e1 · entra `guard:documento-vivo`. Mira el DOCUMENTO de la derecha del editor, que es
+  // el papel que recibe el cliente, y sube aquí porque las tres cosas que vigila se leen IGUAL en
+  // el fuente y sólo existen en el árbol renderizado: que el pie lleve la fecha que el profesional
+  // puso y no una coletilla fija, que el papel se rehaga mientras se escribe, y que sus filas
+  // cuelguen de un `tbody` de verdad —`createElement('linesBody')` no lo es, y por eso la cebra
+  // del CSS no había pintado nunca—. Comprobado en rojo contra `e73e1630` (20-sep-2026): 7
+  // hallazgos en 5 de 5 casos; y por mutación, quitar SÓLO la delegación tumba exactamente las dos
+  // casillas de la fecha y ninguna más.
   // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
-  assert.equal(fuera.length, 31,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ 31 → ${fuera.length}.\n`
+  assert.equal(fuera.length, 32,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ ~~31~~ 32 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

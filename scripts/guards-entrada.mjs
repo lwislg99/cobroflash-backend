@@ -1,4 +1,4 @@
-// scripts/guards-entrada.mjs — SCRUM-414 · los guards de una ENTRADA DE REGISTRO, todos de golpe.
+// scripts/guards-entrada.mjs — SCRUM-414 · lo que hay que mirar ANTES de empujar, todo de golpe.
 //
 //   npm run guards:entrada
 //
@@ -12,10 +12,24 @@
 // comprobarlos de golpe antes de empujar**: `npm test` compila y corre 2.400 tests, así que nadie
 // lo lanza para revisar un fichero de texto. Cada rojo de estos cuesta una vuelta completa de PR.
 //
-// Estos cuatro corren **sin compilar y sin base de datos** —son estructurales, leen ficheros— así
-// que el comando tarda segundos. Ese es el punto: uno que tarde un minuto no se ejecuta.
+// Todos corren **sin compilar y sin base de datos** —son estructurales, leen ficheros— así que el
+// comando tarda segundos. Ese es el punto: uno que tarde un minuto no se ejecuta.
 //
-// ⚠️ Esto NO sustituye a `npm test`. Comprueba la ENTRADA, no el trabajo.
+// ── 🔴 EL CRITERIO SE ENSANCHÓ EL 20-SEP-2026, Y ÉSTE ES EL MOTIVO (SCRUM-964) ───────────────
+// Hasta hoy la lista era «los guards de la ENTRADA DE REGISTRO», o sea del fichero de
+// `docs/master/`. Entra un quinto que NO es de la entrada —`public-js-parsea`— y el criterio pasa
+// a ser el que de verdad los unía: **lo que puede poner un PR en rojo, se comprueba sin compilar y
+// sin base, y se mira en segundos**.
+//
+// El caso que lo decide, medido: un comentario HTML con acentos graves dentro de un literal de
+// plantilla **cierra el literal** y la pantalla deja de existir para el navegador. Es la CUARTA vez
+// que muerde el mismo mecanismo (`plansView` en SCRUM-345, `exportView` en el ticket del guard, un
+// tercero la misma mañana, y `expensesView` en SCRUM-964). La cuarta la cometió una sesión que
+// tenía el aviso escrito **en el propio fichero, en su línea 113** — y no lo leyó, porque editó por
+// búsqueda en la línea 399. **Un comentario solo avisa a quien pasa por delante.** El guard sí
+// existía y sí lo cazó; lo que fallaba era CUÁNDO se corría: después de empujar, no antes.
+//
+// ⚠️ Esto NO sustituye a `npm test`. Comprueba lo barato de comprobar, no el trabajo.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -24,9 +38,10 @@ import { spawnSync } from 'node:child_process';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * Los guards que vigilan una entrada del registro. Cada uno con el motivo por el que está, para que
- * quien añada el quinto sepa qué clase de cosa entra aquí: **lo que puede poner en rojo un PR por el
- * fichero de `docs/master/`, sin tocar código**.
+ * Cada uno con el motivo por el que está, para que quien añada el sexto sepa qué clase de cosa
+ * entra aquí: **lo que puede poner en rojo un PR, se comprueba leyendo ficheros —sin compilar y
+ * sin base— y tarda segundos**. Los cuatro primeros son de la entrada de `docs/master/`; el quinto
+ * no, y por eso el criterio está escrito arriba en vez de deducirse de la lista.
  */
 const GUARDS = [
   { fichero: 'tests/scrum273-registro-por-fichero.test.mjs',
@@ -37,12 +52,15 @@ const GUARDS = [
     porque: 'todo test que la entrada DECLARA existe en el árbol' },
   { fichero: 'tests/scrum242-scripts-no-prometen-documentos.test.mjs',
     porque: 'no se nombra un documento que no existe (la promesa que se lee y no se busca)' },
+  // SCRUM-964 · el quinto, y el primero que no es de la entrada: mira el CÓDIGO del front.
+  { fichero: 'tests/public-js-parsea.test.mjs',
+    porque: 'todo .js que se sirve al navegador PARSEA (un backtick suelto borra una pantalla entera)' },
 ];
 
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-const MINIMO = 4;
+const MINIMO = 5;
 
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega
