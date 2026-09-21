@@ -681,6 +681,8 @@ alta del albarán, (3) GO de staging de 982. Ficha: `docs/microcopy/2026-09-21-S
 | instrumento de mutación | `79362001432b6dba6f767c3f8ca46027bee8e4b2` |
 | M16 del instrumento: de mutante equivalente a mutante real | `0fd6214015ec8bb47f1a0ff38d00d55dadd733c4` |
 | merge de `origin/main` (1a6dfb9a) | `bc6b8b0902bc50206ecec5b60d39a0b238287a87` |
+| expediente y salidas de evidencia (primera versión) | `53c1e1e8d8ffd6a5059c3889665bae728b98979d` |
+| el guard F lleva sus tres medidas de navegador DENTRO de `page.evaluate` (censo de SCRUM-258) | `b06e409e41e5fa575bde9eec6f37c4a0f184f984` |
 
 ### PASO 0 — ¿el defecto existe HOY? (A2)
 
@@ -711,10 +713,11 @@ la barra de Documentos: 1.
 | medida | resultado |
 |---|---|
 | guard F sobre el **producto sin tocar** (control de discriminación) | 🔴 EXIT=2 · **72 ❌** (64 del bloque F y 8 de G.2) + 6 casos NO medidos (`salida-guard-rojo-917g.txt`) |
-| guard F sobre el árbol **final** (`bc6b8b09…`, con `origin/main` dentro) | ✅ EXIT=0 · **246 de 246** · 0 no medidas (`salida-guard-verde-917g.txt`) |
+| guard F sobre el árbol **final** (`b06e409e…`, con `origin/main` 1a6dfb9a dentro) | ✅ EXIT=0 · **246 de 246** · 0 no medidas (`salida-guard-verde-917g.txt`) |
 | techo de controles < 44 px (`DEUDA_44PX`) | **7 → 5 y 6 → 4**, medido con nombre: salen la casilla 13×13 y «Cambiar» 71×30 (`salida-pequenos-antes-917g.txt`) |
 | grupo de tests que nombran lo tocado, ANTES de re-anclar | 1.760 tests · 1.741 pass · **18 fail** · 1 skipped (183 ficheros) |
-| auditoría por mutación (`mutar-917g.mjs`) | **19 de 19 cazadas** (`salida-mutaciones-917g.txt`; ver abajo la M16) |
+| auditoría por mutación (`mutar-917g.mjs`) | **19 de 19 cazadas** (`salida-mutaciones-917g.txt`; ver abajo la M16) · y **7 de 7 otra vez** tras tocar el guard (tercera corrida del mismo fichero) |
+| `npm run guards:entrada` sobre `bc6b8b09…` | 🔴 EXIT=1 · 95 tests · 94 pass · **1 fail**: `scrum258` (censo de identificadores sin declarar, ver abajo) |
 
 ### 🔴 Los 18 tests de contrato que cayeron: RE-ANCLADOS, no borrados
 
@@ -745,7 +748,18 @@ tocó para ponerlo verde por sí solo.
 2. **713c no estaba en mi lista de 17.** El grupo salía de «los tests que nombran lo tocado», y un trinquete
    que barre todo `public/dashboard/js/` no nombra nada: lo encontró el grupo ampliado (183 ficheros).
    🔒 *Lo que un grupo por nombres no ve, lo ve la suite completa.*
-3. **La M16 del instrumento era un mutante EQUIVALENTE, y parecía un agujero.** Pasó en verde contra
+3. **`guards:entrada` cayó por MI guard, y el grupo de 183 no lo vio.** `scrum258` («ningún script usa un
+   nombre que no existe») contó **dos identificadores sin declarar** en `guard-detalle-trabajo-917.mjs`
+   —`document` (línea 388) y `KeyboardEvent` (línea 466)— y su censo sólo admite los dos de
+   `e2e-critico.mjs`. No eran errores: son cuerpos que corren en el NAVEGADOR y el guard los pasaba **por
+   nombre** (`page.evaluate(medirLineasCerradas)`), y el censo reconoce un cuerpo de navegador por estar
+   *dentro* de una llamada `.evaluate(…)`. Se arregló el CÓDIGO (regla 41), no el censo: las tres medidas
+   (`medirLineasCerradas`, `medirLineaAbierta`, `medirCasillaDePrecios`) pasan a ir dentro de su llamada
+   (`b06e409e…`); el residuo sigue siendo los dos de `e2e-critico.mjs`, y `scrum258` da 10 de 10. Como se
+   tocó un instrumento, se volvió a ver en rojo: 7 de 7 mutaciones que dependen del guard, cazadas
+   (tercera corrida). Y es la misma lección que 713c: `scrum258` no nombra lo tocado, y un grupo por
+   nombres no lo ve.
+4. **La M16 del instrumento era un mutante EQUIVALENTE, y parecía un agujero.** Pasó en verde contra
    las suites y el guard F. Mutaba el valor INICIAL de la línea «Quién lo ejecuta», que la línea pisa al
    leer el equipo; los dos instrumentos miden el estado ASENTADO. El fallo era del instrumento (el sitio
    equivocado), no del test. Se corrigió (`0fd62140…`: ahora muta la llamada a `poner`) y cayó por 817 y por

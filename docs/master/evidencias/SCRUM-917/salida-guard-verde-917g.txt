@@ -1,18 +1,18 @@
 # SCRUM-917g - VERDE: scripts/guard-detalle-trabajo-917.mjs (con el bloque F) sobre el arbol FINAL
-# Date: Mon, 21 Sep 2026 14:07:34 GMT
-# medido sobre HEAD bc6b8b0902bc50206ecec5b60d39a0b238287a87, que contiene origin/main 1a6dfb9a578dc04147bd842fad9c83999c8a4d26 (merge sin conflictos). El producto es el de los commits 8bbf9b75a8d0c1505f71702591785aaae9940a2b y 2165d42b88e693f93caf7386739c70074a37bdd7; los commits posteriores solo tocan tests, instrumentos y documentos.
-# EXIT=0 · 246 de 246 · 0 no medidas. Contraparte del ROJO sobre el producto sin tocar (salida-guard-rojo-917g.txt: EXIT=2, 72 x rojo + 6 no medidas).
-node : ⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
-En línea: 1 Carácter: 617
-+ ...  EXIT=$e1"; node scripts/guard-detalle-trabajo-917.mjs > "$tmp\guard- ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (⟦arranque⟧ 0.6 ...ra-página 0.0 s:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
+# Date: Mon, 21 Sep 2026 14:21:19 GMT
+# medido sobre HEAD b06e409e41e5fa575bde9eec6f37c4a0f184f984, que contiene origin/main 1a6dfb9a578dc04147bd842fad9c83999c8a4d26 (merge sin conflictos). El producto es el de los commits 8bbf9b75a8d0c1505f71702591785aaae9940a2b y 2165d42b88e693f93caf7386739c70074a37bdd7; los commits posteriores solo tocan tests, instrumentos y documentos. El ultimo (b06e409e41e5fa575bde9eec6f37c4a0f184f984) es del propio guard: lleva el cuerpo de sus tres medidas de navegador DENTRO de page.evaluate, para que el censo de SCRUM-258 no las lea como nombres sin declarar; la salida es la misma de antes (246 de 246) y por eso se volvio a ver en rojo con 7 mutaciones (tercera corrida de salida-mutaciones-917g.txt).
+# EXIT=0 · 246 de 246 · 0 no medidas. Contraparte del ROJO sobre el producto sin tocar (salida-guard-rojo-917g.txt: EXIT=2, 72 x rojo + 6 no medidas, medido con la version del guard anterior a esta mudanza de sitio).
 
 ══════════════════════════════════════════════════════════════════════════════════════════════
 ⓪ SUELO y control de discriminación · a 1280 px
 ══════════════════════════════════════════════════════════════════════════════════════════════
+node : ⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+En línea: 1 Carácter: 546
++ ... cation $wt; node scripts/guard-detalle-trabajo-917.mjs > "$tmp\guard- ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⟦arranque⟧ 0.6 ...ra-página 0.0 s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
    ✅ ⓪ los 4 casos se pintan y son DISTINTOS entre sí a 1280 px
 
 ══════════════════════════════════════════════════════════════════════════════════════════════

@@ -152,3 +152,62 @@ M16 · la línea «Quién lo ejecuta» CERRADA deja de decir los nombres una vez
 
 RESUMEN: 1 de 1 cazadas · no cazadas: — · ciegas: — · no aplicadas: —
 ÁRBOL FINAL: git status --porcelain vacío · HEAD 0fd6214015ec8bb47f1a0ff38d00d55dadd733c4
+
+
+===================================== TERCERA CORRIDA =====================================
+# Tras tocar el guard F (b06e409e41e5fa575bde9eec6f37c4a0f184f984: el cuerpo de sus tres medidas de navegador pasa DENTRO de page.evaluate, por el censo de SCRUM-258) se vuelve a ver en rojo con las 7 mutaciones que dependen de el (M01 M03 M04 M05 M08 M09 M16): 7 de 7 cazadas. Un instrumento que se toca se vuelve a ver fallar.
+HEAD b06e409e41e5fa575bde9eec6f37c4a0f184f984 · 7 mutaciones (--solo=M01,M03,M04,M05,M08,M09,M16) · suites: 10 ficheros · guard F: scripts/guard-detalle-trabajo-917.mjs
+BASE sin mutar · tests: 87 tests · 87 pass · 0 fail · exit 0 · guard F: exit 0 · 246 comprobaciones · 0 ❌
+
+M01 · «1 gasto» pasa a «1 gastos» (el plural firmado se cuela en el singular)
+   diff --numstat: 1 1 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 13 tests · 11 pass · 2 fail · exit 1
+   caen: SCRUM-917g · los literales de «El trabajo» son EXACTAMENTE los firmados (15881 y 16142) ‖ SCRUM-917g · 🔴 «Gastos» cerrada: 0 · 1 · N — y SIN DATO no dice nada, ni una suma
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Gastos de este trabajo» dice «1 gastos», esperaba «1 gasto» ‖ ❌ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Gastos de este trabajo» dice «1 gastos», esperaba «1 gasto»
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M03 · se quita `sinCuerpo()` cuando el equipo es ilegible (la línea vuelve a ser un control vacío)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Quién lo ejecuta»: debería ser fija (sin galón ni fo ‖ ❌ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Quién lo ejecuta»: debería ser fija (sin galón ni fo
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M04 · el técnico ve las tarjetas para CAMBIAR el tipo (se quita la puerta `!isTecnico`)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.7 [TÉCNICO · sólo lectura] al pulsar «Tipo de trabajo»: el técnico ve 2 tarjetas para CAMBIAR el tipo ‖ ❌ F.7 [TÉCNICO · sólo lectura] al pulsar «Tipo de trabajo»: el técnico ve 2 tarjetas para CAMBIAR el tipo
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M05 · la cabecera de cada línea pierde su `min-height: 44px` (zona de toque)
+   diff --numstat: 1 1 public/dashboard/css/styles.css
+   guard F: exit 1 · 246 comprobaciones · 11 ❌
+   caen: ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] cabeceras por debajo de 44 px: Tipo de trabajo 33.7 · Nombre y dire ‖ ❌ F.4 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] cabeceras por debajo de 44 px: Tipo de trabajo 33.7
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M08 · la llamada que pinta las notas se COMENTA (la función queda declarada y nadie la llama)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 6 tests · 5 pass · 1 fail · exit 1
+   caen: SCRUM-427 · la sección de notas se PINTA en el detalle
+   guard F: exit 1 · 246 comprobaciones · 11 ❌
+   caen: ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Notas internas»: falta el campo de notas · marcador de n ‖ ❌ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Notas internas»: falta el campo de notas
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M09 · la línea de gastos se construye pero NO se cuelga de la tarjeta
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 15 tests · 10 pass · 5 fail · exit 1
+   caen: SCRUM-427 · la composición del detalle CUADRA con el diseño de G — enumerando ‖ SCRUM-427 · CONTROL POSITIVO: las cuatro del diseño están, una a una ‖ SCRUM-917g · CONTROL POSITIVO: las cinco líneas de «El trabajo» se leen de la vista, en su orden ‖ SCRUM-817 · 🔴 el orden decidido: albaranes y «El trabajo» con sus cinco líneas — y «quién ejecuta» se lee SIN abrir (+1)
+   guard F: exit 1 · 246 comprobaciones · 41 ❌
+   caen: ❌ F.1 [SIN EQUIPO · sin nombre · 0 gastos] tarjetas=1 título=«El trabajo» líneas=["Tipo de trabajo","Nombre y  ‖ ❌ F.2 [SIN EQUIPO · sin nombre · 0 gastos] líneas abiertas al cargar: [] (de 4)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M16 · la línea «Quién lo ejecuta» CERRADA deja de decir los nombres una vez leído el equipo (hay que abrirla)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 4 tests · 3 pass · 1 fail · exit 1
+   caen: SCRUM-817 · 🔴 el orden decidido: albaranes y «El trabajo» con sus cinco líneas — y «quién ejecuta» se lee SIN abrir
+   guard F: exit 1 · 246 comprobaciones · 5 ❌
+   caen: ❌ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Quién lo ejecuta» dice «Sin asignar», esperaba «Ja ‖ ❌ F.3 [TÉCNICO · sólo lectura] «Quién lo ejecuta» dice «Sin asignar», esperaba «Javier P. y Lucía M.»
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+RESUMEN: 7 de 7 cazadas · no cazadas: — · ciegas: — · no aplicadas: —
+ÁRBOL FINAL: git status --porcelain vacío · HEAD b06e409e41e5fa575bde9eec6f37c4a0f184f984
