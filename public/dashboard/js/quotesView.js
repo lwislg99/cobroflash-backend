@@ -3974,20 +3974,23 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     // Texto firmado en el comentario 15868. En el DOCUMENTO SUELTO NO entra: su hoja tiene un solo
     // campo («IVA %») y el literal prometería descuento y descripción, que ahí no existen; allí la
     // ficha se queda siempre a la vista, como hoy, y es el único control del IVA de la línea.
-    const ajustesItem = document.createElement("button");
-    ajustesItem.type = "button";
-    ajustesItem.textContent = "Ajustes (IVA, descuento, descripción…)";
-    ajustesItem.addEventListener("click", function () { abrirHojaAjustes(lineObj); });
+    // `null` en el suelto: `overflowMenu` descarta los huecos (`filter(Boolean)`), así que el menú es
+    // UNA llamada con la misma lista en los dos modos.
+    let ajustesItem = null;
+    if (!esDocumentoSuelto) {
+      ajustesItem = document.createElement("button");
+      ajustesItem.type = "button";
+      ajustesItem.textContent = "Ajustes (IVA, descuento, descripción…)";
+      ajustesItem.addEventListener("click", function () { abrirHojaAjustes(lineObj); });
+    }
 
     const menuBtn =
       typeof overflowMenu === "function"
-        ? overflowMenu(
-          esDocumentoSuelto ? [subirBtn, bajarBtn, removeBtn] : [ajustesItem, subirBtn, bajarBtn, removeBtn],
-          { label: "Acciones de la línea" })
+        ? overflowMenu([ajustesItem, subirBtn, bajarBtn, removeBtn], { label: "Acciones de la línea" })
         : null;
     if (menuBtn) actionsTd.appendChild(menuBtn);
     else {
-      if (!esDocumentoSuelto) actionsTd.appendChild(ajustesItem);
+      if (ajustesItem) actionsTd.appendChild(ajustesItem);
       actionsTd.appendChild(subirBtn); actionsTd.appendChild(bajarBtn); actionsTd.appendChild(removeBtn);
     }
 
