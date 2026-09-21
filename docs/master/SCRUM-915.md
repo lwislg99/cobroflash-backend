@@ -572,3 +572,112 @@ cuando lo que pasa es «lector fuera del censo».
 
 Tras el arreglo, corridos por su nombre: **147 pruebas, 147 en verde, 0 rojas** (350, 601, 697, 698,
 709, 514, 726, 700, 237, 258, 267, 522, 548, 723) · `npm run build` y `npm run guards:entrada` en 0.
+
+---
+
+## SCRUM-915h · los conceptos, más limpios
+
+**Fecha:** 21-sep-2026 07:32:58 GMT · **Carril:** S2 (frontend) · **Corte:** 3.º de la partición aprobada
+**Medido contra:** `origin/main` = `d7de8e659c7c3e92d36a26878ce5d232dc344647` (al empezar)
+**Rama:** `scrum-915h-conceptos-limpios`
+**Instrumento:** `scripts/guard-915h-conceptos-limpios.mjs` (`npm run guard:conceptos-limpios`)
+**Microcopy:** `docs/microcopy/2026-09-21-SCRUM-915-conceptos-limpios.md` (comentario 15868)
+
+### El orden, y por qué no era negociable
+
+El traspaso de la S2 lo dejó medido: **los totales no se podían quitar del editor sin ponerlos antes
+en el documento.** El documento de la derecha pintaba Base imponible / IVA total / Total y NO
+«Suma de líneas» ni los dos descuentos. Borrar `.quote-totals` de la izquierda tal cual habría dejado
+el descuento sin verse en ninguna parte — un dato que nadie ve es un dato que nadie corrige
+(CONT-01 ②). Así que primero el documento, luego el editor.
+
+### Qué entra (las filas del PASO 0)
+
+| fila | antes | ahora |
+|---|---|---|
+| F · totales | desglose de apoyo en el editor (`.quote-totals`) y en el documento sólo Base/IVA/Total | el documento pinta **Suma de líneas / Descuento / Descuento global** con los mismos rótulos y la misma condición que el PDF (`pieDePresupuesto`) y la cifra de `T`, la cuenta del editor; en Conceptos queda sólo el TOTAL (el KPI) |
+| F · descuento global | «+ Añadir descuento» dentro del bloque de totales | justo detrás de «+ Añadir línea», dentro de Conceptos |
+| C · líneas | tres renglones en blanco | **UNA** línea lista para escribir |
+| C.1 · ficha | «IVA 21 %» en todas las líneas | sólo si la línea **no** va con lo de siempre (otro IVA que el por defecto, descuento o suplido); cuando lo es, vuelve y lo dice |
+| C.1 · menú ⋯ | Subir · Bajar · Eliminar línea | **Ajustes (IVA, descuento, descripción…)** · Subir · Bajar · Eliminar línea |
+| Teclado | la `N` dentro del editor abría la Cotización rápida encima | no abre nada; en las listas y en #home sigue igual |
+
+**Decisiones, con su motivo:**
+
+- **La ficha se oculta con una CLASE (`is-de-siempre`), no con `hidden`.** En la rejilla de ≥640 px
+  tiene su columna: quitarla del flujo corría el total y el ⋯ de ESA fila bajo la columna de al lado.
+  Ahí se queda el hueco con `visibility: hidden` (fuera del tabulador); en móvil, que va en su propia
+  fila, se quita entera.
+- **En el documento suelto no cambia nada de la línea.** Su hoja tiene un solo campo («IVA %») y el
+  literal del menú prometería descuento y descripción que ahí no existen; la ficha es su único
+  control del IVA y se queda siempre a la vista.
+- **La `N`:** ni un destino vacío (control muerto) ni quitar el respaldo (quitaría el atajo en las
+  listas). Un predicado puro, `atajoNuevo.esUnaCreacion(vista)`, derivado del nombre de la vista
+  (`-new` = las dos del editor) y el respaldo de `app.js` detrás de él.
+
+### El rojo
+
+El guard nuevo, corrido con el `public/` de main puesto encima de la rama (y devuelto después con
+`git restore --source=HEAD`, `git status --porcelain` vacío): **8 hallazgos en 5 de 5 casos** —3
+líneas al abrir, el bloque de apoyo en el editor, «Ajustes» ausente del menú (dos casos), el
+descuento lejos de «+ Añadir línea», la ficha «IVA 21 %» visible en una línea de siempre y la `N`
+abriendo un modal encima del editor—. **Verde con la rama: 5/5.**
+
+Cada caso lleva su control: tras «+ Añadir línea» son dos (A), sin descuento el documento NO lleva
+«Suma de líneas» (B), al cerrar Conceptos el descuento se va con él (C), con IVA 10 % la ficha
+VUELVE y dice «IVA 10 %» (D), y la `N` en #home SÍ abre un modal (E).
+
+### Errores propios
+
+1. **El control de la `N` salió contaminado DOS veces, y en los dos casos lo cazó el rojo, no el
+   verde.** Primero lo medía después del editor, y el modal que la `N` acababa de abrir en main
+   seguía delante: ciego. Al ponerlo primero, `goto` a otro hash de la MISMA página no recarga, y el
+   modal de #home seguía delante del editor: la `N` salía «quieta» sobre main porque había un modal,
+   no porque el editor la frenara. Ahora hay recarga real (`about:blank`) y un suelo que exige 0
+   modales antes de pulsar.
+2. **Perdí una edición sin comitear al inyectar el rojo** — la casilla 9 de A23 (commit de TODO antes
+   de inyectar). Restauré `public/` desde HEAD con el refactor del menú todavía en el árbol, y se fue.
+   Lo cazó buscarlo después por su texto, no el guard (el cambio no mueve el DOM). Rehecho y comiteado
+   aparte («rehecho: se perdió al restaurar public/ sin comitear»).
+3. **El menú ⋯ se cierra solo entre dos `evaluate`** (el helper cierra con cualquier desplazamiento):
+   el primer verde salió rojo con el ítem delante. Abrir y pulsar van ahora en la misma llamada.
+
+### Censos y guards que cambian, cada uno con su motivo en el propio fichero
+
+| fichero | qué exigía | por qué cambia |
+|---|---|---|
+| `scrum139-cuadernillo` | `LINEAS_CUADERNILLO >= 2` (SCRUM-139 F2) | **re-anclado, no borrado**: la v3 aprobada pide UNA. Mismo procedimiento que 915d con SCRUM-660. Sigue exigiendo el número explícito y de un solo sitio; el suelo de 1 lo sujeta además `scrum794` |
+| `scrum139-acciones-linea` | el literal `overflowMenu([subirBtn, bajarBtn, removeBtn]` | admite «Ajustes» delante; lo vigilado —que las acciones pasen por el helper— no cambia |
+| `_asignacion-bloques-presupuesto` (286) | descuento global en `blockTotals` | pasa a `blockLines` |
+| `scrum598` · `scrum229` | la fila «Margen» buscada en `.quote-totals__apoyo` / entre `totalsBox` y el KPI | la misma puerta, buscada donde viven ahora los totales: el documento |
+| `scrum897` | el repintado de `.quote-totals` y del KPI | queda el KPI, y se exige que `.quote-totals` NO exista (si volviera, tiene que volver a medirse) |
+| `scrum697` · `scrum698` | 286 nodos | **245**, por IDENTIDAD, abajo |
+| `scrum522` · `scrum548` | 32 guards fuera de la tanda · 4× `#quotes-new` | 33 · 5×: entra `guard:conceptos-limpios`, medidos corriendo los tests |
+
+**Los −41 nodos, por identidad** (firmas etiqueta + clase de los dos árboles montados en el banco):
+
+```
+POBLACIÓN  main = 286   rama = 245   delta = −41
+FALTA en la rama: −34  las 2 líneas en blanco (17 nodos cada una)
+                  −7   div.quote-totals + 2 filas de apoyo (div + span + strong)
+SOBRA en la rama: +1   BUTTON.quote-line__ajustes.is-de-siempre  ← el MISMO nodo con otra clase (−1 de la clase vieja)
+```
+
+### Medido
+
+- `npm run build` 0 · los **199 ficheros** que leen `quotesView.js`, `atajoNuevo.js`, `app.js` o
+  `styles.css` (más 522 y 548): **1.632 pruebas, 1.587 pass, 0 fail, 43 skipped**.
+- Guards de navegador del editor, todos 0 y con su población: `pasos-del-editor` (3 casos),
+  `descuento-redibuja`, `rotulos-de-la-linea` (10 anchuras), `duplicar-conserva`, `objetivo-tactil`,
+  `documento-vivo` (8 casos), `un-solo-presupuesto` (3 casos), `descuentos-en-el-detalle` (4 casos),
+  `marcadores-en-pantalla` (27 vistas; `quotes-new` sigue en su techo de 6).
+
+### Lo que NO cubre
+
+- «Línea N» como título del menú: firmado, **no construido**. El menú es el helper compartido
+  `overflowMenu`, que no pinta título; ponérselo es tocar un componente de todas las pantallas.
+- Los dos marcadores del descuento pactado («Este cliente tiene pactado…» / «Aplicar a las líneas»):
+  son de 915k.
+- El documento suelto con la ficha oculta: no se ha medido porque no cambia (la ficha se queda).
+- La suite completa: no corrida (norma de la tanda); la corre el PR.
+- Staging: sin recorrer todavía.
