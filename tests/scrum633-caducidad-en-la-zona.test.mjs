@@ -265,9 +265,9 @@ test('SCRUM-633 · las CUATRO impresiones de la landing llevan `timeZone` explí
   assert.equal([...validez.matchAll(/timeZone:\s*zonaDelMerchant\(/g)].length, 1,
     '🔴 la fecha de «Válido hasta el…» ya no pasa por la zona del merchant: la landing y el PDF '
     + 'volverían a leerse en el calendario de la máquina.');
-  assert.match(src, /textoDeValidez\(\{[^}]*merchant:/,
-    '🔴 la landing pide la validez SIN pasarle el merchant: `zonaDelMerchant(undefined)` es UTC, '
-    + 'y el cliente leería una fecha distinta de la del papel cerca de la medianoche.');
+  assert.match(src, /textoDeValidez\(\{[^}]*merchant:\s*\(*quote\b/,
+    '🔴 la landing pide la validez SIN pasarle el merchant DEL PRESUPUESTO: `zonaDelMerchant(null)` '
+    + 'es UTC, y el cliente leería una fecha distinta de la del papel cerca de la medianoche.');
 });
 
 test('SCRUM-633 · el formulario ya no calcula el día en UTC, y en DOS tiempos', () => {
