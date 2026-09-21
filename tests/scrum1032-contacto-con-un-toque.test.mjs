@@ -78,7 +78,7 @@ test('SCRUM-1032 · A · sin dato válido NO hay enlace, y nunca sale «undefine
     assert.deepEqual(r, { telefono: null, movil: null, whatsapp: null, correo: null }, `🔴 ${JSON.stringify(c)}`);
   }
   // Y los que SÍ salen no llevan la palabra en ningún enlace.
-  for (const c of [{ phone: '5550100999', email: 'a@b.es' }, { mobile: '34000000001' }, { phone: '+34000000002', mobile: '5550100999' }]) {
+  for (const c of [{ mobile: '5550100999', email: 'a@b.es' }, { mobile: '34000000001' }, { phone: '+34000000002', mobile: '5550100999' }]) {
     // sólo lo que se PINTA o se ENLAZA (texto y href): un `movil: null` del objeto no es un enlace
     const visibles = Object.values(JSON.parse(JSON.stringify(k(c)))).filter(Boolean)
       .flatMap((e) => [e.texto, e.href]).filter((s) => s !== undefined).join(' ');
