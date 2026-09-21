@@ -395,7 +395,7 @@ async function renderCustomer360View(container, customerId) {
       tr.dataset.trabajo = String(t.id);
       const tdFecha = document.createElement('td');
       tdFecha.className = 'historial-fecha';
-      const f =HISTORIAL_CLIENTE.fechaDeTrabajo(t);
+      const f = HISTORIAL_CLIENTE.fechaDeTrabajo(t);
       tdFecha.textContent = f ? new Date(f).toLocaleDateString('es-ES') : '';
       tr.appendChild(tdFecha);
 
