@@ -16,6 +16,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { soloEjecutable } from './_guard-texto.mjs';
+// SCRUM-917e · el aviso ya no es una línea de un constructor puro: se mide MONTADO.
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const require_ = createRequire(import.meta.url);
@@ -31,6 +33,28 @@ const trabajo = (aceptado, cobrado) => ({
   albaranes: [],
   invoices: [{ id: 1, total: cobrado, status: 'paid' }],
 });
+
+/** El Trabajo del DOM montado. Sin albaranes ni gastos: el aviso no puede colarse por otro sitio. */
+const JOB_BASE = {
+  id: 7, status: 'en_curso', createdAt: '2026-09-01T09:00:00Z', titulo: 'Revisión anual',
+  customer: { id: 3, name: 'Francisco Jiménez' }, asignados: [], operario: null,
+  albaranes: [], gastos: [], notes: '', quote: { currency: 'EUR' }, direccion: null, invoices: [],
+};
+
+async function montarDetalle(job) {
+  const banco = cargarDashboard(RAIZ);
+  banco.ctx.apiRequest = async (u) => {
+    if (/\/admin\/team/.test(u)) return [];
+    if (/\/admin\/merchant/.test(u)) return { name: 'Epipe' };
+    if (/\/admin\/partes/.test(u)) return { partes: [] };
+    if (/gastos/.test(u)) return [];
+    return job;
+  };
+  banco.ctx.appUserRole = 'admin';
+  const r = await pintarVista(banco, 'renderJobDetailView');
+  assert.equal(r.error, null, `🔴 SUELO: la vista no monta (${r.error && r.error.message}). Una pantalla que no se pinta «no avisa» igual que una arreglada.`);
+  return r;
+}
 
 test('SCRUM-907 · el literal firmado, carácter a carácter', () => {
   assert.equal(G5.avisoCobradoDeMas('89,55 €'), 'Has cobrado 89,55 € más de lo aceptado.');
@@ -69,16 +93,55 @@ test('SCRUM-907 · 🔴 la sección «Qué falta para cobrar» se pinta aunque n
   assert.equal(G5.seccionCobroVisible(trabajo(100, 100)), false, '🔴 todo cobrado y cuadrado ya no esconde la sección');
 });
 
-test('SCRUM-907 · 🔴 el bloque «Dinero» del rail lleva el aviso como línea, con el importe formateado', () => {
-  const b = BLOQUES.bloqueDinero(trabajo(539.05, 628.60), fmt);
-  const aviso = b.lineas.find((l) => l.aviso === true);
-  assert.ok(aviso, '🔴 el rail no avisa del cobro de más');
-  assert.equal(aviso.texto, 'Has cobrado 89,55 € más de lo aceptado.');
-  // «Pendiente» sigue como hoy.
-  assert.equal(b.lineas.find((l) => l.etiqueta === 'Pendiente').texto, '0,00 €');
-  // NEGATIVO y POSITIVO en el rail.
-  assert.ok(!BLOQUES.bloqueDinero(trabajo(100, 100.02), fmt).lineas.some((l) => l.aviso), '🔴 avisa por 2 céntimos');
-  assert.ok(!BLOQUES.bloqueDinero(trabajo(853.05, 300), fmt).lineas.some((l) => l.aviso), '🔴 avisa sin cobro de más');
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 RE-ANCLADO EN SCRUM-917e (corte D), 20-sep-2026.
+//
+// QUÉ SUPERFICIE DESAPARECIÓ: el aviso como LÍNEA del bloque «Dinero» del rail. Ese bloque ya no
+// lleva importes —«Cobrado» y «Pendiente» se fueron a la franja del cuerpo, medido: el mismo
+// «590,00 €» se leía siete veces—, y el aviso se fue con ellos: una columna de 220 px no es donde
+// se explica un cobro de más.
+//
+// QUÉ PRINCIPIO SOBREVIVE, Y ES UN OK ESTRECHO: el aviso SE SIGUE DANDO, **con su importe
+// formateado**, en las dos piezas donde el cliente lo puede leer. 🔴 NO vale rebajarlo a «el
+// texto está en pantalla»: el contrato de SCRUM-887 es la línea CON la cifra, y un control más
+// débil que el contrato que dice proteger es peor que no tener control — da la tranquilidad sin
+// dar la garantía. (Es el error propio del corte D: su control de no-pérdida decía «sigue en
+// pantalla» y pasó en verde mientras rompía nueve contratos.)
+//
+// DÓNDE VIVE AHORA: la sección «Qué falta para cobrar», que para eso `seccionCobroVisible`
+// devuelve `true` cuando hay exceso aunque no quede ningún otro hueco. Se mide sobre el DOM
+// MONTADO, no en el fuente: el cableado ya lo lee el test de abajo, y leer el fuente dos veces no
+// prueba que el nodo llegue a pintarse.
+test('SCRUM-907 · 🔴 la ficha PINTA el aviso con su importe formateado, y el rail ya no lo repite', async () => {
+  const r = await montarDetalle({ ...JOB_BASE, totalAceptado: 539.05, totalCobrado: 628.60,
+    invoices: [{ id: 1, total: 628.60, status: 'paid' }] });
+
+  // 🔴 El literal se compara con el espacio fino inseparable NORMALIZADO: `Intl.NumberFormat`
+  // mete un U+202F delante del €, y un literal tecleado a mano daría «0 apariciones» de un texto
+  // que está en pantalla (trampa medida en el PASO 0 de SCRUM-917).
+  const normal = (s) => String(s || '').replace(/[  ]/g, ' ').trim();
+  const textos = todos(r.contenedor).map((n) => normal(n.textContent));
+  assert.ok(
+    textos.includes('Has cobrado 89,55 € más de lo aceptado.'),
+    '🔴 EL AVISO DE COBRO DE MÁS NO ESTÁ EN LA PANTALLA CON SU IMPORTE. Se cobraron 628,60 € ' +
+      'sobre 539,05 € aceptados y la franja dice «Cobrado del todo», que es verdad y no es toda ' +
+      'la verdad. Textos con dinero encontrados: ' +
+      JSON.stringify(textos.filter((t) => /€/.test(t)).slice(0, 8)),
+  );
+
+  // NEGATIVO: sin exceso el aviso no aparece — si no, el positivo de arriba mediría una pantalla
+  // que avisa siempre.
+  const ok = await montarDetalle({ ...JOB_BASE, totalAceptado: 853.05, totalCobrado: 300 });
+  assert.ok(
+    !todos(ok.contenedor).some((n) => /Has cobrado/.test(String(n.textContent || ''))),
+    '🔴 avisa de un cobro de más que no existe.',
+  );
+
+  // Y el rail NO lo repite: el aviso se dice una vez, donde se explica.
+  assert.equal(BLOQUES.bloqueDinero(trabajo(539.05, 628.60), fmt), null,
+    '🔴 el bloque DINERO del rail ha vuelto a pintar el aviso (o los importes). La misma verdad ' +
+      'dicha dos veces en la misma pantalla no informa: informa de que la pantalla no elige.');
+  assert.ok(!BLOQUES.bloqueDinero(trabajo(100, 100.02), fmt), '🔴 el rail vuelve a hablar de dinero');
 });
 
 test('SCRUM-907 · 🔴 la ficha PINTA los dos avisos (cableado del render)', () => {

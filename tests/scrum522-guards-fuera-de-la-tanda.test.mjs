@@ -178,6 +178,15 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // mientras esta rama estaba sin empujar. Resuelto las dos veces igual, como manda el párrafo de
   // arriba: NINGÚN comentario se tira, los tres se quedan, y el número NO se suma —se vuelve a
   // MEDIR corriendo este test sobre el árbol ya fusionado.
+  // SCRUM-917e · entra `guard:detalle-trabajo-917`. Cuenta cuántas VECES se lee un importe en el
+  // DETALLE pintado, que es el ticket entero: el mismo «590,00 €» salía siete veces en la misma
+  // pantalla. Sube aquí porque eso no se puede contar en el fuente — el importe sale de una
+  // plantilla, de `progressBar()` en otro fichero y del rail en un tercero, y sólo el DOM resuelto
+  // sabe cuántas veces lo lee una persona. Trae dos controles que ninguno de los anteriores tenía:
+  // uno de DISCRIMINACIÓN (cuatro Trabajos distintos tienen que pintar cuatro pantallas distintas,
+  // comprobado ANTES de leer ningún resultado) y uno de NO PÉRDIDA (el aviso firmado de SCRUM-887
+  // no puede desaparecer al retirar el bloque DINERO del rail). Comprobado en rojo contra el árbol
+  // sin tocar (20-sep-2026): 32 de 92. El número de abajo se midió corriendo este test.
   // SCRUM-926 · entra `guard:duplicar-conserva`. PULSA «Duplicar» de verdad y lee el editor que
   // sale: mide que la copia no pierde el descuento global ni las condiciones de pago. Sube aquí
   // porque el campo del descuento se juzga por `hidden` con el CSS resuelto y el duplicado pasa
@@ -185,12 +194,35 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // que no sabe mirarlo se leen igual. Comprobado en rojo contra `17a1ec57` (20-sep-2026): 3 de 9
   // casillas, con los dos positivos en verde; y por mutación, cada mitad del arreglo tumba SOLO
   // sus casillas. El número de abajo se midió corriendo este test, no sumando uno.
+  // ⚠️ OCTAVA colisión (20-sep-2026, SCRUM-917e): 917e y 926 escribieron los dos su comentario
+  // sobre el mismo «29 → 30», y el merge dejó los COMENTARIOS en conflicto pero la CIFRA no —
+  // la línea de abajo bajó limpia diciendo 30 cuando ya hay 31 guards. Es el caso que más
+  // engaña de este contador: el conflicto que sí ves te tapa el que no. Los dos comentarios se
+  // quedan, y el número se vuelve a MEDIR corriendo este test sobre el árbol ya fusionado.
   // SCRUM-965 · entra `guard:un-solo-presupuesto`. PULSA «Generar presupuesto» DOS veces y cuenta
   // las peticiones que llegan al SERVIDOR, que es donde se ve el defecto: en pantalla los dos clics
   // se leen igual. Sube aquí porque necesita navegador —el estado que decide (la huella del payload
   // y la hoja abierta) sólo existe en tiempo de render— y porque lleva su control NEGATIVO dentro:
   // si entre los dos clics cambia el precio, tienen que salir DOS documentos, no uno. Sin ese caso,
   // un arreglo que bloqueara SIEMPRE el segundo clic habría pasado por bueno.
+  // SCRUM-915e1 · entra `guard:documento-vivo`. Mira el DOCUMENTO de la derecha del editor, que es
+  // el papel que recibe el cliente, y sube aquí porque las tres cosas que vigila se leen IGUAL en
+  // el fuente y sólo existen en el árbol renderizado: que el pie lleve la fecha que el profesional
+  // puso y no una coletilla fija, que el papel se rehaga mientras se escribe, y que sus filas
+  // cuelguen de un `tbody` de verdad —`createElement('linesBody')` no lo es, y por eso la cebra
+  // del CSS no había pintado nunca—. Comprobado en rojo contra `e73e1630` (20-sep-2026): 7
+  // hallazgos en 5 de 5 casos; y por mutación, quitar SÓLO la delegación tumba exactamente las dos
+  // casillas de la fecha y ninguna más.
+  // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
+  // ⚠️ NOVENA colisión (20-sep-2026, al mergear main en la rama del #1541): otra vez los DOS
+  // comentarios en conflicto y la CIFRA no —917e decía 31 y main ya decía 31 por otro camino—,
+  // así que el merge la habría dejado pasar sin mirar. Re-medida corriendo este test.
+  // ⚠️ DÉCIMA colisión (21-sep-2026, otra vez al mergear main en la rama del #1541): main trajo
+  // 965 y 915e1, cada uno con SU comentario en su propio bloque, y el conflicto cayó sólo en el
+  // comentario de la novena. Se quedan todos, y la cifra NO se toma de ninguno de los dos lados:
+  // se volvió a MEDIR corriendo este test sobre el árbol ya fusionado. Y otra vez la cifra
+  // mentía sin marca de conflicto: bajó limpia de main diciendo 32, y medida da 33 (cada lado
+  // contaba sus guards y no los del otro).
   //
   // ⚠️ NOVENA COLISIÓN, Y ÉSTA SE RESOLVIÓ EN VIVO MIENTRAS SE ARREGLABA LA OCTAVA: SCRUM-965
   // entró en `main` con «30 → 31» mientras esta rama tenía 30. Resuelta como manda el párrafo de
@@ -242,6 +274,10 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   assert.ok(DECLARADOS.length > 0, '🔴 la lista declarada está vacía: no estaría comparando nada.');
   assert.equal(new Set(DECLARADOS).size, DECLARADOS.length,
     '🔴 hay un guard declarado dos veces. Con repetidos, la cifra derivada deja de ser la cuenta.');
+  // ⚠️ ONCEAVA colisión (21-sep-2026, al mergear main en la rama del #1552 —SCRUM-970—): 970 quitaba
+  // de aquí el número escrito a mano y main, a la vez, lo subía a 33 con 915e1. Se quedan TODOS los
+  // comentarios de los dos lados, se tira la línea `assert.equal(fuera.length, 33, …)` —era justo lo
+  // que 970 arregla— y `guard:documento-vivo` se apunta en su propia línea de la lista declarada.
 });
 
 test('SCRUM-522 · la lista sale DERIVADA de package.json, no escrita aquí', () => {

@@ -27,6 +27,8 @@ import { soloEjecutable } from './_guard-texto.mjs';
 // español empieza por 6 o 7, así que `34600000000` —lo primero que escribí— puede ser de alguien
 // de verdad. Se deriva del helper, no se inventa un literal parecido.
 import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
+// SCRUM-917e · la parte del contrato que se mudó a la franja se mide sobre el DOM montado.
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require_ = createRequire(import.meta.url);
@@ -59,6 +61,49 @@ const trabajoLleno = () => ({
 
 const ctx = { fmtMoney: fmt, fechaCorta, responsableName: 'Fontanería Torres' };
 const construir = (job, c) => BLOQUES.construirBloquesRail(job, { ...ctx, ...(c || {}) }).filter(Boolean);
+
+// ── EL DOM MONTADO, para la parte del contrato que desde SCRUM-917e vive en la FRANJA ─────
+// Es el mismo banco que usa `scrum817`: fake DOM, sin red y sin navegador, así que el fichero
+// sigue sin gate. Se monta porque el principio de este ticket ya no se puede leer en un
+// constructor puro: la franja la pinta la vista.
+const JOB_FRANJA = {
+  id: 7, status: 'en_curso', createdAt: '2026-09-01T09:00:00Z', titulo: 'Revisión anual',
+  customer: { id: 3, name: 'Francisco Jiménez' }, asignados: [], operario: null,
+  albaranes: [], gastos: [], notes: '', quote: { currency: 'EUR' }, direccion: null, invoices: [],
+};
+
+async function montarDetalle(job) {
+  const banco = cargarDashboard(RAIZ);
+  banco.ctx.apiRequest = async (u) => {
+    if (/\/admin\/team/.test(u)) return [];
+    if (/\/admin\/merchant/.test(u)) return { name: 'Epipe' };
+    if (/\/admin\/partes/.test(u)) return { partes: [] };
+    if (/gastos/.test(u)) return [];
+    return job;
+  };
+  banco.ctx.appUserRole = 'admin';
+  const r = await pintarVista(banco, 'renderJobDetailView');
+  assert.equal(r.error, null, `🔴 SUELO: la vista no monta (${r.error && r.error.message}). «No está» y «no se pintó nada» son el mismo verde.`);
+  return r;
+}
+
+const conClase = (r, clase) => todos(r.contenedor).filter((n) => String(n.className || '').split(/\s+/).includes(clase));
+
+/** Los rótulos DERIVADOS de la franja: «Te falta por cobrar» / «Cobrado del todo». */
+const rotulosDeLaFranja = (r) => conClase(r, 'detail-dinero__rotulo').map((n) => String(n.textContent || '').trim());
+
+/**
+ * Los datos MEDIDOS de la franja, como pares [etiqueta, cifra].
+ * 🔴 La cifra se queda en dígitos y coma A PROPÓSITO: `Intl.NumberFormat` mete un espacio fino
+ * inseparable (U+202F) delante del €, y comparar contra un literal tecleado a mano da «0
+ * apariciones» de algo que está en pantalla (trampa medida en el PASO 0 de SCRUM-917).
+ */
+function cifrasDeLosLados(r) {
+  return conClase(r, 'detail-dinero__lado').map((lado) => {
+    const partes = lado.hijos.map((h) => String(h.textContent || '').trim()).filter(Boolean);
+    return [partes[0] || '', (partes[partes.length - 1] || '').replace(/[^\d,]/g, '')];
+  });
+}
 
 test('SCRUM-318 · SUELO: el derivador encuentra bloques y los cinco ids están declarados', () => {
   const bloques = construir(trabajoLleno());
@@ -158,27 +203,61 @@ test('SCRUM-318 · CLIENTE: el teléfono es PULSABLE, y `tel:` y WhatsApp salen 
   assert.equal(tel.texto, TEL_ESPACIADO, '🔴 se pinta el número normalizado en vez del que guardó el pro');
 });
 
-test('SCRUM-318 · DINERO: solo líneas con dato, y sin importe de referencia no hay «Pendiente»', () => {
-  const conDinero = BLOQUES.bloqueDinero({ totalAceptado: 853.05, totalCobrado: 400 }, fmt);
-  assert.deepEqual(conDinero.lineas.map((l) => l.etiqueta), ['Cobrado', 'Pendiente']);
-  assert.equal(conDinero.lineas[1].texto, fmt(453.05, 'EUR'), '🔴 el pendiente no cuadra');
-
-  // SCRUM-363: sin importe de referencia no se puede afirmar nada sobre el dinero. Un Trabajo
-  // cobrado sin `totalAceptado` no puede decir «Pendiente 0,00 €» como si estuviera saldado.
-  const sinReferencia = BLOQUES.bloqueDinero({ totalAceptado: 0, totalCobrado: 300 }, fmt);
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 RE-ANCLADO EN SCRUM-917e (corte D), 20-sep-2026. EL PRINCIPIO NO SE TOCA; SE MUDA.
+//
+// QUÉ SUPERFICIE DESAPARECIÓ: el bloque DINERO del rail ya no lleva «Cobrado» ni «Pendiente».
+// Los trajo este ticket cuando el cuerpo sólo tenía el titular «Total aceptado»; desde que el
+// cuerpo tiene la franja del dinero, esta columna repetía dos de sus tres cifras — medido en el
+// PASO 0: «590,00 €» se leía SIETE veces en la misma pantalla.
+//
+// QUÉ PRINCIPIO SOBREVIVE: **sin importe de referencia no se afirma NADA del dinero.** Es la
+// regla de SCRUM-363, y lo que este test protegía no era la palabra «Pendiente»: era que la
+// pantalla dijera lo MEDIDO (lo cobrado) y callara lo DERIVADO cuando no hay eje.
+//
+// DÓNDE VIVE AHORA: en la franja (`.detail-dinero`, `jobDetailView.js`). Y al mudarlo se vio que
+// la franja LO ROMPÍA: medido hoy, con `totalAceptado: 0` y 300 € cobrados pintaba «Cobrado del
+// todo · 0,00 €» justo encima de «Cobrado 300,00 €». Un contrato que se borra porque su
+// superficie desapareció es una decisión perdida; éste, re-anclado, acaba de cazar el defecto que
+// el corte D había metido. Arreglado en el mismo cambio: el eje manda sobre el FOCO (lo derivado),
+// no sobre los lados (lo medido).
+test('SCRUM-318 · DINERO: el rail ya no repite el dinero, y la FRANJA no afirma sin eje', async () => {
+  // ── a) el rail: la columna no vuelve a traerse las cifras de la franja ──────────────────
+  const conJustificante = BLOQUES.bloqueDinero(
+    { totalAceptado: 853.05, totalCobrado: 400, invoices: [{ id: 9, number: 'J-1', status: 'paid' }] }, fmt,
+  );
+  assert.ok(conJustificante, '🔴 SUELO: el bloque DINERO no sale ni con un justificante — lo de abajo no mediría nada.');
   assert.deepEqual(
-    sinReferencia.lineas.map((l) => l.etiqueta), ['Cobrado'],
-    '🔴 se afirma un «Pendiente» sin importe contra el que medirlo — el mismo defecto que ' +
-      'SCRUM-363 quitó del chip de cobro, reintroducido en el rail.',
+    conJustificante.lineas.filter((l) => l.etiqueta).map((l) => l.etiqueta), [],
+    '🔴 EL RAIL HA VUELTO A PINTAR IMPORTES. «Cobrado», «Pendiente» o «Aceptado» aquí son la ' +
+      'misma verdad dicha dos veces: ya están en la franja del cuerpo, a cuatro centímetros.',
   );
-  assert.equal(BLOQUES.bloqueDinero({ totalAceptado: 0, totalCobrado: 0 }, fmt), null, '🔴 bloque DINERO sin dinero');
+  assert.equal(BLOQUES.bloqueDinero({ totalAceptado: 853.05, totalCobrado: 400 }, fmt), null,
+    '🔴 el bloque DINERO se pinta sin ningún justificante: un título con el cuerpo vacío.');
 
-  // `Aceptado` NO se repite: ya es el titular del cuerpo a 2,2 rem.
-  assert.ok(
-    !conDinero.lineas.some((l) => /aceptado/i.test(l.etiqueta || '')),
-    '🔴 «Aceptado» está en el rail Y en el titular del cuerpo: el mismo número dos veces en la ' +
-      'misma pantalla no informa.',
+  // ── b) la franja, que es donde el principio vive ahora. Sobre el DOM MONTADO ────────────
+  const sinEje = await montarDetalle({ ...JOB_FRANJA, totalAceptado: 0, totalCobrado: 300 });
+  assert.deepEqual(
+    rotulosDeLaFranja(sinEje), [],
+    '🔴 LA FRANJA AFIRMA ALGO DEL DINERO SIN EJE CONTRA EL QUE MEDIRLO. Con `totalAceptado` 0 y ' +
+      '300 € cobrados no hay «Te falta por cobrar» ni «Cobrado del todo» que sostener: el primero ' +
+      'es falso y el segundo se lee encima de un «Cobrado 300,00 €» que lo contradice. Es el ' +
+      'mismo defecto que SCRUM-363 quitó del chip de cobro, reintroducido en la franja.',
   );
+  // Lo MEDIDO sí se dice: el principio calla lo derivado, no esconde los datos.
+  assert.deepEqual(
+    cifrasDeLosLados(sinEje), [['Aceptado', '0,00'], ['Cobrado', '300,00']],
+    '🔴 al callar lo derivado se han perdido los dos datos medidos. El rail sí los decía.',
+  );
+
+  // ── c) CONTROL POSITIVO: con eje, la franja sigue afirmando exactamente lo de siempre ───
+  const conEje = await montarDetalle({ ...JOB_FRANJA, totalAceptado: 853.05, totalCobrado: 400 });
+  assert.deepEqual(
+    rotulosDeLaFranja(conEje), ['Te falta por cobrar'],
+    '🔴 con importe de referencia la franja ha dejado de decir lo que falta: el arreglo del caso ' +
+      'sin eje se ha llevado por delante el caso normal, que es el de todos los días.',
+  );
+  assert.deepEqual(cifrasDeLosLados(conEje), [['Aceptado', '853,05'], ['Cobrado', '400,00']]);
 });
 
 test('SCRUM-318 · PRESUPUESTO y RESPONSABLE: existen con dato y desaparecen sin él', () => {

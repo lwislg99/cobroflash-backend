@@ -83,11 +83,37 @@ const DESPLEGAR = `(() => {
   return !!b;
 })()`;
 
-// El rótulo del primario de cada pantalla. `null` = no hay primario, que es una respuesta.
+// El rótulo de la ACCIÓN SIGUIENTE de cada pantalla. `null` = no propone nada, que es una respuesta.
+//
+// 🔴 REANCLADO POR SCRUM-917c (20-sep-2026), y el motivo importa más que el cambio.
+// Esto buscaba `.jobs-acciones > button.btn-primary`: daba por hecho que la acción siguiente de la
+// fila es un botón PRIMARIO. SCRUM-917c cambió eso a propósito — en la lista rediseñada hay **una
+// sola primaria, la del dinero**, y la acción repetida del grupo bajó a secundaria, porque doce
+// «Agendar» verdes idénticos no jerarquizan: si todo es primario, nada lo es. Esa decisión de
+// producto es buena y se queda.
+//
+// El efecto fue que este guard dejó de encontrar su botón y se declaró **CIEGO (salida 2)** en
+// `main`: «los cinco estados dan 1 rótulo distinto», «LISTA: no encuentro el primario que pulsar».
+// Ojo: CIEGO, no rojo. No estaba diciendo que el producto falle, estaba diciendo que no había
+// mirado nada — y sin su propio SUELO esto habría pasado por un verde.
+//
+// Lo que este guard defiende NO es el peso visual del botón: es que la lista y el detalle
+// **propongan el MISMO RÓTULO** para el mismo Trabajo. Así que se ancla a la acción de la fila sea
+// primaria o secundaria. Si alguna vez vuelve a anclarse al peso del botón, volverá a quedarse
+// ciego el día que alguien reordene la jerarquía visual, que es cosa que pasa y debe poder pasar.
+//
+//   🔒 Antes de cambiar una POBLACIÓN, se censa quién mide sobre ella (A12).
+//
 const PRIMARIO_LISTA = `(() => {
   const tr = document.querySelector('#view-container tr.jobs-fila');
   if (!tr) return { error: 'sin filas que medir ni siquiera tras desplegar los grupos' };
-  const b = tr.querySelector('.jobs-acciones > button.btn-primary');
+  // La acción siguiente es la PRIMERA de la celda de acciones, con el peso que tenga hoy. Se
+  // excluye el «⋯» (overflowMenu devuelve el propio botón, con clase overflow-trigger): es el
+  // desplegable de todo lo demás, no una propuesta. La clase se comprobó LEYÉNDOLA en
+  // api.js:overflowMenu, no de memoria; el texto se mira además por si la clase cambia.
+  // (Sin acentos graves aquí dentro: este bloque VIVE en un template literal y los cerraría.)
+  const b = [...tr.querySelectorAll('.jobs-acciones > button')]
+    .find((x) => !x.classList.contains('overflow-trigger') && (x.textContent || '').trim() !== '⋯');
   return { rotulo: b ? b.textContent.trim() : null, nodos: document.querySelectorAll('#view-container *').length };
 })()`;
 const PRIMARIO_DETALLE = `(() => {
@@ -145,7 +171,7 @@ di('\n════════════════════════�
 di('② «Agendar» SE PUEDE EJECUTAR EN LAS DOS — y no navega, y no deja el botón colgado');
 di('══════════════════════════════════════════════════════════════════════════════════════');
 for (const [ruta, quienEs, sel] of [
-  [`/lista-pendiente_agendar`, 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button.btn-primary'],
+  [`/lista-pendiente_agendar`, 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button:not(.overflow-trigger)'],
   [`/detalle-pendiente_agendar`, 'DETALLE', '#view-container .detail-head button.btn-primary'],
 ]) {
   const { page } = await abrirVista(browser, puerto, ruta, 1280);
@@ -192,7 +218,7 @@ di('\n════════════════════════�
 di('②-bis «▶ Empezar» ESCRIBE en las dos — y escribe la transición que la FSM admite');
 di('══════════════════════════════════════════════════════════════════════════════════════');
 for (const [ruta, quienEs, sel] of [
-  ['/lista-agendado', 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button.btn-primary'],
+  ['/lista-agendado', 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button:not(.overflow-trigger)'],
   ['/detalle-agendado', 'DETALLE', '#view-container .detail-head button.btn-primary'],
 ]) {
   const { page } = await abrirVista(browser, puerto, ruta, 1280);
@@ -229,7 +255,7 @@ di('\n════════════════════════�
 di('③ UN TRABAJO CERRADO NO PROPONE NADA — en ninguna de las dos');
 di('══════════════════════════════════════════════════════════════════════════════════════');
 for (const [ruta, quienEs, sel] of [
-  ['/lista-cerrado', 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button.btn-primary'],
+  ['/lista-cerrado', 'LISTA', '#view-container tr.jobs-fila .jobs-acciones > button:not(.overflow-trigger)'],
   ['/detalle-cerrado', 'DETALLE', '#view-container .detail-head button.btn-primary'],
 ]) {
   const { page } = await abrirVista(browser, puerto, ruta, 1280);

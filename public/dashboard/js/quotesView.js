@@ -728,6 +728,10 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   pasoClienteFalta.className = "quote-paso__falta";
   pasoClienteFalta.textContent = "Elige un cliente para seguir";
   pasoClientePie.appendChild(pasoClienteFalta);
+  // SCRUM-915e2 · «Ver documento» va en el pie de los pasos que NO son el último, como en el
+  // prototipo: en «Revisar y enviar» el documento ya es lo que se está mirando. Antes de la
+  // primaria, que se queda la última.
+  pasoClientePie.appendChild(botonVerDocumento());
   const pasoClienteSeguir = document.createElement("button");
   pasoClienteSeguir.type = "button";
   pasoClienteSeguir.className = "btn btn-primary";
@@ -1439,6 +1443,7 @@ descWrapper.appendChild(descLabel);
     pasoCondicionesAtras.className = "btn btn-ghost";
     pasoCondicionesAtras.textContent = "Atrás";
     pasoCondicionesPie.appendChild(pasoCondicionesAtras);
+    pasoCondicionesPie.appendChild(botonVerDocumento()); // SCRUM-915e2
     const pasoCondicionesSeguir = document.createElement("button");
     pasoCondicionesSeguir.type = "button";
     pasoCondicionesSeguir.className = "btn btn-primary";
@@ -1772,6 +1777,7 @@ descWrapper.appendChild(descLabel);
   pasoConceptosAtras.className = "btn btn-ghost";
   pasoConceptosAtras.textContent = "Atrás";
   pasoConceptosPie.appendChild(pasoConceptosAtras);
+  pasoConceptosPie.appendChild(botonVerDocumento()); // SCRUM-915e2
   const pasoConceptosSeguir = document.createElement("button");
   pasoConceptosSeguir.type = "button";
   pasoConceptosSeguir.className = "btn btn-primary";
@@ -1937,14 +1943,115 @@ descWrapper.appendChild(descLabel);
   if (!esDocumentoSuelto) heading.appendChild(draftIndicator);
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
+  // SCRUM-915e1 · «Vista previa del documento» describía la PANTALLA; «Así lo verá el cliente»
+  // describe el DOCUMENTO, que es lo que el profesional necesita saber antes de mandarlo. Los dos
+  // textos están firmados en el comentario 15868 (`docs/prototipos/SCRUM-915/textos-propuestos.md`,
+  // «El documento de la derecha»). La segunda línea no es decoración: es la promesa que el resto
+  // de este corte cumple —el documento se rehace en cada tecla— y sin ella nadie sabe que mirar
+  // ahí mientras escribe sirve para algo.
   const previewTitle = document.createElement("h3");
-  previewTitle.textContent = "Vista previa del documento";
+  previewTitle.textContent = "Así lo verá el cliente";
   previewTitle.className = "quote-preview-title";
   rightCard.appendChild(previewTitle);
+
+  const previewSubtitle = document.createElement("p");
+  previewSubtitle.textContent = "Se actualiza mientras escribes";
+  previewSubtitle.className = "quote-preview-subtitle";
+  rightCard.appendChild(previewSubtitle);
 
   const previewBox = document.createElement("div");
   previewBox.className = "quote-preview";
   rightCard.appendChild(previewBox);
+
+  /**
+   * SCRUM-915e2 · «VER DOCUMENTO» — el papel, cuando no cabe al lado.
+   *
+   * 🔴 EL PROBLEMA NO ES QUE EL DOCUMENTO SE VEA PEQUEÑO: es que NO SE VE. Por debajo de 1100 px
+   * `.quotes-layout` pasa a UNA columna (`styles.css`), así que el documento deja de estar al lado
+   * del editor y se va DEBAJO de él — debajo de los cuatro pasos, las líneas y los totales. En un
+   * teléfono eso son varias pantallas de scroll: el profesional escribe a ciegas y el rótulo «Se
+   * actualiza mientras escribes» que 915e1 acaba de poner le habla de algo que no tiene delante.
+   *
+   * El botón sale EXACTAMENTE por debajo de ese mismo ancho, y la regla la pone el CSS, no un
+   * `matchMedia` en JavaScript: si un día se mueve el punto en el que el editor pasa a una columna,
+   * el botón se mueve con él. Con `matchMedia` habría DOS sitios que saber el mismo número y
+   * separarse sin que nadie lo note. (El prototipo usa 999 px; aquí manda el breakpoint real de
+   * esta app, que es donde el documento se va de al lado de verdad.)
+   *
+   * La hoja MUEVE el documento de verdad, no una copia — el mismo patrón que la hoja de ajustes de
+   * la línea (SCRUM-139 F4): `previewBox` se saca de la tarjeta derecha y se devuelve al cerrar.
+   * Así sigue siendo UN solo documento, y sigue repintándose mientras la hoja está abierta.
+   */
+  let hojaDocumentoAbierta = null;
+
+  function abrirHojaDocumento(botonQueAbre) {
+    if (hojaDocumentoAbierta) return;
+
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+
+    const modal = document.createElement("div");
+    modal.className = "modal quote-documento-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-label", "Así lo verá el cliente");
+
+    const header = cabeceraModal({ titulo: "Así lo verá el cliente" });
+    const cerrar = header.querySelector(".modal-close");
+
+    const body = document.createElement("div");
+    body.className = "modal-body";
+    // El documento REAL. Si esto fuera una copia, al teclear detrás de la hoja el cliente de la
+    // copia se quedaría con lo de antes y la hoja enseñaría un papel que ya no existe.
+    body.appendChild(previewBox);
+
+    const pie = document.createElement("div");
+    pie.className = "modal-footer";
+    const volver = document.createElement("button");
+    volver.type = "button";
+    volver.className = "btn-primary";
+    volver.textContent = "Volver al editor";
+    pie.appendChild(volver);
+
+    modal.appendChild(header);
+    modal.appendChild(body);
+    modal.appendChild(pie);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    function cerrarHojaDocumento() {
+      // 🔴 EL DOCUMENTO SE RECUPERA ANTES DE TIRAR LA HOJA, o se va con ella y la tarjeta derecha
+      // se queda vacía para siempre. Vuelve a su sitio: detrás del rótulo y su segunda línea.
+      rightCard.insertBefore(previewBox, previewSubtitle.nextSibling);
+      overlay.remove();
+      document.removeEventListener("keydown", onEsc);
+      hojaDocumentoAbierta = null;
+      if (botonQueAbre) {
+        try { botonQueAbre.focus({ preventScroll: true }); } catch (_e) { botonQueAbre.focus(); }
+      }
+    }
+    function onEsc(e) {
+      if (e.key === "Escape") { e.stopPropagation(); cerrarHojaDocumento(); }
+    }
+
+    hojaDocumentoAbierta = cerrarHojaDocumento;
+    cerrar.addEventListener("click", cerrarHojaDocumento);
+    volver.addEventListener("click", cerrarHojaDocumento);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) cerrarHojaDocumento(); });
+    document.addEventListener("keydown", onEsc);
+
+    try { volver.focus({ preventScroll: true }); } catch (_e) {}
+  }
+
+  /** El botón del pie de un paso. Texto firmado (comentario 15868). Lo enseña o lo esconde el CSS. */
+  function botonVerDocumento() {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn btn-secondary quote-ver-documento";
+    b.textContent = "Ver documento";
+    b.addEventListener("click", function () { abrirHojaDocumento(b); });
+    return b;
+  }
 
   // SCRUM-600 · EL PANEL DE ESTADO NO APLICA AL DOCUMENTO SUELTO. No es que le falte el texto:
   // es que no tiene estados que enseñar. El presupuesto vive en DRAFT / pendiente de aprobación
@@ -2525,6 +2632,16 @@ descWrapper.appendChild(descLabel);
     return { base, vatTotal, total };
   }
 
+  // SCRUM-915e2 · memoria del resalte. Vive fuera de `renderPreview` porque comparar un pintado
+  // con el anterior es lo único que distingue «esta fila acaba de cambiar» de «esta fila está
+  // ahí». `yaSePintoUnaVez` arranca en falso a propósito: en el PRIMER pintado no hay con qué
+  // comparar, y marcar las ocho filas de un borrador recién cargado sería un resalte que no dice
+  // nada. Los dos de abajo son el arrastre de un pintado, explicado donde se usan.
+  let firmasPintadas = [];
+  let yaSePintoUnaVez = false;
+  let resalteArrastrado = [];
+  let pintadosQuietosDeGracia = 0;
+
   function renderPreview() {
     previewBox.innerHTML = "";
 
@@ -2532,6 +2649,8 @@ descWrapper.appendChild(descLabel);
       const p = document.createElement("p");
       p.textContent = "Cargando datos de empresa…";
       previewBox.appendChild(p);
+      // Sin merchant no se pinta ninguna fila: las firmas de antes se CONSERVAN. Vaciarlas aquí
+      // haría que el primer pintado de verdad marcara el documento entero.
       return;
     }
 
@@ -2740,19 +2859,64 @@ descWrapper.appendChild(descLabel);
     ptHead.appendChild(ptr);
     linesTable.appendChild(ptHead);
 
-    const ptBody = document.createElement("linesBody");
+    // 🔴 SCRUM-915e1 · ERA `createElement("linesBody")`, que no es una etiqueta de HTML: creaba un
+    // elemento desconocido dentro de la `<table>` y las `<tr>` del documento colgaban de él. Y no
+    // era inofensivo: `styles.css` lleva desde siempre una regla de cebra
+    // —`.preview-lines-table tbody tr:nth-child(even)`— escrita para este documento que NO HA
+    // PINTADO NUNCA, porque aquí nunca hubo un `tbody` al que casar. En el fuente los dos se leen
+    // igual; la diferencia sólo existe en el árbol renderizado, que es donde se mira.
+    const ptBody = document.createElement("tbody");
+
+    // 🔴 SCRUM-915e2 · QUÉ FILA SE ACABA DE MOVER. Sin esto, en un documento de ocho líneas el
+    // profesional teclea arriba y no sabe cuál de las ocho ha cambiado: el papel se rehace entero
+    // y todo se ve igual.
+    //
+    // Se compara con la MISMA fila del pintado anterior, no con «es la última» ni con el número de
+    // líneas: la fila que se edita casi nunca es la recién añadida. La firma lleva la fila ENTERA
+    // —concepto, cantidad, precio, total— porque cambiar sólo el precio también es editar esa
+    // fila, y comparar por concepto diría que no ha pasado nada.
+    //
+    // 🔴 Y EL ARRASTRE DE UN PINTADO, que es lo que me cazó el guard: cada evento del profesional
+    // repinta el documento DOS veces —el manejador del propio campo y la delegación de la tarjeta,
+    // las dos llaman a `renderPreview`—. El primer pintado veía el cambio y marcaba; el segundo,
+    // con la firma ya guardada, no veía ninguno y borraba la marca. En pantalla el resalte no
+    // existía, y el fuente se leía perfectamente bien. Por eso una marca sobrevive UN pintado sin
+    // cambios, y sólo uno: al segundo quieto se apaga, que es lo que la diferencia de un resalte
+    // pegado para siempre.
+    const firmas = previewLines.map((l) => [l.concept, l.qty, l.price, l.totalLine].join("\u0001"));
+    let resaltadas = [];
+    if (yaSePintoUnaVez) {
+      // Una fila que antes no existía cuenta como cambio: es la fila recién añadida del prototipo.
+      const cambiadas = [];
+      firmas.forEach((f, i) => { if (firmasPintadas[i] !== f) cambiadas.push(i); });
+      if (cambiadas.length) {
+        resaltadas = cambiadas;
+        resalteArrastrado = cambiadas;
+        pintadosQuietosDeGracia = 1;
+      } else if (pintadosQuietosDeGracia > 0) {
+        resaltadas = resalteArrastrado;
+        pintadosQuietosDeGracia -= 1;
+      } else {
+        resalteArrastrado = [];
+      }
+    }
+    firmasPintadas = firmas;
+    yaSePintoUnaVez = true;
 
     if (previewLines.length === 0) {
       const trEmpty = document.createElement("tr");
       const tdEmpty = document.createElement("td");
       tdEmpty.colSpan = 4;
-      tdEmpty.textContent =
-        "Añade al menos una línea con concepto, cantidad y precio.";
+      // SCRUM-915e1 · el hueco del documento no es el sitio donde se dan instrucciones: para eso
+      // está el pie del paso Conceptos, que ya dice qué falta para poder seguir. Aquí se describe
+      // lo que va a pasar en ESTE trozo de papel. Texto firmado (comentario 15868).
+      tdEmpty.textContent = "Aquí aparecerán los conceptos que añadas.";
       trEmpty.appendChild(tdEmpty);
       ptBody.appendChild(trEmpty);
     } else {
-      previewLines.forEach((l) => {
+      previewLines.forEach((l, i) => {
         const tr = document.createElement("tr");
+        if (resaltadas.indexOf(i) >= 0) tr.className = "preview-line--editada";
         const tdConcept = document.createElement("td");
 tdConcept.textContent = l.concept;
 
@@ -2822,16 +2986,34 @@ tr.appendChild(tdConcept);
     previewBox.appendChild(totalsBlock);
 
     // Pie legal sencillo (podremos hacerlo configurable después)
+    // 🔴 SCRUM-915e1 · ESTE PIE MENTÍA, Y MENTÍA EN EL PAPEL DEL CLIENTE. Decía «válido durante
+    // 30 días» fijo mientras el campo «Válido hasta» de Condiciones lleva desde A16.2 aceptando
+    // CUALQUIER fecha: quien ponía una semana mandaba un documento que prometía un mes, y el que
+    // manda es el papel. No era un rótulo desactualizado — era el único sitio del documento donde
+    // la caducidad se afirmaba, y afirmaba otra cosa que la caducidad guardada (`validUntil`).
+    //
+    // Ahora el pie LEE la misma fecha que se guarda y que ya se enseña en el resumen de
+    // Condiciones (`fechaCorta(validInput.value)`, la misma función: una sola forma de escribir
+    // una fecha en esta pantalla). Texto firmado en el comentario 15868, y la propia ficha dice
+    // que «sustituye al fijo “…válido durante 30 días…”».
+    //
+    // Si no hay fecha legible, NO se inventa ninguna y el pie no se pinta: un documento sin
+    // coletilla es un hueco, y uno con la coletilla equivocada es lo que este ticket arregla.
+    const diaValidez = fechaCorta(validInput.value);
     const footer = document.createElement("div");
     footer.className = "preview-footer";
-    footer.textContent = "Presupuesto válido durante 30 días salvo indicación en contrario.";
+    // Plantilla y no suma de cadenas, y el motivo es el censo: `ranurasDelDocumento` (SCRUM-600)
+    // junta las RANURAS que nombran el presupuesto para que el fundador tenga la lista entera
+    // delante. Concatenada, el extractor no la veía y la cuenta bajaba de 30 a 29 — y un censo que
+    // pierde una ranura no dice «no la veo», dice un número más pequeño. La frase es la misma.
+    footer.textContent = `Presupuesto válido hasta el ${diaValidez}.`;
     // 🔴 SCRUM-600 · EN EL DOCUMENTO SUELTO NO SE IMPRIME NINGUNA COLETILLA, y la omisión es la
     // decisión prudente, no la perezosa. Ésta es una frase LEGAL estampada en el papel que ve el
     // cliente del profesional; la del presupuesto habla de la validez de una OFERTA, que en un
     // documento ya emitido no significa nada. Y escribir otra en su sitio sería redactar una
     // afirmación en un documento fiscal: reglas 7 y 17, y microcopy del fundador (regla 30).
     // Si ahí tiene que ir algo, lo decide él; hasta entonces, no va nada.
-    if (!esDocumentoSuelto) previewBox.appendChild(footer);
+    if (!esDocumentoSuelto && diaValidez) previewBox.appendChild(footer);
   }
 
   // ---------- GESTIÓN DE LÍNEAS ----------
@@ -4520,10 +4702,16 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
   const cuantasLineasValidas = function () { return lines.filter(lineaValidaParaGenerar).length; };
   const conceptosTexto = function (n) { return n + " " + (n === 1 ? "concepto" : "conceptos"); };
   /** «2026-10-18» → «18/10/2026»: el mismo día que eligió el profesional, sin pasar por `Date`. */
-  const fechaCorta = function (iso) {
+  // SCRUM-915e1 · DECLARACIÓN DE FUNCIÓN, no `const`, y el motivo es de alcance y no de estilo:
+  // `renderPreview` vive 2.000 líneas más arriba y corre desde el primer pintado, mucho antes de
+  // que esta línea se ejecute. Con `const` estaba en zona muerta y el pie del documento habría
+  // reventado con «Cannot access before initialization»; declarada así se iza y hay UNA sola forma
+  // de escribir una fecha en esta pantalla, que es lo que evita que el resumen de Condiciones y el
+  // papel del cliente empiecen a decir la misma fecha de dos maneras.
+  function fechaCorta(iso) {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
     return m ? m[3] + "/" + m[2] + "/" + m[1] : "";
-  };
+  }
   // Por `children` y no por `options[selectedIndex]`: es el mismo `<option>` en el navegador, y el
   // banco de vistas de la suite (SCRUM-451) monta el editor sin esas dos propiedades.
   const textoDeCobro = function () {
@@ -4672,6 +4860,22 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
   // cada campo (burbuja), así que se lee el estado ya actualizado.
   ["input", "change", "click"].forEach(function (evento) {
     leftCard.addEventListener(evento, refrescarPasos);
+  });
+  // 🔴 SCRUM-915e1 · EL DOCUMENTO SE REHACE CON LO MISMO QUE LOS PASOS, y no es un extra: es el
+  // contrato que firma el rótulo «Se actualiza mientras escribes» de la derecha.
+  //
+  // Hasta hoy `renderPreview` colgaba de UNA LISTA DE CAMPOS elegidos a mano —las líneas, el
+  // descuento global, las dos propuestas pactadas, el alta de cliente—, así que había campos del
+  // editor que cambiaban el papel y no repintaban el papel. El más caro era «Válido hasta», que
+  // no tenía NI UN oyente: se podía poner una semana, ver el pie del documento seguir hablando de
+  // otra fecha y mandarlo así. Una lista escrita a mano se queda corta el día que alguien añade
+  // el campo número once y no se acuerda de esta línea; la delegación no se queda corta nunca.
+  //
+  // Va DESPUÉS de `refrescarPasos` y por el mismo motivo que él: en la burbuja, con el estado de
+  // los campos ya actualizado. Las llamadas directas que ya existen se conservan —las que corren
+  // sin evento del usuario (cargar un borrador, reordenar líneas) no burbujean por aquí.
+  ["input", "change", "click"].forEach(function (evento) {
+    leftCard.addEventListener(evento, renderPreview);
   });
   // «Limpiar formulario» vacía el cliente y las líneas: se vuelve al primer paso.
   resetBtn.addEventListener("click", function () {

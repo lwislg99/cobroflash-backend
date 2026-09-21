@@ -1909,8 +1909,39 @@ html, body { overflow-x: clip; }
 .preview-total-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
 .preview-total-row-main strong { font-size: 15px; }
 .preview-footer { margin-top: 12px; font-size: 11px; color: var(--neutral-400); }
-.quote-preview-title { font-size: 14px; font-weight: 700; color: var(--neutral-800); margin-bottom: 10px; }
+.quote-preview-title { font-size: 14px; font-weight: 700; color: var(--neutral-800); margin-bottom: 2px; }
+/* SCRUM-915e1 · la segunda línea del rótulo del documento. Tokens ya existentes (`--neutral-400`,
+   el mismo gris del pie del documento) y el tamaño de nota que ya usa `.preview-footer`: no entra
+   ningún token nuevo, ni un color ni una sombra. El margen del título baja de 10 a 2 px porque el
+   aire lo pone ahora esta línea, y el bloque entero sigue separado del papel los mismos 10 px. */
+.quote-preview-subtitle { font-size: 11px; color: var(--neutral-400); margin: 0 0 10px; }
 .quote-preview-block { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--neutral-200); }
+
+/* SCRUM-915e2 · «Ver documento», y el resalte de la fila que se está editando.
+
+   El botón sólo existe cuando el documento NO está al lado: por debajo de 1100 px `.quotes-layout`
+   pasa a una columna y el papel se va DEBAJO del editor entero, que en un teléfono son varias
+   pantallas de scroll. El número no se elige aquí — es el mismo de aquella `@media`—, y los dos
+   viven en este fichero y no uno aquí y otro en un `matchMedia` de JavaScript, que es como dos
+   sitios acaban sabiendo el mismo número y separándose sin que nadie lo note. */
+.quote-ver-documento { display: none; }
+@media (max-width: 1100px) { .quote-ver-documento { display: inline-flex; } }
+
+/* La hoja del documento reutiliza `.modal-overlay` + `.modal` del inventario AB3 tal cual —la casa
+   ya los convierte en hoja inferior por debajo de 640 px—; lo único propio es que el papel pueda
+   desplazarse sin arrastrar la hoja entera. */
+.quote-documento-modal .modal-body { max-height: 70vh; overflow-y: auto; }
+
+/* El resalte. `--brand-tint` es el token de «fondos de realce suaves» que ya existe: ni un color
+   nuevo. No codifica ningún estado —sólo dice «esto se acaba de mover»—, así que el color no es
+   canal único de nada. La duración es la del prototipo v3 aprobado, 1,2 s: no es una transición de
+   interfaz, de esas manda el `.2s` de DESIGN.md, sino un realce que se desvanece, y a 200 ms no
+   daría tiempo a verlo. Con `prefers-reduced-motion` no hay animación y no queda fondo pegado. */
+@keyframes yaqu-resalta-fila { from { background: var(--brand-tint); } to { background: transparent; } }
+.preview-lines-table tr.preview-line--editada { animation: yaqu-resalta-fila 1.2s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .preview-lines-table tr.preview-line--editada { animation: none; }
+}
 
 /* Inline form elements */
 .inline-checkbox { font-size: 13px; margin: 10px 0 2px; } /* respiro: iba pegado al campo de arriba */
@@ -2609,6 +2640,48 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-total-amount {
   font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 800; color: var(--ink);
   line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+
+/* ── SCRUM-917e (D) · LA FRANJA DEL DINERO ───────────────────────────────────────────────────
+   El dinero se dice UNA vez. Antes, entre el titular «Total aceptado», la barra con «Cobrado X de
+   Y», las cuatro filas de importes y el bloque DINERO del rail, el mismo importe se leía SIETE
+   veces en la misma pantalla (medido hoy:
+   docs/master/evidencias/SCRUM-917/salida-paso0-detalle.txt). Aquí hay tres cifras y cada una sale
+   una vez: la grande es LO QUE FALTA —la pregunta del jefe—, y a su lado, pequeños, el aceptado y
+   el cobrado, que le dan contexto sin competir con ella.
+   Sin tokens nuevos: reutiliza --ink, --body, --muted, --ok y --line. */
+.detail-dinero {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; width: 100%;
+}
+.detail-dinero__rotulo {
+  display: block; font-size: 11.5px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px;
+}
+.detail-dinero__grande {
+  font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 800; color: var(--ink);
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+/* Cobrado del todo: la cifra deja de ser una deuda y pasa a ser una confirmación. */
+.detail-dinero__grande--ok { color: var(--ok, #0f7b4f); }
+.detail-dinero__lados {
+  display: grid; gap: 4px; text-align: right; font-size: 13px; color: var(--muted);
+}
+.detail-dinero__lado-cifra { color: var(--body); font-variant-numeric: tabular-nums; }
+/* La barra, MUDA: las dos cifras que antes escribía dentro están dos centímetros más arriba.
+   El ancho lo pone el JS porque es un dato, no un estilo; el texto para lectores de pantalla va en
+   `aria-label`, que es donde no le estorba a quien sí ve la pantalla. */
+.detail-dinero__barra {
+  margin-top: 14px; height: 8px; border-radius: 999px;
+  background: var(--line, #e6e8ec); overflow: hidden;
+}
+.detail-dinero__barra-relleno {
+  display: block; height: 100%; border-radius: 999px; background: var(--ok, #0f7b4f);
+}
+/* A 390 px las cifras de contexto vuelven a la izquierda: alineadas a la derecha en una columna
+   estrecha quedaban colgando lejos de la cifra a la que acompañan. */
+@media (max-width: 560px) {
+  .detail-dinero__lados { text-align: left; }
 }
 
 /* Lista de definición para datos (cliente, decisión) — oculta vacíos vía JS */
