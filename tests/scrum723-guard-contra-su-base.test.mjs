@@ -378,6 +378,10 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-899 (hito 2) · nombra `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
   // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
   'tests/scrum899b-arranque-de-la-tanda.test.mjs',
+  // SCRUM-966 · el banco del censo de ramas. Nombra `origin/main` al montar los worktrees y las ramas
+  // de su repositorio SINTÉTICO del temporal, que tiene su propio remoto desnudo: ese `origin/main` no
+  // es el de este repositorio. Mismo caso que 839d, 839e y 899b. Lo retira quien borre el banco.
+  'tests/scrum966-censo-ve-las-ramas.test.mjs',
   // SCRUM-951a · la lista de verificación nombra `origin/main` también FUERA de los argumentos de git: en
   // los detalles que imprime («idéntica a origin/main:…») y en la prosa de su cabecera. Su llamada
   // directa está declarada arriba, con su motivo.
@@ -426,6 +430,15 @@ const INDIRECTAS_DECLARADAS = [
   // número a ninguna que lleve slug; ningún sha ni alcanzabilidad. Lo retira: quien retire ese
   // control positivo o vuelva a exigir guion en `numeroDeRama`.
   'tests/scrum804f-la-rama-sin-slug.test.mjs',
+  // SCRUM-804h · el guard de «una fase con corte (`scrum-915e1-…`) es de su ticket». Entra por el
+  // MISMO motivo y con la misma forma que `scrum804f`, que es su hermano: nombra `main` en la
+  // PROSA del defecto (el check obligatorio de `main` cerrado, esta vez por `scrum-915e1-…`, con
+  // seis PR esperando) y quita el prefijo `origin/` a los NOMBRES que lista `for-each-ref`.
+  // **NO compara contra la referencia móvil**: su control positivo lee sólo NOMBRES de rama —para
+  // comprobar que el ensanche no re-atribuye a ninguna que YA tuviera ticket— y ni un sha ni una
+  // alcanzabilidad. Lo retira: quien retire ese control positivo o vuelva a leer la fase como un
+  // solo carácter en `numeroDeRama`.
+  'tests/scrum804h-la-fase-con-corte.test.mjs',
   // SCRUM-833 · el guard de los tres instrumentos de SCRUM-637. Entra aquí por el MISMO motivo y
   // con la misma forma que su hermano de arriba: al anclarlo a `git log --merges` nombra `main`
   // en la prosa que explica por qué esa población es permanente, y en el mensaje del suelo del
