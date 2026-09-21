@@ -35,7 +35,7 @@ const DIA = 24 * 3600 * 1000;
  * Los objetos `data` que ponen `subscriptionStatus: 'canceled'`, con los nombres de sus claves. Por AST y
  * no por texto: la prosa que explica por qué se quitó `planExpiresAt` lo CONTIENE (A23 #2).
  */
-function escriturasDeCancelacion() {
+function escriturasDeCancelacion(estadoBuscado = 'canceled') {
   const ruta = path.join(RAIZ, STRIPE);
   const sf = ts.createSourceFile(ruta, fs.readFileSync(ruta, 'utf8'), ts.ScriptTarget.Latest, true);
   const salida = [];
@@ -43,7 +43,7 @@ function escriturasDeCancelacion() {
     if (ts.isObjectLiteralExpression(n)) {
       const claves = new Map(n.properties.filter(ts.isPropertyAssignment).map((p) => [p.name.getText(), p.initializer]));
       const estado = claves.get('subscriptionStatus');
-      if (estado && ts.isStringLiteralLike(estado) && estado.text === 'canceled') salida.push([...claves.keys()]);
+      if (estado && ts.isStringLiteralLike(estado) && estado.text === estadoBuscado) salida.push([...claves.keys()]);
     }
     n.forEachChild(anda);
   })(sf);
@@ -63,6 +63,12 @@ test('SCRUM-809b · SUELO: el censo ve las DOS puertas de cancelación del webho
 });
 
 test('SCRUM-809b · 🔴 ninguna puerta de cancelación borra `planExpiresAt`: el que cancela conserva el fin del periodo que pagó', () => {
+  // CONTROL POSITIVO (el respaldo de la negación de abajo): el mismo extractor SÍ ve `planExpiresAt` en
+  // la escritura del pago, que es la que lo fija. Sin esto, «ninguna cancelación lo escribe» sería
+  // verdad también con un extractor incapaz de ver esa clave.
+  const clavesAlPagar = escriturasDeCancelacion('active').flat();
+  assert.ok(clavesAlPagar.includes('planExpiresAt'),
+    'el extractor no ve `planExpiresAt` en la escritura del pago: está ciego para esa clave');
   for (const claves of escriturasDeCancelacion()) {
     assert.ok(!claves.includes('planExpiresAt'),
       '🔴 una cancelación escribe `planExpiresAt` (a null, que es lo que hacía): `plan === \'trial\' && planExpiresAt && …` '
