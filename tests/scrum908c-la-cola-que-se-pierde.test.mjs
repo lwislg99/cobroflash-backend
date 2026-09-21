@@ -235,26 +235,41 @@ function correrConPadreParado(hijo, marca, extra = []) {
   });
 }
 
-/** La sonda de CAPACIDAD: mismo patrón (tubería + padre parado), sin node:test de por medio. */
-function correrCapacidad(dir) {
-  const hijo = path.join(dir, 'capacidad-908c.mjs');
-  fs.writeFileSync(hijo, cuerpoDelCapacidad());
-  const marca = path.join(dir, 'marca-capacidad.json');
-  const c = spawn(process.execPath, [hijo],
-    { env: entornoBase({ J6_908C_MARCA_CAP: marca }), stdio: ['ignore', 'pipe', 'pipe'] });
-  let recibido = 0;
-  const errores = [];
-  c.stdout.on('data', (d) => { recibido += d.length; });
-  c.stderr.on('data', (d) => errores.push(d));
-  const salioDuranteLaPausa = pararSinLeer(marca, PAUSA_MS);
-  return new Promise((ok, ko) => {
-    c.on('error', ko);
-    c.on('close', () => {
-      let medido = null;
-      try { medido = JSON.parse(fs.readFileSync(marca, 'utf8')); } catch {}
-      ok({ recibido, salioDuranteLaPausa, medido, stderr: Buffer.concat(errores).toString('utf8').slice(0, 400) });
+/**
+ * La sonda de CAPACIDAD: mismo patrón (tubería + padre parado), sin node:test de por medio.
+ *
+ * ⚠️ Con su PROPIO directorio temporal, colgado de `os.tmpdir()` AQUÍ MISMO — no de un `dir`
+ * recibido por parámetro. `scripts/_temporales-en-el-arbol.mjs` (SCRUM-824, de S3) prueba el
+ * origen de una ruta por ÁMBITO LÉXICO, sin cruzar una llamada a función: un `dir` que entra como
+ * parámetro no es rastreable para él, y esta función pasaba a DESCONOCIDO (censo de SCRUM-824,
+ * medido en CI: `tests/scrum908c-la-cola-que-se-pierde.test.mjs` salía nuevo en su lista). Error
+ * propio, confesado (A9): no toca ese fichero (es de S3), así que la forma correcta es no
+ * necesitar que pruebe una indirección que no puede seguir.
+ */
+async function correrCapacidad() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-908c-cap-${process.pid}-`));
+  try {
+    const hijo = path.join(dir, 'capacidad-908c.mjs');
+    fs.writeFileSync(hijo, cuerpoDelCapacidad());
+    const marca = path.join(dir, 'marca-capacidad.json');
+    const c = spawn(process.execPath, [hijo],
+      { env: entornoBase({ J6_908C_MARCA_CAP: marca }), stdio: ['ignore', 'pipe', 'pipe'] });
+    let recibido = 0;
+    const errores = [];
+    c.stdout.on('data', (d) => { recibido += d.length; });
+    c.stderr.on('data', (d) => errores.push(d));
+    const salioDuranteLaPausa = pararSinLeer(marca, PAUSA_MS);
+    return await new Promise((ok, ko) => {
+      c.on('error', ko);
+      c.on('close', () => {
+        let medido = null;
+        try { medido = JSON.parse(fs.readFileSync(marca, 'utf8')); } catch {}
+        ok({ recibido, salioDuranteLaPausa, medido, stderr: Buffer.concat(errores).toString('utf8').slice(0, 400) });
+      });
     });
-  });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 const resumen = (r) => `bytes=${r.bytes} mensajes=${r.mensajes.length} sobrante=${r.sobrante} `
@@ -269,7 +284,7 @@ const medir = (async () => {
   try {
     // ── 1) CAPACIDAD: cuánto acepta el transporte en ESTA máquina antes de que el propio
     //    Writable de Node vea cola. Sin asumir ningún número (SCRUM-908c, recalibración). ──────
-    const capacidad = await correrCapacidad(dir);
+    const capacidad = await correrCapacidad();
     const colaCap = capacidad.medido?.cola ?? 0;
     // Si nunca se vio cola dentro del TECHO de la sonda (Windows: escritura síncrona, así que
     // `writableLength` nunca deja de ser 0), NO hay un techo finito que medir en esta máquina:
