@@ -124,3 +124,106 @@ controles positivos disparando. **14 mutaciones inyectadas, las 14 caen** (detal
   no está en la pantalla no está hecho: esto es diseño y andamio.
 - El prototipo enseña tres de los nueve motivos a la vez; los nueve textos están comprobados por texto, no vistos en pantalla.
 - No se ha medido ninguna lectura de un ticket real con descartes: 912d midió tres tickets sintéticos sin ningún descarte.
+
+
+---
+
+# SCRUM-920d · la foto en la fila, los filtros, los chips, la cabecera del mes y «Nuevo gasto» fijo en el móvil
+
+**Fecha:** 21-sep-2026 · **Carril:** front (S2); lo construye S4 por encargo del orquestador (excepción de carril, como 920c)
+**Medido contra:** `origin/main` = `6db52e1661ca63562ff082a45f970ad29be26ac9` · 2026-09-21T14:52:57Z (cabecera `Date:` de GitHub). La rama fusiona `5dacafa672779b4391d57660c5d02ecf5ef41c99` sin conflictos; de los tres ficheros míos, `main` sólo tocó `docs/master/SCRUM-920.md`.
+**Rama:** `scrum-920d-foto-chips-filtros` · **Serie:** 920c lista sin tabla (#1573, en `main`) → **920d (este PR)** → 920e detalle → 920f alta en el modal (**BLOQUEADA** hasta SCRUM-950, Jira 16175).
+
+## Qué cambia (encargo, filas L5, L6, L7, L8, L12 y L19)
+
+- **L12 · la foto en la fila: «Foto guardada» / «Sin foto», SIN miniatura.** Un hecho sobre el archivo (`tieneFoto`, de SCRUM-964),
+  sin triángulo y sin decir nada de lo que Hacienda admite. La decisión y su medición, más abajo.
+- **L5 · filtro por trabajo.** `select` con «Todos los trabajos», «Sin trabajo» y los trabajos que tienen gastos en la lista que llegó
+  (`item.job`, ya resuelto por SCRUM-135: no se pide `/admin/jobs`). «Sin trabajo» = los gastos SIN `job` (incluye el que tiene
+  presupuesto pero no trabajo, que la celda llama «Presupuesto sin trabajo»): es la misma cuenta que el KPI «Sin asignar a trabajo».
+  Si el trabajo elegido ya no está al cambiar de mes o de categoría, vuelve a «Todos los trabajos».
+- **L6 · los dos chips** «Todos · N» / «Sin foto · N», con `aria-pressed`. **La cuenta es la de lo que verás al pulsar el chip**
+  (sobre los gastos ya filtrados por trabajo), no la del mes: el prototipo contaba el mes entero y con un trabajo elegido el chip decía
+  «Sin foto · 3» y al pulsarlo salía 1 fila. Sin filtro de trabajo coinciden. El pulsado va en Tinta, no en verde (Una Sola Voz).
+- **L8 · cabecera del mes** «Septiembre de 2026 · 9 gastos» (singular «· 1 gasto»). Con un filtro puesto (categoría, trabajo o «Sin foto»)
+  lleva además **la suma de lo que se ve** y «Es la suma de lo que estás viendo, no la del mes.»; sin filtros no lleva suma, porque
+  sería la del KPI y el total del mes sale UNA sola vez. La suma va en céntimos.
+- **L19 · vacío de los filtros** «Ningún gasto con esos filtros» + «Prueba con otro mes, otra categoría u otro trabajo.» + «Quitar los
+  filtros», que quita los tres (trabajo, foto y **categoría**, que filtra el servidor y por eso vuelve a pedir el mes por el mismo camino
+  que si la cambiaras a mano). Una categoría sin gastos ya no dice «Sin gastos este mes» (era falso): dice esto.
+- **L7 · «Nuevo gasto» fijo abajo a ≤560 px, y sólo ahí.** Es **el mismo botón** (`#exp-new-btn`, con `atajoNuevo.etiquetar/registrar` de
+  SCRUM-769), no una copia: sólo cambia dónde se dibuja. A escritorio pasa a la cabecera junto a «⬇ CSV» (como el prototipo); a móvil el
+  CSV se queda arriba. La primera fila entera entra en la primera pantalla a 390×844 (acaba en 654; la barra empieza en 779).
+
+Microcopy: **ningún literal nuevo**. Todos están en `textos-propuestos.md` y firmados el 20-sep (comentario 15992). Único añadido no visible:
+`aria-label="Trabajo"` en el filtro (el del prototipo aprobado; «Trabajo» ya existe como rótulo).
+
+## 🔴 L12 · por qué NO hay miniatura, medido
+
+`GET /admin/expenses/:id/foto` sirve **la foto entera** como binario, con `Cache-Control: no-store`. Una `<img>` por fila = N descargas de ese
+tamaño en cada visita a la lista, sin caché.
+
+Sonda `docs/master/evidencias/scrum920/sonda-peso-fotos-staging.mjs` (solo lectura: login de QA + `GET`; staging, versión `25a279f3…`):
+
+- 12 meses recorridos, **4 gastos, 3 con foto**; las tres son **PNG de 0,1 KiB** (los fixtures del seed). `Content-Length` = bytes recibidos
+  en las tres; sin `content-encoding`; `no-store`. La lista JSON de septiembre: **2,2 KiB** (sin fotos: confirma SCRUM-964).
+- **Lo que NO se pudo medir: el peso de una foto REAL guardada.** Staging solo tiene tres fixtures de juguete y en producción no hay clientes
+  reales (ni se consulta). Sin muestra real, el peso sale del CÓDIGO: `fotoParaGuardar` guarda tal cual si el data-URI cabe en 1,5 MiB
+  (= **1,125 MiB** de binario como máximo) o la reduce hasta que cabe, y SCRUM-947 midió una foto de 3,73 MiB → 0,73 MiB de data-URI
+  (**0,55 MiB** binarios) y una de detalle fino → 1,48 MiB (**1,11 MiB**). Una lista de 20 filas con foto serían **≈ 11 MiB** (0,55) a
+  **≈ 22 MiB** (1,1) por visita, en el móvil de un profesional en la obra.
+- **Decisión:** píldora sin imagen. La miniatura llega cuando el servidor sirva una pequeña. Es un ticket de servidor (S1) que no abro yo
+  (A13): opciones y su coste en «Para ti». El guard lo mantiene: I.1 exige **0 `<img>` y 0 descargas de `/foto`** en la lista.
+
+## Cómo se mide: `npm run guard:lista-gastos` ampliado (navegador, 390 y 1280 px, pulsando con el ratón)
+
+Nuevas secciones **I** (foto en la fila, filtro por trabajo, chips, cabecera del mes, vacío de filtros, «Quitar los filtros» con categoría en
+el servidor del banco) y **J** («Nuevo gasto» fijo a 390, quieto al recorrer 1.194 px de lista, sin tapar la última fila, POR DEBAJO del modal;
+a 1280 arriba y junto al CSV; el atajo «N» sigue siendo de este botón), más H con las dos píldoras de la foto en AA. Población: 8 gastos
+(3 con foto, 5 sin ella; 3 trabajos, uno compartido por dos gastos; 4 sin trabajo) + la ruta de la clave desconocida + la vacía.
+**77 ✅ · 0 🔴**, exit 0, 27 s.
+
+- **Rojo con el código de antes** (`GASTOS_PUBLICO` apuntando a `public/` de `320c7f20`): exit 2, 15 hallazgos + 14 «no supe mirar»,
+  **0 excepciones**. (El primer intento usó una ruta con `/` y el guard no sirvió ni un fichero: lo dijo él mismo, «NO SUPE MIRAR», y no era
+  un rojo; ver «Errores propios».)
+- **Banco de mutación** `docs/master/evidencias/scrum920/mutar-920d.mjs`, con la BASE sin mutar delante (77/0, exit 0), el `git diff
+  --numstat` de cada inyección y el fichero restaurado y comprobado limpio: **18 mutaciones sobre el guard FINAL, las 18 caen**, cada una por el rojo que se esperaba (BASE sin mutar 77/0 delante de cada tanda; `sin restaurar=[]`; salidas en `mutar-920d-final-A.txt` M01-M09 y `-final-B.txt` M10-M18, en dos tandas porque el reloj de la herramienta corta a los 10 min): M01 sin la animación de sólo opacidad (barra a `bottom: 2021`) · M02 «⚠ Sin foto» · M03 una `<img>` con la foto entera por fila · M04 chips que cuentan el mes · M05 el chip vuelve a pedir la lista · M06 suma sin filtros · M07 «Quitar los filtros» sin soltar la categoría · M08 «Sin gastos este mes» con una categoría vacía · M09 barra fija en escritorio · M10 barra por encima del modal · M11 «Sin trabajo» sin el gasto con presupuesto · M12 suma que pierde un gasto · M13 «1 gastos» · M14 ámbar sin AA · M15 chip sin `aria-pressed` · M16 barra que tapa la última fila · M17 dos `#exp-new-btn` · M18 el trabajo repetido en el filtro.
+  **Lo que enseñó el banco** (tres pasadas previas guardadas como `mutar-920d-salida-1/2/3.txt`): (1) **M10 dio un mutante EQUIVALENTE**: subir sólo el `z-index` de la barra no cambia nada, porque con `animation-fill-mode: both` la pantalla es un contexto de apilado permanente y el `z-index` vive dentro, siempre por debajo de un modal del `body`; la mutación honesta quita también la animación (entonces cae, y además rompe el «⋯» de abajo). Consecuencia: el `z-index: 25` de la barra es un cinturón, no lo que la pone bajo el modal. (2) M12 y M13 dieron exit 134 / 0xC0000409 = **el navegador muriendo bajo carga, sin veredicto**: no son «mutante vivo», son instrumento ciego; el banco ahora reintenta y, si sigue, declara CIEGO. (3) M15 salió «viva» por un regex MÍO que no casaba con el mensaje real; el guard sí había caído. (4) Mi `espera(300)` fija daba un rojo intermitente del banco bajo carga (el alta no había abierto aún): ahora esperan a la condición (como texto, por el censo de SCRUM-258). Tras ese último cambio del guard se rehicieron M07, M08 y M10 (las que dependen de esas esperas): **las tres caen** (`mutar-920d-final-C.txt`, BASE 77/0).
+
+## 🟠 Hallazgo para S2 (no lo arreglo yo: es de `styles.css` global)
+
+`#view-container > * { animation: yaqu-fade-in .25s ease both }` termina en `transform: translateY(0)` y `both` lo **mantiene**. Un `transform`
+distinto de `none` convierte a esa pantalla en el bloque contenedor de todo `position: fixed` que lleve dentro. Medido: la barra de «Nuevo gasto»
+se dibujaba a `bottom: 2021` en una pantalla de 844 y se movía con el scroll (`position` decía `fixed`, y era mentira). Hoy nadie lo pisa porque
+los overlays cuelgan de `body`. Aquí se evita con una animación de sólo opacidad **acotada a `.gastos-pantalla`**. Quien haga la próxima barra fija
+en una vista, se lo encuentra.
+
+## Errores propios
+
+- **Mi guard reventaba con una excepción en vez de dar un rojo con nombre** (`Cannot read properties of null (reading 'getBoundingClientRect')`)
+  en cuanto una pieza de la cabecera faltaba: exit 1, sin veredicto. Lo cazó correr el guard contra el `public/` viejo. Es el mismo defecto que
+  ya tuve el 21-sep en el medidor del prototipo. Ahora una pieza que falta es un ✗ con su nombre.
+- **Mi primera comparación contra el `public/` viejo no medía nada:** `GASTOS_PUBLICO` con barras `/` y el servidor del banco compara con
+  `startsWith` sobre rutas de `path.join` (barras `\`): 404 en todos los ficheros, «`renderExpensesView` is not a function». El guard lo declaró
+  («NO SUPE MIRAR», 0 filas) y no lo leí como un rojo de verdad. Con `\`, 15 hallazgos reales.
+- **Esperé que la tecla «N» se pudiera pulsar en el banco.** No se puede: la escucha `app.js`, que este banco no carga. Lo declaro en el guard
+  y compruebo lo que la vista le da a `app.js` (destino registrado, rótulo + `<kbd>N</kbd>, y que el destino abre el alta).
+- La primera barra fija pasó el «es fija» y falló el «pegada al borde»: `getComputedStyle().position` **no basta**; hay que medir dónde está.
+
+## No hecho / declarado
+
+- **Sin recorrido en staging** (no se puede antes de mergear): Gastos a 390 con datos reales, pulsar los chips y «Nuevo gasto».
+- **La foto real no está medida** (arriba). **Miniatura: no.** Necesita servidor.
+- **El CSV no lleva el filtro de trabajo ni el de foto**, sólo mes y categoría (los que filtra el servidor). El botón dice «Exportar gastos
+  filtrados a CSV» (texto de hoy): con un trabajo elegido exporta más de lo que se ve. **Decisión de producto abierta**, no la tomo yo.
+- **Desviaciones del prototipo, declaradas:** (1) las dos píldoras de la fila van UNA debajo de la otra en la columna de 150 px de escritorio
+  (el prototipo dejaba 290 px, pero no tenía la barra lateral de 248 px del panel real: con 290 px la columna del concepto se queda sin sitio
+  entre 900 y 1100 px); en los tres renglones van en fila. (2) Los chips cuentan lo que filtran (arriba).
+- 920e (detalle), 920f (alta; bloqueada) y el IVA 0·2·4·5·10·21 (Jira 16175) **no están en este PR**: el desplegable de IVA está en el modal de
+  alta, que es de 920f.
+- `medir-hoy.mjs`/`sonda-peso-lista-gastos.mjs` del prototipo siguen como estaban: la primera midió el mecanismo con fotos inventadas; la de
+  este PR mide fotos guardadas.
+
+## Suite
+
+`npm run build` **exit 0** (tras `prisma generate`: el cliente compartido de este worktree estaba desfasado y `tsc` daba errores de `revision`/`tags` que NO son de este PR: 0 cambios en `src/`). **87 ficheros de test** (los que leen `expensesView.js`/`styles.css`/el guard, más los censos y trinquetes que barren `tests/`): **866 tests, 864 pasan, 0 fallan, 2 saltados** (`SCRUM-324` × 2, sin `LIBRO_PG_URL`: banco desechable, ajeno). En el camino cayeron **3 guards de entrada, todos por mi código y arreglados en el CÓDIGO, no en el guard**: `SCRUM-666b` (`.gastos-chip-n` se pintaba sin regla → regla de cifras tabulares), `SCRUM-258` (mis esperas del guard usaban `document` dentro de una flecha → ahora expresiones de texto) y `SCRUM-267` (mi ancla de «Medido contra» llevaba texto dentro de las comillas del sha). **La suite COMPLETA no la he corrido** (sin turno, cinco sesiones más en la máquina): el CI es la puerta.
