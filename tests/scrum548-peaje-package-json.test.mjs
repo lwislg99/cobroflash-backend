@@ -125,11 +125,23 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // abierto, qué se puede pulsar para avanzar) y éste lo que hay DENTRO de Conceptos (cuántas
   // líneas, qué ficha se ve, qué ofrece el menú ⋯, dónde va el desglose del dinero). Juntarlos daría
   // un guard que al caer no dice si se rompió el recorrido o el contenido del paso.
+  // SCRUM-915i · el editor pasa a SEIS y `#invoices-new` a DOS: entra `guard:cabecera-del-editor`,
+  // que abre las dos páginas del mismo editor (presupuesto y documento suelto). No se fusiona con
+  // ninguno: los cinco miran lo que hay DENTRO de los pasos o del documento, y éste mira la CABECERA
+  // (título, el «⋯» de arriba) y lo que pasa al vaciar y recargar — el borrador. Con
+  // `guard:pasos-del-editor` comparte `#invoices-new` y nada más: aquél recorre los pasos del suelto,
+  // éste sólo lee su cabecera y su menú.
+  // ⚠️ Y `2×about:blank` NO ES UN SOLAPE: es la página en blanco por la que 915h y 915i pasan ANTES
+  // de cada `goto` (trampa medida en 915h: `goto` a otro hash de la misma página no recarga y un
+  // modal abierto se queda delante). Ninguno de los dos mide nada en ella; el censo la cuenta
+  // porque lee los `goto`. Se declara aquí para que no se lea como dos guards mirando lo mismo.
   assert.deepEqual(resumen, [
+    '2×/dashboard/index.html#invoices-new',
     '2×/dashboard/index.html#quotes-detail/1',
     '2×/medicion.html',
-    '5×/dashboard/index.html#quotes-new',
+    '2×about:blank',
     '5×/index.html',
+    '6×/dashboard/index.html#quotes-new',
   ],
     '🔴 HA CAMBIADO QUIÉN MIDE QUÉ PÁGINA.\n'
     + '  No es un defecto por sí solo —dos guards pueden mirar cosas distintas de la misma\n'

@@ -683,3 +683,115 @@ SOBRA en la rama: +1   BUTTON.quote-line__ajustes.is-de-siempre  ← el MISMO no
 - El documento suelto con la ficha oculta: no se ha medido porque no cambia (la ficha se queda).
 - La suite completa: no corrida (norma de la tanda); la corre el PR.
 - Staging: sin recorrer todavía.
+
+## SCRUM-915i · la cabecera y el menú «⋯» de arriba
+
+**Fecha:** 21-sep-2026 08:09:27 GMT · **Carril:** S2 (frontend) · **Corte:** 4.º de la partición aprobada
+**Medido contra:** `origin/main` = `6b0d92e425157ff3a8c1512bccd224f7e000e03d` (mergeado en la rama a través de 915h)
+**Rama:** `scrum-915i-cabecera`, sobre `scrum-915h-conceptos-limpios` (#1562), porque tocan el mismo fichero
+**Instrumento:** `scripts/guard-915i-cabecera.mjs` (`npm run guard:cabecera-del-editor`)
+**Microcopy:** `docs/microcopy/2026-09-21-SCRUM-915-cabecera-del-editor.md` (comentario 15868)
+
+### Qué entra (las cuatro filas del PASO 0, «A · Cabecera» y «H · Acciones»)
+
+| fila | antes | ahora |
+|---|---|---|
+| título | «Crear presupuesto» | **«Nuevo presupuesto»**, el rótulo que la app ya pone a esta ruta (`L.quoteNew`). El suelto sigue con `tituloModal()` |
+| subtítulo | «Genera un presupuesto con varias líneas…» | **se retira**: cada paso lleva su frase guía desde 915d |
+| «Limpiar formulario» | suelto en el último paso, **sin confirmar** | en el «⋯» de arriba («Más acciones»), y **pide confirmación**: «¿Vaciar este documento?» · la frase firmada · «No, seguir» / «Limpiar formulario» |
+| «💾 Guardar como plantilla» | suelto en el último paso | en el mismo «⋯», delante de limpiar |
+
+La sonda del PASO 0 (`scripts/sonda-915-inventario-v3.mjs`) sobre la rama: las cuatro filas **✅ ya
+está**, y el recuento pasa a **28 ya · 3 parcial · 8 falta · 9 no medible = 48 de 48**. (La sonda
+reescribe `paso0-medido.json` al correr; ese fichero es la foto del PASO 0 y se devolvió a HEAD.)
+
+**La decisión que no es cosmética: vaciar vuelve a PINTAR la pantalla entera.** El reset viejo
+devolvía cinco campos a mano (cliente, dirección, IVA por defecto, condición de pago, líneas) y se
+dejaba el IVA del presupuesto, la validez, las formas de pago, los datos del cliente, «incluir
+descripción» y el descuento global — lo dice el inventario de hoy. La hoja firmada promete «Se
+quitan el cliente, las líneas y los cambios de este documento»: con el reset viejo detrás, habría
+mentido. `vaciarDocumento()` cancela el autoguardado pendiente, borra el borrador y llama a
+`renderQuotesView(container, null, esDocumentoSuelto)`, que es abrir la pantalla nueva. Las
+plantillas (del servidor) y las opciones de siempre (se vuelven a leer al pintar) se quedan, como
+dice la segunda frase. El foco de la hoja va a «No, seguir»: un acto irreversible no es nunca la
+acción principal.
+
+### El rojo, y los mutantes
+
+`guard:cabecera-del-editor` con el `public/` de 915h (`a25c1595`) encima de la rama, devuelto con
+`git restore --source=HEAD` y `git status --porcelain` vacío: **6 hallazgos en 4 de 4 casos** (el
+título, el subtítulo, sin «⋯» arriba, y B, C y D sin poder llegar a limpiar). **Verde con la rama: 4/4.**
+
+Como con el público viejo B y C se paran al no encontrar el «⋯», lo que vacía se probó por mutación,
+con el guard comiteado antes (`a7fa735a`) y cada mutante devuelto a HEAD:
+
+| mutante en `vaciarDocumento` | resultado |
+|---|---|
+| M1 · el reset viejo, campo a campo | **cae**: «tras vaciar el descuento global sigue en 25» |
+| M3 · sin `clearDraft()` | **cae**: 5 hallazgos (cliente, línea y descuento siguen; el borrador vuelve al recargar) |
+| M2 · sin `clearTimeout(draftSaveTimer)` | **SOBREVIVE**, 2 de 2 pasadas, también vaciando sin una sola espera tras la última tecla |
+
+M2 va declarado en la cabecera del propio guard. Causa **no demostrada**; hipótesis: la pantalla
+nueva escribe su propio borrador después del temporizador viejo y lo pisa. El `clearTimeout` se
+queda porque no depende de esa suerte, pero **no se afirma que haya una red que lo sujete**.
+
+### Censos y guards que cambian, cada uno con su motivo en el propio fichero
+
+| fichero | qué exigía | por qué cambia |
+|---|---|---|
+| `scrum139-cuadernillo` | `dibujarCuadernillo()` ≥ 3 veces (el reset lo llamaba) | **re-anclado** (procedimiento de 915d con 660, decidido por el orquestador): ≥ 2, y que `vaciarDocumento` pase por `renderQuotesView` |
+| `_censo-dos-fronts` (E7) | `actionsRow.appendChild(saveTemplateBtn)` | la capacidad es la misma y cambia de DIRECCIÓN: el botón va en la lista del `overflowMenu` y el menú cuelga de `headingRow` |
+| `scrum600` (ranuras) | 30 posiciones, 28 textos | **29 / 27**: «Crear presupuesto» → «Nuevo presupuesto» y sale el subtítulo. Ningún texto nuevo |
+| `scrum600b` · `scrum600g` | «Guardar como plantilla» en el contenedor | se lee **con el menú abierto**, pulsando el «⋯» como el profesional |
+| `scrum601` | «Solo presupuesto…» en `quotesView.js:889` | **890**, medido con el propio censo. La trampa del ancla por número, otra vez |
+| `scrum697` · `scrum698` | 245 nodos | **244**, por IDENTIDAD, abajo |
+| `scrum548` | 5× `#quotes-new` | 6× `#quotes-new`, 2× `#invoices-new`, y **`2×about:blank` declarado: no es un solape** (es la recarga por la que 915h y 915i pasan antes de cada `goto`) |
+| `scrum522` · `_guards-de-navegador-declarados` | — | el guard se apunta en su propia línea (SCRUM-970) y deja su comentario |
+
+**Los −1 nodos, por identidad** (firmas etiqueta + clase + texto propio, banco `_banco-vistas.mjs`):
+
+```
+POBLACIÓN  915h = 245   915i = 244
+FALTA en 915i:  P.quotes-desc (el subtítulo)
+                BUTTON.btn btn-secondary «Limpiar formulario»      ← al menú: fuera del árbol hasta abrirlo
+                BUTTON.btn-ghost btn-sm quote-header-btn (plantilla) ← ídem
+SOBRA en 915i:  DIV.quotes-header-row
+                BUTTON.overflow-trigger btn-ghost btn-sm «⋯»
+                (H2.quotes-title es el MISMO nodo: «Crear presupuesto» → «Nuevo presupuesto»)
+```
+
+### Medido
+
+- `npm run build` 0. Los 70 ficheros de `tests/` que leen `quotesView`, `renderQuotesView`,
+  `renderDocumentoSueltoView`, «Limpiar formulario» u `overflowMenu`: la primera pasada dio 685 tests,
+  **13 rojos** (los contratos de arriba); tras re-anclarlos, los 7 ficheros afectados 68/68.
+- Guards de navegador del editor, todos 0: `cabecera-del-editor` (4 casos), `pasos-del-editor`,
+  `documento-vivo`, `conceptos-limpios`, `descuento-redibuja`, `rotulos-de-la-linea`,
+  `duplicar-conserva`, `marcadores-en-pantalla`, `un-solo-presupuesto` y `objetivo-tactil`.
+
+### Errores propios
+
+1. **El «⋯» de arriba nació CORTO** (30,7 px, la clase `.btn-sm` que arrastran los de cada línea).
+   Lo cazó `guard:objetivo-tactil` en el documento suelto; el mío no mide áreas. Arreglado en el
+   código (44 px mínimo en la fila del título), sin tocar el guard ni añadir excepción.
+2. **Mi primer caso C no ejercitaba la carrera que decía vigilar.** Esperaba entre la última tecla y
+   el vaciado, el temporizador ya había saltado, y M2 sobrevivía por eso. Lo cambié a un vaciado sin
+   esperas… y M2 sigue vivo por otra causa. Queda declarado en vez de darlo por cubierto.
+3. **El rojo de #1562 (915h) era mío**: un «5 casos» en un comentario de `scrum522`, en una línea sin
+   fecha, y el censo de SCRUM-737 pasó de 81 a 82. Reproducido en local antes de arreglarlo
+   (`a2c53547`: la cifra va en la línea de su fecha).
+4. **Corrí la sonda del PASO 0 sin mirar que escribe**: reescribió `paso0-medido.json`. Lo vi en
+   `git status` y lo devolví a HEAD antes de comitear.
+5. **El guard nombraba la clase del pie de los modales en un selector**, y el censo de SCRUM-350
+   exige mirar a todo fichero que la nombre: rojo en `scrum350`. Ahora lee los botones de la hoja por
+   su propia clase y sin los de la cabecera; al cambiarlo salió un tercer botón, la ayuda «?» de
+   `cabeceraModal`, que tampoco es del pie. Repetidos el rojo contra 915h (6 hallazgos) y M1 (cae).
+   `scrum939b` también sale rojo aquí, y sale igual sobre 915h sin mi rama: no es de este corte.
+
+### Lo que NO cubre
+
+- «Línea N» como título del menú de cada línea: firmado, **no construido** (toca `overflowMenu`, el
+  menú de todas las pantallas). Pendiente de que el orquestador lo meta en un corte.
+- `merchantInfo` («datos de empresa» en la izquierda): no es de este corte.
+- La suite completa: no corrida (norma de la tanda); la corre el PR.
+- Staging: sin recorrer.

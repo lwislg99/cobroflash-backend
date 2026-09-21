@@ -374,7 +374,11 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // `strong` cada una), que se van al documento de la derecha. Lo único que SOBRA en la rama es la
   // ficha de la línea que queda con la clase `is-de-siempre`: el MISMO nodo con otra clase, no uno
   // nuevo. No falta nada más, así que el delta no esconde una resta compensada.
-  for (const [vista, nodos] of [['renderQuotesView', 245], ['renderProductsView', 166],
+  // 🔴 SCRUM-915i · 21-sep-2026 · `renderQuotesView` 245 → 244, y las otras tres intactas. Por
+  // identidad (firmas de los dos árboles): faltan el subtítulo `p.quotes-desc` y los dos botones que
+  // se van al menú «⋯» de arriba («Limpiar formulario», «💾 Guardar como plantilla»), y sobran
+  // `div.quotes-header-row` y el `button.overflow-trigger` «⋯». El título es el mismo `h2`.
+  for (const [vista, nodos] of [['renderQuotesView', 244], ['renderProductsView', 166],
     ['renderCustomersView', 69], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -433,7 +437,9 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // bloque `.quote-totals` fuera del editor, identificados por identidad en el bloque de arriba. Lo
   // que este control vigila —que los DOS montajes den el mismo número— sigue intacto: ni el número
   // de líneas al abrir ni el bloque de totales dependen de los datos. Los dos dan 245.
-  assert.equal(todos(desnuda.contenedor).length, 245,
+  // SCRUM-915i (21-sep-2026): la DECIMOQUINTA, −1 — la cabecera (sin subtítulo, con su fila y su
+  // «⋯»), identificada por identidad en el bloque de arriba. Tampoco depende de los datos: 244.
+  assert.equal(todos(desnuda.contenedor).length, 244,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

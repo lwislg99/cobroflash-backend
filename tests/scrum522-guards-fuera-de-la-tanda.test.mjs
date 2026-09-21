@@ -217,6 +217,10 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // ⋯ de la línea, la hoja de ajustes, qué ficha se ve y qué no, y la tecla N; nada de eso existe
   // fuera del render. Comprobado en rojo con el `public/` de main, con el control de la N (en #home
   // SÍ abre) medido primero y en página limpia (21-sep-2026): 8 hallazgos en 5 de 5 casos.
+  // SCRUM-915i · entra `guard:cabecera-del-editor`. Mira el menú «⋯» de arriba, la hoja de
+  // confirmación de «Limpiar formulario» y el borrador tras recargar: el menú y la hoja sólo existen
+  // al pulsar, y el borrador en el `localStorage` de un navegador. Comprobado en rojo con el
+  // `public/` de 915h (21-sep-2026): 6 hallazgos en 4 de 4 casos.
   // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
   // ⚠️ NOVENA colisión (20-sep-2026, al mergear main en la rama del #1541): otra vez los DOS
   // comentarios en conflicto y la CIFRA no —917e decía 31 y main ya decía 31 por otro camino—,
