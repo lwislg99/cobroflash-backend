@@ -278,7 +278,13 @@ const PENDIENTES_DE_FIRMA = [
   // byte a byte el mismo y el motivo sigue siendo el suyo.
   // SCRUM-915i · y de 889 a 890: la cabecera pierde el subtítulo y gana la fila del título. Medido
   // con el propio censo sobre el árbol resultante (el rojo decía `quotesView.js:890`), no contado.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 890, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-915g · y de 890 a 911: la fila «Ajustes del documento» del justificante se escribe 21 líneas
+  // más arriba. CORREGIR un anclaje no es añadirlo (regla de `scrum710b`): el texto es byte a byte el
+  // mismo y el motivo sigue siendo el suyo. Cifra medida con el propio censo sobre el árbol resultante
+  // (21-sep-2026; el rojo decía `quotesView.js:911`), no contada del diff. Y el censo NO marca como
+  // «a pelo» ninguno de los rótulos que entran con 915g («Ajustes del documento», «IVA por defecto»):
+  // ninguno nombra el documento que se emite.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 911, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];

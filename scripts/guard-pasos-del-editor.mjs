@@ -36,7 +36,9 @@
 //   ⛔ I · NEGATIVO · sin scroll lateral.
 //
 // Documento suelto (justificante, 1280 px): TRES pasos —Cliente · Conceptos · Revisar y emitir—,
-// sin Condiciones, y el IVA por defecto sigue en Conceptos (hasta 915g).
+// sin Condiciones, y el IVA por defecto YA NO está en Conceptos (SCRUM-915g): vive en la fila «Ajustes
+// del documento» del último paso, cerrada por defecto. Lo que esa fila hace al pulsarla lo mide
+// `guard:ajustes-del-justificante`; aquí sólo se juzga el ANDAMIO: Conceptos no lo enseña.
 //
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 // Si el editor no se pinta o la lista de clientes no llega al selector, sale con 2 (NO SUPE MEDIR),
@@ -378,7 +380,9 @@ async function casoSuelto(navegador, ancho) {
     await espera(300);
     m = await pag.evaluate(MEDIR, INVENTARIO_SUELTO);
     if (!m.visibles.concepto) mal.push('el justificante no abre Conceptos con «Continuar»');
-    if (!m.visibles.ivaDefecto) mal.push('en el justificante el IVA por defecto tiene que seguir en Conceptos (hasta 915g)');
+    // SCRUM-915g · invertido: hasta 915g el IVA por defecto tenía que verse aquí; ahora tiene que
+    // haberse ido a «Ajustes del documento», en «Revisar y emitir» (medido por su propio guard).
+    if (m.visibles.ivaDefecto) mal.push('en el justificante el IVA por defecto SE VE en Conceptos; desde 915g vive en «Ajustes del documento», en Revisar y emitir');
     if (m.desbordaLado) mal.push('I · hay scroll lateral');
     if (errores.length) mal.push(`errores de página: ${errores.join(' | ')}`);
   } finally {
