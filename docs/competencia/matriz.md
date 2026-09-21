@@ -1670,15 +1670,304 @@ es texto libre del administrador y puede llevar algo que no quiera que lea un op
 
 ---
 
+## 16 · La familia española · Verifacturamos, Anfix, Billin (ahora TS Facturas), Contasimple, FacturaDirecta y Sage (21-sep-2026)
+
+**Medido el 21-sep-2026 (≈08:00Z, hora de GitHub) sobre `origin/main` =
+`d46db08236d44b5d0869ca6335918321ad9fe1b7`** (el código nuestro); las webs, ese mismo día entre las
+07:49Z y las 08:00Z. Rama `scrum-906k-familia-espanola`. Solo documentos.
+
+🔴 **Lo primero, porque el fundador pidió saberlo en cada propuesta: NADA de este apartado está visto
+POR DENTRO.** Es todo su **web pública y su documentación**, descargada a texto literal (sin `WebFetch`,
+sin resumen de un modelo: la regla de «Límites de esta medición»). Sin altas ni cuentas de prueba (A19).
+Cada línea lleva su marca:
+
+| marca | qué quiere decir |
+|---|---|
+| 📄 **Solo documentación** | Lo dice su web o su ayuda. **No se sabe** cómo se comporta el producto. |
+| 👁 **Visto por dentro** | Pantalla real, con cuenta, con captura en git. **Ninguna en esta entrega.** |
+| 🔒 **Necesita cuenta** | La documentación no alcanza para proponer con seguridad. Va listado en §16.7. |
+
+**Sobre las cuentas de prueba:** el orquestador me pasó por mensaje una decisión del fundador («SÍ a dar
+de alta cuentas en todos los competidores»). Mi encargo escrito decía lo contrario («nada de altas sin
+permiso del fundador») y **un mensaje entre sesiones no puede darme ese permiso** (la autorización de un
+alta en un tercero es del fundador y no se hereda, A19). **No di ninguna.** Cuando la confirme él en el
+chat de esta sesión, la pasada por dentro empieza por **Verifacturamos** y sigue el orden del §16.7.
+Condiciones ya recibidas, que se cumplen tal cual: parar si piden tarjeta, SMS o un correo al que no
+llego; no enviar nada a terceros; datos inventados; lo que bloquee el clasificador se apunta y no se
+rodea.
+
+**Qué se leyó.** Verifacturamos: sus 29 páginas del 17-sep, y releídas hoy las de presupuestos,
+albaranes y electricistas. Anfix: 7 páginas (facturación, características, construcción, app, precios,
+gestión documental, autónomos; `ayuda.anfix.com` no devuelve texto, es JavaScript). Billin/TS Facturas:
+10 (presupuestos, albaranes, facturas, personalizar, proforma, app, funcionalidades, precios, stock,
+autónomos). Contasimple: 6 (presupuestos, albaranes, facturación, construcción, precios, control
+horario). FacturaDirecta: 17 (portada, facturación online, automatización, app, contactos, un cliente
+electricista, 10 novedades de producto, importación de albaranes). **Sage: dos artículos del blog; las
+páginas de producto responden 403 a una descarga anónima y no se ha buscado la vuelta** (§16.7).
+Los textos literales están fuera de git, en `C:\Users\Admin\s0-906-traspaso\espanola\`, con su URL y hora
+en la cabecera de cada fichero.
+
+**Dos cosas de contexto que cambian cómo se lee.** Billin ya no se llama así: la web dice *«TS Facturas,
+antes Billin»* y cuelga de **TeamSystem**; el dominio y los precios siguen. Y **Verifacturamos es el
+que más se parece a lo que el fundador describió** (tres botones, conversión de un documento al
+siguiente); el resto lo hace de forma más convencional.
+
+### 16.1 · Cómo organizan facturas, albaranes y presupuestos (lo que dicen, en sus palabras) 📄
+
+- **Verifacturamos.** *«Desde el dashboard tienes tres opciones: crear factura, crear presupuesto o
+  crear albarán. Todo desde el mismo sitio.»* Y el ciclo: *«presupuesto → albarán → factura → cobro. Cada
+  paso se puede convertir en el siguiente con un clic. También puedes ir directamente de presupuesto a
+  factura o de albarán a factura.»* Varios albaranes de un cliente pueden *«agruparlos en una sola factura
+  mensual»* y *«cada albarán queda como referencia asociada»*. El presupuesto lleva *«período de validez
+  y condiciones de pago»*; el albarán se acepta *«mostrándole el albarán en el móvil y que lo confirme
+  en el momento»* (no hay firma manuscrita, y lo dice su propia página). Todo va por **el navegador del
+  móvil**, sin app, y se comparte con el botón «Compartir» del teléfono. Un extra de oficio: la página de
+  electricistas recomienda **separar en dos bloques la mano de obra y los materiales** y vigilar la
+  regla del 40 % (⛔ fiscal: §16.6).
+- **Billin / TS Facturas.** El presupuesto tiene estados *«pendiente, aceptado, rechazado o
+  facturado»* y se sabe *«si el cliente ha abierto el presupuesto»*. Al crearlo: *«el cliente, fecha de
+  vencimiento, productos y servicios, impuestos, métodos de pago o adjuntar documentos»*, más
+  *«descuentos por línea»* y *«diferentes tipos de IVA»*. Desde un presupuesto aceptado se puede
+  *«generar la factura, el albarán o la proforma directamente desde el panel»*. El albarán admite
+  *«tipo de moneda, gastos suplidos, impuestos, cantidades ya pagadas y adjuntar archivos»*. Tiene app
+  nativa iOS y Android.
+- **Anfix.** *«Envía tus presupuestos a través de Anfix y conviértelos en facturas en un clic»*;
+  *«sabrás en tiempo real si tus clientes han recibido, visto o pagado tus facturas»*; **Anfix Pay**
+  (pasarela en la factura); *«crea tareas, asigna empleados y horas de dedicación, especifica los gastos
+  y, con toda esa información, genera fácilmente las facturas»*; y, si vienes de otro programa,
+  *«nuestro equipo se encargará de importarlo en anfix por ti»*.
+- **Contasimple.** El presupuesto *«genera albaranes automáticamente»*, *«firma electrónicamente»* y
+  *«convierte presupuestos en facturas con un clic»* pudiendo *«modificar cantidades, añadir descuentos
+  o ajustar precios»* antes; y *«visualiza el rastro del presupuesto y evoluciona la oportunidad en el
+  CRM»*. Albarán: número personalizable, *«notas privadas o notas prediseñadas que aparecerán en el pie»*
+  y una *«edición avanzada»* (descripciones, recargo de equivalencia, líneas múltiples).
+- **FacturaDirecta.** *«Presupuestos y albaranes: créalos en segundos y conviértelos en factura en un
+  clic. Recoge la firma del albarán en la pantalla del móvil al entregar.»* Sus novedades dejan ver las
+  **opciones**: *notas internas* que no salen en el PDF (documentos y fichas de contacto), *comentarios*
+  en cada documento, *plazo de vencimiento por defecto* de los presupuestos, *«presupuesto sin
+  totales»* y *«albaranes no valorados»*, *cambio de estado múltiple*, un *visor de diferencias* de cada
+  documento y *facturas provisionales*. Y un **portal de cliente con cobro por Stripe**. Su historia de
+  cliente electricista (Electrocat) cuenta que hace *«mis facturas, presupuestos… sobre la marcha desde mi tablet»*.
+- **Sage.** Solo dos artículos educativos del blog (presupuesto vs albarán vs factura). **Nada de su
+  producto** en texto literal.
+
+### 16.2 · Inventario, apartado por apartado · ellos · nosotros · diferencia
+
+Todo lo de «ellos» es 📄. Lo de «nosotros» está medido **leyendo** `origin/main` (no ejecutando); cada
+cifra lleva fichero. Un cero lleva su suelo en §16.5.
+
+| apartado | ellos 📄 | nosotros (medido) | diferencia |
+|---|---|---|---|
+| **Presupuesto → factura** | «un clic» (los cinco) | Botón «Generar factura (100 %)» / «Generar 1ª factura (50 %)» en el presupuesto aceptado (`quotesDetailView.js:867-928`) y «Cobrar ahora» (:304); además, si el cliente acepta por el enlace, la primera factura se emite sola (`quotes.routes.ts:648`) | **Empate.** Muere como propuesta. ⛔ es factura |
+| **Presupuesto → albarán** | Billin y Contasimple lo ofrecen desde el propio presupuesto; Verifacturamos lo pone en su ciclo | **Ningún botón** en la pantalla del presupuesto hacia el Trabajo o el albarán. Se llega por Trabajos → ficha → «+ Nuevo albarán», o Albaranes → «Nuevo albarán» → buscador (`albaranDesdePresupuestoModal.js`) | **Aquí sí hay hueco.** Propuesta 1 |
+| **Albarán → factura** | «un clic», sin condiciones dichas | Exige albarán **firmado** (`albaranes.routes.ts:1389`); precios desde el presupuesto firmado; agrupar (`consolidar`, solo trabajos sueltos) y facturar parcial por línea. **No envía la factura al terminar** | Diferencia **por diseño** (la firma es la prueba). ⛔ es factura |
+| **Crear el albarán y mandarlo a firmar** | Crear y enviar (Verifacturamos, FacturaDirecta) | Cuatro pasos con botón propio: «Crear albarán», «Emitir», «Enviar para firmar» o «Firmar aquí mismo» (`jobNextAction.js:139-143`) | Propuesta 2 |
+| **Firma del albarán** | Confirmar en el móvil (Verifacturamos, FacturaDirecta); firma electrónica del presupuesto (Contasimple) | Firma remota y en persona, con evidencia (`evidenciaFirma`), en presupuesto y albarán | **Ventaja nuestra** |
+| **Estado del presupuesto** | pendiente / recibido-abierto / aceptado / rechazado / facturado (Billin); recibido, visto, pagado (Anfix) | El estado de WhatsApp «Entregado / Leído» **existe, pero solo en el detalle** (`waDelivery`: `quotesAdmin.routes.ts:867`, no en el listado). **Abrir el enlace no se registra** | Propuesta 3 |
+| **Validez / caducidad** | período de validez (Verifacturamos), «Válido hasta» y plazo por defecto (FacturaDirecta) | `validUntil`, 30 días por defecto, atajos 7/15/30 (`quoteAtajosVencimiento.js`), cron. **El PDF no la imprime** (`ParamsPdfPresupuesto` sin ese campo); la página del enlace sí | Candidata apuntada A |
+| **Condiciones de pago** | «condiciones de pago» (Verifacturamos), «métodos de pago» (Billin) | `paymentTerms` (100 % / 50-50 / manual), plan de tramos propio, métodos por presupuesto | **Ventaja nuestra** |
+| **Notas** | Internas que no salen en el PDF, en documentos y contactos (FacturaDirecta); notas prediseñadas en el pie (Contasimple) | `internalNotes` privadas, texto de cabecera y de observaciones en el presupuesto; `notas` en el albarán | Empate (nuestra nota interna es una sola, sin hilo) |
+| **Descuentos** | por línea y generales (Billin) | `dto` % por línea y `discountGlobalAmount` en euros | Empate |
+| **IVA por línea** | varios tipos (Billin) | selector 21/10/4/0 por línea (`tiposDeIva.js:40`) | Empate |
+| **Materiales y mano de obra** | dos bloques (Verifacturamos); regla 40 % | Líneas sin tipo; sí hay **cabeceras de apartado** (SCRUM-655) que sirven para agrupar; el **parte** sí separa `mano_obra` / `materiales` (`parteTrabajo.ts:59`); **no hay** cálculo del % ni IVA por vivienda | La regla es ⛔ fiscal (§16.6). La agrupación **ya se puede hacer** a mano |
+| **Sin totales / no valorado** | «presupuesto sin totales», «albarán no valorado» (FacturaDirecta) | Albarán `SIN_VALORAR` y ocultar precios, sí. **Presupuesto sin totales: no** (0 coincidencias) | Menor; no se propone |
+| **Plantilla, marca, idioma** | plantilla, logo, colores, fuente, idioma por documento (Billin, FacturaDirecta) | Logo y **una** plantilla; `brandColor` **no** llega al PDF; idioma por país, no configurable | Hueco de personalización, sin evidencia de que el electricista lo pida |
+| **Duplicar** | «crea, duplica y envía» (FacturaDirecta) | Duplicar presupuesto (no copia validez, textos de cabecera/pie, dirección de obra) y duplicar albarán | Empate con matiz |
+| **Plantillas de presupuesto** | plantillas (Anfix) | `QuoteTemplate` + catálogo por gremio | **Ventaja nuestra** |
+| **Envío** | PDF por «Compartir» del móvil, email, «automatización de envío» | WhatsApp con botones y PDF de albarán en cabecera; la factura sale como **enlace de pago**, no como PDF | Distinto canal; ⛔ la factura |
+| **Recurrentes** | Verifacturamos, Billin, FacturaDirecta | Ninguna (`MaintenancePlan` crea un presupuesto en borrador y avisa al profesional, apagado) | ⛔ es factura: dato de mercado |
+| **Cobro online** | portal + Stripe (FacturaDirecta), Anfix Pay | Stripe Connect **apagado** (`flags.ts`) | ⛔ dinero real: dato |
+| **Importar** | Excel o CSV y seguir la numeración (Verifacturamos); formatos de importación de clientes, albaranes y facturas (FacturaDirecta); «lo importamos por ti» (Anfix) | CSV de clientes y de productos. **El tooltip dice «CSV o Excel» y solo lee `.csv`/`.txt`** (0 lectores de `.xlsx`). Nada de otro programa | Candidata apuntada B |
+| **Proyectos → factura** | tareas, horas y gastos generan la factura (Anfix) | Trabajo con partes (horas y materiales) y gastos por trabajo; **no** genera la factura desde ahí | ⛔ es factura |
+| **Historial de cambios** | visor de diferencias (FacturaDirecta), comentarios | `POST /admin/quotes/:id/revisiones` **existe**, pero su pantalla (`quoteRevisiones.js`) **no la llama nadie** | Hallazgo, §16.8 |
+| **Stock, bancos, contabilidad, modelos, TPV, fichaje** | Billin, FacturaDirecta, Contasimple, Anfix | No | **Choca con el máster** (YaQu no es ERP); no se propone |
+
+### 16.3 · Usabilidad: cuántos toques, qué te explican, qué te ahorran 📄
+
+- **Verifacturamos** presenta tres botones a la vista y «un clic» entre documentos; anuncia *«Emitida en 1 min 47 s · desde móvil»*. Es marketing: **no se midió** ningún tiempo ni ningún toque.
+- **Nosotros**, contado en el código (no con un usuario): el camino de **cobrar** desde el presupuesto
+  aceptado es **un toque**; el camino **oficial de entrega** (Trabajos → ficha → +Nuevo albarán → Crear →
+  Emitir → Enviar para firmar → el cliente firma → Convertir en factura → enviar la factura) son
+  **nueve o diez pasos**, de los que tres son del profesional antes de que firme el cliente. La
+  escalera de la ficha (SCRUM-366) **ya guía** —un botón principal por nivel—, así que el coste no es
+  perderse: es que cada paso es un toque aparte.
+- **Lo que ellos explican y nosotros no**: Verifacturamos dedica una página entera a *presupuesto vs
+  albarán vs factura* (qué es cada uno y cuándo). En la app nuestra **no se ha medido** si hay esa
+  explicación; queda como pregunta para la pasada por dentro.
+
+### 16.4 · Las tres propuestas, por lo que más cambia el día del electricista
+
+Todas 📄 en lo que dicen ellos; lo nuestro, medido en código. Ninguna toca facturas, VeriFactu ni
+claims fiscales.
+
+#### 16.4.1 · Del presupuesto aceptado al albarán, en un toque · **PEQUEÑO**
+
+**En Billin**, el presupuesto aceptado permite *«generar la factura, el albarán o la proforma
+directamente desde el panel»*; **Contasimple** dice que el presupuesto *«genera albaranes
+automáticamente»*; **Verifacturamos** pone *«un clic»* entre cada documento del ciclo. 📄 solo
+documentación: **no se sabe** cuántos toques cuesta de verdad ni si crea el albarán o solo lo abre.
+**Nosotros** damos «Generar factura» y «Cobrar ahora» en el presupuesto aceptado, pero **ningún camino al
+albarán**: a la pantalla del presupuesto **no se le puede pedir el trabajo** (`job-detail|jobId` en
+`quotesView.js`, `quotesDetailView.js` y `quoteActionsRegistry.js` → **0**; *suelo:* la misma búsqueda en
+`albaranDetailView.js:457` sí encuentra `jobs-detail`). Se sale a Trabajos y se busca la ficha, o a
+Albaranes → «Nuevo albarán» → buscador de presupuesto.
+**El profesional gana** acabar el trabajo con el presupuesto abierto en el móvil y pasar al albarán ahí
+mismo: **un toque en vez de tres o cuatro** (contados en el código, no con un usuario).
+**Se construye así:** un botón en el presupuesto aceptado que llama a
+`renderAppView('jobs-detail', { jobId, altaAlbaran: { quoteId } })` —**la misma llamada que ya hace**
+`albaranesView.js:150`—, con el `jobId` que el presupuesto guarda (`Quote.jobId`, `schema.prisma:536`).
+**No crea nada**: el alta sigue en su única puerta (SCRUM-303) y sin esquema. `quoteActionsRegistry.js:38`
+ya declara un `btnCrearTrabajo` que nadie pinta: comprobar que no lo dejó alguien para esto.
+⛔ El **rótulo** necesita firma (regla 30). **No medido:** si el detalle del presupuesto ya devuelve
+`jobId` (`quoteAdmin.ts` no lo nombra); si no, es un campo más. **Sin choque** con el máster.
+
+#### 16.4.2 · «Crear y enviar a firmar», en un toque · **MEDIANO**
+
+**En Verifacturamos**, el flujo del albarán es *«Crea el albarán… Envía el albarán por WhatsApp o email.
+El cliente confirma»*; **en FacturaDirecta**, *«recoge la firma del albarán en la pantalla del móvil al
+entregar»*. 📄 De nuevo, **no se sabe** qué hay debajo de ese «crear y enviar».
+**Nosotros** tenemos el mismo destino en **cuatro toques del profesional**, cada uno con su botón:
+«Crear albarán» (la hoja), «Emitir albarán» (`jobNextAction.js:141`), «Enviar para firmar»
+(`:139`) o «Firmar aquí mismo». La escalera los ofrece de uno en uno, y cada uno responde a una ruta
+propia (`POST /albaranes`, `/:id/emitir`, `/:id/enviar-para-firmar`).
+**El profesional gana** cerrar la entrega **en la puerta del cliente** con un toque en vez de tres, en el
+caso normal (con teléfono del cliente y sin nada raro).
+**Se construye así:** en la hoja de alta, un segundo botón que encadena las **tres rutas que ya existen**,
+sin ruta nueva ni esquema; si el envío falla, el albarán queda **emitido** y la escalera ya ofrece
+«Enviar para firmar». Es **el mismo envío manual** de hoy, no uno automático (no entra en la tabla J6 como
+envío nuevo).
+🔴 **Choca con una decisión escrita, y hay que decirlo:** la escalera de SCRUM-366 es *un paso, un
+botón*; esto la **comprime en el caso feliz**. Y **emitir congela al cliente** (SCRUM-841), así que el
+profesional dejaría de ver el momento intermedio: hay que decidir si eso importa. El guard de SCRUM-303
+(*«el alta del albarán, en un único punto»*) lee `jobDetailView.js`: el botón nuevo tiene que vivir ahí.
+⛔ Rótulo sin firmar (regla 30).
+
+#### 16.4.3 · Ver en la lista de presupuestos cuáles ha leído el cliente · **MEDIANO**
+
+**En Billin**, el presupuesto *«supervisa si tus contactos han recibido y visto»* y se sabe *«si el
+cliente ha abierto el presupuesto»*; **en Anfix**, *«sabrás en tiempo real si tus clientes han recibido,
+visto o pagado»*. 📄 **No se sabe** si lo enseñan en la lista o solo dentro de cada documento.
+**Nosotros** ya recibimos la señal: el embudo `queued → sent → delivered → read` (`whatsappLog.service.ts:109`)
+y un chip «Entregado / Leído» (`waDeliveryChip`, `api.js:1331`). **Pero solo se pinta dentro del detalle**
+(`quotesDetailView.js:199`), porque solo el detalle la pide (`waDelivery`: `quotesAdmin.routes.ts:867`;
+el listado `GET /admin/quotes` no la trae). **Esto corrige a §15.2**, que dio «¿lo ha visto el cliente?»
+por «Ya»: es cierto para el dato y **falso para la lista**, que es donde se decide a quién llamar.
+**El profesional gana** abrir la lista un lunes y ver **de un vistazo cuáles leyó el cliente y no
+contestó**, para tirar de «Enviar recordatorio» (que ya existe) solo en esos.
+**Se construye así:** una consulta agrupada por la página de ids en el listado (última fila por
+`relatedId` de `WhatsAppMessage`, no una por presupuesto: `getDeliveryStatus` es de uno en uno) y el chip
+que ya existe, en la fila. Sin esquema y sin envío. **Segunda fase, aparte y NO incluida:** registrar
+cuándo el cliente **abre el enlace** `/quote/:token`, que hoy **no escribe nada** (leí
+`quoteDecisionLanding.routes.ts:546-615`, no el resto): pide una columna aditiva y decidir qué se guarda
+(un solo «visto por primera vez», **sin IP**). **No medido:** el índice de `WhatsAppMessage` para esa
+consulta; por eso es *mediano* y no *pequeño*.
+
+### 16.5 · Las que murieron al medirnos, y los ceros con su suelo
+
+**Murieron** (todas con su fichero): conversión presupuesto → factura en un clic (§16.2, primera
+fila); **duplicar presupuesto** (`quotesDetailView.js:79-96`) y albarán (`albaranes.routes.ts:936`);
+**plazo de validez por defecto** y atajos (`quoteAtajosVencimiento.js`, 30 días en
+`quotes.routes.ts:223`); **notas internas** (`Quote.internalNotes`, `schema.prisma:651`); **descuentos por
+línea y global**; **varios IVA por línea**; **firma en la pantalla del móvil** (firma remota y en
+persona, con evidencia); **plantillas de presupuesto** (`QuoteTemplate` y gremio); **agrupar albaranes
+en una factura mensual** (`consolidar`, `jobs.routes.ts:1556`); **suplidos** y **apartados** en las
+líneas del presupuesto (`schemas.ts:167-173`); **etiquetas** del documento (`tags`); **albarán no
+valorado**; **enlace de pago para el cliente** (`/pay/...`).
+**Ceros, con su suelo:** (a) «botón del presupuesto hacia el albarán» → 0 (suelo: `albaranDetailView.js:457`
+sí navega a `jobs-detail`); (b) `validUntil` en el PDF del presupuesto → 0 (suelo: aparece en 7 ficheros
+de `src`, uno de ellos la página del enlace, `quoteDecisionLanding.routes.ts:422`); (c) «abrió el
+enlace» (`viewed|opened|firstView|lastView`) en `src` → 0 (suelo: `whatsappLog.service.ts` sí tiene
+`delivered|read`); (d) lector de `.xlsx` (`xlsx|exceljs|papaparse|csv-parse`) en `src` y `package.json`
+→ 0 (suelo: `csvImport.js` sí lee `.csv`); (e) IVA por vivienda o % de materiales → 0 (suelo: hay una
+frase en `tiposDeIva.js:11` que menciona el 10 % de renovación).
+
+**Candidatas apuntadas que NO entran en las tres**, por si el fundador prefiere otra:
+- **A · «Válido hasta» impreso en el PDF del presupuesto · PEQUEÑA.** Verifacturamos: *«añade un
+  período de validez»*; FacturaDirecta: *«Válido hasta»*. Nosotros lo tenemos y **el papel no lo dice**,
+  así que quien lo recibe adjunto no ve cuándo caduca (solo la página del enlace lo dice). **Cautela:**
+  `presupuestoSello.ts` ya lee `validUntil` y un bloque nuevo en el PDF **no debe cambiar el aspecto de
+  presupuestos ya firmados** (el mismo riesgo que SCRUM-665 documenta para la factura). Si el fundador
+  prefiere lo pequeño, **esta va antes que la 3**.
+- **B · Traer los clientes desde un `.xlsx` · MEDIANO.** Verifacturamos y FacturaDirecta lo ofrecen
+  (*«XLSX o CSV»*). Nosotros leemos CSV y **el tooltip promete «Excel»** (§16.8). Añade una dependencia
+  nueva (regla 36: revisión del fundador).
+
+### 16.6 · ⛔ Dato de mercado, NO propuesta (facturas, VeriFactu, dinero, claims)
+
+Anotado, **no validado**, y **no se propone construirlo** (reglas 7, 17, 29; STOP de `CLAUDE.md`):
+
+| ellos 📄 | nosotros |
+|---|---|
+| **Facturas recurrentes** (Verifacturamos, Billin, FacturaDirecta) | ninguna; `MaintenancePlan` propone un *presupuesto* y está apagado |
+| **Convertir albarán o presupuesto en factura sin firma previa** (Verifacturamos, Billin) | exigimos albarán firmado; «Convertir en factura» **no envía** la factura al acabar |
+| **Retención de IRPF y recargo de equivalencia automáticos** (Verifacturamos, Billin) | declarados en el perfil y en el cliente, **sin cablear al total** (`retencionIrpf.ts:6`: «NO LO LLAMA NADIE TODAVÍA») |
+| **Regla del 40 % de materiales para el IVA del 10 %** (Verifacturamos) | selector de IVA a mano por línea |
+| **Estado de factura «vencida / parcial / no cobrada»** (Billin) | `Invoice` **no tiene campo de vencimiento** (`schema.prisma:459`, lo dice el propio schema) |
+| **Cobro con tarjeta desde un portal** (FacturaDirecta con Stripe; Anfix Pay) | Stripe Connect apagado |
+| **Migrar conservando la numeración** (Verifacturamos) | nada |
+| **Tareas y horas que generan la factura** (Anfix) | el trabajo guarda partes y gastos; no factura desde ahí |
+| **Sobre VeriFactu:** *«Somos la única aplicación homologada por las 5 Agencias Tributarias»* (Anfix), *«conectado a Hacienda»* (Billin), *«Software Certificado VeriFactu»* (FacturaDirecta), una página de «Verifactu gratis AEAT» (Contasimple) | **Anotado tal cual, sin validar.** Que lo escriban no lo convierte en hecho comprobado |
+
+### 16.7 · Lo que NO se midió, y lo que necesita cuenta
+
+- **Necesita cuenta, por competidor** (en el orden en que se haría si el fundador confirma las altas):
+  1. **Verifacturamos** — la **lista de opciones de cada documento** (que era lo que el fundador
+     admiraba; su web solo enseña «tres botones» y «un clic»), los estados del presupuesto, cómo se ve
+     «Convertir en factura», el agrupado de albaranes y qué pide el alta (su web decía nombre, correo y
+     contraseña; **sin NIF**, medido el 17-sep).
+  2. **FacturaDirecta** — el portal de cliente, sus plantillas y los estados.
+  3. **Billin / TS Facturas** — el estado «abierto por el cliente», el adelanto desde el presupuesto y el
+     panel de personalización.
+  4. **Contasimple** — la firma electrónica del presupuesto y el «rastro» en el CRM (de la web solo se
+     saca que existe).
+  5. **Anfix** — el editor de facturas, la plantilla de presupuestos y los proyectos con horas.
+  6. **Sage** — **nada de su producto se ha podido leer**: las páginas de producto dan 403 a una
+     descarga anónima. No se ha eludido el bloqueo. Un buscador devolvió un resumen que dice que Sage
+     Active *«transforma presupuestos en pedidos, albaranes y facturas»*, pero es resumen de buscador,
+     **no cita de su página**, y no se usa.
+- **No se midió** cuántos toques cuesta nada **en su producto**, ni el tiempo; todo «un clic» es su
+  frase de marketing. **Tampoco** cuántos profesionales de YaQu llegan al albarán desde el presupuesto
+  ni cuántos ven la lista de presupuestos a diario: las tres propuestas son **hipótesis respaldadas por
+  competidores 📄**, no por un dato nuestro.
+- **No se recorrió** la explicación de «qué es un presupuesto, un albarán y una factura» en nuestra app
+  (§16.3): es pregunta abierta.
+
+### 16.8 · Hallazgos para el orquestador (sin arreglar: `src/` y `public/` no son de esta sesión)
+
+1. **El tooltip miente, o el importador cojea.** `customersView.js:93` dice *«Importar clientes desde un
+   fichero CSV o Excel»* y `csvImport.js:74` acepta `.csv,.txt`; no hay lector de `.xlsx`. Un
+   profesional con su lista en Excel llega al modal y **no puede subirla**. Es un defecto de rótulo (o de
+   función) que no depende de ninguna propuesta. Leído, no ejecutado.
+2. **Revisiones de presupuesto construidas y sin enchufar.** `POST /admin/quotes/:id/revisiones`
+   (`quotesAdmin.routes.ts:420`) y `pintarRevisiones` / `cablearCrearRevision` (`quoteRevisiones.js:126,175`)
+   existen; **ningún otro fichero de `public/` las llama**. Pregunta: ¿está apagado a propósito?
+3. **`quoteActionsRegistry.js` declara acciones que nadie consume** (`QUOTE_ACTION_REGISTRY` solo
+   aparece en su fichero y en el `<script>` de `index.html`; **lo midió un subagente y no lo releí**).
+   Relevante para la propuesta 1.
+
+**Método.** El código nuestro lo inspeccionó un subagente de solo lectura (fichero y línea por
+afirmación; los «no encontrado» con su suelo). Las afirmaciones **de las que cuelgan las propuestas** las
+releí yo antes de escribirlas: el modal ALB-01 y su llamada `renderAppView`, la escalera
+`jobNextAction`, `waDelivery` solo en el detalle, el PDF sin `validUntil`, el tooltip de Excel y el
+listado sin chip. **Lo que sigue solo en el subagente, sin releer** (los números de línea de la tabla
+§16.2 y de §16.6 que no aparecen arriba): `Quote.jobId` en el detalle, el consumidor de
+`quoteActionsRegistry`, el detalle de campos de Factura, la factura que sale sola al aceptar el
+cliente (`quotes.routes.ts:648`) y que la factura se envía como enlace de pago y no como PDF.
+
+---
+
 ## Cola de competidores
 
 Uno por entrega, avisando al orquestador al acabar cada uno.
 
 **Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅ · **Jobber ✅** ·
 **ServiceM8 ✅** · **Housecall Pro ✅** (§14) · **Tradify ✅** y **Fergus ✅** (§15) — los cinco de la
-familia field service, solo público.
-**Pendientes:** Anfix · Billin · Contasimple · FacturaDirecta · Sage (Active o 50) · Odoo. Los
-españoles de facturación, **solo tras preguntar**.
+familia field service, solo público · **Familia española ✅** (§16): Verifacturamos (releído),
+**Anfix, Billin/TS Facturas, Contasimple, FacturaDirecta**, solo documentación; **Sage ❓** sin poder
+leer su producto.
+**Pendientes:** la pasada **por dentro** de la familia española (empieza por Verifacturamos, **cuando el
+fundador confirme las altas en el chat de la sesión**; §16.7) · Sage por otra vía · Odoo · Jobber y
+Housecall Pro por dentro.
 **Excluidos por decisión del orquestador:** STEL Order y Fixner — sus términos **prohíben
 expresamente** usar el producto para competir (cláusula «Uso limitado», recogida en
 `docs/master/SCRUM-906.md` §2).

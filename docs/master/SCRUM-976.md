@@ -137,3 +137,39 @@ de margen bajo el techo. Los tiempos del §② de arriba (9,0 / 7,4 / 11,0 s) es
 - Los 61 rojos sin `dist/base` en el texto (§③ de arriba) siguen sin investigar: no entran en este
   encargo y no se midió su vía indirecta.
 - 522 tocará a #1541 (917e) y #1552 (970): el conflicto lo resuelve quien mergea, derivando la cifra.
+
+
+# APÉNDICE · FASE c (21-sep-2026) · el techo de `guards:entrada` sube de 60 a 90 s
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca: la fase b decía 60 s y era la medida de aquel momento.
+
+**Medido contra:** `origin/main` = `3ac838a5e055bb9e70a484560ee5b23187c6f491` · 2026-09-21T07:48:58Z (GitHub)
+**Rama:** `scrum-976b-techo-90-s` · **Worktree:** `wt-976b`
+
+**Decisión del orquestador (21-sep):** techo a 90 s. Un guard que cae por sorteo enseña a desconfiar de
+los rojos, que es peor que un techo algo más alto.
+
+## De dónde sale el 90 (para quien lo lea después)
+
+Los once guards juntos, `npm run guards:entrada` sobre el mismo árbol, el mismo día:
+
+    máquina en FRÍO ......... 11,1 s · 17,2 s (corridas de la mañana, con menos sesiones trabajando)
+    máquina CARGADA ......... 44,5 s  (otras sesiones de fondo trabajando en la misma máquina)
+
+Con 60 s de techo el margen de la corrida cargada era de 1,3 veces: el test ④ de
+`tests/scrum976-guards-entrada-con-techo.test.mjs` (que lanza el comando y lo cronometra) podía caer en
+CI, que también corre cargado, sin que ningún guard estuviera roto. Con 90 s son 2 veces sobre la peor
+medida, y sigue siendo un techo: 5 veces lo que tarda en frío.
+
+## Lo que cambia
+
+`TECHO_MS` 60000 → 90000 en `scripts/guards-entrada.mjs` (comentario con las dos medidas) y, en el test, el
+valor fijado (`assert.equal(TECHO_MS, 90000, …)`) y su título. El mecanismo es el mismo: el plazo lo hace
+cumplir el `spawnSync` y el entorno sólo puede BAJARLO. Subirlo otra vez exige tocar el número fijado en el
+test, o sea un PR que lo diga.
+
+## Lo que NO se midió
+
+- El comando bajo la tanda COMPLETA de CI, con todos los ficheros de `tests/` a la vez: la corrida cargada
+  de arriba es una máquina de escritorio con otras sesiones, no el runner. Si ④ cae por el techo en CI y
+  no en local, ése es el dato.
