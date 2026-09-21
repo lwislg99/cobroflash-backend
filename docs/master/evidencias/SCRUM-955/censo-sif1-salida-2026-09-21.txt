@@ -1,0 +1,205 @@
+POBLACIÓN · ref origin/main = 1dd09882fefa41186e9852c5bb39f20d4aa495d8 · 3541 rutas del árbol · 290 .ts de src/ parseados · 9577 literales · 11723 llamadas · 1133 imports · 108 ficheros de public/ · 6 XSD
+
+[A1] Huella SHA-256 con el formato oficial y su vector de la AEAT en un test
+  veredicto: HECHO (estático; el test se CORRE aparte)
+  población: 3 funciones buscadas en src/modules/invoicing/domain/verifactu.service.ts
+  control +: vector oficial AEAT en tests/verifactu.test.mjs = 2
+  · computeVeriFactuHash: declarada
+  · computeVeriFactuHashAnulacion: declarada
+  · formatFechaHoraHuso: declarada
+
+[A2] Encadenado serializado por merchant (lock de Postgres al sellar alta y anulación)
+  veredicto: HECHO
+  población: literales de las 2 funciones de sellado de src/modules/invoicing/domain/verifactu.service.ts
+  control +: literales con pg_advisory_xact_lock en todo src/ = 7
+  · applyVeriFactu: 1 lock(s)
+  · applyVeriFactuAnulacion: 1 lock(s)
+
+[A3] Fecha-hora-huso del registro (SCRUM-735: ¿sale del reloj y del huso del PROCESO?)
+  veredicto: CONFIRMADO: sale del reloj y del huso LOCAL del proceso (new Date() sin argumentos + getters no-UTC)
+  población: 2 funciones de sellado + formatFechaHoraHuso de src/modules/invoicing/domain/verifactu.service.ts
+  control +: new Date(...) en todo src/ = 248
+  · applyVeriFactu: 1 × new Date() sin argumentos (líneas 332)
+  · applyVeriFactuAnulacion: 1 × new Date() sin argumentos (líneas 425)
+  · formatFechaHoraHuso usa: getTimezoneOffset, getFullYear, getMonth, getDate, getHours, getMinutes, getSeconds
+
+[A4] QR de cotejo: base de PRODUCCIÓN; la de PRUEBAS (prewww2) no está parametrizada
+  veredicto: A MEDIAS (solo producción)
+  población: 1 literales de buildVeriFactuQrUrl
+  control +: base de producción www2.agenciatributaria.gob.es en la función = 1
+  · literales con prewww: 0
+
+[A5] Leyenda VERI*FACTU literal en el PDF — y de QUÉ depende que se pinte
+  veredicto: HECHO, pero atada a la HUELLA, no a la REMISIÓN
+  población: literales de 290 ficheros de src/
+  control +: la leyenda literal = 1
+  · src/modules/invoicing/infra/pdf/pdf.service.ts:667 (generateInvoicePdf) — pintada bajo if (isVF)
+  · isVF = !!params.vfHash
+  · SIF_ENABLED leído en src/modules/invoicing/infra/pdf/pdf.service.ts: 0
+
+[C1] Registros de alta y anulación: cuántos generadores hay y quién los llama
+  veredicto: 2 plantilla(s) de alta + 2 de anulación — las de registro.builder.ts NO se llaman desde src/ (0 sitios): huérfanas en producción, solo las de verifactu.service.ts están cableadas
+  población: literales de 290 ficheros de src/
+  control +: llamadas a construirSobreRegFactu fuera de su fichero = 1
+  · plantillas <sum1:RegistroAlta: src/modules/fiscal/verifactu/registro.builder.ts:475 (buildRegistroAlta) · src/modules/invoicing/domain/verifactu.service.ts:907 (construirRegistro)
+  · plantillas <sum1:RegistroAnulacion: src/modules/fiscal/verifactu/registro.builder.ts:511 (buildRegistroAnulacion) · src/modules/invoicing/domain/verifactu.service.ts:878 (construirRegistro)
+  · buildRegistroAlta llamada desde src/: 0
+  · buildRegistroAnulacion llamada desde src/: 0
+  · construirCuerpoSoapRegFactu llamada desde src/: 0
+  · construirSobreRegFactu: src/modules/invoicing/domain/verifactu.service.ts:986 (buildVerifactuRegistrosXml)
+  · buildVerifactuRegistrosXml llamada desde: src/modules/exports/app/routes/exports.routes.ts:252 ((nivel de módulo)) · src/modules/exports/app/routes/exports.routes.ts:556 ((nivel de módulo))
+
+[C2] Encadenamiento/RegistroAnterior completo (AUDITORIA_RRSIF 4.2)
+  veredicto: HECHO
+  población: 3 plantillas con RegistroAnterior
+  control +: plantillas con <sum1:RegistroAnterior> = 3
+  · src/modules/fiscal/verifactu/registro.builder.ts:393 (xmlEncadenamiento) — 4/4 hijos
+  · src/modules/invoicing/domain/verifactu.service.ts:544 (anulacionPrev) — 4/4 hijos
+  · src/modules/invoicing/domain/verifactu.service.ts:786 (construirRegistro) — 4/4 hijos
+
+[C3] Sello de la huella persistido y el MISMO en el XML (AUDITORIA_RRSIF 4.1)
+  veredicto: HECHO
+  población: campos vf* del modelo Invoice
+  control +: campo vfHash en Invoice = 1
+  · campos vf*: vfEstado, vfHash, vfPrevHash, vfTimestamp, vfAnulHash, vfAnulTimestamp, vfAnulPrevHash
+  · src/modules/invoicing/domain/verifactu.service.ts:785 → usa el sello persistido
+  · src/modules/invoicing/domain/verifactu.service.ts:878 → usa el sello persistido
+
+[C4] Bloque SistemaInformatico con sus 9 campos (AUDITORIA_RRSIF 4.3)
+  veredicto: HECHO (forma)
+  población: 3 plantillas con SistemaInformatico
+  control +: plantillas con <sum1:SistemaInformatico> = 3
+  · src/modules/fiscal/verifactu/registro.builder.ts:376 (xmlSistema) — 9/9 campos
+  · src/modules/invoicing/domain/verifactu.service.ts:785 (construirRegistro) — 9/9 campos
+  · src/modules/invoicing/domain/verifactu.service.ts:878 (construirRegistro) — 9/9 campos
+
+[C5] Datos del PRODUCTOR que viajan en cada registro (SCRUM-870, SCRUM-247)
+  veredicto: DATOS DE PERSONA FÍSICA, no de la SL (forma del NIF: persona FÍSICA (DNI)) — falta sustituir por el NIF/razón social de la SL (externo) — NOMBRE con caracteres que 1287 prohíbe
+  población: 5 constantes de src/modules/fiscal/verifactu/productor.ts
+  control +: constantes del productor leídas por AST = 5
+  · NOMBRE contiene caracteres que la validación 1287 prohíbe (<>"'=): SÍ
+  · NIF del productor: forma de persona FÍSICA (DNI) (el valor no se imprime)
+  · ID_SISTEMA de 2 posiciones · VERSION 1.0.0 · NUM_INSTALACION 1
+
+[C6] Factura sin NIF del cliente (F1 vs F2 / art. 61.d) y tipo de rectificativa
+  veredicto: BLOQUEADO por dictamen (P11)
+  población: 2 constantes de src/modules/fiscal/verifactu/registro.builder.ts
+  control +: constantes leídas = 2
+  · MODO_SIN_DESTINATARIO = 'SIN_DICTAMEN'
+  · MODO_TIPO_RECTIFICATIVA = 'INCREMENTAL_I'
+  · literales 'F2' en src/: 3
+
+[C7] Validación de la letra de control del NIF (del merchant y del cliente) antes de declarar
+  veredicto: EXISTE
+  población: literales de 290 ficheros de src/
+  control +: literal ValidarQR (mismo detector) = 1
+  · src/core/validation/nifEspanol.ts:47 ((nivel de módulo))
+
+[C8] Saneamiento de los 5 caracteres que la AEAT rechaza (validación 1287) — qué campos cubre
+  veredicto: NO EXISTE
+  población: 6 regex de invoicing/ y fiscal/
+  control +: regex en invoicing/ y fiscal/ = 6
+
+[D1] Cliente de envío a la AEAT (sif.client.ts): red, endpoint SOAP, mTLS
+  veredicto: NO EXISTE
+  población: 290 ficheros de src/ · 1133 imports
+  control +: imports de red en todo src/ (axios, https…) = 2
+  · sif.client.ts en el árbol: NO
+  · imports de red por módulo: node-fetch=3, axios=9
+  · imports de red dentro de fiscal/ o invoicing/: axios ← src/modules/invoicing/infra/pdf/pdf.service.ts
+  · literales con endpoint SOAP de la AEAT: 0
+  · new Agent(...): 0 · propiedades pfx/passphrase: 0 · fetch() global: 4 (src/integrations/gemini.ts, src/integrations/whatsapp.ts, src/modules/billing/domain/invoiceWhatsApp.service.ts, src/modules/system/app/routes/quoteDecisionLanding.routes.ts)
+
+[D2] Sobre SOAP completo (Envelope/Body) y operación de consulta
+  veredicto: SOLO EL CUERPO
+  población: literales de src/
+  control +: literales con RegFactuSistemaFacturacion (el cuerpo que sí existe) = 1
+  · plantillas con <…Envelope: 0
+  · ConsultaFactuSistemaFacturacion en src/: 0
+  · ConsultaLR.xsd vendorizado: sí
+
+[D3] Cola de remisión VfSubmission (estados, intentos, espera) — pide ALTER
+  veredicto: NO EXISTE
+  población: 30 modelos de prisma/schema.prisma
+  control +: modelo Invoice encontrado por el mismo detector = 1
+  · modelos que casan con vf|submission|remisi|envio|cola|queue: 0
+  · llamadas que mencionan vfSubmission en src/: 0
+
+[D4] Lectura de la respuesta, ritmo de envío y subsanación
+  veredicto: NO EXISTE
+  población: literales de src/ frente a los XSD vendorizados
+  control +: los 6 nombres en los XSD (suma) = 26
+  · TiempoEsperaEnvio: src/=0 · XSD=1
+  · EstadoRegistro: src/=0 · XSD=6
+  · AceptadoConErrores: src/=0 · XSD=1
+  · Subsanacion: src/=0 · XSD=5
+  · RechazoPrevio: src/=0 · XSD=8
+  · SinRegistroPrevio: src/=0 · XSD=5
+  · dependencias XML de producción: 0 · de desarrollo: xmllint-wasm (de 13+14)
+
+[D5] Qué hace hoy SIF_ENABLED (la bandera que encendería la remisión)
+  veredicto: NO GOBIERNA NINGÚN ENVÍO NI COLA (0/4 usos tocan envío/remisión/cola)
+  población: literales de src/ fuera de flags.ts
+  control +: usos de 'INVOICING_ES_ENABLED' (mismo detector) = 7
+  · defecto: INVOICING_ES_ENABLED=false · SIF_ENABLED=false
+  · SIF_ENABLED usada en: src/modules/invoicing/domain/invoiceNumber.service.ts:456 (allocateInvoiceNumber) · src/modules/system/audit.service.ts:254 (flagsFiscalesDe) · src/modules/system/domain/flagFiscal.service.ts:35 ((nivel de módulo)) · src/modules/system/domain/flagFiscal.service.ts:134 (cambiarFlagFiscal)
+  · INVOICING_ES_ENABLED usada en 7 sitios
+
+[D6] Representación del merchant ante la AEAT (Anexo I firmado y custodiado) — pide ALTER
+  veredicto: NO EXISTE
+  población: 861 líneas de código de prisma/schema.prisma + literales de src/
+  control +: campos legalName en el esquema = 3
+  · líneas del esquema: 0
+  · literales en src/: 0
+
+[E1] Declaración responsable publicada y descargable (SCRUM-523)
+  veredicto: NO EXISTE
+  población: literales de src/ + 108 ficheros de public/
+  control +: ruta legal '/alcance-beta' (mismo detector) = 1
+  · src/: 0
+  · public/: 0
+
+[C9] La anulación se sella desde el producto (no solo existe la función)
+  veredicto: HECHO: sellarAnulacionTrasEmision se llama desde 1 sitio(s) del producto (no solo existe)
+  población: llamadas de 290 ficheros de src/
+  control +: llamadas a sellarTrasEmision (alta) = 10
+  · sellarTrasEmision: src/lib/invoicing.ts:218 (ensurePdfAndEvent) · src/modules/jobs/app/routes/albaranes.routes.ts:1295 ((nivel de módulo)) · src/modules/jobs/app/routes/albaranes.routes.ts:1566 ((nivel de módulo)) · src/modules/jobs/app/routes/jobs.routes.ts:1518 ((nivel de módulo)) · src/modules/jobs/domain/recapitulativa.service.ts:140 (emitirRecapitulativas) · src/modules/quotes/app/routes/quotes.routes.ts:787 ((nivel de módulo)) · src/modules/system/app/routes/invoicesAdmin.routes.ts:186 ((nivel de módulo)) · src/modules/system/app/routes/invoicesAdmin.routes.ts:1046 ((nivel de módulo)) · src/modules/system/app/routes/quotesAdmin.routes.ts:333 ((nivel de módulo)) · src/modules/system/app/routes/quotesAdmin.routes.ts:582 ((nivel de módulo))
+  · sellarAnulacionTrasEmision: src/modules/system/app/routes/invoicesAdmin.routes.ts:884 ((nivel de módulo))
+  · applyVeriFactuAnulacion: src/modules/invoicing/domain/selladoEstado.ts:186 (sellarAnulacionTrasEmision)
+
+[H1] Emisor congelado (SCRUM-665 B): ¿algo del producto llama a congelarEmisor/emisorDelDocumento?
+  veredicto: DECLARADO Y CON ALTER APLICADO, PERO 0 LLAMADORES: nada del producto escribe ni lee el emisor congelado (SCRUM-665 B), el PDF sigue leyendo el merchant EN VIVO
+  población: llamadas de 290 ficheros de src/
+  control +: columna merchantTaxId de Invoice en el esquema (ALTER aplicado) = 1
+  · congelarEmisor y emisorDelDocumento declaradas: true
+  · llamadores de congelarEmisor: 0
+  · llamadores de emisorDelDocumento: 0
+
+[H2] ClaveRegimen/CalificacionOperacion en la plantilla VIVA del registro (no solo en registro.builder.ts)
+  veredicto: HECHO: la plantilla VIVA (src/modules/invoicing/domain/verifactu.service.ts) SÍ emite ClaveRegimen/CalificacionOperacion vía buildDetallesDesgloseXml (guard scrum209) — no falta hoy
+  población: 1 función buildDetallesDesgloseXml de src/modules/fiscal/verifactu/registro.builder.ts + llamadas desde src/modules/invoicing/domain/verifactu.service.ts
+  control +: tags ClaveRegimen y CalificacionOperacion en buildDetallesDesgloseXml = 1
+  · buildDetallesDesgloseXml declara los 2 tags: true
+  · llamada desde src/modules/invoicing/domain/verifactu.service.ts: src/modules/invoicing/domain/verifactu.service.ts:695 (construirRegistro)
+
+[H3] taxId en pdf.service.ts: de dónde sale en tiempo de ejecución (¿congelado o en vivo?)
+  veredicto: 6 acceso(s) a .taxId en tiempo de ejecución, 0 vía emisor/cliente congelado — el resto sale del parámetro que le pasa el llamador (EN VIVO cuando el llamador no congela, ver H1)
+  población: accesos .taxId + literales de src/modules/invoicing/infra/pdf/pdf.service.ts
+  control +: literal 'taxId' (mismo fichero) = 2
+  · src/modules/invoicing/infra/pdf/pdf.service.ts:415 (generateInvoicePdf) — params.merchant.taxId
+  · src/modules/invoicing/infra/pdf/pdf.service.ts:415 (generateInvoicePdf) — params.merchant.taxId
+  · src/modules/invoicing/infra/pdf/pdf.service.ts:795 (generateQuotePdf) — params.merchant.taxId
+  · src/modules/invoicing/infra/pdf/pdf.service.ts:795 (generateQuotePdf) — params.merchant.taxId
+  · src/modules/invoicing/infra/pdf/pdf.service.ts:816 (generateQuotePdf) — params.customer.taxId
+  · src/modules/invoicing/infra/pdf/pdf.service.ts:816 (generateQuotePdf) — params.customer.taxId
+
+[G1] Documentos de S1-E, S1-G y S1-H en el árbol
+  veredicto: ver detalle
+  población: 3541 rutas del árbol
+  control +: docs/SIF_SPEC_NOTES.md en el árbol = 1
+  · docs/VERIFACTU_EVIDENCIAS.md: NO existe
+  · docs/legal/DECLARACION_RESPONSABLE.md: existe
+  · docs/legal/PACK_GESTORIA.md: existe
+
+FILAS=25 · CIEGAS=0
+EXIT=0
