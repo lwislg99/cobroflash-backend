@@ -83,6 +83,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // encadenadas (cliente, trabajos, partes, albaranes, fotos) y el recorte del técnico.
   'scrum980-historial-del-cliente.test.mjs': 1,
   'scrum297-evidencias-postgres.test.mjs': 2,
+  // SCRUM-979: la «Última visita». Necesita banco porque lo que vigila es la CONSULTA — el
+  // `groupBy` con la tenencia dentro y el recorte del técnico por los tres ejes de SCRUM-650.
+  'scrum979-ultima-visita.test.mjs': 1,
   'scrum389-un-solo-iva.test.mjs': 2,
   // SCRUM-974: el resumen del lunes. Necesita banco porque corre el resumen DE VERDAD, que lee la
   // bandeja de pendientes de facturar y el modo de emisión de cada negocio. Solo el desechable:

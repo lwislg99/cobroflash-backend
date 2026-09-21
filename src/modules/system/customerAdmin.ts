@@ -75,7 +75,12 @@ const CUSTOMER_SELECT_NO_TOKEN = {
   internalRef: true,
 } as const;
 
-export async function listCustomers(merchantId: number, search?: string) {
+export async function listCustomers(
+  merchantId: number,
+  search?: string,
+  // SCRUM-979: de qué trabajos sale «Última visita». Ver `ultimasVisitas`.
+  opciones: { soloTrabajosDe?: number | null } = {},
+) {
   const where: Prisma.CustomerWhereInput = { merchantId };
 
   if (search) {
@@ -98,7 +103,34 @@ export async function listCustomers(merchantId: number, search?: string) {
     }];
   }
 
-  return prisma.customer.findMany({ where, orderBy: { createdAt: 'desc' }, select: CUSTOMER_SELECT_NO_TOKEN });
+  const clientes = await prisma.customer.findMany({ where, orderBy: { createdAt: 'desc' }, select: CUSTOMER_SELECT_NO_TOKEN });
+  const visitas = await ultimasVisitas(merchantId, opciones.soloTrabajosDe);
+  // Sin visita → la clave NO se añade: ausente no es cero (ni `null` que la vista pinte como fecha).
+  return clientes.map((c) => (visitas.has(c.id) ? { ...c, ultimaVisita: visitas.get(c.id)! } : c));
+}
+
+/**
+ * SCRUM-979 · LA ÚLTIMA VISITA DE CADA CLIENTE: el `scheduledAt` más reciente de sus trabajos
+ * `terminado` o `cerrado` (Parte L). UNA consulta (`groupBy`), no una por cliente: la lista no pagina.
+ *
+ * 🔴 `soloTrabajosDe`: la lista de clientes NO se recorta por rol (el técnico ve la cartera
+ * entera), pero sus TRABAJOS sí (`jobs.routes.ts`, los tres ejes de SCRUM-650). La fecha sale solo
+ * de los trabajos que ese técnico puede ver: si no, la columna le enseñaría la fecha de un trabajo
+ * que en su lista no existe. `undefined` = sin recorte (admin y propietario).
+ */
+async function ultimasVisitas(merchantId: number, soloTrabajosDe?: number | null): Promise<Map<number, Date>> {
+  const where: Prisma.JobWhereInput = { merchantId, status: { in: ['terminado', 'cerrado'] }, scheduledAt: { not: null } };
+  if (soloTrabajosDe !== undefined) {
+    where.OR = [
+      { operarioId: soloTrabajosDe },
+      { assignedUserId: soloTrabajosDe },
+      { assignees: { some: { teamMemberId: soloTrabajosDe as number } } },
+    ];
+  }
+  const filas = await prisma.job.groupBy({ by: ['customerId'], where, _max: { scheduledAt: true } });
+  const fuera = new Map<number, Date>();
+  for (const f of filas) if (f._max.scheduledAt) fuera.set(f.customerId, f._max.scheduledAt);
+  return fuera;
 }
 
 export async function getCustomer(merchantId: number, id: number) {
