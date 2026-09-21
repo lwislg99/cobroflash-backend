@@ -95,11 +95,16 @@ const ESPERADO = new Map([
 // este corte; está aquí para que no pueda empeorar y para que no baje sin que alguien lo diga.
 // Reportada al orquestador el 20-sep-2026 como hallazgo aparte (A23 #1).
 // Un número por línea, que dos tickets no choquen en la misma línea física (A23 #15).
+// SCRUM-917h (21-sep-2026) · 8 → 7 en los tres casos con presupuesto: sale el enlace de fecha del
+// rail («1 sept», 35,8×44 en Windows), que ahora lleva `min-width: 44px`. No es la deuda que
+// «baja sola»: medía 8 en Windows y 7 en el runner de Linux sobre el MISMO árbol, porque su ancho
+// dependía de la fuente. Arreglado el ancho, las dos máquinas dicen 7. El caso sin presupuesto no
+// tiene ese enlace y sigue en 6.
 const DEUDA_44PX = new Map([
-  [JOB_PAGADO.id, 8],
-  [JOB_A_MEDIAS.id, 8],
+  [JOB_PAGADO.id, 7],
+  [JOB_A_MEDIAS.id, 7],
   [JOB_SIN_PRESUPUESTO.id, 6],
-  [JOB_COBRADO_DE_MAS.id, 8],
+  [JOB_COBRADO_DE_MAS.id, 7],
 ]);
 
 const banco = await levantarBanco();
