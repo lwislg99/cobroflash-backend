@@ -56,12 +56,14 @@ const CENSO = Object.freeze({
   //
   // `exportView.js:87` y `:100` — VISIBLES en los tres estados (2 nodos × 3 = 6).
   export: 6,
-  // `quotesView.js:890`, `:1363`, `:1398` — llegan al DOM pero OCULTAS en los tres estados: son
-  // de la propuesta de pago, que sólo se despliega al elegir esa opción. Cuentan igual: que hoy
-  // no se vean depende de un despliegue, no de que el texto esté aprobado.
-  'quotes-new': 6,
   // `albaranes` SALIÓ el 7-sep: el fundador firmó «Nuevo albarán». La entrada se BORRA, no se
   // pone a 0 — el trinquete APRIETA (mismo criterio que SCRUM-402/424/405).
+  //
+  // `quotes-new` SALIÓ el 21-sep (SCRUM-915k): el comentario 15868 de SCRUM-915 firmó los cuatro
+  // rótulos que `quotesView.js` pintaba como marcador —«Descripción», «Aplicar», la frase del
+  // descuento pactado y «Aplicar a las líneas»— y el editor de presupuestos ya no pinta ninguno.
+  // Estaba a 6 (marcadores que llegaban al DOM OCULTOS en los tres estados). Misma regla: BORRADA,
+  // no puesta a 0.
 });
 
 const ESTADOS = ['con-datos', 'sin-datos', 'error'];
