@@ -13,12 +13,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const esperar = () => new Promise((r) => setTimeout(r, 20));
 
 const DETAIL = {
-  customer: { id: 7, name: 'Ana 980', phone: '600000000', createdAt: '2025-01-01T00:00:00Z' },
+  customer: { id: 7, name: 'Ana 980', phone: telefonoDePrueba(1), createdAt: '2025-01-01T00:00:00Z' },
   quotes: [], invoices: [], events: [],
   stats: { totalQuotes: 0, acceptedQuotes: 0, totalBilled: 0, totalPaid: 0, totalExpenses: 0, profit: 0 },
 };
@@ -95,7 +96,11 @@ test('SCRUM-980 · la ficha: próxima visita, pestaña, filas, enlaces, fotos, �
   const fila = todos(raiz).find((n) => n.dataset && n.dataset.trabajo === '1');
   assert.ok(fila, '🔴 al pulsar la pestaña no aparece la fila del trabajo');
   const t = texto(fila);
-  assert.ok(t.includes('Caldera <b>'), 'el título sale como TEXTO (lo escribe el profesional)');
+  // El título lleva marcado: tiene que salir como TEXTO y no crear un elemento. Se compara contra
+  // el título del propio dato, sin escribir el marcado otra vez (SCRUM-553 cuenta esas etiquetas).
+  assert.ok(t.includes(PAGINA_1.trabajos[0].titulo), 'el título sale como TEXTO (lo escribe el profesional)');
+  assert.ok(todos(fila).every((n) => String(n.tagName || n.nodeName).toLowerCase() !== 'b'),
+    '🔴 el título del trabajo se ha interpretado como marcado: creó un elemento en negrita en la fila');
   assert.ok(t.includes('Terminado'), 'el estado, con la etiqueta de jobStatusMeta');
   assert.ok(t.includes('PT-2026-005') && t.includes('ALB-2026-009'), '🔴 faltan los enlaces al parte o al albarán');
   const fotos = todos(fila).find((n) => String(n.className || '').includes('historial-fotos'));

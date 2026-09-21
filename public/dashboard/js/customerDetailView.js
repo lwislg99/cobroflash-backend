@@ -114,7 +114,7 @@ async function renderCustomer360View(container, customerId) {
           <span style="color:var(--neutral-400)">Cliente desde ${new Date(customer.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
         </div>
         ${customer.notes ? `<div style="font-size:12.5px;color:var(--neutral-500);margin-top:6px;font-style:italic">${escC(customer.notes)}</div>` : ''}
-        ${proximaVisita ? `<div class="historial-proxima" style="font-size:13px;font-weight:600;color:var(--neutral-700);margin-top:6px">${escC(HISTORIAL_CLIENTE.TEXTOS.proxima + proximaVisita)}</div>` : ''}
+        ${proximaVisita ? `<div class="historial-proxima">${escC(HISTORIAL_CLIENTE.TEXTOS.proxima + proximaVisita)}</div>` : ''}
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0">
@@ -384,7 +384,7 @@ async function renderCustomer360View(container, customerId) {
       const tr = document.createElement('tr');
       const td = document.createElement('td');
       td.colSpan = T.columnas.length;
-      td.style.cssText = 'text-align:center;color:var(--neutral-400);padding:24px';
+      td.className = 'historial-vacio';
       td.textContent = T.vacio;
       tr.appendChild(td);
       tbody.appendChild(tr);
@@ -394,8 +394,8 @@ async function renderCustomer360View(container, customerId) {
       const tr = document.createElement('tr');
       tr.dataset.trabajo = String(t.id);
       const tdFecha = document.createElement('td');
-      tdFecha.style.color = 'var(--muted)';
-      const f = HISTORIAL_CLIENTE.fechaDeTrabajo(t);
+      tdFecha.className = 'historial-fecha';
+      const f =HISTORIAL_CLIENTE.fechaDeTrabajo(t);
       tdFecha.textContent = f ? new Date(f).toLocaleDateString('es-ES') : '';
       tr.appendChild(tdFecha);
 
@@ -415,7 +415,7 @@ async function renderCustomer360View(container, customerId) {
 
       const tdDocs = document.createElement('td');
       const docs = document.createElement('div');
-      docs.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+      docs.className = 'historial-docs';
       (t.partes || []).forEach((p) => docs.appendChild(enlace(p.numero, () => abrir('parte-detail', 'parteId', p.id))));
       (t.albaranes || []).forEach((a) => {
         const b = enlace(a.numero, () => abrir('albaran-detail', 'albaranId', a.id));
@@ -437,7 +437,6 @@ async function renderCustomer360View(container, customerId) {
       const mas = document.createElement('button');
       mas.type = 'button';
       mas.className = 'btn-secondary btn-sm historial-ver-mas';
-      mas.style.cssText = 'margin:12px 16px';
       mas.textContent = T.verMas;
       mas.addEventListener('click', async () => {
         mas.disabled = true;
@@ -459,11 +458,10 @@ async function renderCustomer360View(container, customerId) {
     if (sueltos.length) {
       const h = document.createElement('h3');
       h.className = 'historial-sueltos';
-      h.style.cssText = 'margin:16px 16px 8px;font-size:13px;font-weight:700;color:var(--neutral-600)';
       h.textContent = T.sueltos;
       card.appendChild(h);
       const lista = document.createElement('div');
-      lista.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:0 16px 16px';
+      lista.className = 'historial-sueltos-lista';
       sueltos.forEach((p) => lista.appendChild(enlace(p.numero, () => abrir('parte-detail', 'parteId', p.id))));
       card.appendChild(lista);
     }
