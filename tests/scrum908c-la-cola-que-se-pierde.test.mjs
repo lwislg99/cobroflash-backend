@@ -14,7 +14,16 @@
 // dice `writableLength > 0`), y el tamaño del caso se DERIVA de esa medición. El caso se calibra
 // solo, por dentro, en cada corrida.
 //
-// El mecanismo que este fichero sigue demostrando con un caso fabricado:
+// 🔴 NO CONCLUYENTE (SCRUM-908c-2, 21-sep-2026): con la recalibración por CAPACIDAD puesta a
+// prueba (run 35608495200, cabeza 1a6dfb9a), el hijo fabricado escribió 265.874 bytes —más del
+// doble de la capacidadBase medida (110.592)— y aun así salió con `colaAlSalir=0` en LOS DOS
+// brazos. El mecanismo de SCRUM-908 sigue SIN REPRODUCIRSE con este caso: ni en Windows (donde
+// la escritura es síncrona y `capacidadBase` sale `null`) ni, esta vez, en el CI de Linux. El
+// `--import` de abajo está restaurado porque es el arreglo que se propone a S3, pero esta
+// suite NO acredita que sea necesario — lo declara ella misma en runtime (`mecanismoEjercitado`,
+// más abajo) en vez de fingir una prueba que no hay. Detalle en docs/master/SCRUM-908.md, § 908c-2.
+//
+// El mecanismo que este fichero intenta demostrar con un caso fabricado (hipótesis, no medición):
 //
 //   1. el hijo de `node:test` corre con `--test-force-exit` (el meta-guard lo lanza con
 //      `run({ forceExit: true })`, `scripts/meta-guard-mutaciones.mjs`);
@@ -306,10 +315,18 @@ const medir = (async () => {
     try { await correrAFichero(hijo, fd, path.join(dir, 'marca-suelo.json')); } finally { fs.closeSync(fd); }
     const suelo = trocear(fs.readFileSync(rutaSuelo));
     const sinArreglo = await correrConPadreParado(hijo, path.join(dir, 'marca-sin.json'));
-    // 🔴 ROJO A PROPÓSITO (SCRUM-908c, A23 nº 8): sin el `--import`, para comprobar en el CI de
-    // Linux que la recalibración por CAPACIDAD SÍ distingue roto de arreglado antes de creérsela.
-    // Se restaura en el commit siguiente si SIN ARREGLO sale verde y CON ARREGLO sale rojo aquí.
-    const conArreglo = await correrConPadreParado(hijo, path.join(dir, 'marca-con.json') /* , ['--import', PRELOAD] */);
+    // El brazo CON ARREGLO SÍ lleva el `--import` (SCRUM-908c): el rojo a propósito del 18-sep
+    // (A23 nº 8) salió VERDE en el CI de Linux con el `--import` comentado —run 35608495200,
+    // 21-sep, cabeza 1a6dfb9a—, porque el hijo fabricado no salió con cola pendiente en NINGÚN
+    // brazo pese a escribir 265.874 bytes (más del doble de la capacidadBase medida, 110.592):
+    // el rojo no llegó a ejercitar la pérdida que dice prevenir. Eso NO prueba el arreglo — lo
+    // que sigue (`mecanismoEjercitado`) lo declara por dentro en vez de fingir una prueba que no
+    // hubo (docs/master/SCRUM-908.md, § 908c-2).
+    const conArreglo = await correrConPadreParado(hijo, path.join(dir, 'marca-con.json'), ['--import', PRELOAD]);
+    // ¿Este caso, en ESTA corrida, llegó a poner al hijo SIN el arreglo en la situación que el
+    // arreglo dice resolver (cola > 0 en su propio Writable al salir)? Si no, CON ARREGLO no
+    // puede acreditar nada: los dos brazos miden el mismo «nunca hubo nada que perder».
+    const mecanismoEjercitado = sinArreglo.colaAlSalir > 0;
     // POBLACIÓN (A3): qué se midió y sobre cuántos mensajes.
     console.log(`# SCRUM-908c · node=${process.version} pausa=${PAUSA_MS}ms tamRelleno=${tamRelleno} `
       + `capacidadBase=${capacidadBase}`);
@@ -318,7 +335,10 @@ const medir = (async () => {
     console.log(`# SUELO        ${resumen(suelo)}`);
     console.log(`# SIN ARREGLO  ${resumen(sinArreglo)}`);
     console.log(`# CON ARREGLO  ${resumen(conArreglo)}`);
-    return { suelo, sinArreglo, conArreglo, capacidad, capacidadBase, tamRelleno };
+    console.log(`# VEREDICTO    ${mecanismoEjercitado
+      ? `MECANISMO REPRODUCIDO — SIN ARREGLO salió con colaAlSalir=${sinArreglo.colaAlSalir} (perdió datos); CON ARREGLO sí lo acredita`
+      : 'NO CONCLUYENTE — ni SIN ARREGLO ni CON ARREGLO salieron con cola pendiente en esta corrida; el caso no ejercitó la pérdida y CON ARREGLO no prueba el arreglo aquí'}`);
+    return { suelo, sinArreglo, conArreglo, capacidad, capacidadBase, tamRelleno, mecanismoEjercitado };
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -359,8 +379,11 @@ test('SCRUM-908c · 🔴 SUELO: el hijo fabricado emite sus 5 veredictos, y el c
     + `(${TECHO_CAPACIDAD}). Revisar la fórmula de tamRelleno. capacidadBase=${capacidadBase}`);
 });
 
-test('SCRUM-908c · 🔴 SIN ARREGLO: la LEY depende de la cola que el propio hijo mide al salir, no de una capacidad supuesta', async () => {
-  const { sinArreglo: r } = await medir;
+test('SCRUM-908c · 🔴 SIN ARREGLO: la LEY depende de la cola que el propio hijo mide al salir, no de una capacidad supuesta', async (t) => {
+  const { sinArreglo: r, mecanismoEjercitado } = await medir;
+  t.diagnostic(mecanismoEjercitado
+    ? `mecanismo ejercitado: colaAlSalir=${r.colaAlSalir} > 0`
+    : 'mecanismo NO ejercitado en esta corrida: colaAlSalir=0 (ver § 908c-2 de docs/master/SCRUM-908.md)');
   assert.ok(r.bytes > 0, `🔴 CIEGO: por la tubería no llegó nada. ${resumen(r)} stderr=${r.stderr}`);
   // ⚠️ NO se exige `salioDuranteLaPausa`: en Windows la escritura es SÍNCRONA, así que el hijo se
   // queda bloqueado dentro de la pausa (no llega a salir hasta que el padre empieza a leer, ya
@@ -388,8 +411,8 @@ test('SCRUM-908c · 🔴 SIN ARREGLO: la LEY depende de la cola que el propio hi
   }
 });
 
-test('SCRUM-908c · ✅ CON ARREGLO: stdout bloqueante en el hijo, la cola al salir es SIEMPRE 0 y llega TODO', async () => {
-  const { conArreglo: r } = await medir;
+test('SCRUM-908c · ✅ CON ARREGLO: stdout bloqueante en el hijo, la cola al salir es SIEMPRE 0 y llega TODO', async (t) => {
+  const { conArreglo: r, mecanismoEjercitado, sinArreglo } = await medir;
   // ⚠️ Igual que en SIN ARREGLO: no se exige `salioDuranteLaPausa` (ver el comentario de allí).
   assert.ok(r.colaAlSalir !== null, `🔴 CIEGO: el hijo no dejó su marca de salida. ${resumen(r)} stderr=${r.stderr}`);
   assert.equal(r.colaAlSalir, 0,
@@ -398,6 +421,23 @@ test('SCRUM-908c · ✅ CON ARREGLO: stdout bloqueante en el hijo, la cola al sa
   assert.equal(r.sobrante, 0, `🔴 la tubería acabó a medio mensaje. ${resumen(r)}`);
   assert.deepEqual([...llegados(r)].sort(), [...TODOS].sort(),
     `🔴 con stdout bloqueante se perdió algo. ${resumen(r)}`);
+  // 🔴 NO CONCLUYENTE, declarado por dentro (SCRUM-908c, no en un documento aparte): las
+  // aserciones de arriba pasan siempre que CON ARREGLO no pierda nada, PERO eso no acredita que
+  // el `--import` sea lo que lo impide salvo que SIN ARREGLO haya demostrado, en la MISMA
+  // corrida, que sin él sí se pierde (`colaAlSalir > 0`). Medido en el CI de Linux (run
+  // 35608495200, 21-sep, cabeza 1a6dfb9a): el hijo fabricado escribió 265.874 bytes —más del
+  // doble de la capacidadBase medida (110.592)— y aun así salió con `colaAlSalir=0` en los DOS
+  // brazos: el mecanismo de SCRUM-908 sigue SIN REPRODUCIRSE con este caso (docs/master/SCRUM-908.md,
+  // § 908c-2). Windows tampoco lo ejercita nunca (escritura síncrona: `capacidadBase` sale `null`).
+  if (mecanismoEjercitado) {
+    t.diagnostic(`MECANISMO REPRODUCIDO: SIN ARREGLO salió con colaAlSalir=${sinArreglo.colaAlSalir} `
+      + `(perdió datos) y CON ARREGLO no. Esta corrida SÍ acredita el arreglo.`);
+  } else {
+    t.diagnostic('NO CONCLUYENTE: en esta corrida, SIN ARREGLO salió con colaAlSalir=0 (no perdió nada '
+      + 'sin el arreglo), así que las aserciones de arriba no distinguen roto de arreglado. El caso '
+      + 'mide lo que dice medir, pero no reproduce la pérdida de SCRUM-908 en esta máquina/corrida — '
+      + 'ver docs/master/SCRUM-908.md, § 908c-2.');
+  }
 });
 
 test('SCRUM-908c · ✅ el vehículo del arreglo: `run({ execArgv })` le pasa el `--import` al hijo', async () => {

@@ -792,3 +792,107 @@ línea, lo dice y dice dónde está ahora.
 
 `docs/YAQU_MASTER.md`, `CLAUDE.md`, `.claude/`, `src/`, `public/`, `prisma/`, `tests/`: ni una línea. Ni
 bases de datos ni producción. Ni Jira: este borrador no abre ni cierra nada.
+
+
+---
+
+# SCRUM-612c · La enmienda FIRMADA, aplicada al máster y a `CLAUDE.md`
+
+**Medido contra:** `origin/main` = `840b7c5668d79c991751be3bb73a7445114d9974` · 2026-09-21T14:32:12Z
+
+**Quién:** el orquestador del equipo de Javier. **Por orden expresa de Javier (jefe), en su chat, el 21-sep-2026:** «**prepárame la enmienda e inclúyela tú**». El máster y `CLAUDE.md` son de un jefe (regla 35); esto no es una propuesta, es la aplicación de un texto ya firmado pregunta por pregunta.
+
+**Gate:** SOLO `docs/YAQU_MASTER.md` y `CLAUDE.md`. Cero líneas de `src/`, `public/`, `prisma/`, `.claude/` o `tests/`.
+
+---
+
+## 0 · Qué se aplicó, y de dónde sale cada palabra
+
+El texto es el del **borrador SCRUM-612b** (§2.1-2.17 y §3.1-3.3 de este mismo expediente), que se escribió el 18-sep y quedó esperando firma. Lo que faltaba eran las **siete preguntas P-1…P-7**, y Javier las contestó **todas el 21-sep-2026**, de una en una, cada una con su literal en un comentario de SCRUM-612:
+
+| # | su respuesta | dónde acaba en el texto |
+|---|---|---|
+| P-1 | «Demo sí» | cláusula del **merchant DEMO** dentro de la regla 24 |
+| P-2 | «Me dejo guiar por tu recomendación» (sigue cobrando) | cláusula del **enlace ya enviado** dentro de la regla 24 |
+| P-3 | «Sí, de momento no vendemos para estas regiones, déjalo por escrito» | **NO va al máster**: es decisión comercial → `limites-del-fundador.md` (SCRUM-997) y PASO 0 del alta (SCRUM-998) |
+| P-4 | «anótalo» | **anotación nueva en la métrica norte de F1 (A5)** — no estaba en el borrador |
+| P-5 | «firmo esa línea» | **NO va al máster**: es microcopy de una pantalla → SCRUM-1001 (S1) |
+| P-6 | «seguimos con tu recomendación» | **V0-0 vuelve a 🟡** con su anotación; **no** se abre V0-0b |
+| P-7 | «no tocamos» | la **regla 25 no se toca**: es la suscripción de YaQu, no el cobro al cliente final |
+
+---
+
+## 1 · La base no había derivado, y se comprobó ANTES de tocar nada
+
+El borrador cita 82 literales por número de línea y avisa de que se desplazan. **Se corrió su propio instrumento contra el `main` de hoy antes de escribir una sola palabra:**
+
+```
+node docs/master/evidencias/SCRUM-612/censo-enmienda-612.mjs . origin/main
+```
+
+```
+## POBLACIÓN docs/YAQU_MASTER.md: 1883 líneas · 494321 bytes
+## POBLACIÓN CLAUDE.md: 168 líneas · 13085 bytes
+OK  citas: 82 de 82 en su línea
+EXIT=0 · controles fallidos: 0
+```
+
+**82 de 82 en su línea**, con los cuatro controles positivos y el negativo en verde. Los 3 bytes de diferencia con el 18-sep son el BOM que quitó SCRUM-958b. Aun así, **cada cambio se localizó por CONTENIDO, no por número de línea**: un número de línea es un dato derivado, y el propio repo tiene escrito que citar por línea convierte una cita en una mentira en cuanto algo se mueve.
+
+## 2 · Cómo se aplicó: un instrumento que se niega ante la duda
+
+`aplicar-enmienda-612c.mjs` (en el scratchpad de la sesión, no en el repo: es de un solo uso). **Cada reemplazo exige encontrar su texto viejo EXACTAMENTE UNA VEZ.** Cero coincidencias significa que se movió; más de una, que la cita no identifica una sola línea. **En cualquiera de los dos casos no escribe nada y lo dice.** Un reemplazo que no encuentra su sitio y sigue en silencio es exactamente cómo se corrompe un documento de 1.883 líneas.
+
+Después de escribir, **vuelve a leer los ficheros del disco** y comprueba, por cada cambio, que el texto nuevo está y que el viejo ya no. Un `finally` que no corre o una escritura a medias no se ven sin releer.
+
+```
+OK · 24 reemplazos aplicados y releídos del disco
+EXIT=0
+```
+
+## 3 · 🔴 EL CONTROL QUE DE VERDAD DECIDE: comparar CONJUNTOS, no contar
+
+Correr el censo **otra vez**, ahora contra el árbol enmendado. Si la enmienda tocó algo que no debía, aquí se ve.
+
+```
+node docs/master/evidencias/SCRUM-612/censo-enmienda-612.mjs . HEAD
+```
+
+**62 citas fallan, y se clasifican solas en dos grupos:**
+
+| grupo | cuántas | qué significa |
+|---|---|---|
+| **«ahora en: N+1»** | **41** | el texto **está intacto**, solo se desplazó: la enmienda añadió 3 líneas (la de precedencia de la Parte P y la del flujo core) |
+| **«NINGUNA línea»** | **21** | el texto **ya no existe**: es un cambio de esta enmienda |
+
+**Y las 21 que desaparecen son EXACTAMENTE los 21 cambios de texto de la enmienda, ni una más.** Se casaron una a una contra la lista del instrumento. Los otros 3 de los 24 reemplazos no aparecen aquí **y así tiene que ser**: la regla 24, la regla 18, el «Done» de V0-0 y la métrica de F1 **conservan su texto viejo como prefijo** y le añaden detrás, así que su cita sigue casando.
+
+🔒 **Un recuento no habría servido:** «21 fallos» es compatible con haber roto 21 líneas equivocadas. Lo que descarta eso es el CONJUNTO.
+
+## 4 · Guards
+
+```
+npm run guards:entrada   →  11 guards · 95 tests · 0 fallos · exit 0
+```
+
+Incluye **SCRUM-273** («ninguna entrada de trabajo NUEVA se escribe en `YAQU_MASTER.md`»), que es el que vigila justo este fichero: la enmienda **corrige reglas**, no añade registro de trabajo, y por eso pasa. Y **A22/SCRUM-958** (el BOM).
+
+## 5 · Lo que la enmienda NO hace, enumerado
+
+- **No toca las 12 líneas COMERCIALES** que el borrador marcó en su §4 (la promesa de calle de A1, el guion H2, los guiones H5-H7, el héroe de la landing, la regla 26b, W1…). Chocan con la decisión B **en la venta**, son de **J4**, y su texto lo firma un jefe con el argumentario (E-5 y E-6) delante. **Señaladas, no redactadas** — y ahora es más visible que antes, porque el máster ya dice una cosa y el argumentario otra.
+- **No toca la cláusula «el copy NUNCA dice "factura"»** de la Parte M. El borrador la condiciona a que un jefe firme la microcopy M-1/M-5, y **no está firmada** (regla 39). Se aplicó el resto de esa línea y esa cláusula se dejó igual.
+- **No toca la regla 25** (P-7), ni la 23, ni la 10, ni la 22: dicen DÓNDE se procesa el dinero, no CUÁNDO.
+- **No toca ningún estado ni transición de la Parte L** (cerrada, regla 27): solo dice cuándo no hay documento ni cobro.
+- **No toca `.claude/**`**: lo que hay allí describe el CÓDIGO, y el código lo cambia SCRUM-825.
+- **No toca código.** `SCRUM-825` sigue sin ejecutarse y **el congelado del expediente sigue vigente**: hoy el justificante y el cobro funcionan exactamente como hasta ahora. **Lo que cambia hoy es lo que el máster MANDA, no lo que el producto HACE.** Los dos estarán de acuerdo cuando SCRUM-825 entre.
+
+## 6 · Lo que queda abierto, y no lo cierra esta enmienda
+
+- **E-3** (declaración responsable), **E-5** (guion H2 y pack de gestoría) y **E-6** (argumentario): siguen donde estaban, son de J4.
+- **E-4:** cuántos justificantes hay ya emitidos. Staging tenía 9 el 18-sep; **producción sigue sin medir**. La consulta de SOLO LECTURA está lista en `docs/master/evidencias/SCRUM-612/contar-justificantes-612.sql`, para que la pegue un jefe en la consola de Railway.
+- **`docs/legal/ALCANCE_BETA.md`** dice lo mismo que V0-6 decía y **hay que cambiarlo también** (§8 del borrador). No se toca aquí: es de J4 y lleva su propio aviso de «NO usar con clientes hasta el visto bueno del asesor».
+- **La landing pública** (`public/index.html`) ofrece cobros hoy. Con esto firmado, en España esa función no existe hasta SIF-1. Es de **S2/S4** (equipo de Luis) y su copy lo firma un jefe.
+
+## 7 · Error propio, de esta misma sesión (A9)
+
+Al medir la parte de la AEAT para Javier, **comenté en SCRUM-143 que la premisa del ticket estaba mal, antes de leer su descripción.** Era falso: el ticket lo tenía bien escrito desde julio. Corregido en el comentario 16183, y el defecto real —el mapa de SIF-1, que lo citaba de más— se corrige en **SCRUM-1006**. Se escribe aquí porque esta enmienda se apoya en ese mismo expediente y quien la lea tiene que saber qué se corrigió y por qué.
