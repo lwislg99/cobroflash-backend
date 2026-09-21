@@ -131,15 +131,23 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // (título, el «⋯» de arriba) y lo que pasa al vaciar y recargar — el borrador. Con
   // `guard:pasos-del-editor` comparte `#invoices-new` y nada más: aquél recorre los pasos del suelto,
   // éste sólo lee su cabecera y su menú.
+  // SCRUM-915g · `#invoices-new` pasa a TRES: entra `guard:ajustes-del-justificante`, que abre sólo el
+  // documento suelto (el editor de presupuestos no lo toca). No se fusiona con los otros dos: el de
+  // pasos RECORRE los tres pasos del justificante y juzga el andamio (cuál está abierto, qué deja
+  // pulsar); el de la cabecera lee su título y su «⋯»; éste mide UNA fila del último paso —la de
+  // «Ajustes del documento»— tras pulsarla: qué se ve abierta y cerrada, qué dice su resumen y cuánto
+  // mide su botón a 390 px. Juntarlos daría un guard que al caer no dice si se rompió el recorrido,
+  // la cabecera o la fila. Su `goto` va con la URL literal (sin `about:blank` previo: cada caso abre
+  // su propia página en un contexto nuevo).
   // ⚠️ Y `2×about:blank` NO ES UN SOLAPE: es la página en blanco por la que 915h y 915i pasan ANTES
   // de cada `goto` (trampa medida en 915h: `goto` a otro hash de la misma página no recarga y un
   // modal abierto se queda delante). Ninguno de los dos mide nada en ella; el censo la cuenta
   // porque lee los `goto`. Se declara aquí para que no se lea como dos guards mirando lo mismo.
   assert.deepEqual(resumen, [
-    '2×/dashboard/index.html#invoices-new',
     '2×/dashboard/index.html#quotes-detail/1',
     '2×/medicion.html',
     '2×about:blank',
+    '3×/dashboard/index.html#invoices-new',
     '5×/index.html',
     '6×/dashboard/index.html#quotes-new',
   ],

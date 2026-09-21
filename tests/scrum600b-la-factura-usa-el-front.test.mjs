@@ -340,7 +340,13 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
   const NO_DEBEN_ESTAR = [
     // SCRUM-915d · «Condiciones» por subcadena caza el paso Y sus filas («Condiciones de pago»).
     'Condiciones',             // plazos y formas de pago: no viajan
-    'Ajustes del documento',   // qué datos salen, dirección e IVA del documento: no viajan (era «4. Envío»)
+    // SCRUM-915g · «Ajustes del documento» SALE de esta lista y se vigila por IDENTIDAD debajo. Era el
+    // título del bloque «4. Envío» (qué datos salen, dirección e IVA del documento: nada de eso viaja),
+    // y el título sigue sin viajar. Pero el justificante tiene ahora SU fila con ese nombre, y lo único
+    // que lleva dentro es el IVA por defecto, que SÍ viaja: es la reserva de `tax` de cada línea nueva
+    // (`addLine`), y el IVA por línea sobrevive. Prohibir el TÍTULO habría obligado a esconder un
+    // control que funciona; lo que no puede colarse son los CONTROLES del bloque viejo, y siguen
+    // prohibidos abajo por su nombre (dirección de la obra, IVA del presupuesto).
     'Estado del presupuesto',  // el documento nace emitido y no cambia de estado (regla 29)
     // «Guardar como plantilla» y «Usar plantilla» SALIERON de esta lista con SCRUM-600g. Eran
     // parada declarada porque sus hojas nombraban el presupuesto, no porque su dato no viajara: una
@@ -356,6 +362,16 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
     + '  llegan al documento: ni error, ni aviso, ni diferencia de importe. Es el defecto que midió\n'
     + '  SCRUM-616 y el motivo por el que estos bloques no se pintan.\n  '
     + coladas.join('\n  '));
+
+  // SCRUM-915g · LO QUE SE QUEDA DEL TÍTULO, por identidad: UNA fila «Ajustes del documento» y con el
+  // IVA por defecto dentro. Con sólo la lista de arriba, la fila podría desaparecer (y el IVA por
+  // defecto quedarse sin dónde vivir) sin que este test lo notara. Y nada de lo que la fila del
+  // presupuesto guarda y aquí no viaja puede acompañarla: `NO_DEBEN_ESTAR` ya lo ata.
+  const filas = todas.filter((x) => x === 'Ajustes del documento');
+  assert.equal(filas.length, 1,
+    `🔴 el justificante debe llevar UNA fila «Ajustes del documento» (915g) y lleva ${filas.length}.`);
+  assert.ok(todas.some((x) => x.includes('IVA por defecto')),
+    '🔴 el justificante ya no ofrece «IVA por defecto»: la fila de Ajustes se quedó sin su único contenido.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════

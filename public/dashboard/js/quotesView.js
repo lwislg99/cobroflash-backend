@@ -809,8 +809,15 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   //
   // 🔴 SCRUM-915d · EN EL PRESUPUESTO, LOS DOS IVA SE VAN A «AJUSTES DEL DOCUMENTO» (v3 aprobada):
   // deciden cómo sale el documento y casi nunca se tocan, y en el paso Conceptos la v3 deja sólo
-  // las líneas. En el DOCUMENTO SUELTO el IVA por defecto SE QUEDA en Conceptos —no tiene paso de
-  // Condiciones donde vivir— hasta que 915g rehaga su último paso.
+  // las líneas. En el DOCUMENTO SUELTO no hay paso de Condiciones donde vivir, así que hasta 915g el
+  // IVA por defecto se quedó en Conceptos.
+  //
+  // 🔴 SCRUM-915g · YA NO: en el justificante el IVA por defecto es la fila «Ajustes del documento»
+  // del ÚLTIMO paso, «Revisar y emitir» (v3 aprobada: `docs/prototipos/SCRUM-915/editor-presupuesto.html`,
+  // `filaAjustes`, donde en el justificante va ANTES de la línea de resumen del cliente). Llega
+  // CERRADA, con su resumen «IVA por defecto 21 %» y un «Cambiar» que la abre EN LA PÁGINA, sin modal.
+  // No se reutiliza `blockDelivery`: es la fila del PRESUPUESTO, y las tres cosas que recibe sin
+  // condición (datos del cliente, descripción, pie de Condiciones) no existen en un justificante.
   //
   // Son DOS filas y no una fila con dos padres, a propósito: el censo de orden (SCRUM-286) coloca
   // cada nodo bajo el PRIMER padre que visita, y una sola fila colgada de Líneas y de Ajustes
@@ -818,9 +825,23 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   const linesVatRow = document.createElement("div");
   linesVatRow.className = "quote-form-row";
   blockDelivery.appendChild(linesVatRow);
+  const ajustesSuelto = document.createElement("div");
+  ajustesSuelto.className = "quote-ajustes";
+  const ajustesSueltoTitulo = document.createElement("h3");
+  ajustesSueltoTitulo.className = "quote-block-title";
+  ajustesSueltoTitulo.textContent = "Ajustes del documento";
+  ajustesSuelto.appendChild(ajustesSueltoTitulo);
+  const ajustesSueltoValor = document.createElement("span");
+  ajustesSueltoValor.className = "quote-fila__valor";
+  ajustesSuelto.appendChild(ajustesSueltoValor);
+  const ajustesSueltoBoton = document.createElement("button");
+  ajustesSueltoBoton.type = "button";
+  ajustesSueltoBoton.className = "quote-paso__cambiar";
+  ajustesSueltoBoton.textContent = "Cambiar";
+  ajustesSuelto.appendChild(ajustesSueltoBoton);
   const sueltoVatRow = document.createElement("div");
   sueltoVatRow.className = "quote-form-row";
-  if (esDocumentoSuelto) blockLines.appendChild(sueltoVatRow);
+  if (esDocumentoSuelto) ajustesSuelto.appendChild(sueltoVatRow);
   if (esDocumentoSuelto) sueltoVatRow.appendChild(fieldVatDefault.wrapper);
   else linesVatRow.appendChild(fieldVatDefault.wrapper);
   // SCRUM-656: al lado del IVA por defecto, que es su misma familia de decisiones.
@@ -1887,6 +1908,11 @@ descWrapper.appendChild(descLabel);
     ? "Revisa el documento y, si está bien, emítelo."
     : "Revisa el documento y, si está bien, envíaselo al cliente por WhatsApp.";
   blockActions.appendChild(pasoRevisarGuia);
+  // SCRUM-915g · «Ajustes del documento» del justificante, ENTRE la guía y el resumen (orden de la
+  // v3). Se cuelga aquí, bajo `esDocumentoSuelto`, y no en una función anidada: el censo de orden
+  // (SCRUM-286) lee los `appendChild` de este fichero y un nodo que se cuelga desde dentro de una
+  // función no lo ve.
+  if (esDocumentoSuelto) blockActions.appendChild(ajustesSuelto);
   // Lo que se va a mandar, en una línea: el cliente y cuántos conceptos (y en el presupuesto, cómo
   // se cobra). Son el nombre del cliente y textos firmados o ya existentes, compuestos.
   const pasoRevisarResumen = document.createElement("p");
@@ -4855,8 +4881,14 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     { clave: "pagos", fila: filaPagos, detalle: filaPagosDetalle, boton: filaPagosBoton },
     { clave: "validez", fila: filaValidez, detalle: filaValidezDetalle, boton: filaValidezBoton },
     // La de Ajustes no tiene contenedor de detalle: es el bloque entero, y lo que se ve con la
-    // fila cerrada lo decide la hoja de estilos (`.quote-ajustes`).
-    { clave: "ajustes", fila: blockDelivery, detalle: null, boton: filaAjustesBoton },
+    // fila cerrada lo decide la hoja de estilos (`.quote-ajustes`). SCRUM-915g: en el justificante
+    // es la fila de SU último paso (`ajustesSuelto`), no la del presupuesto.
+    {
+      clave: "ajustes",
+      fila: esDocumentoSuelto ? ajustesSuelto : blockDelivery,
+      detalle: null,
+      boton: esDocumentoSuelto ? ajustesSueltoBoton : filaAjustesBoton,
+    },
   ];
 
   function pintarFilas() {
@@ -4896,9 +4928,14 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     });
 
     // Lo elegido en cada fila de Condiciones, en su propia fila. SÓLO en el presupuesto: el
-    // documento suelto no cuelga Condiciones ni Ajustes, y calcular aquí sus textos sería hacer
-    // pasar por su flujo rótulos que dicen «presupuesto» (lo vigila el censo de SCRUM-601).
-    if (!esDocumentoSuelto) {
+    // documento suelto no cuelga Condiciones, y calcular aquí sus textos sería hacer pasar por su
+    // flujo rótulos que dicen «presupuesto» (lo vigila el censo de SCRUM-601). Lo único que el
+    // justificante resume es su propia fila de Ajustes (SCRUM-915g), y «IVA por defecto N %» no
+    // dice «presupuesto».
+    if (esDocumentoSuelto) {
+      const ivaPorDefecto = fieldVatDefault.input.value;
+      ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + ivaPorDefecto + " %");
+    } else {
       filaCobroValor.textContent = textoDeCobro();
       const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })
         .map(function (d) { return d.label; });
