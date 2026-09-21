@@ -56,6 +56,21 @@ import { numeroDeRama } from '../scripts/_numero-de-rama.mjs';
 const RAIZ = path.join(import.meta.dirname, '..');
 const FUENTE_DE_LA_REGLA = path.join(RAIZ, 'scripts', '_numero-de-rama.mjs');
 
+// Las formas que el fichero de la regla DECLARA, leídas de su bloque `FORMAS:` … `:FIN`. Lo leen
+// DOS sitios: el test que ejercita la lista línea a línea, y el control del final, que la usa como
+// POBLACIÓN FIJA del rescate. Devuelve `null` si el bloque no está.
+function formasDeclaradas() {
+  const fuente = fs.readFileSync(FUENTE_DE_LA_REGLA, 'utf8');
+  const bloque = /^\/\/\s+FORMAS:$([\s\S]*?)^\/\/\s+:FIN$/m.exec(fuente);
+  if (!bloque) return null;
+  const declaradas = [];
+  for (const linea of bloque[1].split('\n')) {
+    const m = /^\/\/\s+(\S+)\s+→\s+(\d+|null)\b/.exec(linea);
+    if (m) declaradas.push({ nombre: m[1], espera: m[2] === 'null' ? null : Number(m[2]) });
+  }
+  return declaradas;
+}
+
 test('SCRUM-804h · 🔴 una fase `scrum-<n><letra><dígito>` se agrupa bajo SU ticket, no se pierde', () => {
   const agrupadas = agruparRamas([
     'aaa\trefs/heads/scrum-915e1-documento-vivo',
@@ -106,17 +121,10 @@ test('SCRUM-804h · ⛔ LAS FORMAS DECLARADAS EN EL FICHERO SE CUMPLEN, UNA A UN
   // reconoce, en vez de irlas descubriendo a golpes de `main` bloqueado. Para que esa lista sea un
   // mecanismo y no una decoración, se lee DESDE AQUÍ y se ejercita línea a línea: si alguien añade
   // una forma que la regla no cumple, o cambia la regla y deja la lista atrás, esto cae.
-  const fuente = fs.readFileSync(FUENTE_DE_LA_REGLA, 'utf8');
-  const bloque = /^\/\/\s+FORMAS:$([\s\S]*?)^\/\/\s+:FIN$/m.exec(fuente);
-  assert.ok(bloque,
+  const declaradas = formasDeclaradas();
+  assert.ok(declaradas,
     '🔴 NO PUDE MIRAR: no encuentro el bloque `FORMAS:` … `:FIN` en scripts/_numero-de-rama.mjs. '
     + 'O se ha borrado la declaración, o se le han cambiado las marcas y esto dejó de leerla.');
-
-  const declaradas = [];
-  for (const linea of bloque[1].split('\n')) {
-    const m = /^\/\/\s+(\S+)\s+→\s+(\d+|null)\b/.exec(linea);
-    if (m) declaradas.push({ nombre: m[1], espera: m[2] === 'null' ? null : Number(m[2]) });
-  }
 
   // ④ SUELO: un bloque que se lee y del que no sale ninguna línea saldría verde por no medir nada.
   // El número no es un umbral escrito a ojo: es «las que hay», y se exige que haya de las DOS
@@ -160,10 +168,29 @@ test('SCRUM-804h · ✅ EL CONTROL QUE DECIDE: sobre los refs de HOY, quien ya c
 
   // Y el otro lado de la moneda, que es el motivo del ticket: alguien tiene que haber sido
   // RESCATADO. Si no, este cambio no arregla nada y el rojo de `main` sigue ahí.
-  const rescatadas = nombres.filter((n) => anterior(n) === null && numeroDeRama(n) !== null);
+  //
+  // 🔴 SCRUM-804i · LA POBLACIÓN DEL RESCATE NO PUEDE SER «las ramas de hoy». Lo fue, y caducó en
+  // catorce horas: `scrum-915e1-…` y `scrum-915e2-…` —las dos únicas de esa forma— entraron en `main`
+  // la noche del 20-sep y GitHub las borró al mergear. El remoto se quedó sin una sola rama `e<n>`,
+  // este control se quedó sin población, y `main` volvió a cerrar su ÚNICA puerta obligatoria con
+  // OCHO PR detrás (run 35537122940, `fail 1`). El mensaje de aquí abajo lo había predicho palabra
+  // por palabra: «o el remoto ya no tiene ramas `e<n>` —y entonces este control ha dejado de medir
+  // sobre población—». Un control cuya población son las ramas VIVAS mide el calendario, no la regla.
+  //
+  // Por eso la población del rescate son los refs de hoy MÁS las formas DECLARADAS en el fichero de
+  // la regla, que no se borran al mergear. ⛔ Y no pierde dientes: si alguien vuelve a estrechar el
+  // sufijo, `scrum-915e1-documento-vivo` da `null` otra vez, no hay rescatadas y esto cae igual. Lo
+  // que deja de poder pasar es que caiga por un merge ajeno.
+  const declaradasAqui = formasDeclaradas() ?? [];
+  assert.ok(declaradasAqui.some((d) => /^scrum-\d+[a-z]\d+(?:-|$)/i.test(d.nombre)),
+    '🔴 NO PUDE MIRAR: el bloque `FORMAS:` de scripts/_numero-de-rama.mjs ya no declara ninguna '
+    + 'forma `scrum-<n><letra><dígitos>`, que es justo la que este control tiene que ejercitar.');
+  const poblacionDelRescate = [...new Set([...nombres, ...declaradasAqui.map((d) => d.nombre)])];
+
+  const rescatadas = poblacionDelRescate.filter((n) => anterior(n) === null && numeroDeRama(n) !== null);
   assert.ok(rescatadas.length > 0,
-    '🔴 NINGUNA rama pasa de «sin número» a tener ticket. O el remoto ya no tiene ramas `e<n>` '
-    + '—y entonces este control ha dejado de medir sobre población— o el ensanche no hace nada.');
+    '🔴 NINGUNA rama pasa de «sin número» a tener ticket, ni siquiera entre las formas '
+    + 'DECLARADAS en scripts/_numero-de-rama.mjs: el ensanche del sufijo no está haciendo nada.');
   assert.deepEqual(rescatadas.filter((n) => !/^scrum-\d+[a-z]\d+(?:-|$)/i.test(n)), [],
     '🔴 se ha rescatado algo que NO tiene la forma `scrum-<n><letra><dígitos>`: el ensanche está '
     + 'cogiendo más de lo que este ticket midió');

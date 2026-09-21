@@ -1654,3 +1654,79 @@ s2f-20 midió por su cuenta, sobre diez nombres de control, que con `(?:[a-z]+\d
 - `tests/_entrada-de-la-rama.mjs` (SCRUM-854) tiene **su propio** `numeroDeRama` (`/^scrum-(\d+)/i`), que ya leía `scrum-915e1-…` como 915. No se ha tocado.
 - La mutación ① declarada en el meta-guard para 738 (`/^scrum-0*([0-9]+)/`, sin delimitador) **sigue cayendo**: 738 exige `scrum-72.1 → null` y `scrum-72bb → null`, y el mutante da 72 en los dos.
 - `guard:escalera-por-estado` salió CIEGO en la misma tanda de navegador. **Está igual en `main`**, no lo trae esto, y lo lleva s2f-20 con SCRUM-917e.
+
+# APÉNDICE · 21-sep-2026 · SCRUM-804i · El control de 804h se quedó sin población en catorce horas, y volvió a cerrar la puerta
+
+**Carril:** orquestador (desbloqueo de `main`; no había ninguna sesión viva)
+**Medido contra:** `origin/main` = `f721436842b9dda6b945784098dc6ef2671b0105` (merge de SCRUM-958,
+#1551) · 2026-09-21T06:53:07Z (cabecera `Date` de GitHub)
+**Rama:** `scrum-804i-el-control-sin-poblacion` · **Worktree:** `wt-977`
+
+Apéndice CORTO a propósito: 34 líneas en UN fichero de test, sin dinero, sin fiscal, sin schema y
+sin tocar `src/` ni `public/` (rigor proporcional, norma de la tanda del 20-sep).
+
+## ① El defecto, medido
+
+`main` tenía en rojo **su único check obligatorio**, `build + tests (con banco desechable)` (run
+**35537122940**, `f7214368`, 2026-09-20T20:56Z), con **`fail 1`** y un solo test caído:
+
+    ✖ SCRUM-804h · ✅ EL CONTROL QUE DECIDE: sobre los refs de HOY, quien ya casaba da el MISMO número
+      AssertionError: 🔴 NINGUNA rama pasa de «sin número» a tener ticket. O el remoto ya no tiene
+      ramas `e<n>` —y entonces este control ha dejado de medir sobre población— o el ensanche no
+      hace nada.                      tests/scrum804h-la-fase-con-corte.test.mjs:164
+
+Detrás había **OCHO PR abiertos**, los ocho con el mismo `fail 1`: #1537, #1541, #1543, #1544,
+#1548, #1552, #1555 y #1557. El traspaso de la tanda anterior daba ese rojo por **caduco** —de
+antes de que entrara 804h— y proponía relanzarlos. **No lo era**, y relanzarlos no lo habría
+curado: el rojo es posterior al merge de 804h y se reproduce a voluntad.
+
+## ② La causa: el control medía el calendario, no la regla
+
+La última afirmación exigía que **alguna rama viva** pasara de «sin número» a tener ticket, con la
+población sacada de `git for-each-ref` en el momento de correr. Las únicas ramas con la forma que
+ejercita —`scrum-<n><letra><dígitos>`— eran `scrum-915e1-documento-vivo` y
+`scrum-915e2-ver-documento`. **Entraron en `main` esa misma noche** (#1545 y #1550, 20:41Z) y
+GitHub **las borró al mergear**. A las 20:41Z el remoto se quedó con **cero** ramas `e<n>`.
+
+Medido hoy sobre el remoto real: **154 ramas · 97 que la regla anterior ya reconocía · 0 de forma
+`e<n>`**. Las dos siguen existiendo **en local** (sus worktrees `wt-915e` y `wt-915e2` las tienen
+tomadas), y por eso el fichero pasaba en la máquina y caía en el servidor.
+
+🔒 **Esto matiza una frase de la entrada de 804h**, que cerraba así: «el control que decide se hace
+sobre los refs REALES y no sobre una lista escrita a mano». Para la mitad de las
+**re-atribuciones** sigue siendo cierto y no se toca — ahí la población real es la que vale, y la
+tiene (97). Para la mitad del **rescate** no lo era: los refs reales son una población que
+**caduca con el merge de otro**, y el auto-borrado de ramas la vacía justo cuando el ticket ha
+tenido éxito. El propio mensaje de error lo había escrito como hipótesis; era la cierta.
+
+## ③ Lo hecho
+
+1. La población del rescate pasa a ser **los refs de hoy MÁS las formas DECLARADAS** en el bloque
+   `FORMAS:` … `:FIN` de `scripts/_numero-de-rama.mjs` — la lista que estrenó 804h, que **no se
+   borra al mergear**.
+2. Esa lectura se saca a `formasDeclaradas()`, que ahora usan los **dos** sitios: el test que
+   ejercita la lista línea a línea (que le pone su suelo: que salgan líneas y de las dos clases) y
+   este control.
+3. Un suelo propio antes de juzgar: si el bloque dejara de declarar alguna forma
+   `scrum-<n><letra><dígitos>`, el control dice **NO PUDE MIRAR** en vez de dar verde.
+4. El mensaje del fallo deja de ofrecer la hipótesis que ya no puede darse.
+
+**No se toca la regla** (`numeroDeRama`, byte a byte igual) ni la mitad de re-atribuciones.
+
+## ④ Los controles
+
+- **🔴 ROJO REPRODUCIDO, no leído.** Repo de repro con **exactamente las 154 ramas del remoto de
+  hoy** creadas como refs: el fichero **tal y como está en `main`** cae con el mismo mensaje, letra
+  por letra, que el run 35537122940. Sin eso, «el remoto se quedó sin `e<n>`» era una teoría.
+- **✅ Con el arreglo, sobre esa misma población sin ninguna `e<n>`:** `pass 4 · fail 0`.
+- **⛔ CONTROL POSITIVO · los dientes siguen puestos.** Se **deshizo SCRUM-804h** en el repro
+  (sufijo de vuelta a `[a-z]?`), con su suelo comprobado
+  (`numeroDeRama('scrum-915e1-documento-vivo')` → `null`): el fichero parcheado cae con **`fail
+  3`**, y entre ellos la afirmación del rescate con su mensaje nuevo.
+- 🔎 **Un verde que no valía, por el camino:** el primer intento de inyección se hizo con `sed` y
+  **no llegó a tocar el fichero**; el `pass 4` que salió no medía nada. Se cazó porque la pasada
+  imprime la línea ejecutable del patrón, no porque se confiara en el verde.
+- **Censos de entrada** (237, 258, 267, 273, 514, 522, 548, 723) y `npm run guards:entrada`, en
+  verde. Ojo al instrumento: un worktree recién creado no tiene `node_modules` ni `dist/`, y sin
+  ellos cuatro de esos ficheros caen por `ERR_MODULE_NOT_FOUND` — eso no es un rojo, es no haber
+  medido.
