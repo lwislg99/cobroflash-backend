@@ -561,7 +561,11 @@ test('SCRUM-996 · gasto · traspaso <sN> resuelve la ruta desde el cwd (D:\\…
 test('SCRUM-996 · gasto · funciones puras: dedupe por message.id, U sin output, borde del tope, < 8 turnos no tiene U8', () => {
   const asis = (id, U, out = 0) => ({ type: 'assistant', message: { id, usage: { input_tokens: 1, cache_creation_input_tokens: 2, cache_read_input_tokens: U - 3, output_tokens: out }, content: [] } });
   const turnos = turnosDeEntradas([asis('a', 10), asis('a', 20, 999), asis('b', 30), { type: 'assistant', message: { id: 'c', content: [] } }, asis('a', 40)]);
-  assert.deepEqual(turnos.map((t) => [t.id, t.U]), [['a', 40], ['b', 30]], 'orden de primera aparición, último usage, sin turnos sin usage');
+  const esperado = [
+    ['a', 40],
+    ['b', 30],
+  ];
+  assert.deepEqual(turnos.map((t) => [t.id, t.U]), esperado, 'orden de primera aparición, último usage, sin turnos sin usage');
   assert.equal(resumenDeSesion(turnos), null, 'con 2 turnos no hay turno 8');
 
   assert.equal(medirTraspaso(5120, 5120).excede, false);
