@@ -191,7 +191,10 @@ async function teclear(pag, selector, texto) {
 
 async function abrirPagina(pag, etiqueta, hash, selectorListo) {
   await pag.goto('about:blank');
-  await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#${hash}`, { waitUntil: 'networkidle0' });
+  // La URL va LITERAL por página (no `#${hash}`): el censo de SCRUM-548 lee qué página mide cada guard
+  // por sus `goto`, y una plantilla se la escondería.
+  if (hash === 'quotes-new') await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#quotes-new`, { waitUntil: 'networkidle0' });
+  else await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#invoices-new`, { waitUntil: 'networkidle0' });
   const pintado = await pag.waitForSelector(selectorListo, { timeout: 10000 }).then(() => true, () => false);
   if (!pintado) { ciegos.push(`${etiqueta} -> #${hash} no se pintó`); return false; }
   await espera(400);
