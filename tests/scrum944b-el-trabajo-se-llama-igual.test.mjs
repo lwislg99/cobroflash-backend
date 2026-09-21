@@ -37,7 +37,12 @@ function banco({ trabajos = [], quotes = [], clientes = [], gastos = [] } = {}) 
   const consultas = { jobsCompletos: [], quotesCompletos: [], clientes: [] };
   const enLista = (x, arr) => arr?.includes(x);
   inyectarBase({
-    'expense.findMany': () => gastos.map((g) => ({ date: new Date(), category: 'otros', provider: null, quote: g.quoteId ? { id: g.quoteId } : null, ...g })),
+    // SCRUM-964 · la lista hace DOS consultas de gastos: la página y «cuáles llevan foto» (solo `id`,
+    // con `receiptData: { not: null }`). La segunda discrimina por `conFoto`, como Postgres: un doble
+    // que devolviera todo diría `tieneFoto: true` a cualquier gasto y el test sería ciego a la foto.
+    'expense.findMany': (args) => args.where?.receiptData
+      ? gastos.filter((g) => g.conFoto).map((g) => ({ id: g.id }))
+      : gastos.map(({ conFoto, ...g }) => ({ date: new Date(), category: 'otros', provider: null, quote: g.quoteId ? { id: g.quoteId } : null, ...g })),
     'quote.findMany': (args) => {
       if (args.select && 'quoteNumber' in args.select) {          // la consulta de `nombresDeTrabajos`
         consultas.quotesCompletos.push(args);
@@ -151,6 +156,31 @@ test('SCRUM-944b · un gasto cuyo presupuesto no pertenece a ningún Trabajo sig
   const b = banco({ trabajos: [SIN_TITULO], quotes: [{ id: 1, jobId: null, quoteNumber: 5 }], clientes: [MARIA], gastos: [GASTO] });
   const [item] = await b.lista();
   assert.equal(item.job, null);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// LAS DOS COSAS A LA VEZ — el nombre del Trabajo (944) y `tieneFoto` (964) en la MISMA fila
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// Las dos ramas tocaron el mismo `return` de `listExpenses` y el merge las juntó a mano: ningún
+// test miraba las dos cosas en una fila que tuviera Trabajo, así que quitar `tieneFoto` de esa rama
+// dejaba todo en verde (medido al fusionar: 964 15/15 y 944b 10/10 con la clave fuera).
+
+test('SCRUM-944b · 🔴 un gasto CON foto y CON Trabajo lleva las dos cosas: `tieneFoto: true` y el nombre de Trabajos', async () => {
+  const b = banco({ trabajos: [SIN_TITULO], quotes: [Q_ORIGINAL], clientes: [MARIA], gastos: [{ ...GASTO, conFoto: true }] });
+  const [item] = await b.lista();
+  assert.equal(item.job.titulo, 'Presupuesto #5 · María López');
+  assert.equal(item.tieneFoto, true, '🔴 el gasto tiene foto y su fila, con Trabajo, no lo dice');
+});
+
+test('SCRUM-944b · SUELO de `tieneFoto`: el mismo Trabajo, un gasto SIN foto → `false`; y un gasto suelto CON foto → `true`', async () => {
+  const b = banco({
+    trabajos: [SIN_TITULO], quotes: [Q_ORIGINAL], clientes: [MARIA],
+    gastos: [{ ...GASTO, id: 1 }, { ...GASTO, id: 2, quoteId: null, conFoto: true }],
+  });
+  const [conTrabajoSinFoto, sueltoConFoto] = await b.lista();
+  assert.equal(conTrabajoSinFoto.tieneFoto, false, 'el doble discrimina: sin foto es false, no true por defecto');
+  assert.equal(sueltoConFoto.tieneFoto, true);
+  assert.equal(sueltoConFoto.job, null);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════

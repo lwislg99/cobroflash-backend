@@ -67,3 +67,27 @@ el verde sería una frase.
 - Exporté `nombresDeTrabajos` para poder probarla y `scrum411-exports-inalcanzables` cayó (un `export` sin consumidor
   de fuera): la salida fue cambiar el código —no exportarla; el test entra por `listExpenses`—, no declararla huérfana.
   Lo cazó correr los guards vecinos antes de empujar, no la suite.
+
+# APÉNDICE — el merge con SCRUM-964 (21-sep-2026)
+
+Al mergear `origin/main` en la rama (el #1544, SCRUM-964, ya estaba dentro) hubo **un solo conflicto**:
+`src/modules/expenses/domain/expenses.service.ts`, en el `return` final de `listExpenses`. Las dos ramas lo habían
+tocado: 964 añadía `tieneFoto` a cada fila; 944 componía `job.titulo` con `nombresDeTrabajos`. Resuelto a mano:
+`tieneFoto` va en las DOS salidas (con Trabajo y sin él) y el título sale del nombre compuesto.
+
+**El hueco que el merge dejó al descubierto:** quitando `tieneFoto` de la rama «con Trabajo», `scrum964` seguía en
+15/15 y `scrum944b` en 10/10. Ninguno de los dos tests miraba las dos cosas en una fila con Trabajo, así que la
+resolución a mano no tenía red. Además el doble de `expense.findMany` de 944b devolvía TODOS los gastos también a la
+consulta de «cuáles llevan foto», o sea que habría dicho `tieneFoto: true` a cualquiera.
+
+Arreglo, solo en tests: el doble discrimina por `receiptData: { not: null }` (campo `conFoto` de la fila sembrada) y
+hay dos tests nuevos (12 en el fichero). **Rojo medido:** quitar `tieneFoto` de la rama con Trabajo → **2 caen de 12**
+(1 línea de `src/`); revertido y en verde 12/12. Vecinos con el árbol fusionado: `scrum964` 15/15, `scrum943`,
+`scrum135`, `scrum370`, `scrum411` en verde (73 tests, 0 fallos, 4 saltados por gateados).
+
+**Error propio (21-sep):** para la mutación usé `Get-Content -Raw` + `Set-Content -Encoding utf8` en PowerShell 5.1 sobre
+un fichero de `src/`: decodifica como ANSI y reescribe en UTF-8, o sea, DOBLE codificación (88 líneas cambiadas, «Â·»
+donde iba «·»). Lo cazó el `--stat` (176 líneas para una mutación de una) antes de commitear, y se restauró desde el
+índice. Para mutar un fichero se usa `Edit`, nunca el par `Get-Content`/`Set-Content`.
+
+**No mirado:** el nombre del Trabajo en staging con la lista real de gastos (sigue pendiente del despliegue de este PR).
