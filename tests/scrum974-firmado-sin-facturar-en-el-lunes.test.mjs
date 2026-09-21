@@ -35,12 +35,11 @@ if (URL_BANCO) {
 process.env.RESEND_API_KEY = 're_test_974_no_sale';
 delete process.env.INVOICING_ES_ENABLED; // el interruptor lo decide cada merchant, no el entorno
 
-const SKIP = !URL_BANCO && 'sin LIBRO_PG_URL (banco desechable de CI)';
 
 /** Una línea VALORADA: 100 € de base al 21 % → 121,00 € por parte. */
 const LINEA = [{ concepto: 'Mano de obra', cantidad: 1, unidad: 'h', precioUnitario: 100, tipoIva: 21 }];
 
-test('SCRUM-974 · el lunes nombra lo firmado y sin facturar, solo con la facturación encendida', { skip: SKIP }, async () => {
+test('SCRUM-974 · el lunes nombra lo firmado y sin facturar, solo con la facturación encendida', { skip: !URL_BANCO && 'sin LIBRO_PG_URL (banco desechable de CI; no va a staging)' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { sendWeeklyDigests } = await import('../dist/modules/messaging/domain/weeklyDigest.service.js');
   // La instancia CJS de axios: la MISMA que carga dist. La ESM sería otro objeto y el cambio no
