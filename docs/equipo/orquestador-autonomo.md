@@ -91,7 +91,8 @@ Para saber si pasa de 300k no se estima: se mide, con `sesion.mjs contexto N`.
 ### 5bis.2 · Cómo se releva
 
 1. El orquestador **pide** el traspaso por el canal.
-2. La sesión escribe `project_sN_traspaso.md` y su línea en `MEMORY.md`, contesta **«traspaso listo»** y **para**.
+2. La sesión escribe `project_sN_traspaso.md` (**≤ 5 KB**) y su línea en `MEMORY.md` (**≤ 220 bytes**), contesta
+   **«traspaso listo»** y **para**. Los dos topes y por qué, en 5bis.3bis.
 3. El orquestador la **detiene** y lanza la nueva **con el encargo dentro del mismo prompt**.
 4. La nueva lee desde `origin/main` lo suyo y se presenta: «Sesión N lista · <siguiente paso>».
 
@@ -107,8 +108,8 @@ silencio: la nueva arranca creyéndose al día. Si el traspaso no está, se dice
 Siete bloques, y **el encargo va dentro**:
 
 1. quién es y cuál es su **puesto fijo**;
-2. el arranque: `git fetch` y leer **desde `origin/main`** (`CLAUDE.md`, `00-normas-comunes.md`, su `sesion-N.md`, su
-   fila de §11bis de `orquestador.md`) y su traspaso, **midiendo antes de creérselo**;
+2. el arranque **barato** de 5bis.3bis (SCRUM-996): `git fetch`, las normas por secciones con `norma.mjs`, su
+   `sesion-N.md`, SU fila de §11bis (no el fichero entero) y su traspaso, **midiendo antes de creérselo**;
 3. presentarse por el canal con **hora y SHA** (A14);
 4. **el encargo concreto, completo**;
 5. las normas de la tanda, incluida la A19: las autorizaciones no se heredan;
@@ -116,6 +117,46 @@ Siete bloques, y **el encargo va dentro**:
 7. qué hacer al cierre.
 
 Sin el punto 4 la sesión arranca sin trabajo y gasta contexto preguntando qué hacer.
+
+### 5bis.3bis · El arranque barato (SCRUM-996, 21-sep-2026)
+
+**Por qué.** El fundador dijo que el gasto no es sostenible. Medido sobre 44-46 sesiones de 24 h (herramienta:
+`node scripts/equipo/gasto-arranque.mjs sesiones`): el **suelo** del primer mensaje son 54-59k tokens y la **lectura del
+arranque** otros 43-67k, y los dos se releen en CADA turno. Juntos son el 40,7 % de todo el contexto procesado (≈ 34,5 %
+del coste con pesos de precio SUPUESTOS: escritura 1,25, lectura 0,1, salida 5). De esa lectura, las normas enteras son
+~25k (51,8 KB) y el traspaso medio pesa 11,4 KB. Aparte, los resultados de herramientas de ≥ 6 KB son el 7,8 % de las
+llamadas y el 21 % del coste.
+
+**Bloque 2 del prompt, para pegar tal cual** (sustituye a «lee `00-normas-comunes.md`, `CLAUDE.md`…»):
+
+```
+ARRANQUE BARATO (SCRUM-996)
+1. `git fetch origin`. CLAUDE.md: si `git rev-list --count HEAD..origin/main` da 0, ya lo tienes cargado y NO lo releas;
+   si no, léelo desde origin/main.
+2. Normas: `node scripts/equipo/norma.mjs --arranque` (13 secciones + el índice de las otras 11). NO leas
+   `00-normas-comunes.md` entero: lo demás se trae al vuelo, p. ej. `node scripts/equipo/norma.mjs A23` antes de
+   escribir un guard. Si ese script no existe en tu carpeta: `cmd /c "git show origin/main:scripts/equipo/norma.mjs >
+   %TEMP%\norma.mjs"` y `node %TEMP%\norma.mjs --arranque`.
+3. Tu ficha `docs/equipo/sesion-N.md`; tu FILA de §11bis con `git grep -n -E "^\| \*\*S<N>\*\* \|" origin/main --
+   docs/equipo/orquestador.md` (no leas el fichero entero); y tu traspaso `project_sN_traspaso.md`. El
+   `project_sN_historial.md` NO se lee salvo que el traspaso te mande a él.
+4. LECTURAS: ningún Read de más de 6 KB sin offset/limit fuera de este arranque; Grep antes que leer un fichero entero
+   para buscar una línea; las salidas largas de PowerShell, a un fichero y con solo el resumen en pantalla.
+5. AL CERRAR: traspaso ≤ 5 KB (`node scripts/equipo/gasto-arranque.mjs traspaso sN`; si excede, lo histórico y las
+   trampas van a `project_sN_historial.md`) y tu línea de MEMORY.md ≤ 220 bytes.
+```
+
+**Cómo se comprueba, por efecto** (no por lo que digan los ficheros): tras un relevo,
+`node scripts/equipo/gasto-arranque.mjs sesiones --desde <hora ISO con Z del relevo> --min-turnos 8` da el turno 8 de
+las sesiones nuevas y lo compara con el criterio de SCRUM-996: **U8 mediano ≤ 90.000** y **lectura de arranque ≤ 10 %
+del contexto procesado**. Sale con 0 si cumple, 1 si no, 2 si no vio ninguna sesión.
+
+**Qué NO hace esto**, dicho para que nadie lo dé por bueno de más: no toca `sesion.mjs`, `prompt-tanda-orquestador.md`
+ni ninguna copia de `%LOCALAPPDATA%\yaqu-equipo` (la puerta de integridad de `sesion.mjs` exige que sean idénticas a
+`origin/main`, así que tocarlas obliga a reinstalar). El tope de 5 KB del traspaso lo comprueba quien lo escribe, con
+`gasto-arranque.mjs traspaso`, y **no** el relevo: avisar también desde `relevar` obliga a tocar `sesion.mjs` y queda
+para la próxima instalación. Y la A19 de `00-normas-comunes.md` (dueña: la Sesión 0) sigue sin decir nada del tope de
+5 KB: la propuesta va a la S0 en `docs/master/SCRUM-996.md`.
 
 ### 5bis.4 · Solo se lanzan sesiones CON TRABAJO
 
