@@ -353,7 +353,13 @@ const CASOS = [
       informe.push(`${etiqueta} · control en #home: overlays ${h0} → ${h1}`);
       if (h0 !== 0 || h1 <= h0) { ciegos.push(`${etiqueta} -> en #home la «N» no abre nada (${h0} → ${h1}): el instrumento no sabe pulsar la tecla`); return; }
 
+      // 🔴 Medido al ver el rojo: `goto` a OTRO HASH de la misma página NO recarga, y el modal que el
+      // control acaba de abrir seguía delante del editor — la «N» salía «quieta» sobre main porque
+      // había un modal, no porque el editor la frenara. Se pasa por una página en blanco.
+      await pag.goto('about:blank');
       if (!await abrirEditor(pag, etiqueta)) return;
+      const previos = await pag.evaluate(OVERLAYS);
+      if (previos !== 0) { ciegos.push(`${etiqueta} -> el editor ya tiene ${previos} modal(es) delante antes de pulsar: la «N» no se puede juzgar`); return; }
       await pag.evaluate(new Function('if (document.activeElement && document.activeElement.blur) document.activeElement.blur();'));
       const antes = await pag.evaluate(OVERLAYS);
       await pag.keyboard.press('n');
