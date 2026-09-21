@@ -213,8 +213,8 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // casillas de la fecha y ninguna más.
   // SCRUM-915h · entra `guard:conceptos-limpios`. Mira el paso Conceptos DESPUÉS DE PULSAR: el menú
   // ⋯ de la línea, la hoja de ajustes, qué ficha se ve y qué no, y la tecla N; nada de eso existe
-  // fuera del render. Comprobado en rojo con el `public/` de main (21-sep-2026): 8 hallazgos en 5 de
-  // 5 casos, con el control de la N (en #home SÍ abre) medido primero y en página limpia.
+  // fuera del render. Comprobado en rojo con el `public/` de main, con el control de la N (en #home
+  // SÍ abre) medido primero y en página limpia (21-sep-2026): 8 hallazgos en 5 de 5 casos.
   // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
   // ⚠️ NOVENA colisión (20-sep-2026, al mergear main en la rama del #1541): otra vez los DOS
   // comentarios en conflicto y la CIFRA no —917e decía 31 y main ya decía 31 por otro camino—,
