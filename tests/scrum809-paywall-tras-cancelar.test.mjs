@@ -400,32 +400,8 @@ test(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-// LAS MUTACIONES QUE ME TUMBAN. Las dos primeras son LA REGRESIÓN EXACTA que este ticket cierra
-// —una por puerta—, así que si alguna sobreviviera, este guard no estaría cubriendo la mitad que
-// dice cubrir. La tercera ataca el paywall mismo: sin ella, el guard podría estar leyendo un 403
-// que viene de otro sitio.
-export const MUTACIONES_QUE_ME_TUMBAN = [
-  {
-    // 🔴 EL DEFECTO ORIGINAL, PUERTA A: se vuelve a borrar la fecha al cancelar.
-    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
-    de: "            data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null },",
-    a: "            data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null },",
-    cae: 'EL QUE DECIDE · A · customer.subscription.updated (status=canceled): paga → cancela → conserva el periodo Y el paywall le alcanza al vencer',
-  },
-  {
-    // 🔴 EL DEFECTO ORIGINAL, PUERTA B. Es OTRO camino de Stripe, no una copia: arreglar sólo una
-    // dejaba vivas todas las cancelaciones que llegan como `subscription.deleted`.
-    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
-    de: "          data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null }, // A10.2 (L)",
-    a: "          data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null }, // A10.2 (L)",
-    cae: 'EL QUE DECIDE · B · customer.subscription.deleted: paga → cancela → conserva el periodo Y el paywall le alcanza al vencer',
-  },
-  {
-    // El paywall deja de mirar la fecha: nadie queda bloqueado nunca. Si esto sobreviviera, mis
-    // asserts de «bloqueado» no estarían leyendo el paywall.
-    fichero: 'src/core/http/authMiddleware.ts',
-    de: "  if (plan === 'trial' && planExpiresAt && planExpiresAt < new Date()) {",
-    a: "  if (false) {",
-    cae: 'el que NUNCA pagó y agota su trial acaba donde acababa',
-  },
-];
+// LAS MUTACIONES QUE ME TUMBAN YA NO SE DECLARAN AQUÍ (21-sep-2026): viven en
+// `tests/scrum809b-paywall-sin-banco.test.mjs`, con las MISMAS tres —una por puerta de cancelación y la
+// del paywall mismo—. El motivo: el meta-guard corre SIN BASE por diseño, y las declaraba con un `cae`
+// que es de un test de banco, que se salta; sobre un test saltado no se puede emitir veredicto y salía
+// MUDO/CIEGO. Este fichero sigue midiendo lo que importa —el acceso— y no cambió ni una aserción.
