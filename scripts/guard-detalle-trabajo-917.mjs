@@ -383,90 +383,6 @@ const bancosF = {
   ciego: await levantarBanco({ equipoCiego: true }),
 };
 
-/** Lo que se ve con todas las líneas CERRADAS. Devuelve datos; quien lo llama juzga. */
-function medirLineasCerradas() {
-  const c = document.getElementById('view');
-  const norm = (s) => String(s).replace(/[   ]/g, ' ').replace(/\s+/g, ' ').trim();
-  const tarjetas = [...c.querySelectorAll('.detail-trabajo')];
-  const tarjeta = tarjetas[0] || null;
-  const tit = tarjeta ? tarjeta.querySelector('.detail-section-title') : null;
-  const lineas = [...c.querySelectorAll('details.detail-plega')].map((d) => {
-    const cab = d.querySelector('summary');
-    return {
-      clave: d.dataset.linea,
-      rotulo: cab ? norm(cab.querySelector('.detail-plega-rotulo').textContent) : null,
-      valor: cab ? norm(cab.querySelector('.detail-plega-valor').textContent) : null,
-      abierta: d.open,
-      alto: cab ? Math.round(cab.getBoundingClientRect().height * 10) / 10 : 0,
-      fija: d.classList.contains('detail-plega--fija'),
-      enLaTarjeta: !!(tarjeta && tarjeta.contains(d)),
-    };
-  });
-  const titulosSueltos = [...c.querySelectorAll('.detail-section-title')].map((e) => norm(e.textContent))
-    .filter((t) => ['Tipo de trabajo', 'Datos', 'Gastos de este trabajo', 'Notas internas'].includes(t));
-  const preciosEn = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el parte/.test(l.textContent)).length;
-  const barra = c.querySelector('.job-doc-toolbar');
-  return {
-    tarjetas: tarjetas.length,
-    titulo: tit ? norm(tit.textContent) : null,
-    lineas,
-    titulosSueltos,
-    tituloAsignadosDuplicado: c.querySelectorAll('.job-asignados-titulo').length,
-    cambiarTipo: [...c.querySelectorAll('button')].filter((b) => norm(b.textContent) === 'Cambiar').length,
-    preciosEnBarra: barra ? preciosEn(barra) : -1,
-    preciosEnPantalla: preciosEn(c),
-    desbordaTarjeta: tarjeta ? tarjeta.scrollWidth > tarjeta.clientWidth : null,
-  };
-}
-
-/** Pulsa el encabezado de una línea y mide lo que hay DENTRO. */
-async function medirLineaAbierta(clave) {
-  const c = document.getElementById('view');
-  const norm = (s) => String(s).replace(/[   ]/g, ' ').replace(/\s+/g, ' ').trim();
-  const d = c.querySelector(`details.detail-plega[data-linea="${clave}"]`);
-  const antes = d.open;
-  d.querySelector('summary').click();
-  await new Promise((r) => setTimeout(r, 60));
-  const cuerpo = d.querySelector('.detail-plega-cuerpo');
-  const visible = (e) => e.getClientRects().length > 0;
-  const objetivo = (e) => (e.tagName === 'INPUT' && e.type === 'checkbox' && e.closest('label')) ? e.closest('label') : e;
-  const controles = cuerpo ? [...cuerpo.querySelectorAll('button, a, input, select, textarea')].filter(visible) : [];
-  return {
-    antes,
-    ahora: d.open,
-    hayCuerpo: !!cuerpo,
-    texto: cuerpo ? norm(cuerpo.innerText) : '',
-    botones: controles.filter((e) => e.tagName === 'BUTTON').map((e) => norm(e.textContent)),
-    casillas: controles.filter((e) => e.type === 'checkbox').map((e) => e.getAttribute('aria-label')),
-    ids: controles.map((e) => e.id).filter(Boolean),
-    marcadores: Object.fromEntries(controles.filter((e) => e.placeholder).map((e) => [e.id, e.placeholder])),
-    etiquetadoPor: Object.fromEntries(controles.filter((e) => e.getAttribute('aria-labelledby')).map((e) => [e.id, e.getAttribute('aria-labelledby')])),
-    filasGasto: cuerpo ? cuerpo.querySelectorAll('.job-doc-row[data-gasto]').length : 0,
-    pequenos: controles.filter((e) => { const r = objetivo(e).getBoundingClientRect(); return r.width < 44 || r.height < 44; })
-      .map((e) => { const r = objetivo(e).getBoundingClientRect(); return `${e.tagName.toLowerCase()}«${norm(e.textContent || e.getAttribute('aria-label') || e.id).slice(0, 24)}» ${r.width.toFixed(0)}×${r.height.toFixed(0)}`; }),
-  };
-}
-
-/** F.6 · pulsa «+ Nuevo albarán» y mide dónde vive la casilla de precios. */
-async function medirCasillaDePrecios() {
-  const c = document.getElementById('view');
-  const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
-  const cuenta = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el parte/.test(l.textContent));
-  const barra = c.querySelector('.job-doc-toolbar');
-  if (!barra) return { sinBoton: true, antes: { barra: -1, pantalla: cuenta(document).length } };
-  const antes = { barra: cuenta(barra).length, pantalla: cuenta(document).length };
-  const btn = [...c.querySelectorAll('.job-doc-toolbar button')].find((b) => norm(b.textContent) === '+ Nuevo albarán');
-  if (!btn) return { sinBoton: true, antes };
-  btn.click();
-  await new Promise((r) => setTimeout(r, 500));
-  const hoja = document.querySelector('.modal-overlay');
-  const dentro = hoja ? cuenta(hoja) : [];
-  const casilla = dentro[0] ? dentro[0].querySelector('input[type=checkbox]') : null;
-  const res = { antes, hojaAbierta: !!hoja, dentro: dentro.length, marcadaAlAbrir: casilla ? casilla.checked : null };
-  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-  return res;
-}
-
 const huellasF = new Map();
 for (const ancho of ANCHOS) {
   titulo(`F · «El trabajo» plegable: tarjeta única (F.1) · cerradas (F.2) · lo que dice cada línea (F.3) · 44 px y sin desbordar (F.4) · lo que se retira (F.5) · la casilla de precios (F.6) · al ABRIR (F.7) — a ${ancho} px`);
@@ -477,7 +393,45 @@ for (const ancho of ANCHOS) {
     await page.goto(bancosF[caso.banco].base, { waitUntil: 'networkidle0' });
     const t = await pintarDetalle(page, caso.job.id);
     if (!t.ok) { suelo(`F ${q} el Trabajo ${caso.job.id} no se pintó (${t.por})`); await page.close(); continue; }
-    const m = await page.evaluate(medirLineasCerradas);
+    // Lo que se ve con todas las líneas CERRADAS. Devuelve datos; quien lo llama juzga.
+    // ⚠️ El cuerpo va EN LA LLAMADA y no como función con nombre que se pasa a `page.evaluate`: el censo de
+    // identificadores sin declarar (SCRUM-258) reconoce un cuerpo de navegador por estar DENTRO de una
+    // llamada `.evaluate(…)`. Pasado por nombre, `document` y `KeyboardEvent` parecían nombres inexistentes
+    // y el censo subía de 2 a 4. Lo mismo vale para las otras dos medidas de este bloque.
+    const m = await page.evaluate(() => {
+      const c = document.getElementById('view');
+      const norm = (s) => String(s).replace(/[   ]/g, ' ').replace(/\s+/g, ' ').trim();
+      const tarjetas = [...c.querySelectorAll('.detail-trabajo')];
+      const tarjeta = tarjetas[0] || null;
+      const tit = tarjeta ? tarjeta.querySelector('.detail-section-title') : null;
+      const lineas = [...c.querySelectorAll('details.detail-plega')].map((d) => {
+        const cab = d.querySelector('summary');
+        return {
+          clave: d.dataset.linea,
+          rotulo: cab ? norm(cab.querySelector('.detail-plega-rotulo').textContent) : null,
+          valor: cab ? norm(cab.querySelector('.detail-plega-valor').textContent) : null,
+          abierta: d.open,
+          alto: cab ? Math.round(cab.getBoundingClientRect().height * 10) / 10 : 0,
+          fija: d.classList.contains('detail-plega--fija'),
+          enLaTarjeta: !!(tarjeta && tarjeta.contains(d)),
+        };
+      });
+      const titulosSueltos = [...c.querySelectorAll('.detail-section-title')].map((e) => norm(e.textContent))
+        .filter((t) => ['Tipo de trabajo', 'Datos', 'Gastos de este trabajo', 'Notas internas'].includes(t));
+      const preciosEn = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el parte/.test(l.textContent)).length;
+      const barra = c.querySelector('.job-doc-toolbar');
+      return {
+        tarjetas: tarjetas.length,
+        titulo: tit ? norm(tit.textContent) : null,
+        lineas,
+        titulosSueltos,
+        tituloAsignadosDuplicado: c.querySelectorAll('.job-asignados-titulo').length,
+        cambiarTipo: [...c.querySelectorAll('button')].filter((b) => norm(b.textContent) === 'Cambiar').length,
+        preciosEnBarra: barra ? preciosEn(barra) : -1,
+        preciosEnPantalla: preciosEn(c),
+        desbordaTarjeta: tarjeta ? tarjeta.scrollWidth > tarjeta.clientWidth : null,
+      };
+    });
 
     // ⓪ control de discriminación: dos casos SIN el mismo perfil no pueden pintar lo mismo. El
     // técnico comparte trabajo con el caso «con equipo» a propósito (mide otro rol), así que sólo
@@ -533,7 +487,33 @@ for (const ancho of ANCHOS) {
       // Una línea que no existe es un HALLAZGO con nombre, no una excepción: sobre el producto sin
       // tocar este bloque tiene que caer en rojo LIMPIO (se comprobó así), no reventar el guard.
       if (!f) { mal(`F.7 ${q} no existe la línea «${rotulo}»: no hay nada que pulsar`); continue; }
-      const a = await page.evaluate(medirLineaAbierta, clave);
+      // Pulsa el encabezado de una línea y mide lo que hay DENTRO.
+      const a = await page.evaluate(async (clave) => {
+        const c = document.getElementById('view');
+        const norm = (s) => String(s).replace(/[   ]/g, ' ').replace(/\s+/g, ' ').trim();
+        const d = c.querySelector(`details.detail-plega[data-linea="${clave}"]`);
+        const antes = d.open;
+        d.querySelector('summary').click();
+        await new Promise((r) => setTimeout(r, 60));
+        const cuerpo = d.querySelector('.detail-plega-cuerpo');
+        const visible = (e) => e.getClientRects().length > 0;
+        const objetivo = (e) => (e.tagName === 'INPUT' && e.type === 'checkbox' && e.closest('label')) ? e.closest('label') : e;
+        const controles = cuerpo ? [...cuerpo.querySelectorAll('button, a, input, select, textarea')].filter(visible) : [];
+        return {
+          antes,
+          ahora: d.open,
+          hayCuerpo: !!cuerpo,
+          texto: cuerpo ? norm(cuerpo.innerText) : '',
+          botones: controles.filter((e) => e.tagName === 'BUTTON').map((e) => norm(e.textContent)),
+          casillas: controles.filter((e) => e.type === 'checkbox').map((e) => e.getAttribute('aria-label')),
+          ids: controles.map((e) => e.id).filter(Boolean),
+          marcadores: Object.fromEntries(controles.filter((e) => e.placeholder).map((e) => [e.id, e.placeholder])),
+          etiquetadoPor: Object.fromEntries(controles.filter((e) => e.getAttribute('aria-labelledby')).map((e) => [e.id, e.getAttribute('aria-labelledby')])),
+          filasGasto: cuerpo ? cuerpo.querySelectorAll('.job-doc-row[data-gasto]').length : 0,
+          pequenos: controles.filter((e) => { const r = objetivo(e).getBoundingClientRect(); return r.width < 44 || r.height < 44; })
+            .map((e) => { const r = objetivo(e).getBoundingClientRect(); return `${e.tagName.toLowerCase()}«${norm(e.textContent || e.getAttribute('aria-label') || e.id).slice(0, 24)}» ${r.width.toFixed(0)}×${r.height.toFixed(0)}`; }),
+        };
+      }, clave);
       const fallos = [];
       if (caso.dentro.quien && clave === 'quien' && caso.dentro.quien.fija) {
         // Sin nada que abrir: la línea es fija y NO se abre al pulsarla.
@@ -600,7 +580,25 @@ for (const ancho of ANCHOS) {
     // F.6 · la casilla «Incluir precios en el parte» ya no está en la barra de Documentos: vive SÓLO
     // en la hoja de alta del albarán (com. 16142). Sólo en un caso: es igual para todos.
     if (caso.sheet) {
-      const r = await page.evaluate(medirCasillaDePrecios);
+      // F.6 · pulsa «+ Nuevo albarán» y mide dónde vive la casilla de precios.
+      const r = await page.evaluate(async () => {
+        const c = document.getElementById('view');
+        const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
+        const cuenta = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el parte/.test(l.textContent));
+        const barra = c.querySelector('.job-doc-toolbar');
+        if (!barra) return { sinBoton: true, antes: { barra: -1, pantalla: cuenta(document).length } };
+        const antes = { barra: cuenta(barra).length, pantalla: cuenta(document).length };
+        const btn = [...c.querySelectorAll('.job-doc-toolbar button')].find((b) => norm(b.textContent) === '+ Nuevo albarán');
+        if (!btn) return { sinBoton: true, antes };
+        btn.click();
+        await new Promise((r) => setTimeout(r, 500));
+        const hoja = document.querySelector('.modal-overlay');
+        const dentro = hoja ? cuenta(hoja) : [];
+        const casilla = dentro[0] ? dentro[0].querySelector('input[type=checkbox]') : null;
+        const res = { antes, hojaAbierta: !!hoja, dentro: dentro.length, marcadaAlAbrir: casilla ? casilla.checked : null };
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        return res;
+      });
       if (r.sinBoton) mal(`F.6 ${q} no encuentro «+ Nuevo albarán» para pulsar`);
       else if (r.antes.barra === 0 && r.antes.pantalla === 0 && r.hojaAbierta && r.dentro === 1 && r.marcadaAlAbrir === false) {
         bien(`F.6 ${q} la casilla no está en la barra ni en la pantalla; al pulsar «+ Nuevo albarán» la hoja la lleva UNA vez, sin marcar`);
