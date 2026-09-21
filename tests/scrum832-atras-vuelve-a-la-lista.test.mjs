@@ -43,9 +43,11 @@ test('SCRUM-832 · SUELO: se encuentran las cinco fichas declaradas', () => {
   const d = detallesDeclarados();
   assert.ok(d, '🔴 CIEGO: no encuentro `DETALLES` en app.js. Si cambió de forma, este guard dejó '
     + 'de mirar lo que cree que mira y todo lo de abajo es un verde vacío.');
-  assert.equal(d.length, 5,
-    `🔴 hay ${d.length} fichas declaradas y son cinco: presupuesto, trabajo, factura, albarán y `
-    + 'cliente. Si entra una sexta sin aviso, el atrás la deja fuera de la aplicación.');
+  // SCRUM-980 · la SEXTA: `parte-detail`, que ahora se abre desde el historial de la ficha del
+  // cliente. Entra CON su aviso firmado (P8) y vuelve a Trabajos, que es lo que este suelo exige.
+  assert.equal(d.length, 6,
+    `🔴 hay ${d.length} fichas declaradas y son seis: presupuesto, trabajo, factura, albarán, `
+    + 'cliente y parte. Si entra una séptima sin aviso, el atrás la deja fuera de la aplicación.');
 });
 
 test('SCRUM-832 · cada ficha vuelve a SU lista, y su lista es una vista real', () => {

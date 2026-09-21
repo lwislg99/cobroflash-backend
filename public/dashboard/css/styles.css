@@ -1371,6 +1371,7 @@ html, body { overflow-x: clip; }
 .quote-paso.is-cerrado .quote-add-line,
 .quote-paso.is-cerrado .quote-dto-global,
 .quote-paso.is-cerrado .quote-fila,
+.quote-paso.is-cerrado .quote-ajustes,
 .quote-paso.is-cerrado .form-actions { display: none; }
 .quote-paso.is-cerrado .quote-block-title { margin: 0; }
 
@@ -2280,6 +2281,20 @@ html, body { overflow-x: clip; }
 }
 /* Solo clipa las cards que envuelven tablas */
 .data-card { overflow: hidden; }
+
+/* ── SCRUM-980 · La pestaña «Trabajos» de la ficha del cliente (customerDetailView.js) ───────
+   Mismos valores que llevaban como estilo en línea desde JS; salen a la hoja para que el
+   trinquete de 713c no suba. La línea «Próxima visita» va en la cabecera de la ficha.
+   Las dos celdas llevan `.table td` delante porque `.table td` (y su versión móvil) pone su
+   propio padding y color, y una clase sola perdía contra ellos, que es lo que el estilo en
+   línea no hacía. */
+.historial-proxima { font-size: 13px; font-weight: 600; color: var(--neutral-700); margin-top: 6px; }
+.table td.historial-vacio { text-align: center; color: var(--neutral-400); padding: 24px; }
+.table td.historial-fecha { color: var(--muted); }
+.historial-docs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.historial-ver-mas { margin: 12px 16px; }
+.historial-sueltos { margin: 16px 16px 8px; font-size: 13px; font-weight: 700; color: var(--neutral-600); }
+.historial-sueltos-lista { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 16px 16px; }
 
 /* ── Settings form: responsive ──────────────────────────────── */
 @media (max-width: 640px) {

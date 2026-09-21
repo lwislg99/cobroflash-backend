@@ -221,6 +221,11 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // confirmación de «Limpiar formulario» y el borrador tras recargar: el menú y la hoja sólo existen
   // al pulsar, y el borrador en el `localStorage` de un navegador. Comprobado en rojo con el
   // `public/` de 915h (21-sep-2026): 6 hallazgos en 4 de 4 casos.
+  // SCRUM-915g · entra `guard:ajustes-del-justificante`. Mide la fila «Ajustes del documento» del
+  // documento suelto DESPUÉS DE PULSAR «Cambiar» y «Listo» —qué queda a la vista, qué dice su resumen,
+  // cuánto mide su botón a 390 px—, y nada de eso existe fuera del render. Comprobado en rojo con el
+  // `public/` de main 092ccb5a (21-sep-2026): 6 hallazgos en 6 de 6 casos; y por mutación, siete
+  // mutantes, los siete caen.
   // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
   // ⚠️ NOVENA colisión (20-sep-2026, al mergear main en la rama del #1541): otra vez los DOS
   // comentarios en conflicto y la CIFRA no —917e decía 31 y main ya decía 31 por otro camino—,
