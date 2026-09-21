@@ -3867,9 +3867,14 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    `.gastos-pantalla`, `.gastos-*` o `.gasto-*`: no se toca `.table-scroll .table`, que es de otros
    usos (patron-tabla-de-lado.md). Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. */
 
-.gastos-cabecera { margin-bottom: 16px; }
+/* SCRUM-920d · la cabecera lleva las acciones a la derecha, como el prototipo: «Nuevo gasto» (que a 390 px
+   pasa a la barra de abajo) y «⬇ CSV» (que se queda arriba, en las dos anchuras). */
+.gastos-cabecera { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; margin-bottom: 16px; }
+.gastos-titulo { flex: 1 1 240px; min-width: 0; }
 .gastos-cabecera h2 { margin: 0; font-size: 18px; }
 .gastos-cabecera p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.gastos-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gastos-barra { display: flex; }
 .gastos-cargando { color: var(--muted); font-size: 14px; }
 .gastos-error { color: var(--danger-ink, #991b1b); font-size: 14px; }
 .gastos-vacio-cta { margin-top: 14px; }
@@ -3898,13 +3903,40 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 
 .gastos-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
 .gastos-filtros select.input { width: auto; max-width: 100%; }
-.gastos-nuevo { margin-left: auto; }
+
+/* SCRUM-920d · los dos chips de la foto («Todos · N» y «Sin foto · N»). El pulsado va en Tinta y no en verde:
+   la Regla de Una Sola Voz deja el verde para el botón primario de la pantalla. La cuenta es lo que hace
+   accionable al chip, y es la de lo que verás al pulsarlo. */
+.gastos-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px;
+  border-radius: var(--r-full); border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.gastos-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.gastos-chip:focus-visible { outline: none; box-shadow: var(--ring); }
+/* La cuenta del chip en cifras de ancho fijo: al pulsar «Sin foto» cambian los números y el chip no baila. */
+.gastos-chip-n { font-variant-numeric: tabular-nums; }
+
+/* La cabecera del mes: el mes y la cuenta de lo que se ve. Con un filtro puesto lleva además la suma de
+   ESO y dice que no es la del mes (el total del mes sale una sola vez, en el KPI). */
+.gastos-mes { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 0 4px 8px; }
+.gastos-mes b { font-size: 15px; color: var(--ink); }
+.gastos-mes-n { font-size: 13.5px; color: var(--muted); }
+.gastos-mes-suma { margin-left: auto; font-size: 15px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.gastos-mes-salvedad { width: 100%; font-size: 12.5px; color: var(--muted); }
 /* AB6 · objetivo al pulgar: todo control de esta pantalla a 44 px, también en escritorio. */
 .gastos-pantalla .btn-primary,
 .gastos-pantalla .btn-secondary,
 .gastos-pantalla .btn-ghost,
 .gastos-pantalla select.input { min-height: 44px; }
 .gastos-pantalla .overflow-trigger { min-width: 44px; min-height: 44px; }
+/* SCRUM-920d · 🔴 UNA TRAMPA MEDIDA. `#view-container > *` (más arriba) anima con `yaqu-fade-in`, cuyo último
+   fotograma es `transform: translateY(0)`, y `both` lo MANTIENE al acabar. Un `transform` que no es `none` hace
+   de esa pantalla el bloque contenedor de todo `position: fixed` que lleve dentro: la barra de «Nuevo gasto» se
+   dibujaba al final de la lista (bottom 2021 en una pantalla de 844) y se movía con el scroll. Aquí la aparición
+   es sólo de opacidad, que no crea ese bloque. */
+#view-container > .gastos-pantalla { animation-name: yaqu-fade-in-opacidad; }
+@keyframes yaqu-fade-in-opacidad { from { opacity: 0; } to { opacity: 1; } }
 
 /* La lista: filas en REJILLA. Cinco columnas a escritorio; a 900 px se reordenan en tres renglones
    (qué y cuánto · categoría · trabajo y «⋯») y a 390 px NO desbordan. */
@@ -3921,7 +3953,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .gasto-que { min-width: 0; }
 .gasto-que b { display: block; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
 .gasto-notas, .gasto-fecha { display: block; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
-.gasto-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+/* SCRUM-920d · la categoría y la foto, UNA debajo de la otra en la columna de cinco (150 px no dan para las dos
+   en fila y, en fila, unas filas las llevarían juntas y otras no); en los tres renglones de abajo, en fila. */
+.gasto-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
 .gasto-trab { min-width: 0; font-size: 13.5px; }
 .gasto-trab-enlace {
   display: inline-flex; align-items: center; min-height: 44px;
@@ -3947,6 +3981,16 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .gasto-cat--subcontrata { background: #fee2e2; color: #b91c1c; }
 .gasto-cat--otros { background: var(--neutral-100); color: var(--neutral-600); }
 
+/* SCRUM-920d · la foto del ticket en la fila: un HECHO sobre el archivo que guardamos («Foto guardada» /
+   «Sin foto»), sin triángulo y sin decir nada de lo que Hacienda admite. Sin miniatura A PROPÓSITO: la foto
+   entera pesa hasta 1,1 MiB y la fila no puede pedirla (docs/master/SCRUM-920.md, «920d»). */
+.gasto-foto {
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: var(--r-full);
+  font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+}
+.gasto-foto--si { background: var(--brand-tint); color: var(--brand-tint-ink); }
+.gasto-foto--no { background: #fff7ed; color: #b45309; }
+
 @media (max-width: 900px) {
   .gasto-fila {
     grid-template-columns: 1fr auto; grid-template-areas: "que imp" "meta meta" "trab mas";
@@ -3954,7 +3998,7 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   }
   .gasto-que { grid-area: que; }
   .gasto-imp { grid-area: imp; }
-  .gasto-meta { grid-area: meta; }
+  .gasto-meta { grid-area: meta; flex-direction: row; flex-wrap: wrap; align-items: center; }
   .gasto-trab { grid-area: trab; align-self: center; }
   .gasto-mas { grid-area: mas; align-self: center; }
   /* Las notas y la fecha van en UN renglón («Gasto de prueba · 17 sept»): mismos datos, un renglón menos. */
@@ -3977,10 +4021,21 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   .gasto-kpi:first-child { border-top: 0; }
   .gasto-kpi-valor, .gasto-kpi-valor--texto { order: 2; margin: 0 0 0 auto; font-size: 1.0625rem; }
   .gasto-kpi-pie { order: 3; width: 100%; margin: 0; }
-  /* Filtros: el mes y la categoría a lo ancho (a media columna el mes se cortaba en «septiembre de 202»
-     y perdía el año); «Nuevo gasto» y «⬇ CSV» juntos debajo. */
+  /* Filtros en rejilla de dos: el mes a lo ancho (a media columna se cortaba en «septiembre de 202» y
+     perdía el año) · categoría | trabajo · los dos chips juntos. SCRUM-920d: sueltos en fila salían cuatro
+     renglones y la primera fila de gastos no entraba en la primera pantalla. */
   .gastos-filtros { display: grid; grid-template-columns: 1fr 1fr; }
-  .gastos-filtros select.input { width: 100%; min-width: 0; grid-column: 1 / -1; }
-  .gastos-nuevo { margin-left: 0; }
-  .gastos-filtros .btn-secondary { justify-content: center; text-align: center; }
+  .gastos-filtros select.input { width: 100%; min-width: 0; }
+  .gastos-filtros .gastos-filtro-mes { grid-column: 1 / -1; }
+  .gastos-chip { justify-content: center; }
+  /* SCRUM-920d · «Nuevo gasto» FIJO ABAJO, al alcance del pulgar y con la lista pasando por debajo. Es EL MISMO
+     botón de arriba (con su atajo «N», SCRUM-769), no una copia: sólo cambia dónde se dibuja. La barra va por
+     debajo de las hojas y los avisos (z-index). El sitio para la última fila ya lo deja el `padding-bottom: 88px`
+     de `.view-container` a esta anchura (la barra mide 64 px); aquí sólo se suma la muesca del móvil. */
+  .gastos-pantalla { padding-bottom: env(safe-area-inset-bottom); }
+  .gastos-barra {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--border); box-shadow: var(--shadow-lg);
+  }
+  .gastos-barra .gastos-nuevo { flex: 1 1 0; justify-content: center; }
 }
