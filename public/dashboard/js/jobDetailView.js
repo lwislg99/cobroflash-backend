@@ -56,6 +56,9 @@ function pintarBloqueRail(bloque) {
     fila.className = 'detail-rail-linea';
     // SCRUM-907 · la línea de AVISO (cobrado de más) se distingue por clase, no por estilo en línea.
     if (linea.aviso) fila.classList.add('detail-rail-linea--aviso');
+    // SCRUM-982 · la NOTA del cliente: etiqueta encima y el texto con sus saltos de línea. Por
+    // clase, como el aviso; el texto sigue entrando por `textContent`, nunca como marcado.
+    if (linea.nota) fila.classList.add('detail-rail-linea--nota');
 
     if (linea.etiqueta) {
       const et = document.createElement('span');

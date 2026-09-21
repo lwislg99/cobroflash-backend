@@ -2602,6 +2602,15 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* La etiqueta de DINERO va a ancho fijo para que los importes queden alineados en columna. */
 .detail-rail-etiqueta { color: var(--muted); min-width: 76px; }
 .detail-rail-fuerte { color: var(--ink); font-weight: 600; }
+/* SCRUM-982 · la NOTA del cliente («timbre roto, llamar al móvil»): texto libre, de varias líneas.
+   La etiqueta va ENCIMA y el texto ocupa todo el ancho del rail, en vez de quedarse en una columna
+   estrecha al lado. Se lee ENTERA (sin recorte) y respeta los saltos que escribió el profesional;
+   `anywhere` parte una palabra larga (una URL, un código) en vez de ensanchar el rail en 360 px.
+   Y 8 px de aire por encima (el `sm` de DESIGN.md): pegada al enlace de WhatsApp se leía como su
+   subtítulo, y no lo es. Ni un token nuevo. */
+.detail-rail-linea--nota { flex-direction: column; align-items: stretch; gap: 2px; margin-top: 8px; }
+.detail-rail-linea--nota .detail-rail-etiqueta { min-width: 0; }
+.detail-rail-linea--nota span:not(.detail-rail-etiqueta) { white-space: pre-line; overflow-wrap: anywhere; }
 /* SCRUM-368: mismo caso que .home-hero-ok — verde de TEXTO, no el de fondo. */
 .detail-rail-enlace { color: var(--brand-tint-ink, #047857); font-weight: 600; text-decoration: none; }
 .detail-rail-enlace:hover { text-decoration: underline; }
