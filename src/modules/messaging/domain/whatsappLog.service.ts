@@ -148,22 +148,73 @@ export async function updateWaMessageStatus(
   }
 }
 
+export type EntregaWa = { status: string; templateName: string | null; at: Date };
+
+// SCRUM-986 · «el último» envío de un documento se decide en UN sitio. El detalle lo lee con
+// `getDeliveryStatus` (de uno en uno) y la lista con `getDeliveryStatusMany` (una página de ids en
+// una sola consulta): si cada una ordenara a su manera, el chip de la lista y el del detalle
+// podrían contar dos estados distintos del mismo presupuesto. `id` desempata dos envíos del mismo
+// milisegundo, para que «el último» sea el mismo con cualquiera de las dos lecturas.
+const ORDEN_DEL_ULTIMO_ENVIO: Array<{ createdAt: 'desc' } | { id: 'desc' }> = [
+  { createdAt: 'desc' },
+  { id: 'desc' },
+];
+
 /** Estado de entrega del último mensaje WhatsApp de un documento (chip de entrega, J4). */
 export async function getDeliveryStatus(
   merchantId: number,
   relatedType: WaRelatedType,
   relatedId: number,
-): Promise<{ status: string; templateName: string | null; at: Date } | null> {
+): Promise<EntregaWa | null> {
   try {
     const last = await prisma.whatsAppMessage.findFirst({
       where: { merchantId, relatedType, relatedId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: ORDEN_DEL_ULTIMO_ENVIO,
       select: { status: true, templateName: true, updatedAt: true },
     });
     return last ? { status: last.status, templateName: last.templateName, at: last.updatedAt } : null;
   } catch (err: any) {
     console.error('[WA-0b] getDeliveryStatus omitido:', err?.message || err);
     return null;
+  }
+}
+
+/**
+ * SCRUM-986 · El estado de entrega del último WhatsApp de CADA documento de una página de ids, en
+ * UNA consulta (no una por documento). Sirve la lista de presupuestos; el detalle sigue con
+ * `getDeliveryStatus` y las dos comparten `ORDEN_DEL_ULTIMO_ENVIO`.
+ *
+ * Un documento sin envío NO aparece en el mapa (= sin chip). Si la lectura falla, el mapa sale
+ * vacío y la lista se pinta sin chips: el chip es información añadida y no puede tumbar la lista
+ * (el mismo criterio que `getDeliveryStatus`, que devuelve null).
+ *
+ * El plan se midió antes de construirla: `whatsapp_messages` ya tiene el índice
+ * `(related_type, related_id)` y una página de 100 ids sobre 950.000 filas resuelve en ~0,8 ms
+ * con 414 buffers; sin ese índice, 5,9 ms y ~2.000 bloques (`docs/master/SCRUM-986.md`).
+ */
+export async function getDeliveryStatusMany(
+  merchantId: number,
+  relatedType: WaRelatedType,
+  relatedIds: number[],
+): Promise<Map<number, EntregaWa>> {
+  const ultimo = new Map<number, EntregaWa>();
+  const ids = [...new Set(relatedIds)];
+  if (ids.length === 0) return ultimo; // sin ids no hay consulta que hacer
+  try {
+    const filas = await prisma.whatsAppMessage.findMany({
+      where: { merchantId, relatedType, relatedId: { in: ids } },
+      orderBy: ORDEN_DEL_ULTIMO_ENVIO,
+      select: { relatedId: true, status: true, templateName: true, updatedAt: true },
+    });
+    for (const f of filas) {
+      // Llegan ordenadas de la más reciente a la más antigua: la primera de cada documento es «la última».
+      if (f.relatedId == null || ultimo.has(f.relatedId)) continue;
+      ultimo.set(f.relatedId, { status: f.status, templateName: f.templateName, at: f.updatedAt });
+    }
+    return ultimo;
+  } catch (err: any) {
+    console.error('[SCRUM-986] getDeliveryStatusMany omitido:', err?.message || err);
+    return new Map();
   }
 }
 

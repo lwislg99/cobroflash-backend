@@ -4,6 +4,7 @@ import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MIS
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
 import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRUM-34
 import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
+import { getDeliveryStatusMany } from '../messaging/domain/whatsappLog.service'; // SCRUM-986
 import { tieneDescuentoGlobalConVariosIva } from '../invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import {
@@ -77,6 +78,12 @@ export async function listQuotesAdmin(
     take: TOPE_LISTADO_QUOTES, // SCRUM-606: el mismo número que lee el aviso de «hay más»
   });
 
+  // SCRUM-986 · el chip de WhatsApp de cada fila: UNA consulta por la página de ids que acaba de
+  // salir, no una por presupuesto. Es lo que el detalle ya calcula con `getDeliveryStatus`, con la
+  // misma fila «última»; el técnico ve esta lista igual que el detalle, así que no se le enseña
+  // nada nuevo.
+  const entregas = await getDeliveryStatusMany(merchantId, 'quote', quotes.map((q) => q.id));
+
   return quotes.map((q) => {
     const primaryStatus =
       typeof q.status === 'string' ? q.status.toLowerCase() : 'draft';
@@ -121,6 +128,9 @@ export async function listQuotesAdmin(
       // ⚠️ Y la FACTURA no lo necesita: `listInvoicesAdmin` devuelve `findMany` sin `select`, asi
       // que alli la columna sale sola. El quinto eslabon NO es simetrico entre los dos documentos.
       tags: q.tags ?? null,
+      // SCRUM-986 · MISMO PROBLEMA DEL QUINTO ESLABÓN: proyección a mano. Sin esta línea el chip
+      // se calcula y no sale. `null` = nunca se le envió por WhatsApp = sin chip.
+      waDelivery: entregas.get(q.id) ?? null,
     };
   });
 }

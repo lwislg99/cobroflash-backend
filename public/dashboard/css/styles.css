@@ -559,6 +559,35 @@ html, body { overflow-x: clip; }
 .wa-chip-read      { background: var(--green-100);   color: var(--green-700); }
 .wa-chip-failed    { background: var(--red-50);      color: var(--red-600); }
 
+/* SCRUM-986 · el chip de WhatsApp en la celda de ESTADO de la lista de presupuestos: debajo de la
+   pill en la tabla; en la tarjeta móvil, la fila «estado» pasa a ancho completo con pill y chip
+   uno junto al otro (un chip de ~190px en la columna derecha estrechaba el nombre del cliente). */
+.status-wa { margin-top: 4px; }
+/* Con el chip la columna de estado es más ancha y la tabla reparte el resto: que ceda el NOMBRE del
+   cliente (que puede partirse en dos líneas) y no el ID ni el importe, que partidos («#4 / 1»,
+   «1.637,50 / €») se leen mal. Sólo las tablas que llevan una fila con chip (`:has(tr.has-wa)`):
+   `table--cards-mobile` la comparten Facturas, Cobros, Albaranes y Trabajos, y a ésas no se las toca.
+   La fecha tampoco se parte desde 1180 px; por debajo, la tabla ya iba justa y se le deja partirse. */
+.table--cards-mobile:has(tr.has-wa) td.cell-id,
+.table--cards-mobile:has(tr.has-wa) td.cell-amount { white-space: nowrap; }
+@media (min-width: 1180px) {
+  .table--cards-mobile:has(tr.has-wa) td.cell-date { white-space: nowrap; }
+}
+@media (max-width: 640px) {
+  .table--cards-mobile tbody tr.has-wa {
+    grid-template-areas:
+      "id     amount"
+      "client amount"
+      "date   date"
+      "status status"
+      "actions actions";
+  }
+  .table--cards-mobile tbody tr.has-wa td.cell-status {
+    justify-self: start; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+  }
+  .table--cards-mobile tbody tr.has-wa .status-wa { margin-top: 0; }
+}
+
 /* ── Form elements ──────────────────────────────────────────── */
 .field {
   display: flex;
