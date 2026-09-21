@@ -466,3 +466,57 @@ fusionado — **31**, no «30 + 1».
   La entrega anterior se cayó justo por ahí, así que el PR se mira antes de darla por buena.
 - Sin verificar en staging todavía (se hace tras el merge).
 - El hueco del banco de vistas con `append('texto')` sigue vivo: reportado, no arreglado (otro carril).
+
+## 917h · El techo de 44 px decía 8 en Windows y 7 en Linux sobre el MISMO árbol
+
+*21-sep-2026, 07:33 GMT (cabecera `Date:` de `gh api -i zen`) · sobre `origin/main`
+`43f4c7fc3f8d0330089edcd785cb0eea58ccb784` · Sesión 2b · worktree `wt-917h`.*
+
+**Qué pasaba.** Con el #1541 (917e) ya en `main` (merge `e65fd51604febb207ff98474e7396470f99c0d08`,
+07:21:51Z), el job «guards de navegador» dejó de decir `guard:escalera-por-estado: CIEGO` —medido
+en el run 35572028764: 0 apariciones en 603 líneas y `✔ guard:escalera-por-estado verde`— pero
+seguía en rojo por **nuestro propio guard**: `guard:detalle-trabajo-917`, 86 de 92. El trinquete
+G.2 de 44 px contaba **7** controles pequeños en el runner de Linux y el techo decía **8**, medido
+en Windows.
+
+**Por qué.** El guard sólo sabía dar la CUENTA, y su rojo pedía «di CUÁL». Primer commit: G.2
+nombra cada control pequeño con su tamaño cuando la cuenta no cuadra (probado con un rojo
+inyectado: techo 8 → 7 en un caso, la lista sale entera). Con eso, el que cambiaba con la máquina
+era el enlace de fecha del rail, **«1 sept», 35,8×44,0 en Windows**: el único que falla SÓLO por
+un ancho que depende del texto y de la fuente, y el único que no existe en el caso sin
+presupuesto — que es justo el único caso que en CI no cambiaba (6 = 6).
+
+**El arreglo es la causa, no el número.** `min-width: 44px` en `.detail-rail-linea a`, la misma
+regla que ya le daba los 44 px de alto (AB6). Así el área del enlace no depende del texto y las
+dos máquinas cuentan 7. Bajar el techo a 7 sin arreglarlo habría dejado el guard rojo en Windows.
+
+| medida | resultado |
+|---|---|
+| Windows, arreglo + techo viejo 8 | 🔴 86/92, los MISMOS 6 fallos que el runner, «1 sept» fuera de la lista |
+| Windows, arreglo + techo 7 | ✅ 92/92 |
+| Windows, SIN arreglo + techo 7 (la otra mitad del trinquete) | 🔴 86/92 «SUBE desde 7» |
+| `guard:objetivo-tactil` (también mide la ficha del Trabajo) | ✅ EXIT 0 |
+| tests `scrum352/848/782/787/318/317/522/548/710b/917` | 88 tests en 8 ficheros, 88 pass |
+
+### El merge de `main` en el #1541: la DÉCIMA colisión de `scrum522`
+
+El conflicto cayó, otra vez, sólo en los comentarios (965 y 915e1 contra el de la novena). Se
+quedaron todos, y la cifra **bajó limpia de `main` diciendo 32**; medida corriendo el test sobre el
+árbol fusionado: **33**. El conflicto que sí ves te tapa el que no, por segunda vez en dos días.
+
+### Error propio
+
+El 20-sep di por hecho que el único rojo del #1541 era `scrum804`, mirando sólo el job de
+`build + tests`. **El job de navegador ya estaba rojo por G.2 en la pasada de `0a7c010b`** (20-sep,
+20:07Z) y no lo leí. No es la puerta obligatoria, pero es el job que el equipo mira para saber si
+su guard de navegador está sano: entró en `main` con el #1541 y durante un rato todos los PR lo
+iban a heredar en lugar del CIEGO. 🔒 *Un job que no es puerta también se lee: si no, su rojo lo
+paga el siguiente.*
+
+### Lo que NO cubre
+
+- El verde del runner de Linux no está medido aún: lo da el CI de este PR. Si allí saliera 6 ≠ 7,
+  el diagnóstico nuevo nombraría el control, que es para lo que está.
+- La suite completa no se ha corrido en local (sin turno): la corre el PR.
+- Los otros 6-7 controles pequeños del detalle siguen siendo deuda heredada declarada; éste no los
+  toca.
