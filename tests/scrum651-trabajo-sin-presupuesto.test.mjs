@@ -24,6 +24,8 @@ import { soloEjecutable } from './_guard-texto.mjs';
 import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../dist/modules/jobs/domain/trabajoDirecto.js';
 import { TIPOS_INTERVENCION, esTipoIntervencion } from '../dist/modules/jobs/domain/tipoIntervencion.js';
 import { estadoCobroFor, importeDeReferencia } from '../dist/modules/jobs/domain/job.service.js';
+// SCRUM-917e · lo que antes se leía del fuente (el titular del dinero) ahora se mide MONTADO.
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const RUTAS = 'src/modules/jobs/app/routes/jobs.routes.ts';
@@ -37,6 +39,32 @@ const leer = (p) => {
     assert.fail(`🔴 no se pudo leer ${p} (${e && e.code ? e.code : e}). «No está» y «no supe mirar» son el mismo verde.`);
   }
 };
+
+// ── EL DOM MONTADO (SCRUM-917e) ───────────────────────────────────────────────────────────
+// Fake DOM: ni BD, ni red, ni navegador — el mismo banco que usan `scrum817` y `scrum318`.
+const JOB_SIN_PRESUPUESTO = {
+  id: 7, status: 'en_curso', createdAt: '2026-09-01T09:00:00Z', titulo: 'Revisión anual',
+  customer: { id: 3, name: 'Bar Paco' }, asignados: [], operario: null,
+  albaranes: [], gastos: [], notes: '', quote: { currency: 'EUR' }, direccion: null, invoices: [],
+};
+
+async function montarDetalle(job) {
+  const banco = cargarDashboard(RAIZ);
+  banco.ctx.apiRequest = async (u) => {
+    if (/\/admin\/team/.test(u)) return [];
+    if (/\/admin\/merchant/.test(u)) return { name: 'Epipe' };
+    if (/\/admin\/partes/.test(u)) return { partes: [] };
+    if (/gastos/.test(u)) return [];
+    return job;
+  };
+  banco.ctx.appUserRole = 'admin';
+  const r = await pintarVista(banco, 'renderJobDetailView');
+  assert.equal(r.error, null, `🔴 SUELO: la vista no monta (${r.error && r.error.message}). Una pantalla que no se pinta no dice «no hay dinero»: dice «no he mirado».`);
+  return r;
+}
+
+/** El texto propio de cada nodo del árbol montado (el banco NO agrega `textContent`). */
+const textosDe = (r) => todos(r.contenedor).map((n) => String(n.textContent || '').trim()).filter(Boolean);
 
 /** Las rutas declaradas en un fichero de Express, por AST: `router.<método>('<ruta>'`. */
 function rutasDe(fichero) {
@@ -200,15 +228,41 @@ test('SCRUM-651 · 🔴 un Trabajo sin presupuesto NO se llama «Presupuesto #N�
   assert.equal(tituloDeTrabajo({ titulo: 'Averia cocina', quote: null, customer: { name: 'Bar Paco' }, jobId: 12 }), 'Averia cocina');
 });
 
-test('SCRUM-651 · 🔴 el titular «Total aceptado» NO se pinta si no consta', () => {
-  const detalle = soloEjecutable(leer(DETALLE));
-  const i = detalle.indexOf('detail-total-label');
-  assert.ok(i > 0, '🔴 no se encuentra el titular del dinero: el instrumento no vale.');
-  const antes = detalle.slice(Math.max(0, i - 400), i);
-  assert.match(antes, /if \(job\.totalAceptado != null\)/,
-    '🔴 «TOTAL ACEPTADO 0,00 €» VUELVE A PINTARSE EN UN TRABAJO SIN PRESUPUESTO.\n\n'
-    + '  Va a 2,2 rem, es el titular del dinero de la pantalla, y se lee como «presupuestaste\n'
-    + '  cero». No hay presupuesto: lo que corresponde es no decir nada, no decir cero.');
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 RE-ANCLADO EN SCRUM-917e (corte D), 20-sep-2026.
+//
+// QUÉ SUPERFICIE DESAPARECIÓ: el titular «Total aceptado» a 2,2 rem (`detail-total-label`). Se
+// ha ido, con la barra que repetía «Cobrado X de Y» y con la tabla de importes de «Qué falta
+// para cobrar», a una sola franja (`.detail-dinero`) — medido: el mismo «590,00 €» se leía
+// SIETE veces en la pantalla.
+//
+// QUÉ PRINCIPIO SOBREVIVE: **AUSENTE NO ES CERO.** Un Trabajo sin presupuesto no tiene eje, y
+// la pantalla no puede anunciar un 0,00 € como si fuera un importe presupuestado.
+//
+// DÓNDE VIVE AHORA: la franja, guardada por `job.totalAceptado != null`.
+//
+// Y POR QUÉ SE MIDE EL DOM Y NO EL FUENTE: la versión anterior buscaba la guarda por su DISTANCIA
+// en caracteres al nombre de una clase CSS. Eso ataba el contrato a la FORMA del código —el mismo
+// error que este fichero ya se cazó a sí mismo en el test del título (línea 176)—, y se rompió en
+// cuanto la clase dejó de existir, aunque el principio seguía cumpliéndose. Montado, el contrato
+// sobrevive al siguiente rediseño.
+test('SCRUM-651 · 🔴 el dinero NO se pinta si no consta (ausente ≠ cero)', async () => {
+  const sinPresupuesto = await montarDetalle({ ...JOB_SIN_PRESUPUESTO, totalAceptado: null, totalCobrado: 0 });
+  const dinero = textosDe(sinPresupuesto).filter((t) => /€|aceptado|cobrad|falta por cobrar/i.test(t));
+  assert.deepEqual(dinero, [],
+    '🔴 UN TRABAJO SIN PRESUPUESTO ESTÁ HABLANDO DE DINERO: ' + JSON.stringify(dinero) + '\n\n'
+    + '  Sin `totalAceptado` no hay nada que decir. Un «0,00 €» ahí se lee como «presupuestaste\n'
+    + '  cero», que es una afirmación, y falsa. Y no se queda en la franja: ese cero viaja al\n'
+    + '  semáforo de cobro y a la barra, que pasan a hablar del dinero de alguien contra un eje\n'
+    + '  inventado. AUSENTE Y CERO NO SON LO MISMO.');
+
+  // CONTROL POSITIVO: con presupuesto, la franja sí está — si no, el negativo de arriba pasaría
+  // por una pantalla que no pinta dinero nunca, que es el verde que significa lo contrario.
+  const conPresupuesto = await montarDetalle({ ...JOB_SIN_PRESUPUESTO, totalAceptado: 480, totalCobrado: 0 });
+  const conDinero = textosDe(conPresupuesto).filter((t) => /€/.test(t));
+  assert.ok(conDinero.length > 0,
+    '🔴 SUELO: con presupuesto tampoco se pinta dinero. El instrumento no distingue las dos '
+    + 'pantallas, así que su «no hay dinero» no vale para nada.');
 });
 
 // ── 5 · LA PUERTA EN LA PANTALLA ──────────────────────────────────────────────────────────
