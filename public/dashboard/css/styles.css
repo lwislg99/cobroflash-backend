@@ -3811,3 +3811,126 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    con `--danger` en un `style.cssText`, asi que el trinquete de estilos en JS arreglo las dos
    cosas de una: lo saco a su clase y de paso le quito el color que no contrasta. */
 .revision-error { margin: 6px 0 0; font-size: 13px; color: var(--danger-ink, #991b1b); }
+
+/* ═══ SCRUM-920c · LA LISTA DE GASTOS, SIN TABLA (y sin `style=` en línea) ════════════════════════
+   Prototipo aprobado: docs/prototipos/SCRUM-920/gastos.html. Bloque propio y todo acotado a
+   `.gastos-pantalla`, `.gastos-*` o `.gasto-*`: no se toca `.table-scroll .table`, que es de otros
+   usos (patron-tabla-de-lado.md). Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. */
+
+.gastos-cabecera { margin-bottom: 16px; }
+.gastos-cabecera h2 { margin: 0; font-size: 18px; }
+.gastos-cabecera p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.gastos-cargando { color: var(--muted); font-size: 14px; }
+.gastos-error { color: var(--danger-ink, #991b1b); font-size: 14px; }
+.gastos-vacio-cta { margin-top: 14px; }
+
+/* Los TRES KPI de siempre: tres tarjetas a escritorio, UNA de tres renglones a 390 px (abajo). */
+.gastos-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.gasto-kpi {
+  min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 13px 16px; box-shadow: var(--shadow-sm);
+}
+.gasto-kpi--dinero { background: var(--brand-tint); }
+.gasto-kpi-rotulo { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.gasto-kpi-valor {
+  display: block; margin-top: 2px; font-size: 1.5rem; font-weight: 800; line-height: 1.15; color: var(--ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.gasto-kpi-valor--texto { font-size: 1.0625rem; line-height: 1.25; }
+/* «Sin asignar»: ámbar si hay dinero sin trabajo, verde si no. El ámbar es el `warning` de DESIGN.md
+   (#b45309), que sí pasa el contraste; el `#d97706` de antes se quedaba en 3,2:1. */
+.gasto-kpi-valor--aviso { color: #b45309; }
+.gasto-kpi-valor--ok { color: var(--brand); }
+.gasto-kpi-pie { display: block; margin-top: 3px; font-size: 12.5px; color: var(--muted); }
+.gasto-kpi--dinero .gasto-kpi-valor { color: var(--brand-ink); }
+.gasto-kpi--dinero .gasto-kpi-rotulo,
+.gasto-kpi--dinero .gasto-kpi-pie { color: var(--brand-tint-ink); }
+
+.gastos-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.gastos-filtros select.input { width: auto; max-width: 100%; }
+.gastos-nuevo { margin-left: auto; }
+/* AB6 · objetivo al pulgar: todo control de esta pantalla a 44 px, también en escritorio. */
+.gastos-pantalla .btn-primary,
+.gastos-pantalla .btn-secondary,
+.gastos-pantalla .btn-ghost,
+.gastos-pantalla select.input { min-height: 44px; }
+.gastos-pantalla .overflow-trigger { min-width: 44px; min-height: 44px; }
+
+/* La lista: filas en REJILLA. Cinco columnas a escritorio; a 900 px se reordenan en tres renglones
+   (qué y cuánto · categoría · trabajo y «⋯») y a 390 px NO desbordan. */
+.gastos-filas {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.gasto-fila {
+  display: grid; grid-template-columns: minmax(0, 1fr) 150px 200px 110px 44px; gap: 10px; align-items: center;
+  padding: 12px 14px; border-top: 1px solid var(--neutral-200); cursor: pointer;
+}
+.gasto-fila:first-child { border-top: 0; }
+.gasto-fila:hover { background: var(--bg); }
+.gasto-que { min-width: 0; }
+.gasto-que b { display: block; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.gasto-notas, .gasto-fecha { display: block; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.gasto-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.gasto-trab { min-width: 0; font-size: 13.5px; }
+.gasto-trab-enlace {
+  display: inline-flex; align-items: center; min-height: 44px;
+  color: var(--brand-tint-ink); font-weight: 600; text-decoration: none; overflow-wrap: anywhere;
+}
+.gasto-trab-enlace:hover { text-decoration: underline; }
+.gasto-trab-suelto { color: var(--muted); }
+.gasto-trab-prov { display: block; margin-top: -8px; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.gasto-trab-suelto + .gasto-trab-prov { margin-top: 0; }
+.gasto-imp { text-align: right; font-size: 1.0625rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.gasto-mas { justify-self: end; }
+.gasto-opcion-eliminar { color: var(--danger-ink, #991b1b); }
+
+/* La píldora de categoría. Los cinco colores son los de siempre —el profesional ya los reconoce—,
+   con el TEXTO un tono más oscuro de la misma familia para pasar el contraste (AA, 4,5:1). */
+.gasto-cat {
+  display: inline-block; padding: 3px 10px; border-radius: var(--r-full);
+  font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+}
+.gasto-cat--materiales { background: #dbeafe; color: #1d4ed8; }
+.gasto-cat--desplazamiento { background: #fef3c7; color: #92400e; }
+.gasto-cat--herramientas { background: #ede9fe; color: #6d28d9; }
+.gasto-cat--subcontrata { background: #fee2e2; color: #b91c1c; }
+.gasto-cat--otros { background: var(--neutral-100); color: var(--neutral-600); }
+
+@media (max-width: 900px) {
+  .gasto-fila {
+    grid-template-columns: 1fr auto; grid-template-areas: "que imp" "meta meta" "trab mas";
+    gap: 8px 12px; padding: 14px;
+  }
+  .gasto-que { grid-area: que; }
+  .gasto-imp { grid-area: imp; }
+  .gasto-meta { grid-area: meta; }
+  .gasto-trab { grid-area: trab; align-self: center; }
+  .gasto-mas { grid-area: mas; align-self: center; }
+  /* Las notas y la fecha van en UN renglón («Gasto de prueba · 17 sept»): mismos datos, un renglón menos. */
+  .gasto-que .gasto-notas, .gasto-que .gasto-fecha { display: inline; }
+  .gasto-que b + .gasto-notas::before,
+  .gasto-que b + .gasto-fecha::before { content: ""; display: block; }
+  .gasto-notas + .gasto-fecha::before { content: " · "; }
+}
+@media (max-width: 560px) {
+  /* Una tarjeta, tres renglones «rótulo … cifra»: apilados en tres tarjetas, la primera fila de
+     gastos caía por debajo de la mitad de la pantalla. Los tres rótulos y las tres cuentas siguen. */
+  .gastos-kpis {
+    grid-template-columns: 1fr; gap: 0; padding: 4px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+  }
+  .gasto-kpi, .gasto-kpi--dinero {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; padding: 9px 0;
+    background: transparent; border: 0; border-top: 1px solid var(--neutral-200); border-radius: 0; box-shadow: none;
+  }
+  .gasto-kpi:first-child { border-top: 0; }
+  .gasto-kpi-valor, .gasto-kpi-valor--texto { order: 2; margin: 0 0 0 auto; font-size: 1.0625rem; }
+  .gasto-kpi-pie { order: 3; width: 100%; margin: 0; }
+  /* Filtros: el mes y la categoría a lo ancho (a media columna el mes se cortaba en «septiembre de 202»
+     y perdía el año); «Nuevo gasto» y «⬇ CSV» juntos debajo. */
+  .gastos-filtros { display: grid; grid-template-columns: 1fr 1fr; }
+  .gastos-filtros select.input { width: 100%; min-width: 0; grid-column: 1 / -1; }
+  .gastos-nuevo { margin-left: 0; }
+  .gastos-filtros .btn-secondary { justify-content: center; text-align: center; }
+}

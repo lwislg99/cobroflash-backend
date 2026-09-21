@@ -1,16 +1,30 @@
 // public/dashboard/js/expensesView.js
 
+// Los cinco colores de la píldora viven en `styles.css` (`.gasto-cat--<clave>`), no aquí: eran un
+// `style=` en línea por fila (SCRUM-920c, norma A7). Son los de siempre; el profesional ya los reconoce.
 const CATEGORY_LABELS = {
-  materiales:     { label: 'Materiales',      color: '#2563eb', bg: '#dbeafe' },
-  desplazamiento: { label: 'Desplazamiento',  color: '#d97706', bg: '#fef3c7' },
-  herramientas:   { label: 'Herramientas',    color: '#7c3aed', bg: '#ede9fe' },
-  subcontrata:    { label: 'Subcontrata',     color: '#dc2626', bg: '#fee2e2' },
-  otros:          { label: 'Otros',           color: 'var(--neutral-600)', bg: 'var(--neutral-100)' },
+  materiales:     { label: 'Materiales' },
+  desplazamiento: { label: 'Desplazamiento' },
+  herramientas:   { label: 'Herramientas' },
+  subcontrata:    { label: 'Subcontrata' },
+  otros:          { label: 'Otros' },
 };
 
+// SCRUM-944 (punto 1) · UNA sola función decide cómo se nombra una categoría, y la usan la píldora de
+// cada fila y el KPI «Mayor categoría». Antes el KPI caía a `top.category` y en pantalla salía la clave
+// interna —«materials»—; la píldora ya caía a «Otros». Lo que no se reconoce es, por dominio, «otros»
+// (la categoría comodín de `EXPENSE_CATEGORIES`): se dice con un nombre humano y nunca con la clave.
+// Se pregunta por el HECHO —¿es una clave del mapa?— y no con `MAPA[k] || MAPA.otros`: así es un
+// ternario sobre `hasOwnProperty`, que además no se traga `constructor` ni `__proto__`.
+function categoriaDe(category) {
+  const conocida = Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, category);
+  const clave = conocida ? category : 'otros';
+  return { clave, label: CATEGORY_LABELS[clave].label };
+}
+
 function catPill(category) {
-  const c = CATEGORY_LABELS[category] || CATEGORY_LABELS.otros;
-  return `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;background:${c.bg};color:${c.color}">${c.label}</span>`;
+  const c = categoriaDe(category);
+  return `<span class="gasto-cat gasto-cat--${c.clave}">${c.label}</span>`;
 }
 
 // ── SCRUM-135: selector de Trabajos ───────────────────────────────────────────
@@ -60,48 +74,71 @@ function jobOptionsHtml(jobs, currentQuoteId) {
   return `<option value="">— Sin trabajo —</option>` + opts.join('');
 }
 
+function gastoEl(etiqueta, clase, texto) {
+  const n = document.createElement(etiqueta);
+  if (clase) n.className = clase;
+  if (texto != null) n.textContent = texto;
+  return n;
+}
+
+// Un enlace de la fila. La fila entera abre el gasto, así que el enlace NO deja pasar el clic: sin
+// `stopPropagation` pulsar el nombre del trabajo abriría además el modal de edición.
+function enlaceDeGasto(texto, alPulsar) {
+  const a = gastoEl('a', 'gasto-trab-enlace', texto);
+  a.href = '#';
+  a.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); alPulsar(); });
+  return a;
+}
+
 // Celda "Trabajo" de la lista de gastos. Con Job → su nombre y enlace a SU ficha. Sin Job
 // (gasto vinculado a un presupuesto que nunca se aceptó) → se dice tal cual y se enlaza al
-// presupuesto: mejor nombrar lo que hay que fingir un trabajo que no existe.
-function expenseJobCell(expense) {
+// presupuesto: mejor nombrar lo que hay que fingir un trabajo que no existe. Sin presupuesto, el
+// gasto está suelto y lo dice («Sin trabajo», firmado en SCRUM-920, com. 15992), no un «—».
+function celdaTrabajo(expense) {
+  const caja = gastoEl('div', 'gasto-trab');
   if (expense.job) {
-    return `<a href="#" onclick="event.stopPropagation();renderAppView('jobs-detail',{jobId:${expense.job.id}})" style="color:var(--blue-600)">${escHtml(jobLabel(expense.job))}</a>`;
+    caja.appendChild(enlaceDeGasto(jobLabel(expense.job), () => renderAppView('jobs-detail', { jobId: expense.job.id })));
+  } else if (expense.quote) {
+    const qId = Number(expense.quote.id);
+    caja.appendChild(enlaceDeGasto('Presupuesto sin trabajo', () => renderAppView('quotes-detail', { quoteId: qId })));
+  } else {
+    caja.appendChild(gastoEl('span', 'gasto-trab-suelto', 'Sin trabajo'));
   }
-  const qId = Number(expense.quote.id);
-  return `<a href="#" onclick="event.stopPropagation();renderAppView('quotes-detail',{quoteId:${qId}})" style="color:var(--blue-600)">Presupuesto sin trabajo</a>`;
+  if (expense.provider) caja.appendChild(gastoEl('span', 'gasto-trab-prov', expense.provider.name));
+  return caja;
 }
 
 async function renderExpensesView(container) {
   container.innerHTML = `
-    <div>
+    <div class="gastos-pantalla">
       <!-- Cabecera -->
-      <div style="margin-bottom:16px">
-        <h2 style="margin:0;font-size:18px">Gastos</h2>
-        <p style="margin:2px 0 0;font-size:13px;color:var(--muted)">Controla tus costes y vincúlalos a trabajos para ver el margen real.</p>
+      <div class="gastos-cabecera">
+        <h2>Gastos</h2>
+        <p>Controla tus costes y vincúlalos a trabajos para ver el margen real.</p>
       </div>
 
-      <!-- Resumen mensual -->
-      <div id="exp-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
-        <div class="kpi-card"><div class="kpi-label">Cargando…</div></div>
-        <div class="kpi-card"><div class="kpi-label"></div></div>
-        <div class="kpi-card"><div class="kpi-label"></div></div>
+      <!-- Resumen mensual: los tres KPI de siempre, con sus rótulos y sus cuentas -->
+      <div id="exp-summary" class="gastos-kpis">
+        <div class="gasto-kpi"><div class="gasto-kpi-rotulo">Cargando…</div></div>
+        <div class="gasto-kpi"><div class="gasto-kpi-rotulo"></div></div>
+        <div class="gasto-kpi"><div class="gasto-kpi-rotulo"></div></div>
       </div>
 
       <!-- Filtros y botón nuevo -->
-      <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-        <select id="exp-filter-month" class="input" style="width:auto">
+      <div class="gastos-filtros">
+        <select id="exp-filter-month" class="input">
           ${getMonthOptions()}
         </select>
-        <select id="exp-filter-cat" class="input" style="width:auto">
+        <select id="exp-filter-cat" class="input">
           <option value="">Todas las categorías</option>
           ${Object.entries(CATEGORY_LABELS).map(([v,c]) => `<option value="${v}">${c.label}</option>`).join('')}
         </select>
-        <button class="btn-primary" id="exp-new-btn" style="margin-left:auto">Nuevo gasto</button>
-        <a id="exp-export-btn" href="/admin/exports/expenses.csv" class="btn-secondary btn-sm" style="text-decoration:none" title="Exportar gastos filtrados a CSV">⬇ CSV</a>
+        <button class="btn-primary gastos-nuevo" id="exp-new-btn">Nuevo gasto</button>
+        <a id="exp-export-btn" href="/admin/exports/expenses.csv" class="btn-secondary btn-sm" title="Exportar gastos filtrados a CSV">⬇ CSV</a>
       </div>
 
       <!-- Lista -->
-      <div id="exp-list"><div style="color:var(--muted);font-size:14px">Cargando gastos…</div></div>
+      <div id="exp-list"><div class="gastos-cargando">Cargando gastos…</div></div>
     </div>
   `;
 
@@ -183,30 +220,34 @@ async function loadSummary() {
     const data = await apiRequest(`/admin/expenses/summary?month=${month}`);
     const el = document.getElementById('exp-summary');
     if (!el) return;
+    // Los tres KPI de siempre, con los mismos rótulos y las mismas cuentas. Sólo cambia el marcado:
+    // a 390 px son UNA tarjeta de tres renglones (`styles.css`), no tres tarjetas que se comían la
+    // primera pantalla antes de la primera fila. La tercera ya no lleva el `&nbsp;` de relleno.
     el.innerHTML = `
-      <div class="kpi-card">
-        <div class="kpi-label">Gasto del mes</div>
-        <div class="kpi-value">${fmtEuro(data.totalAmount)}</div>
-        <div class="kpi-sub">${data.byCategory?.length || 0} categoría${data.byCategory?.length!==1?'s':''}</div>
+      <div class="gasto-kpi gasto-kpi--dinero">
+        <div class="gasto-kpi-rotulo">Gasto del mes</div>
+        <div class="gasto-kpi-valor">${fmtEuro(data.totalAmount)}</div>
+        <div class="gasto-kpi-pie">${data.byCategory?.length || 0} categoría${data.byCategory?.length!==1?'s':''}</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Sin asignar a trabajo</div>
-        <div class="kpi-value" style="color:${data.unassignedAmount>0?'#d97706':'#22c55e'}">${fmtEuro(data.unassignedAmount)}</div>
-        <div class="kpi-sub">no vinculados a un trabajo</div>
+      <div class="gasto-kpi">
+        <div class="gasto-kpi-rotulo">Sin asignar a trabajo</div>
+        <div class="gasto-kpi-valor ${data.unassignedAmount>0?'gasto-kpi-valor--aviso':'gasto-kpi-valor--ok'}">${fmtEuro(data.unassignedAmount)}</div>
+        <div class="gasto-kpi-pie">no vinculados a un trabajo</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Mayor categoría</div>
-        <div class="kpi-value" style="font-size:16px">${topCat(data.byCategory)}</div>
-        <div class="kpi-sub">&nbsp;</div>
+      <div class="gasto-kpi">
+        <div class="gasto-kpi-rotulo">Mayor categoría</div>
+        <div class="gasto-kpi-valor gasto-kpi-valor--texto">${topCat(data.byCategory)}</div>
       </div>
     `;
   } catch {}
 }
 
+// SCRUM-944 (punto 1) · el nombre humano de la categoría con más gasto; nunca la clave interna
+// (antes: «materials» en pantalla). Ordena una COPIA: `sort` sobre `data.byCategory` lo reordenaba.
 function topCat(cats) {
   if (!cats || !cats.length) return '—';
-  const top = cats.sort((a,b) => b.amount - a.amount)[0];
-  return CATEGORY_LABELS[top.category]?.label || top.category;
+  const top = [...cats].sort((a,b) => b.amount - a.amount)[0];
+  return categoriaDe(top.category).label;
 }
 
 async function loadExpenses() {
@@ -228,50 +269,64 @@ async function loadExpenses() {
       el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
         + '<div class="empty-state-title">Sin gastos este mes</div>'
         + '<div class="empty-state-desc">Registra materiales, desplazamientos y subcontratas para conocer el margen real de cada trabajo.</div>'
-        + '<button id="exp-empty-cta" class="btn-primary btn-sm" style="margin-top:14px">+ Añadir mi primer gasto</button></div>';
+        + '<button id="exp-empty-cta" class="btn-primary btn-sm gastos-vacio-cta">+ Añadir mi primer gasto</button></div>';
       const cta = document.getElementById('exp-empty-cta');
       if (cta) cta.addEventListener('click', () => openExpenseModal(null));
       return;
     }
 
-    el.innerHTML = `
-      <div class="table-scroll" style="margin-top:4px">
-        <table class="table" style="min-width:600px">
-          <thead>
-            <tr>
-              <th>Concepto</th>
-              <th>Categoría</th>
-              <th>Trabajo</th>
-              <th style="text-align:right">Importe</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map((e) => `
-              <tr style="cursor:pointer" onclick="openExpenseModal(${JSON.stringify(e).replace(/"/g,'&quot;')})">
-                <td>
-                  <div style="font-weight:600;color:var(--neutral-800)">${escHtml(e.concept)}</div>
-                  ${e.notes ? `<div style="font-size:12px;color:var(--neutral-400)">${escHtml(e.notes)}</div>` : ''}
-                  <div style="font-size:11px;color:var(--neutral-400)">${new Date(e.date).toLocaleDateString('es',{day:'2-digit',month:'short'})}</div>
-                </td>
-                <td>${catPill(e.category)}</td>
-                <td style="font-size:13px;color:var(--neutral-500)">
-                  ${e.quote ? expenseJobCell(e) : '—'}
-                  ${e.provider ? `<div style="font-size:12px">${escHtml(e.provider.name)}</div>` : ''}
-                </td>
-                <td class="amount" style="text-align:right;font-size:15px">${fmtEuro(Number(e.amount))}</td>
-                <td style="text-align:center">
-                  <button class="btn-icon" onclick="event.stopPropagation();deleteExpenseItem(${e.id})" title="Eliminar">🗑</button>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+    // 🔴 SCRUM-920c · AQUÍ MUERE EL SCROLL LATERAL. Esto era un `<table style="min-width:600px">` dentro
+    // de un `.table-scroll`: a 390 px las columnas sumaban 628 y había que ARRASTRAR la caja para ver el
+    // importe. Ahora son filas en rejilla (`.gasto-fila`, `styles.css`): cinco columnas a escritorio y
+    // tres renglones en móvil, sin desbordar. No se toca `.table-scroll .table`, que es de otros usos.
+    const lista = gastoEl('div', 'gastos-filas');
+    lista.setAttribute('role', 'list');
+    items.forEach((e) => lista.appendChild(filaDeGasto(e)));
+    el.replaceChildren(lista);
   } catch (err) {
-    el.innerHTML = `<div style="color:var(--red-600);font-size:14px">Error: ${err.message}</div>`;
+    el.innerHTML = `<div class="gastos-error">Error: ${err.message}</div>`;
   }
+}
+
+// Una fila de la lista. Tocar la fila abre el gasto (el modal de edición, hasta que exista el detalle);
+// el enlace del trabajo y el «⋯» NO la abren. Todo lo que se puede hacer con un gasto está en su «⋯»:
+// la papelera de 21 × 29 px que iba pegada a una fila que navega ya no es un botón suelto (AB3).
+function filaDeGasto(e) {
+  const fila = gastoEl('div', 'gasto-fila');
+  fila.setAttribute('role', 'listitem');
+  fila.dataset.gastoId = String(e.id);
+
+  const que = gastoEl('div', 'gasto-que');
+  que.appendChild(gastoEl('b', null, e.concept));
+  if (e.notes) que.appendChild(gastoEl('span', 'gasto-notas', e.notes));
+  que.appendChild(gastoEl('span', 'gasto-fecha', new Date(e.date).toLocaleDateString('es', { day: '2-digit', month: 'short' })));
+
+  const meta = gastoEl('div', 'gasto-meta');
+  meta.innerHTML = catPill(e.category);
+
+  const imp = gastoEl('div', 'gasto-imp', fmtEuro(Number(e.amount)));
+
+  // Cada opción CAMBIA EL ESTADO al pulsarla (es el defecto con el que se publicó 917): el guard
+  // `guard:lista-gastos` las pulsa una a una con el ratón.
+  const opciones = [];
+  const opcion = (texto, clase, alPulsar) => {
+    const b = gastoEl('button', 'btn-ghost btn-sm' + (clase ? ' ' + clase : ''), texto);
+    b.type = 'button';
+    b.addEventListener('click', alPulsar);
+    opciones.push(b);
+  };
+  opcion('Editar', '', () => openExpenseModal(e));
+  if (e.job) opcion('Ver trabajo', '', () => renderAppView('jobs-detail', { jobId: e.job.id }));
+  opcion('🗑 Eliminar', 'gasto-opcion-eliminar', () => deleteExpenseItem(e.id));
+  const mas = gastoEl('div', 'gasto-mas');
+  mas.appendChild(overflowMenu(opciones, { label: 'Más acciones de ' + e.concept }));
+
+  fila.append(que, meta, celdaTrabajo(e), imp, mas);
+  fila.addEventListener('click', (ev) => {
+    if (ev.target.closest('a, button')) return;
+    openExpenseModal(e);
+  });
+  return fila;
 }
 
 async function deleteExpenseItem(id) {
