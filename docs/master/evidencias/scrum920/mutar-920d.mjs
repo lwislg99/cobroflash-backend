@@ -34,8 +34,15 @@ const MUTACIONES = [
     de: 'if (!items.length && !cat) {', a: 'if (!items.length) {', rojo: /con una categoría sin gastos la pantalla dice/ },
   { id: 'M09', f: CSS, quita: 'la barra de «Nuevo gasto» es fija tambien en escritorio',
     de: '.gastos-barra { display: flex; }', a: '.gastos-barra { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; }', rojo: /es fija también en escritorio/ },
-  { id: 'M10', f: CSS, quita: 'la barra pasa POR ENCIMA del modal',
-    de: 'position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 10px 16px', a: 'position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; padding: 10px 16px', rojo: /la barra sigue POR ENCIMA del modal/ },
+  // ⚠️ M10 en DOS piezas, y la razon esta MEDIDA: con la animacion de opacidad puesta (`animation-fill-mode: both`), la
+  // pantalla es un contexto de apilado que dura para siempre y el z-index de la barra vive DENTRO de el, siempre por debajo
+  // de un modal colgado del body. Subir SOLO el z-index no cambia nada (primera pasada de M10: exit 0, mutante equivalente).
+  // La mutacion honesta quita tambien la animacion (`animation: none`); entonces el z-index sí decide.
+  { id: 'M10', f: CSS, quita: 'la barra pasa POR ENCIMA del modal (z-index 900 y sin el contexto de apilado de la animacion)',
+    cambios: [
+      { de: 'position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 10px 16px', a: 'position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; padding: 10px 16px' },
+      { de: '#view-container > .gastos-pantalla { animation-name: yaqu-fade-in-opacidad; }', a: '#view-container > .gastos-pantalla { animation: none; }' },
+    ], rojo: /la barra sigue POR ENCIMA del modal/ },
   { id: 'M11', f: JS, quita: '«Sin trabajo» deja fuera al gasto que tiene presupuesto pero no trabajo',
     de: 'if (job === TRABAJO_SUELTO) return !e.job;', a: 'if (job === TRABAJO_SUELTO) return !e.job && !e.quote;', rojo: /«Sin trabajo» deja/ },
   { id: 'M12', f: JS, quita: 'la suma de la cabecera pierde el primer gasto',
@@ -57,9 +64,18 @@ const MUTACIONES = [
 const env = { ...process.env };
 delete env.FORCE_COLOR;
 delete env.GASTOS_PUBLICO;
-const correrGuard = () => {
+const correrGuardUnaVez = () => {
   const r = spawnSync(process.execPath, ['scripts/guard-lista-gastos.mjs'], { cwd: RAIZ, env, encoding: 'utf8', timeout: 280000, maxBuffer: 32 * 1024 * 1024 });
   return { exit: r.status, salida: (r.stdout || '') + '\n' + (r.stderr || '') };
+};
+// Los cuatro desenlaces que el guard sabe dar son 0, 1, 2 y 3. Cualquier otro codigo (en Windows, 0xC0000409 = 3221226505;
+// en la primera pasada, 134) es el NAVEGADOR o node muriendose bajo carga: el instrumento no llego a dar veredicto, y un
+// «no cayo» leido de ahi seria un mutante vivo falso. Se reintenta (2 veces) y, si sigue, se declara CIEGO.
+const correrGuard = () => {
+  let r = correrGuardUnaVez();
+  let intentos = 1;
+  while (![0, 1, 2, 3].includes(r.exit) && intentos < 3) { r = correrGuardUnaVez(); intentos += 1; }
+  return { ...r, intentos, ciego: ![0, 1, 2, 3].includes(r.exit) };
 };
 const git = (...args) => spawnSync('git', args, { cwd: RAIZ, encoding: 'utf8' });
 
@@ -72,28 +88,41 @@ const lineas = (s) => s.split('\n');
 console.log(`BASE sin mutar · guard exit=${base.exit} · ✅ ${lineas(base.salida).filter((l) => l.includes('✅')).length} · 🔴 ${lineas(base.salida).filter((l) => l.includes('🔴')).length}`);
 if (base.exit !== 0) { console.log('La BASE no da 0: sin ella un mutante que cae no significa nada. Aborto.'); console.log('EXIT=2'); process.exit(2); }
 
+// Sin argumentos corre las 18; con ids (`M12 M13 M14`) sólo esas — la BASE va SIEMPRE delante.
+const pedidas = process.argv.slice(2).map((s) => s.toUpperCase());
+const lista = pedidas.length ? MUTACIONES.filter((m) => pedidas.includes(m.id)) : MUTACIONES;
+if (!lista.length) { console.log('Ninguna mutacion coincide con ' + pedidas.join(', ')); console.log('EXIT=2'); process.exit(2); }
 const filas = [];
-for (const m of MUTACIONES) {
+for (const m of lista) {
   const abs = path.join(RAIZ, m.f);
   const original = fs.readFileSync(abs, 'utf8');
-  const veces = original.split(m.de).length - 1;
-  let fila = { id: m.id, quita: m.quita, aplicada: veces === 1, numstat: '', exit: null, rojoVisto: false, cae: false, restaurado: false };
-  if (veces === 1) {
-    fs.writeFileSync(abs, original.replace(m.de, () => m.a), 'utf8');
-    fila.numstat = git('diff', '--numstat', '--', m.f).stdout.trim().replace(/\t/g, ' ');
-    const r = correrGuard();
-    fila.exit = r.exit;
-    // Se busca el rojo esperado SOLO en las lineas marcadas 🔴: una frase que tambien sale en un ✅ no es un rojo.
-    fila.rojoVisto = m.rojo.test(lineas(r.salida).filter((l) => l.includes('🔴')).join('\n'));
-    fila.cae = r.exit !== 0 && fila.rojoVisto;
-    fs.writeFileSync(abs, original, 'utf8');
+  const cambios = m.cambios || [{ de: m.de, a: m.a }];
+  const veces = cambios.map((c) => original.split(c.de).length - 1);
+  const aplicable = veces.every((v) => v === 1);
+  let fila = { id: m.id, quita: m.quita, aplicada: aplicable, numstat: '', exit: null, intentos: 0, ciego: false, rojoVisto: false, cae: false, restaurado: false };
+  if (aplicable) {
+    let mutado = original;
+    for (const c of cambios) mutado = mutado.replace(c.de, () => c.a);
+    fs.writeFileSync(abs, mutado, 'utf8');
+    try {
+      fila.numstat = git('diff', '--numstat', '--', m.f).stdout.trim().replace(/\t/g, ' ');
+      const r = correrGuard();
+      fila.exit = r.exit;
+      fila.intentos = r.intentos;
+      fila.ciego = r.ciego;
+      // Se busca el rojo esperado SOLO en las lineas marcadas 🔴: una frase que tambien sale en un ✅ no es un rojo.
+      fila.rojoVisto = m.rojo.test(lineas(r.salida).filter((l) => l.includes('🔴')).join('\n'));
+      fila.cae = !r.ciego && r.exit !== 0 && fila.rojoVisto;
+    } finally {
+      fs.writeFileSync(abs, original, 'utf8'); // pase lo que pase, el fichero vuelve
+    }
   }
   fila.restaurado = git('diff', '--quiet', '--', m.f).status === 0;
   filas.push(fila);
-  console.log(`${m.id} · ${m.quita}\n     aplicada=${fila.aplicada} (${veces} ocurrencia${veces === 1 ? '' : 's'}) · diff ${fila.numstat || '—'} · guard exit=${fila.exit} · rojo esperado visto=${fila.rojoVisto} · restaurado=${fila.restaurado} → ${fila.cae ? 'CAE' : 'VIVA'}`);
+  console.log(`${m.id} · ${m.quita}\n     aplicada=${fila.aplicada} (ocurrencias por cambio: ${veces.join('+')}) · diff ${fila.numstat || '—'} · guard exit=${fila.exit} (intentos ${fila.intentos}) · rojo esperado visto=${fila.rojoVisto} · restaurado=${fila.restaurado} → ${fila.ciego ? 'CIEGO' : fila.cae ? 'CAE' : 'VIVA'}`);
 }
 const caen = filas.filter((f) => f.cae).length;
-const vivas = filas.filter((f) => !f.cae).map((f) => f.id);
+const vivas = filas.filter((f) => !f.cae).map((f) => f.id + (f.ciego ? '(CIEGO)' : ''));
 const sinRestaurar = filas.filter((f) => !f.restaurado).map((f) => f.id);
 console.log(`\nPOBLACION mutaciones=${filas.length} · aplicadas=${filas.filter((f) => f.aplicada).length} · caen=${caen} · vivas=[${vivas.join(', ')}] · sin restaurar=[${sinRestaurar.join(', ')}]`);
 console.log('EXIT=' + (caen === filas.length && !sinRestaurar.length ? 0 : 1));
