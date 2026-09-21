@@ -24,7 +24,8 @@
 //
 // La pantalla de la oficina —la que sí valora— es otra ruta y otro ticket. Cuando llegue, tendrá
 // que pedir los precios explícitamente, y eso se verá en su diff.
-import { seesAllJobs } from '../../../../core/http/roleCapabilities';
+import { seesAllJobs, seesOnlyOwnJobs, adminOnlyParteField } from '../../../../core/http/roleCapabilities';
+import { esSuyoElTrabajo, SELECT_DUENOS, whereSuyoElTrabajo } from '../../domain/accesoAlTrabajo'; // SCRUM-992
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
@@ -63,11 +64,36 @@ type FindParteResult =
   | { ok: true; parte: any }
   | { ok: false; status: number };
 
+// ── 🔴 SCRUM-992 · AQUÍ NO SE COMPROBABA DE QUIÉN ERA EL TRABAJO ──────────────────────────
+//
+// Esta es la puerta por la que pasan las SIETE rutas de `/admin/partes/:id` —leer, editar, las dos
+// firmas, el dictado y la vista de oficina— y solo filtraba por merchant (regla 2). El efecto
+// medido: un técnico abría, editaba y firmaba el parte de una obra que no era suya.
+//
+// 🔴 EL ARREGLO VA AQUÍ Y NO EN LAS SIETE RUTAS, por la razón de `findAlbaran` (SCRUM-849): siete
+// copias de una comprobación de acceso divergen, y la que se queda atrás no da error, da ACCESO.
+// Una ruta nueva que use `findParte` nace protegida.
+//
+// «Es suyo» son los TRES ejes de SCRUM-467/650 (`esSuyoElTrabajo`), y un parte SUELTO —sin trabajo—
+// NO es de ningún técnico: `ParteTrabajo` no guarda quién lo abrió, así que no se le puede atribuir.
+// Decisión del orquestador (21-sep-2026): ningún parte suelto para el técnico. Con el propietario y
+// el admin no cambia nada: `seesOnlyOwnJobs('admin')` es false y no se pide el trabajo.
+//
+// 404 y no 403, como los albaranes: el código de estado no le dice si el parte existe.
 async function findParte(req: any): Promise<FindParteResult> {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return { ok: false, status: 400 };
   const parte = await prisma.parteTrabajo.findFirst({ where: { id, merchantId: req.merchantId } });
   if (!parte) return { ok: false, status: 404 };
+  if (seesOnlyOwnJobs(req.userRole)) {
+    const job = parte.jobId === null || parte.jobId === undefined
+      ? null
+      : await prisma.job.findFirst({
+        where: { id: parte.jobId, merchantId: req.merchantId },
+        select: SELECT_DUENOS,
+      });
+    if (!esSuyoElTrabajo(job, req.teamMemberId)) return { ok: false, status: 404 };
+  }
   return { ok: true, parte: { ...parte, clienteNombre: await nombreDelCliente(req.merchantId, parte.customerId) } };
 }
 
@@ -248,10 +274,23 @@ function paramsDeSello(parte: any, lineas: LineaParte[]) {
 }
 
 // ── GET /admin/partes — los partes del merchant, los más recientes primero ───────────────
+//
+// 🔴 SCRUM-992 · El técnico recibe SOLO los partes de sus trabajos (los tres ejes) y ninguno suelto.
+// Es el mismo recorte que `findParte` aplica al abrir uno: lo que la lista no enseña, el detalle
+// tampoco lo abre. Se resuelve en DOS consultas porque `ParteTrabajo.jobId` es una columna suelta,
+// sin relación con `Job` (como todo `merchantId` de este schema), y el `where` no puede cruzar.
 router.get('/', async (req: any, res) => {
   try {
+    const where: any = { merchantId: req.merchantId };
+    if (seesOnlyOwnJobs(req.userRole)) {
+      const suyos = await prisma.job.findMany({
+        where: { merchantId: req.merchantId, ...whereSuyoElTrabajo(req.teamMemberId) },
+        select: { id: true },
+      });
+      where.jobId = { in: suyos.map((j) => j.id) };
+    }
     const partes = await prisma.parteTrabajo.findMany({
-      where: { merchantId: req.merchantId },
+      where,
       orderBy: [{ fecha: 'desc' }, { id: 'desc' }],
       take: 200,
     });
@@ -313,12 +352,28 @@ router.post('/', async (req: any, res) => {
     if (jobId !== null && !Number.isInteger(jobId)) {
       return res.status(400).json({ error: 'invalid_job', message: 'El trabajo no es válido.' });
     }
+    // 🔴 SCRUM-992 · EL TÉCNICO NO ABRE UN PARTE SIN TRABAJO. Un parte suelto no es de ningún técnico
+    // (`findParte`), así que uno que lo creara ya no podría volver a abrirlo: mejor decírselo aquí. Medido
+    // el 21-sep-2026: la pantalla NUNCA lo hace —su único llamador (`jobDetailView.js`) manda siempre
+    // `{ jobId: job.id }`—, así que esto solo cierra la llamada directa a la API. El propietario y el
+    // admin siguen pudiendo abrirlo suelto, como hasta hoy.
+    if (jobId === null && seesOnlyOwnJobs(req.userRole)) {
+      return res.status(400).json({ error: 'job_required' });
+    }
     let customerId: number | null = null;
     if (jobId !== null) {
       // Tenancy también para el trabajo del que cuelga: un parte no puede nacer colgado de un
       // trabajo de otro merchant.
-      const job = await prisma.job.findFirst({ where: { id: jobId, merchantId: req.merchantId } });
+      const job = await prisma.job.findFirst({
+        where: { id: jobId, merchantId: req.merchantId },
+        include: { assignees: { select: { teamMemberId: true } } }, // SCRUM-992: el tercer eje
+      });
       if (!job) return res.status(404).json({ error: 'job_not_found' });
+      // …y tampoco de un trabajo AJENO: el parte que un técnico abre sobre la obra de otro es un parte
+      // que él no puede volver a abrir y que el dueño de la obra encuentra en su lista sin haberlo hecho.
+      if (seesOnlyOwnJobs(req.userRole) && !esSuyoElTrabajo(job, req.teamMemberId)) {
+        return res.status(404).json({ error: 'job_not_found' });
+      }
       customerId = job.customerId ?? null;
     }
 
@@ -404,6 +459,14 @@ router.patch('/:id', async (req: any, res) => {
       return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
     }
     const { parte } = found;
+
+    // SCRUM-1078: `precios` es del admin; el técnico, con uno solo, ve rechazada la petición entera.
+    if (!seesAllJobs(req.userRole)) {
+      const campoAdmin = adminOnlyParteField(req.body);
+      if (campoAdmin) {
+        return res.status(403).json({ error: 'forbidden', required_role: 'admin', field: campoAdmin });
+      }
+    }
 
     // 🔴 EL PERMISO SE COMPRUEBA POR CAMPO, NO POR PETICIÓN.
     //

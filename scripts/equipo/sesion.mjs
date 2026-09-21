@@ -82,8 +82,8 @@ const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 export const UNA_HORA_MS = 60 * 60 * 1000;
 /** SCRUM-990 · el modelo de TODA sesión de fondo del equipo (fundador, 21-sep-2026). Sin excepción. */
 export const MODELO_DEL_EQUIPO = 'sonnet';
-/** A19: por encima de esto, AL TERMINAR UNA ENTREGA, se releva. */
-export const UMBRAL_CONTEXTO = 300_000;
+/** A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva (era 300k; bajó el 21-sep-2026, SCRUM-1070b). */
+export const UMBRAL_CONTEXTO = 200_000;
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
 export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
 /** Estados de un trabajo de fondo que ya terminó. SCRUM-954. */

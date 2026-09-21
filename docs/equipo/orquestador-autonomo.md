@@ -82,11 +82,11 @@ que **nació como A19**. Al leer, se comprueba el título, no el número.
 
 ### 5bis.1 · Cuándo se releva
 
-Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 300k**; más de
+Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 200k**; más de
 **1 hora parada**; o el comienzo de la tanda del día siguiente. **Nunca a mitad de una entrega**, y **no en cada
-tarea**: si una entrega cierra por debajo de 300k, el encargo siguiente entra en la misma sesión.
+tarea**: si una entrega cierra por debajo de 200k, el encargo siguiente entra en la misma sesión.
 
-Para saber si pasa de 300k no se estima: se mide, con `sesion.mjs contexto N`.
+Para saber si pasa de 200k no se estima: se mide, con `sesion.mjs contexto N`.
 
 ### 5bis.2 · Cómo se releva
 
@@ -133,7 +133,7 @@ llamadas y el 21 % del coste.
 ARRANQUE BARATO (SCRUM-996)
 1. `git fetch origin`. CLAUDE.md: si `git rev-list --count HEAD..origin/main` da 0, ya lo tienes cargado y NO lo releas;
    si no, léelo desde origin/main.
-2. Normas: `node scripts/equipo/norma.mjs --arranque` (13 secciones + el índice de las otras 11). NO leas
+2. Normas: `node scripts/equipo/norma.mjs --arranque` (14 secciones + el índice de las otras 11). NO leas
    `00-normas-comunes.md` entero: lo demás se trae al vuelo, p. ej. `node scripts/equipo/norma.mjs A23` antes de
    escribir un guard. Si ese script no existe en tu carpeta: `cmd /c "git show origin/main:scripts/equipo/norma.mjs >
    %TEMP%\norma.mjs"` y `node %TEMP%\norma.mjs --arranque`.
