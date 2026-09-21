@@ -52,6 +52,16 @@ const FRASE_FIRMADA = 'Guardamos la foto como tu copia. Los datos fiscales salen
 // Lo que el prototipo NO puede decir: el veredicto del motor del justificante y su lista de «qué
 // falta» (SCRUM-324 E3, espera al asesor) y cualquier promesa de deducción.
 const VETADAS = /deducib|desgrav|deducir|deducci|no_deducible|falta_confirmar|le falta|faltan/i;
+// La misma regla, para aplicarla a UN texto suelto desde el guion (no dentro del navegador).
+const VETADAS_EN_PAGINA = VETADAS;
+// SCRUM-920h · los tres porqués que enseña el andamio «…y con datos que no cuadraron», con su TEXTO
+// EXACTO propuesto (sin firmar). Se comparan con lo que hay en pantalla: si alguien toca la frase en
+// el prototipo sin tocarla aquí (o al revés), esto cae.
+const PORQUES = {
+  fecha_futura: 'La fecha que hemos leído es posterior a hoy. Hemos dejado la de hoy: cámbiala si hace falta.',
+  no_cuadra_con_el_total: 'La base, la cuota y el total no sumaban. Hemos dejado la base vacía: revisa las tres cifras en el ticket.',
+  nif_invalido: 'El NIF que hemos leído no es válido. Compruébalo en el ticket.',
+};
 
 const SELECTOR_CONTROLES = 'button, a[href], input:not([type="file"]), select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])';
 
@@ -268,6 +278,74 @@ async function medirAnchura(nav, a) {
   await pulsar('[data-foto="hacer"]');
   const importeLeido = await page.$eval('#a-importe', (e) => e.value);
   anota('Hueco de 912: con la foto, importe y fecha llegan marcados y hay aviso', (await cuantos('.leido')) === 2 && importeLeido === '84.70' && (await cuantos('#aviso-leido')) === 1, `${await cuantos('.leido')} marcas, importe=${importeLeido}`);
+
+  // ── SCRUM-920h · POR QUÉ UN CAMPO QUEDÓ SIN RELLENAR (los `descartados` de 912) ─────────────────
+  // El servidor los calcula y ninguna pantalla los pinta. Aquí se mide que el diseño los pinta BIEN:
+  // el texto exacto, en el campo que toca, enlazado al campo, sin desbordes ni controles pequeños.
+  //
+  // CONTROL NEGATIVO PRIMERO: con la lectura encendida y SIN descartes no hay ni una línea de porqué.
+  // Sin él, «sale el porqué» podría ser «sale siempre».
+  anota('920h · Sin datos descartados la lectura no pinta ningún porqué', (await cuantos('.porque')) === 0, `${await cuantos('.porque')} líneas`);
+  await pulsar('#descartes');
+  const porques = await page.$$eval('.porque', (e) => e.map((x) => ({ motivo: x.dataset.motivo, texto: x.textContent.trim(), id: x.id })));
+  const porMotivo = Object.fromEntries(porques.map((p) => [p.motivo, p.texto]));
+  anota('920h · Con tres descartes salen TRES porqués, con su texto exacto', porques.length === 3 && Object.entries(PORQUES).every(([m, t]) => porMotivo[m] === t), porques.map((p) => p.motivo).join(', '));
+  // Cada porqué está EN EL CAMPO que descartó: dentro de su <label>, y el campo lo apunta con aria-describedby.
+  const enSuCampo = await page.evaluate(() => [['a-fecha', 'a-fecha-porque'], ['a-base', 'a-base-porque'], ['a-nif', 'a-nif-porque']].map(([campo, porque]) => {
+    const c = document.getElementById(campo); const p = document.getElementById(porque);
+    return { campo, ok: !!c && !!p && c.closest('label') === p.closest('label') && (c.getAttribute('aria-describedby') || '').split(' ').includes(porque) };
+  }));
+  anota('920h · Cada porqué va DENTRO de su campo y el campo lo apunta (aria-describedby)', enSuCampo.every((x) => x.ok), enSuCampo.map((x) => `${x.campo}:${x.ok ? 'sí' : 'NO'}`).join(' '));
+  // Lo que queda en los campos: la BASE vacía y la CUOTA rellena (el motivo vacía la base, no el IVA); la
+  // fecha se queda con la de hoy (el formulario nace con ella) y NO lleva la marca «leído de la foto».
+  const estadoCampos = await page.evaluate(() => ({
+    base: document.getElementById('a-base').value, cuota: document.getElementById('a-cuota').value,
+    tipo: document.getElementById('a-tipoiva').value, fecha: document.getElementById('a-fecha').value,
+    marcas: document.querySelectorAll('.leido').length,
+    fechaConMarca: !!document.getElementById('a-fecha').closest('label').querySelector('.leido'),
+  }));
+  anota('920h · La base queda VACÍA, la cuota y el tipo rellenos, la fecha con la de hoy y sin marca', estadoCampos.base === '' && estadoCampos.cuota === '14.70' && estadoCampos.tipo === '21%' && estadoCampos.fecha !== '' && !estadoCampos.fechaConMarca && estadoCampos.marcas === 3, JSON.stringify(estadoCampos));
+  // El descarte del bloque plegado lo ABRE, y el resumen lo dice (con su plural).
+  const bloque = await page.evaluate(() => ({ abierto: document.getElementById('p-factura').open, resumen: document.querySelector('#p-factura > summary .val').textContent.trim() }));
+  anota('920h · El bloque plegado con descartes se abre solo y dice «Revisa 2 datos»', bloque.abierto === true && bloque.resumen === 'Revisa 2 datos', `abierto=${bloque.abierto}, «${bloque.resumen}»`);
+  const nifDescartado = await page.evaluate(() => DESCARTADOS.pop());
+  await page.evaluate(() => render());
+  const singular = await page.$eval('#p-factura > summary .val', (e) => e.textContent.trim());
+  await page.evaluate((d) => { DESCARTADOS.push(d); render(); }, nifDescartado);
+  anota('920h · …y con UN solo descarte, el singular: «Revisa 1 dato»', singular === 'Revisa 1 dato', `«${singular}»`);
+  // El NIF sigue bloqueado sin proveedor, con su ayuda firmada Y con su porqué; al elegir proveedor se
+  // desbloquea, la ayuda se va y el porqué SE QUEDA (lo leído sigue sin ser válido).
+  const nifSinProv = await page.evaluate(() => ({ ro: document.getElementById('a-nif').readOnly, ayuda: !document.getElementById('a-nif-ayuda').hidden, porque: !!document.getElementById('a-nif-porque') && document.getElementById('a-nif-porque').offsetParent !== null }));
+  await page.select('#a-proveedor', 'Suministros El Centro');
+  const nifConProv = await page.evaluate(() => ({ ro: document.getElementById('a-nif').readOnly, ayuda: !document.getElementById('a-nif-ayuda').hidden, porque: !!document.getElementById('a-nif-porque') && document.getElementById('a-nif-porque').offsetParent !== null }));
+  await page.select('#a-proveedor', '');
+  anota('920h · El NIF: la ayuda firmada y el porqué conviven; al elegir proveedor la ayuda se va y el porqué se queda', nifSinProv.ro === true && nifSinProv.ayuda === true && nifSinProv.porque === true && nifConProv.ro === false && nifConProv.ayuda === false && nifConProv.porque === true, `sin proveedor: ro=${nifSinProv.ro} ayuda=${nifSinProv.ayuda} porqué=${nifSinProv.porque} · con proveedor: ro=${nifConProv.ro} ayuda=${nifConProv.ayuda} porqué=${nifConProv.porque}`);
+  // LOS NUEVE MOTIVOS del servidor tienen literal: se lee `MotivoDescarte` de lecturaTicket.ts y se compara
+  // con las claves del diccionario de la pantalla. Si el servidor añade un décimo, esto cae.
+  const codigoServidor = fs.readFileSync(path.join(AQUI, '../../../src/modules/expenses/domain/lecturaTicket.ts'), 'utf8');
+  const unionServidor = (codigoServidor.match(/export type MotivoDescarte =([\s\S]*?);/) || [])[1] || '';
+  const motivosServidor = [...unionServidor.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+  const motivosPantalla = (await page.evaluate(() => Object.keys(MOTIVOS))).sort();
+  anota('🔴 920h · Los NUEVE motivos del servidor tienen literal, ni uno más ni uno menos', motivosServidor.length === 9 && JSON.stringify(motivosServidor) === JSON.stringify(motivosPantalla), `servidor ${motivosServidor.length} (${motivosServidor.join(', ')}) · pantalla ${motivosPantalla.length}`);
+  const textosMotivos = await page.evaluate(() => Object.values(MOTIVOS));
+  anota('920h · Los nueve textos son distintos, acaban en punto y no dicen nada vetado', new Set(textosMotivos).size === 9 && textosMotivos.every((t) => /\.$/.test(t) && !VETADAS_EN_PAGINA.test(t)), `${new Set(textosMotivos).size} distintos`);
+  // Sin desbordes ni controles pequeños ni frases vetadas EN ESTE ESTADO (el más cargado del alta).
+  const estadoCargado = await page.evaluate(() => window.__detectar());
+  anota('🔴 920h · Con los porqués, 0 scroll lateral, 0 cajas que desbordan, 0 controles <44 px, 0 frases vetadas', !estadoCargado.pagina && estadoCargado.cajas.length === 0 && estadoCargado.pequenos.length === 0 && estadoCargado.vetadas.length === 0, `scroll-H ${estadoCargado.pagina ? 'SÍ' : 'no'} · cajas ${estadoCargado.cajas.length} · <44: ${estadoCargado.pequenos.length}${estadoCargado.pequenos.length ? ' → ' + estadoCargado.pequenos.join(' | ') : ''} · vetadas ${estadoCargado.vetadas.length} [población: ${estadoCargado.total} controles]`);
+  // CONTRASTE del porqué (AA, 4,5:1) medido en el navegador, con su CONTROL POSITIVO: un texto gris claro
+  // sobre blanco sembrado en la misma página TIENE que salir por debajo. Si no, el detector está ciego.
+  const contraste = await page.evaluate(() => {
+    const lum = (rgb) => { const [r, g, b] = rgb.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const partes = (s) => (s.match(/[\d.]+/g) || []).map(Number);
+    const fondoDe = (el) => { for (let e = el; e; e = e.parentElement) { const p = partes(getComputedStyle(e).backgroundColor); if (p.length === 3 || (p.length === 4 && p[3] > 0)) return p.slice(0, 3); } return [255, 255, 255]; };
+    const ratio = (el) => { const l1 = lum(partes(getComputedStyle(el).color).slice(0, 3)); const l2 = lum(fondoDe(el)); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); };
+    const semilla = document.createElement('p'); semilla.style.cssText = 'color:#aaaaaa;background:#ffffff'; semilla.textContent = 'x'; document.getElementById('app').appendChild(semilla);
+    const positivo = ratio(semilla); semilla.remove();
+    return { porques: [...document.querySelectorAll('.porque')].map((e) => +ratio(e).toFixed(2)), positivo: +positivo.toFixed(2) };
+  });
+  anota('920h · Contraste de los porqués ≥ 4,5:1 (y el detector VE un gris claro)', contraste.positivo < 4.5 && contraste.porques.length === 3 && contraste.porques.every((c) => c >= 4.5), `porqués ${contraste.porques.join(' · ')} · control positivo (#aaa sobre blanco) ${contraste.positivo}`);
+  await pulsar('#descartes');
+  anota('920h · Apagar el andamio quita todos los porqués', (await cuantos('.porque')) === 0, `${await cuantos('.porque')} líneas`);
   await pulsar('#lectura');
   await pulsar('[data-foto="quitar"]');
   await page.$eval('#a-importe', (e) => { e.value = ''; });
@@ -312,11 +390,14 @@ async function medirAnchura(nav, a) {
   // en el alta y taparía lo que la captura del hueco de 912 viene a enseñar.
   await page.reload({ waitUntil: 'load' });
   await cuadro();
-  const tomas = [['lista', null], ['alta', null], ['alta-leida', 'lectura'], ['detalle', null], ['detalle-sin-foto', 'sinfoto'], ['inv', null]];
+  // La toma 7 (920h) va AL FINAL a propósito: renumerar las seis de antes cambiaría el nombre de las
+  // capturas que ya están en `capturas-prototipo/`.
+  const tomas = [['lista', null], ['alta', null], ['alta-leida', 'lectura'], ['detalle', null], ['detalle-sin-foto', 'sinfoto'], ['inv', null], ['alta-descartes', 'descartes']];
   for (const [i, [nombre, extra]] of tomas.entries()) {
     const tab = nombre.split('-')[0];
     await ir(tab);
     if (extra === 'lectura') { await pulsar('#lectura'); await pulsar('[data-foto="hacer"]'); await sinAvisos(); }
+    if (extra === 'descartes') { await pulsar('#lectura'); await pulsar('#descartes'); await pulsar('[data-foto="hacer"]'); await sinAvisos(); }
     if (extra === 'sinfoto') { await ir('lista'); await pulsar('.fila .que b', 2); }
     if (nombre === 'detalle') { await ir('lista'); await pulsar('.fila .que b', 1); }
     await sinAvisos();
@@ -327,6 +408,7 @@ async function medirAnchura(nav, a) {
     // no diga el propio prototipo.
     if (nombre !== 'inv') await page.screenshot({ path: path.join(CAPTURAS, `${a.nombre}-${i + 1}-${nombre}-entera.png`), fullPage: true });
     if (extra === 'lectura') { await pulsar('[data-foto="quitar"]'); await pulsar('#lectura'); }
+    if (extra === 'descartes') { await pulsar('[data-foto="quitar"]'); await pulsar('#descartes'); await pulsar('#lectura'); }
   }
 
   await page.close();
