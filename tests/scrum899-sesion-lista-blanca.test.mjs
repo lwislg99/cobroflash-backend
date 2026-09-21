@@ -48,9 +48,22 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
-    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', prompt];",
-    a: "return ['--bg', '-n', nombre, '--permission-mode', 'bypassPermissions', prompt];",
+    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];",
+    a: "return ['--bg', '-n', nombre, '--permission-mode', 'bypassPermissions', '--model', MODELO_DEL_EQUIPO, prompt];",
     cae: '🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte permisos',
+  },
+  {
+    // SCRUM-990: quitar el flag es exactamente el defecto que el ticket arregla.
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];",
+    a: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', prompt];",
+    cae: '🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`',
+  },
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: "export const MODELO_DEL_EQUIPO = 'sonnet';",
+    a: "export const MODELO_DEL_EQUIPO = 'opus';",
+    cae: '🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`',
   },
 ];
 
@@ -77,6 +90,26 @@ test('🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte pe
   // Hermano del patrón (SCRUM-237): el MISMO patrón sí ve la cadena cuando está, dentro del prompt.
   assert.match(args.at(-1), /dangerously|bypass/i, '🔴 CIEGO: el patrón no detecta ni la cadena que está en el prompt');
   assert.equal(args.at(-1), 'hola --dangerously-skip-permissions', '🔴 el prompt no viaja como UN argumento: podría inyectar flags');
+});
+
+test('🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`, en el orden con el que se midió', () => {
+  // Decisión del fundador (21-sep-2026): TODOS los puestos con Sonnet, sin excepción. El orden es el
+  // de `respawnFlags` en el `state.json` de una sesión de fondo lanzada así (CLI 2.1.278).
+  assert.equal(s.MODELO_DEL_EQUIPO, 'sonnet');
+  for (const puesto of ['orquestador', 'sesion-0', 'sesion-1', 'sesion-2', 'sesion-3', 'sesion-4', 'sesion-5']) {
+    assert.deepEqual(s.argsLanzar({ modo: 'nueva', nombre: puesto, prompt: 'p' }),
+      ['--bg', '-n', puesto, '--permission-mode', 'auto', '--model', 'sonnet', 'p'],
+      `🔴 «${puesto}» arrancaría con el modelo por defecto y no con Sonnet`);
+  }
+  // El modelo viaja como flag, nunca dentro del prompt (que es UN argumento sin interpretar).
+  const args = s.argsLanzar({ modo: 'nueva', nombre: 'sesion-3', prompt: '--model opus' });
+  assert.equal(args.filter((a) => a === '--model').length, 1, '🔴 un prompt con `--model` no puede añadir otro flag');
+  assert.equal(args.at(-1), '--model opus');
+});
+
+test('🔴 SCRUM-990: reanudar NO lleva `--model` (con flags arranca una copia; conserva sus opciones)', () => {
+  assert.doesNotMatch(s.argsLanzar({ modo: 'reanudar', nombre: 'sesion-1', sessionId: UUID, prompt: 'p' }).join(' '), /--model/,
+    '🔴 con flags, `--resume` arranca una COPIA con id nuevo (SCRUM-899 3b)');
 });
 
 test('🔴 canario SCRUM-237: el patrón dangerously|bypass SÍ detecta un modo real que se salta permisos', () => {

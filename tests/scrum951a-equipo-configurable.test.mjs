@@ -339,7 +339,7 @@ test('🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo y lanza el su
     assert.deepEqual(lanzamientos(b.leerLlamadas()), [], '🔴 llegó a lanzar con un nombre ajeno');
     const suyo = b.correr('sesion.mjs', 'lanzar', 'jv-s1', promptF);
     assert.equal(suyo.v?.veredicto, 'LANZADA', `🔴 no lanza una sesión de su propio equipo: ${JSON.stringify(suyo.v)}`);
-    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-s1', '--permission-mode', 'auto', 'encargo']);
+    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-s1', '--permission-mode', 'auto', '--model', 'sonnet', 'encargo']);
   } finally { b.limpiar(); }
 });
 
@@ -358,7 +358,7 @@ test('🔴 la tanda lanza al orquestador DEL CONFIG, con su prefijo', () => {
   try {
     const r = b.correr('orquestador-arranque.mjs');
     assert.equal(r.v?.tanda?.veredicto, 'LANZADA', `🔴 la tanda no lanzó: ${JSON.stringify(r.v)}`);
-    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-jefe', '--permission-mode', 'auto', PROMPT],
+    assert.deepEqual(lanzamientos(b.leerLlamadas())[0], ['--bg', '-n', 'jv-jefe', '--permission-mode', 'auto', '--model', 'sonnet', PROMPT],
       '🔴 la tanda lanza un nombre fijo en el código en vez del orquestador de su equipo');
   } finally { b.limpiar(); }
 });

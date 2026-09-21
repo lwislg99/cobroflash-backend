@@ -35,6 +35,18 @@
 //     (el caso medido por el equipo de Javier reanudaba una de 421.718 tokens que acababa de pedir
 //     el relevo). Muere con ello la regla de «menos de una hora → reanudar».
 //
+// ── LO QUE SE MIDIÓ EN SCRUM-990 Y CAMBIA AQUÍ (21-sep-2026, CLI 2.1.278) ──────────────────────
+//   · Decisión del fundador (21-sep-2026): TODOS los puestos van con `--model sonnet`, sin excepción.
+//     Hasta hoy `argsLanzar` no pasaba modelo: el lanzador de las tandas (`arranque.cmd` →
+//     `orquestador-arranque.mjs` → `lanzar`) y todo `relevar` arrancaban con el modelo por DEFECTO.
+//   · Por qué se cambia AQUÍ y no en la copia instalada: `arranque.cmd` la reescribe desde
+//     `origin/main` en cada tanda, y `puertaDeIntegridad` se niega (ALTERADO) si difiere de main.
+//   · El flag es válido con `--bg`: el `state.json` de una sesión lanzada así guarda
+//     `respawnFlags: [-n, <nombre>, --permission-mode, auto, --model, sonnet]`. Ese es el orden que
+//     usa `argsLanzar`, y esa es la sonda por efecto (`docs/master/SCRUM-990.md`).
+//   · `reanudar` NO lleva `--model`: con flags `--resume` arranca una COPIA (SCRUM-899), y la sesión
+//     reanudada conserva las opciones con las que se lanzó. Ninguna acción de la CLI reanuda ya.
+//
 // ── LO QUE NO HACE, Y ES LA MITAD DEL DISEÑO ──────────────────────────────────────────────────
 //   · No acepta nombres fuera de la lista blanca: ni `control-*`, ni una sesión del fundador.
 //   · No construye NUNCA un modo que se salte permisos, ni recibe flags desde fuera.
@@ -68,6 +80,8 @@ export const RUTA_EN_EL_REPO = 'scripts/equipo/sesion.mjs';
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 /** Más de esto parada → sesión nueva en vez de reanudar: la caché ya está fría. */
 export const UNA_HORA_MS = 60 * 60 * 1000;
+/** SCRUM-990 · el modelo de TODA sesión de fondo del equipo (fundador, 21-sep-2026). Sin excepción. */
+export const MODELO_DEL_EQUIPO = 'sonnet';
 /** A19: por encima de esto, AL TERMINAR UNA ENTREGA, se releva. */
 export const UMBRAL_CONTEXTO = 300_000;
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
@@ -122,7 +136,7 @@ export function validarNombre(nombre, equipo = EQUIPO_DE_LUIS) {
 export function argsLanzar({ modo, nombre, sessionId, prompt, equipo }) {
   if (validarNombre(nombre, equipo)) throw new Error('nombre fuera de la lista blanca');
   if (typeof prompt !== 'string' || !prompt.trim()) throw new Error('prompt vacío');
-  if (modo === 'nueva') return ['--bg', '-n', nombre, '--permission-mode', 'auto', prompt];
+  if (modo === 'nueva') return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];
   if (modo === 'reanudar') {
     // SIN flags: con flags, `--resume` arranca una copia (medido en SCRUM-899, control 3b).
     if (!SESSION_ID.test(sessionId || '')) throw new Error('reanudar exige el sessionId COMPLETO');
