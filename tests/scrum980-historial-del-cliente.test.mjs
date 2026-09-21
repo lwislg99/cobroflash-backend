@@ -26,7 +26,11 @@ const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 test('SCRUM-980 · historialDelCliente: tenencia, técnico, fotos, próxima visita y páginas', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
-  const { historialDelCliente, TRABAJOS_POR_PAGINA } = await import('../dist/modules/system/domain/historialDelCliente.js');
+  const { historialDelCliente } = await import('../dist/modules/system/domain/historialDelCliente.js');
+  // No se importa de dentro (SCRUM-411: `TRABAJOS_POR_PAGINA` no tiene consumidor fuera de este
+  // fichero y el `export` quedaba huérfano). Se prueba por la SUPERFICIE PÚBLICA: 20 es el tamaño
+  // de página documentado en `historialDelCliente.ts`.
+  const TRABAJOS_POR_PAGINA = 20;
   const stamp = Date.now();
   const AHORA = new Date('2026-09-21T10:00:00Z');
   try {

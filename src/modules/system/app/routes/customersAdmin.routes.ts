@@ -249,10 +249,9 @@ router.get('/:id/historial', async (req: any, res) => {
     if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
       return res.status(400).json({ error: 'invalid_cursor' });
     }
-    const historial = await historialDelCliente(req.merchantId, id, {
-      despuesDe,
-      ...(seesOnlyOwnJobs(req.userRole) ? { soloTrabajosDe: req.teamMemberId ?? null } : {}),
-    });
+    const opciones: { despuesDe: number | null; soloTrabajosDe?: number | null } = { despuesDe };
+    if (seesOnlyOwnJobs(req.userRole)) opciones.soloTrabajosDe = req.teamMemberId ?? null;
+    const historial = await historialDelCliente(req.merchantId, id, opciones);
     if (!historial) return res.status(404).json({ error: 'not_found' });
     return res.json(historial);
   } catch (err) {

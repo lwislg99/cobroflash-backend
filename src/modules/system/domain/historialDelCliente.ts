@@ -14,7 +14,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../core/db/prisma';
 import { tituloDeTrabajo } from '../../jobs/domain/trabajoDirecto';
 
-export const TRABAJOS_POR_PAGINA = 20;
+const TRABAJOS_POR_PAGINA = 20;
 
 export interface OpcionesHistorial {
   /** `undefined` = sin recorte (admin y propietario). Un número (o `null`) = ese técnico. */
