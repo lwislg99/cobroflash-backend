@@ -160,11 +160,122 @@ test('SCRUM-984 · la ruta del detalle CABLEA la función y viaja `albaranOrigen
   assert.ok(props.has('number'), '🔴 no pasa el número visible del presupuesto');
 
   assert.ok(cuerpo, '🔴 CIEGO: no encuentro el `cuerpo` de la respuesta del detalle');
-  const claves = cuerpo.properties.map((p) => (p.name ? p.name.getText(sf) : p.getText(sf)));
-  assert.ok(claves.includes('albaranOrigen'), `🔴 el cuerpo del detalle no lleva \`albaranOrigen\` (lleva: ${claves.join(', ')})`);
+  const miembros = cuerpo.properties.map((p) => p.getText(sf));
+  assert.ok(miembros.some((t) => t.includes('albaranOrigen')),
+    `🔴 el cuerpo del detalle no lleva \`albaranOrigen\` (lleva: ${miembros.join(', ')})`);
 
-  assert.match(src, /import \{ albaranOrigenDelPresupuesto \} from '\.\.\/\.\.\/\.\.\/jobs\/domain\/albaranOrigenDelPresupuesto'/,
+  // La lectura es una AYUDA de la pantalla y va en SU PROPIO try: el más cercano a la llamada no puede
+  // ser el del handler entero (que responde 500), o un fallo de esta lectura se llevaría el detalle.
+  let t = llamada.parent;
+  while (t && !ts.isTryStatement(t)) t = t.parent;
+  assert.ok(t && t.catchClause, '🔴 la lectura de `albaranOrigen` no está dentro de ningún try/catch');
+  const captura = t.catchClause.getText(sf);
+  assert.match(captura, /albaranOrigen/, '🔴 el try más cercano no es el propio de `albaranOrigen`: es el del handler entero');
+  assert.doesNotMatch(captura, /res\s*\.\s*(status|json)|\breturn\b/,
+    '🔴 el catch de `albaranOrigen` responde o devuelve: un fallo de esta lectura tumbaría el detalle entero');
+
+  assert.match(src, /import \{ albaranOrigenDelPresupuesto(, type AlbaranOrigen)? \} from '\.\.\/\.\.\/\.\.\/jobs\/domain\/albaranOrigenDelPresupuesto'/,
     '🔴 la ruta ya no importa la función del dominio');
+});
+
+// ── LA RUTA DE VERDAD, con doble de `prisma` (patrón de scrum892): el handler entero se ejecuta ──
+
+const moduloPrisma = await import(DIST + 'core/db/prisma.js');
+const ID_RUTA = 99984001;
+
+async function invocarDetalle(req) {
+  const modulo = await import(DIST + 'modules/system/app/routes/quotesAdmin.routes.js');
+  const router = modulo.default?.default ?? modulo.default;
+  assert.ok(Array.isArray(router?.stack), '🔴 CIEGO: no se pudo leer el router de quotesAdmin.routes');
+  const capa = router.stack.find((l) => l.route?.path === '/:id' && l.route?.methods?.get);
+  assert.ok(capa, '🔴 CIEGO: no existe GET /:id en quotesAdmin.routes: el test no estaría invocando nada');
+  let salida = null;
+  const res = {
+    status(c) { this._c = c; return this; },
+    json(b) { salida = { code: this._c ?? 200, body: b }; return this; },
+    send(b) { salida = { code: this._c ?? 200, body: b }; return this; },
+    setHeader() { return this; },
+    type() { return this; },
+  };
+  const handlers = capa.route.stack;
+  await handlers[handlers.length - 1].handle(req, res, () => {});
+  return salida;
+}
+
+/** El detalle por la ruta real. `trabajos` es lo que hay en la tabla de Trabajos; el doble respeta el `where`. */
+// `userRole` por defecto 'admin': es el que emite `requireAuth` para el propietario (`owner` es un
+// pseudo-rol de las métricas y `seesAllJobs` lo trata, con razón, como desconocido → fail-closed).
+async function detalleRealDe({ trabajos = [], userRole = 'admin', teamMemberId = null, fallaLaLecturaDeTrabajos = false } = {}) {
+  const quote = {
+    id: ID_RUTA, quoteNumber: 7, merchantId: 7, customerId: 2, status: 'accepted', currency: 'EUR', total: 590,
+    lines: [{ concept: 'Cuadro eléctrico', qty: 1, price: 590, tax: 0 }], tiers: null,
+    paymentTerms: 'MANUAL', decisionToken: 'a'.repeat(32), Invoice: [], validUntil: null,
+    merchant: { id: 7, name: 'QA', country: 'ES' }, customer: { id: 2, name: 'Cliente QA' },
+    signatureUrl: null, charge: null, billingPlan: null, customBillingPlan: null, discountGlobalAmount: null, revision: 0,
+  };
+  // Lo que no es el presupuesto ni el Trabajo responde VACÍO (null / [] / 0): aquí solo se mira el origen.
+  const modelo = (propio = {}) => new Proxy(propio, {
+    get: (o, k) => (k in o ? o[k] : async () => (String(k) === 'findMany' ? [] : String(k) === 'count' ? 0 : null)),
+  });
+  moduloPrisma.prisma.quote = modelo({ findFirst: async () => quote, findUnique: async () => quote, findMany: async () => [quote] });
+  for (const m of ['whatsAppMessage', 'merchant', 'maintenancePlan', 'quoteAssignee']) moduloPrisma.prisma[m] = modelo();
+  const consultas = [];
+  moduloPrisma.prisma.job = {
+    findMany: async (args) => {
+      consultas.push(args);
+      if (fallaLaLecturaDeTrabajos) throw new Error('bd caida (simulada)');
+      const w = args.where || {};
+      return trabajos.filter((j) => (w.merchantId === undefined || j.merchantId === w.merchantId)
+        && (w.quoteId === undefined || j.quoteId === w.quoteId));
+    },
+  };
+  const respuesta = await invocarDetalle({
+    params: { id: String(ID_RUTA) }, merchantId: 7, userRole, teamMemberId, query: {}, headers: {},
+  });
+  return { respuesta, consultas };
+}
+
+const TRABAJO_DE_LA_RUTA = { id: 70, merchantId: 7, quoteId: ID_RUTA, operarioId: 11, assignedUserId: null, assignees: [] };
+
+test('SCRUM-984 · 🔴 LA RUTA: el detalle de un aceptado con Trabajo de origen trae `albaranOrigen` con su Trabajo', async () => {
+  const { respuesta, consultas } = await detalleRealDe({ trabajos: [TRABAJO_DE_LA_RUTA] });
+  assert.equal(respuesta?.code, 200, `🔴 el detalle no respondió 200: ${JSON.stringify(respuesta?.body).slice(0, 200)}`);
+  assert.equal(respuesta.body.id, ID_RUTA, '🔴 CIEGO: no es el presupuesto pedido');
+  assert.deepEqual(respuesta.body.albaranOrigen, { elegible: true, jobId: 70, motivo: null });
+  // Regla 2, ejecutada y no leída: la lectura sale con el merchant de la petición y el presupuesto pedido.
+  assert.equal(consultas.length, 1, '🔴 la ruta debe leer los Trabajos exactamente una vez');
+  assert.equal(consultas[0].where.merchantId, 7, '🔴 la lectura de Trabajos no filtra por el merchant de la petición');
+  assert.equal(consultas[0].where.quoteId, ID_RUTA, '🔴 la lectura de Trabajos no filtra por el presupuesto pedido');
+});
+
+test('SCRUM-984 · LA RUTA: sin Trabajo de origen → `elegible: false` y el motivo, no un campo ausente', async () => {
+  const { respuesta } = await detalleRealDe({ trabajos: [] });
+  assert.equal(respuesta?.code, 200);
+  assert.deepEqual(respuesta.body.albaranOrigen, { elegible: false, jobId: null, motivo: 'sin_trabajo' });
+});
+
+test('SCRUM-984 · LA RUTA: un técnico recibe SU Trabajo, y el de otro llega sin id', async () => {
+  const suyo = await detalleRealDe({ trabajos: [TRABAJO_DE_LA_RUTA], userRole: 'tecnico', teamMemberId: 11 });
+  assert.deepEqual(suyo.respuesta.body.albaranOrigen, { elegible: true, jobId: 70, motivo: null });
+  const ajeno = await detalleRealDe({ trabajos: [TRABAJO_DE_LA_RUTA], userRole: 'tecnico', teamMemberId: 99 });
+  assert.equal(ajeno.respuesta?.code, 200);
+  assert.deepEqual(ajeno.respuesta.body.albaranOrigen, { elegible: false, jobId: null, motivo: 'trabajo_no_visible' },
+    '🔴 la ruta no pasa el rol o la identidad: un técnico ajeno recibió el Trabajo de otro');
+});
+
+test('SCRUM-984 · 🔴 LA RUTA: si la lectura de Trabajos FALLA, el detalle SIGUE saliendo (sin el campo)', async () => {
+  const errores = [];
+  const consolaOriginal = console.error;
+  console.error = (...a) => { errores.push(a.map(String).join(' ')); };
+  let salida;
+  try { salida = await detalleRealDe({ fallaLaLecturaDeTrabajos: true }); } finally { console.error = consolaOriginal; }
+  assert.equal(salida.respuesta?.code, 200,
+    `🔴 una lectura opcional caída tumbó el detalle entero: ${JSON.stringify(salida.respuesta?.body).slice(0, 160)}`);
+  assert.equal(salida.respuesta.body.id, ID_RUTA, '🔴 CIEGO: el detalle que salió no es el pedido');
+  assert.equal(Object.prototype.hasOwnProperty.call(salida.respuesta.body, 'albaranOrigen'), false,
+    '🔴 el detalle dice algo del origen habiendo fallado la lectura');
+  assert.equal(salida.consultas.length, 1, '🔴 CIEGO: la lectura que se hizo fallar no llegó a intentarse');
+  assert.ok(errores.some((e) => /albaranOrigen/.test(e)), '🔴 el fallo no se registró: quedaría mudo');
 });
 
 test('SCRUM-984 · el dominio contesta con la función del buscador y NO lee `Quote.jobId`', () => {
