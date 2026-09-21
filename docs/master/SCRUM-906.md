@@ -505,3 +505,58 @@ coloca bajo «Add-ons», lo que lo sugiere, y por eso no se afirma.
 esta familia avisan de la llegada al cliente —no era una ocurrencia de Jobber—; y tiene **una página
 por oficio**, como Verifacturamos (M5) y Jobber: **tres de cuatro**, o sea un patrón del sector. Eso
 último es marketing y no producto, y por eso va aparte, en §13.4.
+
+## SCRUM-906j · Housecall Pro cerrado, Tradify y Fergus, y la ficha del cliente lista para construir (21-sep-2026)
+
+**Medido el 21-sep-2026 07:29Z (hora de GitHub) sobre `origin/main` =
+`43f4c7fc3f8d0330089edcd785cb0eea58ccb784`.** Rama `scrum-906j-housecall-tradify-fergus`. Solo docs. El
+detalle está en [`docs/competencia/matriz.md`](../competencia/matriz.md) **§14** (Housecall Pro) y
+**§15** (Tradify y Fergus); las capturas, en `docs/competencia/capturas/{housecall-pro,tradify,fergus}/`.
+
+**Encargo del orquestador:** (1) cerrar Housecall Pro, que quedó a medias el 20-sep y con seis capturas
+fuera de git; (2) una pasada nueva y de más de un competidor; (3) tres propuestas por pasada, con su
+forma, la más barata pequeña, **midiendo antes si ya lo tenemos**; (4) la ficha del cliente, lista para
+construir y con el inventario de lo que ya existe en la API y no se pinta.
+
+**Las tres de Housecall Pro** (§14.3): **la ficha del cliente enseña su historial de trabajo**
+(mediano) · **«Última visita» en la lista de clientes** (pequeño) · **Equipos v1**, el recorte que
+sustituye a §13.3.1 (mediano, ⛔ esquema).
+
+**Las tres de Tradify y Fergus** (§15.3): **avisar al cliente de la visita, la víspera** (mediano, ⛔
+J6 y Meta) · **tu agenda, en el calendario del móvil** (mediano, ⛔ superficie pública; choca en parte
+con «JOB-1 cubre» de la matriz X1) · **la nota del cliente, a la vista en el trabajo** (pequeño).
+
+🔴 **Lo que se midió y desmiente lo escrito, dicho antes que lo demás:**
+
+1. **§13.3.3 estaba equivocado en las fotos.** Decía que `Attachment.entityType` admite
+   `quote_request | job` y que el índice bastaba. Hoy **nada escribe `job`**: las fotos de un trabajo
+   viven en su albarán, se guardan **enteras** en Postgres (hasta 5 MB) y las miniaturas no existen
+   (`thumb|miniatura|sharp` en `src` → 0). El historial es barato; **las fotos, no**. Está corregido
+   en el propio §13.3.3.
+2. **«Es el primer paso barato» era cierto solo en esquema.** La ficha necesita una ruta nueva y un
+   bloque nuevo: `GET /admin/jobs` trae 200 filas y solo filtra por operario, `GET /admin/partes` igual,
+   y `Job` no tiene índice por cliente. Por eso sale *mediano*, no *pequeño*.
+3. **Mi borrador de ayer llevaba «varias direcciones por cliente» como propuesta y se retira**: el
+   parent-child de Housecall Pro ya lo tenemos (`Customer.companyId`, SCRUM-576) y el dato que decide lo
+   otro no se puede medir desde aquí.
+4. **Diez filas de candidatas de Tradify y Fergus murieron al medir** (§15.2): tres están
+   construidas y apagadas tras su bandera, cuatro ya funcionan (una con el límite de SCRUM-403), dos
+   ya estaban propuestas antes y una no se propone por falta de fuente normativa.
+
+🔴 **Un hallazgo fuera de carril, para el orquestador y sin arreglar** (`src/` y `public/` no son de esta
+sesión): `openEdit360Modal` rellena NIF, razón social, forma jurídica y empresa desde un `customer` que
+`/detail` sirve **sin** esos campos (solo nueve), y al guardar los manda como `null`
+(`customerDetailView.js:474-475`, `customerAdmin.ts:316`). **Leído, no ejecutado.** Si es así, editar
+una nota desde la ficha borra el NIF del cliente. Comprobación de dos minutos en staging: un cliente
+con NIF → Editar → ¿sale vacío el NIF? Detalle en §14.3.1.
+
+**Declarado como no medido:** no se entró en ninguno de los tres (A19); todo es su web y su manual, **no
+su producto funcionando**. El código nuestro se midió **leyendo** `origin/main`, no ejecutando nada
+contra staging. **No se midió** cuántos clientes reales tienen ≥ 2 sitios, ni cuántos tienen ya un
+trabajo terminado, ni cuántos usan un calendario externo: las propuestas de §15 son hipótesis
+respaldadas por competidores, no por un dato nuestro.
+
+**Método:** la inspección del código de la ficha la hizo un subagente de solo lectura, con fichero y
+línea por afirmación; los ceros llevan su suelo, y las afirmaciones que sostienen las propuestas
+(sin índice por cliente, ningún escritor de `entityType 'job'`, el `select` de `/detail` y el payload
+del modal) se releyeron a mano antes de escribirlas.
