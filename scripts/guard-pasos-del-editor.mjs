@@ -221,6 +221,7 @@ const MEDIR = new Function('inventario', `
         marcados: botones.filter(function (b) { return b.getAttribute('aria-pressed') === 'true'; }).map(idDe),
         primero: botones[0] ? limpio(botones[0].textContent) : null,
         minAlto: cajas.length ? Math.min.apply(null, cajas.map(function (c) { return c.height; })) : 0,
+        anchoBuscador: (function () { var b = q('.quote-buscador-cliente'); return b ? Math.round(b.getBoundingClientRect().width) : 0; })(),
         caben: cajas.every(function (c) { return c.left >= -1 && c.right <= document.documentElement.clientWidth + 1; }),
         altaVisible: !!alta && ve(alta),
         nota: nota ? limpio(nota.textContent) : null,
@@ -355,6 +356,9 @@ async function casoPresupuesto(navegador, ancho) {
     if (c0.selectVisible) mal.push('J · el select de clientes SE VE: los botones son el control y el select sólo guarda el valor');
     if (c0.minAlto < 44) mal.push(`J · un botón de cliente mide ${Math.round(c0.minAlto)} px de alto; el mínimo táctil es 44`);
     if (!c0.caben) mal.push('J · un botón de cliente se sale de la pantalla');
+    // Con tres columnas (desde 901 px) el campo caía en UNA: el buscador medía 172 px y «Comunidad Los
+    // Olivos» se partía en dos líneas. Con el campo a fila entera mide ≥ 320 px a 390 y ≥ 500 a 1280.
+    if (c0.anchoBuscador < 280) mal.push(`J · el buscador de cliente mide ${c0.anchoBuscador} px: el campo está encajonado en una columna`);
     if (!c0.altaVisible) mal.push('J · no se ve «+ Nuevo cliente»');
 
     // C · con cliente, ELEGIDO CON UN CLIC DE VERDAD sobre su botón (no con `select` a pelo).

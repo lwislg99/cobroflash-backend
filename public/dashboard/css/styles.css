@@ -3831,6 +3831,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    El `<select name="customer_id">` sigue en el DOM con `hidden` (la regla global `[hidden]` de
    arriba lo apaga): es el portador del valor, y aquí NO se le escribe un `display`. */
 .quote-clientes { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+/* El campo del cliente ocupa la FILA ENTERA de `.quote-form-row` (tres columnas desde 901 px): en una sola,
+   el buscador medía 172 px y «Comunidad Los Olivos» se partía en dos líneas (captura de 915j a 1280 px). */
+.quote-form-row > .quote-cliente-campo { grid-column: 1 / -1; }
 .quote-cliente-opcion {
   display: block; width: 100%; min-width: 0; min-height: 52px; box-sizing: border-box;
   padding: 8px 12px; text-align: left;

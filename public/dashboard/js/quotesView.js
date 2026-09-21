@@ -677,6 +677,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   listaClientes.className = "quote-clientes";
   /** Los botones de cliente que hay pintados AHORA (sin el de alta): lo que `sincronizar…` recorre. */
   let botonesDeCliente = [];
+  // Con tres columnas (≥ 901 px) el campo quedaba en UNA: buscador de 172 px y botones que partían
+  // «Comunidad Los / Olivos» en dos líneas (medido con las capturas de 915j). Ocupa la fila entera.
+  fieldCustomer.wrapper.classList.add("quote-cliente-campo");
   fieldCustomer.select.hidden = true;
   fieldCustomer.wrapper.removeChild(fieldCustomer.select);
   fieldCustomer.wrapper.appendChild(buscadorCliente);
