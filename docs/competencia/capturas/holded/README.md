@@ -15,10 +15,18 @@ afirmación sobre el producto de otro, sin imagen, es un recuerdo.
 | `portal-cliente-nueve-acciones.png` | Su artículo `9382835`, entero: las **nueve acciones** del Portal del Cliente —resumen, pagos, aceptar presupuestos, descargar o imprimir, comentar, catálogo, pedidos, **crear y modificar contraseña** e idioma—, cada una con su propia pantalla | **El enlace del portal, en el mensaje** (matriz §10.1) |
 | `caducidad-firma-lista-cerrada.png` | `Configuración > CRM > Firma digital`: «Tiempo de expiración de la firma» → **«Días para que expire la firma»**, un desplegable cerrado | **Caducidad en un toque** (matriz §10.3) |
 | `varios-firmantes-ayuda-10900972.png` | Su ayuda, literal: *«¿Pueden firmar varias personas un mismo documento? Sí. Puedes añadir varios firmantes al enviar el documento.»* Y al lado, su encuadre legal: la firma *«no equivale a una firma electrónica cualificada»* | **Que el presupuesto llegue a quien decide** (matriz §10.2) |
+| `escaner-inbox-por-dentro.png` | **Su escáner de gastos por dentro**, nunca visto hasta hoy: la dirección `…@holdedbox.com` **presidiendo la pantalla**, el triaje «Nuevos · Pendientes de revisar · Errores», los botones Historial y Subir archivo, y la zona de arrastre con sus formatos | **El gasto entra por WhatsApp** (matriz §11.4.1) |
+| `escaner-estados-del-documento.png` | Los cinco estados de un documento entrante: Procesando · Revisar · Hecho · Error · **Descartado** («un logo o una imagen de un email… No requiere ninguna acción») | **La bandeja** (matriz §11.4.2) |
+| `escaner-borrador-solo-si-hay-confianza.png` | Sus ajustes de automatización —el borrador se crea *«siempre que el sistema no detecte inconsistencias y tenga un alto nivel de confianza»*— y, debajo, **«ilimitado en cada plan»** | **Decir por qué un campo vino vacío** (matriz §11.4.3) |
 
 ## Lo que estas capturas NO son, dicho antes de que nadie se confunda
 
-🔴 **La tercera NO es la caja de envío.** Es su **fuente escrita** sobre la caja de envío. La caja no
+🔴 **Las tres del escáner son su pantalla y su ayuda, no su OCR funcionando.** No se subió ningún
+documento, así que **nadie ha visto ese OCR leer**: los tres contadores estaban a cero y el Historial,
+vacío. Lo que dice de precisión, de revisión campo a campo y de qué hace con una foto mala es **suyo
+escrito**, no observado.
+
+🔴 **La tercera de la firma NO es la caja de envío.** Es su **fuente escrita** sobre la caja de envío. La caja no
 se ha fotografiado porque **el clic que la abre sigue prohibido** —lo bloquea el clasificador de
 permisos de la máquina para controles de envío de aplicaciones de facturación de terceros, no
 Holded—, y no se busca la vuelta. Está declarado en la matriz §9.4. Si algún día se autoriza ese

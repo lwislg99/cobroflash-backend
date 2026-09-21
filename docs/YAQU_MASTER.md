@@ -1,4 +1,4 @@
-﻿# YAQU — DOCUMENTO MAESTRO v5.3 UNIFICADO
+# YAQU — DOCUMENTO MAESTRO v5.3 UNIFICADO
 **10 junio 2026 · ÚNICA FUENTE DE VERDAD · Reemplaza a: YAQU_MASTER_V5, PARCHE_V5.1, ADDENDUM_V5.2 y DELTA_V5.3 (todas las precedencias ya resueltas en este documento).**
 
 > **Instrucción para Claude Code (única tarea de instalación):** guardar este archivo como `docs/YAQU_MASTER.md`, mover los 4 documentos anteriores a `docs/historico/`, commit `docs: YAQU_MASTER v5.3 unificado`. No hay nada que fusionar ni interpretar: este documento ya es la fusión.

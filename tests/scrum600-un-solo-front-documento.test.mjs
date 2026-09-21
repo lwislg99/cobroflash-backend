@@ -211,7 +211,11 @@ const RANURAS_A = [
   ["innerHTML", "<strong>Presupuesto #${displayNum}</strong>"],
   ["innerHTML", "KPI-TOTAL"],
   ["innerHTML", "PIE-TOTAL"],
-  ["textContent", "Presupuesto válido durante 30 días salvo indicación en contrario."],
+  // 🔴 SCRUM-915e1 · LA RANURA NO SE BORRA: SE RE-ANCLA. Sigue siendo el pie del documento y sigue
+  // nombrando el presupuesto; lo que cambia es que ya no afirma un plazo inventado —«30 días»—
+  // sino el que el profesional ha puesto y se guarda. El `${diaValidez}` es parte del texto que el
+  // fundador tiene que poder leer aquí: es justamente el trozo que antes no existía.
+  ["textContent", "Presupuesto válido hasta el ${diaValidez}."],
   ["title", "Añadir una línea con \"${item.concepto}\" (en ${item.usos} presupuestos)"],
   ["textContent", "en ${item.usos} presupuestos"],
   ["innerHTML", "MODAL-USAR-PLANTILLA"],
