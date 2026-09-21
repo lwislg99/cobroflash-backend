@@ -63,6 +63,7 @@ const USO = [
   '  sesiones   [--horas 24] [--min-turnos 40] [--desde <ISO con huso>] [--nombre <sN>]',
   '  arranque   <nombre> [--turnos 24]',
   '  resultados [--horas 24] [--min-turnos 40]',
+  '  vivas      [--horas 2] [--umbral 200000] [--simular <umbral>]   quién toca relevar YA (SCRUM-1070)',
   '  traspaso   <sN> | --fichero <ruta> [--tope 5120]',
 ].join('\n');
 
@@ -637,10 +638,83 @@ function subcomandoTraspaso(args, ctx) {
   return informeTraspaso({ ruta, bytes, tope, historial });
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// vivas · SCRUM-1070 · ¿a quién le toca el relevo AHORA?
+// El coste de una sesión es Σ (contexto de cada turno): crece con el cuadrado de su longitud.
+// Medido el 21-sep-2026 (55 sesiones ≥ 40 turnos, 30 h): la mediana ACABA en 337k y 38 de 55 pasan de
+// 300k; con relevo a 200k, Σcontexto baja ~44 % (simulado, no medido; ver simularRelevo).
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+export const UMBRAL_RELEVO = 200000; // fundador, 21-sep (la A19 decía 300k)
+export const CTX_TRAS_RELEVO = 85000; // supuesto: ≈ U8 mediano de una sesión nacida (57k de suelo + arranque + traspaso)
+export const OCIOSA_MIN = 60; // A19 caso 2: la caché de prompt caduca a la hora
+
+/** Dónde está una sesión AHORA: su último contexto y cuándo habló por última vez. */
+export function resumenDeVivas(turnos) {
+  const us = contextoPorTurno(turnos);
+  const ultimo = turnos[turnos.length - 1];
+  return { N: turnos.length, ctx: us[us.length - 1], ultimoMs: Date.parse((ultimo && ultimo.ts) || ''), us };
+}
+
+/** Σcontexto de la serie `us` si se relevara al cruzar `umbral`: cada relevo reinicia en `arr`. */
+export function simularRelevo(us, umbral, arr = CTX_TRAS_RELEVO) {
+  let suma = 0;
+  let relevos = 0;
+  let off = 0;
+  for (let i = 0; i < us.length; i++) {
+    let u = us[i] - off;
+    if (u > umbral && i < us.length - 1) { relevos++; off = us[i] - arr; u = arr; }
+    suma += u;
+  }
+  return { suma, relevos };
+}
+
+export function informeVivas(cen, { horas, umbral, simular, ahoraMs }) {
+  if (!cen.ok) return { codigo: 2, cuerpo: `NO PUDE MIRAR: ${cen.motivo}\nPOBLACION: 0 state.json` };
+  if (cen.sesiones.length === 0) {
+    return { codigo: 2, cuerpo: [`NO PUDE MIRAR: cero sesiones con turnos en las últimas ${horas} h. Esto NO es «nadie pasa del umbral».`,
+      lineaPoblacion(cen.pob, 1), lineaLectura(cen)].join('\n') };
+  }
+  const rs = cen.sesiones.map((s) => ({ nombre: s.nombre, ...s.datos })).sort((a, b) => b.ctx - a.ctx);
+  const l = [`vivas · ventana ${horas} h · umbral de relevo ${umbral} (fundador, 21-sep) · contexto = último turno medido`];
+  let sobre = 0;
+  for (const r of rs) {
+    const parada = Number.isFinite(r.ultimoMs) ? Math.max(0, Math.round((ahoraMs - r.ultimoMs) / 60000)) : null;
+    const toca = r.ctx >= umbral;
+    if (toca) sobre++;
+    const fria = parada !== null && parada > OCIOSA_MIN ? ` · parada ${parada} min: caché fría, RELEVO antes de reanudar` : '';
+    l.push(`${r.nombre.padEnd(14)} turnos=${String(r.N).padStart(4)} contexto=${String(r.ctx).padStart(7)} ${toca ? 'RELEVAR' : 'ok     '}`
+      + `${parada !== null ? ` · último turno hace ${parada} min` : ''}${fria}`);
+  }
+  l.push(`VIVAS ${rs.length} · a relevar (≥ ${umbral}): ${sobre} · mediana ${medianaDe(rs.map((r) => r.ctx))}`);
+  if (simular !== null) {
+    const base = rs.reduce((s, r) => s + r.us.reduce((a, x) => a + x, 0), 0);
+    const sim = rs.map((r) => simularRelevo(r.us, simular));
+    const suma = sim.reduce((s, x) => s + x.suma, 0);
+    l.push(`SIMULADO relevo a ${simular} sobre estas ${rs.length}: Σcontexto ${millones(base)} → ${millones(suma)}`
+      + ` (${pct1((1 - suma / base) * 100)} % menos) · +${sim.reduce((s, x) => s + x.relevos, 0)} relevos · arranque tras relevo ${CTX_TRAS_RELEVO} SUPUESTO;`
+      + ' es una simulación de Σcontexto, no del coste ni de la eficiencia (mirar rojos de CI y correcciones tras entregar)');
+  }
+  l.push(lineaPoblacion(cen.pob, 1), lineaLectura(cen));
+  return { codigo: sobre > 0 ? 1 : 0, cuerpo: l.join('\n') };
+}
+
+function subcomandoVivas(args, ctx) {
+  const { opciones, posicionales } = parsearOpciones(args, ['--horas', '--umbral', '--simular']);
+  if (posicionales.length) throw new ErrorDeUso(`sobra «${posicionales[0]}»`);
+  const horas = opciones['--horas'] === undefined ? 2 : positivo(opciones['--horas'], '--horas');
+  const umbral = opciones['--umbral'] === undefined ? UMBRAL_RELEVO : positivo(opciones['--umbral'], '--umbral', { entero: true });
+  const simular = opciones['--simular'] === undefined ? null : positivo(opciones['--simular'], '--simular', { entero: true });
+  const cen = censarSesiones({
+    dirJobs: ctx.dirJobs, ahoraMs: ctx.ahoraMs, horas, minTurnos: 1, analizar: (turnos) => resumenDeVivas(turnos),
+  });
+  return informeVivas(cen, { horas, umbral, simular, ahoraMs: ctx.ahoraMs });
+}
+
 const SUBCOMANDOS = {
   sesiones: subcomandoSesiones,
   arranque: subcomandoArranque,
   resultados: subcomandoResultados,
+  vivas: subcomandoVivas,
   traspaso: subcomandoTraspaso,
 };
 
