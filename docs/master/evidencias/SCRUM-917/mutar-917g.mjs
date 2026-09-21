@@ -134,8 +134,16 @@ const MUTACIONES = [
   { id: 'M15', que: 'el marcador de las notas vuelve al de Presupuestos (dos marcadores en la pantalla)',
     fichero: MODULO, aplicar: sustituir("marcadorNotas: 'Lo que necesites recordar de este trabajo.',", "marcadorNotas: 'Anota detalles del trabajo, acuerdos verbales, recordatorios…',"),
     suites: [T.notas427, T.nuevo], guard: false },
-  { id: 'M16', que: 'la línea «Quién lo ejecuta» CERRADA deja de decir los nombres (hay que abrirla)',
-    fichero: VISTA, aplicar: sustituir("valor: nombresAsignados || (isTecnico ? resumenDeQuien({ nombres: '' }) : ''),", "valor: '',"),
+  // 🔒 M16 TUVO UNA PRIMERA VERSIÓN QUE ERA UN MUTANTE EQUIVALENTE, y se deja escrito porque el
+  // fallo es de este instrumento y no del test. La primera mutó `valor: nombresAsignados || …` —el
+  // valor INICIAL de la línea, antes de leer el equipo— a `valor: ''`, y pasó en verde en las suites y
+  // en el guard F. No era un agujero: la línea recibe su valor DEFINITIVO más abajo, en
+  // `lineaQuien.poner(resumenDeQuien({ nombres: nombresAsignados, … }))`, cuando ya se leyó el equipo, y
+  // los dos instrumentos miden el estado ASENTADO. Un mutante que no cambia lo observable no prueba
+  // que falte un test: prueba que se mutó el sitio equivocado. Lo que NO se mide, y se declara: el
+  // valor inicial (los ~100 ms antes de que llegue el equipo, para que no parpadee).
+  { id: 'M16', que: 'la línea «Quién lo ejecuta» CERRADA deja de decir los nombres una vez leído el equipo (hay que abrirla)',
+    fichero: VISTA, aplicar: sustituir('          nombres: nombresAsignados,\n          sinEquipo: sel.editable', "          nombres: '',\n          sinEquipo: sel.editable"),
     suites: [T.o817], guard: true },
   { id: 'M17', que: 'las tarjetas del tipo pierden `aria-pressed` (ya no hay función detrás de «Cambiar»)',
     fichero: VISTA, aplicar: sustituir("card.setAttribute('aria-pressed', String(c.value === tipoActual));", "card.setAttribute('aria-selected', String(c.value === tipoActual));"),
@@ -168,13 +176,21 @@ function fila(m, numstat, t, g) {
   return { texto: partes.join('\n') + `\n   ⇒ ${rojo ? '🔴 CAZADA (el rojo salió)' : '🟢 NO CAZADA — la mutación pasó en verde: algo no vigila lo que dice'}`, rojo };
 }
 
+/** `--solo=M16,M03` corre sólo esas (la BASE se corre siempre). Sin la opción, las 19. */
+const SOLO = (process.argv.find((a) => a.startsWith('--solo=')) || '').slice(7).split(',').filter(Boolean);
+
 function main() {
+  const lista = SOLO.length ? MUTACIONES.filter((m) => SOLO.includes(m.id)) : MUTACIONES;
+  if (SOLO.length && lista.length !== SOLO.length) {
+    console.log(`ABORTO: --solo pide ${SOLO.join(',')} y sólo existen ${lista.map((m) => m.id).join(',') || 'ninguna'}.`);
+    process.exit(2);
+  }
   if (git('status', '--porcelain').trim()) {
     console.log('ABORTO: el árbol no está limpio. Se comitea TODO antes de inyectar (A23·9).');
     process.exit(3);
   }
   const cabecera = git('rev-parse', 'HEAD').trim();
-  console.log(`HEAD ${cabecera} · ${MUTACIONES.length} mutaciones · suites: ${TODAS.length} ficheros · guard F: scripts/guard-detalle-trabajo-917.mjs`);
+  console.log(`HEAD ${cabecera} · ${lista.length} mutaciones${SOLO.length ? ` (--solo=${SOLO.join(',')})` : ''} · suites: ${TODAS.length} ficheros · guard F: scripts/guard-detalle-trabajo-917.mjs`);
 
   // ── LA BASE, sin mutar ──────────────────────────────────────────────────────────────────
   const baseT = correrTests(TODAS);
@@ -187,7 +203,7 @@ function main() {
   }
 
   const resumen = { cazadas: 0, noCazadas: [], ciegas: [], noAplicadas: [] };
-  for (const m of MUTACIONES) {
+  for (const m of lista) {
     console.log('');
     const ruta = path.join(RAIZ, m.fichero);
     let numstat = '';
@@ -222,7 +238,7 @@ function main() {
   }
 
   console.log('');
-  console.log(`RESUMEN: ${resumen.cazadas} de ${MUTACIONES.length} cazadas · no cazadas: ${resumen.noCazadas.join(', ') || '—'}`
+  console.log(`RESUMEN: ${resumen.cazadas} de ${lista.length} cazadas · no cazadas: ${resumen.noCazadas.join(', ') || '—'}`
     + ` · ciegas: ${resumen.ciegas.join(', ') || '—'} · no aplicadas: ${resumen.noAplicadas.join(', ') || '—'}`);
   console.log(`ÁRBOL FINAL: git status --porcelain ${git('status', '--porcelain').trim() ? 'SUCIO' : 'vacío'} · HEAD ${git('rev-parse', 'HEAD').trim()}`);
   process.exit(resumen.noCazadas.length || resumen.ciegas.length || resumen.noAplicadas.length ? 1 : 0);
