@@ -70,6 +70,8 @@ el verde sería una frase.
 
 # APÉNDICE — el merge con SCRUM-964 (21-sep-2026)
 
+**Medido contra:** `origin/main` = `e65fd51604febb207ff98474e7396470f99c0d08` · 2026-09-21T07:24:03Z (hora de la cabecera `Date:` de GitHub)
+
 Al mergear `origin/main` en la rama (el #1544, SCRUM-964, ya estaba dentro) hubo **un solo conflicto**:
 `src/modules/expenses/domain/expenses.service.ts`, en el `return` final de `listExpenses`. Las dos ramas lo habían
 tocado: 964 añadía `tieneFoto` a cada fila; 944 componía `job.titulo` con `nombresDeTrabajos`. Resuelto a mano:
