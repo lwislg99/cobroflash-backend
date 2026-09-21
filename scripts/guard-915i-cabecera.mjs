@@ -149,13 +149,13 @@ const HOJA = new Function(`
   if (!h || !h.checkVisibility()) return null;
   var tit = h.querySelector('.modal-title');
   var fr = h.querySelector('.hoja-vaciar__frase');
-  // Los botones de la hoja, menos la ✕ de su cabecera. (No se nombra la clase del pie: el censo de
+  // Los botones de la hoja, menos los de su cabecera (la ✕ y la ayuda «?»). (No se nombra la clase del pie: el censo de
   // SCRUM-350 exige mirar a todo fichero que la nombre, y aquí sólo se leen sus botones.)
   var pie = h;
   return {
     titulo: tit ? limpio(tit.textContent) : null,
     frase: fr ? limpio(fr.textContent) : null,
-    botones: pie ? Array.prototype.slice.call(pie.querySelectorAll('button:not(#vaciar-close)')).map(function (b) { return limpio(b.textContent); }) : [],
+    botones: pie ? Array.prototype.slice.call(pie.querySelectorAll('button')).filter(function (b) { return !b.closest('.modal-header'); }).map(function (b) { return limpio(b.textContent); }) : [],
     foco: document.activeElement ? limpio(document.activeElement.textContent) : null,
   };
 `);
