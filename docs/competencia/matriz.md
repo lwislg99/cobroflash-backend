@@ -1672,9 +1672,9 @@ es texto libre del administrador y puede llevar algo que no quiera que lea un op
 
 ## 16 · La familia española · Verifacturamos, Anfix, Billin (ahora TS Facturas), Contasimple, FacturaDirecta y Sage (21-sep-2026)
 
-**Medido el 21-sep-2026 (≈08:10Z, hora de GitHub) sobre `origin/main` =
+**Medido el 21-sep-2026 (≈08:00Z, hora de GitHub) sobre `origin/main` =
 `d46db08236d44b5d0869ca6335918321ad9fe1b7`** (el código nuestro); las webs, ese mismo día entre las
-07:49Z y las 08:05Z. Rama `scrum-906k-familia-espanola`. Solo documentos.
+07:49Z y las 08:00Z. Rama `scrum-906k-familia-espanola`. Solo documentos.
 
 🔴 **Lo primero, porque el fundador pidió saberlo en cada propuesta: NADA de este apartado está visto
 POR DENTRO.** Es todo su **web pública y su documentación**, descargada a texto literal (sin `WebFetch`,

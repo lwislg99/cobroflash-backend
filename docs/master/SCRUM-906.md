@@ -563,7 +563,7 @@ del modal) se releyeron a mano antes de escribirlas.
 
 ## SCRUM-906k · La familia española: Verifacturamos, Anfix, Billin, Contasimple, FacturaDirecta y Sage (21-sep-2026)
 
-**Medido el 21-sep-2026 (≈08:10Z, hora de GitHub) sobre `origin/main` =
+**Medido el 21-sep-2026 (≈08:00Z, hora de GitHub) sobre `origin/main` =
 `d46db08236d44b5d0869ca6335918321ad9fe1b7`.** Rama `scrum-906k-familia-espanola`. Solo docs. El detalle
 está en [`docs/competencia/matriz.md`](../competencia/matriz.md) **§16**.
 
