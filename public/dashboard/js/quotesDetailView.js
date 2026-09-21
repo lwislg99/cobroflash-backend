@@ -301,6 +301,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       } else {
         const btnCollect = document.createElement('button');
         btnCollect.className = 'btn-primary';
+        // SCRUM-984 · la acción de la pantalla lleva el id de SU fila en `QUOTE_ACTION_REGISTRY`,
+        // para que un guard compare tabla y pantalla por identidad y no por texto.
+        btnCollect.setAttribute('data-accion', 'btnCobrar');
         btnCollect.textContent = '💰 Cobrar ahora';
         btnCollect.addEventListener('click', () => {
           const gen = document.getElementById('btn-generate-invoice');
@@ -308,6 +311,28 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           else if (gen) gen.scrollIntoView({ block: 'center' });
         });
         actions.appendChild(btnCollect);
+      }
+
+      // SCRUM-984 · DEL PRESUPUESTO ACEPTADO AL ALBARÁN, CON UN TOQUE. Aterriza en la ficha del
+      // Trabajo con la hoja de alta ya abierta —la MISMA llamada que hace el buscador de Albaranes
+      // (`albaranesView.js`, ALB-01)—: aquí no se crea nada y el alta sigue teniendo su única puerta.
+      // A dónde ir lo decide el servidor con la regla del buscador (`albaranOrigen`: hay un Trabajo con
+      // ESTE presupuesto de origen y quien mira puede verlo). Sin a dónde ir, el botón NO SE PINTA: no
+      // hay texto firmado que explique por qué no se puede, y un control que no puede explicarse se
+      // quita en vez de deshabilitarse. El rótulo se lee de su fuente única (`atajoNuevo`).
+      const origenAlbaran = quote.albaranOrigen;
+      const rotuloAlbaran = window.atajoNuevo ? window.atajoNuevo.textoDe('albaranes') : '';
+      if (origenAlbaran && origenAlbaran.elegible === true && origenAlbaran.jobId != null && rotuloAlbaran) {
+        const btnAlbaran = document.createElement('button');
+        btnAlbaran.className = 'btn-secondary btn-sm';
+        btnAlbaran.setAttribute('data-accion', 'btnNuevoAlbaran');
+        btnAlbaran.textContent = rotuloAlbaran;
+        btnAlbaran.addEventListener('click', () => {
+          if (window.renderAppView) {
+            window.renderAppView('jobs-detail', { jobId: origenAlbaran.jobId, altaAlbaran: { quoteId: quote.id } });
+          }
+        });
+        actions.appendChild(btnAlbaran);
       }
       summarySec.appendChild(actionsSec);
 

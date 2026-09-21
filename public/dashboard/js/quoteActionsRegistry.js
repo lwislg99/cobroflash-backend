@@ -34,8 +34,12 @@ const QUOTE_ACTION_REGISTRY = [
   // En `sent` la pelota está en el cliente y el profesional no puede aceptar por él: lo que sí
   // puede es recordárselo. Es la acción que mueve el dinero desde aquí.
   { id: 'btnRecordar',         destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'primaria',    accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
-  // Aceptado: el siguiente paso es cobrar/trabajar. Es el único sitio donde nace el Trabajo.
-  { id: 'btnCrearTrabajo',     destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'oculta',      accepted: 'primaria',  rejected: 'oculta',    expired: 'oculta' } },
+  // Aceptado: el siguiente paso es COBRAR. SCRUM-984 (opción R, firmada 21-sep-2026): aquí estaba
+  // `btnCrearTrabajo` («Crear trabajo»), y no describía nada que la pantalla hiciera: el Trabajo ya
+  // no nace en un botón sino al aceptar (`ensureJobForQuote`, desde el 5-jul, `cc39cd71`; lo llaman
+  // `quotes.routes.ts`, `quotesAdmin.routes.ts` y `whatsappIncoming.routes.ts`). La primaria del
+  // estado pasa a ser la que la pantalla ya pinta, «Cobrar ahora».
+  { id: 'btnCobrar',           destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'oculta',      accepted: 'primaria',  rejected: 'oculta',    expired: 'oculta' } },
   // Rechazado y caducado comparten salida: **duplicar y volver a intentarlo**. Es lo único que
   // hace avanzar el dinero desde ahí, y sin ella los dos estados eran un final.
   { id: 'btnDuplicar',         destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'overflow',    accepted: 'overflow',  rejected: 'primaria',  expired: 'primaria' } },
@@ -43,7 +47,13 @@ const QUOTE_ACTION_REGISTRY = [
   // ── Secundarias: como mucho dos por estado (regla 2). ──────────────────────────────────────
   { id: 'btnPdf',              destinos: { draft: 'secundaria', pending_approval: 'secundaria', sent: 'secundaria',  accepted: 'secundaria', rejected: 'secundaria', expired: 'secundaria' } },
   { id: 'btnEditarLineas',     destinos: { draft: 'secundaria', pending_approval: 'secundaria', sent: 'oculta',      accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
-  { id: 'btnWhatsApp',         destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'secundaria',  accepted: 'secundaria', rejected: 'oculta',    expired: 'secundaria' } },
+  { id: 'btnWhatsApp',         destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'secundaria',  accepted: 'overflow',  rejected: 'oculta',    expired: 'secundaria' } },
+  // SCRUM-984 · del presupuesto aceptado al albarán, con un toque. La tabla dice el estado (solo
+  // `accepted`); la pantalla añade el dato: si no hay un Trabajo con ESTE presupuesto de origen que
+  // quien mira pueda ver, el botón no se pinta (`albaranOrigen` del detalle, la misma regla que el
+  // buscador de Albaranes). Entró en `accepted` a costa de `btnWhatsApp`, que pasó al «⋮» para
+  // quedarse en dos secundarias (regla 2 de la ley).
+  { id: 'btnNuevoAlbaran',     destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'oculta',      accepted: 'secundaria', rejected: 'oculta',    expired: 'oculta' } },
 
   // ── El resto, al «⋮» (regla 3). ────────────────────────────────────────────────────────────
   { id: 'btnVerCliente',       destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'overflow',    accepted: 'overflow',  rejected: 'overflow',  expired: 'overflow' } },
@@ -67,11 +77,12 @@ const QUOTE_ACTION_ROTULOS = {
   btnEnviar:           'Enviar al cliente',
   btnAprobar:          'Aprobar',
   btnRecordar:         'Enviar recordatorio',
-  btnCrearTrabajo:     'Crear trabajo',
+  btnCobrar:           'Cobrar ahora',
   btnDuplicar:         'Duplicar',
   btnPdf:              'Descargar PDF',
   btnEditarLineas:     'Editar líneas',
   btnWhatsApp:         'Enviar por WhatsApp',
+  btnNuevoAlbaran:     'Nuevo albarán',
   btnVerCliente:       'Ver cliente',
   btnMarcarRechazado:  'Marcar como rechazado',
   btnBorrar:           'Borrar',
