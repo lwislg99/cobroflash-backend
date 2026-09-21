@@ -452,7 +452,9 @@ async function medirCasillaDePrecios() {
   const c = document.getElementById('view');
   const norm = (s) => String(s).replace(/\s+/g, ' ').trim();
   const cuenta = (raiz) => [...raiz.querySelectorAll('label')].filter((l) => /Incluir precios en el parte/.test(l.textContent));
-  const antes = { barra: cuenta(c.querySelector('.job-doc-toolbar')).length, pantalla: cuenta(document).length };
+  const barra = c.querySelector('.job-doc-toolbar');
+  if (!barra) return { sinBoton: true, antes: { barra: -1, pantalla: cuenta(document).length } };
+  const antes = { barra: cuenta(barra).length, pantalla: cuenta(document).length };
   const btn = [...c.querySelectorAll('.job-doc-toolbar button')].find((b) => norm(b.textContent) === '+ Nuevo albarán');
   if (!btn) return { sinBoton: true, antes };
   btn.click();
@@ -527,9 +529,12 @@ for (const ancho of ANCHOS) {
 
     // F.7 · ESTADO DESPUÉS DE PULSAR: se abre cada línea y se mide lo de dentro.
     for (const [clave, rotulo] of LINEAS_F) {
+      const f = m.lineas.find((x) => x.clave === clave);
+      // Una línea que no existe es un HALLAZGO con nombre, no una excepción: sobre el producto sin
+      // tocar este bloque tiene que caer en rojo LIMPIO (se comprobó así), no reventar el guard.
+      if (!f) { mal(`F.7 ${q} no existe la línea «${rotulo}»: no hay nada que pulsar`); continue; }
       const a = await page.evaluate(medirLineaAbierta, clave);
       const fallos = [];
-      const f = m.lineas.find((x) => x.clave === clave);
       if (caso.dentro.quien && clave === 'quien' && caso.dentro.quien.fija) {
         // Sin nada que abrir: la línea es fija y NO se abre al pulsarla.
         if (!f.fija) fallos.push('debería ser fija (sin galón ni foco)');
