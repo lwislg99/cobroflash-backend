@@ -52,7 +52,7 @@ const MUTACIONES = [
   { id: 'M14', f: CSS, quita: 'el texto de «Sin foto» pasa a un ambar que no llega a 4,5:1',
     de: '.gasto-foto--no { background: #fff7ed; color: #b45309; }', a: '.gasto-foto--no { background: #fff7ed; color: #f59e0b; }', rojo: /píldoras por debajo de 4,5:1/ },
   { id: 'M15', f: JS, quita: 'el chip pulsado no cambia su aria-pressed',
-    de: "chip.setAttribute('aria-pressed', String(chip.dataset.foto === foto));", a: '', rojo: /aria-pressed|chips de arranque/ },
+    de: "chip.setAttribute('aria-pressed', String(chip.dataset.foto === foto));", a: '', rojo: /tras pulsar «Sin foto» el chip pulsado/ },
   { id: 'M16', f: CSS, quita: 'la barra crece hasta tapar la ultima fila',
     de: 'z-index: 25; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));', a: 'z-index: 25; padding: 60px 16px calc(60px + env(safe-area-inset-bottom));', rojo: /la barra tapa la última fila/ },
   { id: 'M17', f: JS, quita: 'un segundo boton con el id #exp-new-btn (una copia del de arriba, no el mismo)',
@@ -111,15 +111,18 @@ for (const m of lista) {
       fila.intentos = r.intentos;
       fila.ciego = r.ciego;
       // Se busca el rojo esperado SOLO en las lineas marcadas 🔴: una frase que tambien sale en un ✅ no es un rojo.
-      fila.rojoVisto = m.rojo.test(lineas(r.salida).filter((l) => l.includes('🔴')).join('\n'));
+      const rojas = lineas(r.salida).filter((l) => l.includes('🔴'));
+      fila.rojoVisto = m.rojo.test(rojas.join('\n'));
       fila.cae = !r.ciego && r.exit !== 0 && fila.rojoVisto;
+      // Lo que el guard dijo, para que un «VIVA» se pueda LEER (¿cayo por otra razon?) y no solo contar.
+      fila.rojas = rojas.slice(0, 3).map((l) => l.trim().slice(0, 170));
     } finally {
       fs.writeFileSync(abs, original, 'utf8'); // pase lo que pase, el fichero vuelve
     }
   }
   fila.restaurado = git('diff', '--quiet', '--', m.f).status === 0;
   filas.push(fila);
-  console.log(`${m.id} · ${m.quita}\n     aplicada=${fila.aplicada} (ocurrencias por cambio: ${veces.join('+')}) · diff ${fila.numstat || '—'} · guard exit=${fila.exit} (intentos ${fila.intentos}) · rojo esperado visto=${fila.rojoVisto} · restaurado=${fila.restaurado} → ${fila.ciego ? 'CIEGO' : fila.cae ? 'CAE' : 'VIVA'}`);
+  console.log(`${m.id} · ${m.quita}\n     aplicada=${fila.aplicada} (ocurrencias por cambio: ${veces.join('+')}) · diff ${fila.numstat || '—'} · guard exit=${fila.exit} (intentos ${fila.intentos}) · rojo esperado visto=${fila.rojoVisto} · restaurado=${fila.restaurado} → ${fila.ciego ? 'CIEGO' : fila.cae ? 'CAE' : 'VIVA'}${(fila.rojas || []).map((l) => '\n       ' + l).join('')}`);
 }
 const caen = filas.filter((f) => f.cae).length;
 const vivas = filas.filter((f) => !f.cae).map((f) => f.id + (f.ciego ? '(CIEGO)' : ''));
