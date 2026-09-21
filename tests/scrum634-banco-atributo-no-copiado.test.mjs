@@ -141,3 +141,51 @@ test('SCRUM-634 · el hueco DECLARADO no grita: `value` y `checked` no reflejan'
   assert.equal(raiz.querySelector('[value="lo-que-tecleo"]'), null);
   assert.equal(raiz.querySelector('[checked]'), null);
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-917f · `append` Y `prepend` ACEPTAN CADENAS, COMO EL NAVEGADOR
+//
+// Mismo fichero porque es el mismo defecto una capa más abajo: el banco discrepaba del navegador
+// y se callaba. `ParentNode.append(...)` admite strings y los mete como nodos de texto; aquí el
+// bucle hacía `x._padre = n` sobre cada argumento, y sobre un primitivo eso es un `TypeError`.
+//
+// LO QUE COSTÓ, MEDIDO (SCRUM-917e): `jobDetailView` hacía `l.append(e, ' ', v)` —DOM de manual,
+// perfectamente legítimo— y la VISTA ENTERA reventaba al montarse, así que los dos contratos de
+// SCRUM-817 caían en su SUELO sin llegar a mirar el orden que vigilan. Y lo que lo hace peor que
+// los huecos de `prepend` (SCRUM-460) o `insertAdjacentHTML` (SCRUM-698): aquí
+// `guard:detalle-trabajo-917` daba **92 de 92 en Chrome sobre la misma línea** que tumbaba la
+// suite. Un verde de navegador y un rojo de banco midiendo cosas distintas, y se creyó el bonito.
+//
+// ⚠️ LAS DOS DIRECCIONES, igual que arriba: la cadena entra COMO TEXTO (no como un hijo raro sin
+// `tagName`), y lo que NO es cadena sigue entrando tal cual, con su identidad intacta. Con una
+// sola, un banco que metiera todo como texto pasaría la primera y perdería los elementos.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-917f · el banco ATIENDE `append(elemento, cadena, elemento)` como el navegador', () => {
+  const reg = registro();
+  const fila = nodo('div', reg);
+  const etiqueta = nodo('span', reg);
+  etiqueta.textContent = 'Aceptado';
+  const cifra = nodo('b', reg);
+  cifra.textContent = '590,00 €';
+
+  assert.doesNotThrow(() => fila.append(etiqueta, ' ', cifra),
+    '🔴 EL BANCO REVIENTA CON UNA CADENA EN `append`, que el navegador sí acepta. No da un rojo '
+    + 'del contrato que se está midiendo: tumba la vista entera y todo lo que colgaba de ella cae '
+    + 'en su suelo, diciendo «no pude mirar» con cara de «no está».');
+
+  assert.equal(fila.hijos.length, 3, '🔴 la cadena no entró, o entró partida');
+  assert.equal(fila.hijos[1].textContent, ' ', '🔴 la cadena no entró como TEXTO');
+  assert.equal(fila.hijos[1].tagName, '#TEXT', '🔴 la cadena entró como un elemento, no como nodo de texto');
+  // Y los elementos siguen siendo LOS MISMOS objetos: nada se ha copiado ni re-creado por el camino.
+  assert.equal(fila.hijos[0], etiqueta, '🔴 el elemento se perdió o se sustituyó al pasar por la conversión');
+  assert.equal(fila.hijos[2], cifra);
+  assert.equal(cifra._padre, fila, '🔴 el elemento entró sin quedar enganchado a su padre');
+
+  // `prepend` es la otra inserción variádica y tenía el mismo bucle: si sólo se arreglara `append`,
+  // el hueco volvería con otra cara y costaría otro ticket entenderlo (la lección de SCRUM-697).
+  const otra = nodo('div', reg);
+  assert.doesNotThrow(() => otra.prepend('Cobrado', nodo('b', reg)));
+  assert.equal(otra.hijos[0].tagName, '#TEXT');
+  assert.equal(otra.hijos[0].textContent, 'Cobrado');
+});

@@ -8,6 +8,9 @@ import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../int
 import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstancia';
 // SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
 import { CLASES_DE_CORREO } from './registroDeEnvios';
+// SCRUM-974: las dos se LEEN, ninguna se toca.
+import { getPendientesFacturar } from '../../jobs/domain/pendientesFacturar.service';
+import { getEmissionMode } from '../../invoicing/domain/emission.service';
 
 // SCRUM-475 · el POST propio se retira: emisor único, y la respuesta se devuelve con su acuse.
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
@@ -62,7 +65,8 @@ export async function sendWeeklyDigests(): Promise<ParteDeAvisos> {
       email: { not: null },
     },
     select: {
-      id: true, name: true, email: true, defaultCurrency: true,
+      // SCRUM-974: `country` y `flags` son lo que lee `getEmissionMode` (solo lectura).
+      id: true, name: true, email: true, defaultCurrency: true, country: true, flags: true,
     },
   });
 
@@ -90,8 +94,46 @@ export async function sendWeeklyDigests(): Promise<ParteDeAvisos> {
   return parte;
 }
 
+/**
+ * SCRUM-974 · EL BLOQUE «FIRMADO Y SIN FACTURAR». Devuelve '' cuando no debe salir.
+ *
+ * · La definición es la de la bandeja del panel —`getPendientesFacturar`, sin tocarla— y el
+ *   importe, el suyo: `importePotencial` CON IVA, sumado en céntimos.
+ * · Solo con la facturación ENCENDIDA para ese negocio, y el interruptor es el MODO DE EMISIÓN,
+ *   el mismo que decide el botón «Nueva factura» (`facturaSuelta.ts`). En `receipt` (profesional
+ *   español con `INVOICING_ES_ENABLED` apagado) un correo que llega solo cada lunes diciendo
+ *   «esto está sin facturar» le empujaría a algo que YaQu no le deja hacer (regla 7). Solo se LEE.
+ * · Importe 0 → no sale: ausente no es cero.
+ * Texto firmado: docs/microcopy/2026-09-21-SCRUM-974-firmado-sin-facturar.md.
+ */
+async function bloqueFirmadoSinFacturar(
+  merchant: { id: number; email: string | null; country: string | null; flags: unknown },
+  currency: string,
+): Promise<string> {
+  if (getEmissionMode(merchant) === 'receipt') return '';
+  const clientes = await getPendientesFacturar(merchant.id, prisma);
+  let totalCents = 0;
+  let partes = 0;
+  for (const c of clientes) {
+    for (const g of c.grupos) {
+      // El tipo público solo declara euros; se suma en céntimos para no acumular decimales.
+      totalCents += Math.round(g.importePotencial.total * 100);
+      partes += g.albaranes.length;
+    }
+  }
+  if (totalCents <= 0) return '';
+  const nClientes = clientes.length;
+  const detalle = `${partes} ${partes === 1 ? 'parte firmado' : 'partes firmados'} de ${nClientes} ${nClientes === 1 ? 'cliente' : 'clientes'}`;
+  return `
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:#0f172a">📝 Firmado y sin facturar</div>
+      <div style="font-size:20px;font-weight:800;color:#0f172a;margin-top:4px">${fmt(totalCents / 100, currency)}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:2px">${detalle}</div>
+    </div>`;
+}
+
 async function sendDigestForMerchant(
-  merchant: { id: number; name: string; email: string | null; defaultCurrency: string },
+  merchant: { id: number; name: string; email: string | null; defaultCurrency: string; country: string | null; flags: unknown },
   from: Date,
   to: Date,
 ): Promise<ResultadoCorreo> {
@@ -124,6 +166,11 @@ async function sendDigestForMerchant(
   const cobrado   = Number(paidInvoices._sum.total ?? 0);
   const pendiente = Number(pendingInvoices._sum.total ?? 0);
   const currency  = merchant.defaultCurrency || 'EUR';
+  // SCRUM-974 · best-effort: si la bandeja falla, el resumen sale igual, sin este bloque.
+  const firmadoSinFacturar = await bloqueFirmadoSinFacturar(merchant, currency).catch((e) => {
+    console.error(`[weeklyDigest] firmado sin facturar, merchant ${merchant.id}:`, e?.message);
+    return '';
+  });
 
   const weekStr = `${from.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} — ${new Date(to.getTime() - 1).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}`;
 
@@ -163,6 +210,7 @@ async function sendDigestForMerchant(
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center;color:#166534;font-weight:600;font-size:13px">
       ✅ ¡No tienes facturas pendientes de cobro!
     </div>`}
+${firmadoSinFacturar}
 
     <div style="text-align:center;margin-top:8px">
       <a href="${config.PUBLIC_BASE_URL}/dashboard/" style="display:inline-block;background:#22c55e;color:#052e16;padding:11px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">
