@@ -103,6 +103,8 @@ existe y está firmado (se reutiliza literal) · **P = propuesto, SIN FIRMAR** (
 | A10 | guardar y errores | `:493-565`; el error va a un banner (`showExpError`) | igual + el foco va al campo que falla | `focus()` en `exp-concept` / `exp-amount` | F («El concepto es obligatorio.», «El importe debe ser mayor que 0.») |
 | A11 | editar un gasto | el mismo modal, con la foto de 120 px | el mismo alta con todo rellenado | `isEdit` sigue funcionando; la foto ya guardada se enseña en el bloque 1 | «Editar gasto», «Guardar cambios», «Guardando…» F |
 | A12 | el técnico | Gastos se oculta del menú (`app.js:146-152`, SCRUM-107) pero **el alta desde el Trabajo sigue abierta** | — | probar el alta como técnico: la lista/KPI dan 403 y **no deben romper el alta** (`onSaved`) | — |
+| A13 | 🆕 **la lectura del ticket con IA (SCRUM-912): la pantalla que la llama** (comentario 16007) | el servidor la tiene desde el 18-sep; `leer-ticket` sale **0 veces** en `public/`: el motor está construido y el profesional no puede llegar a él | el andamio «Con lectura del ticket» dibuja dónde caen los datos | al adjuntar la foto, el alta llama a `POST /admin/expenses/leer-ticket` `{imagen: data-URL}` con la MISMA foto reducida que se guardaría (`fotoParaGuardar`), pinta la propuesta (nombres de `PropuestaGasto`, mapa en §2bis) con «leído de la foto», y **el formulario sigue funcionando entero sin ella** (tope diario, error, sin clave). **El guard cuenta la llamada** (foto adjuntada = una petición; sin foto = ninguna) en vez de mirar la pantalla | F3 **SIN FIRMAR**; los textos de error de la ruta, ni propuestos |
+| A14 | 🆕 **por qué un campo quedó sin rellenar** (comentario 16152; diseño en 920h) | el servidor devuelve `descartados: [{campo, motivo}]` (nueve motivos) y ninguna pantalla los pinta | debajo del campo, una línea ámbar; el bloque plegado con descartes se abre solo y dice «Revisa N datos» | pintar `descartados` con el diccionario de `textos-propuestos.md` §920h. **Un motivo del servidor sin texto en pantalla no debe poder pasar:** el medidor del prototipo ya compara los nueve del tipo con el diccionario; el guard de 920f tiene que hacer lo mismo con el código real | **P → SIN FIRMAR** (firma el orquestador) |
 
 ## 2 · Firmas: qué está firmado y qué NO
 
@@ -113,7 +115,8 @@ comentario 15992, con los tres cambios de arriba). «F» = ya existía y estaba 
 |---|---|---|
 | F1 | «de arriba» → «de abajo» (texto firmado por el fundador el 10-ago, SCRUM-324 E3) | **FIRMADO** por el orquestador, comentario 15992 |
 | F2 | todos los textos «P» (`textos-propuestos.md`, ya con los cambios; la ficha completa en `ficha-microcopy-DRAFT.md`) | **FIRMADOS**, comentario 15992. La ficha pasa a `docs/microcopy/` **en el PR que los pinta** |
-| F3 | los dos textos de la lectura del ticket («Hemos leído el importe y la fecha…», «leído de la foto») | **SIN FIRMAR**: los firma quien firme **SCRUM-912**. No se construyen |
+| F3 | los dos textos de la lectura del ticket («Hemos leído la foto y rellenado lo que se veía…» —reformulado en 920h, antes decía «el importe y la fecha»—, «leído de la foto») | **SIN FIRMAR**: los firma quien firme **SCRUM-912**. No se construyen |
+| F7 | 🆕 los nueve porqués de un campo sin rellenar y «Revisa N datos» (`textos-propuestos.md` §920h) | **SIN FIRMAR**: los firma el orquestador con su comentario en SCRUM-920. No se construyen hasta entonces |
 | F4 | aceptar PDF en la foto | **SIN DECIDIR** (S1: tamaño; fundador). Se queda `image/*` |
 | F5 | la aprobación del prototipo entero | **PENDIENTE** del fundador, la pide el orquestador. No se empieza sin ella |
 | F6 | cualquier frase sobre deducibilidad, «qué falta» o veredicto | **no se propone**: espera al asesor (SCRUM-324 E3) |
@@ -121,10 +124,43 @@ comentario 15992, con los tres cambios de arriba). «F» = ya existía y estaba 
 ⚠️ **Un texto de la lista que NO está firmado y que el prototipo ya no pinta:** «N gastos de M» (la cuenta con filtros).
 Se quitó del prototipo el 20-sep: los chips ya dicen cuántos hay. Si la S2 lo quiere, hay que pedir su firma.
 
+## 2bis · 🆕 Antes de construir A13 y A14 (920h, 21-sep-2026)
+
+**Mapa: qué campo del servidor cae en qué campo del formulario** (ids leídos en `expensesView.js` de `origin/main`; la
+propuesta y sus motivos, en `src/modules/expenses/domain/lecturaTicket.ts`):
+
+| `PropuestaGasto` | campo del formulario | dónde va el porqué / qué hay que decidir |
+|---|---|---|
+| `concept` | Concepto `exp-concept` | debajo del campo (`demasiado_largo`, `no_es_texto`) |
+| `amount` | Importe `exp-amount` | debajo (`no_es_numero`, `fuera_de_rango`) |
+| `baseAmount` | Base imponible `exp-base` | debajo. **`no_cuadra_con_el_total` vacía ESTE campo**, no el IVA |
+| `vatRate` | Tipo de IVA `exp-vatrate` | ⚠️ **el desplegable sólo ofrece 21 · 10 · 4 · 0** y el servidor admite los enteros 0 · 2 · 4 · 5 · 10 · 21 (`TIPOS_IVA_ES_BP` sin el 7,5). Un 5 % **leído** no se puede pintar y **no viene en `descartados`**: el campo quedaría en «—» sin decir nada, que es justo el hueco que 920h quiere cerrar. Hay que decidir (añadir la opción, o descartarlo con motivo) **antes** de encender la lectura |
+| `vatAmount` | Cuota de IVA `exp-vatamount` | debajo |
+| `date` | Fecha `exp-date` | **nace con la de hoy** (no queda vacía): el texto lo dice |
+| `providerInvoiceDate` | Fecha de la factura `exp-provinvdate` | espeja `date`; el servidor sólo descarta `date` (un descarte no se nombra dos veces) |
+| `providerInvoiceNumber` | Nº de factura `exp-provinvnum` | debajo |
+| `proveedorNombre` | **no hay campo**: `exp-providerid` es un desplegable de proveedores ya dados de alta | ⚠️ «sólo se pinta» según el servidor, y **el prototipo no dibuja dónde**. Sin diseño ni texto: se pregunta antes de construirlo |
+| `nifProveedor` | NIF `exp-provider-nif` | debajo de la ayuda firmada de 937b, que **se conserva**; el porqué se queda al elegir proveedor |
+| `providerId` | Proveedor `exp-providerid` | sólo si el NIF leído casa con UNA ficha del merchant |
+
+**Lo que hay que saber antes de llamar a la ruta desde el alta (A13):**
+
+1. 🔴 **Llamarla es encenderla.** El expediente de 912 dice que *encenderla para usuarios reales espera al ticket de
+   privacidad* (Google como encargado del tratamiento; `public/privacidad.html` §5 nombra a Anthropic y no a Google) y que
+   lo firma el fundador. La ruta se apaga sola sin `GEMINI_API_KEY` (503 `ai_not_configured`, sin caer a Claude): **antes de
+   empujar 920f hay que medir si producción tiene la clave** y, si la tiene, pedir el OK del fundador. Con el 503 la
+   pantalla debe tratarlo como «sin lectura» (el alta de siempre), sin error y sin texto nuevo.
+2. **Tope diario:** `LECTURAS_TICKET_POR_DIA = 5` por merchant y día (provisional, lo decide el fundador). La sexta foto del
+   día da `lecturas_agotadas` y el alta tiene que seguir funcionando: su texto no está propuesto ni firmado.
+3. **El aviso F3 y las marcas «leído de la foto»** tienen que salir de lo que de verdad llegó rellenado, no de una lista fija
+   de campos: por eso 920h reformula el aviso (ver F3).
+
 ## 3 · Orden sugerido (un ticket, una rama, un PR: A17) y lo que vigila
 
 1. **920c · la lista sin tabla**: rejilla, «⋯» con 44 px, KPI compactos, «Sin trabajo». Es el que quita el desborde a 390.
 2. **920d · la foto en la lista y los filtros** (L5, L6, L8, L12, L19): depende de medir el peso de la lista (L12).
+   ✅ **Actualizado el 21-sep:** SCRUM-964 ya está en `main` (`tieneFoto` en cada gasto y `GET /admin/expenses/:id/foto`,
+   #1544): 920d **ya no está bloqueado**.
 3. **920e · el detalle** (D1-D6).
 4. **920f · el alta dentro del modal** (A2-A12): con F1 firmado; sin PDF (F4) y sin lectura (F3).
 

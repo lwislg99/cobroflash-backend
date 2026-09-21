@@ -43,10 +43,59 @@ reutilizaba su primera mitad suelta en tres sitios más, y eso separaba la salve
 
 | texto | qué es |
 |---|---|
-| «🔎 Hemos leído el importe y la fecha de la foto. Revísalos: lo que se guarda es lo que pongas tú.» | aviso encima de los campos leídos |
+| «🔎 Hemos leído la foto y rellenado lo que se veía. Revísalo: lo que se guarda es lo que pongas tú.» | aviso encima de los campos leídos. **Reformulado el 21-sep (920h):** decía «el importe y la fecha», y con un dato descartado eso deja de ser verdad (la fecha no se rellenó y el aviso decía que sí) |
 | «leído de la foto» | marca junto a cada campo relleno por la lectura |
 
 Estos dos son de 912 más que de 920: se proponen aquí sólo para que el hueco tenga forma. Los firma quien firme 912.
+
+### 🆕 920h · Por qué un campo de la lectura quedó sin rellenar (PROPUESTOS, SIN FIRMAR)
+
+Nace del comentario 16152 de SCRUM-920 (orquestador/S0, 21-sep-2026) y del 16007. `POST /admin/expenses/leer-ticket` ya
+devuelve `descartados: [{campo, motivo}]` y **ninguna pantalla lo pinta**: un campo que el modelo leyó y no valía queda en
+blanco sin decirlo. La regla que decide qué se dice: **«no se leyó» (`null`) y «se leyó y no vale» (descartado) son dos
+hechos distintos, y sólo el segundo lleva línea.** La línea va **debajo del campo**, en ámbar (el aviso de DESIGN.md, no el
+rojo: no es un fallo de quien apunta el gasto) y enlazada al campo con `aria-describedby`.
+
+Hay **nueve motivos** (`MotivoDescarte` en `lecturaTicket.ts`) y el prototipo tiene uno por cada uno (grupo H del inventario
+y `MOTIVOS` en `gastos.html`); el medidor lee el tipo del servidor y cae si un motivo se queda sin texto.
+
+| motivo | campos donde sale | texto propuesto | nota |
+|---|---|---|---|
+| `no_es_numero` | Importe, Base, Cuota, Tipo de IVA | «No hemos podido leer esta cifra. Escríbela tú.» | el modelo devolvió algo que no es una cifra |
+| `fuera_de_rango` | Importe, Base, Cuota | «La cifra que hemos leído no tiene sentido. Escríbela tú.» | negativa, de más de 1.000.000 o (sólo el Importe) cero |
+| `tipo_iva_no_admitido` | Tipo de IVA | «El tipo de IVA que hemos leído no es uno de los que se pueden guardar. Elígelo tú.» | no es de los que admite el servidor o no es entero |
+| `no_cuadra_con_el_total` | **Base** | «La base, la cuota y el total no sumaban. Hemos dejado la base vacía: revisa las tres cifras en el ticket.» | ver ⚠️ 1 |
+| `fecha_invalida` | Fecha | «La fecha que hemos leído no existe. Hemos dejado la de hoy: cámbiala si hace falta.» | ver ⚠️ 2 |
+| `fecha_futura` | Fecha | «La fecha que hemos leído es posterior a hoy. Hemos dejado la de hoy: cámbiala si hace falta.» | ver ⚠️ 2 |
+| `nif_invalido` | NIF del proveedor | «El NIF que hemos leído no es válido. Compruébalo en el ticket.» | ver ⚠️ 3 |
+| `demasiado_largo` | Concepto, Nº de factura, Proveedor, NIF | «Lo que hemos leído es demasiado largo para este campo. Escríbelo tú.» | supera el máximo del campo |
+| `no_es_texto` | Concepto, Nº de factura, NIF | «No hemos podido leer este dato. Escríbelo tú.» | el modelo devolvió algo que no es texto |
+
+Y el bloque plegado «3 · Datos de la factura del proveedor», cuando la lectura descartó algo **dentro de él**, se abre solo y
+su resumen dice (en vez de «Opcional»):
+
+| texto | qué es |
+|---|---|
+| «Revisa 1 dato» · «Revisa N datos» | resumen del bloque plegado con descartes dentro (singular y plural, como «1 gasto») |
+
+**Tres cosas que el ejemplo del comentario 16152 no decía y que cambian el texto** (medidas leyendo `sanearLectura`, no de
+memoria):
+
+1. ⚠️ **`no_cuadra_con_el_total` vacía la BASE, no el IVA.** El código descarta `baseAmount` cuando base + cuota ≠ total; la
+   cuota se queda rellena y **puede ser ella la mal leída**. Por eso el texto no dice «el IVA no cuadraba» (dejaría creer
+   que el IVA es lo que hay que corregir): dice qué se ha dejado vacío y manda revisar las tres cifras.
+2. ⚠️ **La fecha NO queda vacía.** El formulario nace con la fecha de hoy (`exp-date`), así que «campo en blanco» no vale:
+   el texto dice lo que hay («Hemos dejado la de hoy»). Un texto que dijera «escríbela» mentiría sobre lo que se ve.
+3. ⚠️ **`nif_invalido` convive con la ayuda firmada del NIF.** Sin proveedor el campo está bloqueado y ya dice «Elige antes
+   el proveedor: el NIF se guarda en su ficha.» (SCRUM-937). La línea nueva va debajo, y **se queda cuando se elige
+   proveedor** (lo leído sigue sin ser válido). Es «no es válido… Compruébalo» como la ficha del cliente («Ese NIF/CIF no es
+   válido. Compruébalo.»), para no tener dos formas de decir lo mismo. Es un hecho sobre el texto leído, no una afirmación
+   fiscal; no dice nada de deducibilidad.
+
+**Lo que NO se propone, a propósito:** ninguna línea para un campo `null` (no se leyó: sin dato del servidor no hay porqué
+que dar; el hueco en blanco de siempre); ningún texto para los errores de la ruta (`lecturas_agotadas`, `ai_cuota_*`,
+`ai_not_configured`, `imagen_*`…) ni para «no se leyó nada de esta foto»: son de 912 y de 920f, y se firman con la lectura.
+Tampoco se enseña ningún veredicto del justificante (`medir.mjs` lo vigila también en este estado).
 
 ## La lista
 

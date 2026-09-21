@@ -1,0 +1,24 @@
+POBLACION bytes-stdout=36155 mensajes=110 sobrante=0 basura=0 status=0
+test:pass=20 test:fail=0
+    7531     386B acum=   7917 test:pass SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala
+    8846     340B acum=   9186 test:pass SCRUM-267 · ② el barrido encuentra entradas de verdad
+   10052     319B acum=  10371 test:pass SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo
+   11510     410B acum=  11920 test:pass SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien
+   13023     398B acum=  13421 test:pass SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados
+   14476     382B acum=  14858 test:pass SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer
+   15943     392B acum=  16335 test:pass SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total
+   17141     299B acum=  17440 test:pass SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo
+   18615     422B acum=  19037 test:pass SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard
+   19831     295B acum=  20126 test:pass SCRUM-267 · el formato declarado en el README incluye el ancla
+   21229     398B acum=  21627 test:pass SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada
+   22568     344B acum=  22912 test:pass SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE
+   23943     374B acum=  24317 test:pass SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una
+   25384     386B acum=  25770 test:pass SCRUM-649 · ✅ y la que está listada EXISTE como entrada y sigue sin resolver
+   26639     320B acum=  26959 test:pass SCRUM-859 · SUELO: hay exentas que examinar y entradas contra las que casarlas
+   28023     385B acum=  28408 test:pass SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real — una por una
+   29448     377B acum=  29825 test:pass SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave
+   30901     389B acum=  31290 test:pass SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se habrían desplazado
+   32276     359B acum=  32635 test:pass SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO
+   33711     389B acum=  34100 test:pass SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hace CAER el guard
+bytes por tipo: {"test:enqueue":6464,"test:dequeue":6464,"test:complete":7624,"test:start":6184,"test:pass":7364,"test:plan":172,"test:diagnostic":1620,"test:summary":263}
+EXIT=0

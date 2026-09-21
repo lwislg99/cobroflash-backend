@@ -75,3 +75,52 @@ arreglar `scrum748`: 68/68 en el conjunto afectado (`scrum748`, `scrum522`, `scr
 - `.gasto-fila` deja 150 px para la píldora: cuando 920d meta «Foto guardada» junto a ella hará falta ensanchar la columna.
 - Los guards de navegador de CI ya tienen dos rojos ajenos vistos hoy (`guard:escalera-por-estado` CIEGO y
   `guard:detalle-trabajo-917`); este PR no los toca.
+
+---
+
+# SCRUM-920h · el diseño dice POR QUÉ un campo de la lectura quedó sin rellenar
+
+**Fecha:** 21-sep-2026 · **Carril:** S4 (diseño, prototipo y textos; sin código de producto) · **Rama:** `scrum-920h-motivos-de-la-lectura`
+**Medido contra:** `origin/main` = `320c7f2035067bf845e582373b63aba8c4fd6fa9` · 2026-09-21T13:48:18Z (hora de la cabecera `Date:` de GitHub); la rama nace de `2631bb9a53905c89537c8461c9cf2ab12de796f8`.
+**Origen:** comentarios 16007 y 16152 de SCRUM-920 (orquestador y S0): `POST /admin/expenses/leer-ticket` ya devuelve `descartados: [{campo, motivo}]` (nueve motivos) y ninguna pantalla lo pinta.
+
+**Este PR no toca producción** (`src/`, `public/`): sólo `docs/prototipos/SCRUM-920/` (prototipo, medidor, capturas, textos, encargo) y este expediente.
+
+## Qué cambia
+
+- **`gastos.html`:** un segundo conmutador de andamio («…y con datos que no cuadraron») que, con la lectura encendida y la foto hecha,
+  enseña tres descartes reales de `sanearLectura` (fecha futura, base que no suma, NIF inválido). El motivo va **debajo del campo**, en
+  ámbar y enlazado con `aria-describedby`; el bloque plegado con descartes dentro se abre solo y su resumen dice «Revisa N datos».
+  El diccionario de los **nueve** motivos está en la pantalla y el grupo H del inventario los lista con su porqué.
+- **`textos-propuestos.md` §920h:** los nueve literales + «Revisa 1 dato / N datos», **PROPUESTOS Y SIN FIRMAR** (los firma el orquestador).
+  Y una reformulación del aviso de la lectura (F3, también sin firmar): «el importe y la fecha» dejaba de ser verdad con un dato descartado.
+- **`encargo-construccion-s2.md`:** filas A13 (la pantalla que llama a la ruta) y A14 (los porqués), firmas F3/F7 y §2bis con el mapa
+  campo del servidor → campo del formulario.
+- **`medir.mjs`:** 12 comprobaciones nuevas por anchura (ver `medicion.md` §8) y la toma 7 de capturas.
+
+## Tres cosas que el enunciado no decía y que cambian el texto
+
+1. **`no_cuadra_con_el_total` vacía la BASE, no el IVA.** El ejemplo del comentario («el IVA que leí no cuadraba con el total») no
+   describe lo que hace el código: se descarta `baseAmount`; la cuota se queda rellena y puede ser ella la mal leída.
+2. **La fecha descartada NO queda vacía:** el formulario nace con la de hoy. El texto dice «Hemos dejado la de hoy».
+3. **`nif_invalido` convive con la ayuda firmada del NIF** (SCRUM-937b) y se queda al elegir proveedor.
+
+## Hallazgos para quien construya 920f (declarados en el encargo §2bis, sin ticket: hoy no hay víctima, la lectura no tiene pantalla)
+
+- El desplegable «Tipo de IVA» ofrece 21 · 10 · 4 · 0 y el servidor admite 0 · 2 · 4 · 5 · 10 · 21: un 5 % leído no cabe y **no viene en `descartados`**.
+- `proveedorNombre` no tiene campo en el formulario y el prototipo no dibuja dónde se pinta.
+- **Llamar a la ruta desde el alta es encenderla:** el expediente de 912 dice que encenderla para usuarios reales espera al ticket de
+  privacidad (Google como encargado). Antes de empujar 920f hay que medir si producción tiene `GEMINI_API_KEY` y pedir el OK del fundador.
+
+## Medido
+
+`node docs/prototipos/SCRUM-920/medir.mjs` sobre el árbol: **BASE 86/86 y 0 rojas; después 110/110 y 0 rojas, `EXIT=0`**, los tres
+controles positivos disparando. **14 mutaciones inyectadas, las 14 caen** (detalle y los dos errores propios del instrumento en
+`medicion.md` §8: la variable `$ok`/`$OK` de PowerShell y una excepción que tumbaba el medidor en vez de dar un rojo con nombre).
+
+## No hecho / no medido
+
+- **Nada de esto está en la pantalla real:** la lectura no tiene pantalla (A13) y los textos no están firmados. Un diseño aprobado que
+  no está en la pantalla no está hecho: esto es diseño y andamio.
+- El prototipo enseña tres de los nueve motivos a la vez; los nueve textos están comprobados por texto, no vistos en pantalla.
+- No se ha medido ninguna lectura de un ticket real con descartes: 912d midió tres tickets sintéticos sin ningún descarte.
