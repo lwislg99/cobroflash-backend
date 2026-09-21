@@ -339,17 +339,10 @@ const CASOS = [
     clave: 'tecla-n',
     titulo: 'E · la «N» dentro del editor NO abre la Cotización rápida encima (fuera, sí: control)',
     async correr(pag, etiqueta) {
-      if (!await abrirEditor(pag, etiqueta)) return;
-      await pag.evaluate(new Function('if (document.activeElement && document.activeElement.blur) document.activeElement.blur();'));
-      const antes = await pag.evaluate(OVERLAYS);
-      await pag.keyboard.press('n');
-      await espera(500);
-      const dentro = await pag.evaluate(OVERLAYS);
-      informe.push(`${etiqueta} · en el editor: overlays ${antes} → ${dentro}`);
-      if (dentro > antes) hallazgos.push(`${etiqueta} -> la «N» abrió ${dentro - antes} modal(es) encima del presupuesto a medias`);
-
-      // CONTROL POSITIVO: en una vista sin destino propio (#home) el respaldo SÍ abre algo. Sin
-      // esto, un teclado que no llegara a la página daría «no abre nada» en los dos sitios.
+      // CONTROL POSITIVO, PRIMERO y en página limpia: en una vista sin destino propio (#home) el
+      // respaldo SÍ abre algo. Sin esto, un teclado que no llegara a la página daría «no abre nada»
+      // en los dos sitios. Va antes que el editor a propósito: medido al ver el rojo, un modal que
+      // la «N» abriera en el editor dejaba el control con un overlay ya puesto y lo volvía ciego.
       await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#home`, { waitUntil: 'networkidle0' });
       await espera(600);
       await pag.evaluate(new Function('if (document.activeElement && document.activeElement.blur) document.activeElement.blur();'));
@@ -358,7 +351,16 @@ const CASOS = [
       await espera(500);
       const h1 = await pag.evaluate(OVERLAYS);
       informe.push(`${etiqueta} · control en #home: overlays ${h0} → ${h1}`);
-      if (h1 <= h0) ciegos.push(`${etiqueta} -> en #home la «N» tampoco abre nada: el instrumento no sabe pulsar la tecla`);
+      if (h0 !== 0 || h1 <= h0) { ciegos.push(`${etiqueta} -> en #home la «N» no abre nada (${h0} → ${h1}): el instrumento no sabe pulsar la tecla`); return; }
+
+      if (!await abrirEditor(pag, etiqueta)) return;
+      await pag.evaluate(new Function('if (document.activeElement && document.activeElement.blur) document.activeElement.blur();'));
+      const antes = await pag.evaluate(OVERLAYS);
+      await pag.keyboard.press('n');
+      await espera(500);
+      const dentro = await pag.evaluate(OVERLAYS);
+      informe.push(`${etiqueta} · en el editor: overlays ${antes} → ${dentro}`);
+      if (dentro > antes) hallazgos.push(`${etiqueta} -> la «N» abrió ${dentro - antes} modal(es) encima del presupuesto a medias`);
     },
   },
 ];
