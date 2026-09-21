@@ -119,6 +119,19 @@ entrada que ya tenía `customerAdmin.ts`: lo trae para pintarlo, no decide nada 
   que nombre `taxId` o el censo de origen de la factura): **114 ficheros, 933 tests, 0 fail**, 47
   saltados (gateados por base de datos).
 
+## Error propio: un teléfono de móvil ordinario en los datos de prueba
+
+El primer CI del PR #1568 cayó en `scrum262-telefonos-de-prueba`: el test llevaba `34600111222`,
+que es un móvil español ORDINARIO y puede ser de alguien. **Y la sonda de staging creó el cliente
+de prueba con ese mismo número** (vivió unos segundos y se borró; no se envió nada desde la sonda,
+pero hay crons que escriben por WhatsApp a teléfonos guardados). Los dos pasan a
+`telefonoDePrueba(983)` (rango imposible, prefijo 340). La salida de la primera pasada se deja tal
+cual, con ese número, porque es lo que se ejecutó. En la misma edición se arregla el triple clic
+de la sonda: ahora vacía la nota antes de teclear.
+
+🔒 *La regla existía y tenía guard; lo que faltó fue usar el helper desde la primera línea en vez
+de escribir un número «de ejemplo» a mano.*
+
 ## Lo que NO cubre
 
 - La suite completa no se ha corrido en local (sin turno): la corre el PR.

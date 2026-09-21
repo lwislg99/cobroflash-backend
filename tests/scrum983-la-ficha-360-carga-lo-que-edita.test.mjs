@@ -29,6 +29,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs'; // SCRUM-262: el rango imposible
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTA = 'src/modules/system/app/routes/customersAdmin.routes.ts';
@@ -151,7 +152,7 @@ async function guardarSoloLaNota(customer) {
 }
 
 const CLIENTE_COMPLETO = {
-  id: 3929, name: 'Cliente QA 983', phone: '34600111222', mobile: null, email: 'qa983@example.test',
+  id: 3929, name: 'Cliente QA 983', phone: telefonoDePrueba(983), mobile: null, email: 'qa983@example.test',
   notes: 'nota vieja', portalToken: null, createdAt: '2026-09-01T00:00:00.000Z', waOptOut: false,
   taxId: '12345678Z', legalName: 'Razón Social QA', companyId: 3928, contactKind: 'PERSONA',
   tipoDestinatario: 'EMPRESARIO', billingPeriodicity: 'MENSUAL',

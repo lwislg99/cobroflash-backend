@@ -10,6 +10,9 @@ const req = createRequire(path.join(raiz, 'package.json'));
 const pmod = await import(pathToFileURL(req.resolve('puppeteer-core')).href);
 const puppeteer = pmod.default || pmod;
 const { lanzarNavegador } = await import(pathToFileURL(path.join(raiz, 'scripts/_navegador.mjs')).href);
+// SCRUM-262: el teléfono de prueba va en el rango IMPOSIBLE. La primera pasada (21-sep, ~08:00Z)
+// usó uno de móvil ordinario; el cliente vivió segundos y se borró, pero no debió llevarlo nunca.
+const { telefonoDePrueba } = await import(pathToFileURL(path.join(raiz, 'scripts/_telefonos-prueba.mjs')).href);
 
 const BASE = 'https://yaqu-staging-production.up.railway.app';
 if (!/yaqu-staging/.test(BASE)) { console.error('no es staging'); process.exit(2); }
@@ -37,7 +40,7 @@ try {
   }, body);
   const empresa = await alta({ name: 'ZZZ PRUEBA 360 empresa', contactKind: 'EMPRESA', legalName: 'ZZZ Prueba 360 SL' });
   inf.altaEmpresa = empresa; if (empresa.id) creados.push(empresa.id);
-  const persona = await alta({ name: 'ZZZ PRUEBA 360 persona', notes: 'nota vieja', taxId: '12345678Z', legalName: 'ZZZ Razon Social', companyId: empresa.id, contactKind: 'PERSONA', tipoDestinatario: 'EMPRESARIO', billingPeriodicity: 'MENSUAL', phone: '34600111222', email: 'zzz.prueba360@example.com' });
+  const persona = await alta({ name: 'ZZZ PRUEBA 360 persona', notes: 'nota vieja', taxId: '12345678Z', legalName: 'ZZZ Razon Social', companyId: empresa.id, contactKind: 'PERSONA', tipoDestinatario: 'EMPRESARIO', billingPeriodicity: 'MENSUAL', phone: telefonoDePrueba(983), email: 'zzz.prueba360@example.com' });
   inf.altaPersona = persona; if (persona.id) creados.push(persona.id);
   if (!persona.id) throw new Error('no se creó el cliente de prueba: ' + JSON.stringify(persona));
 
@@ -60,7 +63,10 @@ try {
     notas: document.getElementById('e360-notes').value,
   }));
   // Cambiar SÓLO la nota, tecleando de verdad.
-  await pag.click('#e360-notes', { clickCount: 3 });
+  // (La 1.ª pasada hacía triple clic y NO seleccionaba el texto de un textarea: salió «nota
+  // viejanota nueva». Fallo de la sonda, no del producto. Ahora se vacía y luego se teclea.)
+  await pag.evaluate(() => { document.getElementById('e360-notes').value = ''; });
+  await pag.click('#e360-notes');
   await pag.keyboard.type('nota nueva', { delay: 10 });
   await pag.click('#e360-save');
   await pag.waitForFunction(() => !document.getElementById('e360-save'), { timeout: 20000 }).catch(() => {});
