@@ -134,7 +134,7 @@ function renderQuotesListView(container) {
   card.appendChild(tableScroll);
 
   const table = document.createElement("table");
-  table.className = "table table--cards-mobile table--presupuestos"; // A18.1: cards en móvil (AB4) · SCRUM-986: su propia clase, para no tocar las otras listas
+  table.className = "table table--cards-mobile"; // A18.1: cards en móvil (AB4)
   tableScroll.appendChild(table);
 
   const thead = document.createElement("thead");

@@ -219,12 +219,15 @@ test('SCRUM-986 · D · el chip de la lista ES el del detalle: sale de `waDelive
   }
 });
 
-test('SCRUM-986 · D · el arreglo de anchos se queda en ESTA tabla, no en las otras cuatro que comparten `table--cards-mobile`', () => {
+test('SCRUM-986 · D · el arreglo de anchos sólo alcanza a la tabla que lleva una fila con chip, no a las otras que comparten `table--cards-mobile`', () => {
   const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
   const fuente = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/quotesListView.js'), 'utf8');
-  assert.match(fuente, /table--cards-mobile table--presupuestos/, 'la tabla de presupuestos lleva su propia clase');
-  assert.match(css, /\.table--presupuestos td\.cell-id,\s*\n?\s*\.table--presupuestos td\.cell-amount\s*\{\s*white-space:\s*nowrap/,
-    '🔴 el ID y el importe de la lista de presupuestos ya no se protegen de partirse');
-  assert.doesNotMatch(css, /\.table--cards-mobile td\.cell-(id|amount|date)\s*\{[^}]*white-space/,
-    '🔴 el nowrap se ha puesto en `table--cards-mobile`, que comparten Facturas, Cobros, Albaranes y Trabajos');
+  // Y el marcado de la tabla NO cambia (una clase nueva movía el HTML de Presupuestos aunque no hubiera
+  // ni un chip, y `guard:lista-trabajos` exige que esa lista salga idéntica a la base salvo lo declarado).
+  assert.match(fuente, /table\.className\s*=\s*"table table--cards-mobile";/, 'la tabla conserva su clase de siempre');
+  assert.doesNotMatch(fuente, /table--presupuestos/, '🔴 se ha vuelto a añadir una clase a la tabla de presupuestos');
+  assert.match(css, /\.table--cards-mobile:has\(tr\.has-wa\) td\.cell-id,\s*\n?\s*\.table--cards-mobile:has\(tr\.has-wa\) td\.cell-amount\s*\{\s*white-space:\s*nowrap/,
+    '🔴 el ID y el importe de la lista con chips ya no se protegen de partirse');
+  assert.doesNotMatch(css, /\.table--cards-mobile\s+td\.cell-(id|amount|date)\s*\{[^}]*white-space/,
+    '🔴 el nowrap se ha puesto en `table--cards-mobile` a secas, que comparten Facturas, Cobros, Albaranes y Trabajos');
 });
