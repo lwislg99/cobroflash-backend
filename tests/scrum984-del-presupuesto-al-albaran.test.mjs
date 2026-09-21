@@ -277,6 +277,17 @@ test('SCRUM-984 · un elegible con `jobId` nulo no pinta el botón (no se navega
   assert.equal(m.accion('btnNuevoAlbaran').length, 0, '🔴 el botón se pinta sin Trabajo al que ir');
 });
 
+test('SCRUM-984 · 🔴 una respuesta que se contradice (`elegible: false` CON `jobId`) falla CERRADA: sin botón', async () => {
+  // El servidor no la produce (`jobId` nulo ⇔ no elegible: `filasParaElegirPresupuesto`), y por eso
+  // no la cubre ningún otro caso: `jobId != null` enmascararía que la pantalla dejara de mirar
+  // `elegible`. Un técnico ajeno recibe `trabajo_no_visible` SIN id; si algún día el id viajara, la
+  // pantalla no puede ofrecerle el Trabajo de otro.
+  const m = await montar(presupuesto({ albaranOrigen: { elegible: false, jobId: 77, motivo: 'trabajo_no_visible' } }));
+  assert.equal(m.r.error, null, `🔴 la ficha revienta: ${m.r.error && m.r.error.message}`);
+  assert.equal(m.accion('btnNuevoAlbaran').length, 0, '🔴 la pantalla ofrece el Trabajo de una respuesta que dice «no elegible»');
+  assert.equal(m.accion('btnCobrar').length, 1, '🔴 CIEGO: la ficha no pintó el siguiente paso');
+});
+
 test('SCRUM-984 · 🔴 SOLO en `accepted`: en los demás estados no aparece aunque el servidor diga que sí', async () => {
   const estados = ['draft', 'pending_approval', 'sent', 'rejected', 'expired'];
   for (const status of estados) {
