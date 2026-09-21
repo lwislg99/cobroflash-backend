@@ -134,6 +134,11 @@ export async function levantarBanco({ conEquipo = false, equipoCiego = false, ro
   const srv = http.createServer((req, res) => {
     const u = req.url.split('?')[0];
     if (u.startsWith('/admin/team')) return json(res, equipo);
+    // 🔴 El ROL lo pone `app.js` al arrancar, desde `/admin/me` (`window.appUserRole = me.userRole ||
+    // 'admin'`), y PISA lo que escriba el HTML de abajo. La primera versión de `rol` sólo lo escribía
+    // en el HTML: el «técnico» del banco era un administrador y el bloque F medía el caso que no era.
+    // Para `admin` se sigue contestando `{}` (lo de siempre); sólo otro rol lleva el suyo.
+    if (u.startsWith('/admin/me')) return json(res, rol === 'admin' ? {} : { userRole: rol });
     if (u.startsWith('/admin/merchant')) return json(res, { name: 'Epipe', currency: 'EUR' });
     if (u.startsWith('/admin/partes')) return json(res, { partes: [] });
     // Los gastos son DEL TRABAJO que se pide, no una lista común: con `{ gastos: [] }` para todos,

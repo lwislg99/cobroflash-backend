@@ -2752,6 +2752,44 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .doc-asignados-nota,
 .job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 
+/* ── SCRUM-917g (F) · «EL TRABAJO»: CINCO LÍNEAS PLEGABLES EN UNA TARJETA ───────────────────────
+   Tipo · Nombre y dirección · Quién lo ejecuta · Notas · Gastos, cada una CERRADA con su valor a la
+   derecha (v. `jobTrabajoPlegable.js`). Es el patrón de SCRUM-915 v3 y del prototipo aprobado de
+   SCRUM-917. Un `<details>` nativo: se abre y se cierra con teclado y con lector de pantalla, y el
+   contenido cerrado sigue en el DOM. Tokens de DESIGN.md; ni uno nuevo. La fila entera es la zona
+   de toque (44 px, AB6). */
+.detail-trabajo .detail-section-title { margin-bottom: 4px; }
+.detail-plega { border-top: 1px solid var(--neutral-100); }
+.detail-plega:first-of-type { border-top: 0; }
+.detail-plega-cab {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  min-height: 44px; padding: 6px 0;
+}
+.detail-plega-cab::-webkit-details-marker { display: none; }
+.detail-plega-cab::before { content: "▸"; flex: none; width: 14px; color: var(--muted); font-size: 12px; }
+.detail-plega[open] > .detail-plega-cab::before { content: "▾"; }
+.detail-plega-cab:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--radius-sm); }
+.detail-plega-rotulo { flex: none; font-size: 14px; font-weight: 600; color: var(--ink); }
+/* El valor se lee a la derecha y se PARTE si no cabe (un nombre largo, tres técnicos): nunca ensancha
+   la tarjeta ni se recorta. */
+.detail-plega-valor {
+  flex: 1 1 auto; min-width: 0; margin-left: auto; text-align: right;
+  font-size: 14px; color: var(--body); overflow-wrap: anywhere;
+}
+/* El cuerpo se alinea con el rótulo (14 px de galón + 10 de hueco) y las secciones de siempre que
+   viven dentro pierden su relleno y su raya: la raya es de la tarjeta, no de cada línea. */
+.detail-plega-cuerpo { padding: 2px 0 14px 24px; }
+.detail-plega-cuerpo .detail-section { padding: 0; border-bottom: none; }
+.detail-plega-ayuda { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.job-asignados-alta { min-height: 44px; margin-top: 8px; }
+/* Sin nada que abrir (no se pudo leer el equipo): la línea dice su valor y deja de ser un control. */
+.detail-plega--fija > .detail-plega-cab { cursor: default; }
+.detail-plega--fija > .detail-plega-cab::before { visibility: hidden; }
+@media (max-width: 420px) {
+  .detail-plega-cuerpo { padding-left: 0; }
+}
+
 /* Tarjetas de margen (planas, dentro de su sección) */
 .margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .margin-tile { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; text-align: center; }
