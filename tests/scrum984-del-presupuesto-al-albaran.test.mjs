@@ -296,7 +296,9 @@ const presupuesto = (extra = {}) => ({
   status: 'accepted', total: '100.00', currency: 'EUR', payToken: 'tok1',
   lines: [{ concept: 'Punto de luz', qty: 2, price: 50, tax: 0.21 }],
   createdAt: '2026-09-20T10:00:00.000Z', updatedAt: '2026-09-20T10:00:00.000Z',
-  customer: { id: 3, name: 'Ana Ruiz', phone: '34600000000', email: null, notes: null },
+  // Rango IMPOSIBLE (34 + 0 + 8 dígitos): un `6XX`/`7XX` puede ser de una persona y los crons de envío
+  // no filtran al merchant demo (SCRUM-262; `telefonoDePrueba(1)` de `scripts/_telefonos-prueba.mjs`).
+  customer: { id: 3, name: 'Ana Ruiz', phone: '34000000001', email: null, notes: null },
   merchant: { id: 7, name: 'QA 984', legalName: null, taxId: null, address: null, whatsappPhone: null, defaultCurrency: 'EUR', logoUrl: null },
   charge: null, invoices: [],
   decision: { acceptedAt: '2026-09-20T10:00:00.000Z', rejectedAt: null, decisionChannel: 'backoffice', decisionComment: null, rejectionReason: null, paymentTerms: 'FULL_UPFRONT', evidence: null },
@@ -360,7 +362,7 @@ test('SCRUM-984 · 🔴 el toque navega con LA MISMA llamada que ALB-01 y no cre
   // de OTRO contexto (mismo contenido, distinto `Object.prototype`).
   assert.deepEqual(JSON.parse(JSON.stringify(m.navegaciones)),
     [{ vista: 'jobs-detail', args: { jobId: 77, altaAlbaran: { quoteId: 1 } } }],
-    '🔴 el clic no llama a renderAppView(\'jobs-detail\', { jobId, altaAlbaran: { quoteId } }) — la llamada de albaranesView.js:150');
+    '🔴 el clic no llama a renderAppView(\'jobs-detail\', { jobId, altaAlbaran: { quoteId } }) — la llamada de `albaranesView.js` (ALB-01)');
   assert.equal(m.llamadas.length, antes, '🔴 el clic hizo una petición: aquí no se crea ni se lee nada, se navega');
   assert.equal(m.llamadas.filter((c) => c.method !== 'GET').length, 0, '🔴 hubo una escritura al montar o pulsar');
 });
