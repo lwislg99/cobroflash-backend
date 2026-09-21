@@ -71,8 +71,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/sesion.mjs',
     // SCRUM-954: la linea gano el argumento `job` (el state.json de cada trabajo). El ancla se
     // re-ancla; lo que la mutacion quita sigue siendo `equipo`, y sigue teniendo que matar.
-    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, job: (id) => estadoDeJob(config, id) });',
-    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), job: (id) => estadoDeJob(config, id) });',
+    de: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, repo: config.repo, job: (id) => estadoDeJob(config, id) });',
+    a: 'const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), repo: config.repo, job: (id) => estadoDeJob(config, id) });',
     cae: '🔴 con prefijo, `lanzar` rechaza un nombre del OTRO equipo',
   },
   {
