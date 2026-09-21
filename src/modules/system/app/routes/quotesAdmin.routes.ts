@@ -31,6 +31,7 @@ import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNo
 // SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
 import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+import { albaranOrigenDelPresupuesto } from '../../../jobs/domain/albaranOrigenDelPresupuesto'; // SCRUM-984
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
@@ -904,7 +905,17 @@ router.get('/:id', async (req, res) => {
     // decide aquí, con el mismo criterio que rechaza al aceptar, y no en el navegador a ojo: hay
     // filas ya guardadas con `signatureUrl = "data:,"` que no se tocan.
     const firmaConTrazo = firmaTieneTrazo((detail as { signatureUrl?: unknown } | null)?.signatureUrl);
-    const cuerpo = { ...detail, firmaConTrazo, waDelivery, asignados, ...(maintenance ? { maintenance } : {}) };
+    // SCRUM-984 · A QUÉ TRABAJO IR PARA ABRIR UN ALBARÁN DESDE AQUÍ. La respuesta es la del buscador
+    // de Albaranes (ALB-01), no una lectura propia de `Quote.jobId`: misma regla, mismo técnico.
+    // Viaja siempre y solo dice si hay a dónde ir; que el botón se vea en `accepted` lo decide la pantalla.
+    const albaranOrigen = await albaranOrigenDelPresupuesto({
+      merchantId: req.merchantId!,
+      quoteId: id,
+      number: (detail as { number: number | string }).number,
+      userRole: req.userRole,
+      teamMemberId: req.teamMemberId ?? null,
+    });
+    const cuerpo = { ...detail, firmaConTrazo, waDelivery, asignados, albaranOrigen, ...(maintenance ? { maintenance } : {}) };
     return res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
   } catch (err: any) {
     console.error('[GET /admin/quotes/:id]', err);
