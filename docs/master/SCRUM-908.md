@@ -1172,6 +1172,102 @@ resolverse en esta máquina (Windows, sin WSL ni Docker).
 
 ---
 
+# SCRUM-908c-6 · Barrido de tamRelleno: UNA tirada recogida (de las 4 con GO), cierre por fin de uso
+
+**Fecha:** 21-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición
+PARCIAL, declarada como tal. **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `f21171a84991c5e2691a356209c96c3e950b3e59` · 2026-09-21T17:02:11Z
+**Rama:** `scrum-908c6-barrido-tamrelleno` — el fichero de test del barrido se ha sacado del árbol tras
+recoger este dato (ver «LO QUE SE RETIRA», abajo); esta entrada cita el run ya generado, no una rama viva
+con el fichero dentro. El fichero retirado es recuperable en el commit `76010c092` de esta misma rama,
+antes de su borrado.
+
+> **Por qué es parcial.** El plan (comunicado y con GO del orquestador) era N=4 tiradas del barrido
+> completo: 1 push + 3 `gh run rerun --job`. **Solo se completó la 1ª.** Las reruns 2-4 no llegaron a
+> lanzarse: `gh run rerun <run> --job <job>` rechaza reanudar un job suelto mientras el RUN completo
+> sigue `in_progress` («job … cannot be rerun»), y el resto de jobs del mismo run (meta-guard, trinquete,
+> guards de navegador) no habían terminado cuando llegó el cierre de tanda por uso. **No se esperó**: es
+> la instrucción explícita del orquestador («si está a mitad de una tirada de CI, no la esperes»).
+
+## EL BARRIDO, N=1 tirada (16 medidas + 1 sonda CAPACIDAD)
+
+Run `35628013107`, job `build + tests (con banco desechable)` (`id=106427050646`), `conclusion=failure`
+— **por una causa AJENA al barrido**: `SCRUM-854 · 🔴 ② esta rama, si toca código, trae su entrada de
+registro` cae porque esta rama tocaba código sin un `docs/master/SCRUM-908.md` propio en su propio diff
+(este mismo anexo lo corrige). Las 3 comprobaciones de cordura del propio fichero del barrido
+(`SCRUM-908c6`) pasaron las tres. Log bajado y grepeado por mí:
+
+```
+"C:/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/106427050646/logs > log.txt
+grep -n "SCRUM-908c6\|BARRIDO" log.txt
+```
+
+```
+# SCRUM-908c6 · node=v24.20.0 pausa=2000ms capacidadBase=110592 multiplicadores=[1,1.5,2,3] repesPorPunto=4
+# BARRIDO mult=1   tamRelleno=12288 bytes=108694 → colaAlSalir=872,872,871,872  salioDuranteLaPausa=true  (4/4 los 4)
+# BARRIDO RESUMEN mult=1   tamRelleno=12288 → 4/4 con colaAlSalir>0
+# BARRIDO mult=1.5 tamRelleno=18432 bytes=158803 → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 los 4)
+# BARRIDO RESUMEN mult=1.5 tamRelleno=18432 → 0/4 con colaAlSalir>0
+# BARRIDO mult=2   tamRelleno=24576 bytes=207878 → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 los 4)
+# BARRIDO RESUMEN mult=2   tamRelleno=24576 → 0/4 con colaAlSalir>0
+# BARRIDO mult=3   tamRelleno=36864 bytes=306182 → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 los 4)
+# BARRIDO RESUMEN mult=3   tamRelleno=36864 → 0/4 con colaAlSalir>0
+# SCRUM-908c6 · POBLACIÓN: 16 medidas sobre 4 puntos. 4/16 con colaAlSalir>0 en total.
+```
+
+## LO QUE SUGIERE (NUNCA «el umbral es X» — condición del GO, dicha antes de correr)
+
+**No es monótona en el rango medido, y en la dirección CONTRARIA a la intuición de «más grande, más se
+pierde».** A **1,0×** la capacidadBase, las 4 repeticiones perdieron algo **las 4**, con
+`salioDuranteLaPausa=true` las 4: el hijo terminó (llamó a `process.exit()`) **dentro** de los 2000 ms en
+que el padre no lee nada — igual que el hijo PELADO de la sonda de CAPACIDAD, que también sale durante
+esa misma pausa (comentario 16185 de Jira). A **1,5×, 2× y 3×**, las 12 repeticiones NO perdieron nada
+(`0/12`), y las 12 con `salioDuranteLaPausa=false`: el hijo tardó MÁS de 2000 ms en llegar a
+`process.exit()`.
+
+**La lectura que esto sugiere, coherente con § 908c-5 y el comentario 16185:** la variable que decide no
+parece ser el VOLUMEN por sí solo, sino si el hijo llega a `process.exit()` ANTES o DESPUÉS de que acabe
+la pausa del padre. Si llega antes (relleno pequeño, hijo rápido): el padre sigue sin leer y lo que
+quedó sin vaciar en el `Writable` del hijo se trunca **siempre** — es el mismo caso que el hijo pelado.
+Si llega después (relleno más grande, el hijo tarda más en serializar/ejecutar sus tests): para entonces
+el padre YA ha empezado a leer (su pausa síncrona terminó y su bucle de eventos retomó los `'data'` de la
+tubería), así que hay una CARRERA entre lo que el hijo aún tiene que escribir y lo que el padre va
+drenando — y en esta tirada, el padre ganó las 12 veces. **Esto es coherente con que § 908c-4 midiera
+pérdida SOLO 1 de 5 veces a 2,4×** (justo en la zona donde, según esta lectura, el resultado depende de
+una carrera y no de un tamaño fijo): no es que 2,4× esté "cerca del umbral de tamaño", es que CUALQUIER
+tamaño que cruce el borde de los 2000 ms entra en zona de carrera, intermitente por construcción.
+
+## LO QUE ESTO NO ESTABLECE (declarado, techo de la N real)
+
+- **N=1 tirada, no N=4.** Esta lectura es la de UN solo entorno de ejecución. No se ha repetido: no se
+  sabe si `4/4` a 1,0× es estable o si otra tirada del MISMO commit daría otro número — con una sola
+  muestra por punto no hay ni Wilson que calcular.
+- **Las tiradas serían del MISMO commit** (esto no cambia aunque se completen las 3 que faltan): aíslan
+  la varianza del ENTORNO de ejecución, no dicen nada de si la tasa cambia en otro árbol. La mudez
+  original de `scrum859` se vio en árboles distintos a lo largo de días; esto no es eso (mismo hueco que
+  § 908c-4 ④).
+- **NO se afirma un umbral en 1,5×** ni en ningún otro punto: con N=1 por punto, un `0/4` es
+  "no lo vi esta vez", no "no ocurre ahí". La lectura de arriba es una hipótesis de MECANISMO (carrera
+  contra el fin de la pausa), reforzada por converger con el dato independiente del comentario 16185,
+  pero sigue siendo una hipótesis: haría falta repetir el barrido (las 3 reruns que faltan, o más) para
+  saber si `1,0×` pierde SIEMPRE o solo esta vez, y si `1,5×`+ pierde alguna vez.
+- **Reruns 2-4 sin lanzar**, no perdidas: quedaron bloqueadas por el propio `gh run rerun` mientras el
+  run `35628013107` seguía `in_progress`, y el cierre de tanda llegó antes de que terminara. Quien
+  retome: el run ya existe, el job es `106427050646`, y en cuanto el run completo esté `completed` se
+  puede repetir `gh run rerun 35628013107 --job 106427050646` hasta 3 veces más para llegar a la N=4
+  acordada.
+
+## LO QUE SE RETIRA
+
+**El fichero de test del barrido se saca del árbol de esta rama tras esta medición**, como se acordó con
+el orquestador antes de empezar: no se deja puesto un minuto y medio añadido, para siempre, al check
+obligatorio de los dos equipos. Lo que permanece es este anexo, con los comandos exactos y el commit
+donde vivía el fichero (arriba) para reproducir el barrido si hace falta más N.
+
+## LO NO TOCADO
+
+- `tests/scrum859-…`, `scripts/meta-guard-mutaciones.mjs` (S3), `.github/workflows/**` (S5): ni una línea.
+- Ningún push a `main`; esta rama no se mergea con el fichero de barrido dentro.
 # SCRUM-908c-5 · MUDO y CIEGO en `vigia-atascados.test.mjs` son el MISMO mecanismo, visto desde las dos pasadas
 
 **Fecha:** 21-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición. **NO cierra el ticket.**
