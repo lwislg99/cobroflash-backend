@@ -1,4 +1,7 @@
 import { prisma } from '../../../core/db/prisma';
+// SCRUM-944 (punto 2) · cómo se llama un Trabajo lo decide UNA función, y es esta. Gastos la llama;
+// no la reescribe ni la adapta.
+import { tituloDeTrabajo } from '../../jobs/domain/trabajoDirecto';
 
 export const EXPENSE_CATEGORIES = ['materiales', 'desplazamiento', 'herramientas', 'subcontrata', 'otros'] as const;
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
@@ -145,11 +148,76 @@ export async function listExpenses(
   if (!quoteIds.length) return items.map((e) => ({ ...e, tieneFoto: idsConFoto.has(e.id), job: null }));
 
   const porQuote = await trabajosPorQuote(merchantId, quoteIds);
+  // SCRUM-944 (punto 2) · `job.titulo` ya no es el campo crudo de la base: es el NOMBRE con el que
+  // Trabajos presenta ese mismo Trabajo. Con `Job.titulo` a secas, los Trabajos sin título (10 de 13
+  // en staging) llegaban a `null` y la pantalla los llamaba «Trabajo», mientras Trabajos decía
+  // «Presupuesto #5 · María López»: dos nombres para lo mismo.
+  const nombres = await nombresDeTrabajos(merchantId, [...porQuote.values()]);
   return items.map((e) => {
     const j = e.quoteId != null ? porQuote.get(e.quoteId) : null;
-    // `titulo` puede ser null en Jobs anteriores a SCRUM-10: el front cae a un texto neutro.
-    return { ...e, tieneFoto: idsConFoto.has(e.id), job: j ? { id: j.id, titulo: j.titulo } : null };
+    if (!j) return { ...e, tieneFoto: idsConFoto.has(e.id), job: null };
+    const nombre = nombres.get(j.id);
+    return { ...e, tieneFoto: idsConFoto.has(e.id), job: { id: j.id, titulo: nombre !== undefined ? nombre : j.titulo } };
   });
+}
+
+/**
+ * SCRUM-944 (punto 2) · el nombre de cada Trabajo, EL MISMO que le da la pantalla de Trabajos.
+ *
+ * NO decide nada: llama a `tituloDeTrabajo` (`jobs/domain/trabajoDirecto.ts`), que es quien decide, con
+ * las mismas entradas que le da `serializeJob` — el título propio, el presupuesto ORIGINAL del Trabajo
+ * (el de `Job.quoteId`; a falta de éste, el primero por id de los que tienen `Quote.jobId`) y su cliente.
+ * Ojo: es el original y no el presupuesto al que se imputó el gasto; un gasto de un adicional se
+ * presenta con el nombre del Trabajo, no con el número del adicional.
+ *
+ * Los Trabajos CON título no cuestan nada: `tituloDeTrabajo` devuelve ese título y no se consulta.
+ * Para el resto, tres consultas por página —Trabajos, presupuestos y clientes—, nunca una por gasto
+ * (el coste constante que fijó SCRUM-135). No se exporta: nadie de fuera la usa (`listExpenses` la llama
+ * y su test entra por `listExpenses`), y un `export` sin consumidor lo caza `scrum411`.
+ */
+async function nombresDeTrabajos(
+  merchantId: number,
+  trabajos: Array<{ id: number; titulo: string | null }>,
+  prismaClient = prisma,
+): Promise<Map<number, string>> {
+  const nombres = new Map<number, string>();
+  const sinTitulo: number[] = [];
+  // Varios presupuestos de un mismo Trabajo llegan como varias entradas: cada Trabajo se resuelve una vez.
+  for (const t of new Map(trabajos.map((x) => [x.id, x])).values()) {
+    if (t.titulo) nombres.set(t.id, tituloDeTrabajo({ titulo: t.titulo, jobId: t.id }));
+    else sinTitulo.push(t.id);
+  }
+  if (!sinTitulo.length) return nombres;
+
+  const jobs = await prismaClient.job.findMany({
+    where: { merchantId, id: { in: sinTitulo } },   // regla 2
+    select: { id: true, customerId: true, quoteId: true },
+  });
+  const quoteIds = jobs.map((j) => j.quoteId).filter((id): id is number => id != null);
+  const [quotes, clientes] = await Promise.all([
+    prismaClient.quote.findMany({
+      where: { merchantId, OR: [{ id: { in: quoteIds } }, { jobId: { in: sinTitulo } }] },
+      select: { id: true, jobId: true, quoteNumber: true },
+      orderBy: { id: 'asc' },
+    }),
+    prismaClient.customer.findMany({
+      where: { merchantId, id: { in: [...new Set(jobs.map((j) => j.customerId))] } },
+      select: { id: true, name: true },
+    }),
+  ]);
+  const cliente = new Map(clientes.map((c) => [c.id, c]));
+  for (const j of jobs) {
+    const original =
+      (j.quoteId != null ? quotes.find((q) => q.id === j.quoteId) : undefined)
+      ?? quotes.find((q) => q.jobId === j.id);
+    nombres.set(j.id, tituloDeTrabajo({
+      titulo: null,
+      quote: original ? { id: original.id, quoteNumber: original.quoteNumber } : null,
+      customer: cliente.get(j.customerId) ?? null,
+      jobId: j.id,
+    }));
+  }
+  return nombres;
 }
 
 /**
