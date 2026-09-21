@@ -25,7 +25,8 @@ const facturas = [
   f(4, M, 3, 'pending', 700), f(5, M, 3, 'paid', 300), // cliente 3 debe 700 (mayor que el 1: el orden por saldo NO es el de la lista)
   f(6, OTRO, 4, 'pending', 7777), f(7, OTRO, 1, 'pending', 5555), // el otro merchant, incluso sobre el id 1
 ];
-const casa = (fila, where) => Object.entries(where).every(([k, v]) => (v && typeof v === 'object' && 'in' in v
+// Como Prisma: un valor `undefined` no filtra.
+const casa = (fila, where) => Object.entries(where).every(([k, v]) => v === undefined || (v && typeof v === 'object' && 'in' in v
   ? v.in.includes(fila[k]) : v && typeof v === 'object' && 'not' in v ? fila[k] !== v.not : fila[k] === v));
 
 const dobles = {

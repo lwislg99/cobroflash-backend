@@ -4,7 +4,7 @@
 // fijo con 25 facturas veía una cifra que mentía. Ahora las cifras se agregan en la base; las listas
 // (la pestaña de documentos) siguen en 20. Sin banco: el handler REAL contra un mini-Prisma en memoria
 // que respeta `where` (incluido `merchantId`), `take` y `aggregate`. Con el código de antes, las cifras
-// salen de las 20 filas de `findMany` y este test cae.
+// salen de las filas paginadas de `findMany` y este test cae.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { prisma } from '../dist/core/db/prisma.js';
@@ -43,7 +43,7 @@ function dobles() {
       findMany: async ({ where, take }) => facturas.filter((f) => casa(f, where)).slice(0, take),
       // `saldosPendientesPorCliente` (SCRUM-1043): agrupa por cliente respetando `where` (incl. `in`/`not`).
       groupBy: async ({ where }) => {
-        const filas = facturas.filter((f) => Object.entries(where).every(([k, v]) => (v && typeof v === 'object' && 'in' in v
+        const filas = facturas.filter((f) => Object.entries(where).every(([k, v]) => v === undefined || (v && typeof v === 'object' && 'in' in v
           ? v.in.includes(f[k]) : v && typeof v === 'object' && 'not' in v ? f[k] !== v.not : f[k] === v)));
         const por = new Map();
         for (const f of filas) por.set(f.customerId, [...(por.get(f.customerId) ?? []), f]);

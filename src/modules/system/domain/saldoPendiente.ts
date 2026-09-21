@@ -20,7 +20,7 @@ export async function saldosPendientesPorCliente(
     where: {
       merchantId,
       status: 'pending',
-      ...(customerIds ? { customerId: { in: customerIds } } : {}),
+      customerId: customerIds ? { in: customerIds } : undefined, // undefined = sin filtro (todos los del merchant)
     },
     _sum: { total: true },
     _count: { _all: true },
