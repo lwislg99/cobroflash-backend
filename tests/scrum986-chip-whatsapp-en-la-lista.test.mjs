@@ -90,7 +90,7 @@ function sustituir(prismaQuote, tabla) {
 function restaurar() { for (const k of Object.keys(ORIG)) moduloPrisma.prisma[k] = ORIG[k]; }
 
 const quoteFalso = (id) => ({
-  id, quoteNumber: id, customer: { name: `Cliente ${id}`, phone: '34600000000' },
+  id, quoteNumber: id, customer: { name: `Cliente ${id}`, phone: '34000000001' }, // SCRUM-262: rango imposible (34 0XX)
   createdAt: t('2026-09-05T09:00:00Z'), currency: 'EUR', total: 100 + id, status: 'sent',
   charge: null, internalNotes: null, tags: null,
 });
