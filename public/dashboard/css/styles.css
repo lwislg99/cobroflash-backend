@@ -3899,6 +3899,13 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .gastos-pantalla .btn-ghost,
 .gastos-pantalla select.input { min-height: 44px; }
 .gastos-pantalla .overflow-trigger { min-width: 44px; min-height: 44px; }
+/* SCRUM-920d · 🔴 UNA TRAMPA MEDIDA. `#view-container > *` (más arriba) anima con `yaqu-fade-in`, cuyo último
+   fotograma es `transform: translateY(0)`, y `both` lo MANTIENE al acabar. Un `transform` que no es `none` hace
+   de esa pantalla el bloque contenedor de todo `position: fixed` que lleve dentro: la barra de «Nuevo gasto» se
+   dibujaba al final de la lista (bottom 2021 en una pantalla de 844) y se movía con el scroll. Aquí la aparición
+   es sólo de opacidad, que no crea ese bloque. */
+#view-container > .gastos-pantalla { animation-name: yaqu-fade-in-opacidad; }
+@keyframes yaqu-fade-in-opacidad { from { opacity: 0; } to { opacity: 1; } }
 
 /* La lista: filas en REJILLA. Cinco columnas a escritorio; a 900 px se reordenan en tres renglones
    (qué y cuánto · categoría · trabajo y «⋯») y a 390 px NO desbordan. */
@@ -3992,8 +3999,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   .gastos-chip { justify-content: center; }
   /* SCRUM-920d · «Nuevo gasto» FIJO ABAJO, al alcance del pulgar y con la lista pasando por debajo. Es EL MISMO
      botón de arriba (con su atajo «N», SCRUM-769), no una copia: sólo cambia dónde se dibuja. La barra va por
-     debajo de las hojas y los avisos (z-index) y deja sitio a la última fila. */
-  .gastos-pantalla { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+     debajo de las hojas y los avisos (z-index). El sitio para la última fila ya lo deja el `padding-bottom: 88px`
+     de `.view-container` a esta anchura (la barra mide 64 px); aquí sólo se suma la muesca del móvil. */
+  .gastos-pantalla { padding-bottom: env(safe-area-inset-bottom); }
   .gastos-barra {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
     background: var(--surface); border-top: 1px solid var(--border); box-shadow: var(--shadow-lg);
