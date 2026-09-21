@@ -118,6 +118,27 @@ const MENU_ARRIBA = new Function('texto', `
   return { estado: 'no-encontrado', items: items };
 `);
 
+// Abre el «⋯», pulsa «Limpiar formulario» y CONFIRMA, todo en la misma llamada: sin una sola espera
+// entre la última tecla y el vaciado, el autoguardado de 700 ms de la pantalla vieja sigue PENDIENTE
+// cuando se vacía. Es el único modo de que el caso C ejercite esa carrera (medido: con las esperas
+// de `abrirHoja` el temporizador ya había saltado antes de confirmar, y un mutante sin
+// `clearTimeout` sobrevivía).
+const VACIAR_YA = new Function(`
+  var limpio = function (t) { return String(t || '').replace(/\\s+/g, ' ').trim(); };
+  var t = document.querySelector('.quotes-header-row button.overflow-trigger');
+  if (!t) return 'sin-disparador';
+  t.click();
+  var panel = document.querySelector('.overflow-menu, .overflow-sheet');
+  if (!panel) return 'sin-menu';
+  var item = Array.prototype.slice.call(panel.querySelectorAll('button')).filter(function (b) { return limpio(b.textContent) === 'Limpiar formulario'; })[0];
+  if (!item) return 'sin-item';
+  item.click();
+  var ok = document.querySelector('.modal-overlay .hoja-vaciar .modal-footer .btn-danger');
+  if (!ok) return 'sin-hoja';
+  ok.click();
+  return 'vaciado';
+`);
+
 /** La hoja de confirmación, si está: título, frase y botones. */
 const HOJA = new Function(`
   var limpio = function (t) { return String(t || '').replace(/\\s+/g, ' ').trim(); };
@@ -298,10 +319,8 @@ const CASOS = [
       // Tocar algo (arma el autoguardado de 700 ms) y vaciar ENSEGUIDA: el temporizador pendiente
       // es justo el que podría reescribir el borrador recién borrado.
       await teclear(pag, '.quote-line .quote-line__concept input', 'Punto de luz doble');
-      if (!await abrirHoja(pag, etiqueta)) return;
-      const b = await pag.$('.modal-overlay .hoja-vaciar .modal-footer .btn-danger');
-      if (!b) { ciegos.push(`${etiqueta} -> no encontré el botón de confirmar de la hoja`); return; }
-      await b.click();
+      const v = await pag.evaluate(VACIAR_YA);
+      if (v !== 'vaciado') { hallazgos.push(`${etiqueta} -> no pude vaciar desde el «⋯» de arriba (${v})`); return; }
       await espera(1500);
       if (!await abrirPagina(pag, etiqueta, 'quotes-new', '.quote-line .quote-line__concept input')) return;
       await espera(600);
