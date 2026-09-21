@@ -1,9 +1,10 @@
 # SCRUM-1032 · Llamar, escribir por WhatsApp o mandar un correo al cliente con un toque, desde la lista y la ficha (y ver también su móvil)
 
 **Medido contra:** `origin/main` = `b6cde0517649d991a1b08eabb50017a81a03acfb` · 2026-09-21T17:27:29Z (hora de GitHub, cabecera `Date:` de `gh api -i zen`).
-**Rama:** `scrum-986-chip-lista-y-contacto-1032` (PR A del primer lote CRM, junto con SCRUM-986). Bloque CRM (SCRUM-977), CRM-02; diseño en `docs/producto/CRM.md` §5.
+**Rama:** `scrum-1032-contacto-con-un-toque` (parte del PR A del primer lote CRM; va aparte de SCRUM-986 porque toca `guard:lista-trabajos`, que la regla 41 manda pedir). Bloque CRM (SCRUM-977), CRM-02; diseño en `docs/producto/CRM.md` §5.
 **Ficheros de J2:** `customersView.js` y `customerDetailView.js`; comentario de aviso (decisión D1) puesto el 21-sep-2026 a las 17:27Z en este ticket (16252). No se toca `whatsapp.ts`, ni plantillas de Meta, ni `jobRailBlocks.js` (solo se consultó), ni el esquema.
-**Microcopy:** ninguna nueva. El número y el correo son el dato mismo (el enlace lo lleva por texto); «WhatsApp» y su icono 💬 son el rótulo ya en uso en el bloque CLIENTE del panel del Trabajo (`jobRailBlocks.js:61`), y `Móvil (WhatsApp)` ya nombraba el campo en el formulario. **Pide confirmación del orquestador** que «WhatsApp» (visible en la ficha; nombre accesible y tooltip del icono en la lista) cuente como firmado por su uso allí.
+**Microcopy:** ninguna nueva. El número y el correo son el dato mismo (el enlace lo lleva por texto); «WhatsApp» y su icono 💬 son el rótulo ya en uso en el bloque CLIENTE del panel del Trabajo (`jobRailBlocks.js:61`), y `Móvil (WhatsApp)` ya nombraba el campo en el formulario. **Confirmado por el orquestador -06 el 21-sep-2026 (mensaje en vivo):** reutilizar «WhatsApp» + 💬 cuenta como firmado (texto en la ficha; nombre accesible y tooltip del icono en la lista).
+**Guard:** el orquestador -06 autorizó el mismo día declarar las piezas de este ticket en `guard:lista-trabajos` (regla 41: es añadir una declaración, precedente SCRUM-831/979), con tres condiciones: declaración exacta y mínima, prueba de que sin esas piezas el HTML sale idéntico a la base, y rojo previo sin la declaración. Están abajo.
 
 ## Paso 0: el defecto existía hoy
 
@@ -20,6 +21,13 @@ Contado con el banco de vistas sobre `origin/main`: la lista de Clientes y la fi
 | `tests/scrum1032-contacto-con-un-toque.test.mjs` (5 pruebas) | A: cada caso límite del ticket con su resultado exacto (espacios, sin prefijo, +34/0034/paréntesis, extranjero, móvil = teléfono, distintos → WhatsApp al móvil, solo teléfono, correo con mayúsculas) y que sin dato válido salgan `null` y nunca «undefined»/«null» en un texto o un `href`. B: la lista, una fila con datos y otra vacía sin ningún enlace. C: la ficha, completa, vacía y con dato raro. D: los enlaces de la lista frenan el clic. |
 
 Es un enlace del navegador, **no un envío de YaQu**: no manda nada solo y no pasa por J6 (regla 28). Ninguna llamada a la red nueva.
+
+## El guard de las listas hermanas (`guard:lista-trabajos`): rojo previo, declaración y prueba
+
+1. **Rojo previo, sin la declaración** (sobre esta rama con el arreglo de 986 ya fusionado): `🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979 · base 04ffb4183737ee82 ≠ hoy sin lo declarado …`; Presupuestos y Facturas, idénticos.
+2. **La declaración** (`PIEZAS_1032`, en `scripts/guard-lista-trabajos.mjs`): DOS piezas, cada una con su forma completa —cada atributo escrito— y las veces que tiene que aparecer (una por fila de cliente): el teléfono como enlace, con su icono de WhatsApp opcional (`<td class="cell-date"><div class="contacto"><a … href="tel:…">n</a>[<a … wa.me … aria-label="WhatsApp" …>💬</a>]</div></td>` → `<td class="cell-date">n</td>`) y el correo como enlace (`<a class="contacto-link" href="mailto:…">c</a>` → `c`). **El móvil no se declara** a propósito: las muestras del guard no lo llevan.
+3. **Un defecto del comparador que tuve que corregir, y no es relajarlo:** el guard quitaba las piezas declaradas de 979 **solo de HOY** y comparaba con la base «tal cual». Eso valía mientras la base no las trajera; desde que SCRUM-979 está en `main` la base YA las lleva, así que **cualquier cambio de Clientes, aunque fuera el declarado, daba siempre «MÁS de lo declarado»**. Ahora se deshacen **las mismas piezas en los dos lados** y se compara lo que queda: exige lo mismo que antes (el resto, idéntico) y ya no depende de si la base trae lo declarado. Una pieza que la base no tiene no se toca (su patrón no casa).
+4. **Medido:** con la declaración, `✅ Clientes trae LO DECLARADO (SCRUM-979 y SCRUM-1032) y nada más · sin esas piezas (2 celdas de cada fila), idéntico a la base sin ellas 571a61ff7a50ea42`. Y cuatro controles sobre el PRODUCTO, restaurados con `fs`, **todos cazados**: G1 el enlace gana una clase de más · G2 el nombre accesible del WhatsApp cambia de forma · G3 el `<td>` del teléfono gana una clase · G4 el ID gana un espacio (cambio ajeno a lo declarado: cae por la rama «MÁS de lo declarado»).
 
 ## Verificado en rojo (BASE 5/5)
 
