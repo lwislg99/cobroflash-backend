@@ -451,10 +451,57 @@ leído sus reseñas ni se ha mirado su parte fiscal (es anglosajón, sin VeriFac
 la familia española ya medida).
 
 **Siguientes:** ServiceM8 y Housecall Pro, la misma familia. Los españoles que quedan van detrás, por
-el motivo medido de arriba. Lo que sigue
-sin medirse de su firma —cómo se elige al firmante, qué correo llega, cómo queda el PDF— sigue
-declarado en §8.7 y §9.4, y sigue bloqueado por el clasificador de la máquina, no por Holded.
-Siguiente competidor: **Jobber**, aprobado por el orquestador el 20-sep, y elegido porque los que
-quedaban en la cola española son más facturación —Quipu ya midió que esa familia *«no añade ningún
-hueco que no estuviera ya»*— mientras que Jobber, ServiceM8 y Housecall Pro hacen lo mismo que YaQu:
-presupuesto, trabajo, firma y cobro **en la obra**.
+el motivo medido de arriba.
+
+*(De Holded, lo que sigue sin medirse de su firma —cómo se elige al firmante, qué correo llega, cómo
+queda el PDF— está declarado en §8.7 y §9.4 de la matriz, y sigue bloqueado por el clasificador de la
+máquina, no por Holded.)*
+
+---
+
+## SCRUM-906i · ServiceM8, el que sí tiene la ficha de la caldera (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b`.** Rama
+`scrum-906i-servicem8`. Solo docs. El detalle está en
+[`docs/competencia/matriz.md`](../competencia/matriz.md) **§13**, y las capturas en
+[`docs/competencia/capturas/servicem8/`](../competencia/capturas/servicem8/README.md).
+
+**Encargo con foco del orquestador:** el fundador marcó el **CRM como área de primera** del producto.
+«Equipos del cliente» —cada caldera, cada cuadro, cada instalación con su historial— es el corazón de
+eso para un oficio, y lleva en **❌ desde la primera matriz** (fila 12). Así que la gestión de activos
+de ServiceM8 se miró **con más detalle que el resto**: qué es una ficha de activo, qué cuelga de ella,
+cómo se llega y **qué hace el técnico en la obra**.
+
+**Lo que hace el técnico allí, literal:** pega una etiqueta QR en el aparato → abre el trabajo →
+**escanea** → el sistema ve que esa etiqueta no tiene activo y abre la ficha → ajusta el punto en el
+mapa → hace una foto → rellena los campos del `Asset Type`. Para servir uno existente, escanea y ya:
+no lo busca en ninguna lista. Y **el cliente escanea esa misma pegatina con su móvil** y se le abre
+una página suya.
+
+**Tres propuestas** (§13.3): **la ficha del equipo** colgando del cliente (grande) · **la pegatina con
+QR**, que escanean el técnico y el cliente (mediano) · **las fotos de esa casa, juntas** en la ficha
+del cliente (pequeño, y es el historial del equipo **antes** de que exista el equipo, o sea el primer
+paso barato de la grande).
+
+🔴 **La medición que resume el hueco, y conviene citarla tal cual:**
+
+    🔒 Tenemos la periodicidad, pero no tenemos la cosa.
+
+`MaintenancePlan` cuelga del **cliente** y el equipo es **texto libre** en `title`; no hay
+`equipmentId`. Si un cliente tiene dos calderas, hoy son dos planes con dos títulos escritos a mano y
+ningún historial que las distinga. *Suelo del «no existe»:* el mismo ancla que no encuentra
+`model Equipment|Asset|Device|…` cuenta **30** modelos en `schema.prisma`.
+
+**Y una lección suya que se copia AL REVÉS:** en ServiceM8 **todos** los campos de un tipo de activo
+son obligatorios, y ellos mismos avisan del problema en su manual. En un oficio los campos se rellenan
+**cuando se saben**, que es la mitad de las veces en la segunda visita.
+
+**Declarado como no medido:** no se entró en el producto (A19), así que el §13 son sus páginas y su
+manual — **nadie ha visto un activo real** ni su app móvil, que es donde su propia documentación dice
+que viven. Tampoco se ha comprobado **si la gestión de activos se paga aparte**: su documentación la
+coloca bajo «Add-ons», lo que lo sugiere, y por eso no se afirma.
+
+**Dos datos sueltos que valen:** ServiceM8 tiene *«Track My Arrival»*, así que **dos de los tres** de
+esta familia avisan de la llegada al cliente —no era una ocurrencia de Jobber—; y tiene **una página
+por oficio**, como Verifacturamos (M5) y Jobber: **tres de cuatro**, o sea un patrón del sector. Eso
+último es marketing y no producto, y por eso va aparte, en §13.4.
