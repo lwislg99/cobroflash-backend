@@ -284,7 +284,11 @@ const PENDIENTES_DE_FIRMA = [
   // (21-sep-2026; el rojo decía `quotesView.js:911`), no contada del diff. Y el censo NO marca como
   // «a pelo» ninguno de los rótulos que entran con 915g («Ajustes del documento», «IVA por defecto»):
   // ninguno nombra el documento que se emite.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 911, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-915k · y de 911 a 909: se retira la constante `MARCA_DESC_LINEA` (y su línea en blanco) de
+  // lo alto del fichero, así que TODO lo que va detrás sube dos líneas. Cifra MEDIDA con el propio
+  // censo sobre el árbol FUSIONADO con main (21-sep-2026; el rojo decía `quotesView.js:909`), no
+  // contada ni deducida: al fusionar, el generador la regeneró.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 909, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];

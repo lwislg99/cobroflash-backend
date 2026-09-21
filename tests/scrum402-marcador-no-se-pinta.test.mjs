@@ -225,7 +225,19 @@ const CENSO = Object.freeze({
   // Sale de UNA sola constante, `MARCA_DESC_LINEA`, así que la firma lo apaga de golpe. El día
   // que llegue, este número BAJA a 3 — no se borra la entrada, porque quedan otros marcadores
   // en el fichero (SCRUM-424 / SCRUM-405: la entrada sólo se borra cuando no queda ninguno).
-  'quotesView.js': 4,
+  //
+  // 🔴 SCRUM-915k · 21-sep-2026 · `quotesView.js` SALE DEL CENSO: la entrada se BORRA, no se pone a 0.
+  //
+  // El fundador firmó los textos que le quedaban (SCRUM-915, comentario 15868, 18-sep-2026):
+  // «Descripción» (el rótulo del campo de descripción de la línea, la constante `MARCA_DESC_LINEA`),
+  // «Aplicar» (el botón de las formas de pago pactadas), «Este cliente tiene pactado un descuento
+  // del N %» y «Aplicar a las líneas» (la tira del descuento pactado). Los marcadores se retiraron
+  // EN EL MISMO COMMIT que se aplicó la firma, y su registro es
+  // `docs/microcopy/2026-09-21-SCRUM-915-marcadores-firmados.md`.
+  //
+  // Con la entrada fuera, la vigilancia NO se va: `censoActual()` enumera el directorio, así que un
+  // `[PENDIENTE …]` que vuelva a `quotesView.js` cae por la rama `nuevos` de R4 (R4b, justo debajo,
+  // prueba ese mecanismo con un fichero inventado). Es lo que 915k dejó dicho a quien lo relea.
   // 🔴 SCRUM-530 · 15-sep-2026 · `reportsView.js` ENTRA con 1, y a conciencia.
   //
   // La alerta de tasa de entrega de WhatsApp exige ≥10 envíos en 7 días, así que para un merchant
