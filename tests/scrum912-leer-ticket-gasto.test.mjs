@@ -335,6 +335,11 @@ test('SCRUM-912 · 🔴 la IA NUNCA da un ticket por deducible: como mucho, «fa
     { completar: completarCon(LECTURA_COMPLETA), cliente: clienteCon([]) });
   assert.equal(r.justificante.veredicto, 'falta_confirmar');
   assert.deepEqual(r.justificante.faltan, ['nif_destinatario_en_el_documento']);
+  // 🔴 SCRUM-961b · ESTE ERA EL CASO QUE RELLENABA EL NIF Y NO LO MIRABA. `LECTURA_COMPLETA` trae
+  // `NIF_BUENO`, así que aquí corre el emparejamiento entero — contra un merchant SIN proveedores.
+  // Sin esta línea, el día que el emparejador enganchara a alguien de la nada, este test seguiría
+  // verde. Lo caza `scrum961b` ④, que exige que ningún bloque lea un ticket con NIF sin juzgarlo.
+  assert.equal(r.propuesta.providerId, null, '🔴 sin NINGUNA ficha se ha enganchado un proveedor');
 
   const ticket = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA },
     { completar: completarCon({ total: 3.5, fecha: '2026-09-17' }), cliente: clienteCon([]) });
