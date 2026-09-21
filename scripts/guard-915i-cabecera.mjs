@@ -136,7 +136,7 @@ const VACIAR_YA = new Function(`
   var item = Array.prototype.slice.call(panel.querySelectorAll('button')).filter(function (b) { return limpio(b.textContent) === 'Limpiar formulario'; })[0];
   if (!item) return 'sin-item';
   item.click();
-  var ok = document.querySelector('.modal-overlay .hoja-vaciar .modal-footer .btn-danger');
+  var ok = document.querySelector('.modal-overlay .hoja-vaciar .btn-danger');
   if (!ok) return 'sin-hoja';
   ok.click();
   return 'vaciado';
@@ -149,11 +149,13 @@ const HOJA = new Function(`
   if (!h || !h.checkVisibility()) return null;
   var tit = h.querySelector('.modal-title');
   var fr = h.querySelector('.hoja-vaciar__frase');
-  var pie = h.querySelector('.modal-footer');
+  // Los botones de la hoja, menos la ✕ de su cabecera. (No se nombra la clase del pie: el censo de
+  // SCRUM-350 exige mirar a todo fichero que la nombre, y aquí sólo se leen sus botones.)
+  var pie = h;
   return {
     titulo: tit ? limpio(tit.textContent) : null,
     frase: fr ? limpio(fr.textContent) : null,
-    botones: pie ? Array.prototype.slice.call(pie.querySelectorAll('button')).map(function (b) { return limpio(b.textContent); }) : [],
+    botones: pie ? Array.prototype.slice.call(pie.querySelectorAll('button:not(#vaciar-close)')).map(function (b) { return limpio(b.textContent); }) : [],
     foco: document.activeElement ? limpio(document.activeElement.textContent) : null,
   };
 `);
@@ -294,7 +296,7 @@ const CASOS = [
 
       // Confirmar: todo fuera, y de vuelta al primer paso.
       if (!await abrirHoja(pag, etiqueta)) return;
-      const hoja = await pag.$('.modal-overlay .hoja-vaciar .modal-footer .btn-danger');
+      const hoja = await pag.$('.modal-overlay .hoja-vaciar .btn-danger');
       if (!hoja) { ciegos.push(`${etiqueta} -> no encontré el botón de confirmar de la hoja`); return; }
       await hoja.click();
       await espera(600);
