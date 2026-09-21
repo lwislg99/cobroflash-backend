@@ -1196,3 +1196,227 @@ guard sobre las cinco líneas, no leyéndolas—. Pero de las cinco, **el guard 
 la línea 3 y la de la 588, que son las que encabezan una entrada. Las tres de la fase 0 están bien
 **por cuidado de quien las escribió, no porque nadie lo verifique**. Vale para todo apéndice del
 registro encabezado `# APÉNDICE`.
+
+---
+
+# SCRUM-825 · APÉNDICE · 21-sep-2026 · FASE 2, RECONCILIADA CONTRA SCRUM-612c Y SCRUM-1027
+
+**Medido contra:** `origin/main` = `d5565ec88267a278dcf37be990587f08148fac13` · 2026-09-21T16:54:41Z
+
+**Puesto:** J1 · Facturación y VeriFactu (`jv-j1`, equipo de Javier) · **Rama:**
+`scrum-825-fase2-reconciliacion-612c`
+
+**Carril:** fiscal (camino de emisión) · **Gate:** LECTURA. Cero código, cero rótulos, cero
+`docs/YAQU_MASTER.md`. Este apéndice **no ejecuta nada de la fase 2**: reconcilia el expediente de
+8-sep contra dos hechos nuevos y deja la decisión, otra vez, para el fundador.
+
+> ⛔ No es código: es el expediente para que Javier lo firme (regla 27 — retirar un tipo de
+> documento es cambio de máster y va firmado antes de programar). Las fases 0 y 1 (más arriba en
+> este mismo fichero) siguen cumplidas y no se tocan. La fase 3 sigue bloqueada por el NIF del
+> destinatario: `docs/master/SCRUM-729.md` §9 lo deja escrito — `generateInvoicePdf` no tiene
+> `taxId` en su lista blanca (SCRUM-577), y añadirlo es «contenido fiscal del documento, no se
+> añade de paso».
+
+---
+
+## 0 · 🔴 EL HALLAZGO QUE CAMBIA EL EXPEDIENTE: LA PREGUNTA ⓪ YA TIENE RESPUESTA, Y NO ES NINGUNA DE LAS DOS QUE OFRECÍA
+
+El apéndice de 8-sep (§0 y §3 pregunta ⓪, líneas 621-652 y 935-944 de este mismo fichero) paraba
+en seco porque medía esto:
+
+> **«Retirar `JUST` equivale a encender `INVOICING_ES_ENABLED` para todos los merchants españoles
+> reales — que es lo que la regla 24 prohíbe.»**
+
+Esa frase era verdad **el 8-sep**, con el código de entonces: el modo `receipt` sólo sabía hacer
+una cosa cuando el flag estaba OFF — emitir un justificante `J-`. Quitar `JUST` sin encender el
+flag habría dejado al profesional español real **sin ningún camino**, porque no existía un tercer
+comportamiento.
+
+**Hoy existe.** Dos decisiones, tomadas fuera de este expediente y sin citarlo:
+
+1. **SCRUM-612c** (enmienda de Javier a la regla 24, 21-sep-2026, comentario 15950: *«B: no se
+   cobra hasta que no haya factura»*): con el flag en OFF, en España, **no se emite ningún
+   documento** — ni factura, ni justificante.
+2. **SCRUM-1027** (esta misma sesión, GO expreso de Javier: *«825 tal cual y el atajo también»*,
+   PR #1608 en borrador a la espera de un segundo GO para el propio SCRUM-1027 — ver ahí): el
+   código **ya ejecuta** la decisión 1. `allocateInvoiceNumber` (`invoiceNumber.service.ts:487`)
+   ya no reserva un `J-` en modo `receipt`: lanza `invoicing_es_disabled` para los siete caminos.
+   `modoDocumentoSuelto` (`facturaSuelta.ts:87`) ya no devuelve `'justificante'`: devuelve `'no'`.
+
+**La consecuencia sobre la pregunta ⓪:** retirar el TIPO `JUST` del código —la unión de
+`tipoDocumento.ts`, el reconocedor `isReceiptNumber`, la serie `J-`, los 78 llamadores que
+ramifican por ella— **ya no implica encender la facturación fiscal para nadie**. El modo `receipt`
+seguirá significando exactamente lo mismo que significa desde hoy —«nada»— tenga o no tenga el
+código un TIPO llamado `JUST` para nombrar lo que ya no se produce. Son dos preguntas que el
+expediente de 8-sep fundía en una:
+
+| pregunta | resuelta por | respuesta |
+|---|---|---|
+| ¿qué significa el flag en OFF? | SCRUM-612c + SCRUM-1027 | **nada se emite** — YA EN `main`/en el PR #1608 |
+| ¿se retira el TIPO `JUST` del código, que ya no tiene ningún llamador vivo? | **sin contestar** — es ESTE expediente | pendiente |
+
+**Esto no acelera la fase 2: la simplifica.** El expediente de 8-sep tenía razón en parar —la
+pregunta que medía entonces era real y bloqueaba todo lo demás—, pero la pregunta que queda hoy es
+mucho más pequeña: ya no es «¿generalizamos la facturación fiscal?» (regla 5/27, decisión de
+producto y de riesgo fiscal), es «¿retiramos código y tipos que ya no tiene ningún camino que los
+alcance?» (regla 27, limpieza de un tipo muerto — con las mismas cinco salvedades 🔴 que el
+expediente de 8-sep ya había medido y que **siguen vigentes**: §2 🔴-B a 🔴-E de este mismo
+fichero, líneas 810-879).
+
+### 🔴 Y una consecuencia que invierte una fila entera del expediente de 8-sep
+
+Las preguntas ④ (línea 979) y los cubos Y10-Y11 (línea 779) del 8-sep asumían que retirar el modo
+`receipt` **abría** de golpe la recapitulativa, la factura parcial de albarán y el facturar-trabajo
+a todo merchant español —porque antes «retirar `receipt`» sólo podía significar «encender fiscal
+para todos». **Eso ya no es cierto.** Con la decisión de hoy, esas tres puertas (`albaranes.routes.ts`
+gates de `/consolidar`, `/facturar-parcial`, `/convertir-en-factura`, y `jobs.routes.ts`
+`/consolidar-albaranes`) **se quedan exactamente donde están**: cerradas para `receipt`, abiertas
+sólo para `fiscal`/`demo`. Retirar el TIPO `JUST` no las toca — verificado hoy, no supuesto: ninguna
+de las cuatro depende de `isReceiptNumber` ni de `'JUST'` para decidir si se abre, sólo de
+`getEmissionMode(...) === 'receipt'`, que sigue existiendo y sigue significando «nada» tenga o no
+tenga nombre el documento que no se emite. **La pregunta ④ queda retirada, no contestada: no hay
+nada que decidir porque no hay nada que se abra.**
+
+---
+
+## 1 · Re-medido: el máster, 20 → 14 → **12** menciones de «justificante»
+
+El 21-sep, antes de esta sesión, el orquestador midió que el máster había pasado de 20 a 14
+menciones tras la enmienda SCRUM-612c. Re-medido ahora, sobre `origin/main` = `d5565ec8` (main se
+movió 10 commits más entre medias, ninguno toca el máster): **12**.
+
+Las 12, clasificadas por **contenido**, no por número de línea (las líneas derivan y `main` se
+mueve varias veces por hora):
+
+| clase | cuántas | qué son |
+|---|---|---|
+| **HISTORIA** (bloques `> **✅ SCRUM-N …**`, describen lo que era verdad el día que se cerró ese ticket) | 8 | SCRUM-44, SCRUM-17, SCRUM-73, SCRUM-149, SCRUM-178 (×2 apariciones), V0-1, y el análisis de SCRUM-27 sobre el riesgo del hash. Por AA1.7 (**«✅ con motivo; nunca borrar»**) **no se tocan**: son registro de lo que se verificó entonces, no una afirmación de hoy |
+| **VIVA, YA ACTUALIZADA por SCRUM-612c** | 3 | la regla 24 (línea 246), y las dos entradas de V0-0 en la Parte U (líneas 959 y 980) — las tres **ya dicen** «ningún documento», con «justificante» sólo como lo que se EXCLUYE. No requieren tocarse otra vez |
+| **VIVA, suelta** | 1 | Parte J, plantillas de WhatsApp (líneas 296/300): *«al recrearlas como Utility se usará copy neutro "tu documento de cobro"... merchants ES reales en modo justificante reciben el wording actual»*. **Es la única mención que hoy describe un estado que ya no existe** («modo justificante» no es un estado posible desde SCRUM-612c). No es de este expediente —es Parte J, plantillas de Meta, área de **J2**— y no se propone texto aquí; se **reporta** (regla 37) |
+
+**Ninguna de las 12 bloquea la fase 2.** Las 8 históricas se quedan como están por diseño del
+máster. Las 3 vivas de la regla 24/V0-0 ya están correctas. La única imprecisión viva (Parte J) es
+de otro carril y de bajo riesgo —describe una plantilla que aún no se ha recreado, «al recrearlas»
+es futuro—, y queda dicha para quien la vea primero.
+
+## 2 · Re-medido: el código, 57 ficheros — misma cifra que el 8-sep, población estable
+
+```
+grep -rlE "justificante|'JUST'|isReceiptNumber|RECEIPT_NUMBER_PREFIX|'receipt'" src public \
+  --include="*.ts" --include="*.js" | grep -v "expenses/domain/justificante.ts\|expensesView.js"
+```
+
+**57**, idéntico al censo del 8-sep (55 reales + 2 homónimos de gastos, mismo criterio de
+exclusión). La población no se ha movido en 13 días — ni ha crecido (nadie ha añadido un llamador
+nuevo de `isReceiptNumber`) ni ha bajado (nadie ha retirado nada: SCRUM-1027, hoy, **cierra el
+camino de EJECUCIÓN, no borra las 57 apariciones** — es exactamente la frontera que su propio
+expediente traza en `docs/master/SCRUM-1027.md` §3.1: *«`reservarReferenciaJustificante` se queda
+SIN llamador — no se borra: retirarla es SCRUM-825»*).
+
+**Confirmado hoy, con el código de SCRUM-1027 ya escrito (PR #1608, sin mergear):** los cuatro
+bloques 🟢 G1-G4 (`invoiceNumber.service.ts:82, 88-92, 164-182`) que el 8-sep eran «código vivo que
+hay que apagar en orden» son **ya, hoy, código MUERTO** — `reservarReferenciaJustificante` no tiene
+ningún llamador alcanzable, ni siquiera detrás del gate por flag: el punto único rechaza ANTES de
+intentar reservar nada. Esto no cambia la LISTA del 8-sep (sigue siendo la misma, línea por línea);
+cambia su **urgencia**: retirarlos ya no «apaga un camino en producción», sólo borra código que no
+corre. Es exactamente el tipo de cambio que la regla 38 sigue tratando como STOP —sigue siendo el
+camino de emisión— pero el riesgo de «romper algo que un merchant real usa hoy» (§0 del apéndice de
+8-sep, la advertencia central) **ya no aplica a G1-G4 y G7**: nadie los usa desde que el PR #1608
+se mergee.
+
+## 3 · Qué queda por retirar — la lista del 8-sep, con su estado hoy
+
+La lista completa (§2 de este fichero, líneas 726-899: 8 piezas 🟢 «se borra sin sustituto», 14 🟡
+«se sustituye», 5 🔴 «no se puede tocar sin decidir antes», 3 ⚪ «ya muerto») **sigue siendo la
+medición vigente y no se re-deriva entera aquí** — sería repetir trabajo ya hecho y verificado
+línea por línea. Lo que cambia con SCRUM-612c/1027, resumido:
+
+- **🟢 (8 piezas, se borran sin sustituto):** siguen siendo las mismas 8. Su estado pasa de
+  «vivas, en el camino que un profesional usa hoy» a **«muertas, sin llamador alcanzable»** (§2 de
+  arriba). Retirarlas sigue siendo regla 38 (STOP, GO de un jefe), pero ya no hay usuario al que
+  se le apague nada al hacerlo.
+- **🟡-A, el filtro y sus 78 llamadores (Y1-Y9):** sin cambios. `invoiceAdmin.ts:40` sigue
+  siendo `{ merchantId, type: { not: 'JUST' } }` — literal, misma línea que el 8-sep — y sigue
+  excluyendo el tipo `JUST` de todo listado de facturas **a propósito**, con `tests/scrum442-…:35`
+  exigiéndolo. La pregunta ② del 8-sep (línea 958: ¿se retira el filtro, o se queda como red?)
+  **sigue abierta y sigue siendo la misma pregunta** — hoy tiene menos urgencia (no hay `JUST`
+  nuevo que filtrar desde que se mergee SCRUM-1027), pero los históricos siguen ahí y el filtro
+  sigue siendo lo único que los saca de la vista.
+- **🟡-B, los gates Y10-Y11 (recapitulativa, parcial, facturar-trabajo, consolidar-albaranes):**
+  **la pregunta ④ del 8-sep queda retirada** (§0 de este apéndice): no se abren al retirar `JUST`,
+  siguen cerrados por `getEmissionMode === 'receipt'`, que no desaparece.
+- **🟡-C, los clasificadores del front (Y12-Y14):** sin cambios — `jobDocsReparto.js`,
+  `invoicesView.js`, `app.js` siguen distinguiendo `factura | justificante | no`. Sin usuarios
+  reales en modo `justificante` desde SCRUM-1027, la pregunta ③ del 8-sep (línea 968: ¿el
+  veredicto sobrevive con dos valores?) se contesta más fácil: **sí, sin degradar nada**, porque
+  hoy mismo ya no hay ningún caso real que produzca `'justificante'`.
+- **🔴-B a 🔴-E (el filtro, los 34 rótulos, los datos históricos con `JUST` dentro, la unión
+  cerrada de `tipoDocumento.ts`):** **sin cambios, y siguen siendo la parte que de verdad decide
+  el fundador.** Ninguna de las cuatro la toca ni la resuelve SCRUM-612c ni SCRUM-1027.
+
+## 4 · Qué se lleva por delante, en una frase cada uno (lo que pedía el encargo)
+
+- **El filtro `invoiceAdmin.ts:40`** (`type: { not: 'JUST' }`): deja de excluir nada el día que
+  no queden filas `JUST` — pero **hoy SÍ quedan** (merchant 18, creado el 20-sep 20:42Z, y lo que
+  hubiera en staging/producción antes del borrado de fase 1). Retirarlo antes de que esas filas se
+  resuelvan (¿se conservan, se re-etiquetan, se anulan?) las destaparía en cualquier listado.
+- **La serie `J-`** (`RECEIPT_NUMBER_PREFIX`, `makeReceiptNumber`, `isReceiptNumber`,
+  `reservarReferenciaJustificante`): sin llamador vivo desde SCRUM-1027 (§2). Retirarla del todo
+  exige antes resolver la pregunta ① del 8-sep (línea 946): ¿el RECONOCEDOR se queda —sin
+  generador— para que un `J-` histórico se siga identificando en `email_messages`, `audit_log`,
+  `whatsapp_messages`, que la fase 1 decidió no borrar?
+- **Los clasificadores** (`jobDocsReparto.js`, `invoicesView.js`, `app.js`,
+  `modoDocumentoSuelto`): pasan de tres valores reales a dos, con el tercero ya inalcanzable desde
+  hoy (§3). Angostar el TIPO en TypeScript es cambio de código (regla 38); dejarlo en tres valores
+  con el tercero muerto es más barato y no rompe nada — es una decisión de estilo, no de producto,
+  y no la tomo aquí.
+
+## 5 · Los rótulos que ve el usuario — sin cambios, re-confirmados
+
+Los **34** censados el 8-sep (§2 cubo 🔴-C de este fichero, líneas 819-849: 17 en el panel, 5 en el
+PDF, 1 en una respuesta de API, 11 que llegan al cliente final) **no se han tocado por SCRUM-612c
+ni por SCRUM-1027** — verificado hoy leyendo el diff de ambos: ninguno de los dos toca
+`rotulosDelDocumento.js`, `pdf.service.ts`, `email.service.ts`, `receipt.routes.ts`,
+`invoiceWhatsApp.service.ts` ni `invoiceReminder.service.ts`. Siguen bajo las reglas 30 y 39, cada
+uno con su firma pendiente, y **ninguno se propone aquí**.
+
+## 6 · Qué decide Javier exactamente al firmar
+
+Con la pregunta ⓪ del 8-sep ya resuelta (§0), lo que queda para la firma es más corto que lo que
+pedía el expediente original:
+
+1. **¿Se retira el TIPO `JUST` del código, ahora que su único camino de producción está cerrado
+   (pendiente de mergear SCRUM-1027)?** Si sí, se ejecuta el orden de §5 del apéndice de 8-sep
+   (líneas 1079-1116), que sigue siendo válido tal cual — con la salvedad de que el paso 4 (abrir
+   Y10-Y11) **se retira del orden**, porque §0 de este apéndice ya dice que no hay nada que abrir.
+2. **Pregunta ① (8-sep):** el reconocedor `isReceiptNumber` — ¿se retira entero, o se queda sin
+   generador para identificar los `J-` históricos que la fase 1 decidió no borrar?
+3. **Pregunta ②:** el filtro `invoiceAdmin.ts:40` y su guard `scrum442` — ¿se retiran juntos
+   (misma decisión, mismo PR — regla 41), y qué pasa con las filas `JUST` que ya existen mientras
+   tanto?
+4. **Pregunta ⑤:** `CLASES_DE_CORREO.justificante` y `meta.tipoFactura: 'JUST'` del `AuditLog` —
+   ¿se conservan como valor histórico que se lee y no se escribe, o se retiran de las uniones?
+5. **Pregunta ⑥:** `tipoDocumento.ts:52` (`'F1' | 'R1' | 'JUST'`) — ¿sale `JUST` de la unión, o se
+   queda como tipo conocido y no declarable?
+6. **Los 34 rótulos (§5):** cada uno, su literal, su firma — regla 30/39, sin agrupar.
+
+**Y una pregunta nueva, que no estaba en el 8-sep porque entonces no tenía sentido:** ¿se ejecuta
+esto **antes o después** de que Javier decida sobre el PR #1608 de SCRUM-1027? Este expediente
+**asume que SCRUM-1027 se mergea primero** — es lo que convierte G1-G4/G7 en código muerto (§2) y
+retira la pregunta ④ (§0). Si SCRUM-1027 no se mergea, o se decide de otra forma, esta
+reconciliación entera deja de aplicar y el expediente de 8-sep vuelve a ser el vigente tal cual.
+
+---
+
+## 7 · Lo que NO se ha tocado en esta sesión
+
+- Ninguna línea de código de `src/`, `public/`, `scripts/`, `prisma/schema.prisma`.
+- Ningún rótulo (reglas 30/39). Los 34 siguen sin firma.
+- `docs/YAQU_MASTER.md`: sólo LEÍDO, para re-contar sus menciones a «justificante» — cero líneas
+  escritas.
+- Las seis preguntas de la §3 del apéndice de 8-sep: **ninguna contestada aquí tampoco.**
+- El texto del cambio de máster de §4 del apéndice de 8-sep (líneas 1006-1076): no se ha
+  reescrito. Sigue siendo el borrador vigente para 4.b/4.c/4.d; 4.a (el cierre de la excepción THE
+  PIONEER por generalización) **queda obsoleto por §0 de este apéndice** — ya no se generaliza
+  nada — y se marca así aquí para que nadie lo pegue tal cual.
+- Ninguna base: ni dev, ni staging, ni producción.
