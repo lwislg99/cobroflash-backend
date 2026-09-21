@@ -34,9 +34,11 @@
 //   J · (SCRUM-920d) «Nuevo gasto» FIJO ABAJO A 390 PX, y sólo ahí: es el MISMO botón (id, atajo «N»), a ancho
 //        completo, quieto mientras la lista se recorre, sin tapar la última fila, POR DEBAJO del modal; a 1280
 //        vuelve arriba junto al «⬇ CSV». Y la primera fila entra en la primera pantalla.
+//        (SCRUM-920j) Y el «?» flotante de ayuda NO lo tapa: un doble con el `cssText` de `tutorial.js`, rejilla de 27 puntos.
 //
 // Fuera de `npm test`, como el resto de guards de navegador: la suite no arranca navegador.
 // Salidas: 0 de acuerdo · 1 he encontrado un defecto · 2 NO SUPE MIRAR · 3 no arrancó el navegador.
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
@@ -46,6 +48,8 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // `GASTOS_PUBLICO` existe para el CONTROL EN ROJO: apuntarlo a un `public/` con la lista de antes (la
 // tabla) y comprobar que el guard cae. Sin ella, el `public/` de este árbol.
 const PUBLICO = process.env.GASTOS_PUBLICO || path.join(RAIZ, 'public');
+// SCRUM-920j · el «?» flotante lo pinta `tutorial.js`; el bloque J lee de aquí su `cssText` para pintar un doble fiel.
+const tutorialJs = fs.readFileSync(path.join(PUBLICO, 'dashboard', 'js', 'tutorial.js'), 'utf8');
 
 let fallos = 0;
 let ciego = 0;
@@ -706,11 +710,45 @@ J390: {
   if (!a.mismoBoton) mal('hay más de un botón #exp-new-btn: «Nuevo gasto» tiene que ser UNO (el del atajo «N»)');
   else if (a.posicion !== 'fixed') mal(`390px · la barra de «Nuevo gasto» no es fija (position: ${a.posicion})`);
   else if (a.bottom > a.alto || a.bottom < a.alto - 24) mal(`390px · «Nuevo gasto» no está pegado al borde de abajo: bottom ${a.bottom} en una pantalla de ${a.alto}`);
-  else if (a.width < a.ancho - 40) mal(`390px · «Nuevo gasto» no va a ancho completo: ${a.width} px de ${a.ancho}`);
+  // SCRUM-920j · «a ancho completo» pasa a «hasta el hueco del ?»: la barra deja 78 px a la derecha (el «?» flotante
+  // mide 48 y va a 20 del borde). El umbral baja de `ancho - 40` a `ancho - 100`; lo que vigila que el botón no se
+  // acorte más de la cuenta es ahora el límite de abajo, y lo que vigila que no tape es el bloque del «?».
+  else if (a.width < a.ancho - 100) mal(`390px · «Nuevo gasto» no va a ancho completo (menos el hueco del «?»): ${a.width} px de ${a.ancho}`);
   else if (!a.encima) mal('390px · algo tapa a «Nuevo gasto»: el punto central del botón no es el botón');
   else bien(`390px · «Nuevo gasto» va fijo abajo, a ${a.width} px de ${a.ancho}, pegado al borde (bottom ${a.bottom} de ${a.alto}) y nada lo tapa`);
   if (a.csvDentro || a.csvTop > 200) mal(`390px · «⬇ CSV» no se queda arriba (dentro de la barra: ${a.csvDentro}, top ${a.csvTop})`);
   else bien(`390px · «⬇ CSV» se queda arriba (top ${a.csvTop}), fuera de la barra`);
+  // SCRUM-920j · 🔴 EL «?» DE AYUDA NO TAPA «NUEVO GASTO». `#tut-help-btn` (`tutorial.js`: fijo, 48 px, a 20 del
+  // borde, z 350) lo pinta `tutorial.js`, que este banco no carga; en staging a 390 tapaba 1.632 px² del botón. Aquí
+  // va un DOBLE con el MISMO `cssText`, leído del fichero servido (si `tutorial.js` cambia, el doble cambia con él) y
+  // se mira con `elementFromPoint` en una rejilla de 27 puntos del botón.
+  const fabCss = /btn\.id = 'tut-help-btn';[\s\S]*?btn\.style\.cssText = `([^`]*)`/.exec(tutorialJs)?.[1];
+  if (!fabCss) nosupe('390px · no encuentro el `style.cssText` de `#tut-help-btn` en `tutorial.js`: no puedo pintar el «?» para ver si tapa');
+  else {
+    const fab = await page.evaluate((css) => {
+      const n = document.createElement('button');
+      n.id = 'tut-help-btn';
+      n.style.cssText = css;
+      n.textContent = '?';
+      document.body.appendChild(n);
+      const r = n.getBoundingClientRect();
+      const b = document.getElementById('exp-new-btn').getBoundingClientRect();
+      const en = (x, y) => document.elementFromPoint(x, y);
+      // CONTROL POSITIVO del instrumento: el doble se ve a sí mismo en su centro; si no, nada de lo que sigue vale.
+      const siMismo = en(r.left + r.width / 2, r.top + r.height / 2) === n;
+      // Una REJILLA de 9×3 y no las cuatro esquinas y el centro: el «?» es un CÍRCULO y esos cinco puntos caían fuera
+      // de él aun con 1.632 px² de solape (medido en la primera pasada de este bloque: «0 de 5 puntos» con el defecto).
+      const puntos = [];
+      for (let i = 0; i <= 8; i += 1) for (const f of [0.25, 0.5, 0.75]) puntos.push([b.left + 2 + (i / 8) * (b.width - 4), b.top + f * b.height]);
+      const tapados = puntos.filter(([x, y]) => en(x, y) === n).length;
+      const solape = Math.max(0, Math.min(r.right, b.right) - Math.max(r.left, b.left)) * Math.max(0, Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top));
+      n.remove();
+      return { siMismo, tapados, solape: Math.round(solape), fabLeft: Math.round(r.left), btnRight: Math.round(b.right) };
+    }, fabCss);
+    if (!fab.siMismo) nosupe('390px · el doble del «?» no se ve a sí mismo en su centro (algo lo tapa o no se pinta): la medida de abajo no vale');
+    else if (fab.tapados > 0 || fab.solape > 0) mal(`390px · el «?» de ayuda TAPA a «Nuevo gasto»: ${fab.tapados} de 27 puntos del botón y ${fab.solape} px² (el botón acaba en x=${fab.btnRight} y el «?» empieza en x=${fab.fabLeft})`);
+    else bien(`390px · el «?» de ayuda no toca «Nuevo gasto»: 0 de 27 puntos tapados, 0 px² de solape (el botón acaba en x=${fab.btnRight}, el «?» empieza en x=${fab.fabLeft})`);
+  }
   if (a.recorrible < 60) nosupe(`390px · la página sólo se recorre ${a.recorrible} px: no puedo comprobar que la barra se queda quieta`);
   else {
     await page.evaluate(() => window.scrollTo(0, document.scrollingElement.scrollHeight));
