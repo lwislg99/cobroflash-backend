@@ -378,8 +378,14 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // identidad (firmas de los dos árboles): faltan el subtítulo `p.quotes-desc` y los dos botones que
   // se van al menú «⋯» de arriba («Limpiar formulario», «💾 Guardar como plantilla»), y sobran
   // `div.quotes-header-row` y el `button.overflow-trigger` «⋯». El título es el mismo `h2`.
+  // 🔴 SCRUM-979 · 21-sep-2026 · `renderCustomersView` 69 → 78, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. Los nueve, POR IDENTIDAD (firmas etiqueta + clase de los dos árboles,
+  // `origin/main` 3ac838a5 contra la rama), y en el otro lado no falta nada: el `select.input` del
+  // filtro por última visita (1) con sus 4 `option` («Cualquier fecha de visita» y 6/12/24 meses),
+  // el `th` de «Última visita» (1, `col-hide-mobile`) y su casilla en el selector de columnas
+  // (`label.columnas-opcion` + `input` + `span` = 3).
   for (const [vista, nodos] of [['renderQuotesView', 244], ['renderProductsView', 166],
-    ['renderCustomersView', 69], ['renderHomeView', 144]]) {
+    ['renderCustomersView', 78], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
