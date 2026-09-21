@@ -808,3 +808,33 @@ tocó para ponerlo verde por sí solo.
   ANTES de comitear a «el prototipo aprobado». 🔒 *Una firma no se atribuye a un comentario que no se ha
   releído.*
 - **La primera M16 del instrumento** (arriba): un verde que no era del test.
+
+### La suite completa (con el TURNO del orquestador, 21-sep-2026)
+
+*14:43 GMT (cabecera `Date:` de `gh api -i zen`) · TAP a un fichero FUERA del árbol, `FORCE_COLOR` fuera del
+entorno, memoria medida aparte (5.887 MB libres, umbral 2.200, ninguna otra suite en marcha).*
+
+| pasada | árbol | tests | pass | fail | skipped |
+|---|---|---|---|---|---|
+| 1.ª | `bc6b8b0902bc50206ecec5b60d39a0b238287a87` | 7.911 | 7.791 | **5** | 115 |
+| 2.ª (la final) | `8317144bb809bba4817fcba52bfeb49c69a13339` (con `origin/main` 840b7c56 dentro) | 7.911 | 7.793 | **3** | 115 |
+
+- **Los dos rojos míos de la 1.ª pasada**, arreglados en el CÓDIGO y no en el guard: `scrum709` (el nombre de
+  la ficha llevaba una «g»: la convención sólo admite dígitos entre `SCRUM-` y la ranura) y `scrum921c` (una
+  ruta de `docs/` partida en dos líneas de comentario, que ese guard lee como procedencia que no lleva a
+  ninguna parte).
+- **Los tres que quedan son `scrum939b` ×3, y son AJENOS**: «la ruta de `gh` sale CIERTA y esa ruta no
+  existe». Medido en un worktree limpio de `origin/main` (`840b7c5668d79c991751be3bb73a7445114d9974`, sin nada
+  mío): fallan **los mismos tres**. Dependen de dónde está `gh` en esta máquina (fuera del PATH); no se han
+  tocado. El CI de Linux dirá si allí pasan.
+- **`npm run guards:entrada`**: 11 guards en verde · 95 tests · 95 pass · 0 fail (8,9 s).
+- **Población:** la de la suite completa de `main` (7.911 tests declarados por el propio reporter); los 115
+  `skipped` declaran su motivo en el TAP y no se han contado uno por uno aquí.
+
+### Un error más, ya con la suite en la mano
+
+Para medir `origin/main` sin mi rama monté un worktree temporal con junctions a `node_modules` y `dist`, y lo
+desmonté con `git worktree remove --force` **antes** de desenlazar las junctions: vació `node_modules` y `dist`
+de `wt-917g`. No tocó a ningún otro worktree (los demás tienen los suyos) y se recuperó con `npm ci` y
+`npm run build`; después se repitió la suite completa. 🔒 *Un aviso escrito en el traspaso propio no protege si
+no se convierte en el orden de los comandos.*
