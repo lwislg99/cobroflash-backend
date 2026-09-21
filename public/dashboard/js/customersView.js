@@ -250,10 +250,11 @@ function renderCustomersView(container) {
   // Mismo componente y misma conducta que el de etiquetas: se oculta si ningún cliente del lote
   // tiene visita (un control que no puede filtrar nada no se ofrece). Textos firmados, en la pieza.
   const visitaSelect = document.createElement("select");
-  visitaSelect.className = "input";
   // Sin el tope de 220 px de los otros dos: a 390 px cortaba «Sin visitar desde hace 12 m…»
-  // (medido en Edge). Mide lo que su opción más larga y nunca más que la barra.
-  visitaSelect.style.cssText = "max-width:100%";
+  // (medido en Edge). Mide lo que su opción más larga y nunca más que la barra — clase en
+  // styles.css (`.customers-filtro-visita`), no `style.cssText` (SCRUM-713c: ese trinquete
+  // no sube; cayó en rojo en el CI de este PR al escribirlo así la primera vez).
+  visitaSelect.className = "input customers-filtro-visita";
   // Nace OCULTO: hasta que llega el lote no se sabe si hay visitas, y un filtro visible sobre los
   // esqueletos de carga se puede pulsar sin efecto (medido en Edge a 390 px).
   visitaSelect.hidden = true;
