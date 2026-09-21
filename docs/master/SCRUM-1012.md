@@ -1,5 +1,7 @@
 # SCRUM-1012 · Diseño de producto: CRM mega pulido y apartado de Contabilidad
 
+**Medido contra:** `origin/main` = `6db52e1661ca63562ff082a45f970ad29be26ac9` · 2026-09-21T15:07:00Z
+
 **Estado (21-sep-2026, cierre por fin de uso): BORRADOR entregado en la rama, sin tickets creados en Jira.** Sesión `sd-21` (diseño de producto), sin código de producto.
 
 - **Base medida:** `origin/main` = `6db52e1661ca63562ff082a45f970ad29be26ac9` (`Merge pull request #1588`), worktree `sd-21`, solo lectura; hora local de la máquina 21-sep-2026 ~15:07 UTC (reloj ≈5 min por delante de GitHub).
