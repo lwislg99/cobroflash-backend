@@ -795,3 +795,239 @@ SOBRA en 915i:  DIV.quotes-header-row
 - `merchantInfo` («datos de empresa» en la izquierda): no es de este corte.
 - La suite completa: no corrida (norma de la tanda); la corre el PR.
 - Staging: sin recorrer.
+
+## SCRUM-915g · «Ajustes del documento» del justificante, en «Revisar y emitir»
+
+**Fecha:** 21-sep-2026 12:28:00 GMT · **Carril:** S2 (frontend) · **Corte:** 5.º de la partición aprobada
+**Medido contra:** `origin/main` = `b980a38201357492e8a30b97076f5b49bb17154d` (mergeado en la rama; al empezar era `092ccb5a4742ba8c7cc4b1c47b7c62303d713f76`)
+**Rama:** `scrum-915g-ajustes-del-documento`, sobre `main` (915h y 915i ya estaban dentro)
+**Instrumento:** `scripts/guard-915g-ajustes-del-justificante.mjs` (`npm run guard:ajustes-del-justificante`)
+**Microcopy:** `docs/microcopy/2026-09-21-SCRUM-915-ajustes-del-justificante.md` (comentario 15868)
+
+### Qué entra (la fila del PASO 0 «mismo editor sin condiciones/envío/descuentos»)
+
+| | antes | ahora |
+|---|---|---|
+| IVA por defecto del justificante | **suelto en Conceptos** (el justificante no tiene paso de Condiciones donde vivir) | dentro de la fila **«Ajustes del documento»**, en el último paso «Revisar y emitir» |
+| la fila | no existía | **cerrada** por defecto, con resumen **«IVA por defecto 21 %»**, galón ▸/▾ y «Cambiar»/«Listo» que la abren y cierran **en la página**, sin modal |
+| dónde va en el paso | — | entre la frase guía y la línea que resume el cliente (el orden de la v3: `editor-presupuesto.html`, `filaAjustes` y `pasoEnviar`) |
+| el presupuesto | fila «Ajustes del documento» en Condiciones | **igual**: no se toca |
+
+La sonda del PASO 0 (`scripts/sonda-915-inventario-v3.mjs`) sobre la rama: la fila del justificante
+pasa de 🟡 a **✅ ya está**, y el recuento a **29 ya · 2 parcial · 8 falta · 9 no medible = 48 de 48**.
+(Antes 28 · 3 · 8 · 9.) La sonda reescribe `paso0-medido.json` al correr; ese fichero es la foto del
+PASO 0 y se devolvió a HEAD antes de comitear. Su predicado pide **las dos mitades** —la fila en Revisar
+Y el IVA fuera de Conceptos—: con sólo la primera, un IVA visible en los dos sitios habría salido «hecho».
+
+**Decisiones que no son obvias**
+
+- **No se reutiliza `blockDelivery`.** Es la fila del PRESUPUESTO y recibe sin condición los datos del
+  cliente, la descripción y el pie de Condiciones (`docFieldsWrapper`, `descWrapper`,
+  `pasoCondicionesPie`): en un justificante enseñaría controles cuyo dato el emisor descarta (SCRUM-616).
+  Hay un bloque propio (`ajustesSuelto`), con las clases que ya tienen regla (`quote-ajustes`,
+  `quote-fila__valor`, `quote-paso__cambiar`), que cuelga de `blockActions` bajo `if (esDocumentoSuelto)`.
+- **Cambiar el IVA en Revisar NO toca las líneas que ya hay**, sólo las que se añadan después: es lo
+  que hace `alCambiarElIvaPorDefecto` desde siempre y lo que aprobó el prototipo. En «Revisar y emitir»
+  ya no se añaden líneas, así que el ajuste sólo tiene efecto si el profesional vuelve atrás. No se ha
+  inventado otro comportamiento.
+- **Un paso cerrado no enseña la fila.** El paso cerrado esconde sus hijos por lista
+  (`.quote-paso.is-cerrado …`), y el bloque anidado no estaba en ella: asomaba su título con
+  «Revisar y emitir» cerrado. Se añade `.quote-paso.is-cerrado .quote-ajustes` (una línea de CSS).
+
+### El rojo, y los mutantes
+
+`guard:ajustes-del-justificante` con el `public/` de `main` (`092ccb5a`) en un worktree aparte
+(`wt-915g-rojo`, desechado después): **6 hallazgos en 6 de 6 casos**, `EXIT=1` — el IVA se ve en
+Conceptos, no hay fila en Revisar, «Cambiar» no encuentra la fila, y D, E y F no tienen fila que
+cambiar, enseñar ni tocar a 390 px. **Verde con la rama: 6/6, `EXIT=0`.** Con el guard y el código ya
+comiteados en local (esos commits se fundieron en uno antes del primer push, así que su SHA no consta:
+lo que consta es que cada mutante se devolvió a HEAD y `git diff --numstat` quedó vacío después de cada uno):
+
+| mutante | resultado |
+|---|---|
+| M1 · el campo vuelve a Conceptos | **cae**: A y C (y E queda ciega: la fila abierta no trae su rótulo) |
+| M2 · «Cambiar» sin enlazar a la fila del suelto | **cae**: 5 hallazgos (llega sin `aria-expanded`, no abre, no dice «Listo») |
+| M3 · sin la regla CSS del paso cerrado | **cae**: A, «asoma con Revisar cerrado», en los pasos 1 y 2 |
+| M4 · el resumen sin el valor | **cae**: B y D |
+| M5 · la fila DESPUÉS del resumen | **cae**: B, el orden de la v3 |
+| M6 · otro título | **cae**: 5 hallazgos (no hay fila) |
+| M7 · «Cambiar» de 30 px | **cae**: F, el objetivo táctil |
+
+Los siete caen. **Lo que el guard NO mide** y se declara en vez de darlo por cubierto: que el valor
+elegido llegue a las líneas nuevas (lo hace `addLine`, que este corte no toca); aquí sólo se mide que
+el selector viaje al resumen.
+
+### Censos y guards que cambian, cada uno con su motivo en el propio fichero
+
+| fichero | qué exigía | por qué cambia |
+|---|---|---|
+| `guard-pasos-del-editor` (l. 38 y 381) | «en el justificante el IVA por defecto tiene que seguir en Conceptos (hasta 915g)» | **invertido**: en Conceptos NO se ve. Lo que la fila hace al pulsarla lo mide su guard nuevo |
+| `sonda-915-inventario-v3` | fila del justificante «parcial» con el IVA en Conceptos | «ya está» sólo con las dos mitades |
+| `scrum600b` | «Ajustes del documento» **prohibido** en el documento suelto | sale de la lista de prohibidos y se vigila **por identidad**: UNA fila con ese título y «IVA por defecto» dentro. Siguen prohibidos, por su nombre, los controles del bloque viejo (dirección de la obra, IVA del presupuesto) |
+| `scrum600g` (④) | ningún bloque de Condiciones/Ajustes en el suelto | ahora exactamente `['Ajustes del documento']`: «Condiciones» sigue fuera, y el suelo (en el presupuesto están los dos) no cambia |
+| `scrum601` | «Solo presupuesto…» en `quotesView.js:890` | **911**, medido con el propio censo. La trampa del ancla por número, otra vez. Los rótulos que entran no salen «a pelo» |
+| `scrum548` | 2× `#invoices-new` | 3×: el guard nuevo abre sólo el documento suelto; no comparte página con el editor de presupuestos |
+| `scrum522` · `_guards-de-navegador-declarados` | — | el guard se apunta en su propia línea (SCRUM-970) y deja su comentario |
+| `scrum697` · `scrum698` | 244 nodos | **no cambian**, medido: montan el PRESUPUESTO y la fila sólo se cuelga en el suelto; pasan sin tocarlos |
+
+### Medido
+
+- `npm run build` 0 (tras mergear `main`, que traía un cambio en `src/`).
+- **143 ficheros** de `tests/` que leen `quotesView`, `vat_default`, `renderQuotesView`, el banco de
+  vistas, la lista declarada de guards o el guard de pasos: **1.414 tests, 1.414 pass, 0 fail**,
+  `NODE_EXIT=0` (TAP a un fichero fuera del árbol; la primera pasada, antes de re-anclar, dio 1.399
+  con **4 rojos**: `scrum548`, `600b`, `600g` y `601`).
+- Y otros **193 ficheros** que leen `styles.css`, `package.json`, el microcopy, los guards o
+  `SCRUM-915`, sin repetir los de arriba: **1.879 tests, 1.872 pass, 0 fail, 7 saltados** (los saltos
+  declaran su motivo), `NODE_EXIT=0`. En total 336 ficheros; **no es la suite completa**.
+- `npm run guards:entrada` (corrido DESPUÉS de escribir este expediente): 11 guards, **95 tests, 0
+  fallos**, `EXIT=0`.
+- Guards de navegador del editor, todos `EXIT=0`: `pasos-del-editor` (3 casos), `cabecera-del-editor` (4),
+  `conceptos-limpios` (5), `documento-vivo` (8) y el nuevo (6).
+
+### Errores propios
+
+1. **Mi primer script de mutación dejó `quotesView.js` MUTADO en disco.** Lanzaba `node … 2>&1` bajo
+   `$ErrorActionPreference='Stop'` (PS 5.1): la primera línea de stderr lo abortó a mitad del M1, con
+   el mutante ya escrito y sin restaurar. Lo cacé porque miré `git status` justo después del error;
+   restauré con `git restore --source=HEAD --worktree`, comprobé `git diff --numstat` vacío y rehíce
+   la tanda ENTERA desde M1 (la salida de arriba es de la segunda).
+2. **La primera versión del guard llamaba «ciego» a «la fila no existe».** Sobre el front de `main`
+   salían 3 hallazgos y 3 ciegos con `EXIT=2`. Pero la ausencia de la fila **es** el hallazgo: el
+   instrumento había llegado (B y C saben verla), lo que faltaba era el producto. Corregido —sólo es
+   ciego lo que existe y no se puede pulsar— y repetido el rojo: 6 hallazgos, 0 ciegos, `EXIT=1`.
+3. **Escribí el orden de la lista de `scrum548` a ojo** (`3×` antes de `2×`) y el test es de cadenas
+   ordenadas: rojo a la primera. El número estaba bien; el orden, no.
+4. **Predije, desde mi traspaso, que `scrum697`/`698` pedirían un re-anclaje por identidad.** No lo
+   piden: cuentan el presupuesto. Lo medí en vez de re-anclarlos por costumbre; un re-anclaje que no
+   hace falta es un número movido sin motivo.
+
+### Lo que NO cubre
+
+- **915j** (cliente por botones), **915k** (los cuatro marcadores) y **915f** (la hoja de envío, que
+  toca el envío y el cobro: STOP hasta un GO escrito del fundador). Cada uno, su corte.
+- El resumen de la fila con un borrador cuyo IVA por defecto no sea un número: si el selector queda
+  vacío, el resumen dice «IVA por defecto» sin cifra ni «%» en vez de inventar un valor. No tiene
+  víctima medida hoy, y no se ha probado en navegador (lo cubre sólo la lectura del código).
+- La suite completa: no corrida en local (norma de la tanda); la corre el PR.
+- Staging: sin recorrer (pide autorización nueva, no se hereda).
+
+## SCRUM-915k · los cuatro marcadores de microcopy, ya firmados
+
+**Fecha:** 21-sep-2026 13:20 GMT (hora de GitHub) · **Carril:** S2 (frontend) · **Corte:** el de los cuatro marcadores de la partición aprobada
+**Medido contra:** `origin/main` = `2ccc333cd94303d044b5a39ff017488c9927d071` (mergeado en la rama; al nacer el corte era `b980a38201357492e8a30b97076f5b49bb17154d`). Después `main` avanzó a `1dd09882fefa41186e9852c5bb39f20d4aa495d8` (#1580, SCRUM-984): 8 ficheros, **ninguno de este corte** (`quoteActionsRegistry.js`, `quotesDetailView.js`, `src/` y tests de 984); no se re-fusionó, el CI prueba el merge.
+**Rama:** `scrum-915k-marcadores-firmados`, sobre `main` (915g ya estaba dentro, #1579)
+**Instrumento:** sin guard nuevo, y es una decisión: son cuatro literales y ya tienen vigilante. Los que caen si vuelven: `scrum586`, `scrum587`, `scrum402`, `scrum755`, la sonda del PASO 0 y `guard:marcadores-en-pantalla`.
+**Microcopy:** `docs/microcopy/2026-09-21-SCRUM-915-marcadores-firmados.md` (comentario 15868)
+
+### Qué entra (la fila del PASO 0 «los cuatro marcadores visibles de hoy»)
+
+| | antes | ahora |
+|---|---|---|
+| rótulo del campo de descripción de la línea | `[PENDIENTE microcopy oficial] descripción` (+ `data-microcopy="PENDIENTE_FUNDADOR"`) | **«Descripción»**; se van la constante `MARCA_DESC_LINEA` y el atributo |
+| botón de la tira «Formas de pago pactadas» | `[PENDIENTE microcopy oficial]` (desde SCRUM-586) | **«Aplicar»** |
+| frase de la tira del descuento pactado | `[PENDIENTE microcopy oficial] · N %` | **«Este cliente tiene pactado un descuento del N %»** |
+| botón de esa tira | `[PENDIENTE microcopy oficial]` (desde SCRUM-587) | **«Aplicar a las líneas»** |
+
+La sonda del PASO 0 (`scripts/sonda-915-inventario-v3.mjs`) sobre la rama: las filas «tira de pagos
+pactados» y «tira del descuento pactado» pasan de 🔴 a **✅ ya está**, y el recuento a **31 ya · 2
+parcial · 6 falta · 9 no medible = 48 de 48**. (Antes, con 915g: 29 · 2 · 8 · 9.) La sonda reescribe
+`paso0-medido.json` al correr; ese fichero es la foto del PASO 0 y se devolvió a HEAD antes de comitear.
+La fila «descripción» **sigue NO MEDIBLE**: la sonda no abre la hoja «Ajustes de la línea» («no encuentro
+la ficha de la linea»). No es de este corte arreglarla.
+
+**Decisiones que no son obvias**
+
+- **`FORMA_DE_PAGO_SIN_APROBAR` baja de 1 a 0 y la constante SE QUEDA**, con su motivo escrito: sigue
+  distinguiendo «no hay marcador» de «lo firmó el fundador», y si entra otro texto sin firma en esa tira
+  tiene dónde subir (misma decisión que `SIN_APROBAR` en `atajoNuevo.js`).
+- **Los censos que contaban estos marcadores se APRIETAN, no se ponen a cero:** la entrada `quotesView.js`
+  se BORRA de `scrum402` y de `scrum755`, y la entrada `quotes-new` se BORRA de
+  `guard-marcadores-en-pantalla.mjs` (estaba a 6). Un censo a 0 deja que esa vista vuelva a subir hasta
+  su techo sin caer; borrado, cualquier marcador nuevo en el editor es un rojo.
+- **`scrum587` se da la vuelta sobre pantalla MONTADA:** elige un cliente con `dtoPorDefecto: 10` y lee la
+  frase entera y el botón entero, con control de que la tira aparece. Leer el fuente no distingue una
+  tira que se pinta de una que se queda oculta.
+- **`scrum601` (ancla por línea) se REGENERÓ, no se calculó.** Al fusionar `main` chocó con la cifra de
+  915g (890→911). Se conservaron las dos explicaciones y se puso una cifra provisional; el propio test
+  dijo `quotesView.js:909`, y ése es el valor escrito.
+- **Los porcentajes decimales salen con punto («7.5 %»)** igual que antes de este corte: no se cambia el
+  formato del número (un cambio de formato es otro texto que firmar).
+
+### El rojo, y las mutaciones
+
+**Rojo con el código de antes:** con el parche inverso de mi commit sobre `quotesView.js` (vuelven los
+marcadores: 6 apariciones del literal `[PENDIENTE`), los cuatro ficheros que lo vigilan caen —**`scrum586`
+2 de 22, `scrum587` 1 de 19, `scrum402` 2 de 7, `scrum755` 2 de 9: 4 de 4 ficheros, 7 fallos, `NODE_EXIT=1`
+en los cuatro**—. Devuelto a HEAD, `git diff --numstat` vacío. Y `guard:marcadores-en-pantalla`, con la
+entrada `quotes-new` aún en el censo, dio `EXIT=1` con «ENTRADA CADUCA» (ver errores propios).
+
+**Mutaciones** (base sin mutar: los mismos tres ficheros, en verde en la tanda de abajo; cada mutante se
+aplica a mano sobre `quotesView.js`, se corre su test y se restaura):
+
+| mutante | test | resultado |
+|---|---|---|
+| M1 · el botón de pagos dice «Usar estas formas de pago» | `scrum586` | **cae** (1 de 22): «el rótulo del BOTÓN es el FIRMADO («Aplicar»)», `actual: 'Usar estas formas de pago'` |
+| M2 · el botón del descuento dice «Aceptar propuesta» | `scrum587` | **cae** (1 de 19): «los DOS textos de la tira son los FIRMADOS» |
+| M3 · la frase dice «Descuento pactado: N %» | `scrum587` | **cae** (1 de 19): el mismo test |
+| M4 · vuelve `[PENDIENTE microcopy oficial] descripción` | `scrum402` | **cae** (2 de 7): R4 y R4b |
+
+Los cuatro caen y cada uno por SU motivo (leído en el TAP, no supuesto). La mutación ⑥ que `scrum586`
+declara (`de: propuestaPagoBtn.textContent = "Aplicar";`) es la misma que M1: hasta hoy sólo la
+comprobaba el test de su declaración, ahora también se ha ejecutado a mano.
+
+### Censos y guards que cambian, cada uno con su motivo en el propio fichero
+
+| fichero | qué exigía | por qué cambia |
+|---|---|---|
+| `scrum402` · `scrum755` | `quotesView.js` con su recuento de marcadores | la entrada se **BORRA** (no a 0): ya no pinta ninguno |
+| `guard-marcadores-en-pantalla` | `quotes-new: 6` | **BORRADA**: «ENTRADA CADUCA», el trinquete APRIETA |
+| `scrum586` | el botón de pagos lleva marcador | invertido: === «Aplicar», contador a 0; la mutación ⑥ pasa a «Usar estas formas de pago» |
+| `scrum587` | tira con marcador | invertido y sobre pantalla montada (ver arriba) |
+| `scrum601` | «Solo presupuesto…» en `quotesView.js:911` | **909**, medido con el propio test tras fusionar |
+| `scrum591` | — | no cambia, medido: pasa sin tocarlo (compara el recuento de marcadores de `quotesView.js` con el censo de `scrum402`, y con la entrada borrada siguen de acuerdo) |
+
+### Medido
+
+- `npm run build` 0 (dos veces: tras el primer merge de `main` y tras el segundo, que traía `src/`).
+- **457 ficheros de 933** de `tests/` que leen `quotesView`, `renderQuotesView`, el banco de vistas, los
+  marcadores, `descuentoPorDefecto`/`formaDePagoPorDefecto`, `quote-propuesta`, el microcopy, `styles.css`,
+  `package.json`, `guard-marcadores`, `customersView` o `filtroClientes`: **4.197 tests, 4.165 pass, 0 fail,
+  32 saltados** (los saltos declaran su motivo), `NODE_EXIT=0` en las tres tandas (TAP fuera del árbol; 457
+  rutas juntas no caben en una línea de comandos de Windows). La primera pasada, antes de fusionar el
+  segundo `main`: 450 de 932, 4.122 · 4.091 · 0 · 31. **No es la suite completa**; la corre el PR.
+- **Guards de navegador del editor, sobre el árbol final, todos `EXIT=0`:** `marcadores-en-pantalla` (27
+  vistas × 3 estados, con su control negativo), `pasos-del-editor` (3 casos), `conceptos-limpios` (5),
+  `cabecera-del-editor` (4), `documento-vivo` (8), `ajustes-del-justificante` (6).
+- `npm run guards:entrada` (corrido DESPUÉS de escribir este expediente): 11 guards, **95 tests, 0
+  fallos**, `EXIT=0`.
+
+### Errores propios
+
+1. **`b6c48dce` —mi commit del corte, hecho por la sesión anterior— dejaba en ROJO
+   `guard:marcadores-en-pantalla`** y no lo sabía nadie: ese guard no está en `npm test`, sólo lo pone
+   en rojo el navegador («ENTRADA CADUCA: `quotes-new` ya no pinta ningún marcador»). Lo cacé porque el
+   traspaso mandaba correr los guards de navegador antes de empujar; con los tests en verde habría
+   entrado un PR que rompe un guard que corre en el CI.
+2. **Mi script de mutación no aplicó dos de los cuatro mutantes.** PowerShell 5.1 lee los `.ps1` sin BOM en
+   la página ANSI y los acentos («líneas», «Descripción») no casaban; y al arreglarlo con `í` la
+   herramienta de edición convirtió el escape en el carácter, así que falló igual. Lo cacé porque el
+   script cuenta las apariciones del texto a mutar ANTES de escribir y dijo «0 veces»: sin ese control
+   habría corrido el test sobre el código sin mutar y lo habría leído como «el mutante no cae». Se
+   arregló con `[char]0xED` y `[char]0xF3`.
+3. **El parche inverso para el rojo no aplicaba** porque lo escribí con `Set-Content` (BOM y CRLF). Se
+   regeneró con `git diff --output=`; `git apply -R --check` antes de aplicar, no después.
+4. **Escribí la ficha de microcopy con la primera tanda a medias**, así que `scrum514` pudo correr antes
+   de que existiera. Por eso la tanda que vale es la SEGUNDA, posterior al último cambio de código y de
+   ficha.
+
+### Lo que NO cubre
+
+- **La ayuda firmada «Sale bajo el concepto si en Opciones marcas «Incluir descripción en el PDF».»**: la
+  firmó el mismo comentario 15868 pero NO es de los cuatro marcadores, y este corte no la construye.
+- **«Descripción» pintado, en navegador:** la sonda no abre la hoja «Ajustes de la línea», así que el
+  rótulo se vigila en el fuente (`scrum402`, M4) y no en el DOM. Declarado, no dado por cubierto.
+- **915j** (cliente por botones), **915f** (la hoja de envío, que toca el envío y el cobro: STOP hasta un
+  GO escrito del fundador). Cada uno, su corte.
+- La suite completa: no corrida en local; la corre el PR.
+- Staging: sin recorrer (pide autorización nueva, no se hereda).

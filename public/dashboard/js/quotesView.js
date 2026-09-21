@@ -19,8 +19,6 @@ let quoteFormCreatedVia = 'text';
  *
  * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
  */
-const MARCA_DESC_LINEA = '[PENDIENTE microcopy oficial]'; // SCRUM-632
-
 function renderQuotesView(container, template, documentoSuelto) {
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
@@ -811,8 +809,15 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   //
   // 🔴 SCRUM-915d · EN EL PRESUPUESTO, LOS DOS IVA SE VAN A «AJUSTES DEL DOCUMENTO» (v3 aprobada):
   // deciden cómo sale el documento y casi nunca se tocan, y en el paso Conceptos la v3 deja sólo
-  // las líneas. En el DOCUMENTO SUELTO el IVA por defecto SE QUEDA en Conceptos —no tiene paso de
-  // Condiciones donde vivir— hasta que 915g rehaga su último paso.
+  // las líneas. En el DOCUMENTO SUELTO no hay paso de Condiciones donde vivir, así que hasta 915g el
+  // IVA por defecto se quedó en Conceptos.
+  //
+  // 🔴 SCRUM-915g · YA NO: en el justificante el IVA por defecto es la fila «Ajustes del documento»
+  // del ÚLTIMO paso, «Revisar y emitir» (v3 aprobada: `docs/prototipos/SCRUM-915/editor-presupuesto.html`,
+  // `filaAjustes`, donde en el justificante va ANTES de la línea de resumen del cliente). Llega
+  // CERRADA, con su resumen «IVA por defecto 21 %» y un «Cambiar» que la abre EN LA PÁGINA, sin modal.
+  // No se reutiliza `blockDelivery`: es la fila del PRESUPUESTO, y las tres cosas que recibe sin
+  // condición (datos del cliente, descripción, pie de Condiciones) no existen en un justificante.
   //
   // Son DOS filas y no una fila con dos padres, a propósito: el censo de orden (SCRUM-286) coloca
   // cada nodo bajo el PRIMER padre que visita, y una sola fila colgada de Líneas y de Ajustes
@@ -820,9 +825,23 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   const linesVatRow = document.createElement("div");
   linesVatRow.className = "quote-form-row";
   blockDelivery.appendChild(linesVatRow);
+  const ajustesSuelto = document.createElement("div");
+  ajustesSuelto.className = "quote-ajustes";
+  const ajustesSueltoTitulo = document.createElement("h3");
+  ajustesSueltoTitulo.className = "quote-block-title";
+  ajustesSueltoTitulo.textContent = "Ajustes del documento";
+  ajustesSuelto.appendChild(ajustesSueltoTitulo);
+  const ajustesSueltoValor = document.createElement("span");
+  ajustesSueltoValor.className = "quote-fila__valor";
+  ajustesSuelto.appendChild(ajustesSueltoValor);
+  const ajustesSueltoBoton = document.createElement("button");
+  ajustesSueltoBoton.type = "button";
+  ajustesSueltoBoton.className = "quote-paso__cambiar";
+  ajustesSueltoBoton.textContent = "Cambiar";
+  ajustesSuelto.appendChild(ajustesSueltoBoton);
   const sueltoVatRow = document.createElement("div");
   sueltoVatRow.className = "quote-form-row";
-  if (esDocumentoSuelto) blockLines.appendChild(sueltoVatRow);
+  if (esDocumentoSuelto) ajustesSuelto.appendChild(sueltoVatRow);
   if (esDocumentoSuelto) sueltoVatRow.appendChild(fieldVatDefault.wrapper);
   else linesVatRow.appendChild(fieldVatDefault.wrapper);
   // SCRUM-656: al lado del IVA por defecto, que es su misma familia de decisiones.
@@ -1179,7 +1198,12 @@ descWrapper.appendChild(descLabel);
     // 🔴 6-sep-2026 · BAJA DE 2 A 1. El asesor FIRMÓ el texto de la tira; el rótulo del BOTÓN sigue
     // sin firmar y por eso esto no baja a 0. Que el contador siga en pie con un 1 es justo lo que
     // impide leer «ya no hay marcador que me estorbe» como «ya está aprobado todo».
-    const FORMA_DE_PAGO_SIN_APROBAR = 1;
+    //
+    // 🔴 SCRUM-915k · 21-sep-2026 · BAJA DE 1 A 0. El comentario 15868 de SCRUM-915 firmó el rótulo del
+    // botón, «Aplicar», y su marcador se retiró en el mismo commit. La constante SE QUEDA aunque valga
+    // cero —misma decisión que `SIN_APROBAR` en `atajoNuevo.js`—: sigue distinguiendo «no hay marcador»
+    // de «lo firmó el fundador», y si entra otro texto sin firma en esta tira tiene dónde subir.
+    const FORMA_DE_PAGO_SIN_APROBAR = 0;
     void FORMA_DE_PAGO_SIN_APROBAR; // se declara para que se pueda leer; no lo consume la vista
 
     /**
@@ -1220,13 +1244,11 @@ descWrapper.appendChild(descLabel);
     const propuestaPagoBtn = document.createElement("button");
     propuestaPagoBtn.type = "button";
     propuestaPagoBtn.className = "btn-ghost btn-sm";
-    // 🔴 MARCADOR, NO TEXTO INVENTADO (regla 30), con la grafía que el censo de SCRUM-402 CUENTA
-    // (`[PENDIENTE`): un marcador que el censo no ve es peor que ninguno.
-    //
-    // El rótulo del botón NO estrena literal propio, y es una decisión: el botón del 587 dice
-    // exactamente lo mismo —«acepto la propuesta»— y sigue sin firmar. Abrir un segundo hueco de
-    // microcopy para el mismo acto le daría al asesor dos textos que firmar donde hay UNA frase.
-    propuestaPagoBtn.textContent = "[PENDIENTE microcopy oficial]";
+    // SCRUM-915k · «Aplicar», FIRMADO en el comentario 15868 de SCRUM-915 (sustituye al marcador que
+    // llevó desde SCRUM-586). Es la misma acción que el botón del descuento pactado —«acepto la
+    // propuesta»—, y el fundador firmó un rótulo para cada uno: «Aplicar» aquí, donde lo que se
+    // aplica son unas formas de pago, y «Aplicar a las líneas» allí.
+    propuestaPagoBtn.textContent = "Aplicar";
 
     propuestaPagoWrap.appendChild(propuestaPagoTexto);
     propuestaPagoWrap.appendChild(propuestaPagoBtn);
@@ -1744,11 +1766,9 @@ descWrapper.appendChild(descLabel);
   const propuestaBtn = document.createElement("button");
   propuestaBtn.type = "button";
   propuestaBtn.className = "btn-ghost btn-sm";
-  // 🔴 MARCADOR, NO TEXTO INVENTADO (regla 30): el rótulo lo firma el asesor cuando tenga medida
-  // la caja del campo, y el servidor de medición lleva caído toda la sesión. La grafía es la que
-  // el censo de SCRUM-402 CUENTA (`[PENDIENTE`), para que salga en el recuento y no se quede
-  // dormida: un marcador que el censo no ve es peor que ninguno.
-  propuestaBtn.textContent = "[PENDIENTE microcopy oficial]";
+  // SCRUM-915k · «Aplicar a las líneas», FIRMADO en el comentario 15868 de SCRUM-915: sustituye al
+  // marcador que este botón llevó desde SCRUM-587 mientras el asesor no firmaba nada.
+  propuestaBtn.textContent = "Aplicar a las líneas";
 
   propuestaWrap.appendChild(propuestaTexto);
   propuestaWrap.appendChild(propuestaBtn);
@@ -1821,9 +1841,9 @@ descWrapper.appendChild(descLabel);
     if (alcance <= 0) { propuestaWrap.hidden = true; return; }
     propuestaWrap.hidden = false;
     propuestaWrap.dataset.pct = String(pct);
-    // 🔴 MARCADOR también aquí: el texto que enuncia el acuerdo es microcopy sin firmar. El dato
-    // —el porcentaje— sí es del profesional y se enseña, porque es lo que le deja decidir.
-    propuestaTexto.textContent = "[PENDIENTE microcopy oficial] · " + pct + " %";
+    // SCRUM-915k · la frase FIRMADA (comentario 15868 de SCRUM-915) con el dato del profesional, el
+    // porcentaje, que es lo que le deja decidir: «Este cliente tiene pactado un descuento del N %».
+    propuestaTexto.textContent = "Este cliente tiene pactado un descuento del " + pct + " %";
   }
 
   propuestaBtn.addEventListener("click", function () {
@@ -1888,6 +1908,11 @@ descWrapper.appendChild(descLabel);
     ? "Revisa el documento y, si está bien, emítelo."
     : "Revisa el documento y, si está bien, envíaselo al cliente por WhatsApp.";
   blockActions.appendChild(pasoRevisarGuia);
+  // SCRUM-915g · «Ajustes del documento» del justificante, ENTRE la guía y el resumen (orden de la
+  // v3). Se cuelga aquí, bajo `esDocumentoSuelto`, y no en una función anidada: el censo de orden
+  // (SCRUM-286) lee los `appendChild` de este fichero y un nodo que se cuelga desde dentro de una
+  // función no lo ve.
+  if (esDocumentoSuelto) blockActions.appendChild(ajustesSuelto);
   // Lo que se va a mandar, en una línea: el cliente y cuántos conceptos (y en el presupuesto, cómo
   // se cobra). Son el nombre del cliente y textos firmados o ya existentes, compuestos.
   const pasoRevisarResumen = document.createElement("p");
@@ -3788,12 +3813,12 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     // que invalidara «este producto» se la llevaba por delante. Ahora el `dataset` es sólo el
     // valor que PROPONE el catálogo al elegir; lo que manda es lo que hay en este campo.
     //
-    // 🛑 MICROCOPY PENDIENTE (regla 30): el rótulo nace con marcador y se ve en pantalla a
-    // propósito. Va en `MARCA_DESC_LINEA`, una sola constante, para que la firma lo apague de
-    // golpe. Declarado en el censo de SCRUM-402 y en el de SCRUM-755.
+    // SCRUM-915k · EL RÓTULO YA ESTÁ FIRMADO. Nació con marcador (regla 30) —`MARCA_DESC_LINEA`, una
+    // sola constante para que la firma lo apagara de golpe— y el comentario 15868 de SCRUM-915 lo
+    // firmó: «Descripción». Se van la constante, el marcador y el atributo `data-microcopy`, que
+    // decía «pendiente del fundador» de un texto que ya no lo está.
     // ═══════════════════════════════════════════════════════════════════════════════════
-    const descTd = campoLinea(MARCA_DESC_LINEA + " descripción", "quote-line__descripcion");
-    descTd.dataset.microcopy = "PENDIENTE_FUNDADOR";
+    const descTd = campoLinea("Descripción", "quote-line__descripcion");
     const descInput = document.createElement("textarea");
     descInput.rows = 2;
     descInput.className = "input";
@@ -4856,8 +4881,14 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     { clave: "pagos", fila: filaPagos, detalle: filaPagosDetalle, boton: filaPagosBoton },
     { clave: "validez", fila: filaValidez, detalle: filaValidezDetalle, boton: filaValidezBoton },
     // La de Ajustes no tiene contenedor de detalle: es el bloque entero, y lo que se ve con la
-    // fila cerrada lo decide la hoja de estilos (`.quote-ajustes`).
-    { clave: "ajustes", fila: blockDelivery, detalle: null, boton: filaAjustesBoton },
+    // fila cerrada lo decide la hoja de estilos (`.quote-ajustes`). SCRUM-915g: en el justificante
+    // es la fila de SU último paso (`ajustesSuelto`), no la del presupuesto.
+    {
+      clave: "ajustes",
+      fila: esDocumentoSuelto ? ajustesSuelto : blockDelivery,
+      detalle: null,
+      boton: esDocumentoSuelto ? ajustesSueltoBoton : filaAjustesBoton,
+    },
   ];
 
   function pintarFilas() {
@@ -4897,9 +4928,14 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     });
 
     // Lo elegido en cada fila de Condiciones, en su propia fila. SÓLO en el presupuesto: el
-    // documento suelto no cuelga Condiciones ni Ajustes, y calcular aquí sus textos sería hacer
-    // pasar por su flujo rótulos que dicen «presupuesto» (lo vigila el censo de SCRUM-601).
-    if (!esDocumentoSuelto) {
+    // documento suelto no cuelga Condiciones, y calcular aquí sus textos sería hacer pasar por su
+    // flujo rótulos que dicen «presupuesto» (lo vigila el censo de SCRUM-601). Lo único que el
+    // justificante resume es su propia fila de Ajustes (SCRUM-915g), y «IVA por defecto N %» no
+    // dice «presupuesto».
+    if (esDocumentoSuelto) {
+      const ivaPorDefecto = fieldVatDefault.input.value;
+      ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + ivaPorDefecto + " %");
+    } else {
       filaCobroValor.textContent = textoDeCobro();
       const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })
         .map(function (d) { return d.label; });

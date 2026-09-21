@@ -762,6 +762,10 @@ html, body { overflow-x: clip; }
 
    `aria-pressed` ya anunciaba el estado al lector de pantalla antes que este CSS: aquí
    sólo se hace visible lo que el marcado ya decía. */
+/* SCRUM-979: el select de «última visita» no lleva el tope de 220 px de los otros dos filtros
+   de la toolbar — a 390 px cortaba «Sin visitar desde hace 12 m…» (medido en Edge). Mide lo que
+   su opción más larga y nunca más que la barra. */
+.customers-filtro-visita { max-width: 100%; }
 .customers-tabs {
   display: flex;
   gap: 4px;
@@ -1367,6 +1371,7 @@ html, body { overflow-x: clip; }
 .quote-paso.is-cerrado .quote-add-line,
 .quote-paso.is-cerrado .quote-dto-global,
 .quote-paso.is-cerrado .quote-fila,
+.quote-paso.is-cerrado .quote-ajustes,
 .quote-paso.is-cerrado .form-actions { display: none; }
 .quote-paso.is-cerrado .quote-block-title { margin: 0; }
 
@@ -2166,6 +2171,8 @@ html, body { overflow-x: clip; }
   transition: border-color .12s;
 }
 .input:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
+/* SCRUM-979 · la celda «Última visita» de la lista de Clientes: mismo tono que «Alta». */
+.cell-visita { color: var(--muted); }
 
 /* ── Búsqueda global ─────────────────────────────────────────── */
 #global-search-wrap { display: flex; flex-direction: column; }
@@ -2274,6 +2281,20 @@ html, body { overflow-x: clip; }
 }
 /* Solo clipa las cards que envuelven tablas */
 .data-card { overflow: hidden; }
+
+/* ── SCRUM-980 · La pestaña «Trabajos» de la ficha del cliente (customerDetailView.js) ───────
+   Mismos valores que llevaban como estilo en línea desde JS; salen a la hoja para que el
+   trinquete de 713c no suba. La línea «Próxima visita» va en la cabecera de la ficha.
+   Las dos celdas llevan `.table td` delante porque `.table td` (y su versión móvil) pone su
+   propio padding y color, y una clase sola perdía contra ellos, que es lo que el estilo en
+   línea no hacía. */
+.historial-proxima { font-size: 13px; font-weight: 600; color: var(--neutral-700); margin-top: 6px; }
+.table td.historial-vacio { text-align: center; color: var(--neutral-400); padding: 24px; }
+.table td.historial-fecha { color: var(--muted); }
+.historial-docs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.historial-ver-mas { margin: 12px 16px; }
+.historial-sueltos { margin: 16px 16px 8px; font-size: 13px; font-weight: 700; color: var(--neutral-600); }
+.historial-sueltos-lista { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 16px 16px; }
 
 /* ── Settings form: responsive ──────────────────────────────── */
 @media (max-width: 640px) {
@@ -2588,6 +2609,15 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* La etiqueta de DINERO va a ancho fijo para que los importes queden alineados en columna. */
 .detail-rail-etiqueta { color: var(--muted); min-width: 76px; }
 .detail-rail-fuerte { color: var(--ink); font-weight: 600; }
+/* SCRUM-982 · la NOTA del cliente («timbre roto, llamar al móvil»): texto libre, de varias líneas.
+   La etiqueta va ENCIMA y el texto ocupa todo el ancho del rail, en vez de quedarse en una columna
+   estrecha al lado. Se lee ENTERA (sin recorte) y respeta los saltos que escribió el profesional;
+   `anywhere` parte una palabra larga (una URL, un código) en vez de ensanchar el rail en 360 px.
+   Y 8 px de aire por encima (el `sm` de DESIGN.md): pegada al enlace de WhatsApp se leía como su
+   subtítulo, y no lo es. Ni un token nuevo. */
+.detail-rail-linea--nota { flex-direction: column; align-items: stretch; gap: 2px; margin-top: 8px; }
+.detail-rail-linea--nota .detail-rail-etiqueta { min-width: 0; }
+.detail-rail-linea--nota span:not(.detail-rail-etiqueta) { white-space: pre-line; overflow-wrap: anywhere; }
 /* SCRUM-368: mismo caso que .home-hero-ok — verde de TEXTO, no el de fondo. */
 .detail-rail-enlace { color: var(--brand-tint-ink, #047857); font-weight: 600; text-decoration: none; }
 .detail-rail-enlace:hover { text-decoration: underline; }

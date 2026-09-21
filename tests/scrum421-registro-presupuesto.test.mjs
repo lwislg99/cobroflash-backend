@@ -179,18 +179,25 @@ test('SCRUM-421 · cada fila cubre TODOS los estados (la ranura no queda vacía 
     + '\n\n  Una celda ausente no es «oculta»: es una decisión que nadie tomó.');
 });
 
-test('SCRUM-421 · los doce rótulos son EXACTAMENTE los aprobados (regla 30)', () => {
+test('SCRUM-421 · los trece rótulos son EXACTAMENTE los aprobados (regla 30)', () => {
   // 17-ago-2026 · APROBADOS los doce. Este guard exigía el marcador «se aprueban antes de
   // encenderse»; ya están aprobados, así que pasa a exigir el TEXTO — no se borra, porque entonces
   // los doce rótulos se quedarían sin vigilar el día que por fin tienen texto.
   //
   // Tres cambiaron al aprobarse, y el criterio se conserva porque vale para el siguiente registro:
   // MISMA ACCIÓN, MISMAS PALABRAS que en el detalle de factura.
+  //
+  // 21-sep-2026 · SCRUM-984, opción R (firmada por el orquestador por delegación, comentario 16105):
+  // `btnCrearTrabajo` («Crear trabajo») SALE — el Trabajo ya nace al aceptar, no en un botón — y
+  // entran `btnCobrar` («Cobrar ahora», el rótulo que la pantalla ya pintaba) y `btnNuevoAlbaran`
+  // («Nuevo albarán», el firmado en SCRUM-722). Doce − 1 + 2 = trece. Registro en
+  // `docs/microcopy/2026-09-21-SCRUM-984-del-presupuesto-al-albaran.md`.
   const src = fs.readFileSync(REGISTRO, 'utf8');
   const APROBADOS = {
     btnEnviarAprobacion: 'Enviar a aprobación', btnEnviar: 'Enviar al cliente', btnAprobar: 'Aprobar',
-    btnRecordar: 'Enviar recordatorio', btnCrearTrabajo: 'Crear trabajo', btnDuplicar: 'Duplicar',
+    btnRecordar: 'Enviar recordatorio', btnCobrar: 'Cobrar ahora', btnDuplicar: 'Duplicar',
     btnPdf: 'Descargar PDF', btnEditarLineas: 'Editar líneas', btnWhatsApp: 'Enviar por WhatsApp',
+    btnNuevoAlbaran: 'Nuevo albarán',
     btnVerCliente: 'Ver cliente', btnMarcarRechazado: 'Marcar como rechazado', btnBorrar: 'Borrar',
   };
   for (const [id, texto] of Object.entries(APROBADOS)) {

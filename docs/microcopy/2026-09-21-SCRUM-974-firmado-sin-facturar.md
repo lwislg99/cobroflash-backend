@@ -9,7 +9,7 @@ Bloque debajo de «⏳ Pendiente de cobro» en el resumen semanal
 
 **T1** · título:
 
-    📝 Firmado y sin facturar
+> 📝 Firmado y sin facturar
 
 Lleva emoji porque los demás bloques del mismo correo lo llevan («💰 Cobrado», «⏳ Pendiente de cobro»).
 
@@ -17,9 +17,11 @@ Lleva emoji porque los demás bloques del mismo correo lo llevan («💰 Cobrado
 
 **T3** · detalle, con plurales de verdad:
 
-    1 parte firmado de 1 cliente
-    3 partes firmados de 1 cliente
-    3 partes firmados de 2 clientes
+> 1 parte firmado de 1 cliente
+
+> 3 partes firmados de 1 cliente
+
+> 3 partes firmados de 2 clientes
 
 Importe 0 → el bloque no aparece. Y solo aparece con la facturación encendida para ese negocio
 (modo de emisión distinto de `receipt`).

@@ -730,8 +730,10 @@ const tabla = predicados(f1280, f390, 1280);
 if (fSuelto) {
   const t = fSuelto.revisar;
   tabla['mismo editor sin condiciones/envío/descuentos'] = P(
-    t && t.ajustes ? 'ya' : 'parcial',
-    `los pasos del justificante son ${JSON.stringify(fSuelto.entrada.titulos.filter((x) => x.visible).map((x) => x.texto))} · fila «Ajustes del documento» en Revisar=${!!(t && t.ajustes)} · el IVA por defecto sigue en Conceptos=${fSuelto.conceptos.visibles.ivaDefecto}`,
+    // SCRUM-915g · «ya está» exige las DOS mitades: la fila en Revisar Y el IVA por defecto fuera de
+    // Conceptos. Con sólo la primera, un IVA que se viera en los dos sitios saldría como hecho.
+    t && t.ajustes && !fSuelto.conceptos.visibles.ivaDefecto ? 'ya' : 'parcial',
+    `los pasos del justificante son ${JSON.stringify(fSuelto.entrada.titulos.filter((x) => x.visible).map((x) => x.texto))} · fila «Ajustes del documento» en Revisar=${!!(t && t.ajustes)} · el IVA por defecto se ve en Conceptos=${fSuelto.conceptos.visibles.ivaDefecto} (915g: tiene que ser false)`,
   );
 } else {
   tabla['mismo editor sin condiciones/envío/descuentos'] = P('no-medible', 'el recorrido del justificante no arrancó');

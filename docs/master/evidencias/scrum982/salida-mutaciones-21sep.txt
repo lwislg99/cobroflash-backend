@@ -1,0 +1,33 @@
+# SCRUM-982 - salida de mutar-nota-982.mjs (banco de mutaciones del test)
+# Date: Mon, 21 Sep 2026 11:08:49 GMT (cabecera de gh api -i zen)
+# medido sobre la rama en HEAD 38849170fb91c9e1f8deb811c7729b8a80278763 (arbol limpio), que contiene origin/main 5820ad9259054032ef0966c8101288b9f76e8248; 15 tests por corrida (poblacion abajo)
+# EXIT=0
+
+BASE sin mutar: exit=0 tests=15 ok=15 caen=[]
+M1 notes en CUSTOMER_SELECT (la lista)
+   numstat: 1	1	src/modules/jobs/app/routes/jobs.routes.ts · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M2 el detalle deja de pedir notes
+   numstat: 0	1	src/modules/jobs/app/routes/jobs.routes.ts · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M3 el customer devuelto no lleva notes
+   numstat: 1	1	src/modules/jobs/app/routes/jobs.routes.ts · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M4 serializeJobDetail se exporta
+   numstat: 1	1	src/modules/jobs/app/routes/jobs.routes.ts · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M5 el router de Trabajos se monta también en una ruta pública
+   numstat: 1	0	src/app.ts · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M6 el router sale de /admin
+   numstat: 1	1	src/app.ts · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M7 la nota sin recortar (sólo espacios cuenta como nota)
+   numstat: 1	1	public/dashboard/js/jobRailBlocks.js · exit=1 tests=15 caen=3 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M8 rótulo con dos puntos
+   numstat: 1	1	public/dashboard/js/jobRailBlocks.js · exit=1 tests=15 caen=2 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M9 la vista no pone la clase de la nota
+   numstat: 1	1	public/dashboard/js/jobDetailView.js · exit=1 tests=15 caen=2 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M10 la nota entra por innerHTML
+   numstat: 1	1	public/dashboard/js/jobDetailView.js · exit=1 tests=15 caen=2 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M11 el CSS pierde pre-line
+   numstat: 1	1	public/dashboard/css/styles.css · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M12 el CSS recorta la nota
+   numstat: 1	1	public/dashboard/css/styles.css · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+M13 el CSS deja la etiqueta al lado
+   numstat: 1	1	public/dashboard/css/styles.css · exit=1 tests=15 caen=1 · esperado cae: SÍ ✅ · árbol restaurado: sí
+TODAS LAS MUTACIONES (13) CAZADAS
