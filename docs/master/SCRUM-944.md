@@ -93,3 +93,25 @@ donde iba «·»). Lo cazó el `--stat` (176 líneas para una mutación de una) 
 índice. Para mutar un fichero se usa `Edit`, nunca el par `Get-Content`/`Set-Content`.
 
 **No mirado:** el nombre del Trabajo en staging con la lista real de gastos (sigue pendiente del despliegue de este PR).
+
+# APÉNDICE — el punto 1 (el KPI «Mayor categoría» y la clave cruda) va DENTRO de SCRUM-920c
+
+**Medido contra:** `origin/main` = `06939b3dc305683d88155fcb1cabb7e65f6e8b4c` · 2026-09-21T08:23:07Z (hora de la cabecera `Date:` de GitHub)
+**Rama:** `scrum-920c-lista-sin-tabla` · decisión del orquestador (21-sep): el punto 1 pasa de S2 a S4 y va en el mismo PR que rehace esa pantalla, porque arreglarlo aparte era tocar dos veces las mismas líneas.
+
+**Qué decide la pantalla cuando no conoce la categoría:** «Otros», que es la categoría comodín del dominio
+(`EXPENSE_CATEGORIES`) y lo que ya decía la píldora de cada fila. Nunca la clave. Una sola función (`categoriaDe`, en
+`expensesView.js`) nombra la categoría para la píldora y para el KPI: antes eran dos caminos y solo uno tenía respaldo.
+Pregunta por el HECHO (`hasOwnProperty`: ¿es una clave del mapa?) y no con `MAPA[k] || MAPA.otros`, así que además no se
+traga `constructor` ni `__proto__`. `topCat` ordena una COPIA (antes `sort` reordenaba `data.byCategory`).
+
+**Rojo (guard de navegador `guard:lista-gastos`, caso C):** con `materials` como categoría de más peso el KPI dice
+«Otros» y la pantalla entera no contiene «materials». Inyectando el fallo real —`return top.category;`— caen los tres
+asserts de C (`KPI = «materials»`, «tiene que decir Otros», y el POSITIVO con una conocida, que pasa a decir la clave
+`subcontrata`). **Positivo:** con una categoría conocida el KPI dice su nombre («Subcontrata»).
+
+**Efecto en el censo de scrum748:** `expensesView.js` baja de 1 a 0 (el respaldo `CATEGORY_LABELS[k] || CATEGORY_LABELS.otros`
+desaparece). El trinquete solo baja, y se anota en el propio test.
+
+**No mirado:** el KPI en staging con datos reales (el defecto llegaba por filas con categorías inválidas que sembró
+nuestra sesión; SCRUM-943 ya impide las nuevas).
