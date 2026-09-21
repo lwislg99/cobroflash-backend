@@ -384,7 +384,11 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // filtro por última visita (1) con sus 4 `option` («Cualquier fecha de visita» y 6/12/24 meses),
   // el `th` de «Última visita» (1, `col-hide-mobile`) y su casilla en el selector de columnas
   // (`label.columnas-opcion` + `input` + `span` = 3).
-  for (const [vista, nodos] of [['renderQuotesView', 244], ['renderProductsView', 166],
+  // 🔴 SCRUM-915j · 21-sep-2026 · `renderQuotesView` 244 → 248, y las otras tres intactas. Por
+  // identidad: el subárbol de `ul.quote-clientes` (`ul` · `li.quote-clientes__nota` · `li` ·
+  // `button.quote-cliente-opcion--nuevo`) = 4, y no falta nada: el `<select name="customer_id">` es el
+  // mismo nodo con `hidden`.
+  for (const [vista, nodos] of [['renderQuotesView', 248], ['renderProductsView', 166],
     ['renderCustomersView', 78], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -445,7 +449,11 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // de líneas al abrir ni el bloque de totales dependen de los datos. Los dos dan 245.
   // SCRUM-915i (21-sep-2026): la DECIMOQUINTA, −1 — la cabecera (sin subtítulo, con su fila y su
   // «⋯»), identificada por identidad en el bloque de arriba. Tampoco depende de los datos: 244.
-  assert.equal(todos(desnuda.contenedor).length, 244,
+  // SCRUM-915j (21-sep-2026): la DECIMOSEXTA, +4 — el subárbol de `ul.quote-clientes`, identificado
+  // por identidad en el bloque de arriba. Lo que este control vigila —que los DOS montajes den el
+  // mismo número— sigue intacto: con o sin `datos` el banco monta la vista sin clientes, y el
+  // subárbol vacío son los mismos 4. Los dos dan 248.
+  assert.equal(todos(desnuda.contenedor).length, 248,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

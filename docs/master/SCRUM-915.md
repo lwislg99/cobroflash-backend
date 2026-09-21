@@ -1031,3 +1031,149 @@ comprobaba el test de su declaración, ahora también se ha ejecutado a mano.
   GO escrito del fundador). Cada uno, su corte.
 - La suite completa: no corrida en local; la corre el PR.
 - Staging: sin recorrer (pide autorización nueva, no se hereda).
+
+## SCRUM-915j · el cliente por botones
+
+**Fecha:** 21-sep-2026 14:52 GMT (hora de GitHub; a las 14:49:27Z la medí con `gh api -i zen`) · **Carril:** S2 (frontend) · **Corte:** el paso «1. Cliente» del editor, tal y como lo dibuja la v3 aprobada
+**Medido contra:** `origin/main` = `1a6dfb9a578dc04147bd842fad9c83999c8a4d26` al nacer el corte; fusionado después con tres commits más (`bb3ce486fd6b59006c2614d53efda06bbcf47077`), **ninguno toca los ficheros de este corte** (comprobado con `git diff HEAD...origin/main --stat` sobre ellos antes de fusionar).
+**Rama:** `scrum-915j-cliente-por-botones`
+**Instrumento:** `guard:pasos-del-editor` **ampliado** con un bloque J, no un guard nuevo (ver «Decisiones»), y `tests/scrum915j-cliente-por-botones.test.mjs` (22 pruebas sobre el banco).
+
+### Qué entra
+
+El prototipo v3 (`docs/prototipos/SCRUM-915/editor-presupuesto.html`, `pasoCliente()`) elige al cliente
+por **botones**: buscador, hasta 4 coincidencias como botones grandes (nombre en negrita y, debajo,
+«teléfono · referencia»), «+ Nuevo cliente» al final. El editor seguía enseñando un `<select>` de todos
+los clientes (`paso0-medido.json`, fila «B · 1. Cliente»: `<select>`, botones de coincidencia = 0).
+
+| | antes | ahora |
+|---|---|---|
+| control del paso | `<select name="customer_id">` con todos los clientes | lista `ul.quote-clientes`: **≤ 4 botones** + «+ Nuevo cliente» |
+| el `<select>` | visible | **sigue en el documento, `hidden`**, como portador del valor |
+| elegir | desplegar y buscar la opción | **un toque** en el botón (`aria-pressed`, fondo `--brand-tint` + borde de marca) |
+| el elegido si vive lejos | (siempre estaba en la lista) | **a la cabeza** de los cuatro; nunca se cae |
+| búsqueda sin coincidencias | opción desactivada dentro del `<select>` | aviso «Sin resultados para tu búsqueda» sobre la lista (el elegido y el alta siguen a mano) |
+
+Capturas antes/después (390 y 1280 px, sin elegir y con uno elegido): `docs/prototipos/SCRUM-915/capturas-915j/`.
+
+**Ningún literal nuevo (regla 30) y ningún `aria-label` estrenado:** placeholder, «Sin resultados para tu
+búsqueda», «Primero necesitas un cliente.» y «+ Nuevo cliente» ya estaban firmados; el texto de cada botón
+sale de los datos del cliente. El separador « · » es puntuación de un dato, como en el prototipo.
+
+**Decisiones que no son obvias**
+
+- **El `<select>` se queda, `hidden`** (la regla global `[hidden]` de la hoja lo apaga: sin `display` propio).
+  Doce sitios leen `fieldCustomer.select.value`, el restaurador de borradores lo escribe y SCRUM-713 lo dejó
+  por lo mismo. Los botones son la mano; el `<select>`, la memoria. Su `<option>` «+ Nuevo cliente» (SCRUM-591)
+  también se queda: `scrum591` lo fija y quitarlo es otro corte.
+- **Pulsar un botón ejecuta EL MISMO camino que el `change`.** El cuerpo del oyente pasa a una función con
+  nombre (`alCambiarElCliente`) que llaman el `change` y `elegirCliente`. Dos copias del cuerpo serían dos
+  maneras de elegir cliente que un día dejan de coincidir. Sin `dispatchEvent`: el banco de vistas no lo tiene.
+- **No se repinta al elegir, se marca.** `sincronizarBotonesDeCliente()` sólo mueve `aria-pressed`; repinta
+  únicamente si el cliente guardado no tiene botón (borrador restaurado, recién dado de alta, elegido por
+  otro camino). Repintar en cada toque destruiría el botón pulsado y el teclado perdería el foco (medido en
+  navegador, mutante M8).
+- **El elegido cabe siempre:** `buscadorDeClientes.coincidencias()` (pieza pura, sin DOM) recorta a 4 y, si el
+  elegido queda fuera, lo pone a la cabeza y se cae el último. Un cliente restaurado de un borrador o recién
+  dado de alta vive muy lejos de los cuatro primeros con 200 clientes.
+- **El aviso de «sin resultados» se decide por lo que CASA, no por lo que se pinta:** con un cliente elegido
+  `visibles` no queda nunca vacío, así que la regla del `<select>` (`visibles.length === 0`) no avisaría
+  jamás. Es el mutante M5.
+- **El campo del cliente ocupa la fila entera.** Lo encontré al mirar la captura a 1280 px, no antes: con
+  `.quote-form-row` en tres columnas (≥ 901 px) el campo quedaba en UNA, el buscador medía 172 px y «Comunidad
+  Los Olivos» se partía en dos líneas. Clase `quote-cliente-campo` + `grid-column: 1 / -1`.
+- **Se amplía `guard:pasos-del-editor` (bloque J) en vez de crear un séptimo guard del editor:** un guard nuevo
+  obliga a registrarlo en `_guards-de-navegador-declarados.mjs`, `scrum522`, `scrum548` y `package.json`, y
+  este guard ya recorre el paso del cliente en los tres casos (390, 1280, justificante). Ahora elige al
+  cliente con **clics de verdad** sobre su botón; los otros seis guards del editor siguen usando
+  `pag.select(...)`, que en Puppeteer funciona con un `<select>` oculto y ejercita la otra vía (el `change`).
+- **El traspaso decía que hacía falta «un ayudante común» para `selectOption` de Playwright: no era así.** Los
+  guards son de Puppeteer y `page.select` no comprueba visibilidad. Sólo tres sitios juzgaban «¿se ve el
+  selector de cliente?» y se re-anclaron a la lista de botones: `guard-pasos-del-editor` (`visibles.cliente`),
+  `guard-915i-cabecera` (`clienteVisible`) y `sonda-915-inventario-v3` (`visibles.cliente` y `selectorEsSelect`,
+  que ahora pregunta si el `<select>` se VE).
+
+### El rojo, y las mutaciones
+
+- **Contra el código de antes** (`PASOS_PUBLICO=<git archive origin/main public>`, variable nueva del guard,
+  como `GASTOS_PUBLICO`): `EXIT 1`, «A · al entrar se ven 0 pasos» en los 3 casos. **Es un rojo de otra causa**
+  (no existe `.quote-clientes`) y por eso no basta: el bloque J se probó con mutantes sobre el código nuevo.
+- **19 mutaciones sobre el código nuevo, 0 sobreviven** (runner en Node: cuenta las apariciones ANTES de
+  mutar, restaura y comprueba el árbol limpio; M1-M18 con el runner, M19 a mano —y de ahí el error 3—):
+
+| | mutante | lo mata |
+|---|---|---|
+| M1 | el `<select>` se ve | test «va `hidden`» · guard J |
+| M2 | cinco botones | 8 pruebas · guard J («hay 5») |
+| M3 | el elegido fuera del recorte no cabe | 4 pruebas · guard J («salen [7,8,9,10] marcados=[]») |
+| M4 | `sincronizar` no marca | 4 pruebas |
+| M5 | aviso por lo pintado | test «lo DICE» · guard J («el aviso es «null»») |
+| M6 | pulsar no ejecuta el camino del `change` | 3 pruebas (la vista previa no recibe el nombre) · guard J |
+| M7 | «+ Nuevo cliente» no abre nada | 2 pruebas · guard J («no abrió el formulario de alta») |
+| M8 | cada elección repinta la lista | 1 prueba (el nodo cambia) · guard J («el foco no se queda», foco: null) |
+| M9 | botón de 30 px | guard J («mide 41 px»; el mínimo es 44) |
+| M10 | buscar no repinta | 12 pruebas |
+| M11 | el recién creado no queda a la vista | 1 prueba |
+| M12 | el borrador restaurado no marca su botón | 1 prueba |
+| M13 | el elegido fuera + `limite` (5 botones) | 3 pruebas |
+| M14 | botón de 600 px | guard J («se sale de la pantalla») |
+| M15 | el primer pintado no marca al elegido | 4 pruebas · guard J |
+| M16 | un « · » colgando sin referencia | 1 prueba |
+| M17 | pulsar no guarda el valor | 5 pruebas |
+| M18 | `max` ignorado | 2 pruebas |
+| M19 | sin la regla de fila entera | guard J («el buscador mide 173 px») |
+
+### Censos y guards que cambian, cada uno con su motivo en el propio fichero
+
+- `scrum697` y `scrum698` (nodos de `renderQuotesView`): **244 → 248**, por identidad: el subárbol de
+  `ul.quote-clientes` mide 4 (`ul`, `li.quote-clientes__nota`, `li`, `button.quote-cliente-opcion--nuevo`) y
+  es todo lo que sobra; el `<select>` es el mismo nodo con `hidden`. Medido con una sonda sobre el árbol
+  montado, no restando.
+- `scrum601` (ancla por línea del rótulo «Solo presupuesto (facturación manual)»): **909 → 935**, tomado del
+  propio rojo del test, no calculado.
+- `guard-pasos-del-editor`, `guard-915i-cabecera`, `sonda-915-inventario-v3`: re-anclados como arriba. Ninguno
+  se relaja: los tres siguen juzgando «¿se ve el paso del cliente?», ahora por su lista de botones.
+
+### Medido
+
+- `npm run build` **0**.
+- **112 ficheros de `tests/`** que leen `quotesView`, `buscadorDeClientes`, `styles.css` o `scrum915`:
+  **1.122 tests, 1.122 pass, 0 fail, 0 saltados**, `EXIT 0` (TAP fuera del árbol). **No es la suite
+  completa** (pide el turno del orquestador y medir memoria, A6); la corre el PR.
+- **Doce guards de navegador sobre el árbol final, todos `EXIT 0`:** `pasos-del-editor` (con el bloque J),
+  `documento-vivo`, `conceptos-limpios`, `cabecera-del-editor`, `ajustes-del-justificante`,
+  `un-solo-presupuesto`, `caja-documento-suelto`, `rotulos-de-la-linea`, `objetivo-tactil`,
+  `marcadores-en-pantalla`, `descuento-redibuja`, `caja-datos-del-cliente`.
+- Medidas en navegador real (guard J, seis clientes de fixture): 4 botones al entrar, alto mínimo ≥ 44 px
+  (52 con el CSS), caben a 390 y a 1280, buscador ≥ 280 px, el foco se queda en el botón pulsado.
+
+### Errores propios
+
+1. **Mi primera pasada del bloque J salió verde a la primera.** Un guard que nunca se ha visto en rojo no se
+   sabe si mide: por eso las 19 mutaciones y la variable `PASOS_PUBLICO`.
+2. **Escribí acentos graves dentro de comentarios que viven en una plantilla de JS** (`new Function(\`…\`)`) en
+   tres scripts: el primer arranque murió con `SyntaxError` en dos guards. Lo cacé porque `EXIT 1` sin la
+   salida esperada no era un hallazgo del guard sino del intérprete.
+3. **Restauré la hoja de estilos con PowerShell 5.1** (`Get-Content -Raw` lee en ANSI y lo escribí en UTF-8):
+   el diff pasó a 1.619 líneas. Lo cacé con `git diff --stat` inmediatamente después y la restauré desde
+   `HEAD`; el diff final de la hoja es de 3 líneas. Los mutantes de la hoja se aplican con Node.
+4. **El mensaje del primer commit salió con BOM** (`Set-Content -Encoding utf8` en PS 5.1) y habría sido el
+   título del PR (A24). Reescrito con `[IO.File]::WriteAllText` antes de empujar.
+5. **Tres intentos de `git archive | tar` con rutas de Windows** (la tubería de PowerShell mancha el binario;
+   `tar` toma `C:` por un host): el control «contra el código de antes» costó dos minutos de ejecuciones
+   inútiles. Con `--output` a fichero y rutas relativas funcionó.
+6. **El diseño que me dejó el traspaso preveía re-anclar diez guards**; leyéndolos antes de tocar, sólo tres
+   necesitaban cambio (`pag.select` funciona con el select oculto). Lo dejo escrito para que nadie repita el
+   plan viejo.
+
+### Lo que NO cubre
+
+- **La etiqueta «Cliente» sobre el buscador sigue visible** (la del campo, duplicada con el título del paso):
+  el prototipo la esconde (`sr`), pero no existe en la hoja una clase de sólo-lector y crear una es un cambio
+  de inventario (AB3). Pendiente de decisión.
+- **El `<option>` de alta dentro del `<select>` oculto** ya no lo ve nadie salvo el guard y `scrum591`;
+  quitarlo es un corte aparte.
+- **Verificación en yaqu.app** tras el merge (paso 1 del editor a 390 y 1280 px, elegir, buscar, «+ Nuevo
+  cliente», restaurar un borrador con cliente): pendiente. Staging: sin recorrer (pide autorización nueva).
+- La suite completa: no corrida en local; la corre el PR.
+- **915f** (la hoja de envío: toca envío y cobro; STOP hasta un GO escrito del fundador).

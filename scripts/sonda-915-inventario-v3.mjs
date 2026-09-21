@@ -176,7 +176,10 @@ const FOTO = new Function('inventario', `
     guias: qa('.quote-paso__guia').length,
     guiasVisibles: qa('.quote-paso__guia').filter(ve).length,
     visibles: {
-      cliente: ve(q('select[name="customer_id"]')),
+      // SCRUM-915j · el representante del paso del cliente es su LISTA DE BOTONES: el select sigue en
+      // el DOM pero hidden (es el portador del valor), y juzgar por él daría «cliente no se ve» siempre.
+      // (Sin acentos graves aquí dentro: esto vive en una plantilla de JS y los cierra.)
+      cliente: ve(q('.quote-clientes')),
       concepto: ve(q('.quote-line .quote-line__concept input')),
       condiciones: ve(q('select[name="payment_terms"]')) || qa('label, span').some(function (el) { return limpio(el.textContent) === 'Condiciones de pago' && ve(el); }),
       generar: ve(submit),
@@ -205,7 +208,10 @@ const FOTO = new Function('inventario', `
     })(),
 
     // --- B · cliente
-    selectorEsSelect: !!q('select[name="customer_id"]'),
+    // SCRUM-915j · «¿el control que VE el profesional es un select?». Con el select hidden en el
+    // DOM como portador del valor, un simple q(...) daría siempre que sí: se juzga si se VE, que es lo
+    // que el prototipo v3 pide que deje de ser.
+    selectorEsSelect: ve(q('select[name="customer_id"]')),
     botonesDeCoincidencia: qa('.quote-cliente-opcion, .quote-customer-option, button[data-customer-id]').length,
     nuevoCliente: !!botonPorTexto('+ Nuevo cliente') || textoIzq.indexOf('+ Nuevo cliente') >= 0,
 

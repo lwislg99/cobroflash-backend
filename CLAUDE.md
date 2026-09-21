@@ -4,7 +4,8 @@
 > y el master divergen, **gana el master** (regla 35). Aquí solo vive lo operativo mínimo.
 
 **YaQu** — cobro por WhatsApp para oficios en España: presupuesto en 30s → WhatsApp con botones →
-firma del cliente → cobro de señal/total → (post SIF-1) factura VeriFactu. España-first.
+firma del cliente → (post SIF-1) factura VeriFactu → cobro de señal/total. **Antes de SIF-1, en España,
+ni documento ni cobro por YaQu (regla 24; SCRUM-612).** España-first.
 **Sprint activo y cola única: Parte U del master (regla 31). Prioridad absoluta de F1: SIF-1.**
 
 - Producción: `https://yaqu.app` · Deploy: Railway auto-deploy desde `main`
@@ -87,9 +88,9 @@ desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-s
    no se construye: se propone cambio de master primero.
 6. **El Sprint Registry (U) es la cola única:** no reordenar ni intercalar sin cambio de master.
 7. **Cero claims fiscales hasta SIF-1 8/8** (reglas 17/24/26): `INVOICING_ES_ENABLED=OFF` para
-   merchants ES reales; demo con marca de agua; la pregunta VeriFactu se responde SOLO con el guion H2.
+   merchants ES reales **—y con OFF, ni documento ni cobro por YaQu (regla 24)—**; demo con marca de agua; la pregunta VeriFactu se responde SOLO con el guion H2.
 8. **Tarjeta real solo con Stripe Connect activo en ese merchant** (reglas 18/23). PROHIBIDO
-   procesar pagos de clientes finales en la cuenta Stripe de plataforma. Mientras: transferencia/Bizum manual.
+   procesar pagos de clientes finales en la cuenta Stripe de plataforma. Mientras: transferencia/Bizum manual **—en España, solo con `INVOICING_ES_ENABLED` en ON (regla 24)—**.
 9. **Una factura emitida JAMÁS se edita ni borra** (regla 29): solo R1 o anulación con registro.
    Anti-spam J6 es regla de canal: ningún envío automático nuevo sin pasar por su tabla (regla 28).
 10. **`CLAUDE.md` y `.claude/*` son derivados del master** (regla 35). Prohibido instalar

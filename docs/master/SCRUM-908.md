@@ -1079,3 +1079,231 @@ ocurre», significaba «no ocurrió esta vez». La diferencia la trajo un aviso 
 en rojo), no una segunda medición propia planeada. **Correspondía haber corrido el caso fabricado varias
 veces en CI antes de escribir un veredicto, no una.** Queda dicho para quien siga: con este caso, N=1 en
 Linux no alcanza para ningún veredicto, ni «reproducido» ni «no reproducido».
+
+# SCRUM-908c-4 · N=5 declarada antes de correr: el arreglo aguanta, y el techo que deja sobre la tasa
+
+**Fecha:** 21-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición, con N declarada ANTES de correr (A3, y pedido explícito del orquestador). **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `6a91b1aad2777e59100bee2f9a666886550ca393` · 2026-09-21T15:36:15Z
+**Rama:** ninguna para las 5 tiradas — son re-corridas del job `build + tests (con banco desechable)` vía
+`gh run rerun <run> --job <job>`, sobre el commit `3c86277b2242d0951d8ee993e99c69797d70aae5` (PR #1591),
+ya en `origin/main` desde § 908c-2/908c-3. Esta entrada se anexa desde la rama `scrum-908c4-n5-declarada`.
+
+> **N=5 SE DECLARÓ ANTES DE VER NINGÚN RESULTADO**, con su límite dicho también antes: con las tasas ya
+> medidas del mecanismo original (12,2 % en 908c, hasta 35 % en el dato de hoy de la S5), **5 tiradas con
+> cero eventos es el resultado más probable y no demuestra que el mecanismo no ocurra** — el techo Wilson
+> 95 % para 0 eventos en 5 tiradas es **≈ 43,4 %**, calculado antes de correr:
+> `z=1{,}96, p̂=0, n=5 → centro=0,2173, semiancho=0,2173 → [0 % , 43{,}4 %]`. Aviso y cálculo, del
+> orquestador y re-verificado por mí, ANTES de la primera tirada.
+
+---
+
+## LOS 5 RESULTADOS, TAL CUAL SALIERON
+
+| tirada | job | SIN ARREGLO `colaAlSalir` | CON ARREGLO `colaAlSalir` |
+|---|---|---|---|
+| 1 | `106384186315` | 0 | 0 |
+| 2 | `106387021200` | 0 | 0 |
+| 3 | `106390241882` | **7236** | **0** |
+| 4 | `106393212540` | 0 | 0 |
+| 5 | `106396271326` | 0 | 0 |
+
+Verificado por API en cada tirada (`gh api …/jobs/<id>/logs`, grep de las líneas `# SIN ARREGLO` / `# CON
+ARREGLO`), no de memoria ni de un resumen.
+
+---
+
+## LO QUE ESTO ESTABLECE, Y LO QUE NO
+
+**① El arreglo (`--import`) aguantó las 5 de 5, INCLUIDA la tirada donde el mecanismo se disparó de
+verdad.** La tirada 3 es el dato que importa: en el MISMO proceso padre, milisegundos aparte, el hijo SIN
+ARREGLO perdió 7.236 bytes (idéntico al de PR #1589, § 908c-3) y el hijo CON ARREGLO, ejecutado justo
+después con el mismo tamaño de relleno, no perdió nada. No es que la condición para perder algo no se diera
+esa vez: se dio, medida en el hermano sin arreglo, y el arreglo la neutralizó de todos modos. **Es la
+primera vez que el arreglo se pone a prueba contra una tirada donde SIN ARREGLO demuestra que las
+condiciones estaban dadas**, y sostiene.
+
+**② Lo que 5/5 NO establece, dicho con el mismo cálculo de arriba:** 5 éxitos seguidos del arreglo tienen
+el MISMO techo Wilson (≈ 43,4 %) sobre una tasa de fallo del arreglo que 0/5 tenía sobre la tasa del
+mecanismo. Estadísticamente, cinco tiradas no descartan que el arreglo falle hasta un 43 % de las veces.
+**Lo que sí distingue esta vez del caso de § 908c-2/908c-3 (donde 1 sola tirada bastó para hablar de más
+o de menos) es el MECANISMO, no sólo el número:** `--import` con `setBlocking(true)` hace que cada
+`write()` del hijo se vacíe SÍNCRONAMENTE antes de devolver el control — no hay ventana de tiempo en la
+que pueda quedar cola pendiente, por construcción, no por suerte de la tirada. La tirada 3 es la
+CONFIRMACIÓN de que el mecanismo entendido es el correcto (coincide con que SIN ARREGLO sí perdiera datos
+esa vez), no la ÚNICA razón para creer que el arreglo sostiene.
+
+**③ La tasa de SIN ARREGLO en estas 5 tiradas: 1/5 = 20 %**, dentro del rango ya medido (12,2 %–35 %) pero
+con un intervalo demasiado ancho para decir nada nuevo por sí solo (Wilson 95 % de 1/5, recalculado con
+node antes de escribirlo: **[3,6 % , 62,4 %]**). **No cambia la estimación de la tasa**, sólo la confirma
+sin refinarla.
+
+**④ El hueco declarado, tal como se pidió antes de correr:** las 5 tiradas son del MISMO commit — aíslan
+la varianza del ENTORNO de ejecución (el runner de GitHub, el momento, la carga de la máquina), pero no
+dicen nada sobre si la tasa cambia en otro árbol o con otro contenido de PR. La mudez original de
+`scrum859` se vio en árboles distintos a lo largo de días; esto no es eso.
+
+**⑤ Sobre la pregunta original de § 908c-2 ⑥** («por qué el hijo con `node:test` necesita escribir más
+que el doble de la capacidadBase para perder algo, si el hijo pelado la pierde nada más verla»): estas 5
+tiradas NO la contestan — no varían el tamaño del relleno, sólo repiten el mismo. Sigue sin medirse. Lo
+que sí aportan es la primera confirmación de que, cuando el mecanismo se dispara con este tamaño fijo, el
+arreglo lo neutraliza — que era la pregunta más urgente hoy (¿aguanta el arreglo que ya está en `main`?),
+no la más profunda (¿por qué este umbral y no otro?).
+
+---
+
+## DECISIÓN, CON EL PRESUPUESTO DE CI COMPARTIDO DECLARADO
+
+**No se ampliá la N por cuenta propia** (instrucción explícita del orquestador: cada tirada gasta CI
+compartido con el equipo de Luis). Si se quisiera acotar la tasa de fallo del arreglo con precisión, harían
+falta del orden de **N ≥ 30-40** tiradas (con el mismo cálculo de Wilson que exige 908c §⑦.2 para la tasa
+original), y eso se pide al orquestador con el número antes de correr, no se decide aquí. **Alternativa más
+barata, para quien siga:** reproducir en LOCAL, si se consigue una máquina Linux (WSL/Docker), donde una
+tirada cuesta segundos y no minutos de CI compartido — declarado como hueco desde § 908c-2 ⑥ y sigue sin
+resolverse en esta máquina (Windows, sin WSL ni Docker).
+
+---
+
+## LO NO TOCADO
+
+- Ningún push nuevo, ninguna rama nueva: las 5 tiradas son re-corridas de un job ya existente sobre un
+  commit ya en `main`.
+- `tests/scrum859-…`, `scripts/meta-guard-mutaciones.mjs` (S3), `.github/workflows/**` (S5): ni una línea.
+- Ninguna N ampliada sin pedirlo antes con el número (instrucción explícita, respetada).
+
+---
+
+# SCRUM-908c-5 · MUDO y CIEGO en `vigia-atascados.test.mjs` son el MISMO mecanismo, visto desde las dos pasadas
+
+**Fecha:** 21-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición. **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `beef7b362ed44a7bb431ab4f145879f11abd0c24` · 2026-09-21T16:39:06Z
+**Rama:** `scrum-908c5-mudo-y-ciego-mismo-mecanismo`
+
+> **De dónde viene esto.** La sesión anterior de J6 dejó dos datos sin incorporar, a propósito, para no
+> agrupar por parecido superficial (§ cierre de tanda del comentario 16205 de Jira): un MUDO de
+> `vigia-atascados.test.mjs` (comentario 16159 de la S5, run `35601265329`) y un CIEGO del mismo fichero
+> en el PR #1598 (J5, sin verificar). El encargo de esta tanda era medir los dos y decidir si son el
+> mismo problema visto desde dos sitios, o dos cosas distintas que sólo se parecen.
+
+## PASO 0 · ¿es tocable?
+
+`vigia-atascados.test.mjs` prueba `scripts/vigia-atascados.mjs`, que corre desde
+`.github/workflows/vigia-atascados.yml`. Es un **vigía**: `docs/equipo/puesto-j6.md` dice, literal,
+«`ci.yml`, los vigías y el avisador son de la S5» dentro de «Lo que NO tocas». **No se toca nada.** Todo
+lo de abajo es lectura de logs ya generados y del propio fichero (`git show`/`Read`), nunca una
+ejecución que module su comportamiento.
+
+## ① El MUDO (comentario 16159): re-verificado, misma firma que `scrum859`
+
+Run `35601265329` (push a `main`, cabeza `c090a0b4`, 21-sep 12:44Z), job **`meta-guard · los guards caen
+cuando deben`** (`id=106337803034`), `conclusion=failure`. Log bajado y grepeado por mí, no de memoria:
+
+```
+"C:/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/106337803034/logs > log.txt
+grep -n "vigia-atascados\|GUARDS MUDOS\|vivas .* mudas .* ciegas" log.txt
+```
+
+```
+✖ vigia-atascados.test.mjs · MUDO
+vivas 313 · mudas 1 · ciegas 0 · ficheros muertos 0
+🔴 GUARDS MUDOS — pasan en verde sobre el defecto que dicen vigilar:
+  · vigia-atascados.test.mjs · el guard NO cayó. Test que debía ponerse rojo: «🔴 CEBO REAL #1212 · con la
+    memoria REAL del issue #1241 vuelve a avisar por edad»
+    → en la pasada MUTADA ese test: NO APARECE en la pasada mutada (evento perdido, fichero muerto a
+      medias, o el título cambió). Recuento: 33 pasados · 1 caídos · 0 saltados. Y en la LIMPIA: 64
+      pasados · 0 caídos.
+```
+
+**Misma firma exacta que `scrum859`**: un título que SÍ pasó en la pasada limpia (64 pasados · 0 caídos)
+deja de aparecer, con cualquier veredicto, en la pasada MUTADA. No es que la mutación no cayera: es que
+su evento no llegó.
+
+## ② El CIEGO (PR #1598, J5): re-verificado, y es la MISMA construcción, en la OTRA pasada
+
+Job **`meta-guard · los guards caen cuando deben`** (`id=106395090427`) del PR #1598 (mergeado,
+`headRefName=scrum-competencia-j5-propuestas`), `conclusion=failure`:
+
+```
+"C:/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/106395090427/logs > log.txt
+grep -n "vigia-atascados\|CIEGO\|vivas .* mudas .* ciegas" log.txt
+```
+
+```
+✔ vigia-atascados.test.mjs · 🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad   (+4 test(s) más caídos)
+? vigia-atascados.test.mjs · CIEGO
+? vigia-atascados.test.mjs · CIEGO
+vivas 312 · mudas 0 · ciegas 2 · ficheros muertos 0
+🔴 CIEGO:
+  · vigia-atascados.test.mjs · el test «🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que
+    contar como el bot» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. O el
+    fichero no llegó a ejecutarse (…), o ese test ya fallaba, o el nombre de la declaración caducó. NO es
+    que el guard esté mudo: es que no se ha podido medir.
+  · vigia-atascados.test.mjs · el test «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks
+    corriendo: ESPERANDO, y NO avisa» NO aparece EN VERDE en la pasada limpia […]
+```
+
+**Esto es la clave, leída en `scripts/meta-guard-mutaciones.mjs` (S3, sólo lectura):**
+
+```
+node -e "" # no aplica; leído con Read, líneas 631-639 y 1224-1239
+```
+
+Línea 631: `const flujo = run({ forceExit: true, … })` — es el MISMO `run()` de `node:test` con
+`--test-force-exit` que § 908c/908c-2/908c-3/908c-4 investigan. Comentario de la propia S3 en línea 1227:
+«La línea base se corre UNA VEZ por guard, no por mutación: es la misma pasada limpia para todas las
+mutaciones». **La pasada LIMPIA y cada pasada MUTADA son la MISMA construcción** (un hijo `node:test` con
+`--test-force-exit`, lanzado con `run()`, reportando por tubería a un padre que procesa los eventos por
+lotes): lo único que distingue MUDO de CIEGO, en el propio código de S3 (líneas 885-892), es **cuál de las
+dos pasadas** es la que pierde el evento del título. Si lo pierde la MUTADA → «MUDO». Si lo pierde la
+LIMPIA → el mensaje genérico de CIEGO, que lista tres causas posibles y NO incluye «se perdió por la
+misma tubería» porque S3 no lo tenía como hipótesis cuando escribió ese mensaje.
+
+## ③ Por qué esto NO es la fragilidad propia de `vigia-atascados` (hipótesis 2, descartada)
+
+Dos comprobaciones, las dos hechas antes de escribir esta sección:
+
+1. **El fichero declara, en su propia cabecera (línea 7), «SIN GATE: funciones puras. Ni BD, ni red, ni
+   servidor.»** No hay ninguna llamada a `gh`, a la red ni a un servidor en tiempo de test: las respuestas
+   reales de la API (`CHECKS_1205`, `CHECKS_1259`, …) son literales fijados en el fichero, no llamadas en
+   vivo. La hipótesis «depende de `gh` y de un PR real» que la sesión anterior dejó sin decidir **no puede
+   ser la causa**: no hay `gh` ni red en la ruta de este test.
+2. **Los DOS títulos que salieron CIEGO en el PR #1598 SÍ aparecen, verbatim, PASANDO, en la pasada limpia
+   del run 35601265329** (el mismo fichero, sin cambiar una línea): «✔ vigia-atascados.test.mjs · 🔴 `gh
+   pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot» y «✔ vigia-atascados.test.mjs
+   · 🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa» (líneas
+   683-684 del log de esa run, citadas en § arriba). Eso descarta, por comparación directa entre dos runs
+   del mismo fichero sin tocar, las otras dos explicaciones que da el propio mensaje de CIEGO: no es que
+   «ese test ya fallara» (pasó, limpio, el mismo día) ni que «el nombre de la declaración caducara» (es
+   literalmente el mismo string).
+
+## LO QUE ESTO ESTABLECE
+
+- **MUDO y CIEGO (en su variante «NO aparece EN VERDE en la pasada limpia») son el MISMO mecanismo de
+  transporte de SCRUM-908, visto desde las dos pasadas que arma el meta-guard**, no dos fallos distintos
+  que sólo se parecen. Confirmado por: misma construcción (`run({forceExit:true})`) en el código fuente
+  de S3, y por descarte medido de las otras causas que el propio mensaje de CIEGO ofrece.
+- **El hallazgo se ENSANCHA a un SEGUNDO fichero, `vigia-atascados.test.mjs`**, no relacionado con
+  `scrum859` en contenido ni en autor. Converge con lo que ya apuntaba el comentario 16185 del
+  fundador: «Dos ficheros distintos apuntan a algo del transporte o del runner, no a `scrum859`.» Con
+  esta medición, son tres apariciones documentadas del mismo patrón (`scrum859` repetido, y
+  `vigia-atascados` en las dos pasadas).
+- **No se ha comprobado** si TODO CIEGO del meta-guard es este mecanismo — sólo estos dos, cruzados contra
+  otra corrida. Un CIEGO de un fichero que SÍ dependa de algo externo (red, `dist/`, un test que de verdad
+  falle) seguiría siendo lo que su mensaje dice. Esto no es «todo CIEGO es mudez»: es «este CIEGO, medido,
+  lo es».
+
+## LO QUE SE HACE CON ESTO, Y LO QUE NO
+
+**No se toca** `scripts/vigia-atascados.mjs`, `tests/vigia-atascados.test.mjs` ni
+`.github/workflows/vigia-atascados.yml` (S5) — ni `scripts/meta-guard-mutaciones.mjs` (S3). Se mide y se
+pasa por Jira (este comentario, en SCRUM-908, que es donde ya vivía el dato de la S5 y de J5): es
+información que le sirve a S3 (dueña del meta-guard, para saber que el CIEGO de esta forma concreta no
+es siempre «test ajeno») y a S5 (dueña de `vigia-atascados`, para saber que su vigía no es frágil por sí
+mismo).
+
+## LO NO TOCADO
+
+- `scripts/vigia-atascados.mjs`, `tests/vigia-atascados.test.mjs`, `.github/workflows/vigia-atascados.yml`
+  (S5): ni una línea; sólo `Read`/`git show`.
+- `scripts/meta-guard-mutaciones.mjs` (S3): sólo lectura, para entender `run()` y las PUERTA 1/1a.
+- Ningún push a ninguna rama de S3 o S5. Ninguna ejecución que module estos ficheros: los dos runs citados
+  ya existían antes de empezar esta sección.

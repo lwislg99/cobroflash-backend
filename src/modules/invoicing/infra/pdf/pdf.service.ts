@@ -253,6 +253,17 @@ export type ParamsPdfPresupuesto = {
   clausulas?: Array<{ id: string; titulo: string; texto: string }> | null;
   clausulasExcluidas?: string[] | null;
   tiers?: Array<{ id: string; label: string; description?: string; lines: any[]; total: number; recommended?: boolean }> | null;
+  /**
+   * SCRUM-987 · LA LÍNEA DE VALIDEZ, YA COMPUESTA: «Válido hasta el 15 de octubre de 2026».
+   *
+   * 🔴 LLEGA EL TEXTO, NO LA DECISIÓN. Qué fecha es (la columna, o el respaldo de 30 días), en qué
+   * zona se escribe y si el presupuesto YA FIRMADO la lleva o no lo decide `presupuestoParaPdf`, en
+   * un solo sitio: aquí sólo se pinta. Con la decisión aquí dentro haría falta pasarle la zona del
+   * merchant y el estado de la firma a un documento que no tiene por qué conocerlos.
+   *
+   * Ausente o `null` = el documento sale EXACTAMENTE como salía. Es lo que pasa con todo lo firmado.
+   */
+  validez?: string | null;
 };
 
 export async function generateInvoicePdf(params: {
@@ -783,6 +794,9 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
     .text(QUOTE_LABEL, M, hY, { width: W, align: 'right' });
   doc.fontSize(11).font('Helvetica').fillColor('#64748b')
     .text(`${QUOTE_LABEL} #${numeroVisible}`, { align: 'right' });
+  // SCRUM-987 · «Válido hasta el …» debajo del número, con su mismo estilo. La frase llega COMPUESTA
+  // (ver `validez` en `ParamsPdfPresupuesto`): sin ella —todo lo firmado— la cabecera no cambia.
+  if (params.validez) doc.text(params.validez, { align: 'right' });
   doc.fillColor('#000');
 
   doc.y = Math.max(doc.y, hY + (logoBuf ? 46 : 0));
