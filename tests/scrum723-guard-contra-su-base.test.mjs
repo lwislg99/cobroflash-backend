@@ -489,6 +489,13 @@ const INDIRECTAS_DECLARADAS = [
   // `main` (`Buffer.from(main.stdoutBuffer)`, el proceso hijo del propio script) — ninguna de las
   // dos es una comparación contra la punta de este repositorio. Lo retira quien borre esos textos.
   'tests/scrum899-sesion-lista-blanca.test.mjs',
+  // SCRUM-973 · mismo caso que 839d, 839e, 899b y 966: un repositorio SINTÉTICO en el temporal con
+  // su PROPIO `refs/remotes/origin/main`, avanzado a mano con `update-ref` para reproducir «el
+  // último commit es el merge de main». Nombra `origin/main` en el mensaje de merge fabricado
+  // (`EL_MERGE`, una cadena que imita el título por defecto de un merge de verdad) y al montar y
+  // leer ese remoto sintético — ninguno de los dos es el `origin/main` de este repositorio.
+  // Lo retira quien borre el banco.
+  'tests/scrum973-titulo-del-pr.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

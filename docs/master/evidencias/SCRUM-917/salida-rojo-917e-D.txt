@@ -1,0 +1,126 @@
+node : ⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+En línea: 1 Carácter: 409
++ ... sh/wt-917c; node scripts/guard-detalle-trabajo-917.mjs > "C:\Users\Ad ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⟦arranque⟧ 0.5 ...ra-página 0.0 s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+⓪ SUELO y control de discriminación · a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ ⓪ los 4 casos se pintan y son DISTINTOS entre sí a 1280 px
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+D · el dinero se dice UNA vez: la franja (D.1-D.5) · lo que se retira (D.6-D.9) · lo que no se pierde (D.10) — a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ❌ D.1 [PAGADO (aceptado = cobrado = 590,00 €)] esperaba franja=true y una sola; hay 0
+   ❌ D.2 [PAGADO (aceptado = cobrado = 590,00 €)] rótulo «null», esperaba «Cobrado del todo»
+   ❌ D.3 [PAGADO (aceptado = cobrado = 590,00 €)] cifra grande «null», esperaba «590,00 €»
+   ❌ D.4 [PAGADO (aceptado = cobrado = 590,00 €)] al lado [], esperaba ["Aceptado 590,00 €","Cobrado 590,00 €"]
+   ❌ D.5 [PAGADO (aceptado = cobrado = 590,00 €)] «590,00 €» se lee 7 veces, el inventario dice 3
+   ❌ D.6 [PAGADO (aceptado = cobrado = 590,00 €)] sigue el titular «Total aceptado» a 2,2 rem: la franja ya lo dice
+   ❌ D.7 [PAGADO (aceptado = cobrado = 590,00 €)] la barra sigue diciendo «Cobrado X de Y»: son dos cifras que la franja ya dio
+   ❌ D.8 [PAGADO (aceptado = cobrado = 590,00 €)] el rail sigue con su bloque DINERO: la misma verdad dicha dos veces
+   ❌ D.9 [PAGADO (aceptado = cobrado = 590,00 €)] sigue diciendo «Te falta por cobrar 0,00 €» en un Trabajo que no debe nada
+   ✅ D.10 [PAGADO (aceptado = cobrado = 590,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ❌ D.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] esperaba franja=true y una sola; hay 0
+   ❌ D.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] rótulo «null», esperaba «Te falta por cobrar»
+   ❌ D.3 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] cifra grande «null», esperaba «317,45 €»
+   ❌ D.4 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] al lado [], esperaba ["Aceptado 417,45 €","Cobrado 100,00 €"]
+   ❌ D.5 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] «417,45 €» se lee 4 veces, el inventario dice 1
+   ❌ D.6 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] sigue el titular «Total aceptado» a 2,2 rem: la franja ya lo dice
+   ❌ D.7 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] la barra sigue diciendo «Cobrado X de Y»: son dos cifras que la franja ya dio
+   ❌ D.8 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el rail sigue con su bloque DINERO: la misma verdad dicha dos veces
+   ✅ D.9 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [SIN PRESUPUESTO (no hay importe de referencia)] franja ausente, como debe (sin eje de cobro no se afirma nada)
+   ✅ D.5 [SIN PRESUPUESTO (no hay importe de referencia)] «—» se lee 0 veces
+   ✅ D.6 [SIN PRESUPUESTO (no hay importe de referencia)] el titular «Total aceptado» ya no está
+   ✅ D.7 [SIN PRESUPUESTO (no hay importe de referencia)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [SIN PRESUPUESTO (no hay importe de referencia)] el rail ya no lleva bloque DINERO
+   ✅ D.9 [SIN PRESUPUESTO (no hay importe de referencia)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [SIN PRESUPUESTO (no hay importe de referencia)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ❌ D.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] esperaba franja=true y una sola; hay 0
+   ❌ D.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] rótulo «null», esperaba «Cobrado del todo»
+   ❌ D.3 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] cifra grande «null», esperaba «539,05 €»
+   ❌ D.4 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] al lado [], esperaba ["Aceptado 539,05 €","Cobrado 628,60 €"]
+   ❌ D.5 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] «539,05 €» se lee 4 veces, el inventario dice 3
+   ❌ D.6 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sigue el titular «Total aceptado» a 2,2 rem: la franja ya lo dice
+   ❌ D.7 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] la barra sigue diciendo «Cobrado X de Y»: son dos cifras que la franja ya dio
+   ❌ D.8 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el rail sigue con su bloque DINERO: la misma verdad dicha dos veces
+   ❌ D.9 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sigue diciendo «Te falta por cobrar 0,00 €» en un Trabajo que no debe nada
+   ✅ D.10 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el aviso firmado de SCRUM-887 sigue en pantalla
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+G · todo control a ≥ 44 px (G.2) y sin scroll horizontal (G.1) — a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ G.1 [PAGADO (aceptado = cobrado = 590,00 €)] sin scroll horizontal
+   ❌ G.2 [PAGADO (aceptado = cobrado = 590,00 €)] 8 de 14 controles por debajo de 44 px
+   ✅ G.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] sin scroll horizontal
+   ❌ G.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] 8 de 14 controles por debajo de 44 px
+   ✅ G.1 [SIN PRESUPUESTO (no hay importe de referencia)] sin scroll horizontal
+   ❌ G.2 [SIN PRESUPUESTO (no hay importe de referencia)] 6 de 9 controles por debajo de 44 px
+   ✅ G.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sin scroll horizontal
+   ❌ G.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] 8 de 14 controles por debajo de 44 px
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+⓪ SUELO y control de discriminación · a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ ⓪ los 4 casos se pintan y son DISTINTOS entre sí a 390 px
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+D · el dinero se dice UNA vez: la franja (D.1-D.5) · lo que se retira (D.6-D.9) · lo que no se pierde (D.10) — a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ❌ D.1 [PAGADO (aceptado = cobrado = 590,00 €)] esperaba franja=true y una sola; hay 0
+   ❌ D.2 [PAGADO (aceptado = cobrado = 590,00 €)] rótulo «null», esperaba «Cobrado del todo»
+   ❌ D.3 [PAGADO (aceptado = cobrado = 590,00 €)] cifra grande «null», esperaba «590,00 €»
+   ❌ D.4 [PAGADO (aceptado = cobrado = 590,00 €)] al lado [], esperaba ["Aceptado 590,00 €","Cobrado 590,00 €"]
+   ❌ D.5 [PAGADO (aceptado = cobrado = 590,00 €)] «590,00 €» se lee 7 veces, el inventario dice 3
+   ❌ D.6 [PAGADO (aceptado = cobrado = 590,00 €)] sigue el titular «Total aceptado» a 2,2 rem: la franja ya lo dice
+   ❌ D.7 [PAGADO (aceptado = cobrado = 590,00 €)] la barra sigue diciendo «Cobrado X de Y»: son dos cifras que la franja ya dio
+   ❌ D.8 [PAGADO (aceptado = cobrado = 590,00 €)] el rail sigue con su bloque DINERO: la misma verdad dicha dos veces
+   ❌ D.9 [PAGADO (aceptado = cobrado = 590,00 €)] sigue diciendo «Te falta por cobrar 0,00 €» en un Trabajo que no debe nada
+   ✅ D.10 [PAGADO (aceptado = cobrado = 590,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ❌ D.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] esperaba franja=true y una sola; hay 0
+   ❌ D.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] rótulo «null», esperaba «Te falta por cobrar»
+   ❌ D.3 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] cifra grande «null», esperaba «317,45 €»
+   ❌ D.4 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] al lado [], esperaba ["Aceptado 417,45 €","Cobrado 100,00 €"]
+   ❌ D.5 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] «417,45 €» se lee 4 veces, el inventario dice 1
+   ❌ D.6 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] sigue el titular «Total aceptado» a 2,2 rem: la franja ya lo dice
+   ❌ D.7 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] la barra sigue diciendo «Cobrado X de Y»: son dos cifras que la franja ya dio
+   ❌ D.8 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el rail sigue con su bloque DINERO: la misma verdad dicha dos veces
+   ✅ D.9 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [SIN PRESUPUESTO (no hay importe de referencia)] franja ausente, como debe (sin eje de cobro no se afirma nada)
+   ✅ D.5 [SIN PRESUPUESTO (no hay importe de referencia)] «—» se lee 0 veces
+   ✅ D.6 [SIN PRESUPUESTO (no hay importe de referencia)] el titular «Total aceptado» ya no está
+   ✅ D.7 [SIN PRESUPUESTO (no hay importe de referencia)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [SIN PRESUPUESTO (no hay importe de referencia)] el rail ya no lleva bloque DINERO
+   ✅ D.9 [SIN PRESUPUESTO (no hay importe de referencia)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [SIN PRESUPUESTO (no hay importe de referencia)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ❌ D.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] esperaba franja=true y una sola; hay 0
+   ❌ D.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] rótulo «null», esperaba «Cobrado del todo»
+   ❌ D.3 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] cifra grande «null», esperaba «539,05 €»
+   ❌ D.4 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] al lado [], esperaba ["Aceptado 539,05 €","Cobrado 628,60 €"]
+   ❌ D.5 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] «539,05 €» se lee 4 veces, el inventario dice 3
+   ❌ D.6 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sigue el titular «Total aceptado» a 2,2 rem: la franja ya lo dice
+   ❌ D.7 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] la barra sigue diciendo «Cobrado X de Y»: son dos cifras que la franja ya dio
+   ❌ D.8 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el rail sigue con su bloque DINERO: la misma verdad dicha dos veces
+   ❌ D.9 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sigue diciendo «Te falta por cobrar 0,00 €» en un Trabajo que no debe nada
+   ✅ D.10 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el aviso firmado de SCRUM-887 sigue en pantalla
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+G · todo control a ≥ 44 px (G.2) y sin scroll horizontal (G.1) — a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ G.1 [PAGADO (aceptado = cobrado = 590,00 €)] sin scroll horizontal
+   ❌ G.2 [PAGADO (aceptado = cobrado = 590,00 €)] 8 de 14 controles por debajo de 44 px
+   ✅ G.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] sin scroll horizontal
+   ❌ G.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] 8 de 14 controles por debajo de 44 px
+   ✅ G.1 [SIN PRESUPUESTO (no hay importe de referencia)] sin scroll horizontal
+   ❌ G.2 [SIN PRESUPUESTO (no hay importe de referencia)] 6 de 9 controles por debajo de 44 px
+   ✅ G.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sin scroll horizontal
+   ❌ G.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] 8 de 14 controles por debajo de 44 px
+
+población: 92 comprobaciones sobre 4 casos × 2 anchuras (1280, 390) · 0 no medidas
+❌ el detalle NO cuadra con su inventario: 32 de 92.

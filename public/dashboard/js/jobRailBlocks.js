@@ -115,19 +115,18 @@ function bloqueDinero(job, fmt) {
   const moneda = (job && job.quote && job.quote.currency) || 'EUR';
 
   const lineas = [];
-  if (cobrado > 0) lineas.push({ etiqueta: 'Cobrado', texto: fmt(cobrado, moneda) });
-  if (aceptado > 0) lineas.push({ etiqueta: 'Pendiente', texto: fmt(Math.max(0, aceptado - cobrado), moneda) });
-
-  // SCRUM-907 · «Pendiente 0,00 €» escondía un cobro POR ENCIMA de lo aceptado. El exceso y el texto
-  // salen de `jobCobroHuecos.js`, los MISMOS que usa «Qué falta para cobrar»: dos cuentas del mismo
-  // exceso acabarían avisando en una pieza y no en la otra.
-  const cobro = (typeof importesDeCobro === 'function')
-    ? { importesDeCobro, avisoCobradoDeMas }
-    : (typeof require === 'function' ? require('./jobCobroHuecos.js') : null);
-  if (cobro) {
-    const exceso = cobro.importesDeCobro(job).cobradoDeMas;
-    if (exceso > 0) lineas.push({ texto: cobro.avisoCobradoDeMas(fmt(exceso, moneda)), aviso: true });
-  }
+  // 🔴 SCRUM-917e (D) · «Cobrado» y «Pendiente» YA NO SE PINTAN AQUÍ. Los trajo SCRUM-318 (G3)
+  // cuando el cuerpo sólo tenía el titular «Total aceptado»; desde que el cuerpo tiene la franja,
+  // esta columna repetía dos de sus tres cifras. Medido: con las dos aquí, «590,00 €» se leía
+  // siete veces en la pantalla. La misma verdad dicha dos veces no es redundancia útil, es la
+  // pantalla que no elige.
+  //
+  // ⚠️ El aviso de cobro de más (SCRUM-907/887) TAMBIÉN se va de aquí, por lo mismo: se sigue
+  // dando, entero y con su literal firmado, en «Qué falta para cobrar» — que es donde se explica,
+  // y no en una columna de 220 px. `seccionCobroVisible` devuelve `true` cuando hay exceso
+  // justamente para que esa sección exista aunque no haya ningún otro hueco, así que quitarlo de
+  // aquí no lo deja sin decir en ningún sitio. Lo vigila `guard:detalle-trabajo-917` (D.10), que
+  // falla RUIDOSAMENTE si el aviso desaparece de la pantalla.
 
   // Se clasifican con `tipoDeFactura`, la MISMA condición que usa la pila para repartir: si aquí
   // se repitiera el `startsWith('J-')` a mano, un cambio en una de las dos copias mandaría el
