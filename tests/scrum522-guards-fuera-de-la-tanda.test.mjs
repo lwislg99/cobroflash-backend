@@ -18,6 +18,8 @@ import { fileURLToPath } from 'node:url';
 import { fueraDeLaTanda } from '../scripts/guards-visuales.mjs';
 import { resolverNavegador, CANDIDATOS } from '../scripts/_navegador.mjs';
 import { esDeNavegador } from '../scripts/_solape-de-guards.mjs';
+// SCRUM-970 · la cifra de guards fuera de la tanda ya no se escribe aquí: se deriva de esta lista.
+import { DECLARADOS, diferencias } from './_guards-de-navegador-declarados.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PKG = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
@@ -221,11 +223,61 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // se volvió a MEDIR corriendo este test sobre el árbol ya fusionado. Y otra vez la cifra
   // mentía sin marca de conflicto: bajó limpia de main diciendo 32, y medida da 33 (cada lado
   // contaba sus guards y no los del otro).
-  assert.equal(fuera.length, 33,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ ~~31~~ ~~32~~ 33 → ${fuera.length}.\n`
-    + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
-    + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
-    + `  Ahora mismo: ${JSON.stringify(fuera)}`);
+  //
+  // ⚠️ NOVENA COLISIÓN, Y ÉSTA SE RESOLVIÓ EN VIVO MIENTRAS SE ARREGLABA LA OCTAVA: SCRUM-965
+  // entró en `main` con «30 → 31» mientras esta rama tenía 30. Resuelta como manda el párrafo de
+  // arriba y como manda el arreglo de abajo: **el comentario de 965 se queda entero**, su guard se
+  // apunta en su propia línea de la lista declarada, y el número **NO se suma: se vuelve a MEDIR**
+  // corriendo este test sobre el árbol ya fusionado. Que la colisión número nueve ocurriera dentro
+  // del ticket que la arregla no es casualidad: es la frecuencia del defecto.
+  //
+  // ══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-970 · Y AQUÍ YA NO HAY NINGÚN NÚMERO ESCRITO A MANO. Ésta era la OCTAVA colisión.
+  //
+  // Todo lo de arriba se queda: cada comentario dice por qué entró SU guard y ninguno se tira.
+  // Lo que se va es el `assert.equal(fuera.length, 30)` que había justo aquí, porque la forma que
+  // esos párrafos llevan cuatro días denunciando **no se arregla avisando**:
+  //
+  //   · dos ramas añaden un guard cada una y las dos escriben el MISMO número nuevo;
+  //   · git marca conflicto en los COMENTARIOS, que son distintos → alguien lo ve y los suma;
+  //   · pero la línea del número es IDÉNTICA en las dos, git la auto-mezcla SIN conflicto, y el
+  //     fichero queda mintiendo por uno.
+  //
+  //       🔒 El conflicto que sí ves te tapa el que no.
+  //
+  // MEDIDO con un merge de tres vías de verdad sobre este mismo fichero (evidencia
+  // `docs/master/evidencias/scrum970/colision-del-contador.mjs`): partiendo de 30, dos ramas que
+  // añaden un guard cada una dejan **31 donde la verdad son 32**, con marca de conflicto al lado
+  // que tapa que entró mal.
+  //
+  // Ahora la cifra se DERIVA de `tests/_guards-de-navegador-declarados.mjs`, donde los guards van
+  // **uno por línea** — así dos ramas que añaden el suyo escriben líneas DISTINTAS en el MISMO
+  // sitio y chocan de verdad, que es el conflicto que se buscaba.
+  //
+  // ⚠️ El trinquete no se relaja: se endurece. Antes decía «han cambiado de 30 a 31»; ahora dice
+  //    QUÉ guard sobra o falta, por su nombre. Ganar comodidad no podía perder detección.
+  // ══════════════════════════════════════════════════════════════════════════════════════════
+  const { sinDeclarar, declaradosQueYaNoEstan } = diferencias(fuera);
+  assert.deepEqual({ sinDeclarar, declaradosQueYaNoEstan }, { sinDeclarar: [], declaradosQueYaNoEstan: [] },
+    '🔴 LA LISTA DE GUARDS FUERA DE LA TANDA NO CUADRA CON LO DECLARADO.\n'
+    + `  Sin declarar (están en package.json y no en la lista): ${JSON.stringify(sinDeclarar)}\n`
+    + `  Declarados que ya no están:                            ${JSON.stringify(declaradosQueYaNoEstan)}\n`
+    + '  Si has añadido un guard: apúntalo EN SU PROPIA LÍNEA al final de\n'
+    + '  `tests/_guards-de-navegador-declarados.mjs`, y deja aquí arriba tu comentario diciendo\n'
+    + '  POR QUÉ no cabe en la tanda. Los dos sitios, no uno.\n'
+    + '  Si ha desaparecido uno: di CUÁL y por qué antes de quitarlo de la lista.\n'
+    + `  Ahora mismo hay ${fuera.length} guards fuera de la tanda y ${DECLARADOS.length} declarados.`);
+
+  // ✅ CONTROL DEL PROPIO TRINQUETE: la lista declarada no puede estar vacía ni llevar repetidos.
+  // Vacía, «no sobra ni falta ninguno» sería cierto sobre la nada; con un nombre repetido, los
+  // conjuntos cuadrarían y la cifra derivada dejaría de ser la cuenta.
+  assert.ok(DECLARADOS.length > 0, '🔴 la lista declarada está vacía: no estaría comparando nada.');
+  assert.equal(new Set(DECLARADOS).size, DECLARADOS.length,
+    '🔴 hay un guard declarado dos veces. Con repetidos, la cifra derivada deja de ser la cuenta.');
+  // ⚠️ ONCEAVA colisión (21-sep-2026, al mergear main en la rama del #1552 —SCRUM-970—): 970 quitaba
+  // de aquí el número escrito a mano y main, a la vez, lo subía a 33 con 915e1. Se quedan TODOS los
+  // comentarios de los dos lados, se tira la línea `assert.equal(fuera.length, 33, …)` —era justo lo
+  // que 970 arregla— y `guard:documento-vivo` se apunta en su propia línea de la lista declarada.
 });
 
 test('SCRUM-522 · la lista sale DERIVADA de package.json, no escrita aquí', () => {
