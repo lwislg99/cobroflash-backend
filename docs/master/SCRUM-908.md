@@ -789,3 +789,186 @@ van a `docs/equipo/afirmaciones-verificadas-javier.md`.
 - Banco subido (A8): `docs/master/evidencias/scrum908c/`. Son 9 scripts con las rutas en variables de
   entorno (`J6_908C_DIR`, `GH`) y 14 salidas, sin bytes de control. Los logs de CI no se suben
   (~80 KB cada uno): se vuelven a bajar con el `job` de cada fila de `censo-meta-ci.json`.
+
+# SCRUM-908c-2 · El rojo a propósito salió VERDE, entró en `main` con el arreglo comentado, y el mecanismo sigue sin reproducirse
+
+**Fecha:** 21-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** higiene del guard + medición. **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `840b7c5668d79c991751be3bb73a7445114d9974` · 2026-09-21T14:29:51Z
+**Rama:** `scrum-908c2-no-concluyente-declarado`
+**Preámbulo (A1):** `git status` limpio salvo el cambio de esta tanda; `git rev-list --count HEAD..origin/main` = **0** al ramificar. Sin `git stash` en ningún momento (A15).
+
+> **Obligación 0 (A4):** `git ls-remote --heads origin | awk '{print $2}' | grep -E '^refs/heads/scrum-0*908[a-z0-9]*-'` no devuelve ninguna rama viva (exit 1); `908`, `908b` y `908c` están mergeadas, así que esta entrada **ANEXA** (A8).
+
+> **Relevo, dicho una vez:** la sesión de J6 que dejó `0814eb52` y `df60dd8b` (la recalibración por CAPACIDAD) se quedó bloqueada en `EnterWorktree` antes de poder empujar el commit que restauraba el `--import`, y el auto-merge —armado desde el 18-sep— metió el PR #1519 en `main` tal cual, con el arreglo comentado. Lo midió y lo escribió primero el orquestador del equipo de Javier, en el comentario 16185 de este ticket (21-sep 16:23 CEST); esta entrada lo re-verifica de forma independiente (④) y añade el arreglo de higiene y la sección del expediente que faltaban.
+
+---
+
+## LO PRIMERO: EL RESULTADO
+
+1. **Higiene restaurada.** El `--import` de `conArreglo` ya no está comentado, y las dos pruebas que
+   dependen de la comparación SIN ARREGLO / CON ARREGLO **se declaran a sí mismas** si el caso, en la
+   corrida concreta, llegó a ejercitar la pérdida que dicen medir (`mecanismoEjercitado`, ver ⑤). Ya
+   no hay ningún test verde con el arreglo apagado.
+2. **El mecanismo de SCRUM-908 sigue SIN REPRODUCIRSE con este caso (A18), y ahora con una diferencia
+   medida y mucho más acotada que el 18-sep:** el hijo fabricado (`node:test` + `--test-force-exit`)
+   escribió **más del doble** de la capacidad que un hijo pelado (sin `node:test`) midió en la MISMA
+   máquina y aun así salió sin nada pendiente. Antes la pregunta era «¿cuánto acepta el transporte de
+   CI?»; ahora es «¿por qué el hijo con el runner de tests no se comporta como el hijo pelado?» (⑥).
+3. **No se toca `tests/scrum859`, `scripts/meta-guard-mutaciones.mjs` (S3) ni los workflows (S5).** La
+   propuesta a S3 (§⑦ de la entrada anterior) sigue siendo una **hipótesis con su literal**, y con esta
+   tanda hay una razón más para no darla por demostrada.
+
+---
+
+## ④ RE-VERIFICACIÓN INDEPENDIENTE DE LO QUE IMPRIMIÓ EL CI (no fiado del comentario 16185, medido de nuevo)
+
+**El run:** `35608495200`, job **«build + tests (con banco desechable)»** (`id=106361842488`),
+`head_sha=df60dd8b87051f6db025d75f28b043e56bea906e`, creado **2026-09-21T13:53:24Z**, `conclusion=success`.
+
+```
+"/c/Program Files/GitHub CLI/gh.exe" api repos/lwislg99/cobroflash-backend/actions/runs/35608495200 --jq '{status,conclusion,head_sha,created_at}'
+"/c/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/106361842488/logs > log.txt
+grep -n "SCRUM-908c" log.txt
+```
+
+Líneas 10770-10780 del log bajado hoy (idénticas a las que cita el comentario 16185, re-descargadas
+por esta sesión, no copiadas de él):
+
+```
+# SCRUM-908c · node=v24.20.0 pausa=2000ms tamRelleno=31858 capacidadBase=110592
+# CAPACIDAD    escrito=114688 cola-al-parar=4096 recibido=110592 salioDuranteLaPausa=true
+# SUELO        bytes=265874 mensajes=35 sobrante=0 llegados=[…los 5…]
+# SIN ARREGLO  bytes=265874 mensajes=35 sobrante=0 llegados=[…los 5…] salioDuranteLaPausa=false code=1 colaAlSalir=0
+# CON ARREGLO  bytes=265874 mensajes=35 sobrante=0 llegados=[…los 5…] salioDuranteLaPausa=false code=1 colaAlSalir=0
+✔ SCRUM-908c · 🔴 CAPACIDAD … (4097.295394ms)
+✔ SCRUM-908c · 🔴 SUELO … (3.376362ms)
+✔ SCRUM-908c · 🔴 SIN ARREGLO … (1.44159ms)
+✔ SCRUM-908c · ✅ CON ARREGLO … (2.128404ms)
+✔ SCRUM-908c · ✅ el vehículo del arreglo … (94.504866ms)
+```
+
+**El PR:** #1519, `mergedAt=2026-09-21T14:02:15Z`, `mergeCommit=1a6dfb9a578dc04147bd842fad9c83999c8a4d26`,
+`headRefOid=df60dd8b87051f6db025d75f28b043e56bea906e` — el mismo commit que el run de arriba, así que el
+merge tomó exactamente el árbol con el `--import` comentado.
+
+**Lectura de los números, literal:**
+
+- La sonda **CAPACIDAD** (hijo **sin** `node:test`, ráfagas de tamaño fijo) mide un techo de
+  **110.592 B** en esta corrida de CI y **sí** sale con la cola pendiente durante la pausa
+  (`salioDuranteLaPausa=true`, `cola-al-parar=4096`). El mecanismo de pérdida **existe** para ese hijo.
+- El **hijo fabricado** (con `node:test`, calibrado a `2× capacidadBase + 64 KiB` = 31.858 de relleno)
+  escribió **265.874 B — 2,4× la capacidadBase medida** — y aun así `salioDuranteLaPausa=false` y
+  `colaAlSalir=0` en **los dos brazos**, con o sin `--import`. No salió durante la pausa: siguió
+  escribiendo hasta vaciar su cola por sí solo, sin que el padre leyera.
+- Por construcción del test, cuando `colaAlSalir=0` la LEY exige «llegó todo», y llegó — así que
+  **SIN ARREGLO pasa en verde legítimamente**, no por un fallo del aserto. El problema no es que el
+  test mienta: es que el CASO, en esta corrida, no puso al hijo en la situación que el arreglo dice
+  resolver. **CON ARREGLO, con el `--import` comentado, mide exactamente lo mismo que SIN ARREGLO** —
+  de ahí que pasara sin el arreglo puesto.
+
+---
+
+## ⑤ EL ARREGLO DE HIGIENE DE ESTA TANDA
+
+`tests/scrum908c-la-cola-que-se-pierde.test.mjs`:
+
+1. **Restaurado el `--import`:** `correrConPadreParado(hijo, marca, ['--import', PRELOAD])`, sin
+   comentar.
+2. **`mecanismoEjercitado = sinArreglo.colaAlSalir > 0`**, calculado una vez en `medir()` y devuelto a
+   los tres tests que lo necesitan.
+3. Una línea `# VEREDICTO` en el log compartido (`MECANISMO REPRODUCIDO` / `NO CONCLUYENTE`, con las
+   cifras).
+4. En los tests **SIN ARREGLO** y **CON ARREGLO**, un `t.diagnostic(...)` — visible en el TAP, dentro
+   del propio test, no en un documento aparte — que dice explícitamente si esa corrida acredita algo o
+   no. Cuando `mecanismoEjercitado` es falso, **CON ARREGLO sigue pasando** (sus aserciones —`colaAlSalir
+   === 0`, nada perdido— siguen siendo ciertas y siguen mereciendo comprobarse) pero el diagnóstico dice,
+   literal: «NO CONCLUYENTE: … las aserciones de arriba no distinguen roto de arreglado».
+5. La cabecera del fichero ya no presenta el mecanismo como demostrado: dice **NO CONCLUYENTE** arriba
+   del todo, con el run y las cifras, antes de la descripción de qué hace el fichero.
+
+**Corrida en esta máquina (Windows) tras el cambio** — `node --test` sobre el fichero solo:
+
+```
+# SCRUM-908c · node=v24.18.0 pausa=2000ms tamRelleno=11000 capacidadBase=null
+# VEREDICTO    NO CONCLUYENTE — ni SIN ARREGLO ni CON ARREGLO salieron con cola pendiente en esta corrida…
+✔ 5 tests · 0 fail
+ℹ NO CONCLUYENTE: en esta corrida, SIN ARREGLO salió con colaAlSalir=0 …
+```
+
+Windows nunca ejercita el mecanismo (`capacidadBase=null`, escritura síncrona: SCRUM-908/908b, 0 de 91),
+así que aquí el diagnóstico **siempre** dirá NO CONCLUYENTE — es el comportamiento correcto de esta
+plataforma, no un defecto nuevo. La corrida que importa es la de Linux (④), y hoy también dice NO
+CONCLUYENTE, con las cifras.
+
+**No se borra nada de lo medido** (encargo explícito): la recalibración por CAPACIDAD del 18-sep sigue
+siendo el mecanismo del fichero; lo que cambia es que ya no finge haber probado el arreglo cuando no lo
+hizo.
+
+---
+
+## ⑥ LA PREGUNTA QUE QUEDA ABIERTA (no resuelta esta tanda — sin WSL ni Docker en esta máquina, medido: `wsl.exe -l -v` → «no está instalado», `docker` no está en el PATH)
+
+Los dos hijos de este caso corren con el mismo `stdio: ['pipe','pipe','pipe']`, el mismo padre parado y
+sin leer, y difieren en **una sola cosa**: el hijo fabricado carga `node:test` y sale con
+`--test-force-exit`; el de la sonda CAPACIDAD no. Si `--test-force-exit` llamara a `process.exit()` sin
+esperar a que stdout se vacíe (la hipótesis de §④ de la entrada anterior, con cita de
+`lib/internal/test_runner/test.js` 1463-1487), el hijo fabricado debería comportarse como el pelado
+—salir con cola pendiente al escribir 2,4× la capacidad—. **No lo hace.**
+
+**Dato relacionado, de otro equipo, sin releer por esta sesión (se cita, no se verifica de nuevo):**
+comentario 16159 de este ticket (S5, equipo de Luis, 21-sep 15:09 CEST) — el mismo día, en la misma
+ventana, un **segundo fichero** salió mudo con la misma firma «NO APARECE»: `vigia-atascados.test.mjs`,
+run `35601265329`, «33 pasados · 1 caídos» en la pasada mutada frente a «64 pasados · 0 caídos» en la
+limpia. Dos ficheros de guard distintos con la misma firma apuntan a algo del transporte o del runner
+de `node:test`, no a una propiedad de `scrum859` en concreto — coherente con (y no en contra de) la
+hipótesis de esta rama, pero **tampoco la prueba**: es la misma clase de dato que necesita su propia
+verificación antes de usarse.
+
+**Candidatos sin medir, para quien siga (no se investiga aquí por presupuesto de tanda, se deja
+explícito en vez de callado):**
+
+- Que el reporter de `node:test` (`v8-serializer.js`) escriba en trozos que caben bajo la marca de agua
+  (64 KiB en POSIX, `lib/internal/streams/state.js:12`) con más frecuencia de lo que el caso fabricado
+  asume, de forma que el `drain` tenga tiempo de vaciar la cola ANTES de que el hijo llegue a
+  `process.exit()` — es decir, que la ventana de 2 s de pausa sea más que suficiente para que el propio
+  bucle de eventos del hijo vacíe lo que escribió, y que el hijo pelado (sin overhead de `node:test`
+  entre escritura y escritura) sea el que se comporta distinto por ser MÁS rápido en llenar el buffer
+  del kernel de una sola vez, no el fabricado por ser más lento.
+- Que `--test-force-exit` en Node 24.20 no llame a `process.exit()` inmediatamente sino que espere
+  algún evento adicional (el `unpipe` del reporter, citado en la propia hipótesis) que en la práctica sí
+  da tiempo a vaciar la tubería del SO, y que la lectura de las líneas 1463-1487 esté incompleta.
+- El dato de la S5: si el mudo real (`scrum859` con la mutación) se mueve de fichero en fichero con el
+  tiempo, eso también apunta a un mecanismo compartido por el RUNNER y no por el contenido de un test
+  concreto.
+
+**No se ha medido ninguno de los tres.** Se declara como lo que es: preguntas con su literal, no una
+conclusión.
+
+---
+
+## LO QUE ESTO NO DEMUESTRA (el hueco, declarado, A18)
+
+- Que el `--import` (o quitar `forceExit`) arregle algo **real** sigue sin acreditarse: la hipótesis
+  entera a S3 (§⑦ de la entrada anterior) sigue siendo eso, una hipótesis.
+- Esta sesión no tiene WSL ni Docker (comprobado arriba), así que toda la evidencia de Linux de esta
+  entrada es de **CI**, no de una réplica controlada donde se pueda variar una sola cosa y repetir. Un
+  run de CI no es un banco: no se puede forzar una segunda pasada sobre el MISMO árbol para ver si
+  `colaAlSalir=0` es estable o también intermitente.
+- El caso fabricado, tal como está calibrado (2× capacidadBase + 64 KiB), puede simplemente estar
+  **mal calibrado también para el hijo con runner** — no se ha probado con un relleno mayor (p. ej.
+  10× capacidadBase) para ver si a partir de cierto tamaño el hijo fabricado sí empieza a salir con cola
+  pendiente. Eso NO se ha intentado esta tanda (presupuesto de tanda: la higiene y el expediente tenían
+  prioridad, por encargo explícito).
+
+---
+
+## LO NO TOCADO
+
+- `tests/scrum859-…`, `scripts/meta-guard-mutaciones.mjs` (S3), `.github/workflows/**` (S5): ni una
+  línea.
+- `src/`, `public/`, `prisma/schema.prisma`: nada. Ningún texto que vea el usuario.
+- Ninguna lista de excepciones ensanchada (A7); ningún guard aflojado (regla 41); ninguna aserción
+  relajada — al contrario, se añadieron dos (`mecanismoEjercitado`, los `t.diagnostic`).
+- Sin `git stash`, sin reescribir historia, sin tocar ninguna base ni staging.
+- El PR #1519 (ya mergeado) no se toca ni se reabre: esta entrada va en una rama nueva
+  (`scrum-908c2-no-concluyente-declarado`), como corresponde a A17 sobre una rama ya cerrada.
