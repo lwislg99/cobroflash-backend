@@ -197,9 +197,13 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // del CSS no había pintado nunca—. Comprobado en rojo contra `e73e1630` (20-sep-2026): 7
   // hallazgos en 5 de 5 casos; y por mutación, quitar SÓLO la delegación tumba exactamente las dos
   // casillas de la fecha y ninguna más.
+  // SCRUM-915h · entra `guard:conceptos-limpios`. Mira el paso Conceptos DESPUÉS DE PULSAR: el menú
+  // ⋯ de la línea, la hoja de ajustes, qué ficha se ve y qué no, y la tecla N; nada de eso existe
+  // fuera del render. Comprobado en rojo con el `public/` de main (21-sep-2026): 8 hallazgos en 5 de
+  // 5 casos, con el control de la N (en #home SÍ abre) medido primero y en página limpia.
   // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
-  assert.equal(fuera.length, 32,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ ~~31~~ 32 → ${fuera.length}.\n`
+  assert.equal(fuera.length, 33,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ ~~31~~ ~~32~~ 33 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);
