@@ -1,0 +1,16 @@
+# run 35364145759 · job 105662367169 · build + tests · cabeza f6ac3021 (ROJO A PROPÓSITO)
+# líneas 11069-11076, 11490-11492 y 11507-11509 del log, tal cual
+2026-09-18T15:49:25.2650209Z # SCRUM-908c · node=v24.20.0 pausa=2000ms relleno=11000
+2026-09-18T15:49:25.2651882Z # SUELO        bytes=99003 mensajes=35 sobrante=0 llegados=[RELLENO-908c,NOMBRADO-908c,COLA-908c-1,COLA-908c-2,COLA-908c-3]
+2026-09-18T15:49:25.2654011Z # SIN ARREGLO  bytes=99003 mensajes=35 sobrante=0 llegados=[RELLENO-908c,NOMBRADO-908c,COLA-908c-1,COLA-908c-2,COLA-908c-3] salioDuranteLaPausa=true code=1
+2026-09-18T15:49:25.2656439Z # CON ARREGLO  bytes=99002 mensajes=35 sobrante=0 llegados=[RELLENO-908c,NOMBRADO-908c,COLA-908c-1,COLA-908c-2,COLA-908c-3] salioDuranteLaPausa=true code=1
+2026-09-18T15:49:25.2659036Z ✔ SCRUM-908c · 🔴 SUELO: el hijo fabricado emite sus 5 veredictos, y el caso cae donde debe (201.963576ms)
+2026-09-18T15:49:25.2661119Z ✖ SCRUM-908c · 🔴 SIN ARREGLO: si el hijo sale mientras el padre no lee, la cola SE PIERDE; si no puede salir, llega (2.051622ms)
+2026-09-18T15:49:25.2663679Z ✖ SCRUM-908c · ✅ CON ARREGLO: stdout bloqueante en el hijo, no sale con datos pendientes y llega TODO (0.528123ms)
+2026-09-18T15:49:25.2665842Z ✔ SCRUM-908c · ✅ el vehículo del arreglo: `run({ execArgv })` le pasa el `--import` al hijo (116.285429ms)
+2026-09-18T15:49:33.6099649Z ✖ SCRUM-908c · 🔴 SIN ARREGLO: si el hijo sale mientras el padre no lee, la cola SE PIERDE; si no puede salir, llega (2.051622ms)
+2026-09-18T15:49:33.6101801Z   AssertionError [ERR_ASSERTION]: 🔴 el hijo salió con el padre parado y aun así llegó el NOMBRADO: Node ya vacía stdout antes de salir, y la causa de SCRUM-908 no es ésta. bytes=99003 mensajes=35 sobrante=0 llegados=[RELLENO-908c,NOMBRADO-908c,COLA-908c-1,COLA-908c-2,COLA-908c-3] salioDuranteLaPausa=true code=1
+2026-09-18T15:49:33.6103027Z   
+2026-09-18T15:49:33.6112553Z ✖ SCRUM-908c · ✅ CON ARREGLO: stdout bloqueante en el hijo, no sale con datos pendientes y llega TODO (0.528123ms)
+2026-09-18T15:49:33.6114578Z   AssertionError [ERR_ASSERTION]: 🔴 el hijo salió con el padre parado aunque su stdout debía ser bloqueante: el arreglo no se aplicó (o el caso ya no llena la tubería: mira el SUELO). bytes=99002 mensajes=35 sobrante=0 llegados=[RELLENO-908c,NOMBRADO-908c,COLA-908c-1,COLA-908c-2,COLA-908c-3] salioDuranteLaPausa=true code=1 stderr=
+2026-09-18T15:49:33.6116320Z   

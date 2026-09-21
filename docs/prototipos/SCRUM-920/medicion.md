@@ -148,3 +148,40 @@ commits, 0 conflictos) y se volvió a correr `medir.mjs` sobre el árbol fusiona
   si no se puede abrir, dice «No hemos podido abrir esta foto. Prueba con otra o haz una captura de pantalla del
   ticket.», firmado). No cambia el diseño, pero la construcción tiene que **conservarlo** (ver
   `encargo-construccion-s2.md`).
+
+## 8 · 920h: por qué un campo de la lectura quedó sin rellenar (21-sep-2026)
+
+Se añade al prototipo el estado «Con lectura del ticket» + «…y con datos que no cuadraron» (dos conmutadores del
+andamio) y el grupo H del inventario. Diseño y textos: `textos-propuestos.md` §920h y `encargo-construccion-s2.md`
+A13/A14/§2bis. **Los textos son PROPUESTOS y SIN FIRMAR.**
+
+- **BASE antes de tocar nada: TODO EN VERDE, `EXIT=0`, 86 comprobaciones (43 × 2), 0 rojas**, los tres controles
+  positivos disparando. **Después: 110 (55 × 2), 0 rojas, `EXIT=0`**: las 12 nuevas por anchura son las de 920h.
+  Población del alta cargado (lectura + descartes): 20 controles, en las dos anchuras. La del inventario sigue en 0
+  (hueco ya declarado en §7).
+- **Lo que miden las 12 nuevas** (todas pulsando y leyendo el estado, no el CSS): sin descartes no sale ningún porqué
+  (control negativo) · con tres descartes salen tres, con su **texto exacto** · cada porqué va dentro de su campo y el
+  campo lo apunta (`aria-describedby`) · la base queda vacía, la cuota y el tipo rellenos, la fecha con la de hoy y sin
+  marca · el bloque plegado se abre solo y dice «Revisa 2 datos» (y «Revisa 1 dato» con uno) · el NIF: la ayuda firmada
+  y el porqué conviven, y al elegir proveedor el porqué se queda · **los nueve motivos del servidor tienen literal**
+  (lee `MotivoDescarte` de `lecturaTicket.ts` y compara con el diccionario de la pantalla: cae si el servidor añade un
+  décimo) · los nueve textos son distintos, acaban en punto y no dicen nada vetado · 0 scroll lateral, 0 cajas que
+  desbordan, 0 controles < 44 px y 0 frases vetadas en ese estado · contraste ≥ 4,5:1 (**5,02**) con su control positivo
+  (un gris claro sembrado sale a 2,32) · apagar el andamio los quita.
+- **Rojo visto: 14 mutaciones inyectadas, las 14 caen**, cada una nombrando lo que falla (banco: texto del porqué
+  cambiado · el NIF sin porqué · la base sin `aria-describedby` · la base llega rellena · el bloque no se abre · sin
+  singular · porqués también sin descartes · un motivo mal nombrado · el porqué sin salto de línea (desborda a 390:
+  scroll lateral y 12 cajas) · gris claro (2,32) · la fecha descartada con su marca · el porqué del NIF se pierde al
+  elegir proveedor · el servidor con un décimo motivo (10 ≠ 9) · la base sin `id`). Cada una con `git diff --numstat` como
+  testigo de que se aplicó y restaurada con `git restore` (árbol limpio al final).
+- **Dos errores propios del instrumento, para no repetirlos.** ① La **primera pasada del banco de mutaciones no valía**: en
+  PowerShell `$ok` y `$OK` son la MISMA variable (no distingue mayúsculas), y el recuento pisaba el carácter que buscaba;
+  desde la 2.ª mutación salían «ok=0» y «142 rojas» que parecían resultados. Lo destapó mirar el fichero crudo de una
+  mutación en vez de fiarme del resumen. ② La mutación M14 (quitar un `id`) **reventaba el medidor con una excepción**
+  en vez de dar un rojo con nombre: un campo que desaparece tiene que salir como ✗, no como un proceso caído sin
+  veredicto. Las lecturas del estado de los campos llevan ahora guarda (`null`) y M14 cae con «base: null».
+- **Capturas regeneradas:** `3-alta-leida` (cambia el texto del aviso) y nuevas `7-alta-descartes`, en las dos
+  anchuras, ventana y entera. La 7 va al final a propósito para no renumerar las seis de antes.
+- **NO medido, declarado:** el estado con los otros seis motivos pintados a la vez (el prototipo enseña tres; los nueve
+  literales están todos comprobados por texto pero sólo tres se ven en pantalla) · el porqué en la pantalla REAL (no
+  existe: la lectura no tiene pantalla, A13) · ninguna lectura de un ticket de verdad (912d midió tres tickets sintéticos).
