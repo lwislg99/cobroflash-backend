@@ -205,6 +205,12 @@ details.plega .cuerpo{padding:2px 0 12px}
 /* El hueco de la lectura del ticket (SCRUM-912, carril S1): sólo se DIBUJA dónde caería. */
 .leido{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 8px;border-radius:var(--r-full);background:var(--info-bg);color:var(--info);font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:none}
 .aviso-leido{display:flex;gap:8px;align-items:flex-start;background:var(--info-bg);color:var(--info);border-radius:var(--r-md);padding:10px 12px;font-size:13px;margin:0 0 12px}
+/* SCRUM-920h · POR QUÉ un campo de la lectura no se rellenó. El servidor ya lo calcula (`descartados:
+   [{campo, motivo}]`, nueve motivos) y ninguna pantalla lo pinta. Va DEBAJO del campo, con el tono de
+   AVISO (ámbar de DESIGN.md), nunca el rojo de error: no es un fallo de quien apunta el gasto. Pasa AA
+   sobre el blanco (5,0:1) y sobre el fondo cálido (4,6:1). */
+.campo .porque{display:block;font-size:12.5px;line-height:1.35;font-weight:600;color:var(--warning);margin-top:4px}
+details.plega>summary .val.revisa{font-weight:700;color:var(--warning);white-space:nowrap;flex-shrink:0}
 .oculto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* ── EL DETALLE DEL GASTO ─────────────────────────────────────────────────── */
@@ -319,6 +325,9 @@ details.plega .cuerpo{padding:2px 0 12px}
   <!-- ANDAMIO también: el HUECO de la lectura del ticket con IA. La lectura es SCRUM-912 (carril
        S1, parado a la espera de una decisión del fundador); este ticket sólo dibuja dónde cae. -->
   <label><input type="checkbox" id="lectura"> Con lectura del ticket (SCRUM-912, no existe)</label>
+  <!-- ANDAMIO del andamio: sólo tiene efecto con la lectura encendida y la foto hecha. Enseña qué pasa
+       cuando el servidor DESCARTA campos (`descartados`): lo que hoy se calcula y ninguna pantalla pinta. -->
+  <label><input type="checkbox" id="descartes"> …y con datos que no cuadraron (SCRUM-920h)</label>
   <span class="leyenda"><u>subrayado</u> = texto nuevo, propuesto y sin firmar</span>
 </div>
 
@@ -551,13 +560,16 @@ function pintarAlta() {
     <!-- ② Lo imprescindible: los DOS obligatorios de hoy, más categoría y trabajo. -->
     <section class="paso">
       <h2>${P('2 · Qué es y cuánto')}</h2>
-      ${leidoActivo() ? `<p class="aviso-leido" id="aviso-leido">🔎 ${P('Hemos leído el importe y la fecha de la foto. Revísalos: lo que se guarda es lo que pongas tú.')}</p>` : ''}
+      <!-- SCRUM-920h · el aviso YA NO nombra «el importe y la fecha»: con un dato descartado esa frase
+           dejaba de ser verdad (la fecha no se rellenó y el aviso decía que sí). Qué se leyó lo dice cada
+           campo con su marca «leído de la foto»; qué NO, cada campo con su porqué. -->
+      ${leidoActivo() ? `<p class="aviso-leido" id="aviso-leido">🔎 ${P('Hemos leído la foto y rellenado lo que se veía. Revísalo: lo que se guarda es lo que pongas tú.')}</p>` : ''}
       <label class="campo"><span class="label">Concepto *</span>
         <input id="a-concepto" type="text" placeholder="Ej: Tubería PVC 20mm" value="${esc(altaConcepto)}"></label>
       <div class="dos">
         <label class="campo importe-grande"><span class="label">Importe *${leidoActivo() ? `<span class="leido">${P('leído de la foto')}</span>` : ''}</span>
           <input id="a-importe" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" value="${esc(leidoActivo() && !altaImporte ? '84.70' : altaImporte)}"></label>
-        <label class="campo"><span class="label">Fecha${leidoActivo() ? `<span class="leido">${P('leído de la foto')}</span>` : ''}</span><input id="a-fecha" type="date" value="2026-09-17"></label>
+        <label class="campo"><span class="label">Fecha${leidoActivo() && !descartado('date') ? `<span class="leido">${P('leído de la foto')}</span>` : ''}</span><input id="a-fecha" type="date" value="2026-09-17"${describe('date', 'a-fecha-porque')}>${porque('date', 'a-fecha-porque')}</label>
       </div>
       <div class="dos">
         <label class="campo"><span class="label">Categoría</span>
@@ -574,8 +586,12 @@ function pintarAlta() {
     <!-- ③ y ④ Los ocho campos restantes: TODOS siguen aquí, plegados y agrupados por el momento
          en que se rellenan. Ninguno se retira. -->
     <section class="paso">
-      <details class="plega" id="p-factura">
-        <summary><span class="chev">▸</span>${P('3 · Datos de la factura del proveedor')}<span class="val">${P('Opcional')}</span></summary>
+      <!-- SCRUM-920h · si la lectura DESCARTÓ algo de este bloque, se abre solo y el resumen lo dice: un
+           dato «revisable» escondido en un bloque plegado es exactamente el hueco en blanco de hoy. -->
+      <details class="plega" id="p-factura"${revisaEnFactura() ? ' open' : ''}>
+        <summary><span class="chev">▸</span>${P('3 · Datos de la factura del proveedor')}${revisaEnFactura()
+          ? `<span class="val revisa">${P(`Revisa ${revisaEnFactura()} ${revisaEnFactura() === 1 ? 'dato' : 'datos'}`)}</span>`
+          : `<span class="val">${P('Opcional')}</span>`}</summary>
         <div class="cuerpo">
           <div class="dos">
             <label class="campo"><span class="label">Proveedor (opcional)</span>
@@ -583,18 +599,18 @@ function pintarAlta() {
             <!-- SCRUM-937b (en main): sin proveedor el NIF no tiene dónde guardarse, así que nace bloqueado y
                  la ayuda —texto ya firmado, no es nuevo— lo dice ANTES de teclear. -->
             <label class="campo"><span class="label">NIF del proveedor</span>
-              <input id="a-nif" type="text" inputmode="text" autocapitalize="characters" placeholder="B12345678" readonly aria-describedby="a-nif-ayuda">
-              <span class="pista" id="a-nif-ayuda">Elige antes el proveedor: el NIF se guarda en su ficha.</span></label>
+              <input id="a-nif" type="text" inputmode="text" autocapitalize="characters" placeholder="B12345678" readonly aria-describedby="a-nif-ayuda${descartado('nifProveedor') ? ' a-nif-porque' : ''}">
+              <span class="pista" id="a-nif-ayuda">Elige antes el proveedor: el NIF se guarda en su ficha.</span>${porque('nifProveedor', 'a-nif-porque')}</label>
           </div>
           <div class="dos">
             <label class="campo"><span class="label">Nº de factura del proveedor</span><input type="text" placeholder="A-2026/114"></label>
             <label class="campo"><span class="label">Fecha de la factura</span><input type="date"></label>
           </div>
           <div class="tres">
-            <label class="campo"><span class="label">Base imponible</span><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
-            <label class="campo"><span class="label">Tipo de IVA</span>
-              <select><option value="">—</option><option>21%</option><option>10%</option><option>4%</option><option>0%</option></select></label>
-            <label class="campo"><span class="label">Cuota de IVA</span><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+            <label class="campo"><span class="label">Base imponible</span><input id="a-base" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"${describe('baseAmount', 'a-base-porque')}>${porque('baseAmount', 'a-base-porque')}</label>
+            <label class="campo"><span class="label">Tipo de IVA${descartesActivo() ? `<span class="leido">${P('leído de la foto')}</span>` : ''}</span>
+              <select id="a-tipoiva"><option value="">—</option><option${descartesActivo() ? ' selected' : ''}>21%</option><option>10%</option><option>4%</option><option>0%</option></select></label>
+            <label class="campo"><span class="label">Cuota de IVA${descartesActivo() ? `<span class="leido">${P('leído de la foto')}</span>` : ''}</span><input id="a-cuota" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" value="${descartesActivo() ? '14.70' : ''}"></label>
           </div>
         </div>
       </details>
@@ -620,6 +636,45 @@ function pintarAlta() {
 // que leer, y el formulario tiene que funcionar entero sin la lectura (que hoy no existe).
 let LECTURA = false;
 const leidoActivo = () => LECTURA && altaFoto;
+
+// ── SCRUM-920h · POR QUÉ UN CAMPO DE LA LECTURA QUEDÓ SIN RELLENAR ───────────────────────────
+// `POST /admin/expenses/leer-ticket` ya devuelve `descartados: [{campo, motivo}]` (lecturaTicket.ts,
+// `sanearLectura`): lo que el modelo leyó y NO vale se descarta y se dice. Ninguna pantalla lo pinta.
+// El prototipo respeta el CONTRATO: `campo` es una clave de `PropuestaGasto` y `motivo` uno de los
+// nueve de `MotivoDescarte`. Los literales son PROPUESTOS y SIN FIRMAR (`P()`): los firma el orquestador.
+// «null» (no se leyó) y «descartado» (se leyó y no vale) son dos hechos: sólo el segundo lleva porqué.
+let DESCARTES = false;
+const descartesActivo = () => leidoActivo() && DESCARTES;
+// El caso del andamio: una fecha futura (top), una base que no suma con la cuota y el total (bloque 3)
+// y un NIF con el dígito de control mal (bloque 3). Los tres son motivos reales de `sanearLectura`.
+const DESCARTADOS = [
+  { campo: 'date', motivo: 'fecha_futura' },
+  { campo: 'baseAmount', motivo: 'no_cuadra_con_el_total' },
+  { campo: 'nifProveedor', motivo: 'nif_invalido' },
+];
+const MOTIVOS = {
+  no_es_numero: 'No hemos podido leer esta cifra. Escríbela tú.',
+  fuera_de_rango: 'La cifra que hemos leído no tiene sentido. Escríbela tú.',
+  tipo_iva_no_admitido: 'El tipo de IVA que hemos leído no es uno de los que se pueden guardar. Elígelo tú.',
+  // ⚠️ Este motivo vacía la BASE, no el IVA: `sanearLectura` descarta `baseAmount` cuando base + cuota ≠ total.
+  // La cuota se queda rellena, y puede ser ella la mal leída: por eso el texto manda revisar las TRES.
+  no_cuadra_con_el_total: 'La base, la cuota y el total no sumaban. Hemos dejado la base vacía: revisa las tres cifras en el ticket.',
+  // ⚠️ La fecha NO queda vacía: el formulario nace con la de hoy (`exp-date`). El texto dice lo que hay.
+  fecha_invalida: 'La fecha que hemos leído no existe. Hemos dejado la de hoy: cámbiala si hace falta.',
+  fecha_futura: 'La fecha que hemos leído es posterior a hoy. Hemos dejado la de hoy: cámbiala si hace falta.',
+  nif_invalido: 'El NIF que hemos leído no es válido. Compruébalo en el ticket.',
+  demasiado_largo: 'Lo que hemos leído es demasiado largo para este campo. Escríbelo tú.',
+  no_es_texto: 'No hemos podido leer este dato. Escríbelo tú.',
+};
+const descartado = (campo) => (descartesActivo() ? DESCARTADOS.find((d) => d.campo === campo) : undefined);
+const describe = (campo, id) => (descartado(campo) ? ` aria-describedby="${id}"` : '');
+const porque = (campo, id) => {
+  const d = descartado(campo);
+  return d ? `<span class="porque" id="${id}" data-motivo="${d.motivo}">${P(MOTIVOS[d.motivo])}</span>` : '';
+};
+// Cuántos descartes caen en el bloque plegado «3 · Datos de la factura del proveedor».
+const CAMPOS_DE_LA_FACTURA = ['baseAmount', 'vatRate', 'vatAmount', 'providerInvoiceNumber', 'proveedorNombre', 'nifProveedor'];
+const revisaEnFactura = () => (descartesActivo() ? DESCARTADOS.filter((d) => CAMPOS_DE_LA_FACTURA.includes(d.campo)).length : 0);
 
 function fotoVacia() {
   return `<div class="foto">
@@ -791,6 +846,19 @@ const INV = [
  ['El aviso del simplificado NO se enciende y no hay contenedor vacío esperándolo', 'Igual: no se enciende, y este prototipo tampoco lo enciende', '🔴 Afirmación fiscal: espera al asesor (SCRUM-324 E3, fundador 10-ago-2026)'],
  ['G · Objetivo táctil'],
  ['10 controles por debajo de 44 px a 1280 y 9 a 390 (sin contar el menú lateral)', 'Todos a 44 px o más, también en escritorio', 'AB6. Se declara la excepción de `btn-sm` de DESIGN.md en vez de aprovecharla'],
+ ['H · La lectura del ticket: por qué un campo quedó sin rellenar (SCRUM-920h, del comentario 16152 de SCRUM-920)'],
+ ['El servidor ya descarta lo que no cuadra y lo dice (`descartados: [{campo, motivo}]`, nueve motivos). Ninguna pantalla lo pinta: el campo queda en blanco y nadie sabe por qué', 'Debajo del campo que quedó sin rellenar, UNA línea con el porqué y qué hacer, en ámbar (no en rojo). Sin línea cuando el modelo sólo NO lo vio (`null`)', '«null» (no se leyó) y «descartado» (se leyó y no vale) son dos hechos distintos: sólo el segundo lleva línea. Lo enseña el andamio «…y con datos que no cuadraron». Todos los textos de este grupo: PROPUESTOS, SIN FIRMAR'],
+ ['`no_es_numero` · Importe, Base, Cuota y Tipo de IVA: el campo queda en blanco sin decirlo', '«No hemos podido leer esta cifra. Escríbela tú.»', 'El modelo devolvió algo que no es una cifra'],
+ ['`fuera_de_rango` · Importe, Base y Cuota: en blanco', '«La cifra que hemos leído no tiene sentido. Escríbela tú.»', 'Negativa, de más de 1.000.000 o, sólo el Importe, cero. No se «arregla»: un 0,21 no pasa a 21'],
+ ['`tipo_iva_no_admitido` · Tipo de IVA: en «—»', '«El tipo de IVA que hemos leído no es uno de los que se pueden guardar. Elígelo tú.»', 'No es de los que admite el servidor (`TIPOS_IVA_ES_BP`) o no es entero (`Expense.vatRate` es `Int`)'],
+ ['`no_cuadra_con_el_total` · Base: en blanco', '«La base, la cuota y el total no sumaban. Hemos dejado la base vacía: revisa las tres cifras en el ticket.»', '⚠️ Vacía la BASE, no el IVA: la cuota se queda rellena y puede ser ella la mal leída, por eso el texto manda revisar las tres y no «corregir el IVA». Tolerancia de un céntimo'],
+ ['`fecha_invalida` · Fecha: se queda la de hoy y no se dice que la leída se descartó', '«La fecha que hemos leído no existe. Hemos dejado la de hoy: cámbiala si hace falta.»', 'No es AAAA-MM-DD, el día no existe o el año es anterior a 2000. ⚠️ La fecha NO queda vacía (el formulario nace con la de hoy): el texto dice lo que hay'],
+ ['`fecha_futura` · Fecha: ídem', '«La fecha que hemos leído es posterior a hoy. Hemos dejado la de hoy: cámbiala si hace falta.»', 'El «hoy» es el de Madrid'],
+ ['`nif_invalido` · NIF del proveedor: sin rellenar', '«El NIF que hemos leído no es válido. Compruébalo en el ticket.»', 'El dígito de control no cuadra: casi siempre una letra mal leída. Convive con la ayuda firmada del NIF (sin proveedor está bloqueado) y usa la misma frase que la ficha del cliente («Ese NIF/CIF no es válido. Compruébalo.»)'],
+ ['`demasiado_largo` · Concepto (200), Nº de factura (60), Proveedor (120) y NIF (20): en blanco', '«Lo que hemos leído es demasiado largo para este campo. Escríbelo tú.»', 'Supera el máximo del campo; no se corta a medias'],
+ ['`no_es_texto` · Concepto, Nº de factura y NIF: en blanco', '«No hemos podido leer este dato. Escríbelo tú.»', 'El modelo devolvió algo que no es texto. Sale muy raramente, pero el servidor lo distingue y la pantalla no puede quedarse muda'],
+ ['El aviso de arriba (912, sin firmar) decía «Hemos leído el importe y la fecha de la foto. Revísalos…»', '«Hemos leído la foto y rellenado lo que se veía. Revísalo: lo que se guarda es lo que pongas tú.»', 'Con un dato descartado, «el importe y la fecha» deja de ser verdad: la fecha no se rellenó y el aviso decía que sí. Qué se leyó lo dice cada campo con su marca; qué no, con su porqué'],
+ ['Un descarte dentro del bloque plegado «3 · Datos de la factura del proveedor» queda escondido', 'El bloque se abre solo y su resumen dice «Revisa 1 dato» / «Revisa N datos»', 'Un dato revisable dentro de un bloque cerrado es el hueco en blanco de hoy con otra forma. Singular y plural, como «1 gasto»'],
 ];
 // 🔴 Lo que va entre comillas invertidas es CÓDIGO y se escapa. El borrador lo metía tal cual en
 // innerHTML, y la fila que describe el defecto —«`<table style="min-width:600px">`»— creaba una
@@ -910,6 +978,7 @@ function toast(m) {
 $('#resaltar').addEventListener('change', (e) => document.body.classList.toggle('sin-resaltar', !e.target.checked));
 $('#mesvacio').addEventListener('change', (e) => { MES_VACIO = e.target.checked; if (tab === 'lista') render(); });
 $('#lectura').addEventListener('change', (e) => { LECTURA = e.target.checked; if (tab === 'alta') render(); });
+$('#descartes').addEventListener('change', (e) => { DESCARTES = e.target.checked; if (tab === 'alta') render(); });
 document.addEventListener('change', (e) => {
   if (e.target.id === 'f-cat') { fCat = e.target.value; render(); }
   if (e.target.id === 'f-job') { fJob = e.target.value; render(); }

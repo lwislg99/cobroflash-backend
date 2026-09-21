@@ -1,0 +1,40 @@
+POBLACION jobs meta-guard con job=295
+gh: HTTP 404
+gh: HTTP 404
+{
+ "ciego m2=null": 1,
+ "timeout m2=null": 53,
+ "concurrencia m2=null": 100,
+ "timeout m2=VIVA": 29,
+ "success m2=VIVA": 64,
+ "timeout m2=MUDA": 5,
+ "failure m2=MUDA": 11,
+ "failure m2=VIVA": 25,
+ "concurrencia m2=VIVA": 4,
+ "ciego m2=undefined": 2,
+ "concurrencia m2=MUDA": 1
+}
+mut2 medida en 139 jobs: VIVA=122 MUDA=17
+mut1 medida en 141 jobs: MUDA=0
+{
+ "VIVA scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más ca": 122,
+ "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO": 17
+}
+MUDA 2026-09-18T11:42:22Z 35340947864 scrum-899-aviso-de-uso aaa2ec2b4d timeout
+MUDA 2026-09-18T09:32:46Z 35330089811 scrum-949-el-suelo-como-cociente 03a54c39e5 failure
+MUDA 2026-09-18T07:04:25Z 35317708289 scrum-929-el-total-sin-iva 54c961ca7e timeout
+MUDA 2026-09-17T20:20:24Z 35270205450 scrum-936 8c8f5467bf timeout
+MUDA 2026-09-17T18:38:14Z 35260031508 scrum-906b-matriz-competencia 492fce89b1 failure
+MUDA 2026-09-17T18:22:46Z 35258459223 scrum-864c-el-censo-de-hoy 8db2059e1f failure
+MUDA 2026-09-17T16:22:23Z 35246168583 main adaef3c4ae timeout
+MUDA 2026-09-17T16:12:58Z 35245187285 scrum-678-los-webhooks-sin-secreto fefda1fe88 failure
+MUDA 2026-09-17T15:27:09Z 35240323650 scrum-899-a19-relevo daaf7a98b2 timeout
+MUDA 2026-09-17T14:33:03Z 35234314378 scrum-864b-a19-y-la-vuelta-del-tope 41ef4779e0 failure
+MUDA 2026-09-17T14:21:43Z 35233037422 scrum-804g-la-mutacion-muda-de-738 0fdc29b36f failure
+MUDA 2026-09-17T13:55:45Z 35230214409 scrum-880c-el-desempate-y-los-milisegundos 4800830762 failure
+MUDA 2026-09-17T13:54:06Z 35230038918 scrum-904-completar-lleva-al-campo 18f0e7837e failure
+MUDA 2026-09-17T09:52:41Z 35207496732 main b0650ac389 concurrencia
+MUDA 2026-09-17T09:33:58Z 35205804657 scrum-900-push-de-claude-con-la-app 542a7d3705 failure
+MUDA 2026-09-17T09:27:06Z 35205183959 scrum-orquestador-en-piedra 6441f65e8c failure
+MUDA 2026-09-17T08:46:13Z 35201476082 scrum-839g-ficha-sesion-5 eefd3d5ded failure
+EXIT=0

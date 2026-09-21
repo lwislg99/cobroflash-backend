@@ -1,0 +1,17 @@
+POBLACION mensajes=110 titulos=20
+    9460  175600B test:complete :: SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se
+  185320  175587B test:fail :: SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se
+  364294   26420B test:complete :: SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede cr
+  391037   26407B test:fail :: SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede cr
+  417791    3299B test:complete :: SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas =
+  421423    3286B test:fail :: SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas =
+  424963   96094B test:complete :: SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo
+  521297   96081B test:fail :: SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo
+  621864    8559B test:complete :: SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE
+  630708    8546B test:fail :: SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE
+  641000    3748B test:complete :: SCRUM-649 · ✅ y la que está listada EXISTE como entrada y sigue sin re
+  645075    3735B test:fail :: SCRUM-649 · ✅ y la que está listada EXISTE como entrada y sigue sin re
+  650339  163822B test:complete :: SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real — una por un
+  814487  163809B test:fail :: SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real — una por un
+  978628   26909B test:complete :: SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave
+ 1005855   26896B test:fail :: SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave
