@@ -77,18 +77,19 @@ function renderQuotesView(container, template, documentoSuelto) {
   // que ya decía el modal lo diga también su página. El ternario va PEGADO a sus dos ramas y no
   // detrás de un ayudante: el censo de SCRUM-601 clasifica un literal por la condición que lo
   // elige, y un envoltorio inútil se lo esconde (medido en SCRUM-776: 14 literales → 12).
-  title.textContent = esDocumentoSuelto ? window.rotulosDelDocumento.tituloModal() : "Crear presupuesto";
+  // SCRUM-915i · «Nuevo presupuesto», el rótulo que la app ya pone a esta ruta (`L.quoteNew`) y
+  // al botón que abre esta pantalla: la v3 lo pide arriba del editor en lugar de «Crear presupuesto».
+  title.textContent = esDocumentoSuelto ? window.rotulosDelDocumento.tituloModal() : "Nuevo presupuesto";
   title.className = "quotes-title";
-  heading.appendChild(title);
+  // SCRUM-915i · UNA fila: el título, el «✓ Guardado automáticamente» y el menú «⋯» de arriba
+  // («Más acciones»), que se engancha más abajo, donde nacen sus dos botones.
+  const headingRow = document.createElement("div");
+  headingRow.className = "quotes-header-row";
+  headingRow.appendChild(title);
+  heading.appendChild(headingRow);
 
-  const subtitle = document.createElement("p");
-  subtitle.className = "quotes-desc";
-  subtitle.textContent =
-    "Genera un presupuesto con varias líneas, calcula los totales y envía el link de pago por WhatsApp.";
-  // SCRUM-600 · el subtítulo describe el flujo del PRESUPUESTO —mandar un enlace para que el
-  // cliente acepte y pague—, y ése no es el flujo del documento suelto, que ya nace emitido. No
-  // se reescribe (regla 30: el microcopy es del fundador): se OMITE, que no necesita texto.
-  if (!esDocumentoSuelto) heading.appendChild(subtitle);
+  // SCRUM-915i · SE RETIRA EL SUBTÍTULO («Genera un presupuesto con varias líneas…»): cada paso
+  // lleva ya su frase guía (915d), y la v3 lo quita. En el documento suelto ya se omitía (SCRUM-600).
 
   const merchantInfo = document.createElement("p");
   merchantInfo.className = "quotes-merchant-info";
@@ -1911,26 +1912,31 @@ descWrapper.appendChild(descLabel);
   // presupuesto» es reversible y «Emitir…» no lo es (regla 29). El botón tiene que decirlo.
   submitBtn.textContent = esDocumentoSuelto ? window.rotulosDelDocumento.accionPrimaria() : "Generar presupuesto";
 
+  // SCRUM-915i · «Limpiar formulario» y «💾 Guardar como plantilla» salen del último paso y se van
+  // al menú «⋯» de arriba (v3). Sin clases de botón: el menú les pone la suya (`overflow-item`).
   const resetBtn = document.createElement("button");
   resetBtn.type = "button";
-  resetBtn.className = "btn btn-secondary";
   resetBtn.textContent = "Limpiar formulario";
 
   const saveTemplateBtn = document.createElement("button");
   saveTemplateBtn.type = "button";
-  saveTemplateBtn.className = "btn-ghost btn-sm quote-header-btn";   // SCRUM-139 F6: ver arriba
   saveTemplateBtn.innerHTML = "💾 Guardar como plantilla";
   saveTemplateBtn.title = "Guarda las líneas actuales como plantilla reutilizable";
 
   actionsRow.appendChild(submitBtn);
-  actionsRow.appendChild(resetBtn);
   // ✅ SCRUM-600g · PLANTILLAS TAMBIÉN EN EL DOCUMENTO SUELTO. Hasta aquí fue una parada declarada:
   // el mecanismo servía tal cual, pero sus dos hojas nombraban el presupuesto y no había texto
   // firmado para otro documento (regla 30). Con las dos frases firmadas, las hojas las leen de
   // `rotulosDelDocumento` SÓLO en el documento suelto, y el presupuesto conserva las suyas. Guardar
   // llama a `/admin/templates` y nunca a `/admin/invoices` (regla 38): lo comprueba `scrum600g`
   // pulsando, no leyendo.
-  actionsRow.appendChild(saveTemplateBtn);
+  // El menú es el helper compartido de AB3, con su rótulo por defecto, «Más acciones» (firmado en
+  // el comentario 15868). Si no estuviera cargado, los dos botones se quedan en la fila del título:
+  // perder el menú no puede costar la posibilidad de vaciar el documento.
+  const masAccionesBtn =
+    typeof overflowMenu === "function"
+      ? overflowMenu([saveTemplateBtn, resetBtn], { label: "Más acciones" })
+      : null;
 
   // Indicador de autoguardado de borrador (FRONT1-4)
   const draftIndicator = document.createElement("span");
@@ -1945,7 +1951,10 @@ descWrapper.appendChild(descLabel);
   // El rótulo se omite porque diría algo que no ocurre: aquí no se guarda nada solo.
   // SCRUM-915d · JUNTO AL TÍTULO, no con las acciones (inventario v3): las acciones sólo se ven en
   // el último paso, y el aviso tiene que verse mientras se escribe, que es en los otros tres.
-  if (!esDocumentoSuelto) heading.appendChild(draftIndicator);
+  // SCRUM-915i · en la fila del título, delante del «⋯».
+  if (!esDocumentoSuelto) headingRow.appendChild(draftIndicator);
+  if (masAccionesBtn) headingRow.appendChild(masAccionesBtn);
+  else { headingRow.appendChild(saveTemplateBtn); headingRow.appendChild(resetBtn); }
 
   // ---------- PANEL DERECHO: PREVIEW + ESTADO ----------
   // SCRUM-915e1 · «Vista previa del documento» describía la PANTALLA; «Así lo verá el cliente»
@@ -4294,24 +4303,74 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     }
   });
 
-  resetBtn.addEventListener("click", function () {
-    fieldCustomer.select.value = "";
-    // SCRUM-602 · el control vuelve a su defecto Y el texto se vacía. Sin la segunda línea, la
-    // dirección del presupuesto anterior seguiría escondida detrás de «No mostrar» y volvería a
-    // salir en cuanto alguien reeligiera «Personalizada» — en OTRO documento y OTRO cliente.
-    fieldDireccionObra.select.value = window.quoteDireccionObra.MODOS.NO_MOSTRAR;
-    direccionObraInput.value = "";
-    refrescarDireccionObra();
-    window.tiposDeIva.ponerValor(fieldVatDefault.input, "21"); // SCRUM-660
-    paymentSelect.value = "FULL_UPFRONT";
-
-    linesBody.innerHTML = "";
-    lines = [];
-    dibujarCuadernillo();   // SCRUM-139 F2: "empezar de cero" devuelve el cuadernillo, no una línea
+  /**
+   * SCRUM-915i · «LIMPIAR FORMULARIO» PIDE CONFIRMACIÓN, Y LO QUE PROMETE LA HOJA ES LO QUE HACE.
+   *
+   * Hasta aquí vaciaba sin preguntar, y vaciaba A MEDIAS: devolvía el cliente, la dirección, el IVA
+   * por defecto, la condición de pago y las líneas, pero dejaba el IVA del presupuesto, la validez,
+   * las formas de pago, los datos del cliente, «incluir descripción» y el descuento global
+   * (inventario del PASO 0, fila «Limpiar formulario»). La hoja firmada (comentario 15868) dice «Se
+   * quitan el cliente, las líneas y los cambios de este documento», y una lista escrita a mano de
+   * campos que se devuelven se queda corta el día que alguien añade el siguiente — es lo que ya le
+   * había pasado. Así que confirmar NO recorre campos: vuelve a pintar la pantalla desde cero, que
+   * es exactamente abrirla nueva. «Tus plantillas y tus opciones de siempre no se tocan» también es
+   * literal: las plantillas son del servidor y las opciones de siempre se vuelven a leer al pintar.
+   *
+   * Antes de pintar se borra el borrador y se CANCELA el autoguardado pendiente: sin lo segundo, el
+   * temporizador de 700 ms de la pantalla vieja escribiría su foto en el borrador recién borrado, y
+   * lo que se acaba de vaciar volvería al abrir la próxima vez.
+   */
+  function vaciarDocumento() {
+    clearTimeout(draftSaveTimer);
     clearDraft();
+    renderQuotesView(container, null, esDocumentoSuelto);
+  }
 
-    setAlert(null, "");
-    setResult(null);
+  resetBtn.addEventListener("click", function () {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    const hoja = document.createElement("div");
+    hoja.className = "modal hoja-vaciar";
+    hoja.setAttribute("role", "dialog");
+    hoja.setAttribute("aria-modal", "true");
+    hoja.appendChild(cabeceraModal({ titulo: "¿Vaciar este documento?", idCierre: "vaciar-close" }));
+    const cuerpo = document.createElement("div");
+    cuerpo.className = "modal-body";
+    const frase = document.createElement("p");
+    frase.className = "hoja-vaciar__frase";
+    frase.textContent =
+      "Se quitan el cliente, las líneas y los cambios de este documento. Tus plantillas y tus opciones de siempre no se tocan.";
+    cuerpo.appendChild(frase);
+    hoja.appendChild(cuerpo);
+    const pie = document.createElement("div");
+    pie.className = "modal-footer";
+    const seguirBtn = document.createElement("button");
+    seguirBtn.type = "button";
+    seguirBtn.className = "btn btn-secondary";
+    seguirBtn.textContent = "No, seguir";
+    const vaciarBtn = document.createElement("button");
+    vaciarBtn.type = "button";
+    vaciarBtn.className = "btn btn-danger";
+    vaciarBtn.textContent = "Limpiar formulario";
+    pie.appendChild(seguirBtn);
+    pie.appendChild(vaciarBtn);
+    hoja.appendChild(pie);
+    overlay.appendChild(hoja);
+    document.body.appendChild(overlay);
+
+    // Un acto irreversible no es nunca la acción principal: el foco va a «No, seguir».
+    function cerrar() {
+      document.removeEventListener("keydown", onEsc);
+      overlay.remove();
+    }
+    function onEsc(e) { if (e.key === "Escape") cerrar(); }
+    document.addEventListener("keydown", onEsc);
+    const cierre = overlay.querySelector("#vaciar-close");
+    if (cierre) cierre.addEventListener("click", cerrar);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) cerrar(); });
+    seguirBtn.addEventListener("click", cerrar);
+    vaciarBtn.addEventListener("click", function () { cerrar(); vaciarDocumento(); });
+    try { seguirBtn.focus({ preventScroll: true }); } catch (_e) {}
   });
 
   /**
@@ -4915,11 +4974,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
   ["input", "change", "click"].forEach(function (evento) {
     leftCard.addEventListener(evento, renderPreview);
   });
-  // «Limpiar formulario» vacía el cliente y las líneas: se vuelve al primer paso.
-  resetBtn.addEventListener("click", function () {
-    pasoAlcanzado = 1;
-    abrirPaso(1, false);
-  });
+  // SCRUM-915i · «Limpiar formulario» ya no vuelve al primer paso desde aquí: confirmar vuelve a
+  // pintar la pantalla entera (`vaciarDocumento`), y una pantalla nueva abre en el paso 1.
 
   pasosMontados = true;
   pintarFilas();
