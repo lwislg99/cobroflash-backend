@@ -4,8 +4,8 @@
 **Medido contra:** `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b` · 2026-09-20T20:22:34Z (GitHub)
 **Rama:** `scrum-976-guards-de-lectura-en-la-entrada` · **Worktree:** `wt-976`
 
-🔴 **Estado: NO ENTREGADO.** Cierre por fin de uso a los ~25 min de empezar. Este expediente deja lo
-medido para que el relevo no lo repita; **`scripts/guards-entrada.mjs` NO se ha tocado.** No se ha empujado.
+✅ **Estado (21-sep-2026): ENTREGADO en el «APÉNDICE · FASE b» de abajo.** Lo que sigue hasta ese apéndice
+es el estado del 20-sep (censo medido, arreglo no hecho) y se conserva tal cual, como registro.
 
 ## ① El rojo, reproducido con el commit de verdad
 
@@ -77,3 +77,63 @@ clasificación por texto se equivoca; el criterio real es «pasa sin dist y sin 
 3. **Rojo:** un test que lanza `guards-entrada` contra el commit del §① (o contra un fixture con una
    negación sin respaldo) y exige EXIT ≠ 0. Y control positivo con el árbol actual (EXIT 0).
 4. Mezclar `origin/main` (no rebasar), control de sufijo en su propio comando, empujar.
+
+
+# APÉNDICE · FASE b (21-sep-2026) · ENTREGADO: seis censos de lectura pura dentro de `guards:entrada`, con techo de 60 s
+
+> ⚠️ Se ANEXA. Nada de lo de arriba se toca, salvo la línea de «Estado», que dejaba de ser verdad.
+
+**Medido contra:** `origin/main` = `b950b04365813b976d06fa18e25d9b51b45c0d5f` · 2026-09-21T07:17:41Z (GitHub)
+**Rama:** `scrum-976-guards-de-lectura-en-la-entrada` · **Worktree:** `wt-976`
+
+**Decisión del orquestador (21-sep, con la medición de arriba delante):** el criterio tal cual NO cabe
+(313 ficheros, ~14 min). Entran SEIS y nada más — 237, 258, 514, 522, 548 y 723 — y el comando ENTERO
+tiene un techo de 60 s, escrito como mecanismo y no como número en un comentario. Este apéndice lo
+aplica; el «discriminador propuesto» del §② queda como propuesta NO adoptada (258 y 723 no lo cumplen:
+están por decisión, no por deducción, y el comentario de `scripts/guards-entrada.mjs` lo dice así).
+
+## ① Lo que cambia
+
+- `scripts/guards-entrada.mjs`: seis entradas en `GUARDS`, cada una con su `porque`; `MINIMO` 5 → 11;
+  `GUARDS`, `MINIMO` y `TECHO_MS` exportados; el plazo (`TECHO_MS = 60000`) lo hace cumplir el propio
+  comando con el `timeout` del `spawnSync` (`ETIMEDOUT` → exit 1 con «se pasaron del TECHO»); el entorno
+  puede BAJARLO (`GUARDS_ENTRADA_TECHO_MS`), nunca subirlo; la línea final dice cuánto tardó.
+- `tests/scrum976-guards-entrada-con-techo.test.mjs` (4 tests): ① los once por NOMBRE + suelo ≥ once;
+  ② techo fijado y solo bajable; ③ mitad NEGATIVA (plazo de 1 ms → exit 1 y «se pasaron del TECHO»);
+  ④ mitad POSITIVA (el comando de verdad, exit 0, dentro del techo, con el recuento de tests).
+- No se toca `src/`, `public/`, ni el resto de tests. El conflicto esperado con SCRUM-964c no se dio:
+  964c ya estaba en main (`MINIMO` 4 → 5) y se conservó su quinta entrada.
+
+## ② Lo medido
+
+Sin `dist` y sin base, con `FORCE_COLOR` borrado y comprobado, cada uno SOLO (no con 4 en paralelo):
+
+    237  2,9 s (8 tests)  ·  258  4,6 s (10)  ·  514  2,2 s (7)  ·  522  0,3 s (26)  ·  548  0,2 s (8)  ·  723  9,5 s (8)
+    los seis, uno tras otro: ~19,7 s · todos con skipped 0
+
+Y el comando entero, con los once (el runner reparte los ficheros): **17,2 s, exit 0, 95 tests** — 3,5 veces
+de margen bajo el techo. Los tiempos del §② de arriba (9,0 / 7,4 / 11,0 s) estaban inflados por el paralelo.
+
+## ③ El rojo, con dos controles y el rojo REAL
+
+- **Rojo real (el del #1541):** worktree `wt-976-rojo` en `4be8adcb36b9572add7c6fd6add3f6bdc76292ae`, sin
+  `dist` y sin base. Con el `guards-entrada.mjs` de ese commit: **exit 0** (verde, el defecto). Copiándole
+  encima el de esta rama (`git diff --numstat` → `86 11 scripts/guards-entrada.mjs`, la inyección se
+  aplicó): **exit 1**, y la salida trae `✖ SCRUM-237 · ninguna negación de la suite se queda SIN
+  respaldo`. Se restauró (`git checkout --`) y el worktree quedó limpio (`status` = 0 líneas).
+- **Inyección 1** (commit `83babb7883fc4b2dbe37e262700164177226a216` hecho ANTES): renombrar la línea de 237
+  en `GUARDS` (`git diff --numstat` → `1 1`) → el test ① cae (exit 1). Revertido con
+  `git restore --source=HEAD --staged --worktree`, `status --porcelain` = 0.
+- **Inyección 2** (mismo commit): quitar `timeout: techo` del `spawnSync` (`1 1`) → el test ③ cae (exit 1,
+  9,9 s: el comando corrió entero y salió verde en vez de 1) y ①②④ siguen en verde. Es la que demuestra
+  que el techo MUERDE. Revertido igual, `status --porcelain` = 0.
+
+## ④ Trampas y lo que NO se midió
+
+- 🔴 El techo se mide en RELOJ, y la tanda corre esto mientras otros ficheros corren en paralelo. Con 17 s
+  frente a 60 s hay margen; **no se midió** bajo la tanda completa cargada. Si algún día ④ cae por
+  el techo en CI y no en local, el dato es ése, no un guard roto.
+- `514-leeme-multilinea` sigue FUERA (importa `dist/`, rojo sin build): no es de lectura pura.
+- Los 61 rojos sin `dist/base` en el texto (§③ de arriba) siguen sin investigar: no entran en este
+  encargo y no se midió su vía indirecta.
+- 522 tocará a #1541 (917e) y #1552 (970): el conflicto lo resuelve quien mergea, derivando la cifra.
