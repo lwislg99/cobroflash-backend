@@ -13,7 +13,10 @@
 //   🔴 A · una foto de 3–5 MB (4000×3000, apaisada) SE GUARDA: una petición aceptada, JPEG que el
 //          navegador abre, lado largo ≤ 2000 px, sin aviso de error y el modal cerrado.
 //   🔴 B · lo mismo en VERTICAL (3000×4000): el lado largo es el alto.
-//   🔴 C · lo guardado SE VE DESPUÉS: al reabrir el gasto guardado, su foto se pinta (naturalWidth > 0).
+//   🔴 C · lo guardado SE VE DESPUÉS: se pide la LISTA (que es lo que el panel recarga al guardar),
+//          se reabre el modal con SU FILA, y la foto se pinta (naturalWidth > 0). Desde SCRUM-964
+//          eso pasa por la ruta `GET /admin/expenses/:id/foto`, y de camino se comprueba que la
+//          fila de la lista NO trae `receiptData` — el defecto de los 300 MiB que 964 vino a cerrar.
 //   ✅ D · POSITIVO · una foto pequeña que ya cabía se manda EXACTAMENTE igual que hoy (mismo data-URI).
 //   🔴 E · NEGATIVO · un fichero grande que el navegador no sabe abrir (p. ej. HEIC en Chrome de
 //          escritorio) NO se manda, y el aviso firmado lo dice; el botón vuelve a estar disponible.
@@ -84,6 +87,34 @@ function arrancarServidor() {
     const g = { id: 900 + recibidos.length, ...req.body };
     recibidos.push(g);
     res.status(201).json(g);
+  });
+  // 🔴 SCRUM-964 · LA LISTA YA NO LLEVA LA FOTO, Y AQUÍ SE SIRVE COMO LA SIRVE PRODUCCIÓN.
+  // Antes el control C reabría el modal con el CUERPO DEL POST —que sí lleva `receiptData`— porque
+  // entonces la fila de la lista también lo llevaba, así que valía de doble. Desde 964 la lista
+  // manda `tieneFoto` y la imagen la sirve la ruta de abajo: seguir usando el cuerpo del POST
+  // mediría una forma de fila QUE YA NO EXISTE, y el guard saldría rojo por su fixture, no por el
+  // producto. Se reproduce el contrato nuevo, que además hace que C mida MÁS que antes: ya no
+  // comprueba sólo que el modal sepa pintar un data-URI que le dan, sino que la foto GUARDADA
+  // vuelve por la red y se pinta.
+  const filaDeLista = (g) => {
+    const { receiptData, ...escalares } = g;
+    return { ...escalares, tieneFoto: !!receiptData };
+  };
+  app.get('/admin/expenses', (_q, res) => res.json(recibidos.map(filaDeLista)));
+  // Espejo de `GET /admin/expenses/:id/foto` (src/modules/expenses/app/routes/expenses.routes.ts):
+  // binario, con su `Content-Type` sacado del data-URI, `no-store` y `nosniff`; 404 cuando no hay
+  // nada que servir. No se copia el permiso ni el filtro por `merchantId` —eso lo miden los tests
+  // del servidor, aquí no hay sesión— y por eso queda dicho que aquí NO se miden.
+  app.get('/admin/expenses/:id/foto', (req, res) => {
+    const g = recibidos.find((x) => String(x.id) === String(req.params.id));
+    const m = /^data:([^;,]+);base64,(.*)$/.exec(String(g?.receiptData || ''));
+    if (!m) return res.status(404).json({ ok: false, error: 'not_found' });
+    const bytes = Buffer.from(m[2], 'base64');
+    res.setHeader('Content-Type', m[1]);
+    res.setHeader('Content-Length', String(bytes.length));
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.end(bytes);
   });
   app.use((req, res, next) => {
     const f = path.join(PUBLIC, req.path.replace(/^\//, ''));
@@ -191,19 +222,35 @@ const DECODIFICAR = new Function('uri', `
   });
 `);
 
-/** C · reabre el gasto GUARDADO (lo que devolvió el servidor) y mira si su foto se pinta. */
-const REABRIR_Y_VER = new Function('gasto', `
-  return new Promise(function (ok) {
-    openExpenseModal(gasto, { onSaved: async function () {} });
-    var img = document.querySelector('#exp-receipt-section img');
-    if (!img) return ok({ error: 'al reabrir no hay <img> de la foto' });
-    var fin = function () {
-      var r = img.getBoundingClientRect();
-      ok({ naturalWidth: img.naturalWidth, alto: r.height, visible: img.checkVisibility() });
-      document.getElementById('exp-modal') && document.getElementById('exp-modal').remove();
-    };
-    if (img.complete) fin(); else { img.onload = fin; img.onerror = fin; }
-  });
+/**
+ * C · reabre el gasto guardado COMO LO REABRE EL PANEL —con la fila que da la LISTA, que es lo que
+ * `loadExpenses()` recarga tras guardar— y mira si su foto se pinta.
+ *
+ * 🔴 SCRUM-964 · ANTES ENTRABA EL CUERPO DEL POST, y eso dejó de ser la fila. De paso el control
+ * gana dos afirmaciones que antes no hacía, y las dos son el ticket:
+ *   · la fila de la lista NO trae `receiptData` (si vuelve a traerlo, vuelven los 300 MiB);
+ *   · la fila dice `tieneFoto`, y la imagen que se pinta viene POR LA RED desde su ruta.
+ */
+const REABRIR_Y_VER = new Function('id', `
+  return (async function () {
+    var filas = await fetch('/admin/expenses').then(function (r) { return r.json(); });
+    var fila = null;
+    for (var i = 0; i < filas.length; i++) if (String(filas[i].id) === String(id)) fila = filas[i];
+    if (!fila) return { error: 'la lista no devuelve el gasto recién guardado' };
+    if ('receiptData' in fila) return { error: 'la LISTA sigue trayendo la foto (receiptData): vuelven los 300 MiB' };
+    if (fila.tieneFoto !== true) return { error: 'la lista dice tieneFoto=' + JSON.stringify(fila.tieneFoto) + ' de un gasto que SÍ tiene foto' };
+    return await new Promise(function (ok) {
+      openExpenseModal(fila, { onSaved: async function () {} });
+      var img = document.querySelector('#exp-receipt-section img');
+      if (!img) return ok({ error: 'al reabrir no hay <img> de la foto' });
+      var fin = function () {
+        var r = img.getBoundingClientRect();
+        ok({ src: img.getAttribute('src'), naturalWidth: img.naturalWidth, alto: r.height, visible: img.checkVisibility() });
+        document.getElementById('exp-modal') && document.getElementById('exp-modal').remove();
+      };
+      if (img.complete) fin(); else { img.onload = fin; img.onerror = fin; }
+    });
+  })();
 `);
 
 const hallazgos = [];
@@ -283,7 +330,7 @@ try {
               if ((caso.foto.alto > caso.foto.ancho) !== (d.alto > d.ancho)) mal.push(`cambió la orientación: ${d.ancho}×${d.alto}`);
             }
             // C · el ESTADO después: el gasto guardado, reabierto, enseña su foto.
-            const v = await pag.evaluate(REABRIR_Y_VER, g);
+            const v = await pag.evaluate(REABRIR_Y_VER, g.id);
             if (v.error) mal.push('C · ' + v.error);
             else if (!(v.naturalWidth > 0) || !v.visible || !(v.alto > 0)) mal.push(`C · al reabrir, la foto no se ve (naturalWidth ${v.naturalWidth}, alto ${v.alto})`);
           }
