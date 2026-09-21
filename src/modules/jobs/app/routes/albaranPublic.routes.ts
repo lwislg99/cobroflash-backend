@@ -30,6 +30,8 @@ import {
 } from '../../domain/albaranFirmante';
 import { sendAlbaranFirmadoWhatsApp } from '../../domain/albaranWhatsApp.service';
 import { requestIp } from '../../../system/audit.service';
+import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-967b
+import { portalUrlDelCliente } from '../../../system/customerAdmin'; // SCRUM-967b
 
 const router = Router();
 // Superficie pública → rate-limit (patrón decisionLimiter del presupuesto).
@@ -95,6 +97,8 @@ function renderPage(title: string, body: string): string {
     border-radius:14px;cursor:pointer;min-height:52px;box-shadow:0 4px 14px -2px rgba(22,163,74,.35)}
   .btn-accept:active{background:#15803d;transform:translateY(1px)}
   .btn-accept:disabled{opacity:.5;cursor:default}
+  /* SCRUM-967b: el enlace al portal tras firmar es un <a>, con la misma cara que el botón primario. */
+  a.btn-portal{display:block;box-sizing:border-box;margin-top:16px;text-align:center;text-decoration:none;line-height:22px}
   .status-ok{background:#ecfdf5;border-radius:12px;padding:16px;text-align:center}
   /* SCRUM-361 (H6): el albarán cambió mientras esta página estaba abierta. Hermana de .status-ok
      y NO de un error: mismo radio, mismo padding, mismo centrado — solo cambia el tono. Que no
@@ -219,11 +223,24 @@ function firmanteCamposHtml(nombrePrecargado: string): string {
     })();</script>`;
 }
 
+// SCRUM-967b · las piezas de la línea firmada (L3) bajo «¡Parte firmado!».
+function negocioDe(m: { name: string; legalName: string | null } | null): string {
+  return (m?.legalName || m?.name || '').trim();
+}
+function presupuestosDe(m: { country: string | null } | null): string {
+  return getLocale(m?.country).quotePlural.toLowerCase();
+}
+/** Un literal de JS que se puede soltar dentro de un <script>: el nombre del negocio lo escribe el
+ *  profesional, y un «</script>» en él cerraría el bloque. `<` es el mismo carácter para JS. */
+function literalJs(s: string): string {
+  return JSON.stringify(s).replace(/</g, '\\u003c');
+}
+
 async function loadContext(token: string) {
   const albaran = await prisma.albaran.findUnique({ where: { firmaToken: token } });
   if (!albaran) return null;
   const [merchant, job] = await Promise.all([
-    prisma.merchant.findUnique({ where: { id: albaran.merchantId }, select: { name: true, legalName: true, logoUrl: true, email: true } }),
+    prisma.merchant.findUnique({ where: { id: albaran.merchantId }, select: { name: true, legalName: true, logoUrl: true, email: true, country: true } }),
     prisma.job.findUnique({ where: { id: albaran.jobId }, select: { customerId: true, titulo: true, direccion: true } }),
   ]);
   const customer = job ? await prisma.customer.findUnique({ where: { id: job.customerId }, select: { name: true } }) : null;
@@ -319,9 +336,19 @@ router.get('/:token', async (req: Request, res: Response) => {
               firmadoPorCalidadOtro:(document.getElementById('firmante-otro')||{}).value||''
             })});
           if(r.ok){
+            // SCRUM-967b: el portal llega SOLO en esta respuesta de un solo uso (ver el POST). La URL
+            // se pone como atributo y el texto como texto: nada de la respuesta entra como HTML.
+            const d=await r.json().catch(()=>({}));
             document.querySelector('.card').innerHTML=
               '<div style="text-align:center;padding:12px 0"><div class="success-check">✓</div>'+
               '<h1>¡Parte firmado!</h1><p class="meta">Gracias, ${customerName}. Recibirás tu copia por WhatsApp.</p></div>';
+            if(d && typeof d.portalUrl==='string' && /^https?:\\/\\//.test(d.portalUrl)){
+              const p=document.createElement('p'); p.className='meta';
+              p.textContent=${literalJs(`Ahí tienes tus ${presupuestosDe(merchant)} y pagos con ${negocioDe(merchant)}.`)};
+              const a=document.createElement('a'); a.className='btn-accept btn-portal'; a.href=d.portalUrl;
+              a.textContent=${JSON.stringify('Abrir mi portal de cliente')};
+              const caja=document.querySelector('.card > div'); caja.appendChild(p); caja.appendChild(a);
+            }
           } else {
             const d=await r.json().catch(()=>({}));
             // 🔴 SCRUM-361: el albarán cambió mientras esta página estaba abierta. NO es un error
@@ -426,7 +453,15 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
     // puede reenviarla a mano (botón de la 47). Guards completos vía el servicio.
     sendAlbaranFirmadoWhatsApp(albaran.id).catch((e) => console.error('[albaranPublic] auto-envío:', e?.message || e));
 
-    return res.json({ ok: true });
+    // SCRUM-967b · el enlace del portal, SOLO aquí: en la respuesta de la firma que acaba de entrar,
+    // DESPUÉS de sellar y sin tocar nada de lo sellado. La rama `already` de arriba no lo devuelve
+    // a propósito — si lo hiciera, cualquiera con el enlace del parte tendría el portal entero
+    // (todos los documentos del cliente) para siempre. Best-effort: la firma ya está hecha.
+    const job = await prisma.job.findUnique({ where: { id: albaran.jobId }, select: { customerId: true } }).catch(() => null);
+    const portalUrl = job?.customerId
+      ? await portalUrlDelCliente(albaran.merchantId, job.customerId).catch(() => null)
+      : null;
+    return res.json(portalUrl ? { ok: true, portalUrl } : { ok: true });
   } catch (err: any) {
     console.error('[POST /albaran/:token/firmar]', err?.message || err);
     return res.status(500).json({ error: 'internal_error', message: 'Error inesperado. Inténtalo más tarde.' });

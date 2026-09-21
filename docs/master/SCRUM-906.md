@@ -505,3 +505,112 @@ coloca bajo «Add-ons», lo que lo sugiere, y por eso no se afirma.
 esta familia avisan de la llegada al cliente —no era una ocurrencia de Jobber—; y tiene **una página
 por oficio**, como Verifacturamos (M5) y Jobber: **tres de cuatro**, o sea un patrón del sector. Eso
 último es marketing y no producto, y por eso va aparte, en §13.4.
+
+## SCRUM-906j · Housecall Pro cerrado, Tradify y Fergus, y la ficha del cliente lista para construir (21-sep-2026)
+
+**Medido el 21-sep-2026 07:29Z (hora de GitHub) sobre `origin/main` =
+`43f4c7fc3f8d0330089edcd785cb0eea58ccb784`.** Rama `scrum-906j-housecall-tradify-fergus`. Solo docs. El
+detalle está en [`docs/competencia/matriz.md`](../competencia/matriz.md) **§14** (Housecall Pro) y
+**§15** (Tradify y Fergus); las capturas, en `docs/competencia/capturas/{housecall-pro,tradify,fergus}/`.
+
+**Encargo del orquestador:** (1) cerrar Housecall Pro, que quedó a medias el 20-sep y con seis capturas
+fuera de git; (2) una pasada nueva y de más de un competidor; (3) tres propuestas por pasada, con su
+forma, la más barata pequeña, **midiendo antes si ya lo tenemos**; (4) la ficha del cliente, lista para
+construir y con el inventario de lo que ya existe en la API y no se pinta.
+
+**Las tres de Housecall Pro** (§14.3): **la ficha del cliente enseña su historial de trabajo**
+(mediano) · **«Última visita» en la lista de clientes** (pequeño) · **Equipos v1**, el recorte que
+sustituye a §13.3.1 (mediano, ⛔ esquema).
+
+**Las tres de Tradify y Fergus** (§15.3): **avisar al cliente de la visita, la víspera** (mediano, ⛔
+J6 y Meta) · **tu agenda, en el calendario del móvil** (mediano, ⛔ superficie pública; choca en parte
+con «JOB-1 cubre» de la matriz X1) · **la nota del cliente, a la vista en el trabajo** (pequeño).
+
+🔴 **Lo que se midió y desmiente lo escrito, dicho antes que lo demás:**
+
+1. **§13.3.3 estaba equivocado en las fotos.** Decía que `Attachment.entityType` admite
+   `quote_request | job` y que el índice bastaba. Hoy **nada escribe `job`**: las fotos de un trabajo
+   viven en su albarán, se guardan **enteras** en Postgres (hasta 5 MB) y las miniaturas no existen
+   (`thumb|miniatura|sharp` en `src` → 0). El historial es barato; **las fotos, no**. Está corregido
+   en el propio §13.3.3.
+2. **«Es el primer paso barato» era cierto solo en esquema.** La ficha necesita una ruta nueva y un
+   bloque nuevo: `GET /admin/jobs` trae 200 filas y solo filtra por operario, `GET /admin/partes` igual,
+   y `Job` no tiene índice por cliente. Por eso sale *mediano*, no *pequeño*.
+3. **Mi borrador de ayer llevaba «varias direcciones por cliente» como propuesta y se retira**: el
+   parent-child de Housecall Pro ya lo tenemos (`Customer.companyId`, SCRUM-576) y el dato que decide lo
+   otro no se puede medir desde aquí.
+4. **Diez filas de candidatas de Tradify y Fergus murieron al medir** (§15.2): tres están
+   construidas y apagadas tras su bandera, cuatro ya funcionan (una con el límite de SCRUM-403), dos
+   ya estaban propuestas antes y una no se propone por falta de fuente normativa.
+
+🔴 **Un hallazgo fuera de carril, para el orquestador y sin arreglar** (`src/` y `public/` no son de esta
+sesión): `openEdit360Modal` rellena NIF, razón social, forma jurídica y empresa desde un `customer` que
+`/detail` sirve **sin** esos campos (solo nueve), y al guardar los manda como `null`
+(`customerDetailView.js:474-475`, `customerAdmin.ts:316`). **Leído, no ejecutado.** Si es así, editar
+una nota desde la ficha borra el NIF del cliente. Comprobación de dos minutos en staging: un cliente
+con NIF → Editar → ¿sale vacío el NIF? Detalle en §14.3.1.
+
+**Declarado como no medido:** no se entró en ninguno de los tres (A19); todo es su web y su manual, **no
+su producto funcionando**. El código nuestro se midió **leyendo** `origin/main`, no ejecutando nada
+contra staging. **No se midió** cuántos clientes reales tienen ≥ 2 sitios, ni cuántos tienen ya un
+trabajo terminado, ni cuántos usan un calendario externo: las propuestas de §15 son hipótesis
+respaldadas por competidores, no por un dato nuestro.
+
+**Método:** la inspección del código de la ficha la hizo un subagente de solo lectura, con fichero y
+línea por afirmación; los ceros llevan su suelo, y las afirmaciones que sostienen las propuestas
+(sin índice por cliente, ningún escritor de `entityType 'job'`, el `select` de `/detail` y el payload
+del modal) se releyeron a mano antes de escribirlas.
+
+## SCRUM-906k · La familia española: Verifacturamos, Anfix, Billin, Contasimple, FacturaDirecta y Sage (21-sep-2026)
+
+**Medido el 21-sep-2026 (≈08:00Z, hora de GitHub) sobre `origin/main` =
+`d46db08236d44b5d0869ca6335918321ad9fe1b7`.** Rama `scrum-906k-familia-espanola`. Solo docs. El detalle
+está en [`docs/competencia/matriz.md`](../competencia/matriz.md) **§16**.
+
+**Encargo del orquestador (relevo de s0-21):** la pasada a la familia española, la competencia directa
+del profesional español, con tres propuestas por pasada en la forma de siempre, al menos una pequeña,
+ordenadas por lo que más cambia el día del electricista, midiendo antes en nuestro código, y **marcando
+STOP** (solo dato de mercado) lo que toque facturas, VeriFactu o claims fiscales. **Añadido después:**
+Verifacturamos va primero (al fundador le gustó cómo organiza facturas, albaranes y presupuestos);
+cada propuesta dice si se vio **por dentro** o solo en su web; y, por decisión que llegó por mensaje,
+un **inventario apartado por apartado** (ellos · nosotros · diferencia) y de usabilidad.
+
+🔴 **Lo primero: nada está visto por dentro.** Todo es 📄 web pública y documentación a texto literal.
+**No se dio ninguna alta.** El encargo escrito decía «nada de altas sin permiso del fundador» y un mensaje
+entre sesiones no lo concede; se espera su confirmación en el chat de esta sesión. Sage: sus páginas de
+producto dan 403 a una descarga anónima; no se eludió.
+
+**Las tres propuestas** (§16.4): **del presupuesto aceptado al albarán en un toque** (pequeño; no hay
+ningún botón así hoy) · **«crear y enviar a firmar» en un toque** (mediano; choca con la escalera
+«un paso, un botón» de SCRUM-366) · **ver en la lista de presupuestos cuáles ha leído el cliente**
+(mediano; el dato y el chip existen, pero solo en el detalle). Ninguna toca facturas ni VeriFactu.
+Candidatas apuntadas: **«Válido hasta» en el PDF del presupuesto** (pequeña) y **importar clientes desde
+`.xlsx`** (mediana).
+
+🔴 **Lo que se midió y corrige lo escrito:** §15.2 dio «¿lo ha visto el cliente?» por «Ya»
+(`whatsappLog.service.ts`). Es cierto para el **dato** y falso para la **lista** de presupuestos, que no
+lo pide (`waDelivery` solo en `quotesAdmin.routes.ts:867` y `:907`, los dos detalles). Corregido en
+§16.4.3.
+
+🔴 **Hallazgos para el orquestador, sin arreglar** (`src/` y `public/` no son de esta sesión):
+(1) el tooltip de importar clientes promete **«CSV o Excel»** y solo se lee `.csv`/`.txt`
+(`customersView.js:93` frente a `csvImport.js:74`; 0 lectores de `.xlsx`); (2) las **revisiones de
+presupuesto** existen en servidor y en su fichero de pantalla, pero **nadie las llama** desde `public/`;
+(3) `quoteActionsRegistry.js` declara acciones sin consumidor (lo midió un subagente; sin releer).
+
+**Muertas al medirnos:** conversión presupuesto → factura en un clic, duplicar, validez por defecto y
+atajos, notas internas, descuentos por línea y global, IVA por línea, firma en la pantalla del móvil,
+plantillas, agrupar albaranes en una factura mensual, suplidos, apartados, etiquetas, albarán no
+valorado y enlace de pago. **Dato de mercado ⛔** (no se propone): facturas recurrentes, conversión sin
+firma, retención de IRPF y recargo automáticos, regla del 40 %, estado «vencida» (`Invoice` no tiene
+vencimiento), cobro con tarjeta desde un portal, y todo lo que dicen de VeriFactu (anotado, sin validar).
+
+**Declarado como no medido:** cuántos toques cuesta nada **en su producto** (todo «un clic» es su
+marketing), la lista de opciones de cada documento de Verifacturamos (su web no la publica: **necesita
+cuenta**), y cuántos profesionales de YaQu llegarían a usar cada propuesta. El código nuestro se leyó, no
+se ejecutó.
+
+**Método:** el código lo inspeccionó un subagente de solo lectura, con fichero y línea por afirmación;
+las de las que cuelgan las propuestas se releyeron a mano. Lo que sigue solo en el subagente está
+listado al final de §16.8. Los textos literales de las webs, con URL y hora, están fuera de git en
+`C:\Users\Admin\s0-906-traspaso\espanola\`.

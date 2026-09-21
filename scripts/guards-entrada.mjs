@@ -29,6 +29,22 @@
 // búsqueda en la línea 399. **Un comentario solo avisa a quien pasa por delante.** El guard sí
 // existía y sí lo cazó; lo que fallaba era CUÁNDO se corría: después de empujar, no antes.
 //
+// ── 🔴 SE ESTRECHÓ EL 21-SEP-2026 (SCRUM-976): «SEGUNDOS» TIENE UN TECHO, Y CADA UNO LLEVA SU NOMBRE ─
+// El criterio de arriba, aplicado tal cual, mete 313 ficheros de `tests/` (verdes sin `dist` ni base,
+// medidos uno a uno): unos 14 minutos. Eso ya no es «comprobar lo barato». Entran SEIS, y no por
+// deducción sino por decisión del orquestador con la medición delante: 237, 258, 514, 522, 548 y 723.
+// Los seis pasan **sin `dist` y sin base**, con `tests > 0` y `skipped = 0` (leer el texto del fichero
+// no basta para saberlo: 522 lo nombra «navegador» y es lectura pura).
+//
+// El caso que lo decide, medido: el #1541 cayó en CI por `scrum237-negacion-respaldada` (una negación
+// sin respaldo en `scrum320…:418`) y ESE MISMO commit daba VERDE aquí, porque 237 no estaba en la lista.
+// Para añadir un séptimo: que pase sin `dist` ni base, que quepa bajo el techo, y que lleve al lado el
+// rojo de CI que este comando no cazó.
+//
+// El techo NO es un número en un comentario: es `TECHO_MS`, y `tests/scrum976-guards-entrada-con-techo`
+// lanza este comando de verdad, lo cronometra y cae si se pasa. Para añadir el siguiente hay que
+// dejarle sitio a alguno o subir el techo A PROPÓSITO, en un PR que lo diga.
+//
 // ⚠️ Esto NO sustituye a `npm test`. Comprueba lo barato de comprobar, no el trabajo.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -43,7 +59,7 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
  * sin base— y tarda segundos**. Los cuatro primeros son de la entrada de `docs/master/`; el quinto
  * no, y por eso el criterio está escrito arriba en vez de deducirse de la lista.
  */
-const GUARDS = [
+export const GUARDS = [
   { fichero: 'tests/scrum273-registro-por-fichero.test.mjs',
     porque: 'el fichero se llama SCRUM-<n>.md y el trabajo no se escribe en YAQU_MASTER.md' },
   { fichero: 'tests/scrum267-ancla-de-medicion.test.mjs',
@@ -55,12 +71,33 @@ const GUARDS = [
   // SCRUM-964 · el quinto, y el primero que no es de la entrada: mira el CÓDIGO del front.
   { fichero: 'tests/public-js-parsea.test.mjs',
     porque: 'todo .js que se sirve al navegador PARSEA (un backtick suelto borra una pantalla entera)' },
+  // SCRUM-976 · los seis de lectura pura. Sin `dist`, sin base, `skipped = 0`; solos suman ~20 s.
+  { fichero: 'tests/scrum237-negacion-respaldada.test.mjs',
+    porque: 'ninguna negación de la suite se queda sin respaldo (el rojo del #1541: cayó en CI y aquí salía verde)' },
+  { fichero: 'tests/scrum258-nota-por-sesion.test.mjs',
+    porque: 'la nota del turno es de la SESIÓN: una no puede soltar el turno vivo de otra' },
+  { fichero: 'tests/scrum514-aprobado-y-aplicado.test.mjs',
+    porque: 'todo texto APROBADO está aplicado en la pantalla (la mitad de la regla 30 que faltaba)' },
+  { fichero: 'tests/scrum522-guards-fuera-de-la-tanda.test.mjs',
+    porque: 'la puerta de los guards de navegador sigue existiendo, el workflow la invoca y su lista sale derivada' },
+  { fichero: 'tests/scrum548-peaje-package-json.test.mjs',
+    porque: 'el censo de guards cuenta todos los declarados y el detector de solape sigue discriminando' },
+  { fichero: 'tests/scrum723-guard-contra-su-base.test.mjs',
+    porque: 'un guard compara contra el punto de partida de la rama, no contra la punta móvil de main' },
 ];
+
+// TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
+// del `spawnSync`) y `tests/scrum976-guards-entrada-con-techo.test.mjs` lo lanza de verdad, lo
+// cronometra y cae si se pasa. Medido el 21-sep-2026 con los once: 11-17 s con la máquina en frío
+// (solos, los seis nuevos suman ~20 s; el runner los reparte) y 44,5 s con la máquina cargada por
+// otras sesiones. El techo era de 60 s y ese margen (1,3 veces) era demasiado justo: un guard que cae
+// por sorteo enseña a desconfiar de los rojos. Son 90 s (orquestador, 21-sep-2026).
+export const TECHO_MS = 90000;
 
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-const MINIMO = 5;
+export const MINIMO = 11;
 
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega
@@ -89,6 +126,15 @@ export function recuentoDeTests(salida) {
   return m ? Number(m[1]) : 0;
 }
 
+/**
+ * El plazo que se le da al runner: el techo, o uno MENOR si el entorno lo pide. Un valor que no es
+ * un número positivo se ignora y vale el techo (no se cae en «sin plazo»).
+ */
+export function techoEfectivo(pedido) {
+  const n = Number(pedido);
+  return Number.isFinite(n) && n > 0 ? Math.min(n, TECHO_MS) : TECHO_MS;
+}
+
 function main() {
 const faltan = GUARDS.filter((g) => !fs.existsSync(path.join(RAIZ, g.fichero)));
 if (faltan.length) {
@@ -108,11 +154,24 @@ console.log(`Guards de entrada del registro (${GUARDS.length}):`);
 for (const g of GUARDS) console.log(`  · ${path.basename(g.fichero)} — ${g.porque}`);
 console.log();
 
+// El techo es del comando ENTERO y lo hace cumplir `spawnSync`: pasado el plazo mata al runner y
+// `r.error` trae ETIMEDOUT. Se puede BAJAR con `GUARDS_ENTRADA_TECHO_MS` (así lo prueba el test, sin
+// esperar un minuto), nunca subir: un plazo que cualquiera alarga desde el entorno es una sugerencia.
+const techo = techoEfectivo(process.env.GUARDS_ENTRADA_TECHO_MS);
+const t0 = Date.now();
 const r = spawnSync(process.execPath, ['--test', ...GUARDS.map((g) => g.fichero)], {
-  cwd: RAIZ, encoding: 'utf8',
+  cwd: RAIZ, encoding: 'utf8', timeout: techo,
 });
+const ms = Date.now() - t0;
 process.stdout.write(r.stdout || '');
 process.stderr.write(r.stderr || '');
+
+if (r.error && r.error.code === 'ETIMEDOUT') {
+  console.error(`\n🔴 los guards de entrada se pasaron del TECHO: más de ${techo} ms (el techo es ${TECHO_MS} ms).`);
+  console.error('  Un comando que tarda un minuto no se ejecuta, y entonces no vigila nada. Deja sitio a');
+  console.error('  alguno de la lista o sube el techo A PROPÓSITO, en un PR que lo diga (SCRUM-976).');
+  process.exit(1);
+}
 
 // SUELO Nº2: que además de correr, HAYAN CORRIDO. Un fichero que existe pero se quedó sin tests
 // —o un runner que no encuentra nada— saldría con éxito y en silencio, y «0 tests, 0 fallos» es
@@ -129,7 +188,7 @@ if (r.status !== 0) {
   console.error('  el PR sale rojo y cuesta una vuelta entera.');
   process.exit(r.status ?? 1);
 }
-console.log(`\n✓ ${GUARDS.length} guards de entrada en verde (${ejecutados} tests). La entrada puede empujarse.`);
+console.log(`\n✓ ${GUARDS.length} guards de entrada en verde (${ejecutados} tests, ${(ms / 1000).toFixed(1)} s de ${TECHO_MS / 1000}). La entrada puede empujarse.`);
 }
 
 // Solo corre cuando se le llama como comando. Importarlo —para probar el lector de arriba— no

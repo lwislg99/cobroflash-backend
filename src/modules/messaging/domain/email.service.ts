@@ -12,6 +12,8 @@ import { formatMoneyEs } from '../../../core/utils/utils'; // SCRUM-931: el TERC
 import { enviarPorResend } from '../../../integrations/enviarCorreo'; // SCRUM-475: el emisor unico
 // SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
 import { CLASES_DE_CORREO } from './registroDeEnvios';
+import { portalUrlDelCliente } from '../../system/customerAdmin'; // SCRUM-967b
+import { getLocale } from '../../../core/i18n/locales';
 
 /**
  * Envía la factura al cliente con el PDF adjunto.
@@ -125,7 +127,7 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   const quote = await prisma.quote.findUnique({
     where: { id: quoteId },
     include: {
-      merchant: { select: { name: true, legalName: true } },
+      merchant: { select: { name: true, legalName: true, country: true } },
       customer: { select: { name: true, email: true } },
     },
   });
@@ -143,6 +145,14 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
   // misma fuga (SCRUM-72/74/85/87/90).
   const decisionToken = await ensureQuoteDecisionToken(quoteId, prisma);
   const payUrl = `${BASE_URL}/pay/quote/${decisionToken}`;
+  // SCRUM-967b · el portal del cliente, que hasta aquí no viajaba en ningún envío. Va en el CORREO
+  // porque llega a un solo destinatario —el propio cliente—; en la página del presupuesto NO va,
+  // que contesta a cualquiera que tenga su enlace. Texto firmado: docs/microcopy/2026-09-21-SCRUM-967-*.
+  // Best-effort: el presupuesto importa más que su enlace de portal. Si no hay token, no hay frase.
+  const portalUrl = quote.customerId
+    ? await portalUrlDelCliente(quote.merchantId, quote.customerId).catch(() => null)
+    : null;
+  const presupuestos = getLocale(quote.merchant?.country).quotePlural.toLowerCase();
 
   // PDF adjunto solo si sigue en disco. SCRUM-72: la ruta se deriva de la constante
   // `invoicesDir` + el nombre CANÓNICO del generador (QUOTE-<id>.pdf), NO del string de
@@ -164,6 +174,9 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
 <p style="margin:0;text-align:center;font-size:26px;font-weight:800;color:#0f1c17;letter-spacing:-.02em">${escEmail(total)}</p>`,
     ctaLabel: 'Ver y firmar presupuesto',
     ctaUrl: payUrl,
+    bajoElBotonHtml: portalUrl
+      ? `Todos tus ${escEmail(presupuestos)} y pagos con ${escEmail(business)} están en <a href="${portalUrl}" style="color:#15803d">tu portal de cliente</a>.`
+      : undefined,
     footnote: 'Podrás revisarlo, firmarlo con el dedo desde el móvil o hacer preguntas.',
   });
 

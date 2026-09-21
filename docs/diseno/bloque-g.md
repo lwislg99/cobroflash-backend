@@ -140,7 +140,7 @@ No se declaró — que es **literalmente el fallo del hueco estructurado de B2**
 ├───────────────────────────────────────────────────────┤
 │ Francisco Jiménez   [EN CURSO][PAGADO]  [PRIMARIA] [sec] ⋮│
 ├─────────────────────────────────┬─────────────────────┤
-│  QUÉ FALTA PARA COBRAR         │  CLIENTE                │
+│  LO QUE FALTA                  │  CLIENTE                │
 │  ALBARANES        (tabla, C3)  │  DÓNDE → abrir en mapa  │
 │  GASTOS                        │  DINERO                 │
 │  NOTAS INTERNAS                │  PRESUPUESTO → origen   │
@@ -215,11 +215,39 @@ pero recortando en vez de añadiendo.
 
 ### La lista enmendada
 
-El §4 queda enmendado: las secciones del cuerpo son **QUÉ FALTA PARA COBRAR · DATOS · TIPO DE
+El §4 queda enmendado: las secciones del cuerpo son **LO QUE FALTA · DATOS · TIPO DE
 TRABAJO · ALBARANES · GASTOS · FACTURAS · NOTAS INTERNAS**. Lo comprueba
 `tests/scrum427-composicion-detalle.test.mjs`, que compara esta lista con lo que la pantalla pinta
 **enumerando** —qué falta y qué sobra—, no contando: G4 «cuadraba» porque 4 + 5 = 9, con el número
 correcto y el contenido equivocado.
+
+### ⑤ ENMIENDA DE SCRUM-917f · «QUÉ FALTA PARA COBRAR» pasa a llamarse «LO QUE FALTA»
+
+El §4 y la lista de arriba llevaban **QUÉ FALTA PARA COBRAR**, que es como se llamó la sección
+desde G5. Se enmienda, y no por gusto: **el rótulo afirmaba algo falso en una pantalla de cada
+dos.**
+
+La sección se pinta siempre que haya CUALQUIER hueco (`seccionCobroVisible`), y de los seis que
+produce el motor sólo tres son dinero. Un Trabajo **cobrado del todo** con un albarán pendiente de
+firma enseñaba una cabecera que decía «qué falta para cobrar» encima de una línea que no habla de
+cobrar nada. Son **dos preguntas distintas** —qué falta por cobrar y qué falta por entregar— y esta
+tarjeta contesta a las dos: el rótulo tiene que admitirlo en vez de quedarse con una.
+
+El texto está **firmado** (`docs/prototipos/SCRUM-917/textos-propuestos.md`, «El detalle», por
+delegación permanente, com. 15881), y el prototipo aprobado lo pinta así.
+
+⚠️ **El id interno NO cambia.** `SECCIONES_CUERPO` sigue diciendo `que-falta-para-cobrar`: es una
+clave de reparto que decide DÓNDE va la sección en el ciclo, no un texto que lea nadie.
+Renombrarla la habría movido de sitio sin que nadie lo pidiera.
+
+**Y entra un hueco nuevo, `sin-presupuesto`.** Medido en el PASO 0 de SCRUM-917: un Trabajo con
+`totalAceptado` nulo no producía NINGÚN hueco, así que la sección no se pintaba en absoluto y la
+pantalla se callaba. 🔒 **Un silencio se lee igual que «no falta nada», y aquí son cosas
+opuestas**: no es que no falte, es que sin importe de referencia no se puede saber cuánto falta.
+Va el **primero** del orden canónico por la regla que G5 ya tenía escrita —delante lo que el pro
+puede resolver hoy—, y su criterio es `totalAceptado == null`, el MISMO que decide si se pinta la
+franja: un presupuesto aceptado por 0 € **consta**, y decirle a ese Trabajo que no tiene
+presupuesto sería falso (SCRUM-651).
 
 ### ④ La regla del hueco vale para LEER, no para ESCRIBIR
 

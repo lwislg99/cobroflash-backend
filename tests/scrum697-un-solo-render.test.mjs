@@ -355,14 +355,20 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // el mismo contador, y lo único que SOBRA en la rama es **3 × `button.quote-ver-documento`** con
   // «Ver documento» — uno en el pie de cada paso que no es el último (Cliente, Conceptos,
   // Condiciones). Y no falta nada en el otro lado: el delta no esconde una resta compensada.
-  assert.equal(nodos.length, 286,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 286 `
+  // 🔴 SCRUM-915h · 21-sep-2026 · 286 → 245, y lo mueve la VISTA. Por identidad (firmas de los dos
+  // árboles): −34 = las DOS líneas en blanco que el editor ya no abre (la v3 abre UNA; 17 nodos cada
+  // una) y −7 = `div.quote-totals` con sus dos filas de apoyo, que pasan al documento de la derecha.
+  // Lo único que «sobra» en la rama es la ficha de la línea con la clase `is-de-siempre`: el MISMO
+  // nodo con otra clase. No falta nada más: el delta no esconde una resta compensada.
+  assert.equal(nodos.length, 245,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 245 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
     + '− los 3 avisos «Final: …» retirados por SCRUM-669, − las 24 pintadas viejas que el banco '
     + 'apilaba hasta SCRUM-897, + los 45 del andamio de los pasos de SCRUM-915d, + el rótulo «Se '
-    + 'actualiza mientras escribes» de SCRUM-915e1, + los 3 «Ver documento» de SCRUM-915e2). Si no '
+    + 'actualiza mientras escribes» de SCRUM-915e1, + los 3 «Ver documento» de SCRUM-915e2, − las 2 '
+    + 'líneas en blanco y − el bloque `.quote-totals` de SCRUM-915h). Si no '
     + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
