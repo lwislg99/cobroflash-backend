@@ -1,0 +1,713 @@
+[
+ {
+  "off": 0,
+  "bytes": 341,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala",
+  "nesting": 0
+ },
+ {
+  "off": 341,
+  "bytes": 341,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala",
+  "nesting": 0
+ },
+ {
+  "off": 682,
+  "bytes": 295,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · ② el barrido encuentra entradas de verdad",
+  "nesting": 0
+ },
+ {
+  "off": 977,
+  "bytes": 274,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo",
+  "nesting": 0
+ },
+ {
+  "off": 1251,
+  "bytes": 365,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien",
+  "nesting": 0
+ },
+ {
+  "off": 1616,
+  "bytes": 353,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados",
+  "nesting": 0
+ },
+ {
+  "off": 1969,
+  "bytes": 337,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer",
+  "nesting": 0
+ },
+ {
+  "off": 2306,
+  "bytes": 347,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total",
+  "nesting": 0
+ },
+ {
+  "off": 2653,
+  "bytes": 254,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo",
+  "nesting": 0
+ },
+ {
+  "off": 2907,
+  "bytes": 377,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard CAE",
+  "nesting": 0
+ },
+ {
+  "off": 3284,
+  "bytes": 250,
+  "type": "test:enqueue",
+  "name": "SCRUM-267 · el formato declarado en el README incluye el ancla",
+  "nesting": 0
+ },
+ {
+  "off": 3534,
+  "bytes": 353,
+  "type": "test:enqueue",
+  "name": "SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada",
+  "nesting": 0
+ },
+ {
+  "off": 3887,
+  "bytes": 299,
+  "type": "test:enqueue",
+  "name": "SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE",
+  "nesting": 0
+ },
+ {
+  "off": 4186,
+  "bytes": 329,
+  "type": "test:enqueue",
+  "name": "SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una",
+  "nesting": 0
+ },
+ {
+  "off": 4515,
+  "bytes": 341,
+  "type": "test:enqueue",
+  "name": "SCRUM-649 · ✅ y la que está listada EXISTE como entrada y sigue sin resolver",
+  "nesting": 0
+ },
+ {
+  "off": 4856,
+  "bytes": 275,
+  "type": "test:enqueue",
+  "name": "SCRUM-859 · SUELO: hay exentas que examinar y entradas contra las que casarlas",
+  "nesting": 0
+ },
+ {
+  "off": 5131,
+  "bytes": 340,
+  "type": "test:enqueue",
+  "name": "SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real — una por una",
+  "nesting": 0
+ },
+ {
+  "off": 5471,
+  "bytes": 332,
+  "type": "test:enqueue",
+  "name": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave",
+  "nesting": 0
+ },
+ {
+  "off": 5803,
+  "bytes": 344,
+  "type": "test:enqueue",
+  "name": "SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se habrían desplazado",
+  "nesting": 0
+ },
+ {
+  "off": 6147,
+  "bytes": 314,
+  "type": "test:enqueue",
+  "name": "SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO",
+  "nesting": 0
+ },
+ {
+  "off": 6461,
+  "bytes": 344,
+  "type": "test:enqueue",
+  "name": "SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hace CAER el guard",
+  "nesting": 0
+ },
+ {
+  "off": 6805,
+  "bytes": 399,
+  "type": "test:complete",
+  "name": "SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala",
+  "nesting": 0
+ },
+ {
+  "off": 7204,
+  "bytes": 327,
+  "type": "test:start",
+  "name": "SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala",
+  "nesting": 0
+ },
+ {
+  "off": 7531,
+  "bytes": 386,
+  "type": "test:pass",
+  "name": "SCRUM-267 · ① el validador reconoce un ancla buena y las tres formas de mala",
+  "nesting": 0
+ },
+ {
+  "off": 7917,
+  "bytes": 295,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · ② el barrido encuentra entradas de verdad",
+  "nesting": 0
+ },
+ {
+  "off": 8212,
+  "bytes": 353,
+  "type": "test:complete",
+  "name": "SCRUM-267 · ② el barrido encuentra entradas de verdad",
+  "nesting": 0
+ },
+ {
+  "off": 8565,
+  "bytes": 281,
+  "type": "test:start",
+  "name": "SCRUM-267 · ② el barrido encuentra entradas de verdad",
+  "nesting": 0
+ },
+ {
+  "off": 8846,
+  "bytes": 340,
+  "type": "test:pass",
+  "name": "SCRUM-267 · ② el barrido encuentra entradas de verdad",
+  "nesting": 0
+ },
+ {
+  "off": 9186,
+  "bytes": 274,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo",
+  "nesting": 0
+ },
+ {
+  "off": 9460,
+  "bytes": 175600
+ },
+ {
+  "off": 185060,
+  "bytes": 260,
+  "type": "test:start",
+  "name": "SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo",
+  "nesting": 0
+ },
+ {
+  "off": 185320,
+  "bytes": 175587
+ },
+ {
+  "off": 360907,
+  "bytes": 365,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien",
+  "nesting": 0
+ },
+ {
+  "off": 361272,
+  "bytes": 423,
+  "type": "test:complete",
+  "name": "SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien",
+  "nesting": 0
+ },
+ {
+  "off": 361695,
+  "bytes": 351,
+  "type": "test:start",
+  "name": "SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien",
+  "nesting": 0
+ },
+ {
+  "off": 362046,
+  "bytes": 410,
+  "type": "test:pass",
+  "name": "SCRUM-267 · 🔴 un APÉNDICE con el ancla rota cae, aunque las entradas previas estén bien",
+  "nesting": 0
+ },
+ {
+  "off": 362456,
+  "bytes": 353,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados",
+  "nesting": 0
+ },
+ {
+  "off": 362809,
+  "bytes": 411,
+  "type": "test:complete",
+  "name": "SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados",
+  "nesting": 0
+ },
+ {
+  "off": 363220,
+  "bytes": 339,
+  "type": "test:start",
+  "name": "SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados",
+  "nesting": 0
+ },
+ {
+  "off": 363559,
+  "bytes": 398,
+  "type": "test:pass",
+  "name": "SCRUM-267 · 🔴 SUELO: el troceador VE entradas, y sabe saltar los bloques cercados",
+  "nesting": 0
+ },
+ {
+  "off": 363957,
+  "bytes": 337,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer",
+  "nesting": 0
+ },
+ {
+  "off": 364294,
+  "bytes": 26420
+ },
+ {
+  "off": 390714,
+  "bytes": 323,
+  "type": "test:start",
+  "name": "SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer",
+  "nesting": 0
+ },
+ {
+  "off": 391037,
+  "bytes": 26407
+ },
+ {
+  "off": 417444,
+  "bytes": 347,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total",
+  "nesting": 0
+ },
+ {
+  "off": 417791,
+  "bytes": 3299
+ },
+ {
+  "off": 421090,
+  "bytes": 333,
+  "type": "test:start",
+  "name": "SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total",
+  "nesting": 0
+ },
+ {
+  "off": 421423,
+  "bytes": 3286
+ },
+ {
+  "off": 424709,
+  "bytes": 254,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo",
+  "nesting": 0
+ },
+ {
+  "off": 424963,
+  "bytes": 96094
+ },
+ {
+  "off": 521057,
+  "bytes": 240,
+  "type": "test:start",
+  "name": "SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo",
+  "nesting": 0
+ },
+ {
+  "off": 521297,
+  "bytes": 96081
+ },
+ {
+  "off": 617378,
+  "bytes": 377,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard CAE",
+  "nesting": 0
+ },
+ {
+  "off": 617755,
+  "bytes": 435,
+  "type": "test:complete",
+  "name": "SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard CAE",
+  "nesting": 0
+ },
+ {
+  "off": 618190,
+  "bytes": 363,
+  "type": "test:start",
+  "name": "SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard CAE",
+  "nesting": 0
+ },
+ {
+  "off": 618553,
+  "bytes": 422,
+  "type": "test:pass",
+  "name": "SCRUM-267 · 🔴 EL CONTROL QUE DECIDE: se rompe el ancla de un `# APÉNDICE` real y el guard CAE",
+  "nesting": 0
+ },
+ {
+  "off": 618975,
+  "bytes": 250,
+  "type": "test:dequeue",
+  "name": "SCRUM-267 · el formato declarado en el README incluye el ancla",
+  "nesting": 0
+ },
+ {
+  "off": 619225,
+  "bytes": 308,
+  "type": "test:complete",
+  "name": "SCRUM-267 · el formato declarado en el README incluye el ancla",
+  "nesting": 0
+ },
+ {
+  "off": 619533,
+  "bytes": 236,
+  "type": "test:start",
+  "name": "SCRUM-267 · el formato declarado en el README incluye el ancla",
+  "nesting": 0
+ },
+ {
+  "off": 619769,
+  "bytes": 295,
+  "type": "test:pass",
+  "name": "SCRUM-267 · el formato declarado en el README incluye el ancla",
+  "nesting": 0
+ },
+ {
+  "off": 620064,
+  "bytes": 353,
+  "type": "test:dequeue",
+  "name": "SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada",
+  "nesting": 0
+ },
+ {
+  "off": 620417,
+  "bytes": 411,
+  "type": "test:complete",
+  "name": "SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada",
+  "nesting": 0
+ },
+ {
+  "off": 620828,
+  "bytes": 339,
+  "type": "test:start",
+  "name": "SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada",
+  "nesting": 0
+ },
+ {
+  "off": 621167,
+  "bytes": 398,
+  "type": "test:pass",
+  "name": "SCRUM-649 · 🔴 SUELO: la sonda de existencia pasa su control antes de afirmar nada",
+  "nesting": 0
+ },
+ {
+  "off": 621565,
+  "bytes": 299,
+  "type": "test:dequeue",
+  "name": "SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE",
+  "nesting": 0
+ },
+ {
+  "off": 621864,
+  "bytes": 8559
+ },
+ {
+  "off": 630423,
+  "bytes": 285,
+  "type": "test:start",
+  "name": "SCRUM-649 · 🔴 TODO ancla apunta a un commit que EXISTE",
+  "nesting": 0
+ },
+ {
+  "off": 630708,
+  "bytes": 8546
+ },
+ {
+  "off": 639254,
+  "bytes": 329,
+  "type": "test:dequeue",
+  "name": "SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una",
+  "nesting": 0
+ },
+ {
+  "off": 639583,
+  "bytes": 387,
+  "type": "test:complete",
+  "name": "SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una",
+  "nesting": 0
+ },
+ {
+  "off": 639970,
+  "bytes": 315,
+  "type": "test:start",
+  "name": "SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una",
+  "nesting": 0
+ },
+ {
+  "off": 640285,
+  "bytes": 374,
+  "type": "test:pass",
+  "name": "SCRUM-649 · 🔴 la lista de anclas que no resuelven está CERRADA en una",
+  "nesting": 0
+ },
+ {
+  "off": 640659,
+  "bytes": 341,
+  "type": "test:dequeue",
+  "name": "SCRUM-649 · ✅ y la que está listada EXISTE como entrada y sigue sin resolver",
+  "nesting": 0
+ },
+ {
+  "off": 641000,
+  "bytes": 3748
+ },
+ {
+  "off": 644748,
+  "bytes": 327,
+  "type": "test:start",
+  "name": "SCRUM-649 · ✅ y la que está listada EXISTE como entrada y sigue sin resolver",
+  "nesting": 0
+ },
+ {
+  "off": 645075,
+  "bytes": 3735
+ },
+ {
+  "off": 648810,
+  "bytes": 275,
+  "type": "test:dequeue",
+  "name": "SCRUM-859 · SUELO: hay exentas que examinar y entradas contra las que casarlas",
+  "nesting": 0
+ },
+ {
+  "off": 649085,
+  "bytes": 333,
+  "type": "test:complete",
+  "name": "SCRUM-859 · SUELO: hay exentas que examinar y entradas contra las que casarlas",
+  "nesting": 0
+ },
+ {
+  "off": 649418,
+  "bytes": 261,
+  "type": "test:start",
+  "name": "SCRUM-859 · SUELO: hay exentas que examinar y entradas contra las que casarlas",
+  "nesting": 0
+ },
+ {
+  "off": 649679,
+  "bytes": 320,
+  "type": "test:pass",
+  "name": "SCRUM-859 · SUELO: hay exentas que examinar y entradas contra las que casarlas",
+  "nesting": 0
+ },
+ {
+  "off": 649999,
+  "bytes": 340,
+  "type": "test:dequeue",
+  "name": "SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real — una por una",
+  "nesting": 0
+ },
+ {
+  "off": 650339,
+  "bytes": 163822
+ },
+ {
+  "off": 814161,
+  "bytes": 326,
+  "type": "test:start",
+  "name": "SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real — una por una",
+  "nesting": 0
+ },
+ {
+  "off": 814487,
+  "bytes": 163809
+ },
+ {
+  "off": 978296,
+  "bytes": 332,
+  "type": "test:dequeue",
+  "name": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave",
+  "nesting": 0
+ },
+ {
+  "off": 978628,
+  "bytes": 26909
+ },
+ {
+  "off": 1005537,
+  "bytes": 318,
+  "type": "test:start",
+  "name": "SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave",
+  "nesting": 0
+ },
+ {
+  "off": 1005855,
+  "bytes": 26896
+ },
+ {
+  "off": 1032751,
+  "bytes": 344,
+  "type": "test:dequeue",
+  "name": "SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se habrían desplazado",
+  "nesting": 0
+ },
+ {
+  "off": 1033095,
+  "bytes": 402,
+  "type": "test:complete",
+  "name": "SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se habrían desplazado",
+  "nesting": 0
+ },
+ {
+  "off": 1033497,
+  "bytes": 330,
+  "type": "test:start",
+  "name": "SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se habrían desplazado",
+  "nesting": 0
+ },
+ {
+  "off": 1033827,
+  "bytes": 389,
+  "type": "test:pass",
+  "name": "SCRUM-859 · 🔴 CONTROL del control: por POSICIÓN sí se habrían desplazado",
+  "nesting": 0
+ },
+ {
+  "off": 1034216,
+  "bytes": 314,
+  "type": "test:dequeue",
+  "name": "SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO",
+  "nesting": 0
+ },
+ {
+  "off": 1034530,
+  "bytes": 372,
+  "type": "test:complete",
+  "name": "SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO",
+  "nesting": 0
+ },
+ {
+  "off": 1034902,
+  "bytes": 300,
+  "type": "test:start",
+  "name": "SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO",
+  "nesting": 0
+ },
+ {
+  "off": 1035202,
+  "bytes": 359,
+  "type": "test:pass",
+  "name": "SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO",
+  "nesting": 0
+ },
+ {
+  "off": 1035561,
+  "bytes": 344,
+  "type": "test:dequeue",
+  "name": "SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hace CAER el guard",
+  "nesting": 0
+ },
+ {
+  "off": 1035905,
+  "bytes": 402,
+  "type": "test:complete",
+  "name": "SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hace CAER el guard",
+  "nesting": 0
+ },
+ {
+  "off": 1036307,
+  "bytes": 330,
+  "type": "test:start",
+  "name": "SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hace CAER el guard",
+  "nesting": 0
+ },
+ {
+  "off": 1036637,
+  "bytes": 389,
+  "type": "test:pass",
+  "name": "SCRUM-859 · 🔴 CONTROL: una SEXTA que alegue el motivo hace CAER el guard",
+  "nesting": 0
+ },
+ {
+  "off": 1037026,
+  "bytes": 172,
+  "type": "test:plan",
+  "nesting": 0
+ },
+ {
+  "off": 1037198,
+  "bytes": 201,
+  "type": "test:diagnostic",
+  "nesting": 0
+ },
+ {
+  "off": 1037399,
+  "bytes": 201,
+  "type": "test:diagnostic",
+  "nesting": 0
+ },
+ {
+  "off": 1037600,
+  "bytes": 200,
+  "type": "test:diagnostic",
+  "nesting": 0
+ },
+ {
+  "off": 1037800,
+  "bytes": 199,
+  "type": "test:diagnostic",
+  "nesting": 0
+ },
+ {
+  "off": 1037999,
+  "bytes": 204,
+  "type": "test:diagnostic",
+  "nesting": 0
+ },
+ {
+  "off": 1038203,
+  "bytes": 202,
+  "type": "test:diagnostic",
+  "nesting": 0
+ },
+ {
+  "off": 1038405,
+  "bytes": 199,
+  "type": "test:diagnostic",
+  "nesting": 0
+ },
+ {
+  "off": 1038604,
+  "bytes": 214,
+  "type": "test:diagnostic",
+  "nesting": 0
+ },
+ {
+  "off": 1038818,
+  "bytes": 263,
+  "type": "test:summary"
+ }
+]
