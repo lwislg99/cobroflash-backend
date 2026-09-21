@@ -43,8 +43,9 @@ const MARTIN = { id: 25, name: 'Taller Martín', phone: '34000000025', email: 'm
 const LOLA = { id: 26, name: 'Peluquería Lola', phone: '34000000026', email: 'lola@correo.es' };
 const SEIS = [OLIVOS, FINCAS, ORTEGA, PUERTO, MARTIN, LOLA];
 
-function banco({ clientes = SEIS } = {}) {
+function banco({ clientes = SEIS, localStorage } = {}) {
   return cargarDashboard(RAIZ, {
+    localStorage,
     datos: (url) => {
       const u = String(url || '');
       if (/\/admin\/merchant/.test(u)) return { id: 1, name: 'Fontanería Soler' };
@@ -178,6 +179,21 @@ test('SCRUM-915j · 🔴 el elegido que vive FUERA de los cuatro primeros va a l
   assert.deepEqual(idsDe(r), ['26', '21', '22', '23'],
     '🔴 el cliente 26 está elegido y no se ve: recortar a 4 no puede esconder lo que el profesional eligió.');
   assert.deepEqual(marcadosDe(r), ['26']);
+});
+
+test('SCRUM-915j · 🔴 el cliente de un BORRADOR restaurado queda marcado y a la vista (el select lo escribe otro código)', async () => {
+  // El restaurador ESCRIBE `select.value` a mano, sin evento: si los botones sólo siguieran al `change`,
+  // el borrador volvería con su cliente puesto y ningún botón lo diría.
+  const borrador = JSON.stringify({
+    customerId: '26', paymentTerms: '', vatDefault: '21',
+    lines: [{ concept: 'Punto de luz', qty: '1', price: '10', vat: '21' }],
+  });
+  const r = await pintarVista(banco({ localStorage: { pf_quote_draft_1: borrador } }), 'renderQuotesView');
+  assert.equal(r.error, null, `🔴 el editor no monta con un borrador: ${r.error && r.error.message}`);
+  assert.equal(selectorDeCliente(r).value, '26',
+    '🔴 SUELO: el borrador no restauró el cliente en el select; lo de abajo mediría otra cosa.');
+  assert.deepEqual(idsDe(r), ['26', '21', '22', '23'], '🔴 el cliente del borrador no está a la vista.');
+  assert.deepEqual(marcadosDe(r), ['26'], '🔴 el cliente del borrador no aparece marcado.');
 });
 
 test('SCRUM-915j · el elegido que YA está entre los cuatro NO cambia de sitio', async () => {
