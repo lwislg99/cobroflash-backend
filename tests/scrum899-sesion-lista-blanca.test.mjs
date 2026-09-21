@@ -63,7 +63,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/sesion.mjs',
     de: "export const MODELO_DEL_EQUIPO = 'sonnet';",
     a: "export const MODELO_DEL_EQUIPO = 'opus';",
-    cae: '🔴 SCRUM-990: el modelo del equipo es sonnet',
+    cae: '🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`',
   },
 ];
 

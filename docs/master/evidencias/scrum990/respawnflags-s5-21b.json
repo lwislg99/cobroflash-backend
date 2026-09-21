@@ -1,0 +1,8 @@
+{
+  "medido": "2026-09-21T11:02:10Z (cabecera Date de GitHub; la hora de la maquina va ~5,5 min por delante)",
+  "que_es": "Extracto de ~/.claude/jobs/126ec8ec/state.json (solo estos campos; el resto, incluido el prompt, no se copia) y del recuento de `message.model` en el jsonl de la MISMA sesion.",
+  "sesion": { "id": "126ec8ec", "nombre": "s5-21b", "template": "bg", "cliVersion": "2.1.278" },
+  "respawnFlags": ["-n", "s5-21b", "--permission-mode", "auto", "--model", "sonnet"],
+  "modelo_en_el_jsonl": { "claude-sonnet-5": 111 },
+  "lectura": "Una sesion de fondo lanzada con `--bg -n <nombre> --permission-mode auto --model sonnet <prompt>` (el orden que fija argsLanzar tras SCRUM-990) conserva `--model sonnet` en sus respawnFlags y TODOS sus turnos los contesta claude-sonnet-5. La sonda para verificar una tanda real: `respawnFlags` del state.json del job recien lanzado."
+}
