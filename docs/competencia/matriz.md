@@ -1965,9 +1965,13 @@ Uno por entrega, avisando al orquestador al acabar cada uno.
 familia field service, solo público · **Familia española ✅** (§16): Verifacturamos (releído),
 **Anfix, Billin/TS Facturas, Contasimple, FacturaDirecta**, solo documentación; **Sage ❓** sin poder
 leer su producto.
-**Pendientes:** la pasada **por dentro** de la familia española (empieza por Verifacturamos, **cuando el
-fundador confirme las altas en el chat de la sesión**; §16.7) · Sage por otra vía · Odoo · Jobber y
-Housecall Pro por dentro.
+**En curso (21-sep, 👁):** Verifacturamos **por dentro**, con el permiso del fundador recibido en el chat
+de la sesión. **Cuenta abierta** (alta ≈08:20Z, `lwislg99@gmail.com`, empresa ficticia; **hay que darla de
+baja al terminar**). Parada en el paso 2 del asistente de alta por cierre de sesión; lo visto, en
+[`capturas/verifacturamos/`](capturas/verifacturamos/README.md). **Falta lo que importa:** las opciones de
+cada documento y el «Convertir en factura».
+**Pendientes:** el resto de la pasada **por dentro** de la familia española (FacturaDirecta, Billin,
+Contasimple, Anfix) · Sage por otra vía · Odoo · Jobber y Housecall Pro por dentro.
 **Excluidos por decisión del orquestador:** STEL Order y Fixner — sus términos **prohíben
 expresamente** usar el producto para competir (cláusula «Uso limitado», recogida en
 `docs/master/SCRUM-906.md` §2).
