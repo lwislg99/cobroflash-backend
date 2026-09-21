@@ -93,7 +93,7 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
    `orquestador-autonomo.md` §5bis). Al fundador se le piden las **autorizaciones**, que no se
    heredan.
 5bis. 🔴 **RELEVAR EN VEZ DE REANUDAR.** Antes de mandarle el encargo siguiente a una sesión, se
-   mira lo que ocupa (`sesion.mjs contexto N`). Si pasa de **300k** tras una entrega verificada, si
+   mira lo que ocupa (`sesion.mjs contexto N`). Si pasa de **200k** tras una entrega verificada, si
    lleva **más de 1 h parada** o si empieza la **tanda del día siguiente**, no se le escribe: **se
    la releva** (A19, «El PUESTO es fijo; la SESIÓN se releva» · `orquestador-autonomo.md` §5bis).
    Nunca a mitad de una entrega, y nunca sin que haya dejado su traspaso.
@@ -101,6 +101,7 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
        🔒 Escribirle a una sesión cargada cuesta su contexto ENTERO en cada mensaje. Relevarla
           cuesta un traspaso, una vez.
 6. **Memoria de traspaso al día** (qué está en main por efecto, qué queda, ramas y PR).
+6bis. **Gasto** (A25): `uso.mjs leer` + `gasto-arranque.mjs vivas` y `sesiones`; SCRUM-1070 y SCRUM-996 al día.
 7. **Lo que tiene que hacer él, SIEMPRE AL FINAL** del mensaje, numerado y corto; si no hay
    nada, se dice. Los pasos manuales, uno a uno. **Y antes de enviar, la lista de §0.0 entera.**
 

@@ -23,7 +23,7 @@
 //   · la fuente por defecto es `git show origin/main:docs/equipo/00-normas-comunes.md`. Si no se
 //     puede leer, es «NO PUDE MIRAR» (salida 2). NO hay caída silenciosa al árbol de trabajo: un
 //     checkout viejo daría normas fósiles y la sesión creería tener las de hoy.
-//   · las 13 secciones de arranque se buscan por id Y por título. Si falta una, o su título ya no
+//   · las 14 secciones de arranque se buscan por id Y por título. Si falta una, o su título ya no
 //     casa, es «NO PUDE MIRAR» y NO se imprime un subconjunto en verde: referenciar por posición
 //     caduca en cuanto alguien renumera, y un arranque que omite en silencio A13 es peor que uno
 //     que falla.
@@ -54,7 +54,7 @@ export const MAX_BUFFER = 20 * 1024 * 1024;
 export const CORTES = { A19: MARCADOR_DE_CORTE_A19 };
 
 /**
- * Las 13 secciones que se leen al arrancar. `titulo` es un TROZO del título real (no el título
+ * Las 14 secciones que se leen al arrancar. `titulo` es un TROZO del título real (no el título
  * entero): si la sección se renumera o se retitula, el arranque avisa en vez de callar.
  */
 export const ARRANQUE = [
@@ -71,6 +71,7 @@ export const ARRANQUE = [
   { id: 'A19', titulo: 'El PUESTO es fijo' },
   { id: 'A20', titulo: 'Si el encargo cae fuera' },
   { id: 'A24', titulo: 'El PR lo abre el bot' },
+  { id: 'A25', titulo: 'Eficiencia y gasto' },
 ];
 
 export const PUNTEROS = 'Trampas de la máquina: docs/equipo/trampas-del-entorno.md · coordinación: '

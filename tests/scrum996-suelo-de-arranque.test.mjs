@@ -66,7 +66,7 @@ const exitImpreso = (stdout) => Number(EXIT_FINAL.exec(stdout)?.[1]);
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 const TEXTO_REAL = normalizar(fs.readFileSync(NORMAS_REALES));
-const IDS_ARRANQUE = ['A1', 'A2', 'A3', 'A4', 'A7', 'A8', 'A9', 'A13', 'A14', 'A16', 'A19', 'A20', 'A24'];
+const IDS_ARRANQUE = ['A1', 'A2', 'A3', 'A4', 'A7', 'A8', 'A9', 'A13', 'A14', 'A16', 'A19', 'A20', 'A24', 'A25'];
 const MARCADOR = 'Cuarta versión';
 const RE_FUENTE = /^norma\.mjs · origen (.+) · (\d+) B · sha256 ([0-9a-f]{8}) · (\d+) secciones$/m;
 const RE_PIE = /^norma\.mjs · impresas=(\d+) · (\d+) B de (\d+) B \((\d+) %\) · sin leer=(\d+) · EXIT=(\d+)$/m;
@@ -118,13 +118,13 @@ function sinSeccion(texto, id, siguiente) {
   return [...lineas.slice(0, a), ...lineas.slice(b)].join('\n');
 }
 
-test('SCRUM-996 · norma · SUELO: el fichero real tiene secciones y las 13 de arranque están en él', () => {
+test('SCRUM-996 · norma · SUELO: el fichero real tiene secciones y las 14 de arranque están en él', () => {
   assert.ok(SECCIONES_REALES.size >= IDS_ARRANQUE.length, `solo ${SECCIONES_REALES.size} secciones en el fichero real`);
   for (const id of IDS_ARRANQUE) assert.ok(SECCIONES_REALES.has(id), `${id} no está en 00-normas-comunes.md`);
   assert.deepEqual(ARRANQUE.map((a) => a.id), IDS_ARRANQUE, 'la lista ARRANQUE de norma.mjs no es la del encargo');
 });
 
-test('SCRUM-996 · norma · el fichero real: 13 secciones de arranque (texto exacto), ~43 % de los bytes, índice con el resto', () => {
+test('SCRUM-996 · norma · el fichero real: 14 secciones de arranque (texto exacto), ~43 % de los bytes, índice con el resto', () => {
   const r = correr(NORMA, ['--fichero', NORMAS_REALES]);
   const fuente = RE_FUENTE.exec(r.stdout);
   assert.ok(fuente, `A21: no salió la línea de fuente; stdout:\n${r.stdout.slice(0, 400)}\nstderr:\n${r.stderr.slice(0, 400)}`);
@@ -158,7 +158,7 @@ test('SCRUM-996 · norma · el fichero real: 13 secciones de arranque (texto exa
 
   const pie = RE_PIE.exec(r.stdout);
   assert.ok(pie, `no hay pie con población; stdout:\n${r.stdout.slice(-300)}`);
-  assert.equal(Number(pie[1]), 13);
+  assert.equal(Number(pie[1]), 14);
   assert.equal(Number(pie[2]), bytesEsperados, 'los bytes impresos no coinciden con el recálculo independiente');
   assert.equal(Number(pie[3]), Buffer.byteLength(TEXTO_REAL));
   assert.equal(Number(pie[5]), restoEsperado.length);
@@ -257,7 +257,7 @@ test('SCRUM-996 · norma · SIN --fichero lee de git (bytes crudos, CRLF incluid
   assert.equal(ok.status, 0);
   assert.equal(fuente[1], 'HEAD:docs/equipo/00-normas-comunes.md');
   assert.equal(Number(fuente[2]), Buffer.byteLength(TEXTO_REAL), 'un blob CRLF debe medirse con LF');
-  assert.equal(lineasDe(ok.stdout).filter((l) => /^## A\d+ · /.test(l)).length, 13);
+  assert.equal(lineasDe(ok.stdout).filter((l) => /^## A\d+ · /.test(l)).length, 14);
 
   // Sin origen legible NO cae al árbol de trabajo: es NO PUDE MIRAR.
   const roto = correr(NORMA, ['--origen', 'refs/heads/no-existe-996'], { cwd: repo });
