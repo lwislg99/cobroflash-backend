@@ -5,6 +5,7 @@ import { CustomerCreateInput, CustomerUpdateInput } from '../../core/validation/
 // SCRUM-580 (CONT-07): la decision de las etiquetas vive aparte y es pura — ver ese fichero.
 import { tagsParaPrisma } from './tagsDelCliente';
 import { normalizePhone } from '../../core/utils/utils'; // SCRUM-578: la que YA existe, sin tocarla
+import { BASE_URL } from '../../core/config/env'; // SCRUM-967b
 
 function generatePortalToken() {
   return crypto.randomBytes(16).toString('hex');
@@ -343,6 +344,16 @@ export async function ensurePortalToken(merchantId: number, customerId: number):
   // inventa uno ni se devuelve el que este hilo generó y que NO está guardado.
   if (!yaPuesto?.portalToken) throw new Error('customer_not_found');
   return yaPuesto.portalToken;
+}
+
+/**
+ * SCRUM-967b · la URL del portal, construida en UN sitio para los envíos que la llevan (correo del
+ * presupuesto y respuesta de la firma del parte). Misma forma que `GET /admin/customers/:id/portal-url`.
+ * ⚠️ Abre TODOS los documentos del cliente: solo va a canales de un solo destinatario o de un solo
+ * uso, nunca a una página que conteste a cualquiera que tenga su enlace (test scrum967b ④).
+ */
+export async function portalUrlDelCliente(merchantId: number, customerId: number): Promise<string> {
+  return `${BASE_URL}/cliente/${await ensurePortalToken(merchantId, customerId)}`;
 }
 
 export async function updateCustomer(merchantId: number, id: number, data: CustomerUpdateInput) {

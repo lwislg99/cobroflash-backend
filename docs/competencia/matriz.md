@@ -1306,6 +1306,11 @@ los `Attachment` de los trabajos de ese cliente, por fecha y diciendo de qué tr
 Meta. ⚠️ Ojo al peso: hay una medición abierta de que la lista de Gastos se trae las fotos enteras;
 ésta se hace con miniaturas y paginada, o repite ese mismo defecto.
 
+🔴 **Corregido el 21-sep-2026 (§14.2):** lo de «sin schema» y «el índice ya está» **no era cierto para
+las fotos**. `Attachment.entityType` no guarda hoy ningún `job`: las fotos de un trabajo viven en su
+**albarán**, y las miniaturas no existen. La parte de **historial** sí es barata (§14.3.1); la de
+**fotos** se separa y es grande.
+
 ### 13.4 · Aparte, y NO es producto: cómo se venden
 
 Separado a propósito, porque es marketing y no funciones: ServiceM8 tiene **una página por oficio** —
@@ -1331,15 +1336,349 @@ uno.
 
 ---
 
+## 14 · Housecall Pro · cerrado, y la ficha del cliente lista para construir (21-sep-2026)
+
+**Medido el 21-sep-2026 07:29Z (hora de GitHub) sobre `origin/main` =
+`43f4c7fc3f8d0330089edcd785cb0eea58ccb784`**, por su web pública y su centro de ayuda
+(`help.housecallpro.com`), leídos **a texto literal en el navegador** (nunca con `WebFetch`, por el
+motivo de «Límites»). Sin alta y sin entrar en el producto: **todo lo de aquí es su manual y su web
+comercial**. Las capturas, en [`capturas/housecall-pro/`](capturas/housecall-pro/README.md). El
+código nuestro se midió **leyendo** `origin/main`, no ejecutando nada contra staging.
+
+**Qué cierra.** El 20-sep se midió su ficha de equipos («Property Profile») y quedó a medias: las
+capturas se guardaron fuera de git y las propuestas sin escribir. Hoy se lee además **su ficha del
+cliente**, que es lo que faltaba para decidir el orden.
+
+### 14.1 · Lo que hacen, en sus palabras
+
+- **La ficha del cliente tiene seis pestañas:** *Profile · Estimates · Jobs · Invoices · Attachments ·
+  Notes*, y cada una dice lo mismo: *«All jobs for this customer will appear here»*. Arriba, *«your
+  next three upcoming appointments»*; abajo, un **activity feed** con *«messages, jobs, and
+  invoices»*. 📷 [`ficha-del-cliente-pestanas.png`](capturas/housecall-pro/ficha-del-cliente-pestanas.png).
+- **Las fotos del cliente, juntas y por fecha:** *«a complete aggregation of a customer's
+  attachments across their profile, jobs, estimates, and equipment in a timeline view»*, la más
+  reciente arriba, 25 por página (50 o 75), con miniatura, carrusel y **un enlace al trabajo, la
+  estimación o el equipo donde se subió**. Se pueden compartir por email o SMS. Y el cliente ve solo
+  lo que se le ha compartido en una factura o un presupuesto.
+  📷 [`ficha-del-cliente-fotos-en-linea-de-tiempo.png`](capturas/housecall-pro/ficha-del-cliente-fotos-en-linea-de-tiempo.png).
+- **Etiquetas internas** (*«customers cannot see them»*), con filtro en la lista; y **«Do Not Service»**,
+  una marca roja que sale en la ficha, en el buscador y al crear un trabajo o una estimación.
+- **Dos maneras de tener varios sitios**, dicho por ellos: *varias direcciones bajo un cliente* (todo
+  va a la misma persona) o **subclientes padre-hijo** para *«property management companies and
+  tenants»* (se comunica con uno y se factura a otro). Y **notas por dirección**, internas.
+- **Los equipos** (recapitulado del 20-sep): tipo y nombre obligatorios, el resto opcional; cuelgan
+  de la **dirección**; se dan de alta desde el trabajo, desde la dirección y desde la app; se atan a
+  un plan de servicio y se ve desde el equipo; la lista filtra por tipo, **último servicio** e
+  instalación y exporta CSV; **de pago desde Essentials (229 $/mes)**. Su página dice para qué:
+  *«track service history so you can personalize your service reminders to customers (and book more
+  jobs)»*.
+
+### 14.2 · Nuestra columna, medida hoy
+
+| qué | cómo se midió |
+|---|---|
+| 🔴 **La ficha del cliente no enseña ni un trabajo, parte, albarán, foto ni plan** | `customerDetailView.js` (517 líneas): `git grep -c -i -E "job\|parte\|albaran\|maint\|foto\|attach\|trabajo"` → **1** (un comentario). *Suelo:* `quote\|invoice` → **31**. Pinta cabecera, 6 KPIs, «Actividad reciente» y **dos** pestañas (Presupuestos y Facturas), con 4 llamadas a la API |
+| **El servidor tampoco lo manda** | `GET /admin/customers/:id/detail` (`customersAdmin.routes.ts:237-295`) devuelve `{customer, quotes, invoices, events, stats}`: 20 presupuestos, 20 facturas y 50 eventos. **Ni trabajos, ni partes, ni albaranes, ni fotos** |
+| **«Actividad reciente» no tiene eventos de trabajo** | los tipos que la vista conoce (`customerDetailView.js:163-167`) son `quote_*`, `invoice_issued`, `payment_received`, `reminder_sent`, `review_requested`. Búsqueda de `type: 'job_*' \| 'albaran_*' \| 'parte_*'` en `src` → **0** (suelo: los de presupuesto y cobro sí salen) |
+| **Los datos SÍ están, y con el cliente** | `Job.customerId` (`schema.prisma:1208`) · `ParteTrabajo.customerId` **opcional** y `jobId` (`:1517`) · `Albaran` **no** lleva `customerId`: cuelga de `jobId` (`:1325`) y por ahí se llega al cliente |
+| 🔴 **Pero ninguna lista se puede pedir «de este cliente»** | `GET /admin/jobs` (`jobs.routes.ts:735-807`) trae los **200** más próximos y solo acepta `?operarioId`; `GET /admin/partes` (`partes.routes.ts:251-263`), **200** y sin filtro; el listado de albaranes, sin `take` y sin filtro. `Job` **no tiene índice por cliente** (`:1249-1251`: estado, fecha, operario) |
+| 🔴 **Corrige lo escrito en §13.3.3** | Allí se dijo que `Attachment.entityType` admite `quote_request \| job` y que el índice bastaba. Hoy **nada escribe `job`**: los únicos tipos que se guardan son `quote_request` (`attachment.service.ts:22`) y **`albaran`** (`albaranes.routes.ts:1102`). Las fotos de un trabajo viven **en su albarán**, y el camino del cliente a sus fotos es cliente → `Job` → `Albaran` → `Attachment`, sin ninguna ruta que lo haga de una vez |
+| 🔴 **Y una foto pesa entera** | se guarda en Postgres (`bytea`, tope 5 MB cada una y 10 por albarán, `albaranes.routes.ts:542-543`). La lista **sin** bytes existe (`GET /admin/albaranes/:id/fotos`); las **miniaturas no**: `thumb\|miniatura\|sharp` en `src` → **0** (suelo: `attachment.(findMany\|create…)` sale **7**). El front pinta la foto entera (`albaranDetailView.js:824`) |
+| **El plan de mantenimiento no se puede consultar** | `maintenance.routes.ts` solo tiene POST y DELETE (0 `router.get`), y todo tras `MAINTENANCE_ENABLED` (`false`) |
+| **El parte no tiene enlace propio** | `renderAppView('parte-detail')` no pone id en el hash y no está en `DETALLES` (`app.js:539-545`): un enlace al parte desde la ficha se pierde al recargar. Trabajo, albarán, factura y presupuesto **sí** restauran |
+| **La lista de clientes** | `customersView.js` (1756 líneas) pinta ID, Nombre, Teléfono, Email, Notas, Etiquetas y Alta (`filtroClientes.js:293-316`); `GET /admin/customers` **no pagina** (0 `take:` en `customerAdmin.ts`). Nada de «último trabajo» (`ultimo\|visita\|trabajos\|jobs` en `filtroClientes.js` → **0**; suelo: `customersView.js` sí tiene `ultima`/`ultimo`, variables del lote) |
+| **Equipos, otra vez** | `git grep -E "^model (Equipment\|Asset\|Device\|Instalacion\|Aparato\|Maquina\|Equipo)" -- prisma/schema.prisma` → **0** (suelo: el mismo ancla, `^model `, cuenta **30**); `equipmentId\|equipoId\|assetId` en `prisma`, `src` y `public` → **0** |
+| **Una sola dirección por cliente, y es de facturación** | `Customer` lleva `billingAddress/City/PostalCode/Province/Country`. La de la obra es **texto suelto** en cinco sitios: `Quote.shippingAddress` (`:589`), `Invoice.shippingAddress` (`:779`), `Job.direccion` (`:1220`), `Albaran.lugarEntrega` (`:1342`), `ParteTrabajo.obra` (`:1521`). `direccionObra.ts` tiene tres modos (`no_mostrar`, `facturacion`, `personalizada`) y su regla es explícita: **`personalizada` nunca se rellena con la de facturación** |
+
+### 14.3 · Las tres propuestas
+
+Ordenadas por lo que más cambia el día del electricista.
+
+#### 14.3.1 · La ficha del cliente enseña su historial de trabajo · **MEDIANO**
+
+**En Housecall Pro**, la ficha del cliente tiene una pestaña **Jobs** con todos sus trabajos, otra de
+**Attachments** con todas sus fotos por fecha y enlace al trabajo de origen, y arriba **las tres
+próximas citas**. **Nosotros** la ficha del cliente enseña presupuestos y facturas y **ni un
+trabajo, ni un parte, ni un albarán, ni una foto** (§14.2, 1 coincidencia frente a 31). **El
+profesional gana** lo que necesita al volver a una casa ocho meses después, sin abrir nada: cuándo fue
+la última visita, qué se hizo, qué firmó el cliente y cuándo toca la próxima. Es el primer paso del
+CRM de oficio y **no necesita esquema nuevo**.
+
+🔴 **Una corrección sobre el encargo, dicha antes que el plan:** es barata en esquema, **no** en
+todo. Hace falta **una ruta nueva y un bloque nuevo en la pantalla**, y **las fotos no entran en la
+primera entrega** (§14.2: pesan hasta 5 MB cada una y no hay miniaturas). Por eso es *mediano* y no
+*pequeño*; y lo que sí es grande —las fotos con miniatura— va aparte.
+
+**Lo que YA existe en el servidor y NO se pinta:**
+
+| dato | dónde está hoy | qué falta |
+|---|---|---|
+| Trabajos del cliente: título, estado (`pendiente_agendar → agendado → en_curso → terminado → cerrado`), fecha, dirección, importe aceptado y cobrado | `Job` (`customerId`, `status`, `scheduledAt`, `titulo`, `direccion`, `totalAceptado`, `totalCobrado`), `GET /admin/jobs` | un filtro por cliente (hoy: 200 filas y solo `?operarioId`) |
+| **Próxima visita** | `Job.scheduledAt` con `status = agendado` | pintarla en la cabecera |
+| Partes del cliente: nº, fecha, tipo, estado | `ParteTrabajo` (`customerId?`, `jobId`, `numero`, `fecha`, `tipo`, `estado`), `GET /admin/partes` | filtro por cliente; `customerId` puede ser nulo, así que también por los `jobId` del cliente |
+| Albaranes del cliente | `Albaran` (`jobId`), `GET /admin/albaranes` (sus filas ya traen `clienteId`) | filtro por los `jobId` del cliente |
+| **Cuántas fotos** tiene cada albarán | `Attachment` (`entityType 'albaran'`), `GET /admin/albaranes/:id/fotos` (sin bytes) | un recuento por albarán en la misma consulta |
+| Enlaces a cada uno | `renderAppView('jobs-detail' \| 'albaran-detail', …)` | el del parte no restaura al recargar (`app.js`) |
+| Quién puede ver qué | `seesOnlyOwnJobs(role)` (`roleCapabilities.ts:56`): el técnico **solo ve sus trabajos** | aplicarla también aquí |
+
+**Se construye así** (dos piezas y una regla, una sola PR, **sin esquema, sin flag, sin Meta, sin
+fiscal y sin envío**):
+
+1. **Servidor · carril S1.** Una ruta `GET /admin/customers/:id/historial`, hermana de `/detail`
+   en `customersAdmin.routes.ts`, con `merchantId` en **cada** consulta (regla 2): el cliente por
+   `(id, merchantId)` → 404; sus `Job` por `(merchantId, customerId)`, los 20 últimos con cursor; sus
+   partes por `customerId` **o** por esos `jobId`; sus albaranes por esos `jobId`; y un
+   `attachment.groupBy` con `merchantId` y `entityType 'albaran'` que devuelve **solo el número**.
+   Si el rol es técnico, solo sus trabajos. La ruta se declara en `adminRouteDeclarations.ts` como las
+   demás. Sin índice nuevo: `Job` no lo tiene por cliente y, filtrando por `merchantId`, no hace falta
+   hoy; si un día pesa, es un ALTER aditivo aparte (A5).
+2. **Pantalla · carril S2.** En `customerDetailView.js`, una **tercera pestaña «Trabajos»** con el
+   mismo mecanismo de las otras dos (`:194-221`) y los componentes que ya existen (`.data-card`,
+   `.status-pill`): fecha · título · estado · enlaces a su parte y su albarán con «📷 3». El título
+   sale de **`tituloDeTrabajo()`** (`jobs/domain/trabajoDirecto.ts`), que es quien decide cómo se
+   llama un Trabajo: `Job.titulo` puede ser `null` (SCRUM-944b), y leerlo crudo repite el defecto de
+   Gastos. Y una línea **«Próxima visita»** en la cabecera. Una pantalla, un componente: no es rediseño (Parte AB).
+3. **Regla:** el enlace al parte necesita meter `parte-detail` en `DETALLES` de `app.js`, o se
+   pierde al recargar. Es una línea y **va en la misma PR**.
+
+**Fase 2, aparte y GRANDE: las fotos.** Una pestaña de fotos por fecha exige **miniaturas** (hoy 0) y
+paginación. O una dependencia de imágenes en el servidor —**⛔ decisión del fundador**— o reducir la
+foto en el navegador al subirla. Hasta entonces la ficha enseña el recuento y lleva al albarán.
+
+**Lo que dice el máster.** *No choca:* Parte Z veta el **«CRM con pipeline»** («QuoteRequest + ficha
+360 bastan»), y esto **es** la ficha 360, no un pipeline. Sí hay que decir tres cosas: (a) la regla 15
+(una feature nueva exige matar o posponer otra) no aplica a enriquecer una pantalla existente, pero **lo
+decide el orquestador**; (b) los rótulos nuevos —«Trabajos», «Próxima visita», el vacío de una ficha
+sin trabajos— **necesitan firma** antes de escribirse (A7); (c) la UI pasa por `yaqu-premium-ui`.
+
+🔴 **Un hallazgo que se cruza con esto y no es mío para arreglar** (A7: se reporta). *Leído, no
+ejecutado:* `openEdit360Modal` (`customerDetailView.js:313`) rellena `legalName`, `taxId`,
+`tipoDestinatario`, `billingPeriodicity` (y `contactKind` y `companyId`) desde el `customer` que
+llega de `/detail`, y ese `select` (`customersAdmin.routes.ts:247`) **solo trae nueve campos** — ninguno
+de ésos. Al guardar, el formulario manda `taxId: null`, `legalName: null`… (`:474-475`) y
+`updateCustomer` los escribe (`customerAdmin.ts:316`). **Si es así, editar la nota de un cliente
+desde su ficha le borra el NIF, la razón social y su vínculo con la empresa.** Cuatro eslabones
+leídos, ninguno corrido: la comprobación es de dos minutos en staging (abrir un cliente **con NIF**,
+Editar, ¿sale vacío el NIF?). Va al orquestador **por si tiene víctima hoy**, y la ruta de arriba
+podría servir el mismo `select` completo que ya usa `GET /admin/customers/:id`.
+
+#### 14.3.2 · «Última visita» en la lista de clientes · **PEQUEÑO**
+
+**En Housecall Pro**, la lista de equipos **filtra por fecha de último servicio y ordena por ella**:
+*«track equipment that hasn't been serviced in a while»*, y se exporta a CSV.
+📷 [`lista-ultimo-servicio-y-csv.png`](capturas/housecall-pro/lista-ultimo-servicio-y-csv.png).
+**Nosotros** no tenemos equipos (§14.2), y la lista de **clientes** pinta ID, nombre, teléfono, email,
+notas, etiquetas y alta: **ni una columna de trabajo**. **El profesional gana** la lista de *a quién
+llamar*: los clientes a los que lleva 12 meses sin pisar. Es lo que hoy hace de memoria, y es el
+ingreso más barato que tiene.
+
+**Se construye así:** `listCustomers` (`customerAdmin.ts`) añade dos campos por cliente: `ultimaVisita`
+(el `scheduledAt` máximo de sus trabajos en `terminado` o `cerrado`) y `nTrabajos`, con **un solo**
+`job.groupBy` por `merchantId` — la lista no pagina, así que es una consulta y no N. `filtroClientes.js`
+gana la columna elegible «Última visita» y un filtro «sin visita desde hace 6 / 12 / 24 meses».
+**Sin esquema, sin canal, sin flag:** es una lista y un filtro. **Ningún envío** (regla 28 y J6
+intactas): llamar al cliente es cosa del profesional.
+*Lo que no sé:* cuántos clientes reales tienen ya un trabajo terminado; sin acceso a producción, una
+lista con muchos «—» es posible y la columna valdría poco hasta que el historial se llene.
+
+#### 14.3.3 · Equipos v1: el recorte que dice qué NO hacer primero · **MEDIANO**
+
+**En Housecall Pro**, la ficha del equipo pide **dos campos** (tipo y nombre); marca, modelo, serie,
+instalación y notas son opcionales. Se da de alta desde el trabajo y desde la dirección, se ata al plan
+de servicio y **se ve desde el equipo**.
+📷 [`ficha-del-equipo-campos.png`](capturas/housecall-pro/ficha-del-equipo-campos.png),
+[`alta-del-equipo-desde-el-trabajo.png`](capturas/housecall-pro/alta-del-equipo-desde-el-trabajo.png),
+[`equipo-atado-al-plan.png`](capturas/housecall-pro/equipo-atado-al-plan.png).
+**Nosotros** tenemos *la periodicidad pero no la cosa* (§13.2): 0 modelos de equipo, 0 `equipmentId`,
+y el plan de mantenimiento con un `title` escrito a mano. **El profesional gana** saber qué aparato
+tiene cada cliente y qué se le hizo, que es lo que convierte un aviso de revisión en un ingreso que se
+repite.
+
+**Se construye así:** un modelo `Equipo` (`merchantId`, `customerId`, tipo, nombre; opcionales marca,
+modelo, serie, instalado en, notas) que cuelga **del cliente**, no de la dirección —aquí solo hay
+una—; un `equipoId` opcional en `ParteTrabajo` y en `MaintenancePlan`; alta desde la ficha y desde el
+parte; y **una lista dentro de la ficha del cliente**, con su último servicio, que **es la pestaña de
+§14.3.1**. ⛔ **Esquema:** ALTER aditivo con preview (`docs/equipo/00-normas-comunes.md` A5), tres
+bases.
+
+🔴 **Sustituye a §13.3.1, no se suma.** Aquella era *grande* y decía «todo»; ésta dice **lo que no se
+hace primero**: sin tipos configurables (los campos obligatorios de ServiceM8 son el error que
+Housecall Pro evita con **dos**), sin QR (§13.3.2 queda para después) y sin mapa. Y **depende de
+§14.3.1**: sin la ficha que enseñe el historial, un equipo no tiene dónde verse. También depende de
+que MANT-1 se encienda (`MAINTENANCE_ENABLED: false`) para que el `equipoId` del plan sirva de algo:
+por merchant es opt-in, pero **encenderlo para todos es STOP del fundador** (Parte P). *Máster:* «equipos del cliente» no aparece en él
+(0 coincidencias) salvo como el hueco nº 6 del top de FASE 1; no choca con nada, pero es el **primer
+modelo nuevo** del camino CRM, y por eso lo decide el fundador.
+
+### 14.4 · Las que murieron al medirnos
+
+| candidata (de Housecall Pro) | qué la mató |
+|---|---|
+| **Subclientes para los administradores de fincas** | **Ya lo tenemos:** `Customer.companyId` liga una persona a una empresa (SCRUM-576, para *«el administrador de fincas y la comunidad de propietarios»*). Es su parent-child |
+| **Etiquetas internas con filtro** | **Ya:** la lista de clientes tiene la columna «Etiquetas» (`filtroClientes.js`) y el servidor las normaliza |
+| **Feed de actividad** | **Ya** existe («Actividad reciente», `listCustomerEvents`); solo le faltan los eventos de trabajo, que la propuesta 1 resuelve sin escribir eventos (la pestaña se deriva) |
+| **Varias direcciones por cliente** | 🔴 **Retirada, era mi borrador de ayer.** El parent-child cubre al administrador, y el dato que la decide —cuántos clientes reales tienen ≥ 2 sitios— **no se puede medir desde aquí** (sin acceso a producción). Si el orquestador tiene ese dato y sale a favor, se abre con él; sin él es una función buscando problema |
+| **«Do Not Service»** | Con las etiquetas y `Customer.notes` ya se puede marcar; lo que falta es el aviso al crear un presupuesto, y no hay evidencia de que hoy duela |
+
+### 14.5 · Lo que NO se midió de Housecall Pro, y por qué
+
+- **No se entró en el producto** (no hay cuenta ni se pidió, A19). **Nadie ha visto** una ficha de
+  cliente ni un equipo reales; sus capturas son de su manual.
+- **El vídeo** de su página de *Property Profile* no se reprodujo.
+- **Su app móvil**, sus planes de servicio y *On My Way Texts* solo se leyeron por el título. Este
+  último ya está contado en §12 y §13.5 como el tercero de tres que avisan de la llegada.
+- **Precios reales:** los de su página (229 $ en Essentials), sin comprobar el cobro.
+- 🔴 **Una frase que NO se usa:** una búsqueda resumió que el cliente *«can view their complete service
+  history, including furnace or boiler through a secure online portal»*. En sus 8 páginas capturadas
+  *boiler* sale **0** veces y su guía del portal no lista ningún equipo. Es el resumen de un buscador,
+  no una frase suya; **no sostiene ninguna propuesta**.
+
+---
+
+## 15 · Tradify y Fergus · dos que hacen lo mismo que nosotros (21-sep-2026)
+
+**Medido el 21-sep-2026 07:29Z (hora de GitHub) sobre `origin/main` =
+`43f4c7fc3f8d0330089edcd785cb0eea58ccb784`**, por su **web pública** leída a texto literal. Tradify
+(cinco páginas: electricistas, seguimiento de trabajos, consultas, SmartTools, funciones) y Fergus
+(seis: electricistas, certificados, el trabajo en obra, seguimiento, Assistant y Go Assistant). Sin
+alta y sin entrar en el producto. Capturas en [`capturas/tradify/`](capturas/tradify/README.md) y
+[`capturas/fergus/`](capturas/fergus/README.md).
+
+**Por qué éstos.** La cola decía «Housecall Pro, el siguiente, por ser de la misma familia», y ya está
+cerrado. Tradify y Fergus son field service **para oficios y con página propia para electricistas**:
+el mismo cliente que YaQu. Y la lección de la tanda anterior —*nueve de doce murieron al medirnos*—
+sigue en pie: se midió **antes** de proponer.
+
+### 15.1 · Lo que hacen, en sus palabras
+
+- **Tradify:** *Inquiries* (captar la consulta y convertirla en presupuesto y trabajo), *Quote
+  reminders*, *Instant Website* (que la web del profesional alimente las consultas), **«Appointment
+  Reminder Service»** (*«sending email reminders for appointments, estimates, quotes, invoices & due
+  payments»*), **sincronización con Google Calendar**, *Subcontractor Management*, *SmartRead*
+  (*«snap a photo of any invoice, and Tradify will automatically extract the details»*), *SmartWrite*
+  (descripciones de las líneas del presupuesto), y *«Schedule automatic customer reminders for regular
+  maintenance jobs»*.
+- **Fergus:** el **Job Card** móvil (*«where to go, what to do, and what's already been done
+  on-site»*: **direcciones, alcance, notas e historial**), materiales y cronómetro por trabajo,
+  **certificados digitales** rellenados con los datos del trabajo, del cliente y de la licencia, y un
+  **Assistant** que se pregunta y otro (*Go*) al que se **habla o escribe en la obra** para que deje
+  la nota, el tiempo o el «hay que volver» en el trabajo correcto — *«Assistant shows you the work
+  before anything important is created, changed or sent»*.
+
+### 15.2 · Las que murieron al medirnos
+
+**Diez filas murieron** (algunas juntan dos candidatas parecidas) y **tres sobreviven**. Es lo
+esperado y es lo que este paso existe para hacer.
+
+| candidata | qué la mató |
+|---|---|
+| Tradify *Inquiries* / *Instant Website* | **Ya construido y apagado:** `QuoteRequest`, y **PERFIL-1** (`/p/:slug`, con QR y su alta por el bot). `PUBLIC_PROFILE_ENABLED: false` |
+| Tradify *maintenance reminders* | **MANT-1**, construido y apagado (`MAINTENANCE_ENABLED: false`): cron diario, presupuesto propuesto al profesional por WhatsApp |
+| Fergus **Go Assistant** (hablar en la obra) | **VOZ-1**, construido y apagado: `VOICE_QUOTE_ENABLED` y `VOICE_ALBARAN_ENABLED` en `false`, con su puerta puesta (*«eval VZ-2 ≥ 8/10»*) |
+| Tradify *SmartRead* / Fergus *supplier invoices* | El escáner de gastos ya salió como propuesta (§11.4); y los **gastos por trabajo ya existen** (`GET /admin/jobs/:id/gastos`) |
+| Fergus/Tradify **rentabilidad por trabajo** | **Ya:** `GET /admin/expenses/margin/:quoteId` y su pantalla (`quotesDetailView.js:1020`, solo administrador). En el *Trabajo* no sale **por decisión escrita** (`jobDetailView.js:1124`, `jobs.routes.ts:899`: *«tiene su propio ticket»*), y depende de SCRUM-403 (el importe del gasto no dice si lleva IVA) |
+| Tradify *duplicar / kits de precios* | **Ya:** «⎘ Duplicar» (`quotesDetailView.js:81`) y las plantillas por gremio; el producto lleva `cost` |
+| Fergus *Directions to site* | **Ya:** enlace a Google Maps desde la ficha del trabajo (`jobRailBlocks.js:86`) |
+| Tradify *«¿lo ha visto el cliente?»* | **Ya:** el embudo `queued → sent → delivered → read` (`whatsappLog.service.ts:109`) |
+| Fergus/Tradify **cronómetro y hojas de horas** | Ya está en la tabla de huecos de FASE 1 (fila 5, fichaje), y el parte guarda entrada y salida |
+| Fergus **Certificates** | **No se propone.** El equivalente español (el certificado de instalación eléctrica) es un documento **reglado y distinto por comunidad autónoma**, y no hay aquí una fuente normativa que lo sostenga. «Checklists en el parte» ya está en el top de FASE 1 (nº 9) |
+
+*Suelo:* las diez tienen su fichero o su bandera arriba, así que la búsqueda no está ciega. **Y
+ninguna de las tres que sobreviven aparece en el máster ni en el top de FASE 1.**
+
+### 15.3 · Las tres propuestas
+
+#### 15.3.1 · Avisar al cliente de la visita, la víspera · **MEDIANO**
+
+**En Tradify**, hay un servicio entero de *«email reminders for appointments»* y el móvil *«send[s]
+automatic email to confirm appointments»*; **Jobber** tiene *«Automated Visit Reminders»* (§12.1); la
+página de CRM de **Housecall Pro** lo cuenta entre lo que se automatiza. **Tres de tres.**
+📷 [`tradify-avisos-de-cita.png`](capturas/tradify/tradify-avisos-de-cita.png).
+**Nosotros** avisamos del presupuesto, de la factura, del mantenimiento y del resumen semanal, y **de
+la visita, nada**: los seis `cron.schedule` de `cron.ts` son cotizaciones, facturas, mantenimientos,
+digest, lifecycle y sellos de albarán; ninguno toca `Job.scheduledAt`. *Suelo:* la lista no está
+vacía (son seis). Búsqueda de `recordatorio.*cita|cita.*confirm|visitReminder|appointmentReminder|
+jobReminder` en `src` → **0**.
+
+**El profesional gana** **la llamada que menos quiere y más recibe**: llegar y no estar nadie, o que
+el cliente se olvide. Es tiempo de furgoneta perdido, y el mensaje —«mañana, entre tal y tal hora, irá
+Fulano a esta dirección»— **ya es transaccional**, que es lo que la política J6 permite.
+
+**Se construye así:** un cron diario junto al de facturas (`cron.ts:73`) que coge los `Job` en
+`agendado` para mañana y manda **una** plantilla Utility por WhatsApp, respetando `waOptOut`, la
+ventana 09:00-21:00 y el tope de 3 iniciados por cliente y día. Sale sobre la infraestructura de
+plantillas que ya existe (`WHATSAPP_TEMPLATES_ENABLED: true`). Sin esquema **si el log de mensajes
+basta para no repetir el aviso**; si no, una columna aditiva.
+⛔ **Es un envío automático nuevo:** pasa por la tabla J6 (regla 28), **necesita plantilla en Meta y
+texto firmado**, y comparte plantilla y decisión con §12.3.1 («voy de camino»): **conviene decidirlas
+juntas**, o se pide a Meta dos veces lo mismo. *No consta* propuesta previa de esto: §12.1 lo cita y
+§12.3 no lo propone; el orquestador dirá si ya hay ticket.
+
+#### 15.3.2 · Tu agenda, en el calendario del móvil · **MEDIANO**
+
+**En Tradify** el profesional **conecta su Google Calendar** y ve sus trabajos y sus huecos junto a
+lo demás. 📷 [`tradify-calendario-google.png`](capturas/tradify/tradify-calendario-google.png).
+**Nosotros** damos **un `.ics` por trabajo** (`jobs.routes.ts:1106`, «Añadir a mi calendario»): un
+toque **por cada trabajo**, y como es un archivo suelto, **si el trabajo se re-agenda el calendario no
+se entera**.
+**El profesional gana** mirar la semana donde ya la mira, sin apuntar cada trabajo dos veces y sin que
+un cambio se quede desfasado.
+
+**Se construye así:** una **suscripción** de calendario (`webcal`) por profesional, con un token
+opaco de 128 bits —**el mismo mecanismo que ya usa `/cliente/:token`**— y rotable, que sirve los
+trabajos agendados. **No es OAuth**, así que no toca la cola de «Google Calendar OAuth ≥ 30 % lo
+piden» de la Parte Z. ⛔ **Superficie pública nueva** (pasa por `publicAccessDeclarations.ts` y su
+guard) y un **dato personal**: el calendario llevaría nombres y direcciones de clientes a una
+aplicación de terceros; hay que decidir qué va en el título (la propuesta: solo «Trabajo» y la
+dirección, sin teléfono).
+🔴 **Choca, en parte, con una frase del máster:** la matriz X1 dice que *«JOB-1 (lista semanal + .ics)
+cubre»*. Esto es lo que ese «cubre» no cubre: el `.ics` es una foto, no una suscripción. Si el
+fundador considera que cubre, **muere aquí**.
+
+#### 15.3.3 · La nota del cliente, a la vista en el trabajo · **PEQUEÑO**
+
+**En Fergus**, el *Job Card* enseña *«directions to site, job scope, job notes & history»* en el
+móvil; en **Housecall Pro** las notas de la dirección se ven en la misma línea que la dirección.
+📷 [`fergus-ficha-del-trabajo-notas-e-historial.png`](capturas/fergus/fergus-ficha-del-trabajo-notas-e-historial.png).
+**Nosotros** guardamos la nota del cliente (`Customer.notes`: «timbre roto, llamar al móvil, perro
+suelto»), pero **no sale en ninguna pantalla de trabajo**: `git grep -E "customer\??\.notes"` en
+`public/dashboard/js` → **2** coincidencias, **las dos en `customerDetailView.js`** (suelo: la
+búsqueda no está ciega, encuentra la ficha). Y la
+ficha del trabajo **no puede** enseñarla: `CUSTOMER_SELECT = { id, name, phone, mobile }`
+(`jobs.routes.ts`, junto a `QUOTE_SELECT`) no la trae. **El profesional gana** leer *cómo entrar*
+justo donde mira al llegar, que es la pantalla del trabajo.
+
+**Se construye así:** `notes: true` en ese `select` (los tipos del lote salen de él por
+`GetPayload`, así que no se escriben a mano) y **una línea** en el bloque del cliente de la ficha
+del trabajo (`jobRailBlocks.js`, donde ya está el enlace a Maps). Sin esquema, sin canal, sin fiscal.
+⛔ El **rótulo** («Nota del cliente») necesita firma (A7), y hay que **decidir si el técnico la ve**:
+es texto libre del administrador y puede llevar algo que no quiera que lea un operario.
+
+### 15.4 · Lo que NO se midió, y por qué
+
+- **No se entró en ninguno de los dos** (A19): son sus webs comerciales. **No se sabe** si el aviso de
+  cita de Tradify sale solo o se pide cita a cita, ni si su calendario es de ida y vuelta.
+- **No se midió cuántos clientes de YaQu pierden visitas por olvido**, ni cuántos usan un calendario
+  externo. Las propuestas 1 y 2 son **hipótesis de producto respaldadas por tres y por uno de los
+  competidores**, no por un dato nuestro: eso lo puede aportar el fundador con sus profesionales.
+- **Fergus Certificates** no se recorrió más allá de su lista (dos certificados australianos). Si el
+  fundador quiere el certificado de instalación eléctrica español, **es un encargo con fuente
+  normativa**, no una consultoría de competencia.
+- **Precios y parte fiscal** de los dos: sin mirar; son productos anglosajones sin VeriFactu.
+- **La familia española** (Anfix, Billin, Contasimple, FacturaDirecta, Sage) **no se empezó**: el
+  encargo decía preguntar antes, y Quipu ya dejó medido que esa familia no añade huecos.
+
+---
+
 ## Cola de competidores
 
 Uno por entrega, avisando al orquestador al acabar cada uno.
 
-**Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅ ·
-**Jobber ✅** · **ServiceM8 ✅** (los dos, solo público)
-**Pendientes:** Anfix · Billin · Contasimple · FacturaDirecta · Sage (Active o 50) · Odoo ·
-Tradify · Fergus · **Housecall Pro** — el siguiente, por ser de la misma familia (la obra, no la
-contabilidad), que es donde han salido las propuestas.
+**Hechos:** Verifacturamos ✅ · Holded ✅ (público **y por dentro**) · Quipu ✅ · **Jobber ✅** ·
+**ServiceM8 ✅** · **Housecall Pro ✅** (§14) · **Tradify ✅** y **Fergus ✅** (§15) — los cinco de la
+familia field service, solo público.
+**Pendientes:** Anfix · Billin · Contasimple · FacturaDirecta · Sage (Active o 50) · Odoo. Los
+españoles de facturación, **solo tras preguntar**.
 **Excluidos por decisión del orquestador:** STEL Order y Fixner — sus términos **prohíben
 expresamente** usar el producto para competir (cláusula «Uso limitado», recogida en
 `docs/master/SCRUM-906.md` §2).
