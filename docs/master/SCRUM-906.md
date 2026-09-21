@@ -282,3 +282,226 @@ qué correo llega y cómo queda el documento firmado.
 **Cómo queda la cuenta:** el interruptor de **Presupuestos se deja ENCENDIDO a propósito**, por decisión
 del orquestador (el recorrido no terminó y apagarlo obligaría a repetirlo); los otros cuatro, apagados.
 Es reversible en un comando y está medido.
+
+---
+
+## SCRUM-906g · Holded CERRADO: tres propuestas de producto (20-sep-2026)
+
+**Escrito el 20-sep-2026 a las 19:20:38Z (hora de GitHub) sobre `origin/main` =
+`8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`.** Rama `scrum-906g-propuestas-holded`. Solo docs.
+El detalle está en [`docs/competencia/matriz.md`](../competencia/matriz.md) **§10**.
+
+### Por qué esta entrega tiene otra forma que las seis anteriores
+
+El fundador dijo el 20-sep que **la consultoría no está sacando cosas reales que cambiar**, y el
+orquestador lo recogió como un fallo del encargo, no de la sesión: hasta aquí se pedía *«recorre y
+mide»*, y una matriz describe el mercado pero no dice qué construir el lunes. Desde aquí, el
+entregable de una pasada de competencia son **propuestas concretas de producto**, con forma fija —
+*en tal competidor la pantalla X hace esto · nosotros hacemos esto otro · el profesional gana esto ·
+se construye así · tamaño*—, un mínimo de tres, ordenadas por lo que más le cambia el día al
+profesional y con al menos una pequeña. La medición no se va: pasa a ser el **respaldo** de cada
+propuesta.
+
+**Los tickets los abre el orquestador.** Esta sesión no abre ninguno (norma de la tanda: lo que se
+encuentra va al expediente del ticket que se tiene en la mano, y solo se propone como ticket propio
+lo que ve el profesional o lo que bloquea a alguien).
+
+### Las tres, en una línea cada una
+
+| # | propuesta | tamaño | qué la sostiene |
+|---|---|---|---|
+| 10.1 | El **enlace del portal del cliente** viaja en el mensaje, en vez de copiarse a mano | mediano | `/cliente/:token` no aparece en **ningún** envío de `src` |
+| 10.2 | El presupuesto llega **a quien decide**, no solo a un móvil | grande | Holded admite varios destinatarios; `sendQuote.service.ts` manda a uno |
+| 10.3 | **Caducidad en un toque** (7 / 15 / 30 días) en vez de un calendario | pequeño | Holded la ofrece como lista cerrada; nosotros tenemos toda la maquinaria y falta la pantalla |
+
+### 🔴 El hallazgo que más vale de esta entrega, y no es de Holded
+
+Es nuestro, y es de los que **ve el profesional**, así que va señalado para que el orquestador decida
+si merece ticket propio:
+
+**YaQu tiene un portal del cliente completo y el cliente no recibe nunca su enlace.**
+
+    git grep -n "/cliente/" origin/main -- src
+
+Devuelve el propio portal, su declaración de ruta pública, `customersAdmin.routes.ts:144` (el endpoint
+`/portal-url`, que sirve el botón «copiar enlace» del panel) y dos comentarios. **Cero apariciones en
+`src/integrations`, `src/modules/quotes`, `src/modules/jobs` y `src/modules/messaging`.** *Suelo:* la
+misma búsqueda sí encuentra `${BASE_URL}/albaran/${token}` y `${BASE_URL}/pay/quote/${decisionToken}`,
+que sí se mandan solos — la búsqueda no está ciega. Y con eso se queda apagado de hecho el
+`POST /cliente/:token/quote-request`, que es **trabajo entrante** ya construido.
+
+Es exactamente el defecto que se le midió a Holded en §906e y §906f —una función que nace apagada se
+mide igual que una que no existe—, esta vez en nuestra casa y por otro motivo: la nuestra está
+encendida, pero nadie le da la dirección al cliente.
+
+### Método: la regla nueva que sale de aquí
+
+De cinco candidatas que salían de Holded, **dos murieron al medir nuestra propia columna** (caducidad
+y portal: las dos ya construidas) y una tercera se redujo de un módulo a tres botones. La tabla está
+en §10.4 de la matriz.
+
+    🔒 Medir su producto dice qué existe en el mercado. Medir el nuestro dice qué hay que construir.
+       Sin lo segundo, la mitad de las propuestas son cosas que ya están hechas.
+
+### Capturas: la norma nueva, y de dónde sale
+
+El fundador preguntó si había capturas de Holded en el repo. **No había ninguna** —`git ls-tree`
+sobre todo el árbol: 0 ficheros con «holded» en el nombre—, así que seis entregas de competencia se
+sostenían solo en texto. Van tres, una por propuesta, en
+[`docs/competencia/capturas/holded/`](../competencia/capturas/holded/README.md), con su README
+diciendo qué prueba cada una **y qué no**.
+
+    🔒 Una afirmación sobre el producto de otro, sin imagen, es un recuerdo.
+
+Vale desde ya para Jobber y los que vengan: **cada propuesta nace con su captura.** Y la tercera se
+etiqueta como lo que es —su **fuente escrita**, no la caja de envío—, porque ese clic sigue bloqueado
+por el clasificador de la máquina y no se busca la vuelta.
+
+### 🔴 Una medición de hoy que tumba lo escrito ayer
+
+Al abrir la pantalla de ajustes para fotografiarla, **los seis interruptores de firma están en
+`false`**, incluido Presupuestos, que §906f dejó **encendido a propósito** y verificado tras recargar
+la página entera. Leído del DOM, no de la imagen: `POBLACION interruptores=6 · los 6 en estado=false`.
+Nadie lo tocó desde esta casa; **por qué se apagó no se sabe y no se inventa**. No se ha vuelto a
+encender: la autorización describía un interruptor que ya estaba puesto, no daba permiso para
+ponerlo (A19). Queda corregido en la matriz §9.5, **sin borrar lo anterior**, que es la regla.
+
+    🔒 Verificar recargando la página demuestra que se guardó entonces, no que siga guardado después.
+
+Es la hermana de la trampa de §906f: allí un mensaje de error tapaba un guardado que **sí** ocurrió;
+aquí una verificación correcta tapa un estado que **dejó** de ser cierto. Las dos se arreglan igual —
+volver a medir en el momento en que se va a afirmar algo.
+
+### Lo que de Holded no se ha recorrido
+
+En la matriz, §10.5: diez filas con el motivo de cada una y si daría propuesta. **Solo dos darían una
+nueva** —la caja de envío (bloqueada por permisos) y **su escáner de gastos con OCR**, que es F1 de
+§7.2 y que nadie ha visto por dentro—. Lo decide el orquestador; la cuenta caduca a primeros de
+octubre.
+
+### Segunda pasada del mismo día: su escáner de gastos (matriz §11)
+
+El orquestador reabrió una de las dos filas de §10.5 antes de pasar a Jobber, acotada a una hora,
+porque toca tres tickets vivos (lectura del ticket con IA, fotos reales y rediseño de Gastos). Su
+escáner vive en `Compras > Escáner`, que por dentro es **`/inbox`** — el nombre comercial y la ruta no
+coinciden, y por eso la conjetura `/purchases/scanner` devuelve su 404. **Nadie lo había visto por
+dentro**; va con captura.
+
+**Tres propuestas más**, en §11.4: el gasto entra **por WhatsApp** (mediano) · una **bandeja** donde no
+se pierda lo que entra (grande) · **decir por qué un campo vino vacío** (pequeño, y pequeño *hoy*
+porque la pantalla de Gastos se está construyendo justo ahora).
+
+**Y un resultado que no es un hueco:** nuestra lectura extrae **once** campos donde su ayuda documenta
+cuatro, y descarta campo a campo con motivo medido —incluido `no_cuadra_con_el_total`, una
+comprobación aritmética— frente a su «alto nivel de confianza» sin enseñar.
+
+    🔒 No todo lo que se mide de la competencia es un hueco. Decir dónde vamos por delante evita
+       reconstruir lo que ya está bien.
+
+**Dos cosas que esta sesión estuvo a punto de reportar mal, y no lo hizo porque midió el suelo:**
+
+1. `git grep "leer-ticket" -- public` da **0**, y eso **sí** se sostiene: el suelo son nueve ficheros
+   del árbol con esa cadena (ruta, declaraciones, test, expediente). Queda escrito como hecho —
+   **hoy ninguna pantalla llama a la lectura**— y **no** como defecto: puede ser el reparto deliberado
+   entre SCRUM-912 (motor) y SCRUM-920 (pantalla). Lo decide quien lleve esos tickets.
+2. En `app.js` el menú de **Gastos** se oculta con `style.display='none'`… **solo para los técnicos**, y
+   a propósito (SCRUM-107: la lista completa y los márgenes son economía del negocio). Leer la línea
+   sin su `if` habría producido un defecto inventado contra un sistema sano, que es exactamente lo que
+   este puesto existe para evitar.
+
+**Holded queda cerrado** tras cinco entregas por dentro (§906d, §906e, §906f, §906g y la pasada del
+escáner).
+
+---
+
+## SCRUM-906h · Jobber, el primero que hace lo mismo que nosotros (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `35d25d1c58954930b529ad9f736878018c0f9870`.** Rama
+`scrum-906h-jobber`. Solo docs. El detalle está en
+[`docs/competencia/matriz.md`](../competencia/matriz.md) **§12**, y las capturas en
+[`docs/competencia/capturas/jobber/`](../competencia/capturas/jobber/README.md).
+
+**Por qué Jobber.** De la cola quedaban dos familias: los españoles que faltan son **más
+facturación**, y Quipu ya midió que esa familia *«no añade ningún hueco que no estuviera ya»*. Jobber,
+ServiceM8 y Housecall Pro son **field service para oficios** — presupuesto, trabajo, firma y cobro en
+la obra—, que es literalmente lo que hace YaQu. Jobber es el mayor, y **Electrical** es una de sus
+industrias con página propia.
+
+    🔒 Holded es contabilidad que se asoma a la obra; Jobber ES la obra. Por eso sus propuestas no
+       salen de funciones que falten, sino de MOMENTOS DEL DÍA convertidos en producto.
+
+**Tres propuestas** (§12.3): **«Voy de camino»** con franja de minutos, en WhatsApp (mediano) ·
+**quién va a ir y en qué franja**, en el portal del cliente (mediano) · **el dinero que aún no es
+factura, en el resumen del lunes** (pequeño, y la más barata de las seis de hoy: una línea en un
+correo que ya se envía, llamando a un servicio que ya existe).
+
+**Y el resultado de método que más pesa de toda la tanda:** de seis candidatas que salían de Jobber,
+**tres murieron al medir nuestra columna** —los recordatorios automáticos de presupuesto y factura ya
+existen (`reminder.service.ts` + dos crons), la bandeja de «hecho y sin facturar» ya existe y
+distingue **tres** huecos por documento frente a su vista única, y su *Request Work* es nuestro
+`POST /cliente/:token/quote-request`—.
+
+    🔒 Tres de tres candidatas muertas por estar ya construidas. Medirnos a nosotros no es una
+       formalidad del método: es la mitad del trabajo.
+
+**Declarado como no medido, y es la mitad del §12:** **no se entró en el producto**. No hay cuenta y
+no se pidió, porque un alta en un tercero la autoriza el fundador (A19). Todo el §12 es **su web
+comercial**, y las tres capturas son **maquetas suyas de marketing**, no pantallas en uso. No se han
+leído sus reseñas ni se ha mirado su parte fiscal (es anglosajón, sin VeriFactu: para lo fiscal manda
+la familia española ya medida).
+
+**Siguientes:** ServiceM8 y Housecall Pro, la misma familia. Los españoles que quedan van detrás, por
+el motivo medido de arriba.
+
+*(De Holded, lo que sigue sin medirse de su firma —cómo se elige al firmante, qué correo llega, cómo
+queda el PDF— está declarado en §8.7 y §9.4 de la matriz, y sigue bloqueado por el clasificador de la
+máquina, no por Holded.)*
+
+---
+
+## SCRUM-906i · ServiceM8, el que sí tiene la ficha de la caldera (20-sep-2026)
+
+**Medido el 20-sep-2026 sobre `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b`.** Rama
+`scrum-906i-servicem8`. Solo docs. El detalle está en
+[`docs/competencia/matriz.md`](../competencia/matriz.md) **§13**, y las capturas en
+[`docs/competencia/capturas/servicem8/`](../competencia/capturas/servicem8/README.md).
+
+**Encargo con foco del orquestador:** el fundador marcó el **CRM como área de primera** del producto.
+«Equipos del cliente» —cada caldera, cada cuadro, cada instalación con su historial— es el corazón de
+eso para un oficio, y lleva en **❌ desde la primera matriz** (fila 12). Así que la gestión de activos
+de ServiceM8 se miró **con más detalle que el resto**: qué es una ficha de activo, qué cuelga de ella,
+cómo se llega y **qué hace el técnico en la obra**.
+
+**Lo que hace el técnico allí, literal:** pega una etiqueta QR en el aparato → abre el trabajo →
+**escanea** → el sistema ve que esa etiqueta no tiene activo y abre la ficha → ajusta el punto en el
+mapa → hace una foto → rellena los campos del `Asset Type`. Para servir uno existente, escanea y ya:
+no lo busca en ninguna lista. Y **el cliente escanea esa misma pegatina con su móvil** y se le abre
+una página suya.
+
+**Tres propuestas** (§13.3): **la ficha del equipo** colgando del cliente (grande) · **la pegatina con
+QR**, que escanean el técnico y el cliente (mediano) · **las fotos de esa casa, juntas** en la ficha
+del cliente (pequeño, y es el historial del equipo **antes** de que exista el equipo, o sea el primer
+paso barato de la grande).
+
+🔴 **La medición que resume el hueco, y conviene citarla tal cual:**
+
+    🔒 Tenemos la periodicidad, pero no tenemos la cosa.
+
+`MaintenancePlan` cuelga del **cliente** y el equipo es **texto libre** en `title`; no hay
+`equipmentId`. Si un cliente tiene dos calderas, hoy son dos planes con dos títulos escritos a mano y
+ningún historial que las distinga. *Suelo del «no existe»:* el mismo ancla que no encuentra
+`model Equipment|Asset|Device|…` cuenta **30** modelos en `schema.prisma`.
+
+**Y una lección suya que se copia AL REVÉS:** en ServiceM8 **todos** los campos de un tipo de activo
+son obligatorios, y ellos mismos avisan del problema en su manual. En un oficio los campos se rellenan
+**cuando se saben**, que es la mitad de las veces en la segunda visita.
+
+**Declarado como no medido:** no se entró en el producto (A19), así que el §13 son sus páginas y su
+manual — **nadie ha visto un activo real** ni su app móvil, que es donde su propia documentación dice
+que viven. Tampoco se ha comprobado **si la gestión de activos se paga aparte**: su documentación la
+coloca bajo «Add-ons», lo que lo sugiere, y por eso no se afirma.
+
+**Dos datos sueltos que valen:** ServiceM8 tiene *«Track My Arrival»*, así que **dos de los tres** de
+esta familia avisan de la llegada al cliente —no era una ocurrencia de Jobber—; y tiene **una página
+por oficio**, como Verifacturamos (M5) y Jobber: **tres de cuatro**, o sea un patrón del sector. Eso
+último es marketing y no producto, y por eso va aparte, en §13.4.
