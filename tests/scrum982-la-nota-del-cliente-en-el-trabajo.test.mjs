@@ -108,6 +108,24 @@ function selectsDelClienteEnElDetalle(sf) {
   return selects;
 }
 
+/**
+ * Las claves del objeto con el que `serializeJobDetail` REESCRIBE `customer` (`customer = { ...customer, … }`).
+ * Pedir `notes` en el `select` y no ponerla en lo que se devuelve es el mismo agujero por el otro
+ * lado: la consulta la trae y el JSON no la lleva.
+ */
+function clavesDelClienteDevuelto(sf) {
+  const fn = funcionDelDetalle(sf);
+  if (!fn) return null;
+  const objetos = [];
+  recorrer(fn, (n) => {
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken
+        && n.left.getText() === 'customer' && ts.isObjectLiteralExpression(n.right)) {
+      objetos.push(clavesDe(n.right));
+    }
+  });
+  return objetos;
+}
+
 /** Lo que el fichero EXPORTA, por nombre (`default` para `export default x`). */
 function exportacionesDe(sf) {
   const salida = [];
@@ -221,6 +239,17 @@ test('SCRUM-982 · 🔴 `notes` viaja en el DETALLE y NO en CUSTOMER_SELECT (que
   assert.ok(!lista.includes('notes'),
     '🔴 `notes` está en CUSTOMER_SELECT, que alimenta la LISTA (hasta 200 filas) y nada la pinta allí: ' +
       'texto libre viajando a cambio de nada, y una superficie más por la que puede salir.');
+});
+
+test('SCRUM-982 · 🔴 y lo que se pide llega al JSON: `serializeJobDetail` pone `notes` en el `customer` que devuelve', () => {
+  const devuelto = clavesDelClienteDevuelto(fuenteTS(RUTA_JOBS));
+  assert.ok(Array.isArray(devuelto) && devuelto.length >= 1,
+    '🔴 CIEGO: no encuentro `customer = { …customer, … }` dentro de `serializeJobDetail`.');
+  // Control positivo: el detalle ya devolvía `email` y `taxId` (SCRUM-575b).
+  assert.ok(devuelto.some((c) => c.includes('email') && c.includes('taxId')),
+    '🔴 CIEGO: el extractor no ve `email` y `taxId` en el cliente devuelto, y están.');
+  assert.ok(devuelto.some((c) => c.includes('notes')),
+    '🔴 la consulta pide `notes` pero el `customer` que se devuelve no la lleva: la ficha nunca la recibe.');
 });
 
 // ═══ ④ NINGUNA RUTA PÚBLICA LA EXPONE ════════════════════════════════════════════════════
