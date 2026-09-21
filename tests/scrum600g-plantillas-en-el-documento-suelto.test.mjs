@@ -236,12 +236,18 @@ test('SCRUM-600g · ④ NEGATIVO: «3. Condiciones» y «4. Envío» siguen FUER
   assert.deepEqual(bloques(presupuesto.contenedor), ['Condiciones', 'Ajustes del documento'],
     '🔴 SUELO: el lector no encuentra los bloques 3 y 4 ni en el presupuesto, así que no sabe mirar.');
 
+  // SCRUM-915g · «Ajustes del documento» YA ESTÁ en el documento suelto, y por identidad: es SU fila del
+  // último paso, con el IVA por defecto dentro (el IVA por línea sí sobrevive). «Condiciones» sigue
+  // fuera. Lo que sigue prohibido —dirección de la obra, IVA del presupuesto, los datos del cliente—
+  // lo ata `scrum600b` por su nombre; aquí, que el bloque de Condiciones no vuelva y que la fila de
+  // Ajustes sea UNA.
   for (const modo of ['factura', 'justificante']) {
     const { contenedor } = await montar(modo);
-    assert.deepEqual(bloques(contenedor), [],
-      `🔴 en modo ${modo} se cuela un bloque que el emisor no guarda. Los campos de «3. Condiciones» no ` +
-      'existen en `Invoice` (600e) y los de «4. Envío» tampoco; además, «4. Envío» tiene trabajo vivo en ' +
-      'scrum-820b. Levantar la parada de plantillas no levanta éstas.');
+    assert.deepEqual(bloques(contenedor), ['Ajustes del documento'],
+      `🔴 en modo ${modo} el documento suelto debe llevar SÓLO su fila «Ajustes del documento» (915g) y no ` +
+      '«Condiciones». Los campos de «3. Condiciones» no existen en `Invoice` (600e) y los de «4. Envío» ' +
+      'tampoco; además, «4. Envío» tiene trabajo vivo en scrum-820b. Levantar la parada de plantillas no ' +
+      'levanta éstas.');
   }
 });
 

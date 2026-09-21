@@ -1367,6 +1367,7 @@ html, body { overflow-x: clip; }
 .quote-paso.is-cerrado .quote-add-line,
 .quote-paso.is-cerrado .quote-dto-global,
 .quote-paso.is-cerrado .quote-fila,
+.quote-paso.is-cerrado .quote-ajustes,
 .quote-paso.is-cerrado .form-actions { display: none; }
 .quote-paso.is-cerrado .quote-block-title { margin: 0; }
 
