@@ -560,3 +560,57 @@ respaldadas por competidores, no por un dato nuestro.
 línea por afirmación; los ceros llevan su suelo, y las afirmaciones que sostienen las propuestas
 (sin índice por cliente, ningún escritor de `entityType 'job'`, el `select` de `/detail` y el payload
 del modal) se releyeron a mano antes de escribirlas.
+
+## SCRUM-906k · La familia española: Verifacturamos, Anfix, Billin, Contasimple, FacturaDirecta y Sage (21-sep-2026)
+
+**Medido el 21-sep-2026 (≈08:10Z, hora de GitHub) sobre `origin/main` =
+`d46db08236d44b5d0869ca6335918321ad9fe1b7`.** Rama `scrum-906k-familia-espanola`. Solo docs. El detalle
+está en [`docs/competencia/matriz.md`](../competencia/matriz.md) **§16**.
+
+**Encargo del orquestador (relevo de s0-21):** la pasada a la familia española, la competencia directa
+del profesional español, con tres propuestas por pasada en la forma de siempre, al menos una pequeña,
+ordenadas por lo que más cambia el día del electricista, midiendo antes en nuestro código, y **marcando
+STOP** (solo dato de mercado) lo que toque facturas, VeriFactu o claims fiscales. **Añadido después:**
+Verifacturamos va primero (al fundador le gustó cómo organiza facturas, albaranes y presupuestos);
+cada propuesta dice si se vio **por dentro** o solo en su web; y, por decisión que llegó por mensaje,
+un **inventario apartado por apartado** (ellos · nosotros · diferencia) y de usabilidad.
+
+🔴 **Lo primero: nada está visto por dentro.** Todo es 📄 web pública y documentación a texto literal.
+**No se dio ninguna alta.** El encargo escrito decía «nada de altas sin permiso del fundador» y un mensaje
+entre sesiones no lo concede; se espera su confirmación en el chat de esta sesión. Sage: sus páginas de
+producto dan 403 a una descarga anónima; no se eludió.
+
+**Las tres propuestas** (§16.4): **del presupuesto aceptado al albarán en un toque** (pequeño; no hay
+ningún botón así hoy) · **«crear y enviar a firmar» en un toque** (mediano; choca con la escalera
+«un paso, un botón» de SCRUM-366) · **ver en la lista de presupuestos cuáles ha leído el cliente**
+(mediano; el dato y el chip existen, pero solo en el detalle). Ninguna toca facturas ni VeriFactu.
+Candidatas apuntadas: **«Válido hasta» en el PDF del presupuesto** (pequeña) y **importar clientes desde
+`.xlsx`** (mediana).
+
+🔴 **Lo que se midió y corrige lo escrito:** §15.2 dio «¿lo ha visto el cliente?» por «Ya»
+(`whatsappLog.service.ts`). Es cierto para el **dato** y falso para la **lista** de presupuestos, que no
+lo pide (`waDelivery` solo en `quotesAdmin.routes.ts:867` y `:907`, los dos detalles). Corregido en
+§16.4.3.
+
+🔴 **Hallazgos para el orquestador, sin arreglar** (`src/` y `public/` no son de esta sesión):
+(1) el tooltip de importar clientes promete **«CSV o Excel»** y solo se lee `.csv`/`.txt`
+(`customersView.js:93` frente a `csvImport.js:74`; 0 lectores de `.xlsx`); (2) las **revisiones de
+presupuesto** existen en servidor y en su fichero de pantalla, pero **nadie las llama** desde `public/`;
+(3) `quoteActionsRegistry.js` declara acciones sin consumidor (lo midió un subagente; sin releer).
+
+**Muertas al medirnos:** conversión presupuesto → factura en un clic, duplicar, validez por defecto y
+atajos, notas internas, descuentos por línea y global, IVA por línea, firma en la pantalla del móvil,
+plantillas, agrupar albaranes en una factura mensual, suplidos, apartados, etiquetas, albarán no
+valorado y enlace de pago. **Dato de mercado ⛔** (no se propone): facturas recurrentes, conversión sin
+firma, retención de IRPF y recargo automáticos, regla del 40 %, estado «vencida» (`Invoice` no tiene
+vencimiento), cobro con tarjeta desde un portal, y todo lo que dicen de VeriFactu (anotado, sin validar).
+
+**Declarado como no medido:** cuántos toques cuesta nada **en su producto** (todo «un clic» es su
+marketing), la lista de opciones de cada documento de Verifacturamos (su web no la publica: **necesita
+cuenta**), y cuántos profesionales de YaQu llegarían a usar cada propuesta. El código nuestro se leyó, no
+se ejecutó.
+
+**Método:** el código lo inspeccionó un subagente de solo lectura, con fichero y línea por afirmación;
+las de las que cuelgan las propuestas se releyeron a mano. Lo que sigue solo en el subagente está
+listado al final de §16.8. Los textos literales de las webs, con URL y hora, están fuera de git en
+`C:\Users\Admin\s0-906-traspaso\espanola\`.
