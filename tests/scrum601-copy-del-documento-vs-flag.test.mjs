@@ -288,7 +288,11 @@ const PENDIENTES_DE_FIRMA = [
   // lo alto del fichero, así que TODO lo que va detrás sube dos líneas. Cifra MEDIDA con el propio
   // censo sobre el árbol FUSIONADO con main (21-sep-2026; el rojo decía `quotesView.js:909`), no
   // contada ni deducida: al fusionar, el generador la regeneró.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 909, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-915j · y de 909 a 935: la lista de clientes por botones y sus funciones se escriben ANTES de
+  // esta línea. CORREGIR un anclaje no es añadirlo: el texto es byte a byte el mismo y el motivo
+  // sigue siendo el suyo. Cifra MEDIDA con el propio censo sobre el árbol resultante (21-sep-2026; el
+  // rojo decía `quotesView.js:935`), no contada del diff.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 935, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];

@@ -156,12 +156,48 @@
     });
   }
 
+  /**
+   * SCRUM-915j · CUÁNTOS CLIENTES SE PINTAN COMO BOTÓN. El prototipo v3 aprobado
+   * (`docs/prototipos/SCRUM-915/editor-presupuesto.html`, `pasoCliente()`) enseña «hasta 4
+   * coincidencias»: un botón por cliente, grande, y el resto se encuentra afinando la búsqueda.
+   */
+  var MAX_COINCIDENCIAS = 4;
+
+  /**
+   * Los clientes que se PINTAN como botón: lo que `filtrar` deja ver, recortado a `max`
+   * (`MAX_COINCIDENCIAS` si no se dice).
+   *
+   * 🔴 EL ELEGIDO CABE SIEMPRE. Recortar una lista no puede esconder al cliente que el profesional
+   * ya eligió: con 200 clientes, uno restaurado de un borrador o recién dado de alta vive muy lejos
+   * de los cuatro primeros, y el paso diría «Cliente» sin enseñar cuál. Si el elegido no está entre
+   * los `max` primeros, pasa a la CABEZA y se caen los últimos — nunca al revés.
+   *
+   * Sigue sin mutar la lista de entrada (`customersList` es fuente de verdad de media vista): todo
+   * lo que devuelve es una lista nueva, y con la de `filtrar` como único origen.
+   */
+  function coincidencias(clientes, consulta, idSeleccionado, max) {
+    var limite = typeof max === 'number' && max > 0 ? Math.floor(max) : MAX_COINCIDENCIAS;
+    var todas = filtrar(clientes, consulta, idSeleccionado);
+    var primeras = todas.slice(0, limite);
+    var elegido = String(idSeleccionado == null ? '' : idSeleccionado);
+    if (elegido === '') return primeras;
+    for (var i = 0; i < primeras.length; i++) {
+      if (primeras[i] && String(primeras[i].id) === elegido) return primeras;
+    }
+    for (var j = limite; j < todas.length; j++) {
+      if (todas[j] && String(todas[j].id) === elegido) return [todas[j]].concat(todas.slice(0, limite - 1));
+    }
+    return primeras;
+  }
+
   var api = {
     CAMPOS: CAMPOS,
     TEXTOS: TEXTOS,
+    MAX_COINCIDENCIAS: MAX_COINCIDENCIAS,
     normalizar: normalizar,
     coincide: coincide,
     filtrar: filtrar,
+    coincidencias: coincidencias,
   };
 
   if (typeof window !== 'undefined') window.buscadorDeClientes = api;
