@@ -124,15 +124,21 @@
   </div>
 
   <section class="hecho">
-    <span class="pill">Verificado hace minutos, en el código de hoy</span>
+    <span class="pill">Verificado con grep, no de oídas — no es un subtítulo, son once + cuatro</span>
     <h3 style="margin-top:10px">Lo que dice la landing en producción, ahora mismo</h3>
     <div class="cita">"Del presupuesto al cobro, sin salir de WhatsApp."<br>
-      "...te paga la señal antes de que empieces — con tarjeta, Bizum o transferencia."</div>
-    <p style="margin:0">Ese subtítulo es falso para un profesional español desde las 14:55:34Z de
-    hoy: con <code>INVOICING_ES_ENABLED</code> en OFF, la regla 24 dice que no se cobra por YaQu de
-    ningún tipo. El último cambio de este fichero es del 20-ago — un mes antes de que la regla se
-    aprobara. Cada visita real desde esta tarde ha leído una promesa que el propio máster, mergeado
-    esa misma tarde, dice que es falsa.</p>
+      "...te paga — con tarjeta, Bizum o transferencia."</div>
+    <p>En <code>index.html</code> la promesa de cobro vive en al menos <b>once</b> sitios: título,
+    og/twitter, JSON-LD, el H1 vivo, el subtítulo, la animación de demo ("Cobrado, sin perseguir a
+    nadie"), el paso "3 · Cobra", dos respuestas del FAQ y el CTA final. En
+    <code>precios.html</code>, <b>cuatro</b> — y el más grave no es un titular: es una línea dentro
+    de lo que el plan <b>incluye</b>: <i>"Cobro integrado: el cliente paga desde el móvil"</i>. Eso es
+    una función enumerada en lo que alguien está a punto de pagar, no un eslogan.</p>
+    <p style="margin:0">Todo eso es falso para un profesional español desde las 14:55:34Z de hoy: con
+    <code>INVOICING_ES_ENABLED</code> en OFF, la regla 24 dice que no se cobra por YaQu de ningún
+    tipo. El último cambio de <code>index.html</code> es del 20-ago — un mes antes de que la regla se
+    aprobara. Cada visita real desde esta tarde ha leído, y en <code>precios.html</code> ha comprado,
+    una promesa que el propio máster, mergeado esa misma tarde, dice que es falsa.</p>
   </section>
 
   <!-- ============================= EJE A ============================= -->
@@ -166,7 +172,11 @@
       <tr><td>Le falta</td><td>SIF-1 completo — la prioridad absoluta del máster ya lo tiene en
         cola.</td></tr>
       <tr><td>Riesgo si se usa ya</td><td><b>Alto.</b> Choca con la regla 17 (ningún claim VeriFactu
-        sin el gate fiscal cerrado) tan de lleno como el héroe actual.</td></tr>
+        sin el gate fiscal cerrado) tan de lleno como el héroe actual. Y no partiría de cero: el
+        <b>guion H2</b> — la única respuesta autorizada sobre VeriFactu (regla 26) — <b>ya dice dos
+        cosas falsas hoy</b> y está parado en <b>SCRUM-534</b> (creado 19-ago-2026, "Acción del
+        fundador", sin decidir desde entonces). Este eje construiría encima de un texto que ya
+        sabemos que miente.</td></tr>
     </table>
   </div>
 
