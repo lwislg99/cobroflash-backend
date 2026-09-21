@@ -290,7 +290,6 @@ router.get('/:id/detail', async (req, res) => {
 
     // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
     // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
-    const propios = { customerId: id, merchantId: req.merchantId };
     const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente] = await Promise.all([
       prisma.quote.findMany({
         where: { customerId: id, merchantId: req.merchantId },
@@ -309,11 +308,12 @@ router.get('/:id/detail', async (req, res) => {
         _sum: { amount: true },
       }),
       listCustomerEvents(req.merchantId, id, 50),
-      prisma.quote.count({ where: propios }),
-      prisma.quote.count({ where: { ...propios, status: 'accepted' } }),
-      prisma.invoice.aggregate({ where: propios, _sum: { total: true } }),
-      prisma.invoice.aggregate({ where: { ...propios, status: 'paid' }, _sum: { total: true } }),
-      prisma.invoice.aggregate({ where: { ...propios, status: 'pending' }, _sum: { total: true }, _count: true }),
+      // `where` LITERALES a propósito: los censos de tenencia (SCRUM-289/348) leen el filtro del texto.
+      prisma.quote.count({ where: { customerId: id, merchantId: req.merchantId } }),
+      prisma.quote.count({ where: { customerId: id, merchantId: req.merchantId, status: 'accepted' } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId }, _sum: { total: true } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'paid' }, _sum: { total: true } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'pending' }, _sum: { total: true }, _count: true }),
     ]);
 
     const totalBilled = Number(facturado._sum.total ?? 0);

@@ -4,7 +4,7 @@
 // fijo con 25 facturas veía una cifra que mentía. Ahora las cifras se agregan en la base; las listas
 // (la pestaña de documentos) siguen en 20. Sin banco: el handler REAL contra un mini-Prisma en memoria
 // que respeta `where` (incluido `merchantId`), `take` y `aggregate`. Con el código de antes, las cifras
-// salen de las 20 filas de `findMany` y este test cae.
+// salen de las filas paginadas de `findMany` y este test cae.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { prisma } from '../dist/core/db/prisma.js';
