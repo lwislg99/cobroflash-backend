@@ -1,6 +1,9 @@
 # SCRUM-955 — Mapa medido: qué le falta HOY a la factura con VeriFactu (SIF-1) para emitirse de verdad
 
-**21-sep-2026 ~14:00Z** · `origin/main` = `1dd09882fefa41186e9852c5bb39f20d4aa495d8` · J1 (`jv-j1`).
+**21-sep-2026 ~14:00Z** · medido contra `origin/main` = `1dd09882fefa41186e9852c5bb39f20d4aa495d8`,
+re-verificado sin cambios de veredicto tras traer `origin/main` = `2631bb9a53905c89537c8461c9cf2ab12de796f8`
+a la rama (los 347 commits de diferencia no tocan ningún fichero medido aquí — comprobado con
+`git diff --name-only` sobre los 6 ficheros de esta ficha) · J1 (`jv-j1`).
 Encargo de Javier, 18-sep-2026 ~15:40Z: *"La factura en formato correcto, Verifactu, es nuestro
 cuello de botella y prioridad"*. Con el interruptor fiscal en OFF (SCRUM-612), YaQu ni emite ni
 cobra — la factura desbloquea el producto entero, no solo lo fiscal.

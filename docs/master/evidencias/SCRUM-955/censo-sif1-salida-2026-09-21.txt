@@ -1,4 +1,4 @@
-POBLACIÓN · ref origin/main = 1dd09882fefa41186e9852c5bb39f20d4aa495d8 · 3541 rutas del árbol · 290 .ts de src/ parseados · 9577 literales · 11723 llamadas · 1133 imports · 108 ficheros de public/ · 6 XSD
+POBLACIÓN · ref origin/main = 2631bb9a53905c89537c8461c9cf2ab12de796f8 · 3542 rutas del árbol · 290 .ts de src/ parseados · 9577 literales · 11723 llamadas · 1133 imports · 108 ficheros de public/ · 6 XSD
 
 [A1] Huella SHA-256 con el formato oficial y su vector de la AEAT en un test
   veredicto: HECHO (estático; el test se CORRE aparte)
@@ -195,7 +195,7 @@ POBLACIÓN · ref origin/main = 1dd09882fefa41186e9852c5bb39f20d4aa495d8 · 3541
 
 [G1] Documentos de S1-E, S1-G y S1-H en el árbol
   veredicto: ver detalle
-  población: 3541 rutas del árbol
+  población: 3542 rutas del árbol
   control +: docs/SIF_SPEC_NOTES.md en el árbol = 1
   · docs/VERIFACTU_EVIDENCIAS.md: NO existe
   · docs/legal/DECLARACION_RESPONSABLE.md: existe
