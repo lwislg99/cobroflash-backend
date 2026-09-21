@@ -366,8 +366,15 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // `button.quote-header-btn` «💾 Guardar como plantilla»: viven fuera del árbol hasta que se abre el
   // menú); SOBRAN `div.quotes-header-row` y `button.overflow-trigger` «⋯». El `h2.quotes-title` es el
   // MISMO nodo con otro texto («Crear presupuesto» → «Nuevo presupuesto»). −3 +2 = −1.
-  assert.equal(nodos.length, 244,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 244 `
+  // 🔴 SCRUM-915j · 21-sep-2026 · 244 → 248, y lo mueve la VISTA. Por identidad: el subárbol de
+  // `ul.quote-clientes` mide **4** sobre el árbol montado (con el mismo contador `todos`) y es TODO lo
+  // que sobra: el `<ul>`, `li.quote-clientes__nota` con «Primero necesitas un cliente.» (el banco monta
+  // sin clientes), el `<li>` del alta y `button.quote-cliente-opcion--nuevo` «+ Nuevo cliente». No
+  // falta nada en el otro lado: el `<select name="customer_id">` sigue siendo el MISMO nodo, ahora con
+  // `hidden`. Con clientes en la lista serían más (un `li` + `button` + `b` + `small` por cliente, hasta
+  // 4): este banco monta sin ellos, y el mismo 248 lo dan los dos montajes de 698.
+  assert.equal(nodos.length, 248,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 248 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
@@ -375,7 +382,8 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
     + 'apilaba hasta SCRUM-897, + los 45 del andamio de los pasos de SCRUM-915d, + el rótulo «Se '
     + 'actualiza mientras escribes» de SCRUM-915e1, + los 3 «Ver documento» de SCRUM-915e2, − las 2 '
     + 'líneas en blanco y − el bloque `.quote-totals` de SCRUM-915h, − el subtítulo y los dos botones '
-    + 'que se van al menú «⋯» + la fila del título y su «⋯» de SCRUM-915i). Si no '
+    + 'que se van al menú «⋯» + la fila del título y su «⋯» de SCRUM-915i + la lista de clientes por '
+    + 'botones de SCRUM-915j). Si no '
     + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');

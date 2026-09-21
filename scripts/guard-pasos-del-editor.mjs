@@ -34,6 +34,12 @@
 //          momento (la lista sale de `docs/prototipos/SCRUM-915/inventario-hoy.md`). Se mide también
 //          contra el código de antes: si ahí no da 100 %, el que está mal es este instrumento.
 //   ⛔ I · NEGATIVO · sin scroll lateral.
+//   🔴 J · SCRUM-915j · EL CLIENTE SE ELIGE POR BOTONES, con clics de verdad: al entrar hay 4 botones
+//          (de 6 clientes) de ≥ 44 px que caben en pantalla y el <select> guardián NO se ve; pulsar
+//          uno lo marca y lo guarda (y el foco se queda en el botón); una búsqueda deja al elegido y
+//          trae al que casa aunque viva fuera de los cuatro primeros; sin resultados lo dice; y
+//          «+ Nuevo cliente» abre el alta sin tocar al elegido. El select sigue EN EL DOCUMENTO (el
+//          inventario lo cuenta) porque es el portador del valor.
 //
 // Documento suelto (justificante, 1280 px): TRES pasos —Cliente · Conceptos · Revisar y emitir—,
 // sin Condiciones, y el IVA por defecto YA NO está en Conceptos (SCRUM-915g): vive en la fila «Ajustes
@@ -60,9 +66,24 @@ export const SALIDA_HALLAZGO = 1;
 export const SALIDA_NO_SUPE_MEDIR = 2;
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+// SCRUM-915j · el `public/` que se sirve puede cambiarse (como `GASTOS_PUBLICO` en `guard-lista-gastos`):
+// es lo que permite CORRER ESTE GUARD CONTRA EL CÓDIGO DE ANTES —`git archive origin/main public`— y
+// comprobar que cae. Un guard que nunca se ha visto en rojo no se sabe si mide.
+const PUBLICO = process.env.PASOS_PUBLICO || path.join(RAIZ, 'public');
 let PUERTO = Number(process.env.PASOS_PUERTO || 0);
 
 const CLIENTE = { id: 7, name: 'Comunidad Los Olivos', phone: '34000000001', email: 'olivos@correo.es' };
+// SCRUM-915j · SEIS clientes, no uno: el cliente se elige por BOTONES (hasta 4) y con uno solo no se
+// puede medir ni el recorte a 4, ni que el elegido quepa cuando vive fuera de los cuatro primeros, ni la
+// búsqueda. El de siempre va PRIMERO: el resto del recorrido sigue eligiéndolo a él.
+const CLIENTES = [
+  CLIENTE,
+  { id: 8, name: 'Fincas García SL', phone: '34000000002', email: 'fincas@correo.es', internalRef: 'FG-01' },
+  { id: 9, name: 'Reformas Ortega', phone: '34000000003', email: 'ortega@correo.es' },
+  { id: 10, name: 'Bar El Puerto', phone: '34000000004', email: 'puerto@correo.es' },
+  { id: 11, name: 'Taller Martín', phone: '34000000005', email: 'martin@correo.es' },
+  { id: 12, name: 'Peluquería Lola', phone: '34000000006', email: 'lola@correo.es' },
+];
 let modoSuelto = 'no';
 const me = () => ({
   id: 1, email: 'demo@yaqu.app', name: 'QA 915', plan: 'pro', role: 'admin',
@@ -77,10 +98,10 @@ function arrancarServidor() {
     const u = req.url.split('?')[0];
     if (u === '/admin/me') return json(res, me());
     if (u === '/admin/merchant') return json(res, MERCHANT);
-    if (u === '/admin/customers') return json(res, [CLIENTE]);
+    if (u === '/admin/customers') return json(res, CLIENTES);
     if (u.startsWith('/admin/')) return json(res, { items: [], rows: [], data: [] });
     const rel = u.replace(/^\//, '');
-    const f = path.join(RAIZ, 'public', rel);
+    const f = path.join(PUBLICO, rel);
     if (fs.existsSync(f) && fs.statSync(f).isFile()) {
       const ext = path.extname(f);
       const tipo = ext === '.css' ? 'text/css' : ext === '.js' ? 'application/javascript' : 'text/html';
@@ -156,7 +177,11 @@ const MEDIR = new Function('inventario', `
     .some(function (el) { return limpio(el.textContent) === 'Condiciones de pago' && ve(el); });
   return {
     visibles: {
-      cliente: ve(q('select[name="customer_id"]')),
+      // SCRUM-915j · el representante del paso del cliente es su LISTA DE BOTONES. El select
+      // customer_id sigue en el DOM (el inventario lo cuenta) pero hidden: es el portador del
+      // valor, y juzgar por él daría «el paso del cliente no se ve» aunque esté abierto.
+      // (Sin acentos graves aquí dentro: esto vive en una plantilla de JS y los cierra.)
+      cliente: ve(q('.quote-clientes')),
       concepto: ve(q('.quote-line .quote-line__concept input')),
       condiciones: ve(q('select[name="payment_terms"]')) || rotuloCondiciones,
       generar: ve(submit),
@@ -179,6 +204,31 @@ const MEDIR = new Function('inventario', `
     modalVisible: modalVisible,
     total: (function () { var e = document.querySelector('.quote-total-kpi__cifra'); return e ? limpio(e.textContent) : null; })(),
     inventario: inv,
+    // SCRUM-915j · el cliente por BOTONES: qué se pinta, cuál está marcado, cuánto miden y qué guarda el
+    // select escondido. Todo se lee del DOM renderizado, no del fuente.
+    clientes: (function () {
+      var lista = q('.quote-clientes');
+      var sel = q('select[name="customer_id"]');
+      var todosLosBotones = lista ? Array.prototype.slice.call(lista.querySelectorAll('button.quote-cliente-opcion')) : [];
+      var botones = todosLosBotones.filter(function (b) { return !b.classList.contains('quote-cliente-opcion--nuevo'); });
+      var alta = lista ? lista.querySelector('.quote-cliente-opcion--nuevo') : null;
+      var nota = lista ? lista.querySelector('.quote-clientes__nota') : null;
+      var cajas = todosLosBotones.map(function (b) { return b.getBoundingClientRect(); });
+      var idDe = function (b) { return b.getAttribute('data-customer-id'); };
+      return {
+        hay: botones.length,
+        ids: botones.map(idDe),
+        marcados: botones.filter(function (b) { return b.getAttribute('aria-pressed') === 'true'; }).map(idDe),
+        primero: botones[0] ? limpio(botones[0].textContent) : null,
+        minAlto: cajas.length ? Math.min.apply(null, cajas.map(function (c) { return c.height; })) : 0,
+        caben: cajas.every(function (c) { return c.left >= -1 && c.right <= document.documentElement.clientWidth + 1; }),
+        altaVisible: !!alta && ve(alta),
+        nota: nota ? limpio(nota.textContent) : null,
+        selectVisible: ve(sel),
+        selectValor: sel ? sel.value : null,
+        foco: document.activeElement ? document.activeElement.getAttribute('data-customer-id') : null
+      };
+    })(),
     desbordaLado: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
   };
 `);
@@ -213,6 +263,32 @@ async function teclear(pag, selector, texto) {
   if (!el) return false;
   await el.evaluate((e) => { e.scrollIntoView({ block: 'center', behavior: 'instant' }); e.focus(); e.value = ''; });
   await pag.keyboard.type(texto);
+  return true;
+}
+
+/** SCRUM-915j · el botón de UN cliente. El id sale del fixture, nunca del texto. */
+const BOTON_CLIENTE = (id) => `.quote-cliente-opcion[data-customer-id="${id}"]`;
+
+/** Pulsa el botón del cliente con un CLIC de verdad (puppeteer lo lleva a la vista y pulsa en su caja). */
+async function pulsarCliente(pag, id) {
+  const el = await pag.$(BOTON_CLIENTE(id));
+  if (!el) return false;
+  await el.evaluate((e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await el.click();
+  return true;
+}
+
+/** Vacía el buscador de cliente CON su evento (`teclear` no lo lanza al vaciar) y teclea `texto`. */
+async function buscarCliente(pag, texto) {
+  const el = await pag.$('.quote-buscador-cliente');
+  if (!el) return false;
+  await el.evaluate((e) => {
+    e.scrollIntoView({ block: 'center', behavior: 'instant' });
+    e.focus();
+    e.value = '';
+    e.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  if (texto) await pag.keyboard.type(texto);
   return true;
 }
 
@@ -270,10 +346,59 @@ async function casoPresupuesto(navegador, ancho) {
     m = await pag.evaluate(MEDIR, INVENTARIO);
     if (!m.visibles.cliente || m.visibles.concepto) mal.push('B · pulsar «Continuar» sin cliente CAMBIÓ de paso');
 
-    // C · con cliente.
-    await pag.select('select[name="customer_id"]', String(CLIENTE.id));
+    // J · SCRUM-915j · el cliente por BOTONES, antes de elegir a nadie.
+    const c0 = m.clientes;
+    const idsPrimeros = CLIENTES.slice(0, 4).map((c) => String(c.id));
+    if (c0.hay !== 4 || c0.ids.join() !== idsPrimeros.join()) mal.push(`J · al entrar tiene que haber 4 botones de cliente (${idsPrimeros.join(',')}) y hay ${c0.hay} (${c0.ids.join(',')})`);
+    if (!c0.primero || !c0.primero.includes(CLIENTE.name) || !c0.primero.includes(CLIENTE.phone)) mal.push(`J · el botón de cliente no dice nombre y teléfono («${c0.primero}»)`);
+    if (c0.marcados.length) mal.push(`J · sin elegir a nadie hay botones marcados (${c0.marcados.join(',')})`);
+    if (c0.selectVisible) mal.push('J · el select de clientes SE VE: los botones son el control y el select sólo guarda el valor');
+    if (c0.minAlto < 44) mal.push(`J · un botón de cliente mide ${Math.round(c0.minAlto)} px de alto; el mínimo táctil es 44`);
+    if (!c0.caben) mal.push('J · un botón de cliente se sale de la pantalla');
+    if (!c0.altaVisible) mal.push('J · no se ve «+ Nuevo cliente»');
+
+    // C · con cliente, ELEGIDO CON UN CLIC DE VERDAD sobre su botón (no con `select` a pelo).
+    if (!await pulsarCliente(pag, 8)) { ciegos.push(`${etiqueta} → no encontré el botón del cliente 8`); return; }
     await espera(200);
     m = await pag.evaluate(MEDIR, INVENTARIO);
+    if (m.clientes.selectValor !== '8' || m.clientes.marcados.join() !== '8') mal.push(`J · pulsar el botón del cliente 8 dejó select=«${m.clientes.selectValor}» y marcados=[${m.clientes.marcados}]`);
+    if (m.clientes.foco !== '8') mal.push(`J · tras pulsar, el foco no se queda en el botón (foco: ${m.clientes.foco}): con teclado se perdería`);
+    // Cambiar de idea: el segundo clic mueve la marca, no la duplica.
+    await pulsarCliente(pag, CLIENTE.id);
+    await espera(200);
+    m = await pag.evaluate(MEDIR, INVENTARIO);
+    if (m.clientes.selectValor !== String(CLIENTE.id) || m.clientes.marcados.join() !== String(CLIENTE.id)) mal.push(`J · volver a pulsar el cliente ${CLIENTE.id} dejó select=«${m.clientes.selectValor}» y marcados=[${m.clientes.marcados}]`);
+
+    // J · búsqueda. El elegido (7) NO se cae aunque no case, y el que sí casa (12) aparece aunque viva
+    // fuera de los cuatro primeros.
+    if (!await buscarCliente(pag, 'lola')) { ciegos.push(`${etiqueta} → no encontré el buscador de cliente`); return; }
+    await espera(200);
+    m = await pag.evaluate(MEDIR, INVENTARIO);
+    if (m.clientes.ids.join() !== '7,12') mal.push(`J · buscando «lola» con el 7 elegido salen [${m.clientes.ids}]; tienen que ser el elegido y el que casa (7,12)`);
+    if (m.clientes.marcados.join() !== '7') mal.push(`J · al buscar se pierde la marca del elegido (marcados=[${m.clientes.marcados}])`);
+    if (m.clientes.nota) mal.push(`J · sale un aviso de «sin resultados» (${m.clientes.nota}) habiendo un cliente que casa`);
+    await pulsarCliente(pag, 12);
+    await espera(200);
+    await buscarCliente(pag, '');
+    await espera(200);
+    m = await pag.evaluate(MEDIR, INVENTARIO);
+    if (m.clientes.selectValor !== '12') mal.push(`J · elegir al 12 desde la búsqueda dejó select=«${m.clientes.selectValor}»`);
+    if (m.clientes.hay !== 4 || m.clientes.ids[0] !== '12' || m.clientes.marcados.join() !== '12') {
+      mal.push(`J · con el 12 elegido (fuera de los 4 primeros) y la búsqueda vacía salen [${m.clientes.ids}] marcados=[${m.clientes.marcados}]; el elegido tiene que ir a la cabeza y ser 4 en total`);
+    }
+    // J · una búsqueda que no casa con nadie lo dice, aunque el elegido siga a la vista.
+    await buscarCliente(pag, 'zzzz');
+    await espera(200);
+    m = await pag.evaluate(MEDIR, INVENTARIO);
+    if (m.clientes.nota !== 'Sin resultados para tu búsqueda') mal.push(`J · buscando «zzzz» el aviso es «${m.clientes.nota}»; tiene que ser «Sin resultados para tu búsqueda»`);
+    if (!m.clientes.altaVisible) mal.push('J · sin resultados, «+ Nuevo cliente» no se ve');
+    if (m.clientes.marcados.join() !== '12') mal.push(`J · sin resultados se pierde la marca del elegido (marcados=[${m.clientes.marcados}])`);
+    await buscarCliente(pag, '');
+    await espera(200);
+    await pulsarCliente(pag, CLIENTE.id);
+    await espera(200);
+    m = await pag.evaluate(MEDIR, INVENTARIO);
+    if (m.clientes.selectValor !== String(CLIENTE.id)) mal.push(`J · tras el recorrido de la búsqueda el select guarda «${m.clientes.selectValor}»; tenía que ser ${CLIENTE.id}`);
     if (!m.continuar || m.continuar.disabled) mal.push('C · con cliente, «Continuar» sigue deshabilitado');
     const rC = await pag.evaluate(PULSAR, 'Continuar', null);
     await espera(300);
@@ -345,6 +470,14 @@ async function casoPresupuesto(navegador, ancho) {
     m = await pag.evaluate(MEDIR, INVENTARIO);
     if (!m.visibles.cliente || m.visibles.generar || abiertos(m).length !== 1) mal.push(`G · «Cambiar» en Cliente no lo reabrió como único paso (se ven: ${abiertos(m).join(', ')})`);
     if (m.desbordaLado) mal.push('I · hay scroll lateral');
+
+    // J · «+ Nuevo cliente» abre el alta y NO toca al elegido (SCRUM-591: es una acción, no un cliente).
+    const antes = m.clientes.selectValor;
+    await pag.click('.quote-cliente-opcion--nuevo');
+    await espera(500);
+    m = await pag.evaluate(MEDIR, INVENTARIO);
+    if (!m.modalVisible) mal.push('J · «+ Nuevo cliente» no abrió el formulario de alta');
+    if (m.clientes.selectValor !== antes) mal.push(`J · abrir el alta cambió al elegido de «${antes}» a «${m.clientes.selectValor}»`);
     if (errores.length) mal.push(`errores de página: ${errores.join(' | ')}`);
     informe.push(`${etiqueta} · recorrido completo`);
   } finally {
@@ -374,8 +507,11 @@ async function casoSuelto(navegador, ancho) {
     if (a.length !== 1 || !m.visibles.cliente) { mal.push(`A · al entrar se ven ${a.length} pasos a la vez (${a.join(', ')})`); return; }
     const esperados = ['Cliente', 'Conceptos', 'Revisar y emitir'];
     if (JSON.stringify(m.titulos) !== JSON.stringify(esperados)) mal.push(`los pasos del justificante son ${JSON.stringify(m.titulos)}; se esperaban ${JSON.stringify(esperados)}`);
-    await pag.select('select[name="customer_id"]', String(CLIENTE.id));
+    // SCRUM-915j · también en el justificante el cliente se elige pulsando su botón.
+    if (!await pulsarCliente(pag, CLIENTE.id)) { ciegos.push(`${etiqueta} → no encontré el botón del cliente ${CLIENTE.id}`); return; }
     await espera(200);
+    m = await pag.evaluate(MEDIR, INVENTARIO_SUELTO);
+    if (m.clientes.selectValor !== String(CLIENTE.id) || m.clientes.marcados.join() !== String(CLIENTE.id)) mal.push(`J · pulsar el botón del cliente dejó select=«${m.clientes.selectValor}» y marcados=[${m.clientes.marcados}]`);
     await pag.evaluate(PULSAR, 'Continuar', null);
     await espera(300);
     m = await pag.evaluate(MEDIR, INVENTARIO_SUELTO);

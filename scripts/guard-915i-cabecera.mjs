@@ -169,7 +169,10 @@ const ESTADO = new Function(`
   var dto = document.querySelector('.quote-dto-global input');
   return {
     cliente: sel ? sel.value : null,
-    clienteVisible: ve(sel),
+    // SCRUM-915j · se ve el paso del cliente cuando se ve su lista de botones: el select está
+    // hidden a propósito (es el portador del valor), y ve(sel) daría siempre que no.
+    // (Sin acentos graves aquí dentro: esto vive en una plantilla de JS y los cierra.)
+    clienteVisible: ve(document.querySelector('.quote-clientes')),
     lineas: lineas.length,
     concepto: c ? c.value : null,
     conceptoVisible: ve(c),

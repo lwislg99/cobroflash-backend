@@ -3825,6 +3825,32 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   box-sizing: border-box;
 }
 
+/* SCRUM-915j · el cliente por BOTONES (prototipo v3 aprobado, `.lista-cli`). Hasta 4 coincidencias
+   como botones grandes —nombre y, debajo, teléfono · referencia— y «+ Nuevo cliente» al final.
+   Cero tokens nuevos: todo sale de `tokens.css`. `min-height: 52px` es AB6 con margen (mínimo 44).
+   El `<select name="customer_id">` sigue en el DOM con `hidden` (la regla global `[hidden]` de
+   arriba lo apaga): es el portador del valor, y aquí NO se le escribe un `display`. */
+.quote-clientes { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.quote-cliente-opcion {
+  display: block; width: 100%; min-width: 0; min-height: 52px; box-sizing: border-box;
+  padding: 8px 12px; text-align: left;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface);
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.quote-cliente-opcion:hover { border-color: var(--brand); }
+.quote-cliente-opcion:focus-visible { outline: none; box-shadow: var(--ring); }
+/* Marcado = borde de marca + un píxel más por dentro + fondo suave: NO sólo un cambio de color
+   (WCAG 1.4.1), y el grosor se ve aunque el fondo no se distinga. */
+.quote-cliente-opcion[aria-pressed="true"] {
+  border-color: var(--brand); background: var(--brand-tint);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+.quote-cliente-opcion[aria-pressed="true"]:focus-visible { box-shadow: inset 0 0 0 1px var(--brand), var(--ring); }
+.quote-cliente-opcion b { display: block; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.quote-cliente-opcion small { display: block; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.quote-cliente-opcion--nuevo { border-style: dashed; color: var(--brand-tint-ink); font-weight: 700; }
+.quote-clientes__nota { padding: 8px 0; font-size: 14px; color: var(--muted); }
+
 /* SCRUM-688 · El aviso de que no se pudo crear la revision.
    Cero tokens nuevos. La tinta es `--danger-ink`, NO `--danger`, y no es preferencia: esta hoja
    ya lo midio mas arriba (linea ~600) — `--danger` (#dc2626) sobre fondo claro se queda corto

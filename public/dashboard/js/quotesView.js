@@ -656,8 +656,31 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // TICKET —que es lo que restaura el estado— y el resto va reportado: congelarlos pide un
   // trinquete propio, del patrón de SCRUM-402, y eso es otro ticket.
   buscadorCliente.classList.add("quote-buscador-cliente");
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-915j · EL CLIENTE, POR BOTONES (prototipo v3 aprobado, `pasoCliente()`).
+  //
+  // Hasta 4 coincidencias como botones grandes —nombre y, debajo, teléfono · referencia— y al final
+  // «+ Nuevo cliente». Elegir es UN toque; el `<select>` de 200 opciones desaparece de la vista.
+  //
+  // 🔴 EL `<select name="customer_id">` SE QUEDA EN EL DOM, `hidden`, y es el PORTADOR DEL VALOR.
+  // No es pereza: doce sitios leen `fieldCustomer.select.value`, el restaurador de borradores lo
+  // escribe y SCRUM-713 lo dejó a propósito por lo mismo. Los botones son la mano; el `<select>`, la
+  // memoria. Pulsar un botón hace lo que hacía elegir la opción: `select.value = id` y la MISMA
+  // función que atendía el `change` (`alCambiarElCliente`), sin un camino paralelo que pueda
+  // divergir. `hidden` lo apaga la regla global `[hidden]` de la hoja: sin `display` propio aquí.
+  //
+  // ⛔ NINGÚN LITERAL NUEVO (regla 30): el buscador, «Sin resultados para tu búsqueda», «Primero
+  // necesitas un cliente.» y «+ Nuevo cliente» ya están firmados; el texto de cada botón sale de
+  // los DATOS del cliente. Y ningún `aria-label` nuevo: el nombre accesible del botón es su contenido.
+  const listaClientes = document.createElement("ul");
+  listaClientes.className = "quote-clientes";
+  /** Los botones de cliente que hay pintados AHORA (sin el de alta): lo que `sincronizar…` recorre. */
+  let botonesDeCliente = [];
+  fieldCustomer.select.hidden = true;
   fieldCustomer.wrapper.removeChild(fieldCustomer.select);
   fieldCustomer.wrapper.appendChild(buscadorCliente);
+  fieldCustomer.wrapper.appendChild(listaClientes);
   fieldCustomer.wrapper.appendChild(fieldCustomer.select);
   buscadorCliente.addEventListener("input", function () {
     pintarOpcionesDeCliente();
@@ -2243,6 +2266,96 @@ descWrapper.appendChild(descLabel);
     }
 
     if (seleccionado && seleccionado !== VALOR_ALTA_RAPIDA) select.value = seleccionado;
+
+    // SCRUM-915j · DESPUÉS de restaurar `select.value`: los botones se pintan desde lo que el
+    // `<select>` guarda, y pintarlos antes dejaría marcado al cliente de la pasada anterior.
+    pintarBotonesDeCliente();
+  }
+
+  /**
+   * SCRUM-915j · el id que guarda el `<select>`, o «» si no hay cliente. La entrada de alta no es un
+   * cliente: es una acción (SCRUM-591), y jamás puede quedar «marcada» como si lo fuera.
+   */
+  function idClienteGuardado() {
+    const v = fieldCustomer.select.value;
+    return !v || v === VALOR_ALTA_RAPIDA ? "" : String(v);
+  }
+
+  /**
+   * SCRUM-915j · pinta la lista de botones: las coincidencias (máx. `MAX_COINCIDENCIAS`, con el
+   * elegido SIEMPRE dentro), el aviso si no hay ninguna y «+ Nuevo cliente» al final.
+   *
+   * Todo con `textContent`, sin `innerHTML` con datos: el nombre y el teléfono son texto del
+   * profesional. `innerHTML = ""` sólo vacía, igual que hace `pintarOpcionesDeCliente` con el `<select>`.
+   */
+  function pintarBotonesDeCliente() {
+    const elegido = idClienteGuardado();
+    listaClientes.innerHTML = "";
+    botonesDeCliente = [];
+    const visibles = window.buscadorDeClientes.coincidencias(customersList, buscadorCliente.value, elegido);
+    visibles.forEach(function (c) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "quote-cliente-opcion";
+      btn.dataset.customerId = String(c.id);
+      botonesDeCliente.push(btn);
+      btn.setAttribute("aria-pressed", String(String(c.id) === elegido));
+      const nombre = document.createElement("b");
+      nombre.textContent = c.name;
+      btn.appendChild(nombre);
+      const detalle = [c.phone, c.internalRef].filter(Boolean).join(" · ");
+      if (detalle) {
+        const small = document.createElement("small");
+        small.textContent = detalle;
+        btn.appendChild(small);
+      }
+      btn.addEventListener("click", function () { elegirCliente(c.id); });
+      li.appendChild(btn);
+      listaClientes.appendChild(li);
+    });
+    // 🔴 El aviso se decide por lo que CASA con lo tecleado, NO por lo que se pinta: el elegido va
+    // siempre (arriba), y con uno elegido `visibles` nunca queda vacío aunque la búsqueda no encuentre
+    // a nadie — sin este aviso el profesional vería un solo botón y no sabría que buscó en vano.
+    if (window.buscadorDeClientes.filtrar(customersList, buscadorCliente.value).length === 0) {
+      const nota = document.createElement("li");
+      nota.className = "quote-clientes__nota";
+      nota.textContent = customersList.length === 0
+        ? window.buscadorDeClientes.TEXTOS.sinNinguno
+        : window.buscadorDeClientes.TEXTOS.sinResultados;
+      listaClientes.appendChild(nota);
+    }
+    const liAlta = document.createElement("li");
+    const btnAlta = document.createElement("button");
+    btnAlta.type = "button";
+    btnAlta.className = "quote-cliente-opcion quote-cliente-opcion--nuevo";
+    btnAlta.textContent = TEXTO_ALTA_RAPIDA;
+    btnAlta.addEventListener("click", function () { abrirAltaDeCliente(); });
+    liAlta.appendChild(btnAlta);
+    listaClientes.appendChild(liAlta);
+  }
+
+  /**
+   * SCRUM-915j · pone los botones al día con lo que el `<select>` guarda SIN repintarlos, salvo que
+   * haga falta. Repintar en cada elección destruiría el botón pulsado y el teclado perdería el foco;
+   * pero si el cliente guardado NO tiene botón (restaurado de un borrador, recién dado de alta o
+   * puesto por otro camino), se repinta para que quede a la vista.
+   */
+  function sincronizarBotonesDeCliente() {
+    const elegido = idClienteGuardado();
+    if (elegido && !botonesDeCliente.some(function (b) { return b.dataset.customerId === elegido; })) {
+      pintarBotonesDeCliente();
+      return;
+    }
+    botonesDeCliente.forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.customerId === elegido));
+    });
+  }
+
+  /** SCRUM-915j · pulsar el botón de un cliente = lo que hacía elegir su `<option>`. */
+  function elegirCliente(id) {
+    fieldCustomer.select.value = String(id);
+    alCambiarElCliente();
   }
 
   /**
@@ -2264,6 +2377,8 @@ descWrapper.appendChild(descLabel);
         pintarOpcionesDeCliente();
         fieldCustomer.select.value = String(cliente.id);
         clienteAntesDelAlta = fieldCustomer.select.value;
+        // SCRUM-915j · el recién creado no tiene botón todavía: se repinta con él a la cabeza.
+        sincronizarBotonesDeCliente();
         renderPreview();
         scheduleDraftSave();
       },
@@ -4782,7 +4897,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         const restored = loadDraft();
         if (restored) {
           draftRestored = true;
-          if (typeof restored === "string") fieldCustomer.select.value = restored;
+          if (typeof restored === "string") {
+            fieldCustomer.select.value = restored;
+            // SCRUM-915j · el `<select>` ya tiene al cliente del borrador; sus botones, todavía no.
+            sincronizarBotonesDeCliente();
+          }
           setAlert("info", '📝 Borrador restaurado. Sigue donde lo dejaste o pulsa "Limpiar formulario".');
         }
       }
@@ -5019,7 +5138,11 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
 
   loadInitialData();
 
-  fieldCustomer.select.addEventListener("change", function () {
+  // SCRUM-915j · ANTES era una función anónima pasada a `addEventListener`. Se le ha puesto nombre
+  // porque ahora la llaman DOS: el `change` del `<select>` (la vía que sigue usando quien lo escribe
+  // a mano, y el guard de navegador) y el botón de un cliente (`elegirCliente`). Una sola función:
+  // dos copias del cuerpo son dos maneras de elegir cliente que un día dejan de coincidir.
+  function alCambiarElCliente() {
     // SCRUM-591 (DOC-01) · la entrada de ALTA no es un cliente: es una acción. Se devuelve el
     // selector a lo que había ANTES de abrir el formulario — si el profesional cierra sin
     // guardar, el documento tiene que quedar exactamente como estaba, no con un valor raro.
@@ -5029,6 +5152,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
       return;
     }
     clienteAntesDelAlta = fieldCustomer.select.value;
+    // SCRUM-915j · los botones siguen al `<select>`: se marca el elegido (o se repinta si no tenía).
+    sincronizarBotonesDeCliente();
     // SCRUM-587: cambiar de cliente cambia el acuerdo, así que la propuesta se recalcula aquí.
     // Sólo se PROPONE: nada de esto escribe en las líneas.
     refrescarPropuestaDeDescuento();
@@ -5041,7 +5166,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     refrescarDireccionObra();
     renderPreview();
     scheduleDraftSave();
-  });
+  }
+  fieldCustomer.select.addEventListener("change", alCambiarElCliente);
   // SCRUM-602 · los DOS eventos, por el mismo motivo que el IVA por defecto de SCRUM-660: en un
   // `<select>` el navegador dispara `change`, y algunos además `input`. `refrescarDireccionObra`
   // y `scheduleDraftSave` son idempotentes, así que oírlo dos veces no cuesta nada.
