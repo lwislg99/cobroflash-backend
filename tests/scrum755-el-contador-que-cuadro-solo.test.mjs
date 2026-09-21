@@ -88,7 +88,11 @@ const CENSO_DE_SITIOS = {
   // Sale de UNA sola constante, `MARCA_DESC_LINEA`, así que la firma lo apaga de golpe. El día
   // que llegue, este número BAJA a 3 — no se borra la entrada, porque quedan otros marcadores
   // en el fichero (SCRUM-424 / SCRUM-405: la entrada sólo se borra cuando no queda ninguno).
-  'quotesView.js': 4,
+  //
+  // 🔴 SCRUM-915k · 21-sep-2026 · `quotesView.js` SALE: el fundador firmó sus cuatro textos
+  // (SCRUM-915, comentario 15868, 18-sep-2026) y los marcadores se retiraron en el mismo commit. La
+  // entrada se BORRA, no se pone a 0. Total: 30 → 26 sitios (21-sep-2026, medido por este test, no
+  // restado). Registro de la firma: `docs/microcopy/2026-09-21-SCRUM-915-marcadores-firmados.md`.
   'settingsView.js': 2,
   // SCRUM-576 (CONT-03) · 4 → 6 y de vuelta a 4. El campo «Empresa» del lado Persona entró con
   // sus dos ranuras marcadas (rótulo y opción de «ninguna») el 7-sep-2026, y el fundador **firmó

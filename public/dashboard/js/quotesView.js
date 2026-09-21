@@ -19,8 +19,6 @@ let quoteFormCreatedVia = 'text';
  *
  * `null`/omitido = presupuesto en blanco. Es de un solo uso: no se guarda en `window.appState`.
  */
-const MARCA_DESC_LINEA = '[PENDIENTE microcopy oficial]'; // SCRUM-632
-
 function renderQuotesView(container, template, documentoSuelto) {
   container.innerHTML = "";
   quoteFormCreatedVia = 'text';
@@ -1179,7 +1177,12 @@ descWrapper.appendChild(descLabel);
     // 🔴 6-sep-2026 · BAJA DE 2 A 1. El asesor FIRMÓ el texto de la tira; el rótulo del BOTÓN sigue
     // sin firmar y por eso esto no baja a 0. Que el contador siga en pie con un 1 es justo lo que
     // impide leer «ya no hay marcador que me estorbe» como «ya está aprobado todo».
-    const FORMA_DE_PAGO_SIN_APROBAR = 1;
+    //
+    // 🔴 SCRUM-915k · 21-sep-2026 · BAJA DE 1 A 0. El comentario 15868 de SCRUM-915 firmó el rótulo del
+    // botón, «Aplicar», y su marcador se retiró en el mismo commit. La constante SE QUEDA aunque valga
+    // cero —misma decisión que `SIN_APROBAR` en `atajoNuevo.js`—: sigue distinguiendo «no hay marcador»
+    // de «lo firmó el fundador», y si entra otro texto sin firma en esta tira tiene dónde subir.
+    const FORMA_DE_PAGO_SIN_APROBAR = 0;
     void FORMA_DE_PAGO_SIN_APROBAR; // se declara para que se pueda leer; no lo consume la vista
 
     /**
@@ -1220,13 +1223,11 @@ descWrapper.appendChild(descLabel);
     const propuestaPagoBtn = document.createElement("button");
     propuestaPagoBtn.type = "button";
     propuestaPagoBtn.className = "btn-ghost btn-sm";
-    // 🔴 MARCADOR, NO TEXTO INVENTADO (regla 30), con la grafía que el censo de SCRUM-402 CUENTA
-    // (`[PENDIENTE`): un marcador que el censo no ve es peor que ninguno.
-    //
-    // El rótulo del botón NO estrena literal propio, y es una decisión: el botón del 587 dice
-    // exactamente lo mismo —«acepto la propuesta»— y sigue sin firmar. Abrir un segundo hueco de
-    // microcopy para el mismo acto le daría al asesor dos textos que firmar donde hay UNA frase.
-    propuestaPagoBtn.textContent = "[PENDIENTE microcopy oficial]";
+    // SCRUM-915k · «Aplicar», FIRMADO en el comentario 15868 de SCRUM-915 (sustituye al marcador que
+    // llevó desde SCRUM-586). Es la misma acción que el botón del descuento pactado —«acepto la
+    // propuesta»—, y el fundador firmó un rótulo para cada uno: «Aplicar» aquí, donde lo que se
+    // aplica son unas formas de pago, y «Aplicar a las líneas» allí.
+    propuestaPagoBtn.textContent = "Aplicar";
 
     propuestaPagoWrap.appendChild(propuestaPagoTexto);
     propuestaPagoWrap.appendChild(propuestaPagoBtn);
@@ -1744,11 +1745,9 @@ descWrapper.appendChild(descLabel);
   const propuestaBtn = document.createElement("button");
   propuestaBtn.type = "button";
   propuestaBtn.className = "btn-ghost btn-sm";
-  // 🔴 MARCADOR, NO TEXTO INVENTADO (regla 30): el rótulo lo firma el asesor cuando tenga medida
-  // la caja del campo, y el servidor de medición lleva caído toda la sesión. La grafía es la que
-  // el censo de SCRUM-402 CUENTA (`[PENDIENTE`), para que salga en el recuento y no se quede
-  // dormida: un marcador que el censo no ve es peor que ninguno.
-  propuestaBtn.textContent = "[PENDIENTE microcopy oficial]";
+  // SCRUM-915k · «Aplicar a las líneas», FIRMADO en el comentario 15868 de SCRUM-915: sustituye al
+  // marcador que este botón llevó desde SCRUM-587 mientras el asesor no firmaba nada.
+  propuestaBtn.textContent = "Aplicar a las líneas";
 
   propuestaWrap.appendChild(propuestaTexto);
   propuestaWrap.appendChild(propuestaBtn);
@@ -1821,9 +1820,9 @@ descWrapper.appendChild(descLabel);
     if (alcance <= 0) { propuestaWrap.hidden = true; return; }
     propuestaWrap.hidden = false;
     propuestaWrap.dataset.pct = String(pct);
-    // 🔴 MARCADOR también aquí: el texto que enuncia el acuerdo es microcopy sin firmar. El dato
-    // —el porcentaje— sí es del profesional y se enseña, porque es lo que le deja decidir.
-    propuestaTexto.textContent = "[PENDIENTE microcopy oficial] · " + pct + " %";
+    // SCRUM-915k · la frase FIRMADA (comentario 15868 de SCRUM-915) con el dato del profesional, el
+    // porcentaje, que es lo que le deja decidir: «Este cliente tiene pactado un descuento del N %».
+    propuestaTexto.textContent = "Este cliente tiene pactado un descuento del " + pct + " %";
   }
 
   propuestaBtn.addEventListener("click", function () {
@@ -3788,12 +3787,12 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     // que invalidara «este producto» se la llevaba por delante. Ahora el `dataset` es sólo el
     // valor que PROPONE el catálogo al elegir; lo que manda es lo que hay en este campo.
     //
-    // 🛑 MICROCOPY PENDIENTE (regla 30): el rótulo nace con marcador y se ve en pantalla a
-    // propósito. Va en `MARCA_DESC_LINEA`, una sola constante, para que la firma lo apague de
-    // golpe. Declarado en el censo de SCRUM-402 y en el de SCRUM-755.
+    // SCRUM-915k · EL RÓTULO YA ESTÁ FIRMADO. Nació con marcador (regla 30) —`MARCA_DESC_LINEA`, una
+    // sola constante para que la firma lo apagara de golpe— y el comentario 15868 de SCRUM-915 lo
+    // firmó: «Descripción». Se van la constante, el marcador y el atributo `data-microcopy`, que
+    // decía «pendiente del fundador» de un texto que ya no lo está.
     // ═══════════════════════════════════════════════════════════════════════════════════
-    const descTd = campoLinea(MARCA_DESC_LINEA + " descripción", "quote-line__descripcion");
-    descTd.dataset.microcopy = "PENDIENTE_FUNDADOR";
+    const descTd = campoLinea("Descripción", "quote-line__descripcion");
     const descInput = document.createElement("textarea");
     descInput.rows = 2;
     descInput.className = "input";
