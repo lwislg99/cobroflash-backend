@@ -298,12 +298,17 @@ async function medirAnchura(nav, a) {
   anota('920h · Cada porqué va DENTRO de su campo y el campo lo apunta (aria-describedby)', enSuCampo.every((x) => x.ok), enSuCampo.map((x) => `${x.campo}:${x.ok ? 'sí' : 'NO'}`).join(' '));
   // Lo que queda en los campos: la BASE vacía y la CUOTA rellena (el motivo vacía la base, no el IVA); la
   // fecha se queda con la de hoy (el formulario nace con ella) y NO lleva la marca «leído de la foto».
-  const estadoCampos = await page.evaluate(() => ({
-    base: document.getElementById('a-base').value, cuota: document.getElementById('a-cuota').value,
-    tipo: document.getElementById('a-tipoiva').value, fecha: document.getElementById('a-fecha').value,
-    marcas: document.querySelectorAll('.leido').length,
-    fechaConMarca: !!document.getElementById('a-fecha').closest('label').querySelector('.leido'),
-  }));
+  // Cada lectura lleva su guarda: un campo que desaparece tiene que salir como ROJO CON SU NOMBRE (`null`),
+  // no como una excepción que tumba el medidor sin veredicto (medido con la mutación M14 de 920h).
+  const estadoCampos = await page.evaluate(() => {
+    const val = (id) => { const e = document.getElementById(id); return e ? e.value : null; };
+    const f = document.getElementById('a-fecha');
+    return {
+      base: val('a-base'), cuota: val('a-cuota'), tipo: val('a-tipoiva'), fecha: val('a-fecha'),
+      marcas: document.querySelectorAll('.leido').length,
+      fechaConMarca: !!(f && f.closest('label') && f.closest('label').querySelector('.leido')),
+    };
+  });
   anota('920h · La base queda VACÍA, la cuota y el tipo rellenos, la fecha con la de hoy y sin marca', estadoCampos.base === '' && estadoCampos.cuota === '14.70' && estadoCampos.tipo === '21%' && estadoCampos.fecha !== '' && !estadoCampos.fechaConMarca && estadoCampos.marcas === 3, JSON.stringify(estadoCampos));
   // El descarte del bloque plegado lo ABRE, y el resumen lo dice (con su plural).
   const bloque = await page.evaluate(() => ({ abierto: document.getElementById('p-factura').open, resumen: document.querySelector('#p-factura > summary .val').textContent.trim() }));
