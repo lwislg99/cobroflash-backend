@@ -1434,8 +1434,10 @@ fiscal y sin envío**):
    hoy; si un día pesa, es un ALTER aditivo aparte (A5).
 2. **Pantalla · carril S2.** En `customerDetailView.js`, una **tercera pestaña «Trabajos»** con el
    mismo mecanismo de las otras dos (`:194-221`) y los componentes que ya existen (`.data-card`,
-   `.status-pill`): fecha · título · estado · enlaces a su parte y su albarán con «📷 3». Y una línea
-   **«Próxima visita»** en la cabecera. Una pantalla, un componente: no es rediseño (Parte AB).
+   `.status-pill`): fecha · título · estado · enlaces a su parte y su albarán con «📷 3». El título
+   sale de **`tituloDeTrabajo()`** (`jobs/domain/trabajoDirecto.ts`), que es quien decide cómo se
+   llama un Trabajo: `Job.titulo` puede ser `null` (SCRUM-944b), y leerlo crudo repite el defecto de
+   Gastos. Y una línea **«Próxima visita»** en la cabecera. Una pantalla, un componente: no es rediseño (Parte AB).
 3. **Regla:** el enlace al parte necesita meter `parte-detail` en `DETALLES` de `app.js`, o se
    pierde al recargar. Es una línea y **va en la misma PR**.
 
