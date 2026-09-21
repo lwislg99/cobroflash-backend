@@ -213,6 +213,10 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // del CSS no había pintado nunca—. Comprobado en rojo contra `e73e1630` (20-sep-2026): 7
   // hallazgos en 5 de 5 casos; y por mutación, quitar SÓLO la delegación tumba exactamente las dos
   // casillas de la fecha y ninguna más.
+  // SCRUM-915h · entra `guard:conceptos-limpios`. Mira el paso Conceptos DESPUÉS DE PULSAR: el menú
+  // ⋯ de la línea, la hoja de ajustes, qué ficha se ve y qué no, y la tecla N; nada de eso existe
+  // fuera del render. Comprobado en rojo con el `public/` de main, con el control de la N (en #home
+  // SÍ abre) medido primero y en página limpia (21-sep-2026): 8 hallazgos en 5 de 5 casos.
   // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
   // ⚠️ NOVENA colisión (20-sep-2026, al mergear main en la rama del #1541): otra vez los DOS
   // comentarios en conflicto y la CIFRA no —917e decía 31 y main ya decía 31 por otro camino—,
@@ -278,6 +282,10 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // de aquí el número escrito a mano y main, a la vez, lo subía a 33 con 915e1. Se quedan TODOS los
   // comentarios de los dos lados, se tira la línea `assert.equal(fuera.length, 33, …)` —era justo lo
   // que 970 arregla— y `guard:documento-vivo` se apunta en su propia línea de la lista declarada.
+  // ⚠️ DUODÉCIMA colisión (21-sep-2026, al mergear main en `scrum-915h-conceptos-limpios`): la rama
+  // traía el número escrito a mano (34, con `guard:conceptos-limpios`) y main ya lo había quitado
+  // con SCRUM-970. Se queda TODO lo de main, se tira el `assert.equal(fuera.length, 34, …)` —es lo
+  // que 970 arregla— y `guard:conceptos-limpios` se apunta en su propia línea de la lista declarada.
 });
 
 test('SCRUM-522 · la lista sale DERIVADA de package.json, no escrita aquí', () => {

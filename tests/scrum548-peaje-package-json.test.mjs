@@ -120,10 +120,15 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // pasos), y éste mira el DOCUMENTO de la derecha —lo que el cliente recibe—: si su pie miente
   // sobre la caducidad, los tres siguen verdes y el papel sale mal igual. Juntarlos daría un guard
   // que al caer no dice si se rompió el editor o el papel.
+  // SCRUM-915h · el editor pasa a CINCO: entra `guard:conceptos-limpios`. No se fusiona con
+  // `guard:pasos-del-editor` aunque mire el mismo paso: aquél juzga el ANDAMIO (qué paso está
+  // abierto, qué se puede pulsar para avanzar) y éste lo que hay DENTRO de Conceptos (cuántas
+  // líneas, qué ficha se ve, qué ofrece el menú ⋯, dónde va el desglose del dinero). Juntarlos daría
+  // un guard que al caer no dice si se rompió el recorrido o el contenido del paso.
   assert.deepEqual(resumen, [
     '2×/dashboard/index.html#quotes-detail/1',
     '2×/medicion.html',
-    '4×/dashboard/index.html#quotes-new',
+    '5×/dashboard/index.html#quotes-new',
     '5×/index.html',
   ],
     '🔴 HA CAMBIADO QUIÉN MIDE QUÉ PÁGINA.\n'

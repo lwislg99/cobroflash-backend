@@ -42,7 +42,9 @@ test('SCRUM-139 F5: el orden sigue derivándose del DOM, sin una segunda forma d
 
 test('SCRUM-139 F5: el menú es el helper compartido de AB3, con salida si no está', () => {
   assert.ok(
-    /overflowMenu\(\[subirBtn, bajarBtn, removeBtn\]/.test(codigo),
+    // SCRUM-915h · la v3 añade «Ajustes» DELANTE (menú «Ajustes, Subir, Bajar, Eliminar línea»).
+    // Lo que este caso vigila no cambia: que las acciones pasen por el helper compartido.
+    /overflowMenu\(\[(?:ajustesItem, )?subirBtn, bajarBtn, removeBtn\]/.test(codigo),
     'las acciones de la línea dejan de usar overflowMenu: se perdería teclado, foco, cierre y la hoja inferior de AB3'
   );
   // Perder el menú no puede costar la posibilidad de BORRAR una línea.

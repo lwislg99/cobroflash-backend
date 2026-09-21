@@ -19,12 +19,19 @@ const css = leerFuente(HOJA);
  * render: prueban que no vuelvan las dos regresiones concretas que rompen esta fase.
  */
 
-test('SCRUM-139 F2: el editor arranca con varias líneas dibujadas, no con una', () => {
+// 🔴 SCRUM-915h · RE-ANCLADO, NO BORRADO. Este caso exigía `>= 2` por la decisión de SCRUM-139 F2
+// («varias líneas son una invitación»). La v3 del editor, APROBADA por el fundador
+// (`docs/master/SCRUM-915.md`, cabecera; fila «UNA línea lista para escribir» del PASO 0), la
+// sustituye: con los pasos, el de Conceptos ya dice qué hacer en su frase guía y «+ Añadir línea»
+// va pegado debajo. Mismo procedimiento que 915d con SCRUM-660 (decisión A del orquestador).
+// Lo que se conserva del caso es lo que no ha cambiado: el número es explícito, de un solo sitio, y
+// NUNCA 0 (eso lo sujeta además SCRUM-794). Lo que cambia es el valor exigido: el de la v3.
+test('SCRUM-139 F2 · re-anclado por SCRUM-915h: el editor arranca con UNA línea, la de la v3', () => {
   const m = src.match(/const\s+LINEAS_CUADERNILLO\s*=\s*(\d+)/);
   assert.ok(m, 'no existe LINEAS_CUADERNILLO: el número de líneas del cuadernillo debe ser explícito y de un solo sitio');
-  assert.ok(
-    Number(m[1]) >= 2,
-    `LINEAS_CUADERNILLO = ${m[1]}: con una sola línea esto vuelve a ser una hoja en blanco con un botón, que es justo lo que SCRUM-139 F2 retira`
+  assert.equal(
+    Number(m[1]), 1,
+    `LINEAS_CUADERNILLO = ${m[1]}: la v3 aprobada (SCRUM-915) pide UNA línea lista para escribir`
   );
 });
 

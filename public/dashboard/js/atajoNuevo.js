@@ -88,6 +88,22 @@
     return Object.prototype.hasOwnProperty.call(registro, vista) ? registro[vista] : null;
   }
 
+  /**
+   * 🔴 SCRUM-915h · ¿ESTA VISTA ES YA UNA CREACIÓN? Si lo es, la «N» no tiene nada que abrir.
+   *
+   * El defecto: dentro del editor de presupuesto, con el foco fuera de un campo (tras pulsar un
+   * botón, por ejemplo), la «N» abría la Cotización rápida ENCIMA de un presupuesto a medias. Pasaba
+   * porque `quotes-new` e `invoices-new` no registran destino y `app.js` caía a su respaldo.
+   *
+   * El arreglo NO es registrarles un destino vacío (sería un control muerto) ni quitar el respaldo
+   * (le quitaría el atajo a quien lo usa en las listas): es que el respaldo no se aplique cuando ya
+   * estás creando. La regla sale del NOMBRE de la vista, no de una lista a mano: de las vistas con
+   * hash de `app.js`, las que acaban en `-new` son exactamente las dos del editor.
+   */
+  function esUnaCreacion(vista) {
+    return typeof vista === "string" && /-new$/.test(vista);
+  }
+
   /** Para el censo: qué vistas tienen hoy destino registrado. */
   function vistasConAtajo() {
     return Object.keys(registro).sort();
@@ -221,6 +237,7 @@
     SELECTOR_MODAL: SELECTOR_MODAL,
     registrar: registrar,
     accionDe: accionDe,
+    esUnaCreacion: esUnaCreacion,
     vistasConAtajo: vistasConAtajo,
     textoDe: textoDe,
     sePuedeDisparar: sePuedeDisparar,

@@ -1653,9 +1653,11 @@ descWrapper.appendChild(descLabel);
   // palabra dos veces (AB1, Una Sola Voz), y de paso empujaba hacia abajo lo único que el
   // usuario está buscando en esta pantalla: cuánto suma lo que acaba de escribir.
 
-  const totalsBox = document.createElement("div");
-  totalsBox.className = "quote-totals";
-  blockTotals.appendChild(totalsBox);
+  // 🔴 SCRUM-915h · AQUÍ VIVÍA `.quote-totals` (Suma de líneas / Descuento / Descuento global /
+  // Base imponible / IVA), y se retira de la izquierda. La v3 pide en Conceptos sólo el TOTAL —que
+  // es el KPI de abajo, `kpiBox`— y el desglose en el documento de la derecha, que es donde el
+  // cliente lo va a leer. NO se quitó hasta que el documento pintó las filas de descuento: antes
+  // de eso, borrarlo dejaba el descuento sin verse en ninguna parte.
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-594 (DOC-04) · EL DESCUENTO GLOBAL — EN EUROS, Y DETRÁS DE UN BOTÓN.
@@ -1712,7 +1714,10 @@ descWrapper.appendChild(descLabel);
   // SCRUM-600 · el DESCUENTO GLOBAL viaja en `discountGlobalAmount`, una clave del cuerpo del
   // presupuesto que el cuerpo del documento suelto no tiene. Mismo criterio que el descuento de
   // línea: no se pide lo que el emisor no puede guardar.
-  if (!esDocumentoSuelto) blockTotals.appendChild(dtoGlobalWrap);
+  // SCRUM-915h · y va JUNTO A «+ Añadir línea» (v3: «secundaria junto a “+ Añadir línea”»), no en
+  // el bloque de totales, que en Conceptos ya sólo lleva el TOTAL. `addLineBtnBottom` es el último
+  // hijo de `blockLines` en este punto, así que esto lo deja pegado detrás.
+  if (!esDocumentoSuelto) blockLines.appendChild(dtoGlobalWrap);
 
   // ═══ SCRUM-587 (CONT-14) · EL DESCUENTO PACTADO CON EL CLIENTE, PROPUESTO ═══════════════════
   //
@@ -2519,11 +2524,24 @@ descWrapper.appendChild(descLabel);
         // esconde. Sin esto, un descuento escrito viviría dentro de una hoja cerrada — un dato
         // invisible que nadie corrige, que es justo lo que CONT-01 ② prohíbe.
         const dtoDeEsta = window.quoteDescuentos.dtoDeLinea(line.dtoInput && line.dtoInput.value);
+        const esSuplido = !!(line.suplidoCheck && line.suplidoCheck.checked);
         line.ajustesBtn.textContent = resumenAjustes(
-          !!(line.suplidoCheck && line.suplidoCheck.checked),
+          esSuplido,
           safeVat,
           0,
         ) + (dtoDeEsta > 0 ? ` · Dto. ${dtoDeEsta} %` : '');
+        // 🔴 SCRUM-915h · LA FICHA SÓLO SI LA LÍNEA NO VA CON LO DE SIEMPRE (v3: «otro IVA,
+        // descuento, suplido»). «Lo de siempre» es el IVA por defecto del documento, sin descuento
+        // y sin suplido: una ficha «IVA 21 %» repetida en cada línea no dice nada que no diga ya el
+        // documento. Cuando algo SÍ es distinto, la ficha vuelve y lo dice (F4, CONT-01 ②): un dato
+        // distinto nunca queda escondido. La hoja se sigue abriendo siempre desde el menú ⋯.
+        // En el documento suelto la ficha es el único acceso al IVA de la línea: se queda siempre.
+        const ivaDeSiempre = parseFloat(String(fieldVatDefault.input.value || "21").replace(",", "."));
+        const loDeSiempre = !esSuplido && !(dtoDeEsta > 0)
+          && Number.isFinite(ivaDeSiempre) && safeVat === ivaDeSiempre;
+        // Clase y no `hidden`: en la rejilla ancha la ficha tiene su columna, y quitarla del flujo
+        // correría el total y el ⋯ de ESA fila bajo la columna de al lado (styles.css lo explica).
+        line.ajustesBtn.classList.toggle("is-de-siempre", !esDocumentoSuelto && loDeSiempre);
       }
 
       // SCRUM-594 · la línea, tal cual, para la pieza que calcula los totales. Mismo recorrido.
@@ -2568,44 +2586,12 @@ descWrapper.appendChild(descLabel);
     vatTotal = T.cuotaCents / 100;
 
     const total = T.totalCents / 100;
-    const effVat = base > 0 ? Math.round((vatTotal / base) * 100) : 0;
 
-    // Premium: UNA sola representación de los totales (antes la lista y la tira
-    // "€X + IVA = €Y" decían lo mismo dos veces). Base + IVA como desglose y el
-    // TOTAL como única cifra grande (Regla del Importe: en Tinta).
-    // P-A66-3: formato es-ES compartido (adiós al hack del símbolo por moneda).
-    // SCRUM-139 F3: el TOTAL como Signature KPI (DESIGN.md §5) — Label en MAYÚSCULAS
-    // ARRIBA y la cifra Display debajo, no una fila más de una lista. Antes el total era
-    // `.quote-vat-calc`: una fila `space-between` con "Total presupuesto" a 20 px peleando
-    // por el ancho con su propia cifra. Base e IVA quedan como APOYO (pequeños, apagados):
-    // se consultan, no se buscan. La cifra sigue la Regla del Importe (Tinta, ≥700, tabular).
-    // SCRUM-229: tercera fila de APOYO, del mismo tipo que las dos de arriba — sin componente
-    // nuevo y sin tocar `.quote-line`. Coste medido: +24 px FIJOS, no por fila. El alcance que se
-    // descartó (margen e IVA en columnas por línea) costaba +77 px POR FILA a 390 px, o +770 px
-    // en un presupuesto de 10 líneas: dos pantallas más de scroll en obra.
-    //
-    // Microcopy APROBADO por el fundador (29-jul-2026), literal (regla 30): la etiqueta es
-    // «Margen» y el valor lo compone `textoMargen` — «18,00 € (18 %)», o
-    // «18,00 € · 2 líneas sin calcular» cuando alguna línea no se pudo leer.
-    // SCRUM-594 (DOC-04) · las filas de descuento van DELANTE, y sólo cuando hay descuento.
-    // 🔴 Sin descuento el bloque queda EXACTAMENTE como estaba —mismas dos filas, mismos
-    // rótulos—: un presupuesto anterior a este ticket no puede cambiar de aspecto ni de cifras.
-    // Los flags «activable» no llevan columna (regla 27): el dato ES el flag.
-    //
-    // «Base imponible» NO se renombra. Es el rótulo vivo y aprobado, el mismo que imprime el PDF
-    // (`presentacionIva.ts`), y además es el correcto: la base imponible es la que soporta el
-    // IVA, o sea la de DESPUÉS del descuento. Las filas nuevas son las de arriba.
-    const filasDto = T.descuentoLineasCents > 0 || T.descuentoGlobalCents > 0
-      ? `<div class="quote-totals__apoyo"><span>Suma de líneas</span><strong>${fmtMoneyEs(T.sumaSinDescuentoCents / 100, cur)}</strong></div>`
-        + (T.descuentoLineasCents > 0
-          ? `<div class="quote-totals__apoyo"><span>Descuento</span><strong>−${fmtMoneyEs(T.descuentoLineasCents / 100, cur)}</strong></div>` : '')
-        + (T.descuentoGlobalCents > 0
-          ? `<div class="quote-totals__apoyo"><span>Descuento global</span><strong>−${fmtMoneyEs(T.descuentoGlobalCents / 100, cur)}</strong></div>` : '')
-      : '';
-    totalsBox.innerHTML = filasDto + `
-      <div class="quote-totals__apoyo"><span>Base imponible</span><strong>${fmtMoneyEs(base, cur)}</strong></div>
-      <div class="quote-totals__apoyo"><span>IVA (${effVat}%)</span><strong>${fmtMoneyEs(vatTotal, cur)}</strong></div>
-    `;
+    // SCRUM-139 F3: el TOTAL como Signature KPI (DESIGN.md §5) — Label en MAYÚSCULAS ARRIBA y la
+    // cifra Display debajo. La cifra sigue la Regla del Importe (Tinta, ≥700, tabular).
+    // 🔴 SCRUM-915h · el desglose que iba aquí (`.quote-totals`: Suma de líneas, los dos
+    // descuentos, Base imponible e IVA) vive ahora en el documento de la derecha, en
+    // `renderPreview`, con los mismos rótulos y la misma cuenta (`T`). En Conceptos queda el TOTAL.
     // ✅ SCRUM-600 (DOC-10) · «Total» · FIRMADO POR EL ASESOR el 7-sep-2026, DERIVANDO.
     //
     // PROCEDENCIA, porque «aprobado» sin decir dónde consta es una afirmación que nadie puede
@@ -2629,7 +2615,8 @@ descWrapper.appendChild(descLabel);
     // así aparece al añadir una línea nueva y desaparece sola en cuanto ya no queda ninguna sin
     // descuento. No lleva flag propio (regla 27) — el dato ES el flag.
     refrescarPropuestaDeDescuento();
-    return { base, vatTotal, total };
+    // SCRUM-915h · `T` viaja al documento: sus filas de descuento salen de ESTA cuenta, no de otra.
+    return { base, vatTotal, total, T };
   }
 
   // SCRUM-915e2 · memoria del resalte. Vive fuera de `renderPreview` porque comparar un pintado
@@ -2955,6 +2942,32 @@ tr.appendChild(tdConcept);
     // Totales en preview
     const totalsBlock = document.createElement("div");
     totalsBlock.className = "preview-totals-block";
+
+    // 🔴 SCRUM-915h · EL DESGLOSE DEL DESCUENTO, EN EL PAPEL. Era el requisito para sacar los
+    // totales del editor: el documento pintaba Base / IVA / Total y NO «Suma de líneas» ni los dos
+    // descuentos, así que quitarlos de la izquierda habría dejado el descuento sin verse en ningún
+    // sitio — y un dato que nadie ve es un dato que nadie corrige (CONT-01 ②).
+    //
+    // Mismas filas, misma condición y mismos rótulos que el pie del PDF (`pieDePresupuesto`,
+    // `presentacionIva.ts`) y que la página de firma (SCRUM-888, comentario 15788): sin descuento,
+    // el bloque queda EXACTAMENTE como estaba. Las cifras salen de `T`, la cuenta del editor.
+    const T = totals.T;
+    const filaDoc = (rotulo, cents, negativo) => {
+      const fila = document.createElement("div");
+      fila.className = "preview-total-row";
+      const s = document.createElement("span");
+      s.textContent = rotulo;
+      const n = document.createElement("strong");
+      n.textContent = (negativo ? "−" : "") + formatMoney(cents / 100, currency);
+      fila.appendChild(s);
+      fila.appendChild(n);
+      totalsBlock.appendChild(fila);
+    };
+    if (T && (T.descuentoLineasCents > 0 || T.descuentoGlobalCents > 0)) {
+      filaDoc("Suma de líneas", T.sumaSinDescuentoCents, false);
+      if (T.descuentoLineasCents > 0) filaDoc("Descuento", T.descuentoLineasCents, true);
+      if (T.descuentoGlobalCents > 0) filaDoc("Descuento global", T.descuentoGlobalCents, true);
+    }
 
     const rowBase = document.createElement("div");
     rowBase.className = "preview-total-row";
@@ -3610,7 +3623,10 @@ conceptInput.addEventListener("input", () => {
       overlay.remove();
       document.removeEventListener("keydown", onEsc);
       hojaAbierta = null;
-      try { line.ajustesBtn.focus({ preventScroll: true }); } catch (_e) { line.ajustesBtn.focus(); }
+      // SCRUM-915h · si la ficha está oculta (línea «de siempre»), la hoja se abrió desde el menú ⋯
+      // y el foco vuelve a él: enfocar un botón oculto deja el foco en ninguna parte.
+      const vuelta = line.ajustesBtn.classList.contains("is-de-siempre") ? line.menuBtn : line.ajustesBtn;
+      try { vuelta.focus({ preventScroll: true }); } catch (_e) { vuelta.focus(); }
     }
     function onEsc(e) {
       if (e.key === "Escape") { e.stopPropagation(); cerrarHoja(); }
@@ -3952,12 +3968,31 @@ conceptInput.dataset.pfProductId = ""; // vacío = "manual"
     // El menú es el helper compartido de AB3 (teclado, foco, cierre, hoja inferior en ≤640 px).
     // Si no estuviera cargado, las acciones se quedan visibles sueltas: perder el menú no puede
     // costar la posibilidad de borrar una línea.
+    // 🔴 SCRUM-915h · «Ajustes» ENTRA EN EL MENÚ, el primero (v3: «Ajustes, Subir, Bajar, Eliminar
+    // línea»), porque la ficha de la fila ya sólo aparece cuando la línea NO va con lo de siempre
+    // (ver `recalcTotals`). Sin este ítem, una línea normal no tendría por dónde abrir su hoja.
+    // Texto firmado en el comentario 15868. En el DOCUMENTO SUELTO NO entra: su hoja tiene un solo
+    // campo («IVA %») y el literal prometería descuento y descripción, que ahí no existen; allí la
+    // ficha se queda siempre a la vista, como hoy, y es el único control del IVA de la línea.
+    // `null` en el suelto: `overflowMenu` descarta los huecos (`filter(Boolean)`), así que el menú es
+    // UNA llamada con la misma lista en los dos modos.
+    let ajustesItem = null;
+    if (!esDocumentoSuelto) {
+      ajustesItem = document.createElement("button");
+      ajustesItem.type = "button";
+      ajustesItem.textContent = "Ajustes (IVA, descuento, descripción…)";
+      ajustesItem.addEventListener("click", function () { abrirHojaAjustes(lineObj); });
+    }
+
     const menuBtn =
       typeof overflowMenu === "function"
-        ? overflowMenu([subirBtn, bajarBtn, removeBtn], { label: "Acciones de la línea" })
+        ? overflowMenu([ajustesItem, subirBtn, bajarBtn, removeBtn], { label: "Acciones de la línea" })
         : null;
     if (menuBtn) actionsTd.appendChild(menuBtn);
-    else { actionsTd.appendChild(subirBtn); actionsTd.appendChild(bajarBtn); actionsTd.appendChild(removeBtn); }
+    else {
+      if (ajustesItem) actionsTd.appendChild(ajustesItem);
+      actionsTd.appendChild(subirBtn); actionsTd.appendChild(bajarBtn); actionsTd.appendChild(removeBtn);
+    }
 
     /**
      * SCRUM-139 F4 · MARGEN E IVA A LA HOJA INFERIOR.
@@ -4201,7 +4236,10 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
    * NO se dibuja al restaurar un BORRADOR: ahí el editor no está en blanco, y añadir vacías
    * encima de lo que el usuario ya escribió sería ruido, no invitación.
    */
-  const LINEAS_CUADERNILLO = 3;
+  // 🔴 SCRUM-915h · BAJA DE 3 A 1, y es la v3 aprobada («UNA línea lista para escribir»), no un
+  // ajuste de gusto. Con los pasos (915d) el paso Conceptos ya dice qué hacer en su frase guía y
+  // «+ Añadir línea» va pegado debajo: tres renglones vacíos eran tres cosas más a la vista.
+  const LINEAS_CUADERNILLO = 1;
 
   function dibujarCuadernillo() {
     for (let i = 0; i < LINEAS_CUADERNILLO; i++) addLine();
