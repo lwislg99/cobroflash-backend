@@ -972,3 +972,110 @@ conclusión.
 - Sin `git stash`, sin reescribir historia, sin tocar ninguna base ni staging.
 - El PR #1519 (ya mergeado) no se toca ni se reabre: esta entrada va en una rama nueva
   (`scrum-908c2-no-concluyente-declarado`), como corresponde a A17 sobre una rama ya cerrada.
+
+# SCRUM-908c-3 · CORRECCIÓN: el mecanismo SÍ se reproduce en Linux con el hijo del runner — es intermitente, no ausente
+
+**Fecha:** 21-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición, corrige § 908c-2. **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `840b7c5668d79c991751be3bb73a7445114d9974` (el merge de #1519 seguía roto sobre esta base) · 2026-09-21T14:40Z
+**Rama:** `scrum-908c2-no-concluyente-declarado` (mismo PR #1591 que § 908c-2; se anexa aquí en vez de abrir una rama nueva porque el hallazgo llegó antes de empujar el PR y no cambia el fichero de test, sólo el expediente)
+
+> **Cómo llegó esto:** con el PR #1519 ya en `main` (§ 908c-2), el check obligatorio de `main` se puso en
+> `failure` y taponó también un PR ajeno y sin relación (#1589, de J1, un único `.md`). El orquestador
+> del equipo de Javier lo midió, me lo escribió por el canal y yo lo re-verifiqué de forma independiente
+> antes de actuar (descargando los logs yo misma, no fiándome del aviso). **Corrige mi propia lectura de
+> § 908c-2**, que declaraba el mecanismo NO CONCLUYENTE a partir de UN solo run. Un solo run nunca basta
+> — es exactamente el mismo defecto de método que 908 (3 de 38) y 908b (15 de 72) ya habían medido y
+> corregido cada uno al anterior; me tocó a mí cometer la versión de esta tanda.
+
+---
+
+## LO QUE CAMBIA
+
+**El mecanismo de SCRUM-908 SÍ se reproduce con el caso fabricado en el CI de Linux.** No en el run que
+yo medí en § 908c-2 (`35608495200`, `colaAlSalir=0` en los dos brazos) — en OTRO run, sobre el MISMO
+código sin arreglo, 27 minutos después.
+
+**El run:** `35611927529`, job **«build + tests (con banco desechable)»** (`id=106372921062`), disparado
+por el PR **#1589** (J1, `docs/master/SCRUM-1006.md`, cero código — el fallo no tiene nada que ver con su
+contenido; corre porque el check obligatorio corre en todo PR). `conclusion=failure`.
+
+Verificado por API antes de citarlo:
+
+```
+"/c/Program Files/GitHub CLI/gh.exe" pr checks 1589 --repo lwislg99/cobroflash-backend
+"/c/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/106372921062/logs > log.txt
+grep -n "SCRUM-908c\|AssertionError" log.txt
+```
+
+Lo que imprimió, líneas 10770-11375 del log (`node=v24.20.0`, misma versión que § 908c-2):
+
+```
+# SCRUM-908c · node=v24.20.0 pausa=2000ms tamRelleno=31858 capacidadBase=110592
+# CAPACIDAD    escrito=114688 cola-al-parar=4096 recibido=110592 salioDuranteLaPausa=true
+# SUELO        bytes=265874 mensajes=35 sobrante=0 llegados=[…los 5…]
+# SIN ARREGLO  bytes=265874 mensajes=35 sobrante=0 llegados=[…los 5…] salioDuranteLaPausa=false code=1 colaAlSalir=0
+# CON ARREGLO  bytes=258638 mensajes=9  sobrante=0 llegados=[RELLENO-908c]              salioDuranteLaPausa=false code=1 colaAlSalir=7236
+
+✔ SCRUM-908c · 🔴 SIN ARREGLO … (5.859067ms)
+✖ SCRUM-908c · ✅ CON ARREGLO: stdout bloqueante en el hijo, la cola al salir es SIEMPRE 0 y llega TODO (2.640438ms)
+  AssertionError [ERR_ASSERTION]: 🔴 con stdout bloqueante el hijo salió con 7236 bytes aún pendientes:
+  el arreglo no impidió la salida con cola (o el --import no llegó). bytes=258638 mensajes=9 sobrante=0
+  llegados=[RELLENO-908c] salioDuranteLaPausa=false code=1 colaAlSalir=7236
+      at tests/scrum908c-la-cola-que-se-pierde.test.mjs:395:10
+```
+
+**El dato limpio, que es lo que lo hace concluyente:** `258.638 + 7.236 = 265.874`. Exactamente la
+`SUELO`. El hijo escribió los 265.874 bytes enteros en su propio `Writable` —los 35 mensajes,
+incluidos el NOMBRADO y la COLA—, pero al llamar a `process.exit()` sólo **258.638** habían salido de
+verdad por la tubería (9 mensajes, hasta el veredicto de RELLENO): los **7.236 bytes restantes —26
+mensajes, el NOMBRADO y los tres de la COLA— se quedaron dentro y se truncaron.** Es la LEY del
+fichero, ejercitada de verdad por primera vez con datos de Linux: cola > 0 al salir → el NOMBRADO y la
+COLA faltan. Faltaron.
+
+**Por qué CON ARREGLO cayó y SIN ARREGLO no, con el MISMO código (`--import` seguía comentado en
+`main`):** son dos invocaciones SEPARADAS del mismo hijo, una detrás de otra (`sinArreglo` primero,
+`conArreglo` después, cada una su propio `spawn`). En ESTE run, la primera invocación (SIN ARREGLO)
+salió con `colaAlSalir=0` —no perdió nada, y su LEY lo exige así y se cumplió—; la segunda (CON
+ARREGLO, mismo script, sin `--import`) salió con `colaAlSalir=7236` —si tuviera la LEY de SIN ARREGLO
+habría pasado también (NOMBRADO y COLA ausentes, que es justo lo que pasó), pero tiene la aserción del
+arreglo (`colaAlSalir === 0` sin condición), que con el `--import` apagado no tiene por qué cumplirse,
+y no se cumplió. **El caso no es no-determinista en lo que mide** (mide bien las dos veces): lo que
+varía de una invocación a otra, incluso dentro del mismo proceso padre y milisegundos aparte, es si ESE
+hijo concreto alcanza a vaciar su tubería antes de morir.
+
+---
+
+## LO QUE ESTO CONFIRMA Y LO QUE SIGUE SIN CONFIRMAR
+
+- **Confirmado:** el mecanismo de `process.exit()` truncando un `Writable` con cola pendiente **ocurre**
+  con el hijo fabricado en el CI de Linux, con `node:test` y `--test-force-exit` de por medio. No hacía
+  falta escribir más que la capacidadBase para que ocurra (§ 908c-2 especulaba con relleno mayor); ocurrió
+  con el mismo tamaño (31.858) que en el run limpio.
+- **Confirmado que es INTERMITENTE dentro de la misma calibración**, no que el caso esté mal calibrado:
+  dos invocaciones seguidas del mismo hijo, en el mismo proceso padre, con el mismo tamaño, dieron
+  `colaAlSalir=0` y `colaAlSalir=7236`. Eso es justo la naturaleza del defecto original de SCRUM-908 (una
+  mudez que gotea, no que se repite siempre) — reproducida ahora en el mecanismo que se propuso como su
+  causa, no sólo en el síntoma del meta-guard.
+- **Sigue sin confirmarse la pregunta de § 908c-2 ⑥** (por qué el hijo con `node:test` necesita MÁS que
+  el doble de la capacidadBase para perder algo, cuando el hijo pelado la pierde nada más verla): sigue
+  sin medirse cuál es el umbral real para el hijo con runner, sólo que existe y se cruza a veces con
+  `tamRelleno=31858`.
+- **Lo que el arreglo (`--import`, restaurado en este mismo PR) debería resolver:** con stdout
+  bloqueante, cada `write()` del hijo se vacía antes de devolver el control, así que no debería poder
+  quedar cola pendiente al llegar a `process.exit()` **en ningún caso**, intermitente o no. El PR #1591
+  (que lleva el arreglo restaurado, § 908c-2) es la primera vez que ese arreglo se pone a prueba contra
+  una corrida donde el mecanismo REALMENTE se dispara. Su resultado (verde u otro rojo) es el primer dato
+  real sobre si el arreglo propuesto a S3 funciona, y se anota en cuanto se tenga.
+
+---
+
+## LO QUE ME SALIÓ MAL (A9)
+
+**Declaré «NO CONCLUYENTE» en § 908c-2 con UNA sola medición del CI de Linux (el run que citaba el propio
+encargo), sin pedir una segunda antes de escribirlo como expediente.** Es el error que esta misma familia
+de entradas (908 → 908b) ya había medido y corregido dos veces en otro: «un cero no significa limpio,
+significa que no he mirado», y aquí un `colaAlSalir=0` en una sola pasada no significaba «el mecanismo no
+ocurre», significaba «no ocurrió esta vez». La diferencia la trajo un aviso externo (el check obligatorio
+en rojo), no una segunda medición propia planeada. **Correspondía haber corrido el caso fabricado varias
+veces en CI antes de escribir un veredicto, no una.** Queda dicho para quien siga: con este caso, N=1 en
+Linux no alcanza para ningún veredicto, ni «reproducido» ni «no reproducido».
