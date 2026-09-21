@@ -206,7 +206,9 @@ const paraLaLanding = ({ validUntil, createdAt, timezone }) => ({
 
 /** La frase que lee el cliente en la página: lo que hay dentro del badge, sin el ⏳. */
 const fraseDeLaPagina = (html) => {
-  const m = html.match(/<div class="validity-badge">⏳ ([^<]+)<\/div>/);
+  // `[^>]*` entre la clase y el `>`: deja hueco a los atributos (SCRUM-553: un extractor con el `>` pegado
+  // deja de ver la etiqueta el día que alguien le añade un `id` o un `data-`).
+  const m = html.match(/<div class="validity-badge"[^>]*>⏳ ([^<]+)<\/div>/);
   return m ? m[1] : null;
 };
 
