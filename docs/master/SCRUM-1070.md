@@ -42,3 +42,9 @@ Instrumento: `gasto-arranque.mjs` (`sesiones`, `resultados`, `arranque`) y dos s
 ## Ficheros
 
 `scripts/equipo/gasto-arranque.mjs` (subcomando `vivas`, USO), `tests/scrum1070-vivas-relevo.test.mjs`, este apartado. Commit del código: `7d98023bc9c8ad763203e20ff5062e73c84224df`.
+
+## 1070b · Norma A25 y relevo a 200k (21-sep-2026)
+
+Añade la sección A25 «Eficiencia y gasto» a docs/equipo/00-normas-comunes.md, la incluye en 
+orma.mjs --arranque (ahora 14 secciones + índice de 11), baja el relevo de A19 de 300k a 200k (decisión del orquestador; también en orquestador.md, orquestador-autonomo.md, 	raspaso.md) y UMBRAL_CONTEXTO de sesion.mjs (autorización escrita del fundador; la copia de AppData la refresca el orquestador). Tests: scrum996-suelo-de-arranque (14) y scrum899c-relevar-y-contexto (200_001/199_999).
+Base medida: origin/main tras el merge de #1618, 0252a54dd0f7495aec24de6d8cb41691c5520a62 (antes del commit de registro).
