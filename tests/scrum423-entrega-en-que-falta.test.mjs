@@ -159,10 +159,35 @@ test('SCRUM-423 · 🔴 el número y su salvedad NO SE PUEDEN RENDERIZAR POR SEP
 
   // ② Y la vista la pinta en UN SOLO nodo de texto. Si alguien la partiera en dos elementos, este
   //    assert cae: es la diferencia entre «van juntas» y «hoy salen juntas».
-  const render = /const t = document\.createElement\('span'\);\s*t\.textContent = TEXTO_HUECO\[h\.id\]\(h\);/;
-  assert.match(VISTA, render,
-    '🔴 el hueco ha dejado de pintarse como un único `textContent`. Si el número y su salvedad se ' +
-    'reparten en dos nodos, un truncado o un cambio de layout pueden dejar visible sólo el número.');
+  //
+  // ── RE-ANCLAJE (SCRUM-917f) ──────────────────────────────────────────────────────────────
+  // Este assert exigía que el pintado del hueco fuera EXACTAMENTE dos líneas seguidas. 917f añade
+  // un hueco —`sin-presupuesto`— que sí lleva segunda línea, porque enuncia una AUSENCIA y no una
+  // cantidad, así que la vista ahora tiene una rama. La forma del código cambió; el principio no:
+  //
+  //     «el número de SCRUM-423 y su salvedad no pueden acabar en dos nodos distintos.»
+  //
+  // 🔒 Y el ancla nuevo lo defiende MEJOR que el viejo, no peor. El viejo ataba el contrato a la
+  // forma de dos líneas de código, así que se rompía con cualquier refactor aunque el principio se
+  // cumpliera —y, lo que es peor, se podía CUMPLIR mientras alguien partía el hueco por otro
+  // camino—. El nuevo va a la causa: la única manera de partir un hueco en dos nodos es darle una
+  // entrada en `SUBTEXTO_HUECO`, así que se prohíbe que `sin-entregar` la tenga.
+  assert.match(VISTA, /const SUBTEXTO_HUECO = \{/,
+    '🔴 ESCÁNER CIEGO: `SUBTEXTO_HUECO` no existe en la vista, así que la prohibición de abajo no ' +
+    'mide nada. Si el mecanismo de la segunda línea cambió de nombre, re-ancla esto a él.');
+  const tablaSub = VISTA.slice(VISTA.indexOf('const SUBTEXTO_HUECO = {'));
+  const cierre = tablaSub.indexOf('};');
+  assert.ok(cierre > 0, '🔴 ESCÁNER CIEGO: no encuentro el fin de `SUBTEXTO_HUECO`.');
+  assert.ok(
+    !/sin-entregar/.test(tablaSub.slice(0, cierre)),
+    '🔴 `sin-entregar` ha recibido una SEGUNDA LÍNEA. Su número y su salvedad van en UNA sola ' +
+    'cadena a propósito: partidos en dos nodos, un truncado o un ancho pequeño dejan a alguien ' +
+    'leyendo el número solo — y ese número es justo el que no se puede leer solo.',
+  );
+  // ✅ Y el camino de UN SOLO nodo sigue existiendo, que es por el que pasa este hueco. Sin esto,
+  //    la prohibición de arriba valdría igual en una vista que hubiera partido TODOS los huecos.
+  assert.match(VISTA, /t\.textContent = TEXTO_HUECO\[h\.id\]\(h\);/,
+    '🔴 la vista ya no pinta ningún hueco como un único `textContent`.');
 
   // ③ Nadie pinta el número por su cuenta saltándose el rótulo.
   assert.ok(!/h\.cantidad[^)]*sin entregar/.test(VISTA.replace(/'sin-entregar':[\s\S]*?\n    \},/, '')),

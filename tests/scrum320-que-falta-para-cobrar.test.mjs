@@ -305,10 +305,20 @@ test('SCRUM-320 · el orden canónico DECLARA todos los huecos que la función p
     },
   };
   const conFactura = { ...todos, invoices: [{ id: 9, total: 300, status: 'pending' }] }; // → sin-cobrar
+  // SCRUM-917f añadió el sexto (`sin-presupuesto`) y con él este tercer caso, por el motivo que el
+  // párrafo de arriba anticipaba: el guard se puso rojo porque el fixture no sabía producirlo, y
+  // se le enseña en vez de bajarle el listón.
+  //
+  // 🔴 HACE FALTA UN CASO PROPIO, no vale añadir un campo a `todos`: `sin-presupuesto` sale con
+  // `totalAceptado == null`, y `todos` lo tiene en 900 precisamente para producir los otros. Son
+  // EXCLUYENTES por construcción, y esa es la forma de este hueco — si un día pudieran salir a la
+  // vez, el Trabajo tendría franja Y «no tiene presupuesto aceptado», que es una contradicción.
+  const sinPresupuesto = { ...todos, totalAceptado: null }; // → sin-presupuesto
 
   const producidos = new Set([
     ...G5.huecosDeCobro(todos).map((h) => h.id),
     ...G5.huecosDeCobro(conFactura).map((h) => h.id),
+    ...G5.huecosDeCobro(sinPresupuesto).map((h) => h.id),
   ]);
   assert.equal(
     producidos.size, G5.HUECOS_COBRO.length,
