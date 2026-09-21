@@ -27,17 +27,20 @@ const hrefDe = (n) => n.getAttribute('href') || n.href || '';
 test('SCRUM-1032 · A · cada caso límite del ticket, con su resultado exacto', () => {
   const k = cargarDashboard(RAIZ).ctx.contactoDelCliente;
 
-  // espacios y sin prefijo: se marca tal cual (no se le inventa un país) y wa.me lleva sólo dígitos
-  let r = k({ phone: '600 12 34 56' });
-  assert.equal(r.telefono.href, 'tel:600123456');
-  assert.equal(r.telefono.texto, '600 12 34 56', 'el texto es el dato tal y como lo escribió');
-  assert.equal(r.whatsapp.href, 'https://wa.me/600123456');
+  // espacios y sin prefijo: se marca tal cual (no se le inventa un país) y wa.me lleva sólo dígitos.
+  // (Los números de estos tests son de ficción a propósito, SCRUM-262: los españoles, del rango
+  // imposible 34 0XX; y éste, del 555-01XX de Norteamérica, porque uno español «sin prefijo» del
+  // rango imposible empieza por 0 y la pieza —como el servidor— lo leería como el prefijo «00».)
+  let r = k({ mobile: '(555) 010 0999' });
+  assert.equal(r.movil.href, 'tel:5550100999');
+  assert.equal(r.movil.texto, '(555) 010 0999', 'el texto es el dato tal y como lo escribió');
+  assert.equal(r.whatsapp.href, 'https://wa.me/5550100999');
 
   // con prefijo: guardado como el servidor lo guarda (11 dígitos) y con +34 / 0034
-  for (const v of ['34600123456', '+34 600 12 34 56', '0034 600-12-34-56', '(+34) 600.123.456']) {
+  for (const v of ['34000000001', '+34 000 00 00 01', '0034 000-00-00-01', '(+34) 000.000.001']) {
     r = k({ phone: v });
-    assert.equal(r.telefono.href, 'tel:+34600123456', `«${v}»`);
-    assert.equal(r.whatsapp.href, 'https://wa.me/34600123456', `«${v}»`);
+    assert.equal(r.telefono.href, 'tel:+34000000001', `«${v}»`);
+    assert.equal(r.whatsapp.href, 'https://wa.me/34000000001', `«${v}»`);
   }
 
   // extranjero
@@ -46,18 +49,18 @@ test('SCRUM-1032 · A · cada caso límite del ticket, con su resultado exacto',
   assert.equal(r.whatsapp.href, 'https://wa.me/442079460958');
 
   // móvil y teléfono iguales → UN solo enlace de llamada (el del teléfono), no dos
-  r = k({ phone: '34600123456', mobile: '+34 600 12 34 56' });
+  r = k({ phone: '34000000001', mobile: '+34 000 00 00 01' });
   assert.ok(r.telefono && r.movil === null, 'un solo enlace de llamada');
-  assert.equal(r.whatsapp.href, 'https://wa.me/34600123456');
+  assert.equal(r.whatsapp.href, 'https://wa.me/34000000001');
 
   // distintos → los dos, y WhatsApp va al MÓVIL (`Móvil (WhatsApp)`), no al fijo
-  r = k({ phone: '34911223344', mobile: '34600123456' });
-  assert.equal(r.telefono.href, 'tel:+34911223344');
-  assert.equal(r.movil.href, 'tel:+34600123456');
-  assert.equal(r.whatsapp.href, 'https://wa.me/34600123456');
+  r = k({ phone: '34000000002', mobile: '34000000001' });
+  assert.equal(r.telefono.href, 'tel:+34000000002');
+  assert.equal(r.movil.href, 'tel:+34000000001');
+  assert.equal(r.whatsapp.href, 'https://wa.me/34000000001');
 
   // sólo teléfono → WhatsApp va al teléfono (como el panel del Trabajo)
-  assert.equal(k({ phone: '34911223344' }).whatsapp.href, 'https://wa.me/34911223344');
+  assert.equal(k({ phone: '34000000002' }).whatsapp.href, 'https://wa.me/34000000002');
 
   // correo con mayúsculas: se enlaza tal cual, y el texto es el escrito
   r = k({ email: '  Ana.Perez@Ejemplo.COM ' });
@@ -75,7 +78,7 @@ test('SCRUM-1032 · A · sin dato válido NO hay enlace, y nunca sale «undefine
     assert.deepEqual(r, { telefono: null, movil: null, whatsapp: null, correo: null }, `🔴 ${JSON.stringify(c)}`);
   }
   // Y los que SÍ salen no llevan la palabra en ningún enlace.
-  for (const c of [{ phone: '600123456', email: 'a@b.es' }, { mobile: '34600123456' }, { phone: '+34911223344', mobile: '600123456' }]) {
+  for (const c of [{ phone: '5550100999', email: 'a@b.es' }, { mobile: '34000000001' }, { phone: '+34000000002', mobile: '5550100999' }]) {
     // sólo lo que se PINTA o se ENLAZA (texto y href): un `movil: null` del objeto no es un enlace
     const visibles = Object.values(JSON.parse(JSON.stringify(k(c)))).filter(Boolean)
       .flatMap((e) => [e.texto, e.href]).filter((s) => s !== undefined).join(' ');
@@ -83,16 +86,16 @@ test('SCRUM-1032 · A · sin dato válido NO hay enlace, y nunca sale «undefine
     assert.doesNotMatch(visibles, /undefined|null/, `🔴 ${JSON.stringify(c)} → ${visibles}`);
   }
   // wa.me: sólo dígitos, siempre
-  for (const v of ['+34 600 12 34 56', '600.123.456', '(0034) 600-123-456']) {
+  for (const v of ['+34 000 00 00 01', '555.010.0999', '(0034) 000-000-001']) {
     assert.match(k({ mobile: v }).whatsapp.href, /^https:\/\/wa\.me\/\d{8,15}$/, v);
   }
 });
 
 // ── B · la lista ──────────────────────────────────────────────────────────────────────────────────
 const CLIENTES = [
-  { id: 1, name: 'Ana Pérez', phone: '34911223344', mobile: '34600123456', email: 'Ana@Ejemplo.com', notes: '', tags: null, createdAt: '2026-01-05T10:00:00Z' },
+  { id: 1, name: 'Ana Pérez', phone: '34000000002', mobile: '34000000001', email: 'Ana@Ejemplo.com', notes: '', tags: null, createdAt: '2026-01-05T10:00:00Z' },
   { id: 2, name: 'Cliente vacío', phone: null, mobile: null, email: null, notes: '', tags: null, createdAt: '2026-01-06T10:00:00Z' },
-  { id: 3, name: 'Solo teléfono', phone: '34911000111', mobile: null, email: '', notes: '', tags: null, createdAt: '2026-01-07T10:00:00Z' },
+  { id: 3, name: 'Solo teléfono', phone: '34000000003', mobile: null, email: '', notes: '', tags: null, createdAt: '2026-01-07T10:00:00Z' },
 ];
 
 async function listaDeClientes() {
@@ -109,7 +112,7 @@ test('SCRUM-1032 · B · la fila con datos lleva sus enlaces; la vacía, ninguno
   assert.equal(filas.length, 3, `esperaba 3 filas y salieron ${filas.length}`);
 
   const completa = enlacesDe(filas[0]).map(hrefDe);
-  assert.deepEqual(completa, ['tel:+34911223344', 'tel:+34600123456', 'https://wa.me/34600123456', 'mailto:Ana@Ejemplo.com'],
+  assert.deepEqual(completa, ['tel:+34000000002', 'tel:+34000000001', 'https://wa.me/34000000001', 'mailto:Ana@Ejemplo.com'],
     '🔴 la fila completa: teléfono, móvil, WhatsApp (al móvil) y correo');
   const wa = enlacesDe(filas[0]).find((a) => hrefDe(a).startsWith('https://wa.me/'));
   assert.equal(wa.getAttribute('aria-label'), 'WhatsApp', '🔴 el enlace de WhatsApp, que en la lista es sólo el icono, lleva su nombre accesible (el rótulo ya en uso)');
@@ -120,7 +123,7 @@ test('SCRUM-1032 · B · la fila con datos lleva sus enlaces; la vacía, ninguno
   assert.ok(todos(vacia).some((h) => h._texto === 'sin teléfono'), 'y conserva su «sin teléfono»');
 
   const soloTel = enlacesDe(filas[2]).map(hrefDe);
-  assert.deepEqual(soloTel, ['tel:+34911000111', 'https://wa.me/34911000111'], 'sólo teléfono: llamar y WhatsApp a ese número');
+  assert.deepEqual(soloTel, ['tel:+34000000003', 'https://wa.me/34000000003'], 'sólo teléfono: llamar y WhatsApp a ese número');
 
   const todo = filas.map((f) => enlacesDe(f).map((a) => `${hrefDe(a)} ${a.textContent}`).join(' ')).join(' ');
   assert.doesNotMatch(todo, /undefined|null/, '🔴 ningún enlace sale con «undefined» ni «null»');
@@ -140,8 +143,8 @@ async function fichaDe(customer) {
 }
 
 test('SCRUM-1032 · C · la cabecera de la ficha lleva los enlaces del cliente completo y ninguno del vacío', async () => {
-  const completa = await fichaDe({ id: 1, name: 'Ana Pérez', phone: '34911223344', mobile: '34600123456', email: 'Ana@Ejemplo.com', createdAt: '2026-01-05T10:00:00Z' });
-  assert.deepEqual(enlacesDe(completa).map(hrefDe), ['tel:+34911223344', 'tel:+34600123456', 'https://wa.me/34600123456', 'mailto:Ana@Ejemplo.com'],
+  const completa = await fichaDe({ id: 1, name: 'Ana Pérez', phone: '34000000002', mobile: '34000000001', email: 'Ana@Ejemplo.com', createdAt: '2026-01-05T10:00:00Z' });
+  assert.deepEqual(enlacesDe(completa).map(hrefDe), ['tel:+34000000002', 'tel:+34000000001', 'https://wa.me/34000000001', 'mailto:Ana@Ejemplo.com'],
     '🔴 la ficha completa: teléfono, móvil, WhatsApp (al móvil) y correo');
 
   const vacia = await fichaDe({ id: 2, name: 'Cliente vacío', phone: null, mobile: null, email: null, createdAt: '2026-01-06T10:00:00Z' });
