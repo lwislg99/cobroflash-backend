@@ -1,0 +1,292 @@
+# SCRUM-917g - VERDE: scripts/guard-detalle-trabajo-917.mjs (con el bloque F) sobre el arbol FINAL
+# Date: Mon, 21 Sep 2026 14:07:34 GMT
+# medido sobre HEAD bc6b8b0902bc50206ecec5b60d39a0b238287a87, que contiene origin/main 1a6dfb9a578dc04147bd842fad9c83999c8a4d26 (merge sin conflictos). El producto es el de los commits 8bbf9b75a8d0c1505f71702591785aaae9940a2b y 2165d42b88e693f93caf7386739c70074a37bdd7; los commits posteriores solo tocan tests, instrumentos y documentos.
+# EXIT=0 · 246 de 246 · 0 no medidas. Contraparte del ROJO sobre el producto sin tocar (salida-guard-rojo-917g.txt: EXIT=2, 72 x rojo + 6 no medidas).
+node : ⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+En línea: 1 Carácter: 617
++ ...  EXIT=$e1"; node scripts/guard-detalle-trabajo-917.mjs > "$tmp\guard- ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⟦arranque⟧ 0.6 ...ra-página 0.0 s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+⓪ SUELO y control de discriminación · a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ ⓪ los 4 casos se pintan y son DISTINTOS entre sí a 1280 px
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+D · el dinero se dice UNA vez: la franja (D.1-D.5) · lo que se retira (D.6-D.9) · lo que no se pierde (D.10) — a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ D.1 [PAGADO (aceptado = cobrado = 590,00 €)] franja presente y única
+   ✅ D.2 [PAGADO (aceptado = cobrado = 590,00 €)] rótulo «Cobrado del todo»
+   ✅ D.3 [PAGADO (aceptado = cobrado = 590,00 €)] cifra grande «590,00 €»
+   ✅ D.4 [PAGADO (aceptado = cobrado = 590,00 €)] al lado: Aceptado 590,00 € · Cobrado 590,00 €
+   ✅ D.5 [PAGADO (aceptado = cobrado = 590,00 €)] «590,00 €» se lee 4 veces (E lo bajará a 3: el hueco no debe repetir la cifra de la franja)
+   ✅ D.6 [PAGADO (aceptado = cobrado = 590,00 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [PAGADO (aceptado = cobrado = 590,00 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [PAGADO (aceptado = cobrado = 590,00 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [PAGADO (aceptado = cobrado = 590,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [PAGADO (aceptado = cobrado = 590,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] franja presente y única
+   ✅ D.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] rótulo «Te falta por cobrar»
+   ✅ D.3 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] cifra grande «317,45 €»
+   ✅ D.4 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] al lado: Aceptado 417,45 € · Cobrado 100,00 €
+   ✅ D.5 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] «417,45 €» se lee 2 veces (E lo bajará a 1: el hueco no debe repetir la cifra de la franja)
+   ✅ D.6 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [SIN PRESUPUESTO (no hay importe de referencia)] franja ausente, como debe (sin eje de cobro no se afirma nada)
+   ✅ D.5 [SIN PRESUPUESTO (no hay importe de referencia)] «—» se lee 0 veces
+   ✅ D.6 [SIN PRESUPUESTO (no hay importe de referencia)] el titular «Total aceptado» ya no está
+   ✅ D.7 [SIN PRESUPUESTO (no hay importe de referencia)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [SIN PRESUPUESTO (no hay importe de referencia)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [SIN PRESUPUESTO (no hay importe de referencia)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [SIN PRESUPUESTO (no hay importe de referencia)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] franja presente y única
+   ✅ D.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] rótulo «Cobrado del todo»
+   ✅ D.3 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] cifra grande «539,05 €»
+   ✅ D.4 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] al lado: Aceptado 539,05 € · Cobrado 628,60 €
+   ✅ D.5 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] «539,05 €» se lee 3 veces
+   ✅ D.6 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el aviso firmado de SCRUM-887 sigue en pantalla
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+G · todo control a ≥ 44 px (G.2) y sin scroll horizontal (G.1) — a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ G.1 [PAGADO (aceptado = cobrado = 590,00 €)] sin scroll horizontal
+   ✅ G.2 [PAGADO (aceptado = cobrado = 590,00 €)] 5 de 15 por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja
+   ✅ G.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] sin scroll horizontal
+   ✅ G.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] 5 de 15 por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja
+   ✅ G.1 [SIN PRESUPUESTO (no hay importe de referencia)] sin scroll horizontal
+   ✅ G.2 [SIN PRESUPUESTO (no hay importe de referencia)] 4 de 11 por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja
+   ✅ G.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sin scroll horizontal
+   ✅ G.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] 5 de 15 por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+⓪ SUELO y control de discriminación · a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ ⓪ los 4 casos se pintan y son DISTINTOS entre sí a 390 px
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+D · el dinero se dice UNA vez: la franja (D.1-D.5) · lo que se retira (D.6-D.9) · lo que no se pierde (D.10) — a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ D.1 [PAGADO (aceptado = cobrado = 590,00 €)] franja presente y única
+   ✅ D.2 [PAGADO (aceptado = cobrado = 590,00 €)] rótulo «Cobrado del todo»
+   ✅ D.3 [PAGADO (aceptado = cobrado = 590,00 €)] cifra grande «590,00 €»
+   ✅ D.4 [PAGADO (aceptado = cobrado = 590,00 €)] al lado: Aceptado 590,00 € · Cobrado 590,00 €
+   ✅ D.5 [PAGADO (aceptado = cobrado = 590,00 €)] «590,00 €» se lee 4 veces (E lo bajará a 3: el hueco no debe repetir la cifra de la franja)
+   ✅ D.6 [PAGADO (aceptado = cobrado = 590,00 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [PAGADO (aceptado = cobrado = 590,00 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [PAGADO (aceptado = cobrado = 590,00 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [PAGADO (aceptado = cobrado = 590,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [PAGADO (aceptado = cobrado = 590,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] franja presente y única
+   ✅ D.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] rótulo «Te falta por cobrar»
+   ✅ D.3 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] cifra grande «317,45 €»
+   ✅ D.4 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] al lado: Aceptado 417,45 € · Cobrado 100,00 €
+   ✅ D.5 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] «417,45 €» se lee 2 veces (E lo bajará a 1: el hueco no debe repetir la cifra de la franja)
+   ✅ D.6 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [SIN PRESUPUESTO (no hay importe de referencia)] franja ausente, como debe (sin eje de cobro no se afirma nada)
+   ✅ D.5 [SIN PRESUPUESTO (no hay importe de referencia)] «—» se lee 0 veces
+   ✅ D.6 [SIN PRESUPUESTO (no hay importe de referencia)] el titular «Total aceptado» ya no está
+   ✅ D.7 [SIN PRESUPUESTO (no hay importe de referencia)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [SIN PRESUPUESTO (no hay importe de referencia)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [SIN PRESUPUESTO (no hay importe de referencia)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [SIN PRESUPUESTO (no hay importe de referencia)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] franja presente y única
+   ✅ D.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] rótulo «Cobrado del todo»
+   ✅ D.3 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] cifra grande «539,05 €»
+   ✅ D.4 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] al lado: Aceptado 539,05 € · Cobrado 628,60 €
+   ✅ D.5 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] «539,05 €» se lee 3 veces
+   ✅ D.6 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el aviso firmado de SCRUM-887 sigue en pantalla
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+G · todo control a ≥ 44 px (G.2) y sin scroll horizontal (G.1) — a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ G.1 [PAGADO (aceptado = cobrado = 590,00 €)] sin scroll horizontal
+   ✅ G.2 [PAGADO (aceptado = cobrado = 590,00 €)] 5 de 15 por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja
+   ✅ G.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] sin scroll horizontal
+   ✅ G.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] 5 de 15 por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja
+   ✅ G.1 [SIN PRESUPUESTO (no hay importe de referencia)] sin scroll horizontal
+   ✅ G.2 [SIN PRESUPUESTO (no hay importe de referencia)] 4 de 11 por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja
+   ✅ G.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sin scroll horizontal
+   ✅ G.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] 5 de 15 por debajo de 44 px — DEUDA HEREDADA declarada, ni sube ni baja
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+F · «El trabajo» plegable: tarjeta única (F.1) · cerradas (F.2) · lo que dice cada línea (F.3) · 44 px y sin desbordar (F.4) · lo que se retira (F.5) · la casilla de precios (F.6) · al ABRIR (F.7) — a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ F.1 [SIN EQUIPO · sin nombre · 0 gastos] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [SIN EQUIPO · sin nombre · 0 gastos] las cinco líneas se pintan cerradas
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Tipo de trabajo» dice «Una obra o reforma de varios días»
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Nombre y dirección» dice «Sin nombre»
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Quién lo ejecuta» dice «No tienes equipo»
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Gastos de este trabajo» dice «Sin gastos»
+   ✅ F.4 [SIN EQUIPO · sin nombre · 0 gastos] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [SIN EQUIPO · sin nombre · 0 gastos] la tarjeta no desborda a lo ancho
+   ✅ F.5 [SIN EQUIPO · sin nombre · 0 gastos] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Quién lo ejecuta»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] «Dar de alta a alguien» lleva a la pantalla del equipo
+   ✅ F.6 [SIN EQUIPO · sin nombre · 0 gastos] la casilla no está en la barra ni en la pantalla; al pulsar «+ Nuevo albarán» la hoja la lleva UNA vez, sin marcar
+   ✅ F.1 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] las cinco líneas se pintan cerradas
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Tipo de trabajo» dice «Varios avisos o visitas sueltas»
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Nombre y dirección» dice «Cambio de cuadro en el 3º B»
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Quién lo ejecuta» dice «Javier P. y Lucía M.»
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Gastos de este trabajo» dice «2 gastos»
+   ✅ F.4 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] la tarjeta no desborda a lo ancho
+   ✅ F.5 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Quién lo ejecuta»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.1 [CON EQUIPO · nadie asignado · 1 gasto] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [CON EQUIPO · nadie asignado · 1 gasto] las cinco líneas se pintan cerradas
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Tipo de trabajo» dice «Varios avisos o visitas sueltas»
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Nombre y dirección» dice «Sin nombre»
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Quién lo ejecuta» dice «Sin asignar»
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Gastos de este trabajo» dice «1 gasto»
+   ✅ F.4 [CON EQUIPO · nadie asignado · 1 gasto] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [CON EQUIPO · nadie asignado · 1 gasto] la tarjeta no desborda a lo ancho
+   ✅ F.5 [CON EQUIPO · nadie asignado · 1 gasto] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Quién lo ejecuta»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.1 [TÉCNICO · sólo lectura] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [TÉCNICO · sólo lectura] las cinco líneas se pintan cerradas
+   ✅ F.3 [TÉCNICO · sólo lectura] «Tipo de trabajo» dice «Varios avisos o visitas sueltas»
+   ✅ F.3 [TÉCNICO · sólo lectura] «Nombre y dirección» dice «Cambio de cuadro en el 3º B»
+   ✅ F.3 [TÉCNICO · sólo lectura] «Quién lo ejecuta» dice «Javier P. y Lucía M.»
+   ✅ F.3 [TÉCNICO · sólo lectura] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [TÉCNICO · sólo lectura] «Gastos de este trabajo» dice «2 gastos»
+   ✅ F.4 [TÉCNICO · sólo lectura] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [TÉCNICO · sólo lectura] la tarjeta no desborda a lo ancho
+   ✅ F.5 [TÉCNICO · sólo lectura] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Quién lo ejecuta»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.1 [EQUIPO ILEGIBLE (la lista llegó vacía)] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [EQUIPO ILEGIBLE (la lista llegó vacía)] las cinco líneas se pintan cerradas
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Tipo de trabajo» dice «Una obra o reforma de varios días»
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Nombre y dirección» dice «Sin nombre»
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Quién lo ejecuta» dice «» (nada: no se sabe)
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Gastos de este trabajo» dice «Sin gastos»
+   ✅ F.4 [EQUIPO ILEGIBLE (la lista llegó vacía)] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [EQUIPO ILEGIBLE (la lista llegó vacía)] la tarjeta no desborda a lo ancho
+   ✅ F.5 [EQUIPO ILEGIBLE (la lista llegó vacía)] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Quién lo ejecuta»: no se abre (no hay nada que abrir)
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+F · «El trabajo» plegable: tarjeta única (F.1) · cerradas (F.2) · lo que dice cada línea (F.3) · 44 px y sin desbordar (F.4) · lo que se retira (F.5) · la casilla de precios (F.6) · al ABRIR (F.7) — a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ F.1 [SIN EQUIPO · sin nombre · 0 gastos] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [SIN EQUIPO · sin nombre · 0 gastos] las cinco líneas se pintan cerradas
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Tipo de trabajo» dice «Una obra o reforma de varios días»
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Nombre y dirección» dice «Sin nombre»
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Quién lo ejecuta» dice «No tienes equipo»
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Gastos de este trabajo» dice «Sin gastos»
+   ✅ F.4 [SIN EQUIPO · sin nombre · 0 gastos] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [SIN EQUIPO · sin nombre · 0 gastos] la tarjeta no desborda a lo ancho
+   ✅ F.5 [SIN EQUIPO · sin nombre · 0 gastos] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Quién lo ejecuta»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [SIN EQUIPO · sin nombre · 0 gastos] «Dar de alta a alguien» lleva a la pantalla del equipo
+   ✅ F.6 [SIN EQUIPO · sin nombre · 0 gastos] la casilla no está en la barra ni en la pantalla; al pulsar «+ Nuevo albarán» la hoja la lleva UNA vez, sin marcar
+   ✅ F.1 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] las cinco líneas se pintan cerradas
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Tipo de trabajo» dice «Varios avisos o visitas sueltas»
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Nombre y dirección» dice «Cambio de cuadro en el 3º B»
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Quién lo ejecuta» dice «Javier P. y Lucía M.»
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Gastos de este trabajo» dice «2 gastos»
+   ✅ F.4 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] la tarjeta no desborda a lo ancho
+   ✅ F.5 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Quién lo ejecuta»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.1 [CON EQUIPO · nadie asignado · 1 gasto] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [CON EQUIPO · nadie asignado · 1 gasto] las cinco líneas se pintan cerradas
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Tipo de trabajo» dice «Varios avisos o visitas sueltas»
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Nombre y dirección» dice «Sin nombre»
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Quién lo ejecuta» dice «Sin asignar»
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Gastos de este trabajo» dice «1 gasto»
+   ✅ F.4 [CON EQUIPO · nadie asignado · 1 gasto] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [CON EQUIPO · nadie asignado · 1 gasto] la tarjeta no desborda a lo ancho
+   ✅ F.5 [CON EQUIPO · nadie asignado · 1 gasto] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Quién lo ejecuta»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [CON EQUIPO · nadie asignado · 1 gasto] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.1 [TÉCNICO · sólo lectura] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [TÉCNICO · sólo lectura] las cinco líneas se pintan cerradas
+   ✅ F.3 [TÉCNICO · sólo lectura] «Tipo de trabajo» dice «Varios avisos o visitas sueltas»
+   ✅ F.3 [TÉCNICO · sólo lectura] «Nombre y dirección» dice «Cambio de cuadro en el 3º B»
+   ✅ F.3 [TÉCNICO · sólo lectura] «Quién lo ejecuta» dice «Javier P. y Lucía M.»
+   ✅ F.3 [TÉCNICO · sólo lectura] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [TÉCNICO · sólo lectura] «Gastos de este trabajo» dice «2 gastos»
+   ✅ F.4 [TÉCNICO · sólo lectura] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [TÉCNICO · sólo lectura] la tarjeta no desborda a lo ancho
+   ✅ F.5 [TÉCNICO · sólo lectura] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Quién lo ejecuta»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [TÉCNICO · sólo lectura] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.1 [EQUIPO ILEGIBLE (la lista llegó vacía)] una tarjeta «El trabajo» con sus cinco líneas en orden
+   ✅ F.2 [EQUIPO ILEGIBLE (la lista llegó vacía)] las cinco líneas se pintan cerradas
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Tipo de trabajo» dice «Una obra o reforma de varios días»
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Nombre y dirección» dice «Sin nombre»
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Quién lo ejecuta» dice «» (nada: no se sabe)
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Notas internas» dice «Solo tú las ves»
+   ✅ F.3 [EQUIPO ILEGIBLE (la lista llegó vacía)] «Gastos de este trabajo» dice «Sin gastos»
+   ✅ F.4 [EQUIPO ILEGIBLE (la lista llegó vacía)] las cinco cabeceras miden ≥ 44 px (44 · 44 · 44 · 44 · 44)
+   ✅ F.4 [EQUIPO ILEGIBLE (la lista llegó vacía)] la tarjeta no desborda a lo ancho
+   ✅ F.5 [EQUIPO ILEGIBLE (la lista llegó vacía)] no queda ninguna cabecera suelta, ni «Cambiar», ni el rótulo de quién ejecuta repetido
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Tipo de trabajo»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Nombre y dirección»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Quién lo ejecuta»: no se abre (no hay nada que abrir)
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Notas internas»: se abre y lo de dentro es lo esperado
+   ✅ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Gastos de este trabajo»: se abre y lo de dentro es lo esperado
+
+población: 246 comprobaciones · D y G sobre 4 casos × 2 anchuras · F sobre 5 casos (solo, equipo, equipo, tecnico, ciego) × 2 anchuras (1280, 390) · 0 no medidas
+✅ el detalle cuadra con su inventario: 246 de 246.

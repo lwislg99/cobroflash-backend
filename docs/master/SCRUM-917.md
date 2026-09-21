@@ -655,3 +655,141 @@ paga el siguiente.*
 - La suite completa no se ha corrido en local (sin turno): la corre el PR.
 - Los otros 6-7 controles pequeños del detalle siguen siendo deuda heredada declarada; éste no los
   toca.
+
+## 917g · «El trabajo» plegable: cinco secciones sueltas pasan a ser cinco líneas de UNA tarjeta (21-sep-2026)
+
+*21-sep-2026, 14:07 GMT (cabecera `Date:` de `gh api -i zen`) · Sesión 2b (`s2b-21e`, relevo de `s2b-21c`) ·
+worktree `wt-917g` · rama `scrum-917g-el-trabajo-plegable`.*
+
+**Medido contra:** `origin/main` = `1a6dfb9a578dc04147bd842fad9c83999c8a4d26` · 2026-09-21T14:07:34Z (mezclado dentro de la rama, A4; el merge no tuvo conflictos)
+
+Firmas: SCRUM-917 **comentario 15881** (todos los textos de `docs/prototipos/SCRUM-917/textos-propuestos.md`,
+salvo los dos de «cobrado de más», que el 15994 deja sin firmar) y **comentario 16142** del orquestador,
+21-sep-2026: (1) «1 gasto» / «N gastos» para la línea plegada de gastos cuando los hay, (2) se quita la
+casilla «Incluir precios en el parte» de la barra de Documentos y se deja SÓLO la de dentro de la hoja de
+alta del albarán, (3) GO de staging de 982. Ficha: `docs/microcopy/2026-09-21-SCRUM-917g-el-trabajo-plegable.md`.
+
+| paso | sha completo |
+|---|---|
+| instrumentos y PASO 0 (banco con equipo real, gastos por Trabajo, rol) | `94bb495d7d4b5d192f87ddca6d5d8cbab02f7917` |
+| el producto: cinco líneas en una tarjeta; la casilla sale de la barra | `8bbf9b75a8d0c1505f71702591785aaae9940a2b` |
+| el guard trata una línea inexistente como hallazgo, no como excepción | `5ba24e29ad953bc4ce112869fe846949a26ad720` |
+| salida del rojo sobre el producto sin tocar | `2165d42b88e693f93caf7386739c70074a37bdd7` |
+| merge de `origin/main` (2631bb9a) | `8958457987b0e41b990b74275cf308bc553b0d39` |
+| los tests de contrato re-anclados | `418299f79f88647bf5b2510b1981244bc31a6ccd` |
+| test nuevo de «El trabajo» plegable | `ceef30c98b4f68b90cf97cc6b184c9e53ecabf00` |
+| instrumento de mutación | `79362001432b6dba6f767c3f8ca46027bee8e4b2` |
+| M16 del instrumento: de mutante equivalente a mutante real | `0fd6214015ec8bb47f1a0ff38d00d55dadd733c4` |
+| merge de `origin/main` (1a6dfb9a) | `bc6b8b0902bc50206ecec5b60d39a0b238287a87` |
+
+### PASO 0 — ¿el defecto existe HOY? (A2)
+
+Sí, medido CORRIENDO en un navegador real (`docs/master/evidencias/SCRUM-917/paso0-detalle-f.mjs` →
+`salida-paso0-detalle-f.txt`, 21-sep-2026 12:25:15 GMT, sobre `bbe01631ac5fcfd3ec67272c8aed3e39c192057f`, el
+producto sin tocar; sólo los instrumentos eran nuevos): **5 de 5 secciones sueltas** (Tipo · Datos · Quién
+ejecuta · Notas · Gastos); **bajo el pliegue 2 de 5 a 1280 px y 5 de 5 a 390 px**; alto sumado 716 / 800 /
+748 px en los tres Trabajos; `<details>` en la pantalla: 0; la casilla «Incluir precios en el parte» en
+la barra de Documentos: 1.
+
+### Qué entra
+
+- **`public/dashboard/js/jobTrabajoPlegable.js` (nuevo).** `TEXTOS_EL_TRABAJO` (fuente única de todos los
+  literales), `resumenDeNombre` · `resumenDeQuien` · `resumenDeGastos` (funciones que devuelven texto: lo
+  que dice cada línea CERRADA es una decisión y se prueba con datos), `construirLineaPlegable` (un
+  `<details>` nativo) y `construirBloqueElTrabajo`. Registrado en `index.html` (antes de `jobDetailView.js`)
+  y en el SHELL de `sw.js`.
+- **`jobDetailView.js`.** Las cinco líneas —Tipo · Nombre y dirección · Quién lo ejecuta · Notas internas ·
+  Gastos— dentro de UNA tarjeta «El trabajo», tras Documentos, sin `h3` sueltos y sin el «Cambiar» del tipo;
+  la casilla de precios sale de la barra; el alta de albarán se abre siempre prellenada (`SIN_VALORAR`);
+  el botón «Dar de alta a alguien» en el caso sin equipo; `sinCuerpo()` cuando el equipo es ilegible.
+  `jobAsignados.js`: opción `sinTitulo`.
+- **CSS.** `.detail-trabajo` y `.detail-plega*` en `styles.css`, con cero tokens nuevos.
+- **Instrumentos.** `scripts/_detalle-917.mjs` (banco) y el bloque F de `scripts/guard-detalle-trabajo-917.mjs`.
+
+### Medido, con su población
+
+| medida | resultado |
+|---|---|
+| guard F sobre el **producto sin tocar** (control de discriminación) | 🔴 EXIT=2 · **72 ❌** (64 del bloque F y 8 de G.2) + 6 casos NO medidos (`salida-guard-rojo-917g.txt`) |
+| guard F sobre el árbol **final** (`bc6b8b09…`, con `origin/main` dentro) | ✅ EXIT=0 · **246 de 246** · 0 no medidas (`salida-guard-verde-917g.txt`) |
+| techo de controles < 44 px (`DEUDA_44PX`) | **7 → 5 y 6 → 4**, medido con nombre: salen la casilla 13×13 y «Cambiar» 71×30 (`salida-pequenos-antes-917g.txt`) |
+| grupo de tests que nombran lo tocado, ANTES de re-anclar | 1.760 tests · 1.741 pass · **18 fail** · 1 skipped (183 ficheros) |
+| auditoría por mutación (`mutar-917g.mjs`) | **19 de 19 cazadas** (`salida-mutaciones-917g.txt`; ver abajo la M16) |
+
+### 🔴 Los 18 tests de contrato que cayeron: RE-ANCLADOS, no borrados
+
+La regla es la de la segunda parte de 917e («La regla con la que se resolvieron: RE-ANCLAR, no borrar»,
+más arriba en este mismo expediente): re-anclar con el motivo escrito —qué superficie desapareció, qué
+principio sobrevive, dónde vive ahora— y con el rojo que demuestre que caza la pérdida. Ningún test se
+tocó para ponerlo verde por sí solo.
+
+| test | superficie que desapareció | principio que SOBREVIVE | dónde vive ahora | rojo que lo caza |
+|---|---|---|---|---|
+| **817** orden (×1) | seis bloques sueltos; «quién ejecuta» PRIMERO | el jefe lee a quién le toca sin abrir nada | tarjeta «El trabajo», línea 3; **su línea CERRADA dice los nombres** (segunda mitad del test) | M09, M10, M16 |
+| **817** inventario (×1) | `BUTTON:Cambiar` y el `INPUT` de la casilla | reordenar no pierde funciones | las dos retiradas se DECLARAN (`RETIRADAS_A_PROPOSITO`, con motivo) y `perdidas()` exige que lo perdido sea EXACTAMENTE eso; la función de «Cambiar» se comprueba en las dos tarjetas de tipo | M17 |
+| **817** nada en blanco (×1) | la excepción «sin equipo, el selector no se pinta» | con el trabajo vacío nada desaparece | la línea «Quién lo ejecuta» se pinta SIEMPRE: se quita el `continue`, la exigencia sube | M09 |
+| **817** casilla (×1) | «pegada a + Nuevo albarán» en la barra | la casilla gobierna el `modoValoracion` del albarán, no el parte | sólo dentro de la hoja de alta; se mide sobre el DOM montado, no por el nombre de una variable | M07 |
+| **427** composición y notas (×6) | el escáner de `<h3 class="detail-section-title">` ya no ve cinco de las secciones | la composición se ENUMERA (qué falta y qué sobra), nunca se cuenta | `lineasDeElTrabajo` lee la vista por AST y cuenta SÓLO las líneas colgadas de la tarjeta; enmiendas `nombre y direccion` (antes `datos`) y `quien lo ejecuta`; enmienda ⑥ en `docs/diseno/bloque-g.md` | M09, M10, M13, M14 |
+| **317** (×1) | el marcador «Ej. Reforma baño» | el campo de nombre lleva el marcador firmado y ninguno más | `TEXTOS_EL_TRABAJO.marcadorNombre`; el viejo no puede volver a la vista | M12 |
+| **319** (×1) | la casilla aparecía DOS veces | esa casilla no se renombra ni se mueve sin medir qué gobierna | UNA aparición y es la de `buildAlbEditor`, encontrada por AST | M07 |
+| **662** (×3) · **670** (×1) · **guard-colisión** (×1) | la población declarada de scripts del índice | ningún script se carga sin que nadie lo vigile | `jobTrabajoPlegable.js` en `SCRIPTS_DEL_DASHBOARD` (entrada derivada del índice fusionado, no sumada) y su orden antes de `jobDetailView.js` en `DEPENDENCIAS_DE_CARGA` | el rojo de origen («SOBRAN en el índice: jobTrabajoPlegable.js») y M06 |
+| **713c** (×1) | cuatro `style.cssText` de `jobDetailView.js` | los estilos escritos desde JS no suben **ni bajan en silencio** | techo **340 → 336**: `origin/main` da 340 con el mismo contador (el instrumento no estaba descarriado), la rama 336 y la diferencia entera en ese fichero | M11 |
+
+### Lo que se encontró al re-anclar (y no era del ticket, pero era de estos tests)
+
+1. **El test de las notas pasaba por casualidad.** `scrum427-notas-internas` exigía
+   `pintarNotasInternas(body, job)` y ese texto sólo lo casaba la DECLARACIÓN de la función: la llamada
+   pasó a ser `pintarNotasInternas(lineaNotas.cuerpo, job)` y el test seguía en verde, y lo habría estado
+   también sin que nadie la llamara. Se exige ahora una LLAMADA, sobre código sin comentarios (M08 lo
+   prueba con la llamada comentada).
+2. **713c no estaba en mi lista de 17.** El grupo salía de «los tests que nombran lo tocado», y un trinquete
+   que barre todo `public/dashboard/js/` no nombra nada: lo encontró el grupo ampliado (183 ficheros).
+   🔒 *Lo que un grupo por nombres no ve, lo ve la suite completa.*
+3. **La M16 del instrumento era un mutante EQUIVALENTE, y parecía un agujero.** Pasó en verde contra
+   las suites y el guard F. Mutaba el valor INICIAL de la línea «Quién lo ejecuta», que la línea pisa al
+   leer el equipo; los dos instrumentos miden el estado ASENTADO. El fallo era del instrumento (el sitio
+   equivocado), no del test. Se corrigió (`0fd62140…`: ahora muta la llamada a `poner`) y cayó por 817 y por
+   el guard F. Lo que NO se mide, y se declara: los ~100 ms de valor inicial antes de que llegue el equipo.
+
+### Decisiones
+
+- **«El trabajo» no es una sección de la composición: es el continente.** Lo que se enumera son las cinco
+  líneas. No se enmienda el diseño para un contenedor que no agrupa nada por sí mismo.
+- **`datos` → `nombre y direccion` en las enmiendas.** La decisión de G3 (lo que se EDITA se queda en el
+  cuerpo) no se mueve; se mueve la palabra, firmada. Una enmienda con el nombre viejo autorizaría una
+  sección que ya no existe.
+- **«Quién lo ejecuta» se declara como enmienda nueva** (SCRUM-650, posterior al §4): nunca estuvo
+  enumerada porque su título se escribía desde JS, y al leer las líneas de la tarjeta aparece.
+- **La ficha de microcopy lleva DOS líneas de firma** (15881 y 16142): la firma delegada sólo cuenta con
+  UNA referencia `SCRUM-N comentario M` en su misma línea, y cada comentario firma cosas distintas.
+- **No se repite la casilla en un tercer test.** Su dueño son 319 (una aparición, por AST) y 817 (nada en la
+  barra al cargar): una tercera ancla para lo mismo es la próxima contradicción esperando fecha (A10).
+
+### Lo que NO se construye (declarado)
+
+- **El bloque «Quién lo ejecuta» del RAIL** con equipo (fila 579 del prototipo): exige un sexto bloque en
+  el censo del rail («los cinco bloques», SCRUM-318) y un rótulo en mayúsculas que no está firmado así.
+  Propuesta de corte aparte.
+- **El emoji del tipo** en el valor de la línea.
+- **`+ Añadir gasto` sigue en la cabecera**: no se mueve al cuerpo de la línea, como en el prototipo.
+- **El marcador de dirección del prototipo** («Calle, número, piso»): no está en `textos-propuestos.md`, así
+  que se queda el de hoy.
+- **Los dos textos de «cobrado de más»** (15994): siguen sin firmar también en el detalle.
+- **Sin verificar en staging** (el GO del com. 16142, punto 3, es de 982 y no se hereda).
+
+### Errores propios
+
+- **El primer guard F reventó con una excepción** en vez de dar un rojo limpio contra el producto sin
+  tocar (`d.querySelector` sobre una línea que no existe): se cazó corriéndolo contra el árbol viejo.
+  Un guard nuevo se prueba en rojo ANTES de fiarse de su verde.
+- **El primer banco «técnico» era un administrador**: `app.js` pisa `window.appUserRole` desde
+  `/admin/me`, y redefine `window.renderAppView` (el espía del banco desaparece).
+- **El PASO 0 nació con el banco viejo**: «sin equipo» = `[]` es el camino de ERROR (`EquipoCiego`), no
+  `sinEquipo`. Lo cazó leer `jobAsignados.js`, no un test.
+- **Estimé mi contexto en ~250k y eran 449k** (la sesión saliente): se mide con el `usage` del último
+  mensaje.
+- **Escribí en la ficha que el prototipo «aprobado en el comentario 15881» no lleva el «Cambiar»**: lo
+  primero se comprobó (no hay «Cambiar» en `docs/prototipos/SCRUM-917/`) y lo segundo no; se corrigió
+  ANTES de comitear a «el prototipo aprobado». 🔒 *Una firma no se atribuye a un comentario que no se ha
+  releído.*
+- **La primera M16 del instrumento** (arriba): un verde que no era del test.
