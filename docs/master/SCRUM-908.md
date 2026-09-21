@@ -1268,3 +1268,138 @@ donde vivía el fichero (arriba) para reproducir el barrido si hace falta más N
 
 - `tests/scrum859-…`, `scripts/meta-guard-mutaciones.mjs` (S3), `.github/workflows/**` (S5): ni una línea.
 - Ningún push a `main`; esta rama no se mergea con el fichero de barrido dentro.
+# SCRUM-908c-5 · MUDO y CIEGO en `vigia-atascados.test.mjs` son el MISMO mecanismo, visto desde las dos pasadas
+
+**Fecha:** 21-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición. **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `beef7b362ed44a7bb431ab4f145879f11abd0c24` · 2026-09-21T16:39:06Z
+**Rama:** `scrum-908c5-mudo-y-ciego-mismo-mecanismo`
+
+> **De dónde viene esto.** La sesión anterior de J6 dejó dos datos sin incorporar, a propósito, para no
+> agrupar por parecido superficial (§ cierre de tanda del comentario 16205 de Jira): un MUDO de
+> `vigia-atascados.test.mjs` (comentario 16159 de la S5, run `35601265329`) y un CIEGO del mismo fichero
+> en el PR #1598 (J5, sin verificar). El encargo de esta tanda era medir los dos y decidir si son el
+> mismo problema visto desde dos sitios, o dos cosas distintas que sólo se parecen.
+
+## PASO 0 · ¿es tocable?
+
+`vigia-atascados.test.mjs` prueba `scripts/vigia-atascados.mjs`, que corre desde
+`.github/workflows/vigia-atascados.yml`. Es un **vigía**: `docs/equipo/puesto-j6.md` dice, literal,
+«`ci.yml`, los vigías y el avisador son de la S5» dentro de «Lo que NO tocas». **No se toca nada.** Todo
+lo de abajo es lectura de logs ya generados y del propio fichero (`git show`/`Read`), nunca una
+ejecución que module su comportamiento.
+
+## ① El MUDO (comentario 16159): re-verificado, misma firma que `scrum859`
+
+Run `35601265329` (push a `main`, cabeza `c090a0b4`, 21-sep 12:44Z), job **`meta-guard · los guards caen
+cuando deben`** (`id=106337803034`), `conclusion=failure`. Log bajado y grepeado por mí, no de memoria:
+
+```
+"C:/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/106337803034/logs > log.txt
+grep -n "vigia-atascados\|GUARDS MUDOS\|vivas .* mudas .* ciegas" log.txt
+```
+
+```
+✖ vigia-atascados.test.mjs · MUDO
+vivas 313 · mudas 1 · ciegas 0 · ficheros muertos 0
+🔴 GUARDS MUDOS — pasan en verde sobre el defecto que dicen vigilar:
+  · vigia-atascados.test.mjs · el guard NO cayó. Test que debía ponerse rojo: «🔴 CEBO REAL #1212 · con la
+    memoria REAL del issue #1241 vuelve a avisar por edad»
+    → en la pasada MUTADA ese test: NO APARECE en la pasada mutada (evento perdido, fichero muerto a
+      medias, o el título cambió). Recuento: 33 pasados · 1 caídos · 0 saltados. Y en la LIMPIA: 64
+      pasados · 0 caídos.
+```
+
+**Misma firma exacta que `scrum859`**: un título que SÍ pasó en la pasada limpia (64 pasados · 0 caídos)
+deja de aparecer, con cualquier veredicto, en la pasada MUTADA. No es que la mutación no cayera: es que
+su evento no llegó.
+
+## ② El CIEGO (PR #1598, J5): re-verificado, y es la MISMA construcción, en la OTRA pasada
+
+Job **`meta-guard · los guards caen cuando deben`** (`id=106395090427`) del PR #1598 (mergeado,
+`headRefName=scrum-competencia-j5-propuestas`), `conclusion=failure`:
+
+```
+"C:/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/106395090427/logs > log.txt
+grep -n "vigia-atascados\|CIEGO\|vivas .* mudas .* ciegas" log.txt
+```
+
+```
+✔ vigia-atascados.test.mjs · 🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avisar por edad   (+4 test(s) más caídos)
+? vigia-atascados.test.mjs · CIEGO
+? vigia-atascados.test.mjs · CIEGO
+vivas 312 · mudas 0 · ciegas 2 · ficheros muertos 0
+🔴 CIEGO:
+  · vigia-atascados.test.mjs · el test «🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que
+    contar como el bot» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada. O el
+    fichero no llegó a ejecutarse (…), o ese test ya fallaba, o el nombre de la declaración caducó. NO es
+    que el guard esté mudo: es que no se ha podido medir.
+  · vigia-atascados.test.mjs · el test «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks
+    corriendo: ESPERANDO, y NO avisa» NO aparece EN VERDE en la pasada limpia […]
+```
+
+**Esto es la clave, leída en `scripts/meta-guard-mutaciones.mjs` (S3, sólo lectura):**
+
+```
+node -e "" # no aplica; leído con Read, líneas 631-639 y 1224-1239
+```
+
+Línea 631: `const flujo = run({ forceExit: true, … })` — es el MISMO `run()` de `node:test` con
+`--test-force-exit` que § 908c/908c-2/908c-3/908c-4 investigan. Comentario de la propia S3 en línea 1227:
+«La línea base se corre UNA VEZ por guard, no por mutación: es la misma pasada limpia para todas las
+mutaciones». **La pasada LIMPIA y cada pasada MUTADA son la MISMA construcción** (un hijo `node:test` con
+`--test-force-exit`, lanzado con `run()`, reportando por tubería a un padre que procesa los eventos por
+lotes): lo único que distingue MUDO de CIEGO, en el propio código de S3 (líneas 885-892), es **cuál de las
+dos pasadas** es la que pierde el evento del título. Si lo pierde la MUTADA → «MUDO». Si lo pierde la
+LIMPIA → el mensaje genérico de CIEGO, que lista tres causas posibles y NO incluye «se perdió por la
+misma tubería» porque S3 no lo tenía como hipótesis cuando escribió ese mensaje.
+
+## ③ Por qué esto NO es la fragilidad propia de `vigia-atascados` (hipótesis 2, descartada)
+
+Dos comprobaciones, las dos hechas antes de escribir esta sección:
+
+1. **El fichero declara, en su propia cabecera (línea 7), «SIN GATE: funciones puras. Ni BD, ni red, ni
+   servidor.»** No hay ninguna llamada a `gh`, a la red ni a un servidor en tiempo de test: las respuestas
+   reales de la API (`CHECKS_1205`, `CHECKS_1259`, …) son literales fijados en el fichero, no llamadas en
+   vivo. La hipótesis «depende de `gh` y de un PR real» que la sesión anterior dejó sin decidir **no puede
+   ser la causa**: no hay `gh` ni red en la ruta de este test.
+2. **Los DOS títulos que salieron CIEGO en el PR #1598 SÍ aparecen, verbatim, PASANDO, en la pasada limpia
+   del run 35601265329** (el mismo fichero, sin cambiar una línea): «✔ vigia-atascados.test.mjs · 🔴 `gh
+   pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar como el bot» y «✔ vigia-atascados.test.mjs
+   · 🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa» (líneas
+   683-684 del log de esa run, citadas en § arriba). Eso descarta, por comparación directa entre dos runs
+   del mismo fichero sin tocar, las otras dos explicaciones que da el propio mensaje de CIEGO: no es que
+   «ese test ya fallara» (pasó, limpio, el mismo día) ni que «el nombre de la declaración caducara» (es
+   literalmente el mismo string).
+
+## LO QUE ESTO ESTABLECE
+
+- **MUDO y CIEGO (en su variante «NO aparece EN VERDE en la pasada limpia») son el MISMO mecanismo de
+  transporte de SCRUM-908, visto desde las dos pasadas que arma el meta-guard**, no dos fallos distintos
+  que sólo se parecen. Confirmado por: misma construcción (`run({forceExit:true})`) en el código fuente
+  de S3, y por descarte medido de las otras causas que el propio mensaje de CIEGO ofrece.
+- **El hallazgo se ENSANCHA a un SEGUNDO fichero, `vigia-atascados.test.mjs`**, no relacionado con
+  `scrum859` en contenido ni en autor. Converge con lo que ya apuntaba el comentario 16185 del
+  fundador: «Dos ficheros distintos apuntan a algo del transporte o del runner, no a `scrum859`.» Con
+  esta medición, son tres apariciones documentadas del mismo patrón (`scrum859` repetido, y
+  `vigia-atascados` en las dos pasadas).
+- **No se ha comprobado** si TODO CIEGO del meta-guard es este mecanismo — sólo estos dos, cruzados contra
+  otra corrida. Un CIEGO de un fichero que SÍ dependa de algo externo (red, `dist/`, un test que de verdad
+  falle) seguiría siendo lo que su mensaje dice. Esto no es «todo CIEGO es mudez»: es «este CIEGO, medido,
+  lo es».
+
+## LO QUE SE HACE CON ESTO, Y LO QUE NO
+
+**No se toca** `scripts/vigia-atascados.mjs`, `tests/vigia-atascados.test.mjs` ni
+`.github/workflows/vigia-atascados.yml` (S5) — ni `scripts/meta-guard-mutaciones.mjs` (S3). Se mide y se
+pasa por Jira (este comentario, en SCRUM-908, que es donde ya vivía el dato de la S5 y de J5): es
+información que le sirve a S3 (dueña del meta-guard, para saber que el CIEGO de esta forma concreta no
+es siempre «test ajeno») y a S5 (dueña de `vigia-atascados`, para saber que su vigía no es frágil por sí
+mismo).
+
+## LO NO TOCADO
+
+- `scripts/vigia-atascados.mjs`, `tests/vigia-atascados.test.mjs`, `.github/workflows/vigia-atascados.yml`
+  (S5): ni una línea; sólo `Read`/`git show`.
+- `scripts/meta-guard-mutaciones.mjs` (S3): sólo lectura, para entender `run()` y las PUERTA 1/1a.
+- Ningún push a ninguna rama de S3 o S5. Ninguna ejecución que module estos ficheros: los dos runs citados
+  ya existían antes de empezar esta sección.

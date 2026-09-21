@@ -805,3 +805,31 @@ segunda visita) que solo se informa? El texto de hoy no dice ninguna de las dos 
 > donde se derivaron por AST las 21 ranuras de la pantalla y se separaron las que aprueba el
 > fundador de las que necesitan dictamen fiscal. **No se han reescrito ni aprobado**: siguen con su
 > marcador hasta que haya respuesta.
+
+---
+
+# P17. El cliente final frente a sus propios datos ya congelados en una factura emitida — mismo precedente que E/13, sujeto distinto
+
+> **Formulada por J4 (SCRUM-1023), a partir del hallazgo de J2 en SCRUM-1015: no existe ninguna
+> ruta para que un CLIENTE FINAL (no el merchant) ejerza su derecho de supresión sobre sus propios
+> datos.**
+
+Para el MERCHANT que pide borrar su cuenta (pregunta **E/13** de este mismo documento), el código
+ya aplica el art. 17.3.b RGPD: se anonimizan sus datos identificativos vivos, pero los campos ya
+sellados dentro de una factura emitida (nombre/NIF/email/teléfono del CLIENTE, congelados en
+`Invoice` al emitir — SCRUM-729/665) se conservan siempre, porque forman parte del registro de
+facturación con obligación legal de conservación
+(`src/modules/system/domain/anonimizarMerchant.ts:5-16,36-38`).
+
+**1)** ¿Aplica el mismo criterio, con la misma base legal, cuando quien pide el olvido es el
+CLIENTE FINAL del profesional pidiendo sobre SUS PROPIOS datos, y no el profesional pidiendo sobre
+datos de un tercero? ¿O el hecho de que sea el propio titular quien lo pide (no un tercero) cambia
+el análisis?
+
+**2)** Si la respuesta es "se aplica igual, se anonimiza la ficha viva y la factura se queda",
+¿hace falta decírselo al cliente en algún texto oficial (K1/N5, regla 30) — por ejemplo al pie de
+la factura, o cuando pida su borrado?
+
+**Bloquea:** cualquier construcción futura de un flujo de supresión/portabilidad por cliente final
+(hoy no existe ninguno) y la revisión de J4 sobre la entrega a la gestoría (decisión pendiente,
+`dos-equipos.md` §7, datos de clientes salen a un tercero).
