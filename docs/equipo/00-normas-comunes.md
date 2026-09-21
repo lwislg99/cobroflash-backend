@@ -484,7 +484,7 @@ y **siempre están ocupados**. El puesto dura lo que dure el equipo. Lo que se c
 segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar su contexto.
 
 - **Cuándo se releva** (lo decide el orquestador). Hay tres casos:
-  1. al terminar una entrega verificada, **si el contexto de la sesión pasa de 300k**;
+  1. al terminar una entrega verificada, **si el contexto de la sesión pasa de 200k**;
   2. si la sesión lleva **más de 1 hora parada**. La caché de prompt caduca a la hora, y el siguiente
      mensaje reescribe la conversación entera; Claude Code lo avisa con «Idle… re-cache about Nk
      tokens»;
@@ -496,7 +496,7 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
      (el lanzador de la S5) lee lo mismo. Estimarlo no vale.
   2. ¿Lo **digo en el informe de entrega**, con la cifra, aunque sea bajo? Un informe sin la cifra no pasa
      esta casilla.
-  3. ¿Pasa de **300k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
+  3. ¿Pasa de **200k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
 
   Y **en mitad de una entrega**, si pasa de **500k**: busco el primer punto seguro (un commit local, nunca
   a medio editar), escribo el traspaso y pido el relevo. Es la única excepción a «nunca a mitad de una
@@ -507,7 +507,7 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
   existía; lo que faltaba era una casilla que se contesta al entregar.
 - **Cuándo NO se releva:**
   - **Nunca a mitad de una entrega** (salvo el caso de 500k de arriba, y siempre en un punto seguro).
-  - Tampoco en cada tarea: si una entrega se cierra por debajo de 300k, el siguiente encargo entra
+  - Tampoco en cada tarea: si una entrega se cierra por debajo de 200k, el siguiente encargo entra
     en la misma sesión.
   - Si el uso se acaba o Claude Code no deja seguir, el traspaso se deja ANTES. El último informe
     lo dice justo después de la hora y el SHA (A14): «traspaso listo: el siguiente encargo, en
@@ -820,3 +820,20 @@ Las dos trampas de PowerShell que se midieron el mismo día, y son de la misma f
 no se ejecutó se lee igual que un éxito»), están en `docs/equipo/trampas-del-entorno.md` §2:
 `ReadAllBytes` con ruta relativa devuelve un recuento de **0** que se lee como «limpio», y un `$` dentro de
 comillas dobles no llega a node.
+
+## A25 · Eficiencia y gasto: bajar tokens SIN bajar eficiencia
+
+*(21-sep-2026, de SCRUM-1070/996, por encargo del fundador: «esto no es sostenible».)* La métrica no son
+los tokens: son las **entregas que NOTA el profesional por millón de tokens**. Un recorte que empeore un
+guardarraíl se deshace: **rojos de CI por entrega** y **correcciones tras entregar**.
+
+- **Mide y declara** tu contexto en cada informe de entrega (A19); estimarlo no vale.
+- **Arranque barato:** `norma.mjs --arranque`, traspaso ≤ 5 KB, ningún Read > 6 KB sin offset/limit,
+  Grep antes que leer entero, salidas largas a fichero.
+- **Relevo a 200k** tras una entrega verificada (era 300k; A19 lo recoge). Medido: una sesión de 142 turnos
+  fue el 48 % de las vivas, y la mediana ACABA en 337k; simulado, 200k ahorra el 43 % del contexto.
+- **Al orquestador solo ENTREGA, BLOQUEO o DECISIÓN:** sin saludos ni acuses.
+- **Subagentes** con presupuesto y salida ≤ 2 KB. **Rigor proporcional** a lo que se toca.
+- **No se relanza un puesto sin cola real**, y nunca `EnterWorktree` en un prompt de relevo.
+- **Hilo vivo:** SCRUM-1070 y SCRUM-996 se miran CADA tanda (U8 ≤ 90k, lectura ≤ 10 %) hasta cumplirse;
+  luego, cada semana.

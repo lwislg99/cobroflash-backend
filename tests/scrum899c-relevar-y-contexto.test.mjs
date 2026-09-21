@@ -2,7 +2,7 @@
 //
 // LOS DOS SUBCOMANDOS QUE HACEN QUE EL RELEVO DE LA A19 SE PUEDA EJECUTAR.
 //
-//   · `contexto N` — cuánto ocupa el último turno de una sesión, para saber si pasa de 300k;
+//   · `contexto N` — cuánto ocupa el último turno de una sesión, para saber si pasa de 200k;
 //   · `relevar N <fichero>` — parar una sesión y levantar otra en su puesto, con su encargo dentro.
 //
 // ── LO QUE ESTE FICHERO VIGILA DE VERDAD ────────────────────────────────────────────────────
@@ -150,13 +150,14 @@ test('🔴 el jsonl se busca en TODAS las carpetas de proyecto, no solo en la de
 // decidirRelevo — los tres casos de la A19
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('los tres casos de la A19, y sus dos lados del umbral', () => {
+test('los tres casos de la A19, y sus dos lados del umbral (200k desde A25)', () => {
+  assert.equal(s.UMBRAL_CONTEXTO, 200_000, '🔴 A25: el relevo es a 200k, no a 300k');
   const ahora = Date.parse('2026-09-17T19:00:00Z');
   const hace5min = ahora - 5 * 60 * 1000;
   const ctx = (t) => ({ tokens: t, turnos: 10, cuando: null });
 
-  assert.equal(s.decidirRelevo({ contexto: ctx(300_001), ultimaActividad: hace5min, ahora }).veredicto, 'RELEVAR');
-  assert.equal(s.decidirRelevo({ contexto: ctx(299_999), ultimaActividad: hace5min, ahora }).veredicto, 'SEGUIR',
+  assert.equal(s.decidirRelevo({ contexto: ctx(200_001), ultimaActividad: hace5min, ahora }).veredicto, 'RELEVAR');
+  assert.equal(s.decidirRelevo({ contexto: ctx(199_999), ultimaActividad: hace5min, ahora }).veredicto, 'SEGUIR',
     '🔴 releva por debajo del umbral: la A19 dice que el encargo siguiente entra en la misma sesión');
 
   const hace2h = ahora - 2 * 60 * 60 * 1000;

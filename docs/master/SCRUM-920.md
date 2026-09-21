@@ -264,3 +264,30 @@ Sonda `sonda-flotantes-staging.mjs` (salida en `sonda-flotantes-staging-salida.t
 - **1280 px** no se recorrió (el encargo era 390). La lista sin tabla de 920c se comprobó por sus efectos (sin scroll lateral, filas y píldoras); **no se abrió el «⋯»** de las filas.
 - **La foto real sigue sin medirse:** staging solo tiene fixtures de 0,1 KiB.
 - No se probó guardar un gasto (recorrido de solo lectura).
+
+# SCRUM-920j · el «?» de ayuda deja de tapar «Nuevo gasto» (decisión 1 del comentario 16255)
+
+**Fecha:** 21-sep-2026 · **Carril:** S4 por encargo del orquestador (excepción de carril, como 920i)
+**Medido contra:** `origin/main` = `4f40e95c169281beb224e7b61c904974b4534141` · 2026-09-21T17:52:03Z (cabecera `Date:` de GitHub, al escribir esta entrada; a esa hora `main` ya iba por `b46229f1f65bf802ac3cb79ec2d0a5540931f370`, y entre los dos no cambió `styles.css`, `tutorial.js` ni el guard).
+**Rama:** `scrum-920j-el-ayuda-no-tapa-nuevo-gasto` · guard (rojo) `30c01276f631dc61eaa82af1fa39318da26c533e` · arreglo `f374fdcad104b13cd1c6a547b544f22d4bc23e6b`
+**Decisión:** la del orquestador sobre el comentario de Jira 16255, opción 1 (la recomendada): `padding-right` en la barra a ≤560 px. Sin texto nuevo: es CSS.
+
+## Qué se hizo
+
+- **Arreglo (1 regla, 3 líneas con su comentario):** `.gastos-barra { padding-right: 78px; }` dentro del `@media (max-width: 560px)` de `styles.css`, DESPUÉS del `padding:` abreviado de la barra. 78 = 20 (el `right` del «?») + 48 (su ancho) + 10 de aire. A 390 px el botón pasa de 358 a **296 px** y termina en x=312; el «?» empieza en x=322.
+- **Guard (bloque J de `scripts/guard-lista-gastos.mjs`):** pinta un DOBLE de `#tut-help-btn` con el MISMO `cssText`, **leído de `tutorial.js`** (si el fichero cambia, el doble cambia; si no lo encuentra, sale «NO SUPE MIRAR», no verde), y mira con `elementFromPoint` una rejilla de 27 puntos sobre «Nuevo gasto», más el solape en px². Lleva su control positivo: el doble tiene que verse a sí mismo en su centro.
+- **Rojo con el código de antes (sin la regla):** `🔴 el «?» de ayuda TAPA a «Nuevo gasto»: 2 de 27 puntos del botón y 1632 px²` (los mismos 1.632 px² que midió el recorrido de staging en 920i). **Verde con el arreglo:** `0 de 27 puntos tapados, 0 px² de solape (el botón acaba en x=312, el «?» empieza en x=322)`. La BASE (main sin tocar) dio 77 ✅ · 0 🔴; ahora 78 ✅ · 0 🔴; el conjunto de líneas ✅ cambia sólo en el ancho del botón (358→296) y la línea nueva.
+- **Tres mutaciones + el rojo** (`mutar-920j.mjs`, sobre una COPIA de `public/`, salida en `mutar-920j-salida.txt`): base 0 · sin la regla 🔴 (1632 px²) · hueco corto de 60 px 🔴 (272 px²) · `padding-left` en vez de `-right` 🔴 · la regla antes del `padding:` abreviado, que la pisa, 🔴. Las cuatro caen; ninguna sustitución dejó de casar.
+- **Captura antes/después a 390×844** (`capturas-920j/`, `capturas-920j.mjs`): antes el «?» muerde el extremo derecho del botón; después queda un hueco entre los dos.
+- **Población de la suite:** los **61 ficheros de test** cuyo texto cita `styles.css` (`git grep -l`): **556 tests, 556 pasan, 0 fallan, 0 saltados**. La suite completa no se ha corrido: el CI es la puerta.
+
+## Errores propios
+
+- **Mi primer instrumento no habría visto el defecto.** El traspaso decía «`elementFromPoint` en 5 puntos» y los escribí (cuatro esquinas a 2 px y el centro): con el defecto puesto dieron **«0 de 5»** aunque el solape era de 1.632 px². El «?» es un círculo y ninguno de esos cinco puntos cae dentro. Lo cazó correr el rojo ANTES del arreglo; ahora es una rejilla de 9×3.
+- **He tocado un umbral que ya existía:** «a ancho completo» era `ancho - 40` y con el hueco del «?» el botón mide 296 de 390, así que pasa a `ancho - 100`. Es la única pieza del guard que se relaja; lo dice el comentario del código y lo cubre lo nuevo (el «?» no tapa) más el umbral, que sigue exigiendo un botón ancho.
+
+## No hecho / declarado
+
+- **No verificado en staging:** el PR aún no está en `main`. Cuando lo esté, se puede volver a correr `recorrido-staging-920d.mjs` (solo lectura, GO nuevo) y mirar si el botón y el «?» conviven; el ticket lo cierra el orquestador por efecto medido.
+- El doble del «?» reproduce su posición y su `z-index`, no su comportamiento (`openHelpGuide`): aquí sólo importa qué tapa.
+- Otras pantallas con barra fija abajo a ≤560 px, si las hubiera, no se han censado: este PR no las toca.
