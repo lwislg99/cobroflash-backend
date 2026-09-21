@@ -93,6 +93,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum13-cobrado.test.mjs': 1,
   'scrum52-operario.test.mjs': 1,
   'scrum692-guardado-parcial-en-base.test.mjs': 1,
+  // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
+  // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
+  'scrum967b-el-portal-en-el-envio.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

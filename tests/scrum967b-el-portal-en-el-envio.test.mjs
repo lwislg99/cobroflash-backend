@@ -23,6 +23,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import http from 'node:http';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
@@ -44,7 +45,26 @@ delete process.env.RESEND_API_KEY;
 delete process.env.SMTP_URL;
 
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-const SKIP = !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated';
+
+/** SCRUM-560: `node:http` sin pool (`agent: false`), nunca `fetch` sobre el propio `app.listen(0)`
+ *  — el patrón que revienta libuv al cerrar (ver `tests/scrum100-webhooks-fail-closed.test.mjs`). */
+function pedir(port, method, ruta, json) {
+  return new Promise((resolve, reject) => {
+    const cuerpo = json === undefined ? null : JSON.stringify(json);
+    const req = http.request(
+      { host: '127.0.0.1', port, path: ruta, method, agent: false,
+        headers: cuerpo ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(cuerpo) } : {} },
+      (res) => {
+        let d = '';
+        res.setEncoding('utf8');
+        res.on('data', (t) => { d += t; });
+        res.on('end', () => resolve({ status: res.statusCode, texto: d, json: () => JSON.parse(d) }));
+      },
+    );
+    req.on('error', reject);
+    req.end(cuerpo ?? undefined);
+  });
+}
 
 /** El `.eml` guarda el HTML en quoted-printable: sin decodificar, `=` y los saltos blandos
  *  partirían la URL y la búsqueda saldría vacía aunque el enlace estuviera. */
@@ -59,7 +79,7 @@ function decodificarQP(eml) {
   return Buffer.from(bytes).toString('utf8');
 }
 
-test('SCRUM-967b · el portal viaja en el correo del presupuesto y en la firma del parte, y en nada persistente', { skip: SKIP }, async () => {
+test('SCRUM-967b · el portal viaja en el correo del presupuesto y en la firma del parte, y en nada persistente', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { BASE_URL } = await import('../dist/core/config/env.js');
@@ -67,7 +87,7 @@ test('SCRUM-967b · el portal viaja en el correo del presupuesto y en la firma d
   const { sendQuoteEmail } = await import('../dist/modules/messaging/domain/email.service.js');
   const server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
-  const base = `http://127.0.0.1:${server.address().port}`;
+  const port = server.address().port;
   const stamp = Date.now();
 
   try {
@@ -109,29 +129,27 @@ test('SCRUM-967b · el portal viaja en el correo del presupuesto y en la firma d
       });
 
       // ④ antes de firmar: la página se pinta (suelo) y NO lleva el token.
-      const antes = await (await fetch(`${base}/albaran/${firmaToken}`)).text();
+      const antes = (await pedir(port, 'GET', `/albaran/${firmaToken}`)).texto;
       assert.ok(antes.includes(albaran.numero), 'SUELO: la página del parte no se ha pintado');
       assert.ok(!antes.includes(tokParte), '④ 🔴 la página del parte SIN firmar enseña el token del portal');
       assert.ok(antes.includes('Abrir mi portal de cliente'), '② falta el botón firmado (L3) en la pantalla de gracias');
 
-      const firmar = () => fetch(`${base}/albaran/${firmaToken}/firmar`, {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ signatureData: SIG, version: albaran.version, firmadoPorNombre: 'Jorge 967b' }),
-      });
+      const firmar = () => pedir(port, 'POST', `/albaran/${firmaToken}/firmar`,
+        { signatureData: SIG, version: albaran.version, firmadoPorNombre: 'Jorge 967b' });
       const r1 = await firmar();
-      const b1 = await r1.json();
+      const b1 = r1.json();
       assert.equal(r1.status, 200, `la firma debía entrar y dio ${r1.status} ${JSON.stringify(b1)}`);
       assert.equal(b1.portalUrl, `${BASE_URL}/cliente/${tokParte}`,
         '② 🔴 la respuesta de la firma NO trae el enlace del portal de ESE cliente');
 
       const r2 = await firmar();
-      const b2 = await r2.json();
+      const b2 = r2.json();
       // SUELO del negativo: el segundo POST llegó a la rama idempotente, no a un error cualquiera.
       assert.equal(b2.already, true, `SUELO: el segundo POST no pasó por «ya firmado» (${JSON.stringify(b2)})`);
       assert.ok(!('portalUrl' in b2), '③ 🔴 un segundo POST sobre un parte YA firmado devuelve el portal');
       assert.ok(!JSON.stringify(b2).includes(tokParte), '③ 🔴 el token del portal sale en la respuesta repetida');
 
-      const despues = await (await fetch(`${base}/albaran/${firmaToken}`)).text();
+      const despues = (await pedir(port, 'GET', `/albaran/${firmaToken}`)).texto;
       assert.ok(despues.includes('ya está firmado'), 'SUELO: la página del parte firmado no se ha pintado');
       assert.ok(!despues.includes(tokParte), '④ 🔴 la página del parte FIRMADO enseña el token del portal');
 
@@ -146,8 +164,8 @@ test('SCRUM-967b · el portal viaja en el correo del presupuesto y en la firma d
             ...(status === 'accepted' ? { acceptedAt: new Date() } : {}),
           },
         });
-        const r = await fetch(`${base}/pay/quote/${decisionToken}`);
-        const html = await r.text();
+        const r = await pedir(port, 'GET', `/pay/quote/${decisionToken}`);
+        const html = r.texto;
         assert.equal(r.status, 200, `SUELO: la página del presupuesto ${status} no respondió 200 (${r.status})`);
         assert.ok(html.includes(status === 'accepted' ? 'Ya aceptaste' : 'Firmar y aceptar'), `SUELO: la página del presupuesto ${status} no es la esperada`);
         assert.ok(!html.includes(tokPres), `④ 🔴 la página del presupuesto ${status} enseña el token del portal`);
