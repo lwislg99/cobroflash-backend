@@ -84,3 +84,31 @@ objetivo AB6 es 44): es del componente `.input` y no se cambia en este ticket.
 Si un filtro deja la lista vacía, se pinta el vacío de pestaña, cuya segunda línea («Marca cada
 cliente como empresa o persona al editarlo.») no describe la causa. Ya pasaba con el filtro de
 etiqueta; arreglarlo pide un texto nuevo.
+
+## Apéndice · 21-sep · el PR quedó CONFLICTING con main y se resolvió (S1, relevo)
+
+**Medido contra:** `origin/main` = `c090a0b49f3831ceb522599d1127d08c31d7515c` · 2026-09-21T12:52:15Z (hora de GitHub, cabecera `Date:` de `gh api -i zen`; los conflictos se midieron antes con `git merge-tree --write-tree` contra `b980a38201357492e8a30b97076f5b49bb17154d`, y este `main` va mezclado dentro de la rama, AA2)
+**Rama:** `scrum-979-ultima-visita` · #1567
+
+- **Dos conflictos, los dos medidos ANTES de mezclar** (`merge-tree`, sin escribir ninguna ref) **y resueltos conservando las dos partes:**
+  1. `src/modules/system/app/routes/customersAdmin.routes.ts`: el `import` de `historialDelCliente` (SCRUM-980, en `main`)
+     y el de `seesOnlyOwnJobs` (SCRUM-979, aquí) van los dos.
+  2. `tests/scrum698-vistas-que-no-se-miden.test.mjs`: `main` dejó `renderQuotesView` en **244** (915h, 915i) y esta rama
+     lleva `renderCustomersView` **69 → 78**. Se conservan las tres explicaciones y **el número no se suma: lo dice el
+     propio test** sobre el árbol fusionado (244 · 166 · 78 · 144, y pasa). Clientes sigue en 78 aun con el cambio de
+     `customersView.js` que entró por SCRUM-982.
+- **Un rojo que solo existía en la mezcla, y era de esta rama:** `SCRUM-553 · el número de etiquetas con el «>» pegado NO SUBE`
+  daba **21 con tope 20**, y el extra era `scripts/guard-lista-trabajos.mjs:477`, mío: `/<td class="cell-title">/g`, el
+  contador de filas de datos de Clientes que añadió §⑥ (con esa línea, 21 sobre el árbol fusionado; sin ella, 20).
+  Arreglo, en el CÓDIGO y no en el tope: `/<td class="cell-title"[^>]*>/g` (deja hueco a los atributos y nada más, que es lo
+  que pide el propio test). Cuenta lo mismo hoy: `guard:lista-trabajos` sigue dando «Clientes trae LO DECLARADO (SCRUM-979)
+  y nada más · … idéntico a la base» (huella `571a61ff7a50ea42`, la misma de antes del cambio).
+- **Medido tras el arreglo:** `scrum979` **7 de 7 con banco** (Postgres 16 desechable en loopback, base `*_test`: el test
+  gateado que en `npm test` sale «skipped» aquí corrió de verdad); y 13 ficheros dirigidos (843, 553, 522, 548, 816, 710b, 406,
+  480, 979, 698, 713c, 224): **127 tests, 0 fallos, 1 skipped** (el gateado, que corrió aparte);
+  `guard:lista-trabajos` EXIT 0; `guards:entrada` 11 de 11.
+- **Suite completa** sobre el árbol fusionado con `b980a382`: 7.860 tests · 7.741 pass · 115 skipped · 4 fail. Tres son
+  SCRUM-939b (su control positivo espera que `gh.exe` no exista; en ESTA máquina existe, y sale igual en `main`) y el cuarto
+  era el 553 de arriba, ya arreglado. **No se repitió la suite entera tras ese arreglo de una línea ni tras la mezcla con
+  `c090a0b4`** (915g, 913a, 980b; solo `styles.css` es común y en sitios distintos): se compensó con los 13 ficheros de
+  arriba y con que CI prueba el merge.

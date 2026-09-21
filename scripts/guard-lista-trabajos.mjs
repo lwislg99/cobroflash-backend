@@ -474,7 +474,7 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
     const cA = await huella(puertoMain, '/clientes');
     const cB = await huella(puerto, '/clientes');
     const filasCli = (cA._html.match(/<tr[\s>]/g) || []).length;
-    const filasDeDatos = (cB._html.match(/<td class="cell-title">/g) || []).length;
+    const filasDeDatos = (cB._html.match(/<td class="cell-title"[^>]*>/g) || []).length;
     const PIEZAS_979 = [
       ['el <th> de «Última visita»', /<th[^>]*data-columna="visita"[^>]*>[^<]*<\/th>/g, 1],
       ['el <select> del filtro', /<select[^>]*>(?:(?!<\/select>)[\s\S])*?Cualquier fecha de visita(?:(?!<\/select>)[\s\S])*?<\/select>/g, 1],
