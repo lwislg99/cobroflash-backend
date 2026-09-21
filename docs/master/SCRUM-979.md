@@ -67,7 +67,8 @@ objetivo AB6 es 44): es del componente `.input` y no se cambia en este ticket.
 ## El primer CI salió rojo, y los dos rojos eran de este ticket
 
 1. **713c (estilos escritos desde JS, techo 340)**: el `style.cssText` del selector lo subía a 341.
-   Arreglo: la regla va en `styles.css` (`.clientes-filtro-visita`), y el color de la celda también
+   Arreglo: la regla va en `styles.css` (`.customers-filtro-visita`, la que empujó el bot a esta
+   misma rama; la mía, duplicada, se retiró al fusionar), y el color de la celda también
    (`.cell-visita`), en vez de escribirlos desde JS.
 2. **`guard:lista-trabajos` §⑥ congelaba Clientes por hash**, y este ticket la cambia a propósito.
    Mismo trato que SCRUM-831 dio a Albaranes: Clientes sale de la comparación por hash y se le exige

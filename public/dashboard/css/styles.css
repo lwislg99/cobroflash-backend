@@ -762,6 +762,10 @@ html, body { overflow-x: clip; }
 
    `aria-pressed` ya anunciaba el estado al lector de pantalla antes que este CSS: aquí
    sólo se hace visible lo que el marcado ya decía. */
+/* SCRUM-979: el select de «última visita» no lleva el tope de 220 px de los otros dos filtros
+   de la toolbar — a 390 px cortaba «Sin visitar desde hace 12 m…» (medido en Edge). Mide lo que
+   su opción más larga y nunca más que la barra. */
+.customers-filtro-visita { max-width: 100%; }
 .customers-tabs {
   display: flex;
   gap: 4px;
@@ -2165,9 +2169,6 @@ html, body { overflow-x: clip; }
   transition: border-color .12s;
 }
 .input:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
-/* SCRUM-979 · el filtro por última visita de Clientes: sin el tope de 220 px de sus vecinos, que a
-   390 px cortaba «Sin visitar desde hace 12 m…». Mide lo que su opción más larga, nunca más que la barra. */
-.clientes-filtro-visita { max-width: 100%; }
 /* SCRUM-979 · la celda «Última visita» de la lista de Clientes: mismo tono que «Alta». */
 .cell-visita { color: var(--muted); }
 
