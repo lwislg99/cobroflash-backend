@@ -19,12 +19,16 @@ import {
   type Codificacion, type CampoCliente,
 } from '../../domain/importarClientes.service';
 
+import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
+
 const router = Router();
 
 router.get('/', async (req, res) => {
   try {
     const search = req.query.search ? String(req.query.search) : undefined;
-    const customers = await listCustomers(req.merchantId, search);
+    // SCRUM-979: el técnico ve la cartera entera, pero su «Última visita» sale solo de SUS trabajos.
+    const customers = await listCustomers(req.merchantId, search,
+      seesOnlyOwnJobs(req.userRole) ? { soloTrabajosDe: req.teamMemberId ?? null } : {});
     res.json(customers);
   } catch (err) {
     console.error('[GET /admin/customers]', err);

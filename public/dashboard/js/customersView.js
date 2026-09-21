@@ -172,6 +172,7 @@ function renderCustomersView(container) {
   let pestanaActiva = FC.POR_DEFECTO.pestana;
   let ordenActivo = FC.POR_DEFECTO.orden;
   let etiquetaActiva = FC.POR_DEFECTO.etiqueta; // SCRUM-580 (CONT-07)
+  let visitaActiva = FC.POR_DEFECTO.visita; // SCRUM-979
 
   const pestanas = createElement("div", "customers-tabs");
   const botonesPestana = FC.PESTANAS.map((p) => {
@@ -245,6 +246,40 @@ function renderCustomersView(container) {
     // ofrecer un control con una sola opción que no filtra.
     etiquetaSelect.hidden = usadas.length === 0;
   }
+  // ── SCRUM-979 · EL FILTRO POR ÚLTIMA VISITA ─────────────────────────────────────────────
+  // Mismo componente y misma conducta que el de etiquetas: se oculta si ningún cliente del lote
+  // tiene visita (un control que no puede filtrar nada no se ofrece). Textos firmados, en la pieza.
+  const visitaSelect = document.createElement("select");
+  visitaSelect.className = "input";
+  // Sin el tope de 220 px de los otros dos: a 390 px cortaba «Sin visitar desde hace 12 m…»
+  // (medido en Edge). Mide lo que su opción más larga y nunca más que la barra.
+  visitaSelect.style.cssText = "max-width:100%";
+  // Nace OCULTO: hasta que llega el lote no se sabe si hay visitas, y un filtro visible sobre los
+  // esqueletos de carga se puede pulsar sin efecto (medido en Edge a 390 px).
+  visitaSelect.hidden = true;
+  const visitaTodas = document.createElement("option");
+  visitaTodas.value = "";
+  visitaTodas.textContent = FC.TEXTOS_VISITA.sinFiltro;
+  visitaSelect.appendChild(visitaTodas);
+  FC.FILTROS_VISITA.forEach((f) => {
+    const op = document.createElement("option");
+    op.value = String(f.meses);
+    op.textContent = FC.etiqueta(f);
+    visitaSelect.appendChild(op);
+  });
+  visitaSelect.addEventListener("change", () => {
+    visitaActiva = visitaSelect.value ? Number(visitaSelect.value) : null;
+    pintar();
+  });
+  toolbar.appendChild(visitaSelect);
+  /** Sin ninguna visita en el lote se oculta y se suelta el filtro: una lista vacía sin motivo visible no sirve. */
+  function repoblarVisita(lote) {
+    const hay = FC.hayVisitas(lote);
+    if (!hay) visitaActiva = null;
+    visitaSelect.value = visitaActiva === null ? "" : String(visitaActiva);
+    visitaSelect.hidden = !hay;
+  }
+
   ordenSelect.addEventListener("change", () => { ordenActivo = ordenSelect.value; pintar(); });
   toolbar.appendChild(ordenSelect);
 
@@ -536,7 +571,8 @@ function renderCustomersView(container) {
     // SCRUM-580: los TRES se encadenan — pestaña, etiqueta y orden— sobre el lote que ya viene
     // filtrado por el BUSCADOR desde el servidor. Los cuatro a la vez, y ninguno sustituye a otro.
     repoblarEtiquetas(lote);
-    const data = FC.aplicar(lote, pestanaActiva, ordenActivo, etiquetaActiva);
+    repoblarVisita(lote); // SCRUM-979
+    const data = FC.aplicar(lote, pestanaActiva, ordenActivo, etiquetaActiva, visitaActiva);
 
     // ── SCRUM-582 (CONT-09) · LA SELECCIÓN SE RECORTA A LO VISIBLE, EN CADA PINTADO ────────
     //
@@ -648,6 +684,11 @@ function renderCustomersView(container) {
           tagsCell.title = susTags.join(", ");
         }
         tr.appendChild(tagsCell);
+
+        // SCRUM-979 · «Última visita», con el mismo formato que «Alta». Sin visita, celda vacía.
+        const visita = FC.ultimaVisitaDe(c);
+        const visitaCell = addCell(tr, visita ? visita.toLocaleDateString() : "", FC.claseDeColumna("visita", columnasEncendidas));
+        visitaCell.style.color = "var(--muted)";
 
         const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", FC.claseDeColumna("alta", columnasEncendidas));
         altaCell.style.color = "var(--muted)";

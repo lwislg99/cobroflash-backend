@@ -80,6 +80,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,
   'scrum297-evidencias-postgres.test.mjs': 2,
+  // SCRUM-979: la «Última visita». Necesita banco porque lo que vigila es la CONSULTA — el
+  // `groupBy` con la tenencia dentro y el recorte del técnico por los tres ejes de SCRUM-650.
+  'scrum979-ultima-visita.test.mjs': 1,
   'scrum389-un-solo-iva.test.mjs': 2,
   // SCRUM-728d: los tres de la MEDICIÓN en loopback — el suelo (RTT ~0), los cuatro caminos con
   // 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque cronometran

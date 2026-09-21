@@ -366,8 +366,14 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // clase + texto) de los dos árboles, lo único que sobra en la rama es 3 ×
   // `button.quote-ver-documento` = «Ver documento», uno por cada paso que no es el último. En el
   // otro lado no falta nada, así que el delta no esconde una resta compensada.
+  // 🔴 SCRUM-979 · 21-sep-2026 · `renderCustomersView` 69 → 78, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. Los nueve, POR IDENTIDAD (firmas etiqueta + clase de los dos árboles,
+  // `origin/main` 3ac838a5 contra la rama), y en el otro lado no falta nada: el `select.input` del
+  // filtro por última visita (1) con sus 4 `option` («Cualquier fecha de visita» y 6/12/24 meses),
+  // el `th` de «Última visita» (1, `col-hide-mobile`) y su casilla en el selector de columnas
+  // (`label.columnas-opcion` + `input` + `span` = 3).
   for (const [vista, nodos] of [['renderQuotesView', 286], ['renderProductsView', 166],
-    ['renderCustomersView', 69], ['renderHomeView', 144]]) {
+    ['renderCustomersView', 78], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
