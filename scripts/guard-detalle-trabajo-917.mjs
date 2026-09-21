@@ -170,6 +170,17 @@ for (const ancho of ANCHOS) {
           const r = e.getBoundingClientRect();
           return r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44);
         }).length,
+        // Los pequeños CON NOMBRE y tamaño: el rojo de abajo pide «di CUÁL», y un instrumento que
+        // sólo sabe dar la cuenta no puede contestarlo. Medido 21-sep-2026: en el runner de CI
+        // salían 7 y en Windows 8 sobre el MISMO árbol, y sin nombres no había forma de saber cuál.
+        listaPequenos: controles.filter((e) => {
+          const r = e.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44);
+        }).map((e) => {
+          const r = e.getBoundingClientRect();
+          const nombre = norm(e.textContent || e.getAttribute('aria-label') || '').slice(0, 30);
+          return `${e.tagName.toLowerCase()}«${nombre}» ${r.width.toFixed(1)}×${r.height.toFixed(1)}`;
+        }),
         controles: controles.length,
         desborda: c.scrollWidth > c.clientWidth,
       };
@@ -274,6 +285,7 @@ for (const ancho of ANCHOS) {
     //     instrumento roto hasta que se demuestre lo contrario, y aquí bajaría solo si el guard
     //     dejara de ver controles.
     const techo = DEUDA_44PX.get(caso.id);
+    if (m.pequenos !== techo) console.log(`      pequeños ${q}: ${m.listaPequenos.join(' · ')}`);
     if (m.pequenos === 0) {
       bien(`G.2 ${q} 0 de ${m.controles} controles por debajo de 44 px`);
     } else if (m.pequenos === techo) {
