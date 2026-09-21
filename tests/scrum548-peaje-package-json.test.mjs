@@ -113,10 +113,17 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // —que base e IVA cuadren con el total cuando hay descuentos— y el otro no mira la ficha, la usa
   // de puerta: PULSA «Duplicar» y se va a juzgar el EDITOR que sale. Comparten la URL de partida y
   // nada más, y juntarlos daría un guard que al caer no dice si se rompió la ficha o la copia.
+  // SCRUM-915e1 · el editor pasa a CUATRO: entra `guard:documento-vivo`. Éste SÍ se deriva —el
+  // puerto va en variable pero la ruta `#quotes-new` está escrita literal—, y por eso cuenta aquí
+  // en vez de declararse abajo. No se fusiona con los otros tres, y el motivo es el de siempre:
+  // los tres miran el EDITOR de la izquierda (descuentos que redibujan, anchos de columna, los
+  // pasos), y éste mira el DOCUMENTO de la derecha —lo que el cliente recibe—: si su pie miente
+  // sobre la caducidad, los tres siguen verdes y el papel sale mal igual. Juntarlos daría un guard
+  // que al caer no dice si se rompió el editor o el papel.
   assert.deepEqual(resumen, [
     '2×/dashboard/index.html#quotes-detail/1',
     '2×/medicion.html',
-    '3×/dashboard/index.html#quotes-new',
+    '4×/dashboard/index.html#quotes-new',
     '5×/index.html',
   ],
     '🔴 HA CAMBIADO QUIÉN MIDE QUÉ PÁGINA.\n'
