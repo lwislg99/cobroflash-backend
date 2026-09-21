@@ -221,8 +221,14 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // se volvió a MEDIR corriendo este test sobre el árbol ya fusionado. Y otra vez la cifra
   // mentía sin marca de conflicto: bajó limpia de main diciendo 32, y medida da 33 (cada lado
   // contaba sus guards y no los del otro).
-  assert.equal(fuera.length, 33,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ ~~31~~ ~~32~~ 33 → ${fuera.length}.\n`
+  // SCRUM-920c · entra `guard:lista-gastos`. PULSA la lista de Gastos con el ratón (cada opción del «⋯»,
+  // la fila y sus dos excepciones) y mide a 390 y 1280 px que no hay tabla, ni scroll lateral, ni control
+  // por debajo de 44 px. Sube aquí porque lo que juzga —cajas que desbordan, contraste computado, el
+  // estado tras pulsar— sólo existe con el CSS resuelto y un ratón. Comprobado en rojo por mutación
+  // (21-sep-2026): 11 fallos inyectados sobre una copia de `public/`, los 11 caen.
+  // El número de abajo se MIDIÓ corriendo este test sobre el árbol, no sumando uno.
+  assert.equal(fuera.length, 34,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ ~~31~~ ~~32~~ ~~33~~ 34 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

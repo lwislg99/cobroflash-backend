@@ -193,7 +193,12 @@ function respaldosQueAfirman(codigo, nombre = 'x.js') {
  */
 const CENSO_RESPALDOS = Object.freeze({
   'api.js': 2,                 // :1135 → M.pendiente_agendar · :1285 → map.sent
-  'expensesView.js': 1,        // :12   → CATEGORY_LABELS.otros
+  // 🔻 SCRUM-920c / SCRUM-944 · BAJA DE 1 A 0. Era `CATEGORY_LABELS[category] || CATEGORY_LABELS.otros`:
+  // una categoría desconocida se pintaba como «Otros», y el KPI «Mayor categoría» ni eso — caía a la
+  // clave cruda («materials»). Ahora UNA función (`categoriaDe`) decide para la píldora y para el KPI, y
+  // pregunta por el HECHO —¿es una clave del mapa? (`hasOwnProperty`)— en vez de `MAPA[k] || MAPA.x`.
+  // El desconocido sigue diciéndose «Otros», la categoría comodín del dominio, pero ya no por un respaldo.
+  'expensesView.js': 0,
   // 🔻 SCRUM-816 · BAJA DE 1 A 0, y el trinquete solo baja. Era
   // `JOB_STATE_META[j.status] || JOB_STATE_META.pendiente_agendar`: un Trabajo con un estado que
   // esta pantalla no conociera se pintaba como «Sin agendar» — o sea, un desconocido convertido
