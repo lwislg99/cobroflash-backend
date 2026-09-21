@@ -3885,6 +3885,8 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 .gastos-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
 .gastos-chip:focus-visible { outline: none; box-shadow: var(--ring); }
+/* La cuenta del chip en cifras de ancho fijo: al pulsar «Sin foto» cambian los números y el chip no baila. */
+.gastos-chip-n { font-variant-numeric: tabular-nums; }
 
 /* La cabecera del mes: el mes y la cuenta de lo que se ve. Con un filtro puesto lleva además la suma de
    ESO y dice que no es la del mes (el total del mes sale una sola vez, en el KPI). */
