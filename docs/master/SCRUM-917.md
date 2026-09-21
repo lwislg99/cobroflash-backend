@@ -203,3 +203,266 @@ test (A6: un build roto no es un rojo, es un verde que no vale) → EXIT=0. Desp
 `npm run guard:lista-trabajos-917`: **49 de 49**, con su población declarada (49 comprobaciones sobre 12
 trabajos + 200 + 2 monedas + sin equipo, a 1280 y a 390). Es el mismo 49/49 del 18-sep, ahora contra un
 árbol dos días más nuevo: **el rediseño no lo ha roto nada de lo que entró mientras tanto.**
+
+## 917e · El DETALLE, corte D: el dinero se dice una vez
+
+*(Sesión 2b, 20-sep-2026. Primero de los tres cortes del detalle. Partición aprobada por el orquestador por
+el canal: **917e** = D, la franja del dinero · **917f** = E, la cabecera y «Lo que falta» · **917g** = F,
+«El trabajo» plegable. Las letras continúan las del guard de la lista, donde A, B, C y G estaban usadas y
+D/E/F se dejaron libres a propósito para el detalle.)*
+
+### PASO 0 — ¿el defecto existe HOY? (A2)
+
+El inventario del prototipo se midió el 17-sep contra staging. Antes de escribir una línea se comprobó
+**corriendo** que sigue ocurriendo sobre este árbol:
+`docs/master/evidencias/SCRUM-917/paso0-detalle.mjs` → `…/salida-paso0-detalle.txt`.
+Población: 3 casos × 2 anchuras, SUELO 0.
+
+- **«590,00 €» se lee SIETE veces** en el Trabajo pagado. Es el 7 del inventario, reproducido tres días
+  después. Éste es el ticket entero.
+- **«Qué falta para cobrar» se pinta en un Trabajo PAGADO**, con «Te falta por cobrar 0,00 €». El rótulo
+  sigue mintiendo.
+- El caso **sin presupuesto no pinta esa sección en absoluto**: hoy ese hueco no se nombra.
+- 8 de 14 controles por debajo de 44 px (6 de 9 en el caso pobre).
+
+Lo que **no** se reprodujo, dicho: «María López» sale 3 veces, no las 5 del inventario. La diferencia es de
+datos, no de arreglo — aquel Trabajo de staging tenía albaranes y facturas que el fixture no tiene. Y
+«Quién ejecuta este trabajo» no sale en el censo de secciones porque su título es un `div.job-asignados-titulo`
+y no un `h3` (vive en `jobAsignados.js`): ceguera del selector, declarada.
+
+### Qué entra
+
+La franja `.detail-dinero`: la cifra grande es **lo que falta** —la pregunta del jefe—, con «Te falta por
+cobrar» o **«Cobrado del todo»** según el caso; al lado, «Aceptado» y «Cobrado» una vez cada uno; debajo, la
+barra **muda**. Y se retira todo lo que repetía esas cifras:
+
+| qué se retira | dónde estaba | por qué |
+|---|---|---|
+| titular «Total aceptado» a 2,2 rem | `jobDetailView.js`, bloque `sumSec` | la franja ya da el aceptado |
+| «Cobrado X de Y» dentro de la barra | `progressBar()` | dos cifras que la franja acaba de dar |
+| filas Aceptado / Entregado y firmado / Facturado / Cobrado / Te falta | `pintarQueFaltaParaCobrar` | son la franja |
+| bloque DINERO del rail (Cobrado, Pendiente, aviso) | `jobRailBlocks.js` | la misma verdad dicha dos veces |
+
+**No se pierde información, que es la pregunta al borrar filas.** «Facturado» y «Entregado y firmado» no eran
+cifras de contexto sino síntomas, y ya se dicen —mejor, porque dicen qué hacer— en los huecos: «X entregados
+sin facturar», «X facturados sin cobrar». La salvedad de SCRUM-423 (los albaranes SIN_VALORAR no llevan
+importe, así que un 0,00 € ahí sería una afirmación falsa) sigue viva en `huecosDeCobro`, que distingue
+ausencia de cero.
+
+**`progressBar()` no se ha tocado**, a propósito: la comparten otras cuatro pantallas y aquí hacía falta la
+barra sin su texto. Se pinta la barra, no se cambia la función. El texto que la vista deja de repetir sigue
+existiendo para quien no ve la pantalla, en el `aria-label` de la barra.
+
+### Medido
+
+| instrumento | población | antes | después |
+|---|---|---|---|
+| `guard:detalle-trabajo-917` | 92 comprobaciones · 4 casos × 2 anchuras | **32 de 92** (árbol sin tocar) | **92 de 92** |
+| «590,00 €» en el Trabajo pagado | DOM pintado | 7 veces | **4 veces** |
+| «417,45 €» en el Trabajo a medias | DOM pintado | 4 veces | **2 veces** |
+
+**La cuarta aparición que queda es del HUECO**, y es del corte E, no un descuido: el prototipo lo dice con
+todas las letras — «Lo que falta» no repite la cifra que la franja acaba de decir. El guard lo lleva escrito
+en el propio verde (`E lo bajará a 3`) en vez de esconderlo: dejar sólo el objetivo final habría hecho un
+guard que no puede estar verde nunca, y dejar sólo el número de hoy habría perdido la meta.
+
+**El control que más importa es D.10**, el de NO PÉRDIDA: al retirar el bloque DINERO del rail se retira
+también el aviso de cobro de más que allí se pintaba, y ese literal está FIRMADO desde SCRUM-887. El guard
+exige que **siga en pantalla** en el caso «cobrado de más» — y sigue, en «Qué falta para cobrar», que es
+donde se explica. `seccionCobroVisible` devuelve `true` cuando hay exceso justamente para eso.
+
+### La firma, y una lectura que había que cerrar
+
+El comentario **15881** firma literal todos los textos del prototipo «salvo dos», y los dos que excluye por su
+nombre son los de la **lista**. Leído al pie de la letra, eso firmaría «Se ha cobrado de más» / «El cobro
+supera el importe aceptado. Revísalo antes de facturar.» del **detalle** — que el propio documento marca como
+«forma propuesta, decisión de la S1». Se aplicó la lectura restrictiva, se reportó, y el orquestador lo
+confirmó y lo cerró el 20-sep. **Esos dos no se construyen**, y para ese caso se reutiliza el literal ya
+firmado de SCRUM-887. Ficha: `docs/microcopy/2026-09-20-SCRUM-917-franja-del-dinero.md`.
+
+### Deuda declarada, no verde
+
+**G.2 · los 44 px.** El detalle YA incumplía AB6 antes de este ticket: el PASO 0, sobre el árbol sin tocar,
+midió los mismos 8 de 14. Este corte no lo arregla. En vez de dejarlo en rojo mudo o taparlo, va en una
+**allowlist visible** (`DEUDA_44PX`) con las **dos mitades** del trinquete: no puede subir, y si baja también
+falla, porque una mejora que nadie ha hecho es un instrumento roto hasta que se demuestre lo contrario.
+Reportado aparte al orquestador.
+
+### Errores propios
+
+Los tres son del instrumento, y los tres tenían forma de resultado bueno.
+
+1. **El banco servía el mismo Trabajo a los tres casos.** Llamaba a `renderJobDetailView(c, {jobId: id})` y la
+   firma es `(container, jobId)` con el id **a pelo**; dentro hace `Number(jobId)` → `NaN` → `/admin/jobs/NaN`
+   → y mi comodín `/admin/*` lo contestaba con el Trabajo de siempre. **No dio ningún error.** Los tres casos
+   salieron idénticos y los que no eran el primero dijeron «0 veces» de sus propios importes — que es
+   exactamente lo que diría una pantalla ya arreglada. Lo cazó un **control de discriminación** que no existía
+   al principio y que ahora corre ANTES de leer ningún resultado: *cuatro Trabajos distintos tienen que pintar
+   cuatro pantallas distintas*. El comodín ya no puede devolver un Trabajo, y un id desconocido da 404.
+2. **Al quitar el comodín rompí el arranque, y el síntoma señalaba al sitio equivocado.** El dashboard pide
+   `/admin/me`, `/admin/precarga` y `/admin/entorno` al cargar; sin respuesta navega a la pantalla de entrada,
+   y como el banco servía los `.html` como `application/javascript`, Chrome los pintaba como texto dentro de
+   un `<pre>`. «No existe `#view`» parecía un fallo de la vista y era del banco.
+3. **Dos verdes FALSOS en mi propio guard, en la primera pasada.** `Intl.NumberFormat` separa el número del €
+   con un espacio fino inseparable (U+202F): normalicé el texto del DOM y no el patrón, y el censo dijo **0
+   apariciones** de un importe que sale siete veces. Y `innerText` respeta `text-transform`, así que el rótulo
+   «Total aceptado», pintado en versalitas, se leía «TOTAL ACEPTADO» y el guard lo daba por retirado. Los dos
+   se cazaron porque **contradecían al PASO 0**: sin esa medición previa, los habría publicado.
+
+### 🔴 917c dejó un guard CIEGO en main, y la lección es A12
+
+El PR #1522 (917c) **entró en `main` con el check «guards de navegador» en FAILURE**, que no bloquea.
+`guard:escalera-por-estado` salía **CIEGO (salida 2), no rojo**: «los cinco estados dan 1 rótulo distinto» y
+«LISTA: no encuentro el primario que pulsar». No estaba diciendo que el producto fallara — estaba diciendo
+que no había mirado nada. Sin su propio SUELO, esto habría pasado por un verde.
+
+**La causa es mía y es exactamente A12: cambié una población y no censé quién medía sobre ella.** Ese guard
+buscaba la acción de la fila con `.jobs-acciones > button.btn-primary`, y 917c cambió eso **a propósito**:
+una sola primaria en la lista, la del dinero, y la acción repetida del grupo a secundaria, porque doce
+«Agendar» verdes idénticos no jerarquizan. Revisé el guard 816, que también lee la lista, y no revisé éste.
+
+**Arreglado aquí, con el criterio que decidió el orquestador:** lo que ese guard defiende es que las dos
+pantallas propongan el **MISMO RÓTULO**, no el peso visual del botón — y el peso es justo lo que 917c decidió
+cambiar, decisión que se queda. Se reancla a `button:not(.overflow-trigger)` en los **tres** sitios que
+pulsaban la fila (no sólo en el que salía en el log; el primero arreglado dejaba el segundo ciego, y se vio
+corriendo). Tras el arreglo **mide y está verde**: 5 estados, 4 rótulos distintos, lista y detalle de acuerdo
+en los cinco, y «Agendar» y «▶ Empezar» ejecutables en las dos.
+
+    🔒 Un guard anclado al peso visual de un botón se queda ciego el día que alguien reordene la jerarquía
+       — y reordenar la jerarquía es cosa que pasa y debe poder pasar.
+
+**Y el hallazgo del arreglo: había TRES anclajes a `.btn-primary`, y el log de CI sólo enseñaba el primero.**
+Arreglar ése habría dejado el bloque ② igual de ciego **y el guard en verde**, que es peor que dejarlo roto.
+Se vio corriendo el guard, no leyendo su log.
+
+    🔒 Un arreglo guiado por el log arregla lo que el log enseña, no lo que está roto.
+
+De paso, tres cosas medidas: **CIEGO no es ROJO** (distinguirlo es lo que evitó buscar un defecto de producto
+que no existía); un comentario con acentos graves **dentro de un template literal** lo cierra — el guard no
+compilaba y el `SyntaxError` señalaba a `overflowMenu`, que no tenía nada que ver, o sea que te manda a
+investigar el sitio equivocado; y la clase del «⋯» no era la que yo suponía sino `overflow-trigger`, que se
+comprobó **leyendo** `api.js:overflowMenu` (que devuelve el propio botón, no un envoltorio).
+
+### La rama mergeada no se vuelve a empujar
+
+Este corte sale en una rama NUEVA, `scrum-917e-franja-del-dinero`, y no en la de 917c. El motivo está
+documentado en el equipo y aun así ha mordido varias veces: **el repo borra la rama al mergear**, así que
+empujar `scrum-917c-lista-trabajos` otra vez la **recrea** y abre un PR residuo detrás de un PR ya cerrado.
+La defensa es `git ls-remote --heads origin <rama>` **justo antes** del push, no al empezar la tarea.
+
+### Hallazgo ajeno, arreglado aquí por orden del orquestador
+
+`scripts/capturar-detalle-trabajo.mjs:69` pasaba `{ jobId: 7 }`, la misma forma equivocada. No se notaba
+porque su servidor contesta el mismo Trabajo a todo, pero era **un aparato que fotografiaba una pantalla que
+no es la del id que dice**. Arreglado en este corte (una línea) en vez de abrir ticket: dejarlo vivo mientras
+se construye con él al lado era el riesgo mayor.
+
+### Tests y censos cambiados, con su motivo
+
+- `scrum522-guards-fuera-de-la-tanda`: **30** por `guard:detalle-trabajo-917`, medido corriendo el test.
+  (Al mergear main el 20-sep pasa a **31**; ver «917e · segunda parte».)
+
+### Lo que NO cubre este corte
+
+- El hueco sigue repitiendo la cifra de la franja (−1 aparición pendiente) → **917f (E)**.
+- El título sigue siendo el cliente y las migas lo repiten → **917f (E)**.
+- Las cinco secciones sueltas y «Incluir precios en el parte» → **917g (F)**.
+- Los 8 controles por debajo de 44 px: deuda heredada, declarada y con trinquete.
+- El justificante de cobro sigue en el rail (el prototipo lo manda a Documentos); se retiró sólo lo que
+  repetía cifras. Con estos cuatro casos el bloque DINERO desaparece entero porque no tienen justificantes,
+  así que **D.8 no comprueba «el bloque ya no existe» sino «el rail no repite cifras»**, que es la afirmación
+  que sí se sostiene con este fixture.
+- Sin verificar en staging todavía (se hace tras el merge).
+
+---
+
+## 917e · segunda parte: los NUEVE contratos que la suite completa cazó
+
+*20-sep-2026, 19:39 GMT (cabecera `Date:` de `gh api -i zen`). Sesión 2b, «s2e-20».*
+Commits: `66085437` (817), `b2f92b68` (los cuatro re-anclajes), `74a38f73` (merge de `origin/main`
+`8fcfd13fc7e14069bef9ce2b9c3f94fe969f2506`). Evidencias:
+`docs/master/evidencias/SCRUM-917/salida-reanclajes-917e.txt`.
+
+**El corte D se dio por bueno con `guard:detalle-trabajo-917` en 92/92 y la suite completa sacó
+NUEVE regresiones suyas.** Ésa es la lección entera y va aquí arriba: *un guard nuevo en verde no
+dice nada de los contratos viejos; mide lo que tú decidiste mirar*. Tres eran mecánicos y se
+arreglaron el mismo día; los seis que quedaban son los de abajo.
+
+### La regla con la que se resolvieron: RE-ANCLAR, no borrar
+
+El rediseño se lleva la SUPERFICIE; el PRINCIPIO se queda y ahora lo tiene que cumplir la franja.
+Un contrato que se borra porque su superficie desapareció es **una decisión perdida**; uno
+re-anclado sigue vigilando. Cada uno lleva, en el mismo cambio, (a) qué superficie desapareció,
+qué principio sobrevive y dónde vive ahora, y (b) **el rojo que demuestra que caza la pérdida**.
+
+| contrato | superficie que desapareció | dónde vive ahora | su rojo |
+|---|---|---|---|
+| `SCRUM-651` · ausente ≠ cero | el titular «Total aceptado» (`detail-total-label`) | la franja, guardada por `totalAceptado != null`, **medida en el DOM montado** | quitar la guarda → «Aceptado 0,00 € · Cobrado 0,00 €» en un Trabajo sin presupuesto |
+| `SCRUM-320` · un cero escrito parece un cero medido | la fila «Entregado y firmado» de «Qué falta para cobrar» | `huecosDeCobro`, que ya distingue ausencia de cero | `> 0` → `>= 0` → aparece «0,00 € entregados sin facturar» |
+| `SCRUM-318` · sin eje no se afirma nada | el bloque DINERO del rail con «Cobrado» y «Pendiente» | la franja: el eje manda sobre el **foco** | quitar `if (hayEje)` → la franja afirma sin eje |
+| `SCRUM-907` · el aviso **con su importe** | la línea `aviso` del bloque DINERO del rail | «Qué falta para cobrar», medido en el DOM montado | dos: el aviso que no se pinta, **y el aviso que se pinta SIN su importe** |
+
+### 🔴 El re-anclaje de 318 cazó un defecto del corte D
+
+No es teoría: al mudar el principio se midió la franja con `totalAceptado: 0` y 300 € cobrados, y
+decía **«Cobrado del todo · 0,00 €» justo encima de «Cobrado 300,00 €»** — la pantalla
+contradiciéndose en cuatro centímetros, y es exactamente el defecto que SCRUM-363 quitó del chip de
+cobro. Arreglado en el mismo cambio, y el arreglo es el principio, no un parche: **el eje manda
+sobre lo DERIVADO (el rótulo y la cifra grande), no sobre lo MEDIDO (los dos lados)**. Ni un rótulo
+nuevo: se omite el que había.
+
+### Los dos de SCRUM-817 no eran de orden: la vista NO MONTABA
+
+Nadie los había diagnosticado. `l.append(e, ' ', v)` pasaba una **cadena suelta** al DOM. Es DOM
+válido en el navegador —por eso el guard en Chrome salía 92/92— pero el banco de vistas no la
+atiende, `renderJobDetailView` reventaba con `Cannot create property '_padre' on string ' '`, y los
+dos contratos caían en su **SUELO sin llegar a mirar el orden que vigilan**. Un suelo que salta es
+lo contrario de un contrato roto, y distinguirlo ahorró buscar un defecto de producto inexistente.
+Arreglado con `document.createTextNode(' ')`, que es el idioma que el propio fichero ya usa en la
+casilla de la factura: era la ÚNICA aparición de la forma con cadena en todo `public/`.
+
+**Hallazgo del banco, que NO se arregla aquí** (`tests/_banco-vistas.mjs` es de la S3): su `append`
+hace `x._padre = n` sobre cada argumento, así que muere con los strings que `ParentNode.append` sí
+acepta. Le pasará a la siguiente vista que use la forma corta. Va al orquestador, no a un ticket
+propio.
+
+### Errores propios
+
+1. **Mi primer arreglo del caso sin eje se pasó de largo, y lo tumbó otro contrato.** Condicioné la
+   franja entera a `!= null && (hayEje || cobrado > 0)`, y el control positivo de SCRUM-651 saltó:
+   *un presupuesto aceptado por 0 € es raro pero CONSTA, y eso lo escondía*. Los dos contratos caben
+   a la vez porque hablan de cosas distintas — 651 de si el dato consta (la franja), 318/363 de si
+   hay eje para derivar (el foco). **Es el argumento de esta sección entera sucediendo en vivo:** el
+   contrato que no borré me corrigió a mí.
+2. **La primera pasada de los cinco rojos no midió nada.** Escribí el `.ps1` con caracteres
+   no-ASCII; PowerShell 5.1 lee un `.ps1` sin BOM como ANSI, el patrón `^ℹ (tests|pass|fail)` no casó
+   NUNCA y la salida vino mojibake. Las cinco inyecciones se aplicaron y se revirtieron bien, pero de
+   su resultado no se supo nada. **Un rojo sin población no es un hallazgo: es un instrumento que no
+   llegó a arrancar.** Rehecho en ASCII.
+3. Un `git commit -m` con un here-string lo bloqueó el hook (`Remove-Item on system path '/'`) por lo
+   que llevaba escrito dentro. Se pasó a `-F <fichero>`. Anotado por si le pasa a otra sesión.
+
+### El contador de `scrum522`: la OCTAVA colisión, y la que más engaña
+
+`917e` y `926` escribieron los dos su comentario sobre el mismo «29 → 30». El merge marcó conflicto
+en los **comentarios**… y dejó pasar la **cifra** sin conflicto, diciendo 30 cuando ya había 31.
+🔒 **El conflicto que sí ves te tapa el que no.** Resuelto como manda el fichero: los dos comentarios
+se quedan, ninguno se tira, y el número **se vuelve a medir corriendo el test** sobre el árbol
+fusionado — **31**, no «30 + 1».
+
+### Medido, con su población
+
+- Los cinco ficheros de contratos: **55 tests, 49 pass / 6 fail** antes → **55 pass / 0 fail** después.
+- Cinco rojos, repetidos ENTEROS tras el merge con conflicto (A23 #11), cada uno con su
+  `git diff --numstat` al lado y el árbol limpio después.
+- Censos por su nombre: `scrum258` 10/10 · `scrum522` 26/26 (cifra medida: **31**) · `scrum548` 8/8.
+- `npm run build` EXIT 0 · `guards:entrada` 4 guards / 26 tests EXIT 0.
+- Guards de navegador: `detalle-trabajo-917` **92/92** · `lista-trabajos-917` **49/49** ·
+  `escalera-por-estado` verde (el que estaba CIEGO en `main`; ésta es la entrega que lo cura).
+
+### Lo que NO cubre
+
+- **La suite completa no se ha corrido en local**: por la norma nueva del 20-sep, la corre el PR.
+  La entrega anterior se cayó justo por ahí, así que el PR se mira antes de darla por buena.
+- Sin verificar en staging todavía (se hace tras el merge).
+- El hueco del banco de vistas con `append('texto')` sigue vivo: reportado, no arreglado (otro carril).

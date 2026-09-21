@@ -178,6 +178,14 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // MEDIDO: esa ruta no la sirve ningún otro guard — la fabrica él y no la comparte.
   // SCRUM-918 · `guard:arranque-sin-red`: sirve el panel en un puerto EFÍMERO y navega con la base en
   // una variable, así que su destino no se deriva. Lo sirve él y no lo comparte con ningún guard.
+  // SCRUM-917e · `guard:detalle-trabajo-917`: levanta su propio servidor en un puerto EFÍMERO
+  // (`_detalle-917.mjs`) y navega con la base en una variable, así que su destino no sale de
+  // ningún fichero del árbol y este detector no puede verlo. Mismo motivo que `arranque-sin-red`.
+  // MEDIDO: ese puerto lo elige el sistema en cada pasada y no lo comparte con ningún otro guard.
+  //
+  // La lista pasa a UN ELEMENTO POR LÍNEA (misma razón que `tests/scrum710b`): en una sola línea,
+  // dos tickets que añadan su guard a la vez chocan en la misma línea física y el conflicto no
+  // dice que son independientes. Aquí ya han entrado seis tickets distintos.
   // SCRUM-965 · entra `guard:un-solo-presupuesto`, y por el mismo motivo que `guard:arranque-sin-red`
   // y `guard:rastro-del-menu`: levanta servidor propio en un puerto EFÍMERO (`GUARD965_PUERTO || 0`)
   // y navega a `http://127.0.0.1:${PUERTO}/dashboard/index.html#${ruta}`, con el puerto Y la ruta en
@@ -187,7 +195,24 @@ test('SCRUM-548 · los solapes de hoy son los medidos, y lo no resuelto se decla
   // pero NINGUNO por este servidor: el suyo responde las peticiones al vuelo para poder CONTARLAS,
   // que es lo que mide. No se fusiona con los tres: ellos observan el editor, éste cuenta peticiones.
   // Se declara para que ese solape invisible no se lea como «no tiene».
-  assert.deepEqual(s.noResueltos, ['guard:contraste', 'guard:caja-semaforo', 'guard:caja-documento-suelto', 'guard:portal-en-la-ficha', 'guard:caja-datos-del-cliente', 'guard:arranque-sin-red', 'guard:un-solo-presupuesto', 'guard:firma-con-tramos', 'guard:completar-lleva-al-campo', 'guard:objetivo-tactil', 'guard:rastro-del-menu', 'guard:marcadores-en-pantalla'],
+  // ⚠️ 917e y 965 entraron a la vez y los DOS AÑADEN: se conservan los dos comentarios y los dos
+  // guards. La lista queda en UN ELEMENTO POR LÍNEA —que es justo lo que evita la próxima—, y su
+  // contenido y su ORDEN se vuelven a MEDIR corriendo este test sobre el árbol ya fusionado.
+  assert.deepEqual(s.noResueltos, [
+    'guard:contraste',
+    'guard:caja-semaforo',
+    'guard:caja-documento-suelto',
+    'guard:portal-en-la-ficha',
+    'guard:caja-datos-del-cliente',
+    'guard:arranque-sin-red',
+    'guard:un-solo-presupuesto',
+    'guard:firma-con-tramos',
+    'guard:completar-lleva-al-campo',
+    'guard:objetivo-tactil',
+    'guard:detalle-trabajo-917',
+    'guard:rastro-del-menu',
+    'guard:marcadores-en-pantalla',
+  ],
     '🔴 ha cambiado el conjunto de guards cuyo destino NO se puede derivar. Se declaran para que\n'
     + '  su solape invisible no se lea como «no tiene».');
 });

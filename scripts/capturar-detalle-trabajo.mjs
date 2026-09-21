@@ -66,7 +66,12 @@ for (const ancho of [390, 1280]) {
   const ok = await pag.evaluate(async () => {
     const c = document.getElementById('view');
     if (typeof window.renderJobDetailView !== 'function') return 'sin renderJobDetailView';
-    try { await window.renderJobDetailView(c, { jobId: 7 }); } catch (e) { return 'error: ' + e.message; }
+    // 🔴 SCRUM-917e · el id va A PELO. La firma es `renderJobDetailView(container, jobId)` y dentro
+    // hace `Number(jobId)`: con `{ jobId: 7 }` sale NaN, la petición va a `/admin/jobs/NaN` y el
+    // comodín `/admin/*` de este mismo fichero la contesta con `JOB` igualmente. No daba error y no
+    // se notaba porque aquí sólo hay un trabajo — pero era un aparato que fotografiaba una pantalla
+    // que no es la del id que dice. Cazado con el mismo fallo en el banco de 917e.
+    try { await window.renderJobDetailView(c, 7); } catch (e) { return 'error: ' + e.message; }
     await new Promise((r) => setTimeout(r, 600));
     return 'ok:' + c.querySelectorAll('*').length;
   });
