@@ -119,6 +119,25 @@ entrada que ya tenía `customerAdmin.ts`: lo trae para pintarlo, no decide nada 
   que nombre `taxId` o el censo de origen de la factura): **114 ficheros, 933 tests, 0 fail**, 47
   saltados (gateados por base de datos).
 
+## La misma familia, en el OTRO formulario: el modal de la LISTA — medido, NO borra
+
+El modal «Editar» de la lista de clientes (`customersView.js`) rellena desde `listCustomers`, cuyo
+`select` (`CUSTOMER_SELECT_NO_TOKEN`, `customerAdmin.ts`) ya trae todo lo que ese modal edita. Por
+lectura no tenía el hueco, pero se midió por efecto con la sonda gemela
+(`docs/master/evidencias/scrum983/sonda-lista.mjs`, salida en `salida-lista-staging-21sep.txt`),
+staging `/version` = `53d756d7f619b1bfb22e36c5dd1ecd4ed9fcf160`, 21-sep-2026 ~08:20Z:
+
+- un cliente con **todos** los campos editables rellenos (NIF, razón social, empresa, forma
+  jurídica, tipo, periodicidad, recargo, descuento, referencia, etiquetas, los cinco de dirección,
+  móvil y fijo en rango imposible) → la lista → «Editar» de SU fila (buscada por nombre) → se
+  vacía la nota y se teclea otra → «Guardar cambios»;
+- **población: 23 campos (sin `notes` ni `updatedAt`), los 23 rellenos antes · 0 cambiados** ·
+  control positivo: la nota pasó a «nota nueva». El PUT lleva los 20 que el modal muestra con su
+  valor; `billingPeriodicity` no viaja (no es de ese modal) y siguió en `MENSUAL`;
+- limpieza: los dos clientes de prueba (3930, 3931) borrados, DELETE 204 y ya no se encuentran.
+
+No hace falta arreglo en ese formulario.
+
 ## Error propio: un teléfono de móvil ordinario en los datos de prueba
 
 El primer CI del PR #1568 cayó en `scrum262-telefonos-de-prueba`: el test llevaba `34600111222`,
@@ -136,8 +155,6 @@ de escribir un número «de ejemplo» a mano.*
 
 - La suite completa no se ha corrido en local (sin turno): la corre el PR.
 - El fichero gateado `scrum692-guardado-parcial-en-base` (viaje contra base) no se ha corrido.
-- El modal de la LISTA de clientes (`customersView.js`) no se ha medido aquí: rellena desde otra
-  fuente, con su propio `select` (`CUSTOMER_SELECT_NO_TOKEN` en `customerAdmin.ts`). Lo único
-  medido de esa lectura es que `GET /admin/customers/:id` devolvió los 11 campos en la sonda de
-  staging. Si el modal de la lista tiene el mismo hueco, **no está medido**.
+- (Aquí ponía «el modal de la LISTA no está medido». El orquestador pidió que no se quedara como
+  hueco: está medido abajo, y NO borra.)
 - Sin verificar en staging tras el despliegue todavía.
