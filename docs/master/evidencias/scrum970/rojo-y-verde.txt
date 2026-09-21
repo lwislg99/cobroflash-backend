@@ -1,0 +1,13 @@
+POBLACIÓN · fichero: el scrum522 de origin/main c5d642fe, extraído al temporal · cifra escrita hoy: 31
+
+═══ FORMA VIEJA · la cifra a mano en el assert ═══
+   ① ¿marca de conflicto?  SÍ  (git dice 1 conflicto(s))
+   ② cifra tras el merge:  32   · la verdad son 33
+   ⇒ 🔴 LA CIFRA ENTRÓ MAL — y el conflicto de al lado TAPA que entró mal.
+
+POBLACIÓN · tests\_guards-de-navegador-declarados.mjs · 31 guards declarados, uno por línea
+
+═══ FORMA NUEVA · la cifra derivada de la lista declarada ═══
+   ① ¿marca de conflicto?  SÍ  (git dice 1 conflicto(s))
+   ② cifra tras el merge:  (no hay cifra escrita: se deriva)   · la verdad son 33
+   ⇒ ✅ ninguna cifra pudo entrar mal

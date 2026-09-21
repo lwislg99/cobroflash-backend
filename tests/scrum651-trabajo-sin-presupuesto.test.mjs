@@ -248,13 +248,51 @@ test('SCRUM-651 · 🔴 un Trabajo sin presupuesto NO se llama «Presupuesto #N�
 // sobrevive al siguiente rediseño.
 test('SCRUM-651 · 🔴 el dinero NO se pinta si no consta (ausente ≠ cero)', async () => {
   const sinPresupuesto = await montarDetalle({ ...JOB_SIN_PRESUPUESTO, totalAceptado: null, totalCobrado: 0 });
-  const dinero = textosDe(sinPresupuesto).filter((t) => /€|aceptado|cobrad|falta por cobrar/i.test(t));
+
+  // ── ① EL PRINCIPIO EN SU FORMA PURA: NI UNA CIFRA DE DINERO. Sin excepciones y sin lista de
+  // permitidos, porque el defecto es una CIFRA contra un eje que no existe: un «0,00 €» ahí se lee
+  // como «presupuestaste cero», que es una afirmación y es falsa. Y no se queda en la franja: ese
+  // cero viaja al semáforo de cobro y a la barra. AUSENTE Y CERO NO SON LO MISMO.
+  const cifras = textosDe(sinPresupuesto).filter((t) => /\d[\d.,]*\s*€|€\s*\d/.test(t));
+  assert.deepEqual(cifras, [],
+    '🔴 UN TRABAJO SIN PRESUPUESTO ESTÁ ENSEÑANDO UN IMPORTE: ' + JSON.stringify(cifras));
+
+  // ── ② Y LA RED DE PALABRAS SIGUE CERRADA, con UNA excepción declarada por su texto exacto.
+  //
+  // ── RE-ANCLAJE (SCRUM-917f) ──────────────────────────────────────────────────────────────
+  // Hasta hoy esto era `filter(...) → []`: cualquier texto con «€», «aceptado» o «cobrad» tumbaba
+  // el contrato. 917f construye el hueco que le dice al pro, con todas las letras, que este
+  // Trabajo NO TIENE importe de referencia — y ese texto contiene «aceptado» y «cobrar», así que
+  // la red lo cazó.
+  //
+  // 🔴 Pero esas dos frases no violan el principio: SON el principio, dicho en voz alta. Lo que
+  // 651 prohíbe es AFIRMAR un importe que no consta; decir «no consta» es lo contrario. El hueco
+  // existe precisamente porque callarse se leía igual que «no falta nada».
+  //
+  // 🔒 La excepción va por TEXTO EXACTO y firmado, no por relajar la expresión: un «Te falta por
+  // cobrar 0,00 €» o cualquier otra frase de dinero sigue tumbando esto. Una red con un agujero
+  // con forma de frase concreta no es una red rota; una expresión regular más floja, sí.
+  const PERMITIDOS = [
+    'Este trabajo no tiene presupuesto aceptado',
+    'Sin un importe de referencia no se puede saber cuánto falta por cobrar.',
+  ];
+  const dinero = textosDe(sinPresupuesto)
+    .filter((t) => /€|aceptado|cobrad|falta por cobrar/i.test(t))
+    .filter((t) => !PERMITIDOS.includes(t.trim()));
   assert.deepEqual(dinero, [],
     '🔴 UN TRABAJO SIN PRESUPUESTO ESTÁ HABLANDO DE DINERO: ' + JSON.stringify(dinero) + '\n\n'
-    + '  Sin `totalAceptado` no hay nada que decir. Un «0,00 €» ahí se lee como «presupuestaste\n'
-    + '  cero», que es una afirmación, y falsa. Y no se queda en la franja: ese cero viaja al\n'
-    + '  semáforo de cobro y a la barra, que pasan a hablar del dinero de alguien contra un eje\n'
-    + '  inventado. AUSENTE Y CERO NO SON LO MISMO.');
+    + '  Sin `totalAceptado` no hay nada que decir. Si lo que sale es una frase NUEVA que explica\n'
+    + '  la ausencia, no la añadas a `PERMITIDOS` sin firmarla: la lista es de literales firmados.');
+
+  // ✅ CONTROL de la excepción, o sería un agujero que nadie vigila: las dos frases permitidas
+  //    tienen que estar DE VERDAD en la pantalla. Si dejan de pintarse, la lista sobra y el hueco
+  //    que 917f construyó ha desaparecido sin que nadie se entere.
+  const textos = textosDe(sinPresupuesto).map((t) => t.trim());
+  for (const p of PERMITIDOS) {
+    assert.ok(textos.includes(p),
+      `🔴 «${p}» está permitido aquí pero NO se pinta. O ha desaparecido el hueco de 917f, o la ` +
+      'excepción está tapando algo que ya no existe.');
+  }
 
   // CONTROL POSITIVO: con presupuesto, la franja sí está — si no, el negativo de arriba pasaría
   // por una pantalla que no pinta dinero nunca, que es el verde que significa lo contrario.

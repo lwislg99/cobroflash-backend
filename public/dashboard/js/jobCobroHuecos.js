@@ -99,6 +99,25 @@ function importesDeCobro(job) {
 function huecosDeCobro(job) {
   const huecos = [];
 
+  // 0 · SIN PRESUPUESTO ACEPTADO — SCRUM-917f. Va el PRIMERO, y por el orden que esta sección ya
+  //     tenía escrito desde SCRUM-320: primero lo que el pro puede resolver HOY. Hacer el
+  //     presupuesto es lo más «hoy» de los seis, y además es la CONDICIÓN de que los demás
+  //     importes signifiquen algo — sin importe de referencia, «falta por cobrar» no se puede ni
+  //     calcular.
+  //
+  //     🔴 EL DEFECTO QUE CIERRA, medido en el PASO 0 de 917 sobre el Trabajo 3101: sin importe
+  //     aceptado NO salía ningún hueco, así que `seccionCobroVisible` daba falso y la tarjeta no
+  //     se pintaba EN ABSOLUTO. La pantalla se callaba justo donde hay algo importante que decir,
+  //     y un silencio se lee igual que un «no falta nada». Son cosas opuestas.
+  //
+  //     ⚠️ EL CRITERIO ES `== null`, NO `<= 0`, y es el MISMO que decide si se pinta la franja
+  //     (917e, `job.totalAceptado != null`). Un presupuesto aceptado por 0 € CONSTA: el dato está
+  //     y vale cero, y decirle a ese Trabajo que «no tiene presupuesto aceptado» sería falso. Si
+  //     los dos criterios se separaran habría Trabajos con franja Y con este hueco a la vez.
+  if (job && job.totalAceptado == null) {
+    huecos.push({ id: 'sin-presupuesto', accion: 'hacer-presupuesto' });
+  }
+
   // 1 · SIN FIRMAR — la línea más útil de la sección: es lo único que el pro puede resolver hoy
   //     mismo. No es un dato escondido; es la respuesta a «qué falta».
   const sinFirmar = albaranesDe(job).filter((a) => a && a.estado !== 'firmado');
@@ -224,7 +243,16 @@ function huecosDeCobro(job) {
  * motor se mueven juntos o sale rojo: es justo lo que impide que un hueco nuevo se pinte sin
  * declararse, o que uno declarado deje de salir sin que nadie se entere.
  */
-const HUECOS_COBRO = ['sin-firmar', 'sin-facturar', 'sin-facturar-nada', 'sin-entregar', 'sin-cobrar'];
+// SCRUM-917f añade `sin-presupuesto` el PRIMERO, por el mismo orden de siempre (lo que el pro
+// puede resolver hoy va delante). Los cinco de antes NO se reordenan: este corte solo añade.
+const HUECOS_COBRO = [
+  'sin-presupuesto',
+  'sin-firmar',
+  'sin-facturar',
+  'sin-facturar-nada',
+  'sin-entregar',
+  'sin-cobrar',
+];
 
 /**
  * ¿Se pinta la sección? Solo si hay algún hueco.

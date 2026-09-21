@@ -466,3 +466,192 @@ fusionado — **31**, no «30 + 1».
   La entrega anterior se cayó justo por ahí, así que el PR se mira antes de darla por buena.
 - Sin verificar en staging todavía (se hace tras el merge).
 - El hueco del banco de vistas con `append('texto')` sigue vivo: reportado, no arreglado (otro carril).
+
+
+## 917f · la cabecera y «Lo que falta» (20-sep-2026)
+
+Dos cortes, dos commits, el mismo PR (#1548, apilado sobre el #1541).
+
+| corte | sha completo | hora (Europe/Madrid) |
+|---|---|---|
+| la cabecera | `7c79b796c1695e503fde7c62624d99a4ab50eb2a` | 2026-09-20 22:19:57 +02:00 |
+| «Lo que falta» | `7a8e0c7fd7c9f21f2be1727a44e8cf34ad02ea45` | 2026-09-20 22:36:01 +02:00 |
+
+Hora de GitHub al cerrar la tanda: **dom 20-sep-2026 20:30 GMT**. `origin/main`: `c5d642fe`.
+
+### Corte 1 · el título del detalle es el TRABAJO, no el cliente
+
+Medido en el PASO 0: con el Trabajo #3104 el nombre del cliente salía **CINCO veces** en la
+pantalla, **TRES de ellas dentro de los 139 px de la cabecera** (miga, título y subtítulo). El
+cliente ya vive entero en el rail, con su teléfono. De qué trabajo era esto no estaba destacado en
+ningún sitio.
+
+- Título = nombre del trabajo; si no tiene, el cliente; si tampoco, `Trabajo`.
+- Subtítulo = cliente · fecha · `Presupuesto #N`, compuesto con `unirCon` (TRES partes).
+- Migas = `Trabajos ›` y se acaban ahí: se retira el elemento `migaActual` entero.
+- `headLeft` estrena `.detail-head-izq` con `min-width: 0`.
+
+**CUATRO re-anclajes de `scrum317`**, cada uno con su motivo escrito en el test, más un contrato
+nuevo (*el cliente no desaparece de la cabecera: baja al subtítulo*).
+
+El más útil fue el de **NOMBRES LARGOS**: vigilaba `.detail-miga-actual`, y este corte retira esa
+miga. Dejarlo habría sido **un verde permanente sobre una regla CSS que ya no pinta nada**. Al
+mudar el truncado al `h2` apareció lo que nadie había escrito: **`.detail-head` es flex y un hijo
+de flex no encoge por debajo de su contenido**, así que sin `min-width: 0` el `text-overflow:
+ellipsis` no llega a actuar NUNCA. El contrato viejo llevaba esa propiedad y nadie sabía por qué;
+al mudarlo se supo.
+
+- ROJO: **12 tests, 8 pass, 4 fail** contra el árbol sin tocar. Los cuatro re-anclajes caen.
+- VERDE: 12/12. Población: los **72 ficheros** que miden `jobDetailView`/`detail-head`,
+  **653 tests, 652 pass, 0 fail**. `guard:detalle-trabajo-917` **92 de 92**.
+
+### Corte 2 · «Lo que falta»
+
+**Defecto 1: el rótulo afirmaba algo falso.** La tarjeta se pinta siempre que haya CUALQUIER hueco
+(`seccionCobroVisible`) y de los seis que produce el motor sólo tres son dinero. Un Trabajo
+**cobrado del todo** con un albarán sin firmar enseñaba «Qué falta para cobrar» encima de una línea
+que no habla de cobrar nada. Pasa a «Lo que falta» (firmado, com. 15881). El id interno
+`que-falta-para-cobrar` NO cambia: es clave de reparto, no texto.
+
+**Defecto 2: el caso sin presupuesto era un silencio.** Con `totalAceptado` nulo no salía ningún
+hueco, `seccionCobroVisible` daba falso y la tarjeta **no se pintaba en absoluto**.
+🔒 **Un silencio se lee igual que «no falta nada», y aquí son cosas opuestas**: no es que no falte,
+es que sin importe de referencia no se puede saber cuánto falta. Entra el hueco `sin-presupuesto`
+con sus tres literales firmados y «Hacer presupuesto», que navega a `quotes-new` por el camino que
+ya usan el detalle de cliente y la lista de facturas. Criterio `== null` — el MISMO que decide la
+franja, porque un presupuesto aceptado por 0 € **consta**. Va el primero del orden canónico por la
+regla que SCRUM-320 ya tenía escrita, y los cinco de antes **no se reordenan**.
+
+- ROJO: **6 tests, 1 pass, 5 fail**. El único que pasaba es el trinquete *la tarjeta no repite la
+  cifra de la franja*, que hoy ya era cierto: es un trinquete, no un arreglo.
+
+### 🔴 CUATRO contratos me corrigieron a mí, y ninguno era cosmético
+
+Es el argumento de «re-anclar, no borrar» ocurriendo cuatro veces seguidas en una tarde.
+
+1. **SCRUM-320** — su censo de IGUALDAD se puso rojo porque el fixture no sabía producir el hueco
+   nuevo. Su propio comentario decía que eso era justo para lo que servía. Se le **enseña** con un
+   caso propio: `sin-presupuesto` y los otros cinco son **excluyentes por construcción**, así que
+   no valía añadir un campo a `todos` — si pudieran salir a la vez, el Trabajo tendría franja Y
+   «no tiene presupuesto aceptado», que es una contradicción.
+2. **SCRUM-423** — su ancla exigía dos líneas de fuente SEGUIDAS, y este corte mete una rama.
+   Re-anclado a la CAUSA en vez de a la forma: la única manera de partir un hueco en dos nodos es
+   darle entrada en `SUBTEXTO_HUECO`, así que se prohíbe que `sin-entregar` la tenga. **El ancla
+   nuevo defiende más que el viejo**, que se podía cumplir mientras alguien partía el hueco por
+   otro camino.
+3. **SCRUM-427** — *o se construye lo que falta, o se enmienda el diseño diciendo por qué ya no se
+   quiere*. Enmendado `docs/diseno/bloque-g.md` §5 con el motivo entero. Su control positivo nombra
+   las cuatro secciones **a mano a propósito**: derivarlas del diseño haría que un renombrado se
+   propagara solo y el control dejaría de controlar nada.
+4. **SCRUM-651** — el que más enseña. Su red cazaba **PALABRAS** (`aceptado`, `cobrad`) y el
+   principio es de **CIFRAS**. Mis dos literales no violan 651: **SON 651 dicho en voz alta** — lo
+   que 651 prohíbe es AFIRMAR un importe que no consta, y decir «no consta» es lo contrario.
+   Re-anclado en dos mitades: (a) **ni una cifra de dinero**, sin excepciones y sin lista de
+   permitidos, porque ésa es la forma pura del principio; (b) la red de palabras sigue cerrada con
+   los dos literales firmados exceptuados **por texto exacto**, y con su control de que esas dos
+   frases se pintan de verdad. 🔒 *Una red con un agujero con forma de frase concreta no es una red
+   rota; una expresión regular más floja, sí.*
+
+### Medido, con su población
+
+- Población del corte 2: **74 ficheros** (`jobDetailView`, `jobCobroHuecos`, `cobro-hueco`,
+  `bloque-g`), **668 tests, 667 pass, 0 fail**.
+- `guard:detalle-trabajo-917`: **92 de 92**, con población declarada (4 casos × 2 anchuras, 0 no
+  medidas), antes y después de los dos cortes.
+- Censos por su nombre: `237` `267` `522` `548` `723` `666b` `709` `895b` — **90/90**.
+- `npm run build` EXIT 0 · `guards:entrada` 4 guards / 26 tests EXIT 0.
+
+### Y el rescate del #1541, que no era un rojo
+
+El PR de 917e llevaba **una hora sin gate y parecía verde**. Estaba en CONFLICTO con `main`, y con
+el PR en conflicto GitHub no fabrica el merge-ref: **el workflow de `pull_request` no arranca**. El
+PR se quedó con UN solo check —el armador del automerge— en verde.
+🔒 **Un PR conflictivo no es un PR rojo: es un PR SIN MEDIR, y en la lista de checks los dos se
+parecen.** Es «una operación que no se ejecutó se lee igual que un éxito», una capa más arriba.
+
+Los conflictos eran `scrum522` y `scrum548`, los dos del tipo *los dos AÑADEN*. Resueltos
+conservando los dos comentarios y **re-midiendo** las dos cifras sobre el árbol fusionado: `522` de
+31 a **32**, con control en rojo (se puso 33, cayó, y el mensaje enumeró las 32); `548` con los dos
+guards nuevos y a **un elemento por línea**, que es lo que evita la siguiente. **Novena colisión
+del contador de 522**, y otra vez el conflicto cayó en los comentarios y no en la cifra, que habría
+bajado limpia.
+
+Barrido de los 26 PR abiertos al hilo de eso: **cero PR de la tanda en conflicto** salvo el #1541,
+y los siete gates rojos que abrí caían **todos por el mismo test** —`scrum804-la-rama-viva`, que no
+sabe leer `scrum-915e1-…`—. *La tanda no estaba rota, estaba tapada por un censo.* Diagnóstico
+entregado al orquestador; el arreglo lo lleva otro carril.
+
+### Errores propios
+
+1. **Medí con `node -e "…$…"` y PowerShell se comió el ancla de fin de la expresión regular.** El
+   `$` dentro de comillas dobles no llega a node, así que `scrum-904` salió `null` y el fallo
+   pareció más gordo de lo que era. Repetido desde fichero, quedaron dos nombres. **Un instrumento
+   de una línea también miente.**
+2. **Escribí un fichero de test con `Set-Content -Encoding utf8` y le metí un BOM** a
+   `scrum522`. Lo cacé comparando los cuatro ficheros byte a byte antes de commitear, pero la
+   lección es la de siempre: en PowerShell 5.1 `-Encoding utf8` **añade BOM**. Para tocar un fichero
+   del árbol, las herramientas de edición; `Set-Content` sólo para ficheros desechables.
+3. **Estrené una clase CSS sin regla** (`cobro-hueco__q`) y la habría cazado `scrum666b`. La quité
+   antes de correr nada: el subtexto hereda del hueco, que es lo que tiene que hacer.
+
+### Lo que NO cubre
+
+- **La suite completa no se ha corrido en local** (norma del 20-sep: la corre el PR).
+- **Sin verificar en staging**: turno pedido al orquestador, pendiente de que el #1541 entre.
+- **`917g`** («El trabajo» plegable) no empieza en esta entrega.
+- El subtítulo firmado de `sin-entregar` —«Salen en el presupuesto y todavía no están en ningún
+  albarán.»— **no se construye**: SCRUM-423 dejó escrito que su número y su salvedad van en UNA
+  sola cadena, y partirla en dos nodos lo desharía de rebote. Declarado, no olvidado.
+## 917h · El techo de 44 px decía 8 en Windows y 7 en Linux sobre el MISMO árbol
+
+*21-sep-2026, 07:33 GMT (cabecera `Date:` de `gh api -i zen`) · sobre `origin/main`
+`43f4c7fc3f8d0330089edcd785cb0eea58ccb784` · Sesión 2b · worktree `wt-917h`.*
+
+**Qué pasaba.** Con el #1541 (917e) ya en `main` (merge `e65fd51604febb207ff98474e7396470f99c0d08`,
+07:21:51Z), el job «guards de navegador» dejó de decir `guard:escalera-por-estado: CIEGO` —medido
+en el run 35572028764: 0 apariciones en 603 líneas y `✔ guard:escalera-por-estado verde`— pero
+seguía en rojo por **nuestro propio guard**: `guard:detalle-trabajo-917`, 86 de 92. El trinquete
+G.2 de 44 px contaba **7** controles pequeños en el runner de Linux y el techo decía **8**, medido
+en Windows.
+
+**Por qué.** El guard sólo sabía dar la CUENTA, y su rojo pedía «di CUÁL». Primer commit: G.2
+nombra cada control pequeño con su tamaño cuando la cuenta no cuadra (probado con un rojo
+inyectado: techo 8 → 7 en un caso, la lista sale entera). Con eso, el que cambiaba con la máquina
+era el enlace de fecha del rail, **«1 sept», 35,8×44,0 en Windows**: el único que falla SÓLO por
+un ancho que depende del texto y de la fuente, y el único que no existe en el caso sin
+presupuesto — que es justo el único caso que en CI no cambiaba (6 = 6).
+
+**El arreglo es la causa, no el número.** `min-width: 44px` en `.detail-rail-linea a`, la misma
+regla que ya le daba los 44 px de alto (AB6). Así el área del enlace no depende del texto y las
+dos máquinas cuentan 7. Bajar el techo a 7 sin arreglarlo habría dejado el guard rojo en Windows.
+
+| medida | resultado |
+|---|---|
+| Windows, arreglo + techo viejo 8 | 🔴 86/92, los MISMOS 6 fallos que el runner, «1 sept» fuera de la lista |
+| Windows, arreglo + techo 7 | ✅ 92/92 |
+| Windows, SIN arreglo + techo 7 (la otra mitad del trinquete) | 🔴 86/92 «SUBE desde 7» |
+| `guard:objetivo-tactil` (también mide la ficha del Trabajo) | ✅ EXIT 0 |
+| tests `scrum352/848/782/787/318/317/522/548/710b/917` | 88 tests en 8 ficheros, 88 pass |
+
+### El merge de `main` en el #1541: la DÉCIMA colisión de `scrum522`
+
+El conflicto cayó, otra vez, sólo en los comentarios (965 y 915e1 contra el de la novena). Se
+quedaron todos, y la cifra **bajó limpia de `main` diciendo 32**; medida corriendo el test sobre el
+árbol fusionado: **33**. El conflicto que sí ves te tapa el que no, por segunda vez en dos días.
+
+### Error propio
+
+El 20-sep di por hecho que el único rojo del #1541 era `scrum804`, mirando sólo el job de
+`build + tests`. **El job de navegador ya estaba rojo por G.2 en la pasada de `0a7c010b`** (20-sep,
+20:07Z) y no lo leí. No es la puerta obligatoria, pero es el job que el equipo mira para saber si
+su guard de navegador está sano: entró en `main` con el #1541 y durante un rato todos los PR lo
+iban a heredar en lugar del CIEGO. 🔒 *Un job que no es puerta también se lee: si no, su rojo lo
+paga el siguiente.*
+
+### Lo que NO cubre
+
+- El verde del runner de Linux no está medido aún: lo da el CI de este PR. Si allí saliera 6 ≠ 7,
+  el diagnóstico nuevo nombraría el control, que es para lo que está.
+- La suite completa no se ha corrido en local (sin turno): la corre el PR.
+- Los otros 6-7 controles pequeños del detalle siguen siendo deuda heredada declarada; éste no los
+  toca.

@@ -2526,8 +2526,21 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   gap: 12px; flex-wrap: wrap;
   padding: 18px 22px; border-bottom: 1px solid var(--border);
 }
-.detail-head h2 { font-size: 18px; margin: 0 0 2px; }
-.detail-head .detail-sub { font-size: 13px; color: var(--muted); margin: 0; }
+/* SCRUM-917f · la columna del título encoge. `.detail-head` es flex, y un hijo de flex NO baja
+   de su contenido: sin esto, el `ellipsis` de abajo no actúa nunca y un nombre largo empuja el
+   chip de estado y la barra de acciones fuera de la pantalla. */
+.detail-head-izq { min-width: 0; flex: 1 1 auto; }
+/* SCRUM-917f · el nombre largo TRUNCA, no empuja. Las mismas cuatro propiedades que llevaba
+   `.detail-miga-actual` hasta este corte: el principio no se mueve, se muda a donde vive ahora
+   el nombre largo — el título (que lo escribe el pro a mano) y el subtítulo (tres partes). */
+.detail-head h2 {
+  font-size: 18px; margin: 0 0 2px;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.detail-head .detail-sub {
+  font-size: 13px; color: var(--muted); margin: 0;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* SCRUM-317 (G2) · migas del detalle del Trabajo. Sustituyen al botón «← Volver a Trabajos»:
    dicen dónde estás Y qué es esto, en la misma línea y sin gastar un botón.
@@ -2542,13 +2555,10 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 }
 .detail-miga-link:hover { color: var(--ink); }
 .detail-miga-sep { color: var(--muted); }
-/* La miga actual se TRUNCA en vez de romper la línea: un nombre de cliente largo más un nombre
-   de trabajo largo no deben empujar el título ni el chip de estado — es el caso que más falla
-   en el pase de dispositivos. */
-.detail-miga-actual {
-  color: var(--ink); min-width: 0; max-width: 100%;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+/* SCRUM-917f · aquí vivía `.detail-miga-actual`. La miga repetía «cliente · trabajo» encima del
+   título y del subtítulo, que dicen lo mismo, así que se retira con su elemento. Su regla de
+   truncado NO se pierde: sube a `.detail-head h2` y `.detail-head .detail-sub`, que es donde
+   está ahora el nombre largo. */
 /* SCRUM-316 (G1) · cabecera del patrón: chips de los dos ejes + barra de acciones.
    Ni un token nuevo: gap/radios/colores son los que ya usa .detail-head. */
 .detail-head-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -2580,8 +2590,11 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-rail-enlace:hover { text-decoration: underline; }
 .detail-rail-enlace--suelto { display: inline-block; margin-top: 6px; font-size: 13px; }
 /* Objetivo táctil de 44 px (AB6): el teléfono y el mapa se pulsan con las manos sucias, de pie y
-   con el motor en marcha. Es el único sitio del rail donde el tamaño del área importa. */
-.detail-rail-linea a { min-height: 44px; display: inline-flex; align-items: center; }
+   con el motor en marcha. Es el único sitio del rail donde el tamaño del área importa.
+   SCRUM-917h · y también de ANCHO: un enlace de texto corto («1 sept», el del presupuesto) medía
+   35,8 px con la fuente de Windows y ≥ 44 con la del runner de Linux, así que el mismo árbol daba
+   dos cifras de deuda según la máquina. Con el mínimo, el área ya no depende del texto. */
+.detail-rail-linea a { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; }
 
 /* Móvil: el rail deja de ser columna. Un rail de 220 px al lado del cuerpo en un Android de gama
    media deja las dos columnas ilegibles.
@@ -2626,6 +2639,11 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* Objetivo tactil de 44 px (AB6): se pulsan de pie y con prisa. */
 .cobro-hueco button { min-height: 44px; }
 @media (max-width: 720px) { .cobro-hueco { align-items: flex-start; } }
+/* SCRUM-917f · el hueco que enuncia una AUSENCIA lleva segunda linea. Las dos van en la misma
+   caja para que al envolver no se separen: la explicacion es de SU linea, no de la tarjeta.
+   Ni un token nuevo — --muted y el 12px son los que ya usa el subtitulo del detalle. */
+.cobro-hueco__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cobro-hueco__s { font-size: 12px; color: var(--muted); }
 
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }

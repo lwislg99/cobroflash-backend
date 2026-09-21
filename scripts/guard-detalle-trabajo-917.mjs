@@ -95,11 +95,16 @@ const ESPERADO = new Map([
 // este corte; está aquí para que no pueda empeorar y para que no baje sin que alguien lo diga.
 // Reportada al orquestador el 20-sep-2026 como hallazgo aparte (A23 #1).
 // Un número por línea, que dos tickets no choquen en la misma línea física (A23 #15).
+// SCRUM-917h (21-sep-2026) · 8 → 7 en los tres casos con presupuesto: sale el enlace de fecha del
+// rail («1 sept», 35,8×44 en Windows), que ahora lleva `min-width: 44px`. No es la deuda que
+// «baja sola»: medía 8 en Windows y 7 en el runner de Linux sobre el MISMO árbol, porque su ancho
+// dependía de la fuente. Arreglado el ancho, las dos máquinas dicen 7. El caso sin presupuesto no
+// tiene ese enlace y sigue en 6.
 const DEUDA_44PX = new Map([
-  [JOB_PAGADO.id, 8],
-  [JOB_A_MEDIAS.id, 8],
+  [JOB_PAGADO.id, 7],
+  [JOB_A_MEDIAS.id, 7],
   [JOB_SIN_PRESUPUESTO.id, 6],
-  [JOB_COBRADO_DE_MAS.id, 8],
+  [JOB_COBRADO_DE_MAS.id, 7],
 ]);
 
 const banco = await levantarBanco();
@@ -170,6 +175,17 @@ for (const ancho of ANCHOS) {
           const r = e.getBoundingClientRect();
           return r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44);
         }).length,
+        // Los pequeños CON NOMBRE y tamaño: el rojo de abajo pide «di CUÁL», y un instrumento que
+        // sólo sabe dar la cuenta no puede contestarlo. Medido 21-sep-2026: en el runner de CI
+        // salían 7 y en Windows 8 sobre el MISMO árbol, y sin nombres no había forma de saber cuál.
+        listaPequenos: controles.filter((e) => {
+          const r = e.getBoundingClientRect();
+          return r.width > 0 && r.height > 0 && (r.width < 44 || r.height < 44);
+        }).map((e) => {
+          const r = e.getBoundingClientRect();
+          const nombre = norm(e.textContent || e.getAttribute('aria-label') || '').slice(0, 30);
+          return `${e.tagName.toLowerCase()}«${nombre}» ${r.width.toFixed(1)}×${r.height.toFixed(1)}`;
+        }),
         controles: controles.length,
         desborda: c.scrollWidth > c.clientWidth,
       };
@@ -274,6 +290,7 @@ for (const ancho of ANCHOS) {
     //     instrumento roto hasta que se demuestre lo contrario, y aquí bajaría solo si el guard
     //     dejara de ver controles.
     const techo = DEUDA_44PX.get(caso.id);
+    if (m.pequenos !== techo) console.log(`      pequeños ${q}: ${m.listaPequenos.join(' · ')}`);
     if (m.pequenos === 0) {
       bien(`G.2 ${q} 0 de ${m.controles} controles por debajo de 44 px`);
     } else if (m.pequenos === techo) {

@@ -513,3 +513,45 @@ es absoluta y un directorio no vale una excepción.
 | `docs/master/evidencias/scrum864c/el-que-decide.mjs` | el control que decide y el positivo, con TMPDIR propio |
 | `docs/master/evidencias/scrum864c/mutacion.mjs` | las tres mutaciones, con su comprobación de entrada |
 | `docs/master/evidencias/scrum864c/tmpdir-*.mjs` | el inventario de TMPDIR, repetible y en sólo lectura |
+
+
+---
+
+# SCRUM-864d · Un commit `SCRUM-864c:` dentro de la rama de 970 pide su entrada, y ésta es
+
+**Medido contra:** `origin/main` = `43f4c7fc3f8d0330089edcd785cb0eea58ccb784` · 2026-09-21T07:33:55Z (GitHub)
+
+**Rama:** `scrum-970-la-cifra-se-deriva` (PR #1552)
+
+> ⛔ `src/` intacto · sin estado ni flag nuevos (27) · sin dependencias (36). No se borra nada de TMPDIR.
+
+## 1 · Qué pasó
+
+El commit `fc6d1844b9522b69274b464bda05de861bd1ebcc` de la rama de SCRUM-970 se tituló
+`SCRUM-864c: el instrumento de 970 pide su temporal por el helper, que lo borra pase lo que pase`:
+el instrumento de 970 (`docs/master/evidencias/scrum970/colision-del-contador.mjs`) creaba su
+directorio con `mkdtempSync` a pelo, que es justo lo que el censo de 864c persigue, y se cambió a
+`temporal()` de `tests/_temporal.mjs` (el helper que lo borra al salir el proceso pase lo que pase,
+también si el script sale con 1 o 2).
+
+El guard de SCRUM-854 lee el ASUNTO de cada commit propio de la rama (`SCRUM-<n>:` al inicio: SCRUM-857 lo
+midió como la línea entre SER trabajo de un ticket y MENCIONARLO) y exige que la rama traiga
+`docs/master/SCRUM-<n>.md` de CADA ticket con trabajo. Este commit es trabajo de 864 y la rama no tocaba
+`SCRUM-864.md`: `build + tests` del #1552 salió rojo con «falta: docs/master/SCRUM-864.md» — la única
+falla de 7.786 tests (`ℹ pass 7692 · fail 1`, run 35572760669).
+
+## 2 · La decisión
+
+Se escribe la entrada (norma A7: un guard en rojo se arregla cambiando el código o aquí el registro, nunca lo
+que el guard exige) y **no se reescribe la historia**: rebasar para renombrar el commit exigiría `--force`
+sobre una rama con PR abierto. Esto es todo lo que 864 tiene que decir de ese commit: no cambia el
+censo de 864c ni su criterio.
+
+## 3 · Lo medido y lo que NO
+
+- El instrumento de 970 se RE-EJECUTÓ tras el cambio (21-sep, sobre el árbol fusionado): arranca, mide
+  33 guards declarados y da — sin haberlo contrastado línea a línea con su expediente — forma vieja «🔴 LA CIFRA ENTRÓ MAL»
+  (su salida es 1 porque `peor` recoge el peor informe, y la vieja falla a propósito), forma nueva
+  «✅ ninguna cifra pudo entrar mal».
+- No se midió que el directorio de `temporal()` se borre en ESTA ejecución (lo garantiza y lo vigila
+  `tests/_temporal.mjs`, no este apéndice).
