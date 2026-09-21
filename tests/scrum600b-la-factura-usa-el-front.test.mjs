@@ -142,7 +142,23 @@ async function pintarPagina(documentoSuelto, tercerArgumento) {
   const { banco } = bancoConRed(documentoSuelto);
   const r = await pintarVista(banco, 'renderQuotesView', null, tercerArgumento);
   assert.equal(r.error, null, `🔴 la vista no monta: ${r.error && r.error.message}`);
+  r.banco = banco;
   return r;
+}
+
+/**
+ * SCRUM-915i · lo que vive en el menú «⋯» de arriba («Más acciones») no está en el contenedor
+ * hasta que se abre: `overflowMenu` cuelga sus ítems del `body` al pulsar. Se PULSA, como haría el
+ * profesional, y se devuelve lo que el menú pinta. Sin menú, `[]` — y el test que lo use cae.
+ */
+function abrirMasAcciones(r) {
+  const boton = todos(r.contenedor).find((n) => n.tagName === 'BUTTON'
+    && n._attrs && n._attrs['aria-label'] === 'Más acciones');
+  if (!boton) return [];
+  boton.disparar('click');
+  const menu = todos(r.banco.ctx.document.body).find((n) => n._attrs && n._attrs.role === 'menu'
+    && n._attrs['aria-label'] === 'Más acciones');
+  return menu ? ranurasLegibles(menu) : [];
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -278,7 +294,8 @@ test('SCRUM-600b · ✅ CONTROL POSITIVO: en modo FACTURA la MISMA página sí d
 
 test('SCRUM-600b · ✅ EL PRESUPUESTO NO PIERDE NADA al compartir la página', async () => {
   const r = await pintarPagina('justificante', undefined); // sin tercer argumento = presupuesto
-  const todas = ranurasLegibles(r.contenedor).map((x) => x.texto);
+  // SCRUM-915i · «Guardar como plantilla» se fue al menú «⋯» de arriba: se lee con el menú ABIERTO.
+  const todas = ranurasLegibles(r.contenedor).concat(abrirMasAcciones(r)).map((x) => x.texto);
   const hay = (t) => todas.some((x) => x.includes(t));
   // SCRUM-915d · los bloques son ahora PASOS con los títulos firmados en SCRUM-915 comentario 15868.
   // Se comprueban por IGUALDAD: «Condiciones» por subcadena lo daría por bueno «Condiciones de pago».

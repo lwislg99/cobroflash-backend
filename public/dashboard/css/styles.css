@@ -1369,6 +1369,7 @@ html, body { overflow-x: clip; }
 .quote-paso.is-cerrado .quote-conceptos,
 .quote-paso.is-cerrado .quote-lines,
 .quote-paso.is-cerrado .quote-add-line,
+.quote-paso.is-cerrado .quote-dto-global,
 .quote-paso.is-cerrado .quote-fila,
 .quote-paso.is-cerrado .form-actions { display: none; }
 .quote-paso.is-cerrado .quote-block-title { margin: 0; }
@@ -1703,6 +1704,12 @@ html, body { overflow-x: clip; }
   cursor: pointer;
 }
 .quote-line__ajustes:hover { color: var(--ink, #0f1c17); background: var(--bg, #f6f7f5); }
+/* SCRUM-915h · la ficha sólo se ve si la línea NO va con lo de siempre (otro IVA, descuento,
+   suplido). En móvil va en su propia fila a lo ancho, así que se quita entera; en la rejilla de
+   ≥640 px tiene COLUMNA, y quitarla correría el total y el ⋯ de esa fila bajo la columna de al lado:
+   ahí se queda el hueco, invisible y fuera del orden de tabulación (`visibility`). La hoja se abre
+   siempre desde «Ajustes» del menú ⋯. */
+.quote-line__ajustes.is-de-siempre { display: none; }
 .quote-line__ajustes:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
 
 /* La hoja: los dos campos apilados y a lo ancho — es su pantalla, no una columna estrecha. */
@@ -1811,6 +1818,7 @@ html, body { overflow-x: clip; }
      base, que es lo que lo pone en su propia fila a todo lo ancho. */
   .quote-line__actions, .quote-line__ajustes { grid-column: auto; }
   .quote-line__actions { justify-content: flex-start; justify-self: auto; }
+  .quote-line__ajustes.is-de-siempre { display: block; visibility: hidden; } /* SCRUM-915h: el hueco */
 }
 
 /* ≥880 px de línea: vuelve la fila ÚNICA de SCRUM-139 F4, con la densidad de la tabla. La
@@ -1845,16 +1853,9 @@ html, body { overflow-x: clip; }
 }
 .quote-add-line:hover:not(:disabled) { background: var(--neutral-100); color: var(--neutral-700); }
 
-/* SCRUM-139 F3: sin fondo ni borde propios. Era una caja gris DENTRO de la tarjeta blanca
-   del bloque —caja dentro de caja— y con el título "Totales" fuera se notaba el doble marco.
-   Ahora la tarjeta del bloque es el único contenedor y esto es solo el desglose de apoyo. */
-.quote-totals { padding: 0; font-size: 13px; }
-.quote-totals > div { display: flex; justify-content: space-between; margin-bottom: 4px; }
-
-/* SCRUM-139 F3 · EL TOTAL COMO SIGNATURE KPI (DESIGN.md §5).
-   Base e IVA son APOYO: se consultan, no se buscan. */
-.quote-totals__apoyo { color: var(--muted, #6b756f); }
-.quote-totals__apoyo strong { color: var(--ink, #0f1c17); font-variant-numeric: tabular-nums; font-weight: 600; }
+/* SCRUM-915h · aquí vivían `.quote-totals` y `.quote-totals__apoyo`, el desglose de apoyo del
+   editor (Base, IVA, descuentos). Se fue con él al documento de la derecha, que lo pinta con
+   `.preview-total-row`. En Conceptos queda sólo el TOTAL (SCRUM-139 F3 · Signature KPI). */
 
 /* El KPI: Label arriba, cifra Display debajo — NO una fila `space-between` donde el rótulo
    pelea por el ancho con su propia cifra (así estaba en `.quote-vat-calc`). */
@@ -2198,6 +2199,14 @@ html, body { overflow-x: clip; }
 .quotes-desc { margin: 0 0 4px 0; font-size: 13.5px; color: var(--neutral-500); }
 .quotes-header-block { margin-bottom: 10px; }
 .quotes-header-block .quotes-title { margin: 0 0 4px 0; font-size: 17px; font-weight: 700; }
+/* SCRUM-915i · el título, el «Guardado automáticamente» y el «⋯» de arriba, en una fila. */
+.quotes-header-row { display: flex; align-items: center; gap: 8px; }
+.quotes-header-row .quotes-title { flex: 1 1 auto; min-width: 0; }
+/* El «⋯» de arriba es un objetivo NUEVO: nace con su área de toque (AB6, 44 px), no con la
+   excepción de `.btn-sm` que arrastran los de cada línea (guard:objetivo-tactil). */
+.quotes-header-row .overflow-trigger { min-width: 44px; min-height: 44px; }
+.hoja-vaciar { max-width: 420px; }
+.hoja-vaciar__frase { margin: 0; font-size: 14px; color: var(--neutral-600); }
 .quotes-header-block .quotes-merchant-info { font-size: 12.5px; color: var(--neutral-400); }
 .quote-result { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--neutral-100); font-size: 13.5px; }
 .quote-result h3 { margin: 0 0 6px; font-size: 15px; }
@@ -2526,8 +2535,21 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   gap: 12px; flex-wrap: wrap;
   padding: 18px 22px; border-bottom: 1px solid var(--border);
 }
-.detail-head h2 { font-size: 18px; margin: 0 0 2px; }
-.detail-head .detail-sub { font-size: 13px; color: var(--muted); margin: 0; }
+/* SCRUM-917f · la columna del título encoge. `.detail-head` es flex, y un hijo de flex NO baja
+   de su contenido: sin esto, el `ellipsis` de abajo no actúa nunca y un nombre largo empuja el
+   chip de estado y la barra de acciones fuera de la pantalla. */
+.detail-head-izq { min-width: 0; flex: 1 1 auto; }
+/* SCRUM-917f · el nombre largo TRUNCA, no empuja. Las mismas cuatro propiedades que llevaba
+   `.detail-miga-actual` hasta este corte: el principio no se mueve, se muda a donde vive ahora
+   el nombre largo — el título (que lo escribe el pro a mano) y el subtítulo (tres partes). */
+.detail-head h2 {
+  font-size: 18px; margin: 0 0 2px;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.detail-head .detail-sub {
+  font-size: 13px; color: var(--muted); margin: 0;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* SCRUM-317 (G2) · migas del detalle del Trabajo. Sustituyen al botón «← Volver a Trabajos»:
    dicen dónde estás Y qué es esto, en la misma línea y sin gastar un botón.
@@ -2542,13 +2564,10 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 }
 .detail-miga-link:hover { color: var(--ink); }
 .detail-miga-sep { color: var(--muted); }
-/* La miga actual se TRUNCA en vez de romper la línea: un nombre de cliente largo más un nombre
-   de trabajo largo no deben empujar el título ni el chip de estado — es el caso que más falla
-   en el pase de dispositivos. */
-.detail-miga-actual {
-  color: var(--ink); min-width: 0; max-width: 100%;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+/* SCRUM-917f · aquí vivía `.detail-miga-actual`. La miga repetía «cliente · trabajo» encima del
+   título y del subtítulo, que dicen lo mismo, así que se retira con su elemento. Su regla de
+   truncado NO se pierde: sube a `.detail-head h2` y `.detail-head .detail-sub`, que es donde
+   está ahora el nombre largo. */
 /* SCRUM-316 (G1) · cabecera del patrón: chips de los dos ejes + barra de acciones.
    Ni un token nuevo: gap/radios/colores son los que ya usa .detail-head. */
 .detail-head-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
@@ -2575,6 +2594,15 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* La etiqueta de DINERO va a ancho fijo para que los importes queden alineados en columna. */
 .detail-rail-etiqueta { color: var(--muted); min-width: 76px; }
 .detail-rail-fuerte { color: var(--ink); font-weight: 600; }
+/* SCRUM-982 · la NOTA del cliente («timbre roto, llamar al móvil»): texto libre, de varias líneas.
+   La etiqueta va ENCIMA y el texto ocupa todo el ancho del rail, en vez de quedarse en una columna
+   estrecha al lado. Se lee ENTERA (sin recorte) y respeta los saltos que escribió el profesional;
+   `anywhere` parte una palabra larga (una URL, un código) en vez de ensanchar el rail en 360 px.
+   Y 8 px de aire por encima (el `sm` de DESIGN.md): pegada al enlace de WhatsApp se leía como su
+   subtítulo, y no lo es. Ni un token nuevo. */
+.detail-rail-linea--nota { flex-direction: column; align-items: stretch; gap: 2px; margin-top: 8px; }
+.detail-rail-linea--nota .detail-rail-etiqueta { min-width: 0; }
+.detail-rail-linea--nota span:not(.detail-rail-etiqueta) { white-space: pre-line; overflow-wrap: anywhere; }
 /* SCRUM-368: mismo caso que .home-hero-ok — verde de TEXTO, no el de fondo. */
 .detail-rail-enlace { color: var(--brand-tint-ink, #047857); font-weight: 600; text-decoration: none; }
 .detail-rail-enlace:hover { text-decoration: underline; }
@@ -2629,6 +2657,11 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* Objetivo tactil de 44 px (AB6): se pulsan de pie y con prisa. */
 .cobro-hueco button { min-height: 44px; }
 @media (max-width: 720px) { .cobro-hueco { align-items: flex-start; } }
+/* SCRUM-917f · el hueco que enuncia una AUSENCIA lleva segunda linea. Las dos van en la misma
+   caja para que al envolver no se separen: la explicacion es de SU linea, no de la tarjeta.
+   Ni un token nuevo — --muted y el 12px son los que ya usa el subtitulo del detalle. */
+.cobro-hueco__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cobro-hueco__s { font-size: 12px; color: var(--muted); }
 
 .detail-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
 .detail-section:last-child { border-bottom: none; }
@@ -3784,3 +3817,126 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
    con `--danger` en un `style.cssText`, asi que el trinquete de estilos en JS arreglo las dos
    cosas de una: lo saco a su clase y de paso le quito el color que no contrasta. */
 .revision-error { margin: 6px 0 0; font-size: 13px; color: var(--danger-ink, #991b1b); }
+
+/* ═══ SCRUM-920c · LA LISTA DE GASTOS, SIN TABLA (y sin `style=` en línea) ════════════════════════
+   Prototipo aprobado: docs/prototipos/SCRUM-920/gastos.html. Bloque propio y todo acotado a
+   `.gastos-pantalla`, `.gastos-*` o `.gasto-*`: no se toca `.table-scroll .table`, que es de otros
+   usos (patron-tabla-de-lado.md). Tokens de `tokens.css` (DESIGN.md), ninguno nuevo. */
+
+.gastos-cabecera { margin-bottom: 16px; }
+.gastos-cabecera h2 { margin: 0; font-size: 18px; }
+.gastos-cabecera p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.gastos-cargando { color: var(--muted); font-size: 14px; }
+.gastos-error { color: var(--danger-ink, #991b1b); font-size: 14px; }
+.gastos-vacio-cta { margin-top: 14px; }
+
+/* Los TRES KPI de siempre: tres tarjetas a escritorio, UNA de tres renglones a 390 px (abajo). */
+.gastos-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.gasto-kpi {
+  min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 13px 16px; box-shadow: var(--shadow-sm);
+}
+.gasto-kpi--dinero { background: var(--brand-tint); }
+.gasto-kpi-rotulo { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.gasto-kpi-valor {
+  display: block; margin-top: 2px; font-size: 1.5rem; font-weight: 800; line-height: 1.15; color: var(--ink);
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.gasto-kpi-valor--texto { font-size: 1.0625rem; line-height: 1.25; }
+/* «Sin asignar»: ámbar si hay dinero sin trabajo, verde si no. El ámbar es el `warning` de DESIGN.md
+   (#b45309), que sí pasa el contraste; el `#d97706` de antes se quedaba en 3,2:1. */
+.gasto-kpi-valor--aviso { color: #b45309; }
+.gasto-kpi-valor--ok { color: var(--brand); }
+.gasto-kpi-pie { display: block; margin-top: 3px; font-size: 12.5px; color: var(--muted); }
+.gasto-kpi--dinero .gasto-kpi-valor { color: var(--brand-ink); }
+.gasto-kpi--dinero .gasto-kpi-rotulo,
+.gasto-kpi--dinero .gasto-kpi-pie { color: var(--brand-tint-ink); }
+
+.gastos-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.gastos-filtros select.input { width: auto; max-width: 100%; }
+.gastos-nuevo { margin-left: auto; }
+/* AB6 · objetivo al pulgar: todo control de esta pantalla a 44 px, también en escritorio. */
+.gastos-pantalla .btn-primary,
+.gastos-pantalla .btn-secondary,
+.gastos-pantalla .btn-ghost,
+.gastos-pantalla select.input { min-height: 44px; }
+.gastos-pantalla .overflow-trigger { min-width: 44px; min-height: 44px; }
+
+/* La lista: filas en REJILLA. Cinco columnas a escritorio; a 900 px se reordenan en tres renglones
+   (qué y cuánto · categoría · trabajo y «⋯») y a 390 px NO desbordan. */
+.gastos-filas {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.gasto-fila {
+  display: grid; grid-template-columns: minmax(0, 1fr) 150px 200px 110px 44px; gap: 10px; align-items: center;
+  padding: 12px 14px; border-top: 1px solid var(--neutral-200); cursor: pointer;
+}
+.gasto-fila:first-child { border-top: 0; }
+.gasto-fila:hover { background: var(--bg); }
+.gasto-que { min-width: 0; }
+.gasto-que b { display: block; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.gasto-notas, .gasto-fecha { display: block; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.gasto-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.gasto-trab { min-width: 0; font-size: 13.5px; }
+.gasto-trab-enlace {
+  display: inline-flex; align-items: center; min-height: 44px;
+  color: var(--brand-tint-ink); font-weight: 600; text-decoration: none; overflow-wrap: anywhere;
+}
+.gasto-trab-enlace:hover { text-decoration: underline; }
+.gasto-trab-suelto { color: var(--muted); }
+.gasto-trab-prov { display: block; margin-top: -8px; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.gasto-trab-suelto + .gasto-trab-prov { margin-top: 0; }
+.gasto-imp { text-align: right; font-size: 1.0625rem; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.gasto-mas { justify-self: end; }
+.gasto-opcion-eliminar { color: var(--danger-ink, #991b1b); }
+
+/* La píldora de categoría. Los cinco colores son los de siempre —el profesional ya los reconoce—,
+   con el TEXTO un tono más oscuro de la misma familia para pasar el contraste (AA, 4,5:1). */
+.gasto-cat {
+  display: inline-block; padding: 3px 10px; border-radius: var(--r-full);
+  font-size: 12px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+}
+.gasto-cat--materiales { background: #dbeafe; color: #1d4ed8; }
+.gasto-cat--desplazamiento { background: #fef3c7; color: #92400e; }
+.gasto-cat--herramientas { background: #ede9fe; color: #6d28d9; }
+.gasto-cat--subcontrata { background: #fee2e2; color: #b91c1c; }
+.gasto-cat--otros { background: var(--neutral-100); color: var(--neutral-600); }
+
+@media (max-width: 900px) {
+  .gasto-fila {
+    grid-template-columns: 1fr auto; grid-template-areas: "que imp" "meta meta" "trab mas";
+    gap: 8px 12px; padding: 14px;
+  }
+  .gasto-que { grid-area: que; }
+  .gasto-imp { grid-area: imp; }
+  .gasto-meta { grid-area: meta; }
+  .gasto-trab { grid-area: trab; align-self: center; }
+  .gasto-mas { grid-area: mas; align-self: center; }
+  /* Las notas y la fecha van en UN renglón («Gasto de prueba · 17 sept»): mismos datos, un renglón menos. */
+  .gasto-que .gasto-notas, .gasto-que .gasto-fecha { display: inline; }
+  .gasto-que b + .gasto-notas::before,
+  .gasto-que b + .gasto-fecha::before { content: ""; display: block; }
+  .gasto-notas + .gasto-fecha::before { content: " · "; }
+}
+@media (max-width: 560px) {
+  /* Una tarjeta, tres renglones «rótulo … cifra»: apilados en tres tarjetas, la primera fila de
+     gastos caía por debajo de la mitad de la pantalla. Los tres rótulos y las tres cuentas siguen. */
+  .gastos-kpis {
+    grid-template-columns: 1fr; gap: 0; padding: 4px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+  }
+  .gasto-kpi, .gasto-kpi--dinero {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; padding: 9px 0;
+    background: transparent; border: 0; border-top: 1px solid var(--neutral-200); border-radius: 0; box-shadow: none;
+  }
+  .gasto-kpi:first-child { border-top: 0; }
+  .gasto-kpi-valor, .gasto-kpi-valor--texto { order: 2; margin: 0 0 0 auto; font-size: 1.0625rem; }
+  .gasto-kpi-pie { order: 3; width: 100%; margin: 0; }
+  /* Filtros: el mes y la categoría a lo ancho (a media columna el mes se cortaba en «septiembre de 202»
+     y perdía el año); «Nuevo gasto» y «⬇ CSV» juntos debajo. */
+  .gastos-filtros { display: grid; grid-template-columns: 1fr 1fr; }
+  .gastos-filtros select.input { width: 100%; min-width: 0; grid-column: 1 / -1; }
+  .gastos-nuevo { margin-left: 0; }
+  .gastos-filtros .btn-secondary { justify-content: center; text-align: center; }
+}

@@ -88,9 +88,11 @@ export const GUARDS = [
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
 // del `spawnSync`) y `tests/scrum976-guards-entrada-con-techo.test.mjs` lo lanza de verdad, lo
-// cronometra y cae si se pasa. Medido el 21-sep-2026 con los once: 17,2 s (solos, los seis nuevos
-// suman ~20 s; el runner los reparte), o sea ~3,5 veces de margen para una máquina cargada.
-export const TECHO_MS = 60000;
+// cronometra y cae si se pasa. Medido el 21-sep-2026 con los once: 11-17 s con la máquina en frío
+// (solos, los seis nuevos suman ~20 s; el runner los reparte) y 44,5 s con la máquina cargada por
+// otras sesiones. El techo era de 60 s y ese margen (1,3 veces) era demasiado justo: un guard que cae
+// por sorteo enseña a desconfiar de los rojos. Son 90 s (orquestador, 21-sep-2026).
+export const TECHO_MS = 90000;
 
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea

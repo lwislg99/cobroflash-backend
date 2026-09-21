@@ -1,0 +1,54 @@
+TESTIGO · sonda 983-lista contra https://yaqu-staging-production.up.railway.app
+{
+  "login": 200,
+  "version": "53d756d7f619b1bfb22e36c5dd1ecd4ed9fcf160",
+  "altaEmpresa": {
+    "status": 201,
+    "id": 3930
+  },
+  "altaPersona": {
+    "status": 201,
+    "id": 3931
+  },
+  "filaEncontrada": true,
+  "putEnviado": {
+    "name": "ZZZ PRUEBA 983 lista 1789978692827",
+    "phone": "34000009831",
+    "mobile": "34000009832",
+    "email": "zzz.prueba983@example.com",
+    "notes": "nota nueva",
+    "legalName": "ZZZ Razon Social",
+    "taxId": "12345678Z",
+    "companyId": 3930,
+    "internalRef": "EXP-983",
+    "dtoPorDefecto": 5,
+    "contactKind": "PERSONA",
+    "waOptOut": false,
+    "tipoDestinatario": "EMPRESARIO",
+    "recargoEquivalencia": true,
+    "tags": [
+      "zzz983"
+    ],
+    "billingAddress": "Calle Prueba 1",
+    "billingCity": "Bilbao",
+    "billingPostalCode": "48001",
+    "billingProvince": "Bizkaia",
+    "billingCountry": "ES"
+  },
+  "borrado": {
+    "out": [
+      {
+        "id": 3931,
+        "status": 204
+      },
+      {
+        "id": 3930,
+        "status": 204
+      }
+    ],
+    "quedan": []
+  }
+}
+── CAMPO: antes → después (sólo los que cambian) ──
+POBLACION campos=23 (sin notes ni updatedAt) · rellenos antes=23 · control positivo (la nota pasó a «nota nueva»)=true · cambiados=0
+EXIT=0

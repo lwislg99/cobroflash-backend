@@ -79,6 +79,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum244-supresion-y-anonimizado.test.mjs': 1,
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,
+  // SCRUM-980: el historial de la ficha. Necesita banco porque vigila la TENENCIA de cinco consultas
+  // encadenadas (cliente, trabajos, partes, albaranes, fotos) y el recorte del técnico.
+  'scrum980-historial-del-cliente.test.mjs': 1,
   'scrum297-evidencias-postgres.test.mjs': 2,
   // SCRUM-979: la «Última visita». Necesita banco porque lo que vigila es la CONSULTA — el
   // `groupBy` con la tenencia dentro y el recorte del técnico por los tres ejes de SCRUM-650.

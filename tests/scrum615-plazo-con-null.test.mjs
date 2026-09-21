@@ -158,6 +158,10 @@ test('SCRUM-615 · 🔴 quién LEE `tipoDestinatario` en producción: la lista e
     ficherosLectoresDeSrc,
     [
       'src/modules/jobs/domain/pendientesFacturar.service.ts',
+      // SCRUM-983 · transporte, como el de abajo: el `select` de GET /:id/detail lo trae para que
+      // el modal «Editar» de la ficha 360 lo pinte con su valor en vez de vacío (vacío, al guardar,
+      // lo BORRABA). No decide nada con él: ni plazo, ni «null → PARTICULAR».
+      'src/modules/system/app/routes/customersAdmin.routes.ts',
       'src/modules/system/customerAdmin.ts', // transporte: el `select` que lo trae a la ficha
     ],
     '🔴 HA CAMBIADO QUIÉN LEE UN CAMPO CON CARGA FISCAL. Míralo antes de actualizar esta lista.',

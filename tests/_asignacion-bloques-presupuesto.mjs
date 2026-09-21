@@ -69,7 +69,11 @@ export const CAMPO_A_BLOQUE = {
   // Líneas: no es un ajuste de una línea, es una rebaja sobre el conjunto —se negocia a bulto—,
   // y su efecto se lee justo donde se pinta, entre la suma y la base imponible. El `Dto. %` de
   // cada línea sí vive en Líneas, dentro de la hoja de ajustes de su fila.
-  discountGlobalAmount: { control: 'dtoGlobalWrap', bloque: 'blockTotals' },
+  // SCRUM-915h · pasa a `blockLines`: la v3 aprobada lo pone «secundaria junto a “+ Añadir línea”»,
+  // y los totales dejan el editor (su desglose, con la fila «Descuento global», va al documento).
+  // La razón de arriba —se negocia a bulto, no es de una línea— no cambia: por eso NO entra en la
+  // hoja de ajustes de ninguna fila, sino debajo de todas.
+  discountGlobalAmount: { control: 'dtoGlobalWrap', bloque: 'blockLines' },
   // SCRUM-602 (DOC-12) · la dirección de la OBRA. Va al bloque del CLIENTE y no a «4. Envío»,
   // que en esta pantalla significa el envío del DOCUMENTO por WhatsApp o correo: dos cosas
   // distintas con el mismo nombre en la misma pantalla es cómo se aprende mal un producto.
