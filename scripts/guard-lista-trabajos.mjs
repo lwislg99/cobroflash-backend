@@ -489,13 +489,21 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
     // cambie de forma, o cualquier otro cambio del HTML, sigue poniendo el guard en rojo.
     // El móvil no está aquí a propósito: las muestras no lo llevan, y si algún día lo llevan el guard
     // caerá pidiendo declararlo.
+    //
+    // 🔴 SIN EL `>` PEGADO (SCRUM-553 cuenta los extractores así y su tope sólo baja): cada etiqueta
+    // deja un hueco `([^>]*)` para atributos, y el SUSTITUTO es una función que sólo deshace la pieza
+    // si esos huecos están VACÍOS. Así la exactitud no se pierde: un atributo de más en el `<td>`, en
+    // la caja o en un enlace no lo absorbe la sustitución —se queda en el HTML y el guard cae—.
+    const sinHuecos = (...huecos) => huecos.every((h) => h === '');
     const PIEZAS_1032 = [
       ['el teléfono de cada fila como enlace (y su «WhatsApp»)',
-        /<td class="cell-date"><div class="contacto-fila"><a class="contacto-link" href="tel:\+?\d+">([^<]*)<\/a>(?:<a class="contacto-link contacto-link--icono" href="https:\/\/wa\.me\/\d+" aria-label="WhatsApp" title="WhatsApp" target="_blank" rel="noopener">💬<\/a>)?<\/div><\/td>/g,
-        filasDeDatos, '<td class="cell-date">$1</td>'],
+        /<td class="cell-date"([^>]*)><div class="contacto-fila"([^>]*)><a class="contacto-link" href="tel:\+?\d+"([^>]*)>([^<]*)<\/a>(?:<a class="contacto-link contacto-link--icono" href="https:\/\/wa\.me\/\d+" aria-label="WhatsApp" title="WhatsApp" target="_blank" rel="noopener"([^>]*)>💬<\/a>)?<\/div><\/td>/g,
+        filasDeDatos,
+        (todo, td, caja, enlace, texto, wa = '') => (sinHuecos(td, caja, enlace, wa) ? `<td class="cell-date">${texto}</td>` : todo)],
       ['el correo de cada fila como enlace',
-        /<a class="contacto-link" href="mailto:[^"]*">([^<]*)<\/a>/g,
-        filasDeDatos, '$1'],
+        /<a class="contacto-link" href="mailto:[^"]*"([^>]*)>([^<]*)<\/a>/g,
+        filasDeDatos,
+        (todo, enlace, texto) => (sinHuecos(enlace) ? texto : todo)],
     ];
     const PIEZAS_DECLARADAS = [...PIEZAS_979, ...PIEZAS_1032];
     const cuentas = PIEZAS_DECLARADAS.map(([nombre, re, esperadas]) => [nombre, (cB._html.match(re) || []).length, esperadas]);
