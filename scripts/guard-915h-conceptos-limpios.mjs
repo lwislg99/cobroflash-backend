@@ -129,8 +129,15 @@ const ABRIR_MENU = new Function('n', `
   return Array.prototype.slice.call(panel.querySelectorAll('button')).map(function (b) { return limpio(b.textContent); });
 `);
 
-const PULSAR_EN_MENU = new Function('texto', `
+// Abre el menú ⋯ de la línea N y pulsa el ítem EN LA MISMA LLAMADA: el menú compartido se cierra
+// solo con cualquier desplazamiento, y entre dos `evaluate` el propio puppeteer puede provocar uno
+// (medido: el ítem estaba y la segunda llamada ya no encontraba el menú).
+const PULSAR_EN_MENU = new Function('n', 'texto', `
   var limpio = function (t) { return String(t || '').replace(/\\s+/g, ' ').trim(); };
+  var l = document.querySelectorAll('.quote-lines > .quote-line')[n];
+  var t = l && l.querySelector('.overflow-trigger');
+  if (!t) return 'sin-disparador';
+  if (t.getAttribute('aria-expanded') !== 'true') t.click();
   var panel = document.querySelector('.overflow-menu, .overflow-sheet');
   if (!panel) return 'sin-menu';
   var bs = panel.querySelectorAll('button');
@@ -242,8 +249,9 @@ const CASOS = [
       // Descuento de LÍNEA, puesto por el camino del profesional: menú ⋯ → Ajustes → «Dto. %».
       const items = await pag.evaluate(ABRIR_MENU, 0);
       if (!items || !items.length) { ciegos.push(`${etiqueta} -> no pude abrir el menú ⋯ de la línea`); return; }
-      if (await pag.evaluate(PULSAR_EN_MENU, ITEMS_V3[0]) !== 'pulsado') {
-        hallazgos.push(`${etiqueta} -> el menú ⋯ no ofrece «${ITEMS_V3[0]}»: ${JSON.stringify(items)}`); return;
+      const pulsado = await pag.evaluate(PULSAR_EN_MENU, 0, ITEMS_V3[0]);
+      if (pulsado !== 'pulsado') {
+        hallazgos.push(`${etiqueta} -> no pude pulsar «${ITEMS_V3[0]}» en el menú ⋯ (${pulsado}): ${JSON.stringify(items)}`); return;
       }
       await espera(250);
       if (await pag.evaluate(PONER_EN_HOJA, '.quote-line__dto input', '10') !== 'puesto') { ciegos.push(`${etiqueta} -> la hoja de ajustes no tiene «Dto. %»`); return; }
@@ -312,7 +320,8 @@ const CASOS = [
       if (JSON.stringify(limpios) !== JSON.stringify(ITEMS_V3)) {
         hallazgos.push(`${etiqueta} -> el menú ⋯ es ${JSON.stringify(limpios)}; la v3 pide ${JSON.stringify(ITEMS_V3)}`);
       }
-      if (await pag.evaluate(PULSAR_EN_MENU, ITEMS_V3[0]) !== 'pulsado') return;
+      const pulsado = await pag.evaluate(PULSAR_EN_MENU, 0, ITEMS_V3[0]);
+      if (pulsado !== 'pulsado') { hallazgos.push(`${etiqueta} -> no pude pulsar «${ITEMS_V3[0]}» en el menú ⋯ (${pulsado})`); return; }
       await espera(250);
       // La línea deja de ir «con lo de siempre»: IVA 10 %.
       const puesto = await pag.evaluate(PONER_EN_HOJA, '.quote-line__vat select, .quote-line__vat input', '10');
