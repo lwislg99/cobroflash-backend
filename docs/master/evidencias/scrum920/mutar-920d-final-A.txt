@@ -1,0 +1,49 @@
+TESTIGO · banco de mutacion 920d · HEAD 0470d6aad15cade2b87453f13d30a618f9f2b804
+BASE sin mutar · guard exit=0 · ✅ 77 · 🔴 0
+M01 · la animacion solo de opacidad de la pantalla (deja el `transform` que rompe el fixed)
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 390px · «Nuevo gasto» no está pegado al borde de abajo: bottom 1945 en una pantalla de 844
+       🔴 390px · al recorrer la lista «Nuevo gasto» se mueve (top 1901 → 702)
+       🔴 390px · la barra tapa la última fila (su borde inferior 755, la barra empieza en 691)
+M02 · «Sin foto» pasa a llevar un triangulo (texto sin firmar)
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · la foto de la fila dice otra cosa que el gasto: [{"c":"Gasolina","texto":"⚠ Sin foto","clase":"gasto-foto gasto-foto--no"},{"c":"Fontanero autónomo","texto":"
+       🔴 390px · la foto de la fila dice otra cosa que el gasto: [{"c":"Gasolina","texto":"⚠ Sin foto","clase":"gasto-foto gasto-foto--no"},{"c":"Fontanero autónomo","texto":"⚠
+       🔴 2 hallazgos.
+M03 · una <img> con la foto ENTERA en cada fila con foto (la miniatura que pesa hasta 1,1 MiB)
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 0 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · 🔴 la lista pide fotos (3 <img>, 3 descargas de /foto): la foto entera pesa hasta 1,1 MiB y aquí serían N
+       🔴 390px · 🔴 la lista pide fotos (3 <img>, 3 descargas de /foto): la foto entera pesa hasta 1,1 MiB y aquí serían N
+       🔴 2 hallazgos.
+M04 · los chips cuentan el mes entero y no lo que se vera al pulsarlos
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · «Presupuesto #5 · María López» · chips ["Todos · 8","Sin foto · 5"] y esperaba ["Todos · 2","Sin foto · 0"]
+       🔴 1280px · «Sin trabajo» · chips ["Todos · 8","Sin foto · 5"] y esperaba ["Todos · 4","Sin foto · 4"]
+       🔴 1280px · «Reforma baño» · chips ["Todos · 8","Sin foto · 5"] y esperaba ["Todos · 1","Sin foto · 0"]
+M05 · el chip vuelve a pedir la lista al servidor
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · pulsar el chip pidió la lista al servidor (1 → 2 peticiones): se filtra aquí
+       🔴 390px · pulsar el chip pidió la lista al servidor (1 → 2 peticiones): se filtra aquí
+       🔴 2 hallazgos.
+M06 · la cabecera pinta la suma aunque no haya ningun filtro (el total del mes saldria dos veces)
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · cabecera sin filtros {"mes":"Septiembre de 2026","cuenta":"· 8 gastos","suma":"10.262,39 €","salvedad":"Es la suma de lo que estás viendo, no la del mes."} y 
+       🔴 1280px · NEGATIVO: «Todos» no devuelve la lista entera y sin suma (8 filas, cabecera {"mes":"Septiembre de 2026","cuenta":"· 8 gastos","suma":"10.262,39 €","salvedad":
+       🔴 390px · cabecera sin filtros {"mes":"Septiembre de 2026","cuenta":"· 8 gastos","suma":"10.262,39 €","salvedad":"Es la suma de lo que estás viendo, no la del mes."} y e
+M07 · «Quitar los filtros» no suelta la categoria
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 «Quitar los filtros» deja categoría «herramientas», 0 filas y la última petición {"ruta":"/admin/expenses?month=2026-09&category=herramientas","metodo":"GET","cuerpo":
+       🔴 1 hallazgos.
+M08 · una categoria sin gastos dice «Sin gastos este mes»
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=2 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 con una categoría sin gastos la pantalla dice {"titulo":"Sin gastos este mes","desc":"Registra materiales, desplazamientos y subcontratas para conocer el margen real d
+       🔴 NO SUPE MIRAR: no encuentro «Quitar los filtros» tras el vacío por categoría
+       🔴 NO SUPE MIRAR en 1 sitios: esto NO es «de acuerdo».
+M09 · la barra de «Nuevo gasto» es fija tambien en escritorio
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 «Nuevo gasto» no abre el alta vacía (modal false, concepto null)
+       🔴 1280px · la barra de «Nuevo gasto» es fija también en escritorio: la barra de abajo es sólo del móvil
+       🔴 2 hallazgos.
+
+POBLACION mutaciones=9 · aplicadas=9 · caen=9 · vivas=[] · sin restaurar=[]
+EXIT=0
