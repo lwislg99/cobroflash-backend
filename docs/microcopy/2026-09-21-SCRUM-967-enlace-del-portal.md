@@ -7,18 +7,18 @@
 **L1** · correo del presupuesto, debajo del botón «Ver y firmar presupuesto»
 (`src/modules/messaging/domain/email.service.ts`, `sendQuoteEmail`, ranura `bajoElBotonHtml`):
 
-    Todos tus presupuestos y pagos con {negocio} están en tu portal de cliente.
+> Todos tus presupuestos y pagos con {negocio} están en tu portal de cliente.
 
 «tu portal de cliente» es el enlace a `/cliente/:portalToken`.
 
 **L3** · pantalla «¡Parte firmado!», debajo de «Recibirás tu copia por WhatsApp.»
 (`src/modules/jobs/app/routes/albaranPublic.routes.ts`, JS de éxito de la firma remota):
 
-    Ahí tienes tus presupuestos y pagos con {negocio}.
+> Ahí tienes tus presupuestos y pagos con {negocio}.
 
 y el botón:
 
-    Abrir mi portal de cliente
+> Abrir mi portal de cliente
 
 `{negocio}` = razón social o nombre del negocio. En LATAM, «presupuestos» sale de
 `locale.quotePlural` en minúscula («cotizaciones»).
