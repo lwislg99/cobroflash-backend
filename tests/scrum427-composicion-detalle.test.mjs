@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import {
   compararComposicion, seccionesDelDiseno, seccionesPintadas, normalizar,
   ENMIENDAS, SOBRANTES_SIN_DECIDIR, LARGO_MAX,
+  lineasDeElTrabajo, textosDeElTrabajo,
 } from './_composicion-detalle.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -90,6 +91,46 @@ test('SCRUM-427 · CONTROL POSITIVO: las cuatro del diseño están, una a una', 
     assert.ok(diseno.includes(s), `🔴 «${s}» ya no se lee del §4 del diseño.`);
     assert.ok(pintadas.some((p) => p.includes(s) || s.includes(p)), `🔴 «${s}» no se pinta.`);
   }
+});
+
+// ── SCRUM-917g · LAS LÍNEAS DE «EL TRABAJO» ───────────────────────────────────────────────
+
+test('SCRUM-917g · CONTROL POSITIVO: las cinco líneas de «El trabajo» se leen de la vista, en su orden', () => {
+  // Escrito a mano A PROPÓSITO (como el de arriba): derivar la lista esperada de la misma vista que se
+  // juzga la haría cierta por construcción. El orden es el del prototipo aprobado.
+  const js = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
+  const lineas = lineasDeElTrabajo(js, textosDeElTrabajo(RAIZ));
+  assert.deepEqual(
+    lineas.map((l) => normalizar(l.rotulo)),
+    ['tipo de trabajo', 'nombre y direccion', 'quien lo ejecuta', 'notas internas', 'gastos de este trabajo'],
+    '🔴 las líneas que la vista cuelga de la tarjeta «El trabajo» no son las cinco del prototipo, en su ' +
+    'orden. Si falta una, o el escáner dejó de ver la tarjeta (`construirBloqueElTrabajo`) o se retiró una ' +
+    'sección sin decisión; si sobra, hay una sección nueva sin declarar.');
+  // Y todas caen bajo el enumerador: ninguna se queda fuera de `seccionesPintadas`.
+  const pintadas = seccionesPintadas(RAIZ);
+  for (const l of lineas) {
+    assert.ok(pintadas.includes(normalizar(l.rotulo)),
+      `🔴 la línea «${l.rotulo}» se cuelga de la tarjeta pero no entra en la composición enumerada.`);
+  }
+});
+
+test('SCRUM-917g · el enumerador cuenta SÓLO las líneas que se cuelgan de la tarjeta', () => {
+  // Fuente fabricada: dos líneas construidas, UNA colgada. La no colgada no se pinta y contarla sería
+  // contar lo que nadie ve. Y sin tarjeta no hay líneas: el suelo de arriba lo declararía ciego.
+  const textos = { rotuloA: 'Línea colgada', rotuloB: 'Línea suelta' };
+  const fuente = [
+    "const lineaA = construirLineaPlegable(document, { clave: 'a', rotulo: textosTrabajo.rotuloA });",
+    "const lineaB = construirLineaPlegable(document, { clave: 'b', rotulo: textosTrabajo.rotuloB });",
+    'body.appendChild(construirBloqueElTrabajo(document, [lineaA]));',
+  ].join('\n');
+  assert.deepEqual(lineasDeElTrabajo(fuente, textos), [{ clave: 'a', rotulo: 'Línea colgada' }],
+    '🔴 el enumerador no distingue una línea colgada de una construida y suelta.');
+  assert.deepEqual(lineasDeElTrabajo('const x = 1;', textos), [],
+    '🔴 sin tarjeta debe devolver VACÍO, no inventar líneas.');
+  // Un rótulo que el módulo de textos no tiene no se inventa: se descarta (y el suelo lo notaría).
+  assert.deepEqual(lineasDeElTrabajo(fuente.replace('[lineaA]', '[lineaA, lineaB]'), { rotuloA: 'Línea colgada' }),
+    [{ clave: 'a', rotulo: 'Línea colgada' }],
+    '🔴 el enumerador inventa un rótulo que `TEXTOS_EL_TRABAJO` no tiene.');
 });
 
 // ── LAS EXCEPCIONES, VIGILADAS ───────────────────────────────────────────────────────────
@@ -168,10 +209,19 @@ test('SCRUM-427 · una enmienda que autoriza algo que ya NO se pinta, se caza', 
 // ── LA MICROCOPY APROBADA ────────────────────────────────────────────────────────────────
 
 test('SCRUM-427 · el rótulo es «Notas internas», sin emoji', () => {
+  // ── RE-ANCLAJE (SCRUM-917g) ────────────────────────────────────────────────────────────
+  // Este test leía el rótulo de un `<h3 class="detail-section-title">Notas internas</h3>` escrito
+  // en la vista. 917g mete «Notas internas» como LÍNEA de la tarjeta «El trabajo»: el rótulo ya no
+  // es marcado, es `TEXTOS_EL_TRABAJO.rotuloNotas`, y la vista lo cuelga con `construirLineaPlegable`.
+  // Desaparece una SUPERFICIE (el `<h3>`); el PRINCIPIO no: «el rótulo aprobado es «Notas internas»
+  // a secas, sin emoji, y ninguna sección lo lleva». Se lee ahora por el camino nuevo —el AST de la
+  // vista, que dice cuál es la línea de notas, y la fuente única, que dice su rótulo— y se conserva
+  // la comprobación exacta. Se re-ancla, no se borra: borrarlo dejaría al rótulo sin vigilar.
   const js = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/jobDetailView.js'), 'utf8');
-  const m = /<h3[^>]*class="detail-section-title"[^>]*>([^<]*Notas[^<]*)</.exec(js);
-  assert.ok(m, '🔴 no se encuentra el rótulo de notas.');
-  assert.equal(m[1].trim(), 'Notas internas',
+  const lineas = lineasDeElTrabajo(js, textosDeElTrabajo(RAIZ));
+  const notas = lineas.find((l) => l.clave === 'notas');
+  assert.ok(notas, '🔴 no se encuentra la línea de notas en la tarjeta «El trabajo».');
+  assert.equal(notas.rotulo.trim(), 'Notas internas',
     '🔴 la microcopy aprobada (10-ago-2026) es «Notas internas» a secas. Entró con un 📝 delante y ' +
     'ninguna de las otras seis secciones del detalle lleva emoji: rompía el registro de la pantalla.');
 

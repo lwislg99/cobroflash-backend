@@ -249,6 +249,29 @@ puede resolver hoy—, y su criterio es `totalAceptado == null`, el MISMO que de
 franja: un presupuesto aceptado por 0 € **consta**, y decirle a ese Trabajo que no tiene
 presupuesto sería falso (SCRUM-651).
 
+### ⑥ ENMIENDA DE SCRUM-917g · cinco secciones pasan a ser cinco LÍNEAS de una tarjeta, «EL TRABAJO»
+
+Las secciones **TIPO DE TRABAJO · DATOS · QUIÉN EJECUTA · NOTAS INTERNAS · GASTOS** eran cinco
+bloques sueltos, cada uno con su cabecera, y a 390 px las cinco quedaban bajo el pliegue (medido en
+`docs/master/evidencias/SCRUM-917/salida-paso0-detalle-f.txt`). Ahora son cinco líneas plegables
+dentro de UNA tarjeta, con su valor a la derecha, en el orden del prototipo aprobado
+(`docs/prototipos/SCRUM-917/trabajos.html`). **Ninguna se quita:** cambia el continente, no la
+composición.
+
+- **DATOS se llama «Nombre y dirección».** Es la misma sección de la enmienda ②; cambia la palabra,
+  firmada en el com. 15881 de SCRUM-917. **La decisión de G3 no se mueve** (lo que se EDITA se queda
+  en el cuerpo).
+- **QUIÉN EJECUTA entra en la lista.** Es el selector de **SCRUM-650**, posterior a este §4, y nunca
+  estuvo enumerada porque su título se escribía desde JS. Se declara ahora en vez de esconderla.
+- **TIPO DE TRABAJO sigue con su pregunta ABIERTA** (§7·5, enmienda ③): pasar a línea no la contesta,
+  y sigue siendo la bandera fiscal. Que la línea diga su valor sin abrirla no la esconde.
+- **«El trabajo» no es una sección de la composición:** es el continente. Las que se enumeran son las
+  cinco líneas, que `tests/_composicion-detalle.mjs` lee **por AST de la vista** —sólo las que se
+  cuelgan de la tarjeta— y compara con esta lista.
+
+**La lista enmendada:** LO QUE FALTA · ALBARANES · FACTURAS · y, dentro de «El trabajo», TIPO DE
+TRABAJO · NOMBRE Y DIRECCIÓN · QUIÉN LO EJECUTA · NOTAS INTERNAS · GASTOS.
+
 ### ④ La regla del hueco vale para LEER, no para ESCRIBIR
 
 «O está el dato, o no está la sección» (G3/G4/G5) se escribió para bloques de **LECTURA**: una

@@ -15,12 +15,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => fs.readFileSync(path.join(RAIZ, p), 'utf8');
 const VISTA = leer('public/dashboard/js/jobDetailView.js');
+// SCRUM-917g: los literales de «El trabajo» viven en su módulo (script de navegador con `module.exports`).
+const { TEXTOS_EL_TRABAJO } = createRequire(import.meta.url)(
+  path.join(RAIZ, 'public/dashboard/js/jobTrabajoPlegable.js'),
+);
 
 /**
  * ⚠️ LA VISTA SIN COMENTARIOS, para los tests que PROHÍBEN un literal.
@@ -270,9 +275,28 @@ test('SCRUM-317 · el campo de nombre existe, con su microcopy aprobada', () => 
     /nombreLabel\.textContent = 'Nombre del trabajo'/.test(VISTA),
     '🔴 la etiqueta del campo no es la aprobada: «Nombre del trabajo»',
   );
+  // ── RE-ANCLAJE (SCRUM-917g) ────────────────────────────────────────────────────────────
+  // Este test exigía por fuente `nombreInput.placeholder = 'Ej. Reforma baño'`. 917g cambia el
+  // MARCADOR: el fundador firmó otro (SCRUM-917, com. 15881, `docs/prototipos/SCRUM-917/textos-
+  // propuestos.md`) —«Por ejemplo: cambio de cuadro en el 3º B»— y el literal deja de vivir en la
+  // vista: vive UNA vez, en `TEXTOS_EL_TRABAJO` de `jobTrabajoPlegable.js`, y la vista lo lee.
+  // La SUPERFICIE cambia; el PRINCIPIO no: «el campo de nombre tiene el marcador que firmó el
+  // fundador, y ningún otro». Por eso se comprueban las DOS mitades —la vista lo lee de la fuente
+  // única, y la fuente única dice el literal firmado— y se vigila que el viejo no vuelva a la vista.
+  // Se re-ancla, no se borra: borrarlo dejaría el campo libre a un marcador sin firma (regla 30).
   assert.ok(
-    /nombreInput\.placeholder = 'Ej\. Reforma baño'/.test(VISTA),
-    '🔴 el marcador del campo no es el aprobado: «Ej. Reforma baño»',
+    /nombreInput\.placeholder = (?:textosTrabajo|TEXTOS_EL_TRABAJO)\.marcadorNombre\b/.test(VISTA),
+    '🔴 el marcador del campo de nombre ya no sale de `TEXTOS_EL_TRABAJO.marcadorNombre`: la vista ' +
+      'lo escribe por su cuenta, y un literal en la vista es un texto sin firma esperando fecha.',
+  );
+  assert.equal(
+    TEXTOS_EL_TRABAJO.marcadorNombre, 'Por ejemplo: cambio de cuadro en el 3º B',
+    '🔴 el marcador del campo de nombre no es el firmado (SCRUM-917 com. 15881): «Por ejemplo: ' +
+      'cambio de cuadro en el 3º B».',
+  );
+  assert.ok(
+    !/Ej\. Reforma baño/.test(VISTA_CODIGO),
+    '🔴 ha vuelto el marcador viejo «Ej. Reforma baño» a la vista: no es el firmado.',
   );
   assert.ok(
     /method: 'PATCH', body: \{ titulo/.test(VISTA),

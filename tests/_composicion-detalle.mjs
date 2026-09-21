@@ -21,12 +21,15 @@
 //  · lo que el diseño pide → del recuadro ASCII de `docs/diseno/bloque-g.md` §4, columna del
 //    CUERPO. Si alguien cambia el diseño, este test lo nota; si la lista viviera aquí copiada, el
 //    test seguiría comprobando el diseño de ayer.
-//  · lo que la pantalla pinta → de los `detail-section-title` de `jobDetailView.js`.
+//  · lo que la pantalla pinta → de los `detail-section-title` de `jobDetailView.js` y, desde
+//    SCRUM-917g, de las LÍNEAS que la vista cuelga de la tarjeta «El trabajo» (`lineasDeElTrabajo`).
 //
 // Lo ÚNICO escrito a mano son las ENMIENDAS, y llevan su motivo y su cita: eso es el hecho que no
 // se puede derivar de ningún sitio, porque es una decisión.
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+import ts from 'typescript';
 
 /** Sin acentos, sin mayúsculas y sin espacios de más: comparar rótulos, no su tipografía. */
 export function normalizar(t) {
@@ -87,11 +90,89 @@ export const LARGO_MAX = 40;
 export function seccionesPintadas(raiz) {
   const js = fs.readFileSync(path.join(raiz, 'public/dashboard/js/jobDetailView.js'), 'utf8');
   const salida = [];
-  for (const m of js.matchAll(/<h3[^>]*class="detail-section-title"[^>]*>([^<]+)</g)) {
-    const n = normalizar(m[1]);
+  const meter = (rotulo) => {
+    const n = normalizar(rotulo);
     if (n && !salida.includes(n)) salida.push(n);
-  }
+  };
+  for (const m of js.matchAll(/<h3[^>]*class="detail-section-title"[^>]*>([^<]+)</g)) meter(m[1]);
+  // SCRUM-917g · las secciones que viven como LÍNEAS de la tarjeta «El trabajo».
+  for (const l of lineasDeElTrabajo(js, textosDeElTrabajo(raiz))) meter(l.rotulo);
   return salida;
+}
+
+/**
+ * SCRUM-917g · LOS LITERALES DE «EL TRABAJO», de su módulo (`jobTrabajoPlegable.js`).
+ *
+ * Es un script de navegador con `module.exports` condicional, así que se carga con `require` sin
+ * ejecutar nada de navegador. Devuelve `{}` si no se puede leer: el llamador lo trata como CIEGO.
+ */
+export function textosDeElTrabajo(raiz) {
+  const ruta = path.join(raiz, 'public/dashboard/js/jobTrabajoPlegable.js');
+  const modulo = createRequire(import.meta.url)(ruta);
+  return (modulo && modulo.TEXTOS_EL_TRABAJO) || {};
+}
+
+/**
+ * SCRUM-917g · LAS LÍNEAS DE LA TARJETA «EL TRABAJO», con su rótulo y en el orden en que se cuelgan.
+ *
+ * Desde 917g, «Tipo de trabajo», «Nombre y dirección», «Quién lo ejecuta», «Notas internas» y
+ * «Gastos de este trabajo» ya no son cinco `<h3 class="detail-section-title">` sueltos: son cinco
+ * LÍNEAS plegables dentro de UNA tarjeta. El escáner de `<h3>` de arriba dejó de verlas y la
+ * composición se quedó en 3 secciones —el guard cayó con razón—, pero la respuesta no es dejar de
+ * enumerarlas: siguen siendo secciones del detalle, y una que apareciera o desapareciera sin
+ * decisión tendría que seguir poniendo el guard en rojo.
+ *
+ * 🔴 SE LEEN POR AST DE LA VISTA, no por texto, y cuentan SOLO las que se CUELGAN de la tarjeta:
+ *   · `const lineaX = construirLineaPlegable(document, { clave, rotulo: textosTrabajo.rotuloY })`
+ *     dice QUÉ línea es y de qué literal sale su rótulo;
+ *   · `construirBloqueElTrabajo(document, [lineaA, lineaB, …])` dice CUÁLES se pintan y en qué orden.
+ * Una línea construida y no colgada no se pinta, y contarla sería contar lo que nadie ve (la
+ * misma familia que «declarar la sección y no pintarla», SCRUM-427). El rótulo NO se copia aquí: se
+ * lee de `TEXTOS_EL_TRABAJO`, que es la fuente única, así que si el literal cambia allí cambia
+ * también lo que este guard ve.
+ *
+ * «El trabajo» —el título de la tarjeta— NO es una sección de la composición: es el continente. No
+ * sale de aquí ni del escáner de `<h3>` (se escribe con `textContent`, no como marcado), y no se
+ * enmienda el diseño para un contenedor que no agrupa nada por sí mismo.
+ *
+ * @param fuenteVista  texto de `jobDetailView.js`
+ * @param textos       `TEXTOS_EL_TRABAJO`
+ * @returns            `[{ clave, rotulo }]`; VACÍO si no encuentra la tarjeta (el suelo lo declara ciego)
+ */
+export function lineasDeElTrabajo(fuenteVista, textos) {
+  const sf = ts.createSourceFile('v.js', fuenteVista, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const porVariable = new Map();
+  const colgadas = [];
+  const visita = (n) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer
+        && ts.isCallExpression(n.initializer)
+        && n.initializer.expression.getText(sf) === 'construirLineaPlegable') {
+      const arg = n.initializer.arguments[1];
+      if (arg && ts.isObjectLiteralExpression(arg)) {
+        let clave = null;
+        let campo = null;
+        for (const p of arg.properties) {
+          if (!ts.isPropertyAssignment(p)) continue;
+          const nombre = p.name.getText(sf);
+          if (nombre === 'clave' && ts.isStringLiteral(p.initializer)) clave = p.initializer.text;
+          if (nombre === 'rotulo' && ts.isPropertyAccessExpression(p.initializer)) campo = p.initializer.name.text;
+        }
+        porVariable.set(n.name.text, { clave, campo });
+      }
+    }
+    if (ts.isCallExpression(n) && n.expression.getText(sf) === 'construirBloqueElTrabajo') {
+      const lista = n.arguments[1];
+      if (lista && ts.isArrayLiteralExpression(lista)) {
+        for (const e of lista.elements) if (ts.isIdentifier(e)) colgadas.push(e.text);
+      }
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return colgadas
+    .map((v) => porVariable.get(v))
+    .filter((l) => l && l.campo && typeof (textos || {})[l.campo] === 'string')
+    .map((l) => ({ clave: l.clave, rotulo: textos[l.campo] }));
 }
 
 /**
@@ -109,10 +190,25 @@ export const ENMIENDAS = Object.freeze({
     fuente: 'docs/master/SCRUM-319.md',
     enmiendaEnDiseno: true,   // declarada en `docs/diseno/bloque-g.md` §4
   },
-  datos: {
-    motivo: 'G3 movió CLIENTE/TELÉFONO/DIRECCIÓN al rail y dejó «Datos» a propósito con lo que se '
-      + 'EDITA (el nombre del Trabajo). El §4 se dibujó ANTES de esa decisión.',
+  // RE-ANCLAJE (SCRUM-917g): esta enmienda se llamaba `datos`. El fundador firmó otro rótulo para
+  // la MISMA sección (SCRUM-917, com. 15881: «Nombre y dirección») y ahora es una línea de la
+  // tarjeta «El trabajo». La decisión de G3 —que lo que se EDITA se queda en el cuerpo— no se
+  // mueve; lo que se mueve es la palabra, y una enmienda con el nombre viejo autorizaría una
+  // sección que ya no existe (`enmendadasNoPintadas` lo caza) y dejaría sin autorizar la que sí.
+  'nombre y direccion': {
+    motivo: 'G3 movió CLIENTE/TELÉFONO/DIRECCIÓN al rail y dejó la sección a propósito con lo que se '
+      + 'EDITA (el nombre del Trabajo); se llamaba «Datos» y SCRUM-917g la rotula «Nombre y dirección», '
+      + 'como línea de «El trabajo». El §4 se dibujó ANTES de esa decisión.',
     fuente: 'docs/master/SCRUM-318.md',
+    enmiendaEnDiseno: true,
+  },
+  // SCRUM-917g: ésta no estaba en la lista porque el escáner de `<h3>` nunca la vio (su título se
+  // escribía desde JS, en `jobAsignados.js`). Al leer las líneas de «El trabajo» aparece, y se
+  // declara aquí con su decisión en vez de esconderla: es el selector de SCRUM-650, POSTERIOR al §4.
+  'quien lo ejecuta': {
+    motivo: 'SCRUM-650 (T1) puso el selector de quién ejecuta el Trabajo como sección propia, DESPUÉS '
+      + 'del §4; SCRUM-917g la deja como línea de «El trabajo», con el rótulo firmado en el com. 15881.',
+    fuente: 'docs/master/SCRUM-650.md',
     enmiendaEnDiseno: true,
   },
   'tipo de trabajo': {
