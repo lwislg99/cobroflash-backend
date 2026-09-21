@@ -58,8 +58,9 @@ test('SCRUM-427 · la sección de notas se PINTA en el detalle', () => {
   // (`function pintarNotasInternas(body, job)`), no con ninguna llamada — es decir, este test llevaba
   // pasando por casualidad desde que la llamada cambió, y habría pasado también si nadie la llamara.
   // Se exige ahora una LLAMADA (cualquier primer argumento, que no sea la declaración) y se conserva
-  // la otra mitad: la función existe.
-  assert.match(s, /(?<!function )pintarNotasInternas\([\w.]+, job\)/,
+  // la otra mitad: la función existe. Sobre el CÓDIGO, sin comentarios: una llamada comentada no
+  // pinta nada, y sobre el fichero entero un `// pintarNotasInternas(x, job);` la daría por buena.
+  assert.match(soloEjecutable(s), /(?<!function )pintarNotasInternas\([\w.]+, job\)/,
     '🔴 la sección de notas no se llama desde el detalle (una LLAMADA, no la declaración).\n\n'
     + '  Declararla y no pintarla es peor que no tenerla: el contrato dice que existe y la pantalla\n'
     + '  no la enseña, que es exactamente lo que este ticket vino a arreglar.');
