@@ -60,8 +60,10 @@ const titulo = (s) => {
 };
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 /** SCRUM-920d · espera a que se CUMPLA una condición en la página (hasta `ms`) en vez de dormir un tiempo fijo:
- *  con otras suites corriendo en la misma máquina, un `espera(300)` se queda corto y da un rojo que no es del producto. */
-const hasta = (page, condicion, arg = null, ms = 4000) => page.waitForFunction(condicion, { timeout: ms, polling: 50 }, arg).then(() => true, () => false);
+ *  con otras suites corriendo en la misma máquina, un `espera(300)` se queda corto y da un rojo que no es del producto.
+ *  La condición va como TEXTO (una expresión del navegador), como `window.__listo === true` del banco: una función
+ *  flecha con `document` dentro es un identificador que este script no declara (censo de SCRUM-258). */
+const hasta = (page, expresion, ms = 4000) => page.waitForFunction(expresion, { timeout: ms, polling: 50 }).then(() => true, () => false);
 // Un guard que se cuelga no dice nada: mejor «no supe mirar» a los cuatro minutos que un CI parado.
 setTimeout(() => {
   console.error('🔴 NO SUPE MIRAR: el guard lleva más de 4 minutos sin terminar (una pulsación que no vuelve). Esto NO es «de acuerdo».');
@@ -647,7 +649,7 @@ for (const ancho of [1280, 390]) {
 {
   const { page } = await abrir('/g-cruda', 1280);
   await page.select('#exp-filter-cat', 'herramientas');
-  await hasta(page, () => !!document.querySelector('#exp-list .empty-state-title'));
+  await hasta(page, "!!document.querySelector('#exp-list .empty-state-title')");
   const v = await vacioDe(page);
   const hayVacioDelMes = await page.evaluate(() => !!document.getElementById('exp-empty-cta'));
   if (v.titulo !== 'Ningún gasto con esos filtros' || hayVacioDelMes) mal(`con una categoría sin gastos la pantalla dice ${JSON.stringify(v)} (vacío del mes: ${hayVacioDelMes})`);
@@ -656,7 +658,7 @@ for (const ancho of [1280, 390]) {
   if (!boton) nosupe('no encuentro «Quitar los filtros» tras el vacío por categoría');
   else {
     await pulsar(boton);
-    await hasta(page, () => document.getElementById('exp-filter-cat').value === '' && document.querySelectorAll('.gasto-fila').length > 0);
+    await hasta(page, "document.getElementById('exp-filter-cat').value === '' && document.querySelectorAll('.gasto-fila').length > 0");
     const cat = await page.evaluate(() => document.getElementById('exp-filter-cat').value);
     const filas = await conceptosVisibles(page);
     const e = await estado(page);
@@ -730,7 +732,7 @@ J390: {
   else bien(`390×844 · la primera fila entera entra en la primera pantalla (acaba en ${primera}; la barra empieza en ${a.barraTop})`);
   // Se pulsa con el ratón y abre el alta; el modal queda POR ENCIMA de la barra.
   await pulsar(await page.$('#exp-new-btn'));
-  await hasta(page, () => !!document.getElementById('exp-modal'));
+  await hasta(page, "!!document.getElementById('exp-modal')");
   await espera(150); // el modal ya está; un instante para que su animación de entrada no engañe al «qué hay encima»
   const m = await page.evaluate(() => {
     const b = document.getElementById('exp-new-btn').getBoundingClientRect();
@@ -771,7 +773,7 @@ J390: {
       abre: typeof accion === 'function' ? (accion(), true) : false,
     };
   });
-  await hasta(page, () => !!document.getElementById('exp-modal'));
+  await hasta(page, "!!document.getElementById('exp-modal')");
   const modalDelAtajo = (await estado(page)).modal;
   if (!atajo.registrado) mal('1280px · «expenses» ya no tiene destino registrado en atajoNuevo: la tecla «N» no abriría nada (SCRUM-769)');
   else if (!atajo.kbd || atajo.texto !== 'Nuevo gasto') mal(`1280px · el botón perdió el rótulo o la marca del atajo: «${atajo.texto}», kbd ${atajo.kbd}`);
