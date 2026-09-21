@@ -122,6 +122,17 @@ test('SCRUM-992 · la LISTA y el DETALLE miran los mismos ejes: lo que lee `esSu
     '🔴 la lista y el detalle han divergido: uno mira ejes que el otro no');
 });
 
+test('SCRUM-992 · `whereSuyoElTrabajo`: tres ejes con identidad y NADA sin ella (el `null` no es «los sin operario»)', async () => {
+  const { whereSuyoElTrabajo } = await import('../dist/modules/jobs/domain/accesoAlTrabajo.js');
+  assert.deepEqual(whereSuyoElTrabajo(7), {
+    OR: [{ operarioId: 7 }, { assignedUserId: 7 }, { assignees: { some: { teamMemberId: 7 } } }],
+  });
+  for (const sinIdentidad of [null, undefined]) {
+    assert.deepEqual(whereSuyoElTrabajo(sinIdentidad), { id: { in: [] } },
+      '🔴 sin identidad debe casar NADA: `{ operarioId: null }` serían los trabajos sin operario, de cualquiera');
+  }
+});
+
 test('SCRUM-992 · toda ruta de partes que no es de admin o pasa por `findParte`, o lee la tabla mirando el rol', () => {
   const { rutas, miraElRol, llama, leeDirecto } = censo();
   const culpables = [];
