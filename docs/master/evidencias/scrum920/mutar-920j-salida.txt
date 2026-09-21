@@ -1,0 +1,11 @@
+M0 · BASE sin mutar: salida 0 (como se esperaba)
+M1 · quitar la regla (el código de antes: sin hueco para el «?»): salida 1 (como se esperaba)
+      🔴 390px · el «?» de ayuda TAPA a «Nuevo gasto»: 2 de 27 puntos del botón y 1632 px² (el botón acaba en x=374 y el «?» empieza en x=322)
+M2 · hueco corto: 60 px en vez de 78 (el botón acaba en x=330 y el «?» empieza en x=322): salida 1 (como se esperaba)
+      🔴 390px · el «?» de ayuda TAPA a «Nuevo gasto»: 2 de 27 puntos del botón y 272 px² (el botón acaba en x=330 y el «?» empieza en x=322)
+M3 · el hueco en el lado equivocado: padding-left en vez de padding-right: salida 1 (como se esperaba)
+      🔴 390px · el «?» de ayuda TAPA a «Nuevo gasto»: 2 de 27 puntos del botón y 1632 px² (el botón acaba en x=374 y el «?» empieza en x=322)
+M4 · la regla ANTES del `padding:` abreviado, que la pisa (el orden importa): salida 1 (como se esperaba)
+      🔴 390px · el «?» de ayuda TAPA a «Nuevo gasto»: 2 de 27 puntos del botón y 1632 px² (el botón acaba en x=374 y el «?» empieza en x=322)
+
+Base verde y los cuatro mutantes en rojo: el guard los caza.
