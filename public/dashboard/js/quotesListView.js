@@ -134,7 +134,7 @@ function renderQuotesListView(container) {
   card.appendChild(tableScroll);
 
   const table = document.createElement("table");
-  table.className = "table table--cards-mobile"; // A18.1: cards en móvil (AB4)
+  table.className = "table table--cards-mobile table--presupuestos"; // A18.1: cards en móvil (AB4) · SCRUM-986: su propia clase, para no tocar las otras listas
   tableScroll.appendChild(table);
 
   const thead = document.createElement("thead");
@@ -256,6 +256,18 @@ function renderQuotesListView(container) {
       const tdStatus = document.createElement("td");
       tdStatus.className = "cell-status";
       tdStatus.appendChild(buildStatusPill(q.status));
+
+      // SCRUM-986 · el estado de WhatsApp de la fila enviada (Enviado / Entregado / Leído / No
+      // entregado), con el MISMO chip del detalle: no se reescribe ni un rótulo. Una fila sin
+      // envío (`waDelivery` null) no pinta nada. `tr.has-wa` sólo recompone la tarjeta en móvil.
+      const chipWa = window.waDeliveryChip ? window.waDeliveryChip(q.waDelivery, { sinFecha: true }) : "";
+      if (chipWa) {
+        const cajaWa = document.createElement("div");
+        cajaWa.className = "status-wa";
+        cajaWa.innerHTML = chipWa;
+        tdStatus.appendChild(cajaWa);
+        tr.classList.add("has-wa");
+      }
 
       const tdMethod = document.createElement("td");
       tdMethod.className = "col-hide-mobile";

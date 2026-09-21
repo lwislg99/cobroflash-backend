@@ -1328,7 +1328,7 @@ window.copyRojo = copyRojo;
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
 // Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.
-function waDeliveryChip(waDelivery) {
+function waDeliveryChip(waDelivery, opciones) {
   if (!waDelivery || !waDelivery.status) return '';
   const map = {
     queued:    { cls: 'wa-chip-sent',      glyph: '🕓', label: 'En cola' },
@@ -1339,7 +1339,10 @@ function waDeliveryChip(waDelivery) {
   };
   const m = map[waDelivery.status] || map.sent;
   let when = '';
-  if (waDelivery.at) {
+  // SCRUM-986 · `sinFecha`: la LISTA lo pide para no ensanchar la columna de estado (con la fecha el
+  // chip mide ~200 px y parte en dos líneas el ID, la fecha y el importe de TODAS las filas). El
+  // detalle no lo pasa y sigue igual. Lo que cuenta —el estado— no cambia.
+  if (waDelivery.at && !(opciones && opciones.sinFecha)) {
     const d = new Date(waDelivery.at);
     if (!isNaN(d)) when = ' · ' + d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
   }
