@@ -42,16 +42,36 @@ try {
     await pag.setViewport({ width: w, height: w === 1280 ? 900 : 800 });
     // Pulsar como un usuario: el control al CENTRO de la ventana (no pegado al borde, donde la barra
     // inferior del móvil lo tapa) y, ANTES de pulsar, comprobar que el punto donde se pulsa ES el
-    // control y no otra cosa encima. Devuelve si era tocable.
+    // control y no otra cosa encima. Devuelve si era tocable; si NO lo era, deja en `inf.taparon` QUIEN
+    // hay encima (nodeName, clase, id y su caja) y la caja del control, para no adivinar (SCRUM-980b).
+    inf.taparon = [];
+    // ⚠️ `html { scroll-behavior: smooth }` (styles.css): con `scrollIntoView` a secas la caja se mide A MEDIO
+    // DESPLAZAMIENTO. Medido el 21-sep (tercera y cuarta pasada): «Ver más» «no tocable» con el punto FUERA de la
+    // ventana (elementFromPoint = null, y=1924 en una ventana de 800), y a 360 el clic cayo en el «?» de la guía
+    // mientras el control aun subia. Era la SONDA, no la pantalla: `behavior: 'instant'` y dos fotogramas de espera.
     const pulsar = async (sel) => {
-      await pag.$eval(sel, (el) => el.scrollIntoView({ block: 'center' }));
-      const tocable = await pag.$eval(sel, (el) => {
+      await pag.$eval(sel, (el) => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+      await pag.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const medida = await pag.$eval(sel, (el) => {
         const r = el.getBoundingClientRect();
-        const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-        return !!e && (e === el || el.contains(e));
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const e = document.elementFromPoint(cx, cy);
+        const caja = (n) => { const b = n.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)].join(','); };
+        const cs = e ? getComputedStyle(e) : null;
+        return {
+          tocable: !!e && (e === el || el.contains(e)),
+          control: { nodo: el.nodeName, clase: el.className, caja: caja(el), visible: el.offsetParent !== null },
+          centro: [Math.round(cx), Math.round(cy)],
+          ventana: [window.innerWidth, window.innerHeight],
+          scrollY: Math.round(window.scrollY),
+          docAlto: document.documentElement.scrollHeight,
+          encima: e ? { nodo: e.nodeName, clase: e.className, id: e.id, caja: caja(e), position: cs.position, zIndex: cs.zIndex, texto: (e.textContent || '').trim().slice(0, 40) } : null,
+        };
       });
+      if (!medida.tocable) inf.taparon.push({ sel, ...medida });
       await pag.click(sel);
-      return tocable;
+      return medida.tocable;
     };
     await pag.goto(BASE + '/login.html', { waitUntil: 'load' });
     const login = await pag.evaluate(async (s) => (await fetch('/auth/test-login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'qa-980b@example.test', secret: s }) })).status, secreto);
@@ -88,7 +108,24 @@ try {
 
     // ── PULSAR la pestaña y medir el ESTADO ───────────────────────────────────────────────
     marca(await pulsar('button[data-key="jobs"]'), `[${w}] la pestaña «Trabajos» es tocable en su centro (nada encima)`);
-    await pag.waitForSelector('tr[data-trabajo]', { timeout: 10000 });
+    const hayFilas = await pag.waitForSelector('tr[data-trabajo]', { timeout: 10000 }).then(() => true, () => false);
+    if (!hayFilas) {
+      // Diagnostico en vez de caerse: que ve el usuario tras pulsar, y si un SEGUNDO clic si abre la pestana
+      // (si solo abre el segundo, el primero se perdio: carrera de la sonda o defecto real, y se separa por esto).
+      const estado = () => pag.evaluate(() => ({
+        hash: location.hash,
+        tabs: [...document.querySelectorAll('button[data-key]')].map((b) => ({ key: b.dataset.key, texto: b.textContent, aria: b.getAttribute('aria-selected'), clase: b.className, style: b.getAttribute('style') })),
+        filas: document.querySelectorAll('tr[data-trabajo]').length,
+        cuerpo: document.body.innerText.slice(0, 300),
+        cargando: [...document.querySelectorAll('*')].filter((n) => /cargando|loading/i.test(n.className + ' ' + n.textContent) && n.children.length === 0).map((n) => n.textContent.trim().slice(0, 30)).slice(0, 3),
+      }));
+      inf.sinFilas = { trasPrimerClic: await estado() };
+      const tocable2 = await pulsar('button[data-key="jobs"]');
+      const hay2 = await pag.waitForSelector('tr[data-trabajo]', { timeout: 10000 }).then(() => true, () => false);
+      inf.sinFilas.segundoClic = { tocable: tocable2, hayFilas: hay2, estado: await estado() };
+      marca(false, `[${w}] al pulsar la pestana «Trabajos» NO aparecen filas (primer clic); segundo clic → ${hay2 ? 'SI abre' : 'tampoco abre'}`, inf.sinFilas);
+      if (!hay2) { await pag.screenshot({ path: path.join(aqui, `sonda980b-${w}-sinfilas.png`) }).catch(() => {}); await ctx.close(); continue; }
+    }
     inf.pestana = await pag.evaluate(() => {
       const filas = [...document.querySelectorAll('tr[data-trabajo]')];
       const f0 = filas[0];
