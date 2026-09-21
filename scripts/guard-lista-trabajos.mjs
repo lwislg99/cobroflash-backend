@@ -491,7 +491,7 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
     // caerá pidiendo declararlo.
     const PIEZAS_1032 = [
       ['el teléfono de cada fila como enlace (y su «WhatsApp»)',
-        /<td class="cell-date"><div class="contacto"><a class="contacto-link" href="tel:\+?\d+">([^<]*)<\/a>(?:<a class="contacto-link contacto-link--icono" href="https:\/\/wa\.me\/\d+" aria-label="WhatsApp" title="WhatsApp" target="_blank" rel="noopener">💬<\/a>)?<\/div><\/td>/g,
+        /<td class="cell-date"><div class="contacto-fila"><a class="contacto-link" href="tel:\+?\d+">([^<]*)<\/a>(?:<a class="contacto-link contacto-link--icono" href="https:\/\/wa\.me\/\d+" aria-label="WhatsApp" title="WhatsApp" target="_blank" rel="noopener">💬<\/a>)?<\/div><\/td>/g,
         filasDeDatos, '<td class="cell-date">$1</td>'],
       ['el correo de cada fila como enlace',
         /<a class="contacto-link" href="mailto:[^"]*">([^<]*)<\/a>/g,

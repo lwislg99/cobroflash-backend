@@ -777,7 +777,7 @@ function renderCustomersView(container) {
     const conWa = k.whatsapp ? (k.movil ? lineas.find((l) => l.movil) : lineas.find((l) => l.enlace)) : null;
     lineas.forEach((l) => {
       const fila = document.createElement("div");
-      fila.className = "contacto";
+      fila.className = "contacto-fila"; // no «contacto» a secas: la landing (`index.html`) ya tiene esa clase
       if (l.enlace) fila.appendChild(enlaceDeContacto(l.enlace.href, l.enlace.texto));
       else fila.appendChild(document.createTextNode(l.texto));
       if (l === conWa) fila.appendChild(enlaceDeContacto(k.whatsapp.href, "💬", true, "WhatsApp"));

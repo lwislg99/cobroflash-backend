@@ -4074,8 +4074,8 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 
 /* SCRUM-1032 (CRM-02) · teléfono, móvil, WhatsApp y correo como enlaces (lista de Clientes y ficha).
    Subrayado suave para que se vea que se toca, y el área de toque de AB6: 44 px hasta 768 y 36 por
-   encima (DESIGN.md). `.contacto` junta el número y su «WhatsApp» en una línea, que se parte si no cabe. */
-.contacto { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
+   encima (DESIGN.md). `.contacto-fila` junta el número y su «WhatsApp» en una línea, que se parte si no cabe. */
+.contacto-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
 .contacto-link {
   display: inline-flex; align-items: center; min-height: 36px;
   text-decoration: underline; text-decoration-color: var(--neutral-300); text-underline-offset: 3px;
