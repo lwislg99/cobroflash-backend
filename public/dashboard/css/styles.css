@@ -2584,8 +2584,11 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-rail-enlace:hover { text-decoration: underline; }
 .detail-rail-enlace--suelto { display: inline-block; margin-top: 6px; font-size: 13px; }
 /* Objetivo táctil de 44 px (AB6): el teléfono y el mapa se pulsan con las manos sucias, de pie y
-   con el motor en marcha. Es el único sitio del rail donde el tamaño del área importa. */
-.detail-rail-linea a { min-height: 44px; display: inline-flex; align-items: center; }
+   con el motor en marcha. Es el único sitio del rail donde el tamaño del área importa.
+   SCRUM-917h · y también de ANCHO: un enlace de texto corto («1 sept», el del presupuesto) medía
+   35,8 px con la fuente de Windows y ≥ 44 con la del runner de Linux, así que el mismo árbol daba
+   dos cifras de deuda según la máquina. Con el mínimo, el área ya no depende del texto. */
+.detail-rail-linea a { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; }
 
 /* Móvil: el rail deja de ser columna. Un rail de 220 px al lado del cuerpo en un Android de gama
    media deja las dos columnas ilegibles.
