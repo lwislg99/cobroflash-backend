@@ -176,6 +176,15 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // mientras esta rama estaba sin empujar. Resuelto las dos veces igual, como manda el párrafo de
   // arriba: NINGÚN comentario se tira, los tres se quedan, y el número NO se suma —se vuelve a
   // MEDIR corriendo este test sobre el árbol ya fusionado.
+  // SCRUM-917e · entra `guard:detalle-trabajo-917`. Cuenta cuántas VECES se lee un importe en el
+  // DETALLE pintado, que es el ticket entero: el mismo «590,00 €» salía siete veces en la misma
+  // pantalla. Sube aquí porque eso no se puede contar en el fuente — el importe sale de una
+  // plantilla, de `progressBar()` en otro fichero y del rail en un tercero, y sólo el DOM resuelto
+  // sabe cuántas veces lo lee una persona. Trae dos controles que ninguno de los anteriores tenía:
+  // uno de DISCRIMINACIÓN (cuatro Trabajos distintos tienen que pintar cuatro pantallas distintas,
+  // comprobado ANTES de leer ningún resultado) y uno de NO PÉRDIDA (el aviso firmado de SCRUM-887
+  // no puede desaparecer al retirar el bloque DINERO del rail). Comprobado en rojo contra el árbol
+  // sin tocar (20-sep-2026): 32 de 92. El número de abajo se midió corriendo este test.
   // SCRUM-926 · entra `guard:duplicar-conserva`. PULSA «Duplicar» de verdad y lee el editor que
   // sale: mide que la copia no pierde el descuento global ni las condiciones de pago. Sube aquí
   // porque el campo del descuento se juzga por `hidden` con el CSS resuelto y el duplicado pasa
@@ -183,6 +192,11 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // que no sabe mirarlo se leen igual. Comprobado en rojo contra `17a1ec57` (20-sep-2026): 3 de 9
   // casillas, con los dos positivos en verde; y por mutación, cada mitad del arreglo tumba SOLO
   // sus casillas. El número de abajo se midió corriendo este test, no sumando uno.
+  // ⚠️ OCTAVA colisión (20-sep-2026, SCRUM-917e): 917e y 926 escribieron los dos su comentario
+  // sobre el mismo «29 → 30», y el merge dejó los COMENTARIOS en conflicto pero la CIFRA no —
+  // la línea de abajo bajó limpia diciendo 30 cuando ya hay 31 guards. Es el caso que más
+  // engaña de este contador: el conflicto que sí ves te tapa el que no. Los dos comentarios se
+  // quedan, y el número se vuelve a MEDIR corriendo este test sobre el árbol ya fusionado.
   // SCRUM-965 · entra `guard:un-solo-presupuesto`. PULSA «Generar presupuesto» DOS veces y cuenta
   // las peticiones que llegan al SERVIDOR, que es donde se ve el defecto: en pantalla los dos clics
   // se leen igual. Sube aquí porque necesita navegador —el estado que decide (la huella del payload
@@ -202,8 +216,21 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // fuera del render. Comprobado en rojo con el `public/` de main (21-sep-2026): 8 hallazgos en 5 de
   // 5 casos, con el control de la N (en #home SÍ abre) medido primero y en página limpia.
   // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
-  assert.equal(fuera.length, 33,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ ~~31~~ ~~32~~ 33 → ${fuera.length}.\n`
+  // ⚠️ NOVENA colisión (20-sep-2026, al mergear main en la rama del #1541): otra vez los DOS
+  // comentarios en conflicto y la CIFRA no —917e decía 31 y main ya decía 31 por otro camino—,
+  // así que el merge la habría dejado pasar sin mirar. Re-medida corriendo este test.
+  // ⚠️ DÉCIMA colisión (21-sep-2026, otra vez al mergear main en la rama del #1541): main trajo
+  // 965 y 915e1, cada uno con SU comentario en su propio bloque, y el conflicto cayó sólo en el
+  // comentario de la novena. Se quedan todos, y la cifra NO se toma de ninguno de los dos lados:
+  // se volvió a MEDIR corriendo este test sobre el árbol ya fusionado. Y otra vez la cifra
+  // mentía sin marca de conflicto: bajó limpia de main diciendo 32, y medida da 33 (cada lado
+  // contaba sus guards y no los del otro).
+  // ⚠️ UNDÉCIMA colisión (21-sep-2026, al mergear main en `scrum-915h-conceptos-limpios`): la rama
+  // decía 33 con `guard:conceptos-limpios` y main decía 33 con los suyos. El mismo número por dos
+  // caminos distintos, y otra vez sólo chocaron los comentarios. Se quedan todos y la cifra se
+  // volvió a MEDIR corriendo este test sobre el árbol fusionado: 34.
+  assert.equal(fuera.length, 34,
+    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ ~~22~~ ~~23~~ ~~24~~ ~~25~~ ~~26~~ ~~27~~ ~~28~~ ~~29~~ ~~30~~ ~~31~~ ~~32~~ ~~33~~ 34 → ${fuera.length}.\n`
     + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
     + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
     + `  Ahora mismo: ${JSON.stringify(fuera)}`);

@@ -33,10 +33,12 @@ máquina**: que en la de Luis fuera así no dice nada de la de Javier.
 | un comando con `Remove-Item Env:FORCE_COLOR` y, en la misma línea, `/c` o `'\]\('` lo **bloquea el hook** («Remove-Item on system path») | el hook lee esos trozos como una ruta del sistema | `[Environment]::SetEnvironmentVariable('FORCE_COLOR', $null)`, o el regex en un `.mjs` |
 | `$m` y `$M` pisan el mismo valor | PowerShell no distingue mayúsculas en las variables | nombres distintos de verdad |
 | `[IO.File]::ReadAllText('ruta/relativa')` lee OTRO fichero | las APIs de .NET resuelven contra el directorio del PROCESO, no el de PowerShell | rutas ABSOLUTAS (`Resolve-Path`) |
+| 🔴 `[IO.File]::ReadAllBytes('ruta/relativa')` tras un `cd` **lanza**, el array queda vacío y `(@() \| Where-Object {…}).Count` da **0**, que se lee igual que «fichero limpio» (medido el 20-sep-2026 barriendo BOMs) | la misma causa, con peor cara: aquí el error no acaba en un fichero equivocado sino en un recuento vacío | ruta ABSOLUTA y, **al lado de cada recuento, la POBLACIÓN** (`$b.Length`): un 0 sobre 0 bytes no es un hallazgo, es un instrumento que no arrancó |
 | `… \| Select-Object -First N` y node no escribe nada | la tubería corta a node antes de que escriba | redirigir a un fichero y leerlo en OTRO comando |
 | `>` o `Out-File` escribe UTF-16 o con BOM | valores por defecto de 5.1 | `-Encoding utf8`; y para un mensaje de commit sin BOM: `[IO.File]::WriteAllText($ruta, $texto, (New-Object Text.UTF8Encoding $false))` |
 | `ConvertFrom-Json` de un array de un elemento devuelve un objeto | 5.1 desenvuelve arrays | volcar el JSON a fichero y leerlo con node |
 | `node -e "…"` con comillas anidadas revienta | el escapado de 5.1 | escribir el script a un `.mjs` |
+| 🔴 un `$` dentro de comillas dobles **no llega a node**: PowerShell lo expande antes, y una medición hecha con `node -e "…$…"` sale distinta —y peor— de lo que es, **sin error** | las comillas dobles de 5.1 interpolan `$nombre` y `$(…)` | el script **desde fichero** (`.mjs`), o comillas simples; y comprobar que el texto que llega es el que escribiste |
 | `2>&1` sobre un programa nativo pone `$?` en falso aunque saliera 0 | 5.1 envuelve cada línea de error | no redirigir stderr de programas nativos |
 | `FORCE_COLOR` vuelve en cada comando | el entorno de la herramienta no persiste entre comandos | borrarlo al principio de CADA comando (A6) |
 
