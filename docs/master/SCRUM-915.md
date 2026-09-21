@@ -652,7 +652,7 @@ VUELVE y dice «IVA 10 %» (D), y la `N` en #home SÍ abre un modal (E).
 | `scrum598` · `scrum229` | la fila «Margen» buscada en `.quote-totals__apoyo` / entre `totalsBox` y el KPI | la misma puerta, buscada donde viven ahora los totales: el documento |
 | `scrum897` | el repintado de `.quote-totals` y del KPI | queda el KPI, y se exige que `.quote-totals` NO exista (si volviera, tiene que volver a medirse) |
 | `scrum697` · `scrum698` | 286 nodos | **245**, por IDENTIDAD, abajo |
-| `scrum522` · `scrum548` | 32 guards fuera de la tanda · 4× `#quotes-new` | 33 · 5×: entra `guard:conceptos-limpios`, medidos corriendo los tests |
+| `scrum522` · `scrum548` | 32 guards fuera de la tanda · 4× `#quotes-new` | 5× en 548; en 522, **34** tras mergear `origin/main` = `43f4c7fc3f8d0330089edcd785cb0eea58ccb784` (la rama decía 33 y main decía 33 por otro guard: undécima colisión del contador, sólo en los comentarios). Medido corriendo el test sobre el árbol fusionado, no sumado |
 
 **Los −41 nodos, por identidad** (firmas etiqueta + clase de los dos árboles montados en el banco):
 
@@ -665,8 +665,10 @@ SOBRA en la rama: +1   BUTTON.quote-line__ajustes.is-de-siempre  ← el MISMO no
 
 ### Medido
 
-- `npm run build` 0 · los **199 ficheros** que leen `quotesView.js`, `atajoNuevo.js`, `app.js` o
-  `styles.css` (más 522 y 548): **1.632 pruebas, 1.587 pass, 0 fail, 43 skipped**.
+- Sobre el árbol YA FUSIONADO con `43f4c7fc`: `npm run build` 0 · los **205 ficheros** que leen
+  `quotesView.js`, `atajoNuevo.js`, `app.js` o `styles.css`, más los censos de la lista de la S2
+  (237, 258, 267, 350, 514, 522, 548, 601, 662, 697, 698, 700, 709, 710b, 723, 726): **1.683
+  pruebas, 1.640 pass, 0 fail, 43 skipped** · `npm run guards:entrada` 11/11 · `guard:conceptos-limpios` 5/5.
 - Guards de navegador del editor, todos 0 y con su población: `pasos-del-editor` (3 casos),
   `descuento-redibuja`, `rotulos-de-la-linea` (10 anchuras), `duplicar-conserva`, `objetivo-tactil`,
   `documento-vivo` (8 casos), `un-solo-presupuesto` (3 casos), `descuentos-en-el-detalle` (4 casos),
