@@ -1,0 +1,485 @@
+{
+ "360": {
+  "fallos": [
+   "401 GET /admin/me",
+   "404 GET /admin/partes/999999",
+   "404 GET /admin/partes/999999"
+  ],
+  "taparon": [],
+  "antes": {
+   "tabs": [
+    {
+     "key": "quotes",
+     "texto": "Presupuestos (0)",
+     "derecha": 134,
+     "ancho": 122
+    },
+    {
+     "key": "invoices",
+     "texto": "Facturas (0)",
+     "derecha": 234,
+     "ancho": 96
+    },
+    {
+     "key": "jobs",
+     "texto": "Trabajos (20+)",
+     "derecha": 348,
+     "ancho": 110
+    }
+   ],
+   "proxima": "Próxima visita: 5 oct 2026, 13:11",
+   "proximaEstilo": {
+    "fs": "13px",
+    "fw": "600",
+    "mt": "6px"
+   },
+   "anchoDoc": 360,
+   "ventana": 360
+  },
+  "pestana": {
+   "n": 20,
+   "th": [
+    "Fecha",
+    "Trabajo",
+    "Estado",
+    "Documentos"
+   ],
+   "primeraFila": [
+    "11/9/2026",
+    "Trabajo 01",
+    "Terminado",
+    "PT-2026-001ALB-2026-001 📷 3"
+   ],
+   "pill": {
+    "texto": "Terminado",
+    "clase": "status-pill status-pill-accepted"
+   },
+   "colorFecha": "rgb(106, 116, 110)",
+   "colorMuted": "rgb(106, 116, 110)",
+   "docs": {
+    "display": "flex",
+    "gap": "6px",
+    "botones": [
+     "PT-2026-001",
+     "ALB-2026-001 📷 3"
+    ]
+   },
+   "fotos": {
+    "texto": "📷 3",
+    "aria": "3 fotos"
+   },
+   "verMas": {
+    "texto": "Ver más trabajos",
+    "margen": "12px 16px 12px 16px"
+   },
+   "sueltos": {
+    "texto": "Partes sin trabajo",
+    "tag": "H3",
+    "fs": "13px",
+    "fw": "700",
+    "margen": "16px 16px 8px 16px"
+   },
+   "sueltosLista": {
+    "display": "flex",
+    "margen": "0px 16px 16px 16px",
+    "botones": [
+     "PT-2026-099"
+    ]
+   },
+   "tabTitulo": "Trabajos (20+)",
+   "anchoDoc": 360,
+   "ventana": 360,
+   "carril": {
+    "scrollWidth": 520,
+    "clientWidth": 334
+   }
+  },
+  "verMas": {
+   "n": 24,
+   "tab": "Trabajos (24)",
+   "boton": false,
+   "largo": "Trabajo 01",
+   "ultimo": "Instalacion completa de climatizacion por conductos en la vivienda y en el local anexo",
+   "anchoDoc": 360,
+   "ventana": 360
+  },
+  "parte": {
+   "hash": "#parte-detail/13",
+   "trasRecargar": {
+    "hash": "#parte-detail/13",
+    "cuerpo": true,
+    "aviso": false
+   }
+  },
+  "inexistente": {
+   "hash": "#jobs",
+   "aviso": true
+  },
+  "vacio": {
+   "texto": "Sin trabajos",
+   "tab": "Trabajos (0)",
+   "pad": "24px 24px 24px 24px",
+   "align": "center",
+   "color": "rgb(148, 155, 146)",
+   "proxima": false,
+   "colspan": 4,
+   "anchoDoc": 360,
+   "ventana": 360
+  }
+ },
+ "390": {
+  "fallos": [
+   "401 GET /admin/me",
+   "404 GET /admin/partes/999999",
+   "404 GET /admin/partes/999999"
+  ],
+  "taparon": [],
+  "antes": {
+   "tabs": [
+    {
+     "key": "quotes",
+     "texto": "Presupuestos (0)",
+     "derecha": 146,
+     "ancho": 134
+    },
+    {
+     "key": "invoices",
+     "texto": "Facturas (0)",
+     "derecha": 254,
+     "ancho": 104
+    },
+    {
+     "key": "jobs",
+     "texto": "Trabajos (20+)",
+     "derecha": 378,
+     "ancho": 120
+    }
+   ],
+   "proxima": "Próxima visita: 5 oct 2026, 13:11",
+   "proximaEstilo": {
+    "fs": "13px",
+    "fw": "600",
+    "mt": "6px"
+   },
+   "anchoDoc": 390,
+   "ventana": 390
+  },
+  "pestana": {
+   "n": 20,
+   "th": [
+    "Fecha",
+    "Trabajo",
+    "Estado",
+    "Documentos"
+   ],
+   "primeraFila": [
+    "11/9/2026",
+    "Trabajo 01",
+    "Terminado",
+    "PT-2026-001ALB-2026-001 📷 3"
+   ],
+   "pill": {
+    "texto": "Terminado",
+    "clase": "status-pill status-pill-accepted"
+   },
+   "colorFecha": "rgb(106, 116, 110)",
+   "colorMuted": "rgb(106, 116, 110)",
+   "docs": {
+    "display": "flex",
+    "gap": "6px",
+    "botones": [
+     "PT-2026-001",
+     "ALB-2026-001 📷 3"
+    ]
+   },
+   "fotos": {
+    "texto": "📷 3",
+    "aria": "3 fotos"
+   },
+   "verMas": {
+    "texto": "Ver más trabajos",
+    "margen": "12px 16px 12px 16px"
+   },
+   "sueltos": {
+    "texto": "Partes sin trabajo",
+    "tag": "H3",
+    "fs": "13px",
+    "fw": "700",
+    "margen": "16px 16px 8px 16px"
+   },
+   "sueltosLista": {
+    "display": "flex",
+    "margen": "0px 16px 16px 16px",
+    "botones": [
+     "PT-2026-099"
+    ]
+   },
+   "tabTitulo": "Trabajos (20+)",
+   "anchoDoc": 390,
+   "ventana": 390,
+   "carril": {
+    "scrollWidth": 520,
+    "clientWidth": 364
+   }
+  },
+  "verMas": {
+   "n": 24,
+   "tab": "Trabajos (24)",
+   "boton": false,
+   "largo": "Trabajo 01",
+   "ultimo": "Instalacion completa de climatizacion por conductos en la vivienda y en el local anexo",
+   "anchoDoc": 390,
+   "ventana": 390
+  },
+  "parte": {
+   "hash": "#parte-detail/13",
+   "trasRecargar": {
+    "hash": "#parte-detail/13",
+    "cuerpo": true,
+    "aviso": false
+   }
+  },
+  "inexistente": {
+   "hash": "#jobs",
+   "aviso": true
+  },
+  "vacio": {
+   "texto": "Sin trabajos",
+   "tab": "Trabajos (0)",
+   "pad": "24px 24px 24px 24px",
+   "align": "center",
+   "color": "rgb(148, 155, 146)",
+   "proxima": false,
+   "colspan": 4,
+   "anchoDoc": 390,
+   "ventana": 390
+  }
+ },
+ "1280": {
+  "fallos": [
+   "401 GET /admin/me",
+   "404 GET /favicon.ico",
+   "404 GET /admin/partes/999999",
+   "404 GET /admin/partes/999999"
+  ],
+  "taparon": [],
+  "antes": {
+   "tabs": [
+    {
+     "key": "quotes",
+     "texto": "Presupuestos (0)",
+     "derecha": 416,
+     "ancho": 144
+    },
+    {
+     "key": "invoices",
+     "texto": "Facturas (0)",
+     "derecha": 531,
+     "ancho": 111
+    },
+    {
+     "key": "jobs",
+     "texto": "Trabajos (20+)",
+     "derecha": 664,
+     "ancho": 129
+    }
+   ],
+   "proxima": "Próxima visita: 5 oct 2026, 13:11",
+   "proximaEstilo": {
+    "fs": "13px",
+    "fw": "600",
+    "mt": "6px"
+   },
+   "anchoDoc": 1280,
+   "ventana": 1280
+  },
+  "pestana": {
+   "n": 20,
+   "th": [
+    "Fecha",
+    "Trabajo",
+    "Estado",
+    "Documentos"
+   ],
+   "primeraFila": [
+    "11/9/2026",
+    "Trabajo 01",
+    "Terminado",
+    "PT-2026-001ALB-2026-001 📷 3"
+   ],
+   "pill": {
+    "texto": "Terminado",
+    "clase": "status-pill status-pill-accepted"
+   },
+   "colorFecha": "rgb(106, 116, 110)",
+   "colorMuted": "rgb(106, 116, 110)",
+   "docs": {
+    "display": "flex",
+    "gap": "6px",
+    "botones": [
+     "PT-2026-001",
+     "ALB-2026-001 📷 3"
+    ]
+   },
+   "fotos": {
+    "texto": "📷 3",
+    "aria": "3 fotos"
+   },
+   "verMas": {
+    "texto": "Ver más trabajos",
+    "margen": "12px 16px 12px 16px"
+   },
+   "sueltos": {
+    "texto": "Partes sin trabajo",
+    "tag": "H3",
+    "fs": "13px",
+    "fw": "700",
+    "margen": "16px 16px 8px 16px"
+   },
+   "sueltosLista": {
+    "display": "flex",
+    "margen": "0px 16px 16px 16px",
+    "botones": [
+     "PT-2026-099"
+    ]
+   },
+   "tabTitulo": "Trabajos (20+)",
+   "anchoDoc": 1280,
+   "ventana": 1280,
+   "carril": {
+    "scrollWidth": 918,
+    "clientWidth": 918
+   }
+  },
+  "verMas": {
+   "n": 24,
+   "tab": "Trabajos (24)",
+   "boton": false,
+   "largo": "Trabajo 01",
+   "ultimo": "Instalacion completa de climatizacion por conductos en la vivienda y en el local anexo",
+   "anchoDoc": 1280,
+   "ventana": 1280
+  },
+  "parte": {
+   "hash": "#parte-detail/13",
+   "trasRecargar": {
+    "hash": "#parte-detail/13",
+    "cuerpo": true,
+    "aviso": false
+   }
+  },
+  "inexistente": {
+   "hash": "#jobs",
+   "aviso": true
+  },
+  "vacio": {
+   "texto": "Sin trabajos",
+   "tab": "Trabajos (0)",
+   "pad": "24px 24px 24px 24px",
+   "align": "center",
+   "color": "rgb(148, 155, 146)",
+   "proxima": false,
+   "colspan": 4,
+   "anchoDoc": 1280,
+   "ventana": 1280
+  }
+ }
+}
+
+── VEREDICTO ──
+✔ [1280] login de QA  → 200
+✔ [1280] la cabecera pinta «Próxima visita»  → "Próxima visita: 5 oct 2026, 13:11"
+✔ [1280] «Próxima visita» con el estilo de la hoja (13px, 600, 6px)  → {"fs":"13px","fw":"600","mt":"6px"}
+✔ [1280] la pestaña dice «Trabajos (20+)» (hay segunda página)  → "Trabajos (20+)"
+✔ [1280] las tres pestañas (SUELO: las de siempre siguen)  → ["Presupuestos (0)","Facturas (0)","Trabajos (20+)"]
+✔ [1280] ninguna pestaña se sale de la ventana  → [416,531,664]
+✔ [1280] sin scroll horizontal antes de pulsar  → {"anchoDoc":1280,"ventana":1280}
+✔ [1280] la pestaña «Trabajos» es tocable en su centro (nada encima)
+✔ [1280] al pulsar: 20 filas (primera página)  → 20
+✔ [1280] columnas Fecha · Trabajo · Estado · Documentos  → ["Fecha","Trabajo","Estado","Documentos"]
+✔ [1280] la primera fila: título, estado (Terminado) y sus dos documentos  → ["11/9/2026","Trabajo 01","Terminado","PT-2026-001ALB-2026-001 📷 3"]
+✔ [1280] el albarán enseña «📷 3» y su nombre accesible «3 fotos»  → {"texto":"📷 3","aria":"3 fotos"}
+✔ [1280] .historial-docs: flex con hueco de 6px (el estilo que llevaba en línea)  → {"display":"flex","gap":"6px"}
+✔ [1280] la celda de fecha lleva el color --muted (como con el estilo en línea)  → {"color":"rgb(106, 116, 110)","muted":"rgb(106, 116, 110)"}
+✔ [1280] «Ver más trabajos» con margen 12px 16px  → {"texto":"Ver más trabajos","margen":"12px 16px 12px 16px"}
+✔ [1280] «Partes sin trabajo» (13px, 700, margen 16 16 8)  → {"texto":"Partes sin trabajo","tag":"H3","fs":"13px","fw":"700","margen":"16px 16px 8px 16px"}
+✔ [1280] la lista de partes sueltos: flex, margen 0 16 16 y PT-2026-099  → {"display":"flex","margen":"0px 16px 16px 16px","botones":["PT-2026-099"]}
+✔ [1280] sin scroll horizontal DESPUÉS de pulsar  → {"anchoDoc":1280,"ventana":1280,"carril":{"scrollWidth":918,"clientWidth":918}}
+✔ [1280] «Ver más trabajos» es tocable en su centro (nada encima)
+✔ [1280] «Ver más»: 24 filas, «Trabajos (24)» y el botón desaparece  → {"n":24,"tab":"Trabajos (24)","boton":false,"largo":"Trabajo 01","ultimo":"Instalacion completa de climatizacion por conductos en la vivienda y en el local anexo","anchoDoc":1280,"ventana":1280}
+✔ [1280] sin scroll horizontal con el título largo  → {"anchoDoc":1280,"ventana":1280}
+✔ [1280] el enlace del parte abre SU parte  → "#parte-detail/13"
+✔ [1280] recargar en la ficha del parte NO la pierde (DETALLES)  → {"hash":"#parte-detail/13","cuerpo":true,"aviso":false}
+✔ [1280] un parte que no existe → «Ese parte ya no existe.»  → {"hash":"#jobs","aviso":true}
+✔ [1280] (cliente sin trabajos) la pestaña «Trabajos» es tocable en su centro
+✔ [1280] al pulsar «Trabajos (0)» aparece la celda del vacío
+✔ [1280] sin trabajos: «Sin trabajos», «Trabajos (0)», padding 24 y centrado (lo que decía el estilo en línea)  → {"texto":"Sin trabajos","tab":"Trabajos (0)","pad":"24px 24px 24px 24px","align":"center","color":"rgb(148, 155, 146)","proxima":false,"colspan":4,"anchoDoc":1280,"ventana":1280}
+✔ [1280] sin próxima visita la línea NO se pinta (ausente no es cero)  → false
+✔ [1280] sin scroll horizontal en el vacío  → {"anchoDoc":1280,"ventana":1280}
+✔ [1280] sin errores de página ni de consola (salvo los de red, que van abajo con su URL)  → []
+✔ [1280] ninguna respuesta >= 400 aparte de las declaradas (parte 999999 pedido a propósito, /admin/me antes del login, favicon)  → []
+✔ [390] login de QA  → 200
+✔ [390] la cabecera pinta «Próxima visita»  → "Próxima visita: 5 oct 2026, 13:11"
+✔ [390] «Próxima visita» con el estilo de la hoja (13px, 600, 6px)  → {"fs":"13px","fw":"600","mt":"6px"}
+✔ [390] la pestaña dice «Trabajos (20+)» (hay segunda página)  → "Trabajos (20+)"
+✔ [390] las tres pestañas (SUELO: las de siempre siguen)  → ["Presupuestos (0)","Facturas (0)","Trabajos (20+)"]
+✔ [390] ninguna pestaña se sale de la ventana  → [146,254,378]
+✔ [390] sin scroll horizontal antes de pulsar  → {"anchoDoc":390,"ventana":390}
+✔ [390] la pestaña «Trabajos» es tocable en su centro (nada encima)
+✔ [390] al pulsar: 20 filas (primera página)  → 20
+✔ [390] columnas Fecha · Trabajo · Estado · Documentos  → ["Fecha","Trabajo","Estado","Documentos"]
+✔ [390] la primera fila: título, estado (Terminado) y sus dos documentos  → ["11/9/2026","Trabajo 01","Terminado","PT-2026-001ALB-2026-001 📷 3"]
+✔ [390] el albarán enseña «📷 3» y su nombre accesible «3 fotos»  → {"texto":"📷 3","aria":"3 fotos"}
+✔ [390] .historial-docs: flex con hueco de 6px (el estilo que llevaba en línea)  → {"display":"flex","gap":"6px"}
+✔ [390] la celda de fecha lleva el color --muted (como con el estilo en línea)  → {"color":"rgb(106, 116, 110)","muted":"rgb(106, 116, 110)"}
+✔ [390] «Ver más trabajos» con margen 12px 16px  → {"texto":"Ver más trabajos","margen":"12px 16px 12px 16px"}
+✔ [390] «Partes sin trabajo» (13px, 700, margen 16 16 8)  → {"texto":"Partes sin trabajo","tag":"H3","fs":"13px","fw":"700","margen":"16px 16px 8px 16px"}
+✔ [390] la lista de partes sueltos: flex, margen 0 16 16 y PT-2026-099  → {"display":"flex","margen":"0px 16px 16px 16px","botones":["PT-2026-099"]}
+✔ [390] sin scroll horizontal DESPUÉS de pulsar  → {"anchoDoc":390,"ventana":390,"carril":{"scrollWidth":520,"clientWidth":364}}
+✔ [390] «Ver más trabajos» es tocable en su centro (nada encima)
+✔ [390] «Ver más»: 24 filas, «Trabajos (24)» y el botón desaparece  → {"n":24,"tab":"Trabajos (24)","boton":false,"largo":"Trabajo 01","ultimo":"Instalacion completa de climatizacion por conductos en la vivienda y en el local anexo","anchoDoc":390,"ventana":390}
+✔ [390] sin scroll horizontal con el título largo  → {"anchoDoc":390,"ventana":390}
+✔ [390] el enlace del parte abre SU parte  → "#parte-detail/13"
+✔ [390] recargar en la ficha del parte NO la pierde (DETALLES)  → {"hash":"#parte-detail/13","cuerpo":true,"aviso":false}
+✔ [390] un parte que no existe → «Ese parte ya no existe.»  → {"hash":"#jobs","aviso":true}
+✔ [390] (cliente sin trabajos) la pestaña «Trabajos» es tocable en su centro
+✔ [390] al pulsar «Trabajos (0)» aparece la celda del vacío
+✔ [390] sin trabajos: «Sin trabajos», «Trabajos (0)», padding 24 y centrado (lo que decía el estilo en línea)  → {"texto":"Sin trabajos","tab":"Trabajos (0)","pad":"24px 24px 24px 24px","align":"center","color":"rgb(148, 155, 146)","proxima":false,"colspan":4,"anchoDoc":390,"ventana":390}
+✔ [390] sin próxima visita la línea NO se pinta (ausente no es cero)  → false
+✔ [390] sin scroll horizontal en el vacío  → {"anchoDoc":390,"ventana":390}
+✔ [390] sin errores de página ni de consola (salvo los de red, que van abajo con su URL)  → []
+✔ [390] ninguna respuesta >= 400 aparte de las declaradas (parte 999999 pedido a propósito, /admin/me antes del login, favicon)  → []
+✔ [360] login de QA  → 200
+✔ [360] la cabecera pinta «Próxima visita»  → "Próxima visita: 5 oct 2026, 13:11"
+✔ [360] «Próxima visita» con el estilo de la hoja (13px, 600, 6px)  → {"fs":"13px","fw":"600","mt":"6px"}
+✔ [360] la pestaña dice «Trabajos (20+)» (hay segunda página)  → "Trabajos (20+)"
+✔ [360] las tres pestañas (SUELO: las de siempre siguen)  → ["Presupuestos (0)","Facturas (0)","Trabajos (20+)"]
+✔ [360] ninguna pestaña se sale de la ventana  → [134,234,348]
+✔ [360] sin scroll horizontal antes de pulsar  → {"anchoDoc":360,"ventana":360}
+✔ [360] la pestaña «Trabajos» es tocable en su centro (nada encima)
+✔ [360] al pulsar: 20 filas (primera página)  → 20
+✔ [360] columnas Fecha · Trabajo · Estado · Documentos  → ["Fecha","Trabajo","Estado","Documentos"]
+✔ [360] la primera fila: título, estado (Terminado) y sus dos documentos  → ["11/9/2026","Trabajo 01","Terminado","PT-2026-001ALB-2026-001 📷 3"]
+✔ [360] el albarán enseña «📷 3» y su nombre accesible «3 fotos»  → {"texto":"📷 3","aria":"3 fotos"}
+✔ [360] .historial-docs: flex con hueco de 6px (el estilo que llevaba en línea)  → {"display":"flex","gap":"6px"}
+✔ [360] la celda de fecha lleva el color --muted (como con el estilo en línea)  → {"color":"rgb(106, 116, 110)","muted":"rgb(106, 116, 110)"}
+✔ [360] «Ver más trabajos» con margen 12px 16px  → {"texto":"Ver más trabajos","margen":"12px 16px 12px 16px"}
+✔ [360] «Partes sin trabajo» (13px, 700, margen 16 16 8)  → {"texto":"Partes sin trabajo","tag":"H3","fs":"13px","fw":"700","margen":"16px 16px 8px 16px"}
+✔ [360] la lista de partes sueltos: flex, margen 0 16 16 y PT-2026-099  → {"display":"flex","margen":"0px 16px 16px 16px","botones":["PT-2026-099"]}
+✔ [360] sin scroll horizontal DESPUÉS de pulsar  → {"anchoDoc":360,"ventana":360,"carril":{"scrollWidth":520,"clientWidth":334}}
+✔ [360] «Ver más trabajos» es tocable en su centro (nada encima)
+✔ [360] «Ver más»: 24 filas, «Trabajos (24)» y el botón desaparece  → {"n":24,"tab":"Trabajos (24)","boton":false,"largo":"Trabajo 01","ultimo":"Instalacion completa de climatizacion por conductos en la vivienda y en el local anexo","anchoDoc":360,"ventana":360}
+✔ [360] sin scroll horizontal con el título largo  → {"anchoDoc":360,"ventana":360}
+✔ [360] el enlace del parte abre SU parte  → "#parte-detail/13"
+✔ [360] recargar en la ficha del parte NO la pierde (DETALLES)  → {"hash":"#parte-detail/13","cuerpo":true,"aviso":false}
+✔ [360] un parte que no existe → «Ese parte ya no existe.»  → {"hash":"#jobs","aviso":true}
+✔ [360] (cliente sin trabajos) la pestaña «Trabajos» es tocable en su centro
+✔ [360] al pulsar «Trabajos (0)» aparece la celda del vacío
+✔ [360] sin trabajos: «Sin trabajos», «Trabajos (0)», padding 24 y centrado (lo que decía el estilo en línea)  → {"texto":"Sin trabajos","tab":"Trabajos (0)","pad":"24px 24px 24px 24px","align":"center","color":"rgb(148, 155, 146)","proxima":false,"colspan":4,"anchoDoc":360,"ventana":360}
+✔ [360] sin próxima visita la línea NO se pinta (ausente no es cero)  → false
+✔ [360] sin scroll horizontal en el vacío  → {"anchoDoc":360,"ventana":360}
+✔ [360] sin errores de página ni de consola (salvo los de red, que van abajo con su URL)  → []
+✔ [360] ninguna respuesta >= 400 aparte de las declaradas (parte 999999 pedido a propósito, /admin/me antes del login, favicon)  → []
+
+POBLACION anchos=3 · comprobaciones=93 · rojos=0
+EXIT=0

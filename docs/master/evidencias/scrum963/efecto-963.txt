@@ -1,0 +1,25 @@
+POBLACIÓN · 15 PR abiertos · 15 medidos · 0 NO PUDE MIRAR
+
+PR    puerta HOY              meta-guard              trinquete               guards                  
+#1538 en-curso:in_progress    en-curso:in_progress    en-curso:in_progress    en-curso:in_progress     [automerge]
+#1537 failure                 en-curso:in_progress    en-curso:in_progress    en-curso:in_progress     [automerge]
+#1519 failure                 cancelled               success                 success                  [automerge]
+#1428 failure                 failure                 (sin check)             success                  [automerge]
+#1153 success                 failure                 (sin check)             success                 
+#972  success                 (sin check)             (sin check)             success                 
+#709  (sin check)             (sin check)             (sin check)             (sin check)             
+#639  failure                 (sin check)             (sin check)             (sin check)             
+#592  (sin check)             (sin check)             (sin check)             (sin check)             
+#545  (sin check)             (sin check)             (sin check)             (sin check)             
+#540  (sin check)             (sin check)             (sin check)             (sin check)             
+#531  (sin check)             (sin check)             (sin check)             (sin check)             
+#486  (sin check)             (sin check)             (sin check)             (sin check)             
+#480  (sin check)             (sin check)             (sin check)             (sin check)             
+#459  (sin check)             (sin check)             (sin check)             (sin check)             
+
+HOY bloqueados por la única puerta: 13 de 15
+  + «meta-guard · los guards caen cuando deben» → bloquearía 15 de 15 (de ellos 10 porque el check NI SIQUIERA EXISTE en ese commit): #1538 #1537 #1519 #1428 #1153 #972 #709 #639 #592 #545 #540 #531 #486 #480 #459
+  + «trinquete · ningún test nuevo mide la zona de la máquina» → bloquearía 14 de 15 (de ellos 12 porque el check NI SIQUIERA EXISTE en ese commit): #1538 #1537 #1428 #1153 #972 #709 #639 #592 #545 #540 #531 #486 #480 #459
+  + «guards de navegador (fuera de la tanda)» → bloquearía 11 de 15 (de ellos 9 porque el check NI SIQUIERA EXISTE en ese commit): #1538 #1537 #709 #639 #592 #545 #540 #531 #486 #480 #459
+
+LOS CUATRO JUNTOS bloquearían 15 de 15: #1538 #1537 #1519 #1428 #1153 #972 #709 #639 #592 #545 #540 #531 #486 #480 #459

@@ -1,4 +1,4 @@
-// scripts/_numero-de-rama.mjs — SCRUM-829
+﻿// scripts/_numero-de-rama.mjs — SCRUM-829
 //
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // EL NÚMERO DE TICKET DE UN NOMBRE DE RAMA. UNA SOLA REGLA, Y EN UN SITIO.
@@ -44,6 +44,35 @@
 // 8-sep-2026: **cambia de número exactamente 1**, el `revert-…`, de 824 a `null`. Ninguna rama
 // legítima se mueve, así que esto no reparte ningún trabajo de otra manera.
 
+// ── 🔴 LAS FORMAS QUE ESTA REGLA RECONOCE, DECLARADAS (SCRUM-804h) ──────────────────────────
+//
+// Van aquí porque es la TERCERA vez que este fichero cierra el check obligatorio de `main` por no
+// saber leer una forma de nombre que alguien usó de buena fe: `revert-…` (829), sin slug (804f) y
+// la fase con corte (804h). Tres veces no es mala suerte — es que las formas legales no estaban
+// escritas en ninguna parte y se iban descubriendo a golpes, un `main` bloqueado por vez.
+//
+// ⛔ Y NO ES UN COMENTARIO: `tests/scrum804h-la-fase-con-corte.test.mjs` LEE este bloque y ejercita
+// cada línea. Una forma que se añada aquí sin que la regla la cumpla pone el guard en rojo, y una
+// forma que la regla deje de cumplir también. La lista no puede quedarse desfasada en silencio.
+//
+// Antes de estrenar una forma de nombre que no esté aquí: pruébala, y si la regla no la lee,
+// añádela con su ticket en vez de renombrar la rama — renombrar arregla hoy y no mañana.
+//
+//   FORMAS:
+//   scrum-904                          → 904    sin slug (SCRUM-804f)
+//   scrum-904-completar-lleva-al-campo → 904    con slug, el caso de toda la vida
+//   scrum-839e-union-solo-registro     → 839    con fase
+//   scrum-905b                         → 905    con fase y sin slug
+//   scrum-915e1-documento-vivo         → 915    fase con corte (SCRUM-804h)
+//   scrum-915e12-documento-vivo        → 915    y el corte puede llevar dos dígitos
+//   scrum-0072-ceros-delante           → 72     los ceros a la izquierda no hacen otro ticket
+//   scrum-paso0-dinero                 → null   sin número: NO se inventa a qué ticket va
+//   scrum-72bb-x                       → null   dos letras no son una fase
+//   scrum-72.1-x                       → null   un punto no delimita
+//   revert-1192-scrum-824b-el-vigia    → null   un revert es el deshacer, no el trabajo (SCRUM-829)
+//   feature/scrum-72                   → null   no anclada al principio
+//   :FIN
+
 /**
  * El número de ticket de un NOMBRE DE RAMA, o `null` si el nombre no es de un ticket.
  *
@@ -52,6 +81,25 @@
  *     nombre no dice que la rama sea de ese ticket.
  *   · con delimitador (`-` o FIN DEL NOMBRE) → `scrum-72-x` da 72 y `scrum-727-x` da 727, no 72.
  *   · la letra opcional es una FASE del mismo ticket: `scrum-684b-…` da 684, no otro número.
+ *   · y la fase puede llevar CORTE: `scrum-915e1-…` da 915. La letra es la fase, los dígitos que
+ *     la siguen son el corte dentro de ella.
+ *
+ * 🔴 SCRUM-804h (20-sep-2026) · LA FASE PUEDE LLEVAR NÚMERO DETRÁS. `main` volvió a quedarse con
+ * su check obligatorio en rojo (run 35533496437, `soloEnGit: [ 'scrum-915e1-documento-vivo' ]`) y
+ * con seis PR sin poder mergear: la partición de SCRUM-915 en siete cortes nombra sus ramas
+ * `scrum-915e1-…`, `scrum-915e2-…`, y aquí la fase era UN SOLO carácter. Es el MISMO borde que
+ * cerró 804f tres días antes, en esta misma línea, y se cierra igual —en la regla, no renombrando
+ * la rama— por el motivo que 804f dejó escrito: la siguiente rama con esa forma lo traería otra vez.
+ *
+ * ⛔ Se ensancharon los DÍGITOS, no la letra. `[a-z]+` también habría arreglado `915e1` y habría
+ * roto una decisión de 804f que nadie pidió relajar: `scrum-72bb → null`, «dos letras no son una
+ * fase». Con `[a-z]?\d*` las cuatro afirmaciones de identidad de 804f siguen intactas.
+ *
+ * 🔴 Y NO RE-ATRIBUYE A NADIE, por construcción: `0*` come los ceros y `\d+` es voraz, así que el
+ * grupo 1 se lleva la tirada ENTERA de dígitos. Partirla dejaría al `\d*` delante de un dígito,
+ * que no es `-` ni fin, así que ninguna partición alternativa casa. Ensanchar el sufijo sólo puede
+ * convertir un `null` en ESE MISMO número, nunca un número en otro. Medido igualmente sobre los
+ * refs del 20-sep en `tests/scrum804h-la-fase-con-corte.test.mjs`: 0 re-atribuidas.
  *
  * 🔴 SCRUM-804f (17-sep-2026) · EL FIN DEL NOMBRE TAMBIÉN DELIMITA. Hasta hoy el delimitador era
  * SÓLO el `-`, y una rama sin slug (`scrum-904`, PR #1423) salía `null`: el censo decía SIN RASTRO
@@ -64,6 +112,6 @@
  * distintas: ahí la cadena entera ES la clave; aquí es texto libre que rodea a la clave.
  */
 export function numeroDeRama(nombre) {
-  const m = /^scrum-0*(\d+)[a-z]?(?:-|$)/.exec(String(nombre ?? '').trim());
+  const m = /^scrum-0*(\d+)[a-z]?\d*(?:-|$)/.exec(String(nombre ?? '').trim());
   return m ? Number(m[1]) : null;
 }

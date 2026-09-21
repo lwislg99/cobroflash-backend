@@ -272,7 +272,23 @@ const PENDIENTES_DE_FIRMA = [
   // porque contiene la diana, pero NO nombra el documento que se emite.
   // SCRUM-915d · la línea pasa de 672 a 885 porque el esqueleto de los pasos se escribe encima;
   // el texto y el motivo no cambian. Cifra MEDIDA sobre el árbol resultante, no deducida.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 885, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-915e2 · y de 885 a 889 por lo mismo: el «Ver documento» del pie de los pasos se escribe
+  // 150 líneas más arriba. CORREGIR un anclaje no es añadirlo (regla de `scrum710b`), y la cifra
+  // sale del propio censo sobre el árbol resultante —dice 889— no de contar el diff. El texto es
+  // byte a byte el mismo y el motivo sigue siendo el suyo.
+  // SCRUM-915i · y de 889 a 890: la cabecera pierde el subtítulo y gana la fila del título. Medido
+  // con el propio censo sobre el árbol resultante (el rojo decía `quotesView.js:890`), no contado.
+  // SCRUM-915g · y de 890 a 911: la fila «Ajustes del documento» del justificante se escribe 21 líneas
+  // más arriba. CORREGIR un anclaje no es añadirlo (regla de `scrum710b`): el texto es byte a byte el
+  // mismo y el motivo sigue siendo el suyo. Cifra medida con el propio censo sobre el árbol resultante
+  // (21-sep-2026; el rojo decía `quotesView.js:911`), no contada del diff. Y el censo NO marca como
+  // «a pelo» ninguno de los rótulos que entran con 915g («Ajustes del documento», «IVA por defecto»):
+  // ninguno nombra el documento que se emite.
+  // SCRUM-915k · y de 911 a 909: se retira la constante `MARCA_DESC_LINEA` (y su línea en blanco) de
+  // lo alto del fichero, así que TODO lo que va detrás sube dos líneas. Cifra MEDIDA con el propio
+  // censo sobre el árbol FUSIONADO con main (21-sep-2026; el rojo decía `quotesView.js:909`), no
+  // contada ni deducida: al fusionar, el generador la regeneró.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 909, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];

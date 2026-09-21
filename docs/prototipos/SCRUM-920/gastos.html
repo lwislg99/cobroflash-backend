@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gastos · lista, alta y detalle · prototipo</title>
+<meta name="description" content="Prototipo de la pantalla de Gastos (SCRUM-920): apuntar un gasto en segundos con la foto primero, verlos por mes con sus totales, y abrir uno con su foto delante. Datos de ejemplo tomados de staging; no guarda nada.">
+<style>
+/* Tokens: DESIGN.md (única fuente). Los mismos que los prototipos de SCRUM-915 y SCRUM-917:
+   un cuarto prototipo con tokens propios enseñaría una casa distinta a la de al lado. */
+:root{
+  --brand:#16a34a; --brand-hover:#15803d; --brand-ink:#052e16; --brand-tint:#ecfdf5; --brand-tint-ink:#166534;
+  --ink:#0f1c17; --body:#3f4a45; --muted:#6b756f; --bg:#f6f7f5; --surface:#fff; --border:#e7e9e5; --neutral-100:#eef0ec;
+  --danger:#dc2626; --warning:#b45309; --warning-bg:#fff7ed; --info:#1d4ed8; --info-bg:#eff6ff;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:22px; --r-full:9999px;
+  --sh-reposo:0 1px 2px rgba(16,24,40,.04);
+  --sh-elevado:0 4px 12px -2px rgba(16,24,40,.08),0 2px 6px -2px rgba(16,24,40,.05);
+  --sh-flotante:0 18px 40px -12px rgba(16,24,40,.18);
+  --sh-foco:0 0 0 3px rgba(34,197,94,.30);
+  --font:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--body);font:400 15px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:none;box-shadow:var(--sh-foco)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 18px;border-radius:var(--r-full);border:1px solid transparent;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-hover)}
+.btn-secondary{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.btn-secondary:hover{background:var(--bg)}
+.btn-ghost{background:transparent;color:var(--body);padding:11px 12px}
+.btn-ghost:hover{color:var(--ink);background:var(--neutral-100)}
+.btn-danger{background:var(--surface);color:var(--danger);border-color:#f3c9c9}
+.btn-danger:hover{background:#fef2f2}
+/* Como en 915 y 917: la variante pequeña conserva su aire pequeño pero NO baja de 44 px de alto.
+   DESIGN.md exime a `btn-sm` (30 px) con su motivo escrito; aquí se mide contra el objetivo del
+   pulgar en obra, que es lo que este rediseño viene a arreglar, y la exención se declara en
+   medicion.md en vez de aprovecharse. */
+.btn-sm{min-height:44px;padding:9px 14px;font-size:14px}
+.label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.money{font-variant-numeric:tabular-nums}
+.propuesto{text-decoration:underline dashed var(--warning) 1.5px;text-underline-offset:3px}
+body.sin-resaltar .propuesto{text-decoration:none}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--r-full);font-size:12px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+/* Los cinco colores de categoría son los de HOY (`CATEGORY_LABELS` en expensesView.js): no se
+   reinventan, porque el profesional ya los reconoce. */
+.cat-materiales{background:#dbeafe;color:#2563eb}
+.cat-desplazamiento{background:#fef3c7;color:#d97706}
+.cat-herramientas{background:#ede9fe;color:#7c3aed}
+.cat-subcontrata{background:#fee2e2;color:#dc2626}
+.cat-otros{background:var(--neutral-100);color:var(--muted)}
+
+/* Barra del prototipo (no es producto) */
+.proto{background:var(--ink);color:#fff;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:8px 16px}
+.proto strong{font-size:13px}
+.proto button{background:transparent;border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:var(--r-full);padding:6px 12px;font-size:13px;cursor:pointer}
+.proto button[aria-pressed="true"]{background:rgba(255,255,255,.18);border-color:transparent;font-weight:700}
+.proto label{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
+.proto .leyenda{font-size:12px;color:#c9d3ce;width:100%}
+.proto .leyenda u{text-decoration:underline dashed #f0b100 1.5px;text-underline-offset:3px}
+
+.marco{max-width:1240px;margin:0 auto;padding:20px 16px 90px}
+
+/* ── LA LISTA ─────────────────────────────────────────────────────────────── */
+.titular{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:4px}
+.titular h1{margin:0;font-size:1.6rem;color:var(--ink);letter-spacing:-.02em}
+.titular .acc{display:flex;gap:8px;flex-wrap:wrap}
+.sub{font-size:13.5px;color:var(--muted);margin:0 0 14px}
+
+/* Los TRES KPI de hoy, enteros y con los mismos rótulos. */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:13px 16px;box-shadow:var(--sh-reposo);min-width:0}
+.kpi.dinero{background:var(--brand-tint);border-color:#c9ecd7}
+.kpi .n{display:block;font-size:1.5rem;font-weight:800;color:var(--ink);line-height:1.15;font-variant-numeric:tabular-nums;margin-top:2px;overflow-wrap:anywhere}
+.kpi.dinero .n{color:var(--brand-ink)}
+.kpi .n.texto{font-size:1.0625rem;line-height:1.25}
+.kpi .pie{display:block;font-size:12.5px;color:var(--muted);margin-top:3px}
+
+.filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.filtros select{min-height:44px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--ink);max-width:100%}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border-radius:var(--r-full);border:1px solid var(--border);background:var(--surface);color:var(--ink);font-weight:600;cursor:pointer;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.crece{margin-left:auto}
+@media (max-width:860px){.crece{margin-left:0}}
+
+/* La cabecera del mes: el TOTAL, que es lo que pide el ticket, encima de sus filas. */
+.mescab{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:0 4px 8px}
+.mescab b{color:var(--ink);font-size:15px}
+.mescab .cuenta{color:var(--muted);font-size:13.5px}
+.mescab .suma{margin-left:auto;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;font-size:15px}
+.mescab .salvedad{width:100%;font-size:12.5px;color:var(--muted);margin-top:2px}
+
+.filas{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-reposo)}
+/* 🔴 AQUÍ MUERE EL SCROLL LATERAL. Hoy esto es un `<table class="table" style="min-width:600px">`
+   dentro de un `.table-scroll`: a 390 px sus columnas suman 628 px y hay que ARRASTRAR la caja
+   para ver el importe. Es el defecto que SCRUM-139 F1 llamó inservible con el pulgar en obra.
+   No es una tabla: son filas en grid, y a 860 px se reordenan en dos líneas sin desbordar. */
+.fila{display:grid;grid-template-columns:minmax(0,1fr) 290px 190px 110px 44px;gap:10px;align-items:center;padding:12px 14px;border-top:1px solid var(--border);cursor:pointer}
+.fila:first-child{border-top:0}
+.fila:hover{background:var(--bg)}
+.fila .que{min-width:0}
+.fila .que b{display:block;color:var(--ink);font-weight:700;overflow-wrap:anywhere}
+.fila .que span{display:block;font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.fila .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.fila .trab{min-width:0;font-size:13.5px}
+.fila .trab a{color:var(--brand-tint-ink);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;min-height:44px}
+.fila .trab a:hover{text-decoration:underline}
+.fila .trab .prov{display:block;font-size:12.5px;color:var(--muted);margin-top:-8px}
+.fila .trab .suelto{color:var(--muted)}
+.fila .imp{text-align:right;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;font-size:1.0625rem}
+.fila .mas{justify-self:end}
+
+/* 🔴 EL JUSTIFICANTE, QUE HOY NO SE VE EN NINGUNA COLUMNA. Es un HECHO sobre el archivo que
+   guardamos nosotros —la foto está o no está—, no una afirmación sobre lo que Hacienda admite:
+   eso último no se dice en ninguna parte de este prototipo, a propósito (ver direccion-de-diseno). */
+.just{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:var(--r-full);white-space:nowrap}
+.just.si{background:var(--brand-tint);color:var(--brand-tint-ink)}
+.just.no{background:var(--warning-bg);color:var(--warning)}
+.just .mini{width:26px;height:34px;border-radius:3px;object-fit:cover;border:1px solid rgba(0,0,0,.08);background:#fff;flex:none}
+
+.kebab{min-width:44px;min-height:44px;border-radius:50%;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);font-size:17px;line-height:1}
+.kebab:hover{background:var(--bg);color:var(--ink)}
+.vacio{padding:30px 18px;text-align:center;color:var(--muted)}
+.vacio .ico{font-size:34px}
+.vacio h3{color:var(--ink);margin:8px 0 4px;font-size:1.0625rem}
+.vacio p{margin:0 auto 14px;max-width:44ch}
+
+/* A 390 los tres KPI apilados medían ~330 px antes de la primera fila (el borrador los ponía en
+   tres tarjetas de ancho completo). Hoy van 2+1 en tarjetas altas. Aquí: UNA tarjeta, tres renglones
+   «rótulo … cifra». Los tres rótulos y las tres cuentas siguen; lo que se va es el aire. */
+@media (max-width:560px){
+  .kpis{grid-template-columns:1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-reposo);padding:4px 14px}
+  .kpi,.kpi.dinero{background:transparent;border:0;border-top:1px solid var(--border);border-radius:0;box-shadow:none;padding:9px 0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .kpi:first-child{border-top:0}
+  .kpi .n,.kpi .n.texto{font-size:1.0625rem;margin:0 0 0 auto;order:2}
+  .kpi .pie{width:100%;margin:0;order:3}
+  .kpi .pie:empty,.kpi .pie.nada{display:none}
+  /* Filtros en rejilla de dos: el mes a lo ancho · categoría | trabajo · los dos chips juntos.
+     Sueltos en flex salían cuatro renglones y la primera fila no entraba en la primera pantalla.
+     El mes va a lo ancho porque a media columna se cortaba en «septiembre de 202»: perdía el año. */
+  .filtros{display:grid;grid-template-columns:1fr 1fr}
+  .filtros select{min-width:0;width:100%}
+  .filtros #f-mes{grid-column:1 / -1}
+  .filtros .chip{justify-content:center}
+}
+@media (max-width:900px){
+  .fila{grid-template-columns:1fr auto;grid-template-areas:"que imp" "meta meta" "trab mas";gap:8px 12px;padding:14px}
+  .fila .que{grid-area:que}
+  /* En móvil las notas y la fecha van en UN renglón («Gasto de prueba · 17 sept»): mismos datos,
+     un renglón menos por fila. */
+  .fila .que span{display:inline}
+  .fila .que b + span::before{content:"";display:block}
+  .fila .que span + span.fecha::before{content:" · "}
+  .fila .imp{grid-area:imp}
+  .fila .meta{grid-area:meta}
+  .fila .trab{grid-area:trab;align-self:center}
+  .fila .trab .prov{margin-top:-6px}
+  .fila .mas{grid-area:mas;align-self:center}
+}
+
+/* ── EL ALTA, CON LA FOTO PRIMERO ─────────────────────────────────────────── */
+.alta{max-width:560px;margin:0 auto}
+.paso{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;box-shadow:var(--sh-reposo);margin-bottom:12px}
+.paso>h2{margin:0 0 4px;font-size:1.0625rem;color:var(--ink);letter-spacing:-.01em}
+.paso>.ayuda{margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+/* 🔴 EL CAMPO 14 DE 14 PASA A SER EL PRIMERO. El ticket pide «apuntar un gasto en segundos desde
+   el móvil, foto del ticket primero», y hoy la foto es el último de los catorce campos del modal:
+   hay que bajar 760 px de formulario para llegar a lo único que se hace con la mano ya sucia. */
+.foto{border:2px dashed #cfd8d3;border-radius:var(--r-lg);background:var(--bg);padding:18px;text-align:center}
+.foto .iconota{font-size:34px;line-height:1}
+.foto .acc{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.foto .btn{flex:1 1 auto;min-width:0}
+.foto.hecha{border-style:solid;border-color:#c9ecd7;background:var(--brand-tint);text-align:left;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.foto.hecha img{width:74px;height:98px;object-fit:cover;border-radius:var(--r-sm);border:1px solid rgba(0,0,0,.08);background:#fff;flex:none}
+.foto.hecha .q{flex:1;min-width:140px}
+.foto.hecha .q b{display:block;color:var(--brand-ink)}
+.foto.hecha .q span{font-size:12.5px;color:var(--brand-tint-ink)}
+
+.campo{display:block;margin-bottom:12px}
+.campo>.label{display:block;margin-bottom:5px}
+.campo input,.campo select,.campo textarea{width:100%;min-height:44px;padding:11px 13px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);color:var(--ink)}
+.campo textarea{resize:vertical}
+.campo .pista{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.campo .pista[hidden]{display:none}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tres{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media (max-width:560px){.dos,.tres{grid-template-columns:1fr}}
+.importe-grande input{font-size:1.5rem;font-weight:800;min-height:56px;font-variant-numeric:tabular-nums}
+/* La marca de «ya está»: en un formulario de catorce campos, dos obligatorios, nadie sabe cuándo
+   puede parar. Aquí se dice. */
+.yaesta{display:flex;align-items:center;gap:8px;background:var(--brand-tint);border:1px solid #c9ecd7;color:var(--brand-ink);border-radius:var(--r-md);padding:10px 12px;font-size:13.5px;font-weight:600;margin:2px 0 0}
+details.plega{border-top:1px solid var(--border)}
+details.plega:first-of-type{border-top:0}
+details.plega>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:13px 0;min-height:44px;color:var(--ink);font-weight:700}
+details.plega>summary::-webkit-details-marker{display:none}
+details.plega>summary .chev{color:var(--muted);font-size:11px;width:12px;display:inline-block}
+details.plega>summary .val{margin-left:auto;font-weight:400;color:var(--muted);font-size:13.5px;text-align:right}
+details.plega[open]>summary .chev{transform:rotate(90deg)}
+details.plega .cuerpo{padding:2px 0 12px}
+.pie-alta{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
+.pie-alta .btn{flex:0 0 auto}
+/* El hueco de la lectura del ticket (SCRUM-912, carril S1): sólo se DIBUJA dónde caería. */
+.leido{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:1px 8px;border-radius:var(--r-full);background:var(--info-bg);color:var(--info);font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:none}
+.aviso-leido{display:flex;gap:8px;align-items:flex-start;background:var(--info-bg);color:var(--info);border-radius:var(--r-md);padding:10px 12px;font-size:13px;margin:0 0 12px}
+.oculto{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ── EL DETALLE DEL GASTO ─────────────────────────────────────────────────── */
+.det{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+.migas{font-size:13px;color:var(--muted);margin-bottom:2px}
+.migas a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding-right:6px;color:var(--brand-tint-ink);text-decoration:none;font-weight:600}
+.cab-det{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 18px;box-shadow:var(--sh-reposo);margin-bottom:14px;display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.cab-det .q{min-width:0;flex:1}
+.cab-det h1{margin:0 0 3px;font-size:1.35rem;color:var(--ink);letter-spacing:-.02em;overflow-wrap:anywhere}
+.cab-det .sub2{font-size:13.5px;color:var(--muted)}
+.cab-det .chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.cab-det .cifra{font-size:1.75rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1}
+.cab-det .acc{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%;border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
+.tarjeta{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;box-shadow:var(--sh-reposo);margin-bottom:14px}
+.tarjeta h2{margin:0 0 12px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+
+/* 🔴 EL JUSTIFICANTE, DELANTE. Hoy no hay pantalla de detalle: tocar una fila abre el modal de
+   EDICIÓN, y la foto aparece como una miniatura de 120 px de alto debajo de los trece campos. */
+.justificante{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.justificante img{width:190px;max-width:100%;border-radius:var(--r-md);border:1px solid var(--border);background:#fff;display:block}
+.justificante .lado{flex:1;min-width:200px}
+.justificante .lado .acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sinfoto{border:2px dashed #e3d3b8;background:var(--warning-bg);border-radius:var(--r-md);padding:18px;text-align:center}
+.sinfoto .iconota{font-size:30px}
+.sinfoto p{margin:6px 0 12px;font-size:13.5px;color:var(--warning)}
+
+.datos{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+@media (max-width:560px){.datos{grid-template-columns:1fr}}
+.dato{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:10px 0;border-top:1px solid var(--border)}
+.dato .k{color:var(--muted);font-size:13.5px}
+.dato .v{color:var(--ink);font-weight:600;text-align:right;overflow-wrap:anywhere}
+.dato .v.vacio2{color:var(--muted);font-weight:400}
+.rail .bloque{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:12px;box-shadow:var(--sh-reposo)}
+.rail .bloque h3{margin:0 0 9px;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.rail .bloque b{color:var(--ink)}
+.rail .bloque a{display:flex;align-items:center;gap:8px;color:var(--brand-tint-ink);text-decoration:none;font-weight:600;min-height:44px}
+.rail .bloque .dim{color:var(--muted);font-size:13px}
+@media (max-width:999px){.det{grid-template-columns:1fr}.rail{order:2}}
+
+/* Barra inferior de móvil: SÓLO la acción, a ancho completo y al alcance del pulgar.
+   El borrador repetía aquí el total del mes: a 390 salía TRES veces en la primera pantalla (KPI,
+   cabecera del mes y esta barra) — el defecto que la v1 de SCRUM-917 metió con «620,00 €» ×5.
+   En la lista, «Nuevo gasto» vive aquí y NO en el titular (una sola vez por pantalla); en el alta,
+   la barra lleva «Añadir gasto», para no bajar 1.500 px a buscarlo; en el detalle no hay barra:
+   el importe y «Editar» ya están en la cabecera. */
+.barra-abajo{display:none}
+@media (max-width:860px){
+  .marco{padding-bottom:104px}
+  .barra-abajo:not(:empty){display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--border);box-shadow:var(--sh-flotante);padding:10px 16px calc(10px + env(safe-area-inset-bottom));gap:10px;align-items:center}
+  .barra-abajo .btn{flex:1 1 0}
+  .solo-ancho{display:none!important}
+}
+
+/* Hojas */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(15,28,23,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.hoja{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-flotante);width:100%;max-width:460px;max-height:calc(100vh - 32px);overflow:auto;padding:20px}
+.hoja-cab{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.hoja-cab h3{margin:0;color:var(--ink);font-size:1.0625rem;min-width:0;overflow-wrap:anywhere}
+.cerrar{width:44px;height:44px;min-width:44px;border-radius:50%;border:0;background:transparent;font-size:22px;cursor:pointer;color:var(--muted)}
+.hoja .lista-acc{display:flex;flex-direction:column;gap:8px}
+.hoja .lista-acc .btn{width:100%;justify-content:flex-start}
+.hoja img.grande{width:100%;border-radius:var(--r-md);border:1px solid var(--border);display:block}
+@media (max-width:640px){
+  .overlay{align-items:flex-end;padding:0}
+  .hoja{border-radius:var(--r-xl) var(--r-xl) 0 0;max-height:92vh;max-width:none}
+}
+.toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-full);font-weight:600;box-shadow:var(--sh-flotante);max-width:calc(100vw - 32px);text-align:center}
+
+/* ── Inventario ───────────────────────────────────────────────────────────── */
+.inv{max-width:1240px;margin:0 auto;padding:24px 16px 90px}
+.inv h2{color:var(--ink);margin:0 0 8px}
+.inv p{max-width:78ch}
+.inv table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);font-size:14px}
+.inv th,.inv td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.inv th{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+.inv .grupo2 td{background:var(--brand-tint);color:var(--brand-ink);font-weight:700}
+.inv .mal td:first-child{border-left:3px solid var(--danger)}
+/* A 390 px la tabla de tres columnas NO se recorre de lado: se apila. El prototipo de SCRUM-917
+   dejaba aquí un `min-width:620px` con su scroller declarado; aquí no, porque el defecto que este
+   ticket viene a quitar es exactamente ése y un prototipo no puede traerlo dentro. */
+@media (max-width:760px){
+  /* Cada celda lleva su rótulo (`data-k`), así que la cabecera sobra. Recortada a 1 px (como la
+     dejaba el borrador) su fila seguía midiendo 225 px dentro de una caja de 4: desborde medido. */
+  .inv thead{display:none}
+  .inv table,.inv tbody,.inv tr,.inv td{display:block;width:100%}
+  .inv table{border:0;background:transparent}
+  .inv tr{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:10px;padding:4px 2px}
+  .inv td{border-bottom:0;padding:8px 12px}
+  .inv td::before{content:attr(data-k);display:block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .inv .grupo2 td::before{content:none}
+  .inv .grupo2{background:transparent;border:0;padding:0}
+  .inv .grupo2 td{border-radius:var(--r-md)}
+  .inv .mal td:first-child{border-left:0}
+  .inv .mal{border-left:3px solid var(--danger)}
+}
+</style>
+</head>
+<body>
+
+<div class="proto">
+  <strong>Prototipo · SCRUM-920 · datos de ejemplo tomados de staging, no guarda nada</strong>
+  <button data-tab="lista" aria-pressed="true">Lista de gastos</button>
+  <button data-tab="alta" aria-pressed="false">Apuntar un gasto</button>
+  <button data-tab="detalle" aria-pressed="false">Detalle del gasto</button>
+  <button data-tab="inv" aria-pressed="false">Inventario antes → después</button>
+  <label><input type="checkbox" id="resaltar" checked> Resaltar textos nuevos</label>
+  <!-- ANDAMIO, no producto, y por eso vive aquí arriba y no entre los filtros de la pantalla:
+       un control del prototipo con aspecto de control de producto enseña una función que no
+       existe (aprendido midiendo el de SCRUM-917). Sirve para ver el estado VACÍO, que es una
+       función de hoy que no se puede perder. -->
+  <label><input type="checkbox" id="mesvacio"> Mes sin gastos</label>
+  <!-- ANDAMIO también: el HUECO de la lectura del ticket con IA. La lectura es SCRUM-912 (carril
+       S1, parado a la espera de una decisión del fundador); este ticket sólo dibuja dónde cae. -->
+  <label><input type="checkbox" id="lectura"> Con lectura del ticket (SCRUM-912, no existe)</label>
+  <span class="leyenda"><u>subrayado</u> = texto nuevo, propuesto y sin firmar</span>
+</div>
+
+<main id="app"></main>
+<div class="barra-abajo" id="barraAbajo"></div>
+<div id="capa"></div>
+
+<script>
+'use strict';
+const $ = (s) => document.querySelector(s);
+const P = (t) => `<span class="propuesto">${t}</span>`;
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// `useGrouping:true`, igual que `fmtMoneyEs` del producto: un prototipo que formatea el dinero
+// distinto que la pantalla de al lado enseña una diferencia que no existe.
+const eur = (n) => Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true }) + ' €';
+
+// Un ticket dibujado, para no meter binarios en el repositorio ni pedir red.
+const TICKET = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 200"><rect width="150" height="200" fill="#fff"/>
+   <g fill="#0f1c17" font-family="monospace" font-size="9"><text x="12" y="24">SUMINISTROS</text><text x="12" y="35">EL CENTRO S.L.</text></g>
+   <g fill="#6b756f" font-family="monospace" font-size="7"><text x="12" y="50">17/09/2026  11:42</text>
+   <text x="12" y="72">2 x CABLE 3x2,5</text><text x="12" y="84">1 x CAJA EMPALME</text><text x="12" y="96">1 x TUBO PVC 20</text>
+   <text x="12" y="118">BASE .......  70,00</text><text x="12" y="130">IVA 21% ....  14,70</text></g>
+   <g fill="#0f1c17" font-family="monospace" font-size="11" font-weight="bold"><text x="12" y="150">TOTAL   84,70</text></g>
+   <g stroke="#e7e9e5"><path d="M8 58h134M8 106h134M8 138h134"/></g>
+   <g fill="#0f1c17"><rect x="12" y="166" width="3" height="20"/><rect x="19" y="166" width="2" height="20"/><rect x="25" y="166" width="5" height="20"/><rect x="34" y="166" width="2" height="20"/><rect x="40" y="166" width="4" height="20"/><rect x="48" y="166" width="2" height="20"/><rect x="54" y="166" width="6" height="20"/><rect x="64" y="166" width="2" height="20"/><rect x="70" y="166" width="3" height="20"/><rect x="77" y="166" width="5" height="20"/><rect x="86" y="166" width="2" height="20"/><rect x="92" y="166" width="4" height="20"/></g></svg>`);
+
+// ── LOS DATOS ────────────────────────────────────────────────────────────────
+// Los CUATRO primeros son los gastos reales sembrados en staging el 17-sep-2026 con el merchant
+// QA Staging (`inventario-hoy.md` §6): mismo concepto, mismo importe, misma foto, mismo trabajo.
+// Los cinco siguientes se AÑADEN, y se dice: con cuatro filas no se puede enseñar ni el total del
+// mes ni el filtro por trabajo, que son dos de las tres piezas que pide el ticket. Ninguno de los
+// añadidos inventa un campo que la pantalla de hoy no tenga.
+// Medido en la BD de staging el 18-sep-2026 (SELECT de sólo lectura, merchant 2): los cuatro gastos
+// son del 17-sep, NINGUNO tiene proveedor vinculado, y los dos con Trabajo apuntan al Job 3099, cuyo
+// `titulo` es null. La pantalla de Trabajos lo llama «Presupuesto #5 · María López»
+// (`tituloDeTrabajo`, jobs.routes.ts); la de Gastos de hoy, «Trabajo» a secas, porque lee el
+// `titulo` crudo. El prototipo lo nombra como Trabajos: el mismo trabajo, el mismo nombre.
+// ⚠️ Y la CATEGORÍA: los cuatro se sembraron con claves en inglés (`materials`, `travel`,
+// `subcontractor`) que el servidor aceptó sin validar, y pintaban «Otros». El fundador los corrigió a
+// mano el 18-sep (inventario-hoy.md §8); estas son las de ahora. La ruta sigue sin validar (SCRUM-943).
+const TRABAJOS = [
+  { id: 3099, nombre: 'Presupuesto #5 · María López' },
+  { id: 10, nombre: 'Cámara frigorífica' },
+  { id: 1, nombre: 'Cambio de cuadro eléctrico' },
+];
+const G = [
+  { id: 1, concepto: 'SCRUM-920 · Material de almacén (ticket)', importe: 84.70, cat: 'materiales', fecha: '2026-09-17',
+    foto: true, jobId: 3099, proveedor: null, notas: 'Gasto de prueba de SCRUM-920',
+    base: null, tipoIva: null, cuota: null, numFactura: null, fechaFactura: null, nif: null },
+  { id: 2, concepto: 'SCRUM-920 · Compresor (factura del proveedor)', importe: 423.50, cat: 'materiales', fecha: '2026-09-17',
+    foto: true, jobId: 3099, proveedor: null, notas: 'Gasto de prueba de SCRUM-920',
+    base: 350, tipoIva: 21, cuota: 73.50, numFactura: 'A-2026/114', fechaFactura: '2026-09-17', nif: 'B12345678' },
+  { id: 3, concepto: 'SCRUM-920 · Gasolina', importe: 62.15, cat: 'desplazamiento', fecha: '2026-09-17',
+    foto: false, jobId: null, proveedor: null, notas: 'Gasto de prueba de SCRUM-920',
+    base: null, tipoIva: null, cuota: null, numFactura: null, fechaFactura: null, nif: null },
+  { id: 4, concepto: 'SCRUM-920 · Subcontrata de albañilería', importe: 310.00, cat: 'subcontrata', fecha: '2026-09-17',
+    foto: true, jobId: null, proveedor: null, notas: 'Gasto de prueba de SCRUM-920',
+    base: null, tipoIva: null, cuota: null, numFactura: null, fechaFactura: null, nif: null },
+  // ── añadidos para poder enseñar el total del mes y el filtro por trabajo ──
+  { id: 5, concepto: 'Cable manguera 3x2,5 (100 m)', importe: 96.45, cat: 'materiales', fecha: '2026-09-12',
+    foto: true, jobId: 10, proveedor: 'Suministros El Centro', notas: '',
+    base: null, tipoIva: null, cuota: null, numFactura: null, fechaFactura: null, nif: null },
+  { id: 6, concepto: 'Peaje AP-7 ida y vuelta', importe: 14.30, cat: 'desplazamiento', fecha: '2026-09-11',
+    foto: false, jobId: 10, proveedor: null, notas: '',
+    base: null, tipoIva: null, cuota: null, numFactura: null, fechaFactura: null, nif: null },
+  { id: 7, concepto: 'Alquiler de andamio, 3 días', importe: 180.00, cat: 'herramientas', fecha: '2026-09-10',
+    foto: true, jobId: 1, proveedor: 'Andamios Vega', notas: 'Devuelto el viernes',
+    base: 148.76, tipoIva: 21, cuota: 31.24, numFactura: 'AV-3391', fechaFactura: '2026-09-10', nif: null },
+  { id: 8, concepto: 'Grúa para subir el termo', importe: 120.00, cat: 'otros', fecha: '2026-09-08',
+    foto: false, jobId: null, proveedor: null, notas: '',
+    base: null, tipoIva: null, cuota: null, numFactura: null, fechaFactura: null, nif: null },
+  { id: 9, concepto: 'Caja de bridas y terminales', importe: 23.90, cat: 'materiales', fecha: '2026-09-04',
+    foto: true, jobId: 1, proveedor: 'Suministros El Centro', notas: '',
+    base: null, tipoIva: null, cuota: null, numFactura: null, fechaFactura: null, nif: null },
+];
+
+const CATS = {
+  materiales: 'Materiales', desplazamiento: 'Desplazamiento', herramientas: 'Herramientas',
+  subcontrata: 'Subcontrata', otros: 'Otros',
+};
+const MESES = ['septiembre de 2026', 'agosto de 2026', 'julio de 2026', 'junio de 2026', 'mayo de 2026', 'abril de 2026'];
+
+let MES_VACIO = false;        // andamio: enseña el estado vacío, que es función de hoy
+let fCat = '';                // filtro de categoría (existe hoy)
+let fJob = '';                // filtro por trabajo (lo pide el ticket; hoy NO existe)
+let fJust = 'todos';          // «Todos» / «Sin foto» (lo pide el ticket; hoy NO existe)
+
+const trabajoDe = (g) => g.jobId == null ? null : TRABAJOS.find((t) => t.id === g.jobId) || null;
+const fechaCorta = (s) => new Date(s + 'T00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+const fechaLarga = (s) => new Date(s + 'T00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+
+function visibles() {
+  if (MES_VACIO) return [];
+  return G.filter((g) => (!fCat || g.cat === fCat)
+    && (!fJob || String(g.jobId) === fJob)
+    && (fJust === 'todos' || (fJust === 'sinfoto' && !g.foto)));
+}
+
+// ── PANTALLA 1 · LA LISTA ────────────────────────────────────────────────────
+function pintarLista() {
+  const delMes = MES_VACIO ? [] : G;
+  const v = visibles();
+  const totalMes = delMes.reduce((a, g) => a + g.importe, 0);
+  const sinTrabajo = delMes.filter((g) => g.jobId == null).reduce((a, g) => a + g.importe, 0);
+  const porCat = {};
+  for (const g of delMes) porCat[g.cat] = (porCat[g.cat] || 0) + g.importe;
+  const cats = Object.keys(porCat);
+  const mayor = cats.length ? CATS[cats.sort((a, b) => porCat[b] - porCat[a])[0]] : '—';
+  const sinFoto = delMes.filter((g) => !g.foto).length;
+  const sumaFiltrada = v.reduce((a, g) => a + g.importe, 0);
+  const filtrando = !!(fCat || fJob || fJust !== 'todos');
+
+  $('#app').innerHTML = `<div class="marco">
+    <div class="titular"><h1>Gastos</h1>
+      <div class="acc">
+        <button class="btn btn-primary btn-sm solo-ancho" data-ir="alta">Nuevo gasto <span style="opacity:.7;font-weight:600">N</span></button>
+        <a class="btn btn-secondary btn-sm" href="#" data-accion="csv" role="button">⬇ CSV</a>
+      </div></div>
+    <p class="sub">Controla tus costes y vincúlalos a trabajos para ver el margen real.</p>
+
+    <!-- Los TRES KPI de hoy, con sus rótulos y sus cuentas. No se retira ninguno. -->
+    <div class="kpis">
+      <div class="kpi dinero"><span class="label">Gasto del mes</span><b class="n money">${eur(totalMes)}</b>
+        <span class="pie">${cats.length} categoría${cats.length !== 1 ? 's' : ''}</span></div>
+      <div class="kpi"><span class="label">Sin asignar a trabajo</span><b class="n money" style="color:${sinTrabajo > 0 ? 'var(--warning)' : 'var(--brand)'}">${eur(sinTrabajo)}</b>
+        <span class="pie">no vinculados a un trabajo</span></div>
+      <div class="kpi"><span class="label">Mayor categoría</span><b class="n texto">${mayor}</b>
+        <span class="pie nada">&nbsp;</span></div>
+    </div>
+
+    <div class="filtros">
+      <select id="f-mes" aria-label="Mes">${MESES.map((m, i) => `<option${i === 0 ? ' selected' : ''}>${m}</option>`).join('')}</select>
+      <select id="f-cat" aria-label="Categoría">
+        <option value="">Todas las categorías</option>
+        ${Object.entries(CATS).map(([v2, n]) => `<option value="${v2}"${fCat === v2 ? ' selected' : ''}>${n}</option>`).join('')}
+      </select>
+      <!-- 🔴 FILTRO POR TRABAJO: lo pide el ticket y hoy NO existe. El dato ya viaja resuelto en
+           item.job (SCRUM-135), así que no cuesta una consulta más. Este comentario NO lleva
+           comillas invertidas a propósito: va DENTRO de un literal de plantilla y una sola
+           cerraría el literal — es el fallo que dejó a expensesView.js sin parsear (SCRUM-769). -->
+      <select id="f-job" aria-label="Trabajo">
+        <option value="">${'Todos los trabajos'}</option>
+        ${TRABAJOS.map((t) => `<option value="${t.id}"${fJob === String(t.id) ? ' selected' : ''}>${esc(t.nombre)}</option>`).join('')}
+        <option value="null"${fJob === 'null' ? ' selected' : ''}>Sin trabajo</option>
+      </select>
+      <!-- 🔴 EL JUSTIFICANTE, QUE HOY NO SE VE. Dos chips, y la cuenta a la vista. -->
+      <button class="chip" data-just="todos" aria-pressed="${fJust === 'todos'}">${P('Todos')} · ${delMes.length}</button>
+      <button class="chip" data-just="sinfoto" aria-pressed="${fJust === 'sinfoto'}">${P('Sin foto')} · ${sinFoto}</button>
+    </div>
+
+    ${v.length === 0 && MES_VACIO ? vacioMes()
+      : v.length === 0 ? `<div class="filas"><div class="vacio"><div class="ico">🔍</div>
+          <h3>${P('Ningún gasto con esos filtros')}</h3><p>${P('Prueba con otro mes, otra categoría u otro trabajo.')}</p>
+          <button class="btn btn-secondary btn-sm" data-limpiar>${P('Quitar los filtros')}</button></div></div>`
+      : `<div class="mescab">
+          <b>${MESES[0].charAt(0).toUpperCase() + MESES[0].slice(1)}</b>
+          <span class="cuenta">${v.length} gasto${v.length !== 1 ? 's' : ''}</span>
+          ${/* Sin filtros, la suma de la cabecera ES el «Gasto del mes» del KPI: se omite, para que
+               el total salga UNA vez. Con filtros es otra cifra, y se dice qué es sin repetir la
+               del mes, que ya está arriba. */ ''}
+          ${filtrando ? `<span class="suma money">${eur(sumaFiltrada)}</span>
+          <span class="salvedad">${P('Es la suma de lo que estás viendo, no la del mes.')}</span>` : ''}
+        </div>
+        <div class="filas">${v.map(fila).join('')}</div>`}
+  </div>`;
+
+  $('#barraAbajo').innerHTML = `<button class="btn btn-primary" data-ir="alta">Nuevo gasto</button>`;
+}
+
+function vacioMes() {
+  // El estado vacío de HOY, palabra por palabra, más la foto como camino de entrada.
+  return `<div class="filas"><div class="vacio">
+    <div class="ico">🧾</div>
+    <h3>Sin gastos este mes</h3>
+    <p>Registra materiales, desplazamientos y subcontratas para conocer el margen real de cada trabajo.</p>
+    <button class="btn btn-primary btn-sm" data-ir="alta">+ Añadir mi primer gasto</button>
+  </div></div>`;
+}
+
+// La fila es un `<div>` con su `data-abrir`, igual que en el prototipo de SCRUM-917 y que el
+// `<tr onclick>` de hoy: dentro viven un enlace y un botón de verdad, y un `<a>` o un `<button>`
+// dentro de otro `<button>` es HTML inválido — el navegador lo desanida y la rejilla se rompe.
+function fila(g) {
+  const t = trabajoDe(g);
+  return `<div class="fila" data-abrir="${g.id}">
+    <div class="que"><b>${esc(g.concepto)}</b>
+      ${g.notas ? `<span>${esc(g.notas)}</span>` : ''}
+      <span class="fecha">${fechaCorta(g.fecha)}</span></div>
+    <div class="meta"><span class="pill cat-${g.cat}">${CATS[g.cat]}</span>${justificante(g)}</div>
+    <div class="trab">${t
+      ? `<a href="#" data-trabajo="${t.id}">${esc(t.nombre)}</a>${g.proveedor ? `<span class="prov">${esc(g.proveedor)}</span>` : ''}`
+      : `<span class="suelto">${P('Sin trabajo')}</span>${g.proveedor ? `<span class="prov">${esc(g.proveedor)}</span>` : ''}`}</div>
+    <div class="imp money">${eur(g.importe)}</div>
+    <div class="mas"><button class="kebab" data-mas="${g.id}" aria-label="Más acciones de ${esc(g.concepto)}">⋯</button></div>
+  </div>`;
+}
+// El justificante, con la miniatura de la foto: es lo que hace que se VEA sin leer. Lo comparten
+// la lista y la cabecera del detalle, para que digan exactamente lo mismo.
+function justificante(g) {
+  return g.foto
+    ? `<span class="just si"><img class="mini" src="${TICKET}" alt="">${P('Foto guardada')}</span>`
+    : `<span class="just no">${P('Sin foto')}</span>`;
+}
+
+// ── PANTALLA 2 · EL ALTA, CON LA FOTO PRIMERO ────────────────────────────────
+// Estado del formulario del prototipo: lo justo para poder MEDIR el estado después de pulsar,
+// que es lo único que demuestra que un botón hace algo.
+let altaFoto = false;
+let altaImporte = '';
+let altaConcepto = '';
+
+function pintarAlta() {
+  $('#app').innerHTML = `<div class="marco"><div class="alta">
+    <div class="migas"><a href="#" data-ir="lista">Gastos</a> ›</div>
+    <h1 style="margin:0 0 12px;font-size:1.5rem;color:var(--ink);letter-spacing:-.02em">Nuevo gasto</h1>
+
+    <!-- ① 🔴 LA FOTO, PRIMERO. Hoy es el campo CATORCE DE CATORCE, al final de un modal de 760 px
+         de alto en móvil. Es lo único que se hace con el ticket todavía en la mano. -->
+    <section class="paso">
+      <h2>${P('1 · La foto del ticket')}</h2>
+      <p class="ayuda">${P('Hazla ahora, que el papel lo tienes delante. Lo demás lo puedes rellenar luego.')}</p>
+      <!-- El campo 14 de hoy, el mismo: un input de fichero. Hoy acepta sólo imagen (accept="image/*");
+           el ticket pide «foto o archivo», y aceptar también PDF es un cambio que se PROPONE
+           (medicion.md): lo que guarda receiptData es base64 y su tamaño lo decide la S1. -->
+      <input type="file" id="a-foto" class="oculto" accept="image/*,application/pdf" tabindex="-1" aria-hidden="true">
+      <div id="zona-foto">${altaFoto ? fotoHecha() : fotoVacia()}</div>
+    </section>
+
+    <!-- ② Lo imprescindible: los DOS obligatorios de hoy, más categoría y trabajo. -->
+    <section class="paso">
+      <h2>${P('2 · Qué es y cuánto')}</h2>
+      ${leidoActivo() ? `<p class="aviso-leido" id="aviso-leido">🔎 ${P('Hemos leído el importe y la fecha de la foto. Revísalos: lo que se guarda es lo que pongas tú.')}</p>` : ''}
+      <label class="campo"><span class="label">Concepto *</span>
+        <input id="a-concepto" type="text" placeholder="Ej: Tubería PVC 20mm" value="${esc(altaConcepto)}"></label>
+      <div class="dos">
+        <label class="campo importe-grande"><span class="label">Importe *${leidoActivo() ? `<span class="leido">${P('leído de la foto')}</span>` : ''}</span>
+          <input id="a-importe" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" value="${esc(leidoActivo() && !altaImporte ? '84.70' : altaImporte)}"></label>
+        <label class="campo"><span class="label">Fecha${leidoActivo() ? `<span class="leido">${P('leído de la foto')}</span>` : ''}</span><input id="a-fecha" type="date" value="2026-09-17"></label>
+      </div>
+      <div class="dos">
+        <label class="campo"><span class="label">Categoría</span>
+          <select>${Object.entries(CATS).map(([v, n]) => `<option value="${v}">${n}</option>`).join('')}</select></label>
+        <label class="campo"><span class="label">Trabajo (opcional)</span>
+          <select><option value="">— Sin trabajo —</option>${TRABAJOS.map((t) => `<option>${esc(t.nombre)}</option>`).join('')}</select>
+          <span class="pista">Vincula este gasto a un trabajo para calcular el margen.</span></label>
+      </div>
+      <!-- En un formulario de catorce campos con dos obligatorios, nadie sabe cuándo puede parar.
+           Aquí se dice, y por eso el resto puede quedarse plegado sin esconder nada. -->
+      <p class="yaesta">✓ ${P('Con esto ya se guarda. Lo de abajo es opcional.')}</p>
+    </section>
+
+    <!-- ③ y ④ Los ocho campos restantes: TODOS siguen aquí, plegados y agrupados por el momento
+         en que se rellenan. Ninguno se retira. -->
+    <section class="paso">
+      <details class="plega" id="p-factura">
+        <summary><span class="chev">▸</span>${P('3 · Datos de la factura del proveedor')}<span class="val">${P('Opcional')}</span></summary>
+        <div class="cuerpo">
+          <div class="dos">
+            <label class="campo"><span class="label">Proveedor (opcional)</span>
+              <select id="a-proveedor"><option value="">— Sin proveedor —</option><option>Suministros El Centro</option><option>Clima y Frío S.L.</option><option>Andamios Vega</option></select></label>
+            <!-- SCRUM-937b (en main): sin proveedor el NIF no tiene dónde guardarse, así que nace bloqueado y
+                 la ayuda —texto ya firmado, no es nuevo— lo dice ANTES de teclear. -->
+            <label class="campo"><span class="label">NIF del proveedor</span>
+              <input id="a-nif" type="text" inputmode="text" autocapitalize="characters" placeholder="B12345678" readonly aria-describedby="a-nif-ayuda">
+              <span class="pista" id="a-nif-ayuda">Elige antes el proveedor: el NIF se guarda en su ficha.</span></label>
+          </div>
+          <div class="dos">
+            <label class="campo"><span class="label">Nº de factura del proveedor</span><input type="text" placeholder="A-2026/114"></label>
+            <label class="campo"><span class="label">Fecha de la factura</span><input type="date"></label>
+          </div>
+          <div class="tres">
+            <label class="campo"><span class="label">Base imponible</span><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+            <label class="campo"><span class="label">Tipo de IVA</span>
+              <select><option value="">—</option><option>21%</option><option>10%</option><option>4%</option><option>0%</option></select></label>
+            <label class="campo"><span class="label">Cuota de IVA</span><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></label>
+          </div>
+        </div>
+      </details>
+      <details class="plega" id="p-notas">
+        <summary><span class="chev">▸</span>Notas<span class="val">${P('Opcional')}</span></summary>
+        <div class="cuerpo">
+          <label class="campo"><textarea rows="3" placeholder="Detalles adicionales…"></textarea></label>
+        </div>
+      </details>
+    </section>
+
+    <div class="pie-alta solo-ancho">
+      <button class="btn btn-secondary" data-ir="lista">Cancelar</button>
+      <button class="btn btn-primary" data-accion="guardar">Añadir gasto</button>
+    </div>
+  </div></div>`;
+  // En móvil «Añadir gasto» va FIJO abajo: con la foto hecha y el importe puesto, el gasto se guarda
+  // sin bajar hasta el final del formulario. Una sola vez por pantalla (el pie de arriba se oculta).
+  $('#barraAbajo').innerHTML = `<button class="btn btn-secondary" data-ir="lista">Cancelar</button>
+    <button class="btn btn-primary" data-accion="guardar">Añadir gasto</button>`;
+}
+// El hueco de SCRUM-912 sólo se enciende con el andamio Y con la foto hecha: sin foto no hay nada
+// que leer, y el formulario tiene que funcionar entero sin la lectura (que hoy no existe).
+let LECTURA = false;
+const leidoActivo = () => LECTURA && altaFoto;
+
+function fotoVacia() {
+  return `<div class="foto">
+    <div class="iconota">🧾</div>
+    <div style="color:var(--ink);font-weight:700;margin-top:6px">${P('Haz la foto del ticket')}</div>
+    <!-- TEXTO OFICIAL APROBADO (SCRUM-324 E3, fundador 10-ago-2026): «Guardamos la foto como tu
+         copia. Los datos fiscales salen de los campos de arriba.» Con la foto PRIMERO, «de arriba»
+         deja de ser verdad: los campos pasan a estar debajo. El texto no se puede mover tal cual
+         y se propone el cambio de UNA palabra, subrayado y sin firmar (textos-propuestos.md). -->
+    <p style="margin:6px 0 0;font-size:12.5px;color:var(--muted)">Guardamos la foto como tu copia. Los datos fiscales salen de los campos ${P('de abajo')}.</p>
+    <div class="acc">
+      <button class="btn btn-primary" data-foto="hacer">📷 ${P('Hacer foto')}</button>
+      <button class="btn btn-secondary" data-foto="galeria">${P('Elegir foto o archivo')}</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" data-foto="saltar" style="margin-top:6px">${P('Ahora no tengo el ticket')}</button>
+  </div>`;
+}
+// La frase firmada de SCRUM-324 E3 va ENTERA y en un solo sitio (arriba, con la foto vacía). No se
+// parte en trozos para reutilizar la primera mitad: su segunda mitad es la salvedad fiscal, y el
+// orquestador lo dejó escrito — «no toques nada más de esa frase».
+function fotoHecha() {
+  // `alt` va en texto plano: el borrador metía aquí el <span> del subrayado y sus comillas
+  // cerraban el atributo.
+  return `<div class="foto hecha">
+    <img src="${TICKET}" alt="Foto del ticket">
+    <div class="q"><b>${P('Foto guardada')}</b><span>${P('Si no se lee bien, repítela.')}</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" data-foto="ver">${P('Verla')}</button>
+      <button class="btn btn-ghost btn-sm" data-foto="quitar">${P('Quitarla')}</button>
+    </div>
+  </div>`;
+}
+
+// ── PANTALLA 3 · EL DETALLE DEL GASTO ────────────────────────────────────────
+// Hoy NO existe: tocar una fila abre el modal de EDICIÓN con sus catorce campos. Un gasto no se
+// puede LEER, sólo editar — y la foto, que es el justificante, aparece como miniatura de 120 px
+// debajo de los trece campos anteriores.
+let abierto = 2;
+function pintarDetalle() {
+  const g = G.find((x) => x.id === abierto) || G[0];
+  const t = trabajoDe(g);
+  const datos = [
+    ['Nº de factura del proveedor', g.numFactura],
+    ['Fecha de la factura', g.fechaFactura ? fechaLarga(g.fechaFactura) : null],
+    ['Base imponible', g.base != null ? eur(g.base) : null],
+    ['Tipo de IVA', g.tipoIva != null ? g.tipoIva + '%' : null],
+    ['Cuota de IVA', g.cuota != null ? eur(g.cuota) : null],
+    ['NIF del proveedor', g.nif],
+  ];
+
+  $('#app').innerHTML = `<div class="marco">
+    <div class="migas"><a href="#" data-ir="lista">Gastos</a> ›</div>
+    <div class="det">
+      <div>
+        <div class="cab-det">
+          <div class="q">
+            <h1>${esc(g.concepto)}</h1>
+            <div class="sub2">${fechaLarga(g.fecha)}</div>
+            <div class="chips"><span class="pill cat-${g.cat}">${CATS[g.cat]}</span>${justificante(g)}</div>
+          </div>
+          <div class="cifra money">${eur(g.importe)}</div>
+          <div class="acc">
+            <button class="btn btn-secondary btn-sm" data-accion="editar">${P('Editar')}</button>
+            ${t ? `<button class="btn btn-secondary btn-sm" data-trabajo="${t.id}">Ver trabajo</button>` : ''}
+            <button class="kebab" data-mas="${g.id}" aria-label="Más acciones">⋯</button>
+          </div>
+        </div>
+
+        <!-- 🔴 EL JUSTIFICANTE, DELANTE Y GRANDE. Es el defecto que da nombre a la fila de la
+             matriz de competencia: «gastos y justificantes», y el justificante era lo único que
+             no se veía. -->
+        <div class="tarjeta">
+          <h2>${P('La foto del ticket')}</h2>
+          ${g.foto
+            ? `<div class="justificante">
+                 <img src="${TICKET}" alt="Foto del ticket de ${esc(g.concepto)}">
+                 <div class="lado">
+                   <div class="acc" style="margin-top:0">
+                     <button class="btn btn-secondary btn-sm" data-accion="verfoto">${P('Ver a tamaño completo')}</button>
+                     <button class="btn btn-ghost btn-sm" data-accion="cambiarfoto">${P('Cambiar la foto')}</button>
+                   </div>
+                 </div>
+               </div>`
+            : `<div class="sinfoto">
+                 <div class="iconota">🧾</div>
+                 <p>${P('De este gasto no guardaste ninguna foto.')}</p>
+                 <button class="btn btn-primary btn-sm" data-accion="anadirfoto">📷 ${P('Añadir la foto ahora')}</button>
+               </div>`}
+        </div>
+
+        <!-- 🔴 SÓLO LO QUE EL PROFESIONAL APUNTÓ. El borrador pintaba los seis campos con un «—» en
+             cada vacío: en la Gasolina salía una columna de seis guiones bajo «Datos de la factura»,
+             que es la lista de «qué le falta» del motor del justificante puesta por la puerta de
+             atrás. Esa lista NO se enseña (SCRUM-324 E3, espera al asesor; orden del orquestador del
+             18-sep). Por eso: los campos rellenos, y si no hay ninguno, la tarjeta no se pinta. -->
+        ${datos.some(([, v]) => v) ? `<div class="tarjeta">
+          <h2>${P('Datos de la factura del proveedor')}</h2>
+          <div class="datos">${datos.filter(([, v]) => v).map(([k, v]) => `<div class="dato"><span class="k">${k}</span>
+            <span class="v">${esc(v)}</span></div>`).join('')}</div>
+        </div>` : ''}
+
+        ${g.notas ? `<div class="tarjeta"><h2>Notas</h2><p style="margin:0">${esc(g.notas)}</p></div>` : ''}
+      </div>
+
+      <aside class="rail">
+        <div class="bloque"><h3>Trabajo</h3>
+          ${t ? `<a href="#" data-trabajo="${t.id}">${esc(t.nombre)}</a>`
+              : `<b class="dim">${P('Sin trabajo')}</b><p class="dim" style="margin:4px 0 0">${P('Este gasto no cuenta para el margen de ningún trabajo.')}</p>
+                 <button class="btn btn-secondary btn-sm" data-accion="vincular" style="margin-top:8px">${P('Vincular a un trabajo')}</button>`}</div>
+        <div class="bloque"><h3>Proveedor</h3>${g.proveedor ? `<b>${esc(g.proveedor)}</b>` : `<b class="dim">— Sin proveedor —</b>`}</div>
+        <div class="bloque"><h3>Categoría</h3><span class="pill cat-${g.cat}">${CATS[g.cat]}</span></div>
+      </aside>
+    </div>
+  </div>`;
+
+  // Sin barra fija: el importe y «Editar» ya están en la cabecera (el borrador los repetía abajo).
+  $('#barraAbajo').innerHTML = '';
+}
+
+// ── PANTALLA 4 · EL INVENTARIO ───────────────────────────────────────────────
+const INV = [
+ ['A · La lista: lo de arriba'],
+ ['Título «Gastos» + «Controla tus costes y vincúlalos a trabajos para ver el margen real.»', 'Igual, palabra por palabra', 'Texto de hoy: no se toca'],
+ ['Tres KPI: «Gasto del mes» · «Sin asignar a trabajo» · «Mayor categoría»', 'Los tres, con sus rótulos y sus cuentas', 'No se retira ninguno'],
+ ['Selector de mes (6 meses) y filtro de categoría (5)', 'Los dos, iguales, y a 44 px de alto', 'Hoy miden 36 px'],
+ ['«Nuevo gasto» con su atajo «N»', 'Igual, con su atajo. En móvil baja a una barra fija, a ancho completo, y sale UNA vez por pantalla', 'Rótulo FIRMADO el 6-sep-2026 (SCRUM-769): no se toca el texto, sólo el sitio'],
+ ['«Mayor categoría» pinta la clave interna si no la conoce (en staging: «materials»)', 'Siempre la etiqueta de la categoría', '🔴 Medido el 18-sep: los 4 gastos de staging se sembraron con claves en inglés y la API las guardó sin validar; las filas pintaban «Otros» y el KPI la clave cruda. Las filas las corrigió el fundador a mano; la ruta SIGUE sin validar. Tickets: SCRUM-943 (la ruta, S1) y SCRUM-944 (el KPI)'],
+ ['Los tres KPI en tarjetas altas (2 + 1 a 390 px)', 'En móvil, una sola tarjeta con tres renglones «rótulo … cifra»', 'Las tres cuentas siguen; se va el aire. Con tres tarjetas apiladas, la primera fila bajaba por debajo de la mitad de la pantalla'],
+ ['«⬇ CSV» con los filtros aplicados', 'Igual, y arrastra también el filtro de trabajo nuevo', 'Función de hoy, ampliada'],
+ ['Filtro por TRABAJO', 'Nuevo: un selector con los trabajos y «Sin trabajo»', 'Lo pide el ticket. El dato ya viaja resuelto en `item.job` (SCRUM-135)'],
+ ['Total del mes visible sólo como KPI', 'El KPI sigue siendo el total del mes, y sale UNA vez. Encima de las filas, la cuenta de gastos; con filtros, además la suma DE LO QUE SE VE y su salvedad', 'Lo pide el ticket. Una suma filtrada sin decirlo es una cifra que miente; la misma cifra dos veces es la que quitó SCRUM-917'],
+ ['B · La lista: las columnas'],
+ ['5 columnas en `<table style="min-width:600px">` dentro de `.table-scroll`', 'Filas en grid; a ≤860 px se reordenan en dos líneas', '🔴 A 390 px las columnas suman 628 px: HAY QUE ARRASTRAR DE LADO para ver el importe (SCRUM-139 F1)'],
+ ['El justificante NO aparece en ninguna columna', 'Cada fila dice «Foto guardada» con la miniatura, o «Sin foto»', '🔴 En la matriz de competencia esta fila se llama «gastos y justificantes». El dato ya viaja: `receiptData`'],
+ ['No se puede filtrar por si tiene foto', 'Dos chips: «Todos · N» y «Sin foto · N»', 'La cuenta es lo que hace accionable el dato'],
+ ['Concepto + notas + fecha en la misma celda', 'Igual, en la misma zona', 'No se toca'],
+ ['Categoría: píldora de color (5 colores)', 'Los mismos 5 colores y las mismas 5 etiquetas', '`CATEGORY_LABELS` no se reinventa'],
+ ['Trabajo: enlace a su ficha; debajo, el proveedor', 'Igual, y el enlace a 44 px', 'Hoy mide 46 × 16 px'],
+ ['El enlace del Trabajo dice «Trabajo» a secas cuando el trabajo no tiene título (10 de 13 en staging)', 'El MISMO nombre que en la pantalla de Trabajos: «Presupuesto #5 · María López»', '🔴 Gastos lee el `titulo` crudo; Trabajos usa `tituloDeTrabajo()`. La función ya existe y Gastos no la nombra (SCRUM-944)'],
+ ['Sin trabajo: la celda dice «—»', '«Sin trabajo»', 'Un guion no dice si no hay trabajo o si no se pudo cargar'],
+ ['Importe alineado a la derecha', 'Igual', 'No se toca'],
+ ['C · La lista: las acciones'],
+ ['🗑 de 21 × 29 px en cada fila, dentro de una fila que navega', 'La papelera se va al «⋯» de la fila, a 44 px, con su confirmación', '🔴 El control más pequeño de la pantalla, para un BORRADO, pegado a un gesto de navegación'],
+ ['La fila entera abre el modal de EDICIÓN', 'La fila abre el DETALLE del gasto; «Editar» está dentro', 'Un gasto hoy no se puede leer, sólo editar'],
+ ['Estado vacío: «Sin gastos este mes» + «+ Añadir mi primer gasto»', 'Igual, palabra por palabra', 'Texto de hoy: no se toca. El conmutador «Mes sin gastos» del prototipo lo enseña'],
+ ['Sin estado vacío para «no hay nada con estos filtros»', 'Nuevo, con «Quitar los filtros»', 'Con filtro de trabajo y de foto, una lista vacía ya no significa «no hay gastos»'],
+ ['D · El alta: el orden'],
+ ['14 campos; la FOTO es el 14.º y último', '🔴 La foto es lo PRIMERO, con «📷 Hacer foto» a ancho completo', '🔴 El ticket pide «apuntar un gasto en segundos desde el móvil, foto del ticket primero»'],
+ ['La foto acepta sólo imagen (`accept="image/*"`)', '«Elegir foto o archivo»: imagen o PDF', 'El ticket dice «foto o archivo»: la factura del proveedor llega en PDF. Se PROPONE; el tamaño de lo que se guarda lo decide la S1'],
+ ['No hay lectura del ticket', 'El HUECO, dibujado y apagado: con la foto hecha, importe y fecha llegan rellenos, marcados «leído de la foto», y un aviso pide revisarlos', 'La lectura es SCRUM-912 (S1). Aquí sólo se diseña dónde cae; el andamio «Con lectura del ticket» lo enseña'],
+ ['«Añadir gasto» al final de un modal de 760 px', 'En móvil, fijo abajo con «Cancelar»', 'Con la foto y el importe puestos, se guarda sin bajar'],
+ ['Modal de 760 px de alto a 390 px, todo desplegado', 'Tres bloques: la foto · lo imprescindible · lo opcional plegado', 'Los catorce campos siguen estando. Ninguno se retira'],
+ ['Concepto * e Importe * (los dos únicos obligatorios) en el 1.º y el 2.º', 'Los dos juntos en el bloque 2, con el importe a 1,5 rem', 'El importe es el dato del dinero (Regla del Importe de DESIGN.md)'],
+ ['Nada dice cuándo se puede parar de rellenar', '«✓ Con esto ya se guarda. Lo de abajo es opcional.»', 'Texto propuesto. Doce campos opcionales sin marca parecen doce obligatorios'],
+ ['Base · Tipo de IVA · Cuota · Nº factura · Fecha factura · Proveedor · NIF: siete campos sueltos', 'Los siete, dentro de «Datos de la factura del proveedor», plegado', 'Se rellenan en el mismo momento: cuando tienes el papel del proveedor delante'],
+ ['«Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.»', 'Igual, con UNA palabra cambiada: «de abajo»', '🔴 TEXTO FIRMADO (SCRUM-324 E3, 10-ago-2026). Con la foto primero, «de arriba» deja de ser verdad. Necesita firma'],
+ ['«Vincula este gasto a un trabajo para calcular el margen.» · «— Sin trabajo —» · «— Sin proveedor —» · «Añadir gasto» · «Guardar cambios» · «Guardando…»', 'Iguales, palabra por palabra', 'Textos de hoy: no se tocan'],
+ ['E · El detalle del gasto'],
+ ['NO EXISTE: tocar la fila abre el modal de edición', 'Pantalla de detalle con su cabecera, su justificante y sus datos', 'Lo pide el ticket'],
+ ['La foto, miniatura de 120 px al final del modal de edición', '🔴 La foto, a 190 px y en su propia tarjeta, lo primero debajo de la cabecera', '🔴 Es el justificante: es lo que se viene a ver'],
+ ['Un gasto sin foto no se distingue de uno con foto', 'Bloque propio: «De este gasto no guardaste ninguna foto» + «📷 Añadir la foto ahora»', 'Texto propuesto'],
+ ['Los siete campos de la factura, sólo como inputs editables', 'En lectura, SÓLO los que están rellenos; si no hay ninguno, la tarjeta no se pinta', '🔴 Pintar los vacíos con «—» sería la lista de «qué le falta» del motor por la puerta de atrás. No se enseña ningún veredicto ni ninguna lista de lo que falte: espera al asesor (SCRUM-324 E3)'],
+ ['F · Lo que NO se toca'],
+ ['Alta desde la ficha del Trabajo, con trabajo fijo y su propio `onSaved`', 'Igual', 'SCRUM-135: no se toca'],
+ ['El gasto se vincula por `quoteId`, y el selector lo resuelve desde el Job', 'Igual', 'SCRUM-135: el modelo no cambia'],
+ ['Trabajo sin presupuesto: opción deshabilitada con su motivo', 'Igual', 'SCRUM-89: que el pro sepa POR QUÉ no puede'],
+ ['Al elegir proveedor, su NIF se rellena solo y queda de sólo lectura', 'Igual', 'SCRUM-324 E3: no se toca'],
+ ['Sin proveedor, el NIF nace bloqueado y dice «Elige antes el proveedor: el NIF se guarda en su ficha.»', 'Igual (se añadió el 20-sep: entró en main con SCRUM-937b después del prototipo)', 'Texto ya firmado (SCRUM-937, comentario 15873): no se subraya'],
+ ['El aviso del simplificado NO se enciende y no hay contenedor vacío esperándolo', 'Igual: no se enciende, y este prototipo tampoco lo enciende', '🔴 Afirmación fiscal: espera al asesor (SCRUM-324 E3, fundador 10-ago-2026)'],
+ ['G · Objetivo táctil'],
+ ['10 controles por debajo de 44 px a 1280 y 9 a 390 (sin contar el menú lateral)', 'Todos a 44 px o más, también en escritorio', 'AB6. Se declara la excepción de `btn-sm` de DESIGN.md en vez de aprovecharla'],
+];
+// 🔴 Lo que va entre comillas invertidas es CÓDIGO y se escapa. El borrador lo metía tal cual en
+// innerHTML, y la fila que describe el defecto —«`<table style="min-width:600px">`»— creaba una
+// tabla DE VERDAD de 600 px dentro de la celda: la pestaña del inventario se recorría de lado a
+// 390 px (634 > 390, medido). El prototipo traía dentro el defecto que viene a quitar.
+const codigo = (s) => String(s).replace(/`([^`]+)`/g, (_, x) => `<code>${esc(x)}</code>`);
+function pintarInv() {
+  const K = ['Hoy', 'Propuesto', 'Por qué'];
+  $('#app').innerHTML = `<div class="inv">
+    <h2>Inventario · lo que hay hoy → lo que propone el prototipo</h2>
+    <p>La columna de la izquierda está <b>medida en staging el 17-sep-2026</b> sobre <code>11cc872a</code>, a 1280 y a 390 px
+    (las cuentas enteras, en <code>inventario-hoy.md</code>), y <b>re-medida el 18-sep</b> en la base de staging (sólo lectura)
+    y en <code>expensesView.js</code> de <code>origin/main</code>. <b>Nada se retira</b>: lo que está decidido con su motivo escrito
+    se conserva aunque se vea distinto. Las filas con el borde rojo son las que están
+    <b>mal decididas</b> o afectan a un texto firmado, no sólo mal presentadas.</p>
+    <table><thead><tr><th style="width:33%">Hoy</th><th style="width:34%">Propuesto</th><th>Por qué</th></tr></thead><tbody>
+    ${INV.map((r) => r.length === 1
+      ? `<tr class="grupo2"><td colspan="3">${r[0]}</td></tr>`
+      : `<tr class="${/🔴/.test(r[2]) ? 'mal' : ''}">${r.map((c, i) => `<td data-k="${K[i]}">${codigo(c)}</td>`).join('')}</tr>`).join('')}
+    </tbody></table>
+    <p style="margin-top:14px"><b>${INV.filter((r) => r.length > 1).length} filas</b> en ${INV.filter((r) => r.length === 1).length} grupos.</p>
+  </div>`;
+  $('#barraAbajo').innerHTML = '';
+}
+
+// ── El conmutador y los gestos ───────────────────────────────────────────────
+let tab = 'lista';
+function render() {
+  document.querySelectorAll('.proto [data-tab]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === tab)));
+  if (tab === 'lista') pintarLista();
+  else if (tab === 'alta') pintarAlta();
+  else if (tab === 'detalle') pintarDetalle();
+  else pintarInv();
+}
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-tab],[data-ir],[data-just],[data-limpiar],[data-abrir],[data-mas],[data-trabajo],[data-foto],[data-accion],[data-cerrar]');
+  if (!t) return;
+
+  // 🔴 EL ORDEN DE ESTAS RAMAS IMPORTA, y la lección de SCRUM-917 es por qué: allí un
+  // `event.stopPropagation()` en la hoja impedía que sus propios botones llegaran al manejador y
+  // las opciones del «⋯» NO HACÍAN NADA, con las capturas perfectas. Aquí la hoja NO para la
+  // propagación: se cierra sólo si se tocó el fondo o la «×», y cada botón de dentro llega.
+  if (t.dataset.tab) { tab = t.dataset.tab; $('#capa').innerHTML = ''; render(); return; }
+  if (t.dataset.ir) { e.preventDefault(); tab = t.dataset.ir; $('#capa').innerHTML = ''; render(); return; }
+  if (t.dataset.just) { e.stopPropagation(); fJust = t.dataset.just; render(); return; }
+  if (t.hasAttribute('data-limpiar')) { fCat = ''; fJob = ''; fJust = 'todos'; render(); return; }
+  if (t.dataset.trabajo) { e.preventDefault(); e.stopPropagation(); toast('En el prototipo esta acción no hace nada.'); return; }
+  if (t.dataset.mas) { e.preventDefault(); e.stopPropagation(); hojaMas(Number(t.dataset.mas)); return; }
+  if (t.dataset.foto) { e.stopPropagation(); accionFoto(t.dataset.foto); return; }
+  if (t.dataset.cerrar != null) { if (t.classList.contains('cerrar') || !e.target.closest('.hoja')) $('#capa').innerHTML = ''; return; }
+  if (t.dataset.accion) { e.preventDefault(); e.stopPropagation(); accion(t.dataset.accion); return; }
+  if (t.dataset.abrir) { abierto = Number(t.dataset.abrir); tab = 'detalle'; render(); }
+});
+
+function accionFoto(q) {
+  // Se repinta el alta ENTERA (no sólo la zona de la foto) porque, con el hueco de 912 encendido,
+  // la foto cambia también los campos de abajo. Lo tecleado se conserva antes de repintar.
+  const guardarTecleado = () => {
+    altaConcepto = document.getElementById('a-concepto')?.value || '';
+    altaImporte = document.getElementById('a-importe')?.value || '';
+  };
+  if (q === 'hacer' || q === 'galeria') { guardarTecleado(); altaFoto = true; render(); toast(q === 'hacer' ? 'Foto hecha (en el prototipo es de ejemplo).' : 'Foto elegida (en el prototipo es de ejemplo).'); return; }
+  if (q === 'quitar') { guardarTecleado(); altaFoto = false; render(); toast('Foto quitada.'); return; }
+  if (q === 'saltar') { $('#p-factura')?.removeAttribute('open'); document.getElementById('a-concepto')?.focus(); toast('Sigue sin la foto: la puedes añadir luego desde el gasto.'); return; }
+  if (q === 'ver') { hojaFoto(); return; }
+}
+
+function accion(q) {
+  if (q === 'guardar') {
+    const c = document.getElementById('a-concepto');
+    const i = document.getElementById('a-importe');
+    altaConcepto = c ? c.value : '';
+    altaImporte = i ? i.value : '';
+    if (!altaConcepto.trim()) { toast('El concepto es obligatorio.'); c?.focus(); return; }
+    if (!(Number(altaImporte) > 0)) { toast('El importe debe ser mayor que 0.'); i?.focus(); return; }
+    toast('En el prototipo no se guarda nada.');
+    return;
+  }
+  if (q === 'verfoto') { hojaFoto(); return; }
+  if (q === 'borrar') { $('#capa').innerHTML = ''; toast('En el prototipo esta acción no hace nada.'); return; }
+  $('#capa').innerHTML = '';
+  toast('En el prototipo esta acción no hace nada.');
+}
+
+function hojaFoto() {
+  $('#capa').innerHTML = `<div class="overlay" data-cerrar><div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hf">
+    <div class="hoja-cab"><h3 id="hf">${P('La foto del ticket')}</h3><button class="cerrar" data-cerrar aria-label="Cerrar">×</button></div>
+    <img class="grande" src="${TICKET}" alt="Foto del ticket">
+  </div></div>`;
+}
+
+function hojaMas(id) {
+  const g = G.find((x) => x.id === id);
+  const t = trabajoDe(g);
+  // La papelera de 21 × 29 px de cada fila vive aquí, a 44 px, y separada del gesto que navega.
+  $('#capa').innerHTML = `<div class="overlay" data-cerrar><div class="hoja" role="dialog" aria-modal="true" aria-labelledby="hm">
+    <div class="hoja-cab"><h3 id="hm">${esc(g.concepto)}</h3><button class="cerrar" data-cerrar aria-label="Cerrar">×</button></div>
+    <div class="lista-acc">
+      <button class="btn btn-secondary" data-accion="editar">${P('Editar')}</button>
+      ${g.foto ? `<button class="btn btn-secondary" data-accion="verfoto">${P('Ver la foto')}</button>`
+               : `<button class="btn btn-secondary" data-accion="anadirfoto">📷 ${P('Añadir la foto')}</button>`}
+      ${t ? `<button class="btn btn-secondary" data-accion="vertrabajo">Ver trabajo</button>`
+          : `<button class="btn btn-secondary" data-accion="vincular">${P('Vincular a un trabajo')}</button>`}
+      <button class="btn btn-danger" data-accion="borrar">🗑 Eliminar</button>
+    </div>
+  </div></div>`;
+}
+
+function toast(m) {
+  document.querySelectorAll('.toast').forEach((x) => x.remove());
+  const d = document.createElement('div');
+  d.className = 'toast'; d.setAttribute('role', 'status'); d.textContent = m;
+  document.body.appendChild(d); setTimeout(() => d.remove(), 2600);
+}
+
+$('#resaltar').addEventListener('change', (e) => document.body.classList.toggle('sin-resaltar', !e.target.checked));
+$('#mesvacio').addEventListener('change', (e) => { MES_VACIO = e.target.checked; if (tab === 'lista') render(); });
+$('#lectura').addEventListener('change', (e) => { LECTURA = e.target.checked; if (tab === 'alta') render(); });
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'f-cat') { fCat = e.target.value; render(); }
+  if (e.target.id === 'f-job') { fJob = e.target.value; render(); }
+  if (e.target.id === 'a-proveedor') {
+    const hay = !!e.target.value;
+    $('#a-nif').readOnly = !hay;
+    $('#a-nif-ayuda').hidden = hay;
+  }
+});
+render();
+</script>
+</body>
+</html>

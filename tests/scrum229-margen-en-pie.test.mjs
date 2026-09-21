@@ -164,7 +164,13 @@ test('SCRUM-229 · NO se cambia el comportamiento de `safeMarkup` en el total', 
 });
 
 test('SCRUM-229 · ✅ RETIRADO POR SCRUM-598: el pie ya no tiene fila de Margen', () => {
-  const pie = src.slice(src.indexOf('totalsBox.innerHTML'), src.indexOf("kpiBox.innerHTML"));
+  // 🔴 SCRUM-915h · RE-ANCLADO: el pie de totales salió del editor (`totalsBox`) y vive en el
+  // documento de la derecha, entre `preview-totals-block` y la fila del total. Si alguno de los dos
+  // anclajes falta, `indexOf` da -1 y el suelo de abajo cae: nunca un corte vacío que pase.
+  const desde = src.indexOf('preview-totals-block');
+  const hasta = src.indexOf('preview-total-row-main');
+  assert.ok(desde > 0 && hasta > desde, 'suelo: no encuentro el bloque de totales del documento');
+  const pie = src.slice(desde, hasta);
   assert.match(pie, /Base imponible/, "suelo: no encuentro el pie de totales");
   // El pie conserva Base imponible e IVA. La fila «Margen» sale por decision del fundador
   // (24-ago-2026, DOC-08): era informacion del profesional en el papel de su cliente.

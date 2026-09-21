@@ -31,6 +31,10 @@ const JOB_RAIL_TITULOS = {
 // era `[PENDIENTE microcopy oficial]`, y ese marcador se descuenta del censo de SCRUM-402.
 const ROTULO_ABRIR_EN_MAPA = 'Abrir en mapa';
 
+// SCRUM-982 · rótulo de la nota del cliente en el bloque CLIENTE. FIRMADO por el orquestador por
+// delegación del fundador (SCRUM-982, comentario 16065): etiqueta pequeña, sin dos puntos ni icono.
+const ROTULO_NOTA_DEL_CLIENTE = 'Nota del cliente';
+
 const limpio = (v) => (v == null ? '' : String(v).trim());
 
 /**
@@ -43,7 +47,10 @@ const limpio = (v) => (v == null ? '' : String(v).trim());
 function bloqueCliente(job) {
   const nombre = limpio(job && job.customer && job.customer.name);
   const telefono = limpio(job && job.customer && job.customer.phone);
-  if (!nombre && !telefono) return null;
+  // SCRUM-982 · la nota del cliente, tal cual la escribió el profesional: se recortan los extremos
+  // y NADA más — los saltos de línea de dentro son suyos y se pintan. Sin nota, sin línea.
+  const nota = limpio(job && job.customer && job.customer.notes);
+  if (!nombre && !telefono && !nota) return null;
 
   const lineas = [];
   if (nombre) lineas.push({ texto: nombre, fuerte: true });
@@ -53,6 +60,7 @@ function bloqueCliente(job) {
     lineas.push({ texto: telefono, icono: '📞', href: `tel:${marcable}` });
     lineas.push({ texto: 'WhatsApp', icono: '💬', href: `https://wa.me/${marcable}` });
   }
+  if (nota) lineas.push({ texto: nota, etiqueta: ROTULO_NOTA_DEL_CLIENTE, nota: true });
   return { id: 'cliente', titulo: JOB_RAIL_TITULOS.cliente, lineas };
 }
 
@@ -115,19 +123,18 @@ function bloqueDinero(job, fmt) {
   const moneda = (job && job.quote && job.quote.currency) || 'EUR';
 
   const lineas = [];
-  if (cobrado > 0) lineas.push({ etiqueta: 'Cobrado', texto: fmt(cobrado, moneda) });
-  if (aceptado > 0) lineas.push({ etiqueta: 'Pendiente', texto: fmt(Math.max(0, aceptado - cobrado), moneda) });
-
-  // SCRUM-907 · «Pendiente 0,00 €» escondía un cobro POR ENCIMA de lo aceptado. El exceso y el texto
-  // salen de `jobCobroHuecos.js`, los MISMOS que usa «Qué falta para cobrar»: dos cuentas del mismo
-  // exceso acabarían avisando en una pieza y no en la otra.
-  const cobro = (typeof importesDeCobro === 'function')
-    ? { importesDeCobro, avisoCobradoDeMas }
-    : (typeof require === 'function' ? require('./jobCobroHuecos.js') : null);
-  if (cobro) {
-    const exceso = cobro.importesDeCobro(job).cobradoDeMas;
-    if (exceso > 0) lineas.push({ texto: cobro.avisoCobradoDeMas(fmt(exceso, moneda)), aviso: true });
-  }
+  // 🔴 SCRUM-917e (D) · «Cobrado» y «Pendiente» YA NO SE PINTAN AQUÍ. Los trajo SCRUM-318 (G3)
+  // cuando el cuerpo sólo tenía el titular «Total aceptado»; desde que el cuerpo tiene la franja,
+  // esta columna repetía dos de sus tres cifras. Medido: con las dos aquí, «590,00 €» se leía
+  // siete veces en la pantalla. La misma verdad dicha dos veces no es redundancia útil, es la
+  // pantalla que no elige.
+  //
+  // ⚠️ El aviso de cobro de más (SCRUM-907/887) TAMBIÉN se va de aquí, por lo mismo: se sigue
+  // dando, entero y con su literal firmado, en «Qué falta para cobrar» — que es donde se explica,
+  // y no en una columna de 220 px. `seccionCobroVisible` devuelve `true` cuando hay exceso
+  // justamente para que esa sección exista aunque no haya ningún otro hueco, así que quitarlo de
+  // aquí no lo deja sin decir en ningún sitio. Lo vigila `guard:detalle-trabajo-917` (D.10), que
+  // falla RUIDOSAMENTE si el aviso desaparece de la pantalla.
 
   // Se clasifican con `tipoDeFactura`, la MISMA condición que usa la pila para repartir: si aquí
   // se repitiera el `startsWith('J-')` a mano, un cambio en una de las dos copias mandaría el
@@ -193,7 +200,7 @@ if (typeof window !== 'undefined') {
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    construirBloquesRail, JOB_RAIL_TITULOS,
+    construirBloquesRail, JOB_RAIL_TITULOS, ROTULO_NOTA_DEL_CLIENTE,
     bloqueCliente, bloqueDonde, bloqueDinero, bloquePresupuesto, bloqueResponsable,
   };
 }

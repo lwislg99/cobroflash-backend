@@ -56,6 +56,9 @@ function pintarBloqueRail(bloque) {
     fila.className = 'detail-rail-linea';
     // SCRUM-907 · la línea de AVISO (cobrado de más) se distingue por clase, no por estilo en línea.
     if (linea.aviso) fila.classList.add('detail-rail-linea--aviso');
+    // SCRUM-982 · la NOTA del cliente: etiqueta encima y el texto con sus saltos de línea. Por
+    // clase, como el aviso; el texto sigue entrando por `textContent`, nunca como marcado.
+    if (linea.nota) fila.classList.add('detail-rail-linea--nota');
 
     if (linea.etiqueta) {
       const et = document.createElement('span');
@@ -132,36 +135,39 @@ function pintarBloqueRail(bloque) {
  */
 function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
   const i = importesDeCobro(job);
-  sec.innerHTML = '<h3 class="detail-section-title">Qué falta para cobrar</h3>';
+  // 🔴 SCRUM-917f · EL RÓTULO YA NO AFIRMA «PARA COBRAR». Esta tarjeta se pinta siempre que haya
+  // CUALQUIER hueco, y no todos son dinero: un albarán sin firmar y una línea sin entregar no son
+  // «lo que falta para cobrar». En un Trabajo cobrado del todo con un albarán pendiente de firma,
+  // el rótulo viejo afirmaba algo FALSO. Son dos preguntas distintas y la tarjeta contesta a las
+  // dos, así que el rótulo tiene que admitirlo. Texto firmado (com. 15881).
+  //
+  // ⚠️ El id interno de la sección —`que-falta-para-cobrar` en `SECCIONES_CUERPO`— NO cambia: es
+  // una clave de reparto, no un texto, y renombrarla movería la sección de sitio en el ciclo sin
+  // que nadie lo pidiera.
+  sec.innerHTML = '<h3 class="detail-section-title">Lo que falta</h3>';
 
-  const tabla = document.createElement('div');
-  tabla.className = 'cobro-lineas';
+  // 🔴 SCRUM-917e (D) · AQUÍ ESTABA LA TABLA DE IMPORTES — Aceptado / Entregado y firmado /
+  // Facturado / Cobrado / Te falta por cobrar — y se ha ido ENTERA a la franja del cuerpo.
+  //
+  // Por qué, medido: entre estas filas, el titular «Total aceptado», la barra y el rail, el mismo
+  // «590,00 €» se leía SIETE veces en la misma pantalla. La franja dice las tres cifras que
+  // importan (lo que falta, el aceptado y el cobrado) una sola vez cada una.
+  //
+  // ⚠️ Y NO SE PIERDE INFORMACIÓN, que es la pregunta que hay que hacerse al borrar filas:
+  // «Facturado» y «Entregado y firmado» no eran cifras de contexto, eran SÍNTOMAS, y ya se dicen
+  // —mejor, porque dicen qué hacer— en los huecos de abajo: «X entregados sin facturar», «X
+  // facturados sin cobrar». Lo que desaparece es el número repetido, no el dato.
+  // Lo vigila `guard:detalle-trabajo-917` (D.5), que cuenta apariciones en el DOM pintado.
+  //
+  // La salvedad de SCRUM-423 sobre «Entregado y firmado» —los albaranes SIN_VALORAR no llevan
+  // importe, así que un 0,00 € ahí sería una afirmación falsa y no un hueco— sigue viva donde
+  // ahora vive ese dato: `huecosDeCobro`, que ya distingue ausencia de cero.
 
-  const fila = (etiqueta, importe, clase) => {
-    const f = document.createElement('div');
-    f.className = 'cobro-linea' + (clase ? ' ' + clase : '');
-    const e = document.createElement('span');
-    e.className = 'cobro-linea__etiqueta';
-    e.textContent = etiqueta;
-    const v = document.createElement('span');
-    v.className = 'cobro-linea__importe';
-    v.textContent = fmt(importe, moneda);
-    f.append(e, v);
-    tabla.appendChild(f);
-  };
-
-  fila('Aceptado', i.aceptado);
-  // ⚠️ La línea del entregado se OMITE si no se pudo medir. Los albaranes SIN_VALORAR —el modo por
-  // DEFECTO— no llevan importe, así que con tres albaranes firmados y sin valorar el número sería
-  // «0,00 €»: una afirmación falsa, no un hueco. Ausencia antes que un cero que parece medido.
-  if (i.albaranesFirmadosConImporte > 0) fila('Entregado y firmado', i.entregadoFirmado);
-  fila('Facturado', i.facturado);
-  fila('Cobrado', i.cobrado);
-  fila('Te falta por cobrar', i.faltaPorCobrar, 'cobro-linea--total');
-  sec.appendChild(tabla);
-
-  // SCRUM-907 · cobrado POR ENCIMA de lo aceptado (más de 0,02 €). La fila de arriba sigue diciendo
-  // 0,00 €, que es verdad —no falta nada—, y este aviso dice lo que esa fila no puede decir.
+  // SCRUM-907 · cobrado POR ENCIMA de lo aceptado (más de 0,02 €). La franja dice «Cobrado del
+  // todo», que es verdad —no falta nada—, y este aviso dice lo que esa franja no puede decir.
+  // 🔴 El literal está FIRMADO (SCRUM-887, comentario 15697) y vive en `jobCobroHuecos.js`. No se
+  // reescribe ni se le busca una forma nueva: 917 propuso «Se ha cobrado de más» / «El cobro supera
+  // el importe aceptado…» y esos dos NO están firmados y no se construyen.
   if (i.cobradoDeMas > 0) {
     const aviso = document.createElement('p');
     aviso.className = 'cobro-aviso';
@@ -172,6 +178,11 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
 
   // ── LOS HUECOS, cada uno con su enlace ────────────────────────────────────────────────
   const TEXTO_HUECO = {
+    // SCRUM-917f · el caso SIN PRESUPUESTO ACEPTADO, que hasta este corte no se nombraba: sin
+    // huecos la sección entera no se pintaba, así que la pantalla callaba. Un silencio se lee
+    // igual que «no falta nada», y aquí son cosas opuestas — no es que no falte, es que no se
+    // puede saber. Los dos literales están FIRMADOS (com. 15881); aquí no se escribe copy.
+    'sin-presupuesto': () => 'Este trabajo no tiene presupuesto aceptado',
     'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
     'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
     'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
@@ -202,10 +213,22 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
   };
   const TEXTO_ACCION = {
+    'hacer-presupuesto': 'Hacer presupuesto',
     'ver-albaranes': 'Ver albaranes',
     'facturar-lo-entregado': 'Facturar lo entregado',
     'facturar-el-trabajo': 'Facturar el trabajo',
     'registrar-cobro': 'Registrar cobro',
+  };
+
+  // SCRUM-917f · SÓLO este hueco lleva una segunda línea, y por una razón concreta: los otros
+  // cinco enuncian una CANTIDAD que se entiende sola («2 albaranes sin firmar»), y éste enuncia
+  // una AUSENCIA, que no se entiende sin decir qué consecuencia tiene. Literal firmado.
+  //
+  // 🔴 A `sin-entregar` NO se le añade la suya aunque esté propuesta: SCRUM-423 dejó escrito que
+  // su número y su salvedad van en UNA SOLA CADENA a propósito, para que un truncado no deje a
+  // nadie leyendo el número solo. Partirla en dos nodos aquí sería deshacer eso de rebote.
+  const SUBTEXTO_HUECO = {
+    'sin-presupuesto': 'Sin un importe de referencia no se puede saber cuánto falta por cobrar.',
   };
 
   const lista = document.createElement('div');
@@ -215,7 +238,23 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     f.className = 'cobro-hueco';
     f.dataset.hueco = h.id;
     const t = document.createElement('span');
-    t.textContent = TEXTO_HUECO[h.id](h);
+    // SCRUM-917f: con subtexto, el hueco pasa a DOS líneas. Se envuelven juntas para que la
+    // segunda no se separe de la primera al envolver en móvil — es una explicación de SU línea,
+    // no una nota de la tarjeta.
+    const sub2 = SUBTEXTO_HUECO[h.id];
+    if (sub2) {
+      t.className = 'cobro-hueco__texto';
+      // Sin clase: hereda el tamaño y el color del hueco, que es lo que tiene que hacer. Una
+      // clase sin regla es justo lo que caza `scrum666b`.
+      const q = document.createElement('span');
+      q.textContent = TEXTO_HUECO[h.id](h);
+      const s = document.createElement('span');
+      s.className = 'cobro-hueco__s';
+      s.textContent = sub2;
+      t.append(q, s);
+    } else {
+      t.textContent = TEXTO_HUECO[h.id](h);
+    }
     const a = document.createElement('button');
     a.type = 'button';
     a.className = 'btn-ghost btn-sm';
@@ -224,6 +263,14 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     // facturas ya tienen su sección tras G4). Navegar, no ejecutar — ejecutar es de la cabecera y
     // de la fila de cada documento, que ya lo hacen y no se duplica aquí.
     a.addEventListener('click', () => {
+      // SCRUM-917f · `hacer-presupuesto` es el ÚNICO que sale de esta pantalla, y tiene que
+      // hacerlo: lo que falta no está en ninguna sección de este Trabajo, es que no existe el
+      // documento. Se navega por el mismo camino que ya usan el detalle de cliente y la lista de
+      // facturas —`renderAppView('quotes-new')`, sin estado—, no por uno nuevo.
+      if (h.accion === 'hacer-presupuesto') {
+        if (window.renderAppView) window.renderAppView('quotes-new');
+        return;
+      }
       // ⚠️ `facturar-el-trabajo` va a ALBARANES, no a FACTURAS: ese hueco sale precisamente cuando
       // NO hay ninguna factura, así que la sección FACTURAS no está pintada y el enlace no llevaría
       // a ningún sitio. La de albaranes se monta siempre, y es donde se empieza a documentar el
@@ -492,6 +539,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   head.className = 'detail-head';
   page.appendChild(head);
   const headLeft = document.createElement('div');
+  // SCRUM-917f: la columna del título necesita clase propia por una razón mecánica, no estética.
+  // `.detail-head` es flex, y dentro de un flex un hijo NO encoge por debajo de su contenido: sin
+  // `min-width: 0` aquí, el `text-overflow: ellipsis` del título y del subtítulo no llega a actuar
+  // NUNCA y un nombre largo sigue empujando el chip de estado y la barra de acciones.
+  headLeft.className = 'detail-head-izq';
   // ── SCRUM-317 (G2) · migas + título, en vez de un botón de volver ────────────────────
   //
   // El subtítulo anterior —«Detalle del trabajo, cobros y documentos.»— desaparece: describía
@@ -512,11 +564,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   migaSep.className = 'detail-miga-sep';
   migaSep.setAttribute('aria-hidden', 'true');
   migaSep.textContent = '›';
-  const migaActual = document.createElement('span');
-  migaActual.className = 'detail-miga-actual';
+  // SCRUM-917f: aquí vivía `migaActual`, que repetía «cliente · trabajo» tres píxeles encima del
+  // título y del subtítulo, que dicen lo mismo. Las migas contestan DÓNDE ESTÁS; QUÉ ESTÁS MIRANDO
+  // lo contesta el título, y con más tamaño. Con ella, el nombre del cliente salía CINCO veces en
+  // la pantalla, tres de ellas en los 139 px de la cabecera.
   migas.appendChild(migaTrabajos);
   migas.appendChild(migaSep);
-  migas.appendChild(migaActual);
   headLeft.appendChild(migas);
   const h2 = document.createElement('h2');
   headLeft.appendChild(h2);
@@ -589,10 +642,17 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const refresh = () => renderJobDetailView(container, job.id);
 
   // ── SCRUM-317 (G2) · el Trabajo se llama por su nombre ───────────────────────────────
+  //     SCRUM-917f · …y el que manda es el nombre DEL TRABAJO, no el del cliente.
   //
-  // TÍTULO = el CLIENTE, siempre. Es el único dato que no puede faltar (`customerId` es NOT NULL
-  // en el modelo) y es como el profesional piensa en el trabajo: «lo de Francisco».
-  // SUBTÍTULO = el nombre que le haya puesto el pro + la fecha.
+  // TÍTULO = el NOMBRE DEL TRABAJO; si el pro no le ha puesto ninguno, el CLIENTE. Las dos ramas
+  // salen de datos que el presupuesto no puede quitar (`customerId` es NOT NULL), que es el
+  // principio entero de SCRUM-317: un Trabajo sin presupuesto no se queda sin título.
+  // SUBTÍTULO = cliente · fecha · presupuesto.
+  //
+  // ⚠️ POR QUÉ SE DA LA VUELTA: medido en el PASO 0 de 917f, con el Trabajo #3104 el nombre del
+  // cliente salía CINCO veces en la pantalla, TRES de ellas dentro de los 139 px de la cabecera
+  // (miga, título y subtítulo). El cliente ya vive entero en el rail de la derecha, con su
+  // teléfono. Lo que no estaba en ningún sitio destacado era de QUÉ trabajo es esto.
   //
   // ⚠️ EL SEPARADOR SOLO SE PINTA SI HAY ALGO A LOS DOS LADOS. `unirCon` es la única forma de
   // componer estas líneas en esta vista, precisamente para que no exista el camino que produce
@@ -617,11 +677,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // si al salir del campo hay algo que guardar. NO se pinta en la cabecera: eso es el rail.
   const direccionObra = (job.direccion || '').trim();
 
-  h2.textContent = nombreCliente || 'Trabajo';
-  sub.textContent = unirCon(' · ', nombreTrabajo, fechaCorta(job.createdAt));
+  // La referencia del presupuesto de origen, si lo hay. Un Trabajo puede no tenerlo
+  // (`Job.quoteId` es `Int?`), y por eso pasa por `unirCon` como una parte más: si falta, no
+  // cuelga ningún separador.
+  const refPresupuesto = job.quote?.number != null ? `Presupuesto #${job.quote.number}` : '';
+
+  h2.textContent = nombreTrabajo || nombreCliente || 'Trabajo';
+  sub.textContent = unirCon(' · ', nombreCliente, fechaCorta(job.createdAt), refPresupuesto);
   // Un subtítulo vacío no deja un párrafo en blanco empujando la pantalla.
   sub.style.display = sub.textContent ? '' : 'none';
-  migaActual.textContent = unirCon(' · ', nombreCliente, nombreTrabajo);
 
   // SCRUM-57: "Responsable" en la cabecera = autoría del operario (job.operario, ya en el
   // serializer tras SCRUM-22). Si el Trabajo es del propietario (operario null), el nombre del
@@ -687,33 +751,105 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // «Parcial» era una afirmación FALSA que además no se podía deshacer nunca (la pestaña
     // «Pagado» no lo enseñaba jamás, así que el pro perseguía un pago que ya tenía).
     (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : '');
-  // 🔴 SCRUM-651 · AUSENTE Y CERO NO SON LO MISMO, y aqui se veia en el titular del dinero.
+  // 🔴 SCRUM-917e (D) · EL DINERO SE DICE UNA VEZ. Aquí había un titular «Total aceptado» a 2,2 rem
+  // y, debajo, una barra que repetía «Cobrado X de Y». Entre eso, las cuatro filas de importes de
+  // «Qué falta para cobrar» y el bloque DINERO del rail, **«590,00 €» se leía SIETE veces en la
+  // misma pantalla** — medido hoy, no heredado del prototipo:
+  // `docs/master/evidencias/SCRUM-917/salida-paso0-detalle.txt`. Nueve importes para dos valores.
+  // Eso es, medido, la sensación de «rudimentario»: no hay nada mal calculado, hay una pantalla que
+  // no elige.
   //
-  // Esto se pintaba SIEMPRE. En un Trabajo sin presupuesto `totalAceptado` llega `null`, el
-  // `|| 0` de arriba lo volvia 0 y la pantalla anunciaba **«Total aceptado 0,00 €»** a 2,2 rem:
-  // se lee como «presupuestaste cero», que es una afirmacion, y falsa. No hay presupuesto.
+  // Ahora es UNA franja y se acabó: la cifra grande es LO QUE FALTA —que es la pregunta del jefe—,
+  // al lado el aceptado y el cobrado una sola vez cada uno, y debajo la barra SIN texto, porque las
+  // dos cifras que decía acaban de darse dos centímetros más arriba.
   //
-  // La guarda mira `totalAceptado != null` y NO `aceptado > 0`: un presupuesto aceptado por 0 €
-  // es raro pero es un dato que existe, y ocultarlo cambiaria el camino de siempre. Lo que se
-  // calla es lo que NO CONSTA, que es otra cosa.
+  // ⚠️ SCRUM-651 SE CONSERVA, y es la razón de la guarda: en un Trabajo sin presupuesto
+  // `totalAceptado` llega `null`, el `|| 0` de arriba lo volvía 0 y la pantalla anunciaba
+  // «Total aceptado 0,00 €», que se lee como «presupuestaste cero» — una afirmación, y falsa.
+  // La guarda mira `totalAceptado != null` y NO `aceptado > 0`: un presupuesto aceptado por 0 € es
+  // raro pero es un dato que existe. Lo que se calla es lo que NO CONSTA, que es otra cosa.
+  // Sin franja, ese caso se queda sin decir cuánto falta: lo recoge la tarjeta «Lo que falta»
+  // (SCRUM-917f, bloque E), que para eso pregunta si hay franja antes de repetir una cifra.
+  // 🔴 SCRUM-917e (D) · RE-ANCLAJE DE SCRUM-318/363 — SIN EJE NO SE AFIRMA NADA DEL DINERO.
+  // El bloque DINERO del rail, que esta franja sustituye, tenía este contrato escrito y medido:
+  // con `totalAceptado` 0 y 300 € cobrados pintaba SOLO «Cobrado», y NUNCA «Pendiente», porque un
+  // importe derivado sin eje contra el que medirlo es una afirmación que no se puede sostener (es
+  // el mismo defecto que SCRUM-363 quitó del chip de cobro). Al bajar el dinero a la franja, ese
+  // contrato se quedó sin superficie y la franja lo rompió: medido hoy, con aceptado 0 y cobrado
+  // 300 € decía «Cobrado del todo · 0,00 €» encima de un «Cobrado 300,00 €» — la pantalla
+  // contradiciéndose en cuatro centímetros.
   //
-  // ⚠️ El chip de cobro y la barra ya estaban bien (SCRUM-363 y el `aceptado > 0` de abajo);
-  // este titular era el unico hueco por el que el cero se colaba a la pantalla.
+  // Así que el eje manda sobre el FOCO, no sobre la franja entera: los lados son DATOS MEDIDOS
+  // (lo aceptado y lo cobrado, cada uno el suyo) y se siguen diciendo; lo que se calla es lo
+  // DERIVADO. Ni un rótulo nuevo: se omite el que había.
+  //
+  // ⚠️ LA CONDICIÓN DE LA FRANJA NO SE TOCA, y esto NO es un detalle de estilo. El primer intento
+  // fue `!= null && (hayEje || cobrado > 0)`, y lo tumbó el control positivo de SCRUM-651: un
+  // presupuesto aceptado por 0 € es raro pero es un dato que CONSTA, y esa condición lo escondía.
+  // Los dos contratos caben a la vez porque hablan de cosas distintas — 651 de si el dato consta
+  // (la franja), 318/363 de si hay eje para derivar (el foco).
+  const hayEje = aceptado > 0;
   if (job.totalAceptado != null) {
-    const totBlock = document.createElement('div');
-    totBlock.style.textAlign = 'right';
-    totBlock.innerHTML = `<div class="detail-total-label">Total aceptado</div><div class="detail-total-amount">${fmtMoneyEs(aceptado, cur)}</div>`;
-    sumRow.appendChild(totBlock);
+    const franja = document.createElement('div');
+    franja.className = 'detail-dinero';
+
+    const foco = document.createElement('div');
+    if (hayEje) {
+      const rot = document.createElement('span');
+      rot.className = 'detail-dinero__rotulo';
+      // «Cobrado del todo» en vez de «Te falta por cobrar 0,00 €»: enseñar un cero donde se espera
+      // una deuda obliga a leer el número para entender que no hay nada que hacer.
+      rot.textContent = pendiente > 0 ? 'Te falta por cobrar' : 'Cobrado del todo';
+      const gr = document.createElement('div');
+      gr.className = 'detail-dinero__grande' + (pendiente > 0 ? '' : ' detail-dinero__grande--ok');
+      gr.textContent = fmtMoneyEs(pendiente > 0 ? pendiente : aceptado, cur);
+      foco.append(rot, gr);
+    }
+
+    // Aceptado y Cobrado, al lado y en este orden. Son el contexto de la cifra grande, no su
+    // competencia: por eso van juntos, pequeños, y NO se repiten en ningún otro sitio.
+    const lat = document.createElement('div');
+    lat.className = 'detail-dinero__lados';
+    for (const [etiqueta, valor] of [['Aceptado', aceptado], ['Cobrado', cobrado]]) {
+      const l = document.createElement('div');
+      l.className = 'detail-dinero__lado';
+      const e = document.createElement('span');
+      e.textContent = etiqueta;
+      const v = document.createElement('b');
+      v.className = 'detail-dinero__lado-cifra';
+      v.textContent = fmtMoneyEs(valor, cur);
+      // El separador va como NODO DE TEXTO, no como cadena suelta. `append(' ')` es DOM válido en
+      // el navegador —por eso el guard en Chrome salía verde—, pero era la ÚNICA aparición de esa
+      // forma en `public/` (la otra separación del fichero, en la casilla de la factura, ya usa
+      // `createTextNode`) y el banco de vistas no la atiende: la vista REVENTABA al montarse y los
+      // dos contratos de SCRUM-817 caían en su SUELO, sin llegar a mirar el orden que vigilan.
+      l.append(e, document.createTextNode(' '), v);
+      lat.appendChild(l);
+    }
+    franja.append(foco, lat);
+    sumRow.appendChild(franja);
+
+    // La barra, debajo y MUDA. No se usa `progressBar()` a propósito: esa función escribe
+    // «Cobrado X de Y» dentro, la comparten otras cuatro pantallas y cambiarla aquí las movería a
+    // todas. Aquí hace falta la barra sin su texto, así que se pinta la barra, no se toca la
+    // función. El ancho es un DATO (el porcentaje cobrado), no un estilo: va por `.style.width`,
+    // igual que hace `progressBar`, y es lo único que no puede vivir en la hoja.
+    if (aceptado > 0) {
+      const barra = document.createElement('div');
+      barra.className = 'detail-dinero__barra';
+      barra.setAttribute('role', 'progressbar');
+      barra.setAttribute('aria-valuemin', '0');
+      barra.setAttribute('aria-valuemax', '100');
+      barra.setAttribute('aria-valuenow', String(Math.round(pct)));
+      // El lector de pantalla SÍ necesita el texto que la vista ya no repite.
+      barra.setAttribute('aria-label', `Cobrado ${fmtMoneyEs(cobrado, cur)} de ${fmtMoneyEs(aceptado, cur)}`);
+      const relleno = document.createElement('i');
+      relleno.className = 'detail-dinero__barra-relleno';
+      relleno.style.width = Math.max(0, Math.min(100, pct)) + '%';
+      barra.appendChild(relleno);
+      sumSec.appendChild(barra);
+    }
   }
-  if (aceptado > 0) {
-    const bar = document.createElement('div');
-    bar.style.marginTop = '14px';
-    bar.innerHTML = progressBar(pct, job.estadoCobro, { cobrado, aceptado, currency: cur });
-    sumSec.appendChild(bar);
-  }
-  // SCRUM-318 (G3): «Cobrado» y «Pendiente» pasan al rail (bloque DINERO). El titular «Total
-  // aceptado» se queda AQUÍ, a 2,2 rem: es el momento del dinero (AB1) y meterlo en una columna de
-  // 220 px lo encogería. Por eso `Aceptado` no se repite en el rail — ver `bloqueDinero`.
 
   // ── CTA primario del HÉROE — la SIGUIENTE acción del Trabajo (SCRUM-31 F4). jobNextAction
   // decide CUÁL por la escalera aprobada; aquí SOLO se ejecuta, reutilizando endpoints existentes

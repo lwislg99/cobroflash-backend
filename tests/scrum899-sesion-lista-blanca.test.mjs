@@ -48,9 +48,22 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
-    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', prompt];",
-    a: "return ['--bg', '-n', nombre, '--permission-mode', 'bypassPermissions', prompt];",
+    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];",
+    a: "return ['--bg', '-n', nombre, '--permission-mode', 'bypassPermissions', '--model', MODELO_DEL_EQUIPO, prompt];",
     cae: '🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte permisos',
+  },
+  {
+    // SCRUM-990: quitar el flag es exactamente el defecto que el ticket arregla.
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];",
+    a: "return ['--bg', '-n', nombre, '--permission-mode', 'auto', prompt];",
+    cae: '🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`',
+  },
+  {
+    fichero: 'scripts/equipo/sesion.mjs',
+    de: "export const MODELO_DEL_EQUIPO = 'sonnet';",
+    a: "export const MODELO_DEL_EQUIPO = 'opus';",
+    cae: '🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`',
   },
 ];
 
@@ -79,6 +92,26 @@ test('🔴 una sesión nueva va en modo auto y NUNCA con un modo que se salte pe
   assert.equal(args.at(-1), 'hola --dangerously-skip-permissions', '🔴 el prompt no viaja como UN argumento: podría inyectar flags');
 });
 
+test('🔴 SCRUM-990: una sesión nueva sale con `--model sonnet`, en el orden con el que se midió', () => {
+  // Decisión del fundador (21-sep-2026): TODOS los puestos con Sonnet, sin excepción. El orden es el
+  // de `respawnFlags` en el `state.json` de una sesión de fondo lanzada así (CLI 2.1.278).
+  assert.equal(s.MODELO_DEL_EQUIPO, 'sonnet');
+  for (const puesto of ['orquestador', 'sesion-0', 'sesion-1', 'sesion-2', 'sesion-3', 'sesion-4', 'sesion-5']) {
+    assert.deepEqual(s.argsLanzar({ modo: 'nueva', nombre: puesto, prompt: 'p' }),
+      ['--bg', '-n', puesto, '--permission-mode', 'auto', '--model', 'sonnet', 'p'],
+      `🔴 «${puesto}» arrancaría con el modelo por defecto y no con Sonnet`);
+  }
+  // El modelo viaja como flag, nunca dentro del prompt (que es UN argumento sin interpretar).
+  const args = s.argsLanzar({ modo: 'nueva', nombre: 'sesion-3', prompt: '--model opus' });
+  assert.equal(args.filter((a) => a === '--model').length, 1, '🔴 un prompt con `--model` no puede añadir otro flag');
+  assert.equal(args.at(-1), '--model opus');
+});
+
+test('🔴 SCRUM-990: reanudar NO lleva `--model` (con flags arranca una copia; conserva sus opciones)', () => {
+  assert.doesNotMatch(s.argsLanzar({ modo: 'reanudar', nombre: 'sesion-1', sessionId: UUID, prompt: 'p' }).join(' '), /--model/,
+    '🔴 con flags, `--resume` arranca una COPIA con id nuevo (SCRUM-899 3b)');
+});
+
 test('🔴 canario SCRUM-237: el patrón dangerously|bypass SÍ detecta un modo real que se salta permisos', () => {
   // Respaldo del `doesNotMatch` de arriba: sin esto, el token podría ser tan imposible como el de
   // scrum73 y la negación pasaría siempre sin comprobar nada.
@@ -100,14 +133,18 @@ test('🔴 reanudar va con el sessionId COMPLETO y SIN flags (con flags arranca 
 // Decisiones
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('decidir lanzar: viva, bloqueada, reanudar, nueva, y no pude mirar', () => {
+test('decidir lanzar: viva, bloqueada, NUEVA siempre, y no pude mirar', () => {
   const ahora = 10 * 60 * 60 * 1000;
   const viva = { id: 'aaaaaaaa', name: 'sesion-2', kind: 'background', state: 'working' };
   assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [viva], registro: {}, ahora }).veredicto, 'YA-VIVA');
   assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [{ ...viva, state: 'blocked', waitingFor: 'permission prompt' }], registro: {}, ahora }).veredicto,
     'BLOQUEADA', '🔴 una sesión bloqueada se trata como viva y nadie lo dice');
   const reciente = { 'sesion-2': { sessionId: UUID, ultimaTanda: ahora - 30 * 60 * 1000 } };
-  assert.deepEqual(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: reciente, ahora }), { veredicto: 'REANUDAR', sessionId: UUID });
+  // SCRUM-954 (20-sep-2026): esto decia REANUDAR. Ya no. `lanzar` lanza SIEMPRE una sesion nueva,
+  // y el motivo es la A19: reanudar dentro de la hora arrastra la conversacion entera, que es
+  // justo lo que el relevo viene a soltar. Decision del orquestador, con su motivo escrito.
+  assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: reciente, ahora }).veredicto, 'NUEVA',
+    'SCRUM-954: con la cache caliente TAMPOCO se reanuda');
   const vieja = { 'sesion-2': { sessionId: UUID, ultimaTanda: ahora - 2 * 60 * 60 * 1000 } };
   assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: vieja, ahora }).veredicto, 'NUEVA', '🔴 reanuda una sesión con la caché fría');
   assert.equal(s.decidirLanzar({ nombre: 'sesion-2', agentes: [], registro: {}, ahora }).veredicto, 'NUEVA');
@@ -157,7 +194,8 @@ function banco({ alterar = false, configEnElRepo = false } = {}) {
   // SCRUM-951a: la puerta exige el equipo y la carpeta de los traspasos; aquí, el equipo de Luis.
   const memoria = path.join(dir, 'memoria');
   fs.mkdirSync(memoria);
-  const config = JSON.stringify({ repo, claude: [process.execPath, falso], ...s.EQUIPO_DE_LUIS, traspasos: memoria });
+  // SCRUM-954: `jobs` propio — sin él, la CLI leería los trabajos REALES de la máquina.
+  const config = JSON.stringify({ repo, claude: [process.execPath, falso], ...s.EQUIPO_DE_LUIS, traspasos: memoria, jobs: path.join(dir, 'jobs') });
   fs.writeFileSync(path.join(inst, 'config.json'), config);
   // Para el rojo del árbol: la copia del PROPIO repositorio, con su config al lado.
   if (configEnElRepo) fs.writeFileSync(path.join(repo, 'scripts', 'equipo', 'config.json'), config);

@@ -142,7 +142,23 @@ async function pintarPagina(documentoSuelto, tercerArgumento) {
   const { banco } = bancoConRed(documentoSuelto);
   const r = await pintarVista(banco, 'renderQuotesView', null, tercerArgumento);
   assert.equal(r.error, null, `🔴 la vista no monta: ${r.error && r.error.message}`);
+  r.banco = banco;
   return r;
+}
+
+/**
+ * SCRUM-915i · lo que vive en el menú «⋯» de arriba («Más acciones») no está en el contenedor
+ * hasta que se abre: `overflowMenu` cuelga sus ítems del `body` al pulsar. Se PULSA, como haría el
+ * profesional, y se devuelve lo que el menú pinta. Sin menú, `[]` — y el test que lo use cae.
+ */
+function abrirMasAcciones(r) {
+  const boton = todos(r.contenedor).find((n) => n.tagName === 'BUTTON'
+    && n._attrs && n._attrs['aria-label'] === 'Más acciones');
+  if (!boton) return [];
+  boton.disparar('click');
+  const menu = todos(r.banco.ctx.document.body).find((n) => n._attrs && n._attrs.role === 'menu'
+    && n._attrs['aria-label'] === 'Más acciones');
+  return menu ? ranurasLegibles(menu) : [];
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -278,7 +294,8 @@ test('SCRUM-600b · ✅ CONTROL POSITIVO: en modo FACTURA la MISMA página sí d
 
 test('SCRUM-600b · ✅ EL PRESUPUESTO NO PIERDE NADA al compartir la página', async () => {
   const r = await pintarPagina('justificante', undefined); // sin tercer argumento = presupuesto
-  const todas = ranurasLegibles(r.contenedor).map((x) => x.texto);
+  // SCRUM-915i · «Guardar como plantilla» se fue al menú «⋯» de arriba: se lee con el menú ABIERTO.
+  const todas = ranurasLegibles(r.contenedor).concat(abrirMasAcciones(r)).map((x) => x.texto);
   const hay = (t) => todas.some((x) => x.includes(t));
   // SCRUM-915d · los bloques son ahora PASOS con los títulos firmados en SCRUM-915 comentario 15868.
   // Se comprueban por IGUALDAD: «Condiciones» por subcadena lo daría por bueno «Condiciones de pago».
@@ -291,12 +308,20 @@ test('SCRUM-600b · ✅ EL PRESUPUESTO NO PIERDE NADA al compartir la página', 
     'Estado del presupuesto',                                   // el panel de estado
     'Total presupuesto',                                        // el KPI y el pie de la vista previa
     'Generar presupuesto',                                      // la acción primaria, reversible
-    'Presupuesto válido durante 30 días salvo indicación en contrario.', // la coletilla del papel
+    // 🔴 SCRUM-915e1 · RE-ANCLADA, no borrada: la coletilla del papel sigue ahí y sigue siendo
+    // imprescindible; lo que cambia es que ahora lleva DENTRO la fecha que el profesional puso
+    // (antes prometía «30 días» dijera lo que dijera el campo «Válido hasta»). Se ancla al trozo
+    // fijo con `includes`: la fecha cambia cada día que corre la suite, y anclar a una fecha sería
+    // un contrato con caducidad. Si el pie desapareciera —o se quedara sin fecha, que es cuando no
+    // se pinta— esta línea sigue cayendo, que es para lo que está.
+    'Presupuesto válido hasta el ',                             // la coletilla del papel
     'Guardar como plantilla', 'Usar plantilla',                 // F11
     'Guardado automáticamente',                                 // el borrador
     'IVA del presupuesto',                                      // el IVA por documento
     'Añade los conceptos que vas a presupuestar.',              // la pista del bloque de líneas
-    'Vista previa del documento',                               // F7
+    // SCRUM-915e1 · el rótulo del documento pasa a ser el texto firmado en el comentario 15868.
+    // Sigue siendo F7 y sigue teniendo que estar: cambia lo que dice, no que esté.
+    'Así lo verá el cliente',                                   // F7
     'Dirección de la obra',                                     // DOC-12
   ];
   const perdidas = IMPRESCINDIBLES.filter((t) => !hay(t));
@@ -315,7 +340,13 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
   const NO_DEBEN_ESTAR = [
     // SCRUM-915d · «Condiciones» por subcadena caza el paso Y sus filas («Condiciones de pago»).
     'Condiciones',             // plazos y formas de pago: no viajan
-    'Ajustes del documento',   // qué datos salen, dirección e IVA del documento: no viajan (era «4. Envío»)
+    // SCRUM-915g · «Ajustes del documento» SALE de esta lista y se vigila por IDENTIDAD debajo. Era el
+    // título del bloque «4. Envío» (qué datos salen, dirección e IVA del documento: nada de eso viaja),
+    // y el título sigue sin viajar. Pero el justificante tiene ahora SU fila con ese nombre, y lo único
+    // que lleva dentro es el IVA por defecto, que SÍ viaja: es la reserva de `tax` de cada línea nueva
+    // (`addLine`), y el IVA por línea sobrevive. Prohibir el TÍTULO habría obligado a esconder un
+    // control que funciona; lo que no puede colarse son los CONTROLES del bloque viejo, y siguen
+    // prohibidos abajo por su nombre (dirección de la obra, IVA del presupuesto).
     'Estado del presupuesto',  // el documento nace emitido y no cambia de estado (regla 29)
     // «Guardar como plantilla» y «Usar plantilla» SALIERON de esta lista con SCRUM-600g. Eran
     // parada declarada porque sus hojas nombraban el presupuesto, no porque su dato no viajara: una
@@ -331,6 +362,16 @@ test('SCRUM-600b · 🔴 y el modo documento suelto NO arrastra lo que el emisor
     + '  llegan al documento: ni error, ni aviso, ni diferencia de importe. Es el defecto que midió\n'
     + '  SCRUM-616 y el motivo por el que estos bloques no se pintan.\n  '
     + coladas.join('\n  '));
+
+  // SCRUM-915g · LO QUE SE QUEDA DEL TÍTULO, por identidad: UNA fila «Ajustes del documento» y con el
+  // IVA por defecto dentro. Con sólo la lista de arriba, la fila podría desaparecer (y el IVA por
+  // defecto quedarse sin dónde vivir) sin que este test lo notara. Y nada de lo que la fila del
+  // presupuesto guarda y aquí no viaja puede acompañarla: `NO_DEBEN_ESTAR` ya lo ata.
+  const filas = todas.filter((x) => x === 'Ajustes del documento');
+  assert.equal(filas.length, 1,
+    `🔴 el justificante debe llevar UNA fila «Ajustes del documento» (915g) y lleva ${filas.length}.`);
+  assert.ok(todas.some((x) => x.includes('IVA por defecto')),
+    '🔴 el justificante ya no ofrece «IVA por defecto»: la fila de Ajustes se quedó sin su único contenido.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════

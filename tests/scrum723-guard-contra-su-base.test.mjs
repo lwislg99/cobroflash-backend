@@ -342,6 +342,17 @@ const HALLAZGOS_DECLARADOS = [
   // SCRUM-951a · su banco: mismo caso que los de 899 — un repositorio SINTÉTICO en el temporal cuyo
   // `origin/main` no es el de nadie, para comprobar que el instalador copió exactamente de ahí.
   'tests/scrum951a-equipo-configurable.test.mjs [show]',
+  // SCRUM-954 · su banco: mismo caso que los de 899 y 951a — un repositorio SINTÉTICO en el temporal
+  // cuyo `origin/main` no es el de nadie. Existe para montar una instalación que la puerta de
+  // `sesion.mjs` acepte (exige ser idéntica, byte a byte, a `origin/main:scripts/equipo/sesion.mjs`);
+  // contra cualquier otra referencia el banco no podría ejercitar lo que la puerta comprueba, que es
+  // justo lo que los casos de `estado` y `olvidar` necesitan por EFECTO.
+  'tests/scrum954-vivo-no-es-listado.test.mjs [show]',
+  // SCRUM-959b · su banco: mismo caso que los de 899, 951a y 954 — un repositorio SINTÉTICO en el
+  // temporal cuyo `origin/main` no es el de nadie, para que la puerta de `sesion.mjs` acepte la
+  // instalación del banco y se pueda medir POR EFECTO qué llamadas recibe `claude` (si con el equipo
+  // vivo `lanzar orquestador` llama o no a `claude --bg`). Lo retira quien borre `sesion.mjs`.
+  'tests/scrum959b-el-arranque-no-duplica-el-equipo.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -372,6 +383,10 @@ const INDIRECTAS_DECLARADAS = [
   // SCRUM-899 (hito 2) · nombra `refs/remotes/origin/main` al montar el `origin/main` de su repositorio
   // SINTÉTICO (y `origin/main:<fichero>` al instalar las copias, como hace `arranque.cmd`).
   'tests/scrum899b-arranque-de-la-tanda.test.mjs',
+  // SCRUM-966 · el banco del censo de ramas. Nombra `origin/main` al montar los worktrees y las ramas
+  // de su repositorio SINTÉTICO del temporal, que tiene su propio remoto desnudo: ese `origin/main` no
+  // es el de este repositorio. Mismo caso que 839d, 839e y 899b. Lo retira quien borre el banco.
+  'tests/scrum966-censo-ve-las-ramas.test.mjs',
   // SCRUM-951a · la lista de verificación nombra `origin/main` también FUERA de los argumentos de git: en
   // los detalles que imprime («idéntica a origin/main:…») y en la prosa de su cabecera. Su llamada
   // directa está declarada arriba, con su motivo.
@@ -420,6 +435,15 @@ const INDIRECTAS_DECLARADAS = [
   // número a ninguna que lleve slug; ningún sha ni alcanzabilidad. Lo retira: quien retire ese
   // control positivo o vuelva a exigir guion en `numeroDeRama`.
   'tests/scrum804f-la-rama-sin-slug.test.mjs',
+  // SCRUM-804h · el guard de «una fase con corte (`scrum-915e1-…`) es de su ticket». Entra por el
+  // MISMO motivo y con la misma forma que `scrum804f`, que es su hermano: nombra `main` en la
+  // PROSA del defecto (el check obligatorio de `main` cerrado, esta vez por `scrum-915e1-…`, con
+  // seis PR esperando) y quita el prefijo `origin/` a los NOMBRES que lista `for-each-ref`.
+  // **NO compara contra la referencia móvil**: su control positivo lee sólo NOMBRES de rama —para
+  // comprobar que el ensanche no re-atribuye a ninguna que YA tuviera ticket— y ni un sha ni una
+  // alcanzabilidad. Lo retira: quien retire ese control positivo o vuelva a leer la fase como un
+  // solo carácter en `numeroDeRama`.
+  'tests/scrum804h-la-fase-con-corte.test.mjs',
   // SCRUM-833 · el guard de los tres instrumentos de SCRUM-637. Entra aquí por el MISMO motivo y
   // con la misma forma que su hermano de arriba: al anclarlo a `git log --merges` nombra `main`
   // en la prosa que explica por qué esa población es permanente, y en el mensaje del suelo del
@@ -470,6 +494,13 @@ const INDIRECTAS_DECLARADAS = [
   // `main` (`Buffer.from(main.stdoutBuffer)`, el proceso hijo del propio script) — ninguna de las
   // dos es una comparación contra la punta de este repositorio. Lo retira quien borre esos textos.
   'tests/scrum899-sesion-lista-blanca.test.mjs',
+  // SCRUM-973 · mismo caso que 839d, 839e, 899b y 966: un repositorio SINTÉTICO en el temporal con
+  // su PROPIO `refs/remotes/origin/main`, avanzado a mano con `update-ref` para reproducir «el
+  // último commit es el merge de main». Nombra `origin/main` en el mensaje de merge fabricado
+  // (`EL_MERGE`, una cadena que imita el título por defecto de un merge de verdad) y al montar y
+  // leer ese remoto sintético — ninguno de los dos es el `origin/main` de este repositorio.
+  // Lo retira quien borre el banco.
+  'tests/scrum973-titulo-del-pr.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

@@ -1,0 +1,52 @@
+﻿POBLACION · agents --json: 9 entradas · 7 de fondo · 2 interactivas
+
+── LAS DOS SONDAS, entrada a entrada ────────────────────────────────────────
+┌─────────┬────────────┬────────────┬─────────────┬──────────────┬───────────┬────────────┬────────────────────────────┐
+│ (index) │ id         │ nombre     │ lista_state │ lista_status │ lista_pid │ json_state │ json_terminal              │
+├─────────┼────────────┼────────────┼─────────────┼──────────────┼───────────┼────────────┼────────────────────────────┤
+│ 0       │ 'df2fa38f' │ 'sesion-5' │ 'working'   │ null         │ null      │ 'done'     │ '2026-09-18T13:50:15.562Z' │
+│ 1       │ 'ac89ffa1' │ 's2b-20'   │ 'working'   │ 'busy'       │ 5268      │ 'working'  │ null                       │
+│ 2       │ '621e0f80' │ 's1-20'    │ 'working'   │ 'busy'       │ 16576     │ 'working'  │ null                       │
+│ 3       │ 'b4d5ecc1' │ 's2-20'    │ 'working'   │ 'busy'       │ 11832     │ 'working'  │ null                       │
+│ 4       │ '068af1ca' │ 's0-20'    │ 'working'   │ 'busy'       │ 14420     │ 'working'  │ null                       │
+│ 5       │ 'a88eaf95' │ 's5-20b'   │ 'working'   │ 'busy'       │ 24792     │ 'working'  │ null                       │
+│ 6       │ 'c81e8979' │ 's4-20'    │ 'working'   │ 'busy'       │ 1924      │ 'working'  │ null                       │
+└─────────┴────────────┴────────────┴─────────────┴──────────────┴───────────┴────────────┴────────────────────────────┘
+
+DISCREPANCIAS (state.json TERMINAL pero la lista dice «working»): 1 de 7
+  · sesion-5 (df2fa38f) terminal desde 2026-09-18T13:50:15.562Z · lista_state=working · pid=null
+
+── decidirLanzar / decidirRelevar / decidirParar, corridos ──────────────────
+
+  «sesion-5» — SUJETO: su única entrada viva-falsa es un job terminal desde el 18-sep
+     lanzar  → YA-VIVA · «sesion-5» ya está en marcha (df2fa38f)
+     relevar → OCUPADA · «sesion-5» está trabajando: no se para a mitad, aunque el traspaso esté fresco
+     parar   → PARAR · id=df2fa38f
+
+  «sesion-3» — CONTROL NEGATIVO: nombre del equipo SIN ninguna entrada en la lista
+     lanzar  → NUEVA · no hay sesión anterior
+     relevar → LANZAR · no hay ninguna sesión «sesion-3» viva
+     parar   → NADA · no hay ninguna sesión de fondo «sesion-3»
+
+  «orquestador» — CONTROL NEGATIVO 2: tampoco está en la lista
+     lanzar  → NUEVA · no hay sesión anterior
+     relevar → LANZAR · no hay ninguna sesión «orquestador» viva
+     parar   → NADA · no hay ninguna sesión de fondo «orquestador»
+
+── CONTROL POSITIVO (el instrumento ve lo que sabemos que está) ─────────────
+  «s2b-20» (pid 5268, viva DE VERDAD) → lanzar = YA-VIVA · «s2b-20» ya está en marcha (ac89ffa1)
+  ✓ el instrumento SÍ distingue: ve a la viva
+
+── argsLanzar, corrido (la causa que encontró el equipo de Javier) ──────────
+  nueva    → ["--bg","-n","sesion-5","--permission-mode","auto","x"]   · lleva -n: true
+  reanudar → ["--bg","--resume","11111111-2222-3333-4444-555555555555","x"]   · lleva -n: false
+
+  La regex /backgrounded · ([0-9a-f]{8}) · / contra las dos salidas:
+    CASA    · con nombre (el caso que sí casa)
+    NO CASA · SIN nombre (lo que devuelve el reanudar, medido por Javier en el ticket)
+
+── decidirLanzar con registro reciente (la reanudación que contradice a la A19) ──
+  parada hace 5 min  → REANUDAR · 11111111-2222-3333-4444-555555555555
+  parada hace >1 h   → NUEVA · la anterior lleva más de una hora parada
+
+EXIT=0

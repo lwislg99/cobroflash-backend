@@ -105,6 +105,8 @@ function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = fal
     repo, claude: [process.execPath, falso],
     prefijo: '', puestos: ['orquestador', 'sesion-0', 'sesion-1', 'sesion-2', 'sesion-3', 'sesion-4', 'sesion-5'],
     orquestador: 'orquestador', traspasos: memoria,
+    // SCRUM-954: `jobs` propio — sin él, la CLI leería los trabajos REALES de la máquina.
+    jobs: path.join(dir, 'jobs'),
   }));
 
   const leerLlamadas = () => (fs.existsSync(llamadas) ? fs.readFileSync(llamadas, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
@@ -125,8 +127,9 @@ test('🔴 POSITIVO: la tanda lanza al orquestador en modo auto con el prompt de
     const r = b.tanda();
     assert.equal(r.v?.tanda?.veredicto, 'LANZADA', `🔴 la tanda no lanzó al orquestador: ${JSON.stringify(r.v)}`);
     const [bg] = lanzamientos(b.leerLlamadas());
-    assert.deepEqual(bg, ['--bg', '-n', 'orquestador', '--permission-mode', 'auto', PROMPT],
-      '🔴 el orquestador no arranca con el nombre fijo, en modo auto y con el prompt de origin/main');
+    // SCRUM-990: `--model sonnet` va en TODO lanzamiento (decisión del fundador, 21-sep-2026).
+    assert.deepEqual(bg, ['--bg', '-n', 'orquestador', '--permission-mode', 'auto', '--model', 'sonnet', PROMPT],
+      '🔴 el orquestador no arranca con el nombre fijo, en modo auto, con Sonnet y con el prompt de origin/main');
     const registro = JSON.parse(fs.readFileSync(path.join(b.inst, 'sesiones.json'), 'utf8'));
     assert.equal(registro.orquestador?.sessionId, UUID, '🔴 el sessionId COMPLETO no queda en el registro: no se podría reanudar');
   } finally { b.limpiar(); }

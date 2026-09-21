@@ -58,8 +58,14 @@ const PUERTAS = Object.freeze({
       const m = /resumenAjustes\([\s\S]{0,240}?safeVat,\s*([^,)\s]+)/.exec(limpio);
       return !m || m[1].trim() !== '0';
     },
+  // 🔴 SCRUM-915h · RE-ANCLADA: el bloque de totales salió del editor (`.quote-totals__apoyo`) y vive
+  // en el documento de la derecha (`.preview-total-row`, filas por `filaDoc`). La puerta sigue siendo
+  // la misma —una fila «Margen» entre los totales—; lo que cambia es dónde está ese bloque.
   'la línea «Margen» del bloque de totales':
-    (limpio) => /quote-totals__apoyo[^`]*>Margen</.test(limpio) || /\btextoMargen\(/.test(limpio),
+    (limpio) => /quote-totals__apoyo[^`]*>Margen</.test(limpio)
+      || /preview-total-row[^`]*>Margen</.test(limpio)
+      || /filaDoc\(\s*["'`]Margen/.test(limpio)
+      || /\btextoMargen\(/.test(limpio),
 });
 
 test('SCRUM-598 · SUELO: el desnudado quita prosa y NO se come el código', () => {
@@ -69,7 +75,9 @@ test('SCRUM-598 · SUELO: el desnudado quita prosa y NO se come el código', () 
   assert.ok(!limpio.includes('SCRUM-598'), '🔴 el desnudado NO está quitando comentarios: este '
     + 'guard se cazaría a sí mismo en la prosa que explica la prohibición.');
   assert.ok(limpio.includes('resumenAjustes('), '🔴 el desnudado se ha comido el código.');
-  assert.ok(limpio.includes('quote-totals__apoyo'), '🔴 el desnudado se ha comido los totales.');
+  // SCRUM-915h · el suelo mira los totales donde viven ahora (el documento), no el editor.
+  assert.ok(limpio.includes('preview-total-row') && limpio.includes('filaDoc('),
+    '🔴 el desnudado se ha comido los totales.');
 });
 
 test('SCRUM-598 · 🔴 EL MARGEN NO ESTÁ EN NINGUNA DE LAS TRES PUERTAS', () => {

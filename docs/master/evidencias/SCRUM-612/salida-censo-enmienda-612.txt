@@ -1,0 +1,42 @@
+# censo-enmienda-612 · ref 17b0c86b84fb0544013923314d250d7181d913db = 17b0c86b84fb0544013923314d250d7181d913db
+# FORCE_COLOR ausente
+
+## POBLACIÓN docs/YAQU_MASTER.md: 1883 líneas · 494324 bytes
+JUSTIFICANTE    20 líneas
+INTERRUPTOR     22 líneas
+SENAL           46 líneas
+ENLACE_PAGO     31 líneas
+COBRO           98 líneas
+MEDIOS         116 líneas
+RECORDATORIO    37 líneas
+RECIBO          27 líneas
+FLUJO            8 líneas
+UNIÓN          292 líneas distintas de 1883
+
+## POBLACIÓN CLAUDE.md: 168 líneas · 13085 bytes
+JUSTIFICANTE     0 líneas
+INTERRUPTOR      1 líneas
+SENAL            1 líneas
+ENLACE_PAGO      0 líneas
+COBRO            3 líneas
+MEDIOS           6 líneas
+RECORDATORIO     0 líneas
+RECIBO           0 líneas
+FLUJO            0 líneas
+UNIÓN           10 líneas distintas de 168
+
+## CONTROLES
+OK  docs/YAQU_MASTER.md · «vuelve a "justificante"» en 1 línea(s) · la familia JUSTIFICANTE ve 1
+OK  docs/YAQU_MASTER.md · «INVOICING_ES_ENABLED» en 22 línea(s) · la familia INTERRUPTOR ve 22
+OK  docs/YAQU_MASTER.md · «señal» en 39 línea(s) · la familia SENAL ve 39
+OK  CLAUDE.md · «cobro de señal/total» en 1 línea(s) · la familia SENAL ve 1
+negativo: ninguna familia casa con «zzq cobroflash zzq» salvo las listadas arriba
+
+## CLASIFICACIÓN (conjuntos: candidatas = casadas − historial; clasificadas = unión de clases)
+OK  docs/YAQU_MASTER.md: casadas 292 = historial 141 + candidatas 151 · extras declaradas 1 · CAMBIA 21 · COMERCIAL 12 · ABIERTA 1 · CUBIERTA 50 · OTRO_SENTIDO 5 · HISTORIA 2 · NO_CHOCA 61
+OK  CLAUDE.md: casadas 10 = historial 0 + candidatas 10 · extras declaradas 1 · CAMBIA 6 · NO_CHOCA 5
+
+## CITAS (cada literal del borrador, en su línea, en el SHA medido)
+OK  citas: 82 de 82 en su línea
+
+EXIT=0 · controles fallidos: 0

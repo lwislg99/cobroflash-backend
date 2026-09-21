@@ -8,6 +8,7 @@
 //   node <instalación>/sesion.mjs relevar  <nombre> <fichero-con-el-encargo>
 //   node <instalación>/sesion.mjs contexto <nombre>
 //   node <instalación>/sesion.mjs parar    <nombre>
+//   node <instalación>/sesion.mjs olvidar  <nombre>
 //   node <instalación>/sesion.mjs estado
 //
 // ── LO QUE SE MIDIÓ EN SCRUM-899 Y ESTE FICHERO CODIFICA (17-sep-2026) ─────────────────────────
@@ -16,6 +17,35 @@
 //   · `--resume <sessionId completo>` CON flags arranca una COPIA; SIN flags continúa la misma.
 //   · `claude stop/rm` aceptan el id, no el nombre.
 //   → Nada interactivo en segundo plano, ids completos, reanudar sin flags, modo `auto`.
+//
+// ── LO QUE SE MIDIÓ EN SCRUM-954 Y CAMBIA AQUÍ (20-sep-2026, CLI 2.1.278) ──────────────────────
+//   · `claude agents --json` sigue listando un trabajo TERMINADO, y lo lista como `working`. El de
+//     `sesion-5` (`df2fa38f`) llevaba terminal desde el 18-sep 13:50:15Z y la lista lo daba por vivo
+//     dos días después. Con eso el nombre del puesto queda QUEMADO: `lanzar` → YA-VIVA y `relevar`
+//     → OCUPADA para siempre, y el relevo de la A19 («parar y volver a lanzar el MISMO nombre») deja
+//     de poder hacerse. Es el defecto entero del ticket. → `clasificarAgente`.
+//   · El tell es el `pid`, y salió de un CONTROL: una sesión de prueba con su proceso VIVO sale con
+//     `pid` y `status`; la muerta sale sin ninguno de los dos y con el último `state` que tuvo.
+//   · Lo que el ticket daba por causa —que al reanudar se perdía el `-n`— NO REPRODUCE en 2.1.278:
+//     medido, `claude --bg --resume <sid>` sin `-n` contesta «woke session … with its saved options
+//     (-n, --permission-mode)» y la sesión conserva su nombre. No se arregla lo que no está roto; lo
+//     que sí se hace es ensanchar la regex del `backgrounded`, que era el otro medio defecto.
+//   · `lanzar` deja de REANUDAR, y el motivo ya no es el nombre: es la A19. Decisión del orquestador
+//     del 20-sep-2026, con su motivo — reanudar dentro de la hora arrastra la conversación entera
+//     (el caso medido por el equipo de Javier reanudaba una de 421.718 tokens que acababa de pedir
+//     el relevo). Muere con ello la regla de «menos de una hora → reanudar».
+//
+// ── LO QUE SE MIDIÓ EN SCRUM-990 Y CAMBIA AQUÍ (21-sep-2026, CLI 2.1.278) ──────────────────────
+//   · Decisión del fundador (21-sep-2026): TODOS los puestos van con `--model sonnet`, sin excepción.
+//     Hasta hoy `argsLanzar` no pasaba modelo: el lanzador de las tandas (`arranque.cmd` →
+//     `orquestador-arranque.mjs` → `lanzar`) y todo `relevar` arrancaban con el modelo por DEFECTO.
+//   · Por qué se cambia AQUÍ y no en la copia instalada: `arranque.cmd` la reescribe desde
+//     `origin/main` en cada tanda, y `puertaDeIntegridad` se niega (ALTERADO) si difiere de main.
+//   · El flag es válido con `--bg`: el `state.json` de una sesión lanzada así guarda
+//     `respawnFlags: [-n, <nombre>, --permission-mode, auto, --model, sonnet]`. Ese es el orden que
+//     usa `argsLanzar`, y esa es la sonda por efecto (`docs/master/SCRUM-990.md`).
+//   · `reanudar` NO lleva `--model`: con flags `--resume` arranca una COPIA (SCRUM-899), y la sesión
+//     reanudada conserva las opciones con las que se lanzó. Ninguna acción de la CLI reanuda ya.
 //
 // ── LO QUE NO HACE, Y ES LA MITAD DEL DISEÑO ──────────────────────────────────────────────────
 //   · No acepta nombres fuera de la lista blanca: ni `control-*`, ni una sesión del fundador.
@@ -50,10 +80,22 @@ export const RUTA_EN_EL_REPO = 'scripts/equipo/sesion.mjs';
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 /** Más de esto parada → sesión nueva en vez de reanudar: la caché ya está fría. */
 export const UNA_HORA_MS = 60 * 60 * 1000;
+/** SCRUM-990 · el modelo de TODA sesión de fondo del equipo (fundador, 21-sep-2026). Sin excepción. */
+export const MODELO_DEL_EQUIPO = 'sonnet';
 /** A19: por encima de esto, AL TERMINAR UNA ENTREGA, se releva. */
 export const UMBRAL_CONTEXTO = 300_000;
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
 export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
+/** Estados de un trabajo de fondo que ya terminó. SCRUM-954. */
+export const ESTADOS_TERMINALES = Object.freeze(['done', 'stopped', 'failed', 'cancelled']);
+/** El id corto de un trabajo de fondo, tal y como lo imprime `claude --bg` y lo listan los agentes. */
+const ID_CORTO = /^[0-9a-f]{8}$/;
+/**
+ * El id que imprime `claude --bg`. SCRUM-954: antes exigía un « · » DETRÁS del id, que sólo existe
+ * cuando la sesión lleva nombre. Con una salida sin nombre no casaba, y entonces una sesión que SÍ
+ * había arrancado se declaraba `NO-PUDE-MIRAR`: una operación ejecutada leída como un fallo.
+ */
+const BACKGROUNDED = /backgrounded · ([0-9a-f]{8})(?: · |\s|$)/;
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // Decisiones puras
@@ -94,7 +136,7 @@ export function validarNombre(nombre, equipo = EQUIPO_DE_LUIS) {
 export function argsLanzar({ modo, nombre, sessionId, prompt, equipo }) {
   if (validarNombre(nombre, equipo)) throw new Error('nombre fuera de la lista blanca');
   if (typeof prompt !== 'string' || !prompt.trim()) throw new Error('prompt vacío');
-  if (modo === 'nueva') return ['--bg', '-n', nombre, '--permission-mode', 'auto', prompt];
+  if (modo === 'nueva') return ['--bg', '-n', nombre, '--permission-mode', 'auto', '--model', MODELO_DEL_EQUIPO, prompt];
   if (modo === 'reanudar') {
     // SIN flags: con flags, `--resume` arranca una copia (medido en SCRUM-899, control 3b).
     if (!SESSION_ID.test(sessionId || '')) throw new Error('reanudar exige el sessionId COMPLETO');
@@ -104,22 +146,131 @@ export function argsLanzar({ modo, nombre, sessionId, prompt, equipo }) {
 }
 
 /**
+ * ¿Esa entrada de `claude agents --json` es una sesión VIVA?
+ *
+ * 🔴 MEDIDO EL 20-sep-2026, y es el defecto entero de SCRUM-954: la lista enseña trabajos que ya
+ * terminaron, y los enseña como `state: "working"`.
+ *
+ *     df2fa38f · name "sesion-5" · lista: state "working", SIN pid, SIN status
+ *                                 state.json: state "done", firstTerminalAt 2026-09-18T13:50:15.562Z
+ *
+ * El tell es el `pid`, y no es una teoría: salió de un CONTROL. Una sesión de prueba con su proceso
+ * VIVO sale en la lista con `pid` y `status` y con su `state` de verdad; la muerta sale sin ninguno
+ * de los dos y con el último `state` que tuvo en vida. Cuando el proceso ya no está, el `state` de
+ * la lista no describe nada.
+ *
+ * Dos sondas, y la segunda no está para distinguir —una sesión viva también escribe `done` entre
+ * turno y turno— sino para que una carpeta de trabajo BORRADA o ilegible no se pueda leer como
+ * «muerta»:
+ *   · la lista (`pid`), que es quien decide, y
+ *   · el `state.json` del trabajo, que es quien puede VETAR el veredicto.
+ *
+ * 🔴 FALLA CERRADO. Declarar MUERTA a una viva significa lanzar una segunda sesión encima de alguien
+ * que está entregando, o borrarle su trabajo. Por eso sólo se declara muerta cuando las DOS sondas
+ * lo dicen, y cualquier duda sale como `NO-PUDE-MIRAR`, que los tres que deciden tratan como VIVA.
+ *
+ * @param {object} agente una entrada de `claude agents --json`
+ * @param {{leido:boolean, terminal?:boolean, cuando?:string|null, motivo?:string}|null} job
+ *   lo que dice su `state.json`, o `{leido:false}` si no se pudo mirar
+ * @returns {{estado:'VIVA'|'MUERTA'|'NO-PUDE-MIRAR', motivo:string}}
+ */
+export function clasificarAgente(agente, job) {
+  if (!agente || typeof agente !== 'object') return { estado: 'NO-PUDE-MIRAR', motivo: 'la entrada no es un objeto' };
+  if (typeof agente.pid === 'number' && agente.pid > 0) return { estado: 'VIVA', motivo: `tiene proceso (pid ${agente.pid})` };
+  if (!job || job.leido !== true) {
+    return { estado: 'NO-PUDE-MIRAR', motivo: `sin pid, y su state.json no se pudo leer${job && job.motivo ? `: ${job.motivo}` : ''}` };
+  }
+  if (job.terminal === true) {
+    return { estado: 'MUERTA', motivo: `sin pid, y su state.json dice que terminó${job.cuando ? ` (${job.cuando})` : ''}` };
+  }
+  return { estado: 'NO-PUDE-MIRAR', motivo: 'sin pid, pero su state.json no dice que haya terminado' };
+}
+
+/**
+ * Las entradas que se llaman `nombre`, separadas en las que CUENTAN (vivas, o que no se puede jurar
+ * que no lo estén) y los RESTOS (muertas de las dos sondas). El criterio vive en un solo sitio a
+ * propósito: repetirlo en las tres decisiones es la forma de que se separen sin que nadie lo note.
+ */
+export function repartirPorNombre({ nombre, agentes, job, soloFondo = false }) {
+  const cuentan = [];
+  const restos = [];
+  for (const a of agentes) {
+    if (!a || a.name !== nombre) continue;
+    if (soloFondo && a.kind !== 'background') continue;
+    const c = clasificarAgente(a, typeof job === 'function' ? job(a.id) : null);
+    (c.estado === 'MUERTA' ? restos : cuentan).push({ agente: a, motivo: c.motivo, estado: c.estado });
+  }
+  return { cuentan, restos };
+}
+
+/** Los restos, tal y como se cuentan en un veredicto: id y por qué se les da por muertos. */
+function comoRestos(restos) {
+  return restos.length
+    ? { restos: restos.map((r) => ({ id: r.agente.id ?? null, motivo: r.motivo })) }
+    : {};
+}
+
+/** Una ruta comparable entre las dos formas en que Windows la escribe (`D:\x` y `d:/x`). */
+function rutaComparable(r) {
+  return String(r).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+}
+
+/**
+ * Las sesiones que hacen que YA HAYA un equipo vivo en `repo`. SCRUM-959b.
+ *
+ * Cuenta una sesión si (a) SE ARRANCÓ en el repo o bajo él (`cwd`; los worktrees de
+ * `.claude/worktrees/` cuelgan de él), (b) no es un resto muerto (mismo criterio que `lanzar`: el
+ * `pid`, y ante la duda cuenta como viva), y (c) si es un chat INTERACTIVO, está TRABAJANDO
+ * (`status: busy` o `state: working`). Un chat abierto y parado NO es un equipo: el fundador los deja
+ * abiertos días, y si contaran, la tanda no arrancaría nunca. Una sesión de FONDO viva cuenta esté
+ * trabajando o esperando: las lanza el equipo, y un equipo entero esperando a un CI sigue siendo un equipo.
+ *
+ * ⚠️ LO QUE NO SEPARA, dicho: un orquestador interactivo PARADO y sin ninguna sesión de fondo viva
+ * no cuenta, así que en ese caso se lanzaría otro. `agents --json` no da la última actividad, y
+ * `statusUpdatedAt` del fichero de sesión tampoco (sólo cambia cuando cambia el estado: el de una
+ * sesión que lleva 40 min `busy` seguía en el instante en que arrancó). Se
+ * declara y no se inventa un umbral. Y el orquestador y los puestos no se distinguen por nombre
+ * a propósito: mañana serán otros.
+ */
+export function equipoVivo({ agentes, repo, job }) {
+  const raiz = rutaComparable(repo);
+  const vivos = [];
+  for (const a of agentes) {
+    if (!a || typeof a !== 'object' || typeof a.cwd !== 'string') continue;
+    const cwd = rutaComparable(a.cwd);
+    if (cwd !== raiz && !cwd.startsWith(raiz + '/')) continue;
+    const c = clasificarAgente(a, typeof job === 'function' ? job(a.id) : null);
+    if (c.estado === 'MUERTA') continue;
+    if (a.kind === 'interactive' && a.status !== 'busy' && a.state !== 'working') continue;
+    vivos.push({ id: a.id ?? null, nombre: a.name ?? null, kind: a.kind ?? null, porque: c.motivo });
+  }
+  return vivos;
+}
+
+/**
  * Qué hacer al lanzar `nombre`.
  *
  * @param {{nombre:string, agentes:object[]|null, registro:object|null, ahora:number}} e
  *   `agentes`: la salida de `claude agents --json`, o `null` si no se pudo leer.
  *   `registro`: `{ [nombre]: { sessionId, ultimaTanda } }`, o `null` si no se pudo leer.
+ *   `job`: `(id) => {leido, terminal, cuando}`, lo que dice el `state.json` de ese trabajo. Si no se
+ *   pasa, TODA entrada con ese nombre cuenta como viva — que es el comportamiento de antes de
+ *   SCRUM-954, y es el que falla cerrado.
+ *
+ * 🔴 NUNCA devuelve REANUDAR, y eso es una decisión, no un descuido (orquestador, 20-sep-2026):
+ * reanudar dentro de la hora arrastra la conversación entera, que es lo contrario de lo que pide la
+ * A19. `relevar` ya lanzaba siempre nueva; ahora `lanzar` también.
  */
-export function decidirLanzar({ nombre, agentes, registro, ahora, equipo }) {
+export function decidirLanzar({ nombre, agentes, registro, ahora, equipo, job, repo }) {
   const malo = validarNombre(nombre, equipo);
   if (malo) return malo;
   if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
   if (!registro || typeof registro !== 'object') return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer el registro de sesiones' };
 
-  const vivas = agentes.filter((a) => a && a.name === nombre);
-  if (vivas.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${vivas.length} sesiones vivas se llaman «${nombre}»` };
-  if (vivas.length === 1) {
-    const v = vivas[0];
+  const { cuentan, restos } = repartirPorNombre({ nombre, agentes, job });
+  if (cuentan.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${cuentan.length} sesiones vivas se llaman «${nombre}»` };
+  if (cuentan.length === 1) {
+    const v = cuentan[0].agente;
     // Bloqueada = esperando algo interactivo que nadie va a contestar. Se dice; no se rodea.
     if (v.state === 'blocked' || v.waitingFor) {
       return { veredicto: 'BLOQUEADA', motivo: `«${nombre}» (${v.id}) espera ${v.waitingFor || 'algo interactivo'}`, id: v.id };
@@ -127,12 +278,35 @@ export function decidirLanzar({ nombre, agentes, registro, ahora, equipo }) {
     return { veredicto: 'YA-VIVA', motivo: `«${nombre}» ya está en marcha (${v.id})`, id: v.id };
   }
 
-  const previa = registro[nombre];
-  if (previa && SESSION_ID.test(previa.sessionId || '') && typeof previa.ultimaTanda === 'number'
-      && ahora - previa.ultimaTanda <= UNA_HORA_MS) {
-    return { veredicto: 'REANUDAR', sessionId: previa.sessionId };
+  // 🔴 SCRUM-959b · «ya vivo» por NOMBRE no basta para el ORQUESTADOR. El equipo de un día puede
+  // estar levantado a mano con otros nombres (el del 21-sep eran `s<n>-21` y el orquestador
+  // `cobroflash-backend-90`), y entonces la tanda de las 13:05 lanzaba un SEGUNDO orquestador encima.
+  // Para él —y sólo para él: los puestos SÍ se lanzan cuando faltan— se mira si hay ALGO vivo en el
+  // repo, con las pruebas que da `agents --json` y ninguna sobre cómo se llame.
+  const orquestador = (equipo || EQUIPO_DE_LUIS);
+  if (nombre === orquestador.prefijo + orquestador.orquestador) {
+    if (typeof repo !== 'string' || !repo) {
+      return { veredicto: 'NO-PUDE-MIRAR', motivo: 'sin la ruta del repo no se sabe si ya hay un equipo vivo: no se lanza otro orquestador a ciegas' };
+    }
+    const vivos = equipoVivo({ agentes, repo, job });
+    if (vivos.length) {
+      return {
+        veredicto: 'YA-VIVA',
+        motivo: `hay ${vivos.length} sesión(es) vivas en el repo (${vivos.map((v) => v.nombre ?? v.id ?? '?').join(', ')}): un orquestador nuevo encima duplicaría el equipo`,
+        equipo: vivos,
+        ...comoRestos(restos),
+      };
+    }
   }
-  return { veredicto: 'NUEVA', motivo: previa ? 'la anterior lleva más de una hora parada' : 'no hay sesión anterior' };
+
+  const previa = registro[nombre];
+  return {
+    veredicto: 'NUEVA',
+    motivo: previa
+      ? 'hubo una sesión anterior con este nombre: se lanza NUEVA, nunca se reanuda (A19)'
+      : 'no hay sesión anterior',
+    ...comoRestos(restos),
+  };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -239,17 +413,18 @@ export function decidirRelevo({ contexto, ultimaActividad, ahora, tandaNueva = f
  * resultado los devuelve en `comprobado` para que un `SIN-TRASPASO` se pueda discutir sin volver a
  * correrlo.
  */
-export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora, esperaMs = ESPERA_TRASPASO_MS, equipo }) {
+export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora, esperaMs = ESPERA_TRASPASO_MS, equipo, job }) {
   const malo = validarNombre(nombre, equipo);
   if (malo) return malo;
   if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
 
-  const vivas = agentes.filter((a) => a && a.name === nombre);
-  if (vivas.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${vivas.length} sesiones vivas se llaman «${nombre}»` };
-  // Nadie a quien relevar. No es un error: se lanza y ya está.
-  if (vivas.length === 0) return { veredicto: 'LANZAR', motivo: `no hay ninguna sesión «${nombre}» viva` };
+  const { cuentan, restos } = repartirPorNombre({ nombre, agentes, job });
+  if (cuentan.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${cuentan.length} sesiones vivas se llaman «${nombre}»` };
+  // Nadie a quien relevar. No es un error: se lanza y ya está. SCRUM-954: un resto de un trabajo
+  // terminado ya NO cuenta como «alguien», que es lo que dejaba el puesto bloqueado para siempre.
+  if (cuentan.length === 0) return { veredicto: 'LANZAR', motivo: `no hay ninguna sesión «${nombre}» viva`, ...comoRestos(restos) };
 
-  const v = vivas[0];
+  const v = cuentan[0].agente;
   const comprobado = { traspasoMtime: traspasoMtime ?? null, ultimoTurno: ultimoTurno ?? null, estado: v.state ?? null };
 
   if (typeof ultimoTurno !== 'number') {
@@ -276,15 +451,48 @@ export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ah
 }
 
 /** Qué hacer al parar `nombre`: siempre por id, y solo si el nombre casa. */
-export function decidirParar({ nombre, agentes, equipo }) {
+export function decidirParar({ nombre, agentes, equipo, job }) {
   const malo = validarNombre(nombre, equipo);
   if (malo) return malo;
   if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
-  const vivas = agentes.filter((a) => a && a.name === nombre && a.kind === 'background');
-  if (vivas.length === 0) return { veredicto: 'NADA', motivo: `no hay ninguna sesión de fondo «${nombre}»` };
-  if (vivas.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${vivas.length} sesiones de fondo se llaman «${nombre}»` };
-  if (!/^[0-9a-f]{8}$/.test(vivas[0].id || '')) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'la sesión no trae un id legible' };
-  return { veredicto: 'PARAR', id: vivas[0].id };
+  const { cuentan, restos } = repartirPorNombre({ nombre, agentes, job, soloFondo: true });
+  // Parar un resto no hace nada (ya terminó) y deja creer que se hizo algo: se dice que hay resto y
+  // se manda a `olvidar`, que es quien lo quita de la lista.
+  if (cuentan.length === 0) return { veredicto: 'NADA', motivo: `no hay ninguna sesión de fondo «${nombre}» viva`, ...comoRestos(restos) };
+  if (cuentan.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${cuentan.length} sesiones de fondo se llaman «${nombre}»` };
+  if (!ID_CORTO.test(cuentan[0].agente.id || '')) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'la sesión no trae un id legible' };
+  return { veredicto: 'PARAR', id: cuentan[0].agente.id };
+}
+
+/**
+ * Qué hacer al OLVIDAR `nombre`: quitar de `claude agents` los restos de trabajos ya terminados que
+ * siguen ocupando ese nombre. SCRUM-954, punto 3 del ticket — hasta hoy había que salir de esta
+ * puerta y escribir `claude rm <id>` a mano, que además está denegado en el settings del fundador.
+ *
+ * 🔴 Es un acto IRREVERSIBLE (borra la conversación del trabajo), así que:
+ *   · no toca nada que no esté MUERTO por las DOS sondas — una duda es `NO-PUDE-MIRAR`, no un «bueno»;
+ *   · si hay una viva con ese nombre, se niega entera, sin borrar los restos de al lado;
+ *   · y no es la acción principal de nada: `lanzar` y `relevar` ya no la necesitan, porque con
+ *     `clasificarAgente` un resto dejó de estorbarles. `olvidar` es sólo para que la lista no mienta.
+ */
+export function decidirOlvidar({ nombre, agentes, equipo, job }) {
+  const malo = validarNombre(nombre, equipo);
+  if (malo) return malo;
+  if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
+  const { cuentan, restos } = repartirPorNombre({ nombre, agentes, job, soloFondo: true });
+  if (cuentan.length) {
+    return {
+      veredicto: 'ESTA-VIVA',
+      motivo: `«${nombre}» tiene ${cuentan.length} sesión(es) que no se pueden dar por muertas: no se borra nada`,
+      ...comoRestos(restos),
+    };
+  }
+  if (restos.length === 0) return { veredicto: 'NADA', motivo: `no hay ningún resto de «${nombre}» en la lista` };
+  const ids = restos.map((r) => r.agente.id).filter((id) => ID_CORTO.test(id || ''));
+  if (ids.length !== restos.length) {
+    return { veredicto: 'NO-PUDE-MIRAR', motivo: 'algún resto no trae un id legible: no se borra nada', ...comoRestos(restos) };
+  }
+  return { veredicto: 'OLVIDAR', ids, ...comoRestos(restos) };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -352,6 +560,22 @@ function leerAgentes(config) {
   const r = claude(config, ['agents', '--json']);
   if (r.error || r.status !== 0) return null;
   try { const a = JSON.parse(r.stdout); return Array.isArray(a) ? a : null; } catch { return null; }
+}
+
+/**
+ * Lo que dice el `state.json` del trabajo de fondo `id` (SCRUM-954). Es la sonda que puede VETAR un
+ * veredicto de muerte, así que su suelo es lo único que importa: si no se puede leer, `leido:false`,
+ * y `clasificarAgente` deja la entrada como `NO-PUDE-MIRAR` — o sea, viva.
+ */
+function estadoDeJob(config, id) {
+  if (!ID_CORTO.test(id || '')) return { leido: false, motivo: 'la entrada no trae un id corto legible' };
+  const raiz = config.jobs || path.join(process.env.USERPROFILE || process.env.HOME || '', '.claude', 'jobs');
+  const ruta = path.join(raiz, id, 'state.json');
+  let j;
+  try { j = JSON.parse(fs.readFileSync(ruta, 'utf8')); } catch { return { leido: false, motivo: `no se pudo leer ${ruta}` }; }
+  if (!j || typeof j !== 'object') return { leido: false, motivo: `${ruta} no es un objeto` };
+  const cuando = typeof j.firstTerminalAt === 'string' && j.firstTerminalAt ? j.firstTerminalAt : null;
+  return { leido: true, terminal: cuando !== null || ESTADOS_TERMINALES.includes(j.state), cuando, estado: j.state ?? null };
 }
 
 function leerRegistro(dir) {
@@ -428,7 +652,23 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (accion === 'estado') {
     const agentes = leerAgentes(config);
     if (!agentes) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' });
-    salir(0, { veredicto: 'ESTADO', sesiones: agentes.filter((a) => validarNombre(a.name, equipo) === null) });
+    const job = (id) => estadoDeJob(config, id);
+    const resumen = (a) => {
+      const c = clasificarAgente(a, job(a.id));
+      return { id: a.id ?? null, nombre: a.name ?? null, cwd: a.cwd ?? null, kind: a.kind ?? null,
+        state: a.state ?? null, pid: a.pid ?? null, clasificacion: c.estado, porque: c.motivo };
+    };
+    // SCRUM-954, punto 2 del ticket: una sesión de fondo SIN nombre —o con uno que no es de este
+    // equipo— desaparecía del radar entera, porque este filtro sólo dejaba pasar la lista blanca.
+    // Ahora sale en `otras`, por id y ruta, y los trabajos ya terminados que siguen ocupando un
+    // nombre del equipo salen en `restos`, que es lo que `olvidar` limpia.
+    salir(0, {
+      veredicto: 'ESTADO',
+      sesiones: agentes.filter((a) => validarNombre(a.name, equipo) === null),
+      restos: agentes.filter((a) => a.kind === 'background' && validarNombre(a.name, equipo) === null
+        && clasificarAgente(a, job(a.id)).estado === 'MUERTA').map(resumen),
+      otras: agentes.filter((a) => a.kind === 'background' && validarNombre(a.name, equipo) !== null).map(resumen),
+    });
   }
 
   if (accion === 'contexto') {
@@ -463,7 +703,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     let traspasoMtime;
     try { traspasoMtime = fs.statSync(traspaso).mtimeMs; } catch { traspasoMtime = undefined; }
 
-    const d = decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora: Date.now(), equipo });
+    const d = decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora: Date.now(), equipo, job: (id) => estadoDeJob(config, id) });
     if (d.veredicto !== 'RELEVAR' && d.veredicto !== 'LANZAR') salir(1, d);
 
     if (d.veredicto === 'RELEVAR') {
@@ -475,7 +715,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     // la caché que el relevo viene a soltar.
     const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo, equipo });
     const r = claude(config, args);
-    const m = /backgrounded · ([0-9a-f]{8}) · /.exec(r.stdout || '');
+    const m = BACKGROUNDED.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
     const nueva = (leerAgentes(config) || []).find((a) => a.id === m[1]);
     if (!nueva || !SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
@@ -485,29 +725,48 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
 
   if (accion === 'parar') {
-    const d = decidirParar({ nombre, agentes: leerAgentes(config), equipo });
+    const d = decidirParar({ nombre, agentes: leerAgentes(config), equipo, job: (id) => estadoDeJob(config, id) });
     if (d.veredicto !== 'PARAR') salir(d.veredicto === 'NADA' ? 0 : 1, d);
     const stop = claude(config, ['stop', d.id]);
     const rm = claude(config, ['rm', d.id]);
     salir(stop.status === 0 && rm.status === 0 ? 0 : 2, { veredicto: 'PARADA', nombre, id: d.id, stop: stop.status, rm: rm.status });
   }
 
+  if (accion === 'olvidar') {
+    const d = decidirOlvidar({ nombre, agentes: leerAgentes(config), equipo, job: (id) => estadoDeJob(config, id) });
+    if (d.veredicto !== 'OLVIDAR') salir(d.veredicto === 'NADA' ? 0 : 1, d);
+    const borrados = [];
+    for (const id of d.ids) {
+      const rm = claude(config, ['rm', id]);
+      borrados.push({ id, rm: rm.status });
+    }
+    salir(borrados.every((b) => b.rm === 0) ? 0 : 2, { veredicto: 'OLVIDADOS', nombre, borrados, restos: d.restos });
+  }
+
   if (accion === 'lanzar') {
     let prompt;
     try { prompt = fs.readFileSync(ficheroPrompt, 'utf8'); } catch { salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer el fichero del prompt' }); }
     const registro = leerRegistro(dir);
-    const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo });
-    if (d.veredicto !== 'NUEVA' && d.veredicto !== 'REANUDAR') salir(d.veredicto === 'YA-VIVA' ? 0 : 1, d);
-    const args = argsLanzar({ modo: d.veredicto === 'NUEVA' ? 'nueva' : 'reanudar', nombre, sessionId: d.sessionId, prompt, equipo });
+    const d = decidirLanzar({ nombre, agentes: leerAgentes(config), registro, ahora: Date.now(), equipo, repo: config.repo, job: (id) => estadoDeJob(config, id) });
+    if (d.veredicto !== 'NUEVA') salir(d.veredicto === 'YA-VIVA' ? 0 : 1, d);
+    const args = argsLanzar({ modo: 'nueva', nombre, prompt, equipo });
     const r = claude(config, args);
-    const m = /backgrounded · ([0-9a-f]{8}) · /.exec(r.stdout || '');
+    const m = BACKGROUNDED.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
     const nueva = (leerAgentes(config) || []).find((a) => a.id === m[1]);
     if (!nueva || !SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
     const siguiente = { ...(registro || {}), [nombre]: { sessionId: nueva.sessionId, ultimaTanda: Date.now() } };
     fs.writeFileSync(path.join(dir, 'sesiones.json'), JSON.stringify(siguiente, null, 2));
-    salir(0, { veredicto: d.veredicto === 'NUEVA' ? 'LANZADA' : 'REANUDADA', nombre, id: m[1], sessionId: nueva.sessionId });
+    salir(0, { veredicto: 'LANZADA', nombre, id: m[1], sessionId: nueva.sessionId, ...(d.restos ? { restos: d.restos } : {}) });
   }
 
-  salir(1, { veredicto: 'ACCION-DESCONOCIDA', motivo: 'uso: sesion.mjs <lanzar nombre fichero-prompt | relevar nombre fichero-encargo | contexto nombre | parar nombre | estado>' });
+  salir(1, {
+    veredicto: 'ACCION-DESCONOCIDA',
+    motivo: 'uso: sesion.mjs <lanzar nombre fichero-prompt | relevar nombre fichero-encargo | contexto nombre | parar nombre | olvidar nombre | estado>',
+    // SCRUM-954, punto 3 del ticket: hasta hoy, cuando un nombre se quedaba ocupado por un trabajo
+    // ya terminado, la única salida era `claude rm <id>` a mano — fuera de esta puerta y denegado en
+    // el settings del fundador. Ahora se dice aquí y lo hace `olvidar`.
+    ayuda: '`estado` enseña en `restos` los trabajos terminados que siguen ocupando un nombre, y en '
+      + '`otras` las sesiones de fondo que no son de este equipo. `olvidar <nombre>` quita los restos.',
+  });
 }

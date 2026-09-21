@@ -1,0 +1,86 @@
+TESTIGO · sonda nif-360 contra https://yaqu-staging-production.up.railway.app
+{
+  "login": 200,
+  "version": "3ac838a5e055bb9e70a484560ee5b23187c6f491",
+  "altaEmpresa": {
+    "status": 201,
+    "id": 3928
+  },
+  "altaPersona": {
+    "status": 201,
+    "id": 3929
+  },
+  "antes": {
+    "name": "ZZZ PRUEBA 360 persona",
+    "notes": "nota vieja",
+    "taxId": "12345678Z",
+    "legalName": "ZZZ Razon Social",
+    "companyId": 3928,
+    "contactKind": "PERSONA",
+    "tipoDestinatario": "EMPRESARIO",
+    "billingPeriodicity": "MENSUAL",
+    "phone": "34600111222",
+    "email": "zzz.prueba360@example.com",
+    "waOptOut": false
+  },
+  "modalAlAbrir": {
+    "taxId": "",
+    "legalName": "",
+    "tipo": "",
+    "periodicidad": "NINGUNA",
+    "notas": "nota vieja"
+  },
+  "putEnviado": {
+    "name": "ZZZ PRUEBA 360 persona",
+    "notes": "nota viejanota nueva",
+    "legalName": null,
+    "taxId": null,
+    "companyId": null,
+    "tipoDestinatario": null,
+    "contactKind": null,
+    "billingPeriodicity": "NINGUNA",
+    "waOptOut": false,
+    "phone": "34600111222",
+    "email": "zzz.prueba360@example.com"
+  },
+  "despues": {
+    "name": "ZZZ PRUEBA 360 persona",
+    "notes": "nota viejanota nueva",
+    "taxId": null,
+    "legalName": null,
+    "companyId": null,
+    "contactKind": null,
+    "tipoDestinatario": null,
+    "billingPeriodicity": "NINGUNA",
+    "phone": "34600111222",
+    "email": "zzz.prueba360@example.com",
+    "waOptOut": false
+  },
+  "borrado": {
+    "out": [
+      {
+        "id": 3929,
+        "status": 204
+      },
+      {
+        "id": 3928,
+        "status": 204
+      }
+    ],
+    "quedan": []
+  }
+}
+── CAMPO: antes → después ──
+✔ name: "ZZZ PRUEBA 360 persona" → "ZZZ PRUEBA 360 persona"
+✔ notes: "nota vieja" → "nota viejanota nueva"
+🔴 taxId: "12345678Z" → null
+🔴 legalName: "ZZZ Razon Social" → null
+🔴 companyId: 3928 → null
+🔴 contactKind: "PERSONA" → null
+🔴 tipoDestinatario: "EMPRESARIO" → null
+🔴 billingPeriodicity: "MENSUAL" → "NINGUNA"
+✔ phone: "34600111222" → "34600111222"
+✔ email: "zzz.prueba360@example.com" → "zzz.prueba360@example.com"
+✔ waOptOut: false → false
+POBLACION campos=11 · control positivo (la nota cambió)=true · perdidos=6
+EXIT=0

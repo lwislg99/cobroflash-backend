@@ -79,8 +79,18 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum244-supresion-y-anonimizado.test.mjs': 1,
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,
+  // SCRUM-980: el historial de la ficha. Necesita banco porque vigila la TENENCIA de cinco consultas
+  // encadenadas (cliente, trabajos, partes, albaranes, fotos) y el recorte del técnico.
+  'scrum980-historial-del-cliente.test.mjs': 1,
   'scrum297-evidencias-postgres.test.mjs': 2,
+  // SCRUM-979: la «Última visita». Necesita banco porque lo que vigila es la CONSULTA — el
+  // `groupBy` con la tenencia dentro y el recorte del técnico por los tres ejes de SCRUM-650.
+  'scrum979-ultima-visita.test.mjs': 1,
   'scrum389-un-solo-iva.test.mjs': 2,
+  // SCRUM-974: el resumen del lunes. Necesita banco porque corre el resumen DE VERDAD, que lee la
+  // bandeja de pendientes de facturar y el modo de emisión de cada negocio. Solo el desechable:
+  // recorre TODOS los merchants activos de la base (por eso no va a staging).
+  'scrum974-firmado-sin-facturar-en-el-lunes.test.mjs': 1,
   // SCRUM-728d: los tres de la MEDICIÓN en loopback — el suelo (RTT ~0), los cuatro caminos con
   // 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque cronometran
   // el trabajo REAL del servidor: sin base no hay nada que cronometrar. Y necesitan que sea
@@ -93,6 +103,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum13-cobrado.test.mjs': 1,
   'scrum52-operario.test.mjs': 1,
   'scrum692-guardado-parcial-en-base.test.mjs': 1,
+  // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
+  // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
+  'scrum967b-el-portal-en-el-envio.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

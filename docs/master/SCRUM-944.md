@@ -1,0 +1,117 @@
+# SCRUM-944 · Gastos enseña datos internos — punto 2 (el nombre del Trabajo), servidor
+
+**Fecha:** 20-sep-2026 · **Carril:** ticket de S1 (servidor); lo trabaja S4 por encargo del orquestador (excepción de carril aceptada por escrito por el canal el 20-sep, porque S4 lo midió y S1 estaba con la IA de presupuestos) · **Pedido por:** el orquestador
+**Medido contra:** `origin/main` = `205d3d4af7660d74281df366895436239b69d709` · 2026-09-20T13:35:47Z
+**Rama:** `scrum-944b-nombre-del-trabajo`
+
+El ticket tiene dos puntos. **El punto 1** (el KPI «Mayor categoría» pinta la clave cruda) es de front y de la
+Sesión 2: no se toca aquí. **Este PR es sólo el punto 2**, y por eso lleva el sufijo `b`: el punto 1 lo entregará S2
+y anexará su sección a este mismo fichero.
+
+## El defecto, medido antes de escribir (PASO 0, corriendo)
+
+Sonda sobre la lista de verdad (`dist/modules/expenses/…`, base doblada, sin red): un gasto de un Trabajo SIN título,
+con presupuesto nº 5 y cliente María López.
+
+```
+Gastos   → GET /admin/expenses   job = {"id":500,"titulo":null}      (la pantalla cae a «Trabajo»)
+Trabajos → tituloDeTrabajo(...)  = "Presupuesto #5 · María López"
+```
+
+Causa: `listExpenses` devolvía `Job.titulo` crudo (`trabajosPorQuote` lo selecciona tal cual). `tituloDeTrabajo()`
+(`jobs/domain/trabajoDirecto.ts`) es quien decide cómo se titula un Trabajo, y Gastos no la llamaba. En staging, 10 de
+los 13 Trabajos del merchant no tienen título (medido por S4 el 18-sep con SELECT de sólo lectura).
+
+`tituloDeTrabajo` es una función pura (su único import es `tipoIntervencion`), así que se puede llamar desde el
+servicio de gastos sin arrastrar nada. Un solo consumidor de `trabajosPorQuote` (`listExpenses`).
+
+## Lo que se hace
+
+`nombresDeTrabajos(merchantId, trabajos, prismaClient)` en `expenses.service.ts`, llamada desde `listExpenses`:
+`job.titulo` pasa a ser el NOMBRE con el que Trabajos presenta ese Trabajo. **No decide nada**: llama a
+`tituloDeTrabajo` con las mismas entradas que le da `serializeJob` — el título propio, el presupuesto **original** del
+Trabajo (el de `Job.quoteId`; a falta de éste, el primero por id de los que tienen `Quote.jobId`) y su cliente.
+
+- Un gasto imputado a un presupuesto ADICIONAL lleva el nombre del Trabajo (el original), no el número del adicional.
+- Un Trabajo CON título no cuesta nada: no se hace ninguna consulta de más.
+- Para el resto, tres consultas por página (Trabajos, presupuestos, clientes), nunca una por gasto: el coste
+  constante que fijó SCRUM-135. Todas acotadas por `merchantId` (regla 2).
+- **API aditiva en forma:** la clave sigue siendo `job.titulo` y sigue siendo texto; lo que cambia es que ya no llega
+  `null` para los Trabajos sin título. El «Trabajo» de respaldo del front (`jobLabel`) queda sin uso; es de S2.
+
+## Tests
+
+`tests/scrum944b-el-trabajo-se-llama-igual.test.mjs` (10). Se vio en **rojo** inyectando el fallo real (volver a
+`titulo: j.titulo`): **4 pasan y 6 caen** sobre 10 (los 4 que pasan son el suelo y los positivos; los 6 que caen, el
+defecto). Corregido y en verde 10/10 antes de seguir. El suelo comprueba que el banco ve el gasto y su Trabajo; sin él
+el verde sería una frase.
+
+## Lo que NO se hace
+
+- No se cambia `tituloDeTrabajo` (su fichero no está en el diff): si no encajara, se pararía y se diría. Encaja.
+- No se toca el punto 1 (KPI con clave cruda), ni `expensesView.js`, ni nada de front.
+- No se tocan los nombres ya escritos: `Job.titulo` sigue como está en la base; el nombre se compone al leer.
+
+## No mirado
+
+- La medición contra staging (sólo el banco sin base). El caso con y sin `titulo` en staging se comprobará al
+  desplegar con la lista real de gastos.
+- Si el orden de `quotesDeJob` (original primero, luego por `Quote.jobId` sin `ORDER BY`) coincide siempre con «el
+  primero por id» cuando falta `Job.quoteId`: se asumió, no se midió. Sólo importa en Trabajos sin `Job.quoteId`.
+
+## Errores propios
+
+- Dije al orquestador «contexto propio ~120k» sin medirlo: medido en mi jsonl eran ~158k. La cifra se mide, no se estima (A19).
+- Al cambiar de rama en el mismo árbol, un `node --test` con la ruta de un test que ya no existía en esa rama corrió el
+  resto sin quejarse (47 tests; con los 9 del otro ticket habrían sido 56): lo cazó la población, no el código de salida. Un fichero que no existe no es un fallo, es una ausencia.
+- Exporté `nombresDeTrabajos` para poder probarla y `scrum411-exports-inalcanzables` cayó (un `export` sin consumidor
+  de fuera): la salida fue cambiar el código —no exportarla; el test entra por `listExpenses`—, no declararla huérfana.
+  Lo cazó correr los guards vecinos antes de empujar, no la suite.
+
+# APÉNDICE — el merge con SCRUM-964 (21-sep-2026)
+
+**Medido contra:** `origin/main` = `e65fd51604febb207ff98474e7396470f99c0d08` · 2026-09-21T07:24:03Z (hora de la cabecera `Date:` de GitHub)
+
+Al mergear `origin/main` en la rama (el #1544, SCRUM-964, ya estaba dentro) hubo **un solo conflicto**:
+`src/modules/expenses/domain/expenses.service.ts`, en el `return` final de `listExpenses`. Las dos ramas lo habían
+tocado: 964 añadía `tieneFoto` a cada fila; 944 componía `job.titulo` con `nombresDeTrabajos`. Resuelto a mano:
+`tieneFoto` va en las DOS salidas (con Trabajo y sin él) y el título sale del nombre compuesto.
+
+**El hueco que el merge dejó al descubierto:** quitando `tieneFoto` de la rama «con Trabajo», `scrum964` seguía en
+15/15 y `scrum944b` en 10/10. Ninguno de los dos tests miraba las dos cosas en una fila con Trabajo, así que la
+resolución a mano no tenía red. Además el doble de `expense.findMany` de 944b devolvía TODOS los gastos también a la
+consulta de «cuáles llevan foto», o sea que habría dicho `tieneFoto: true` a cualquiera.
+
+Arreglo, solo en tests: el doble discrimina por `receiptData: { not: null }` (campo `conFoto` de la fila sembrada) y
+hay dos tests nuevos (12 en el fichero). **Rojo medido:** quitar `tieneFoto` de la rama con Trabajo → **2 caen de 12**
+(1 línea de `src/`); revertido y en verde 12/12. Vecinos con el árbol fusionado: `scrum964` 15/15, `scrum943`,
+`scrum135`, `scrum370`, `scrum411` en verde (73 tests, 0 fallos, 4 saltados por gateados).
+
+**Error propio (21-sep):** para la mutación usé `Get-Content -Raw` + `Set-Content -Encoding utf8` en PowerShell 5.1 sobre
+un fichero de `src/`: decodifica como ANSI y reescribe en UTF-8, o sea, DOBLE codificación (88 líneas cambiadas, «Â·»
+donde iba «·»). Lo cazó el `--stat` (176 líneas para una mutación de una) antes de commitear, y se restauró desde el
+índice. Para mutar un fichero se usa `Edit`, nunca el par `Get-Content`/`Set-Content`.
+
+**No mirado:** el nombre del Trabajo en staging con la lista real de gastos (sigue pendiente del despliegue de este PR).
+
+# APÉNDICE — el punto 1 (el KPI «Mayor categoría» y la clave cruda) va DENTRO de SCRUM-920c
+
+**Medido contra:** `origin/main` = `06939b3dc305683d88155fcb1cabb7e65f6e8b4c` · 2026-09-21T08:23:07Z (hora de la cabecera `Date:` de GitHub)
+**Rama:** `scrum-920c-lista-sin-tabla` · decisión del orquestador (21-sep): el punto 1 pasa de S2 a S4 y va en el mismo PR que rehace esa pantalla, porque arreglarlo aparte era tocar dos veces las mismas líneas.
+
+**Qué decide la pantalla cuando no conoce la categoría:** «Otros», que es la categoría comodín del dominio
+(`EXPENSE_CATEGORIES`) y lo que ya decía la píldora de cada fila. Nunca la clave. Una sola función (`categoriaDe`, en
+`expensesView.js`) nombra la categoría para la píldora y para el KPI: antes eran dos caminos y solo uno tenía respaldo.
+Pregunta por el HECHO (`hasOwnProperty`: ¿es una clave del mapa?) y no con `MAPA[k] || MAPA.otros`, así que además no se
+traga `constructor` ni `__proto__`. `topCat` ordena una COPIA (antes `sort` reordenaba `data.byCategory`).
+
+**Rojo (guard de navegador `guard:lista-gastos`, caso C):** con `materials` como categoría de más peso el KPI dice
+«Otros» y la pantalla entera no contiene «materials». Inyectando el fallo real —`return top.category;`— caen los tres
+asserts de C (`KPI = «materials»`, «tiene que decir Otros», y el POSITIVO con una conocida, que pasa a decir la clave
+`subcontrata`). **Positivo:** con una categoría conocida el KPI dice su nombre («Subcontrata»).
+
+**Efecto en el censo de scrum748:** `expensesView.js` baja de 1 a 0 (el respaldo `CATEGORY_LABELS[k] || CATEGORY_LABELS.otros`
+desaparece). El trinquete solo baja, y se anota en el propio test.
+
+**No mirado:** el KPI en staging con datos reales (el defecto llegaba por filas con categorías inválidas que sembró
+nuestra sesión; SCRUM-943 ya impide las nuevas).

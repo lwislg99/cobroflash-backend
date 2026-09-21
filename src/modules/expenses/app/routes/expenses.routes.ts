@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   listExpenses, createExpense, updateExpense, deleteExpense,
-  getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError,
+  getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError, ExpenseCategoryError,
   queFueDelNif, // SCRUM-937
 } from '../../domain/expenses.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
@@ -93,6 +93,59 @@ router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/expenses/:id/foto — SCRUM-964 · LA FOTO DEL TICKET, DE UNA EN UNA.
+ *
+ * Existe porque la lista dejó de llevarlas: `GET /admin/expenses` devolvía las 200 fotos del mes
+ * (hasta 300 MiB medidos) para pintar una tabla que no enseña ninguna. La lista dice ahora
+ * `tieneFoto`, y quien quiera verla la pide por aquí.
+ *
+ * 🔴 SALE COMO IMAGEN, NO COMO JSON, y eso no es estética: el data-URI guardado es base64 (+33 %
+ * de bulto) y dentro de un JSON se escapa otra vez. En binario, el navegador la pinta con un
+ * `<img src="…">` —la cookie `pf_session` viaja sola, es `same-origin`— sin cargar la cadena en
+ * memoria ni pasarla por el parser de JSON.
+ *
+ * MISMO PERMISO QUE LA LISTA (`admin`): la foto es una columna de la fila, y una fila que solo
+ * lee un admin no puede tener una puerta más abierta que la lista de la que sale. El filtro por
+ * `merchantId` es el de la regla 2 y decide: el gasto de otro negocio da **404**, el mismo que
+ * un id que no existe — distinguirlos convertiría la ruta en un oráculo de ids ajenos.
+ *
+ * `no-store` a propósito: la foto de un gasto se puede REEMPLAZAR desde el modal de edición, y no
+ * hay `ETag` que lo delate todavía. Antes servir una foto vieja por un cacheo de 5 minutos que
+ * ahorrar una petición.
+ */
+router.get('/:id/foto', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    const gasto = await prisma.expense.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { receiptData: true },
+    });
+    // «No es tuyo», «no existe» y «no tiene foto» dan lo mismo: no hay nada que servir.
+    if (!gasto || !gasto.receiptData) return res.status(404).json({ ok: false, error: 'not_found' });
+
+    // El MISMO parser que valida la foto al leer el ticket (`parsearImagen`): un solo sitio decide
+    // qué es una foto admitida, así que no se puede servir por aquí algo que allí se rechazaría.
+    const imagen = parsearImagen(gasto.receiptData);
+    // Código PROPIO y distinto del 404: la fila SÍ tiene contenido, lo que pasa es que no es una
+    // imagen que sepamos servir (filas anteriores al tope de tipos). `tieneFoto` dijo la verdad.
+    if (!imagen.ok) return res.status(415).json({ ok: false, error: 'foto_no_legible' });
+
+    const bytes = Buffer.from(imagen.data, 'base64');
+    res.setHeader('Content-Type', imagen.mimeType);
+    res.setHeader('Content-Length', String(bytes.length));
+    res.setHeader('Cache-Control', 'no-store');
+    // El tipo sale de la fila, así que se prohíbe que el navegador adivine otro (`parsearImagen`
+    // solo admite cinco tipos de imagen, pero la prohibición no depende de esa lista).
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.end(bytes);
+  } catch (err) {
+    console.error('[GET /admin/expenses/:id/foto]', err);
+    return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
 // POST /admin/expenses
 router.post('/', async (req, res) => {
   try {
@@ -161,6 +214,12 @@ router.post('/', async (req, res) => {
     return res.status(201).json({ ok: true, item: expense, justificante, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
+    // SCRUM-943 · entrada inválida, no fallo del servidor. Sin `message`: el selector de la pantalla
+    // sólo ofrece las cinco, así que esto es la red para llamadas directas al endpoint, y un texto
+    // nuevo para el usuario tendría que estar firmado. Se devuelve la lista válida para quien llame.
+    if (err instanceof ExpenseCategoryError) {
+      return res.status(400).json({ ok: false, error: err.code, categories: EXPENSE_CATEGORIES });
+    }
     console.error('[POST /admin/expenses]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
@@ -258,6 +317,12 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     return res.json({ ok: true, item: updated, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
+    // SCRUM-943 · entrada inválida, no fallo del servidor. Sin `message`: el selector de la pantalla
+    // sólo ofrece las cinco, así que esto es la red para llamadas directas al endpoint, y un texto
+    // nuevo para el usuario tendría que estar firmado. Se devuelve la lista válida para quien llame.
+    if (err instanceof ExpenseCategoryError) {
+      return res.status(400).json({ ok: false, error: err.code, categories: EXPENSE_CATEGORIES });
+    }
     console.error('[PUT /admin/expenses/:id]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
