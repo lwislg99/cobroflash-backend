@@ -41,6 +41,14 @@ function dobles() {
     },
     invoice: {
       findMany: async ({ where, take }) => facturas.filter((f) => casa(f, where)).slice(0, take),
+      // `saldosPendientesPorCliente` (SCRUM-1043): agrupa por cliente respetando `where` (incl. `in`/`not`).
+      groupBy: async ({ where }) => {
+        const filas = facturas.filter((f) => Object.entries(where).every(([k, v]) => v === undefined || (v && typeof v === 'object' && 'in' in v
+          ? v.in.includes(f[k]) : v && typeof v === 'object' && 'not' in v ? f[k] !== v.not : f[k] === v)));
+        const por = new Map();
+        for (const f of filas) por.set(f.customerId, [...(por.get(f.customerId) ?? []), f]);
+        return [...por].map(([customerId, fs]) => ({ customerId, _sum: { total: suma(fs) }, _count: { _all: fs.length } }));
+      },
       aggregate: async ({ where }) => {
         const filas = facturas.filter((f) => casa(f, where));
         return { _sum: { total: filas.length ? suma(filas) : null }, _count: filas.length };
