@@ -12,6 +12,8 @@ import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../int
 import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstancia';
 // SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
 import { CLASES_DE_CORREO } from './registroDeEnvios';
+// SCRUM-1029 (regla 24): mismo lector que `weeklyDigest.service.ts`, solo LEE.
+import { getEmissionMode } from '../../invoicing/domain/emission.service';
 
 const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
 
@@ -121,14 +123,18 @@ function anotarEnvio(parte: ParteDeAvisos, destinatario: string, r: ResultadoCor
 export async function sendWelcomeEmail(merchantId: number): Promise<ResultadoCorreo | null> {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, email: true, name: true, lifecycleEmailsSent: true },
+    select: { id: true, email: true, name: true, lifecycleEmailsSent: true, country: true, flags: true },
   });
   if (!m || alreadySent(m, 'welcome')) return null;
   // Sin correo NO se manda nada, y eso ahora se DICE: `sin_destino` es un dato, no un hueco.
   if (!m.email) return resultadoSinDestino();
+  // SCRUM-1029 (regla 24): en modo `receipt` (ES real, facturación apagada) YaQu no cobra ni emite
+  // ningún documento — la frase se OCULTA entera para ese modo. El texto sustituto lo firma Javier
+  // (docs/master/SCRUM-1029.md); aquí no se inventa ninguno.
+  const puedeCobrar = getEmissionMode(m) !== 'receipt';
   const html = wrap(`
     <p>¡Hola ${m.name || ''}! 👋</p>
-    <p>Bienvenido a <strong>YaQu</strong>. A partir de ahora vas a cotizar por WhatsApp, cobrar antes de empezar y olvidarte del papeleo.</p>
+    ${puedeCobrar ? `<p>Bienvenido a <strong>YaQu</strong>. A partir de ahora vas a cotizar por WhatsApp, cobrar antes de empezar y olvidarte del papeleo.</p>` : ''}
     <p>Para arrancar solo necesitas 3 cosas: tu catálogo de servicios, un cliente y pulsar enviar. En 30 segundos tu primera cotización está en camino.</p>
   `, { label: 'Crear mi primera cotización', url: DASHBOARD_URL });
   // 🔴 El `.catch()` inline se retira: era lo que impedía que el fallo llegara a quien llama, y lo
@@ -142,17 +148,20 @@ export async function sendWelcomeEmail(merchantId: number): Promise<ResultadoCor
 export async function sendFirstPaymentEmail(merchantId: number): Promise<ResultadoCorreo | null> {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, email: true, name: true, lifecycleEmailsSent: true },
+    select: { id: true, email: true, name: true, lifecycleEmailsSent: true, country: true, flags: true },
   });
   if (!m || alreadySent(m, 'firstPayment')) return null;
   if (!m.email) return resultadoSinDestino();
+  // SCRUM-1029 (regla 24): en `receipt` no se generan facturas al cobrar — se OCULTA la fila, no
+  // se reescribe (texto sustituto pendiente de firma, docs/master/SCRUM-1029.md).
+  const facturaAlCobrar = getEmissionMode(m) !== 'receipt';
   const html = wrap(`
     <p>¡Gracias por confiar en YaQu, ${m.name || ''}! 🚀</p>
     <p>Ya tienes el plan <strong>Pro</strong> activo. 5 cosas que quizá no sabías:</p>
     <ul>
       <li>La IA puede redactar tus cotizaciones a partir de una descripción.</li>
       <li>Puedes ofrecer 3 opciones de precio (Good/Better/Best) y cierras más.</li>
-      <li>Las facturas se generan solas al cobrar.</li>
+      ${facturaAlCobrar ? '<li>Las facturas se generan solas al cobrar.</li>' : ''}
       <li>Tienes informes de rentabilidad por servicio.</li>
       <li>Puedes invitar a tu equipo con roles.</li>
     </ul>
