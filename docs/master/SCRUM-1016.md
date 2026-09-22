@@ -344,3 +344,140 @@ lista negra, pasa a verificar (a)+(b):**
 
 **Encargo para quien lo construya (J3):** ninguno de los dos apartados está escrito en código por mí;
 esto es la especificación completa para que se escriba sin tener que volver a razonar el porqué.
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-1016i · El titular, reescrito — dos candidatos verificados contra los tres guards
+
+**Fecha:** 23-sep-2026 · **Carril:** J4 (legal y cumplimiento) · **Gate:** sin gate — propuesta, no se aplica nada
+**Medido contra:** `origin/main` = `6bca74e55d4ad193debd03cd95223f8390080ad4` · 2026-09-23T00:00:00Z
+
+## Encargo
+
+Javier decidió hoy la opción **(b)** de los tres STOP que dejó `scrum-1016e-titular-aplicado` (J3,
+commit `bf3f8914`, sin mergear): **reescribir** el H1/subtítulo/cabecera en vez de firmar una
+excepción en SCRUM-299/400 o dejar que ganara la regla 30. El literal firmado de los comentarios
+16427/16513 —*"...tu factura VeriFactu, sin cambiar de precio."* en el H1 y *"...tu factura VeriFactu,
+en camino"* en `<title>`/`og:title`/`twitter:title`— choca con **tres guards a la vez**:
+
+1. **SCRUM-299** (trinquete de "factura", baseline 0 en `public/index.html`): el posesivo **"tu
+   factura"** es justo el patrón que el guard existe para cazar (Parte M: el documento post-pago es
+   justificante, no factura) — sube el trinquete de 0 a 5 (H1 + los tres campos de cabecera + el H1
+   espejado de `#heroe-f4`).
+2. **SCRUM-400** (conformidad vs. documento real): el subtítulo afirma que *"la remisión a Hacienda se
+   activa con la declaración responsable del fabricante"* — `docs/legal/DECLARACION_RESPONSABLE.md`
+   sigue siendo una PLANTILLA (25 placeholders, `[VALIDAR ASESOR]`, aviso "NO publicar", cabecera
+   "PLANTILLA"). Y, aparte de la lógica del guard, hay una regresión LITERAL en
+   `tests/scrum400-conformidad-landing.test.mjs:163` que **prohíbe la cadena "declaración responsable"
+   en `public/index.html` sin condición**, esté o no emitido el documento algún día.
+3. **Regla 26, condición (b)** (mi propia enmienda, ya firmada — comentario 16432, aplicada en
+   `7c7b6bf3`): el matiz tiene que leerse en la MISMA unidad visible que el nombre. El texto del
+   `<title>`/`og:title`/`twitter:title` nombra VeriFactu sin matiz — y esos tres campos, dice el
+   propio literal firmado, **"NUNCA cumplen esta condición, porque nunca llevan el matiz consigo"**.
+
+## El patrón (vale más que el literal): un conflicto estructural, no mala suerte
+
+**Cada reformulación tropieza con un guard DISTINTO porque los tres protegen la MISMA cosa desde
+ángulos distintos: que el lector no se crea una factura VeriFactu que hoy no existe.** Y hay una
+tensión más de fondo que ninguna redacción arregla: la regla 26b —firmada desde antes de este ticket,
+sin tocar— dice literalmente que *"VeriFactu es el pilar de confianza nº2..., **nunca el titular**"*,
+mientras el Eje A elegido pone VeriFactu **al frente del titular** por diseño. No lo reabro (Javier ya
+decidió el Eje A en SCRUM-1016d y esta entrada no vuelve sobre eso), pero es la explicación de fondo:
+mientras el titular siga queriendo decir "VeriFactu" en el mismo aliento que "ya", cualquier redacción
+nueva va a rozar uno de estos tres guards, no porque el texto esté mal escrito, sino porque la propia
+combinación (afirmación + brevedad + ubicación de titular) es la que las reglas existen para impedir.
+
+## Verificación — PURA, sin tocar `public/index.html`
+
+Los tres guards relevantes (`tests/_copy-publico.mjs:promesasDeFactura`,
+`scripts/_guard-conformidad-landing.mjs:comprobar`, y la regresión literal de scrum400) son funciones
+puras: se les pasó el HTML candidato como string, sin escribir en ningún fichero. Script en
+`docs/master/evidencias/SCRUM-1016/verificar-candidatos.mjs` (adjunto a este commit). Contra el
+literal firmado (control), reproduce exactamente lo ya medido por J3: 4 promesas de "factura"
+(1 H1 + 3 cabecera; la 5ª es el espejo de `#heroe-f4`, fuera de este script), SCRUM-400 en rojo
+citando la misma frase, y el ban literal de "declaración responsable" disparado.
+
+## Candidato 1 — Eje A, con el matiz citado del guion H2, en el subtítulo (recomendado)
+
+- **H1** (`:427` y su espejo `:507`): `Del presupuesto a la firma, <span class="hl">sin salir de
+  WhatsApp.</span>`
+- **Subtítulo** (`:428`): `Crea el presupuesto en 30 segundos y tu cliente lo firma desde el móvil
+  por WhatsApp. Hoy generamos cada registro de facturación con el formato oficial de la AEAT; la
+  remisión a Hacienda todavía no está construida, y los founding la estrenaréis sin cambio de precio.`
+- **`<title>`/`og:title`/`twitter:title`** (`:6,16,23`, los tres iguales): `YaQu — Del presupuesto a
+  la firma, sin salir de WhatsApp` — **56 caracteres**, no se corta a 60.
+
+**Por qué pasa cada condición, comprobado, no supuesto:**
+- **No promete factura:** cero coincidencias de `promesasDeFactura` en H1+subtítulo+cabecera (script
+  arriba). No hay posesivo "tu/su factura" en ningún campo.
+- **No afirma conformidad:** `comprobar()` da `ok: true`. El subtítulo nombra AEAT y Hacienda, pero
+  NINGUNA frase junta un término de ESTADO (`certificación/cumple/conforme/declaración responsable/...`)
+  con un término FISCAL — la cadena "declaración responsable" no aparece en ningún campo.
+- **Matiz en la MISMA unidad visible (condición b):** el subtítulo es UN párrafo; la mención
+  ("generamos... con el formato oficial de la AEAT") y su matiz ("la remisión a Hacienda todavía no
+  está construida") están en la MISMA frase compuesta, sin bajar a otro bloque. El H1, que va en el
+  bloque contiguo, no nombra ningún término regulado — no necesita matiz propio.
+- **Cita literal (condición a), clausula por clausula:**
+  - *"generamos cada registro de facturación con el formato oficial de la AEAT"* — cita literal (con
+    "hoy" adelantado y sin el inciso "—huella SHA-256 encadenada y QR de cotejo—", igual que ya
+    recortó SCRUM-1016d para caber en un subtítulo) del guion H2 firmado
+    (`docs/YAQU_MASTER.md:215`).
+  - *"la remisión a Hacienda todavía no está construida"* — cita literal del mismo guion H2.
+  - *"sin cambio de precio"* — cita literal de H2 y de V0-6 (C3, comentario 16404).
+  - *"y los founding la estrenaréis"* — **redacción NUEVA** (conecta la cita anterior con "sin cambio
+    de precio" sin repetir "la facturación VeriFactu con su declaración responsable", que está
+    baneado). Lo declaro: si Javier firma este candidato, firma también esta media frase como pieza
+    nueva.
+  - "Del presupuesto a la firma" — no nombra ningún término regulado, así que la regla 26 no le
+    aplica; es la misma redacción que ya propuso SCRUM-1016d (nunca firmada de forma aislada, porque
+    iba pegada a la cláusula de VeriFactu que sí falló).
+- **`<title>` autosuficiente y ≤60 con el matiz pegado:** no aplica — este candidato NO nombra
+  ningún término regulado en el `<title>`, así que no necesita matiz ahí. Ver el apunte de abajo sobre
+  por qué elijo esto en vez de intentar un `<title>` con VeriFactu+matiz pegado.
+
+## Candidato 2 — sin nombrar VeriFactu/AEAT/Hacienda en ningún campo (más cerca de la regla 26b)
+
+- **H1:** igual que el candidato 1.
+- **Subtítulo:** `Crea el presupuesto en 30 segundos y tu cliente lo firma desde el móvil por
+  WhatsApp. Clientes, gastos y trabajos en un mismo sitio — sin post-its ni Excel.` (la segunda
+  cláusula es cita literal de la línea #6 ya propuesta en SCRUM-1016c, fila "3 · Organiza", nunca
+  firmada de forma aislada tampoco.)
+- **`<title>`/`og:title`/`twitter:title`:** igual que el candidato 1 (56 caracteres).
+
+**Verificado igual que el candidato 1:** 0 promesas de factura, `comprobar()` → `ok: true`. La regla
+26 ni se aplica (ningún término regulado nombrado). Es el más conservador de los dos: no diferencia a
+YaQu por VeriFactu en el titular en absoluto, en línea literal con la regla 26b ("nunca el titular").
+
+## 🔴 Lo que dejo señalado y NO decido: si un `<title>` puede nombrar VeriFactu con matiz PEGADO
+
+`scrum-1016f-enmienda-regla-26` (apéndice de arriba, §4) ya dejó medidos tres candidatos de `<title>`
+que SÍ nombran VeriFactu dentro del propio campo (p. ej. *"YaQu — Presupuesto y firma ya; VeriFactu en
+camino"*, 50 caracteres), razonando que si el matiz va PEGADO dentro del mismo string de 50-60
+caracteres, no hace falta un bloque externo. **Mi lectura, al releer el literal ya firmado de la
+condición (b) (comentario 16432, `docs/YAQU_MASTER.md:246`): el texto dice que estos tres campos
+"NUNCA cumplen esta condición, PORQUE nunca llevan el matiz consigo" — está redactado como un hecho
+estructural del campo, no como "salvo que quepa junto". Un `<title>` con "VeriFactu en camino" dentro
+sigue siendo, letra a letra, el caso que la condición describe como imposible.** No lo resuelvo yo:
+si Javier quiere esa vía, hace falta que aclare si su firma de 16432 quería decir "nunca, salvo que
+quepa pegado" — que es otra enmienda de la condición (b), no una simple firma de literal por (c). Por
+eso mis dos candidatos de arriba evitan el nombre en el `<title>` del todo: es la única vía que no
+depende de esa aclaración.
+
+## Qué NO hice
+
+- **No apliqué nada** a `public/index.html` — es de J3; regla 39, la firma es de Javier primero.
+- No reabro el Eje A frente al B (decisión ya tomada, SCRUM-1016d) — el candidato 2 es una variante
+  MÁS conservadora dentro del mismo titular pivotado ("a la firma"), no una vuelta al eje viejo.
+- No toco los guards (SCRUM-299/400/scrum331) ni sus baselines.
+- No decido la pregunta de arriba sobre el `<title>` con matiz pegado — la dejo para la firma de
+  Javier, con la cita exacta de por qué dudo.
+- No cubro `#heroe-f4` (propuesta oculta, `PENDIENTE_FUNDADOR`) — sigue el mismo hallazgo que ya
+  registró J3 en su apéndice SCRUM-1016g/h (`scrum-1016e-titular-aplicado`, sin mergear): su propio
+  `.sub` no lleva matiz si algún día se activa con VeriFactu en el H1. Fuera de este encargo.
+
+## Recomendación
+
+**Candidato 1.** Mantiene el diferenciador VeriFactu del Eje A (en el subtítulo, con su matiz
+literal-citado, verdad hoy) sin tocar ningún guard y sin la ambigüedad del `<title>` señalada arriba.
+El candidato 2 queda como alternativa más conservadora si Javier prefiere no nombrar VeriFactu en el
+titular en absoluto, en línea con la 26b.
