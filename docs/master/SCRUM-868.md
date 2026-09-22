@@ -155,3 +155,93 @@ además habrá que declararlos. Anotarlo sin arreglarlo es la regla 9.
 La **corrección de la cifra del registro de SCRUM-829b** (decía `vivas 197 · mudas 0 · ciegas 0`; el
 CI dio `196 · 1 · 0`, con la muda en `scrum859`, que es SCRUM-866 y ya estaba en `main`). Va aquí por
 orden del orquestador: no se abre un PR sólo para eso.
+
+---
+
+# SCRUM-868 · APÉNDICE · 22-sep-2026 · grupo C, medido y con diseño — listo para construir, sin construir
+
+**Fecha:** 22-sep-2026 · **Carril:** S5 · **Gate:** ninguno — cero código, solo lectura
+**Medido contra:** `origin/main` = `067601b809b9601d8182bb9e3f84c6ca6b874d1b` · 2026-09-22T10:23:34Z
+
+## El defecto
+
+El estado del 21-sep (comentario 16277 de Jira SCRUM-868) dejaba el **grupo C**
+(`a55-window-quote.test.mjs`, `bot-suite.test.mjs`) como «diseño propio, rama aparte, sin
+relajar `assertSafeStagingUrl`: M, no listo esta semana». El encargo de hoy pedía continuar.
+
+## Lo que se midió (leído entero, sin ejecutar código)
+
+Leí los dos ficheros de test y `tests/_merchant-fixture.mjs` (`withMerchant`) completos.
+
+* **Los dos son de esquema puro.** Ninguno lee una fila que no haya creado él mismo:
+  `withMerchant` crea el merchant efímero con `prisma.merchant.create` (sin datos de siembra),
+  y todo lo demás (customer, whatsAppMessage, botSession…) lo crea el propio test dentro de
+  su cuerpo. SCRUM-159 ya se lo garantizó explícitamente en su cabecera («ya NO depende del
+  seed demo»); lo que confirmo aquí es que **tampoco depende de nada más de staging**: ni una
+  fila, ni una configuración, ni un merchant preexistente.
+* `a55-window-quote.test.mjs`: solo Prisma directo (`customer.create`, `whatsAppMessage`) +
+  `sendWhatsAppWindowFirst`/`buildQuoteDecision` en `WHATSAPP_DRY_RUN`. Sin servidor HTTP.
+* `bot-suite.test.mjs`: monta `dist/app.js` en proceso y golpea `/webhooks/whatsapp` con
+  payloads fabricados, todo en `WHATSAPP_DRY_RUN=1`. Sin red real. Es una suite grande (un solo
+  `test()` con muchos pasos: menú, presupuestos, pago, handoff, mudo 24h, opt-out).
+* Los dos importan `./_staging-db.mjs` **solo por su gate** (`A55_DB_TEST`/`BOT_SUITE_TEST` →
+  exige `DATABASE_URL_TESTS` + marcador de staging). Nada del CUERPO del test necesita que la
+  BD sea staging — necesita que sea Postgres con el esquema actual.
+
+**Conclusión: SÍ se puede dar a los dos una ruta al banco desechable, sin tocar
+`assertSafeStagingUrl` ni el camino de staging existente.** No es una suposición: es lo que
+`withMerchant` y los dos ficheros hacen, leído línea a línea.
+
+## El diseño propuesto (no implementado — ver «Por qué no lo construyo hoy»)
+
+**Aditivo, nunca sustituye el gate de staging.** `A55_DB_TEST=1`/`BOT_SUITE_TEST=1` +
+`DATABASE_URL_TESTS` de staging siguen funcionando exactamente igual (para
+`npm run test:staging:gated`, verificación real contra staging). Se AÑADE un segundo camino:
+
+1. Dos variables nuevas, mismo patrón que `LIBRO_PG_URL`/`SERIE_PG_URL`/`TRAMOS_PG_URL`:
+   `A55_PG_URL` y `BOT_PG_URL`. Cuando están puestas, el test NO importa `_staging-db.mjs`
+   (o lo importa pero esa rama no se ejecuta — a decidir en la implementación) y en su lugar
+   corre un guard local `exigirBancoDesechable`-equivalente (loopback + base `_test`, calcado
+   de `scrum814-carrera-de-tramos-postgres.test.mjs:73-82`) y fija `DATABASE_URL` antes de que
+   `dist/core/db/prisma.js` se construya — mismo orden síncrono que ya exige `_staging-db.mjs`
+   (comentario SCRUM-165 en ese fichero: asignar ANTES del primer `await`).
+2. `.github/workflows/ci.yml`: sumar `yaqu_a55_test` y `yaqu_bot_test` al bucle de
+   `CREATE DATABASE`/aplicar esquema (línea ~228) — mismo esquema, sin coste nuevo de imagen
+   (ya hay un servicio `postgres:16-alpine` levantado para libro/serie/tramos).
+3. **`bot-suite` probablemente necesita ir AISLADO**, como `TRAMOS_PG_URL`/`scrum814`: es una
+   suite grande de un solo `test()` con muchos pasos, y `scrum814` ya midió (comentario en
+   ci.yml:262-275) que un test así, dentro de la tanda paralela de ~800 ficheros, revienta por
+   timeout de transacción bajo carga aunque el defecto no sea suyo. **No medido si a
+   `bot-suite` le pasaría lo mismo — es la primera cosa a comprobar al construir, no se
+   supone.** `a55-window-quote` es un test pequeño (un solo `withMerchant`, dos casos); no hay
+   señal de que necesite aislarse.
+
+## Por qué no lo construyo hoy
+
+Esto es dinero y bot (dos de los caminos que la Parte I trata con más cuidado), y esta casa
+exige **verificado en rojo** antes de dar un guard/gate por bueno — no «debería funcionar».
+Verificarlo de verdad exige un Postgres real corriendo los dos ficheros contra él, y en esta
+máquina eso implica montar el banco portable documentado en la memoria de equipo
+(`project_postgres_banco_local.md`): sin Docker ni WSL, binarios portátiles de 338 MB, con un
+historial de que el Sensor de almacenamiento de Windows se lleva `share/`/`bin/` a mitad de
+sesión. Medido hoy: el cluster de una sesión anterior (`$TEMP\pgb`, puerto 55432) sigue con
+procesos `postgres` vivos pero **no escucha** y le faltan `psql.exe`/`pg_isready.exe` — hay que
+volver a montarlo desde cero. Es una inversión real (descarga + `initdb` + verificación), y
+apresurar un cambio de gate en el camino del bot/dinero sin esa verificación viva sería
+exactamente lo que este ticket, y esta casa, piden no hacer.
+
+**Con esto el ticket pasa de "M, no listo esta semana" a "listo para construir": el diseño está
+medido y decidido, solo falta ejecutarlo con su verificación en rojo.** Rama aparte, como pide
+el ticket.
+
+## Lo que NO cubre este apéndice
+
+* No implementa nada: cero cambios en `ci.yml`, en los dos test files ni en ningún script.
+* No decide si `bot-suite` necesita aislarse — eso se mide al construir, con el banco real.
+* No toca `assertSafeStagingUrl`, `_staging-db.mjs` ni el camino de staging existente.
+* No actualiza el inventario de `scrum419` (SCRUM-868 ya lo reportó como trabajo del grupo B,
+  no de éste — regla 9).
+
+## Ficheros
+
+`docs/master/SCRUM-868.md` (este apéndice). Ninguno más — solo lectura.
