@@ -240,6 +240,22 @@ la AEAT, además del certificado FNMT?
 **Nota:** esto no necesita dictamen legal, es logística de la propia cita — se puede preguntar al
 concertarla, no hace falta tratarlo como bloqueo.
 
+## F16 · Los datos del EMISOR en una factura rectificativa, cuando han cambiado desde la original
+
+**Para el asesor:** Un autónomo emite en enero; en marzo cambia su domicilio fiscal (o constituye
+una sociedad, o cambia de denominación); en octubre emite una rectificativa sobre la de enero.
+(1) ¿Qué datos del expedidor deben figurar en la rectificativa: los de la fecha original o los
+vigentes al rectificar? (2) ¿Cambia la respuesta si lo que cambió fue el NIF (p. ej. constituyó una
+SL) frente a domicilio o denominación? Si la rectificativa lleva un NIF distinto al de la factura
+que rectifica, ¿sigue siendo válida como rectificativa de aquella? (3) Al reimprimir una copia de la
+factura original años después, ¿debe salir con los datos de expedidor de entonces? (4) ¿Hay
+obligación de conservar el historial de datos identificativos del expedidor, más allá del dato que
+figuró en cada factura? El programa ya congela los datos del emisor al emitir (SCRUM-665), y el
+camino de la rectificativa se dejó sin decidir a propósito hasta esta respuesta.
+**Desbloquea:** SCRUM-665, la ruta de emisión de rectificativas (R1).
+**Si no se contesta:** una R1 sigue usando los datos vigentes del merchant al rectificar, no los de
+la factura original.
+
 ---
 
 # 2 · Asesor MERCANTIL / SOCIETARIO (contratos, consumo, estructura de empresa)
@@ -365,9 +381,10 @@ bundle Y3.
 
 ## Contador — para que cuadre con `PREGUNTAS_ASESOR.md`
 
-**15 preguntas fiscales** (F1-F15, dos de ellas agrupan varias sub-preguntas del original: F4 agrupa
-las preguntas 14-24 de la sección F, y F14 agrupa las cinco del bloque 21) + **5 mercantiles**
-(M1-M5) + **3 de protección de datos** (P1-P3) = **23 preguntas de envío**, que cubren las ~40
-preguntas y sub-preguntas numeradas del expediente original. Los números no coinciden a propósito:
-el expediente original numera cada matiz técnico por separado; este documento agrupa por la decisión
-legal real que hay debajo, que es lo que un asesor necesita ver de una vez.
+**16 preguntas fiscales** (F1-F16, dos de ellas agrupan varias sub-preguntas del original: F4 agrupa
+las preguntas 14-24 de la sección F, y F14 agrupa las cinco del bloque 21; F16 es P18 del expediente,
+añadida el 22-sep-2026) + **5 mercantiles** (M1-M5) + **3 de protección de datos** (P1-P3) = **24
+preguntas de envío**, que cubren las ~40 preguntas y sub-preguntas numeradas del expediente original.
+Los números no coinciden a propósito: el expediente original numera cada matiz técnico por separado;
+este documento agrupa por la decisión legal real que hay debajo, que es lo que un asesor necesita ver
+de una vez.

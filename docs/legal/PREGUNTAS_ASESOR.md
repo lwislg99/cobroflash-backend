@@ -836,6 +836,41 @@ la factura, o cuando pida su borrado?
 
 ---
 
+# P18. Los datos del EMISOR en una factura rectificativa, cuando han cambiado desde la original
+
+> **Formulada por J4 (SCRUM-1085), a partir de la instrucción explícita de Javier: «lo llevamos al
+> asesor» (22-sep-2026), sobre el PENDIENTE marcado a propósito en el comentario 16468 de Jira
+> SCRUM-665.**
+
+Un autónomo emite en enero; en marzo cambia su domicilio fiscal (o constituye una sociedad, o
+cambia de denominación); en octubre emite una rectificativa sobre la de enero.
+
+**1)** ¿Qué datos del expedidor deben figurar en la rectificativa: los de la fecha original o los
+vigentes al rectificar?
+
+**2)** ¿Cambia la respuesta si lo que cambió fue el **NIF** (p. ej. constituyó una SL) frente a
+domicilio o denominación? Si la rectificativa lleva un NIF distinto al de la factura que rectifica,
+¿sigue siendo válida como rectificativa de aquella?
+
+**3)** Al reimprimir una copia de la factura original años después, ¿debe salir con los datos de
+expedidor de entonces?
+
+**4)** ¿Hay obligación de conservar el historial de datos identificativos del expedidor, más allá
+del dato que figuró en cada factura?
+
+Hoy el programa ya congela los datos del emisor al emitir (`src/modules/invoicing/domain/emisorCongelado.ts`,
+SCRUM-665). El camino de la rectificativa se dejó **SIN DECIDIR a propósito**: en
+`src/modules/system/app/routes/invoicesAdmin.routes.ts` (ruta de rectificación), una R1 congela el
+emisor con la ficha VIVA del merchant al rectificar — igual que las otras siete bocas —, **no** con
+la del emisor de la factura original, y el código lo marca literalmente como «PENDIENTE, marcado a
+propósito y sin resolver por omisión», a la espera de esta pregunta. El cliente (destinatario) sí
+tiene resuelto el caso simétrico: hereda el de la factura que rectifica
+(`congelarParaRectificativa`, SCRUM-729).
+
+**Bloquea:** SCRUM-665 (qué criterio usa `congelarEmisorDesdeFicha` en la ruta de rectificación).
+
+---
+
 ## RESPUESTAS · 22-sep-2026 (asesor, contra FAQ AEAT 21-jul-2026 y ROF consolidado 31-mar-2026)
 
 > **Quien preparó estas respuestas:** una sesión de IA de este equipo, consultando la FAQ de la AEAT y el BOE, el 22-sep-2026. **No las ha revisado un asesor humano.** Javier decidió ese mismo día mantener la cabecera «asesor» (SCRUM-1079, comentario 16403). Las **14 marcas ⚠** señalan lo que su propio autor no pudo releer en fuente oficial: **ninguna de ellas se convierte en microcopy ni en guard sin cotejarla antes.**
