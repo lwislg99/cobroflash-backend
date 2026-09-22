@@ -1530,3 +1530,112 @@ almacenamiento persistente reconfirmado por el mismo barrido de dependencias
 Ni una línea de `src/`, ni de `prisma/schema.prisma`, ni de ninguna base. El enchufe (PDF + el sexto
 punto del XML) sigue esperando el GO del fundador sobre un único PR de ~10-11 sitios en el camino de
 emisión fiscal, más su decisión pendiente de la R1 (§④ del apéndice anterior).
+
+# APÉNDICE (F) · 22-sep-2026 · J1 · EL ENCHUFE, APLICADO — LOS DIEZ SITIOS + EL SEXTO PUNTO
+
+**Fecha:** 22-sep-2026 · **Carril:** J1 · **Gate:** ✅ **APLICADO, con GO.**
+**Medido contra:** `origin/main` = `081f619bad377709a06a02fcb80f627a7518983c` · 2026-09-22T11:06:18Z
+**Rama:** `scrum-665-enchufe-emisor-congelado` (arrancada por la sesión anterior en `9cb232b6`,
+2/10 sitios, NO COMPILABA a propósito)
+**GO:** comentario 16468 de Jira SCRUM-665, 22-sep-2026 12:22:47 CEST, Javier — «adelante con el
+emisor congelado» — leído directamente por esta sesión antes de tocar código, no heredado de un
+traspaso.
+
+## ⓪ Lo que ya estaba (2/10) y lo que trajo esta tanda
+
+Heredado, sin tocar: `emisorCongelado.ts` (escritor `congelarEmisor`/`congelarEmisorDesdeBase`,
+lector `emisorDelDocumento`) · `crearFacturaEmitida.ts` a 4 argumentos (`tx, cliente, emisor,
+datos`) · `invoicing.service.ts` (`EmitInvoiceInput.emisorCongelado` obligatorio) · el escritor y
+las dos lecturas de PDF en `lib/invoicing.ts` (boca 1).
+
+Nuevo en esta tanda:
+
+1. **`congelarEmisorDesdeFicha(m)`**, en `emisorCongelado.ts` — el gemelo de `congelarEmisor` para
+   quien YA tiene la ficha en ámbito (hace el renombrado `whatsappPhone → phone` en un solo sitio;
+   `congelarEmisorDesdeBase` se reescribió para reusarlo, sin cambiar su contrato).
+2. **Los 8 sitios que faltaban del embudo**, con las tres formas que midió el dosier (D):
+   - **5 triviales** (ficha ya en ámbito, cero viajes nuevos): `jobs.routes.ts` collect-rest
+     (boca 3 — el `include: { merchant: true }` de SCRUM-1027 la dejó trivial: ya NO es "sin
+     lectura utilizable" como medía el dosier D, `main` se movió), `quotes.routes.ts` decision
+     (boca 4, pública), `invoicesAdmin.routes.ts` `/:id/rectify` (boca 5, R1 — ver §① abajo),
+     `quotesAdmin.routes.ts` `/:id/invoice` y `/:id/invoice-manual` (bocas 6 y 7).
+   - **3 con `select` ensanchado** (la lectura ya estaba, fuera de la tx; se añadieron
+     `name/legalName/address/logoUrl/whatsappPhone`, y en dos de ellas también `taxId`):
+     `albaranes.routes.ts` `/:id/facturar-parcial` y `/:id/convertir-en-factura`,
+     `invoicesAdmin.routes.ts` `POST /` (factura suelta).
+   - **1 viaje nuevo, fuera de la tx**: `recapitulativa.service.ts` — `emitirRecapitulativas` sólo
+     recibe `merchantId`, no la ficha; usa `congelarEmisorDesdeBase(prisma, merchantId)` igual que
+     hace ya para el cliente.
+3. **Los 2 errores de tipo declarados pendientes por la sesión anterior** (`lib/invoicing.ts:112,255`,
+   `EmisorDelDocumento.name` es `string | null` y `generateInvoicePdf` exige `string`): se decidió
+   **fallar, no fabricar un nombre**. `Merchant.name` es `NOT NULL` en el esquema, así que un
+   `emisor.name == null` en este punto es una fila rota, no un caso normal; se lanza
+   `emisor_sin_nombre_al_generar_pdf` en vez de imprimir un documento fiscal con el emisor en
+   blanco — mismo criterio que ya usa `emisorDelDocumento` cuando no hay ni columna ni ficha.
+4. **El sexto punto de conexión** (hallazgo de la sesión anterior, sin empezar): `verifactu.service.ts`
+   `construirRegistro` ahora usa `emisorDelDocumento(inv, emisorFichaViva)` por factura — mismo
+   criterio que ya usaba `clienteDelDocumento` para el destinatario (SCRUM-729) — para
+   `IDEmisorFactura`, `NombreRazonEmisor`, `IDEmisorFacturaAnulada` y el `RegistroAnterior` de las
+   dos cadenas (alta y anulación). El `ObligadoEmision` del SOBRE (`<sum:Cabecera>`) se deja **a
+   propósito** en el merchant EN VIVO: identifica quién presenta el LOTE hoy, no quién emitió cada
+   factura — es un concepto distinto y las dos rutas del XML (`GET /verifactu.xml` y el ZIP de
+   `GET /datos.zip`) comparten el mismo `buildVerifactuRegistrosXml`, así que se arreglan las dos
+   a la vez sin tocarlas.
+5. **Trinquetes actualizados en el mismo commit** (regla 41 — se arregla el código/instrumento
+   nunca el guard, y aquí lo que cambió es el HECHO que el instrumento vigila):
+   - `tests/scrum411-exports-inalcanzables.test.mjs`: `MODULOS_DOMINIO_INALCANZABLES_MAX` **8 → 7**
+     — `emisorCongelado.ts` ya tiene llamador en `src/`, tal y como pedía su propio comentario y el
+     test de `scrum665a-congelar-el-emisor.test.mjs` que lo vigila.
+   - `tests/_huerfanos-declarados.mjs`: se declara `CAMPOS_CONGELADOS_EMISOR` (gemelo de
+     `CAMPOS_CONGELADOS`, misma categoría `VOCABULARIO_DEL_MODULO`) — al volverse alcanzable el
+     módulo, el censo de huérfanos empezó a verlo por primera vez.
+   - `tests/_embudo-factura.mjs` (SCRUM-203): el literal de datos de `crearFacturaEmitida` estaba
+     anclado al argumento `[2]` (cuando la firma era `(tx, cliente, datos)`); con el emisor de por
+     medio pasa a ser `(tx, cliente, emisor, datos)` y el dato está en `[3]`.
+   - `docs/legal/AUDITORIA_CAMINO_EMISION.md`: tres anclas de línea corregidas tras el desplazamiento
+     por mis inserciones (`buildVeriFactuQrUrl` 141→142, `buildVerifactuRegistrosXml` 574→575,
+     `exigirDocumentoEmitible` 101/237→102/246) — vigilado por
+     `tests/scrum525d-anclas-que-apuntan.test.mjs`.
+
+## ① Lo que NO se decidió — la R1 (boca 5)
+
+Instrucción explícita del GO: congelar el emisor **al emitir** (ficha de HOY), dejar el camino de
+la rectificativa **como está**, y no resolver por omisión si hereda el emisor de la factura
+ORIGINAL. Implementado así en `invoicesAdmin.routes.ts` `/:id/rectify`, con el comentario en código
+marcándolo PENDIENTE y remitiendo al comentario 16468. **Sin construir de nuevo aquí**: sigue
+esperando la respuesta del asesor.
+
+## ② Controles — rigor completo (regla 29, camino fiscal)
+
+Nuevo banco: `tests/scrum665e-el-escritor-del-emisor.test.mjs`, mismo patrón que
+`scrum729-el-escritor-del-cliente.test.mjs` pero para el emisor y sobre `buildVerifactuRegistrosXml`
+directamente (el escritor/lector del PDF ya los cubre `scrum665a`/`scrum665b` desde el 16-sep):
+
+- **ROJO reproducido y arreglado** (④-bis): la MISMA factura, sin columnas de emisor congeladas,
+  con la ficha viva cambiada entre dos exportaciones → el `RegistroFactura` de la AEAT SÍ cambia.
+  Es el mecanismo viejo, ejercitado de verdad, no supuesto.
+- **④ el que decide**: la misma factura CON columnas congeladas → el `RegistroFactura` (NIF y
+  nombre del emisor) NO cambia al corregir el perfil — comparado por SUBCADENA del documento, no
+  por igualdad completa, porque el `ObligadoEmision` del sobre sí sigue al merchant vivo a
+  propósito (③ punto 4 arriba); hay un test aparte que fija ESE comportamiento.
+- **✅ control positivo**: una factura SIN columnas congeladas (todas las anteriores a hoy) sigue
+  saliendo, con la ficha viva como respaldo — ni se rompe ni queda en blanco.
+- Cubre las DOS rutas del XML a la vez por compartir constructor (③ punto 4).
+
+Suelo: `npx tsc --noEmit` limpio (11 errores → 0) · `npm run build` limpio · los cinco ficheros de
+test tocados (`scrum665e` nuevo, `scrum665a`, `scrum665b`, `scrum411`, `scrum413`, `scrum275`,
+`scrum525d`, `scrum203`, `scrum729`) en verde, 56+ casos.
+
+Tanda completa (`node --test … "tests/*.test.mjs"`, TAP a fichero, leído en un segundo comando):
+de 13 `not ok` iniciales, **11 causados por esta rama** (arreglados arriba: SCRUM-203, SCRUM-275,
+SCRUM-411×2, SCRUM-413×4 — fixture de test con `merchant.name` ausente, `Merchant.name` es
+NOT NULL en el esquema real —, SCRUM-525d×2) y **2 preexistentes y ajenos a este carril**
+(SCRUM-476: censo de topología de `node_modules` de TODOS los worktrees de la máquina; SCRUM-939b:
+ruta de `gh.exe` de esta máquina en el trinquete de skills) — reportados, no arreglados: no son de
+facturación ni VeriFactu.
+
+## ③ Lo que NO se ha hecho (fuera del alcance del GO)
+
+`prisma/schema.prisma`: sin tocar. Publicar el PR: sin hacer — sigue en BORRADOR con el auto-merge
+DESARMADO, comprobado tras cada push (el bot lo rearma en cada uno). El sí de empujar el camino del
+cobro lo pide el orquestador a un jefe.

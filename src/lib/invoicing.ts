@@ -105,19 +105,24 @@ export async function ensureInvoicePdf(
     // SCRUM-665 · el emisor sale de la COLUMNA, no de la ficha viva — mismo criterio que el
     // cliente (SCRUM-729): `emisorDelDocumento` sólo cae a `inv.merchant` si la factura es
     // anterior al escritor (`merchantName` a NULL).
+    const emisor = emisorDelDocumento(inv, {
+      name: inv.merchant.name,
+      legalName: inv.merchant.legalName,
+      taxId: inv.merchant.taxId,
+      address: inv.merchant.address,
+      logoUrl: inv.merchant.logoUrl,
+      phone: inv.merchant.whatsappPhone, // A2.4: emisor completo
+      email: inv.merchant.email,
+    });
+    // `Merchant.name` es NOT NULL, así que esto no debería poder pasar; si pasa, es una fila
+    // rota y el PDF tiene que fallar, no imprimir un emisor en blanco (mismo criterio que el
+    // `throw` de `emisorDelDocumento` cuando no hay ni columna ni ficha).
+    if (emisor.name == null) throw new Error('emisor_sin_nombre_al_generar_pdf');
     await generateInvoicePdf({
       number: inv.number,
       invoiceId: inv.id,          // SCRUM-72
       merchantId: inv.merchantId, // SCRUM-72
-      merchant: emisorDelDocumento(inv, {
-        name: inv.merchant.name,
-        legalName: inv.merchant.legalName,
-        taxId: inv.merchant.taxId,
-        address: inv.merchant.address,
-        logoUrl: inv.merchant.logoUrl,
-        phone: inv.merchant.whatsappPhone, // A2.4: emisor completo
-        email: inv.merchant.email,
-      }),
+      merchant: { ...emisor, name: emisor.name },
       // SCRUM-577: se pasa `legalName`. Hasta hoy NO viajaba, asi que la factura no podia
       // imprimir la denominacion legal aunque el cliente la tuviera rellena.
       //
@@ -246,21 +251,27 @@ export async function ensureInvoiceForCharge(
 
       const invLines = inv.lines && Array.isArray(inv.lines) ? inv.lines as any[] : [];
 
+      // SCRUM-665 · idem que el otro generador: la columna manda, la ficha viva sólo si el
+      // documento es anterior al escritor.
+      const emisor = emisorDelDocumento(inv, {
+        name: merchant.name,
+        legalName: merchant.legalName,
+        taxId: merchant.taxId,
+        address: merchant.address,
+        logoUrl: merchant.logoUrl,
+        phone: merchant.whatsappPhone, // A2.4: emisor completo
+        email: merchant.email,
+      });
+      // `Merchant.name` es NOT NULL: si esto salta es una fila rota, y el PDF tiene que fallar,
+      // no imprimir un emisor en blanco (mismo criterio que `emisorDelDocumento` cuando no hay
+      // ni columna ni ficha).
+      if (emisor.name == null) throw new Error('emisor_sin_nombre_al_generar_pdf');
+
       const pdf = await generateInvoicePdf({
         number: inv.number,
         invoiceId: inv.id,          // SCRUM-72
         merchantId: inv.merchantId, // SCRUM-72
-        // SCRUM-665 · idem que el otro generador: la columna manda, la ficha viva sólo si el
-        // documento es anterior al escritor.
-        merchant: emisorDelDocumento(inv, {
-          name: merchant.name,
-          legalName: merchant.legalName,
-          taxId: merchant.taxId,
-          address: merchant.address,
-          logoUrl: merchant.logoUrl,
-          phone: merchant.whatsappPhone, // A2.4: emisor completo
-          email: merchant.email,
-        }),
+        merchant: { ...emisor, name: emisor.name },
         // SCRUM-577: idem — el segundo camino que arma la factura.
         // SCRUM-729 · idem: la columna manda, la ficha viva sólo si el documento es anterior.
         customer: clienteDelDocumento(inv, customer),

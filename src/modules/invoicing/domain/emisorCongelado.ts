@@ -163,14 +163,34 @@ export async function congelarEmisorDesdeBase(
     // consumido y la serie tendría un hueco que justificar.
     throw new Error(`emisor_no_encontrado_al_congelar:${merchantId}`);
   }
+  return congelarEmisorDesdeFicha(ficha);
+}
+
+/**
+ * 🔴 EL RENOMBRADO, para quien YA tiene la ficha del merchant en ámbito (`include: { merchant:
+ * true }` o un `select` que trae los siete) y no necesita el viaje de `congelarEmisorDesdeBase`.
+ *
+ * Mismo renombrado que hace `congelarEmisorDesdeBase` internamente (`Merchant.whatsappPhone` →
+ * `FichaDeEmisor.phone`), en un solo sitio para las ocho bocas: si el nombre de la columna
+ * cambia, es un solo sitio el que hay que tocar.
+ */
+export function congelarEmisorDesdeFicha(m: {
+  name: string | null;
+  legalName?: string | null;
+  taxId?: string | null;
+  address?: string | null;
+  logoUrl?: string | null;
+  whatsappPhone?: string | null;
+  email?: string | null;
+}): EmisorCongelado {
   return congelarEmisor({
-    name: ficha.name,
-    legalName: ficha.legalName,
-    taxId: ficha.taxId,
-    address: ficha.address,
-    logoUrl: ficha.logoUrl,
-    phone: ficha.whatsappPhone,
-    email: ficha.email,
+    name: m.name,
+    legalName: m.legalName,
+    taxId: m.taxId,
+    address: m.address,
+    logoUrl: m.logoUrl,
+    phone: m.whatsappPhone,
+    email: m.email,
   });
 }
 

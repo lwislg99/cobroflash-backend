@@ -175,8 +175,8 @@ function motivoDeFuga(llamada, sf) {
 
 /**
  * La pregunta de siempre —¿de dónde sale `number`?— sobre el literal de datos, venga de un
- * `create({ data: … })` o del tercer argumento de `crearFacturaEmitida`. Se extrajo para que las
- * dos formas se juzguen con EL MISMO criterio y no puedan divergir (SCRUM-729).
+ * `create({ data: … })` o del cuarto argumento de `crearFacturaEmitida` (SCRUM-665). Se extrajo
+ * para que las dos formas se juzguen con EL MISMO criterio y no puedan divergir (SCRUM-729).
  */
 function motivoPorElData(data, llamada, sf) {
   const numero = propiedad(data, 'number');
@@ -192,9 +192,13 @@ function motivoPorElData(data, llamada, sf) {
   return '`number` se construye a mano, sin pasar por el embudo';
 }
 
-/** SCRUM-729 · `crearFacturaEmitida(tx, cliente, datos)`: el literal de datos es el TERCERO. */
+/**
+ * SCRUM-665 · `crearFacturaEmitida(tx, cliente, emisor, datos)`: el literal de datos es el
+ * CUARTO desde que el emisor congelado se sumó como tercer parámetro (era el tercero, con
+ * `crearFacturaEmitida(tx, cliente, datos)`, hasta SCRUM-665).
+ */
 function motivoDelEnvoltorio(llamada, sf) {
-  const datos = llamada.arguments[2];
+  const datos = llamada.arguments[3];
   if (!datos || !ts.isObjectLiteralExpression(datos)) {
     return `\`${ENVOLTORIO}\` sin literal de datos: no hay forma de ver de dónde sale el número`;
   }
