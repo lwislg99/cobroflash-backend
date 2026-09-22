@@ -880,8 +880,9 @@ tiene resuelto el caso simétrico: hereda el de la factura que rectifica
 
 **El problema concreto, medido en el código, no supuesto:** el bloque `SistemaInformatico` del
 registro tiene un solo campo de productor — `nombreRazonProductor: string` y `nifProductor: string`
-(`src/modules/fiscal/verifactu/registro.builder.ts:19-21`), que se vuelcan tal cual a
-`<sum1:NombreRazon>`/`<sum1:NIF>` del XML (`:377-378`). Un nombre, un NIF. «Los dos» no cabe ahí, y
+(`src/modules/fiscal/verifactu/registro.builder.ts:19-21` — `nombreRazonProductor`), que se vuelcan
+tal cual a `<sum1:NombreRazon>`/`<sum1:NIF>` del XML
+(`src/modules/fiscal/verifactu/registro.builder.ts:377-378` — `xmlSistema`). Un nombre, un NIF. «Los dos» no cabe ahí, y
 tampoco en `docs/legal/DECLARACION_RESPONSABLE.md` §1 ("Productor del sistema"), que hoy es un único
 placeholder de razón social + NIF.
 
