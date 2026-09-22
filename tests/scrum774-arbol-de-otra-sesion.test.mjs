@@ -6,7 +6,8 @@
 // El 6-sep-2026, S1 trabajaba SCRUM-586 en `cobroflash-b3` con cambios sin commitear. Otra sesión
 // hizo `git checkout -b scrum-760` sobre ESE MISMO árbol y luego `reset --hard`. Ninguna de las
 // dos rompió una regla: `checkout -b` no descarta nada (git arrastra lo sin commitear a la rama
-// nueva) y el `reset --hard` siguiente YA estaba cubierto por la regla 6 del hook. El agujero real
+// nueva) y el `reset --hard` siguiente YA estaba cubierto por la comprobación que ya tenía
+// `guard-dangerous.mjs` para ese comando. El agujero real
 // es que `checkout -b` cambia la rama actual SIN preguntar, y lo próximo que la sesión dueña haga
 // (un `git merge`, un commit) aterriza en la rama nueva sin que nadie lo note — no hay error, no
 // hay conflicto, no hay rojo.
@@ -35,7 +36,7 @@ const veredicto = (comando, cwd) => evaluar(llamada(comando), SENTINEL_FALSO, { 
 
 /** Un repo con una rama base y, sobre ella, otra rama con trabajo SIN COMMITEAR (la víctima). */
 function repoConVictima() {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-774-')));
+  const dir = fs.realpathSync(temporal('yaqu-774-'));
   const git = (...a) => spawnSync('git', a, { cwd: dir, encoding: 'utf8' });
   git('init', '-q');
   git('config', 'user.email', 'x@x');
@@ -80,7 +81,7 @@ test('SCRUM-774 · 🔴 EL PISOTÓN: checkout -b de OTRA sesión sobre un árbol
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-774 · ✅ POSITIVO: checkout -b con el árbol LIMPIO no bloquea nada', () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-774-limpio-')));
+  const dir = fs.realpathSync(temporal('yaqu-774-limpio-'));
   const git = (...a) => spawnSync('git', a, { cwd: dir, encoding: 'utf8' });
   git('init', '-q'); git('config', 'user.email', 'x@x'); git('config', 'user.name', 'x');
   fs.writeFileSync(path.join(dir, 'a.txt'), 'x\n');
@@ -148,7 +149,7 @@ test('SCRUM-774 · veredictoArbol: sin ticket, INFORMATIVO; con HEAD desacoplado
 });
 
 test('SCRUM-774 · arbolMio: SUELO — sobre un árbol git de verdad, ve el árbol y la rama', () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-774-suelo-')));
+  const dir = fs.realpathSync(temporal('yaqu-774-suelo-'));
   const git = (...a) => spawnSync('git', a, { cwd: dir, encoding: 'utf8' });
   git('init', '-q'); git('config', 'user.email', 'x@x'); git('config', 'user.name', 'x');
   fs.writeFileSync(path.join(dir, 'a.txt'), 'x\n'); git('add', '-A'); git('commit', '-qm', 'base');
@@ -162,14 +163,14 @@ test('SCRUM-774 · arbolMio: SUELO — sobre un árbol git de verdad, ve el árb
 });
 
 test('SCRUM-774 · arbolMio: fuera de un repo git, CIEGO — nunca "MIO" por defecto', () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-774-norepo-'))); // sin `git init`
+  const dir = fs.realpathSync(temporal('yaqu-774-norepo-')); // sin `git init`
   const r = arbolMio(dir, '774');
   assert.equal(r.veredicto, 'CIEGO');
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
 test('SCRUM-774 · el CLI `arbol-mio.mjs` sale con 1 cuando NO-MIO, y con 0 cuando MIO o informativo', () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-774-cli-')));
+  const dir = fs.realpathSync(temporal('yaqu-774-cli-'));
   const git = (...a) => spawnSync('git', a, { cwd: dir, encoding: 'utf8' });
   git('init', '-q'); git('config', 'user.email', 'x@x'); git('config', 'user.name', 'x');
   fs.writeFileSync(path.join(dir, 'a.txt'), 'x\n'); git('add', '-A'); git('commit', '-qm', 'base');
