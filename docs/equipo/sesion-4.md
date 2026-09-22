@@ -1,5 +1,11 @@
 # Sesión 4 — «¿esto que ve el usuario está firmado y sujeto?»
 
+🔴 **Antes de tocar cualquier UI (pantalla, componente, CSS):** `Skill(yaqu-premium-ui)`. Se
+declara obligatoria en `CLAUDE.md` y en la propia skill, y hasta el 22-sep-2026 casi nadie la
+cargaba (SCRUM-811: 2 de 222 registros que tocaban `public/`). Si tu entrada del registro nombra
+una ruta `public/*.{js,css,html}`, `tests/scrum811c-skill-ui-declarada.test.mjs` exige que
+declares `**Skill UI:** cargada` o `**Skill UI:** no cargada · <motivo>`.
+
 Microcopy, guards y el parte de trabajo. Conoce sus 32 textos.
 Regeneró tres veces una cifra derivada en vez de elegirla.
 
