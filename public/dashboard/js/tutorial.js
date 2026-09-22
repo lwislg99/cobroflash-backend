@@ -178,6 +178,10 @@ const TUTORIAL_GUIDE = [
   },
   {
     q: '¿Cómo funciona el cobro?',
+    // SCRUM-1029 (regla 24): describe un flujo que en `receipt` (ES real, facturación apagada)
+    // YaQu no ejecuta — se OCULTA la entrada entera en vez de reescribirla (ver el filtro más
+    // abajo, `openHelpGuide`).
+    soloSiCobra: true,
     steps: [
       'Al crear el presupuesto eliges las condiciones de pago.',
       'Cuando el cliente acepta y firma, se genera la factura.',
@@ -227,7 +231,7 @@ function openHelpGuide() {
       <h2 style="margin:0;font-size:18px;color:#0f1c17">Guía de inicio</h2>
       <button id="tut-guide-close" style="border:none;background:none;font-size:24px;cursor:pointer;color:#6b756f">&times;</button>
     </div>
-    ${TUTORIAL_GUIDE.map((g, i) => `
+    ${TUTORIAL_GUIDE.filter((g) => !g.soloSiCobra || window.appModoEmision !== 'receipt').map((g, i) => `
       <div style="border:1px solid #e7e9e5;border-radius:12px;margin-bottom:10px;overflow:hidden">
         <button class="tut-acc" data-i="${i}" style="width:100%;text-align:left;padding:13px 14px;background:#f7f8f6;border:none;cursor:pointer;font-size:14px;font-weight:600;color:#0f1c17;display:flex;justify-content:space-between;align-items:center">
           <span>${g.q}</span><span style="color:#22c55e">+</span>
