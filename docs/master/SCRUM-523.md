@@ -325,3 +325,118 @@ declaración responsable **no es técnico**: es de la asesoría.
 
 ⚠️ **Lo que no he podido determinar:** si el ZIP de exportación es el artefacto que la asesoría
 considera «el registro de facturación» a estos efectos. No se decide desde el código.
+
+---
+
+# SCRUM-523b · Recomprobado el 22-sep: nada cambió en el código, hay corroboración nueva del
+asesor, y el cruce con SCRUM-870 queda CONFIRMADO — no supuesto
+
+**Medido contra:** `origin/main` = `763d37e5225ea4897827b1a997e34cf5e117c5c3` · 2026-09-22T16:24:54Z
+
+**Carril:** normativa · censo · **Gate:** sin gate — no añade código de producto. Encargo recibido
+hoy porque llegaron las respuestas de SCRUM-1079 y cambian el sitio del ticket en el mapa. PASO 0:
+el título del ticket dice «no está construido ni previsto» — **eso ya era inexacto el 16-sep** (ver
+§② de arriba) y sigue siéndolo hoy. Este bloque no repite esa medición: la recomprueba y añade la
+parte nueva.
+
+## 1 · El código no se movió, solo las LÍNEAS — recomprobado, no supuesto
+
+`SCRUM-665` mergeó hoy a las 13:00 (`6d0451d0`, PR #1680) y tocó
+`src/modules/invoicing/domain/verifactu.service.ts` (49 líneas, +20 antes del bloque que aquí
+importa). Es del **emisor** (identidad del profesional que factura), no del **productor**
+(identidad de YaQu como fabricante del software): son dos bloques distintos del mismo registro y
+`SCRUM-665` no tocó el segundo. Recomprobado línea a línea porque las citas de §② ya no apuntan al
+sitio correcto:
+
+| qué | cita de §② (16-sep) | hoy (22-sep) | ¿cambió la sustancia? |
+|---|---|---|---|
+| bloque `SistemaInformatico` cableado, alta | `verifactu.service.ts:757` | `:795` | no — mismo `productor.nombre` interpolado |
+| bloque `SistemaInformatico` cableado, anulación | `verifactu.service.ts:852` | `:890` | no |
+| guard fail-closed del productor | `verifactu.service.ts:593` (citado en Jira SCRUM-870) | `:619-633` | no — sigue comprobando solo que no esté VACÍO (`!productor.nombre`), no la FORMA |
+| `productor.ts` | sha distinto de HEAD | **byte a byte igual**: `VERIFACTU_PRODUCTOR_NOMBRE = "<Luis Lara Granado>"` | no |
+
+Y el censo de `public/` para «declaración» (normalizado, acentos incluidos): repetido a mano hoy
+sobre los mismos patrones de §②, **sigue en CERO** — los únicos usos de la palabra en `public/` son
+de otro dominio (firma de albaranes, comentarios de código), ninguno es el documento legal.
+
+## 2 · Corroboración nueva: SCRUM-1079 (22-sep), segunda fuente — con la misma reserva
+
+`docs/legal/PREGUNTAS_ASESOR.md`, bloque **C5** (añadido hoy por SCRUM-1079): confirma, de forma
+independiente, art. 13 RRSIF + art. 15 Orden HAC/1177/2024, título fijo, contenido mínimo, orden, se
+emite **antes** de la primera factura real, se versiona por release. Coincide palabra por palabra
+con lo que ya decía §① de arriba.
+
+⚠️ **No sube el nivel de verificación de §④.1.** El propio `docs/master/SCRUM-1079.md` declara su
+procedencia: «una sesión de IA de este equipo… **no las ha revisado un asesor humano**». Sigue
+siendo una segunda fuente de IA, no una fuente primaria ni un humano colegiado. Lo que sí aporta:
+dos sesiones distintas, en días distintos, leyendo el mismo artículo, llegan al mismo texto — eso
+reduce el riesgo de una alucinación puntual, no lo elimina.
+
+`PREGUNTAS_ASESOR.md:916` además dice, literal, lo que este documento ya sabía: «el borrador de
+`DECLARACION_RESPONSABLE.md` ya apunta a esos artículos; lo que le falta son los datos del
+productor (B2)» — mismo diagnóstico que §② y §③ de arriba, de forma independiente.
+
+## 3 · B2 (SCRUM-1079): el productor interino, mientras no exista la SL
+
+`PREGUNTAS_ASESOR.md:901`, literal: «Con la SL decidida, el productor será la SL (NIF de persona
+jurídica); **mientras no exista, el único productor posible es la persona física**. Si se emite
+alguna factura real antes de constituirla, la declaración responsable y los registros llevarían al
+autónomo como productor, y habría que reemitirla al cambiar de productor (art. 13 RRSIF: versionada,
+se conservan todas)».
+
+Esto **no estaba resuelto** en la entrada del 16-sep (§④.5 lo dejaba abierto). Ahora hay una
+respuesta citada: el bloque 11 de §③ («depende del NIF / ROAD-4») **no depende del todo de la SL**
+— la persona física es una opción válida HOY, no solo un parche temporal. Ver §5 para lo que esto
+cambia.
+
+## 4 · El cruce con SCRUM-870 — CONFIRMADO por Jira, no por parecido
+
+Leído el ticket completo (`getJiraIssue SCRUM-870`, estado **«Acción del fundador»**, etiquetas
+`area-j1`, `decision-jefe`, `equipo-javier`): **es el mismo agujero que el hallazgo ① de §② de
+arriba, visto desde otra puerta.**
+
+| | SCRUM-523 (hallazgo ①, 16-sep) | SCRUM-870 (medido 16-sep, ampliado 18-sep) |
+|---|---|---|
+| objeto que señala | `productor.ts:39` → viaja a la letra h) de la declaración | el mismo `productor.ts:39` → viaja al XML `SistemaInformatico > NombreRazon` |
+| defecto | corchetes de plantilla dentro del valor, sin guard de forma | mismo valor, con el dato nuevo del 18-sep: `<` y `>` son dos de los **cinco caracteres que la validación 1287 de la AEAT rechaza explícitamente** |
+| por qué no se toca | «es identidad fiscal, lo decide quien puede» | STOP explícito, regla 38 y regla 26, medido y no tocado |
+| bloqueo declarado | ninguno propio — depende del bloque 11 de §③ | «espera al NIF de la SL» (el propio ticket) |
+
+**No son dos hallazgos parecidos: es literalmente la misma línea de código**, encontrada dos veces
+por dos medición distintas (16-sep declaración responsable, 18-sep catálogo de validaciones
+SCRUM-524) con dos consecuencias que se suman: la declaración firmaría un nombre inválido por forma
+*y* ese mismo nombre es rechazable por la AEAT en el `SistemaInformatico` de cada registro que se
+llegue a remitir.
+
+## 5 · Lo que esto cambia — pregunta para el fundador, no decisión mía
+
+SCRUM-870 fija su disparador así: «en cuanto exista el NIF y la razón social de la SL, este ticket
+se hace». **§3 de este documento (B2, 22-sep) pone en duda que ese disparador sea el correcto**: si
+hoy el único productor válido es la persona física, y `VERIFACTU_PRODUCTOR_NOMBRE` ya contiene un
+nombre de persona física real dentro de los corchetes (`Luis Lara Granado`) — no ha esperar a la SL
+para quitar los ángulos y comprobar la forma; **esperaría a la SL únicamente para cambiar el NIF y
+la razón social cuando ésta exista**, momento en el que además habría que reemitir la declaración
+(art. 13.3, versionada).
+
+**No lo decido aquí**, por dos motivos que son STOP y no interpretación mía:
+
+1. Es identidad fiscal (`productor.ts`, camino de emisión) — regla 38/40.
+2. No puedo confirmar que «Luis Lara Granado» sea efectivamente el nombre de la persona física
+   productora de registro, ni que el criterio jurídico de «una versión» (§① de arriba, sin cerrar)
+   permita corregir un carácter no válido sin que cuente como nueva versión a efectos del art. 13.2.
+   Es exactamente lo que el propio SCRUM-870 dejó como plan (`productorLegible.ts`, ~15 líneas,
+   guard nuevo, código `verifactu_productor_con_marcador`) a la espera de esta decisión.
+
+**Lo que sí puedo decir, medido:** el riesgo hoy es cero en la práctica —
+`INVOICING_ES_ENABLED` sigue OFF para merchants ES reales y no hay ningún registro real que remitir
+(regla 24; SCRUM-870 lo dice igual) — así que no hay urgencia operativa, solo la de dejar la
+pregunta bien planteada antes de que alguien la resuelva de memoria.
+
+## Lo que NO se hizo (igual que arriba, repetido porque aplica también a esta entrada)
+
+- **`src/` intacto.** No se tocó `productor.ts` ni `verifactu.service.ts`: solo se leyeron.
+- **Ningún texto legal ni de producto escrito ni firmado.** No se decide el disparador de SCRUM-870
+  ni el carril A/B (siguen abiertos, §④ de arriba).
+- **No se comentó en Jira SCRUM-870**: la lectura fue de solo consulta (`getJiraIssue`); la
+  actualización del ticket, si procede, la decide quien lo cierra (A13).
+- Cero dependencias nuevas (36) · cero estado o flag de producto (27) · cero `schema.prisma`.
