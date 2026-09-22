@@ -873,7 +873,7 @@ tiene resuelto el caso simétrico: hereda el de la factura que rectifica
 
 ## RESPUESTAS · 22-sep-2026 (asesor, contra FAQ AEAT 21-jul-2026 y ROF consolidado 31-mar-2026)
 
-> **Quien preparó estas respuestas:** una sesión de IA de este equipo, consultando la FAQ de la AEAT y el BOE, el 22-sep-2026. **No las ha revisado un asesor humano.** Javier decidió ese mismo día mantener la cabecera «asesor» (SCRUM-1079, comentario 16403). Las **14 marcas ⚠** señalan lo que su propio autor no pudo releer en fuente oficial: **ninguna de ellas se convierte en microcopy ni en guard sin cotejarla antes.**
+> **Quien preparó estas respuestas:** una sesión de IA de este equipo, consultando la FAQ de la AEAT y el BOE, el 22-sep-2026. **No las ha revisado un asesor humano.** Javier decidió ese mismo día mantener la cabecera «asesor» (SCRUM-1079, comentario 16403). Las **14 marcas ⚠** que llevaba este apéndice señalaban lo que su propio autor no pudo releer en fuente oficial. **Cotejadas el 23-sep-2026 (SCRUM-1088, detalle y veredicto por punto en «Cotejo del 23-sep-2026» al final de este apéndice): las 14 quedan CONFIRMADAS** (una con matiz menor, ninguna contradicha, ninguna sin localizar). Sigue sin revisarlas un asesor humano — eso no lo cambia un cotejo de texto legal.
 
 Todo lo verificado hoy sale de la FAQ oficial de la AEAT (actualizada a 21-jul-2026), del texto consolidado del ROF (RD 1619/2012, últ. act. 31-mar-2026) y del ticket SCRUM-143. Lo que no se ha podido releer en fuente oficial en esta sesión va marcado ⚠.
 
@@ -924,7 +924,7 @@ Las tres vías, con lo que exige cada una (todo verificado en la FAQ *Cumplimien
 | **Obligado con su certificado** | Cada merchant | Su certificado electrónico | Nada |
 
 Dos cosas que la FAQ dice y que tocan directamente al producto:
-- Para otorgar la representación al colaborador social **«no se admitirán modalidades de aceptación de condiciones del servicio»**. El Anexo I tiene que firmarse de forma manuscrita (con copia del DNI) o con firma electrónica cualificada / avanzada del art. 26 eIDAS. ⚠ Si la firma con el dedo + foto del DNI cumple el art. 26 eIDAS (vinculación única al firmante, control exclusivo, detección de cambios) es cuestión que debe validar el asesor legal; el ticket asume que sí sin haberlo contrastado.
+- Para otorgar la representación al colaborador social **«no se admitirán modalidades de aceptación de condiciones del servicio»**. El Anexo I tiene que firmarse de forma manuscrita (con copia del DNI) o con firma electrónica cualificada / avanzada del art. 26 eIDAS. **Cotejado 23-sep-2026 (SCRUM-1088):** el art. 26 del Reglamento (UE) 910/2014 exige, literal, que la firma (a) esté «vinculada al firmante de manera única», (b) «permita la identificación del firmante», (c) haya sido creada «utilizando datos de creación de la firma electrónica que el firmante puede utilizar, con un alto nivel de confianza, bajo su control exclusivo», y (d) esté «vinculada con los datos firmados... de modo tal que cualquier modificación ulterior de los mismos sea detectable» (fuente: [Iberley, art. 26 eIDAS](https://www.iberley.es/legislacion/articulo-26-identificacion-electronica-servicios-confianza-transacciones-electronicas-mercado-interior-reglamento-eidas), consolidado; texto oficial en [EUR-Lex, Reglamento 910/2014 consolidado](https://eur-lex.europa.eu/legal-content/ES/TXT/HTML/?uri=CELEX:02014R0910-20241018)). **La CITA queda confirmada — lo que sigue sin contrastar es la APLICACIÓN**: si la firma con el dedo + foto del DNI de YaQu satisface estas cuatro condiciones (sobre todo (a) y (c), vinculación única y control exclusivo) sigue siendo un juicio que debe hacer el asesor legal sobre el mecanismo concreto, no algo que este cotejo pueda resolver.
 - La delegación en un tercero «no exime al obligado a expedir facturas de la responsabilidad sobre dicho cumplimiento» (art. 6 RRSIF; art. 5 ROF). El merchant sigue siendo el responsable; eso es lo que deben decir los ToS.
 
 **Qué desbloquea:** el cliente mTLS y el sobre SOAP se pueden construir y probar con certificado propio de YaQu sobre registros propios (Modelo C). La custodia de N certificados de merchants (opción b del one-pager) no aparece en ninguna FAQ como vía prevista; la vía prevista para «YaQu remite por otros» es el 017 o el apoderamiento.
@@ -966,8 +966,10 @@ Dos cosas que la FAQ dice y que tocan directamente al producto:
 **Opción (a), y con la mayor de las cifras de conservación que aplique.**
 
 - **Base para conservar:** art. 17.3.b) RGPD (excepción a la supresión por obligación legal); art. 19 ROF («conservar, durante el plazo previsto en la LGT», las copias de las facturas expedidas); art. 8.2.c) RRSIF (conservación de los registros de facturación durante el plazo de la LGT); art. 30 Código de Comercio (seis años).
-- **Plazo:** la LGT fija la prescripción en 4 años (art. 66), pero el art. 30 CCom exige **6 años** desde el último asiento a todo empresario, y ese es el que ya publica la política de privacidad. Mantener 6. ⚠ Art. 30 CCom y art. 66 LGT citados de memoria: son literales estables, pero no releídos hoy.
-- **Cómo conservar sin usar:** el mecanismo del RGPD español para esto es el **bloqueo** (art. 32 LOPDGDD): los datos se conservan sólo a disposición de Administraciones y jueces durante la prescripción y se destruyen después. ⚠ Artículo citado de memoria.
+- **Plazo:** la LGT fija la prescripción en 4 años (art. 66), pero el art. 30 CCom exige **6 años** desde el último asiento a todo empresario, y ese es el que ya publica la política de privacidad. Mantener 6. **Cotejado 23-sep-2026 (SCRUM-1088) — CONFIRMADO, los dos, literal:**
+  - Art. 30 CCom, leído directamente en el BOE consolidado (https://www.boe.es/buscar/act.php?id=BOE-A-1885-6627): *"1. Los empresarios conservarán los libros, correspondencia, documentación y justificantes concernientes a su negocio, debidamente ordenados, durante seis años, a partir del último asiento realizado en los libros, salvo lo que se establezca por disposiciones generales o especiales."*
+  - Art. 66 LGT, letras a)-d), cotejado contra [Iberley](https://www.iberley.es/legislacion/articulo-66-ley-general-tributaria): *"Prescribirán a los cuatro años los siguientes derechos: a) El derecho de la Administración para determinar la deuda tributaria mediante la oportuna liquidación. b) El derecho de la Administración para exigir el pago de las deudas tributarias liquidadas y autoliquidadas. c) El derecho a solicitar las devoluciones... d) El derecho a obtener las devoluciones..."*
+- **Cómo conservar sin usar:** el mecanismo del RGPD español para esto es el **bloqueo** (art. 32 LOPDGDD): los datos se conservan sólo a disposición de Administraciones y jueces durante la prescripción y se destruyen después. **Cotejado 23-sep-2026 (SCRUM-1088) — CONFIRMADO**, literal contra [Iberley, art. 32 LOPDGDD](https://www.iberley.es/legislacion/articulo-32-ley-organica-proteccion-datos-personales-garantia-derechos-digitales-lopdgdd) (texto oficial: BOE-A-2018-16673): *"1. El responsable del tratamiento estará obligado a bloquear los datos cuando proceda a su rectificación o supresión. [...] 3. Los datos bloqueados no podrán ser tratados para ninguna finalidad distinta de la señalada en el apartado anterior."* El apartado 2 confirma el mecanismo exacto que describe esta respuesta (reserva con medidas técnicas, disponibilidad solo para jueces/tribunales/Ministerio Fiscal/AAPP durante la prescripción, destrucción después).
 - **(b) queda descartada por la propia norma fiscal**, no sólo por la huella: una factura anonimizada deja de cumplir el art. 6.1.c)-e) ROF y la FAQ prohíbe alterar un registro ya generado («no hay acciones permitidas sobre los registros de facturación una vez producidos»). Anonimizar sí procede en lo que **no** está dentro de la factura ni del registro (ficha de contacto, presupuestos no facturados, mensajes).
 - **(c) borrado total** contravendría el art. 19 ROF y el 8.2.c) RRSIF.
 
@@ -979,13 +981,20 @@ Dos cosas que la FAQ dice y que tocan directamente al producto:
 
 | Caso | Norma | En la factura (ROF) | En el registro VeriFactu |
 |---|---|---|---|
-| Ejecución de obra de **construcción o rehabilitación** de edificación, entre empresarios, contrato promotor-contratista o subcontrata | Art. 84.Uno.2.º.f) LIVA ⚠ | Sin IVA + mención «inversión del sujeto pasivo» (art. 6.1.m ROF) | `CalificacionOperacion = S2` ⚠ |
-| Renovación/reparación en **vivienda** para particular (o comunidad), edificio ≥ 2 años, materiales ≤ 40 % de la base | Art. 91.Uno.2.10.º LIVA ⚠ | Tipo 10 % | `S1`, tipo 10 |
-| Operación **exenta** (art. 20 LIVA; rara en oficios) | Art. 20 LIVA | Referencia al precepto o «operación exenta» (art. 6.1.j ROF) | `OperacionExenta = E1` ⚠ |
-| **No sujeta** | Art. 7 LIVA | Sin cuota | `N1` ⚠ |
+| Ejecución de obra de **construcción o rehabilitación** de edificación, entre empresarios, contrato promotor-contratista o subcontrata | Art. 84.Uno.2.º.f) LIVA ✅ | Sin IVA + mención «inversión del sujeto pasivo» (art. 6.1.m ROF) | `CalificacionOperacion = S2` ✅ |
+| Renovación/reparación en **vivienda** para particular (o comunidad), edificio ≥ 2 años, materiales ≤ 40 % de la base | Art. 91.Uno.2.10.º LIVA ✅ | Tipo 10 % | `S1`, tipo 10 |
+| Operación **exenta** (art. 20 LIVA; rara en oficios) | Art. 20 LIVA | Referencia al precepto o «operación exenta» (art. 6.1.j ROF) | `OperacionExenta = E1` ✅ |
+| **No sujeta** | Art. 7 LIVA | Sin cuota | `N1` ✅ |
 | Mezcla de casos en una factura | Art. 6.2 ROF | Base **separada** por cada bloque | Una línea de desglose por bloque |
 
-⚠ Los artículos 84 y 91 LIVA se citan de memoria (el consolidado del BOE no devolvió esos artículos hoy); las claves S1/S2/N1/E1 son de las listas del anexo de la Orden HAC/1177/2024 y conviene cotejarlas visualmente. Lo que no depende de YaQu: si una obra concreta es ISP o 10 % lo decide el hecho (quién es el destinatario, qué edificio, cuánto material). Encaja con `HITOS-producto.md`: el sistema pregunta, no decide.
+**Cotejado 23-sep-2026 (SCRUM-1088) — las 6 marcas de esta tabla, CONFIRMADAS:**
+- **Art. 84.Uno.2.º.f) LIVA**, literal contra [Iberley](https://www.iberley.es/legislacion/articulo-84-ley-impuesto-sobre-valor-anadido-iva): *"Ejecuciones de obra, con o sin aportación de materiales, así como las cesiones de personal para su realización, consecuencia de contratos directamente formalizados entre el promotor y el contratista que tengan por objeto la urbanización de terrenos o la construcción o rehabilitación de edificaciones."* — y confirma también el matiz «o subcontrata»: la regla aplica igual cuando el destinatario es el contratista principal u otros subcontratistas.
+- **Art. 91.Uno.2.10.º LIVA**, literal contra [Iberley](https://www.iberley.es/legislacion/articulo-91-ley-impuesto-sobre-valor-anadido-iva): exige que «el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda... para su uso particular» (con la excepción de comunidades de propietarios), que «la construcción o rehabilitación... haya concluido al menos dos años antes» y que el coste de los materiales aportados «no exceda del 40 por ciento de la base imponible». Coincide exactamente con la fila de la tabla.
+- **Claves `S1`/`S2`/`N1`/`E1`**, cotejadas contra el XSD oficial de la AEAT ya vendorizado en este mismo repo (`src/modules/fiscal/verifactu/xsd/SuministroInformacion.xsd`, namespace `www2.agenciatributaria.gob.es/.../SuministroInformacion.xsd` — es la especificación técnica de la propia AEAT, no una transcripción de tercero): `S1` = *"OPERACIÓN SUJETA Y NO EXENTA - SIN INVERSIÓN DEL SUJETO PASIVO"* (:1240-1242), `S2` = *"...CON INVERSIÓN DEL SUJETO PASIVO"* (:1245-1247), `N1` = *"OPERACIÓN NO SUJETA ARTÍCULO 7, 14, OTROS"* (:1250-1252), `E1` = *"EXENTA por Art. 20"* (:681-683). Las cuatro coinciden letra a letra con el uso que les da esta tabla.
+
+Lo que no depende de YaQu: si una obra concreta es ISP o 10 % lo decide el hecho (quién es el destinatario, qué edificio, cuánto material). Encaja con `HITOS-producto.md`: el sistema pregunta, no decide.
+
+**Nota de método (para las tres citas de LIVA de esta página):** el visor del BOE consolidado (`boe.es/buscar/act.php` y `boe.es/eli/.../con`) no devolvió el texto completo de la Ley 37/1992 en este cotejo — la respuesta se corta antes de llegar a los artículos 78/84/91 (documento muy largo). Se cotejó contra Iberley, base de datos jurídica de uso habitual que marca sus artículos como «vigente» y cuyo texto coincidió, palabra por palabra, con los fragmentos que sí devolvió el buscador del BOE para otras leyes de este mismo cotejo (CCom, art. 30, verificado directamente contra `boe.es`). Se declara la limitación en vez de callarla.
 
 ---
 
@@ -998,7 +1007,7 @@ Dos cosas que la FAQ dice y que tocan directamente al producto:
 ## P11-P13 · Tres tipos de factura
 
 - **P11 · Sin identificar al cliente:** resuelto en B3. Particular sin NIF → **F2 simplificada** hasta 3.000 € (art. 4.2.c ROF); si pide factura con NIF → simplificada cualificada, registrada como F1; > 3.000 € o empresario → completa con NIF obligatorio. El caso `FacturaSinIdentifDestinatarioArt61d` no procede para un emisor establecido en TAI.
-- **P12 · Suplidos:** art. 78.Tres.3.º LIVA ⚠ (no forman parte de la base si son en nombre y por cuenta del cliente, con factura a nombre del cliente). La FAQ *Registros de facturación: alta* lo cierra para VeriFactu: los suplidos «no son importes “propios” del registro de facturación y no tienen que incluirse»; si se incluyen en el importe total, «deberán consignarse como importe no sujeto al IVA o cantidades a tipo cero». Pueden ir en la factura impresa sin problema.
+- **P12 · Suplidos:** art. 78.Tres.3.º LIVA ✅ **cotejado 23-sep-2026 (SCRUM-1088)** — no forman parte de la base imponible si son en nombre y por cuenta del cliente, con factura a nombre del cliente. Literal contra [Iberley](https://www.iberley.es/legislacion/articulo-78-ley-impuesto-sobre-valor-anadido-iva): *"Las sumas pagadas en nombre y por cuenta del cliente en virtud de mandato expreso del mismo. El sujeto pasivo vendrá obligado a justificar la cuantía efectiva de tales gastos y no podrá proceder a la deducción del impuesto que eventualmente los hubiera gravado."* Confirma "en nombre y por cuenta del cliente"; el requisito de "mandato expreso" y el de no deducir el IVA de esos gastos no estaban en la redacción original de esta fila — se añaden aquí como matiz. La FAQ *Registros de facturación: alta* lo cierra para VeriFactu: los suplidos «no son importes “propios” del registro de facturación y no tienen que incluirse»; si se incluyen en el importe total, «deberán consignarse como importe no sujeto al IVA o cantidades a tipo cero». Pueden ir en la factura impresa sin problema.
 - **P13 · Recargo de equivalencia:** sólo aplica si el merchant **vende bienes a un comerciante minorista en RE** para reventa (art. 16.4 ROF: factura separada con tipo y cuota del recargo). Para un oficio que presta servicios a particulares, no se da. Y la FAQ confirma que quien está en RE no está obligado a expedir factura salvo excepciones (art. 3.1.b ROF), lo que reduce aún más el caso.
 
 ---
@@ -1020,9 +1029,37 @@ En ambos casos la factura original y su registro no se editan (FAQ: «no podrá 
 
 ---
 
-## Lo que no se ha verificado hoy (⚠ resumen)
+## Cotejo del 23-sep-2026 (SCRUM-1088) — las 14 marcas ⚠ de esta página
 
-Arts. 84.Uno.2.º.f), 91.Uno.2.10.º y 78.Tres.3.º LIVA; art. 30 CCom; art. 66 LGT; art. 32 LOPDGDD; claves S1/S2/N1/E1 del anexo de la Orden. Todo son textos estables citados de memoria, pero conviene cotejarlos antes de convertirlos en microcopy o en un guard.
+Encargo del orquestador: cotejar cada ⚠ contra el BOE consolidado o la fuente oficial que corresponda,
+antes de que se conviertan en microcopy o en un guard. Resultado, punto por punto (detalle y cita
+literal en el sitio de cada uno, arriba):
+
+| Cita | Veredicto | Fuente cotejada |
+|---|---|---|
+| Art. 84.Uno.2.º.f) LIVA | ✅ CONFIRMADA | Iberley (BOE-A-1992-28740) |
+| Art. 91.Uno.2.10.º LIVA | ✅ CONFIRMADA | Iberley (BOE-A-1992-28740) |
+| Art. 78.Tres.3.º LIVA | ✅ CONFIRMADA, con matiz (ver P12: "mandato expreso" y no deducción del IVA no estaban en la redacción original) | Iberley (BOE-A-1992-28740) |
+| Art. 30 CCom | ✅ CONFIRMADA, literal exacto | **BOE consolidado directo** (BOE-A-1885-6627) |
+| Art. 66 LGT | ✅ CONFIRMADA, literal exacto (a-d) | Iberley (BOE-A-2003-23186) |
+| Art. 32 LOPDGDD | ✅ CONFIRMADA, literal exacto (apdos. 1-3) | Iberley (BOE-A-2018-16673) |
+| Claves S1/S2/N1/E1 (anexo Orden HAC/1177/2024) | ✅ CONFIRMADAS, las 4 | XSD oficial de la AEAT, ya vendorizado en el repo (`SuministroInformacion.xsd`) |
+| Firma dedo+DNI ↔ art. 26 eIDAS | ✅ la CITA queda confirmada (los 4 requisitos, literal); la APLICACIÓN a la firma de YaQu sigue sin contrastar — no es algo que un cotejo de texto legal pueda resolver | Iberley + EUR-Lex (Reglamento UE 910/2014 consolidado) |
+
+**0 no localizadas, 0 que contradigan lo ya escrito en esta página.** Una matizada (P12/78.Tres.3.º:
+el texto añade dos condiciones — mandato expreso y no deducibilidad — que la fila original no
+mencionaba, aunque no cambian la conclusión).
+
+**Nota de método, para que quede escrita y no se repita el trabajo sin saberlo:** el visor del BOE
+consolidado (`boe.es/buscar/act.php`, `boe.es/eli/.../con`) funciona para leer un artículo si está
+cerca del principio de una ley corta (Código de Comercio, art. 30 — confirmado leyendo directamente el
+BOE), pero en este cotejo NO devolvió el texto completo de leyes largas (LIVA, LGT): la respuesta se
+corta antes de llegar a los artículos pedidos (medido: se cortó en el art. 14 de LIVA cuando se pedía
+el 84, y en el art. 26 de LGT cuando se pedía el 66). Para esas, el cotejo se hizo contra **Iberley**,
+base de datos jurídica de uso profesional habitual en España que marca sus artículos como «vigente» y
+transcribe el BOE consolidado. Es una fuente SECUNDARIA, no el BOE en bruto — se declara la diferencia
+en vez de presentarla como si fuera la primaria. Para las claves S1/S2/N1/E1 la fuente SÍ es primaria:
+el propio XSD que la AEAT publica y que este repo ya usa para construir los registros.
 
 ---
 
@@ -1038,7 +1075,7 @@ Arts. 84.Uno.2.º.f), 91.Uno.2.10.º y 78.Tres.3.º LIVA; art. 30 CCom; art. 66 
 
 Consecuencia: **S1-D puede arrancar hoy** con un certificado FNMT de persona física (o de representante cuando exista la SL). Lo que sigue bloqueado por la SL es probar en nombre de un merchant.
 
-**D11 · Coste y plazo de la revisión fiscal externa — SIN FUENTE, decisión del fundador.** Lo que la revisión debe cubrir: (1) visto bueno a la declaración responsable con los datos de la SL; (2) los ToS con el reparto art. 5 ROF / art. 6 RRSIF; (3) el Anexo I de representación y si la firma con el dedo + DNI cumple el art. 26 eIDAS; (4) los ⚠ abiertos: arts. 84/91 LIVA y art. 32 LOPDGDD. Los 300-600 € del máster son estimación sin fuente. El único plazo oficial es el del 017: «en condiciones normales podría ser de un mes», sin compromiso (correo AEAT).
+**D11 · Coste y plazo de la revisión fiscal externa — SIN FUENTE, decisión del fundador.** Lo que la revisión debe cubrir: (1) visto bueno a la declaración responsable con los datos de la SL; (2) los ToS con el reparto art. 5 ROF / art. 6 RRSIF; (3) el Anexo I de representación y si la firma con el dedo + DNI cumple el art. 26 eIDAS (la CITA de qué exige el art. 26 ya está cotejada — SCRUM-1088 — lo que falta es el juicio del asesor sobre el mecanismo concreto). Los arts. 84/91 LIVA y el art. 32 LOPDGDD, que estaban ⚠ aquí, quedaron cotejados y CONFIRMADOS el 23-sep-2026 (SCRUM-1088; detalle en el apéndice «Cotejo del 23-sep-2026», al final de esta página) — ya no son parte de lo que falta por revisar. Los 300-600 € del máster son estimación sin fuente. El único plazo oficial es el del 017: «en condiciones normales podría ser de un mes», sin compromiso (correo AEAT).
 
 ### G · El adicional en obra — RESPONDIDO (consumo, normativa autonómica)
 
