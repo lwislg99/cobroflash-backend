@@ -42,3 +42,20 @@ todos los textos de la web que siguen prometiendo cobro por YaQu (falso desde la
 - No se tocó ningún fichero de `public/` ni `docs/YAQU_MASTER.md` — `git diff --stat` de esta rama
   solo toca `docs/legal/` y `docs/master/`.
 - El STOP de siempre en J4: copy fiscal/de producto, propone y para — no envía ni aplica.
+
+## Corrección post-CI (rojo obligatorio, misma rama)
+
+El PR entró en rojo en «build + tests (con banco desechable)» (run 35793619444) por dos guards de
+`docs/legal/` que la entrega original no satisfacía — ninguno pide relajar el guard (regla 41):
+
+- **SCRUM-525d (trinquete de anclas con testigo):** la cita `docs/YAQU_MASTER.md:215` de la
+  sección D no llevaba testigo escrito. Se le añadió el testigo `` (`cobrar señales por WhatsApp`) ``
+  — literal que sí está en esa línea — sin cambiar la afirmación.
+- **SCRUM-547 (documento «para aprobar» sin enlazar):** el nombre del fichero nuevo contiene
+  "PENDIENTES", así que el censo lo cuenta como a la espera de aprobación; no estaba enlazado desde
+  ninguna puerta. Se añadió una entrada en `docs/PENDIENTES_FUNDADOR.md` (sección "✍️ Aprobar
+  textos") que dice qué decidir y cómo contestar.
+
+El fallo de «meta-guard · los guards caen cuando deben» del mismo run era consecuencia del segundo
+punto: la pasada limpia de control ya caía por SCRUM-547 antes de mutar nada, así que el meta-guard
+no podía medir la mutación. Se resuelve solo al arreglar la causa.

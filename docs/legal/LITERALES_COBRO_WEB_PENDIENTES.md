@@ -144,7 +144,7 @@ presupuesto y lo firman con el dedo."*
 
 ## D · La categoría de la Parte H2 del máster — cambio de máster, no de `public/`
 
-**Dónde:** `docs/YAQU_MASTER.md:215`, Parte H2 ("Mensaje en dos etapas"). Reportado por la sesión
+**Dónde:** `docs/YAQU_MASTER.md:215` (`cobrar señales por WhatsApp`), Parte H2 ("Mensaje en dos etapas"). Reportado por la sesión
 anterior de J4 (ver traspaso de esa tanda) y sin tocar desde entonces.
 
 **Texto de hoy:** *"Etapa 1 (pre-SIF): categoría = "herramienta para presupuestar, firmar y
