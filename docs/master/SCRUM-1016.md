@@ -349,6 +349,10 @@ esto es la especificación completa para que se escriba sin tener que volver a r
 
 # APÉNDICE · 23-sep-2026 · SCRUM-1016i · El titular, reescrito — dos candidatos verificados contra los tres guards
 
+**Skill UI:** no cargada · esta entrada PROPONE copy (H1/subtítulo/título) sin tocar ningún componente
+visual ni `public/index.html` — cita rutas y líneas para que J3 las aplique después; yaqu-premium-ui
+es obligatoria antes de TOCAR UI, y aquí no se toca ninguna.
+
 **Fecha:** 23-sep-2026 · **Carril:** J4 (legal y cumplimiento) · **Gate:** sin gate — propuesta, no se aplica nada
 **Medido contra:** `origin/main` = `6bca74e55d4ad193debd03cd95223f8390080ad4` · 2026-09-23T00:00:00Z
 
