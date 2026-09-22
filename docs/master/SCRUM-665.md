@@ -1442,3 +1442,91 @@ suelo cae y el censo se declara CIEGO en vez de medir media casa y dar un númer
 - **Ninguna factura tocada** (regla 29). Ningún estado ni flag nuevo (27). Ninguna dependencia (36).
 - `git stash` no usado · historia no reescrita · rama propia, nunca `main`.
 - **Las 18 divergencias esquema/base del apéndice (B): ninguna arreglada.** No son de este encargo.
+
+---
+
+# APÉNDICE · 22-sep-2026 · J1 · RECONFIRMADO HOY, MÁS UN QUINTO SITIO: EL XML DE LA AEAT
+
+**Fecha:** 22-sep-2026 · **Carril:** J1 · **Gate:** 🔴 **MIDE. NO ARREGLA.**
+**Medido contra:** `origin/main` = `504cd33edb23d023b50ea8805cf359ab04096834` · 2026-09-22T09:59:36Z
+**Rama:** `scrum-665-verifactu-xml-emisor-vivo`
+**Encargo:** el orquestador pide reconfirmar si el PDF usa las columnas del cliente congelado (hoy
+sincronizadas en las tres bases) o la ficha viva. Antes de contestar, PASO 0: este ticket ya tenía
+1445 líneas de expedientes previos (15/16/17-sep) — no se repite lo medido, se apunta a ello.
+
+## 0 · La pregunta del orquestador, contestada primero
+
+**Sí, el PDF (y el XML de la AEAT) usan la columna, no la ficha viva — para el CLIENTE.**
+`clienteDelDocumento(inv, inv.customer)` es el único lector, y lo llaman los tres generadores de PDF
+(`invoicing.ts:122,260`; `invoicesAdmin.routes.ts:1161`) y el exportador de la AEAT
+(`verifactu.service.ts:856`). Cierra SCRUM-729; nada que construir ahí.
+
+**Para el EMISOR (el profesional) la respuesta sigue siendo NO**, y eso es justamente el resto de
+este ticket: el escritor y el lector (`emisorCongelado.ts`) están construidos y probados desde el
+16-sep, el ALTER está aplicado y VERIFICADO en las **tres** bases desde el 17-sep, y el esquema lo
+declara desde esa misma fecha — pero **nada los llama todavía** (censo AST del apéndice anterior:
+`emisorDelDocumento`, 0 apariciones en `src/`). El PDF y el XML siguen leyendo `merchant.*` en vivo.
+Reconfirmado hoy con el instrumento QUE YA EXISTÍA (`docs/master/evidencias/scrum665/dos-regeneraciones.mjs`,
+sin escribir uno nuevo), contra el commit de arriba: mismo veredicto que el 15-sep —
+
+```
+pasada1 vs pasada2 (el merchant corrigio su direccion):
+  por BYTES ....: 🔴 DISTINTOS
+  por CONTENIDO : 🔴 DISTINTO
+```
+
+## 1 · Lo nuevo: un QUINTO sitio que ningún apéndice anterior había mirado
+
+`clienteCongelado.ts:6-9` dice que son "los cuatro sitios que reconstruyen una factura emitida —dos
+PDF, la regeneración de admin y el XML de la AEAT". Los cuatro apéndices previos midieron ESE marco
+(y con razón: el título del ticket dice "el PDF"). Pero el propio XML de la AEAT tiene DOS caras, y
+solo se midió una:
+
+- **La cara del DESTINATARIO** (`clienteDelDocumento`, línea 856): ✅ ya congelada, medida en el §0.
+- **La cara del EMISOR de ese mismo XML**: 🔴 **nunca medida en este expediente.**
+  `buildVerifactuRegistrosXml` (`verifactu.service.ts:582`) hace
+  `await prismaClient.merchant.findUnique({ where: { id: params.merchantId } })` — EN VIVO, en el
+  momento de EXPORTAR — y usa `merchant.taxId` (`:771,788,883,912`) y
+  `merchant.legalName || merchant.name` (`nombreEmisor`, `:666,987`) para construir `IDEmisorFactura`
+  y `obligado.nombreRazon`. Llamado desde DOS rutas de exportación
+  (`exports.routes.ts:252` y `:556`), no desde `emitInvoice`: el censo de "productores" del apéndice
+  anterior no lo veía porque no es un productor, es un LECTOR que no pasa por `emisorDelDocumento`.
+
+### Un matiz que decide cómo de grave es cada campo, verificado leyendo `computeVeriFactuHash`
+
+`IDEmisorFactura=${nif}` es uno de los **ocho** campos que entran en la huella
+(`verifactu.service.ts:92-111`). Consecuencia medida por identidad, no supuesta:
+
+| campo del emisor en el XML | ¿entra en la huella sellada? | qué pasa si `Merchant.taxId`/`legalName` cambia tras emitir |
+|---|---|---|
+| `merchant.taxId` (`IDEmisorFactura`) | **SÍ** (uno de los 8) | el XML re-exportado llevaría un NIF que **no cuadra** con la huella que el mismo XML imprime — auto-defendido: un verificador que recompute la huella lo detecta |
+| `merchant.legalName`/`name` (`nombreEmisor`) | **NO** | puede derivar en silencio, sin que ninguna huella lo delate — el mismo defecto no detectable que ya tiene el PDF |
+
+O sea: el caso peor (el NIF) tiene una red de seguridad que el PDF no tiene para NADA; el caso del
+nombre del emisor no tiene ninguna, ni en el PDF ni en el XML.
+
+## 2 · Consecuencia para "el enchufe" (§⑤ del apéndice anterior, SCRUM-665d)
+
+El plan de conexión ya escrito (líneas 1312-1342 de este mismo fichero) cablea `emisorCongelado`
+dentro de `emitInvoice`/`crearFacturaEmitida` y sus lectores de PDF — **no nombra
+`buildVerifactuRegistrosXml`**. Si el enchufe se construye tal como está escrito hoy, el PDF
+dejaría de reimprimir con datos de hoy pero **el XML de la AEAT seguiría haciéndolo**: dos
+documentos de la misma factura, uno congelado y otro no. Se deja **nombrado y sin construir**
+(regla 38): el sexto punto de conexión sería `verifactu.service.ts:582,666,771,788,883,912,987`,
+sustituyendo el `findUnique` en vivo por `emisorDelDocumento(inv, merchant)` con el mismo criterio
+de NULL = "anterior al escritor".
+
+## 3 · Lo que sigue sin poder medirse (igual que el 15-sep)
+
+Cuántas facturas emitidas hay en las tres bases y cuántas dependen del disco efímero: sigue exigiendo
+tocar las bases, y esta sesión no tiene `DATABASE_URL_DEV` en su árbol (bloqueo reportado y resuelto
+por otra vía: el orquestador aplicó el sincronizado de columnas de HOY desde el suyo). Cero
+almacenamiento persistente reconfirmado por el mismo barrido de dependencias
+(`s3|aws|cloudinary|supabase|gcs|azure|minio|blob|r2|backblaze` → 0 en `src/modules/invoicing` y
+`src/core/storage`).
+
+## 4 · Nada aplicado
+
+Ni una línea de `src/`, ni de `prisma/schema.prisma`, ni de ninguna base. El enchufe (PDF + el sexto
+punto del XML) sigue esperando el GO del fundador sobre un único PR de ~10-11 sitios en el camino de
+emisión fiscal, más su decisión pendiente de la R1 (§④ del apéndice anterior).
