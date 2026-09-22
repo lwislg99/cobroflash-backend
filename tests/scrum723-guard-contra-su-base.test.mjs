@@ -353,6 +353,11 @@ const HALLAZGOS_DECLARADOS = [
   // instalación del banco y se pueda medir POR EFECTO qué llamadas recibe `claude` (si con el equipo
   // vivo `lanzar orquestador` llama o no a `claude --bg`). Lo retira quien borre `sesion.mjs`.
   'tests/scrum959b-el-arranque-no-duplica-el-equipo.test.mjs [show]',
+  // SCRUM-1007/1011/1026 · su banco: mismo caso que los de 899, 951a, 954 y 959b — un repositorio
+  // SINTÉTICO en el temporal cuyo `origin/main` no es el de nadie, para que la puerta de
+  // `sesion.mjs` acepte la instalación del banco y se pueda medir POR EFECTO `lanzar`/`relevar`/
+  // `estado` (confirmarArranque, sesionesBloqueadas). Lo retira quien borre `sesion.mjs`.
+  'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
