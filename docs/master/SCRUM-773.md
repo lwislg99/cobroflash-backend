@@ -271,3 +271,26 @@ la pareja antes/ahora — una vez declarada una retirada para `'tests-declarados
 poder avisar de CUALQUIER bajada futura de esa población, no sólo de ésta. Mismo patrón ya en las
 dos entradas de SCRUM-867. Si es a propósito, no hace falta tocar nada; si no, es un ticket de S5
 aparte sobre el propio mecanismo del trinquete.
+
+## Segunda corrección (22-sep, mismo día): `guards de navegador` en rojo, y NO es de este ticket
+
+`@claude` avisó de que el check obligatorio también salía en rojo en `guard:marcadores-en-pantalla`
+(SCRUM-722), job «guards de navegador (fuera de la tanda)». Medido antes de tocar nada (regla 41):
+el diff de esta rama no toca `public/dashboard/js/exportView.js` ni ese guard, así que **no lo causó
+SCRUM-773**. Origen real, ya en `origin/main`: SCRUM-1041 (commit `80b60238`, bloque A) firmó y quitó
+el marcador `[PENDIENTE microcopy oficial]` de `exportView.js`, pero actualizó el censo de
+`tests/scrum402-marcador-no-se-pinta.test.mjs` y no el censo APARTE que lleva
+`scripts/guard-marcadores-en-pantalla.mjs` (uno mide el FUENTE, el otro el DOM renderizado — ver
+cabecera de ese fichero) — la entrada `export: 6` se quedó caduca y confirmado con
+`git show origin/main:scripts/guard-marcadores-en-pantalla.mjs` que sigue así en `main`: rompe a
+CUALQUIER PR sobre main actual, no solo a este.
+
+Arreglo, dentro de esta misma rama porque bloquea el check obligatorio de este PR y no toca nada de
+las stop conditions de AA1.4: se borra la entrada `export` del `CENSO` (no se pone a 0 — mismo
+criterio que el propio guard exige en su mensaje de error y que SCRUM-402/424/405 ya siguieron).
+No se relaja ninguna aserción: la vista sale del censo porque ya no pinta nada, y si algún día
+vuelve a pintar el marcador caerá como «VISTA NUEVA», más estricto que antes.
+
+El tercer job en rojo del mismo run (`meta-guard`, `scrum859-identidad-y-motivo-cerrado.test.mjs`
+→ `MUDO`) tampoco lo causa este PR: es la muda intermitente de CI que SCRUM-908 ya midió y documentó
+en `scripts/meta-guard-mutaciones.mjs` (3 de 38 runs en CI, 0 de 50 pasadas en local) — no se toca.
