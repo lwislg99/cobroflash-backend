@@ -2323,6 +2323,11 @@ html, body { overflow-x: clip; }
 .historial-docs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .historial-ver-mas { margin: 12px 16px; }
 .historial-sueltos { margin: 16px 16px 8px; font-size: 13px; font-weight: 700; color: var(--neutral-600); }
+
+/* SCRUM-1033/1034 · chips de la cabecera de la ficha 360 (NIF/CIF, dirección, referencia) y el
+   aviso del límite de etiquetas. Regla 4: nada de esto va como `style.cssText` desde JS. */
+.c360-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.c360-tags-limite { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .historial-sueltos-lista { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 16px 16px; }
 
 /* ── Settings form: responsive ──────────────────────────────── */
