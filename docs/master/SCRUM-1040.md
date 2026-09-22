@@ -4,6 +4,7 @@
 `docs/equipo/orquestador.md` §11bis A20 — el área normal de J5 sigue siendo Competencia y producto)
 **Gate:** sin gate, corre en `npm test`
 **Medido contra:** `origin/main` = `6bca74e55d4ad193debd03cd95223f8390080ad4` · 2026-09-22T22:44:05Z
+**Skill UI:** cargada — tarde, no antes de tocar `public/` como pide el encargo (confesado abajo)
 
 ## Qué es, y qué NO es
 
@@ -110,6 +111,17 @@ que buscaba `/^\d+ gastos/` (plural) para descartar el aviso de excluidos del re
 datos — y ese aviso, con `sinClasificar === 1`, sale en SINGULAR («1 gasto…», `avisosLibroRecibidas`
 lo pluraliza de verdad). El test contaba esa línea como una fila de datos y fallaba con «2 !== 1».
 No era el producto: era mi propio filtro heurístico. Corregido a `/^\d+ gastos? sin datos de IVA/`.
+
+**El segundo, más de proceso:** el encargo decía explícitamente «Es UI: carga la skill
+`yaqu-premium-ui` antes de tocar `public/`», y no lo hice hasta el final, al medir con
+`guards:entrada` y ver que SCRUM-811 exige declarar esta ranura. Cargada tarde, la comparé contra
+lo ya construido: reutiliza el inventario AB3 sin inventar componente ni token nuevo (`.data-card`,
+`.data-card-toolbar`, `.table-scroll`/`.table`, `.alert` + tono, `.btn-secondary`, `.input`), es
+vanilla, y no queda ni un `style.cssText` (el propio SCRUM-713c lo exigió). Lo que la skill pide y
+NO se ha hecho: capturas antes/después y la matriz de dispositivos (AB6) — declarado también más
+arriba, sin Playwright en este worktree. El selector de periodo hereda `style="…"` inline en sus
+`<label>`/`<input>` dentro del `innerHTML`, igual que el mismo componente en `exportView.js`: no es
+una superficie nueva de ese defecto, pero tampoco está limpia — se deja dicho en vez de callado.
 
 ## Lo que NO cubre — declarado
 
