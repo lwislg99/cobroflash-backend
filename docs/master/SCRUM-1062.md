@@ -15,7 +15,10 @@ leía por documento (`relatedType`/`relatedId`), nunca por cliente.
   si no es suyo); sus mensajes por `(merchantId, customerId)`, 20 por página con cursor (como
   `historialDelCliente`, SCRUM-980); `waOptOut` del CLIENTE, una vez, no por fila.
 - Ruta fina `GET /admin/customers/:id/whatsapp` en `customersAdmin.routes.ts`, hermana de
-  `/historial`, mismo patrón de cursor `?despuesDe=<id>`.
+  `/historial`, mismo patrón de cursor `?despuesDe=<id>`. Rol: `requireRole('admin')` — a
+  diferencia de `/historial` (trabajos del cliente, campo del Operario, SCRUM-980), esto es el
+  registro de ENVÍOS/entregas de WhatsApp, más cerca de facturación/comunicación que de la
+  visita en obra; sin un motivo de campo explícito se queda en el default de S1 (Admin-only).
 - NO se enseña texto de conversación porque no se guarda — `WhatsAppMessage` solo tiene tipo,
   plantilla, estado y el documento relacionado. No es un recorte de esta pantalla: es lo que hay.
 - Un documento borrado no se lleva el mensaje por delante: `WhatsAppMessage` es tabla SUELTA (sin
@@ -53,6 +56,11 @@ gateado y sigue diciendo «0 fallos NO incluye estos»). Censos de tenencia 348/
 
 ## Errores propios
 
-Ninguno que declarar en este ticket: se replicó el patrón ya probado de SCRUM-980 sin desviarse,
+La ruta se abrió sin `requireRole`: la red fail-closed de SCRUM-55
+(`tests/scrum55-admin-fail-closed.test.mjs`) la cazó en el CI del PR («toda ruta /admin declara
+rol»), en rojo en el check obligatorio. Corregido añadiendo `requireRole('admin')` — el default
+de S1 — con el motivo explicado arriba; no se tocó el guard.
+
+Fuera de eso, ninguno que declarar: se replicó el patrón ya probado de SCRUM-980 sin desviarse,
 y el punto de mayor riesgo (que un documento borrado callara el mensaje) se resolvió por diseño
 del esquema (tabla sin FK) y se dejó como caso explícito del test, no como suposición.

@@ -272,8 +272,14 @@ router.get('/:id/historial', async (req: any, res) => {
  * GET /admin/customers/:id/whatsapp — SCRUM-1062 (CRM-19) · qué WhatsApp se le han enviado al
  * cliente y en qué estado. Hermana de `/historial`: SOLO LECTURA, `?despuesDe=<id>` pide la
  * página siguiente. No enseña texto de conversación (no se guarda) y no toca el canal (J2).
+ *
+ * SCRUM-55 (S1, default): a diferencia de `/historial` (los TRABAJOS del cliente, que sí es
+ * campo — SCRUM-980), esto es el registro de ENVÍOS/entregas de WhatsApp — más cerca de
+ * facturación/comunicación que de la visita en obra. Sin un "por qué de campo" explícito no se
+ * inventa el permiso (TECNICO_ALLOWED exige motivo, no es un trámite): se queda en el default,
+ * Admin-only.
  */
-router.get('/:id/whatsapp', async (req, res) => {
+router.get('/:id/whatsapp', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
