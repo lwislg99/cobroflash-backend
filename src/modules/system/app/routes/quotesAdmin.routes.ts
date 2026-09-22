@@ -37,6 +37,7 @@ import { getEmissionMode } from '../../../invoicing/domain/emission.service'; //
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 // SCRUM-814 · el cerrojo de serie que YA EXISTE, tomado por el llamador para que el recuento de
 // tramos y la reserva del número queden bajo la MISMA sección crítica. No es un cerrojo nuevo:
 // es `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, el de SCRUM-234/728, y esta función lo
@@ -271,6 +272,9 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
 
     // SCRUM-729 · fuera de la transacción: el cerrojo se toma en la primera línea de dentro.
     const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `merchant` (= `quote.merchant`) ya viene completo: sin
+    // viaje nuevo.
+    const emisorCongelado = congelarEmisorDesdeFicha(merchant);
 
     const emision = await prisma.$transaction(async (tx) => {
       // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
@@ -305,7 +309,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C3', actor: actorDeRequest(req),
       });
-      const creada = await crearFacturaEmitida(tx, clienteCongelado, {
+      const creada = await crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,
@@ -574,12 +578,15 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
 
     // SCRUM-729 · el congelado, fuera de la transacción como en los otros seis sitios.
     const clienteCongeladoEntera = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `merchant` (= `quote.merchant`) ya viene completo: sin
+    // viaje nuevo.
+    const emisorCongeladoEntera = congelarEmisorDesdeFicha(merchant);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C4', actor: actorDeRequest(req),
       });
-      return crearFacturaEmitida(tx, clienteCongeladoEntera, {
+      return crearFacturaEmitida(tx, clienteCongeladoEntera, emisorCongeladoEntera, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,

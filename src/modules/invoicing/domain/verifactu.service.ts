@@ -36,6 +36,7 @@ import {
   resolverSinDestinatario,
 } from '../../fiscal/verifactu/registro.builder';
 import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
+import { emisorDelDocumento, type FichaDeEmisor } from './emisorCongelado'; // SCRUM-665
 
 // SCRUM-145: los namespaces oficiales de los XSD de la AEAT vivían aquí (`NS_LR`, `NS_INFO`)
 // SOLO para el sobre que se armaba en este fichero. SCRUM-240 se llevó el sobre a
@@ -663,7 +664,27 @@ export async function buildVerifactuRegistrosXml(
       })),
   ].sort((a, b) => a.sello - b.sello);
 
-  const nombreEmisor = merchant.legalName || merchant.name;
+  // SCRUM-665 · sexto punto de conexión: hasta hoy `NombreRazonEmisor` e `IDEmisorFactura` salían
+  // del merchant EN VIVO al exportar, para TODAS las facturas del ejercicio a la vez — igual que
+  // el PDF antes de SCRUM-665. `merchant.taxId` está entre los 8 campos de `computeVeriFactuHash`
+  // (un cambio queda auto-defendido: la huella deja de cuadrar), pero el NOMBRE no, y podía
+  // derivar en silencio en el documento que se remite a la AEAT.
+  //
+  // Ahora cada `RegistroFactura` usa el emisor de SU PROPIA factura (`emisorDelDocumento`, mismo
+  // criterio que el PDF y que `clienteDelDocumento` para el destinatario): la columna manda, y
+  // sólo cae a esta ficha viva si la factura es anterior al escritor (SCRUM-665, 16-sep-2026).
+  const emisorFichaViva: FichaDeEmisor = {
+    name: merchant.name,
+    legalName: merchant.legalName,
+    taxId: merchant.taxId,
+    address: merchant.address,
+    logoUrl: merchant.logoUrl,
+    phone: merchant.whatsappPhone,
+    email: merchant.email,
+  };
+  // El SOBRE (`obligado`, más abajo) es harina de otro costal: identifica a quien presenta el
+  // LOTE hoy, no a quien emitió cada factura — se queda con el merchant EN VIVO a propósito.
+  const nombreEmisorDelSobre = merchant.legalName || merchant.name;
   // ⚠️ NO UNIFICAR con el formato de los CSV (SCRUM-86). Aquí los importes van con PUNTO
   // decimal (`121.00`) porque lo exige el esquema de la AEAT: el tipo es un decimal XSD, y
   // el separador decimal de XSD es el punto, no depende del locale. Este fichero no lo abre
@@ -681,6 +702,20 @@ export async function buildVerifactuRegistrosXml(
   const excluidos: Array<{ number: string; motivo: string }> = [];
 
   const construirRegistro = (inv: (typeof invoices)[number]): string => {
+    // SCRUM-665 · el emisor de ESTA factura, congelado si lo tiene. `merchant.taxId!` ya exigía
+    // NIF antes de llegar aquí (gate de arriba, sobre el merchant EN VIVO); una factura frigida
+    // ANTES de tener NIF configurado es el mismo caso límite que ya cubre `excluidos` para el
+    // desglose — se excluye con motivo, nunca se declara con un NIF inventado o vacío.
+    const emisor = emisorDelDocumento(inv, emisorFichaViva);
+    if (emisor.name == null) {
+      throw new RegistroNoEmitibleError('el emisor de esta factura no tiene nombre — no se declara', inv.number);
+    }
+    if (!emisor.taxId) {
+      throw new RegistroNoEmitibleError('el emisor de esta factura no tiene NIF — no se declara', inv.number);
+    }
+    const idEmisorFactura = emisor.taxId;
+    const nombreEmisor = emisor.name;
+
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
     const vat = calcVatBreakdown(lines);
     // SCRUM-209: el desglose ya NO se construye aquí. Este bloque tenía su propia plantilla
@@ -768,7 +803,7 @@ export async function buildVerifactuRegistrosXml(
     const rectificadas = esRectificativa ? `
       <sum1:FacturasRectificadas>
         <sum1:IDFacturaRectificada>
-          <sum1:IDEmisorFactura>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFactura>
+          <sum1:IDEmisorFactura>${xmlEscape(idEmisorFactura)}</sum1:IDEmisorFactura>
           <sum1:NumSerieFactura>${xmlEscape(inv.rectifies!.number)}</sum1:NumSerieFactura>
           <sum1:FechaExpedicionFactura>${formatDateES(inv.rectifies!.createdAt)}</sum1:FechaExpedicionFactura>
         </sum1:IDFacturaRectificada>
@@ -785,7 +820,7 @@ export async function buildVerifactuRegistrosXml(
     const encadenamiento = inv.vfHash ? `
       <sum1:Encadenamiento>${anterior ? `
         <sum1:RegistroAnterior>
-          <sum1:IDEmisorFactura>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFactura>
+          <sum1:IDEmisorFactura>${xmlEscape(idEmisorFactura)}</sum1:IDEmisorFactura>
           <sum1:NumSerieFactura>${xmlEscape(anterior.number)}</sum1:NumSerieFactura>
           <sum1:FechaExpedicionFactura>${formatDateES(anterior.createdAt)}</sum1:FechaExpedicionFactura>
           <sum1:Huella>${xmlEscape(inv.vfPrevHash!)}</sum1:Huella>
@@ -880,11 +915,11 @@ export async function buildVerifactuRegistrosXml(
     <sum1:RegistroAnulacion>
       <sum1:IDVersion>1.0</sum1:IDVersion>
       <sum1:IDFactura>
-        <sum1:IDEmisorFacturaAnulada>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFacturaAnulada>
+        <sum1:IDEmisorFacturaAnulada>${xmlEscape(idEmisorFactura)}</sum1:IDEmisorFacturaAnulada>
         <sum1:NumSerieFacturaAnulada>${xmlEscape(inv.number)}</sum1:NumSerieFacturaAnulada>
         <sum1:FechaExpedicionFacturaAnulada>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFacturaAnulada>
       </sum1:IDFactura>
-      <sum1:Encadenamiento>${anulacionPrev(inv, merchant.taxId!, registrosOrdenados) || `
+      <sum1:Encadenamiento>${anulacionPrev(inv, idEmisorFactura, registrosOrdenados) || `
         <sum1:PrimerRegistro>S</sum1:PrimerRegistro>`}
       </sum1:Encadenamiento>
       <sum1:SistemaInformatico>
@@ -909,7 +944,7 @@ export async function buildVerifactuRegistrosXml(
     <sum1:RegistroAlta>
       <sum1:IDVersion>1.0</sum1:IDVersion>
       <sum1:IDFactura>
-        <sum1:IDEmisorFactura>${xmlEscape(merchant.taxId!)}</sum1:IDEmisorFactura>
+        <sum1:IDEmisorFactura>${xmlEscape(idEmisorFactura)}</sum1:IDEmisorFactura>
         <sum1:NumSerieFactura>${xmlEscape(inv.number)}</sum1:NumSerieFactura>
         <sum1:FechaExpedicionFactura>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFactura>
       </sum1:IDFactura>
@@ -984,7 +1019,7 @@ ${excluidos.map((x) => `       · ${xmlEscape(x.number)}: ${xmlEscape(x.motivo)}
   // permanente: lo que queda vigilando en `npm test` es que las dos presentaciones no divierjan
   // en contenido y que las dos validen contra los XSD (`tests/scrum240-sobre-unico.test.mjs`).
   const xml = construirSobreRegFactu({
-    obligado: { nombreRazon: nombreEmisor, nif: merchant.taxId },
+    obligado: { nombreRazon: nombreEmisorDelSobre, nif: merchant.taxId },
     registrosFacturaXml: registros,
     comentario: parteExclusiones,
     declaracionXml: true,
