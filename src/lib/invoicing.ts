@@ -23,6 +23,7 @@ import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.ser
 import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarDesdeFicha, clienteDelDocumento } from '../modules/invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisor, emisorDelDocumento } from '../modules/invoicing/domain/emisorCongelado'; // SCRUM-665
 
 /**
  * Asegura que el PDF de una factura existe en disco (genera bajo demanda si está
@@ -101,11 +102,14 @@ export async function ensureInvoicePdf(
     exigirDocumentoEmitible({ number: inv.number, vfHash }, inv.merchant);
 
     const lines = Array.isArray(inv.lines) ? (inv.lines as any[]) : [];
+    // SCRUM-665 · el emisor sale de la COLUMNA, no de la ficha viva — mismo criterio que el
+    // cliente (SCRUM-729): `emisorDelDocumento` sólo cae a `inv.merchant` si la factura es
+    // anterior al escritor (`merchantName` a NULL).
     await generateInvoicePdf({
       number: inv.number,
       invoiceId: inv.id,          // SCRUM-72
       merchantId: inv.merchantId, // SCRUM-72
-      merchant: {
+      merchant: emisorDelDocumento(inv, {
         name: inv.merchant.name,
         legalName: inv.merchant.legalName,
         taxId: inv.merchant.taxId,
@@ -113,7 +117,7 @@ export async function ensureInvoicePdf(
         logoUrl: inv.merchant.logoUrl,
         phone: inv.merchant.whatsappPhone, // A2.4: emisor completo
         email: inv.merchant.email,
-      },
+      }),
       // SCRUM-577: se pasa `legalName`. Hasta hoy NO viajaba, asi que la factura no podia
       // imprimir la denominacion legal aunque el cliente la tuviera rellena.
       //
@@ -246,7 +250,9 @@ export async function ensureInvoiceForCharge(
         number: inv.number,
         invoiceId: inv.id,          // SCRUM-72
         merchantId: inv.merchantId, // SCRUM-72
-        merchant: {
+        // SCRUM-665 · idem que el otro generador: la columna manda, la ficha viva sólo si el
+        // documento es anterior al escritor.
+        merchant: emisorDelDocumento(inv, {
           name: merchant.name,
           legalName: merchant.legalName,
           taxId: merchant.taxId,
@@ -254,7 +260,7 @@ export async function ensureInvoiceForCharge(
           logoUrl: merchant.logoUrl,
           phone: merchant.whatsappPhone, // A2.4: emisor completo
           email: merchant.email,
-        },
+        }),
         // SCRUM-577: idem — el segundo camino que arma la factura.
         // SCRUM-729 · idem: la columna manda, la ficha viva sólo si el documento es anterior.
         customer: clienteDelDocumento(inv, customer),
@@ -328,11 +334,22 @@ export async function ensureInvoiceForCharge(
   // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
   exigirTiposDeIvaEmitibles(invoiceLines);
 
-  // SCRUM-729 · el congelado sale de la ficha que `ensureInvoiceForCharge` YA cargó con el
-  // `Charge` (`include: { customer: true, … }`): aquí cuesta CERO viajes. Y va fuera de la
-  // transacción por la misma razón que en el resto: dentro estaría dentro del cerrojo de serie.
+  // SCRUM-729/665 · el congelado sale de la ficha que `ensureInvoiceForCharge` YA cargó con el
+  // `Charge` (`include: { customer: true, merchant: true, … }`): aquí cuesta CERO viajes. Y va
+  // fuera de la transacción por la misma razón que en el resto: dentro estaría dentro del
+  // cerrojo de serie.
   if (!ch.customer) throw new Error('missing_customer_in_charge');
+  if (!ch.merchant) throw new Error('missing_merchant_in_charge');
   const clienteCongelado = congelarDesdeFicha(ch.customer);
+  const emisorCongelado = congelarEmisor({
+    name: ch.merchant.name,
+    legalName: ch.merchant.legalName,
+    taxId: ch.merchant.taxId,
+    address: ch.merchant.address,
+    logoUrl: ch.merchant.logoUrl,
+    phone: ch.merchant.whatsappPhone,
+    email: ch.merchant.email,
+  });
 
   const inv = await prisma.$transaction(async (tx) => {
     const number = await allocateInvoiceNumber(tx, ch.merchantId, {
@@ -342,7 +359,7 @@ export async function ensureInvoiceForCharge(
       // actor desde los 4 llamadores. Se registra lo que se sabe y NO se inventa el resto.
       actor: actorC6 ?? { tipo: 'sistema', ref: 'ensureInvoiceForCharge' },
     });
-    return crearFacturaEmitida(tx, clienteCongelado, {
+    return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
       // SCRUM-445 · EL VINCULO, ESCRITO. `Invoice.chargeId` existia y no lo escribia nadie, asi
       // que la pantalla de Cobros no tenia con que saber que este Charge y esta Invoice son EL
       // MISMO dinero: los pintaba dos veces. Toda la desduplicacion colgaba de que existiera un

@@ -35,22 +35,23 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 import type { Prisma } from '@prisma/client';
 import type { ClienteCongelado } from './clienteCongelado';
+import type { EmisorCongelado } from './emisorCongelado'; // SCRUM-665
 
 /**
- * Todo lo que hoy se escribe en un `invoice.create`, MENOS los cinco campos del cliente: ésos
- * entran por su parámetro y no por el `data`. Escribirlos a mano aquí no compila.
+ * Todo lo que hoy se escribe en un `invoice.create`, MENOS los campos del cliente y del emisor:
+ * ésos entran por su parámetro y no por el `data`. Escribirlos a mano aquí no compila.
  */
 export type DatosDeFacturaEmitida = Omit<
   Prisma.InvoiceUncheckedCreateInput,
-  keyof ClienteCongelado
+  keyof ClienteCongelado | keyof EmisorCongelado
 >;
 
 /**
- * Crea la fila de una factura EMITIDA con el cliente de ese instante escrito dentro.
+ * Crea la fila de una factura EMITIDA con el cliente y el emisor de ese instante escritos dentro.
  *
  * La copia viaja en el MISMO `INSERT` que ya se hacía: **cero viajes de más a la base, y cero
- * dentro del cerrojo de serie**. El único viaje que añade este ticket es la lectura de la ficha
- * (`congelarCliente`), y va FUERA de la `$transaction`.
+ * dentro del cerrojo de serie**. El único viaje que añaden estos dos parámetros es la lectura de
+ * las fichas (`congelarCliente`, `congelarEmisorDesdeBase`), y va FUERA de la `$transaction`.
  *
  * ⛔ No se llama para presupuestos (oferta viva) ni para rectificar una fila ya escrita: una
  *    factura emitida no se edita (regla 29). Sólo nace.
@@ -58,7 +59,8 @@ export type DatosDeFacturaEmitida = Omit<
 export function crearFacturaEmitida(
   tx: Prisma.TransactionClient,
   cliente: ClienteCongelado,
+  emisor: EmisorCongelado,
   datos: DatosDeFacturaEmitida,
 ) {
-  return tx.invoice.create({ data: { ...datos, ...cliente } });
+  return tx.invoice.create({ data: { ...datos, ...cliente, ...emisor } });
 }

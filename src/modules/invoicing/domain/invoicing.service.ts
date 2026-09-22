@@ -17,6 +17,7 @@ import type { ActorAudit } from '../../system/audit.service'; // SCRUM-207
 import type { TipoDocumento } from './tipoDocumento'; // SCRUM-413: union CERRADA
 import { crearFacturaEmitida } from './crearFacturaEmitida'; // SCRUM-729
 import type { ClienteCongelado } from './clienteCongelado'; // SCRUM-729
+import type { EmisorCongelado } from './emisorCongelado'; // SCRUM-665
 
 export interface AlbaranRef {
   albaranId: number;
@@ -82,6 +83,15 @@ export interface EmitInvoiceInput {
    * declarar de qué cliente es la factura que emite.
    */
   clienteCongelado: ClienteCongelado;
+  /**
+   * SCRUM-665 · OBLIGATORIO: el EMISOR tal y como está en este instante. Mismo patrón que
+   * `clienteCongelado`, `actor` (SCRUM-207) y `origen` (SCRUM-347): obligatorio por tipo, así que
+   * un llamador nuevo no compila hasta declarar con qué emisor emite.
+   *
+   * Lo lee el llamador con `congelarEmisorDesdeBase(prisma, merchantId)` —o `congelarEmisor(ficha)`
+   * si ya tiene la ficha del merchant a mano— ANTES de abrir la `$transaction`, nunca esta función.
+   */
+  emisorCongelado: EmisorCongelado;
 }
 
 /**
@@ -94,8 +104,9 @@ export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoi
     // orígenes se registraban igual.
     camino: input.origen, actor: input.actor,
   });
-  // SCRUM-729 · el cliente de este instante entra por el envoltorio, en el MISMO `INSERT`.
-  return crearFacturaEmitida(tx, input.clienteCongelado, {
+  // SCRUM-729/665 · el cliente y el emisor de este instante entran por el envoltorio, en el
+  // MISMO `INSERT`.
+  return crearFacturaEmitida(tx, input.clienteCongelado, input.emisorCongelado, {
     merchantId: input.merchantId,
     customerId: input.customerId,
     quoteId: input.quoteId ?? null,

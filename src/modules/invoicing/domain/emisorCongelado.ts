@@ -46,6 +46,28 @@ export const CAMPOS_CONGELADOS_EMISOR = Object.freeze([
   'merchantEmail',
 ] as const);
 
+/**
+ * 🔴 LO MÍNIMO QUE SE USA, gemelo de `LectorDeFichas` (`clienteCongelado.ts:55-62`) y por el mismo
+ * motivo: se llama con el cliente GLOBAL, a propósito, para que la lectura quede FUERA de la
+ * transacción y no entre en la sección crítica del cerrojo de serie.
+ */
+export interface LectorDeEmisores {
+  merchant: {
+    findUnique(args: {
+      where: { id: number };
+      select: { name: true; legalName: true; taxId: true; address: true; logoUrl: true; whatsappPhone: true; email: true };
+    }): Promise<{
+      name: string;
+      legalName: string | null;
+      taxId: string | null;
+      address: string | null;
+      logoUrl: string | null;
+      whatsappPhone: string | null;
+      email: string | null;
+    } | null>;
+  };
+}
+
 /** La ficha VIVA: el perfil del merchant tal y como está hoy en su tabla. */
 export interface FichaDeEmisor {
   name: string | null;
@@ -111,6 +133,45 @@ export function congelarEmisor(ficha: FichaDeEmisor): EmisorCongelado {
     merchantPhone: ficha.phone ?? null,
     merchantEmail: ficha.email ?? null,
   };
+}
+
+/**
+ * 🔴 EL VIAJE, cuando quien llama NO tiene ya la ficha del merchant a mano (gemelo de
+ * `congelarCliente`, `clienteCongelado.ts:154-175`).
+ *
+ * Se llama **ANTES de abrir la `$transaction`**, nunca dentro — mismo motivo que el cliente:
+ * `allocateInvoiceNumber` toma el cerrojo de serie como primera sentencia y es de transacción, así
+ * que cualquier viaje detrás de él se serializa entre emisiones simultáneas.
+ *
+ * 🔴 SIN FILTRO por merchant, y no es un descuido: en `congelarCliente` el filtro protege a un
+ * `customerId` de fuera del merchant (regla 2, SCRUM-243). Aquí el `merchantId` **es** el sujeto,
+ * no el ámbito — no hay un segundo campo contra el que contrastarlo.
+ *
+ * `Merchant.whatsappPhone` se renombra aquí a `FichaDeEmisor.phone`: es el único sitio del árbol
+ * donde ese renombrado tiene que pasar, porque de aquí sale directo a `congelarEmisor`.
+ */
+export async function congelarEmisorDesdeBase(
+  db: LectorDeEmisores,
+  merchantId: number,
+): Promise<EmisorCongelado> {
+  const ficha = await db.merchant.findUnique({
+    where: { id: merchantId },
+    select: { name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true, email: true },
+  });
+  if (!ficha) {
+    // Fallar aquí es fallar ANTES de pedir número: si reventara después, el número ya estaría
+    // consumido y la serie tendría un hueco que justificar.
+    throw new Error(`emisor_no_encontrado_al_congelar:${merchantId}`);
+  }
+  return congelarEmisor({
+    name: ficha.name,
+    legalName: ficha.legalName,
+    taxId: ficha.taxId,
+    address: ficha.address,
+    logoUrl: ficha.logoUrl,
+    phone: ficha.whatsappPhone,
+    email: ficha.email,
+  });
 }
 
 /**
