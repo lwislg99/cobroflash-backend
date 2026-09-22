@@ -272,3 +272,56 @@ lo cuente dos veces.
 la sirve ni una declaración de acceso para ella. Si no la usa nadie, B es gratis y A es trabajo
 sobre una pantalla muerta; si la usa el fundador para dar de alta cobros a mano, es al revés. **Esa
 respuesta no está en el repositorio.**
+
+---
+
+# SCRUM-910e · ② firmado y aplicado — variante A, 4 casos
+
+**Medido contra:** `origin/main` = `79175cfce0ca4f82db873c12cfaacdbb7590151d` · 2026-09-23T00:22:14Z
+**Rama:** `scrum-910-recibo-sin-boton-que-no-existe`
+**Carril:** J2 (Clientes y cobro) — ticket asignado por Luis fuera de tabla (comentario 16278) y
+confirmado por el orquestador (comentario 16420).
+
+## 0 · La firma
+
+**Firmados en Jira SCRUM-910, comentario 16527, por el orquestador** (delegación de Javier del
+22-sep-2026 sobre textos que no sean legales ni fiscales, registrada en SCRUM-997): los 2 literales
+NUEVOS que faltaban de la variante A propuesta en §7 de este mismo expediente. Los otros dos casos
+no son texto nuevo: **ambos** ya estaba firmado (sin cambio) y **ninguno** reutiliza, sin una
+palabra añadida, el literal ya firmado de `payInvoice.routes.ts:242`.
+
+| caso | condición | literal |
+|---|---|---|
+| ambos | `puedeTransferencia && puedeTarjeta` | *(ya firmado, sin cambio)* «Estamos esperando tu pago. Puedes completarlo usando los botones de **pago por banco** o **pago con tarjeta** que aparecen más arriba.» |
+| solo banco | `puedeTransferencia && !puedeTarjeta` | 🔴 *(NUEVO, firmado 16527)* «Estamos esperando tu pago. Puedes completarlo usando el botón de **pago por banco** que aparece más arriba.» |
+| solo tarjeta | `!puedeTransferencia && puedeTarjeta` | 🔴 *(NUEVO, firmado 16527)* «Estamos esperando tu pago. Puedes completarlo usando el botón de **pago con tarjeta** que aparece más arriba.» |
+| ninguno | `!puedeTransferencia && !puedeTarjeta` | *(reusado, sin cambio)* «El profesional te indicará cómo pagar.<br/>Contacta con él si tienes dudas.» |
+
+## 1 · El arreglo
+
+`receipt.routes.ts`: el `statusMessage` de `ch.status === 'pending'` deja de ser un literal fijo y
+pasa a derivarse de `puedeTransferencia`/`puedeTarjeta` (las mismas dos variables que ya deciden
+`payBtns`, líneas 123-124 — misma pregunta, no una tercera condición derivada). Cero cambios fuera
+de `receipt.routes.ts` y el test nuevo.
+
+## 2 · Rojo primero
+
+`tests/scrum910d-microcopy-recibo-pendiente.test.mjs`: pide `/recibo/:token` con `ch.status:
+'pending'` para los 4 merchants (uno por caso) y comprueba que el cuerpo contiene el literal de SU
+caso y NINGUNO de los otros tres — así el test cae tanto si falta el texto correcto como si sobra
+el de otro caso. Control positivo aparte: los 4 literales son mutuamente no-subcadena (si uno fuera
+subcadena de otro, un `includes` no discriminaría).
+
+Corrido contra el árbol SIN tocar → 3 de 4 casos en rojo por el motivo esperado («ambos» pasaba
+porque hoy ES el único texto que se pinta, siempre). Aplicado el arreglo → 4/4 verde, y sin
+regresión en `tests/scrum910-la-transferencia-que-no-mira.test.mjs` (③, ya en `main`).
+
+`npm run guards:entrada` 112/112 · `npm run guard:marcadores-en-pantalla` verde. `npm test`
+completo: ver informe de entrega.
+
+## 3 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `src/modules/billing/app/routes/receipt.routes.ts` | `pendingMessage` derivado de `puedeTransferencia`/`puedeTarjeta` |
+| `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` | nuevo — rojo primero, 4 casos + control positivo |
