@@ -87,3 +87,135 @@ sitios) = las mismas 11+4 de J5, a otra granularidad. No hay líneas nuevas ni l
   PR ya mergeado.
 * No propone qué decir en `:79`/`:83` de `precios.html` cuando el cobro SÍ se active — eso es otro
   ticket, con su propio literal, cuando llegue el momento.
+
+---
+
+# APÉNDICE · 22-sep-2026 · SCRUM-1016e · El titular montado — y un choque con regla 26, J3
+
+**Fecha:** 22-sep-2026 · **Carril:** J3 · **Rama:** `scrum-1016e-titular-aplicado`
+**Medido contra:** `origin/main` = `c1dfb4b1de122d835e6214bfba1ac88db1158b61` · 2026-09-22T09:31:45Z
+
+## Qué se aplicó
+
+Los tres literales firmados por Javier el 22-sep-2026 (comentario 16427 de SCRUM-1016, texto en el
+apéndice SCRUM-1016d de arriba), en `public/index.html`, letra a letra:
+
+1. `<h1 id="reg-hero">` (`:427`) → *"Del presupuesto a la firma — tu factura VeriFactu, sin cambiar
+   de precio."*
+2. `<p class="sub">` (`:428`) → *"Crea el presupuesto en 30 segundos y tu cliente lo firma desde el
+   móvil por WhatsApp. Cada registro de facturación ya sale con el formato oficial de la AEAT — la
+   remisión a Hacienda se activa con la declaración responsable del fabricante, sin cambiar de
+   precio."*
+3. `<title>`, `og:title`, `twitter:title` (`:6,16,23`) → *"YaQu — Del presupuesto a la firma, tu
+   factura VeriFactu sin cambiar de precio"*
+
+Además, **un cuarto cambio no pedido por el encargo pero exigido por un guard existente**: el `<h1>`
+de la propuesta oculta `#heroe-f4` (`:507`, SCRUM-331/F4, `hidden`) se sincronizó con el nuevo H1,
+porque `tests/scrum331-heroe.test.mjs` (regla ④, "el posicionamiento no se toca") exige que el
+eyebrow y el H1 de esa propuesta sean letra a letra iguales a los del héroe vivo. El eyebrow ya
+coincidía; el `.sub` de `#heroe-f4` es intencionadamente distinto del vivo desde antes de esta
+entrada (el propio test solo exige eyebrow+H1) y no se ha tocado.
+
+## Verificación del layout a 390px — EN NAVEGADOR REAL, no aritmética
+
+Medido con Edge vía `puppeteer-core` (mismo mecanismo que `guard:contraste`/`guard:caja-avisos`),
+sirviendo `public/` tal cual desde disco e inyectando el texto viejo/nuevo en la MISMA página para
+que la única variable sea el texto:
+
+| | viejo | nuevo | delta |
+|---|---|---|---|
+| H1 — líneas | 3 | 4 | +1 |
+| H1 — alto | 106,8 px | 142,4 px | +35,6 px |
+| Subtítulo — líneas | 4 | 7 | +3 |
+| Subtítulo — alto | 105,6 px | 184,7 px | +79,2 px |
+| Héroe completo — alto | 1.460,4 px | 1.575,2 px | +114,8 px (+7,9 %) |
+| `scrollWidth` vs `clientWidth` (390) | 390 = 390 | 390 = 390 | sin overflow horizontal |
+
+**No rompe**: sin overflow horizontal, sin solape entre H1/subtítulo/CTA/nota/demo (huecos de 16–24 px
+entre cada bloque, medidos con `getBoundingClientRect`), sin clipping (`.hero` tiene `overflow:hidden`
+solo para el fondo decorativo `::before`, no limita altura porque la sección no tiene alto fijo). Sí
+**crece bastante**: +115 px en un viewport de 844 px de alto es ~el 14 % de la pantalla — el visitante
+necesita un scroll algo más largo para ver la demo animada. Es una consecuencia real y medida del
+texto más largo, no una suposición: se entrega tal cual, sin acortar el literal firmado por mi cuenta.
+
+## 🔴 STOP — el literal firmado choca con regla 26, y no se decide aquí
+
+`node --test tests/scrum331-heroe.test.mjs` da **1 fallo de 11**, y es reproducible y aislado (los
+otros 10, incluida la sincronía de `#heroe-f4` de arriba, están en verde):
+
+> 🔴 el héroe menciona la fiscalidad. Esa pregunta se contesta SOLO con el guion H2 (regla 26), y no
+> en el héroe.
+
+El regex del guard (`/veri\s*\*?\s*factu|aeat|hacienda|rrsif|declaraci[oó]n responsable/i`) contra
+el H1 y el subtítulo **por separado** (aislado con Node, no de memoria):
+
+- **H1 solo** → coincide: `VeriFactu` (1 vez).
+- **Subtítulo solo** → coincide 3 veces: `AEAT`, `Hacienda`, `declaración responsable`.
+
+`docs/YAQU_MASTER.md:215` es la fuente de regla 26: *"Guion único ante '¿me vale para VeriFactu?'"*
+— la respuesta detallada y con matices (*"no puedo decir que esté cerrada"*, *"todavía no está
+construida"*) vive SOLO en el guion H2, nunca en el héroe. El apéndice SCRUM-1016d (arriba) justificó
+cada cláusula del literal contra las reglas 17/24 (veracidad), pero **no contra regla 26** (dónde se
+puede decir, no si es verdad) — el guard que la vigila es de otra entrada (SCRUM-331) y no lo cruzó
+nadie hasta esta medición.
+
+**No decido yo cuál gana.** Es JUSTO lo que la regla 41 del máster pide (guard en rojo → se arregla
+el código, nunca el guard) y JUSTO lo que las STOP conditions de AA1.4 cubren (claims fiscales/
+VeriFactu en copy): no relajo el test, no reescribo el literal firmado por mi cuenta. Hace falta una
+decisión del fundador/orquestador entre:
+
+- (a) regla 26 se amplía para permitir esta frase concreta en el héroe (cambio de máster + del
+  guard, ninguno de los dos es mío);
+- (b) el literal del H1/subtítulo se reescribe para no nombrar VeriFactu/AEAT/Hacienda/"declaración
+  responsable" en el héroe — y entonces vuelve a ser copy fiscal sin firmar, con su propia vuelta de
+  firma;
+- (c) se decide que regla 26 gana tal cual y el titular de SCRUM-1016d NO se aplica hoy.
+
+## Estado de la rama
+
+`scrum-1016e-titular-aplicado`, con el diff de arriba, mergeada con `origin/main` de hoy y build
+verde (`npm run build`). **No se empuja como lista**: se abre/actualiza el PR en BORRADOR y con el
+auto-merge desarmado, porque `main` no puede recibir un rojo a propósito (norma de la casa) y este
+rojo es real, no un control.
+
+## El otro encargo — ¿la página se contradice a sí misma?
+
+Sí, y más de lo que ya se sabía. Con el titular nuevo puesto (o incluso ya con el viejo, da igual
+para este punto: es la MISMA contradicción que ya existía, el titular nuevo solo la hace más
+visible), lo que sigue prometiendo cobro por YaQu en `public/index.html`, TODO LIVE (sin `hidden`):
+
+**Ya conocido (las 13 líneas de SCRUM-1016c, sin firmar, sin aplicar — confirmado que siguen
+idénticas: 9 en `index.html` + 4 en `precios.html`):** paso "3 · Cobra" (`:609`), FAQ resp. 1 y 2
+(`:759`, `:761`), CTA final (`:767`), meta/og/twitter/JSON-LD description (`:7,17,24,37`), y en
+`precios.html` la tarjeta de precios (`:7,62,79,83`).
+
+**NO estaba en esa lista, y también es LIVE hoy:**
+
+- `:433-434` y `:466` — el demo animado del propio héroe termina con un check "✓ Cobrado ·
+  961,95 €" (`.paid-toast`, visual, no solo el `aria-label` del contenedor).
+- `:529-533` y `:570-595`, sección `#probar` ("Pruébalo tú") — un **demo interactivo completo** de
+  cobro: paso 4 "Recibe el enlace de pago", paso 5 "Paga como quiera — Tarjeta, Bizum o
+  transferencia", y una simulación de móvil con selector de método de pago, botón "Pagar 961,95 €" y
+  pantalla final "¡Cobrado! Ya tienes tu dinero — sin perseguir a nadie". Es más persuasivo que
+  cualquiera de los 13 literales de texto: el visitante hace clic en "pagar" y ve el dinero
+  "recibido".
+- `:743-748` — la **propia landing** tiene su tarjeta de precios (distinta de `precios.html`, mismo
+  patrón): "Cobro con tarjeta, Bizum y transferencia" + "Solo si cobras con tarjeta: 0,9 %".
+- `:760` FAQ ("¿Mis clientes tienen que instalar algo?"): "tienen dos botones — Firmar y Pagar".
+
+**NO es contradicción porque NO es visible hoy** (confirmado por su propio marcador, no de
+memoria): la sección `#comparativa` ("Tu libreta no firma, no cobra y no avisa.") lleva
+`hidden data-propuesta="microcopy-sin-aprobar"` — no se pinta.
+
+No abro ticket (A13): esto es lo que el orquestador pidió medir para decidir si sube las 13 líneas
+hoy o espera al titular. Con el demo interactivo de `#probar` sin cubrir por ninguna propuesta
+existente, la contradicción es mayor de lo que la lista de 13 sugiere.
+
+## Encargo 2 — los `[PENDIENTE microcopy oficial]` de SCRUM-1025/1029
+
+Confirmado, no de memoria: `grep` de las seis superficies A-F (`settingsView.js`, `onboardingView.js`,
+`tutorial.js`, `plansView.js`, `lifecycle.service.ts`) no encuentra ningún texto sustituto de la §6 de
+`SCRUM-1029.md` ni el marcador `[PENDIENTE microcopy oficial]` en ninguna de ellas — siguen ocultando,
+no redactando, tal como quedó el PR #1650. El único `PENDIENTE_MODO_EMISION` que aparece en
+`settingsView.js` es un mecanismo DISTINTO y anterior (fallback de la pill de `appModoEmision` ante un
+valor desconocido), no el texto sustituto de este ticket.
