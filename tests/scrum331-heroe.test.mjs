@@ -18,7 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   auditarCifras, bloqueHeroe, textoDeCopia, cifrasDeCopia, claveDeCifra,
-  CENSO, SIN_FUENTE_MAX,
+  CENSO, SIN_FUENTE_MAX, tieneMatizEnElMismoBloque, sinComentariosHtml,
 } from '../scripts/_cifras-heroe.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -118,11 +118,50 @@ test('SCRUM-331 · 🔴 ni un testimonio, ni un logo, ni un «más de X profesio
   }
 });
 
-test('SCRUM-331 · regla 26: el héroe no habla de VeriFactu ni de Hacienda, ni con sinónimos', () => {
-  const t = publicado(bloqueHeroe(html)) + ' ' + publicado(bloquePropuesta());
-  assert.doesNotMatch(t, /veri\s*\*?\s*factu|aeat|hacienda|rrsif|declaraci[oó]n responsable/i,
-    '🔴 el héroe menciona la fiscalidad. Esa pregunta se contesta SOLO con el guion H2 (regla 26), ' +
-    'y no en el héroe.');
+// ⚠️ SCRUM-1016 (comentario de Jira 16432, Javier, 22-sep-2026): la regla 26 dejó de ser lista
+// negra absoluta. Ahora una mención de VeriFactu/AEAT/Hacienda/RRSIF/declaración responsable vale
+// SI (a) es cita literal de una frase ya firmada en el máster y (b) su matiz vive en la MISMA
+// unidad visible (el `<span>/<h1>/<p>` inmediato, o el `<div>` que los envuelve — nunca toda la
+// sección). (a) y (c) —el ticket con la firma— no se pueden comprobar por código: quedan como
+// checklist humano en el PR (PR #1668 §5A). Esto solo comprueba (b).
+const FISCAL_RE_HEROE = /veri\s*\*?\s*factu|aeat|hacienda|rrsif|declaraci[oó]n\s*responsable/gi;
+
+test('SCRUM-331 · regla 26 enmendada: toda mención de fiscalidad lleva su matiz en la MISMA unidad visible', () => {
+  const zonas = [['héroe vivo', bloqueHeroe(html)], ['propuesta F4', bloquePropuesta()]];
+  const sinMatiz = [];
+  for (const [nombre, bloqueRaw] of zonas) {
+    if (!bloqueRaw) continue;
+    const saneado = sinComentariosHtml(bloqueRaw);
+    FISCAL_RE_HEROE.lastIndex = 0;
+    let m;
+    while ((m = FISCAL_RE_HEROE.exec(saneado)) !== null) {
+      const r = tieneMatizEnElMismoBloque(bloqueRaw, m.index, m.index + m[0].length);
+      if (!r.ok) sinMatiz.push(nombre + ': «' + m[0] + '» (índice ' + m.index + ')');
+    }
+  }
+  assert.deepEqual(sinMatiz, [],
+    '🔴 menciona la fiscalidad SIN el matiz en la MISMA unidad visible (regla 26 enmendada, ' +
+    'comentario 16432 de SCRUM-1016): ' + sinMatiz.join(' · ') +
+    '\n   Fuera de una conversación en vivo esa pregunta sigue siendo SOLO el guion H2, salvo cita ' +
+    'literal firmada CON su matiz pegado en el mismo contenedor — no basta con que el matiz esté ' +
+    'en otro punto de la sección.');
+});
+
+test('SCRUM-331 · AUTOPRUEBA: tieneMatizEnElMismoBloque distingue "en el mismo bloque" de "en la sección"', () => {
+  const conMatizCerca = '<div><h1>habla de <span class="hl">VeriFactu</span></h1>' +
+    '<p class="sub">se activa con la declaración firmada</p></div>';
+  const i1 = conMatizCerca.indexOf('VeriFactu');
+  assert.equal(tieneMatizEnElMismoBloque(conMatizCerca, i1, i1 + 'VeriFactu'.length).ok, true,
+    '🔴 no ve el matiz aunque esté en el <p> hermano dentro del mismo <div> envolvente');
+
+  const sinMatizCerca = '<section class="hero"><div class="a"><h1>habla de ' +
+    '<span class="hl">VeriFactu</span></h1><p class="sub">sin ningún matiz aquí</p></div>' +
+    '<div class="b"><p>se activa con algo, pero en OTRO bloque hermano</p></div></section>';
+  const i2 = sinMatizCerca.indexOf('VeriFactu');
+  assert.equal(tieneMatizEnElMismoBloque(sinMatizCerca, i2, i2 + 'VeriFactu'.length).ok, false,
+    '🔴 ha dado por bueno un matiz que vive en un `<div>` HERMANO, no en el que envuelve la ' +
+    'mención — eso es la lista negra vieja disfrazada («en algún punto de la sección»), no la ' +
+    'condición (b) («la MISMA unidad visible»)');
 });
 
 // ── ③ REGLA 30, EN LAS DOS DIRECCIONES ───────────────────────────────────────────────────────

@@ -219,3 +219,120 @@ Confirmado, no de memoria: `grep` de las seis superficies A-F (`settingsView.js`
 no redactando, tal como quedó el PR #1650. El único `PENDIENTE_MODO_EMISION` que aparece en
 `settingsView.js` es un mecanismo DISTINTO y anterior (fallback de la pill de `appModoEmision` ante un
 valor desconocido), no el texto sustituto de este ticket.
+
+---
+
+# APÉNDICE · 22-sep-2026 · SCRUM-1016g/h · cabecera aplicada, guards al día — y DOS conflictos nuevos sin decidir, J3
+
+**Fecha:** 22-sep-2026 · **Carril:** J3 · **Rama:** `scrum-1016e-titular-aplicado`
+**Medido contra:** `origin/main` = `6bca74e55d4ad193debd03cd95223f8390080ad4` · 2026-09-22T22:46:20Z
+
+## ① H1/subtítulo — comprobados, sin tocar
+
+`public/index.html:427-428` sigue letra a letra el literal del comentario 16427. No se ha reescrito.
+
+## ② Los tres campos de cabecera — aplicado el literal del comentario 16513
+
+`<title>`, `og:title`, `twitter:title` (`:6,16,23`) → **"YaQu — Presupuesto y firma; tu factura
+VeriFactu, en camino"** (59 caracteres), los tres iguales.
+
+## ③ Guard A — `scrum331-heroe.test.mjs`, regla 26 de lista negra a (a)+(b)
+
+Implementado tal como especifica el PR #1668 §5A: cada mención de fiscalidad escala del
+`<span>/<h1>/<p>` inmediato al `<div>` que los envuelve (nunca a la sección `hero` entera) buscando
+el patrón de matiz. Detalle técnico en `scripts/_cifras-heroe.mjs` (`tieneMatizEnElMismoBloque`,
+`elementosDe`) + dos AUTOPRUEBA nuevas que distinguen "mismo bloque" de "en la sección".
+
+**Resultado real, no esperado:** el héroe VIVO pasa entero (VeriFactu en el H1 escala al `<div>`
+envolvente, que contiene el `.sub` con "se activa con"; AEAT/Hacienda/declaración responsable están
+directamente en ese mismo `.sub`). **La propuesta oculta `#heroe-f4` NO pasa:** su H1 (`:507`) copia
+"VeriFactu" letra a letra del vivo —obligado por el test ④, "el posicionamiento no se toca"— pero su
+`.sub` propio (`:508`) es el texto ANTERIOR al pivote (intencionadamente distinto del vivo desde antes
+de este ticket) y no lleva ningún matiz. Es un hallazgo real, no algo que yo haya introducido: la
+regla 26 vieja (lista negra) ya lo habría cazado igual; lo nuevo es que ahora se puede señalar
+EXACTAMENTE dónde falta el matiz, en vez de "el héroe menciona fiscalidad" a secas.
+
+**No lo he tocado.** No es de los 4 puntos del encargo, y las dos salidas que veo son decisión del
+fundador, no mía:
+- (a) reutilizar en `#heroe-f4/p.sub` el MISMO subtítulo ya firmado (comentario 16427) — no sería
+  texto nuevo, sería la misma frase aprobada puesta también en el contenedor que hoy no la lleva;
+- (b) decidir que un bloque `hidden` + `data-microcopy="PENDIENTE_FUNDADOR"` (test ③ ya impide que se
+  pinte) queda fuera del alcance de la condición (b) — cambia lo que dice J4 en el §5A ("igual que
+  hoy" cubre `bloquePropuesta()`), así que es alcance de la regla, no mío.
+
+## ④ Guard B — nuevo, el `<head>`
+
+`auditarCabecera()` en `_cifras-heroe.mjs` + `tests/scrum1016-cabecera-fiscal.test.mjs` (6 tests).
+Lista CERRADA de literales firmados (`LITERALES_CABECERA_FIRMADOS`, hoy 1 entrada: el del comentario
+16513). Verificado EN ROJO contra el literal que llevaba esta misma rama antes de esa firma
+("…tu factura VeriFactu sin cambiar de precio") — cae en los tres campos, como tiene que caer. Verde
+con el literal de hoy.
+
+## 🔴🔴 STOP — la tanda completa (960 ficheros) destapa DOS conflictos que nadie cruzó, y no son míos para decidir
+
+`npm test` completo: **8082 tests, 16 en rojo.** De esos 16, corregí 2 (abajo) por ser míos, y
+descarté 3 por ser ruido de máquina ajeno a este ticket (también abajo). **Quedan 11, y son las MISMAS
+DOS causas** — los literales firmados en 16427/16513 chocan con dos guards de regla 30/Parte M que
+existían ANTES de este ticket y que nadie cruzó contra el texto nuevo:
+
+**(A) SCRUM-299 — trinquete de «factura».** `public/index.html` tenía baseline **CERO** promesas de
+factura al cliente final (`BASELINE['public/index.html'].n = 0`, limpiado a propósito en el commit de
+SCRUM-299: "Parte M: el documento post-pago es justificante, no factura"). El literal de 16427 (H1) Y
+el de 16513 (cabecera) usan los DOS el posesivo **"tu factura VeriFactu"** — 5 apariciones hoy (H1
+vivo, H1 de `#heroe-f4` por mirroring, y los 3 campos de cabecera). El trinquete sube de 0 a 5.
+
+**(B) SCRUM-400 — conformidad vs. documento real.** El subtítulo de 16427 afirma un ESTADO: *"Cada
+registro de facturación ya sale con el formato oficial de la AEAT — la remisión a Hacienda se activa
+con la declaración responsable del fabricante"*. El guard comprueba el documento citado
+(`docs/legal/DECLARACION_RESPONSABLE.md`) y hoy es una PLANTILLA: 25 placeholders sin rellenar,
+marcas `[VALIDAR ASESOR]`, aviso "NO publicar", cabecera "PLANTILLA". El guard no juzga si la frase
+está bien redactada (de hecho el propio comentario 16427 argumenta que los eslabones 8/9 no se
+afirman) — juzga si lo que se CITA existe, y no existe todavía.
+
+**No he tocado ninguno de los dos guards ni he reescrito el literal firmado.** Es exactamente el
+STOP de AA1.4 (claims fiscales) y la regla 41 (guard en rojo se arregla en el código, nunca en el
+guard) — con el agravante de que aquí el "código" que habría que cambiar es un texto que el fundador
+ya firmó dos veces. Las salidas que veo, sin decidir por mi cuenta:
+- (a) el fundador amplía también SCRUM-299/SCRUM-400 con su firma sobre ESTOS literales exactos —
+  mismo patrón que la enmienda de regla 26 (comentario 16432): condición + firma + registro (subir
+  `BASELINE` de 299 con su motivo; decidir en 400 que "se activa con" no exige el documento YA
+  emitido);
+- (b) se reescribe el H1/cabecera para no usar el posesivo "tu factura" ni afirmar el estado de la
+  AEAT — vuelve a ser copy sin firmar, otra vuelta de firma;
+- (c) regla 30/Parte M gana tal cual y el titular de SCRUM-1016d/e no se aplica hoy — como ya pasó
+  una vez con regla 26.
+
+## Lo que SÍ corregí, por ser mío o mecánico (no toca ninguna decisión de fundador)
+
+- **SCRUM-553** (etiquetas con `>` pegado, tope 20): mi `auditarCabecera()` extraía `<title>` sin
+  hueco para atributos y sumaba el extractor nº21. Cambiado a `<title[^>]*>` — el mismo patrón que ya
+  usa el resto del fichero (`bloqueHeroe`). Verde.
+- **SCRUM-563** (registro de lo aprobado): `heroe-f4/h1#1` tenía registrado el texto VIEJO
+  ("Del presupuesto al cobro…") con fecha 20-ago. El mirroring de este ticket (obligado por el test
+  ④ de SCRUM-331) reescribió ese H1 sin re-registrar la aprobación — el mecanismo lo cazó
+  correctamente ("una aprobación que no caduca sola es una aprobación que miente"). Actualicé la
+  entrada con el texto de hoy, fecha 22-sep-2026 y cita del comentario 16427; regeneré
+  `docs/REGISTRO_DE_MICROCOPY_APROBADA.md` (`node scripts/registro-de-lo-aprobado.mjs`); actualicé el
+  fixture del propio test (línea con el texto viejo) y `SIN_CUBRIR` de 1 a 2 (el F4-1 del documento
+  de propuesta de 20-ago ya no coincide con el registro re-aprobado — se documenta el motivo en el
+  propio test). No es una relajación: el mecanismo sigue detectando cambios de texto, solo queda al
+  día con el cambio YA autorizado.
+
+## Lo que NO toqué, por ser ruido de máquina ajeno a este ticket
+
+- **SCRUM-476** (reconciliar censos de `node_modules`): compara este árbol contra otros worktrees de
+  la MISMA máquina (`scrum-1016c/d/f`, `scrum-1023b`, `scrum-1079`…) que no tienen `node_modules`
+  instalado — "NO SE PUDO MIRAR", no un desfase real de mis dependencias.
+- **SCRUM-754b** (`fs.watch` mudo): un juez de mutaciones no detecta creación/borrado de ficheros por
+  `mtime` en este sistema de ficheros de Windows — nada que ver con `public/index.html` ni con copy.
+- **SCRUM-939b** (trinquete de las skills): la ruta de `gh.exe` está declarada como "falsa" en el
+  censo de una skill y hoy SÍ existe (Javier instaló `gh` el 18-sep, según mi propio traspaso) — un
+  hueco del censo, de otra sesión, no de este ticket.
+
+## Estado de la rama
+
+Build verde (`npm run build`), `guards:entrada` 95/95 verde. `npm test` completo: **8082 tests, 4 en
+rojo** — los del punto ③ (1, `#heroe-f4`) y del STOP de arriba (3, SCRUM-299 + SCRUM-400 × 2). **No
+se empuja como lista para mergear**: PR #1666 permanece en BORRADOR y con el auto-merge desarmado
+(comprobado tras el push). No decido yo entre las opciones (a)/(b)/(c) de los dos STOP: hacen falta
+dos firmas del fundador, sobre textos que él mismo ya firmó por otro motivo.

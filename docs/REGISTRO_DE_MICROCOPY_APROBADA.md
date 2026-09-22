@@ -37,9 +37,9 @@ Cruce con `docs/MICROCOPY_BLOQUE_F_PARA_APROBAR.md` (**51** entradas), con `===`
 
 | | |
 |---|---|
-| cubiertas exactamente por el registro | **34** |
+| cubiertas exactamente por el registro | **33** |
 | las mismas palabras, **partidas de otra manera** | **16** |
-| 🔴 **sin cubrir por ninguna aprobación** | **1** |
+| 🔴 **sin cubrir por ninguna aprobación** | **2** |
 
 ### 🔴 Las que no cubre nadie
 
@@ -50,6 +50,7 @@ abajo, en el registro. Queda ésta:
 | nº en el documento | texto literal |
 |---|---|
 | `F4-1` | «El ERP por WhatsApp para los oficios» |
+| `F4-2` | «Del presupuesto al cobro, sin salir de WhatsApp.» |
 
 **Y no está fuera por olvido, está fuera por decisión.** Un texto que falta y uno que se dejó
 fuera se leen igual, así que se declara — `NO_APROBADAS` en el módulo, con su motivo:
@@ -109,7 +110,7 @@ node scripts/registro-de-lo-aprobado.mjs --estado "Seis herramientas. Una sola a
 
 | identificador | texto literal | vía | fecha | quién |
 |---|---|---|---|---|
-| `heroe-f4/h1#1` | «Del presupuesto al cobro, sin salir de WhatsApp.» | elemento | 2026-08-20 | fundador |
+| `heroe-f4/h1#1` | «Del presupuesto a la firma — tu factura VeriFactu, sin cambiar de precio.» | elemento | 2026-09-22 | fundador |
 | `heroe-f4/p#1` | «Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. No hace falta que te fíes: haz tú el recorrido completo antes de dar tu correo.» | elemento | 2026-08-20 | fundador |
 | `heroe-f4/p#2` | «14 días gratis Sin tarjeta» | elemento | 2026-08-20 | fundador |
 | `gremios/h2#1` | «El recorrido es el mismo. El trabajo, no.» | elemento | 2026-08-20 | fundador |

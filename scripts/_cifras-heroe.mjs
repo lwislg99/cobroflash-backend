@@ -119,3 +119,122 @@ export function auditarCifras(html) {
   const sinFuente = Object.entries(CENSO).filter(([, v]) => v.sinFuente).map(([k]) => k);
   return { ciego: false, texto, cifras, sinCenso, sinFuente };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// REGLA 26 ENMENDADA (SCRUM-1016, comentario de Jira 16432) — el matiz en la MISMA unidad visible
+//
+// La regla vieja era lista negra absoluta: cualquier mención de VeriFactu/AEAT/Hacienda en el
+// héroe caía, sin excepción. La enmienda la sustituye por (a)+(b)+(c): (a) cita literal de una
+// frase YA FIRMADA en el máster, (b) la afirmación y su matiz en la MISMA unidad visible —sin que
+// el lector tenga que bajar a otro bloque—, (c) ticket con la firma sobre ESE literal exacto.
+// Aquí se comprueba (b): que toda mención tenga su matiz en el contenedor HTML MÁS PEQUEÑO que la
+// agrupa (el `<span>`/`<h1>`/`<p>` inmediato, y si ninguno de esos lo lleva, se escala UN nivel al
+// `<div>` que los envuelve — nunca a la sección `hero` entera). (a) y (c) no se pueden comprobar
+// por código (no hay forma barata de leer Jira desde aquí): quedan como checklist humano en el PR
+// (PR #1668 §5A, propuesta de J4).
+
+/** Quita el CONTENIDO de los comentarios HTML sin mover ni un índice (los rellena de espacios). */
+export function sinComentariosHtml(bloqueHtml) {
+  return String(bloqueHtml).replace(/<!--[\s\S]*?-->/g, (m) => ' '.repeat(m.length));
+}
+
+const TAG_RE = /<(\/?)([a-zA-Z][\w-]*)([^>]*)>/g;
+
+/**
+ * Todos los elementos COMPLETOS (abre+cierra) de un bloque de HTML, con su rango de índices sobre
+ * ESE MISMO bloque. Tolera etiquetas vacías sin cierre (`<br>`, `<img>`…) sin romper el resto: al
+ * cerrar una etiqueta se busca la más cercana del MISMO nombre y se descarta lo que quedara
+ * abierto por encima sin emparejar — nunca se emparejan etiquetas de nombre distinto.
+ */
+function elementosDe(bloqueHtml) {
+  const pila = [];
+  const elementos = [];
+  TAG_RE.lastIndex = 0;
+  let m;
+  while ((m = TAG_RE.exec(bloqueHtml)) !== null) {
+    const [tagCompleto, cierre, nombre, attrs] = m;
+    if (!cierre) {
+      if (/\/\s*$/.test(attrs)) continue; // autocierre (svg <path/>, etc.): no agrupa nada
+      pila.push({ nombre: nombre.toLowerCase(), inicio: m.index });
+    } else {
+      for (let i = pila.length - 1; i >= 0; i--) {
+        if (pila[i].nombre === nombre.toLowerCase()) {
+          const quitados = pila.splice(i, pila.length - i);
+          elementos.push({ nombre: quitados[0].nombre, inicio: quitados[0].inicio, fin: m.index + tagCompleto.length });
+          break;
+        }
+      }
+    }
+  }
+  return elementos;
+}
+
+const CONTENEDORES_CANDIDATOS = new Set(['span', 'p', 'h1', 'div']);
+const MATIZ_RE = /a[uú]n no|en camino|no est[aá] construid[ao]|no est[aá] cerrad[ao]|pendiente|se activa(r[aá])? con|sin certificaci[oó]n/i;
+
+/**
+ * ¿El texto en `[desde, hasta)` de `bloqueOriginal` cae dentro de un `<span>/<h1>/<p>/<div>` que
+ * TAMBIÉN lleva el matiz? Prueba primero el contenedor más pequeño que lo agrupa; si no lo lleva,
+ * escala al siguiente candidato que lo envuelve — nunca hace falta llegar a `<section class="hero">`
+ * para que esto encuentre un matiz que SÍ está en el mismo bloque visible (ver AUTOPRUEBA abajo).
+ */
+export function tieneMatizEnElMismoBloque(bloqueOriginal, desde, hasta) {
+  const saneado = sinComentariosHtml(bloqueOriginal);
+  const candidatos = elementosDe(saneado)
+    .filter((e) => CONTENEDORES_CANDIDATOS.has(e.nombre) && e.inicio <= desde && e.fin >= hasta)
+    .sort((a, b) => (a.fin - a.inicio) - (b.fin - b.inicio));
+  for (const c of candidatos) {
+    if (MATIZ_RE.test(textoDeCopia(bloqueOriginal.slice(c.inicio, c.fin)).replace(/\s+/g, ' '))) {
+      return { ok: true, contenedor: c.nombre };
+    }
+  }
+  return { ok: false };
+}
+
+/** La misma detección de fiscalidad que el héroe (regla 26), reutilizada para el `<head>`. */
+export const FISCAL_RE = /veri\s*\*?\s*factu|aeat|hacienda|rrsif|declaraci[oó]n\s*responsable/i;
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// EL <head> — nadie lo auditaba (SCRUM-1016, hallazgo de J4 en el comentario 16432)
+//
+// `<title>`, `og:title` y `twitter:title` CIRCULAN SUELTOS: pestaña, resultado de Google,
+// previsualización de WhatsApp/Twitter. Nunca arrastran el subtítulo que los acota, así que aquí
+// NO existe «matiz en el mismo bloque»: un campo de ~60 caracteres no tiene sitio para llevarlo
+// pegado sin reventar el límite (medido por J4: 6 variantes de 77-96 con el matiz DESPUÉS de
+// «VeriFactu» se cortaban a 50-60 sin él). La única vía verde es una lista CERRADA de literales
+// firmados, carácter a carácter — nunca un patrón: un patrón de matiz en ~60 caracteres es fácil
+// de burlar sin darse cuenta, y aquí sí compensa el coste de mantener una lista.
+export const LITERALES_CABECERA_FIRMADOS = [
+  {
+    literal: 'YaQu — Presupuesto y firma; tu factura VeriFactu, en camino',
+    firma: 'SCRUM-1016, comentario de Jira 16513 (Javier Pereira, 22-sep-2026): «Elijo la 3».',
+  },
+];
+
+/**
+ * Audita `<title>`, `og:title` y `twitter:title`.
+ *
+ * 🔴 SUELO: si no encuentra los tres campos se declara CIEGO — un extractor roto que no lee nada
+ * se leería igual que «no hay fiscalidad en la cabecera», y son consecuencias opuestas.
+ */
+export function auditarCabecera(html) {
+  const saca = (re) => {
+    const m = String(html).match(re);
+    return m ? m[1] : null;
+  };
+  const campos = {
+    title: saca(/<title[^>]*>([\s\S]*?)<\/title>/),
+    'og:title': saca(/<meta\s+property="og:title"\s+content="([^"]*)"\s*\/?>/),
+    'twitter:title': saca(/<meta\s+name="twitter:title"\s+content="([^"]*)"\s*\/?>/),
+  };
+  const faltantes = Object.entries(campos).filter(([, v]) => v === null).map(([k]) => k);
+  if (faltantes.length > 0) {
+    return { ciego: true, motivo: 'no se encontraron estos campos del <head>: ' + faltantes.join(', ') };
+  }
+
+  const firmados = new Set(LITERALES_CABECERA_FIRMADOS.map((l) => l.literal));
+  const problemas = Object.entries(campos)
+    .filter(([, valor]) => FISCAL_RE.test(valor) && !firmados.has(valor))
+    .map(([campo, valor]) => ({ campo, valor }));
+  return { ciego: false, campos, problemas };
+}

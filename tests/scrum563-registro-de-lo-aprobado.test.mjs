@@ -29,7 +29,11 @@ const html = leerLanding(RAIZ);
 
 /** Lo medido el 20-ago-2026. */
 const REGISTRADOS = 52;
-const SIN_CUBRIR = 1;
+// SCRUM-1016 (comentario 16427, 22-sep-2026): al re-aprobar `heroe-f4/h1#1` con el texto de hoy,
+// el F4-1 del documento de propuesta original (20-ago) ya no coincide con el registro — se suma a
+// F4-2, que ya estaba sin cubrir. Sube de 1 a 2 porque el propio texto aprobado cambió, no porque
+// el mecanismo haya perdido nada.
+const SIN_CUBRIR = 2;
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · un registro que no encuentra nada diría «no hay nada aprobado»
@@ -95,8 +99,8 @@ test('CONTROL POSITIVO · el texto guardado es el literal, no una descripción',
 // ═════════════════════════════════════════════════════════════════════════════════════════
 test('dado un texto cualquiera, el registro contesta aprobado / pendiente / ni una cosa ni otra', () => {
   const casos = [
-    { texto: 'Del presupuesto al cobro, sin salir de WhatsApp.', espera: APROBADO,
-      porque: 'es una unidad registrada' },
+    { texto: 'Del presupuesto a la firma — tu factura VeriFactu, sin cambiar de precio.', espera: APROBADO,
+      porque: 'es una unidad registrada (re-aprobada, SCRUM-1016, comentario 16427)' },
     { texto: 'Escríbenos por WhatsApp', espera: APROBADO,
       porque: 'vive en un atributo y también está registrada' },
     { texto: 'El ERP por WhatsApp para los oficios', espera: PENDIENTE,
