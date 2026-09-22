@@ -23,6 +23,7 @@ import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCR
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
 import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
 import { historialWhatsAppDelCliente } from '../../domain/historialWhatsAppDelCliente'; // SCRUM-1062
+import { crearNota, listarNotas, resolverAutor } from '../../domain/notasDelCliente'; // SCRUM-1036
 
 const router = Router();
 
@@ -292,6 +293,50 @@ router.get('/:id/whatsapp', requireRole('admin'), async (req, res) => {
     return res.json(historial);
   } catch (err) {
     console.error('[GET /admin/customers/:id/whatsapp]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/customers/:id/notes — SCRUM-1036 (CRM-08) · las notas del cliente, de la más nueva a
+ * la más antigua, con la «Nota fija» (el texto heredado de `Customer.notes`) al final.
+ *
+ * SCRUM-55 (S1, default): sin motivo de campo declarado, Admin-only — mismo criterio que
+ * `/whatsapp` (registro/anotación, no la visita en sí).
+ */
+router.get('/:id/notes', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const notas = await listarNotas(req.merchantId, id);
+    if (!notas) return res.status(404).json({ error: 'not_found' });
+    return res.json({ notas });
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/notes]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/customers/:id/notes — SCRUM-1036 (CRM-08) · añade una nota. El autor se resuelve de
+ * la SESIÓN (nunca del cuerpo) y se congela como texto en el momento de escribir.
+ */
+router.post('/:id/notes', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const texto = typeof req.body?.texto === 'string' ? req.body.texto : '';
+    const autor = await resolverAutor(req.merchantId, req.teamMemberId ?? null);
+    const nota = await crearNota(req.merchantId, id, texto, autor);
+    return res.status(201).json({
+      id: nota.id, texto: nota.title, fecha: nota.createdAt, autor: autor.authorName, esFija: false,
+    });
+  } catch (err: any) {
+    if (err?.message === 'nota_vacia') {
+      return res.status(400).json({ error: 'nota_vacia', message: 'Escribe algo antes de guardar la nota.' });
+    }
+    if (err?.message === 'customer_not_found') return res.status(404).json({ error: 'not_found' });
+    console.error('[POST /admin/customers/:id/notes]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
