@@ -736,3 +736,50 @@ en `PREGUNTAS_ASESOR.md` y en el traspaso de este puesto.
   con instrucción explícita de no seguir).
 * El dato "F1=0 · R1=0 · 1 justificante en producción" es el que me dio el orquestador; esta sesión no
   tiene acceso de lectura a producción y no lo ha vuelto a medir por su cuenta.
+
+---
+
+# APÉNDICE · 22-sep-2026 · SCRUM-534i · El guion H2 y las 3 líneas de "certificación" APLICADAS al máster, con firma comprobable
+
+**Fecha:** 22-sep-2026 · **Carril:** J4 (legal y cumplimiento) · **Gate:** ninguno — aplicación directa, ya firmada
+**Medido contra:** `origin/main` = `a71ddc7f85216988872dde3909a624952d555bd3` · 2026-09-22T08:59:50Z
+
+## La firma que autoriza esta aplicación
+
+Comentario **16404** de este mismo ticket (Jira, `SCRUM-534`), escrito por Javier el 22-sep-2026,
+**repetido a petición de la sesión ejecutora anterior** porque la firma previa (comentario 16395) le había
+llegado relayada por el orquestador y su clasificador de permisos la rechazó (A19: una autorización no se
+hereda entre sesiones). El 16404 es la firma DIRECTA, en el canal comprobable, literal:
+
+> «firmo el literal del guion H2 de la fase f» — y, sobre las tres líneas del censo de "certificación"
+> (fase h): «Firmo».
+
+Esta sesión (`jv-j4`, relevo) lee ESE comentario, no un mensaje de chat que lo cite.
+
+## Qué se aplicó, exactamente
+
+**C1 · `docs/YAQU_MASTER.md:215`** — el guion único de la regla 26 (Parte H2) cambia al literal completo
+firmado en el apéndice de fase f de esta misma ficha ("El literal nuevo — listo para pegar", línea 671).
+Pegado TAL CUAL, sin una palabra distinta.
+
+**C2 · `docs/YAQU_MASTER.md:650`** (entrada SCRUM-17) — *"...latente hasta la certificación; visible en
+demo)."* → *"...latente hasta que se active la facturación VeriFactu con su declaración responsable;
+visible en demo)."*
+
+**C3 · `docs/YAQU_MASTER.md:988`** (V0-6, ESTADO DE EJECUCIÓN) — *"...se activan al cerrar la
+certificación, sin cambio de precio"* → *"...se activan al cerrar la declaración responsable del
+fabricante, sin cambio de precio"*. **Esto desbloquea el titular del Eje A de la landing (SCRUM-1016)**,
+que estaba parado a propósito por depender de esta frase (V0-6).
+
+`git diff --numstat docs/YAQU_MASTER.md` de esta rama: 1 fichero, 3 líneas insertadas + 3 borradas — solo
+las tres frases de arriba, nada más tocado (verificado antes de empujar).
+
+## Lo que NO cubre esta entrada
+
+* Las 9 afirmaciones falsas de `PACK_GESTORIA.md`/`DECLARACION_RESPONSABLE.md` (fase f, §2) siguen sin
+  aplicarse — la firma del comentario 16404 cubre solo el guion H2 y las 3 líneas de "certificación", no
+  esas 9.
+* El censo completo de fase h (`SCRUM-534h`, PR #1651, sin mergear a la hora de esta entrada) descartó 11
+  de 14 apariciones de "certifica" por no ser la idea falsa; esas 11 no se tocan aquí.
+* El titular/subtítulo/`<title>` del Eje A (SCRUM-1016) no se escriben en esta entrada — carril aparte
+  (encargo 3 de esta tanda), ahora desbloqueado por C3.
