@@ -257,6 +257,18 @@ function renderQuotesListView(container) {
       tdStatus.className = "cell-status";
       tdStatus.appendChild(buildStatusPill(q.status));
 
+      // SCRUM-986 · el estado de WhatsApp de la fila enviada (Enviado / Entregado / Leído / No
+      // entregado), con el MISMO chip del detalle: no se reescribe ni un rótulo. Una fila sin
+      // envío (`waDelivery` null) no pinta nada. `tr.has-wa` sólo recompone la tarjeta en móvil.
+      const chipWa = window.waDeliveryChip ? window.waDeliveryChip(q.waDelivery, { sinFecha: true }) : "";
+      if (chipWa) {
+        const cajaWa = document.createElement("div");
+        cajaWa.className = "status-wa";
+        cajaWa.innerHTML = chipWa;
+        tdStatus.appendChild(cajaWa);
+        tr.classList.add("has-wa");
+      }
+
       const tdMethod = document.createElement("td");
       tdMethod.className = "col-hide-mobile";
       tdMethod.style.color = "var(--muted)";

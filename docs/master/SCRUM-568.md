@@ -183,3 +183,45 @@ creado: abrir un runbook de lanzamiento es una decisión de producto.
   está dicho en ③ en vez de construir un tercero.
 - ⛔ **Nada que deje el CI en rojo hoy.** El test está verde con las nueve inalcanzables, porque eso
   es la decisión correcta.
+
+---
+
+# SCRUM-568b · el disparador humano, cerrado (22-sep-2026)
+
+**Fecha:** 22-sep-2026 10:05Z · **Carril:** S5 · automatización
+**Medido contra:** `origin/main` = `5588e3263847bd40ea906d325e4f83c883c24e6e` · 2026-09-22T08:05Z
+**Rama:** `scrum-568-antes-del-go` · **Worktree:** `wt-s5-568`
+**Decisión del fundador:** comentario Jira 16263 (21-sep) — el mecanismo ya estaba entregado (⓪-⑩
+arriba); faltaba sólo el disparador. Elige `docs/RUNBOOKS.md`, la opción que la sección ⑨ ya
+recomendaba.
+
+## Lo que faltaba, y lo que se añade
+
+La sección ⑨ de arriba dejó tres sitios posibles y sin abrir ninguno: «no lo he creado: abrir un
+runbook de lanzamiento es una decisión de producto». El fundador decidió `docs/RUNBOOKS.md`.
+
+1. **`scripts/estado-antes-del-go.mjs`** — CLI de una función: lee la landing, llama a
+   `estadoCondicionadas()` (ya existente, sin tocar) y imprime su `.linea` + los flags. No es un
+   mecanismo nuevo, es la puerta para correr el que ya había sin abrir un test.
+2. **`npm run antes-del-go`** en `package.json`, con su `//antes-del-go` explicando que es un
+   registro, no una puerta.
+3. **`docs/RUNBOOKS.md` § R21 · Antes del go comercial** — tres pasos: correr la línea de estado,
+   comprobar SIF-1 8/8 en la Parte U del máster, y leer el veredicto (si M < 9, no se lanza con esos
+   textos tal cual: o se encienden los flags que faltan, o se cambia el texto por el cauce de la
+   regla 30).
+
+## Medido
+
+- `tests/scrum568-promesa-con-mecanismo.test.mjs`: **12 pass · 0 fail**, sin tocar (el mecanismo no
+  cambió, sólo se le puso una puerta encima).
+- `node scripts/estado-antes-del-go.mjs` → `de las 9 afirmaciones condicionadas a un flag, 0 son
+  alcanzables hoy` + `flags: BIZUM_MANUAL_ENABLED, PAYMENTS_CONNECT_ENABLED`. Coincide con el estado
+  que ⑤ ya documentaba.
+- `npm run guards:entrada`: 11 guards, verde.
+
+## Lo que NO se ha hecho
+
+- ⛔ Ningún texto de landing tocado, ningún flag encendido (reglas 18/23/30).
+- ⛔ No se ha reescrito `estadoCondicionadas()` ni `_afirmaciones-publicadas.mjs`: el CLI sólo los
+  invoca.
+- Cierra SCRUM-568 (comentario del fundador: «Cerrar 568 al mergear eso»).

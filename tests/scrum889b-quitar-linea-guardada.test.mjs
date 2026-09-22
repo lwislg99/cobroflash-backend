@@ -30,11 +30,16 @@ const RUTAS = '../dist/modules/jobs/app/routes/partes.routes.js';
 const copia = (x) => JSON.parse(JSON.stringify(x));
 
 const PARTE_ID = 889;
+// SCRUM-992 · el parte ya no es SUELTO: un técnico solo abre partes de SUS trabajos, y uno sin trabajo no es
+// de nadie. El fixture cuelga el parte de un trabajo cuyo operario es el técnico que llama; lo que este test
+// vigila (que quitar una línea no mueva su precio a otra) no cambia ni una aserción.
+const JOB_ID = 8890;
+const TECNICO = 8891;
 
 /** Un parte en BORRADOR con tres líneas valoradas por la oficina, como están hoy en la base: sin id. */
 function parteGuardado(lineas) {
   return {
-    id: PARTE_ID, merchantId: MERCHANT, jobId: null, customerId: null,
+    id: PARTE_ID, merchantId: MERCHANT, jobId: JOB_ID, customerId: null,
     numero: 'PT-2026-889', fecha: '2026-09-16T08:00:00.000Z', obra: 'C/ Mayor 3', referencia: null,
     entrada: '09:00', salida: null, desplazamientos: null, kilometros: null, tecnicos: [],
     tipo: 'reparacion_asistencia', lineas, notas: null, estado: 'borrador',
@@ -68,6 +73,10 @@ function banco(lineas) {
   inyectarBase({
     'parteTrabajo.findFirst': ({ where }) =>
       (where.id === fila.id && where.merchantId === MERCHANT ? copia(fila) : null),
+    'job.findFirst': ({ where }) =>
+      (where.id === JOB_ID && where.merchantId === MERCHANT
+        ? { operarioId: TECNICO, assignedUserId: null, assignees: [] }
+        : null),
     'parteTrabajo.update': ({ where, data }) => {
       assert.equal(where.id, fila.id);
       Object.assign(fila, copia(data));
@@ -79,7 +88,7 @@ function banco(lineas) {
     const h = manejador(router, metodo, ruta);
     const r = { status: 200, data: undefined };
     const res = { status(s) { r.status = s; return res; }, json(j) { r.data = copia(j); return res; } };
-    await h({ params: { id: String(PARTE_ID) }, body, merchantId: MERCHANT, userRole: rol }, res);
+    await h({ params: { id: String(PARTE_ID) }, body, merchantId: MERCHANT, userRole: rol, teamMemberId: rol === 'tecnico' ? TECNICO : null }, res);
     return r;
   };
   const get = llamar('get', '/:id');

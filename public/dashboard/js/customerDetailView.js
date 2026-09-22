@@ -103,14 +103,25 @@ async function renderCustomer360View(container, customerId) {
   // SCRUM-980 · sin próxima visita la clave no viene y la línea NO se pinta: ausente no es cero.
   const proximaVisita = historial && historial.proximaVisita ? HISTORIAL_CLIENTE.fechaProxima(historial.proximaVisita.fecha) : null;
   const initials = (customer.name || 'C').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  // SCRUM-1032 (CRM-02) · teléfono, móvil, WhatsApp y correo con UN TOQUE: enlaces del navegador, no
+  // envíos de YaQu. La normalización es la de `contactoDelCliente` (api.js), la misma que la lista.
+  // Sin dato válido no hay enlace: el texto se pinta como antes, o nada.
+  const contacto = window.contactoDelCliente(customer);
+  const enlaceHtml = (e, icono) => `<span>${icono} <a class="contacto-link" href="${escC(e.href)}">${escC(e.texto)}</a></span>`;
+  const telefonoHtml = contacto.telefono ? enlaceHtml(contacto.telefono, '📱') : (customer.phone ? `<span>📱 ${escC(customer.phone)}</span>` : '');
+  const movilHtml = contacto.movil ? enlaceHtml(contacto.movil, '📱') : '';
+  const whatsappHtml = contacto.whatsapp ? `<span><a class="contacto-link" href="${escC(contacto.whatsapp.href)}" target="_blank" rel="noopener">💬 WhatsApp</a></span>` : '';
+  const correoHtml = contacto.correo ? enlaceHtml(contacto.correo, '✉️') : (customer.email ? `<span>✉️ ${escC(customer.email)}</span>` : '');
   header.innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
       <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--green-500),#22d3ee);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--green-900);flex-shrink:0">${initials}</div>
       <div>
         <h2 style="margin:0 0 4px;font-size:18px;font-weight:800;color:var(--neutral-900)">${escC(customer.name)}</h2>
         <div style="font-size:13px;color:var(--neutral-500);display:flex;gap:12px;flex-wrap:wrap">
-          ${customer.phone ? `<span>📱 ${escC(customer.phone)}</span>` : ''}
-          ${customer.email ? `<span>✉️ ${escC(customer.email)}</span>` : ''}
+          ${telefonoHtml}
+          ${movilHtml}
+          ${whatsappHtml}
+          ${correoHtml}
           <span style="color:var(--neutral-400)">Cliente desde ${new Date(customer.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</span>
         </div>
         ${customer.notes ? `<div style="font-size:12.5px;color:var(--neutral-500);margin-top:6px;font-style:italic">${escC(customer.notes)}</div>` : ''}
@@ -173,13 +184,16 @@ async function renderCustomer360View(container, customerId) {
   kpiGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px';
 
   // A18.3 (AB4 "deuda/pagos/presupuestos"): la DEUDA es lo primero que se ve
-  const debt = (invoices || [])
-    .filter((i) => String(i.status).toLowerCase() === 'pending')
-    .reduce((a, i) => a + Number(i.total || 0), 0);
+  // SCRUM-1035: la deuda la suma el SERVIDOR sobre todas las facturas del cliente (la lista trae 20).
+  const debt = stats.totalPending !== undefined
+    ? Number(stats.totalPending)
+    : (invoices || [])
+      .filter((i) => String(i.status).toLowerCase() === 'pending')
+      .reduce((a, i) => a + Number(i.total || 0), 0);
 
   const kpis = [
     { label: 'Pendiente de cobro', value: fmt(debt),
-      sub: debt > 0 ? `${invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : 'al día ✓',
+      sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : 'al día ✓',
       color: debt > 0 ? 'var(--red-600)' : 'var(--green-600)' },
     { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
     { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },

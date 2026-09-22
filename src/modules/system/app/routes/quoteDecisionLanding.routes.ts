@@ -10,6 +10,7 @@ import { isQuoteExpired } from '../../../quotes/domain/expire.service';
 // cliente se armara por otro sitio, serían dos documentos distintos con el mismo nombre.
 import { paramsDePresupuestoParaPdf } from '../../../quotes/domain/presupuestoParaPdf';
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service';
+import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1001
 import { pieDePresupuesto } from '../../../quotes/domain/presentacionIva'; // SCRUM-888 punto 1
 // SCRUM-888g · los tramos que ve el cliente al firmar salen de la MISMA vista que usan el panel y
 // la emisión (`stageAmountsFromLines`): la página no calcula un solo importe por su cuenta.
@@ -238,7 +239,8 @@ async function loadQuote(token: string) {
       // SCRUM-633 · `timezone`: la página que ve el CLIENTE imprime la fecha de caducidad DOS
       // veces, y sin este campo las dos saldrían en la zona del contenedor. Mismo `select`
       // explícito, mismo riesgo: lo que no esté aquí no sale.
-      merchant: { select: { name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true } },
+      // SCRUM-1001 · `id`, `email` y `flags`: `getEmissionMode` reconoce al demo y el interruptor por negocio con ellos.
+      merchant: { select: { id: true, email: true, flags: true, name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true } },
       customer: { select: { name: true } },
     },
   });
@@ -648,6 +650,9 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
 
   const shareName = (loadedQuote?.merchant?.legalName || loadedQuote?.merchant?.name || 'el profesional');
   const shareTextEnc = encodeURIComponent(`✅ He aceptado mi ${locale.quoteVerb} con ${shareName}. ¡Gracias!`);
+  // SCRUM-1001 · sin cobro por YaQu (modo `receipt`: ES real con INVOICING_ES_ENABLED OFF) la página no
+  // ofrece pagar, así que tras aceptar dice quién se ocupa. Literal FIRMADO por Javier el 21-sep-2026.
+  const sinBotonDePago = getEmissionMode((loadedQuote as any).merchant ?? {}) === 'receipt';
 
   // PC-A (N1): botón "💬 Tengo una duda" → WhatsApp del PRO. Mismo patrón que el estado
   // rejected. Si el negocio no tiene whatsappPhone, no se muestra (degradación digna).
@@ -741,6 +746,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
               '<div class="success-check">✓</div>' +
               '<h1 style="font-size:20px;margin:0 0 6px">¡${locale.quote} aceptad${qg}' + (sigData ? ' y firmad${qg}' : '') + '!</h1>' +
               '<p style="color:#6b756f;font-size:14px;margin:0 0 18px">${esc(shareName)} ya tiene tu confirmación.</p>' +
+              ${sinBotonDePago ? `'<p class="sin-pago" style="color:#6b756f;font-size:14px;margin:0 0 18px">El profesional te enviará la factura y las instrucciones de pago por su cuenta.</p>' +` : ''}
               '<a class="btn-share" target="_blank" rel="noopener" href="https://wa.me/?text=${shareTextEnc}">' +
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
                 'Compartir por WhatsApp</a>' +

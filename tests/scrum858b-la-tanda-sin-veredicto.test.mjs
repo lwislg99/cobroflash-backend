@@ -82,8 +82,12 @@ const directa = (dir, args) => spawnSync(process.execPath, ['--test', ...args],
 function nodesVivosCon(dir) {
   const aguja = path.basename(dir);
   if (process.platform === 'win32') {
-    const salida = execFileSync('wmic', ['process', 'where', "name='node.exe'", 'get', 'ProcessId,CommandLine'], { encoding: 'utf8' });
-    return salida.split('\n').filter((l) => l.includes(aguja) && !l.includes('wmic'));
+    // `wmic` lo retiró Windows 11 (SCRUM-922): CIM es lo que Microsoft dejó en su lugar.
+    const salida = execFileSync('powershell.exe', [
+      '-NoProfile', '-NonInteractive', '-Command',
+      "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | ForEach-Object { \"$($_.ProcessId) $($_.CommandLine)\" }",
+    ], { encoding: 'utf8' });
+    return salida.split('\n').filter((l) => l.includes(aguja));
   }
   const salida = execFileSync('ps', ['-eo', 'pid,args'], { encoding: 'utf8' });
   return salida.split('\n').filter((l) => l.includes(aguja) && /node/.test(l) && !/\bps\b/.test(l));

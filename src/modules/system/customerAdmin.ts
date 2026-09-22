@@ -6,6 +6,7 @@ import { CustomerCreateInput, CustomerUpdateInput } from '../../core/validation/
 import { tagsParaPrisma } from './tagsDelCliente';
 import { normalizePhone } from '../../core/utils/utils'; // SCRUM-578: la que YA existe, sin tocarla
 import { BASE_URL } from '../../core/config/env'; // SCRUM-967b
+import { saldosPendientesPorCliente } from './domain/saldoPendiente'; // SCRUM-1043
 
 function generatePortalToken() {
   return crypto.randomBytes(16).toString('hex');
@@ -79,7 +80,9 @@ export async function listCustomers(
   merchantId: number,
   search?: string,
   // SCRUM-979: de qué trabajos sale «Última visita». Ver `ultimasVisitas`.
-  opciones: { soloTrabajosDe?: number | null } = {},
+  // SCRUM-1043: `conSaldo` añade `saldoPendiente` (solo a quien lo pide: es dinero); `soloConDeuda` deja
+  // los clientes que deben algo; `ordenPorSaldo` los pone de mayor a menor deuda. Ver `saldosPendientesPorCliente`.
+  opciones: { soloTrabajosDe?: number | null; conSaldo?: boolean; soloConDeuda?: boolean; ordenPorSaldo?: boolean } = {},
 ) {
   const where: Prisma.CustomerWhereInput = { merchantId };
 
@@ -106,7 +109,17 @@ export async function listCustomers(
   const clientes = await prisma.customer.findMany({ where, orderBy: { createdAt: 'desc' }, select: CUSTOMER_SELECT_NO_TOKEN });
   const visitas = await ultimasVisitas(merchantId, opciones.soloTrabajosDe);
   // Sin visita → la clave NO se añade: ausente no es cero (ni `null` que la vista pinte como fecha).
-  return clientes.map((c) => (visitas.has(c.id) ? { ...c, ultimaVisita: visitas.get(c.id)! } : c));
+  const conVisita = clientes.map((c) => (visitas.has(c.id) ? { ...c, ultimaVisita: visitas.get(c.id)! } : c));
+  if (!opciones.conSaldo) return conVisita;
+  // SCRUM-1043 · «quién me debe». Cliente sin deuda = sin `saldoPendiente` (ausente no es cero).
+  const saldos = await saldosPendientesPorCliente(merchantId);
+  let filas = conVisita.map((c) => (saldos.has(c.id) ? { ...c, saldoPendiente: saldos.get(c.id)!.total } : c));
+  if (opciones.soloConDeuda) filas = filas.filter((c) => 'saldoPendiente' in c);
+  if (opciones.ordenPorSaldo) {
+    const de = (c: { saldoPendiente?: number } | object) => (c as { saldoPendiente?: number }).saldoPendiente ?? 0;
+    filas = [...filas].sort((a, b) => de(b) - de(a));
+  }
+  return filas;
 }
 
 /**

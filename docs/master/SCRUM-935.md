@@ -193,3 +193,21 @@ mirando otro sitio. Queda escrito en el propio banco.
   hoy)», que era verdad el día que se escribió y hoy erraba por dos órdenes de magnitud.
 * `docs/master/evidencias/scrum935/` — los siete instrumentos, sus salidas con población y `EXIT=`,
   los datos de los 97 runs, los dos perfiles en TSV y el `/timing` crudo que demuestra el 0.
+
+## SCRUM-935b · el CI de `main` deja de cancelarse (opción B, decisión 16227)
+
+21-sep-2026 17:28Z (GitHub) · medido sobre `origin/main` `b6cde0517649d991a1b08eabb50017a81a03acfb` · S5 (`s5-21h`).
+
+**Qué:** `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}` en `ci.yml`. Las ramas de PR siguen igual; `main` deja de matar el run en curso. GitHub sigue sustituyendo al run PENDIENTE (comentario 16149, punto 3): se esperan ~21 veredictos de 38, no 38 de 38. Coste en dinero 0; tiempo de main +11-34 % (modelo de 16149).
+
+**Rojo → arreglo → positivo → negativo**
+* ROJO (`56c73bef9623d4d1e43d99f9b5288d404b5daeeb`, guard solo): `tests/scrum935b-main-no-cancela.test.mjs` sobre `ci.yml` sin tocar → 4 pass · 1 fail (el de `main`).
+* ARREGLO (`d307605d4a3891c672f9e34edd2b2ab33b10ef9f`): 5 pass · 0 fail.
+* POSITIVO (PR sigue cancelando), con inyección aplicada (`git diff --numstat` = 1/1 en cada una): `cancel-in-progress: false` → cae el test de PR; `group: ci-${{ github.sha }}` → cae el mismo. Revertido con `git restore --source=HEAD`, `git status --porcelain` vacío, 5/5 otra vez. Vuelta a `true` → cae el ROJO.
+* NEGATIVO (qué comprueba el CI y cuánto dura): quitando comentarios, `ci.yml` antes y después tiene 257 líneas y **la única diferencia es la de `cancel-in-progress`**. Ni un job, paso, `timeout-minutes` ni evento tocado.
+
+**El guard evalúa, no busca texto:** resuelve la expresión para los dos únicos refs en los que corre el CI (`refs/heads/main`, `refs/pull/N/merge`), y una forma que no sabe evaluar lanza (no da verde). Población fijada: `pull_request` y `push` solo a `[main]`. Control de instrumento: el valor viejo (`true`) evaluado da «cancela en main».
+
+**Cómo se mide el efecto tras el merge (no se da por hecho):** en las horas siguientes, `gh run list --workflow ci.yml --event push --branch main` y contar `cancelled`. Esperado: los `cancelled` que queden son pendientes sustituidos (sin `startedAt`), no runs con jobs a medias. Si siguen muriendo runs con jobs en curso, la línea no surtió efecto.
+
+**Ficheros:** `.github/workflows/ci.yml` (la línea y dos comentarios), `tests/scrum935b-main-no-cancela.test.mjs`, este apartado.

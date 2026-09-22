@@ -86,6 +86,15 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-979: la «Última visita». Necesita banco porque lo que vigila es la CONSULTA — el
   // `groupBy` con la tenencia dentro y el recorte del técnico por los tres ejes de SCRUM-650.
   'scrum979-ultima-visita.test.mjs': 1,
+  // SCRUM-809: el acceso tras cancelar. Necesita banco porque lo que mide es lo que le CONTESTA el producto al
+  // profesional que pagó y canceló (una petición real a las rutas con paywall). El census cuenta 5 llamadas a
+  // `test(` con salto —dos de ellas generadas por las dos puertas de cancelación—. Su mitad sin banco
+  // vive en `scrum809b-paywall-sin-banco.test.mjs`, que sí corre en cada `npm test` y en el meta-guard.
+  'scrum809-paywall-tras-cancelar.test.mjs': 5,
+  // SCRUM-992: los partes recortados por rol. Necesita banco porque lo que vigila es lo que el técnico
+  // puede LEER, EDITAR y FIRMAR sobre partes de otros —las nueve rutas, la app entera, tres sesiones—.
+  // La mitad estructural (AST) no lo necesita y corre en cada `npm test`.
+  'scrum992-partes-recortan-por-rol.test.mjs': 1,
   'scrum389-un-solo-iva.test.mjs': 2,
   // SCRUM-974: el resumen del lunes. Necesita banco porque corre el resumen DE VERDAD, que lee la
   // bandeja de pendientes de facturar y el modo de emisión de cada negocio. Solo el desechable:

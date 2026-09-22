@@ -661,8 +661,8 @@ function renderCustomersView(container) {
 
         addCell(tr, "#" + c.id);
         addCell(tr, c.name || "Cliente sin nombre", "cell-title");
-        addCell(tr, c.phone || "sin teléfono", "cell-date");
-        addCell(tr, c.email || "", FC.claseDeColumna("email", columnasEncendidas));
+        celdaDeTelefonos(addCell(tr, "", "cell-date"), c);
+        celdaDeCorreo(addCell(tr, "", FC.claseDeColumna("email", columnasEncendidas)), c);
         const notesCell = addCell(tr, c.notes || "", FC.claseDeColumna("notas", columnasEncendidas));
         notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
         if (c.notes) notesCell.title = c.notes;
@@ -745,6 +745,50 @@ function renderCustomersView(container) {
     if (cls) td.className = cls;
     tr.appendChild(td);
     return td;
+  }
+
+  // SCRUM-1032 (CRM-02) · teléfono, móvil, WhatsApp y correo con UN TOQUE. Son enlaces del
+  // navegador, no envíos de YaQu. La normalización es la de `contactoDelCliente` (api.js), la misma
+  // que usa la ficha. `stopPropagation`: la FILA entera abre la ficha, y tocar el número no debe
+  // sacarte de la lista. Sin dato válido no hay enlace: se pinta el texto, o nada.
+  function enlaceDeContacto(href, texto, aparte, nombre) {
+    const a = document.createElement("a");
+    a.className = "contacto-link";
+    a.href = href;
+    a.textContent = texto;
+    // Sólo el icono («💬») en la lista, que va justa de ancho: el nombre accesible es el rótulo ya
+    // en uso, «WhatsApp», y no un texto nuevo.
+    if (nombre) { a.className += " contacto-link--icono"; a.setAttribute("aria-label", nombre); a.title = nombre; }
+    if (aparte) { a.target = "_blank"; a.rel = "noopener"; }
+    a.addEventListener("click", (ev) => ev.stopPropagation());
+    return a;
+  }
+
+  function celdaDeTelefonos(td, c) {
+    const k = window.contactoDelCliente(c);
+    const fijo = String(c.phone || "").trim();
+    // El teléfono (enlace si es un número; si no, tal cual lo escribió) y, si lo hay y es otro, el móvil.
+    const lineas = [];
+    if (k.telefono) lineas.push({ enlace: k.telefono });
+    else if (fijo) lineas.push({ texto: fijo });
+    if (k.movil) lineas.push({ enlace: k.movil, movil: true });
+    if (lineas.length === 0) { td.textContent = "sin teléfono"; return; }
+    // WhatsApp va al móvil y, si no hay, al teléfono: el mismo destino que decide `contactoDelCliente`.
+    const conWa = k.whatsapp ? (k.movil ? lineas.find((l) => l.movil) : lineas.find((l) => l.enlace)) : null;
+    lineas.forEach((l) => {
+      const fila = document.createElement("div");
+      fila.className = "contacto-fila"; // no «contacto» a secas: la landing (`index.html`) ya tiene esa clase
+      if (l.enlace) fila.appendChild(enlaceDeContacto(l.enlace.href, l.enlace.texto));
+      else fila.appendChild(document.createTextNode(l.texto));
+      if (l === conWa) fila.appendChild(enlaceDeContacto(k.whatsapp.href, "💬", true, "WhatsApp"));
+      td.appendChild(fila);
+    });
+  }
+
+  function celdaDeCorreo(td, c) {
+    const k = window.contactoDelCliente(c);
+    if (k.correo) td.appendChild(enlaceDeContacto(k.correo.href, k.correo.texto));
+    else td.textContent = c.email || "";
   }
 
   // -------- Eventos --------

@@ -1,0 +1,28 @@
+TESTIGO · banco de mutacion 920d · HEAD 3326db1e5703ae68f269c30df11e006dd80c1602
+BASE sin mutar · guard exit=0 · ✅ 77 · 🔴 0
+M01 · la animacion solo de opacidad de la pantalla (deja el `transform` que rompe el fixed)
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/css/styles.css · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M02 · «Sin foto» pasa a llevar un triangulo (texto sin firmar)
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M03 · una <img> con la foto ENTERA en cada fila con foto (la miniatura que pesa hasta 1,1 MiB)
+     aplicada=true (1 ocurrencia) · diff 1 0 public/dashboard/js/expensesView.js · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M04 · los chips cuentan el mes entero y no lo que se vera al pulsarlos
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M05 · el chip vuelve a pedir la lista al servidor
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M06 · la cabecera pinta la suma aunque no haya ningun filtro (el total del mes saldria dos veces)
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M07 · «Quitar los filtros» no suelta la categoria
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M08 · una categoria sin gastos dice «Sin gastos este mes»
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=2 · rojo esperado visto=true · restaurado=true → CAE
+M09 · la barra de «Nuevo gasto» es fija tambien en escritorio
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/css/styles.css · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M10 · la barra pasa POR ENCIMA del modal
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/css/styles.css · guard exit=0 · rojo esperado visto=false · restaurado=true → VIVA
+M11 · «Sin trabajo» deja fuera al gasto que tiene presupuesto pero no trabajo
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 · rojo esperado visto=true · restaurado=true → CAE
+M12 · la suma de la cabecera pierde el primer gasto
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=134 · rojo esperado visto=false · restaurado=true → VIVA
+M13 · «1 gastos» (el singular deja de existir)
+     aplicada=true (1 ocurrencia) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=3221226505 · rojo esperado visto=false · restaurado=false → VIVA

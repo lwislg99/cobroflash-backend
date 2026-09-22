@@ -21,6 +21,7 @@ import {
 
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
+import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
 
 const router = Router();
 
@@ -28,8 +29,12 @@ router.get('/', async (req, res) => {
   try {
     const search = req.query.search ? String(req.query.search) : undefined;
     // SCRUM-979: el técnico ve la cartera entera, pero su «Última visita» sale solo de SUS trabajos.
-    const customers = await listCustomers(req.merchantId, search,
-      seesOnlyOwnJobs(req.userRole) ? { soloTrabajosDe: req.teamMemberId ?? null } : {});
+    // SCRUM-1043: el saldo es DINERO, solo para quien ve todo (admin/propietario): el técnico no lo
+    // recibe aunque lo pida (`conDeuda`/`orden=saldo` se ignoran para él).
+    const propio = seesOnlyOwnJobs(req.userRole);
+    const customers = await listCustomers(req.merchantId, search, propio
+      ? { soloTrabajosDe: req.teamMemberId ?? null }
+      : { conSaldo: true, soloConDeuda: req.query.conDeuda === '1', ordenPorSaldo: req.query.orden === 'saldo' });
     res.json(customers);
   } catch (err) {
     console.error('[GET /admin/customers]', err);
@@ -288,7 +293,9 @@ router.get('/:id/detail', async (req, res) => {
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
-    const [quotes, invoices, expenses, events] = await Promise.all([
+    // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
+    // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
+    const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente] = await Promise.all([
       prisma.quote.findMany({
         where: { customerId: id, merchantId: req.merchantId },
         orderBy: { createdAt: 'desc' },
@@ -306,10 +313,16 @@ router.get('/:id/detail', async (req, res) => {
         _sum: { amount: true },
       }),
       listCustomerEvents(req.merchantId, id, 50),
+      // `where` LITERALES a propósito: los censos de tenencia (SCRUM-289/348) leen el filtro del texto.
+      prisma.quote.count({ where: { customerId: id, merchantId: req.merchantId } }),
+      prisma.quote.count({ where: { customerId: id, merchantId: req.merchantId, status: 'accepted' } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId }, _sum: { total: true } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'paid' }, _sum: { total: true } }),
+      saldosPendientesPorCliente(req.merchantId, [id]), // SCRUM-1043: la MISMA suma que la lista «quién me debe»
     ]);
 
-    const totalBilled = invoices.reduce((a, i) => a + Number(i.total), 0);
-    const totalPaid   = invoices.filter(i => i.status === 'paid').reduce((a, i) => a + Number(i.total), 0);
+    const totalBilled = Number(facturado._sum.total ?? 0);
+    const totalPaid   = Number(cobrado._sum.total ?? 0);
     const portalUrl   = customer.portalToken
       ? `${config.PUBLIC_BASE_URL}/cliente/${customer.portalToken}`
       : null;
@@ -320,10 +333,14 @@ router.get('/:id/detail', async (req, res) => {
       invoices,
       events,
       stats: {
-        totalQuotes:   quotes.length,
-        acceptedQuotes: quotes.filter(q => q.status === 'accepted').length,
+        totalQuotes,
+        acceptedQuotes,
         totalBilled,
         totalPaid,
+        // SCRUM-1035 · lo que el cliente debe (facturas `pending`): la misma cifra que la ficha
+        // sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
+        totalPending: pendiente.get(id)?.total ?? 0,
+        pendingCount: pendiente.get(id)?.count ?? 0,
         totalExpenses: Number(expenses._sum.amount ?? 0),
         profit: totalPaid - Number(expenses._sum.amount ?? 0),
       },

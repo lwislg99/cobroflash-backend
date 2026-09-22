@@ -22,10 +22,23 @@
 //   F · «Sin trabajo» / «Presupuesto sin trabajo» / el nombre del trabajo, y el proveedor debajo.
 //   G · SE CONSERVA LO QUE YA ESTABA: el estado vacío palabra por palabra, el filtro de categoría pide
 //        `category=`, el CSV lleva mes y categoría, «Nuevo gasto» abre el alta.
-//   H · CERO `style=` EN LÍNEA en la pantalla (norma A7) y las cinco píldoras pasan AA (4,5:1).
+//   H · CERO `style=` EN LÍNEA en la pantalla (norma A7) y las cinco píldoras pasan AA (4,5:1) — y, desde 920d,
+//        también las dos de la foto.
+//   I · (SCRUM-920d) LA FOTO EN LA FILA Y LOS FILTROS DE ESTA PANTALLA, pulsados con el ratón: cada fila dice
+//        «Foto guardada» / «Sin foto» y la lista NO pide ni una foto (no hay <img>: el peso de la foto entera es
+//        la razón) · el filtro por trabajo ofrece «Todos los trabajos», «Sin trabajo» y los trabajos de la lista ·
+//        los chips «Todos · N» / «Sin foto · N» cuentan lo que verás al pulsarlos y filtran SIN pedir nada al
+//        servidor · la cabecera del mes dice mes y cuenta (con filtro, la suma de lo que se ve y su salvedad; sin
+//        filtro, ninguna suma: el total del mes sale sólo en el KPI) · el vacío de los filtros y «Quitar los
+//        filtros», que también suelta la categoría (que sí filtra el servidor).
+//   J · (SCRUM-920d) «Nuevo gasto» FIJO ABAJO A 390 PX, y sólo ahí: es el MISMO botón (id, atajo «N»), a ancho
+//        completo, quieto mientras la lista se recorre, sin tapar la última fila, POR DEBAJO del modal; a 1280
+//        vuelve arriba junto al «⬇ CSV». Y la primera fila entra en la primera pantalla.
+//        (SCRUM-920j) Y el «?» flotante de ayuda NO lo tapa: un doble con el `cssText` de `tutorial.js`, rejilla de 27 puntos.
 //
 // Fuera de `npm test`, como el resto de guards de navegador: la suite no arranca navegador.
 // Salidas: 0 de acuerdo · 1 he encontrado un defecto · 2 NO SUPE MIRAR · 3 no arrancó el navegador.
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
@@ -35,6 +48,8 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // `GASTOS_PUBLICO` existe para el CONTROL EN ROJO: apuntarlo a un `public/` con la lista de antes (la
 // tabla) y comprobar que el guard cae. Sin ella, el `public/` de este árbol.
 const PUBLICO = process.env.GASTOS_PUBLICO || path.join(RAIZ, 'public');
+// SCRUM-920j · el «?» flotante lo pinta `tutorial.js`; el bloque J lee de aquí su `cssText` para pintar un doble fiel.
+const tutorialJs = fs.readFileSync(path.join(PUBLICO, 'dashboard', 'js', 'tutorial.js'), 'utf8');
 
 let fallos = 0;
 let ciego = 0;
@@ -48,6 +63,11 @@ const titulo = (s) => {
   di('══════════════════════════════════════════════════════════════════════════════');
 };
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+/** SCRUM-920d · espera a que se CUMPLA una condición en la página (hasta `ms`) en vez de dormir un tiempo fijo:
+ *  con otras suites corriendo en la misma máquina, un `espera(300)` se queda corto y da un rojo que no es del producto.
+ *  La condición va como TEXTO (una expresión del navegador), como `window.__listo === true` del banco: una función
+ *  flecha con `document` dentro es un identificador que este script no declara (censo de SCRUM-258). */
+const hasta = (page, expresion, ms = 4000) => page.waitForFunction(expresion, { timeout: ms, polling: 50 }).then(() => true, () => false);
 // Un guard que se cuelga no dice nada: mejor «no supe mirar» a los cuatro minutos que un CI parado.
 setTimeout(() => {
   console.error('🔴 NO SUPE MIRAR: el guard lleva más de 4 minutos sin terminar (una pulsación que no vuelve). Esto NO es «de acuerdo».');
@@ -63,13 +83,15 @@ const gasto = (id, concept, category, amount, extra = {}) => ({
 });
 const JOB_500 = { id: 500, titulo: 'Presupuesto #5 · María López' };
 const LARGO = 'Materialdeconstruccionmuylargosinespaciosparaprobarquenodesbordalacaja';
+// SCRUM-920d · la foto: 1, 3 y 6 la tienen (3 con foto, 5 sin ella). Los trabajos: el 500 lo comparten el 1 y el
+// 6; el 501 sólo el 3; el 502 sólo el 4; SIN trabajo son 2, 5, 7 (que tiene presupuesto pero no trabajo) y 8.
 const ITEMS = [
-  gasto(1, 'Tubo de cobre 22 mm', 'materiales', 42, { notes: 'Ticket del almacén', quoteId: 50, quote: { id: 50 }, job: JOB_500, provider: { id: 9, name: 'Saltoki' } }),
+  gasto(1, 'Tubo de cobre 22 mm', 'materiales', 42, { notes: 'Ticket del almacén', quoteId: 50, quote: { id: 50 }, job: JOB_500, provider: { id: 9, name: 'Saltoki' }, tieneFoto: true }),
   gasto(2, 'Gasolina', 'desplazamiento', 61.3),
-  gasto(3, 'Taladro percutor', 'herramientas', 129.9, { quoteId: 51, quote: { id: 51 }, job: { id: 501, titulo: 'Reforma baño' } }),
+  gasto(3, 'Taladro percutor', 'herramientas', 129.9, { quoteId: 51, quote: { id: 51 }, job: { id: 501, titulo: 'Reforma baño' }, tieneFoto: true }),
   gasto(4, 'Fontanero autónomo', 'subcontrata', 9999.99, { quoteId: 52, quote: { id: 52 }, job: { id: 502, titulo: 'Cocina Ruiz' }, provider: { id: 10, name: 'Instalaciones Pérez' } }),
   gasto(5, 'Varios', 'otros', 5),
-  gasto(6, 'Silicona', 'materials', 3, { quoteId: 50, quote: { id: 50 }, job: JOB_500 }),
+  gasto(6, 'Silicona', 'materials', 3, { quoteId: 50, quote: { id: 50 }, job: JOB_500, tieneFoto: true }),
   gasto(7, 'Cinta aislante', 'materiales', 3.2, { quoteId: 77, quote: { id: 77 } }),
   gasto(8, LARGO + LARGO, 'materiales', 18, { notes: LARGO + ' ' + LARGO }),
 ];
@@ -93,7 +115,13 @@ function datos(items, res) {
     var borra = /\\/admin\\/expenses\\/(\\d+)$/.exec(ruta);
     if (metodo === 'DELETE' && borra) { borrados.push(Number(borra[1])); return { ok: true }; }
     if (/\\/admin\\/expenses\\/summary/.test(ruta)) return D.res;
-    if (/\\/admin\\/expenses/.test(ruta)) return { items: D.items.filter(function (g) { return borrados.indexOf(g.id) < 0; }) };
+    if (/\\/admin\\/expenses/.test(ruta)) {
+      // SCRUM-920d · como el servidor: la CATEGORÍA la filtra él (el trabajo y la foto, no).
+      var cat = /[?&]category=([^&]+)/.exec(ruta);
+      return { items: D.items.filter(function (g) {
+        return borrados.indexOf(g.id) < 0 && (!cat || g.category === decodeURIComponent(cat[1]));
+      }) };
+    }
     return [];
   };
 })()`;
@@ -450,13 +478,345 @@ titulo('H · sin estilos en línea (A7) · las cinco píldoras pasan AA');
       const cs = getComputedStyle(n);
       pildoras[n.className.replace('gasto-cat gasto-cat--', '')] = Math.round(ratio(cs.color, cs.backgroundColor) * 100) / 100;
     }
+    // SCRUM-920d · las dos píldoras de la foto, en la misma cuenta.
+    for (const n of document.querySelectorAll('.gasto-foto')) {
+      const cs = getComputedStyle(n);
+      pildoras[n.className.replace('gasto-foto ', '')] = Math.round(ratio(cs.color, cs.backgroundColor) * 100) / 100;
+    }
     return { dentro, pildoras };
   });
   if (r.dentro.length) mal(`${r.dentro.length} elementos con style= en línea: ${JSON.stringify(r.dentro.slice(0, 4))}`); else bien('0 elementos con style= en línea en la pantalla');
   const claves = Object.keys(r.pildoras);
-  if (claves.length < 5) nosupe(`sólo ${claves.length} categorías distintas en la muestra: ${claves.join(', ')}`);
+  if (claves.length < 7) nosupe(`sólo ${claves.length} píldoras distintas en la muestra (cinco categorías y dos de foto): ${claves.join(', ')}`);
   const bajas = Object.entries(r.pildoras).filter(([, v]) => v < 4.5);
   if (bajas.length) mal(`píldoras por debajo de 4,5:1: ${JSON.stringify(bajas)}`); else bien(`píldoras ${JSON.stringify(r.pildoras)}: todas ≥ 4,5:1`);
+  await page.close();
+}
+
+// ═══ I · LA FOTO EN LA FILA Y LOS FILTROS DE ESTA PANTALLA (SCRUM-920d) ═════════════════════════
+titulo('I · la foto en la fila · el filtro por trabajo · los chips · la cabecera del mes · el vacío de los filtros');
+const limpio = (s) => (s == null ? null : String(s).replace(/\xa0/g, ' ').replace(/\s+/g, ' ').trim());
+const peticionesDeLista = (e) => e.peticiones.filter((p) => /\/admin\/expenses\?/.test(p.ruta));
+const conceptosVisibles = (page) => page.evaluate((s) => [...document.querySelectorAll(s)].map((f) => (f.querySelector('b') || {}).textContent), SEL_FILA);
+const chipsDe = (page) => page.evaluate(() => [...document.querySelectorAll('.gastos-chip')].map((c) => ({
+  texto: c.textContent.replace(/\xa0/g, ' ').replace(/\s+/g, ' ').trim(), pulsado: c.getAttribute('aria-pressed'),
+})));
+const cabeceraDe = (page) => page.evaluate(() => {
+  const c = document.querySelector('.gastos-mes');
+  if (!c) return null;
+  const t = (s) => { const n = c.querySelector(s); return n ? n.textContent.replace(/\xa0/g, ' ').replace(/\s+/g, ' ').trim() : null; };
+  return { mes: t('b'), cuenta: t('.gastos-mes-n'), suma: t('.gastos-mes-suma'), salvedad: t('.gastos-mes-salvedad') };
+});
+const vacioDe = (page) => page.evaluate(() => {
+  const t = document.querySelector('#exp-list .empty-state-title');
+  const d = document.querySelector('#exp-list .empty-state-desc');
+  const b = document.querySelector('#exp-quitar-filtros');
+  return { titulo: t ? t.textContent : null, desc: d ? d.textContent : null, boton: b ? b.textContent : null };
+});
+async function elegirTrabajo(page, etiqueta) {
+  const valor = await page.evaluate((t) => { const o = [...document.querySelectorAll('#exp-filter-job option')].find((x) => x.textContent === t); return o ? o.value : null; }, etiqueta);
+  if (valor === null) return false;
+  await page.select('#exp-filter-job', valor);
+  await espera(150);
+  return true;
+}
+async function pulsarChip(page, dato) {
+  const c = await page.$('.gastos-chip[data-foto="' + dato + '"]');
+  if (!c) return false;
+  await pulsar(c);
+  await espera(150);
+  return true;
+}
+const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const CONCEPTOS_TODOS = ITEMS.map((g) => g.concept);
+const CONCEPTOS_SIN_FOTO = ITEMS.filter((g) => !g.tieneFoto).map((g) => g.concept);
+
+for (const ancho of [1280, 390]) {
+  const { page } = await abrir('/g', ancho);
+  const mesEsperado = await page.evaluate(() => {
+    const t = document.getElementById('exp-filter-month').selectedOptions[0].textContent.trim();
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  });
+
+  // I.1 · la foto en cada fila, y la lista NO la pide.
+  const fotos = await page.evaluate((s) => [...document.querySelectorAll(s)].map((f) => {
+    const p = f.querySelector('.gasto-foto');
+    return { c: (f.querySelector('b') || {}).textContent, texto: p ? p.textContent : null, clase: p ? p.className : null };
+  }), SEL_FILA);
+  const malas = fotos.filter((f) => {
+    const tiene = ITEMS.find((g) => g.concept === f.c).tieneFoto;
+    return f.texto !== (tiene ? 'Foto guardada' : 'Sin foto') || f.clase !== 'gasto-foto ' + (tiene ? 'gasto-foto--si' : 'gasto-foto--no');
+  });
+  if (fotos.length !== ITEMS.length) nosupe(`${ancho}px · I.1 ${fotos.length} filas y esperaba ${ITEMS.length}`);
+  else if (malas.length) mal(`${ancho}px · la foto de la fila dice otra cosa que el gasto: ${JSON.stringify(malas.slice(0, 3))}`);
+  else bien(`${ancho}px · cada fila dice «Foto guardada» (${fotos.filter((f) => f.texto === 'Foto guardada').length}) o «Sin foto» (${fotos.filter((f) => f.texto === 'Sin foto').length}) según su gasto`);
+  const pesa = await page.evaluate(() => ({
+    imgs: document.querySelectorAll('#view-container img').length,
+    recursos: performance.getEntriesByType('resource').filter((r) => /\/foto(\?|$)/.test(r.name)).length,
+  }));
+  if (pesa.imgs || pesa.recursos) mal(`${ancho}px · 🔴 la lista pide fotos (${pesa.imgs} <img>, ${pesa.recursos} descargas de /foto): la foto entera pesa hasta 1,1 MiB y aquí serían N`);
+  else bien(`${ancho}px · la lista no pide ninguna foto (0 <img>, 0 descargas de /foto)`);
+
+  // I.2 · el filtro por trabajo: qué ofrece.
+  const ops = await page.evaluate(() => [...document.querySelectorAll('#exp-filter-job option')].map((o) => o.textContent));
+  const opsEsperadas = ['Todos los trabajos', 'Sin trabajo', 'Cocina Ruiz', 'Presupuesto #5 · María López', 'Reforma baño'];
+  if (!igual(ops, opsEsperadas)) mal(`${ancho}px · el filtro por trabajo ofrece ${JSON.stringify(ops)} y esperaba ${JSON.stringify(opsEsperadas)}`);
+  else bien(`${ancho}px · el filtro por trabajo ofrece «Todos los trabajos», «Sin trabajo» y los 3 trabajos de la lista, una vez cada uno`);
+
+  // I.3 · sin filtros: chips, cabecera sin suma.
+  {
+    const c = await chipsDe(page);
+    const h = await cabeceraDe(page);
+    if (!igual(c, [{ texto: 'Todos · 8', pulsado: 'true' }, { texto: 'Sin foto · 5', pulsado: 'false' }])) mal(`${ancho}px · chips de arranque ${JSON.stringify(c)}`);
+    else bien(`${ancho}px · chips «Todos · 8» (pulsado) y «Sin foto · 5»`);
+    if (!h || h.mes !== mesEsperado || h.cuenta !== '· 8 gastos' || h.suma !== null || h.salvedad !== null) mal(`${ancho}px · cabecera sin filtros ${JSON.stringify(h)} y esperaba «${mesEsperado}» · 8 gastos, sin suma ni salvedad`);
+    else bien(`${ancho}px · cabecera «${h.mes} ${h.cuenta}», sin suma (el total del mes sale sólo en el KPI)`);
+  }
+
+  // I.4 · «Sin foto»: se pulsa, se filtra SIN pedir nada al servidor, y cuenta lo que dice.
+  {
+    const antes = peticionesDeLista(await estado(page)).length;
+    if (!(await pulsarChip(page, 'sinfoto'))) nosupe(`${ancho}px · no encuentro el chip «Sin foto»`);
+    else {
+      const filas = await conceptosVisibles(page);
+      const c = await chipsDe(page);
+      const h = await cabeceraDe(page);
+      const despues = peticionesDeLista(await estado(page)).length;
+      if (!igual(filas, CONCEPTOS_SIN_FOTO)) mal(`${ancho}px · «Sin foto» deja ${JSON.stringify(filas)} y esperaba ${JSON.stringify(CONCEPTOS_SIN_FOTO)}`);
+      else bien(`${ancho}px · «Sin foto» deja las ${filas.length} filas sin foto (y sólo ésas)`);
+      if (c[0].pulsado !== 'false' || c[1].pulsado !== 'true') mal(`${ancho}px · tras pulsar «Sin foto» el chip pulsado es ${JSON.stringify(c)}`);
+      else bien(`${ancho}px · aria-pressed pasa de «Todos» a «Sin foto»`);
+      if (antes !== despues) mal(`${ancho}px · pulsar el chip pidió la lista al servidor (${antes} → ${despues} peticiones): se filtra aquí`);
+      else bien(`${ancho}px · el chip filtra sin pedir nada al servidor (${despues} petición de lista en total)`);
+      if (!h || h.cuenta !== '· 5 gastos' || h.suma !== '10.087,49 €' || h.salvedad !== 'Es la suma de lo que estás viendo, no la del mes.') mal(`${ancho}px · cabecera con «Sin foto»: ${JSON.stringify(h)} y esperaba · 5 gastos, 10.087,49 € y la salvedad`);
+      else bien(`${ancho}px · con filtro, la cabecera dice la suma de lo que se ve (10.087,49 €) y que no es la del mes`);
+    }
+    // NEGATIVO: «Todos» lo deja como estaba.
+    await pulsarChip(page, 'todos');
+    const filas = await conceptosVisibles(page);
+    const h = await cabeceraDe(page);
+    if (!igual(filas, CONCEPTOS_TODOS) || !h || h.suma !== null) mal(`${ancho}px · NEGATIVO: «Todos» no devuelve la lista entera y sin suma (${filas.length} filas, cabecera ${JSON.stringify(h)})`);
+    else bien(`${ancho}px · NEGATIVO · «Todos» devuelve las 8 filas y quita la suma`);
+  }
+
+  // I.5 · el trabajo: filtra, cuenta, singular; y «Sin trabajo» son los que no tienen Trabajo.
+  {
+    const casos = [
+      ['Presupuesto #5 · María López', ['Tubo de cobre 22 mm', 'Silicona'], 'Todos · 2', 'Sin foto · 0', '· 2 gastos', '45,00 €'],
+      ['Sin trabajo', ['Gasolina', 'Varios', 'Cinta aislante', LARGO + LARGO], 'Todos · 4', 'Sin foto · 4', '· 4 gastos', '87,50 €'],
+      ['Reforma baño', ['Taladro percutor'], 'Todos · 1', 'Sin foto · 0', '· 1 gasto', '129,90 €'],
+    ];
+    const pedidasAntes = peticionesDeLista(await estado(page)).length;
+    for (const [etiqueta, conceptos, chipTodos, chipSin, cuenta, suma] of casos) {
+      if (!(await elegirTrabajo(page, etiqueta))) { nosupe(`${ancho}px · no encuentro «${etiqueta}» en el filtro por trabajo`); continue; }
+      const filas = await conceptosVisibles(page);
+      const c = (await chipsDe(page)).map((x) => x.texto);
+      const h = await cabeceraDe(page);
+      if (!igual(filas, conceptos)) mal(`${ancho}px · «${etiqueta}» deja ${JSON.stringify(filas)} y esperaba ${JSON.stringify(conceptos)}`);
+      else if (!igual(c, [chipTodos, chipSin])) mal(`${ancho}px · «${etiqueta}» · chips ${JSON.stringify(c)} y esperaba ${JSON.stringify([chipTodos, chipSin])}`);
+      else if (!h || h.cuenta !== cuenta || h.suma !== suma) mal(`${ancho}px · «${etiqueta}» · cabecera ${JSON.stringify(h)} y esperaba ${cuenta} y ${suma}`);
+      else bien(`${ancho}px · «${etiqueta}» deja ${filas.length} fila${filas.length === 1 ? '' : 's'} · ${chipTodos} · ${chipSin} · ${cuenta} · ${suma}`);
+    }
+    const pedidasDespues = peticionesDeLista(await estado(page)).length;
+    if (pedidasAntes !== pedidasDespues) mal(`${ancho}px · cambiar de trabajo pidió la lista al servidor (${pedidasAntes} → ${pedidasDespues})`);
+    else bien(`${ancho}px · cambiar de trabajo no pide nada al servidor`);
+  }
+
+  // I.6 · un filtro que no deja nada: el vacío, y «Quitar los filtros» lo quita TODO.
+  {
+    await elegirTrabajo(page, 'Reforma baño');
+    await pulsarChip(page, 'sinfoto'); // el 501 tiene foto → 0 filas
+    const filas = await conceptosVisibles(page);
+    const v = await vacioDe(page);
+    const cab = await cabeceraDe(page);
+    const c = (await chipsDe(page)).map((x) => x.texto);
+    if (filas.length) nosupe(`${ancho}px · I.6 sigue habiendo ${filas.length} filas y esperaba un filtro que no deja ninguna`);
+    else if (v.titulo !== 'Ningún gasto con esos filtros' || v.desc !== 'Prueba con otro mes, otra categoría u otro trabajo.' || v.boton !== 'Quitar los filtros') mal(`${ancho}px · el vacío de los filtros dice ${JSON.stringify(v)}`);
+    else if (cab) mal(`${ancho}px · con 0 filas sigue pintando la cabecera del mes: ${JSON.stringify(cab)}`);
+    else bien(`${ancho}px · trabajo + «Sin foto» sin resultados → «Ningún gasto con esos filtros», su ayuda y «Quitar los filtros» (${c.join(' · ')})`);
+    const boton = await page.$('#exp-quitar-filtros');
+    if (!boton) nosupe(`${ancho}px · no encuentro «Quitar los filtros»`);
+    else {
+      await pulsar(boton); await espera(200);
+      const f2 = await conceptosVisibles(page);
+      const job = await page.evaluate(() => document.getElementById('exp-filter-job').value);
+      const c2 = await chipsDe(page);
+      if (!igual(f2, CONCEPTOS_TODOS) || job !== '' || c2[0].pulsado !== 'true') mal(`${ancho}px · «Quitar los filtros» deja ${f2.length} filas, trabajo «${job}» y chips ${JSON.stringify(c2)}`);
+      else bien(`${ancho}px · «Quitar los filtros» devuelve las 8 filas, «Todos los trabajos» y el chip «Todos»`);
+    }
+  }
+  await page.close();
+}
+
+// I.7 · la categoría SÍ la filtra el servidor: un vacío por categoría dice «Ningún gasto con esos filtros» (y no «Sin
+// gastos este mes», que sería mentira), y «Quitar los filtros» la suelta y vuelve a pedir el mes entero.
+{
+  const { page } = await abrir('/g-cruda', 1280);
+  await page.select('#exp-filter-cat', 'herramientas');
+  await hasta(page, "!!document.querySelector('#exp-list .empty-state-title')");
+  const v = await vacioDe(page);
+  const hayVacioDelMes = await page.evaluate(() => !!document.getElementById('exp-empty-cta'));
+  if (v.titulo !== 'Ningún gasto con esos filtros' || hayVacioDelMes) mal(`con una categoría sin gastos la pantalla dice ${JSON.stringify(v)} (vacío del mes: ${hayVacioDelMes})`);
+  else bien('categoría sin gastos → «Ningún gasto con esos filtros», no «Sin gastos este mes»');
+  const boton = await page.$('#exp-quitar-filtros');
+  if (!boton) nosupe('no encuentro «Quitar los filtros» tras el vacío por categoría');
+  else {
+    await pulsar(boton);
+    await hasta(page, "document.getElementById('exp-filter-cat').value === '' && document.querySelectorAll('.gasto-fila').length > 0");
+    const cat = await page.evaluate(() => document.getElementById('exp-filter-cat').value);
+    const filas = await conceptosVisibles(page);
+    const e = await estado(page);
+    const ultima = peticionesDeLista(e).pop();
+    if (cat !== '' || filas.length !== ITEMS_CRUDA.length || !ultima || /category=/.test(ultima.ruta)) mal(`«Quitar los filtros» deja categoría «${cat}», ${filas.length} filas y la última petición ${JSON.stringify(ultima)}`);
+    else bien('«Quitar los filtros» suelta la categoría y vuelve a pedir el mes entero (sin category=)');
+  }
+  await page.close();
+}
+// I.8 · mes sin gastos y sin ningún filtro: sigue diciendo lo de siempre, y los chips cuentan 0 (control del suelo).
+{
+  const { page } = await abrir('/g-vacio', 1280);
+  const c = (await chipsDe(page)).map((x) => x.texto);
+  const cab = await cabeceraDe(page);
+  if (!igual(c, ['Todos · 0', 'Sin foto · 0']) || cab) mal(`mes vacío: chips ${JSON.stringify(c)}, cabecera ${JSON.stringify(cab)}`);
+  else bien('mes vacío → chips «Todos · 0» y «Sin foto · 0», sin cabecera del mes');
+  await page.close();
+}
+
+// ═══ J · «NUEVO GASTO» FIJO ABAJO A 390 PX (SCRUM-920d) ═════════════════════════════════════
+titulo('J · «Nuevo gasto» abajo, fijo, en el móvil · arriba en el escritorio · la primera fila entra en la primera pantalla');
+J390: {
+  const { page } = await abrirVista(browser, puerto, '/g', 390, 844);
+  const medir = () => page.evaluate(() => {
+    const b = document.getElementById('exp-new-btn');
+    const barra = document.querySelector('.gastos-barra');
+    const csv = document.getElementById('exp-export-btn');
+    // Una pieza que no está es un rojo CON NOMBRE, no una excepción que tira el guard sin veredicto.
+    const falta = [['#exp-new-btn', b], ['.gastos-barra', barra], ['#exp-export-btn', csv]].filter(([, n]) => !n).map(([s]) => s);
+    if (falta.length) return { falta };
+    const r = b.getBoundingClientRect();
+    const rb = barra.getBoundingClientRect();
+    const centro = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return {
+      posicion: getComputedStyle(barra).position, alto: window.innerHeight, ancho: window.innerWidth,
+      top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), width: Math.round(r.width), barraTop: Math.round(rb.top),
+      encima: !!centro && (centro === b || b.contains(centro)),
+      csvDentro: barra.contains(csv), csvTop: Math.round(csv.getBoundingClientRect().top),
+      recorrible: document.scrollingElement.scrollHeight - window.innerHeight,
+      mismoBoton: document.querySelectorAll('#exp-new-btn').length === 1,
+    };
+  });
+  const a = await medir();
+  if (a.falta) { mal(`390px · faltan piezas de la cabecera: ${a.falta.join(', ')}`); await page.close(); break J390; }
+  if (!a.mismoBoton) mal('hay más de un botón #exp-new-btn: «Nuevo gasto» tiene que ser UNO (el del atajo «N»)');
+  else if (a.posicion !== 'fixed') mal(`390px · la barra de «Nuevo gasto» no es fija (position: ${a.posicion})`);
+  else if (a.bottom > a.alto || a.bottom < a.alto - 24) mal(`390px · «Nuevo gasto» no está pegado al borde de abajo: bottom ${a.bottom} en una pantalla de ${a.alto}`);
+  // SCRUM-920j · «a ancho completo» pasa a «hasta el hueco del ?»: la barra deja 78 px a la derecha (el «?» flotante
+  // mide 48 y va a 20 del borde). El umbral baja de `ancho - 40` a `ancho - 100`; lo que vigila que el botón no se
+  // acorte más de la cuenta es ahora el límite de abajo, y lo que vigila que no tape es el bloque del «?».
+  else if (a.width < a.ancho - 100) mal(`390px · «Nuevo gasto» no va a ancho completo (menos el hueco del «?»): ${a.width} px de ${a.ancho}`);
+  else if (!a.encima) mal('390px · algo tapa a «Nuevo gasto»: el punto central del botón no es el botón');
+  else bien(`390px · «Nuevo gasto» va fijo abajo, a ${a.width} px de ${a.ancho}, pegado al borde (bottom ${a.bottom} de ${a.alto}) y nada lo tapa`);
+  if (a.csvDentro || a.csvTop > 200) mal(`390px · «⬇ CSV» no se queda arriba (dentro de la barra: ${a.csvDentro}, top ${a.csvTop})`);
+  else bien(`390px · «⬇ CSV» se queda arriba (top ${a.csvTop}), fuera de la barra`);
+  // SCRUM-920j · 🔴 EL «?» DE AYUDA NO TAPA «NUEVO GASTO». `#tut-help-btn` (`tutorial.js`: fijo, 48 px, a 20 del
+  // borde, z 350) lo pinta `tutorial.js`, que este banco no carga; en staging a 390 tapaba 1.632 px² del botón. Aquí
+  // va un DOBLE con el MISMO `cssText`, leído del fichero servido (si `tutorial.js` cambia, el doble cambia con él) y
+  // se mira con `elementFromPoint` en una rejilla de 27 puntos del botón.
+  const fabCss = /btn\.id = 'tut-help-btn';[\s\S]*?btn\.style\.cssText = `([^`]*)`/.exec(tutorialJs)?.[1];
+  if (!fabCss) nosupe('390px · no encuentro el `style.cssText` de `#tut-help-btn` en `tutorial.js`: no puedo pintar el «?» para ver si tapa');
+  else {
+    const fab = await page.evaluate((css) => {
+      const n = document.createElement('button');
+      n.id = 'tut-help-btn';
+      n.style.cssText = css;
+      n.textContent = '?';
+      document.body.appendChild(n);
+      const r = n.getBoundingClientRect();
+      const b = document.getElementById('exp-new-btn').getBoundingClientRect();
+      const en = (x, y) => document.elementFromPoint(x, y);
+      // CONTROL POSITIVO del instrumento: el doble se ve a sí mismo en su centro; si no, nada de lo que sigue vale.
+      const siMismo = en(r.left + r.width / 2, r.top + r.height / 2) === n;
+      // Una REJILLA de 9×3 y no las cuatro esquinas y el centro: el «?» es un CÍRCULO y esos cinco puntos caían fuera
+      // de él aun con 1.632 px² de solape (medido en la primera pasada de este bloque: «0 de 5 puntos» con el defecto).
+      const puntos = [];
+      for (let i = 0; i <= 8; i += 1) for (const f of [0.25, 0.5, 0.75]) puntos.push([b.left + 2 + (i / 8) * (b.width - 4), b.top + f * b.height]);
+      const tapados = puntos.filter(([x, y]) => en(x, y) === n).length;
+      const solape = Math.max(0, Math.min(r.right, b.right) - Math.max(r.left, b.left)) * Math.max(0, Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top));
+      n.remove();
+      return { siMismo, tapados, solape: Math.round(solape), fabLeft: Math.round(r.left), btnRight: Math.round(b.right) };
+    }, fabCss);
+    if (!fab.siMismo) nosupe('390px · el doble del «?» no se ve a sí mismo en su centro (algo lo tapa o no se pinta): la medida de abajo no vale');
+    else if (fab.tapados > 0 || fab.solape > 0) mal(`390px · el «?» de ayuda TAPA a «Nuevo gasto»: ${fab.tapados} de 27 puntos del botón y ${fab.solape} px² (el botón acaba en x=${fab.btnRight} y el «?» empieza en x=${fab.fabLeft})`);
+    else bien(`390px · el «?» de ayuda no toca «Nuevo gasto»: 0 de 27 puntos tapados, 0 px² de solape (el botón acaba en x=${fab.btnRight}, el «?» empieza en x=${fab.fabLeft})`);
+  }
+  if (a.recorrible < 60) nosupe(`390px · la página sólo se recorre ${a.recorrible} px: no puedo comprobar que la barra se queda quieta`);
+  else {
+    await page.evaluate(() => window.scrollTo(0, document.scrollingElement.scrollHeight));
+    await espera(150);
+    const b2 = await medir();
+    const ultima = await page.evaluate(() => {
+      const filas = [...document.querySelectorAll('.gasto-fila')];
+      return Math.round(filas[filas.length - 1].getBoundingClientRect().bottom);
+    });
+    if (Math.abs(b2.top - a.top) > 1) mal(`390px · al recorrer la lista «Nuevo gasto» se mueve (top ${a.top} → ${b2.top})`);
+    else bien(`390px · recorrida ${a.recorrible} px de lista, «Nuevo gasto» sigue en su sitio (top ${b2.top})`);
+    if (ultima > b2.barraTop + 1) mal(`390px · la barra tapa la última fila (su borde inferior ${ultima}, la barra empieza en ${b2.barraTop})`);
+    else bien(`390px · al final de la lista, la última fila acaba en ${ultima} y la barra empieza en ${b2.barraTop}: no la tapa`);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  // La primera fila entra en la primera pantalla (es lo que el prototipo persigue con la rejilla de filtros).
+  const primera = await page.evaluate(() => Math.round(document.querySelector('.gasto-fila').getBoundingClientRect().bottom));
+  if (primera > a.barraTop) mal(`390×844 · la primera fila NO entra en la primera pantalla: acaba en ${primera} y la barra empieza en ${a.barraTop}`);
+  else bien(`390×844 · la primera fila entera entra en la primera pantalla (acaba en ${primera}; la barra empieza en ${a.barraTop})`);
+  // Se pulsa con el ratón y abre el alta; el modal queda POR ENCIMA de la barra.
+  await pulsar(await page.$('#exp-new-btn'));
+  await hasta(page, "!!document.getElementById('exp-modal')");
+  await espera(150); // el modal ya está; un instante para que su animación de entrada no engañe al «qué hay encima»
+  const m = await page.evaluate(() => {
+    const b = document.getElementById('exp-new-btn').getBoundingClientRect();
+    const punto = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+    return { modal: !!document.getElementById('exp-modal'), botonTapado: !!punto && !document.getElementById('exp-new-btn').contains(punto) };
+  });
+  if (!m.modal) mal('390px · pulsar «Nuevo gasto» (el de la barra) no abre el alta');
+  else if (!m.botonTapado) mal('390px · con el alta abierta la barra sigue POR ENCIMA del modal');
+  else bien('390px · «Nuevo gasto» (el de la barra) abre el alta, y el modal queda por encima de la barra');
+  await page.close();
+}
+{
+  const { page } = await abrir('/g', 1280);
+  const r = await page.evaluate(() => {
+    const nb = document.getElementById('exp-new-btn');
+    const nc = document.getElementById('exp-export-btn');
+    const nbarra = document.querySelector('.gastos-barra');
+    if (!nb || !nc || !nbarra) return { falta: true };
+    const b = nb.getBoundingClientRect();
+    const c = nc.getBoundingClientRect();
+    return { posicion: getComputedStyle(nbarra).position, btnTop: Math.round(b.top), csvTop: Math.round(c.top), alto: window.innerHeight };
+  });
+  if (r.falta) mal('1280px · faltan piezas de la cabecera (#exp-new-btn, #exp-export-btn o .gastos-barra)');
+  else if (r.posicion === 'fixed') mal('1280px · la barra de «Nuevo gasto» es fija también en escritorio: la barra de abajo es sólo del móvil');
+  else if (r.btnTop > 200 || Math.abs(r.btnTop - r.csvTop) > 20) mal(`1280px · «Nuevo gasto» no está arriba junto a «⬇ CSV» (top ${r.btnTop} y ${r.csvTop})`);
+  else bien(`1280px · «Nuevo gasto» está arriba, junto a «⬇ CSV» (top ${r.btnTop} y ${r.csvTop}), no en una barra fija`);
+  // El atajo «N» (SCRUM-769) sigue siendo de ESTE botón. ⚠️ LÍMITE DECLARADO: la tecla en sí la escucha `app.js`,
+  // que este banco no carga (mide una vista, no el router). Lo que sí se comprueba es lo que la vista le da a
+  // `app.js`: el destino registrado (que al llamarlo abre el alta) y la marca de la tecla en el botón.
+  const atajo = await page.evaluate(() => {
+    const b = document.getElementById('exp-new-btn');
+    const accion = window.atajoNuevo && window.atajoNuevo.accionDe('expenses');
+    return {
+      registrado: typeof accion === 'function',
+      kbd: !!b && !!b.querySelector('kbd.btn-atajo'),
+      // El rótulo es SU texto propio (el <kbd> de la tecla va aparte, para que el copy siga siendo una cadena).
+      texto: b ? [...b.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim() : null,
+      abre: typeof accion === 'function' ? (accion(), true) : false,
+    };
+  });
+  await hasta(page, "!!document.getElementById('exp-modal')");
+  const modalDelAtajo = (await estado(page)).modal;
+  if (!atajo.registrado) mal('1280px · «expenses» ya no tiene destino registrado en atajoNuevo: la tecla «N» no abriría nada (SCRUM-769)');
+  else if (!atajo.kbd || atajo.texto !== 'Nuevo gasto') mal(`1280px · el botón perdió el rótulo o la marca del atajo: «${atajo.texto}», kbd ${atajo.kbd}`);
+  else if (!modalDelAtajo) mal('1280px · el destino registrado del atajo «N» ya no abre el alta de gasto');
+  else bien('1280px · el atajo «N» sigue siendo de este botón (rótulo «Nuevo gasto» + <kbd>N</kbd>) y su destino abre el alta (la tecla la escucha app.js: fuera del banco)');
   await page.close();
 }
 
@@ -464,7 +824,7 @@ await browser.close();
 di('');
 if (ciego) { console.error(`🔴 NO SUPE MIRAR en ${ciego} sitios: esto NO es «de acuerdo».`); process.exit(2); }
 if (fallos) { console.error(`🔴 ${fallos} hallazgos.`); process.exit(1); }
-di('✅ De acuerdo: la lista de Gastos no se recorre de lado, cada opción del «⋯» cambia el estado y el KPI no enseña claves internas.');
+di('✅ De acuerdo: la lista de Gastos no se recorre de lado, cada opción del «⋯» cambia el estado, el KPI no enseña claves internas, la foto se ve en cada fila sin pedirla, los filtros y los chips cuentan lo que filtran y «Nuevo gasto» va fijo abajo en el móvil.');
 // Salida EXPLÍCITA: el servidor del banco sigue abierto y, sin esto, el proceso no termina nunca en el
 // camino verde (medido: una mutación equivalente dejó al guard colgado hasta que lo mató el reloj).
 process.exit(0);
