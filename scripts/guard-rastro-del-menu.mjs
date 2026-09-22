@@ -25,7 +25,7 @@ import { lanzarNavegador } from './_navegador.mjs';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const MINIMO_DESTINOS = 17;
+export const MINIMO_DESTINOS = 18; // SCRUM-1040: +1, «Facturas recibidas» junto a «Libro de registro»
 
 const ME = {
   id: 1, email: 'demo@yaqu.app', name: 'Epipe', plan: 'pro', role: 'admin',

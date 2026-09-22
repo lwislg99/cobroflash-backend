@@ -1001,6 +1001,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   // quién lleva el documento y va ANTES de los dos detalles que lo montan.
   'documentoAsignados.js',
   'economiaVisible.js',
+  'facturasRecibidasView.js', // SCRUM-1040 (CON-04)
   'jobsCierreTrabajo.js',
   'jobsView.js',
   'libroRegistroView.js',
