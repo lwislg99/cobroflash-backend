@@ -361,3 +361,43 @@ El texto sustituto de la §6 original (arriba) sigue sin escribirse. Este PR ún
 6 superficies (A-F) **dejen de mentir** (no muestran nada donde antes prometían cobro/documento); no
 dice nada en su lugar. Cuando Javier firme el copy —del lote de SCRUM-534 o aparte—, la siguiente
 rama solo tiene que rellenar los huecos que aquí quedan vacíos, sin tocar el mecanismo de gateo.
+
+## 12 · Superficie G (22-sep-2026, jv-j1) — `puertaSerie.js`, la SÉPTIMA de la familia
+
+**Medido contra:** `origin/main` = `9b9e7f5995e2210fe6e7d5dc5223b9453ba3770a` · 2026-09-22T09:23:12Z ·
+**Rama:** `scrum-puerta-serie-modo-emision`
+
+Encontrada por J6 al hacer el barrido previo a un guard nuevo (censo de ayer decía 5, la
+construcción de §11 destapó la 6ª —el pie compartido de los emails, §11.1— y ésta es la 7ª): igual
+que B (§2), pero en `public/dashboard/js/puertaSerie.js:98` — la «puerta de última oportunidad»
+(SCRUM-D1/SCRUM-313) que se pinta en Configuración a quien ya pasó el alta y no contestó la
+numeración. Sin condicionar por `appModoEmision`, `INVOICING_ES_ENABLED` ni ningún flag (confirmado:
+0 referencias antes del arreglo). Víctima hoy: cualquier merchant ES con la facturación en OFF que
+entre a Configuración ve prometida una factura que la regla 24 no permite emitir.
+
+**Mismo mecanismo reusado de B, sin inventar variante:** dentro de `refrescarPrevia`, justo después
+de `error.style.display = 'none';` y antes del resto del cálculo:
+
+```js
+if (window.appModoEmision === 'receipt') { previa.style.display = 'none'; return; }
+```
+
+Se oculta SOLO el bloque `#ps-previa` («Tu primera factura con YaQu será…»); la pregunta «¿Ya has
+facturado en {año}?», el guardado de la serie (`POST /admin/onboarding/serie`) y el bloqueo del
+campo por serie ya emitida siguen funcionando igual, para cuando SIF-1 llegue — igual que en B. No
+se ha tocado ni una palabra del microcopy (fiscal, lo firma Javier; regla 39): solo se oculta.
+
+**Rojo primero → verde después**, en `tests/scrumD1-puerta-serie.test.mjs`
+(`SCRUM-1029 (superficie G) · en modo receipt se oculta "Tu primera factura con YaQu será…"`):
+antes del arreglo, el test caía porque el bloque de `refrescarPrevia` no contenía el guard; con el
+arreglo, pasa.
+
+**Control positivo** (mismo test, mismas líneas): el bloque de `refrescarPrevia` sigue conteniendo
+`apiRequest(` y `previa.style.display = 'block'` — a un merchant que SÍ factura le sigue saliendo la
+vista previa real pedida al servidor. Sin este control, ocultar el bloque ENTERO sin condición habría
+pasado igual el assert del guard.
+
+**Verificación adicional** (mismo patrón que §11): `node --check` sobre `puertaSerie.js`, `npm run
+build` (tsc) sin errores, `npm run guards:entrada` → 11 guards · 95/95 en verde sobre este árbol.
+
+No se ha tocado `prisma/schema.prisma`, ningún flag, ni el camino de emisión.
