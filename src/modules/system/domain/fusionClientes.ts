@@ -42,6 +42,7 @@ import { prisma } from '../../../core/db/prisma';
 import { desvincularYBorrar } from '../customerAdmin';
 import { tagsDe, normalizarTags, tagsParaPrisma } from '../tagsDelCliente';
 import { normalizarNif } from '../../../core/validation/nifEspanol';
+import { reasignarClienteEnFusion } from '../../messaging/domain/registroDeEnvios';
 
 export type MotivoRechazoFusion = 'mismo_cliente' | 'cliente_no_encontrado' | 'factura_emitida';
 
@@ -177,7 +178,9 @@ export async function fusionarClientes(
     await tx.quoteRequest.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
     await tx.parteTrabajo.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
     await tx.whatsAppMessage.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
-    await tx.emailMessage.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
+    // `email_messages` NO se toca aquí directo: `registroDeEnvios.ts` es el ÚNICO fichero que
+    // puede escribir esa tabla (scrum508-los-cinco-dejan-fila.test.mjs).
+    await reasignarClienteEnFusion(tx as any, merchantId, fusionadoId, principalId);
     await tx.maintenancePlan.updateMany({ where: { merchantId, customerId: fusionadoId }, data: { customerId: principalId } });
 
     await tx.customer.updateMany({ where: { id: principalId, merchantId }, data: { tags: tagsUnidas } });
