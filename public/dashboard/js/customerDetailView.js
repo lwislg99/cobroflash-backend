@@ -509,6 +509,41 @@ async function renderCustomer360View(container, customerId) {
         docs.appendChild(b);
       });
       tdDocs.appendChild(docs);
+
+      // ── SCRUM-1061 (CRM-18) · miniaturas de las fotos del trabajo (hasta 3, tope de SCRUM-1060) ──
+      // Ausente ≠ vacío: `t.fotos` solo viaja si el trabajo tiene alguna. Reutiliza
+      // `GET /admin/attachments/:id` (ya sirve el binario con su propio check de merchantId): sin
+      // ruta nueva, sin tocar el almacenamiento.
+      if (t.fotos && t.fotos.ids && t.fotos.ids.length) {
+        const galeria = document.createElement('div');
+        galeria.className = 'historial-fotos-mini';
+        t.fotos.ids.forEach((fotoId) => {
+          const enlaceFoto = document.createElement('a');
+          enlaceFoto.href = `/admin/attachments/${fotoId}`;
+          enlaceFoto.target = '_blank';
+          enlaceFoto.rel = 'noopener';
+          enlaceFoto.className = 'historial-foto-mini';
+          const img = document.createElement('img');
+          img.src = `/admin/attachments/${fotoId}`;
+          // ✅ TEXTO FIRMADO por el orquestador por delegación del fundador (22-sep-2026, SCRUM-1061).
+          img.alt = 'Foto del trabajo';
+          img.loading = 'lazy';
+          // Una foto que falla al cargar no rompe la ficha: se retira en vez de enseñar el icono roto.
+          img.onerror = () => { img.hidden = true; };
+          enlaceFoto.appendChild(img);
+          galeria.appendChild(enlaceFoto);
+        });
+        const restantes = t.fotos.total - t.fotos.ids.length;
+        if (restantes > 0) {
+          const mas = document.createElement('span');
+          mas.className = 'historial-fotos-mas';
+          mas.textContent = '+' + restantes + ' más'; // ✅ FIRMADO, SCRUM-1061
+          mas.setAttribute('aria-label', restantes + ' fotos más'); // ✅ FIRMADO, SCRUM-1061
+          galeria.appendChild(mas);
+        }
+        tdDocs.appendChild(galeria);
+      }
+
       tr.appendChild(tdDocs);
       tbody.appendChild(tr);
     });
