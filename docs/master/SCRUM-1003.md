@@ -1,7 +1,7 @@
 # SCRUM-1003 · «Guardar en mis contactos» (.vcf) en la ficha del cliente
 
-**Medido contra:** rama `scrum-1033-ficha-datos-y-etiquetas` = `bbeb3bb83cc31d2f2255be877ef71501c37bde34` (aún no en `origin/main`; SCRUM-1004 va en la misma rama nueva, `scrum-1003-vcard-como-llegar`, encima de aquélla — depende de sus chips de dirección/NIF, PR B) · 2026-09-22T08:42:00Z (hora de GitHub).
-**Rama:** `scrum-1003-vcard-como-llegar`.
+**Medido contra:** `origin/main` = `5588e3263847bd40ea906d325e4f83c883c24e6e` · 2026-09-22T08:42:00Z (hora de GitHub, cabecera `Date:` de `gh api -i zen`).
+**Rama:** `scrum-1003-vcard-como-llegar`, montada sobre `scrum-1033-ficha-datos-y-etiquetas` = `bbeb3bb83cc31d2f2255be877ef71501c37bde34` (aún no en `origin/main`; SCRUM-1004 va en esta misma rama, encima de aquélla — depende de sus chips de dirección/NIF, PR B).
 **Microcopy:** ✅ **texto firmado** por el orquestador por delegación del fundador (22-sep-2026, comentario de Jira en SCRUM-1003): botón **«Guardar en mis contactos»**.
 
 ## Paso 0: el defecto existía hoy

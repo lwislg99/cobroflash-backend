@@ -1,7 +1,7 @@
 # SCRUM-1004 · «Cómo llegar» en la ficha del cliente (hoy solo dentro de un Trabajo)
 
-**Medido contra:** rama `scrum-1033-ficha-datos-y-etiquetas` = `bbeb3bb83cc31d2f2255be877ef71501c37bde34` (PR B, misma rama que SCRUM-1003: `scrum-1003-vcard-como-llegar`) · 2026-09-22T08:42:00Z (hora de GitHub).
-**Rama:** `scrum-1003-vcard-como-llegar`.
+**Medido contra:** `origin/main` = `5588e3263847bd40ea906d325e4f83c883c24e6e` · 2026-09-22T08:42:00Z (hora de GitHub, cabecera `Date:` de `gh api -i zen`).
+**Rama:** `scrum-1003-vcard-como-llegar`, montada sobre `scrum-1033-ficha-datos-y-etiquetas` = `bbeb3bb83cc31d2f2255be877ef71501c37bde34` (PR B, misma rama que SCRUM-1003).
 **Microcopy:** ✅ **texto firmado** por el orquestador por delegación del fundador (22-sep-2026, comentario de Jira en SCRUM-1004): enlace **«Cómo llegar»** — reuso literal del MECANISMO de `jobRailBlocks.js` (mismo proveedor, Google Maps por texto, sin clave ni mapa incrustado), con su propio rótulo (el del Trabajo sigue siendo «Abrir en mapa», sin tocar).
 
 ## Paso 0: el defecto existía hoy
