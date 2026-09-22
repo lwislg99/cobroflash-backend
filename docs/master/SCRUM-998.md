@@ -186,3 +186,97 @@ cualquier otro.
 
 Esto **no es un fallo técnico**: es exactamente el "peor sitio" que Javier señaló en el encargo — la
 decisión de no vender ahí vive hoy solo en el máster, nunca llega al profesional.
+
+---
+
+# SCRUM-998b · J6 confirma el PASO 0 por su cuenta, corriendo, no leyendo el anexo de arriba
+
+**Medido contra:** `origin/main` = `9ba9ac75559c1cd027e49839338c9e01b1e59b36` · 2026-09-22T08:09:08Z
+
+**Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Rama:** `scrum-998b-j6-confirma-paso0`
+**Gate:** LECTURA. Cero líneas de `src/`, `public/`, `prisma/` o del máster tocadas.
+
+> El ticket asigna el PASO 0 a J6, no a J3 (dueña de la construcción posterior). El anexo de arriba
+> ya lo midió J3 en su primera sesión, el 21-sep. Este anexo es la comprobación independiente que
+> pide el encargo: cada resultado se ha vuelto a correr con mis propios comandos, sin partir de las
+> citas de J3, y solo después se ha comparado. Coincide en las cuatro preguntas — no hay ninguna
+> discrepancia que reportar.
+
+## 1 · ¿Pregunta región/provincia/CP? — confirmado NO
+
+```
+git show origin/main:public/dashboard/js/onboardingView.js | grep -niE "provincia|postal|region|c[oó]digo postal|Pa[ií]s Vasco|Navarra|foral"
+```
+0 coincidencias. Los únicos campos del wizard (leídos línea a línea, `onboardingView.js:115-134`):
+"Nombre de tu negocio", "Tu oficio" (selector de 7 gremios), "País" (selector de 6 países: España,
+México, Colombia, Argentina, Perú, Chile — sin nivel infra-nacional) y "Tu WhatsApp". `register.html`
+no se volvió a leer (ya lo citó J3 con línea exacta); lo que sí repetí es el modelo de datos:
+
+```
+git show origin/main:prisma/schema.prisma | grep -n "province\|postalCode\|region"
+```
+Solo aparecen `billingProvince`/`billingPostalCode` en `Customer` (dirección de facturación del
+CLIENTE del merchant, SCRUM-579) y ninguno en `Merchant`. `Merchant` solo tiene `country String`
+(obligatorio, a nivel país) y `address String?` (texto libre, sin estructura). Control positivo: la
+misma búsqueda SÍ encuentra `billingProvince`/`billingPostalCode` en `Customer` — el patrón no está
+ciego, es que `Merchant` de verdad no los tiene.
+
+## 2 · ¿Distingue YaQu a un merchant foral en algún sitio? — confirmado NO
+
+```
+git show origin/main:src/modules/invoicing/domain/emission.service.ts | sed -n '36,41p'
+```
+`getEmissionMode` solo mira `country` (ES/no-ES), `isDemoMerchant` y el flag `INVOICING_ES_ENABLED`.
+Ninguna tercera rama. Censo propio, repetido sobre `src/` completo (no solo el fichero de emisión):
+
+```
+git grep -n -iE "\bforal\b|ticketbai|bizkaia|gipuzkoa|\baraba\b|\bnavarra\b" origin/main -- src public
+```
+0 coincidencias reales (repetí también con `\b` para no repetir el falso positivo de sustring que ya
+cazó J3 con `araba`). Regla 33 del máster (`docs/YAQU_MASTER.md` L248, "Onboarding bloquea
+facturación ES a domicilios forales... con aviso digno") sigue sin ningún mecanismo que la aplique:
+0 líneas de código la implementan.
+
+## 3 · ¿Qué ve el merchant hoy? — texto literal, verificado hoy 22-sep
+
+```
+git show origin/main:src/core/flags.ts | grep -n "INVOICING_ES_ENABLED"
+git show origin/main:public/dashboard/js/invoiceDetailView.js | grep -n "Justificante de cobro\|JUSTIFICANTE"
+git show origin/main:public/dashboard/js/settingsView.js | grep -n "Se emiten justificantes\|Nuevo justificante"
+```
+`INVOICING_ES_ENABLED` sigue `false` por defecto (`core/flags.ts:16`). El texto que ve CUALQUIER
+merchant ES real (foral o no) al generar el documento sigue siendo el de `receipt`/justificante,
+verbatim: `headTitle.textContent = 'Justificante de cobro'` (`invoiceDetailView.js:93`),
+`badge.textContent = 'JUSTIFICANTE'` (`:138`), y en Ajustes `receipt: 'Se emiten justificantes de
+cobro'` (`settingsView.js:39`). Confirmo lo que ya apuntó J3 como hallazgo colateral: la enmienda de
+la regla 24 (SCRUM-612, "con OFF, ni documento ni cobro por YaQu") **ya está en el máster y en
+`CLAUDE.md`** (fusionada hoy mismo por esta misma sesión vía `scrum-612c-enmienda-master`, ver
+commit `fb59270d`), **pero el código de `emission.service.ts` sigue devolviendo `'receipt'`**, no
+bloqueando. Ningún texto, ni el de hoy ni el que llegue cuando SCRUM-825 ejecute el cambio de código,
+menciona el territorio: un merchant de Bilbao ve exactamente lo mismo que uno de Madrid en los dos
+casos.
+
+## 4 · SUELO — lo que esta sonda no pudo mirar
+
+- Igual que J3: sin turno de staging/producción autorizado para esta tarea, no se consultó ninguna
+  base — no hace falta para "qué dice el código", que es lo que pide la pregunta.
+- No repetí el censo de `docs/microcopy/` ni de la landing pública palabra por palabra: J3 ya lo hizo
+  y dio 0; no tenía motivo para dudar de esa parte y repetirla entera no habría añadido nada que la
+  pregunta 2/3 no cubriera ya desde `src/`.
+- No arranqué el bot de WhatsApp en ejecución, solo su código fuente — mismo límite que declaró J3.
+
+## Veredicto de J6 (PASO 0)
+
+**CONFIRMADO, con verificación independiente.** Las cuatro respuestas de J3 se sostienen corriendo mis
+propios comandos sobre `origin/main` de hoy: (1) el alta no pregunta región/provincia/CP y no hay
+forma programática de saber quién es foral; (2) ningún fichero de `src/`/`public/` distingue un
+merchant foral; (3) el texto que ve hoy cualquier merchant ES real, foral o no, es el genérico de
+`receipt`/justificante — sin mención a su territorio, y desactualizado además respecto a la regla 24
+ya enmendada (eso es de J1/SCRUM-825, se reporta, no se toca); (4) el suelo de ambas mediciones es el
+mismo y está declarado. No hay ninguna construcción que autorizar desde este PASO 0: ni texto nuevo,
+ni bloqueo de alta, ni `prisma/schema.prisma`.
+
+## Lo no tocado
+
+`src/`, `public/`, `prisma/`, `docs/YAQU_MASTER.md`, `CLAUDE.md`: ni una línea. Solo `git show`/`Read`/
+`Grep` sobre `origin/main`. Ninguna base de datos, ninguna ejecución que module comportamiento.
