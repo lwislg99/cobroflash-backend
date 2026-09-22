@@ -272,3 +272,54 @@ lo cuente dos veces.
 la sirve ni una declaración de acceso para ella. Si no la usa nadie, B es gratis y A es trabajo
 sobre una pantalla muerta; si la usa el fundador para dar de alta cobros a mano, es al revés. **Esa
 respuesta no está en el repositorio.**
+
+---
+
+# SCRUM-910c · ① decidido (B) y aplicado — J2, traspaso de Luis
+
+**Medido contra:** `origin/main` = `763d37e5225ea4897827b1a997e34cf5e117c5c3` · 2026-09-22T22:24:27Z
+**Rama:** `scrum-910-admin-enlaces-undefined`
+**Carril:** J2 (Clientes y cobro) — ticket asignado por Luis fuera de tabla, Jira SCRUM-910 comentario 16278 (21-sep-2026) y confirmado por el orquestador de J en el comentario 16420 (22-sep-2026).
+
+## 0 · Quién decide y con qué dato nuevo
+
+**DECIDIDO: opción B** (`admin.html` deja de pintar el bloque de enlaces). Lo decide Luis en el
+comentario 16278, y esta sesión lo re-verificó antes de tocar nada, en vez de darlo por bueno:
+**0 referencias a `admin.html`** en `src/` ni en `public/` (grep propio, hoy — no solo la medición
+de Luis del 21-sep). Sigue sin saberse **quién usa la página** fuera del repositorio (§3 de arriba
+lo declaraba como el dato que faltaba); lo que cambia es que la pregunta relevante para B —¿algo
+del código la referencia?— ya tiene 0 como respuesta medida dos veces, por dos sesiones distintas.
+
+**No arregla el defecto (1)** (el 404 por mandar `created.id` donde se espera `decisionToken`,
+comentario 15795). Sigue vivo, sigue documentado ahí y en §3 de este expediente. No es un hallazgo
+nuevo — no se abre ticket aparte — y no tiene víctima medida (0 referencias a la página). Queda
+declarado, no arreglado: si algún día se usa `admin.html` para algo, el botón «Aceptar» seguirá
+dando el error de consola de siempre, ya no seguido de enlaces `undefined`.
+
+## 1 · El arreglo
+
+`public/admin.html`: se retira el bloque `.link-list` (los dos `<a href="${accepted.paybank_url}">`
+/ `${accepted.paycard_url}`) y su CSS asociado (única consumidora), y se quita `accepted.charge_id`
+del mensaje de estado — ninguno de los tres campos existe en la respuesta real de
+`POST /quote/:token/accept` (`quotes.routes.ts:373-378`: `{ok, status, quote_id, accepted_at}`).
+`accepted.quote_id` y `accepted.status`, que sí existen, se quedan. Cero líneas tocadas fuera de
+`admin.html`. 43 líneas de diff, 2 inserciones + 41 borrados.
+
+## 2 · Rojo primero
+
+`tests/scrum910-admin-sin-enlaces-undefined.test.mjs`: lee `admin.html` como texto (vanilla, sin
+runtime que montar) y falla si aparece `accepted.paybank_url` / `accepted.paycard_url` /
+`accepted.charge_id`, con control positivo de que `accepted.quote_id` y `accepted.status` —que SÍ
+existen— se siguen usando (guarda del detector, SCRUM-113: sin el positivo, un fichero vaciado de
+más también pasaría).
+
+Corrido contra el árbol SIN tocar → rojo por el motivo esperado (`accepted.paybank_url` presente).
+Aplicado el arreglo → verde. `npm run guards:entrada` 112/112 · `npm run guard:marcadores-en-pantalla`
+verde (27 vistas × 3 estados, control negativo corrido). `npm test` completo: ver informe de entrega.
+
+## 3 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `public/admin.html` | retirado el bloque de enlaces rotos y su CSS |
+| `tests/scrum910-admin-sin-enlaces-undefined.test.mjs` | nuevo — rojo primero + control positivo |
