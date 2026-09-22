@@ -4,7 +4,7 @@
 // NINGÚN FICHERO DE TEXTO VERSIONADO LLEVA BYTES DE CONTROL LITERALES.
 //
 // `\uXXXX` escrito por una sesión aterriza en disco como el CARÁCTER LITERAL, no como la
-// secuencia de escape (medido, 7/7 casos: SCRUM-941). Un NUL convierte el fichero en «binario»
+// secuencia de escape (medido el 22-sep-2026, 7/7 casos: SCRUM-941). Un NUL convierte el fichero en «binario»
 // para git: `git diff --numstat` da «- -» y GitHub pone «Binary file not shown» — nadie vuelve a
 // ver ese contenido en un diff. Un `\x08` (backspace) dentro de una regex deja un patrón que «no
 // casa con nada»: un guard CIEGO (antecedente real, docs/master/SCRUM-428.md).
