@@ -87,3 +87,107 @@ sitios) = las mismas 11+4 de J5, a otra granularidad. No hay líneas nuevas ni l
   PR ya mergeado.
 * No propone qué decir en `:79`/`:83` de `precios.html` cuando el cobro SÍ se active — eso es otro
   ticket, con su propio literal, cuando llegue el momento.
+
+---
+
+# APÉNDICE · 22-sep-2026 · SCRUM-1016d · El titular bloqueado, ya desbloqueado — Eje A, versión "verdad hoy"
+
+**Fecha:** 22-sep-2026 · **Carril:** J4 (legal y cumplimiento) · **Gate:** sin gate — propuesta, no se aplica nada
+**Medido contra:** `origin/main` = `524ba73fac05904b9a50eb77282140a9a1f53e79` · 2026-09-22T09:10:35Z
+
+## Qué desbloquea esto, y qué NO
+
+Javier eligió el **Eje A** (`docs/prototipos/SCRUM-1016/direccion-de-diseno.md`: "Cumplir con Hacienda,
+rápido y sin pensar") en su **versión "verdad hoy"**: VeriFactu al frente como diferenciador, sin
+afirmar que se cumple hoy — la recomendación de J5 era el Eje B, por motivo declarado en su propio
+prototipo; Javier decidió el A de todas formas y esta entrada no reabre esa decisión.
+
+Lo que lo desbloquea es la firma de Javier del 22-sep-2026 (Jira, comentario **16404** de SCRUM-534)
+sobre **C3**: V0-6 del máster deja de decir *"...se activan al cerrar la certificación..."* y pasa a
+decir *"...se activan al cerrar la declaración responsable del fabricante..."* — aplicado en la rama
+`scrum-534i-h2-y-censo-aplicados` (PR **#1657**, sin mergear a la hora de esta entrada). **Esta entrada
+ancla el titular en el texto YA FIRMADO por Javier, no en el texto que hoy sigue en `origin/main` hasta
+que ese PR mergee** — el literal firmado es el dato que manda (comentario 16404), el fichero es solo
+dónde vive todavía sin aplicar.
+
+## Los tres literales — para firmar, J3 monta después
+
+**NO SE APLICA NADA aquí.** `public/index.html` es de J3; regla 39, lo firma Javier primero.
+
+### 1 · `<h1 id="reg-hero">` (`public/index.html:427`)
+
+**Dice hoy:** *"Del presupuesto al cobro, <span class="hl">sin salir de WhatsApp.</span>"*
+
+**Literal propuesto:**
+> Del presupuesto a la firma — <span class="hl">tu factura VeriFactu, sin cambiar de precio.</span>
+
+**Por qué cada cláusula es verdad hoy:**
+- "Del presupuesto a la firma" — es lo que la beta hace hoy en España (guion H2 firmado: "en España la
+  beta es de presupuestos y firma"); no dice "cobro" (regla 24, `INVOICING_ES_ENABLED` OFF).
+- "tu factura VeriFactu" — no dice "lista" ni "cumple con Hacienda" (regla 17); es un sustantivo sin
+  verbo de estado, y el resto de la frase ("sin cambiar de precio") es sobre el PRECIO, no sobre si la
+  factura existe ya.
+- "sin cambiar de precio" — cita literal de V0-6 firmado (C3) y del guion H2 firmado ("Los founding
+  estrenaréis la facturación VeriFactu... sin cambio de precio"): es la misma promesa ya firmada dos
+  veces, en un tercer sitio.
+
+### 2 · `<p class="sub">` (`public/index.html:428`)
+
+**Dice hoy:** *"Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con
+tarjeta, Bizum o transferencia. Y llevas clientes, gastos y facturas en el mismo sitio."*
+
+**Literal propuesto:**
+> Crea el presupuesto en 30 segundos y tu cliente lo firma desde el móvil por WhatsApp. Cada registro
+> de facturación ya sale con el formato oficial de la AEAT — la remisión a Hacienda se activa con la
+> declaración responsable del fabricante, sin cambiar de precio.
+
+**Por qué cada cláusula es verdad hoy:**
+- "Crea el presupuesto en 30 segundos... firma desde el móvil por WhatsApp" — existente, sin depender
+  de ningún flag.
+- "Cada registro de facturación ya sale con el formato oficial de la AEAT" — es la cláusula 1 de la
+  tabla de verificación del guion H2 firmado ("generamos cada registro... con el formato oficial de la
+  AEAT —huella SHA-256 encadenada y QR de cotejo—"), aquí sin el detalle técnico (SHA-256/QR) porque es
+  un subtítulo de landing, no la respuesta a un gestor. Los eslabones 4/6/7 de
+  `docs/legal/AUDITORIA_CAMINO_EMISION.md` existen — verificado en la fase f de `SCRUM-534.md`.
+- "la remisión a Hacienda se activa con la declaración responsable del fabricante" — cita directa de
+  C3/V0-6 ya firmado: los eslabones 8/9 (remisión) NO existen todavía, y la frase no dice que existan.
+- "sin cambiar de precio" — misma cita que en el H1.
+- **Se retira "te paga — con tarjeta, Bizum o transferencia"**: es la promesa de cobro que la regla 24
+  prohíbe desde el 21-sep (ya lo señalaba J5 como el hallazgo #6 de la tabla "verdad hoy", punto 2 de
+  esta ficha, fase c). No se repite ese hallazgo aquí; se hereda.
+
+### 3 · `<title>`, `og:title`, `twitter:title` (`public/index.html:6,16,23`)
+
+Citan el H1 literalmente (así lo dejó dicho la fase c: "cambian junto con él, no antes").
+
+**Dicen hoy:** *"YaQu — Del presupuesto al cobro, sin salir de WhatsApp"*
+
+**Literal propuesto (los tres, igual):**
+> YaQu — Del presupuesto a la firma, tu factura VeriFactu sin cambiar de precio
+
+Es el H1 aplanado a texto plano (sin el `<span>`), con el mismo razonamiento de verificación que arriba.
+
+## Hallazgo fuera de este encargo, reportado y NO tocado
+
+La propia Parte H2 del máster (`docs/YAQU_MASTER.md:215`, la línea que precede al guion), dice:
+*"categoría = "herramienta para presupuestar, firmar y cobrar señales por WhatsApp""*. La fase f de
+`SCRUM-534.md` ya señaló que "la misma regla 24 que invalida 'cobros' en el guion probablemente también
+le pesa a esa categoría" y lo dejó como hallazgo de este ticket (SCRUM-1016). Esta entrada lo confirma
+y lo deja igual: **no propone literal para esa línea** porque no es parte del encargo de hoy (titular,
+subtítulo, `<title>` de `index.html`) — sí de esta zona/carril, para una entrada futura del mismo
+ticket.
+
+## Verificación — releído `docs/YAQU_MASTER.md` en `origin/main`, no de memoria
+
+`git grep -n "está construida y en certificación\|se activan al cerrar la declaración responsable"
+origin/main -- docs/YAQU_MASTER.md` a las 09:10:35Z de hoy: el máster en `main` **todavía** dice
+"certificación" (línea 215/988) porque el PR #1657 (SCRUM-534i) sigue sin mergear. El texto que ancla
+esta entrada es el **firmado** (comentario 16404 de Jira), no el que hoy vive en `main` — se declara la
+diferencia en vez de callarla, tal y como pide A3.
+
+## Lo que NO cubre esta entrada
+
+* No aplica nada a `public/index.html` — es de J3, y necesita la firma de Javier primero (regla 39).
+* No propone literal para la categoría de la Parte H2 del máster (hallazgo de arriba, reportado).
+* No repite ni reabre la elección del Eje A frente al B — es la decisión ya tomada por Javier.
+* No mide impacto de conversión ni SEO de la longitud del `<title>` propuesto — eso es de J3 al montar.
