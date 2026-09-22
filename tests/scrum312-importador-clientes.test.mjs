@@ -32,16 +32,27 @@ import {
 } from '../dist/modules/system/domain/importarClientes.service.js';
 import { parsearLineaCsv, trocearCsv, quitarBom } from '../dist/core/csv/csv.js';
 
-/** Cliente de mentira: registra lo que se crea para poder afirmar sobre ello. */
+/**
+ * Cliente de mentira: registra lo que se crea para poder afirmar sobre ello.
+ *
+ * SCRUM-1046: busca en `existentes` Y en lo ya `creados` en esta misma pasada — una base real
+ * (READ COMMITTED, awaits secuenciales) SÍ vería la fila que acaba de crear la línea anterior del
+ * mismo CSV, así que un doble no la ve el mock lo estaría dejando pasar por un motivo que no
+ * existe en producción.
+ */
 function clienteFalso({ existentes = [] } = {}) {
   const creados = [];
+  const casa = (e, o) =>
+    (o.phone && e.phone === o.phone) ||
+    (o.mobile && e.mobile === o.mobile) ||
+    (o.email && e.email === o.email) ||
+    (o.taxId?.equals && String(e.taxId ?? '').toUpperCase() === String(o.taxId.equals).toUpperCase());
   return {
     creados,
     findFirst: async ({ where }) => {
       const ors = where.OR ?? [];
-      return existentes.find((e) =>
-        e.merchantId === where.merchantId &&
-        ors.some((o) => (o.phone && e.phone === o.phone) || (o.email && e.email === o.email)),
+      return [...existentes, ...creados].find((e) =>
+        e.merchantId === where.merchantId && ors.some((o) => casa(e, o)),
       ) ?? null;
     },
     create: async ({ data }) => { creados.push(data); return { id: creados.length, ...data }; },
@@ -119,17 +130,37 @@ test('② propone leyendo la cabecera, en cualquier orden y con tildes', () => {
 });
 
 test('② lo que NO reconoce lo DICE, no lo adivina', () => {
-  const p = proponerMapeo(['NOMBRE', 'DIRECCION']);
-  const dir = p.find((c) => c.columna === 'DIRECCION');
+  const p = proponerMapeo(['NOMBRE', 'REFERENCIA_INTERNA_ANTIGUA']);
+  const dir = p.find((c) => c.columna === 'REFERENCIA_INTERNA_ANTIGUA');
   assert.equal(dir.campo, null, '🔴 adivinar una columna que no se entiende es peor que preguntar');
   assert.equal(dir.confianza, 'ninguna');
 });
 
-test('② un campo no se propone DOS veces: TELEFONO y MOVIL no se pisan', () => {
+test('② un campo no se propone DOS veces: TELEFONO y TLF (los dos sinónimos de teléfono fijo) no se pisan', () => {
   // Repartir el mismo campo entre dos columnas perdería una sin que se note.
-  const p = proponerMapeo(['NOMBRE', 'TELEFONO', 'MOVIL']);
+  const p = proponerMapeo(['NOMBRE', 'TELEFONO', 'TLF']);
   assert.equal(p[1].campo, 'phone');
-  assert.equal(p[2].campo, null, '🔴 la segunda columna de teléfono se llevaría el campo');
+  assert.equal(p[2].campo, null, '🔴 la segunda columna de teléfono fijo se llevaría el campo');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// SCRUM-1046 · NIF, MÓVIL, ETIQUETAS Y DIRECCIÓN — los cuatro campos nuevos
+// ═════════════════════════════════════════════════════════════════════════════
+
+test('② NIF, MÓVIL, ETIQUETAS y DIRECCIÓN se proponen — y MÓVIL ya no se confunde con TELÉFONO', () => {
+  // 🔴 Antes «MOVIL» era sinónimo de `phone` porque no existía otro sitio: con `Customer.mobile`
+  // ya en el esquema (SCRUM-590), MOVIL y TELEFONO tienen que ir a campos DISTINTOS, no pisarse.
+  const p = proponerMapeo(['NOMBRE', 'TELEFONO', 'MOVIL', 'NIF', 'ETIQUETAS', 'DIRECCION', 'CIUDAD', 'CP', 'PROVINCIA', 'PAIS']);
+  const campo = (columna) => p.find((c) => c.columna === columna).campo;
+  assert.equal(campo('TELEFONO'), 'phone');
+  assert.equal(campo('MOVIL'), 'mobile', '🔴 MOVIL cayendo en phone perdería el teléfono fijo de esa fila');
+  assert.equal(campo('NIF'), 'taxId');
+  assert.equal(campo('ETIQUETAS'), 'tags');
+  assert.equal(campo('DIRECCION'), 'billingAddress');
+  assert.equal(campo('CIUDAD'), 'billingCity');
+  assert.equal(campo('CP'), 'billingPostalCode');
+  assert.equal(campo('PROVINCIA'), 'billingProvince');
+  assert.equal(campo('PAIS'), 'billingCountry');
 });
 
 test('② la confianza se distingue: exacta vs sinónimo', () => {
@@ -194,6 +225,84 @@ test('③ un duplicado se OMITE, y omitido no es lo mismo que rechazado', async 
   assert.equal(r.omitidos, 1, 'ya existía: no es un error del usuario');
   assert.equal(r.creados, 1);
   assert.equal(r.rechazos.length, 1, 'y el de sin nombre sigue siendo rechazo');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ④ SCRUM-1046 · NIF, MÓVIL, ETIQUETAS Y DIRECCIÓN, importados
+// ═════════════════════════════════════════════════════════════════════════════
+
+const MAPEO_COMPLETO = {
+  name: 0, phone: 1, mobile: 2, email: 3, taxId: 4, tags: 5,
+  billingAddress: 6, billingCity: 7, billingPostalCode: 8, billingProvince: 9, billingCountry: 10,
+};
+const CABECERA_COMPLETA = 'nombre;telefono;movil;email;nif;etiquetas;direccion;ciudad;cp;provincia;pais';
+
+test('④ una fila completa importa los siete campos nuevos', async () => {
+  // Las etiquetas van en UNA celda CSV, entrecomillada porque lleva el mismo `;` que separa
+  // columnas — dentro se parten con `;` OTRA VEZ, ya en memoria (ver el fichero fuente).
+  const fila = 'Ana;34000000001;34600000001;ana@x.es;33576428Q;"moroso;administrador";Calle Mayor 1;Madrid;28001;Madrid;ES';
+  const cl = clienteFalso();
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\n${fila}`, MAPEO_COMPLETO, cl);
+  assert.equal(r.creados, 1);
+  const c = cl.creados[0];
+  assert.equal(c.taxId, '33576428Q');
+  assert.deepEqual(c.tags, ['moroso', 'administrador']);
+  assert.equal(c.billingAddress, 'Calle Mayor 1');
+  assert.equal(c.billingCity, 'Madrid');
+  assert.equal(c.billingPostalCode, '28001');
+  assert.equal(c.billingProvince, 'Madrid');
+  assert.equal(c.billingCountry, 'ES');
+  assert.equal(c.mobile, '34600000001');
+});
+
+test('④ un NIF mal formado se RECHAZA con su motivo, sin tumbar las demás filas', async () => {
+  const filas = ['Ana;;;;12345678A;;;;;;', 'Luis;;;;33576428Q;;;;;;'].join('\r\n'); // 12345678 pide letra Z, no A
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\n${filas}`, MAPEO_COMPLETO, clienteFalso());
+  assert.equal(r.rechazos.length, 1);
+  assert.match(r.rechazos[0].motivo, /NIF/);
+  assert.equal(r.creados, 1, '🔴 un NIF roto no puede tumbar la fila de al lado');
+});
+
+test('④ un NIF vacío sigue siendo válido — validar no es obligar', async () => {
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\nAna;;;;;;;;;;`, MAPEO_COMPLETO, clienteFalso());
+  assert.equal(r.creados, 1);
+  assert.equal(r.rechazos.length, 0);
+});
+
+test('④ un país que no es el código ISO de 2 letras se RECHAZA en vez de adivinarse', async () => {
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\nAna;;;;;;;;;;España`, MAPEO_COMPLETO, clienteFalso());
+  assert.equal(r.rechazos.length, 1);
+  assert.match(r.rechazos[0].motivo, /País/);
+  assert.equal(r.creados, 0, '🔴 truncar "España" a "ES" sería inventar un dato que nadie escribió así');
+});
+
+test('④ las etiquetas respetan el límite de 20 por cliente (`tagsDelCliente.ts`)', async () => {
+  const veinticinco = Array.from({ length: 25 }, (_, i) => `tag${i}`).join(';');
+  const cl = clienteFalso();
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\nAna;;;;;"${veinticinco}";;;;;`, MAPEO_COMPLETO, cl);
+  assert.equal(r.creados, 1);
+  assert.equal(r.rechazos.length, 0, '🔴 el tope se aplica recortando, no rechazando la fila entera');
+  assert.equal(cl.creados[0].tags.length, 20, '🔴 más de 20 etiquetas no es un tope si se guardan todas');
+});
+
+test('④ un NIF repetido DENTRO del mismo archivo se omite, no se duplica en silencio', async () => {
+  const filas = ['Ana;;;;33576428Q;;;;;;', 'Ana Dos;;;;33576428Q;;;;;;'].join('\r\n');
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\n${filas}`, MAPEO_COMPLETO, clienteFalso());
+  assert.equal(r.creados, 1);
+  assert.equal(r.omitidos, 1, '🔴 el segundo NIF igual crearía un cliente duplicado');
+});
+
+test('④ un NIF que YA EXISTE en la base con otra CAPITALIZACIÓN se omite', async () => {
+  const cl = clienteFalso({ existentes: [{ merchantId: 7, taxId: 'A58818501' }] });
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\nAna;;;;a58818501;;;;;;`, MAPEO_COMPLETO, cl);
+  assert.equal(r.omitidos, 1, '🔴 minúsculas/mayúsculas distintas no pueden esconder el mismo NIF');
+  assert.equal(r.creados, 0);
+});
+
+test('④ un móvil que ya existe como móvil de otro cliente se omite (dedup propio, no comparte con teléfono)', async () => {
+  const cl = clienteFalso({ existentes: [{ merchantId: 7, mobile: '34600000009' }] });
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\nAna;;34600000009;;;;;;;;`, MAPEO_COMPLETO, cl);
+  assert.equal(r.omitidos, 1);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
