@@ -336,3 +336,84 @@ rojo** — los del punto ③ (1, `#heroe-f4`) y del STOP de arriba (3, SCRUM-299
 se empuja como lista para mergear**: PR #1666 permanece en BORRADOR y con el auto-merge desarmado
 (comprobado tras el push). No decido yo entre las opciones (a)/(b)/(c) de los dos STOP: hacen falta
 dos firmas del fundador, sobre textos que él mismo ya firmó por otro motivo.
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-1016i — el titular definitivo aplicado (comentario 16528) — y UNA PARED MÁS, no vista hasta ahora, J3
+
+**Fecha:** 23-sep-2026 · **Carril:** J3 · **Rama:** `scrum-1016e-titular-aplicado`
+**Medido contra:** `origin/main` = `936743224df712808258053f64391a25e0e3791c` · 2026-09-22T23:37:42Z
+
+## Qué se aplicó — sustituye TODO lo anterior, letra a letra (comentario 16528)
+
+1. `<h1 id="reg-hero">` (`:427`) y su espejo `#heroe-f4` (`:507`) → *"Del presupuesto a la firma,
+   sin salir de WhatsApp."*
+2. `<p class="sub">` (`:428`) → *"Crea el presupuesto en 30 segundos y tu cliente lo firma desde el
+   móvil por WhatsApp. Hoy generamos cada registro de facturación con el formato oficial de la
+   AEAT; la remisión a Hacienda todavía no está construida, y los founding la estrenaréis sin
+   cambio de precio."*
+3. `<title>`, `og:title`, `twitter:title` (`:6,16,23`) → *"YaQu — Del presupuesto a la firma, sin
+   salir de WhatsApp"* (56 caracteres).
+
+El H1/subtítulo/título del comentario 16427/16513 (los del apéndice de ayer) quedan reemplazados,
+no conservados.
+
+## Los TRES bloqueos de ayer — verificados, no supuestos: los tres se resuelven solos
+
+Corrida la tanda entera (no solo `guards:entrada`), en este orden:
+
+- **SCRUM-299** (trinquete «factura»): 0 apariciones del posesivo «tu factura» en ningún campo →
+  vuelve a baseline 0. Verde.
+- **SCRUM-400** (conformidad vs. documento real): «declaración responsable» no aparece en ningún
+  campo → no cita el documento plantilla. Verde.
+- **Regla 26 (a)+(b)**: la mención de AEAT/Hacienda y su matiz («todavía no está construida») están
+  en la MISMA frase del subtítulo; el H1 y los tres campos de cabecera ya no nombran ningún término
+  regulado. Verde en los dos guards (`scrum331-heroe.test.mjs` y `scrum1016-cabecera-fiscal.test.mjs`).
+- **`#heroe-f4`** (el hallazgo ③ de ayer, el subtítulo de la propuesta oculta sin matiz propio):
+  desapareció solo, tal como se esperaba — el H1 nuevo ya no nombra VeriFactu, así que no hay nada
+  que necesite matiz en ese contenedor.
+
+Corregido también lo mecánico (mismo patrón que ayer): re-registré `heroe-f4/h1#1` en
+`scripts/_registro-de-lo-aprobado.mjs` con el texto de hoy (segunda re-aprobación del mismo día:
+sustituye la de 16427 por la de 16528), actualicé el fixture homónimo de
+`tests/scrum563-registro-de-lo-aprobado.test.mjs` y regeneré
+`docs/REGISTRO_DE_MICROCOPY_APROBADA.md`.
+
+## 🔴 STOP — CUARTA pared, esta vez en el subtítulo: SCRUM-537
+
+`npm test` completo: **8082 tests, 5 en rojo.** De esos 5, **1 es del subtítulo de hoy** y los otros
+4 son el mismo ruido de máquina de ayer, sin relación con este ticket (SCRUM-476, SCRUM-939b ×3 —
+censo de `node_modules` entre worktrees y censo de `gh.exe`, ninguno mío).
+
+**El nuevo:** `tests/scrum537-afirmacion-falsa.test.mjs` — *"el repo REAL pasa este guard hoy"* —
+cae. Verificado con la función pura, no de memoria (`afirmacionesFalsas()` de
+`scripts/_guard-afirmacion-fiscal.mjs`), la frase exacta que dispara:
+
+> *"la remisión a Hacienda todavía no está construida, y los founding la estrenaréis sin cambio de
+> precio."* → **familia B**: *"afirma que la facturación fiscal está construida (o que solo falta
+> activarla) y el envío a la AEAT NO existe en el código."*
+
+**Lo que he medido del propio guard, para que la decisión no sea a ciegas:** el patrón `CONSTRUIDA`
+de la familia B (`scripts/_guard-afirmacion-fiscal.mjs:79`) busca la subcadena "está construida" y
+NO tiene excepción de negación — a diferencia de la familia A (`:115`, `&& !negada`), que sí la
+tiene. Por eso "**no** está construida" cae igual que "está construida" a secas: la negación no lo
+libra. **No sé decir si es un límite del detector (falta la misma excepción que ya tiene la familia
+A) o si es a propósito** — el propio módulo explica que la familia B vigila la IMPLICACIÓN de "ya
+está, solo falta encenderlo" más que la letra exacta, y "no está construida… la estrenaréis sin
+cambio de precio" sí deja esa impresión aunque lo diga con un "no" delante. Las dos lecturas son
+razonables y no me corresponde elegir.
+
+**No he tocado el guard ni el literal.** Es exactamente la instrucción que traje conmigo hoy: "si
+alguno sigue cayendo, para y dímelo — no lo toques". Dos salidas, sin decidir por mi cuenta:
+- (a) el guard tiene un límite real (falta la excepción de negación en familia B) y se corrige el
+  CÓDIGO del guard — no toca el literal;
+- (b) el guard está bien y la frase, aunque lleve un "no" explícito, sigue dejando la impresión que
+  regla 17/SCRUM-537 existen para evitar — hace falta un literal nuevo para el subtítulo, otra
+  vuelta de J4/firma.
+
+## Estado de la rama
+
+Build verde, `guards:entrada` 95/95 verde. Empujado con el literal de 16528 aplicado tal cual —
+**no se retiene** porque aplicar lo firmado es lo pedido y el hallazgo de arriba es de un guard
+DISTINTO del que se estaba verificando (SCRUM-537, no regla 26/299/400). PR #1666 sigue en
+BORRADOR, auto-merge desarmado (comprobado tras el push).

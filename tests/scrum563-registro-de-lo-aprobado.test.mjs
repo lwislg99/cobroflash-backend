@@ -99,8 +99,8 @@ test('CONTROL POSITIVO · el texto guardado es el literal, no una descripción',
 // ═════════════════════════════════════════════════════════════════════════════════════════
 test('dado un texto cualquiera, el registro contesta aprobado / pendiente / ni una cosa ni otra', () => {
   const casos = [
-    { texto: 'Del presupuesto a la firma — tu factura VeriFactu, sin cambiar de precio.', espera: APROBADO,
-      porque: 'es una unidad registrada (re-aprobada, SCRUM-1016, comentario 16427)' },
+    { texto: 'Del presupuesto a la firma, sin salir de WhatsApp.', espera: APROBADO,
+      porque: 'es una unidad registrada (re-aprobada, SCRUM-1016, comentario 16528)' },
     { texto: 'Escríbenos por WhatsApp', espera: APROBADO,
       porque: 'vive en un atributo y también está registrada' },
     { texto: 'El ERP por WhatsApp para los oficios', espera: PENDIENTE,

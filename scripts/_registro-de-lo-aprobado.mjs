@@ -59,12 +59,13 @@ export const MARCADORES_DE_PENDIENTE = [
  * cambió».
  */
 export const REGISTRO = [
-  // SCRUM-1016 (comentario de Jira 16427, 22-sep-2026): «FIRMO EL TITULAR» — el h1 vivo cambió de
-  // eje y `heroe-f4/h1#1` lo copia LETRA A LETRA (test ④ de scrum331-heroe.test.mjs, máster A22).
-  // Reescribir la frase caducó la aprobación de 20-ago; ésta es la re-aprobación del texto de hoy.
+  // SCRUM-1016 (comentario de Jira 16528, 23-sep-2026): «Verifactu en subtitulo» — titular
+  // definitivo, Candidato 1 de J4 (VeriFactu sale del H1). `heroe-f4/h1#1` lo copia LETRA A LETRA
+  // (test ④ de scrum331-heroe.test.mjs, máster A22). Segunda re-aprobación del mismo día: el
+  // comentario 16427 (22-sep) quedó sustituido por éste antes de mergearse.
   { id: 'heroe-f4/h1#1',
-    texto: 'Del presupuesto a la firma — tu factura VeriFactu, sin cambiar de precio.',
-    via: 'elemento', fecha: '2026-09-22', quien: 'fundador' },
+    texto: 'Del presupuesto a la firma, sin salir de WhatsApp.',
+    via: 'elemento', fecha: '2026-09-23', quien: 'fundador' },
   { id: 'heroe-f4/p#1',
     texto: 'Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. No hace falta que te fíes: haz tú el recorrido completo antes de dar tu correo.',
     via: 'elemento', fecha: '2026-08-20', quien: 'fundador' },

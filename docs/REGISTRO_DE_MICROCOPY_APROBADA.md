@@ -110,7 +110,7 @@ node scripts/registro-de-lo-aprobado.mjs --estado "Seis herramientas. Una sola a
 
 | identificador | texto literal | vía | fecha | quién |
 |---|---|---|---|---|
-| `heroe-f4/h1#1` | «Del presupuesto a la firma — tu factura VeriFactu, sin cambiar de precio.» | elemento | 2026-09-22 | fundador |
+| `heroe-f4/h1#1` | «Del presupuesto a la firma, sin salir de WhatsApp.» | elemento | 2026-09-23 | fundador |
 | `heroe-f4/p#1` | «Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. No hace falta que te fíes: haz tú el recorrido completo antes de dar tu correo.» | elemento | 2026-08-20 | fundador |
 | `heroe-f4/p#2` | «14 días gratis Sin tarjeta» | elemento | 2026-08-20 | fundador |
 | `gremios/h2#1` | «El recorrido es el mismo. El trabajo, no.» | elemento | 2026-08-20 | fundador |
