@@ -22,6 +22,7 @@ import {
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
 import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
+import { historialWhatsAppDelCliente } from '../../domain/historialWhatsAppDelCliente'; // SCRUM-1062
 
 const router = Router();
 
@@ -263,6 +264,28 @@ router.get('/:id/historial', async (req: any, res) => {
     return res.json(historial);
   } catch (err) {
     console.error('[GET /admin/customers/:id/historial]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/customers/:id/whatsapp — SCRUM-1062 (CRM-19) · qué WhatsApp se le han enviado al
+ * cliente y en qué estado. Hermana de `/historial`: SOLO LECTURA, `?despuesDe=<id>` pide la
+ * página siguiente. No enseña texto de conversación (no se guarda) y no toca el canal (J2).
+ */
+router.get('/:id/whatsapp', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const despuesDe = req.query.despuesDe === undefined ? null : Number(req.query.despuesDe);
+    if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
+      return res.status(400).json({ error: 'invalid_cursor' });
+    }
+    const historial = await historialWhatsAppDelCliente(req.merchantId, id, { despuesDe });
+    if (!historial) return res.status(404).json({ error: 'not_found' });
+    return res.json(historial);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/whatsapp]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
