@@ -1639,3 +1639,96 @@ facturación ni VeriFactu.
 `prisma/schema.prisma`: sin tocar. Publicar el PR: sin hacer — sigue en BORRADOR con el auto-merge
 DESARMADO, comprobado tras cada push (el bot lo rearma en cada uno). El sí de empujar el camino del
 cobro lo pide el orquestador a un jefe.
+
+# APÉNDICE (G) · 22-sep-2026 · J1 · EL EJE DEL CÓDIGO — NO SOLO EL DATO, TAMBIÉN LA PLANTILLA
+
+**Fecha:** 22-sep-2026 23:00:33Z (hora de GitHub, `gh api -i zen`) · **Carril:** J1 · **Gate:**
+🔴 **MIDE Y PROPONE. NO CONSTRUYE.**
+**Medido contra:** `origin/main` = `6bca74e55d4ad193debd03cd95223f8390080ad4` · 2026-09-22T23:00:33Z
+**Rama:** `scrum-665-eje-del-codigo-medicion`
+**Encargo:** el ticket se reabrió — el Apéndice (F) resolvió **sólo la opción B** (los DATOS
+congelados: emisor, cliente, XML). Su propio enunciado dice de esa opción: «no arregla el cambio
+por código». Este apéndice mide el otro eje: ¿`ensureInvoicePdf` reimprime una factura EMITIDA con
+la PLANTILLA de hoy, no sólo con datos de hoy? Sin construir ninguna de las cuatro salidas (A/B/C/D):
+la elección depende de una pregunta al asesor que J4 está registrando (si el hash sella el REGISTRO
+o también tiene que sellar el DOCUMENTO).
+
+## 1 · El mecanismo, confirmado CORRIENDO — no leído
+
+`ensureInvoicePdf` (`src/lib/invoicing.ts:70-77`) regenera cuando `!fs.existsSync(diskPath)`, y el
+comentario de la propia función dice por qué eso ocurre casi siempre: «el fs de Railway es efímero»
+(`src/lib/invoicing.ts:30`). Medido con la MISMA factura EMITIDA (datos 100% frozen, ni una tecla
+tocada entre pasadas — ni merchant, ni cliente, ni número, ni huella) generada dos veces, cambiando
+en medio **sólo el literal de la plantilla** (`docTitle` en
+`src/modules/invoicing/infra/pdf/pdf.service.ts:389`, de `'FACTURA'` a `'FACTURA-TEST-665'`),
+recompilando con `npm run build` entre pasadas — nada de `src/` tocado en el diff final (revertido
+justo después de medir, `git status` limpio):
+
+```
+pasada1 (plantilla de entonces): bytes=5209  contiene "FACTURA-TEST-665"=false
+pasada2 (misma factura, plantilla cambiada): bytes=5226  contiene "FACTURA-TEST-665"=true
+```
+
+**Confirmado, no razonado:** con datos idénticos, el PDF de una factura ya emitida cambia de
+contenido cuando cambia el CÓDIGO de la plantilla. La regla 29 («lo emitido no se edita jamás») está
+rota por esta puerta aunque los datos del emisor y del cliente estén perfectamente congelados —
+son dos ejes independientes y el Apéndice (F) sólo cerró uno.
+
+## 2 · `generateInvoicePdf` no recibe versión de plantilla — confirmado
+
+Su firma completa (`src/modules/invoicing/infra/pdf/pdf.service.ts:269-301`) y el `import` que la
+trae a `ensureInvoicePdf` (`src/lib/invoicing.ts:9`, reexportado sin cambios por el wrapper
+`src/lib/pdf.ts`) no llevan ningún parámetro de versión, sello de plantilla o fecha de generación
+que ate el PDF al código con el que nació. Grep de `TEMPLATE_VERSION|templateVersion|pdfVersion|
+PDF_VERSION|plantillaVersion` sobre `src/` entero: **cero resultados**. No es un descuido de
+lectura — el concepto no existe en el árbol.
+
+## 3 · La medición 2, pendiente — no tengo la clave en este árbol, medido con la herramienta propia
+
+`node scripts/comprobar-claves-bd.mjs` en `cobroflash-jv1`:
+
+```
+🔴 DATABASE_URL_STAGING: AUSENTE del entorno de este árbol.
+🔴 DATABASE_URL_DEV: AUSENTE del entorno de este árbol.
+🔴 DATABASE_URL_TESTS: AUSENTE del entorno de este árbol.
+❌ 4 problema(s) de claves en «cobroflash-jv1». No se sigue.
+```
+
+Ni `.env`, ni `.env.local`, ni variable de entorno del sistema en esta sesión (`ls -la .env*`,
+`printenv`, y `Object.keys(process.env)` desde node: los tres, vacíos). No se rodeó buscando la
+clave por otra vía (`~/.bashrc` u otro fichero fuera de lo designado): es el mismo límite que ya
+paró a la sesión anterior una vez, y sigue siendo el correcto. Declarado como suelo, no como
+«no lo hice».
+
+**El script queda escrito y listo para quien tenga la clave**:
+`docs/master/evidencias/scrum665-eje-codigo/desglose-pdfurl.mjs` — cuenta, sobre `invoices` con
+`vf_estado = 'sellado'` (facturas EMITIDAS de verdad), cuántas tienen `pdf_url` en
+`PENDING%` (nunca generado), cuántas en el formato válido D4 (`/admin/invoices/<id>/pdf`) y cuántas
+en formato legado. Uso: `node desglose-pdfurl.mjs DATABASE_URL_DEV` (o `_STAGING`, o
+`DATABASE_URL` para producción — la URL nunca se imprime, sólo el nombre de la variable).
+
+🔴 **Aviso de lectura, escrito en el propio script**: el desglose por `pdf_url` NO mide «persiste».
+Sin almacenamiento externo (confirmado de nuevo en el punto 4), NINGUNA fila sobrevive garantizada
+a un redeploy de Railway — el formato válido sólo dice que la última vez que se escribió esa fila
+el fichero SÍ estaba en el disco efímero, no que siga estando hoy. Confirmar el fichero real exige
+mirar el disco del contenedor de cada entorno, fuera del alcance de un script que corre en local.
+Los totales por entorno ya los midió el orquestador hoy (producción 2, staging 9, dev 5); falta el
+desglose por `pdf_url` de esos mismos totales, con esa salvedad puesta por delante.
+
+## 4 · Cero almacenamiento externo — reconfirmado
+
+`package.json` (`dependencies` + `devDependencies`), grep por claves que contengan
+`aws|s3|cloudinary|storage|azure|gcp|cloud|r2|minio|backblaze`: **cero coincidencias**.
+`src/core/storage/dirs.ts` — los tres directorios de documentos (`invoicesDir`, `outboxDir`,
+`albaranesDir`) son `path.join(process.cwd(), 'storage', ...)`: disco local, sin SDK de nube en el
+medio. Sin cambios desde la última vez que se midió hoy.
+
+## Lo que esto deja para decidir (sin decidirlo)
+
+El defecto vivo tiene DOS ejes, no uno: el dato (cerrado por el Apéndice F) y el código de la
+plantilla (medido aquí, abierto). Las cuatro salidas A/B/C/D del ticket siguen sin construirse —
+dependen de la respuesta del asesor que J4 está registrando. Si la respuesta es «el hash sólo sella
+el REGISTRO, el documento puede regenerarse», este eje deja de ser un defecto fiscal y pasa a ser
+una decisión de producto (¿molesta al profesional que su PDF cambie de aspecto?). Si es «el
+documento entregado también tiene que ser inmutable», este apéndice es la prueba de que hoy no lo
+es, en el mismo sentido en que el Apéndice (F) probó que los datos sí lo son ya.
