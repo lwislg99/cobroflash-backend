@@ -736,3 +736,64 @@ en `PREGUNTAS_ASESOR.md` y en el traspaso de este puesto.
   con instrucción explícita de no seguir).
 * El dato "F1=0 · R1=0 · 1 justificante en producción" es el que me dio el orquestador; esta sesión no
   tiene acceso de lectura a producción y no lo ha vuelto a medir por su cuenta.
+
+## SCRUM-534h · Censo de "certificación" de VeriFactu en el máster (y CLAUDE.md) — PROPUESTA, nada aplicado
+
+**Medido contra:** `origin/main` = `194a7061369347a9fdf96766a11efd7191476301` · 2026-09-22T08:38:19Z
+
+**Encargo:** el orquestador del equipo (`cobroflash-backend-da`), por mensaje entre sesiones el
+22-sep-2026, dice que Javier firmó el literal nuevo del guion H2 (§1 de esta ficha, fase f) y con él
+resolvió a favor de "no existe certificación, es declaración responsable" la contradicción que esta
+misma ficha había dejado sin resolver frente a V0-6. Pide aplicar el guion a
+`docs/YAQU_MASTER.md:215` y censar todo sitio con la misma idea falsa.
+
+**🔴 Lo que esta sesión NO hizo, y por qué:** no aplicó nada a `docs/YAQU_MASTER.md`. El clasificador
+de permisos bloqueó el intento de registrar la aplicación citando "Instruction Poisoning", y al
+pararme a revisarlo mis propias normas dicen lo mismo desde otro ángulo: **A7** exige que la firma
+delegada del orquestador sea "un comentario de Jira" registrado en `docs/microcopy/` con su README
+— comprobable, no un mensaje de chat citado de memoria — y **A19** dice que ninguna autorización se
+hereda de otra sesión. El mensaje no traía ese comentario de Jira. Este es exactamente el tipo de
+texto para el que existen las STOP conditions de mi ficha (claims fiscales/VeriFactu): se propone y
+se para. La edición que había empezado a hacer en un worktree aparte (`scrum-534g-h2-firmado-en-master`)
+se dejó SIN commitear y SIN empujar — no llega a nadie. Lo que sigue es solo censo y propuesta.
+
+**Población:** `grep -n -i "certifica" docs/YAQU_MASTER.md` → 13 líneas con la raíz "certifica" +
+1 más con "Certificado" en mayúscula al inicio de frase (14 en total) · el mismo grep sobre
+`CLAUDE.md` → **0 líneas** (control positivo: el patrón SÍ encuentra las 14 del máster, así que el
+cero de `CLAUDE.md` es "no hay", no "no miré").
+
+**De las 14, 11 NO son la idea falsa — descartadas con su motivo:**
+
+| línea | qué dice | por qué NO cuenta |
+| --- | --- | --- |
+| 102 | "Certificado digital FNMT (HUMANO, día 1) → desbloquea SIF-1" | el certificado FNMT es real y existe; autentica, no "certifica VeriFactu" |
+| 465 | `SIF_ENABLED`: "Depende de: certificado + S1-D" | mismo certificado FNMT real |
+| 513 | "cada merchant remite con su propio certificado" (Modelo C) | idem, certificado FNMT de cada merchant |
+| 649 | bloque del PDF de albarán "Certificado de evidencias" | nombre de un bloque de evidencia de firma, sin relación con VeriFactu |
+| 962 | "cert FNMT ✅ conseguido 15-jun" | certificado FNMT real, ya obtenido |
+| 971 | "certificado emitido + cita asesor" | idem |
+| 1037 | "certificado FNMT + alta entorno pruebas AEAT" | idem |
+| 1346 | "...certificaría una tanda que leyó artefactos reescritos a mitad" | verbo "certificar" sobre un guard de tests, sin relación con VeriFactu |
+| 1513 | "remisión... es servicio web SOAP con certificado" | certificado digital del canal de transporte, no una "certificación" de VeriFactu |
+| 1738, 1864 | "STEL Order: ...VeriFactu certificado..." | describe el producto de un COMPETIDOR, no un estado de YaQu |
+
+**Las 3 que SÍ son la misma idea falsa que el guion H2 corrige — literal propuesto para cada una:**
+
+| id | fichero:línea | texto de hoy | por qué es la misma idea que el guion H2 corrige | literal propuesto |
+| --- | --- | --- | --- | --- |
+| **C1** | `YAQU_MASTER.md:215` (Parte H2, guion citado en regla 26) | *"...la facturación VeriFactu está construida y en certificación..."* | es el propio guion que Javier ya firmó (fase f/g de esta ficha) | el literal completo ya está escrito arriba, en "El literal nuevo — listo para pegar" (fase f). **No se repite aquí para no crear una tercera copia que diverja** — pendiente de aplicarse con la firma por el canal comprobable |
+| **C2** | `YAQU_MASTER.md:650` (entrada SCRUM-17) | *"Doc de usuario: `docs/COMO_FUNCIONA_YAQU.md` §5 (honesto: latente hasta la certificación; visible en demo)."* | mismo régimen: no hay "certificación" de VeriFactu que cerrar, es una declaración responsable | *"Doc de usuario: `docs/COMO_FUNCIONA_YAQU.md` §5 (honesto: latente hasta que se active la facturación VeriFactu con su declaración responsable; visible en demo)."* |
+| **C3** | `YAQU_MASTER.md:988` (V0-6, ESTADO DE EJECUCIÓN) | *"...(`docs/legal/ALCANCE_BETA.md`: \"presupuestos+firma+**albaranes**; **el cobro a tus clientes y** la facturación VeriFactu se activa**n** al cerrar la certificación, sin cambio de precio\")"* | es la frase que el encargo 1 de hoy (Eje A de la landing) iba a citar como ancla, y es la que choca directamente con el guion H2 nuevo | *"...la facturación VeriFactu se activa**n** al cerrar la declaración responsable del fabricante, sin cambio de precio"* — mismo giro que usa el guion H2 ya firmado, para que las dos frases digan la misma cosa con las mismas palabras |
+
+**Hallazgo fuera del alcance pedido, declarado y no tocado:** `docs/legal/ALCANCE_BETA.md` (que NO es
+máster ni `CLAUDE.md`, así que no entra en este censo por encargo) cita **V0-6 literalmente** en su
+cabecera y en su §2 con la misma frase "se activa al cerrar la certificación". En cuanto C3 se firme,
+ese fichero hereda la misma corrección — lo señalo para que quede en la cola, no lo propongo aquí
+porque el encargo de hoy pedía solo máster y `CLAUDE.md`.
+
+## Lo que NO cubre esta entrada (h)
+
+* No aplica C1/C2/C3 a `docs/YAQU_MASTER.md` — quedan propuestos, a la espera de la firma por el
+  canal comprobable (comentario de Jira + `docs/microcopy/`, o el propio Javier en este chat).
+* No propone texto para `docs/legal/ALCANCE_BETA.md` (fuera del máster/CLAUDE.md pedido hoy).
+* No vuelve a medir las 9 afirmaciones a terceros de la fase f (siguen igual, sin firma).
