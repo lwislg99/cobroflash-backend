@@ -90,6 +90,15 @@ const DEL_ANTICIPO = 363;
 const DEL_FINAL = 847;
 const SALTO = String.fromCharCode(10);
 
+// SCRUM-1027 (regla 24 / enmienda SCRUM-612c, 21-sep-2026): desde ese cambio, un merchant ES con
+// el interruptor OFF ya no emite NINGÚN documento en los dos caminos de este fichero — el gate
+// está ANTES de tocar Invoice. Sin esto, los tres casos de abajo miden la carrera sobre 0
+// facturas siempre: «nunca dos del mismo tramo» se cumple sin ejercitar nada (CIEGO). Se enciende
+// el interruptor POR MERCHANT (columna `merchants.flags`, no el env global) para que sigan
+// midiendo el camino de emisión real; el caso con el interruptor apagado se mide aparte, con su
+// propia garantía — no «cero facturas por accidente», sino «cero facturas SIEMPRE, a propósito».
+const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true } };
+
 let prisma;
 
 async function cargar() {
@@ -145,7 +154,7 @@ test('SCRUM-814 · los dos caminos que el test de staging no cubre',
     // 🔴 EL CLIENTE FINAL — el que más pesa de los tres
     // ═══════════════════════════════════════════════════════════════════════════════════════
     await t.test('🔴 CLIENTE FINAL · tres carreras en `/:token/decision`: nunca dos del mismo tramo', async () => {
-      await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'e814@t.test' }, async (merchant) => {
+      await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'e814@t.test', ...FISCAL_ON }, async (merchant) => {
         const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Pepe' } });
 
         for (let ronda = 1; ronda <= 3; ronda += 1) {
@@ -196,7 +205,7 @@ test('SCRUM-814 · los dos caminos que el test de staging no cubre',
     // 🔴 COBRAR EL RESTO
     // ═══════════════════════════════════════════════════════════════════════════════════════
     await t.test('🔴 COBRAR EL RESTO · tres carreras en `/:id/collect-rest`: nunca dos del mismo tramo', async () => {
-      await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'f814@t.test' }, async (merchant) => {
+      await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'f814@t.test', ...FISCAL_ON }, async (merchant) => {
         const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Pepe' } });
 
         for (let ronda = 1; ronda <= 3; ronda += 1) {
@@ -232,7 +241,7 @@ test('SCRUM-814 · los dos caminos que el test de staging no cubre',
     // ✅ POSITIVO y ✅ DINERO — lo que tiene que seguir funcionando
     // ═══════════════════════════════════════════════════════════════════════════════════════
     await t.test('✅ POSITIVO · dos «cobrar el resto» dan «Anticipo» 363 € y «Final» 847 € = 1210 €', async () => {
-      await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'g814@t.test' }, async (merchant) => {
+      await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'g814@t.test', ...FISCAL_ON }, async (merchant) => {
         const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Pepe' } });
         const q = await nuevoPresupuesto(merchant.id, cliente.id);
         const job = await prisma.job.create({
@@ -258,6 +267,57 @@ test('SCRUM-814 · los dos caminos que el test de staging no cubre',
         const facturado = emitidas.reduce((acc, i) => acc + Number(i.total), 0);
         assert.equal(facturado, Number(TOTAL),
           `🔴 facturado ${facturado} € sobre un presupuesto de ${TOTAL} €.`);
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    // 🔴 ES OFF (regla 24) — la garantía que los tres casos de arriba YA NO ejercitan al medir
+    // con `FISCAL_ON`. No es «nunca dos del mismo tramo» (no hay tramo: no se emite nada); es
+    // «CERO documentos, siempre», con el gate ejercitado bajo una carrera real y no una lectura
+    // del código. Mismo estilo que el caso dedicado que SCRUM-1027 añadió en fc54e4e3 para el
+    // cuarto camino de `scrum728d-ms-en-loopback.test.mjs`.
+    // ═══════════════════════════════════════════════════════════════════════════════════════
+    await t.test('🔴 ES OFF · las mismas dos carreras con el interruptor apagado: CERO documentos, siempre', async () => {
+      await withMerchant(prisma, { name: 'Tecnosel', taxId: 'B12345678', email: 'h814@t.test' }, async (merchant) => {
+        const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Pepe' } });
+
+        // CLIENTE FINAL — el gate de `quotes.routes.ts:668` está ANTES de tocar Invoice: no hay
+        // número que reservar. Lo que hay que garantizar es que la aceptación sigue funcionando
+        // y que NINGÚN proceso de la pareja cuela un documento.
+        const q = await nuevoPresupuesto(merchant.id, cliente.id, {
+          status: 'pending', decisionToken: randomBytes(16).toString('hex'),
+        });
+        const [a1, b1] = await correrCarrera(CAMINO_CLIENTE, {
+          params: { token: q.decisionToken }, body: { decision: 'accept' },
+        });
+        exigirCarreraReal(a1, b1, 'off/cliente');
+        for (const r of [a1, b1]) {
+          assert.ok(r.code < 400,
+            `🔴 ES OFF: el cliente recibe ${r.code} ${JSON.stringify(r.cuerpo)}. Su aceptación `
+            + 'tiene que seguir funcionando con la facturación apagada (regla 24).');
+          assert.notEqual(r.cuerpo?.facturaPendiente, true,
+            '🔴 ES OFF: no hay «factura pendiente» si nunca se intenta emitir.');
+        }
+        assert.equal((await facturasDe(q.id)).length, 0,
+          '🔴 ES OFF: la carrera del cliente final ha colado un documento con la facturación apagada.');
+
+        // COBRAR EL RESTO — el gate de `jobs.routes.ts:1388` rechaza ANTES de mirar el tramo
+        // pendiente: las dos peticiones simultáneas tienen que caer en el mismo 409, siempre.
+        const q2 = await nuevoPresupuesto(merchant.id, cliente.id);
+        const job = await prisma.job.create({
+          data: { merchantId: merchant.id, customerId: cliente.id, quoteId: q2.id, status: 'terminado' },
+        });
+        const [a2, b2] = await correrCarrera(CAMINO_RESTO, {
+          params: { id: String(job.id) }, merchantId: merchant.id,
+        });
+        exigirCarreraReal(a2, b2, 'off/resto');
+        for (const r of [a2, b2]) {
+          assert.equal(r.code, 409, `🔴 ES OFF: «cobrar el resto» tiene que rechazar con 409, no ${r.code}.`);
+          assert.equal(r.cuerpo?.error, 'facturacion_no_disponible',
+            `🔴 ES OFF: el motivo del rechazo no es «facturacion_no_disponible», es «${r.cuerpo?.error}».`);
+        }
+        assert.equal((await facturasDe(q2.id)).length, 0,
+          '🔴 ES OFF: «cobrar el resto» ha colado un documento con la facturación apagada.');
       });
     });
   });
