@@ -254,3 +254,20 @@ SCRUM-773 **no tocado**, sigue en *Acción del fundador*.
   blanca aditiva), documentado en 773b.
 - ⛔ Ninguna base de datos consultada ni escrita.
 - ⛔ `docs/master/SCRUM-811.md` — no anexado aquí (es de otro censo, ya reportado en 773b).
+
+## Corrección sobre este mismo commit (22-sep, mismo día): el trinquete de SCRUM-948 lo cazó
+
+El PR #1637 salió `FAILURE` en `build + tests`: al fusionar SCRUM-948 (el paso «Traer main» en
+`ci.yml`), este PR fue de los primeros en correr CON ese paso ya activo — y `scrum810b-los-suelos-derivados.test.mjs`
+detectó por primera vez en CI que la población «tests-declarados» bajó **7802 → 7796** (los 6
+`test()` de `scrum650c`, retirado arriba). Exactamente el caso para el que existe
+`RETIRADAS_A_PROPOSITO`: se añadió la entrada con su motivo, EN EL MISMO COMMIT que dispara el
+suelo (bien: ya venía en éste). Medido tras el arreglo: `scrum810b` + `scrum810`, **13 pass · 0
+fail**, `guards:entrada` verde.
+
+🟠 **Hallazgo de otro carril, se reporta y no se arregla aquí:** `sueloDerivado()` en
+`scripts/_suelo-contra-main.mjs:271-281` exime por NOMBRE de población (`medida.nombre`), no por
+la pareja antes/ahora — una vez declarada una retirada para `'tests-declarados'`, el suelo deja de
+poder avisar de CUALQUIER bajada futura de esa población, no sólo de ésta. Mismo patrón ya en las
+dos entradas de SCRUM-867. Si es a propósito, no hace falta tocar nada; si no, es un ticket de S5
+aparte sobre el propio mecanismo del trinquete.
