@@ -30,6 +30,11 @@
 // confundir. El guard (`tests/scrum296-pantalla-libro.test.mjs`) compara ranura a ranura contra
 // estas constantes, así que el día que se aprueben los textos sigue verde sin tocarlo — patrón de
 // SCRUM-263/303.
+//
+// SCRUM-1041 (22-sep-2026): los 5 avisos de abajo SIGUEN con marcador a propósito. No son
+// microcopy de producto — `docs/legal/PREGUNTAS_ASESOR.md` §21 los separó el 19-ago-2026 de los
+// 16 que sí se aprobaron, porque afirman algo sobre la INTEGRIDAD del libro (dictamen fiscal, no
+// texto de pantalla) y esperan al asesor, no al orquestador. Ver docs/master/SCRUM-1041.md.
 (function () {
   const MARCADOR = '[PENDIENTE microcopy oficial]';
 
