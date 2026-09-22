@@ -99,6 +99,25 @@ nuevo declarado), `scrum348`/`scrum289` (tenencia) en verde.
   propias (a diferencia de `Invoice`) — «es una oferta viva», así que reasignar `customerId` los
   deja mostrando correctamente los datos del principal, sin romper nada firmado.
 
+## CI en rojo tras el PR, y los dos arreglos (regla 41: se arregló el código, no el guard)
+
+- **Ronda 1** (`8eb65d1f`): `fusionClientes.ts` reasignaba `email_messages.customerId` con
+  `tx.emailMessage.updateMany(...)` directo, violando SCRUM-475/508 (`registroDeEnvios.ts` tiene
+  que ser el ÚNICO fichero que escribe esa tabla). Arreglo: `reasignarClienteEnFusion(tx,
+  merchantId, deId, aId)` nueva en `registroDeEnvios.ts`, con el mismo patrón que
+  `desvincularYBorrar` (recibe el `tx` del llamador). `fusionClientes.ts` la llama en vez de tocar
+  `tx.emailMessage` directo.
+- **Ronda 2** (este commit): mover la escritura al fichero correcto no bastaba —
+  `scrum508-los-cinco-dejan-fila.test.mjs` tiene un SEGUNDO aserto, más estricto, que fija el
+  CONJUNTO EXACTO de operaciones (`['create', 'update']`): un envío y el aviso del proveedor,
+  nada más. El `updateMany` de la ronda 1 añade una tercera operación legítima y el propio test
+  la anticipa («si has añadido una tercera, dilo aquí con su motivo» — el mismo mecanismo con el
+  que SCRUM-475 añadió el `update`). No es relajar el guard: sigue siendo un `deepStrictEqual`
+  sobre un conjunto CERRADO, solo que ahora de tres. Arreglo: el conjunto esperado pasa a
+  `['create', 'update', 'updateMany']`, con un comentario que explica por qué (SCRUM-1057:
+  reasignación de filas ya existentes, no un envío ni un aviso) y qué significa que cualquiera de
+  los tres desaparezca.
+
 ## Declarado, sin arreglar aquí
 
 - La pantalla («fusionar con…», el selector, el aviso de NIF distintos) es de S2.
