@@ -871,6 +871,85 @@ tiene resuelto el caso simétrico: hereda el de la factura que rectifica
 
 ---
 
+# P19. El PRODUCTOR del SIF, ¿puede ser DOS personas físicas?
+
+> **Formulada por J4 (SCRUM-1087), a partir de una decisión de Javier dicha hoy (23-sep-2026),
+> literal: «De momento nadie, pero seremos los dos, más bien la empresa que conformemos dentro de
+> poco» — refiriéndose a él mismo y a Luis Lara Granado. Y sobre las pruebas: «si hace falta uno
+> para pruebas me pongo yo, pero el día que haya algo real será como empresa».**
+
+**El problema concreto, medido en el código, no supuesto:** el bloque `SistemaInformatico` del
+registro tiene un solo campo de productor — `nombreRazonProductor: string` y `nifProductor: string`
+`src/modules/fiscal/verifactu/registro.builder.ts:19-21` (`nombreRazonProductor`), que se vuelcan
+tal cual a `<sum1:NombreRazon>`/`<sum1:NIF>` del XML
+`src/modules/fiscal/verifactu/registro.builder.ts:375-378` (`xmlSistema`). Un nombre, un NIF. «Los dos» no cabe ahí, y
+tampoco en `docs/legal/DECLARACION_RESPONSABLE.md` §1 ("Productor del sistema"), que hoy es un único
+placeholder de razón social + NIF.
+
+**1)** ¿Puede una **declaración responsable** del art. 13 RRSIF nombrar a **dos personas físicas** como
+productor conjunto, o el propio formato (un NIF por declaración) obliga a elegir una sola?
+
+**2)** ¿Puede el productor ser una **comunidad de bienes** en vez de una persona física o una SL,
+mientras la sociedad no esté constituida?
+
+**3)** Mientras se decide y si hace falta un productor solo para las **pruebas** del entorno de la
+AEAT (Javier: «me pongo yo»): si UNA sola persona física firma como productor, ¿qué responsabilidad
+asume esa persona **frente a la otra** (que participa en YaQu pero no queda nombrada en la
+declaración)?
+
+**4)** Cuando se constituya la sociedad, ¿hay que **reemitir** la declaración responsable con el
+nuevo productor (persona jurídica), conservando la anterior? (art. 13 RRSIF: "el productor conserva
+todas las versiones").
+
+**Bloquea:** rellenar `docs/legal/DECLARACION_RESPONSABLE.md` §1 y los valores reales de
+`nombreRazonProductor`/`nifProductor` — hoy los dos son placeholders sin rellenar.
+
+---
+
+# P20. 🔴 La huella sella el REGISTRO — ¿también tiene que ser inmutable el PDF entregado?
+
+> **Formulada por J4 (SCRUM-1087). Del enunciado de SCRUM-665, sin preguntar desde el 2-sep-2026 —
+> hoy bloquea una decisión de diseño, y por eso es la más urgente de las dos preguntas de esta
+> entrada.**
+
+**Medido hoy, no supuesto:** el PDF de una factura emitida se **regenera** con el código actual cada
+vez que falta en disco. `ensureInvoicePdf` (`src/lib/invoicing.ts`) comprueba
+`!fs.existsSync(diskPath)` entre las condiciones de `needs`, y si el fichero no está, vuelve a llamar
+a `generateInvoicePdf` (`src/modules/invoicing/infra/pdf/pdf.service.ts`) — y `storage/invoices` vive
+en el disco de Railway, que es **efímero** entre despliegues. Los **DATOS** que entran en esa
+regeneración ya están congelados (el emisor sale de la columna congelada de la factura, no de la
+ficha viva del merchant — `emisorDelDocumento`, SCRUM-665/729, ver P18 arriba); el **DISEÑO**
+(plantilla, maquetación, qué campos se imprimen y cómo) sale del código de `generateInvoicePdf` **tal
+como está hoy**, no como estaba el día de la emisión. Si la plantilla cambia en marzo, una factura de
+enero que se regenere en abril sale con el diseño de marzo.
+
+**1)** La huella encadenada sella el **registro de facturación** (los datos: base, cuota, NIF,
+fecha...). ¿Exige la norma que el **documento** entregado al cliente (el PDF) sea también el mismo
+bit a bit que el generado el día de la emisión, o basta con que los DATOS que contiene coincidan con
+el registro sellado?
+
+**2)** La copia que el expedidor debe conservar (art. 19 ROF: conservar "las copias o matrices de las
+facturas expedidas") — ¿es una copia del **documento** tal como se entregó, o basta con poder
+**reconstruirlo** a partir de los datos conservados?
+
+**3)** Si la respuesta exige el documento inmutable: ¿basta con archivar el PDF generado en el
+momento de la emisión (aunque el disco donde vive hoy sea efímero), o hace falta además versionar la
+**plantilla/el motor de generación** para poder reproducirlo bit a bit más adelante?
+
+🔴 **De esta respuesta depende elegir entre CUATRO salidas** — sin ella no se construye ninguna:
+- (a) archivar el PDF generado en el momento de emitir (en almacenamiento persistente, no en disco
+  efímero) y servir SIEMPRE ese archivo, nunca regenerar;
+- (b) no archivar el PDF pero congelar/versionar la plantilla de generación, de forma que una
+  regeneración futura reproduzca el mismo documento;
+- (c) las dos cosas;
+- (d) asumir que solo el registro necesita ser inmutable, y dejar el PDF como está hoy (se regenera
+  con el diseño vigente).
+
+**Bloquea:** decisión de diseño sobre `ensureInvoicePdf` (`src/lib/invoicing.ts`) y
+`generateInvoicePdf` (`src/modules/invoicing/infra/pdf/pdf.service.ts`).
+
+---
+
 ## RESPUESTAS · 22-sep-2026 (asesor, contra FAQ AEAT 21-jul-2026 y ROF consolidado 31-mar-2026)
 
 > **Quien preparó estas respuestas:** una sesión de IA de este equipo, consultando la FAQ de la AEAT y el BOE, el 22-sep-2026. **No las ha revisado un asesor humano.** Javier decidió ese mismo día mantener la cabecera «asesor» (SCRUM-1079, comentario 16403). Las **14 marcas ⚠** que llevaba este apéndice señalaban lo que su propio autor no pudo releer en fuente oficial. **Cotejadas el 23-sep-2026 (SCRUM-1088, detalle y veredicto por punto en «Cotejo del 23-sep-2026» al final de este apéndice): las 14 quedan CONFIRMADAS** (una con matiz menor, ninguna contradicha, ninguna sin localizar). Sigue sin revisarlas un asesor humano — eso no lo cambia un cotejo de texto legal.
