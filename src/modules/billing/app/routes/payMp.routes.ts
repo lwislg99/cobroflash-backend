@@ -75,19 +75,27 @@ router.get('/mp/:token', async (req, res) => {
 /**
  * GET /pay/mp/:token/result?status=approved|rejected|pending|expired
  * Página de resultado que Mercado Pago muestra tras el pago.
+ *
+ * SCRUM-924 · `status` NO sale de la query string: quien manda el enlace la controla, y `/webhooks/mp`
+ * (fail-closed, verificado) es quien escribe `charge.status` de verdad. Antes, un cobro `pending`
+ * con `?status=approved` pintaba «¡Pago aprobado!» sin que hubiera pasado nada — el `try{}catch{}`
+ * que rodeaba la consulta se tragaba cualquier fallo y seguía pintando con lo que trajera la URL.
  */
-router.get('/mp/:token/result', async (req, res) => {
-  const status = String(req.query.status || 'pending');
+const CHARGE_STATUS_A_RESULTADO: Record<string, string> = {
+  paid: 'approved',
+  failed: 'rejected',
+  expired: 'expired',
+  pending: 'pending',
+};
 
-  let concept = '', amount = '', currency = '';
-  try {
-    const charge = await prisma.charge.findUnique({ where: { receiptToken: req.params.token } });
-    if (charge) {
-      concept  = charge.concept;
-      amount   = Number(charge.amount).toFixed(2);
-      currency = charge.currency;
-    }
-  } catch {}
+router.get('/mp/:token/result', async (req, res) => {
+  const charge = await prisma.charge.findUnique({ where: { receiptToken: req.params.token } });
+  if (!charge) return res.status(404).send(documentNotFoundHtml());
+
+  const concept  = charge.concept;
+  const amount   = Number(charge.amount).toFixed(2);
+  const currency = charge.currency;
+  const status   = CHARGE_STATUS_A_RESULTADO[charge.status] || 'pending';
 
   const statusMap: Record<string, { emoji: string; title: string; msg: string; color: string }> = {
     approved: { emoji: '✅', title: '¡Pago aprobado!',        msg: 'Tu pago ha sido procesado correctamente.',                  color: '#16a34a' },
