@@ -91,6 +91,12 @@ const CENSO = {
   // agrupa el IVA a mano, a propósito— quedaba fuera del censo de SCRUM-627, porque su criterio
   // es por fichero. Al irse la llamada, aquel fichero aparece por lo que lleva haciendo siempre.
   'src/modules/quotes/domain/presentacionIva.ts': { veredicto: 'DOCUMENTO', nota: 'el pie de UN presupuesto: llama a la primitiva y solo decide qué filas se pintan según el modo de IVA (SCRUM-656)' },
+  // SCRUM-1047 · llamador NUEVO, dentro de un bucle por factura: desglosa la base de CADA
+  // factura de la lista que ya arma `reports.routes.ts` (`paidInvoices`, la MISMA que suma
+  // `revenue` arriba). No agrega nada por su cuenta — una factura sin líneas desglosables se
+  // EXCLUYE y se cuenta (`revenueSinDesglose`), nunca se sustituye por el total. Mismo veredicto
+  // que `libroRegistro.ts`.
+  'src/modules/reports/domain/beneficioBaseImponible.ts': { veredicto: 'DOCUMENTO', nota: 'desglosa la base de CADA factura del periodo, una llamada por factura; sin líneas desglosables se excluye y se declara, nunca se sustituye por el total (SCRUM-1047)' },
 };
 
 test('SCRUM-389 · SUELO: el extractor ENCUENTRA llamadores', () => {
