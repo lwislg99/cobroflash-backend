@@ -48,7 +48,15 @@ router.get('/:token', async (req, res) => {
       typeof sessId === 'string' &&
       sessId
     ) {
-      const s = await stripe.checkout.sessions.retrieve(sessId);
+      // SCRUM-923 · la Checkout Session la creó `payCard.routes.ts` en la cuenta CONECTADA del
+      // merchant cuando `cardChargeMode` da 'connect' (regla 23) — Stripe es account-scoped, así
+      // que recuperarla sin decir de qué cuenta daba `resource_missing` y este fallback nunca
+      // confirmaba el pago de un merchant con Connect. Mismo criterio que ya usa la creación.
+      const retrieveOpts =
+        cardChargeMode(charge.merchant) === 'connect'
+          ? { stripeAccount: (charge.merchant as any)?.stripeAccountId }
+          : undefined;
+      const s = await stripe.checkout.sessions.retrieve(sessId, retrieveOpts);
       if (s && (s.payment_status === 'paid' || s.status === 'complete')) {
         await axios.post(
           `${BASE_URL}/webhooks/psp`,
