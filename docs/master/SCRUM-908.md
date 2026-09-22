@@ -1453,3 +1453,82 @@ dos veces más para llegar a la N=4 acordada. El instrumento del barrido sigue r
 
 `tests/`, `src/`, `scripts/`, `.github/workflows/**`: ni una línea. Solo lectura del log de un job ya
 generado por un rerun pedido explícitamente en el encargo de esta tanda.
+
+---
+
+# SCRUM-908c-8/9 · Tiradas 3 y 4 — N=4 completa, y CIERRE
+
+**Fecha:** 22-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición,
+**cierra el ticket**. **Medido contra:** `origin/main` = `e8f636bf93736ac2fb963f371e038f81efe9c262`
+· 2026-09-22T08:41:22Z (`#1636` de § 908c-7, mergeado a las 08:21:35Z, ya está en este `main`).
+
+Continuación directa de § 908c-6/908c-7 (N=1 y N=2). Mismo comando, mismo método: comprobar
+`gh run view 35628013107 --json status` = `completed` antes de cada rerun, y sacar el `databaseId`
+NUEVO del job con `gh run view 35628013107 --json jobs` antes de leer su log (cada intento cambia el
+id: tirada 3 = `106664707473`→cae en rerun→`106668541645`; tirada 4 =
+`106668541645`→rerun→`106672122270`; el original `106427050646` de § 908c-6 ya no sirve desde la
+tirada 2). `gh run rerun 35628013107 --job <id ANTERIOR>` — intentarlo con un `databaseId` viejo da
+`job <id> cannot be rerun`, no un error real (se cazó antes de gastar el rerun).
+
+```
+# TIRADA 3 (databaseId 106668541645, conclusion=failure — el propio test del barrido falla a
+# propósito para volcar el log; no es un rojo de CI real)
+# BARRIDO mult=1   → colaAlSalir=870,871,871,872  salioDuranteLaPausa=true  (4/4)
+# BARRIDO mult=1.5 → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+# BARRIDO mult=2   → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+# BARRIDO mult=3   → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+
+# TIRADA 4 (databaseId 106672122270, conclusion=failure, mismo motivo)
+# BARRIDO mult=1   → colaAlSalir=870,871,872,871  salioDuranteLaPausa=true  (4/4)
+# BARRIDO mult=1.5 → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+# BARRIDO mult=2   → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+# BARRIDO mult=3   → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+```
+
+**Agregado de las 4 tiradas del MISMO commit (16 medidas por tirada × 4 = 64 medidas sobre 4
+puntos):** a 1,0× — **16/16** repeticiones con `colaAlSalir>0` y `salioDuranteLaPausa=true`; a
+1,5×/2×/3× — **0/48**, las 48 con `salioDuranteLaPausa=false`. Las 4 tiradas dieron el patrón
+IDÉNTICO, sin una sola excepción en ningún punto.
+
+## Lectura — y su techo, declarado desde § 908c-6 y sin cambios
+
+Con N=4 en vez de N=1, la hipótesis de mecanismo (§ 908c-6: la variable es si el hijo llega a
+`process.exit()` antes o después del fin de la pausa de 2000 ms del padre) queda reforzada con mucha
+más fuerza que antes — a `tamRelleno=12288` el mecanismo se ejercita de forma perfectamente
+reproducible en ESTE entorno de CI, para ESTE commit: 0 varianza en 4 tiradas.
+
+**Pero esto sigue sin tocar el eje que SCRUM-908 necesita.** Declarado ya en § 908c-6 y repetido aquí
+porque sigue siendo cierto tras completar la N=4: **las 4 tiradas son del MISMO commit.** Aíslan la
+varianza del ENTORNO de ejecución (el runner de GitHub Actions, repetido 4 veces sobre el mismo
+código) — no dicen nada de si la tasa cambia **entre árboles**, que es donde se vio la mudez ORIGINAL
+del meta-guard (`scrum859` visto vivo/muerto en rachas, 15 de 72, a lo largo de días y de commits
+distintos — #1434 y #1455). Completar la N=4 acordada no cambia esa frontera: **mide una cosa
+distinta de la que SCRUM-836 necesita saber.**
+
+## Decisión de cierre
+
+**«No concluyente» respecto a si el meta-guard mata la mutación de forma fiable entre árboles — y
+ESO es la entrega**, no un resultado pendiente de una quinta tirada. Seguir tirando el mismo commit
+no reduce este hueco: por construcción, ninguna N de tiradas del mismo commit puede decir nada sobre
+la varianza entre commits. Repetir más allá de N=4 sería el mismo «agujero sin fondo» que el
+orquestador ya advirtió en § 908c-7.
+
+**Efecto sobre SCRUM-836 (obligatoriedad del meta-guard, S5): SIGUE BLOQUEADO. No se desbloquea con
+esta medición.** SCRUM-836 necesita saber si el meta-guard es fiable como gate obligatorio a lo largo
+del tiempo — es decir, entre commits/árboles distintos, que es exactamente el eje que estas 4 tiradas
+no pueden medir por diseño (mismo commit, mismo push). Lo que sí aporta esta tanda: la hipótesis de
+mecanismo (carrera hijo-vs-pausa) queda mucho mejor sostenida, así que si alguien retoma esto para
+intentar reproducir la intermitencia ENTRE árboles, tiene un mecanismo concreto que perseguir en vez
+de un fantasma — pero eso es trabajo nuevo, no una continuación de este barrido.
+
+**SCRUM-908 queda CERRADO con este veredicto** (no arreglado, no reproducido-y-arreglado: medido con
+el techo que tenía desde el principio, y ese techo se ha hecho explícito en las tres tiradas). Quien
+quiera desbloquear SCRUM-836 necesita un método distinto: repetir esta misma sonda sobre COMMITS
+DISTINTOS a lo largo de varias tandas de CI reales (no reruns del mismo run), o instrumentar
+directamente las rachas que ya se observaron (#1434, #1455) en vez de reproducir el mecanismo en
+aislado.
+
+## LO NO TOCADO
+
+`tests/`, `src/`, `scripts/`, `.github/workflows/**`: ni una línea. Solo lectura de logs de jobs ya
+generados por reruns pedidos explícitamente en el encargo.
