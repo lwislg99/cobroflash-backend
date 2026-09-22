@@ -190,6 +190,43 @@ Prueba de relevo de la S0, `claude --bg -n 0 --permission-mode auto`, id `f4dfaf
 
 Esto es lo que cierra **F4**: una sesión ya no necesita al fundador para abrir otra.
 
+### 5bis.7 · La puerta de integridad puede quedar CERRADA hasta la próxima tanda (SCRUM-991, 22-sep-2026)
+
+**El defecto, medido:** `sesion.mjs` se niega a actuar (`lanzar`, `relevar`, `parar`, `olvidar`, `contexto`,
+`estado` — todo pasa por `puertaDeIntegridad`) si la copia instalada en `%LOCALAPPDATA%\yaqu-equipo\` no es
+BYTE A BYTE la de `origin/main`. Es diseño consciente (falla cerrado: una copia desfasada no actúa), pero
+**quien la repone** es `arranque.cmd`, y ese `.cmd` solo corre en las tareas programadas del día
+(08:00 / 13:05 / 18:10). Un merge que toca `scripts/equipo/sesion.mjs`, `orquestador-arranque.mjs`,
+`uso.mjs` o el prompt de la tanda deja la puerta cerrada **desde ese merge hasta la siguiente tarea** — hasta
+**13 h 49 min** en el peor caso (un merge a las 18:11).
+
+**Mientras está cerrada:** el relevo va A MANO (`claude --bg` directo, como documenta 5bis.6) y se dice por
+el canal, porque `sesion.mjs relevar`/`lanzar` fallarán con `ALTERADO`.
+
+**El paso que la reabre, sin tocar ninguna tarea programada** (decisión del orquestador, 21-sep-2026,
+comentario 16148 de SCRUM-991 — probado, sin bloqueo del sistema de permisos):
+
+```
+git -C <repo> fetch --quiet origin main
+git -C <repo> show origin/main:scripts/equipo/sesion.mjs               > %LOCALAPPDATA%\yaqu-equipo\sesion.mjs
+git -C <repo> show origin/main:scripts/equipo/orquestador-arranque.mjs > %LOCALAPPDATA%\yaqu-equipo\orquestador-arranque.mjs
+git -C <repo> show origin/main:scripts/equipo/uso.mjs                  > %LOCALAPPDATA%\yaqu-equipo\uso.mjs
+git -C <repo> show origin/main:<prompt de la tanda del config.json>    > %LOCALAPPDATA%\yaqu-equipo\prompt-tanda.md
+```
+
+(las cuatro rutas y el nombre exacto de cada `<instalado>` están en `scripts/equipo/instalar.mjs`,
+`FICHEROS` + `PROMPT_INSTALADO` — cópialas de ahí, no las teclees de memoria: si el instalador cambia el
+mapeo, este bloque queda desfasado y hay que traerlo de nuevo).
+
+**Lo que NO se propone, y por qué:** que `sesion.mjs` se reescriba a sí mismo. Una copia que puede
+reescribirse sola es justo lo que la puerta de integridad existe para impedir. Tampoco un cuarto paso
+programado nuevo ni `schtasks /run` a mano — las dos opciones se descartaron (comentario 16148): la primera
+exige instalación del fundador, la segunda es un paso manual que se olvida igual que éste. Este bloque
+**es** el paso que se olvida menos porque está escrito aquí, en el sitio que toda tanda relee.
+
+**Cierre, por efecto:** tras aplicar este paso a una copia desfasada, `node %LOCALAPPDATA%\yaqu-equipo\sesion.mjs estado`
+sale con **exit 0**, no `ALTERADO`/exit 2.
+
 ## 5ter · Cierre y arranque por FIN DE USO
 
 Hasta el 17-sep esto solo vivía en la memoria del orquestador. Se escribe porque es precisamente lo que se pierde si el
