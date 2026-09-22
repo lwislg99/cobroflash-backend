@@ -1,6 +1,7 @@
 # SCRUM-1037 · CONTABILIDAD — Comprobar en staging los cuatro fallos de cifras
 
-**Puesto: S0 (medición) · 22-sep-2026 · `origin/main` `e2f715939d0e27ca2661821e1b57292d4ec1c3cc`**
+**Medido contra:** `origin/main` = `f5111cf184179e59a2b58e121a57816799724cb2` · 2026-09-22T09:43:00Z
+**Puesto:** S0 (medición)
 
 Medido/leído — el camino de emisión fiscal se lee, no se modifica (STOP de AA1.4). Detalle completo,
 citas de código y la comprobación en vivo del punto (a): `docs/master/evidencias/scrum1037/HALLAZGOS.md`.
