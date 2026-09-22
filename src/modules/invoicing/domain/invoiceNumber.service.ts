@@ -481,16 +481,18 @@ export async function allocateInvoiceNumber(
       tx,
     );
 
-  // V0-0: merchant ES real sin INVOICING_ES_ENABLED → justificante, no factura.
-  // No avanza NINGÚN contador de la serie fiscal. Las rectificativas no existen
-  // para justificantes (solo rectifican facturas emitidas — regla 29).
+  // SCRUM-1027 · REGLA 24 (enmienda SCRUM-612c, 21-sep-2026): con INVOICING_ES_ENABLED en OFF,
+  // en España, YA NO SALE NINGÚN DOCUMENTO — ni factura, ni justificante. Antes esta rama emitía
+  // un `J-…` (V0-0); ahora es EXACTAMENTE lo que ya hacía para las rectificativas (`if (rect)
+  // throw`), extendido a los siete caminos: el punto ÚNICO de decisión deja de tener dos
+  // desenlaces para `receipt` y pasa a tener uno solo. No avanza NINGÚN contador de la serie
+  // fiscal — ni se llega a intentar.
+  //
+  // `reservarReferenciaJustificante` se queda SIN llamador (no se borra: retirar el tipo JUST
+  // es SCRUM-825, que va firmado antes — regla 27. Esto no lo enciende ni lo apaga, solo deja de
+  // usarlo desde aquí).
   if (getEmissionMode(m) === 'receipt') {
-    if (rect) throw new Error('invoicing_es_disabled');
-    // SCRUM-396: la referencia se comprueba contra el índice antes de devolverla. Va DENTRO del
-    // cerrojo de arriba, que es lo que hace que la comprobación no tenga carrera.
-    const numero = await reservarReferenciaJustificante(tx, merchantId, now);
-    await auditar(numero, true);
-    return numero;
+    throw new Error('invoicing_es_disabled');
   }
   const sameYear = m.invoiceSeriesYear === year;
 

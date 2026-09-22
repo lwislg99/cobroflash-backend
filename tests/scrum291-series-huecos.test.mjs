@@ -299,7 +299,19 @@ const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 //
 // 🔴 SIN RENUMERAR NI UNA: el control que decide de `tests/scrum780-…` compone los cinco números
 // REALES de dev con su fecha y exige que salgan byte a byte iguales.
-const EMISOR_SHA256 = '4ea68c579d53c8d0fc5640c12bf2a6a70986d643845e1c8596c3c22839fdd9f9';
+//
+// ── SCRUM-1027 · 21-sep-2026 · GO EXPRESO DE JAVIER (jefe), en el chat de su orquestador: «825
+// tal cual y el atajo también». Regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en
+// España, ya NO se emite NINGÚN documento — ni siquiera el `J-…` que este mismo fichero emitía
+// hasta hoy. El cambio: dentro de `allocateInvoiceNumber`, la rama `getEmissionMode(m) ===
+// 'receipt'` deja de reservar una referencia de justificante y pasa a lanzar
+// `invoicing_es_disabled` para los SIETE caminos (antes solo lo hacía si `rectifying`). El
+// `pg_advisory_xact_lock`, el reinicio anual, los dos contadores y el corte a `F<AA><NNNN>` de
+// SCRUM-780 NO SE TOCAN — verificable en el diff, no solo afirmado.
+//
+//   anterior: 4ea68c579d53c8d0fc5640c12bf2a6a70986d643845e1c8596c3c22839fdd9f9   (SCRUM-780)
+//   nuevo:    b9cdfe424c97019ba1aa5daf4e06ed40fc0a106b55fe811d93a0bfdf9878a567   (SCRUM-1027)
+const EMISOR_SHA256 = 'b9cdfe424c97019ba1aa5daf4e06ed40fc0a106b55fe811d93a0bfdf9878a567';
 
 test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
   // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta

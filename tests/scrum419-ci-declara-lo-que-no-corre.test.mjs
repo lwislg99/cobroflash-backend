@@ -100,11 +100,15 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // bandeja de pendientes de facturar y el modo de emisión de cada negocio. Solo el desechable:
   // recorre TODOS los merchants activos de la base (por eso no va a staging).
   'scrum974-firmado-sin-facturar-en-el-lunes.test.mjs': 1,
-  // SCRUM-728d: los tres de la MEDICIÓN en loopback — el suelo (RTT ~0), los cuatro caminos con
-  // 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque cronometran
-  // el trabajo REAL del servidor: sin base no hay nada que cronometrar. Y necesitan que sea
-  // DESECHABLE porque emiten números de serie y crean facturas — 1.000 en el de la pendiente.
-  'scrum728d-ms-en-loopback.test.mjs': 3,
+  // SCRUM-728d: los de la MEDICIÓN en loopback — el suelo (RTT ~0), los tres caminos que
+  // reservan con 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque
+  // cronometran el trabajo REAL del servidor: sin base no hay nada que cronometrar. Y necesitan
+  // que sea DESECHABLE porque emiten números de serie y crean facturas — 1.000 en el de la
+  // pendiente. SCRUM-1027 (21-sep-2026): el cuarto camino («justificante») dejó de reservar —
+  // regla 24, un merchant ES sin flag ya no emite nada — así que se mide APARTE, con su propio
+  // test: que el modo `receipt` rechaza siempre bajo concurrencia, sin colar una reserva por una
+  // carrera. Sube de 3 a 4.
+  'scrum728d-ms-en-loopback.test.mjs': 4,
   // SCRUM-876c (T2): los tres que dependían de `MERCHANT_ID = 1` y pasan a `withMerchant`. Hasta
   // aquí sólo corrían con `QA_DB_TEST=1` (staging) y ese destino lo conservan; éste es el segundo.
   // Necesitan banco porque lo que vigilan ES la escritura: la suma de lo cobrado (13), el

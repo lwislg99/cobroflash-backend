@@ -33,6 +33,7 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { albaranOrigenDelPresupuesto, type AlbaranOrigen } from '../../../jobs/domain/albaranOrigenDelPresupuesto'; // SCRUM-984
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
@@ -164,6 +165,11 @@ router.post('/:id/reject', async (req, res) => {
   }
 });
 
+// SCRUM-1027 · mismo marcador que `albaranes.routes.ts:MICROCOPY_PENDIENTE_290` e
+// `invoicesAdmin.routes.ts:MICROCOPY_PENDIENTE_308` — el TEXTO es lo que reconoce
+// `sinMarcadorPendiente.ts`, no el nombre de la constante. Regla 30: lo firma el fundador.
+const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
+
 /**
  * POST /admin/quotes/:id/invoice
  * SCRUM-55 (D2 del fundador): EMITE FACTURA → dinero. S1: "Facturas: emitir ❌ Técnico".
@@ -193,6 +199,13 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     }
     if (!quote.merchant || !quote.customer) {
       return res.status(500).json({ error: 'quote_missing_relations' });
+    }
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, no se
+    // emite NINGÚN documento. Sin este gate, `allocateInvoiceNumber` seguiría rechazando el modo
+    // `receipt` (punto único, SCRUM-1027), pero DESPUÉS de contar el tramo y abrir la
+    // transacción — y el rechazo saldría como 500, no 409.
+    if (getEmissionMode(quote.merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
     }
 
     const existingInvoices = quote.Invoice || [];
@@ -492,6 +505,11 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     }
     if (!quote.merchant || !quote.customer) {
       return res.status(500).json({ error: 'quote_missing_relations' });
+    }
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): mismo gate que `/:id/invoice`, arriba en este
+    // fichero — con el interruptor en OFF, en España, no se emite NINGÚN documento, tampoco a mano.
+    if (getEmissionMode(quote.merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
     }
 
     // FAIL-CLOSED 1 — esta vía es SOLO para los que no tienen tramos. Con plan, la factura sale
