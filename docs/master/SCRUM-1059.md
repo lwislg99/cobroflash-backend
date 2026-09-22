@@ -67,3 +67,21 @@ entorno; aquí no se ha necesitado ese tipo de verificación porque `aplicarEtiq
 nada fiscal ni de emisión, así que el rojo/verde de sus 11 casos se pudo comprobar con normalidad
 añadiendo y quitando aserciones mientras se escribían (no queda rastro de eso en el commit final,
 solo el resultado).
+
+## Tercera corrección (22-sep, mismo día): `guards de navegador` en rojo, y NO es de este ticket
+
+`@claude` avisó (avisador-rojo) de que el check obligatorio salía en rojo en
+`guard:marcadores-en-pantalla` (SCRUM-722), job «guards de navegador (fuera de la tanda)», sobre
+el commit `15cc1977`. Medido antes de tocar nada (regla 41): el diff de esta rama no toca
+`public/dashboard/js/exportView.js` ni ese guard, así que no lo causó SCRUM-1059. Origen real:
+SCRUM-1041 (commit `80b60238`, bloque A) ya en `origin/main` firmó y quitó el marcador
+`[PENDIENTE microcopy oficial]` de `exportView.js`, pero solo actualizó el censo de
+`tests/scrum402-marcador-no-se-pinta.test.mjs` y no el censo APARTE que lleva
+`scripts/guard-marcadores-en-pantalla.mjs` (uno mide el FUENTE, el otro el DOM renderizado). La
+entrada `export: 6` quedó caduca en `origin/main` — rompía a cualquier PR sobre main en esa
+ventana, no solo a éste. Otra sesión de `@claude` ya lo midió y arregló igual en `origin/main`
+(commit `cf6b454d`, sobre la rama de SCRUM-773) antes de que esta rama se actualizara: aquí se
+aplica el mismo arreglo —se borra la entrada `export` del `CENSO`, no se pone a 0— para que el
+check obligatorio de ESTA rama también pase sin depender de cuándo se actualice con `main`. No se
+relaja ninguna aserción: la vista sale del censo porque ya no pinta nada, y si algún día vuelve a
+pintar el marcador caerá como «VISTA NUEVA», más estricto que antes.
