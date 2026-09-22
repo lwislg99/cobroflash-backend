@@ -318,6 +318,16 @@ regresión en `tests/scrum910-la-transferencia-que-no-mira.test.mjs` (③, ya en
 
 `npm run guards:entrada` 112/112 · `npm run guard:marcadores-en-pantalla` verde. `npm test`
 completo: ver informe de entrega.
+
+## 3 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `src/modules/billing/app/routes/receipt.routes.ts` | `pendingMessage` derivado de `puedeTransferencia`/`puedeTarjeta` |
+| `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` | nuevo — rojo primero, 4 casos + control positivo |
+
+---
+
 # SCRUM-910c · ① decidido (B) y aplicado — J2, traspaso de Luis
 
 **Medido contra:** `origin/main` = `763d37e5225ea4897827b1a997e34cf5e117c5c3` · 2026-09-22T22:24:27Z
@@ -364,7 +374,5 @@ verde (27 vistas × 3 estados, control negativo corrido). `npm test` completo: v
 
 | fichero | qué |
 |---|---|
-| `src/modules/billing/app/routes/receipt.routes.ts` | `pendingMessage` derivado de `puedeTransferencia`/`puedeTarjeta` |
-| `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` | nuevo — rojo primero, 4 casos + control positivo |
 | `public/admin.html` | retirado el bloque de enlaces rotos y su CSS |
 | `tests/scrum910-admin-sin-enlaces-undefined.test.mjs` | nuevo — rojo primero + control positivo |
