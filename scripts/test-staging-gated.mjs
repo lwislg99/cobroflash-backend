@@ -35,7 +35,12 @@
 // lanzador: modifica el comentario de catálogo de la BD. Por eso aplica la allowlist de host
 // de `_db-guard.mjs` de forma INCONDICIONAL, igual que `marcar-staging.mjs` — misma razón:
 // una herramienta que escribe no puede depender de que alguien recuerde comprobar antes.
-import 'dotenv/config'; // el turno necesita DATABASE_URL_TESTS en el PADRE, no solo en los hijos
+// El turno necesita DATABASE_URL_TESTS en el PADRE, no solo en los hijos (que heredan
+// `{...process.env}` y la releen por su cuenta).
+// SCRUM-932 · era `import 'dotenv/config'`, que solo mira el `.env` del directorio actual. Hoy no
+// hay `.env` en ningún árbol de esta máquina, así que cargaba CERO claves y la tanda gateada
+// abortaba por lo mismo que el CLI del turno. El porqué medido está en `_cargar-env.mjs`.
+import { cargarEnvDelEquipo, resumenDeEnv } from './_cargar-env.mjs';
 import { spawnSync } from 'node:child_process';
 import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -83,6 +88,12 @@ import { medirMargen, textoDeMargen, esAbortadoPorTiempo, margenesVacios } from 
 // SCRUM-197: el parseo del resumen de node:test vive extraído, para que un test lo ejercite sin
 // arrancar la tanda. De su comportamiento con salida truncada depende la distinción crash-vs-rojo.
 import { CATS, parseCuenta } from './_parse-cuenta.mjs';
+
+// SCRUM-932 · LA PRIMERA sentencia del cuerpo, y ahí a propósito: `import 'dotenv/config'` cargaba
+// el entorno en tiempo de importación, o sea antes de CUALQUIER línea de este fichero. Poner la
+// llamada más abajo sería un cambio de comportamiento silencioso — todo lo que lea `process.env`
+// por encima (el override de los tiempos, entre otros) vería un entorno a medio cargar.
+const informeEnv = cargarEnvDelEquipo();
 
 const HERE = path.dirname(fileURLToPath(import.meta.url)); // resolver el preflight junto a este script (SCRUM-167)
 const override = process.argv[2] || null; // contraprueba/diagnóstico: si viene, todos lo usan
@@ -253,7 +264,12 @@ const DURACION_PREVISTA_MS = hijos.reduce(
 // no se les pasa por argumento ni por variable intermedia (medido el 6-ago-2026).
 const urlStaging = process.env.DATABASE_URL_TESTS;
 if (!urlStaging) {
-  console.error('\n❌ tanda gateada ABORTADA: falta DATABASE_URL_TESTS en el entorno — sin ella no hay ni turno ni tanda.\n');
+  console.error('\n❌ tanda gateada ABORTADA: falta DATABASE_URL_TESTS en el entorno — sin ella no hay ni turno ni tanda.');
+  // SCRUM-932 · se dice DÓNDE se buscó. «No encontré la clave» sin la lista de sitios mirados no
+  // se puede accionar: manda a adivinar, y lo que se adivinó fue improvisar la variable a mano.
+  console.error(resumenDeEnv(informeEnv, { conNombres: true }));
+  console.error('\n   Si el fichero de credenciales vive fuera de los árboles, dilo con YAQU_ENV_FILE=<ruta>.');
+  console.error('   La credencial la pone el fundador en ese fichero, NUNCA en el chat (regla 9).\n');
   process.exit(2);
 }
 {

@@ -79,8 +79,42 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum244-supresion-y-anonimizado.test.mjs': 1,
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,
+  // SCRUM-980: el historial de la ficha. Necesita banco porque vigila la TENENCIA de cinco consultas
+  // encadenadas (cliente, trabajos, partes, albaranes, fotos) y el recorte del técnico.
+  'scrum980-historial-del-cliente.test.mjs': 1,
   'scrum297-evidencias-postgres.test.mjs': 2,
+  // SCRUM-979: la «Última visita». Necesita banco porque lo que vigila es la CONSULTA — el
+  // `groupBy` con la tenencia dentro y el recorte del técnico por los tres ejes de SCRUM-650.
+  'scrum979-ultima-visita.test.mjs': 1,
+  // SCRUM-809: el acceso tras cancelar. Necesita banco porque lo que mide es lo que le CONTESTA el producto al
+  // profesional que pagó y canceló (una petición real a las rutas con paywall). El census cuenta 5 llamadas a
+  // `test(` con salto —dos de ellas generadas por las dos puertas de cancelación—. Su mitad sin banco
+  // vive en `scrum809b-paywall-sin-banco.test.mjs`, que sí corre en cada `npm test` y en el meta-guard.
+  'scrum809-paywall-tras-cancelar.test.mjs': 5,
+  // SCRUM-992: los partes recortados por rol. Necesita banco porque lo que vigila es lo que el técnico
+  // puede LEER, EDITAR y FIRMAR sobre partes de otros —las nueve rutas, la app entera, tres sesiones—.
+  // La mitad estructural (AST) no lo necesita y corre en cada `npm test`.
+  'scrum992-partes-recortan-por-rol.test.mjs': 1,
   'scrum389-un-solo-iva.test.mjs': 2,
+  // SCRUM-974: el resumen del lunes. Necesita banco porque corre el resumen DE VERDAD, que lee la
+  // bandeja de pendientes de facturar y el modo de emisión de cada negocio. Solo el desechable:
+  // recorre TODOS los merchants activos de la base (por eso no va a staging).
+  'scrum974-firmado-sin-facturar-en-el-lunes.test.mjs': 1,
+  // SCRUM-728d: los tres de la MEDICIÓN en loopback — el suelo (RTT ~0), los cuatro caminos con
+  // 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque cronometran
+  // el trabajo REAL del servidor: sin base no hay nada que cronometrar. Y necesitan que sea
+  // DESECHABLE porque emiten números de serie y crean facturas — 1.000 en el de la pendiente.
+  'scrum728d-ms-en-loopback.test.mjs': 3,
+  // SCRUM-876c (T2): los tres que dependían de `MERCHANT_ID = 1` y pasan a `withMerchant`. Hasta
+  // aquí sólo corrían con `QA_DB_TEST=1` (staging) y ese destino lo conservan; éste es el segundo.
+  // Necesitan banco porque lo que vigilan ES la escritura: la suma de lo cobrado (13), el
+  // operario congelado en el Job (52) y el guardado parcial del cliente (692).
+  'scrum13-cobrado.test.mjs': 1,
+  'scrum52-operario.test.mjs': 1,
+  'scrum692-guardado-parcial-en-base.test.mjs': 1,
+  // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
+  // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
+  'scrum967b-el-portal-en-el-envio.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

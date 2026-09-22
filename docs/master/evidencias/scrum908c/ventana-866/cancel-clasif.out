@@ -1,0 +1,4 @@
+POBLACION cancelled=194 de runs=307
+{"timeout":87,"concurrencia":107,"otra":0,"ciego":0}
+timeout s: min 603 max 651 | concurrencia s: min 0 max 616
+EXIT=0

@@ -1,0 +1,28 @@
+═══ LO MEDIDO (de `coste-de-los-dos-caminos.mjs`) ═══
+   factura típica (1 línea, sin logo) : 5209 B  = 5.1 KiB
+   factura de 20 líneas ..............: 6403 B  = 6.3 KiB
+   con marca DEMO ....................: 5512 B  = 5.4 KiB
+   → se proyecta con 6403 B (el techo de lo medido). SIN LOGO: un logo se embebe y
+     puede moverlo mucho. Ese factor NO está medido y por eso no está dentro del número.
+
+═══ LA PROYECCIÓN · un escenario no es una previsión ═══
+
+   escenario                        merchants  fac/mes    al mes      al año   a 5 años
+   ----------------------------------------------------------------------------------------
+   HOY (anclado, no supuesto)             13        0        0 B         0 B        0 B
+   SUPUESTO A · arranque                  10      100  625.3 KiB     7.3 MiB   36.6 MiB
+   SUPUESTO B · tracción                 100     2000   12.2 MiB   146.6 MiB  732.8 MiB
+   SUPUESTO C · escala                  1000    20000  122.1 MiB    1.43 GiB   7.16 GiB
+
+   · HOY (anclado, no supuesto) — 13 cuentas declaradas de prueba y CERO clientes reales: la puerta de SCRUM-390 está cerrada.
+   · SUPUESTO A · arranque — diez profesionales facturando diez veces al mes.
+   · SUPUESTO B · tracción — cien profesionales, una factura cada día laborable aprox.
+   · SUPUESTO C · escala — mil profesionales al mismo ritmo.
+
+═══ LA LECTURA ═══
+   Incluso el escenario más grande de los tres supuestos (1000 merchants) da
+   1.43 GiB AL AÑO. El almacenamiento NO es el coste que decide este ticket.
+   Lo que decide es DÓNDE: hoy no existe ningún almacenamiento persistente en el producto.
+
+   ⚠️ Y el número de facturas al mes es el supuesto más frágil de los tres: no hay ni un dato
+      real detrás. Si alguien lo mide algún día, esta tabla se rehace con una línea.

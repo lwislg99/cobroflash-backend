@@ -71,7 +71,64 @@
 
   // SCRUM-580 (CONT-07) · el filtro por ETIQUETA. `null` = «no se filtra por ninguna», que NO
   // es «filtrar por la etiqueta vacía»: son cosas distintas y aquí sólo existe la primera.
-  var POR_DEFECTO = { pestana: 'TODOS', orden: 'RECIENTES', etiqueta: null };
+  // SCRUM-979 · `visita: null` = «no se filtra por visita», que es lo de hoy.
+  var POR_DEFECTO = { pestana: 'TODOS', orden: 'RECIENTES', etiqueta: null, visita: null };
+
+  /**
+   * SCRUM-979 · «ÚLTIMA VISITA»: la columna y el filtro de 6 / 12 / 24 meses.
+   *
+   * ✅ FIRMADOS por el orquestador por delegación del fundador (21-sep-2026, SCRUM-979; registro en
+   * `docs/microcopy/2026-09-21-SCRUM-979-ultima-visita.md`). No cuentan en SIN_APROBAR.
+   *
+   * La fecha la manda el servidor (`listCustomers` → `ultimaVisita`): el `scheduledAt` más reciente de
+   * los trabajos `terminado`/`cerrado` que QUIEN MIRA puede ver. Un cliente sin ninguno NO trae la
+   * clave, y aquí se respeta: ausente no es cero.
+   */
+  var TEXTOS_VISITA = {
+    columna: 'Última visita',
+    sinFiltro: 'Cualquier fecha de visita',
+  };
+  var FILTROS_VISITA = [
+    { meses: 6, palabra: 'Sin visitar desde hace 6 meses' },
+    { meses: 12, palabra: 'Sin visitar desde hace 12 meses' },
+    { meses: 24, palabra: 'Sin visitar desde hace 24 meses' },
+  ];
+
+  /** La fecha de la última visita, o `null` si no hay (o si lo que llega no es una fecha). */
+  function ultimaVisitaDe(c) {
+    var v = c && c.ultimaVisita;
+    if (v === null || v === undefined || v === '') return null;
+    var d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /** ¿Algún cliente del lote tiene visita? Sin ninguna, el selector no sirve y se oculta. */
+  function hayVisitas(clientes) {
+    var lista = Array.isArray(clientes) ? clientes : [];
+    for (var i = 0; i < lista.length; i++) if (ultimaVisitaDe(lista[i])) return true;
+    return false;
+  }
+
+  /**
+   * «Sin visitar desde hace N meses»: su última visita es de hace N meses o más (meses de
+   * calendario, contados desde `ahora`).
+   *
+   * 🔴 Un cliente SIN ninguna visita NO entra (decisión del orquestador, SCRUM-979): «nunca» no es
+   * «hace más de 12 meses», y esta lista es para llamar a quien ya fue cliente de trabajo.
+   * `meses` nulo o desconocido → la lista TAL CUAL: no filtrar no es filtrar por nada.
+   */
+  function filtrarPorVisita(clientes, meses, ahora) {
+    var lista = Array.isArray(clientes) ? clientes : [];
+    var valido = false;
+    for (var i = 0; i < FILTROS_VISITA.length; i++) if (FILTROS_VISITA[i].meses === meses) valido = true;
+    if (!valido) return lista.slice();
+    var corte = new Date((ahora instanceof Date ? ahora : new Date()).getTime());
+    corte.setMonth(corte.getMonth() - meses);
+    return lista.filter(function (c) {
+      var d = ultimaVisitaDe(c);
+      return d !== null && d.getTime() <= corte.getTime();
+    });
+  }
 
   /**
    * SCRUM-580 (CONT-07) · LOS CUATRO TEXTOS DE LAS ETIQUETAS, en un solo sitio.
@@ -242,8 +299,9 @@
    * `etiqueta` es opcional: quien llame con dos argumentos sigue teniendo el comportamiento de
    * antes, que es lo que hace que este cambio no rompa a nadie.
    */
-  function aplicar(clientes, pestanaId, ordenId, etiqueta) {
-    return ordenar(filtrarPorEtiqueta(filtrarPorPestana(clientes, pestanaId), etiqueta), ordenId);
+  function aplicar(clientes, pestanaId, ordenId, etiqueta, visita, ahora) {
+    // SCRUM-979: la visita es un filtro más, ENCADENADO. Con `visita` ausente, lo de antes.
+    return ordenar(filtrarPorVisita(filtrarPorEtiqueta(filtrarPorPestana(clientes, pestanaId), etiqueta), visita, ahora), ordenId);
   }
 
 
@@ -311,6 +369,7 @@
     { id: 'email', texto: 'Email', fija: false, ocultaEnMovil: true },
     { id: 'notas', texto: 'Notas', fija: false, ocultaEnMovil: true },
     { id: 'etiquetas', texto: TEXTOS_ETIQUETAS.columna, fija: false, ocultaEnMovil: true },
+    { id: 'visita', texto: TEXTOS_VISITA.columna, fija: false, ocultaEnMovil: true }, // SCRUM-979
     { id: 'alta', texto: 'Alta', fija: false, ocultaEnMovil: true },
     { id: 'acciones', texto: '', fija: true, ocultaEnMovil: false },
   ];
@@ -525,6 +584,12 @@
     tagsDe: tagsDe,
     ordenar: ordenar,
     aplicar: aplicar,
+    // SCRUM-979
+    TEXTOS_VISITA: TEXTOS_VISITA,
+    FILTROS_VISITA: FILTROS_VISITA,
+    ultimaVisitaDe: ultimaVisitaDe,
+    hayVisitas: hayVisitas,
+    filtrarPorVisita: filtrarPorVisita,
   };
 
   if (typeof window !== 'undefined') window.filtroClientes = api;

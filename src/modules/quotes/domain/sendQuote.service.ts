@@ -8,7 +8,8 @@ import { prisma } from '../../../core/db/prisma';
 import { sendWhatsAppWindowFirst } from '../../../integrations/whatsapp';
 import { buildQuoteDecision } from '../../../integrations/whatsappTemplates';
 import { recordCustomerEvent } from '../../system/customerEvents.service';
-import { normalizePhone, formatMoneyEs } from '../../../core/utils/utils';
+import { formatMoneyEs } from '../../../core/utils/utils';
+import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import { BASE_URL } from '../../../core/config/env';
 import { ensureQuoteDecisionToken } from './quoteToken.service'; // SCRUM-95
 
@@ -40,13 +41,16 @@ export async function sendQuoteWhatsAppToCustomer(
   if (!quote || (merchantId != null && quote.merchantId !== merchantId)) {
     return { ok: false, sent: false, reason: 'not_found' };
   }
-  if (!quote.customer?.phone) {
+  // SCRUM-590 (CONT-19): el destino es el MÓVIL si consta y el fijo si no. Los DOS guards se conservan
+  // porque son dos respuestas distintas del contrato de esta función: «no nos dio número»
+  // e «invalid_phone_format» («nos dio uno que no se puede marcar»).
+  if (!tieneNumeroDeContacto(quote.customer)) {
     return { ok: false, sent: false, reason: 'customer_missing_phone' };
   }
   if (quote.status === 'pending_approval') {
     return { ok: false, sent: false, reason: 'pending_approval' };
   }
-  const to = normalizePhone(quote.customer.phone);
+  const to = canalDeWhatsApp(quote.customer);
   if (!to) {
     return { ok: false, sent: false, reason: 'invalid_phone_format' };
   }
@@ -82,7 +86,11 @@ export async function sendQuoteWhatsAppToCustomer(
       customerName: quote.customer.name ?? 'Cliente',
       businessName,
       quoteNumber: displayNum,
-      totalWithCurrency: `${Number(quote.total).toFixed(2)} ${quote.currency}`,
+      // SCRUM-931: en bruto. La forma la da el builder, la misma que el texto libre de arriba —
+      // antes esta línea mandaba `419.87 EUR` mientras `windowText` mandaba `419,87 €`, así que el
+      // MISMO cliente leía el MISMO presupuesto en dos formatos según si su ventana estaba abierta.
+      amount: Number(quote.total),
+      currency: quote.currency,
       decisionToken, // SCRUM-95: token opaco, no el id global
     }),
     sinPlantilla: opciones.sinPlantilla === true, // SCRUM-195

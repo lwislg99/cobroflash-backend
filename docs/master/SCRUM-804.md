@@ -278,3 +278,1455 @@ Y **tres rojos legítimos por el camino**, todos de guards de la casa cazándome
 6. **No corrí `meta:mutaciones` entero contra este árbol.** Los 16 de E1 cumplen también E2, así
    que no cambiaría ni una cifra; el arnés se ejercitó sobre las 3 mutaciones nuevas, que caen,
    nombran su test y restauran byte a byte.
+
+
+---
+
+# APÉNDICE · 8-sep-2026 · La dimensión que le faltaba al censo: EN MAIN, EN RAMA VIVA, SIN RASTRO
+
+**Fecha:** 8-sep-2026 · **Carril:** instrumentos / tablero · **Medido contra:** `origin/main` =
+`52f19747e842c8379457cdcb5601ea79c17ff638`
+
+> ⛔ Esto NO cierra ningún ticket y no toca el tablero. Entrega la lista y la cifra; cerrar es del
+> asesor.
+
+---
+
+## 0 · Obligación 0, cumplida y con su contraste
+
+```
+git ls-remote --heads origin | grep -E "refs/heads/scrum-804(-|$)"
+  77fbf0b7…  refs/heads/scrum-804-el-tablero-contra-el-arbol
+git merge-base --is-ancestor 77fbf0b7 origin/main   →  MERGEADA — sigue   (0 commits pendientes)
+```
+
+Y el contraste que el propio encargo pedía: un `grep 804` suelto sobre la salida de `ls-remote`
+devuelve **2** líneas; la consulta anclada, **1**. La de más casa dentro de un SHA.
+
+## 1 · 🔴 EL ROJO: el censo no es que no viera la rama viva — la presentaba como trabajo en `main`
+
+Provocado antes de escribir una línea, llamando a `censarTicket` sobre el árbol vivo:
+
+```
+SCRUM-819   ENTERO   fuentes: ramas   scrum-819-el-menu-deja-rastro, …-al-dia
+SCRUM-816   ENTERO   fuentes: ramas   scrum-816-lista-de-trabajos
+SCRUM-820   ENTERO   fuentes: ramas   scrum-820-estados-en-castellano, …-al-dia
+SCRUM-821   ENTERO   fuentes: ramas   scrum-821-la-lista-que-decide-que-se-mira
+SCRUM-716   PARCIAL  fuentes: commits+docs/master+ramas
+```
+
+`ENTERO` es el veredicto más fuerte de ese censo, y sus filas se imprimen bajo el titular
+**«PROPUESTA · tienen trabajo suyo en `main`»**. Ninguno de esos cuatro tiene una línea en `main`.
+
+> El defecto no era una ausencia: era una **afirmación falsa**. Y es justo el falso positivo que la
+> cabecera del propio censo llama el más caro — el que propone cerrar algo que nadie ha mergeado.
+
+## 2 · ⛔ Lo que NO se ha escrito, porque ya existía
+
+Buscar antes de escribir cambió el ticket entero. La regla que decide esto **ya vive en la casa**:
+
+| pieza | de dónde | qué aporta |
+| --- | --- | --- |
+| `alcanzabilidadDe` | `_censo-alcanzabilidad.mjs` (SCRUM-753) | dentro/fuera a granel: 0,30 s vs 52,6 s rama a rama |
+| `agruparRamas` | `_censo-reparto.mjs` (SCRUM-387) | agrupa por ticket sin confundir `scrum-2` con `…-rebasada-2`, y trata el `null` como INDETERMINADA |
+| `instantanea` | `_censo-alcanzabilidad.mjs` (SCRUM-753) | congela el sha: la pregunta deja de ser móvil |
+| `adelantoDe` | `_censo-alcanzabilidad.mjs` (SCRUM-753) | commits fuera de `main` = el TAMAÑO del trabajo vivo |
+
+**El censo de alcanzabilidad ya contestaba la pregunta, y bien.** Corrido sobre los cinco
+controles antes de tocar nada: 816/819/820/821 → **FUERA**, 716 → **DENTRO**. Lo que faltaba no era
+el mecanismo: era que **el censo del tablero lo consultara**. Escribir aquí una segunda copia de
+cualquiera de esas cuatro reglas habría sido el error que este mismo ticket se documentó en su
+PASO 0 — «la misma regla implementada dos veces es cómo una de las dos se queda atrás».
+
+Lo nuevo es **una pieza de costura**, `scripts/_rastro-del-ticket.mjs`, y el cableado en el CLI.
+
+## 3 · Los tres veredictos (y el cuarto que no se pliega)
+
+`EN MAIN` · `EN RAMA VIVA` · `SIN RASTRO`, y `INDETERMINADO` para la rama cuyo objeto no está en
+local — que no contesta ni «dentro» ni «fuera» (provocado y medido en SCRUM-753). Plegarlo a
+cualquiera de los tres sería inventarse una medición. Hoy son **0**.
+
+**Basta UNA rama viva** para que el ticket salga `EN RAMA VIVA`: 819 y 820 tienen su original y su
+`-al-dia`, y llamarlos EN MAIN por la que entrara sería el mismo falso positivo con otra cara.
+
+En el CLI, el filtro que quita el falso positivo es exacto y **no retira a nadie por tener una rama
+viva**: sólo al que tiene `ramas` como **única** fuente Y ninguna mergeada. SCRUM-600, 597 y 595
+tienen trabajo en `main` *y* rama viva, y siguen siendo propuesta legítima.
+
+## 4 · 🔴 LAS CIFRAS, medidas — y son DOS, no una
+
+**Son dos preguntas distintas y mezclarlas sería exactamente el tipo de imprecisión que este
+ticket persigue.** Cada una con su sha, porque `main` se movió TRES veces mientras se medía.
+
+### ① Tickets a los que el censo llamaba «trabajo en `main`» sin tenerlo
+
+Los que tienen `ramas` como **única** fuente y ninguna mergeada. Es el conjunto exacto del falso
+positivo, y el que el CLI ya imprime aparte:
+
+    → 14 ticket(s), sobre 89 ramas vivas de 558 remotas   (origin/main = 5c9e579f)
+
+### ② Tickets ABIERTOS en el tablero con rama viva sin mergear — la cifra que pedía el encargo
+
+Es más ancha: incluye a los que sí tienen trabajo en `main` **y además** una rama sin mergear.
+
+| medición | sha de `main` | abiertos con rama viva |
+| --- | --- | --- |
+| primera pasada | `52f19747` | **17** |
+| tras entrar 819, 820 y 600 | `5c9e579f` | **14** |
+
+Los 14 de la última medición: 821, 816, 813, 809, 754, 729, 637, 632, 630, 626, 614, 597, 595, 576.
+
+> 🔴 **LA CIFRA CADUCÓ MIENTRAS SE ESCRIBÍA, Y ESO ES EL DATO.** Entre las dos pasadas entraron
+> **SCRUM-819 y SCRUM-820** (PR #1161 y #1162) y SCRUM-600. Un número sin su sha no es una
+> medición: es una foto que nadie sabe de cuándo. Por eso las dos van con el suyo.
+
+### La foto de Jira llegaba hasta el 818
+
+Cruzando con `docs/verificacion/asuntos-jira.tsv` (tomada el 7-sep) salían **14** en la primera
+pasada, no 17. La diferencia eran **819, 820 y 821**: la foto llega hasta SCRUM-818, así que **los
+tres tickets que originaron este encargo caen fuera de ella**. Una foto con fecha es honesta; ésta
+además estaba caducada justo donde importaba. La cifra buena se sacó contra **Jira en vivo**.
+
+### Población
+
+558 ramas remotas · **464 en `main`** · **94 vivas** · 0 indeterminadas (primera pasada).
+De 525 tickets derivables: 332 DENTRO · **71 FUERA** · 122 NO MEDIBLE → tras los merges, 68 FUERA.
+
+⚠️ `scrum-600-un-solo-front-documento` salía con **`+0`**: rama viva que no adelanta a `main` ni
+un commit. No es trabajo pendiente — es residuo. El tamaño es lo único que lo distingue de sus
+hermanas, y por eso la cifra va SIEMPRE con él.
+
+## 5 · Verificación
+
+- ✅ **CONTROL POSITIVO ENUMERADO** — 819, 816, 820 y 821 salen `EN RAMA VIVA`, las cuatro, con sha
+  de 40 hex, adelanto > 0 y fecha. En el guard va la lista a mano a propósito: un control derivado
+  del propio instrumento no caza que el instrumento deje de ver una familia entera.
+- ✅ **CONTROL NEGATIVO** — SCRUM-716 (`scrum-716-el-verde-ciego`, mergeada) sale `EN MAIN`, con
+  todas sus ramas `en-main` y adelanto 0. Es lo que separa «existe el nombre» de «hay trabajo».
+- ✅ **SIN RASTRO es un veredicto**: un número sin rama lo devuelve, y no se confunde con EN MAIN.
+- ⛔ **POR IDENTIDAD** — sobre el árbol vivo, SCRUM-2 no recoge `…-rebasada-2` ni
+  `codeowners-zona-roja-v2`, y el discriminador se ejercita sobre los tres casos conocidos.
+- 🔴 **SUELO** — cero ramas vivas **no** se lee como «está todo mergeado»: se declara sospechoso,
+  porque es indistinguible de un clasificador que contesta «dentro» a todo. Se exige además
+  `enMain > 0`: un instrumento que sólo sabe decir «viva» tampoco ha clasificado nada. Y el suelo
+  se ejercita **sin árbol**, con las cuatro formas, para que su silencio sobre el árbol bueno
+  signifique algo.
+
+## 6 · Límites declarados
+
+- **Este censo no lee Jira**, y sigue sin leerlo: la cifra de arriba la produjo esta sesión
+  cruzando a mano. El CLI dice de qué mitad responde y de cuál no, en vez de fingir que sabe.
+- **`SIN RASTRO` no es «no hay trabajo»**: una rama mergeada Y BORRADA deja el ticket sin rama y su
+  trabajo dentro (medido en SCRUM-637 con `scrum-653-dos-firmas`). Por eso el dato se lee junto a
+  las otras dos fuentes, nunca solo.
+- **El import cierra un ciclo** (`censo-tablero-vs-arbol` → `_rastro-del-ticket` →
+  `_censo-alcanzabilidad` → `censo-tablero-vs-arbol`). Es benigno —todas son declaraciones de
+  función y ninguna se usa en la evaluación del módulo— y está **comprobado ejecutándolo**, no
+  razonado. Queda declarado aquí porque la alternativa era una cuarta copia de `numeroDeRama`.
+- **En la tanda se mide con `traer: false`**: contra el último `fetch`, no contra el remoto en
+  vivo. El CLI sí trae.
+
+## 7 · Lo que NO se ha tocado
+
+`_censo-alcanzabilidad.mjs` · `_censo-reparto.mjs` · `_censo-tickets.mjs` (el motor) · ninguna rama
+ajena · el tablero · ningún ticket cerrado. Sólo `ls-remote` y `merge-base`, lectura.
+
+
+---
+
+# APÉNDICE · 8-sep-2026 · SCRUM-804b · El caso INVERSO: trabajo vivo sobre tickets CERRADOS
+
+**Ancla:** `origin/main` = `15b42968cff2dffdeb1e4ec6ab6ed733b3908ce1`, congelado a las
+**2026-09-08T05:51:28Z**. Todo lo de abajo se mide contra ese objeto.
+**Tablero:** Jira **en vivo**, no la foto versionada (que llega hasta SCRUM-818).
+
+> ⛔ No se ha borrado ninguna rama, no se ha cerrado ni reabierto nada en Jira. Sólo `ls-remote`,
+> `merge-base`, `log` y lectura de Jira.
+
+## Población
+
+554 ramas remotas · **468 en `main`** · **86 vivas** · 0 indeterminadas.
+De las 86 vivas, 81 llevan número de ticket → **64 tickets**, de los cuales **54 están CERRADOS**.
+
+**69 ramas vivas cuelgan de esos 54 tickets cerrados.**
+
+## 🔴 El corte (a)/(b) que pedía el encargo — y por qué sale degenerado
+
+| | |
+| --- | --- |
+| **(a)** rama viva con **0** commits por delante | **0** |
+| **(b)** rama viva **CON** commits por delante | **69**, sobre 54 tickets |
+
+**(a) es cero POR CONSTRUCCIÓN, y conviene decirlo antes de que parezca un hallazgo.** Una rama
+con 0 commits por delante de `main` es, por definición, alcanzable desde `main` — o sea, el
+clasificador la llama `en-main` y no `viva`. El «residuo que se borra y ya» **no vive en la lista
+de vivas: son las 468 refs `en-main`**, que es donde hay que ir a limpiar.
+
+Y no es una deducción de sobremesa: se midió. **Cero ramas vivas con `+0`** en toda la población,
+que es justo la coherencia que el árbitro del guard exige (`viva` ⟹ adelanto ≥ 1).
+
+## ⚠️ Lo que este censo NO puede afirmar, y sin esto la lista se lee mal
+
+`merge-base --is-ancestor` mide **ASCENDENCIA, no CONTENIDO**. Una rama mergeada por *squash* o
+reescrita por *rebase* mete su contenido en `main` con SHAs distintos: por ascendencia sigue
+«viva», y su trabajo está dentro. Así que **de estas 69 no se puede decir «hay 69 trabajos
+perdidos»** — se puede decir que hay 69 puntas de rama que `main` no alcanza.
+
+Tres señales, medidas, que separan el grano:
+
+| señal | ramas |
+| --- | --- |
+| llevan el sufijo `-rebasada` / `-rebasada-N` (la convención de re-empuje de la casa) | **12** |
+| su ticket tiene **además** otra rama YA EN `main` → el trabajo entró plausiblemente por ella | **35** |
+| 🔴 su ticket **no tiene NINGUNA rama en `main`** | **34**, sobre **30 tickets** |
+
+**Los 30 del último grupo son la lista corta**, y son éstos:
+
+`37 · 38 · 161 · 166 · 172 · 198 · 215 · 216 · 222 · 223 · 224 · 234 · 240 · 253 · 255 · 268 ·
+270 · 275 · 309 · 312 · 329 · 340 · 381 · 390 · 397 · 412 · 440 · 566 · 606 · 683`
+
+Aun así, «sin rama hermana en `main`» **tampoco prueba** que el trabajo falte: pudo entrar por un
+commit directo o por un PR cuya rama se borró (medido en SCRUM-637 con `scrum-653-dos-firmas`).
+**Lo que zanjaría la pregunta es una comparación por CONTENIDO** —`git cherry` / patch-id, que
+marca los commits cuya versión equivalente ya está en `main`—. No se ha corrido: queda fuera de
+las herramientas que este encargo autorizaba, y es el paso siguiente natural.
+
+## La tabla — 69 ramas, 54 tickets cerrados, la más antigua primero
+
+Reparto por mes del último commit: **julio 15 · agosto 44 · septiembre 10**.
+Las cinco con más trabajo fuera: SCRUM-205 (+7) · SCRUM-300 (+7) · SCRUM-368 (+6) ·
+SCRUM-475 (+6) · SCRUM-37 (+5).
+
+*(La tabla completa, con ticket, título, rama, `+main`, fecha y autor, se entregó en el parte de
+la sesión; se resume aquí por los cortes que la hacen accionable.)*
+
+## Lo que esto sugiere hacer, sin hacerlo
+
+1. **Las 468 refs `en-main`** son el residuo de verdad: se borran sin pensar. `ls-remote` dice que
+   más de cuatro de cada cinco ramas del remoto ya están dentro.
+2. **Los 30 tickets sin hermana en `main`** merecen una pasada por contenido antes de tocar nada.
+3. **Nada de esto cierra ni reabre un ticket.** El tablero lo lleva el asesor.
+
+
+---
+
+# APÉNDICE · 8-sep-2026 · SCRUM-804b (2ª parte) · La comparación por CONTENIDO
+
+**Ancla:** `origin/main` = `24f8cb4dcfd1dba2c9d9d857880952639273f214`, congelada a las
+**2026-09-08T06:02:00Z**. Jira **en vivo**.
+
+Sobre las **34 ramas de los 30 tickets CERRADOS** que la primera parte dejó como lista corta —los
+que no tenían ninguna rama en `main`—, autorizado `git cherry` / `patch-id`.
+
+---
+
+## 🔴 LA CORRECCIÓN DE MÉTODO, que es lo que más vale de este encargo
+
+### Lección 1 · `git cherry` contesta otra pregunta
+
+> **`git cherry` contesta «¿está este parche exacto en `main`?», no «¿está este trabajo en
+> `main`?».** Un rebase conserva el trabajo y destruye el patch-id.
+
+Al rebasar sobre un `main` que se ha movido, el contexto del diff cambia; con el contexto cambia
+el patch-id; y con el patch-id cambiado `cherry` marca `+` un commit cuyo trabajo está dentro.
+
+**Un recuento de `+` a pelo habría dado 30 falsas alarmas, cuatro de ellas fiscales.**
+
+### Lección 2 · Cómo se cazó: CONTROL DE RESPUESTA CONOCIDA
+
+No se cazó razonando: se cazó porque **una de las respuestas se sabía de antemano**.
+
+`git cherry` marcó `+` el commit *«SCRUM-234: cerrojo en la reserva de serie + censo de las dos
+formas correctas»*. Y ese cerrojo **está en `main`**, en
+`src/modules/invoicing/domain/invoiceNumber.service.ts:427`:
+
+```
+await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;
+```
+
+Es el cerrojo **sobre el que se construyó SCRUM-814 ese mismo día**. El instrumento decía que
+faltaba algo que la sesión había leído y usado horas antes. Sin esa respuesta conocida, el `+`
+habría pasado por hallazgo.
+
+> Un instrumento nuevo se estrena contra un caso cuya respuesta ya se sabe. Si no hay ninguno,
+> no se sabe si mide.
+
+### 📌 Y consta, con fecha
+
+**El asesor autorizó `git cherry` como decisivo el 8-sep-2026, y se equivocó.** Queda escrito aquí
+a petición suya: la autorización era razonable y era falsa, y lo que la corrigió fue medir, no
+discutir. La misma forma que ya arregló el corte (a)/(b) de la primera parte.
+
+### Lo que SÍ contestó la pregunta
+
+Tres señales, y ninguna sola decide:
+
+| señal | qué aporta |
+| --- | --- |
+| `censarTicket` (SCRUM-388) | commits de `main` cuyo **asunto NOMBRA** el ticket |
+| merges de `main` que nombran una rama suya | **por dónde entró** el trabajo |
+| lectura del **contenido** (ficheros y mecanismo) | el árbitro final |
+
+---
+
+## El resultado: 28 TODO DENTRO · 2 PARCIAL · 0 NADA DENTRO
+
+**Ningún ticket cerrado perdió su trabajo.** Los cuatro fiscales que se pidieron primero:
+
+| Ticket | `cherry` | Veredicto | Entró por |
+| --- | --- | --- | --- |
+| SCRUM-215 · Factura a particular = rechazo | 3 `+` / 2 `−` | ✅ TODO DENTRO | PR #314, `scrum-215-rebasada` |
+| SCRUM-216 · R1 sin TipoRectificativa | 2 `+` / 0 `−` | ✅ TODO DENTRO | PR #351, `scrum-216-consolidar-rebasada` |
+| SCRUM-222 · Deriva de esquema en producción | 3 `+` / 0 `−` | ✅ TODO DENTRO | PR #788/#789, `scrum-222-deriva-al-dia` |
+| SCRUM-234 · Carrera de numeración | 1 `+` / 2 `−` | ✅ TODO DENTRO | PR #362, `scrum-234-carrera-numeracion-medida` |
+
+**Las tres ramas por las que entraron están BORRADAS del remoto.** Ésa es la razón de que la
+primera parte los viera «sin hermana en `main`»: la rama que entró se borró y sobrevivió la
+original superada. Es el caso que SCRUM-637 dejó declarado con `scrum-653-dos-firmas`, ahora
+medido cuatro veces más.
+
+**Sobre SCRUM-215 en concreto:** su trabajo está en `main` —16 menciones de `Destinatario` en
+`verifactu.service.ts`, más `tests/scrum215-sin-destinatario.test.mjs` y
+`public/dashboard/js/tipoDestinatarioPendiente.js`—. ⚠️ Por tanto **el defecto de SCRUM-729 (el NIF
+del destinatario no viaja al PDF) NO se explica por «215 se cerró sobre nada»**: es otro hueco, y
+sigue abierto.
+
+## Los dos PARCIAL
+
+**🔴 SCRUM-340 · el arreglo entró; su guard y su evidencia, no.**
+`founding.ts` de `main` tiene el arreglo y es correcto
+(`PLAZA_OCUPADA = { plan: 'founding', subscriptionStatus: 'active' }`). Pero **no están en `main`**:
+
+- `tests/scrum340-contador-plazas-reales.test.mjs`
+- `docs/master/SCRUM-340.md`
+
+Un arreglo sin trinquete. Es el hallazgo accionable del barrido.
+
+**SCRUM-38 · trabajo dentro, rama vieja superviviente.** Sus tres ficheros clave
+(`scripts/seed-staging.mjs`, `.mcp.json`, `docs/QA/SUITE_REGRESION.md`) existen en `main`; el diff
+contra la rama es sobre todo `main` habiendo evolucionado desde el 12-jul. Sin entrada de máster
+propia. **No requiere acción de código**; su rama queda anotada como candidata a borrado — que lo
+decide y lo ejecuta el asesor, no esta sesión.
+
+## Suelo
+
+`git cherry` **nunca** devolvió cero líneas sobre una rama con commits no-merge por delante, y las
+cuentas cuadran ticket a ticket: `cherry` == commits sin merges (`rev-list --count --no-merges`).
+No hubo ceguera.
+
+⛔ Ninguna rama borrada. Ningún ticket cerrado ni reabierto.
+
+---
+
+# APÉNDICE · 8-sep-2026 (tarde) · Los suelos que sobreviven al auto-borrado de ramas
+
+**Fecha:** 8-sep-2026 · **Carril:** proceso · censo · **Gate:** sin gate — corre en `npm test`
+**Medido contra:** `origin/main` = `da5ac06ac169fca5d3692a63b10b01a6aed7d3d6` · 2026-09-08T10:33:34Z
+**Fichero tocado:** `tests/scrum804-la-rama-viva.test.mjs` (y esta entrada). Nada más.
+
+> 🛑 **ESTE APÉNDICE NO CIERRA NADA** ni toca el instrumento. `scripts/_rastro-del-ticket.mjs` y
+> `scripts/censo-tablero-vs-arbol.mjs` quedan **exactamente como estaban**: acertaban.
+
+## 0 · El síntoma que llegó, y la hipótesis que hubo que matar
+
+Llegó como «CI ve 100 ramas y en local se ven 553; sus suelos caen por población corta», con la
+hipótesis de que el censo pedía las ramas a la API de GitHub sin paginar —100 es el tamaño de
+página por defecto—. **Se paró y se midió antes de arreglar nada.** Murió por dos sitios:
+
+| medición | resultado |
+| --- | --- |
+| `grep -rn "api.github.com\|gh api\|octokit\|GITHUB_TOKEN" scripts/ tests/ package.json` | **0 resultados.** El censo lee `git for-each-ref refs/remotes/origin/` — [censo-tablero-vs-arbol.mjs:78](../../scripts/censo-tablero-vs-arbol.mjs#L78), [_rastro-del-ticket.mjs:150](../../scripts/_rastro-del-ticket.mjs#L150), [_censo-alcanzabilidad.mjs:185](../../scripts/_censo-alcanzabilidad.mjs#L185). Un tamaño de página no trunca lo que nunca se pide por red |
+| `git ls-remote --heads origin \| wc -l`, dos veces con 20 min de diferencia | **102**, luego **105**. Un truncamiento por paginación da 100 clavado siempre; esto es una cuenta real que se mueve |
+
+**El sentido era el contrario: CI tenía razón y el local estaba rancio.** `for-each-ref` lee refs
+locales, que conservan las ramas borradas hasta que alguien poda; CI clona en limpio
+(`actions/checkout@v4` + `fetch-depth: 0`) y por eso veía el remoto de verdad. Y los 26 worktrees
+de esta máquina **comparten un único almacén de refs**: dos sesiones que miden «por separado» leen
+el mismo almacén, así que los 553 eran una medición, no dos.
+
+## 1 · La causa real: el auto-borrado de ramas al mergear
+
+Activado ese mismo día. `_censo-alcanzabilidad.mjs:179` dejó escrito que el 6-sep `ls-remote` daba
+**491**; el 8-sep daba **105**. Se llevó ~390 ramas mergeadas. Las refs dentro de `main` pasaron de
+**464** (cifra que este mismo fichero escribió esa mañana) a **15**.
+
+Tres controles de `tests/scrum804-la-rama-viva.test.mjs` cayeron. **Ninguno por un defecto:**
+
+| control | qué exigía | por qué cayó |
+| --- | --- | --- |
+| positivo enumerado | «SCRUM-821 tiene rama en el remoto con su número» | se mergeó y **su rama se borró** |
+| árbitro | `interrogadas.length >= 5` entre 819, 816, 820, 821, 716 | quedaban **4** (821 y 716 sin rama) |
+| negativo | `soloMergeadas.length > 10`, con «había 464 ramas dentro de `main` al escribir esto» | quedaban **9**. Esa cifra se escribió esa mañana: **caducó en horas** |
+
+`SCRUM-821 → SIN RASTRO` es hoy la respuesta **correcta**. Y el instrumento **ya lo tenía escrito**:
+[_rastro-del-ticket.mjs:295](../../scripts/_rastro-del-ticket.mjs#L295) dice literal que «una rama
+mergeada Y BORRADA deja el ticket sin rama y su trabajo dentro de `main`». El módulo lo sabía; el
+test afirmaba lo contrario.
+
+## 2 · 🔴 Por qué cambiar lo que el guard EXIGE no viola la regla 41
+
+La regla 41 —«guard en rojo → se arregla el código, nunca el guard»— **presupone que lo que el
+guard exige sigue siendo cierto.** Aquí la premisa dejó de serlo.
+
+> **Un guard que exige que existan ramas ya borradas no protege nada: AFIRMA UN HECHO FALSO.
+> Cambiar lo que exige NO es relajarlo cuando lo que exigía ha dejado de existir.**
+
+La distinción que separa esto de una relajación: no se ha bajado ningún umbral para que pase. Se
+han **retirado los umbrales** y se han sustituido por igualdades contra lo que `git` contesta en la
+misma pasada. El guard de hoy es más estricto que el de ayer, no menos: el `> 100` no cazaba que
+el censo perdiera ramas concretas mientras el total siguiera cómodo; la igualdad sí.
+
+## 3 · El anclaje nuevo: `git log --merges`, que el auto-borrado no puede tocar
+
+Un merge de PR deja rastro **permanente** en `main`: el commit de merge y su segundo padre siguen
+siendo alcanzables aunque la rama desaparezca el mismo día. Hoy son **1.055 merges con nombre de
+rama y número de ticket**, y esa población **sólo puede crecer**.
+
+| control | antes | ahora |
+| --- | --- | --- |
+| SUELO | `resumen.total > 100` («había 558»), `enMain > 0`, `vivas > 0` | **igualdad** con `for-each-ref`, `--merged` y `--no-merged` en la misma pasada. Sin cifras |
+| POSITIVO | `LOS_CUATRO = [819, 816, 820, 821]` | **no nombra a nadie**: re-deriva la agrupación con git en crudo y exige que el censo no **pierda** ni **invente** ninguna rama |
+| ÁRBITRO | 5 tickets enumerados, `>= 5` ramas | población de `git log --merges` + **respuesta conocida** (el segundo padre de un merge está dentro de `main` por construcción) + coherencia sobre **las 104 ramas**, no sobre 5 |
+| NEGATIVO | `soloMergeadas.length > 10` | igualdad de conjuntos contra `--merged`, más un sujeto de la historia de merges para cuando no quede ninguna ref mergeada |
+
+El árbitro va **a granel con un solo `git rev-list`** (1.660 merges sin 1.660 procesos) y contrasta
+ese atajo contra `merge-base --is-ancestor` en los dos sentidos, para que no se crea a sí mismo.
+
+**El positivo enumerado no se ha debilitado al dejar de nombrar tickets: se ha ensanchado.** Antes
+comprobaba que se vieran 4 tickets; ahora comprueba que no se pierda **ninguna** de las 99 ramas
+con forma canónica, que es el modo de fallo que la enumeración quería cazar.
+
+## 4 · 🔴 El control que evita la sexta vez: el guard se vigila a sí mismo
+
+Los tres que cayeron tenían la misma forma —`> 100`, `>= 5`, `> 10`—: tres cifras escritas a mano,
+las tres **bien medidas el día que se escribieron**, las tres caducadas por un cambio de política
+que ninguna podía prever. «No escribas umbrales a mano» como comentario es un recordatorio, y los
+recordatorios se incumplen.
+
+El último test recorre **su propia fuente con AST** y cae si encuentra cualquier comparación
+relacional contra un literal numérico distinto de `0`. El `0` es la única excepción y está
+justificada: `x.length > 0` no afirma una magnitud del árbol, dice «hay población o estoy ciego».
+
+**AST y no `grep`**, por la razón de siempre: un guard de texto se caza a sí mismo en el párrafo
+que explica la prohibición — ese párrafo lleva un `> 100` escrito.
+
+**Su rojo, ejecutado:** inyectado `historia.length > 0` → `> 10`, la tanda cae con
+
+```
+🔴 UMBRAL ESCRITO A MANO en este fichero:
+   · scrum804-la-rama-viva.test.mjs:238 · historia.length > 10
+```
+
+Restaurado byte a byte y verificado por `sha256`
+(`5ff45eddfea9e8f6bd910828d7cafaca599934db88f664ab4f99061940a640d9` antes y después).
+
+**Y cazó un caso mío antes que el inyectado:** `partes.length < 3` en el parseo de `git log`. Es una
+constante de formato, no un umbral del árbol — pero **no se le puso excepción**: una lista de
+excepciones es deuda. Se reescribió el parseo para no necesitar el número.
+
+## 5 · ⚠️ Hallazgo de otro carril: `scrum637:164` está en la misma cuenta atrás
+
+Medido de paso, **no arreglado** (regla 9: hallazgo de otro carril se reporta):
+
+| dónde | qué exige | hoy | veredicto |
+| --- | --- | --- | --- |
+| [scrum637-la-rama-que-nadie-mira.test.mjs:164](../../tests/scrum637-la-rama-que-nadie-mira.test.mjs#L164) | `dentro.length > 10` — ramas **dentro de `main`** | **14** | 🔴 **MISMA FORMA Y MISMA POBLACIÓN.** Cuenta justo lo que el auto-borrado destruye. Margen: **4 ramas**. Cae en los próximos merges |
+| [scrum775-suelo-que-no-dispara.test.mjs:264](../../tests/scrum775-suelo-que-no-dispara.test.mjs#L264) | `real.conectados.length > 10` y `real.guards > 20` | verde | ⚠️ misma **forma** (magnitud escrita a mano), **población distinta**: cuenta guards del árbol, que sólo crecen. No está en cuenta atrás |
+
+La distinción importa: lo que pone a `scrum637` en peligro no es tener un número escrito, es tener
+un número escrito **sobre una población que una política del repositorio está vaciando**.
+
+## 6 · Verificación
+
+- **9/9 en verde**, `# skipped 0`. Los 8 controles reescritos pasan sobre el árbol vivo.
+- **El rojo del control nuevo, ejecutado y pegado** (§4), con restauración verificada por `sha256`.
+- **Tanda completa en verde**: los 3 rojos que frenaban los PR quedan en 0.
+- ⛔ No se ha podado el almacén de refs: es **compartido por los 26 worktrees**, y podar aquí se lo
+  poda a las otras cinco sesiones. Sólo `git fetch origin main`.
+
+## 7 · Lo que NO se ha tocado
+
+`scripts/_rastro-del-ticket.mjs`, `scripts/censo-tablero-vs-arbol.mjs`, `scripts/_censo-reparto.mjs`
+y `scripts/_censo-alcanzabilidad.mjs` quedan intactos: el defecto no estaba en ellos. Ninguna rama
+borrada, ningún ticket cerrado ni reabierto, ninguna dependencia nueva.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-804c · El barrido de cierre: los 112 abiertos de hoy, en tres clases
+
+**Medido contra:** `origin/main` = `07ccd16c92e37350e785526232d03b7f0c637684` · 2026-09-09T16:03:28+00:00
+**Rama:** `scrum-804c-barrido-de-cierre` · **Carril:** proceso · censo · **Gate:** sin gate
+
+> ⛔ **ESTE APÉNDICE NO CIERRA NADA Y NO TOCA EL TABLERO.** Ni una transición, ni un comentario en
+> Jira. Entrega la tabla para que el fundador decida con ella delante.
+
+---
+
+## 0 · Obligación 0, y su contraste
+
+```
+git fetch origin --prune
+git ls-remote --heads origin | wc -l   ->  120   <- la poblacion de ramas
+git ls-remote origin refs/heads/main   ->  07ccd16c92e37350e785526232d03b7f0c637684
+git rev-parse origin/main              ->  07ccd16c92e37350e785526232d03b7f0c637684   (concuerdan)
+```
+
+Y el contraste que importa, porque sin él todo lo de abajo se mide contra un árbol que no existe:
+**el worktree desde el que se arrancó iba 145 commits por detrás de `origin/main`**, y su copia de
+`docs/master/` tenía **470** ficheros contra **481** en `main` — este mismo fichero, **617 líneas
+contra 751**. Anexar allí habría **borrado en silencio el apéndice del 8-sep**. Por eso todo lo que
+sigue se mide y se escribe sobre un árbol limpio en `origin/main`, y nada sobre el árbol de arranque.
+
+## 1 · La población: 163, 165 y 112 son tres números buenos de tres días distintos
+
+| número | de dónde sale | cuándo |
+|---|---|---|
+| **163** | el TÍTULO de SCRUM-804, escrito a mano | creado el **6-sep-2026 23:47** |
+| **165** | la medición de la cabecera de esta entrada | **7-sep-2026** |
+| **112** | `totalCount` de Jira en vivo, misma JQL | **15-sep-2026** |
+
+La JQL es la misma en los tres casos (`project = SCRUM AND statusCategory != Done`), así que
+**ninguno es erróneo: el tablero se movió**. El bueno para trabajar hoy es **112**, por la razón que
+ya escribió este ticket el 8-sep: *un número sin su fecha no es una medición, es una foto que nadie
+sabe de cuándo*. Por estado, hoy: **Tareas por hacer 54 · En curso 29 · Acción del fundador 18 · En
+revisión 11 = 112**. Rango `SCRUM-16 … SCRUM-848` (el 7-sep llegaba al 809). Épicas abiertas: **6**.
+
+## 2 · ⛔ Lo que NO he escrito, porque ya existía
+
+El encargo describía un censo que **este ticket ya construyó**. Reusado tal cual, sin tocar una línea:
+
+| pieza | qué aportó al barrido |
+|---|---|
+| `scripts/censo-tablero-vs-arbol.mjs --json` | los 498 tickets derivables del árbol, con sus commits, entrada y ramas |
+| `scripts/_rastro-del-ticket.mjs` (SCRUM-804) | la dimensión `EN MAIN` / `EN RAMA VIVA` / `SIN RASTRO` |
+| `tests/_censo-tickets.mjs` (SCRUM-388) | el motor y su suelo |
+| `tests/scrum835-credenciales-en-el-historial.test.mjs` | corrido aparte, ver §6 |
+
+Corrido sobre `origin/main` = `07ccd16c`: **`fiable: true` · `ramasFiables: true` · `suelo: []` ·
+`sueloRamaViva: []`** · 498 tickets censados · 481 entradas de máster · 121 ramas traídas.
+
+## 3 · 🔴 Lo que este apéndice AÑADE: el corte (a)/(b), que el instrumento declara que NO sabe hacer
+
+El límite está escrito en el apéndice del 8-sep de este mismo fichero, y es exacto:
+
+> **`SIN RASTRO` no es «no hay trabajo»**: una rama mergeada Y BORRADA deja el ticket sin rama y su
+> trabajo dentro.
+
+Medido hoy: **SCRUM-16 sale `rastro: SIN RASTRO`** y tiene seis commits suyos en `main` desde agosto.
+O sea que el veredicto de ramas, leído solo, **confunde «nunca se empujó» con «se mergeó y la
+borraron»** — que es justo el defecto que el encargo manda separar.
+
+El discriminador que lo parte es el **commit de merge**, que el autoborrado no puede tocar (la misma
+ancla que eligió el apéndice del 8-sep por la tarde para los suelos):
+
+- **(b) hubo rama y se mergeó** → existe en `origin/main` un `Merge pull request #N from
+  lwislg99/scrum-<n>-…` que **nombra** una rama de ese ticket. El nombre sobrevive al borrado porque
+  vive en el asunto del commit, no en la ref.
+- **(a) nunca se empujó** → ni rama viva, ni merge que la nombre, ni commit de autoría suyo.
+
+| causa | tickets |
+|---|---|
+| **(b) hubo rama, se mergeó, ya no está** | **51** |
+| **(a) nunca se empujó** | **51** |
+| tiene rama hoy en el remoto | **10** |
+| **suma** | **112** |
+
+⚠️ **Y una precisión que el encargo pedía y el dato no sostiene entera:** el autoborrado lleva activo
+desde el 8-sep, pero **la mayoría de esos 51 se mergearon mucho antes** (SCRUM-16 por el PR #579, el
+10-ago). Sus ramas no las quitó el autoborrado. Lo que las quitó se ve en la cifra: el 8-sep este
+ticket midió **558 ramas remotas**; hoy hay **120**. Han desaparecido ~438 en una semana, y eso es una
+limpieza, no una serie de merges. **(b) aquí significa «hubo rama y su trabajo entró», no «lo borró el
+autoborrado».** Distinguir quién la borró exige el registro de eventos de GitHub, que no es árbol.
+
+## 4 · ⚠️ El instrumento lee `refs/remotes/`, y hoy es fiable SÓLO porque se prunó antes
+
+`_rastro-del-ticket.mjs` resuelve las ramas con `for-each-ref refs/remotes/origin/`, que son refs
+**locales** y conservan ramas ya borradas hasta que alguien poda. Comprobado antes de creerle nada:
+
+```
+git ls-remote --heads origin            -> 120
+git for-each-ref refs/remotes/origin/   -> 121   (las 120 + refs/remotes/origin/HEAD)
+sobrantes reales                        -> 0
+```
+
+Están en sync **porque la obligación 0 prunó**. Su `traer: true` hace `fetch` **sin `--prune`**: en un
+árbol sin podar ese censo daría por vivas ramas que ya no existen. No es un defecto que arreglar aquí
+—hallazgo de otro carril, regla 37— pero sí una precondición que hay que cumplir antes de leerlo.
+
+## 5 · El criterio de cada clase
+
+| clase | exige |
+|---|---|
+| 🟢 **CERRABLE** | commit de autoría suyo en `origin/main` (con SHA) **+** entrada en `docs/master/` **+** ninguna rama viva sin mergear **+** la entrada **no** se autodeclara sin construcción |
+| 🟡 **DUDOSO** | hay rastro y algo no cuadra. Cada fila dice **qué** |
+| 🔴 **VIVO** | no hay trabajo suyo en `main`: o no se empujó nunca, o vive en una rama sin mergear |
+
+**Autoría, no mención.** La referencia tiene que ir en la CABECERA del asunto —`SCRUM-729 (paso 6):`,
+`docs(SCRUM-331):`, `feat(SCRUM-333):`— y no después de los dos puntos. Sin esa distinción,
+`SCRUM-710c: el trinquete era un cepo` contaba como trabajo del 331 por nombrarlo de pasada.
+
+🔴 **Y la entrada de máster no basta, porque algunas declaran que no construyeron nada.** Aplicado el
+filtro textual que este ticket midió el 7-sep, salieron **8 candidatos**. **Los leí los ocho**: seis lo
+dicen de verdad y salen de 🟢 — **16, 280, 307, 322, 323, 328**. Dos eran **falsos positivos**, y los
+retiré a mano en vez de dejar que el filtro decidiera:
+
+| retirado | por qué NO es «no construí» |
+|---|---|
+| **SCRUM-634** | su «cero código» habla de los commits **ajenos** #883 y #885, no de su propio trabajo |
+| **SCRUM-827** | su «sólo LEE» es la fórmula de la **regla 38** (no modifica el camino fiscal) |
+
+## 6 · Verificación
+
+- ✅ **CONTROL POSITIVO DE (b)** — `SCRUM-848`: su merge `07ccd16c` es la punta de `main` y su rama
+  `scrum-848-tactil-ficha-trabajo` **no** está en el remoto. Sale (b), que es lo correcto.
+- ✅ **CONTROL POSITIVO DE (a)** — `SCRUM-729`: un ticket sin rama, sin merge que la nombre y sin commit
+  de autoría sale (a) y **no** se pliega a (b).
+- ✅ **CONTROL DE TOKEN** — `scrum-16` **no** recoge `scrum-161`, `scrum-166` ni `scrum-172`: el número
+  se compara con delimitador, nunca como subcadena. Ejercitado sobre los tres.
+- ✅ **DOS SONDAS INDEPENDIENTES, Y CONCUERDAN.** El censo da `119 ramas / 17 en main / 102 vivas`; la
+  medición directa con `merge-base --is-ancestor` sobre la salida de `ls-remote` da `120 / 18 / 102`. La
+  de diferencia es **`main` misma**, que una cuenta como rama y el otro excluye. **Las 102 vivas coinciden.**
+- ✅ **CRUCE DE VEREDICTOS** — de los 112, **53 están en la población del censo**, y en los 53
+  coincidimos: **0 discrepancias**. Los otros 59 faltan por el límite que el propio censo declara: *su
+  población nace del ÁRBOL*, y un ticket que nadie tocó no llega a entrar.
+- ✅ **LOS 35 🔴 DE CAUSA (a), CONFIRMADOS POR LA SEGUNDA SONDA**: los 35 están **ausentes** del censo,
+  que deriva su población de ramas + entradas + commits. Cero rastro por dos caminos distintos.
+- ⚠️ **Los 4 que el censo llama `ENTERO` y aquí salen 🔴** (707, 809, 813, 829) **no son una
+  discrepancia**: su `fuentes` es `[ramas]` y su `rastro` es `EN RAMA VIVA`. Es el falso positivo que el
+  apéndice del 8-sep documentó y que su propia dimensión nueva ya corrige. La clase concuerda con
+  `rastro`, no con el `veredicto` crudo.
+- ✅ **SCRUM-835, corrido aparte porque lo pidió el encargo**:
+  `tests/scrum835-credenciales-en-el-historial.test.mjs` sobre `07ccd16c` →
+  **5/5 pass · 0 fail · 0 skipped · exit 0**. **9.920 blobs alcanzables · 387 binarios · 0 saltados por
+  tamaño · 0 hallazgos.** Su control positivo **sembrado** —comitear una credencial sintética, borrarla
+  al commit siguiente y comprobar que el barrido la sigue viendo— pasa. Y la población barrida es
+  **superconjunto de la de CI**: `rev-list --objects --all` alcanza también las refs de los ~26
+  worktrees. **Cero credenciales en el historial, y el cero está respaldado.**
+
+## 7 · 🟢 CERRABLE — **40**
+
+Trabajo suyo en `main` **con SHA de 40**, entrada de máster, y ninguna rama viva sin mergear.
+
+| ticket | estado en el tablero | SHA del commit de autoría | fecha | entrada |
+|---|---|---|---|---|
+| SCRUM-273 | Tareas por hacer | `1809690725b20043308b65ff771d89db259f1f9a` | 2026-08-20 | `docs/master/SCRUM-273.md` |
+| SCRUM-331 | Acción del fundador | `08ff895abf8c9afd0687d1e4b206a0ac09e965c9` | 2026-08-20 | `docs/master/SCRUM-331.md` |
+| SCRUM-333 | Acción del fundador | `a7198cf771a22221ff1b901cd0137be35be85ad2` | 2026-08-20 | `docs/master/SCRUM-333.md` |
+| SCRUM-512 | Acción del fundador | `c79bb4a7fde5bc2446abeb650286485d7af85ec3` | 2026-09-07 | `docs/master/SCRUM-512.md` |
+| SCRUM-567 | En revisión | `b3220e3f506a534f2702e80ec9a23fa5381fc849` | 2026-08-20 | `docs/master/SCRUM-567.md` |
+| SCRUM-568 | En revisión | `8554293e1d2027d158ee1e9bf30fe3d44dabcd79` | 2026-08-20 | `docs/master/SCRUM-568.md` |
+| SCRUM-600 | En curso | `a72d4b777562743c7490fdd5681a5a1f2bc64ee7` | 2026-09-08 | `docs/master/SCRUM-600.md` |
+| SCRUM-613 | Acción del fundador | `2bcd39981275255f224657876b55e224acb3b4ae` | 2026-08-24 | `docs/master/SCRUM-613.md` |
+| SCRUM-626 | Tareas por hacer | `e5ef45a4024ac831e0e0169a244299ac375dc911` | 2026-09-08 | `docs/master/SCRUM-626.md` |
+| SCRUM-632 | Tareas por hacer | `2b6d0a24bc904ef8e7177bfef3b57bcaea0d4104` | 2026-09-08 | `docs/master/SCRUM-632.md` |
+| SCRUM-634 | Tareas por hacer | `aea68989cc33efbecd7088379d404e64aaf0013e` | 2026-09-01 | `docs/master/SCRUM-634.md` |
+| SCRUM-637 | En curso | `efd4618dac9d6f0c20ac58af006f1fdc1707add3` | 2026-09-08 | `docs/master/SCRUM-637.md` |
+| SCRUM-638 | Tareas por hacer | `cfdd74694012f11ff6d84264b0b25d91940d75dc` | 2026-09-01 | `docs/master/SCRUM-638.md` |
+| SCRUM-644 | Tareas por hacer | `19ea5a4052340cbe9598451c9ede91f2c1a07170` | 2026-09-02 | `docs/master/SCRUM-644.md` |
+| SCRUM-654 | Acción del fundador | `36d685ff8cc2e551bbcfbff95fc18d42fcc48c0f` | 2026-09-02 | `docs/master/SCRUM-654.md` |
+| SCRUM-674 | En curso | `96e36cb8050fa4494681897f3abef54cab6858dd` | 2026-09-02 | `docs/master/SCRUM-674.md` |
+| SCRUM-694 | Tareas por hacer | `c71635ce15066fba817a7f2f19ea9637ba7f0e9d` | 2026-09-02 | `docs/master/SCRUM-694.md` |
+| SCRUM-726 | En curso | `8f6e0f08831440e24ad36e973271dcfab4169905` | 2026-09-04 | `docs/master/SCRUM-726.md` |
+| SCRUM-762 | En revisión | `09ce900808ab774affddb88cb261635738f91708` | 2026-09-07 | `docs/master/SCRUM-762.md` |
+| SCRUM-764 | En curso | `17144978c8859ad79b4d1e419f929e0e6a81c40b` | 2026-09-07 | `docs/master/SCRUM-764.md` |
+| SCRUM-766 | En curso | `bb78ade7119ec4dd1177acd2153c30a47d9810e5` | 2026-09-08 | `docs/master/SCRUM-766.md` |
+| SCRUM-780 | En revisión | `100735c75f0a3a0ef982b2375bbab27b82392167` | 2026-09-07 | `docs/master/SCRUM-780.md` |
+| SCRUM-782 | En revisión | `1eda1a6ea3af4ada3eb8fb2770a039b082967e30` | 2026-09-06 | `docs/master/SCRUM-782.md` |
+| SCRUM-787 | En curso | `d61f3feafdc6fbc014385fb86cf14390dc05974f` | 2026-09-06 | `docs/master/SCRUM-787.md` |
+| SCRUM-788 | En revisión | `dfe37cc2fb7c64a3dbfb78710526715e07abba15` | 2026-09-06 | `docs/master/SCRUM-788.md` |
+| SCRUM-790 | En revisión | `10225d66de530356885e362f4d173b7158052e96` | 2026-09-06 | `docs/master/SCRUM-790.md` |
+| SCRUM-801 | En curso | `ac2d17abae0eb233f7abee1ed970d6cbebe19351` | 2026-09-07 | `docs/master/SCRUM-801.md` |
+| SCRUM-804 | En curso | `a93b29eebbce82c2899d8773258afd4d6c83e4c8` | 2026-09-08 | `docs/master/SCRUM-804.md` |
+| SCRUM-805 | En revisión | `b39f3fde32d13e60bb1d2686239979b89c93b131` | 2026-09-07 | `docs/master/SCRUM-805.md` |
+| SCRUM-811 | En curso | `c34292577f5b52c83036db843a06118cbfeae6c3` | 2026-09-07 | `docs/master/SCRUM-811.md` |
+| SCRUM-815 | Acción del fundador | `36f06e093863ddc890529b96a1ae2f25b718807e` | 2026-09-08 | `docs/master/SCRUM-815.md` |
+| SCRUM-816 | En curso | `8981866ebb9ca906b992849a95f77438b9552c76` | 2026-09-08 | `docs/master/SCRUM-816.md` |
+| SCRUM-824 | Tareas por hacer | `2d821e57a6f16cb235cd080fd79301818ba454df` | 2026-09-08 | `docs/master/SCRUM-824.md` |
+| SCRUM-825 | Tareas por hacer | `6bf6ddbf48e479cb157a605bb72daced852a74bd` | 2026-09-08 | `docs/master/SCRUM-825.md` |
+| SCRUM-827 | Tareas por hacer | `a6eddd6f6e6b976b7478f5e5f65b9f83f63d8fba` | 2026-09-08 | `docs/master/SCRUM-827.md` |
+| SCRUM-828 | Tareas por hacer | `626ab5e237d44deccf11c701e3792805118d6aee` | 2026-09-08 | `docs/master/SCRUM-828.md` |
+| SCRUM-831 | En curso | `db60de753120dd03ae11fae3d789df9857d6fea0` | 2026-09-09 | `docs/master/SCRUM-831.md` |
+| SCRUM-840 | En curso | `9fe0a3e1212449197ddf894441407be05c6fb42e` | 2026-09-09 | `docs/master/SCRUM-840.md` |
+| SCRUM-844 | En curso | `0754a55e9fa3a91d9e280854414ce6b5762ebb8a` | 2026-09-09 | `docs/master/SCRUM-844.md` |
+| SCRUM-845 | En curso | `02cd8e41e5a8d3e2cf377d7be524af7c13f6bdcb` | 2026-09-09 | `docs/master/SCRUM-845.md` |
+
+## 8 · 🟡 DUDOSO — **33**
+
+Hay rastro y algo no cuadra. La columna de la derecha dice **qué**.
+
+| ticket | estado | SHA (si lo hay) | qué NO cuadra |
+|---|---|---|---|
+| SCRUM-16 | Tareas por hacer | `c09fc07a7659ac35645bc33a05a402c788edfc23` | la ENTRADA se autodeclara sin construcción («MEDICIÓN, NO CONSTRUCCI»): hay informe, no producto |
+| SCRUM-20 | Tareas por hacer | `3b927132d6f952e5b74bb92b0dadfa62932371e6` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-41 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-142 | Acción del fundador | — | sólo lo NOMBRAN commits de otros tickets (4); ningún trabajo propio |
+| SCRUM-276 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-280 | Tareas por hacer | `69dd7b036d8a01a56aa84386ea20a31ef26c5b91` | la ENTRADA se autodeclara sin construcción («cero construcci»): hay informe, no producto |
+| SCRUM-307 | Tareas por hacer | `44840ce6b848246655243b8dc82972986c877c13` | la ENTRADA se autodeclara sin construcción («esta tarea **solo lee»): hay informe, no producto |
+| SCRUM-322 | Tareas por hacer | `f35dc4627d1011fa3035b2eb37596d615ec906e3` | la ENTRADA se autodeclara sin construcción («Cero construcci»): hay informe, no producto |
+| SCRUM-323 | Tareas por hacer | `0c42404bcc0aafcddb417441f5c0534127a2a53f` | la ENTRADA se autodeclara sin construcción («Cero construcci»): hay informe, no producto |
+| SCRUM-326 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-328 | En curso | `80c24c3789972ccfbf9947c7dfc58a4504daa311` | la ENTRADA se autodeclara sin construcción («cero construcci»): hay informe, no producto |
+| SCRUM-332 | Acción del fundador | `143866cb05dbabaf44ebc950aa9fa21ac43090f5` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-334 | Acción del fundador | `4c4b8c59785b472f6ada786d1b98f973fc481019` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-340 | Tareas por hacer | `a4fd8efe007ccad9fc9803d3e8eb3daee0ae0dcc` | trabajo en main Y ADEMÁS rama viva sin mergear (scrum-340-contador-plazas-reales): falta algo por entrar |
+| SCRUM-523 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-525 | En curso | `6245478d1b225f284391ff23128186f77254b7b5` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-527 | Tareas por hacer | `94934a4024119313837312323af6c0fd7aed577f` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-534 | Acción del fundador | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-547 | En curso | `36386d4d590df47aa22c97f15fb8e101a0abe7ce` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-628 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (5); ningún trabajo propio |
+| SCRUM-663 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-665 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-711 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-736 | En curso | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-774 | Acción del fundador | — | sólo lo NOMBRAN commits de otros tickets (2); ningún trabajo propio |
+| SCRUM-786 | En curso | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-823 | En curso | `20f3a2f551e8a36f26f4a7a3755e91eafbb8672a` | trabajo en main Y ADEMÁS rama viva sin mergear (scrum-823-la-escalera-mira-el-estado): falta algo por entrar |
+| SCRUM-826 | Tareas por hacer | — | sólo lo NOMBRAN commits de otros tickets (1); ningún trabajo propio |
+| SCRUM-836 | En curso | `2a2bff77a5c8c08053451dddac410a138f990d35` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-837 | En curso | `0e8364e294cd62317bf0e5033da69c384dd99f73` | trabajo en main Y ADEMÁS rama viva sin mergear (scrum-837-decisiones-encerradas): falta algo por entrar |
+| SCRUM-839 | Tareas por hacer | `d2990977dd9801ddd6810cf91b5bbdd74f0359dd` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-846 | En revision | `322a2a47304b0a5862926334575869e95290ac2d` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+| SCRUM-848 | En curso | `404c0f59e6e6df63eed8d5022b40d25489661e4a` | trabajo en main pero SIN entrada en docs/master: no cumple el listón de 🟢 |
+
+## 9 · 🔴 VIVO — **39**
+
+Sigue habiendo trabajo pendiente de verdad. **Ninguno es (b)**, y no puede serlo: (b) significa que su
+trabajo entró en `main`, y eso lo sacaría de esta clase por construcción.
+
+| ticket | estado | causa | detalle |
+|---|---|---|---|
+| SCRUM-18 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-19 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-143 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-281 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-335 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-505 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-511 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-524 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-529 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-530 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-532 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-540 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-554 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-572 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-573 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-612 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-618 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-635 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-649 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-657 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-658 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-669 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-675 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-678 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-688 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-691 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-707 | Tareas por hacer | **rama viva sin mergear** | `scrum-707-estado-no-contemplado` · **+3 commits** sobre main · 2026-09-08 · `e9f66075179639c7bb4fd72c7443e2fbed2dfef7` |
+| SCRUM-732 | En curso | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-735 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-752 | Tareas por hacer | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-773 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-779 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-789 | Acción del fundador | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-809 | En revisión | **rama viva sin mergear** | `scrum-809-el-paywall-del-reves` · **+4 commits** sobre main · 2026-09-07 · `4cc758b6c715062f2368a31eabaeafadc5f39d5d` |
+| SCRUM-812 | En curso | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-813 | En revisión | **rama viva sin mergear** | `scrum-813-el-trinquete-de-zona-horaria` · **+9 commits** sobre main · 2026-09-08 · `2b317011fef4bf059d9261aaf1d0733e5998f5d8` |
+| SCRUM-829 | En curso | **rama viva sin mergear** | `scrum-829-una-sola-regla-rama-ticket` · **+6 commits** sobre main · 2026-09-09 · `faebb1e67003867674c58594a70170a7c57617e5` |
+| SCRUM-841 | En curso | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+| SCRUM-843 | En curso | **(a) nunca se empujó** | ni rama, ni merge que la nombre, ni commit de autoría; **ausente** del censo del árbol |
+
+## 10 · Límites declarados
+
+1. **🟢 quiere decir «el trabajo aterrizó y está registrado», NO «el ticket está resuelto».** Un commit
+   de autoría más una entrada no demuestran que se hiciera *todo* lo que el ticket pide. Los 🟢 son
+   **candidatos a mirar**, no una orden de transición — y esa decisión es del fundador, no del censo.
+2. **No he aplicado el criterio E1/E2** —mutación declarada, o guard vivo que asevera sobre producto—
+   que esta misma entrada estrenó el 7-sep y que es **más fuerte** que el de aquí. Exige una tanda
+   completa atribuida por fichero, y no cabía en esta tanda. **Con él, algunos 🟢 bajarían a 🟡.**
+3. **El filtro de «cero construcción» lo leí sólo donde disparó** (8 de 49 candidatos). No he leído las
+   41 entradas que no disparó, así que **no puedo afirmar que no haya más**. Es el hueco nº 2 del 7-sep,
+   sin cerrar.
+4. **La patología del SCRUM-727 sigue viva**: una entrada puede llevar el número de un ticket y hablar
+   de otro asunto. No hay discriminador mecánico barato — este ticket ya probó dos y los tiró.
+5. **(b) no distingue quién borró la rama.** Ver §3.
+6. **Mi propio error, declarado:** el primer detector de autoría exigía que el asunto EMPEZARA por
+   `SCRUM-N`, y esta casa escribe `docs(SCRUM-331):` y `feat(SCRUM-333):`. Daba **cero commits de
+   autoría** a tickets que sí los tenían, y lo cazó un control sobre cuatro casos conocidos, no la
+   lectura del resultado. El resultado se leía perfectamente creíble.
+
+## 11 · Lo que NO se ha tocado
+
+Jira (ni una transición, ni un comentario) · ninguna rama ajena · ningún `git stash` ·
+`prisma/schema.prisma` · `src/` · los instrumentos del censo · ningún guard. Sólo `fetch`, `ls-remote`,
+`merge-base`, `log` y `for-each-ref`: lectura. El único fichero escrito es éste.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-804d · Los tres filtros sobre los 40 🟢 — y sobreviven 5
+
+**Medido contra:** `origin/main` = `7bae70d0e15c18326b19cb75d23b5d47b5110402` · 2026-09-15T08:03:37Z
+**Rama:** `scrum-804d-criterio-e1-e2` · **Mezclado `main`** hasta `319bbd9928b6e828e9af213d51240f3aa8aace1b` antes de empujar · **Carril:** proceso · censo · **Gate:** sin gate
+
+> ⛔ **NO TOCA EL TABLERO Y NO TOCA `src/`.** Cierra los dos huecos que 804c declaró abiertos
+> —E1/E2 sin aplicar, y el filtro de «cero construcción» leído sólo donde disparó— y añade el
+> tercero, que es el que de verdad decide: **lo construido contra lo que el ticket PROMETE.**
+
+---
+
+## 0 · El titular
+
+| filtro | qué exige | sobreviven |
+|---|---|---|
+| ① 804c | trabajo en `main` con sha + entrada de máster + ninguna rama viva | **40** |
+| ② E1/E2 | mutación declarada, **o** guard vivo que asevera sobre producto y pasa sin saltar | **19** |
+| ③ **la promesa** | lo construido cubre lo que el ticket prometió, y **ningún hueco propio sigue abierto** | **19** |
+| **los tres a la vez** | | **5** |
+
+**Los cinco: `626 · 632 · 764 · 766 · 845`.**
+
+> 🔒 El tercer filtro es el que cambia el resultado, y ninguno de los otros dos lo ve: **un guard
+> vivo demuestra que hay guard, no que cubra lo prometido.** SCRUM-694 tiene 24 tests en verde y
+> migró **9 de 56**; sus tests pasan porque sólo miran los nueve.
+
+## 1 · Los tres filtros, y de dónde sale cada medición
+
+| | qué exige | instrumento |
+|---|---|---|
+| **E1** | el arnés **NOMBRA** el test que cae si se deshace | `censoDeDeclaraciones()` de `meta-guard-mutaciones.mjs` (SCRUM-745), por AST |
+| **E2** | un test suyo **asevera sobre producto** y **pasa sin saltar** | `aseveraSobreProducto()` + `parteDeLaTanda()` de `censo-abiertos-vs-guards.mjs` (SCRUM-804) |
+| **promesa** | el texto del ticket en Jira contra los huecos que su propia entrada declara | lectura, ticket a ticket |
+
+Censo E1 de hoy: **55 guards · 167 declaraciones · 0 ilegibles**, suelo OK (20/54), en modo
+`--solo-censo`: **ni una mutación ejecutada**, ni un fichero del árbol tocado.
+
+## 2 · 🔴 La tanda: cuatro formas de invocarla, tres daban cifras falsas
+
+| intento | decía | de verdad miró |
+|---|---|---|
+| `node --test … tests/*.test.mjs` | **exit 126** (el compuesto reportaba 0) | *Argument list too long*: 781 rutas no caben |
+| `node --test … tests/` | 1 «test» llamado `tests` | **1** fichero de 781 |
+| `node --test … "tests/*.test.mjs"` | 99 pass · 0 fail | **15** de 781 — esta versión no expande el glob |
+| descubrimiento por defecto | **2.681 pass · 0 fail** | **355** de 781 |
+| **troceado en lotes de 100** | ver abajo | **726** de 781 |
+
+> 🔒 **Un «2.681 en verde» es igual de creíble mirando 355 ficheros que mirando 781.** Lo único que
+> los separa es preguntarle al instrumento cuántos ficheros ha visto, y por eso ese control va
+> DELANTE del veredicto. Leer el resultado no habría cazado ninguno de los tres.
+
+**La tanda que sostiene E2:** `726` ficheros · **7665 pass sin saltar · 0 fail · 112 skipped**.
+
+⚠️ **Hueco declarado: 55 ficheros no llegaron a emitir eventos**, todos del rango `scrum003…scrum320` —los
+gateados por base—: en un árbol sin `.env` se quedan esperando una conexión que no existe.
+**Ninguno de los 55 pertenece a ninguno de los 40**, así que la cobertura sobre los tickets que
+se juzgan aquí es completa; sobre la suite entera, no. Queda dicho en vez de redondear.
+
+⚠️ **Y la tanda va TROCEADA**, no en una invocación como `npm test`. Para E2 —«¿pasa este test sin
+saltar?»— da igual; para un defecto de interferencia entre ficheros (el que midió SCRUM-824) no.
+No es la tanda oficial y no se presenta como tal.
+
+⚠️ **Un susto, declarado:** el descubrimiento por defecto arrastró `scripts/test-staging-gated.mjs`,
+que TOMA EL TURNO de staging. **No llegó**: el árbol aislado nace sin `.env`, así que
+`DATABASE_URL_TESTS` estaba ausente y murió antes de conectarse. Comprobado con `git status` vacío.
+
+## 3 · El filtro de «cero construcción», leído en las 49 — acertó cero y falló doce
+
+804c declaró el hueco: *«lo leí sólo donde disparó, 8 de 49»*. **Leídas las 49.** Sobre los 40 🟢:
+
+| | |
+|---|---|
+| entradas de 🟢 que SÍ se autodeclaran medición | **12** |
+| de ésas, que el filtro automático vio | **0** |
+| 🟢 que el filtro señaló | **2** (634 y 827) — **los dos falsos positivos** ya retirados |
+
+No dicen «cero construcción». Dicen **«ESTE TICKET MIDE. NO CONSTRUYE»** (762), **«Esto MIDE. La
+decisión es del fundador»** (811), **«no entra código, no entra test»** (613), **«NO arregla ni un
+botón»** (787). Doce formas distintas. **Un filtro con esa hoja de servicios no es un censo: es una
+muestra**, y queda dicho aquí para que nadie lo vuelva a usar como si lo fuera.
+
+## 4 · LOS CUATRO PRIORITARIOS
+
+| ticket | ② E1/E2 | ③ promesa | veredicto |
+|---|---|---|---|
+| **SCRUM-694** | ❌ ningún test suyo asevera sobre producto | ❌ | 🟡 **NO cerrable** |
+| **SCRUM-824** | ✅ `scrum824b-el-sha-que-parecia-un-numero.test.mjs` → `../scripts/_ritmo-de-despliegue.mjs:33` | ❌ | 🟡 **NO cerrable** |
+| **SCRUM-844** | ✅ `scrum844-sellar-dentro-de-transaccion.test.mjs` → `../dist/modules/invoicing/domain/verifactu.service.js:51` | ❌ | 🟡 **NO cerrable** |
+| **SCRUM-845** | ✅ `scrum845-la-lista-pregunta-lo-que-el-servidor-contesta.test.mjs` → `public/dashboard/js/invoiceAccion.js:38` | ✅ | 🟢 **CERRABLE** |
+
+Los tres que caen, con el motivo exacto:
+
+- **SCRUM-694** — Migro 9 de 56 y su entrada dice «No se migraron los 47 restantes». Y mientras se escribia esto entro SCRUM-694b en `main` (PR #1244): migra NUEVE MAS y deja el trinquete en 42 — con la misma frase al final, «No se migraron los 42 restantes». La promesa sigue sin cubrirse; sus tests pasan porque solo miran los migrados.
+- **SCRUM-824** — 🔴 El `SCRUM-824` que esta en main es OTRO SUJETO: la entrada se titula «El vigia que no deja pasar» y dice «No se toca el vigia». El titulo del ticket es el rojo intermitente por ficheros temporales dentro de tests/. Patologia del SCRUM-727, confirmada.
+- **SCRUM-844** — «El resto de la lista (puestos 3 a 6): sin escribir, a la espera de la medicion del CI». La promesa eran los 31 puntos; hay dos puestos.
+
+**Las dos sesiones que midieron su propio ticket tenían razón**, y el criterio de aquí llega a lo
+mismo por otro camino: 694 por su «no se migraron los 47 restantes», y 824 porque la entrada que
+hay en `main` **habla de otro sujeto** que el título del ticket. Es la patología del SCRUM-727 que
+el propio 804 declaró como hueco nº 1 el 7-sep — **ahora con un caso confirmado y con nombre.**
+
+## 5 · 🟢 A · PASAN LOS TRES FILTROS — **5**
+
+| ticket | estado en el tablero | la prueba viva | por qué la promesa está cubierta |
+|---|---|---|---|
+| **SCRUM-626** | Tareas por hacer | `scrum626-calentar-el-navegador.test.mjs` → `../scripts/_navegador.mjs:23` | El porque quedo contestado con el dato del fundador (8-sep): `guard:contraste` arranca en 32,5 s contra un tope de 30.000 ms. Y la mitigacion esta construida y vigilada. |
+| **SCRUM-632** | Tareas por hacer | `scrum632-la-descripcion-de-la-linea.test.mjs` → `public/dashboard/js/quotesView.js:30` | Las dos salidas que necesitaban texto salen con `[PENDIENTE microcopy oficial]` y la subida del censo declarada — que es literalmente lo que el ticket ordenaba hacer. |
+| **SCRUM-764** | En curso | **E1** `scrum764-margen-negativo.test.mjs(6)` | El margen negativo se ve, con seis mutaciones declaradas que lo tumban. El unico punto abierto (`margenCatalogo.js` → `reportsView.js`) quedo RESUELTO el 7-sep. |
+| **SCRUM-766** | En curso | **E1** `scrum766-el-grep-que-cuenta-lineas.test.mjs(2)` | El instrumento pasa a AFIRMAR POR PLATAFORMA. Lo que no se hizo —ni skip ni retirar el aviso— va razonado, no pendiente. |
+| **SCRUM-845** | En curso | `scrum845-la-lista-pregunta-lo-que-el-servidor-contesta.test.mjs` → `public/dashboard/js/invoiceAccion.js:38` | El defecto era de la pantalla y la pantalla queda arreglada; el servidor ya filtraba y se comprobo. No hay hueco propio abierto. |
+
+## 6 · 🟡 B · Promesa cubierta, pero E1/E2 **no puede verlos** — **9**
+
+**No es que estén mal.** E2 llama «producto» a `src|dist|public|scripts|docs|prisma`, así que un
+guard que vigila **otros guards** (lee `tests/`) no cuenta, y un guard que corre **fuera de la
+tanda** (navegador) tampoco. Son decisión tuya: el trabajo está y la promesa también, lo que falta
+es que algo de la tanda lo sujete.
+
+| ticket | estado | por qué E1/E2 no lo ve | promesa |
+|---|---|---|---|
+| SCRUM-273 | Tareas por hacer | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | Sus tres exclusiones (no migrar el historico, no impedir editar, no validar contenido) las declara FUERA DE ALCANCE el propio ticket en Jira. Exclusio |
+| SCRUM-567 | En revisión | no existe ningún `tests/scrum567*` | El defecto era el censo contando literales HTML; se cambio a AST y el tope baja de 29 a 23. Los 7 nuevos se dejan sin arreglar A PROPOSITO, y la ficha |
+| SCRUM-644 | Tareas por hacer | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | El trinquete entra y las dos rutas que siguen tragandose el P2002 son idempotencia deliberada de ONBOARD-2, con test que lo pincha. |
+| SCRUM-726 | En curso | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | Entra `pendientesDeFirma()`, los seis registros reales cuentan y devuelve cero pendientes. El mecanismo que faltaba esta puesto. |
+| SCRUM-782 | En revisión | no existe ningún `tests/scrum782*` | Toca `styles.css` (`.casilla-seleccion::before`, inset -16px), `customersView.js`, el medidor y el guard: arregla la casilla Y amplia el guard a la se |
+| SCRUM-816 | En curso | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | La segunda vuelta entra entera: la tabla, la accion por fila y el chip de cobro. «Lo que NO se ha tocado» es una lista de no-tocar deliberados, no de  |
+| SCRUM-827 | Tareas por hacer | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | Cierra un limite que los propios guards tenian declarado por escrito con fichero y linea: el trinquete pasa a vigilar el VALOR. |
+| SCRUM-828 | Tareas por hacer | no existe ningún `tests/scrum828*` | Su unico hueco («el mensaje no puede leer Settings») esta declarado como corto A PROPOSITO: lo que pide es volver a medir, no ampliar la lista de memo |
+| SCRUM-831 | En curso | sus tests vigilan instrumentos o documentos, no `src/`/`public/` | Ademas de las acciones de la fila, cierra los dos huecos que destapo: el contexto a medias de `jobDetailView` y los datos que no viajaban a la lista. |
+
+## 7 · 🔴 C · La promesa NO está cubierta — **14**
+
+**Éstos NO se cierran.** Cada uno declara, con sus palabras, un hueco propio que sigue abierto.
+
+| ticket | estado | ② E1/E2 | qué falta, según su propia entrada |
+|---|---|---|---|
+| SCRUM-331 | Acción del fundador | ✅ | El heroe entra `hidden` y con `data-microcopy=PENDIENTE_FUNDADOR`: el texto no esta firmado, asi que la promesa no esta viva. Y el CLS de la primera pantalla queda por encima de 0,1, aislado. |
+| SCRUM-333 | Acción del fundador | ✅ | Tres huecos declarados por la entrada: «Talleres no existe» (vertical VETADO, exige cambio de master), las seis van al MISMO destino, y las seis siguen en `draft_pendiente_validacion`. |
+| SCRUM-512 | Acción del fundador | — | La entrada se titula «(mitad independiente)». La mitad que promete el ticket —que el contador no vaya hacia atras— cuelga de SCRUM-340, que sigue con rama viva sin mergear. |
+| SCRUM-568 | En revisión | ✅ | El propio ticket deja sin marcar «Esto tiene que aparecer en la lista de comprobacion del lanzamiento, no solo en el repo». Sin eso el mecanismo dira «0 de 9» el dia del go y nadie lo habra mirado. |
+| SCRUM-600 | En curso | ✅ | «No hecho, con su motivo: la unificacion (bloqueo A) · el vencimiento (bloqueos A y B) · los ganchos del punto 5». La unificacion ES la promesa del ticket. |
+| SCRUM-634 | Tareas por hacer | — | «Lo que NO cubre — huecos DECLARADOS»: el reflejo va en un solo sentido, `n.name` sigue valiendo `''`, y `value`/`checked` quedan fuera. La promesa decia CUALQUIER atributo. |
+| SCRUM-637 | En curso | ✅ | «El punto 1 completo —que la rama se publique en Jira— sigue sin resolverse: se ha cerrado la mitad barata». |
+| SCRUM-674 | En curso | — | El orden de la casa es ① decision → ② ALTER en las TRES bases → ③ PR. La entrada declara que lo que espera son «las cinco columnas y partes_trabajo»: el ALTER no esta aplicado. |
+| SCRUM-694 | Tareas por hacer | — | Migro 9 de 56 y su entrada dice «No se migraron los 47 restantes». Y mientras se escribia esto entro SCRUM-694b en `main` (PR #1244): migra NUEVE MAS y deja el trinquete en 42 — con la misma frase al final, «No se migraron los 42 restantes». La promesa sigue sin cubrirse; sus tests pasan porque solo miran los migrados. |
+| SCRUM-780 | En revisión | ✅ | Es una DECISION DEL FUNDADOR sin tomar («¿se adopta F260001?»), y ademas destapa un hueco nuevo que queda abierto: `huecosDeLaSerie` compone sin fecha y reportara todas las `F26…` como ajenas. |
+| SCRUM-801 | En curso | ✅ | «11 de las 21 no estan medidas» en la pregunta central, y la ruta completa con sesion sigue sin ejercitarse. |
+| SCRUM-805 | En revisión | ✅ | Su propia seccion «Verificacion pendiente»: 0 presupuestos firmados en dev, «la poblacion real no esta medida y hace falta el dato de produccion». Y el carril es DECISION DEL FUNDADOR. |
+| SCRUM-824 | Tareas por hacer | ✅ | 🔴 El `SCRUM-824` que esta en main es OTRO SUJETO: la entrada se titula «El vigia que no deja pasar» y dice «No se toca el vigia». El titulo del ticket es el rojo intermitente por ficheros temporales dentro de tests/. Patologia de |
+| SCRUM-844 | En curso | ✅ | «El resto de la lista (puestos 3 a 6): sin escribir, a la espera de la medicion del CI». La promesa eran los 31 puntos; hay dos puestos. |
+
+> 🔴 **Nueve de estos catorce PASAN E1/E2.** Ésa es la medida exacta de lo que el criterio del
+> 7-sep no alcanzaba: tienen guard vivo y verde, y no cubren lo que prometieron.
+
+## 8 · ⬜ D · Medición declarada — E1/E2 no aplica — **12**
+
+Su encargo ERA un informe. No construyeron comportamiento, así que no hay guard posible y el
+criterio no puede opinar. **Se cierran —o no— leyendo si el informe contesta lo que se pidió**, y
+eso es tuyo, no del árbol. Van aparte a propósito: mezclarlos con los de la clase C sería llamar
+«no hecho» a un trabajo entregado.
+
+| ticket | estado | lo que declara su entrada |
+|---|---|---|
+| SCRUM-613 | Acción del fundador | «Gate: sin gate — no entra codigo, no entra test». Cinco mediciones que desbloquean un lote. |
+| SCRUM-638 | Tareas por hacer | «Gate: medicion — NO se ha arreglado nada». Averigua de quien es el rojo; no lo arregla. |
+| SCRUM-654 | Acción del fundador | «PASO 0 de medicion: ¿sirve lo que ya hay?» — y el propio ticket esta BLOQUEADO por la regla 36. |
+| SCRUM-762 | En revisión | «ESTE TICKET MIDE. NO CONSTRUYE.» literal en su cabecera. |
+| SCRUM-787 | En curso | «Esta entrada NO arregla ni un boton. Trae el numero; la decision es del fundador.» |
+| SCRUM-788 | En revisión | «Este ticket MIDE.» No cambia ningun veredicto del arnes. |
+| SCRUM-790 | En revisión | «Documentacion e instrumentacion... el unico cambio de codigo es el texto de dos comentarios de package.json.» |
+| SCRUM-804 | En curso | «ESTE TICKET NO CIERRA NADA. Es una medicion.» literal en su cabecera. |
+| SCRUM-811 | En curso | «Esto MIDE. La decision es del fundador.» No se toca una linea de CSS. |
+| SCRUM-815 | Acción del fundador | «Esto es medir, no arreglar.» PASO 0 sobre el webhook de Stripe. |
+| SCRUM-825 | Tareas por hacer | «Gate: medicion, cero rotulos cambiados». Propone una tabla; la firma el fundador. |
+| SCRUM-840 | En curso | Censo de que se puede romper sin que caiga ningun test. La entrega es la lista. |
+
+## 9 · Límites declarados
+
+1. **El filtro ③ es JUICIO, no medición.** Lo he leído ticket a ticket y cada fila lleva su cita,
+   pero no hay instrumento detrás: donde una entrada dice «lo que NO se ha hecho» he tenido que
+   decidir si eso era **exclusión prometida** (273, 567, 644) o **hueco abierto** (694, 844). Esa
+   frontera la he puesto yo y se puede discutir fila a fila — para eso va la cita.
+2. **La patología del 727 sigue sin instrumento.** La cacé en 824 leyendo, no midiendo. Puede
+   quedar en otros.
+3. **55 ficheros de la tanda sin eventos** (§2). Ninguno de los 40, pero la suite no está entera.
+4. **E2 no ve el trabajo sobre instrumentos** (§6), y son 9 de los 40.
+5. **Mi propio error, otra vez:** di por bueno un `2.681 pass · 0 fail` que había mirado **355
+   ficheros de 781**. No lo cazó leer el resultado —era creíble— sino exigirle al instrumento que
+   dijera cuántos ficheros había visto. Es la tercera vez en este ticket que el control de
+   cobertura caza lo que la cifra escondía.
+
+## 10 · Lo que NO se ha tocado
+
+Jira · `src/` · `prisma/schema.prisma` · ninguna mutación ejecutada · ningún guard · ninguna rama
+ajena · staging. El único fichero escrito es éste.
+
+---
+
+# APÉNDICE · 15-sep-2026 · SCRUM-804e · Las listas para transicionar, y quién queda sin vigilancia
+
+**Medido contra:** `origin/main` = `78215b9ff35a1456f832c47db0ac81bc425ff415` · 2026-09-15T10:30:00+02:00
+**Rama:** `scrum-804e-la-lista-sin-vigilancia` · **Carril:** proceso · censo · **Gate:** sin gate
+
+> ⛔ **NO TOCA JIRA.** Las transiciones las hace el fundador con estas listas delante.
+
+**Decisión del fundador (15-sep-2026):** el grupo **B se cierra** —promesa cubierta basta; E1/E2
+mide si algo de la tanda lo sujeta, y eso es **deseable, no la definición de «hecho»**— y del
+grupo **D se cierran los que pasen ① y ③**, porque E1/E2 no les aplica.
+
+---
+
+## 1 · GRUPO B — se cierran los 9
+
+Promesa cubierta (filtro ③) y trabajo en `main` con sha y entrada (filtro ①).
+
+| clave | estado hoy | por qué la promesa está cubierta |
+|---|---|---|
+| **SCRUM-273** | Tareas por hacer | Sus tres exclusiones (no migrar el historico, no impedir editar, no validar contenido) las declara FUERA DE ALCANCE el propio ticket en Jira. Exclusion prometida, no hueco. |
+| **SCRUM-567** | En revisión | El defecto era el censo contando literales HTML; se cambio a AST y el tope baja de 29 a 23. Los 7 nuevos se dejan sin arreglar A PROPOSITO, y la ficha lo prohibia expresamente. |
+| **SCRUM-644** | Tareas por hacer | El trinquete entra y las dos rutas que siguen tragandose el P2002 son idempotencia deliberada de ONBOARD-2, con test que lo pincha. |
+| **SCRUM-726** | En curso | Entra `pendientesDeFirma()`, los seis registros reales cuentan y devuelve cero pendientes. El mecanismo que faltaba esta puesto. |
+| **SCRUM-782** | En revisión | Toca `styles.css` (`.casilla-seleccion::before`, inset -16px), `customersView.js`, el medidor y el guard: arregla la casilla Y amplia el guard a la segunda superficie. |
+| **SCRUM-816** | En curso | La segunda vuelta entra entera: la tabla, la accion por fila y el chip de cobro. «Lo que NO se ha tocado» es una lista de no-tocar deliberados, no de pendientes. |
+| **SCRUM-827** | Tareas por hacer | Cierra un limite que los propios guards tenian declarado por escrito con fichero y linea: el trinquete pasa a vigilar el VALOR. |
+| **SCRUM-828** | Tareas por hacer | Su unico hueco («el mensaje no puede leer Settings») esta declarado como corto A PROPOSITO: lo que pide es volver a medir, no ampliar la lista de memoria. |
+| **SCRUM-831** | En curso | Ademas de las acciones de la fila, cierra los dos huecos que destapo: el contexto a medias de `jobDetailView` y los datos que no viajaban a la lista. |
+
+## 2 · GRUPO D — de los 12, pasan ① y ③ **cinco**
+
+① lo pasan los doce: todos tienen trabajo en `main` con sha y entrada de máster. El que decide es ③.
+
+### ✅ Pasan ① y ③ — **se cierran**
+
+| clave | estado hoy | qué entregó |
+|---|---|---|
+| **SCRUM-638** | Tareas por hacer | Su entrada tiene **«LA RESPUESTA, EN UNA LÍNEA»**: el guard pasa en local en las tres configuraciones y sólo cae en el runner, así que **se une a SCRUM-626 en vez de duplicarlo**. Contestado. |
+| **SCRUM-762** | En revisión | Entrega los siete apartados, incluidas **«Las tres salidas, escritas como tales»** y el coste medido. El único hueco (`ensureQuotePdf`) queda fuera por declaración: el presupuesto no está bajo la regla 29, y aun así lo cubre su §⑤. |
+| **SCRUM-788** | En revisión | Contesta el número que decide y clasifica los 33. Los **2 INDETERMINADOS** van declarados y **sin repartir al montón mayoritario**, que es residuo dicho, no promesa incumplida. |
+| **SCRUM-790** | En revisión | Mide la dispersión real y corrige el texto que ya no describía la máquina. El guard que no se añadió va **propuesto con su dato**, y es más de lo que el ticket pedía. |
+| **SCRUM-840** | En curso | Entrega **«LA LISTA · lo que se rompe sin que caiga nadie, ordenado por lo que pasa si se rompe»**, con 500 de 500 puntos y 31/31 ficheros, más dos hallazgos que no se le pedían. |
+
+### ❌ NO pasan ③ — **no se cierran**, con la cita
+
+| clave | estado hoy | la cita que lo impide |
+|---|---|---|
+| SCRUM-613 | Acción del fundador | Su entrada: **«PRODUCCIÓN NO SE HA MEDIDO, y no por olvido: en este árbol no hay credencial de producción»** — y el ticket prometía cinco mediciones. |
+| SCRUM-654 | Acción del fundador | Es un **PASO 0** de un ticket cuya promesa es la función («Rellenar el parte por voz»), y el propio título dice **BLOQUEADO por la regla 36**. Cuatro decisiones son del fundador y los límites del plan gratuito van como **NO MEDIDO**. |
+| SCRUM-787 | En curso | Su entrada: **«Ocho vistas sin medir por falta de fixture. Es el hueco más grande: el 76 es un SUELO, no el total del panel»** — contra una promesa que decía «la aplicación entera». |
+| SCRUM-804 | En curso | Sus **tres huecos declarados**, entre ellos **«Sólo leí las 14 entradas de menor acuerdo. No las 51»**. Y sigue recibiendo apéndices — éste es el cuarto. |
+| SCRUM-811 | En curso | Su §3: **«lo que NO se pudo medir (8 vistas), declarado»**, y lo dice con todas las letras: **«Una vista que no se pudo montar no es una vista sin defectos»**. |
+| SCRUM-815 | Acción del fundador | El ticket promete que el webhook **falla por los dos lados**; su entrada abre con **«⛔ Aquí no hay arreglo»**: es el paso ① del orden decisión → ALTER → PR. |
+| SCRUM-825 | Tareas por hacer | Su propia sección: **«🔴 Y sigue pendiente lo del NIF, que ahora pesa más»**. |
+
+## 3 · 🔴 LA LISTA QUE CONDICIONA EL CIERRE DE B: qué sujeta a cada uno de los 14
+
+La pregunta no es «¿tiene un test con su número?» —eso no mide nada— sino: **¿algún test de la
+suite asevera sobre los ficheros de producto que ese ticket cambió, y pasa?** Los ficheros salen
+de sus commits de autoría en `main`; lo que asevera cada test, del AST de SCRUM-804; y «pasa» de
+la tanda del apéndice 804d.
+
+**Ninguno de los 14 queda sin nada.** Pero hay dos niveles, y la diferencia importa:
+
+| nivel | qué significa | tickets |
+|---|---|---|
+| **① fuerte** | un test **suyo** asevera sobre producto y pasa | 626 · 632 · 764 · 766 · 845 |
+| **② por fichero** | ningún test con su número lo hace, pero **otros tests de la casa** aseveran sobre los ficheros que tocó y pasan | 273 · 567 · 644 · 726 · 782 · 816 · 827 · 828 · 831 |
+| **③ nada** | ningún test asevera sobre ninguno de sus ficheros | **(ninguno)** |
+
+| ticket | nivel | ficheros de producto que tocó | tests que los aseveran y pasan |
+|---|---|---|---|
+| SCRUM-273 | ② | 8 | 15 — p. ej. `scrum235-cliente-por-columnas.test.mjs` |
+| SCRUM-567 | ② | 1 | 1 — p. ej. `scrum553-etiquetas-pegadas.test.mjs` |
+| SCRUM-626 | **①** | 4 | 11 — p. ej. `scrum452-pdf-lo-que-se-sello.test.mjs` |
+| SCRUM-632 | **①** | 2 | 30 — p. ej. `scrum195-loop-adicional.test.mjs` |
+| SCRUM-644 | ② | 16 | 44 — p. ej. `dashboard-colision-declaraciones.test.mjs` |
+| SCRUM-726 | ② | 11 | 59 — p. ej. `albaran.test.mjs` |
+| SCRUM-764 | **①** | 4 | 23 — p. ej. `scrum228-desglose-empleado-suma.test.mjs` |
+| SCRUM-766 | **①** | 2 | 2 — p. ej. `scrum570-cr-en-disco.test.mjs` |
+| SCRUM-782 | ② | 5 | 25 — p. ej. `scrum285-pantalla-cobros.test.mjs` |
+| SCRUM-816 | ② | 19 | 45 — p. ej. `dashboard-colision-declaraciones.test.mjs` |
+| SCRUM-827 | ② | 1 | 9 — p. ej. `scrum285-pantalla-cobros.test.mjs` |
+| SCRUM-828 | ② | 0 | — |
+| SCRUM-831 | ② | 12 | 41 — p. ej. `dashboard-colision-declaraciones.test.mjs` |
+| SCRUM-845 | **①** | 5 | 23 — p. ej. `dashboard-colision-declaraciones.test.mjs` |
+
+### 🔴 Y LO QUE PASA SI REGRESIONAN — la frase, sin adornos
+
+> **Un ticket del nivel ② está sujeto POR FICHERO, no por comportamiento.** Si alguien borra o
+> rompe de forma gruesa uno de los ficheros que tocó, la tanda cae y alguien se entera. **Pero si
+> alguien deshace exactamente su cambio dejando el fichero en pie, la tanda sigue VERDE y nadie se
+> entera** — porque el test que pasa por ahí está mirando otra cosa. Nueve de los catorce que se
+> cierran hoy están en esa situación, y se cierran igual porque el fundador ha decidido que la
+> promesa cumplida basta. Queda escrito para que el día que uno de los nueve reaparezca, **no se
+> busque el defecto en el código: se busque aquí.**
+
+## 4 · ⚠️ El caso 828, que estuvo a punto de salir «sin nada» y era falso
+
+El instrumento le dio **0 ficheros de producto**. Falso: su código está en `main` como
+`2cbb16bd2…` —`.github/workflows/pr-automatico.yml`, 115 líneas— y lo vigila
+`tests/pr-automatico-el-mensaje-del-automerge.test.mjs`, **10 pass · 0 skip · 0 fail** en la tanda.
+
+No lo vio porque **ni el commit ni el test llevan el número**: la entrega se hizo en la rama
+`automerge-el-mensaje-que-manda-a-mirar-donde-no-es` cuando el ticket todavía no tenía número, y su
+propia entrada lo dice. Es el reverso exacto de la patología del SCRUM-727: allí el número estaba
+y el sujeto era otro; aquí el sujeto está y el número no aparece por ningún lado.
+
+> 🔒 **Un censo por número no puede ver el trabajo que no lleva número.** Se arregla mirando, no
+> ensanchando el patrón.
+
+## 5 · Límites declarados
+
+1. **El nivel ② es cobertura por FICHERO, no por comportamiento.** Ver la frase del §3. Es más
+   débil que E1/E2 y se presenta como tal.
+2. **El juicio ③ sobre los 12 de D es lectura, no medición**, igual que en 804d. Cada fila lleva
+   su cita para que se pueda discutir.
+3. **La tanda que sostiene esto es la de 804d**: troceada en lotes de 100 y con **55 ficheros sin
+   eventos**, ninguno de los 40. No es la tanda oficial.
+4. **🔴 Y mi propio error, el tercero de este ticket:** la primera pasada de este censo dio
+   **«SIN NADA: los catorce»**, y era falso — el `--format` de git estaba mal y la lista de
+   ficheros salía VACÍA para todos. El control positivo del detector de aserciones pasaba, así que
+   el instrumento parecía sano: **el control estaba en la mitad equivocada.** Lo cazó que el
+   resultado fuera demasiado redondo, y se arregló poniéndole suelo a la OTRA mitad — cero
+   ficheros tocados es `NO MEDIBLE`, nunca «sin vigilancia».
+
+## 6 · Lo que NO se ha tocado
+
+Jira · `src/` · `prisma/schema.prisma` · ningún guard · ninguna rama ajena · staging.
+El único fichero escrito es éste.
+
+---
+
+# APÉNDICE · Fase d — lo que cada ticket PROMETÍA, y qué desbloquea a los no decidibles
+
+*17-sep-2026 · rama `scrum-804d-lo-que-prometia`*
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T14:56:04+01:00
+
+⛔ **MIDE. No cierra tickets, no toca Jira, no renombra ni borra ninguna rama.**
+⛔ **El bloque ① (arreglar el barrido) fue RETIRADO por el fundador** — lo lleva la S3 de Luis. Lo
+hecho antes de la retirada queda en un commit de `scrum-804c-el-barrido-alcanza-la-rama`,
+**sin empujar**, para no poner una segunda rama sobre el mismo fichero.
+
+## ② ¿Está hecho lo que cada ticket PROMETÍA?
+
+> «¿Está el trabajo en `main`?» y «¿está hecho lo que el ticket prometía?» **no son la misma
+> pregunta**, y sólo la segunda cierra un ticket.
+
+**Población: 25 mirados · 25 clasificados.**
+
+🔴 **DE DÓNDE SALE LA PROMESA, Y ES LA LIMITACIÓN QUE MANDA:** se lee de la **entrada de registro
+del propio ticket en `main`**, no de Jira — el conector de Atlassian está desconectado en esta
+sesión. Donde la entrada sólo registra una MEDICIÓN, no puedo saber si el enunciado original pedía
+construir. **Esos van a `NO SÉ` y son tuyos**, no míos.
+
+### 🔴 PARCIAL · 13 — y cada uno lo declara ÉL MISMO
+
+| ticket | qué falta, en sus propias palabras |
+| --- | --- |
+| **SCRUM-307** | su propio título: *«SUELO DISPARADO: no he podido leer los tres tickets»* |
+| **SCRUM-328** | dos secciones `## 5 · LO QUE NO SE HA HECHO` · *«sigue sin haber una frase aprobada»* |
+| **SCRUM-523** | el título: *«qué exige, qué hay y qué falta»* |
+| **SCRUM-534** | *«`docs/VERIFACTU_EVIDENCIAS.md` sigue sin existir»* · **las 10 frases sin corregir** |
+| **SCRUM-568** | el título: *«hoy 0 de 9»* · `## ⑩ Lo que NO se ha hecho` · una rama *«todavía no fusionada»* |
+| **SCRUM-635** | el título: *«MEDIDO Y PARADO: sigue bloqueado por su propia condición»* |
+| **SCRUM-665** | *«sigue sin medir»* · **el lector sigue sin llamador** |
+| **SCRUM-688** | en el propio código: `crearRevision: '⛔ PENDIENTE DE MICROCOPY (SCRUM-688)'` |
+| **SCRUM-825** | el título: *«por qué el renombrado NO se puede hacer así»* · *«la variable sigue sin gobernar la llave»* |
+| **SCRUM-863** | **la mudanza sin hacer**; su fase b está declarada y abierta |
+| **SCRUM-878** | *«Lo que NO se ha hecho: convertir este censo en trinquete»* |
+| **SCRUM-903** | — *(ver CUMPLIDO)* |
+| **SCRUM-910** | el título: *«① medido, y el resto PARADO»* · depende de SCRUM-893, que no está en `main` |
+| **SCRUM-16** | *«Sigue sin cablearse nada. `git diff` sobre `src/` y `prisma/` está vacío»* |
+
+✅ **Los tres casos que el fundador dio como control —863, 665 y 534— salen los tres PARCIAL.**
+Si el criterio los hubiera dado por cumplidos, no estaría midiendo.
+
+### ✅ CUMPLIDO · 6
+
+`280` (CAMINO 1 decidido) · `331` (F4, el héroe) · `333` (F6, tarjeta por gremio) · `512` (el
+producto no olvida que alguien pagó; su «diff ②» se declaró **improcedente**, no pendiente) ·
+`554` (las dos copias del medidor, y la deuda medida) · `903` (el marcador que se imprime; el banco
+por estados está declarado **ticket aparte**, que es alcance y no deuda).
+
+### ⚠️ NO SÉ · 6 — **y son tuyos**
+
+| ticket | por qué no puedo decidirlo |
+| --- | --- |
+| **332** · **334** | **no tienen entrada en `main`**: entraron al cubo DENTRO por tener ficheros propios. Sin entrada no puedo leer qué prometían |
+| **322** · **323** · **654** · **811** | su entrada registra un **PASO 0 de medición** y la medición está hecha. Pero si el enunciado de Jira pedía **construir**, esto es PARCIAL y no CUMPLIDO — y el enunciado no lo puedo leer |
+
+## ③ Los 29 NO DECIDIBLES, por lo que los desbloquea
+
+⚠️ **Corrijo un reparto que di mal en la fase b:** dije «6 con commits · 3 anteriores a la
+convención · 20 sin rastro». Recontado uno a uno son **7 · 3 · 19**.
+
+### 🔴 GRUPO A · 7 con commits — **decididos, y sin salir del repo**
+
+Basta mirar **qué ficheros tocaron** esos commits. Todos tocan artefactos reales de `main`:
+
+| ticket | qué tocaron sus commits |
+| --- | --- |
+| 41 | `docs/BUGS.md` · `docs/YAQU_MASTER.md` |
+| 142 | `docs/COMO_FUNCIONA_YAQU.md` · **`docs/master/SCRUM-16.md`** · `package.json` |
+| 276 · 326 | `docs/diseno/bloque-a.md` · `bloque-b.md` |
+| 774 | `scripts/meta-guard-mutaciones.mjs` · dos tests |
+| 786 | `public/dashboard/js/customerDetailView.js` · `scripts/_pagina-panel.mjs` |
+| 20 | `public/dashboard/js/api.js` · `quotesDetailView.js` · `verifactu.service.ts` |
+
+**Pasan a DENTRO** para la pregunta ①. **Qué haría falta: nada — ya estaba, y el ciego era mi
+instrumento.** Le faltaba una tercera señal: *qué tocaron los commits que nombran el ticket*. Sólo
+miraba (a) las rutas citadas por la entrada y (b) ficheros llamados `scrumN`.
+
+> 🔴 **Y SCRUM-142 SÍ TENÍA ENTRADA — bajo el nombre de OTRO ticket.** Vive en
+> `docs/master/SCRUM-16.md`, titulada **«SCRUM-16 / 142»**. Mi criterio buscaba `SCRUM-142.md` y no
+> podía verla. Es *«un trabajo sin número puede estar entero»* otra vez, un piso más abajo: aquí el
+> trabajo tiene número, pero **el de otro**.
+
+### GRUPO B · 3 anteriores a la convención — **tuyos**
+
+`143` · `18` · `19`. Son anteriores a SCRUM-192, así que **no pudieron tener entrada**. No hay nada
+en el repositorio que los decida: hace falta **leer el ticket y preguntarle a una persona**.
+
+### GRUPO C · 19 sin rastro de ninguna clase — **tuyos**
+
+`281 · 335 · 524 · 529 · 540 · 572 · 573 · 612 · 657 · 658 · 678 · 732 · 735 · 773 · 779 · 789 ·
+812 · 891 · 908`. Ni rama, ni entrada, ni ficheros propios, ni commits que los nombren. **El
+repositorio no tiene con qué contestar**, y seguirá sin tenerlo por mucho que se afine el
+instrumento: lo que falta no es una señal mejor, es el enunciado.
+
+## Lo NO tocado
+
+Jira · ningún ticket cerrado · ninguna rama renombrada ni borrada (27 instrumentos miden ahí, A12) ·
+`scripts/_numero-de-rama.mjs` **devuelto a como está en `main`** en esta rama · `CLAUDE.md` regla 3
+sin re-fechar · producción y staging sin tocar.
+## SCRUM-804f · Una rama `scrum-<n>` sin slug cerró el check obligatorio de `main`
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T13:52:18Z
+**Rama:** `scrum-804f-la-rama-sin-slug` · **Carril:** Sesión 3 (instrumentos) · encargo urgente del orquestador (17-sep 15:45 CEST). Los sufijos 804b–804e ya estaban usados.
+
+### PASO 0 · el rojo, reproducido en local contra los refs de hoy
+El CI de `main` (run 35226536503) cayó en «SCRUM-804 · CONTROL POSITIVO DERIVADO: la agrupación no pierde ni inventa ramas». En local, sobre `2be8fe16` con la rama remota `scrum-904` presente (PR #1423), falla exactamente ese test y los otros 8 pasan: `scrum-904 → SCRUM-904`, perdida.
+
+**Causa:** dos reglas para la misma pregunta.
+- El test de 804 da la rama por canónica: `/^scrum-(\d+)[a-z]?(?:-|$)/`.
+- `numeroDeRama` (`scripts/_numero-de-rama.mjs`), que usa `agruparRamas`, exigía guion: `/^scrum-0*(\d+)[a-z]?-/`.
+
+El guion existía (SCRUM-738) para que `scrum-72` no casara con el principio de `scrum-727-x`. Eso lo garantiza igual el fin de cadena, porque `\d+` es voraz.
+
+**Impacto medido antes de cambiar:** sobre los **831** nombres de rama (remotos y locales) cambia de número **exactamente 1**, `scrum-904` (`null` → 904).
+
+### Rojo, arreglo y tests que cambian
+- **Rojo** `e25859347a76334200c304f4f5e0427252fee83c`: `tests/scrum804f-la-rama-sin-slug.test.mjs`. (1) `agruparRamas` con una población fabricada (`scrum-904`, `scrum-905b`), así que no depende de que la rama de Javier siga viva. (2) La identidad: 72 ≠ 727, `scrum-72bb` y `scrum-72.1` sin número, anclada, y un revert sigue sin ticket. (3) POSITIVO sobre los refs de hoy: sólo cambian de número las ramas sin slug.
+- **Arreglo** `519a645fc00847c259773c74a67fd1a66b3f7dee`: `numeroDeRama` acepta `(?:-|$)`.
+- **`scrum738`:** exigía `null` para `scrum-72` a secas. Era un efecto de la regla, no su motivo. Ahora exige 72, y además `scrum-727` → 727, para que la identidad siga comprobada también sin slug.
+- **`scrum723`:** el nuevo guard nombra `main` en su prosa y quita `origin/` a los nombres, así que queda **declarado con su motivo**. No compara contra la referencia móvil: sólo lee nombres.
+
+### Mutantes (con todo comiteado), los 3 muertos
+| Mutante | Cae |
+|---|---|
+| M1 la regla vieja (sólo guion) | 804 ① + 804f (1) y (2) |
+| M2 `agruparRamas` **pierde** las ramas `scrum-9xx` | 804 ① + 804f (1) |
+| M3 `agruparRamas` **inventa** (cada rama también en n+1) | 804 ② + 804f (1) |
+
+### Verificación
+Los 9 ficheros que consumen la regla (reparto, alcanzabilidad, tablero, rastro, 804, 804f, 738, 753, 387), más 723: en verde. `npm test` completo **no** se ha corrido en local, para no quitarle tiempo a un `main` bloqueado y porque la sonda de SCRUM-858 seguía corriendo; lo corre el CI del PR. La comprobación del PR va en un paso aparte.
+
+### Añadido tras los datos de Javier (orquestador, 17-sep 16:25 CEST)
+- **Lo que midió Javier:** de 150 ramas vivas, 93 con forma de ticket, y sólo `scrum-904` rompía el barrido. `scrum-421-…-INCOMPLETO` y `scrum-474-…-INCOMPLETO` llevan el slug en mayúsculas, pero el guion tras el número ya las delimitaba y el barrido las alcanza. Su propuesta, `^scrum-(\d+)([a-z])?(-|$)`, es equivalente a la aplicada; Javier retira la suya y renombra `scrum-904` → `scrum-904-completar-lleva-al-campo`.
+- **EL LÍMITE, fijado por el orquestador:** una rama **sin número** (`scrum-paso0-dinero`) NO se atribuye a ningún ticket. Queda **declarada** en `sinNumero`, visible y contada en el total, nunca descartada en silencio. Lo fija el nuevo NEGATIVO de `scrum804f` (commit `c48d220183ecc3848bec429b163d8fd8316ac12e`).
+- **M4, inventar un número** (`^scrum-\D*0*(\d+)…`, que convierte `scrum-paso0-dinero` en 0): muerto. Caen el NEGATIVO y el POSITIVO sobre los refs de hoy.
+
+### A12 · quién comparte el lector (y quién NO se ha tocado)
+El lector cambiado es **uno**, `scripts/_numero-de-rama.mjs`. Sus consumidores, por import y no por nombre:
+- `scripts/_censo-reparto.mjs` (`agruparRamas`), y a través de él `scripts/censo-reparto.mjs`, `scripts/_rastro-del-ticket.mjs` (el censo de SCRUM-804) y `scripts/_censo-alcanzabilidad.mjs`;
+- `scripts/censo-tablero-vs-arbol.mjs` (`poblacionDe`, que reexporta la regla), y a través de él `_censo-alcanzabilidad`;
+- tests: `scrum387`, `scrum738`, `scrum753`, `scrum804`, `scrum804f`, `scrum829b`.
+
+**NO comparte el lector, y NO se ha tocado:** `tests/_entrada-de-la-rama.mjs` (SCRUM-854), que tiene su propio `numeroDeRama` (`/^scrum-(\d+)/i`) y ya aceptaba las ramas sin slug. Tampoco el resto de instrumentos que miden sobre ramas remotas con su propio lector: los de la cuenta de Javier (27) que no aparecen arriba no importan esta regla.
+
+## SCRUM-804g · La mutación de 738 que 804f dejó muda
+
+**Medido contra:** `origin/main` = `755d23997bd55ce7aa6d6a1cb6a98616926dfd7e` · 2026-09-17T14:05:18Z
+**Rama:** `scrum-804g-la-mutacion-muda-de-738`
+
+El meta-guard del PR #1430 (run 35230131786, job 105231752255) salió FAILURE con «vivas 235 · mudas 1 · ciegas 0 · ficheros muertos 0». El único ✖ era `scrum738` MUDO: su mutación ①, que quita el delimitador de `numeroDeRama` (`/^scrum-0*([0-9]+)/`), ya no tumbaba «72 NO casa con 720, 727 ni 1727». La cazaba `numeroDeRama('scrum-72') === null`, y desde 804f `scrum-72` da 72 **con la regla y con el mutante**. **Es mío**, no la muda intermitente de scrum859.
+
+**Arreglo** (`a18dc18f`): 738 exige `null` para `scrum-72.1` y `scrum-72bb`. Es lo que la regla sigue exigiendo (delimitador `-` o fin del nombre) y lo que el mutante no cumple. **Verificado aplicando la mutación EXACTA declarada**: cae el test que nombra, y sin mutación 738 da 7/7. Las 4 mutaciones de 804f no daban muda (no están declaradas en el meta-guard; se midieron a mano).
+
+## SCRUM-804h · La fase puede llevar CORTE (`scrum-915e1-…`), y sin eso no mergea nadie
+
+**Medido contra:** `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b` · 2026-09-20T20:13:36Z (hora de GitHub, cabecera `Date:` de `gh api -i zen`; el reloj local va ~5,5 min adelantado)
+**Rama:** `scrum-804h-la-fase-con-corte`
+
+### El defecto, y a quién bloqueaba
+
+El trabajo **«build + tests (con banco desechable)»** —la ÚNICA puerta obligatoria de `main`— salió FAILURE **sobre `main` mismo** (run `35533496437`, job `106138275117`). Un solo test caído, de 7.7xx:
+
+```
+✖ SCRUM-804 · 🔴 SUELO: el censo cuadra rama a rama con lo que `git` lista, sin cifras escritas
+    actual:   { soloEnGit: [ 'scrum-915e1-documento-vivo' ], soloEnElCenso: [] }
+    expected: { soloEnGit: [], soloEnElCenso: [] }
+```
+
+Con esa puerta cerrada **no mergea nadie**: esa tarde había seis PR esperando, entre ellos el #1544 (SCRUM-964), el #1549 (964c) y el #1537 (944b).
+
+**Causa, EJECUTADA y no leída** — el patrón vigente sobre el nombre real:
+
+```
+/^scrum-0*(\d+)[a-z]?(?:-|$)/  sobre 'scrum-915e1-documento-vivo'  →  null
+/^scrum-0*(\d+)[a-z]?(?:-|$)/  sobre 'scrum-915-paso0-inventario'  →  915
+```
+
+La letra de fase era **un solo carácter**. `915e1` es fase `e`, corte `1`: tras la letra viene un dígito, y ahí el patrón ya exigía el `-`. La rama cae en `sinNumero`, el censo no la ve, y el suelo de 804 compara dos poblaciones distintas.
+
+**Y no era una rama rara.** En `origin` había ya **dos** con esa forma cuando se midió: `scrum-915e1-documento-vivo` y `scrum-915e2-ver-documento`. Salen de partir SCRUM-915 en **siete cortes**, así que quedaban cinco por llegar.
+
+**El origen, dicho por el orquestador y recogido aquí a petición suya:** la numeración de fase de dos caracteres la inventó él al aprobar la partición esa misma tarde, sin comprobar si el censo la entendía.
+
+### Por qué se arregla en la regla y no renombrando la rama
+
+Porque ya está decidido y escrito, tres días antes, en este mismo fichero por SCRUM-804f: *«si la rama se renombra, el rojo se va solo; la SIGUIENTE rama sin slug lo volvería a traer. Esto lo cierra en la regla, no en la rama»*. Es el **mismo borde de la misma línea**, con otra forma: 804f fue el delimitador, 804h es el sufijo. Con cinco cortes de 915 por nacer, renombrar dos ramas habría comprado el rojo de mañana.
+
+### El arreglo, y la alternativa que se descartó
+
+```
+antes    /^scrum-0*(\d+)[a-z]?(?:-|$)/
+después  /^scrum-0*(\d+)[a-z]?\d*(?:-|$)/
+```
+
+Se ensancharon los **dígitos**, no la letra. `[a-z]+` también arregla `915e1` — y rompe `scrum-72bb → null` («dos letras no son una fase»), que es una decisión explícita de 804f **que nadie pidió relajar**. Ensanchar de más para arreglar un borde es cómo un guard se desactiva por partes. Con `[a-z]?\d*` las **cuatro** afirmaciones de identidad de 804f siguen intactas, y este ticket las vuelve a comprobar en su propio fichero para que no se descubra en el PR de otro.
+
+### 🔴 Por qué no re-atribuye el trabajo de nadie — demostrado Y medido
+
+**Por construcción:** `0*` come los ceros y `\d+` es voraz, así que el grupo 1 se lleva la **tirada entera** de dígitos. No hay backtracking que lo cambie: partir la tirada dejaría al `\d*` delante de un DÍGITO, que no es `-` ni fin de nombre, así que ninguna partición alternativa casa. Ensanchar el sufijo sólo puede convertir un `null` en **ese mismo** número, nunca un número en otro.
+
+**Y medido igual**, porque una demostración que no se ejercita es una opinión con forma de demostración. Sobre los refs reales del 20-sep (remotos + locales), en el tercer test de `scrum804h`: **0 re-atribuidas**, y las rescatadas son exactamente las de forma `scrum-<n><letra><dígitos>`.
+
+### Rojo, arreglo y control positivo
+
+- **ROJO, antes de tocar el patrón** (`tests/scrum804h-la-fase-con-corte.test.mjs`): cayeron **2 de 3** y el que no cayó es el que no debía — el de identidad ya estaba verde, porque el defecto no era que la regla afloje sino que no llega. Y el tercero cayó por su mitad correcta: `yaCasaban > 0` y `reatribuidas == []` pasaron; lo que falló fue `rescatadas > 0`, o sea «el ensanche no hace nada».
+- **ARREGLO** (`e73b1eb3`): un carácter de patrón, `\d*`, más la prosa de por qué.
+- **VERDE**: los 7 ficheros que consumen la regla + los suyos, **65 tests, 0 fallos**: `scrum804h`, `scrum804f`, `scrum804`, `scrum829b`, `scrum738`, `scrum753`, `scrum637`. Y el que decide: **`SCRUM-804 · SUELO` pasa a ✔**, que es el desbloqueo de `main`.
+
+### 🔴 Se tocó un test de OTRO ticket (`scrum804f`), y por qué no es relajarlo
+
+El cuarto control de 804f —«sólo cambian de número las ramas sin slug»— **se puso rojo** con el arreglo, señalando `scrum-915e1-documento-vivo` y `scrum-915e2-ver-documento`.
+
+No es un defecto del arreglo ni de 804f: ese control compara la regla **PRE-804f** con la regla **VIVA**, así que no mide el delta de 804f — mide **la suma de todos los ensanches que haya habido desde entonces**. Con un solo ensanche no se notaba. Al llegar el segundo, el control acusa a un rescate **deliberado**. Es el patrón de «un control negativo cableado caduca».
+
+Lo que se hizo, y en este orden importa:
+
+1. La exención se abre en **lista con el ticket de cada forma delante** (`RESCATADAS_A_PROPOSITO`), uno por línea, en vez de ensanchar el patrón a algo cómodo que las cubra todas. La siguiente forma se **añade** con su ticket; la lista no se borra.
+2. **Y se le añadió la mitad que NO caduca**, que 804f no tenía: *quien YA tenía número sigue teniendo EL MISMO*. Una lista de formas permitidas se alarga con cada ensanche y acaba permitiéndolo todo; esa segunda mitad no, y es la que de verdad protege el reparto — mover una rama viva de un ticket a otro es repartirle el trabajo a otra persona sin que nadie lo vea.
+
+O sea que 804f sale de aquí **con un control más, no con uno menos**.
+
+### ⚠️ El sufijo `804g` estaba ocupado y el instrumento fácil mentía
+
+La rama iba a llamarse `scrum-804g-…`. El control de sufijo por ramas vivas **no lo habría cazado**: `git ls-remote` sólo devuelve `scrum-804b-…`, porque el repo borra la rama al mergear. Quien contestó fue **el expediente**: b, c, d, e, f y **g** ya citados aquí dentro. `gh pr list --search "scrum-804"` tampoco valió: devolvió uno solo.
+
+🔒 **Para el sufijo de un ticket con historia, la fuente es `docs/master/SCRUM-<n>.md`, no el remoto ni los PR.** Las dos listas que se borran solas dan un vacío que parece un hueco libre.
+
+### Segunda mitad, encargada por el orquestador: el fichero DECLARA sus formas legales
+
+Su motivo, y es el dato que lo justifica: **es la TERCERA vez** que este fichero cierra el check obligatorio de `main` por no saber leer una forma de nombre que alguien usó de buena fe — `revert-…` (829), sin slug (804f) y la fase con corte (804h). *Tres veces no es mala suerte*: las formas legales no estaban escritas en ninguna parte y se descubrían a golpes, un `main` bloqueado por vez.
+
+Va un bloque `FORMAS:` … `:FIN` junto al patrón, con **12 ejemplos y su resultado**, las dos clases (con número y `null`) y el motivo de cada uno.
+
+🔒 **Y no es un comentario: es un mecanismo.** El cuarto test de `scrum804h` **lee el bloque del fuente** y ejercita cada línea. Una forma añadida ahí que la regla no cumpla pone el guard en rojo; una regla que deje la lista atrás, también. Un comentario sólo avisa a quien pasa por delante — esta sesión ya tiene esa lección del 964, donde el aviso estaba escrito en la línea 113 y el accidente se repitió igual.
+
+**Los dos rojos de esa mitad, inyectados y medidos** (y con mensajes distintos, que es lo que prueba que miden cosas distintas):
+
+| Inyección | Lo que dijo |
+|---|---|
+| Declarar `scrum-72bb-x → 72` (una forma que la regla NO cumple) | «el fichero declara formas que su propia regla NO cumple» |
+| Quitar la marca `:FIN` | «NO PUDE MIRAR: no encuentro el bloque `FORMAS:` … `:FIN`» — el suelo, no un verde |
+
+### Lo medido por s2f-20, y por qué el patrón NO es el suyo
+
+s2f-20 midió por su cuenta, sobre diez nombres de control, que con `(?:[a-z]+\d*)?` cambian **exactamente dos**, los dos al valor correcto (915), y que no se mueven `scrum-904`, `scrum-727-x`, `scrum-72-x`, `scrum-839e-…` ni `revert-1192-scrum-824b-…`. Coincide con la monotonía de arriba y vale como control independiente.
+
+**Su patrón, sin embargo, no se aplicó**, y la diferencia es de una letra: `[a-z]+` lee `scrum-72bb` como **72**, y 804f exige ahí `null` («dos letras no son una fase»). Los diez nombres de control de s2f no incluían ninguno de dos letras, así que su medición no podía verlo. Con `[a-z]?\d*` el borde queda fuera y las cuatro afirmaciones de 804f siguen en pie.
+
+🔒 **Una medición sobre diez nombres de control no dice nada de la forma que no está entre los diez.** No es un fallo de la medición: es su alcance, y por eso el control que decide se hace sobre los refs REALES y no sobre una lista escrita a mano.
+
+### Lo que NO toca
+
+- `tests/_entrada-de-la-rama.mjs` (SCRUM-854) tiene **su propio** `numeroDeRama` (`/^scrum-(\d+)/i`), que ya leía `scrum-915e1-…` como 915. No se ha tocado.
+- La mutación ① declarada en el meta-guard para 738 (`/^scrum-0*([0-9]+)/`, sin delimitador) **sigue cayendo**: 738 exige `scrum-72.1 → null` y `scrum-72bb → null`, y el mutante da 72 en los dos.
+- `guard:escalera-por-estado` salió CIEGO en la misma tanda de navegador. **Está igual en `main`**, no lo trae esto, y lo lleva s2f-20 con SCRUM-917e.
+
+# APÉNDICE · 21-sep-2026 · SCRUM-804i · El control de 804h se quedó sin población en catorce horas, y volvió a cerrar la puerta
+
+**Carril:** orquestador (desbloqueo de `main`; no había ninguna sesión viva)
+**Medido contra:** `origin/main` = `f721436842b9dda6b945784098dc6ef2671b0105` (merge de SCRUM-958,
+#1551) · 2026-09-21T06:53:07Z (cabecera `Date` de GitHub)
+**Rama:** `scrum-804i-el-control-sin-poblacion` · **Worktree:** `wt-977`
+
+Apéndice CORTO a propósito: 34 líneas en UN fichero de test, sin dinero, sin fiscal, sin schema y
+sin tocar `src/` ni `public/` (rigor proporcional, norma de la tanda del 20-sep).
+
+## ① El defecto, medido
+
+`main` tenía en rojo **su único check obligatorio**, `build + tests (con banco desechable)` (run
+**35537122940**, `f7214368`, 2026-09-20T20:56Z), con **`fail 1`** y un solo test caído:
+
+    ✖ SCRUM-804h · ✅ EL CONTROL QUE DECIDE: sobre los refs de HOY, quien ya casaba da el MISMO número
+      AssertionError: 🔴 NINGUNA rama pasa de «sin número» a tener ticket. O el remoto ya no tiene
+      ramas `e<n>` —y entonces este control ha dejado de medir sobre población— o el ensanche no
+      hace nada.                      tests/scrum804h-la-fase-con-corte.test.mjs:164
+
+Detrás había **OCHO PR abiertos**, los ocho con el mismo `fail 1`: #1537, #1541, #1543, #1544,
+#1548, #1552, #1555 y #1557. El traspaso de la tanda anterior daba ese rojo por **caduco** —de
+antes de que entrara 804h— y proponía relanzarlos. **No lo era**, y relanzarlos no lo habría
+curado: el rojo es posterior al merge de 804h y se reproduce a voluntad.
+
+## ② La causa: el control medía el calendario, no la regla
+
+La última afirmación exigía que **alguna rama viva** pasara de «sin número» a tener ticket, con la
+población sacada de `git for-each-ref` en el momento de correr. Las únicas ramas con la forma que
+ejercita —`scrum-<n><letra><dígitos>`— eran `scrum-915e1-documento-vivo` y
+`scrum-915e2-ver-documento`. **Entraron en `main` esa misma noche** (#1545 y #1550, 20:41Z) y
+GitHub **las borró al mergear**. A las 20:41Z el remoto se quedó con **cero** ramas `e<n>`.
+
+Medido hoy sobre el remoto real: **154 ramas · 97 que la regla anterior ya reconocía · 0 de forma
+`e<n>`**. Las dos siguen existiendo **en local** (sus worktrees `wt-915e` y `wt-915e2` las tienen
+tomadas), y por eso el fichero pasaba en la máquina y caía en el servidor.
+
+🔒 **Esto matiza una frase de la entrada de 804h**, que cerraba así: «el control que decide se hace
+sobre los refs REALES y no sobre una lista escrita a mano». Para la mitad de las
+**re-atribuciones** sigue siendo cierto y no se toca — ahí la población real es la que vale, y la
+tiene (97). Para la mitad del **rescate** no lo era: los refs reales son una población que
+**caduca con el merge de otro**, y el auto-borrado de ramas la vacía justo cuando el ticket ha
+tenido éxito. El propio mensaje de error lo había escrito como hipótesis; era la cierta.
+
+## ③ Lo hecho
+
+1. La población del rescate pasa a ser **los refs de hoy MÁS las formas DECLARADAS** en el bloque
+   `FORMAS:` … `:FIN` de `scripts/_numero-de-rama.mjs` — la lista que estrenó 804h, que **no se
+   borra al mergear**.
+2. Esa lectura se saca a `formasDeclaradas()`, que ahora usan los **dos** sitios: el test que
+   ejercita la lista línea a línea (que le pone su suelo: que salgan líneas y de las dos clases) y
+   este control.
+3. Un suelo propio antes de juzgar: si el bloque dejara de declarar alguna forma
+   `scrum-<n><letra><dígitos>`, el control dice **NO PUDE MIRAR** en vez de dar verde.
+4. El mensaje del fallo deja de ofrecer la hipótesis que ya no puede darse.
+
+**No se toca la regla** (`numeroDeRama`, byte a byte igual) ni la mitad de re-atribuciones.
+
+## ④ Los controles
+
+- **🔴 ROJO REPRODUCIDO, no leído.** Repo de repro con **exactamente las 154 ramas del remoto de
+  hoy** creadas como refs: el fichero **tal y como está en `main`** cae con el mismo mensaje, letra
+  por letra, que el run 35537122940. Sin eso, «el remoto se quedó sin `e<n>`» era una teoría.
+- **✅ Con el arreglo, sobre esa misma población sin ninguna `e<n>`:** `pass 4 · fail 0`.
+- **⛔ CONTROL POSITIVO · los dientes siguen puestos.** Se **deshizo SCRUM-804h** en el repro
+  (sufijo de vuelta a `[a-z]?`), con su suelo comprobado
+  (`numeroDeRama('scrum-915e1-documento-vivo')` → `null`): el fichero parcheado cae con **`fail
+  3`**, y entre ellos la afirmación del rescate con su mensaje nuevo.
+- 🔎 **Un verde que no valía, por el camino:** el primer intento de inyección se hizo con `sed` y
+  **no llegó a tocar el fichero**; el `pass 4` que salió no medía nada. Se cazó porque la pasada
+  imprime la línea ejecutable del patrón, no porque se confiara en el verde.
+- **Censos de entrada** (237, 258, 267, 273, 514, 522, 548, 723) y `npm run guards:entrada`, en
+  verde. Ojo al instrumento: un worktree recién creado no tiene `node_modules` ni `dist/`, y sin
+  ellos cuatro de esos ficheros caen por `ERR_MODULE_NOT_FOUND` — eso no es un rojo, es no haber
+  medido.

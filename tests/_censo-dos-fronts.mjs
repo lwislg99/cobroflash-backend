@@ -125,6 +125,18 @@ function hayLlamada(sf, { nombre, receptor = null, argumento = null }) {
   return visto;
 }
 
+/** Hay una llamada a `overflowMenu([...])` cuya lista lleva el identificador `nombre`. */
+function hayElementoEnMenu(sf, nombre) {
+  let visto = false;
+  recorrer(sf, (n) => {
+    if (visto || !ts.isCallExpression(n) || nombreLlamada(n) !== 'overflowMenu') return;
+    const lista = n.arguments[0];
+    if (lista && ts.isArrayLiteralExpression(lista)
+        && lista.elements.some((e) => ts.isIdentifier(e) && e.text === nombre)) visto = true;
+  });
+  return visto;
+}
+
 /** Existe una propiedad `clave` en algun objeto literal del arbol. */
 function hayPropiedad(sf, clave) {
   let visto = false;
@@ -177,15 +189,21 @@ export const CAPACIDADES = [
   { id: 'E2', que: 'condiciones de pago (select de plazos)',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'blockConditions', argumento: null }) },
   { id: 'E3', que: 'caducidad / fecha propia del documento',
-    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'blockConditions', argumento: 'validWrapper' }) },
+    // SCRUM-915d · la caducidad cuelga de SU FILA del paso Condiciones (que cuelga del bloque).
+    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'filaValidezDetalle', argumento: 'validWrapper' }) },
   { id: 'E4', que: 'que datos del cliente salen en el documento',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'blockDelivery', argumento: 'docFieldsWrapper' }) },
   { id: 'E5', que: 'estado del documento en el panel derecho',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'rightCard', argumento: 'resultBox' }) },
   { id: 'E6', que: 'autoguardado de borrador',
     detecta: (sf) => hayLlamada(sf, { nombre: 'scheduleDraftSave' }) },
+  // 🔁 SCRUM-915i (21-sep-2026) · «💾 Guardar como plantilla» sale de la fila de acciones del último
+  // paso y entra en el menú «⋯» de arriba (v3 aprobada). La capacidad es la misma; cambia su DIRECCIÓN,
+  // y el detector la sigue: el botón va en la lista del `overflowMenu`, y el menú cuelga de la fila
+  // del título. Las dos cosas, porque un menú que no se monta no guarda nada.
   { id: 'E7', que: 'guardar las lineas como plantilla',
-    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'actionsRow', argumento: 'saveTemplateBtn' }) },
+    detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'headingRow', argumento: 'masAccionesBtn' })
+      && hayElementoEnMenu(sf, 'saveTemplateBtn') },
   { id: 'E8', que: 'reordenar lineas (arrastre + mover)',
     detecta: (sf) => hayLlamada(sf, { nombre: 'moverLinea' }) },
 ];
@@ -284,6 +302,10 @@ export const LOS_OCHO = [
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'payMethodsWrapper', argumento: 'pmFee' }) },
   { id: 'F11', que: 'plantillas + Sugerir con IA + Usar plantilla, GRATIS Y EN PRIMER PLANO',
     fichero: 'public/dashboard/js/quotesView.js',
+    // SCRUM-600 · el ancla sigue a su línea. Desde SCRUM-600g el `appendChild` vuelve a ir sin
+    // condición: en el documento suelto las plantillas ya no son parada declarada. Lo que el ancla
+    // sujeta es el CONTROL NEGATIVO —quitarla tiene que cambiar la respuesta del detector—, así que
+    // tiene que ser la línea que de verdad está en el fichero.
     ancla: '  linesHeader.appendChild(useTemplateBtn);',
     detecta: (sf) => hayLlamada(sf, { nombre: 'appendChild', receptor: 'linesHeader', argumento: 'aiBtn' })
                   && hayLlamada(sf, { nombre: 'appendChild', receptor: 'linesHeader', argumento: 'useTemplateBtn' }) },

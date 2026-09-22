@@ -1,0 +1,12 @@
+TESTIGO · fijos en Gastos a 390×844 · Edge (Windows)
+   fijo · <aside .sidebar> aria="" texto="YQ
+        YaQu
+      
+
+" z=40 · x -248-0 · y 0-844 (248×844)
+   fijo · <div .gastos-barra> aria="" texto="Nuevo gastoN" z=25 · x 0-390 · y 779-844 (390×65)
+   fijo · <button #tut-help-btn> aria="" texto="?" z=350 · x 322-370 · y 776-824 (48×48)
+   barra de «Nuevo gasto»: {"x":0,"y":779,"w":390,"h":65,"r":390,"b":844} · boton: {"x":16,"y":790,"w":358,"h":44,"r":374,"b":834}
+   🔴 <button #tut-help-btn> aria="" tapa 1632 px² del BOTON «Nuevo gasto» (z=350)
+población: 3 elementos fijos visibles · 2 distintos de la barra
+EXIT=1

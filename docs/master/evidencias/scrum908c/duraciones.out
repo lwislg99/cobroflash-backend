@@ -1,0 +1,13 @@
+POBLACION runs=148
+cancelled n=112 min=19 med=615 max=651 >=590s:74 <60s:3
+success n=7 min=483 med=541 max=594 >=590s:1 <60s:0
+failure n=21 min=467 med=549 max=592 >=590s:2 <60s:0
+null-sin-tiempos n=8 
+success 35348529850 2026-09-18T13:09:00Z scrum-951c-fichas-javier 594
+success 35345618271 2026-09-18T12:37:01Z scrum-912b-lecturas-staging 483
+success 35345152758 2026-09-18T12:31:51Z scrum-951b-normas-dos-equipos 491
+success 35328124095 2026-09-18T09:10:13Z scrum-524b-el-trinquete 573
+success 35326170938 2026-09-18T08:47:29Z main 547
+success 35257299743 2026-09-17T18:11:29Z scrum-924-la-pantalla-que-se-cree-la-url 541
+success 35244387014 2026-09-17T16:05:15Z scrum-880d-la-prueba-del-empate 524
+EXIT=0

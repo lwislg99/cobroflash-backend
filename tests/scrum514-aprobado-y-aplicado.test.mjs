@@ -81,7 +81,21 @@ function citasDeTextoAprobado(md) {
     if (/^#{1,6}\s/.test(linea)) { dentro = /texto\s+aprobado/i.test(linea); continue; }
     if (!dentro) continue;
     const m = /^>\s?(.+)$/.exec(linea.trim());
-    if (m && m[1].trim().length >= 4) out.push(m[1].trim());
+    if (!m || m[1].trim().length < 4) continue;
+    // 🔴 SCRUM-915e1 · LA MISMA REGLA DE PLANTILLA QUE YA APLICA `celdasDeTabla`, que aquí
+    // faltaba. No es una excepción nueva ni una rebaja: es la de 20 líneas más abajo, escrita
+    // para el registro congelado y nunca traída a las fichas. Un texto aprobado con un hueco
+    // dentro —«Presupuesto válido hasta el {dd/mm/aaaa}.»— NUNCA aparece literal en el código,
+    // porque el código lo COMPONE; cruzarlo tal cual da un rojo permanente por un texto que SÍ
+    // está aplicado. Lo que este guard puede afirmar de una plantilla es que su parte fija esté,
+    // y eso lo cubren los censos de la pantalla que la pinta (`scrum600` la ranura, `scrum600b`
+    // el documento renderizado) y el guard de navegador del ticket, que cambia el hueco dos veces
+    // y comprueba que la pantalla va detrás.
+    //
+    // La exención es ESTRECHA a propósito: sólo salta con llaves. Un texto sin ellas se sigue
+    // cruzando byte a byte, y eso lo vigila el suelo de este mismo fichero.
+    if (/{[^}]+}/.test(m[1])) continue;
+    out.push(m[1].trim());
   }
   return out;
 }
@@ -135,7 +149,60 @@ function corpus() {
  * tiene que pasar para que salga de aquí. Una excepción sin eso vuelve a ser el defecto que este
  * ticket cierra — un texto aprobado que nadie aplica y del que nadie se acuerda.
  */
+/**
+ * 🔴 SCRUM-867 (16-sep-2026) · DIEZ TEXTOS QUE SE QUEDARON SIN PANTALLA, NO SIN APROBACIÓN.
+ *
+ * Son los rótulos accesibles y los marcadores del modal viejo de «Nueva factura»
+ * (`nuevaFacturaModal.js`). Ese fichero estaba MUERTO —nadie lo abría desde que la lista navega a
+ * `invoices-new`— pero el índice lo cargaba y el SHELL lo precacheaba, así que se retiró entero.
+ *
+ * NO se han desaprobado: siguen firmados y siguen en su registro. Lo que ya no existe es la pantalla
+ * que los pintaba. Se aparcan aquí —en vez de borrarlos del registro— porque quitarle la firma a un
+ * texto es del fundador (regla 30), y porque la pantalla de hoy tiene los suyos, aprobados aparte.
+ */
+const MOTIVO_MODAL_RETIRADO = 'SU PANTALLA SE RETIRÓ (SCRUM-867, 16-sep-2026). Era un rótulo del '
+  + 'modal viejo de «Nueva factura» (`public/dashboard/js/nuevaFacturaModal.js`), que estaba muerto '
+  + '—cero llamadas, medido montando la pantalla— y que el panel seguía descargando y ejecutando en '
+  + 'cada visita. Sale del árbol con su fichero; NO se desaprueba: la firma se conserva en su '
+  + 'registro. Lo desbloquea el fundador el día que decida retirar los textos del registro, o una '
+  + 'pantalla nueva que los necesite. Registro del ticket: `docs/master/SCRUM-867.md`.';
+
+const DEL_MODAL_RETIRADO = [
+  'Busca por nombre…',
+  'Buscar cliente por nombre',
+  'Cliente al que facturas',
+  'No hemos podido cargar tus clientes. Inténtalo otra vez.',
+  'Trabajo o material',
+  'Concepto de la línea',
+  'Cantidad de unidades',
+  'Precio sin IVA',
+  'Precio por unidad, sin IVA',
+  'Quitar esta línea',
+];
+
 const APARCADOS = [
+  ...DEL_MODAL_RETIRADO.map((texto) => ({ texto, motivo: MOTIVO_MODAL_RETIRADO })),
+  {
+    texto: 'Crear una factura nueva',
+    motivo: 'RETIRADO POR DECISIÓN DEL FUNDADOR (SCRUM-875, 16-sep-2026). Era el `aria-label` del '
+      + 'diálogo de «Nueva factura», servido por `rotulosDelDocumento.ariaDialogo()`. Su único '
+      + 'consumidor era el modal viejo, retirado en SCRUM-867; el fundador decidió retirar también el '
+      + 'rótulo: una página no es un diálogo, y cablearlo sería inventarle un uso. NO se desaprueba '
+      + 'en el registro —la firma ocurrió—. Si algún día hay un diálogo, su texto se aprueba entonces. '
+      + 'Registro del ticket: `docs/master/SCRUM-875.md`.',
+  },
+  {
+    texto: 'Se acaba de emitir otra factura de este presupuesto. Vuelve a intentarlo y saldra el tramo siguiente.'.replace('saldra', 'saldrá'),
+    motivo: 'APROBADO Y SIN SITIO DONDE PINTARSE (SCRUM-814, 7-sep-2026). Se propuso para el 409 de '
+      + 'una carrera de tramos y el fundador lo firmo sin cambios. Entre la firma y el merge, otra '
+      + 'sesion cerro la misma carrera en `main` con un arreglo MEJOR: recalcula el tramo dentro '
+      + 'del cerrojo, asi que quien llega segundo emite el tramo SIGUIENTE en la misma peticion y '
+      + 'no hay carrera que contarle a nadie. Y en el camino del CLIENTE FINAL tampoco se pinta: '
+      + 'su aceptacion salio bien y su factura existe, asi que no se le dice nada. Se conserva la '
+      + 'firma porque ocurrio; NO se deja una constante sin consumidor en `src/` para justificarla. '
+      + 'Lo desbloquea el fundador el dia que quiera un aviso de «otra peticion se te ha '
+      + 'adelantado»; registro en `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`.',
+  },
   {
     texto: 'Válido hasta dentro de 7 días',
     motivo: 'CONSTRUIDO Y SIN CABLEAR (SCRUM-605, 4-sep-2026). El nombre accesible existe en '
@@ -162,6 +229,14 @@ const APARCADOS = [
       + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
       + 'esa sesion al '
       + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
+  },
+  {
+    texto: '2. Líneas',
+    motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-915d, 18-sep-2026). Era el título del bloque '
+      + 'de líneas del editor. La v3 del editor, APROBADA por el fundador, convierte los bloques en '
+      + 'pasos, y sus títulos se firmaron en SCRUM-915 comentario 15868: este bloque es el paso '
+      + '«Conceptos» (el número lo pinta la hoja de estilos, aparte). NO se desaprueba en el '
+      + 'registro —la firma ocurrió—; ya no tiene dónde pintarse. Registro: `docs/master/SCRUM-915.md`.',
   },
   {
     texto: 'Modo no reconocido',

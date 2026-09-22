@@ -1,0 +1,17 @@
+{
+  "planId": 1,
+  "plan2": 2,
+  "plan3": 3,
+  "R": {
+    "totalDelBorradorCuadra": "FALLA (guardado 320, con IVA 387.2)",
+    "posponer1": "funciona",
+    "posponer30d": "funciona",
+    "dosPosponerPausan": "funciona",
+    "pausadoNoVuelve": "funciona",
+    "telefonoAjeno": "funciona",
+    "aprobar": "funciona",
+    "aprobarSinCanalDejaElBorrador": "funciona",
+    "cancelar": "funciona",
+    "botonConFlagOff": "funciona"
+  }
+}

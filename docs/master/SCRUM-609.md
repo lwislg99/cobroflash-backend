@@ -624,3 +624,267 @@ retirando mi parche estrecho de `name`**, que es exactamente lo que dejé escrit
 * **STAGING tiene 0 productos**, así que no puede validar ningún backfill del catálogo.
 * Se mantienen los de los apéndices anteriores (CSV del tarifario sin `cost`, y el «bloque K» del
   ticket que no es la Parte K del máster).
+
+---
+
+# SCRUM-609 · APÉNDICE S5 · 16-sep-2026 · Las dos ramas vivas: las dos son RESTOS, y la regla 42 medida
+
+**Medido contra:** `origin/main` = `3e5f58db7325058ededc7ba2381140d0be291abc` · 2026-09-15T15:27:37Z
+**Rama:** `scrum-609-ramas-vivas-medidas` · **Carril:** proceso · **Gate:** sin gate
+
+⛔ **No se ha mergeado ni borrado ninguna rama. No se ha reabierto ni cerrado ningún ticket.**
+`src/` intacto. Esto mide; cerrar o reabrir la 609 es del fundador.
+
+---
+
+## 1 · El veredicto de las dos: **(a) restos**, las dos
+
+| rama | commits propios | veredicto |
+|---|---|---|
+| `scrum-609-medir-el-catalogo` | 1 | ✅ **(a)** todo su contenido está ya en `main` |
+| `scrum-609-switch-y-margen` | 5 | ✅ **(a)** su trabajo entró por otra vía; `main` va muy por delante |
+
+### Cómo se midió, y por qué no por sha
+
+Con squash o con un rehecho **el commit no llega pero el código sí**, así que comparar shas diría
+«sin mergear» sobre trabajo que ya está dentro. Se comparó **fichero a fichero, por contenido**,
+entre cada rama y `origin/main`.
+
+### 🔴 Y mi primer comparador dio un FALSO (b) — lo que lo cazó fue la estructura
+
+La comparación por **pertenencia de líneas** dijo que `scrum-609-switch-y-margen` llevaba
+**105 líneas que no están en main**, repartidas en tres ficheros, y concluyó «(b) trabajo real que
+nunca entró». **Era falso.** Lo desmintió preguntar por la ESTRUCTURA en vez de por el parecido:
+
+| pregunta estructural | main | rama |
+|---|---|---|
+| ¿existe `public/dashboard/js/margenCatalogo.js`? | **sí** | sí |
+| ¿cuántas veces se llama a `cablearMargen(`? | **3** | 3 |
+| ¿el `index.html` carga `margenCatalogo`? | **sí** | sí |
+
+El margen **entró en main**. Y midiendo las dos direcciones se ve por qué sobraban esas 105 líneas:
+
+| fichero | sólo en la RAMA | sólo en MAIN |
+|---|---|---|
+| `public/dashboard/index.html` | 9 | **74** |
+| `public/dashboard/js/productsView.js` | 32 | **292** |
+| `tests/_banco-vistas.mjs` | 64 | **723** |
+
+**`main` va muy por delante en los tres.** Las líneas «sólo en la rama» son fragmentos rancios de
+ficheros que `main` ha reescrito desde entonces — no trabajo que falte.
+
+> 🔒 Una comparación por parecido contesta «esto no está» cuando lo que pasa es «esto ya no se
+> escribe así». Es la misma familia que la ventana de seis líneas de anoche: **si la pregunta se
+> puede hacer por estructura, no se hace por proximidad.**
+
+**Conclusión:** las dos ramas son restos. El ticket **no** está mal cerrado por ellas.
+
+### ⚠️ Lo que NO alcanzo a mirar, declarado
+
+* La comparación por contenido cubre los ficheros que cada rama toca. **No sigo renombrados**: si
+  un fichero llegó a main con otro nombre, saldría como «no existe en main».
+* No distingo si una línea ausente es trabajo pendiente o estilo viejo **salvo preguntando por
+  estructura**, y eso lo he hecho sólo para el margen, que es lo que este apéndice necesitaba.
+
+---
+
+## 2 · ③ La regla 42, medida por primera vez
+
+Derivado del árbol, no a mano:
+
+| | |
+|---|---|
+| ramas remotas | **145** |
+| 🔴 **vivas** (no ancestras de `main`) | **127** |
+| · con número de ticket en el nombre | 72 |
+| · **sin** número (no atribuibles) | **55** |
+| tickets distintos con rama viva | **57** |
+| 🔴 **de ellos, CERRADOS** (`statusCategory = done`) | **55** |
+| en revisión | 2 |
+
+> 🔒 **55 de 57.** La 609 no es un caso: **es la norma.** Un ticket cerrado con rama viva es lo
+> normal en este repositorio hoy, y la regla 42 —«un ticket no se cierra mientras su rama siga sin
+> mergear»— describe algo que no está pasando.
+
+Los 55 van desde `SCRUM-37` hasta `SCRUM-820`, y hay entre ellos carril fiscal (`198` XSD, `205`
+sellado, `215` destinatarios, `216` rectificativa, `234` numeración, `240` sobre duplicado) y
+tenencia (`440`).
+
+### 🔴 El suelo y el control positivo
+
+* **SUELO:** el instrumento encuentra **127** ramas vivas. Si encontrara cero se declararía CIEGO —
+  hay dos medidas a mano en este mismo apéndice.
+* **CONTROL POSITIVO:** sobre tickets cerrados **sin** rama tiene que decir «sin rama», y lo dice:
+
+```
+SCRUM-824  ✅ sin rama      SCRUM-856  ✅ sin rama      SCRUM-752  ✅ sin rama
+SCRUM-844  ✅ sin rama      SCRUM-815  ✅ sin rama
+SCRUM-609  🔴 2 vivas: scrum-609-medir-el-catalogo, scrum-609-switch-y-margen
+```
+
+No contesta lo mismo para todos: **distingue**.
+
+### ⚠️ El límite que más pesa sobre ese 55
+
+**La prueba (a)/(b) por contenido se ha hecho SÓLO para las dos ramas de la 609.** Los otros 53
+cerrados están contados por **tener rama viva**, no por llevar trabajo que falte. Si el patrón de
+la 609 se repite —y es lo que yo esperaría, porque el auto-borrado al mergear deja atrás justo las
+ramas que se rehicieron—, **la mayoría serán restos y no agujeros**. Pero eso **no está medido**, y
+contarlo como medido sería exactamente lo que este apéndice viene a evitar.
+
+Lo que sí está medido es el número que importa para la regla 42: **cuántos tickets cerrados tienen
+hoy una rama remota viva. Son 55.**
+
+## 3 · Lo NO tocado
+
+Ninguna rama mergeada ni borrada · ningún ticket reabierto ni cerrado · `src/` · `prisma/schema.prisma` ·
+el camino de emisión fiscal (regla 38) · ningún estado ni flag (27) · ninguna dependencia (36).
+**Nada ejecutado contra producción ni contra staging.**
+# SCRUM-609 · APÉNDICE S5b · 16-sep-2026 · Los 53 por contenido: el carril fiscal está limpio
+
+**Medido contra:** `origin/main` = `f5720e41e44a8445f51773b9879df277cc7ef946` · 2026-09-15T15:32:18+01:00
+**Rama:** `scrum-609b-los-53-por-contenido` · **Carril:** proceso · **Gate:** sin gate
+
+> 🔴 **EL ORDEN DE LOS APÉNDICES NO SALE DE LAS HORAS, Y ESTE PAR LO DEMUESTRA.** Al fusionar,
+> ordenar por el ancla habría puesto **este apéndice ANTES que el S5**, y sería al revés:
+>
+> | apéndice | ancla | en UTC |
+> |---|---|---|
+> | S5 | `2026-09-15T15:27:37Z` | **15:27** |
+> | S5b (éste) | `2026-09-15T15:32:18+01:00` | **14:32** |
+>
+> 🔒 **El ancla dice contra qué `main` se MIDIÓ, no cuándo se ESCRIBIÓ.** Dos sesiones pueden medir
+> contra commits distintos en cualquier orden, y encima con husos distintos —aquí uno en `Z` y otro
+> en `+01:00`, que es media hora de diferencia aparente que no existe—. **Manda la DEPENDENCIA:**
+> este apéndice dice en su primera línea que «cierra el límite que dejó declarado el apéndice S5»,
+> así que S5 va delante. Quien fusione el siguiente, que lea la dependencia antes que el reloj.
+
+⛔ **Ninguna rama mergeada ni borrada. Ningún ticket reabierto ni cerrado.** `src/` y `prisma/` a
+0 líneas. Cierra el límite que dejó declarado el apéndice S5.
+
+---
+
+## 1 · ✅ EL CARRIL FISCAL Y TENENCIA: los siete, RESTOS. No hay PARA
+
+Era la prioridad del encargo — «si alguno lleva trabajo que falta, PARA inmediatamente». **Ninguno
+lo lleva.** Cada uno comprobado a mano, no por el agregado:
+
+| ticket | rama(s) | veredicto | por qué |
+|---|---|---|---|
+| **198** | `spike-xsd` | ✅ resto | el `spike/` no está en main, pero **su conclusión sí**: `tests/_xsd-verifactu.mjs` y `scrum198-consumidores-xml.test.mjs` |
+| **205** | `sellado`, `sellado-rebasada` | ✅ resto | lo «ausente» son encabezados de `MIGRATIONS_PENDING.md` y `YAQU_MASTER.md`; main tiene **76 y 11** propios frente a 1 |
+| **215** | `destinatarios` | ✅ resto | ver §2 — era un **renombrado** |
+| **216** | `consolidar`, `p12-contradiccion` | ✅ resto | ídem |
+| **234** | `carrera-numeracion` | ✅ resto | ver §2 — el **formato cambió** |
+| **240** | `rebasada`, `rebasada-2` | ✅ resto | `# PARTE I — REGLAS (1-37)`, y main va por la 42 |
+| **440** | `tenencia-supresion` | ✅ resto | `MIGRATIONS_PENDING.md`: main **48** propios frente a 9 |
+
+---
+
+## 2 · 🔴 TRES MODOS DE FALLO DE LA COMPARACIÓN AUTOMÁTICA, y los tres me pasaron
+
+Esto vale más que el veredicto, porque el veredicto caduca y esto no.
+
+### ① Por PARECIDO DE LÍNEAS → falso «falta» (apéndice S5, anoche)
+
+Dijo «105 líneas que no están en main» sobre trabajo que sí estaba. Una línea ausente no distingue
+«falta esto» de «esto ya no se escribe así».
+
+### ② Por SÍMBOLO, ciego a los RENOMBRADOS
+
+Cambié la unidad de línea a **símbolo declarado** (exports, funciones, títulos de test) y preguntando
+si existe **en cualquier parte** de main. Mejor, y aun así:
+
+`scrum-215-destinatarios` y `scrum-216-consolidar` salieron 🔴 por `buildRegFactuEnvelope`, que no
+está en main. **Y main lo explica en su propio código:**
+
+```
+registro.builder.ts:580   `buildRegFactuEnvelope`, que no decía de qué era el sobre; ahora dice lo que es.
+registroBuilder.test.mjs:73  SCRUM-240: `buildRegFactuEnvelope` pasó a llamarse `construirCuerpoSoapRegFactu`
+```
+
+Lo mismo en `scrum-234`: la rama testea `formatAlbaranNumber: ALB-2026-001` y main
+`formatAlbaranNumber: AB260001, y al desbordar CRECE` — **el formato cambió con DOC-02 (SCRUM-592)**.
+
+Y en el `216`: la rama afirma `la constante sigue SIN CONFIRMAR`; main tiene
+`la constante sigue en INCREMENTAL_I (y moverla exige el dictamen)` — **la constante se confirmó por
+decisión del fundador**, y main tiene **13 títulos frente a los 6 de la rama**.
+
+**El arreglo:** medir la DIRECCIÓN. Por fichero, cuántas unidades tiene sólo la rama y cuántas sólo
+main. Con eso, «main va por delante» deja de leerse como «falta trabajo».
+
+### ③ Por SÍMBOLO, ciego a la REIMPLEMENTACIÓN
+
+El que no cierra ni con dirección. `scrum-418-puerta-de-produccion` lleva
+**`src/core/db/puertaDeProduccion.ts`**, que no existe en main, y sus símbolos —`HOST_DE_PRODUCCION`,
+`exigirDestinoDeclarado`, `hostDe`— tampoco. Parece trabajo perdido, y de los caros: la puerta de
+producción.
+
+**No lo es.** Main resuelve lo mismo con **otro diseño**: `scripts/_clave-vs-destino.mjs`, con
+
+```
+DATABASE_URL: { host: 'autorack.proxy.rlwy.net', base: null, comoSeLlama: 'PRODUCCIÓN' }
+```
+
+y es literalmente lo que `CLAUDE.md` describe: «desde SCRUM-418 el guard lo hace cumplir por
+DESTINO». La rama es un diseño anterior que se superó.
+
+> 🔒 **Ningún comparador automático puede cerrar esto**, porque la pregunta ya no es «¿está este
+> símbolo?» sino «¿está cubierta esta PREOCUPACIÓN?». Eso se contesta leyendo, y por eso lo de abajo
+> se entrega como lista para mirar y no como veredicto.
+
+---
+
+## 3 · El barrido completo, y lo que NO certifico
+
+| | |
+|---|---|
+| ramas vivas | **127** |
+| · con número de ticket | **72** |
+| · sin número | **55** |
+| de las 72: ✅ restos limpios (ni una unidad propia) | **37** |
+| ⚠️ con algo propio **sólo en `docs/`** | **9** |
+| ⚠️ con algo propio en **código** (`src`/`tests`/`scripts`/`public`) | **26** |
+
+**Las 37 limpias son restos con la misma seguridad que las dos de la 609.** Las 9 de sólo-docs son,
+en todos los casos mirados, apéndices de máster que se rehicieron.
+
+🔴 **Las 26 con código NO las certifico.** Cada una necesita la lectura del §2③ —¿está cubierta la
+preocupación, aunque no esté el símbolo?— y eso lo he hecho para el carril fiscal, tenencia y la 418.
+Las demás quedan **listadas, no juzgadas**. Las que tienen ficheros que no existen en main, que son
+las que más piden mirada:
+
+`scrum-300-c5-campos` · `scrum-340-contador-plazas-reales` · `scrum-368-a1-texto-grande` ·
+`scrum-388-censo-contra-main` · `scrum-397-fecha-de-cobro-rebasada` · `scrum-418-puerta-de-produccion`
+(✅ ya mirada: reimplementada) · `scrum-683b-acotado-al-hecho` · `scrum-809-el-paywall-del-reves` ·
+`scrum-813-el-trinquete-de-zona-horaria` · `scrum-820b-una-sola-forma`
+
+### Las 55 sin número: qué puedo y qué no
+
+**Puedo** decir que están vivas y cuántas son. **No puedo** atribuirlas a un ticket: el nombre no
+lleva número y el mensaje de commit no es una fuente fiable para eso (un commit puede citar varios
+tickets, o ninguno). Contarlas dentro del censo de la regla 42 sería inventar la atribución, así que
+**quedan fuera del 55-de-57 y se declaran aparte**.
+
+---
+
+## 4 · 🔴 El control positivo, y por qué es sintético
+
+El encargo pide control positivo «sobre una rama que SÍ lleve algo que no esté en main, fabricada por
+ti». **No he fabricado ninguna rama**: crear y borrar refs choca con el «ninguna rama se borra, ni
+una». Se hace sobre el índice, que es donde vive la decisión:
+
+```
+símbolo inventado (estaFuncionNoExisteEnMainSCRUM609B) → ✅ NO está en el índice: lo marcaría ausente
+símbolo real de main (resolverTipoRectificativa)       → ✅ SÍ está: el índice ve lo que hay
+índice de main: 22.690 unidades estructurales
+```
+
+**SUELO:** con el índice vacío el comparador sale con 3 y se declara CIEGO — si no, todo saldría
+«falta» y el barrido diría que 72 ramas llevan trabajo perdido.
+
+## 5 · Lo NO tocado
+
+Ninguna rama · ningún ticket · `src/` · `prisma/schema.prisma` · el camino de emisión fiscal (leído,
+regla 38) · ningún estado ni flag (27) · ninguna dependencia (36). **Nada ejecutado contra producción
+ni contra staging.**

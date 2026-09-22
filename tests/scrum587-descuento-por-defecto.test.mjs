@@ -23,7 +23,7 @@ import ts from 'typescript';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { ejecutableDe } from './_guard-texto.mjs';
-import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { cargarDashboard, pintarVista, todos, datosDeMuestra } from './_banco-vistas.mjs';
 import { scriptsDeLaPagina, rutaDelDashboard, cegueraDelExtractor } from './_scripts-de-la-pagina.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -291,16 +291,47 @@ test('SCRUM-587 · 🔴 la tira se PINTA en el editor, OCULTA, y reutiliza el co
     '🔴 la tira no es `info`: un acuerdo que el profesional pactó no es un aviso de que algo va mal.');
 });
 
-test('SCRUM-587 · 🔴 el rótulo sin firmar lleva la grafía que el censo de SCRUM-402 CUENTA', async () => {
-  const r = await pintarVista(cargarDashboard(RAIZ), 'renderQuotesView');
-  const tira = todos(r.contenedor).find((n) => String(n.className || '').includes('quote-propuesta-dto'));
+test('SCRUM-587 · ✅ los DOS textos de la tira son los FIRMADOS, y ninguno lleva marcador', async () => {
+  // 🔴 SCRUM-915k · 21-sep-2026 · ESTE CONTROL SE HA DADO LA VUELTA. Hasta hoy exigía lo contrario: que
+  // los dos textos de la tira siguieran SIN firmar y con la grafía que el censo del 402 cuenta. El
+  // comentario 15868 de SCRUM-915 los firmó —«Este cliente tiene pactado un descuento del N %» y
+  // «Aplicar a las líneas»— y sus marcadores se retiraron en el mismo commit que se aplicó la firma.
+  // No se relaja: se comparan ENTEROS y con `===` (un `includes` dejaría colar «Aplicar descuento» o
+  // «…descuento del 10» sin el «%») y sobre la pantalla MONTADA, eligiendo al cliente de verdad, no
+  // sobre el fuente: la frase sólo existe cuando hay una propuesta que enseñar.
+  const c = cliente(10);
+  const r = await pintarVista(cargarDashboard(RAIZ, {
+    datos: (url) => {
+      const u = String(url || '');
+      if (/\/admin\/customers/.test(u)) return [c];
+      return datosDeMuestra(u);
+    },
+  }), 'renderQuotesView');
+  assert.equal(r.error, null, `🔴 el editor no monta: ${r.error && r.error.message}`);
+  const tira = todos(r.contenedor).find((n) => clases(n).includes('quote-propuesta-dto'));
   assert.ok(tira, '🔴 no hay tira que mirar');
+  const boton = todos(tira).find((n) => n.tagName === 'BUTTON');
+  assert.ok(boton, '🔴 GUARD CIEGO: la tira no tiene botón.');
+  assert.equal(String(boton.textContent), 'Aplicar a las líneas',
+    '🔴 el rótulo del botón ya no es el texto firmado («Aplicar a las líneas», SCRUM-915 comentario 15868).');
+
+  // CONTROL: elegido el cliente, la tira APARECE. Con la tira oculta su frase no se puede leer, y
+  // «no lleva marcador» sería cierto sobre una frase que nadie ha pintado.
+  const selector = todos(r.contenedor).find((n) => n.tagName === 'SELECT' && n.name === 'customer_id');
+  assert.ok(selector, '🔴 GUARD CIEGO: no encuentro el selector de cliente.');
+  selector.value = String(c.id);
+  selector.disparar('change');
+  assert.equal(tira.hidden, false,
+    '🔴 GUARD CIEGO: elegido un cliente con el 10 % pactado la tira no aparece, y no puedo leer su frase.');
+  const frase = todos(tira).find((n) => clases(n).includes('quote-propuesta-dto__texto'));
+  assert.ok(frase, '🔴 GUARD CIEGO: la tira no tiene el `<span>` de la frase.');
+  assert.equal(String(frase.textContent), 'Este cliente tiene pactado un descuento del 10 %',
+    '🔴 la frase de la tira no es la firmada («Este cliente tiene pactado un descuento del N %»).');
+
   const dentro = todos(tira).map((n) => String(n.textContent || '')).join(' | ');
-  assert.match(dentro, /\[PENDIENTE/,
-    '🔴 el rótulo sin firmar NO lleva marcador, o lleva una grafía que el censo del 402 no cuenta '
-    + '(cuenta `[PENDIENTE`). Un marcador invisible para el censo se queda dormido para siempre.');
-  assert.doesNotMatch(dentro, /descuento habitual|precio pactado|aplicar descuento/i,
-    '🔴 se ha inventado microcopy oficial (regla 30). El rótulo lo firma el asesor.');
+  assert.doesNotMatch(dentro, /\[PENDIENTE/,
+    '🔴 la tira vuelve a pintar un marcador. Si hay un texto nuevo sin firma, se declara en el censo '
+    + 'del 402 A CONCIENCIA; si no, esto no tiene que moverse.');
 });
 
 test('SCRUM-587 · 🔴 la pieza se carga DESPUÉS de su aritmética y ANTES de quien la consume', () => {

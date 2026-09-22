@@ -378,9 +378,14 @@ test('SCRUM-606 · (e) 🔴 el botón sigue estando cuando la lista de albaranes
     `🔴 hay ${conAtajo.length} botones con tecla en Albaranes y debía haber UNO (el de «Nuevo albarán»).`);
   assert.equal(conAtajo[0].hijos.find((h) => h.tagName === 'KBD').textContent, 'N',
     '🔴 la tecla pintada no es la «N»: el atajo de las otras tres listas es esa.');
-  assert.match(conAtajo[0].textContent, /PENDIENTE/,
-    '🔴 el rótulo ya no lleva el marcador. O el fundador lo ha firmado —y entonces hay que bajar ' +
-    '`SIN_APROBAR` y sacar la entrada del censo de SCRUM-402—, o alguien se ha inventado un texto.');
+  // ✅ SCRUM-722 · 7-sep-2026 · FIRMADO. Hasta hoy este assert exigía el MARCADOR, y él mismo
+  // decía cómo se cerraba: «o el fundador lo ha firmado —y entonces hay que bajar `SIN_APROBAR` y
+  // sacar la entrada del censo de SCRUM-402—, o alguien se ha inventado un texto». Se firmó, y las
+  // tres cosas se han hecho a la vez. La pregunta no cambia —¿lo que se pinta es lo que hay
+  // firmado?—: cambia la respuesta, así que ahora se exige el LITERAL APROBADO.
+  assert.equal(conAtajo[0].textContent.replace(/\s*N\s*$/, '').trim(), 'Nuevo albarán',
+    '🔴 el rótulo no es el firmado. Si vuelve a llevar marcador, alguien deshizo la firma; si es '
+    + 'otro texto, alguien se lo ha inventado (regla 30).');
 });
 
 test('SCRUM-606 · (e) la vista de Albaranes registra su atajo «N»', async () => {

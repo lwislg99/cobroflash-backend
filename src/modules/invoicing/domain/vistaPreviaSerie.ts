@@ -20,6 +20,9 @@
 // Las dos ya están exportadas. Este módulo las **importa** y no modifica ni una línea de
 // `invoiceNumber.service.ts` (regla 38): leer ese camino no es STOP, modificarlo sí.
 import { formatInvoiceNumber, resolveSeriesSeq } from './invoiceNumber.service';
+// SCRUM-780: el corte se PREGUNTA también, por el mismo motivo que lo demás — aparte para no
+// tocar la línea de arriba, que es la que vigila el guard de SCRUM-313.
+import { usaFormatoF } from './invoiceNumber.service';
 
 /**
  * El número que saldrá de verdad si se emite ahora mismo con este par.
@@ -37,6 +40,23 @@ export function vistaPreviaSerie(
   par: { invoiceSeriesYear: number | null; nextInvoiceNumber: number },
   año: number,
   rectificativa = false,
+  fecha?: Date | null,
+  seqF?: number | null,
 ): string {
-  return formatInvoiceNumber(prefijo, año, resolveSeriesSeq(par, año), rectificativa);
+  // ── SCRUM-780 · LA VISTA PREVIA TIENE QUE PASAR POR EL CORTE, O MIENTE ────────────────────
+  // Tras el corte la serie ordinaria es `F<AA><NNNN>` y su secuencia NO sale de
+  // `nextInvoiceNumber`: se deriva de lo ya emitido (`leerSeqDeLaSerieF`). Sin `seqF`, el
+  // merchant 1 de dev vería `F260006` —su contador viejo— y emitiría `F260001`. Esta pantalla es
+  // la puerta de última oportunidad: un número distinto del que va a salir es peor que no
+  // enseñar ninguno, porque el profesional confirma creyendo que sabe qué confirma.
+  const enFormatoF = usaFormatoF(fecha, rectificativa);
+  if (enFormatoF && (seqF == null || !Number.isInteger(seqF) || seqF < 1)) {
+    throw new RangeError(
+      'vistaPreviaSerie: tras el corte hace falta `seqF` (la secuencia DERIVADA de la serie F, '
+      + 'con `leerSeqDeLaSerieF`). Sin ella esta pantalla enseñaría el contador de la serie vieja '
+      + 'y prometería un número que no va a salir.',
+    );
+  }
+  const seq = enFormatoF ? (seqF as number) : resolveSeriesSeq(par, año);
+  return formatInvoiceNumber(prefijo, año, seq, rectificativa, fecha);
 }

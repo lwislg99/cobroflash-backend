@@ -71,16 +71,24 @@ Justificación de los tres últimos, que es donde alguien podría dudar:
 
 | Campo | Por qué | Fuente | Estado |
 |---|---|---|---|
-| «Empresa» (seleccionar compañía) | Vincular la persona con la empresa para la que trabaja. Es lo que aparece en Holded al pasar a Persona. | ② | **CONT-03 — no se construye aquí** |
+| «Empresa» (seleccionar compañía) | Vincular la persona con la empresa para la que trabaja. Es lo que aparece en Holded al pasar a Persona. | ② | ✅ **CONSTRUIDO — SCRUM-576 (CONT-03)**, 7-sep-2026 |
 
-> Hoy el lado Persona **no gana ningún campo**: solo pierde los de §3.2. El campo que lo llenaría
-> es de CONT-03. Se dice para que nadie lea el hueco como un olvido.
+> ~~Hoy el lado Persona **no gana ningún campo**: solo pierde los de §3.2. El campo que lo
+> llenaría es de CONT-03. Se dice para que nadie lea el hueco como un olvido.~~
+>
+> ✅ **7-sep-2026 · SCRUM-576 lo llenó.** El lado Persona gana «Empresa», un desplegable que
+> apunta al **id** de otro contacto. La regla vive donde vivía la de §3.2 —`SOLO_PERSONA` en
+> `switchFormaJuridica.js`, junto a `SOLO_EMPRESA`— y no en una segunda regla en otro fichero.
+>
+> ⛔ **La columna `customers.company_id` está SIN APLICAR en las tres bases.** La migración está
+> escrita (`docs/sql/scrum-576-customers-company-id.sql`) y la aplica el fundador; el PR no es
+> mergeable hasta entonces. Detalle en `docs/MIGRATIONS_PENDING.md`.
 
 ### 3.4 Lo que este ticket deja preparado y NO construye
 
 | Ticket | Qué añade | Dónde encaja |
 |---|---|---|
-| CONT-03 | campo «Empresa» | lado Persona (§3.3) |
+| ~~CONT-03~~ | ~~campo «Empresa»~~ | ✅ hecho: SCRUM-576, 7-sep-2026 |
 | CONT-04 | nombre comercial ≠ razón social | lado Empresa: parte `legalName` en dos |
 | CONT-08 (SCRUM-581) | filtro Empresas/Personas | lee `contact_kind` — **por eso la opción C no valía** |
 | CONT-19 | los campos pueden diferir entre lados | generaliza §3.1–§3.3, y tiene que resolver la divergencia ya medida en §2 |
@@ -115,6 +123,7 @@ El switch está en los **dos** formularios y la columna `contact_kind` está apl
 | Pieza | Dónde |
 |---|---|
 | El componente | `public/dashboard/js/switchFormaJuridica.js` |
+| El campo «Empresa» del lado Persona (SCRUM-576) | `switchFormaJuridica.selectorDeEmpresa` · `empresasElegibles` |
 | Alta + edición desde la lista | `public/dashboard/js/customersView.js` |
 | Edición desde la ficha 360 | `public/dashboard/js/customerDetailView.js` |
 | La regla de §3, en UN sitio | `switchFormaJuridica.aplicarLado` / `debeEsconder` |

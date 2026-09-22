@@ -154,3 +154,120 @@ Prisma regenerado y `dist/` reconstruido desde este worktree. `npm run guards:en
 * `tests/scrum609b-switch-tipo-articulo.test.mjs` — el test del microcopy se invierte: exigía el
   marcador, ahora exige su ausencia y el texto literal aprobado.
 * `tests/scrum402-marcador-no-se-pinta.test.mjs` — `switchTipoArticulo.js` sale del `CENSO`.
+
+---
+
+# SCRUM-722 · el censo de marcadores sobre lo PINTADO, y el guard que faltaba
+
+**Medido contra:** `origin/main` = `af08201502a3978a484de3933132dfcdf26df790` · 2026-09-07T13:55:27+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-722-marcadores-a-la-vista`
+**Carril:** front / microcopy + un guard de navegador
+
+## De dónde salió
+
+De rebote. El barrido de SCRUM-721 devolvió «[PENDIENTE microcopy oficial] Nuevo albarán» midiendo
+otra cosa. Llevaba **tres días en pantalla** y no lo encontró ningún mecanismo.
+
+## 🔴 La respuesta que más vale: por qué ninguno de los CUATRO guards lo vio
+
+No fue descuido. Ninguno mira eso, y cada uno lo dice:
+
+| guard | sobre qué | por qué no lo vio |
+|---|---|---|
+| SCRUM-402 | el **fuente** (`public/dashboard/js`, por AST) | Es un **trinquete**, no una prohibición: congela un censo por fichero. `atajoNuevo.js: 1` está **dentro** del censo, así que ese marcador estaba **contado y permitido**. Hizo exactamente lo que promete. |
+| SCRUM-667 | el **fuente**, ampliado a `src/` | Mismo eje. Un marcador más en un fichero ya censado no es noticia. |
+| SCRUM-720 | el **DOM renderizado** | Es el único del eje bueno, y su propia constante `COBERTURA` declara que sólo cubre `parteDetailView.js` y `jobAsignados.js`. **Dos ficheros.** |
+| SCRUM-755 | el **árbol**, contando SITIOS que pintan | Tenía `atajoNuevo.js: 1` **en su censo**: lo contaba bien. Pero contar no es avisar — mientras el número cuadre, nadie mira si lo contado está delante de un cliente. ⚠️ **A éste no lo encontré en mi primer barrido de guards**; salió en rojo al correr la suite, y por eso esta tabla dice cuatro y no tres. |
+
+🔒 **Teníamos tres guards y ninguno cubría el panel entero sobre lo pintado.** El fuente dice qué
+literales existen; sólo el DOM dice cuáles se leen. Y un marcador que vive en una constante
+compartida —como éste— no sube el censo del fichero que lo pinta, porque no vive ahí.
+
+## ① El censo, sobre el DOM renderizado
+
+**26 vistas** (derivadas del `switch` del router, no de mi memoria) **× 3 estados** = 78 pares.
+
+**La unidad, declarada** (la lección de SCRUM-714, donde tres instrumentos dieron 1, 4, 13 y 14):
+
+- **APARICIÓN** — una ocurrencia del literal en un **nodo de texto del DOM ya pintado**. Es lo que se cuenta.
+- **VISIBLE** — su padre tiene caja y ningún ancestro está oculto. Se cuenta **aparte**.
+- **PAR** — (vista, estado). El del parte sólo salía en dos de tres: el estado importa.
+- **No cuenta**: atributos (`title`, `placeholder`, `aria-label`) ni `value` de input. Es un hueco real y se declara.
+
+**Resultado: 15 apariciones · 9 visibles · 3 vistas · 0 ciegos.**
+
+| vista | apariciones | visible | dónde |
+|---|---|---|---|
+| `albaranes` | 3 (1 por estado) | 👁 **sí** | `atajoNuevo.js:48` → botón de la lista |
+| `export` | 6 (2 por estado) | 👁 **sí** | `exportView.js:87` y `:100` |
+| `quotes-new` | 6 (2 por estado) | oculto | `quotesView.js:890`, `:1363`, `:1398` |
+
+## Cuatro veces que el banco me mintió, y cómo se cazaron
+
+1. **La página no era la página.** Sin sesión, el arranque hace `location.href='login.html'`: el
+   documento se sustituye, no queda ni un script y **las 26 vistas salían «no existe render…»**.
+   Cero absoluto con cara de limpio. Se le da sesión por `fetch` **antes** de los scripts.
+2. **El contenedor desaparecía**: alguna vista reescribe el `body`. Se recrea.
+3. **«Sin datos» no es «sin forma»**: devolver `[]` a todo reventaba tres vistas y las dejaba
+   ciegas. Se conserva la forma y se vacían sus listas.
+4. **El estado del albarán en mayúsculas** (`'BORRADOR'`) daba un destino inexistente y la vista
+   moría antes de pintar. Va en minúscula.
+
+Los cuatro se cazaron porque el barrido **aborta cuando no puede mirar**. Con un instrumento que
+contara «0» en esos casos, este informe diría que el panel está limpio.
+
+## ② El arreglo
+
+`atajoNuevo.TEXTOS.albaranes` pasa a **«Nuevo albarán»**, firmado por el fundador el 7-sep-2026 y
+registrado en `docs/microcopy/2026-09-07-SCRUM-722-nuevo-albaran.md`. Vive en la pieza, así que la
+firma llega a la vez al botón de la lista y al título del modal del buscador.
+
+**Del resto no se ha inventado ni una palabra.** Van en el informe con su literal para que los firme.
+
+## ③ El guard: `guard:marcadores-en-pantalla`
+
+Un guard de navegador más en la tanda (ahora **14**). Vigila que **ningún marcador nuevo llegue al
+DOM renderizado** de las 26 vistas en sus tres estados.
+
+**Es un trinquete y no una prohibición**, por el mismo motivo que SCRUM-402: hoy quedan dos ranuras
+sin firmar, y un guard que naciera rojo lo apaga alguien en una hora. Vigila que **el número no
+suba y que no aparezca una vista nueva**. Las entradas se **borran**, no se ponen a 0.
+
+**Sus dos suelos:**
+
+- Una vista que no se puede pintar es **CIEGA y el guard falla**. «No he podido mirar» no es «está limpio».
+- **El control negativo se corre en CADA ejecución**: inyecta un marcador y comprueba que el
+  detector lo ve. No se confía en que se probara una vez.
+
+**🔴 El rojo, corrido — y el primer intento no cayó.** Inyecté un marcador al principio de
+`renderTemplatesView` y el guard **siguió verde**: el propio render reasigna `innerHTML` después y
+se lo comía. Eso no era un guard flojo, era una inyección que no llegaba a pintarse — la misma
+distinción entre *estar en el fuente* y *llegar al DOM* que justifica todo este ticket. Inyectado
+donde sí se pinta (un `textContent` real), el guard **cae** nombrando vista, número y literal.
+Revertido, vuelve al verde.
+
+## Lo que queda SIN FIRMA, y no se toca
+
+| dónde | qué dice hoy | visible | qué es |
+|---|---|---|---|
+| `exportView.js:87` | `[PENDIENTE microcopy oficial]` | 👁 sí | párrafo de ayuda bajo «Facturas emitidas» |
+| `exportView.js:100` | `[PENDIENTE microcopy oficial]` | 👁 sí | rótulo del botón `#btn-libro-emitidas` |
+| `quotesView.js:890` · `:1363` · `:1398` | `[PENDIENTE microcopy oficial]` | oculto | el botón de la propuesta de pago y su porcentaje |
+
+Los de `quotesView` llegan al DOM pero están ocultos en los tres estados medidos: se despliegan al
+elegir la propuesta de pago. **Cuentan igual** — que hoy no se vean depende de un despliegue, no de
+que el texto esté aprobado.
+
+## Cierre
+
+`npm run build` → 0 · `guards-visuales` **14/14**, el nuevo incluido.
+
+### Addendum · el hueco que este censo NO alcanza, dicho antes de que lo encuentre otro
+
+El censo mide las vistas **tal como se pintan al entrar**. Un modal que sólo se abre con un clic
+queda fuera, y ahí hay marcadores reales: `albaranDesdePresupuestoModal.js` declara **seis**
+(`ALB_ORIGEN_SIN_APROBAR = 6`) y el profesional los ve en cuanto abre el buscador de presupuestos.
+
+Se dice aquí en vez de dejar que el número de arriba parezca la foto completa. Abrir cada modal
+desde el guard es otro ticket: hay que decidir con qué gesto se abre cada uno, y eso es una lista
+a mano —justo lo que este guard evita en las vistas, donde las deriva del router—.

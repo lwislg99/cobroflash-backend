@@ -59,8 +59,23 @@ import crypto from 'node:crypto';
 import http from 'node:http';
 import Stripe from 'stripe';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113: la limpieza no depende de que yo me acuerde
+import { parseBDSegura } from '../scripts/_db-guard.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// 🔴 SCRUM-809 (21-sep-2026) · ESTE GUARD SALÍA MUDO EN EL META-GUARD, y el motivo era el gate: solo se
+// activaba con `QA_DB_TEST=1` (la base de STAGING, que el CI no tiene), así que en CI sus siete tests se
+// SALTABAN y una mutación que reintroduce el defecto no podía ponerlos rojos. Un test que no corre no cae.
+// Se abre también con `LIBRO_PG_URL` —un Postgres DESECHABLE, loopback y base «*_test», que es lo que el
+// job de CI y el meta-guard sí llevan—, con el mismo cerrojo que SCRUM-979/980. Lo que el guard EXIGE no
+// cambia ni una línea: cambia DÓNDE puede correr.
+const URL_BANCO = process.env.QA_DB_TEST === '1' ? '' : (process.env.LIBRO_PG_URL || '');
+if (URL_BANCO) {
+  const p = parseBDSegura(URL_BANCO);
+  if (!p || !['127.0.0.1', 'localhost', '::1'].includes(p.host) || !p.base.endsWith('_test')) {
+    throw new Error('🔴 LIBRO_PG_URL no es un banco desechable (loopback y base «*_test»). No se toca nada.');
+  }
+  process.env.DATABASE_URL = URL_BANCO;
+}
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 // Claves de JUGUETE, fijadas antes de cargar `dist/` (que lee `config` al importarse). No viaja
 // nada a Stripe: `constructEvent` es HMAC local y `generateTestHeaderString` es su inversa. Se
@@ -228,7 +243,7 @@ const nuevo = (extra) => ({
 for (const puerta of PUERTAS) {
   test(
     `SCRUM-809 · 🔴 EL QUE DECIDE · ${puerta.nombre}: paga → cancela → conserva el periodo Y el paywall le alcanza al vencer`,
-    { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' },
+    { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
     async () => {
       await conApp(async ({ prisma, emitir, cookieDe, intentarTrabajar, subDe }) => {
         await withMerchant(prisma, nuevo({ plan: 'trial', planExpiresAt: new Date(Date.now() + 5 * DIA) }), async (m) => {
@@ -291,7 +306,7 @@ for (const puerta of PUERTAS) {
 
   test(
     `SCRUM-809 · la pregunta que dejó abierta el fundador · ${puerta.nombre}: si la fecha YA estaba vencida al cancelar, le alcanza YA`,
-    { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' },
+    { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
     async () => {
       await conApp(async ({ prisma, emitir, cookieDe, intentarTrabajar, subDe }) => {
         await withMerchant(prisma, nuevo({ plan: 'trial', planExpiresAt: new Date(Date.now() + 5 * DIA) }), async (m) => {
@@ -314,7 +329,7 @@ for (const puerta of PUERTAS) {
 
 test(
   'SCRUM-809 · ✅ POSITIVO · el que NUNCA pagó y agota su trial acaba donde acababa: bloqueado',
-  { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' },
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
   async () => {
     await conApp(async ({ prisma, cookieDe, intentarTrabajar }) => {
       // Ni un solo evento de Stripe: este merchant no pasa por ninguna de las dos puertas.
@@ -330,7 +345,7 @@ test(
 
 test(
   'SCRUM-809 · ✅ NEGATIVO · el que paga y NO cancela no se mueve un milímetro',
-  { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' },
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
   async () => {
     await conApp(async ({ prisma, emitir, cookieDe, intentarTrabajar, subDe }) => {
       await withMerchant(prisma, nuevo({ plan: 'trial', planExpiresAt: new Date(Date.now() + 5 * DIA) }), async (m) => {
@@ -363,7 +378,7 @@ test(
 // que los ids de este fichero se generan únicos.
 test(
   'SCRUM-809 · ✅ el LRU de idempotencia SÍ marca duplicado cuando el id se repite (respalda la negación)',
-  { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' },
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' },
   async () => {
     await conApp(async ({ prisma, emitirCon, idNuevo, subDe }) => {
       await withMerchant(prisma, nuevo({ plan: 'trial', planExpiresAt: new Date(Date.now() + 5 * DIA) }), async (m) => {
@@ -385,32 +400,8 @@ test(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-// LAS MUTACIONES QUE ME TUMBAN. Las dos primeras son LA REGRESIÓN EXACTA que este ticket cierra
-// —una por puerta—, así que si alguna sobreviviera, este guard no estaría cubriendo la mitad que
-// dice cubrir. La tercera ataca el paywall mismo: sin ella, el guard podría estar leyendo un 403
-// que viene de otro sitio.
-export const MUTACIONES_QUE_ME_TUMBAN = [
-  {
-    // 🔴 EL DEFECTO ORIGINAL, PUERTA A: se vuelve a borrar la fecha al cancelar.
-    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
-    de: "            data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null },",
-    a: "            data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null },",
-    cae: 'EL QUE DECIDE · A · customer.subscription.updated (status=canceled): paga → cancela → conserva el periodo Y el paywall le alcanza al vencer',
-  },
-  {
-    // 🔴 EL DEFECTO ORIGINAL, PUERTA B. Es OTRO camino de Stripe, no una copia: arreglar sólo una
-    // dejaba vivas todas las cancelaciones que llegan como `subscription.deleted`.
-    fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
-    de: "          data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null }, // A10.2 (L)",
-    a: "          data: { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscriptionId: null, planExpiresAt: null }, // A10.2 (L)",
-    cae: 'EL QUE DECIDE · B · customer.subscription.deleted: paga → cancela → conserva el periodo Y el paywall le alcanza al vencer',
-  },
-  {
-    // El paywall deja de mirar la fecha: nadie queda bloqueado nunca. Si esto sobreviviera, mis
-    // asserts de «bloqueado» no estarían leyendo el paywall.
-    fichero: 'src/core/http/authMiddleware.ts',
-    de: "  if (plan === 'trial' && planExpiresAt && planExpiresAt < new Date()) {",
-    a: "  if (false) {",
-    cae: 'el que NUNCA pagó y agota su trial acaba donde acababa',
-  },
-];
+// LAS MUTACIONES QUE ME TUMBAN YA NO SE DECLARAN AQUÍ (21-sep-2026): viven en
+// `tests/scrum809b-paywall-sin-banco.test.mjs`, con las MISMAS tres —una por puerta de cancelación y la
+// del paywall mismo—. El motivo: el meta-guard corre SIN BASE por diseño, y las declaraba con un `cae`
+// que es de un test de banco, que se salta; sobre un test saltado no se puede emitir veredicto y salía
+// MUDO/CIEGO. Este fichero sigue midiendo lo que importa —el acceso— y no cambió ni una aserción.

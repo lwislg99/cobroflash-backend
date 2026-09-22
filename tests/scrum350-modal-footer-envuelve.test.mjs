@@ -37,7 +37,10 @@ const HOJA = fs.readFileSync(CSS, 'utf8');
 // número y significan lo contrario.
 const SUELO_TOTAL = 10;
 const SUELO_PLANTILLA = 5;     // HTML dentro de template literals
-const SUELO_CREATE = 4;        // document.createElement + .className
+// 🔴 4 → 3 · 16-sep-2026 (SCRUM-867): NO es que el detector vea menos, es que hay un modal menos.
+// `nuevaFacturaModal.js` estaba muerto —nadie lo abría— y se retiró del árbol; su pie era uno de
+// los construidos con `document.createElement`. Regenerado con el censo, no deducido.
+const SUELO_CREATE = 3;        // document.createElement + .className
 const SUELO_HELPER = 1;        // createElement(tag, clase, texto) propio de la vista
 
 test('SCRUM-350 · SUELO: el censo encuentra los pies de modal', () => {
@@ -110,7 +113,9 @@ test('SCRUM-350 · LA OTRA CARA: el pie no se rediseña para arreglar uno solo',
 // Aquí se le QUITA la cosa vigilada y se exige que el resultado cambie.
 
 test('SCRUM-350 · ROJO: si un pie deja de llevar la clase, el censo lo pierde', () => {
-  const victima = 'public/dashboard/js/nuevaFacturaModal.js';
+  // SCRUM-867: la víctima era `nuevaFacturaModal.js`, retirado. Se reancla en otro pie construido
+  // de la MISMA forma (`document.createElement` + `.className`), que es lo que este rojo ejercita.
+  const victima = 'public/dashboard/js/jobDetailView.js';
   const mutadas = FUENTES.map((f) =>
     f.ruta === victima ? { ...f, texto: f.texto.replace(/'modal-footer'/g, "'pie-cualquiera'") } : f);
   const tras = censarPiesDeModal(mutadas);

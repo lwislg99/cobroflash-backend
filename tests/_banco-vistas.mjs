@@ -30,6 +30,24 @@
 //
 // > Un banco infiel no mide de menos: mide OTRA COSA, y su rojo se lee igual que un hallazgo.
 //
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ⚠️ LÍMITES CONOCIDOS · lo que este banco NO hace como el navegador, y lo SABE
+//
+// Decisión del orquestador (17-sep-2026, al cerrar SCRUM-901): se declaran aquí y **no llevan
+// ticket mientras ningún test mida mal por su causa**. Si aparece uno, se abre ticket con ESA víctima
+// y se arregla con su rojo: no antes, y no «por si acaso».
+//
+//   1. SIN IndexedDB por defecto. `cargarDashboard` no lo inyecta, así que la Inicio pinta «No hemos
+//      podido comprobar si te queda algo por subir» (+1 nodo frente a Edge, SCRUM-901). Inyectarlo
+//      cambiaría lo que reciben TODAS las vistas medidas a cambio de un solo nodo explicado. Quien lo
+//      necesite lo pide: `_banco-almacen-local.mjs` ya lo monta con `fake-indexeddb`.
+//   2. SIN cierres implícitos. `<p>`, `<li>`, `<td>` u `<option>` sin su `</…>` NO se cierran al abrir
+//      el siguiente: lo que venga detrás queda DENTRO. El navegador sí los cierra.
+//   3. SIN el `<tbody>` que el navegador inserta cuando un `<tr>` va directo en `<table>`. Aquí el
+//      `<tr>` es hijo de la tabla; en Edge, nieto.
+//   4. `textContent` NO se agrega. El texto de un elemento es el que va justo detrás de su etiqueta de
+//      apertura, no la suma de sus descendientes: `<span>a <b>b</b></span>` da «a» y no «a b».
+//
 // Sin dependencias nuevas (regla 36): `node:vm` y un DOM de mentira, como el de SCRUM-296.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -72,6 +90,11 @@ const ATRIBUTO = /(?:^|\s)([A-Za-z_:][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'))
 // FUERA A PROPÓSITO: `value` y `checked`, porque en el navegador el campo NO refleja el
 // atributo después de escribir o de marcar —ahí devolver `false` es lo FIEL, no un hueco—; e
 // `id` y `class`, que el matcher ya resuelve por su campo unas líneas más abajo.
+// SCRUM-901 · para el parser que anida: los elementos que no tienen cierre (no abren nada) y los
+// que guardan TEXTO dentro aunque lleve `<`.
+const VACIOS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+const CRUDOS = new Set(['script', 'style', 'textarea']);
+
 const REFLEJADOS = new Map([
   ['type', ''], ['name', ''], ['href', ''], ['src', ''],
   ['title', ''], ['placeholder', ''], ['download', ''], ['disabled', false],
@@ -211,6 +234,30 @@ function desengancha(h) {
   if (h && h._padre) h._padre.hijos = h._padre.hijos.filter((x) => x !== h);
 }
 
+/**
+ * 🔴 SCRUM-917f · `append` y `prepend` ACEPTAN CADENAS, como el navegador.
+ *
+ * `ParentNode.append(...nodos o cadenas)` admite strings y los mete como nodos de texto. Aquí no:
+ * el bucle hacía `x._padre = n` sobre cada argumento, y sobre un primitivo eso es un `TypeError`
+ * en modo estricto. Resultado, medido en SCRUM-917e: `jobDetailView` hacía `l.append(e, ' ', v)`
+ * —DOM de manual, perfectamente legítimo— y **la vista entera reventaba al montarse**, así que los
+ * dos contratos de SCRUM-817 caían en su SUELO sin llegar a mirar el orden que vigilan.
+ *
+ * Lo que hace este hueco distinto de `prepend` (SCRUM-460) o `insertAdjacentHTML` (SCRUM-698) es
+ * que aquí el banco y el navegador DISCREPABAN en silencio: `guard:detalle-trabajo-917` daba 92 de
+ * 92 en Chrome sobre la misma línea que tumbaba la suite. **Un verde de navegador y un rojo de
+ * banco estaban midiendo cosas distintas**, y el que se creyó fue el bonito.
+ *
+ * ⚠️ Convierte SÓLO strings y números, que es lo que convierte el navegador. `null` y `undefined`
+ * se dejan pasar tal cual para no cambiar lo que ya hacía el `if (x)` de las dos inserciones.
+ */
+function comoNodo(x, reg) {
+  if (typeof x !== 'string' && typeof x !== 'number') return x;
+  const t = nodo('#text', reg);
+  t.textContent = String(x);
+  return t;
+}
+
 export function nodo(tag, reg) {
   const n = {
     tagName: String(tag).toUpperCase(),
@@ -222,7 +269,12 @@ export function nodo(tag, reg) {
     // `appendChild`, la próxima vista que use `prepend` traería el mismo síntoma con otra
     // cara y costaría otro ticket entenderlo.
     appendChild(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.push(h); return h; },
-    append(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.push(...h); },
+    // SCRUM-917f · las cadenas entran como nodos de texto, igual que en el navegador (ver `comoNodo`).
+    append(...bruto) {
+      const h = bruto.map((x) => comoNodo(x, reg));
+      for (const x of h) { if (x) { desengancha(x); x._padre = n; } }
+      n.hijos.push(...h);
+    },
     // ⚠️ SCRUM-444 · al quitar un nodo se DESREGISTRA su id. En el navegador, `getElementById` no
     // encuentra lo que ya no está en el documento; aquí seguía encontrándolo, así que un test que
     // borrara un contenedor y lo volviera a pedir recibía el nodo MUERTO y seguía escribiendo en
@@ -236,7 +288,11 @@ export function nodo(tag, reg) {
     // SCRUM-460 · `prepend`. No existía, y por eso `albaranDetailView` REVENTABA al montarse —
     // quedó reportado como hueco en SCRUM-451 y ahora bloqueaba el test que decide de H1. Nada
     // podía depender de él antes, porque llamarlo era un `TypeError`.
-    prepend(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.unshift(...h); },
+    prepend(...bruto) {
+      const h = bruto.map((x) => comoNodo(x, reg));
+      for (const x of h) { if (x) { desengancha(x); x._padre = n; } }
+      n.hijos.unshift(...h);
+    },
     // 🔴 SCRUM-698 · `insertAdjacentHTML`. NO EXISTÍA, y por eso `renderSettingsView` REVENTABA
     // al montarse: la vista pone la nota del IBAN con
     // `fIban.wrapper.querySelector('label').insertAdjacentHTML('afterend', …)`, que es DOM de
@@ -411,23 +467,60 @@ export function nodo(tag, reg) {
       },
     },
     getBoundingClientRect: () => ({ width: 0, height: 0, top: 0, left: 0 }),
-    set textContent(v) { n._texto = String(v); n.hijos = []; },
+    // 🔴 SCRUM-897 · LO QUE SE QUITA SALE DEL DOCUMENTO, como en `removeChild` (SCRUM-444): pierde
+    // su padre y los id de todo su subárbol dejan de resolverse. Lo usan `innerHTML` y, desde
+    // SCRUM-901, `textContent`, que vaciaba la lista pero dejaba los id vivos y el padre puesto.
+    _soltarHijos() {
+      for (const h of n.hijos) {
+        if (!h) continue;
+        h._padre = null;
+        for (const d of todos(h)) if (d._id && reg.porId.get(d._id) === d) reg.porId.delete(d._id);
+      }
+      n.hijos = [];
+    },
+    set textContent(v) { n._texto = String(v); n._soltarHijos(); },
     get textContent() { return n._texto; },
     set innerHTML(v) {
       n._html = String(v);
-      if (v === '') { n.hijos = []; return; }
+      // 🔴 SCRUM-897 · ASIGNAR `innerHTML` REEMPLAZA. Antes se vaciaba SOLO con `''`; con marcado,
+      // lo nuevo se APILABA sobre lo de antes. Medido sobre 018d1807 con dos sondas: la vista de
+      // presupuestos daba 261 nodos en el banco y 227 elementos en Edge (+10 #text del banco), y
+      // los 24 que sobraban eran pintadas viejas de `.quote-totals` y `.quote-total-kpi`.
+      n._soltarHijos();
+      if (v === '') return;
       // Lo que hace el navegador: el marcado se vuelve árbol. Sin esto, toda vista que pinte con
       // `innerHTML` y luego busque por id daría un rojo falso.
       //
       // SCRUM-285: se representan TODAS las etiquetas con atributos, no solo las que llevan `id`,
       // y se les copia `id`, `class`, `data-*` y su texto. Antes solo entraban las de `id`, así que
       // un bloque marcado con `data-…` —el estado vacío de Cobros— era invisible para el banco y su
-      // test daba un rojo que era del banco. Es plano a propósito: no anida, y se declara.
+      // test daba un rojo que era del banco.
       // SCRUM-451: se representan TAMBIÉN las etiquetas SIN atributos. Antes se saltaban, y con eso
       // un `card.innerHTML = '<div>…</div>'` seguido de `card.querySelector('div')` devolvía `null`
       // y la vista reventaba —`settingsView` lo hace— por un hueco del banco, no del producto.
-      for (const m of String(v).matchAll(/<(\w+)([^>]*)>([^<]*)/g)) {
-        const h = nodo(m[1], reg);
+      //
+      // 🔴 SCRUM-901 · EL MARCADO ANIDA. Era plano «a propósito»: cada etiqueta, hija directa del
+      // nodo. Medido sobre 8c354ff3, eso dejaba la Inicio a medio cargar: los esqueletos que el
+      // marcado pone DENTRO de `#kpi-grid` eran hermanos suyos, y repintar `#kpi-grid` no los
+      // quitaba (+16 frente a Edge). Y `.kpi-grid .kpi-card` no casaba nunca.
+      // Lo que hace: pila de abiertos; `</x>` cierra hasta el `x` abierto más cercano (y se ignora
+      // si no hay ninguno); los elementos VACÍOS y el `/>` (SVG) no abren; comentarios fuera; en
+      // `script`, `style` y `textarea` lo de dentro es texto. Lo que NO hace, y se declara: cierres
+      // implícitos (`<p>`, `<li>`, `<td>` sin cerrar) ni el `<tbody>` que el navegador inserta.
+      // El texto de cada elemento sigue siendo el que va justo detrás de su apertura.
+      const pila = [n];
+      const marcado = String(v);
+      const TOKEN = /<!--[\s\S]*?(?:-->|$)|<\/([a-zA-Z][\w-]*)[^>]*>|<([a-zA-Z][\w-]*)((?:"[^"]*"|'[^']*'|[^'">])*)>([^<]*)/g;
+      for (let m = TOKEN.exec(marcado); m; m = TOKEN.exec(marcado)) {
+        if (m[0].startsWith('<!--')) continue;
+        if (m[1]) {
+          const nombre = m[1].toUpperCase();
+          for (let i = pila.length - 1; i > 0; i--) if (pila[i].tagName === nombre) { pila.length = i; break; }
+          continue;
+        }
+        const etiqueta = m[2].toLowerCase();
+        const autocerrado = /\/\s*$/.test(m[3] || '');
+        const h = nodo(m[2], reg);
         // SCRUM-634 · SE COPIAN **TODOS** LOS ATRIBUTOS, no solo `id`, `class` y `data-*`.
         //
         // Antes solo entraban esos tres. Y como el matcher SÍ da por soportado un selector
@@ -436,16 +529,36 @@ export function nodo(tag, reg) {
         //
         // Se copian vía `setAttribute` —no como campos sueltos— porque el matcher resuelve
         // por `getAttribute`, y ese método ya refleja `id`, `class` y `data-*` a sus campos.
-        for (const a of String(m[2] || '').matchAll(ATRIBUTO)) {
+        for (const a of String(m[3] || '').matchAll(ATRIBUTO)) {
           h.setAttribute(a[1], a[2] !== undefined ? a[2] : (a[3] !== undefined ? a[3] : ''));
         }
-        const texto = (m[3] || '').trim();
+        // 🔴 SCRUM-901 · UN CAMPO RECIÉN PARSEADO PARTE DE SU ATRIBUTO. `REFLEJADOS` deja fuera
+        // `value` y `checked` porque DESPUÉS de escribir la propiedad ya no sigue al atributo, y eso
+        // es fiel. Pero al nacer del marcado el navegador sí los toma de él: un `<input value="X">`
+        // tiene `.value === 'X'`. Aquí salía vacío, y el test de scrum889 tuvo que leer el
+        // atributo porque `.value` decía que la línea repintada estaba en blanco.
+        if (h.hasAttribute('value')) h.value = h.getAttribute('value');
+        if (h.hasAttribute('checked')) h.checked = true;
+        let texto = m[4] || '';
+        const crudo = CRUDOS.has(etiqueta) && !autocerrado;
+        if (crudo) {
+          // Lo de dentro es texto hasta su cierre, aunque lleve `<`.
+          const desde = m.index + m[0].length - texto.length;
+          const cierre = marcado.toLowerCase().indexOf(`</${etiqueta}`, desde);
+          const hasta = cierre === -1 ? marcado.length : cierre;
+          texto = marcado.slice(desde, hasta);
+          const fin = cierre === -1 ? -1 : marcado.indexOf('>', cierre);
+          TOKEN.lastIndex = fin === -1 ? marcado.length : fin + 1;
+        }
+        texto = texto.trim();
         if (texto) h.textContent = texto;
         // SCRUM-609 · el hijo nacido del marcado SABE QUIÉN ES SU PADRE. No lo sabía: el parser
         // sólo lo metía en `hijos`, así que `h.parentNode` era null y cualquier vista que hiciera
         // `x.parentNode.insertBefore(...)` —DOM de manual— reventaba al montarse.
-        h._padre = n;
-        n.hijos.push(h);
+        const padre = pila[pila.length - 1];
+        h._padre = padre;
+        padre.hijos.push(h);
+        if (!crudo && !autocerrado && !VACIOS.has(etiqueta)) pila.push(h);
       }
     },
     get innerHTML() { return n._html; },
@@ -800,6 +913,10 @@ export function clasesEscritas(fuente, nombre = 'x.js') {
 export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'aiQuoteAssistant.js',
   'albaranActionsRegistry.js',
+  // SCRUM-831 · el siguiente paso de un albarán, sacado de `jobDetailView.js` para que la LISTA
+  // pudiera nombrarlo: es el movimiento de SCRUM-366 por tercera vez. Sus relaciones de orden se
+  // declaran abajo — si cargara después de sus consumidores, la pantalla revienta al abrirse.
+  'albaranAccion.js',
   // SCRUM-606 (ALB-01): el buscador de presupuesto de «Nuevo albarán». Va ANTES de
   // `albaranesView.js`, que es quien lo abre, y después de `modalHeader.js` y `atajoNuevo.js`,
   // de los que lee la cabecera del modal y el rótulo. Ambas relaciones se DECLARAN abajo.
@@ -809,10 +926,22 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'almacenLocal.js',
   'api.js',
   'app.js',
+  // SCRUM-918 · la decisión de arrancar sin red. Va ANTES de `app.js`, que la usa al arrancar.
+  'arranqueSinCobertura.js',
+  // SCRUM-885 · la regla del aviso «el documento del cobro no ha salido», compartida por el
+  // detalle de la factura y el del trabajo. La llaman al confirmar y al pintar, no al cargarse.
+  'avisoDocumentoSinEnviar.js',
+  // SCRUM-713 · la regla con la que el presupuesto filtra sus clientes al teclear, y los tres
+  // textos que enseña al hacerlo. Va ANTES de `quotesView.js`, que la llama al MONTAR el selector
+  // —no sólo al buscar—, así que cargarla después dejaría la pantalla sin selector de cliente.
+  'buscadorDeClientes.js',
   'cobrosView.js',
   'colaDeFirmas.js',
   'contacto.js',
   'csvImport.js',
+  // SCRUM-600 (DOC-10) · la única composición del cuerpo de `POST /admin/invoices`. Va ANTES de
+  // `quotesView.js` y de `nuevaFacturaModal.js`: son las dos pantallas que la llaman.
+  'cuerpoDelDocumentoSuelto.js',
   'customerDetailView.js',
   'customersView.js',
   // SCRUM-587 (CONT-14) · el descuento pactado con el cliente, PROPUESTO. Va DESPUÉS de
@@ -820,6 +949,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   // de `quotesView.js`, que le pide la propuesta al elegir cliente.
   'descuentoPorDefecto.js',
   'estadoFirma.js',
+  // SCRUM-595 (DOC-05) · el bloque de etiquetas de la ficha, COMPARTIDO por las dos fichas de
+  // documento. Va DESPUÉS de `filtroClientes.js`, de donde saca las decisiones y los textos, y
+  // ANTES de `quotesDetailView.js` e `invoiceDetailView.js`, que lo montan.
+  'etiquetasDelDocumento.js',
   'expensesView.js',
   'exportView.js',
   'facturaPreEmision.js',
@@ -831,6 +964,11 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'formaDePagoPorDefecto.js',
   'globalSearch.js',
   'homeView.js',
+  // SCRUM-845 · qué se puede hacer con una FACTURA, sacado de dentro de `renderInvoiceDetailView`
+  // para que la LISTA pudiera preguntarlo. Es el movimiento de SCRUM-366 por CUARTA vez, y el
+  // primero que encontró un instrumento —`censo:decisiones-encerradas`— en vez de una persona.
+  // Sus relaciones de orden se declaran abajo.
+  'invoiceAccion.js',
   'invoiceActionsRegistry.js',
   'invoiceDetailView.js',
   'invoicesView.js',
@@ -839,6 +977,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'jobDetailView.js',
   'jobDocsReparto.js',
   'jobNextAction.js',
+  // SCRUM-823 · agendar un Trabajo, sacado de `jobsView.js` para que el DETALLE pueda nombrarlo:
+  // es el movimiento de SCRUM-366 en espejo. Sus DOS relaciones de orden se declaran abajo, y no
+  // es una formalidad — si se cargara después de sus consumidores, la pantalla revienta al abrirse.
+  'jobAgendar.js',
   // SCRUM-651 (2-sep-2026): entra `jobNuevoModal.js`, el modal para abrir un Trabajo SIN
   // presupuesto —una averia, el caso mas frecuente del primer cliente real—. Va ANTES de
   // `jobsView.js`, que lo consume, y despues de `modalHeader.js`, del que usa `cabeceraModal`.
@@ -853,13 +995,20 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'jobNuevoModal.js',
   'jobRailBlocks.js',
   'jobAsignados.js',
+  // SCRUM-597 (DOC-07, 7-sep-2026): entran DOS. `economiaVisible.js` responde quién ve coste
+  // y margen (P-DOC-3) y va ANTES de `productsView.js`, `quotesView.js` e
+  // `invoiceDetailView.js`, que lo consultan. `documentoAsignados.js` es el selector de
+  // quién lleva el documento y va ANTES de los dos detalles que lo montan.
+  'documentoAsignados.js',
+  'economiaVisible.js',
   'jobsCierreTrabajo.js',
   'jobsView.js',
   'libroRegistroView.js',
   'margenCatalogo.js',
   'modalHeader.js',
   'nifEspanol.js',
-  'nuevaFacturaModal.js',
+  // SCRUM-867: aquí estaba `nuevaFacturaModal.js`. Se retiró del índice y del SHELL con su
+  // fichero: el panel ya no lo carga, así que el banco tampoco puede esperarlo.
   'onboardingView.js',
   'paidViaEtiquetas.js',
   'parteDetailView.js',
@@ -917,11 +1066,49 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
  */
 export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'filtroClientes.js', despues: 'customersView.js', motivo: 'SCRUM-581: pestañas y orden de la lista' },
+  // SCRUM-595 (DOC-05) · las etiquetas del documento reutilizan la pieza de CONT-07 en CUATRO
+  // sitios más. Las vistas leen `window.filtroClientes` SIN fallback, a propósito: degradar en
+  // silencio escondería una pantalla rota en vez de enseñarla. Lo que sostiene esa decisión es
+  // este orden, así que se declara — que es lo que impide que un merge lo reordene y nadie note
+  // nada hasta que un profesional abra la lista de facturas.
+  { antes: 'filtroClientes.js', despues: 'etiquetasDelDocumento.js', motivo: 'SCRUM-595: de ahí saca las decisiones y los textos' },
+  { antes: 'filtroClientes.js', despues: 'quotesListView.js', motivo: 'SCRUM-595: el filtro por etiqueta del presupuesto' },
+  { antes: 'filtroClientes.js', despues: 'invoicesView.js', motivo: 'SCRUM-595: el filtro por etiqueta de la factura' },
+  { antes: 'etiquetasDelDocumento.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-595: la ficha monta el bloque' },
+  { antes: 'etiquetasDelDocumento.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-595: la ficha monta el bloque' },
   { antes: 'margenCatalogo.js', despues: 'productsView.js', motivo: 'SCRUM-609: la aritmética del margen' },
+  // SCRUM-597 (DOC-07): si `economiaVisible.js` se cargara DESPUÉS, `window.veoEconomia` no
+  // existiría al montar la pantalla y los campos de coste y margen se pintarían a un técnico —
+  // que es exactamente lo que el ticket cierra. Se declaran los TRES consumidores.
+  { antes: 'economiaVisible.js', despues: 'productsView.js', motivo: 'SCRUM-597: quién ve coste y margen en la ficha del catálogo' },
+  { antes: 'economiaVisible.js', despues: 'quotesView.js', motivo: 'SCRUM-597: si la columna «Coste» de la línea se pinta o no' },
+  { antes: 'documentoAsignados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-597: el selector de quién lleva el documento' },
+  { antes: 'documentoAsignados.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-597: el mismo selector en la factura' },
   { antes: 'margenCatalogo.js', despues: 'reportsView.js', motivo: 'SCRUM-764: el criterio de margen negativo' },
   { antes: 'switchTipoArticulo.js', despues: 'productsView.js', motivo: 'SCRUM-609: el switch Producto|Servicio' },
   { antes: 'quoteApartados.js', despues: 'quotesDetailView.js', motivo: 'SCRUM-655: apartados, numeración y descripción' },
   { antes: 'signaturePad.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: el parte abre el pad de firma' },
+  // SCRUM-823 · las DOS pantallas ejecutan «Agendar» desde aquí. `jobsView` además le pide
+  // `jobsModal`, que se mudó con él, así que sin este orden la lista no monta.
+  // SCRUM-831 · las TRES superficies que preguntan cuál es el siguiente paso de un albarán. Y
+  // `albaranAccion` lee el registro y el resolutor del patrón, así que va detrás de los dos.
+  { antes: 'albaranActionsRegistry.js', despues: 'albaranAccion.js', motivo: 'SCRUM-831: la tabla de acciones que lee' },
+  { antes: 'patronDetalleAcciones.js', despues: 'albaranAccion.js', motivo: 'SCRUM-831: `destinoEfectivo`, el resolutor' },
+  { antes: 'albaranAccion.js', despues: 'albaranesView.js', motivo: 'SCRUM-831: la primaria de cada fila' },
+  { antes: 'albaranAccion.js', despues: 'jobDetailView.js', motivo: 'SCRUM-831: las filas de documento del Trabajo' },
+  // SCRUM-845 · `invoiceAccion` lee el registro de factura y el resolutor del patrón, igual que su
+  // hermano del albarán, así que va detrás de los dos.
+  //
+  // ⚠️ Y NO se declara `invoiceAccion.js` → `invoicesView.js`, que sería lo simétrico: en el índice
+  // la LISTA carga ANTES, y es correcto. La llama al PINTAR la tabla, no al cargarse, y para
+  // entonces el documento está entero. Declarar aquí un orden que el índice no cumple pondría rojo
+  // un guard por una dependencia que no existe — y el arreglo cómodo sería mover el `<script>`,
+  // tocando el orden de una pantalla que hoy funciona.
+  { antes: 'invoiceActionsRegistry.js', despues: 'invoiceAccion.js', motivo: 'SCRUM-845: la tabla de acciones que lee' },
+  { antes: 'patronDetalleAcciones.js', despues: 'invoiceAccion.js', motivo: 'SCRUM-845: `destinoEfectivo`, el resolutor' },
+  { antes: 'invoiceAccion.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-845: el estado y el destino de cada acción' },
+  { antes: 'jobAgendar.js', despues: 'jobsView.js', motivo: 'SCRUM-823: agendar y el modal de la casa' },
+  { antes: 'jobAgendar.js', despues: 'jobDetailView.js', motivo: 'SCRUM-823: el CTA «Agendar» del héroe' },
   { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
   // SCRUM-593 (DOC-03): la pieza se carga antes que sus DOS consumidores. `jobDetailView.js`
   // YA la consume (el campo de cabecera del albaran); `quotesView.js` la consumira cuando salga
@@ -940,6 +1127,10 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   // `window.formaDePagoPorDefecto` no existe cuando el editor se monta y la tira no aparecería
   // JAMÁS — en silencio y con la tanda verde, que es el modo en que este defecto se esconde.
   { antes: 'formaDePagoPorDefecto.js', despues: 'quotesView.js', motivo: 'SCRUM-586: el editor le pide la propuesta al elegir cliente' },
+  // SCRUM-713 · y ésta NO es del mismo tipo que la de arriba: el editor la llama al MONTAR, dentro
+  // de `pintarOpcionesDeCliente`, no al elegir cliente. Cargarla después no dejaría el selector sin
+  // buscador — lo dejaría SIN CLIENTES, porque el montaje reventaría antes de pintarlos.
+  { antes: 'buscadorDeClientes.js', despues: 'quotesView.js', motivo: 'SCRUM-713: el editor filtra y rotula el selector de cliente con ella' },
   // SCRUM-606 (ALB-01) · las TRES del buscador de presupuesto. La del rótulo no es cosmética:
   // el modal titula con `atajoNuevo.textoDe('albaranes')`, así que si se cargara antes se
   // quedaría sin título y el marcador de microcopy sin firmar no se vería en pantalla.
@@ -1041,7 +1232,33 @@ export function cargarDashboard(raiz, opciones = {}) {
     // MISMA forma que el servidor —y los cubos salen de la MISMA función, importada de `dist`, no
     // de una lista escrita aquí— para que un test que pase un array siga midiendo la pantalla real
     // y no una respuesta que ningún servidor devuelve.
-    apiRequest: async (ruta) => (typeof opciones.datos === 'function' ? opciones.datos() : (opciones.datos ?? {})),
+    // 🔴 SCRUM-848 · LA RUTA SE LE PASA AL FIXTURE, igual que ya se hacía con `fetch` aquí debajo.
+    //
+    // No se hacía, y la consecuencia era invisible: un fixture por ruta —`(url) => …`, que es como
+    // están escritos los de `censo-objetivo-tactil-panel` y `DATOS_795`— se llamaba SIN url, así
+    // que caía siempre en su rama por defecto. Toda vista que pida por `apiRequest` —la ficha de
+    // Trabajo, entre otras— quedaba fuera del alcance de su propia fixture y se montaba con `[]`.
+    //
+    // Así se medía la ficha de Trabajo con un Trabajo SIN `status`, que el producto no puede
+    // producir (`Job.status` tiene `@default` en el esquema). Mientras la escalera caía al nivel 5
+    // con cualquier estado no se notó; SCRUM-823 le puso puerta por estado y entonces la pantalla
+    // medida dejó de tener acción de héroe. El guard lo cazó, y tenía razón.
+    //
+    // El segundo argumento va también: `apiRequest(ruta, opciones)` es su firma real, y un fixture
+    // que quiera distinguir un POST de un GET necesita verlo.
+    //
+    // 🔴 SCRUM-848b · CORRECCIÓN MEDIDA, 15-sep-2026 — ESTA LÍNEA NO ERA LA CAUSA.
+    // Lo de arriba describe un arreglo real pero INERTE para las vistas, y conviene saberlo antes
+    // de volver a tocar aquí. Medido revirtiéndola y renderizando `renderCustomer360View` con un
+    // fixture por ruta: MISMO html (3.062 bytes) y el fixture recibiendo su ruta igual. El motivo
+    // está treinta líneas más arriba, escrito desde SCRUM-432: `api.js` declara su propio
+    // `apiRequest` y al cargarse PISA éste, así que las vistas piden por `fetch` — y a `fetch` el
+    // banco SIEMPRE le pasó la url. Los fixtures por ruta nunca estuvieron ciegos por aquí.
+    // Lo que curó la ficha de Trabajo fue el OTRO cambio de SCRUM-848: darle `datos` a la
+    // superficie `/__jobdetail`. La línea se queda —es correcta y es la firma buena—, pero si
+    // algún día una vista se mide con datos que nadie eligió, el defecto NO estará aquí.
+    // Lo fija `tests/scrum848b-el-fixture-llega-a-la-pantalla.test.mjs`.
+    apiRequest: async (ruta, opts) => (typeof opciones.datos === 'function' ? opciones.datos(String(ruta), opts) : (opciones.datos ?? {})),
     // SCRUM-362 (H7): con escenario de red, el `fetch` es el suyo. Sin él, el de siempre —una red
     // que responde bien— para no cambiar lo que ya miden los demás tests.
     fetch: opciones.red?.fetch ?? (async (url, opts) => ({
@@ -1153,6 +1370,20 @@ export async function pintarVista(banco, nombreFn, ...argumentos) {
     return { error: new Error(`la vista no publica \`${nombreFn}\` (es ${typeof fn})`), contenedor: null };
   }
   const contenedor = banco.mk('div');
+  // 🔴 SCRUM-901 · LA VISTA SE MONTA DENTRO DEL DOCUMENTO. El contenedor quedaba suelto, así que
+  // `document.querySelector` —que recorre `document.body`— no veía nada de la vista, aunque
+  // `getElementById` sí (tira del registro). Medido sobre 8c354ff3: `renderSetupChecklist` no
+  // encontraba `.kpi-grid` y la Inicio salía sin «Completa tu configuración», −51 frente a Edge.
+  // Como el panel, que pinta cada vista en el MISMO hueco, la montada antes sale del documento,
+  // con sus id.
+  const cuerpo = banco.ctx.document.body;
+  const anterior = banco.montada;
+  if (anterior && anterior._padre === cuerpo) {
+    cuerpo.removeChild(anterior);
+    for (const d of todos(anterior)) if (d._id && banco.reg.porId.get(d._id) === d) banco.reg.porId.delete(d._id);
+  }
+  cuerpo.appendChild(contenedor);
+  banco.montada = contenedor;
   const idsAntes = banco.reg.idsNoResueltos.length;
 
   // 🔴 SCRUM-698 · LOS RECHAZOS HUÉRFANOS SE RECOGEN, NO MATAN EL PROCESO.

@@ -1,0 +1,24 @@
+JUSTIFICANTE DE COBRO
+Ref. J-20260916-LFXN
+Fecha: 16/09/2026
+EMISOR
+QA Staging S.L.
+C/ Staging 1, 28000 Madrid
+34600000001
+qa@staging.yaqu
+CLIENTE
+SCRUM-883 Cliente electricista
+scrum883@example.com
+34600883883
+CONCEPTO CANT. PRECIO UNIT IVA % TOTAL
+Punto de luz 8,00 24,95 21% 241,52
+Base de enchufe schuko 11,00 19,99 10% 241,88
+Boletín eléctrico (CIE) 1,00 120,00 21% 145,20
+Base imponible: 539,49 EUR
+[PENDIENTE microcopy oficial]
+21% 319,60 EUR IVA 21%: 67,12 EUR
+10% 219,89 EUR IVA 10%: 21,99 EUR
+TOTAL COBRADO: 628,60 EUR
+Justificante de cobro — este documento acredita el cobro recibido.
+No constituye una factura. Generado con YaQu · yaqu.app
+

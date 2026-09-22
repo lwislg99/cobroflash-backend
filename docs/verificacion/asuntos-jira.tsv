@@ -1,0 +1,816 @@
+# Foto de los ASUNTOS de Jira del proyecto SCRUM — NO se edita a mano.
+#
+# Para que sirve: el enlace ticket<->rama vive implicito en el nombre de la rama, el mensaje
+# del commit y el fichero de docs/master/. Los tres son del REPO. El asunto del TICKET vive solo
+# en Jira, y sin el no se puede saber si los tres hablan de lo mismo — que es el caso SCRUM-706.
+#
+# Tomada el 2026-09-07 con el MCP de Atlassian sobre cloudId 30938fdf-…
+# 🔴 TRAMPA MEDIDA AL TOMARLA: la JQL de RANGO («key >= SCRUM-816 AND key <= SCRUM-915») devolvio
+#    CERO con SCRUM-816/817/818 existiendo. La misma consulta como «key in (...)» los devuelve los
+#    tres. Un rango que miente no da error: da un cero creible. Por eso el instrumento compara su
+#    cobertura contra los numeros que encuentra en el repo y DECLARA los que no tiene.
+#
+# clave	estado	asunto
+SCRUM-16	Tareas por hacer	FISCAL-1 · Factura de anticipo con IVA + descuento en factura final ("lo del trimestre")
+SCRUM-17	Finalizada	FISCAL-2 · Factura recapitulativa (consolidar albaranes del mismo mes natural)
+SCRUM-18	Tareas por hacer	FISCAL-3 · Certificaciones de obra por % + retención de garantía 5% (solo obra)
+SCRUM-19	Tareas por hacer	SEPA-1 · Recibo/adeudo SEPA a nivel Trabajo (mandato + remesas para tramos posteriores)
+SCRUM-20	Tareas por hacer	VERIFACTU-TRABAJOS · Registro VeriFactu de las facturas nuevas (anticipo + recapitulativa)
+SCRUM-21	Finalizada	Equipo/operarios + Export blindado (base de datos descargable para inspecciones)
+SCRUM-22	Finalizada	OPERARIO-1 · Autoría del operario en el Trabajo (registro de nombre en todo el flujo)
+SCRUM-23	Finalizada	OPERARIO-2 · El operario ve solo sus trabajos (visibilidad por rol)
+SCRUM-24	Finalizada	OPERARIO-3 · Vista de admin: supervisar trabajos y progreso por operario
+SCRUM-25	Finalizada	EXPORT-1 · Base de datos descargable (ZIP: facturas PDF+XML + CSVs) para inspecciones y asesor
+SCRUM-26	Finalizada	Test A12.2c obsoleto (webhooks/psp): actualizar a internalHeaders() tras P0-SEC-4
+SCRUM-27	Finalizada	PAGOS-FLEX · Planes de cobro por tramos personalizados (30/40/30, hitos, mensualidades)
+SCRUM-28	Finalizada	COBROS-2 · Recalcular totalCobrado también en cobros manuales (Bizum/transferencia)
+SCRUM-29	Finalizada	Entorno de STAGING para pruebas E2E de Claude Code (sin tocar producción)
+SCRUM-30	Finalizada	UI-DEUDA · Centralizar el mapeo del pill de cobro (Pagado/Parcial/Pendiente → status-pill) en un helper compartido
+SCRUM-31	Finalizada	UI-MEJORA · Rediseño/pulido del detalle de Trabajo (centro de mando) — tras feedback de uso real
+SCRUM-32	Finalizada	BUG money · El 2º tramo 50/50 se redondea independiente (75,63+75,63) en vez de ser el resto → 1 cént. de más en totales impares
+SCRUM-33	Finalizada	PAGOS-FLEX · Etiqueta del tramo en la factura y el WhatsApp (Anticipo/Hito 1 en documentos del cliente)
+SCRUM-34	Finalizada	PAGOS-FLEX · UX de generación de tramos: cobrar el siguiente hito sin marcar el trabajo terminado + plan visible en el detalle del presupuesto
+SCRUM-35	Finalizada	BUG pre-existente · quote-detail no expone status de las invoices → CTAs "Ver justificante" y "Marcar como pagada" nunca se renderizan
+SCRUM-36	Finalizada	QA automatizado · Claude Code como QA con Playwright MCP sobre STAGING (login de test seed, nunca tocar auth de producción)
+SCRUM-37	Finalizada	PAGOS-FLEX-2 (spec) · Obras que evolucionan: editar tramos restantes + presupuestos adicionales firmados sobre el mismo Trabajo — gate de "feedback de cliente real" RETIRADO (regla 13 nueva); queda el cambio de máster
+SCRUM-38	Finalizada	Staging exprés en Railway para QA autónomo (BD propia, WhatsApp/Resend apagados, login de test seed, Playwright MCP)
+SCRUM-39	Finalizada	Seguridad · el magic link (token de login) se loguea a consola en producción (auth.service.ts:42)
+SCRUM-40	Finalizada	Deuda técnica · prisma/migrations congelada (mar-2026) vs db push en prod — unificar estrategia de schema antes de que alguien ejecute migrate deploy
+SCRUM-41	Tareas por hacer	Go-live de Stripe · activar la cuenta (live mode) y migrar producción de sk_test a sk_live — bloqueante del primer euro real
+SCRUM-42	Finalizada	QA staging · el merchant QA del seed cae en id=1 → semántica DEMO (regla 8): quemar id 1 y re-seedear para probar la serie J- real
+SCRUM-43	Finalizada	UI · numeración inconsistente de presupuestos (Home usa id global vs quoteNumber) + "Marcar como pagada" sin confirmación (decisión pendiente)
+SCRUM-44	Finalizada	QA docs · SUITE_REGRESION.md v1.2: alinear 3 asserts con la UI real (literal "Pendiente", CTA "Ver cobro pendiente", confirmación condicionada a SCRUM-43)
+SCRUM-45	Finalizada	Infra/UX · cache-busting de estáticos del dashboard: tras cada deploy la pestaña abierta sirve la versión vieja (reincidente: signaturePad, PWA icons, SCRUM-34)
+SCRUM-46	Finalizada	PWA · service worker cache-first sin bump: los usuarios del dashboard NO reciben el JS nuevo tras deploy (SCRUM-43 invisible para usuarios existentes)
+SCRUM-47	Finalizada	ALBARAN-2 · Enviar el albarán firmado al WhatsApp del cliente (plantilla Utility: PDF adjunto vs link público) — GATE: confirmarlo en las llamadas a gremios
+SCRUM-48	Finalizada	Seguridad · PDFs de albarán públicos y enumerables (con firma del cliente) + colisión de archivo entre merchants — servir por endpoint auth y nombrar con merchantId
+SCRUM-49	Finalizada	ALBARAN-3 · Firma REMOTA del albarán por WhatsApp (link + firma del cliente en su móvil) con auto-envío de la copia firmada al completarse
+SCRUM-50	Finalizada	WhatsApp bot · adaptar a los flujos de albarán: fallback ventana 24h (sesión vs plantilla), manejo del quick reply "Recibido" y respuestas a mensajes entrantes sobre albaranes
+SCRUM-51	Finalizada	jobs · serializeJobDetail omite albaranes[] en Jobs sin quoteId (early-return) — bug latente para Jobs manuales
+SCRUM-52	Finalizada	SCHEMA · Job.operarioId + índice + poblado + audit (base de SCRUM-22)
+SCRUM-53	Finalizada	Proceso · evolucionar la propiedad del schema de 'dueño único' a 'edición aditiva con review obligatorio' cuando el carril Javier tenga rodaje
+SCRUM-54	Finalizada	SEGURIDAD · collect-rest sin requireRole: un Técnico puede emitir factura + cobrar (contra S1)
+SCRUM-55	Finalizada	SEGURIDAD · Auditoría completa de las 124 rutas /admin + red fail-closed que impide que nazca la 125 abierta (absorbe SCRUM-54)
+SCRUM-56	Finalizada	Proceso · evolucionar la propiedad del schema de 'dueño único' a 'edición aditiva con review obligatorio' cuando el carril Javier tenga rodaje
+SCRUM-57	Finalizada	UI · mostrar el nombre del operario (autoría) en el detalle del Trabajo — carril A (jobDetailView.js), tras SCRUM-22 backend
+SCRUM-58	Finalizada	Rendimiento · N+1 en serializeJob de la lista de Trabajos (quote+customer+operario = 3 queries/job) — optimizar cuando la lista crezca
+SCRUM-59	Finalizada	WhatsApp · extender validateTemplateComponents (J7) para exigir header de documento cuando hasDocumentHeader — evitar media_id vacío que solo falla en Meta (#132012)
+SCRUM-60	Finalizada	ONBOARDING carril B · entorno de ejecución: Node 20 + DATABASE_URL_STAGING (no correr gated tests contra prod)
+SCRUM-61	Finalizada	QA · el seed de staging debe marcar onboardingCompleted en el merchant QA (el wizard intercepta clicks del suite, fricción recurrente)
+SCRUM-62	Finalizada	WhatsApp · window-first para los envíos de albarán (ahorro de plantilla en ventana 24h abierta) — gate de tracción RETIRADO (regla 13 nueva, 27-jul-2026)
+SCRUM-63	Finalizada	webhooks-idempotencia.test.mjs depende de datos del seed demo (falla contra staging)
+SCRUM-64	Finalizada	Tests gateados sin guard anti-prod: scrum57-operario-propagacion y scrum50-bot-albaranes
+SCRUM-65	Finalizada	ALBARAN-4 · Albarán valorado: precios e IVA opcionales en las líneas (prerequisito de la recapitulativa)
+SCRUM-66	Finalizada	TRABAJO-4 · Selector \"varios avisos sueltos\" vs \"obra larga\" (tipoOperacion) — nadie en el mercado lo tiene
+SCRUM-67	Finalizada	ALBARAN-5 · PDF legalmente impecable: rótulo \"NO ES FACTURA\", datos fiscales de las partes y fecha de ejecución
+SCRUM-68	Finalizada	ALBARAN-6 · Evidencias probatorias reforzadas en la firma (hash del PDF, IP, UA, timestamp) para resistir un monitorio
+SCRUM-69	Finalizada	FACT-1 · Bandeja \"pendientes de facturar\" con semáforo de plazo legal (fin de mes / día 16) — nadie avisa
+SCRUM-70	Finalizada	FACT-2 · Rutas de conversión avanzadas: por rango de fechas/números, masiva por cliente, parcial por cantidad servida y recurrente
+SCRUM-71	Finalizada	IA-1 · Partes por voz en obra + OCR de albaranes de proveedor (captura de oportunidad — gate post-tracción RETIRADO, regla 13 nueva 27-jul-2026)
+SCRUM-72	Finalizada	🔴 SEGURIDAD/RGPD · PDFs de FACTURA públicos y enumerables sin login (mismo fallo que SCRUM-48 dejó sin cerrar)
+SCRUM-73	Finalizada	🔴 FISCAL · verifactu.xml genera registros RRSIF sin gate de flag y accesible a Técnico (choca con reglas 24/26)
+SCRUM-74	Finalizada	🔴 SEGURIDAD/RGPD · /recibo/:chargeId/pdf enumerable: facturas ajenas descargables sin login (la otra puerta de SCRUM-72)
+SCRUM-75	Finalizada	QA · 4 archivos de test (SCRUM-47/49/50/57) nunca se registraron en npm test — falsa cobertura (reaparición de P3-7)
+SCRUM-76	Finalizada	Email · adjunto del PDF no garantizado en todas las ramas (+ .eml outbox rama muerta) — crítico tras quitar el botón en SCRUM-72
+SCRUM-77	Finalizada	WhatsApp/Meta · payment_request_es con URL estática {{1}} (P3-1 confirmado): acción del fundador en WhatsApp Manager
+SCRUM-78	Finalizada	QA · la suite gateada es no-determinista bajo concurrencia contra staging (P3-10) + tests que dependen del merchant id=1 quemado (P3-9)
+SCRUM-79	Finalizada	QA · Los tests crean merchants FUERA del try: la limpieza en finally es optimista y deja huérfanos de forma repetible (24 de 24 ficheros)
+SCRUM-80	Finalizada	QA · 3 tests más dependen del merchant id=1 quemado (pdfs, a55-window-quote, bot-suite) — mismo patrón de SCRUM-78
+SCRUM-81	Finalizada	FISCAL · allocateInvoiceNumber resuelve el modo de emisión sin leer merchant.flags — una factura fiscal podría salir con número de justificante
+SCRUM-82	Finalizada	Export ZIP · incluir el XML VeriFactu cuando INVOICING_ES_ENABLED se encienda (hoy se omite en silencio) — gate: post SIF-1
+SCRUM-83	Finalizada	Export ZIP · asíncrono para paquetes grandes (hoy limitado por tope: el render de PDFs domina el time-to-first-byte)
+SCRUM-84	Finalizada	Infra/QA · segunda BD en el Postgres de staging (una por carril) para eliminar el cuello de botella — coste cero
+SCRUM-85	Finalizada	🔴 SEGURIDAD/RGPD · /pay/card, /pay/bizum y /pay/invoice enumerables por chargeId (la TERCERA puerta de la misma fuga)
+SCRUM-86	Finalizada	CSV · los exports no se abren bien en Excel ES: separador coma y punto decimal (rompe el DONE de SCRUM-25)
+SCRUM-87	Finalizada	🔴🔴 SEGURIDAD/RGPD · ~100 PDFs de clientes reales COMMITEADOS en public/invoices/ y servidos sin auth (la 72 no los movió)
+SCRUM-88	Finalizada	SEGURIDAD · Auditoría sistemática de superficie pública (rutas, estáticos, tokens, enlaces, exports, logs) — dejar de descubrir fugas por tropiezo
+SCRUM-89	Finalizada	UI · un Operario ve botones que ahora dan 403 (y el mensaje empeoró) — regresión de los gates de SCRUM-55
+SCRUM-90	Finalizada	🔴 SEGURIDAD/RGPD · /pay/bank (¡expone el IBAN del profesional!) y /pay/mp enumerables — la QUINTA puerta
+SCRUM-91	Finalizada	🔴 CAPTACIÓN · el magic link no llega a Hotmail/Outlook: un profesional con esa cuenta no puede entrar (revisar Resend + SPF/DKIM/DMARC)
+SCRUM-92	Finalizada	AUTH · un Operario no puede volver a entrar: /auth/login solo busca en Merchant y le responde que le llegará un email que nunca se envía
+SCRUM-93	Finalizada	🔴 LEGAL/RGPD · No existe política de privacidad ni registro de tratamientos, y ya tratamos datos de clientes finales (que no son usuarios nuestros)
+SCRUM-94	Finalizada	AUTH · registerMerchant no valida contra TeamMember.email: un operario puede auto-inducirse la colisión y perder su acceso
+SCRUM-95	Finalizada	🔴🔴 SEGURIDAD/RGPD · POST /quote/:id/decision: sin auth, sin rate-limit, enumerable, filtra NIF del profesional Y MUTA ESTADO (sexta puerta)
+SCRUM-96	Finalizada	🔴 SEGURIDAD/RGPD · public/outbox/ servido sin auth: los .eml de fallback llevan el email completo con adjuntos (misma clase que SCRUM-87, no cerrada allí)
+SCRUM-97	Finalizada	🔴 SEGURIDAD · GET /admin/invoices/:id filtra IBAN, IDs de Stripe y portalToken del cliente a rol Técnico
+SCRUM-98	Finalizada	GUARD A · test fail-closed: toda ruta pública debe declarar su categoría de acceso (cierra la CLASE de las seis puertas, no una instancia)
+SCRUM-99	Finalizada	🔴 SEGURIDAD · /webhooks/mp y /webhooks/whatsapp son FAIL-OPEN: si falta el secreto, aceptan sin verificar firma
+SCRUM-100	Finalizada	🟡 Tests fail-closed para los 4 webhooks (Stripe/Connect/MP/WhatsApp) — deuda tras SCRUM-99
+SCRUM-101	Finalizada	SEGURIDAD/RGPD · emails en claro en los logs de producción, incluido el intento de login de cuentas inexistentes (enumeración vía logs)
+SCRUM-102	Finalizada	SEGURIDAD · fees.csv (facturación de TODA la plataforma) protegido solo por una variable de entorno, sin factor en BD
+SCRUM-103	Finalizada	SEGURIDAD · El ratchet cuenta entradas pero no las valida: la lista de pendientes aceptó una que decía que no había duda y que estaba abierta en producción
+SCRUM-104	Finalizada	Export ZIP · clientes.csv se filtra por fecha de alta: el paquete puede traer facturas de clientes que no están en el CSV
+SCRUM-105	Finalizada	Higiene de seguridad · cierre de los BAJOS de la auditoría (SESSION_SECRET muerto, entropía, Referrer-Policy, console.error crudo) + residuos de 99 y 102
+SCRUM-106	Finalizada	PRODUCTO · ¿cuál es la fecha de un trabajo? trabajos.csv filtra por ALTA y no por ejecución — decidido por omisión, nunca elegido
+SCRUM-107	Finalizada	Permisos · /admin/expenses se parte: el Técnico CREA gastos (obra) pero no LISTA los de la empresa
+SCRUM-108	Finalizada	TESTS · Toda comprobación por ausencia necesita antes un assert de que lo buscado existe cuando debe
+SCRUM-109	Finalizada	SCHEMA (carril A) · Expense.teamMemberId: sin campo de autoría el técnico no puede ver ni corregir el gasto que él mismo registró
+SCRUM-110	Finalizada	AUTH · /auth/register no comprueba TeamMember.email: un Operario puede registrarse y auto-expulsarse de su cuenta (P0-AUTH-1)
+SCRUM-111	Finalizada	🔴 TESTS · el canario de tenancy del ZIP busca en bytes COMPRIMIDOS: nunca ha podido detectar una fuga
+SCRUM-112	Finalizada	TESTS · la limpieza depende de que cada autor se acuerde: 24 de 24 crean el merchant fuera del try — helper + after() global
+SCRUM-113	Finalizada	TESTS · la limpieza depende de que cada autor se acuerde: 24 de 24 crean el merchant fuera del try
+SCRUM-114	Finalizada	TESTS/ALBARANES · scrum49 falla en main: enviar-para-firmar devuelve 200 con ok:false (y deja una guarda de SCRUM-108 sin estrenar)
+SCRUM-115	Finalizada	🔴 WhatsApp · el front dice "Enviado ✓" cuando el envío falló, y el fallo no se registra en ningún sitio
+SCRUM-116	Finalizada	🔴 COBROS · un recordatorio fallido se guarda como enviado: desactiva el cron, engaña al usuario y contamina la métrica
+SCRUM-117	Finalizada	MÉTRICA · reminderEur cuenta como recuperado lo que nunca se envió — y los datos viejos NO se pueden limpiar
+SCRUM-118	Finalizada	🔴 QA/DATOS · el guard anti-prod solo busca la cadena "autorack": una URL de prod con otro host pasaría
+SCRUM-119	Finalizada	🔴 TESTS/PAGOS · /pay/card comprueba Stripe ANTES de resolver el token: el 501 tapa el 404 y entierra el assert de aislamiento de /pay/invoice
+SCRUM-120	Finalizada	PATCH /admin/jobs/:id no gatea por rol — un Operario puede cambiar tipoOperacion (bandera fiscal)
+SCRUM-121	Finalizada	TESTS/WEBHOOKS · scrum50 falla en staging porque el fail-closed de SCRUM-99 funciona: falta WHATSAPP_APP_SECRET
+SCRUM-122	Finalizada	P3-11 · scrum50-bot-albaranes.test.mjs no firma su payload a /webhooks/whatsapp (roto por el fail-closed de SCRUM-99)
+SCRUM-123	Finalizada	DECISIÓN · ¿planExpiresAt en los defaults de withMerchant? — con los datos de los 25 ficheros ya vistos
+SCRUM-124	Finalizada	AUDITORÍA · ¿Qué otra prohibición escrita queda sin mecanismo detrás? — y dónde parar la regresión infinita
+SCRUM-125	Finalizada	DECISIÓN · El ratchet de SCRUM-113 cuenta FICHEROS y el trabajo se hace por bloques test() — medido: desvío del 12%
+SCRUM-126	Finalizada	DECISIÓN · La convención \"200 + ok:false\" en los envíos es un punto ciego de monitorización — decidir si se mantiene, se cambia o se blinda con un guard
+SCRUM-127	Finalizada	TESTS · requireActivePlan (paywall trial_expired) no tiene NINGÚN test — el bloqueo nunca se verifica
+SCRUM-128	Finalizada	Guard fail-closed para los 9 endpoints de envío — que nadie consuma sent sin mirarlo (SCRUM-126 paso b)
+SCRUM-129	Finalizada	🔴 n8n vivo en POST /charges/:id/send — regla dura 1 violada, y miente "sent" cuando no envía nada
+SCRUM-130	Finalizada	🔴 PAGOS/REGULATORIO · /pay/card cae a la cuenta de PLATAFORMA sin Connect — la prohibición r23 solo la sostiene el selector del front
+SCRUM-131	Finalizada	POST /admin/team/:id/resend miente {ok:true} si el email de invitación falla — mismo patrón que el cluster 114-127
+SCRUM-132	Finalizada	PRESUPUESTOS/FISCAL · El "IVA general" del presupuesto no siembra las líneas — campo que no afecta a nada
+SCRUM-133	Finalizada	PRESUPUESTOS/UX · Botón "+" para añadir línea debajo de la última (evitar volver arriba)
+SCRUM-134	Finalizada	PRESUPUESTOS/PLANTILLAS · Seleccionar una plantilla abre contenido equivocado (borrador pendiente u otra plantilla), no la seleccionada
+SCRUM-135	Finalizada	GASTOS/UX · Asociar gasto a trabajo más fácil — añadir gasto desde Trabajos + selector de trabajos abiertos (no ID manual)
+SCRUM-136	Finalizada	EQUIPO/OPERARIOS · Unificar en un solo apartado — resumen por operario + añadir miembros en el mismo sitio
+SCRUM-137	Finalizada	DECISIÓN/S1 · Añadir rol "comercial" (permisos = operario) — decisión del fundador + máster
+SCRUM-138	Finalizada	EXPORT/FINANZAS · Mover "descargar datos" de Configuración a un apartado propio en Finanzas + export selectivo (elegir qué incluir, no solo periodo)
+SCRUM-139	Finalizada	UX/PRESUPUESTOS · Rediseñar el editor de presupuesto: de formulario de datos a \"cuadernillo\" (gate: feedback real primero)
+SCRUM-140	Finalizada	Pasar la plantilla como ARGUMENTO en vez de por sessionStorage (elimina la clase entera del off-by-one de SCRUM-134)
+SCRUM-141	Finalizada	FISCAL-1a · Factura final con deducción de anticipos (construible YA — independiente del dictamen P1)
+SCRUM-142	Acción del fundador	🔒 FISCAL-1b · Emisión de la factura de anticipo y su fecha de devengo — BLOQUEADO por dictamen P1
+SCRUM-143	Acción del fundador	🔴 LEGAL/VERIFACTU · Respuesta oficial AEAT: el Convenio 017 EXIGE sociedad mercantil — tres modelos de envío y cuál no está bloqueado
+SCRUM-144	Finalizada	VERIFACTU · Modelo C (el merchant remite con su propio certificado) — construible YA, sin SL ni convenio
+SCRUM-145	Finalizada	VERIFACTU 144a · Payload conforme a los XSD oficiales (gaps 1-6 + vf_timestamp + anulación) — común a todos los modelos de envío
+SCRUM-146	Finalizada	VERIFACTU 144b · DECISIÓN de transporte: apoderamiento (B) vs custodia de certificados (C1) vs utilidad local (C2)
+SCRUM-147	Finalizada	🔴 S1/SEGURIDAD · Dos denylists `=== 'tecnico'` siguen vivas y fallan ABIERTO — SCRUM-55 dejó el trabajo a medias
+SCRUM-148	Finalizada	EQUIPO · Detalle por miembro (sus presupuestos y trabajos) — exige filtro por teamMemberId en quotes y jobs
+SCRUM-149	Finalizada	🔴 FISCAL · createInvoiceFromQuoteAdmin es código muerto que emitiría factura SIN líneas (huella VeriFactu con cuota 0,00) e ignorando el plan de tramos
+SCRUM-150	Finalizada	PAGO/TRANSFERENCIA · La página /pay/bank desborda a 390px (el botón "Copiar IBAN" se sale) y el importe no va en es-ES
+SCRUM-151	Finalizada	GAP conocido · Un Trabajo con condiciones MANUAL/SIN_CONDICIONES no se puede facturar por NINGUNA vía
+SCRUM-152	Finalizada	EXPORT · Guard: el paquete no puede perder un dataset en silencio (4 listas que deben cuadrar)
+SCRUM-153	Finalizada	FISCAL/FSM · Anular una factura emitida: el disparador que falta (pending → annulled) — la maquinaria ya está
+SCRUM-154	Finalizada	🔴 CI · No hay nada que corra npm test en un PR: los guards solo saltan DESPUÉS del merge, sobre main
+SCRUM-155	Finalizada	🔴 QA/SEGURIDAD · A12.4 puede estar dando cobertura FALSA: las rutas con :id se piden sin sustituir el parámetro (404 de parseo, no 403 de rol)
+SCRUM-156	Finalizada	main en rojo: scrum51-job-sin-quote.test.mjs crea el merchant a mano y hace saltar el ratchet de SCRUM-113
+SCRUM-157	Finalizada	🔴 QA · Dos tests cuentan como cobertura y no corren NUNCA: A55_DB_TEST y BOT_SUITE_TEST no los setea ningún script ni la tanda gateada de rutina
+SCRUM-158	Finalizada	QA/ROLES · Invariante: todo montaje admin-gateado debe tener ≥1 ruta muestreada en ADMIN_ONLY_ROUTES (la lista es literal y no sigue al árbol)
+SCRUM-159	Finalizada	🔴 QA/DATOS · P3-9 · a55-window-quote y bot-suite fallan en el seed: el merchant demo id=1 quedó inerte en SCRUM-42 y sus clientes seed no existen
+SCRUM-160	Finalizada	🔴 QA · La tanda gateada completa sale roja en 21/337 — triage: separar fallo del runner, estado sucio de staging y podredumbre real
+SCRUM-161	Finalizada	CI · La tanda de tests gateados NO está en el CI: sigue dependiendo de que alguien se acuerde de tecleaerla (tercer caso del mismo patrón)
+SCRUM-162	Finalizada	Conceptos y plantillas FRECUENTES de verdad: hace falta contar usos (hoy no existe la señal)
+SCRUM-163	Finalizada	🔴 STAGING · PUBLIC_BASE_URL es el placeholder literal &lt;TU-URL-DE-STAGING&gt;: rompe la confirmación de Bizum y TODO enlace que el sistema genera
+SCRUM-164	Finalizada	QA/SEGURIDAD · Gate inline en jobs.routes.ts:331 — protege PATCH /admin/jobs/:id sin requireRole, invisible a la lista y a la derivación
+SCRUM-165	Finalizada	🔴 QA/DATOS · REGRESIÓN de SCRUM-118: DATABASE_URL se asigna DESPUÉS de un await — 5 tests nacen con el cliente Prisma sin variable
+SCRUM-166	Finalizada	QA · Unificar test:staging con el runner gateado — un solo comando, env resuelta en JS y no en shell
+SCRUM-167	Finalizada	QA · Nada detecta que staging va por detrás de schema.prisma: la deriva se manifiesta como 16 fallos crípticos en 14 ficheros
+SCRUM-168	Finalizada	CI · Job NO bloqueante «este PR toca la zona roja» — la ÚNICA señal sobre la zona roja (no hay gate de Code Owners y no lo habrá)
+SCRUM-169	Finalizada	PROCESO/DATOS · Un cambio de schema no está aplicado hasta estarlo en las TRES BD: el registro solo contempla dos
+SCRUM-170	Finalizada	FACT-2c · Facturación PARCIAL por cantidad servida (parte del albarán) — 🚨 SCHEMA + estado nuevo (cambio de máster)
+SCRUM-171	Finalizada	FACT-2d · Facturación recurrente/periódica por cliente (mensual, quincenal) — 🚨 SCHEMA (periodicidad) + cron
+SCRUM-172	Finalizada	QA/DATOS · MODELOS_POR_MERCHANT es una lista a mano sin FK detrás: si deriva, la limpieza deja basura en silencio
+SCRUM-173	Finalizada	🔴 FISCAL · La factura recapitulativa se emite SIN registro VeriFactu: emitInvoice no llama a applyVeriFactu (agujero en la cadena, tapado por el flag)
+SCRUM-174	Finalizada	QA/DATOS · withMerchant barre botSession por merchantId, pero BotSession.merchantId es nullable: las sesiones de primer contacto quedan huérfanas
+SCRUM-175	Finalizada	DINERO/QA · El candado de SCRUM-116 está en rojo: el envío falla y aun así se marca como enviado — decidir si es artefacto de staging o fuga real
+SCRUM-176	Finalizada	PROCESO/GUARD · `guard-dangerous` casa por substring en el MENSAJE de commit: escribir «db push» en prosa bloquea un commit inocente
+SCRUM-177	Finalizada	🔴 FISCAL/VERIFACTU · Asimetría de lectura de la cadena: el alta ignora las anulaciones, la anulación no
+SCRUM-178	Finalizada	FISCAL · Vía de emisión manual para Trabajos con condiciones MANUAL/SIN_CONDICIONES (decisión tomada, falta construir)
+SCRUM-179	Finalizada	PROCESO/QA · Nada sincroniza CODEOWNERS con la zona roja de ASESOR.md §4: dos listas a mano que ya han derivado en las DOS direcciones
+SCRUM-180	Finalizada	🔴 QA/WHATSAPP · Los fixtures fabrican teléfonos en 34600xxxxxx, que es rango móvil ES REAL: lo único que impide enviar a desconocidos es una env var fijada dentro del propio fichero
+SCRUM-181	Finalizada	QA/RUNNER · La tanda gateada no tiene timeout NI salida en directo: un hijo colgado es indistinguible de uno lento, y bloquea el turno de staging para siempre
+SCRUM-182	Finalizada	🔴 QA/WORKTREES · R6 serializa la BD pero NO los artefactos de build: una tanda de 10 min puede leer un dist que otra sesión reescribió a mitad
+SCRUM-183	Finalizada	REGISTRO/GUARD · F6 se mergeó ROTA y estuvo así en producción: un ReferenceError mataba medio render y nadie lo notó porque la página cargaba
+SCRUM-184	Finalizada	🔴 QA · `e2e:critico` está ROJO en main: no pasa de «landing sin botón de aceptar» — la puerta de «despliega tranquilo» lleva media función
+SCRUM-185	Finalizada	🔒 ENTORNO · Faltan las 5 variables del PRODUCTOR de VeriFactu en Railway: los tests de SCRUM-73 y 82 no pueden pasar aunque el código esté perfecto
+SCRUM-186	Finalizada	QA/DOC · Principio de borrado en fixtures (FK-Restrict grita, sin-FK falla mudo) en SUITE_REGRESION — escrito y pusheado, pendiente de revisión cruzada
+SCRUM-187	Finalizada	PROCESO/QA · Guard que ate CODEOWNERS a ZONA_ROJA — desbloquea lo que SCRUM-179 dejó esperando, con la divergencia ya medida (8 rutas, una sola dirección)
+SCRUM-188	Finalizada	QA/RUNNER · El turno de staging (R6) es una convención humana INVISIBLE: dos sesiones concurrentes pueden borrarse los merchants a mitad de tanda — y salir VERDE por accidente
+SCRUM-189	Finalizada	QA/DOC · «regla 3 del runbook» es una cita cierta pero AMBIGUA: apunta a un fichero donde el 3 significa otra cosa (pagos). Heredada de SCRUM-113 y copiada a 4 sitios
+SCRUM-190	Finalizada	Un worktree recién creado no está instalado: 114 fallos que parecen reales — el arreglo es que NAZCA instalado, no que uno se acuerde
+SCRUM-191	Finalizada	🔴 PAGOS/DATOS · El webhook de Connect graba `method:'card'` a fuego: un Bizum automático se registraría como TARJETA — y bloquea encender BIZUM_AUTO_ENABLED
+SCRUM-192	Finalizada	DATOS/SCHEMA · Ninguno de los 21 modelos con merchantId tiene FK: borrar un merchant deja huérfanos en silencio (el comentario decía 12, son 0)
+SCRUM-193	Finalizada	PROCESO/QA · `_guard-texto.mjs` está escrito pero NO es el camino por defecto: cuatro guards se cazaron a sí mismos contra su propia prosa, el último con el helper ya existiendo
+SCRUM-194	Finalizada	DATOS · 68 filas huérfanas en staging (AuditLog 47, WhatsAppMessage 21) — producción está limpia. Las crea la escritura TARDÍA, no la lista de modelos
+SCRUM-195	Finalizada	PAGOS-FLEX-2 · MECANISMO 2 · Presupuestos adicionales firmados sobre el mismo Trabajo (Job 1:N Quote) — 🚨 SCHEMA en dos pasos, decisiones ya tomadas
+SCRUM-196	Finalizada	🔴 SEGURIDAD · Inventario de vías de fuga de credenciales tras la rotación de prod: backup-dump.mjs imprime el error de pg_dump y la URL viaja como argumento (PROD, SIN verificar)
+SCRUM-197	Finalizada	QA/RUNNER · El recibo de la tanda no guarda los tests POR HIJO: un hijo que crashea mientras otro tiene rojos queda enmascarado como «rojo normal» y el guard aconseja cuarentena en vez de re-correr
+SCRUM-198	Finalizada	🔴 VERIFACTU/QA · El XML emitido NO se valida contra el XSD en ninguna comprobación automática: la única red son asserts de cadena a mano, y ya ha dejado pasar un token muerto
+SCRUM-199	Finalizada	QA/RUNNER · «Qué ficheros son especiales» vive en TRES copias a mano (AISLADOS ×2 + CLAVES_HIJOS): añadir un hijo obliga a mover las tres y olvidar una falla en silencio
+SCRUM-200	Finalizada	RECON · Superficie de emisión de facturas: cuántos caminos existen, qué valida cada uno y dónde viven las reglas fiscales — precondición para poder IMPEDIR (decisión de producto 29-jul)
+SCRUM-201	Finalizada	SEMAFORO-1 · Calibrar la lista ROJO/ÁMBAR contra el doc oficial "Validaciones y errores" de la AEAT — el rojo no se decide a ojo
+SCRUM-202	Finalizada	SKILL-CEREBRO · Skill .claude/skills/cerebro-yaqu para sesiones: arranque, disparadores anti-error R1-R7 y checklists de PR/STOP — el vocabulario estaba, faltaba el disparador
+SCRUM-203	Finalizada	EMBUDO-1 · Test que falla si CUALQUIER creación de factura no pasa por allocateInvoiceNumber() — convierte "los 7 sin excepción" en mecanismo, no en afirmación
+SCRUM-204	Finalizada	EMBUDO-1b · seed-demo.mjs fabrica números de factura a mano y descuadra la serie del merchant de demo — la única fuga real que destapó SCRUM-203
+SCRUM-205	Finalizada	SELLADO-1 · El sellado debe ocurrir al EMITIR, no perezosamente al generar el PDF — hoy el punto de no retorno lo dispara el cliente final
+SCRUM-206	Finalizada	FAILOPEN-1 · El catch del sellado en lib/invoicing.ts:58 y :152 deja salir la factura sin huella con una línea de log — la palabra «se omite» está en el código
+SCRUM-207	Finalizada	AUDIT-FISCAL-1 · AuditLog no registra NINGUNA acción fiscal — sin esto, el ámbar del semáforo vale cero como escudo legal
+SCRUM-208	Finalizada	🔴 seed-demo.mjs es un script de RESET y su BD por defecto es PRODUCCIÓN — sin host-check, a diferencia de seed-video.mjs
+SCRUM-209	Finalizada	🔴 El XML de registros que emite el servicio NO valida contra el XSD de la AEAT — y el .ps1 que sí valida está validando un constructor que no usa nadie
+SCRUM-210	Finalizada	SEMAFORO-FRONT-1 · Lo que ve el fontanero: rojo deshabilitado con explicación, ámbar con aceptación trazable, verde en silencio
+SCRUM-211	Finalizada	CALIBRACION-CHECK · ¿Cuántos ROJOS de SEMAFORO_CALIBRACION.md los incumple YA nuestro propio emisor? El 209 estaba escrito en el doc y seguía vivo en el código
+SCRUM-212	Finalizada	EXENTAS-1 · Falta la calificación de la operación —exenta (OperacionExenta E1..E6), no sujeta (N1/N2) e ISP (S2)—: un tramo al 0 % excluye la factura entera del registro
+SCRUM-213	Finalizada	SEMAFORO-FRONT-2 · Matriz de dispositivos AB6 del semáforo: solo se midió a 390 px, y el breakpoint está en 480
+SCRUM-214	Finalizada	GUARD-SEMAFORO · Test que falla si alguien cablea el semáforo del front antes de que exista el catálogo de avisos (SCRUM-207)
+SCRUM-215	Finalizada	🔴 DESTINATARIOS-1 · Cada factura a un particular es un rechazo AEAT (1189): emitimos F1 sin Destinatarios cuando el cliente no tiene NIF — y en oficios eso es lo NORMAL
+SCRUM-216	Finalizada	🔴 RECTIFICATIVA-1 · Toda R1 sale sin TipoRectificativa (1114): el servicio no lo emite nunca y solo existe en un comentario y en el builder que no usa nadie
+SCRUM-217	Finalizada	FAILOPEN-2 · Los cuatro rojos que hoy nadie dispara pero que están a un dato de distancia: año sin cota, IVA al 15%, prefijo de serie sin charset, ID de sistema vacío
+SCRUM-218	Finalizada	FLAG-FISCAL-1 · Encender INVOICING_ES_ENABLED es la acción más grave del producto y hoy es un UPDATE a mano en la BD: sin superficie, sin registro, sin poder probar cuándo empezó a emitir un merchant
+SCRUM-219	Finalizada	TX-TIPADO-1 · El tipo NO garantiza que haya transacción: PrismaClient es asignable a TransactionClient, así que pasar el cliente global compila limpio en TODA función que reciba un tx
+SCRUM-220	Finalizada	🔴 PRODUCCIÓN ROTA · Dos fallos independientes: la home da 500 por Quote.jobId sin aplicar en prod, y la vista de Facturas está muerta por doble declaración de copyRojo
+SCRUM-221	Finalizada	AUDIT-FISCAL-A9 · exportacion_fiscal sin registrar: quién pidió el pack de inspección y para quién no queda en ninguna parte
+SCRUM-222	Finalizada	🔴 DERIVA-PROD-1 · Nada impide desplegar código que exige un schema que producción no tiene — hoy eso ha tirado la home, y el aviso llegó como un 500 en la cara del usuario
+SCRUM-223	Finalizada	🔴 WRAPPER-PROD-1 · db-push-prod imprime su cabecera y muere en silencio: el guard de la operación más peligrosa del sistema hace un no-op que se lee como "no hay nada que aplicar"
+SCRUM-224	Finalizada	🔴 DESPLIEGUE · Un hotfix desplegado NO llega al usuario: el service worker sigue sirviendo el JS viejo y hay que limpiarlo a mano (tercera vez, tras SCRUM-45 y 46)
+SCRUM-225	Finalizada	MIGRATIONS_PENDING.md es una lista a mano del estado de las TRES BD y nada la ata a la realidad: hoy decía PENDIENTE en dev cuando ya estaba aplicado, y su otra dirección de error es un 500 en producción
+SCRUM-226	Finalizada	🔴 DBURL-GUARD-1 · Un mismo defecto ha filtrado credenciales dos veces y matado el wrapper de prod: parsear DATABASE_URL a mano. La regla existe, está en la skill, y no la para nada
+SCRUM-227	Finalizada	RESEÑAS-1 / WA-RASTRO-1 · CINCO de las ocho vías de envío de WhatsApp no registran WhatsAppMessage — la reseña es una de ellas
+SCRUM-228	Finalizada	INFORMES-EMPLEADO-1 · Desglose por empleado en Informes: el dato YA se agrega, falta la UI — pero Charge no tiene teamMemberId y las sumas no cuadrarán con el total
+SCRUM-229	Finalizada	PRESU-MARGEN-PIE-1 · Ver margen e IVA del presupuesto SIN abrir cada línea: agregados en el pie de totales (24 px fijos) — descartadas las columnas por fila, medidas en 77 px/fila a 390 px
+SCRUM-230	Finalizada	QR-PAGINA-1 · El QR de la página pública no es personalizable en nada y el pro no lo ve antes de descargarlo — riesgo contenido: NO comparte código con el QR fiscal
+SCRUM-231	Finalizada	🔒 CACHE-EDGE-1 · Los JS del dashboard se sirven con max-age=14400 y NO sale del repo: hay que averiguar quién pone esa cabecera (sospecha: Browser Cache TTL de Cloudflare)
+SCRUM-232	Finalizada	TURNO-2 · El lock de staging dice QUIÉN lo tiene pero no QUÉ está corriendo: quien espera no puede decidir si esperar, avisar o seguir
+SCRUM-233	Finalizada	🔒 DBURL-GUARD-2 · El runbook de db push enseña en PROSA la forma insegura (--from-url) y el guard de SCRUM-226 no ve prosa — extenderlo a docs
+SCRUM-234	Finalizada	🔴 NUMERACION-CARRERA-1 · Tenemos dos formas de reservar número de serie y la robusta está en el documento MENOS crítico: invoiceNumber hace read-then-write, quoteNumber usa increment atómico
+SCRUM-235	Finalizada	🔴 CLIENTE-PRISMA-1 · El guard del cliente da falso verde por una premisa escrita que es falsa, y además no corre en la única tanda que toca la BD — hoy costó 27 minutos y 6 tests
+SCRUM-236	Finalizada	La pantalla de Equipo descarta en silencio lo no atribuible: las partes no suman el total y nada lo dice
+SCRUM-237	Finalizada	ASSERTS-MUERTOS-1 · Un doesNotMatch sobre un token que no puede aparecer NUNCA es un verde permanente que no comprueba nada — barrido + guard
+SCRUM-238	Finalizada	🔴 BUILD-INVISIBLE-1 · Nada del repo genera el cliente Prisma y no está versionado: producción arranca hoy gracias a una auto-detección de la plataforma que ningún fichero declara
+SCRUM-239	Finalizada	GUARD-RECIBO-BUCLE · El criterio commit === HEAD se invalida a sí mismo: anotar el resultado de la tanda en el máster es un commit posterior a la tanda
+SCRUM-240	Finalizada	🔴 SOBRE-DUPLICADO · Hay DOS constructores del sobre RegFactuSistemaFacturacion y solo uno está demostrado conforme contra XSD
+SCRUM-241	Finalizada	🔴🔴 BACKUP-ROTO-1 · El backup lógico pierde 4 tablas EN SILENCIO (lista a mano derivada + un nombre de tabla equivocado) y --restore-test está ciego a ese fallo
+SCRUM-242	Acción del fundador	🔴 BACKUP-PROCESO-1 · No hay backup programado, no hay copia fuera de la infraestructura, no hay retención, y la restauración del dump lógico NO EXISTE (el RUNBOOK que promete el script no está escrito)
+SCRUM-243	Finalizada	🔴 TENENCIA-LECTURA-1 · El aislamiento entre merchants en LECTURA es disciplina, no barrera: ningún guard obliga a filtrar por merchantId y no se ha descartado un IDOR ruta por ruta
+SCRUM-244	Finalizada	RGPD-1 · El borrado de un merchant está bien hecho y guardado pero NO lo expone ninguna ruta; la portabilidad cubre 6 de 21 modelos; y borrar el merchant destruye su AuditLog fiscal
+SCRUM-245	Finalizada	🔴 WA-RASTRO-2 · 21 llamadores del bot envían WhatsApp sin merchantId y no dejan rastro — pero registrarlos todos multiplicaría las escrituras en el camino de más tráfico del producto
+SCRUM-246	Finalizada	🔴 SIN-LINEAS-NO-SELLABLE · Una factura fiscal sin líneas no se puede sellar NUNCA, y desde SCRUM-205 tampoco puede producir documento — trampa armada para el día que se encienda el flag
+SCRUM-247	Finalizada	🔴 PRODUCTOR-CONSTANTES-1 · Las 5 variables del PRODUCTOR faltan en PRODUCCIÓN — pasarlas a constantes del repo: un cambio de NIF es un hecho fiscal, no configuración
+SCRUM-248	Finalizada	🔴 DECLARABILIDAD-1 · El export fiscal EXCLUYE facturas selladas de verdad (con líneas y huella real): o el fixture no basta, o el export es más estricto que el sellado
+SCRUM-249	Finalizada	TURNO-3 · Latido de liveness del turno de staging: SCRUM-232 dio el CONTEXTO (qué corre + fin estimado); falta saber si el dueño está VIVO
+SCRUM-250	Finalizada	FLAKE-WA0B-1 · scrum115 cae cuando staging va lento: verifica un efecto fire-and-forget con un poll de 3 s, sin punto de sincronización
+SCRUM-251	Finalizada	TENENCIA · GET /charges lee entre merchants: findMany sin `where` (mitigado por requireInternalSecret, pero es un global vivo)
+SCRUM-252	Finalizada	GUARD-PRISMA-2 · El guard de cliente compara NOMBRES, no tipos: dos schemas con las mismas columnas y distinto tipo dan VERDE y el cliente revienta al deserializar
+SCRUM-253	Finalizada	TURNO-4 · turno:tomar antes de lanzar la tanda BLOQUEA TU PROPIA TANDA: adquirirLock rechaza cualquier lock vivo sin comparar dueño
+SCRUM-254	Finalizada	TENENCIA · GET /charges/:id devuelve CUALQUIER cobro de CUALQUIER merchant, con referencias bancarias — y su único consumidor es un link que solo existe fuera de producción
+SCRUM-255	Finalizada	Migrar los 5 tests que sondean una escritura fire-and-forget al punto de sincronización de SCRUM-250
+SCRUM-256	Finalizada	AUDIT-SYNC · recordAudit devuelve void: el helper de SCRUM-250 NO transfiere (a cero de los 11). Hace falta un interceptor de DELEGATE — y es la única forma de sostener la aserción NEGATIVA de scrum66:91
+SCRUM-257	Finalizada	ALBARAN-DESDE-PRESUPUESTO · Crear albarán abre una pantalla prellenada con las líneas del presupuesto, sin precios — y no se puede crear un albarán sin presupuesto
+SCRUM-258	Finalizada	TURNO-5 · La marca del turno se guarda por MÁQUINA (%TEMP%\yaqu-turno-staging.json): dos sesiones en el mismo equipo se pisan la nota y la primera queda soltando a mano
+SCRUM-259	Finalizada	🔴 LISTADO-ROL-1 · tenancy-permisos:258 en rojo: el técnico NO ve SU PROPIO Trabajo en la lista — y la creación es síncrona, así que no es timing
+SCRUM-260	Finalizada	🔴 LIMPIEZA-CIEGA-1 · clean-staging-tests borra TODOS los @test.local de staging sin consultar el turno de SCRUM-188 — y sin dejar rastro de qué borró
+SCRUM-261	Finalizada	PII-REPO-1 · Un número de móvil real vive en el repo — y no en dos sitios, sino en SIETE ficheros, uno de ellos escribiéndolo en la BD
+SCRUM-262	Finalizada	SEED-RANGO-1 · Sembrar los teléfonos en un rango que no pueda pertenecer a nadie: permite eximir el RANGO en vez de eximir el CAMINO
+SCRUM-263	Finalizada	SIN-LINEAS-ROJO-POR-RUTA · nadie comprueba que emitir sin líneas devuelva 409 con su copy: el guard de SCRUM-246 es estructural, no de ruta
+SCRUM-264	Finalizada	MICROCOPY-SIN-LINEAS · los dos copys de SCRUM-246 se declaran «[PENDIENTE microcopy oficial]» y ya se le enseñan al cliente final
+SCRUM-265	Finalizada	🟠 TANDA-TIMEOUT · El hijo QA tarda ~28 min y su límite POR DEFECTO son 30: el margen es del 7% y una muerte por timeout cuesta el turno entero de una cola de 4 máquinas
+SCRUM-266	Finalizada	🟠 TTL-DESATADO · `estado` y `tomar` hardcodean 45 min mientras el runner deriva su TTL: con GATED_CHILD_TIMEOUT_MS>35min una tanda VIVA se lee como RANCIA, e invita a reclamarla
+SCRUM-267	Finalizada	MASTER-ANCLA · Una entrada del máster que afirma «hecho y en main» debe llevar el sha: hoy no se puede saber si envejeció, y ya ha costado dos rondas
+SCRUM-268	Finalizada	TURNO-4 · el turno no sabe expresar una CESIÓN, así que un esperador automático convierte una cola acordada en una carrera — y gana el que programó el bucle
+SCRUM-269	Finalizada	🔴 ROJO-127 · «requireActivePlan bloquea de verdad las 4 rutas gateadas» falla en la tanda del 2-ago — rojo NUEVO, ajeno a la rama, y fuera del grupo fiscal
+SCRUM-270	Finalizada	🟠 EVIDENCIA-TIRADA · Nuestros tests OBTIENEN la evidencia que explicaría su propio rojo y la descartan: un assert que muere el primero deja las otras respuestas sin imprimir
+SCRUM-271	Finalizada	🔴 COMA-DECIMAL-1 · «2,5» se convierte en 1 SIN AVISAR en el presupuesto rápido (homeView:912): el único punto que corrompe en silencio en vez de fallar
+SCRUM-272	Finalizada	🟠 BARRIDO-SNAPSHOT · barridoDeHuerfanas decide qué borrar con una lista tomada UNA vez y luego borra durante 21 consultas: un merchant nacido a mitad se ve como huérfano
+SCRUM-273	Tareas por hacer	🟠 MASTER-FICHERO-POR-TICKET · Siete ramas chocaron el mismo día en YAQU_MASTER.md: el conflicto no hay que resolverlo mejor, hay que hacerlo imposible
+SCRUM-274	Finalizada	FINGERPRINT-ESTATICOS · Los 31 JS del dashboard no llevan hash de contenido, así que ninguna política de caché puede ser correcta: o se sirve viejo o se rebaja todo a cero
+SCRUM-275	Finalizada	🔴 LOGIN-CODIGO-CRUDO · Quien teclea mal su correo en la página de acceso lee «invalid_email»: SCRUM-151 no está a medias ahí, está sin empezar por los dos lados
+SCRUM-276	Tareas por hacer	BLOQUE A · Núcleo fiscal — facturación completa, del tipo de factura al Libro de Registro
+SCRUM-277	Finalizada	BLOQUE B · Arquitectura de información — sidebar, patrón de detalle, formularios y separar Facturas de Cobros
+SCRUM-278	Finalizada	BLOQUE C · Albaranes como objeto de primera clase — pestaña propia, página de detalle y orden dentro del Trabajo
+SCRUM-279	Finalizada	BLOQUE D · Entrada y migración — importar desde Excel y continuar la numeración donde la dejaste
+SCRUM-280	Tareas por hacer	BLOQUE E · Gestoría e integraciones — entregar al asesor lo que su programa entiende, por el canal que la ley permite
+SCRUM-281	Tareas por hacer	BLOQUE F · Landing y posicionamiento — el gancho legal, la tabla comparativa y los gremios
+SCRUM-282	Finalizada	BLOQUE G · Trabajos — ordenar nuestro diferencial y hacer visible el ciclo completo
+SCRUM-283	Finalizada	B2 · La LEY del patrón de detalle, aplicada a FACTURA — de 8 botones apilados a 1 primaria + 2 secundarias + «⋮»
+SCRUM-284	Finalizada	B1 · Barra lateral por ciclo de venta y Configuración troceada en nueve submenús
+SCRUM-285	Finalizada	B4 · Separar Facturas de Cobros — un justificante bajo una ruta que dice «Factura» es un mensaje arriesgado
+SCRUM-286	Finalizada	B3 · Formularios numerados por bloques — el de presupuesto pide la forma de pago antes de saber el cliente
+SCRUM-287	Finalizada	A0.1 · MEDIR si una factura puede existir sin trabajo y sin presupuesto — informe, sin construir nada
+SCRUM-288	Finalizada	A0.2 · MEDIR si una línea de albarán se puede casar con su línea de presupuesto — informe, sin construir nada
+SCRUM-289	Finalizada	A0.3 · La FACTURA SUELTA — «Nueva factura» sin presupuesto, sin trabajo y sin albarán
+SCRUM-290	Finalizada	A0.4 · ALBARÁN → FACTURA · cantidades del albarán, precios del presupuesto firmado — y lo añadido en obra dispara un presupuesto adicional
+SCRUM-291	Finalizada	A4 · Series de numeración configurables — y detectar los huecos en vez de advertir en gris de que no los haya
+SCRUM-292	Finalizada	A1 · Tipo de factura — tres visibles y doce plegadas, y PROPONER en vez de preguntar (aporta la CAPTURA de SCRUM-212; NO lo absorbe)
+SCRUM-293	Finalizada	A2 · Retención IRPF y suplidos — configurada UNA vez en el perfil, no elegida en cada factura
+SCRUM-294	Finalizada	A3 · Recargo de equivalencia en el cliente y criterio de caja — que en YaQu deja de ser una casilla y pasa a calcularse
+SCRUM-295	Finalizada	A5 · Modelo 303 con las casillas mapeadas — y cruzado con los cobros reales, que ellos no pueden hacer
+SCRUM-296	Finalizada	A6 · Libro de Registro — y que cada asiento enlace a su presupuesto firmado, su albarán y su cobro
+SCRUM-297	Finalizada	A7 · Exportar evidencias de cumplimiento — su ZIP prueba lo que se declaró; el nuestro prueba además lo que pasó
+SCRUM-298	Finalizada	A8 · El interruptor de VERI*FACTU — «se guarda» vs «se envía», visible, y el modal de dos caminos
+SCRUM-299	Finalizada	🔴 LANDING-PROMETE-FACTURA · La web pública dice «Recibe la factura» y enseña «Factura #F-128», y hoy un merchant ES real entrega un justificante de cobro — el máster prohíbe ese copy con esas palabras
+SCRUM-300	Finalizada	C5 · Los tres campos que faltan — y FIRMADO POR, que convierte nuestra firma en la más difícil de discutir
+SCRUM-301	Finalizada	C1 · Albaranes como sección propia — para poder contestar «¿qué tengo sin firmar?» sin entrar obra por obra
+SCRUM-302	Finalizada	C2 · Página de detalle del albarán — el patrón de B2 aplicado, con el rail de contexto y el presupuesto origen enlazado
+SCRUM-303	Finalizada	C4 · Crear un albarán en UNA pantalla — que deje de crearse vacío para luego editarlo
+SCRUM-304	Finalizada	C3 · Los albaranes dentro del Trabajo: tabla, no pila de tarjetas
+SCRUM-305	Finalizada	C6 · «Quedan 3» — qué falta por entregar contra el presupuesto, que es certificación por partes sin construirla
+SCRUM-306	Finalizada	C7 · Serie de numeración propia para albaranes — reutilizando el mecanismo de A4, no escribiendo un segundo
+SCRUM-307	Tareas por hacer	BLOQUE H · Firmar sin cobertura — el albarán se firma en un sótano, y hoy necesita red
+SCRUM-308	Finalizada	🔴 RECTIFICAR-ANULADA · Se puede emitir una rectificativa sobre una factura ANULADA: el back no comprueba el status y el front tampoco — la pregunta la dejó abierta SCRUM-153 y se cerró sin contestarla
+SCRUM-309	Finalizada	G0 · MEDIR el Trabajo antes de diseñar sus tareas — seis preguntas, informe, cero construcción
+SCRUM-310	Finalizada	D0 · MEDIR el alta y lo que ya existe de importación — seis preguntas, informe, cero construcción
+SCRUM-311	Finalizada	🔴 GUARD-271-ENUMERA · El guard que vigila «no inventes cantidades» lee DOS ficheros escritos a mano — justo los dos que su ticket arregló. El patrón vive sin vigilancia en quotesView.js
+SCRUM-312	Finalizada	D1 · Importador de clientes y productos — que proponga el mapeo, que entienda el CSV español y que diga lo que no pudo importar
+SCRUM-313	Finalizada	D2 · «¿Por qué número vas?» — preguntar la continuidad de numeración en el alta, no esconderla en Configuración
+SCRUM-314	Finalizada	D3 · Arreglar wipeDemo ANTES de ponerle botón — y sustituir los datos de ejemplo por el catálogo del gremio
+SCRUM-315	Finalizada	D4 · Primeros pasos, hasta el dinero — el checklist no acaba en «presupuesto creado», acaba en «cobrado»
+SCRUM-316	Finalizada	G1 · El detalle del Trabajo con el patrón B2 — y con los DOS EJES separados, trabajo y cobro
+SCRUM-317	Finalizada	G2 · El Trabajo se llama por su nombre — hoy se titula «Presupuesto #2» y eso contradice la tesis del producto
+SCRUM-318	Finalizada	G3 · DATOS sube al rail derecho — a quién llamo y adónde voy no puede estar debajo de la pila de albaranes
+SCRUM-319	Finalizada	G4 · DOCUMENTOS se parte por tipo — hoy es «una pestaña gigantesca» con cuatro objetos distintos en una pila
+SCRUM-320	Finalizada	G5 · «Qué falta para cobrar» — la pantalla dice CUÁNTO se ha cobrado y no dice QUÉ falta para cobrar el resto
+SCRUM-321	Finalizada	E0 · Medir antes de diseñar el Bloque E — nueve preguntas, y dos de ellas deciden argumentos de venta que ya estamos usando
+SCRUM-322	Tareas por hacer	E1 · El envío al asesor — alcanzarles, por el canal que la ley permite, y con el ciclo trimestral que ellos no tienen
+SCRUM-323	Tareas por hacer	E2 · El fichero que su programa entiende — el problema no es el formato, es el plan contable
+SCRUM-324	Finalizada	E3 · El gasto usable — y la corrección de una promesa legalmente incorrecta sobre la foto del ticket
+SCRUM-325	Finalizada	E4 · Excel por periodo, formato de Libros Registro de la AEAT, y Drive — el suelo que cualquier despacho sabe leer
+SCRUM-326	Tareas por hacer	E5 · Integración bancaria — la mitad del bloque que faltaba, y la única pieza que hace verdad «sabemos cuándo entró cada euro»
+SCRUM-327	Finalizada	F0 · Medir la landing de verdad — abrir index.html, el embudo y el precio. Nadie ha abierto el fichero que declaramos fuente de verdad
+SCRUM-328	En curso	F1 · La decisión de posicionamiento — no podemos vender facturación que el usuario no puede usar, y hay que enmendar el máster
+SCRUM-329	Finalizada	F2 · Lo legal de la página pública — aviso legal, cookies, LSSI y RGPD. Hoy no tiene dueño en ningún bloque
+SCRUM-330	Finalizada	F3 · 🔴 Precio, oferta y contador — «quedan 18 de 20 plazas» con cero clientes pagando, y un tachado que puede ser ficticio
+SCRUM-331	Acción del fundador	F4 · Héroe, titular y prueba social HONESTA — con cero clientes, lo único prohibido es inventarse uno
+SCRUM-332	Acción del fundador	F5 · La tabla comparativa contra «tu método actual» — y no es legalmente gratis, cada fila tiene que ser verdad HOY
+SCRUM-333	Acción del fundador	F6 · Tarjetas por gremio — somos un producto de oficios y su octava parte se ve más dirigida que nuestra totalidad
+SCRUM-334	Acción del fundador	F7 · Lo que pasa DESPUÉS del clic — CTA, WhatsApp y el que no está listo hoy. La mitad del bloque que faltaba
+SCRUM-335	Tareas por hacer	F8 · «Da igual de dónde vengas» — la barrera de cambio hecha polvo. HUECO DECLARADO hasta que D1 y D2 estén en main
+SCRUM-336	Finalizada	🔴 DEFECTO VIVO · La landing escribe localStorage de marketing sin consentimiento y sin banner — ePrivacy art. 5.3
+SCRUM-337	Finalizada	🔴 El correo del día 12 dice «perderías el acceso a tu panel» y el código no quita el panel — claim más duro que el producto
+SCRUM-338	Finalizada	🔴 Quien salta el wizard se queda sin oficio para siempre y no puede cargar el catálogo — callejón sin salida
+SCRUM-339	Finalizada	🔴 El importador de productos tira filas en silencio, miente en el recuento y no es idempotente con nuestro propio export
+SCRUM-340	Finalizada	🔴 DEFECTO VIVO · El contador «quedan 18 de 20 plazas» cuenta el campo plan, no pagos — prueba social falsa publicada
+SCRUM-341	Finalizada	La landing dice «para siempre» y el documento vinculante dice «mientras mantengas la suscripción» — la condición solo está donde el visitante no la ve
+SCRUM-342	Finalizada	invoice.quote as any apaga la null-safety justo en el sitio donde la factura suelta la va a necesitar
+SCRUM-343	Finalizada	Los dos gastos.csv no tienen las mismas columnas (9 vs 8) y el comentario del código dice que sí
+SCRUM-344	Finalizada	🔴 «Cerrar trabajo» es irreversible, mata la vía de cobro y se ofrece sin ninguna guarda de dinero
+SCRUM-345	Finalizada	Dos descargas que nadie puede pedir y un rótulo que enlaza al fichero equivocado — decisión del fundador
+SCRUM-346	Finalizada	A0.5 · El JUSTIFICANTE suelto — la reparación de 40 € de un merchant ES real, que hoy tampoco tiene puerta
+SCRUM-347	Finalizada	La auditoría no distingue el ORIGEN de una factura: la suelta, la recapitulativa y el parcial de albarán se registran igual
+SCRUM-348	Finalizada	🔴 El guard de tenencia de SCRUM-243 da por cubierta cualquier lectura dentro de un handler que mencione merchantId — y el agujero crece solo
+SCRUM-349	Finalizada	El trinquete de SCRUM-299 escanea los COMENTARIOS de src/ como si fueran copy — y ya obliga a reformular explicaciones para esquivarlo
+SCRUM-350	Finalizada	.modal-footer no envuelve: dos botones con texto largo se salen de la pantalla a 390 px
+SCRUM-351	Finalizada	🔴 El repo afirma que los worktrees comparten node_modules por junction — medido, es falso, y sobre esa premisa está construida una restricción que aplicamos a diario
+SCRUM-352	Finalizada	Tres pies de modal tienen target táctil de 36 px en vez de 44: escriben btn-primary sin la clase btn, que es la que sube en móvil
+SCRUM-353	Finalizada	La excepción del guard de SCRUM-311 está anclada por número de línea: cualquier inserción encima la rompe
+SCRUM-354	Finalizada	A9 · Facturas recurrentes sobre maintenancePlan — su casilla no sabe qué factura; la nuestra factura un CONTRATO
+SCRUM-355	Finalizada	H0 · MEDIR antes de nada — quién firma, en qué aparato y con qué móvil. Una respuesta puede parar el bloque entero
+SCRUM-356	Finalizada	H2 · Los tres significados de «guardado» — la tarea que da miedo, y el corazón del bloque
+SCRUM-357	Finalizada	H1 · Bajar al sótano con lo que hace falta — precargar el albarán, y poder CREARLO sin red
+SCRUM-358	Finalizada	H3 · La cola de sincronización — orden, reintentos e idempotencia con la clave DEFINIDA
+SCRUM-359	Finalizada	H4 · Los dos relojes — la fecha de una firma sin red la pone un reloj que el usuario controla
+SCRUM-360	Finalizada	H5 · 🔴 Almacenamiento — iOS BORRA el origen entero a los 7 días, y ahí se pierden firmas enteras
+SCRUM-361	Finalizada	H6 · Conflictos — lo firmado NO se toca, ni siquiera para arreglarlo
+SCRUM-362	Finalizada	H7 · Cómo se prueba «sin cobertura» de verdad — el toggle Offline de DevTools no vale
+SCRUM-363	Finalizada	🔴 «Pagado» es inalcanzable si totalAceptado es null o 0 — un Trabajo cobrado se queda en «Parcial» para siempre
+SCRUM-364	Finalizada	🔴 El catálogo vacío no lo arregla el importador: `trade` solo se escribe en el alta y `load-catalog` exige `trade_required` — callejón sin salida
+SCRUM-365	Finalizada	🔴 Asimetría de permisos: /export lleva requireRole y /import y /load-catalog no — un Técnico puede reescribir el tarifario pero no exportarlo
+SCRUM-366	Finalizada	🔴 La lista y el detalle del Trabajo no coinciden en la acción principal — «Marcar terminado» vs «Enviar para firmar» para el mismo trabajo
+SCRUM-367	Finalizada	🔴 Atar cada línea de albarán a su línea de presupuesto (quoteLineIndex) — sin esto, C6 y media G5 no tienen dato y son lo único que nadie puede copiarnos
+SCRUM-368	Finalizada	🔴 DESIGN.md y el CSS no coinciden: .btn-primary mide 36 px y da 3,3:1 de contraste — afecta a TODO el producto, no a una pantalla
+SCRUM-369	Finalizada	🔴 El sello de la firma NO tiene verificador: nadie recalcula computeAlbaranContentHash — es evidencia guardada, no un invariante comprobado
+SCRUM-370	Finalizada	🔴 «+ Añadir gasto» guarda un gasto que luego no se ve en ninguna parte de la ficha del Trabajo — medir si se ve en algún sitio del producto o si es un botón que se traga los datos
+SCRUM-371	Finalizada	El verificador del sello existe y nadie lo dispara: barrido de población por versión — «¿cuántos albaranes firmados hay de cada versión y cuadran todos?»
+SCRUM-372	Finalizada	🔴 El mismo dato viaja con dos nombres —estadoFacturacion y estadoCobro— y copiar el contexto de una vista a otra da `undefined`, que compara «true» contra todo
+SCRUM-373	Finalizada	Ante el mismo fallo, Albaranes le da una salida al profesional y Facturas le da un diagnóstico — tres avisos de invoicesView.js sin alinear
+SCRUM-374	Finalizada	🔴 Job.direccion no la escribe NADIE — y va sellada dentro de la evidencia de firma de todos los albaranes firmados
+SCRUM-375	Finalizada	🔴 El marcado de facturas como pagadas dice que ha fallado cuando SÍ se ha guardado: el catch envuelve también al reload()
+SCRUM-376	Finalizada	🔴 Nadie carga landing-demo.js: la doc la da por «publicada» y hay un test que asume que existe — un verde que no vigila nada
+SCRUM-377	Finalizada	El «(s)» de programador en 11 sitios que ve el profesional — y la pantalla del Trabajo llama «parte» a lo que el resto del producto llama albarán
+SCRUM-378	Finalizada	Nadie comprueba que una página cargue lo que su propio código necesita — y el guard que existe solo mira una de las nueve páginas
+SCRUM-379	Finalizada	🔴 En el detalle del albarán, si falla la recarga tras una acción la pantalla NO DICE NADA y deja la ficha vieja delante — cinco sitios, y el rechazo ni siquiera entra en el catch
+SCRUM-380	Finalizada	🔴 La acción principal de la pantalla del Trabajo es un objetivo táctil de 30 px en móvil — y su rótulo aparece dos veces en la misma pantalla
+SCRUM-381	Finalizada	🔴 Los dos sembradores están rotos contra main y nadie se había enterado — uno por un import a un fichero borrado, el otro por semántica fiscal obligatoria
+SCRUM-382	Finalizada	🔴 Una foto subida dos veces se queda en el albarán para siempre: no hay dedupe, y el producto no tiene ninguna forma de borrar una foto
+SCRUM-383	Finalizada	🔴 DATABASE_URL_STAGING no apunta a staging: apunta a yaqu_dev_javier — el orden «staging → dev → producción» lleva sin validar nada en staging
+SCRUM-384	Finalizada	Dos min-height:44px locales que la base ya resuelve — y uno de ellos, por ser inline, hace un botón MÁS ALTO de lo que DESIGN.md pide en escritorio
+SCRUM-385	Finalizada	🔴 STOP MIGRACIONES · `prisma migrate diff` devuelve VACÍO con exit 0 en Prisma 7.9.1 — el preview obligatorio antes de tocar producción dice «no hay cambios» pase lo que pase
+SCRUM-386	Finalizada	Sacar openAlbEditorSheet y openFacturarParcialSheet de dentro de renderJobDetailView — dos acciones del albarán solo son alcanzables desde la fila del Trabajo, y la página no puede quedárselas
+SCRUM-387	Finalizada	🔴 Se está construyendo el MISMO ticket varias veces en paralelo, y la marca «aprobado por el fundador» la puede escribir cualquiera — censo derivado de main contra Jira, y procedencia obligatoria en la microcopy
+SCRUM-388	Finalizada	🔴 El censo de SCRUM-387 es CIEGO en un sentido: el trabajo que está en main SIN entrada de máster es indistinguible del que nadie ha tocado — hace falta una segunda vía de conteo que no comparta el criterio de la primera
+SCRUM-389	Finalizada	🔴 Hay DOS agregadores de IVA repercutido: GET /admin/reports/vat con pantalla viva, y el Libro de A6 del que ahora cuelga el 303 — un día dirán cifras distintas y nadie sabrá cuál miente
+SCRUM-390	Finalizada	🔴 Nueve decisiones llevan la cláusula «el día que entre el primer cliente real» — y ese día no va a disparar nada: no existe forma de saber si ya llegó
+SCRUM-391	Finalizada	🔴 16 guards huérfanos: el mecanismo está en main y su vigilante se quedó en una rama — creemos protegido lo que no lo está
+SCRUM-392	Finalizada	🔴 El guard de SCRUM-386 congela un literal de llamada: añadir cualquier propiedad al contexto lo rompe y no hay forma de corregir el código — bloquea C5
+SCRUM-393	Finalizada	🔴 Un árbol CON MARCADORES DE CONFLICTO VIVOS pasa la suite entera en verde — medido: `npm test` exit 0 con dos `<<<<<<<` sin resolver en jobDetailView.js
+SCRUM-394	Finalizada	Si el CLIENTE se da de baja de WhatsApp, el plan de mantenimiento deja de proponerse AL PROFESIONAL — que no es quien se dio de baja, y no se entera de que su plan se ha parado
+SCRUM-395	Finalizada	🔴 `prisma migrate diff` en un worktree que cambió de rama propone BORRAR el trabajo ajeno — y `--accept-data-loss` NO protege esa ruta
+SCRUM-396	Finalizada	La referencia del justificante se sortea con Math.random() y no tiene reintento: una colisión revienta la escritura EN MITAD DE UN COBRO
+SCRUM-397	Finalizada	🔴 «Sabemos exactamente cuándo entró cada euro» es el argumento de tres bloques — y `paidAt` se pone con `new Date()`: dice cuándo alguien lo marcó, no cuándo llegó el dinero
+SCRUM-398	Finalizada	El «conjunto cerrado» de formas de cobro solo es cerrado dentro de paidVia.ts: la UI etiqueta cuatro valores que no están, el código escribe `mp`, y un método fuera del mapa se le enseña al profesional sin traducir
+SCRUM-399	Finalizada	🔴 Un plan con opt-out ocupa un hueco del lote de 50 del cron PARA SIEMPRE y en las primeras posiciones: con suficientes, el cron deja de llegar a los planes buenos — y también en silencio
+SCRUM-400	Finalizada	🔴🔴 LA LANDING YA AFIRMA SER FABRICANTE CON DECLARACIÓN RESPONSABLE — y ese documento es una plantilla cuya propia cabecera dice «NO publicar»
+SCRUM-401	Finalizada	Anular una factura BORRA si estaba cobrada: `annulled` y el estado de cobro comparten el mismo campo, y el dato de si entró el dinero no se recupera
+SCRUM-402	Finalizada	🔴 «Confirmar Bizum recibido» se pinta HOY como acción PRIMARIA, es inerte, y lleva el texto `[PENDIENTE microcopy oficial]` a la vista del profesional
+SCRUM-403	Finalizada	🔴 El «Beneficio neto» de Informes resta cifras CON IVA en los dos lados — le enseña al profesional como beneficio un dinero que es de Hacienda
+SCRUM-404	Finalizada	🔴 Si falla el envío de la firma, el TRAZO SE PIERDE: el modal cierra antes de enviar, y hay que pedirle al cliente que firme otra vez delante de él
+SCRUM-405	Finalizada	🔴 Con un portal cautivo, el profesional se descarga la página de login del router creyendo que son sus datos — y uno de los tres ficheros es el que le manda al asesor
+SCRUM-406	Finalizada	Un profesional en mitad de una obra no tiene desde dónde avisarnos: el único contacto vive en las páginas legales y el botón «?» es el tutorial
+SCRUM-407	Finalizada	Los fixtures de scrum399 corren como merchant demo (merchantId 1) — hoy no muerde, y ése es exactamente el problema
+SCRUM-408	Finalizada	🔴 CREDENCIAL · backup-dump.mjs parsea DATABASE_URL a pelo y pasa la URL de producción en el argv de pg_dump — es la fuga exacta que ya costó rotar una credencial
+SCRUM-409	Finalizada	25 ficheros de test corren como merchant demo (64 ocurrencias de merchantId 1), y 14 no tienen nada que ver con el comportamiento demo
+SCRUM-410	Finalizada	Dos guards huérfanos que NO entran tal cual (245 y 172): uno señala decisiones posteriores como si fueran defectos, el otro exige construir una lista que no existe
+SCRUM-411	Finalizada	🔴 MOTORES SIN SUPERFICIE · Cuánto del producto está construido, verde y sin que ningún usuario pueda alcanzarlo — ya van tres casos y ninguno se detectó al cerrarse
+SCRUM-412	Finalizada	12 usos de btn-sm en 11 pantallas: hay que decidir uno por uno cuáles son acción de fila o modal y cuáles son primaria de pantalla — prohibirlos de golpe es un rediseño encubierto
+SCRUM-413	Finalizada	🔴 Invoice.type es String sin enum ni unión en todo src, y el mapeo a AEAT sella como F1 todo lo que no sea R1 — 'ANT' ya está reservado en un comentario
+SCRUM-414	Finalizada	🔴 El guard de scrum195 filtra por el NOMBRE DE LA VARIABLE: se le escapan 8 de 10 new URL en scripts, y tres parsean de verdad una URL de BD a mano — la regla que enuncia está incumplida hoy en main
+SCRUM-415	Finalizada	🔴 scrum297-evidencias-postgres está ROJO en main: la fixture declara v:1 y sella con la versión por defecto (v:2) — el verificador está bien, miente la fixture
+SCRUM-416	Finalizada	La ayuda tiene que vivir DENTRO del modal: quitar el display:none es un arreglo hueco y subir el FAB tapa el botón de firmar — y signaturePad no lo alcanza ningún arreglo del CSS
+SCRUM-417	Finalizada	🔴 exportView.js NO PARSEA en main: la pantalla de «Descargar datos» está muerta en el navegador desde SCRUM-384, y pasó por cuatro commits y una PR sin que nada lo mirara
+SCRUM-418	Finalizada	El guard de destino (SCRUM-383) no conoce `DATABASE_URL` a secas: la clave genérica pasa sin vigilar por no estar en su tabla
+SCRUM-419	Finalizada	🔴 El guard de evidencias NO CORRE EN CI: está gateado por LIBRO_PG_URL, así que se acaba de arreglar un rojo que nadie habría vuelto a ver
+SCRUM-420	Finalizada	🔴 B1 · La barra lateral por ciclo de venta NUNCA SE CONSTRUYÓ — el ticket está Finalizado, el hueco declarado, y el trabajo no está en ninguna lista
+SCRUM-421	Finalizada	El patrón de detalle de B2 no se aplicó al PRESUPUESTO — existen los registros de factura, albarán y trabajo, y el de presupuesto no. Es el único hueco de B que no está declarado en ninguna parte
+SCRUM-422	Finalizada	🔴 CLAUDE.md afirma que «.env apunta a PROD y dev usa .env.local» y es FALSO en los cuatro worktrees — es la frase que hizo a una sesión afirmar sin medir y al asesor abrir un ticket equivocado
+SCRUM-423	Finalizada	🔴 CIERRE EN FALSO · C6 (SCRUM-305) está Finalizada y su motor no lo llama NADIE: `entregaPendiente.ts` solo lo importa su test, así que la línea «quedan 3 m» no existe para ningún profesional
+SCRUM-424	Finalizada	🔴 El enlace a mapa de G3 —el 🏆 «que no lo tiene nadie»— está CONSTRUIDO Y NO SE PINTA NUNCA: `Job.direccion` sigue sin escritor y `bloqueDonde` devuelve null siempre
+SCRUM-425	Finalizada	🔵 FUNDADOR · schema: columna de clave de idempotencia en Albaran — es la única puerta que le falta a SCRUM-358 (H3) y la decisión ya está tomada
+SCRUM-426	Finalizada	A6 · Libro de Registro de facturas RECIBIDAS — hoy A6 solo construye emitidas, y sin esto E4 entregaría un libro vacío que se lee como «este trimestre no compré nada»
+SCRUM-427	Finalizada	🔴 G4 · NOTAS INTERNAS no existe en el detalle del Trabajo — el bloque salía «cuadrado» porque el número de secciones coincidía y el contenido no
+SCRUM-428	Finalizada	🔴 «Terminado y sin cobrar» — el estado más importante del negocio: medir si el profesional tiene camino, porque la escalera de `jobNextAction` no cruza el eje de cobro
+SCRUM-429	Finalizada	🔴 El cliente de Prisma es COMPARTIDO por los cuatro worktrees (node_modules va por junction): una sesión lo regenera y se lo cambia a las otras tres
+SCRUM-430	Finalizada	docs/master/SCRUM-312.md no existe en main — un hueco de registro del bloque D que ya se reportó dos veces y no estaba en ninguna lista
+SCRUM-431	Finalizada	🔴 EVIDENCIAS · los sobres v:1 verifican leyendo `Job.direccion` EN VIVO — su prueba de integridad depende de un dato mutable, y el 409 de SCRUM-424 solo tapa la puerta de la UI
+SCRUM-432	Finalizada	B · Plantillas pasa a pestaña dentro de Presupuestos (Historial · Plantillas) y sale de la barra lateral — el movimiento que SCRUM-420 no pudo hacer sin tocar la pantalla de presupuestos
+SCRUM-433	Finalizada	La vista `operarios` existe en el router y no tiene entrada en la barra lateral — medir qué es, y si se solapa con `Equipo`
+SCRUM-434	Finalizada	🔴 EL MECANISMO DEL PRIMER (b) · una entrada de máster que dice «NO CIERRA» y un ticket marcado Finalizado — la declaración estaba escrita y nadie la leyó
+SCRUM-435	Finalizada	🔴 El trinquete de SCRUM-403 está MUERTO: la ventana del detector corta en 1.200 caracteres y la primera columna que vigila está en el 1.417 — las columnas entraron hoy y el test sigue verde
+SCRUM-436	Finalizada	Cuatro formateadores de euros distintos en el panel, y hoy nació el cuarto porque no había ninguno compartido — en un producto cuyo argumento es que el dinero se lee claro
+SCRUM-437	Finalizada	🔴 Cuatro guards VIVOS leen el código fuente por una ventana de caracteres — el mismo defecto que mató al trinquete de SCRUM-403, ya censado y sin arreglar
+SCRUM-438	Finalizada	🔵 FUNDADOR · Corregir la razón social de un cliente convierte en «manipulados» TODOS sus albaranes firmados — cinco campos viajan fuera de la firma, en v:1 y en v:2, y arreglarlo es un v:3 que toca el sellado
+SCRUM-439	Finalizada	CUATRO RAMAS CON PATCH FUERA DE MAIN · una ya se ha medido y NO era cierre en falso (SCRUM-284 está en main por otro camino) — faltan 368, 381 y 405 por veredicto de FUNCIÓN
+SCRUM-440	Finalizada	🔴🔴 TENENCIA · POST /admin/supresion/:merchantId no compara el merchant de la URL con el del solicitante: un admin del merchant A puede anonimizar al B — hoy solo lo contiene un flag apagado
+SCRUM-441	Finalizada	🔵 FUNDADOR · schema: `Invoice` no guarda el método de cobro — un profesional que filtre por «transferencia» no encuentra sus transferencias en la pantalla de Cobros
+SCRUM-442	Finalizada	🔴 B4 · El listado de «Facturas» mezcla facturas y justificantes — el profesional cuenta como facturas documentos que no lo son
+SCRUM-443	Finalizada	🔴 Los mensajes de error se van antes de que se lean y no se pueden cerrar a mano — el más largo del producto necesita ~8 s y el toast dura 5
+SCRUM-444	Finalizada	🔴 Dos errores seguidos y el profesional solo ve el segundo — el toast se reemplaza a sí mismo, y SCRUM-443 acaba de multiplicar por tres la ventana de colisión
+SCRUM-445	Finalizada	🔴 La pantalla de Cobros enseña DOS VECES cada cobro por pasarela — la desduplicación se apoya en `Invoice.chargeId`, y ese campo no lo escribe nadie
+SCRUM-446	Finalizada	Constructor compartido de cabecera de modal — 24 cabeceras a mano en 16 ficheros sin ningún sitio donde poner algo una vez, y es lo que bloquea SCRUM-416
+SCRUM-447	Finalizada	🔴 El censo de SCRUM-428 sigue en el árbol y mide mal — ya generó un ticket sobre un defecto que no existía, y el instrumento no ha cambiado
+SCRUM-448	Finalizada	🔴 Con la red colgada, Cobros afirma «Todavía no hay cobros registrados» — le dice al profesional que no le deben nada mientras la respuesta va en camino
+SCRUM-449	Finalizada	🔵 FUNDADOR · schema: `AuthSession.instaladaPwa` — sin esa columna no sabemos a cuántos profesionales les puede borrar iOS una firma pendiente
+SCRUM-450	Finalizada	El guard del precache dará FALSO POSITIVO el día que entre una ruta servida y no de disco — y un guard que acusa en falso se desactiva al primer roce
+SCRUM-451	Finalizada	🔴 Ninguna petición del dashboard tiene plazo: cualquier pantalla puede quedarse esperando para siempre — y el primer plazo de la casa acaba de nacer dentro de UNA vista
+SCRUM-452	Finalizada	🔴 En un albarán v:3 el PDF certifica un contenido e imprime otro: el sobre congela cinco campos y el documento solo consume dos
+SCRUM-453	Finalizada	⚠️ HIPÓTESIS SIN MEDIR · si el HTML pide `api.js?v=<huella>` y el SHELL precachea `api.js`, el dashboard no tendría offline HOY — y el bloque H entero se está construyendo encima
+SCRUM-454	Finalizada	🔴 Tres veces en un día se ha perdido trabajo sin commitear con `git checkout --`: la regla existe, se conoce y se incumple — falta el mecanismo, no la regla
+SCRUM-455	Finalizada	H1 fase 1 · El almacén local que no existe — IndexedDB son CERO ficheros hoy, y sin él no hay ni precarga ni cola (con su purgado en logout desde el primer día)
+SCRUM-456	Finalizada	🔴 67 tests saltan MUDOS y nadie los mira — el trinquete vigila los 7 que declaran motivo e ignora los diez veces más que no lo declaran
+SCRUM-457	Finalizada	🔴 Cerrar sesión NO borra localStorage: el borrador de presupuesto con el cliente y los importes, y el catálogo con los PRECIOS del profesional, se quedan en el móvil
+SCRUM-458	Finalizada	H1 fase 2 · El paquete de precarga: qué baja al móvil antes de que el profesional pierda cobertura
+SCRUM-459	Finalizada	🔴 Un POST contra una red que acepta y no entrega NO VUELVE NUNCA — y el camino de firma es un POST: el profesional se queda mirando la pantalla sin límite
+SCRUM-460	Finalizada	H1 fase 3 · Bajar el paquete al móvil y servirlo sin red — hoy el productor existe y no lo llama nadie
+SCRUM-461	Finalizada	🔴 El censo de deriva puede encogerse en silencio: el generador y su guard leen la MISMA fuente —el cliente de Prisma del worktree—, así que se dan la razón el uno al otro estando los dos mal
+SCRUM-462	Finalizada	⚠️ HIPÓTESIS · Tres albaranes en producción están marcados como FIRMADOS y no tienen ninguna evidencia — ¿es data vieja, o hay un camino vivo que firma sin sobre?
+SCRUM-463	Finalizada	⚠️ HIPÓTESIS · La pantalla de detalle del albarán NO muestra sus líneas — y si es ahí donde el cliente firma, está firmando un documento cuyo contenido no ve
+SCRUM-464	Finalizada	H1 fase 4 · El técnico también baja al sótano — la precarga es admin-only, y en un oficio con equipo el que va a la obra es el operario
+SCRUM-465	Finalizada	El guard del plazo de red prohíbe hasta MENCIONAR la constante compartida: el próximo que quiera consumirla se topará con él, y ése es el guard que acaba desactivado
+SCRUM-466	Finalizada	🔴 Que el firmante VEA lo que firma: el albarán y el recuadro de firma en la misma pantalla, con el material y el servicio y SIN importes
+SCRUM-467	Finalizada	🔵 FUNDADOR · El rol de técnico no está definido: lleva los albaranes precargados y no puede llegar a ellos, y a la vez puede abrir los que no son suyos
+SCRUM-468	Finalizada	🔴 El PDF de un albarán VALORADO sí enseña importes: PRECIO UD., IMPORTE, Base y Total — el firmante ve una cosa en pantalla y se lleva otra en papel
+SCRUM-469	Finalizada	H5 fase 4 · El aviso de desalojo está CONSTRUIDO y no se pinta en ninguna parte: hoy detectamos que se han perdido firmas y no se lo decimos a nadie
+SCRUM-470	Finalizada	🔴 `origin/main` está ROJA: cinco tests de la cola offline fallan sin que nadie los toque, y cada rama que se abra hereda un rojo que no es suyo
+SCRUM-471	Finalizada	🔴 Una devDependency nueva en main deja ciegos a todos los worktrees que no reinstalan: el árbol sale limpio, el SHA es el correcto, y la suite falla por lo que NO está
+SCRUM-472	Finalizada	🔴 El seed escribe una firma de 1×1 px con estado 'firmado' saltándose la validación — y ha aterrizado en un merchant que NO es el demo
+SCRUM-473	Finalizada	🔴 El conjunto cerrado de métodos de pago (regla 22) NO LO CONSUME NADIE — y ya ha derivado en producción: `bizum` a secas no se puede mapear sin inventar
+SCRUM-474	Finalizada	🔴 `Charge.method` hace DOS trabajos: guarda el método PREVISTO y el EFECTIVO en el mismo campo — «cómo entró el dinero» puede ser una intención, no un hecho
+SCRUM-475	Finalizada	🔴 No se puede acreditar que un correo llegó: la respuesta de Resend se descarta en los 6 emisores, no hay tabla de correo y ninguna ruta recibe rebotes — y por ahí viaja la factura al cliente
+SCRUM-476	Finalizada	🔴 El censo de SCRUM-471 declara «200 árboles · 91 junctions» y hoy se miden 0 junctions en 60 directorios: dos mecanismos en main dicen cosas distintas del mismo hecho, y uno está roto
+SCRUM-477	Finalizada	🔴 Cuatro avisos se tragan su fallo con un catch vacío — y los cuatro son «te han pagado» y «te han aceptado el presupuesto»: los dos mensajes que el profesional más espera
+SCRUM-478	Finalizada	🔴 SCRUM-475 fase 1b · Cuatro de siete emisores se TRAGAN el fallo, y el mudo es el que te avisa de que te han pagado — rescate del delta de la rama que no se mergeó
+SCRUM-479	Finalizada	🔵 FUNDADOR · schema: sin una fila por envío, «¿se mandó la F-2026-014 y cuándo?» solo se contesta buscando en logs que rotan — y un rebote se pierde entero
+SCRUM-480	Finalizada	🔴 Diez ficheros de public/dashboard/js/ están en CRLF contra el autocrlf de Windows: un cambio de 9 líneas produce un diff de 5.147 y ahí no se revisa nada
+SCRUM-481	Finalizada	🔴 La columna MÉTODO de Cobros enseña el valor crudo de la base al profesional —«card:stripe», «card»— mientras el filtro de al lado dice «tarjeta» en castellano
+SCRUM-482	Tareas por hacer	Saber en PRODUCCIÓN si el offline se usa o se está perdiendo — el contador de «lo que llegó con retraso»
+SCRUM-483	Finalizada	Sustituir los 46 marcadores [PENDIENTE microcopy oficial] por los 33 rótulos aprobados — y retirar los dos apartados vetados, que hoy son un menú prometiendo una habitación vacía
+SCRUM-484	Finalizada	🔴 CENSO · ¿Cuántos motores hemos construido que no llama nadie? Cinco encontrados de rebote en dos días, y ninguno se buscaba
+SCRUM-485	Finalizada	🔴 RGPD · `borrarMerchant` no lo llama NADIE: un profesional no puede pedir que borren su cuenta, y el ticket que lo prometía está cerrado
+SCRUM-486	Finalizada	🔴 `charges.routes.ts:39` escribe `'mp'`, que no está en PAID_VIA — y escribe directo a `prisma.charge.create`, así que el validador que acabamos de construir no lo ve pasar
+SCRUM-487	Finalizada	SCRUM-411 fase 2 · Los exports huérfanos DENTRO de módulos vivos son otra población, y no la vigilaba nadie
+SCRUM-488	Finalizada	🔴 El mismo cobro se lee distinto en Cobros y en Informes — dos vocabularios de paid_via en el navegador, los dos aprobados por separado
+SCRUM-489	Finalizada	🔴 `mpWebhook.routes.ts:103` escribe `method='mp'` EN EL MOMENTO DEL PAGO, ignorando el traductor que se llama tres líneas antes — un `paid_via` falsificado, no una intención
+SCRUM-490	Finalizada	🔴 Cinco avisos del ciclo de vida se marcan como ENVIADOS sin haberse enviado: sendEmail devuelve sin_destino sin lanzar y markSent escribe igual
+SCRUM-491	Finalizada	🔴 `manual` no es un método de cobro, es cómo se registró — Informes lo pinta como método y Cobros dice que no consta: dos hechos distintos peleando por una columna
+SCRUM-492	Finalizada	SCRUM-411 fase 2b · Contestar si `ensureReferralCode` está muerto, y reclasificar `borrarMerchant` — con un instrumento de alcance que no sobre-marque vivos
+SCRUM-493	Finalizada	🔴 Las dos casas deciden qué código está muerto con DOS instrumentos de alcance que ya discrepan — 2 llamadas frente a 3 sobre el mismo fichero
+SCRUM-494	Finalizada	El guard de huérfanos aconseja DECLARAR lo que hay que DES-EXPORTAR — y la categoría cuelga del sitio equivocado del árbol: es una SUB-categoría del uso interno
+SCRUM-495	Finalizada	🔴 Añadir `email_messages` al esquema dejó 11 tests en rojo: tres registros que enumeran tablas no se enteraron — RGPD del borrado, la deriva de producción y la lista del backup
+SCRUM-496	Finalizada	🔴 bulk-paid puede resucitar una factura ANULADA como pagada — su filtro es status: { not: 'paid' } y eso incluye annulled
+SCRUM-497	Finalizada	🔴 RGPD · Tras una supresión, la dirección de correo del cliente SIGUE EN CLARO — `CAMPOS_PERSONALES` no cubre `email_messages.to_email`, y arreglar solo los 3 rojos deja la suite verde con el hueco abierto
+SCRUM-498	Finalizada	Nueve afirmaciones de «21 modelos» pasarán a ser falsas EN CUANTO `EmailMessage` entre en el esquema — y ninguna caerá, porque sus suelos son `>= 20` y `>= 21`
+SCRUM-499	Finalizada	SCRUM-491 fase 2 · El registro «marcado a mano» tiene sitio (pie de la lista, microcopy aprobada), y la tercera pantalla deja de fabricar `manual`
+SCRUM-500	Finalizada	A2-c · Suplidos — el campo peor entendido de la factura española, y necesita columna propia en Invoice (acción de fundador)
+SCRUM-501	Finalizada	🔴 SCRUM-475 · La pieza que falta y que nadie tenía asignada: NADIE ESCRIBE UNA FILA al enviar — sin ella el webhook verificará avisos perfectos y no tendrá qué actualizar
+SCRUM-502	Finalizada	🔴 SCRUM-496 fase B · Hay TRES puertas más al estado de cobro y DOS son peores que bulk-paid: las de pasarela no miran el estado en absoluto, y una se traga su error con .catch(() => {})
+SCRUM-503	Finalizada	`desconocido` es un valor DECLARADO de `paid_via` y la pantalla le contesta al profesional «Método no reconocido» — le dice que su propia respuesta no vale
+SCRUM-504	Finalizada	🔴 Una línea con cantidad VACÍA se cobra como 1 unidad — vat.service.ts:24 hace Number(l?.qty) || 1, y eso está vivo hoy en presupuestos
+SCRUM-505	Tareas por hacer	🔵 FUNDADORES · RGPD · QUINCE datos personales sin anonimizar — y el guard vigila COLUMNAS, no CONTENIDOS: un correo escondido en un texto libre sobrevive sin que nadie lo vea
+SCRUM-506	Finalizada	Cobros borra la distinción que Informes acaba de hacer: llama «Método no registrado» al `desconocido` — el censo de SCRUM-488 sube de 4 divergencias a 5
+SCRUM-507	Finalizada	Desde hoy una cantidad ilegible vale 0 en el cálculo y en el PDF, y 1 si viene de la IA — dos respuestas al mismo dato dentro del mismo producto
+SCRUM-508	Finalizada	SCRUM-501 fase 2 · Cinco emisores mandan correo y NO dejan fila — la acreditación solo cubre los envíos de `email.service`
+SCRUM-509	Finalizada	Dos guards cobran peaje sobre código correcto dos días seguidos — SCRUM-409 lee el prefijo en vez del valor, y las huellas de SCRUM-337 se mueven por plomería sin cambiar ninguna promesa
+SCRUM-510	Finalizada	🔴 La exención de SCRUM-409 libra a 16 ficheros por MENCIONAR la señal en un comentario — 18 exentos frente a 2 que la usan de verdad
+SCRUM-511	Tareas por hacer	Censar qué OTROS guards eximen por mencionar la señal en vez de por usarla — el comentario que advierte del defecto es lo que compra la exención
+SCRUM-512	Acción del fundador	🔴 El contador de plazas de la landing va HACIA ATRÁS: si un fundador cancela, «quedan 17» pasa a «quedan 18» — y un contador de escasez que sube parece inventado
+SCRUM-513	Finalizada	🔴 verifactu.service.ts:673 afirma que la R1 se EXCLUYE del registro por un modo que cambió el 30-jul — quien lo lea concluirá que las rectificativas no se declaran
+SCRUM-514	Finalizada	Aplicar a las 13 pantallas los textos aprobados de MICROCOPY_APROBADA_SIN_APLICAR.md — 2 hechas, 11 pendientes, y los multilínea son la trampa
+SCRUM-515	Finalizada	🔴 Bizum está ENCENDIDO en producción y 7 de 13 merchants no tienen teléfono — el aviso que les protege NUNCA se ha visto fallar, y llevo cinco peticiones pidiendo que alguien lo mire a mano
+SCRUM-516	Finalizada	🔴 El guard de SCRUM-267 no vigila el ancla de un APÉNDICE: opera por fichero, no por entrada — y el 273 empuja precisamente a escribir apéndices
+SCRUM-517	Finalizada	🔴 scrum480 caso 4 enseña su fallo 55× más pequeño (.slice(0,25) sin decirlo) y hace imposible un verde local: 1386 de 1479 ficheros llevan CR
+SCRUM-518	Finalizada	🔴 `npm ci` no ejecuta los postinstall (npm warn allow-scripts) → el cliente de Prisma NO se genera, y el motivo de SCRUM-238 puede dejar de cumplirse sin avisar
+SCRUM-519	Finalizada	🔴 La tarjeta de «listo para cobrar» dice ✅ a un merchant solo-IBAN, y usa un criterio DISTINTO al del aviso que hay dos pantallas más abajo
+SCRUM-520	Finalizada	🔴 El guard scrum351 falla o pasa según lo ocupada que esté la máquina: 206 ms aislado y 3508 ms en la suite, contra un límite de 2000 — un guard intermitente es el que alguien acaba desactivando
+SCRUM-521	Finalizada	🔴 El resolvedor de importadores pierde las aristas de la rama dist/→src/ por separador, y devuelve [] en vez de declararse ciego — 1 cero falso real de 1404 aristas
+SCRUM-522	Finalizada	🔴 Van TRES guards que quedan fuera de `npm test` por lentos: sólo protegen si alguien se acuerda de lanzarlos — figuran como cobertura y son costumbre
+SCRUM-523	Tareas por hacer	🔴 DECLARACIÓN RESPONSABLE DEL PRODUCTOR: es un requisito de INTERFAZ (art. 13.2 RRSIF + art. 15.3 Orden), una por versión, y no está construido ni previsto
+SCRUM-524	Tareas por hacer	🔴 Catálogo OFICIAL de validaciones VERI*FACTU: las restricciones que condicionan el diseño (3 categorías de error, saneamiento de texto, límites duros) — antes de construir la facturación
+SCRUM-525	En curso	AUDITORÍA ESCRITA del camino de emisión: qué existe HOY de VeriFactu, hasta dónde llega, y cuál de los dos carriles de representación está construido — con fichero y línea en cada afirmación
+SCRUM-526	Finalizada	✅ DIAGNÓSTICO · La entrega SÍ se mide y se ve en pantalla; lo que nadie puede contestar es «si llegó a QUIEN debía» — no se guarda a qué número se envió
+SCRUM-527	Tareas por hacer	DOCS · `WHATSAPP_TEMPLATES.md` dice que `quote_decision_es` es «la ÚNICA plantilla del ciclo» y hay siete
+SCRUM-528	Finalizada	🔴 INVENTARIO · Qué afirma hoy el repo sobre VeriFactu que la auditoría SCRUM-525 ha desmentido — MEDIR, no corregir
+SCRUM-529	Acción del fundador	🔵 SCHEMA · Guardar a qué número se envió cada mensaje (`toPhone`) — diff preparado y PARADO, decide el fundador
+SCRUM-530	Tareas por hacer	🔴 La alerta de tasa de entrega exige ≥10 envíos en 7 días: para un fontanero del Pioneer NO se activa nunca
+SCRUM-531	Finalizada	Instalar la skill `verifactu` en `.claude/skills/` del repo — conocimiento verificado disponible para todas las sesiones
+SCRUM-532	Tareas por hacer	🔴 El guard 267 deja de mirar dentro de un apéndice, y el guard 273 empuja a escribir apéndices: los dos combinados abren un hueco que ya se demostró
+SCRUM-533	Finalizada	🔴 El guard de fin de línea da ROJO en local y VERDE en CI por `core.autocrlf`: cada sesión pierde tiempo diagnosticando un fallo que no existe
+SCRUM-534	Acción del fundador	🔴🔴 EL GUION H2 —la ÚNICA respuesta autorizada sobre VeriFactu ante un cliente— dice dos cosas falsas · y 8 afirmaciones falsas más están en documentos que se entregan a terceros
+SCRUM-535	Finalizada	🔴 ¿Está el guion H2 falso PUBLICADO en la web? `public/index.html` quedó NO MEDIDO y por AB5 hereda el guion
+SCRUM-536	Finalizada	🔴 HUECO DEL INVENTARIO · Las 8 skills de `.claude/skills/` no se inventariaron, y las sesiones las cargan como verdad — una de ellas es de VeriFactu
+SCRUM-537	Finalizada	🔴🔴 BOMBA DE RELOJERÍA · El guard que impide publicar el guion H2 falso SE ABRE SOLO en cuanto se emita la declaración responsable — y la norma ya autoriza publicarlo
+SCRUM-538	Finalizada	🔴 CORREGIR LAS SKILLS · El `description` de `yaqu-verifactu-sif` afirma «cola VfSubmission, envío AEAT» y se entrega SOLO a cada sesión desde junio
+SCRUM-539	Finalizada	🔴 504 tests y 216 fuentes tienen CR en el árbol de trabajo: ¿cuántos guards están midiendo un fichero distinto al que va a CI?
+SCRUM-540	Acción del fundador	Extender la regla de arbitraje corregida a `yaqu-verifactu-sif` — hoy dice «si chocan, gana el máster» y el máster tiene 19 afirmaciones falsas
+SCRUM-541	Finalizada	🔴 En la comparativa, un lector de pantalla oye las dos celdas sin saber cuál es cuál — y en una tabla comparativa eso invierte el mensaje
+SCRUM-542	Finalizada	El enlace de `.p-link` mide 22 px y AB6 exige 44 — afecta a tres secciones de la landing, no sólo a las tarjetas de gremio
+SCRUM-543	Finalizada	A11Y de la landing publicada · texto pegado en el héroe y la demo, secciones sin nombre accesible, y dos táctiles &lt;44 px que no son `.p-link`
+SCRUM-544	Finalizada	🔴 CLS 0,382 a 360 px — la barra de anuncio desplaza la página al responder el fetch, y el límite es 0,1
+SCRUM-545	Finalizada	🔵 CUATRO afirmaciones vivas en producción detectadas en el bloque F — decide el fundador
+SCRUM-546	Finalizada	Dos guards de navegador miden casi lo mismo en la primera pantalla — el conflicto de `package.json` sólo lo hizo visible
+SCRUM-547	En curso	🔴 Volcar los ~20 textos en propuesta del bloque F a un documento aprobable — hoy están dentro del HTML y por eso nadie los aprueba
+SCRUM-548	Finalizada	Tres conflictos de `package.json` en dos días, los tres por declarar un guard nuevo en el mismo punto — es un peaje, no un conflicto
+SCRUM-549	Finalizada	🔴 El guard vigila que lo MARCADO no se publique, pero no que todo lo publicable esté marcado — un titular sin marcar se habría publicado sin aprobar
+SCRUM-550	Finalizada	🔴 `guard:a11y-comparativa` mide con el medidor defectuoso que S2 desmontó — su verde no prueba nada, y el test de SCRUM-541 exige un espacio que accname ya produce
+SCRUM-551	Finalizada	🔴 F4 y F6 afirman capacidades del producto SIN ANCLA — F6-8 promete SCRUM-195 (no construido), F6-16 promete SCRUM-142 (bloqueado) y F4-3 afirma el cobro con tarjeta que F5 descartó a propósito
+SCRUM-552	Finalizada	El rojo de CI no dice QUÉ subtest cae — sólo la línea de fichero. Cuatro configuraciones verdes en local y el diagnóstico paró por falta de salida
+SCRUM-553	Finalizada	Cuarta vez que el `>` pegado rompe un extractor — añadir un atributo dejó ciegos a `_cifras-heroe.mjs` y a `scrum331-heroe.test.mjs`, y uno cayó por «no se pudo leer»
+SCRUM-554	Tareas por hacer	Cuando SCRUM-543 entre habrá DOS copias del medidor accname y del arranque de Edge — deuda declarada por la sesión que la creó, no descubierta después
+SCRUM-555	Finalizada	🔴 El copy sin aprobar se marca de DOS formas distintas y el censo de anclas sólo alcanza una — la comparativa entera (20 textos) queda fuera, y los `span` y enlaces fuera de las tres
+SCRUM-556	Finalizada	🔴 No es un test que falla: es un PROCESO QUE ABORTA, intermitente y dentro de la tanda — `scrum334` cae con exitCode 0xC0000409 y en la pasada siguiente pasa
+SCRUM-557	Finalizada	🔴🔴 MAIN EN ROJO · el marcador de «pendiente de aprobar» hace DOS trabajos: marca lo no aprobado Y define el alcance del censo de anclas — así que APROBAR APAGA LA VIGILANCIA
+SCRUM-558	Finalizada	🔴 El ancla demuestra que el CÓDIGO EXISTE, no que el usuario pueda LLEGAR a él — «queda anotada sola» está anclada y es FALSA para todo merchant nuevo
+SCRUM-559	Finalizada	🔴 LOS SUELOS DE UMBRAL SON CIEGOS A LA PÉRDIDA PARCIAL — medido en tres guards el mismo día: perder UNA de 60 da verde, y perder DOS secciones de tres da `sinAncla=0`
+SCRUM-560	Finalizada	Arreglar el abort de `scrum334` con el remedio que ya está probado en el repo desde SCRUM-100 — y decidir qué se hace con los otros 30 ficheros que comparten el patrón
+SCRUM-561	Finalizada	🔴 El fundador aprobó 37 textos y hay 16 nodos MÁS en esas mismas secciones que nadie le enseñó — entre ellos «El ERP por WhatsApp para los oficios», que dice qué es el producto
+SCRUM-562	Finalizada	🔴 `elementsFromPoint().includes(el)` DA POR BUENO LO QUE OTRO ELEMENTO TAPA — un decorativo sin `pointer-events:none` se comía 20 px del CTA y ningún censo podía verlo
+SCRUM-563	Finalizada	🔴 NADA EN EL REPO REGISTRA QUÉ MICROCOPY ESTÁ APROBADA — el mecanismo sabe decir «pendiente» y no sabe decir «ya se aprobó», y eso ha causado tres errores del asesor en un día
+SCRUM-564	Finalizada	Las 28 afirmaciones del copy PUBLICADO que nadie ha anclado — `#como`, `#todo`, `#precios`, `#probar` y `#faq`, incluida «Solo si cobras con tarjeta: 0,9 %»
+SCRUM-565	Finalizada	🔴 UN ENCARGO LLEGÓ CORTADO A LA SESIÓN y sólo se supo porque ella lo declaró — lo primero que se pierde al truncar es el bloque de restricciones de seguridad
+SCRUM-566	Finalizada	`SIF_SPEC_NOTES.md` es un plan sin marca de estado: no dice en ninguna parte que el envío NO está construido, así que se lee igual antes y después de construirlo
+SCRUM-567	En revisión	Tercera vez: el censo de SCRUM-553 cuenta un HTML literal dentro de un `.replace()` como si fuera un extractor — el ruido va gastando el margen del trinquete
+SCRUM-568	En revisión	🔴 CONDICIÓN DE LANZAMIENTO · Antes del go comercial, o los medios de pago están encendidos o estos nueve textos cambian — hoy es una promesa sin mecanismo
+SCRUM-569	Finalizada	🔴 AGENTS.md ESTÁ FOSILIZADO Y CONTRADICE UNA RESTRICCIÓN DE SEGURIDAD — manda usar `npx prisma migrate diff`, que CLAUDE.md prohíbe; y 3 de 4 afirmaciones más son falsas
+SCRUM-570	Finalizada	🔴 Los CR costaron tiempo a las TRES sesiones el mismo día con 480 y 533 ya cerrados — y `Buffer.compare` contra el blob, que la casa exige en todos los encargos, NO funciona en los ficheros normalizados
+SCRUM-571	Tareas por hacer	BLOQUE 1 · Contactos y clientes — lote aprobado 24-ago-2026 contra Holded (17 tickets)
+SCRUM-572	Tareas por hacer	BLOQUE 2 · Documentos: factura, presupuesto y albarán — lote aprobado 24-ago-2026 contra Holded y Quipu (19 tickets)
+SCRUM-573	Tareas por hacer	BLOQUE 3 · Catálogo de productos y servicios — el margen sale del documento y pasa a vivir aquí (3 tickets)
+SCRUM-574	Finalizada	CONT-01 · Switch Empresa/Persona que cambia el formulario; elimina «Tipo de cliente»
+SCRUM-575	Finalizada	CONT-02 · Validación de NIF/CIF/DNI en el campo
+SCRUM-576	Tareas por hacer	CONT-03 · Asociar persona ↔ empresa
+SCRUM-577	Finalizada	CONT-04 · Nombre comercial ≠ razón social
+SCRUM-578	Finalizada	CONT-05 · Prefijo país + normalización + aviso de duplicado
+SCRUM-579	Finalizada	CONT-06 · Dirección de facturación en la ficha del cliente (corregido: una, no dos)
+SCRUM-580	Finalizada	CONT-07 · Tags por contacto
+SCRUM-581	Finalizada	CONT-08 · Filtros y orden en la lista
+SCRUM-582	Finalizada	CONT-09 · Selección múltiple + acciones en bloque
+SCRUM-583	Finalizada	CONT-10 · Exportar contactos
+SCRUM-584	Finalizada	CONT-11 · Selector de columnas
+SCRUM-585	Finalizada	CONT-12 · Atajo de teclado «N»
+SCRUM-586	Finalizada	CONT-13 · Forma de pago por defecto por cliente
+SCRUM-587	Finalizada	CONT-14 · Descuento % por defecto
+SCRUM-588	Finalizada	CONT-16 · Referencia interna
+SCRUM-589	Finalizada	CONT-18 · Razón social vs nombre: elección en vez de automático (corregido)
+SCRUM-590	En curso	CONT-19 · Teléfono + Móvil, móvil como canal WA
+SCRUM-591	Finalizada	DOC-01 · Crear cliente desde el selector del documento
+SCRUM-592	Finalizada	DOC-02 · Numeración `F`/`P`/`AB` + AA + secuencia
+SCRUM-593	Finalizada	DOC-03 · Texto en el documento + observaciones
+SCRUM-594	Finalizada	DOC-04 · Descuento por línea + descuento global
+SCRUM-595	Tareas por hacer	DOC-05 · Etiquetas del documento
+SCRUM-596	Finalizada	DOC-06 · Nota interna
+SCRUM-597	Tareas por hacer	DOC-07 · Asignar usuario al documento
+SCRUM-598	Finalizada	DOC-08 · Quitar el margen del documento
+SCRUM-599	Finalizada	DOC-09 · Unificar navegación + atajo N
+SCRUM-600	Acción del fundador	DOC-10 · Facturas usa el front de presupuestos
+SCRUM-601	En revisión	DOC-11 · El copy debe ser función del flag
+SCRUM-602	Finalizada	DOC-12 · Dirección de envío por documento
+SCRUM-603	Finalizada	DOC-13 · Descripción, texto y observaciones en el PDF
+SCRUM-604	Finalizada	DOC-14 · Desglose Base imponible / IVA / Total en el PDF
+SCRUM-605	Finalizada	DOC-15 · Vencimiento / válido hasta + atajos de calendario
+SCRUM-606	Finalizada	ALB-01 · Nuevo albarán desde presupuesto
+SCRUM-607	Finalizada	ALB-02 · Ocultar precios en el albarán
+SCRUM-608	Finalizada	ALB-03 · Tipo de documento en la cabecera del PDF
+SCRUM-609	Finalizada	CAT-01 · Productos y servicios: switch + coste/margen/precio
+SCRUM-610	Finalizada	CAT-02 · Precio final con margen aplicado al elegir del catálogo
+SCRUM-611	Finalizada	DOC-16 · Selector de tipo de IVA en la línea
+SCRUM-612	Acción del fundador	🔴 DECISIÓN DEL FUNDADOR · Retirar el justificante — expediente de enmienda al máster (NO es ticket de ejecución)
+SCRUM-613	Acción del fundador	⬜ PREGUNTAS ABIERTAS del lote 24-ago-2026 — 5 son mediciones, 8 son decisiones del fundador (NO es ticket de ejecución)
+SCRUM-614	Tareas por hacer	El catálogo guarda el margen (DOC-08) y el Operario puede verlo, editarlo y borrar la fila — a la decisión de julio se le caduca la premisa
+SCRUM-615	Finalizada	🔴 `tipoDestinatario` fija un plazo legal y se presenta como «Tipo de cliente: Sin clasificar» — está en NULL en las 15 filas y nadie sabe qué plazo aplica hoy
+SCRUM-616	Finalizada	Caracterizar qué guarda hoy `POST /admin/invoices` — nada deja constancia de que las claves de más se descartan en silencio, y así es como se pierde la marca de suplido
+SCRUM-617	Finalizada	🔴 CINCO de los nueve guards reportan un fallo de arranque del navegador COMO UN DEFECTO REAL de contraste o accesibilidad — y mandan a arreglar algo que no está roto
+SCRUM-618	Tareas por hacer	🔴 El control que decide si el CI vigila de verdad NO lo puede ejecutar ninguna sesión — y un CI que nunca se ha visto rojo no se distingue de uno que no vigila nada
+SCRUM-619	Finalizada	🔴 La marca de SUPLIDO se descarta en silencio al guardar la factura — una vez guardada es indistinguible de una línea al 0 %, y sus euros están dentro de la base imponible
+SCRUM-620	Finalizada	Un puerto ocupado se cuenta como defecto encontrado: EADDRINUSE sale por la misma puerta que rojo(1)
+SCRUM-621	Finalizada	Un byte NUL en guards-visuales.mjs hace que git lo trate como binario: nadie puede revisarlo en un PR
+SCRUM-622	Finalizada	El semáforo pinta VERDE cualquier estado que no reconozca: || SEMAFORO_META.verde convierte «no lo sé» en «todo bien»
+SCRUM-623	Finalizada	Una factura con dos bases imprime el mismo número de filas de IVA que una con una sola: la base al 0 % no aparece
+SCRUM-624	Finalizada	🔴 El PDF recalcula el total e ignora el guardado — y YA HAY un camino real de divergencia: dos convenciones de redondeo (36,27 guardado vs 36,26 impreso)
+SCRUM-625	Finalizada	La factura escribe 117,60 y el presupuesto 117.60: dos formatos de número para el mismo cliente español
+SCRUM-626	Tareas por hacer	Por qué guard-contraste no arrancaba en el runner sigue sin saberse: no se resolvió, se dejó de tropezar con ello
+SCRUM-627	Finalizada	El censo de IVA sólo ve a quien pasa por su puerta: el bloque de totales de la factura tiene su vatMap a mano y es invisible para SCRUM-389
+SCRUM-628	Tareas por hacer	Los nueve guards visuales miran la landing y dos páginas sintéticas: el dashboard entero no tiene ninguno, y el verde no lo dice
+SCRUM-629	Finalizada	telefonoDePrueba(1) se convierte en cadena vacía al normalizar: el helper de la casa genera tests que pasan comparando dos vacíos
+SCRUM-630	Tareas por hacer	El «Válido hasta» por defecto suma 30×24h en vez de 30 días: con el cambio de hora el presupuesto caduca un día antes
+SCRUM-631	Finalizada	Retirado el borrado físico, un producto desactivado ocupa su nombre para siempre: @@unique no mira isActive
+SCRUM-632	Tareas por hacer	La descripción sólo existe si la línea vino del catálogo: escrita a mano, la casilla «Incluir descripción» no puede hacer nada
+SCRUM-633	Finalizada	La caducidad de un presupuesto se calcula en tres sitios: el front, el servidor al guardar y la landing que ve el cliente
+SCRUM-634	Tareas por hacer	El banco de vistas devuelve null en silencio para cualquier atributo que no copie — es el defecto que el banco existe para eliminar
+SCRUM-635	Tareas por hacer	El CSV del tarifario exporta el IVA que ya no se pide y esconde el coste del que sale el margen
+SCRUM-636	Finalizada	Hay cuatro formas distintas de escribir dinero y ninguna es el sitio único — el formateador compartido no existe
+SCRUM-637	Tareas por hacer	No hay forma fiable de ir de un ticket a su rama, y nada avisa cuando una rama termina sin mergear
+SCRUM-638	Tareas por hacer	Tres ramas independientes fallan en el mismo check «guards de navegador» — el sospechoso ya no son las ramas
+SCRUM-639	Finalizada	El vocabulario de códigos existe dentro del guard y no sale fuera: el agregador colapsa «no arranca» en el mismo 1 que «hay defectos»
+SCRUM-640	Finalizada	Cinco tests más miden la zona horaria de la máquina, no el producto — verdes en UTC, y dos pisan terreno fiscal
+SCRUM-641	Finalizada	El profesional lee «name_duplicate» en pantalla, y reactivar un producto devuelve 500 en vez de 409
+SCRUM-642	Finalizada	La marca ⟦arranque⟧ es un solo número para cinco tramos: repite, un nivel más abajo, el problema que vino a resolver
+SCRUM-643	Finalizada	🔴 VIVO EN PRODUCCIÓN: el producto decide el mes natural fiscal con el reloj del servidor, y el servidor está en UTC mientras España está en UTC+1/+2
+SCRUM-644	Tareas por hacer	26 sitios más pintan el mensaje crudo del servidor, y nada impide que la próxima vista lo vuelva a hacer
+SCRUM-645	Finalizada	La puerta reformatea la marca de arranque y tira los tramos: el desglose de SCRUM-642 sólo se ve cuando un guard muere
+SCRUM-646	Finalizada	Si Canarias es mercado, el producto no puede facturar allí: un canario no repercute IVA, repercute IGIC — y Ceuta y Melilla, IPSI
+SCRUM-647	Finalizada	El presupuesto sigue con «IVA%» grabado en su tabla de líneas, y el mecanismo que ya existe para el nombre del impuesto está indexado por país
+SCRUM-648	Finalizada	Un semáforo que no sabe leer la fecha límite dice que todo va bien: calcularSemaforo devuelve «verde» con un límite ilegible
+SCRUM-649	Tareas por hacer	El guard de anclas comprueba que el SHA tenga forma de SHA, no que el commit exista: un ancla inventada pasa en verde
+SCRUM-650	Finalizada	T1 · Asignar un trabajo a UNO O VARIOS empleados — en su parte real salen tres técnicos escritos a mano en la misma línea
+SCRUM-651	Finalizada	T2 · Crear un trabajo SIN presupuesto — una avería no se presupuesta, y hoy eso no se puede meter en YaQu
+SCRUM-652	Finalizada	T3 · Parte de trabajo con los campos reales — y DOS candados: el contenido se congela al firmar, los precios siguen abiertos hasta facturar
+SCRUM-653	Finalizada	T4 · Las DOS firmas en el móvil del técnico, sin cobertura — y con quién firma por el cliente y en calidad de qué
+SCRUM-654	Acción del fundador	T5 · Rellenar el parte por voz — 🔴 BLOQUEADO por regla 36: dependencia, coste y RGPD del audio los decide el fundador
+SCRUM-655	Finalizada	T6 · Presupuestos con APARTADOS, numeración 1.01 derivada, descripciones largas y revisiones — hoy no se puede escribir un presupuesto de obra en YaQu
+SCRUM-656	Finalizada	T7 · IVA al final del presupuesto, con casilla al crearlo — y las cláusulas fijas del merchant (garantía, alcance, validez) que hoy no existen
+SCRUM-657	Tareas por hacer	🔴 Sus clientes son ADMINISTRACIONES PÚBLICAS: sus facturas llevan códigos DIR3 de FACe — sin factura electrónica por FACe, la administración no le paga
+SCRUM-658	Tareas por hacer	BLOQUE B del sprint Tecnosel — factura desde el parte, recurrentes y el 303: BLOQUEADO por regla 24 hasta que el fundador decida si su padre emite facturas reales desde YaQu
+SCRUM-659	Finalizada	🔴 El lector de PDF no distingue un salto de línea de su ausencia: cualquier test de texto multilínea nace muerto
+SCRUM-660	Finalizada	El IVA por defecto del documento sigue siendo campo libre mientras el de la línea ya se elige
+SCRUM-661	Finalizada	P6 · El margen real de una venta no es recuperable ni en teoría: no se guarda el hecho del que se derivaría
+SCRUM-662	Finalizada	🔴 SCRIPTS_DEL_DASHBOARD ha chocado CINCO veces y tres fueron SILENCIOSAS — un número derivado guardado a mano colisiona una vez por rama, y cuando las dos se equivocan igual no colisiona nada
+SCRUM-663	Tareas por hacer	Sexta colisión de SCRIPTS_DEL_DASHBOARD: un RECUENTO colisiona en silencio, una LISTA no podría
+SCRUM-664	Finalizada	El trinquete de SCRUM-646 vigila el NOMBRE, no el VALOR — y su punto ciego ya se cobró un sitio el mismo día que nació
+SCRUM-665	Tareas por hacer	🔴 El PDF de una factura EMITIDA se regenera con el código y los datos de HOY: la regla 29 tiene una puerta abierta que nadie había mirado
+SCRUM-666	Finalizada	El banco de vistas no aplica CSS externo: todo control de «¿se ve?» tiene un punto ciego del tamaño de styles.css
+SCRUM-667	Finalizada	🔴 Un marcador de microcopy en src/ no lo cuenta ningún censo, y ése se imprime en un documento que se entrega al cliente
+SCRUM-668	Finalizada	🔴 DATABASE_URL_STAGING y DATABASE_URL_TESTS son la MISMA cadena: la suite escribe donde medimos, y es la tercera vez que esta familia muerde
+SCRUM-669	Tareas por hacer	Lo que queda muerto después de DOC-08: cuatro restos que ya no lee nadie y siguen cargándose
+SCRUM-670	Finalizada	🔴 TRES regex distintas leen index.html y hoy coinciden por casualidad: un script con defer sale del banco y de un guard, y entra en el otro
+SCRUM-671	Finalizada	🔴 SEGUNDO guard que mide reloj de pared: scrum642 da verde aislado y rojo en la suite — un defecto que aparece dos veces en sitios independientes es un patrón, no un descuido
+SCRUM-672	Finalizada	Un test que DESAPARECE no es un test que falla: 14 se fueron del total en silencio y nadie vigila ese número
+SCRUM-673	Finalizada	🔴 TERCER reloj de pared, y este BLOQUEA TODAS LAS PRs: guard:contraste se corta a los 30,0 s arrancando Edge — en la MISMA tirada, guard:caja-avisos necesitó 38,2 s y salió verde
+SCRUM-674	En curso	🔑 EL COMMIT DE SCHEMA: cinco cambios ya aprobados que llevan cuatro tareas viviendo en un .md — sin esto, SCRUM-650/651/652/655/656 están construidos y NO funcionan
+SCRUM-675	Tareas por hacer	🔴 El censo de SCRUM-647 lee una ventana fija de 1400 caracteres: escribir un comentario cerca deja ciego a un guard vivo, y el margen que queda son 152 caracteres
+SCRUM-676	Finalizada	recursosDe lee los <link .css> con regex propia: la última población del índice que sigue sin extractor único, y nadie la ha medido
+SCRUM-677	Finalizada	🔴🔴 PRODUCCIÓN LLEVA NUEVE DÍAS SIN DESPLEGAR: todos los despliegues fallan el healthcheck y el anterior se queda ACTIVO, así que el fallo es invisible
+SCRUM-678	Tareas por hacer	🔴 Faltan STRIPE_CONNECT_WEBHOOK_SECRET y MP_WEBHOOK_SECRET en producción: esos webhooks rechazan TODAS las peticiones
+SCRUM-679	Finalizada	Los DOS últimos guards que asertan sobre una duración medida: scrum362:303 (ms &lt; 8000) y scrum501:171 (tardado &lt; 2_000) — el censo de 1.182 ficheros dice que con estos dos se acaba la familia
+SCRUM-680	Finalizada	🔴 DOCE frases dicen «22 modelos» a mano y ya son 23 — y una vive en portabilidadCompleta.ts, el camino de EXPORT: es SCRIPTS_DEL_DASHBOARD otra vez, pero el que paga es el cliente que pide sus datos
+SCRUM-681	Finalizada	Las esperas fijas del grupo 2 (scrum268 duerme 2×60 s, bot-suite 2×1,5 s): un plazo vencido aquí SÍ produce veredicto, y el equivocado — y scrum268 duerme 120 s aunque la condición se cumpla en el primer segundo
+SCRUM-682	Finalizada	🔴 El número de rutas del precache es 74, la documentación dice 69 y otra fuente 71 — y como cache.addAll es ATÓMICO, si la lista y el número se separan el técnico se queda SIN app en el sótano
+SCRUM-683	Finalizada	🎙️ El parte dictado, DESBLOQUEADO sin dependencia nueva: dicta el teclado del propio móvil (gratis, todos los navegadores, el audio no sale) y Gemini solo ORDENA el texto en mano de obra ‖ materiales
+SCRUM-684	Finalizada	🔴 DECISIÓN DEL FUNDADOR · ¿Una avería abierta como trabajo directo puede entregar albarán? El guard de SCRUM-257 cerró una puerta que SCRUM-651 volvió a abrir cuatro semanas después
+SCRUM-685	Finalizada	🔴🔴 db-push-prod propuso DROP TABLE job_assignees y email_messages + ~30 columnas de PRODUCCIÓN, y lo que lo paró fue que el shell no tenía stdin — el checkout estaba 1933 commits detrás y el script no lo comprueba
+SCRUM-686	Finalizada	🔴🔴 main en rojo: `docHeaderText`/`docFooterText` sin clasificar en revision.ts (593 × 655b se mergearon sin verse)
+SCRUM-687	Finalizada	Guard 2 · constancia desde CI de que un ALTER está aplicado en producción (opción D + secreto propio)
+SCRUM-688	Tareas por hacer	🟠 `nuevaRevisionDe` no tiene llamador: las revisiones se pueden VER y no CREAR
+SCRUM-689	Finalizada	🔴 Las pestañas de la lista de clientes se pintan como botones crudos del navegador: `.customers-tab` y `.customers-tabs` no tienen ni una regla CSS
+SCRUM-690	Finalizada	🔴 `.segmented`: el fondo del lado activo da 1,07:1 contra la barra — el control «uno de N» se apoya casi solo en la tinta
+SCRUM-691	Tareas por hacer	⬜ DECISIÓN DEL FUNDADOR · `--surface` y `--bg` son casi el mismo color (1,07:1) y `--border` contra `--bg` da 1,14:1 — todo el sistema se apoya en la tinta
+SCRUM-692	Finalizada	El guardado parcial de cliente es cierto POR ACCIDENTE y nada lo sujeta: la regresión que borraría datos sería muda
+SCRUM-693	Finalizada	El filtro de comentarios de `scrum578` no cubre los bloques `/** */`: un JSDoc que cite la cadena prohibida lo hace saltar en falso
+SCRUM-694	Tareas por hacer	🔴 Trece guards más filtran comentarios a mano y ninguno aguanta una URL con `//`: un filtro demasiado permisivo produce VERDES FALSOS
+SCRUM-695	Finalizada	🔴 Cuatro tests desaparecieron en SCRUM-680 sin reemplazo y siguen ausentes — y el recibo de evidencia no está en git, así que nadie podía haberlo notado
+SCRUM-696	Finalizada	🔴🔴 `soloCodigo()` se desincroniza en la primera plantilla con `${…}`: 60 ficheros del árbol quedarían CIEGOS a código real, y ya está en main
+SCRUM-697	Finalizada	🔴 El banco de vistas pinta la vista de clientes DOS veces en una sola llamada: 16 `<th>` para 8 columnas, y cualquier recuento sobre ella sale al doble
+SCRUM-698	Finalizada	🔴 Seis vistas del panel no se montan en el banco, y `renderReportsView` tumba el proceso entero: hay tests que pueden DESAPARECER sin decirlo
+SCRUM-699	Finalizada	La tabla de clientes acaba FUERA de su `div.table-scroll`: el envoltorio de scroll se queda vacío
+SCRUM-700	Finalizada	🔴 No eran 13 sino 56: 27 guards cortan en cualquier `//` y 31 encogen el texto — y nadie sabe cuántos ciegan código HOY
+SCRUM-701	Finalizada	🔴 `sellarReferencias` (PRODUCCIÓN) es ciego a las comillas simples y cuenta las etiquetas comentadas: una hoja sin sellar se sirve desde caché vieja
+SCRUM-702	Finalizada	El suelo de la tanda se DECLARA en un commit y se EVALÚA en otro (título corregido: NO era Windows vs Ubuntu — refutado por medición)
+SCRUM-703	Finalizada	Tecnosel · el tipo de intervención se guarda, y un parte firmado ya se puede VALORAR: permiso por campo + la vista de oficina
+SCRUM-704	Finalizada	🔴 `apiRequest` no serializa el body y DOS campos no se guardan: renombrar el Trabajo y la dirección de la obra viajan como «[object Object]» — sin error, sin aviso, sin nada
+SCRUM-705	Finalizada	🔴 EL MÁSTER dice que `db-push-prod` es el «procedimiento canónico» contra producción, y el propio script dice lo contrario — y el máster gana (regla 35)
+SCRUM-706	Tareas por hacer	El agujero ① de SCRUM-664: el trinquete del IVA vigila el NOMBRE y no el VALOR — medido, se construye por NOMBRE+VALOR en `src/`+`public/` (7 aciertos, 0 falsos positivos)
+SCRUM-707	Tareas por hacer	Pantallas de detalle sin defensa ante un estado no contemplado
+SCRUM-708	Tareas por hacer	Huecos declarados del detector de tests mudos (heredados de SCRUM-702)
+SCRUM-709	Finalizada	🔴 MICROCOPY_APROBADA_SIN_APLICAR.md ha chocado SIETE veces en dos días: un fichero único al que todas las ramas añaden al final colisiona una vez POR PAR DE RAMAS — se parte en un fichero por aprobación
+SCRUM-710	Finalizada	🔴 El censo de SCRUM-622 ancla su única excepción por NÚMERO DE LÍNEA: cualquier edición por encima tumba el guard sin que cambie nada de lo vigilado
+SCRUM-711	Tareas por hacer	El guard `objetivo-tactil` corre FUERA de la tanda, así que no ve un botón de 30 px (AB6 exige 44)
+SCRUM-712	Finalizada	🔴 `price` admite decimales ilimitados (`z.number().nonnegative()`): es el camino por el que ocurrió la ÚNICA divergencia real en datos
+SCRUM-713	Tareas por hacer	Buscador de cliente en el presupuesto — el patrón YA EXISTE en la casa, en dos sitios distintos
+SCRUM-714	Finalizada	🔴 Tres instrumentos cuentan marcadores de microcopy en TRES unidades distintas y ninguno declara cuál: 1 vs 4 vs 13 vs 14 para lo mismo
+SCRUM-715	Finalizada	constaAprobado() casaba por SUBCADENA y una consulta corta daba «aprobado por el fundador» en falso — ahora compara por IDENTIDAD sobre unidades delimitadas
+SCRUM-716	Finalizada	🔴 EL VIGÍA NO TIENE MEMORIA: mira un instante y no sabe nada del anterior, así que pinta igual «producción congelada» y «producción avanzando por detrás» — el verde ciego original YA está arreglado en main y verificado por ejecución
+SCRUM-717	Finalizada	Comprobar que un select pide todo lo que su consumidor usa exige seguir el VALOR (callbacks, desestructuración, Map), no el identificador — el analizador por texto da CERO por no saber mirar
+SCRUM-718	Finalizada	🔴 ts.createScanner a pelo ve 148 de los 352 comentarios de src/app.ts: sin contexto no sabe si un «/» abre una regex o divide — y de esa técnica cuelga el control positivo de SCRUM-715 y el de scrum387
+SCRUM-719	Finalizada	🔴 DOCE guards afirman negaciones sin respaldo: pasarían igual sobre un fichero vacío — medido rompiendo soloEjecutable, solo 9 de 24 se ponen rojos
+SCRUM-720	Finalizada	🔴🔴 LA PANTALLA DEL PARTE ESTÁ INUSABLE EN PRODUCCIÓN: sin una sola línea de CSS y con ~26 rótulos [PENDIENTE microcopy oficial] a la vista — y el recorrido decía 8/8
+SCRUM-721	Finalizada	El botón «Nueva factura» NO pasa por el mecanismo del atajo: SCRUM-599 se cerró con tres listas de cuatro, no cuatro
+SCRUM-722	Finalizada	El valor por defecto de «Válido hasta» y el atajo de 30 días pueden dar días DISTINTOS — más dos hallazgos del mismo módulo
+SCRUM-723	Finalizada	🔴 El guard de SCRUM-603b compara contra la PUNTA de origin/main, que es un objetivo móvil: tumba ramas ajenas sin que hayan tocado nada
+SCRUM-724	Finalizada	Los botones COMPARTIDOS de toda la app están bajo los 44 px de AB6: btn-primary 36, btn-secondary/btn-ghost 30, la miga 19 — subirlos es un rediseño global, no un arreglo
+SCRUM-725	Finalizada	🎙️ Micrófono DENTRO de la app + la IA reescribe lo dictado — el teclado del sistema le resulta raro al profesional, y en la furgoneta se escribe deprisa y mal
+SCRUM-726	En curso	🔴 constaAprobado() no sabe QUIÉN firmó: cualquiera que escriba en docs/microcopy/ queda leído como el fundador — la regla 30 no es verificable por máquina
+SCRUM-727	Finalizada	🔴 La lista de Trabajos es un desastre según el fundador: tarjetas gigantes en vez de lista, sin filtros, y no se ve QUIÉN tiene cogido cada trabajo ni se le puede asignar desde fuera
+SCRUM-728	Tareas por hacer	🔴 El cerrojo de serie serializa y diez creaciones simultáneas del mismo merchant superan el timeout de 5 s de Prisma (~5.200 ms medidos)
+SCRUM-729	Acción del fundador	🔴 El PDF de una factura EMITIDA lee los datos del cliente EN VIVO: si el cliente cambia su nombre o su NIF, el documento ya emitido cambia
+SCRUM-730	Finalizada	🔴 `scrum176b:117` rompe `npm test` en cualquier ruta con un espacio: usa `new URL().pathname` sin decodificar, y es el ÚNICO de 362 que no usa `fileURLToPath`
+SCRUM-731	Finalizada	🔴 El descuento global: el campo se ve SIEMPRE (hidden derrotado por display:flex) y el PDF sale con el total rebajado SIN las filas que lo explican
+SCRUM-732	En curso	Censar los guards cuyo ALCANCE es más ancho que su SUJETO: dos aparecieron el mismo día en el mismo fichero (scrum286 y scrum591)
+SCRUM-733	Finalizada	🔴 El generador de docs/sql/deriva-prod.sql pierde una entrada EN SILENCIO si su última línea lleva comentario SQL: el parser deja de verla y nadie se entera
+SCRUM-734	Finalizada	🔴 La tercera puerta del PDF de presupuesto pierde modoIva, clausulas y clausulasExcluidas — y la segunda pierde tiers: el papel que se sirve no es el que el profesional configuró
+SCRUM-735	Tareas por hacer	🔴 DECISIÓN DEL FUNDADOR · El camino de emisión fiscal deriva día, año y huso del RELOJ DEL PROCESO: el valor entra en la huella SHA-256 y se remite a la AEAT — y la fase ③ de SCRUM-643 no lo miró
+SCRUM-736	En curso	🔴 Los suelos de la tanda envejecen solos y nadie está OBLIGADO a mirarlos: SUELO_TESTS lleva 441 de margen y SUELO_TOTAL 4.593 — el aviso existe y es un console.log
+SCRUM-737	Finalizada	🔴 Con nueve worktrees vivos, una cifra congelada en un comentario caduca en horas: un número necesita su unidad, su ÁRBOL y su HORA — medido, seis de siete cambiaron en 90 minutos
+SCRUM-738	Finalizada	🔴 EL TABLERO NO SABE QUÉ ESTÁ HECHO: diez encargos del 4-sep salieron sobre tickets YA MERGEADOS — reconciliar Jira contra el árbol, con un instrumento, no a mano
+SCRUM-739	Finalizada	🔴 La pantalla de INFORMES escribe 6050,00 donde el resto del producto escribe 6.050,00: falla justo en la banda de 1.000 a 9.999 € — el defecto que SCRUM-636 arregló en los documentos, vivo en la pantalla
+SCRUM-740	Finalizada	🔴 Dos tests se pisan por carrera: scrum206b crea y borra un fichero temporal MIENTRAS scrum226 barre el árbol — ENOENT intermitente, y aislado pasa 6/6
+SCRUM-741	Finalizada	🔴 `paresDelSql` (scrum461) pierde una entrada por un comentario detrás y acusa al SCHEMA: 421 de 422, y el diagnóstico apunta al sitio equivocado
+SCRUM-742	Finalizada	🟠 Media docena de guards leen INTERNOS de Prisma y nadie tiene ticket — y `prisma generate` ya avisa en cada ejecución de que `package.json#prisma` desaparece en Prisma 7
+SCRUM-743	Finalizada	🔴 Falta la tercera forma de escribir un número: AGRUPAR SIN FORZAR DECIMALES — el albarán firmado imprime «1500» donde debería poner «1.500», y el sitio único no puede arreglarlo sin cambiar lo impreso
+SCRUM-744	Finalizada	🔴 La lista de comandos peligrosos de scrum176b vigila UNA forma de invocar Prisma, y la casa usa OTRA en cuatro sitios: el guard del `db push --force-reset` no cubre el camino real
+SCRUM-745	Finalizada	🔴 TRES trinquetes nacieron MUDOS el mismo día, los tres anclados por TEXTO, y a los tres los cazó lo mismo: inyectar el rojo. Ninguna revisión de código los habría visto
+SCRUM-746	Finalizada	🔴🔴 Las DOS rutas que de verdad tocan producción NO pasan por el sentinel: `bash scripts/db-push-prod` y `npm run db:seed` llegan al hook como el NOMBRE DEL SCRIPT — y el sentinel se consume aunque luego se deniegue
+SCRUM-747	Finalizada	🔴 `fechaLimiteRecapitulativa` no valida su entrada y `Date.UTC` NORMALIZA EN SILENCIO: el mes 13 de 2026 sale como 31-ene-2027 y el semáforo lo pinta verde — un plazo PLAUSIBLE y equivocado, sin síntoma
+SCRUM-748	Finalizada	🔴 BOMBA DE RELOJERÍA · El `||` de invoicesView pinta «AL DÍA» CUALQUIER estado desconocido: el día que se apruebe un cuarto estado del semáforo, el navegador lo convertirá en «todo bien»
+SCRUM-749	Finalizada	🔴 `inicioDelDiaEn` / `finDelDiaEn` siguen normalizando en silencio — y son la primitiva de la que SCRUM-633 está a punto de colgar cinco sitios más
+SCRUM-750	Finalizada	🔴 El atajo de vencimiento y el valor por defecto escriben el MISMO campo con DOS calendarios: hasta un 45,6 % de los instantes dan día distinto
+SCRUM-751	Finalizada	🔴 CI EN ROJO · El objeto CENSO de scrum402 tiene la MISMA CLAVE dos veces: JS se calla, gana la última, y dos tickets «entraron con 1» sin verse
+SCRUM-752	Tareas por hacer	La ruta ADMIN-ONLY oculta el coste y la ruta ABIERTA al técnico lo sirve: listProducts usa include sin select y exportProductsCsv sí lo excluye
+SCRUM-753	Finalizada	🔴 El censo de ALCANZABILIDAD del tablero vive en un scratchpad que se borra — y es el instrumento que distinguió 13 ramas perdidas de 27 falsas
+SCRUM-754	En curso	🔴 EL META-GUARD OSCILA: la misma mutación sobre el mismo fichero dio CIEGA en la primera pasada y VIVA en las tres siguientes — un juez que no repite veredicto no es un juez
+SCRUM-755	Finalizada	El contador INV_SIN_APROBAR dijo 1 habiendo 2 durante un día entero: una ranura nueva de microcopy no lo sube, así que el contador no cuenta — cuadró solo por casualidad
+SCRUM-756	Finalizada	🔴 «+ Nuevo cliente» desde el documento RECHAZA EN SILENCIO: el profesional pulsa Guardar, no ve nada y el cliente no se crea — sólo funciona si antes pasó por la pantalla de Clientes
+SCRUM-757	Finalizada	🔴 El meta-guard ve CERO declaraciones y no dice nada: una declaración con la forma equivocada es INVISIBLE, y el fichero pasa como si no vigilara nada — tercer defecto del mismo instrumento en un día
+SCRUM-758	Finalizada	🔴 EL APLICADOR OFICIAL NO PUEDE APLICAR UNA MIGRACIÓN DE DATOS: la lista blanca rechaza todo DML, así que las migraciones de datos van por otra vía que NO escribe en el log — el log nunca podrá contarlas
+SCRUM-759	Finalizada	🔴 Un guard por AST anclado a UN fichero es ciego fuera de él: SCRUM-303 lee sólo jobDetailView.js y se quedó VERDE con una segunda alta inyectada en otro fichero
+SCRUM-760	Finalizada	🔴🔴 El albarán por voz RECORTA el IVA en vez de rechazarlo: si el modelo devuelve 21 en vez de 0.21, el recorte lo deja en 1 y la pantalla lo pinta 100 % de IVA — sin un solo aviso
+SCRUM-761	Finalizada	🔴 El catálogo de la demo es INVISIBLE al autocompletado: seed-demo no escribe nameSearch, los 8 productos salen con NULL — y de paso la base de dev no puede ejercitar la unicidad de nombre
+SCRUM-762	En curso	🔴🔴 REGLA 29 · El PDF de una factura EMITIDA se regenera SIEMPRE con el código de hoy: el fs de Railway es efímero, existsSync falla siempre, y cualquier cambio del generador altera lo que ya se firmó
+SCRUM-763	Finalizada	🔴 RESTAURAR EL FUENTE NO ES RESTAURAR EL ÁRBOL: con TypeScript de por medio, Buffer.compare da 0 y dist/ sigue mutado — casi publicamos un falso positivo con la restauración «verificada»
+SCRUM-764	En curso	El margen NEGATIVO no tiene decisión: margenDesde(150, 100) devuelve −50 y la ficha no dice nada — el guard de CAT-01 sólo cubre el imposible por arriba
+SCRUM-765	Finalizada	🔴 La puerta de entrada del meta-guard NUNCA casa en Windows y sólo arranca por su respaldo: si alguien renombra el script, el job sale VERDE en 0,88 s sin ejecutar una sola mutación
+SCRUM-766	En curso	🔴 El grep de retornos de carro es un INSTRUMENTO FALSO en este Git Bash: devuelve exactamente wc -l, el árbol es LF puro (CR = 0) — y ayer se publicó «1.213 de 1.992 ficheros con \r»
+SCRUM-767	Finalizada	El sembrador no escribe customer.portalToken: los clientes sembrados nacen sin token y dependen de que ensurePortalToken los cure bajo demanda
+SCRUM-768	Finalizada	🔴 El guard de SCRUM-599 CLAVA el residuo que dice haber retirado: «Presupuestos» sigue 100,7 px desalineada de sus tres hermanas y el test que lo defiende se llama «ya NO tiene submenú»
+SCRUM-769	Finalizada	Cuatro listas tienen botón primario de crear y NO registran el atajo N (jobs, expenses, products, providers) — y sus cuatro rótulos no siguen el patrón «Nuevo X»: FIRMA DEL FUNDADOR
+SCRUM-770	Finalizada	🔴🔴 EL META-GUARD MUTA EL FUENTE Y NO RECOMPILA: toda mutación cuyo test lea dist/ se declara VIVA sin que nadie la haya visto caer — el «vivas 27 · mudas 0» puede contener mudas desconocidas
+SCRUM-771	Finalizada	🔴 Nadie valida el tipo de IVA aguas abajo: albaranes.routes.ts:1148 entrega tax: l.tipoIva/100 a emitInvoice y invalidTipoIva no existe en invoicing/ ni en fiscal/
+SCRUM-772	Finalizada	La línea de voz del albarán estampa un 21 CABLEADO que el profesional no eligió (jobDetailView.js:2150) — y el albarán no tiene «IVA por defecto del documento»: FIRMA DEL FUNDADOR
+SCRUM-773	Acción del fundador	backfill-job-assignees.mjs tiene la puerta rota y por eso NO ARRANCA NUNCA en Windows — arreglársela es ENCENDER un backfill que lleva apagado quién sabe cuánto: DECISIÓN DEL FUNDADOR
+SCRUM-774	Acción del fundador	🔴🔴 DOS SESIONES SOBRE EL MISMO ÁRBOL: una hizo checkout -b + reset --hard sobre el árbol de otra, le borró dos ficheros del disco y se llevó su merge de main a su propia rama
+SCRUM-775	Finalizada	🔴 El suelo del censo hermano es DECORACIÓN: censo-tablero-vs-arbol.mjs:136 comprueba suelo.ok === false sobre un ARRAY, así que esa mitad no ha podido dispararse nunca
+SCRUM-776	Finalizada	🔴 153 de 162 rótulos visibles NO derivan del flag: el botón promete un justificante y el modal que abre dice «factura» seis veces — un gesto, dos voces
+SCRUM-777	Finalizada	🔴 Abrir y cerrar una ficha de cliente MATA la tecla N en TODAS las pantallas hasta recargar: sePuedeDisparar mira la presencia de .modal-overlay, no su visibilidad
+SCRUM-778	Finalizada	🔴 LLAMADORES_DE_EMIT (SCRUM-246) está CABLEADA con 2 ficheros y el árbol tiene 3 — y vigila por FICHERO, así que un fichero con dos bocas pasa con una sola protegida
+SCRUM-779	Acción del fundador	Preferencia POR MERCHANT de razón social en documentos — necesita columna nueva en Merchant: DIFF PREPARADO, ESPERA FIRMA DEL FUNDADOR
+SCRUM-780	En curso	🖋️ La FACTURA sigue en 2026-CF-001 y no en F260001 — adoptar F borra invoiceSeriesPrefix para TODOS y cambia la numeración de CASI NADIE: DECISIÓN DEL FUNDADOR
+SCRUM-781	Finalizada	🔴 El cerrojo de serie tarda ~5.200 ms con diez en fila, POR ENCIMA del timeout de 5.000 ms de Prisma — y la concurrencia de la FACTURA nunca se ha provocado
+SCRUM-782	En revisión	🔴 La casilla de selección mide 18,0 px a 390 contra los 44 de AB6 — menos de la mitad — y guard:objetivo-tactil hace goto('/'): sólo mide la LANDING, no el dashboard
+SCRUM-783	Finalizada	La selección múltiple se PIERDE al remontar la vista (3 → 0): abrir la ficha 360 de un cliente navega, y `let seleccion = []` nace vacía
+SCRUM-784	Finalizada	🔴 Cuando una mutación MATA EL FICHERO ENTERO, el meta-guard dicta MUDO sobre un guard que SÍ se puso rojo — node:test emite la RUTA como nombre y cayo() no la reconoce
+SCRUM-785	Finalizada	Productos y Proveedores siguen ESCONDIENDO su modal: tras editar una vez, el botón de ayuda desaparece para siempre por body:has(.modal-overlay)
+SCRUM-786	En curso	🖋️ Los .btn-sm miden 30,8–31,0 px de área de toque contra los 44 de AB6 — 13 en una sola pantalla, y la clase la comparte toda la app: DECISIÓN DEL FUNDADOR
+SCRUM-787	En curso	Contar cuántos táctiles de la aplicación entera están por debajo de los 44 px de AB6 — hoy sólo se han medido dos pantallas y salieron 13
+SCRUM-788	En revisión	55 tests caen ADEMÁS del que la mutación nombra, en 33 declaraciones de 17 guards — hoy se cuentan y no se juzgan: decidir si eso es cobertura o un radio demasiado ancho
+SCRUM-789	Acción del fundador	🖋️ UN «SELECT 1» DESDE PRODUCCIÓN: es lo único que separa «urgente» de «teórico» en el límite de emisiones simultáneas — DECISIÓN Y MEDICIÓN DEL FUNDADOR
+SCRUM-790	En revisión	🔴 El «8 % de variación entre dos pasadas» que package.json documenta ya no describe la máquina: los MISMOS 11 guards midieron 241,4 s y ~139 s seguidos — un 42 %
+SCRUM-791	Finalizada	Vigilar DOS superficies más en guard:objetivo-tactil — Presupuestos (la más usada) y Ficha del Trabajo (los dos peores del árbol, 14,0 y 19,6 px, y se usa de pie en obra)
+SCRUM-792	Finalizada	🔴 En móvil las DOS vías de «seleccionar todos» se ocultan A LA VEZ: thead{display:none} + la barra con cero — hay que marcar una a mano para que aparezca la que las marca todas
+SCRUM-793	Finalizada	🔴🔴 ensurePortalToken es un read-then-write SIN transacción: con dos peticiones a la vez salen tokens DISTINTOS y uno de los dos ya está muerto en la base — el profesional manda un enlace que nunca funcionó
+SCRUM-794	Finalizada	Nuevo presupuesto tiene DOS «+ Añadir línea»: uno flotando encima de los conceptos y otro debajo — se queda el de abajo (FIRMADO POR EL FUNDADOR)
+SCRUM-795	Finalizada	🔴 DOS caminos de PRODUCCIÓN crean cliente sin portalToken (botFlow:264 y charges:24) — y charges:24 lo crea además SIN merchantId: censo completo del alta de cliente, MEDIR SIN ARREGLAR
+SCRUM-796	Finalizada	🔴 El auto-chequeo del ancla se cae SIEMPRE que el arnés muta: scrum753:532 asevera que el ancla sigue en el fichero justo cuando el arnés acaba de sustituirla — 27 de los 36 arrastres son ese único mecanismo
+SCRUM-797	En revisión	🖋️🔴🔴 merchantId Int @default(1): cualquier alta que olvide el merchant DONA el registro al merchant demo en silencio — el defecto no es de charges.routes.ts, es del schema: DECISIÓN DEL FUNDADOR
+SCRUM-798	Finalizada	🔴 HERMANO DE 774 · La base de dev es COMPARTIDA entre sesiones: a S6 le desapareció una fila entre dos censos suyos — y el guard que verifica a qué base apunta cada worktree es una lista cableada donde b16 no está
+SCRUM-799	Finalizada	🔴 El PDF del PRESUPUESTO es PEOR que el de la factura: GET /admin/quotes/:id/pdf regenera SIEMPRE, sin existsSync ni needs — cambia de aspecto en CADA apertura, no sólo tras un despliegue
+SCRUM-800	Finalizada	🖋️🔴 PRODUCCIÓN LLEVA 9,5 h Y 8 COMMITS ATRÁS · prod=ff4e1c4a · main=388dc045 — el vigía lo dice en tres ramas a la vez y sólo el fundador puede mirar los logs de Railway
+SCRUM-801	En curso	🔴 La tecla N en una pantalla que no la registra NO se queda quieta: cae al respaldo de SCRUM-599 y abre la COTIZACIÓN RÁPIDA — afecta a toda vista sin destino, no sólo a Productos y Proveedores
+SCRUM-802	Finalizada	🔴 El detector de sobrantes mira el SELECTOR, no el MOTIVO: una excepción que nombraba dos víctimas y ahora sólo tiene una sigue en verde — el motivo caduca en silencio
+SCRUM-803	Finalizada	🖋️ 14 de 16 clientes de dev siguen sin portalToken y la lista CRECE: el backfill está propuesto y sin encender — encenderlo muta datos, y eso es del fundador
+SCRUM-804	Finalizada	EL TABLERO CONTRA EL ÁRBOL · 163 tickets abiertos y muchos ya están construidos y en verde: censar cuáles, CON EVIDENCIA POR CONTENIDO — es el ticket que cierra a los demás
+SCRUM-805	En curso	🖋️🔴🔴 La firma de un presupuesto NO tiene ningún vínculo de integridad: Quote guarda signatureUrl y acceptedAt y nada más — el profesional no puede probar QUÉ firmó su cliente
+SCRUM-806	Finalizada	🔴 P1-PORTAL-PDF · El botón «📄 Ver PDF» del portal PÚBLICO apunta a /admin/quotes/:id/pdf, detrás de requireAuth: al cliente le sale un muro de login — hoy latente, se arma en cuanto el profesional abre el PDF una vez
+SCRUM-807	Finalizada	🔴🔴 P0-SEC-8 · CONFIRMADO: ?eml= es inyectable y SE EJECUTA en el origen de la aplicación — y el banner «(modo dev)» se pinta en producción a quien lo pida, porque el texto lo dice y el código no lo comprueba
+SCRUM-808	Finalizada	🔴 Matar el meta-guard DEJA EL ÁRBOL MUTADO: la restauración vive en un finally que la señal se salta — dos sesiones distintas lo han pisado hoy, y la siguiente medición sería sobre un árbol corrompido
+SCRUM-809	En curso	🖋️🔴🔴 EL PAYWALL ESTÁ DEL REVÉS: el que paga y cancela se queda el producto GRATIS PARA SIEMPRE, y el que nunca pagó se queda fuera — la condición exige planExpiresAt y cancelar lo pone a null
+SCRUM-810	Finalizada	🔴 LOS SUELOS DEL ARNÉS ESTÁN EN 20/54 CONTRA 107 DECLARACIONES REALES: se podrían perder 53 declaraciones —la mitad de la vigilancia— sin que nada dijera una palabra
+SCRUM-811	En curso	🖋️🔴 DOS SKILLS SE DECLARAN OBLIGATORIAS Y NINGUNA SESIÓN LAS CARGA: yaqu-premium-ui lleva 88 días en el árbol y su checklist AB6 de seis casillas se cumple, como mucho, en dos
+SCRUM-812	En curso	🔴 EL META-GUARD CUENTA LOS GUARDS QUE DECLARAN, NO LOS QUE EXISTEN: un guard anterior a SCRUM-745 no aparece en el censo, y su «132 vivas · 0 mudas» se lee como si los cubriera todos
+SCRUM-813	En curso	🔴 EL DEFECTO DE ZONA HORARIA VOLVIÓ A ENTRAR DOS DÍAS DESPUÉS DE ARREGLARSE: SCRUM-640 lo midió una vez y no dejó trinquete — hoy hay 3 tests nuevos que miden la máquina, nacidos con SCRUM-592
+SCRUM-814	Tareas por hacer	🔴🔴 DOS peticiones simultáneas emiten DOS facturas del MISMO tramo: 484 € quedan sin poder facturarse y las dos facturas ya no se editan (regla 29) — reproducido 3 de 3
+SCRUM-815	Acción del fundador	🔴🔴 El webhook de Stripe falla por los DOS lados: marca el evento como visto EN MEMORIA antes de procesarlo (pierde el reintento) y lo olvida al reiniciar (reprocesa) — corrido
+SCRUM-816	Tareas por hacer	🎨 A · La lista de Trabajos ocupa media pantalla, repite la MISMA accion en las 20 filas y no deja asignar tecnico desde la fila — segunda vuelta pedida por el fundador
+SCRUM-817	Tareas por hacer	🎨 B · El detalle del Trabajo esta ordenado al reves: «quien ejecuta» esta ENTERRADO en el ultimo bloque, y albaranes/parte/precios viven mezclados en una sola caja
+SCRUM-818	Tareas por hacer	🎨 C · El parte de trabajo tiene SIETE campos que parecen rellenables y son guiones muertos, y las lineas no tienen ni bordes ni cabeceras — «no se puede rellenar lo de arriba»

@@ -1,0 +1,39 @@
+﻿node : ⟦arranque⟧ 0.9 s COMPLETA · proceso+ws 0.9 s · primera-página 0.0 s
+En línea: 1 Carácter: 515
++ ... TEXITCODE"; node docs/master/evidencias/scrum907b/veredicto-en-stagin ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⟦arranque⟧ 0.9 ...ra-página 0.0 s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+  SCRUM-907 · VEREDICTO EN STAGING — «Has cobrado {importe} más de lo aceptado.»
+  POBLACIÓN: 3 Trabajos × 2 anchos = 6 mediciones
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+  1280px · job 3102 (aceptado 539,05 · cobrado 628,60 · exceso 89,55) · se espera AVISO
+        sección: falta por cobrar = 0,00 €  ·  aviso = «Has cobrado 89,55 € más de lo aceptado.»
+        rail:    aviso = «Has cobrado 89,55 € más de lo aceptado.»  ·  líneas del rail: 9
+        → ✔ de acuerdo
+  1280px · job 3100 (aceptado 243,14 · cobrado 243,14 (cuadrado)) · se espera SIN AVISO
+        sección: falta por cobrar = 0,00 €  ·  aviso = ninguno
+        rail:    aviso = ninguno  ·  líneas del rail: 8
+        → ✔ de acuerdo
+  1280px · job 3103 (aceptado 970,23 · cobrado 291,07 (falta por cobrar)) · se espera SIN AVISO
+        sección: falta por cobrar = 679,16 €  ·  aviso = ninguno
+        rail:    aviso = ninguno  ·  líneas del rail: 8
+        → ✔ de acuerdo
+   390px · job 3102 (aceptado 539,05 · cobrado 628,60 · exceso 89,55) · se espera AVISO
+        sección: falta por cobrar = 0,00 €  ·  aviso = «Has cobrado 89,55 € más de lo aceptado.»
+        rail:    aviso = «Has cobrado 89,55 € más de lo aceptado.»  ·  líneas del rail: 9
+        → ✔ de acuerdo
+   390px · job 3100 (aceptado 243,14 · cobrado 243,14 (cuadrado)) · se espera SIN AVISO
+        sección: falta por cobrar = 0,00 €  ·  aviso = ninguno
+        rail:    aviso = ninguno  ·  líneas del rail: 8
+        → ✔ de acuerdo
+   390px · job 3103 (aceptado 970,23 · cobrado 291,07 (falta por cobrar)) · se espera SIN AVISO
+        sección: falta por cobrar = 679,16 €  ·  aviso = ninguno
+        rail:    aviso = ninguno  ·  líneas del rail: 8
+        → ✔ de acuerdo
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  ✔ las 6 mediciones de acuerdo: avisa donde hay exceso y calla donde no lo hay.
+

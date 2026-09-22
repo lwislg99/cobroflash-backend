@@ -1,0 +1,15 @@
+medido contra origin/main = 4a7ff1ec74c138c74d30a1c7bebc70d67a5d0d1c · 2026-09-18T08:56:44.263Z
+
+① CEGUERA PLAUSIBLE (pierde 3: sw.js + public/js/*) — tiene que SALTAR
+   suelo                                              P=96   P=196   P=496
+   cableado · SUELO_FICHEROS = 40 (origin/main)      calla   calla   calla
+   cociente fijo 0,818 (historial entero)            calla   calla   calla
+   cociente fijo 0,97 (historial desde 50)           SALTA   calla   calla
+   cociente 1 contra git (ESTA RAMA)                 SALTA   SALTA   SALTA
+
+② BORRADO HONESTO (1 fichero, sin git rm) — tiene que CALLAR
+   suelo                                              P=96   P=196   P=496
+   cableado · SUELO_FICHEROS = 40 (origin/main)      calla   calla   calla
+   cociente fijo 0,818 (historial entero)            calla   calla   calla
+   cociente fijo 0,97 (historial desde 50)           calla   calla   calla
+   cociente 1 contra git (ESTA RAMA)                 calla   calla   calla

@@ -1,0 +1,17 @@
+SUJETO: 495 suelos de población censada · MUESTRA medida: 11
+
+decl   real   cociente  clase         dónde
+------------------------------------------------------------------------------------------------
+   54    273      0.20  MUERTO       tests/scrum763-restaurar-el-arbol.test.mjs:139
+   20     86      0.23  MUERTO       tests/scrum765-la-puerta-y-el-suelo.test.mjs:219
+   20      —         —  NO_DECIDIBLE scripts/meta-guard-mutaciones.mjs:120  · ya está en rojo con su propio valor: no es medible así
+   40     96      0.42  MUERTO       tests/public-js-parsea.test.mjs:92
+   50    273      0.18  MUERTO       tests/restauracion-del-arbol-ejecutable.test.mjs:179
+    7      7      1.00  AJUSTADO     tests/scrum128-frontend-census.test.mjs:122
+   14     14      1.00  AJUSTADO     tests/scrum176b-force-por-identidad.test.mjs:100
+    5     11      0.45  MUERTO       tests/scrum158-montajes-admin-muestreados.test.mjs:49
+    2      2      1.00  AJUSTADO     tests/scrum198-consumidores-xml.test.mjs:164
+  200   6102      0.03  MUERTO       tests/scrum225-mapa-tres-bd.test.mjs:79
+  196    287      0.68  VIVO         tests/scrum243-tenencia-lectura.test.mjs:190
+
+EN LA MUESTRA: VIVO 1 · MUERTO 6 · AJUSTADO 3 · NO_DECIDIBLE 1

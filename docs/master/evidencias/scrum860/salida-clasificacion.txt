@@ -1,0 +1,125 @@
+SCRUM-860 ① · clasificación de las lecturas SIN `select` de primer nivel
+==============================================================================================
+lecturas de Prisma en src/ : 431  (con select 285 · sin select 146)
+
+🔴 HACIA FUERA (se serializan a una respuesta) :  81   ← EL NÚMERO QUE DECIDE
+   INTERNA   (no salen por la API)             :  44
+⚠️  NO CLASIFICADO (no lo sé — NO es sano)      :  21
+   ------------------------------------------------
+   suma                                        : 146  ✅ cuadra con el censo
+
+🔒 EL SUELO DEL TRINQUETE = hacia fuera + no clasificado = 102
+   NO CLASIFICADO cae del lado MALO: si el suelo se derivara sólo de las que se
+   serializan, las que nadie ha sabido seguir quedarían fuera de la red sin que nadie
+   lo hubiera decidido — el defecto de este ticket una capa más arriba.
+
+🔴 HACIA FUERA · por modelo
+    18  invoice
+    18  quote
+    10  charge
+     9  job
+     5  albaran
+     3  merchant
+     3  parteTrabajo
+     2  maintenancePlan
+     2  product
+     2  teamMember
+     2  botSession
+     1  authSession
+     1  expense
+     1  provider
+     1  quoteRequest
+     1  customer
+     1  whatsAppMessage
+     1  customerEvent
+
+🔴 HACIA FUERA · la lista, con fichero y línea
+   src/lib/invoicing.ts:170  charge.findUnique +include  [por su llamador]  ensureInvoiceForCharge
+   src/lib/invoicing.ts:297  invoice.findUnique  [por su llamador]  ensureInvoiceForCharge
+   src/lib/invoicing.ts:302  quote.findFirst  [por su llamador]  ensureInvoiceForCharge
+   src/lib/invoicing.ts:304  invoice.findFirst  [por su llamador]  ensureInvoiceForCharge
+   src/modules/ai/app/routes/ai.routes.ts:163  quote.findFirst +include  [directo]  
+   src/modules/auth/domain/auth.service.ts:283  authSession.findUnique +include  [por su llamador]  getSession
+   src/modules/billing/app/routes/charges.routes.ts:16  merchant.findUnique  [directo]  
+   src/modules/billing/app/routes/payBank.routes.ts:27  charge.findUnique +include  [directo]  
+   src/modules/billing/app/routes/payBizum.routes.ts:124  charge.findUnique +include  [por su llamador]  loadBizumCharge
+   src/modules/billing/app/routes/payInvoice.routes.ts:23  charge.findUnique +include  [directo]  
+   src/modules/billing/app/routes/payMp.routes.ts:84  charge.findUnique  [directo]  
+   src/modules/billing/app/routes/psp.routes.ts:37  charge.findUnique  [directo]  
+   src/modules/billing/app/routes/receipt.routes.ts:28  charge.findUnique +include  [directo]  
+   src/modules/billing/app/routes/receipt.routes.ts:64  charge.findUnique +include  [directo]  
+   src/modules/billing/app/routes/receipt.routes.ts:81  quote.findFirst  [directo]  
+   src/modules/billing/app/routes/receipt.routes.ts:83  invoice.findFirst  [directo]  
+   src/modules/billing/app/routes/receipt.routes.ts:89  invoice.findUnique  [directo]  
+   src/modules/billing/domain/cobros.service.ts:171  charge.findMany +include  [por su llamador]  listarCobros
+   src/modules/billing/domain/cobros.service.ts:176  invoice.findMany +include  [por su llamador]  listarCobros
+   src/modules/billing/domain/invoiceWhatsApp.service.ts:32  invoice.findUnique +include  [por su llamador]  sendInvoicePaymentRequest
+   src/modules/expenses/domain/expenses.service.ts:55  expense.findMany +include  [por su llamador]  listExpenses
+   src/modules/exports/app/routes/exports.routes.ts:137  merchant.findUnique  [directo]  
+   src/modules/invoicing/app/routes/invoice.routes.ts:68  invoice.findUnique +include  [directo]  
+   src/modules/jobs/app/routes/albaranes.routes.ts:449  albaran.findMany  [directo]  
+   src/modules/jobs/app/routes/albaranes.routes.ts:571  albaran.findFirst  [por su llamador]  findAlbaran
+   src/modules/jobs/app/routes/albaranes.routes.ts:783  albaran.findFirst  [directo]  
+   src/modules/jobs/app/routes/albaranes.routes.ts:1212  job.findFirst  [directo]  
+   src/modules/jobs/app/routes/albaranPublic.routes.ts:352  albaran.findUnique  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:829  job.findFirst  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:874  job.findFirst  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:895  job.findFirst  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:1062  job.findFirst  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:1102  job.findFirst  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:1301  job.findFirst  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:1321  quote.findMany +include  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:1523  job.findFirst  [directo]  
+   src/modules/jobs/app/routes/jobs.routes.ts:1543  albaran.findMany  [directo]  
+   src/modules/jobs/app/routes/partes.routes.ts:66  parteTrabajo.findFirst  [por su llamador]  findParte
+   src/modules/jobs/app/routes/partes.routes.ts:245  parteTrabajo.findMany  [directo]  
+   src/modules/jobs/app/routes/partes.routes.ts:266  parteTrabajo.findMany  [directo]  
+   src/modules/jobs/app/routes/partes.routes.ts:312  job.findFirst  [directo]  
+   src/modules/jobs/domain/recapitulativa.service.ts:138  invoice.findUnique  [por su llamador]  emitirRecapitulativas
+   src/modules/maintenance/app/routes/maintenance.routes.ts:52  maintenancePlan.findFirst  [directo]  
+   src/modules/maintenance/app/routes/maintenance.routes.ts:83  maintenancePlan.findFirst  [directo]  
+   src/modules/metrics/domain/metrics.service.ts:27  quote.findMany +include  [por su llamador]  getHomeMetrics
+   src/modules/products/domain/products.service.ts:68  product.findMany +include  [por su llamador]  listProducts
+   src/modules/products/domain/products.service.ts:263  product.findFirst +include  [por su llamador]  getProductById
+   src/modules/providers/domain/providers.service.ts:22  provider.findMany  [por su llamador]  listProviders
+   src/modules/quoteRequests/app/routes/quoteRequests.routes.ts:14  quoteRequest.findMany +include  [directo]  
+   src/modules/quotes/app/routes/quotes.routes.ts:122  merchant.findUnique  [directo]  
+   src/modules/quotes/app/routes/quotes.routes.ts:304  quote.findUnique +include  [directo]  
+   src/modules/quotes/app/routes/quotes.routes.ts:392  quote.findUnique  [directo]  
+   src/modules/quotes/app/routes/quotes.routes.ts:490  quote.findUnique +include  [directo]  
+   src/modules/quotes/domain/sendQuote.service.ts:36  quote.findUnique +include  [por su llamador]  sendQuoteWhatsAppToCustomer
+   src/modules/system/app/routes/customerPortal.routes.ts:225  customer.findUnique +include  [directo]  
+   src/modules/system/app/routes/customerPortal.routes.ts:243  quote.findMany  [directo]  
+   src/modules/system/app/routes/customerPortal.routes.ts:248  invoice.findMany +include  [directo]  
+   src/modules/system/app/routes/dev.routes.ts:73  charge.findUnique +include  [directo]  
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:301  invoice.findFirst +include  [directo]  
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:313  whatsAppMessage.findMany  [directo]  
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:646  invoice.findFirst +include  [directo]  
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:682  invoice.findFirst +include  [directo]  
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:820  invoice.findFirst +include  [directo]  
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:942  invoice.findFirst +include  [directo]  
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:1091  invoice.findFirst +include  [directo]  
+   src/modules/system/app/routes/quoteDecisionLanding.routes.ts:186  quote.findUnique +include  [por su llamador]  loadQuote
+   src/modules/system/app/routes/quotesAdmin.routes.ts:177  quote.findFirst +include  [directo]  
+   src/modules/system/app/routes/quotesAdmin.routes.ts:401  quote.findFirst +include  [directo]  
+   src/modules/system/app/routes/quotesAdmin.routes.ts:433  quote.findFirst +include  [directo]  
+   src/modules/system/customerEvents.service.ts:77  customerEvent.findMany  [por su llamador]  listCustomerEvents
+   src/modules/system/invoiceAdmin.ts:65  invoice.findMany +include  [por su llamador]  listInvoicesAdmin
+   src/modules/system/invoiceAdmin.ts:111  invoice.findFirst +include  [por su llamador]  getInvoiceDetailAdmin
+   src/modules/system/invoiceAdmin.ts:220  invoice.findFirst  [por su llamador]  updateInvoiceStatusAdmin
+   src/modules/system/quoteAdmin.ts:64  quote.findMany +include  [por su llamador]  listQuotesAdmin
+   src/modules/system/quoteAdmin.ts:151  quote.findFirst +include  [por su llamador]  getQuoteDetailAdmin
+   src/modules/system/quoteAdmin.ts:315  quote.findFirst  [por su llamador]  acceptQuoteAdmin
+   src/modules/system/quoteAdmin.ts:362  quote.findFirst  [por su llamador]  rejectQuoteAdmin
+   src/modules/team/domain/team.service.ts:36  teamMember.findFirst  [por su llamador]  createTeamMember
+   src/modules/team/domain/team.service.ts:91  teamMember.findFirst  [por su llamador]  resendInvite
+   src/modules/whatsappBot/app/routes/botAdmin.routes.ts:14  botSession.findMany  [directo]  
+   src/modules/whatsappBot/domain/botFlow.service.ts:47  botSession.findFirst  [por su llamador]  getSession
+
+⚠️ NO CLASIFICADO · por qué (y NO son sanos)
+    20  devuelve el dato y su llamador (1 salto) no serializa: la cadena sigue
+     1  devuelve el dato desde un callback de `$transaction`: el valor vuelve a la función de fuera y el seguimiento por nombre no cruza esa frontera
+
+   INTERNA · por vía
+    22  handler terminal
+    22  no devuelve ni serializa

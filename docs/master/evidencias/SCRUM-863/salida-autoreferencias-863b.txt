@@ -1,0 +1,87 @@
+POBLACION: 282 ficheros .ts bajo src/
+
+a) AUTO-REFERENCIAS ABSOLUTAS a yaqu.app en src/, fuera de comentarios: 10
+
+  · src/integrations/whatsappNotifications.ts:97
+      `https://yaqu.app/recibo/${params.receiptToken}`,
+      ¿mira PUBLIC_BASE_URL como base? : 🔴 NO — dominio a pelo
+
+  · src/integrations/whatsappNotifications.ts:105
+      url: `https://yaqu.app/recibo/${params.receiptToken}`,
+      ¿mira PUBLIC_BASE_URL como base? : 🔴 NO — dominio a pelo
+
+  · src/modules/auth/domain/referral.service.ts:55
+      const base = config.PUBLIC_BASE_URL || 'https://yaqu.app';
+      ¿mira PUBLIC_BASE_URL como base? : SI (respaldo)
+
+  · src/modules/billing/domain/invoiceWhatsApp.service.ts:102
+      `https://yaqu.app/pay/invoice/${payToken}`,
+      ¿mira PUBLIC_BASE_URL como base? : 🔴 NO — dominio a pelo
+
+  · src/modules/billing/domain/invoiceWhatsApp.service.ts:110
+      url: `https://yaqu.app/pay/invoice/${payToken}`,
+      ¿mira PUBLIC_BASE_URL como base? : 🔴 NO — dominio a pelo
+
+  · src/modules/messaging/domain/emailLayout.ts:69
+      Enviado con <a href="https://yaqu.app" style="color:${BRAND_DARK};text-decoration:none;font-weight:600">YaQu</a> — presupuestos, firma y cobro por Wha
+      ¿mira PUBLIC_BASE_URL como base? : 🔴 NO — dominio a pelo
+
+  · src/modules/messaging/domain/emailLayout.ts:70
+      <a href="https://yaqu.app/privacidad" style="color:${MUTED}">Privacidad</a> · <a href="https://yaqu.app/terminos" style="color:${MUTED}">Términos</a>
+      ¿mira PUBLIC_BASE_URL como base? : 🔴 NO — dominio a pelo
+
+  · src/modules/messaging/domain/lifecycle.service.ts:16
+      const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
+      ¿mira PUBLIC_BASE_URL como base? : SI (respaldo)
+
+  · src/modules/messaging/domain/lifecycle.service.ts:61
+      <p style="font-size:12px;color:#9ca3af">YaQu · Cotiza por WhatsApp y cobra antes de empezar · <a href="https://yaqu.app" style="color:#9ca3af">yaqu.ap
+      ¿mira PUBLIC_BASE_URL como base? : 🔴 NO — dominio a pelo
+
+  · src/modules/system/app/routes/customerPortal.routes.ts:161
+      <p class="pf-footer">Hecho con <a href="https://yaqu.app" style="color:inherit;font-weight:700;text-decoration:none">YaQu</a></p>
+      ¿mira PUBLIC_BASE_URL como base? : 🔴 NO — dominio a pelo
+
+  RESUMEN a): 10 en total · 1
+    con respaldo PUBLIC_BASE_URL || …  : 2
+    🔴 dominio ESCRITO A PELO          : 8
+
+b) ¿EXISTE PUBLIC_BASE_URL Y QUIEN LA LEE?  (control positivo)
+   usos en src/ fuera de comentarios: 16
+     src/core/config/env.ts:8   PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
+     src/core/config/env.ts:208   const motivo = invalidPublicBaseUrl(config.PUBLIC_BASE_URL);
+     src/core/config/env.ts:211   `🚨 [config] PUBLIC_BASE_URL ${motivo}. Es la raíz de TODO enlace que el sistema envía ` +
+     src/core/config/env.ts:263   export const BASE_URL = config.PUBLIC_BASE_URL;
+     src/index.ts:35   console.log(`YaQu API listening on ${config.PUBLIC_BASE_URL}`);
+     src/modules/auth/domain/auth.service.ts:96   const link = `${config.PUBLIC_BASE_URL}/auth/verify?token=${token}`;
+     src/modules/auth/domain/auth.service.ts:211   const link = `${config.PUBLIC_BASE_URL}/auth/verify?token=${token}`;
+     src/modules/auth/domain/referral.service.ts:55   const base = config.PUBLIC_BASE_URL || 'https://yaqu.app';
+     src/modules/billing/app/routes/subscriptions.routes.ts:125   success_url: `${config.PUBLIC_BASE_URL}/dashboard/#plans?success=1`,
+     src/modules/billing/app/routes/subscriptions.routes.ts:126   cancel_url:  `${config.PUBLIC_BASE_URL}/dashboard/#plans?cancelled=1`,
+     src/modules/billing/app/routes/subscriptions.routes.ts:153   return_url: `${config.PUBLIC_BASE_URL}/dashboard/#plans`,
+     src/modules/messaging/domain/lifecycle.service.ts:16   const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
+     src/modules/messaging/domain/weeklyDigest.service.ts:168   <a href="${config.PUBLIC_BASE_URL}/dashboard/" style="display:inline-block;background:#22c55e;color:#052e16;padding:11px
+     src/modules/system/app/routes/customersAdmin.routes.ts:144   const portalUrl = `${config.PUBLIC_BASE_URL}/cliente/${token}`;
+     src/modules/system/app/routes/customersAdmin.routes.ts:274   ? `${config.PUBLIC_BASE_URL}/cliente/${customer.portalToken}`
+     src/modules/system/app/routes/quoteDecisionLanding.routes.ts:19   const BASE_API_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+   ficheros FUERA de src/ que la nombran: 5
+
+c) LAS DE COBRO — ¿tocan una factura YA EMITIDA?
+   Criterio: se mira si la funcion que las contiene ESCRIBE en la factura (update/
+   create de prisma) o solo LEE para componer un mensaje. Escribir seria regla 29.
+
+  · src/integrations/whatsappNotifications.ts:97   (funcion desde la linea 58)
+      `https://yaqu.app/recibo/${params.receiptToken}`,
+      escrituras prisma en esa funcion: NINGUNA (solo lee)
+
+  · src/integrations/whatsappNotifications.ts:105   (funcion desde la linea 58)
+      url: `https://yaqu.app/recibo/${params.receiptToken}`,
+      escrituras prisma en esa funcion: NINGUNA (solo lee)
+
+  · src/modules/billing/domain/invoiceWhatsApp.service.ts:102   (funcion desde la linea 31)
+      `https://yaqu.app/pay/invoice/${payToken}`,
+      escrituras prisma en esa funcion: invoice.update
+
+  · src/modules/billing/domain/invoiceWhatsApp.service.ts:110   (funcion desde la linea 31)
+      url: `https://yaqu.app/pay/invoice/${payToken}`,
+      escrituras prisma en esa funcion: invoice.update

@@ -58,7 +58,7 @@ function wrap(bodyHtml: string, cta?: { label: string; url: string }): string {
     <div style="padding:8px 0 20px"><span style="color:#22c55e;font-weight:800;font-size:20px">YaQu</span></div>
     <div style="font-size:15px;line-height:1.6;color:#374151">${bodyHtml}${button}</div>
     <hr style="border:none;border-top:1px solid #eef2f7;margin:28px 0 14px"/>
-    <p style="font-size:12px;color:#9ca3af">YaQu · Cotiza por WhatsApp y cobra antes de empezar · <a href="https://yaqu.app" style="color:#9ca3af">yaqu.app</a></p>
+    <p style="font-size:12px;color:#9ca3af">YaQu · Cotiza por WhatsApp y cobra antes de empezar · <a href="${config.PUBLIC_BASE_URL}" style="color:#9ca3af">yaqu.app</a></p>
   </div>`.trim();
 }
 

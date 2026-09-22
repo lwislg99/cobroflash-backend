@@ -24,19 +24,26 @@
 //
 // La pantalla de la oficina —la que sí valora— es otra ruta y otro ticket. Cuando llegue, tendrá
 // que pedir los precios explícitamente, y eso se verá en su diff.
-import { seesAllJobs } from '../../../../core/http/roleCapabilities';
+import { seesAllJobs, seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities';
+import { esSuyoElTrabajo, SELECT_DUENOS, whereSuyoElTrabajo } from '../../domain/accesoAlTrabajo'; // SCRUM-992
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import {
   BLOQUES_PARTE,
   TIPOS_PARTE,
+  casarLineasPorIdentidad,
+  idDeLinea,
   computeParteContentHash,
   lineasParaElTecnico,
   puedeEditarContenido,
   puedeEditarPrecios,
   permisoDeCampos,
   puedeFirmarse,
+  puedeFirmarCliente,
+  puedeFirmarTecnico,
+  firmasCompletas,
   PARTE_CONTENIDO_VERSION_ACTUAL,
   type BloqueParte,
   type EstadoParte,
@@ -57,11 +64,36 @@ type FindParteResult =
   | { ok: true; parte: any }
   | { ok: false; status: number };
 
+// ── 🔴 SCRUM-992 · AQUÍ NO SE COMPROBABA DE QUIÉN ERA EL TRABAJO ──────────────────────────
+//
+// Esta es la puerta por la que pasan las SIETE rutas de `/admin/partes/:id` —leer, editar, las dos
+// firmas, el dictado y la vista de oficina— y solo filtraba por merchant (regla 2). El efecto
+// medido: un técnico abría, editaba y firmaba el parte de una obra que no era suya.
+//
+// 🔴 EL ARREGLO VA AQUÍ Y NO EN LAS SIETE RUTAS, por la razón de `findAlbaran` (SCRUM-849): siete
+// copias de una comprobación de acceso divergen, y la que se queda atrás no da error, da ACCESO.
+// Una ruta nueva que use `findParte` nace protegida.
+//
+// «Es suyo» son los TRES ejes de SCRUM-467/650 (`esSuyoElTrabajo`), y un parte SUELTO —sin trabajo—
+// NO es de ningún técnico: `ParteTrabajo` no guarda quién lo abrió, así que no se le puede atribuir.
+// Decisión del orquestador (21-sep-2026): ningún parte suelto para el técnico. Con el propietario y
+// el admin no cambia nada: `seesOnlyOwnJobs('admin')` es false y no se pide el trabajo.
+//
+// 404 y no 403, como los albaranes: el código de estado no le dice si el parte existe.
 async function findParte(req: any): Promise<FindParteResult> {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return { ok: false, status: 400 };
   const parte = await prisma.parteTrabajo.findFirst({ where: { id, merchantId: req.merchantId } });
   if (!parte) return { ok: false, status: 404 };
+  if (seesOnlyOwnJobs(req.userRole)) {
+    const job = parte.jobId === null || parte.jobId === undefined
+      ? null
+      : await prisma.job.findFirst({
+        where: { id: parte.jobId, merchantId: req.merchantId },
+        select: SELECT_DUENOS,
+      });
+    if (!esSuyoElTrabajo(job, req.teamMemberId)) return { ok: false, status: 404 };
+  }
   return { ok: true, parte: { ...parte, clienteNombre: await nombreDelCliente(req.merchantId, parte.customerId) } };
 }
 
@@ -118,6 +150,14 @@ function serializeParteParaElTecnico(parte: any) {
     firmadoAt: parte.firmadoAt ?? null,
     firmadoPorNombre: parte.firmadoPorNombre ?? null,
     firmadoPorCalidad: parte.firmadoPorCalidad ?? null,
+    // SCRUM-653 · el ESTADO de las dos firmas. **Los trazos NO viajan**: la pantalla
+    // necesita saber si ya se firmó y quién, no repintar la imagen — y un data-URI por
+    // firma engorda cada respuesta del listado con algo que nadie mira.
+    firmadoTecnicoAt: parte.firmadoTecnicoAt ?? null,
+    firmadoTecnicoNombre: parte.firmadoTecnicoNombre ?? null,
+    firmoElCliente: parte.firmadoAt !== null && parte.firmadoAt !== undefined,
+    firmoElTecnico: parte.firmadoTecnicoAt !== null && parte.firmadoTecnicoAt !== undefined,
+    firmasCompletas: firmasCompletas(parte),
     contenidoHash: parte.contenidoHash ?? null,
     contenidoVersion: parte.contenidoVersion ?? null,
     // Los dos candados VIAJAN RESUELTOS, con su motivo: la pantalla no vuelve a decidir la regla.
@@ -140,7 +180,7 @@ function serializeParteParaElTecnico(parte: any) {
  */
 function serializeParteParaLaOficina(parte: any) {
   const lineas: LineaParte[] = Array.isArray(parte.lineas) ? parte.lineas : [];
-  const conImporte = lineas.map((l: any) => {
+  const conImporte = lineas.map((l: any, i: number) => {
     const precio = l.precioUnitario === null || l.precioUnitario === undefined ? null : Number(l.precioUnitario);
     const unds = l.unds === null || l.unds === undefined ? null : Number(l.unds);
     // El importe es DERIVADO y viaja calculado: si lo calculara la pantalla, habría dos sitios
@@ -149,6 +189,8 @@ function serializeParteParaLaOficina(parte: any) {
       ? null
       : Math.round(precio * unds * 100) / 100;
     return {
+      // SCRUM-889 · la oficina valora POR IDENTIDAD: si la línea ya no está, su precio no cae en otra.
+      id: idDeLinea(l, i),
       bloque: l.bloque ?? null,
       unds,
       descripcion: l.descripcion ?? null,
@@ -201,7 +243,10 @@ function validarLineasDelTecnico(
     if (!descripcion) return { ok: false, message: 'Cada línea necesita una descripción.' };
     // `precioUnitario` y `tipoIva` NO se leen del cuerpo. No es que se ignoren: es que este camino
     // no los acepta. Si el técnico mandara uno, no entra — los pone la oficina, en otra pantalla.
-    lineas.push({ bloque: bloque as BloqueParte, unds, descripcion });
+    // SCRUM-889 · el `id` sólo sirve para CASAR con una línea guardada; no se guarda el que manda el
+    // cliente (`casarLineasPorIdentidad` guarda el de la base o uno nuevo).
+    const id = l?.id === undefined || l?.id === null ? undefined : String(l.id);
+    lineas.push({ ...(id === undefined ? {} : { id }), bloque: bloque as BloqueParte, unds, descripcion });
   }
   return { ok: true, lineas };
 }
@@ -229,10 +274,23 @@ function paramsDeSello(parte: any, lineas: LineaParte[]) {
 }
 
 // ── GET /admin/partes — los partes del merchant, los más recientes primero ───────────────
+//
+// 🔴 SCRUM-992 · El técnico recibe SOLO los partes de sus trabajos (los tres ejes) y ninguno suelto.
+// Es el mismo recorte que `findParte` aplica al abrir uno: lo que la lista no enseña, el detalle
+// tampoco lo abre. Se resuelve en DOS consultas porque `ParteTrabajo.jobId` es una columna suelta,
+// sin relación con `Job` (como todo `merchantId` de este schema), y el `where` no puede cruzar.
 router.get('/', async (req: any, res) => {
   try {
+    const where: any = { merchantId: req.merchantId };
+    if (seesOnlyOwnJobs(req.userRole)) {
+      const suyos = await prisma.job.findMany({
+        where: { merchantId: req.merchantId, ...whereSuyoElTrabajo(req.teamMemberId) },
+        select: { id: true },
+      });
+      where.jobId = { in: suyos.map((j) => j.id) };
+    }
     const partes = await prisma.parteTrabajo.findMany({
-      where: { merchantId: req.merchantId },
+      where,
       orderBy: [{ fecha: 'desc' }, { id: 'desc' }],
       take: 200,
     });
@@ -294,12 +352,28 @@ router.post('/', async (req: any, res) => {
     if (jobId !== null && !Number.isInteger(jobId)) {
       return res.status(400).json({ error: 'invalid_job', message: 'El trabajo no es válido.' });
     }
+    // 🔴 SCRUM-992 · EL TÉCNICO NO ABRE UN PARTE SIN TRABAJO. Un parte suelto no es de ningún técnico
+    // (`findParte`), así que uno que lo creara ya no podría volver a abrirlo: mejor decírselo aquí. Medido
+    // el 21-sep-2026: la pantalla NUNCA lo hace —su único llamador (`jobDetailView.js`) manda siempre
+    // `{ jobId: job.id }`—, así que esto solo cierra la llamada directa a la API. El propietario y el
+    // admin siguen pudiendo abrirlo suelto, como hasta hoy.
+    if (jobId === null && seesOnlyOwnJobs(req.userRole)) {
+      return res.status(400).json({ error: 'job_required' });
+    }
     let customerId: number | null = null;
     if (jobId !== null) {
       // Tenancy también para el trabajo del que cuelga: un parte no puede nacer colgado de un
       // trabajo de otro merchant.
-      const job = await prisma.job.findFirst({ where: { id: jobId, merchantId: req.merchantId } });
+      const job = await prisma.job.findFirst({
+        where: { id: jobId, merchantId: req.merchantId },
+        include: { assignees: { select: { teamMemberId: true } } }, // SCRUM-992: el tercer eje
+      });
       if (!job) return res.status(404).json({ error: 'job_not_found' });
+      // …y tampoco de un trabajo AJENO: el parte que un técnico abre sobre la obra de otro es un parte
+      // que él no puede volver a abrir y que el dueño de la obra encuentra en su lista sin haberlo hecho.
+      if (seesOnlyOwnJobs(req.userRole) && !esSuyoElTrabajo(job, req.teamMemberId)) {
+        return res.status(404).json({ error: 'job_not_found' });
+      }
       customerId = job.customerId ?? null;
     }
 
@@ -311,6 +385,30 @@ router.post('/', async (req: any, res) => {
     }
 
     const fecha = new Date();
+    // 🔴 SCRUM-818 · LOS TÉCNICOS VIENEN PRELLENADOS DE LOS ASIGNADOS DEL TRABAJO.
+    //
+    // Nadie teclea lo que el sistema ya sabe: si el jefe asignó a Israel y a Miguel (SCRUM-650),
+    // el parte nace con sus nombres puestos. Antes nacía con `[]` y el técnico los reescribía de
+    // pie y con una mano.
+    //
+    // ⚠️ SE COPIA UNA VEZ, AL CREARLO, Y DESPUÉS ES UN CAMPO SUYO — no un valor derivado que se
+    // recalcule. El parte es la prueba de lo que PASÓ, no el registro de lo que se planeó, y lo
+    // firma un cliente que puede discutirlo. Si el técnico lo cambia porque al final fue otro,
+    // **eso no es un error: es el dato**, y nada lo revierte al guardar.
+    //
+    // Sin Trabajo detrás, o con un Trabajo sin nadie asignado, se queda vacío —que es lo que
+    // había— y lo escribe el técnico. No se inventa un nombre.
+    let tecnicosDelTrabajo: string[] = [];
+    if (jobId !== null) {
+      const asignados = await prisma.jobAssignee.findMany({
+        where: { jobId },
+        select: { teamMember: { select: { name: true } } },
+      });
+      tecnicosDelTrabajo = asignados
+        .map((a) => (a.teamMember?.name ?? '').trim())
+        .filter((n) => n !== '');
+    }
+
     const creado = await prisma.$transaction(async (tx) => {
       // Ver `parteNumero.ts` para lo que esta reserva SÍ garantiza y lo que NO.
       const yaHay = await tx.parteTrabajo.findMany({
@@ -327,7 +425,7 @@ router.post('/', async (req: any, res) => {
           fecha,
           tipo,
           lineas: [],
-          tecnicos: [],
+          tecnicos: tecnicosDelTrabajo,
           estado: 'borrador',
         },
       });
@@ -424,21 +522,19 @@ router.patch('/:id', async (req: any, res) => {
       const v = validarLineasDelTecnico(req.body.lineas);
       if (!v.ok) return res.status(400).json({ error: 'lineas_invalidas', message: v.message });
       // 🔴 LOS PRECIOS YA PUESTOS NO SE PIERDEN al editar el contenido. El técnico manda
-      // {bloque, unds, descripcion}; si esa misma línea ya tenía precio de oficina, se conserva.
+      // {id, bloque, unds, descripcion}; si esa misma línea ya tenía precio de oficina, se conserva.
       // Sin esto, una corrección del técnico borraría la valoración del jefe EN SILENCIO.
+      // SCRUM-889 · «esa misma línea» es la del mismo ID, no la de la misma posición: si no, quitar
+      // una línea le movería el precio a la de detrás.
       const previas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
-      data.lineas = v.lineas.map((l, i) => {
-        const antes = previas[i];
-        const esLaMisma = antes && antes.bloque === l.bloque && antes.descripcion === l.descripcion;
-        return esLaMisma
-          ? { ...l, precioUnitario: antes.precioUnitario ?? null, tipoIva: antes.tipoIva ?? null }
-          : l;
-      });
+      data.lineas = casarLineasPorIdentidad(previas, v.lineas, randomUUID);
     }
 
     // ── LOS PRECIOS DE LA OFICINA ────────────────────────────────────────────────────
     //
-    // Viajan en su PROPIA clave y por índice de línea: `[{ indice, precioUnitario, tipoIva }]`.
+    // Viajan en su PROPIA clave y por índice de línea: `[{ indice, id?, precioUnitario, tipoIva }]`.
+    // SCRUM-889 · con `id` manda el id: si esa línea ya no está (el técnico la quitó con la pantalla
+    // de la oficina abierta), se rechaza — con el índice, el precio caería en la línea de detrás.
     // No se mezclan con `lineas` a propósito — mezclarlos haría que «esta petición toca precios»
     // fuera una cuestión de mirar dentro de un array, y entonces «mixta» sería opinable.
     if (req.body?.precios !== undefined) {
@@ -448,7 +544,9 @@ router.patch('/:id', async (req: any, res) => {
       const previas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
       const conPrecio = previas.map((l) => ({ ...l }));
       for (const p of req.body.precios) {
-        const i = Number(p?.indice);
+        const i = p?.id === undefined || p?.id === null
+          ? Number(p?.indice)
+          : previas.findIndex((l, j) => idDeLinea(l, j) === String(p.id));
         if (!Number.isInteger(i) || i < 0 || i >= conPrecio.length) {
           return res.status(400).json({
             error: 'precio_sin_linea',
@@ -501,6 +599,80 @@ router.patch('/:id', async (req: any, res) => {
   }
 });
 
+// ───────────────────────────────────────────────────────
+// POST /admin/partes/:id/firmar-tecnico · SCRUM-653
+// ───────────────────────────────────────────────────────
+//
+// 🔴 RUTA PROPIA, no un parámetro de la de arriba. Las dos firmas escriben en columnas distintas
+// y tienen candados distintos; con un `if (esTecnico)` dentro de una sola ruta, el día que una
+// cambie habría que releer las dos para saber a cuál afecta. Además la cola de firmas encamina
+// por TIPO (`firma:parte-tecnico:7`), y un tipo necesita una ruta.
+//
+// ⚠️ AQUÍ NO HAY `firmadoPorCalidad`, y no es un olvido: las seis opciones de `albaranFirmante.ts`
+// existen porque quien firma POR EL CLIENTE puede ser cualquiera —«portero o conserje», «un
+// familiar»—. El técnico es un empleado identificado del merchant; ofrecerle una ranura de
+// «calidad» sería ofrecerle declarar que firma en nombre del cliente.
+router.post('/:id/firmar-tecnico', async (req: any, res) => {
+  try {
+    const found = await findParte(req);
+    if (!found.ok) {
+      return res.status(found.status).json({ error: found.status === 400 ? 'invalid_id' : 'not_found' });
+    }
+    const { parte } = found;
+
+    // Mismo código `parte_locked` que la del cliente: la cola lo trata como ÉXITO al drenar.
+    const ranura = puedeFirmarTecnico(parte);
+    if (!ranura.ok) {
+      return res.status(409).json({ error: 'parte_locked', message: ranura.motivo });
+    }
+
+    const lineas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
+    const sePuede = puedeFirmarse(lineas);
+    if (!sePuede.ok) return res.status(409).json({ error: 'parte_vacio', message: sePuede.motivo });
+
+    const signatureData = String(req.body?.signatureData || '');
+    if (!/^data:image\/(png|jpeg);base64,/.test(signatureData)) {
+      return res
+        .status(400)
+        .json({ error: 'firma_invalida', message: 'La firma debe ser una imagen PNG o JPEG (data-URI base64).' });
+    }
+    if (signatureData.length > FIRMA_MAX_CHARS) {
+      return res
+        .status(413)
+        .json({ error: 'firma_demasiado_grande', message: 'La firma supera el tamaño máximo permitido.' });
+    }
+
+    // El nombre es OBLIGATORIO, con la misma regla que el del cliente (SCRUM-300): el acto de
+    // firmar lo exige aunque la columna sea nullable por las filas viejas.
+    const nombre = exigirNombreFirmante(req.body?.firmadoTecnicoNombre);
+    if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
+
+    // El sello, sólo si no lo había: v:2 sella CONTENIDO, así que firme quien firme primero la
+    // huella es la misma. Recalcularla no la cambiaría, pero reescribirla haría pensar que sí.
+    const contenidoHash = parte.contenidoHash
+      ? parte.contenidoHash
+      : computeParteContentHash(paramsDeSello(parte, lineas), PARTE_CONTENIDO_VERSION_ACTUAL);
+
+    const updated = await prisma.parteTrabajo.update({
+      where: { id: parte.id },
+      data: {
+        // El contenido se congela con la PRIMERA firma, sea de quien sea. Si firma el técnico
+        // primero, el estado pasa a `firmado` aquí y el cliente firma después sobre su ranura.
+        estado: 'firmado',
+        firmadoTecnicoAt: new Date(),
+        firmadoTecnicoNombre: nombre.nombre,
+        signatureTecnicoUrl: signatureData,
+        contenidoHash,
+        contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
+      },
+    });
+    return res.json(serializeParteParaElTecnico(updated));
+  } catch (err: any) {
+    console.error('[POST /admin/partes/:id/firmar-tecnico]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // ── POST /admin/partes/:id/firmar ────────────────────────────────────────────────────────
 router.post('/:id/firmar', async (req: any, res) => {
   try {
@@ -510,11 +682,19 @@ router.post('/:id/firmar', async (req: any, res) => {
     }
     const { parte } = found;
 
-    // 🔴 `parte_locked` es el gemelo de `albaran_locked`, y su código importa: la cola de firmas
-    // lo trata como ÉXITO al drenar. Un reintento cuya petición anterior sí llegó no puede
-    // quedarse dando vueltas en la cola para siempre.
-    if (parte.estado !== 'borrador') {
-      return res.status(409).json({ error: 'parte_locked', message: 'Este parte ya está firmado.' });
+    // 🔴 SCRUM-653 · EL CANDADO PASA A SER POR RANURA, NO POR ESTADO.
+    //
+    // Antes bastaba `estado !== 'borrador'`, y con UNA firma daba igual. Con DOS no: en cuanto el
+    // TÉCNICO firma, el estado ya es `firmado`, y con el candado viejo **el cliente no podría
+    // firmar después** — el segundo firmante se quedaría fuera según el orden, que es justo lo que
+    // `ordenDeFirmaExigido()` dice que NO se exige.
+    //
+    // `parte_locked` se conserva como código: la cola de firmas lo trata como ÉXITO al drenar
+    // (`elServidorYaLaTiene`), así que un reintento cuya petición anterior sí llegó sale de la cola
+    // en vez de dar vueltas para siempre.
+    const ranura = puedeFirmarCliente(parte);
+    if (!ranura.ok) {
+      return res.status(409).json({ error: 'parte_locked', message: ranura.motivo });
     }
 
     const lineas: LineaParte[] = Array.isArray(parte.lineas) ? (parte.lineas as any) : [];
@@ -544,15 +724,15 @@ router.post('/:id/firmar', async (req: any, res) => {
     if (!nombre.ok) return res.status(400).json({ error: nombre.error, message: nombre.message });
 
     const firmadoAt = new Date();
-    // El sello se calcula CON el firmante ya resuelto (las dos ranuras están en el canónico) y SIN
-    // un solo precio: `lineasCanonicasParte` sella bloque, unds y descripción, y nada más.
-    const contenidoHash = computeParteContentHash(
-      paramsDeSello(
-        { ...parte, firmadoPorNombre: nombre.nombre, firmadoPorCalidad: calidad.valor },
-        lineas,
-      ),
-      PARTE_CONTENIDO_VERSION_ACTUAL,
-    );
+    // 🔴 SCRUM-653 · EL SELLO YA NO LLEVA AL FIRMANTE (v:2). Con dos firmas, sellar la identidad
+    // hacía que la huella dependiera de quién firmara primero — ver `contenidoCanonicoParte`.
+    // Se sella el CONTENIDO, y por eso el sello **no se recalcula** cuando firma el segundo.
+    //
+    // ⚠️ Y sólo se sella si NO había sello: si el técnico firmó antes, la huella ya está puesta y
+    // volver a calcularla no puede cambiarla —pero escribirla otra vez haría pensar que sí—.
+    const contenidoHash = parte.contenidoHash
+      ? parte.contenidoHash
+      : computeParteContentHash(paramsDeSello(parte, lineas), PARTE_CONTENIDO_VERSION_ACTUAL);
 
     const updated = await prisma.parteTrabajo.update({
       where: { id: parte.id },
@@ -561,8 +741,11 @@ router.post('/:id/firmar', async (req: any, res) => {
         firmadoAt,
         firmadoPorNombre: nombre.nombre,
         firmadoPorCalidad: calidad.valor,
+        // 🔴 EL TRAZO SE GUARDA. Hasta SCRUM-653 se validaba y se TIRABA: el parte guardaba que
+        // se firmó y quién dijo ser, y no la firma. Defecto de la fase C, arreglado aquí.
+        signatureUrl: signatureData,
         contenidoHash,
-        contenidoVersion: PARTE_CONTENIDO_VERSION_ACTUAL,
+        contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
       },
     });
     return res.json(serializeParteParaElTecnico(updated));

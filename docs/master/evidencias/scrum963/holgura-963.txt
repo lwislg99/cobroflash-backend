@@ -1,0 +1,6 @@
+POBLACIÓN · 100 runs de ci.yml mirados · 98 con la puerta medida · 2 sin ese job · 0 NO PUDE MIRAR
+duración de «build + tests (con banco desechable)» (techo 10 min):
+   p50 6:13 · p95 7:25 · máx 9:16
+   por encima del 80 % del techo (8 min): 1 de 98
+      35317708289 · pull_request · 9:16 · success
+   conclusiones: failure 7 · success 70 · cancelled 21

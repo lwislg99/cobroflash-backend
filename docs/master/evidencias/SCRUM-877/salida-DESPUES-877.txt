@@ -1,0 +1,23 @@
+SUELO DEL CENSO
+  auto-referencias absolutas en los 5 ficheros : 1
+  de ellas, con respaldo (no se tocan)         : 1
+  🔴 a pelo                                    : 0
+  lineas que DERIVAN de config.PUBLIC_BASE_URL : 2
+
+DETALLE
+     src/modules/messaging/domain/lifecycle.service.ts:16
+        const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
+
+MITAD DINAMICA · renderEmailLayout (3 de los 8 enlaces)
+  PUBLIC_BASE_URL puesta a : https://centinela-877.invalid
+  enlaces con yaqu.app     : 0
+  enlaces con el centinela : 3
+  VEREDICTO: ✅ los enlaces SIGUEN la variable
+
+MITAD ESTATICA · los 5 ficheros
+  literales absolutos a pelo que quedan : 0  ✅
+  lineas que derivan de la variable     : 2
+
+  y los DOS que no se tocan, intactos:
+    src/modules/auth/domain/referral.service.ts:55   const base = config.PUBLIC_BASE_URL || 'https://yaqu.app';
+    src/modules/messaging/domain/lifecycle.service.ts:16   const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;

@@ -26,6 +26,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { evaluar, tokenizar, acciones, coincide } from '../.claude/hooks/guard-dangerous.mjs';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const HOOK = path.join(AQUI, '..', '.claude', 'hooks', 'guard-dangerous.mjs');
@@ -249,7 +250,7 @@ test('SCRUM-454 · el junction se comprueba ANTES de seguirlo (SCRUM-429)', (t) 
 // ── 2.c · La autorización, con el mismo diseño que ya existe para `db push` ───────────────────
 
 test('SCRUM-454 · el sentinel autoriza UNA vez y se consume', () => {
-  const sentinel = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-454s-')), 'allow-destructivo');
+  const sentinel = path.join(temporal('yaqu-454s-'), 'allow-destructivo');
   const opciones = { cwd: SUCIO.dir, sentinelDestructivo: sentinel };
   const entrada = llamada('git checkout -- sucio.txt');
 
@@ -263,7 +264,7 @@ test('SCRUM-454 · el sentinel autoriza UNA vez y se consume', () => {
 test('SCRUM-454 · el permiso NO se quema si otra regla bloquea antes', () => {
   // Misma lección que SCRUM-176: una autorización de un solo uso se gasta cuando algo se va a
   // ejecutar, no cuando se mira.
-  const sentinel = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-454t-')), 'allow-destructivo');
+  const sentinel = path.join(temporal('yaqu-454t-'), 'allow-destructivo');
   fs.writeFileSync(sentinel, '');
   const { bloqueado } = evaluar(llamada(`git checkout ${FORCE} -- sucio.txt`), SENTINEL_FALSO,
     { cwd: SUCIO.dir, sentinelDestructivo: sentinel });
@@ -279,7 +280,7 @@ test('SCRUM-454 · 🔴 crear el permiso EN EL MISMO comando no vale', () => {
   // era el error». Ese es el diagnóstico de la sesión que perdió el cuarto trabajo, y es lo que
   // este test sostiene: el hook decide ANTES de que nada se ejecute, así que un `touch` en la
   // misma línea todavía no ha creado nada cuando se juzga.
-  const sentinel = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-454u-')), 'allow-destructivo');
+  const sentinel = path.join(temporal('yaqu-454u-'), 'allow-destructivo');
   const { bloqueado } = evaluar(
     llamada(`touch ${sentinel.replace(/\\/g, '/')} && git checkout -- sucio.txt`),
     SENTINEL_FALSO,

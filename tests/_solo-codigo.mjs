@@ -34,6 +34,94 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import ts from 'typescript';
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL SUELO DE ESTE MÓDULO — SCRUM-694b
+//
+// Este fichero lo importan DECENAS de guards. Eso lo convierte en un punto único de fallo para
+// decenas de protecciones a la vez: si un día devuelve algo peor sin decirlo, no cae un guard,
+// se apagan todos, Y LA TANDA SALE MÁS VERDE QUE NUNCA. Un suelo aquí vale más que un guard.
+//
+// ── LO QUE HABÍA, Y POR QUÉ ERA UN AGUJERO ──────────────────────────────────────────────
+// Las tres funciones empezaban por `String(fuente ?? '')`. O sea: si a `soloCodigo` le llegaba
+// `undefined` —una ruta mal montada, un `match()` que dio `null`, un `leer()` con `try/catch`—
+// devolvía la CADENA VACÍA, y `literalesDe` devolvía la LISTA VACÍA. En silencio.
+//
+// Y ésa es justo la forma del defecto de la casa, porque los guards que llaman aquí preguntan
+// casi siempre en NEGATIVO: «este texto no aparece», «esta cadena no se pinta». Sobre la nada,
+// todas esas preguntas se contestan que SÍ, que todo correcto. **Vacío y no-medido se leen
+// igual y significan lo contrario.**
+//
+// Así que a partir de aquí: si este módulo no puede responder de lo que devuelve, REVIENTA.
+// Un rojo ruidoso se arregla en diez minutos; un verde mudo dura meses.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+/** El fuente, o un error que lo dice. Nunca un vacío de relleno. */
+function exigirFuente(fuente, nombre, quien) {
+  if (typeof fuente === 'string') return fuente;
+  const que = fuente === null ? 'null' : fuente === undefined ? 'undefined' : typeof fuente;
+  throw new TypeError(
+    '🔴 ' + quien + '(' + nombre + '): me han dado `' + que + '`, no un fuente. Antes esto '
+    + 'devolvía ' + (quien === 'soloCodigo' ? 'la cadena vacía' : 'una lista vacía') + ' sin '
+    + 'decir nada, y un guard que pregunta «¿aparece esto?» sobre la nada contesta que NO y da '
+    + 'VERDE. Vacío y no-medido se leen igual y significan lo contrario: mira de dónde sale este '
+    + 'argumento (una ruta que no existe, un `match()` que dio null, un `leer()` que se comió su '
+    + 'error) en vez de rellenarlo con un vacío.');
+}
+
+/**
+ * ¿Puede este módulo responder de lo que acaba de producir? Se comprueba el CONTRATO que la
+ * cabecera de `soloCodigo` promete —misma longitud, mismas líneas, y lo único que cambia son
+ * comentarios convertidos en espacios— porque hasta hoy sólo estaba prometido, no verificado.
+ *
+ * 🔴 Y no es teórico: el defecto de SCRUM-696 era exactamente esto, el scanner leyendo como
+ * comentario el `//` de una URL y blanqueando código real. Salía en verde porque nadie miraba.
+ * Medido el 15-sep-2026 sobre los 1.776 ficheros del árbol: los 1.776 cumplen el contrato, así
+ * que este suelo no inventa un rojo — fija el que ya se cumple para que no se pueda perder.
+ */
+function responderDeLaSalida(fuente, salida, comentarios, nombre) {
+  const yo = '🔴 soloCodigo(' + nombre + ') ha devuelto algo de lo que no puede responder: ';
+  const coda = ' Esto lo usan los guards de toda la casa para decidir qué vigilan, así que una '
+    + 'salida degradada los apaga a todos EN VERDE. Antes de tocar nada, mira si ha cambiado la '
+    + 'versión de `typescript`.';
+
+  if (salida.length !== fuente.length) {
+    throw new Error(yo + 'la salida mide ' + salida.length + ' caracteres y el fuente '
+      + fuente.length + '. El contrato es conservar la longitud, porque los guards acotan bloques '
+      + 'con `slice(indexOf(…))`: si los índices se descolocan, cada uno mide un trozo que no es '
+      + 'el suyo y no se entera.' + coda);
+  }
+  const nf = (fuente.match(/\n/g) || []).length;
+  const ns = (salida.match(/\n/g) || []).length;
+  if (nf !== ns) {
+    throw new Error(yo + 'el fuente tiene ' + nf + ' saltos de línea y la salida ' + ns
+      + '. Los guards cuentan líneas para señalar dónde está el problema.' + coda);
+  }
+  for (let i = 0; i < fuente.length; i++) {
+    if (salida[i] !== fuente[i] && salida[i] !== ' ') {
+      throw new Error(yo + 'en la posición ' + i + ' el fuente dice ' + JSON.stringify(fuente[i])
+        + ' y la salida ' + JSON.stringify(salida[i]) + '. Lo único que puede cambiar es un '
+        + 'comentario convertido en ESPACIO; cualquier otra cosa es el scanner reescribiendo '
+        + 'código.' + coda);
+    }
+  }
+  // ⚠️ AQUÍ NO VA UN «la salida está toda en blanco». Se intentó, y la tanda lo tumbó en el acto:
+  // un fuente que es ENTERAMENTE un comentario tiene que salir entero en blanco, y eso es la
+  // respuesta correcta, no una avería. Lo usan de verdad `scrum713c` y `_cifras-sin-ancla`, que
+  // deriva los comentarios POR DIFERENCIA contra esta salida. Desde dentro del módulo, «lo he
+  // blanqueado todo porque todo era comentario» y «lo he blanqueado todo porque estoy roto» no
+  // se distinguen: quien sí puede distinguirlo es quien llama, que sabe qué le dio. Un suelo que
+  // salta con entrada legítima no es un suelo — es lo que acaba haciendo que alguien lo relaje.
+  // 🔴 «Dejar de ver comentarios» es la avería silenciosa de este módulo: no rompe nada, sólo
+  // deja de limpiar, y entonces los guards vuelven a saltar por su propia documentación —el
+  // impuesto sobre la claridad que motivó SCRUM-693— o peor, dejan de reconocer lo que filtran.
+  if (comentarios === 0 && /^[ \t]*\/\//m.test(fuente)) {
+    throw new Error(yo + 'no ha visto NI UN comentario, y el fuente tiene líneas que empiezan '
+      + 'por `//`. O el scanner ha dejado de reconocerlos, o se le está pasando algo que no es '
+      + 'JavaScript. Las dos cosas devuelven el fuente intacto, que es lo mismo que no filtrar.'
+      + coda);
+  }
+}
+
 /**
  * El fuente con los COMENTARIOS en blanco — no borrados: sustituidos por espacios, y los saltos
  * de línea conservados.
@@ -48,10 +136,12 @@ import ts from 'typescript';
  * @returns {string} el mismo texto con los comentarios en blanco
  */
 export function soloCodigo(fuente, nombre = 'x.js') {
+  const fuenteOk = exigirFuente(fuente, nombre, 'soloCodigo');
   const sc = ts.createScanner(ts.ScriptTarget.Latest, /* skipTrivia */ false,
-    ts.LanguageVariant.Standard, String(fuente ?? ''));
+    ts.LanguageVariant.Standard, fuenteOk);
   let salida = '';
   let clase;
+  let comentarios = 0;
   // 🔴 SCRUM-696 · LA PILA, Y POR QUÉ UNA PLANTILLA NO SE ESCANEA «DE SEGUIDO»
   //
   // `sc.scan()` a secas NO sabe volver a entrar en una plantilla. Ante `` `hola ${x} adiós` ``
@@ -122,6 +212,7 @@ export function soloCodigo(fuente, nombre = 'x.js') {
     const texto = sc.getTokenText();
     const esComentario = clase === ts.SyntaxKind.SingleLineCommentTrivia
       || clase === ts.SyntaxKind.MultiLineCommentTrivia;
+    if (esComentario) comentarios += 1;
     // Los `\n` se conservan: si un comentario de bloque ocupa seis líneas, siguen siendo seis.
     salida += esComentario ? texto.replace(/[^\n]/g, ' ') : texto;
     // La trivia no cuenta como «token anterior»: entre un `(` y el `/` puede haber un salto
@@ -129,6 +220,7 @@ export function soloCodigo(fuente, nombre = 'x.js') {
     const esTrivia = clase >= ts.SyntaxKind.FirstTriviaToken && clase <= ts.SyntaxKind.LastTriviaToken;
     if (!esTrivia) anterior = clase;
   }
+  responderDeLaSalida(fuenteOk, salida, comentarios, nombre);
   return salida;
 }
 
@@ -144,7 +236,8 @@ export function soloCodigo(fuente, nombre = 'x.js') {
  * decir en su rojo CUÁL era el literal que sobra.
  */
 export function literalesDe(fuente, nombre = 'x.js') {
-  const sf = ts.createSourceFile(nombre, String(fuente ?? ''), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const sf = ts.createSourceFile(nombre, exigirFuente(fuente, nombre, 'literalesDe'),
+    ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const textos = [];
   const visitar = (n) => {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) textos.push(n.text);

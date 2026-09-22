@@ -1,0 +1,6 @@
+﻿  base: railway  ·  host reconocido como staging: sí
+  POBLACIÓN: 18 Trabajos en la base.
+  con totalAceptado > 0: 13
+  CANDIDATOS (cobrado > aceptado + 0,02 EUR): 1
+     · job 3102 · merchant 2 · «null» · aceptado 539.05 · cobrado 628.6 · exceso 89.55
+  CONTROL NEGATIVO (cobrado < aceptado, el caso normal): 10

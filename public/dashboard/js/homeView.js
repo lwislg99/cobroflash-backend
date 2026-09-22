@@ -517,9 +517,14 @@ function renderActivity(items) {
     return;
   }
   feed.innerHTML = items.map((item) => {
-    const statusLabel = {
-      draft: "Borrador", sent: "Enviado", accepted: "Aceptado", rejected: "Rechazado",
-    }[item.status] || item.status;
+    // SCRUM-820 · ERA UNA COPIA MÁS DEL MISMO DICCIONARIO, y con CUATRO claves de seis: un
+    // presupuesto `expired` o `pending_approval` salía aquí como `● expired` y `● pending_approval`
+    // —el identificador interno, crudo, en la portada—. Medido, no supuesto.
+    //
+    // Ahora lee de la pieza compartida (`quoteStatusMeta`, api.js), la misma que la lista. Ése es
+    // el arreglo de fondo: la contradicción entre pantallas no se quita alineando dos mapas, se
+    // quita dejando UNO.
+    const statusLabel = window.quoteStatusMeta(item.status).label;
     const statusColor = {
       accepted: "#16a34a", rejected: "#dc2626", sent: "#2563eb", draft: "#6b756f",
     }[item.status] || "#6b756f";

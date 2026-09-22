@@ -1,5 +1,14 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
 import { Router } from 'express';
+import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
+// SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
+// Quién lo ve se PREGUNTA a la política, no se decide aquí.
+import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
+import {
+  normalizarAsignados, escribirAsignadosDeDocumento, leerAsignadosDeDocumento,
+  type ClienteDeAsignacionDeDocumento,
+} from '../../../../core/documentos/asignacionDeDocumento'; // SCRUM-597 (DOC-07)
+
 import { recordAudit, requestIp, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../audit.service'; // A11.1 (S2) · SCRUM-207
 import { requireRole } from '../../../../core/http/authMiddleware'; // A21.3 (S1)
 import { UnpayNotAllowedError } from '../../invoiceAdmin';
@@ -10,6 +19,7 @@ import {
   NO_SE_MARCAN_PAGADAS_EN_LOTE,
   markInvoicePaidAdmin,
   markInvoicePendingAdmin,
+  setInvoiceTags,
 } from '../../invoiceAdmin';
 
 import { BASE_URL } from '../../../../core/config/env';
@@ -18,6 +28,7 @@ import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/doma
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
 import { getDeliveryStatus } from '../../../messaging/domain/whatsappLog.service';
+import { envioDelDocumento } from '../../../billing/domain/envioDelDocumento'; // SCRUM-885b
 // SCRUM-499 · la MISMA lectura del método que Cobros e Informes, y el rótulo del «no consta» que
 // ya vive una sola vez (SCRUM-474, aprobado por el asesor el 10-ago-2026).
 import { metodoDeUnCobro, ROTULO_SIN_METODO } from '../../../billing/domain/metodoDeCobro';
@@ -27,9 +38,12 @@ import { generateInvoicePdf } from '../../../../lib/pdf';
 import { sendWhatsAppTemplate, sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { buildPaymentRequest } from '../../../../integrations/whatsappTemplates';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
-import { normalizePhone } from '../../../../core/utils/utils';
+import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
 import fs from 'fs';
 import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invoicing';
+// SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
+// de un `internal_error`. NO sube el timeout ni toca el cerrojo.
+import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
@@ -37,6 +51,10 @@ import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // 
 import { exigirLineasFacturables, esErrorSinLineas, ERROR_SIN_LINEAS, COPY_ADMIN_SIN_LINEAS } from '../../../invoicing/domain/lineasFacturables'; // SCRUM-246
 import { exigirTiposDeIvaEmitibles } from '../../../../core/validation/tiposIvaEmitibles'; // SCRUM-771
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-289 (C7)
+import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
+import {
+  congelarDesdeFicha, congelarParaRectificativa, clienteDelDocumento,
+} from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
 import {
@@ -58,7 +76,9 @@ router.get('/', async (req, res) => {
     const dateTo   = req.query.dateTo   ? (() => { const d = new Date(String(req.query.dateTo)); d.setHours(23,59,59,999); return d; })() : null;
 
     const invoices = await listInvoicesAdmin(req.merchantId, status, search, dateFrom, dateTo);
-    res.json(invoices);
+    // El listado devuelve la fila ENTERA de `invoices`, y `lines` es una columna: el coste
+    // congelado viajaba también por aquí, no sólo por el detalle.
+    res.json(veEconomiaDelNegocio(req.userRole) ? invoices : sinCosteEnDocumentos(invoices as unknown as Array<Record<string, unknown>>));
   } catch (err) {
     console.error('[GET /admin/invoices]', err);
     res.status(500).json({ error: 'internal_error' });
@@ -106,9 +126,11 @@ router.post('/', requireRole('admin'), async (req, res) => {
 
     // TENENCIA (regla 2): el cliente tiene que ser DE ESTE merchant. Sin esto, un id ajeno
     // emitiría una factura a nombre del cliente de otro — y una factura emitida no se borra.
+    // SCRUM-729 · el `select` se ensancha a los cinco campos que se congelan: aquí el congelado
+    // sale a COSTE CERO, porque esta consulta de tenencia ya se hacía. Ni un viaje más.
     const customer = await prisma.customer.findFirst({
       where: { id: val.customerId, merchantId: req.merchantId },
-      select: { id: true },
+      select: { id: true, name: true, legalName: true, taxId: true, email: true, phone: true },
     });
     if (!customer) {
       return res.status(404).json({ error: ERROR_CLIENTE_INVALIDO, message: 'Ese cliente no existe.' });
@@ -137,6 +159,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         quoteId: null, // ESTO es la factura suelta
         actor: actorDeRequest(req),
         origen: 'C7-suelta', // SCRUM-347: nace sin presupuesto ni albarán detrás (A0.5)
+        clienteCongelado: congelarDesdeFicha(customer), // SCRUM-729 · sin viaje extra
       }),
     );
 
@@ -212,12 +235,41 @@ router.get('/:id', async (req, res) => {
     const waDelivery = await getDeliveryStatus(req.merchantId, 'invoice', id);
     // SCRUM-85: token OPACO para que el frontend construya /pay/invoice sin usar chargeId.
     const payToken = invoice.chargeId ? await ensureChargeReceiptToken(invoice.chargeId, prisma) : null;
-    res.json({ ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken });
+    // SCRUM-597 (DOC-07): quién lleva este documento. Viaja SIEMPRE, y una lista vacía significa
+    // «sin asignar» — que es como está hoy todo lo que existe, y se comporta igual que siempre.
+    const asignados = await leerAsignadosDeDocumento(
+      prisma as unknown as ClienteDeAsignacionDeDocumento, 'invoice', id,
+    );
+    // SCRUM-885b · ¿le llegó al cliente el documento de ESTE cobro? Los mismos hechos que la fila del
+    // trabajo, para que la ficha deje el aviso FIJO: el toast de «Confirmar Bizum» dura 3 s.
+    const envioDocumento = await envioDelDocumentoDeLaFactura(req.merchantId!, invoice.chargeId);
+    const cuerpo = { ...invoice, demo: isDemoMerchant({ id: req.merchantId }), waDelivery, payToken, asignados, envioDocumento };
+    // `sinCosteEnDocumento` tapa TAMBIÉN `quote.lines`: este detalle arrastra el presupuesto de
+    // origen entero (`include: { quote: true }`), y por ahí salía el mismo coste.
+    res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
   } catch (err) {
     console.error('[GET /admin/invoices/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });
+
+/**
+ * SCRUM-885b · `null` si la factura no tiene cobro o su cobro no está pagado: todavía no había nada
+ * que enviar. Sólo lectura, con `select` y filtrado por `merchantId` (regla 2): nada se envía desde aquí.
+ */
+async function envioDelDocumentoDeLaFactura(merchantId: number, chargeId: number | null) {
+  if (chargeId == null) return null;
+  const cobro = await prisma.charge.findFirst({
+    where: { id: chargeId, merchantId }, // regla 2
+    select: { status: true, customer: { select: { email: true } } },
+  });
+  if (cobro?.status !== 'paid') return null;
+  const filasWhatsapp = await prisma.whatsAppMessage.findMany({
+    where: { merchantId, relatedType: 'charge', relatedId: chargeId }, // regla 2
+    select: { status: true, createdAt: true },
+  });
+  return envioDelDocumento({ clienteEmail: cobro.customer?.email, filasWhatsapp });
+}
 
 /**
  * POST /admin/invoices/:id/payment-anomaly — A21.2 (V4/V5)
@@ -424,6 +476,42 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
  * PUT /admin/invoices/:id/status
  * Cambia el estado (pending / paid / expired) – lo usa el botón del BO.
  */
+/**
+ * PUT /admin/invoices/:id/tags — SCRUM-595 (DOC-05) · las etiquetas de la factura.
+ *
+ * 🔴 ESTO NO ABRE UNA PUERTA DE EDICION SOBRE UNA FACTURA EMITIDA (regla 29). Escribe UN campo
+ * que no es el documento —ni numero, ni total, ni lineas, ni sello, ni PDF— y el porque, con sus
+ * medidas, vive junto a `setInvoiceTags` en `invoiceAdmin.ts`. Es la misma familia que
+ * `/:id/pay` o `/:id/status`, que ya escriben sobre facturas emitidas sin tocarlas.
+ *
+ * ⚠️ Y NO ROZA EL GUARD DE SCRUM-289b, que vigila otra cosa: que el ENTRYPOINT DE ALTA
+ * (`POST /`) no edite ni borre, y que la COLECCION no acepte patch/put/delete. Esta ruta va por
+ * `:id`, que es donde ya viven `rectify` y `annul`.
+ */
+router.put('/:id/tags', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
+    // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
+    // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
+    // 400 dice que no se ha guardado; un 200 sobre un borrado accidental, no.
+    const bruto = (req.body ?? {}).tags;
+    if (bruto !== null && !Array.isArray(bruto)) {
+      return res.status(400).json({ error: 'invalid_tags' });
+    }
+    const tocadas = await setInvoiceTags(req.merchantId, id, bruto);
+    if (tocadas === 0) return res.status(404).json({ error: 'invoice_not_found' });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[PUT /admin/invoices/:id/tags]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * PUT /admin/invoices/:id/status
+ */
 router.put('/:id/status', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -624,12 +712,13 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     if (!invoice) return res.status(404).json({ ok: false, error: 'not_found' });
     if (invoice.status === 'paid') return res.status(409).json({ ok: false, error: 'invoice_already_paid' });
 
-    const phone = normalizePhone(invoice.customer?.phone);
+    const phone = canalDeWhatsApp(invoice.customer);
     if (!phone) return res.status(400).json({ ok: false, error: 'customer_missing_phone' });
 
     const customerName = invoice.customer?.name || 'Cliente';
     const merchantName = invoice.merchant?.name || 'tu proveedor';
-    const total        = Number(invoice.total).toFixed(2);
+    // SCRUM-931: la forma de la casa, UNA vez, para la plantilla y para el texto libre de abajo.
+    const importe      = formatMoneyEs(invoice.total, invoice.currency);
     const chargeId     = invoice.chargeId;
     // SCRUM-85: token OPACO — NUNCA el chargeId en la URL pública (el botón real de
     // payment_request_es apunta a /pay/invoice/{{1}}, ver WHATSAPP_TEMPLATES.md §2).
@@ -649,7 +738,8 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
           customerName,
           businessName: merchantName,
           invoiceNumber: invoice.number,
-          amountWithCurrency: `${total} ${invoice.currency}`,
+          amount: Number(invoice.total), // SCRUM-931: en bruto; la forma la da el builder
+          currency: invoice.currency,
           urlToken: payToken as string,
         }),
       });
@@ -664,7 +754,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       const result = await sendWhatsAppText({
         to: phone,
         merchantId: invoice.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${total} ${invoice.currency}* de parte de *${merchantName}*.\n\n¡Gracias!`,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${importe}* de parte de *${merchantName}*.\n\n¡Gracias!`,
         // SCRUM-115: si falla, que la fila de WA-0b quede enlazada a ESTA factura/cliente.
         log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
@@ -924,27 +1014,29 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // que sea positivo: una R1 mueve dinero en la otra dirección, pero lo mueve.
     exigirLineasFacturables(negLines);
 
+    // SCRUM-729 · la R1 HEREDA el destinatario de la factura que rectifica. Fuera de la
+    // transacción, como todos: sólo viaja a la base si la original es anterior al escritor.
+    const clienteCongelado = await congelarParaRectificativa(prisma, original);
+
     const rect = await prisma.$transaction(async (tx) => {
       const number = await allocateInvoiceNumber(tx, req.merchantId, {
         rectifying: true, camino: 'C5', actor: actorDeRequest(req),
       });
-      return tx.invoice.create({
-        data: {
-          merchantId: original.merchantId,
-          customerId: original.customerId,
-          quoteId: original.quoteId,
-          number,
-          total: (-Number(original.total)).toFixed(2),
-          currency: original.currency,
-          lines: negLines,
-          type: 'R1',
-          rectifiesId: original.id,
-          status: 'paid',
-          paidAt: new Date(),
-          pdfUrl: 'PENDING_PDF',
-          qrData: 'PENDING_QR',
-          registerId: null,
-        },
+      return crearFacturaEmitida(tx, clienteCongelado, {
+        merchantId: original.merchantId,
+        customerId: original.customerId,
+        quoteId: original.quoteId,
+        number,
+        total: (-Number(original.total)).toFixed(2),
+        currency: original.currency,
+        lines: negLines,
+        type: 'R1',
+        rectifiesId: original.id,
+        status: 'paid',
+        paidAt: new Date(),
+        pdfUrl: 'PENDING_PDF',
+        qrData: 'PENDING_QR',
+        registerId: null,
       });
     });
 
@@ -1001,6 +1093,10 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: ERROR_SIN_LINEAS, message: COPY_ADMIN_SIN_LINEAS });
     }
     console.error('[POST /admin/invoices/:id/rectify]', err);
+    // SCRUM-728 · el cerrojo de serie no dio turno a tiempo. No es un fallo del servidor ni del
+    // profesional: es cola. La transaccion se deshizo entera —ni documento, ni numero consumido—,
+    // asi que repetir la misma accion unos segundos despues sale bien.
+    if (esCerrojoSaturado(err)) return res.status(ESTADO_CERROJO_SATURADO).json(cuerpoCerrojoSaturado());
     return res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -1055,11 +1151,14 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
         address: merchant.address,
         logoUrl: merchant.logoUrl,
       },
-      customer: {
-        name:  invoice.customer.name,
-        email: invoice.customer.email,
-        phone: invoice.customer.phone,
-      },
+      // SCRUM-729 · el cliente CONGELADO, igual que los otros dos generadores de PDF.
+      //
+      // 🔴 Y aquí faltaba `legalName`, que los otros dos SÍ pasan desde SCRUM-577: la misma
+      // factura salía distinta según por dónde se pidiera el PDF —«Abrir PDF» imprimía la
+      // denominación legal y este botón el nombre comercial—. Es el mismo defecto del ticket por
+      // otra puerta (un destinatario que depende de por dónde se mire), así que entra aquí y no
+      // en un ticket aparte.
+      customer: clienteDelDocumento(invoice, invoice.customer),
       currency: invoice.currency,
       total: invoice.total.toString(),
       qrData,
@@ -1119,6 +1218,65 @@ router.get('/:id/pdf', async (req, res) => {
       });
     }
     return res.status(500).json({ error: 'pdf_generation_failed' });
+  }
+});
+
+/**
+ * PATCH /admin/invoices/:id/asignados — SCRUM-597 (DOC-07) · ASIGNAR USUARIOS AL DOCUMENTO
+ *
+ * Cuerpo: `{ assignedUserIds: number[] }`. Es la MISMA forma que ya manda el selector de los
+ * trabajos (`cuerpoDeAsignacion` en `jobAsignados.js`), y se reutiliza a propósito: dos formas
+ * distintas para la misma idea acaban divergiendo.
+ *
+ * 🔴 ASIGNAR NO ES UN PERMISO. Esta ruta escribe QUIÉN LLEVA el documento; no cambia quién puede
+ * editarlo ni emitirlo, que lo siguen decidiendo el rol y `requireRole` en cada una de esas
+ * rutas. Y tampoco abre la economía: un técnico asignado sigue sin ver coste ni margen, porque
+ * eso lo decide `visibilidadEconomica.ts` por ROL y la asignación no entra en esa pregunta.
+ *
+ * 🔴 Y NO TOCA EL DOCUMENTO (regla 29). Escribe SOLO en la tabla puente. Asignar a una factura
+ * emitida no puede cambiar su número, su total ni su PDF: no hay ninguna escritura que pudiera.
+ *
+ * `requireRole('admin')` por RUTA y no por campo: así entra sola en la red fail-closed de
+ * SCRUM-55, que reconoce el marcador que deja `requireRole` y no sabría ver un `if` dentro del
+ * handler. El criterio es el de S1 —el reparto del trabajo es del admin— y es el mismo que ya
+ * aplica el selector de asignados de los trabajos.
+ */
+router.patch('/:id/asignados', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    // Tenancy ANTES de escribir (regla 2): el id es un entero consecutivo, así que sin esto se
+    // asignarían documentos de otro merchant sabiendo contar.
+    const documento = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true },
+    });
+    if (!documento) return res.status(404).json({ error: 'not_found' });
+
+    const ids = normalizarAsignados(req.body?.assignedUserIds);
+
+    // Cada asignado, comprobado UNO A UNO y dentro del merchant. Comprobar solo el primero
+    // dejaría colar los demás — y con varios asignados eso es la mayoría de la lista.
+    for (const uid of ids) {
+      const miembro = await prisma.teamMember.findFirst({
+        where: { id: uid, merchantId: req.merchantId },
+        select: { id: true },
+      });
+      if (!miembro) return res.status(400).json({ error: 'invalid_assignee' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await escribirAsignadosDeDocumento(tx as unknown as ClienteDeAsignacionDeDocumento, 'invoice', id, ids);
+    });
+
+    const asignados = await leerAsignadosDeDocumento(
+      prisma as unknown as ClienteDeAsignacionDeDocumento, 'invoice', id,
+    );
+    return res.json({ ok: true, asignados });
+  } catch (err) {
+    console.error('[PATCH /admin/invoices/:id/asignados]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

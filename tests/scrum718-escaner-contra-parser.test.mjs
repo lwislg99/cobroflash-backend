@@ -139,9 +139,21 @@ function usuariosDelEscaner() {
 
 // Medido el 4-sep-2026. `scrum387` es carril ajeno y se queda; `_solo-codigo` ya usa además el
 // parser completo; `scrum709` se migró en este ticket y por eso YA NO está en la lista.
+//
+// 🔴 SCRUM-814 (7-sep-2026): `scrum387` SE MIGRA y sale de la lista. No fue una limpieza de paso:
+// fue una avería MEDIDA. Aquel ticket metió un `` $executeRaw`… ${x} …` `` en
+// `quotesAdmin.routes.ts` y el censo de procedencia de scrum387 se quedó CIEGO desde ese punto del
+// fichero — de 143 comentarios vistos pasó a 72, y la marca de aprobación que venía detrás dejó de
+// contarse. Es el mismo defecto que este ticket ya había medido («no sabe si un `/` abre regex o
+// divide»), con otra cara: un template CON SUSTITUCIONES necesita `reScanTemplateToken`.
+//
+// Al migrarlo a `getLeadingCommentRanges` aparecieron OCHO marcas de aprobación sin procedencia
+// que llevaban ocultas (`SIN_PROCEDENCIA` 9 → 17), enumeradas una a una en el propio scrum387.
+//
+// 📌 Y el modo de fallo merece quedar escrito: se manifestó como una BAJADA del número, o sea con
+// la forma de una mejora. Lo cazó la mitad del trinquete que vigila que no baje en silencio.
 const USUARIOS_HOY = Object.freeze([
   'tests/_solo-codigo.mjs',
-  'tests/scrum387-procedencia-aprobacion.test.mjs',
   'tests/scrum718-escaner-contra-parser.test.mjs',   // este fichero, que lo usa para CONTRASTAR
 ]);
 
@@ -150,8 +162,11 @@ test('SCRUM-718 · 🔴 SUELO + CONTROL POSITIVO: el censo encuentra a los que s
   assert.ok(hallados.length > 0,
     '🔴 CIEGO: cero usuarios de `ts.createScanner`, y sabemos que hay al menos dos. El barrido está '
     + 'roto; no es que no haya usuarios.');
-  assert.ok(hallados.includes('tests/scrum387-procedencia-aprobacion.test.mjs'),
-    `🔴 BARRIDO ROTO: no encuentra scrum387, que sabemos que usa el escáner. Halló: ${hallados.join(', ')}`);
+  // El ancla del control positivo era `scrum387`, y SCRUM-814 lo migró. Se mueve a
+  // `_solo-codigo.mjs`, que sigue llamando al escáner — el control necesita un usuario REAL, no
+  // uno histórico: si apuntara a un fichero ya migrado, sería el control el que estaría roto.
+  assert.ok(hallados.includes('tests/_solo-codigo.mjs'),
+    `🔴 BARRIDO ROTO: no encuentra \`_solo-codigo.mjs\`, que sabemos que usa el escáner. Halló: ${hallados.join(', ')}`);
 });
 
 test('SCRUM-718 · el censo de usuarios no crece sin decirlo', () => {

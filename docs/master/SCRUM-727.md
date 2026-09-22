@@ -168,3 +168,118 @@ ternario dan `CI.length`**, así que lee hasta el final del fichero y se conform
 mutación**: se lo quité al job del vigía y el guard siguió **verde**. El día que alguien lo
 convierta en bloqueante, el candado que impide arreglar el problema mergeando se cierra sin que
 ningún guard lo diga. No se toca aquí: es de otro carril.
+
+---
+
+# SCRUM-727b · la lista de Trabajos es una lista, y dice quién la ejecuta
+
+**Medido contra:** `origin/main` = `1304643497934441f88950e441182b7e344dbb57` · 2026-09-04T19:11:47+02:00
+**Medido en:** host `DESKTOP-T5MONF5` · rama `scrum-727-lista-de-trabajos`
+**Carril:** front (lista) + un campo aditivo en el serializer de lista
+
+> ⚠️ **Este fichero lo abrió la sesión de Javier** para el vigía de despliegue, y su contenido de
+> arriba no se toca ni una palabra. El ticket es el mismo número, el trabajo es otro; se anexa
+> aquí porque el guard de SCRUM-273 exige un fichero por ticket, como hizo la sesión 3 con
+> SCRUM-710c.
+
+## PASO 0 — el barrido de las cuatro hermanas
+
+No era «fea»: era **la única que no era una lista**. Medido, no opinado:
+
+| vista | `table-scroll` | `table--cards-mobile` | `col-hide-mobile` | `<thead>` |
+|---|---|---|---|---|
+| Clientes | 1 | 1 | 0 | 1 |
+| Presupuestos | 1 | 1 | 2 | 1 |
+| Albaranes | 1 | 3 | 1 | 1 |
+| Facturas | 1 | 1 | 4 | 1 |
+| **Trabajos** | **0** | **0** | **0** | **0** |
+
+Así que no se estrena componente: se copia el que existe, con sus clases de celda, que son las que
+la hoja convierte en card por debajo de 640 px.
+
+## El dato que faltaba, y por qué `assignedUserId` no valía
+
+El serializer de lista devolvía 19 claves y ninguna era `asignados`. Lo único que viajaba era
+`assignedUserId`, **el espejo del PRIMER asignado** — la columna escalar «solo sabe guardar uno»
+(`asignacionDeTrabajo.ts`). 🔒 **Un Trabajo con tres técnicos que enseña uno no está incompleto:
+está mintiendo con cara de estar bien**, y desde la pantalla no hay forma de notarlo.
+
+Se añade `asignados` **en lote**: una consulta con `in` sobre los ids de la página, agrupada
+después. La objeción que el propio código dejó escrita —«sería una consulta por Trabajo, el N+1
+que SCRUM-58 quitó midiendo 2910 ms contra 1270»— era correcta, y se cumple en vez de discutirla.
+`assignedUserId` **no se toca ni se retira**: aditivo, como los ALTER. Cero cambios en el esquema:
+el dato ya existía, solo que no se pedía.
+
+## Lo que casi se pierde por el camino
+
+- **Los grupos.** Su cabecera lleva el importe de «Terminados» y su salvedad, que son microcopy
+  aprobada (SCRUM-428). Una tabla admite varios `<tbody>`: se agrupa sin dejar de ser una fila por
+  trabajo.
+- **Las transiciones.** `jobDetailView.js` tiene **cero** —ni agendar, ni empezar, ni terminar, ni
+  cerrar— y `scheduledAt` no aparece ni una vez: esta lista era el ÚNICO sitio del producto donde
+  se agenda un Trabajo. Sacar el `datetime-local` a pelo habría borrado la función. Se van al «⋯»
+  y «Agendar» abre el modal de la casa.
+- **El cierre.** Se abre en el modal con `CIERRE_TEXTOS` entero y literal: cambia el sitio, no una
+  palabra. Aquí el riesgo no es el clic accidental, es no entender lo que se hace.
+
+## El candado
+
+🔒 **Una acción que modifica datos no puede dispararse con el mismo gesto con el que se navega.**
+Abrir el Trabajo es un clic en la fila; asignar es entrar en el «⋯» y confirmar en un modal, y al
+guardar **dice a quién ha dejado asignado**. Dos gestos distintos, y el segundo se ve.
+
+## Dos defectos que sólo se vieron mirando la captura
+
+1. **Dos botones con el mismo rótulo.** `jobNextAction` devuelve `💰 Cobrar el resto (importe)`
+   para un terminado con saldo — la misma cadena que el botón de ejecutar—, así que la fila sacaba
+   el par: uno navegaba y otro cobraba, sin forma de distinguirlos. Se queda el que **ejecuta**.
+2. **El nombre del cliente cortado a media palabra.** Medido: no se solapaba con el importe (hay
+   12 px de hueco), pero la tabla hereda `white-space: nowrap` y en la card de 390 px se leía
+   «Cliente con nombre largo número 24.820,50 €» como una sola cadena. En una card el nombre del
+   cliente es el identificador de la fila.
+
+## Un cambio de diseño que salió de medir, no de opinar
+
+El filtro ofrecía sólo a los técnicos **que ya tienen trabajos**. Con eso, «¿qué tiene Nadia esta
+semana?» no se podía ni preguntar — y ésa es literalmente la pregunta del ticket. Ahora ofrece a
+todo el equipo: **«ninguno» también es una respuesta**.
+
+## Controles (la suite verde no vale)
+
+Navegador real, `page.setViewport` (nunca `--window-size`), a 390 y a 1280:
+
+- **Cero scroll horizontal** con 19 trabajos y con 1, en los dos anchos.
+- **Nada se sale del ancho**: 0 elementos.
+- **Suelo de no-pérdida**: 16 filas + 3 en el grupo plegado = 19.
+- 🔴 **El control que decide**: un trabajo con TRES sale «Israel, Miguel, Jesús L.»; uno con CERO
+  dice «Sin asignar».
+- ✅ **Positivo**: las cuatro listas hermanas, huella sha256 **idéntica** a la de antes de empezar,
+  y el diff de la hoja es **101 líneas añadidas y 0 borradas** — ningún selector existente se
+  modifica, así que no pueden haber cambiado.
+- ✅ **Negativo del filtro**: filtrando por un técnico sin trabajos quedan **0 filas** y lo dice.
+- ✅ **Negativo de la asignación**, corrido: el clic en la fila navega a `jobs-detail` y deja
+  **0 PATCH**. Abrir no asigna.
+- ✅ **Suelos**: con cero trabajos lo dice; con cero técnicos asignables, también.
+
+## Tres guards que se pusieron rojos, y ninguno se relajó
+
+- **SCRUM-344** ancló su inyección en `jobCard`, que pasó a llamarse `jobRow`. Falló **diciendo que
+  no encontraba dónde inyectar** en vez de pasar en verde sin probar nada: se actualiza el ancla.
+- **SCRUM-412** exigió declarar los cuatro `btn-primary btn-sm` nuevos. Declarados uno a uno, y de
+  paso con nombre propio: dos se llamaban `ok` y habrían compartido clave en la lista, tapándose.
+- **SCRUM-644** tiene techo 2 de `.message` crudos en este fichero y yo dejaba 3. **Un trinquete
+  solo baja**: los tres caminos pasan ahora por un único punto. ⚠️ Eso reduce la superficie, no la
+  cura — por esa rendija sigue pudiendo salir un identificador del servidor, y traducirlo es otro
+  ticket.
+
+## Hallazgos abiertos (regla 37)
+
+1. **`jobCierreSection` conserva 4 `style.cssText`** heredados. No se reescribe aquí: es la UI
+   aprobada del cierre y mezclarla con este ticket sería tocar dos cosas a la vez.
+2. **`JOB_STATE_META.pill`** ya no lo usa nadie: los colores del estado viven ahora en la hoja. Se
+   deja el dato en su sitio para no tocar una estructura que otros ficheros podrían leer.
+
+## Cierre
+
+`npm run build` → 0 · `npm test` **5201 tests, 0 fallos** · `guards-entrada` 4/4 ·
+`guards-visuales` **9/9**. Sin dependencias nuevas. Sin un `style=` en línea en lo reescrito.

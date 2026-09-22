@@ -126,13 +126,28 @@ test('SCRUM-769 · 🔴 SUELO: NINGUNA vista con botón de crear DESAPARECE del 
   // Se cierra ENUMERANDO: una vista que se cae del censo se nombra, en vez de restarse de un
   // total. Es la misma lección de SCRUM-411 aplicada a la otra mitad del censo.
   // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // ═══ SCRUM-823 · SALE `renderJobDetailView`, Y LA CAUSA ESTÁ MEDIDA ═══════════════════════
+  //
+  // Este suelo nombraba tres causas posibles para una baja (no parsea · le quitaron el botón · lo
+  // renombraron). Ésta es una CUARTA y por eso se escribe: **el detalle nunca tuvo un botón de
+  // crear propio**. Medido montando la vista con el banco: su «+ Nuevo albarán» de la sección de
+  // albaranes es `btn-secondary btn-sm`, y el único `.btn-primary` de la pantalla es «Consolidar
+  // seleccionados». Lo que el censo contaba era el **CTA del héroe**, que decía «+ Nuevo albarán»
+  // porque la escalera caía a su nivel 5 con un fixture cuyo `status` es `undefined`.
+  //
+  // SCRUM-823 hace que la escalera no proponga documentos en un estado que no los admite, así que
+  // con un `status` desconocido devuelve `null` y el CTA no se pinta. El detalle sale de aquí
+  // porque deja de tener un primario que diga «nuevo», NO porque se haya roto: su fichero parsea
+  // (comprobado con `ts.createSourceFile` y con `node --check`) y la vista sigue montando 73 nodos.
+  //
+  // 🔴 Y NO SE PIERDE VIGILANCIA: un detalle no es una lista con botón de crear, así que nunca le
+  // tocó atajo «N» y no está entre las seis que el SUELO de arriba exige por nombre.
   const c = await censar();
   assert.deepEqual(c.conCrear, [
     'renderAlbaranesView',
     'renderCustomersView',
     'renderExpensesView',
     'renderInvoicesView',
-    'renderJobDetailView',
     'renderJobsView',
     'renderProductsView',
     'renderProvidersView',
@@ -157,12 +172,14 @@ test('SCRUM-768 · 🔴 la lista de vistas con botón de crear y SIN atajo no CR
   // Las TRES que quedan no lo tienen, y está medido:
   //   · `renderProductsView` y `renderProvidersView`: su botón primario es el SUBMIT de un
   //     formulario en línea siempre visible. La «N» intentaría crear con lo que hubiera escrito.
-  //   · `renderJobDetailView`: su botón primario es el CTA del héroe, cuya etiqueta la decide la
-  //     escalera de `jobNextAction` según el estado del Trabajo — hoy «+ Nuevo albarán», mañana
-  //     «Cobrar el resto». La «N» dispararía lo que tocase, incluido un cobro.
-  // Los tres esperan decisión: no se inventa aquí.
+  // 🔻 SCRUM-823 · BAJA DE TRES A DOS: sale `renderJobDetailView`. Su «botón primario de crear»
+  // era el CTA del héroe diciendo «+ Nuevo albarán» porque la escalera caía a su nivel 5 con un
+  // fixture sin `status`. Desde SCRUM-823 la escalera no propone documentos en un estado que no
+  // los admite, así que ahí ya no hay primario que diga «nuevo». **No es que se le haya dado el
+  // atajo**: es que deja de ser candidata, y su motivo de siempre —atar la «N» a lo que decida la
+  // escalera— sigue en pie por si vuelve.
+  // Las dos que quedan esperan decisión: no se inventa aquí.
   assert.deepEqual(c.sinAtajo, [
-    'renderJobDetailView',
     'renderProductsView',
     'renderProvidersView',
   ],
@@ -181,22 +198,35 @@ test('SCRUM-768 · 🔴 la lista de vistas con botón de crear y SIN atajo no CR
     + 'mano diciéndolo— o el censo ha dejado de encontrar botones de crear.');
 });
 
-test('SCRUM-768 · una de las tres NO es una lista, y se dice en vez de esconderse', async () => {
+test('SCRUM-768 · la ficha de Trabajo NO es una lista, y por qué ya no sale en el censo', async () => {
   const c = await censar();
-  // `renderJobDetailView` es la ficha de un Trabajo, no una lista. Aparece en el censo porque el
+  // `renderJobDetailView` es la ficha de un Trabajo, no una lista. Aparecía en el censo porque el
   // criterio es «vista con botón primario de crear», que es lo que se puede derivar; «lista» no lo
   // es sin una lista escrita a mano, que es lo que no se quiere.
   //
-  // 🔴 SCRUM-769 · Y AL IR A DARLE EL ATAJO SE MIDIÓ QUE TIENE **DOS** BOTONES «+ Nuevo albarán»:
-  //   · el PRIMARIO es el CTA del héroe, y su etiqueta la escribe `jobNextAction.js:67` —una de
-  //     las seis de la escalera aprobada—, así que dice «+ Nuevo albarán» sólo mientras el Trabajo
-  //     esté en ese peldaño. En otro dice «Cobrar el resto», que mueve dinero.
-  //   · el que DA DE ALTA de verdad es `jobDetailView.js:1157`, y es `btn-secondary btn-sm`.
-  // Por eso este censo lo sigue viendo y por eso NO se le ha registrado atajo: hacerlo ataría la
-  // «N» a lo que decida la escalera. Espera decisión.
-  assert.ok(c.sinAtajo.includes('renderJobDetailView'),
-    '🔴 `renderJobDetailView` ha salido del censo. Si se le ha registrado atajo, quítalo también '
-    + 'de la lista de arriba y de esta nota, los dos en el mismo commit.');
+  // 🔴 SCRUM-769 midió que tenía **DOS** botones «+ Nuevo albarán»:
+  //   · el PRIMARIO era el CTA del héroe, cuya etiqueta escribe la escalera — así que decía
+  //     «+ Nuevo albarán» sólo mientras el Trabajo estuviera en ese peldaño. En otro dice «Cobrar
+  //     el resto», que mueve dinero. Por eso NO se le registró atajo: la «N» dispararía lo que
+  //     tocase.
+  //   · el que DA DE ALTA de verdad es `btn-secondary btn-sm`, y ése SIGUE AHÍ.
+  //
+  // 🔻 SCRUM-823 · Y AHORA NI SIQUIERA SALE. La escalera dejó de proponer documentos en un estado
+  // que no los admite, y el fixture del banco monta la ficha sin `status`, así que el CTA no se
+  // pinta y el único `.btn-primary` de la pantalla pasa a ser «Consolidar seleccionados».
+  //
+  // Se invierte la afirmación en vez de retirar el test: lo que hacía falta saber —que el atajo
+  // NO se le ata a un rótulo que decide la escalera— sigue haciendo falta el día que vuelva.
+  assert.equal(c.sinAtajo.includes('renderJobDetailView'), false,
+    '🔴 `renderJobDetailView` ha VUELTO al censo de «botón de crear sin atajo».\n'
+    + '  Antes de darle la «N», mira QUÉ dice hoy su primario: si lo escribe la escalera, el atajo\n'
+    + '  quedaría atado a lo que ella decida — incluido un cobro. Es la razón por la que nunca se\n'
+    + '  le dio, y sigue siendo válida.');
+  // Y el suelo de esta afirmación: que el censo siga VIENDO la ficha como vista montada. Si
+  // desapareciera de la población entera, este `false` sería cierto por no haber mirado.
+  assert.equal(c.ciegas.includes('renderJobDetailView'), false,
+    '🔴 la ficha de Trabajo ya no se monta en el banco: entonces «no está en el censo» no\n'
+    + '  significa nada. Una vista que no se mira no es una vista sin defectos.');
 });
 
 // ═══ ③ EL DETECTOR REACCIONA — control positivo y negativo, sin tocar el árbol ════════════════

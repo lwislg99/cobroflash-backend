@@ -19,12 +19,17 @@ import {
   type Codificacion, type CampoCliente,
 } from '../../domain/importarClientes.service';
 
+import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
+import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
+
 const router = Router();
 
 router.get('/', async (req, res) => {
   try {
     const search = req.query.search ? String(req.query.search) : undefined;
-    const customers = await listCustomers(req.merchantId, search);
+    // SCRUM-979: el técnico ve la cartera entera, pero su «Última visita» sale solo de SUS trabajos.
+    const customers = await listCustomers(req.merchantId, search,
+      seesOnlyOwnJobs(req.userRole) ? { soloTrabajosDe: req.teamMemberId ?? null } : {});
     res.json(customers);
   } catch (err) {
     console.error('[GET /admin/customers]', err);
@@ -107,6 +112,10 @@ router.post('/', async (req, res) => {
     res.status(201).json(customer);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
+    // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
+    // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
+    if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
     console.error('[POST /admin/customers]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -122,6 +131,10 @@ router.put('/:id', async (req, res) => {
     res.json(updated);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.errors });
+    // SCRUM-576 (CONT-03): un vínculo de empresa que no se sostiene —no existe, es de otro
+    // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
+    // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
+    if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
     console.error('[PUT /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }
@@ -225,6 +238,30 @@ router.post('/import', requireRole('admin'), async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/customers/:id/historial — SCRUM-980 · el historial de TRABAJO del cliente (hermana de
+ * `/detail`, que trae presupuestos y facturas). `?despuesDe=<jobId>` pide la página siguiente.
+ * La lógica, con su tenencia y el recorte del técnico, vive en `historialDelCliente`.
+ */
+router.get('/:id/historial', async (req: any, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const despuesDe = req.query.despuesDe === undefined ? null : Number(req.query.despuesDe);
+    if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
+      return res.status(400).json({ error: 'invalid_cursor' });
+    }
+    const opciones: { despuesDe: number | null; soloTrabajosDe?: number | null } = { despuesDe };
+    if (seesOnlyOwnJobs(req.userRole)) opciones.soloTrabajosDe = req.teamMemberId ?? null;
+    const historial = await historialDelCliente(req.merchantId, id, opciones);
+    if (!historial) return res.status(404).json({ error: 'not_found' });
+    return res.json(historial);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/historial]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // GET /admin/customers/:id/detail — vista 360: historial completo del cliente
 router.get('/:id/detail', async (req, res) => {
   try {
@@ -233,7 +270,21 @@ router.get('/:id/detail', async (req, res) => {
 
     const customer = await prisma.customer.findFirst({
       where: { id, merchantId: req.merchantId },
-      select: { id: true, name: true, phone: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true },
+      // SCRUM-590 (CONT-19): `mobile` también aquí — este `select` es distinto del de
+      // `customerAdmin.ts` y alimenta la ficha 360. Sin él, la ficha enseñaría el fijo y
+      // callaría el número por el que de verdad se le escribe al cliente.
+      // SCRUM-983: y los seis con los que el modal «Editar» de la ficha RELLENA sus controles. Sin
+      // ellos el modal los pintaba vacíos y, al guardar sólo la nota, los BORRABA (medido en
+      // staging el 21-sep-2026). Lo vigila `tests/scrum983-la-ficha-360-carga-lo-que-edita`.
+      select: {
+        id: true, name: true, phone: true, mobile: true, email: true, notes: true, portalToken: true, createdAt: true, waOptOut: true,
+        taxId: true,
+        legalName: true,
+        companyId: true,
+        contactKind: true,
+        tipoDestinatario: true,
+        billingPeriodicity: true,
+      },
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
