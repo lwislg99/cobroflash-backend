@@ -115,6 +115,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,
+  // SCRUM-1059: las acciones masivas de etiquetado. Necesita banco porque vigila la TENENCIA (un
+  // id de otro merchant no se toca) y que se relee igual tras la escritura (quinto eslabón,
+  // SCRUM-580). La mitad pura (`aplicarEtiquetaMasiva`) no necesita base y corre siempre.
+  'scrum1059b-etiquetado-masivo-postgres.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
