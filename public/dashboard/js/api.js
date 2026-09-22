@@ -1389,6 +1389,19 @@ function contactoDelCliente(c) {
 }
 window.contactoDelCliente = contactoDelCliente;
 
+// SCRUM-1004 (CRM-04) · la URL de «abrir en mapa» por dirección, para la ficha del cliente.
+// Sin proveedor de mapas nuevo (regla del ticket): Google Maps por búsqueda de texto, sin clave.
+//
+// ⚠️ MISMA FÓRMULA que `jobRailBlocks.js` (el carril del Trabajo), a propósito NO compartida: ese
+// fichero es funciones puras sin ninguna dependencia —se `require()` a pelo en
+// `tests/scrum424-donde-tiene-dato.test.mjs`, sin `window` ni bundler— y engancharlo a un global
+// de `api.js` le rompería esa garantía por una fórmula de una línea. Si el proveedor cambia algún
+// día, se cambia en los dos sitios.
+function hrefAbrirEnMapa(direccion) {
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(direccion);
+}
+window.hrefAbrirEnMapa = hrefAbrirEnMapa;
+
 // -------- Admin – Merchant --------
 
 function getMerchantProfile() {
