@@ -256,6 +256,36 @@ camino de la rectificativa se dejó sin decidir a propósito hasta esta respuest
 **Si no se contesta:** una R1 sigue usando los datos vigentes del merchant al rectificar, no los de
 la factura original.
 
+## F17 · El PRODUCTOR del SIF, ¿puede ser DOS personas físicas?
+
+**Para el asesor:** El bloque `SistemaInformatico` de cada registro tiene un solo campo de productor
+(un nombre, un NIF). Javier: "de momento nadie, pero seremos los dos [con Luis Lara Granado], más
+bien la empresa que conformemos dentro de poco"; "si hace falta uno para pruebas me pongo yo, pero el
+día que haya algo real será como empresa". (1) ¿Puede una declaración responsable del art. 13 RRSIF
+nombrar a dos personas físicas como productor conjunto? (2) ¿Puede el productor ser una comunidad de
+bienes mientras no exista la sociedad? (3) Si una sola persona física firma como productor (para
+pruebas), ¿qué responsabilidad asume frente a la otra, no nombrada? (4) Al constituir la sociedad,
+¿hay que reemitir la declaración responsable con el nuevo productor, conservando la anterior?
+**Desbloquea:** rellenar `docs/legal/DECLARACION_RESPONSABLE.md` §1 (Productor del sistema).
+**Si no se contesta:** el documento sigue con placeholders sin rellenar en el campo de productor.
+
+## F18 · 🔴 La huella sella el REGISTRO — ¿también el PDF entregado tiene que ser inmutable?
+
+**Para el asesor — la más urgente de las dos de hoy, bloquea una decisión de diseño ya:** el PDF de
+una factura se REGENERA con el código actual cada vez que falta en disco (el disco de Railway es
+efímero entre despliegues; `ensureInvoicePdf` en `src/lib/invoicing.ts`). Los DATOS que entran ya
+están congelados (columna congelada del emisor, no ficha viva — SCRUM-665/729); el DISEÑO
+(plantilla/maquetación) sale del código TAL COMO ESTÁ HOY, no como estaba el día de la emisión. (1) La
+huella encadenada sella el registro (los datos) — ¿exige la norma que el documento entregado sea
+también el mismo bit a bit, o basta con que los datos coincidan con el registro sellado? (2) La copia
+que el expedidor debe conservar (art. 19 ROF) — ¿del documento tal como se entregó, o basta con poder
+reconstruirlo desde los datos? (3) Si hace falta el documento inmutable, ¿basta con archivar el PDF de
+la emisión, o hay que versionar también la plantilla/el motor de generación?
+**Desbloquea:** elegir entre archivar el PDF, versionar la plantilla, las dos cosas, o asumir que solo
+el registro necesita ser inmutable — ninguna de las cuatro se construye sin esta respuesta.
+**Si no se contesta:** el PDF sigue regenerándose con el diseño vigente en cada descarga que falte en
+disco, sin garantía de reproducir el documento del día de la emisión.
+
 ---
 
 # 2 · Asesor MERCANTIL / SOCIETARIO (contratos, consumo, estructura de empresa)
@@ -381,10 +411,10 @@ bundle Y3.
 
 ## Contador — para que cuadre con `PREGUNTAS_ASESOR.md`
 
-**16 preguntas fiscales** (F1-F16, dos de ellas agrupan varias sub-preguntas del original: F4 agrupa
+**18 preguntas fiscales** (F1-F18, dos de ellas agrupan varias sub-preguntas del original: F4 agrupa
 las preguntas 14-24 de la sección F, y F14 agrupa las cinco del bloque 21; F16 es P18 del expediente,
-añadida el 22-sep-2026) + **5 mercantiles** (M1-M5) + **3 de protección de datos** (P1-P3) = **24
-preguntas de envío**, que cubren las ~40 preguntas y sub-preguntas numeradas del expediente original.
-Los números no coinciden a propósito: el expediente original numera cada matiz técnico por separado;
-este documento agrupa por la decisión legal real que hay debajo, que es lo que un asesor necesita ver
-de una vez.
+añadida el 22-sep-2026; F17 y F18 son P19 y P20, añadidas el 23-sep-2026 — SCRUM-1087) + **5
+mercantiles** (M1-M5) + **3 de protección de datos** (P1-P3) = **26 preguntas de envío**, que cubren
+las ~42 preguntas y sub-preguntas numeradas del expediente original. Los números no coinciden a
+propósito: el expediente original numera cada matiz técnico por separado; este documento agrupa por
+la decisión legal real que hay debajo, que es lo que un asesor necesita ver de una vez.
