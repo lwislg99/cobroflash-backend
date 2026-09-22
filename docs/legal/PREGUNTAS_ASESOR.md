@@ -833,3 +833,74 @@ la factura, o cuando pida su borrado?
 **Bloquea:** cualquier construcción futura de un flujo de supresión/portabilidad por cliente final
 (hoy no existe ninguno) y la revisión de J4 sobre la entrega a la gestoría (decisión pendiente,
 `dos-equipos.md` §7, datos de clientes salen a un tercero).
+
+---
+
+# Q-C1…Q-C9 · Contabilidad para un autónomo de oficio (bloquea CON-08/09, `docs/producto/CONTABILIDAD.md` §4)
+
+> **Propuesta de S0, 22-sep-2026 (SCRUM-1039/CON-03) — dueño J4: pendiente de tu visto bueno.**
+> Nacen de `docs/producto/CONTABILIDAD.md` §1 y §3: el diseño del bloque de Contabilidad leyó el
+> código y dedujo qué hace falta, y cada regla fiscal que usa lleva su cita oficial comprobada por
+> script (`docs/verificacion/comprobar-citas-contabilidad.mjs`, 26/26 citas literales, control
+> negativo OK). **Q-C5 y Q-C9 se responden abajo con esa cita** — se dejan aquí para que las
+> confirmes o las corrijas, no porque falte la fuente. El resto sigue abierto.
+
+**Q-C1.** Reforma de vivienda al 10 % (LIVA art. 91.Uno.2.10º, letras b y c — citas en
+`CONTABILIDAD.md` §3): ¿cómo debe documentarse «más de dos años» desde el fin de obra, y cómo se
+aplica cuando el destinatario es una comunidad de propietarios? Y confirmar que la regla del 40 % de
+materiales se calcula sobre el total de la operación, no por línea.
+
+**Q-C2.** Inversión del sujeto pasivo en obra (LIVA art. 84, letra f — cita en §3): ¿cómo debe verse
+reflejado en la factura, y qué hace a alguien «promotor» o «contratista» a efectos prácticos para un
+oficio que subcontrata o es subcontratado?
+
+**Q-C3.** Suplidos (LIVA art. 78.Tres.3º — cita en §3): ¿cómo se acredita el «mandato expreso» del
+cliente en la práctica de un oficio (una tasa de licencia, un permiso de obra)? ¿Y cómo se muestran
+en la factura sin que se confundan con una línea de servicio?
+
+**Q-C4.** Recargo de equivalencia (LIVA art. 161 — cita en §3): el código ya tiene los tres tipos
+(21→5,2 % · 10→1,4 % · 4→0,5 %) marcados «pendiente de confirmación». ¿Confirmas el mapeo? ¿Y en qué
+casos un cliente de un oficio (persona física comerciante minorista) está sujeto a él?
+
+**Q-C5.** ✅ **RESPONDIDA por cita, pendiente de tu confirmación.** Las retenciones del 2 % y el 1 %
+que admite `retencionIrpf.ts:54` son RIRPF art. 95.4-6: el **1 %** es para actividades en
+**estimación objetiva (módulos)** de una lista cerrada de epígrafes IAE que incluye literalmente
+fontanería/climatización (504.2-3), albañilería (501.3), carpintería/cerrajería (505.5) y pintura
+(505.6) — coincide con los oficios de YaQu. El **2 %** es agrícola/ganadera/forestal (95.4-5) — no
+un oficio de YaQu. Preguntamos: ¿tiene sentido ofrecer el 1 % como opción en YaQu (para quien esté
+en módulos), o el perfil de usuario de YaQu está mayoritariamente en estimación directa (15/7 %) y
+el 1 %/2 % sobran? Y en cualquier caso, ¿cuándo NO retiene el cliente particular (solo retienen
+empresas/profesionales, nunca un consumidor final)?
+
+**Q-C6.** Criterio de caja: `paidAt` es la fecha en que alguien MARCÓ el cobro, no necesariamente la
+fecha real en que entró el dinero (detalle y advertencia ya en el código,
+`criterioCaja.ts`/`devengoPorCaja.ts`). ¿Es una aproximación aceptable para un RECC, o hace falta la
+fecha real del apunte bancario? Mientras no haya respuesta, el módulo clasifica y avisa; no liquida
+ningún 303 (sin llamadores).
+
+**Q-C7.** Los tipos de IVA 2, 5 y 7,5 % que el servidor admite (`fiscalInput.ts:35`) no aparecen en
+los arts. 90-91 LIVA citados en §3 (que solo dan 21/10/4 %). ¿Se retiran del selector, o corresponden
+a un supuesto (transitorio, territorial — Canarias/IGIC no es IVA) que haya que documentar aparte?
+
+**Q-C8.** Plazos trimestrales. **Parcialmente respondida:** el modelo 303 trimestral tiene su plazo
+citado en §3 (Orden EHA/3786/2008, art. 7.2 — 20 primeros días del mes siguiente, salvo el 4T que son
+los 30 primeros días de enero). **Sigue sin localizar:** los plazos y las órdenes de aprobación de
+130/131 (pago fraccionado IRPF), 111 (retenciones trabajo/profesional), 115 (retenciones alquiler),
+347 (operaciones con terceros) y 390 (resumen anual IVA). ¿Coinciden con el mismo patrón (20 días /
+30 en enero), o alguno tiene un calendario distinto?
+
+**Q-C9.** ✅ **RESPONDIDA por cita, pendiente de tu confirmación.** Se revisó LIVA art. 7 completo
+(los 12 supuestos de no sujeción: transmisión de negocio, muestras gratuitas, relación laboral,
+Administraciones Públicas, cesiones de dinero…) y art. 20.Uno, encabezado + los 5 primeros apartados
+de una lista más larga (postal universal, sanidad, profesiones médicas/sanitarias). **Ninguno de los
+revisados aplica** a la venta ordinaria de un servicio de reforma/instalación de un oficio. No se
+transcribió el resto de 20.Uno (~30 apartados más: educación, financiero, seguros, alquiler de
+vivienda…) por no ser candidatos plausibles. **Pregunta:** ¿conoces algún supuesto real de un oficio
+de YaQu (electricista, fontanero, reformista, pintor, cerrajero, climatización) que caiga en una
+exención o no sujeción del resto de la lista? Si la respuesta es «ninguno», Exento/No sujeto puede
+quedar fuera del selector de tipos de IVA en vez de construirse sin caso de uso.
+
+**Fuentes citadas arriba, con SHA-256 de la descarga y método de comprobación:**
+`docs/producto/CONTABILIDAD.md` §8. Los ficheros HTML no están en git (se vuelven a bajar de las
+direcciones de esa tabla); el comprobador con control negativo es
+`docs/verificacion/comprobar-citas-contabilidad.mjs`.
