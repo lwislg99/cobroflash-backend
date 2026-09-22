@@ -292,3 +292,47 @@ población fiable; la lectura completa sí.
 
 Jira **SCRUM-1029** (`equipo-javier`, `area-j3`), En curso, asignado a Javier. El censo y la propuesta
 de arriba están también en su descripción.
+
+## 11 · Construcción del GATEADO (22-sep-2026, jv-j3, segunda pasada) — sin tocar copy fiscal
+
+**Medido contra:** `origin/main` = `1f92f5733359880115b3f76824d38db25bef56e0` · 2026-09-22T08:33:54Z ·
+**Rama:** `scrum-1025-1029-checklist-modoemision`
+
+Encargo del orquestador: condicionar las 5 superficies por el modo de emisión, reusando el patrón
+YA aprobado de `weeklyDigest.service.ts` (SCRUM-974) — **ocultar, no redactar**. El texto sustituto
+que vería el profesional en su lugar es fiscal y lo firma Javier; no se escribe en este PR.
+
+**Mecanismo reusado, no reinventado:** en el navegador, `window.appModoEmision` (`app.js:51-52`,
+derivado de `modoEmisionVisible()`/`getEmissionMode`, ya consumido por `settingsView.js:201` y
+`albaranAccion.js:66` — no hay una segunda fuente). En el servidor, `getEmissionMode(merchant)` de
+`emission.service.ts`, igual que `weeklyDigest.service.ts:113`.
+
+| superficie | qué se ocultó | qué queda igual |
+|---|---|---|
+| A · `settingsView.js` `renderReadinessCard` | la tarjeta «Tu cuenta, lista para cobrar» **entera**, si `appModoEmision === 'receipt'` | nada se pinta — no hay fila con texto a medias |
+| B · `onboardingView.js` Paso 2 | solo el bloque de vista previa («Tu primera factura con YaQu será…», `#ob-serie-previa`) | la pregunta de continuidad de serie y el guardado (`POST /admin/onboarding/serie`) siguen funcionando, para cuando SIF-1 llegue |
+| C · `tutorial.js` `TUTORIAL_GUIDE` | la entrada «¿Cómo funciona el cobro?» (marcada `soloSiCobra: true`, filtrada en `openHelpGuide`) | las otras 2 entradas de la guía |
+| D · `plansView.js` features del plan Pro | «Cobro integrado…» y «Recordatorios automáticos de cobro» | las otras 5 features |
+| E · `lifecycle.service.ts` | la frase de `sendWelcomeEmail` («…cobrar antes de empezar…») y el ítem de `sendFirstPaymentEmail` («Las facturas se generan solas al cobrar.») | el resto de cada email; se añadió `country`+`flags` al `select` de Prisma para poder leer el modo |
+
+**Control positivo:** `node --check` en los 4 `.js` de `public/dashboard/`, `npm run build` (tsc) sin
+errores, `npm run guards:entrada` → 11 guards · 95/95 tests en verde sobre este árbol.
+
+### 11.1 · Hallazgo NUEVO, no censado ayer y NO tocado en este PR
+
+`lifecycle.service.ts:61` — el pie `wrap()`, compartido por **TODOS** los emails del ciclo de vida
+(bienvenida, día 3/7/12/15/inactivo, primer pago), lleva la tagline fija:
+
+> «YaQu · Cotiza por WhatsApp y cobra antes de empezar»
+
+Mismo defecto que E, pero en un sitio que gobierna más de dos emails y que el censo de §2 no cubrió.
+No se toca en esta rama (fuera del encargo de hoy, y tocar un `wrap()` compartido es mayor superficie
+de la autorizada): queda para que el orquestador decida si es un 6º punto de este mismo ticket o uno
+nuevo.
+
+### 11.2 · Lo que sigue PENDIENTE — no se construye sin firma (regla 39)
+
+El texto sustituto de la §6 original (arriba) sigue sin escribirse. Este PR únicamente hace que las
+5 superficies **dejen de mentir** (no muestran nada donde antes prometían cobro/documento); no dice
+nada en su lugar. Cuando Javier firme el copy —del lote de SCRUM-534 o aparte—, la siguiente rama solo
+tiene que rellenar los huecos que aquí quedan vacíos, sin tocar el mecanismo de gateo.
