@@ -289,6 +289,14 @@ router.get('/:id/detail', async (req, res) => {
         contactKind: true,
         tipoDestinatario: true,
         billingPeriodicity: true,
+        // SCRUM-1033: la cabecera de la ficha 360 enseña etiquetas, dirección y referencia interna.
+        tags: true,
+        billingAddress: true,
+        billingCity: true,
+        billingPostalCode: true,
+        billingProvince: true,
+        billingCountry: true,
+        internalRef: true,
       },
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });

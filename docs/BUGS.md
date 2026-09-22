@@ -883,6 +883,11 @@
   `process.env.WHATSAPP_DRY_RUN = ''` al principio del archivo, igual que ya hacen otros tests
   con sus propios flags.
 
+### [ ] P4 · `guard:marcadores-en-pantalla` (SCRUM-722): la entrada `export: 6` del censo ha caducado (22-sep, hallazgo de S2 en SCRUM-1033/1034, de OTRO carril — se reporta, no se arregla)
+- **Síntoma:** `npm run guards:visuales` cae en `guard:marcadores-en-pantalla` con «ENTRADA CADUCA: `export` ya no pinta ningún marcador. BÓRRALA del censo — no la pongas a 0».
+- **No es de mi carril:** no toqué `exportView.js` ni `scripts/guard-marcadores-en-pantalla.mjs` en esta rama (`scrum-1033-ficha-datos-y-etiquetas`); el censo `CENSO.export = 6` (`scripts/guard-marcadores-en-pantalla.mjs:58`) ya no coincide con lo que la vista pinta hoy, y es anterior a este PR.
+- **No arreglado aquí** (regla: un hallazgo de otro carril se reporta, no se arregla): quien tocó `exportView.js` por última vez decide si los 6 marcadores `[PENDIENTE…]` deberían seguir ahí (y se restauran) o si de verdad ya no hacen falta (y se borra la entrada del censo, `guard-marcadores-en-pantalla.mjs:58`).
+
 ### [x] P3-10 · Suite gateada COMPLETA (`QA_DB_TEST=1 npm test`) era inestable por concurrencia contra staging (22-jul, hallazgo en SCRUM-75; corregido en SCRUM-78)
 - **Síntoma:** con los ~19 archivos de test gateados corriendo TODOS a la vez (comportamiento por
   defecto de `node --test` con múltiples archivos: paraleliza por worker), el resultado NO era

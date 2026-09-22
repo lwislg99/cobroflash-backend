@@ -138,6 +138,45 @@ async function renderCustomer360View(container, customerId) {
   `;
   wrap.appendChild(header);
 
+  // ── SCRUM-1033 · chips de la cabecera: NIF/CIF, dirección y referencia interna ──────────────
+  // Sólo lo que tenga valor: un cliente sin ninguno de los tres no pinta el bloque.
+  // SCRUM-1034 · las etiquetas, en el mismo bloque, editables con el patrón YA existente de
+  // `etiquetasDelDocumento.js` (mismos avisos, mismo componente): nada nuevo que decidir aquí, la
+  // decisión (qué es una etiqueta válida) sigue en `filtroClientes.js`/`tagsDelCliente.ts`.
+  const meta = document.createElement('div');
+  meta.className = 'customers-card';
+  meta.id = 'c360-meta';
+  wrap.appendChild(meta);
+
+  const chipsFila = document.createElement('div');
+  chipsFila.id = 'c360-chips';
+  chipsFila.className = 'c360-chips';
+  meta.appendChild(chipsFila);
+  const chipMeta = (etiqueta, valor) => {
+    const el = document.createElement('span');
+    el.className = 'badge badge-slate';
+    el.textContent = etiqueta + ': ' + valor;
+    chipsFila.appendChild(el);
+  };
+  if (customer.taxId) chipMeta('NIF/CIF', customer.taxId);
+  // Las 5 columnas de dirección, unidas en una sola línea: sin las que falten (ausente ≠ vacío).
+  const direccionTexto = [customer.billingAddress, customer.billingPostalCode, customer.billingCity, customer.billingProvince, customer.billingCountry]
+    .filter(Boolean).join(', ');
+  if (direccionTexto) chipMeta('Dirección', direccionTexto);
+  if (customer.internalRef) chipMeta('Referencia', customer.internalRef);
+  if (!chipsFila.children.length) chipsFila.remove();
+
+  // El mismo componente que ya usan presupuesto y factura: chips + campo + guardado automático.
+  // `endpoint` es el PUT general del cliente (el mismo que usa la lista), no uno nuevo.
+  montarEtiquetasDelDocumento(meta, customer, `/admin/customers/${id}`);
+  // ✅ TEXTO FIRMADO por el orquestador por delegación del fundador (21-sep-2026, SCRUM-1034).
+  // Sólo aquí: el componente es compartido con presupuesto/factura y no se toca (otro carril).
+  const limiteTags = document.createElement('div');
+  limiteTags.id = 'c360-tags-limite';
+  limiteTags.className = 'c360-tags-limite';
+  limiteTags.textContent = 'Máximo 20 etiquetas, de hasta 40 caracteres cada una.';
+  meta.appendChild(limiteTags);
+
   // Editar cliente desde la ficha (antes solo se podía desde la lista)
   header.querySelector('#btn-edit-360').onclick = () => {
     openEdit360Modal(customer, id, container);

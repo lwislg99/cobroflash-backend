@@ -80,6 +80,7 @@ function pagina(caso) {
 <script>${leer('api.js')}</script>
 <script>${leer('csvImport.js')}</script>
 <script>${leer('filtroClientes.js')}</script>
+<script>${leer('etiquetasDelDocumento.js')}</script>
 <script>${leer('customerDetailView.js')}</script>
 <script>${leer('customersView.js')}</script>
 <script>
