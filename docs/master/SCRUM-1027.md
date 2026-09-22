@@ -212,6 +212,13 @@ todos medían el comportamiento ANTERIOR a la regla 24 enmendada):
 | `tests/scrum667-marcador-visible.test.mjs` | censo congelado de marcadores en `src/` | +1 entrada por `jobs.routes.ts` y `quotesAdmin.routes.ts`, declarada a conciencia (A23 #14) |
 | `docs/legal/AUDITORIA_CAMINO_EMISION.md` | cita `facturaSuelta.ts:74-78` (`modoDocumentoSuelto`) | la función se movió a `85-89` por los comentarios añadidos; corregida por SCRUM-525d |
 
+**Corregido, encontrado por el check obligatorio del PR (gateado por `TRAMOS_PG_URL`, no corre en
+`npm test` sin banco desechable — esta máquina no tiene Docker ni Postgres, SUELO declarado):**
+
+| fichero | qué medía antes | qué mide ahora |
+|---|---|---|
+| `tests/scrum814-carrera-de-tramos-postgres.test.mjs` | los tres `withMerchant` de la carrera creaban un merchant ES sin flag (→ `receipt`); «COBRAR EL RESTO» y «POSITIVO» caían con 0 facturas donde esperaban 363/847/1210, y «CLIENTE FINAL» quedaba en VERDE pero VACÍO (0 facturas siempre cumple «nunca dos del mismo tramo» sin ejercitar nada) | los tres encienden `INVOICING_ES_ENABLED` POR MERCHANT (`flags`, no el env) para seguir midiendo la carrera real; caso nuevo y separado, con el interruptor apagado, que exige CERO documentos siempre bajo concurrencia en los dos caminos de este fichero |
+
 `npm run guards:entrada` y la suite completa (`node --test tests/*.test.mjs`, TAP a fichero fuera
 del árbol): verde, salvo los tres rojos **pre-existentes y no relacionados** de esta máquina, ya
 documentados en `docs/equipo/traspaso-javier.md` §5 (SCRUM-858b: `wmic` no existe en Windows 11;
