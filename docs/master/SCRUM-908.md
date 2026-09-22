@@ -1403,3 +1403,53 @@ mismo).
 - `scripts/meta-guard-mutaciones.mjs` (S3): sólo lectura, para entender `run()` y las PUERTA 1/1a.
 - Ningún push a ninguna rama de S3 o S5. Ninguna ejecución que module estos ficheros: los dos runs citados
   ya existían antes de empezar esta sección.
+
+---
+
+# SCRUM-908c-7 · Barrido de tamRelleno: TIRADA 2 de 4, mismo patrón exacto que la tirada 1
+
+**Fecha:** 22-sep-2026 · **Puesto:** J6 · calidad y seguridad (equipo de Javier) · **Gate:** medición
+PARCIAL (N=2 de 4). **NO cierra el ticket.**
+**Medido contra:** `origin/main` = `b5b229d7b6f7b78b24366696f6f84c25748ee27f` · 2026-09-22T08:12:32Z
+
+Continuación de § 908c-6: `gh run rerun 35628013107 --job 106427050646` (el run ya estaba `completed`,
+confirmado antes con `gh run view 35628013107 --json status`). GitHub le da un `databaseId` NUEVO al
+job de cada intento — `106664707473`, no el original — y así se leyó su log:
+
+```
+"C:/Program Files/GitHub CLI/gh.exe" run view 35628013107 --json jobs --jq '.jobs[] | select(.name|contains("build"))'
+"C:/Program Files/GitHub CLI/gh.exe" api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/106664707473/logs > log.txt
+grep -n "SCRUM-908c6\|BARRIDO" log.txt
+```
+
+```
+# SCRUM-908c6 · node=v24.20.0 pausa=2000ms capacidadBase=110592 multiplicadores=[1,1.5,2,3] repesPorPunto=4
+# BARRIDO mult=1   → colaAlSalir=871,871,871,871  salioDuranteLaPausa=true  (4/4)
+# BARRIDO RESUMEN mult=1   tamRelleno=12288 → 4/4 con colaAlSalir>0
+# BARRIDO mult=1.5 → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+# BARRIDO mult=2   → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+# BARRIDO mult=3   → colaAlSalir=0,0,0,0          salioDuranteLaPausa=false (4/4 sin pérdida)
+# SCRUM-908c6 · POBLACIÓN: 16 medidas sobre 4 puntos. 4/16 con colaAlSalir>0 en total.
+```
+
+**Idéntico a la tirada 1, punto por punto:** 4/4 con pérdida y `salioDuranteLaPausa=true` a 1,0×;
+0/12 sin pérdida y `salioDuranteLaPausa=false` a 1,5×/2×/3×. Con N=2, ambas del mismo commit, **el
+patrón se repitió exacto** — refuerza la hipótesis de § 908c-6 (la variable es si el hijo sale antes
+o después del fin de la pausa de 2000 ms), pero **sigue sin ser N=4** y sigue siendo la varianza de
+UN entorno, no de árboles distintos (mismo hueco declarado en § 908c-6, sin cambios).
+
+## Cierre de esta tanda: N=2 de 4, declarado como parcial — no se lanzan las reruns 3 y 4
+
+**Motivo del corte, explícito:** el orquestador pidió cerrar esta sesión por contexto (>200k) antes
+de que esta tirada terminase, con la instrucción expresa de que «no concluyente» es una entrega
+válida y que seguir seria repetir el patrón de "agujero sin fondo" que ya preocupaba en el encargo.
+Las reruns 3 y 4 **no se han lanzado**: quien retome puede repetir exactamente el mismo comando
+(`gh run rerun 35628013107 --job 106427050646`, comprobando antes que el run esté `completed`) hasta
+dos veces más para llegar a la N=4 acordada. El instrumento del barrido sigue retirado del árbol
+(commit `76010c092` de la rama ya mergeada `scrum-908c6-barrido-tamrelleno`, § 908c-6): esta rama
+(`scrum-908c7-tirada2-n2de4`) no lo reintroduce, solo anexa el dato ya generado por el run existente.
+
+## LO NO TOCADO
+
+`tests/`, `src/`, `scripts/`, `.github/workflows/**`: ni una línea. Solo lectura del log de un job ya
+generado por un rerun pedido explícitamente en el encargo de esta tanda.
