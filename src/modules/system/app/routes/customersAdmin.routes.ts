@@ -118,8 +118,10 @@ router.get('/duplicados', async (req, res) => {
  *
  * NO hay «avisar a la selección»: sería un envío nuevo (J6, regla 28) y es otro ticket.
  * NO exporta: el punto 3 del ticket (exportar la selección) es su propio commit, por ser STOP.
+ * `requireRole('admin')` (SCRUM-55): acción en bloque sobre datos de cliente, sin motivo de campo
+ * que la lleve a `TECNICO_ALLOWED` — el default de S1 es admin-only.
  */
-router.post('/bulk-tags', async (req, res) => {
+router.post('/bulk-tags', requireRole('admin'), async (req, res) => {
   try {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(Number) : [];
     const accion = req.body?.accion as AccionEtiqueta;
@@ -133,7 +135,7 @@ router.post('/bulk-tags', async (req, res) => {
     if (ids.length === 0) {
       return res.json({ actualizados: 0, resultados: [] });
     }
-    const r = await etiquetarSeleccion(req.merchantId, ids, accion, etiqueta);
+    const r = await etiquetarSeleccion(req.merchantId, ids, accion, etiqueta, prisma);
     return res.json(r);
   } catch (err) {
     console.error('[POST /admin/customers/bulk-tags]', err);

@@ -41,7 +41,7 @@ test('SCRUM-1059 · etiquetarSeleccion: tenencia, uno lleno no tumba a los demá
         const deB = await prisma.customer.create({ data: { merchantId: b.id, name: 'De B 1059' } });
 
         // ── add sobre una selección mixta: dos libres, uno lleno, uno de OTRO merchant ──
-        const r = await etiquetarSeleccion(a.id, [libre1.id, libre2.id, lleno.id, deB.id], 'add', 'revisión');
+        const r = await etiquetarSeleccion(a.id, [libre1.id, libre2.id, lleno.id, deB.id], 'add', 'revisión', prisma);
         assert.equal(r.actualizados, 2, '🔴 solo los dos libres debían escribirse');
 
         const porId = new Map(r.resultados.map((x) => [x.id, x]));
@@ -65,13 +65,13 @@ test('SCRUM-1059 · etiquetarSeleccion: tenencia, uno lleno no tumba a los demá
         assert.deepEqual(releidoDeB.tags, null, '🔴 el cliente de OTRO merchant no puede haber cambiado');
 
         // ── remove: quitar de los dos que la tienen ──
-        const r2 = await etiquetarSeleccion(a.id, [libre1.id, libre2.id], 'remove', 'revisión');
+        const r2 = await etiquetarSeleccion(a.id, [libre1.id, libre2.id], 'remove', 'revisión', prisma);
         assert.equal(r2.actualizados, 2);
         const releido1b = await prisma.customer.findUnique({ where: { id: libre1.id }, select: { tags: true } });
         assert.deepEqual(releido1b.tags, null, '🔴 quitar la única etiqueta debe dejar NULL, no `[]`');
 
         // ── selección vacía: no revienta, no escribe nada ──
-        const vacio = await etiquetarSeleccion(a.id, [], 'add', 'x');
+        const vacio = await etiquetarSeleccion(a.id, [], 'add', 'x', prisma);
         assert.deepEqual(vacio, { actualizados: 0, resultados: [] });
       }));
   } finally {

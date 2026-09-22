@@ -10,7 +10,13 @@
 //
 // La MISMA decisión que el alta y la edición manual (`tagsDelCliente.ts`): límite 20×40,
 // comparación sin distinguir mayúsculas, `ausente ≠ vacío`. No se reinventa aquí.
-import { prisma } from '../../../core/db/prisma';
+//
+// SCRUM-411 · `aplicarEtiquetaMasiva` NO SE EXPORTA. Su único consumidor real está DENTRO de este
+// fichero (`etiquetarSeleccion`); exportarla solo para que su test la llamara directo era un
+// `export` que no le servía a nadie más — el trinquete de huérfanos lo cazó y tenía razón. Se mide
+// por la SUPERFICIE PÚBLICA: `etiquetarSeleccion` recibe el `cliente` (Prisma o un doble) por
+// PARÁMETRO, el mismo patrón que `importarClientes.service.ts` — así su test puede ejercer la
+// decisión entera, incluida esta función, sin Postgres.
 import { tagsDe, normalizarTags, tagsParaPrisma, LARGO_MAXIMO, MAXIMO_POR_CLIENTE } from '../tagsDelCliente';
 
 export type AccionEtiqueta = 'add' | 'remove';
@@ -33,7 +39,7 @@ interface ClienteConTags {
  * `siguiente` es la traducción lista para Prisma (`tagsParaPrisma`), la MISMA que usan el alta y
  * la edición — no una segunda decisión sobre `DbNull` vs `[]`.
  */
-export function aplicarEtiquetaMasiva(
+function aplicarEtiquetaMasiva(
   cliente: ClienteConTags,
   accion: AccionEtiqueta,
   etiquetaBruta: string,
@@ -81,34 +87,52 @@ export interface ResultadoEtiquetadoMasivo {
 }
 
 /**
+ * Lo mínimo que `etiquetarSeleccion` necesita de Prisma — o de un doble en el test.
+ *
+ * `Function` y no una firma estricta, el mismo motivo que `ClienteMinimo` en
+ * `importarClientes.service.ts`: fijar los tipos exactos de Prisma aquí ataría este contrato a la
+ * forma exacta de sus argumentos, y lo único que este módulo necesita es que exista el método.
+ */
+export interface ClienteParaEtiquetadoMasivo {
+  customer: { findMany: Function; updateMany: Function };
+  $transaction: Function;
+}
+
+/**
  * Aplica la acción a la selección ENTERA de un merchant.
  *
  * TENENCIA (regla 2): se leen solo los clientes de `merchantId`, y se escriben con el mismo
  * `merchantId` en el `where`. Un id de la selección que no sea de este merchant (o no exista) se
  * declara «No encontrado» y no revela nada de a quién pertenece de verdad.
+ *
+ * `cliente` entra por PARÁMETRO (Prisma en la ruta, un doble en el test) — el mismo patrón que
+ * `importarClientes.service.ts`. Así la decisión entera, incluida `aplicarEtiquetaMasiva`, se mide
+ * sin Postgres, y la tenencia y la transacción de verdad se miden aparte, contra base real
+ * (`scrum1059b-...-postgres.test.mjs`).
  */
 export async function etiquetarSeleccion(
   merchantId: number,
   ids: number[],
   accion: AccionEtiqueta,
   etiqueta: string,
+  cliente: ClienteParaEtiquetadoMasivo,
 ): Promise<ResultadoEtiquetadoMasivo> {
   const idsUnicos = [...new Set(ids)].filter((id) => Number.isInteger(id) && id > 0);
   if (idsUnicos.length === 0) return { actualizados: 0, resultados: [] };
 
-  const clientes = await prisma.customer.findMany({
+  const clientes: ClienteConTags[] = await cliente.customer.findMany({
     where: { id: { in: idsUnicos }, merchantId },
     select: { id: true, tags: true },
   });
-  const porId = new Map(clientes.map((c) => [c.id, c]));
+  const porId = new Map(clientes.map((c) => [c.id, c] as const));
 
   const resultados: ResultadoFila[] = [];
   const escrituras: { id: number; siguiente: ReturnType<typeof tagsParaPrisma> }[] = [];
 
   for (const id of idsUnicos) {
-    const cliente = porId.get(id);
-    if (!cliente) { resultados.push({ id, actualizado: false, motivo: 'No encontrado' }); continue; }
-    const { resultado, siguiente } = aplicarEtiquetaMasiva(cliente, accion, etiqueta);
+    const c = porId.get(id);
+    if (!c) { resultados.push({ id, actualizado: false, motivo: 'No encontrado' }); continue; }
+    const { resultado, siguiente } = aplicarEtiquetaMasiva(c, accion, etiqueta);
     resultados.push(resultado);
     if (resultado.actualizado) escrituras.push({ id, siguiente: siguiente! });
   }
@@ -117,9 +141,9 @@ export async function etiquetarSeleccion(
     // Una transacción por escritura: cada cliente cambia a un valor DISTINTO (el suyo), así que
     // no se puede resolver con un solo `updateMany`. Van todas juntas para que la selección se
     // aplique de una vez y no a medias si algo falla a mitad.
-    await prisma.$transaction(
+    await cliente.$transaction(
       escrituras.map(({ id, siguiente }) =>
-        prisma.customer.updateMany({ where: { id, merchantId }, data: { tags: siguiente } })),
+        cliente.customer.updateMany({ where: { id, merchantId }, data: { tags: siguiente } })),
     );
   }
 
