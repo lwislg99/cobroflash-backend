@@ -292,3 +292,72 @@ población fiable; la lectura completa sí.
 
 Jira **SCRUM-1029** (`equipo-javier`, `area-j3`), En curso, asignado a Javier. El censo y la propuesta
 de arriba están también en su descripción.
+
+## 11 · Construcción del GATEADO (22-sep-2026, jv-j3, segunda pasada) — sin tocar copy fiscal
+
+**Medido contra:** `origin/main` = `1f92f5733359880115b3f76824d38db25bef56e0` · 2026-09-22T08:33:54Z ·
+**Rama:** `scrum-1025-1029-checklist-modoemision`
+
+Encargo del orquestador: condicionar las 5 superficies censadas ayer por el modo de emisión, reusando
+el patrón YA aprobado de `weeklyDigest.service.ts` (SCRUM-974) — **ocultar, no redactar**. El texto
+sustituto que vería el profesional en su lugar es fiscal y lo firma Javier; no se escribe en este PR.
+Durante la construcción de E apareció una 6ª (§11.1, «F»): mismo defecto, mismo fichero, decisión del
+orquestador de sumarla aquí en vez de abrir ticket propio.
+
+**Mecanismo reusado, no reinventado:** en el navegador, `window.appModoEmision` (`app.js:51-52`,
+derivado de `modoEmisionVisible()`/`getEmissionMode`, ya consumido por `settingsView.js:201` y
+`albaranAccion.js:66` — no hay una segunda fuente). En el servidor, `getEmissionMode(merchant)` de
+`emission.service.ts`, igual que `weeklyDigest.service.ts:113`.
+
+| superficie | qué se ocultó | qué queda igual |
+|---|---|---|
+| A · `settingsView.js` `renderReadinessCard` | la tarjeta «Tu cuenta, lista para cobrar» **entera**, si `appModoEmision === 'receipt'` | nada se pinta — no hay fila con texto a medias |
+| B · `onboardingView.js` Paso 2 | solo el bloque de vista previa («Tu primera factura con YaQu será…», `#ob-serie-previa`) | la pregunta de continuidad de serie y el guardado (`POST /admin/onboarding/serie`) siguen funcionando, para cuando SIF-1 llegue |
+| C · `tutorial.js` `TUTORIAL_GUIDE` | la entrada «¿Cómo funciona el cobro?» (marcada `soloSiCobra: true`, filtrada en `openHelpGuide`) | las otras 2 entradas de la guía |
+| D · `plansView.js` features del plan Pro | «Cobro integrado…» y «Recordatorios automáticos de cobro» | las otras 5 features |
+| E · `lifecycle.service.ts` | la frase de `sendWelcomeEmail` («…cobrar antes de empezar…») y el ítem de `sendFirstPaymentEmail` («Las facturas se generan solas al cobrar.») | el resto de cada email; se añadió `country`+`flags` al `select` de Prisma para poder leer el modo |
+| F · `lifecycle.service.ts` `wrap()` (pie compartido) | la cláusula «· Cotiza por WhatsApp y cobra antes de empezar» del pie, en los **7** emails que usan `wrap()` (bienvenida, primer pago, día 3/7/12/15, inactivo) | «YaQu · yaqu.app» sigue saliendo en los 7; el resto de cada cuerpo no cambia |
+
+**Control positivo:** `node --check` en los 4 `.js` de `public/dashboard/`, `npm run build` (tsc) sin
+errores, `npm run guards:entrada` → 11 guards · 95/95 tests en verde sobre este árbol.
+
+### 11.1 · Superficie F — el censo de ayer se quedó CORTO, no es un detalle
+
+`lifecycle.service.ts:61` (numeración de la medición de ayer) — el pie `wrap()`, compartido por
+**TODOS** los emails del ciclo de vida (bienvenida, día 3/7/12/15/inactivo, primer pago, 7 en total),
+llevaba la tagline fija:
+
+> «YaQu · Cotiza por WhatsApp y cobra antes de empezar»
+
+Es el **mismo defecto** que E (misma regla 24, mismo barrido, mismo fichero — no víctima distinta ni
+bloquea otra cosa: no es ticket aparte, decisión del orquestador), pero la superficie real es **mayor**
+de lo que decía el censo de ayer: no son 2 emails con promesa de cobro, son **7**, porque el pie lo
+comparten todos.
+
+**Cómo se gateó, sin tocar los 5 emails que NO tenían nada que ver:** `wrap()` pasa a exigir un
+tercer parámetro `puedeCobrar: boolean` **sin valor por defecto** — a propósito, para que TypeScript
+obligue a decidirlo en cada una de las 7 llamadas en vez de dejar que una llamada olvidada cuele el
+`undefined` de siempre. `npm run build` en verde confirma que las 7 lo pasan.
+
+**Control positivo de que los 5 emails NO afectados (día 3/7/12/15, inactivo) siguen enteros:**
+reconstruido el bloque del pie de `wrap()` en un script suelto y comparado byte a byte —
+
+```
+puedeCobrar=true IGUAL AL ORIGINAL: true
+puedeCobrar=false SIGUE TENIENDO yaqu.app: true
+puedeCobrar=false NO tiene la promesa: true
+```
+
+Con `puedeCobrar=true` (el caso de todo merchant no-ES o ES con el flag ON — o sea, los 5 emails
+que no se tocaron hasta hoy, para los que `getEmissionMode` sigue dando `!== 'receipt'`) la salida es
+**idéntica byte a byte** a la de antes de este cambio: ningún email de los no censados se cae ni sale
+con el pie roto. Con `puedeCobrar=false` solo desaparece la cláusula de cobro; «YaQu · yaqu.app»
+sigue ahí. El diff real (`git diff`) confirma además que los CUERPOS de día 3/7/12/15/inactivo no
+cambiaron ni una letra: solo se añadió el argumento a su llamada a `wrap()`.
+
+### 11.2 · Lo que sigue PENDIENTE — no se construye sin firma (regla 39)
+
+El texto sustituto de la §6 original (arriba) sigue sin escribirse. Este PR únicamente hace que las
+6 superficies (A-F) **dejen de mentir** (no muestran nada donde antes prometían cobro/documento); no
+dice nada en su lugar. Cuando Javier firme el copy —del lote de SCRUM-534 o aparte—, la siguiente
+rama solo tiene que rellenar los huecos que aquí quedan vacíos, sin tocar el mecanismo de gateo.

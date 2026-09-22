@@ -119,6 +119,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,
+  // SCRUM-1062: el historial de WhatsApp de la ficha. Necesita banco porque vigila la TENENCIA
+  // (dos merchants), que un documento borrado no se lleva el mensaje por delante (tabla suelta,
+  // ENT-3) y las páginas de 20 con cursor.
+  'scrum1062-historial-whatsapp-cliente.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
