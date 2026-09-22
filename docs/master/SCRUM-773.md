@@ -207,3 +207,50 @@ ticket dice que es otra decisión y que no se decidan juntas · `docs/sql/*` · 
 SCRUM-773 **no tocado**, sigue en *Acción del fundador*.
 **Ninguna base de datos fue consultada ni escrita: no había ninguna clave con la que hacerlo.**
 **Producción y staging: no tocados, ni para mirar.**
+
+---
+
+# SCRUM-773c · RETIRADO, cerrado (22-sep-2026)
+
+**Fecha:** 22-sep-2026 10:12Z · **Carril:** S5 · instrumentos/datos
+**Medido contra:** `origin/main` = `5588e3263847bd40ea906d325e4f83c883c24e6e` · 2026-09-22T08:02Z
+**Rama:** `scrum-773c-retirar-backfill` · **Worktree:** `wt-s5-773`
+**Decisión del fundador:** comentario Jira 16264 (21-sep) — RETIRAR `backfill-job-assignees.mjs`
+(con su test `scrum650c`) y bajar `TECHO_PUERTAS_FRAGILES`. `_prisma-sync.mjs` no está muerto
+(arranca por el respaldo `endsWith`): arreglarlo con `ejecutadoDirectamente()`.
+
+## Lo hecho
+
+1. **Retirado `scripts/backfill-job-assignees.mjs`** y `tests/scrum650c-backfill-equivalencia.test.mjs`
+   (dedicado por completo a él). El PR #1484 (773b, arriba) ya midió que hoy no desbloquea nada:
+   la visibilidad mira `assignedUserId` por otro eje y la escritura nueva va por
+   `escribirAsignados()`, que ya mantiene `job_assignees` al día. Con datos sólo de prueba no había
+   histórico que migrar — no se enciende nada, se retira.
+2. **`scripts/_prisma-sync.mjs` arreglado**: `import.meta.url === 'file://'+argv[1] ||
+   argv[1]?.endsWith(...)` → `ejecutadoDirectamente(import.meta.url)` (mismo mecanismo que ya usa
+   el meta-guard desde SCRUM-765). No escribe en base de datos — sólo regenera el cliente Prisma
+   local si hace falta.
+3. **`TECHO_PUERTAS_FRAGILES` bajado de 2 a 0** en `tests/scrum765-la-puerta-y-el-suelo.test.mjs`:
+   las dos puertas frágiles conocidas están cerradas.
+4. **`scripts/censo-migraciones.mjs`**: la entrada `DEBE_VER` para `backfill-job-assignees.mjs`
+   (el caso de control de «pg en crudo») se retira con nota, para que el script no quede CIEGO
+   buscando un fichero que ya no existe.
+
+## Medido
+
+- **Antes** (`scrum765` + `scrum650c` juntos): 13 pass · 0 fail.
+- **Después** (`scrum765` solo, `scrum650c` borrado): 7 pass · 0 fail.
+- `node scripts/_prisma-sync.mjs` corrido directamente: exit 0 (arranca por la puerta arreglada,
+  no por el respaldo).
+- `npm run pretest` completo: verde (`_prisma-sync` → `_prisma-client-guard` →
+  `_prisma-procedencia-guard`).
+- `node scripts/censo-migraciones.mjs`: «control positivo: los 4 idiomas conocidos se ven» (antes
+  5, con el retirado).
+- `npm run guards:entrada`: 11 guards, verde.
+
+## Lo que no se ha hecho
+
+- ⛔ `docs/sql/scrum-650-paso-c-backfill.sql` — no tocado, sigue RECHAZADA por el aplicador (lista
+  blanca aditiva), documentado en 773b.
+- ⛔ Ninguna base de datos consultada ni escrita.
+- ⛔ `docs/master/SCRUM-811.md` — no anexado aquí (es de otro censo, ya reportado en 773b).

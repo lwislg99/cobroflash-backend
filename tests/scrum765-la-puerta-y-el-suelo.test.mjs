@@ -158,20 +158,19 @@ test('SCRUM-765 · el censo de puertas frágiles VE lo que dice ver', () => {
 /**
  * TECHO DEL ÁRBOL — este número SÓLO BAJA.
  *
- * Medido el 6-sep-2026 sobre `scripts/` y `tests/`: DOS puertas frágiles, las dos fuera de este
- * ticket y las dos REPORTADAS sin tocar, porque cambiar cuándo arranca un script no es cosmética:
+ * Medido el 6-sep-2026: DOS puertas frágiles. SCRUM-773 (22-sep-2026) las cerró las dos, por
+ * decisión del fundador:
  *
- *   · `scripts/_prisma-sync.mjs` — misma forma y mismo respaldo `endsWith()` que tenía el
- *     meta-guard: arranca sólo por el respaldo.
- *   · `scripts/backfill-job-assignees.mjs` — la variante que invierte las barras, y SIN respaldo:
- *     su bloque de arranque no se ejecuta nunca en Windows. Y ese bloque ESCRIBE EN UNA BASE DE
- *     DATOS. Arreglarle la puerta es ENCENDER un backfill que hoy está apagado, y eso lo decide
- *     el fundador con el diff delante — no una sesión que pasaba por aquí (reglas 9 y 37).
+ *   · `scripts/_prisma-sync.mjs` — arreglada con `ejecutadoDirectamente()` (el mismo mecanismo
+ *     que ya usaba el meta-guard desde SCRUM-765).
+ *   · `scripts/backfill-job-assignees.mjs` — RETIRADO. El PR #1484 (773b) midió que hoy no
+ *     desbloquea nada: la visibilidad ya mira `assignedUserId` por otro eje, y la escritura nueva
+ *     va por `escribirAsignados()`, que ya mantiene `job_assignees` al día. No quedaba dato
+ *     histórico que migrar con datos sólo de prueba, así que no se enciende nada: se retira.
  *
- * Lo que este techo impide es que aparezcan MÁS. Bajarlo al arreglar una de las dos es el camino
- * previsto; subirlo es meter el defecto otra vez.
+ * Lo que este techo impide es que aparezcan MÁS.
  */
-const TECHO_PUERTAS_FRAGILES = 2;
+const TECHO_PUERTAS_FRAGILES = 0;
 
 test('SCRUM-765 · el árbol NO gana puertas frágiles, y el meta-guard ya no es una de ellas', () => {
   const { puertas, ficherosVistos } = censoDePuertasFragiles(RAIZ);
