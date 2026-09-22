@@ -229,10 +229,27 @@ test('🔴 A2 · el instalador graba en config.json la carpeta de los traspasos 
         `🔴 ${instalado} no es la copia de origin/main:${enRepo}`);
     }
     const salida = JSON.parse(r.stdout);
-    assert.equal(salida.settings.statusLine.command, `node ${destino.replace(/\\/g, '/')}/uso.mjs escribir`,
-      '🔴 la línea del statusLine no apunta al uso.mjs de ESTA instalación');
+    assert.equal(salida.settings.statusLine.command, `node "${destino.replace(/\\/g, '/')}/uso.mjs" escribir`,
+      '🔴 la línea del statusLine no apunta al uso.mjs de ESTA instalación, o le faltan las comillas');
   } finally { b.limpiar(); }
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-953 · un usuario de Windows con espacio (p.ej. `C:/Users/Javier Pereira/…`) no puede cortar
+// el statusLine en el espacio: el aviso de uso no arranca nunca y no hay error visible en ningún sitio.
+// La máquina de Luis (`C:/Users/Admin`) no tiene espacios, así que ningún test anterior lo cubría.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('🔴 SCRUM-953 · lineaStatusLine entrecomilla la ruta: un destino CON espacio no corta la orden', () => {
+  const destino = 'C:/Users/Javier Pereira/AppData/Local/yaqu-equipo';
+  const { statusLine } = instalar.lineaStatusLine(destino);
+  assert.equal(statusLine.command, 'node "C:/Users/Javier Pereira/AppData/Local/yaqu-equipo/uso.mjs" escribir',
+    '🔴 sin comillas, Windows corta la orden en "Javier" y `node` intenta abrir "C:/Users/Javier" como módulo');
+  // CONTROL POSITIVO: un destino sin espacio también entrecomilla (no depende de detectar el espacio).
+  assert.equal(instalar.lineaStatusLine('C:/Users/Admin/yaqu-equipo').statusLine.command,
+    'node "C:/Users/Admin/yaqu-equipo/uso.mjs" escribir');
+});
+
 
 test('🔴 A2 · sin `traspasos` en config.json, sesion.mjs dice NO-PUDE-MIRAR y no llama a claude', () => {
   const b = banco({ conTraspasos: false });
