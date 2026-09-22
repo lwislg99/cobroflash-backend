@@ -47,8 +47,12 @@ test('SCRUM-980 · historialDelCliente: tenencia, técnico, fotos, próxima visi
         const jAgendadoFuturo = await job({ titulo: 'Revisión', status: 'agendado', scheduledAt: new Date('2026-10-05T08:00:00Z') });
         await job({ titulo: 'Olvidado', status: 'agendado', scheduledAt: new Date('2026-08-01T08:00:00Z') }); // pasado: no es «próxima»
         const alb = await prisma.albaran.create({ data: { merchantId: a.id, jobId: jDelTecnico.id, numero: `ALB-980-${stamp}`, estado: 'firmado', lineas: [] } });
-        for (let i = 0; i < 3; i++) {
-          await prisma.attachment.create({ data: { merchantId: a.id, entityType: 'albaran', entityId: alb.id, url: `/x/${i}`, kind: 'photo' } });
+        // SCRUM-1061: 5, no 3 — para poder distinguir el TOPE de miniaturas (3) del TOTAL real (5),
+        // que es justo el caso que dispara «+n más». Con 3 y 3 los dos números coinciden por casualidad.
+        const idsDeFoto = [];
+        for (let i = 0; i < 5; i++) {
+          const f = await prisma.attachment.create({ data: { merchantId: a.id, entityType: 'albaran', entityId: alb.id, url: `/x/${i}`, kind: 'photo' } });
+          idsDeFoto.push(f.id);
         }
         const pDelTecnico = await parte({ jobId: jDelTecnico.id, customerId: ana.id });
         const pSuelto = await parte({ jobId: null, customerId: ana.id });
@@ -69,11 +73,22 @@ test('SCRUM-980 · historialDelCliente: tenencia, técnico, fotos, próxima visi
         assert.ok(titulos.includes('Presupuesto #77 · Ana 980'), `🔴 el título no sale de tituloDeTrabajo: ${titulos}`);
         const caldera = h.trabajos.find((t) => t.id === jDelTecnico.id);
         assert.equal(caldera.albaranes.length, 1);
-        assert.equal(caldera.albaranes[0].fotos, 3, '🔴 el albarán no cuenta sus fotos');
+        assert.equal(caldera.albaranes[0].fotos, 5, '🔴 el albarán no cuenta sus fotos');
+        // SCRUM-1061 · las miniaturas del TRABAJO: tope 3 (SCRUM-1060), pero el total real es 5 —
+        // es la cifra que dispara «+n más» en el front. Las 3 que llegan son las más RECIENTES
+        // (orderBy createdAt desc): las 3 últimas creadas, ids [4] [3] [2] de las 5 (0-indexado).
+        assert.ok(caldera.fotos, '🔴 CIEGO: con 5 fotos, el trabajo no lleva la clave `fotos`');
+        assert.equal(caldera.fotos.total, 5, '🔴 el total de fotos del trabajo no suma las de su(s) albarán(es)');
+        assert.deepEqual(caldera.fotos.ids, [idsDeFoto[4], idsDeFoto[3], idsDeFoto[2]],
+          '🔴 las miniaturas no son las 3 más recientes, o no respetan el tope de SCRUM-1060');
         assert.deepEqual(caldera.partes.map((p) => p.id), [pDelTecnico.id]);
         assert.deepEqual(h.partesSueltos.map((p) => p.id), [pSuelto.id], 'el admin ve el parte suelto del cliente');
         assert.equal(h.proximaVisita?.trabajoId, jAgendadoFuturo.id, '🔴 la próxima visita no es el agendado futuro más cercano');
         assert.ok(!('siguiente' in h), 'con 4 trabajos no hay página siguiente');
+        // SCRUM-1061 · un trabajo sin fotos no lleva la clave `fotos` (ausente ≠ vacío: `{ids:[],total:0}`
+        // diría «se miró y no hay ninguna», que no es lo mismo que «no hay nada que mirar»).
+        const sinPresupuesto = h.trabajos.find((t) => t.id === jDelPresupuesto.id);
+        assert.ok(!('fotos' in sinPresupuesto), '🔴 un trabajo sin ningún albarán con fotos lleva la clave `fotos`');
 
         // ── Técnico ──
         const t = await historialDelCliente(a.id, ana.id, { soloTrabajosDe: tec.id, ahora: AHORA });

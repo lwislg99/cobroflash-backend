@@ -85,14 +85,23 @@ export async function historialDelCliente(merchantId: number, customerId: number
     }),
   ]);
 
+  // SCRUM-1061 (CRM-18) · antes solo se contaban (`groupBy` + `_count`); ahora hacen falta los IDS
+  // para poder pintar miniaturas — `findMany` en vez de `groupBy`, mismo `merchantId` en la
+  // consulta (regla 2). El tope de 3 lo puso SCRUM-1060 (medición de peso/carga en staging).
+  const MINIATURAS_POR_TRABAJO = 3;
   const fotos = albaranes.length
-    ? await prisma.attachment.groupBy({
-        by: ['entityId'],
+    ? await prisma.attachment.findMany({
         where: { merchantId, entityType: 'albaran', entityId: { in: albaranes.map((a) => a.id) } },
-        _count: { _all: true },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, entityId: true },
       })
     : [];
-  const fotosPorAlbaran = new Map(fotos.map((f) => [f.entityId, f._count._all]));
+  const fotosPorAlbaran = new Map<number, number[]>();
+  for (const f of fotos) {
+    const lista = fotosPorAlbaran.get(f.entityId) ?? [];
+    lista.push(f.id);
+    fotosPorAlbaran.set(f.entityId, lista);
+  }
   const quotePorId = new Map(quotes.map((q) => [q.id, q]));
 
   return {
@@ -111,7 +120,13 @@ export async function historialDelCliente(merchantId: number, customerId: number
       createdAt: t.createdAt,
       partes: partes.filter((p) => p.jobId === t.id).map(({ jobId: _j, ...p }) => p),
       albaranes: albaranes.filter((a) => a.jobId === t.id)
-        .map(({ jobId: _j, ...a }) => ({ ...a, fotos: fotosPorAlbaran.get(a.id) ?? 0 })),
+        .map(({ jobId: _j, ...a }) => ({ ...a, fotos: (fotosPorAlbaran.get(a.id) ?? []).length })),
+      // SCRUM-1061 · las miniaturas son del TRABAJO, agregadas de TODOS sus albaranes (no de uno
+      // solo): ausente ≠ vacío, sin fotos la clave `fotos` no viaja.
+      ...(() => {
+        const ids = albaranes.filter((a) => a.jobId === t.id).flatMap((a) => fotosPorAlbaran.get(a.id) ?? []);
+        return ids.length ? { fotos: { ids: ids.slice(0, MINIATURAS_POR_TRABAJO), total: ids.length } } : {};
+      })(),
     })),
     partesSueltos: partes.filter((p) => p.jobId === null).map(({ jobId: _j, ...p }) => p),
     ...(hayMas ? { siguiente: trabajos[trabajos.length - 1].id } : {}),
