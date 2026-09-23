@@ -1645,3 +1645,31 @@ El lector cambiado es **uno**, `scripts/_numero-de-rama.mjs`. Sus consumidores, 
 - tests: `scrum387`, `scrum738`, `scrum753`, `scrum804`, `scrum804f`, `scrum829b`.
 
 **NO comparte el lector, y NO se ha tocado:** `tests/_entrada-de-la-rama.mjs` (SCRUM-854), que tiene su propio `numeroDeRama` (`/^scrum-(\d+)/i`) y ya aceptaba las ramas sin slug. Tampoco el resto de instrumentos que miden sobre ramas remotas con su propio lector: los de la cuenta de Javier (27) que no aparecen arriba no importan esta regla.
+
+## SCRUM-804b · CI en rojo tras fusionar `main`: dos huecos ajenos a esta rama, arreglados en ella
+
+**Detectado:** CI del PR #1428 (run 35231802589), commit `6f011d3bde33`, tras fusionar
+`main` (1941416e, que incluye SCRUM-804f/PR #1432).
+
+**① `meta-guard` MUDO sobre `scrum738`.** La `MUTACIONES_QUE_ME_TUMBAN` de
+`tests/scrum738-el-tablero-contra-el-arbol.test.mjs` sólo quitaba el delimitador final de
+`numeroDeRama` (`[a-z]?(?:-|$)`), y ya está escrito arriba —línea 1616— que **eso no colisiona**:
+`\d+` es voraz y captura el número entero delimitador o no. Antes de SCRUM-804f eso daba igual,
+porque el efecto SÍ se veía por otro lado: `numeroDeRama('scrum-72')` (sin slug) exigía `null`, y
+la mutación (sin exigir guion) devolvía `72` — una discrepancia real. SCRUM-804f cambió esa MISMA
+aserción a exigir `72` (línea 1623: «Ahora exige 72»), que es lo que la mutación YA daba: la única
+comprobación que distinguía código sano de mutado desapareció, y nadie tocó la mutación al mismo
+tiempo porque vive en un fichero distinto del que cambió. Arreglo: la mutación ahora acota la
+captura a 1-2 dígitos (`[0-9]{1,2}`), que sí reproduce una colisión real entre 72/720/727/1727.
+
+**② El NEGATIVO de `censo-regla-42` (SCRUM-880) había envejecido.** El test fija SCRUM-880 como
+ticket con «rama viva sin mergear hoy», cierto cuando se escribió (ver la fila de la línea 1420,
+`scrum-880c-el-desempate-y-los-milisegundos`, ancla del 8-sep). Esa rama ya se mergeó, así que el
+censo lo clasifica DENTRO —correctamente— y el test fallaba acusándolo de un defecto que no
+tiene. Sustituido por SCRUM-1099, medido el 23-sep-2026 contra las 153 ramas remotas
+(`git merge-base --is-ancestor origin/scrum-1099-censo-ast-escritores-invoice origin/main` → no
+es antepasado). Mismo envejecimiento por diseño que el resto de NEGATIVOS de esta familia de
+tests: quien lo vuelva a medir, que lo re-feche.
+
+**Ninguno de los dos es código nuevo de esta rama** (censo-regla-42.mjs no cambia); son
+correcciones a las declaraciones de prueba que la fusión de `main` dejó desactualizadas.
