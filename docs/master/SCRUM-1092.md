@@ -151,3 +151,83 @@ sin serlo.
 - `docs/master/evidencias/scrum1092/censo-merges.mjs` — censo A, todo el historial.
 - `docs/master/evidencias/scrum1092/censo-reflog.mjs` — censo B, sólo el árbol compartido
   `cobroflash-backend` (ejecutar DESDE ahí: usa el reflog de ESE checkout, no el de un worktree).
+
+# APÉNDICE — Los tres aterrizajes antiguos (674 ×2, 610): ¿se perdió su contenido o llegó por otra vía?
+
+**Fecha:** 23-sep-2026 09:57Z (GitHub) · **Carril:** J6 · calidad y seguridad
+**Medido contra:** `origin/main` = `a457077f4d73bb0d3923f98916ddf03ffbd2fb13` · 2026-09-23T09:57:14Z
+**Rama:** `scrum-1092-cuantas-veces-ha-pasado`
+
+## 9 · El encargo, en una línea
+
+De los tres commits de §3 que se quedaron para siempre en rama ajena (no el de hoy, que ya se
+corrigió), decir por CONTENIDO — no por SHA ni por número de ticket — si lo que introducían está
+hoy en `main`, y clasificar cada uno: (a) llegó igual · (b) llegó reescrito · (c) se perdió.
+
+## 10 · Método
+
+Para cada commit: `git merge-base --is-ancestor <sha> origin/main` (¿el commit exacto es
+antepasado de main?) y, si no lo es, buscar su contenido por TEXTO/función en `origin/main` de hoy
+— no por si existe un fichero con el mismo nombre.
+
+## 11 · SCRUM-610 (`88f5da6c`, 5-sep 17:25) → **(a) llegó igual**
+
+`git merge-base --is-ancestor 88f5da6c origin/main` → **SÍ es antepasado**. El commit, con su SHA
+original intacto, vive hoy dentro de `origin/main`.
+
+Cómo: la rama donde aterrizó por error (`scrum-609-registro-del-alter-y-p-doc-8`) **todavía no se
+había mergeado** cuando el commit se le añadió (17:25) — se mergeó 29 minutos después, a las
+17:54:17+01:00, con el PR #1069 (`c5bd379f`, `git log --oneline origin/main --grep=SCRUM-610`
+lo confirma como ancestro directo). El commit viajó dentro de esa rama sin que nadie lo separara.
+Por eso la rama ya no existe (`git ls-remote --heads origin scrum-609-registro-del-alter-y-p-doc-8`
+→ vacío: el bot la borró al mergear, como con cualquier PR mergeado).
+
+Contenido verificado hoy: `origin/main:docs/master/SCRUM-610.md` líneas 124-152 trae, palabra por
+palabra, la «NOTA DE CADUCIDAD» que añadió ese commit (título, cita a `2e3e7685`, el bloque de
+código con `costeUnitario`, y el párrafo «P6 sigue SIN FIRMAR»). Nada perdido, nada reescrito.
+
+## 12 · SCRUM-674 (`6093240a` + `d6f5cb53`, 2-sep 17:59 y 18:02) → **(b) llegó reescrito**
+
+Ninguno de los dos es antepasado de `origin/main` (confirmado con `merge-base --is-ancestor`,
+también repetido tras un segundo `fetch` con `main` ya movido a `a457077f`: mismo resultado).
+
+**Por qué éste NO viajó como el de 610:** la rama donde aterrizaron
+(`scrum-661-coste-unitario-congelado`) YA se había mergeado — PR #929, `9f3d4b26`, a las
+17:44:38+01:00 — **antes** de que el primero de los dos (17:59) se le añadiera. El tren ya se había
+ido: esa rama no iba a volver a mergearse, así que los dos commits quedaron varados. La rama
+**sigue existiendo hoy** en `origin` (`git ls-remote --heads origin
+scrum-661-coste-unitario-congelado` → apunta a `d6f5cb53`, sin borrar, porque nunca se volvió a
+mergear).
+
+**Pero el TRABAJO no se perdió — se rehizo, sin saberlo, unas horas después:**
+
+- El commit `96e36cb8` («SCRUM-674 (parte A) + SCRUM-685: el SQL aditivo…»), Sep 2 20:35:32+02:00
+  (18:35Z — **posterior** a los dos huérfanos), añadió `docs/sql/scrum-674-aditivo.sql`. Diff
+  línea por línea de las sentencias reales (sin comentarios) contra el DDL del huérfano
+  `d6f5cb53:docs/sql/scrum-674-deriva-produccion.sql`: **las mismas 5 `ALTER TABLE` + el mismo
+  `CREATE TABLE partes_trabajo` con sus 24 columnas + los mismos 2 `CREATE INDEX`**, sólo
+  reordenados y realineados. Mismas columnas, mismos tipos (JSONB en `clausulas_presupuesto` y
+  `clausulas_excluidas`, `revision INTEGER NOT NULL DEFAULT 0`), mismo veredicto aditivo.
+  `96e36cb8` llegó a `main` por el PR #967 (`1f038152`, 3-sep 12:30:30+02:00). Nadie citó el
+  commit huérfano al escribirlo (`grep` de `6093240a`/`d6f5cb53`/`coste-unitario-congelado` en
+  `docs/master/SCRUM-674.md` → cero coincidencias): es una re-medición independiente que llegó a
+  la misma DDL, no una recuperación consciente.
+- La consulta de verificación manual que añadía `6093240a`
+  (`verificacion-scrum-674.sql`, con sus controles `control_quotes_id`, `tipos_correctos`, etc.)
+  **NO se encuentra hoy en `main` bajo ningún nombre** (`git grep` de sus fingerprints únicos
+  — `tipos_correctos`, `control_quotes_id` — en todo `origin/main` sólo casa con un fichero de
+  OTRO ticket, SCRUM-579, por casualidad de nomenclatura). Lo que SÍ cumple su misma función hoy
+  es la sección propia `## Verificación, SIN tocar ninguna base` de
+  `docs/master/SCRUM-674.md` (con su propio control positivo: «la conexión ve 385 columnas»),
+  apoyada en `docs/sql/deriva-prod.sql` (censo genérico regenerado por
+  `scripts/generar-sql-deriva.mjs`, no la consulta manual del huérfano). Mismo objetivo — saber
+  si las seis cosas ya están — mecanismo distinto: por eso el veredicto de estos dos commits es
+  **reescrito**, no **igual**.
+
+## 13 · Conclusión — SIN víctima
+
+**De los tres, ninguno es (c).** Nada de lo que introducían estos tres commits huérfanos falta hoy
+en `main`: 610 llegó con su propio SHA (a), y las dos entradas de 674 llegaron con el mismo DDL
+bajo otro nombre y otra sesión de medición, horas después (b). El mecanismo que SCRUM-1092 vino a
+medir sigue siendo un riesgo de PROCESO real —hoy volvió a disparar dos veces (§3)—, pero **no
+tiene, por ahora, ninguna víctima con nombre**: no hace falta recuperar nada de `main` de hoy.
