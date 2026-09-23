@@ -132,3 +132,83 @@ auditarlo.
 ## 7 · Ticket
 
 Jira **SCRUM-1080** (`equipo-javier`, `area-j6`, `calidad`). Lo cierra el orquestador (A13), no yo.
+
+## 8 · SCRUM-1080b — Interrogado el guard ya en verde (encargo del fundador, 23-sep-2026)
+
+**Sesión:** jv-j6 · **Medido contra:** `origin/main` = `0a93fc6ab64de1753e7ec3f4c8d1b55c5f1396c5` ·
+2026-09-23T08:40:15Z (hora de GitHub)
+
+El guard llevaba un día en verde. «Verde solo significa que no se queja»: se le hicieron tres
+preguntas que debería saber contestar.
+
+### 8.1 · Puesto en rojo A PROPÓSITO, con un caso derivado de la constante (no un literal copiado)
+
+Inyectada una frase real que casa con `PATRONES_PROMESA_COBRO` («cliente + pagar, pegados») en un
+fichero NUEVO y sin condicionar dentro de la población (`public/dashboard/js/_prueba...borrar.js`,
+borrado antes de terminar; árbol comprobado limpio con `git status --porcelain` después):
+
+```
+public/dashboard/js/_prueba_scrum1080_borrar.js:3 [cliente + pagar, pegados (cobro por YaQu)]
+```
+
+**Cae, como debe.** El guard SÍ ve una promesa nueva en un fichero nuevo dentro de su población.
+
+### 8.2 · El hueco DECLARADO en la cabecera (granularidad por fichero) — verificado EN VIVO, no solo leído
+
+`_copy-cobro-profesional.mjs` (líneas 46-48) declara el precio de gatear por FICHERO en vez de por
+función: «un fichero que YA condiciona alguna promesa… queda ciego a una promesa NUEVA que alguien
+añada sin condicionar en el mismo fichero». Comprobado corriendo, no solo leído: se añadió una línea
+nueva con la misma frase («tus clientes pueden pagar con tarjeta ahora mismo») al FINAL de
+`settingsView.js` (que ya condiciona su propia tarjeta) y se corrió el guard.
+
+**Sigue en VERDE.** El hueco declarado es real y explotable hoy: cualquier edición futura de uno de
+los 6-7 ficheros ya gateados puede colar una promesa nueva sin que el guard se entere, con tal de que
+el fichero siga teniendo AL MENOS una condición en cualquier otra parte. (Línea revertida con Edit,
+`git status --porcelain` limpio de nuevo tras revertir — el `git restore` normal quedó bloqueado por
+un efecto de entorno de esta máquina, no relacionado con el guard: `guard-dangerous.mjs` calcula el
+`cwd` de un `cd "/c/…con espacio…" &&` extrayendo la ruta POSIX tal cual, y `spawnSync` en Node nativo
+de Windows no resuelve `/c/…` como ruta — falla cerrado con «no se pudo comprobar el estado del
+árbol», que es el comportamiento SEGURO que el propio hook documenta para cuando no puede mirar. No es
+un hallazgo de este guard; se deja anotado para quien toque `.claude/hooks/` — no es carril de J6 en
+`public/`, y el hook en sí no perdió nada, solo bloqueó una operación legítima.)
+
+**Veredicto: no se toca.** Es un trade-off DECLARADO por su propio autor, con el porqué escrito (§38
+de la cabecera: los tres mecanismos de gateo medidos no comparten alcance léxico). Subir la
+granularidad a nivel de función exigiría tres reglas ad-hoc distintas para los tres mecanismos que
+usan las superficies ya gateadas — el propio documento ya lo sopesó. No se ensancha ni se estrecha: se
+confirma que la declaración es cierta, que es lo que pedía el encargo.
+
+### 8.3 · Superficie que cubre y cuál NO — ¿hereda el agujero de SCRUM-299? Sí, la MISMA FORMA, sin víctima hoy
+
+SCRUM-299 se dejó 5→6→7 superficies porque el hueco era siempre «lo COMPARTIDO o lo HERMANO» (un pie
+de email compartido, un componente gemelo). Medí si `_copy-cobro-profesional.mjs` tiene la misma
+forma de hueco: su población es DOS entradas nombradas a mano (`public/dashboard/**` recorrido
+completo + UN fichero, `lifecycle.service.ts`) — no todo `src/modules/messaging/domain/`, que es
+donde vive. Ese directorio tiene 5 ficheros HERMANOS de `lifecycle.service.ts` que también envían
+contenido AL PROFESIONAL y que el censo no recorre: `weeklyDigest.service.ts` (email semanal «AL
+PROFESIONAL», el propio fichero lo dice en un comentario), `merchantNotifications.ts` (el nombre lo
+dice), `email.service.ts`, `emailLayout.ts` (la plantilla COMPARTIDA — la misma clase de riesgo que
+el pie `wrap()` que amplió el censo de SCRUM-299/1029 de 5 a 6) y `avisoDeCorreo.ts`.
+
+Los cinco, comprobados EJECUTANDO los patrones reales de `PATRONES_PROMESA_COBRO` contra su contenido
+de hoy (no leídos por encima): **0 coincidencias en los cinco**. `weeklyDigest.service.ts` sí habla de
+dinero cobrado/pendiente («💰 Cobrado», «N facturas sin cobrar»), pero es la misma clase que
+`docs/master/SCRUM-1029.md` §5 ya declaró SIGUE BIEN para «Pendiente de cobro» en `reportsView.js`:
+reporta un ESTADO pasado o pendiente, no promete que YaQu vaya a procesar un cobro nuevo — no casa con
+ninguno de los 6 patrones nombrados del detector.
+
+**Veredicto: hueco real de POBLACIÓN, sin víctima HOY (A7) — no es ticket.** No lo abro (A13) ni
+ensancho el censo yo (regla 38 lo permitiría — es un cambio solo de test, no toca el camino de
+emisión — pero decidir SI se ensancha es del orquestador, igual que en SCRUM-299 §299b). Queda escrito
+aquí para que quien lo decida no tenga que remedirlo: si `weeklyDigest.service.ts` u otro hermano de
+`messaging/domain/` gana algún día una frase que SÍ case con los patrones, el guard de hoy no la
+vería. Propuesta, no construida: añadir `src/modules/messaging/domain/*.ts` (o al menos los cinco
+ficheros nombrados) a `recolectarCopyProfesional`.
+
+### 8.4 · Resumen
+
+| pregunta | respuesta |
+|---|---|
+| ¿Detecta una promesa nueva en su población? | Sí — probado en rojo de verdad (8.1) |
+| ¿Detecta una promesa nueva en un fichero YA condicionado? | **No** — hueco declarado, confirmado en vivo (8.2), no se toca |
+| ¿Cubre todos los ficheros que envían contenido al profesional? | **No** — 5 hermanos de `lifecycle.service.ts` fuera del censo (8.3), sin víctima hoy |
