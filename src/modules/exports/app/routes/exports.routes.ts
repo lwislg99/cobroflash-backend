@@ -534,7 +534,12 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
     // J1: SCRUM-735 (GO comentario 16573) — el merchant se lee ANTES de derivar el año, porque
     // el año "de hoy" (sin `?year=`) y el tope de `invalidAnioFiscal` tienen que salir de la
     // zona del MERCHANT, no del reloj del proceso (Railway va en UTC).
-    const merchant = await prisma.merchant.findUnique({ where: { id: req.merchantId } });
+    // SCRUM-860: sólo los campos que este bloque usa (país/flags para el gate, NIF para el
+    // 409, huso para la zona) — no el merchant entero.
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { country: true, taxId: true, flags: true, timezone: true },
+    });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant })) {
       return res.status(404).json({ error: 'not_found' });

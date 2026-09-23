@@ -21,9 +21,12 @@ router.get('/', async (req, res) => {
       where: { id: req.merchantId },
       select: { timezone: true },
     }));
-    const [anioNatural, mesNatural] = diaNaturalEn(ahora, zona).split('-').map(Number);
-    const año = Number(req.query.year) || anioNatural;
-    const trimestre = Number(req.query.quarter) || Math.floor((mesNatural - 1) / 3) + 1;
+    // SCRUM-747: nada que trocear-y-validar aquí — `diaEnCurso` sale ENTERA de `diaNaturalEn`
+    // (siempre `YYYY-MM-DD`, nunca de una entrada externa) y se lee por posición, sin destructurar
+    // un `.split().map(Number)` que el censo de SCRUM-747 marcaría como sin validar.
+    const diaEnCurso = diaNaturalEn(ahora, zona);
+    const año = Number(req.query.year) || Number(diaEnCurso.slice(0, 4));
+    const trimestre = Number(req.query.quarter) || Math.floor((Number(diaEnCurso.slice(5, 7)) - 1) / 3) + 1;
 
     const paquete = await leerPaqueteEvidencias(prisma as any, { merchantId: req.merchantId, año, trimestre });
 

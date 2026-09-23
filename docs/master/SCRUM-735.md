@@ -309,6 +309,38 @@ que cambió y un consumidor que hay que actualizar, exactamente como predice A12
 `Europe/Madrid`. La zona sale siempre de `zonaDelMerchant(merchant)` o de un parámetro explícito
 que el caller decide.
 
+## 3bis · 🔴 Lo que la batería local NO cazó, y el CI de `main` sí (A9)
+
+La batería dirigida de ~200 tests (arriba) medía sobre esta máquina, sin banco Postgres. El CI de
+`main` corre ADEMÁS los ~8.100 tests gateados contra un banco desechable, y ahí cayeron dos guards
+que la tanda local nunca ejercita porque no tocan `verifactu.service.ts`/`invoiceNumber.service.ts`
+directamente — caen sobre `modelo303.routes.ts`/`evidencias.routes.ts`/`exports.routes.ts`, y sólo
+se ven barriendo `src/` entero:
+
+- **`tests/scrum747-validar-antes-de-normalizar.test.mjs`** — el censo AST de "trocear una cadena
+  a números sin validar" cazó `const [anioNatural, mesNatural] = diaNaturalEn(...).split('-').map(Number)`
+  en `modelo303.routes.ts` y `evidencias.routes.ts`: la misma FORMA que el ticket que dio origen a
+  este censo (SCRUM-747) cerró en `pendientesFacturar.service.ts`, aunque aquí `diaNaturalEn`
+  siempre reciba un `Date` fresco (`new Date()`, nunca entrada externa) y no pueda fallar. El propio
+  fichero de test avisa, con un caso real ya vivido, de que "viene de `diaNaturalEn`, así que está
+  bien" es EXACTAMENTE el razonamiento que ya se demostró falso una vez (`dentroDeRangoFecha`, donde
+  el mismo argumento sí podía llegar de `req.query` sin pasar por `diaNaturalEn`). En vez de repetir
+  ese razonamiento o añadir una validación de teatro, se cambió el idioma: `Number(diaNaturalEn(...).slice(0,4))`
+  en lugar de destructurar un `.split().map(Number)` — el mismo patrón que ya usaba `fiscalInput.ts`
+  en este mismo diff, que por eso nunca disparó el censo.
+- **`tests/scrum860-trinquete-del-select.test.mjs`** — mover el `prisma.merchant.findUnique`
+  (sin `select`) de `/verifactu.xml` a ANTES del primer `return` hizo que el análisis estático lo
+  clasificara como "se sirve" cuando antes no lo veía. Es un `findUnique` que YA existía (medido
+  contra `origin/main`: el mismo sitio, sin `select`, ya contaba entre los 102 del suelo — sólo que
+  en otra forma no detectada); moverlo lo hizo visible. Arreglado con `select` a los cuatro campos
+  que el bloque de verdad usa (`country`, `taxId`, `flags`, `timezone`) — no se sube el suelo: se
+  cierra la lectura.
+
+Los dos arreglos son locales a las rutas fiscales tocadas por este ticket, no cambian ningún
+comportamiento observable (mismos datos, mismas respuestas), y quedan reverificados en la batería
+dirigida (`scrum747`, `scrum860`, más el resto de la batería de exports.routes.ts) antes de este
+párrafo.
+
 ## 4 · Suelo — lo que no se pudo verificar aquí
 
 - **La tanda completa de `npm test` (973 ficheros) no se terminó de correr en esta máquina**: dos

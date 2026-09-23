@@ -26,12 +26,15 @@ router.get('/', async (req, res) => {
       where: { id: req.merchantId },
       select: { timezone: true },
     }));
-    const [anioNatural, mesNatural] = diaNaturalEn(ahora, zona).split('-').map(Number);
-    const año = Number(req.query.year) || anioNatural;
+    // SCRUM-747: nada que trocear-y-validar aquí — `diaEnCurso` sale ENTERA de `diaNaturalEn`
+    // (siempre `YYYY-MM-DD`, nunca de una entrada externa) y se lee por posición, sin destructurar
+    // un `.split().map(Number)` que el censo de SCRUM-747 marcaría como sin validar.
+    const diaEnCurso = diaNaturalEn(ahora, zona);
+    const año = Number(req.query.year) || Number(diaEnCurso.slice(0, 4));
     // Sin trimestre en la petición se usa el EN CURSO. No el anterior: quien abre esto en mayo
     // está mirando lo que lleva del 2T, y devolverle el 1T sin decirlo sería contestar a otra
     // pregunta. El periodo devuelto viaja siempre en `desde`/`hasta`.
-    const trimestre = Number(req.query.quarter) || trimestreDe(mesNatural);
+    const trimestre = Number(req.query.quarter) || trimestreDe(Number(diaEnCurso.slice(5, 7)));
 
     return res.json(await leerModelo303(prisma, { merchantId: req.merchantId, año, trimestre }));
   } catch (err) {
