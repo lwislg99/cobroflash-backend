@@ -160,6 +160,25 @@ export const DECLARADOS = {
     porque: 'runner local para empujar una entrada del registro; lo que ejecuta son tests de la tanda',
     prueba: { susGuardsSonDeLaTanda: true },
   },
+  'scripts/guard-acreditacion-invoicing-es.mjs': {
+    porque: 'SCRUM-1097/1109: su CLI no lo invoca npm test ni CI — corre por su propio contrato de '
+      + 'bandera (--staging/--prod-ro), programado en Railway contra producción (SCRUM-1109), fuera '
+      + 'del repo. Su módulo puro SÍ corre en la tanda: tests/scrum1097-… llama DIRECTAMENTE a sus '
+      + 'dos funciones exportadas, y scripts/aviso-programado-… las llama a su vez desde dentro de '
+      + '`ejecutarPasada`, que tests/scrum1109-… ejercita de verdad.',
+    prueba: {
+      directas: {
+        fichero: 'tests/scrum1097-guard-acreditacion-invoicing-es.test.mjs',
+        llamadas: ['medirAcreditacion', 'verificarSoloLecturaEstructural'],
+      },
+      indirectas: {
+        envoltorio: 'scripts/aviso-programado-acreditacion-invoicing-es.mjs',
+        llamadas: ['medirAcreditacion', 'verificarSoloLecturaEstructural'],
+        testDelEnvoltorio: 'tests/scrum1109-aviso-programado-acreditacion-invoicing-es.test.mjs',
+        llamadaDelTest: 'ejecutarPasada',
+      },
+    },
+  },
 };
 
 // ── EL ÁRBOL REAL ────────────────────────────────────────────────────────────────────────────
@@ -333,6 +352,32 @@ test('SCRUM-711 · las pruebas de las declaraciones siguen siendo ciertas', () =
   assert.deepEqual(fuera, [],
     '🔴 `guards-entrada.mjs` ejecuta algo que la tanda NO corre, así que ya no vale su declaración: '
     + fuera.join(', '));
+});
+
+test('SCRUM-1109 · la prueba de guard-acreditacion-invoicing-es.mjs en DECLARADOS sigue siendo cierta', () => {
+  const pc = DECLARADOS['scripts/guard-acreditacion-invoicing-es.mjs'].prueba;
+
+  // Directa: el test de SCRUM-1097 llama a las dos funciones exportadas por su nombre.
+  const codigoDirecto = soloCodigo(fs.readFileSync(path.join(RAIZ, pc.directas.fichero), 'utf8'));
+  for (const llamada of pc.directas.llamadas) {
+    assert.match(codigoDirecto, new RegExp(`\\b${llamada}\\(`),
+      `🔴 ${pc.directas.fichero} ya no llama a ${llamada}(…) fuera de comentarios.`);
+  }
+
+  // Indirecta: el envoltorio de SCRUM-1109 llama a las dos funciones dentro de su propio código…
+  const codigoEnvoltorio = soloCodigo(fs.readFileSync(path.join(RAIZ, pc.indirectas.envoltorio), 'utf8'));
+  for (const llamada of pc.indirectas.llamadas) {
+    assert.match(codigoEnvoltorio, new RegExp(`\\b${llamada}\\(`),
+      `🔴 ${pc.indirectas.envoltorio} ya no llama a ${llamada}(…) fuera de comentarios — deja de `
+      + 'ejercitar el guard importado.');
+  }
+  // …y el test de SCRUM-1109 SÍ ejercita ese envoltorio de verdad (no solo lo importa).
+  const codigoTestEnvoltorio = soloCodigo(fs.readFileSync(path.join(RAIZ, pc.indirectas.testDelEnvoltorio), 'utf8'));
+  assert.match(codigoTestEnvoltorio, new RegExp(`\\b${pc.indirectas.llamadaDelTest}\\(`),
+    `🔴 ${pc.indirectas.testDelEnvoltorio} ya no llama a ${pc.indirectas.llamadaDelTest}(…) fuera de `
+    + 'comentarios. Sin esa llamada, la cadena hasta el guard importado deja de ejercitarse en la tanda '
+    + 'y la declaración de scripts/guard-acreditacion-invoicing-es.mjs en DECLARADOS estaría tapando '
+    + 'un guard que no corre en ningún sitio.');
 });
 
 test('SCRUM-711 · 📌 el límite de «primer nivel» sigue sin esconder nada', () => {
