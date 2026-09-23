@@ -123,7 +123,7 @@ uno por si tiene ya una `RESPUESTA` citable en el apéndice de arriba.
 | **M4/M5** | G — presupuesto adicional | SCRUM-290 | ✅ RESPONDIDA (ADDENDA·G, normativa Comunidad de Madrid, tabla completa) — **es normativa autonómica**, fuera de Madrid falta cotejar | Para Madrid, NO; para el resto de CCAA, SÍ |
 | **P1** | E — baja de un profesional | SCRUM-244 | ✅ RESPONDIDA (RESPUESTAS·E, cotejada 23-sep) | NO |
 | **P2** | P17 — cliente final y sus datos congelados | flujo de supresión cliente final | ✅ RESPONDIDA (RESPUESTAS·P17) | NO |
-| **P3** | Modelo RGPD/cookies completo | corregir `yaqu.app/privacidad` | 🔴 **ABIERTA — y el hueco ya está PUBLICADO y activo hoy** (no cubre IBAN/NIF/teléfono del profesional, dirección del cliente final ni evidencia de firma); RESPUESTAS sólo la roza de refilón en C9 | SÍ — es la más grave de las abiertas: no bloquea construir algo futuro, exhibe un documento público ya defectuoso |
+| **P3** | Modelo RGPD/cookies completo | validación externa del bundle Y3 | 🟡 **CORREGIDO 23-sep-2026 (jv-j4): el hueco de contenido NO existe hoy** — medido contra la página EN VIVO, §2 ya cubre IBAN/NIF/teléfono, dirección del cliente final y evidencia de firma desde el 23-jul-2026 (commit `c238ec706a`); lo que sigue abierto es que nunca la revisó un asesor externo | SÍ, pero como validación, no como corrección de contenido — ver apéndice §1023c |
 | **QC1** | Reforma vivienda 10 % | CON-08/09 (no bloqueante, declarado en su propio ticket) | 🟢 Sustancialmente respondida por **F4** (misma cita LIVA 91.Uno.2.10º, ya incluye comunidades de propietarios) | NO nueva — cruzar con F4 |
 | **QC2** | ISP en obra/subcontrata | ídem | 🟢 Sustancialmente respondida por **F4** (LIVA 84.f, subcontrata explícita) | NO nueva — cruzar con F4 |
 | **QC3** | Suplidos, mandato expreso | ídem | 🟢 Sustancialmente respondida por **F7** (LIVA 78.Tres.3º, "mandato expreso" ya cotejado) | NO nueva — cruzar con F7 |
@@ -136,11 +136,11 @@ uno por si tiene ya una `RESPUESTA` citable en el apéndice de arriba.
 
 ## Por gravedad (lo que bloquean, no lo interesante) — las que SÍ necesitan asesor hoy
 
-1. **P3** — hueco YA publicado en `yaqu.app/privacidad` (no es un bloqueo futuro: es un documento
-   público con un hueco activo hoy mismo).
-2. **F18 (P20)** y **F16 (P18)** — bloquean **SCRUM-665**, ambas marcadas urgentes ya.
-3. **F9 (P16)** — bloquea **SCRUM-413**, con el diff ya escrito esperando sólo esta respuesta.
-4. **F17 (P19)** — bloquea rellenar la declaración responsable, condición previa a SIF-1 8/8.
+1. **F18 (P20)** y **F16 (P18)** — bloquean **SCRUM-665**, ambas marcadas urgentes ya.
+2. **F9 (P16)** — bloquea **SCRUM-413**, con el diff ya escrito esperando sólo esta respuesta.
+3. **F17 (P19)** — bloquea rellenar la declaración responsable, condición previa a SIF-1 8/8.
+4. **P3** — CORREGIDA 23-sep-2026: ya no es "hueco publicado" (ver §1023c), es sólo validación
+   externa pendiente de un texto ya completo. Baja de #1 a aquí: no bloquea nada hoy.
 5. **M2** y **M3** — bloquean poder cobrar (ToS correctos / alcance Founding por escrito). M3 además
    cruza con el bloqueo de hoy de SCRUM-534 (Encargo 1): conviene mandarla después.
 6. **F13, F14** — microcopy/UI (5+1 ranuras), menor: no bloquean dinero ni una decisión de diseño.
@@ -259,3 +259,63 @@ positivos (declarado arriba) y el volumen no justificaba un segundo instrumento 
 `scripts/_afirmaciones-publicadas.mjs` (afirmaciones de la landing) y `scripts/_documentos-citados.mjs`
 (citas entre documentos), y ninguno de los dos mide esto: comprobado antes de escribir nada.
 * No resuelve F3 (si hay que volver a preguntar el Convenio 017): es decisión de Javier, no mía.
+
+## SCRUM-1023c · Corrección de P3 + auditoría de premisas del mapa (23-sep-2026, jv-j4)
+
+**Medido contra:** `origin/main` = `d8d724e1f3f41d1ce50b785cbfb275b76bd7b729` · 2026-09-23T10:53:08Z
+
+### La corrección
+
+El encargo era proponer texto firmable para P3 (rankeada #1 por gravedad arriba: "hueco YA
+publicado en `yaqu.app/privacidad`"). Antes de proponer texto, medí si el hueco existe hoy —
+PASO 0 — y no: es falso.
+
+- **yaqu.app/privacidad EN VIVO** (fetch de hoy) = idéntica a `public/privacidad.html` de
+  `origin/main` ("Última actualización: 23 de julio de 2026"). Su §2 cubre, literalmente: del
+  profesional "nombre, email, teléfono, NIF/CIF, dirección fiscal e IBAN"; de los clientes finales
+  "nombre, teléfono, email y dirección del servicio"; y una "Evidencia de firma" detallada (fecha,
+  hora, IP, navegador, hash). Los tres elementos que P3 decía que faltan, están.
+- El hueco **sí existió**, pero se cerró hace dos meses: commit `c238ec706a` (Luis, 23-jul-2026,
+  "política de privacidad republicada"), con este mensaje: *"no cubría IBAN/NIF/teléfono del
+  profesional, dirección del cliente final ni la evidencia de firma [...] Se publica la versión
+  completa ahora (decisión del fundador)"*. `docs/legal/RGPD_TRATAMIENTO_DATOS.md` lo documenta
+  correctamente EN PASADO, con el sello "✅ Decisión del fundador (23-jul-2026): publicar ya".
+- La redacción de P3 (commit `9cf6254b`, 22-sep-2026, un día antes de esta medición) **copia ese
+  mismo texto en presente** ("no cubre HOY") sin recotejarlo contra la página viva ni contra la
+  fecha de "última actualización" de su propio texto de origen.
+- Lo que **sigue siendo verdad**: esa política nunca la revisó un asesor externo. Sigue abierto,
+  pero es una pregunta de validación, no un "documento público con hueco activo".
+
+**Aplicado en esta misma rama:** texto de P3 corregido en `PREGUNTAS_ASESOR_POR_ESPECIALISTA.md` y
+bajado de #1 a #4 en el orden por gravedad de este fichero (arriba). No toqué
+`PREGUNTAS_ASESOR.md` (el expediente que sí se manda al asesor) — eso, si hace falta, lo decide
+quien lo envíe.
+
+### La pregunta que salió de esto: ¿cuántas más del mapa heredan una premisa caducada?
+
+Encargo del orquestador: de las preguntas rankeadas arriba por gravedad, ¿cuántas afirman un hecho
+comprobable sobre el estado de HOY (una página, un fichero, una columna) y cuántas de ésas se
+verificaron contra la realidad al escribirlas? Auditoría proporcional (no exhaustiva — se pidió
+media hora, no recontar las 35):
+
+| Pregunta | ¿Afirma un hecho de hoy verificable? | Verificado ahora | Resultado |
+|---|---|---|---|
+| **P3** | Sí — estado de una página pública, sin cita a línea/función concreta | Recoteja | 🔴 **CACHÉ CADUCADA** — la única de las auditadas que falló |
+| **F16** | Sí — cita exacta `SCRUM-665`, "el emisor sale de la COLUMNA, no de la ficha viva" | `src/lib/invoicing.ts:105-113`, función `emisorDelDocumento` | 🟢 Confirmado: así es hoy |
+| **F18** | Sí — cita exacta `ensureInvoicePdf` en `src/lib/invoicing.ts` | Función existe, regenera con el código/plantilla vigente cada vez que falta en disco (línea 70-77) | 🟢 Confirmado: así es hoy |
+| **F17** | Sí — "el documento sigue con placeholders sin rellenar en el campo de productor" | `docs/legal/DECLARACION_RESPONSABLE.md:23-24` — placeholders `[NOMBRE O RAZÓN SOCIAL DEL PRODUCTOR]` / `[NIF DEL PRODUCTOR]` siguen ahí | 🟢 Confirmado: así es hoy |
+| **F9** | Sí, pero de datos de producción ("5 casos reales") | No verificable desde esta máquina (sin acceso a la BD; SUELO declarado, no medido) | ⚪ No verificable aquí — cita "ya medido", no heredada de otro documento |
+| **M3** | Sí — `ALCANCE_BETA.md` cita "se activa al cerrar la certificación", frase que SCRUM-534h marcó para corregir | `docs/legal/ALCANCE_BETA.md:5,28` — la frase SIGUE sin corregir hoy | 🟢 Confirmado: así sigue, y la propia pregunta ya avisaba de este riesgo |
+| **M2** | Parcial — cita el 0,9 % y Stripe Connect como mecanismo vigente | Lógica de comisión localizada en `src/modules/billing/app/routes/{payInvoice,payCard}.routes.ts` | 🟢 Confirmado: el mecanismo existe hoy |
+
+**Conclusión: P3 fue la excepción, no la regla.** De 7 preguntas del bloque de mayor gravedad, 5 se
+recotejaron contra código/ficheros de hoy y **coinciden** con lo que afirman; 1 (F9) cita una
+medición previa sobre datos de producción que esta máquina no puede repetir (sin Postgres/acceso a
+BD — se declara, no se da por buena ni por mala); y sólo P3 resultó ser una premisa heredada de un
+documento de hace dos meses sin recotejar. La señal que separó a P3 del resto: **P3 no citaba
+fichero, línea ni función** — sólo "la página, HOY", en prosa. F16/F17/F18/M2/M3 sí citan un
+artefacto concreto (fichero:línea, función, o el propio SCRUM del mecanismo), y los cinco
+resistieron el recotejo.
+
+**No re-audité F13, F14, F5/QC6, F8, QC7** (gravedad #6-8, no pedidas) ni el resto de los 35 grupos
+— sería repetir el trabajo completo del mapa, no lo que se pidió.

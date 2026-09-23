@@ -390,12 +390,23 @@ banner mínimo. Hay un análisis con 6 preguntas concretas ya preparado en
 `docs/legal/RGPD_TRATAMIENTO_DATOS.md` (reparto responsable/encargado entre YaQu y el profesional,
 base jurídica de cada tratamiento, si hace falta un DPA con cada profesional, aviso de firma para el
 cliente final, plazos de conservación, y si hace falta Registro de Actividades de Tratamiento).
-**Urgente dentro de este bloque:** la política de privacidad que está publicada HOY en
-`yaqu.app/privacidad` no cubre el IBAN/NIF/teléfono del profesional, la dirección del cliente final ni
-la evidencia de firma — y nunca fue validada por un asesor pese a estar ya visible al público.
-**Desbloquea:** que la política publicada sea correcta (hoy tiene un hueco activo) + el resto del
-bundle Y3.
-**Si no se contesta:** la política sigue publicada con ese hueco.
+**CORREGIDO 23-sep-2026 (jv-j4):** este bloque decía que `yaqu.app/privacidad` "no cubre HOY" el
+IBAN/NIF/teléfono del profesional, la dirección del cliente final ni la evidencia de firma. Medido
+contra la página EN VIVO hoy (no solo el repo): **es falso** — SÍ los cubre, los tres, en su §2 ("Qué
+datos recogemos"), en la versión con fecha "Última actualización: 23 de julio de 2026". Ese hueco
+existió, pero se cerró ese mismo 23-jul-2026 (commit `c238ec706a`, "política de privacidad
+republicada"); `docs/legal/RGPD_TRATAMIENTO_DATOS.md` lo documenta correctamente en pasado ("no
+cubría") con el sello "Decisión del fundador (23-jul-2026): publicar ya". Esta sección heredó esa
+frase en presente sin recotejarla contra la página viva.
+**Lo que SIGUE abierto de verdad:** esa política, aunque completa, **nunca la revisó un asesor
+externo** — se publicó el 23-jul-2026 por decisión del fundador mientras se esperaba esa revisión.
+Las 6 preguntas del análisis de `RGPD_TRATAMIENTO_DATOS.md` (reparto responsable/encargado, DPA,
+aviso de firma, plazos de conservación, Registro de Actividades) siguen siendo las que hay que
+mandar — no ha cambiado nada de eso.
+**Desbloquea:** que quede una validación externa del bundle Y3 (no una corrección de contenido: no
+hay ninguna pendiente).
+**Si no se contesta:** la política sigue publicada sin haber pasado nunca por un asesor — no con un
+hueco de contenido.
 
 ---
 
