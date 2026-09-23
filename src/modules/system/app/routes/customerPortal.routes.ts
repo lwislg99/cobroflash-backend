@@ -267,12 +267,16 @@ router.get('/:token', async (req, res) => {
       // regla 2: `merchantId` en la propia consulta, no solo heredado de `customer` (SCRUM-243).
       where: { merchantId: customer.merchantId, customerId: customer.id, scheduledAt: { gte: new Date() }, status: { in: ['agendado', 'en_curso'] } },
       orderBy: { scheduledAt: 'asc' },
-      include: {
+      // `select`, no `include` (SCRUM-860: ninguna lectura que llegue a una respuesta sin nombrar
+      // sus columnas) — solo lo que el portal pinta, nunca el Job entero.
+      select: {
+        scheduledAt: true,
+        assignedUserId: true,
         // SCRUM-650: JobAssignee es el destino final; se lee primero y se cae a `assignedUserId`
         // solo si no hay ningún asignado por la tabla nueva (los dos sitios pueden discrepar
         // mientras esa migración no esté completa). Un job puede tener varios asignados; el
         // portal es singular ("Tu técnico"), así que se enseña el primero asignado.
-        assignees: { orderBy: { assignedAt: 'asc' }, take: 1, include: { teamMember: { select: { name: true } } } },
+        assignees: { orderBy: { assignedAt: 'asc' }, take: 1, select: { teamMember: { select: { name: true } } } },
       },
     }),
   ]);
