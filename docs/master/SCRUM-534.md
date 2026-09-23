@@ -1185,3 +1185,103 @@ Mi comentario 16583 metió bajo «LA DÉCIMA» **dos** líneas como si fueran un
 las nueve y firmada. J4 lo encontró en su PASO 0 —releer antes de aplicar— y **paró en vez de
 ejecutar**, separando lo que era contradicción mía de lo que era diferencia con `main`. Corregido en
 el comentario 16585. Sin esa parada se habría aplicado mal un documento que se firma ante Hacienda.
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-534n · La parte 3 aplicada al máster (opción B)
+
+**Medido contra:** `origin/main` = `8599c18b4033a598cf87ce5c6dd0af198b75dfcc` · 2026-09-23T10:40:08Z
+**Aplica:** el orquestador del equipo de Javier (A13), con la firma de Javier del 23-sep-2026
+(SCRUM-534, comentario 16601): sobre las dos opciones del apéndice SCRUM-534j, eligió **«B»**.
+
+## Por qué lo aplica el orquestador
+
+`docs/YAQU_MASTER.md` es de Javier y **su clasificador bloquea ese fichero a las sesiones por
+contenido** — le pasó a J1 al entregar el expediente de la parte 3, y ya le había pasado a J4 con el
+guion H2. Mismo camino que la enmienda de la regla 26 y que el bloque D del lote de cobro.
+
+## Lo aplicado, las dos líneas
+
+### L2 · `:404`, Parte L — «STATE MACHINES OFICIALES · FUENTE DE VERDAD» (regla 27)
+
+| | |
+|---|---|
+| **antes** | `**VfSubmission:** pending → sent → accepted · sent → rejected(error) → pending(retry, attempts++) · attempts≥5 → manual_review. accepted terminal.` |
+| **después** | describe `Invoice.vfEstado`, la entidad **real**: `pendiente_de_sellado → sellado` · `pendiente_de_sellado → no_aplica`, con su fuente en `selladoEstado.ts`, diciendo expresamente que es el **sellado LOCAL y no la remisión**, y que la cola **no está construida** |
+
+**El defecto que tenía:** el formato era **idéntico** al de Quote, Invoice y Charge, que sí existen.
+Nada en la frase distinguía «esto es diseño» de «esto está construido», y la sección donde vivía se
+declara *fuente de verdad* por la regla 27.
+
+### L3 · `:449`, Parte O — runbook R7
+
+| | |
+|---|---|
+| **antes** | `R7 · SIF rechaza registros:` leer `VfSubmission.lastError`, «la emisión local sigue y **la cola remite al reanudar**» |
+| **después** | `R7 · Falla el sellado local de una factura:` describe lo único que **sí** puede fallar hoy, y dice expresamente que **la AEAT no puede rechazar nada porque la remisión no está construida** |
+
+**Por qué era el peor de los dos, aunque fuera una línea más corta:** un runbook **se lee con prisa,
+durante una incidencia**, y le da instrucciones a alguien para operar un mecanismo que no existe. Una
+descripción en la Parte L se lee con calma.
+
+## 🔴 El hueco que la opción B destapa, declarado y no escondido
+
+R7 queda con un **`[FALTA decidir el mecanismo de reintento — hoy no hay ninguno automático,
+medido]`**. Ese hueco es real: **no hay runbook para un fallo de sellado local.**
+
+**Es mejor que lo de antes, y conviene decir por qué:** un hueco declarado se ve; una instrucción
+falsa se sigue. La opción A lo habría tapado con una etiqueta `[SE HARÁ]`, dejando la entrada dentro
+de una sección que se declara fuente de verdad.
+
+## Controles, ejecutados y no supuestos
+
+Aplicado con un script que **aborta sin escribir un byte** si cualquiera falla, y que **localiza las
+dos líneas por CONTENIDO, no por número** (el máster se mueve):
+
+| control | resultado |
+|---|---|
+| cada línea aparece **exactamente una vez** antes de tocar | sí, las dos |
+| líneas del fichero antes → después | **1887 → 1887** |
+| líneas que difieren | **2** |
+| 🔴 ¿sigue existiendo la máquina de estados de `VfSubmission`? | **no** |
+| 🔴 ¿sigue existiendo el runbook del rechazo de la AEAT? | **no** |
+| 🔴 ¿queda alguna frase diciendo «la cola remite al reanudar»? | **no** |
+| ¿se conserva D2 (`:156`, capas nuevas)? | **sí** — es plan declarado, no defecto |
+| ¿se conserva S1-D (`:1042`, checklist de SIF-1)? | **sí** — ídem |
+
+### Una corrección del propio control, que merece la pena dejar escrita
+
+La primera versión del script **abortó**: exigía que quedaran **2** menciones de `VfSubmission` y
+quedaban **3**. La tercera es **mía y deliberada** — el texto nuevo dice *«antes descrito aquí como
+`VfSubmission`»* para que quien busque ese nombre encuentre el rastro en vez de un silencio.
+
+**El control tenía razón en saltar y mi expectativa estaba mal.** Pero la lección no es subir el
+número de 2 a 3: es que **contar menciones nunca fue el invariante**. El invariante es *«ninguna línea
+vuelve a DECLARAR la máquina de estados ni el runbook falso»*, y así está escrito ahora — tres
+comprobaciones por efecto en vez de un recuento. Un guard que cuenta apariciones pasa en cuanto
+alguien escribe la misma mentira con otras palabras.
+
+## 🔴 Lo que esto NO cierra: seis bebedores fuera del máster
+
+El comentario **13813** (S1, 19-ago) avisó de esto y sigue siendo el riesgo: **corregir la Parte L sin
+corregir a quien bebe de ella deja huérfanos citando algo que ya no dice eso.**
+
+| dónde | qué sigue diciendo |
+|---|---|
+| `docs/RUNBOOKS.md:79` | repite el R7 viejo entero, **con un guion para decirle al cliente que «la remisión se reanuda»** |
+| `YAQU_MASTER.md:434` y `:1028` | citan `VfSubmission.lastError` y la cola |
+| `docs/legal/SEMAFORO_CALIBRACION.md:196` | asume que existe el sitio donde gestionar los rechazos 3000-3004 |
+| `docs/equipo/puesto-j1.md:15` | describe el área del puesto incluyendo la cola |
+| `.agents/skills/yaqu-verifactu-sif/SKILL.md` | **la copia que lee Codex en la máquina de Luis** — va por SCRUM-1089 |
+
+Y `docs/VERIFACTU_EVIDENCIAS.md`, citado por el máster, un runbook y dos skills, **no existe**: parece
+un error de nombre propagado por copia desde `docs/EVIDENCIAS_E2E.md`, que sí existe.
+
+**El más caro de los seis es el primero**, por el mismo motivo que L3: se abre en una incidencia real
+y lleva un guion que le mentiría a un cliente.
+
+## Lo que NO se ha tocado
+
+- Ninguna otra línea del máster. Un cambio de máster lleva una firma, y esta firma cubre estas dos.
+- Ningún estado, flag ni transición de producto (reglas 27 y 30) más allá de las dos enmendadas.
+- Ningún fichero de `src/`, ningún test, ningún guard.
