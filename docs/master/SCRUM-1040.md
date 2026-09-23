@@ -104,6 +104,27 @@ se reutilizan sin reescribir. Sin claims: en ningún texto nuevo aparece «ofici
   rama y no tiene relación con facturas ni con el dashboard. Los dos se reportan, no se arreglan
   aquí (son de otro carril).
 
+## Cierre de CI (23-sep-2026, sesión J5 nueva — relevo)
+
+El PR quedó en UNSTABLE al entregarse. Medido, no supuesto: dos checks en rojo.
+
+* **`guards de navegador (fuera de la tanda)` → `guard:marcadores-en-pantalla` (SCRUM-722).**
+  Es un **UNDÉCIMO** trinquete que la lista de arriba no recoge — sólo corre en el job de CI
+  completo, no en `guards:entrada` ni en `npm test` (mismo motivo que los otros diez: nadie lo ve
+  en local). Encontró la vista `facturas-recibidas` pintando 6 `[PENDIENTE microcopy oficial]`
+  (título + aviso de error, en sus tres estados) sin entrada en el censo del guard. Arreglado
+  declarando la entrada en `scripts/guard-marcadores-en-pantalla.mjs` con su motivo y quién la
+  retira (firmar el texto), igual que las tres que ya salieron de ese mismo censo — **no se ha
+  inventado microcopy** (regla 5/30; firmar textos es STOP CONDITION de AA1.4, no una decisión de
+  quien construye la pantalla).
+* **`meta-guard · los guards caen cuando deben` → CIEGO en `vigia-atascados.test.mjs`.**
+  Un test ajeno a este ticket (`🔴 CONTROL NEGATIVO REAL #1259`, sobre `scripts/vigia-atascados.mjs`,
+  el vigía de PR atascados) no apareció verde en la pasada limpia del meta-guard. Ese fichero no lo
+  toca esta rama, y el mismo job pasó en verde en `main` el mismo día (23-sep, runs `35798146956` y
+  `35799922861`): se trata como flake de infraestructura, no como un rojo de este ticket, y se
+  reintenta con el push de este mismo commit en vez de tocar `vigia-atascados.mjs` (regla 41: no es
+  mi código el que falló).
+
 ## Un error propio, confesado
 
 Mi primer intento de comparar la ruta JSON contra el CSV como CONJUNTO tenía un filtro de líneas
