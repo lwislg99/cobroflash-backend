@@ -1732,3 +1732,77 @@ el REGISTRO, el documento puede regenerarse», este eje deja de ser un defecto f
 una decisión de producto (¿molesta al profesional que su PDF cambie de aspecto?). Si es «el
 documento entregado también tiene que ser inmutable», este apéndice es la prueba de que hoy no lo
 es, en el mismo sentido en que el Apéndice (F) probó que los datos sí lo son ya.
+
+---
+
+# APÉNDICE (H) · 23-sep-2026 · J1 · El desglose por `pdfUrl` en DEV — y un bug en el script que lo mide
+
+**Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:09:09Z
+
+> Encargo: cerrar la medición 2 pendiente — correr
+> `docs/master/evidencias/scrum665-eje-codigo/desglose-pdfurl.mjs DATABASE_URL_DEV`. Los totales
+> por entorno (producción 2, staging 9, dev 5) ya los midió el orquestador; faltaba el desglose por
+> `pdfUrl` de esos mismos totales. Staging y producción no son de este puesto — no se han tocado.
+
+## El script, tal cual está en `main`, falla contra DEV — y no es un problema del entorno
+
+```
+node docs/master/evidencias/scrum665-eje-codigo/desglose-pdfurl.mjs DATABASE_URL_DEV
+```
+
+La primera consulta (huella + total de filas) corre bien: **5 filas en `invoices`**, coincide con
+el total que ya tenía el orquestador para DEV. La segunda consulta —el desglose por `pdf_url`—
+**lanza**:
+
+```
+PrismaClientKnownRequestError: Raw query failed. Code: `42703`.
+Message: `column "pdf_url" does not exist`
+```
+
+**No es un problema de la base ni del entorno: es un desajuste entre el SQL del script y el
+esquema.** `prisma/schema.prisma`, `model Invoice` (`@@map("invoices")`):
+
+```
+vfEstado  String  @default("pendiente_de_sellado")  @map("vf_estado")   ← SÍ tiene @map: columna real "vf_estado"
+pdfUrl    String                                                          ← NO tiene @map: columna real "pdfUrl" (camelCase, con comillas)
+```
+
+El script usa `vf_estado` (correcto, coincide con el `@map`) y `pdf_url` (incorrecto: ese campo NO
+lleva `@map`, así que Prisma lo creó con el nombre `"pdfUrl"` case-sensitive, no `pdf_url`). El
+`WHERE` de la primera columna filtra bien; la comparación de la segunda no encuentra la columna y
+Postgres corta la consulta entera.
+
+## La medición que SÍ se pudo hacer — con la columna corregida, no con el script de `main`
+
+Para no dejar la medición 2 sin cerrar, corrí la misma consulta cambiando `pdf_url` por `"pdfUrl"`
+(entre comillas, tal como exige Postgres para un identificador con mayúsculas). **No se tocó el
+fichero de `main`** — es una consulta ad-hoc, de solo lectura, ejecutada aparte:
+
+```
+DEV — facturas EMITIDAS (vf_estado = 'sellado'): 0
+  → PENDING%             : 0
+  → formato válido (D4)  : 0
+  → formato legado       : 0
+```
+
+**Motivo, no ausencia de dato:** las 5 filas de `invoices` en DEV están **las 5 en
+`pendiente_de_sellado`** (`SELECT vf_estado, count(*) FROM invoices GROUP BY vf_estado` → una sola
+fila, `pendiente_de_sellado: 5`). Ninguna ha llegado nunca a `sellado`. El desglose por `pdfUrl` es
+correctamente 0/0/0/0 porque el universo sobre el que se calcula —facturas emitidas— está vacío en
+este entorno, no porque el script no encontrara nada que buscar.
+
+🔴 **Repetido aquí, tal como pide el propio script**: «formato válido» ≠ «persiste». Sin
+almacenamiento externo (reconfirmado en el punto 4 de este mismo ticket: cero SDKs de nube en
+`package.json`), ninguna fila sobrevive garantizada a un redeploy de Railway — el proxy de formato
+solo dice si el disco efímero tenía el fichero la última vez que se escribió esa fila, no si sigue
+estando hoy. Con DEV en 0 emitidas, esta salvedad no tiene ninguna fila a la que aplicarse todavía,
+pero sigue valiendo para cuando staging o producción se corran con la columna corregida.
+
+## Lo que NO cubre esta entrada
+
+* ⛔ No se corrige `desglose-pdfurl.mjs` en `main` — es un bug de una línea (`pdf_url` → `"pdfUrl"`)
+  pero arreglarlo es construir, y el encargo de esta tanda es medir. Queda para quien lo pida.
+* ⛔ **Staging y producción no se han corrido**, ni con el script tal cual (fallaría igual, mismo
+  bug) ni con la columna corregida — no son de este puesto (dixit el encargo).
+* La cifra de DEV (0 emitidas) es la MEDICIÓN de hoy sobre esta base; no dice nada de staging (9
+  filas totales) ni de producción (2), que pueden tener una distribución de `vf_estado` distinta.
