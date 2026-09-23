@@ -485,3 +485,75 @@ depende de esa aclaración.
 literal-citado, verdad hoy) sin tocar ningún guard y sin la ambigüedad del `<title>` señalada arriba.
 El candidato 2 queda como alternativa más conservadora si Javier prefiere no nombrar VeriFactu en el
 titular en absoluto, en línea con la 26b.
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-1016j · Candidato 1 choca con SCRUM-537 — hallazgo de #1666 que su
+propia verificación no cubre, J3
+
+**Fecha:** 23-sep-2026 · **Carril:** J3 · **Rama:** `scrum-1016j-candidato1-choca-scrum537`
+**Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:09:46Z
+
+## Encargo
+
+Limpiar PR #1666 (`scrum-1016e-titular-aplicado`, DIRTY y en borrador desde el 22-sep): medir si
+aporta algo que no esté ya en el expediente vivo (Candidato 1/2, apéndice SCRUM-1016i de arriba,
+mergeado por PR #1690); si no aporta nada, cerrarlo diciendo por qué; si aporta algo, extraerlo y
+cerrar el resto. **Sí aporta algo, y es importante antes de que Javier firme.**
+
+## El hallazgo: la verificación de los candidatos deja fuera un cuarto guard
+
+`docs/master/evidencias/SCRUM-1016/verificar-candidatos.mjs` (el script puro que respalda "verificado"
+en el apéndice de arriba) comprueba los candidatos contra **tres** guards: SCRUM-299
+(`promesasDeFactura`), SCRUM-400 (`comprobar`) y la regla 26 (regex propio del script). **No importa
+`afirmacionesFalsas` de `scripts/_guard-afirmacion-fiscal.mjs` (SCRUM-537)** — el guard que #1666 ya
+había encontrado en rojo contra este mismo texto, aplicado de verdad en `public/index.html` (su
+apéndice del 22-sep 23:37Z, "CUARTA pared"). El Candidato 1 de este expediente usa, letra a letra, el
+H1/subtítulo/título del comentario 16528 que #1666 aplicó y midió en rojo — no es un texto distinto
+ya corregido, es el mismo.
+
+**Repetido hoy, en aislado, sin tocar `public/index.html`** (importando la función real de
+`origin/main`, sha de arriba). Script en `docs/master/evidencias/SCRUM-1016/verificar-scrum537.mjs`
+(adjunto a este commit, ejecutado y su salida reproducida antes de escribir esta entrada):
+
+```
+afirmacionesFalsas(htmlConH1SubtituloTitulo(candidato1), { envioConstruido: false })
+→ [{ familia: 'B',
+     texto: 'la remisión a Hacienda todavía no está construida, y los founding la estrenaréis…',
+     motivo: 'afirma que la facturacion fiscal esta construida (o que solo falta activarla) y el
+              envio a la AEAT NO existe en el codigo' }]
+```
+
+Control, mismo método, Candidato 2: `[]` — limpio, no nombra ningún término fiscal.
+
+**Causa exacta** (ya la había medido #1666; confirmado que sigue igual hoy): el patrón `CONSTRUIDA`
+de la familia B (`scripts/_guard-afirmacion-fiscal.mjs:79`) no tiene excepción de negación, a
+diferencia de la familia A (que sí comprueba `!negada`). *"no está construida"* cae igual que *"está
+construida"* — el "no" no lo libra. El propio comentario del módulo explica que la familia B vigila
+la IMPLICACIÓN ("ya está, solo falta encenderlo"), no la letra exacta, así que no es evidente que sea
+un simple defecto del guard: puede ser a propósito. No lo decido yo.
+
+## Para quien lleve la firma a Javier
+
+Si se firma **Candidato 1** tal como está redactado hoy, aplicarlo deja `main` con
+`tests/scrum537-afirmacion-falsa.test.mjs` en ROJO de inmediato — el mismo rojo que ya paró a #1666,
+ahora bajo un nombre distinto ("candidato verificado"). **Candidato 2 no tiene este problema.** Las
+salidas son las mismas tres que ya dejó señaladas #1666 (arreglar el guard / reescribir la cláusula
+del subtítulo / usar Candidato 2): no las repito, las señalo para que se decidan ANTES de la firma,
+no después de aplicarla.
+
+## El resto de #1666 — ya cubierto, no se rescata
+
+Medido contra el propio apéndice SCRUM-1016i de arriba: el hallazgo de `#heroe-f4` (su `.sub` propio
+sin matiz) ya está citado ahí ("Qué NO hice"), la confirmación de SCRUM-299/400/regla-26 sobre el
+texto real de 16528 solo corrobora lo que el script puro de #1690 ya verificó, y la comprobación de
+que A-F de SCRUM-1029 siguen ocultando sin redactar coincide con el traspaso ya recibido por esta
+sesión. La medición de layout a 390px es del literal 16427/16513 (más largo, con "tu factura
+VeriFactu"), ya descartado por los dos candidatos — no aplica al texto de hoy.
+
+## PR #1666 — cerrado
+
+Cerrado con enlace a esta entrada como motivo. La rama `scrum-1016e-titular-aplicado` NO se borra:
+conserva el detalle completo de por qué se descartaron los literales de 16427/16513 (regla 26 +
+SCRUM-299 + SCRUM-400), útil si alguien pregunta por qué el titular no dice "tu factura VeriFactu". No
+cierro el ticket Jira SCRUM-1016 (A13: cierra el orquestador del equipo dueño, no la sesión).
