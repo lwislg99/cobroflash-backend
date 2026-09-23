@@ -843,3 +843,72 @@ porque el encargo de hoy pedía solo máster y `CLAUDE.md`.
   canal comprobable (comentario de Jira + `docs/microcopy/`, o el propio Javier en este chat).
 * No propone texto para `docs/legal/ALCANCE_BETA.md` (fuera del máster/CLAUDE.md pedido hoy).
 * No vuelve a medir las 9 afirmaciones a terceros de la fase f (siguen igual, sin firma).
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-534k · Re-medición de las 9 (encargo 2, parte 2) — nada nuevo, nada aplicado
+
+**Fecha:** 23-sep-2026 · **Carril:** J4 (legal y cumplimiento) · **Gate:** ninguno — solo lectura,
+propone; no toca `PACK_GESTORIA.md`, `DECLARACION_RESPONSABLE.md` ni `YAQU_MASTER.md` (regla 39)
+**Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:12:12Z
+
+**Encargo:** el orquestador pidió re-medir las «8 afirmaciones falsas» de esta ficha (parte 2 del
+ticket, reabierto porque el cierre anterior solo verificó la parte 1, el guion H2) porque el guion
+H2 y el censo de "certificación" cambiaron en `YAQU_MASTER.md` desde el 22-sep, y podían haber
+arrastrado a `PACK_GESTORIA.md`/`DECLARACION_RESPONSABLE.md` con ellos.
+
+**Resultado: no arrastraron nada. Siguen siendo 9, no 8, y son las MISMAS 9 de la fase f, palabra
+por palabra.**
+
+- `git log --oneline -- docs/legal/PACK_GESTORIA.md docs/legal/DECLARACION_RESPONSABLE.md` → los
+  dos únicos commits son de su creación (13-jun-2026, S1-H y S1-E). **Ningún commit los ha tocado
+  desde entonces**, tampoco los tres de fase i (C1/C2/C3 viven solo en `YAQU_MASTER.md`).
+- Los dos ficheros, leídos ENTEROS hoy (76 + 104 líneas, no solo las líneas ya censadas): A11-A19
+  siguen literalmente en su sitio (mismas líneas: `PACK_GESTORIA.md:12-14/18-19/20-21/39/64-65`,
+  `DECLARACION_RESPONSABLE.md:11-13/39-41/46-49/53`). Cero candidatas nuevas — revisado el resto del
+  texto (F1/F2 400€, exports, QR, inalterabilidad…) y nada más afirma en presente una remisión a la
+  AEAT que no exista.
+- El hecho que las hace falsas se re-verificó hoy, no se dio por bueno de ayer: `grep -n "model Vf\|Submission" prisma/schema.prisma`
+  → 0 · `grep -rn "fetch(\|axios\|https.request\|http.request\|net.connect" src/modules/fiscal/verifactu/`
+  → 0. Sigue sin existir ninguna remisión a la AEAT en el código.
+- Comprobado que la ruta que SÍ cita `PACK_GESTORIA.md` §5 (`GET /admin/exports/verifactu.xml`)
+  existe de verdad (`src/modules/exports/app/routes/exports.routes.ts:531`) — no es una décima
+  afirmación falsa, es correcta.
+
+**🔴 Sobre la trampa de "certificación" que avisó el orquestador: ninguna de las 9 es de esa
+familia.** Las 9 afirman en presente que YaQu **remite/envía** registros a la AEAT (una capacidad de
+código que no existe); la familia "certificación" (C1/C2/C3, fase h/i, ya aplicada en
+`YAQU_MASTER.md` con firma del comentario 16404) afirmaba que existe un proceso de *certificación*
+de VeriFactu al que se está entrando, cuando el régimen real es una *declaración responsable* (art.
+13 RRSIF). Son dos ideas falsas distintas, con víctimas distintas: la de "certificación" es interna
+(máster/landing); la de "remite" va en dos documentos que se **entregan a terceros** (gestoría del
+cliente, y una declaración que firma un representante legal bajo su responsabilidad) — por eso ésta
+es la que "más daño hace", como pedía el orquestador. Sí aparece la palabra "Certificación" una vez
+en `DECLARACION_RESPONSABLE.md:103`, pero es el título literal de la FAQ de la AEAT que se cita como
+fuente ("Certificación de los sistemas informáticos: declaración responsable"), no una afirmación
+sobre YaQu — no es una décima falsa ni pertenece a la familia C1-C3.
+
+**El diff, listo para firmar (idéntico al de la fase f — re-confirmado hoy, no reescrito):**
+
+| id | dónde | sale | entra | por qué la nueva es verdad hoy |
+| --- | --- | --- | --- | --- |
+| A11 | `PACK_GESTORIA.md:12-14` | "...emite cada factura con una huella digital encadenada y la **remite automáticamente a la AEAT** en el momento." | "...emite cada factura con una huella digital encadenada según el formato oficial de la AEAT. La remisión telemática se activará junto con esta declaración, antes de distribuirse este documento." | 0 llamadas de red a la AEAT en `src/` (re-medido hoy) |
+| A12 | `PACK_GESTORIA.md:18-19` | "Cada registro de facturación (alta, rectificativa y anulación) se envía a la AEAT en tiempo real a través de su servicio web." | "Cada registro de facturación (alta, rectificativa y anulación) queda preparado con el sobre oficial de la AEAT, listo para su remisión en cuanto ésta esté construida." | mismo hecho medible |
+| A13 | `PACK_GESTORIA.md:20-21` | "...la huella SHA-256 encadenada + **la remisión autenticada** cumplen el requisito (RRSIF)." | "...no se exige firma electrónica: la huella SHA-256 encadenada cumple el requisito por sí sola (art. 16.2-16.3 RRSIF)." | art. 16.2-16.3 RRSIF, "presunción de cumplimiento por diseño" (skill `verifactu` §3) — la huella basta sola, atribuirlo a la remisión es la razón equivocada además de prematura |
+| A14 | `PACK_GESTORIA.md:39` | "Al cobrar, YaQu emite la factura, calcula su huella y **la remite a la AEAT**." | "Al cobrar, YaQu emite la factura y calcula su huella; la remisión a la AEAT se añadirá con el envío telemático." | mismo hecho medible |
+| A15 | `PACK_GESTORIA.md:64-65` | "...es el sistema de facturación que **genera y remite** los registros..." | "...es el sistema de facturación que genera los registros con el formato oficial; los remitirá en cuanto el envío esté construido." | mismo hecho medible |
+| A16 | `DECLARACION_RESPONSABLE.md:11-13` | "Los valores del sistema DEBEN coincidir con el bloque `SistemaInformatico` que YaQu **remite** en cada registro de facturación." | "...que YaQu remitirá en cada registro de facturación, una vez conectado el envío a la AEAT." | mismo hecho medible |
+| A17 | `DECLARACION_RESPONSABLE.md:39-41` | "Tipología: sistema informático de facturación en modalidad VERI\*FACTU (**remisión de los registros de facturación a la AEAT**)." | "...en modalidad VERI\*FACTU (remisión de los registros a la AEAT, una vez completado el envío telemático)." | corrige el tiempo verbal; el fondo de si el régimen ya aplica hoy es P14, pendiente del asesor — no se decide aquí |
+| A18 | `DECLARACION_RESPONSABLE.md:46-49` | "...y **remisión telemática al servicio web de la AEAT**." | se quita la cláusula, o se marca "(pendiente de construir)" | mismo hecho medible |
+| A19 | `DECLARACION_RESPONSABLE.md:53` | "**Remisión inmediata a la AEAT** (modalidad VERI\*FACTU), **con control de flujo**." | "Remisión a la AEAT (modalidad VERI\*FACTU), una vez construido el envío." | mismo hecho medible; "con control de flujo" además nombra un mecanismo sin decidir en ningún sitio (ni U1.3, ni la skill, ni el stack de S1-0b) — se quita, no se inventa |
+
+**No se aplica nada de esto** — regla 39, la firma es de Javier. Este apéndice es la confirmación de
+que el trabajo de la fase f **sigue vigente sin cambios**, para que se firme sobre él con la
+seguridad de que no quedó desfasado por lo de anoche.
+
+## Lo que NO cubre esta entrada (k)
+
+* No aplica A11-A19 a `PACK_GESTORIA.md` ni a `DECLARACION_RESPONSABLE.md`.
+* No repite el censo del guion H2 ni de la familia "certificación" (fase f/h/i) — ya aplicado,
+  fuera del alcance de esta parte 2 del ticket.
+* No decide P14 (si el régimen VeriFactu ya aplica hoy a YaQu) — sigue siendo pregunta del asesor.
