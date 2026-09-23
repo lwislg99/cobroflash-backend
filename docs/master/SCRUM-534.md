@@ -843,3 +843,197 @@ porque el encargo de hoy pedía solo máster y `CLAUDE.md`.
   canal comprobable (comentario de Jira + `docs/microcopy/`, o el propio Javier en este chat).
 * No propone texto para `docs/legal/ALCANCE_BETA.md` (fuera del máster/CLAUDE.md pedido hoy).
 * No vuelve a medir las 9 afirmaciones a terceros de la fase f (siguen igual, sin firma).
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-534j · El expediente de `VfSubmission` (parte 3): qué dice el máster, qué hay de verdad, quién bebe, y el texto para firmar
+
+**Fecha:** 23-sep-2026 · **Carril:** J1 (facturación y VeriFactu) · **Gate:** ninguno — **NO SE APLICA NADA a `docs/YAQU_MASTER.md`** (regla 39: lo firma un jefe; el clasificador de permisos de esta sesión bloquea ese fichero por CONTENIDO)
+**Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:09:09Z
+
+> Encargo del orquestador (`jv-j1`, relevo): SCRUM-534 tiene tres partes; la primera (guion H2) ya
+> está aplicada (fase i). Ésta es la tercera — el interno ⚪ de la fase a, clase A2/A3/A4: la FSM
+> `VfSubmission` de la Parte L y quien la cita como si existiera. **Mide y propón. No construye.**
+
+## PASO 0 — lo ya medido, confirmado de un vistazo
+
+`VfSubmission` aparece **4 veces en `docs/YAQU_MASTER.md`** y **0 veces en `prisma/schema.prisma`**
+(`git grep -n "VfSubmission" origin/main -- prisma/schema.prisma` → sin resultado, exit 1).
+Confirmado hoy contra `62176956...`, sin discrepancia con lo que traía el encargo.
+
+## § 1 · Qué publica la Parte L (y sus vecinas) sobre `VfSubmission` — las 4 apariciones, literales
+
+| # | dónde (`YAQU_MASTER.md`) | texto literal completo | qué promete |
+| --- | --- | --- | --- |
+| **L1** | `:156`, Parte D2 (capas nuevas y fase) | *«`src/modules/fiscal/verifactu/` ← SIF-1 (F1): `sif.client.ts` + cola `VfSubmission`»* | ✅ **no es la parte defectuosa** — vive bajo el epígrafe «Capas nuevas», explícitamente prospectivo. Se cita por completitud del censo, no se toca. |
+| **L2** | `:404`, Parte L (*«STATE MACHINES OFICIALES · FUENTE DE VERDAD, regla 27»*) | *«**VfSubmission:** `pending → sent → accepted` · `sent → rejected(error) → pending(retry, attempts++)` · `attempts≥5 → manual_review`. accepted terminal.»* | 🔴 **el defecto central.** Formato IDÉNTICO al de Quote/Invoice/Charge, que sí existen — nada en la frase distingue «esto es diseño» de «esto está construido», y la sección donde vive se declara *fuente de verdad* por la regla 27. |
+| **L3** | `:449`, Parte O (runbooks), R7 | *«**R7 · SIF rechaza registros:** leer `VfSubmission.lastError` → dato de factura: corregir vía R1 si emitida; estructural (XSD/firma): `SIF_ENABLED=false` + avisar asesor; la emisión local sigue y la cola remite al reanudar. Documentar en VERIFACTU_EVIDENCIAS.»* | 🔴 **el segundo defecto**, y el más caro operativamente: es un runbook, formato imperativo, sin marca de futuro — se lee y se sigue durante una incidencia real. Cita además `docs/VERIFACTU_EVIDENCIAS.md`, que tampoco existe (medido en la fase b de este mismo ticket). |
+| **L4** | `:1042`, Parte U1.3 (S1-D, una de las 8 obligatorias de SIF-1) | *«**S1-D · Envío en pruebas AEAT:** `src/modules/fiscal/verifactu/sif.client.ts` + cola `VfSubmission {invoiceId,status,attempts,lastError}` + retry backoff + incidencias/subsanación + logs legibles. Done: ≥10 registros (alta/anulación/R1) aceptados consecutivos.»* | ✅ **tampoco es la parte defectuosa** — es un ítem de checklist con su criterio de «Done», sin el ✅ que sí llevan S1-A/B/C. Se lee como tarea, no como hecho. |
+
+**Resultado:** de las 4, **2 son el defecto** (L2, L3) y **2 están correctamente enmarcadas como
+futuro** (L1, L4). La enmienda solo necesita tocar L2 y L3.
+
+**Hallazgo colateral, fuera de las 4 pero de la misma causa — no se re-propone aquí, se deja
+dicho:** la fila `SIF_ENABLED` de la Parte P (`:465`) dice *«seguro: cola pausa, emisión local
+sigue»* — la misma idea falsa (que hay una cola que pausar) sin usar la palabra `VfSubmission`, así
+que el censo por texto literal no la encuentra. La corrige quien firme L2, porque describir bien
+qué es `vfEstado` hace obvio que no hay nada que "pausar".
+
+## § 2 · Qué existe de verdad — por lectura de fuente, no por grep
+
+**La columna real es `Invoice.vfEstado`** (`prisma/schema.prisma`, dentro de `model Invoice`,
+`@@map("invoices")`): un **campo STRING en la propia factura**, no una tabla ni una entidad aparte.
+Sus hermanas, todas en el mismo modelo: `vfHash`/`vfPrevHash`/`vfTimestamp` (alta) y
+`vfAnulHash`/`vfAnulTimestamp`/`vfAnulPrevHash` (anulación) — siete columnas, cero tablas.
+
+**Los estados reales son 3, no 6**, definidos en `src/modules/invoicing/domain/selladoEstado.ts`:
+
+```
+SELLADO_PENDIENTE = 'pendiente_de_sellado'   (nace así; default del schema)
+SELLADO_HECHO     = 'sellado'
+SELLADO_NO_APLICA = 'no_aplica'              (justificantes, merchant sin NIF o no-ES)
+```
+
+**Las transiciones reales** (leídas en `selladoEstado.ts`, funciones `estadoAlNacer` y
+`sellarTrasEmision`, no un grep de la palabra):
+
+- **Nacimiento** → `pendiente_de_sellado` si el documento entra en la cadena VeriFactu
+  (`entraEnLaCadena`), si no → `no_aplica` directamente.
+- `pendiente_de_sellado → sellado`: al terminar `applyVeriFactu` (huella SHA-256 + QR) con éxito,
+  **después** del commit de la emisión.
+- `pendiente_de_sellado → pendiente_de_sellado` (se queda igual): si `applyVeriFactu` lanza. Queda
+  un `AuditLog` (`action: 'sellado_fallido'`) con el motivo. **No hay reintento automático, ni
+  contador de intentos, ni ningún estado tipo `manual_review`** — eso es diseño de la FSM de la
+  Parte L, no código que exista.
+- **`sellado` es terminal para este campo.** Anular NO lo cambia (`sellarAnulacionTrasEmision` no
+  toca `vfEstado`, y lo dice el propio comentario del fichero: el registro de anulación es un
+  eslabón MÁS de la cadena, no un cambio de estado del alta — regla 29).
+
+**Lo que esto significa para la FSM de la Parte L:** `vfEstado` describe el **sellado LOCAL** (huella
++ QR calculados y persistidos), no la **remisión a la AEAT**. Ningún estado real se llama `pending`
+con el mismo sentido de la Parte L (que es «a la espera de que la AEAT conteste»), ni existe
+`sent`, `rejected`, `accepted` ni `manual_review` en ningún sitio — coherente con lo ya medido en la
+fase a de este ticket (②: cero llamadas de red a la AEAT en `src/`) y con la auditoría
+`docs/legal/AUDITORIA_CAMINO_EMISION.md` (eslabones 8 y 9: NO EXISTE).
+
+## § 3 · Quién bebe — medido, no de oídas
+
+**Metodología:** `git grep -l "VfSubmission" origin/main` sobre todo el repo → **33 ficheros**. De
+esos 33 se descarta: el propio `YAQU_MASTER.md` (es la fuente, no un bebedor), 1 copia congelada en
+`docs/historico/` (política ya fijada en la fase b de este ticket: no se toca), y **28 que YA citan
+la ausencia correctamente** — auditorías (`AUDITORIA_CAMINO_EMISION.md`, los dos `INVENTARIO_*`,
+`SEMAFORO_MAPA_EMISION.md`), entradas de `docs/master/*` que la miden como inexistente (298, 328,
+524, 525, 538, 566, 575, 815, 955 y sus evidencias), el guard `_guard-afirmacion-fiscal.mjs` (es el
+mecanismo de detección, no un bebedor), 3 comentarios de código que ya dicen «NO EXISTE»
+(`modoVisible.ts`, su test, y `correoDeFacturaEnviado.ts` que solo cita la lista cerrada de FSMs de
+la Parte L sin afirmar que funciona) y `docs/SIF_SPEC_NOTES.md` (ya lleva las etiquetas
+`[SE HARÁ]` de SCRUM-566).
+
+**Quedan 4 — y son éstos, no los que nombraba el traspaso** (que hablaba de A3/A4 *dentro* del
+máster + el runbook; aquí se cuentan ficheros *fuera* de `YAQU_MASTER.md` que tratan
+`VfSubmission` como si ya existiera, sin ningún aviso):
+
+| # | fichero | qué dice, sin aviso de que no existe | riesgo |
+| --- | --- | --- | --- |
+| **D1** | `docs/RUNBOOKS.md:75-81` (R7) | copia casi literal de L3, y AÑADE un guion para el merchant: *«Tus facturas siguen emitiéndose con normalidad; la remisión a la AEAT se reanuda en cuanto cerremos la incidencia técnica.»* | 🔴 **el más caro**: es el documento que se abre EN UNA INCIDENCIA REAL, y lleva un guion que le mentiría a un cliente sobre un servicio que no existe. |
+| **D2** | `.agents/skills/yaqu-verifactu-sif/SKILL.md:3,28-29` | el campo `description` (se carga en TODA sesión, no solo al invocar la skill — es el mismo mecanismo de exposición que documentó `INVENTARIO_AFIRMACIONES_SKILLS.md` para la copia de `.claude/`) dice *«cola VfSubmission, envío AEAT»*, y el cuerpo repite la FSM como «regla dura» sin ninguna marca. | 🔴 **alto**: es una COPIA DESINCRONIZADA. `.claude/skills/yaqu-verifactu-sif/SKILL.md` (la que se cargó al empezar esta tanda) SÍ está corregida desde SCRUM-538/566 — con `🔴 NO CONSTRUIDO` delante de la FSM. La de `.agents/` se quedó con el texto viejo. |
+| **D3** | `docs/legal/SEMAFORO_CALIBRACION.md:196-198` | *«La cola `VfSubmission` (máster, Parte L) es el sitio donde se gestionan»* (los códigos de rechazo `3000-3004` de la AEAT) | 🟡 medio: documento técnico/legal sobre códigos de error, no un runbook de incidencia, pero lo mismo — asume que el sitio donde gestionarlos ya existe. |
+| **D4** | `docs/equipo/puesto-j1.md:15-16` | lista *«VeriFactu (huella, QR, registros, la cola `VfSubmission`, el envío a la AEAT)…»* dentro del área que este mismo puesto tiene asignada | ⚪ bajo: es una ficha interna de equipo, y quien la lee (yo, ahora mismo) descubre la verdad en el primer ticket. Se cita por completitud. |
+
+**Por qué el número no es «cuatro» por la misma razón que decía el traspaso:** el traspaso
+apuntaba a una relación DENTRO del máster (A2 → beben A3, A4, el runbook — es decir 3 sitios, dos
+de ellos dentro del propio `YAQU_MASTER.md`). Medido aquí con otro criterio —ficheros AJENOS al
+máster que tratan `VfSubmission` como real— la cifra también da 4, pero es OTRA lista (RUNBOOKS +
+la skill duplicada + SEMAFORO_CALIBRACION + puesto-j1), y coincide con el número por composición
+distinta, no porque ambas cuentas midan lo mismo. Quede dicho para que nadie lea «4» dos veces
+como si fuera un solo hecho verificado dos veces.
+
+## § 4 · El texto de la enmienda — dos opciones, para que Javier elija y firme
+
+**Ninguna de las dos toca `docs/YAQU_MASTER.md`.** Van aquí, literales, listas para pegar el día
+que haya firma (regla 39).
+
+### Opción A — anotar con `[SE HARÁ]` (mínimo cambio; conserva el diseño donde está)
+
+Misma convención que ya aplicó SCRUM-566 en `SIF_SPEC_NOTES.md`. Sustituye **L2** por:
+
+> **VfSubmission `[SE HARÁ — no construida; no está en `prisma/schema.prisma`, medido]`:** diseño
+> para cuando exista la remisión a la AEAT (S1-D): `pending → sent → accepted` ·
+> `sent → rejected(error) → pending(retry, attempts++)` · `attempts≥5 → manual_review`. accepted
+> terminal. **Lo que existe hoy es otra cosa, con otro nombre:** el sellado LOCAL de cada factura
+> vive en `Invoice.vfEstado` (`pendiente_de_sellado → sellado`, o `no_aplica` si el documento nunca
+> entra en la cadena) — ver `src/modules/invoicing/domain/selladoEstado.ts`.
+
+Y **L3** por:
+
+> **R7 · SIF rechaza registros `[SE HARÁ — no puede ocurrir hoy: no hay remisión a la AEAT,
+> medido]`:** cuando exista la cola de remisión (S1-D), leer su último error → dato de factura:
+> corregir vía R1 si emitida; estructural (XSD/firma): `SIF_ENABLED=false` + avisar asesor; la
+> emisión local sigue y la cola remite al reanudar. Documentar en VERIFACTU_EVIDENCIAS (tampoco
+> existe, medido en SCRUM-534b).
+
+**Pro:** cambio de una frase por entrada; conserva el diseño ya decidido para S1-D en el mismo
+sitio donde alguien construyendo esa tarea iría a buscarlo. **Con:** la Parte L se declara
+*«FUENTE DE VERDAD»* (regla 27) — mezclar ahí una entrada real (Quote, Invoice…) con una etiquetada
+`[SE HARÁ]` es la misma mezcla de hechos y plan que SCRUM-566 corrigió sacándola de
+`SIF_SPEC_NOTES.md`; aquí se propone dejarla dentro, solo con la etiqueta.
+
+### Opción B — sacar el diseño de la Parte L, documentar solo lo que hay
+
+Sustituye **L2** por (deja de listarse como `VfSubmission`; se documenta la entidad real, con su
+nombre real):
+
+> **Invoice.vfEstado (sellado local — NO es la remisión a la AEAT):**
+> `pendiente_de_sellado → sellado` (huella SHA-256 + QR calculados y persistidos tras el commit de
+> la emisión) · `pendiente_de_sellado → no_aplica` (documento que nunca entra en la cadena:
+> justificante, o merchant sin NIF/no-ES). `sellado` es terminal para este campo — anular no lo
+> cambia (regla 29; el registro de anulación es un eslabón más, no un estado nuevo). Fuente:
+> `src/modules/invoicing/domain/selladoEstado.ts`. **La cola de remisión a la AEAT no está
+> construida** — no hay tabla, no hay envío, cero llamadas de red
+> (`docs/legal/AUDITORIA_CAMINO_EMISION.md`, eslabones 8-9). Su diseño (antes descrito aquí como
+> `VfSubmission`) queda en S1-D, Parte U1.3, para cuando se construya.
+
+Y **L3** por (describe solo lo que puede fallar HOY, sin inventar un mecanismo que no existe):
+
+> **R7 · Falla el sellado local de una factura:** `vfEstado` se queda en `pendiente_de_sellado`; la
+> huella SHA-256/QR no se pudo calcular tras la emisión (motivo en `AuditLog`, acción
+> `sellado_fallido`); la factura no produce PDF ni QR hasta resellarse. **[FALTA decidir el
+> mecanismo de reintento — no hay uno automático hoy, medido; no se propone uno aquí porque
+> inventarlo es del carril de código, no de este expediente.]** Esto es distinto de un rechazo de
+> la AEAT: esa remisión no está construida (S1-D), así que hoy no puede rechazar nada.
+
+**Pro:** la Parte L vuelve a ser 100% lo que su cabecera promete —hechos, no diseño—, y R7 deja de
+prometer una acción que nadie puede ejecutar. **Con:** cambio mayor; y destapa un hueco real —no
+hay runbook para un fallo de sellado local— que esta entrada señala pero no resuelve (es decisión
+de producto/soporte, no un texto que se pueda derivar solo de lo medido).
+
+**Recomendación de esta sesión, sin decidir por Javier:** Opción B para L2 (la Parte L gana más
+siendo estrictamente cierta que conservando el diseño con una etiqueta) y Opción A para L3 si se
+prefiere no abrir ahora el hueco del runbook de sellado — son combinables independientemente.
+
+## Verificación
+
+* ✅ **Control positivo** — el mismo `git grep -l "VfSubmission"` que da 33 ficheros SÍ encuentra
+  `docs/YAQU_MASTER.md`, así que la ausencia de ese fichero de la lista de «28 ya corregidos» no es
+  ceguera: se excluyó a propósito por ser la fuente.
+* ✅ **Dos instrumentos independientes para §2** — el schema (`prisma/schema.prisma`, declarativo)
+  y el código (`selladoEstado.ts`, comportamiento) coinciden en los mismos 3 estados; no se leyó
+  solo uno.
+* 🔴 **Suelo** — 0 en `prisma/schema.prisma` no es ceguera: el mismo grep encuentra 30 modelos
+  reales (`Invoice`, `InvoiceAssignee`…), así que el cero es «no está», no «no miré» (mismo control
+  que ya dejó escrito la fase a).
+* ⚠️ **D2 (`.agents/`) es hallazgo de esta sesión, no heredado**: no aparece en el censo de
+  SCRUM-538/566 porque esos censos midieron `.claude/skills/` y `docs/`/`docs/legal/`, no
+  `.agents/skills/`. Ninguna entrada previa de este ticket ni de esos dos lo cubre.
+
+## Lo que NO cubre esta entrada
+
+* ⛔ No toca `docs/YAQU_MASTER.md`, `docs/RUNBOOKS.md`, ninguna de las dos copias de la skill, ni
+  `SEMAFORO_CALIBRACION.md` ni `puesto-j1.md` — regla 39 para el máster; para el resto, el mandato
+  de esta tanda es medir y proponer, no construir.
+* No decide entre Opción A y Opción B — las dos quedan listas para que Javier elija y firme.
+* No re-abre la fila `SIF_ENABLED` de la Parte P (`:465`) ni la línea `:580` — comparten la misma
+  causa (señalado en §1) pero no llevan la palabra `VfSubmission`, así que quedan fuera del
+  alcance literal del encargo; se nombran para que no se pierdan, no se proponen aquí.
+* No corrige D1-D4: son consecuencia de lo que se firme en L2/L3, y arreglarlos antes sería fijar
+  cuatro textos que la firma podría volver a mover.
