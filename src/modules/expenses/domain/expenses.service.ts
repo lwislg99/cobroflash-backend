@@ -39,6 +39,18 @@ export interface CreateExpenseInput {
   vatAmount?: number | null;
   providerInvoiceNumber?: string | null;
   providerInvoiceDate?: Date | null;
+  /**
+   * SCRUM-1103 · retención de IRPF PRACTICADA como pagador (111/115), no la que se SUFRE
+   * (`retencionIrpf.ts`, sentido inverso). Mismo patrón que el desglose de IVA de arriba:
+   * `tipo`/`cuota` son el dato objetivo que trae la factura del proveedor.
+   *
+   * `declarada` NO entra aquí a propósito, mismo criterio que `vatDeducible` (que tampoco es
+   * parámetro de alta): es una DECISIÓN de clasificación, no un dato que se transcribe, y su
+   * cubo de tipos válidos por 111/115 lo fija quien construya SCRUM-1066 — escribirla aquí sin
+   * esa validación dejaría entrar cualquier valor.
+   */
+  retencionPracticadaTipo?: number | null;
+  retencionPracticadaCuota?: number | null;
 }
 
 /**
@@ -85,6 +97,9 @@ const CAMPOS_DE_LA_LISTA = {
   vatDeducible: true,
   providerInvoiceNumber: true,
   providerInvoiceDate: true,
+  retencionPracticadaTipo: true,
+  retencionPracticadaCuota: true,
+  retencionPracticadaDeclarada: true,
   teamMemberId: true,
   createdAt: true,
   updatedAt: true,
@@ -355,6 +370,10 @@ export async function createExpense(merchantId: number, data: CreateExpenseInput
       vatAmount:             data.vatAmount             ?? null,
       providerInvoiceNumber: data.providerInvoiceNumber ?? null,
       providerInvoiceDate:   data.providerInvoiceDate   ?? null,
+      // SCRUM-1103 · igual criterio: `?? null` y no `x ? … : null`, porque un tipo 0 % legítimo
+      // es falsy y el atajo lo leería como «no se sabe».
+      retencionPracticadaTipo:  data.retencionPracticadaTipo  ?? null,
+      retencionPracticadaCuota: data.retencionPracticadaCuota ?? null,
     },
   });
   await guardarNifDelProveedor(merchantId, data);
