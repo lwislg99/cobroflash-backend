@@ -1,6 +1,8 @@
 # SCRUM-1031 · CLIENTES — Comprobar en staging los tres fallos de la ficha del cliente
 
-**Puesto: S0 (medición) · 22-sep-2026 · `origin/main` `b8e3f81a61344f5cfa94184be9e31c45c1270cdd`**
+**Puesto: S0 (medición) · 22-sep-2026**
+
+**Medido contra:** `origin/main` = `b8e3f81a61344f5cfa94184be9e31c45c1270cdd` · 2026-09-22T09:42:53+01:00
 
 Medido EN STAGING (merchant QA), no leído. Sonda y hallazgos completos:
 `docs/master/evidencias/scrum1031/` (`sonda.mjs`, `limpiar-1031.mjs`, `HALLAZGOS.md`).

@@ -54,8 +54,11 @@ const MARCADOR = '[PENDIENTE microcopy oficial]';
 const CENSO = Object.freeze({
   // SCRUM-722 · 7-sep-2026. Medido con este mismo guard sobre `origin/main`.
   //
-  // `exportView.js:87` y `:100` — VISIBLES en los tres estados (2 nodos × 3 = 6).
-  export: 6,
+  // `export` SALIÓ el 23-sep (SCRUM-1041): los cuatro textos de «Facturas emitidas» que
+  // `exportView.js:87`/`:100` pintaban como marcador quedaron firmados y el marcador se retiró
+  // del fuente. La entrada se BORRA, no se pone a 0 — el trinquete APRIETA (mismo criterio que
+  // SCRUM-402/424/405).
+  //
   // `albaranes` SALIÓ el 7-sep: el fundador firmó «Nuevo albarán». La entrada se BORRA, no se
   // pone a 0 — el trinquete APRIETA (mismo criterio que SCRUM-402/424/405).
   //
