@@ -174,6 +174,41 @@ generado como «respuestas del asesor»), sin bajar mi objeción con ella. J4 se
 **La regla:** mi objeción baja **con** la orden. Y si el ejecutor la rechaza, se vuelve al jefe —
 **no se busca otro ejecutor**. → memoria `no-bajar-una-orden-que-yo-mismo-discuti`.
 
+## 2.6 · 🔴 Anunciar un arreglo antes de probarlo ENTERO — y el mismo día que apunté ese patrón
+
+**Caso (23-sep, por la tarde).** J6 midió que el lanzador **no fija el directorio de trabajo en ningún
+sitio**, así que cada sesión hereda el mío y las seis comparten árbol. Monté el arreglo obvio —un
+worktree por sesión—, medí el coste de arranque (`npm ci`, **17,8 s**, cierto y verificado) y **le dije
+a Javier que estaba «montado y probado»**.
+
+**No lo estaba.** Lo probado era el `npm ci`. **Nunca llegué a lanzar una sesión desde ese árbol.**
+Al intentarlo de verdad, con control:
+
+| prueba | resultado |
+|---|---|
+| lanzar desde el worktree propio, 3 intentos | **no arranca**: se registra y se queda sin proceso |
+| parar una sesión y reintentar | no arranca |
+| parar otra y reintentar | no arranca |
+| **mismo prompt, mismo lanzador, desde el árbol de siempre** | **arranca a la primera** |
+
+**Lo que costó:** paré **dos sesiones** (J4 y J5) como parte de comprobar una hipótesis que resultó
+falsa. Iban a pararse igual —las dos por encima del umbral y con dos peticiones de traspaso
+ignoradas—, así que el daño real es cero, pero **la razón que di para pararlas no era la buena**.
+
+**Lo que se ganó, y no es poco:** el lanzador llevaba días diciendo que esto *«puede ser un límite de
+sesiones concurrentes (SIN CONFIRMAR, SCRUM-1011)»*. **Queda desmentido por medición**: se pararon dos
+y siguió sin arrancar. Un «sin confirmar» escrito hace días es una hipótesis que nadie ha ido a matar;
+ésta ya está muerta.
+
+**Por qué esta entrada importa más que las otras:** es **exactamente** el patrón que el §3.1 de este
+mismo documento identifica —afirmar sin medir del todo— repetido **el mismo día que lo escribí**, y
+sobre el documento que lo escribía. Nombrar un patrón no lo desactiva.
+
+**La regla que deja, más estrecha que la del 2.3:** cuando lo que se anuncia es **un arreglo**, la
+medición que vale es **la del efecto que el arreglo promete**, no la de un paso intermedio. Medir que
+se instalan las dependencias no es medir que una sesión arranque. Si sólo se ha probado el paso
+intermedio, se dice así: *«montado, falta probarlo de punta a punta»*.
+
 ---
 
 # 3 · Análisis
@@ -236,4 +271,16 @@ lleva `cd` a una ruta POSIX, que es como trabajan todas las sesiones).
 
 **Errores:** 2.1 (SCRUM-534) · 2.2 · 2.3 (dos de los cuatro) · 2.4.
 
-**Cazado por sesiones:** 3 paradas, 3 aciertos.
+**Cazado por sesiones:** 4 paradas, 4 aciertos. La cuarta: J1 leyó «no puedo confirmar que esto esté
+a salvo» donde un `ls-remote` decía «no existe», y paró en vez de dar por perdido un commit que ya
+estaba en `main`.
+
+**Decisiones del fundador recogidas:** el titular · el lote de cobro entero · las nueve de los
+documentos a terceros · el GO al reloj · NO construir SCRUM-1050 · GO acotado a SCRUM-1051 · la
+dependencia para leer Excel · franja y nombre en el portal · la enmienda del máster (opción B) · el
+espejo de `.agents/` es de Luis, se sincroniza · **Javier es el productor de pruebas**.
+
+**Dos cifras mías que corrigió una sesión:** dije «43 censos caídos» y eran **21** —el log contaba
+cada fallo dos veces— · dije «ventana de 1-2 horas cada día» y es **anual**.
+
+**Errores de la tarde:** 2.6.
