@@ -11,6 +11,7 @@ import { recordCustomerEvent } from '../../customerEvents.service';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { cardChargeMode } from '../../../billing/domain/cardCharge'; // SCRUM-893
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1018
 
 const router = Router();
 
@@ -232,7 +233,7 @@ router.get('/:token', async (req, res) => {
         // por eso el botón «Pagar ahora» se pintaba sin mirar nada. Es lectura de tres columnas
         // más: ni esquema, ni camino de cobro.
         select: { id: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true, country: true,
-          connectStatus: true, stripeAccountId: true, flags: true },
+          connectStatus: true, stripeAccountId: true, flags: true, timezone: true },
       },
     },
   });
@@ -245,7 +246,7 @@ router.get('/:token', async (req, res) => {
     );
   }
 
-  const [quotes, invoices] = await Promise.all([
+  const [quotes, invoices, proximoJob] = await Promise.all([
     prisma.quote.findMany({
       where: { customerId: customer.id },
       orderBy: { createdAt: 'desc' },
@@ -257,7 +258,39 @@ router.get('/:token', async (req, res) => {
       orderBy: { createdAt: 'desc' },
       take: 20,
     }),
+    // SCRUM-1018: la PRÓXIMA visita agendada, si hay una — GO de Javier (comentario 16610),
+    // sin foto y con franja de 1h EMPEZANDO en `scheduledAt` (no centrada: el profesional agenda
+    // pensando en el inicio). Solo `agendado`/`en_curso` y con fecha en el futuro: una visita ya
+    // pasada que el profesional no cerró no es "tu visita", y por eso no basta con `scheduledAt`
+    // no nulo (SCRUM-1018.md §4).
+    prisma.job.findFirst({
+      // regla 2: `merchantId` en la propia consulta, no solo heredado de `customer` (SCRUM-243).
+      where: { merchantId: customer.merchantId, customerId: customer.id, scheduledAt: { gte: new Date() }, status: { in: ['agendado', 'en_curso'] } },
+      orderBy: { scheduledAt: 'asc' },
+      // `select`, no `include` (SCRUM-860: ninguna lectura que llegue a una respuesta sin nombrar
+      // sus columnas) — solo lo que el portal pinta, nunca el Job entero.
+      select: {
+        scheduledAt: true,
+        assignedUserId: true,
+        // SCRUM-650: JobAssignee es el destino final; se lee primero y se cae a `assignedUserId`
+        // solo si no hay ningún asignado por la tabla nueva (los dos sitios pueden discrepar
+        // mientras esa migración no esté completa). Un job puede tener varios asignados; el
+        // portal es singular ("Tu técnico"), así que se enseña el primero asignado.
+        assignees: { orderBy: { assignedAt: 'asc' }, take: 1, select: { teamMember: { select: { name: true } } } },
+      },
+    }),
   ]);
+
+  let nombreTecnico: string | null = null;
+  if (proximoJob) {
+    nombreTecnico = proximoJob.assignees[0]?.teamMember?.name ?? null;
+    if (!nombreTecnico && proximoJob.assignedUserId) {
+      // findFirst, no findUnique: TeamMember no tiene unicidad compuesta con merchantId, y regla 2
+      // pide filtrarlo en la propia consulta (convención de team.service.ts/notasDelCliente.ts).
+      const tm = await prisma.teamMember.findFirst({ where: { id: proximoJob.assignedUserId, merchantId: customer.merchantId }, select: { name: true } });
+      nombreTecnico = tm?.name ?? null;
+    }
+  }
 
   // SCRUM-85: token OPACO por cobro pendiente — NUNCA el chargeId en el botón "Pagar ahora".
   const payTokens = new Map<number, string>();
@@ -392,6 +425,23 @@ router.get('/:token', async (req, res) => {
       }).join('')
     : '<p class="pf-empty">No hay facturas aún.</p>';
 
+  // ── Tu visita (SCRUM-1018: franja + nombre, sin foto — literal firmado en el comentario 16610) ──
+  const visitaHtml = (() => {
+    if (!proximoJob?.scheduledAt) return '';
+    const zona = zonaDelMerchant(m);
+    const inicio = new Date(proximoJob.scheduledAt);
+    const fin = new Date(inicio.getTime() + 60 * 60 * 1000); // GO: 1h desde el inicio, no centrada
+    const fmtHora = (d: Date) => new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit', timeZone: zona }).format(d);
+    const franja = `entre las ${fmtHora(inicio)} y las ${fmtHora(fin)}`;
+    const linea = nombreTecnico ? `${esc(nombreTecnico)} · ${franja}` : franja;
+    return `<div class="pf-section">
+        <div class="pf-section-title">Tu visita</div>
+        <div class="pf-card"><div class="pf-card-body">
+          <div class="pf-card-title" style="margin-bottom:0">${linea}</div>
+        </div></div>
+      </div>`;
+  })();
+
   // ── Botón WhatsApp para contactar ────────────────────────────────────────
   const waPhone    = m.whatsappPhone ? normalizePhone(m.whatsappPhone) : null;
   const contactHtml = waPhone
@@ -419,6 +469,8 @@ router.get('/:token', async (req, res) => {
     <div class="pf-main">
       <div class="pf-greeting">Hola, ${esc(customer.name)} 👋</div>
       <div class="pf-greeting-sub">Aquí tienes tus ${locale.quotePlural.toLowerCase()}, facturas y pagos.</div>
+
+      ${visitaHtml}
 
       <!-- Solicitar presupuesto -->
       <div class="pf-section">
