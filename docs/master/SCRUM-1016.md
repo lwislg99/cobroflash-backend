@@ -493,6 +493,10 @@ propia verificación no cubre, J3
 
 **Fecha:** 23-sep-2026 · **Carril:** J3 · **Rama:** `scrum-1016j-candidato1-choca-scrum537`
 **Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:09:46Z
+**Skill UI:** no cargada · esta entrada MIDE (script puro, sin escribir en el árbol) si el Candidato 1
+ya propuesto choca con un guard fiscal que su propia verificación no cubría; no toca ningún componente
+visual ni `public/index.html` — yaqu-premium-ui es obligatoria antes de TOCAR UI, y aquí no se toca
+ninguna.
 
 ## Encargo
 
