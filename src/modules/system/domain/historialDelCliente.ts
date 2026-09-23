@@ -92,7 +92,7 @@ export async function historialDelCliente(merchantId: number, customerId: number
   const fotos = albaranes.length
     ? await prisma.attachment.findMany({
         where: { merchantId, entityType: 'albaran', entityId: { in: albaranes.map((a) => a.id) } },
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         select: { id: true, entityId: true },
       })
     : [];
