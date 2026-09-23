@@ -23,6 +23,7 @@
 
 import test from 'node:test';
 import { ejecutableDe } from './_guard-texto.mjs';
+import { bloqueDeLlaves } from './_bloque-estructural.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -169,6 +170,29 @@ test('SCRUM-D1 · el microcopy es el APROBADO del asistente, literal', () => {
     assert.ok(ONB.includes(frase), `suelo: «${frase}» tiene que estar en el asistente`);
     assert.ok(PUERTA.includes(frase), `🔴 la puerta no usa el texto aprobado: «${frase}»`);
   }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// ④ SCRUM-1029 (superficie G) · REGLA 24 — CON LA FACTURACIÓN APAGADA, ESTA PUERTA NO PUEDE
+// SEGUIR PROMETIENDO UNA FACTURA
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1029 (superficie G) · en modo receipt se oculta "Tu primera factura con YaQu será…"', () => {
+  // Mismo patrón YA aprobado y mergeado en onboardingView.js (PR #1650, SCRUM-1029): se OCULTA la
+  // vista previa, no se reescribe el texto (fiscal, lo firma Javier — no se toca aquí).
+  const bloque = bloqueDeLlaves(PUERTA, 'const refrescarPrevia');
+  assert.ok(bloque, 'ESCÁNER CIEGO: no se localiza refrescarPrevia en puertaSerie.js');
+  assert.match(bloque, /window\.appModoEmision === 'receipt'/,
+    '🔴 con la facturación apagada (ES real, regla 24) esta pantalla sigue prometiendo «Tu primera '
+    + 'factura con YaQu será…», y con OFF no se emite ninguna (regla 24, SCRUM-1029).');
+
+  // CONTROL POSITIVO: el guard no se ha tragado el resto del flujo — a un merchant que SÍ factura
+  // le sigue saliendo la previa real, pedida al servidor. Sin este control, ocultar TODO el bloque
+  // sin condición pasaría el assert de arriba igual de verde.
+  assert.match(bloque, /apiRequest\(/,
+    '🔴 el guard se ha comido la llamada al servidor: un merchant que SÍ factura dejaría de ver la vista previa');
+  assert.match(bloque, /previa\.style\.display = 'block'/,
+    '🔴 el guard se ha comido el bloque que muestra la previa a quien SÍ factura');
 });
 
 test('SCRUM-D1 · el script está en el SHELL del service worker', () => {

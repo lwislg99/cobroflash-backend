@@ -98,6 +98,29 @@ actualizar el censo, para que la mejora quede anotada en vez de pasar desapercib
 
 Si estas escribiendo una entrada NUEVA, nada de esto te afecta: pon el ancla.
 
+## El campo `Skill UI` (SCRUM-811)
+
+Si tu entrada nombra una ruta `public/*.{js,css,html}` **y la fechas después del 22-sep-2026**,
+lleva además:
+
+```markdown
+**Skill UI:** cargada
+```
+
+o, si no la cargaste:
+
+```markdown
+**Skill UI:** no cargada · <el motivo>
+```
+
+Lo exige `tests/scrum811c-skill-ui-declarada.test.mjs`. `yaqu-premium-ui` se declara obligatoria
+«antes de tocar UI» (`CLAUDE.md`, Parte AB del máster) y, medido en SCRUM-811, la prosa por sí
+sola la cumplía en 2 de 222 registros que tocaban `public/` (0,9 %) — contra el 99,7 % de la
+ancla `**Medido contra:**`, que SÍ tiene guard. El campo no puede comprobar que abriste la skill
+de verdad (eso no toca el árbol): mide la declaración, igual que la ancla mide que escribiste un
+sha, no que lo copiaste bien. **Entradas fechadas el 22-sep-2026 o antes quedan exentas** — el
+campo no existía cuando se escribieron.
+
 ### 🔴 UN APENDICE ES UNA ENTRADA, Y LLEVA SU PROPIA ANCLA (SCRUM-532)
 
 Si tu registro va sobre un ticket que **ya tiene fichero**, SCRUM-273 te manda escribirlo como

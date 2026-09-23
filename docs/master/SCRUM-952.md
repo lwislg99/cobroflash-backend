@@ -171,3 +171,46 @@ hallazgos por tanda es 3. Lo que dice es que **el recuento de A22, tal y como es
 encontrarlos**, y que un carácter invisible que la propia norma no cuenta es justo el que sobrevive.
 La norma A22 es de `00-normas-comunes.md`, cuya dueña es la **Sesión 0**: esto se le reporta, no se
 edita desde aquí.
+
+---
+
+## SCRUM-952c · El subconjunto sin riesgo del plan, con la clave TODAVÍA bloqueada (22-sep-2026)
+
+**Sesión:** s3-22a (refuerzo) · **Medido contra:** `origin/main` = `742a346c0dac3cfb21da801d11ad3c9cc15b112b` · 2026-09-22T10:03:25Z (hora de GitHub)
+**Carril:** scripts/equipo/** y src/integrations/gemini* (encargo explícito del orquestador a esta sesión de refuerzo).
+
+**PASO 0, repetido hoy:** `Test-Path C:\Users\Admin\Documents\yaqu-gemini-pruebas.txt` no se pudo comprobar
+(esta sesión no tiene acceso al disco del fundador), y un intento de leer `.env.local` desde PowerShell
+fue **denegado por el clasificador de auto mode** («Credential Materialization»): correcto, regla 9. **El
+banco de calidad de SCRUM-952b sigue bloqueado, cuatro días después**, exactamente como en la entrada
+anterior. No he repetido esa medición: la doy por vigente.
+
+**Lo que SÍ se puede hacer sin la clave, y es lo que se ha hecho:**
+
+1. **El defecto medido (no leído):** `tests/scrum952-respaldo-gemini-con-cupo.test.mjs`, corrido contra
+   el código de `origin/main` (con `git stash`), sale en ROJO — `MODELOS_PRESUPUESTOS_POR_DEFECTO` no
+   existe todavía, así que no había ni un guard que impidiera reintroducir un modelo a cupo 0. Con el
+   arreglo puesto, los tres tests pasan (evidencia en el informe de esta sesión, no repetida aquí).
+2. **🔴 Hallazgo nuevo de esta sesión, no descrito en SCRUM-952/952b:** la lista rota estaba escrita
+   **dos veces**, tal y como SCRUM-952b ya advertía en el Paso 2 del plan («línea única: hoy la lista
+   por defecto está escrita dos veces») — pero **la que de verdad manda es `env.ts:81`**, no
+   `gemini.ts:142`: `config.GEMINI_MODEL` sale de `env.ts` con su propio `|| '…'`, así que **siempre**
+   es truthy y el `|| MODELOS_PRESUPUESTOS_POR_DEFECTO` de `gemini.ts` nunca se ejecutaba en la app
+   real. Arreglar solo `gemini.ts` (mi primer intento, revertido) habría sido una operación que no se
+   ejecuta y se lee como hecha — el propio patrón que A24 avisa que hay que vigilar. Corregido: la
+   constante vive en `env.ts` (única fuente) y `gemini.ts` la importa.
+3. **El modelo elegido para el hueco de `gemini-2.0-flash` es `gemini-2.5-flash-lite`**, con cupo 20/día
+   propio (tabla del fundador) y **ya en uso en producción** en `MODELOS_LECTURA` de
+   `lecturaTicket.ts` (SCRUM-912): no es un candidato sin medir, es un modelo cuya salida YaQu ya
+   consume hoy. `tests/scrum912-leer-ticket-gasto.test.mjs` sigue en verde (24/24 entre los dos
+   ficheros): la lectura de tickets sigue sin compartir modelo con los presupuestos.
+4. **Lo que esta entrada NO hace:** el banco de calidad de 5 casos × candidatos 3.x del plan aprobado
+   sigue SIN CORRER. Este cambio es deliberadamente el subconjunto conservador — quitar un modelo
+   confirmado a cupo 0 y entrar uno de la MISMA familia ya validado en producción — y no sustituye el
+   Paso 1 del plan. Si el fundador consigue la clave, el banco (`docs/master/evidencias/SCRUM-952/banco.mjs`)
+   sigue ahí y sigue siendo el instrumento correcto para decidir la lista final con los 3.x.
+5. **Error propio:** mi primer borrador declaró el arreglo en `gemini.ts` sin comprobar que `env.ts` no
+   lo dejaba dormido; lo destapó `git grep` sobre el string viejo, no una lectura atenta del diff.
+
+**Suite completa del worktree** (8107 tests, `$TEMP\s3-22a-952.tap`): 4 fallos, los 4 AJENOS
+(SCRUM-939b × 3 + SCRUM-854, que exige justo este registro y se resuelve con este commit).

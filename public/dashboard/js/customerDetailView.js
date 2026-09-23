@@ -133,10 +133,25 @@ async function renderCustomer360View(container, customerId) {
       <button class="btn-secondary btn-sm" id="btn-copy-portal-360" title="Copiar enlace del portal del cliente">
         🔗 Portal
       </button>
+      <!-- ✅ SCRUM-1003, texto firmado por el orquestador por delegación del fundador (22-sep-2026) -->
+      <button class="btn-secondary btn-sm" id="btn-vcard-360" title="Descargar la ficha del cliente como contacto">📇 Guardar en mis contactos</button>
       <button class="btn-primary btn-sm" id="btn-new-quote-360">+ ${L.quoteNew || 'Nuevo presupuesto'}</button>
     </div>
   `;
   wrap.appendChild(header);
+
+  // SCRUM-1003 (CRM-03) · descarga el .vcf en el navegador; nada se manda al servidor.
+  header.querySelector('#btn-vcard-360').onclick = () => {
+    const blob = new Blob([construirVCard(customer)], { type: 'text/vcard;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = nombreDeFicheroVCard(customer);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+  };
 
   // ── SCRUM-1033 · chips de la cabecera: NIF/CIF, dirección y referencia interna ──────────────
   // Sólo lo que tenga valor: un cliente sin ninguno de los tres no pinta el bloque.
@@ -162,7 +177,19 @@ async function renderCustomer360View(container, customerId) {
   // Las 5 columnas de dirección, unidas en una sola línea: sin las que falten (ausente ≠ vacío).
   const direccionTexto = [customer.billingAddress, customer.billingPostalCode, customer.billingCity, customer.billingProvince, customer.billingCountry]
     .filter(Boolean).join(', ');
-  if (direccionTexto) chipMeta('Dirección', direccionTexto);
+  if (direccionTexto) {
+    chipMeta('Dirección', direccionTexto);
+    // ✅ SCRUM-1004, texto firmado por el orquestador por delegación del fundador (22-sep-2026):
+    // reuso literal del enlace de `jobRailBlocks.js` (mismo proveedor, sin mapa incrustado).
+    const comoLlegar = document.createElement('a');
+    comoLlegar.id = 'c360-como-llegar';
+    comoLlegar.className = 'contacto-link';
+    comoLlegar.target = '_blank';
+    comoLlegar.rel = 'noopener';
+    comoLlegar.href = hrefAbrirEnMapa(direccionTexto);
+    comoLlegar.textContent = 'Cómo llegar';
+    chipsFila.appendChild(comoLlegar);
+  }
   if (customer.internalRef) chipMeta('Referencia', customer.internalRef);
   if (!chipsFila.children.length) chipsFila.remove();
 
@@ -482,6 +509,41 @@ async function renderCustomer360View(container, customerId) {
         docs.appendChild(b);
       });
       tdDocs.appendChild(docs);
+
+      // ── SCRUM-1061 (CRM-18) · miniaturas de las fotos del trabajo (hasta 3, tope de SCRUM-1060) ──
+      // Ausente ≠ vacío: `t.fotos` solo viaja si el trabajo tiene alguna. Reutiliza
+      // `GET /admin/attachments/:id` (ya sirve el binario con su propio check de merchantId): sin
+      // ruta nueva, sin tocar el almacenamiento.
+      if (t.fotos && t.fotos.ids && t.fotos.ids.length) {
+        const galeria = document.createElement('div');
+        galeria.className = 'historial-fotos-mini';
+        t.fotos.ids.forEach((fotoId) => {
+          const enlaceFoto = document.createElement('a');
+          enlaceFoto.href = `/admin/attachments/${fotoId}`;
+          enlaceFoto.target = '_blank';
+          enlaceFoto.rel = 'noopener';
+          enlaceFoto.className = 'historial-foto-mini';
+          const img = document.createElement('img');
+          img.src = `/admin/attachments/${fotoId}`;
+          // ✅ TEXTO FIRMADO por el orquestador por delegación del fundador (22-sep-2026, SCRUM-1061).
+          img.alt = 'Foto del trabajo';
+          img.loading = 'lazy';
+          // Una foto que falla al cargar no rompe la ficha: se retira en vez de enseñar el icono roto.
+          img.onerror = () => { img.hidden = true; };
+          enlaceFoto.appendChild(img);
+          galeria.appendChild(enlaceFoto);
+        });
+        const restantes = t.fotos.total - t.fotos.ids.length;
+        if (restantes > 0) {
+          const mas = document.createElement('span');
+          mas.className = 'historial-fotos-mas';
+          mas.textContent = '+' + restantes + ' más'; // ✅ FIRMADO, SCRUM-1061
+          mas.setAttribute('aria-label', restantes + ' fotos más'); // ✅ FIRMADO, SCRUM-1061
+          galeria.appendChild(mas);
+        }
+        tdDocs.appendChild(galeria);
+      }
+
       tr.appendChild(tdDocs);
       tbody.appendChild(tr);
     });
@@ -529,6 +591,39 @@ async function renderCustomer360View(container, customerId) {
 function escC(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── SCRUM-1003 (CRM-03) · el .vcf del cliente, en una función PURA ──────────────────────────
+// Sin endpoint nuevo y sin más datos que los que la ficha ya muestra (nombre, teléfono, móvil,
+// email, dirección de facturación). Separada del `onclick` a propósito: así se puede probar el
+// TEXTO del .vcf sin tocar `Blob`/`URL.createObjectURL`, que el banco de vistas no implementa de
+// verdad (`tests/_banco-vistas.mjs`: `Blob: class {}` — límite declarado, no un hueco silencioso).
+function escapeVCard(v) {
+  return String(v == null ? '' : v).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+}
+function construirVCard(customer) {
+  const nombre = escapeVCard(customer && customer.name ? customer.name : 'Cliente');
+  const lineas = ['BEGIN:VCARD', 'VERSION:3.0', 'N:;' + nombre + ';;;', 'FN:' + nombre];
+  if (customer && customer.phone) lineas.push('TEL;TYPE=WORK,VOICE:' + escapeVCard(customer.phone));
+  if (customer && customer.mobile) lineas.push('TEL;TYPE=CELL:' + escapeVCard(customer.mobile));
+  if (customer && customer.email) lineas.push('EMAIL:' + escapeVCard(customer.email));
+  const dir = customer || {};
+  if (dir.billingAddress || dir.billingCity || dir.billingProvince || dir.billingPostalCode || dir.billingCountry) {
+    // ADR: casilla;extendida;calle;ciudad;provincia;CP;país (RFC 6350)
+    lineas.push('ADR;TYPE=WORK:;;' + escapeVCard(dir.billingAddress) + ';' + escapeVCard(dir.billingCity) + ';'
+      + escapeVCard(dir.billingProvince) + ';' + escapeVCard(dir.billingPostalCode) + ';' + escapeVCard(dir.billingCountry));
+  }
+  lineas.push('END:VCARD');
+  return lineas.join('\r\n') + '\r\n';
+}
+/** El nombre del fichero: el del cliente, sin caracteres que rompan el sistema de ficheros. */
+function nombreDeFicheroVCard(customer) {
+  const base = String((customer && customer.name) || 'cliente').replace(/[\\/:*?"<>|]+/g, '').trim();
+  return (base || 'cliente') + '.vcf';
+}
+if (typeof window !== 'undefined') {
+  window.construirVCard = construirVCard;
+  window.nombreDeFicheroVCard = nombreDeFicheroVCard;
 }
 
 // ── Modal de edición desde la ficha 360 ─────────────────────────────────────

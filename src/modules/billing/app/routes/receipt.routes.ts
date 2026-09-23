@@ -180,10 +180,26 @@ router.get('/:token', async (req, res) => {
          </a></p>${emailBlock}`
       : '';
 
+      // SCRUM-910 ②: el texto nombra SOLO lo que `payBtns` (arriba, con `puedeTransferencia` /
+      // `puedeTarjeta`) pinta de verdad. Antes decía siempre "los botones de pago por banco o pago
+      // con tarjeta", y con SCRUM-910③ ya en main un merchant sin Connect y sin IBAN/CLABE se queda
+      // en /recibo SIN NINGÚN BOTÓN — ese texto pasó de nombrar un botón roto a nombrar dos que no
+      // existen. Cuatro literales firmados (Jira SCRUM-910, comentario 16527 del orquestador):
+      // "ambos" y "ninguno" ya estaban firmados (el segundo se reutiliza tal cual de
+      // payInvoice.routes.ts:242); "solo banco" y "solo tarjeta" son los dos nuevos que firmó.
+      const pendingMessage =
+        puedeTransferencia && puedeTarjeta
+          ? 'Estamos esperando tu pago. Puedes completarlo usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen más arriba.'
+          : puedeTransferencia
+          ? 'Estamos esperando tu pago. Puedes completarlo usando el botón de <b>pago por banco</b> que aparece más arriba.'
+          : puedeTarjeta
+          ? 'Estamos esperando tu pago. Puedes completarlo usando el botón de <b>pago con tarjeta</b> que aparece más arriba.'
+          : 'El profesional te indicará cómo pagar.<br/>Contacta con él si tienes dudas.';
+
       const statusMessage =
       ch.status === 'pending'
         ? `<div class="note note-warn">
-             Estamos esperando tu pago. Puedes completarlo usando los botones de <b>pago por banco</b> o <b>pago con tarjeta</b> que aparecen más arriba.
+             ${pendingMessage}
            </div>`
         : ch.status === 'paid'
         ? invoice

@@ -123,6 +123,15 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // (dos merchants), que un documento borrado no se lleva el mensaje por delante (tabla suelta,
   // ENT-3) y las páginas de 20 con cursor.
   'scrum1062-historial-whatsapp-cliente.test.mjs': 1,
+  // SCRUM-1036: las notas del cliente. Necesita banco porque vigila la TENENCIA, que el autor se
+  // CONGELA como texto (borrar al técnico no vacía la nota vieja) y la «Nota fija» sintetizada
+  // desde `Customer.notes` sin copiarla ni inventarle fecha/autor.
+  'scrum1036-notas-del-cliente.test.mjs': 1,
+  // SCRUM-1057: fusionar dos clientes duplicados. Necesita banco porque vigila las CUATRO tablas
+  // con FK real a `customers` (Quote, Charge, QuoteRequest, CustomerEvent) moviéndose antes del
+  // `DELETE` —si no, Postgres lo rechazaría—, las cinco sin FK, el rechazo por factura emitida,
+  // la tenencia y el desvínculo de quien apuntara al fusionado como su empresa.
+  'scrum1057b-fusion-clientes-postgres.test.mjs': 4,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

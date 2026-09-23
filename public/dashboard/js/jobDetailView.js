@@ -1161,7 +1161,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const tipoCollapsedLabel = document.createElement('div');
   tipoCollapsedLabel.style.cssText = 'font-size:14px;color:var(--ink)';
   const tipoChangeBtn = document.createElement('button');
-  tipoChangeBtn.className = 'btn-ghost btn-sm';
+  tipoChangeBtn.className = 'btn-ghost btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   tipoChangeBtn.textContent = 'Cambiar';
   tipoCollapsed.append(tipoCollapsedLabel, tipoChangeBtn);
   tipoSec.appendChild(tipoCollapsed);
@@ -1393,13 +1393,16 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // estado es reversible. Cerrar no.
   if (job.status === 'cerrado') newAlbRow.hidden = true;
   const newAlbBtn = document.createElement('button');
-  newAlbBtn.className = 'btn-secondary btn-sm';
+  newAlbBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   newAlbBtn.textContent = '+ Nuevo albarán';
   newAlbRow.appendChild(newAlbBtn);
   // SCRUM-65: elegir el modo ANTES de crear (congelado desde 'emitido'; se puede
   // ajustar también mientras el albarán siga en borrador, ver buildAlbEditor).
   const valoradoLabel = document.createElement('label');
-  valoradoLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer';
+  // SCRUM-962 (AB6): min-height en la ETIQUETA, no en la casilla — mismo patrón que
+  // `.quote-line__suplido label` (styles.css): el checkbox nativo se queda pequeño a propósito
+  // y es la etiqueta entera la que da el área de toque de 44 px.
+  valoradoLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;min-height:44px';
   const valoradoCheck = document.createElement('input');
   valoradoCheck.type = 'checkbox';
   valoradoLabel.appendChild(valoradoCheck);
@@ -1424,7 +1427,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // cada fila, así que **no hace falta tocar `partes.routes.ts`** —que lo está editando otra
   // sesión ahora mismo— para abrir esta puerta.
   const parteBtn = document.createElement('button');
-  parteBtn.className = 'btn-secondary btn-sm';
+  parteBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   parteBtn.setAttribute('data-abrir-parte', '1');
   parteBtn.textContent = 'Parte de trabajo';
   parteBtn.addEventListener('click', async () => {
@@ -1458,7 +1461,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // sin él no hay nada que vincular (mismo caso que las opciones deshabilitadas del selector).
   if (job.quote?.id != null && typeof openExpenseModal === 'function') {
     const gastoBtn = document.createElement('button');
-    gastoBtn.className = 'btn-secondary btn-sm';
+    gastoBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
     gastoBtn.textContent = '+ Añadir gasto';
     gastoBtn.addEventListener('click', () => {
       openExpenseModal(null, {
