@@ -23,6 +23,7 @@ import {
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
 import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
+import { etiquetarSeleccion, type AccionEtiqueta } from '../../domain/etiquetadoMasivo'; // SCRUM-1059
 import { historialWhatsAppDelCliente } from '../../domain/historialWhatsAppDelCliente'; // SCRUM-1062
 import { crearNota, listarNotas, resolverAutor } from '../../domain/notasDelCliente'; // SCRUM-1036
 import { previsualizarFusion, fusionarClientes } from '../../domain/fusionClientes'; // SCRUM-1057
@@ -102,6 +103,38 @@ router.get('/duplicados', async (req, res) => {
   } catch (err) {
     console.error('[GET /admin/customers/duplicados]', err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/customers/bulk-tags — SCRUM-1059 (CRM-17) · añadir/quitar una etiqueta a VARIOS
+ * clientes a la vez. Un cliente que no se puede actualizar (ya la tenía, ya tiene 20, o el id no
+ * es de este merchant) no tumba a los demás — se declara en `resultados`.
+ *
+ * NO hay «avisar a la selección»: sería un envío nuevo (J6, regla 28) y es otro ticket.
+ * NO exporta: el punto 3 del ticket (exportar la selección) es su propio commit, por ser STOP.
+ * `requireRole('admin')` (SCRUM-55): acción en bloque sobre datos de cliente, sin motivo de campo
+ * que la lleve a `TECNICO_ALLOWED` — el default de S1 es admin-only.
+ */
+router.post('/bulk-tags', requireRole('admin'), async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(Number) : [];
+    const accion = req.body?.accion as AccionEtiqueta;
+    const etiqueta = typeof req.body?.etiqueta === 'string' ? req.body.etiqueta : '';
+    if (accion !== 'add' && accion !== 'remove') {
+      return res.status(400).json({ error: 'accion_invalida', message: 'La acción tiene que ser "add" o "remove".' });
+    }
+    if (!etiqueta.trim()) {
+      return res.status(400).json({ error: 'etiqueta_vacia', message: 'Escribe una etiqueta.' });
+    }
+    if (ids.length === 0) {
+      return res.json({ actualizados: 0, resultados: [] });
+    }
+    const r = await etiquetarSeleccion(req.merchantId, ids, accion, etiqueta, prisma);
+    return res.json(r);
+  } catch (err) {
+    console.error('[POST /admin/customers/bulk-tags]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 
