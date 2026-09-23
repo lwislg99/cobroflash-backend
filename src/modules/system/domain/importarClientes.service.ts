@@ -30,6 +30,11 @@
 // import no puede meter clientes en el merchant de otro.
 
 import { trocearCsv, celdaCsv } from '../../../core/csv/csv';
+// SCRUM-1022: lectura de .xlsx, solo en el PUNTO DE ENTRADA. Dependencia nueva autorizada por el
+// fundador (regla 36, comentario 16597 de SCRUM-1022) tras la comparativa medida en ese ticket.
+// `readSheet` (no el export por defecto, que en la 9.x devuelve TODAS las hojas) da las filas de
+// UNA sola hoja — la primera si no se indica otra — que es lo único que hace falta aquí.
+import { readSheet } from 'read-excel-file/node';
 // SCRUM-884: el teléfono con la MISMA regla que el alta — las dos piezas que ya existen, no otra.
 import { normalizarIdentificadores } from '../customerAdmin';
 import { formasBuscables } from './identificadoresDuplicados';
@@ -76,6 +81,35 @@ function esUtf8Valido(bytes: Uint8Array): boolean {
   } catch {
     return false;
   }
+}
+
+// ── ①b .xlsx (SCRUM-1022) ────────────────────────────────────────────────────
+
+const FIRMA_ZIP = Buffer.from([0x50, 0x4b, 0x03, 0x04]); // 'PK\x03\x04': todo OOXML (.xlsx incluido) es un ZIP
+
+/** ¿Son estos bytes un .xlsx (o cualquier Office moderno)? Se mira la firma, no la extensión. */
+export function pareceXlsx(bytes: Uint8Array): boolean {
+  return bytes.length >= 4 && Buffer.from(bytes.subarray(0, 4)).equals(FIRMA_ZIP);
+}
+
+/**
+ * Lee la primera hoja de un .xlsx y la reescribe como texto CSV (mismo separador `;` que usa el
+ * resto del importador), para que tenga la MISMA forma que `decodificarCsv(...).texto`. Con eso,
+ * `trocearCsv`, `proponerMapeo` e `importarClientes` no saben ni les importa de dónde vino el
+ * texto: no cambian ni una línea.
+ *
+ * Un .xlsx no tiene la ambigüedad de codificación de un CSV (la resuelve la librería sobre el XML
+ * interno), así que esto sustituye a `decodificarCsv`, no lo envuelve.
+ */
+export async function xlsxATextoCsv(bytes: Buffer): Promise<string> {
+  const filas = await readSheet(bytes);
+  return filas.map((fila) => fila.map((celda) => celdaCsv(celdaXlsxATexto(celda), ';')).join(';')).join('\r\n');
+}
+
+function celdaXlsxATexto(valor: unknown): string {
+  if (valor == null) return '';
+  if (valor instanceof Date) return valor.toISOString().slice(0, 10);
+  return String(valor);
 }
 
 // ── ② Mapeo propuesto ────────────────────────────────────────────────────────

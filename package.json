@@ -195,6 +195,7 @@
     "nodemailer": "^7.0.10",
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
+    "read-excel-file": "^9.3.10",
     "stripe": "^19.3.0",
     "zod": "^4.1.11"
   },

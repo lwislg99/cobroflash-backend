@@ -16,6 +16,7 @@ import {
 import { trocearCsv } from '../../../../core/csv/csv';
 import {
   decodificarCsv, proponerMapeo, importarClientes, csvDeRechazos,
+  pareceXlsx, xlsxATextoCsv, // SCRUM-1022
   type Codificacion, type CampoCliente,
 } from '../../domain/importarClientes.service';
 
@@ -181,18 +182,34 @@ router.post('/import/preparar', requireRole('admin'), async (req, res) => {
     const base64 = String(req.body?.fichero ?? '');
     if (!base64) return res.status(400).json({ error: 'no_data', message: 'No hemos recibido ningún archivo. Vuelve a elegirlo.' });
 
-    const forzar = req.body?.codificacion as Codificacion | undefined;
-    const d = decodificarCsv(Buffer.from(base64, 'base64'), forzar);
-    const { cabecera } = trocearCsv(d.texto);
+    const bytes = Buffer.from(base64, 'base64');
+
+    // SCRUM-1022: se mira la FIRMA del fichero, no la extensión ni un flag del cliente. Un .xlsx
+    // no tiene la ambigüedad de codificación de un CSV, así que se salta `decodificarCsv` entero;
+    // `trocearCsv`/`proponerMapeo` reciben el mismo shape de texto de siempre y no lo notan.
+    let texto: string;
+    let codificacion: Codificacion = 'utf-8';
+    let alternativa: Codificacion = 'windows-1252';
+    let primeraFila: string;
+    if (pareceXlsx(bytes)) {
+      texto = await xlsxATextoCsv(bytes);
+      primeraFila = texto.split(/\r?\n/).find((l) => l.trim() !== '') ?? '';
+    } else {
+      const forzar = req.body?.codificacion as Codificacion | undefined;
+      const d = decodificarCsv(bytes, forzar);
+      ({ texto, codificacion, alternativa, primeraFila } = d);
+    }
+
+    const { cabecera } = trocearCsv(texto);
     if (cabecera.length === 0) {
       return res.status(400).json({ error: 'csv_vacio', message: 'El archivo no tiene ninguna fila.' });
     }
 
     return res.json({
       ok: true,
-      codificacion: d.codificacion,
-      alternativa: d.alternativa,
-      primeraFila: d.primeraFila,
+      codificacion,
+      alternativa,
+      primeraFila,
       columnas: proponerMapeo(cabecera),
     });
   } catch (err) {
@@ -217,7 +234,11 @@ router.post('/import', requireRole('admin'), async (req, res) => {
       });
     }
 
-    const { texto } = decodificarCsv(Buffer.from(base64, 'base64'), req.body?.codificacion as Codificacion | undefined);
+    // SCRUM-1022: mismo criterio que en /import/preparar — la firma decide, no la extensión.
+    const bytes = Buffer.from(base64, 'base64');
+    const texto = pareceXlsx(bytes)
+      ? await xlsxATextoCsv(bytes)
+      : decodificarCsv(bytes, req.body?.codificacion as Codificacion | undefined).texto;
 
     // Tope de filas, como antes. El limite es del lote, no del formato.
     const { filas } = trocearCsv(texto);
