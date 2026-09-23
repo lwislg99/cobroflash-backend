@@ -242,6 +242,11 @@ export const ANCLAS_564 = {
   'precios/li#2': { texto: 'Envío por WhatsApp + firma digital', anclas: [FIRMA, WHATSAPP] },
   'probar/span#9': { texto: 'Lo firma desde el móvil', anclas: [FIRMA] },
   'probar/div#6': { texto: 'Firma para aceptar', anclas: [FIRMA] },
+  'probar/p#1': {
+    texto: 'Pulsa el botón verde dentro del móvil y avanza — del presupuesto a la firma, como lo viven tú y tu cliente.',
+    anclas: [FIRMA],
+    // SCRUM-1086 (comentario 16602, 23-sep-2026): cabecera de #probar firmada — decía «al pago».
+  },
 
   // ── cobro · SCRUM-1086 retiró el lote firmado; queda UNA, sin tocar (ver nota abajo).
   //    Su veredicto lo sigue derivando `alcanzabilidad()`, igual que antes.

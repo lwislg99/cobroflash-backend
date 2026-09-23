@@ -254,3 +254,53 @@ arreglado, los 13 tests de ese fichero corren limpios de punta a punta en local;
   21 del run 35840396154).
 - `git diff --stat` de este apéndice: los 6 ficheros de `tests/`, los 3 `scripts/` y los 2 `docs/`
   generados. Nada de `public/`.
+
+# APÉNDICE · 23-sep-2026 · SCRUM-1086f · El párrafo de `#probar` firmado y aplicado, J3
+
+**Fecha:** 23-sep-2026 · **Carril:** J3 · **Gate:** ninguno — cuatro palabras de copy firmado
+**Skill UI:** cargada (yaqu-premium-ui) — cambio de texto puro, sin tocar layout/tokens
+**Medido contra:** `origin/main` = `8599c18b4033a598cf87ce5c6dd0af198b75dfcc` · 2026-09-23T10:39:39Z
+
+## Encargo
+
+Hallazgo 1 de SCRUM-1086b (apéndice anterior): `index.html:525` seguía diciendo *"del
+presupuesto al pago"* tras el bloque B opción 3 (el recorrido ya no llega al pago). Javier lo
+firmó en **SCRUM-1086, comentario 16602**: cambiar únicamente esas cuatro palabras.
+
+## El cambio, literal y verificado en rojo primero
+
+`public/index.html:525`, dentro del párrafo de cabecera de `#probar`:
+
+| | texto |
+|---|---|
+| **antes** (confirmado en el árbol antes de tocar) | `…avanza — del presupuesto al pago, como lo viven tú y tu cliente.` |
+| **después** | `…avanza — del presupuesto a la firma, como lo viven tú y tu cliente.` |
+
+Nada más de la frase se toca — ni "como lo viven tú y tu cliente", ni el `<h2>`, ni el
+`eyebrow`. `git diff` de esta entrada: una sola línea de `public/index.html`.
+
+## Efecto colateral medido, y resuelto igual que el resto del apéndice SCRUM-1086e
+
+El nuevo texto activa el detector léxico (contiene «firma») donde el viejo («pago») no lo
+hacía: el párrafo entero pasa a ser una AFIRMACIÓN nueva del censo SCRUM-564
+(`probar/p#1`), antes fuera de alcance. Se declaró en `ANCLAS_564` con ancla `FIRMA` —la
+misma que ya respalda `probar/span#9` y `probar/div#6`, es literalmente la misma promesa— y
+se volvió a medir: **17→18 afirmaciones, 12→13 con ancla**. El documento
+`docs/AFIRMACIONES_DEL_COPY_PUBLICADO.md` se regeneró con su script, no a mano.
+
+## Lo que NO se toca
+
+- **El subtítulo del hero espejo** (`:508`, `#heroe-f4`, `hidden`, `PENDIENTE_FUNDADOR`).
+  Javier lo descartó como pendiente suelto: sin `hidden` no es promesa visible hoy, y se
+  arregla en la misma pasada que el titular vivo (`:428`), bloqueado por SCRUM-1090/537.
+  Queda igual — no forma parte de esta entrada.
+- Los ficheros de `scripts/tests/docs` del apéndice SCRUM-1086e no se tocan de nuevo salvo
+  para declarar `probar/p#1` y regenerar el `.md` afectado.
+
+## Control al cerrar
+
+- Los 7 ficheros de test de SCRUM-1086e, re-corridos completos tras el cambio: **81/81
+  verde**. `npm run build` limpio. `npm run guards:entrada`: **112/112 verde**.
+- `git diff --stat`: `public/index.html` (1 línea), `scripts/_afirmaciones-publicadas.mjs`
+  (nueva entrada), `tests/scrum564-afirmaciones-publicadas.test.mjs` (números re-medidos),
+  `docs/AFIRMACIONES_DEL_COPY_PUBLICADO.md` (regenerado), este fichero.
