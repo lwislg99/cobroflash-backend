@@ -478,3 +478,129 @@ viva, §15) sigue siendo la propuesta más segura — no depende de resolver est
 arrancar SIN tocar `~/.claude.json` a mano, necesita decidir entre `--strict-mcp-config` (pierde
 Jira) o una pre-aprobación por el camino oficial (§23, sin medir) — esa decisión de diseño le toca a
 quien implemente dentro de `sesion.mjs`, coordinado entre los dos equipos.**
+
+## 25 · Encargo nuevo (23-sep, tarde) · Por qué cayeron las SEIS a la vez — NO es MCP
+
+**Fecha:** 23-sep-2026 16:06Z (GitHub) · **Carril:** J6 · calidad y seguridad
+**Medido contra:** `origin/main` = `b2df30887f1a1e1cff193b748d6beb0ef499e9e9` · 2026-09-23T16:06:21Z
+**Rama:** `scrum-1092h-por-que-cayeron-las-seis`, en un `git worktree add` propio (nunca la
+herramienta `EnterWorktree`, prohibida en el encargo): el árbol compartido tenía cambios sin
+commitear de otra sesión y `guard-dangerous` lo bloqueó correctamente al primer intento — se midió
+sólo en lectura ahí y se escribió aquí.
+
+> ⛔ `src/`, `scripts/equipo/sesion.mjs`, `.mcp.json` y `~/.claude.json` — SOLO LECTURA. Ningún
+> guard nuevo.
+
+### 25.1 · La hipótesis de §19-24 (MCP de proyecto) NO aplica aquí, y se descarta con evidencia
+
+El encargo la daba por dudosa porque las seis arrancaron en el árbol de siempre, ya aprobado, y
+trabajaron horas. Confirmado: los `state.json` de las seis sesiones de HOY ya no existen en
+`~/.claude/jobs/` (`sesion.mjs parar` hace `claude stop <id>` + `claude rm <id>`, y eso borra el
+directorio — es lo que hizo el orquestador al relanzar antes de este encargo). Pero la evidencia
+sobrevive en otro sitio que el encargo no pedía mirar y que sí tiene los datos: los transcripts
+`.jsonl` en `~/.claude/projects/C--Users-Javier-Pereira-cobroflash-backend/`, que `claude rm` no
+toca. Ahí está la causa, con hora y texto literal.
+
+### 25.2 · El texto exacto, en TRES sesiones distintas, con menos de 7 minutos de diferencia
+
+Grep de `"session limit"` sobre todos los `.jsonl` de hoy. Tres sesiones —de seis— alcanzaron a
+escribirlo como mensaje del asistente, palabra por palabra igual en las tres:
+
+    You've hit your session limit · resets 1:40pm (Europe/London)
+
+| puesto | fichero (session id) | primera vez que lo dice |
+|---|---|---|
+| J2 | `07a2d7a6-e407-4314-a286-cdb03133e1d5.jsonl` | 2026-09-23T11:14:36.502Z |
+| J5 | `c35ca612-4765-4de6-8df9-fe2358c3c2f2.jsonl` | 2026-09-23T11:14:37.486Z |
+| J1 | `198927f9-dbd7-4216-9edb-1aa473288f57.jsonl` | 2026-09-23T11:21:54.198Z (tras varios "Sigo esperando" desde 11:14) |
+
+J2 y J5 lo dicen con **1 segundo** de diferencia. No es un permiso de MCP: es el **límite de uso de
+la CUENTA** de Claude Code (una ventana de sesión compartida, no por-sesión), agotado por las seis
+sesiones de fondo consumiendo el mismo presupuesto a la vez. `1:40pm (Europe/London)` = **12:40Z**
+(BST = UTC+1 el 23-sep).
+
+### 25.3 · Confirmado también del lado del lanzador, no sólo del transcript
+
+`claude agents --json` AHORA MISMO, para la sesión bloqueada que sigue viva desde ayer
+(`34714ba0`, jv-j3 — un bloqueo VIEJO y de otro tipo, ver §25.5):
+
+    {"id":"34714ba0","name":"jv-j3","state":"blocked"}
+
+**No hay campo `waitingFor` en absoluto.** En `scripts/equipo/sesion.mjs` líneas 279-280, 462-463 y
+555: `v.waitingFor || 'algo interactivo'` — **«algo interactivo» es un texto de RELLENO que pone el
+propio lanzador cuando el campo viene vacío, no algo que diga Claude Code.** El CLI no reporta
+ningún permiso pendiente: reporta `blocked` a secas. La sospecha de "un permiso que nadie puede
+contestar" no es literal — no hay ningún permiso en el JSON; hay una cuenta sin cupo y un texto de
+relleno que lo disfraza de aprobación interactiva.
+
+### 25.4 · Dos familias, y por qué — pregunta 2 y 3 del encargo, juntas
+
+Censo de las SEIS últimas sesiones antes del relanzamiento (`last-prompt` de cada `.jsonl` da el
+puesto; `firstTs`/`lastTs` son las marcas de tiempo del propio transcript, no el mtime del fichero
+— el mtime miente aquí, ver nota):
+
+| puesto | último transcript antes del relanzamiento | qué hacía | cómo termina |
+|---|---|---|---|
+| J1 | `198927f9` (10:43–11:21Z) | trabajando en SCRUM-1051/#1715 | **Familia A** — a mitad de turno, escribe el aviso y reintenta ("Sigo esperando") hasta las 11:21, luego nada |
+| J2 | `07a2d7a6` (10:57–11:14Z) | — | **Familia A** — mismo patrón, aviso a las 11:14:36 |
+| J5 | `c35ca612` (10:44–11:14Z) | — | **Familia A** — aviso a las 11:14:37 |
+| J3 | `5a93a388` (10:57–11:04Z) | acababa de entregar SCRUM-1025/1029 al orquestador | **Familia B** — cierra limpio a las 11:04:15, nunca vuelve a escribir nada |
+| J4 | `0798b6d7` (10:43–11:10Z) | acababa de cerrar SCRUM-1094 #5/#6 | **Familia B** — cierra limpio a las 11:10:18, nunca vuelve a escribir nada |
+| J6 (predecesora) | `13e2e0f5` (11:00–11:12Z) | acababa de entregar el censo de PR #1724 | **Familia B** — cierra limpio a las 11:12:00, nunca vuelve a escribir nada |
+
+**Familia A (bloqueadas, "sin pid" del encargo) = pilladas A MITAD DE TURNO** cuando se agotó la
+cuota: alcanzan a escribir el aviso y quedan reintentando sin avanzar — eso es lo que el lanzador ve
+como `blocked` sin `waitingFor`.
+**Familia B (muertas, NO-VIVA) = ENTRE turnos**: acababan de entregar y esperaban el siguiente
+encargo del orquestador. Cuando la cuenta se quedó sin cupo, el daemon no les dio ni un turno más
+para escribir nada — de ahí que el lanzador las vea sin rastro, no bloqueadas con mensaje.
+
+**El disparador (pregunta 3) no es una herramienta concreta**: es el **reloj de la cuota de la
+cuenta**, agotada por las SEIS sesiones de fondo compartiendo el mismo presupuesto simultáneamente
+— no una llamada de una sesión en particular. Ninguna de las tres transcripciones de la Familia A
+muestra una llamada a herramienta justo antes del aviso; el aviso sustituye al turno entero.
+
+**Nota sobre el mtime:** los ficheros `.jsonl` de las tres de la Familia A tienen mtime ~16:54-17:00
+(hora en que el orquestador las paró), pero su ÚLTIMO contenido con marca de tiempo real es
+~11:14-11:22Z. El mtime del fichero no es la hora del suceso; la marca de tiempo DENTRO del JSON sí
+lo es. Medido comparando ambas en los tres casos.
+
+### 25.5 · Lo que NO es esta causa — el bloqueo viejo de jv-j3 es OTRA cosa, y no se confunden
+
+`34714ba0` (jv-j3, blocked desde 22-sep 23:39Z, sigue vivo en el lanzador ahora) tiene
+`detail: "SCRUM-537: subtitle guard blocking; awaiting next decision"` y `needs: "decide: fix
+subtitle guard or escalate to orquestador"` — un bloqueo de DECISIÓN (un guard cayó, la sesión paró
+y pidió al orquestador, correctamente, regla 41) de **ayer**, no relacionado con el límite de cuenta
+de hoy. Se nombra aquí solo para no agruparlo por parecido superficial ("blocked" + "sin pid") con
+la causa de §25.2-25.4: son dos familias de bloqueo DISTINTAS del propio lanzador, y ésta ya estaba
+diagnosticada antes de este encargo.
+
+### 25.6 · El hueco de 11:14Z a 15:57Z — SUELO declarado, no una causa que no comprobé
+
+El aviso decía que el cupo se restaura a las **12:40Z**. El relanzamiento (las seis, `estado` nuevo)
+ocurrió a las **~15:57Z** — casi **3h17min DESPUÉS** de la restauración anunciada. Esto importa para
+la pregunta 4 (prevención): **esperar el reloj no basta por sí solo** para que una sesión ya atascada
+en el bucle de reintento se recupere sola — necesita que alguien la pare y la relance (lo que hizo el
+orquestador).
+
+**Medido, no supuesto:** el transcript del propio orquestador (`a11e92b8-…jsonl`, la sesión más
+grande del directorio, sigue viva) **no tiene NINGUNA línea con marca de tiempo entre las
+11:14:00Z y las 15:40:29Z** — 4h26min sin actividad, incluida la tanda programada de las 13:30 de
+`config.json`. Su primera línea después del hueco es a las 15:40:29Z, y lanza las seis sesiones
+nuevas a las ~15:57Z. **No puedo saber, con lo que hay, si el orquestador estuvo parado por el mismo
+límite de cuenta compartido, si esperaba a Javier, o si simplemente no había tanda programada hasta
+las 13:30 y ésa tampoco produjo nada visible** — el transcript no dice POR QUÉ no escribió nada en
+4h26min, solo que no lo hizo. Declarado como suelo: no es una causa plausible sin comprobar, es lo
+que no se puede saber con la evidencia disponible.
+
+### 25.7 · Respuesta a las cuatro preguntas del encargo
+
+| pregunta | respuesta | evidencia |
+|---|---|---|
+| 1. ¿Qué permiso exacto esperan? | Ninguno. No es un permiso: es el **límite de uso de la cuenta** («You've hit your session limit · resets 1:40pm (Europe/London)» = 12:40Z), y el CLI no reporta ningún `waitingFor` — «algo interactivo» es relleno del propio `sesion.mjs`, no un dato de Claude Code. | §25.2, §25.3 |
+| 2. ¿Un mensaje o dos familias? | Mismo mensaje literal en las tres que alcanzaron a escribirlo (J1, J2, J5); las otras tres (J3, J4, J6) no escriben nada — no es un segundo mensaje, es la ausencia total de turno. Dos familias por CUÁNDO las pilló el límite (a mitad de turno / entre turnos), no por texto distinto. | §25.4 |
+| 3. ¿Qué disparó el bloqueo? | El reloj de cupo de la cuenta, agotado por las seis sesiones a la vez — no una herramienta ni una sesión concreta. | §25.4 |
+| 4. ¿Se puede prevenir sin apagar nada? | Sin medir un arreglo (no era el encargo): esperar el reset no basta solo — hace falta parar+relanzar tras él (§25.6). Repartir la cuota entre menos sesiones de fondo simultáneas reduciría la probabilidad de tocar el techo a la vez, pero esa es una decisión de cuántos puestos corren en paralelo, no de `sesion.mjs`. | §25.6 |
+
+**Lo que NO se tocó:** `scripts/equipo/sesion.mjs` (solo lectura), `.mcp.json`, `~/.claude.json`
+(ni se abrió), `.claude/hooks/guard-dangerous.mjs`, ningún guard nuevo, cero `src/`.
