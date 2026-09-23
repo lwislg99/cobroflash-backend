@@ -39,7 +39,8 @@ for (let ronda = 1; ronda <= N; ronda++) {
     else if (r.ok) { slot.ok++; }
     else { slot.otros++; detalle.push(`OTRO:${i}:${JSON.stringify(r).slice(0,120)}`); }
   }
-  console.log(`ronda ${ronda}/${N} · ${Date.now() - t0}ms · limpia=${limpiaMurio ? 'MUERTA' : 'ok'} · ` + (detalle.length ? detalle.join(' ') : 'todas ok'));
+  const estadoLimpia = limpiaMurio ? 'MUERTA' : 'viva';
+  console.log(`ronda ${ronda}/${N} · ${Date.now() - t0}ms · limpia=${estadoLimpia} · ` + (detalle.length ? detalle.join(' ') : 'todas ok'));
 }
 
 console.log('\n=== RESUMEN ===');
