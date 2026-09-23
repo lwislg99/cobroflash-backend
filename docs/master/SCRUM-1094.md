@@ -79,15 +79,76 @@ con la descripción del ticket por texto, no por número:
 No decido si esto cierra el nº2 o lo reduce a "ya no aplica" — se lo dejo a quien aplique el
 máster, con el número de línea correcto medido hoy en vez del original.
 
-## Propuesta para el nº3 (S1-G, línea 1045) — NO aplicada aquí
+## SCRUM-1094b · Censo de `docs/VERIFACTU_EVIDENCIAS.md` (23-sep-2026, jv-j4)
 
-Sustituir la cita de `docs/VERIFACTU_EVIDENCIAS.md` por `docs/EVIDENCIAS_E2E.md` (el fichero
-que sí existe, y que el propio ticket señala como el nombre correcto propagado con error) —
-o, si `VERIFACTU_EVIDENCIAS.md` debe existir como documento propio distinto de
-`EVIDENCIAS_E2E.md`, crearlo. No decido cuál de las dos: lo firma quien aplique el máster.
+El orquestador pidió NO decidir a ciegas si es "error de nombre" (sustituir por
+`EVIDENCIAS_E2E.md`) o "falta un documento": medir cuántos sitios lo citan hoy y qué esperan
+encontrar. Censo por `git grep "VERIFACTU_EVIDENCIAS"` sobre este árbol:
+
+**Vivos y desactualizados (siguen afirmando que el fichero es el sitio correcto):**
+- `docs/YAQU_MASTER.md:1045` (S1-G) — nº3 del ticket, máster, lo aplica el orquestador.
+- `.agents/skills/yaqu-verifactu-sif/SKILL.md:49` — nº4 del ticket, va por SCRUM-1089/J5.
+- `.agents/skills/yaqu-release-check/SKILL.md:24` — **NO es uno de los seis del censo del
+  19-ago**, y el suelo del ticket dice "si aparece un séptimo, se añade, no se ajusta al
+  número": lo añado aquí. Cita `EVIDENCIAS_E2E.md` y `VERIFACTU_EVIDENCIAS.md` juntos como
+  ejemplos de "docs de evidencia que pida la tarea". Es la misma familia que el nº4 (mirror
+  `.agents/` sin sincronizar) — no lo toco, es SCRUM-1089/J5.
+
+**Ya corregidos (confirman que NO existe y remiten a `EVIDENCIAS_E2E.md`):**
+- `.claude/skills/yaqu-verifactu-sif/SKILL.md:87-90` — ya dice "no existe (comprobado el
+  20-ago-2026). Cítese `docs/EVIDENCIAS_E2E.md`... cuando lo que se quiera adjuntar sean
+  evidencias E2E."
+- `.claude/skills/yaqu-release-check/SKILL.md` — ya NO contiene la cadena (0 ocurrencias hoy);
+  `docs/legal/INVENTARIO_AFIRMACIONES_SKILLS.md:199-208` describe una versión vieja de este
+  fichero (su hallazgo A7) que ya no está — el propio inventario quedó desactualizado por el
+  mismo mecanismo que este ticket entero corrige (una copia se arregla, la otra no se entera).
+
+**Históricos, no se tocan** (expedientes/snapshots, no specs vivas):
+`docs/historico/YAQU_MASTER_v5.3_pre-14jun_con-progreso.md`,
+`docs/legal/INVENTARIO_AFIRMACIONES_SKILLS.md` (es el propio informe de hallazgo, con fecha),
+y `docs/master/SCRUM-{534,538,804,939,955,1089}.md` (expedientes de ticket: registran lo que
+se encontró ENTONCES, no se reescriben).
+
+### Lo que esperan encontrar — y por qué NO es (solo) un error de nombre
+
+Las dos citas vivas (S1-G y la skill de VeriFactu) esperan lo mismo entre sí: **evidencia de
+un envío real a producción de la AEAT** ("capturas, IDs, fechas" + "≥1 factura real remitida
+y aceptada"). Eso es DISTINTO de lo que contiene `EVIDENCIAS_E2E.md` (evidencia de un flujo
+E2E de producto en móvil, confirmado por el fundador — nada de AEAT). **No son el mismo
+documento con dos nombres: son dos evidencias de dos cosas distintas**, y la de la AEAT no
+existe todavía por la misma razón que S1-G sigue ⏳ en el máster: **el envío real a
+producción de la AEAT no ha ocurrido** (S1-D es sólo pruebas, no producción). Sustituir la
+cita por `EVIDENCIAS_E2E.md` sería incorrecto — mezclaría dos evidencias distintas.
+
+**Corrección a mi propia propuesta de la sección anterior** (creada antes de este censo): dije
+que la solución podía ser "sustituir por `EVIDENCIAS_E2E.md` o crear el documento". Medido
+ahora: **no es una sustitución** — es un documento futuro y legítimo que se crea cuando S1-G
+se complete, no antes. Lo único que hay que corregir HOY en los sitios que lo citan es el
+TIEMPO VERBAL: no "está aquí" sino "se creará aquí cuando exista un envío real". No decido si
+el nombre final debe ser `VERIFACTU_EVIDENCIAS.md`: eso lo fija quien complete S1-G.
+
+## nº5 y nº6 (23-sep-2026, jv-j4 — asignados por el orquestador tras el nº1)
+
+Localizados por TEXTO, no por el número de línea del ticket (el propio orquestador confirmó
+que los seis números del censo del 19-ago pueden estar corridos, igual que el nº2/nº3).
+
+- **nº5 · `docs/legal/SEMAFORO_CALIBRACION.md`** — el bloque real está en las líneas 196-200
+  (el ticket decía 196-198; coincide aproximadamente). Afirmaba: *"La cola `VfSubmission`
+  (máster, Parte L) es el sitio donde se gestionan"* los códigos 3000-3004. Corregido:
+  declara que hoy no hay ningún sitio donde se gestionen (máster, Parte L; S1-D), y conserva
+  sin tocar la parte que SÍ es spec pura de la AEAT (las banderas `Subsanacion` /
+  `RechazoPrevio` / `SinRegistroPrevio`, que vienen del anexo del PDF y no dependen de si
+  YaQu ya las implementa).
+- **nº6 · `docs/equipo/puesto-j1.md`** — el bloque real está en las líneas 15-17 (el ticket
+  decía 15-16; el texto cruza a la 17). Listaba "la cola `VfSubmission`, el envío a la AEAT"
+  como si ya existiera, dentro del área de J1. **Esta ficha la lee J1 al arrancar cada
+  tanda** (nota del orquestador) — corregido para decir que la remisión es **S1-D, aún sin
+  construir** (máster, Parte L), sin quitarla del área de J1: seguirá siendo su trabajo
+  cuando se construya, sólo que hoy no existe.
 
 ## Verificación
 
-Sólo `docs/RUNBOOKS.md` y este expediente cambian en esta rama (ver diff). No toca
-`src/`, `public/`, `prisma/schema.prisma` ni ningún camino de emisión — no aplica `npm test`.
-Verificación = lectura del diff contra el texto del máster citado arriba.
+Cambian `docs/RUNBOOKS.md`, `docs/legal/SEMAFORO_CALIBRACION.md`, `docs/equipo/puesto-j1.md`
+y este expediente (ver diff). No toca `src/`, `public/`, `prisma/schema.prisma` ni ningún
+camino de emisión — no aplica `npm test`. Verificación = lectura del diff contra el texto del
+máster citado arriba.
