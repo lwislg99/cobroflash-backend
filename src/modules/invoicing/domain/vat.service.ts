@@ -6,8 +6,18 @@
  * cuota total de la huella VeriFactu.
  */
 
-export type VatLine = { qty?: number; price?: number; tax?: number };
-export type VatRateEntry = { rate: number; base: number; cuota: number }; // rate en % (21, 10, 4, 0)
+/**
+ * SCRUM-1050/1051 · LISTA CERRADA de causas por las que una línea no repercute IVA por su
+ * `tax`. Hoy sólo `S2` (inversión del sujeto pasivo, GO de Javier 23-sep-2026) está ACTIVA — el
+ * tipo sólo declara ese literal a propósito: `E1` (exenta) y `N1` (no sujeta) quedan fuera hasta
+ * que exista su propio GO (SCRUM-1050 lo denegó por falta de caso de uso citado). Añadir una
+ * causa nueva es ensanchar este tipo Y su validador (`core/validation/causaLineaEmitible.ts`) a
+ * la vez — uno solo no basta.
+ */
+export type Causa = 'S2';
+
+export type VatLine = { qty?: number; price?: number; tax?: number; causa?: Causa };
+export type VatRateEntry = { rate: number; base: number; cuota: number; causa?: Causa }; // rate en % (21, 10, 4, 0)
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -47,20 +57,31 @@ export function calcVatBreakdown(lines: VatLine[] | null | undefined): {
   base: number;
   cuota: number;
 } {
-  const map = new Map<number, { base: number; cuota: number }>();
+  // SCRUM-1051: la clave agrupa por (rate, causa). Una línea con causa NUNCA se funde con una
+  // sin causa aunque compartan `rate` — son declaraciones fiscales distintas (una S2 a base 100
+  // y una S1 al 0% a base 100 no son la misma línea del desglose, aunque las dos "midan" 0%).
+  const map = new Map<string, { rate: number; base: number; cuota: number; causa?: Causa }>();
   for (const l of Array.isArray(lines) ? lines : []) {
     const qty = cantidadDeLinea(l?.qty);
     const price = Number(l?.price) || 0;   // el defecto ES 0: sustituye un cero por un cero
     const taxFrac = Number(l?.tax) || 0;
     const base = qty * price;
     const rate = Math.round(taxFrac * 100);
-    const e = map.get(rate) ?? { base: 0, cuota: 0 };
+    const causa = l?.causa;
+    const key = `${rate}|${causa ?? ''}`;
+    const e = map.get(key) ?? { rate, base: 0, cuota: 0, causa };
     e.base += base;
-    e.cuota += base * taxFrac;
-    map.set(rate, e);
+    // Una línea con causa (S2 hoy) no repercute cuota: la autorrepercute el destinatario. Es la
+    // CAUSA la que pone la cuota a 0, no el `tax` de la línea — que puede llevar cualquier valor.
+    e.cuota += causa ? 0 : base * taxFrac;
+    map.set(key, e);
   }
-  const entries = [...map.entries()]
-    .map(([rate, v]) => ({ rate, base: round2(v.base), cuota: round2(v.cuota) }))
+  // `causa` sólo se incluye cuando existe (SCRUM-1051): media docena de llamadores comparan
+  // `entries` con `deepStrictEqual` contra fixtures escritos antes de este ticket — una clave
+  // `causa: undefined` explícita en CADA entrada rompía esa igualdad sin cambiar ningún importe.
+  const entries = [...map.values()]
+    .map((v) => (v.causa ? { rate: v.rate, base: round2(v.base), cuota: round2(v.cuota), causa: v.causa }
+      : { rate: v.rate, base: round2(v.base), cuota: round2(v.cuota) }))
     .sort((a, b) => b.rate - a.rate);
   return {
     entries,

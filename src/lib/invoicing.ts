@@ -21,6 +21,7 @@ import {
 import { exigirLineasFacturables } from '../modules/invoicing/domain/lineasFacturables'; // SCRUM-246
 import { lineasParaFacturar } from '../modules/invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { exigirTiposDeIvaEmitibles } from '../core/validation/tiposIvaEmitibles'; // SCRUM-771
+import { exigirCausaLineaEmitible } from '../core/validation/causaLineaEmitible'; // SCRUM-1051
 import { crearFacturaEmitida } from '../modules/invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarDesdeFicha, clienteDelDocumento } from '../modules/invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisor, emisorDelDocumento } from '../modules/invoicing/domain/emisorCongelado'; // SCRUM-665
@@ -344,6 +345,10 @@ export async function ensureInvoiceForCharge(
   // arriba: ANTES de pedir número, nunca después. Deriva de `invalidTipoIva`; aquí no
   // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
   exigirTiposDeIvaEmitibles(invoiceLines);
+  // SCRUM-1051 · y que la CAUSA (si la línea trae una) esté en la lista activa. Mismo sitio,
+  // misma razón: hoy ninguna línea de este camino trae `causa` (no hay UI que la escriba
+  // todavía), así que este portón no rechaza nada hoy — es la barrera para el día que exista.
+  exigirCausaLineaEmitible(invoiceLines);
 
   // SCRUM-729/665 · el congelado sale de la ficha que `ensureInvoiceForCharge` YA cargó con el
   // `Charge` (`include: { customer: true, merchant: true, … }`): aquí cuesta CERO viajes. Y va
