@@ -884,12 +884,57 @@ ningún 303 (sin llamadores).
 los arts. 90-91 LIVA citados en §3 (que solo dan 21/10/4 %). ¿Se retiran del selector, o corresponden
 a un supuesto (transitorio, territorial — Canarias/IGIC no es IVA) que haya que documentar aparte?
 
-**Q-C8.** Plazos trimestrales. **Parcialmente respondida:** el modelo 303 trimestral tiene su plazo
-citado en §3 (Orden EHA/3786/2008, art. 7.2 — 20 primeros días del mes siguiente, salvo el 4T que son
-los 30 primeros días de enero). **Sigue sin localizar:** los plazos y las órdenes de aprobación de
-130/131 (pago fraccionado IRPF), 111 (retenciones trabajo/profesional), 115 (retenciones alquiler),
-347 (operaciones con terceros) y 390 (resumen anual IVA). ¿Coinciden con el mismo patrón (20 días /
-30 en enero), o alguno tiene un calendario distinto?
+**Q-C8.** ~~Plazos trimestrales~~ ✅ **RESPONDIDA por el asesor fiscal (23-sep-2026), pendiente de tu
+confirmación.** Perfil consultado: autónomo de oficio, estimación directa, régimen general de IVA,
+clientes particulares y empresas. **El asesor marcó él mismo con ⚠ lo que citó de memoria** — por la
+regla de oro de `docs/producto/CONTABILIDAD.md` §0, ninguna cita ⚠ entra aquí como cita comprobada:
+va marcada **NO VERIFICADO** hasta que alguien la coteje contra el BOE consolidado (pendiente,
+ninguna de las de abajo se ha descargado todavía). Lo que el asesor dio **con enlace propio** sí se
+trata como fuente: AEAT «Otras cuestiones de interés» (exoneración 390, calendario 2026), novedades
+Orden HAC/1148/2018, instrucciones del 390, RECC en la guía del 036, RD 1619/2012 (ROF) consolidado.
+
+*Qué modelos le tocan a este perfil:*
+
+| Modelo | ¿Le toca? | Cuándo | Cita |
+|---|---|---|---|
+| **303** | Siempre | Trimestral | art. 71.3 RIVA — **NO VERIFICADO** ⚠ |
+| **390** | Siempre. **NO está exonerado** | Anual, enero | AEAT «Otras cuestiones de interés» + instrucciones del 390 — con enlace, tratado como fuente |
+| **130** | Siempre (estimación directa) | Trimestral. Sólo se libra si ≥70 % de ingresos del año anterior llevaron retención — **en un oficio no ocurre** (su actividad es empresarial, no profesional) | art. 109 RIRPF — **NO VERIFICADO** ⚠ |
+| **131** | 🔴 **NUNCA** — es el pago fraccionado de estimación objetiva (módulos), excluyente con el 130 | — | definición del propio modelo (AEAT), no una cita de artículo |
+| **111 + 190** | Sólo si retiene a alguien (nóminas, o facturas de profesionales —no empresariales— con retención: gestoría, arquitecto, aparejador, abogado…) | Trimestral + anual | art. 99 LIRPF y arts. 74-76 RIRPF — **NO VERIFICADO** ⚠ |
+| **115 + 180** | Sólo si paga alquiler de local afecto (no si trabaja desde casa) | Trimestral + anual | art. 100 RIRPF — **NO VERIFICADO** ⚠ |
+| **347** | Habitual, no automático: cada cliente/proveedor con total anual IVA incluido > 3.005,06 €, por trimestres. Fuera: lo ya declarado en 190/180, lo del 349, y **quien esté en SII** (VeriFactu **no** lo elimina — sólo el SII, y SII es incompatible con VeriFactu) | Anual, febrero | arts. 31-35 RGAT (RD 1065/2007) — **NO VERIFICADO** ⚠ |
+| **100** | Siempre — **no estaba en nuestra lista**; es el que cierra el 130 | Renta anual | — |
+| **349** | Sólo si compra/vende a empresas de otros países UE — **no estaba en nuestra lista**; raro en oficios | — | — |
+
+**111 y 115, el detalle que falta en el código hoy:** la retención la sufre el profesional que emite
+la factura, pero **la presenta quien la paga** (texto del asesor). No genera 111 una factura de otro
+oficio o de un proveedor de material (son empresariales, sin retención). Consecuencia de producto ya
+recogida en **SCRUM-1103**: sin captar la retención en las facturas RECIBIDAS no se pueden calcular
+111 ni 115.
+
+**Trimestral → mensual:** automático sólo por volumen > 6.010.121,04 € (art. 71.3 RIVA ⚠, no le pasa
+a un oficio) o voluntario por **REDEME** (art. 30 RIVA ⚠), que arrastra **SII obligatorio** (art. 62.6
+RIVA ⚠) y saca al merchant del RRSIF/VeriFactu → tratado aparte en **SCRUM-1102**, no se duplica aquí.
+
+**Criterio de caja:** no cambia qué modelos tocan ni su periodicidad — cambia cómo se rellenan (303:
+repercutido en el trimestre del cobro con tope 31-dic siguiente, soportado al pagar, con casillas
+informativas del devengo general; 347: además de por devengo, los importes cobrados/pagados del año)
+y qué hay que guardar (mención "régimen especial del criterio de caja" en factura, y fecha/importe/
+medio de cobro en libros). Confirma exactamente lo que pedía **SCRUM-1055** (fecha real del cobro).
+Requisito y casillas: arts. 163 *decies*/*duodecies* LIVA, art. 34 RGAT, art. 61 *decies* RIVA, la
+numeración de casillas 62/63/74/75 del 303 — **todo NO VERIFICADO** ⚠.
+
+**Las cuatro preguntas de alta que propone el asesor** (textual): *«si tiene empleados o
+profesionales retenidos (111), si paga alquiler (115), si está en REDEME, si optó a criterio de
+caja, y si alguna cliente empresa le practica retención (sólo si su actividad estuviera dada de alta
+como profesional, no empresarial). Son cuatro preguntas de alta en la herramienta; el resto se deduce
+de las facturas.»* Es una propuesta de producto, no un texto de pantalla: sin firma del fundador
+(regla 39) no se implementa.
+
+**Lo que NO se le preguntó a propósito:** los plazos concretos de presentación de cada modelo — se
+citan de su propia orden ministerial (las seis ya localizadas en SCRUM-1039b), no de memoria del
+asesor.
 
 **Q-C9.** ✅ **RESPONDIDA por cita, pendiente de tu confirmación.** Se revisó LIVA art. 7 completo
 (los 12 supuestos de no sujeción: transmisión de negocio, muestras gratuitas, relación laboral,
