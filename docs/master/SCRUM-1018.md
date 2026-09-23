@@ -196,6 +196,18 @@ orquestador decidió ADOPTARLO tras verificación, no descartarlo.
    merchant, censo de merchantId, ancla de medición, y el propio SCRUM-893). CI corre la suite
    completa con el banco desechable.
 
+### Lo que CI cazó que el acotado local no ejercita
+
+El PR salió rojo en el check obligatorio por **SCRUM-860** (el trinquete del `select`: ninguna
+lectura sin nombrar columnas puede llegar a una respuesta — suelo declarado 102, subió a 103). La
+consulta de `proximoJob` usaba `include: { assignees: {...} }` sin `select` propio, publicando el
+`Job` entero. Arreglado cambiando `include` por `select`, nombrando solo `scheduledAt`,
+`assignedUserId` y `assignees` (con su propio `select` anidado) — exactamente lo que el portal
+pinta. Ese guard no está en `tests/*.test.mjs` acotado a mano por nombre (no lo cité en la lista
+de arriba porque no lo conocía); queda para la próxima vez: correr también
+`tests/scrum860-trinquete-del-select.test.mjs` en cualquier PR que añada una consulta nueva a un
+fichero con respuesta HTTP.
+
 ### Hallazgo — el precedente de «próxima visita» es el estrecho, no este código
 
 El orquestador preguntó, antes de alinear el filtro de este ticket (`status IN (agendado,
