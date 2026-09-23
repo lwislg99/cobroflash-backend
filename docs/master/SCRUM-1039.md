@@ -1,6 +1,7 @@
 # SCRUM-1039 · CONTABILIDAD — Completar las citas oficiales que faltan y llevar las Q-C al asesor
 
-**Puesto: S0 + J4 · 22-sep-2026 · `origin/main` `524ba73fac05904b9a50eb77282140a9a1f53e79`**
+**Medido contra:** `origin/main` = `524ba73fac05904b9a50eb77282140a9a1f53e79` · 2026-09-22T09:09:06Z
+**Puesto:** S0 + J4 · 22-sep-2026
 
 Solo lectura y documentación (STOP fiscal declarado en el ticket, no bloqueante). Alcance: las
 citas que `docs/producto/CONTABILIDAD.md` §4 marcaba NO VERIFICADO: los plazos trimestrales (el

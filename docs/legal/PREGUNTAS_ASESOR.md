@@ -863,7 +863,8 @@ en la factura sin que se confundan con una línea de servicio?
 casos un cliente de un oficio (persona física comerciante minorista) está sujeto a él?
 
 **Q-C5.** ✅ **RESPONDIDA por cita, pendiente de tu confirmación.** Las retenciones del 2 % y el 1 %
-que admite `retencionIrpf.ts:54` son RIRPF art. 95.4-6: el **1 %** es para actividades en
+que admite `src/modules/invoicing/domain/retencionIrpf.ts:54` (`TIPOS_RETENCION`) son RIRPF
+art. 95.4-6: el **1 %** es para actividades en
 **estimación objetiva (módulos)** de una lista cerrada de epígrafes IAE que incluye literalmente
 fontanería/climatización (504.2-3), albañilería (501.3), carpintería/cerrajería (505.5) y pintura
 (505.6) — coincide con los oficios de YaQu. El **2 %** es agrícola/ganadera/forestal (95.4-5) — no
@@ -878,7 +879,8 @@ fecha real en que entró el dinero (detalle y advertencia ya en el código,
 fecha real del apunte bancario? Mientras no haya respuesta, el módulo clasifica y avisa; no liquida
 ningún 303 (sin llamadores).
 
-**Q-C7.** Los tipos de IVA 2, 5 y 7,5 % que el servidor admite (`fiscalInput.ts:35`) no aparecen en
+**Q-C7.** Los tipos de IVA 2, 5 y 7,5 % que el servidor admite
+`src/core/validation/fiscalInput.ts:35` (`TIPOS_IVA_ES_BP`) no aparecen en
 los arts. 90-91 LIVA citados en §3 (que solo dan 21/10/4 %). ¿Se retiran del selector, o corresponden
 a un supuesto (transitorio, territorial — Canarias/IGIC no es IVA) que haya que documentar aparte?
 
