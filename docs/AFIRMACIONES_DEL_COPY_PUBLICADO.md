@@ -1,9 +1,9 @@
 # Las afirmaciones del copy publicado
 
 **SCRUM-564.** De los 98 textos de `#como`, `#todo`, `#precios`, `#probar`
-y `#faq` —que SCRUM-563 midió como *ni aprobados ni marcados*—, **17 afirman algo del
+y `#faq` —que SCRUM-563 midió como *ni aprobados ni marcados*—, **18 afirman algo del
 producto**. Decisión del fundador: se revisan sólo ésos. **Los que afirman pueden ser FALSOS;
-los otros 81 sólo pueden ser feos.**
+los otros 80 sólo pueden ser feos.**
 
 > ⚠️ **Generado** (`node scripts/citar-afirmaciones-publicadas.mjs`). La fuente es
 > `scripts/_afirmaciones-publicadas.mjs`, que es lo que leen los tests.
@@ -16,7 +16,7 @@ los otros 81 sólo pueden ser feos.**
 
 | grupo | cuántas | qué se hace |
 |---|---|---|
-| ✅ verdad hoy, **con ancla viva y alcanzable** | **12** | queda anclada y registrada |
+| ✅ verdad hoy, **con ancla viva y alcanzable** | **13** | queda anclada y registrada |
 | 🟡 verdad hoy, **sin ancla de código** | **1** | se declara el ancla |
 | 🔴 **falsa o no verificable** | **2** | **esto es lo que va delante del fundador** |
 | ⚪ descartadas (falso positivo del léxico) | **2** | no son afirmaciones |
@@ -58,7 +58,7 @@ Todo: presupuestos y firma, más clientes, proveedores, productos, gastos, infor
 
 ---
 
-## ✅ Verdad hoy, con ancla viva y alcanzable — 12
+## ✅ Verdad hoy, con ancla viva y alcanzable — 13
 
 | identificador | texto literal | anclas |
 |---|---|---|
@@ -70,6 +70,7 @@ Todo: presupuestos y firma, más clientes, proveedores, productos, gastos, infor
 | `precios/li#3` | «Recordatorios automáticos de firma» | `src/modules/quotes/domain/reminder.service.ts::sendPendingReminders` |
 | `precios/a#1` | «Empieza gratis» | `src/modules/auth/domain/auth.service.ts::planExpiresAt` |
 | `precios/p#2` | «o 16,58 €/mes pagando el año (199 € · 2 meses gratis)» | `src/modules/billing/domain/stripePrices.ts::pro_annual` |
+| `probar/p#1` | «Pulsa el botón verde dentro del móvil y avanza — del presupuesto a la firma, como lo viven tú y tu cliente.» | `src/modules/quotes/app/routes/quotes.routes.ts::signatureUrl` |
 | `probar/span#9` | «Lo firma desde el móvil» | `src/modules/quotes/app/routes/quotes.routes.ts::signatureUrl` |
 | `probar/div#6` | «Firma para aceptar» | `src/modules/quotes/app/routes/quotes.routes.ts::signatureUrl` |
 | `faq/div#1` | «Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma ni lleva el seguimiento solo. Y aquí además llevas clientes, gastos y facturas en el mismo sitio.» | `src/modules/quotes/app/routes/quotes.routes.ts::signatureUrl`<br>`src/modules/quotes/domain/reminder.service.ts::sendPendingReminders` |
@@ -96,7 +97,7 @@ literal delante — no se toca el léxico para que dejen de aparecer.
 
 ## Lo que queda fuera de alcance
 
-**81 textos** de las cinco secciones. no afirman ninguna capacidad, condición ni identidad del producto: sólo pueden ser feos, no falsos (decisión del fundador, 20-ago-2026).
+**80 textos** de las cinco secciones. no afirman ninguna capacidad, condición ni identidad del producto: sólo pueden ser feos, no falsos (decisión del fundador, 20-ago-2026).
 
 Se cuentan, no se callan: «no revisado» y «no existe» se leen igual si nadie escribe la
 diferencia.
@@ -106,9 +107,9 @@ diferencia.
 | `#como` | 9 | 2 | 7 |
 | `#todo` | 15 | 3 | 12 |
 | `#precios` | 20 | 5 | 15 |
-| `#probar` | 43 | 3 | 40 |
+| `#probar` | 43 | 4 | 39 |
 | `#faq` | 11 | 4 | 7 |
-| **TOTAL** | **98** | **17** | **81** |
+| **TOTAL** | **98** | **18** | **80** |
 
 ⚠️ **Por qué el extractor de aquí no es el del bloque F:** aquél mira `h1|h2|h3|p|li` y en
 estas cinco secciones eso ve 37 de los textos. En `#faq` es casi ciego —las preguntas van en

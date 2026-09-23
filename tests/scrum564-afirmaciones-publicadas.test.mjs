@@ -3,11 +3,11 @@
 // Sin gate: lee ficheros. Ni BD, ni red, ni servidor.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// 🔴 DE LOS 98 NODOS DEL COPY PUBLICADO, 17 PUEDEN SER FALSOS. LOS OTROS 81 SÓLO PUEDEN SER FEOS
+// 🔴 DE LOS 98 NODOS DEL COPY PUBLICADO, 18 PUEDEN SER FALSOS. LOS OTROS 80 SÓLO PUEDEN SER FEOS
 // (medido 20-ago-2026: eran 148/28/120; SCRUM-1086, 23-sep-2026, retiró el lote de cobro de
 // `#como`, `#precios` y `#probar` — regla 24 — y bajó el universo con él.)
 //
-// El criterio es del fundador y es el bueno. Este fichero fija los 17 —ni uno menos, que sería
+// El criterio es del fundador y es el bueno. Este fichero fija los 18 —ni uno menos, que sería
 // mirar a medias, ni uno más sin declararlo— y el veredicto de cada uno, DERIVADO del mecanismo
 // que ya existe: `anclaViva()` (SCRUM-551, el símbolo existe) y `alcanzabilidad()` (SCRUM-558, un
 // merchant nuevo llega a él). No hay un tercer mecanismo.
@@ -32,9 +32,9 @@ import {
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = leerLanding(RAIZ);
 
-/** Lo medido el 23-sep-2026, tras SCRUM-1086 (antes: 28 / 15 CON_ANCLA / 10 FALSA). El trinquete, en las dos direcciones. */
-const AFIRMACIONES = 17;
-const GRUPOS_HOY = { [CON_ANCLA]: 12, [FALSA]: 2, [ANCLA_A_DECLARAR]: 1, [DESCARTADA]: 2 };
+/** Lo medido el 23-sep-2026, tras SCRUM-1086 completo (antes: 28 / 15 CON_ANCLA / 10 FALSA). El trinquete, en las dos direcciones. */
+const AFIRMACIONES = 18;
+const GRUPOS_HOY = { [CON_ANCLA]: 13, [FALSA]: 2, [ANCLA_A_DECLARAR]: 1, [DESCARTADA]: 2 };
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · contar 28 y medir 12 sería peor que no medir
@@ -49,7 +49,7 @@ test('SUELO · las cinco secciones existen y ninguna sale vacía', () => {
   }
 });
 
-test('SUELO · el censo llega a las 17 afirmaciones, ni menos ni más', () => {
+test('SUELO · el censo llega a las 18 afirmaciones, ni menos ni más', () => {
   const c = censar(html);
   assert.equal(c.afirman.length, AFIRMACIONES,
     `🔴 el censo encuentra ${c.afirman.length} afirmaciones y se midieron ${AFIRMACIONES}.\n`
@@ -62,7 +62,7 @@ test('SUELO · el censo llega a las 17 afirmaciones, ni menos ni más', () => {
 test('SUELO · el extractor alcanza donde el esquema del bloque F es ciego', () => {
   // La razón de no reutilizar `h1|h2|h3|p|li`: `#faq` guarda sus preguntas en `<details>` y sus
   // respuestas en `<div>`. Si este extractor volviera a mirar sólo cinco etiquetas, las cuatro
-  // afirmaciones de `#faq` y las tres de `#probar` desaparecerían y el fichero saldría verde.
+  // afirmaciones de `#faq` y las cuatro de `#probar` desaparecerían y el fichero saldría verde.
   const faq = unidadesDe(html, 'faq');
   assert.ok(faq.length > 0, '🔴 CIEGO: cero unidades en #faq');
   const etiquetas = new Set(faq.map((u) => u.etiqueta));
@@ -88,7 +88,7 @@ test('CONTROL POSITIVO · una afirmación del bloque F con ancla viva sigue sali
     for (const a of reg.anclas) {
       assert.equal(censoF.anclaViva(a, RAIZ).viva, true,
         `🔴 ${id}: el ancla «${a}» estaba viva y ahora no. O se movió el símbolo, o el mecanismo `
-        + 'que este fichero reutiliza se ha roto — y entonces sus 12 «con ancla» no valen nada.');
+        + 'que este fichero reutiliza se ha roto — y entonces sus 13 «con ancla» no valen nada.');
     }
   }
 });
@@ -103,7 +103,7 @@ test('CONTROL POSITIVO · el mecanismo distingue un ancla viva de una inventada'
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LOS TRES GRUPOS · derivados, no declarados
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('cada una de las 17 tiene veredicto, y ninguna se queda sin declarar', () => {
+test('cada una de las 18 tiene veredicto, y ninguna se queda sin declarar', () => {
   const r = veredictos(html, RAIZ, censoF);
   assert.equal(r.total, AFIRMACIONES, '🔴 el total de afirmaciones no es el medido');
   const sinDeclarar = r.veredictos.filter((v) => v.grupo === SIN_DECLARAR);
