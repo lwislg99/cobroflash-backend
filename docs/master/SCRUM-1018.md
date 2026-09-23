@@ -133,3 +133,86 @@ Ninguno de construcción hasta que un jefe conteste: (1) sí/no a la foto y, si 
 preguntas del §3; (2) camino A o B para la franja y, si es A, su anchura; (3) firma del literal del
 §5. Con esas tres respuestas, la construcción del camino A (sin ALTER) cabe en un ticket nuevo de
 tamaño pequeño sobre `customerPortal.routes.ts` — el único fichero de mi área que hace falta tocar.
+
+## SCRUM-1018b · construido, verificado y entregado
+
+**Medido contra:** `origin/main` = `b2df30887f1a1e1cff193b748d6beb0ef499e9e9` · 2026-09-23T16:08:49Z
+
+23-sep-2026 · **J2** (puesto de Clientes y cobro). El GO llegó firmado en dos comentarios del
+fundador (vía orquestador, por delegación): **16598** (sí a franja+nombre, no a la foto) y
+**16610** (firma el literal exacto y la anchura de 1h, con la ventana empezando en `scheduledAt`).
+
+### De dónde sale el código
+
+El código **no lo escribió esta sesión desde cero**: al arrancar, el worktree dedicado de J2 tenía
+sin commitear una implementación casi completa del literal firmado, sin ningún traspaso que la
+mencionara. Se preservó a un scratchpad fuera del árbol (nunca a `git stash`, prohibido por A15) y
+se avisó al orquestador ANTES de seguir — casi con toda seguridad es trabajo de una sesión J2
+anterior que recibió el GO y murió sin commitear cuando cayó el equipo, no de otro puesto. El
+orquestador decidió ADOPTARLO tras verificación, no descartarlo.
+
+### Verificación — se CORRIÓ, no se leyó
+
+1. **Alcance:** `git status --short` — un único fichero tocado, `customerPortal.routes.ts`. Sin
+   `prisma/schema.prisma`, sin `src/modules/jobs/**`, sin ningún flag ni texto de cobro.
+2. **Tipos contra el schema real:** `npm run build` (tsc) en verde, sin errores — valida que
+   `assignees`/`teamMember`/`assignedUserId`/`scheduledAt`/`status` existen y casan con
+   `@prisma/client` regenerado desde el `schema.prisma` de `origin/main` actual.
+3. **La lógica de formateo, ejecutada de verdad** (no releída): sonda con la MISMA expresión
+   copiada literal del fichero (líneas 422-436), contra la función real `zonaDelMerchant` ya
+   compilada, con 6 casos fabricados — con técnico, sin técnico, sin hora (sección fuera), un
+   nombre con `<script>` (confirma que `esc()` lo neutraliza, sin XSS), merchant canario (confirma
+   que la franja usa el huso del MERCHANT, no `Europe/Madrid` fijo) y merchant sin huso declarado
+   (cae a UTC, el defecto documentado). Las 6 salidas casan letra por letra con el literal firmado
+   en el comentario 16610, con sus dos ausencias (nombre omitido sin técnico; sección entera
+   omitida sin hora). Guion y salida real en
+   `docs/master/evidencias/scrum1018/probar-visita-1018.mjs` y `…/probar-visita-1018-salida.txt`.
+4. **Los tests existentes, corridos de verdad** (`node scripts/tanda-con-veredicto.mjs node --test
+   …` sobre los ficheros que tocan este fichero o sus vecinos): salieron DOS rojos reales, ninguno
+   del literal — los cazó justo `npm test`, que es para lo que está:
+   - **SCRUM-243** (censo de lecturas sin filtrar por `merchantId`, regla 2): las dos consultas
+     nuevas (`prisma.job.findFirst` y la caída a `assignedUserId`) NO llevaban `merchantId` en su
+     `where` — censo de `customerPortal.routes.ts` subía de 3 a 5 excepciones sin declarar.
+     **Arreglado en el código, no en el censo:** las dos llevan ahora `merchantId:
+     customer.merchantId`, y la segunda pasó de `findUnique` a `findFirst` (`TeamMember` no tiene
+     unicidad compuesta con `merchantId`; mismo patrón que `team.service.ts`/`notasDelCliente.ts`).
+     Con el arreglo, el censo se queda en 3 — no hizo falta declarar ninguna excepción nueva.
+   - **SCRUM-893** («solo lo que puede cobrar», las tres páginas de cobro): el doble de `prisma`
+     que usa ese test para el portal (`prismaDelPortal`) no tenía modelo `job` ni `teamMember`, así
+     que la ruta real tiraba `TypeError: Cannot read properties of undefined (reading 'findFirst')`
+     antes de llegar a pintar nada. **Arreglado en el DOBLE del test**, no en el código: se le
+     añadieron `job.findFirst` y `teamMember.findFirst` devolviendo `null` (sin próxima visita),
+     que es lo correcto para un test centrado en el selector de cobro, no en la visita.
+   Reconstruido y re-corrido tras los dos arreglos: **50/50 en verde** (antes: 2 rojos sobre 36).
+5. **Suelo declarado:** esta máquina no tiene ninguna credencial de base de datos en el entorno
+   (comprobado: 0 variables `DATABASE_URL*`/`PG*` en Bash y en PowerShell) ni Docker/Postgres
+   local, así que el camino `JobAssignee` vacío → caída a `assignedUserId` → `prisma.teamMember.
+   findFirst` **no se pudo ejercitar contra una base real**; queda validado por tipos (punto 2), por
+   el doble del test (punto 4) y por lectura estructural del código. Quien tenga banco de pruebas a
+   mano puede cerrarlo con un caso más.
+6. **No se ha corrido la suite entera** (`npm test` completo): con lo gateado (`TRAMOS_PG_URL`/
+   `LIBRO_PG_URL`) fuera de alcance en esta máquina (sin Docker/Postgres), se acotó a los ficheros
+   que tocan `customerPortal.routes.ts` y sus vecinos directos (portal, PDF del portal, zona del
+   merchant, censo de merchantId, ancla de medición, y el propio SCRUM-893). CI corre la suite
+   completa con el banco desechable.
+
+### Hallazgo — el precedente de «próxima visita» es el estrecho, no este código
+
+El orquestador preguntó, antes de alinear el filtro de este ticket (`status IN (agendado,
+en_curso)`) con el precedente de `historialDelCliente.ts` (`status: 'agendado'` a secas): *si se
+filtrara solo a `agendado`, ¿qué ve el cliente cuando la visita pasa a `en_curso`?*
+
+Medido: **la sección desaparecería del todo.** El portal es hoy el ÚNICO canal donde el cliente
+final puede ver quién va y cuándo — no hay ningún WhatsApp automático al cambiar el estado del
+`Job` (`grep sendWhatsApp` en `jobs.routes.ts`, el `PATCH /admin/jobs/:id` que mueve el estado: 0
+coincidencias). Así que estrechar a `agendado` apagaría la información justo cuando el técnico
+está llegando — el peor momento, y el contrario del motivo del ticket. **No se toca el filtro**:
+se deja `agendado`/`en_curso`, ya construido así. El precedente de `historialDelCliente.ts`
+(ficha 360, uso del PROFESIONAL, no del cliente) tiene el mismo hueco para su propia audiencia,
+pero es otro fichero y otro carril (no es de J2) — se deja anotado aquí como hallazgo, no se
+arregla en este ticket.
+
+### Qué NO se ha hecho
+
+Ni foto (sigue el STOP del §3), ni ALTER (`prisma/schema.prisma` sin tocar), ni promesa de cobro o
+factura en el portal, ni ningún fichero fuera de `customerPortal.routes.ts`.

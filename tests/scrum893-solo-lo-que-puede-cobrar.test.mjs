@@ -290,6 +290,10 @@ const prismaDelPortal = (m) => ({
     findUnique: async () => ({ receiptToken: 'tok893' }),
     update: async () => ({ receiptToken: 'tok893' }),
   },
+  // SCRUM-1018: el portal ahora pregunta también por la próxima visita agendada. Sin ninguna,
+  // la sección «Tu visita» no se pinta — fuera del alcance de este fichero (card-charge mode).
+  job: { findFirst: async () => null },
+  teamMember: { findFirst: async () => null },
 });
 
 const PAGINAS = [
