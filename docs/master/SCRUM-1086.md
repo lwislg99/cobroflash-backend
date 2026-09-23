@@ -186,3 +186,71 @@ El cambio se aplicó con un script que **aborta** si cualquiera de estos control
 - **Ninguna otra línea del máster.** No se aprovechó el viaje para corregir nada más: un cambio de
   máster lleva una firma, y esta firma cubre esta línea.
 - **Ningún estado, flag ni transición** (reglas 27 y 30).
+
+# APÉNDICE · 23-sep-2026 · SCRUM-1086e · Los censos de `public/` resincronizados con el bloque A/C/B, J3
+
+**Fecha:** 23-sep-2026 · **Carril:** J3 · **Gate:** ninguno — resincroniza censos de test, no toca
+copy publicado ni el mecanismo de SCRUM-568
+**Medido contra:** `origin/main` = `a457077f4d73bb0d3923f98916ddf03ffbd2fb13` · 2026-09-23T09:53:38Z
+
+## Encargo
+
+El PR #1706 (esta rama) entró en rojo en CI (run 35840396154): 21 casos en 7 ficheros de test
+(el aviso inicial decía «43» porque el log de CI imprime cada fallo dos veces — en «Tests» y en
+«Por qué cayó» — y alguien los contó sin deduplicar). Los 21 son la MISMA causa: SCRUM-1086b quitó
+del `public/` las promesas de cobro (`#como`, `#precios`, `#probar`) y varios censos que miden ese
+HTML byte a byte —`scripts/_afirmaciones-publicadas.mjs` (SCRUM-564), `scripts/_hueco-condicion.mjs`
+(SCRUM-564b) y la cifra acoplada de SCRUM-555— se quedaron citando texto que ya no existe.
+
+## Qué se hizo — por causa medida, no por parecido
+
+1. **`ANCLAS_564`** (`scripts/_afirmaciones-publicadas.mjs`): se quitaron las **11** entradas cuyo
+   texto ya no aparece en el marcado (el demo de pago de `#probar`, el fee-note de `#precios`, «3 ·
+   Cobra» de `#como`…) y se actualizaron las **4** con texto desfasado por el lote —
+   `precios/li#3`, `precios/p#2`, `faq/div#1`, `faq/div#3`. La claim nueva, «Recordatorios
+   automáticos de firma», se verificó contra código real antes de anclarla: existe
+   (`src/modules/quotes/domain/reminder.service.ts::sendPendingReminders`, ya wireado en
+   `src/core/cron/cron.ts`, sin flag) — no es un `SIN_ANCLA` a ciegas.
+2. **Los documentos generados** (`docs/AFIRMACIONES_DEL_COPY_PUBLICADO.md`,
+   `docs/DONDE_CABE_LA_CONDICION.md`) se re-generaron con sus propios scripts
+   (`citar-afirmaciones-publicadas.mjs`, `citar-hueco-condicion.mjs`) — no se editaron a mano. El
+   segundo generador tenía además prosa fija que citaba ejemplos ya retirados (`probar/span#15`,
+   el caso de `precios/li#3`): se reescribió para que hable de lo que hay hoy, con los rangos
+   calculados desde `HUECOS`, no hardcodeados.
+3. **Los números fijos de los tests** (`AFIRMACIONES`, `GRUPOS_HOY`, `CUANTAS`, `CONDICIONADAS`…)
+   se actualizaron a lo que la herramienta mide DESPUÉS del punto 1, nunca al revés: 28→17
+   afirmaciones, 15→12 con ancla, 10→2 falsas, 9→1 condicionada a flag. `precios/li#3` y `faq/div#1`
+   ya no son falsas — vuelven a ser CON_ANCLA. **`faq/div#3` sigue FALSA** (`SIN_ANCLA`, sin ancla
+   individual a sus 8 capacidades) y **`todo/p#3` (en `#todo`, fuera del lote firmado) sigue
+   prometiendo tarjeta/Bizum/transferencia** — el lote no la tocó; sigue siendo «lo que va delante
+   del fundador», documentada en el `.md` regenerado.
+4. **La familia de 5→3 pasos de la demo** (SCRUM-543, SCRUM-553, SCRUM-555 — el `<br>` entre
+   título y descripción, y la cifra acoplada «la demo se numera 1…N»): SCRUM-1086b retiró los
+   `try-step` 4 y 5, así que las tres quedan en 3, medido contando los `.try-step` reales, no
+   decidido.
+5. **SCRUM-985** («Excel»/«xlsx» solo donde está declarado): el nuevo texto de `#como`
+   («…sin post-its ni Excel») nombra Excel para decir que NO hace falta, igual que la frase ya
+   permitida de `csvImport.js` — se añadió a `EXCEL_PERMITIDO`, no se cambió el criterio.
+
+## El trinquete de zona horaria (el otro check en rojo del run)
+
+`trinquete · ningún test nuevo mide la zona de la máquina` marcaba 3 tests de
+`scrum564b-hueco-condicion.test.mjs` como recién dependientes de la zona — pero **«ausente» en una
+de las dos zonas, no «distinto resultado»**, y ninguno de los tres usa `Date`/`Intl`. Es el síntoma
+de que el `ANCLAS_564` viejo (con los 11 huecos) hacía que ALGÚN test anterior del mismo fichero
+lanzara y abortara el registro del resto — no una dependencia real del reloj. No confirmable en
+esta máquina (sin Postgres/Docker: ese job corre contra un banco desechable). Con el registro
+arreglado, los 13 tests de ese fichero corren limpios de punta a punta en local; lo confirma CI.
+
+## Control al cerrar
+
+- Cada uno de los 7 ficheros, en rojo primero (verificado contra el run de CI) y en verde después,
+  por separado: 12+13+39+12+5 = correcto uno a uno antes de correr la tanda entera.
+- `npm run build` limpio. Tanda completa (973 ficheros, `npm test`): **8168 tests · 8033 pass · 5
+  fail**. Los 5 que quedan (`scrum476-reconciliar-censos`, `scrum910d-microcopy-recibo-pendiente`,
+  `scrum939b-trinquete-de-las-skills` ×3) son ruido de ESTA máquina — desfase de `node_modules`
+  entre las ~20 worktrees ajenas que viven en este árbol y una ruta de `gh.exe` hardcodeada —, no
+  tocan ningún fichero de esta entrada y ya estaban rojos antes de empezar (no forman parte de los
+  21 del run 35840396154).
+- `git diff --stat` de este apéndice: los 6 ficheros de `tests/`, los 3 `scripts/` y los 2 `docs/`
+  generados. Nada de `public/`.

@@ -230,12 +230,13 @@ const LANDING = fs.readFileSync(path.join(RAIZ, 'public', 'index.html'), 'utf8')
 /** Los dos patrones tal y como quedaron en `scrum543-landing-a11y` tras el arreglo. */
 const DOTS = /<span[^>]*class="dot"[^>]*><\/span>/g;
 const BRS = /<\/span><br[^>]*><span[^>]*class="ts"[^>]*>/g;
+// SCRUM-1086 (23-sep-2026) retiró los pasos 4 y 5 (el cobro) de la demo: quedan 3 `<br>`, no 5.
 
 test('SCRUM-553 · 🔴 el patrón arreglado SIGUE encontrando lo que buscaba', () => {
   assert.ok((LANDING.match(DOTS) || []).length >= 2,
     '🔴 el patrón tolerante ya no encuentra los `<span class="dot">`: el arreglo rompió el guard');
-  assert.equal((LANDING.match(BRS) || []).length, 5,
-    '🔴 el patrón tolerante ya no encuentra los 5 `<br>` de la demo');
+  assert.equal((LANDING.match(BRS) || []).length, 3,
+    '🔴 el patrón tolerante ya no encuentra los 3 `<br>` de la demo');
 });
 
 test('SCRUM-553 · 🔴 y los sigue encontrando CON ATRIBUTOS AÑADIDOS (el caso del incidente)', () => {
@@ -249,8 +250,8 @@ test('SCRUM-553 · 🔴 y los sigue encontrando CON ATRIBUTOS AÑADIDOS (el caso
   assert.ok((conAtributos.match(DOTS) || []).length >= 2,
     '🔴 CON UN `aria-hidden` AÑADIDO el patrón deja de encontrar los dots. Es el defecto que este '
     + 'ticket viene a cerrar, cometido por el arreglo.');
-  assert.equal((conAtributos.match(BRS) || []).length, 5,
-    '🔴 con una clase en el `<br>` el patrón deja de encontrar los 5 pasos');
+  assert.equal((conAtributos.match(BRS) || []).length, 3,
+    '🔴 con una clase en el `<br>` el patrón deja de encontrar los 3 pasos');
 });
 
 test('SCRUM-553 · 🔴 pero CAE si se quita lo que de verdad vigila, y dice cuál', () => {
@@ -262,8 +263,8 @@ test('SCRUM-553 · 🔴 pero CAE si se quita lo que de verdad vigila, y dice cu�
 
   const sinBr = LANDING.replace(/<\/span><br><span class="ts">/g, '</span><span class="ts">');
   assert.notEqual(sinBr, LANDING, '🔴 la inyección no se aplicó');
-  assert.notEqual((sinBr.match(BRS) || []).length, 5,
-    '🔴 se quitó el `<br>` que separa y el patrón sigue dando 5');
+  assert.notEqual((sinBr.match(BRS) || []).length, 3,
+    '🔴 se quitó el `<br>` que separa y el patrón sigue dando 3');
 
   // Y la clase SIGUE siendo exacta: `dot-grande` no es `dot`.
   const otraClase = LANDING.replace(/<span class="dot"><\/span>/g, '<span class="dot-grande"></span>');
