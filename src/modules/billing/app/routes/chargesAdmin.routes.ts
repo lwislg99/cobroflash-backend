@@ -10,6 +10,7 @@ import { BASE_URL } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
 import { resolverFechaDeCobro } from '../../domain/fechaDeCobro'; // SCRUM-397
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093
 import { envioDelDocumento } from '../../domain/envioDelDocumento'; // SCRUM-885
 import { tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp';
 
@@ -48,7 +49,13 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     // El criterio (futura no, hacia atrás sin límite) y sus dos textos son los APROBADOS el
     // 10-ago-2026 para el mismo problema en facturas: se reutilizan, no se inventan (regla 30).
     // Sin fecha, `ahora` — que no es el defecto: el defecto era no poder cambiarla.
-    const fecha = resolverFechaDeCobro((req.body as any)?.paid_at ?? (req.body as any)?.fecha);
+    // SCRUM-1093 · el «hoy» que decide si la fecha es futura es el del MERCHANT. `charge.merchant`
+    // ya viaja completo en el `include` de arriba: no hace falta tocar la consulta.
+    const fecha = resolverFechaDeCobro(
+      (req.body as any)?.paid_at ?? (req.body as any)?.fecha,
+      new Date(),
+      zonaDelMerchant(charge.merchant),
+    );
     if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
 
     // Misma cadena post-pago que el PSP (P0-3: factura ligada → paid, WA, email)
