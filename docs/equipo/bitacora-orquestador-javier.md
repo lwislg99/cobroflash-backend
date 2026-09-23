@@ -209,6 +209,32 @@ medición que vale es **la del efecto que el arreglo promete**, no la de un paso
 se instalan las dependencias no es medir que una sesión arranque. Si sólo se ha probado el paso
 intermedio, se dice así: *«montado, falta probarlo de punta a punta»*.
 
+
+**CIERRE de esta entrada (23-sep, misma tarde) — el error sigue siendo el mismo; el diagnóstico que di era peor de lo que pensaba.**
+
+Al decir *«el arreglo no es viable tal como lo monté»* di por causa **el directorio**, porque era la única
+variable que había cambiado. J6 lo midió de verdad y **no era ni el worktree ni el `--detach`**: reprodujo
+el mismo bloqueo en los dos.
+
+**La causa real:** `.mcp.json` del repositorio declara un servidor MCP de proyecto (`playwright`). Una
+**ruta absoluta nueva** no tiene entrada en `~/.claude.json`, así que Claude Code **exige aprobación
+humana** de ese servidor. El diálogo de confianza sí se salta en `--bg`; **la aprobación de MCP no**. El
+job queda `blocked, "1 new MCP server needs approval"` para siempre, sin `pid`.
+
+**Y el arreglo SÍ es viable**: pre-aprobar el servidor para esa ruta. Lo que lo bloquea hoy no es técnico
+—es que tocar `~/.claude.json` es cambiar la configuración de permisos de la máquina del fundador, y eso
+lo decide él.
+
+**Lo que esto añade al error, y por lo que el cierre no lo suaviza:** no sólo anuncié un arreglo sin
+probarlo entero. Cuando falló, **di una causa plausible por medida** —«es el directorio»— porque era la
+variable que yo había tocado. Era la primera explicación razonable y **no la comprobé separando las
+variables**. J6 sí: probó worktree con HEAD desatado y worktree con rama propia, y vio que las dos
+fallaban igual. Eso es lo que convierte una sospecha en una causa.
+
+**Segunda regla que deja, distinta de la primera:** cuando algo falla justo después de un cambio mío, «lo
+que yo toqué» es la **hipótesis más cómoda**, no la más probable. Se separa por variables antes de
+escribirla como causa.
+
 ---
 
 # 3 · Análisis
@@ -250,6 +276,36 @@ dos consecuencias:
 - **Mantener puestos parados sin ansiedad.** J2 lleva horas apagada porque sus tres tickets esperan a
   Javier. Es lo correcto —lanzar sin cola real se inventa trabajo— pero tiendo a buscarle encargo.
 - **Medir mi propio gasto.** Sé medir el de las sesiones y no aplico lo mismo a esta.
+
+
+## 3.5 · Por qué se pudren unas afirmaciones y otras no — el discriminador de J4
+
+El 23-sep, J4 encontró que **P3**, la pregunta que su propio mapa ponía **la primera por gravedad**,
+describía un agujero de privacidad **cerrado dos meses antes**. Al auditar las otras seis del bloque
+alto, las seis seguían coincidiendo con la realidad. Y dio con la señal que las separaba:
+
+> *«La señal que distinguió a P3: era la única SIN cita a fichero/línea/función concreta — sólo "la
+> página, HOY" en prosa. Las que SÍ citan un artefacto exacto resistieron el recotejo.»*
+
+**Esto explica el §3.1 de este documento**, que hasta ahora sólo describía el síntoma («afirmo sin
+medir»). El mecanismo es más concreto:
+
+| | |
+|---|---|
+| **Una afirmación ANCLADA** (fichero, línea, función, comando, commit) | se puede **volver a preguntar**. El lector reproduce la medición y ve si sigue siendo verdad |
+| **Una afirmación en PROSA** | sólo se puede **creer**. No hay forma de re-preguntarla, así que sobrevive a su propia caducidad |
+
+**Mis siete errores encajan todos en la segunda fila**: un sha escrito de memoria, «55 y 7 facturas»,
+«la ventana es de 1-2 horas cada día», «la décima no está en las nueve», «43 censos» (eran 21), «las
+cinco registradas» (eran cuatro), «la causa es el directorio». **Ninguno citaba dónde se medía.** Y no
+es casualidad: si los hubiera anclado, al escribir el ancla habría tenido que ir a mirar.
+
+**Por eso la regla del §2.3 —medir antes de escribir un número— es la mitad.** La otra mitad es:
+**escribir DÓNDE se midió, en la misma frase.** No como cortesía para el lector: como obligación para
+mí, porque es lo que fuerza la comprobación. Un ancla no se puede poner sin ir a mirar.
+
+**Aplicado a este documento:** cada entrada de aquí debería citar su artefacto — el comentario de
+Jira, el PR, el fichero. Las que no lo hagan son, por su propia tesis, las que se pudrirán primero.
 
 ---
 
