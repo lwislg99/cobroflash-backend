@@ -1,63 +1,77 @@
 # SCRUM-657 · Clientes que son Administraciones Públicas (FACe, DIR3) — medición, sin código
 
-**Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:20:48Z
+**Medido contra:** `origin/main` = `53d72343cd74f262aae15531c64e21615122c0a9` · 2026-09-23T08:24:17Z
 
 **Gate:** medición y propuesta. Cero líneas de `src/`, cero `prisma/schema.prisma`. Camino de
 emisión fiscal: leerlo no es STOP (regla 38); este expediente no lo modifica.
 
 ---
 
-## PASO 0 — barrido por PALABRA, no por número de ticket
+## El PASO 0 que pide el propio ticket, y qué pude hacer de él
 
-`DIR3|FACe|Facturae|oficina contable|órgano gestor|unidad tramitadora` contra todo el repo.
-Con límites de palabra (una pasada sin ellos da 59 falsos positivos: «facturae» como subcadena de
-«facturación», «FACe» dentro de palabras inglesas sueltas en comentarios). El resultado real, 4
-ficheros, ninguno en `src/` ni en `prisma/`:
+El ticket no es una idea abstracta: nace de un hallazgo real, 19-ago-2026, leyendo facturas
+verdaderas del merchant **Tecnosel Seguridad, S.L.** para el sprint. Al pie de una factura real al
+**I.E.S. Ramón y Cajal** aparecían los tres códigos DIR3 (oficina contable, órgano gestor, unidad
+tramitadora), y de los cinco documentos aportados por ese merchant, **cuatro** eran a centros
+públicos de la Comunidad de Madrid. El propio texto del ticket pide TRES mediciones antes de
+decidir nada, y las repito tal cual — porque solo una de las tres es de las que se contestan
+leyendo código:
 
-- `docs/competencia/matriz.md:91` — fila 19 del análisis competitivo: «Facturae y FACe
-  (administración pública) | Contasimple · Fixner | **No**» — YaQu no lo tiene, dos competidores
-  sí, catalogado `M ⛔ fiscal` y puesto explícitamente **fuera del top** de prioridades
-  (`matriz.md:119`).
-- `docs/equipo/puesto-j1.md:79` — SCRUM-657 ya en la tabla de J1, con la nota «bajó de categoría
-  el 2-sep».
-- `docs/master/SCRUM-906.md` y `docs/verificacion/asuntos-jira.tsv` — la exportación cruda del
-  propio ticket de Jira, sin medición nueva dentro.
+1. **«¿Cómo presenta HOY estas facturas? ¿Las sube él a FACe, o se las presenta la gestoría?»**
+   — el ticket dice explícitamente que la pregunta **ya está hecha al padre del fundador** y que
+   **«sin esa respuesta no se dimensiona nada»**. No es algo que yo pueda medir con grep ni
+   corriendo código: es una respuesta humana pendiente, fuera de este repo. La dejo **PENDIENTE**,
+   no la invento ni la doy por soluble desde aquí.
+2. **«¿Qué proporción de su facturación es pública?»** — con los datos REALES de Tecnosel, no con
+   los cinco documentos que él eligió enseñar. Requeriría consultar staging/producción para ese
+   merchant. Esta máquina no tiene Postgres (`TRAMOS_PG_URL`/`LIBRO_PG_URL` no corren aquí,
+   medido en sesiones anteriores) y esta sesión no tiene turno de staging abierto. **PENDIENTE,
+   declarado como SUELO** — no silenciado: quien lo mida, que lo haga contra staging/producción
+   con su turno, no a ojo ni con la muestra que trajo el propio merchant.
+3. **«¿Existe algo de Facturae en el código?»** — Esta sí la pude medir de primera mano. Resultado:
+   cero. Ver §1 y §2 abajo, con censo y grep reales, no de memoria.
 
-Nada construido, nada medido antes con código. El alcance que pide el orquestador (medir qué
-falta) es el que corresponde — no hay nada que rehacer.
+**Solo la (3) queda resuelta desde este carril.** Las preguntas (1) y (2) siguen abiertas, y el
+propio ticket es explícito en que sin la (1) «no se dimensiona nada» — mi medición de tamaño (§3)
+es información real y utilizable, pero **no sustituye** esa respuesta pendiente: dimensiona
+«cuánto costaría construirlo SI se aprueba», no «si hace falta ya para Tecnosel en concreto». Esa
+segunda pregunta la responde quien tenga la (1) y la (2).
 
 ## 1 · Qué pasa HOY si un profesional de YaQu factura a un ayuntamiento
 
 - **La ficha de cliente no puede ni declarar que es una administración pública.**
   `Customer.contactKind` es un enum CERRADO — `z.enum(['EMPRESA', 'PERSONA'])`
   (`src/core/validation/schemas.ts:554`) — sin un tercer valor para organismo público. Un
-  ayuntamiento se daría de alta como `EMPRESA`, indistinguible de cualquier SL.
+  ayuntamiento o un IES se daría de alta como `EMPRESA`, indistinguible de cualquier SL.
 - **Ningún campo del alta/edición de cliente pregunta por DIR3.** Confirmado por el censo del
   §2: cero columnas, cero validación, cero pantalla.
 - **La factura que se genera hoy no es el formato que FACe exige.** El único camino de emisión
   que existe produce dos cosas — el PDF (`generateInvoicePdf`) y el XML de VeriFactu
   (`verifactu.service.ts`, bloque `<sum1:Destinatarios>` con `NombreRazon`+`NIF`) — y ninguna de
   las dos es **Facturae**, el estándar de e-factura que FACe exige. Son dos cosas distintas por
-  diseño, no una que falte completar: VeriFactu es el registro ANTIFRAUDE que va a la AEAT;
-  Facturae es el formato de ENTREGA de la factura al organismo receptor, con su propio XSD y sus
-  propios códigos DIR3 (oficina contable, órgano gestor, unidad tramitadora) para dirigirla a la
-  subdivisión administrativa correcta.
+  diseño, no una que falte completar — coincide con lo que ya deja escrito el propio ticket:
+  VeriFactu (RD 1007/2023) es el registro ANTIFRAUDE remitido a la AEAT, para TODAS las facturas
+  desde el 1-1-2027; Facturae+FACe (Ley 25/2013) es el formato y canal de ENTREGA de la factura al
+  CLIENTE, solo cuando ese cliente es una administración pública. Una factura a un IES en 2027
+  necesitaría LAS DOS, y hoy no hay ninguna de las dos construida.
 - **No existe un generador Facturae en el repo.** Grep de los elementos propios de ese estándar:
   sin resultados en `src/`.
 - **No hay ninguna llamada de red hacia FACe ni hacia ningún portal de gobierno.** Verificado de
-  primera mano (no solo citado): `git grep -n -E "fetch\(|axios|https://www1?\.agenciatributaria|face\.gob|facturae" -- src/modules/fiscal src/modules/invoicing` → el único resultado es
-  `pdf.service.ts:120`, un `axios.get` que descarga el LOGO del merchant para el PDF — nada que
-  ver con Hacienda ni con FACe. Coincide con lo que ya medía `docs/competencia/matriz.md` fila 8
-  para VeriFactu→AEAT (cero llamadas), y aquí es la misma foto: cero también hacia FACe.
+  primera mano: `git grep -n -E "fetch\(|axios|https://www1?\.agenciatributaria|face\.gob|facturae" -- src/modules/fiscal src/modules/invoicing` → el único resultado es
+  `src/modules/invoicing/infra/pdf/pdf.service.ts:120`, un `axios.get` que descarga el LOGO del
+  merchant para el PDF — nada que ver con Hacienda ni con FACe. Coincide con lo que el propio
+  ticket cita de SCRUM-525 (auditoría del 19-ago): tampoco se remite nada a la AEAT todavía.
 - **Dónde se corta el circuito, en orden — faltan CUATRO piezas, no una:**
   1. no se puede declarar que el cliente es una administración pública;
   2. no hay dónde guardar sus 3 códigos DIR3 aunque se preguntaran;
   3. no existe el generador del formato de fichero (Facturae) que FACe exige;
-  4. no hay integración con el portal FACe para entregarlo.
-- **La válvula manual que ya existe para otros casos similares** (Bizum/transferencia mientras
-  Stripe Connect está apagado, regla 18) tiene un equivalente aquí, FUERA de YaQu: el profesional
-  puede generar el Facturae con otra herramienta (o pedírselo a su gestor) y subirlo a mano al
-  portal FACe. YaQu hoy no se lo impide ni se lo facilita — simplemente no participa.
+  4. no hay integración con el portal FACe para entregarlo, ni forma de leer los estados que
+     devuelve (registrada, conformada, pagada, rechazada — los cuatro que el propio ticket nombra
+     como parte del alcance).
+- **La salida sensata mientras tanto, que el propio ticket ya propone y yo confirmo que hoy
+  funciona sin tocar nada:** el merchant puede usar YaQu para presupuestos, trabajos, partes,
+  firmas y empleados, y seguir presentando la factura fiscal por FACe **fuera** de YaQu, como
+  hace hoy (a mano o vía gestoría). Ningún hallazgo de este expediente bloquea eso.
 
 ## 2 · Los tres códigos DIR3 — ¿existe dónde guardarlos, hoy?
 
@@ -72,70 +86,74 @@ falta) es el que corresponde — no hay nada que rehacer.
   XML necesitan su propio campo, no uno pensado para lo contrario.
 - **Conclusión medida: no existe ningún sitio para guardarlos hoy.** Hace falta un ALTER — tres
   columnas nuevas, aditivas, `nullable`, sin `@default` (mismo patrón que el resto de `Customer`:
-  NULL = «no declarado»). Decisión y aplicación en las tres bases: **de Javier**, ciclo de la
-  regla 3 (decisión → ALTER aditivo → PR con esquema+código+tests). No propongo el DDL aquí — el
-  ticket pide diseño, no schema ni código.
+  NULL = «no declarado»), coincidiendo con lo que el propio ticket ya anticipa: «los tres códigos
+  DIR3 pasan a ser campos del CLIENTE, no del merchant». Decisión y aplicación en las tres bases:
+  **de Javier**, ciclo de la regla 3 (decisión → ALTER aditivo → PR con esquema+código+tests). No
+  propongo el DDL aquí — el ticket pide diseño, no schema ni código.
 
-## 3 · Tamaño real del problema
+## 3 · Tamaño de la CONSTRUCCIÓN si se aprueba — no confundir con la urgencia para Tecnosel
 
-- **Ya está medido y rebajado por el propio equipo**, por DOS fuentes independientes que no se
-  citan entre sí: `puesto-j1.md:79` («bajó de categoría el 2-sep») y `matriz.md` fila 19+línea 119
-  (catalogado `M`, puesto explícitamente fuera del top «por tamaño o por gate»). No es una
-  apreciación mía nueva, es una confirmación de lo que ya se había medido.
-- **Es un problema de SEGMENTO, no de todos los oficios.** Solo afecta al profesional que factura
-  a una administración pública (mantenimiento municipal, obra pública menor…) — un subconjunto de
-  un subconjunto (España-first, y dentro de España solo quien trabaja con el sector público). El
-  producto hoy **no puede ni contar** cuántos clientes actuales caen en ese subconjunto: no existe
-  el campo para marcarlo (§2), así que ni siquiera es una pregunta que el modelo de datos sepa
-  responder todavía.
-- El enunciado del ticket («sin factura electrónica por FACe la administración no paga») es
-  correcto como motivación de negocio pero **no es una afirmación que yo pueda verificar contra el
-  BOE** — se deja como pregunta para J4 (abajo), no se da por buena de memoria (es exactamente el
-  defecto que el propio encargo pide evitar).
-- **El tamaño de construir esto, si se aprobara, es mayor que «añadir tres campos».** Exige (a) el
-  ALTER, (b) un generador de un formato de documento COMPLETAMENTE NUEVO (Facturae/XSD propio, no
-  reutiliza nada de `verifactu.service.ts`), (c) integración con la API/portal de FACe
-  (autenticación, envío, y probablemente firma electrónica del XML — sin confirmar, ver preguntas
-  abajo). Y las tres se apoyarían sobre una tubería VeriFactu que **hoy todavía no remite nada a
-  la AEAT** (`flags.ts` `SIF_ENABLED: false`, cero llamadas de red medidas, `matriz.md` fila 8):
-  construir la entrega a FACe antes de que la tubería fiscal base llegue a producción sería
-  levantar el piso de arriba sin haber acabado el de abajo — y antes de SIF-1, en España, ni
-  documento ni cobro por YaQu (regla 24).
-- El alcance que pidió el orquestador (medir qué falta y el tamaño real) es el que corresponde al
-  ticket de Jira real — no hace falta parar por desajuste de alcance.
+Esto mide «cuánto cuesta construirlo», que es una pregunta distinta de «hace falta ya» (que
+depende de las preguntas (1) y (2) del PASO 0, todavía abiertas — ver arriba):
+
+- **Es mayor que «añadir tres campos».** El propio ticket ya da la orientación de tamaño y la
+  confirmo: (a) el ALTER de los tres DIR3 + declarar «es administración pública» sin mezclarlo con
+  `contactKind`; (b) un generador de un formato de documento COMPLETAMENTE NUEVO (Facturae, su
+  propio XSD — no reutiliza nada de `verifactu.service.ts`), **firmado electrónicamente**; (c)
+  integración con la API/portal de FACe (autenticación, envío, lectura de estados).
+- **La pieza (b) firmada electrónicamente reabre la MISMA pregunta que ya bloquea VeriFactu**, y
+  no es una lectura mía: lo dice el propio ticket y coincide con `docs/legal/PREGUNTAS_ASESOR.md`
+  punto 1 — «Modelo de representación ante la AEAT»: colaborador social (un solo certificado de
+  YaQu, apoderamiento) frente a certificado por merchant (custodia de N certificados). Esa
+  decisión, sin respuesta hoy, es la misma que necesitaría la firma del Facturae — «es la misma
+  decisión, no dos», tal cual lo dice el ticket.
+- **Se apoyaría sobre una tubería VeriFactu que hoy todavía no remite nada a la AEAT**
+  (`flags.ts` `SIF_ENABLED: false`, cero llamadas de red medidas — SCRUM-525, confirmado también
+  aquí de primera mano en §1). Antes de SIF-1, en España, ni documento ni cobro por YaQu (regla
+  24) — construir la entrega a FACe antes de que la tubería fiscal base llegue a producción sería
+  levantar el piso de arriba sin haber acabado el de abajo.
+- **Nota aparte, sin resolver aquí:** `docs/equipo/puesto-j1.md:79` registra que el ticket «bajó
+  de categoría el 2-sep» — una nota posterior al hallazgo del 19-ago, sin el motivo escrito en ese
+  mismo sitio. No la reconcilio con la urgencia que transmite el propio ticket (un merchant real,
+  con facturas reales ya rechazables): dejo las dos cosas dichas, con su fecha y su fuente, para
+  que quien tenga las respuestas (1)/(2) decida con las dos delante, no con una sola.
 
 ## Preguntas para J4 (normativa — no las respondo yo, se cotejan contra el BOE)
 
-1. ¿Es cierto, y con qué plazo/excepciones/umbrales, que «sin factura electrónica por FACe la
-   administración no paga»? (Motivación probable: Ley 25/2013, art. 4 — a confirmar, no citar de
-   memoria en ningún expediente fiscal.)
-2. ¿Hace falta firma electrónica del propio profesional/autónomo sobre el XML Facturae, o basta
-   con la identificación del emisor que ya va en el documento? Si hace falta, la pieza (c) del §3
-   pasa de «llamar a una API» a «gestionar certificados digitales» — un carril entero aparte.
+1. La Ley 25/2013 y sus umbrales/plazos exactos para la obligación de facturación electrónica a
+   AA.PP. — el ticket ya la cita como motivación; confirmar el detalle normativo (art. 4 y
+   excepciones) antes de que aparezca en cualquier copy o decisión de producto.
+2. Si el modelo de representación ante la AEAT (PREGUNTAS_ASESOR.md punto 1) se resuelve como
+   «colaborador social», ¿sirve el mismo certificado de YaQu para firmar el Facturae, o FACe exige
+   un modelo de firma distinto del de la remisión a la AEAT? Cambia si (c) del §3 necesita además
+   un circuito de firma propio.
 3. ¿DIR3 es un catálogo cerrado que YaQu tendría que sincronizar (como hace cualquier ERP con
    e-factura), o el profesional copia los tres códigos a mano de la orden de compra del
-   organismo? Cambia el tamaño real de (b)/(c).
+   organismo, como parece indicar el pie de la factura real de Tecnosel?
 
 ## Recomendación
 
-**No construir todavía.** Tres motivos que apuntan al mismo sitio, no uno solo: (1) ya está
-rebajado por el propio equipo el 2-sep, con motivo de tamaño, confirmado por dos fuentes
-independientes; (2) depende de una tubería VeriFactu que aún no llega a producción (regla 24); (3)
-las tres preguntas normativas de arriba cambian el tamaño real de la construcción en un factor
-grande — con firma electrónica y catálogo DIR3 sincronizado es un carril entero, sin ellas mucho
-menos, y hoy no se sabe cuál de los dos escenarios es el real. Mantenerlo donde está (cola U /
-Acción del fundador) hasta que J4 conteste y SIF-1 esté más cerca de producción real.
+**No construir todavía — pero no por «baja prioridad» genérica: por las dos preguntas del PASO 0
+del propio ticket que siguen sin respuesta** (cómo presenta Tecnosel hoy sus facturas, y qué
+proporción real de su facturación es pública). El propio ticket dice que sin la primera «no se
+dimensiona nada», y esta sesión no puede conseguir ninguna de las dos desde este carril. Lo que sí
+dejo resuelto y reutilizable en cuanto esas respuestas lleguen: el tamaño de la construcción (§3,
+cuatro piezas, con la firma electrónica como el mismo cuello de botella que ya bloquea VeriFactu)
+y dónde falta cada pieza (§1, §2), para que la decisión se tome sabiendo qué hay, tal como pide el
+propio ticket.
 
 **Si algún día se aprueba construir**, el primer paso no es el generador Facturae: es el ALTER de
 los tres campos DIR3 + decidir cómo se marca «esta ficha es una administración pública» sin
 mezclarlo con `contactKind` (EMPRESA/PERSONA) — misma lección que ya se aplicó al separar
 `tipoDestinatario` de `contactKind` (`schema.prisma:204-217`: dos preguntas distintas no se
-mezclan, ni con un valor por defecto que deduzca una de la otra). El generador Facturae y la
-integración con FACe serían fases posteriores, cada una con su propio expediente.
+mezclan, ni con un valor por defecto que deduzca una de la otra).
 
 ## Declarado, sin arreglar aquí
 
 - El texto de producto/marketing sobre este gap (si se anuncia o no como «próximamente») no se
   propone aquí — copy con firma (regla 30/39), fuera de mi carril.
-- Recuento real de clientes que hoy podrían ser administraciones públicas en cualquier entorno: no
-  medible — el campo para identificarlos no existe (§2), así que no hay qué contar todavía.
+- Las preguntas (1) y (2) del PASO 0 del ticket: no resueltas desde esta sesión (sin acceso a la
+  respuesta del padre del fundador ni a los datos reales de Tecnosel en staging/producción desde
+  esta máquina). Declaradas como SUELO, no como «no aplica».
+- Los tickets hermanos vistos de pasada en el mismo lote de hallazgos de Tecnosel (SCRUM-650,
+  654, 655, 656) no se abren aquí: quedan fuera del encargo.
