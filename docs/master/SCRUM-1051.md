@@ -268,3 +268,47 @@ y verificados; sacarla de borrador es una decisión del fundador/orquestador, no
 * No decide cómo entra ISP en el resumen del 303 trimestral (lo fija Q-C2).
 * No toca `jobs.routes.ts`/`albaranes.routes.ts`/`quotes*.routes.ts`/`recapitulativa.service.ts`
   — fuera de mi carril y sin boca hoy que escriba `causa`.
+
+## 🔴 AÑADIDO 23-sep-2026 18:56Z (J1) · el alcance real se estrechó DESPUÉS de escribir esto
+
+**Lo que sabíamos al escribir el PASO 1 (23-sep, 10:15Z) no era falso, pero era incompleto: el
+asesor respondió el resto de Q-C2 más tarde ese mismo día**, y ese añadido cambia cómo hay que
+leer la frase *"aquí SÍ hay caso de uso real y citado... no es un supuesto de manual"* de más
+arriba. No se reescribe: se deja tal cual la escribió esa medición, con esta nota al lado.
+
+**Cuándo se supo:** `docs/master/SCRUM-1106.md` (J4), medido contra `origin/main` =
+`a900d4484bddd80d3b0351294de6b6d2c53cc851` · **2026-09-23T17:53:14Z** — más de siete horas
+DESPUÉS de que este PASO 1 diera por buena la cita de art. 84.Uno.2.º.f LIVA como base
+suficiente. La leyenda exacta de la factura se cerró aún más tarde, ese mismo día, en el
+apéndice de SCRUM-1106 (18:14:22Z), cotejada por J5 con `curl` sobre el BOE consolidado —
+art. 6.1.m ROF (RD 1619/2012):
+
+> «En el caso de que el sujeto pasivo del Impuesto sea el adquirente o el destinatario de la
+> operación, la mención "inversión del sujeto pasivo"»
+
+La condición ("cuando el sujeto pasivo es el destinatario") es **parte de la cita**, no son
+tres palabras sueltas sin condición.
+
+**Lo que cambia, textual del asesor** (`docs/legal/PREGUNTAS_ASESOR.md`, Q-C2): tres
+condiciones ACUMULATIVAS, no una:
+
+1. destinatario empresario o profesional actuando como tal;
+2. **la obra GLOBAL tiene que ser construcción o rehabilitación en el sentido del art.
+   20.Uno.22º.B LIVA** (⚠ NO VERIFICADO — cita del asesor, sin cotejo contra el BOE: >50 % del
+   coste en estructura/fachadas/cubiertas, y coste >25 % del valor) — *"una reforma de baño, por
+   grande que sea, NO es rehabilitación → NO hay ISP aunque el cliente sea una empresa"*;
+3. el destinatario debe **comunicarlo expresa y fehacientemente** (art. 24 *quater* RIVA, ⚠ NO
+   VERIFICADO — misma reserva: de memoria del asesor, no entra como cita hasta que alguien la
+   baje del BOE); sin esa comunicación, el emisor no está protegido.
+
+**Lo que esto NO invalida:** el código de este ticket (el portón `Causa='S2'`) sigue siendo
+correcto tal cual está. No decide CUÁNDO se cumplen las tres condiciones de arriba — eso no
+existe hoy en ningún camino (sin UI, sin selector, nadie escribe `causa` todavía) — así que
+estrechar el criterio de aplicación no le resta ni le suma nada al mecanismo de sellado.
+
+**Lo que esto SÍ cambia:** la frecuencia real del caso es mucho menor de lo que este PASO 1
+daba a entender. Un electricista o fontanero que subcontrata a otro para una reforma corriente
+(el ejemplo más común del oficio) **no tiene ISP** bajo el criterio ya cerrado, salvo que la
+obra completa sea, de verdad, construcción o rehabilitación en el sentido estricto de arriba.
+Quien retome este ticket para construir la UI/selector (fuera del GO de esta entrada) necesita
+las tres condiciones, no solo la subcontrata entre profesionales.
