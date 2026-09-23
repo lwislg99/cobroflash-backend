@@ -136,6 +136,28 @@ de evitar para el DINERO; repetirlo para el IMPORTE sería la misma grieta un ni
 retencionGarantiaCobrada DateTime? @map("retencion_garantia_cobrada")
 ```
 
+### ✅ APLICADO — las tres bases
+
+Javier aplicó el DDL del §7 en **producción y staging** el 23-sep-2026 («Query ran successfully»
+en las dos). **DEV, aplicado por J2** el mismo día con `node scripts/aplicar-sql-dev.mjs --file
+docs/sql/scrum-1107-retencion-garantia-obra.sql --go` (destino confirmado ANTES:
+`acela.proxy.rlwy.net/yaqu_dev_javier`, el único que ese script acepta). El SQL del fichero es
+BYTE A BYTE el mismo que se aplicó en las otras dos — no se reescribió.
+
+**Verificado leyendo el catálogo** (no el mensaje de «aplicado»): `information_schema.columns`
+sobre `yaqu_dev_javier.charges` devuelve las cuatro, con el tipo, la nulabilidad y el `NULL`
+esperados —
+
+| columna | tipo | nullable | default |
+|---|---|---|---|
+| `retencion_garantia_cobrada` | `timestamp without time zone` | `YES` | ninguno |
+| `retencion_garantia_importe` | `numeric(12,2)` | `YES` | ninguno |
+| `retencion_garantia_liberacion` | `timestamp without time zone` | `YES` | ninguno |
+| `retencion_garantia_porcentaje` | `numeric(5,2)` | `YES` | ninguno |
+
+**Las tres bases tienen ya las cuatro columnas.** El paso ③ de A5 (esquema + código + tests en un
+PR) puede empezar.
+
 `NULL` = pendiente de reclamar (el aviso sigue vivo); con fecha = resuelto, el profesional marcó
 que ya entró (el aviso se apaga). La cifra exacta que entró, si difiere de la retenida, se lee del
 `Charge` nuevo — no de aquí. El invariante del §4 (`retención + recibido = total`) sigue siendo el
