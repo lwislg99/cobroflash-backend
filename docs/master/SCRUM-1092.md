@@ -340,3 +340,141 @@ desfasada o tocada por accidente, no de una reescritura deliberada). Por eso CUA
 §14-15 (desconfiar de qué árbol trae cada actor) **pero un mecanismo distinto**: éste protege la
 INTEGRIDAD del propio lanzador; §14-15 habla de qué árbol hereda la sesión que el lanzador arranca.
 No son la misma pregunta y no comparten arreglo.
+
+# APÉNDICE — Punto 1, profundizado: POR QUÉ no arranca (ejercitado, no deducido)
+
+**Fecha:** 23-sep-2026 10:53Z (GitHub) · **Carril:** J6 · calidad y seguridad
+**Medido contra:** `origin/main` = `d8d724e1f3f41d1ce50b785cbfb275b76bd7b729` · 2026-09-23T10:53:01Z
+**Rama:** `scrum-1092-lanzador-cwd-por-sesion` (continúa el PR #1713, no abre uno nuevo: es la misma
+pregunta de §14-18, un nivel más abajo)
+
+> ⛔ `scripts/equipo/sesion.mjs` se LEYÓ, no se tocó. `.claude/hooks/guard-dangerous.mjs` (SCRUM-1091,
+> S5) ni se miró. No se ha escrito ningún guard nuevo. `src/` intacto.
+
+## 19 · El síntoma, reproducido con control: se registra, nunca tiene `pid`
+
+Lancé de verdad —no leí, no deduje— un `claude --bg` desde dentro de `cobroflash-jv-j6` (el worktree
+que dejó la sesión anterior, HEAD desatado, con `node_modules` ya instalado):
+
+    cd cobroflash-jv-j6 && claude --bg -n j6-test-detached --permission-mode auto \
+      --model claude-sonnet-5 "Responde unicamente con OK y termina."
+    → backgrounded · 24072c88 · j6-test-detached
+
+`claude agents --json` para `24072c88`: **sin `pid`**, igual que midió la sesión anterior. Pero el
+`state.json` del job (`~/.claude/jobs/24072c88/state.json`) SÍ dice por qué, con una frase, no un
+silencio:
+
+    "state": "blocked",
+    "detail": "1 new MCP server needs approval",
+    "needs": "approve 1 new project MCP server (playwright) — attach to respond"
+
+**No es un fallo mudo. Es un `state` legible que nadie había leído todavía** — la sesión anterior
+mitió el `pid` (correcto, es el tell de SCRUM-954) pero no llegó a abrir `state.json`, que es donde
+vive la razón.
+
+## 20 · Por qué ese MCP concreto, y por qué sólo en un árbol NUEVO
+
+`origin/main:.mcp.json` declara un único servidor de proyecto:
+
+    { "mcpServers": { "playwright": { "command": "npx", "args": ["-y", "@playwright/mcp@latest"] } } }
+
+Claude Code exige aprobación humana la PRIMERA vez que un `.mcp.json` de proyecto declara un
+servidor para una ruta absoluta dada — lo guarda en `~/.claude.json` → `projects["<ruta>"]`. Grep de
+ese fichero (30.843 tokens; **NO se lee entero — lección propia: mi primer intento sí lo leyó entero
+y costó ~31k tokens de más, ver §23**) por `jv-j6` y `jv-j2`: **cero coincidencias**. Los worktrees de
+prueba nunca habían tenido una entrada — son rutas genuinamente nuevas para Claude Code, no sólo para
+git. Los cinco árboles con entrada en `projects` (`cobroflash-backend`, `-b1`…`-b5`) sí la tienen,
+con `hasTrustDialogAccepted`.
+
+`claude --help` confirma que el diálogo de CONFIANZA (trust) se salta en modo no interactivo
+(`--bg`/`-p`) — y en efecto no bloqueó nada. **La aprobación de un servidor MCP de proyecto es una
+puerta DISTINTA, y ésa no se salta.** En `--bg` nadie puede contestarla (`attach to respond` — hace
+falta un terminal), así que el job se queda `blocked` para siempre: se registra (tiene `id`,
+`state.json`), pero el proceso de trabajo real nunca arranca (`pid` nunca aparece).
+
+## 21 · ¿Es el worktree, o es el `--detach`? Aislado con dos pruebas — NINGUNO de los dos
+
+- **Detached, sin `--strict-mcp-config`** (`cobroflash-jv-j6`, HEAD suelto): bloqueado (§19, job
+  `24072c88`).
+- **Rama PROPIA, sin `--strict-mcp-config`** (worktree nuevo creado con
+  `git worktree add <ruta> -b jv-j6-test-branch-scratch origin/main`, nunca `EnterWorktree`): **el
+  mismo bloqueo, palabra por palabra** —
+
+      "state": "blocked", "detail": "1 new MCP server needs approval",
+      "needs": "approve 1 new project MCP server (playwright) — attach to respond"
+
+  (job `299277e1`, `cwd` = la rama nueva). Limpiado después: `claude stop 299277e1`,
+  `git worktree remove` (sin `--force`; con `--force` el hook `guard-dangerous` lo bloqueó, correcto:
+  pedía mi OK, no el del fundador, y no insistí) y `git branch -D jv-j6-test-branch-scratch`. Queda
+  huérfana en disco (no en `git worktree list`) `C:/Users/Javier Pereira/cobroflash-jv-j6-branch-test`
+  — un fichero se quedó bloqueado (probablemente el `.jsonl` de la sesión recién parada) y
+  `git worktree remove` sin `--force` dio *Permission denied*; lo declaro en vez de forzarlo.
+
+**La variable que decide es la RUTA absoluta y si ya tiene entrada en `~/.claude.json`, no si el
+`HEAD` está suelto o en una rama.** `--detach` era una pista falsa — coincidía con el primer worktree
+que se probó, no con la causa.
+
+## 22 · SÍ hay una forma de que arranque en su propio árbol — medida de principio a fin, con un coste real
+
+    cd cobroflash-jv-j6 && claude --bg -n j6-test-strict --permission-mode auto \
+      --model claude-sonnet-5 --strict-mcp-config "Responde unicamente con OK y termina."
+    → backgrounded · fe97428a
+
+`claude agents --json` a los pocos segundos: **`"pid": 25324, "status": "busy"`**. El job terminó
+solo, sin que nadie lo tocara:
+
+    "state": "done", "detail": "responded as requested", "output": { "result": "OK" }
+
+**`--strict-mcp-config` ("Only use MCP servers from --mcp-config, ignoring all other MCP
+configurations") evita la puerta de §20 por completo: si no hay ningún servidor de proyecto que
+aprobar, no hay nada que bloquee.** Confirmado también en el worktree de rama propia (no sólo el
+desatado): con el flag, arranca igual.
+
+**Pero tiene un coste que medí, no que supuse — y es serio para este equipo:** lancé un tercer job,
+mismo flag, pidiéndole *sólo* que dijera si veía alguna herramienta MCP de Jira/Atlassian (sin
+llamarla, sin escribir nada):
+
+    "output": { "result": "NO — no Jira/Atlassian MCP tools available" }
+
+Control: mi PROPIA sesión, arrancada desde el árbol compartido ya confiado y SIN
+`--strict-mcp-config`, sí tiene `mcp__claude_ai_Atlassian_Rovo__*` disponible (los mismos que uso
+para comentar tickets). **`--strict-mcp-config` no sólo quita `playwright`: quita también el
+conector de cuenta de claude.ai (Atlassian Rovo, Claude Docs) que las seis sesiones usan para Jira**
+(`claudeAiMcpEverConnected` en `~/.claude.json` — es un conector de CUENTA, no algo que declare
+`.mcp.json`, y aun así el flag lo apaga). Aplicar `--strict-mcp-config` sin más en el lanzador
+arreglaría el arranque y rompería en silencio el único canal por el que cada puesto cierra su parte
+del ciclo de A13. No es una solución gratis: es cambiar un bloqueo visible por uno invisible.
+
+## 23 · Lo que no medí, y por qué — suelo declarado, no una causa plausible sin comprobar
+
+No probé la vía que parece más limpia sobre el papel: pre-aprobar `playwright` para la ruta nueva
+ANTES de lanzar (escribir en `~/.claude.json` → `projects["<ruta>"].enabledMcpjsonServers =
+["playwright"]`, imitando la entrada que ya tienen `cobroflash-backend`/`-b1`…`-b5`), que en teoría
+evitaría el bloqueo del §19 SIN perder el conector de Jira del §22. **No lo hice porque
+`~/.claude.json` es un fichero de 1.807 líneas que las seis sesiones vivas de esta máquina —además de
+la mía— están leyendo y escribiendo AHORA MISMO** (`lastCost`, `lastGracefulShutdown`… se actualizan
+por sesión, en caliente): escribirlo yo a mano, desde fuera del propio Claude Code, es tocar estado
+compartido en producción sin el control atómico que tiene el proceso que normalmente lo escribe —
+justo el tipo de acción que se para y se declara en vez de ejecutar. Si esto se implementa, lo hace
+el propio lanzador (o `claude mcp add --scope project`, que sí pasa por el camino oficial) dentro de
+`sesion.mjs`, que es territorio compartido con el otro equipo y que este encargo me pidió no tocar.
+
+Error propio, para la bitácora: mi primer intento de mirar `~/.claude.json` lo leí ENTERO (offset/limit
+por defecto) antes de darme cuenta de que pesaba 30.843 tokens — contra la norma de arranque barato
+(§4 del prompt de relevo). A partir de ahí usé `Grep` para todo lo demás en ese fichero.
+
+## 24 · Respuesta a los cuatro puntos del encargo, en una tabla
+
+| punto | respuesta | evidencia |
+|---|---|---|
+| 1. ¿Por qué no arranca? | Aprobación de servidor MCP de PROYECTO (`playwright`, de `.mcp.json`) pendiente para una ruta que `~/.claude.json` no ha visto nunca; en `--bg` nadie puede contestarla y el job se queda `blocked` sin `pid` para siempre. | §19-20, job `24072c88` |
+| 2. ¿Worktree o `--detach`? | Ninguno de los dos. Mismo bloqueo, palabra por palabra, en un worktree con rama PROPIA. | §21, job `299277e1` |
+| 3. ¿Hay forma de que SÍ arranque en su árbol? | Sí: `--strict-mcp-config`, medido de principio a fin (`pid` real, `state: done`, salida correcta). Pero apaga también el conector de Jira/Atlassian que usan las seis sesiones — no es gratis. | §22, jobs `fe97428a`, `4d1da327` |
+| 4. Si no se puede ver, declararlo | No aplica: SÍ se pudo ver — `state.json` lo dice literalmente. Lo que sí queda sin medir es la vía de pre-aprobación por fichero (§23), declarada y no ejecutada por tocar estado compartido en caliente. | §23 |
+
+**Para SCRUM-1092 punto 1: EXIGIR (que el lanzador se niegue si el `cwd` ya lo ocupa otra sesión
+viva, §15) sigue siendo la propuesta más segura — no depende de resolver esta puerta de MCP. CREAR
+(que el lanzador dé un árbol nuevo por sesión) es viable en coste (§16) pero, si además quiere
+arrancar SIN tocar `~/.claude.json` a mano, necesita decidir entre `--strict-mcp-config` (pierde
+Jira) o una pre-aprobación por el camino oficial (§23, sin medir) — esa decisión de diseño le toca a
+quien implemente dentro de `sesion.mjs`, coordinado entre los dos equipos.**
