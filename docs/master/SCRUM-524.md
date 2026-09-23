@@ -440,3 +440,23 @@ y camino de emisión) · ninguna de las 25 no comprobadas se ha arreglado: **med
 trabajo, y taparlas necesita firma** · ningún estado ni nombre para «aceptado con errores» (27): sigue
 en la mesa del fundador tal cual · ningún texto de usuario (26/30) · `prisma/schema.prisma` · Jira:
 SCRUM-524 **leído, no modificado** (sigue *En curso*). **Producción y staging: no tocados.**
+
+## ⑥ 23-sep-2026 · el código 1207 ganó una segunda rama (S2) y el atajo dejó de expresar la regla (J1)
+
+`SCRUM-1051` (ISP/inversión del sujeto pasivo) añadió una segunda salida a
+`clasificarDetalleDesglose` (`S2`, sin `CuotaRepercutida`). El ancla del código **1207** de arriba
+(`propiedad ... todas: true`, «TODAS las `calificacion` del ámbito son S1») era válida con una sola
+rama y dejó de serlo con dos: la regla real («`CuotaRepercutida` distinta de 0 sólo con S1») **se
+seguía cumpliendo** (S2 no escribe `CuotaRepercutida`), pero el atajo no sabía expresarlo.
+
+Se añadió un tipo de ancla nuevo, **`propiedadLigada`**, en `scripts/tabla-verifactu.mjs` — compara
+DOS propiedades del MISMO objeto-literal («si `si` está presente, `entonces.nombre` vale
+`entonces.valor`») — y el código 1207 pasa a usarla. Verificado con una violación real fabricada
+(la rama S2 escribiendo `CuotaRepercutida`, algo que 1207 prohíbe): el ancla nueva cae, y los otros
+40 códigos del catálogo no cambian de veredicto (41/41 verde, SUELO igual). De paso, el motivo del
+código **1237** (que decía que `clasificarDetalleDesglose` "fija S1") se corrigió: ya no es cierto
+con dos ramas.
+
+Detalle completo, batería de tests y el bloqueo de `SCRUM-525d` (3 citas de línea que este mismo
+cambio desplazó) resuelto junto a esto: `docs/master/SCRUM-1051.md`, PASO 5. Rama
+`scrum-1051-isp-obra-subcontrata` (PR #1715, en borrador).

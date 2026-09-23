@@ -214,6 +214,13 @@ const MUTACIONES = [
   { que: '1207 · aparece una calificación que no es S1', fichero: F.builder,
     de: 'calificacion: CALIFICACION_SUJETA_NO_EXENTA,',
     a: "calificacion: entrada.rate > 0 ? CALIFICACION_SUJETA_NO_EXENTA : 'N1',", caen: ['1207'] },
+  // La violación REAL que el ancla `propiedadLigada` existe para atrapar (SCRUM-524b, 23-sep-2026):
+  // no un cambio de sintaxis, sino la rama S2 (SCRUM-1051) empezando a declarar `cuotaRepercutida`
+  // — exactamente lo que el código AEAT 1207 prohíbe (cuota sólo con S1).
+  { que: '1207 · la rama S2 empieza a declarar `cuotaRepercutida` (violación real, no sintáctica)', fichero: F.builder,
+    de: 'calificacion: CALIFICACION_INVERSION_SUJETO_PASIVO,\n      baseImponible: entrada.base.toFixed(2),\n    };',
+    a: 'calificacion: CALIFICACION_INVERSION_SUJETO_PASIVO,\n      baseImponible: entrada.base.toFixed(2),\n      cuotaRepercutida: entrada.cuota.toFixed(2),\n    };',
+    caen: ['1207'] },
   { que: '1177 · el arranque deja de comprobar el id del sistema', fichero: F.arranque,
     de: 'assertVerifactuIdSistema();', a: '', caen: ['1177'] },
   { que: '1177 · el validador deja de exigir 2 posiciones', fichero: F.env,
