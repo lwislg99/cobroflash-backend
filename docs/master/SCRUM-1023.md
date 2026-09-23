@@ -179,4 +179,83 @@ dejo el enlace escrito para quien lo decida.
   ni a los tickets bloqueados — eso es propagar, y lo decide un jefe.
 * No repite el detalle de fichero/línea de cada pregunta: ya vive en `PREGUNTAS_ASESOR.md` y en la
   reorganización de ayer; este apéndice sólo cruza y clasifica.
+
+## J6 (23-sep-2026) — el discriminador de P3, aplicado a las 34 filas del mapa
+
+**Medido contra:** `origin/main` = `65a8396864ad08625ba99eec1739edb1eedc17fd` · 2026-09-23T11:06:42Z
+
+Encargo del orquestador: censar, en una población acotada de documentos que afirman el estado de
+HOY, cuántas afirmaciones van ANCLADAS (citan fichero/línea/función/comando/commit) y cuántas van
+sólo en prosa — el mismo discriminador que hoy distinguió a **P3** (sin cita) de sus vecinas del
+bloque alto (con cita, resistieron el recotejo de J4).
+
+### Definición, escrita ANTES de contar
+
+- **Afirmación:** el contenido de una columna «Estado» (o equivalente) en una tabla de estado. NO
+  «cualquier línea con verbo en presente» — un primer barrido línea a línea sobre docs/legal +
+  docs/master + RUNBOOKS con ese criterio marcó 1554 de 1696 líneas como «prosa»: ruido por diseño
+  (contaba texto, no afirmaciones), descartado sin publicar esa cifra.
+- **Anclada:** el texto de la columna cita algo localizable — `RESPUESTAS·<ID>`, artículo de ley con
+  número, `fichero:línea`, símbolo de código entre backticks, o nº de SCRUM/comentario.
+- **En prosa:** da un veredicto (RESPONDIDA/ABIERTA/PARCIAL) sin ese localizador: se cree, no se
+  vuelve a preguntar.
+
+### Población y resultado
+
+**Primaria — «El mapa» de esta misma entrada** (línea 100 de este fichero), 34 filas: es la hermana
+estructural exacta de donde salió P3 (mismas columnas). J4 ya recotejó hoy el bloque de gravedad
+(P3, F18, F16, F9, F17, M2, M3, F13, F14, F5, F8, QC6, QC7); yo apliqué el mismo discriminador a las
+34 filas completas, sin excluir las ya tocadas, para que la cifra sea comprobable aparte.
+
+- **ANCLADAS — 18/34:** F1, F2, F4, F6, F7, F10, F15, M1, M2, M3, M4/M5, P1, P2, QC1, QC2, QC3,
+  QC5, QC9.
+- **EN PROSA — 16/34:** F3, F5, F8, F9, F11, F12, F13, F14, F16, F17, F18, P3 (corregida hoy),
+  QC4, QC6, QC7, QC8.
+
+**Control positivo, sin recotejar:** las dos tablas de `docs/legal/AUDITORIA_CAMINO_EMISION.md`
+§1 y §4 (17 filas entre las dos) — **17/17 ANCLADAS**, todas con `fichero:línea`. El discriminador sí
+reconoce un documento bien anclado; no marca todo como prosa por diseño. Y la tabla §7 de
+`docs/legal/RGPD_TRATAMIENTO_DATOS.md` (6 filas): 2/6 ancladas (`public/privacidad.html`,
+`LegalAcceptance`), 4 en prosa — pero cada fila de ese documento va marcada `[VALIDAR ASESOR]`/
+«borrador» desde su cabecera: prosa DECLARADA como provisional, no prosa que se hace pasar por
+cerrada. Riesgo distinto al de P3.
+
+### Las 4 recotejadas contra la realidad de HOY (elegidas por gravedad, no al azar)
+
+1. **F17 (P19 — productor, ¿dos personas?).** Bloquea la declaración responsable, previa a SIF-1
+   8/8. Contra `PREGUNTAS_ASESOR.md:947-978`: la formuló J4 HOY (SCRUM-1087), 4 sub-preguntas sin
+   respuesta. **No caducó** — el mapa dice la verdad de hoy, sólo que sin puntero.
+2. **F9 (P16 — tipo de factura declarado).** Bloquea SCRUM-413, diff ya escrito. Contra
+   `PREGUNTAS_ASESOR.md:617-673`: la «Nota de estado» confirma que la corrección sigue sin
+   aplicarse (regla 38, espera GO). **No caducó.**
+3. **F5 (P13 — recargo de equivalencia).** Contra `PREGUNTAS_ASESOR.md:328-361`: las 4 sub-preguntas
+   (tipos/total/a quién/RECC) siguen sin respuesta ahí. **No caducó.**
+4. **F11 (B4 — TipoRectificativa, «Confirmado I. Cerrado»).** 🔴 La que sí muestra el patrón de P3,
+   en miniatura. La fuente (`PREGUNTAS_ASESOR.md:1097`) SÍ cita `registro.builder.ts` — la cita se
+   pierde al resumir en la fila del mapa. Verificado en el código de hoy
+   (`src/modules/fiscal/verifactu/registro.builder.ts:150,437-445`): el valor por defecto es `'I'`
+   (`MODO_TIPO_RECTIFICATIVA`), pero desde SCRUM-216 cada llamada exige `tipoRectificativa`
+   explícito o `exigirTipoRectificativa` **lanza** (`TipoRectificativaAusenteError`) — no hay
+   default silencioso global. El «Cerrado» no es falso, pero es más simple que el código de hoy:
+   quien lea sólo el mapa no sabe que ese guard existe.
+
+### Dónde se concentra el problema
+
+No es un documento suelto — es la FORMA de la tabla. Las dos tablas de `AUDITORIA_CAMINO_EMISION.md`
+describen el código directamente, con columna «Fichero y línea» obligatoria: 100 % ancladas. Esta
+mapa en cambio RESUME lo que ya está escrito en `PREGUNTAS_ASESOR.md` (~250 líneas de respuestas), y
+el resumen es el que pierde el puntero — 16 de 34 veces. La causa no es el tema (fiscal/RGPD): es
+que una tabla que RESUME otro documento en vez de CITARLO pierde el ancla al comprimir.
+
+**Propuesta, no decisión (A13: no abro ticket yo):** las 16 filas en prosa de este mapa son
+candidatas a llevar `RESPUESTAS·<ID>` explícito en vez de descripción libre — ya lo hace la mitad de
+la tabla; sería aplicar el formato existente a la otra mitad, no inventar uno.
+
+### Lo que NO se tocó
+
+Ninguna respuesta se corrigió ni se propagó (fuera de carril de J6, A7). Cero `src/`. El recuento fue
+semi-manual sobre las 34 filas: un primer detector automático por línea dio ~92 % de falsos
+positivos (declarado arriba) y el volumen no justificaba un segundo instrumento — ya existen
+`scripts/_afirmaciones-publicadas.mjs` (afirmaciones de la landing) y `scripts/_documentos-citados.mjs`
+(citas entre documentos), y ninguno de los dos mide esto: comprobado antes de escribir nada.
 * No resuelve F3 (si hay que volver a preguntar el Convenio 017): es decisión de Javier, no mía.
