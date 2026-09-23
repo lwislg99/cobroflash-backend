@@ -171,6 +171,91 @@ pide diseñar esto con cuidado, y fuera de "nada fuera de eso" del GO.
 resto de la tanda (mi test nuevo + la batería VeriFactu completa) está en verde; los dos rojos que
 quedan están aislados, medidos y con causa conocida — ninguno es una regresión fiscal.
 
+## PASO 5 — los dos bloqueos, resueltos (J1, 23-sep-2026)
+
+Encargo del orquestador, acotado a estos dos rojos — nada de ampliar el GO de S2 ni tocar
+`productor.ts` (eso es otro encargo, después).
+
+### Bloqueo 1 (SCRUM-524b) — ancla nueva `propiedadLigada`, no ensanchar el atajo
+
+Se implementó el tipo de ancla propuesto en el bloqueo de arriba, en `scripts/tabla-verifactu.mjs`:
+`propiedadLigada(a, sf, esc)` busca, dentro del ámbito, todo objeto-literal que escriba la
+propiedad `si` (`cuotaRepercutida`); si alguno la escribe sin que su propiedad `entonces.nombre`
+(`calificacion`) valga `entonces.valor` (`CALIFICACION_SUJETA_NO_EXENTA`), cae. El código 1207 en
+`scripts/_tabla-verifactu-catalogo.mjs` pasa a usarla en vez de `propiedad ... todas: true`.
+
+**🔴 Rojo primero, con una violación REAL, no sintáctica:** se fabricó una copia mutada donde la
+rama `S2` (que hoy nunca escribe `cuotaRepercutida`) empieza a escribirla —exactamente lo que 1207
+prohíbe— y se confirmó que el ancla nueva CAE, nombrando el fichero y la razón, y que NADA MÁS cae
+a la vez. Esa mutación se dejó como caso permanente en `tests/scrum524b-trinquete-de-la-tabla.test.mjs`
+(`1207 · la rama S2 empieza a declarar cuotaRepercutida (violación real, no sintáctica)`), junto a
+la mutación sintáctica que ya existía.
+
+**Control de los otros 40 códigos:** la batería completa de `scrum524b-trinquete-de-la-tabla.test.mjs`
+(41 tests: población, SUELO por CONJUNTOS, fuera del catálogo, ausencias, y una mutación por
+mecanismo) sigue 41/41 verde — el SUELO no bajó ni subió, ninguno de los otros 40 códigos cambió de
+veredicto. `node scripts/tabla-verifactu.mjs` da ahora `14 de 41 comprobadas, todas vivas` (antes:
+`VEREDICTO: ROTO — 1207`).
+
+**Censo del catálogo (encargo 2):** el código **1237** decía *"hoy nunca se declara una operación
+no sujeta ni exenta (`clasificarDetalleDesglose` fija S1...)"* — falso desde que existe la rama S2.
+Reescrito: *"hoy `clasificarDetalleDesglose` resuelve S1 (régimen general) y, desde SCRUM-1051, S2
+(inversión del sujeto pasivo) — ninguna de las dos es «no sujeta ni exenta»..."*. La conclusión
+(no-comprobada, no-decidible) no cambia: sólo el motivo, que era falso. Censadas todas las demás
+menciones a `clasificarDetalleDesglose`/S1 en el catálogo (grep de las dos cadenas): sólo 1207 y
+1237 asumían una única rama; el código 1196 (`OperacionExenta`/`CalificacionOperacion` nunca los
+dos) sigue siendo cierto tal como está.
+
+### Bloqueo 2 (SCRUM-525d) — las 3 citas, relocalizadas por TESTIGO, no por posición
+
+Entendido el mecanismo antes de tocar nada: `scripts/_anclas-con-testigo.mjs` exige que una cita
+`` `fichero:NN` (`testigo`) `` tenga el símbolo `testigo` DENTRO del rango citado; si resuelve pero
+el testigo está en otra línea, es `DESFASADA`. `scripts/_anclas-sin-testigo.congelado.mjs` es un
+mecanismo APARTE (dos conjuntos que sólo encogen/crecen, para la deuda de citas SIN testigo y para
+la cobertura de testigos ya puestos) — no aplica aquí porque las 3 citas rotas SÍ llevan testigo;
+mi sesión anterior lo confundió con el guard que estaba arreglando y por eso deshizo su propio
+trabajo.
+
+Las 3 citas, verificadas por TESTIGO (no por número adivinado) contra el árbol de esta rama:
+
+1. `docs/legal/AUDITORIA_CAMINO_EMISION.md:39` — `registro.builder.ts:558` (`construirSobreRegFactu`)
+   → el símbolo está hoy en 574 (declaración) y 621 (llamada); la fila describe qué CONSTRUYE el
+   sobre, así que apunta a la declaración → **574**.
+2. `docs/legal/AUDITORIA_CAMINO_EMISION.md:141` — `src/lib/invoicing.ts:102` y `:246`
+   (`exigirDocumentoEmitible`) → de las 5 apariciones (import, 2 comentarios, 2 llamadas reales),
+   las dos citadas eran las llamadas reales, desplazadas +1 cada una → **103** y **247**.
+3. `docs/legal/PREGUNTAS_ASESOR.md:958` — `registro.builder.ts:375-378` (`xmlSistema`) → la frase
+   afirma "se vuelcan tal cual a `<sum1:NombreRazon>`/`<sum1:NIF>`"; ese bloque (declaración +
+   apertura + las dos líneas XML) está hoy en **391-394** (desplazado +16, mismo desplazamiento que
+   el punto 1 — consistente: es el mismo fichero).
+
+Confirmado con `git diff origin/main..HEAD --stat`: las 3 rutas citadas SÍ las tocó este ticket
+(`invoicing.ts` +5, `registro.builder.ts` +30/-7), así que el "SCRUM-1051 movió la línea" que dice
+cada nota es verificable, no una suposición.
+
+**Verificación:** `tests/scrum525d-anclas-que-apuntan.test.mjs`, 8/8 verde (antes: 2 caían — el
+control positivo que fabrica el defecto histórico no podía ejecutarse porque su única fila de
+`exigirDocumentoEmitible` estaba, ella misma, desfasada; y el guard de "toda coordenada con testigo
+apunta a lo que dice" nombraba las 4 coordenadas exactas de arriba).
+
+**Hallazgo, reportado y no arreglado (fuera de este encargo):** el propio test ya avisaba, ANTES de
+mi cambio, que la cobertura de testigos "SUBIÓ en 4" y pide añadir 4 líneas a
+`TESTIGOS_PUESTOS` en `scripts/_anclas-sin-testigo.congelado.mjs`. Sólo una de esas 4
+(`registro.builder.ts # xmlSistema`) tiene que ver con esta rama; las otras tres
+(`retencionIrpf.ts # TIPOS_RETENCION`, `fiscalInput.ts # TIPOS_IVA_ES_BP`,
+`registro.builder.ts # nombreRazonProductor`) ya estaban sin registrar ANTES de que yo tocara nada
+— lo confirmé comparando la salida del test antes y después de mis ediciones. Es un aviso
+informativo (`console.log`, no `assert`), y arreglarlo bien exige revisar las 4 filas una a una:
+lo dejo señalado para quien lo retome, no lo arreglo de paso.
+
+**Bateria completa corrida** (`scrum1051-isp-s2`, `scrum145`, `scrum173`, `scrum524b`, `scrum73`,
+`scrum82`, `verifactu`, `scrum525d`): **66 verdes, 0 rojos, 9 SKIP declarados** (gateados por
+`QA_DB_TEST`, esta máquina no tiene Postgres/Docker — confirma CI, no esta sesión). `tsc` sin
+errores.
+
+**Esta rama sigue en BORRADOR y sin auto-merge.** Los dos bloqueos que la frenaban están resueltos
+y verificados; sacarla de borrador es una decisión del fundador/orquestador, no de esta sesión.
+
 ## Lo que NO cubre esta entrada (fuera del GO, a propósito)
 
 * No activa `E1` ni `N1` — el portón los rechaza expresamente.

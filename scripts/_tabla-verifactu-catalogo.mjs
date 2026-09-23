@@ -262,17 +262,18 @@ export const CATALOGO = Object.freeze([
     categoria: 'comprobada', capa: 'construcción',
     anclas: [
       { tipo: 'constante', fichero: F.builder, nombre: 'CALIFICACION_SUJETA_NO_EXENTA', valor: 'S1' },
-      { tipo: 'propiedad', fichero: F.builder, dentroDe: 'clasificarDetalleDesglose', nombre: 'calificacion',
-        valor: 'CALIFICACION_SUJETA_NO_EXENTA', todas: true },
+      { tipo: 'propiedadLigada', fichero: F.builder, dentroDe: 'clasificarDetalleDesglose',
+        si: 'cuotaRepercutida', entonces: { nombre: 'calificacion', valor: 'CALIFICACION_SUJETA_NO_EXENTA' } },
       { tipo: 'llamada', ...REG, llamada: 'clasificarDetalleDesglose' },
     ],
   },
   {
     codigo: '1237', que: 'operación no sujeta o exenta: sin tipo, cuota ni recargo',
     categoria: 'no-comprobada', clase: 'no-decidible',
-    porque: 'hoy nunca se declara una operación no sujeta ni exenta (`clasificarDetalleDesglose` fija S1 '
-      + 'y `OperacionExenta` no se escribe), pero el ticket agrupa 1237 y 1238 y sin el literal de cada '
-      + 'uno no sé qué mitad cubre cada código',
+    porque: 'hoy `clasificarDetalleDesglose` resuelve S1 (régimen general) y, desde SCRUM-1051, S2 '
+      + '(inversión del sujeto pasivo) — ninguna de las dos es «no sujeta ni exenta». `OperacionExenta` '
+      + 'sigue sin escribirse nunca, pero el ticket agrupa 1237 y 1238 y sin el literal de cada uno no '
+      + 'sé qué mitad cubre cada código',
   },
   {
     codigo: '1238', que: 'operación no sujeta o exenta: sin tipo, cuota ni recargo',

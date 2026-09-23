@@ -955,7 +955,7 @@ tiene resuelto el caso simétrico: hereda el de la factura que rectifica
 registro tiene un solo campo de productor — `nombreRazonProductor: string` y `nifProductor: string`
 `src/modules/fiscal/verifactu/registro.builder.ts:19-21` (`nombreRazonProductor`), que se vuelcan
 tal cual a `<sum1:NombreRazon>`/`<sum1:NIF>` del XML
-`src/modules/fiscal/verifactu/registro.builder.ts:375-378` (`xmlSistema`). Un nombre, un NIF. «Los dos» no cabe ahí, y
+`src/modules/fiscal/verifactu/registro.builder.ts:391-394` (`xmlSistema`) — SCRUM-1051 movió la línea. Un nombre, un NIF. «Los dos» no cabe ahí, y
 tampoco en `docs/legal/DECLARACION_RESPONSABLE.md` §1 ("Productor del sistema"), que hoy es un único
 placeholder de razón social + NIF.
 
