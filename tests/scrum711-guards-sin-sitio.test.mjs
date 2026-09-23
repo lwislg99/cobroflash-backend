@@ -24,6 +24,12 @@
 //          comprobaciones son `tests/*.test.mjs`, así que ya corren en la tanda.
 //     guards que no corren en ningún sitio  →  0
 //
+// 🔴 AÑADIDO EL 23-SEP-2026 (SCRUM-1097), SIN REPETIR LA MEDICIÓN DE ARRIBA — que ya está vieja
+// por el volumen de guards nuevos desde el 15-sep y no se re-teclea a ojo (SCRUM-846):
+// `guard-acreditacion-invoicing-es.mjs` se suma a DECLARADOS por el mismo motivo que
+// `guard-conformidad-landing.mjs` — CLI de solo lectura contra staging/producción, sin secretos en
+// CI (regla 9), cuya lógica corre en la tanda por su módulo puro (`scrum1097`).
+//
 // Un cero no se cree por sí solo (SCRUM-846): abajo va el CASO CONOCIDO —la situación exacta del
 // 3-sep, fabricada— y el censo tiene que verlo con la MISMA función que da el cero sobre el árbol.
 //
@@ -159,6 +165,14 @@ export const DECLARADOS = {
   'scripts/guards-entrada.mjs': {
     porque: 'runner local para empujar una entrada del registro; lo que ejecuta son tests de la tanda',
     prueba: { susGuardsSonDeLaTanda: true },
+  },
+  'scripts/guard-acreditacion-invoicing-es.mjs': {
+    porque: 'CLI de solo lectura contra staging/producción, SIN destino por defecto (`--staging` o '
+      + '`--prod-ro`): sus secretos `DATABASE_URL_STAGING`/`DATABASE_URL_PROD_RO` no viajan a un PR '
+      + '(regla 9), así que no puede engancharse a `npm test` ni a CI. Su lógica SÍ corre en la '
+      + 'tanda a través de su módulo puro: scrum1097 ejercita `medirAcreditacion()` con un '
+      + 'PrismaClient inyectado, sin BD real.',
+    prueba: { fichero: 'tests/scrum1097-guard-acreditacion-invoicing-es.test.mjs', llamada: 'medirAcreditacion(prisma)' },
   },
 };
 
@@ -333,6 +347,15 @@ test('SCRUM-711 · las pruebas de las declaraciones siguen siendo ciertas', () =
   assert.deepEqual(fuera, [],
     '🔴 `guards-entrada.mjs` ejecuta algo que la tanda NO corre, así que ya no vale su declaración: '
     + fuera.join(', '));
+
+  const pa = DECLARADOS['scripts/guard-acreditacion-invoicing-es.mjs'].prueba;
+  const codigoA = soloCodigo(fs.readFileSync(path.join(RAIZ, pa.fichero), 'utf8'));
+  assert.ok(codigoA.includes(pa.llamada),
+    `🔴 \`${pa.fichero}\` ya no ejecuta \`${pa.llamada}\` (fuera de comentarios). Sin esa llamada, `
+    + '`guard-acreditacion-invoicing-es` deja de correr en ningún sitio y su declaración lo estaría tapando.');
+  assert.ok(patrones.some((p) => p.test(pa.fichero)),
+    `🔴 \`${pa.fichero}\` no lo cubre ningún patrón de la tanda (\`${scripts.test}\`), así que su `
+    + 'declaración no vale aunque llame a lo que dice.');
 });
 
 test('SCRUM-711 · 📌 el límite de «primer nivel» sigue sin esconder nada', () => {
