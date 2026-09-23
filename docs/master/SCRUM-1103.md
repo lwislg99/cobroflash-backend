@@ -130,3 +130,128 @@ ADD COLUMN     "retencion_practicada_tipo" INTEGER;
 Javier aplica el ALTER del §5 en las tres bases (staging/dev/tests). Con las columnas ya en la
 base, SCRUM-1066 puede medir «qué datos hay» de verdad (su propio punto 1 de aceptación) y
 construir el borrador de 111/115 — hoy estaba bloqueado antes incluso de poder medirse.
+
+---
+
+## SCRUM-1103b · ② ALTER en dev, y ③ esquema + código + tests
+
+**Fecha:** 23-sep-2026 18:41Z · **Carril:** J1 · **Medido contra:** `origin/main` =
+`671296fed22b1185898e0168c6d8b9a1e3eb8955` · 2026-09-23T18:41:56Z
+
+### ② El ALTER, en la tercera base
+
+Producción y staging: aplicados por Javier (23-sep-2026, «Query ran successfully» en las dos).
+Dev: aplicado por J1 con `scripts/aplicar-sql-dev.mjs --go` (destino confirmado ANTES con
+`describirBD`: `DATABASE_URL_DEV` → `yaqu_dev_javier`), mismo DDL byte a byte que el §5 de
+arriba — `docs/sql/scrum-1103-retencion-practicada-gastos.sql`.
+
+**Verificado leyendo `information_schema.columns`, no el mensaje de «aplicado»:**
+
+```
+control_ve_el_catalogo: 470 · tipo: 1 · cuota: 1 · declarada: 1
+retencion_practicada_cuota      → numeric, nullable, precision 12 scale 2
+retencion_practicada_declarada  → boolean, nullable
+retencion_practicada_tipo       → integer, nullable
+```
+
+Las tres bases tienen ya el esquema. Paso ③ de A5 puede empezar.
+
+### ③ Esquema + código + tests
+
+**Schema** (`prisma/schema.prisma`, `model Expense`): las tres columnas del §4, con el mismo
+`@map` que el DDL ya aplicado. `prisma generate` regenerado; `preview-migracion.mjs` contra dev
+confirma que el schema y la base ya NO discrepan en `expenses.retencion_practicada_*` (el resto
+del diff que ese preview muestra —`charges.retencion_garantia_*`, `customers.pay_methods_por_defecto`,
+las FK de `quote_assignees`/`invoice_assignees`— es deriva PREEXISTENTE de otros tickets en curso,
+SCRUM-1107 entre ellos; no se toca aquí, es de otro carril).
+
+**Código** (`src/modules/expenses/domain/expenses.service.ts`), mismo patrón que
+`baseAmount`/`vatRate`/`vatAmount` (SCRUM-324):
+
+- `CreateExpenseInput` gana `retencionPracticadaTipo?`/`retencionPracticadaCuota?` — el dato
+  OBJETIVO que trae la factura del proveedor, y `createExpense()` los escribe con `?? null`
+  (un tipo 0 % legítimo no puede leerse como «no se sabe»).
+- `CAMPOS_DE_LA_LISTA` gana las TRES columnas (incluida `retencionPracticadaDeclarada`): la
+  lista las lee y las devuelve. Lo exige el guard existente de SCRUM-964 (el `select` de la
+  lista tiene que ser EXACTAMENTE los escalares de `Expense` menos `receiptData`) — sin este
+  cambio, ese guard cae solo con el ALTER ya aplicado.
+- 🔴 **`retencionPracticadaDeclarada` NO entra en `CreateExpenseInput`, a propósito.** Mismo
+  criterio que `vatDeducible`, que tampoco es parámetro de alta hoy (medido: no aparece en
+  ningún `create()` ni en ninguna ruta): es una DECISIÓN de clasificación, no un dato que se
+  transcribe, y su cubo de tipos válidos por 111 vs. 115 lo fija quien construya SCRUM-1066
+  (§6 de arriba). Escribirla aquí sin esa validación dejaría entrar cualquier valor.
+- **Las rutas HTTP (`POST`/`PUT /admin/expenses`) NO se tocan en este ticket.** El dominio ya
+  sabe escribir y leer los tres campos —programáticamente, y para SCRUM-1066—; la pantalla de
+  captura con su cubo de tipos válidos es del ticket que construya esa clasificación. Igual
+  que SCRUM-403 (schema) fue anterior y distinto de SCRUM-324 (rutas + pantalla).
+- `libroRecibidas.ts`/`.repo.ts` (el libro de COMPRAS, IVA) NO se tocan: la retención IRPF
+  practicada es un dato para 111/115, una declaración distinta, no una columna de ese libro.
+  Tocarlo aquí habría sido inventar un segundo consumidor sin que SCRUM-1066 lo haya pedido.
+
+**Tests** (`tests/scrum1103-retencion-practicada-en-gastos.test.mjs`), patrón de
+`scrum324-cadena-hasta-el-libro.test.mjs`:
+
+1. SUELO — el schema declara las tres columnas, nullable, sin `@default`, con la precisión
+   `Decimal(12,2)` de `cuota`.
+2. SUELO — censo de escrituras (regex sobre el fuente, con control positivo) para
+   `tipo`/`cuota`; y su espejo, la DECISIÓN de que `declarada` NO se escribe (con el mismo
+   instrumento verificando que `vatDeducible` tampoco, para probar que el regex detecta
+   ausencias reales y no es ciego).
+3. `CAMPOS_DE_LA_LISTA` incluye las tres — control explícito, además del guard general de
+   SCRUM-964.
+4. Unidad sin base (doble de `_envio-doblado.mjs`): `createExpense` manda tipo/cuota al
+   `create()` de Prisma, `null` si no llegan, y un tipo 0 % legítimo no se confunde con «no se
+   sabe» (mismo defecto que `vatRate` en su día).
+5. 🔴 LA CADENA ENTERA (gateada por `LIBRO_PG_URL`, banco desechable): alta con retención →
+   se lee de vuelta por FUERA de la función que escribió (no «se aceptó y se perdió») → la
+   LISTA también la trae → `updateExpense` corrige un campo sin borrar el otro. Y su control
+   negativo: sin retención, las tres nacen `null`.
+
+**Verificado, no asumido:**
+
+- `npm run build` limpio.
+- `tests/scrum1103-retencion-practicada-en-gastos.test.mjs`: 6/8 verde, 2 SKIP declarados (sin
+  `LIBRO_PG_URL` en esta máquina — sin Docker/Postgres, **suelo del entorno**, no del código;
+  CI los confirma).
+- Los 6 no gateados se comprobaron en ROJO contra `origin/main` (sin este cambio) antes de
+  darlos por buenos: los tres censos basados en regex/schema dan `false`/ausente sobre el
+  `expenses.service.ts` y el `schema.prisma` de `origin/main`, así que miden el cambio real y
+  no una tautología.
+- Guard de SCRUM-964 (`el select de la lista es EXACTAMENTE Expense menos receiptData`): verde
+  con las tres columnas nuevas dentro de `CAMPOS_DE_LA_LISTA`.
+- Guard de SCRUM-860 (trinquete del select en ficheros con respuesta HTTP): verde — no sube el
+  suelo de lecturas nuevas sin `select`, aunque este ticket no toca ninguna ruta.
+- **Deriva de esquema regenerada**: `docs/sql/deriva-prod.sql` (`node
+  scripts/generar-sql-deriva.mjs`) estaba desfasado tras el ALTER — lo cazaron en rojo
+  `tests/scrum222-deriva-arranque.test.mjs`, `scrum461-censo-no-encoge.test.mjs` y
+  `scrum733-el-censo-no-se-encoge-en-silencio.test.mjs`. Regenerado y verde.
+- **Inventario de gateados actualizado**: `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`
+  cayó porque el fichero nuevo trae 2 tests gateados por `LIBRO_PG_URL` sin declarar — se
+  añadió al `GATEADOS_DECLARADOS` con su motivo. Verde.
+- **Registro de rama** (`scrum854-todo-merge-deja-entrada.test.mjs`): esta misma sección es su
+  entrada — el guard lo exige para toda rama que toque código.
+- `npm test` completo corrido en esta máquina: aparte de lo de arriba, quedan cuatro grupos en
+  rojo AJENOS a este ticket, confirmados preexistentes corriendo los mismos ficheros contra el
+  checkout sin tocar (`cobroflash-backend`, sin este cambio): `scrum910d` (el `fetch()` de
+  Windows revienta con la aserción de libuv, SCRUM-100/560/809), `scrum932` (resolución de
+  `.env`/`--base` específica de esta máquina) y `scrum939b` (`gh.exe` SÍ existe en esta
+  máquina en la ruta que el censo de falsas declaradas esperaba que no existiera). No se
+  tocan: son suelo del entorno, no de este ticket.
+
+### Errores propios (A9)
+
+- El primer intento de leer `DATABASE_URL_DEV` con `dotenv` capturó también la línea de aviso
+  de `dotenv` («injecting env…») dentro del `$(...)` de bash, y el `DATABASE_URL` quedó vacío
+  — el preview de Prisma falló con «debe empezar por postgresql://» hasta usar `{quiet:true}`
+  y `2>/dev/null`. No llegó a imprimir ninguna credencial (el fallo fue un string vacío, no un
+  string filtrado), pero el diagnóstico costó dos vueltas.
+- Sobrepensé el reparto tipo/cuota vs. `declarada` dándole varias vueltas antes de fijarlo por
+  el precedente YA existente en el propio fichero (`vatDeducible`) en vez de inventar un
+  criterio nuevo — el precedente estaba a la vista desde el principio.
+
+### Desbloquea
+
+SCRUM-1066 (modelos 111/115): las tres bases tienen el esquema, y el dominio ya sabe
+escribir/leer `retencionPracticadaTipo`/`Cuota` sin tener que tocar `expenses.service.ts` de
+nuevo. Lo que SCRUM-1066 SÍ tiene que construir: el cubo de tipos válidos por 111 vs. 115, la
+pantalla de captura (rutas incluidas) y la clasificación de `retencionPracticadaDeclarada`.

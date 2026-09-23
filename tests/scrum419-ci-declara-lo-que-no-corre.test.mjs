@@ -136,6 +136,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // `DELETE` —si no, Postgres lo rechazaría—, las cinco sin FK, el rechazo por factura emitida,
   // la tenencia y el desvínculo de quien apuntara al fusionado como su empresa.
   'scrum1057b-fusion-clientes-postgres.test.mjs': 4,
+  // SCRUM-1103: la cadena entera de la retención practicada (alta → se lee de vuelta con su
+  // precisión Decimal → la LISTA la trae → `updateExpense` corrige sin borrar) y su control
+  // negativo. Necesita banco porque lo que prueba es que el ALTER ya aplicado y el dominio
+  // escriben y leen la MISMA fila, no que «se pinta el campo» (mismo motivo que SCRUM-324).
+  'scrum1103-retencion-practicada-en-gastos.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
