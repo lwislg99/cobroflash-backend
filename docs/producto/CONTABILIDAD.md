@@ -27,6 +27,12 @@
 > asesor como verificados hoy por él (se citan como fuente); mi propio cotejo del ROF por WebFetch
 > salió ambiguo en la letra exacta y **no se promueve a §3** — el resto de citas nuevas, todas ⚠ del
 > asesor, quedan NO VERIFICADO igual que en v0.11.
+>
+> **v0.13 · J4 · 23-sep-2026 (SCRUM-1039c, medido por J5).** La ambigüedad de v0.12 sobre el art.
+> 6.1.m ROF queda **cerrada**: bajado por `curl` (no WebFetch), sólo hay una letra m), sin cambios
+> desde 2012 — el duplicado que yo vi era un artefacto del resumen de WebFetch. **Promovida a §3**
+> con el literal completo (incluida la condición: la mención se incluye CUANDO el sujeto pasivo es
+> el destinatario, no son solo tres palabras sueltas). Q-C2 (§4) actualizada.
 
 ## 0 · La regla de oro y cómo se cumple
 
@@ -94,10 +100,20 @@ Fuentes en §8 (LIVA · RIVA · LIRPF · RIRPF · RFACT · ORDEN303, BOE consoli
 | Operaciones no sujetas (art. 7): ninguna encaja en un oficio | LIVA art. 7, encabezado y 1.º | «Artículo 7. Operaciones no sujetas al impuesto. No estarán sujetas al impuesto: 1.º La transmisión de un conjunto de elementos corporales y, en su caso, incorporales que, formando parte del patrimonio empresarial o profesional del sujeto pasivo, constituyan o sean susceptibles de constituir una unidad económica autónoma en el transmitente» — el resto de la lista (2.º a 12.º) son muestras gratuitas, relación laboral, Administraciones Públicas, cesiones de dinero: ninguna es la venta ordinaria de un servicio de reforma/instalación |
 | Exenciones interiores (art. 20): tampoco | LIVA art. 20.Uno, encabezado y 1.º-5.º | «Artículo 20. Exenciones en operaciones interiores. Uno. Estarán exentas de este impuesto las siguientes operaciones: 1.º Las prestaciones de servicios y las entregas de bienes accesorias a ellas que constituyan el servicio postal universal» — seguido de sanidad (2.º-4.º) y profesiones médicas/sanitarias (5.º): tampoco hay una exención para reformas/instalaciones en la parte revisada |
 | Plazo trimestral del modelo 303 | Orden EHA/3786/2008, art. 7.2 | «la presentación de las autoliquidaciones del modelo 303, así como, en su caso, el ingreso o la solicitud de devolución, si corresponde, de la cantidad resultante, se efectuará en los veinte primeros días naturales del mes siguiente a la finalización del correspondiente período de liquidación trimestral, excepto la correspondiente al último período de liquidación del año, que deberá presentarse durante los treinta primeros días naturales del mes de enero siguiente» |
+| Mención "inversión del sujeto pasivo" en factura | RFACT art. 6.1.m | «Artículo 6. Contenido de la factura. 1. Toda factura y sus copias contendrán los datos o requisitos que se citan a continuación (…): m) En el caso de que el sujeto pasivo del Impuesto sea el adquirente o el destinatario de la operación, la mención "inversión del sujeto pasivo".» |
+| ISP: bases separadas si la factura mezcla operaciones con y sin ISP | RFACT art. 6.2.b | «2. Deberá especificarse por separado la parte de base imponible correspondiente a cada una de las operaciones que se documenten en una misma factura en los siguientes casos: (…) b) Cuando se incluyan operaciones en las que el sujeto pasivo del Impuesto sobre el Valor Añadido correspondiente a aquéllas sea su destinatario y otras en las que no se dé esta circunstancia.» |
 
 **Cruce con el código (los números coinciden, la aplicación no está cableada):** recargo 5,2 / 1,4 / 0,5 (`recargoEquivalencia.ts:51-64`) ↔ art. 161 · retención 15 y 7 (`retencionIrpf.ts:54`) ↔ art. 95.1 · retención 1 y 2 (`retencionIrpf.ts:54`) ↔ art. 95.4-6, y el 1 % SÍ encaja con los oficios de YaQu (fontanería, albañilería, carpintería/cerrajería, pintura); el 2 % es agrícola/forestal, no un oficio de YaQu · el 40 % de materiales **no existe** en el código.
 ⚠️ Trampa medida: la primera cita de «15 por ciento» que salió del RIRPF era del **art. 101 (propiedad intelectual)**, no de profesionales; el script no distingue, lo distingue leer el artículo. El art. 95.1 es el correcto para oficios.
 ⚠️ Las citas de art. 7 y art. 20 son PARCIALES a propósito: se revisó el encabezado completo de cada lista cerrada y los primeros apartados (7.º completo — los 12 apartados —, 20.Uno los 5 primeros de una lista que sigue); ninguno de los revisados aplica a un oficio, y no se transcribió el resto de 20.Uno (sanidad, educación, finanzas, seguros, alquileres de vivienda…) por no ser candidatos plausibles para reformas/instalaciones. Si alguien necesita el 20.Uno completo, se vuelve a bajar la fuente.
+⚠️ Trampa medida (23-sep-2026, SCRUM-1039c): el art. 6.1.m ROF llegó de un primer cotejo por
+WebFetch con **dos textos distintos, los dos etiquetados «m)»**, en la misma respuesta — no se
+promovió a esta tabla con esa ambigüedad (correcto: no se fuerza una cita dudosa). Repetido con
+`curl` directo sobre el mismo `BOE-A-2012-14696` (dos sondas independientes sobre el art. 6
+completo, y el historial de modificaciones del propio BOE al pie del artículo): **solo hay una
+letra m)**, sin cambios desde 2012. El duplicado era un artefacto de resumen de WebFetch, no algo
+del origen — mismo defecto que SCRUM-1039b ya documentó para citas legales. **Lección: una cita
+legal se baja con `curl`, nunca con WebFetch.**
 
 ## 4 · NO VERIFICADO → pregunta al asesor (propuestas Q-C para `docs/legal/PREGUNTAS_ASESOR.md`, dueño J4)
 
@@ -106,7 +122,7 @@ Cada una: por qué está aquí = el texto no se ha localizado o no basta para de
 | id | pregunta | hoy en el código |
 |---|---|---|
 | Q-C1 | ~~Reforma de vivienda al 10 %~~ **RESPONDIDA (23-sep-2026) → SCRUM-1052, detalle en `PREGUNTAS_ASESOR.md`.** El 40 % se mide sobre la operación entera, nunca por línea (cita AEAT con enlace, no ⚠). Falta una declaración firmada del cliente para los "2 años" (encaja con la firma que ya existe). **Hallazgo:** mantenimiento de instalaciones (calderas, revisiones) NO es ejecución de obra → 21 % siempre | no existe |
-| Q-C2 | ~~ISP en obra~~ **RESPONDIDA (23-sep-2026) → SCRUM-1051, alcance MUY estrechado.** Leyenda exacta «inversión del sujeto pasivo» (art. 6.1.m ROF, dado como verificado por el asesor; mi propio cotejo por WebFetch fue ambiguo en la letra exacta, no se promueve a §3). Sólo aplica si la obra GLOBAL es construcción/rehabilitación (no una reforma de baño) y el destinatario lo comunica expresamente — si no, no hay ISP aunque el cliente sea empresa | no existe |
+| Q-C2 | ~~ISP en obra~~ **RESPONDIDA (23-sep-2026) → SCRUM-1051, alcance MUY estrechado.** Leyenda exacta «inversión del sujeto pasivo», con cita literal comprobada en §3 (art. 6.1.m/6.2.b RFACT, cerrado por SCRUM-1039c tras un primer cotejo ambiguo por WebFetch). Sólo aplica si la obra GLOBAL es construcción/rehabilitación (no una reforma de baño) y el destinatario lo comunica expresamente — si no, no hay ISP aunque el cliente sea empresa | no existe |
 | Q-C3 | ~~Suplidos~~ **RESPONDIDA (23-sep-2026) → SCRUM-1054.** Tres condiciones acumulativas: factura del tercero A NOMBRE DEL CLIENTE (nunca del profesional), mandato expreso identificando el gasto concreto (una línea genérica "suplidos" no vale), cuantía exacta con justificante | casilla que fuerza IVA 0 |
 | Q-C4 | ~~Recargo de equivalencia~~ **RESPONDIDA (23-sep-2026) → SCRUM-1054.** Sólo en entregas de BIENES a un minorista para su tienda; un oficio presta servicios, así que casi nunca aplica — "basta con tener el campo, no un flujo" | dato guardado, no calculado |
 | Q-C5 | ~~Retenciones 2 y 1 %~~ **RESPONDIDA por completo (23-sep-2026) → SCRUM-1053/1073, sustituye la parcial del 22-sep.** 🔴🔴 Para este perfil (estimación directa) **la retención en factura EMITIDA es CERO en todos los casos** — el 1 % sólo aplica a módulos. El "5 % en obra" no es retención fiscal: es garantía contractual de pago, no de impuestos. **Necesita decisión del fundador:** ¿se construye el campo igual para un segmento (módulos) que hoy no existe? | 15/7/2/1 cerrada |
@@ -123,11 +139,12 @@ perfil**. Tampoco están descargadas las fuentes de las citas ⚠ del asesor que
 pero cotejar estos concretos es trabajo aparte, no asumido por tenerlos ya descargados una vez.
 Igual para las que responden Q-C1 a Q-C5 y Q-C7 (SCRUM-1106): arts. 170.Dos.2º, 87.Uno, 91.Uno.3.1º,
 20.Uno.22º.B, 148-149, 163.Uno y 170.Dos.3º LIVA · art. 24 *quater* y 61 RIVA · art. 76 RIRPF ·
-art. 107 LCSP — todas **NO VERIFICADO**. El art. 6.1.m/6.2.b ROF y las páginas de la AEAT sobre
-reformas de vivienda las dio el asesor como verificadas hoy por él (se citan como fuente en
-`PREGUNTAS_ASESOR.md`), pero **no se promueven aquí**: mi propio cotejo del art. 6 ROF por WebFetch
-salió ambiguo en la letra exacta, así que no alcanza el nivel de "comprobada por script" que exige
-esta tabla. **Pendiente CON-03** para todo lo anterior.
+art. 107 LCSP — todas **NO VERIFICADO**. Las páginas de la AEAT sobre reformas de vivienda las dio
+el asesor como verificadas hoy por él y se citan como fuente en `PREGUNTAS_ASESOR.md`, sin bajarlas
+aparte aquí. **El art. 6.1.m/6.2.b ROF SÍ pasó a la tabla de arriba** (SCRUM-1039c, 23-sep-2026):
+mi primer cotejo por WebFetch salió ambiguo (dos textos para «m)»); repetido por J5 con `curl`
+directo, sólo hay una letra m), sin cambios desde 2012 — el duplicado era un artefacto de WebFetch.
+**Pendiente CON-03** para todo lo anterior salvo esa ya cerrada.
 
 ## 5 · Principios del bloque
 
