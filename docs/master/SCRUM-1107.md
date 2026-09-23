@@ -195,3 +195,70 @@ Con las cuatro columnas decididas y el ALTER aplicado por Javier en las tres bas
 (escribir el importe retenido al confirmar un cobro parcial, leerlo en la ficha del cliente/factura,
 y el aviso cuando se acerque la fecha de liberación) cabe en un ticket de tamaño mediano sobre
 `src/modules/billing/**`, que es mi área.
+
+---
+
+# APÉNDICE · Paso ③ construido — esquema + código + tests
+
+**Medido contra:** `origin/main` = `1cc2e6bb04fec54ef9e39b52a0ea2e173eb15c6c` · 2026-09-23T18:19:36Z
+
+Con las tres bases ya con las cuatro columnas (§"APLICADO"), esta rama construye el paso ③ de
+A5: `prisma/schema.prisma` declarando lo que las bases ya tienen, el módulo de dominio, dos rutas
+nuevas, y los tests de los dos invariantes que el encargo pidió fijados desde el principio.
+
+## Qué se construye
+
+- **`src/modules/billing/domain/retencionGarantia.ts`** — módulo PURO (sin BD, sin red):
+  `calcularSplitRetencion(total, porcentaje)` reparte EXACTO al céntimo, por construcción (resta,
+  no dos redondeos independientes) — así que `retenido + recibido = total` no puede fallar por
+  un céntimo. Más los lectores (`tieneRetencionDeclarada`, `retencionPendiente`) y los
+  generadores de `data` (`datosParaDeclararRetencion`, `datosParaMarcarCobrada`).
+- **`POST /admin/charges/:id/garantia`** (`chargesAdmin.routes.ts`, `requireRole('admin')`,
+  mismo criterio que `bulk-tags`/SCRUM-1059) — declara la retención sobre un cobro YA existente.
+  `total` lo manda quien llama (nunca se deriva de `Invoice`: un `Charge` puede saldar más de una
+  factura — `Charge.invoices` — así que no hay «la» factura de la que sacarlo). NO toca
+  `charge.amount`: es metadata aditiva, no una corrección de lo ya cobrado.
+- **`POST /admin/charges/:id/garantia/liberar`** — registra que la garantía se cobró. El dinero
+  es un `Charge` NUEVO, creado con `datosDeCobroPagado` (SCRUM-397: el MISMO generador que
+  cualquier otro cobro, no un tercer sitio que escriba `status`/`paidAt` a mano — lo cazó el
+  censo de `scrum397-instante-de-cobro.test.mjs` al construirlo, ver abajo). Las dos escrituras
+  (el `Charge` nuevo y el `retencionGarantiaCobrada` del original) van en una `$transaction`.
+  `concept` y `method` los manda quien llama — regla 39: ningún texto se inventa aquí.
+
+## Los dos invariantes, fijados con test desde el principio
+
+1. **`retenido + recibido = total`, exacto.** `tests/scrum1107-retencion-garantia.test.mjs`
+   —batería de 10 pares total/porcentaje, incluidos NO redondos (12.345,67 al 7%, 77,77 al
+   0,01%)— y repetido a nivel de RUTA en `scrum1107b`, sobre la respuesta HTTP real.
+2. **El cobro de la liberación es un `Charge` NUEVO, y `retencionGarantiaCobrada` pasa de NULL a
+   fecha EN ESE MOMENTO.** `tests/scrum1107b-rutas-garantia.test.mjs` — verifica que
+   `POST …/liberar` crea el `Charge` (con el importe correcto, `status:'paid'`) Y actualiza el
+   original DENTRO de la misma `$transaction`, más que liberar una retención ya cobrada o sin
+   declarar se rechaza con 409 SIN crear un segundo `Charge` (evita cobrar la garantía dos veces).
+
+## Lo que este PR NO construye — declarado, no un olvido
+
+- **El aviso** (cuándo y cómo se le recuerda al profesional que ya puede reclamar): es diseño de
+  UI/notificación — cron, banner del dashboard, WhatsApp — que necesita su propia decisión y no
+  estaba pedido para esta tanda. Con `retencionPendiente()` ya expuesto, el disparo es un ticket
+  aparte que lee este dato, no que lo redefine.
+- **Ningún texto de pantalla.** Las dos rutas son API pura; nada en `public/` cambia. El 5%/12
+  meses sugeridos, y cualquier copy del formulario que los declare, los firma Javier (regla 39).
+- **No se toca `confirm-bizum`.** Declarar la retención es una acción POSTERIOR y separada, no
+  parte del flujo de confirmación existente — evita tocar la cadena post-pago ya delicada
+  (P0-3: factura ligada → paid → WA → email) para una funcionalidad que no la necesita.
+- **No se resuelve el encadenamiento formal** entre el `Charge` de liberación y la `Invoice`
+  original (§3): quedó anotado en el PASO 0 y sigue sin FK — se relacionan por `customerId`,
+  como cualquier cobro manual.
+
+## Verificado
+
+`npm run build` en verde. **19/19** tests nuevos (10 del módulo puro + 9 de las rutas) — las
+rutas usan `node:http` con `agent: false`, no `fetch` (SCRUM-100/560/809: con `fetch` sobre
+varios `listen(0)` seguidos el proceso revienta una aserción nativa de libuv al cerrar en
+Windows; medido aquí dos veces antes de aplicar el remedio ya escrito). Más **206 tests** de
+alrededor sin romper (225 corridos en total entre las dos tandas, menos los 19 nuevos): el censo
+de SCRUM-397 (que cazó el primer intento — escribía `status`/`paidAt` a mano en vez de usar
+`datosDeCobroPagado`, arreglado), SCRUM-860 (`select`), SCRUM-243 (`merchantId`), SCRUM-267
+(ancla), y toda la batería `*cobro*.test.mjs` del módulo de billing (131 tests, sin ninguno
+afectado).

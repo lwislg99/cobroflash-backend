@@ -10,9 +10,16 @@ import { BASE_URL } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
 import { resolverFechaDeCobro } from '../../domain/fechaDeCobro'; // SCRUM-397
+import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397 (SCRUM-1107: mismo generador)
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093
 import { envioDelDocumento } from '../../domain/envioDelDocumento'; // SCRUM-885
 import { tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp';
+import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-1107 (D2: admin-only)
+import { PAID_VIA } from '../../domain/paidVia'; // SCRUM-1107
+import {
+  calcularSplitRetencion, tieneRetencionDeclarada, retencionPendiente,
+  datosParaDeclararRetencion, datosParaMarcarCobrada,
+} from '../../domain/retencionGarantia'; // SCRUM-1107
 
 // SCRUM-885 · cuánto se espera, como mucho, a que el WhatsApp de la confirmación deje su fila.
 // psp lo lanza sin `await`, así que al volver de psp puede no haber vuelto aún de Meta.
@@ -89,6 +96,112 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual', paid_at: fecha.fecha.toISOString(), envioDocumento });
   } catch (err: any) {
     console.error('[POST /admin/charges/:id/confirm-bizum]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/charges/:id/garantia — SCRUM-1107 · declara sobre un cobro EXISTENTE que un
+ * porcentaje quedó retenido por garantía de obra, y cuándo se puede reclamar.
+ *
+ * NO toca `charge.amount` ni el estado del cobro: es metadata aditiva, no una corrección de lo
+ * ya cobrado. `total` lo manda quien llama (no se deriva de `Invoice`: un `Charge` puede saldar
+ * más de una factura — `Charge.invoices` — y no hay «la» factura de la que sacarlo aquí).
+ *
+ * `requireRole('admin')`, mismo criterio que `bulk-tags` (SCRUM-55/1059): dinero retenido de un
+ * cliente, sin motivo de campo que lo lleve a `TECNICO_ALLOWED`.
+ */
+router.post('/:id/garantia', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const charge = await prisma.charge.findFirst({
+      where: { id, merchantId: req.merchantId }, // regla 2
+      select: { id: true },
+    });
+    if (!charge) return res.status(404).json({ error: 'not_found' });
+
+    const total = Number(req.body?.total);
+    const porcentaje = Number(req.body?.porcentaje);
+    const liberacion = req.body?.liberacion ? new Date(String(req.body.liberacion)) : null;
+    if (!liberacion || !Number.isFinite(liberacion.getTime())) {
+      return res.status(400).json({ error: 'liberacion_invalida' });
+    }
+
+    const split = calcularSplitRetencion(total, porcentaje);
+    if (!split.ok) return res.status(400).json({ error: split.error });
+
+    const actualizado = await prisma.charge.update({
+      where: { id },
+      data: datosParaDeclararRetencion(split, liberacion),
+      select: {
+        retencionGarantiaPorcentaje: true, retencionGarantiaImporte: true,
+        retencionGarantiaLiberacion: true, retencionGarantiaCobrada: true,
+      },
+    });
+    return res.json({ ok: true, retencion: actualizado, importeRecibido: split.importeRecibido });
+  } catch (err) {
+    console.error('[POST /admin/charges/:id/garantia]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/charges/:id/garantia/liberar — SCRUM-1107 · registra que la garantía retenida se
+ * cobró. El dinero es un `Charge` NUEVO (mismo generador que cualquier otro cobro — SCRUM-397,
+ * `datosParaMarcarCobrada`); las dos escrituras van en UNA transacción: nunca queda un cobro de
+ * liberación sin que se apague el aviso, ni el aviso apagado sin que exista el cobro.
+ *
+ * `concept` y `method` los manda quien llama — ningún texto se inventa aquí (regla 39).
+ */
+router.post('/:id/garantia/liberar', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const original = await prisma.charge.findFirst({
+      where: { id, merchantId: req.merchantId }, // regla 2
+      select: {
+        id: true, customerId: true, currency: true,
+        retencionGarantiaPorcentaje: true, retencionGarantiaImporte: true, retencionGarantiaCobrada: true,
+      },
+    });
+    if (!original) return res.status(404).json({ error: 'not_found' });
+    if (!tieneRetencionDeclarada(original)) return res.status(409).json({ error: 'sin_retencion_declarada' });
+    if (!retencionPendiente(original)) return res.status(409).json({ error: 'ya_cobrada' });
+
+    const importe = req.body?.importe !== undefined ? Number(req.body.importe) : Number(original.retencionGarantiaImporte);
+    if (!Number.isFinite(importe) || importe <= 0) return res.status(400).json({ error: 'importe_invalido' });
+
+    const method = String(req.body?.method || '');
+    if (!(PAID_VIA as readonly string[]).includes(method)) return res.status(400).json({ error: 'method_invalido' });
+
+    const concept = String(req.body?.concept || '').trim();
+    if (!concept) return res.status(400).json({ error: 'concept_requerido' });
+
+    // SCRUM-397 · un solo generador para «pagado + su instante + su evento» — nunca los tres
+    // campos a mano (censo `tests/scrum397-instante-de-cobro.test.mjs`, «nadie marca un cobro
+    // pagado fuera del generador»).
+    const ahora = new Date();
+    const [nuevoCharge] = await prisma.$transaction([
+      prisma.charge.create({
+        data: {
+          merchantId: req.merchantId!,
+          customerId: original.customerId,
+          concept,
+          amount: importe,
+          currency: original.currency,
+          method,
+          ...datosDeCobroPagado(ahora, { tipo: 'liberacion_garantia_obra', chargeOriginalId: original.id }),
+        },
+        select: { id: true },
+      }),
+      prisma.charge.update({ where: { id: original.id }, data: datosParaMarcarCobrada(ahora) }),
+    ]);
+    return res.json({ ok: true, chargeLiberacionId: nuevoCharge.id, retencionGarantiaCobrada: ahora.toISOString() });
+  } catch (err) {
+    console.error('[POST /admin/charges/:id/garantia/liberar]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
