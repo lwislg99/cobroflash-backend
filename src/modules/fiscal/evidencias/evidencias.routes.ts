@@ -8,14 +8,22 @@ import { Router } from 'express';
 import { ZipArchive } from 'archiver';
 import { prisma } from '../../../core/db/prisma';
 import { leerPaqueteEvidencias } from './paquete.repo';
+import { zonaDelMerchant, diaNaturalEn } from '../../../core/zonaDelMerchant'; // SCRUM-735
 
 const router = Router();
 
 router.get('/', async (req, res) => {
   try {
+    // SCRUM-735 (GO comentario 16573): «el año/trimestre EN CURSO» salía del reloj del PROCESO
+    // (Railway va en UTC), no del merchant — mismo defecto y misma medición que modelo303.routes.ts.
     const ahora = new Date();
-    const año = Number(req.query.year) || ahora.getFullYear();
-    const trimestre = Number(req.query.quarter) || Math.floor(ahora.getMonth() / 3) + 1;
+    const zona = zonaDelMerchant(await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { timezone: true },
+    }));
+    const [anioNatural, mesNatural] = diaNaturalEn(ahora, zona).split('-').map(Number);
+    const año = Number(req.query.year) || anioNatural;
+    const trimestre = Number(req.query.quarter) || Math.floor((mesNatural - 1) / 3) + 1;
 
     const paquete = await leerPaqueteEvidencias(prisma as any, { merchantId: req.merchantId, año, trimestre });
 

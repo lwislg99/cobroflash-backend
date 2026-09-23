@@ -184,8 +184,10 @@ const MUTACIONES = [
     de: 'const motivo = invalidPrefijoSerie(v);', a: 'const motivo = null;', caen: ['1130'] },
   { que: '1130 · y de la otra puerta (app.ts)', fichero: F.app,
     de: 'const malPrefijo = invalidPrefijoSerie(prefijoPedido);', a: 'const malPrefijo = null;', caen: ['1130'] },
+  // SCRUM-735 (23-sep-2026): el año/zona ya no se leen del reloj del proceso — la llamada pasó
+  // a `invalidAnioFiscal(year, new Date(), zona)`, con `zona = zonaDelMerchant(merchant)`.
   { que: '1152 · /verifactu.xml deja de mirar el año', fichero: F.exports,
-    de: 'const motivoAnio = invalidAnioFiscal(year);', a: 'const motivoAnio = null;', caen: ['1152'] },
+    de: 'const motivoAnio = invalidAnioFiscal(year, new Date(), zona);', a: 'const motivoAnio = null;', caen: ['1152'] },
   { que: '1189 · la factura sin NIF deja de pasar por el resolvedor', fichero: F.servicio,
     de: '? resolverSinDestinatario(tipoBase, inv.number, opts.modoSinDestinatario ?? MODO_SIN_DESTINATARIO)',
     a: '? null', caen: ['1189'] },

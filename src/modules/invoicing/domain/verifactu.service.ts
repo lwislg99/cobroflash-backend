@@ -37,6 +37,7 @@ import {
 } from '../../fiscal/verifactu/registro.builder';
 import { clienteDelDocumento } from './clienteCongelado'; // SCRUM-729
 import { emisorDelDocumento, type FichaDeEmisor } from './emisorCongelado'; // SCRUM-665
+import { zonaDelMerchant } from '../../../core/zonaDelMerchant'; // SCRUM-735 (GO comentario 16573)
 
 // SCRUM-145: los namespaces oficiales de los XSD de la AEAT vivían aquí (`NS_LR`, `NS_INFO`)
 // SOLO para el sobre que se armaba en este fichero. SCRUM-240 se llevó el sobre a
@@ -55,22 +56,63 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-function formatDateES(d: Date): string {
-  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
+// SCRUM-735 · EL RELOJ DE PARED SALE DE LA ZONA DEL MERCHANT, NUNCA DEL PROCESO.
+//
+// Antes estas dos funciones leían `d.getFullYear()/getMonth()/getDate()/getHours()/…` y
+// `d.getTimezoneOffset()` — el reloj y el huso del PROCESO (Railway corre en UTC). A las
+// 23:30Z del 31-dic, eso declara 31-dic mientras en la península ya es 1-ene: el día y el año
+// que entran en la huella SHA-256 y en `FechaHoraHusoGenRegistro` salían mal, en silencio,
+// autoconsistentes (medido y confirmado en docs/master/SCRUM-643.md §5 y
+// docs/master/SCRUM-735.md). GO del fundador (Jira SCRUM-735, comentario 16573, 23-sep-2026):
+// la zona la decide el MERCHANT (`zonaDelMerchant`), nunca `Europe/Madrid` fijo — un canario en
+// invierno (UTC+0) tiene razón donde un peninsular (UTC+1) no la tiene.
+//
+// No se exporta esta pieza desde `core/zonaDelMerchant.ts`: el GO acota el arreglo a las 23
+// ocurrencias fiscales censadas, y este es el único módulo que necesita hora+desfase completos
+// (el resto de la casa solo necesita el día, que sí exporta `diaNaturalEn`). Mismo método
+// (`Intl.DateTimeFormat` + `Date.UTC`) que ya está probado allí.
+function relojDeParedEnZona(
+  d: Date,
+  zona: string,
+): { y: number; mo: number; day: number; hh: number; mi: number; ss: number; offsetMin: number } {
+  const p: Record<string, string> = {};
+  for (const x of new Intl.DateTimeFormat('en-US', {
+    timeZone: zona,
+    hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(d)) p[x.type] = x.value;
+  const y = Number(p.year);
+  const mo = Number(p.month);
+  const day = Number(p.day);
+  const hh = Number(p.hour) % 24; // Intl da "24" a medianoche con hour12:false
+  const mi = Number(p.minute);
+  const ss = Number(p.second);
+  const comoUtc = Date.UTC(y, mo - 1, day, hh, mi, ss);
+  const offsetMin = Math.round((comoUtc - d.getTime()) / 60_000);
+  return { y, mo, day, hh, mi, ss, offsetMin };
+}
+
+// SCRUM-735 (GO comentario 16573): "sí: exportar formatDateES" — para que su test de zona la
+// mida directamente, igual que ya se podía con formatFechaHoraHuso.
+export function formatDateES(d: Date, zona: string): string {
+  const r = relojDeParedEnZona(d, zona);
+  return `${pad2(r.day)}-${pad2(r.mo)}-${r.y}`;
 }
 
 /**
  * FechaHoraHusoGenRegistro: ISO 8601 con huso explícito (ej. 2024-01-01T19:20:30+01:00),
- * como exige la spec de huella de la AEAT. Usa el huso del sistema; el MISMO valor
- * que entra en la huella debe remitirse luego en el registro XML (S1-C lo persistirá).
+ * como exige la spec de huella de la AEAT. `zona` es SIEMPRE la del merchant emisor
+ * (`zonaDelMerchant`); el MISMO valor que entra en la huella debe remitirse luego en el
+ * registro XML (S1-C lo persistirá).
  */
-export function formatFechaHoraHuso(d: Date): string {
-  const tzMin = -d.getTimezoneOffset();
-  const sign = tzMin >= 0 ? '+' : '-';
-  const abs = Math.abs(tzMin);
+export function formatFechaHoraHuso(d: Date, zona: string): string {
+  const r = relojDeParedEnZona(d, zona);
+  const sign = r.offsetMin >= 0 ? '+' : '-';
+  const abs = Math.abs(r.offsetMin);
   return (
-    `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
-    `T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}` +
+    `${r.y}-${pad2(r.mo)}-${pad2(r.day)}` +
+    `T${pad2(r.hh)}:${pad2(r.mi)}:${pad2(r.ss)}` +
     `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`
   );
 }
@@ -247,7 +289,6 @@ export async function applyVeriFactu(
     throw new Error('invoice_without_lines_not_sealable');
   }
 
-  const fecha = formatDateES(invoice.createdAt);
   const importeTotal = Number(invoice.total.toString()).toFixed(2);
 
   // Cuota total de IVA real desde las líneas (garantizadas no vacías por el guard de arriba,
@@ -293,6 +334,15 @@ export async function applyVeriFactu(
     );
   }
 
+  // SCRUM-735: la zona del EMISOR, no la del proceso — ver `relojDeParedEnZona` arriba. Se lee
+  // DESPUÉS del portón de arriba: un cliente de transacción se rechaza sin gastar esta consulta.
+  const merchantParaZona = await prismaClient.merchant.findUnique({
+    where: { id: invoice.merchantId },
+    select: { timezone: true },
+  });
+  const zona = zonaDelMerchant(merchantParaZona);
+  const fecha = formatDateES(invoice.createdAt, zona);
+
   const sellado = await (prismaClient as any).$transaction(async (tx: any) => {
     // Namespace fijo + merchantId: dos claves de 32 bits, para no colisionar con cualquier
     // otro advisory lock de la aplicación.
@@ -331,7 +381,7 @@ export async function applyVeriFactu(
     // indistinguibles para el desempate de la cadena. Ahora se conserva `ahora`: la huella sigue
     // usando el truncado que exige la AEAT, y la columna guarda la precisión que el hash descarta.
     const ahora = new Date();
-    const timestamp = formatFechaHoraHuso(ahora);
+    const timestamp = formatFechaHoraHuso(ahora, zona);
 
     const vfHash = computeVeriFactuHash({
       nif: taxId,
@@ -355,7 +405,7 @@ export async function applyVeriFactu(
     // ⚠️ SCRUM-880 MATIZA ESA PROMESA, y conviene que esté escrito donde se hizo: lo que se
     // guarda ya no es *exactamente* lo hasheado, sino **lo hasheado MÁS la precisión que el hash
     // descarta**. La verificación de un tercero no cambia: el XML emite
-    // `formatFechaHoraHuso(inv.vfTimestamp)`, que vuelve a truncar y produce la misma cadena.
+    // `formatFechaHoraHuso(inv.vfTimestamp, zona)`, que vuelve a truncar y produce la misma cadena.
     await tx.invoice.update({
       where: { id: invoice.id },
       data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: ahora },
@@ -414,6 +464,13 @@ export async function applyVeriFactuAnulacion(
     );
   }
 
+  // SCRUM-735: la zona del EMISOR, no la del proceso — ver `relojDeParedEnZona` arriba.
+  const merchantParaZona = await prismaClient.merchant.findUnique({
+    where: { id: invoice.merchantId },
+    select: { timezone: true },
+  });
+  const zona = zonaDelMerchant(merchantParaZona);
+
   const sellado = await (prismaClient as any).$transaction(async (tx: any) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
 
@@ -424,12 +481,12 @@ export async function applyVeriFactuAnulacion(
     // 🔴 SCRUM-880 · simétrico al alta: el instante se guarda ENTERO y se hashea TRUNCADO. Que la
     // anulación y su alta cayeran en el mismo segundo era justo el caso que bifurcaba la cadena.
     const ahora = new Date();
-    const timestamp = formatFechaHoraHuso(ahora);
+    const timestamp = formatFechaHoraHuso(ahora, zona);
 
     const vfAnulHash = computeVeriFactuHashAnulacion({
       nif: taxId,
       serie: invoice.number,
-      fecha: formatDateES(invoice.createdAt),
+      fecha: formatDateES(invoice.createdAt, zona),
       prevHash,
       timestamp,
     });
@@ -535,6 +592,7 @@ function anulacionPrev(
   inv: { number: string; vfAnulPrevHash: string | null },
   taxId: string,
   registros: { huella: string; numero: string; fecha: Date }[],
+  zona: string,
 ): string {
   // Vacío = primer registro de la cadena. Es legítimo, no un fallo.
   if (!inv.vfAnulPrevHash) return '';
@@ -546,7 +604,7 @@ function anulacionPrev(
         <sum1:RegistroAnterior>
           <sum1:IDEmisorFactura>${xmlEscape(taxId)}</sum1:IDEmisorFactura>
           <sum1:NumSerieFactura>${xmlEscape(anterior.numero)}</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>${formatDateES(anterior.fecha)}</sum1:FechaExpedicionFactura>
+          <sum1:FechaExpedicionFactura>${formatDateES(anterior.fecha, zona)}</sum1:FechaExpedicionFactura>
           <sum1:Huella>${xmlEscape(anterior.huella)}</sum1:Huella>
         </sum1:RegistroAnterior>`;
 }
@@ -583,6 +641,8 @@ export async function buildVerifactuRegistrosXml(
   const merchant = await prismaClient.merchant.findUnique({ where: { id: params.merchantId } });
   if (!merchant) throw new Error('merchant_not_found');
   if (merchant.country !== 'ES' || !merchant.taxId) throw new Error('verifactu_not_applicable');
+  // SCRUM-735: la zona del EMISOR, no la del proceso — ver `relojDeParedEnZona` arriba.
+  const zona = zonaDelMerchant(merchant);
 
   const invoices = await prismaClient.invoice.findMany({
     where: {
@@ -805,7 +865,7 @@ export async function buildVerifactuRegistrosXml(
         <sum1:IDFacturaRectificada>
           <sum1:IDEmisorFactura>${xmlEscape(idEmisorFactura)}</sum1:IDEmisorFactura>
           <sum1:NumSerieFactura>${xmlEscape(inv.rectifies!.number)}</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>${formatDateES(inv.rectifies!.createdAt)}</sum1:FechaExpedicionFactura>
+          <sum1:FechaExpedicionFactura>${formatDateES(inv.rectifies!.createdAt, zona)}</sum1:FechaExpedicionFactura>
         </sum1:IDFacturaRectificada>
       </sum1:FacturasRectificadas>${rectificativa.importeXml}` : '';
 
@@ -822,7 +882,7 @@ export async function buildVerifactuRegistrosXml(
         <sum1:RegistroAnterior>
           <sum1:IDEmisorFactura>${xmlEscape(idEmisorFactura)}</sum1:IDEmisorFactura>
           <sum1:NumSerieFactura>${xmlEscape(anterior.number)}</sum1:NumSerieFactura>
-          <sum1:FechaExpedicionFactura>${formatDateES(anterior.createdAt)}</sum1:FechaExpedicionFactura>
+          <sum1:FechaExpedicionFactura>${formatDateES(anterior.createdAt, zona)}</sum1:FechaExpedicionFactura>
           <sum1:Huella>${xmlEscape(inv.vfPrevHash!)}</sum1:Huella>
         </sum1:RegistroAnterior>` : `
         <sum1:PrimerRegistro>S</sum1:PrimerRegistro>`}
@@ -843,7 +903,7 @@ export async function buildVerifactuRegistrosXml(
            huella sigue sin ser recomputable por un tercero y no hay forma de recuperarlo
            (el instante no se guardó). Ninguna de esas filas se remitirá: la remisión
            empieza post-SIF y solo con registros nuevos. -->
-      <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.vfTimestamp ?? inv.createdAt)}</sum1:FechaHoraHusoGenRegistro>
+      <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.vfTimestamp ?? inv.createdAt, zona)}</sum1:FechaHoraHusoGenRegistro>
       <sum1:TipoHuella>01</sum1:TipoHuella>
       <sum1:Huella>${xmlEscape(inv.vfHash)}</sum1:Huella>` : '';
 
@@ -917,9 +977,9 @@ export async function buildVerifactuRegistrosXml(
       <sum1:IDFactura>
         <sum1:IDEmisorFacturaAnulada>${xmlEscape(idEmisorFactura)}</sum1:IDEmisorFacturaAnulada>
         <sum1:NumSerieFacturaAnulada>${xmlEscape(inv.number)}</sum1:NumSerieFacturaAnulada>
-        <sum1:FechaExpedicionFacturaAnulada>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFacturaAnulada>
+        <sum1:FechaExpedicionFacturaAnulada>${formatDateES(inv.createdAt, zona)}</sum1:FechaExpedicionFacturaAnulada>
       </sum1:IDFactura>
-      <sum1:Encadenamiento>${anulacionPrev(inv, idEmisorFactura, registrosOrdenados) || `
+      <sum1:Encadenamiento>${anulacionPrev(inv, idEmisorFactura, registrosOrdenados, zona) || `
         <sum1:PrimerRegistro>S</sum1:PrimerRegistro>`}
       </sum1:Encadenamiento>
       <sum1:SistemaInformatico>
@@ -933,7 +993,7 @@ export async function buildVerifactuRegistrosXml(
         <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
         <sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>
       </sum1:SistemaInformatico>
-      <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.vfAnulTimestamp)}</sum1:FechaHoraHusoGenRegistro>
+      <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.vfAnulTimestamp, zona)}</sum1:FechaHoraHusoGenRegistro>
       <sum1:TipoHuella>01</sum1:TipoHuella>
       <sum1:Huella>${xmlEscape(inv.vfAnulHash)}</sum1:Huella>
     </sum1:RegistroAnulacion>
@@ -946,7 +1006,7 @@ export async function buildVerifactuRegistrosXml(
       <sum1:IDFactura>
         <sum1:IDEmisorFactura>${xmlEscape(idEmisorFactura)}</sum1:IDEmisorFactura>
         <sum1:NumSerieFactura>${xmlEscape(inv.number)}</sum1:NumSerieFactura>
-        <sum1:FechaExpedicionFactura>${formatDateES(inv.createdAt)}</sum1:FechaExpedicionFactura>
+        <sum1:FechaExpedicionFactura>${formatDateES(inv.createdAt, zona)}</sum1:FechaExpedicionFactura>
       </sum1:IDFactura>
       <sum1:NombreRazonEmisor>${xmlEscape(nombreEmisor)}</sum1:NombreRazonEmisor>
       <sum1:TipoFactura>${tipoFactura}</sum1:TipoFactura>${rectificativa.tipoXml}${rectificadas}

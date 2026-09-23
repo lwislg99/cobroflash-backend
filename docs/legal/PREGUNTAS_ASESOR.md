@@ -880,7 +880,7 @@ fecha real del apunte bancario? Mientras no haya respuesta, el módulo clasifica
 ningún 303 (sin llamadores).
 
 **Q-C7.** Los tipos de IVA 2, 5 y 7,5 % que el servidor admite
-`src/core/validation/fiscalInput.ts:35` (`TIPOS_IVA_ES_BP`) no aparecen en
+`src/core/validation/fiscalInput.ts:39` (`TIPOS_IVA_ES_BP`) no aparecen en
 los arts. 90-91 LIVA citados en §3 (que solo dan 21/10/4 %). ¿Se retiran del selector, o corresponden
 a un supuesto (transitorio, territorial — Canarias/IGIC no es IVA) que haya que documentar aparte?
 
