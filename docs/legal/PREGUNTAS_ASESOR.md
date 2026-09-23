@@ -845,33 +845,116 @@ la factura, o cuando pida su borrado?
 > negativo OK). **Q-C5 y Q-C9 se responden abajo con esa cita** — se dejan aquí para que las
 > confirmes o las corrijas, no porque falte la fuente. El resto sigue abierto.
 
-**Q-C1.** Reforma de vivienda al 10 % (LIVA art. 91.Uno.2.10º, letras b y c — citas en
-`CONTABILIDAD.md` §3): ¿cómo debe documentarse «más de dos años» desde el fin de obra, y cómo se
-aplica cuando el destinatario es una comunidad de propietarios? Y confirmar que la regla del 40 % de
-materiales se calcula sobre el total de la operación, no por línea.
+**Q-C1.** ~~Reforma de vivienda al 10 %~~ ✅ **RESPONDIDA por el asesor fiscal (23-sep-2026) →
+afecta a SCRUM-1052.** El 40 % de materiales se mide sobre **la operación entera** (todo el
+presupuesto/obra), **nunca partida a partida** — cita AEAT verificada hoy, con enlace (no ⚠):
+_«la ejecución de obra […] tributará, toda ella, al tipo general del 21 %»_ y _«no cabría facturar
+por separado una entrega de materiales […] al 21 % y una prestación de servicios […] al 10 %»_.
+Mano de obra y materiales pueden ir en líneas separadas de la factura; el tipo aplicado es único.
 
-**Q-C2.** Inversión del sujeto pasivo en obra (LIVA art. 84, letra f — cita en §3): ¿cómo debe verse
-reflejado en la factura, y qué hace a alguien «promotor» o «contratista» a efectos prácticos para un
-oficio que subcontrata o es subcontratado?
+Los «más de dos años desde el fin de obra»: la ley no exige un documento concreto. Criterio DGT
+(**NO VERIFICADO** ⚠, sin enlace): el profesional puede exigir una **declaración escrita y
+firmada** del cliente bajo su responsabilidad — con ella, si es falsa, responde el cliente (arts.
+170.Dos.2º y 87.Uno LIVA, **NO VERIFICADO** ⚠); sin ella, responde el profesional. Consecuencia de
+producto, textual: _«una casilla de aceptación en el presupuesto no basta; hace falta un texto
+firmado (vale la misma firma que ya usáis para el presupuesto, si el texto es explícito)»_ — encaja
+con la firma que YaQu ya tiene, no hace falta mecanismo nuevo.
 
-**Q-C3.** Suplidos (LIVA art. 78.Tres.3º — cita en §3): ¿cómo se acredita el «mandato expreso» del
-cliente en la práctica de un oficio (una tasa de licencia, un permiso de obra)? ¿Y cómo se muestran
-en la factura sin que se confundan con una línea de servicio?
+Comunidad de propietarios: incluida expresamente (no es empresario → ni ISP ni retención).
 
-**Q-C4.** Recargo de equivalencia (LIVA art. 161 — cita en §3): el código ya tiene los tres tipos
-(21→5,2 % · 10→1,4 % · 4→0,5 %) marcados «pendiente de confirmación». ¿Confirmas el mapeo? ¿Y en qué
-casos un cliente de un oficio (persona física comerciante minorista) está sujeto a él?
+**Queda fuera del 10 % aunque lo parezca:** vivienda alquilada o con actividad (21 %) ·
+🔴 **mantenimiento de instalaciones —calderas, revisiones— NO es ejecución de obra → 21 %** (fuente
+AEAT, con enlace) · rehabilitación integral va por otro número (art. 91.Uno.3.1º LIVA, **NO
+VERIFICADO** ⚠).
 
-**Q-C5.** ✅ **RESPONDIDA por cita, pendiente de tu confirmación.** Las retenciones del 2 % y el 1 %
-que admite `src/modules/invoicing/domain/retencionIrpf.ts:54` (`TIPOS_RETENCION`) son RIRPF
-art. 95.4-6: el **1 %** es para actividades en
-**estimación objetiva (módulos)** de una lista cerrada de epígrafes IAE que incluye literalmente
-fontanería/climatización (504.2-3), albañilería (501.3), carpintería/cerrajería (505.5) y pintura
-(505.6) — coincide con los oficios de YaQu. El **2 %** es agrícola/ganadera/forestal (95.4-5) — no
-un oficio de YaQu. Preguntamos: ¿tiene sentido ofrecer el 1 % como opción en YaQu (para quien esté
-en módulos), o el perfil de usuario de YaQu está mayoritariamente en estimación directa (15/7 %) y
-el 1 %/2 % sobran? Y en cualquier caso, ¿cuándo NO retiene el cliente particular (solo retienen
-empresas/profesionales, nunca un consumidor final)?
+**Q-C2.** ~~Inversión del sujeto pasivo~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1051, y le
+estrecha mucho el alcance.** La leyenda exacta de la factura: art. 6.1.m ROF (RD 1619/2012) —
+«**inversión del sujeto pasivo**», esas tres palabras, sin cuota ni tipo; art. 6.2.b ROF: si la
+factura mezcla ISP y no-ISP, base separada por bloque. **El asesor dice haberlo verificado hoy
+contra el ROF** (no ⚠, tratado como fuente); mi propio cotejo (WebFetch sobre el BOE consolidado)
+confirma la SUSTANCIA («inversión del sujeto pasivo» en el art. 6.1) pero devolvió una lectura
+ambigua sobre la LETRA exacta (mi consulta trajo dos textos distintos etiquetados «m)» en la misma
+pasada) — lo digo en vez de callarlo: no es una verificación mía a la altura del script de
+`CONTABILIDAD.md` §3, así que **no promuevo esta cita a §3**, sólo la traigo aquí como la trajo él.
+
+🔴 **El alcance se estrecha mucho.** Tres condiciones ACUMULATIVAS, y en un oficio fallan a menudo:
+1. destinatario **empresario o profesional** actuando como tal — un particular nunca es promotor;
+2. la obra global tiene que ser **construcción o rehabilitación** en el sentido del art.
+   20.Uno.22º.B LIVA (**NO VERIFICADO** ⚠: >50 % del coste en estructura/fachadas/cubiertas, y coste
+   >25 % del valor). **Una reforma de baño, por grande que sea, NO es rehabilitación → NO hay ISP
+   aunque el cliente sea una empresa**;
+3. el destinatario debe **comunicarlo expresa y fehacientemente** (art. 24 *quater* RIVA, **NO
+   VERIFICADO** ⚠). Con esa comunicación el emisor queda protegido; sin ella responde quien se
+   equivoca.
+
+Quién es quién: promotor = quien encarga para sí · contratista = contrata con el promotor ·
+subcontratista = contrata con el contratista. Textual: _«el electricista subcontratado por un
+reformista factura al reformista con ISP si la obra global es construcción/rehabilitación; si es
+una reforma corriente, le factura con IVA.»_
+
+En el 303: emisor → casilla informativa 61 (**NO VERIFICADO** ⚠) sin cuota; receptor liquida
+(casillas 12-13, **NO VERIFICADO** ⚠) y deduce. VeriFactu: `CalificacionOperacion = S2` — esto sí
+verificado, en código, contra el XSD (SCRUM-1088), no es cita legal.
+
+**Q-C3.** ~~Suplidos~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1054.** Tres condiciones
+ACUMULATIVAS, cada una con su prueba:
+1. 🔴 **la factura del tercero va A NOMBRE DEL CLIENTE**, no del profesional — textual: _«un
+   material comprado por el fontanero a su nombre nunca es suplido: es coste suyo, va en la base y
+   él deduce el IVA»_. Es la prueba que no admite discusión;
+2. **mandato expreso y previo:** cláusula en el presupuesto aceptado identificando el gasto
+   **concreto** (qué, a quién, importe estimado). Textual: _«una línea genérica "suplidos" sin
+   identificar el gasto no es mandato expreso»_. No hace falta firma aparte si el presupuesto ya
+   está firmado;
+3. **cuantía exacta:** el importe pagado, sin margen ni redondeo, con justificante.
+
+Factura y registro: importe separado, fuera de base y cuota; en VeriFactu fuera del registro o como
+no sujeto/tipo 0 — de la FAQ de registros de facturación de la AEAT (con enlace, no ⚠). No entra en
+el libro de gastos (su IVA no se deduce).
+
+**Q-C4.** ~~Recargo de equivalencia~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1054.**
+Corresponde al comerciante minorista persona física que vende sin transformar y ≥80 % a
+consumidores finales (arts. 148-149 LIVA, **NO VERIFICADO** ⚠). Tipos: 5,2/1,4/0,5 % (art. 161
+LIVA, **NO VERIFICADO** ⚠ en esta pasada — el valor ya estaba en el código, el artículo no se ha
+recotejado hoy).
+
+No hay registro público de quién está en recargo: el minorista está obligado a acreditarlo ante sus
+proveedores (art. 163.Uno LIVA y art. 61 RIVA, **NO VERIFICADO** ⚠). Sin esa comunicación, el
+proveedor no responde; el que fue informado y no lo repercutió, sí (infracción del minorista que no
+lo acreditó, art. 170.Dos.3º LIVA, **NO VERIFICADO** ⚠).
+
+🔴 **Alcance para este perfil, textual:** _«el recargo sólo existe en entregas de BIENES a un
+minorista para su tienda. Un oficio presta SERVICIOS (ejecución de obra); sólo tocaría si vende
+material suelto a una ferretería o similar para reventa. Es tan raro que basta con tener el campo,
+no un flujo.»_
+
+**Q-C5.** ~~Retenciones 2 y 1 %~~ ✅ **RESPONDIDA por completo (23-sep-2026) → afecta a SCRUM-1053 y
+SCRUM-1073, y necesita DECISIÓN DEL FUNDADOR (abajo).** Sustituye la respuesta parcial del 22-sep.
+
+Los cuatro tipos, situados: **15 %** profesionales (art. 95.1 RIRPF, ya comprobado en
+`CONTABILIDAD.md` §3) — la que un oficio **sufre** al recibir la factura de su gestor, no la que
+aplica · **7 %** profesionales en el año de inicio y los dos siguientes (mismo artículo, comprobado)
+· **2 %** agrícolas/ganaderas/forestales (**NO VERIFICADO** ⚠) · **1 %** porcino/avicultura y
+actividades empresariales en **estimación objetiva** de los epígrafes del art. 95.6 (fontanería,
+electricidad, albañilería, carpintería, pintura — lista ya comprobada en §3) cuando paga un
+empresario. Textual: _«ésta es la única retención "de obra" que existe, y es de módulos»_.
+
+🔴🔴 **Lo que cambia el ticket, textual:** _«un oficio en estimación directa no sufre retención de
+nadie, ni de empresas, porque su actividad es empresarial, no profesional, y el 1 % sólo aplica a
+módulos. Para vuestro perfil la retención en factura emitida es CERO en todos los casos; el campo
+tiene sentido sólo si un día admitís usuarios en módulos que facturan a empresas.»_
+
+Un particular nunca retiene (no está entre los obligados del art. 76 RIRPF, **NO VERIFICADO** ⚠).
+
+El «5 % en obra» que a veces se menciona **no es una retención fiscal**: es la retención de
+**garantía contractual** en certificaciones de obra (habitual 5 %; en contratos públicos, garantía
+definitiva del art. 107 LCSP, **NO VERIFICADO** ⚠). Textual: _«es una retención de PAGO, no de
+impuestos: la factura se emite por el 100 % y el IVA se devenga sobre el 100 %; lo retenido es un
+crédito pendiente de cobro. Si lo modeláis, va en cobros, no en la factura.»_
+
+🔴🔴 **DECISIÓN DEL FUNDADOR PENDIENTE — no la tomo yo:** si la retención en factura emitida de este
+perfil es CERO en todo caso, ¿se construye igual el campo/flujo para un segmento (módulos
+facturando a empresa) que YaQu hoy no tiene? Así lo marca el propio ticket (SCRUM-1106), sin
+resolver.
 
 **Q-C6.** Criterio de caja: `paidAt` es la fecha en que alguien MARCÓ el cobro, no necesariamente la
 fecha real en que entró el dinero (detalle y advertencia ya en el código,
@@ -879,10 +962,12 @@ fecha real en que entró el dinero (detalle y advertencia ya en el código,
 fecha real del apunte bancario? Mientras no haya respuesta, el módulo clasifica y avisa; no liquida
 ningún 303 (sin llamadores).
 
-**Q-C7.** Los tipos de IVA 2, 5 y 7,5 % que el servidor admite
-`src/core/validation/fiscalInput.ts:39` (`TIPOS_IVA_ES_BP`) no aparecen en
-los arts. 90-91 LIVA citados en §3 (que solo dan 21/10/4 %). ¿Se retiran del selector, o corresponden
-a un supuesto (transitorio, territorial — Canarias/IGIC no es IVA) que haya que documentar aparte?
+**Q-C7.** ~~Los tipos de IVA 2, 5 y 7,5 %~~ ✅ **RESUELTA (23-sep-2026).** Son los tipos
+**temporales de alimentos** del RDL 4/2024 (1-oct a 31-dic-2024: el 0 % básico subió al 2 %, y el
+5 % de aceite y pasta al 7,5 %; desde 1-ene-2025 volvieron al 4 % y 10 % — fechas **NO VERIFICADO**
+⚠). Recargos de equivalencia asociados: 0,26 % y 1 %. Siguen en el anexo de la Orden VeriFactu
+porque hay facturas históricas que los usan. Textual: _«a un oficio no le aplican nunca; en el
+código pueden quedar como valores admitidos pero NO OFRECIDOS»_.
 
 **Q-C8.** ~~Plazos trimestrales~~ ✅ **RESPONDIDA por el asesor fiscal (23-sep-2026), pendiente de tu
 confirmación.** Perfil consultado: autónomo de oficio, estimación directa, régimen general de IVA,

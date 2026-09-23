@@ -16,6 +16,17 @@
 > faltaban del mapa · el 347 NO desaparece con VeriFactu (sólo con SII, incompatible con VeriFactu).
 > REDEME→SII (SCRUM-1102) y la retención en facturas recibidas para 111/115 (SCRUM-1103) ya tienen
 > ticket propio: no se duplican aquí.
+>
+> **v0.12 · J4 · 23-sep-2026 (SCRUM-1106).** Q-C1, Q-C2, Q-C3, Q-C4, Q-C5 y Q-C7 quedan RESPONDIDAS
+> (Q-C5 sustituye su parcial del 22-sep). Afectan al alcance de **SCRUM-1051, 1052, 1053, 1054 y
+> 1073** — revisarlos con esto antes de construir. Dos hallazgos grandes: 🔴🔴 para este perfil
+> (estimación directa) **la retención en factura EMITIDA es CERO en todos los casos**, sin decisión
+> del fundador sobre si construirla igual para un segmento que hoy no existe; y el **ISP se
+> estrecha mucho** — una reforma de baño nunca es "rehabilitación", así que casi nunca aplica
+> aunque el cliente sea empresa. El art. 6.1.m/6.2.b ROF y las páginas AEAT de reformas los dio el
+> asesor como verificados hoy por él (se citan como fuente); mi propio cotejo del ROF por WebFetch
+> salió ambiguo en la letra exacta y **no se promueve a §3** — el resto de citas nuevas, todas ⚠ del
+> asesor, quedan NO VERIFICADO igual que en v0.11.
 
 ## 0 · La regla de oro y cómo se cumple
 
@@ -94,13 +105,13 @@ Cada una: por qué está aquí = el texto no se ha localizado o no basta para de
 
 | id | pregunta | hoy en el código |
 |---|---|---|
-| Q-C1 | Reforma de vivienda al 10 %: cómo documentar «más de dos años» y el destinatario comunidad de propietarios; y que la regla de los materiales (§3) se aplica al total de la operación | no existe |
-| Q-C2 | ISP en obra: cómo debe verse en la factura y quién es «promotor/contratista» a efectos prácticos (art. 84 f) | no existe |
-| Q-C3 | Suplidos: forma de acreditar el «mandato expreso» y cómo se muestran en factura | casilla que fuerza IVA 0 |
-| Q-C4 | Recargo de equivalencia: ¿confirma el mapeo tipo→recargo y cuándo aplica al cliente? (el código lo marca "pendiente de confirmación") | dato guardado, no calculado |
-| Q-C5 | ~~Retenciones 2 y 1 %~~ **RESPONDIDA por cita (§3, 22-sep-2026):** el 1 % es RIRPF art. 95.6 — actividades en estimación objetiva (módulos) de una lista cerrada de epígrafes IAE que SÍ incluye fontanería (504.2/3), albañilería (501.3), carpintería/cerrajería (505.5) y pintura (505.6). El 2 % es art. 95.4/95.5 — agrícola/ganadera/forestal, **no** un oficio de YaQu. Sigue abierto para el asesor: cuándo un oficio de YaQu está en estimación objetiva vs. directa (lo decide Hacienda por la actividad y el volumen, no lo elige el profesional en YaQu), y si conviene ofrecer el 1 % como opción o solo el 15/7 % de estimación directa | 15/7/2/1 cerrada |
+| Q-C1 | ~~Reforma de vivienda al 10 %~~ **RESPONDIDA (23-sep-2026) → SCRUM-1052, detalle en `PREGUNTAS_ASESOR.md`.** El 40 % se mide sobre la operación entera, nunca por línea (cita AEAT con enlace, no ⚠). Falta una declaración firmada del cliente para los "2 años" (encaja con la firma que ya existe). **Hallazgo:** mantenimiento de instalaciones (calderas, revisiones) NO es ejecución de obra → 21 % siempre | no existe |
+| Q-C2 | ~~ISP en obra~~ **RESPONDIDA (23-sep-2026) → SCRUM-1051, alcance MUY estrechado.** Leyenda exacta «inversión del sujeto pasivo» (art. 6.1.m ROF, dado como verificado por el asesor; mi propio cotejo por WebFetch fue ambiguo en la letra exacta, no se promueve a §3). Sólo aplica si la obra GLOBAL es construcción/rehabilitación (no una reforma de baño) y el destinatario lo comunica expresamente — si no, no hay ISP aunque el cliente sea empresa | no existe |
+| Q-C3 | ~~Suplidos~~ **RESPONDIDA (23-sep-2026) → SCRUM-1054.** Tres condiciones acumulativas: factura del tercero A NOMBRE DEL CLIENTE (nunca del profesional), mandato expreso identificando el gasto concreto (una línea genérica "suplidos" no vale), cuantía exacta con justificante | casilla que fuerza IVA 0 |
+| Q-C4 | ~~Recargo de equivalencia~~ **RESPONDIDA (23-sep-2026) → SCRUM-1054.** Sólo en entregas de BIENES a un minorista para su tienda; un oficio presta servicios, así que casi nunca aplica — "basta con tener el campo, no un flujo" | dato guardado, no calculado |
+| Q-C5 | ~~Retenciones 2 y 1 %~~ **RESPONDIDA por completo (23-sep-2026) → SCRUM-1053/1073, sustituye la parcial del 22-sep.** 🔴🔴 Para este perfil (estimación directa) **la retención en factura EMITIDA es CERO en todos los casos** — el 1 % sólo aplica a módulos. El "5 % en obra" no es retención fiscal: es garantía contractual de pago, no de impuestos. **Necesita decisión del fundador:** ¿se construye el campo igual para un segmento (módulos) que hoy no existe? | 15/7/2/1 cerrada |
 | Q-C6 | Criterio de caja: qué fecha cuenta como cobro (`paidAt` vs. fecha real) | usa `paidAt` |
-| Q-C7 | Los tipos **2, 5 y 7,5 %** que el servidor admite (`fiscalInput.ts:35`) no salen en los arts. 90-91 citados: ¿se retiran o se explican? | admitidos |
+| Q-C7 | ~~Los tipos 2, 5 y 7,5 %~~ **RESUELTA (23-sep-2026).** Son los tipos temporales de alimentos del RDL 4/2024 (oct-dic 2024), ya caducados desde ene-2025. Siguen en el anexo de VeriFactu por facturas históricas. A un oficio no le aplican nunca: admitidos en código pero NO ofrecidos | admitidos |
 | Q-C8 | ~~Plazos y modelos trimestrales~~ **RESPONDIDA por el asesor fiscal (23-sep-2026), detalle completo en `PREGUNTAS_ASESOR.md`.** Mapa: **habitual** 303/390/130/100/347 · **excepción** 111+190 (si retiene)/115+180 (si paga alquiler)/349 (si hay UE) · **NUNCA** 131 (es de módulos, excluyente con el 130). El 390 **no** está exonerado (fuente AEAT con enlace); el 347 **no** desaparece con VeriFactu (sólo con SII, incompatible con VeriFactu). Todas las citas de artículo que trae el asesor (RIVA, RIRPF, LIRPF, RGAT) las marcó él mismo ⚠ (de memoria): **NO VERIFICADO** en §3, ninguna se promueve a cita comprobada en esta pasada | 303: solo devengado. 130/111/115/347/390/100/349: no existen |
 | Q-C9 | ~~Exento y no sujeto~~ **RESPONDIDA por cita (§3, 22-sep-2026):** se revisó LIVA art. 7 completo (los 12 apartados de no sujeción: transmisión de negocio, muestras gratuitas, relación laboral, Administraciones Públicas…) y art. 20.Uno, encabezado + los 5 primeros apartados (postal, sanidad, profesiones médicas). **Ninguno de los revisados aplica** a la venta ordinaria de un servicio de reforma/instalación. No se transcribió el resto de 20.Uno (~30 apartados más: educación, finanzas, seguros, alquiler de vivienda…) por no ser candidatos plausibles — si el asesor conoce un supuesto concreto de un oficio que SÍ pueda caer en el resto de la lista, se revisa ese apartado puntual | no existen |
 
@@ -110,7 +121,13 @@ perfil**. Tampoco están descargadas las fuentes de las citas ⚠ del asesor que
 (RD 1065/2007, arts. 31-35), ni los artículos nuevos de RIVA (30, 61 *decies*, 71.3, 62.6), RIRPF
 (74-76, 100, 107, 109) y LIRPF (99) — LIVA/RIVA/RIRPF/LIRPF ya son fuente en §8 para OTROS artículos,
 pero cotejar estos concretos es trabajo aparte, no asumido por tenerlos ya descargados una vez.
-**Pendiente CON-03** para todo lo anterior.
+Igual para las que responden Q-C1 a Q-C5 y Q-C7 (SCRUM-1106): arts. 170.Dos.2º, 87.Uno, 91.Uno.3.1º,
+20.Uno.22º.B, 148-149, 163.Uno y 170.Dos.3º LIVA · art. 24 *quater* y 61 RIVA · art. 76 RIRPF ·
+art. 107 LCSP — todas **NO VERIFICADO**. El art. 6.1.m/6.2.b ROF y las páginas de la AEAT sobre
+reformas de vivienda las dio el asesor como verificadas hoy por él (se citan como fuente en
+`PREGUNTAS_ASESOR.md`), pero **no se promueven aquí**: mi propio cotejo del art. 6 ROF por WebFetch
+salió ambiguo en la letra exacta, así que no alcanza el nivel de "comprobada por script" que exige
+esta tabla. **Pendiente CON-03** para todo lo anterior.
 
 ## 5 · Principios del bloque
 
