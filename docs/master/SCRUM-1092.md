@@ -231,3 +231,112 @@ en `main`: 610 llegó con su propio SHA (a), y las dos entradas de 674 llegaron 
 bajo otro nombre y otra sesión de medición, horas después (b). El mecanismo que SCRUM-1092 vino a
 medir sigue siendo un riesgo de PROCESO real —hoy volvió a disparar dos veces (§3)—, pero **no
 tiene, por ahora, ninguna víctima con nombre**: no hace falta recuperar nada de `main` de hoy.
+
+# APÉNDICE — Punto 1: ¿puede el lanzador dar un árbol POR SESIÓN?
+
+**Fecha:** 23-sep-2026 10:09Z (GitHub) · **Carril:** J6 · calidad y seguridad
+**Medido contra:** `origin/main` = `13e967cde072faacf8abb4c3d15019a25ad9b721` · 2026-09-23T10:09:13Z
+**Rama:** `scrum-1092-lanzador-cwd-por-sesion`
+
+> ⛔ `scripts/equipo/sesion.mjs` se LEYÓ, no se tocó. No se ha tocado
+> `.claude/hooks/guard-dangerous.mjs` (SCRUM-1091, S5). No se ha escrito ningún guard nuevo.
+> `src/` intacto.
+
+## 14 · Cómo fija el `cwd` HOY el lanzador — leído, no supuesto
+
+**No lo fija. No existe ningún campo de `cwd` en su diseño.** `argsLanzar()` (`sesion.mjs:140`)
+construye los argumentos de `claude` — `['--bg', '-n', nombre, '--permission-mode', 'auto',
+'--model', MODELO_DEL_EQUIPO, prompt]` — y ni ahí ni en `claude()` (`sesion.mjs:619`, el
+`spawnSync` que de verdad arranca el proceso) hay una opción `cwd`. Node, sin esa opción, hereda el
+`process.cwd()` de quien invoca `sesion.mjs` en ESE instante. Ningún `chdir` en todo el fichero
+(`grep -c chdir sesion.mjs` → 0). `config.repo` existe (`config.json`) pero SÓLO se usa para
+comparar contra `origin/main` en la puerta de integridad (`sesion.mjs:595`) y para
+`equipoVivo()` (`sesion.mjs:239`) — nunca se pasa como `cwd` al lanzar.
+
+**Consecuencia medida, no supuesta:** el árbol en el que nace una sesión nueva es, siempre, el
+directorio en el que el ORQUESTADOR (quien ejecuta `node sesion.mjs lanzar/relevar`) tenía puesto
+su propio shell en ese momento. Que hoy las seis nazcan en árboles distintos depende enteramente
+de que el orquestador se acuerde de `cd` a un worktree propio ANTES de cada `lanzar` — es la
+"costumbre" que dice el encargo, y el fichero no la exige ni la registra en ningún sitio.
+
+## 15 · ¿CREAR o EXIGIR? Las dos son mecánicamente viables — y no resuelven lo mismo
+
+**CREAR** (aprovisionar un worktree nuevo antes de lanzar, y pasarlo como `cwd`): el fichero ya
+tiene las dos piezas que hacen falta. `gitReal(cwd, args)` (`sesion.mjs:606`) ya envuelve `git -C
+<cwd> …`, así que un `git worktree add <ruta> origin/main` encaja en el mismo patrón; y
+`spawnSync` (usado en `claude()`) acepta una opción `cwd` que hoy simplemente no se pasa. Es
+trabajo NUEVO (decidir la ruta por puesto, si se reusa una ya existente de una tanda anterior,
+quién la borra al cerrar el puesto) pero no hay ningún obstáculo estructural: ⚠️ decisiones de
+diseño que no tomo yo aquí — no toco `sesion.mjs`.
+
+**EXIGIR** (negarse a lanzar si el `cwd` donde nacería la sesión ya está ocupado por OTRA sesión
+viva): es MÁS barato que crear, y usa un dato que el fichero YA LEE. `equipoVivo()`
+(`sesion.mjs:239`) ya recorre `claude agents --json`, que trae el `cwd` REAL de cada agente vivo
+(`a.cwd`), y ya sabe filtrar por raíz de repo y por "vivo, no resto muerto"
+(`clasificarAgente`, `sesion.mjs:181`). Extender `decidirLanzar`/`decidirRelevar` para negarse si
+`process.cwd()` (el `cwd` que heredaría la sesión nueva) coincide con el `cwd` de un agente vivo
+de OTRO `nombre` es una comprobación de LECTURA sobre datos que el lanzador ya trae — cero
+aprovisionamiento, cero coste de `npm ci`.
+
+**No son alternativas — resuelven momentos distintos, y por eso NO descarto ninguna:**
+EXIGIR sólo actúa en el INSTANTE del `lanzar`/`relevar`. No puede impedir que una sesión YA VIVA,
+a mitad de su propio turno, haga `git checkout <rama-ajena>` dentro de SU árbol compartido — eso
+ya no es un evento de lanzamiento, es un evento de la sesión en marcha, y es exactamente el hueco
+que cubre (para árbol sucio) SCRUM-774 y que el punto 4 de este encargo pide extender (árbol
+limpio). CREAR es la única de las dos que ataca la CAUSA en la raíz: si cada sesión nace ya en su
+propio árbol, un `checkout` posterior dentro de ESE árbol nunca puede chocar con el de otra sesión,
+porque son directorios distintos — no hace falta ni el guard de SCRUM-774 ni ninguna extensión suya.
+
+## 16 · El coste de `npm ci` — MEDIDO, no estimado, y NO es el bloqueo que se temía
+
+Worktree nuevo, genuinamente sin `node_modules` (`git worktree add <ruta> origin/main`, confirmado
+`ls node_modules` → no existe antes de medir):
+
+    2026-09-23T10:05:33Z → npm ci --no-audit --no-fund → "added 400 packages in 16s"
+    real 0m16.121s · 2026-09-23T10:05:49Z
+
+**16 segundos, no "varios minutos".** `node_modules` resultante: **414-451 MB** (medido dos
+veces, `Get-ChildItem -Recurse` y `du -sh`, con esa diferencia entre las dos herramientas). Espacio
+libre en disco: **287 GB de 931 GB** — seis worktrees más (~2,5 GB) son el 0,3 % del disco. Ninguno
+de los dos costes —tiempo, disco— hace inviable la opción CREAR en ESTA máquina.
+
+⚠️ **Por qué sale tan rápido, para que el número no se lea fuera de contexto:** la caché LOCAL de
+npm (`%LocalAppData%\npm-cache`) está **caliente y es COMPARTIDA por los ~60 worktrees que ya
+existen en esta máquina** — medida en **1,7 GB**. `npm ci` no baja paquetes de la red: los sirve de
+esa caché. Es el número correcto para "¿cuánto cuesta crear un worktree MÁS en esta máquina, hoy?"
+— que es la pregunta del encargo — pero NO generaliza a una máquina nueva sin esa caché (un runner
+de CI, por ejemplo), donde `npm ci` sí bajaría los 400 paquetes de la red.
+
+*(Medición hecha en un worktree de usar y tirar, `git worktree add` + `git worktree remove`
+—nunca `EnterWorktree`—, retirado al terminar de medir; no queda en `git worktree list`.)*
+
+## 17 · La pregunta del punto 4 — sí se propone, pero como COMPLEMENTO, no como sustituto
+
+El encargo pide proponer el síntoma "sólo si se descarta la opción 1". **No la descarto** (§15-16):
+crear es viable y barato en esta máquina. Pero §15 ya dijo por qué EXIGIR/CREAR y el aviso de
+SCRUM-774 no compiten por el mismo hueco — cubren instantes distintos del ciclo de vida de una
+sesión — así que la propuesta tiene sentido aunque la primera no se descarte:
+
+**Extender el aviso de SCRUM-774 al caso "árbol LIMPIO con otra sesión viva encima"** (hoy sólo
+avisa con árbol sucio, decisión explícita del fundador citada en `docs/master/SCRUM-774.md` §2) es
+tratar el SÍNTOMA: detecta el choque en el momento en que una sesión hace `checkout` a una rama que
+ya ocupa OTRA sesión viva, pero no impide que dos sesiones sigan arrancando por defecto en el mismo
+árbol. **Es un parche sobre la costumbre, no una cura de la causa** — la causa (§14: ningún `cwd`
+por sesión) sólo la cierra CREAR. Con CREAR en marcha, esta extensión de SCRUM-774 seguiría
+teniendo valor como segunda red: cubre el caso de una sesión que, aun teniendo su propio árbol, se
+mueve por error al árbol de otra a mano.
+
+## 18 · Por qué `sesion.mjs contexto` responde `DESDE-UN-ARBOL` — mismo principio, mecanismo DISTINTO
+
+`puertaDeIntegridad()` (`sesion.mjs:573`) exige que el PROPIO fichero `sesion.mjs` que se está
+ejecutando NO esté dentro de ningún árbol de git (`git rev-parse --is-inside-work-tree` sobre su
+propio directorio). Es AL REVÉS de lo que este punto pregunta: no es que la sesión NUEVA nazca sin
+árbol propio, es que sólo la COPIA INSTALADA (fuera de cualquier worktree, sólo la rellena el
+instalador desde `origin/main`) puede actuar — para que nadie pueda alterar el lanzador editando una
+rama y lanzando desde ahí (línea 53-56 del propio fichero lo declara: protege de una copia
+desfasada o tocada por accidente, no de una reescritura deliberada). Por eso CUALQUIER copia de
+`sesion.mjs` que yo ejecute desde dentro de este repo —`main` o cualquier worktree— cae en
+`DESDE-UN-ARBOL`: es el diseño funcionando como declara, no un error. **Es el mismo PRINCIPIO** que
+§14-15 (desconfiar de qué árbol trae cada actor) **pero un mecanismo distinto**: éste protege la
+INTEGRIDAD del propio lanzador; §14-15 habla de qué árbol hereda la sesión que el lanzador arranca.
+No son la misma pregunta y no comparten arreglo.
