@@ -349,29 +349,6 @@
         font-style: italic;
       }
 
-      .link-list {
-        margin-top: 6px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: 12px;
-      }
-
-      .link-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .link-row code {
-        font-size: 11px;
-        background: #020617;
-        padding: 2px 4px;
-        border-radius: 4px;
-        border: 1px solid #1f2937;
-        overflow-x: auto;
-      }
-
       .tag {
         font-size: 10px;
         text-transform: uppercase;
@@ -939,8 +916,8 @@
             statusEl,
             'ok',
             sendNow
-              ? `Presupuesto aceptado y cobro enviado por WhatsApp (cargo #${accepted.charge_id}).`
-              : `Presupuesto aceptado. Link de cobro generado (cargo #${accepted.charge_id}).`,
+              ? `Presupuesto #${accepted.quote_id} aceptado y cobro enviado por WhatsApp.`
+              : `Presupuesto #${accepted.quote_id} aceptado. Cobro generado.`,
           );
 
           resultEl.innerHTML = `
@@ -949,22 +926,6 @@
               <span style="color:var(--muted)">Estado:</span> ${
                 accepted.status || 'accepted'
               }
-            </div>
-            <div class="link-list">
-              <div class="link-row">
-                <strong>Pay-by-bank:</strong>
-                <a href="${accepted.paybank_url}" target="_blank">Abrir link</a>
-              </div>
-              <div class="link-row">
-                <code>${accepted.paybank_url}</code>
-              </div>
-              <div class="link-row" style="margin-top:4px">
-                <strong>Tarjeta (Stripe):</strong>
-                <a href="${accepted.paycard_url}" target="_blank">Abrir link</a>
-              </div>
-              <div class="link-row">
-                <code>${accepted.paycard_url}</code>
-              </div>
             </div>
           `;
         } catch (err) {

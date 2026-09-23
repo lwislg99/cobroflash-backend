@@ -33,9 +33,11 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { albaranOrigenDelPresupuesto, type AlbaranOrigen } from '../../../jobs/domain/albaranOrigenDelPresupuesto'; // SCRUM-984
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 // SCRUM-814 · el cerrojo de serie que YA EXISTE, tomado por el llamador para que el recuento de
 // tramos y la reserva del número queden bajo la MISMA sección crítica. No es un cerrojo nuevo:
 // es `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, el de SCRUM-234/728, y esta función lo
@@ -164,6 +166,11 @@ router.post('/:id/reject', async (req, res) => {
   }
 });
 
+// SCRUM-1027 · mismo marcador que `albaranes.routes.ts:MICROCOPY_PENDIENTE_290` e
+// `invoicesAdmin.routes.ts:MICROCOPY_PENDIENTE_308` — el TEXTO es lo que reconoce
+// `sinMarcadorPendiente.ts`, no el nombre de la constante. Regla 30: lo firma el fundador.
+const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
+
 /**
  * POST /admin/quotes/:id/invoice
  * SCRUM-55 (D2 del fundador): EMITE FACTURA → dinero. S1: "Facturas: emitir ❌ Técnico".
@@ -193,6 +200,13 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     }
     if (!quote.merchant || !quote.customer) {
       return res.status(500).json({ error: 'quote_missing_relations' });
+    }
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, no se
+    // emite NINGÚN documento. Sin este gate, `allocateInvoiceNumber` seguiría rechazando el modo
+    // `receipt` (punto único, SCRUM-1027), pero DESPUÉS de contar el tramo y abrir la
+    // transacción — y el rechazo saldría como 500, no 409.
+    if (getEmissionMode(quote.merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
     }
 
     const existingInvoices = quote.Invoice || [];
@@ -258,6 +272,9 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
 
     // SCRUM-729 · fuera de la transacción: el cerrojo se toma en la primera línea de dentro.
     const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `merchant` (= `quote.merchant`) ya viene completo: sin
+    // viaje nuevo.
+    const emisorCongelado = congelarEmisorDesdeFicha(merchant);
 
     const emision = await prisma.$transaction(async (tx) => {
       // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
@@ -292,7 +309,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C3', actor: actorDeRequest(req),
       });
-      const creada = await crearFacturaEmitida(tx, clienteCongelado, {
+      const creada = await crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,
@@ -493,6 +510,11 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     if (!quote.merchant || !quote.customer) {
       return res.status(500).json({ error: 'quote_missing_relations' });
     }
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): mismo gate que `/:id/invoice`, arriba en este
+    // fichero — con el interruptor en OFF, en España, no se emite NINGÚN documento, tampoco a mano.
+    if (getEmissionMode(quote.merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
+    }
 
     // FAIL-CLOSED 1 — esta vía es SOLO para los que no tienen tramos. Con plan, la factura sale
     // por su cadena de siempre: dos vías compitiendo por el mismo presupuesto es como se emite
@@ -556,12 +578,15 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
 
     // SCRUM-729 · el congelado, fuera de la transacción como en los otros seis sitios.
     const clienteCongeladoEntera = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `merchant` (= `quote.merchant`) ya viene completo: sin
+    // viaje nuevo.
+    const emisorCongeladoEntera = congelarEmisorDesdeFicha(merchant);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C4', actor: actorDeRequest(req),
       });
-      return crearFacturaEmitida(tx, clienteCongeladoEntera, {
+      return crearFacturaEmitida(tx, clienteCongeladoEntera, emisorCongeladoEntera, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,

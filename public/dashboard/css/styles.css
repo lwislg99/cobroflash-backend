@@ -1589,6 +1589,12 @@ html, body { overflow-x: clip; }
 .quote-propuesta-dto .btn-sm,
 .quote-propuesta-pago .btn-sm { min-height: 44px; }
 
+/* SCRUM-962 (AB6): `.btn-sm` mide 30px de alto (regla 493) y en el detalle del Trabajo eso deja
+   cuatro botones por debajo del objetivo táctil. NO se toca `.btn-sm` en general — lo comparten
+   decenas de pantallas y es justo la causa que investiga el ticket hermano SCRUM-786 — así que
+   aquí se opta-in por botón, con esta clase. */
+.job-toolbar-btn-44 { min-height: 44px; }
+
 .quote-dto-global { margin-top: 8px; }
 
 /* ── SCRUM-602 (DOC-12) · el campo libre de la dirección de la obra ────────────────────────
@@ -2154,6 +2160,21 @@ html, body { overflow-x: clip; }
 .data-card .table-scroll { /* hereda, sin márgenes extra */ }
 .data-card .table { border-radius: 0; }
 
+/* SCRUM-1040 · Facturas recibidas: mismo lenguaje que el resto del panel (data-card + table +
+   alert), sin un solo estilo en línea (regla 4). El periodo reutiliza `.data-card-toolbar`. */
+.fr-title { margin: 0; font-size: 18px; }
+.fr-subtitle { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.fr-alert { margin: 16px; }
+.fr-alert-top { margin: 16px 16px 0; }
+.fr-alert-detail { margin: 0 16px 16px; font-size: 12px; color: var(--muted); }
+.fr-empty { margin: 24px 16px; color: var(--muted); font-size: 14px; }
+.fr-table-scroll { margin-top: 8px; }
+.fr-th { text-align: left; vertical-align: bottom; }
+.fr-td-nowrap { white-space: nowrap; }
+.fr-td-money { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.fr-td-money-strong { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.fr-tfoot-cell { font-weight: 700; border-top: 2px solid var(--border); }
+
 /* Pestañas de data-card (SCRUM-69, componente NUEVO — propuesto a AB3). Mismo lenguaje que
    .status-pill/.badge: sin sombras/colores nuevos, solo el verde de marca ya usado en
    .nav-item.active. Altura del botón ≥44px (AB6, targets táctiles).
@@ -2323,7 +2344,21 @@ html, body { overflow-x: clip; }
 .historial-docs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .historial-ver-mas { margin: 12px 16px; }
 .historial-sueltos { margin: 16px 16px 8px; font-size: 13px; font-weight: 700; color: var(--neutral-600); }
+
+/* SCRUM-1033/1034 · chips de la cabecera de la ficha 360 (NIF/CIF, dirección, referencia) y el
+   aviso del límite de etiquetas. Regla 4: nada de esto va como `style.cssText` desde JS. */
+.c360-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.c360-tags-limite { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .historial-sueltos-lista { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 16px 16px; }
+
+/* SCRUM-1061 (CRM-18) · miniaturas de las fotos del trabajo, en el historial de la ficha 360. */
+.historial-fotos-mini { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.historial-foto-mini {
+  display: inline-flex; width: 44px; height: 44px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.historial-foto-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.historial-fotos-mas { display: inline-flex; align-items: center; font-size: 12px; color: var(--muted); }
 
 /* ── Settings form: responsive ──────────────────────────────── */
 @media (max-width: 640px) {
@@ -2605,6 +2640,9 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-miga-link {
   background: none; border: 0; padding: 0; font: inherit;
   color: var(--muted); cursor: pointer; text-decoration: underline;
+  /* SCRUM-962 (AB6): el texto es pequeño a propósito, pero el ÁREA de toque no puede serlo.
+     min-width también: sin él, «Trabajos» medía 43,7×44 — 0,3 px corto de ancho. */
+  display: inline-flex; align-items: center; min-height: 44px; min-width: 44px;
 }
 .detail-miga-link:hover { color: var(--ink); }
 .detail-miga-sep { color: var(--muted); }
@@ -2650,13 +2688,16 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* SCRUM-368: mismo caso que .home-hero-ok — verde de TEXTO, no el de fondo. */
 .detail-rail-enlace { color: var(--brand-tint-ink, #047857); font-weight: 600; text-decoration: none; }
 .detail-rail-enlace:hover { text-decoration: underline; }
-.detail-rail-enlace--suelto { display: inline-block; margin-top: 6px; font-size: 13px; }
 /* Objetivo táctil de 44 px (AB6): el teléfono y el mapa se pulsan con las manos sucias, de pie y
-   con el motor en marcha. Es el único sitio del rail donde el tamaño del área importa.
+   con el motor en marcha.
    SCRUM-917h · y también de ANCHO: un enlace de texto corto («1 sept», el del presupuesto) medía
    35,8 px con la fuente de Windows y ≥ 44 con la del runner de Linux, así que el mismo árbol daba
-   dos cifras de deuda según la máquina. Con el mínimo, el área ya no depende del texto. */
-.detail-rail-linea a { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; }
+   dos cifras de deuda según la máquina. Con el mínimo, el área ya no depende del texto.
+   SCRUM-962 · «Abrir en mapa» del bloque DÓNDE es un enlace SUELTO (`.detail-rail-enlace--suelto`,
+   fuera de `.detail-rail-linea`) y se había quedado sin esta misma regla: medía 84×20,1. */
+.detail-rail-linea a,
+.detail-rail-enlace--suelto { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; }
+.detail-rail-enlace--suelto { margin-top: 6px; font-size: 13px; }
 
 /* Móvil: el rail deja de ser columna. Un rail de 220 px al lado del cuerpo en un Android de gama
    media deja las dos columnas ilegibles.

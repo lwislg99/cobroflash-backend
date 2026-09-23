@@ -36,15 +36,17 @@ const codigo = () => leerFuente(path.join(RAIZ, APP), { ancla: 'renderAppView' }
 
 // ═══ 🔴 SUELO ═════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-819 · 🔴 SUELO: el menú declara los 17 destinos y el guard los exige', () => {
+test('SCRUM-819 · 🔴 SUELO: el menú declara los 18 destinos y el guard los exige', () => {
+  // 18, no 17: SCRUM-1040 añade «Facturas recibidas» junto a «Libro de registro» — un destino
+  // nuevo de verdad, remedido aquí, no bajado.
   const html = fs.readFileSync(path.join(RAIZ, 'public/dashboard/index.html'), 'utf8');
   const destinos = [...new Set([...html.matchAll(/data-view="([^"]+)"/g)].map((m) => m[1]))];
-  assert.equal(destinos.length, 17,
-    `🔴 el menú tiene ${destinos.length} destinos y no 17. Si han cambiado, el guard de navegador `
+  assert.equal(destinos.length, 18,
+    `🔴 el menú tiene ${destinos.length} destinos y no 18. Si han cambiado, el guard de navegador `
     + 'lleva ese número como suelo y hay que remedirlo — no bajarlo.');
 
   const guard = fs.readFileSync(path.join(RAIZ, 'scripts/guard-rastro-del-menu.mjs'), 'utf8');
-  assert.match(guard, /MINIMO_DESTINOS = 17/,
+  assert.match(guard, /MINIMO_DESTINOS = 18/,
     '🔴 el guard de navegador ha perdido su suelo. Sin él, «0 incoherencias» sobre tres botones se '
     + 'leería como que todo está bien.');
 });

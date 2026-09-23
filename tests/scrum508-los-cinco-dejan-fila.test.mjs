@@ -195,13 +195,22 @@ test('SCRUM-508 · 🔴 la fila se escribe por UN SOLO camino, no por seis parec
     + '  escribiendo lo mismo son seis que hay que recordar cuando cambie qué se escribe.\n'
     + `  Todo pasa por \`registrarEnvio\`/\`aplicarAvisoDeProveedor\` en ${REPOSITORIO}.`);
 
-  assert.deepEqual(escritores.map((e) => e.operacion).sort(), ['create', 'update'],
-    '🔴 las escrituras de `email_messages` ya no son exactamente UN `create` (el envío) y UN '
-    + '`update` (el aviso del proveedor):\n    '
+  // SCRUM-1057 añade la TERCERA escritura legítima: `reasignarClienteEnFusion` hace un
+  // `updateMany` para reasignar el `customerId` de las filas YA EXISTENTES cuando se fusionan
+  // dos clientes duplicados. No es un envío (no hay `create`) ni un aviso de proveedor sobre SU
+  // propia fila (no cambia `status`/`error`): es una reasignación de propiedad de filas que ya
+  // constan, y vive en este mismo fichero por la misma razón que `aplicarAvisoDeProveedor` — es
+  // el único que puede tocar la tabla. Se declara aquí, con su motivo, tal como pide el mensaje
+  // de abajo.
+  assert.deepEqual(escritores.map((e) => e.operacion).sort(), ['create', 'update', 'updateMany'],
+    '🔴 las escrituras de `email_messages` ya no son exactamente UN `create` (el envío), UN '
+    + '`update` (el aviso del proveedor) y UN `updateMany` (SCRUM-1057: reasignación de '
+    + 'cliente al fusionar duplicados):\n    '
     + escritores.map((e) => `${e.fichero}:${e.linea} (${e.operacion})`).join('\n    ') + '\n\n'
-    + '  Si has añadido una tercera, dilo aquí con su motivo. Si ha DESAPARECIDO el `update`, el\n'
+    + '  Si has añadido una CUARTA, dilo aquí con su motivo. Si ha DESAPARECIDO el `update`, el\n'
     + '  receptor del webhook ha dejado de escribir y un rebote vuelve a no dejar rastro — que es\n'
-    + '  el defecto entero de SCRUM-475.');
+    + '  el defecto entero de SCRUM-475. Si ha DESAPARECIDO el `updateMany`, la fusión de\n'
+    + '  clientes ha dejado huérfanas las filas del cliente fusionado (SCRUM-1057).');
 });
 
 // ── 3 · 🔴 CONTROL POSITIVO · cada clase escribe UNA fila con su `kind` ─────────────────────

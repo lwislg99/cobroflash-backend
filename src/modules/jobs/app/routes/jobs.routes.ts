@@ -22,6 +22,7 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
 // SCRUM-358 (H3): el alta de albarán, idempotente.
@@ -1329,6 +1330,11 @@ router.post('/:id/albaranes', async (req, res) => {
   }
 });
 
+// SCRUM-1027 · mismo marcador que `albaranes.routes.ts:MICROCOPY_PENDIENTE_290` e
+// `invoicesAdmin.routes.ts:MICROCOPY_PENDIENTE_308` — el TEXTO es lo que reconoce
+// `sinMarcadorPendiente.ts`, no el nombre de la constante. Regla 30: lo firma el fundador.
+const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
+
 // POST /admin/jobs/:id/collect-rest — A13.3: EL momento de dinero.
 // terminado + tramo pendiente → genera la factura del resto (misma maquinaria
 // getNextBillingStage del accept) y envía payment_request. V2: SIEMPRE acción
@@ -1345,6 +1351,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     if (job.status !== 'terminado') {
       return res.status(409).json({ error: 'job_not_finished', message: 'Marca el trabajo como terminado para cobrar el resto.' });
     }
+
     // ─────────────────────────────────────────────────────────────────────────
     // SCRUM-195 (rebanada 2) · AQUÍ ESTABA LA TRAMPA, y merece leerse entera.
     //
@@ -1360,14 +1367,28 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     //
     // Ahora se pregunta por el CONJUNTO. El 409 de «sin presupuesto» solo procede si el
     // Trabajo no tiene NINGUNO — que es lo que ese error siempre quiso decir.
+    //
+    // SCRUM-1027 · `merchant: true` se añade AQUÍ (no una consulta aparte) para el gate de abajo:
+    // los presupuestos de este Trabajo son todos del MISMO merchant (`merchantId: req.merchantId`
+    // en el `where`), así que el primero ya trae el dato que hace falta, sin un viaje más.
     const quotesConPlan = await prisma.quote.findMany({
       where: {
         merchantId: req.merchantId, // regla 2
         OR: [{ jobId: job.id }, ...(job.quoteId != null ? [{ id: job.quoteId }] : [])],
       },
-      include: { Invoice: { select: { id: true } } },
+      include: { Invoice: { select: { id: true } }, merchant: true },
     });
     if (quotesConPlan.length === 0) return res.status(409).json({ error: 'job_without_quote' });
+
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, no se
+    // emite NINGÚN documento ni se cobra por YaQu. Sin este gate, `allocateInvoiceNumber` seguiría
+    // rechazando el modo `receipt` (SCRUM-1027, punto único), pero DESPUÉS de que esta ruta ya
+    // hubiera contado el tramo y abierto la transacción — y el rechazo saldría como 500, no 409.
+    // Mismo patrón EXACTO que `/consolidar-albaranes` (línea ~1580 de este fichero).
+    if (!quotesConPlan[0].merchant) return res.status(404).json({ error: 'not_found' });
+    if (getEmissionMode(quotesConPlan[0].merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
+    }
 
     // ORIGINAL primero, adicionales después por id: el orden es determinista a propósito —
     // «cobrar el resto» tiene que emitir siempre el mismo tramo si se pulsa dos veces.
@@ -1429,6 +1450,12 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // SCRUM-729 · fuera de la transacción a propósito: aquí el cerrojo de serie se toma en la
     // PRIMERA línea de la tx (SCRUM-814), así que cualquier lectura de dentro se serializa.
     const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `quote.merchant` ya viene completo por el `include: {
+    // merchant: true }` de SCRUM-1027 (arriba, con `quotesConPlan`): sin viaje nuevo. Ya se gateó
+    // arriba (`if (!quotesConPlan[0].merchant) return 404`): todo `quotesConPlan` comparte
+    // `merchantId: req.merchantId` (mismo `where`), así que si el primero tiene merchant, éste
+    // también — no hace falta un segundo 404 sin mensaje para el mismo hecho.
+    const emisorCongelado = congelarEmisorDesdeFicha(quote.merchant!);
 
     const invoice = await prisma.$transaction(async (tx) => {
       // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
@@ -1457,7 +1484,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
       });
-      return crearFacturaEmitida(tx, clienteCongelado, {
+      return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,

@@ -1,6 +1,6 @@
 // Comprueba que cada cita «...» (25+ caracteres) de docs/producto/CONTABILIDAD.md aparece literal en las fuentes oficiales bajadas.
 // Uso: node docs/verificacion/comprobar-citas-contabilidad.mjs docs/producto/CONTABILIDAD.md <carpetaFuentes>
-// La carpeta lleva LIVA.html RIVA.html LIRPF.html RIRPF.html RFACT.html: NO estan en git; direcciones y SHA-256 en la §8 del documento.
+// La carpeta lleva LIVA.html RIVA.html LIRPF.html RIRPF.html RFACT.html ORDEN303.html: NO estan en git; direcciones y SHA-256 en la §8 del documento.
 // Convierte cada HTML a texto plano aqui mismo (quita etiquetas, decodifica entidades, colapsa blancos) y busca la cita normalizada.
 // En CONTABILIDAD.md las « » se usan SOLO para citas literales: cualquier otra cosa entre « » saldria como NO ENCONTRADA.
 // Control negativo: una cita alterada a proposito (21 -> 20 por ciento) debe salir NO ENCONTRADA; si la encuentra, el comprobador esta ciego.
@@ -23,7 +23,7 @@ const norm = (s) => s
   .replace(/[“”„«»]/g, '"').replace(/[‘’]/g, "'").replace(/[–—]/g, '-')
   .replace(/\s+/g, ' ').replace(/ ([,.;:])/g, '$1').trim();
 
-const FUENTES = ['LIVA', 'RIVA', 'LIRPF', 'RIRPF', 'RFACT'];
+const FUENTES = ['LIVA', 'RIVA', 'LIRPF', 'RIRPF', 'RFACT', 'ORDEN303'];
 const N = {};
 for (const k of FUENTES) N[k] = norm(aTexto(fs.readFileSync(path.join(dir, k + '.html'), 'utf8')));
 

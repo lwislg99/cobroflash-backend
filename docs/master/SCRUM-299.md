@@ -107,3 +107,78 @@ Los tres textos de categoría (`:317`/`:7`/`:37`, ciertas), el camino de emisió
 ## Ficheros
 - `tests/_copy-publico.mjs` — censo derivado + `promesasDeFactura` (discriminador A/B declarado)
 - `tests/scrum299-copy-factura-publico.test.mjs` — 4 tests, sin gate (suelo · ratchet · control negativo · trampa)
+
+---
+
+## SCRUM-299b · Decisión de alcance — el hueco es A PROPÓSITO, no un fallo (22-sep-2026, J6)
+
+**Medido contra:** `origin/main` = `171be5dc33df669bd52ad3ae8bd65cc0c95de9e9` · 2026-09-22T08:29:15Z
+
+**Puesto:** J6 · Calidad y seguridad (`jv-j6`, equipo de Javier). **Gate:** LECTURA + DECISIÓN. Cero
+líneas de `tests/_copy-publico.mjs`, `tests/scrum299-copy-factura-publico.test.mjs`, `src/` o
+`public/` tocadas. No se ensancha el guard (no es ficha de J6): se decide y se propone.
+
+### El encargo
+
+SCRUM-1029 (J3, 21-sep) midió CORRIENDO el instrumento, no leyéndolo: el guard SCRUM-299 no ve
+ninguna de las 5 superficies que hoy prometen «cobrar» a un merchant ES con `INVOICING_ES_ENABLED`
+en OFF (regla 24 enmendada por SCRUM-612c) — `public/dashboard/**` queda fuera por frontera de
+carpeta, y dentro de lo que sí censa (`lifecycle.service.ts`), los 5 `PATRONES_PROMESA` dan 0
+coincidencias sobre «cobrar antes de empezar» y «las facturas se generan solas al cobrar», con el
+control positivo (frase canónica del propio guard) cayendo en 1. Esa medición **no se repite aquí**:
+sigue siendo la fuente (`docs/master/SCRUM-1029.md` §2-4,
+`docs/master/evidencias/SCRUM-1029/probar-censo-299.mjs`).
+
+Falta la decisión: ¿ese hueco es un FALLO del guard, o su alcance a propósito?
+
+### Interrogar al guard sobre lo que NUNCA se ejercitó
+
+El propio guard declara su contrato en su primera línea (`tests/_copy-publico.mjs:1`): «detector de
+**PROMESAS DE «FACTURA»** en el copy **PÚBLICO**» — dos restricciones deliberadas, las dos con test
+propio que las fija:
+- **Población:** copy hacia el **CLIENTE FINAL**. `public/dashboard/**` se excluye por diseño
+  (`:25-26`, «es la app del PRO, no material público-cliente») y esa exclusión tiene SU PROPIO test
+  (`scrum299…test.mjs:128`, «TRAMPA DE LA CASA»). Nunca se le preguntó al guard por promesas hechas
+  **al profesional** — no es una laguna que se coló: es la frontera que el test fija a propósito.
+- **Discriminador:** los 5 `PATRONES_PROMESA` cazan la palabra «factura» pegada a una señal de
+  ENTREGA (posesivo tu/su, verbo recibir, «aquí tienes», «te enviamos», documento numerado — todas
+  del léxico de "te doy un documento"). Ninguno busca «cobro»/«cobrar»: ese vocabulario no está en su
+  contrato porque el defecto original de SCRUM-299 (4-ago-2026) era la promesa de un DOCUMENTO al
+  cliente, no la promesa de una CAPACIDAD (poder cobrar) al profesional.
+
+Verificado ejecutando (no leído): `promesasDeFactura('Aquí tienes tu factura')` → 1 (el instrumento
+funciona); `promesasDeFactura('cobrar antes de empezar')` y `promesasDeFactura('las facturas se
+generan solas al cobrar')` → 0 los dos (SCRUM-1029 §3-4). El guard contesta exactamente lo que su
+contrato promete contestar sobre una población — profesional, verbo «cobrar» — que **nunca formó
+parte de su contrato**, ni antes ni después de escribirlo.
+
+### Decisión
+
+**No es un fallo del guard: es un hueco a propósito, correcto para el contrato con el que se escribió
+el 4-ago-2026.** Lo que cambió no es el guard — es la regla. La enmienda de la regla 24
+(SCRUM-612c, 21-sep, ya en `main`) amplió la prohibición de «no prometer factura al cliente final» a
+«ni documento ni cobro por YaQu», y esa ampliación alcanza una población que SCRUM-299 nunca prometió
+cubrir: lo que YaQu le promete **al profesional** sobre su propia capacidad de cobrar (A-D del
+dashboard del pro, `sendWelcomeEmail`/`sendFirstPaymentEmail` en E — las 5 de SCRUM-1029, las 5
+`FALSO`). Ensanchar SCRUM-299 in situ para cazar esto forzaría el guard en sus DOS ejes a la vez —
+levantar la exclusión que su propio test fija a propósito, y añadir un discriminador de «cobro» que
+es estructuralmente distinto de «factura+entrega» — sin que ninguno de los dos cambios lo pidiera el
+defecto que el guard nació a vigilar. **No se ensancha la lista hasta que pase: es una regla nueva sin
+guard**, y eso pide un guard nuevo con su propio contrato, no un parche al de otro.
+
+### Propuesta (no construida; a firmar por quien mantiene el guard o el fundador)
+
+Un guard NUEVO y distinto de SCRUM-299, con su propio ticket:
+- **Población:** `public/dashboard/**` (esta vez SÍ incluido) + `lifecycle.service.ts` (ya censado
+  por 299, se reusaría el censo si el nuevo guard vive en el mismo módulo) — copy dirigido al
+  PROFESIONAL, no al cliente final.
+- **Discriminador:** promesa de que YaQu VA A COBRAR / el profesional VA A PODER cobrar / el
+  documento SE VA A GENERAR, sin condicionar por el interruptor de la regla 24 — patrones sobre
+  «cobrar/cobro», «paga(n/r/s)», «se genera(n) la(s) factura(s)» pegados a presente/futuro cercano de
+  disponibilidad. Es un léxico distinto del de «factura+entrega»: no es una fila más en
+  `PATRONES_PROMESA`.
+- **Caso motivador, ya medido, no hace falta re-medir:** las 5 superficies A-E de
+  `docs/master/SCRUM-1029.md` §2, cada una con su cita y su veredicto `FALSO`.
+
+**No lo construyo yo** (SCRUM-299 no es ficha de J6 — encargo explícito) y no abro el ticket (A13: el
+veredicto va al orquestador). Reportado por el canal.

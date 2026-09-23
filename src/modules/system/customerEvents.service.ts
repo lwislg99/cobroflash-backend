@@ -71,11 +71,18 @@ export async function existeEventoDePlan(
   }
 }
 
-/** Lista los eventos de un cliente (más recientes primero). Devuelve [] si falla. */
+/**
+ * Lista los eventos de un cliente (más recientes primero). Devuelve [] si falla.
+ *
+ * 🔴 SCRUM-1036 · EXCLUYE `type: 'nota'` A PROPÓSITO. Esta lista alimenta «Actividad reciente»
+ * (ENT-3: comunicaciones y hechos del sistema — presupuesto enviado, factura emitida…). Una nota
+ * es una anotación PRIVADA del profesional, no un hecho que le pasó al cliente, y tiene su propia
+ * sección (`notasDelCliente.ts`, `listarNotas`). Mezclarlas aquí las duplicaría en las dos listas.
+ */
 export async function listCustomerEvents(merchantId: number, customerId: number, take = 50) {
   try {
     return await (prisma as any).customerEvent.findMany({
-      where: { merchantId, customerId },
+      where: { merchantId, customerId, type: { not: 'nota' } },
       orderBy: { createdAt: 'desc' },
       take,
     });

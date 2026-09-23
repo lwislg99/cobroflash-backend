@@ -403,3 +403,85 @@ registro del **foco** que abre este fichero: **no se ha tocado ni una palabra**,
 debajo · Jira: SCRUM-811 **leído**, no modificado (sigue *En curso*) · la colisión de número se
 REPORTA, no se arregla.
 **Producción y staging: no tocados, ni para mirar.**
+
+---
+
+# SCRUM-811 · APENDICE · 22-sep-2026 · el guard, construido (decisión 16268)
+
+**Fecha:** 22-sep-2026 · **Carril:** S5 (método) · **Gate:** sin gate, corre en `guards:entrada` y `npm test`
+**Medido contra:** `origin/main` = `389954adc670fb1cd925e7daa5a67e562b3dc80a` · 2026-09-22T09:06:44Z
+**Tanda:** 8064 tests, 7936 pass, 3 fail, 125 skipped (salida 1)
+
+## El defecto
+
+Comentario 16268 (21-sep-2026): «guard de entrada que exija "skill cargada / por qué no" en
+registros que toquen public/ (mide declaración, no carga)» + «poner yaqu-premium-ui en el
+arranque de S2/S4 (sesion-N.md y prompt de relevo)». Las dos propuestas de SCRUM-811b (comentario
+15828) estaban «escritas y sin implementar»; esto las implementa.
+
+## La decisión, y por qué
+
+**Guard nuevo, `tests/scrum811c-skill-ui-declarada.test.mjs`**, en vez de un hook `SessionStart` o
+tocar `settings.json` — la decisión 16268 reserva eso al fundador (punto 4). Reutiliza
+`entradasTroceadas()` de `scrum267-ancla-de-medicion.test.mjs` (igual que ya hacen `scrum649` y
+`scrum859`), sin duplicar troceador. Exige un campo `**Skill UI:**` en toda entrada NUEVA (fechada
+después del 22-sep-2026) que nombre una ruta `public/*.{js,css,html}` en cualquier parte de su
+cuerpo — no sólo en «## Ficheros», porque SCRUM-391 ya midió que esa sección sólo la usan 58 de
+104 entradas y acotar ahí cegaría al detector en el resto.
+
+**Por qué el corte por fecha y no una lista de exentas**: 294 entradas ya tocan `public/` sin este
+campo (recontado hoy; eran 222 el 17-sep). Una lista de 294 excepciones no es mantenible y exigir
+el campo con retroactividad castigaría a quien siguió el formato vigente cuando escribió — el
+mismo argumento que ya usa el README para las tres anclas exentas de SCRUM-267.
+
+**Arranque de S2/S4**: en vez de tocar el prompt de relevo compartido (`orquestador-autonomo.md`
+§5bis.3, que usan LOS SEIS puestos), la instrucción va en `docs/equipo/sesion-2.md` y
+`sesion-4.md` — que el propio ARRANQUE BARATO (SCRUM-996, paso 3) YA lee en cada relevo de
+cualquier puesto. No hace falta un canal nuevo: el que ya existe llega. Juicio propio, no pedido
+explícitamente en el comentario 16268 — lo declaro por si el fundador prefiere además una mención
+en el prompt compartido.
+
+## Lo que se midió
+
+* `entradasTroceadas()` sobre el árbol real: **1068 entradas**, **294** mencionan una ruta
+  `public/*.{js,css,html}` (SUELO ≥300 y ≥50 respectivamente, con margen).
+* Autoprueba sobre texto fabricado (CEBO): fecha con mes en español, ruta `public/`, y las dos
+  formas del campo (`cargada` / `no cargada · <motivo>`) — acierta los 4 casos, incluido que «no
+  cargada» SIN motivo no basta.
+* Real: `entradasSinDeclarar(entradasTroceadas())` da **0** hoy — nada dated después del corte
+  toca `public/` todavía, que es lo esperado el mismo día en que el guard nace.
+* `npm run guards:entrada`: **12/12 guards, 112 tests, 10,0 s de 90** (antes: 11 guards, ~90 s con
+  la máquina cargada). El duodécimo no compila ni toca BD: añade ~0,3 s.
+* `npm run build`: limpio.
+* **Los 3 fail de la tanda son AJENOS**, confirmados en `tests/scrum939b-trinquete-de-las-skills.test.mjs`
+  (censo de `cerebro-yaqu` sobre la ruta de `gh.exe`) y verificados también sobre un `origin/main`
+  limpio (worktree aparte, sin mi rama): fallan igual ahí. Dependen del ENTORNO —esta máquina
+  Windows tiene `gh.exe` en `C:\Program Files\GitHub CLI\gh.exe`, y el censo lo declara «no
+  existe» (calibrado para el runner Linux de CI)—, no de este cambio. No tocado (regla 9, es de
+  otro carril).
+
+## Verificado en rojo
+
+Dentro de la autoprueba (`entradasSinDeclarar`, tests fabricados, no el árbol real): una entrada
+con fecha posterior al corte, ruta `public/` y sin el campo CAE; la misma entrada con el campo, con
+fecha en el corte mismo, o sin ruta `public/`, NO cae (control negativo, tres variantes).
+
+## Lo que NO cubre
+
+* No comprueba que la skill se CARGÓ de verdad — eso no toca el árbol (mismo límite que la ancla
+  `**Medido contra:**`, que tampoco comprueba que el sha se copió de un `git rev-parse` real).
+* No toca `yaqu-verifactu-sif` (la otra skill obligatoria del ticket original): su población no es
+  `public/`, y el comentario 16268 sólo decidió la de UI. Queda fuera a propósito.
+* No retira ni relaja el checklist AB6 de seis casillas del máster; sólo exige la declaración de
+  si se cargó la skill, no que se cumplan sus seis puntos.
+* No toca `settings.json` ni ningún hook — reservado al fundador (16268, punto 4).
+
+## Ficheros
+
+`tests/scrum811c-skill-ui-declarada.test.mjs` (nuevo) · `scripts/guards-entrada.mjs` (GUARDS +1,
+MINIMO 11→12) · `docs/master/README.md` (campo documentado) · `docs/equipo/sesion-2.md` ·
+`docs/equipo/sesion-4.md`.
+
+**Skill UI:** no cargada · este apéndice no toca ninguna vista, componente ni CSS: añade un guard
+de texto sobre `docs/master/` y dos líneas de prosa en fichas de equipo. `public/` no aparece en
+el diff.

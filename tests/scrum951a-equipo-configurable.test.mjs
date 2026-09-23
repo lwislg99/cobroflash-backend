@@ -162,7 +162,9 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
     "if (args[0] === '--version') { process.stdout.write('2.1.276 (Claude Code, falso del banco)\\n'); process.exit(0); }",
     "if (args[0] === '--bg') {",
     "  const nombre = args[args.indexOf('-n') + 1];",
-    `  vivas.push({ id: '1234abcd', name: nombre, kind: 'background', state: 'working', sessionId: ${JSON.stringify(UUID)} });`,
+    // SCRUM-1011: `pid` es el tell de que el proceso EXISTE — sin él, `lanzar`/`relevar` se quedan
+    // sondeando hasta NO-ARRANCO, que es justo el fallo mudo que ese ticket cierra.
+    `  vivas.push({ id: '1234abcd', pid: 4321, name: nombre, kind: 'background', state: 'working', sessionId: ${JSON.stringify(UUID)} });`,
     '  fs.writeFileSync(V, JSON.stringify(vivas));',
     "  process.stdout.write('Starting background service…\\nbackgrounded · 1234abcd · ' + nombre + '\\n');",
     '  process.exit(0);',

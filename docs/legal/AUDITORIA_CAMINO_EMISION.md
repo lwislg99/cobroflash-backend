@@ -31,12 +31,12 @@ y el envío— no se han construido nunca.**
 | # | Eslabón | Estado | Fichero y línea |
 |---|---|---|---|
 | 1 | Puerta de emisión (usuario y admin) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:100` |
-| 2 | Decide qué documento sale (factura / justificante / ninguno) | **EXISTE** | `src/modules/invoicing/domain/facturaSuelta.ts:74-78` (`modoDocumentoSuelto`) |
-| 3 | Numeración de serie | **EXISTE** | `src/modules/invoicing/domain/invoiceNumber.service.ts:390` (`allocateInvoiceNumber`) |
+| 2 | Decide qué documento sale (factura / justificante / ninguno) | **EXISTE** | `src/modules/invoicing/domain/facturaSuelta.ts:85-89` (`modoDocumentoSuelto`) — SCRUM-1027 (21-sep-2026) movió la línea: la afirmación sigue igual, «justificante» ya no es uno de los desenlaces posibles (regla 24 / SCRUM-612c) |
+| 3 | Numeración de serie | **EXISTE** | `src/modules/invoicing/domain/invoiceNumber.service.ts:395` (`allocateInvoiceNumber`) — SCRUM-735 (23-sep-2026) movió la línea: el año de la serie pasó a derivarse de la zona del merchant |
 | 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:886-887` (`vf_hash`, `vf_prev_hash`) |
 | 5 | Sellado en el momento de emitir | **EXISTE** | `src/modules/invoicing/domain/selladoEstado.ts:116` (`sellarTrasEmision`), invocado desde `src/lib/invoicing.ts:17` |
-| 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:141` (`buildVeriFactuQrUrl`) |
-| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:558` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:574` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:252` y `:556` |
+| 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:184` (`buildVeriFactuQrUrl`) — SCRUM-735 movió la línea |
+| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:558` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:633` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:253` y `:563` — SCRUM-735 movió las líneas |
 | 8 | Cola de remisión (`VfSubmission`) | **NO EXISTE** | ningún modelo del esquema; ver medición abajo |
 | 9 | Envío telemático a la AEAT | **NO EXISTE** | ninguna llamada de red; ver medición abajo |
 
@@ -138,7 +138,7 @@ existe, porque no hay envío.**
 | Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:865-866`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |
 | Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:864` |
 | Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:536` (generador único del contenido) |
-| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:101` y `:237` (`exigirDocumentoEmitible`) |
+| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:102` y `:246` (`exigirDocumentoEmitible`) |
 | `Subsanacion` / `RechazoPrevio` / `SinRegistroPrevio` | **NO MEDIDO** | no se buscaron una a una en esta tanda |
 | Cola `VfSubmission` | **INEXISTENTE** | el esquema tiene **25 modelos** (`prisma/schema.prisma`) y **ninguno** se llama `Vf*`, `*Submission` ni `*Verifactu`. Ningún fichero de `src/` menciona `vfSubmission` |
 | Control de flujo de envío (reintentos, ritmo) | **INEXISTENTE** | no hay envío que gobernar |

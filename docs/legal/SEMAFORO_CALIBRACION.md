@@ -194,10 +194,14 @@ anexo 6.1 / 6.2 del PDF (`ERROR (2)`, `ERROR (3)`, `ERROR (6)`, `ERROR (10)`).
 | Factura dada de alta vía formulario, no modificable | `3004` | 🔴 |
 
 > **Por qué esta familia importa más de lo que parece:** son los únicos ROJO que **no** se
-> evitan validando el XML antes de enviarlo. Dependen del estado remoto. La cola `VfSubmission`
-> (máster, Parte L) es el sitio donde se gestionan, y `Subsanacion` / `RechazoPrevio` /
-> `SinRegistroPrevio` son las tres banderas que deciden cuál de las ocho operativas admisibles
-> del anexo se está pidiendo. **Elegir mal la bandera convierte una subsanación en un duplicado.**
+> evitan validando el XML antes de enviarlo. Dependen del estado remoto. **[CORREGIDO
+> 23-sep-2026, SCRUM-1094: hoy no hay ningún sitio donde se gestionen — la remisión a la AEAT
+> no está construida (máster, Parte L; S1-D): sin tabla, sin envío, cero llamadas de red.
+> Ninguno de estos cuatro puede producirse todavía.]** `Subsanacion` / `RechazoPrevio` /
+> `SinRegistroPrevio` son las tres banderas que el anexo del PDF de la AEAT define para decidir
+> cuál de las ocho operativas admisibles se está pidiendo — siguen aplicando el día que exista
+> un envío real. **Elegir mal la bandera, cuando exista ese envío, convertirá una subsanación en
+> un duplicado.**
 
 ---
 

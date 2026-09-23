@@ -207,3 +207,90 @@ ticket dice que es otra decisión y que no se decidan juntas · `docs/sql/*` · 
 SCRUM-773 **no tocado**, sigue en *Acción del fundador*.
 **Ninguna base de datos fue consultada ni escrita: no había ninguna clave con la que hacerlo.**
 **Producción y staging: no tocados, ni para mirar.**
+
+---
+
+# SCRUM-773c · RETIRADO, cerrado (22-sep-2026)
+
+**Fecha:** 22-sep-2026 10:12Z · **Carril:** S5 · instrumentos/datos
+**Medido contra:** `origin/main` = `5588e3263847bd40ea906d325e4f83c883c24e6e` · 2026-09-22T08:02Z
+**Rama:** `scrum-773c-retirar-backfill` · **Worktree:** `wt-s5-773`
+**Decisión del fundador:** comentario Jira 16264 (21-sep) — RETIRAR `backfill-job-assignees.mjs`
+(con su test `scrum650c`) y bajar `TECHO_PUERTAS_FRAGILES`. `_prisma-sync.mjs` no está muerto
+(arranca por el respaldo `endsWith`): arreglarlo con `ejecutadoDirectamente()`.
+
+## Lo hecho
+
+1. **Retirado `scripts/backfill-job-assignees.mjs`** y `tests/scrum650c-backfill-equivalencia.test.mjs`
+   (dedicado por completo a él). El PR #1484 (773b, arriba) ya midió que hoy no desbloquea nada:
+   la visibilidad mira `assignedUserId` por otro eje y la escritura nueva va por
+   `escribirAsignados()`, que ya mantiene `job_assignees` al día. Con datos sólo de prueba no había
+   histórico que migrar — no se enciende nada, se retira.
+2. **`scripts/_prisma-sync.mjs` arreglado**: `import.meta.url === 'file://'+argv[1] ||
+   argv[1]?.endsWith(...)` → `ejecutadoDirectamente(import.meta.url)` (mismo mecanismo que ya usa
+   el meta-guard desde SCRUM-765). No escribe en base de datos — sólo regenera el cliente Prisma
+   local si hace falta.
+3. **`TECHO_PUERTAS_FRAGILES` bajado de 2 a 0** en `tests/scrum765-la-puerta-y-el-suelo.test.mjs`:
+   las dos puertas frágiles conocidas están cerradas.
+4. **`scripts/censo-migraciones.mjs`**: la entrada `DEBE_VER` para `backfill-job-assignees.mjs`
+   (el caso de control de «pg en crudo») se retira con nota, para que el script no quede CIEGO
+   buscando un fichero que ya no existe.
+
+## Medido
+
+- **Antes** (`scrum765` + `scrum650c` juntos): 13 pass · 0 fail.
+- **Después** (`scrum765` solo, `scrum650c` borrado): 7 pass · 0 fail.
+- `node scripts/_prisma-sync.mjs` corrido directamente: exit 0 (arranca por la puerta arreglada,
+  no por el respaldo).
+- `npm run pretest` completo: verde (`_prisma-sync` → `_prisma-client-guard` →
+  `_prisma-procedencia-guard`).
+- `node scripts/censo-migraciones.mjs`: «control positivo: los 4 idiomas conocidos se ven» (antes
+  5, con el retirado).
+- `npm run guards:entrada`: 11 guards, verde.
+
+## Lo que no se ha hecho
+
+- ⛔ `docs/sql/scrum-650-paso-c-backfill.sql` — no tocado, sigue RECHAZADA por el aplicador (lista
+  blanca aditiva), documentado en 773b.
+- ⛔ Ninguna base de datos consultada ni escrita.
+- ⛔ `docs/master/SCRUM-811.md` — no anexado aquí (es de otro censo, ya reportado en 773b).
+
+## Corrección sobre este mismo commit (22-sep, mismo día): el trinquete de SCRUM-948 lo cazó
+
+El PR #1637 salió `FAILURE` en `build + tests`: al fusionar SCRUM-948 (el paso «Traer main» en
+`ci.yml`), este PR fue de los primeros en correr CON ese paso ya activo — y `scrum810b-los-suelos-derivados.test.mjs`
+detectó por primera vez en CI que la población «tests-declarados» bajó **7802 → 7796** (los 6
+`test()` de `scrum650c`, retirado arriba). Exactamente el caso para el que existe
+`RETIRADAS_A_PROPOSITO`: se añadió la entrada con su motivo, EN EL MISMO COMMIT que dispara el
+suelo (bien: ya venía en éste). Medido tras el arreglo: `scrum810b` + `scrum810`, **13 pass · 0
+fail**, `guards:entrada` verde.
+
+🟠 **Hallazgo de otro carril, se reporta y no se arregla aquí:** `sueloDerivado()` en
+`scripts/_suelo-contra-main.mjs:271-281` exime por NOMBRE de población (`medida.nombre`), no por
+la pareja antes/ahora — una vez declarada una retirada para `'tests-declarados'`, el suelo deja de
+poder avisar de CUALQUIER bajada futura de esa población, no sólo de ésta. Mismo patrón ya en las
+dos entradas de SCRUM-867. Si es a propósito, no hace falta tocar nada; si no, es un ticket de S5
+aparte sobre el propio mecanismo del trinquete.
+
+## Segunda corrección (22-sep, mismo día): `guards de navegador` en rojo, y NO es de este ticket
+
+`@claude` avisó de que el check obligatorio también salía en rojo en `guard:marcadores-en-pantalla`
+(SCRUM-722), job «guards de navegador (fuera de la tanda)». Medido antes de tocar nada (regla 41):
+el diff de esta rama no toca `public/dashboard/js/exportView.js` ni ese guard, así que **no lo causó
+SCRUM-773**. Origen real, ya en `origin/main`: SCRUM-1041 (commit `80b60238`, bloque A) firmó y quitó
+el marcador `[PENDIENTE microcopy oficial]` de `exportView.js`, pero actualizó el censo de
+`tests/scrum402-marcador-no-se-pinta.test.mjs` y no el censo APARTE que lleva
+`scripts/guard-marcadores-en-pantalla.mjs` (uno mide el FUENTE, el otro el DOM renderizado — ver
+cabecera de ese fichero) — la entrada `export: 6` se quedó caduca y confirmado con
+`git show origin/main:scripts/guard-marcadores-en-pantalla.mjs` que sigue así en `main`: rompe a
+CUALQUIER PR sobre main actual, no solo a este.
+
+Arreglo, dentro de esta misma rama porque bloquea el check obligatorio de este PR y no toca nada de
+las stop conditions de AA1.4: se borra la entrada `export` del `CENSO` (no se pone a 0 — mismo
+criterio que el propio guard exige en su mensaje de error y que SCRUM-402/424/405 ya siguieron).
+No se relaja ninguna aserción: la vista sale del censo porque ya no pinta nada, y si algún día
+vuelve a pintar el marcador caerá como «VISTA NUEVA», más estricto que antes.
+
+El tercer job en rojo del mismo run (`meta-guard`, `scrum859-identidad-y-motivo-cerrado.test.mjs`
+→ `MUDO`) tampoco lo causa este PR: es la muda intermitente de CI que SCRUM-908 ya midió y documentó
+en `scripts/meta-guard-mutaciones.mjs` (3 de 38 runs en CI, 0 de 50 pasadas en local) — no se toca.

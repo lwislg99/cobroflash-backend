@@ -100,11 +100,22 @@ const ESPERADO = new Map([
 // «baja sola»: medía 8 en Windows y 7 en el runner de Linux sobre el MISMO árbol, porque su ancho
 // dependía de la fuente. Arreglado el ancho, las dos máquinas dicen 7. El caso sin presupuesto no
 // tiene ese enlace y sigue en 6.
+// SCRUM-962 (22-sep-2026) · 7/7/6/7 → 1/1/1/1: arreglados «Trabajos» (la miga, `.detail-miga-link`,
+// le faltaban min-height Y min-width), «Abrir en mapa» (el enlace SUELTO del rail,
+// `.detail-rail-enlace--suelto`, que se había quedado sin la regla de 44px que sí llevan los
+// enlaces de `.detail-rail-linea`), y los cuatro `.btn-sm` de la barra de documentos y de
+// «Cambiar» (opt-in con la clase `.job-toolbar-btn-44`: NO se toca `.btn-sm` en general —lo
+// comparten decenas de pantallas y es justo la causa que investiga el ticket hermano SCRUM-786—).
+// Lo que QUEDA en 1 los cuatro casos es la casilla «Incluir precios en el parte» (13×13): mismo
+// patrón que `.quote-line__suplido` (styles.css) — el checkbox nativo se deja pequeño A PROPÓSITO
+// y es la ETIQUETA la que lleva el área de 44 px (ya se la dimos, `min-height:44px` en
+// `valoradoLabel`). Ticket sigue vivo con 1, no se cierra en falso (mismo criterio que el propio
+// SCRUM-962 dejó escrito para SCRUM-917g).
 const DEUDA_44PX = new Map([
-  [JOB_PAGADO.id, 7],
-  [JOB_A_MEDIAS.id, 7],
-  [JOB_SIN_PRESUPUESTO.id, 6],
-  [JOB_COBRADO_DE_MAS.id, 7],
+  [JOB_PAGADO.id, 1],
+  [JOB_A_MEDIAS.id, 1],
+  [JOB_SIN_PRESUPUESTO.id, 1],
+  [JOB_COBRADO_DE_MAS.id, 1],
 ]);
 
 const banco = await levantarBanco();

@@ -19,6 +19,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { emitInvoice } from '../../invoicing/domain/invoicing.service';
 import { congelarCliente } from '../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeBase } from '../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { applyVeriFactu } from '../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../invoicing/domain/invoiceNumber.service';
 import { calcVatBreakdown } from '../../invoicing/domain/vat.service';
@@ -75,6 +76,9 @@ export async function emitirRecapitulativas(
   // La recapitulativa emite N facturas al mismo cliente en la misma tanda: congelarlas todas con
   // la MISMA foto es además lo correcto —son el mismo acto de emisión— y evita N viajes.
   const clienteCongelado = await congelarCliente(prisma, merchantId, customerId);
+  // SCRUM-665 · idem para el emisor. Aquí SÍ es un viaje nuevo: `params` no trae la ficha del
+  // merchant (sólo `merchantId`), a diferencia de las demás bocas que la reciben por relación.
+  const emisorCongelado = await congelarEmisorDesdeBase(prisma, merchantId);
 
   const facturas = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const out: FacturaEmitida[] = [];
@@ -106,6 +110,7 @@ export async function emitirRecapitulativas(
         merchantId, customerId, total, currency, type: 'F1', lines, albaranRefs, quoteId: null, actor,
         origen: 'C7-recapitulativa', // SCRUM-347: recapitulativa mensual
         clienteCongelado, // SCRUM-729 · la misma foto para todo el lote
+        emisorCongelado, // SCRUM-665 · idem
       });
       // Robustez fiscal: una recapitulativa JAMÁS puede salir como justificante J-. Si
       // `allocateInvoiceNumber` devolviera serie receipt (porque el gate de modo miró un

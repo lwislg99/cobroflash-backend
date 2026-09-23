@@ -272,3 +272,107 @@ lo cuente dos veces.
 la sirve ni una declaración de acceso para ella. Si no la usa nadie, B es gratis y A es trabajo
 sobre una pantalla muerta; si la usa el fundador para dar de alta cobros a mano, es al revés. **Esa
 respuesta no está en el repositorio.**
+
+---
+
+# SCRUM-910e · ② firmado y aplicado — variante A, 4 casos
+
+**Medido contra:** `origin/main` = `79175cfce0ca4f82db873c12cfaacdbb7590151d` · 2026-09-23T00:22:14Z
+**Rama:** `scrum-910-recibo-sin-boton-que-no-existe`
+**Carril:** J2 (Clientes y cobro) — ticket asignado por Luis fuera de tabla (comentario 16278) y
+confirmado por el orquestador (comentario 16420).
+
+## 0 · La firma
+
+**Firmados en Jira SCRUM-910, comentario 16527, por el orquestador** (delegación de Javier del
+22-sep-2026 sobre textos que no sean legales ni fiscales, registrada en SCRUM-997): los 2 literales
+NUEVOS que faltaban de la variante A propuesta en §7 de este mismo expediente. Los otros dos casos
+no son texto nuevo: **ambos** ya estaba firmado (sin cambio) y **ninguno** reutiliza, sin una
+palabra añadida, el literal ya firmado de `payInvoice.routes.ts:242`.
+
+| caso | condición | literal |
+|---|---|---|
+| ambos | `puedeTransferencia && puedeTarjeta` | *(ya firmado, sin cambio)* «Estamos esperando tu pago. Puedes completarlo usando los botones de **pago por banco** o **pago con tarjeta** que aparecen más arriba.» |
+| solo banco | `puedeTransferencia && !puedeTarjeta` | 🔴 *(NUEVO, firmado 16527)* «Estamos esperando tu pago. Puedes completarlo usando el botón de **pago por banco** que aparece más arriba.» |
+| solo tarjeta | `!puedeTransferencia && puedeTarjeta` | 🔴 *(NUEVO, firmado 16527)* «Estamos esperando tu pago. Puedes completarlo usando el botón de **pago con tarjeta** que aparece más arriba.» |
+| ninguno | `!puedeTransferencia && !puedeTarjeta` | *(reusado, sin cambio)* «El profesional te indicará cómo pagar.<br/>Contacta con él si tienes dudas.» |
+
+## 1 · El arreglo
+
+`receipt.routes.ts`: el `statusMessage` de `ch.status === 'pending'` deja de ser un literal fijo y
+pasa a derivarse de `puedeTransferencia`/`puedeTarjeta` (las mismas dos variables que ya deciden
+`payBtns`, líneas 123-124 — misma pregunta, no una tercera condición derivada). Cero cambios fuera
+de `receipt.routes.ts` y el test nuevo.
+
+## 2 · Rojo primero
+
+`tests/scrum910d-microcopy-recibo-pendiente.test.mjs`: pide `/recibo/:token` con `ch.status:
+'pending'` para los 4 merchants (uno por caso) y comprueba que el cuerpo contiene el literal de SU
+caso y NINGUNO de los otros tres — así el test cae tanto si falta el texto correcto como si sobra
+el de otro caso. Control positivo aparte: los 4 literales son mutuamente no-subcadena (si uno fuera
+subcadena de otro, un `includes` no discriminaría).
+
+Corrido contra el árbol SIN tocar → 3 de 4 casos en rojo por el motivo esperado («ambos» pasaba
+porque hoy ES el único texto que se pinta, siempre). Aplicado el arreglo → 4/4 verde, y sin
+regresión en `tests/scrum910-la-transferencia-que-no-mira.test.mjs` (③, ya en `main`).
+
+`npm run guards:entrada` 112/112 · `npm run guard:marcadores-en-pantalla` verde. `npm test`
+completo: ver informe de entrega.
+
+## 3 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `src/modules/billing/app/routes/receipt.routes.ts` | `pendingMessage` derivado de `puedeTransferencia`/`puedeTarjeta` |
+| `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` | nuevo — rojo primero, 4 casos + control positivo |
+
+---
+
+# SCRUM-910c · ① decidido (B) y aplicado — J2, traspaso de Luis
+
+**Medido contra:** `origin/main` = `763d37e5225ea4897827b1a997e34cf5e117c5c3` · 2026-09-22T22:24:27Z
+**Rama:** `scrum-910-admin-enlaces-undefined`
+**Carril:** J2 (Clientes y cobro) — ticket asignado por Luis fuera de tabla, Jira SCRUM-910 comentario 16278 (21-sep-2026) y confirmado por el orquestador de J en el comentario 16420 (22-sep-2026).
+
+## 0 · Quién decide y con qué dato nuevo
+
+**DECIDIDO: opción B** (`admin.html` deja de pintar el bloque de enlaces). Lo decide Luis en el
+comentario 16278, y esta sesión lo re-verificó antes de tocar nada, en vez de darlo por bueno:
+**0 referencias a `admin.html`** en `src/` ni en `public/` (grep propio, hoy — no solo la medición
+de Luis del 21-sep). Sigue sin saberse **quién usa la página** fuera del repositorio (§3 de arriba
+lo declaraba como el dato que faltaba); lo que cambia es que la pregunta relevante para B —¿algo
+del código la referencia?— ya tiene 0 como respuesta medida dos veces, por dos sesiones distintas.
+
+**No arregla el defecto (1)** (el 404 por mandar `created.id` donde se espera `decisionToken`,
+comentario 15795). Sigue vivo, sigue documentado ahí y en §3 de este expediente. No es un hallazgo
+nuevo — no se abre ticket aparte — y no tiene víctima medida (0 referencias a la página). Queda
+declarado, no arreglado: si algún día se usa `admin.html` para algo, el botón «Aceptar» seguirá
+dando el error de consola de siempre, ya no seguido de enlaces `undefined`.
+
+## 1 · El arreglo
+
+`public/admin.html`: se retira el bloque `.link-list` (los dos `<a href="${accepted.paybank_url}">`
+/ `${accepted.paycard_url}`) y su CSS asociado (única consumidora), y se quita `accepted.charge_id`
+del mensaje de estado — ninguno de los tres campos existe en la respuesta real de
+`POST /quote/:token/accept` (`quotes.routes.ts:373-378`: `{ok, status, quote_id, accepted_at}`).
+`accepted.quote_id` y `accepted.status`, que sí existen, se quedan. Cero líneas tocadas fuera de
+`admin.html`. 43 líneas de diff, 2 inserciones + 41 borrados.
+
+## 2 · Rojo primero
+
+`tests/scrum910-admin-sin-enlaces-undefined.test.mjs`: lee `admin.html` como texto (vanilla, sin
+runtime que montar) y falla si aparece `accepted.paybank_url` / `accepted.paycard_url` /
+`accepted.charge_id`, con control positivo de que `accepted.quote_id` y `accepted.status` —que SÍ
+existen— se siguen usando (guarda del detector, SCRUM-113: sin el positivo, un fichero vaciado de
+más también pasaría).
+
+Corrido contra el árbol SIN tocar → rojo por el motivo esperado (`accepted.paybank_url` presente).
+Aplicado el arreglo → verde. `npm run guards:entrada` 112/112 · `npm run guard:marcadores-en-pantalla`
+verde (27 vistas × 3 estados, control negativo corrido). `npm test` completo: ver informe de entrega.
+
+## 3 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `public/admin.html` | retirado el bloque de enlaces rotos y su CSS |
+| `tests/scrum910-admin-sin-enlaces-undefined.test.mjs` | nuevo — rojo primero + control positivo |

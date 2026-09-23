@@ -28,8 +28,9 @@ export function diez(html, raiz) {
 export function generar(html, raiz) {
   const lista = diez(html, raiz);
   if (lista.length === 0) {
-    throw new Error('🔴 CIEGO: cero afirmaciones falsas. Están medidas: son diez. Un cero aquí '
-      + 'diría «no hay nada que documentar», que es la conclusión más cara que puede dar esto.');
+    throw new Error('🔴 CIEGO: cero afirmaciones falsas. Estaban medidas: eran diez el 21-ago-2026 '
+      + '(SCRUM-1086 retiró ocho el 23-sep-2026). Un cero aquí diría «no hay nada que documentar», '
+      + 'que es la conclusión más cara que puede dar esto.');
   }
   const clas = lista.map((v) => clasificar(v.id, v.texto));
   const de = (g) => clas.filter((c) => c.grupo === g);
@@ -45,14 +46,17 @@ export function generar(html, raiz) {
   p('> enunciados como están. *«Cuando hagamos el go para empezar a vender, todo será verdad. De');
   p('> momento no pasa nada.»*');
   p('>');
-  p('> ⛔ **No se escribe ninguna nota.** Ni en `precios/li#3`, ni en los tres de `#probar`, ni en');
-  p('> ningún sitio. Lo que sostiene esa decisión es el mecanismo de **SCRUM-568** —las nueve');
-  p('> afirmaciones ancladas con `tras`, cuyo veredicto cambia solo cuando los flags se');
-  p('> enciendan—, no una advertencia al visitante.');
+  p('> ⛔ **No se escribe ninguna nota.** Lo que sostiene esa decisión es el mecanismo de');
+  p('> **SCRUM-568** —las afirmaciones ancladas con `tras`, cuyo veredicto cambia solo cuando los');
+  p('> flags se enciendan—, no una advertencia al visitante.');
   p('>');
   p('> **Entonces ¿por qué sigue esto aquí?** Porque la medida costó dos intentos y tres trampas,');
   p('> y el día que haga falta una nota —si el go llega antes que los flags— el dato ya estará.');
   p('> **Es un archivo, no un plan: hoy no hay que hacer nada con estos números.**');
+  p();
+  p('> ⚠️ **SCRUM-1086 (23-sep-2026) retiró ocho de los diez textos originales** de `#como`,');
+  p('> `#precios` y `#probar` (regla 24). Quedan los dos de abajo, sin tocar el mecanismo ni la');
+  p('> decisión — sólo la superficie que medía se ha encogido.');
   p();
   p('> ⛔ **Aquí no hay ni una palabra de la condición.** Regla 30: el microcopy es del fundador.');
   p('> Esto mide **dónde cabría y cuánto**; la frase, si algún día hace falta, la elige él.');
@@ -65,11 +69,11 @@ export function generar(html, raiz) {
   p('## El hecho');
   p();
   p('`PAYMENTS_CONNECT_ENABLED` y `BIZUM_MANUAL_ENABLED` están **apagadas por defecto**. Para un');
-  p('merchant nuevo **sólo existe la transferencia** — y estos diez textos publicados enumeran tres.');
+  p(`merchant nuevo **sólo existe la transferencia** — y estos ${lista.length} textos publicados quedan sin verificar (uno enumera medios; el detalle, abajo).`);
   p();
   p('---');
   p();
-  p('## ① Los diez, verificados byte a byte');
+  p(`## ① Los ${lista.length}, verificados byte a byte`);
   p();
   p('Identificador **derivado** del HTML (`sección/etiqueta#orden`), texto **literal**, comparado');
   p('con `===` y `Buffer.compare` contra el censo **y** contra el fichero. Cero `includes()`.');
@@ -84,22 +88,22 @@ export function generar(html, raiz) {
   p('### ⚠️ Control positivo — y lo que saca');
   p();
   p('El control pedía que no entrara en la lista nada que no afirme sobre medios de pago.');
-  p(`**Ocho de los diez nombran un medio concreto** (tarjeta, Bizum o transferencia). **${sinMedio.length} no**, y`);
-  p('los dos merecen una lectura distinta, con el texto delante:');
+  const verbo = lista.length - sinMedio.length === 1 ? 'nombra' : 'nombran';
+  p(`**${lista.length - sinMedio.length} de los ${lista.length} ${verbo} un medio concreto** (tarjeta, Bizum o transferencia). **${sinMedio.length} no**, y`);
+  p(sinMedio.length === 1 ? 'se lee aparte, con el texto delante:' : 'se leen aparte, con el texto delante:');
   p();
   for (const v of sinMedio) {
     p(`- \`${v.id}\` — «${v.texto}»`);
   }
   p();
-  p('- `probar/span#15` **sí pertenece**: «Paga como quiera» es el rótulo del paso 5 de la demo y');
-  p('  la línea siguiente (`probar/span#16`) enumera los tres medios. La promesa de elección es');
-  p('  suya, aunque los medios los nombre su vecina.');
-  p('- 🔴 `faq/div#3` **es un veredicto mío demasiado estricto, y lo corrijo aquí.** No nombra');
-  p('  ningún medio: dice que el producto incluye «cobro», y **cobro por transferencia existe hoy**.');
-  p('  Enumera nueve capacidades y las nueve están disponibles. **No es falsa.** No la retiro del');
-  p('  registro en este ticket porque reclasificarla exige declararle ancla a las nueve, que es');
-  p('  otro trabajo — pero el fundador debe saber que de los diez, **nueve son el caso y una es mía**.');
-  p();
+  if (sinMedio.some((v) => v.id === 'faq/div#3')) {
+    p('- 🔴 `faq/div#3` **es un veredicto mío demasiado estricto, y lo corrijo aquí.** No nombra');
+    p('  ningún medio: dice que el producto incluye «cobro», y **cobro por transferencia existe hoy**.');
+    p('  SCRUM-1086 ya quitó «cobro» de la enumeración; lo que queda son ocho capacidades y las ocho');
+    p('  están disponibles. **No es falsa.** No la retiro del registro en este ticket porque');
+    p('  reclasificarla exige declararle ancla a las ocho, que es otro trabajo.');
+    p();
+  }
   p('---');
   p();
   p('## ② Dónde cabe · medido en navegador, a 360 y a 1280 px');
@@ -152,39 +156,13 @@ export function generar(html, raiz) {
   p('antes de llegar. Si un texto sólo admite eso, **la única salida que le queda es cambiar el');
   p('texto, y eso es del fundador.**');
   p();
-  for (const c of [...de(LEJOS), ...de(NINGUNO)]) {
+  const vuelven = [...de(LEJOS), ...de(NINGUNO)];
+  for (const c of vuelven) {
     p(`- \`${c.id}\` — «${c.texto}» · ${c.sitios.filter((s) => s.sitio !== 'pie de la seccion').map((s) => `${s.sitio}: ${s.motivo || s.peor + ' car.'}`).join(' · ')}`);
   }
-  p();
-  p('Los tres están en **`#probar`**, la maqueta de la demo: cajas de tamaño fijo donde el texto');
-  p('no fluye como prosa. ⚠️ Y por eso sus números de «sin mover» a 1280 salen altísimos (277, 312,');
-  p('320, 375): el contenedor se traga el texto sin cambiar de alto. **Esos números no significan');
-  p('«cabe»** — significan que la caja es rígida. El dato bueno ahí es el de «1 línea».');
-  p();
-  p('### 🔴 El caso difícil: `precios/li#3`');
-  p();
-  p('«Cobro con tarjeta, Bizum y transferencia», **dentro de la lista de lo que incluye el plan, al');
-  p('lado del precio**. Medido:');
-  p();
-  const li = clas.find((c) => c.id === 'precios/li#3');
-  if (li) {
-    for (const s of li.sitios) {
-      const a = HUECOS[360][li.id][s.sitio];
-      const b = HUECOS[1280][li.id][s.sitio];
-      p(`- **${s.sitio}** — 360: ${a.unaLinea} car. · 1280: ${b.unaLinea} car.`);
-    }
+  if (vuelven.length === 0) {
+    p(`Ninguno hoy: los ${de(JUNTO).length} que quedan admiten nota junto al texto (tabla del punto ②).`);
   }
-  p();
-  p('**Junto al texto no cabe: seis caracteres a 1280.** La lista de precios reparte el ancho, y a');
-  p('1280 la fila está casi llena. Lo único que entra ahí es una **marca** (un asterisco), no una');
-  p('condición.');
-  p();
-  p('El hueco de verdad es **una segunda línea dentro del propio `<li>`**: 36 caracteres a 360 y 52');
-  p('a 1280. Cabe — pero **empuja** (sin mover: 0), así que la caja de precio crece.');
-  p();
-  p('⚠️ **Y esto hay que decirlo aunque no sea una medida:** una fila de la tabla de precios es');
-  p('donde el cliente decide, y es donde peor entra un asterisco. **Que quepa no significa que');
-  p('convenga.** La medida dice cuánto entra; si entra ahí o se cambia la fila, es del fundador.');
   p();
   p('---');
   p();
@@ -194,26 +172,35 @@ export function generar(html, raiz) {
   p();
   p('| mecanismo | aporta | le falta |');
   p('|---|---|---|');
-  p('| `<small>` **inline, junto al texto** | se lee con la afirmación delante, sin saltos | el hueco más pequeño de los tres; en `precios/li#3` son 6 car. a 1280, y en `#probar` no se ve |');
-  p('| **nota al pie del bloque** (`<p>` dentro de la tarjeta / el `<li>`) | 36–56 car., y sigue pegada a la afirmación | **empuja**: «sin mover» es 0 en casi todos, así que la sección crece |');
-  p('| **marca (`*`) + nota única al pie de la sección** | cabe en los diez, incluidos los tres de `#probar` (45–187 car.) | el cliente decide **antes** de llegar a la nota; documenta para quien ya dudaba |');
+  p('| `<small>` **inline, junto al texto** | se lee con la afirmación delante, sin saltos | el hueco más pequeño de los tres |');
+  p('| **nota al pie del bloque** (`<p>`/`<li>` que la contiene) | más caracteres, y sigue pegada a la afirmación | **empuja**: «sin mover» suele ser 0, así que la sección crece |');
+  p('| **marca (`*`) + nota única al pie de la sección** | cabe en todos los casos medidos | el cliente decide **antes** de llegar a la nota; documenta para quien ya dudaba |');
   p('| `aria-describedby` | lo anuncia el lector de pantalla sin ocupar sitio | **no lo ve quien mira**, y esta condición es comercial, no de accesibilidad. Complemento, nunca la salida |');
   p();
+  const rangos = { 'junto al texto': [], 'pie del bloque': [], 'pie de la seccion': [] };
+  for (const c of clas) {
+    for (const s of c.sitios) {
+      for (const ancho of [360, 1280]) {
+        const d = HUECOS[ancho][c.id][s.sitio];
+        if (d && d.visible) rangos[s.sitio].push(d.unaLinea);
+      }
+    }
+  }
+  const rango = (xs) => (xs.length ? `${Math.min(...xs)} y ${Math.max(...xs)}` : 'sin dato');
   p('**El dato que faltaba para elegir la frase**, por si se lee sólo esta línea: junto al texto');
-  p('caben entre **6 y 43** caracteres según el sitio; al pie del bloque, entre **36 y 56**; al pie');
-  p('de la sección, entre **45 y 187**.');
+  p(`caben entre **${rango(rangos['junto al texto'])}** caracteres según el sitio; al pie del bloque, entre`);
+  p(`**${rango(rangos['pie del bloque'])}**; al pie de la sección, entre **${rango(rangos['pie de la seccion'])}**.`);
   p();
   p('---');
   p();
   p('## ⑤ Lo que no se ha tocado');
   p();
-  p('- Ninguno de los diez textos. Ni una palabra.');
+  p('- Este archivo no escribe ninguna nota: mide, no corrige (regla 30, arriba).');
   p('- Ningún flag, ningún medio de pago. Reglas 18 y 23.');
-  p('- **Ningún táctil pierde su área** por culpa de la nota: medido en los 30 sitios × 2 anchos');
-  p('  con el árbitro de SCRUM-562 (`closest`, desde el centro), **0 robos**.');
-  p('- ⚠️ En `#probar` había **4 táctiles que ya no reciben el toque en su centro antes de tocar');
-  p('  nada**: son los botones de la maqueta con `visibility:hidden`, que SCRUM-542 ya declaró como');
-  p('  «presentes pero no tocables». **No los causa la nota.**');
+  p('- ⚠️ El «0 robos» de táctiles y los «30 sitios × 2 anchos» medidos el 21-ago-2026 eran sobre');
+  p('  los diez originales, ocho de ellos en `#como`/`#precios`/`#probar` — retirados por');
+  p('  SCRUM-1086. Sobre los dos que quedan no hay una medida de táctiles nueva: ninguno de los');
+  p('  dos es un elemento pulsable.');
   p();
   return L.join('\n') + '\n';
 }

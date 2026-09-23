@@ -334,3 +334,26 @@ export async function aplicarAvisoDeProveedor(args: {
     return { aplicado: false, motivo: 'fallo_escritura', idProveedor };
   }
 }
+
+/**
+ * Reasigna el `customerId` de las filas de `email_messages` de un cliente a otro (SCRUM-1057:
+ * fusión de dos clientes duplicados). Vive AQUÍ y no en `fusionClientes.ts` por lo mismo que
+ * `aplicarAvisoDeProveedor`: este es el ÚNICO fichero que puede escribir la tabla
+ * (`scrum508-los-cinco-dejan-fila.test.mjs`). Un `emailMessage.updateMany` puesto en el llamador
+ * sería una SEGUNDA forma de escritura — exactamente lo que ese guard existe para impedir.
+ *
+ * Recibe el `tx` de la transacción del llamador (mismo patrón que `desvincularYBorrar`): la
+ * reasignación tiene que caer o quedar junto con el resto de la fusión, no en una transacción propia.
+ */
+export async function reasignarClienteEnFusion(
+  tx: { emailMessage: { updateMany: (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => Promise<{ count: number }> } },
+  merchantId: number,
+  deId: number,
+  aId: number,
+): Promise<number> {
+  const r = await tx.emailMessage.updateMany({
+    where: { merchantId, customerId: deId },
+    data: { customerId: aId },
+  });
+  return r.count;
+}
