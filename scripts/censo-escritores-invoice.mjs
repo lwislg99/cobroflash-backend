@@ -41,7 +41,7 @@ import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Suelo de población: hoy `src/` + `scripts/` pasan de 500 ficheros entre los dos. */
+/** Suelo de población: `src/` + `scripts/` deben superar este mínimo entre los dos. */
 export const MINIMO_POBLACION = 400;
 
 /** El escritor que YA sabemos que existe — si el censo no lo encuentra, está ciego. */

@@ -1,6 +1,6 @@
 # SCRUM-1099 · Censo por AST — toda escritura a `Invoice` en el árbol
 
-**Medido contra:** 6e97b236863ff3de08dfcd8b8308959cbdce32ab 2026-09-23T16:50:58Z
+**Medido contra:** `origin/main` = `6e97b236863ff3de08dfcd8b8308959cbdce32ab` · 2026-09-23T16:50:58Z
 
 **Puesto:** J6 · Calidad y seguridad (`jv-j6`) · **Rama:** `scrum-1099-censo-ast-escritores-invoice`
 
