@@ -50,6 +50,61 @@ diseñar el caso que falta.
   `schema.prisma:925`), no por cliente. La serie no puede colisionar al fusionar dos clientes del
   mismo merchant.
 
+## 1bis · Censo campo por campo: TODO lo que referencia al cliente, con ruta:línea
+
+Pedido explícito de la ficha del ticket en Jira («lista de TODOS los campos de una factura
+emitida y de su registro que referencian al cliente, con ruta:línea»). Censo, no memoria:
+
+**En `prisma/schema.prisma`, modelo `Invoice`:**
+
+| campo | línea | qué es |
+|---|---|---|
+| `customerId` | 723 | FK viva a `Customer`. El ÚNICO que un merge llegaría a tocar. |
+| `customerName` | 726 | congelado |
+| `customerLegalName` | 727 | congelado |
+| `customerTaxId` | 728 | congelado — decide si la factura lleva `<Destinatarios>` en el XML |
+| `customerEmail` | 729 | congelado |
+| `customerPhone` | 730 | congelado |
+| `customer` (relación) | 912 | el JOIN que resuelve `customerId` a una ficha viva |
+| `rectifiesId`/`rectifies`/`rectifiedBy` | 863, 916-917 | no referencia al cliente directamente, pero encadena la identidad de una R1 a la de su original (ver rectificativas, §5) |
+
+**El escritor — un único sitio, al emitir:**
+
+- `src/modules/invoicing/domain/crearFacturaEmitida.ts` — `cliente: ClienteCongelado` es
+  parámetro obligatorio del `create`, no un campo del `data` que se pueda olvidar (el tipo lo
+  excluye).
+- `src/modules/invoicing/domain/clienteCongelado.ts::congelarCliente`/`congelarDesdeFicha` — lee
+  la ficha **antes** de abrir la `$transaction` de numeración.
+- `clienteCongelado.ts::congelarParaRectificativa` — caso especial de R1, ver §5.
+
+**Los lectores — los 4 sitios que reconstruyen un documento YA EMITIDO, los 4 vía
+`clienteDelDocumento` (censados por grep, cero más en `src/`):**
+
+1. `src/lib/invoicing.ts:131` — generador de PDF, camino de sellado inline.
+2. `src/lib/invoicing.ts:249` (el `findUnique` por `customerId`) y `:277` (el consumo) —
+   segundo generador de PDF, camino de sellado diferido (SCRUM-206).
+3. `src/modules/system/app/routes/invoicesAdmin.routes.ts:1185` — regeneración desde el panel
+   de administración.
+4. `src/modules/invoicing/domain/verifactu.service.ts:891` — construcción del bloque
+   `<sum1:Destinatarios>` del XML que se remite a la AEAT («su registro», en el sentido fiscal
+   del término).
+
+Los 4 comparten la MISMA regla: `customerName` no-NULL → usan las 5 columnas de la factura y
+JAMÁS miran `customerId` ni la ficha viva; `customerName` a NULL → sí leen `customerId` (vía
+`inv.customer` o el `findUnique` explícito) — éste es el único hilo por el que un merge podría
+llegar a cambiar lo que muestra un documento ya emitido, y solo en ese caso.
+
+**Sitios con `customerId` de `Invoice` que NO reconstruyen el documento (no pasan por
+`clienteDelDocumento`, son metadatos administrativos, no contenido fiscal):**
+
+- `src/modules/invoicing/domain/libroRegistro.repo.ts:82` — `select` del libro de registro
+  (agrupa/filtra, no reescribe destinatario).
+- Los 28 ficheros del §3 (`reports.routes.ts`, `invoiceReminder.service.ts`,
+  `customerPortal.routes.ts`, `cobros.service.ts`, `exportData.ts`, `metrics.service.ts`,
+  `search.routes.ts`…) — todos filtran u ordenan POR `customerId`; ninguno reconstruye el
+  contenido legal del documento, así que todos se BENEFICIAN de que el merge reasigne el enlace
+  (es la única forma de que «qué debe cada cliente» quede correcto tras fusionar).
+
 ## 2 · Qué hace HOY la fusión de SCRUM-1057 con los documentos del absorbido
 
 Medido en el código real (`fusionClientes.ts`, `decidirRechazoFusion` + `fusionarClientes`), no
@@ -180,6 +235,59 @@ al 8-sep-2026 — sin tocar el módulo fiscal más que con una lectura de `count
 seguimiento explícito** una vez J1 confirme si el backfill-en-el-borrado descrito arriba es
 aceptable bajo regla 29. Opción C solo si J1 considera que A/B no son suficientes por algún motivo
 fiscal que no vea desde este carril — no la construiría sin que ese motivo se diga primero.
+
+## 5 · Casos límite pedidos por el ticket, resueltos por escrito
+
+### Cliente con facturas rectificativas (R1)
+
+`congelarParaRectificativa` (§1bis) hereda la identidad de la factura ORIGINAL —lee
+`original.customerName` si no es NULL— y **nunca** de `customerId`. Bajo la Opción A/B, una R1
+solo puede existir si su original ya está congelada (si no lo estuviera, la fusión ya estaría
+bloqueada por el propio `customerName IS NULL` del original). Y como el `updateMany` de la
+reasignación mueve **todas** las facturas del fusionado a la vez —no una por una—, F1 y su R1
+siempre viajan juntas al mismo `customerId` nuevo dentro de una misma fusión: no hay forma de que
+se separen. El único escenario en el que podrían acabar en `customerId` distintos —una fusión que
+mueve F1 y, MÁS TARDE, otra fusión distinta que mueve solo la R1— no es alcanzable: una R1 nueva no
+puede emitirse contra un `customerId` que ya fue borrado por la primera fusión, así que esa
+secuencia no existe.
+
+### Cliente con «series» distintas
+
+No existe tal cosa en este esquema, y por eso no hay nada que resolver: `number` es único **por
+MERCHANT** (`@@unique([merchantId, number])`, `schema.prisma:925`), no por cliente, y
+`invoiceNumber.service.ts` no referencia `customerId` en ningún punto (grep: 0 resultados).
+Fusionar dos clientes no puede tocar ni colisionar ninguna numeración, tengan sus facturas la
+serie/año que tengan.
+
+### NIF distinto entre los dos
+
+Ya lo resuelve SCRUM-1057: `nifDistintos` es un AVISO en la previsualización, nunca un bloqueo, y
+queda apuntado en el `CustomerEvent` tipo `fusion`. Para las facturas YA EMITIDAS no hay riesgo
+adicional al ya descrito en §3 («el nombre que ya viajó»): bajo la Opción A solo se fusiona si
+TODAS están congeladas, así que el NIF impreso en cada una sigue siendo el que tenía al emitirse,
+pase lo que pase con las fichas después. Las facturas FUTURAS del cliente fusionado usan el NIF
+que tenga el principal en ese momento — es el mismo comportamiento que ya existe hoy para
+cualquier corrección de NIF en una ficha viva, no uno nuevo de este ticket.
+
+## 6 · Si la respuesta es SÍ — construcción propuesta (no construida aquí)
+
+Con la Opción A recomendada:
+
+1. **Ticket de construcción único** (rama propia, tests en Postgres real igual que
+   `scrum1057b-fusion-clientes-postgres.test.mjs`): cambiar `decidirRechazoFusion` para distinguir
+   `factura_sin_congelar` (bloquea) de «tiene facturas pero todas congeladas» (permite), y añadir
+   la décima reasignación (`tx.invoice.updateMany`) en `fusionarClientes`. Sin tocar
+   `crearFacturaEmitida.ts` ni `clienteCongelado.ts`.
+2. **Seguimiento aparte, solo si J1 aprueba la Opción B**: el backfill de facturas sin congelar
+   dentro de la transacción de fusión, reusando `congelarDesdeFicha` — éste sí toca el módulo
+   fiscal y necesita su propio expediente con el mismo nivel de detalle que SCRUM-729.
+3. **Pantalla (S2)**: el aviso/mensaje que ve el profesional cuando la fusión se bloquea por
+   `factura_sin_congelar` — depende de qué opción se apruebe y necesita firma (regla 30/39); no se
+   propone texto aquí.
+
+Si la respuesta fuera NO (no se permite nunca fusionar clientes con facturas), el mensaje que
+vería el profesional ya EXISTE: es el mismo 409 con motivo `factura_emitida` que devuelve
+`fusionarClientes` hoy — no haría falta construir nada nuevo, solo no tocar `fusionClientes.ts`.
 
 ## Declarado, sin arreglar aquí
 
