@@ -2160,6 +2160,21 @@ html, body { overflow-x: clip; }
 .data-card .table-scroll { /* hereda, sin márgenes extra */ }
 .data-card .table { border-radius: 0; }
 
+/* SCRUM-1040 · Facturas recibidas: mismo lenguaje que el resto del panel (data-card + table +
+   alert), sin un solo estilo en línea (regla 4). El periodo reutiliza `.data-card-toolbar`. */
+.fr-title { margin: 0; font-size: 18px; }
+.fr-subtitle { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.fr-alert { margin: 16px; }
+.fr-alert-top { margin: 16px 16px 0; }
+.fr-alert-detail { margin: 0 16px 16px; font-size: 12px; color: var(--muted); }
+.fr-empty { margin: 24px 16px; color: var(--muted); font-size: 14px; }
+.fr-table-scroll { margin-top: 8px; }
+.fr-th { text-align: left; vertical-align: bottom; }
+.fr-td-nowrap { white-space: nowrap; }
+.fr-td-money { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.fr-td-money-strong { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.fr-tfoot-cell { font-weight: 700; border-top: 2px solid var(--border); }
+
 /* Pestañas de data-card (SCRUM-69, componente NUEVO — propuesto a AB3). Mismo lenguaje que
    .status-pill/.badge: sin sombras/colores nuevos, solo el verde de marca ya usado en
    .nav-item.active. Altura del botón ≥44px (AB6, targets táctiles).

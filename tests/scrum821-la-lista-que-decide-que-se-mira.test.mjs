@@ -86,12 +86,17 @@ test('SCRUM-821 · 🔴 EL ROJO DEL MECANISMO VIEJO: con la lista a mano faltaba
   const LISTA_A_MANO = ['home', 'quotes-new', 'quotes-list', 'customers', 'products', 'invoices',
     'reports', 'quote-requests', 'expenses', 'providers', 'team', 'settings'];
 
+  // SCRUM-1040 (22-sep-2026): el menú gana «facturas-recibidas», y por construcción del cotejo
+  // (una LISTA VIEJA congelada contra el menú de HOY) cae también fuera de esa lista vieja. No es
+  // el defecto original —esa pantalla ni existía— pero el cotejo no puede distinguirlo sin
+  // reescribir la lista, así que se nombra aquí, aparte de las seis históricas.
   const { sinFoto } = cotejarPoblaciones(vistasDelMenu(RAIZ), LISTA_A_MANO);
   assert.deepEqual(sinFoto,
-    ['albaranes', 'cobros', 'jobs', 'libro-registro', 'partes-oficina', 'plans'],
+    ['albaranes', 'cobros', 'facturas-recibidas', 'jobs', 'libro-registro', 'partes-oficina', 'plans'],
     '🔴 el cotejo ya no caza el defecto original: con la lista vieja fallaban EXACTAMENTE esas '
-    + 'seis — la cadena Tecnosel entera— y tiene que seguir diciendo cuáles son.');
-  assert.equal(sinFoto.length, 6);
+    + 'seis (más las pantallas nuevas desde entonces) — la cadena Tecnosel entera— y tiene que '
+    + 'seguir diciendo cuáles son.');
+  assert.equal(sinFoto.length, 7);
 });
 
 // ═══ ✅ CONTROL POSITIVO, ENUMERADO ═══════════════════════════════════════════════════════

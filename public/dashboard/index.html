@@ -162,6 +162,17 @@
           <span id="nav-libro-registro-label">Libro de registro</span>
         </button>
 
+        <!-- SCRUM-1040 (CON-04) · JUNTO a «Libro de registro» (aceptación 1). SIN marcador a
+             propósito (SCRUM-420 §④): la barra es lo primero que ve el profesional cada día, y
+             ningún rótulo de menú lleva `[PENDIENTE …]`, esté o no aprobado el texto todavía. Lo
+             que sigue sin firmar es la copy DE DENTRO de la pantalla (título, estados, avisos),
+             que sí lleva marcador — ver `facturasRecibidasView.js`. El rótulo es literal del
+             propio ticket («Facturas recibidas») y de `LIBROS_DISPONIBLES` en el servidor. -->
+        <button class="nav-item" data-view="facturas-recibidas" id="nav-facturas-recibidas">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7"/><path d="M9 11h4"/></svg>
+          <span id="nav-facturas-recibidas-label">Facturas recibidas</span>
+        </button>
+
         <!-- `Descargar datos` SALE de la barra (diseño §B1: «pasa a Configuración › Tus datos. La
              página construida en SCRUM-244 NO se rehace: solo cambia de dónde se enlaza»). El
              enlace nuevo vive en `settingsView.js` → panel `datos`, y `tests/scrum420` comprueba
@@ -346,6 +357,7 @@
   <script src="./js/settingsView.js"></script>
   <script src="./js/exportView.js"></script>
   <script src="./js/libroRegistroView.js"></script> <!-- SCRUM-296 (A6) -->
+  <script src="./js/facturasRecibidasView.js"></script> <!-- SCRUM-1040 (CON-04) -->
   <script src="./js/teamView.js"></script>
   <script src="./js/jobsCierreTrabajo.js"></script>
   <script src="./js/terminadoSinCobrar.js"></script>
