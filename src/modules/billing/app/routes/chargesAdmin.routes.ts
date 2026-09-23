@@ -10,6 +10,7 @@ import { BASE_URL } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
 import { resolverFechaDeCobro } from '../../domain/fechaDeCobro'; // SCRUM-397
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093
 import { envioDelDocumento } from '../../domain/envioDelDocumento'; // SCRUM-885
 import { tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp';
 
@@ -26,9 +27,20 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Multi-tenant: el cobro debe ser del merchant de la sesión
+    // SCRUM-860 (trinquete del select) + SCRUM-1093: `select`, no `include` — antes bastaba con
+    // `include: { merchant: true }` porque nada de `charge` llegaba a una respuesta; pasar
+    // `charge.merchant` a `zonaDelMerchant` (SCRUM-1093) hizo que el censo dejara de poder
+    // probarlo por sí solo. Solo las columnas que usa este handler: `status`/`amount`/`currency`
+    // de `charge`, y `country`/`flags` (isFlagEnabled) + `timezone` (zonaDelMerchant) del merchant.
     const charge = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId },
-      include: { merchant: true, customer: { select: { name: true } } },
+      select: {
+        status: true,
+        amount: true,
+        currency: true,
+        merchant: { select: { country: true, flags: true, timezone: true } },
+        customer: { select: { name: true } },
+      },
     });
     if (!charge) return res.status(404).json({ error: 'not_found' });
     if (charge.status === 'paid') return res.json({ ok: true, status: 'already_paid' });
@@ -48,7 +60,13 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     // El criterio (futura no, hacia atrás sin límite) y sus dos textos son los APROBADOS el
     // 10-ago-2026 para el mismo problema en facturas: se reutilizan, no se inventan (regla 30).
     // Sin fecha, `ahora` — que no es el defecto: el defecto era no poder cambiarla.
-    const fecha = resolverFechaDeCobro((req.body as any)?.paid_at ?? (req.body as any)?.fecha);
+    // SCRUM-1093 · el «hoy» que decide si la fecha es futura es el del MERCHANT. `charge.merchant`
+    // ya viaja completo en el `include` de arriba: no hace falta tocar la consulta.
+    const fecha = resolverFechaDeCobro(
+      (req.body as any)?.paid_at ?? (req.body as any)?.fecha,
+      new Date(),
+      zonaDelMerchant(charge.merchant),
+    );
     if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
 
     // Misma cadena post-pago que el PSP (P0-3: factura ligada → paid, WA, email)

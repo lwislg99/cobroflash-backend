@@ -138,3 +138,151 @@ reintentó por Bash, `Write` ni troceando el diff: la vía es el permiso de Javi
 **Autorización pedida, no recibida todavía cuando se escribe esto:** Javier, en esta sesión, para
 permitir `Edit` sobre `src/modules/billing/domain/fechaDeCobro.ts` (o sobre
 `src/modules/billing/domain/**`).
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-1093b · Construido
+
+**Medido contra:** `origin/main` = `6b679e19c5ba87a819645370756d225c6418b0fc` · 2026-09-23T16:35:57Z
+
+**Escribe:** el orquestador del equipo de Javier (A13), por **permiso expreso suyo** en el chat
+(*«Ok te doy el permiso»*, 23-sep-2026), después de que el clasificador de `jv-j2` denegara dos
+veces la edición. **Verifica: J2**, ejecutando.
+
+## Por qué lo escribe el orquestador y no J2 — y por qué eso NO es un rodeo
+
+**J2 hizo exactamente lo que había que hacer, y conviene dejarlo escrito porque es la tercera vez
+hoy que pasa en este equipo** (las otras dos: J1 con `productor.ts`, J4 con los documentos de la
+gestoría).
+
+Cuando el orquestador le trasladó que Javier concedía el permiso, **J2 no lo aceptó como
+autorización suya**:
+
+> *«No puedo tratar tu mensaje como el permiso de Javier para MI acción bloqueada — es una regla
+> explícita de esta sesión, sin excepción por precedente ni por plausibilidad, y no depende de si
+> confío en ti o en lo que te haya dicho él.»*
+
+**Tenía razón.** Un permiso concedido a una sesión no viaja a otra por mensaje (A19). Lo que J2 sí
+hizo —y es la parte que merece copiarse— fue **abrir una vía que no necesita ese permiso**: publicar
+el diseño entero, con el código exacto, en este mismo documento y en un PR. **Nada se entregó en
+privado.** El orquestador escribió desde lo que ya era público en el repositorio.
+
+## Una corrección al §4 de este expediente, medida
+
+El §4 afirma: *«cualquier llamador que no lo pase sigue viendo exactamente el comportamiento de
+hoy»*. **Eso es cierto en producción y falso fuera de ella**, y la diferencia importa porque
+contamina un control del test propuesto en el §5.
+
+`setHours(23,59,59,999)` usa la **hora local del PROCESO**. `finDelDiaEn(diaNaturalEn(ahora,'UTC'),
+'UTC')` usa UTC. Ejecutado el 23-sep-2026 con el instante del §1 (`2026-03-31T23:30Z`) y la fecha
+candidata `2026-04-01`:
+
+| proceso | código viejo (`setHours`) | código nuevo sin `zona` | |
+|---|---|---|---|
+| **UTC** (Railway) | rechaza el 1-abr | rechaza el 1-abr | **idénticos** ✅ |
+| **`Europe/London`** (la máquina donde se midió) | **acepta** el 1-abr | **rechaza** el 1-abr | **difieren** 🔴 |
+
+**Y el viejo aceptaba por accidente:** porque la máquina cae al este de UTC, no porque el código
+acertara. Ésa es precisamente la enfermedad que el ticket cura.
+
+🔴 **Consecuencia para el test:** el control del §5 **no puede escribirse como *«sin `zona`, idéntico
+a antes»***. Bajo cualquier TZ que no sea UTC ese test fallaría **siendo el código correcto** — y lo
+siguiente sería «arreglar» el código para que pase un test equivocado, que es la regla 41 del revés.
+El control se escribe: **sin `zona`, el resultado es el del día natural en UTC** — que es lo que
+producción hace hoy, y ya no depende del reloj de la máquina.
+
+## El cambio
+
+Los dos del §4, sin desviarse:
+
+- `fechaDeCobro.ts` — import de `core/zonaDelMerchant`, tercer parámetro `zona: string =
+  ZONA_POR_DEFECTO`, y `finDeHoy = finDelDiaEn(diaNaturalEn(ahora, zona), zona)`.
+- `chargesAdmin.routes.ts` — import de `zonaDelMerchant` y la llamada pasando
+  `zonaDelMerchant(charge.merchant)`.
+
+**Lo único que el orquestador añadió al diseño son COMENTARIOS**, y se dice aquí para que no se
+descubra en el diff: el comentario que había encima de `finDeHoy` describía el mecanismo viejo, y
+dejarlo intacto habría sido dejar una explicación falsa. El comentario nuevo lleva dentro la
+medición de la tabla de arriba. **Ni una línea de lógica fuera del §4.**
+
+## Controles, ejecutados y no supuestos
+
+Aplicado con un script que **aborta sin escribir un byte** si cualquiera falla:
+
+| control | resultado |
+|---|---|
+| cada ancla aparece **exactamente una vez** antes de tocar | **sí, las 4** |
+| `fechaDeCobro.ts` líneas antes → después | 88 → 104 |
+| `chargesAdmin.routes.ts` líneas antes → después | 107 → 114 |
+| 🔴 ¿queda `setHours` **en el código**? | **no** |
+| ¿lo nombra el comentario nuevo? | **sí, a propósito** |
+| ¿queda `new Date(ahora)`? | **no** |
+| ¿usa `finDelDiaEn(diaNaturalEn(ahora, zona), zona)`? | **sí** |
+| ¿`zona` está en la firma con su defecto? | **sí** |
+| exports del módulo antes → después | **6 → 6** |
+| la ruta relativa resuelve a `src/core/` | **sí, en los dos ficheros** |
+| ¿sobrevive la llamada vieja de un solo argumento? | **no** |
+| ¿se pasa `zonaDelMerchant(charge.merchant)` exactamente una vez? | **sí** |
+
+### 🔴 El control que falló primero, y por qué se deja escrito
+
+La primera pasada **abortó**: el control decía `¿aparece el texto setHours?` y saltó **sobre el
+comentario nuevo**, que nombra `setHours` justo para explicar por qué se fue. **El control medía la
+presencia de una palabra; lo que importaba era si la LLAMADA sigue ejecutándose.** Se rehízo
+mirando sólo las líneas de código, y se dejaron **los dos** controles: `setHoursEnCodigo: false` y
+`setHoursMencionadoEnComentario: true`. **El par se prueba a sí mismo** — juntos dicen que la
+llamada se fue y que el comentario la nombra, cosa que ninguno de los dos afirma por separado.
+
+El abort se comprobó **por bytes**: `sha256` de los dos ficheros idéntico al de `origin/main`
+después de fallar. No escribió nada.
+
+## ⛔ Lo que este apéndice NO afirma
+
+- ⛔ **No toca `invoicesAdmin.routes.ts:450`** (de J1). Sigue con el defecto — **comportamiento
+  idéntico a hoy**, ninguna regresión — y queda anotado para que J1 lo adopte en su propio PR.
+- ⛔ **No hay corte de fechas.** Lo midió J2 en el §3 y no se re-mide: la función se invoca una sola
+  vez al confirmar, y el lado de lectura nunca la revalida.
+
+## VERIFICADO por J2 (23-sep-2026, tras el apéndice de arriba)
+
+`npm run build` (tsc) en verde. El caso del §1 reproducido contra el `dist/` compilado: sin
+`zona`, sigue rechazando (día natural en UTC, como corrige el apéndice); con `zona=Europe/Madrid`,
+ahora ACEPTA — el arreglo funciona. Control con `Atlantic/Canary` y con la llamada de un solo
+argumento (compatibilidad), los dos correctos (guion de verificación en el scratchpad de la
+sesión, no committeado). El test que SÍ queda en el repo es
+`tests/scrum397-fecha-real-de-cobro.test.mjs` — el fichero ya existente de `resolverFechaDeCobro`
+(SCRUM-397), que es donde correspondía extenderlo.
+
+**Tests actualizados, con la corrección exacta que pide el apéndice** (§5.5 de arriba: *«sin zona,
+el resultado es el del día natural en UTC»*, no *«idéntico a antes»*): sustituida la vieja
+caracterización `SCRUM-397 · CARACTERIZACIÓN: con cadena YYYY-MM-DD el veredicto DEPENDE del
+servidor` — que documentaba el defecto que este ticket arregla y ya no describe el código — por
+tres tests nuevos en el mismo fichero: sin zona (UTC, machine-independent), con
+`zona=Europe/Madrid` (el arreglo) y la llamada de compatibilidad de un argumento. 87/87 verdes en
+la tanda completa (fechaDeCobro, instanteDeCobro, zonaDelMerchant, el sello fiscal, el censo de
+`merchantId`, el trinquete del `select`, y los ficheros que ejercitan `confirm-bizum`).
+
+### Un rojo REAL que el apéndice no vio — SCRUM-860, arreglado
+
+Con el código del apéndice aplicado, `chargesAdmin.routes.ts` empezó a fallar el trinquete del
+`select` (SCRUM-860: 102→103) — no por una lectura nueva, sino porque pasar `charge.merchant` como
+argumento de `zonaDelMerchant(charge.merchant)` en la misma línea que `const fecha = …` hace que el
+censo (que propaga «sucio» por texto, no por tipos: `_lecturas-sin-select.mjs:143-151`) marque
+`fecha` como si llevara datos de `charge`, y como `fecha.error`/`fecha.message` SÍ llegan a un
+`res.json` dos líneas más abajo, cuenta la consulta entera de `charge` como expuesta — aunque
+`ResolucionFecha` (el tipo que devuelve `resolverFechaDeCobro`) no lleva NINGÚN campo de `charge`.
+Es un falso positivo del censo (no distingue argumento de un helper puro de dato que fluye), pero
+en vez de tocar el script compartido (usado por las seis sesiones), se cerró donde el propio guard
+propone como vía (a): `include: { merchant: true, customer: {...} }` → `select` nombrando
+exactamente lo que usa el handler (`status`/`amount`/`currency` de `charge`;
+`country`/`flags`/`timezone` del merchant, para `isFlagEnabled` y `zonaDelMerchant`). Con el
+`select` puesto, el trinquete pasa igual —tiene `select`, no hace falta la traza de texto— y de
+paso dejó de sobre-pedir el `merchant` completo. `git status` limpio tras el arreglo: un solo
+fichero más tocado (`chargesAdmin.routes.ts`), nada en `fechaDeCobro.ts`.
+
+### Ancla de re-verificación
+
+**Verificado contra:** `origin/main` = `e8240b63` (tras el merge de SCRUM-1018) · rama
+`scrum-1093b-zona-en-fecha-de-cobro` · 23-sep-2026.
+
+**Listo para auto-merge.** J2 lo rearma tras empujar este commit.
