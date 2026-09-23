@@ -868,14 +868,20 @@ AEAT, con enlace) · rehabilitación integral va por otro número (art. 91.Uno.3
 VERIFICADO** ⚠).
 
 **Q-C2.** ~~Inversión del sujeto pasivo~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1051, y le
-estrecha mucho el alcance.** La leyenda exacta de la factura: art. 6.1.m ROF (RD 1619/2012) —
-«**inversión del sujeto pasivo**», esas tres palabras, sin cuota ni tipo; art. 6.2.b ROF: si la
-factura mezcla ISP y no-ISP, base separada por bloque. **El asesor dice haberlo verificado hoy
-contra el ROF** (no ⚠, tratado como fuente); mi propio cotejo (WebFetch sobre el BOE consolidado)
-confirma la SUSTANCIA («inversión del sujeto pasivo» en el art. 6.1) pero devolvió una lectura
-ambigua sobre la LETRA exacta (mi consulta trajo dos textos distintos etiquetados «m)» en la misma
-pasada) — lo digo en vez de callarlo: no es una verificación mía a la altura del script de
-`CONTABILIDAD.md` §3, así que **no promuevo esta cita a §3**, sólo la traigo aquí como la trajo él.
+estrecha mucho el alcance.** La leyenda exacta, **RESPONDIDA por cita comprobada (§3 de
+`CONTABILIDAD.md`, SCRUM-1039c, 23-sep-2026)** — art. 6.1.m RFACT/ROF (RD 1619/2012): *«En el caso
+de que el sujeto pasivo del Impuesto sea el adquirente o el destinatario de la operación, la
+mención "inversión del sujeto pasivo"»* — la mención se incluye **cuando** el sujeto pasivo es el
+destinatario, no son tres palabras sueltas sin condición. Y art. 6.2.b: si la factura mezcla ISP y
+no-ISP, base separada por bloque (cita completa en §3).
+
+*Cómo se cerró la duda:* mi primer cotejo (WebFetch sobre el BOE consolidado) devolvió **dos
+textos distintos, ambos etiquetados «m)»**, en la misma pasada — no lo promoví a §3 con esa
+ambigüedad. J5 lo repitió con `curl` directo (dos sondas independientes sobre el art. 6 completo, y
+el historial de modificaciones que el BOE publica al pie del artículo): **sólo hay una letra m),
+sin cambios desde 2012**. El duplicado era un artefacto del resumen de WebFetch, no algo del
+origen (detalle en `docs/master/SCRUM-1039.md` §SCRUM-1039c). **Lección de método:** una cita legal
+se baja con `curl`, nunca con WebFetch.
 
 🔴 **El alcance se estrecha mucho.** Tres condiciones ACUMULATIVAS, y en un oficio fallan a menudo:
 1. destinatario **empresario o profesional** actuando como tal — un particular nunca es promotor;
