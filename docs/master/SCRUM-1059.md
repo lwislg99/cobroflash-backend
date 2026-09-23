@@ -85,3 +85,44 @@ aplica el mismo arreglo —se borra la entrada `export` del `CENSO`, no se pone 
 check obligatorio de ESTA rama también pase sin depender de cuándo se actualice con `main`. No se
 relaja ninguna aserción: la vista sale del censo porque ya no pinta nada, y si algún día vuelve a
 pintar el marcador caerá como «VISTA NUEVA», más estricto que antes.
+
+## Cuarta corrección (23-sep, PR #1642): main se movió mucho, el merge tuvo conflictos reales
+
+**Medido contra:** `origin/main` = `6e97b236863ff3de08dfcd8b8308959cbdce32ab` · 2026-09-23T17:00:28Z
+
+El auto-merge llevaba tres días armado con `mergeable: CONFLICTING` / `mergeStateStatus: DIRTY` —
+un ticket dado por cerrado que no lo estaba (regla 42). `main` se había movido, pero **donde yo
+toco**, no solo en volumen: dos ficheros con conflicto real, resueltos con `git merge origin/main`
+(nunca rebase — la rama ya estaba empujada, y el force queda bloqueado por hook y clasificador;
+regla de la casa: rebasar habría ido a `<rama>-rebasada`, no hizo falta).
+
+- **`customersAdmin.routes.ts`:** dos inserciones INDEPENDIENTES en el mismo punto del fichero, no
+  una disputa. Mi rama añadía `POST /bulk-tags` justo después de `GET /duplicados` (tiene que ir
+  ANTES de cualquier `/:id`, por la misma trampa de Express ya documentada arriba en este fichero
+  para `/duplicados`: `Number('bulk-tags')` → `NaN` → `400`). `origin/main`, mientras tanto, había
+  RELOCALIZADO `GET /:id` —que antes vivía justo después de `GET /` (medido en el merge-base,
+  commit `25c07866`)— a ese mismo punto, por el MISMO motivo: corregir el orden para que `/:id` no
+  se comiera las rutas literales de encima. Las dos correcciones son compatibles (una es `POST`, la
+  otra `GET`: no compiten por el mismo verbo+ruta) y las dos se quedan, unidas — `/bulk-tags`
+  primero, `/:id` relocalizado después. Import de `etiquetadoMasivo` (mío) + los tres imports de
+  SCRUM-1062/1036/1057 (de main) también se unen, sin descartar ninguno.
+- **`tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`:** el mismo patrón sobre un registro
+  declarativo (`GATEADOS_DECLARADOS`, un objeto literal `nombre → cuenta`). Cada rama añadió sus
+  propias entradas nuevas (la mía: `scrum1059b-etiquetado-masivo-postgres.test.mjs`; las de main:
+  1062/1036/1057b) en el mismo punto del objeto. `TOTAL_DECLARADO` se deriva con `.reduce()` sobre
+  el objeto entero — no hay ningún número a mano que regenerar (la lección de «un conflicto en una
+  cifra derivada no se resuelve sumando, se regenera con su generador»: aquí el generador YA corre
+  solo, con las dos mitades presentes).
+- **`scripts/guard-marcadores-en-pantalla.mjs`:** auto-mergeado por git sin conflicto — nada que
+  resolver a mano.
+
+**Verificado tras el merge** (build + los tests relevantes, corridos, no releídos): `npm run
+build` en verde; `scrum1059-etiquetado-masivo` (puro), `scrum1057-duplicados-antes-de-id` (el
+mismo guard de orden de rutas que motiva dónde va `/bulk-tags`), `scrum419` (el registro que
+acabo de tocar), `scrum1035`, `scrum1043`, `scrum983`, `scrum767`, `scrum860` (trinquete del
+`select`) y `scrum243` (censo de `merchantId`) — **64/64 verdes** en total entre las dos tandas.
+`scrum1059b-etiquetado-masivo-postgres.test.mjs` (gateado por banco desechable) no se pudo correr
+en esta máquina — sin Docker/Postgres local; lo confirma CI.
+
+Empujado a la misma rama `scrum-1059-etiquetado-masivo` como un commit de MERGE (no squash, no
+rebase) para que la revisión vea exactamente qué se resolvió.
