@@ -441,6 +441,12 @@ async function initApp() {
         viewTitle.textContent = (window.LIBRO_COPY && window.LIBRO_COPY.titulo) || '';
         if (typeof window.renderLibroRegistroView === 'function') window.renderLibroRegistroView(viewContainer);
         break;
+      // SCRUM-1040 (CON-04). Junto a 'libro-registro', mismo criterio: el titulo sale de la
+      // MISMA constante que la vista.
+      case 'facturas-recibidas':
+        viewTitle.textContent = (window.FACTURAS_RECIBIDAS_COPY && window.FACTURAS_RECIBIDAS_COPY.titulo) || '';
+        if (typeof window.renderFacturasRecibidasView === 'function') window.renderFacturasRecibidasView(viewContainer);
+        break;
       case 'expenses':
         viewTitle.textContent = 'Gastos';
         renderExpensesView(viewContainer);
@@ -515,7 +521,7 @@ async function initApp() {
     // olvida. Sin esto, quien recargue estando a media factura suelta pierde la pantalla — que
     // es exactamente lo que le pasaba con el modal, y medio motivo del ticket.
     'invoices','invoices-new','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
-      'libro-registro','albaranes',
+      'libro-registro','facturas-recibidas','albaranes',
     // sprint Tecnosel · el TERCER sitio, que es el que se olvida: sin esto, quien recargue
     // estando en «Partes por valorar» pierde la vista. Se entra desde Trabajos.
       'partes-oficina'];
