@@ -30,6 +30,8 @@ const TEXTO_FIRMADO = 'Importar clientes desde un fichero CSV';
 // número de línea: referenciar por posición caduca.
 const EXCEL_PERMITIDO = [
   { fichero: 'public/dashboard/js/csvImport.js', fragmento: 'que exporta tu Excel' },
+  // SCRUM-1086 (23-sep-2026): «sin post-its ni Excel» no promete leerlo — dice que no hace falta.
+  { fichero: 'public/index.html', fragmento: 'sin post-its ni Excel' },
 ];
 
 function ficherosDePublic() {

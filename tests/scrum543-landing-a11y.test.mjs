@@ -51,7 +51,8 @@ test('SCRUM-543 · lo que separa el texto del héroe y de la demo sigue en su si
   //   que es justamente lo que produce la separación. Tolerar atributos no es aceptar cualquier
   //   cosa: sin `class="ts"` exacto y sin ese orden, sigue sin casar.
   const brs = (LANDING.match(/<\/span><br[^>]*><span[^>]*class="ts"[^>]*>/g) || []).length;
-  if (brs !== 5) malos.push(`demo: ${brs} de 5 pasos conservan el <br> entre título y descripción`);
+  // SCRUM-1086 (23-sep-2026) retiró los pasos 4 y 5 (el cobro) de la demo: quedan 3, no 5.
+  if (brs !== 3) malos.push(`demo: ${brs} de 3 pasos conservan el <br> entre título y descripción`);
   assert.deepEqual(malos, [],
     '🔴 SE HA RETIRADO LO QUE SEPARA EL TEXTO:\n    ' + malos.join('\n    ') +
     '\n\n  Sin eso el nombre accesible se pega («Sin tarjetaListo»). Compruébalo con ' +

@@ -26,18 +26,18 @@ import { generar, DESTINO, diez } from '../scripts/citar-hueco-condicion.mjs';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = leerLanding(RAIZ);
 
-/** Lo medido el 21-ago-2026. */
-const CUANTAS = 10;
-const GRUPOS_HOY = { [JUNTO]: 7, [LEJOS]: 3, [NINGUNO]: 0 };
+/** Lo medido el 21-ago-2026 (eran 10 / 7 JUNTO / 3 LEJOS). SCRUM-1086, 23-sep-2026, retiró ocho. */
+const CUANTAS = 2;
+const GRUPOS_HOY = { [JUNTO]: 2, [LEJOS]: 0, [NINGUNO]: 0 };
 const SITIOS = ['junto al texto', 'pie del bloque', 'pie de la seccion'];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · menos de diez es mirar a medias; más, un hallazgo
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('SUELO · siguen siendo diez, y si no, se nombra la diferencia', () => {
+test('SUELO · siguen siendo dos, y si no, se nombra la diferencia', () => {
   const lista = diez(html, RAIZ);
   assert.ok(lista.length > 0,
-    '🔴 CIEGO: cero afirmaciones falsas. Están medidas: son diez. Un cero se leería como «no hay '
+    '🔴 CIEGO: cero afirmaciones falsas. Están medidas: son dos. Un cero se leería como «no hay '
     + 'nada que documentar», que es la conclusión más cara que puede dar este fichero.');
   assert.equal(lista.length, CUANTAS,
     `🔴 el censo devuelve ${lista.length} y se midieron ${CUANTAS} · diferencia ${lista.length - CUANTAS}.\n`
@@ -46,7 +46,7 @@ test('SUELO · siguen siendo diez, y si no, se nombra la diferencia', () => {
     + 'es hallazgo, y hay que medirle el hueco antes de que el fundador elija la frase.');
 });
 
-test('SUELO · la medida congelada cubre los diez, en los dos anchos y en los tres sitios', () => {
+test('SUELO · la medida congelada cubre los dos, en los dos anchos y en los tres sitios', () => {
   const ids = diez(html, RAIZ).map((v) => v.id);
   for (const ancho of CONDICIONES.anchos) {
     assert.ok(HUECOS[ancho], `🔴 CIEGO: no hay medida a ${ancho} px`);
@@ -62,7 +62,7 @@ test('SUELO · la medida congelada cubre los diez, en los dos anchos y en los tr
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LOS TEXTOS · si cambian, el hueco medido ya no es el suyo
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('los diez textos son los del marcado, byte a byte', () => {
+test('los dos textos son los del marcado, byte a byte', () => {
   const porId = new Map(censar(html).todas.map((u) => [u.id, u.texto]));
   const bruto = fs.readFileSync(path.join(RAIZ, 'public/index.html'));
   for (const v of diez(html, RAIZ)) {
@@ -86,24 +86,24 @@ test('CONTROL POSITIVO · el copy publicado que no promete medios NO está en la
   const control = ['todo/h2#1', 'como/h3#2', 'precios/p#1', 'faq/div#4'];
   for (const id of control) {
     assert.equal(ids.has(id), false,
-      `🔴 «${id}» está en la lista de los diez y no promete ningún medio de pago: el criterio no `
+      `🔴 «${id}» está en la lista de los dos y no promete ningún medio de pago: el criterio no `
       + 'distingue nada y la lista es ruido.');
   }
-  // y el contraste: los que sí prometen, están
-  for (const id of ['como/p#4', 'precios/li#3', 'probar/span#42']) {
-    assert.ok(ids.has(id), `🔴 «${id}» promete un medio que hoy no existe y NO está en la lista`);
+  // y el contraste: los dos que hoy siguen falsas, están
+  for (const id of ['todo/p#3', 'faq/div#3']) {
+    assert.ok(ids.has(id), `🔴 «${id}» debería seguir en la lista y ya no está`);
   }
 });
 
-test('EL LÉXICO ES SUELO · ocho de los diez nombran un medio concreto, y los dos que no están dichos', () => {
+test('EL LÉXICO ES SUELO · uno de los dos nombra un medio concreto, y el que no está dicho', () => {
   const MEDIOS = /tarjeta|bizum|transferencia/i;
   const lista = diez(html, RAIZ);
   const conMedio = lista.filter((v) => MEDIOS.test(v.texto));
   const sinMedio = lista.filter((v) => !MEDIOS.test(v.texto));
-  assert.equal(conMedio.length, 8, '🔴 ha cambiado cuántos nombran un medio concreto');
-  assert.deepEqual(sinMedio.map((v) => v.id).sort(), ['faq/div#3', 'probar/span#15'],
-    '🔴 han cambiado los dos que NO nombran medio. Ésos son los que hay que releer con el texto '
-    + 'delante antes de darlos por falsos: ' + JSON.stringify(sinMedio.map((v) => v.id)));
+  assert.equal(conMedio.length, 1, '🔴 ha cambiado cuántos nombran un medio concreto');
+  assert.deepEqual(sinMedio.map((v) => v.id).sort(), ['faq/div#3'],
+    '🔴 ha cambiado el que NO nombra medio. Ése es el que hay que releer con el texto '
+    + 'delante antes de darlo por falso: ' + JSON.stringify(sinMedio.map((v) => v.id)));
   // y que el documento los explique uno por uno, en vez de esconderlos en el recuento
   const doc = fs.readFileSync(path.join(RAIZ, DESTINO), 'utf8');
   for (const v of sinMedio) {
