@@ -113,10 +113,56 @@ No se ha instalado ninguna dependencia ni tocado `package.json`. No se ha escrit
 producción: el script de medición del §1 no se empuja (vive en el scratchpad de esta sesión). No se
 ha tocado el esquema. No se ha publicado ningún texto de usuario.
 
-## Siguiente paso
+## Siguiente paso (§1-6, cerrado por la construcción de abajo)
 
 Esperando de un jefe: (1) sí/no y qué librería para leer `.xlsx` de verdad (§3); (2) firma del
 literal del error específico del §5, que no depende de (1) y se puede construir antes. Con
 cualquiera de las dos respuestas, el ticket de construcción es nuevo y pequeño, y toca solo
 `customersAdmin.routes.ts` (mío) más, si se elige la lectura real de `.xlsx`, la línea de
 `package.json` que decida el jefe.
+
+## SCRUM-1022b · construcción — lee un `.xlsx` real al importar (CON GO)
+
+**Medido contra:** `origin/main` = `d8d724e1f3f41d1ce50b785cbfb275b76bd7b729` · 2026-09-23T11:02:04Z
+
+23-sep-2026 11:02Z · rama `scrum-1022-lee-xlsx-al-importar` · escrita por **J2**. GO del fundador
+a la dependencia (regla 36), literal *«Sí que entre»*, en **SCRUM-1022, comentario 16597** — la
+comparativa del §3 no se repite aquí, se cita.
+
+**Qué se construyó**, sin tocar el diseño ya medido en §4:
+
+- Dependencia instalada: `read-excel-file@^9.3.10` (la elegida en §3), con su export `./node` para
+  servidor (`readSheet`, no el export por defecto, que en la 9.x trae TODAS las hojas).
+- `importarClientes.service.ts`: dos funciones nuevas — `pareceXlsx(bytes)` (mira la firma ZIP
+  `PK\x03\x04`, primeros 4 bytes, no la extensión) y `xlsxATextoCsv(bytes)` (lee la primera hoja y
+  la reescribe como texto CSV con `;`, la MISMA forma que devuelve `decodificarCsv(...).texto`).
+- `customersAdmin.routes.ts` (`/import/preparar` y `/import`, líneas 167 y 193 antes de esta
+  tanda): si `pareceXlsx`, la rama usa `xlsxATextoCsv` en vez de `decodificarCsv`; si no, el
+  camino CSV de siempre, sin cambios.
+- 🔴 **Criterio de diseño cumplido, verificado en el diff: `proponerMapeo` e `importarClientes` no
+  cambian ni una línea.** Ambas reciben el mismo `{cabecera, filas}` de siempre vía `trocearCsv`.
+- `tests/scrum985-...test.mjs`: el test que afirmaba «0 lectores de hojas de cálculo en las
+  dependencias» se reescribe a propósito (estaba previsto en su propio texto viejo) para exigir
+  que el lector sea **el autorizado**, ni otro ni ninguno.
+- `tests/scrum1022-importa-xlsx-real.test.mjs` (nuevo): rojo→verde con un `.xlsx` REAL (ZIP/OOXML
+  válido, construido en memoria con `archiver`, ya presente — ninguna dependencia nueva para el
+  test), contra los handlers reales del router (sin mocks del parseo). Cubre `pareceXlsx`,
+  `xlsxATextoCsv`, las dos rutas con un `.xlsx` de verdad, y un control positivo: un CSV normal
+  sigue exactamente igual que antes.
+
+**Verificado antes de empujar:** `npm run build` (tsc) limpio · 83 tests en verde, 0 fail, 0
+skipped (`scrum1022-importa-xlsx-real`, `scrum985`, y toda la suite de clientes/importador que
+toca el mismo módulo: `scrum983`, `scrum884`, `scrum767`, `scrum339`, `scrum312`, `scrum1057`,
+`scrum1043`, `scrum1035`).
+
+**§5 (el mensaje engañoso propuesto) queda SIN aplicar aquí a propósito**: con la lectura real de
+`.xlsx` entrando, ese literal deja de hacer falta — lo dice el encargo de esta tanda, y no se
+construye por esta sesión.
+
+**Mi error, para que quede registrado (A9):** el trabajo de esta sección estaba ya escrito, sin
+commitear, en el árbol de trabajo al arrancar esta sesión (no consta en el traspaso de la sesión
+anterior de J2). Para no perderlo lo aparté con `git stash push -u` y lo repuse sobre una rama
+nueva creada desde `origin/main` — **un uso de `git stash` que A15 prohíbe** (su almacén es
+compartido entre worktrees). No hubo colisión (se hizo y deshizo en el mismo turno, sin otra
+sesión de por medio), pero no debí usarlo: la alternativa correcta era copiar los ficheros a un
+directorio temporal fuera del árbol, no el stash compartido.
