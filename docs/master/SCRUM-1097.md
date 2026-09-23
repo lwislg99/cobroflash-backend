@@ -138,3 +138,27 @@ scripts de siembra/limpieza fueron efímeros y no se han committeado.
 
 Coordinar con el fundador la pasada `--prod-ro` contra `DATABASE_URL_PROD_RO` (rol `yaqu_lectura`,
 solo lectura verificado a nivel de Postgres) y registrar aquí su resultado como SCRUM-1097b.
+
+---
+
+## 6 · CI en rojo tras abrir el PR — check obligatorio, arreglado sin tocar el guard
+
+El check obligatorio `build + tests (con banco desechable)` salió en rojo (run 35902771652) por
+`tests/scrum711-guards-sin-sitio.test.mjs` (SCRUM-711 — «¿qué guard no corre en ningún sitio?»):
+`guard-acreditacion-invoicing-es.mjs` cae en `ES_GUARD_EJECUTABLE` por su nombre y no lo invoca
+nadie — ni `npm test` ni ningún workflow, correctamente: no tiene destino por defecto y sus
+secretos (`DATABASE_URL_STAGING`/`_PROD_RO`) no viajan a CI (regla 9), igual que los tests
+gateados. Un guard escrito y sin invocar se lee como cobertura y protege lo mismo que uno que no
+existe — exactamente el defecto que SCRUM-711 vigila.
+
+Regla 41: se arregla el código, no el guard. El código que faltaba era la declaración: se añadió
+a `DECLARADOS` en `scrum711-guards-sin-sitio.test.mjs`, con la misma forma que ya tenía
+`guard-conformidad-landing.mjs` — su lógica pura (`medirAcreditacion`) SÍ corre en la tanda, a
+través de `tests/scrum1097-guard-acreditacion-invoicing-es.test.mjs` (§3 de este informe) — y con
+una prueba comprobable añadida a `'las pruebas de las declaraciones siguen siendo ciertas'` para
+que la declaración no pueda quedarse sola si algún día deja de ser cierta.
+
+`meta-guard · los guards caen cuando deben` también salió en rojo en ese mismo run, por
+`scrum859-identidad-y-motivo-cerrado.test.mjs` (MUDO) — un ticket ajeno a SCRUM-1097, sin relación
+con ninguno de los tres ficheros de este PR. No es el check obligatorio que señaló el aviso y no
+se ha tocado aquí.
