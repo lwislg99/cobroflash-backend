@@ -561,3 +561,120 @@ Cerrado con enlace a esta entrada como motivo. La rama `scrum-1016e-titular-apli
 conserva el detalle completo de por qué se descartaron los literales de 16427/16513 (regla 26 +
 SCRUM-299 + SCRUM-400), útil si alguien pregunta por qué el titular no dice "tu factura VeriFactu". No
 cierro el ticket Jira SCRUM-1016 (A13: cierra el orquestador del equipo dueño, no la sesión).
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-1016k · Expediente listo para `:428` y `:508` — Candidato 1 re-verificado, sin aplicar
+
+**Fecha:** 23-sep-2026 · **Carril:** J3 · **Rama:** `scrum-1016k-expediente-428-508-candidato1`
+**Medido contra:** `origin/main` = `b2df30887f1a1e1cff193b748d6beb0ef499e9e9` · 2026-09-23T16:06:10Z
+**Skill UI:** no cargada · esta entrada MIDE y documenta, sin tocar `public/index.html` — regla 39 y la
+prohibición explícita del comentario 16580 ("No se aplica el Candidato 1"); yaqu-premium-ui es
+obligatoria antes de TOCAR UI, y aquí no se toca ninguna.
+
+## Encargo
+
+Dejar el expediente listo para cuando S0 desbloquee SCRUM-1090 (guard SCRUM-537, familia B sin
+excepción de negación): qué cambia exactamente en `:428` y `:508`, si `:508` necesita ajuste por
+estar `hidden`/`PENDIENTE_FUNDADOR`, y RE-VERIFICAR (no releer) si el guard sigue cayendo. No se
+aplica nada a `public/`.
+
+## 1 · El literal firmado — ya existe, cito la fuente, no propongo uno nuevo
+
+Javier firmó el Candidato 1 en el comentario Jira **16564** (23-sep, 10:16Z) y ya antes en el
+**16528**: H1 (`:427` y su espejo `:507`), subtítulo (`:428`) y `<title>`/`og:title`/`twitter:title`
+(`:6,16,23`).
+
+## 2 · Diff exacto por sitio, medido contra el `origin/main` de hoy
+
+| sitio | línea | dice HOY | queda (firmado) |
+| --- | --- | --- | --- |
+| `<title>`/`og:title`/`twitter:title` | `:6`,`:16`,`:23` | `YaQu — Del presupuesto al cobro, sin salir de WhatsApp` | `YaQu — Del presupuesto a la firma, sin salir de WhatsApp` (56 car.) |
+| H1 vivo | `:427` | `Del presupuesto al cobro, <span class="hl">sin salir de WhatsApp.</span>` | `Del presupuesto a la firma, <span class="hl">sin salir de WhatsApp.</span>` |
+| Subtítulo vivo | `:428` | `Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. Y llevas clientes, gastos y facturas en el mismo sitio.` | `Crea el presupuesto en 30 segundos y tu cliente lo firma desde el móvil por WhatsApp. Hoy generamos cada registro de facturación con el formato oficial de la AEAT; la remisión a Hacienda todavía no está construida, y los founding la estrenaréis sin cambio de precio.` |
+| H1 espejo (oculto) | `:507` | idéntico a `:427`, carácter a carácter | mismo cambio que `:427` — la firma 16564 lo lista explícitamente |
+| Subtítulo espejo (oculto) | `:508` | ver §3 — **NO idéntico a `:428`** | **sin firmar**, ver §3 |
+
+## 3 · `:508` — medido, y corrijo mi propia nota de traspaso previa ("es copia del `:428`")
+
+**No es una copia completa.** Comparación carácter a carácter de las dos líneas hoy:
+
+- **Primera frase — IDÉNTICA en las dos:** *"Crea el presupuesto en 30 segundos, tu cliente lo
+  firma desde el móvil y te paga — con tarjeta, Bizum o transferencia."* Es la única cláusula que
+  comparten, y es la que promete cobro (la que el Candidato 1 retira en `:428`).
+- **Segunda frase — DISTINTA:**
+  - `:428` hoy: *"Y llevas clientes, gastos y facturas en el mismo sitio."*
+  - `:508` hoy: *"No hace falta que te fíes: haz tú el recorrido completo antes de dar tu correo."*
+    (voz propia del héroe oculto, orientada a la demo interactiva — coherente con su propio CTA en
+    `:509`, que antepone "Probar la demo" a "Empieza gratis", al revés que el héroe vivo).
+
+**Consecuencia:** el literal firmado del Candidato 1 sustituye la segunda frase de `:428` por la
+cláusula de AEAT/Hacienda. Aplicarlo tal cual a `:508` significaría, o (a) pisar la voz propia del
+héroe oculto con esa misma segunda frase, o (b) conservar su segunda frase original y sustituir
+solo la primera. **Ninguna de las dos está firmada.** Javier pidió explícitamente (comentario
+16564) medir el alcance y traérselo antes de escribir una palabra nueva ahí — esto es esa medición,
+no una decisión: no elijo (a) ni (b), lo dejo señalado para su firma.
+
+Grep de control sobre `public/index.html` completo: la cláusula *"te paga — con tarjeta, Bizum o
+transferencia"* aparece exactamente **2 veces** (`:428` y `:508`), ninguna más — no hay una tercera
+superficie que el Candidato 1 estuviera dejando fuera.
+
+## 4 · `hidden` / `PENDIENTE_FUNDADOR` — no protege del guard, medido no supuesto
+
+Pregunta del encargo: ¿necesita `:508` algún ajuste por estar oculto? **No — al revés, no hay
+ningún ajuste que lo proteja.** `scripts/_guard-afirmacion-fiscal.mjs` y su test
+(`tests/scrum537-afirmacion-falsa.test.mjs`) leen `public/index.html` con `fs.readFileSync` como
+texto plano (constante `PAGINAS`, línea 232) y aplican regex sobre el string completo — no parsean
+DOM, no miran `hidden` ni `data-microcopy`. La cláusula de `:508` se escanea exactamente igual que
+la de `:428`. **Cualquier literal que se firme para `:508` con la misma cláusula de "no está
+construida" quedaría bloqueado por el MISMO rojo que `:428`, aunque nadie lo vea en pantalla.**
+
+## 5 · SCRUM-537 — RE-EJECUTADO hoy, no releído. Sigue en rojo. Sin noticia de S0.
+
+Corrido `docs/master/evidencias/SCRUM-1016/verificar-scrum537.mjs` contra el
+`scripts/_guard-afirmacion-fiscal.mjs` real de `origin/main` de HOY (sha de la cabecera), en un
+árbol espejo aislado fuera del checkout compartido (mismo método que el apéndice SCRUM-1016j, sin
+tocar `public/`):
+
+```
+===== CANDIDATO 1 · Eje A con matiz citado (H2) en el subtítulo =====
+SCRUM-537 (afirmacionesFalsas) — hallazgos: 1
+   🔴 [familia B] «la remisión a Hacienda todavía no está construida, y los founding la
+      estrenaréis sin cambio de precio.» — afirma que la facturacion fiscal esta construida
+      (o que solo falta activarla) y el envio a la AEAT NO existe en el codigo
+
+===== CANDIDATO 2 · Sin nombrar términos regulados (más cerca de 26b) =====
+SCRUM-537 (afirmacionesFalsas) — hallazgos: 0
+   ✅ limpio
+```
+
+**Sin cambio respecto al 23-sep 10:51Z** (comentario Jira 16580). Control cruzado, dos señales
+independientes, las dos de hoy:
+
+- `scripts/_guard-afirmacion-fiscal.mjs` — sin commits desde `9142fcd3`/`7f7db23b`, los dos
+  anteriores a la apertura de SCRUM-1090.
+- **SCRUM-1090** (Jira, equipo S0) — estado "Tareas por hacer", **0 comentarios**. Nadie ha
+  empezado.
+
+**No hay noticia que aplicar hoy.** Sigue bloqueado exactamente como lo dejó 16580.
+
+## 6 · Listo para cuando llegue el desbloqueo — aplicar y empujar, no investigar
+
+Cuando SCRUM-1090 cierre (o Javier elija otra de las tres salidas que le dio el orquestador):
+
+1. **`:6,16,23` y `:427`/`:507`** — sin bloqueo de ningún guard; se pueden aplicar el mismo día que
+   se desbloquee `:428` (o antes, si algún jefe decide separarlos — no es este expediente quien lo
+   decide).
+2. **`:428`** — aplicar el literal de §2 tal cual, y correr `verificar-scrum537.mjs` de nuevo como
+   control positivo (tiene que dar `0` hallazgos con el guard ya corregido).
+3. **`:508`** — **STOP**: falta la firma de Javier sobre §3 (qué pasa con su segunda frase) antes
+   de escribir una palabra. Sin esa firma, la pasada de `:428` puede aplicarse sola y dejar `:508`
+   para una entrada siguiente — no son atómicas entre sí, solo comparten guard.
+
+## Qué NO hice
+
+- No toqué `public/index.html` ni ningún fichero de `public/` (regla 39 + prohibición literal del
+  comentario 16580).
+- No toqué el guard ni sus baselines (regla 41; tampoco es fichero de J3).
+- No decidí el literal de la segunda frase de `:508` (regla 39) — lo señalé para firma.
+- No reabro nada ya cerrado (Candidato 1 vs 2, Eje A vs B): sigue igual que 16564/16580.
