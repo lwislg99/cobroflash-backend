@@ -136,3 +136,72 @@ Descarga de 6 órdenes + lectura visual completa de los 2 formularios que más t
 tiene Postgres/Docker (no aplica aquí: todo el trabajo fue lectura de fuentes públicas). Ninguna
 interpretación fiscal: todo lo de arriba es lo que el formulario o el artículo dicen literalmente,
 con su URL para que J4 lo recoteje sin rehacerlo.
+
+## SCRUM-1039c · ROF art. 6.1.m) y 6.2.b) — el duplicado de WebFetch no está en la fuente (J5, 23-sep-2026)
+
+**Medido contra:** `origin/main` = `5b007193a8c7ac07ada416d7a08131f5b4d67e32` · 2026-09-23T18:00:12Z
+
+Encargo del orquestador: J4 cotejó hoy el art. 6.1.m) del ROF (RD 1619/2012) con WebFetch y le
+devolvió DOS textos distintos, ambos etiquetados «m)», en la misma respuesta — lo declaró sin
+promocionarlo a `CONTABILIDAD.md` §3 (correcto: no se fuerza una cita ambigua). Se pidió repetir la
+descarga con el método de SCRUM-1039b (curl directo, no WebFetch) y medir por qué hay dos «m)», sin
+razonarlo de antemano. Importa porque esta letra fija la mención «inversión del sujeto pasivo» que
+se IMPRIME en una factura que ve un cliente.
+
+### Fuente
+
+RD 1619/2012, de 30 de noviembre, Reglamento por el que se regulan las obligaciones de facturación —
+`BOE-A-2012-14696`, `https://www.boe.es/buscar/act.php?id=BOE-A-2012-14696`. Descarga directa por
+`curl` (23-sep-2026 ~18:00Z), convertida con el mismo `docs/master/evidencias/scrum1039/convertir-a-texto.mjs`
+de SCRUM-1039b: **106.999 caracteres** — IDÉNTICA a la longitud ya registrada para esta misma fuente
+(«RFACT») en `docs/producto/CONTABILIDAD.md` §8, lo que confirma que es la misma descarga
+reproducible y no un texto distinto.
+
+### Medido: solo hay UNA letra m), no dos
+
+Dos sondas independientes sobre el cuerpo completo del art. 6 (8.839 caracteres, desde «Artículo 6.»
+hasta el inicio de «Artículo 7.»):
+
+1. Sobre el texto normalizado: **1 aparición** de una letra `m)` en posición de lista.
+2. Sobre el HTML crudo, sin normalizar: **1 aparición** de la frase «inversión del sujeto pasivo» y
+   **1 solo bloque** `id="a6"` (el artículo no está duplicado en el DOM).
+
+Las dos sondas coinciden: no hay una segunda «m)» en lo que sirve el BOE.
+
+**Cita literal (art. 6.1.m):**
+
+> Artículo 6. Contenido de la factura. 1. Toda factura y sus copias contendrán los datos o
+> requisitos que se citan a continuación (…): m) En el caso de que el sujeto pasivo del Impuesto sea
+> el adquirente o el destinatario de la operación, la mención "inversión del sujeto pasivo".
+
+**Cita literal (art. 6.2.b), cotejada de paso — se usará junto a la anterior):**
+
+> 2. Deberá especificarse por separado la parte de base imponible correspondiente a cada una de las
+> operaciones que se documenten en una misma factura en los siguientes casos: (…) b) Cuando se
+> incluyan operaciones en las que el sujeto pasivo del Impuesto sobre el Valor Añadido correspondiente
+> a aquéllas sea su destinatario y otras en las que no se dé esta circunstancia.
+
+### Por qué hay dos «m)» en WebFetch y no en la fuente — medido, no razonado por adelantado
+
+La hipótesis del encargo era que el consolidado mezcla la redacción vigente con una anterior. **Se
+descarta por lo que dice el propio documento**, no por deducción: al pie del artículo, el BOE lista
+su historial completo de cambios —«Se añade el apartado 5… Se modifica el apartado 3… Se modifica la
+letra a) del apartado 1… Se añade la letra p) al apartado 1…»— y la letra **m) no aparece en ninguna
+de las cuatro modificaciones** (2013, 2014, 2021, 2023): es la misma desde el texto original de
+2012. No hay dos redacciones de m) entre las que elegir — solo hay una, siempre.
+
+Conclusión medida: el duplicado que vio J4 es un artefacto de WebFetch (resumen/render — el mismo
+defecto de tope de 125 caracteres por cita que SCRUM-1039 ya documentó para citas legales), no algo
+que exista en el origen. No se ha podido reproducir la ambigüedad bajando la fuente directamente.
+
+### Suelo
+
+- Instrumento: `curl` + `convertir-a-texto.mjs` (mismo script de SCRUM-1039b) para el texto plano, y
+  un conteo directo sobre el HTML sin normalizar como segunda sonda independiente — declarado arriba,
+  las dos coinciden.
+- Población: el cuerpo COMPLETO del art. 6 delimitado por el inicio del art. 7, no solo el entorno
+  de la palabra buscada — para no dejar fuera una posible segunda `m)` en otra parte del artículo.
+- No se ha tocado `docs/legal/PREGUNTAS_ASESOR.md` ni `docs/producto/CONTABILIDAD.md` (dueño J4, en
+  revisión de SCRUM-1106): esto es evidencia para que la incorpore, no una cita propagada por mí.
+- Sin STOP: solo lectura de una fuente pública externa; ningún fichero de código tocado, ningún
+  texto de usuario propuesto ni firmado.
