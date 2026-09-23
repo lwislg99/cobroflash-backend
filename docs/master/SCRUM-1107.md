@@ -103,9 +103,73 @@ no redonda no lo es).
   primero.
 - **El encadenamiento del segundo cobro** (§3) queda expresamente sin resolver, no es un olvido.
 
+## 6 · La cuarta pregunta: falta decir CUÁNDO SE COBRÓ — respondida, cambia el diseño
+
+El orquestador midió el hueco correcto: las tres columnas del §4 dicen cuánto y cuándo se PUEDE
+reclamar, pero no si YA SE RECLAMÓ. Sin eso, el aviso dispararía para siempre sobre un dinero ya
+ingresado — peor que no avisar, porque el profesional deja de creerse los avisos.
+
+**① ¿Cuarta columna o `Charge` nuevo?** Las dos cosas, no una u otra — son preguntas distintas:
+
+- **El DINERO que entra** (la liberación real de los 500€, o 480€ si hubo un desperfecto) debe
+  pasar por el mismo camino que CUALQUIER otro cobro: un `Charge` NUEVO, normal, confirmado con
+  el mismo mecanismo que ya existe (`confirm-bizum` u homólogo). No es un capricho de diseño: es
+  el mismo principio que ya cerró SCRUM-397 (`instanteDeCobro.ts`, «UN SOLO GENERADOR, no dos
+  asignaciones que se parecen» — el motivo exacto por el que ese ticket existió es que TRES
+  sitios daban tres respuestas sobre «cuándo se cobró»). Si el importe liberado viviera en un
+  campo aparte del retenido, `saldoPendiente.ts` y `cobros.service.ts` tendrían que aprender a
+  sumar DOS fuentes de «dinero cobrado» en vez de una, y ésa es la clase de bifurcación que ya
+  causó un ticket entero. El `Charge` nuevo no necesita un FK formal de vuelta a la factura
+  original — `Invoice.chargeId` ya lo ocupa el cobro inicial (§3) — se relaciona por el mismo
+  cliente, igual que hoy cualquier cobro se relaciona por `customerId`.
+- **La cuarta columna SÍ hace falta**, pero es MÁS PEQUEÑA de lo que parece: no es «cuánto se
+  cobró» (eso ya lo tiene el `Charge` nuevo, en su propio `amount`) — es solo **«¿sigue pendiente
+  este recordatorio, o ya se resolvió?»**, para que el aviso sepa cuándo callarse.
+
+**② ¿Solo fecha, o también importe?** **Solo fecha.** El importe REAL cobrado (500€, o 480€ con
+el desperfecto descontado) ya vive en `Charge.amount` del cobro nuevo — duplicarlo en la fila de
+la retención original sería el mismo defecto de «dos sitios que dicen cuánto» que el punto ① acaba
+de evitar para el DINERO; repetirlo para el IMPORTE sería la misma grieta un nivel más abajo.
+
+```prisma
+// Cuarta columna, añadida a la propuesta del §4 — sigue SIN aplicar
+retencionGarantiaCobrada DateTime? @map("retencion_garantia_cobrada")
+```
+
+`NULL` = pendiente de reclamar (el aviso sigue vivo); con fecha = resuelto, el profesional marcó
+que ya entró (el aviso se apaga). La cifra exacta que entró, si difiere de la retenida, se lee del
+`Charge` nuevo — no de aquí. El invariante del §4 (`retención + recibido = total`) sigue siendo el
+control del cobro INICIAL; el cobro de la LIBERACIÓN es un segundo hecho independiente, con su
+propio importe, que puede no coincidir con lo retenido (ahí está el desperfecto) — y eso no es un
+error del sistema, es la realidad que el ticket pide poder anotar.
+
+## 7 · El DDL exacto — generado, no escrito a mano
+
+Pedido por el orquestador para poder llevárselo a Javier: `node scripts/preview-migracion.mjs
+--desde <viejo.prisma>` en modo offline (compara dos ficheros de esquema, no toca ninguna base).
+`prisma/schema.prisma` de este worktree se modificó SOLO para generar el DDL de abajo y se
+revirtió a continuación — no se empuja (regla A5: la decisión y el ALTER son de Javier; el PR con
+esquema + código + tests va DESPUÉS de que él lo aplique).
+
+```sql
+-- AlterTable
+ALTER TABLE "charges" ADD COLUMN     "retencion_garantia_cobrada" TIMESTAMP(3),
+ADD COLUMN     "retencion_garantia_importe" DECIMAL(12,2),
+ADD COLUMN     "retencion_garantia_liberacion" TIMESTAMP(3),
+ADD COLUMN     "retencion_garantia_porcentaje" DECIMAL(5,2);
+```
+
+**Veredicto de `preview-migracion.mjs`:** control positivo pasado (herramienta responde, 30
+tablas vistas) · **aditiva: ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.**
+
+**Árbol limpio tras generarlo, verificado por CONTENIDO, no solo porque el comando no fallara:**
+`git checkout -- prisma/schema.prisma`, luego `git status --short` (no lista `schema.prisma`) Y
+`sha256sum` del fichero en el árbol contra la copia intacta guardada antes de tocarlo — **hash
+idéntico** (`4084abc3…9a77a2` los dos). El esquema del worktree quedó exactamente como estaba.
+
 ## Siguiente paso
 
-Con las tres columnas decididas y el ALTER aplicado por Javier en las tres bases, la construcción
+Con las cuatro columnas decididas y el ALTER aplicado por Javier en las tres bases, la construcción
 (escribir el importe retenido al confirmar un cobro parcial, leerlo en la ficha del cliente/factura,
 y el aviso cuando se acerque la fecha de liberación) cabe en un ticket de tamaño mediano sobre
 `src/modules/billing/**`, que es mi área.
