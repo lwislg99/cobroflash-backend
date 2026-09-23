@@ -6,6 +6,16 @@
 > backlog DISEÑADO pero **los tickets NO están creados en Jira** (§6). **Spec interna: cero claims fiscales en texto de producto** (regla 7,
 > `verifactu`). Todo texto de pantalla que aparezca aquí es propuesta **sin firma** (regla 39). Este documento no dice qué debe hacer el
 > profesional: dice qué dice la norma y qué hace hoy el código. CRM: `docs/producto/CRM.md`.
+>
+> **v0.11 · J4 · 23-sep-2026 (SCRUM-1104).** Q-C8 pasa de parcial a **RESPONDIDA** por el asesor
+> fiscal — mapa completo de modelos en §4. **Ninguna cita nueva entra en §3**: todo lo que el asesor
+> citó de memoria (marcado ⚠ por él mismo) queda NO VERIFICADO hasta que alguien lo coteje contra el
+> BOE consolidado — no se ha bajado ninguna fuente nueva en esta pasada (ni RGAT, ni los artículos
+> nuevos de RIVA/RIRPF/LIVA). **Cuatro cambios de alcance:** el 131 se retira (nunca aplica a este
+> perfil) · el 390 no está exonerado (con enlace AEAT, no ⚠) · se añaden el 100 y el 349, que
+> faltaban del mapa · el 347 NO desaparece con VeriFactu (sólo con SII, incompatible con VeriFactu).
+> REDEME→SII (SCRUM-1102) y la retención en facturas recibidas para 111/115 (SCRUM-1103) ya tienen
+> ticket propio: no se duplican aquí.
 
 ## 0 · La regla de oro y cómo se cumple
 
@@ -91,10 +101,16 @@ Cada una: por qué está aquí = el texto no se ha localizado o no basta para de
 | Q-C5 | ~~Retenciones 2 y 1 %~~ **RESPONDIDA por cita (§3, 22-sep-2026):** el 1 % es RIRPF art. 95.6 — actividades en estimación objetiva (módulos) de una lista cerrada de epígrafes IAE que SÍ incluye fontanería (504.2/3), albañilería (501.3), carpintería/cerrajería (505.5) y pintura (505.6). El 2 % es art. 95.4/95.5 — agrícola/ganadera/forestal, **no** un oficio de YaQu. Sigue abierto para el asesor: cuándo un oficio de YaQu está en estimación objetiva vs. directa (lo decide Hacienda por la actividad y el volumen, no lo elige el profesional en YaQu), y si conviene ofrecer el 1 % como opción o solo el 15/7 % de estimación directa | 15/7/2/1 cerrada |
 | Q-C6 | Criterio de caja: qué fecha cuenta como cobro (`paidAt` vs. fecha real) | usa `paidAt` |
 | Q-C7 | Los tipos **2, 5 y 7,5 %** que el servidor admite (`fiscalInput.ts:35`) no salen en los arts. 90-91 citados: ¿se retiran o se explican? | admitidos |
-| Q-C8 | Plazos y modelos trimestrales de un autónomo de oficio (303, 130/131, 111, 115, 347, 390): **parcialmente respondida (22-sep-2026)** — el modelo 303 trimestral tiene su plazo citado en §3 (Orden EHA/3786/2008, art. 7.2: 20 primeros días del mes siguiente, salvo 4T que son los 30 primeros días de enero). **Sigue NO VERIFICADO**: 130/131, 111, 115, 347 y 390 — cada uno tiene su propia orden de aprobación y no se han localizado todavía; el art. 71 RIVA sigue sin contener plazos | solo 303 devengado |
+| Q-C8 | ~~Plazos y modelos trimestrales~~ **RESPONDIDA por el asesor fiscal (23-sep-2026), detalle completo en `PREGUNTAS_ASESOR.md`.** Mapa: **habitual** 303/390/130/100/347 · **excepción** 111+190 (si retiene)/115+180 (si paga alquiler)/349 (si hay UE) · **NUNCA** 131 (es de módulos, excluyente con el 130). El 390 **no** está exonerado (fuente AEAT con enlace); el 347 **no** desaparece con VeriFactu (sólo con SII, incompatible con VeriFactu). Todas las citas de artículo que trae el asesor (RIVA, RIRPF, LIRPF, RGAT) las marcó él mismo ⚠ (de memoria): **NO VERIFICADO** en §3, ninguna se promueve a cita comprobada en esta pasada | 303: solo devengado. 130/111/115/347/390/100/349: no existen |
 | Q-C9 | ~~Exento y no sujeto~~ **RESPONDIDA por cita (§3, 22-sep-2026):** se revisó LIVA art. 7 completo (los 12 apartados de no sujeción: transmisión de negocio, muestras gratuitas, relación laboral, Administraciones Públicas…) y art. 20.Uno, encabezado + los 5 primeros apartados (postal, sanidad, profesiones médicas). **Ninguno de los revisados aplica** a la venta ordinaria de un servicio de reforma/instalación. No se transcribió el resto de 20.Uno (~30 apartados más: educación, finanzas, seguros, alquiler de vivienda…) por no ser candidatos plausibles — si el asesor conoce un supuesto concreto de un oficio que SÍ pueda caer en el resto de la lista, se revisa ese apartado puntual | no existen |
 
-Sin fuente descargada todavía: órdenes ministeriales de los modelos 130/131, 111, 115, 347 y 390 (solo se localizó y citó la del 303: Orden EHA/3786/2008). **Pendiente CON-03** para esas cinco.
+Sin fuente descargada todavía: órdenes ministeriales de los modelos 130, 111, 115, 347 y 390 (solo se
+localizó y citó la del 303: Orden EHA/3786/2008) — **el 131 se retira de esta lista, no aplica a este
+perfil**. Tampoco están descargadas las fuentes de las citas ⚠ del asesor que responden Q-C8: RGAT
+(RD 1065/2007, arts. 31-35), ni los artículos nuevos de RIVA (30, 61 *decies*, 71.3, 62.6), RIRPF
+(74-76, 100, 107, 109) y LIRPF (99) — LIVA/RIVA/RIRPF/LIRPF ya son fuente en §8 para OTROS artículos,
+pero cotejar estos concretos es trabajo aparte, no asumido por tenerlos ya descargados una vez.
+**Pendiente CON-03** para todo lo anterior.
 
 ## 5 · Principios del bloque
 
