@@ -178,16 +178,27 @@ test('SCRUM-738 · 🔴 esta pieza es SUPERFICIE: el motor sigue siendo el de SC
 // ═════════════════════════════════════════════════════════════════════════════════════════
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    // ① EL SUBSTRING QUE ESTE TICKET PROHÍBE, reconstruido: se quita el delimitador obligatorio.
-    // `scrum-72` vuelve a dar 72 en vez de `null`, o sea que «72» vuelve a casar con el principio
-    // de `scrum-727-x`. Con eso el censo propondría cerrar el ticket que no es — el peor resultado
-    // que puede dar, peor que no tenerlo.
+    // ① EL SUBSTRING QUE ESTE TICKET PROHÍBE, reconstruido: se acota la captura a 1-2 dígitos.
+    // `scrum-720-marcadores` y `scrum-727-constancia` vuelven a dar 72, y `scrum-1727-inventado`
+    // da 17 — «72» vuelve a casar con el principio de tickets que no son el suyo. Con eso el censo
+    // propondría cerrar el ticket que no es — el peor resultado que puede dar, peor que no tenerlo.
     // ⚠️ RE-ANCLADA tras SCRUM-829: `numeroDeRama` se mudó a `_numero-de-rama.mjs` (HOJA, sin
     // tocarle un carácter al patrón) para que `_censo-reparto.mjs` la comparta sin cerrar el
     // ciclo de imports que este fichero documenta arriba. Este fichero sólo la re-exporta.
+    // 🔴🔴 RE-ESCRITA EL 23-sep-2026 (SCRUM-804b): la forma anterior sólo quitaba el delimitador
+    // final (`[a-z]?(?:-|$)`) y dejaba el `+` codicioso intacto, así que sobre CUALQUIERA de los
+    // cuatro números de esta prueba capturaba el número ENTERO igual que el original — un `\d+`
+    // sin límite de longitud no colisiona nunca por sí solo, delimitador o no. SCRUM-804f
+    // (17-sep-2026, PR #1432) le añadió a este MISMO fichero la aserción `numeroDeRama('scrum-72')
+    // === 72` sin slug, y esa aserción PASA igual con la mutación vieja, así que dejó de haber
+    // ninguna entrada que distinguiera el código sano del mutado: el meta-guard lo midió MUDO por
+    // primera vez al fusionar esa rama aquí, no porque nadie lo tocara a propósito. Medido antes de
+    // reescribirla: con la declaración vieja, las OCHO comprobaciones de la prueba ① dan el mismo
+    // resultado con y sin mutar. La de aquí SÍ colisiona, porque acota la captura en vez de tocar
+    // el delimitador — es la forma real en que 720/727/1727 pueden perder sus últimos dígitos.
     fichero: 'scripts/_numero-de-rama.mjs',
     de: 'export function numeroDeRama(nombre) {',
-    a: 'export function numeroDeRama(nombre) {\n  const mm = /^scrum-0*([0-9]+)/.exec(String(nombre ??0).trim()); return mm ? Number(mm[1]) : null;',
+    a: 'export function numeroDeRama(nombre) {\n  const mm = /^scrum-0*([0-9]{1,2})/.exec(String(nombre ??0).trim()); return mm ? Number(mm[1]) : null;',
     cae: '«72» NO casa con 720, 727 ni 1727 — se compara el NÚMERO',
   },
   {
