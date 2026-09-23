@@ -11,15 +11,21 @@ uno que corre solo y avisa el día que deja de dar cero, sí»*.
 
 ---
 
-## 0 · Dependencia con SCRUM-1097 — declarada, no escondida
+## 0 · Dependencia con SCRUM-1097 — declarada, no escondida (y ya resuelta)
 
 Este ticket no puede existir sin `scripts/guard-acreditacion-invoicing-es.mjs` (SCRUM-1097, PR
-[#1744](https://github.com/lwislg99/cobroflash-backend/pull/1744), **abierto, no mergeado** al
-medir esto). Esta rama trae una copia BYTE A BYTE de ese fichero y de su test
-(`git checkout origin/scrum-1097-guard-acreditacion-invoicing-es -- scripts/guard-acreditacion-invoicing-es.mjs
-tests/scrum1097-guard-acreditacion-invoicing-es.test.mjs`), no una reescritura: cuando #1744
-mergee a `main`, un `git merge origin/main` en esta rama encuentra el mismo blob a ambos lados y
-no genera conflicto. El trabajo NUEVO de este ticket no toca ni un byte de esos dos ficheros.
+[#1744](https://github.com/lwislg99/cobroflash-backend/pull/1744)). Al empezar esta rama traía una
+copia BYTE A BYTE de ese fichero y de su test (`git checkout
+origin/scrum-1097-guard-acreditacion-invoicing-es -- scripts/guard-acreditacion-invoicing-es.mjs
+tests/scrum1097-guard-acreditacion-invoicing-es.test.mjs`), no una reescritura. **#1744 mergeó a
+`main` a las 2026-09-23T18:55:41Z, a mitad de esta tarea**, junto con una segunda declaración de
+`scripts/guard-acreditacion-invoicing-es.mjs` en `DECLARADOS`
+(`tests/scrum711-guards-sin-sitio.test.mjs`) hecha por otra sesión — el mismo sitio exacto que
+tocaba yo. `git merge origin/main` (commit `c1f51f62`) trajo esos 11 commits; los dos ficheros
+copiados coincidieron BYTE A BYTE (merge automático, sin conflicto) y el único conflicto real, en
+`DECLARADOS`, se resolvió conservando la entrada ya mergeada y sumando los campos que necesitaba
+mi prueba adicional (el envoltorio + su test), sin duplicar ni tocar la lógica que ya estaba en
+verde. El trabajo NUEVO de este ticket no toca ni un byte del guard de SCRUM-1097 en sí.
 
 ## 1 · Qué se construyó
 
