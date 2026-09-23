@@ -238,11 +238,51 @@ después de fallar. No escribió nada.
 
 ## ⛔ Lo que este apéndice NO afirma
 
-- ⛔ **No compila aquí, y no se dice que compile.** El worktree del orquestador nace sin
-  `node_modules`. **`npm run build` y los tests los corre J2**, que ya tiene el banco del §1 montado.
-  Hasta entonces esto es **código escrito y controlado, no verificado**.
-- ⛔ **No hay tests todavía.** Los del §5 siguen pendientes, con la corrección del control de arriba.
 - ⛔ **No toca `invoicesAdmin.routes.ts:450`** (de J1). Sigue con el defecto — **comportamiento
   idéntico a hoy**, ninguna regresión — y queda anotado para que J1 lo adopte en su propio PR.
 - ⛔ **No hay corte de fechas.** Lo midió J2 en el §3 y no se re-mide: la función se invoca una sola
   vez al confirmar, y el lado de lectura nunca la revalida.
+
+## VERIFICADO por J2 (23-sep-2026, tras el apéndice de arriba)
+
+`npm run build` (tsc) en verde. El caso del §1 reproducido contra el `dist/` compilado: sin
+`zona`, sigue rechazando (día natural en UTC, como corrige el apéndice); con `zona=Europe/Madrid`,
+ahora ACEPTA — el arreglo funciona. Control con `Atlantic/Canary` y con la llamada de un solo
+argumento (compatibilidad), los dos correctos (guion de verificación en el scratchpad de la
+sesión, no committeado). El test que SÍ queda en el repo es
+`tests/scrum397-fecha-real-de-cobro.test.mjs` — el fichero ya existente de `resolverFechaDeCobro`
+(SCRUM-397), que es donde correspondía extenderlo.
+
+**Tests actualizados, con la corrección exacta que pide el apéndice** (§5.5 de arriba: *«sin zona,
+el resultado es el del día natural en UTC»*, no *«idéntico a antes»*): sustituida la vieja
+caracterización `SCRUM-397 · CARACTERIZACIÓN: con cadena YYYY-MM-DD el veredicto DEPENDE del
+servidor` — que documentaba el defecto que este ticket arregla y ya no describe el código — por
+tres tests nuevos en el mismo fichero: sin zona (UTC, machine-independent), con
+`zona=Europe/Madrid` (el arreglo) y la llamada de compatibilidad de un argumento. 87/87 verdes en
+la tanda completa (fechaDeCobro, instanteDeCobro, zonaDelMerchant, el sello fiscal, el censo de
+`merchantId`, el trinquete del `select`, y los ficheros que ejercitan `confirm-bizum`).
+
+### Un rojo REAL que el apéndice no vio — SCRUM-860, arreglado
+
+Con el código del apéndice aplicado, `chargesAdmin.routes.ts` empezó a fallar el trinquete del
+`select` (SCRUM-860: 102→103) — no por una lectura nueva, sino porque pasar `charge.merchant` como
+argumento de `zonaDelMerchant(charge.merchant)` en la misma línea que `const fecha = …` hace que el
+censo (que propaga «sucio» por texto, no por tipos: `_lecturas-sin-select.mjs:143-151`) marque
+`fecha` como si llevara datos de `charge`, y como `fecha.error`/`fecha.message` SÍ llegan a un
+`res.json` dos líneas más abajo, cuenta la consulta entera de `charge` como expuesta — aunque
+`ResolucionFecha` (el tipo que devuelve `resolverFechaDeCobro`) no lleva NINGÚN campo de `charge`.
+Es un falso positivo del censo (no distingue argumento de un helper puro de dato que fluye), pero
+en vez de tocar el script compartido (usado por las seis sesiones), se cerró donde el propio guard
+propone como vía (a): `include: { merchant: true, customer: {...} }` → `select` nombrando
+exactamente lo que usa el handler (`status`/`amount`/`currency` de `charge`;
+`country`/`flags`/`timezone` del merchant, para `isFlagEnabled` y `zonaDelMerchant`). Con el
+`select` puesto, el trinquete pasa igual —tiene `select`, no hace falta la traza de texto— y de
+paso dejó de sobre-pedir el `merchant` completo. `git status` limpio tras el arreglo: un solo
+fichero más tocado (`chargesAdmin.routes.ts`), nada en `fechaDeCobro.ts`.
+
+### Ancla de re-verificación
+
+**Verificado contra:** `origin/main` = `e8240b63` (tras el merge de SCRUM-1018) · rama
+`scrum-1093b-zona-en-fecha-de-cobro` · 23-sep-2026.
+
+**Listo para auto-merge.** J2 lo rearma tras empujar este commit.
