@@ -142,23 +142,30 @@ presupuesto y lo firman con el dedo."*
 
 ---
 
-## D · La categoría de la Parte H2 del máster — cambio de máster, no de `public/`
+## D · La categoría de la Parte H2 del máster — cambio de máster, no de `public/` — ✅ APLICADO
 
-**Dónde:** `docs/YAQU_MASTER.md:215` (`cobrar señales por WhatsApp`), Parte H2 ("Mensaje en dos etapas"). Reportado por la sesión
-anterior de J4 (ver traspaso de esa tanda) y sin tocar desde entonces.
+**Dónde:** ~~`docs/YAQU_MASTER.md:215` (`cobrar señales por WhatsApp`)~~, Parte H2 ("Mensaje en dos
+etapas"). Reportado por la sesión anterior de J4 (ver traspaso de esa tanda).
 
-**Texto de hoy:** *"Etapa 1 (pre-SIF): categoría = "herramienta para presupuestar, firmar y
+**Texto de entonces:** *"Etapa 1 (pre-SIF): categoría = "herramienta para presupuestar, firmar y
 cobrar señales por WhatsApp"."*
 
-**Por qué es falso:** la misma línea 215 lleva, justo a continuación, el guion único ante "¿me
-vale para VeriFactu?" — reescrito y aplicado esta misma tanda (SCRUM-1016, comentario 16432) —
+**Por qué era falso:** la misma línea 215 llevaba, justo a continuación, el guion único ante "¿me
+vale para VeriFactu?" — reescrito y aplicado esa misma tanda (SCRUM-1016, comentario 16432) —
 que dice literalmente *"no emitimos ningún documento de facturación ni cobramos por la app — la
-señal la gestionas tú por fuera"*. La categoría de la propia Etapa 1, tres frases antes, sigue
+señal la gestionas tú por fuera"*. La categoría de la propia Etapa 1, tres frases antes, seguía
 prometiendo justo lo que el guion de al lado acaba de negar. Es la misma familia de contradicción
-que motivó la reescritura del guion H2 (SCRUM-534), sin resolver todavía en esta línea concreta.
+que motivó la reescritura del guion H2 (SCRUM-534).
 
-**Literal propuesto:** *"categoría = "herramienta para presupuestar y firmar por WhatsApp""* — se
-retira "y cobrar señales", sin sustituir por nada (no hay una función de cobro que hoy sea verdad
+**Aplicado:** con la firma de Javier del 23-sep-2026 (SCRUM-1086, comentario 16576), el orquestador
+del equipo aplicó el cambio en la Parte H2 del máster — detalle y controles en SCRUM-1086d, sección
+de `docs/master/SCRUM-1086.md` — y la categoría de la Etapa 1 quedó en *"herramienta para
+presupuestar y firmar por WhatsApp"*, sin sustituto para «y cobrar señales». La coordenada de
+arriba queda tachada porque el literal que citaba ya no está en esa línea del máster — a propósito,
+es el cambio que este bloque pedía.
+
+**Literal aplicado:** *"categoría = "herramienta para presupuestar y firmar por WhatsApp""* — se
+retiró "y cobrar señales", sin sustituir por nada (no había una función de cobro que fuera verdad
 para ponerle nombre).
 
 🔴 **Esto es un cambio de `docs/YAQU_MASTER.md` (Parte H2) — regla 35: no se aplica sin la firma de
