@@ -11,6 +11,10 @@
 // ⚠️ NO tocan `verifactu.service.ts`. El emisor ya tiene sus propios guards (SCRUM-149, 173, 177);
 // esto es la capa de antes, para que un dato inválido no llegue nunca a construir un registro.
 
+// SCRUM-735 (GO comentario 16573): `invalidAnioFiscal` deriva el año MÁXIMO de la zona del
+// merchant, no del reloj del proceso.
+import { diaNaturalEn, ZONA_POR_DEFECTO } from '../zonaDelMerchant';
+
 /**
  * 1152 · El sistema no existe antes del 28-10-2024 (entrada en vigor de la Orden de VERI*FACTU).
  * Una factura con fecha anterior es un registro que la AEAT rechaza, así que un export de un
@@ -41,15 +45,27 @@ export const TIPOS_IVA_ES_BP: ReadonlySet<number> = new Set([0, 200, 400, 500, 7
  */
 const PROHIBIDOS_SERIE = ['"', "'", '<', '>', '='];
 
-/** ¿El año pedido para un export fiscal es un año que este sistema puede representar? */
-export function invalidAnioFiscal(valor: unknown, ahora = new Date()): string | null {
+/**
+ * ¿El año pedido para un export fiscal es un año que este sistema puede representar?
+ *
+ * SCRUM-735 (GO comentario 16573): `maximo` salía de `ahora.getFullYear()`, el reloj del
+ * PROCESO (Railway va en UTC). En la madrugada del 1-ene española eso rechazaba el ejercicio ya
+ * en curso con «es un año futuro» — medido en docs/master/SCRUM-735.md §4. `zona` cae a
+ * `ZONA_POR_DEFECTO` ('UTC') para no romper a quien todavía no la pasa: el llamador real
+ * (`GET /admin/exports/verifactu.xml`) sí pasa la zona del merchant.
+ */
+export function invalidAnioFiscal(
+  valor: unknown,
+  ahora: Date = new Date(),
+  zona: string = ZONA_POR_DEFECTO,
+): string | null {
   const n = typeof valor === 'number' ? valor : Number(valor);
   if (!Number.isInteger(n)) return `no es un año válido: ${String(valor)}`;
   if (n < ANIO_MINIMO_FISCAL) {
     return `${n} es anterior a ${ANIO_MINIMO_FISCAL}: VERI*FACTU entró en vigor el 28-10-2024 `
       + 'y no hay registros válidos antes de esa fecha';
   }
-  const maximo = ahora.getFullYear();
+  const maximo = Number(diaNaturalEn(ahora, zona).slice(0, 4));
   if (n > maximo) return `${n} es un año futuro (el ejercicio en curso es ${maximo})`;
   return null;
 }

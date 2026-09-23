@@ -40,6 +40,11 @@ function fakePrisma({ lines }) {
       findFirst: async () => null,          // no hay huella anterior (primer registro)
       update: async ({ data }) => ({ ...data }),
     },
+    // SCRUM-735: `applyVeriFactu` lee la zona del merchant ANTES de sellar. `timezone: null` cae
+    // a `ZONA_POR_DEFECTO` ('UTC') — el mismo comportamiento que había antes de este ticket.
+    merchant: {
+      findUnique: async () => ({ timezone: null }),
+    },
     $executeRaw: async () => 1,
     $transaction: async (fn) => fn(client),
   };

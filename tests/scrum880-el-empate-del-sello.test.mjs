@@ -28,8 +28,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  formatFechaHoraHuso, applyVeriFactuAnulacion, computeVeriFactuHashAnulacion,
+  formatFechaHoraHuso, formatDateES, applyVeriFactuAnulacion, computeVeriFactuHashAnulacion,
 } from '../dist/modules/invoicing/domain/verifactu.service.js';
+
+// SCRUM-735: la zona que usa el camino real es la del merchant (`zonaDelMerchant`); el doble de
+// abajo declara `timezone: null`, que cae a `ZONA_POR_DEFECTO` ('UTC') — la misma que aquí.
+const ZONA = 'UTC';
 
 const NIF = '89890001K';
 const MERCHANT = 1;
@@ -55,7 +59,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 
 /** El sello tal y como se persistía ANTES de B: por el formateador real, no reconstruido a mano. */
 function selloTruncado(d) {
-  return new Date(formatFechaHoraHuso(d));
+  // La zona no importa para este truncado: el ISO 8601 lleva el offset explícito, así que
+  // `new Date(...)` reconstruye el MISMO instante absoluto sea cual sea la zona elegida.
+  return new Date(formatFechaHoraHuso(d, ZONA));
 }
 
 /**
@@ -103,6 +109,11 @@ function bancoDeCadena(filas) {
         Object.assign(fila, data);
         return fila;
       },
+    },
+    // SCRUM-735: `applyVeriFactu`/`applyVeriFactuAnulacion` leen la zona del merchant ANTES de
+    // sellar. `timezone: null` cae a `ZONA_POR_DEFECTO` ('UTC') — el comportamiento de antes.
+    merchant: {
+      findUnique: async () => ({ timezone: null }),
     },
   };
   return { cliente: { $transaction: async (fn) => fn(tx), ...tx }, tabla, escrituras };
@@ -223,10 +234,9 @@ test('SCRUM-880c · 🔴 B · y la HUELLA sigue siendo recomputable desde el sel
     const recomputada = computeVeriFactuHashAnulacion({
       nif: NIF,
       serie: 'F-0003',
-      fecha: `${String(tabla[2].createdAt.getDate()).padStart(2, '0')}-`
-        + `${String(tabla[2].createdAt.getMonth() + 1).padStart(2, '0')}-${tabla[2].createdAt.getFullYear()}`,
+      fecha: formatDateES(tabla[2].createdAt, ZONA),
       prevHash: vfPrevHash,
-      timestamp: formatFechaHoraHuso(escrito.vfAnulTimestamp),
+      timestamp: formatFechaHoraHuso(escrito.vfAnulTimestamp, ZONA),
     });
     assert.equal(recomputada, vfAnulHash,
       '🔴 LA HUELLA YA NO SE PUEDE RECOMPUTAR DESDE EL SELLO GUARDADO. Guardar el instante con '

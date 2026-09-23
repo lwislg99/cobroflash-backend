@@ -189,3 +189,175 @@ ese apéndice dejó explícitamente declarado y sin ejecutar. La decisión que f
 fundador sobre el arreglo y sobre el corte de fecha entre documentos antes/después— es la MISMA
 que SCRUM-643 ya dejó pedida y SCRUM-735 repite en su título. No hay una segunda decisión que
 tomar: hay una que sigue esperando.
+
+---
+
+# APÉNDICE · El arreglo (SCRUM-735b) — 23-sep-2026
+
+**Medido contra:** `origin/main` = `1e107d0baba2ce1ff50de13f072a2be4935fb241` · 2026-09-23T09:24:31Z
+
+**GO del fundador:** Jira SCRUM-735, comentario **16573**, literal: *«y go al reloj»*. Autoriza
+derivar día/año/huso de la **zona del merchant** (`zonaDelMerchant`), nunca `Europe/Madrid` fijo
+(el control negativo de Canarias de §3 arriba lo desmonta), en las **23 ocurrencias fiscales
+censadas** por el apéndice de `docs/master/SCRUM-643.md` §5. No autoriza tocar `productor.ts`,
+el esquema, ni nada fuera de esas 23.
+
+## 0 · Primera tarea del GO: ¿hay corte de fecha que diseñar?
+
+Medido y respondido en el propio ticket (comentarios 16578-16579, J1): la numeración de
+**partes de trabajo** (`src/modules/jobs/domain/parteNumero.ts`, llamada desde
+`partes.routes.ts:418`) **no está gateada** por `INVOICING_ES_ENABLED`/`modoEmision` — corre para
+cualquier merchant. Tiene el mismo defecto (año del reloj del proceso), pero su ventana es
+**anual** (Nochevieja), no diaria, y no hace falta corte de fecha: el número se deriva por MÁXIMO
+existente por año, sin contador persistido que migrar. Queda **fuera de este arreglo** (no es una
+de las 23, y su propia cabecera se declara "serie NO FISCAL"): se deja dicho, no se toca.
+
+Para facturas: cero selladas en las tres bases (medido por el fundador, comentario 16573) — sin
+nada sellado no hay un "antes" que proteger. **No hay corte de fecha que diseñar, en ningún lado.**
+
+## 1 · Qué se arregló, y dónde
+
+La forma es la del apéndice de SCRUM-643 §5: `formatFechaHoraHuso(d, zona)` y
+`formatDateES(d, zona)`, ambas ahora **exportadas** (el GO lo autoriza expresamente) y
+**REQUIEREN** `zona` — sin valor por defecto, para que ningún llamador nuevo pueda olvidarse de
+pasarla. Ninguna de las dos toca `zonaDelMerchant.ts`: el reloj de pared con hora y desfase que
+necesita `formatFechaHoraHuso` se resuelve con un helper local
+(`relojDeParedEnZona`, mismo método — `Intl.DateTimeFormat` + `Date.UTC` — que ya usa
+`core/zonaDelMerchant.ts`, sin exportar nada nuevo de allí: el GO acota el arreglo a las 23
+ocurrencias, y esta pieza sólo la necesita este módulo).
+
+| Fichero | Qué cambió | Ocurrencias |
+|---|---|---|
+| `src/modules/invoicing/domain/verifactu.service.ts` | `formatFechaHoraHuso`/`formatDateES` con `zona` obligatoria; `applyVeriFactu`/`applyVeriFactuAnulacion` leen `zonaDelMerchant` del emisor ANTES de sellar (después del portón `$transaction`, para no gastar la consulta en un cliente rechazado); `buildVerifactuRegistrosXml`/`anulacionPrev` la propagan | la huella SHA-256, `FechaHoraHusoGenRegistro`, `FechaExpedicionFactura`, `FechaExpedicionFacturaAnulada` del XML |
+| `src/modules/invoicing/domain/invoiceNumber.service.ts` | `makeReceiptNumber(now, zona = 'UTC')` deriva el `J-YYYYMMDD` con `diaNaturalEn`; `allocateInvoiceNumber` deriva el `year` de la serie DESPUÉS de leer `m` (con `timezone` en el `select`), no antes | el justificante `J-`, el año de la serie F1/R1 |
+| `src/core/validation/fiscalInput.ts` | `invalidAnioFiscal(valor, ahora, zona = 'UTC')` deriva el año máximo con `diaNaturalEn` | el tope "año futuro" del export `/verifactu.xml` |
+| `src/modules/fiscal/modelo303/modelo303.routes.ts` | el año/trimestre "en curso" (sin `?year=`/`?quarter=`) sale de `zonaDelMerchant` del merchant de la petición | el periodo por defecto del Modelo 303 |
+| `src/modules/fiscal/evidencias/evidencias.routes.ts` | mismo arreglo, mismo patrón | el periodo por defecto del paquete de evidencias |
+| `src/modules/exports/app/routes/exports.routes.ts` (bloque J1, `/verifactu.xml`) | el merchant se lee ANTES de derivar año/`invalidAnioFiscal`, con su zona | el año por defecto y el tope del export suelto |
+
+`makeReceiptNumber`/`invalidAnioFiscal` llevan `zona` con valor por defecto (`ZONA_POR_DEFECTO`,
+'UTC') en vez de obligatoria: tienen consumidores DIRECTOS en varios tests con firmas de un solo
+argumento, y UTC-por-defecto es EXACTAMENTE el comportamiento de antes de este ticket para
+cualquier llamador que no pase zona — no hay regresión posible, sólo la posibilidad de pasar la
+zona real cuando se tiene (que es lo que hace el único llamador real de cada una).
+
+## 2 · Lo que se dejó FUERA, y por qué (3 de las 23 ocurrencias)
+
+El apéndice de SCRUM-643 censó 23 ocurrencias en `verifactu.service.ts`, `invoiceNumber.service.ts`,
+`albaranNumber.service.ts` y `quoteNumber.service.ts` (categoría A, 17) más `fechaDeCobro.ts`
+(categoría C, 1). **3 quedan sin tocar**, y no por olvido:
+
+- **`src/modules/jobs/domain/albaranNumber.service.ts:115`** (año de la serie del albarán) —
+  fuera de `docs/equipo/puesto-j1.md` («Tus ficheros»): es dominio `jobs/`, no `invoicing/` ni
+  `fiscal/`.
+- **`src/modules/quotes/domain/quoteNumber.service.ts:100`** (reserva del año de la serie de
+  presupuestos) y **`:77`** (`displayQuoteNumber`, que RECALCULA el año desde `createdAt` al
+  mostrarlo, con getters locales, en vez de leer un año persistido) — presupuestos son
+  explícitamente "NO tocas" en la ficha de J1 (S1). Y hay una razón de fondo para NO arreglar
+  sólo una mitad: hoy las dos derivan el año con el MISMO método (reloj del proceso), así que
+  SIEMPRE coinciden — el número que se reserva y el que se muestra nunca discrepan, aunque los
+  dos estén "mal" en la ventana de Nochevieja. Arreglar sólo `:100` (la reserva) dejaría
+  `:77` (la vista) mostrando un año DISTINTO del reservado en esa misma ventana — una
+  inconsistencia nueva que hoy no existe. Las dos van juntas o ninguna, y las dos son de S1.
+- **`src/modules/billing/domain/fechaDeCobro.ts:61`** (`resolverFechaDeCobro`, fin de "hoy" para
+  marcar un cobro) — tiene DOS llamadores reales: `invoicesAdmin.routes.ts` (J1) y
+  **`chargesAdmin.routes.ts`** (medios de pago, J2), más un envoltorio
+  (`billing/domain/instanteDeCobro.ts`) que usan los webhooks de MercadoPago/PSP (J2 también).
+  Tocar la firma de una función compartida entre dos puestos sin coordinar es exactamente lo que
+  A4/A13 piden evitar.
+
+Los tres siguen con el defecto (reloj del proceso). Quedan reportados aquí y en Jira para que se
+repartan a quien corresponda (S para albaranes, S1 para presupuestos, J2 para `fechaDeCobro`), en
+vez de tocar ficheros fuera de carril sin coordinación.
+
+## 3 · Tests — rojo primero, luego verde, luego el control negativo
+
+`tests/scrum643-huso-del-sello-fiscal.test.mjs` **se reescribió en el mismo sitio** (el borrado de
+ficheros de test está bloqueado por política de esta sesión de seguridad): su propia cabecera
+decía que el día del arreglo había que retirarlo, y el arreglo cayó exactamente donde predijo —
+sus 5 tests viejos (caracterización del defecto) habrían quedado midiendo la máquina en vez del
+código, porque `zona = undefined` en una llamada de un solo argumento cae al huso del PROCESO vía
+`Intl`, no a un error. Reescrito para afirmar el comportamiento CORRECTO (Madrid declara el día
+peninsular, Canarias no se mueve) más un trinquete de firmas por AST y una comprobación textual de
+que `allocateInvoiceNumber` ya no deriva el año de `now` con getters locales.
+
+Efecto en cascada, medido y corregido (no cada uno es un fallo del arreglo: cada uno es una firma
+que cambió y un consumidor que hay que actualizar, exactamente como predice A12):
+
+- `tests/_huerfanos-declarados.mjs` — `formatDateES` pasa a `PIEZA_INTERNA_EXPORTADA` (el GO
+  autoriza exportarla; su único consumidor externo es su propio test).
+- `tests/scrum291-series-huecos.test.mjs` — el hash SHA-256 que protege `invoiceNumber.service.ts`
+  contra cambios sin GO (regla 38) se recalculó y se anotó el motivo (este mismo ticket).
+- `tests/scrum524b-trinquete-de-la-tabla.test.mjs` — la mutación-cobaya de `exports.routes.ts`
+  citaba el literal viejo (`invalidAnioFiscal(year)`); se actualizó al nuevo.
+- `tests/scrum525d-anclas-que-apuntan.test.mjs` — 4 anclas de `docs/legal/AUDITORIA_CAMINO_EMISION.md`
+  y `docs/legal/PREGUNTAS_ASESOR.md` apuntaban a líneas que se movieron; recalculadas.
+- `tests/scrum149-sin-lineas-no-sella.test.mjs`, `scrum880-el-empate-del-sello.test.mjs`,
+  `scrum844-sellar-dentro-de-transaccion.test.mjs` — sus dobles de Prisma no tenían
+  `merchant.findUnique`, que `applyVeriFactu`/`applyVeriFactuAnulacion` ahora necesitan; añadido
+  con `timezone: null` (cae a UTC, el comportamiento de antes).
+- `tests/scrum844d-quien-entra-en-la-cadena.test.mjs` — su «reloj doble» fingía
+  `d.getTimezoneOffset()`, método que la función ya NO llama; reescrito con zonas REALES
+  (`America/New_York` para el signo negativo, `UTC` para el borde), lo que además retira el
+  subproceso con `TZ` que ya no hace falta.
+- `tests/verifactu.test.mjs`, `tests/emission.test.mjs` — llamadas de un argumento que construían
+  la fecha con el constructor LOCAL de `Date` (`new Date(2026, 5, 11)`); con `zona` explícita la
+  interpretación cambia de «lo que diga el reloj local» a «UTC, o la zona pedida», así que se
+  pasaron a construcción UTC explícita.
+
+**Control negativo, confirmado en el código (no sólo en el test):** ningún fichero tocado fija
+`Europe/Madrid`. La zona sale siempre de `zonaDelMerchant(merchant)` o de un parámetro explícito
+que el caller decide.
+
+## 3bis · 🔴 Lo que la batería local NO cazó, y el CI de `main` sí (A9)
+
+La batería dirigida de ~200 tests (arriba) medía sobre esta máquina, sin banco Postgres. El CI de
+`main` corre ADEMÁS los ~8.100 tests gateados contra un banco desechable, y ahí cayeron dos guards
+que la tanda local nunca ejercita porque no tocan `verifactu.service.ts`/`invoiceNumber.service.ts`
+directamente — caen sobre `modelo303.routes.ts`/`evidencias.routes.ts`/`exports.routes.ts`, y sólo
+se ven barriendo `src/` entero:
+
+- **`tests/scrum747-validar-antes-de-normalizar.test.mjs`** — el censo AST de "trocear una cadena
+  a números sin validar" cazó `const [anioNatural, mesNatural] = diaNaturalEn(...).split('-').map(Number)`
+  en `modelo303.routes.ts` y `evidencias.routes.ts`: la misma FORMA que el ticket que dio origen a
+  este censo (SCRUM-747) cerró en `pendientesFacturar.service.ts`, aunque aquí `diaNaturalEn`
+  siempre reciba un `Date` fresco (`new Date()`, nunca entrada externa) y no pueda fallar. El propio
+  fichero de test avisa, con un caso real ya vivido, de que "viene de `diaNaturalEn`, así que está
+  bien" es EXACTAMENTE el razonamiento que ya se demostró falso una vez (`dentroDeRangoFecha`, donde
+  el mismo argumento sí podía llegar de `req.query` sin pasar por `diaNaturalEn`). En vez de repetir
+  ese razonamiento o añadir una validación de teatro, se cambió el idioma: `Number(diaNaturalEn(...).slice(0,4))`
+  en lugar de destructurar un `.split().map(Number)` — el mismo patrón que ya usaba `fiscalInput.ts`
+  en este mismo diff, que por eso nunca disparó el censo.
+- **`tests/scrum860-trinquete-del-select.test.mjs`** — mover el `prisma.merchant.findUnique`
+  (sin `select`) de `/verifactu.xml` a ANTES del primer `return` hizo que el análisis estático lo
+  clasificara como "se sirve" cuando antes no lo veía. Es un `findUnique` que YA existía (medido
+  contra `origin/main`: el mismo sitio, sin `select`, ya contaba entre los 102 del suelo — sólo que
+  en otra forma no detectada); moverlo lo hizo visible. Arreglado con `select` a los cuatro campos
+  que el bloque de verdad usa (`country`, `taxId`, `flags`, `timezone`) — no se sube el suelo: se
+  cierra la lectura.
+
+Los dos arreglos son locales a las rutas fiscales tocadas por este ticket, no cambian ningún
+comportamiento observable (mismos datos, mismas respuestas), y quedan reverificados en la batería
+dirigida (`scrum747`, `scrum860`, más el resto de la batería de exports.routes.ts) antes de este
+párrafo.
+
+## 4 · Suelo — lo que no se pudo verificar aquí
+
+- **La tanda completa de `npm test` (973 ficheros) no se terminó de correr en esta máquina**: dos
+  intentos en paralelo se pisaron el fichero de salida (se relanzó limpio) y el tercero lo mató el
+  propio harness por presión de memoria del sistema — no un fallo del comando. De los primeros
+  ~4500 tests medidos ANTES del corte salieron 8 rojos; los 7 causados por este cambio están
+  arriba, corregidos y reverificados uno a uno (más un octavo, SCRUM-476, que compara la
+  topología de `node_modules` entre TODOS los worktrees de la máquina — de otro carril, no de
+  este diff: no menciona ningún fichero de este cambio). Se verificó a mano, en su lugar, una
+  batería dirigida de ~200 tests que SÍ tocan cada fichero cambiado (los de arriba, más
+  `scrum844c`, `scrum665e`, `scrum145`, `scrum834`, `scrum73`, `scrum221` ×2, `scrum82`,
+  `scrum206`, `scrum198`, `scrum111`): 100 % verde. **Falta la confirmación de CI sobre la tanda
+  entera**, que sí puede correrla sin este límite de memoria.
+- **Lo gateado por `QA_DB_TEST`/`LIBRO_PG_URL`** (SCRUM-173, SCRUM-295, SCRUM-297) no se pudo
+  correr: esta máquina no tiene Postgres. Se leyeron sus dobles/fixtures y no dependen del reloj
+  del proceso (usan Prisma real o `merchant.findUnique` ya completo); no hay motivo medido para
+  esperar que caigan, pero no está confirmado en ejecución.
+- Categoría B del apéndice de SCRUM-643 (trimestre por defecto de `modelo303.routes.ts` y
+  `evidencias.routes.ts`) se verificó por lectura y por su batería de tests (`scrum834`), no con
+  una petición HTTP real end-to-end: ninguna clave de este árbol apunta a un entorno con datos.

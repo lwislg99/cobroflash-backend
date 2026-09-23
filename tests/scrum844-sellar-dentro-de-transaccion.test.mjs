@@ -73,6 +73,10 @@ const comoUnaTx = () => ({ invoice: { findUnique: async () => ({ lines: LINEAS }
 const PASE = 'PASO_EL_PORTON';
 const comoElGlobal = () => ({
   invoice: { findUnique: async () => ({ lines: LINEAS }) },
+  // SCRUM-735: el portón de la transacción se comprueba ANTES de leer la zona del merchant
+  // (se rechaza sin gastar esa consulta), pero este doble SÍ tiene que pasar ese portón, así que
+  // sí necesita poder contestar a `merchant.findUnique`.
+  merchant: { findUnique: async () => ({ timezone: null }) },
   $transaction: async () => { throw new Error(PASE); },
 });
 
