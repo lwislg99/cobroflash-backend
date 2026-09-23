@@ -1103,3 +1103,85 @@ prefiere no abrir ahora el hueco del runbook de sellado — son combinables inde
   alcance literal del encargo; se nombran para que no se pierdan, no se proponen aquí.
 * No corrige D1-D4: son consecuencia de lo que se firme en L2/L3, y arreglarlos antes sería fijar
   cuatro textos que la firma podría volver a mover.
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-534m · Las NUEVE aplicadas (parte 2 cerrada)
+
+**Medido contra:** `origin/main` = `61bbfa79ddd53a5b1882a47509230e2a6278d6b6` · 2026-09-23T09:12:51Z
+**Aplica:** el orquestador del equipo de Javier (A13), por instrucción expresa suya, con la firma
+del comentario 16583 y la corrección de censo del 16585.
+
+## Por qué lo aplica el orquestador y no J4
+
+**El clasificador de permisos de jv-j4 denegó la edición de los DOS ficheros**, con el motivo
+`Real-World Transactions`: primero sobre `PACK_GESTORIA.md`, y después —probado por separado, a
+petición mía, con la misma sesión y los mismos permisos— también sobre `DECLARACION_RESPONSABLE.md`
+con la corrección más pequeña de las cuatro (A16). No es nuevo: el mismo bloqueo está registrado
+para la sesión anterior de ese puesto en el comentario 16404.
+
+**J4 paró las dos veces y no buscó otra herramienta.** Correcto, y es la parte que importa del
+registro: **no se le pasó el trabajo a una tercera sesión a la que no se lo denegaran.** Eso habría
+sido usar los permisos de otra sesión para esquivar una decisión de permisos. Se subió al fundador,
+que es de quien son los permisos, y él instruyó expresamente aplicarlo desde el orquestador.
+
+## Lo aplicado
+
+Las nueve del apéndice SCRUM-534k, con el literal firmado. **A18 la resolvió Javier**: su propuesta
+ofrecía dos formas («quitar la cláusula» o «marcarla pendiente de construir») y no elegía; firma
+quitarla entera.
+
+| | fichero | qué cambia |
+|---|---|---|
+| **A11** | `PACK_GESTORIA.md` | la remisión automática pasa a «se activará junto con esta declaración» |
+| **A12** | `PACK_GESTORIA.md` | «se envía en tiempo real» → «queda preparado con el sobre oficial, listo para su remisión» |
+| **A13** | `PACK_GESTORIA.md` | **cambia la RAZÓN, no el tiempo**: la dispensa de firma la cumple la huella encadenada **por sí sola** (art. 16.2-16.3 RRSIF), no «la huella + la remisión» |
+| **A14** | `PACK_GESTORIA.md` | «la remite a la AEAT» → «la remisión se añadirá con el envío telemático» |
+| **A15** | `PACK_GESTORIA.md` | «genera y remite» → «genera… los remitirá en cuanto el envío esté construido» |
+| **A16** | `DECLARACION_RESPONSABLE.md` | «remite» → «remitirá una vez conectado el envío» |
+| **A17** | `DECLARACION_RESPONSABLE.md` | la tipología añade «una vez completado el envío telemático» |
+| **A18** | `DECLARACION_RESPONSABLE.md` | **se retira** «y remisión telemática al servicio web de la AEAT» de *Composición / arquitectura* |
+| **A19** | `DECLARACION_RESPONSABLE.md` | «Remisión **inmediata**… **con control de flujo**» → «Remisión… una vez construido el envío» |
+
+**A19 se queda sin «control de flujo» y sin sustituto, a propósito:** la medición de J4 dice que ese
+mecanismo **no está decidido en ningún sitio** (ni en U1.3, ni en la skill `yaqu-verifactu-sif`, ni
+en el stack de S1-0b). Inventar qué significa sería el mismo defecto que este ticket arregla.
+
+## Controles de la aplicación, ejecutados y no supuestos
+
+Se aplicó con `aplicar-534m.mjs`, que **aborta sin escribir un byte** si cualquier control falla:
+
+| control | resultado |
+|---|---|
+| cada una de las 9 reglas casa **exactamente una vez** (0 o 2 abortan) | **9 de 9** |
+| frases viejas que quedan en cualquiera de los dos ficheros (8 vigiladas) | **0** |
+| 🔴 **la décima sigue intacta** (`TipoUsoPosibleSoloVerifactu`, línea 43) | **sí** |
+| `PACK_GESTORIA.md` | 77 → 81 líneas · 3.811 → 4.030 bytes |
+| `DECLARACION_RESPONSABLE.md` | 105 → 105 líneas · 5.420 → 5.418 bytes |
+
+La décima es **control negativo**, no adorno: el riesgo de aplicar nueve correcciones seguidas es
+llevarse por delante la que se decidió no tocar.
+
+## 🔴 Lo que este apéndice NO cierra
+
+**`DECLARACION_RESPONSABLE.md` sigue teniendo un problema vivo, y es de otra clase.** La línea 43
+declara:
+
+> `TipoUsoPosibleSoloVerifactu`: **Sí** — el sistema solo opera en modalidad VERI\*FACTU.
+
+Las nueve se arreglaban con un tiempo verbal porque describían una acción que aún no ocurre. Esto
+**declara la modalidad entera del sistema** — letra e) del art. 15.1 de la Orden HAC/1177/2024,
+campo obligatorio. Si la remisión no existe, la pregunta no es cómo redactarlo: es **si esta versión
+puede declararse VERI\*FACTU en absoluto**. Eso es **P14**, registrada en `PREGUNTAS_ASESOR.md` y sin
+contestar.
+
+Se deja escrito aquí y no en una nota suelta porque **una lista de nueve corregidas es exactamente
+donde una décima se vuelve invisible**.
+
+## Un error del orquestador que cazó J4, y cómo
+
+Mi comentario 16583 metió bajo «LA DÉCIMA» **dos** líneas como si fueran una sola cosa nueva: la de
+*Tipología* (39-41) y la de `TipoUsoPosibleSoloVerifactu` (43). La primera **es A17**, que estaba en
+las nueve y firmada. J4 lo encontró en su PASO 0 —releer antes de aplicar— y **paró en vez de
+ejecutar**, separando lo que era contradicción mía de lo que era diferencia con `main`. Corregido en
+el comentario 16585. Sin esa parada se habría aplicado mal un documento que se firma ante Hacienda.

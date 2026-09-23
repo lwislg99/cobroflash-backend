@@ -10,15 +10,17 @@
 ## En una frase
 
 **YaQu es el sistema de facturación (SIF) de tu cliente, y opera en modalidad VERI*FACTU:**
-emite cada factura con una huella digital encadenada y la **remite automáticamente a la
-AEAT** en el momento. Tú no tienes que instalar nada ni cambiar tu forma de trabajar.
+emite cada factura con una huella digital encadenada según el formato oficial de la
+AEAT. La remisión telemática se activará junto con esta declaración, antes de
+distribuirse este documento. Tú no tienes que instalar nada ni cambiar tu forma de trabajar.
 
 ## 1. Modalidad
 
 - **VERI*FACTU (remisión voluntaria).** Cada registro de facturación (alta, rectificativa
-  y anulación) se envía a la AEAT en tiempo real a través de su servicio web.
-- Al operar en esta modalidad, **no se exige firma electrónica** de los registros: la
-  huella SHA-256 encadenada + la remisión autenticada cumplen el requisito (RRSIF).
+  y anulación) queda preparado con el sobre oficial de la AEAT, listo para su remisión
+  en cuanto ésta esté construida.
+- Al operar en esta modalidad, **no se exige firma electrónica**: la
+  huella SHA-256 encadenada cumple el requisito por sí sola (art. 16.2-16.3 RRSIF).
 - Permanencia en la modalidad durante el año natural.
 
 ## 2. Qué garantiza el sistema (conformidad)
@@ -36,7 +38,8 @@ AEAT** en el momento. Tú no tienes que instalar nada ni cambiar tu forma de tra
 
 1. El profesional crea el presupuesto y lo envía por WhatsApp.
 2. El cliente final lo acepta (y firma) desde el móvil.
-3. Al cobrar, YaQu emite la factura, calcula su huella y **la remite a la AEAT**.
+3. Al cobrar, YaQu emite la factura y calcula su huella; la remisión a la AEAT se añadirá
+   con el envío telemático.
 4. El profesional y su cliente reciben la factura (PDF con QR) por WhatsApp/email.
 
 ## 4. Qué le pides a tu cliente (datos que la factura necesita)
@@ -62,7 +65,8 @@ AEAT** en el momento. Tú no tienes que instalar nada ni cambiar tu forma de tra
 ## 6. Lo que YaQu NO sustituye
 
 YaQu **no presenta** modelos ante la AEAT ni lleva la contabilidad: es el sistema de
-**facturación** que genera y remite los registros, y te da los exports para tu trabajo.
+**facturación** que genera los registros con el formato oficial; los remitirá en cuanto
+el envío esté construido, y te da los exports para tu trabajo.
 La presentación de impuestos y los libros siguen siendo tuyos. **[VALIDAR ASESOR]**
 
 ## 7. Contacto
