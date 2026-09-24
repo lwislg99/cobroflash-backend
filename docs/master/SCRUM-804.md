@@ -1395,6 +1395,109 @@ El único fichero escrito es éste.
 
 ---
 
+# APÉNDICE · Fase b — el barrido de la regla 42
+
+*17-sep-2026 · rama `scrum-804b-el-barrido-de-la-42`*
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T14:39:35+01:00
+
+⛔ **MIDE. No cierra ningún ticket, no toca Jira, no renombra ni borra ninguna rama.**
+
+## ① El censo — `27 DENTRO · 3 FUERA · 29 NO DECIDIBLE`
+
+```
+población: 59 tickets mirados · 59 clasificados · 27 DENTRO · 3 FUERA · 29 NO DECIDIBLE
+           (lado malo) · leídas 150 ramas remotas, 2999 ficheros de main y 564 entradas
+           de registro (la convención empieza en SCRUM-192)
+```
+
+**FUERA · 3 — y son los únicos que el censo puede PROBAR que están fuera:**
+
+| ticket | evidencia positiva |
+| --- | --- |
+| SCRUM-813 | rama viva sin mergear `scrum-813-el-trinquete-de-zona-horaria` |
+| SCRUM-864 | rama viva sin mergear `scrum-864b-a19-y-la-vuelta-del-tope` |
+| SCRUM-880 | rama viva sin mergear `scrum-880c-el-desempate-y-los-milisegundos` |
+
+**DENTRO · 25 de la lista** — 280 · 307 · 322 · 323 · 328 · 331 · 332 · 333 · 334 · 512 · 523 ·
+534 · 554 · 568 · 635 · 654 · 665 · 688 · 811 · 825 · 863 · 878 · 903 · 910 · 16. Casi todos con
+entrada en `main` **y sus artefactos presentes** (328 → 30/30 · 825 → 35/37 · 665 → 25/25).
+
+### 🔴 Y aquí es donde este censo casi miente: la primera versión daba 32 FUERA
+
+Los **32 con el mismo motivo**: *«sin rama, sin entrada y sin ficheros propios»*. Eso no es un
+veredicto — es **«no he encontrado marca»**. El encargo lo avisaba con estas palabras:
+
+> *«Un commit que lleva el número no prueba que el trabajo esté; y un trabajo sin número puede
+> estar entero.»*
+
+**Mandar esos 32 a `FUERA` habría hecho reabrir trabajo ya hecho.**
+
+Y había una razón **de construcción** que el primer criterio no podía ver: **las entradas de
+`docs/master/` empiezan en SCRUM-192** (sólo existe una por debajo, derivado del árbol y no
+escrito a mano). Los tickets anteriores — 41, 142, 143, 16, 18, 19, 20 — **no PUDIERON tener
+entrada**: se les exigía una regla que no existía cuando se hicieron.
+
+**Corregido:** `FUERA` exige **evidencia positiva de ausencia** — una rama viva sin mergear, que es
+lo único que este censo puede probar de ese lado. Todo lo demás es `NO DECIDIBLE`, del lado malo,
+con el motivo separado porque cada uno se acciona distinto:
+
+| motivo | nº | qué hacer con ellos |
+| --- | --- | --- |
+| commits de `main` lo nombran pero ningún artefacto comprobable | 6 | 41 · 142 · 276 · 326 · 774 · 786 · 20 — mirar el ticket en Jira y decidir a mano |
+| anterior a la convención de `docs/master/` | 3 | 143 · 18 · 19 — el censo no puede ayudar aquí |
+| el censo no ve NADA | 20 | ni rama, ni entrada, ni ficheros, ni commits |
+
+## ② El suelo y los controles
+
+| control | resultado |
+| --- | --- |
+| ✅ POSITIVO · SCRUM-866 y SCRUM-881 (cerrados y mergeados) | **DENTRO** los dos |
+| 🔴 NEGATIVO · SCRUM-880 (rama empujada hoy, sin mergear) | **FUERA**, y se comprueba que sale por el motivo correcto y no por casualidad |
+| 🔴 SUELO · 0 en DENTRO | aborta **CIEGO** |
+| 🔴 EXTRA · un ticket inventado (999999) | **NO DECIDIBLE**, nunca FUERA — el defecto de la primera versión, atado para que no vuelva |
+
+## ③ Las ramas sin slug — **una, no tres**
+
+De **150 ramas vivas**, 93 tienen forma de ticket. Incumplen `scrum-<n>-<slug>` **3**, pero son
+**tres cosas distintas y sólo una rompe el barrido**:
+
+| rama | qué le pasa | ¿la alcanza el barrido? |
+| --- | --- | --- |
+| `scrum-904` | **sin slug** | 🔴 **no** |
+| `scrum-421-registro-presupuesto-INCOMPLETO` | slug en MAYÚSCULAS | sí |
+| `scrum-474-fase2-INCOMPLETO` | slug en MAYÚSCULAS | sí |
+
+Y una cuarta forma fuera de esa cuenta: **`scrum-paso0-dinero`, sin número**.
+
+### Quién mide sobre esta población: **27 instrumentos**, no 8
+
+10 scripts (`censo-alcanzabilidad`, `censo-reparto`, `censo-tablero-vs-arbol`,
+`enlace-ticket-rama`, `ramas-borrables`, `_barrido-de-credenciales`, `_rastro-del-ticket`…),
+14 tests (267, 387, 716b, 716c, 723, 753, 775, 804, 824b, 829b, 839e, 853, 899, 900) y 3 bancos.
+**Con eso encima, no se ha renombrado ni borrado nada** (A12).
+
+### ¿Puede el barrido tolerar las dos formas sin perder precisión?
+
+**Sí para «número sin slug». No para «sin número». Y la diferencia no es de grado:**
+
+* **El barrido necesita EL NÚMERO, no el slug.** `^scrum-(\d+)([a-z])?(-|$)` reconoce `scrum-904`
+  sin ninguna ambigüedad, y sigue sin casar `scrum-41` dentro de `scrum-410`. Está atado con un
+  test en `tests/scrum804b-el-barrido-de-la-42.test.mjs`. **Tolerarlo es gratis.**
+* **`scrum-paso0-dinero` no tiene ticket al que mapear.** Tolerar eso no es relajar una forma: es
+  **inventar la asociación**. Ahí sí se pierde precisión, y es la puerta que no hay que abrir.
+
+> La regla `scrum-<n>-<slug>` junta dos exigencias de peso muy distinto: **el número lo leen las
+> máquinas y es la que aguanta; el slug es para las personas.** Un barrido que pierde una rama por
+> no llevar slug está fallando por una propiedad que no tiene nada que ver con lo que mide.
+
+**Reportado y no arreglado**: ampliar el criterio de SCRUM-804 es de su carril, y el encargo pedía
+la medición y el juicio, no el cambio.
+
+## Lo NO tocado
+
+Jira · ningún ticket cerrado · ninguna rama renombrada ni borrada · el criterio de SCRUM-804 sin
+ampliar · producción y staging sin tocar.
 # APÉNDICE · Fase d — lo que cada ticket PROMETÍA, y qué desbloquea a los no decidibles
 
 *17-sep-2026 · rama `scrum-804d-lo-que-prometia`*
@@ -1543,6 +1646,33 @@ El lector cambiado es **uno**, `scripts/_numero-de-rama.mjs`. Sus consumidores, 
 
 **NO comparte el lector, y NO se ha tocado:** `tests/_entrada-de-la-rama.mjs` (SCRUM-854), que tiene su propio `numeroDeRama` (`/^scrum-(\d+)/i`) y ya aceptaba las ramas sin slug. Tampoco el resto de instrumentos que miden sobre ramas remotas con su propio lector: los de la cuenta de Javier (27) que no aparecen arriba no importan esta regla.
 
+## SCRUM-804b · CI en rojo tras fusionar `main`: dos huecos ajenos a esta rama, arreglados en ella
+
+**Detectado:** CI del PR #1428 (run 35231802589), commit `6f011d3bde33`, tras fusionar
+`main` (1941416e, que incluye SCRUM-804f/PR #1432).
+
+**① `meta-guard` MUDO sobre `scrum738`.** La `MUTACIONES_QUE_ME_TUMBAN` de
+`tests/scrum738-el-tablero-contra-el-arbol.test.mjs` sólo quitaba el delimitador final de
+`numeroDeRama` (`[a-z]?(?:-|$)`), y ya está escrito arriba —línea 1616— que **eso no colisiona**:
+`\d+` es voraz y captura el número entero delimitador o no. Antes de SCRUM-804f eso daba igual,
+porque el efecto SÍ se veía por otro lado: `numeroDeRama('scrum-72')` (sin slug) exigía `null`, y
+la mutación (sin exigir guion) devolvía `72` — una discrepancia real. SCRUM-804f cambió esa MISMA
+aserción a exigir `72` (línea 1623: «Ahora exige 72»), que es lo que la mutación YA daba: la única
+comprobación que distinguía código sano de mutado desapareció, y nadie tocó la mutación al mismo
+tiempo porque vive en un fichero distinto del que cambió. Arreglo: la mutación ahora acota la
+captura a 1-2 dígitos (`[0-9]{1,2}`), que sí reproduce una colisión real entre 72/720/727/1727.
+
+**② El NEGATIVO de `censo-regla-42` (SCRUM-880) había envejecido.** El test fija SCRUM-880 como
+ticket con «rama viva sin mergear hoy», cierto cuando se escribió (ver la fila de la línea 1420,
+`scrum-880c-el-desempate-y-los-milisegundos`, ancla del 8-sep). Esa rama ya se mergeó, así que el
+censo lo clasifica DENTRO —correctamente— y el test fallaba acusándolo de un defecto que no
+tiene. Sustituido por SCRUM-1099, medido el 23-sep-2026 contra las 153 ramas remotas
+(`git merge-base --is-ancestor origin/scrum-1099-censo-ast-escritores-invoice origin/main` → no
+es antepasado). Mismo envejecimiento por diseño que el resto de NEGATIVOS de esta familia de
+tests: quien lo vuelva a medir, que lo re-feche.
+
+**Ninguno de los dos es código nuevo de esta rama** (censo-regla-42.mjs no cambia); son
+correcciones a las declaraciones de prueba que la fusión de `main` dejó desactualizadas.
 ## SCRUM-804g · La mutación de 738 que 804f dejó muda
 
 **Medido contra:** `origin/main` = `755d23997bd55ce7aa6d6a1cb6a98616926dfd7e` · 2026-09-17T14:05:18Z
@@ -1730,3 +1860,49 @@ tenido éxito. El propio mensaje de error lo había escrito como hipótesis; era
   verde. Ojo al instrumento: un worktree recién creado no tiene `node_modules` ni `dist/`, y sin
   ellos cuatro de esos ficheros caen por `ERR_MODULE_NOT_FOUND` — eso no es un rojo, es no haber
   medido.
+
+---
+
+# APÉNDICE · 24-sep-2026 · SCRUM-804b (PR #1428) · Desatascado — conflicto de comentario + negativo caducado otra vez
+
+**Carril:** s3-22b (refuerzo, PRs atascados) · **Medido contra:** `origin/main` =
+`f80590410e03887ce016c7f58c1daf37825c78bc` · 2026-09-24T15:29:13Z (cabecera `Date` de GitHub)
+**Rama:** `scrum-804b-el-barrido-de-la-42` (PR #1428) · **Worktree:** `wt-s3-22b-1428`
+
+PASO 0: el PR llevaba 7 días abierto y `CONFLICTING`. No estaba abandonado — una sesión lo había
+retomado el 23-sep (commits `1061a9d`, `85b520d`) arreglando el meta-guard mudo de `scrum738` y
+sustituyendo el negativo caducado de SCRUM-880 por SCRUM-1099 — pero se quedó a medias: seguía en
+conflicto con `main` y sin empujar el arreglo hasta el final.
+
+## ① El conflicto, y por qué se resuelve a favor de HEAD
+
+`git merge origin/main` dio **un solo** conflicto real, en `tests/scrum738-el-tablero-contra-el-arbol.test.mjs`,
+dentro de un comentario de `MUTACIONES_QUE_ME_TUMBAN`. `origin/main` seguía citando la mutación
+vieja (`/^scrum-0*([0-9]+)/`, delimitador quitado, `+` codicioso intacto) porque el PR #1436
+(SCRUM-804g, «la mutación muda de 738») sólo había tocado el comentario, no el `a:` real — la
+mutación seguía sin colisionar y el meta-guard seguía mudo **en `main`**. La reescritura del PR
+#1428 (23-sep) SÍ cambia el `a:` a `/^scrum-0*([0-9]{1,2})/`, que colisiona de verdad. Se conserva
+la versión de HEAD (PR #1428): es la más nueva Y la única que corrige el código, no sólo la prosa.
+
+## ② El negativo caducó DE NUEVO en 26 horas — la misma familia que SCRUM-880/804i
+
+`tests/scrum804b-el-barrido-de-la-42.test.mjs` usaba `NEGATIVO = 1099` (rama viva sin mergear,
+medido el 23-sep). Entre el 23 y el 24-sep, **SCRUM-1099 se mergeó** (PR #1734), y el test empezó
+a fallar en el sentido contrario: `DENTRO` donde exigía `FUERA` — exactamente el patrón que el
+propio comentario de esa línea ya avisaba («en cuanto esta rama se mergee, hay que re-elegir un
+ticket vivo»). Re-medido hoy contra las 149 ramas remotas (`git merge-base --is-ancestor`):
+`NEGATIVO = 1107` (`scrum-1107b-garantia-obra-construccion`, sin entrada en `docs/master/`, rama
+viva confirmada). `npm test` sobre los dos ficheros: **12 pass · 0 fail**.
+
+## ③ Lo que NO se ha tocado
+
+`scripts/censo-regla-42.mjs` (el censo en sí, byte a byte igual) y el resto de la saga 804
+(804c–804i, ya en `main`). Sólo el conflicto de merge y el negativo caducado.
+
+## Verificación
+
+- `node --test` directo sobre `tests/scrum738-…` + `tests/scrum804b-…`: 12/12 pass (no requiere
+  `dist/`: ambos importan de `scripts/` y `tests/_*.mjs`).
+- `git diff origin/main --stat` sobre los 4 ficheros del PR: sin sorpresas, sólo lo esperado.
+- Empujado a `scrum-804b-el-barrido-de-la-42`; `mergeable` pasó de `CONFLICTING` a `MERGEABLE`,
+  CI en marcha (auto-merge sigue armado desde la apertura del PR).
