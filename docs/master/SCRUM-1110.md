@@ -103,3 +103,91 @@ Con el **certificado personal** se llega a **S1-D entero**. **No más allá**: l
    la compilación falla por campos que sí existen en el esquema (aquí,
    `retencionPracticadaTipo` de SCRUM-1103). No es un defecto de `main` —`npm ci` regenera—
    pero **sí una trampa de esa forma de montar el árbol**.
+
+---
+
+# APÉNDICE · 24-sep-2026 · La AEAT ACEPTA el registro — `Correcto`, sin errores
+
+**Medido contra:** `origin/main` = `902d11e6c546cdb4ce9bc8cce8b780acaab3b1f6` · 2026-09-24T13:42:02Z
+
+🟢 **`EstadoEnvio: Correcto` · `EstadoRegistro: Correcto` · sin `CodigoErrorRegistro`.**
+**CSV `A-KR84MFNPTPDHMN`**, 15:49:07+02:00. Factura `PRUEBA-AEAT-700841`, obligado
+`05292751Z`, operación **Alta**.
+
+**Es el primer registro VeriFactu de YaQu aceptado por la AEAT.**
+
+## Los siete envíos — y ninguno falló por un defecto del código
+
+Cada respuesta quitó un error **y no trajo otro del mismo tipo**. Eso es lo que separa una
+cadena de progreso de dar palos de ciego:
+
+| # | respuesta de la AEAT | qué era de verdad |
+|---|---|---|
+| 1-2 | `4138` petición vacía | 🔴 **el fichero no se estaba adjuntando.** Las dos primeras pruebas **no midieron nada** |
+| 3 | `1207` error interno (`Id. 131766580`) | el formulario espera el **sobre SOAP**, no el registro pelado |
+| 4 | `1239` NIF no identificado en el censo | **NIF de destinatario inventado** (`12345678Z`) |
+| 5 | `2004` la fecha debe ser la actual ±**240 s** | **sello escrito a mano** (junio) |
+| 6 | `2007` no debe informarse como primer registro | 🔴 **la cadena funcionando**: los envíos anteriores ya existían |
+| **7** | **`Correcto`** | — |
+
+🔴 **Lo de los dos primeros envíos lo destapó el fundador**, no una comprobación nuestra:
+*«lo que no sé es si estoy abriendo el fichero como toca»*. Sin esa frase habríamos seguido
+buscando el defecto en el XML. **La señal estaba en su duda, no en los datos.**
+
+## Lo que queda demostrado CONTRA LA AEAT, no contra un XSD
+
+**Ésta era la pregunta del ticket.** El XSD decía que la forma era correcta; **no decía que la
+AEAT lo aceptara**. Ahora lo dice la AEAT:
+
+el **sobre SOAP** · la **huella SHA-256** · el **encadenamiento** · el bloque
+`SistemaInformatico` con el productor de SCRUM-870 · el **desglose** y los **importes** · el
+tipo de factura **F1**.
+
+## Cierra un `[VALIDAR]` abierto desde junio
+
+`SIF_SPEC_NOTES.md` §4 tenía el flujo de control de **240 s** marcado `[VALIDAR]`, tomado de
+una fuente **secundaria**. Lo confirma la **fuente primaria**, literal del código 2004:
+
+> *«El valor del campo FechaHoraHusoGenRegistro debe ser la fecha actual del sistema de la
+> AEAT, admitiéndose un margen de error de: **240 segundos**.»*
+
+## Los dos defectos propios, corregidos por el camino
+
+1. 🔴 **El huso calculado a mano daba `+00:00`** en septiembre — **dos horas en el futuro** para
+   la AEAT. Habría repetido el 2004 y nos habría hecho pensar que el arreglo no servía, cuando
+   el error habría sido otro. Ahora sale de `Intl` con `longOffset`, que ya trae el DST.
+2. **El registro sin envolver en `<sum:RegistroFactura>`**, cazado por el validador XSD **antes**
+   de enviarlo. Si llega a subirse, el rechazo habría parecido del registro y era del sobre.
+
+## El encadenamiento, ahora automático
+
+El script guarda el último registro en `tmp/ultimo-registro.json` **después** de que pasen los
+controles —si el sobre no sale, la cadena no avanza— y el siguiente envío apunta a él. Sin
+fichero previo se declara primer registro; con él, encadena.
+
+## ⛔ Lo que esto NO cierra
+
+- ⛔ **NO cierra S1-D.** Su criterio son **≥10 registros consecutivos aceptados**, de **alta,
+  anulación y R1**. Esto es **uno, y sólo de alta**. Falta además el cliente automatizado con su
+  cola `VfSubmission`. **Lo que se cierra es la incógnita**: construir S1-D ya no es apostar.
+- ⛔ **NO cierra S1-G.** Eso es **producción**, y necesita el Convenio 017 → la **SL**
+  (SCRUM-143).
+- ⛔ Sigue sin haber ninguna «certificación» que ofrecer, y **siguen prohibidos los claims**
+  (reglas 7, 17, 24, 26). Que la AEAT acepte un registro de pruebas **no es** que YaQu
+  «cumpla con Hacienda».
+
+## Evidencia — los CSV no se pueden reconstruir
+
+| envío | CSV | estado |
+|---|---|---|
+| 5 | `A-RRC3W7HBRRATXM` | AceptadoConErrores (2004) |
+| 6 | `A-RWSKNNRGRBNNS9` | AceptadoConErrores (2007) |
+| **7** | **`A-KR84MFNPTPDHMN`** | **Correcto** |
+
+## Y una tercera cosa del proceso que salió mal
+
+**Este PR entró en rojo por el guard de SCRUM-854** — *«esta rama, si toca código, trae su
+entrada de registro»*. Tenía razón: el expediente se fue a `main` con el **primer** empujón, y
+el segundo llevaba **sólo código**. El guard no se relajó (A7): **se escribió este apéndice**,
+que además hacía falta igualmente porque el documento describía el estado **anterior** a la
+prueba.

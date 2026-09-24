@@ -65,6 +65,19 @@ function arg(nombre) {
 const NIF = arg('nif');
 const NOMBRE = arg('nombre');
 
+// 🔴 EL DESTINATARIO TAMBIÉN TIENE QUE EXISTIR EN EL CENSO DE LA AEAT.
+//
+// Medido el 24-sep-2026 contra el entorno de pruebas REAL: con `12345678Z` (un NIF
+// inventado) la AEAT proceso el registro y contesto `CodigoErrorRegistro 1239`:
+//   «Error en el bloque Destinatario.. El NIF no esta identificado en el censo de la AEAT»
+//
+// Es un error de DATO, no de estructura — todo lo demas (huella, encadenamiento,
+// SistemaInformatico, sobre SOAP) lo dio por bueno. Por defecto el destinatario es el
+// PROPIO emisor, que por definicion esta en el censo: para una prueba de conformidad lo
+// que importa es que el registro se acepte, no a quien se factura.
+const DEST_NIF = arg('dest-nif') ?? NIF;
+const DEST_NOMBRE = arg('dest-nombre') ?? NOMBRE;
+
 // Falla CERRADO: sin NIF explícito no se genera nada. Un valor por defecto aquí sería la
 // forma más fácil de acabar enviando el NIF inventado y no entender el rechazo.
 if (!NIF || !NOMBRE) {
@@ -94,13 +107,41 @@ const sistema = {
 // ────────────────────────────────────────────────────── el registro (UNO solo)
 
 // Primer registro de la cadena → huella anterior VACÍA (conformidad verificada en S1-A).
-const SERIE = 'PRUEBA-AEAT-001';
-const FECHA = '24-06-2026';             // dd-mm-aaaa, el formato del registro
-const TS = '2026-06-24T10:00:00+02:00'; // ISO con huso (S1-A)
+const SERIE = 'PRUEBA-AEAT-' + String(Date.now()).slice(-6);
+
+// 🔴 LA HORA ES AHORA, NO UNA CONSTANTE. Medido contra la AEAT real el 24-sep-2026: con un
+// sello escrito a mano (junio) contesto 'AceptadoConErrores' + codigo 2004:
+//   «El valor del campo FechaHoraHusoGenRegistro debe ser la fecha actual del sistema de la
+//    AEAT, admitiendose un margen de error de: 240 segundos.»
+// Eso CIERRA el [VALIDAR] de SIF_SPEC_NOTES §4 sobre los 240 s: lo dice la fuente primaria.
+const ahora = new Date();
+
+// El desfase se saca de 'longOffset', que ya trae el horario de verano. Calcularlo a mano
+// da +00:00 en septiembre (comprobado: la primera version de este script lo hizo), y eso son
+// DOS HORAS en el futuro para la AEAT -> vuelta al error 2004.
+const _p = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  timeZoneName: 'longOffset',
+}).formatToParts(ahora);
+const _g = (k) => _p.find((x) => x.type === k).value;
+const _off = _g('timeZoneName').replace('GMT', '') || '+00:00';
+const TS = `${_g('year')}-${_g('month')}-${_g('day')}T${_g('hour')}:${_g('minute')}:${_g('second')}${_off}`;
+const FECHA = `${_g('day')}-${_g('month')}-${_g('year')}`;
+
+// 🔴 ENCADENAMIENTO. Medido contra la AEAT REAL el 24-sep-2026: al mandar un segundo
+// registro con `primerRegistro: true` contestó código 2007 — «No debe informarse como
+// primer registro, existen facturas emitidas con el obligado emisión y el sistema
+// informático actual». NO era un defecto: era la cadena funcionando. Desde el segundo
+// envío hay que apuntar al anterior, que es justo lo que VeriFactu exige.
+const RUTA_ULTIMO = path.join(raiz, 'tmp', 'ultimo-registro.json');
+const anterior = fs.existsSync(RUTA_ULTIMO)
+  ? JSON.parse(fs.readFileSync(RUTA_ULTIMO, 'utf8'))
+  : null;
 
 const huella = computeVeriFactuHash({
   nif: NIF, serie: SERIE, fecha: FECHA, tipoFactura: 'F1',
-  cuotaTotal: '21.00', importeTotal: '121.00', prevHash: '', timestamp: TS,
+  cuotaTotal: '21.00', importeTotal: '121.00', prevHash: anterior ? anterior.huella : '', timestamp: TS,
 });
 
 const registro = buildRegistroAlta({
@@ -110,14 +151,14 @@ const registro = buildRegistroAlta({
   nombreRazonEmisor: NOMBRE,
   tipoFactura: 'F1',
   descripcionOperacion: 'Prueba de conformidad del envio VERI*FACTU',
-  destinatario: { nombreRazon: 'Cliente de prueba', nif: '12345678Z' },
+  destinatario: { nombreRazon: DEST_NOMBRE, nif: DEST_NIF },
   desglose: [{
     claveRegimen: '01', calificacion: 'S1', tipoImpositivo: '21',
     baseImponible: '100.00', cuotaRepercutida: '21.00',
   }],
   cuotaTotal: '21.00',
   importeTotal: '121.00',
-  encadenamiento: { primerRegistro: true },
+  encadenamiento: anterior ? { primerRegistro: false, anterior } : { primerRegistro: true },
   sistema,
   fechaHoraHusoGenRegistro: TS,
   huella,
@@ -156,6 +197,8 @@ const controles = {
   nifEnEmisor: soap.includes(`<sum1:IDEmisorFactura>${NIF}</sum1:IDEmisorFactura>`),
   // 🔴 El NIF inventado del generador de muestras NO puede aparecer por ningún lado.
   sinNifDeMuestra: !soap.includes('B12345678'),
+  // 🔴 Medido: la AEAT rechazo este NIF por censo (codigo 1239) el 24-sep-2026.
+  sinDestinatarioInventado: !soap.includes('12345678Z'),
   // El productor es el real de SCRUM-870, no el marcador «PRODUCTOR DEMO SL».
   productorReal: soap.includes(productor.VERIFACTU_PRODUCTOR_NIF) && !soap.includes('PRODUCTOR DEMO'),
   unSoloRegistro: (soap.match(/<sum:RegistroFactura>/g) || []).length === 1,
@@ -177,6 +220,12 @@ if (!ok) {
 const salida = path.join(raiz, 'tmp', 'sobre-soap-prueba-aeat.xml');
 fs.mkdirSync(path.dirname(salida), { recursive: true });
 fs.writeFileSync(salida, soap, 'utf8');
+
+// El siguiente envío se encadena a éste. Se guarda DESPUÉS de que pasen los controles:
+// si el sobre no sale, la cadena no avanza.
+fs.writeFileSync(RUTA_ULTIMO, JSON.stringify({
+  idEmisorFactura: NIF, numSerieFactura: SERIE, fechaExpedicion: FECHA, huella,
+}, null, 2));
 
 console.log(JSON.stringify({
   veredicto: 'GENERADO',
