@@ -81,7 +81,9 @@ export function ordenesSchtasks({ destino, tandas, prefijo }) {
 /** La línea del statusLine para `~/.claude/settings.json` (la pone quien manda en la máquina). */
 export function lineaStatusLine(destino) {
   const uso = `${destino.replace(/\\/g, '/').replace(/\/$/, '')}/uso.mjs`;
-  return { statusLine: { type: 'command', command: `node ${uso} escribir` } };
+  // SCRUM-953: sin comillas, un usuario de Windows con espacio (`C:/Users/Javier Pereira/…`) corta
+  // la orden en el espacio y el aviso de uso no arranca nunca, sin error visible en ningún sitio.
+  return { statusLine: { type: 'command', command: `node "${uso}" escribir` } };
 }
 
 function argumento(nombre) {

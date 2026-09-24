@@ -108,13 +108,29 @@ function celdaTrabajo(expense) {
   return caja;
 }
 
+// SCRUM-920d · lo que la lista recuerda entre pulsaciones: los gastos que llegaron (mes + categoría, que
+// filtra el servidor) y los dos filtros que se hacen AQUÍ, sobre esos gastos: el trabajo y la foto. Se
+// reinicia en cada `renderExpensesView`: entrar en Gastos empieza sin filtros, como siempre.
+const TRABAJO_SUELTO = 'sin-trabajo';
+let gastosVista = { items: [], job: '', foto: 'todos' };
+
 async function renderExpensesView(container) {
+  gastosVista = { items: [], job: '', foto: 'todos' };
+  // ⚠️ Los comentarios de esta plantilla van FUERA de ella o sin acentos graves: uno solo cierra el literal.
   container.innerHTML = `
     <div class="gastos-pantalla">
-      <!-- Cabecera -->
+      <!-- Cabecera: el título y, a la derecha, las acciones -->
       <div class="gastos-cabecera">
-        <h2>Gastos</h2>
-        <p>Controla tus costes y vincúlalos a trabajos para ver el margen real.</p>
+        <div class="gastos-titulo">
+          <h2>Gastos</h2>
+          <p>Controla tus costes y vincúlalos a trabajos para ver el margen real.</p>
+        </div>
+        <div class="gastos-acciones">
+          <div class="gastos-barra">
+            <button class="btn-primary gastos-nuevo" id="exp-new-btn">Nuevo gasto</button>
+          </div>
+          <a id="exp-export-btn" href="/admin/exports/expenses.csv" class="btn-secondary btn-sm" title="Exportar gastos filtrados a CSV">⬇ CSV</a>
+        </div>
       </div>
 
       <!-- Resumen mensual: los tres KPI de siempre, con sus rótulos y sus cuentas -->
@@ -124,17 +140,20 @@ async function renderExpensesView(container) {
         <div class="gasto-kpi"><div class="gasto-kpi-rotulo"></div></div>
       </div>
 
-      <!-- Filtros y botón nuevo -->
+      <!-- Filtros: mes y categoría (los resuelve el servidor), trabajo y foto (los resuelve esta pantalla) -->
       <div class="gastos-filtros">
-        <select id="exp-filter-month" class="input">
+        <select id="exp-filter-month" class="input gastos-filtro-mes">
           ${getMonthOptions()}
         </select>
         <select id="exp-filter-cat" class="input">
           <option value="">Todas las categorías</option>
           ${Object.entries(CATEGORY_LABELS).map(([v,c]) => `<option value="${v}">${c.label}</option>`).join('')}
         </select>
-        <button class="btn-primary gastos-nuevo" id="exp-new-btn">Nuevo gasto</button>
-        <a id="exp-export-btn" href="/admin/exports/expenses.csv" class="btn-secondary btn-sm" title="Exportar gastos filtrados a CSV">⬇ CSV</a>
+        <select id="exp-filter-job" class="input" aria-label="Trabajo">
+          <option value="">Todos los trabajos</option>
+        </select>
+        <button type="button" class="gastos-chip" data-foto="todos" aria-pressed="true">Todos<span class="gastos-chip-n"></span></button>
+        <button type="button" class="gastos-chip" data-foto="sinfoto" aria-pressed="false">Sin foto<span class="gastos-chip-n"></span></button>
       </div>
 
       <!-- Lista -->
@@ -197,6 +216,12 @@ async function renderExpensesView(container) {
 
   document.getElementById('exp-filter-month').addEventListener('change', () => { updateExportLink(); loadExpenses(); });
   document.getElementById('exp-filter-cat').addEventListener('change',   () => { updateExportLink(); loadExpenses(); });
+  // SCRUM-920d · el trabajo y la foto se filtran sobre los gastos que YA llegaron: no piden nada al servidor.
+  // (El CSV de arriba lleva mes y categoría, que son los que filtra el servidor; estos dos no viajan.)
+  document.getElementById('exp-filter-job').addEventListener('change', (ev) => { gastosVista.job = ev.target.value; pintarGastos(); });
+  document.querySelectorAll('.gastos-chip').forEach((chip) => {
+    chip.addEventListener('click', () => { gastosVista.foto = chip.dataset.foto; pintarGastos(); });
+  });
   updateExportLink();
 
   await Promise.all([loadSummary(), loadExpenses()]);
@@ -263,28 +288,121 @@ async function loadExpenses() {
     // listExpenses). Nada de pedir /admin/jobs aquí: eso dejaba la lista esperando por el
     // endpoint más lento solo para poder nombrar la columna.
     const data = await apiRequest(`/admin/expenses?${qs}`);
-    const items = data.items || [];
-
-    if (!items.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
-        + '<div class="empty-state-title">Sin gastos este mes</div>'
-        + '<div class="empty-state-desc">Registra materiales, desplazamientos y subcontratas para conocer el margen real de cada trabajo.</div>'
-        + '<button id="exp-empty-cta" class="btn-primary btn-sm gastos-vacio-cta">+ Añadir mi primer gasto</button></div>';
-      const cta = document.getElementById('exp-empty-cta');
-      if (cta) cta.addEventListener('click', () => openExpenseModal(null));
-      return;
-    }
-
-    // 🔴 SCRUM-920c · AQUÍ MUERE EL SCROLL LATERAL. Esto era un `<table style="min-width:600px">` dentro
-    // de un `.table-scroll`: a 390 px las columnas sumaban 628 y había que ARRASTRAR la caja para ver el
-    // importe. Ahora son filas en rejilla (`.gasto-fila`, `styles.css`): cinco columnas a escritorio y
-    // tres renglones en móvil, sin desbordar. No se toca `.table-scroll .table`, que es de otros usos.
-    const lista = gastoEl('div', 'gastos-filas');
-    lista.setAttribute('role', 'list');
-    items.forEach((e) => lista.appendChild(filaDeGasto(e)));
-    el.replaceChildren(lista);
+    gastosVista.items = data.items || [];
+    opcionesDeTrabajo(gastosVista.items);
+    pintarGastos();
   } catch (err) {
     el.innerHTML = `<div class="gastos-error">Error: ${err.message}</div>`;
+  }
+}
+
+// SCRUM-920d · el filtro por trabajo ofrece los trabajos QUE TIENEN gastos en la lista que llegó (no pide
+// `/admin/jobs`: el trabajo de cada gasto ya viene resuelto en `item.job`, SCRUM-135), más «Todos los
+// trabajos» y «Sin trabajo». Si el trabajo elegido ya no está (otro mes, otra categoría), vuelve a «Todos».
+function opcionesDeTrabajo(items) {
+  const sel = document.getElementById('exp-filter-job');
+  if (!sel) return;
+  const trabajos = new Map();
+  items.forEach((e) => { if (e.job && !trabajos.has(String(e.job.id))) trabajos.set(String(e.job.id), jobLabel(e.job)); });
+  const ordenados = [...trabajos].sort((a, b) => a[1].localeCompare(b[1], 'es', { numeric: true }));
+  sel.replaceChildren(
+    new Option('Todos los trabajos', ''),
+    new Option('Sin trabajo', TRABAJO_SUELTO),
+    ...ordenados.map(([id, titulo]) => new Option(titulo, id)),
+  );
+  if (gastosVista.job !== '' && gastosVista.job !== TRABAJO_SUELTO && !trabajos.has(gastosVista.job)) gastosVista.job = '';
+  sel.value = gastosVista.job;
+}
+
+function coincideTrabajo(e, job) {
+  if (job === '') return true;
+  if (job === TRABAJO_SUELTO) return !e.job;
+  return !!e.job && String(e.job.id) === job;
+}
+
+// La suma en CÉNTIMOS: sumar decimales sueltos deja «0,30000000000000004» en el peor renglón.
+function sumaDeGastos(gastos) {
+  return gastos.reduce((a, e) => a + Math.round(Number(e.amount) * 100), 0) / 100;
+}
+
+function conNumero(n, singular, plural) {
+  return n + ' ' + (n === 1 ? singular : plural);
+}
+
+// Pinta la lista con los dos filtros de esta pantalla puestos. La cuenta de cada chip es la de lo que verás
+// al pulsarlo: cuenta sobre los gastos ya filtrados por trabajo, y no sobre todo el mes.
+function pintarGastos() {
+  const el = document.getElementById('exp-list');
+  if (!el) return;
+  const { items, job, foto } = gastosVista;
+  const cat = document.getElementById('exp-filter-cat')?.value || '';
+
+  const delTrabajo = items.filter((e) => coincideTrabajo(e, job));
+  const sinFoto = delTrabajo.filter((e) => !e.tieneFoto);
+  const visibles = foto === 'sinfoto' ? sinFoto : delTrabajo;
+  document.querySelectorAll('.gastos-chip').forEach((chip) => {
+    const n = chip.dataset.foto === 'sinfoto' ? sinFoto.length : delTrabajo.length;
+    chip.querySelector('.gastos-chip-n').textContent = ' · ' + n;
+    chip.setAttribute('aria-pressed', String(chip.dataset.foto === foto));
+  });
+
+  // Sin ningún filtro que lo explique, el mes está vacío: el estado vacío de siempre, palabra por palabra.
+  if (!items.length && !cat) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div>'
+      + '<div class="empty-state-title">Sin gastos este mes</div>'
+      + '<div class="empty-state-desc">Registra materiales, desplazamientos y subcontratas para conocer el margen real de cada trabajo.</div>'
+      + '<button id="exp-empty-cta" class="btn-primary btn-sm gastos-vacio-cta">+ Añadir mi primer gasto</button></div>';
+    const cta = document.getElementById('exp-empty-cta');
+    if (cta) cta.addEventListener('click', () => openExpenseModal(null));
+    return;
+  }
+
+  // Con un filtro puesto y nada que enseñar: se dice, y hay una salida.
+  if (!visibles.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div>'
+      + '<div class="empty-state-title">Ningún gasto con esos filtros</div>'
+      + '<div class="empty-state-desc">Prueba con otro mes, otra categoría u otro trabajo.</div>'
+      + '<button id="exp-quitar-filtros" class="btn-secondary btn-sm gastos-vacio-cta">Quitar los filtros</button></div>';
+    document.getElementById('exp-quitar-filtros').addEventListener('click', quitarFiltrosDeGastos);
+    return;
+  }
+
+  // La cabecera del mes: el mes y la cuenta de lo que se ve. Con un filtro puesto es OTRA cifra que la del
+  // KPI, así que se dice qué es; sin filtros la suma sería la del KPI y no se repite (sale una sola vez).
+  const filtrando = !!cat || job !== '' || foto !== 'todos';
+  const mesSel = document.getElementById('exp-filter-month');
+  const mesNombre = (mesSel?.selectedOptions[0]?.textContent || '').trim();
+  const cabecera = gastoEl('div', 'gastos-mes');
+  cabecera.appendChild(gastoEl('b', null, mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)));
+  cabecera.appendChild(gastoEl('span', 'gastos-mes-n', '· ' + conNumero(visibles.length, 'gasto', 'gastos')));
+  if (filtrando) {
+    cabecera.appendChild(gastoEl('span', 'gastos-mes-suma', fmtEuro(sumaDeGastos(visibles))));
+    cabecera.appendChild(gastoEl('span', 'gastos-mes-salvedad', 'Es la suma de lo que estás viendo, no la del mes.'));
+  }
+
+  // 🔴 SCRUM-920c · AQUÍ MUERE EL SCROLL LATERAL. Esto era un `<table style="min-width:600px">` dentro
+  // de un `.table-scroll`: a 390 px las columnas sumaban 628 y había que ARRASTRAR la caja para ver el
+  // importe. Ahora son filas en rejilla (`.gasto-fila`, `styles.css`): cinco columnas a escritorio y
+  // tres renglones en móvil, sin desbordar. No se toca `.table-scroll .table`, que es de otros usos.
+  const lista = gastoEl('div', 'gastos-filas');
+  lista.setAttribute('role', 'list');
+  visibles.forEach((e) => lista.appendChild(filaDeGasto(e)));
+  el.replaceChildren(cabecera, lista);
+}
+
+// «Quitar los filtros» los quita TODOS: trabajo y foto (de esta pantalla) y categoría (del servidor, que
+// vuelve a pedir el mes entero por el mismo camino que si la hubieras cambiado tú a mano).
+function quitarFiltrosDeGastos() {
+  gastosVista.job = '';
+  gastosVista.foto = 'todos';
+  const sel = document.getElementById('exp-filter-job');
+  if (sel) sel.value = '';
+  const cat = document.getElementById('exp-filter-cat');
+  if (cat && cat.value) {
+    cat.value = '';
+    cat.dispatchEvent(new Event('change'));
+  } else {
+    pintarGastos();
   }
 }
 
@@ -301,8 +419,12 @@ function filaDeGasto(e) {
   if (e.notes) que.appendChild(gastoEl('span', 'gasto-notas', e.notes));
   que.appendChild(gastoEl('span', 'gasto-fecha', new Date(e.date).toLocaleDateString('es', { day: '2-digit', month: 'short' })));
 
+  // SCRUM-920d · la foto del ticket, a la vista en cada fila: un hecho sobre el archivo (`tieneFoto`, que da
+  // la lista sin traer la foto: SCRUM-964). SIN miniatura: `GET /admin/expenses/:id/foto` sirve la foto
+  // ENTERA (hasta 1,1 MiB, `no-store`), y una `<img>` por fila serían N descargas de ese tamaño.
   const meta = gastoEl('div', 'gasto-meta');
   meta.innerHTML = catPill(e.category);
+  meta.appendChild(gastoEl('span', 'gasto-foto ' + (e.tieneFoto ? 'gasto-foto--si' : 'gasto-foto--no'), e.tieneFoto ? 'Foto guardada' : 'Sin foto'));
 
   const imp = gastoEl('div', 'gasto-imp', fmtEuro(Number(e.amount)));
 

@@ -1,0 +1,265 @@
+{
+  "login": 200,
+  "version": "f319add31e4e414ab9e9a70e10bc179dc13996c9",
+  "muestras": [
+    {
+      "i": 0,
+      "w": 4032,
+      "h": 3024,
+      "densidad": 0.1,
+      "origenBytes": 1542563,
+      "guardadoDataUriBytes": 271251,
+      "guardadoBinBytes": 203421,
+      "guardadoPx": "2000×1500",
+      "msCliente": 283
+    },
+    {
+      "i": 1,
+      "w": 3024,
+      "h": 4032,
+      "densidad": 0.1,
+      "origenBytes": 1481104,
+      "guardadoDataUriBytes": 258627,
+      "guardadoBinBytes": 193953,
+      "guardadoPx": "1500×2000",
+      "msCliente": 204
+    },
+    {
+      "i": 2,
+      "w": 3264,
+      "h": 2448,
+      "densidad": 0.1,
+      "origenBytes": 982843,
+      "guardadoDataUriBytes": 1310483,
+      "guardadoBinBytes": 982845,
+      "guardadoPx": "3264×2448",
+      "msCliente": 4
+    },
+    {
+      "i": 3,
+      "w": 2448,
+      "h": 3264,
+      "densidad": 0.1,
+      "origenBytes": 986891,
+      "guardadoDataUriBytes": 1315879,
+      "guardadoBinBytes": 986892,
+      "guardadoPx": "2448×3264",
+      "msCliente": 3
+    },
+    {
+      "i": 4,
+      "w": 4608,
+      "h": 3456,
+      "densidad": 0.1,
+      "origenBytes": 2090331,
+      "guardadoDataUriBytes": 261559,
+      "guardadoBinBytes": 196152,
+      "guardadoPx": "2000×1500",
+      "msCliente": 228
+    },
+    {
+      "i": 5,
+      "w": 4032,
+      "h": 3024,
+      "densidad": 0.3,
+      "origenBytes": 3162489,
+      "guardadoDataUriBytes": 511107,
+      "guardadoBinBytes": 383313,
+      "guardadoPx": "2000×1500",
+      "msCliente": 206
+    },
+    {
+      "i": 6,
+      "w": 3024,
+      "h": 4032,
+      "densidad": 0.3,
+      "origenBytes": 3073925,
+      "guardadoDataUriBytes": 518451,
+      "guardadoBinBytes": 388821,
+      "guardadoPx": "1500×2000",
+      "msCliente": 223
+    },
+    {
+      "i": 7,
+      "w": 3264,
+      "h": 2448,
+      "densidad": 0.3,
+      "origenBytes": 2059465,
+      "guardadoDataUriBytes": 619323,
+      "guardadoBinBytes": 464475,
+      "guardadoPx": "2000×1500",
+      "msCliente": 137
+    },
+    {
+      "i": 8,
+      "w": 2448,
+      "h": 3264,
+      "densidad": 0.3,
+      "origenBytes": 2002161,
+      "guardadoDataUriBytes": 612007,
+      "guardadoBinBytes": 458988,
+      "guardadoPx": "1500×2000",
+      "msCliente": 117
+    },
+    {
+      "i": 9,
+      "w": 4608,
+      "h": 3456,
+      "densidad": 0.3,
+      "origenBytes": 4051647,
+      "guardadoDataUriBytes": 506151,
+      "guardadoBinBytes": 379596,
+      "guardadoPx": "2000×1500",
+      "msCliente": 202
+    },
+    {
+      "i": 10,
+      "w": 4032,
+      "h": 3024,
+      "densidad": 0.5,
+      "origenBytes": 3789067,
+      "guardadoDataUriBytes": 613547,
+      "guardadoBinBytes": 460143,
+      "guardadoPx": "2000×1500",
+      "msCliente": 187
+    },
+    {
+      "i": 11,
+      "w": 3024,
+      "h": 4032,
+      "densidad": 0.5,
+      "origenBytes": 3780123,
+      "guardadoDataUriBytes": 616923,
+      "guardadoBinBytes": 462675,
+      "guardadoPx": "1500×2000",
+      "msCliente": 156
+    },
+    {
+      "i": 12,
+      "w": 3264,
+      "h": 2448,
+      "densidad": 0.5,
+      "origenBytes": 2470949,
+      "guardadoDataUriBytes": 746799,
+      "guardadoBinBytes": 560082,
+      "guardadoPx": "2000×1500",
+      "msCliente": 108
+    },
+    {
+      "i": 13,
+      "w": 2448,
+      "h": 3264,
+      "densidad": 0.5,
+      "origenBytes": 2447215,
+      "guardadoDataUriBytes": 742915,
+      "guardadoBinBytes": 557169,
+      "guardadoPx": "1500×2000",
+      "msCliente": 113
+    },
+    {
+      "i": 14,
+      "w": 4608,
+      "h": 3456,
+      "densidad": 0.5,
+      "origenBytes": 4928876,
+      "guardadoDataUriBytes": 616819,
+      "guardadoBinBytes": 462597,
+      "guardadoPx": "2000×1500",
+      "msCliente": 241
+    },
+    {
+      "i": 15,
+      "w": 4032,
+      "h": 3024,
+      "densidad": 0.8,
+      "origenBytes": 4206911,
+      "guardadoDataUriBytes": 695003,
+      "guardadoBinBytes": 521235,
+      "guardadoPx": "2000×1500",
+      "msCliente": 201
+    },
+    {
+      "i": 16,
+      "w": 3024,
+      "h": 4032,
+      "densidad": 0.8,
+      "origenBytes": 4227454,
+      "guardadoDataUriBytes": 681975,
+      "guardadoBinBytes": 511464,
+      "guardadoPx": "1500×2000",
+      "msCliente": 278
+    },
+    {
+      "i": 17,
+      "w": 3264,
+      "h": 2448,
+      "densidad": 0.8,
+      "origenBytes": 2731573,
+      "guardadoDataUriBytes": 841075,
+      "guardadoBinBytes": 630789,
+      "guardadoPx": "2000×1500",
+      "msCliente": 127
+    },
+    {
+      "i": 18,
+      "w": 2448,
+      "h": 3264,
+      "densidad": 0.8,
+      "origenBytes": 2743961,
+      "guardadoDataUriBytes": 840239,
+      "guardadoBinBytes": 630162,
+      "guardadoPx": "1500×2000",
+      "msCliente": 108
+    },
+    {
+      "i": 19,
+      "w": 4608,
+      "h": 3456,
+      "densidad": 0.8,
+      "origenBytes": 5459423,
+      "guardadoDataUriBytes": 713603,
+      "guardadoBinBytes": 535185,
+      "guardadoPx": "2000×1500",
+      "msCliente": 230
+    }
+  ],
+  "resumenPesoBin": {
+    "n": 20,
+    "minMiB": 0.185,
+    "medianaMiB": 0.443,
+    "p90MiB": 0.937,
+    "maxMiB": 0.941
+  },
+  "modalCerrado": true,
+  "gastoDePrueba": 239,
+  "cargaBajo4G": [
+    {
+      "intento": 0,
+      "ms": 739,
+      "status": 200,
+      "bytes": 464473,
+      "tipo": "image/jpeg",
+      "cache": "no-store"
+    },
+    {
+      "intento": 1,
+      "ms": 738,
+      "status": 200,
+      "bytes": 464473,
+      "tipo": "image/jpeg",
+      "cache": "no-store"
+    },
+    {
+      "intento": 2,
+      "ms": 735,
+      "status": 200,
+      "bytes": 464473,
+      "tipo": "image/jpeg",
+      "cache": "no-store"
+    }
+  ],
+  "borrado": {
+    "status": 200,
+    "sigue": false
+  }
+}

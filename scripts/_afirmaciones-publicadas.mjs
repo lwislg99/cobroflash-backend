@@ -170,6 +170,8 @@ export const SIN_ANCLA = 'SIN_ANCLA';
 const FIRMA = 'src/modules/quotes/app/routes/quotes.routes.ts::signatureUrl';
 const WHATSAPP = 'src/integrations/whatsapp.ts::sendWhatsAppTemplate';
 const RECORDATORIO = 'src/modules/billing/domain/invoiceReminder.service.ts::sendInvoicePaymentReminders';
+/** SCRUM-1086: recordatorio de FIRMA (no de cobro) — cron ya lo llama para todo merchant, sin flag. */
+const RECORDATORIO_FIRMA = 'src/modules/quotes/domain/reminder.service.ts::sendPendingReminders';
 const TRANSFERENCIA = 'src/modules/billing/app/routes/payBank.routes.ts::router';
 const PRUEBA = 'src/modules/auth/domain/auth.service.ts::planExpiresAt';
 const CSV = 'src/modules/exports/domain/exportData.ts::csvBody';
@@ -240,62 +242,42 @@ export const ANCLAS_564 = {
   'precios/li#2': { texto: 'Envío por WhatsApp + firma digital', anclas: [FIRMA, WHATSAPP] },
   'probar/span#9': { texto: 'Lo firma desde el móvil', anclas: [FIRMA] },
   'probar/div#6': { texto: 'Firma para aceptar', anclas: [FIRMA] },
-
-  // ── cobro · las NUEVE condicionadas a un flag. Su veredicto lo deriva `alcanzabilidad()`.
-  'como/h3#3': { texto: '3 · Cobra', anclas: [TRANSFER] },
-  'como/p#4': {
-    texto: 'Tarjeta, Bizum o transferencia — él elige, tú cobras. Los pendientes se reclaman solos.',
-    anclas: [TARJETA, BIZUM, TRANSFER], tras: [TRAS_TARJETA, TRAS_BIZUM],
+  'probar/p#1': {
+    texto: 'Pulsa el botón verde dentro del móvil y avanza — del presupuesto a la firma, como lo viven tú y tu cliente.',
+    anclas: [FIRMA],
+    // SCRUM-1086 (comentario 16602, 23-sep-2026): cabecera de #probar firmada — decía «al pago».
   },
+
+  // ── cobro · SCRUM-1086 retiró el lote firmado; queda UNA, sin tocar (ver nota abajo).
+  //    Su veredicto lo sigue derivando `alcanzabilidad()`, igual que antes.
   'todo/p#3': {
     texto: 'Tarjeta, Bizum o transferencia. Cobra trabajos completos o por adelantado, con recordatorios que persiguen solos.',
     anclas: [TARJETA, BIZUM, TRANSFER, RECORDATORIO], tras: [TRAS_TARJETA, TRAS_BIZUM],
+    // ⚠️ SCRUM-1086 (23-sep-2026) quitó el resto del lote de cobro de `#como`, `#precios` y
+    //    `#probar` (regla 24). Ésta queda en `#todo` sin tocar — sigue siendo la que «va
+    //    delante del fundador», ahora sola.
   },
+
+  // ── recordatorios de FIRMA (no de cobro) · SCRUM-1086, nuevas ──────────────────────────
   'precios/li#3': {
-    texto: 'Cobro con tarjeta, Bizum y transferencia',
-    anclas: [TARJETA, BIZUM, TRANSFER], tras: [TRAS_TARJETA, TRAS_BIZUM],
-    // ⚠️ Ésta va en la LISTA DE LO QUE INCLUYE EL PLAN, al lado del precio. Medido en
-    //    SCRUM-564: junto al texto caben SEIS caracteres a 1280 px. Si algún día hay que
-    //    condicionarla, ahí no cabe la condición — el dato está en `_hueco-condicion.mjs`.
+    texto: 'Recordatorios automáticos de firma',
+    anclas: [RECORDATORIO_FIRMA],
+    // Medido 23-sep-2026: `sendPendingReminders` avisa por WhatsApp a las 24h de un presupuesto
+    // `sent` sin decisión (src/core/cron/cron.ts la llama para todo merchant, sin flag).
   },
-  'precios/p#2': {
-    texto: 'Solo si cobras con tarjeta:',
-    anclas: [TARJETA], tras: [TRAS_TARJETA],
-    // La frase entera del elemento es «Solo si cobras con tarjeta: 0,9 %. Bizum y
-    // transferencia: 0 €.»: anuncia la comisión de un medio que hoy no se puede usar.
-  },
-  'precios/p#4': {
-    texto: 'Bizum y transferencia:',
-    anclas: [BIZUM, TRANSFER], tras: [TRAS_BIZUM],
-  },
-  'probar/span#15': {
-    texto: 'Paga como quiera',
-    anclas: [TARJETA, BIZUM, TRANSFER], tras: [TRAS_TARJETA, TRAS_BIZUM],
-    // No nombra medios: es el rótulo del paso 5 y su vecina (`span#16`) los enumera. La
-    // promesa de ELECCIÓN es suya, y elegir entre tres cuando hay uno es la misma promesa.
-  },
-  'probar/span#16': {
-    texto: 'Tarjeta, Bizum o transferencia.',
-    anclas: [TARJETA, BIZUM, TRANSFER], tras: [TRAS_TARJETA, TRAS_BIZUM],
-  },
-  'probar/span#42': { texto: 'Tarjeta', anclas: [TARJETA], tras: [TRAS_TARJETA] },
-  'probar/span#44': { texto: 'Bizum', anclas: [BIZUM], tras: [TRAS_BIZUM] },
-  'probar/span#46': { texto: 'Transferencia', anclas: [TRANSFER] },
-  'probar/div#9': { texto: 'Tu cliente paga desde el chat', anclas: [WHATSAPP, TRANSFER] },
-  // ── recordatorios ─────────────────────────────────────────────────────────────────────
   'faq/div#1': {
-    texto: 'Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma, no cobra y no persigue al que no contesta. Y aquí además llevas clientes, gastos y facturas en el mismo sitio.',
-    anclas: [FIRMA, RECORDATORIO],
-  },
-  'faq/div#2': {
-    texto: 'Nada. Les llega un WhatsApp normal con un enlace: lo abren, ven el presupuesto y tienen dos botones — Firmar y Pagar. Y si prefieren transferencia de toda la vida, también vale.',
-    anclas: [FIRMA, WHATSAPP, RECORDATORIO],
+    texto: 'Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma ni lleva el seguimiento solo. Y aquí además llevas clientes, gastos y facturas en el mismo sitio.',
+    anclas: [FIRMA, RECORDATORIO_FIRMA],
   },
 
   // ── condiciones comerciales ───────────────────────────────────────────────────────────
   'precios/p#1': { texto: '14 días gratis, sin tarjeta. Y sin letra pequeña.', anclas: [PRUEBA] },
   'precios/a#1': { texto: 'Empieza gratis', anclas: [PRUEBA] },
-  'precios/p#6': { texto: 'o 16,58 €/mes pagando el año (199 € · 2 meses gratis)', anclas: [ANUAL] },
+  'precios/p#2': {
+    texto: 'o 16,58 €/mes pagando el año (199 € · 2 meses gratis)',
+    anclas: [ANUAL],
+    // Era `precios/p#6`: SCRUM-1086 quitó el fee-note que iba delante y el índice bajó a #2.
+  },
   'faq/div#4': {
     texto: 'Sin permanencia. Tus datos son tuyos: clientes, presupuestos, facturas, cobros, trabajos y gastos se exportan en CSV cuando quieras.',
     anclas: [CSV],
@@ -311,10 +293,10 @@ export const ANCLAS_564 = {
       + 'tests/scrum555-lo-que-el-censo-no-ve.test.mjs, entre las cifras acopladas.',
   },
   'faq/div#3': {
-    texto: 'Todo: presupuestos, firma y cobro, más clientes, proveedores, productos, gastos, informes y equipo. Es tu herramienta de gestión completa, no solo para cotizar.',
+    texto: 'Todo: presupuestos y firma, más clientes, proveedores, productos, gastos, informes y equipo. Es tu herramienta de gestión completa, no solo para cotizar.',
     anclas: SIN_ANCLA,
-    promete: 'enumera nueve capacidades como si estuvieran todas disponibles. El «cobro» arrastra '
-      + 'los mismos dos flags apagados que las de arriba.',
+    promete: 'enumera ocho capacidades como si estuvieran todas disponibles (SCRUM-1086 retiró '
+      + '«cobro» de la lista; antes eran nueve, con el mismo motivo que las de arriba).',
   },
 };
 

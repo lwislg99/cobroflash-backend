@@ -349,7 +349,14 @@ async function seed() {
   let collectedThisMonth = 0, pendingAmount = 0, awaitingAmount = 0;
 
   await prisma.$transaction(async (tx) => {
-    // 1) MERCHANT — ES, sin flag INVOICING → emite JUSTIFICANTES (J-), NO demo (sin watermark).
+    // 1) MERCHANT — ES, CON override explícito de INVOICING_ES_ENABLED (Parte P, `flags`
+    //    JSON del merchant, precedencia merchant > país > env — lo lee `core/flags.ts`).
+    //    SCRUM-1027 (21-sep-2026, regla 24): sin ese override, `allocateInvoiceNumber` lanza
+    //    `invoicing_es_disabled` en cuanto se acepta el primer presupuesto y la
+    //    `$transaction` entera revierte — 0 filas, el script no siembra nada. NO demo (sin
+    //    watermark): id≠1. Emite factura FISCAL (F1), no "justificante" — ese tipo de
+    //    documento lo decidió retirar el fundador (SCRUM-825; su ejecución sigue parada, pero
+    //    ya no es lo que este seed debe fingir que pasa).
     //    plan='trial' + planExpiresAt lejano: SIN paywall y SIN banners (el único banner de la
     //    Parte L es past_due, que dejamos null). Ver informe para "Plan Pro" sin tocar el plan.
     const merchant = await tx.merchant.create({
@@ -372,6 +379,7 @@ async function seed() {
         planExpiresAt: daysFromNow(3650),   // +10 años → nunca expira → sin paywall/banner
         subscriptionStatus: null,           // sin banner past_due
         acquisitionSource: 'video-demo',
+        flags: { INVOICING_ES_ENABLED: true }, // SCRUM-1098: override, sin él no emite NADA
       },
     });
     counts.merchant = 1;
@@ -477,7 +485,7 @@ async function seed() {
       counts.quotes++;
       if (q.status === 'sent') awaitingAmount = round2(awaitingAmount + total);
 
-      // Documentos de cobro (justificantes J-) + cobros, solo para ACEPTADOS con plan.
+      // Documentos de cobro (facturas fiscales F-, con el override) + cobros, solo para ACEPTADOS con plan.
       if (q.status === 'accepted') {
         const plan = resolveBillingPlan({ paymentTerms: q.paymentTerms, customBillingPlan: null });
         const stageAmounts = distributeStageAmounts(total, plan); // reparto exacto (último tramo = resto)
@@ -514,7 +522,7 @@ async function seed() {
           });
           counts.charges++;
 
-          // Justificante (Invoice). allocateInvoiceNumber → J- (merchant ES sin flag).
+          // Factura fiscal (Invoice). allocateInvoiceNumber → F- (merchant ES con override).
           // El nº lleva la fecha de emisión histórica (paidAt/createdAt).
           const emitAt = paidAt ?? createdAt;
           // El camino se DERIVA del tramo, no se fija: el primero nace cuando el cliente acepta

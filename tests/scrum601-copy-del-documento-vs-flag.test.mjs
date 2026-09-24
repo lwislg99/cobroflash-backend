@@ -122,7 +122,20 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // SCRUM-915d (18-sep-2026) · flag 12 → 13: entra la guía del paso Cliente del editor, que SÍ deriva
 // del flag («¿Para quién es el presupuesto?» / «…el justificante?», firmadas en SCRUM-915
 // comentario 15868). Regenerada con el censo, no deducida.
-const VEREDICTO_AL_MEDIR = { flag: 13, tipo: 7, aPelo: 154 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 154 → 156 · 22-sep-2026 (SCRUM-1040) · CUÁLES ENTRARON Y POR QUÉ NO ES REGRESIÓN. Los DOS son
+// el mismo sumidero, `facturasRecibidasView.js:37` (`recuento`), singular y plural: «1 factura
+// recibida» / « facturas recibidas».
+//
+// **«A pelo» es la categoría correcta, y no un defecto que se cuela.** La pantalla nueva enseña
+// las facturas que el profesional RECIBE de sus proveedores (A6/SCRUM-426), no las que él emite:
+// un documento de un proveedor SIEMPRE es una factura, gane o no el merchant su propio flag de
+// emisión — la palabra no depende de `INVOICING_ES_ENABLED` porque no describe lo que este
+// negocio emite, describe lo que otro negocio le ha entregado a él.
+//
+// Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VEREDICTO_AL_MEDIR = { flag: 13, tipo: 7, aPelo: 156 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -288,7 +301,11 @@ const PENDIENTES_DE_FIRMA = [
   // lo alto del fichero, así que TODO lo que va detrás sube dos líneas. Cifra MEDIDA con el propio
   // censo sobre el árbol FUSIONADO con main (21-sep-2026; el rojo decía `quotesView.js:909`), no
   // contada ni deducida: al fusionar, el generador la regeneró.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 909, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-915j · y de 909 a 935: la lista de clientes por botones y sus funciones se escriben ANTES de
+  // esta línea. CORREGIR un anclaje no es añadirlo: el texto es byte a byte el mismo y el motivo
+  // sigue siendo el suyo. Cifra MEDIDA con el propio censo sobre el árbol resultante (21-sep-2026; el
+  // rojo decía `quotesView.js:935`), no contada del diff.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 935, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];

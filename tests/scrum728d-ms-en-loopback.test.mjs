@@ -136,7 +136,7 @@ test('SCRUM-728d · SUELO: el banco es desechable, y el RTT en loopback es ~0',
     } finally { await prisma.$disconnect(); }
   });
 
-test('SCRUM-728d · 🔴 LOS CUATRO CAMINOS, con 1 · 5 · 10 simultáneas',
+test('SCRUM-728d · 🔴 LOS TRES CAMINOS QUE RESERVAN, con 1 · 5 · 10 simultáneas',
   { skip: !ENABLED && 'necesita banco desechable: LIBRO_PG_URL=… npm test (CI lo levanta solo)' }, async (t) => {
     const { PrismaClient } = await import('@prisma/client');
     exigirBancoDesechable(URL_BANCO);
@@ -146,8 +146,19 @@ test('SCRUM-728d · 🔴 LOS CUATRO CAMINOS, con 1 · 5 · 10 simultáneas',
     const { getEmissionMode } = await import('../dist/modules/invoicing/domain/emission.service.js');
 
     try {
-      // 🔴 HACEN FALTA DOS MERCHANTS, y no es comodidad: el modo de emisión es del merchant, así
-      // que uno solo no puede dar los cuatro caminos. Y una RECTIFICATIVA sobre un merchant en
+      // 🔴 SCRUM-1027 (21-sep-2026, regla 24 / SCRUM-612c) RETIRÓ EL CUARTO CAMINO DE ESTA LISTA.
+      //
+      // Hasta hoy «justificante» era un camino que RESERVABA (un merchant ES en modo `receipt`
+      // recibía un `J-…`), así que tenía sentido cronometrarlo igual que los otros tres. Desde
+      // hoy `allocateInvoiceNumber` RECHAZA el modo `receipt` para los siete caminos de emisión
+      // — no reserva nada, no hay número que medir. Es la misma naturaleza que ya tenía la
+      // rectificativa sobre un merchant `receipt` (el comentario de abajo, sin tocar): una
+      // operación que lanza `invoicing_es_disabled` no es lenta, es un camino que ya no existe.
+      // Se mide APARTE, más abajo, lo que SÍ hay que garantizar de esa rama: que rechaza siempre,
+      // determinista, sin que la concurrencia cuele una reserva por una carrera.
+      //
+      // HACEN FALTA DOS MERCHANTS, y no es comodidad: el modo de emisión es del merchant, así que
+      // uno solo no puede dar los tres caminos que quedan. Y una RECTIFICATIVA sobre un merchant en
       // modo `receipt` no es lenta: **lanza `invoicing_es_disabled`** (las rectificativas no
       // existen para justificantes, regla 29), así que medirla ahí no habría medido nada.
       const es = { name: 'QA SCRUM-728d ES', email: `medicion-es-${process.pid}@yaqu.test`, country: 'ES' };
@@ -159,8 +170,9 @@ test('SCRUM-728d · 🔴 LOS CUATRO CAMINOS, con 1 · 5 · 10 simultáneas',
           const modoFr = getEmissionMode(mFr);
           t.diagnostic(`merchant ES id=${mEs.id} modo=${modoEs} · merchant FR id=${mFr.id} modo=${modoFr}`);
           assert.equal(modoEs, 'receipt',
-            `🔴 el merchant ES sale en modo «${modoEs}», no «receipt». El camino del justificante `
-            + 'NO se estaría midiendo, y es el que emite el ES real de hoy.');
+            `🔴 el merchant ES sale en modo «${modoEs}», no «receipt». El rechazo bajo concurrencia `
+            + 'que se mide más abajo NO se estaría ejercitando sobre el camino que de verdad usa hoy '
+            + 'un merchant ES real.');
           assert.equal(modoFr, 'fiscal',
             `🔴 el merchant no-ES sale en modo «${modoFr}», no «fiscal»: los caminos F1 y R1 no se `
             + 'estarían midiendo.');
@@ -176,7 +188,6 @@ test('SCRUM-728d · 🔴 LOS CUATRO CAMINOS, con 1 · 5 · 10 simultáneas',
           const op = (m) => ({ camino: 'C7-suelta', actor: act(m) });
           const CAMINOS = [
             ['albarán      ', (tx) => allocateAlbaranNumber(tx, mEs.id), null],
-            ['justificante ', (tx) => allocateInvoiceNumber(tx, mEs.id, op(mEs)), filaDeFactura(mEs.id, cliEs.id)],
             ['factura F1   ', (tx) => allocateInvoiceNumber(tx, mFr.id, op(mFr)), filaDeFactura(mFr.id, cliFr.id)],
             ['rectificativa', (tx) => allocateInvoiceNumber(tx, mFr.id, { ...op(mFr), rectifying: true }), filaDeFactura(mFr.id, cliFr.id)],
           ];
@@ -206,6 +217,54 @@ test('SCRUM-728d · 🔴 LOS CUATRO CAMINOS, con 1 · 5 · 10 simultáneas',
             }
           }
         });
+      });
+    } finally { await prisma.$disconnect(); }
+  });
+
+test('SCRUM-1027 · 🔴 EL CUARTO CAMINO YA NO RESERVA: el modo receipt rechaza SIEMPRE bajo concurrencia',
+  { skip: !ENABLED && 'necesita banco desechable: LIBRO_PG_URL=… npm test (CI lo levanta solo)' }, async (t) => {
+    const { PrismaClient } = await import('@prisma/client');
+    exigirBancoDesechable(URL_BANCO);
+    const prisma = new PrismaClient({ datasourceUrl: URL_BANCO });
+    const { allocateInvoiceNumber } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
+    const { getEmissionMode } = await import('../dist/modules/invoicing/domain/emission.service.js');
+
+    try {
+      // Regla 24 (SCRUM-612c) / SCRUM-1027: un merchant ES real sin flag no emite NINGÚN
+      // documento. Lo que hay que garantizar bajo concurrencia no es «no se repite un número»
+      // —nunca hay número—, es «nunca se cuela una reserva por una carrera entre el cerrojo y el
+      // rechazo». `getEmissionMode` se lee ANTES del `$executeRaw` del cerrojo
+      // (`invoiceNumber.service.ts`), así que no hay ventana que una carrera pueda explotar; esto
+      // lo comprueba contra Postgres de verdad, no contra la lectura del código.
+      const es = { name: 'QA SCRUM-1027 concurrencia', email: `medicion-1027-${process.pid}@yaqu.test`, country: 'ES' };
+
+      await conMerchantDeMedicion(prisma, es, async (mEs) => {
+        const modoEs = getEmissionMode(mEs);
+        t.diagnostic(`merchant ES id=${mEs.id} modo=${modoEs}`);
+        assert.equal(modoEs, 'receipt', `🔴 el merchant ES sale en modo «${modoEs}», no «receipt».`);
+
+        const op = { camino: 'C7-suelta', actor: { tipo: 'merchant', merchantId: mEs.id, teamMemberId: null } };
+        const fn = (tx) => allocateInvoiceNumber(tx, mEs.id, op);
+
+        for (const n of [1, 5, 10]) {
+          const t0 = performance.now();
+          const r = await Promise.allSettled(
+            Array.from({ length: n }, () => prisma.$transaction((tx) => fn(tx))),
+          );
+          const total = performance.now() - t0;
+          const rechazadas = r.filter((x) => x.status === 'rejected'
+            && String(x.reason?.message || x.reason).includes('invoicing_es_disabled'));
+          t.diagnostic(`receipt · ${String(n).padStart(2)} a la vez: ${ms(total)} en total · ${rechazadas.length}/${n} rechazadas con invoicing_es_disabled`);
+          assert.equal(rechazadas.length, n,
+            `🔴 con ${n} intentos simultáneos sólo ${rechazadas.length} rechazaron con `
+            + 'invoicing_es_disabled. Si alguno NO rechazó, un merchant ES real con el flag OFF '
+            + 'consiguió un documento bajo concurrencia — regla 24 rota por una carrera.');
+        }
+
+        const restantes = await prisma.invoice.count({ where: { merchantId: mEs.id } });
+        assert.equal(restantes, 0,
+          `🔴 quedaron ${restantes} facturas para un merchant en modo receipt: alguna reserva se `
+          + 'coló pese a rechazar en el resultado reportado.');
       });
     } finally { await prisma.$disconnect(); }
   });

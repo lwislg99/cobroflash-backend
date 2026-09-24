@@ -12,8 +12,10 @@ Lees antes de nada, desde `origin/main`: `CLAUDE.md`, `00-normas-comunes.md`, `d
 
 ## Tu área
 
-Facturas (emisión, PDF, envío por WhatsApp y por correo), VeriFactu (huella, QR, registros, la cola
-`VfSubmission`, el envío a la AEAT), rectificativas (R1) y anulación, el libro de registro, y la entrega a la
+Facturas (emisión, PDF, envío por WhatsApp y por correo), VeriFactu (huella, QR, registros locales;
+la remisión a la AEAT es **S1-D, aún sin construir** — sin tabla, sin envío, cero llamadas de red,
+máster Parte L; **corregido 23-sep-2026, SCRUM-1094**, antes decía que ya existía como cola
+`VfSubmission`), rectificativas (R1) y anulación, el libro de registro, y la entrega a la
 gestoría (SCRUM-280, 322 y 323: J1 con revisión de J4, **pendiente de un jefe**, `dos-equipos.md` §7).
 
 Y **revisas todo lo que borre o anonimice datos**, sea de quien sea el fichero: una factura emitida no se

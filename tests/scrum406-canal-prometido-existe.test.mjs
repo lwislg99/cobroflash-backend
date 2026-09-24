@@ -41,6 +41,7 @@ const CANALES_QUE_EXISTEN = {
 const WA_DECLARADOS = {
   'homeView.js': 'del CLIENTE FINAL: «Responder →» abre WhatsApp con quien escribió al profesional.',
   'jobRailBlocks.js': 'del CLIENTE FINAL: el teléfono del trabajo, el mismo que se pinta al lado.',
+  'api.js': 'del CLIENTE FINAL: `contactoDelCliente` (SCRUM-1032) enlaza el móvil, o el teléfono, del cliente que se pinta al lado; es un enlace del navegador, no un envío ni un canal de YaQu.',
 };
 
 // ── ① LA PROMESA ────────────────────────────────────────────────────────────────────────────────

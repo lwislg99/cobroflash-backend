@@ -39,6 +39,7 @@
 import type { ParamsPdfPresupuesto } from '../../invoicing/infra/pdf/pdf.service';
 import { leerClausulasDelMerchant } from './clausulas';
 import { getLocale } from '../../../core/i18n/locales';
+import { textoDeValidez } from './validez';
 
 /** Todas las claves, obligatorias. Lo que hace que «se me olvidó una» no compile. */
 export type Completo<T> = { [K in keyof T]-?: T[K] };
@@ -69,6 +70,16 @@ function clausulasDelMerchantParaPdf(merchant: any) {
     return [];
   }
   return leido.clausulas;
+}
+
+// NO SE EXPORTA, por lo mismo que la de arriba: sólo la usa el constructor.
+//
+// «Firmado» son las TRES marcas que deja la firma en la fila: cuándo (`acceptedAt`), el trazo
+// (`signatureUrl`) y el sobre sellado (`evidenciaFirma`, SCRUM-805). Se miran las tres porque los
+// presupuestos firmados antes de SCRUM-805 no tienen sobre, y los aceptados sin trazo no tienen
+// firma: el cuidado es el mismo, que un papel ya firmado no cambie de aspecto.
+function estaFirmado(quote: any): boolean {
+  return !!(quote?.acceptedAt || quote?.signatureUrl || quote?.evidenciaFirma);
 }
 
 /** Lo mínimo que hace falta saber para pintar el documento. Deliberadamente laxo (`any` en los
@@ -150,5 +161,15 @@ export function paramsDePresupuestoParaPdf(f: FuentesDelPresupuesto): ParamsComp
     clausulas: clausulasDelMerchantParaPdf(merchant),
     clausulasExcluidas: (quote.clausulasExcluidas as any) ?? null,
     tiers: (quote.tiers as any) ?? null,
+    // SCRUM-987 · «Válido hasta el …» en el papel. LA REGLA CONSERVADORA: un presupuesto YA FIRMADO
+    // sale SIN la línea. Añadirla no toca ningún hash —el sello de SCRUM-805 ya sella `validUntil`
+    // como DATO, no los bytes del PDF—, pero `GET /admin/quotes/:id/pdf` regenera y SOBRESCRIBE el
+    // `pdfUrl` de una fila firmada, y su papel no puede cambiar de aspecto por debajo. La validez
+    // ya la vio el cliente en la landing donde firmó. Fecha, zona y respaldo: `textoDeValidez`.
+    validez: estaFirmado(quote) ? null : textoDeValidez({
+      validUntil: quote.validUntil,
+      createdAt: quote.createdAt,
+      merchant,
+    }),
   };
 }

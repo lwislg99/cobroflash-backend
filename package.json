@@ -177,7 +177,11 @@
     "//ramas:borrables": "SCRUM-637: la pregunta CONTRARIA a la de arriba — las ramas remotas que YA estan dentro de origin/main y se pueden borrar. EN SECO por defecto; borra de verdad solo con --ejecutar, que lo pone una persona. Antes de lanzarlo hay que mirar los PR abiertos: aqui no hay `gh` y el script no puede comprobarlo.",
     "ramas:borrables": "node scripts/verificacion-s5/ramas-borrables.mjs",
     "//enlace:ticket-rama": "SCRUM-637: cruza las CUATRO fuentes del enlace ticket-rama (nombre de rama, mensaje de commit, docs/master/SCRUM-n.md y el asunto de Jira en docs/verificacion/asuntos-jira.tsv) y dice cuando NO se ponen de acuerdo. Solo reporta, no falla nada.",
-    "enlace:ticket-rama": "node scripts/verificacion-s5/enlace-ticket-rama.mjs"
+    "enlace:ticket-rama": "node scripts/verificacion-s5/enlace-ticket-rama.mjs",
+    "//antes-del-go": "SCRUM-568: cuántas de las afirmaciones publicadas condicionadas a un flag (regla 24) son alcanzables HOY para un merchant nuevo. Es un REGISTRO (sale 0 siempre), no una puerta.",
+    "antes-del-go": "node scripts/estado-antes-del-go.mjs",
+    "//arbol:mio": "SCRUM-774: PASO 0 antes de escribir — en qué worktree y rama está esta sesión, y si esa rama es la del ticket dado (`npm run arbol:mio -- 774`). Sin ticket, sólo informa. Exit != 0 si NO-MIO o CIEGO. Sólo lectura.",
+    "arbol:mio": "node scripts/arbol-mio.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
@@ -191,6 +195,7 @@
     "nodemailer": "^7.0.10",
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
+    "read-excel-file": "^9.3.10",
     "stripe": "^19.3.0",
     "zod": "^4.1.11"
   },

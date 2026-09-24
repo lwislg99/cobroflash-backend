@@ -227,6 +227,10 @@ function showOnboardingWizard(onComplete) {
         const refrescarPrevia = async () => {
           const n = Number(numero.value);
           error.style.display = 'none';
+          // SCRUM-1029 (regla 24): en `receipt` (ES real, facturación apagada) YaQu no emite
+          // ninguna factura — se OCULTA el bloque entero («Tu primera factura con YaQu será…»)
+          // en vez de reescribirlo. El resto del paso (guardar la numeración) sigue igual.
+          if (window.appModoEmision === 'receipt') { previa.style.display = 'none'; return; }
           if (!Number.isInteger(n) || n < 1) { previa.style.display = 'none'; return; }
           const mio = ++pedido;
           try {

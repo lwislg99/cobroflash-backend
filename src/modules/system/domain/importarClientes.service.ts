@@ -30,9 +30,18 @@
 // import no puede meter clientes en el merchant de otro.
 
 import { trocearCsv, celdaCsv } from '../../../core/csv/csv';
+// SCRUM-1022: lectura de .xlsx, solo en el PUNTO DE ENTRADA. Dependencia nueva autorizada por el
+// fundador (regla 36, comentario 16597 de SCRUM-1022) tras la comparativa medida en ese ticket.
+// `readSheet` (no el export por defecto, que en la 9.x devuelve TODAS las hojas) da las filas de
+// UNA sola hoja — la primera si no se indica otra — que es lo único que hace falta aquí.
+import { readSheet } from 'read-excel-file/node';
 // SCRUM-884: el teléfono con la MISMA regla que el alta — las dos piezas que ya existen, no otra.
 import { normalizarIdentificadores } from '../customerAdmin';
 import { formasBuscables } from './identificadoresDuplicados';
+// SCRUM-1046: el NIF con la MISMA validación que el alta manual — un solo sitio, `nifEspanol.ts`.
+import { validarNifEspanol, normalizarNif } from '../../../core/validation/nifEspanol';
+// SCRUM-580: las etiquetas con la MISMA decisión que el alta y la edición (límite 20×40, ausente ≠ vacío).
+import { tagsParaPrisma } from '../tagsDelCliente';
 
 // ── ① Codificación ───────────────────────────────────────────────────────────
 
@@ -74,18 +83,70 @@ function esUtf8Valido(bytes: Uint8Array): boolean {
   }
 }
 
+// ── ①b .xlsx (SCRUM-1022) ────────────────────────────────────────────────────
+
+const FIRMA_ZIP = Buffer.from([0x50, 0x4b, 0x03, 0x04]); // 'PK\x03\x04': todo OOXML (.xlsx incluido) es un ZIP
+
+/** ¿Son estos bytes un .xlsx (o cualquier Office moderno)? Se mira la firma, no la extensión. */
+export function pareceXlsx(bytes: Uint8Array): boolean {
+  return bytes.length >= 4 && Buffer.from(bytes.subarray(0, 4)).equals(FIRMA_ZIP);
+}
+
+/**
+ * Lee la primera hoja de un .xlsx y la reescribe como texto CSV (mismo separador `;` que usa el
+ * resto del importador), para que tenga la MISMA forma que `decodificarCsv(...).texto`. Con eso,
+ * `trocearCsv`, `proponerMapeo` e `importarClientes` no saben ni les importa de dónde vino el
+ * texto: no cambian ni una línea.
+ *
+ * Un .xlsx no tiene la ambigüedad de codificación de un CSV (la resuelve la librería sobre el XML
+ * interno), así que esto sustituye a `decodificarCsv`, no lo envuelve.
+ */
+export async function xlsxATextoCsv(bytes: Buffer): Promise<string> {
+  const filas = await readSheet(bytes);
+  return filas.map((fila) => fila.map((celda) => celdaCsv(celdaXlsxATexto(celda), ';')).join(';')).join('\r\n');
+}
+
+function celdaXlsxATexto(valor: unknown): string {
+  if (valor == null) return '';
+  if (valor instanceof Date) return valor.toISOString().slice(0, 10);
+  return String(valor);
+}
+
 // ── ② Mapeo propuesto ────────────────────────────────────────────────────────
 
-/** Los campos de Cliente que este importador sabe rellenar. */
-export const CAMPOS_CLIENTE = ['name', 'phone', 'email', 'notes'] as const;
+/**
+ * Los campos de Cliente que este importador sabe rellenar.
+ *
+ * SCRUM-1046: se añaden NIF, móvil, etiquetas y dirección fiscal — el CSV de hoy sólo traía los
+ * cuatro primeros. Un CSV de 4 columnas como el de siempre sigue funcionando igual: todo lo nuevo
+ * es opcional y `mapeo` es `Partial`.
+ *
+ * 🔴 `movil` SALE DE LOS SINÓNIMOS DE `phone`. Antes «MOVIL»/«MOBILE»/«CELULAR» se reconocían como
+ * `phone` porque no existía otro sitio donde ponerlos. Ahora que `Customer.mobile` es un campo
+ * propio (SCRUM-590), dejarlos en los dos sitios haría que quien gane dependa del ORDEN de
+ * `CAMPOS_CLIENTE` — y es exactamente el defecto que el guard ② ya vigila para dos columnas del
+ * mismo campo. `phone` se queda con las formas de teléfono FIJO.
+ */
+export const CAMPOS_CLIENTE = [
+  'name', 'phone', 'mobile', 'email', 'notes', 'taxId', 'tags',
+  'billingAddress', 'billingCity', 'billingPostalCode', 'billingProvince', 'billingCountry',
+] as const;
 export type CampoCliente = (typeof CAMPOS_CLIENTE)[number];
 
 /** Etiqueta humana de cada campo, para la pantalla de mapeo. */
 export const ETIQUETA_CAMPO: Record<CampoCliente, string> = {
   name: 'Nombre',
   phone: 'Teléfono',
+  mobile: 'Móvil',
   email: 'Email',
   notes: 'Notas',
+  taxId: 'NIF/CIF',
+  tags: 'Etiquetas',
+  billingAddress: 'Dirección fiscal',
+  billingCity: 'Ciudad',
+  billingPostalCode: 'Código postal',
+  billingProvince: 'Provincia',
+  billingCountry: 'País (ISO, ej. ES)',
 };
 
 /**
@@ -95,9 +156,17 @@ export const ETIQUETA_CAMPO: Record<CampoCliente, string> = {
  */
 const SINONIMOS: Record<CampoCliente, string[]> = {
   name: ['nombre', 'name', 'cliente', 'razonsocial', 'nombrecompleto', 'contacto'],
-  phone: ['telefono', 'phone', 'tel', 'movil', 'mobile', 'celular', 'telefono1', 'tlf'],
+  phone: ['telefono', 'phone', 'tel', 'telefono1', 'tlf', 'fijo'],
+  mobile: ['movil', 'mobile', 'celular', 'telefonomovil'],
   email: ['email', 'correo', 'mail', 'correoelectronico', 'e-mail'],
   notes: ['notas', 'notes', 'nota', 'observaciones', 'comentarios', 'obs'],
+  taxId: ['nif', 'cif', 'dni', 'nie', 'taxid', 'identificacionfiscal', 'nifcif'],
+  tags: ['etiquetas', 'etiqueta', 'tags', 'tag'],
+  billingAddress: ['direccion', 'direccionfiscal', 'domicilio', 'calle', 'address'],
+  billingCity: ['ciudad', 'localidad', 'poblacion', 'city'],
+  billingPostalCode: ['codigopostal', 'cp', 'postal', 'postalcode', 'zip'],
+  billingProvince: ['provincia', 'province'],
+  billingCountry: ['pais', 'country', 'paisiso'],
 };
 
 export function normalizarCabecera(s: string): string {
@@ -190,29 +259,82 @@ export async function importarClientes(
       continue;
     }
 
-    // 🔴 SCRUM-884 · el teléfono se GUARDA como lo guarda el alta (`normalizarIdentificadores`) y
-    // se BUSCA por sus formas (`formasBuscables`), como el aviso de duplicado del alta. Hacen falta
-    // las dos: `normalizePhone` sola da `612345678` y `34612345678` para el mismo cliente, porque
-    // no resuelve el prefijo de país — y guardar CON prefijo supuesto no es decisión de este ticket.
+    // 🔴 SCRUM-884 · el teléfono y el móvil se GUARDAN como los guarda el alta
+    // (`normalizarIdentificadores`), y se BUSCAN por sus formas (`formasBuscables`), como el aviso
+    // de duplicado del alta. Hacen falta las dos: `normalizePhone` sola da `612345678` y
+    // `34612345678` para el mismo cliente, porque no resuelve el prefijo de país — y guardar CON
+    // prefijo supuesto no es decisión de este ticket.
     const telefonoDelCsv = leer(celdas, 'phone') || null;
-    const { phone } = normalizarIdentificadores({ phone: telefonoDelCsv });
+    const movilDelCsv = leer(celdas, 'mobile') || null;
+    const { phone, mobile } = normalizarIdentificadores({ phone: telefonoDelCsv, mobile: movilDelCsv });
     const email = (leer(celdas, 'email') || '').toLowerCase() || null;
     const notes = leer(celdas, 'notes') || null;
 
+    // SCRUM-1046 · el NIF con la MISMA validación que el alta manual (forma + dígito de control;
+    // vacío sigue siendo válido). Una fila con NIF mal formado se rechaza con su motivo — no se
+    // importa el resto de la fila con un NIF roto en silencio.
+    const taxIdDelCsv = leer(celdas, 'taxId') || null;
+    if (taxIdDelCsv && !validarNifEspanol(taxIdDelCsv).valido) {
+      base.rechazos.push({ fila: numeroDeFila, motivo: 'NIF/CIF con formato incorrecto', celdas });
+      continue;
+    }
+
+    // El país viaja en ISO-3166-1 alfa-2, como `Merchant.country` y como pide el esquema
+    // (`billingCountry` es `@db` de 2 caracteres). Un Excel con «España» completa no se adivina a
+    // «ES» — sería inventar un dato que el fontanero no escribió con esa forma — así que se
+    // rechaza la fila y se dice, en vez de guardar un país que nadie tecleó.
+    const paisDelCsv = leer(celdas, 'billingCountry') || null;
+    if (paisDelCsv && !/^[A-Za-z]{2}$/.test(paisDelCsv)) {
+      base.rechazos.push({ fila: numeroDeFila, motivo: 'País debe ser el código ISO de 2 letras (ej. ES)', celdas });
+      continue;
+    }
+    const billingCountry = paisDelCsv ? paisDelCsv.toUpperCase() : null;
+
+    // SCRUM-580 (CONT-07) · las etiquetas, separadas por `;` DENTRO de la celda ya trocedada — el
+    // `;` del separador del CSV lo resuelve `trocearCsv` antes de llegar aquí, así que partir esta
+    // cadena no puede desplazar ninguna otra columna. `tagsParaPrisma` aplica el límite 20×40 y la
+    // traducción a `Prisma.DbNull`, la MISMA que usan el alta y la edición manuales.
+    const etiquetasDelCsv = leer(celdas, 'tags');
+    const tagsBrutas = etiquetasDelCsv ? etiquetasDelCsv.split(';').map((t) => t.trim()).filter(Boolean) : undefined;
+    const tags = tagsParaPrisma(tagsBrutas);
+
+    const billingAddress = leer(celdas, 'billingAddress') || null;
+    const billingCity = leer(celdas, 'billingCity') || null;
+    const billingPostalCode = leer(celdas, 'billingPostalCode') || null;
+    const billingProvince = leer(celdas, 'billingProvince') || null;
+
     try {
-      // Dedup por teléfono o email, SIEMPRE dentro del merchant (regla 2). Las formas salen de la
-      // CELDA, no del número ya limpio: incluyen el texto tal cual, así que una fila vieja guardada
-      // sin normalizar se sigue encontrando con el mismo texto, como antes de este ticket.
-      if (phone || email) {
-        const existente = await cliente.findFirst({
-          where: {
-            merchantId,
-            OR: [...formasBuscables(telefonoDelCsv).map((forma) => ({ phone: forma })), ...(email ? [{ email }] : [])],
-          },
-        });
+      // Dedup por teléfono, móvil, NIF o email, SIEMPRE dentro del merchant (regla 2). Las formas
+      // de teléfono/móvil salen de la CELDA, no del número ya limpio: incluyen el texto tal cual,
+      // así que una fila vieja guardada sin normalizar se sigue encontrando con el mismo texto,
+      // como antes de este ticket.
+      //
+      // ⚠️ El NIF se compara SIN DISTINGUIR MAYÚSCULAS (`mode: 'insensitive'`) y con la forma que
+      // da `normalizarNif` (sin espacios/puntos/guiones) además de la tal cual — eso resuelve
+      // `b58818501` (CSV) contra `A58818501` (guardado). NO resuelve una diferencia de SEPARADORES
+      // en el lado ya guardado (`A-5881850-1` en la base no lo encontraría un `A58818501` del
+      // CSV): el alta manual no normaliza `taxId` al guardar, así que no hay un único formato del
+      // que partir. Cerrar eso es del alta, no de este importador.
+      const formasNif = taxIdDelCsv
+        ? [...new Set([taxIdDelCsv.trim(), normalizarNif(taxIdDelCsv)])]
+        : [];
+      const or = [
+        ...formasBuscables(telefonoDelCsv).map((forma) => ({ phone: forma })),
+        ...formasBuscables(movilDelCsv).map((forma) => ({ mobile: forma })),
+        ...(email ? [{ email }] : []),
+        ...formasNif.map((forma) => ({ taxId: { equals: forma, mode: 'insensitive' as const } })),
+      ];
+      if (or.length) {
+        const existente = await cliente.findFirst({ where: { merchantId, OR: or } });
         if (existente) { base.omitidos++; continue; }
       }
-      await cliente.create({ data: { merchantId, name, phone, email, notes } });
+      await cliente.create({
+        data: {
+          merchantId, name, phone, mobile, email, notes,
+          taxId: taxIdDelCsv, tags,
+          billingAddress, billingCity, billingPostalCode, billingProvince, billingCountry,
+        },
+      });
       base.creados++;
     } catch (e: any) {
       base.rechazos.push({

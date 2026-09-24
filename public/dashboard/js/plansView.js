@@ -96,6 +96,13 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
   const ctaPrice   = annual ? `${plan.priceAnnual} €/año` : `${fmtMoneyEs(plan.price)}/mes`;
   const saving     = annual ? `<div style="font-size:12px;color:var(--green-600);font-weight:600;margin-top:4px">${plan.priceAnnual} €/año facturado una vez · Ahorras 2 meses</div>` : '';
 
+  // SCRUM-1029 (regla 24): estas dos filas prometen cobro; en `receipt` (ES real, facturación
+  // apagada) YaQu no cobra por ninguna vía. Se OCULTAN para ese modo, no se reescriben (texto
+  // sustituto pendiente de firma, docs/master/SCRUM-1029.md).
+  const SOLO_SI_COBRA = new Set([
+    'Cobro integrado: el cliente paga desde el móvil',
+    'Recordatorios automáticos de cobro',
+  ]);
   const features = [
     'Presupuestos ilimitados con firma digital',
     'Envío por WhatsApp con un toque',
@@ -106,7 +113,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     // SCRUM-406 · decía «Soporte por email y WhatsApp»; ese WhatsApp de soporte NO EXISTE en el
     // código (ningún `wa.me` del producto apunta a YaQu). Se retira la mención, no se reescribe.
     'Soporte por email',
-  ];
+  ].filter((f) => window.appModoEmision !== 'receipt' || !SOLO_SI_COBRA.has(f));
 
   // V0-4 (W1): banner founding sobre Pro — 9,90 €/mes de por vida, contador REAL
   const foundingHtml = showFounding ? `

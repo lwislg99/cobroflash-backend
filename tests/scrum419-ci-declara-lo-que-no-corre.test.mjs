@@ -86,16 +86,29 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-979: la «Última visita». Necesita banco porque lo que vigila es la CONSULTA — el
   // `groupBy` con la tenencia dentro y el recorte del técnico por los tres ejes de SCRUM-650.
   'scrum979-ultima-visita.test.mjs': 1,
+  // SCRUM-809: el acceso tras cancelar. Necesita banco porque lo que mide es lo que le CONTESTA el producto al
+  // profesional que pagó y canceló (una petición real a las rutas con paywall). El census cuenta 5 llamadas a
+  // `test(` con salto —dos de ellas generadas por las dos puertas de cancelación—. Su mitad sin banco
+  // vive en `scrum809b-paywall-sin-banco.test.mjs`, que sí corre en cada `npm test` y en el meta-guard.
+  'scrum809-paywall-tras-cancelar.test.mjs': 5,
+  // SCRUM-992: los partes recortados por rol. Necesita banco porque lo que vigila es lo que el técnico
+  // puede LEER, EDITAR y FIRMAR sobre partes de otros —las nueve rutas, la app entera, tres sesiones—.
+  // La mitad estructural (AST) no lo necesita y corre en cada `npm test`.
+  'scrum992-partes-recortan-por-rol.test.mjs': 1,
   'scrum389-un-solo-iva.test.mjs': 2,
   // SCRUM-974: el resumen del lunes. Necesita banco porque corre el resumen DE VERDAD, que lee la
   // bandeja de pendientes de facturar y el modo de emisión de cada negocio. Solo el desechable:
   // recorre TODOS los merchants activos de la base (por eso no va a staging).
   'scrum974-firmado-sin-facturar-en-el-lunes.test.mjs': 1,
-  // SCRUM-728d: los tres de la MEDICIÓN en loopback — el suelo (RTT ~0), los cuatro caminos con
-  // 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque cronometran
-  // el trabajo REAL del servidor: sin base no hay nada que cronometrar. Y necesitan que sea
-  // DESECHABLE porque emiten números de serie y crean facturas — 1.000 en el de la pendiente.
-  'scrum728d-ms-en-loopback.test.mjs': 3,
+  // SCRUM-728d: los de la MEDICIÓN en loopback — el suelo (RTT ~0), los tres caminos que
+  // reservan con 1/5/10 simultáneas y la pendiente del viaje que escala. Necesitan banco porque
+  // cronometran el trabajo REAL del servidor: sin base no hay nada que cronometrar. Y necesitan
+  // que sea DESECHABLE porque emiten números de serie y crean facturas — 1.000 en el de la
+  // pendiente. SCRUM-1027 (21-sep-2026): el cuarto camino («justificante») dejó de reservar —
+  // regla 24, un merchant ES sin flag ya no emite nada — así que se mide APARTE, con su propio
+  // test: que el modo `receipt` rechaza siempre bajo concurrencia, sin colar una reserva por una
+  // carrera. Sube de 3 a 4.
+  'scrum728d-ms-en-loopback.test.mjs': 4,
   // SCRUM-876c (T2): los tres que dependían de `MERCHANT_ID = 1` y pasan a `withMerchant`. Hasta
   // aquí sólo corrían con `QA_DB_TEST=1` (staging) y ese destino lo conservan; éste es el segundo.
   // Necesitan banco porque lo que vigilan ES la escritura: la suma de lo cobrado (13), el
@@ -106,6 +119,28 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,
+  // SCRUM-1059: las acciones masivas de etiquetado. Necesita banco porque vigila la TENENCIA (un
+  // id de otro merchant no se toca) y que se relee igual tras la escritura (quinto eslabón,
+  // SCRUM-580). La mitad pura (`aplicarEtiquetaMasiva`) no necesita base y corre siempre.
+  'scrum1059b-etiquetado-masivo-postgres.test.mjs': 1,
+  // SCRUM-1062: el historial de WhatsApp de la ficha. Necesita banco porque vigila la TENENCIA
+  // (dos merchants), que un documento borrado no se lleva el mensaje por delante (tabla suelta,
+  // ENT-3) y las páginas de 20 con cursor.
+  'scrum1062-historial-whatsapp-cliente.test.mjs': 1,
+  // SCRUM-1036: las notas del cliente. Necesita banco porque vigila la TENENCIA, que el autor se
+  // CONGELA como texto (borrar al técnico no vacía la nota vieja) y la «Nota fija» sintetizada
+  // desde `Customer.notes` sin copiarla ni inventarle fecha/autor.
+  'scrum1036-notas-del-cliente.test.mjs': 1,
+  // SCRUM-1057: fusionar dos clientes duplicados. Necesita banco porque vigila las CUATRO tablas
+  // con FK real a `customers` (Quote, Charge, QuoteRequest, CustomerEvent) moviéndose antes del
+  // `DELETE` —si no, Postgres lo rechazaría—, las cinco sin FK, el rechazo por factura emitida,
+  // la tenencia y el desvínculo de quien apuntara al fusionado como su empresa.
+  'scrum1057b-fusion-clientes-postgres.test.mjs': 4,
+  // SCRUM-1103: la cadena entera de la retención practicada (alta → se lee de vuelta con su
+  // precisión Decimal → la LISTA la trae → `updateExpense` corrige sin borrar) y su control
+  // negativo. Necesita banco porque lo que prueba es que el ALTER ya aplicado y el dominio
+  // escriben y leen la MISMA fila, no que «se pinta el campo» (mismo motivo que SCRUM-324).
+  'scrum1103-retencion-practicada-en-gastos.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

@@ -351,7 +351,20 @@ test('SCRUM-451 · TRINQUETE: las vistas que se quedan MUDAS tras vencer el plaz
   // Un mensaje genérico donde había uno concreto es un empeoramiento, no una unificación.
   //
   // ⚠️ Las vistas se sacan del dispatch (censo derivado de SCRUM-433), no de una lista a mano.
-  const MUDAS_TECHO = 4; // medido el 10-ago-2026 sobre main = 2e12c2f7: invoices, products, providers, export. Solo baja.
+  // 🔴 SCRUM-1041 · 22-sep-2026 · SUBE de 4 a 5: invoices, products, providers, settings, export.
+  // `export` (la card «Facturas emitidas») se une a la lista, y no es un defecto nuevo de este
+  // ticket: `refrescarInfo()` ya decidía, A PROPÓSITO (comentario en `exportView.js`, «si el
+  // conteo falla no bloqueamos la descarga: el backend vuelve a validar el tope»), no avisar de un
+  // fallo de red — sólo dejaba el texto neutro «Sin fechas se descarga todo.». Lo que la contaba
+  // como «habla» hasta hoy era un ACCIDENTE: el marcador `[PENDIENTE microcopy oficial]`, que este
+  // ticket retira, entraba en el regex de «hablar» sin decir nada sobre la red. Al quitarlo, este
+  // trinquete mide lo que la pantalla hace de verdad, no lo que el marcador tapaba. Arreglarlo —
+  // avisar de verdad al fallar la red— pide un texto firmado (regla 30) que no existe todavía;
+  // se deja para su propio ticket (docs/master/SCRUM-1041.md).
+  // `settings` YA estaba en esta lista antes de hoy: la nota de 10-ago-2026 decía «export» donde
+  // debía decir «settings» — medido contra el árbol de HEAD antes de tocar nada (comprobado con
+  // `git stash`), no es un cambio de esta rama.
+  const MUDAS_TECHO = 5;
   const { vistas } = vistasDelDispatch(RAIZ);
   const nombreFn = (v) => 'render' + v.split('-').map((p) => p[0].toUpperCase() + p.slice(1)).join('') + 'View';
 

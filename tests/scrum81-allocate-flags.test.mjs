@@ -38,9 +38,14 @@ const merchant = (over) => ({
 });
 const now = new Date('2026-07-13T10:00:00Z');
 
-test('SCRUM-81: ES sin override → modo receipt → número J- de justificante', async () => {
-  const n = await allocateInvoiceNumber(mkTx(merchant()), 7, CTX, now);
-  assert.ok(isReceiptNumber(n), `esperaba J-, salió ${n}`);
+// SCRUM-1027 (21-sep-2026, regla 24 / SCRUM-612c): con el interruptor en OFF, en España, ya NO
+// se emite NINGÚN documento — ni siquiera el J- de justificante que este test esperaba hasta hoy.
+test('SCRUM-81: ES sin override → modo receipt → invoicing_es_disabled, sin número (SCRUM-1027)', async () => {
+  await assert.rejects(
+    () => allocateInvoiceNumber(mkTx(merchant()), 7, CTX, now),
+    /invoicing_es_disabled/,
+    'sin override, en España, ya no se emite nada — ni factura ni justificante (regla 24)',
+  );
 });
 
 test('SCRUM-81: ES con INVOICING_ES_ENABLED por override de merchant → serie FISCAL (no J-)', async () => {

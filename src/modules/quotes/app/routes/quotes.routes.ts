@@ -49,8 +49,10 @@ import { generateQuotePdf } from '../../../../lib/pdf';
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { recordCustomerEvent } from '../../../system/customerEvents.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 // SCRUM-814 · el MISMO cerrojo de serie que toman `quotesAdmin` y `collect-rest`
 // (`pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, SCRUM-234/728/358). Aquí pesa más que en
 // ningún otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
@@ -654,7 +656,17 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
       const plan = resolveBillingPlan(updatedQuote);
       const stage = plan[existingInvoices.length] ?? null;
 
-      if (stage) {
+      // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, no se
+      // emite NINGÚN documento ni se cobra por YaQu. La aceptación de arriba YA está commiteada y
+      // sigue siendo válida (regla 24: "presupuestos, firma, albaranes y partes siguen igual") —
+      // lo único que no ocurre es esto: no se intenta emitir, y por tanto no se marca
+      // `facturaPendiente` (el aviso «tu factura está en proceso» sería FALSO para un merchant que
+      // no va a emitir nunca: no hay factura pendiente, hay facturación apagada). Sin gate aquí,
+      // `allocateInvoiceNumber` seguiría rechazando el modo `receipt` (punto único, SCRUM-1027),
+      // pero DESPUÉS de abrir la transacción, y el catch de abajo lo convertiría en ese mismo
+      // aviso falso. Ningún texto nuevo: se sigue, exactamente, el patrón ya decidido para el
+      // botón de cobro (regla 24 / SCRUM-612 §6 M-6 — "ningún texto: los botones no se pintan").
+      if (stage && getEmissionMode(quote.merchant) !== 'receipt') {
         const isCustomPlan = Array.isArray((updatedQuote as any).customBillingPlan) && (updatedQuote as any).customBillingPlan.length > 0;
 
         // Copiar las líneas a la factura (la parte del tramo, ej. 50% en FIFTY_FIFTY).
@@ -710,6 +722,11 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // SCRUM-729 · antes de abrir la transacción: dentro está el cerrojo de serie desde la
         // primera línea (SCRUM-814) y todo lo de dentro se serializa entre emisiones.
         const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+        // SCRUM-665 · idem para el emisor. `quote.merchant` ya viene completo por el `include` de
+        // arriba (línea ~503): sin viaje nuevo. Mismo criterio que el resto de esta ruta con
+        // `quote.merchant` (líneas 669, 803): no se gatea aparte — un `quoteId` con merchant
+        // huérfano ya rompería antes, en `getEmissionMode(quote.merchant)`.
+        const emisorCongelado = congelarEmisorDesdeFicha(quote.merchant!);
         try {
         invoice = await prisma.$transaction(async (tx) => {
           // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ───────────────────────────
@@ -739,7 +756,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             // `ref` nombra la VÍA, nunca el token (sería guardar una credencial).
             actor: { tipo: 'cliente_final', ref: 'quote_token' },
           });
-          return crearFacturaEmitida(tx, clienteCongelado, {
+          return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
             merchantId: quote.merchantId,
             customerId: quote.customerId,
             quoteId: quote.id,

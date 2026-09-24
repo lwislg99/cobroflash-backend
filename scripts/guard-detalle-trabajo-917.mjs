@@ -103,19 +103,18 @@ const ESPERADO = new Map([
 // «baja sola»: medía 8 en Windows y 7 en el runner de Linux sobre el MISMO árbol, porque su ancho
 // dependía de la fuente. Arreglado el ancho, las dos máquinas dicen 7. El caso sin presupuesto no
 // tiene ese enlace y sigue en 6.
-// SCRUM-917g (21-sep-2026) · 7 → 5 en los tres casos con presupuesto y 6 → 4 sin él. Se van DOS
-// controles, medidos con nombre y tamaño sobre el árbol SIN TOCAR
-// (`docs/master/evidencias/SCRUM-917/salida-pequenos-antes-917g.txt`): la casilla «Incluir precios»
-// de la barra de Documentos (input[checkbox] 13×13, se quita: com. 16142 de SCRUM-917) y el
-// «Cambiar» del tipo de trabajo (71×30, ya no existe: la línea entera de «El trabajo» es el control
-// y mide ≥ 44 px, F.4). Es justo la mitad del trinquete que exige que una BAJADA se explique.
-// Quedan cinco (cuatro sin presupuesto): «Trabajos» (la miga), «+ Añadir gasto», «+ Nuevo albarán»,
-// «Parte de trabajo» y «Abrir en mapa». Sin cambios de este corte.
+// MERGE 917g × SCRUM-962 (22-sep-2026) — la cifra se REGENERA, no se elige de ningún lado
+// ([[feedback_cifra_derivada_en_merge]]): 917g quita la casilla «Incluir precios en el parte» de
+// esta barra (com. 16142) justo en el control que SCRUM-962 había arreglado con `min-height:44px`
+// en `valoradoLabel`; con la casilla fuera, ese control ya no existe y no puede seguir sumando a
+// la deuda. Los otros arreglos de SCRUM-962 (miga `.detail-miga-link`, «Abrir en mapa»
+// `.detail-rail-enlace--suelto`, los `.btn-sm` de la barra vía `.job-toolbar-btn-44`) siguen en
+// pie sin tocar por este corte. Números medidos sobre el árbol YA fusionado, no deducidos:
 const DEUDA_44PX = new Map([
-  [JOB_PAGADO.id, 5],
-  [JOB_A_MEDIAS.id, 5],
-  [JOB_SIN_PRESUPUESTO.id, 4],
-  [JOB_COBRADO_DE_MAS.id, 5],
+  [JOB_PAGADO.id, 0],
+  [JOB_A_MEDIAS.id, 0],
+  [JOB_SIN_PRESUPUESTO.id, 0],
+  [JOB_COBRADO_DE_MAS.id, 0],
 ]);
 
 const banco = await levantarBanco();

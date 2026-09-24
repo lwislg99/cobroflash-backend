@@ -59,6 +59,10 @@ const CENSO = censar(RAIZ);
  */
 const SIN_PROBAR_CONOCIDOS = [
   'tests/restauracion-del-arbol-ejecutable.test.mjs',
+  // SCRUM-1007/1011/1026: mismo caso que 951d — su `banco()` cuelga de `temporal()`.
+  'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs',
+  // SCRUM-1089b: `copiarSkillsA()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
+  'tests/scrum1089b-espejo-skills-agentes.test.mjs',
   'tests/scrum253-adopcion.test.mjs',
   'tests/scrum258-nota-por-sesion.test.mjs',
   'tests/scrum351-diagnostico-dependencias.test.mjs',

@@ -109,4 +109,32 @@ router.get('/recibidas.csv', async (req, res) => {
   return res.send(csvLibroRecibidas(filas, avisos));
 });
 
+/**
+ * `GET /admin/libros/recibidas.json?año=2026&trimestre=3` — SCRUM-1040 (CON-04).
+ *
+ * Ruta de LECTURA NUEVA para la pantalla «Facturas recibidas»: `/recibidas.csv` no se toca. Mismo
+ * contrato de periodo que su hermana (año y trimestre OBLIGATORIOS, mismo 400) y el MISMO motor
+ * (`leerLibroRecibidasDelTrimestre`) — así la pantalla y la descarga dan siempre el mismo conjunto
+ * de filas, que es justo lo que este ticket exige comprobar.
+ */
+router.get('/recibidas.json', async (req, res) => {
+  const año = entero(req.query['año'] ?? req.query.ano);
+  const tri = trimestre(req.query.trimestre);
+  if (año === null || tri === null) {
+    return res.status(400).json({
+      error: 'periodo_invalido',
+      // Microcopy APROBADA el 7-ago-2026 (la misma de expedidas y de recibidas.csv).
+      detalle: 'No reconozco ese periodo. Elige un trimestre (T1 a T4) y un año.',
+    });
+  }
+
+  const { filas, miradas, avisos, desde, hasta } = await leerLibroRecibidasDelTrimestre(prisma as any, {
+    merchantId: req.merchantId!, año, trimestre: tri,
+  });
+
+  // Sin caché, mismo motivo que las dos descargas: es una foto de un instante.
+  res.setHeader('Cache-Control', 'no-store');
+  return res.json({ filas, miradas, avisos, desde, hasta, año, trimestre: tri });
+});
+
 export default router;

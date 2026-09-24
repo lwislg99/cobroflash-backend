@@ -610,3 +610,678 @@ antes de escribir esto.
 —`GRAPH_REPORT`, `CENSO-RAMAS`, y los nombres de ticket de G1— **suman una cita más** a cada una de
 esas rutas. No cambian de cubo, así que el reparto es el mismo, pero el recuento de citadores de
 esas entradas lleva dentro a este documento.
+
+---
+
+# APÉNDICE · 22-sep-2026 · SCRUM-534f · El guion H2 reescrito, listo para firma, y las 9 (no 8) afirmaciones de los documentos a terceros
+
+**Fecha:** 22-sep-2026 · **Carril:** J4 (legal y cumplimiento) · **Gate:** sin gate — **NO SE APLICA NADA de esto** (regla 39: texto de cliente lo firma un jefe)
+**Medido contra:** `origin/main` = `9ba9ac75559c1cd027e49839338c9e01b1e59b36` · 2026-09-22T08:09:33Z
+
+> ⛔ **ESTA ENTRADA NO CAMBIA NI UNA PALABRA de `YAQU_MASTER.md`, `PACK_GESTORIA.md` ni
+> `DECLARACION_RESPONSABLE.md`.** Propone; firma un jefe (J4, `puesto-j4.md`). Aplicarlo es tarea
+> aparte, después de la firma.
+
+## PASO 0 — el encargo dice OCHO, medido hoy son NUEVE
+
+El encargo de hoy pide "las OCHO afirmaciones falsas restantes". El censo de esta misma ticket, fase
+a (16-sep-2026), ya midió **NUEVE**, no ocho, y hoy se ha vuelto a comprobar una a una contra
+`origin/main` = `9ba9ac75...`: las nueve siguen literalmente donde estaban (`docs/legal/PACK_GESTORIA.md`
+y `docs/legal/DECLARACION_RESPONSABLE.md` no se han tocado desde el 13-jun-2026, confirmado por
+`git log`), y ninguna se resolvió sola. **No eran ocho: van las nueve**, con la discrepancia dicha en
+vez de recortada para que cuadre el número del encargo.
+
+## 1 · El guion H2 — el literal completo, para firmar tal cual
+
+**Qué dice hoy** (`docs/YAQU_MASTER.md:215`, dentro de la Parte H2, regla 26 — es la única respuesta
+autorizada ante "¿me vale para VeriFactu?"):
+
+> *"Te contesto como fabricante: la facturación VeriFactu está construida y en certificación — con
+> declaración responsable del productor, que es lo que tu gestor te pedirá. Por ley no puedo
+> activarla hasta cerrarla; por eso la beta es de presupuestos y cobros. Los founding la estrenáis al
+> cerrarse, sin cambio de precio. Si quieres, le paso a tu gestor el detalle técnico cuando lo
+> publique."*
+
+**Las dos cosas que dice y no son verdad, medidas hoy:**
+
+1. **"está construida y en certificación"** — 🔴 doblemente falso. **(a)** No está construida: de los
+   9 eslabones del camino de una factura, existen 7 (huella SHA-256 encadenada, QR, XML con el sobre
+   oficial) y **faltan los 2 últimos, la cola de remisión y el envío telemático a la AEAT**
+   (`docs/legal/AUDITORIA_CAMINO_EMISION.md`, tabla del punto 1; reconfirmado hoy: `git grep` sobre
+   `prisma/schema.prisma` no encuentra ningún modelo `Vf*`/`*Submission`, y sobre
+   `src/modules/fiscal/verifactu/` no hay ninguna llamada de red — cero, igual que el 19-ago).
+   **(b)** No existe ninguna "certificación" de VeriFactu a la que se pueda estar entrando: el
+   régimen se basa en una **declaración responsable** del productor (art. 13 RRSIF), no en un
+   proceso de certificación (skill `verifactu`, §0 y §6, verificado contra el BOE).
+2. **"por eso la beta es de presupuestos y cobros"** — 🔴 falso desde el 21-sep-2026. La regla 24,
+   en su redacción de hoy (`docs/YAQU_MASTER.md:246`), dice literal: *"Con el interruptor en OFF,
+   YaQu no emite ningún documento para ese merchant [...] y no cobra por YaQu a sus clientes: ni
+   enlace de pago, ni señal al aceptar el presupuesto [...]. Presupuestos, firma, albaranes y partes
+   siguen igual. El profesional cobra por fuera de YaQu hasta que exista la factura."* Con
+   `INVOICING_ES_ENABLED` en OFF —que es el estado de todo merchant ES real hoy (regla 24, primera
+   frase)— **la beta es de presupuestos y firma, no de cobros.** Decirle a un cliente que la beta
+   "es de cobros" es prometerle algo que la propia regla 24 firmada hace tres días prohíbe.
+
+**Dato que sostiene la reescritura** (aportado por el orquestador, medición de producción,
+22-sep-2026, no re-derivado por esta sesión: no tengo acceso de lectura a producción): **en
+producción hay UN solo documento emitido y es un justificante — `F1 = 0` y `R1 = 0`.** YaQu nunca ha
+emitido una factura fiscal. Cualquier frase que sugiera una facturación VeriFactu "cerrándose" o "en
+marcha" habla de algo que no ha ocurrido ni una vez.
+
+### El literal nuevo — listo para pegar en `docs/YAQU_MASTER.md:215`, sin huecos
+
+> *"Te contesto como fabricante: hoy generamos cada registro de facturación con el formato oficial de
+> la AEAT —huella SHA-256 encadenada y QR de cotejo—, pero la remisión a Hacienda todavía no está
+> construida: no puedo decir que esté cerrada. Tampoco existe una «certificación» de VeriFactu — el
+> régimen se basa en una declaración responsable del fabricante, que publicaremos en cuanto el envío
+> esté terminado. Mientras tanto, en España la beta es de presupuestos y firma: no emitimos ningún
+> documento de facturación ni cobramos por la app — la señal la gestionas tú por fuera. Los founding
+> estrenaréis la facturación VeriFactu con su declaración responsable en cuanto esté cerrada, sin
+> cambio de precio. Si quieres, le paso a tu gestor el detalle técnico cuando lo publiquemos."*
+
+**Verificación de cada frase, cláusula a cláusula, contra hoy:**
+
+| cláusula | fuente que la sostiene |
+| --- | --- |
+| "generamos cada registro... con el formato oficial... huella SHA-256 encadenada y QR" | ✅ es literalmente la frase de "verdad sostenible" de la skill `verifactu` §7, y los eslabones 4/6/7 de la auditoría **EXISTEN** |
+| "la remisión a Hacienda todavía no está construida" | ✅ eslabones 8/9 **NO EXISTEN** (auditoría + `git grep` de hoy, arriba) |
+| "no existe una «certificación»... declaración responsable del fabricante" | ✅ skill `verifactu` §0 y §6, art. 13 RRSIF |
+| "en España la beta es de presupuestos y firma: no emitimos... ni cobramos" | ✅ es case a case el texto de la regla 24 de hoy (`YAQU_MASTER.md:246`) |
+| "Los founding estrenaréis... sin cambio de precio" | decisión comercial ya tomada (H1), no es un claim fiscal — se conserva igual que en el guion viejo |
+
+**Qué NO toca esta propuesta:** la línea de categoría y el "PROHIBIDO" que preceden al guion en
+`YAQU_MASTER.md:215` (*"categoría = 'herramienta para presupuestar, firmar y cobrar señales por
+WhatsApp'"*) — esa frase es del carril de SCRUM-1016 (ya entregado, en curso, esperando que Javier
+elija eje) y esta sesión tiene instrucción explícita de no tocarlo. Se deja dicho porque la misma
+regla 24 que invalida "cobros" en el guion probablemente también le pesa a esa categoría, pero
+**es hallazgo para el otro ticket, no para este.**
+
+## 2 · Las 9 afirmaciones falsas de los documentos a terceros — dónde, por qué hoy, corrección, y quién firma
+
+Las nueve viven en dos plantillas marcadas **BORRADOR — no distribuir hasta SIF-1 8/8** que
+acompañan la declaración responsable y el pack de la gestoría. Que estén marcadas borrador no las
+exime: `DECLARACION_RESPONSABLE.md` es un documento que un representante legal **firma bajo su
+responsabilidad** (art. 13 RRSIF), y un borrador que ya trae la frase falsa escrita se revisa con
+menos desconfianza que uno en blanco — lo mismo vale para el one-pager que se le entrega a la
+gestoría del cliente. Las nueve comparten la misma causa: afirman en presente que YaQu **remite** los
+registros a la AEAT, cuando esa remisión no existe en el código (medido hoy, arriba). Ninguna
+necesita al asesor — el hecho que las hace falsas es MEDIBLE en el código, y ahí el árbitro es el
+código (`yaqu-verifactu-sif`, decisión del fundador SCRUM-538 punto 2), no una interpretación legal.
+
+| id | fichero:línea (hoy) | frase falsa | por qué es falsa HOY | corrección propuesta | ¿corregible con frase del máster, o pide asesor? |
+| --- | --- | --- | --- | --- | --- |
+| **A11** | `PACK_GESTORIA.md:12-14` | *"emite cada factura con una huella digital encadenada y la **remite automáticamente a la AEAT** en el momento"* | 0 llamadas de red a la AEAT en `src/` (medido hoy) | *"...emite cada factura con una huella digital encadenada según el formato oficial de la AEAT. La remisión telemática se activará junto con esta declaración, antes de distribuirse este documento."* | **Máster** (código decide; sin asesor) |
+| **A12** | `PACK_GESTORIA.md:18-19` | *"Cada registro... se envía a la AEAT en tiempo real a través de su servicio web"* | mismo hecho medible: no existe el envío | *"Cada registro... queda preparado con el sobre oficial de la AEAT, listo para su remisión en cuanto ésta esté construida."* | **Máster** |
+| **A13** | `PACK_GESTORIA.md:20-21` | *"la huella SHA-256 encadenada + **la remisión autenticada** cumplen el requisito (RRSIF)"* | la dispensa de firma la cumple la huella encadenada por sí sola (art. 16.2-16.3 RRSIF, "presunción de cumplimiento por diseño" — skill `verifactu` §3); atribuirlo a "la remisión" además de ser prematuro, es la razón equivocada | *"...no se exige firma electrónica: la huella SHA-256 encadenada cumple el requisito por sí sola (art. 16.2-16.3 RRSIF)."* | **Máster** (es cita de ley ya verificada, no interpretación nueva) |
+| **A14** | `PACK_GESTORIA.md:39` | *"Al cobrar, YaQu emite la factura, calcula su huella y **la remite a la AEAT**"* | mismo hecho medible | *"Al cobrar, YaQu emite la factura y calcula su huella; la remisión a la AEAT se añadirá con el envío telemático."* | **Máster** |
+| **A15** | `PACK_GESTORIA.md:64-65` | *"es el sistema de facturación que **genera y remite** los registros"* | mismo hecho medible | *"es el sistema de facturación que genera los registros con el formato oficial; los remitirá en cuanto el envío esté construido."* | **Máster** |
+| **A16** | `DECLARACION_RESPONSABLE.md:11-13` | *"los valores... DEBEN coincidir con el bloque SistemaInformatico que YaQu **remite** en cada registro"* | tiempo presente sobre algo que no ocurre aún; instrucción de plantilla, no frase de cara al cliente, pero la firma un representante legal | *"...DEBEN coincidir con el bloque SistemaInformatico que YaQu remitirá en cada registro, una vez conectado el envío a la AEAT."* | **Máster** |
+| **A17** | `DECLARACION_RESPONSABLE.md:39-41` | *"Tipología: sistema... en modalidad VERI\*FACTU (**remisión de los registros... a la AEAT**)"* | describe una capacidad presente que no existe; ⚠️ distinto de P14 (si YaQu ya es "productor" hoy) — **esa pregunta no la contesta esta sesión**, es del asesor | *"...en modalidad VERI\*FACTU (remisión de los registros a la AEAT, una vez completado el envío telemático)."* | **Máster** para el tiempo verbal — **el fondo de si aplica ya el régimen es P14, del asesor** |
+| **A18** | `DECLARACION_RESPONSABLE.md:46-49` | *"...y **remisión telemática al servicio web de la AEAT**"* | mismo hecho medible | quitar la cláusula o marcarla "(pendiente de construir)" | **Máster** |
+| **A19** | `DECLARACION_RESPONSABLE.md:53` | *"**Remisión inmediata a la AEAT** (modalidad VERI\*FACTU), **con control de flujo**"* | mismo hecho medible, y además **"con control de flujo" nombra un mecanismo que no está decidido en ningún sitio** (ni en U1.3, ni en la skill `yaqu-verifactu-sif`, ni en el stack de S1-0b) | quitar "con control de flujo" en vez de inventar un mecanismo; dejar *"Remisión a la AEAT (modalidad VERI\*FACTU), una vez construido el envío."* | **Máster** para "remisión inmediata"; **"control de flujo" no es fixable con una frase — es diseño técnico sin decidir, y la decisión es de los fundadores, no del asesor fiscal** |
+
+**Resumen de la columna que pedías, para firmar sin riesgo:** de las 9, **9 de 9 son corregibles con
+una frase que sale de hechos ya medidos o de ley ya verificada — ninguna necesita al asesor para el
+texto en sí.** Lo único que roza al asesor es la pregunta de fondo detrás de A17 (P14: si el plazo del
+productor, vencido el 29-jul-2025, ya nos aplica) — y ésa **no se contesta aquí**, ya está registrada
+en `PREGUNTAS_ASESOR.md` y en el traspaso de este puesto.
+
+## Lo que NO cubre esta entrada
+
+* ⛔ No se ha tocado `docs/YAQU_MASTER.md`, `PACK_GESTORIA.md` ni `DECLARACION_RESPONSABLE.md` — regla
+  39, lo firma un jefe.
+* No se ha vuelto a medir la clase B/C/D del inventario `INVENTARIO_AFIRMACIONES_VERIFACTU.md`; esto
+  es solo la clase A de esta ticket (guion H2 + los 9 de documentos a terceros).
+* No se contesta P14 ni se propone texto para SCRUM-1028 ni SCRUM-1016 (fuera de carril esta tanda,
+  con instrucción explícita de no seguir).
+* El dato "F1=0 · R1=0 · 1 justificante en producción" es el que me dio el orquestador; esta sesión no
+  tiene acceso de lectura a producción y no lo ha vuelto a medir por su cuenta.
+
+---
+
+# APÉNDICE · 22-sep-2026 · SCRUM-534i · El guion H2 y las 3 líneas de "certificación" APLICADAS al máster, con firma comprobable
+
+**Fecha:** 22-sep-2026 · **Carril:** J4 (legal y cumplimiento) · **Gate:** ninguno — aplicación directa, ya firmada
+**Medido contra:** `origin/main` = `a71ddc7f85216988872dde3909a624952d555bd3` · 2026-09-22T08:59:50Z
+
+## La firma que autoriza esta aplicación
+
+Comentario **16404** de este mismo ticket (Jira, `SCRUM-534`), escrito por Javier el 22-sep-2026,
+**repetido a petición de la sesión ejecutora anterior** porque la firma previa (comentario 16395) le había
+llegado relayada por el orquestador y su clasificador de permisos la rechazó (A19: una autorización no se
+hereda entre sesiones). El 16404 es la firma DIRECTA, en el canal comprobable, literal:
+
+> «firmo el literal del guion H2 de la fase f» — y, sobre las tres líneas del censo de "certificación"
+> (fase h): «Firmo».
+
+Esta sesión (`jv-j4`, relevo) lee ESE comentario, no un mensaje de chat que lo cite.
+
+## Qué se aplicó, exactamente
+
+**C1 · `docs/YAQU_MASTER.md:215`** — el guion único de la regla 26 (Parte H2) cambia al literal completo
+firmado en el apéndice de fase f de esta misma ficha ("El literal nuevo — listo para pegar", línea 671).
+Pegado TAL CUAL, sin una palabra distinta.
+
+**C2 · `docs/YAQU_MASTER.md:650`** (entrada SCRUM-17) — *"...latente hasta la certificación; visible en
+demo)."* → *"...latente hasta que se active la facturación VeriFactu con su declaración responsable;
+visible en demo)."*
+
+**C3 · `docs/YAQU_MASTER.md:988`** (V0-6, ESTADO DE EJECUCIÓN) — *"...se activan al cerrar la
+certificación, sin cambio de precio"* → *"...se activan al cerrar la declaración responsable del
+fabricante, sin cambio de precio"*. **Esto desbloquea el titular del Eje A de la landing (SCRUM-1016)**,
+que estaba parado a propósito por depender de esta frase (V0-6).
+
+`git diff --numstat docs/YAQU_MASTER.md` de esta rama: 1 fichero, 3 líneas insertadas + 3 borradas — solo
+las tres frases de arriba, nada más tocado (verificado antes de empujar).
+
+## Lo que NO cubre esta entrada
+
+* Las 9 afirmaciones falsas de `PACK_GESTORIA.md`/`DECLARACION_RESPONSABLE.md` (fase f, §2) siguen sin
+  aplicarse — la firma del comentario 16404 cubre solo el guion H2 y las 3 líneas de "certificación", no
+  esas 9.
+* El censo completo de fase h (`SCRUM-534h`, PR #1651, sin mergear a la hora de esta entrada) descartó 11
+  de 14 apariciones de "certifica" por no ser la idea falsa; esas 11 no se tocan aquí.
+* El titular/subtítulo/`<title>` del Eje A (SCRUM-1016) no se escriben en esta entrada — carril aparte
+  (encargo 3 de esta tanda), ahora desbloqueado por C3.
+## SCRUM-534h · Censo de "certificación" de VeriFactu en el máster (y CLAUDE.md) — PROPUESTA, nada aplicado
+
+**Medido contra:** `origin/main` = `194a7061369347a9fdf96766a11efd7191476301` · 2026-09-22T08:38:19Z
+
+**Encargo:** el orquestador del equipo (`cobroflash-backend-da`), por mensaje entre sesiones el
+22-sep-2026, dice que Javier firmó el literal nuevo del guion H2 (§1 de esta ficha, fase f) y con él
+resolvió a favor de "no existe certificación, es declaración responsable" la contradicción que esta
+misma ficha había dejado sin resolver frente a V0-6. Pide aplicar el guion a
+`docs/YAQU_MASTER.md:215` y censar todo sitio con la misma idea falsa.
+
+**🔴 Lo que esta sesión NO hizo, y por qué:** no aplicó nada a `docs/YAQU_MASTER.md`. El clasificador
+de permisos bloqueó el intento de registrar la aplicación citando "Instruction Poisoning", y al
+pararme a revisarlo mis propias normas dicen lo mismo desde otro ángulo: **A7** exige que la firma
+delegada del orquestador sea "un comentario de Jira" registrado en `docs/microcopy/` con su README
+— comprobable, no un mensaje de chat citado de memoria — y **A19** dice que ninguna autorización se
+hereda de otra sesión. El mensaje no traía ese comentario de Jira. Este es exactamente el tipo de
+texto para el que existen las STOP conditions de mi ficha (claims fiscales/VeriFactu): se propone y
+se para. La edición que había empezado a hacer en un worktree aparte (`scrum-534g-h2-firmado-en-master`)
+se dejó SIN commitear y SIN empujar — no llega a nadie. Lo que sigue es solo censo y propuesta.
+
+**Población:** `grep -n -i "certifica" docs/YAQU_MASTER.md` → 13 líneas con la raíz "certifica" +
+1 más con "Certificado" en mayúscula al inicio de frase (14 en total) · el mismo grep sobre
+`CLAUDE.md` → **0 líneas** (control positivo: el patrón SÍ encuentra las 14 del máster, así que el
+cero de `CLAUDE.md` es "no hay", no "no miré").
+
+**De las 14, 11 NO son la idea falsa — descartadas con su motivo:**
+
+| línea | qué dice | por qué NO cuenta |
+| --- | --- | --- |
+| 102 | "Certificado digital FNMT (HUMANO, día 1) → desbloquea SIF-1" | el certificado FNMT es real y existe; autentica, no "certifica VeriFactu" |
+| 465 | `SIF_ENABLED`: "Depende de: certificado + S1-D" | mismo certificado FNMT real |
+| 513 | "cada merchant remite con su propio certificado" (Modelo C) | idem, certificado FNMT de cada merchant |
+| 649 | bloque del PDF de albarán "Certificado de evidencias" | nombre de un bloque de evidencia de firma, sin relación con VeriFactu |
+| 962 | "cert FNMT ✅ conseguido 15-jun" | certificado FNMT real, ya obtenido |
+| 971 | "certificado emitido + cita asesor" | idem |
+| 1037 | "certificado FNMT + alta entorno pruebas AEAT" | idem |
+| 1346 | "...certificaría una tanda que leyó artefactos reescritos a mitad" | verbo "certificar" sobre un guard de tests, sin relación con VeriFactu |
+| 1513 | "remisión... es servicio web SOAP con certificado" | certificado digital del canal de transporte, no una "certificación" de VeriFactu |
+| 1738, 1864 | "STEL Order: ...VeriFactu certificado..." | describe el producto de un COMPETIDOR, no un estado de YaQu |
+
+**Las 3 que SÍ son la misma idea falsa que el guion H2 corrige — literal propuesto para cada una:**
+
+| id | fichero:línea | texto de hoy | por qué es la misma idea que el guion H2 corrige | literal propuesto |
+| --- | --- | --- | --- | --- |
+| **C1** | `YAQU_MASTER.md:215` (Parte H2, guion citado en regla 26) | *"...la facturación VeriFactu está construida y en certificación..."* | es el propio guion que Javier ya firmó (fase f/g de esta ficha) | el literal completo ya está escrito arriba, en "El literal nuevo — listo para pegar" (fase f). **No se repite aquí para no crear una tercera copia que diverja** — pendiente de aplicarse con la firma por el canal comprobable |
+| **C2** | `YAQU_MASTER.md:650` (entrada SCRUM-17) | *"Doc de usuario: `docs/COMO_FUNCIONA_YAQU.md` §5 (honesto: latente hasta la certificación; visible en demo)."* | mismo régimen: no hay "certificación" de VeriFactu que cerrar, es una declaración responsable | *"Doc de usuario: `docs/COMO_FUNCIONA_YAQU.md` §5 (honesto: latente hasta que se active la facturación VeriFactu con su declaración responsable; visible en demo)."* |
+| **C3** | `YAQU_MASTER.md:988` (V0-6, ESTADO DE EJECUCIÓN) | *"...(`docs/legal/ALCANCE_BETA.md`: \"presupuestos+firma+**albaranes**; **el cobro a tus clientes y** la facturación VeriFactu se activa**n** al cerrar la certificación, sin cambio de precio\")"* | es la frase que el encargo 1 de hoy (Eje A de la landing) iba a citar como ancla, y es la que choca directamente con el guion H2 nuevo | *"...la facturación VeriFactu se activa**n** al cerrar la declaración responsable del fabricante, sin cambio de precio"* — mismo giro que usa el guion H2 ya firmado, para que las dos frases digan la misma cosa con las mismas palabras |
+
+**Hallazgo fuera del alcance pedido, declarado y no tocado:** `docs/legal/ALCANCE_BETA.md` (que NO es
+máster ni `CLAUDE.md`, así que no entra en este censo por encargo) cita **V0-6 literalmente** en su
+cabecera y en su §2 con la misma frase "se activa al cerrar la certificación". En cuanto C3 se firme,
+ese fichero hereda la misma corrección — lo señalo para que quede en la cola, no lo propongo aquí
+porque el encargo de hoy pedía solo máster y `CLAUDE.md`.
+
+## Lo que NO cubre esta entrada (h)
+
+* No aplica C1/C2/C3 a `docs/YAQU_MASTER.md` — quedan propuestos, a la espera de la firma por el
+  canal comprobable (comentario de Jira + `docs/microcopy/`, o el propio Javier en este chat).
+* No propone texto para `docs/legal/ALCANCE_BETA.md` (fuera del máster/CLAUDE.md pedido hoy).
+* No vuelve a medir las 9 afirmaciones a terceros de la fase f (siguen igual, sin firma).
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-534k · Re-medición de las 9 (encargo 2, parte 2) — nada nuevo, nada aplicado
+
+**Fecha:** 23-sep-2026 · **Carril:** J4 (legal y cumplimiento) · **Gate:** ninguno — solo lectura,
+propone; no toca `PACK_GESTORIA.md`, `DECLARACION_RESPONSABLE.md` ni `YAQU_MASTER.md` (regla 39)
+**Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:12:12Z
+
+**Encargo:** el orquestador pidió re-medir las «8 afirmaciones falsas» de esta ficha (parte 2 del
+ticket, reabierto porque el cierre anterior solo verificó la parte 1, el guion H2) porque el guion
+H2 y el censo de "certificación" cambiaron en `YAQU_MASTER.md` desde el 22-sep, y podían haber
+arrastrado a `PACK_GESTORIA.md`/`DECLARACION_RESPONSABLE.md` con ellos.
+
+**Resultado: no arrastraron nada. Siguen siendo 9, no 8, y son las MISMAS 9 de la fase f, palabra
+por palabra.**
+
+- `git log --oneline -- docs/legal/PACK_GESTORIA.md docs/legal/DECLARACION_RESPONSABLE.md` → los
+  dos únicos commits son de su creación (13-jun-2026, S1-H y S1-E). **Ningún commit los ha tocado
+  desde entonces**, tampoco los tres de fase i (C1/C2/C3 viven solo en `YAQU_MASTER.md`).
+- Los dos ficheros, leídos ENTEROS hoy (76 + 104 líneas, no solo las líneas ya censadas): A11-A19
+  siguen literalmente en su sitio (mismas líneas: `PACK_GESTORIA.md:12-14/18-19/20-21/39/64-65`,
+  `DECLARACION_RESPONSABLE.md:11-13/39-41/46-49/53`). Cero candidatas nuevas — revisado el resto del
+  texto (F1/F2 400€, exports, QR, inalterabilidad…) y nada más afirma en presente una remisión a la
+  AEAT que no exista.
+- El hecho que las hace falsas se re-verificó hoy, no se dio por bueno de ayer: `grep -n "model Vf\|Submission" prisma/schema.prisma`
+  → 0 · `grep -rn "fetch(\|axios\|https.request\|http.request\|net.connect" src/modules/fiscal/verifactu/`
+  → 0. Sigue sin existir ninguna remisión a la AEAT en el código.
+- Comprobado que la ruta que SÍ cita `PACK_GESTORIA.md` §5 (`GET /admin/exports/verifactu.xml`)
+  existe de verdad (`src/modules/exports/app/routes/exports.routes.ts:531`) — no es una décima
+  afirmación falsa, es correcta.
+
+**🔴 Sobre la trampa de "certificación" que avisó el orquestador: ninguna de las 9 es de esa
+familia.** Las 9 afirman en presente que YaQu **remite/envía** registros a la AEAT (una capacidad de
+código que no existe); la familia "certificación" (C1/C2/C3, fase h/i, ya aplicada en
+`YAQU_MASTER.md` con firma del comentario 16404) afirmaba que existe un proceso de *certificación*
+de VeriFactu al que se está entrando, cuando el régimen real es una *declaración responsable* (art.
+13 RRSIF). Son dos ideas falsas distintas, con víctimas distintas: la de "certificación" es interna
+(máster/landing); la de "remite" va en dos documentos que se **entregan a terceros** (gestoría del
+cliente, y una declaración que firma un representante legal bajo su responsabilidad) — por eso ésta
+es la que "más daño hace", como pedía el orquestador. Sí aparece la palabra "Certificación" una vez
+en `DECLARACION_RESPONSABLE.md:103`, pero es el título literal de la FAQ de la AEAT que se cita como
+fuente ("Certificación de los sistemas informáticos: declaración responsable"), no una afirmación
+sobre YaQu — no es una décima falsa ni pertenece a la familia C1-C3.
+
+**El diff, listo para firmar (idéntico al de la fase f — re-confirmado hoy, no reescrito):**
+
+| id | dónde | sale | entra | por qué la nueva es verdad hoy |
+| --- | --- | --- | --- | --- |
+| A11 | `PACK_GESTORIA.md:12-14` | "...emite cada factura con una huella digital encadenada y la **remite automáticamente a la AEAT** en el momento." | "...emite cada factura con una huella digital encadenada según el formato oficial de la AEAT. La remisión telemática se activará junto con esta declaración, antes de distribuirse este documento." | 0 llamadas de red a la AEAT en `src/` (re-medido hoy) |
+| A12 | `PACK_GESTORIA.md:18-19` | "Cada registro de facturación (alta, rectificativa y anulación) se envía a la AEAT en tiempo real a través de su servicio web." | "Cada registro de facturación (alta, rectificativa y anulación) queda preparado con el sobre oficial de la AEAT, listo para su remisión en cuanto ésta esté construida." | mismo hecho medible |
+| A13 | `PACK_GESTORIA.md:20-21` | "...la huella SHA-256 encadenada + **la remisión autenticada** cumplen el requisito (RRSIF)." | "...no se exige firma electrónica: la huella SHA-256 encadenada cumple el requisito por sí sola (art. 16.2-16.3 RRSIF)." | art. 16.2-16.3 RRSIF, "presunción de cumplimiento por diseño" (skill `verifactu` §3) — la huella basta sola, atribuirlo a la remisión es la razón equivocada además de prematura |
+| A14 | `PACK_GESTORIA.md:39` | "Al cobrar, YaQu emite la factura, calcula su huella y **la remite a la AEAT**." | "Al cobrar, YaQu emite la factura y calcula su huella; la remisión a la AEAT se añadirá con el envío telemático." | mismo hecho medible |
+| A15 | `PACK_GESTORIA.md:64-65` | "...es el sistema de facturación que **genera y remite** los registros..." | "...es el sistema de facturación que genera los registros con el formato oficial; los remitirá en cuanto el envío esté construido." | mismo hecho medible |
+| A16 | `DECLARACION_RESPONSABLE.md:11-13` | "Los valores del sistema DEBEN coincidir con el bloque `SistemaInformatico` que YaQu **remite** en cada registro de facturación." | "...que YaQu remitirá en cada registro de facturación, una vez conectado el envío a la AEAT." | mismo hecho medible |
+| A17 | `DECLARACION_RESPONSABLE.md:39-41` | "Tipología: sistema informático de facturación en modalidad VERI\*FACTU (**remisión de los registros de facturación a la AEAT**)." | "...en modalidad VERI\*FACTU (remisión de los registros a la AEAT, una vez completado el envío telemático)." | corrige el tiempo verbal; el fondo de si el régimen ya aplica hoy es P14, pendiente del asesor — no se decide aquí |
+| A18 | `DECLARACION_RESPONSABLE.md:46-49` | "...y **remisión telemática al servicio web de la AEAT**." | se quita la cláusula, o se marca "(pendiente de construir)" | mismo hecho medible |
+| A19 | `DECLARACION_RESPONSABLE.md:53` | "**Remisión inmediata a la AEAT** (modalidad VERI\*FACTU), **con control de flujo**." | "Remisión a la AEAT (modalidad VERI\*FACTU), una vez construido el envío." | mismo hecho medible; "con control de flujo" además nombra un mecanismo sin decidir en ningún sitio (ni U1.3, ni la skill, ni el stack de S1-0b) — se quita, no se inventa |
+
+**No se aplica nada de esto** — regla 39, la firma es de Javier. Este apéndice es la confirmación de
+que el trabajo de la fase f **sigue vigente sin cambios**, para que se firme sobre él con la
+seguridad de que no quedó desfasado por lo de anoche.
+
+## Lo que NO cubre esta entrada (k)
+
+* No aplica A11-A19 a `PACK_GESTORIA.md` ni a `DECLARACION_RESPONSABLE.md`.
+* No repite el censo del guion H2 ni de la familia "certificación" (fase f/h/i) — ya aplicado,
+  fuera del alcance de esta parte 2 del ticket.
+* No decide P14 (si el régimen VeriFactu ya aplica hoy a YaQu) — sigue siendo pregunta del asesor.
+# APÉNDICE · 23-sep-2026 · SCRUM-534j · El expediente de `VfSubmission` (parte 3): qué dice el máster, qué hay de verdad, quién bebe, y el texto para firmar
+
+**Fecha:** 23-sep-2026 · **Carril:** J1 (facturación y VeriFactu) · **Gate:** ninguno — **NO SE APLICA NADA a `docs/YAQU_MASTER.md`** (regla 39: lo firma un jefe; el clasificador de permisos de esta sesión bloquea ese fichero por CONTENIDO)
+**Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:09:09Z
+
+> Encargo del orquestador (`jv-j1`, relevo): SCRUM-534 tiene tres partes; la primera (guion H2) ya
+> está aplicada (fase i). Ésta es la tercera — el interno ⚪ de la fase a, clase A2/A3/A4: la FSM
+> `VfSubmission` de la Parte L y quien la cita como si existiera. **Mide y propón. No construye.**
+
+## PASO 0 — lo ya medido, confirmado de un vistazo
+
+`VfSubmission` aparece **4 veces en `docs/YAQU_MASTER.md`** y **0 veces en `prisma/schema.prisma`**
+(`git grep -n "VfSubmission" origin/main -- prisma/schema.prisma` → sin resultado, exit 1).
+Confirmado hoy contra `62176956...`, sin discrepancia con lo que traía el encargo.
+
+## § 1 · Qué publica la Parte L (y sus vecinas) sobre `VfSubmission` — las 4 apariciones, literales
+
+| # | dónde (`YAQU_MASTER.md`) | texto literal completo | qué promete |
+| --- | --- | --- | --- |
+| **L1** | `:156`, Parte D2 (capas nuevas y fase) | *«`src/modules/fiscal/verifactu/` ← SIF-1 (F1): `sif.client.ts` + cola `VfSubmission`»* | ✅ **no es la parte defectuosa** — vive bajo el epígrafe «Capas nuevas», explícitamente prospectivo. Se cita por completitud del censo, no se toca. |
+| **L2** | `:404`, Parte L (*«STATE MACHINES OFICIALES · FUENTE DE VERDAD, regla 27»*) | *«**VfSubmission:** `pending → sent → accepted` · `sent → rejected(error) → pending(retry, attempts++)` · `attempts≥5 → manual_review`. accepted terminal.»* | 🔴 **el defecto central.** Formato IDÉNTICO al de Quote/Invoice/Charge, que sí existen — nada en la frase distingue «esto es diseño» de «esto está construido», y la sección donde vive se declara *fuente de verdad* por la regla 27. |
+| **L3** | `:449`, Parte O (runbooks), R7 | *«**R7 · SIF rechaza registros:** leer `VfSubmission.lastError` → dato de factura: corregir vía R1 si emitida; estructural (XSD/firma): `SIF_ENABLED=false` + avisar asesor; la emisión local sigue y la cola remite al reanudar. Documentar en VERIFACTU_EVIDENCIAS.»* | 🔴 **el segundo defecto**, y el más caro operativamente: es un runbook, formato imperativo, sin marca de futuro — se lee y se sigue durante una incidencia real. Cita además `docs/VERIFACTU_EVIDENCIAS.md`, que tampoco existe (medido en la fase b de este mismo ticket). |
+| **L4** | `:1042`, Parte U1.3 (S1-D, una de las 8 obligatorias de SIF-1) | *«**S1-D · Envío en pruebas AEAT:** `src/modules/fiscal/verifactu/sif.client.ts` + cola `VfSubmission {invoiceId,status,attempts,lastError}` + retry backoff + incidencias/subsanación + logs legibles. Done: ≥10 registros (alta/anulación/R1) aceptados consecutivos.»* | ✅ **tampoco es la parte defectuosa** — es un ítem de checklist con su criterio de «Done», sin el ✅ que sí llevan S1-A/B/C. Se lee como tarea, no como hecho. |
+
+**Resultado:** de las 4, **2 son el defecto** (L2, L3) y **2 están correctamente enmarcadas como
+futuro** (L1, L4). La enmienda solo necesita tocar L2 y L3.
+
+**Hallazgo colateral, fuera de las 4 pero de la misma causa — no se re-propone aquí, se deja
+dicho:** la fila `SIF_ENABLED` de la Parte P (`:465`) dice *«seguro: cola pausa, emisión local
+sigue»* — la misma idea falsa (que hay una cola que pausar) sin usar la palabra `VfSubmission`, así
+que el censo por texto literal no la encuentra. La corrige quien firme L2, porque describir bien
+qué es `vfEstado` hace obvio que no hay nada que "pausar".
+
+## § 2 · Qué existe de verdad — por lectura de fuente, no por grep
+
+**La columna real es `Invoice.vfEstado`** (`prisma/schema.prisma`, dentro de `model Invoice`,
+`@@map("invoices")`): un **campo STRING en la propia factura**, no una tabla ni una entidad aparte.
+Sus hermanas, todas en el mismo modelo: `vfHash`/`vfPrevHash`/`vfTimestamp` (alta) y
+`vfAnulHash`/`vfAnulTimestamp`/`vfAnulPrevHash` (anulación) — siete columnas, cero tablas.
+
+**Los estados reales son 3, no 6**, definidos en `src/modules/invoicing/domain/selladoEstado.ts`:
+
+```
+SELLADO_PENDIENTE = 'pendiente_de_sellado'   (nace así; default del schema)
+SELLADO_HECHO     = 'sellado'
+SELLADO_NO_APLICA = 'no_aplica'              (justificantes, merchant sin NIF o no-ES)
+```
+
+**Las transiciones reales** (leídas en `selladoEstado.ts`, funciones `estadoAlNacer` y
+`sellarTrasEmision`, no un grep de la palabra):
+
+- **Nacimiento** → `pendiente_de_sellado` si el documento entra en la cadena VeriFactu
+  (`entraEnLaCadena`), si no → `no_aplica` directamente.
+- `pendiente_de_sellado → sellado`: al terminar `applyVeriFactu` (huella SHA-256 + QR) con éxito,
+  **después** del commit de la emisión.
+- `pendiente_de_sellado → pendiente_de_sellado` (se queda igual): si `applyVeriFactu` lanza. Queda
+  un `AuditLog` (`action: 'sellado_fallido'`) con el motivo. **No hay reintento automático, ni
+  contador de intentos, ni ningún estado tipo `manual_review`** — eso es diseño de la FSM de la
+  Parte L, no código que exista.
+- **`sellado` es terminal para este campo.** Anular NO lo cambia (`sellarAnulacionTrasEmision` no
+  toca `vfEstado`, y lo dice el propio comentario del fichero: el registro de anulación es un
+  eslabón MÁS de la cadena, no un cambio de estado del alta — regla 29).
+
+**Lo que esto significa para la FSM de la Parte L:** `vfEstado` describe el **sellado LOCAL** (huella
++ QR calculados y persistidos), no la **remisión a la AEAT**. Ningún estado real se llama `pending`
+con el mismo sentido de la Parte L (que es «a la espera de que la AEAT conteste»), ni existe
+`sent`, `rejected`, `accepted` ni `manual_review` en ningún sitio — coherente con lo ya medido en la
+fase a de este ticket (②: cero llamadas de red a la AEAT en `src/`) y con la auditoría
+`docs/legal/AUDITORIA_CAMINO_EMISION.md` (eslabones 8 y 9: NO EXISTE).
+
+## § 3 · Quién bebe — medido, no de oídas
+
+**Metodología:** `git grep -l "VfSubmission" origin/main` sobre todo el repo → **33 ficheros**. De
+esos 33 se descarta: el propio `YAQU_MASTER.md` (es la fuente, no un bebedor), 1 copia congelada en
+`docs/historico/` (política ya fijada en la fase b de este ticket: no se toca), y **28 que YA citan
+la ausencia correctamente** — auditorías (`AUDITORIA_CAMINO_EMISION.md`, los dos `INVENTARIO_*`,
+`SEMAFORO_MAPA_EMISION.md`), entradas de `docs/master/*` que la miden como inexistente (298, 328,
+524, 525, 538, 566, 575, 815, 955 y sus evidencias), el guard `_guard-afirmacion-fiscal.mjs` (es el
+mecanismo de detección, no un bebedor), 3 comentarios de código que ya dicen «NO EXISTE»
+(`modoVisible.ts`, su test, y `correoDeFacturaEnviado.ts` que solo cita la lista cerrada de FSMs de
+la Parte L sin afirmar que funciona) y `docs/SIF_SPEC_NOTES.md` (ya lleva las etiquetas
+`[SE HARÁ]` de SCRUM-566).
+
+**Quedan 4 — y son éstos, no los que nombraba el traspaso** (que hablaba de A3/A4 *dentro* del
+máster + el runbook; aquí se cuentan ficheros *fuera* de `YAQU_MASTER.md` que tratan
+`VfSubmission` como si ya existiera, sin ningún aviso):
+
+| # | fichero | qué dice, sin aviso de que no existe | riesgo |
+| --- | --- | --- | --- |
+| **D1** | `docs/RUNBOOKS.md:75-81` (R7) | copia casi literal de L3, y AÑADE un guion para el merchant: *«Tus facturas siguen emitiéndose con normalidad; la remisión a la AEAT se reanuda en cuanto cerremos la incidencia técnica.»* | 🔴 **el más caro**: es el documento que se abre EN UNA INCIDENCIA REAL, y lleva un guion que le mentiría a un cliente sobre un servicio que no existe. |
+| **D2** | `.agents/skills/yaqu-verifactu-sif/SKILL.md:3,28-29` | el campo `description` (se carga en TODA sesión, no solo al invocar la skill — es el mismo mecanismo de exposición que documentó `INVENTARIO_AFIRMACIONES_SKILLS.md` para la copia de `.claude/`) dice *«cola VfSubmission, envío AEAT»*, y el cuerpo repite la FSM como «regla dura» sin ninguna marca. | 🔴 **alto**: es una COPIA DESINCRONIZADA. `.claude/skills/yaqu-verifactu-sif/SKILL.md` (la que se cargó al empezar esta tanda) SÍ está corregida desde SCRUM-538/566 — con `🔴 NO CONSTRUIDO` delante de la FSM. La de `.agents/` se quedó con el texto viejo. |
+| **D3** | `docs/legal/SEMAFORO_CALIBRACION.md:196-198` | *«La cola `VfSubmission` (máster, Parte L) es el sitio donde se gestionan»* (los códigos de rechazo `3000-3004` de la AEAT) | 🟡 medio: documento técnico/legal sobre códigos de error, no un runbook de incidencia, pero lo mismo — asume que el sitio donde gestionarlos ya existe. |
+| **D4** | `docs/equipo/puesto-j1.md:15-16` | lista *«VeriFactu (huella, QR, registros, la cola `VfSubmission`, el envío a la AEAT)…»* dentro del área que este mismo puesto tiene asignada | ⚪ bajo: es una ficha interna de equipo, y quien la lee (yo, ahora mismo) descubre la verdad en el primer ticket. Se cita por completitud. |
+
+**Por qué el número no es «cuatro» por la misma razón que decía el traspaso:** el traspaso
+apuntaba a una relación DENTRO del máster (A2 → beben A3, A4, el runbook — es decir 3 sitios, dos
+de ellos dentro del propio `YAQU_MASTER.md`). Medido aquí con otro criterio —ficheros AJENOS al
+máster que tratan `VfSubmission` como real— la cifra también da 4, pero es OTRA lista (RUNBOOKS +
+la skill duplicada + SEMAFORO_CALIBRACION + puesto-j1), y coincide con el número por composición
+distinta, no porque ambas cuentas midan lo mismo. Quede dicho para que nadie lea «4» dos veces
+como si fuera un solo hecho verificado dos veces.
+
+## § 4 · El texto de la enmienda — dos opciones, para que Javier elija y firme
+
+**Ninguna de las dos toca `docs/YAQU_MASTER.md`.** Van aquí, literales, listas para pegar el día
+que haya firma (regla 39).
+
+### Opción A — anotar con `[SE HARÁ]` (mínimo cambio; conserva el diseño donde está)
+
+Misma convención que ya aplicó SCRUM-566 en `SIF_SPEC_NOTES.md`. Sustituye **L2** por:
+
+> **VfSubmission `[SE HARÁ — no construida; no está en `prisma/schema.prisma`, medido]`:** diseño
+> para cuando exista la remisión a la AEAT (S1-D): `pending → sent → accepted` ·
+> `sent → rejected(error) → pending(retry, attempts++)` · `attempts≥5 → manual_review`. accepted
+> terminal. **Lo que existe hoy es otra cosa, con otro nombre:** el sellado LOCAL de cada factura
+> vive en `Invoice.vfEstado` (`pendiente_de_sellado → sellado`, o `no_aplica` si el documento nunca
+> entra en la cadena) — ver `src/modules/invoicing/domain/selladoEstado.ts`.
+
+Y **L3** por:
+
+> **R7 · SIF rechaza registros `[SE HARÁ — no puede ocurrir hoy: no hay remisión a la AEAT,
+> medido]`:** cuando exista la cola de remisión (S1-D), leer su último error → dato de factura:
+> corregir vía R1 si emitida; estructural (XSD/firma): `SIF_ENABLED=false` + avisar asesor; la
+> emisión local sigue y la cola remite al reanudar. Documentar en VERIFACTU_EVIDENCIAS (tampoco
+> existe, medido en SCRUM-534b).
+
+**Pro:** cambio de una frase por entrada; conserva el diseño ya decidido para S1-D en el mismo
+sitio donde alguien construyendo esa tarea iría a buscarlo. **Con:** la Parte L se declara
+*«FUENTE DE VERDAD»* (regla 27) — mezclar ahí una entrada real (Quote, Invoice…) con una etiquetada
+`[SE HARÁ]` es la misma mezcla de hechos y plan que SCRUM-566 corrigió sacándola de
+`SIF_SPEC_NOTES.md`; aquí se propone dejarla dentro, solo con la etiqueta.
+
+### Opción B — sacar el diseño de la Parte L, documentar solo lo que hay
+
+Sustituye **L2** por (deja de listarse como `VfSubmission`; se documenta la entidad real, con su
+nombre real):
+
+> **Invoice.vfEstado (sellado local — NO es la remisión a la AEAT):**
+> `pendiente_de_sellado → sellado` (huella SHA-256 + QR calculados y persistidos tras el commit de
+> la emisión) · `pendiente_de_sellado → no_aplica` (documento que nunca entra en la cadena:
+> justificante, o merchant sin NIF/no-ES). `sellado` es terminal para este campo — anular no lo
+> cambia (regla 29; el registro de anulación es un eslabón más, no un estado nuevo). Fuente:
+> `src/modules/invoicing/domain/selladoEstado.ts`. **La cola de remisión a la AEAT no está
+> construida** — no hay tabla, no hay envío, cero llamadas de red
+> (`docs/legal/AUDITORIA_CAMINO_EMISION.md`, eslabones 8-9). Su diseño (antes descrito aquí como
+> `VfSubmission`) queda en S1-D, Parte U1.3, para cuando se construya.
+
+Y **L3** por (describe solo lo que puede fallar HOY, sin inventar un mecanismo que no existe):
+
+> **R7 · Falla el sellado local de una factura:** `vfEstado` se queda en `pendiente_de_sellado`; la
+> huella SHA-256/QR no se pudo calcular tras la emisión (motivo en `AuditLog`, acción
+> `sellado_fallido`); la factura no produce PDF ni QR hasta resellarse. **[FALTA decidir el
+> mecanismo de reintento — no hay uno automático hoy, medido; no se propone uno aquí porque
+> inventarlo es del carril de código, no de este expediente.]** Esto es distinto de un rechazo de
+> la AEAT: esa remisión no está construida (S1-D), así que hoy no puede rechazar nada.
+
+**Pro:** la Parte L vuelve a ser 100% lo que su cabecera promete —hechos, no diseño—, y R7 deja de
+prometer una acción que nadie puede ejecutar. **Con:** cambio mayor; y destapa un hueco real —no
+hay runbook para un fallo de sellado local— que esta entrada señala pero no resuelve (es decisión
+de producto/soporte, no un texto que se pueda derivar solo de lo medido).
+
+**Recomendación de esta sesión, sin decidir por Javier:** Opción B para L2 (la Parte L gana más
+siendo estrictamente cierta que conservando el diseño con una etiqueta) y Opción A para L3 si se
+prefiere no abrir ahora el hueco del runbook de sellado — son combinables independientemente.
+
+## Verificación
+
+* ✅ **Control positivo** — el mismo `git grep -l "VfSubmission"` que da 33 ficheros SÍ encuentra
+  `docs/YAQU_MASTER.md`, así que la ausencia de ese fichero de la lista de «28 ya corregidos» no es
+  ceguera: se excluyó a propósito por ser la fuente.
+* ✅ **Dos instrumentos independientes para §2** — el schema (`prisma/schema.prisma`, declarativo)
+  y el código (`selladoEstado.ts`, comportamiento) coinciden en los mismos 3 estados; no se leyó
+  solo uno.
+* 🔴 **Suelo** — 0 en `prisma/schema.prisma` no es ceguera: el mismo grep encuentra 30 modelos
+  reales (`Invoice`, `InvoiceAssignee`…), así que el cero es «no está», no «no miré» (mismo control
+  que ya dejó escrito la fase a).
+* ⚠️ **D2 (`.agents/`) es hallazgo de esta sesión, no heredado**: no aparece en el censo de
+  SCRUM-538/566 porque esos censos midieron `.claude/skills/` y `docs/`/`docs/legal/`, no
+  `.agents/skills/`. Ninguna entrada previa de este ticket ni de esos dos lo cubre.
+
+## Lo que NO cubre esta entrada
+
+* ⛔ No toca `docs/YAQU_MASTER.md`, `docs/RUNBOOKS.md`, ninguna de las dos copias de la skill, ni
+  `SEMAFORO_CALIBRACION.md` ni `puesto-j1.md` — regla 39 para el máster; para el resto, el mandato
+  de esta tanda es medir y proponer, no construir.
+* No decide entre Opción A y Opción B — las dos quedan listas para que Javier elija y firme.
+* No re-abre la fila `SIF_ENABLED` de la Parte P (`:465`) ni la línea `:580` — comparten la misma
+  causa (señalado en §1) pero no llevan la palabra `VfSubmission`, así que quedan fuera del
+  alcance literal del encargo; se nombran para que no se pierdan, no se proponen aquí.
+* No corrige D1-D4: son consecuencia de lo que se firme en L2/L3, y arreglarlos antes sería fijar
+  cuatro textos que la firma podría volver a mover.
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-534m · Las NUEVE aplicadas (parte 2 cerrada)
+
+**Medido contra:** `origin/main` = `61bbfa79ddd53a5b1882a47509230e2a6278d6b6` · 2026-09-23T09:12:51Z
+**Aplica:** el orquestador del equipo de Javier (A13), por instrucción expresa suya, con la firma
+del comentario 16583 y la corrección de censo del 16585.
+
+## Por qué lo aplica el orquestador y no J4
+
+**El clasificador de permisos de jv-j4 denegó la edición de los DOS ficheros**, con el motivo
+`Real-World Transactions`: primero sobre `PACK_GESTORIA.md`, y después —probado por separado, a
+petición mía, con la misma sesión y los mismos permisos— también sobre `DECLARACION_RESPONSABLE.md`
+con la corrección más pequeña de las cuatro (A16). No es nuevo: el mismo bloqueo está registrado
+para la sesión anterior de ese puesto en el comentario 16404.
+
+**J4 paró las dos veces y no buscó otra herramienta.** Correcto, y es la parte que importa del
+registro: **no se le pasó el trabajo a una tercera sesión a la que no se lo denegaran.** Eso habría
+sido usar los permisos de otra sesión para esquivar una decisión de permisos. Se subió al fundador,
+que es de quien son los permisos, y él instruyó expresamente aplicarlo desde el orquestador.
+
+## Lo aplicado
+
+Las nueve del apéndice SCRUM-534k, con el literal firmado. **A18 la resolvió Javier**: su propuesta
+ofrecía dos formas («quitar la cláusula» o «marcarla pendiente de construir») y no elegía; firma
+quitarla entera.
+
+| | fichero | qué cambia |
+|---|---|---|
+| **A11** | `PACK_GESTORIA.md` | la remisión automática pasa a «se activará junto con esta declaración» |
+| **A12** | `PACK_GESTORIA.md` | «se envía en tiempo real» → «queda preparado con el sobre oficial, listo para su remisión» |
+| **A13** | `PACK_GESTORIA.md` | **cambia la RAZÓN, no el tiempo**: la dispensa de firma la cumple la huella encadenada **por sí sola** (art. 16.2-16.3 RRSIF), no «la huella + la remisión» |
+| **A14** | `PACK_GESTORIA.md` | «la remite a la AEAT» → «la remisión se añadirá con el envío telemático» |
+| **A15** | `PACK_GESTORIA.md` | «genera y remite» → «genera… los remitirá en cuanto el envío esté construido» |
+| **A16** | `DECLARACION_RESPONSABLE.md` | «remite» → «remitirá una vez conectado el envío» |
+| **A17** | `DECLARACION_RESPONSABLE.md` | la tipología añade «una vez completado el envío telemático» |
+| **A18** | `DECLARACION_RESPONSABLE.md` | **se retira** «y remisión telemática al servicio web de la AEAT» de *Composición / arquitectura* |
+| **A19** | `DECLARACION_RESPONSABLE.md` | «Remisión **inmediata**… **con control de flujo**» → «Remisión… una vez construido el envío» |
+
+**A19 se queda sin «control de flujo» y sin sustituto, a propósito:** la medición de J4 dice que ese
+mecanismo **no está decidido en ningún sitio** (ni en U1.3, ni en la skill `yaqu-verifactu-sif`, ni
+en el stack de S1-0b). Inventar qué significa sería el mismo defecto que este ticket arregla.
+
+## Controles de la aplicación, ejecutados y no supuestos
+
+Se aplicó con `aplicar-534m.mjs`, que **aborta sin escribir un byte** si cualquier control falla:
+
+| control | resultado |
+|---|---|
+| cada una de las 9 reglas casa **exactamente una vez** (0 o 2 abortan) | **9 de 9** |
+| frases viejas que quedan en cualquiera de los dos ficheros (8 vigiladas) | **0** |
+| 🔴 **la décima sigue intacta** (`TipoUsoPosibleSoloVerifactu`, línea 43) | **sí** |
+| `PACK_GESTORIA.md` | 77 → 81 líneas · 3.811 → 4.030 bytes |
+| `DECLARACION_RESPONSABLE.md` | 105 → 105 líneas · 5.420 → 5.418 bytes |
+
+La décima es **control negativo**, no adorno: el riesgo de aplicar nueve correcciones seguidas es
+llevarse por delante la que se decidió no tocar.
+
+## 🔴 Lo que este apéndice NO cierra
+
+**`DECLARACION_RESPONSABLE.md` sigue teniendo un problema vivo, y es de otra clase.** La línea 43
+declara:
+
+> `TipoUsoPosibleSoloVerifactu`: **Sí** — el sistema solo opera en modalidad VERI\*FACTU.
+
+Las nueve se arreglaban con un tiempo verbal porque describían una acción que aún no ocurre. Esto
+**declara la modalidad entera del sistema** — letra e) del art. 15.1 de la Orden HAC/1177/2024,
+campo obligatorio. Si la remisión no existe, la pregunta no es cómo redactarlo: es **si esta versión
+puede declararse VERI\*FACTU en absoluto**. Eso es **P14**, registrada en `PREGUNTAS_ASESOR.md` y sin
+contestar.
+
+Se deja escrito aquí y no en una nota suelta porque **una lista de nueve corregidas es exactamente
+donde una décima se vuelve invisible**.
+
+## Un error del orquestador que cazó J4, y cómo
+
+Mi comentario 16583 metió bajo «LA DÉCIMA» **dos** líneas como si fueran una sola cosa nueva: la de
+*Tipología* (39-41) y la de `TipoUsoPosibleSoloVerifactu` (43). La primera **es A17**, que estaba en
+las nueve y firmada. J4 lo encontró en su PASO 0 —releer antes de aplicar— y **paró en vez de
+ejecutar**, separando lo que era contradicción mía de lo que era diferencia con `main`. Corregido en
+el comentario 16585. Sin esa parada se habría aplicado mal un documento que se firma ante Hacienda.
+
+---
+
+# APÉNDICE · 23-sep-2026 · SCRUM-534n · La parte 3 aplicada al máster (opción B)
+
+**Medido contra:** `origin/main` = `8599c18b4033a598cf87ce5c6dd0af198b75dfcc` · 2026-09-23T10:40:08Z
+**Aplica:** el orquestador del equipo de Javier (A13), con la firma de Javier del 23-sep-2026
+(SCRUM-534, comentario 16601): sobre las dos opciones del apéndice SCRUM-534j, eligió **«B»**.
+
+## Por qué lo aplica el orquestador
+
+`docs/YAQU_MASTER.md` es de Javier y **su clasificador bloquea ese fichero a las sesiones por
+contenido** — le pasó a J1 al entregar el expediente de la parte 3, y ya le había pasado a J4 con el
+guion H2. Mismo camino que la enmienda de la regla 26 y que el bloque D del lote de cobro.
+
+## Lo aplicado, las dos líneas
+
+### L2 · `:404`, Parte L — «STATE MACHINES OFICIALES · FUENTE DE VERDAD» (regla 27)
+
+| | |
+|---|---|
+| **antes** | `**VfSubmission:** pending → sent → accepted · sent → rejected(error) → pending(retry, attempts++) · attempts≥5 → manual_review. accepted terminal.` |
+| **después** | describe `Invoice.vfEstado`, la entidad **real**: `pendiente_de_sellado → sellado` · `pendiente_de_sellado → no_aplica`, con su fuente en `selladoEstado.ts`, diciendo expresamente que es el **sellado LOCAL y no la remisión**, y que la cola **no está construida** |
+
+**El defecto que tenía:** el formato era **idéntico** al de Quote, Invoice y Charge, que sí existen.
+Nada en la frase distinguía «esto es diseño» de «esto está construido», y la sección donde vivía se
+declara *fuente de verdad* por la regla 27.
+
+### L3 · `:449`, Parte O — runbook R7
+
+| | |
+|---|---|
+| **antes** | `R7 · SIF rechaza registros:` leer `VfSubmission.lastError`, «la emisión local sigue y **la cola remite al reanudar**» |
+| **después** | `R7 · Falla el sellado local de una factura:` describe lo único que **sí** puede fallar hoy, y dice expresamente que **la AEAT no puede rechazar nada porque la remisión no está construida** |
+
+**Por qué era el peor de los dos, aunque fuera una línea más corta:** un runbook **se lee con prisa,
+durante una incidencia**, y le da instrucciones a alguien para operar un mecanismo que no existe. Una
+descripción en la Parte L se lee con calma.
+
+## 🔴 El hueco que la opción B destapa, declarado y no escondido
+
+R7 queda con un **`[FALTA decidir el mecanismo de reintento — hoy no hay ninguno automático,
+medido]`**. Ese hueco es real: **no hay runbook para un fallo de sellado local.**
+
+**Es mejor que lo de antes, y conviene decir por qué:** un hueco declarado se ve; una instrucción
+falsa se sigue. La opción A lo habría tapado con una etiqueta `[SE HARÁ]`, dejando la entrada dentro
+de una sección que se declara fuente de verdad.
+
+## Controles, ejecutados y no supuestos
+
+Aplicado con un script que **aborta sin escribir un byte** si cualquiera falla, y que **localiza las
+dos líneas por CONTENIDO, no por número** (el máster se mueve):
+
+| control | resultado |
+|---|---|
+| cada línea aparece **exactamente una vez** antes de tocar | sí, las dos |
+| líneas del fichero antes → después | **1887 → 1887** |
+| líneas que difieren | **2** |
+| 🔴 ¿sigue existiendo la máquina de estados de `VfSubmission`? | **no** |
+| 🔴 ¿sigue existiendo el runbook del rechazo de la AEAT? | **no** |
+| 🔴 ¿queda alguna frase diciendo «la cola remite al reanudar»? | **no** |
+| ¿se conserva D2 (`:156`, capas nuevas)? | **sí** — es plan declarado, no defecto |
+| ¿se conserva S1-D (`:1042`, checklist de SIF-1)? | **sí** — ídem |
+
+### Una corrección del propio control, que merece la pena dejar escrita
+
+La primera versión del script **abortó**: exigía que quedaran **2** menciones de `VfSubmission` y
+quedaban **3**. La tercera es **mía y deliberada** — el texto nuevo dice *«antes descrito aquí como
+`VfSubmission`»* para que quien busque ese nombre encuentre el rastro en vez de un silencio.
+
+**El control tenía razón en saltar y mi expectativa estaba mal.** Pero la lección no es subir el
+número de 2 a 3: es que **contar menciones nunca fue el invariante**. El invariante es *«ninguna línea
+vuelve a DECLARAR la máquina de estados ni el runbook falso»*, y así está escrito ahora — tres
+comprobaciones por efecto en vez de un recuento. Un guard que cuenta apariciones pasa en cuanto
+alguien escribe la misma mentira con otras palabras.
+
+## 🔴 Lo que esto NO cierra: seis bebedores fuera del máster
+
+El comentario **13813** (S1, 19-ago) avisó de esto y sigue siendo el riesgo: **corregir la Parte L sin
+corregir a quien bebe de ella deja huérfanos citando algo que ya no dice eso.**
+
+| dónde | qué sigue diciendo |
+|---|---|
+| `docs/RUNBOOKS.md:79` | repite el R7 viejo entero, **con un guion para decirle al cliente que «la remisión se reanuda»** |
+| `YAQU_MASTER.md:434` y `:1028` | citan `VfSubmission.lastError` y la cola |
+| `docs/legal/SEMAFORO_CALIBRACION.md:196` | asume que existe el sitio donde gestionar los rechazos 3000-3004 |
+| `docs/equipo/puesto-j1.md:15` | describe el área del puesto incluyendo la cola |
+| `.agents/skills/yaqu-verifactu-sif/SKILL.md` | **la copia que lee Codex en la máquina de Luis** — va por SCRUM-1089 |
+
+Y `docs/VERIFACTU_EVIDENCIAS.md`, citado por el máster, un runbook y dos skills, **no existe**: parece
+un error de nombre propagado por copia desde `docs/EVIDENCIAS_E2E.md`, que sí existe.
+
+**El más caro de los seis es el primero**, por el mismo motivo que L3: se abre en una incidencia real
+y lleva un guion que le mentiría a un cliente.
+
+## Lo que NO se ha tocado
+
+- Ninguna otra línea del máster. Un cambio de máster lleva una firma, y esta firma cubre estas dos.
+- Ningún estado, flag ni transición de producto (reglas 27 y 30) más allá de las dos enmendadas.
+- Ningún fichero de `src/`, ningún test, ningún guard.

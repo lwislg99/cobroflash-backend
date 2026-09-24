@@ -2,7 +2,7 @@
 //
 // LOS DOS SUBCOMANDOS QUE HACEN QUE EL RELEVO DE LA A19 SE PUEDA EJECUTAR.
 //
-//   · `contexto N` — cuánto ocupa el último turno de una sesión, para saber si pasa de 300k;
+//   · `contexto N` — cuánto ocupa el último turno de una sesión, para saber si pasa de 200k;
 //   · `relevar N <fichero>` — parar una sesión y levantar otra en su puesto, con su encargo dentro.
 //
 // ── LO QUE ESTE FICHERO VIGILA DE VERDAD ────────────────────────────────────────────────────
@@ -11,7 +11,10 @@
 // comprueban que releve, sino que **NO releve**: sin traspaso, con el traspaso viejo o con la
 // sesión trabajando, se niega y lo dice.
 //
-// «Fresco» no es una sensación: es `traspasoMtime > ultimoTurno`, dos números. El resultado los
+// SCRUM-1007 (22-sep-2026) · «Fresco» YA NO es `traspasoMtime > ultimoTurno`: el protocolo real es
+// escribir el traspaso y LUEGO contestar «traspaso listo» —esa respuesta es un turno posterior al
+// fichero, por diseño—, así que el orden estricto nunca daba verde en el camino feliz. Ahora es una
+// VENTANA: `ultimoTurno - traspasoMtime < esperaMs`, en cualquier dirección. El resultado se
 // devuelve en `comprobado` para que un `SIN-TRASPASO` se pueda discutir sin volver a correrlo.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -58,9 +61,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
-    de: '  if (traspasoMtime <= ultimoTurno) {',
+    de: '  if (ultimoTurno - traspasoMtime >= esperaMs) {',
     a: '  if (false) {',
-    cae: '🔴 no se para una sesión cuyo traspaso no se ha reescrito',
+    cae: '🔴 no se para una sesión cuyo traspaso está REALMENTE viejo frente al último turno',
   },
 ];
 
@@ -150,13 +153,14 @@ test('🔴 el jsonl se busca en TODAS las carpetas de proyecto, no solo en la de
 // decidirRelevo — los tres casos de la A19
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('los tres casos de la A19, y sus dos lados del umbral', () => {
+test('los tres casos de la A19, y sus dos lados del umbral (200k desde A25)', () => {
+  assert.equal(s.UMBRAL_CONTEXTO, 200_000, '🔴 A25: el relevo es a 200k, no a 300k');
   const ahora = Date.parse('2026-09-17T19:00:00Z');
   const hace5min = ahora - 5 * 60 * 1000;
   const ctx = (t) => ({ tokens: t, turnos: 10, cuando: null });
 
-  assert.equal(s.decidirRelevo({ contexto: ctx(300_001), ultimaActividad: hace5min, ahora }).veredicto, 'RELEVAR');
-  assert.equal(s.decidirRelevo({ contexto: ctx(299_999), ultimaActividad: hace5min, ahora }).veredicto, 'SEGUIR',
+  assert.equal(s.decidirRelevo({ contexto: ctx(200_001), ultimaActividad: hace5min, ahora }).veredicto, 'RELEVAR');
+  assert.equal(s.decidirRelevo({ contexto: ctx(199_999), ultimaActividad: hace5min, ahora }).veredicto, 'SEGUIR',
     '🔴 releva por debajo del umbral: la A19 dice que el encargo siguiente entra en la misma sesión');
 
   const hace2h = ahora - 2 * 60 * 60 * 1000;
@@ -185,19 +189,30 @@ test('traspaso fresco y sesión quieta → RELEVAR, con lo comprobado a la vista
     '🔴 un SIN-TRASPASO que no dice qué comparó no se puede discutir sin volver a correrlo');
 });
 
-test('🔴 no se para una sesión cuyo traspaso no se ha reescrito', () => {
-  // Anterior al último turno = la sesión aún no lo ha escrito. El plazo se cuenta DESDE ese último
-  // turno, que es la última vez que contestó; si lleva horas parada sin escribirlo, ya no lo va a
-  // escribir. Los dos lados se prueban lejos del borde, a propósito: un caso que cae justo en el
-  // límite mide el redondeo, no la conducta.
+test('🔴 SCRUM-1007 · un traspaso unos segundos antes del último turno SÍ cuenta (es el camino feliz)', () => {
+  // Es el caso medido en el ticket: la sesión escribe el traspaso y LUEGO contesta «traspaso
+  // listo» — esa respuesta es el `ultimoTurno`, y llega segundos DESPUÉS del fichero. Con la
+  // ventana (`esperaMs`), esto es fresco: si no lo fuera, el camino feliz jamás daría RELEVAR.
+  const d = s.decidirRelevar({
+    nombre: 'sesion-2', agentes: viva(), traspasoMtime: ultimoTurno - 14_400, ultimoTurno,
+    ahora: ultimoTurno + 5_000,
+  });
+  assert.equal(d.veredicto, 'RELEVAR', '🔴 vuelve el defecto: contestar «traspaso listo» bloquea el propio relevo');
+});
+
+test('🔴 no se para una sesión cuyo traspaso está REALMENTE viejo frente al último turno', () => {
+  // «Viejo» ya no es «anterior», es «fuera de la ventana `esperaMs`»: la sesión siguió trabajando
+  // DESPUÉS de ese traspaso y no lo ha vuelto a tocar. Los dos lados se prueban lejos del borde de
+  // la ventana Y del plazo de espera, a propósito: un caso justo en el límite mide el redondeo.
+  const traspasoViejo = ultimoTurno - 20 * 60 * 1000; // 20 min antes: fuera de los 10 min de esperaMs
   const dentro = s.decidirRelevar({
-    nombre: 'sesion-2', agentes: viva(), traspasoMtime: ultimoTurno - 1000, ultimoTurno,
+    nombre: 'sesion-2', agentes: viva(), traspasoMtime: traspasoViejo, ultimoTurno,
     ahora: ultimoTurno + 60 * 1000,
   });
-  assert.equal(dentro.veredicto, 'ESPERANDO', '🔴 se la carga mientras todavía está escribiendo el traspaso');
+  assert.equal(dentro.veredicto, 'ESPERANDO', '🔴 se la carga con un traspaso que ya no describe el último turno');
 
   const fuera = s.decidirRelevar({
-    nombre: 'sesion-2', agentes: viva(), traspasoMtime: ultimoTurno - 1000, ultimoTurno,
+    nombre: 'sesion-2', agentes: viva(), traspasoMtime: traspasoViejo, ultimoTurno,
     ahora: ultimoTurno + 11 * 60 * 1000,
   });
   assert.equal(fuera.veredicto, 'SIN-TRASPASO', '🔴 espera para siempre, o peor: para igual');

@@ -574,6 +574,45 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
+### [ ] P3-PAIDAT-BO · El botón individual "marcar pagada" del BO (`PUT /admin/invoices/:id/status`) no acepta fecha de cobro declarada, a diferencia de `bulk-paid` (23-sep-2026, hallazgo colateral de SCRUM-1055)
+- **No es de SCRUM-1055** — se registra aparte porque SCRUM-1055 (el criterio de caja/RECC) está
+  parado esperando al asesor (Q-C6/QC6, `docs/legal/PREGUNTAS_ASESOR.md`, sin cita todavía —
+  confirmado hoy contra el mapa fresco de `docs/master/SCRUM-1023.md`, que la deja fuera de las 17
+  ya resueltas). Esto es un hallazgo aparte, no fiscal, sin GO pendiente: no decide qué fecha manda
+  el periodo, sólo si el operador puede DECLARARLA.
+- **Medido, no supuesto** (PASO 0 de SCRUM-1055 pedía fabricar los casos reales antes de creerse el
+  defecto):
+  - Automático (Stripe `psp.routes.ts`, MercadoPago `mpWebhook.routes.ts`): `paidAt = new Date()`
+    en el instante del webhook. **Correcto** — para un pago automático ese instante SÍ es (o está a
+    segundos de ser) el cobro real; así lo documenta ya `criterioCaja.ts`.
+  - Manual EN LOTE (`POST /admin/invoices/bulk-paid`): usa `resolverFechaDeCobro(req.body.paidAt)`
+    — acepta la fecha que declara la persona, y sólo cae a `new Date()` si no se declaró ninguna.
+    **Correcto desde SCRUM-397** (10-ago-2026, firmado por el fundador).
+  - Manual de UNA factura, el botón individual del BO (`PUT /admin/invoices/:id/status`, comentario
+    de la propia ruta: "lo usa el botón del BO") → `updateInvoiceStatusAdmin()`
+    (`src/modules/system/invoiceAdmin.ts:206-268`): la firma es
+    `(id, status, merchantId?, paidVia?)` — **sin parámetro de fecha** — y el cuerpo hace
+    `paidAt = new Date()` a fuego en cuanto `status === 'paid' && !existing.paidAt`. **No hay forma
+    de declarar la fecha real por este camino.**
+  - R1 (rectificativa, `invoicesAdmin.routes.ts:1059-1060`): `paidAt: new Date()` al emitirse.
+    **Correcto** — una R1 no tiene un evento de cobro aparte que registrar, se salda al emitirse.
+- **Causa raíz:** SCRUM-397 corrigió el marcado EN LOTE (`bulk-paid`) pero no tocó su hermano de UNA
+  factura (`PUT /:id/status`), que hace exactamente la misma acción real de negocio — conciliar a
+  mano un cobro ya recibido, típicamente con fecha pasada — sin heredar el mecanismo ya aprobado.
+- **Impacto medido, y lo que NO es:** hoy `paidAt` de una factura marcada por este botón no
+  alimenta ninguna liquidación fiscal (`criterioCaja.ts`/`devengoPorCaja.ts` no tienen llamadores:
+  el RECC no está activado para ningún merchant y el 303 sigue declarando por `createdAt`/emisión).
+  **Sí alimenta** `metrics.service.ts`, `reports.routes.ts` y `weeklyDigest.service.ts`, que agrupan
+  ingresos por `paidAt`: una transferencia conciliada varios días después, marcada por este botón,
+  puede aparecer en el informe/resumen semanal del periodo equivocado. No es un problema fiscal hoy;
+  sí es un dato de negocio incorrecto hoy.
+- **Arreglo (no ejecutado, fuera de este ticket):** reutilizar `resolverFechaDeCobro` en
+  `updateInvoiceStatusAdmin`, igual que ya hace `bulk-paid` — mecanismo ya firmado por el fundador,
+  no una decisión fiscal nueva. Es del carril de J1 (fiscal/facturación), donde vive SCRUM-1055.
+- **Done cuando:** `PUT /admin/invoices/:id/status` acepte un `paidAt` opcional en el cuerpo con el
+  mismo contrato que `bulk-paid` (rechaza fecha futura, sin límite hacia atrás), y sin cuerpo se
+  comporte exactamente igual que hoy.
+
 ### [ ] P3-NODEOPTS-850B · `scrum850b` filtra `NODE_OPTIONS` a su `node --test` anidado: bajo CI real escribe en el MISMO `tanda.tap` del proceso padre (16-sep-2026, hallazgo colateral de SCRUM-839e)
 - **Medido:** en el run `35137040565` (job «build + tests (con banco desechable)»), el TAP combinado
   (`${{ runner.temp }}/tanda.tap`) trae `not ok 1 - ESTE TEST FALLA A PROPOSITO`, en
@@ -882,6 +921,11 @@
   webhook, esto es otra cosa): si se quiere un fix, el candidato obvio es que `scrum116` fije
   `process.env.WHATSAPP_DRY_RUN = ''` al principio del archivo, igual que ya hacen otros tests
   con sus propios flags.
+
+### [ ] P4 · `guard:marcadores-en-pantalla` (SCRUM-722): la entrada `export: 6` del censo ha caducado (22-sep, hallazgo de S2 en SCRUM-1033/1034, de OTRO carril — se reporta, no se arregla)
+- **Síntoma:** `npm run guards:visuales` cae en `guard:marcadores-en-pantalla` con «ENTRADA CADUCA: `export` ya no pinta ningún marcador. BÓRRALA del censo — no la pongas a 0».
+- **No es de mi carril:** no toqué `exportView.js` ni `scripts/guard-marcadores-en-pantalla.mjs` en esta rama (`scrum-1033-ficha-datos-y-etiquetas`); el censo `CENSO.export = 6` (`scripts/guard-marcadores-en-pantalla.mjs:58`) ya no coincide con lo que la vista pinta hoy, y es anterior a este PR.
+- **No arreglado aquí** (regla: un hallazgo de otro carril se reporta, no se arregla): quien tocó `exportView.js` por última vez decide si los 6 marcadores `[PENDIENTE…]` deberían seguir ahí (y se restauran) o si de verdad ya no hacen falta (y se borra la entrada del censo, `guard-marcadores-en-pantalla.mjs:58`).
 
 ### [x] P3-10 · Suite gateada COMPLETA (`QA_DB_TEST=1 npm test`) era inestable por concurrencia contra staging (22-jul, hallazgo en SCRUM-75; corregido en SCRUM-78)
 - **Síntoma:** con los ~19 archivos de test gateados corriendo TODOS a la vez (comportamiento por

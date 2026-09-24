@@ -1,0 +1,43 @@
+TESTIGO · recorrido 920d en staging a 390×844 · version desplegada: b6cde0517649d991a1b08eabb50017a81a03acfb
+POBLACION · mes 2026-09: 4 gastos (3 con foto, 1 sin ella), segun la API
+navegador: Edge (Windows)
+
+A. La lista con datos reales (390 px)
+   ✅ la lista pinta 4 filas y la API dice 4
+   ✅ sin scroll lateral (scrollWidth − innerWidth = 0)
+   ✅ píldoras: 3 «Foto guardada» (API 3) y 1 «Sin foto» (API 1)
+   ✅ 0 <img> en la lista (hay 0)
+   ✅ 0 descargas de /foto al cargar la lista (hubo 0)
+   ✅ cabecera del mes: «Septiembre de 2026· 4 gastos»
+   ✅ chips: Todos · 4|true · Sin foto · 1|false
+   ✅ «Nuevo gasto» fijo abajo: position fixed, borde inferior 834 de 844, alto del botón 44
+   ✅ «Nuevo gasto» alcanzable con el pulgar: alto 44 px (≥ 44)
+   🔴 el dedo llega al botón «Nuevo gasto» en sus 5 puntos — TAPADO en x=353 por #tut-help-btn
+   ✅ la barra sigue en su sitio tras recorrer la lista (borde inferior 834 → 834)
+   ✅ la barra no tapa la última fila (fila acaba en 755, barra empieza en 779)
+
+B. Chip «Sin foto»
+   ✅ pulsar «Sin foto · 1» deja 1 filas (esperadas 1); aria-pressed=true
+   ✅ todas las filas que quedan dicen «Sin foto»
+   ✅ con el chip puesto la cabecera lleva la suma con su aviso «Es la suma de lo que estás viendo, no la del mes.»
+   ✅ pulsar «Todos» devuelve las 4 filas
+
+C. Filtro por trabajo
+   ✅ el filtro ofrece: =Todos los trabajos | sin-trabajo=Sin trabajo | 3099=Presupuesto #5 · María López
+   ✅ «Sin trabajo» deja 2 filas (la API dice 2 sin trabajo)
+   ✅ el trabajo «Presupuesto #5 · María López» deja 2 filas (la API dice 2)
+
+D. «Nuevo gasto» abre el alta (y se cierra sin guardar)
+   ✅ el alta se abre con el campo de concepto a la vista
+   (Escape no lo cerró; pulsado Cancelar/Cerrar: true)
+   ✅ el alta se cerró sin guardar nada
+
+E. Solo lectura y errores
+   (declarado) 1 × POST /admin/entorno: lo manda la propia app al cargar, marca el entorno de la sesion de QA
+   ✅ todas las demas peticiones a staging fueron GET (escrituras que no son /admin/entorno: 0)
+   ✅ 0 errores de consola/página (hubo 0)
+   ✅ 0 descargas de /foto en todo el recorrido (hubo 0)
+
+23 ✅ · 1 🔴 · población: 4 gastos de 2026-09 en staging, 390×844, 113 peticiones
+capturas en docs\master\evidencias\scrum920\recorrido-staging-920d: 390-1-lista.png, 390-2-lista-entera.png, 390-3-final-de-la-lista.png, 390-4-chip-sin-foto.png, 390-5-filtro-sin-trabajo.png, 390-6-filtro-un-trabajo.png, 390-7-nuevo-gasto-modal.png
+EXIT=1

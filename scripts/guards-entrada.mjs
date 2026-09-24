@@ -84,6 +84,9 @@ export const GUARDS = [
     porque: 'el censo de guards cuenta todos los declarados y el detector de solape sigue discriminando' },
   { fichero: 'tests/scrum723-guard-contra-su-base.test.mjs',
     porque: 'un guard compara contra el punto de partida de la rama, no contra la punta móvil de main' },
+  // SCRUM-811 · el duodécimo. Reutiliza el troceador de scrum267 (sin git, sin DB): añade ~0,3 s.
+  { fichero: 'tests/scrum811c-skill-ui-declarada.test.mjs',
+    porque: 'toda entrada nueva que toca public/ declara si cargó yaqu-premium-ui, o por qué no' },
 ];
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
@@ -97,7 +100,7 @@ export const TECHO_MS = 90000;
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-export const MINIMO = 11;
+export const MINIMO = 12;
 
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega

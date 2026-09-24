@@ -3,15 +3,17 @@
 // Sin gate: lee ficheros. Ni BD, ni red, ni servidor.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// 🔴 DE LOS 148 NODOS DEL COPY PUBLICADO, 28 PUEDEN SER FALSOS. LOS OTROS 120 SÓLO PUEDEN SER FEOS
+// 🔴 DE LOS 98 NODOS DEL COPY PUBLICADO, 18 PUEDEN SER FALSOS. LOS OTROS 80 SÓLO PUEDEN SER FEOS
+// (medido 20-ago-2026: eran 148/28/120; SCRUM-1086, 23-sep-2026, retiró el lote de cobro de
+// `#como`, `#precios` y `#probar` — regla 24 — y bajó el universo con él.)
 //
-// El criterio es del fundador y es el bueno. Este fichero fija los 28 —ni uno menos, que sería
+// El criterio es del fundador y es el bueno. Este fichero fija los 18 —ni uno menos, que sería
 // mirar a medias, ni uno más sin declararlo— y el veredicto de cada uno, DERIVADO del mecanismo
 // que ya existe: `anclaViva()` (SCRUM-551, el símbolo existe) y `alcanzabilidad()` (SCRUM-558, un
 // merchant nuevo llega a él). No hay un tercer mecanismo.
 //
 // ⚠️ Este guard NO está enganchado a `pretest`, por el mismo motivo que el del bloque F: hoy da
-// ROJO por diez afirmaciones publicadas, y ese rojo es CORRECTO. Engancharlo bloquearía el CI de
+// ROJO por dos afirmaciones publicadas, y ese rojo es CORRECTO. Engancharlo bloquearía el CI de
 // todo el mundo por un copy que lleva meses vivo y cuya corrección es del fundador. Lo que impide
 // que se olvide es que el rojo está MEDIDO, escrito en la entrega, y con trinquete aquí.
 // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -30,9 +32,9 @@ import {
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = leerLanding(RAIZ);
 
-/** Lo medido el 20-ago-2026. El trinquete, en las dos direcciones. */
-const AFIRMACIONES = 28;
-const GRUPOS_HOY = { [CON_ANCLA]: 15, [FALSA]: 10, [ANCLA_A_DECLARAR]: 1, [DESCARTADA]: 2 };
+/** Lo medido el 23-sep-2026, tras SCRUM-1086 completo (antes: 28 / 15 CON_ANCLA / 10 FALSA). El trinquete, en las dos direcciones. */
+const AFIRMACIONES = 18;
+const GRUPOS_HOY = { [CON_ANCLA]: 13, [FALSA]: 2, [ANCLA_A_DECLARAR]: 1, [DESCARTADA]: 2 };
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · contar 28 y medir 12 sería peor que no medir
@@ -47,7 +49,7 @@ test('SUELO · las cinco secciones existen y ninguna sale vacía', () => {
   }
 });
 
-test('SUELO · el censo llega a las 28 afirmaciones, ni menos ni más', () => {
+test('SUELO · el censo llega a las 18 afirmaciones, ni menos ni más', () => {
   const c = censar(html);
   assert.equal(c.afirman.length, AFIRMACIONES,
     `🔴 el censo encuentra ${c.afirman.length} afirmaciones y se midieron ${AFIRMACIONES}.\n`
@@ -59,8 +61,8 @@ test('SUELO · el censo llega a las 28 afirmaciones, ni menos ni más', () => {
 
 test('SUELO · el extractor alcanza donde el esquema del bloque F es ciego', () => {
   // La razón de no reutilizar `h1|h2|h3|p|li`: `#faq` guarda sus preguntas en `<details>` y sus
-  // respuestas en `<div>`. Si este extractor volviera a mirar sólo cinco etiquetas, las cinco
-  // afirmaciones de `#faq` y las nueve de `#probar` desaparecerían y el fichero saldría verde.
+  // respuestas en `<div>`. Si este extractor volviera a mirar sólo cinco etiquetas, las cuatro
+  // afirmaciones de `#faq` y las cuatro de `#probar` desaparecerían y el fichero saldría verde.
   const faq = unidadesDe(html, 'faq');
   assert.ok(faq.length > 0, '🔴 CIEGO: cero unidades en #faq');
   const etiquetas = new Set(faq.map((u) => u.etiqueta));
@@ -68,7 +70,7 @@ test('SUELO · el extractor alcanza donde el esquema del bloque F es ciego', () 
     '🔴 CIEGO: en #faq sólo se ven `p`; el extractor ha vuelto al esquema de cinco etiquetas');
   const afirmanEnFaq = faq.filter((u) => afirmacionesDe(u.texto).length);
   assert.ok(afirmanEnFaq.length > 0,
-    '🔴 CIEGO: cero afirmaciones en #faq. Se midieron cinco, y ninguna vive en `h1|h2|h3|p|li`.');
+    '🔴 CIEGO: cero afirmaciones en #faq. Se midieron cuatro, y ninguna vive en `h1|h2|h3|p|li`.');
   const conEsquemaViejo = afirmanEnFaq.filter((u) => ['h1', 'h2', 'h3', 'p', 'li'].includes(u.etiqueta));
   assert.equal(conEsquemaViejo.length, 0,
     '🔴 si ahora las afirmaciones de #faq caben en el esquema viejo, el marcado ha cambiado y hay '
@@ -86,7 +88,7 @@ test('CONTROL POSITIVO · una afirmación del bloque F con ancla viva sigue sali
     for (const a of reg.anclas) {
       assert.equal(censoF.anclaViva(a, RAIZ).viva, true,
         `🔴 ${id}: el ancla «${a}» estaba viva y ahora no. O se movió el símbolo, o el mecanismo `
-        + 'que este fichero reutiliza se ha roto — y entonces sus 15 «con ancla» no valen nada.');
+        + 'que este fichero reutiliza se ha roto — y entonces sus 13 «con ancla» no valen nada.');
     }
   }
 });
@@ -101,7 +103,7 @@ test('CONTROL POSITIVO · el mecanismo distingue un ancla viva de una inventada'
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LOS TRES GRUPOS · derivados, no declarados
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('cada una de las 28 tiene veredicto, y ninguna se queda sin declarar', () => {
+test('cada una de las 18 tiene veredicto, y ninguna se queda sin declarar', () => {
   const r = veredictos(html, RAIZ, censoF);
   assert.equal(r.total, AFIRMACIONES, '🔴 el total de afirmaciones no es el medido');
   const sinDeclarar = r.veredictos.filter((v) => v.grupo === SIN_DECLARAR);
@@ -120,16 +122,20 @@ test('el reparto en grupos es el medido — y el tercero es el que va delante de
     + '      hoy: ' + JSON.stringify(cuenta));
 });
 
-test('🔴 las diez FALSAS lo son por la misma puerta, y se nombra cuál', () => {
+test('🔴 las dos FALSAS dicen por qué, cada una la suya — SCRUM-1086 dejó de ser una sola puerta', () => {
+  // Hasta SCRUM-1086 las diez FALSAS caían todas por la misma puerta (los dos flags de cobro
+  // apagados). El lote retiró ocho; de las dos que quedan, sólo `todo/p#3` sigue detrás de esa
+  // puerta — `faq/div#3` es `SIN_ANCLA` (nadie ha verificado sus ocho capacidades una a una), una
+  // causa distinta. Por eso el test ya no exige una única puerta: exige que CADA UNA diga la suya.
   const r = veredictos(html, RAIZ, censoF);
   const falsas = r.veredictos.filter((v) => v.grupo === FALSA);
-  assert.equal(falsas.length, 10, '🔴 ya no son diez');
+  assert.equal(falsas.length, 2, '🔴 ya no son dos');
   for (const v of falsas) {
-    // El motivo puede venir de dos sitios, y desde SCRUM-568 casi siempre del segundo:
+    // El motivo puede venir de dos sitios:
     //   · `promete` — lo escribió una persona al declarar la entrada `SIN_ANCLA`;
     //   · `problemas` — lo DERIVA `alcanzabilidad()` (SCRUM-558) del valor de hoy del flag.
-    // Se exige lo mismo que antes o más: que el rojo diga por qué. Y cuando viene derivado, se
-    // exige además que NOMBRE EL FLAG — un rojo que no dice qué puerta está cerrada se archiva.
+    // Se exige que el rojo diga por qué. Y cuando viene derivado, se exige además que NOMBRE EL
+    // FLAG — un rojo que no dice qué puerta está cerrada se archiva.
     const derivado = Array.isArray(v.problemas) && v.problemas.length > 0;
     assert.ok((v.promete && v.promete.length > 20) || derivado,
       `🔴 ${v.id} sale como falsa y no dice QUÉ promete que no existe. Un rojo sin motivo se archiva.`);
@@ -138,14 +144,16 @@ test('🔴 las diez FALSAS lo son por la misma puerta, y se nombra cuál', () =>
         `🔴 ${v.id}: el veredicto es derivado y no nombra la puerta que lo hace falso`);
     }
   }
-  // Las dos puertas están APAGADAS por defecto, que es lo que hace falsas a las diez.
+  const derivadas = falsas.filter((v) => Array.isArray(v.problemas) && v.problemas.length > 0);
+  assert.equal(derivadas.length, 1, '🔴 ya no es sólo una la que depende del flag de cobro');
+  // La puerta de cobro sigue apagada por defecto, que es lo que hace falsa a `todo/p#3`.
   const tablaP = censoF.defaultsDeLaTablaP(RAIZ);
   assert.equal(tablaP.ok, true, `🔴 CIEGO: no se ha podido leer la tabla P — ${tablaP.motivo}`);
   assert.equal(tablaP.tabla.PAYMENTS_CONNECT_ENABLED, false,
-    '🔴 `PAYMENTS_CONNECT_ENABLED` ya no está apagada por defecto: vuelve a mirar las diez, '
-    + 'porque puede que varias hayan dejado de ser falsas.');
+    '🔴 `PAYMENTS_CONNECT_ENABLED` ya no está apagada por defecto: vuelve a mirar las dos falsas, '
+    + 'porque puede que la derivada haya dejado de serlo.');
   assert.equal(tablaP.tabla.BIZUM_MANUAL_ENABLED, false,
-    '🔴 `BIZUM_MANUAL_ENABLED` ya no está apagada por defecto: vuelve a mirar las diez.');
+    '🔴 `BIZUM_MANUAL_ENABLED` ya no está apagada por defecto: vuelve a mirar las dos.');
 });
 
 test('la cifra acoplada de #todo sigue cuadrando', () => {

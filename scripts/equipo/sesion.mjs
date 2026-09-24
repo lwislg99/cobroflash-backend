@@ -82,10 +82,14 @@ const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 export const UNA_HORA_MS = 60 * 60 * 1000;
 /** SCRUM-990 · el modelo de TODA sesión de fondo del equipo (fundador, 21-sep-2026). Sin excepción. */
 export const MODELO_DEL_EQUIPO = 'sonnet';
-/** A19: por encima de esto, AL TERMINAR UNA ENTREGA, se releva. */
-export const UMBRAL_CONTEXTO = 300_000;
+/** A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva (era 300k; bajó el 21-sep-2026, SCRUM-1070b). */
+export const UMBRAL_CONTEXTO = 200_000;
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
 export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
+/** SCRUM-1011 · lo que se espera, sondeando el `pid`, antes de declarar que una sesión NO arrancó. */
+export const ESPERA_ARRANQUE_MS = 8_000;
+/** SCRUM-1026 · a partir de aquí, una sesión bloqueada se marca para que `estado` la grite. */
+export const UMBRAL_AVISO_BLOQUEO_MS = 10 * 60 * 1000;
 /** Estados de un trabajo de fondo que ya terminó. SCRUM-954. */
 export const ESTADOS_TERMINALES = Object.freeze(['done', 'stopped', 'failed', 'cancelled']);
 /** El id corto de un trabajo de fondo, tal y como lo imprime `claude --bg` y lo listan los agentes. */
@@ -403,15 +407,24 @@ export function decidirRelevo({ contexto, ultimaActividad, ahora, tandaNueva = f
  *
  * 🔴 **Es cobarde por defecto, y a propósito.** Un script que mata sesiones se niega ante la duda:
  *   · sin traspaso legible → `SIN-TRASPASO`, y no para;
- *   · con el traspaso ANTERIOR al último turno de la sesión → aún no lo ha escrito: `ESPERANDO`
- *     mientras quede plazo, y `SIN-TRASPASO` después;
+ *   · con el traspaso demasiado LEJOS del último turno → `ESPERANDO` mientras quede plazo, y
+ *     `SIN-TRASPASO` después;
  *   · con la sesión TRABAJANDO → `OCUPADA`, y no para **aunque el traspaso esté fresco**: un
  *     traspaso escrito hace diez minutos no describe lo que está haciendo ahora, y varias sesiones
  *     han entregado con cosas a medio empujar.
  *
- * «Fresco» no es una sensación: es `traspasoMtime > ultimoTurno`, dos números que se comparan. El
- * resultado los devuelve en `comprobado` para que un `SIN-TRASPASO` se pueda discutir sin volver a
- * correrlo.
+ * 🔴 SCRUM-1007 · «Fresco» YA NO es `traspasoMtime > ultimoTurno`. El propio protocolo de arriba
+ * dice que la sesión ESCRIBE el traspaso y LUEGO contesta «traspaso listo» — y esa respuesta ES
+ * un turno, posterior al fichero por diseño. Con la comparación estricta, el camino feliz nunca
+ * podía dar `RELEVAR`: medido en un relevo real, 14,4 s de diferencia (`ultimoTurno` = la propia
+ * respuesta) bastaban para `ESPERANDO` y, pasados los 10 min, `SIN-TRASPASO` para siempre.
+ *
+ * El dato que de verdad importa no es «¿quién fue primero?», es «¿describe este traspaso el
+ * ÚLTIMO turno de la sesión?» — y eso es una VENTANA, no un orden: `traspasoMtime` cuenta si está
+ * a menos de `esperaMs` del último turno, **en cualquier dirección** (escrito un poco antes de la
+ * respuesta de confirmación, o reescrito después). Un traspaso de hace HORAS frente a un último
+ * turno RECIENTE (la sesión siguió trabajando después de escribirlo) sigue cayendo fuera de la
+ * ventana y sigue dando `SIN-TRASPASO`: eso es justo lo que había que seguir cazando.
  */
 export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ahora, esperaMs = ESPERA_TRASPASO_MS, equipo, job }) {
   const malo = validarNombre(nombre, equipo);
@@ -433,10 +446,12 @@ export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ah
   if (typeof traspasoMtime !== 'number') {
     return { veredicto: 'SIN-TRASPASO', motivo: 'no hay fichero de traspaso legible: no se para nada', id: v.id, comprobado };
   }
-  if (traspasoMtime <= ultimoTurno) {
+  // SCRUM-1007: ventana simétrica en vez de «estrictamente posterior». `ultimoTurno - traspasoMtime`
+  // negativo (traspaso reescrito DESPUÉS del último turno leído) siempre cuenta como fresco.
+  if (ultimoTurno - traspasoMtime >= esperaMs) {
     const esperando = ahora - ultimoTurno;
     if (esperando < esperaMs) {
-      return { veredicto: 'ESPERANDO', motivo: `el traspaso es anterior al último turno; llevan ${Math.round(esperando / 1000)} s`, id: v.id, comprobado };
+      return { veredicto: 'ESPERANDO', motivo: `el traspaso está a más de ${Math.round(esperaMs / 1000)} s del último turno; llevan ${Math.round(esperando / 1000)} s`, id: v.id, comprobado };
     }
     return { veredicto: 'SIN-TRASPASO', motivo: `el traspaso no se ha reescrito en ${Math.round(esperaMs / 1000)} s: no se para nada`, id: v.id, comprobado };
   }
@@ -493,6 +508,56 @@ export function decidirOlvidar({ nombre, agentes, equipo, job }) {
     return { veredicto: 'NO-PUDE-MIRAR', motivo: 'algún resto no trae un id legible: no se borra nada', ...comoRestos(restos) };
   }
   return { veredicto: 'OLVIDAR', ids, ...comoRestos(restos) };
+}
+
+/**
+ * SCRUM-1011 · ¿la entrada recién lanzada VIVE? El tell es el mismo de SCRUM-954: el `pid`. Que
+ * `claude` haya impreso «backgrounded» solo dice que ACEPTÓ el encargo, no que el proceso exista.
+ * Medido el 21-sep-2026: 4 de 4 sesiones nuevas se registraban en `claude agents --json`, con
+ * `pid=NINGUNO`, sin `status` y sin un solo turno en su `jsonl` — `lanzar` las daba igual por
+ * LANZADA, con exit 0 y sin una línea de error. Un lanzador que miente así es peor que uno que
+ * falla: el orquestador reparte trabajo a un puesto vacío y se entera cuando alguien pregunta.
+ *
+ * @param {object|undefined} agente la entrada de `claude agents --json` para el id recién lanzado
+ * @returns {{ok:true}|{ok:false, motivo:string}}
+ */
+export function comprobarQueArranco(agente) {
+  if (agente && typeof agente.pid === 'number' && agente.pid > 0) return { ok: true };
+  return {
+    ok: false,
+    motivo: agente
+      ? `se registró (id ${agente.id ?? '?'}) pero sin \`pid\`: no llegó a tener proceso`
+      : 'no aparece en `claude agents --json`: no llegó a registrarse',
+  };
+}
+
+/**
+ * SCRUM-1026 · Las sesiones de fondo BLOQUEADAS, separadas de las que trabajan, para que `estado`
+ * lo GRITE en vez de que el orquestador tenga que leer `waitingFor` fila a fila — que es como se
+ * perdieron los dos casos medidos: uno ~30 min sin que nada avisara, otro justo al ir a entregar.
+ *
+ * No hay una marca de CUÁNDO empezó el bloqueo (nadie la escribe), así que «cuánto lleva así» usa
+ * el proxy que el propio ticket describe («detecté porque su contexto llevaba 20 min sin
+ * moverse»): el tiempo desde el ÚLTIMO turno con uso. `sinActividadMs` es una función porque leer
+ * el jsonl de cada sesión es I/O — aquí se decide solo QUÉ hacer con el número.
+ *
+ * @param {{agentes:object[], sinActividadMs?:(agente:object)=>number|null}} e
+ */
+export function sesionesBloqueadas({ agentes, sinActividadMs }) {
+  const bloqueadas = [];
+  for (const a of agentes || []) {
+    if (!a || a.kind !== 'background') continue;
+    if (a.state !== 'blocked' && !a.waitingFor) continue;
+    const ms = typeof sinActividadMs === 'function' ? sinActividadMs(a) : null;
+    bloqueadas.push({
+      id: a.id ?? null,
+      nombre: a.name ?? null,
+      waitingFor: a.waitingFor || 'algo interactivo',
+      sinActividadMs: typeof ms === 'number' ? ms : null,
+      avisar: typeof ms === 'number' && ms >= UMBRAL_AVISO_BLOQUEO_MS,
+    });
+  }
+  return bloqueadas;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -560,6 +625,43 @@ function leerAgentes(config) {
   const r = claude(config, ['agents', '--json']);
   if (r.error || r.status !== 0) return null;
   try { const a = JSON.parse(r.stdout); return Array.isArray(a) ? a : null; } catch { return null; }
+}
+
+/** Espera bloqueante síncrona: este script no tiene un `main` async (todo va por `spawnSync`). */
+function esperarMs(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * SCRUM-1011 · Tras lanzar, sondea el `pid` hasta `ESPERA_ARRANQUE_MS` antes de rendirse. Convierte
+ * el fallo MUDO medido en el ticket (LANZADA, exit 0, sin proceso) en un veredicto legible.
+ */
+function confirmarArranque(config, id, { esperaMs = ESPERA_ARRANQUE_MS, pasoMs = 1_000 } = {}) {
+  let transcurrido = 0;
+  for (;;) {
+    const agente = (leerAgentes(config) || []).find((a) => a.id === id);
+    const c = comprobarQueArranco(agente);
+    if (c.ok) return { ok: true, agente };
+    if (transcurrido >= esperaMs) return { ok: false, motivo: c.motivo };
+    esperarMs(pasoMs);
+    transcurrido += pasoMs;
+  }
+}
+
+/**
+ * SCRUM-1026 · Milisegundos desde el último turno CON USO de `agente`, o `null` si no se puede
+ * saber (sin `sessionId` legible, o sin jsonl encontrado: el mismo suelo que `leerContexto`).
+ */
+function sinActividadDelAgente(config, agente, ahora) {
+  if (!agente || !SESSION_ID.test(agente.sessionId || '')) return null;
+  const carpetas = carpetasDeProyecto(config);
+  if (!carpetas) return null;
+  const ruta = buscarJsonl({ sessionId: agente.sessionId, carpetas, existe: (p) => fs.existsSync(p) });
+  if (!ruta) return null;
+  let ctx;
+  try { ctx = contextoDelJsonl(fs.readFileSync(ruta, 'utf8')); } catch { ctx = null; }
+  if (!ctx || !ctx.cuando) return null;
+  return ahora - Date.parse(ctx.cuando);
 }
 
 /**
@@ -662,9 +764,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     // equipo— desaparecía del radar entera, porque este filtro sólo dejaba pasar la lista blanca.
     // Ahora sale en `otras`, por id y ruta, y los trabajos ya terminados que siguen ocupando un
     // nombre del equipo salen en `restos`, que es lo que `olvidar` limpia.
+    // SCRUM-1026: `bloqueadas` separa las que esperan algo interactivo de las que trabajan — hoy
+    // hay que leer `waitingFor` fila a fila, y en un vistazo rápido se parecen.
+    const ahora = Date.now();
     salir(0, {
       veredicto: 'ESTADO',
       sesiones: agentes.filter((a) => validarNombre(a.name, equipo) === null),
+      bloqueadas: sesionesBloqueadas({ agentes, sinActividadMs: (a) => sinActividadDelAgente(config, a, ahora) }),
       restos: agentes.filter((a) => a.kind === 'background' && validarNombre(a.name, equipo) === null
         && clasificarAgente(a, job(a.id)).estado === 'MUERTA').map(resumen),
       otras: agentes.filter((a) => a.kind === 'background' && validarNombre(a.name, equipo) !== null).map(resumen),
@@ -717,8 +823,19 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const r = claude(config, args);
     const m = BACKGROUNDED.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
-    const nueva = (leerAgentes(config) || []).find((a) => a.id === m[1]);
-    if (!nueva || !SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
+    // SCRUM-1011: el mismo defecto que `lanzar` — «backgrounded» solo dice que `claude` aceptó el
+    // encargo, no que el proceso exista. Se sondea el `pid` antes de dar RELEVADA/LANZADA por buena.
+    const confirmacion = confirmarArranque(config, m[1]);
+    if (!confirmacion.ok) {
+      salir(2, {
+        veredicto: 'NO-ARRANCO', nombre, id: m[1],
+        motivo: `${confirmacion.motivo}. Puede ser un límite de sesiones de fondo concurrentes en `
+          + 'esta máquina (SIN CONFIRMAR, SCRUM-1011): parar una sesión existente y reintentar es el '
+          + 'control que falta correr.',
+      });
+    }
+    const nueva = confirmacion.agente;
+    if (!SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
     const registro = leerRegistro(dir) || {};
     fs.writeFileSync(path.join(dir, 'sesiones.json'), JSON.stringify({ ...registro, [nombre]: { sessionId: nueva.sessionId, ultimaTanda: Date.now() } }, null, 2));
     salir(0, { veredicto: d.veredicto === 'RELEVAR' ? 'RELEVADA' : 'LANZADA', nombre, anterior: d.id ?? null, id: m[1], sessionId: nueva.sessionId, comprobado: d.comprobado ?? null });
@@ -753,8 +870,20 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const r = claude(config, args);
     const m = BACKGROUNDED.exec(r.stdout || '');
     if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
-    const nueva = (leerAgentes(config) || []).find((a) => a.id === m[1]);
-    if (!nueva || !SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
+    // 🔴 SCRUM-1011 · medido 4 de 4: «backgrounded» solo dice que `claude` aceptó el encargo, no
+    // que el proceso exista. Sondea el `pid` (el tell de SCRUM-954) antes de dar LANZADA por buena;
+    // sin esto, el orquestador se cree que tiene un puesto trabajando y reparte trabajo a nadie.
+    const confirmacion = confirmarArranque(config, m[1]);
+    if (!confirmacion.ok) {
+      salir(2, {
+        veredicto: 'NO-ARRANCO', nombre, id: m[1],
+        motivo: `${confirmacion.motivo}. Puede ser un límite de sesiones de fondo concurrentes en `
+          + 'esta máquina (SIN CONFIRMAR, SCRUM-1011): parar una sesión existente y reintentar es el '
+          + 'control que falta correr.',
+      });
+    }
+    const nueva = confirmacion.agente;
+    if (!SESSION_ID.test(nueva.sessionId || '')) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: `la sesión ${m[1]} arrancó pero no se lee su sessionId`, id: m[1] });
     const siguiente = { ...(registro || {}), [nombre]: { sessionId: nueva.sessionId, ultimaTanda: Date.now() } };
     fs.writeFileSync(path.join(dir, 'sesiones.json'), JSON.stringify(siguiente, null, 2));
     salir(0, { veredicto: 'LANZADA', nombre, id: m[1], sessionId: nueva.sessionId, ...(d.restos ? { restos: d.restos } : {}) });

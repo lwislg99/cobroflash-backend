@@ -1211,7 +1211,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const tipoCardOf = (v) => TIPO_CARDS.find((c) => c.value === v) || TIPO_CARDS[1];
 
   // Las 2 tarjetas + hint (idénticas a antes). Ya no hay vista «colapsada» aparte: la línea de «El
-  // trabajo» es la que se pliega, y su valor lo dice `syncTipoCollapsed`.
+  // trabajo» es la que se pliega, y su valor lo dice `syncTipoCollapsed`. SCRUM-962 (22-sep)
+  // arreglaba el «Cambiar» de la vista colapsada de antes con `job-toolbar-btn-44`; ese botón ya
+  // no existe desde 917g (com. 16142), así que el arreglo queda sin objeto aquí.
   const tipoExpanded = document.createElement('div');
   const tipoRow = document.createElement('div');
   tipoRow.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap';
@@ -1431,7 +1433,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // estado es reversible. Cerrar no.
   if (job.status === 'cerrado') newAlbRow.hidden = true;
   const newAlbBtn = document.createElement('button');
-  newAlbBtn.className = 'btn-secondary btn-sm';
+  newAlbBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   newAlbBtn.textContent = '+ Nuevo albarán';
   newAlbRow.appendChild(newAlbBtn);
   // ── SCRUM-917g (F) · LA CASILLA DE PRECIOS YA NO ESTÁ EN ESTA BARRA ─────────────────────────
@@ -1447,6 +1449,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // único que había), y llevarla al parte de verdad la ataría a un documento que no gobierna. Lo
   // vigila `scrum817` (re-anclado en este corte). Consecuencia buscada: el alta ya no se abre nunca
   // en modo con precios desde aquí, así que siempre se prellena (SIN_VALORAR).
+  //
+  // SCRUM-962 (22-sep) le había dado a esta misma casilla (`valoradoLabel`, aquí ya retirada) el
+  // `min-height:44px` que dejaba en 1 la deuda de 44 px de este bloque; con la casilla fuera de la
+  // barra ese control ya no existe, así que tampoco cuenta (guard-detalle-trabajo-917.mjs).
 
   // ── SCRUM-652 (fase D) · EL PARTE DE TRABAJO ────────────────────────────────────────
   //
@@ -1466,7 +1472,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // cada fila, así que **no hace falta tocar `partes.routes.ts`** —que lo está editando otra
   // sesión ahora mismo— para abrir esta puerta.
   const parteBtn = document.createElement('button');
-  parteBtn.className = 'btn-secondary btn-sm';
+  parteBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   parteBtn.setAttribute('data-abrir-parte', '1');
   parteBtn.textContent = 'Parte de trabajo';
   parteBtn.addEventListener('click', async () => {
@@ -1500,7 +1506,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // sin él no hay nada que vincular (mismo caso que las opciones deshabilitadas del selector).
   if (job.quote?.id != null && typeof openExpenseModal === 'function') {
     const gastoBtn = document.createElement('button');
-    gastoBtn.className = 'btn-secondary btn-sm';
+    gastoBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
     gastoBtn.textContent = '+ Añadir gasto';
     gastoBtn.addEventListener('click', () => {
       openExpenseModal(null, {

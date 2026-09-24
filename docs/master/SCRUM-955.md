@@ -99,9 +99,12 @@ falte dato: el que hay **no pasaría** la validación si se enviara hoy.
 
 - **La SL y su NIF.** `productor.ts:11-12` lo dice explícito: "la SL está en constitución". Bloquea
   a la vez C5 (productor real), D6 (representación) y, por el Convenio 017 (SCRUM-143: exige
-  sociedad mercantil para actuar como colaborador social en el entorno de pruebas), el arranque
-  mismo de S1-D. Es el bloqueador con más apalancamiento de todo el mapa — aparece en cuatro sitios
-  distintos.
+  sociedad mercantil para actuar como colaborador social remitiendo registros DE TERCEROS —
+  Modelo A), **remitir en nombre de los clientes**. **NO bloquea el arranque de S1-D**: el
+  productor puede ejercitar el cliente SOAP remitiendo SUS PROPIOS registros con SU propio
+  certificado, sin esperar a la SL (Modelo C — corrección SCRUM-1006, ver APÉNDICE al final de
+  este documento). Sigue siendo el bloqueador con más apalancamiento del mapa para C5, D6 y el
+  Modelo A — aparece en varios sitios distintos.
 - **Alta en el entorno de pruebas de la AEAT + Convenio 017** (S1-0, SCRUM-143): certificado FNMT
   ya conseguido (15-jun); falta el alta y el convenio, y el convenio exige la SL de arriba.
 - **Revisión del asesor (S1-F).** Medido: **ninguna pregunta de `PREGUNTAS_ASESOR.md` consta
@@ -120,11 +123,15 @@ emisión), aunque el cambio sea pequeño. Se marca en cada paso.
 
 1. **[EXTERNO, ya en marcha]** Avanzar la SL + su NIF. Nada de código depende de J1 aquí; es la
    dependencia de mayor apalancamiento (desbloquea 2, 6 y 7).
-2. **[PREGUNTA, no requiere código]** Validar con la AEAT/el asesor si el cliente SOAP de pruebas
-   se puede empezar a ejercitar con el certificado del **productor sobre su propio NIF**, sin
-   actuar todavía como colaborador social — si la respuesta es sí, D1/D2 se pueden construir y
-   probar ESTA SEMANA sin esperar meses a la SL. Sigue **[VALIDAR]**, sin medir: es un hecho de
-   fuera, no de código.
+2. **[CONFIRMADO — ya no es `[VALIDAR]`]** El productor puede ejercitar el cliente SOAP de pruebas
+   remitiendo SUS PROPIOS registros con SU certificado FNMT sobre SU NIF (Modelo C), sin actuar
+   como colaborador social y **sin esperar a la SL**: SCRUM-143 (correos oficiales de la AEAT,
+   jul-2026) lo dice sin ambigüedad — "el Modelo C no está bloqueado por nada" — y la decisión del
+   fundador del 24-jul-2026, ya en el mismo ticket: "mientras tanto, se construye la maquinaria
+   (Modelo C) sin bloquearse". Esto **no** habilita remitir en nombre de clientes (Modelo A: sigue
+   exigiendo la SL y el Convenio 017); desbloquea construir y probar D1/D2 (paso 3) EN PARALELO a
+   la SL, que sigue siendo el camino más largo. Lo que sigue sin confirmar (Portal de Pruebas
+   externas y otros) se dice en el APÉNDICE al final de este documento (corrección SCRUM-1006).
 3. **[CÓDIGO, STOP]** Construir `sif.client.ts` (D1: mTLS + endpoint SOAP) y completar el sobre
    (D2: Envelope/Body + `ConsultaFactuSistemaFacturacion`). Es código NUEVO que no toca las
    funciones de sellado existentes, pero vive en la zona fiscal: pide GO igualmente.
@@ -156,9 +163,10 @@ emisión), aunque el cambio sea pequeño. Se marca en cada paso.
    (escritor + lector) y el ALTER ya están aplicados en las tres bases; solo falta elegir cómo
    engancharlo. Protege la regla 29 en cuanto haya facturas reales — sin esto, el PDF de una
    factura YA EMITIDA sigue cambiando si el merchant edita su perfil.
-2. **Hacer la pregunta del punto 2 del orden** (¿se puede probar el cliente SOAP con el
-   certificado del productor sobre su propio NIF, sin esperar a la SL?) — si la respuesta es sí,
-   desbloquea empezar D1/D2 esta misma semana en paralelo a la SL, que es el camino más largo.
+2. **Empezar D1/D2 (paso 3 del orden) con el certificado del productor sobre su propio NIF
+   (Modelo C).** Ya no es una pregunta pendiente — SCRUM-143 lo confirma desde jul-2026 y no hace
+   falta esperar a la SL (corrección SCRUM-1006, ver APÉNDICE). Sigue abierto, y sin confirmar, si
+   el Portal de Pruebas externas exige algún alta previa distinta del certificado.
 3. **Insistir en el avance de la SL + su NIF.** Aparece como bloqueador en C5, D6, el Convenio 017
    (SCRUM-143) y, en cascada, en casi todo S1-D. Es el único ítem de este mapa que bloquea a la vez
    código y trámite externo.
@@ -203,3 +211,82 @@ node docs/master/evidencias/SCRUM-955/censo-sif1.mjs . origin/main
 Debe dar `FILAS=25 · CIEGAS=0 · EXIT=0`. Para ver el mecanismo fallar de verdad:
 `docs/master/evidencias/SCRUM-955/_fabricar-ref-rojo.mjs` construye el commit fabricado descrito
 en §0 (instrucciones de uso en su cabecera).
+
+# APÉNDICE · 21-sep-2026 — CORRECCIÓN SCRUM-1006: el Convenio 017 NO bloquea el arranque de S1-D, solo el Modelo A
+
+**Medido contra:** `origin/main` = `1a6dfb9a578dc04147bd842fad9c83999c8a4d26` · 2026-09-21T14:22:59Z
+
+**El defecto, y quién lo escribió:** §3 y el paso 2 de §4 de este mismo expediente decían que el
+Convenio 017 — y por tanto la SL — bloquea «el arranque mismo de S1-D». Lo escribió este mismo
+puesto (J1) el 21-sep-2026, en la medición original de más arriba. **Sobrepasa la fuente.**
+
+**Lo que dice la fuente, sin ambigüedad** (SCRUM-143, correos oficiales de la AEAT de jul-2026 — la
+Subdirección General de Comunicación Externa y el Departamento de Informática Tributaria — ya
+escritos ahí desde entonces; el error fue citarlos de menos, no que faltara la fuente). Hay TRES
+modelos de envío, y solo uno está bloqueado:
+
+| modelo | quién remite | ¿necesita Convenio 017 / SL? |
+|---|---|---|
+| A | YaQu remite EN NOMBRE de sus clientes (colaborador social) | **SÍ** |
+| B | YaQu remite vía Registro de apoderamientos | NO exige sociedad; alta de poder por cliente |
+| **C** | **CADA MERCHANT remite con SU PROPIO certificado** | **NO — "no está bloqueado por nada"** |
+
+Literal de la descripción de SCRUM-143: «El MODELO C NO ESTÁ BLOQUEADO POR NADA y permite construir
+toda la maquinaria (generación, huella, encadenamiento, XML) sin esperar a la SL. La decisión de la
+SL afecta a QUIÉN pulsa "enviar", no a si el sistema puede generar los registros.»
+
+Y el literal de la AEAT que acota el bloqueo con precisión: «En tanto que no se obtenga la condición
+de colaborador social NO SE PODRÁ ACTUAR COMO TAL EN EL ENTORNO DE PRUEBAS […] remitiendo
+información de registros de facturación CORRESPONDIENTES A TERCERAS PERSONAS.» Bloquea remitir DE
+TERCEROS como colaborador social — no remitir los PROPIOS. La FAQ oficial de Colaboración Social lo
+confirma: «el envío podrá ser efectuado por el propio obligado tributario». Converge con la
+validación 4112 (cuatro títulos válidos — Obligado a la Emisión, Colaborador Social, Apoderado,
+Sucesor — validados por ENVÍO, no por plataforma) y con la propia decisión del fundador del
+24-jul-2026, ya en SCRUM-143: «se constituirá la SL... Mientras tanto, se construye la maquinaria
+(Modelo C) sin bloquearse.»
+
+**Consecuencia práctica, y lo que corrige en este expediente:**
+- §3, bullet de la SL: deja de decir "el arranque mismo de S1-D"; dice que la SL bloquea C5, D6 y
+  el Modelo A (remitir POR TERCEROS), no el arranque de S1-D en sí.
+- §4, paso 2: deja de ser `[VALIDAR]`; el productor puede ejercitar el cliente SOAP (D1/D2 del
+  paso 3) remitiendo SUS PROPIOS registros con SU certificado FNMT sobre SU NIF, EN PARALELO a la
+  constitución de la SL, que sigue siendo el camino más largo.
+- §5, punto 2: deja de ser "hacer la pregunta"; pasa a ser "empezar D1/D2 con el certificado del
+  productor", con la pregunta que sigue abierta movida aquí abajo.
+
+**Lo que SIGUE sin confirmar** (con estas palabras, no se rellena):
+- Si el Portal de Pruebas externas (`preportal.aeat.es`) exige algún alta previa propia distinta
+  del certificado — ni la sede, ni la FAQ, ni el PDF "Aclaraciones a dudas de los desarrolladores"
+  (04-dic-2025) lo dicen (búsqueda agotada: 292.610 caracteres del PDF, "pruebas" 11 veces, ninguna
+  sobre el portal).
+- Aparece una vía alternativa no explorada antes: la AEAT describe una operativa de
+  "pruebas/formación" EN PRODUCCIÓN, con serie propia (ej. `PRU 25 XXXX`) y anulación posterior
+  obligatoria — puede que ejercitar el envío extremo a extremo no necesite el portal de pruebas en
+  absoluto.
+- El aviso vivo de la propia AEAT (punto 6 de SCRUM-143): hasta que se apruebe la orden ministerial
+  de la solución pública de facturación electrónica, no está en disposición de afirmar que los
+  acuerdos de colaboración social sirvan para su aplicación efectiva — el Modelo A tiene una
+  incertidumbre que no depende de nosotros.
+
+**Lo que esta corrección NO dice, y no hay que leer de más:**
+- **No** dice que ya se puede remitir en nombre de clientes: el Modelo A sigue exigiendo el
+  Convenio 017 y la SL, igual que antes.
+- **No** cierra el Portal de Pruebas ni las otras dos cosas sin confirmar de arriba: siguen
+  abiertas.
+- **No** cambia ninguna de las 25 filas del censo de §1 ni el §2 — esto corrige lo que se CONCLUYÓ
+  de una fuente externa (SCRUM-143), no la medición del código.
+- **No** cambia los STOP marcados en §4: construir D1/D2 (paso 3) sigue siendo `[CÓDIGO, STOP]` —
+  código nuevo en zona fiscal que pide GO de un jefe igual que antes.
+- **No** adelanta §10 (encender `INVOICING_ES_ENABLED`): sigue esperando a que 1-9 estén cerrados,
+  porque la leyenda VERI\*FACTU del PDF pintaría sobre facturas nunca remitidas si se enciende
+  antes de que exista el envío.
+
+**Verificación propia antes de escribir esto (PASO 0):** leí la DESCRIPCIÓN completa de SCRUM-143
+(no su título, no cómo la citan otros documentos) y sus 4 comentarios. Confirma la tabla de tres
+modelos y el literal "no está bloqueado por nada" para el Modelo C. Es la misma fuente, y la misma
+lectura, que ya hizo el orquestador de Javier el 21-sep-2026 (comentarios 16181 y 16183 del propio
+ticket, este último con su error confesado) y que ya dejó escrita mi sesión anterior en el traspaso
+de este puesto tras cerrar SCRUM-955 — este apéndice materializa esa corrección en el expediente
+mismo, que es donde vivirá para quien lo lea después.
+
+Ticket: SCRUM-1006. Rama: `scrum-1006-correccion-mapa-sif1`.

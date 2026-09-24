@@ -72,7 +72,17 @@ const CENSO_DE_SITIOS = {
   // censo lo tenía contado —hacía su trabajo—, pero contar no es avisar: mientras el número
   // cuadre, nadie mira si lo que cuenta está delante de un cliente. Ese eje lo cubre desde hoy
   // `guard:marcadores-en-pantalla` (SCRUM-722), que mide el DOM renderizado y no el árbol.
-  'exportView.js': 2,
+  // 🔴 SCRUM-1041 · 22-sep-2026 · `exportView.js` SALE (tenía 2: las dos apariciones EXACTAS de
+  // `[PENDIENTE microcopy oficial]`, líneas 87 y 100 — las otras dos, `[PENDIENTE]` corto en
+  // 90 y 94, no casaban con `MARCA` y por eso nunca contaron aquí). Firmados por el orquestador
+  // por delegación del fundador (com. 16306 de SCRUM-1041). La entrada se BORRA, no se pone a 0
+  // (SCRUM-424 / SCRUM-405). 26 → 24 sitios.
+  // 🔴 SCRUM-1040 · 22-sep-2026 · `facturasRecibidasView.js` ENTRA con 1, A CONCIENCIA: 24 → 25.
+  // Pantalla nueva, mismo patrón que `libroRegistroView.js` — título, rótulo interno, estado
+  // vacío y aviso de descuadre salen de una sola constante `MARCADOR` (vía `rotulo()`), así que
+  // aprobar el copy los apaga de golpe. El rótulo de la BARRA no cuenta aquí: SCRUM-420 §④ le
+  // prohíbe llevar marcador, así que sale como texto plano desde que nace.
+  'facturasRecibidasView.js': 1,
   'invoicesView.js': 1,
   'libroRegistroView.js': 1,
   'parteDetailView.js': 1,
@@ -131,7 +141,9 @@ const TOTAL_DE_SITIOS = Object.values(CENSO_DE_SITIOS).reduce((t, n) => t + n, 0
  * la viera, y ahí es donde muerde el censo de sitios de arriba.
  */
 const PINTAN_Y_NO_CUENTAN = {
-  'exportView.js': 'sus dos ranuras son literales dentro del HTML de la vista; SCRUM-402 las ve una a una',
+  // 🔴 SCRUM-1041 · 22-sep-2026 · `exportView.js` SALE: ya no pinta marcador (ver
+  // `CENSO_DE_SITIOS` arriba). Entrada BORRADA, no puesta a 0 (SCRUM-424 / SCRUM-405).
+  'facturasRecibidasView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera (mismo criterio que libroRegistroView.js), y `scrum1040-pantalla-facturas-recibidas` la compara ranura a ranura',
   'libroRegistroView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera, y `scrum296-pantalla-libro` la compara ranura a ranura',
   'parteDetailView.js': 'su propio comentario dice que entra en el censo de SCRUM-402 con su número',
   'providersView.js': 'mensajes de error y respaldo de último recurso; `scrum644-trinquete-mensaje-crudo` los vigila',

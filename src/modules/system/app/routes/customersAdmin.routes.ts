@@ -16,11 +16,17 @@ import {
 import { trocearCsv } from '../../../../core/csv/csv';
 import {
   decodificarCsv, proponerMapeo, importarClientes, csvDeRechazos,
+  pareceXlsx, xlsxATextoCsv, // SCRUM-1022
   type Codificacion, type CampoCliente,
 } from '../../domain/importarClientes.service';
 
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
+import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
+import { etiquetarSeleccion, type AccionEtiqueta } from '../../domain/etiquetadoMasivo'; // SCRUM-1059
+import { historialWhatsAppDelCliente } from '../../domain/historialWhatsAppDelCliente'; // SCRUM-1062
+import { crearNota, listarNotas, resolverAutor } from '../../domain/notasDelCliente'; // SCRUM-1036
+import { previsualizarFusion, fusionarClientes } from '../../domain/fusionClientes'; // SCRUM-1057
 
 const router = Router();
 
@@ -28,24 +34,15 @@ router.get('/', async (req, res) => {
   try {
     const search = req.query.search ? String(req.query.search) : undefined;
     // SCRUM-979: el técnico ve la cartera entera, pero su «Última visita» sale solo de SUS trabajos.
-    const customers = await listCustomers(req.merchantId, search,
-      seesOnlyOwnJobs(req.userRole) ? { soloTrabajosDe: req.teamMemberId ?? null } : {});
+    // SCRUM-1043: el saldo es DINERO, solo para quien ve todo (admin/propietario): el técnico no lo
+    // recibe aunque lo pida (`conDeuda`/`orden=saldo` se ignoran para él).
+    const propio = seesOnlyOwnJobs(req.userRole);
+    const customers = await listCustomers(req.merchantId, search, propio
+      ? { soloTrabajosDe: req.teamMemberId ?? null }
+      : { conSaldo: true, soloConDeuda: req.query.conDeuda === '1', ordenPorSaldo: req.query.orden === 'saldo' });
     res.json(customers);
   } catch (err) {
     console.error('[GET /admin/customers]', err);
-    res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-router.get('/:id', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
-    const customer = await getCustomer(req.merchantId, id);
-    if (!customer) return res.status(404).json({ error: 'not_found' });
-    res.json(customer);
-  } catch (err) {
-    console.error('[GET /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -59,8 +56,12 @@ router.get('/:id', async (req, res) => {
  * GET aparte en vez de dentro del POST: hay casos legítimos —marido y mujer con el mismo móvil,
  * dos comunidades del mismo administrador con el mismo email— y el que decide es el profesional.
  *
- * Va ANTES de `/:id` a propósito: `duplicados` no es un id, pero si esta ruta se registrara
- * después, `/:id` la capturaría y devolvería `invalid_id`. Es la misma precaución que ya toma
+ * 🔴 SCRUM-1031 (caso A) · VA ANTES DE `/:id` DE VERDAD, no solo en el comentario. Hasta hoy el
+ * comentario lo AFIRMABA pero el código registraba `/:id` primero: Express empareja por ORDEN DE
+ * REGISTRO, no por especificidad, así que `/:id` capturaba `duplicados` como si fuera un id
+ * (`Number('duplicados')` → `NaN` → `400 invalid_id`) y esta ruta nunca se ejecutaba. Medido en
+ * staging (SCRUM-1031, 22-sep-2026) y reproducido aquí invocando el router real
+ * (`tests/scrum1057-duplicados-antes-de-id.test.mjs`). Es la misma precaución que ya toma
  * `albaranes.routes.ts` con `/pendientes-facturar`.
  *
  * NO se lee la tabla entera: se pregunta por las FORMAS BUSCABLES del valor —con prefijo y sin
@@ -101,6 +102,51 @@ router.get('/duplicados', async (req, res) => {
     });
   } catch (err) {
     console.error('[GET /admin/customers/duplicados]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/customers/bulk-tags — SCRUM-1059 (CRM-17) · añadir/quitar una etiqueta a VARIOS
+ * clientes a la vez. Un cliente que no se puede actualizar (ya la tenía, ya tiene 20, o el id no
+ * es de este merchant) no tumba a los demás — se declara en `resultados`.
+ *
+ * NO hay «avisar a la selección»: sería un envío nuevo (J6, regla 28) y es otro ticket.
+ * NO exporta: el punto 3 del ticket (exportar la selección) es su propio commit, por ser STOP.
+ * `requireRole('admin')` (SCRUM-55): acción en bloque sobre datos de cliente, sin motivo de campo
+ * que la lleve a `TECNICO_ALLOWED` — el default de S1 es admin-only.
+ */
+router.post('/bulk-tags', requireRole('admin'), async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(Number) : [];
+    const accion = req.body?.accion as AccionEtiqueta;
+    const etiqueta = typeof req.body?.etiqueta === 'string' ? req.body.etiqueta : '';
+    if (accion !== 'add' && accion !== 'remove') {
+      return res.status(400).json({ error: 'accion_invalida', message: 'La acción tiene que ser "add" o "remove".' });
+    }
+    if (!etiqueta.trim()) {
+      return res.status(400).json({ error: 'etiqueta_vacia', message: 'Escribe una etiqueta.' });
+    }
+    if (ids.length === 0) {
+      return res.json({ actualizados: 0, resultados: [] });
+    }
+    const r = await etiquetarSeleccion(req.merchantId, ids, accion, etiqueta, prisma);
+    return res.json(r);
+  } catch (err) {
+    console.error('[POST /admin/customers/bulk-tags]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    const customer = await getCustomer(req.merchantId, id);
+    if (!customer) return res.status(404).json({ error: 'not_found' });
+    res.json(customer);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -169,18 +215,34 @@ router.post('/import/preparar', requireRole('admin'), async (req, res) => {
     const base64 = String(req.body?.fichero ?? '');
     if (!base64) return res.status(400).json({ error: 'no_data', message: 'No hemos recibido ningún archivo. Vuelve a elegirlo.' });
 
-    const forzar = req.body?.codificacion as Codificacion | undefined;
-    const d = decodificarCsv(Buffer.from(base64, 'base64'), forzar);
-    const { cabecera } = trocearCsv(d.texto);
+    const bytes = Buffer.from(base64, 'base64');
+
+    // SCRUM-1022: se mira la FIRMA del fichero, no la extensión ni un flag del cliente. Un .xlsx
+    // no tiene la ambigüedad de codificación de un CSV, así que se salta `decodificarCsv` entero;
+    // `trocearCsv`/`proponerMapeo` reciben el mismo shape de texto de siempre y no lo notan.
+    let texto: string;
+    let codificacion: Codificacion = 'utf-8';
+    let alternativa: Codificacion = 'windows-1252';
+    let primeraFila: string;
+    if (pareceXlsx(bytes)) {
+      texto = await xlsxATextoCsv(bytes);
+      primeraFila = texto.split(/\r?\n/).find((l) => l.trim() !== '') ?? '';
+    } else {
+      const forzar = req.body?.codificacion as Codificacion | undefined;
+      const d = decodificarCsv(bytes, forzar);
+      ({ texto, codificacion, alternativa, primeraFila } = d);
+    }
+
+    const { cabecera } = trocearCsv(texto);
     if (cabecera.length === 0) {
       return res.status(400).json({ error: 'csv_vacio', message: 'El archivo no tiene ninguna fila.' });
     }
 
     return res.json({
       ok: true,
-      codificacion: d.codificacion,
-      alternativa: d.alternativa,
-      primeraFila: d.primeraFila,
+      codificacion,
+      alternativa,
+      primeraFila,
       columnas: proponerMapeo(cabecera),
     });
   } catch (err) {
@@ -205,7 +267,11 @@ router.post('/import', requireRole('admin'), async (req, res) => {
       });
     }
 
-    const { texto } = decodificarCsv(Buffer.from(base64, 'base64'), req.body?.codificacion as Codificacion | undefined);
+    // SCRUM-1022: mismo criterio que en /import/preparar — la firma decide, no la extensión.
+    const bytes = Buffer.from(base64, 'base64');
+    const texto = pareceXlsx(bytes)
+      ? await xlsxATextoCsv(bytes)
+      : decodificarCsv(bytes, req.body?.codificacion as Codificacion | undefined).texto;
 
     // Tope de filas, como antes. El limite es del lote, no del formato.
     const { filas } = trocearCsv(texto);
@@ -262,6 +328,78 @@ router.get('/:id/historial', async (req: any, res) => {
   }
 });
 
+/**
+ * GET /admin/customers/:id/whatsapp — SCRUM-1062 (CRM-19) · qué WhatsApp se le han enviado al
+ * cliente y en qué estado. Hermana de `/historial`: SOLO LECTURA, `?despuesDe=<id>` pide la
+ * página siguiente. No enseña texto de conversación (no se guarda) y no toca el canal (J2).
+ *
+ * SCRUM-55 (S1, default): a diferencia de `/historial` (los TRABAJOS del cliente, que sí es
+ * campo — SCRUM-980), esto es el registro de ENVÍOS/entregas de WhatsApp — más cerca de
+ * facturación/comunicación que de la visita en obra. Sin un "por qué de campo" explícito no se
+ * inventa el permiso (TECNICO_ALLOWED exige motivo, no es un trámite): se queda en el default,
+ * Admin-only.
+ */
+router.get('/:id/whatsapp', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const despuesDe = req.query.despuesDe === undefined ? null : Number(req.query.despuesDe);
+    if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
+      return res.status(400).json({ error: 'invalid_cursor' });
+    }
+    const historial = await historialWhatsAppDelCliente(req.merchantId, id, { despuesDe });
+    if (!historial) return res.status(404).json({ error: 'not_found' });
+    return res.json(historial);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/whatsapp]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/customers/:id/notes — SCRUM-1036 (CRM-08) · las notas del cliente, de la más nueva a
+ * la más antigua, con la «Nota fija» (el texto heredado de `Customer.notes`) al final.
+ *
+ * SCRUM-55 (S1, default): sin motivo de campo declarado, Admin-only — mismo criterio que
+ * `/whatsapp` (registro/anotación, no la visita en sí).
+ */
+router.get('/:id/notes', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const notas = await listarNotas(req.merchantId, id);
+    if (!notas) return res.status(404).json({ error: 'not_found' });
+    return res.json({ notas });
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/notes]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/customers/:id/notes — SCRUM-1036 (CRM-08) · añade una nota. El autor se resuelve de
+ * la SESIÓN (nunca del cuerpo) y se congela como texto en el momento de escribir.
+ */
+router.post('/:id/notes', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const texto = typeof req.body?.texto === 'string' ? req.body.texto : '';
+    const autor = await resolverAutor(req.merchantId, req.teamMemberId ?? null);
+    const nota = await crearNota(req.merchantId, id, texto, autor);
+    return res.status(201).json({
+      id: nota.id, texto: nota.title, fecha: nota.createdAt, autor: autor.authorName, esFija: false,
+    });
+  } catch (err: any) {
+    if (err?.message === 'nota_vacia') {
+      return res.status(400).json({ error: 'nota_vacia', message: 'Escribe algo antes de guardar la nota.' });
+    }
+    if (err?.message === 'customer_not_found') return res.status(404).json({ error: 'not_found' });
+    console.error('[POST /admin/customers/:id/notes]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // GET /admin/customers/:id/detail — vista 360: historial completo del cliente
 router.get('/:id/detail', async (req, res) => {
   try {
@@ -284,11 +422,21 @@ router.get('/:id/detail', async (req, res) => {
         contactKind: true,
         tipoDestinatario: true,
         billingPeriodicity: true,
+        // SCRUM-1033: la cabecera de la ficha 360 enseña etiquetas, dirección y referencia interna.
+        tags: true,
+        billingAddress: true,
+        billingCity: true,
+        billingPostalCode: true,
+        billingProvince: true,
+        billingCountry: true,
+        internalRef: true,
       },
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
-    const [quotes, invoices, expenses, events] = await Promise.all([
+    // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
+    // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
+    const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente] = await Promise.all([
       prisma.quote.findMany({
         where: { customerId: id, merchantId: req.merchantId },
         orderBy: { createdAt: 'desc' },
@@ -306,10 +454,16 @@ router.get('/:id/detail', async (req, res) => {
         _sum: { amount: true },
       }),
       listCustomerEvents(req.merchantId, id, 50),
+      // `where` LITERALES a propósito: los censos de tenencia (SCRUM-289/348) leen el filtro del texto.
+      prisma.quote.count({ where: { customerId: id, merchantId: req.merchantId } }),
+      prisma.quote.count({ where: { customerId: id, merchantId: req.merchantId, status: 'accepted' } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId }, _sum: { total: true } }),
+      prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'paid' }, _sum: { total: true } }),
+      saldosPendientesPorCliente(req.merchantId, [id]), // SCRUM-1043: la MISMA suma que la lista «quién me debe»
     ]);
 
-    const totalBilled = invoices.reduce((a, i) => a + Number(i.total), 0);
-    const totalPaid   = invoices.filter(i => i.status === 'paid').reduce((a, i) => a + Number(i.total), 0);
+    const totalBilled = Number(facturado._sum.total ?? 0);
+    const totalPaid   = Number(cobrado._sum.total ?? 0);
     const portalUrl   = customer.portalToken
       ? `${config.PUBLIC_BASE_URL}/cliente/${customer.portalToken}`
       : null;
@@ -320,10 +474,14 @@ router.get('/:id/detail', async (req, res) => {
       invoices,
       events,
       stats: {
-        totalQuotes:   quotes.length,
-        acceptedQuotes: quotes.filter(q => q.status === 'accepted').length,
+        totalQuotes,
+        acceptedQuotes,
         totalBilled,
         totalPaid,
+        // SCRUM-1035 · lo que el cliente debe (facturas `pending`): la misma cifra que la ficha
+        // sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
+        totalPending: pendiente.get(id)?.total ?? 0,
+        pendingCount: pendiente.get(id)?.count ?? 0,
         totalExpenses: Number(expenses._sum.amount ?? 0),
         profit: totalPaid - Number(expenses._sum.amount ?? 0),
       },
@@ -346,6 +504,50 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
   } catch (err) {
     console.error('[DELETE /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/customers/:id/fusion-preview?con=<id> — SCRUM-1057 (CRM-16) · qué se conserva (el
+ * principal, `:id`) y qué se movería (aceptación 2), SIN escribir nada. `requireRole('admin')`:
+ * operación destructiva, GO del fundador (22-sep-2026, citado en el ticket).
+ */
+router.get('/:id/fusion-preview', requireRole('admin'), async (req, res) => {
+  try {
+    const principalId = Number(req.params.id);
+    const fusionadoId = Number(req.query.con);
+    if (!Number.isInteger(principalId) || principalId <= 0 || !Number.isInteger(fusionadoId) || fusionadoId <= 0) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+    const preview = await previsualizarFusion(req.merchantId, principalId, fusionadoId);
+    return res.json(preview);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/fusion-preview]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/customers/:id/fusionar — SCRUM-1057 (CRM-16) · ejecuta la fusión: `:id` es el
+ * PRINCIPAL (lo que se conserva), `{ con }` es el que desaparece. Transaccional (aceptación 4).
+ * `requireRole('admin')`: operación destructiva, GO del fundador citado arriba.
+ */
+router.post('/:id/fusionar', requireRole('admin'), async (req, res) => {
+  try {
+    const principalId = Number(req.params.id);
+    const fusionadoId = Number(req.body?.con);
+    if (!Number.isInteger(principalId) || principalId <= 0 || !Number.isInteger(fusionadoId) || fusionadoId <= 0) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+    const resultado = await fusionarClientes(req.merchantId, principalId, fusionadoId);
+    return res.json(resultado);
+  } catch (err: any) {
+    const motivo = String(err?.message || '');
+    if (motivo === 'mismo_cliente' || motivo === 'cliente_no_encontrado' || motivo === 'factura_emitida') {
+      return res.status(409).json({ error: motivo });
+    }
+    console.error('[POST /admin/customers/:id/fusionar]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

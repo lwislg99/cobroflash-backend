@@ -82,16 +82,17 @@ que **nació como A19**. Al leer, se comprueba el título, no el número.
 
 ### 5bis.1 · Cuándo se releva
 
-Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 300k**; más de
+Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 200k**; más de
 **1 hora parada**; o el comienzo de la tanda del día siguiente. **Nunca a mitad de una entrega**, y **no en cada
-tarea**: si una entrega cierra por debajo de 300k, el encargo siguiente entra en la misma sesión.
+tarea**: si una entrega cierra por debajo de 200k, el encargo siguiente entra en la misma sesión.
 
-Para saber si pasa de 300k no se estima: se mide, con `sesion.mjs contexto N`.
+Para saber si pasa de 200k no se estima: se mide, con `sesion.mjs contexto N`.
 
 ### 5bis.2 · Cómo se releva
 
 1. El orquestador **pide** el traspaso por el canal.
-2. La sesión escribe `project_sN_traspaso.md` y su línea en `MEMORY.md`, contesta **«traspaso listo»** y **para**.
+2. La sesión escribe `project_sN_traspaso.md` (**≤ 5 KB**) y su línea en `MEMORY.md` (**≤ 220 bytes**), contesta
+   **«traspaso listo»** y **para**. Los dos topes y por qué, en 5bis.3bis.
 3. El orquestador la **detiene** y lanza la nueva **con el encargo dentro del mismo prompt**.
 4. La nueva lee desde `origin/main` lo suyo y se presenta: «Sesión N lista · <siguiente paso>».
 
@@ -107,8 +108,8 @@ silencio: la nueva arranca creyéndose al día. Si el traspaso no está, se dice
 Siete bloques, y **el encargo va dentro**:
 
 1. quién es y cuál es su **puesto fijo**;
-2. el arranque: `git fetch` y leer **desde `origin/main`** (`CLAUDE.md`, `00-normas-comunes.md`, su `sesion-N.md`, su
-   fila de §11bis de `orquestador.md`) y su traspaso, **midiendo antes de creérselo**;
+2. el arranque **barato** de 5bis.3bis (SCRUM-996): `git fetch`, las normas por secciones con `norma.mjs`, su
+   `sesion-N.md`, SU fila de §11bis (no el fichero entero) y su traspaso, **midiendo antes de creérselo**;
 3. presentarse por el canal con **hora y SHA** (A14);
 4. **el encargo concreto, completo**;
 5. las normas de la tanda, incluida la A19: las autorizaciones no se heredan;
@@ -116,6 +117,46 @@ Siete bloques, y **el encargo va dentro**:
 7. qué hacer al cierre.
 
 Sin el punto 4 la sesión arranca sin trabajo y gasta contexto preguntando qué hacer.
+
+### 5bis.3bis · El arranque barato (SCRUM-996, 21-sep-2026)
+
+**Por qué.** El fundador dijo que el gasto no es sostenible. Medido sobre 44-46 sesiones de 24 h (herramienta:
+`node scripts/equipo/gasto-arranque.mjs sesiones`): el **suelo** del primer mensaje son 54-59k tokens y la **lectura del
+arranque** otros 43-67k, y los dos se releen en CADA turno. Juntos son el 40,7 % de todo el contexto procesado (≈ 34,5 %
+del coste con pesos de precio SUPUESTOS: escritura 1,25, lectura 0,1, salida 5). De esa lectura, las normas enteras son
+~25k (51,8 KB) y el traspaso medio pesa 11,4 KB. Aparte, los resultados de herramientas de ≥ 6 KB son el 7,8 % de las
+llamadas y el 21 % del coste.
+
+**Bloque 2 del prompt, para pegar tal cual** (sustituye a «lee `00-normas-comunes.md`, `CLAUDE.md`…»):
+
+```
+ARRANQUE BARATO (SCRUM-996)
+1. `git fetch origin`. CLAUDE.md: si `git rev-list --count HEAD..origin/main` da 0, ya lo tienes cargado y NO lo releas;
+   si no, léelo desde origin/main.
+2. Normas: `node scripts/equipo/norma.mjs --arranque` (14 secciones + el índice de las otras 11). NO leas
+   `00-normas-comunes.md` entero: lo demás se trae al vuelo, p. ej. `node scripts/equipo/norma.mjs A23` antes de
+   escribir un guard. Si ese script no existe en tu carpeta: `cmd /c "git show origin/main:scripts/equipo/norma.mjs >
+   %TEMP%\norma.mjs"` y `node %TEMP%\norma.mjs --arranque`.
+3. Tu ficha `docs/equipo/sesion-N.md`; tu FILA de §11bis con `git grep -n -E "^\| \*\*S<N>\*\* \|" origin/main --
+   docs/equipo/orquestador.md` (no leas el fichero entero); y tu traspaso `project_sN_traspaso.md`. El
+   `project_sN_historial.md` NO se lee salvo que el traspaso te mande a él.
+4. LECTURAS: ningún Read de más de 6 KB sin offset/limit fuera de este arranque; Grep antes que leer un fichero entero
+   para buscar una línea; las salidas largas de PowerShell, a un fichero y con solo el resumen en pantalla.
+5. AL CERRAR: traspaso ≤ 5 KB (`node scripts/equipo/gasto-arranque.mjs traspaso sN`; si excede, lo histórico y las
+   trampas van a `project_sN_historial.md`) y tu línea de MEMORY.md ≤ 220 bytes.
+```
+
+**Cómo se comprueba, por efecto** (no por lo que digan los ficheros): tras un relevo,
+`node scripts/equipo/gasto-arranque.mjs sesiones --desde <hora ISO con Z del relevo> --min-turnos 8` da el turno 8 de
+las sesiones nuevas y lo compara con el criterio de SCRUM-996: **U8 mediano ≤ 90.000** y **lectura de arranque ≤ 10 %
+del contexto procesado**. Sale con 0 si cumple, 1 si no, 2 si no vio ninguna sesión.
+
+**Qué NO hace esto**, dicho para que nadie lo dé por bueno de más: no toca `sesion.mjs`, `prompt-tanda-orquestador.md`
+ni ninguna copia de `%LOCALAPPDATA%\yaqu-equipo` (la puerta de integridad de `sesion.mjs` exige que sean idénticas a
+`origin/main`, así que tocarlas obliga a reinstalar). El tope de 5 KB del traspaso lo comprueba quien lo escribe, con
+`gasto-arranque.mjs traspaso`, y **no** el relevo: avisar también desde `relevar` obliga a tocar `sesion.mjs` y queda
+para la próxima instalación. Y la A19 de `00-normas-comunes.md` (dueña: la Sesión 0) sigue sin decir nada del tope de
+5 KB: la propuesta va a la S0 en `docs/master/SCRUM-996.md`.
 
 ### 5bis.4 · Solo se lanzan sesiones CON TRABAJO
 
@@ -148,6 +189,43 @@ Prueba de relevo de la S0, `claude --bg -n 0 --permission-mode auto`, id `f4dfaf
 | nombre | convención **`sesion-N`**, que ES la dirección de `SendMessage` |
 
 Esto es lo que cierra **F4**: una sesión ya no necesita al fundador para abrir otra.
+
+### 5bis.7 · La puerta de integridad puede quedar CERRADA hasta la próxima tanda (SCRUM-991, 22-sep-2026)
+
+**El defecto, medido:** `sesion.mjs` se niega a actuar (`lanzar`, `relevar`, `parar`, `olvidar`, `contexto`,
+`estado` — todo pasa por `puertaDeIntegridad`) si la copia instalada en `%LOCALAPPDATA%\yaqu-equipo\` no es
+BYTE A BYTE la de `origin/main`. Es diseño consciente (falla cerrado: una copia desfasada no actúa), pero
+**quien la repone** es `arranque.cmd`, y ese `.cmd` solo corre en las tareas programadas del día
+(08:00 / 13:05 / 18:10). Un merge que toca `scripts/equipo/sesion.mjs`, `orquestador-arranque.mjs`,
+`uso.mjs` o el prompt de la tanda deja la puerta cerrada **desde ese merge hasta la siguiente tarea** — hasta
+**13 h 49 min** en el peor caso (un merge a las 18:11).
+
+**Mientras está cerrada:** el relevo va A MANO (`claude --bg` directo, como documenta 5bis.6) y se dice por
+el canal, porque `sesion.mjs relevar`/`lanzar` fallarán con `ALTERADO`.
+
+**El paso que la reabre, sin tocar ninguna tarea programada** (decisión del orquestador, 21-sep-2026,
+comentario 16148 de SCRUM-991 — probado, sin bloqueo del sistema de permisos):
+
+```
+git -C <repo> fetch --quiet origin main
+git -C <repo> show origin/main:scripts/equipo/sesion.mjs               > %LOCALAPPDATA%\yaqu-equipo\sesion.mjs
+git -C <repo> show origin/main:scripts/equipo/orquestador-arranque.mjs > %LOCALAPPDATA%\yaqu-equipo\orquestador-arranque.mjs
+git -C <repo> show origin/main:scripts/equipo/uso.mjs                  > %LOCALAPPDATA%\yaqu-equipo\uso.mjs
+git -C <repo> show origin/main:<prompt de la tanda del config.json>    > %LOCALAPPDATA%\yaqu-equipo\prompt-tanda.md
+```
+
+(las cuatro rutas y el nombre exacto de cada `<instalado>` están en `scripts/equipo/instalar.mjs`,
+`FICHEROS` + `PROMPT_INSTALADO` — cópialas de ahí, no las teclees de memoria: si el instalador cambia el
+mapeo, este bloque queda desfasado y hay que traerlo de nuevo).
+
+**Lo que NO se propone, y por qué:** que `sesion.mjs` se reescriba a sí mismo. Una copia que puede
+reescribirse sola es justo lo que la puerta de integridad existe para impedir. Tampoco un cuarto paso
+programado nuevo ni `schtasks /run` a mano — las dos opciones se descartaron (comentario 16148): la primera
+exige instalación del fundador, la segunda es un paso manual que se olvida igual que éste. Este bloque
+**es** el paso que se olvida menos porque está escrito aquí, en el sitio que toda tanda relee.
+
+**Cierre, por efecto:** tras aplicar este paso a una copia desfasada, `node %LOCALAPPDATA%\yaqu-equipo\sesion.mjs estado`
+sale con **exit 0**, no `ALTERADO`/exit 2.
 
 ## 5ter · Cierre y arranque por FIN DE USO
 

@@ -2,6 +2,32 @@
 // entorno. Se importa para poder validarlo en el arranque.
 import { VERIFACTU_ID_SISTEMA } from '../../modules/fiscal/verifactu/productor';
 
+/**
+ * SCRUM-952 · Lista de respaldo POR DEFECTO de los presupuestos (Sugerir con IA), cuando no hay
+ * `GEMINI_MODEL` en Railway. ÚNICA fuente: antes estaba escrita dos veces (aquí y en
+ * `integrations/gemini.ts`), y `gemini.ts` importa esta constante en vez de repetirla —
+ * dos copias del mismo texto es el defecto que este ticket destapó (docs/master/SCRUM-952.md).
+ *
+ * Antes llevaba `gemini-2.0-flash` en medio, con **cupo 0** en el nivel gratis (tabla del
+ * fundador, captura de AI Studio, 18-sep-2026, y «Shut down» en la página de modelos de Google):
+ * un modelo así nunca responde, así que agotar las 20 diarias de `gemini-2.5-flash` dejaba la IA
+ * de presupuestos parada para TODO YaQu — solo quedaba `gemini-flash-latest`, un alias sin cupo
+ * propio medido (docs/master/SCRUM-952.md, PASO 0).
+ *
+ * `gemini-2.5-flash-lite` SÍ tiene cupo confirmado (20/día, RPD propio: Google cuenta la cuota
+ * por modelo) y YA está en producción hoy, en `MODELOS_LECTURA` de `lecturaTicket.ts` (SCRUM-912):
+ * no es una apuesta a ciegas, es un modelo cuya salida YaQu ya usa.
+ *
+ * ⚠️ El plan aprobado el 18-sep-2026 (docs/master/SCRUM-952.md) pedía además correr un banco de
+ * calidad con los candidatos 3.x Flash contra Google real, con los 5 casos del ticket, antes de
+ * fijar la lista final. Esa medición sigue BLOQUEADA por falta de `GEMINI_API_KEY` en esta
+ * máquina (regla 9: los secretos no viajan al chat) — igual que lo estaba el 20-sep-2026. Este
+ * cambio es el subconjunto SIN RIESGO del plan: quita el modelo confirmado a cupo 0 y entra un
+ * modelo de la MISMA familia (2.5) ya validado en producción, sin tocar la familia del modelo
+ * principal ni añadir un candidato sin medir.
+ */
+export const MODELOS_PRESUPUESTOS_POR_DEFECTO = 'gemini-2.5-flash,gemini-2.5-flash-lite,gemini-flash-latest';
+
 export const config = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     PORT: Number(process.env.PORT || 3000),
@@ -78,7 +104,7 @@ export const config = {
     GEMINI_API_KEY:     process.env.GEMINI_API_KEY     || '',
     // Lista de modelos a probar EN ORDEN (coma). Si el 1º tiene cuota gratis a 0
     // o no existe, se pasa al siguiente. Override con GEMINI_MODEL en Railway.
-    GEMINI_MODEL:       process.env.GEMINI_MODEL       || 'gemini-2.5-flash,gemini-2.0-flash,gemini-flash-latest',
+    GEMINI_MODEL:       process.env.GEMINI_MODEL       || MODELOS_PRESUPUESTOS_POR_DEFECTO,
 
     // Cuentas "owner" exentas del límite de prueba: se tratan como Pro activo y
     // sin caducidad (no afecta a los demás merchants). Lista de emails separada

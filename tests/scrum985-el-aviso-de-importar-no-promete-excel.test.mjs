@@ -30,6 +30,8 @@ const TEXTO_FIRMADO = 'Importar clientes desde un fichero CSV';
 // número de línea: referenciar por posición caduca.
 const EXCEL_PERMITIDO = [
   { fichero: 'public/dashboard/js/csvImport.js', fragmento: 'que exporta tu Excel' },
+  // SCRUM-1086 (23-sep-2026): «sin post-its ni Excel» no promete leerlo — dice que no hace falta.
+  { fichero: 'public/index.html', fragmento: 'sin post-its ni Excel' },
 ];
 
 function ficherosDePublic() {
@@ -68,14 +70,20 @@ test('SCRUM-985 · el importador acepta solo lo que el aviso promete: CSV (y tex
     '🔴 el importador acepta hojas de cálculo: entonces sí hay que decidir qué lector las abre');
 });
 
-test('SCRUM-985 · no hay lector de hojas de cálculo en las dependencias (lo que hace verdad el aviso)', () => {
+test('SCRUM-985 · SCRUM-1022 — el lector de hojas de cálculo es el autorizado, y el aviso sigue sin prometer Excel', () => {
+  // SCRUM-1022 (23-sep-2026, comentario 16597): el fundador autorizó `read-excel-file` (regla 36)
+  // para que el SERVIDOR lea un .xlsx real. Esto NO reescribe el aviso: el `title` del botón (test
+  // de arriba) y el `accept` del `<input>` (test de abajo) siguen sin nombrar Excel — que el
+  // servidor acepte un .xlsx por detrás (p.ej. arrastrado al dropzone, que `accept` no filtra) no
+  // es lo mismo que PROMETERLO en pantalla, y esa promesa la firma un jefe (regla 39): propuesta y
+  // pendiente en `docs/master/SCRUM-1022.md` §5, no de esta tanda.
   const pkg = JSON.parse(leer('package.json'));
   const deps = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
   assert.ok(deps.length > 10, `🔴 CIEGO: solo veo ${deps.length} dependencias en package.json`);
   const lectores = deps.filter((d) => /^(xlsx|exceljs|node-xlsx|read-excel-file|sheetjs.*|@e965\/xlsx)$/i.test(d));
-  assert.deepEqual(lectores, [],
-    '🔴 hay un lector de hojas de cálculo: si el importador ya lee `.xlsx`, el aviso puede volver a decirlo — '
-    + 'pero entonces este test se reescribe a propósito, con la firma del texto nuevo.');
+  assert.deepEqual(lectores, ['read-excel-file'],
+    '🔴 el lector de hojas de cálculo no es (solo) el autorizado en SCRUM-1022: si es otro o hay '
+    + 'varios, revisa la autorización; si no hay ninguno, esta tanda no instaló lo que dice que instaló.');
 });
 
 test('SCRUM-985 · «Excel»/«xlsx» en `public/` solo aparece donde está declarado (y el censo VE el árbol)', () => {

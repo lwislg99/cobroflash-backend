@@ -70,17 +70,28 @@
   datos. Márcalo pagado solo cuando lo veas en tu cuenta."
 - **Prevención:** referencia única por cobro (`CF-YYYYMMDD-XXXX`) para casarlo en el banco.
 
-## R7 · SIF (AEAT) rechaza registros
+## R7 · Falla el sellado local de una factura
 
-- **Síntoma:** `VfSubmission` en `rejected`; la cola acumula intentos.
-- **Dónde mirar:** `VfSubmission.lastError` + logs del módulo `fiscal/verifactu`.
-- **Acción:** error de **dato de factura** → corregir vía R1 si está emitida. Error
-  **estructural** (XSD/firma) → `SIF_ENABLED=false` + avisar al asesor; la emisión local
-  sigue y la cola remite al reanudar. Documentar en `docs/VERIFACTU_EVIDENCIAS.md`.
-- **Qué decir al merchant:** "Tus facturas siguen emitiéndose con normalidad; la remisión a
-  la AEAT se reanuda en cuanto cerremos la incidencia técnica. No tienes que hacer nada."
-- **Prevención:** validación contra XSD antes de enviar; retry con backoff; `manual_review`
-  a partir de 5 intentos (Parte L).
+> **CORREGIDO 23-sep-2026 (SCRUM-1094, jv-j4):** esta entrada describía un rechazo de la
+> AEAT vía una cola `VfSubmission` que nunca se construyó (cero tabla, cero envío, cero
+> llamada de red). El máster ya no la publica (Parte L, `docs/YAQU_MASTER.md`) tras
+> SCRUM-534n. El guion que había aquí para el merchant se **retira**, no se reescribe: nadie
+> ha diseñado qué decirle en esta incidencia, e inventarlo aquí sería regla 39 sin firma.
+
+- **Síntoma:** `Invoice.vfEstado` se queda en `pendiente_de_sellado`; la huella SHA-256 y el
+  QR no se pudieron calcular tras la emisión. La factura no produce PDF ni QR hasta
+  resellarse.
+- **Dónde mirar:** `AuditLog`, acción `sellado_fallido` (ahí queda el motivo). Fuente del
+  estado: `src/modules/invoicing/domain/selladoEstado.ts` (máster, Parte L).
+- **Acción:** **[FALTA decidir el mecanismo de reintento — hoy no hay ninguno automático,
+  medido; no se inventa aquí porque es carril de código, no de este runbook — máster, Parte
+  O · R7.]**
+- **Qué decir al merchant:** **[FALTA un guion aprobado. No comunicar nada sobre esta
+  incidencia hasta que un jefe firme un texto (regla 39).]**
+- **Prevención:** **[FALTA — el máster no define ninguna para este fallo; no se inventa
+  aquí.]**
+- **Esto NO es un rechazo de la AEAT:** la remisión telemática no está construida (S1-D); hoy
+  la AEAT no puede rechazar nada (máster, Parte L y Parte O · R7).
 
 ## R8 · "Abrir PDF" falla
 
@@ -734,3 +745,42 @@ horas lo pareció. Ahora el guard mira **qué hace** el comando, no cómo está 
 **Prevención.** Medido el 4-sep-2026 (SCRUM-733/742). El censo
 `npm run censo:internos-prisma` enumera quién lanza el CLI y quién sólo nombra su ruta, para que
 un cambio del punto de entrada se pueda evaluar con la lista delante.
+
+---
+
+## R21 · Antes del go comercial (medios de pago) — SCRUM-568
+
+**La condición, firmada por el fundador en SCRUM-564 (20-ago-2026):** antes del go comercial, o los
+medios de pago están encendidos, o estos nueve textos publicados cambian. La decisión no se
+documenta con una nota en la landing (regla 30: nada nuevo sin pasar por el master) — se comprueba
+sola, y este runbook es el disparador humano: el mecanismo (`scripts/_afirmaciones-publicadas.mjs`)
+no avisa por su cuenta, alguien tiene que correrlo el día del go.
+
+**1 · Correr la línea de estado** (segundos, no compila ni toca la base):
+
+    npm run antes-del-go
+
+Imprime `de las 9 afirmaciones condicionadas a un flag, M son alcanzables hoy` y la lista de flags
+(`PAYMENTS_CONNECT_ENABLED`, `BIZUM_MANUAL_ENABLED`). Hoy da **0 de 9**: con los dos flags apagados,
+un merchant nuevo sólo tiene transferencia, y los nueve textos publicados nombran tarjeta y Bizum
+además.
+
+**2 · Comprobar SIF-1 8/8** en `docs/YAQU_MASTER.md`, Parte U (sprint registry) — regla 17/24/26:
+cero claims fiscales hasta que SIF-1 esté completo.
+
+**3 · Leer el veredicto:**
+
+- Si `M` = 9 (las nueve alcanzables): los flags ya están encendidos para el merchant real, los
+  textos publicados ya son ciertos. Nada que hacer aquí.
+- Si `M` < 9: **no se lanza comercialmente en España con esos textos tal cual.** O se encienden los
+  flags que faltan (`PAYMENTS_CONNECT_ENABLED`/`BIZUM_MANUAL_ENABLED`, decisión del fundador — reglas
+  18/23), o se cambian los textos afectados (propuesta de cambio de master primero, nunca directo:
+  regla 30).
+
+**Qué decir al merchant.** Nada: esto es un paso de preparación interno, no llega a producción por
+sí mismo.
+
+**Prevención.** El mecanismo entero (anclas, alcanzabilidad, la línea de estado) está verificado por
+`tests/scrum568-promesa-con-mecanismo.test.mjs` — 12 casos, incluido que el veredicto cambia SOLO al
+encender los flags, sin tocar ningún fichero. Si `npm run antes-del-go` y ese test discrepan, gana
+el test: el script es sólo la puerta para correrlo a mano.

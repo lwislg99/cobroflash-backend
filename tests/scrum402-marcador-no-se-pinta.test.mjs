@@ -489,7 +489,12 @@ const CENSO = Object.freeze({
   // además se ha comprobado a propósito en este ticket metiendo un marcador nuevo en este mismo
   // fichero y viendo que R4 lo caza por la rama `nuevos`. Un cero sin control positivo no es un
   // cero: es un guard que dejó de mirar.
-  'exportView.js': 1,
+  //
+  // 🔴 SCRUM-1041 (22-sep-2026) · `exportView.js` SALE DEL CENSO (tenía 1: los 4 marcadores de la
+  // card «Facturas emitidas» vivían en el MISMO literal, por eso contaban como uno). Firmados por
+  // el orquestador por delegación del fundador (com. 16306 de SCRUM-1041); los 5 avisos del libro
+  // de `libroRegistroView.js` NO se tocaron — `docs/legal/PREGUNTAS_ASESOR.md` §21 los separó por
+  // ser dictamen fiscal, no microcopy. La entrada se BORRA y no se pone a 0 (SCRUM-424 / SCRUM-405).
   // 🔴 17-ago-2026 · `invoiceDetailView.js` SALE DEL CENSO (tenía 9). El fundador aprobó los ocho
   // rótulos de acción, y el noveno era `MARCA_MICRO`, una constante que ya no consumía nadie y que
   // se borra con ellos. Eran los ocho botones que un profesional veía sin saber qué hacían: la peor
@@ -674,6 +679,16 @@ const CENSO = Object.freeze({
   // provisionales. Eso lo dice `ALB_OCULTAR_PRECIOS_SIN_APROBAR` en `jobDetailView.js`, y su
   // registro vive en `docs/master/SCRUM-607.md` — nunca en `docs/microcopy/`, que es del fundador
   // y `constaAprobado()` lo barre (SCRUM-726).
+  // 🔴 SCRUM-1040 (CON-04) · 22-sep-2026 · `facturasRecibidasView.js` ENTRA con 1, A CONCIENCIA.
+  //
+  // Pantalla nueva («Facturas recibidas», junto al Libro de registro). Su título, su rótulo de
+  // menú, el estado vacío y el aviso de descuadre no están aprobados (regla 30) y salen con
+  // marcador a propósito, mismo criterio que `libroRegistroView.js` (SCRUM-514): la pantalla
+  // entera se declara sin firmar en su propia cabecera. Se cuenta 1: los cuatro salen de una sola
+  // constante `MARCADOR`, así que aprobar el copy los apaga de golpe. Las cabeceras de columna
+  // (Fecha, Proveedor, NIF, Base, IVA, Total) NO llevan marcador: son los términos que impone la
+  // propia aceptación del ticket, no copy inventada.
+  'facturasRecibidasView.js': 1,
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

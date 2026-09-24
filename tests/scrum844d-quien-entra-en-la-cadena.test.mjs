@@ -12,9 +12,9 @@
 //   · si deja entrar de menos, una factura española se queda FUERA de la cadena y su hueco no
 //     se ve hasta que alguien compara el libro con la AEAT.
 //
-// `formatFechaHoraHuso(d)` escribe la marca temporal que entra en la HUELLA (SCRUM-145: es el
-// instante que se firma). Su signo decide si el registro dice `+02:00` o `-02:00` — dos instantes
-// distintos separados por cuatro horas.
+// `formatFechaHoraHuso(d, zona)` escribe la marca temporal que entra en la HUELLA (SCRUM-145: es
+// el instante que se firma). Su signo decide si el registro dice `+02:00` o `-02:00` — dos
+// instantes distintos separados por cuatro horas.
 //
 // ── 🔴 POR QUÉ EL SIGNO ESTABA SIN MIRAR, y no es un descuido de nadie ────────────────────────
 //
@@ -23,17 +23,14 @@
 // ternario no se ha ejecutado jamás en la tanda. No es que el test estuviera mal: es que la
 // población de zonas que eligió no contenía el caso.
 //
-// ⛔ Este fichero NO toca `src/`. Cada caso se probó EN ROJO inyectando el punto exacto,
-//    recompilando, y restaurando fuente y `dist/` byte a byte (`Buffer.compare === 0`).
+// 🟢 SCRUM-735 (23-sep-2026): `formatFechaHoraHuso` DEJÓ de leer `d.getTimezoneOffset()` — ahora
+// recibe la zona EXPLÍCITA y la resuelve con `Intl.DateTimeFormat({ timeZone: zona })`. El
+// «reloj doble» que fingía `getTimezoneOffset()` ya no puede influir en nada: la función no
+// llama a ese método. Se retira el doble y se prueba con zonas REALES al oeste — que además ya
+// no necesitan subproceso, porque `Intl` con `timeZone` explícito no depende de `process.env.TZ`.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-
-const AQUI = path.dirname(fileURLToPath(import.meta.url));
-const RAIZ = path.join(AQUI, '..');
 
 const { entraEnLaCadena, estadoAlNacer, SELLADO_PENDIENTE, SELLADO_NO_APLICA } =
   await import('../dist/modules/invoicing/domain/selladoEstado.js');
@@ -105,69 +102,35 @@ test('SCRUM-844d · ✅ y el estado con el que NACE el documento sigue esos mism
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 // 2 · 🔴 EL SIGNO DEL HUSO EN LA MARCA TEMPORAL DECLARADA
 //
-// `formatFechaHoraHuso` lee el reloj del PROCESO (`d.getTimezoneOffset()`), así que para fijar
-// el signo sin depender de en qué máquina corra esto se le pasa un reloj EXPLÍCITO: un objeto
-// con los mismos métodos que `Date`. No es un atajo — es lo que permite comprobar el borde
-// exacto (`tzMin === 0`), que ninguna zona real del planeta puede producir a voluntad.
-//
-// Y debajo va el control con una zona DE VERDAD, para que el doble no pueda mentir solo.
+// SCRUM-735: la zona es un parámetro EXPLÍCITO y se resuelve con `Intl.DateTimeFormat`, así que
+// ya no hace falta un reloj doble ni un subproceso con `TZ` puesta para fijar el signo — basta
+// con pedir una zona REAL. El mismo instante UTC (`2026-03-15T18:45:30Z`) sirve para los tres
+// casos: sólo cambia la zona que se pide.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
-/** Un reloj con el desfase que se le pida, en minutos al ESTE de UTC (España en verano: +120). */
-const relojCon = (minutosAlEste) => ({
-  getTimezoneOffset: () => -minutosAlEste, // `Date` lo devuelve INVERTIDO, y ahí está la trampa
-  getFullYear: () => 2026, getMonth: () => 2, getDate: () => 15,
-  getHours: () => 13, getMinutes: () => 45, getSeconds: () => 30,
-});
+const INSTANTE = new Date('2026-03-15T18:45:30Z');
 
-test('SCRUM-844d · SUELO: el reloj doble produce la misma FORMA que la función real', () => {
-  const marca = formatFechaHoraHuso(relojCon(120));
+test('SCRUM-844d · SUELO: con una zona al ESTE, el huso se declara en POSITIVO', () => {
+  const marca = formatFechaHoraHuso(INSTANTE, 'Europe/Madrid'); // CET en marzo: +01:00
   assert.match(marca, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
-    `🔴 el doble no produce una marca ISO 8601 con huso: ${marca}. Si la forma no es la real, `
-    + 'los casos de abajo no están midiendo la marca que se declara.');
-  assert.equal(marca, '2026-03-15T13:45:30+02:00');
+    `🔴 no produce una marca ISO 8601 con huso: ${marca}.`);
+  assert.equal(marca, '2026-03-15T19:45:30+01:00');
 });
 
 test('SCRUM-844d · 🔴 EL SIGNO: al OESTE de UTC el huso se declara en NEGATIVO', () => {
-  // Nueva York en marzo: UTC-4. La rama `'-'` del ternario, que la tanda no ha ejecutado nunca.
-  assert.equal(formatFechaHoraHuso(relojCon(-240)), '2026-03-15T13:45:30-04:00',
+  // Nueva York en marzo: UTC-4. La rama `'-'` del ternario, que `scrum643` (UTC/Madrid/Canarias,
+  // todas al este o en el meridiano) no ejercita nunca.
+  assert.equal(formatFechaHoraHuso(INSTANTE, 'America/New_York'), '2026-03-15T14:45:30-04:00',
     '🔴 un huso al oeste se declara con el signo cambiado. La marca temporal entra en la HUELLA '
     + '(SCRUM-145), así que un signo invertido no es un detalle de formato: declara un instante '
     + 'distinto — ocho horas de diferencia en el caso de Nueva York — y la huella firma ESE.');
 });
 
-test('SCRUM-844d · 🔴 EL BORDE: en UTC exacto (tzMin = 0) el signo es «+», no «-»', () => {
-  // El corte es `tzMin >= 0`. Con `>` el cero caería al lado negativo y produciría `-00:00`,
-  // que el XSD de la AEAT no admite como huso de `FechaHoraHusoGenRegistro`.
-  const marca = formatFechaHoraHuso(relojCon(0));
-  assert.equal(marca, '2026-03-15T13:45:30+00:00',
-    `🔴 el cero cae al lado negativo: ${marca}. Es el borde exacto del corte \`tzMin >= 0\`, y `
-    + 'es justo el que produce cualquier servidor en UTC — o sea, producción.');
-});
-
-test('SCRUM-844d · ✅ CONTROL DE REALIDAD: con una zona REAL al oeste, el signo sigue siendo «-»', () => {
-  // El doble podría estar de acuerdo consigo mismo. Esto lo mide con un `Date` de verdad, en un
-  // subproceso con `TZ` puesta — el mismo arnés que `scrum643`, con la zona que a él le faltaba.
-  const urlDist = (rel) => pathToFileURL(path.join(RAIZ, 'dist', rel)).href;
-  const guion = `
-    const { formatFechaHoraHuso } = await import(process.argv[1]);
-    console.log(JSON.stringify({
-      zonaEfectiva: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      huso: formatFechaHoraHuso(new Date('2026-03-15T18:45:30Z')),
-    }));
-  `;
-  const salida = execFileSync(
-    process.execPath,
-    ['--input-type=module', '-e', guion,
-      urlDist('modules/invoicing/domain/verifactu.service.js')],
-    { cwd: RAIZ, env: { ...process.env, TZ: 'America/New_York' }, encoding: 'utf8' },
-  );
-  const r = JSON.parse(salida);
-  // Sin esto el test sería CIEGO: si `TZ` no se propaga, el subproceso arranca en la zona local
-  // y estaríamos comprobando el huso de esta máquina contra sí mismo.
-  assert.equal(r.zonaEfectiva, 'America/New_York',
-    `🔴 INSTRUMENTO CIEGO: pedí TZ=America/New_York y arrancó en ${r.zonaEfectiva}`);
-  assert.match(r.huso, /-\d{2}:\d{2}$/,
-    `🔴 con el proceso en Nueva York, el sello fiscal declara el huso ${r.huso.slice(-6)}: un `
-    + 'huso al oeste declarado como si fuera al este.');
+test('SCRUM-844d · 🔴 EL BORDE: en UTC exacto el signo es «+», no «-»', () => {
+  // El corte del signo cae exactamente en cero. Con el borde mal puesto, UTC produciría `-00:00`,
+  // que el XSD de la AEAT no admite como huso de `FechaHoraHusoGenRegistro` — y UTC es justo la
+  // zona de cualquier servidor sin merchant declarado (`ZONA_POR_DEFECTO`), o sea, producción.
+  const marca = formatFechaHoraHuso(INSTANTE, 'UTC');
+  assert.equal(marca, '2026-03-15T18:45:30+00:00',
+    `🔴 el cero cae al lado negativo: ${marca}.`);
 });

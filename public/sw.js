@@ -111,6 +111,7 @@ const SHELL = [
   '/dashboard/js/settingsView.js',
   '/dashboard/js/exportView.js',
   '/dashboard/js/libroRegistroView.js',
+  '/dashboard/js/facturasRecibidasView.js', // SCRUM-1040 (CON-04)
   '/dashboard/js/teamView.js',
   '/dashboard/js/jobsCierreTrabajo.js', // SCRUM-344
   '/dashboard/js/terminadoSinCobrar.js',

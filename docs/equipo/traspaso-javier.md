@@ -1,4 +1,4 @@
-21-sep-2026 13:28Z · medido sobre `origin/main = 1dd09882fefa41186e9852c5bb39f20d4aa495d8` · clon `cobroflash-backend` (el del orquestador de Javier)
+21-sep-2026 16:30Z · medido sobre `origin/main = beef7b362ed44a7bb431ab4f145879f11abd0c24` · worktree `cobroflash-orq`
 
 # TRASPASO DEL EQUIPO DE JAVIER — estado
 
@@ -7,130 +7,151 @@ dos equipos) y lo que cambia para éste, `orquestador-javier.md`. Los **LÍMITES
 `limites-del-fundador.md`. **Si algo de aquí contradice a una medición de hoy, gana la medición.**
 
 > **Por qué existe.** Los dos orquestadores **no pueden hablarse**: máquinas distintas, cuentas
-> distintas, y la memoria de una máquina no la ve nunca la otra (`dos-equipos.md` §5). Lo único que
-> ven los dos equipos es **Jira y el repositorio**. Éste es el hermano de `traspaso.md`, que es el
-> del equipo de Luis: **cada orquestador escribe el suyo y lee el del otro al arrancar**
-> (`dos-equipos.md` §5.5). Nace tarde, en SCRUM-995: el equipo existe desde el 18-sep y hasta hoy
-> el equipo de Luis no tenía ninguna forma de saber en qué estábamos.
+> distintas, y la memoria de una máquina no la ve nunca la otra (`dos-equipos.md` §5). Lo único que ven
+> los dos equipos es **Jira y el repositorio**. Éste es el hermano de `traspaso.md`, que es el del
+> equipo de Luis: **cada orquestador escribe el suyo y lee el del otro al arrancar** (§5.5).
+
+*(Segunda escritura, SCRUM-995b. La primera, de las 13:28Z de hoy, **nació desfasada en dos horas**:
+decía que J2-J5 no estaban levantados y no recogía la enmienda. Se reescribe entera; el historial queda
+en git. La lección va aquí porque vale para los dos equipos: **un traspaso escrito a media tanda
+caduca antes de que alguien lo lea.**)*
 
 ## 1 · El objetivo vigente de este equipo
 
 **SIF-1 es la prioridad absoluta**, por decisión de Javier del 18-sep-2026 (SCRUM-612, comentario
-15950), literal: «**B: no se cobra hasta que no haya factura. La factura en formato correcto,
-Verifactu, es nuestro cuello de botella y prioridad.**»
+15950): «**B: no se cobra hasta que no haya factura. La factura en formato correcto, Verifactu, es
+nuestro cuello de botella y prioridad.**»
 
-Su consecuencia, ya decidida y escrita: con el interruptor de facturación en OFF, **ni documento ni
-cobro por YaQu**. La decisión anterior del mismo día (comentario 15946, E-1) decía la primera mitad:
-«Nada hasta que factura no esté lista no hay documento. No nos andamos con medias tintas.»
+## 2 · 🔴 LO QUE CAMBIÓ HOY, Y AFECTA A LOS DOS EQUIPOS
 
-⚠️ **Lo que esto NO alcanza:** el **merchant demo** (id=1) sigue emitiendo factura con marca de agua y
-cobrando en TEST — decisión de Javier del **21-sep-2026** (P-1, comentario 16166). Es coherente con la
-regla 24 y con que el modo `demo` se decide una línea antes de leer el interruptor; no es una
-excepción nueva.
+**La enmienda de SCRUM-612 está en `main`** (PR **#1593**, 21-sep 14:55:34Z). Javier, como jefe,
+contestó las **siete preguntas P-1…P-7** y ordenó aplicarla. **24 reemplazos: 21 en el máster y 3 en
+`CLAUDE.md`.** Expediente y controles en `docs/master/SCRUM-612.md` §SCRUM-612c.
 
-## 2 · Los puestos, y quién los ocupaba al escribir esto
+**La regla 24 ahora dice:** con `INVOICING_ES_ENABLED` en OFF, en España, **YaQu no emite ningún
+documento y no cobra a los clientes del profesional** — ni enlace de pago, ni señal, ni recordatorios,
+ni «marcar como cobrada», ni pantalla de Cobros, ni recibo público. Presupuestos, firma, albaranes y
+partes **siguen igual**. Dos matices decididos el 21-sep: **el merchant demo sigue** emitiendo con
+marca de agua y cobrando en TEST (P-1), y **un enlace de pago ya enviado sigue cobrando** (P-2).
 
-Los puestos y sus áreas están en `dos-equipos.md` §2.2 y §3; las fichas, en `puesto-j1.md` …
-`puesto-j6.md`. Las **sesiones** se relevan, los **puestos** no (A19). Sus traspasos viven en la
-memoria de la máquina de Javier (`project_j1_traspaso.md` …) y **el otro equipo no los ve**: lo que
-tenga que saber, va aquí o a Jira.
+### 2.1 · Lo que eso abre, y toca al equipo de Luis
 
-| puesto | sesión | estado el 21-sep 13:28Z |
+🔴 **El máster y el argumentario de venta se contradicen desde hoy.** J4 verificó contra el `main` de
+hoy las **12 líneas comerciales** que §4 de `docs/master/SCRUM-612.md` había señalado: **11 siguen
+exactas** y 1 se resolvió con la respuesta P-4. Las de mayor gravedad son **`public/index.html` y
+`public/precios.html`**, que **hoy le dicen a un visitante real que YaQu le cobra**. Esas páginas son de
+**S2/S4** y su copy lo firma un jefe. Análisis y literales propuestos: **SCRUM-1016**.
+
+**Dato para decidir el ángulo de venta, medido por J5** (SCRUM-1016 y `docs/competencia/`): de **13
+competidores, 0 usan el cobro como titular**; **9 de 13 sí ofrecen cobro online**, pero como función
+secundaria. **No es que no puedan prometerlo: eligen no abrir por ahí.**
+
+### 2.2 · El reloj: el camino REGENERA documentos
+
+| cuándo | qué | fuente |
 |---|---|---|
-| **J1** · Facturación y VeriFactu | `jv-j1` | **viva**, con SCRUM-955 |
-| **J6** · Calidad y seguridad | `jv-j6` | **viva**, con SCRUM-908c |
-| **J2** · Clientes y cobro | — | sin levantar. Primer ticket de su ficha: SCRUM-678 |
-| **J3** · Alta y crecimiento | — | sin levantar. Primer ticket de su ficha: SCRUM-335 |
-| **J4** · Legal y cumplimiento | — | sin levantar. Primer ticket de su ficha: SCRUM-950 |
-| **J5** · Competencia y producto | — | sin levantar. Hereda `docs/competencia/` de la S0 |
+| 8-sep | borrado del fundador: producción **a 0 documentos**, verificado con seis vistas | SCRUM-825 fase 1 |
+| **20-sep 20:42** | **aparece un justificante nuevo** — merchant 18, **que no es el demo** (demo = id 1) | consulta de E-4, pegada por Javier el 21-sep |
+| 21-sep 14:55Z | la enmienda entra en `main` | PR #1593 |
 
-Un puesto sin cola **no se levanta** (A19 · `orquestador-autonomo.md` §5bis.4): una sesión viva sin
-encargo gasta uso y contesta mensajes que no llevan a nada.
+**Dos mediciones independientes separadas por doce días: no quedaron restos, el camino los fabrica.**
 
-## 3 · Los tickets vivos de este equipo
+**E-4 queda RESUELTA:** producción tiene **1 documento y es un justificante**; staging, **9, todos
+JUST**; `F1 = 0` y `R1 = 0` en las dos — **YaQu no ha emitido nunca una factura fiscal en producción**.
 
-| ticket | quién | dónde está |
-|---|---|---|
-| **SCRUM-612** | Javier (jefe) | **Acción del fundador.** El expediente de la enmienda al máster está escrito (PR #1520, mergeado el 18-sep). Quedan **7 preguntas P-1…P-7**; **P-1 contestada el 21-sep**, P-2…P-7 abiertas. Es el único ticket del equipo con `decision-jefe` |
-| **SCRUM-955** | J1 | **En curso.** Mapa medido de lo que le falta a SIF-1. Censo por AST escrito y **nunca corrido**; rama `scrum-955-mapa-sif1`, commit `7845a57a` **sin empujar** (a propósito) |
-| **SCRUM-908** | J6 | **En curso.** El medidor de mutaciones sale mudo. **PASO 0: el defecto EXISTE HOY.** Mecanismo **NO reproducido** (A18): el caso de 908c se calibró con una capacidad que nunca se midió. PR **#1519 en ROJO A PROPÓSITO**, y con **auto-merge armado**: el día que se ponga verde entra solo |
-| **SCRUM-957** | S0 (equipo de Luis) | **Por hacer.** Propuesta de este equipo: Windows 11 ya no trae `wmic` y `scrum858b` cae sin haber podido mirar. Texto propuesto dentro |
-| **SCRUM-995** | orquestador de Javier | **En curso.** Este fichero |
+⚠️ **Control que falló y hubo que rehacer, y vale para quien mida bases:** `current_database()` devuelve
+**`railway` en las dos** (nombre por defecto de Railway): **no identifica nada**. Se resolvió corriendo
+lo mismo en las dos y comparando, más la corroboración de los 9 de staging ya medidos el 18-sep.
 
-**Cerrados por efecto en esta tanda:** SCRUM-956 (el filtro de afirmaciones de este equipo,
-`afirmaciones-verificadas-javier.md`, en `main` desde el 18-sep por el PR #1521).
+## 3 · Los puestos, y en qué están (21-sep 16:30Z)
+
+Los puestos y áreas están en `dos-equipos.md` §2.2 y §3. **Las sesiones se relevan, los puestos no**
+(A19). Sus traspasos viven en la memoria de la máquina de Javier y **el otro equipo no los ve**.
+
+| puesto | en qué está |
+|---|---|
+| **J1** · Facturación y VeriFactu | **SCRUM-1027** (que con el flag en OFF deje de generarse el documento; **GO de Javier para CONSTRUIR, no para desplegar**) y después **SCRUM-825 fase 2**, que es el expediente para la firma, no código |
+| **J2** · Clientes y cobro | SCRUM-1018 y 1022, que le llegaron de J5 |
+| **J3** · Alta y crecimiento | qué promete hoy el alta a un merchant ES que ya no puede cobrar |
+| **J4** · Legal y cumplimiento | `docs/legal/ALCANCE_BETA.md`, que es lo que un founding firma **antes de pagar** |
+| **J5** · Competencia y producto | las 7 entradas de la matriz que nadie ha re-medido |
+| **J6** · Calidad y seguridad | SCRUM-908 y `vigia-atascados` |
+
+**Medido hoy y útil para los dos equipos:** `area-j3` tiene **1 ticket** y el tramo del alta **está
+peinado** (6 tickets cerrados lo cubrieron). Que nadie gaste una tanda redescubriéndolo.
 
 ## 4 · Lo que este equipo le debe al de Luis, y al revés
 
-- **SCRUM-957** espera a la **S0**: es una trampa de máquina medida aquí, con su texto propuesto para
-  `trampas-del-entorno.md`. Sin coger desde el 18-sep.
-- **SCRUM-953** (el aviso de uso no arranca si el usuario de Windows lleva un espacio) espera a la
-  **S5**. Sin coger desde el 18-sep. Corregido a mano en esta máquina; el instalador sigue igual.
-- **SCRUM-908** toca `scripts/meta-guard-mutaciones.mjs`, que es de la **S3**. Decisión del
-  orquestador de Javier, y sigue en pie: **J6 no lo toca ni parchea `tests/scrum859`**. Cuando el caso
-  esté bien calibrado, el arreglo de raíz se le pide a S3 por Jira. Hasta entonces **es una hipótesis
-  con su literal, no un arreglo**.
-- **Del equipo de Luis a éste:** la S5 dejó el 21-sep a las 13:08Z un comentario de solo datos en
-  SCRUM-908 con un segundo fichero mudo (`vigia-atascados.test.mjs`, run 35601265329). Es la
-  observación que la hipótesis de J6 predice.
-- ⚠️ **Hueco de etiquetas:** `dos-equipos.md` §4 exige dos etiquetas (equipo + área) y las de área van
-  de `area-j1` a `area-j6`. **No hay ninguna para el orquestador**, aunque §3.3 le asigna ficheros
-  propios. SCRUM-995 usa `area-orquestador` a falta de otra cosa; la S0 decide el nombre.
+**Abierto por este equipo hacia el vuestro, hoy:**
+
+| ticket | qué |
+|---|---|
+| **SCRUM-1024** · `area-s1` | **los CUATRO defectos que cortan «del alta al primer presupuesto» son los cuatro vuestros** (969, 967, 1001, 893). El patrón es el hallazgo: con la enmienda, ese tramo **ya no es la mitad del producto en España, es TODO** |
+| **SCRUM-1001** · `area-s1` | la página del cliente promete un pago que luego no está. **Literal FIRMADO por Javier** dentro |
+| **SCRUM-1011** · `area-s5` | `lanzar` devuelve **LANZADA y exit 0** sobre sesiones que **no arrancan** (4 de 4). ⚠️ La hipótesis del «tope de 2» **quedó REFUTADA** por su propio autor con una predicción declarada antes de medir |
+| **SCRUM-1026** · `area-s5` | una sesión **bloqueada** esperando un permiso **parece viva**; 2 casos, uno de ~30 min |
+| **SCRUM-1007** · `area-s5` | `relevar` **no puede dar verde nunca** por el camino que manda su propio protocolo |
+| **SCRUM-997** · `area-orquestador` | escribir en `limites-del-fundador.md` la decisión de Javier: **no se vende en País Vasco ni Navarra de momento** |
+| **SCRUM-957** · `area-s0` | la trampa de `wmic` (Windows 11 ya no lo trae) |
+
+**Recibido del vuestro:** el dato de la S5 sobre la mudez del meta-guard (comentario 16159 de
+SCRUM-908); **SCRUM-1000** (el arranque automático: **ya estaba instalado aquí desde el 18-sep** — lo
+que falta no es montarlo, es que el PC esté encendido a esas horas); y el aviso de **SCRUM-999**.
+
+⚠️ **Hueco de la norma, para la S0:** `dos-equipos.md` §4 exige dos etiquetas (equipo + área) y **no hay
+ninguna para el orquestador**, aunque §3.3 le asigna ficheros propios. Se usa `area-orquestador` a falta
+de otra cosa.
 
 ## 5 · Recursos compartidos, medidos en esta máquina
 
-- **Turno de suite completa:** es **por máquina**, así que lo da el orquestador de este equipo. Umbral
-  fijado el 18-sep midiendo este PC (16.299 MB): **2.200 MB libres y ninguna otra suite corriendo**.
-  El 21-sep está **dado a J6**.
-- **Rojos conocidos de esta máquina**, que no son defectos del producto: 3 de `scrum939b` (`gh` sí
-  está instalado aquí) y 1 de `scrum858b` (`wmic` no existe en Windows 11 — SCRUM-957).
-- **Staging:** el turno es un cerrojo en la propia base y vale entre máquinas; se respeta igual.
-- ⚠️ **Merchant QA de staging: COMPARTIDO, y sigue PENDIENTE de un jefe** (`dos-equipos.md` §5.1 y §7).
-  Hasta que se decida, **cada siembra de este equipo se declara en su ticket**, porque sale en las
-  mediciones del otro.
-- **Base de desarrollo de Javier:** la aplica su carril; quien la necesite al día **la pide**.
-- **Los ALTER los aplica Javier para los DOS equipos** (A5). Esperando su ALTER el 21-sep:
-  SCRUM-529 y 779 (en «Acción del fundador»), 913 y 914 (por hacer), 674 (En curso, del equipo de
-  Luis).
+- **Turno de suite completa:** es **por máquina**. Umbral medido el 18-sep (PC de 16.299 MB): **2.200 MB
+  libres y ninguna otra suite**. Hoy lo tiene J6.
+- **Rojos conocidos de esta máquina**, que no son del producto: 3 de `scrum939b` (`gh` sí está instalado
+  aquí) y 1 de `scrum858b` (`wmic`, SCRUM-957).
+- **Staging:** el turno es un cerrojo en la propia base y vale entre máquinas.
+- ⚠️ **Merchant QA de staging: COMPARTIDO y PENDIENTE de un jefe** (`dos-equipos.md` §5.1 y §7). Cada
+  siembra de este equipo se declara en su ticket.
+- **Los ALTER los aplica Javier para los DOS equipos** (A5). Esperando su ALTER: SCRUM-529 y 779
+  («Acción del fundador»), 913 y 914 («Por hacer»), 674 (En curso, del equipo de Luis).
 
 ## 6 · Trabajo commiteado que no está en ningún remoto
 
-Medido con `node scripts/equipo/huerfanos.mjs` el 21-sep 13:15Z — 28 árboles mirados, 0 sin poder
-mirar:
-
-| árbol | rama | último commit |
-|---|---|---|
-| `cobroflash-jv1` | `scrum-955-mapa-sif1` | 18-sep — **es el trabajo vivo de J1**, sin empujar a propósito |
-| `cobroflash-b24` | `scrum-637-verificacion-s5` | 8-sep — **pendiente de decidir con Javier**, no es de este equipo |
-| `cobroflash-b12` | `scrum-744-guard-por-la-accion` | 4-sep — **pendiente de decidir con Javier**, no es de este equipo |
+Medido con `node scripts/equipo/huerfanos.mjs`: `cobroflash-b24` (`scrum-637-verificacion-s5`, 8-sep) y
+`cobroflash-b12` (`scrum-744-guard-por-la-accion`, 4-sep). **No son de este equipo y no se tocan**;
+pendientes de decidir con Javier.
 
 ## 7 · La máquina y su arranque automático
 
-- Instalación: `C:\Users\Javier Pereira\AppData\Local\yaqu-equipo`. Prefijo **`jv-`**, puestos
-  `orquestador,j1…j6`, tandas **08:25, 13:30 y 18:35** (media hora corridas respecto al equipo de
-  Luis, para no chocar en staging ni en CI).
-- 🔴 **Las tres tareas programadas NO se han ejecutado NUNCA.** Medido el 21-sep por tres vías
-  independientes: el programador dice «última ejecución: nunca», el fichero `arranque.log` no existe,
-  y el registro del sistema no tiene ningún evento suyo en cuatro días. **Causa confirmada por Javier:
-  el ordenador estuvo apagado a esas horas.** Las tareas llevan `StartWhenAvailable: False` y
-  `DisallowStartIfOnBatteries: True`, así que **una cita perdida no se recupera nunca**. Mientras el PC
-  no esté encendido a esas horas, **el equipo sólo arranca a mano**.
-- ⚠️ **La copia instalada de `sesion.mjs` se queda vieja si no corre ninguna tanda.** La reescribe
-  `arranque.cmd` desde `origin/main` en cada tanda, y `puertaDeIntegridad` se niega (`ALTERADO`) si
-  difiere. El 21-sep estaba tres versiones por detrás (SCRUM-954, 959b y 990) y el lanzador no
-  funcionaba; se refrescó a mano con la misma línea que usa `arranque.cmd`.
-- **Trampas de esta máquina** que van en todo encargo: `FORCE_COLOR=0` · el cwd del shell vuelve a
-  `cobroflash-backend` tras cada comando · `gh` está en `"C:/Program Files/GitHub CLI/gh.exe"`, fuera
-  del PATH · **una sesión de fondo que usa la herramienta de entrar en un worktree se queda bloqueada
-  pidiendo un permiso que nadie puede contestar** · las sesiones de fondo **no ejecutan** el
-  `statusLine`, así que el aviso de uso sólo lo alimenta una conversación interactiva.
+- Instalación en `AppData\Local\yaqu-equipo`. Prefijo **`jv-`**, puestos `orquestador,j1…j6`, tandas
+  **08:25, 13:30 y 18:35** (media hora corridas respecto a las del equipo de Luis).
+- 🔴 **Las tres tareas programadas NO se han ejecutado NUNCA.** Medido por tres vías independientes
+  («última ejecución: nunca», `arranque.log` inexistente, cero eventos en el registro del Programador).
+  **Causa confirmada por Javier: el PC estuvo apagado a esas horas.** Llevan `StartWhenAvailable: False`,
+  así que **una cita perdida no se recupera**. Javier decidió mantener esas horas: **hoy el equipo sólo
+  arranca a mano.**
+- ⚠️ **La copia instalada de `sesion.mjs` se queda vieja si no corre ninguna tanda**, y entonces
+  `puertaDeIntegridad` la rechaza (`ALTERADO`) y **no se puede lanzar ni relevar nada**. Es **SCRUM-991**,
+  ya abierto por vosotros; confirmado desde esta máquina. Se arregla refrescándola desde `origin/main`
+  con la misma línea que usa `arranque.cmd`.
+- **Trampas de esta máquina:** `FORCE_COLOR=0` en todo · el cwd del shell vuelve a `cobroflash-backend`
+  tras cada comando · `gh` en `"C:/Program Files/GitHub CLI/gh.exe"`, fuera del PATH · 🔴 **una sesión de
+  fondo que usa EnterWorktree se queda bloqueada pidiendo un permiso que nadie puede contestar** (dos
+  casos hoy) · las sesiones de fondo **no ejecutan** el `statusLine`, así que el aviso de uso sólo lo
+  alimenta una conversación interactiva · **un worktree nuevo nace sin `node_modules`** y
+  `guards:entrada` falla hasta hacer `npm ci` · al escribir en Jira, **un enlace en Markdown puede
+  perderse en la conversión a ADF sin avisar**: se relee el cuerpo devuelto y se ponen las URL en texto
+  plano.
 
 ## 8 · Autorizaciones
 
-**No se heredan** (A19), ni entre sesiones ni entre tandas. Al 21-sep:
+**No se heredan** (A19), ni entre sesiones ni entre tandas. Al 21-sep 16:30Z:
 
-- **Lanzar sesiones en segundo plano:** autorizado por Javier el 21-sep para esa tanda, con su frase.
-- Sin autorizaciones de dinero, de base de datos, de despliegue ni de datos de clientes.
+- **Lanzar sesiones de fondo:** autorizado por Javier el 21-sep.
+- **Construir SCRUM-1027**, que toca el camino de emisión: **GO expreso de Javier**, literal, «825 tal
+  cual y el atajo también». 🔴 **Ese GO NO incluye desplegar:** empujar es desplegar, y en el camino del
+  cobro **el sí lo escribe un jefe en el chat de la sesión** (`orquestador-autonomo.md` §7).
+- Sin autorizaciones de base de datos ni de datos de clientes. **Las consultas de producción de E-4 las
+  pegó Javier**; ninguna sesión toca producción.
 - **Este orquestador NO tiene delegada la firma de microcopy** (`orquestador-javier.md` §3): propone el
   literal y firma un jefe. La delegación que el fundador dio al orquestador de Luis **no se supone**
   para éste.

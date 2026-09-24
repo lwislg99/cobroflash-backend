@@ -1,19 +1,25 @@
-// tests/scrum346-justificante-suelto.test.mjs — SCRUM-346 (A0.5)
+// tests/scrum346-justificante-suelto.test.mjs — SCRUM-346 (A0.5) · retirado por SCRUM-1027
 //
 // EL JUSTIFICANTE SUELTO: la reparación de 40 € del martes. Sin presupuesto, sin trabajo y sin
 // albarán — el 80 % de la semana de un fontanero, que el producto trataba como excepción.
 //
-// ── LO QUE FALTABA NO ERA CAMINO, ERA PERMISO ───────────────────────────────────────────────
+// ── LO QUE FALTABA NO ERA CAMINO, ERA PERMISO (A0.3 → A0.5, historia) ───────────────────────
 // A0.3 construyó la ruta entera (`POST /admin/invoices`) y cerró la puerta para el modo
 // `receipt`, porque el botón prometía «factura» y a un merchant ES real no le sale una factura.
-// El defecto estaba en aplanar dos cosas opuestas en un booleano:
+// A0.5 (SCRUM-346, este fichero) abrió esa puerta: un merchant ES real SIN el flag podía emitir
+// un documento suelto — el justificante `J-`. El defecto que A0.5 corrigió era aplanar dos cosas
+// opuestas en un booleano: `false` = «no puedes emitir nada» ←→ `false` = «tú emites
+// JUSTIFICANTES». Con tres valores, el segundo dejó de leerse como una carencia.
 //
-//   `false` = «no puedes emitir nada»   ←→   `false` = «tú emites JUSTIFICANTES»
-//
-// Con tres valores, el segundo deja de leerse como una carencia.
-//
-// ⚠️ ESTO NO ENCIENDE NADA (regla 24). El mismo merchant sigue sin poder emitir facturas: lo que
-// se hace explícito es el documento que YA le corresponde.
+// ── 🔴 SCRUM-1027 (21-sep-2026) RETIRA EXACTAMENTE LO QUE A0.5 ABRIÓ ────────────────────────
+// Regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, ya NO se emite NINGÚN
+// documento — ni siquiera el justificante que A0.5 hizo explícito. No es deshacer A0.5 por
+// descuido: es la misma decisión del fundador, tomada otra vez, en sentido contrario, con fecha
+// y ticket propios (ver `docs/master/SCRUM-1027.md`). Los CONTROL POSITIVO de abajo, que probaban
+// que el profesional SÍ podía emitir su justificante, pasan a probar lo contrario: que ya no
+// puede. Los CONTROL NEGATIVO de entrada (sin cliente, sin líneas) se mueven al merchant con el
+// flag ON, porque con el flag OFF el rechazo ahora llega ANTES de leer esa entrada — así siguen
+// midiendo lo que medían (una entrada inválida se rechaza), no lo que ya no es cierto.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -93,25 +99,27 @@ const CUERPO_OK = {
 const REQ = (body = CUERPO_OK) => ({ body, merchantId: 7, userRole: 'admin', user: { id: 1 } });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-// CONTROL POSITIVO · el caso que este ticket viene a abrir
+// 🔴 SCRUM-1027 · CONTROL POSITIVO INVERTIDO: el caso que A0.5 abrió, y que la regla 24 cierra
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-346 · CONTROL POSITIVO: el profesional ES real SÍ emite su justificante', async () => {
+test('SCRUM-1027 · el profesional ES real YA NO emite ningún documento suelto (regla 24)', async () => {
   const cap = montar(ES_REAL);
   const r = await invocar(REQ());
-  assert.equal(r.code, 201, `esperaba 201 y salió ${r.code}: ${JSON.stringify(r.body)}`);
-  assert.ok(cap.emitido, '🔴 no se emitió nada: la avería de 40 € sigue sin puerta');
-  assert.equal(cap.emitido.total, '48.40', '40 € + 21 %');
+  assert.equal(r.code, 409, `esperaba 409 y salió ${r.code}: ${JSON.stringify(r.body)}`);
+  assert.equal(r.body?.error, 'factura_suelta_no_disponible',
+    '🔴 el gate no responde con el error NOMBRADO ya establecido para el veredicto "no".');
+  assert.equal(cap.emitido, null,
+    '🔴 se ha emitido un documento pese al interruptor en OFF — regla 24 (SCRUM-612c) rota.');
 });
 
-test('SCRUM-346 · el `J-` YA NO se rechaza en el camino de justificante', () => {
-  // Es la ramificación del cinturón, y el motivo por el que este ticket no era «quitar una línea»:
-  // A0.3 rechazaba cualquier J- porque el botón prometía FACTURA. Aquí el J- es lo correcto.
+test('SCRUM-1027 · el mensaje del rechazo sigue siendo el YA APROBADO (regla 30: no se inventa uno nuevo)', async () => {
+  // «En este modo no se emiten facturas» ya estaba aprobado para el caso "sin merchant" (A0.3) y
+  // sigue siendo VERDAD para este caso nuevo: no hace falta —ni se permite— redactar uno propio.
   montar(ES_REAL);
-  return invocar(REQ()).then((r) => {
-    assert.notEqual(r.body?.error, 'factura_suelta_no_disponible',
-      '🔴 el documento correcto se está rechazando por su propio número de serie');
-  });
+  const r = await invocar(REQ());
+  assert.equal(r.body?.message, 'En este modo no se emiten facturas.',
+    '🔴 el 409 lleva un texto distinto del ya aprobado. Regla 30: la microcopy la aprueba el ' +
+    'fundador — reusar la frase que YA es verdad no es lo mismo que inventar una nueva.');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -128,19 +136,26 @@ test('SCRUM-346 · NO-REGRESIÓN: en modo factura se sigue emitiendo FACTURA, co
   assert.equal(modoDocumentoSuelto(ES_CON_FLAG), 'factura');
 });
 
-test('SCRUM-346 · REGLA 24: el ES real sigue SIN poder emitir factura', () => {
-  // Hacer explícito el justificante no abre la facturación. Si alguien hiciera que `receipt`
-  // devolviera 'factura', esto cae — y con él la regla 24.
-  assert.equal(modoDocumentoSuelto(ES_REAL), 'justificante');
+test('SCRUM-1027 · REGLA 24: el ES real sin flag no emite NINGÚN documento suelto (ni factura ni justificante)', () => {
+  // Hasta SCRUM-1027 este veredicto era 'justificante' (A0.5). La regla 24 enmendada retira ESE
+  // documento: si alguien hiciera que `receipt` volviera a devolver 'justificante' o pasara a
+  // 'factura', esto cae.
+  assert.equal(modoDocumentoSuelto(ES_REAL), 'no');
   assert.notEqual(modoDocumentoSuelto(ES_REAL), 'factura');
+  assert.notEqual(modoDocumentoSuelto(ES_REAL), 'justificante');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 // CONTROL NEGATIVO · sin cliente identificable no se emite
+//
+// SCRUM-1027: se mueven a ES_CON_FLAG (fiscal). Con ES_REAL el gate de la regla 24 rechaza ANTES
+// de llegar a mirar el cuerpo, así que ya no sirven para medir la validación de ENTRADA — que es
+// lo que estos dos casos existen para comprobar, y sigue siendo cierto para un merchant que SÍ
+// emite.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-346 · CONTROL NEGATIVO: sin cliente NO se emite, y no se pide número', async () => {
-  const cap = montar(ES_REAL);
+  const cap = montar(ES_CON_FLAG);
   const r = await invocar(REQ({ lines: CUERPO_OK.lines })); // sin customerId
   assert.equal(r.code, 400);
   assert.equal(r.body.error, 'cliente_invalido');
@@ -150,7 +165,7 @@ test('SCRUM-346 · CONTROL NEGATIVO: sin cliente NO se emite, y no se pide núme
 test('SCRUM-346 · CONTROL NEGATIVO: un cliente que NO es de este merchant no vale (regla 2)', async () => {
   // Sin esto, un id ajeno emitiría un documento a nombre del cliente de otro profesional — y un
   // documento emitido no se borra (regla 29).
-  const cap = montar(ES_REAL, { customer: null });
+  const cap = montar(ES_CON_FLAG, { customer: null });
   const r = await invocar(REQ());
   assert.equal(r.code, 404);
   assert.equal(r.body.error, 'cliente_invalido');
@@ -158,13 +173,13 @@ test('SCRUM-346 · CONTROL NEGATIVO: un cliente que NO es de este merchant no va
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-// EL SUELO · no se emite «lo que tenga»
+// EL SUELO · no se emite «lo que tenga» (SCRUM-1027: sobre ES_CON_FLAG, mismo motivo que arriba)
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-346 · SUELO: sin líneas NO se emite «lo que tenga»', async () => {
   // Un documento fiscal emitido sin nada que cobrar no se puede borrar (regla 29): el error queda
   // para siempre y solo se corrige con una rectificativa.
-  const cap = montar(ES_REAL);
+  const cap = montar(ES_CON_FLAG);
   const r = await invocar(REQ({ customerId: 5, lines: [] }));
   assert.equal(r.code, 400);
   assert.equal(r.body.error, 'lineas_invalidas');
@@ -172,7 +187,7 @@ test('SCRUM-346 · SUELO: sin líneas NO se emite «lo que tenga»', async () =>
 });
 
 test('SCRUM-346 · SUELO: una línea sin concepto tampoco pasa', async () => {
-  const cap = montar(ES_REAL);
+  const cap = montar(ES_CON_FLAG);
   const r = await invocar(REQ({ customerId: 5, lines: [{ concept: '  ', qty: 1, price: 40, tax: 0.21 }] }));
   assert.equal(r.code, 400);
   assert.equal(cap.emitido, null, '🔴 se emitiría un documento con una línea que no dice qué se hizo');

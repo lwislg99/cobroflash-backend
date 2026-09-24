@@ -353,6 +353,11 @@ const HALLAZGOS_DECLARADOS = [
   // instalación del banco y se pueda medir POR EFECTO qué llamadas recibe `claude` (si con el equipo
   // vivo `lanzar orquestador` llama o no a `claude --bg`). Lo retira quien borre `sesion.mjs`.
   'tests/scrum959b-el-arranque-no-duplica-el-equipo.test.mjs [show]',
+  // SCRUM-1007/1011/1026 · su banco: mismo caso que los de 899, 951a, 954 y 959b — un repositorio
+  // SINTÉTICO en el temporal cuyo `origin/main` no es el de nadie, para que la puerta de
+  // `sesion.mjs` acepte la instalación del banco y se pueda medir POR EFECTO `lanzar`/`relevar`/
+  // `estado` (confirmarArranque, sesionesBloqueadas). Lo retira quien borre `sesion.mjs`.
+  'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs [show]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -467,6 +472,15 @@ const INDIRECTAS_DECLARADAS = [
   // Sólo lee: no borra, no empuja, y está fuera de CI.
   // Lo retira: quien borre `scripts/verificacion-s5/`.
   'scripts/verificacion-s5/ramas-sin-mergear.mjs',
+  // SCRUM-996 · `norma.mjs`, que imprime las normas por SECCIONES en vez del fichero entero. Nombra
+  // `origin/main` como valor por defecto de `--origen` y en la línea donde declara de dónde leyó.
+  // Aquí la referencia móvil es el SUJETO, no un descuido: la pregunta es «¿qué dicen las normas
+  // AHORA?», y el checkout compartido de la máquina puede ir miles de commits por detrás (medido
+  // el 21-sep-2026: 4.740), así que contra el árbol de trabajo serviría normas fósiles.
+  // **NO compara ni emite veredicto sobre ninguna rama**: solo lee un fichero con
+  // `git show <ref>:<ruta>` y imprime el origen y el sha256 en su primera línea. No corre en CI.
+  // Lo retira: quien retire `norma.mjs`, o el día que las sesiones lean las normas de otro modo.
+  'scripts/equipo/norma.mjs',
   // SCRUM-829b · el banco de la ref RANCIA. Nombra `refs/remotes/origin/main` en el control de la
   // poda —«podar no es vaciar: `main` tiene que seguir ahí»—, y ese `main` es el del CLON que el
   // test fabrica en un directorio temporal, no el de este repositorio: el mismo motivo por el que
