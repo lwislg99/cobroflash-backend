@@ -325,6 +325,11 @@ function renderProductsView(container) {
                   <div class="field"><label>Margen %</label><input name="margen" type="number" step="0.01"/></div>
                   <div class="field"><label>Proveedor</label><select name="providerId"><option value="">— Sin proveedor —</option></select></div>
                 </div>
+                <div class="quote-form-row">
+                  <div class="field"><label>SKU</label><input name="sku" maxlength="60"/></div>
+                  <div class="field"><label>Referencia del proveedor</label><input name="supplierRef" maxlength="60"/></div>
+                  <div class="field"><label>Unidad</label><input name="unit" maxlength="40"/></div>
+                </div>
                 <div class="field"><label>Descripción</label><input name="description"/></div>
               </div>
               <div class="modal-footer">
@@ -362,6 +367,9 @@ function renderProductsView(container) {
             const costRaw = campoCoste ? campoCoste.value.trim() : null;
             const providerRaw = body.querySelector('[name="providerId"]').value.trim();
             const description = body.querySelector('[name="description"]').value.trim();
+            const sku = body.querySelector('[name="sku"]').value.trim();
+            const supplierRef = body.querySelector('[name="supplierRef"]').value.trim();
+            const unit = body.querySelector('[name="unit"]').value.trim();
 
             if (!name) return setAlert('error', 'El nombre es obligatorio.');
             if (!Number.isFinite(price) || price <= 0) return setAlert('error', 'El precio debe ser mayor que 0.');
@@ -379,6 +387,10 @@ function renderProductsView(container) {
               // sólo toca las claves presentes: si no viajara, no se podría volver a «sin
               // clasificar» una vez declarado.
               itemKind: _editSwitch ? _editSwitch.leer() : null,
+              // SCRUM-1008 · igual criterio: viaja siempre, vacío borra (como `description`).
+              sku: sku || null,
+              supplierRef: supplierRef || null,
+              unit: unit || null,
             };
 
             const saveBtn = ov.querySelector('#pf-edit-save');
@@ -426,6 +438,9 @@ function renderProductsView(container) {
           pintarMargen(_margen);
           }
           body.querySelector('[name="description"]').value = it.description || '';
+          body.querySelector('[name="sku"]').value = it.sku || '';
+          body.querySelector('[name="supplierRef"]').value = it.supplierRef || '';
+          body.querySelector('[name="unit"]').value = it.unit || '';
 
           // SCRUM-609 · EL LADO GUARDADO MANDA AL ABRIR, y esto es lo que hace que el switch
           // sirva de algo: uno que no lee lo guardado OLVIDA lo que elegiste en cuanto
@@ -528,12 +543,29 @@ function renderProductsView(container) {
           </select>
         </div>
       </div>
-  
+
+        <div class="quote-form-row">
+        <div class="field">
+          <label>SKU</label>
+          <input name="sku" placeholder="Código propio (opcional)" maxlength="60" />
+        </div>
+
+        <div class="field">
+          <label>Referencia del proveedor</label>
+          <input name="supplierRef" placeholder="Con la que la pide el proveedor (opcional)" maxlength="60" />
+        </div>
+
+        <div class="field">
+          <label>Unidad</label>
+          <input name="unit" placeholder="ud, m, h… (opcional)" maxlength="40" />
+        </div>
+      </div>
+
         <div class="field">
           <label>Descripción</label>
           <input name="description" placeholder="Texto opcional" />
         </div>
-  
+
         <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px">
           <button class="btn btn-primary" type="button" id="pf-create-product">Crear producto</button>
         </div>
@@ -603,6 +635,9 @@ function renderProductsView(container) {
     const costI = form.querySelector('input[name="cost"]');
     const providerSelect = form.querySelector('select[name="providerId"]');
     const descI = form.querySelector('input[name="description"]');
+    const skuI = form.querySelector('input[name="sku"]');
+    const supplierRefI = form.querySelector('input[name="supplierRef"]');
+    const unitI = form.querySelector('input[name="unit"]');
     cablearMargen(costI, priceI, margenI);
     // SCRUM-609 · el switch del ALTA. Nace SIN lado marcado: null = «nadie lo ha declarado»,
     // y con null se ven todos los campos (invariante de CONT-01). Preseleccionar Producto
@@ -1000,10 +1035,13 @@ function renderProductsView(container) {
         const costRaw = String(costI.value || "").trim();
         const providerRaw = String(providerSelect?.value || "").trim();
         const description = String(descI.value || "").trim();
-  
+        const sku = String(skuI?.value || "").trim();
+        const supplierRef = String(supplierRefI?.value || "").trim();
+        const unit = String(unitI?.value || "").trim();
+
         if (!name) return setAlert("error", "El nombre es obligatorio.");
         if (!Number.isFinite(price) || price <= 0) return setAlert("error", "El precio debe ser mayor que 0.");
-  
+
         const payload = {
           name,
           description: description || null,
@@ -1014,10 +1052,14 @@ function renderProductsView(container) {
           providerId: providerRaw === "" ? null : Number(providerRaw),
           // SCRUM-609 · el lado elegido, o null si nadie tocó el switch.
           itemKind: altaSwitch.leer(),
+          // SCRUM-1008 · la ficha del artículo: código propio, referencia del proveedor y unidad.
+          sku: sku || null,
+          supplierRef: supplierRef || null,
+          unit: unit || null,
         };
-  
+
         await createProduct(merchantId, payload);
-  
+
         nameI.value = "";
         priceI.value = "";
         margenI.value = "";
@@ -1027,6 +1069,9 @@ function renderProductsView(container) {
         pintarMargen(margenI);
         if (providerSelect) providerSelect.value = "";
         descI.value = "";
+        if (skuI) skuI.value = "";
+        if (supplierRefI) supplierRefI.value = "";
+        if (unitI) unitI.value = "";
   
         setAlert("success", "Producto creado.");
         await refresh();
