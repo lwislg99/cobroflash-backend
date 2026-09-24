@@ -1860,3 +1860,49 @@ tenido éxito. El propio mensaje de error lo había escrito como hipótesis; era
   verde. Ojo al instrumento: un worktree recién creado no tiene `node_modules` ni `dist/`, y sin
   ellos cuatro de esos ficheros caen por `ERR_MODULE_NOT_FOUND` — eso no es un rojo, es no haber
   medido.
+
+---
+
+# APÉNDICE · 24-sep-2026 · SCRUM-804b (PR #1428) · Desatascado — conflicto de comentario + negativo caducado otra vez
+
+**Carril:** s3-22b (refuerzo, PRs atascados) · **Medido contra:** `origin/main` =
+`f80590410e03887ce016c7f58c1daf37825c78bc` · 2026-09-24T15:29:13Z (cabecera `Date` de GitHub)
+**Rama:** `scrum-804b-el-barrido-de-la-42` (PR #1428) · **Worktree:** `wt-s3-22b-1428`
+
+PASO 0: el PR llevaba 7 días abierto y `CONFLICTING`. No estaba abandonado — una sesión lo había
+retomado el 23-sep (commits `1061a9d`, `85b520d`) arreglando el meta-guard mudo de `scrum738` y
+sustituyendo el negativo caducado de SCRUM-880 por SCRUM-1099 — pero se quedó a medias: seguía en
+conflicto con `main` y sin empujar el arreglo hasta el final.
+
+## ① El conflicto, y por qué se resuelve a favor de HEAD
+
+`git merge origin/main` dio **un solo** conflicto real, en `tests/scrum738-el-tablero-contra-el-arbol.test.mjs`,
+dentro de un comentario de `MUTACIONES_QUE_ME_TUMBAN`. `origin/main` seguía citando la mutación
+vieja (`/^scrum-0*([0-9]+)/`, delimitador quitado, `+` codicioso intacto) porque el PR #1436
+(SCRUM-804g, «la mutación muda de 738») sólo había tocado el comentario, no el `a:` real — la
+mutación seguía sin colisionar y el meta-guard seguía mudo **en `main`**. La reescritura del PR
+#1428 (23-sep) SÍ cambia el `a:` a `/^scrum-0*([0-9]{1,2})/`, que colisiona de verdad. Se conserva
+la versión de HEAD (PR #1428): es la más nueva Y la única que corrige el código, no sólo la prosa.
+
+## ② El negativo caducó DE NUEVO en 26 horas — la misma familia que SCRUM-880/804i
+
+`tests/scrum804b-el-barrido-de-la-42.test.mjs` usaba `NEGATIVO = 1099` (rama viva sin mergear,
+medido el 23-sep). Entre el 23 y el 24-sep, **SCRUM-1099 se mergeó** (PR #1734), y el test empezó
+a fallar en el sentido contrario: `DENTRO` donde exigía `FUERA` — exactamente el patrón que el
+propio comentario de esa línea ya avisaba («en cuanto esta rama se mergee, hay que re-elegir un
+ticket vivo»). Re-medido hoy contra las 149 ramas remotas (`git merge-base --is-ancestor`):
+`NEGATIVO = 1107` (`scrum-1107b-garantia-obra-construccion`, sin entrada en `docs/master/`, rama
+viva confirmada). `npm test` sobre los dos ficheros: **12 pass · 0 fail**.
+
+## ③ Lo que NO se ha tocado
+
+`scripts/censo-regla-42.mjs` (el censo en sí, byte a byte igual) y el resto de la saga 804
+(804c–804i, ya en `main`). Sólo el conflicto de merge y el negativo caducado.
+
+## Verificación
+
+- `node --test` directo sobre `tests/scrum738-…` + `tests/scrum804b-…`: 12/12 pass (no requiere
+  `dist/`: ambos importan de `scripts/` y `tests/_*.mjs`).
+- `git diff origin/main --stat` sobre los 4 ficheros del PR: sin sorpresas, sólo lo esperado.
+- Empujado a `scrum-804b-el-barrido-de-la-42`; `mergeable` pasó de `CONFLICTING` a `MERGEABLE`,
+  CI en marcha (auto-merge sigue armado desde la apertura del PR).
