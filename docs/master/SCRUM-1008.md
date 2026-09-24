@@ -2,7 +2,7 @@
 
 **Fecha:** 24-sep-2026 · **Carril:** S1 (servidor/importes) · **Rama:** `scrum-1008-ficha-articulo-sku-unidad-familia`
 
-**Medido contra:** `origin/main` = `f8059041` (Merge pull request #1749, `scrum-1110-sobre-soap-prueba-aeat`)
+**Medido contra:** `origin/main` = `f80590410e03887ce016c7f58c1daf37825c78bc` · 2026-09-24T15:58:41Z (Merge pull request #1749, `scrum-1110-sobre-soap-prueba-aeat`)
 
 ## Origen
 
