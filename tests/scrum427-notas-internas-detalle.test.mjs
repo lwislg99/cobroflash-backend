@@ -25,6 +25,7 @@ import path from 'node:path';
 // en su cabecera por qué NO toca `Quote.internalNotes`, y un guard de texto no distingue la
 // prohibición de su explicación (SCRUM-203). Es la quinta vez que muerde en este repo.
 import { soloEjecutable } from './_guard-texto.mjs';
+import { lineasDeElTrabajo, textosDeElTrabajo } from './_composicion-detalle.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/jobDetailView.js');
@@ -50,8 +51,17 @@ test('SCRUM-427 · SUELO: se está leyendo el detalle del Trabajo de verdad', ()
 
 test('SCRUM-427 · la sección de notas se PINTA en el detalle', () => {
   const s = leer(VISTA);
-  assert.match(s, /pintarNotasInternas\(body, job\)/,
-    '🔴 la sección de notas no se llama desde el cuerpo del detalle.\n\n'
+  // ── RE-ANCLAJE (SCRUM-917g) ────────────────────────────────────────────────────────────
+  // El ancla era `pintarNotasInternas(body, job)` y hoy la llamada es `pintarNotasInternas(
+  // lineaNotas.cuerpo, job)`: se pinta DENTRO de la línea «Notas internas» de «El trabajo», no
+  // en el cuerpo suelto. Peor: el ancla viejo seguía casando, pero con la DEFINICIÓN de la función
+  // (`function pintarNotasInternas(body, job)`), no con ninguna llamada — es decir, este test llevaba
+  // pasando por casualidad desde que la llamada cambió, y habría pasado también si nadie la llamara.
+  // Se exige ahora una LLAMADA (cualquier primer argumento, que no sea la declaración) y se conserva
+  // la otra mitad: la función existe. Sobre el CÓDIGO, sin comentarios: una llamada comentada no
+  // pinta nada, y sobre el fichero entero un `// pintarNotasInternas(x, job);` la daría por buena.
+  assert.match(soloEjecutable(s), /(?<!function )pintarNotasInternas\([\w.]+, job\)/,
+    '🔴 la sección de notas no se llama desde el detalle (una LLAMADA, no la declaración).\n\n'
     + '  Declararla y no pintarla es peor que no tenerla: el contrato dice que existe y la pantalla\n'
     + '  no la enseña, que es exactamente lo que este ticket vino a arreglar.');
   assert.match(s, /function pintarNotasInternas/, '🔴 la función ya no existe');
@@ -110,6 +120,20 @@ function rotuloDeNotas(fuente, dondeDice) {
   return m[1].trim();
 }
 
+/**
+ * SCRUM-917g · el rótulo de la línea de notas de la tarjeta «El trabajo», leído por el camino nuevo.
+ * Mismo suelo que `rotuloDeNotas`: si no lo encuentra, LANZA — no devuelve vacío.
+ */
+function rotuloDeNotasDelTrabajo(fuenteVista) {
+  const textos = textosDeElTrabajo(RAIZ);
+  const notas = lineasDeElTrabajo(fuenteVista, textos).find((l) => l.clave === 'notas');
+  assert.ok(notas && notas.rotulo,
+    '🔴 CIEGO: no se encuentra la línea de notas en la tarjeta «El trabajo» del detalle. Sin los dos ' +
+    'rótulos no se puede afirmar que coincidan — comparar dos cosas que no se han leído da igualdad ' +
+    'trivial, que es el verde más peligroso de este fichero.');
+  return notas.rotulo.trim();
+}
+
 test('SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal', () => {
   // Regla 30: no se inventa microcopy. Aquí no hacía falta — la sección de notas ya existe en
   // Presupuestos con su rótulo, su píldora y su placeholder aprobados. Que las dos pantallas digan
@@ -136,7 +160,9 @@ test('SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal', (
   // estricto que el guard original —él comparaba contra un literal escrito aquí; esto compara las
   // dos pantallas de verdad, una contra otra— y no hay literal que mantener: el día que la copy
   // cambie, cambia en los dos sitios o esto cae.
-  const rotuloDetalle = rotuloDeNotas(detalle, 'el detalle del Trabajo');
+  // RE-ANCLAJE (SCRUM-917g): el rótulo del detalle ya no es un `<h3>` escrito en la vista, es la línea
+  // «Notas internas» de «El trabajo»; se lee por el camino nuevo, con el mismo suelo.
+  const rotuloDetalle = rotuloDeNotasDelTrabajo(detalle);
   const rotuloPresupuestos = rotuloDeNotas(presupuestos, 'Presupuestos');
 
   assert.equal(
@@ -154,18 +180,39 @@ test('SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal', (
   assert.equal(rotuloDetalle, 'Notas internas',
     '🔴 el rótulo aprobado (10-ago-2026) es «Notas internas» a secas, sin emoji ni adornos.');
 
-  for (const [texto, que] of [
-    ['Solo tú las ves', 'la píldora de privacidad'],
-    ['Anota detalles del trabajo, acuerdos verbales, recordatorios…', 'el placeholder'],
-  ]) {
-    assert.ok(presupuestos.includes(texto),
-      `🔴 PREMISA ROTA: «${texto}» ya no está en Presupuestos, así que este guard estaría comparando `
-      + 'contra algo que se fue. Si la microcopy cambió allí, decide si cambia en los dos sitios.');
-    assert.ok(detalle.includes(texto),
-      `🔴 ${que} del detalle no coincide con el de Presupuestos: «${texto}».\n\n`
-      + '  El mismo concepto contado con dos palabras distintas en dos pantallas se lee como dos\n'
-      + '  cosas distintas. Y la microcopy no se inventa (regla 30).');
-  }
+  // ── RE-ANCLAJE (SCRUM-917g) ──────────────────────────────────────────────────────────
+  // Este bucle exigía DOS textos iguales en las dos pantallas: la píldora y el placeholder. Con la
+  // tarjeta «El trabajo» cambian de sitio los dos, y uno de ellos cambia de TEXTO por una firma:
+  //
+  //   · LA PÍLDORA «Solo tú las ves» sigue siendo LA MISMA en las dos pantallas, pero en el detalle
+  //     ya no vive en la vista: es el valor cerrado de la línea (`TEXTOS_EL_TRABAJO.notasPrivadas`).
+  //     La igualdad se conserva, leyendo del sitio nuevo.
+  //   · EL PLACEHOLDER ya NO es el de Presupuestos, A PROPÓSITO: el fundador firmó otro para esta
+  //     pantalla (SCRUM-917, com. 15881). Su ficha, la ruta ENTERA en una sola línea:
+  //     docs/microcopy/2026-09-21-SCRUM-917-el-trabajo-plegable.md
+  //     El principio de la regla 30 no se mueve —«ningún texto sin firma»— y por eso
+  //     esta divergencia se DECLARA aquí, con su firma, en vez de quedar como una excepción muda:
+  //     se exige que el literal del detalle sea EXACTAMENTE el firmado y que el viejo no siga en el
+  //     código del detalle (dos marcadores en la misma pantalla serían uno sin firma).
+  const textos = textosDeElTrabajo(RAIZ);
+  assert.ok(presupuestos.includes('Solo tú las ves'),
+    '🔴 PREMISA ROTA: «Solo tú las ves» ya no está en Presupuestos, así que este guard estaría comparando '
+    + 'contra algo que se fue. Si la microcopy cambió allí, decide si cambia en los dos sitios.');
+  assert.equal(textos.notasPrivadas, 'Solo tú las ves',
+    '🔴 la píldora de privacidad del detalle no coincide con la de Presupuestos.\n\n'
+    + '  El mismo concepto contado con dos palabras distintas en dos pantallas se lee como dos\n'
+    + '  cosas distintas. Y la microcopy no se inventa (regla 30).');
+
+  assert.equal(textos.marcadorNotas, 'Lo que necesites recordar de este trabajo.',
+    '🔴 el placeholder de las notas del detalle no es el firmado (SCRUM-917 com. 15881). Si el texto '
+    + 'cambia, cambia con firma: no se «vuelve» al de Presupuestos por comodidad.');
+  assert.match(soloEjecutable(detalle), /ta\.placeholder = TEXTOS_EL_TRABAJO\.marcadorNotas/,
+    '🔴 el detalle no lee su placeholder de la fuente única `TEXTOS_EL_TRABAJO.marcadorNotas`.');
+  assert.ok(!soloEjecutable(detalle).includes('Anota detalles del trabajo, acuerdos verbales'),
+    '🔴 ha vuelto al detalle el placeholder de Presupuestos: son dos marcadores en la misma pantalla y '
+    + 'el que no es el firmado no tiene firma.');
+  assert.ok(fs.existsSync(path.join(RAIZ, 'docs/microcopy/2026-09-21-SCRUM-917-el-trabajo-plegable.md')),
+    '🔴 falta la ficha de microcopy de SCRUM-917g (docs/microcopy/): el texto firmado no está registrado.');
 });
 
 test('SCRUM-427 · `notas` está declarada en el contrato de secciones, y la ÚLTIMA', () => {

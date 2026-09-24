@@ -995,6 +995,10 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'jobNuevoModal.js',
   'jobRailBlocks.js',
   'jobAsignados.js',
+  // SCRUM-917g (F) · «El trabajo» plegable: las cinco líneas del detalle (tipo, nombre, quién,
+  // notas, gastos) y lo que dice cada una cerrada. Va ANTES de `jobDetailView.js`, que la monta;
+  // el orden se declara abajo. Entrada DERIVADA del `index.html` ya fusionado con main, no sumada.
+  'jobTrabajoPlegable.js',
   // SCRUM-597 (DOC-07, 7-sep-2026): entran DOS. `economiaVisible.js` responde quién ve coste
   // y margen (P-DOC-3) y va ANTES de `productsView.js`, `quotesView.js` e
   // `invoiceDetailView.js`, que lo consultan. `documentoAsignados.js` es el selector de
@@ -1110,6 +1114,9 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'invoiceAccion.js', despues: 'invoiceDetailView.js', motivo: 'SCRUM-845: el estado y el destino de cada acción' },
   { antes: 'jobAgendar.js', despues: 'jobsView.js', motivo: 'SCRUM-823: agendar y el modal de la casa' },
   { antes: 'jobAgendar.js', despues: 'jobDetailView.js', motivo: 'SCRUM-823: el CTA «Agendar» del héroe' },
+  // SCRUM-917g · la vista arma «El trabajo» con `construirBloqueElTrabajo` y sus líneas al MONTAR el
+  // detalle: cargada después, `window.construirLineaPlegable` no existe y la ficha no se pinta.
+  { antes: 'jobTrabajoPlegable.js', despues: 'jobDetailView.js', motivo: 'SCRUM-917g: la tarjeta «El trabajo» y sus cinco líneas' },
   { antes: 'colaDeFirmas.js', despues: 'parteDetailView.js', motivo: 'SCRUM-652: firma con la cola que ya existe' },
   // SCRUM-593 (DOC-03): la pieza se carga antes que sus DOS consumidores. `jobDetailView.js`
   // YA la consume (el campo de cabecera del albaran); `quotesView.js` la consumira cuando salga

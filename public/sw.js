@@ -98,6 +98,7 @@ const SHELL = [
   '/dashboard/js/facturaPreEmision.js', // SCRUM-292 (A1)
   '/dashboard/js/jobRailBlocks.js', // SCRUM-318 (G3)
   '/dashboard/js/jobAsignados.js', // SCRUM-650 (T1): quien EJECUTA el trabajo
+  '/dashboard/js/jobTrabajoPlegable.js', // SCRUM-917g (F): «El trabajo» plegable
   '/dashboard/js/albaranActionsRegistry.js', // SCRUM-302 (C2)
   '/dashboard/js/albaranAccion.js', // SCRUM-831: el siguiente paso de un albarán, compartido
   '/dashboard/js/invoiceAccion.js', // SCRUM-845: qué se puede hacer con una factura, compartido

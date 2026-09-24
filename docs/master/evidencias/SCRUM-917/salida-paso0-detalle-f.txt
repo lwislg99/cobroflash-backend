@@ -1,0 +1,34 @@
+# SCRUM-917g - salida de paso0-detalle-f.mjs (Edge real, puppeteer-core), sobre el PRODUCTO SIN TOCAR
+# Date: Mon, 21 Sep 2026 12:25:15 GMT (cabecera de gh api -i zen)
+# medido sobre la rama en HEAD bbe01631ac5fcfd3ec67272c8aed3e39c192057f (merge del #1575, origin/main de las 12:18 GMT); lo unico distinto de main son los instrumentos (scripts/_detalle-917.mjs con equipo real y gastos por Trabajo). Con el banco nuevo, guard:detalle-trabajo-917 sigue en 92 de 92 sobre este mismo arbol.
+# ⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+# EXIT=0
+# SCRUM-917g · PASO 0 — el detalle del Trabajo, las CINCO secciones sueltas, medido HOY
+POBLACIÓN: 3 casos (3099, 3103, 3104) × 2 anchuras (1280, 390) · banco con equipo
+
+Trabajo 3099 a 1280px · 120 nodos
+  secciones sueltas: 5 de 5 (tipo@682 datos@779 quien@369 notas@991 gastos@1151)
+  bajo el pliegue (y > 900): 2 de 5 · alto sumado de las secciones: 716 px
+  <details> en la pantalla: 0 · casilla «Incluir precios en el parte» en la barra de Documentos: 1
+Trabajo 3103 a 1280px · 127 nodos
+  secciones sueltas: 5 de 5 (tipo@682 datos@779 quien@369 notas@991 gastos@1151)
+  bajo el pliegue (y > 900): 2 de 5 · alto sumado de las secciones: 800 px
+  <details> en la pantalla: 0 · casilla «Incluir precios en el parte» en la barra de Documentos: 1
+Trabajo 3104 a 1280px · 123 nodos
+  secciones sueltas: 5 de 5 (tipo@682 datos@779 quien@369 notas@991 gastos@1151)
+  bajo el pliegue (y > 900): 2 de 5 · alto sumado de las secciones: 748 px
+  <details> en la pantalla: 0 · casilla «Incluir precios en el parte» en la barra de Documentos: 1
+Trabajo 3099 a 390px · 120 nodos
+  secciones sueltas: 5 de 5 (tipo@1233 datos@1330 quien@860 notas@1542 gastos@1702)
+  bajo el pliegue (y > 844): 5 de 5 · alto sumado de las secciones: 716 px
+  <details> en la pantalla: 0 · casilla «Incluir precios en el parte» en la barra de Documentos: 1
+Trabajo 3103 a 390px · 127 nodos
+  secciones sueltas: 5 de 5 (tipo@1275 datos@1372 quien@902 notas@1584 gastos@1744)
+  bajo el pliegue (y > 844): 5 de 5 · alto sumado de las secciones: 800 px
+  <details> en la pantalla: 0 · casilla «Incluir precios en el parte» en la barra de Documentos: 1
+Trabajo 3104 a 390px · 123 nodos
+  secciones sueltas: 5 de 5 (tipo@1233 datos@1330 quien@860 notas@1542 gastos@1702)
+  bajo el pliegue (y > 844): 5 de 5 · alto sumado de las secciones: 748 px
+  <details> en la pantalla: 0 · casilla «Incluir precios en el parte» en la barra de Documentos: 1
+
+SUELOS (casos no medidos): 0
