@@ -1,6 +1,6 @@
 # SCRUM-1042 · ajuste «Enseñar la foto del técnico al cliente» (Configuración → Equipo)
 
-**Aprobado por el orquestador por delegación del fundador** el 2026-09-22 — SCRUM-1042, comentario de Jira con la firma.
+**Aprobado por el orquestador por delegación del fundador** el 2026-09-22 — SCRUM-1042 comentario 16765.
 
 ## Los literales, tal cual se pintan
 
