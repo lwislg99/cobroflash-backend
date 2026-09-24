@@ -59,6 +59,10 @@ const CENSO = censar(RAIZ);
  */
 const SIN_PROBAR_CONOCIDOS = [
   'tests/restauracion-del-arbol-ejecutable.test.mjs',
+  // SCRUM-1007/1011/1026: mismo caso que 951d — su `banco()` cuelga de `temporal()`.
+  'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs',
+  // SCRUM-1089b: `copiarSkillsA()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
+  'tests/scrum1089b-espejo-skills-agentes.test.mjs',
   'tests/scrum253-adopcion.test.mjs',
   'tests/scrum258-nota-por-sesion.test.mjs',
   'tests/scrum351-diagnostico-dependencias.test.mjs',
@@ -71,7 +75,8 @@ const SIN_PROBAR_CONOCIDOS = [
   'tests/scrum766-el-grep-que-cuenta-lineas.test.mjs',
   'tests/scrum778-la-lista-cableada.test.mjs',
   'tests/scrum808-el-arbol-que-queda-mutado.test.mjs',
-  'tests/scrum899-sesion-lista-blanca.test.mjs',
+  // SCRUM-951d: su `banco()` cuelga de `temporal()` (tests/_temporal.mjs), que el análisis no atraviesa.
+  'tests/scrum951d-ensayo-instalacion.test.mjs',
 ];
 
 // ═══ ① SUELO — sin esto, un «cero infracciones» podría ser «no he mirado» ═════════════════

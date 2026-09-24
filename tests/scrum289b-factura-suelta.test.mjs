@@ -95,15 +95,18 @@ test('SCRUM-289b · SUELO: el extractor encuentra el entrypoint', () => {
 
 // ── EL GATE ──────────────────────────────────────────────────────────────────────────────
 
-test('SCRUM-289b · el gate es el MODO, no el flag: los tres modos y el no-ES', () => {
-  // SCRUM-346 (A0.5): el veredicto pasó de booleano a TRES valores. Las cuatro afirmaciones de
-  // A0.3 siguen aquí ENTERAS; lo que cambia es que `receipt` ya no se lee como «no puedes» sino
-  // como lo que siempre fue: «tú emites justificantes».
+test('SCRUM-1027 · el gate es el MODO, no el flag: receipt vuelve a NO (regla 24, SCRUM-612c)', () => {
+  // Hasta SCRUM-346 (A0.5) esto era 'justificante': un merchant ES real sin flag podía emitir un
+  // documento suelto (el justificante `J-`). SCRUM-1027 retira ESE documento —no el gate por
+  // MODO, que sigue siendo la razón de fondo (ver la cabecera del fichero)—, así que 'receipt'
+  // vuelve a caer en 'no', igual que "sin merchant". Las tres NO-facturas comparten desenlace
+  // pero no motivo, y eso está bien: hoy nadie necesita distinguirlas en esta puerta.
 
-  // 'receipt' — ES real sin el flag: JUSTIFICANTE. Era `false` y ése era el defecto.
-  assert.equal(modoDocumentoSuelto({ id: 9, email: 'pro@x.es', country: 'ES', flags: null }), 'justificante',
-    '🔴 un merchant ES real emite JUSTIFICANTES, no nada. Devolver «no» aquí le deja sin puerta ' +
-    'para la reparación de 40 € que es el 80 % de su semana.');
+  // 'receipt' — ES real sin el flag: NINGÚN documento (SCRUM-1027 / regla 24 enmendada).
+  assert.equal(modoDocumentoSuelto({ id: 9, email: 'pro@x.es', country: 'ES', flags: null }), 'no',
+    '🔴 un merchant ES real sin flag ha vuelto a poder emitir un documento suelto. Desde ' +
+    'SCRUM-1027 (regla 24 / SCRUM-612c) el interruptor en OFF significa CERO documentos, ' +
+    'ni factura ni justificante — no solo "no factura".');
   // 'fiscal' por país — el caso que un gate por `isFlagEnabled` habría roto.
   assert.equal(modoDocumentoSuelto({ id: 9, email: 'pro@x.fr', country: 'FR', flags: null }), 'factura',
     '🔴 EL BUG DE LA VECINA: un merchant no-ES emite factura fiscal SIEMPRE. `INVOICING_ES_ENABLED` ' +
@@ -117,14 +120,13 @@ test('SCRUM-289b · el gate es el MODO, no el flag: los tres modos y el no-ES', 
   assert.equal(modoDocumentoSuelto(null), 'no', '🔴 sin merchant hay que fallar cerrado.');
 });
 
-test('SCRUM-346 · REGLA 24: hacer explícito el justificante NO enciende la facturación', () => {
-  // El cambio de A0.5 se puede leer mal como «ya emitimos facturas en España». No: el mismo
-  // merchant ES real que ANTES no tenía botón ahora tiene el de JUSTIFICANTE, y sigue sin poder
-  // emitir factura. Si alguien hiciera que `receipt` devolviera 'factura', esto cae.
+test('SCRUM-1027 · REGLA 24: el interruptor en OFF sigue sin encender la facturación', () => {
+  // El invariante de SCRUM-346 seguía vivo aunque el documento intermedio (el justificante) haya
+  // desaparecido: un merchant ES real sin `INVOICING_ES_ENABLED` NUNCA emite 'factura' por esta
+  // puerta. Si alguien hiciera que `receipt` devolviera 'factura', esto cae.
   const esReal = { id: 9, email: 'pro@x.es', country: 'ES', flags: null };
   assert.notEqual(modoDocumentoSuelto(esReal), 'factura',
-    '🔴 un merchant ES real sin `INVOICING_ES_ENABLED` NO emite facturas (regla 24). A0.5 hace ' +
-    'explícito el justificante; no abre la facturación.');
+    '🔴 un merchant ES real sin `INVOICING_ES_ENABLED` NO emite facturas (regla 24).');
   // Y con el flag ON —post SIF-1— sí, para que la negación de arriba no sea verde por accidente.
   assert.equal(modoDocumentoSuelto({ ...esReal, flags: { INVOICING_ES_ENABLED: true } }), 'factura');
 });

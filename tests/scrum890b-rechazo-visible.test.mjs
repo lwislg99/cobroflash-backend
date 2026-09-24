@@ -129,7 +129,8 @@ test('SCRUM-890b · 🔴 firmar un parte SIN RED no cierra el pad: dice lo MISMO
   assert.equal(pad.cerrado, false,
     '🔴 sin red el pad se ha CERRADO como si el cliente hubiera firmado. La firma sólo está en este ' +
     'móvil y el profesional se va creyendo que subió.');
-  const literal = b.ctx.mensajeDeFalloAlFirmar({ sinRed: true });
+  // SCRUM-919 · con la firma GUARDADA en el móvil, el mismo mensaje del albarán nombra ese estado.
+  const literal = b.ctx.mensajeDeFalloAlFirmar({ sinRed: true }, { encolada: true });
   assert.equal(pad.aviso, literal,
     '🔴 el aviso no es el literal del albarán (`mensajeDeFalloAlFirmar`): ' + JSON.stringify(pad.aviso));
   assert.deepEqual(await enLaCola(b), ['firma:parte:7'],

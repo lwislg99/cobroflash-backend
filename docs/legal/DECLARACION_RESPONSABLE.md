@@ -9,7 +9,7 @@
 > el productor conserva todas las versiones (art. 13 RRSIF).
 >
 > Cumplimentar todos los `[…]` antes de firmar. Los valores del sistema DEBEN coincidir
-> con el bloque `SistemaInformatico` que YaQu remite en cada registro de facturación
+> con el bloque `SistemaInformatico` que YaQu remitirá en cada registro una vez conectado el envío a la AEAT
 > (ver `src/modules/fiscal/verifactu/registro.builder.ts`).
 
 ---
@@ -37,7 +37,7 @@
 ### 3. Tipología, composición y funcionalidades
 
 - **Tipología:** sistema informático de facturación en modalidad **VERI*FACTU**
-  (remisión de los registros de facturación a la AEAT). **No** opera en modo "no
+  (remisión de los registros a la AEAT, una vez completado el envío telemático). **No** opera en modo "no
   verificable".
 - **Modalidad de uso** (coherente con los registros remitidos):
   - `TipoUsoPosibleSoloVerifactu`: **Sí** — el sistema solo opera en modalidad VERI*FACTU.
@@ -46,11 +46,11 @@
 - **Composición / arquitectura:** aplicación web SaaS alojada en `[INFRAESTRUCTURA, ej.
   Railway]`; backend Node.js; base de datos PostgreSQL. Generación de los registros de
   facturación de **alta**, **rectificativa (R1)** y **anulación** con huella **SHA-256
-  encadenada** (art. 12 RRSIF) y remisión telemática al servicio web de la AEAT.
+  encadenada** (art. 12 RRSIF).
 - **Funcionalidades relevantes a efectos del Reglamento:**
   - Registro de facturación de alta por cada factura emitida, con huella y encadenamiento.
   - Registro de anulación y factura rectificativa (R1) con su propio registro y huella.
-  - Remisión inmediata a la AEAT (modalidad VERI*FACTU), con control de flujo.
+  - Remisión a la AEAT (modalidad VERI*FACTU), una vez construido el envío.
   - Código QR de cotejo y leyenda "Factura verificable en la sede electrónica de la AEAT"
     en cada factura.
   - Conservación e inalterabilidad de los registros; trazabilidad.

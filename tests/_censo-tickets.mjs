@@ -218,9 +218,9 @@ export function censarTicket(numero, { raiz = process.cwd(), ref = 'origin/main'
   // este censo se equivoca hacia «falta trabajo», nunca hacia «ya está hecho».
   // `--grep` de git no tiene frontera de palabra portable, así que se filtra después con el
   // patrón propio: pedirle a git `SCRUM-29` devuelve también los del 298.
-  const crudo = capacidad.commits.puede ? git(['log', ref, '--format=%h%cs%an%s', `--grep=SCRUM-${n}`, '-i'], raiz) : '';
+  const crudo = capacidad.commits.puede ? git(['log', ref, '--format=%h\x1f%cs\x1f%an\x1f%s', `--grep=SCRUM-${n}`, '-i'], raiz) : '';
   const commits = crudo.split('\n').filter(Boolean)
-    .map((l) => { const [sha, fecha, autor, asunto] = l.split(''); return { sha, fecha, autor, asunto }; })
+    .map((l) => { const [sha, fecha, autor, asunto] = l.split('\x1f'); return { sha, fecha, autor, asunto }; })
     .filter((c) => patron.test(c.asunto));
 
   // ── FUENTE 2 · la entrada de máster ─────────────────────────────────────────────────────

@@ -211,3 +211,67 @@ borrador se guarda en cada paso. Mutantes (quitar B; quitar `renderPreview` de A
 - **Hallazgo sin ticket:** el borrador del editor (`saveDraft`) no guarda ni el dto de línea ni el descuento
   global. Se guarda al tocarlos (ahora sí), pero sin ellos: al recuperar el borrador vuelven vacíos. Ya pasaba
   antes de este PR al tocar otro campo después de un descuento.
+
+# SCRUM-888d · PR de servidor: el descuento global en el detalle (puntos 1 y 3) y la página de firma (punto 1)
+
+**Medido contra:** `origin/main` = `2be8fe16a3245322e64837f789189875e0c9f560` · 2026-09-17T13:21:12Z (hora del commit de main)
+**Rama:** `scrum-888d-servidor-descuentos` · **Carril:** Sesión 1 · **Firma:** SCRUM-888 comentario 15788 · **Estado:** listo en local, sin empujar (va detrás del PR 3 de SCRUM-887).
+
+## Qué cambia
+
+- **`GET /admin/quotes/:id` devuelve `discountGlobalAmount`** (`null` si no hay). Lo medía la Sesión 2 en staging e437a51f: las líneas traían `dto` y el global no. Es precio, no margen: lo ve quien ve el total, y SCRUM-597 sigue verde.
+- **Punto 3 (Duplicar):** en el servidor no hay ninguna ruta de duplicar. «⎘ Duplicar» (`quotesDetailView.js:1172`) lee ese GET y arma la plantilla en el front, así que la parte de servidor era solo el campo. Pasarlo a la plantilla es de la Sesión 2.
+- **Punto 1 · página de firma** (`quoteDecisionLanding.routes.ts`): con descuento, el bloque de totales sale de `pieDePresupuesto`, la cuenta del pie del PDF: «Suma de líneas», «Descuento», «Descuento global» (los rótulos de SCRUM-594 sin los dos puntos), «Base imponible» e «IVA (x%)». Sin descuento se queda el camino de antes: `pieDePresupuesto` redondea la cuota sobre la base del tipo y `calcVatBreakdown` la acumula línea a línea, así que pasar todo por el pie habría movido céntimos de páginas que estaban bien. Aprobación en `docs/microcopy/2026-09-17-SCRUM-888-descuentos-en-la-firma.md`.
+
+## Verificación
+
+- **Rojo del GET** `551ac3566f8af2eeb306e3f590e8891f2c8815fd`, por la app real (HTTP, banco de SCRUM-597): el detalle respondía 200 con las líneas y su `dto`, pero sin la clave. **Arreglo** `0035fcb92c4131aed44623c6faf6833bf35a0860`.
+- **Rojo de la firma** `ee76f08f5507a9bc935e20f3fbda7db176cf4628`: C3-B firmaba 559,70 y la página sumaba Base 539,49 + IVA 113,29 = 652,78; C3 firmaba 539,05 y la página sumaba 628,60. **Arreglo** `8cc2ac948a6d373ecf4fb4d08241a90a1dc2792e`: C3-B suma 462,56 + 97,14 = **559,70**; C3 suma 462,56 + 57,71 + 18,78 = **539,05**; y lo mismo con solo el descuento de línea y con solo el global.
+- **Positivo:** huella sha256 de 8 páginas SIN descuento (C1 con el céntimo del punto 4, C2, C4, dto 0 y global «0.00», todo al 0 %, modo «IVA no incluido», tiers y sin líneas), congelada con el código anterior: idéntica byte a byte tras el arreglo.
+- **Mutantes**, cada uno compilado y revertido (recompilando también al revertir): la firma ignora el global → 1 rojo · la firma pasa TODO por el pie → 1 (la huella) · la firma vuelve a la cuenta sin descuentos → 1 · el IVA con el rótulo del PDF → 1 · el GET sin el campo → 1. Revertido: 3/3.
+
+## Huecos, dichos
+
+- **Modo «IVA no incluido»:** la página sigue siempre en «sumar», como antes (condición (c) de la firma).
+- **Presupuesto con descuento y todo al 0 %:** la página enseña ahora el bloque (Suma de líneas, Descuento…, Base imponible) sin fila de IVA. Antes no había bloque porque la cuota era 0. La etiqueta de la cabecera no cambia («Total del presupuesto»).
+- No se ha mirado la página renderizada en un navegador (ni a 390 px ni a 1280 px): se verifica en staging tras el merge.
+- **Tests ajustados tras la primera suite completa** (merge de main `10e1b30b`): el del GET iba por la app real por HTTP y, con el test en verde, el proceso reventaba al salir en Windows (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`, libuv). Ahora llama sin servidor a `getQuoteDetailAdmin`, la función que sirve el GET, con `prisma` de doble, y otro test comprueba que el GET la sigue sirviendo. Quitar el campo sigue dando rojo (medido). El de la firma deja hueco a los atributos en sus expresiones (guard SCRUM-553). Suite completa: **7.350 tests · 7.240 pass · 0 fail · 110 skipped**.
+## SCRUM-888c (C + punto 1 front + borrador) · las filas y los totales con los descuentos
+
+**Medido contra:** `origin/main` `e437a51f` (rojo), 17-sep-2026.
+**Rama:** `scrum-888c-descuentos-en-lineas` · **Alcance decidido por el orquestador:** C + detalle (opción a) + borrador.
+
+**Qué pasaba** (con una línea de 8 × 24,95 € al 21 % y dto 15 %; en el detalle, las tres líneas de SCRUM-883 C3):
+
+| sitio | antes | la cuenta del editor |
+|---|---|---|
+| fila de la vista previa del editor | 241,52 € | 205,29 € |
+| borrador recargado (F5) | sin dto ni global: 241,52 € | 175,04 € con dto y global 25 € |
+| detalle: filas | 241,52 · 241,88 · 145,20 | 205,29 · 217,69 · 145,20 |
+| detalle: base / IVA bajo total 539,05 € | 539,49 / 89,11 | 462,56 / 76,49 |
+
+**Arreglo:**
+
+- `quoteDescuentos.importeDeLinea`: una sola cuenta por línea. Sin dto es EXACTAMENTE `qty × price × (1 + tax)`
+  (igualdad estricta en `npm test`). La usan la fila del editor, la de la vista previa y la del detalle.
+- Detalle: con descuentos, base e IVA de `totalesConDescuento(líneas, quote.discountGlobalAmount)`. Sin descuentos,
+  la suma de siempre: entre las dos cuentas cabe un céntimo (punto 4) y aquí no se cambia una cifra que hoy cuadra.
+- Borrador: `saveDraft` guarda `dto` por línea y `descuentoGlobal`; `loadDraft` los restaura y abre el campo del global.
+
+**⚠️ DECLARADO — el descuento global en el detalle.** `GET /admin/quotes/:id` NO devuelve `discountGlobalAmount`
+(medido en staging `e437a51f`: la clave no está). Hasta que lo mande el servidor (Sesión 1, junto al punto 3 y la
+página de firma), un presupuesto CON descuento global sigue sin restarlo en el detalle: base e IVA aplican el dto de
+línea y no el global, así que siguen sin cuadrar con el total, como antes. No se deduce restando del total (sería una
+segunda cuenta). Cuando llegue el campo, cuadra sin tocar el front: el guard lo prueba con el campo simulado.
+
+**Rojo y verde:**
+
+- `guard:descuento-redibuja` (ampliado): fila de la vista previa = fila del editor, y al recargar vuelven el dto y el
+  global con el mismo total. Un contexto de navegador por ancho (el borrador de un ancho se restauraba en el otro).
+- `guard:descuentos-en-el-detalle` (nuevo, panel real, `/admin/quotes/1` simulado): positivo sin descuentos idéntico
+  a hoy; con dto, cuadra; con dto y global CON el campo, cuadra; SIN el campo, declarado.
+- Contra `e437a51f`: rojo en los dos (2 de 2 anchos; 3 de 4 casos). Con el arreglo: verdes.
+- Mutantes: fila de la vista previa con cuenta propia, borrador sin dto/global y detalle con `if (false)`, sin sustituir
+  la base o ignorando el global del servidor → rojo en `tests/scrum888c-descuentos-en-lineas.test.mjs`. El `if (false)`
+  al principio solo lo cazaba el guard: el test se reforzó para exigir la puerta y su efecto.
+- Trinquete 522 medido: 21 → 22.

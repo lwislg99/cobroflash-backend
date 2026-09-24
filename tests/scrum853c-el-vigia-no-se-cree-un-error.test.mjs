@@ -26,7 +26,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -135,7 +134,7 @@ function correrPaso({ cabecera, escenario = {}, previos = {} }) {
   const sondas = guion.split(SONDA).length - 1;
   const pasadas = guion.split(PASADA).length - 1;
   // El temporal se crea aquí y a la vista: el censo de SCRUM-824 no atraviesa lo que devuelve una función.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-853c-${process.pid}-`));
+  const tmp = temporal(`yaqu-853c-${process.pid}-`);
   const bin = path.join(tmp, 'bin');
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, 'gh'), GH_FALSO);
@@ -175,6 +174,24 @@ function correrPaso({ cabecera, escenario = {}, previos = {} }) {
     FALLA: '',
     ...escenario,
   };
+  // 🔴 SCRUM-928c · EL PASO FABRICADO NO HEREDA EL ENTORNO DEL CHAT.
+  // En GitHub Actions estas tres no existen; aquí venían de quien lanza la tanda, y el paso no
+  // corría en el entorno que dice medir. Medido el 17-sep-2026: con `FORCE_COLOR=3` en el chat,
+  // el `node` del paso pinta los NÚMEROS de amarillo y la línea de estado salía
+  // `1212|DIRTY|\x1B[33m1\x1B[39m||null` en vez de `1212|DIRTY|1||null`. Dos casos en rojo con el
+  // vigía sano: 9 tests · 7 pass · 2 fail, frente a 9/9/0 sin la variable.
+  //   · `FORCE_COLOR` es la MEDIDA aquí.
+  //   · `NODE_OPTIONS` y `NODE_TEST_CONTEXT` van por el mismo motivo y con precedente MEDIDO en
+  //     SCRUM-858b (CI del #1441: un reporter heredado le regalaba un recuento a una tanda
+  //     fabricada). NO se han vuelto a medir sobre ESTE fichero, y se dice: ponerle un
+  //     `NODE_OPTIONS` con reporter a la tanda de fuera mata al propio `node --test` que la corre
+  //     (`ERR_INVALID_ARG_VALUE`), así que con este método no se puede mirar.
+  // El escenario sigue mandando: si un caso quisiera color a propósito, lo pone en `escenario` y
+  // se aplica después de esto.
+
+  for (const v of ['FORCE_COLOR', 'NODE_OPTIONS', 'NODE_TEST_CONTEXT']) {
+    if (!(v in escenario)) delete env[v];
+  }
   const r = spawnSync('bash', ['-e', barras(path.join(tmp, 'paso.sh'))], { cwd: tmp, env, encoding: 'utf8', timeout: 120000 });
   const outputs = {};
   for (const l of fs.readFileSync(salida, 'utf8').split('\n')) {
@@ -191,6 +208,36 @@ function correrPaso({ cabecera, escenario = {}, previos = {} }) {
 
 const REUNIR = '      - name: Reunir el estado de los PR abiertos';
 const CLASIFICAR = '      - id: pasada';
+
+// ── SCRUM-928c · EL LABORATORIO NO LE PASA SU ENTORNO AL SUJETO ────────────────────────────────
+
+test('SCRUM-928c · 🔴 el paso fabricado NO hereda el color del chat: su línea de estado sale sin ANSI', () => {
+  const antes = process.env.FORCE_COLOR;
+  process.env.FORCE_COLOR = '3';
+  try {
+    // ✅ CONTROL que impide que este caso sea una tautología: con el color puesto, un hijo que SÍ
+    // hereda el entorno tiene que colorear. Si no colorea, el caso de abajo pasaría sin medir nada.
+    const testigo = spawnSync(process.execPath, ['-e', 'console.log(1)'],
+      { env: { ...process.env }, encoding: 'utf8', timeout: 30000 });
+    assert.ok(testigo.stdout.includes('\u001B'),
+      '🔴 NO PUDE MIRAR: con FORCE_COLOR=3 un hijo que hereda el entorno ya no colorea, así que este'
+      + ` caso no distingue un laboratorio limpio de uno sucio. stdout: ${JSON.stringify(testigo.stdout)}`);
+
+    const r = correrPaso({ cabecera: REUNIR });
+    assert.equal(r.status, 0, `el paso no terminó bien: ${r.stderr}`);
+    // 🔴 EL CONTROL QUE DECIDE: ni un byte de escape en lo que el paso escribe para el siguiente.
+    assert.ok(r.estados && !r.estados.includes('\u001B'),
+      '🔴 la línea de estado trae códigos de color: el laboratorio le ha pasado su FORCE_COLOR al paso,'
+      + ` y el vigía no corre en el entorno que este fichero dice medir. estados: ${JSON.stringify(r.estados)}`);
+    // Y el valor, que es lo que el siguiente paso parsea por posición.
+    const [numero, estado, checks] = r.estados.trim().split('|');
+    assert.deepEqual([numero, estado, checks], ['1212', 'DIRTY', '1'],
+      '🔴 con color en el chat, el campo de checks llegaba como «\\x1B[33m1\\x1B[39m» en vez de «1»');
+  } finally {
+    if (antes === undefined) delete process.env.FORCE_COLOR;
+    else process.env.FORCE_COLOR = antes;
+  }
+});
 
 // ── SUELOS ─────────────────────────────────────────────────────────────────────────────────────
 

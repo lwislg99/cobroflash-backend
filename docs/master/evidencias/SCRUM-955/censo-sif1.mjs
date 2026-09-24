@@ -1,0 +1,471 @@
+#!/usr/bin/env node
+// SCRUM-955 · ¿Qué le falta HOY a SIF-1 para 8/8? — censo por AST, SOLO LECTURA.
+//
+// Uso:   node docs/master/evidencias/SCRUM-955/censo-sif1.mjs <repo> <ref>
+//        (p. ej. `node docs/master/evidencias/SCRUM-955/censo-sif1.mjs . origin/main`)
+//
+// Lee los BLOBS del ref (`git cat-file --batch`), nunca el árbol de trabajo: la medición describe
+// el commit, no lo que haya suelto en disco. Parsea TypeScript con el `typescript` del propio repo,
+// así que los COMENTARIOS no cuentan (A23 #2): un comentario que explica por qué falta algo
+// contiene el nombre de lo que falta.
+//
+// Cada fila dice su POBLACIÓN y lleva un CONTROL POSITIVO: el mismo detector buscando algo que
+// SABEMOS que está. Si un control da 0, la fila es CIEGA y el censo sale con código 2 (A3, A21):
+// un cero sin control delante es «no he mirado», no «no existe».
+//
+// No modifica nada, no abre red, no lee ningún `.env`, no toca ninguna base.
+
+import { execFileSync, spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+
+const [repoArg, ref] = process.argv.slice(2);
+if (!repoArg || !ref) {
+  console.error('uso: node censo-sif1.mjs <repo> <ref>');
+  process.exit(64);
+}
+const repo = path.resolve(repoArg);
+const require = createRequire(path.join(repo, 'package.json'));
+const ts = require('typescript');
+
+const git = (...a) => execFileSync('git', ['-C', repo, ...a], { encoding: 'utf8', maxBuffer: 1 << 28 });
+const sha = git('rev-parse', ref).trim();
+
+// ─── lectura de blobs ─────────────────────────────────────────────────────────────────────
+const todos = git('ls-tree', '-r', '--name-only', sha).split('\n').filter(Boolean);
+function leer(rutas) {
+  const input = rutas.map((r) => `${sha}:${r}`).join('\n') + '\n';
+  const out = spawnSync('git', ['-C', repo, 'cat-file', '--batch'], { input, maxBuffer: 1 << 30 });
+  if (out.status !== 0) throw new Error('cat-file falló: ' + out.stderr);
+  const buf = out.stdout;
+  const res = new Map();
+  let pos = 0;
+  for (const r of rutas) {
+    const nl = buf.indexOf(10, pos);
+    const cab = buf.slice(pos, nl).toString('utf8');
+    const m = cab.match(/^[0-9a-f]+ blob (\d+)$/);
+    if (!m) throw new Error(`blob ilegible para ${r}: «${cab}»`);
+    const n = Number(m[1]);
+    res.set(r, buf.slice(nl + 1, nl + 1 + n).toString('utf8'));
+    pos = nl + 1 + n + 1;
+  }
+  return res;
+}
+
+const rutasSrc = todos.filter((r) => r.startsWith('src/') && r.endsWith('.ts') && !r.endsWith('.d.ts'));
+const rutasPublic = todos.filter((r) => r.startsWith('public/') && /\.(html|js|css)$/.test(r));
+const rutasXsd = todos.filter((r) => r.startsWith('src/modules/fiscal/verifactu/xsd/') && r.endsWith('.xsd'));
+const extra = ['prisma/schema.prisma', 'package.json', 'tests/verifactu.test.mjs', 'src/core/flags.ts'];
+const blobs = leer([...new Set([...rutasSrc, ...rutasPublic, ...rutasXsd, ...extra])]);
+
+// ─── AST ──────────────────────────────────────────────────────────────────────────────────
+const asts = new Map();
+for (const r of rutasSrc) {
+  asts.set(r, ts.createSourceFile(r, blobs.get(r), ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS));
+}
+function recorrer(n, cb) { cb(n); ts.forEachChild(n, (h) => recorrer(h, cb)); }
+function linea(sf, n) { return sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1; }
+function funcionDe(n) {
+  for (let p = n.parent; p; p = p.parent) {
+    if ((ts.isFunctionDeclaration(p) || ts.isMethodDeclaration(p)) && p.name) return p.name.getText();
+    if ((ts.isArrowFunction(p) || ts.isFunctionExpression(p)) && p.parent && ts.isVariableDeclaration(p.parent)) return p.parent.name.getText();
+  }
+  return '(nivel de módulo)';
+}
+/** Texto ESTÁTICO de un literal de cadena o de plantilla (sin las expresiones `${…}`). */
+function textoLiteral(n) {
+  if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) return n.text;
+  if (ts.isTemplateExpression(n)) return n.head.text + n.templateSpans.map((s) => '\\x00' + s.literal.text).join('');
+  return null;
+}
+/** Todos los literales (cadena y plantilla) de `src/`, con su fichero, línea y función. */
+const literales = [];
+const llamadas = [];
+const news = [];
+const imports = [];
+const regexes = [];
+const props = [];
+for (const [r, sf] of asts) {
+  recorrer(sf, (n) => {
+    const t = textoLiteral(n);
+    if (t !== null && !ts.isImportDeclaration(n.parent) && !(n.parent && ts.isExternalModuleReference(n.parent))) {
+      literales.push({ r, n, sf, t, l: linea(sf, n), f: funcionDe(n) });
+    }
+    if (ts.isCallExpression(n)) {
+      const e = n.expression;
+      const nombre = ts.isIdentifier(e) ? e.text : ts.isPropertyAccessExpression(e) ? e.name.text : null;
+      if (nombre) llamadas.push({ r, n, sf, nombre, l: linea(sf, n), f: funcionDe(n) });
+    }
+    if (ts.isNewExpression(n)) {
+      const e = n.expression;
+      const nombre = ts.isIdentifier(e) ? e.text : ts.isPropertyAccessExpression(e) ? e.name.text : null;
+      if (nombre) news.push({ r, n, sf, nombre, args: n.arguments ? n.arguments.length : 0, l: linea(sf, n), f: funcionDe(n) });
+    }
+    if (ts.isImportDeclaration(n) && ts.isStringLiteral(n.moduleSpecifier)) imports.push({ r, m: n.moduleSpecifier.text });
+    if (ts.isRegularExpressionLiteral(n)) regexes.push({ r, sf, t: n.text, l: linea(sf, n), f: funcionDe(n) });
+    if (ts.isPropertyAssignment(n) || ts.isShorthandPropertyAssignment(n)) {
+      props.push({ r, nombre: n.name.getText(sf), l: linea(sf, n), f: funcionDe(n) });
+    }
+  });
+}
+
+// ─── salida ───────────────────────────────────────────────────────────────────────────────
+const filas = [];
+let ciegas = 0;
+function fila(id, requisito, veredicto, poblacion, control, detalle = []) {
+  const ciega = control.valor === 0;
+  if (ciega) ciegas++;
+  filas.push({ id, requisito, veredicto: ciega ? 'CIEGO' : veredicto, poblacion, control, detalle });
+}
+const donde = (xs) => xs.map((x) => `${x.r}:${x.l} (${x.f})`);
+const lits = (pred) => literales.filter((x) => pred(x.t));
+const callsA = (nombre, fueraDe) => llamadas.filter((c) => c.nombre === nombre && c.r !== fueraDe);
+const fnDecl = (ruta, nombre) => {
+  const sf = asts.get(ruta);
+  let hit = null;
+  if (sf) recorrer(sf, (n) => { if (ts.isFunctionDeclaration(n) && n.name && n.name.text === nombre) hit = n; });
+  return hit;
+};
+const constInit = (ruta, nombre) => {
+  const sf = asts.get(ruta);
+  let hit = null;
+  if (sf) recorrer(sf, (n) => {
+    if (ts.isVariableDeclaration(n) && n.name.getText(sf) === nombre && n.initializer) hit = n.initializer.getText(sf);
+  });
+  return hit;
+};
+const dentroDe = (fnNode, pred) => {
+  const out = [];
+  if (fnNode) recorrer(fnNode, (n) => { if (pred(n)) out.push(n); });
+  return out;
+};
+
+const VF = 'src/modules/invoicing/domain/verifactu.service.ts';
+const RB = 'src/modules/fiscal/verifactu/registro.builder.ts';
+const PROD = 'src/modules/fiscal/verifactu/productor.ts';
+const PDF = 'src/modules/invoicing/infra/pdf/pdf.service.ts';
+
+// ── S1-A · huella ─────────────────────────────────────────────────────────────────────────
+{
+  const fns = ['computeVeriFactuHash', 'computeVeriFactuHashAnulacion', 'formatFechaHoraHuso'].map((n) => [n, !!fnDecl(VF, n)]);
+  const vector = '3C464DAF61ACB827C65FDA19F352A4E3BDC2C640E9E9FC4CC058073F38F12F60';
+  const enTest = (blobs.get('tests/verifactu.test.mjs') || '').split(vector).length - 1;
+  fila('A1', 'Huella SHA-256 con el formato oficial y su vector de la AEAT en un test', fns.every((x) => x[1]) && enTest > 0 ? 'HECHO (estático; el test se CORRE aparte)' : 'FALTA',
+    `3 funciones buscadas en ${VF}`, { que: 'vector oficial AEAT en tests/verifactu.test.mjs', valor: enTest },
+    fns.map(([n, ok]) => `${n}: ${ok ? 'declarada' : 'NO declarada'}`));
+}
+// ── S1-A · encadenamiento serializado ────────────────────────────────────────────────────
+{
+  const res = ['applyVeriFactu', 'applyVeriFactuAnulacion'].map((n) => {
+    const f = fnDecl(VF, n);
+    const locks = dentroDe(f, (x) => { const t = textoLiteral(x); return t !== null && t.includes('pg_advisory_xact_lock'); }).length;
+    return [n, locks];
+  });
+  const control = lits((t) => t.includes('pg_advisory_xact_lock')).length;
+  fila('A2', 'Encadenado serializado por merchant (lock de Postgres al sellar alta y anulación)', res.every((x) => x[1] > 0) ? 'HECHO' : 'A MEDIAS',
+    `literales de las 2 funciones de sellado de ${VF}`, { que: 'literales con pg_advisory_xact_lock en todo src/', valor: control },
+    res.map(([n, k]) => `${n}: ${k} lock(s)`));
+}
+// ── S1-A · el sello sale del reloj del proceso (SCRUM-735) ───────────────────────────────
+{
+  const conteos = ['applyVeriFactu', 'applyVeriFactuAnulacion'].map((n) => {
+    const f = fnDecl(VF, n);
+    const ahora = dentroDe(f, (x) => ts.isNewExpression(x) && x.expression.getText() === 'Date' && (!x.arguments || x.arguments.length === 0));
+    return { n, k: ahora.length, lineas: ahora.map((x) => linea(asts.get(VF), x)) };
+  });
+  const res = conteos.map((c) => `${c.n}: ${c.k} × new Date() sin argumentos (líneas ${c.lineas.join(', ')})`);
+  const f = fnDecl(VF, 'formatFechaHoraHuso');
+  const getters = [...new Set(dentroDe(f, (x) => ts.isCallExpression(x) && ts.isPropertyAccessExpression(x.expression) && /^get/.test(x.expression.name.text)).map((x) => x.expression.name.text))];
+  const control = news.filter((x) => x.nombre === 'Date').length;
+  const ambasSinArg = conteos.every((c) => c.k > 0);
+  const local = getters.length > 0 && getters.every((g) => !g.startsWith('getUTC'));
+  const veredicto = getters.length === 0 ? 'CIEGO PARA EL DETECTOR (formatFechaHoraHuso no usa ningún getFoo())'
+    : ambasSinArg && local ? 'CONFIRMADO: sale del reloj y del huso LOCAL del proceso (new Date() sin argumentos + getters no-UTC)'
+    : ambasSinArg && !local ? 'CONFIRMADO: new Date() sin argumentos, pero formatFechaHoraHuso usa getters UTC (huso NO es el del proceso)'
+    : 'A MEDIAS: alguna de las dos funciones de sellado no usa new Date() sin argumentos — revisar detalle';
+  fila('A3', 'Fecha-hora-huso del registro (SCRUM-735: ¿sale del reloj y del huso del PROCESO?)', veredicto,
+    `2 funciones de sellado + formatFechaHoraHuso de ${VF}`, { que: 'new Date(...) en todo src/', valor: control },
+    [...res, `formatFechaHoraHuso usa: ${getters.join(', ') || '(ningún getter)'}`]);
+}
+// ── S1-A · QR y leyenda ───────────────────────────────────────────────────────────────────
+{
+  const f = fnDecl(VF, 'buildVeriFactuQrUrl');
+  const ls = dentroDe(f, (x) => textoLiteral(x) !== null).map((x) => textoLiteral(x));
+  const prod = ls.filter((t) => t.includes('www2.agenciatributaria.gob.es')).length;
+  const pruebas = ls.filter((t) => /prewww/.test(t)).length;
+  fila('A4', 'QR de cotejo: base de PRODUCCIÓN; la de PRUEBAS (prewww2) no está parametrizada', pruebas === 0 ? 'A MEDIAS (solo producción)' : 'HECHO',
+    `${ls.length} literales de buildVeriFactuQrUrl`, { que: 'base de producción www2.agenciatributaria.gob.es en la función', valor: prod },
+    [`literales con prewww: ${pruebas}`]);
+}
+{
+  const ley = lits((t) => t.includes('Factura verificable en la sede electrónica de la AEAT'));
+  const detalle = ley.map((x) => {
+    let cond = '(sin if)';
+    for (let p = x.n.parent; p; p = p.parent) if (ts.isIfStatement(p)) { cond = p.expression.getText(x.sf); break; }
+    return `${x.r}:${x.l} (${x.f}) — pintada bajo if (${cond})`;
+  });
+  const isVF = constInit(PDF, 'isVF');
+  const sifEnPdf = lits((t) => t === 'SIF_ENABLED').filter((x) => x.r === PDF).length;
+  fila('A5', 'Leyenda VERI*FACTU literal en el PDF — y de QUÉ depende que se pinte', ley.length ? 'HECHO, pero atada a la HUELLA, no a la REMISIÓN' : 'FALTA',
+    `literales de ${rutasSrc.length} ficheros de src/`, { que: 'la leyenda literal', valor: ley.length },
+    [...detalle, `isVF = ${isVF}`, `SIF_ENABLED leído en ${PDF}: ${sifEnPdf}`]);
+}
+// ── S1-C · generadores del registro ─────────────────────────────────────────────────────
+{
+  const alta = lits((t) => t.includes('<sum1:RegistroAlta'));
+  const anul = lits((t) => t.includes('<sum1:RegistroAnulacion'));
+  const quien = (n) => donde(callsA(n, RB));
+  const sobre = quien('construirSobreRegFactu');
+  const builderLlamado = quien('buildRegistroAlta').length + quien('buildRegistroAnulacion').length;
+  const veredictoC1 = alta.length === 0 && anul.length === 0 ? 'NO EXISTE ningún generador'
+    : `${alta.length} plantilla(s) de alta + ${anul.length} de anulación — ` +
+      (builderLlamado > 0 ? `registro.builder.ts SÍ se llama desde src/ (${builderLlamado} sitio(s))`
+        : 'las de registro.builder.ts NO se llaman desde src/ (0 sitios): huérfanas en producción, solo las de verifactu.service.ts están cableadas');
+  fila('C1', 'Registros de alta y anulación: cuántos generadores hay y quién los llama', veredictoC1,
+    `literales de ${rutasSrc.length} ficheros de src/`, { que: 'llamadas a construirSobreRegFactu fuera de su fichero', valor: sobre.length },
+    [`plantillas <sum1:RegistroAlta: ${donde(alta).join(' · ')}`,
+     `plantillas <sum1:RegistroAnulacion: ${donde(anul).join(' · ')}`,
+     `buildRegistroAlta llamada desde src/: ${quien('buildRegistroAlta').length}`,
+     `buildRegistroAnulacion llamada desde src/: ${quien('buildRegistroAnulacion').length}`,
+     `construirCuerpoSoapRegFactu llamada desde src/: ${quien('construirCuerpoSoapRegFactu').length}`,
+     `construirSobreRegFactu: ${sobre.join(' · ')}`,
+     `buildVerifactuRegistrosXml llamada desde: ${donde(callsA('buildVerifactuRegistrosXml', VF)).join(' · ')}`]);
+}
+{
+  const plantillas = lits((t) => t.includes('<sum1:RegistroAnterior>'));
+  const hijos = ['IDEmisorFactura', 'NumSerieFactura', 'FechaExpedicionFactura', 'Huella'];
+  const detalle = plantillas.map((x) => `${x.r}:${x.l} (${x.f}) — ${hijos.filter((h) => x.t.includes(`<sum1:${h}>`)).length}/4 hijos`);
+  fila('C2', 'Encadenamiento/RegistroAnterior completo (AUDITORIA_RRSIF 4.2)', plantillas.every((x) => hijos.every((h) => x.t.includes(`<sum1:${h}>`))) ? 'HECHO' : 'A MEDIAS',
+    `${plantillas.length} plantillas con RegistroAnterior`, { que: 'plantillas con <sum1:RegistroAnterior>', valor: plantillas.length }, detalle);
+}
+{
+  const schema = blobs.get('prisma/schema.prisma');
+  const inv = schema.slice(schema.indexOf('model Invoice {'), schema.indexOf('\n}', schema.indexOf('model Invoice {')));
+  const campos = inv.split(/\r?\n/).map((s) => s.trim()).filter((s) => /^vf[A-Za-z]*\s/.test(s)).map((s) => s.split(/\s+/)[0]);
+  const enXml = lits((t) => t.includes('<sum1:FechaHoraHusoGenRegistro>')).filter((x) => x.r === VF);
+  const usaSello = enXml.map((x) => `${x.r}:${x.l} → ${x.n.getText(x.sf).includes('vfTimestamp') || x.n.getText(x.sf).includes('vfAnulTimestamp') ? 'usa el sello persistido' : 'NO usa el sello'}`);
+  fila('C3', 'Sello de la huella persistido y el MISMO en el XML (AUDITORIA_RRSIF 4.1)', campos.includes('vfTimestamp') ? 'HECHO' : 'FALTA',
+    `campos vf* del modelo Invoice`, { que: 'campo vfHash en Invoice', valor: campos.includes('vfHash') ? 1 : 0 },
+    [`campos vf*: ${campos.join(', ')}`, ...usaSello]);
+}
+// ── S1-C · SistemaInformatico y productor ────────────────────────────────────────────────
+{
+  const plantillas = lits((t) => t.includes('<sum1:SistemaInformatico>'));
+  const tags = ['NombreRazon', 'NIF', 'NombreSistemaInformatico', 'IdSistemaInformatico', 'Version', 'NumeroInstalacion', 'TipoUsoPosibleSoloVerifactu', 'TipoUsoPosibleMultiOT', 'IndicadorMultiplesOT'];
+  const detalle = plantillas.map((x) => `${x.r}:${x.l} (${x.f}) — ${tags.filter((h) => x.t.includes(`<sum1:${h}>`)).length}/9 campos`);
+  fila('C4', 'Bloque SistemaInformatico con sus 9 campos (AUDITORIA_RRSIF 4.3)', plantillas.every((x) => tags.every((h) => x.t.includes(`<sum1:${h}>`))) ? 'HECHO (forma)' : 'A MEDIAS',
+    `${plantillas.length} plantillas con SistemaInformatico`, { que: 'plantillas con <sum1:SistemaInformatico>', valor: plantillas.length }, detalle);
+}
+{
+  const vals = {};
+  for (const n of ['VERIFACTU_PRODUCTOR_NOMBRE', 'VERIFACTU_PRODUCTOR_NIF', 'VERIFACTU_ID_SISTEMA', 'VERIFACTU_VERSION', 'VERIFACTU_NUM_INSTALACION']) {
+    const t = constInit(PROD, n);
+    vals[n] = t === null ? null : JSON.parse(t);
+  }
+  const prohibidos = /[<>"'=]/;
+  const nif = vals.VERIFACTU_PRODUCTOR_NIF || '';
+  const tipoNif = /^\d{8}[A-Z]$/.test(nif) ? 'persona FÍSICA (DNI)' : /^[XYZ]\d{7}[A-Z]$/.test(nif) ? 'persona física extranjera (NIE)'
+    : /^[ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]$/.test(nif) ? 'persona JURÍDICA' : 'forma no reconocida';
+  const presentes = Object.values(vals).filter((v) => v !== null).length;
+  const nombreProhibido = prohibidos.test(vals.VERIFACTU_PRODUCTOR_NOMBRE || '');
+  const veredictoC5 = presentes < 5 ? `A MEDIAS (${presentes}/5 constantes declaradas)`
+    : tipoNif !== 'persona JURÍDICA' ? `DATOS DE PERSONA FÍSICA, no de la SL (forma del NIF: ${tipoNif}) — falta sustituir por el NIF/razón social de la SL (externo)`
+    : 'HECHO (forma de NIF de persona jurídica)';
+  fila('C5', 'Datos del PRODUCTOR que viajan en cada registro (SCRUM-870, SCRUM-247)', veredictoC5 + (nombreProhibido ? ' — NOMBRE con caracteres que 1287 prohíbe' : ''),
+    `5 constantes de ${PROD}`, { que: 'constantes del productor leídas por AST', valor: presentes },
+    [`NOMBRE contiene caracteres que la validación 1287 prohíbe (<>"'=): ${prohibidos.test(vals.VERIFACTU_PRODUCTOR_NOMBRE || '') ? 'SÍ' : 'no'}`,
+     `NIF del productor: forma de ${tipoNif} (el valor no se imprime)`,
+     `ID_SISTEMA de ${String(vals.VERIFACTU_ID_SISTEMA || '').length} posiciones · VERSION ${vals.VERIFACTU_VERSION} · NUM_INSTALACION ${vals.VERIFACTU_NUM_INSTALACION}`]);
+}
+// ── S1-C · decisiones fiscales cableadas como constante ─────────────────────────────────
+{
+  const sinDest = constInit(RB, 'MODO_SIN_DESTINATARIO');
+  const tipoRect = constInit(RB, 'MODO_TIPO_RECTIFICATIVA');
+  const tipoF2 = lits((t) => t === 'F2').length;
+  fila('C6', 'Factura sin NIF del cliente (F1 vs F2 / art. 61.d) y tipo de rectificativa', sinDest === "'SIN_DICTAMEN'" ? 'BLOQUEADO por dictamen (P11)' : 'DECIDIDO',
+    `2 constantes de ${RB}`, { que: 'constantes leídas', valor: [sinDest, tipoRect].filter(Boolean).length },
+    [`MODO_SIN_DESTINATARIO = ${sinDest}`, `MODO_TIPO_RECTIFICATIVA = ${tipoRect}`, `literales 'F2' en src/: ${tipoF2}`]);
+}
+{
+  const letras = lits((t) => t.includes('TRWAGMYFPDXBNJZSQVHLCKE'));
+  const control = lits((t) => t.includes('ValidarQR')).length;
+  fila('C7', 'Validación de la letra de control del NIF (del merchant y del cliente) antes de declarar', letras.length ? 'EXISTE' : 'NO EXISTE',
+    `literales de ${rutasSrc.length} ficheros de src/`, { que: 'literal ValidarQR (mismo detector)', valor: control }, donde(letras));
+}
+{
+  const fiscal = regexes.filter((x) => x.r.startsWith('src/modules/invoicing/') || x.r.startsWith('src/modules/fiscal/'));
+  const saneadores = fiscal.filter((x) => x.t.includes('<') && x.t.includes('>') && x.t.includes('='));
+  fila('C8', 'Saneamiento de los 5 caracteres que la AEAT rechaza (validación 1287) — qué campos cubre', saneadores.length ? 'A MEDIAS (ver a qué funciones)' : 'NO EXISTE',
+    `${fiscal.length} regex de invoicing/ y fiscal/`, { que: 'regex en invoicing/ y fiscal/', valor: fiscal.length }, donde(saneadores));
+}
+// ── S1-D · envío ──────────────────────────────────────────────────────────────────────────
+{
+  const red = ['https', 'node:https', 'http', 'node:http', 'tls', 'node:tls', 'undici', 'node-fetch', 'got', 'soap', 'axios'];
+  const porModulo = red.map((m) => [m, [...new Set(imports.filter((i) => i.m === m).map((i) => i.r))]]).filter(([, rs]) => rs.length);
+  const fiscalRed = porModulo.flatMap(([m, rs]) => rs.filter((r) => /modules\/(fiscal|invoicing)\//.test(r)).map((r) => `${m} ← ${r}`));
+  const endpoints = lits((t) => /VerifactuSOAP|wlpl\/TIKE-CONT\/ws|SistemaFacturacion\.wsdl/.test(t));
+  const agentes = news.filter((x) => x.nombre === 'Agent');
+  const pfx = props.filter((p) => ['pfx', 'passphrase'].includes(p.nombre));
+  const fetchs = llamadas.filter((c) => c.nombre === 'fetch' && ts.isIdentifier(c.n.expression));
+  fila('D1', 'Cliente de envío a la AEAT (sif.client.ts): red, endpoint SOAP, mTLS', endpoints.length || agentes.length || pfx.length ? 'A MEDIAS' : 'NO EXISTE',
+    `${rutasSrc.length} ficheros de src/ · ${imports.length} imports`, { que: 'imports de red en todo src/ (axios, https…)', valor: porModulo.length },
+    [`sif.client.ts en el árbol: ${todos.includes('src/modules/fiscal/verifactu/sif.client.ts') ? 'sí' : 'NO'}`,
+     `imports de red por módulo: ${porModulo.map(([m, rs]) => `${m}=${rs.length}`).join(', ')}`,
+     `imports de red dentro de fiscal/ o invoicing/: ${fiscalRed.join(' · ') || '0'}`,
+     `literales con endpoint SOAP de la AEAT: ${endpoints.length}`,
+     `new Agent(...): ${agentes.length} · propiedades pfx/passphrase: ${pfx.length} · fetch() global: ${fetchs.length} (${[...new Set(fetchs.map((c) => c.r))].join(', ')})`]);
+}
+{
+  const env = lits((t) => t.includes('Envelope')).filter((x) => x.t.includes('<'));
+  const body = lits((t) => t.includes('RegFactuSistemaFacturacion')).length;
+  const consulta = lits((t) => t.includes('ConsultaFactuSistemaFacturacion')).length;
+  fila('D2', 'Sobre SOAP completo (Envelope/Body) y operación de consulta', env.length ? 'A MEDIAS' : 'SOLO EL CUERPO',
+    `literales de src/`, { que: 'literales con RegFactuSistemaFacturacion (el cuerpo que sí existe)', valor: body },
+    [`plantillas con <…Envelope: ${env.length}`, `ConsultaFactuSistemaFacturacion en src/: ${consulta}`, `ConsultaLR.xsd vendorizado: ${rutasXsd.some((r) => r.endsWith('/ConsultaLR.xsd')) ? 'sí' : 'no'}`]);
+}
+{
+  const schema = blobs.get('prisma/schema.prisma');
+  const modelos = [...schema.matchAll(/^model\s+(\w+)\s*\{/gm)].map((m) => m[1]);
+  const cola = modelos.filter((m) => /vf|submission|remisi|envio|cola|queue/i.test(m));
+  const enSrc = llamadas.filter((c) => /vfSubmission/i.test(c.n.getText(c.sf))).length;
+  fila('D3', 'Cola de remisión VfSubmission (estados, intentos, espera) — pide ALTER', cola.length ? 'EXISTE' : 'NO EXISTE',
+    `${modelos.length} modelos de prisma/schema.prisma`, { que: 'modelo Invoice encontrado por el mismo detector', valor: modelos.includes('Invoice') ? 1 : 0 },
+    [`modelos que casan con vf|submission|remisi|envio|cola|queue: ${cola.join(', ') || '0'}`, `llamadas que mencionan vfSubmission en src/: ${enSrc}`]);
+}
+{
+  const xsdResp = blobs.get('src/modules/fiscal/verifactu/xsd/RespuestaSuministro.xsd') || '';
+  const xsdInfo = blobs.get('src/modules/fiscal/verifactu/xsd/SuministroInformacion.xsd') || '';
+  const nombres = ['TiempoEsperaEnvio', 'EstadoRegistro', 'AceptadoConErrores', 'Subsanacion', 'RechazoPrevio', 'SinRegistroPrevio'];
+  const det = nombres.map((n) => {
+    const src = lits((t) => t.includes(n)).length;
+    const xsd = (xsdResp.split(n).length - 1) + (xsdInfo.split(n).length - 1);
+    return [n, src, xsd];
+  });
+  const pkg = JSON.parse(blobs.get('package.json'));
+  const deps = Object.keys(pkg.dependencies || {});
+  const dev = Object.keys(pkg.devDependencies || {});
+  fila('D4', 'Lectura de la respuesta, ritmo de envío y subsanación', det.every(([, s]) => s === 0) ? 'NO EXISTE' : 'A MEDIAS',
+    `literales de src/ frente a los XSD vendorizados`, { que: 'los 6 nombres en los XSD (suma)', valor: det.reduce((a, [, , x]) => a + x, 0) },
+    [...det.map(([n, s, x]) => `${n}: src/=${s} · XSD=${x}`),
+     `dependencias XML de producción: ${deps.filter((d) => /xml/i.test(d)).join(', ') || '0'} · de desarrollo: ${dev.filter((d) => /xml/i.test(d)).join(', ') || '0'} (de ${deps.length}+${dev.length})`]);
+}
+{
+  const flags = asts.get('src/core/flags.ts');
+  const defs = {};
+  recorrer(flags, (n) => {
+    if (ts.isPropertyAssignment(n) && ['INVOICING_ES_ENABLED', 'SIF_ENABLED'].includes(n.name.getText(flags))) defs[n.name.getText(flags)] = n.initializer.getText(flags);
+  });
+  const usos = (f) => lits((t) => t === f).filter((x) => x.r !== 'src/core/flags.ts');
+  const sif = usos('SIF_ENABLED');
+  const inv = usos('INVOICING_ES_ENABLED');
+  const patronEnvio = /envio|submission|remisi|queue|cola|send|sif\.client/i;
+  const usosEnvio = sif.filter((x) => patronEnvio.test(x.r) || patronEnvio.test(x.f));
+  const veredictoD5 = sif.length === 0 ? 'CIEGO: SIF_ENABLED no aparece fuera de flags.ts'
+    : usosEnvio.length === 0 ? `NO GOBIERNA NINGÚN ENVÍO NI COLA (0/${sif.length} usos tocan envío/remisión/cola)`
+    : `GOBIERNA ${usosEnvio.length}/${sif.length} usos relacionados con envío`;
+  fila('D5', 'Qué hace hoy SIF_ENABLED (la bandera que encendería la remisión)', veredictoD5,
+    `literales de src/ fuera de flags.ts`, { que: "usos de 'INVOICING_ES_ENABLED' (mismo detector)", valor: inv.length },
+    [`defecto: INVOICING_ES_ENABLED=${defs.INVOICING_ES_ENABLED} · SIF_ENABLED=${defs.SIF_ENABLED}`, `SIF_ENABLED usada en: ${donde(sif).join(' · ') || '0'}`, `INVOICING_ES_ENABLED usada en ${inv.length} sitios`]);
+}
+// ── S1-D · representación como colaborador social ───────────────────────────────────────
+{
+  const schema = blobs.get('prisma/schema.prisma');
+  const lineas = schema.split(/\r?\n/);
+  const codigo = lineas.filter((s) => !s.trim().startsWith('//'));
+  const repr = codigo.filter((s) => /apodera|representaci|colaborador|otorga|anexo/i.test(s)).map((s) => s.trim());
+  const control = codigo.filter((s) => /legalName/.test(s)).length;
+  const enSrc = lits((t) => /apoderamiento|colaborador social|Anexo I\b|otorgamiento/i.test(t));
+  fila('D6', 'Representación del merchant ante la AEAT (Anexo I firmado y custodiado) — pide ALTER', repr.length || enSrc.length ? 'A MEDIAS' : 'NO EXISTE',
+    `${codigo.length} líneas de código de prisma/schema.prisma + literales de src/`, { que: 'campos legalName en el esquema', valor: control },
+    [`líneas del esquema: ${repr.join(' | ') || '0'}`, `literales en src/: ${donde(enSrc).join(' · ') || '0'}`]);
+}
+// ── S1-E · declaración responsable ──────────────────────────────────────────────────────
+{
+  const enSrc = lits((t) => /declaracion-responsable|declaración responsable/i.test(t));
+  const pub = rutasPublic.filter((r) => /declaracion-responsable|declaración responsable/i.test(blobs.get(r)));
+  const control = lits((t) => t === '/alcance-beta').length;
+  fila('E1', 'Declaración responsable publicada y descargable (SCRUM-523)', enSrc.length || pub.length ? 'A MEDIAS' : 'NO EXISTE',
+    `literales de src/ + ${rutasPublic.length} ficheros de public/`, { que: "ruta legal '/alcance-beta' (mismo detector)", valor: control },
+    [`src/: ${donde(enSrc).join(' · ') || '0'}`, `public/: ${pub.join(', ') || '0'}`]);
+}
+// ── anulación y rectificativa: ¿llegan desde una ruta? ──────────────────────────────────
+{
+  const q = (n, fuera) => donde(callsA(n, fuera));
+  const alta = q('sellarTrasEmision', 'src/modules/invoicing/domain/selladoEstado.ts');
+  const anulDesdeProducto = callsA('sellarAnulacionTrasEmision', 'src/modules/invoicing/domain/selladoEstado.ts');
+  const veredictoC9 = anulDesdeProducto.length > 0
+    ? `HECHO: sellarAnulacionTrasEmision se llama desde ${anulDesdeProducto.length} sitio(s) del producto (no solo existe)`
+    : 'NO SE LLAMA DESDE EL PRODUCTO: la función de sellado de anulación existe pero nada del producto la invoca';
+  fila('C9', 'La anulación se sella desde el producto (no solo existe la función)', veredictoC9,
+    `llamadas de ${rutasSrc.length} ficheros de src/`, { que: 'llamadas a sellarTrasEmision (alta)', valor: alta.length },
+    [`sellarTrasEmision: ${alta.join(' · ')}`,
+     `sellarAnulacionTrasEmision: ${donde(anulDesdeProducto).join(' · ') || '0'}`,
+     `applyVeriFactuAnulacion: ${q('applyVeriFactuAnulacion', VF).join(' · ') || '0'}`]);
+}
+// ── emisor congelado (SCRUM-665 B): ¿lo llama algo del producto? ────────────────────────
+{
+  const EC = 'src/modules/invoicing/domain/emisorCongelado.ts';
+  const declarado = !!fnDecl(EC, 'congelarEmisor') && !!fnDecl(EC, 'emisorDelDocumento');
+  const llamadoresEscritor = callsA('congelarEmisor', EC);
+  const llamadoresLector = callsA('emisorDelDocumento', EC);
+  const schema = blobs.get('prisma/schema.prisma');
+  const alterAplicado = /merchantTaxId\s+String\?\s+@map\("merchant_tax_id"\)/.test(schema);
+  const veredicto = !declarado ? 'CIEGO: congelarEmisor/emisorDelDocumento no están declarados donde se esperaba'
+    : (llamadoresEscritor.length === 0 && llamadoresLector.length === 0)
+      ? 'DECLARADO Y CON ALTER APLICADO, PERO 0 LLAMADORES: nada del producto escribe ni lee el emisor congelado (SCRUM-665 B), el PDF sigue leyendo el merchant EN VIVO'
+      : `EN USO: ${llamadoresEscritor.length} llamador(es) al escritor, ${llamadoresLector.length} al lector`;
+  fila('H1', 'Emisor congelado (SCRUM-665 B): ¿algo del producto llama a congelarEmisor/emisorDelDocumento?', veredicto,
+    `llamadas de ${rutasSrc.length} ficheros de src/`, { que: 'columna merchantTaxId de Invoice en el esquema (ALTER aplicado)', valor: alterAplicado ? 1 : 0 },
+    [`congelarEmisor y emisorDelDocumento declaradas: ${declarado}`,
+     `llamadores de congelarEmisor: ${donde(llamadoresEscritor).join(' · ') || '0'}`,
+     `llamadores de emisorDelDocumento: ${donde(llamadoresLector).join(' · ') || '0'}`]);
+}
+// ── ClaveRegimen/CalificacionOperacion: ¿la plantilla VIVA los emite? (SCRUM-209) ───────
+{
+  const desgloseDecl = fnDecl(RB, 'buildDetallesDesgloseXml');
+  const tags = ['ClaveRegimen', 'CalificacionOperacion'];
+  const cuerpo = desgloseDecl ? desgloseDecl.getText(asts.get(RB)) : '';
+  const tieneTags = tags.every((t) => cuerpo.includes(`<sum1:${t}>`));
+  const llamadoresVF = callsA('buildDetallesDesgloseXml', RB).filter((c) => c.r === VF);
+  const veredicto = !tieneTags ? 'CIEGO: buildDetallesDesgloseXml no declara los tags esperados'
+    : llamadoresVF.length > 0
+      ? `HECHO: la plantilla VIVA (${VF}) SÍ emite ClaveRegimen/CalificacionOperacion vía buildDetallesDesgloseXml (guard scrum209) — no falta hoy`
+      : `FALTA: buildDetallesDesgloseXml declara los tags pero ${VF} no la llama`;
+  fila('H2', 'ClaveRegimen/CalificacionOperacion en la plantilla VIVA del registro (no solo en registro.builder.ts)', veredicto,
+    `1 función buildDetallesDesgloseXml de ${RB} + llamadas desde ${VF}`, { que: 'tags ClaveRegimen y CalificacionOperacion en buildDetallesDesgloseXml', valor: tieneTags ? 1 : 0 },
+    [`buildDetallesDesgloseXml declara los 2 tags: ${tieneTags}`, `llamada desde ${VF}: ${donde(llamadoresVF).join(' · ') || '0'}`]);
+}
+// ── taxId en pdf.service.ts: ¿de dónde sale? ────────────────────────────────────────────
+{
+  const sfPdf = asts.get(PDF);
+  const accesos = [];
+  recorrer(sfPdf, (n) => { if (ts.isPropertyAccessExpression(n) && n.name.text === 'taxId') accesos.push({ l: linea(sfPdf, n), f: funcionDe(n), texto: n.getText(sfPdf) }); });
+  const literalTaxId = lits((t) => t === 'taxId').filter((x) => x.r === PDF).length;
+  const viaCongelado = accesos.filter((a) => /emisorDelDocumento|congelado/.test(a.texto)).length;
+  const veredicto = accesos.length === 0 ? 'CIEGO: ningún acceso .taxId en pdf.service.ts'
+    : `${accesos.length} acceso(s) a .taxId en tiempo de ejecución, ${viaCongelado} vía emisor/cliente congelado — el resto sale del parámetro que le pasa el llamador (EN VIVO cuando el llamador no congela, ver H1)`;
+  fila('H3', 'taxId en pdf.service.ts: de dónde sale en tiempo de ejecución (¿congelado o en vivo?)', veredicto,
+    `accesos .taxId + literales de ${PDF}`, { que: "literal 'taxId' (mismo fichero)", valor: literalTaxId },
+    accesos.map((a) => `${PDF}:${a.l} (${a.f}) — ${a.texto}`));
+}
+// ── S1-G / S1-E / S1-H · documentos ────────────────────────────────────────────────────
+{
+  const docs = ['docs/VERIFACTU_EVIDENCIAS.md', 'docs/legal/DECLARACION_RESPONSABLE.md', 'docs/legal/PACK_GESTORIA.md'];
+  const control = todos.includes('docs/SIF_SPEC_NOTES.md') ? 1 : 0;
+  fila('G1', 'Documentos de S1-E, S1-G y S1-H en el árbol', 'ver detalle', `${todos.length} rutas del árbol`, { que: 'docs/SIF_SPEC_NOTES.md en el árbol', valor: control },
+    docs.map((d) => `${d}: ${todos.includes(d) ? 'existe' : 'NO existe'}`));
+}
+
+// ─── impresión ────────────────────────────────────────────────────────────────────────────
+console.log(`POBLACIÓN · ref ${ref} = ${sha} · ${todos.length} rutas del árbol · ${rutasSrc.length} .ts de src/ parseados · ${literales.length} literales · ${llamadas.length} llamadas · ${imports.length} imports · ${rutasPublic.length} ficheros de public/ · ${rutasXsd.length} XSD`);
+for (const f of filas) {
+  console.log(`\n[${f.id}] ${f.requisito}`);
+  console.log(`  veredicto: ${f.veredicto}`);
+  console.log(`  población: ${f.poblacion}`);
+  console.log(`  control +: ${f.control.que} = ${f.control.valor}${f.control.valor === 0 ? '  ← CIEGO' : ''}`);
+  for (const d of f.detalle) console.log(`  · ${d}`);
+}
+const exit = ciegas ? 2 : 0;
+console.log(`\nFILAS=${filas.length} · CIEGAS=${ciegas}`);
+console.log(`EXIT=${exit}`);
+process.exit(exit);

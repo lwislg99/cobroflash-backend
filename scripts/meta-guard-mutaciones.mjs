@@ -103,7 +103,34 @@ const EN_VUELO = [];
  *
  * SON NÚMEROS QUE SÓLO SUBEN. Se suben al adoptar el mecanismo en un guard nuevo; bajarlos es
  * retirar cobertura, y entonces el diff lo tiene que decir en voz alta. Medido en el árbol del
- * 6-sep-2026 (rama scrum-765-763, tras mezclar main por tercera vez): 20 guards · 54 declaraciones.
+ * 6-sep-2026 (rama scrum-765-763, tras mezclar main por tercera vez): el reparto de entonces está
+ * en el registro de SCRUM-765; aquí no se copia, porque una cifra en prosa envejece (SCRUM-737 ②).
+ *
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-812c · ESTOS DOS NÚMEROS YA NO SON EL SUELO. NO LOS SUBAS.
+ *
+ * Como SUELO están muertos, y se puede medir: el 17-sep-2026 declaraban 20 y 54 sobre un árbol de
+ * 86 declarantes y 273 declaraciones. Menos de un cuarto. Un suelo tan por debajo **no se puede
+ * disparar nunca**, y leerlos como vigilancia es leerlos mal.
+ *
+ * **Pero no son un resto olvidado, y por eso siguen aquí:** SCRUM-810 los SUSTITUYÓ por un suelo
+ * que se deriva de `origin/main` (`scripts/_suelo-contra-main.mjs`), y ése sí habla **a la
+ * primera pérdida**, no a la 64ª. Crecer no le dispara; retirar A PROPÓSITO cuesta una línea en
+ * `RETIRADAS_A_PROPOSITO`, en el mismo commit. La vigilancia de verdad está allí.
+ *
+ * Lo que estos dos hacen HOY es sostener el CONTROL NEGATIVO de aquel ticket
+ * (`tests/scrum810-el-suelo-a-la-primera.test.mjs`), que mide los dos suelos pegados:
+ *
+ *     · suelo CABLEADO (20 / 54)  → calla hasta la 63ª pérdida. Habla en la 64ª.
+ *     · suelo CONTRA MAIN         → habla en la 1ª.
+ *
+ * 🔴 **SUBIRLOS ROMPE ESE CONTROL Y NO GANA NADA.** Medido el 17-sep-2026: subidos a 86/273, el
+ * test «perder UNA declaración ya habla, y nombra el guard» se pone ROJO —su primer aserto exige
+ * que el cableado siga callado con 63 pérdidas—, y a cambio no se cubre ni un caso nuevo, porque
+ * la retirada de una declaración ya la caza el suelo derivado. Se probó, se midió y se revirtió.
+ *
+ * Si algún día se quieren retirar de verdad, el sitio donde mirar primero es el control de
+ * SCRUM-810: son su patrón de comparación, no un número del árbol.
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  */
 export const SUELO_GUARDS = 20;
@@ -255,14 +282,174 @@ export function mutacionesDeclaradas(codigo, nombre = 'x.mjs') {
   return lecturaDeDeclaraciones(codigo, nombre).buenas;
 }
 
-/** Todos los guards que declaran mutaciones, con las suyas. */
-export function censoDeDeclaraciones(dir = DIR_TESTS) {
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-812 · EL CENSO DECLARA SU POBLACIÓN, NO SÓLO SU RESULTADO.
+ *
+ * Este instrumento le exige a todos los censos de la casa que digan sobre cuántos midieron (A3),
+ * y él publicaba su propio recuento llamándolo «guards», a secas. (La cifra no se copia aquí:
+ * SCRUM-737 ② — una frase sin número no se desincroniza.) Dos cosas estaban mal en esa línea, y
+ * ninguna era el recuento:
+ *
+ *   ① **la palabra.** Contaba a los que DECLARAN y los llamaba «guards», así que su «mudas 0» se
+ *      leía como «todos los guards están cubiertos». Un guard que no declara no entra en el
+ *      denominador ni para bien ni para mal — lo filtra el `if` de abajo.
+ *   ② **el denominador.** Estaba aquí delante y no se publicaba: el `readdirSync` lista `tests/`
+ *      ENTERO y el filtro descarta después. Decir «81 de 885» no cuesta una lectura más.
+ *
+ * Y por eso las dos cifras salen de ESTA función y de una sola pasada: la población y el censo
+ * derivan del MISMO `readdirSync`, así que no pueden divergir. Publicarlas desde dos recorridos
+ * sería dejar preparada la próxima contradicción.
+ *
+ * Lo mismo vale para el subconjunto AUTODECLARADO (`titulados`): se calcula del texto que esta
+ * función YA lee para el AST. Ni un barrido nuevo.
+ *
+ * ⛔ LO QUE AQUÍ NO SE DECIDE: qué es un guard. El árbol no tiene esa definición —no hay una
+ * línea en `docs/` ni en el máster que la dé— y publicar «X de Y guards» sin ella sería cometer
+ * DENTRO del instrumento el defecto que SCRUM-812 vino a denunciar. Se publican los dos
+ * denominadores que SÍ se derivan (ficheros de test, y ficheros auto-titulados GUARD) y no se
+ * inventa el tercero.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+
+/**
+ * ¿Este fichero se llama GUARD a sí mismo, en el título de alguno de sus tests?
+ *
+ * Es la ÚNICA señal auto-declarada que hay en el árbol, y es DÉBIL EN LAS DOS DIRECCIONES —
+ * medido el 17-sep-2026: de los 81 que declaran, sólo 18 se titulan guard; y de los 206 que se
+ * titulan guard, sólo 18 declaran. No es un censo de guards y el rótulo lo dice en voz alta.
+ */
+export function seTitulaGuard(codigo) {
+  return /test\(\s*[`'"][^`'"]*GUARD/i.test(codigo);
+}
+
+/**
+ * El censo Y su población, de UNA sola pasada por `tests/`.
+ *
+ * `poblacion` son los ficheros `.test.mjs` que existen; `censo` los que declaran. Las dos salen
+ * del mismo listado a propósito (ver el bloque de arriba).
+ */
+export function censoConPoblacion(dir = DIR_TESTS) {
+  const ficheros = fs.readdirSync(dir).filter((x) => x.endsWith('.test.mjs'));
   const out = [];
-  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.test.mjs'))) {
-    const { buenas, incompletas } = lecturaDeDeclaraciones(fs.readFileSync(path.join(dir, f), 'utf8'), f);
+  let titulados = 0;
+  let tituladosQueDeclaran = 0;
+  for (const f of ficheros) {
+    const codigo = fs.readFileSync(path.join(dir, f), 'utf8');
+    const { buenas, incompletas } = lecturaDeDeclaraciones(codigo, f);
     if (buenas.length || incompletas.length) out.push({ guard: f, mutaciones: buenas, incompletas });
+    // El subconjunto auto-declarado, del MISMO texto que ya está leído para el AST.
+    //
+    // ⚠️ «Declara» aquí es `buenas.length`, el MISMO criterio con el que el rótulo cuenta a los
+    // declarantes — y no `buenas || incompletas`, que es el criterio de pertenecer al censo. Los
+    // dos coinciden hoy (un fichero con sólo incompletas sale CIEGO antes de imprimir nada), y
+    // precisamente por eso había que elegir uno: dos criterios que hoy dan el mismo número son
+    // la próxima contradicción con fecha puesta.
+    if (seTitulaGuard(codigo)) {
+      titulados += 1;
+      if (buenas.length) tituladosQueDeclaran += 1;
+    }
   }
-  return out;
+  return {
+    poblacion: ficheros.length,
+    declarantes: out.filter((c) => c.mutaciones.length).length,
+    titulados,
+    tituladosQueDeclaran,
+    censo: out,
+  };
+}
+
+/**
+ * Todos los guards que declaran mutaciones, con las suyas.
+ *
+ * Se DERIVA de `censoConPoblacion` en vez de repetir el recorrido: dos recorridos del mismo
+ * directorio son dos cosas que se quedan atrás por separado. La firma no cambia, para no mover a
+ * quien ya la llamaba.
+ */
+export function censoDeDeclaraciones(dir = DIR_TESTS) {
+  return censoConPoblacion(dir).censo;
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-812c · EL ANCLA QUE SE CITA A SÍ MISMA.
+ *
+ * Un guard que pone un TOPE o un SUELO declara su mutación copiando la línea de la constante:
+ *
+ *     export const TOPE = N;                       ← la constante, en su línea
+ *     …
+ *     { de: 'export const TOPE = N;', a: '…' }     ← la declaración, que la CITA
+ *
+ * El ancla aparece entonces DOS veces en el mismo fichero, y `aplicarUna` hace
+ * `texto.replace(de, a)`, que toma la PRIMERA. Hoy acierta **por el orden del fichero, no por
+ * contrato**: la constante va antes del array. Si alguien mueve el array arriba, la mutación
+ * reescribe el TEXTO de la declaración, la constante se queda como estaba, el guard no cae y el
+ * veredicto sale **MUDO acusando a un guard sano** — el defecto de SCRUM-839e, mutar un sitio por
+ * el que el test no pasa.
+ *
+ * Censadas el 17-sep-2026: cuatro declaraciones del árbol tienen el ancla ambigua.
+ *
+ * ⚠️ **EL LÍMITE DE ESTA COMPROBACIÓN, y hay que leerlo antes de fiarse:** `primeraEnLineaPropia`
+ * sólo separa «la línea de verdad» de «la cita indentada dentro del array». **No sirve** cuando
+ * las dos ocurrencias son código real en líneas propias —p. ej. dos `where:` idénticos en un
+ * `.ts`—: ahí dice que sí sin probar nada. Para ese caso hace falta otra comprobación, y este
+ * módulo no la tiene.
+ *
+ * Vive AQUÍ, en el módulo dueño del contrato, y no copiada en cada guard: dos copias de la misma
+ * comprobación son la próxima contradicción con fecha puesta.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function ocurrenciasDelAncla(fuente, ancla) {
+  const veces = fuente.split(ancla).length - 1;
+  const i = fuente.indexOf(ancla);
+  return { veces, primeraEnLineaPropia: veces > 0 && (i === 0 || fuente[i - 1] === '\n') };
+}
+
+/**
+ * SUELO ⓿ (SCRUM-812) · ¿he mirado algún fichero? Devuelve el motivo, o `null` si aguanta.
+ *
+ * Vive FUERA del bloque principal por lo mismo que `sueloDelCenso`: un suelo que sólo existe
+ * dentro del `if` de arranque no se le puede exigir el rojo sin pagar los minutos del trabajo
+ * entero, y un guard al que no se le ha visto caer es una decoración.
+ */
+export function sueloDePoblacion({ poblacion }) {
+  if (poblacion > 0) return null;
+  return 'he leído CERO ficheros `.test.mjs` en `tests/`. No es que no haya declaraciones: es que '
+    + 'no he mirado nada, y un censo sobre una población vacía no dice nada del árbol. Comprueba '
+    + 'el directorio y el checkout antes de leer ningún número.';
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-812 · EL RÓTULO, COMO FUNCIÓN PURA — y por qué no se escribe en el `console.log`.
+ *
+ * El defecto que este ticket arregla ES un rótulo. Si el texto vive suelto dentro del bloque
+ * principal, la única forma de comprobarlo es arrancar el script entero, y un guard que cuesta
+ * minutos se acaba quitando. Aquí devuelve LÍNEAS y el bloque de abajo sólo las imprime, así que
+ * su guard (`scrum812`) puede exigirle las palabras en milisegundos — y se las exige a ESTA
+ * función, la misma que el script usa, no a una copia del texto.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function rotuloDelCenso({ poblacion, declarantes, declaraciones, titulados, tituladosQueDeclaran }) {
+  const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
+  return [
+    // La palabra es la mitad del arreglo: el instrumento contaba bien y nombraba mal, y quien
+    // leía «N guards · mudas 0» entendía «todos los guards están cubiertos». Nadie confunde
+    // «declarantes» con «todos». El porcentaje va al entero: decimales sobre una población que
+    // se mueve cada día serían precisión inventada.
+    `censo · ${declarantes} ficheros DECLARANTES de ${poblacion} ficheros de test `
+      + `(${pct(declarantes, poblacion)} %) · ${declaraciones} declaraciones `
+      + `(suelos ${SUELO_GUARDS} / ${SUELO_DECLARACIONES})`,
+    // El subconjunto AUTO-DECLARADO va aparte, porque mide otra cosa.
+    `  subconjunto AUTODECLARADO · ${titulados} ficheros se titulan GUARD en algún test · `
+      + `${tituladosQueDeclaran} de ésos declaran (${pct(tituladosQueDeclaran, titulados)} %)`,
+    // Y su límite PEGADO. Un subconjunto sin su límite al lado se lee como un censo, que es el
+    // defecto de la primera línea otra vez y dos líneas más abajo.
+    `  ⚠️ la señal es DÉBIL EN LAS DOS DIRECCIONES: de los ${declarantes} declarantes sólo `
+      + `${tituladosQueDeclaran} se titulan guard, o sea que ${declarantes - tituladosQueDeclaran} `
+      + 'declaran SIN llamarse guard. Y «guard» no está definido en el árbol: esto NO es un censo '
+      + 'de guards.',
+  ];
 }
 
 /**
@@ -300,6 +487,37 @@ export function cayo(resultado, nombre) {
 /** ¿El test `nombre` aparece como PASADO en este resultado? */
 export function paso(resultado, nombre) {
   return (resultado?.pasados || []).some((n) => n.includes(nombre));
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-908 · POR QUÉ no cayó. «No cayó» tapa CUATRO cosas que no son la misma.
+ *
+ * El veredicto MUDO se calcula con `cayo()`, que sólo sabe decir sí o no. Y detrás de ese «no»
+ * caben cuatro situaciones con arreglos opuestos:
+ *
+ *   · el test CORRIÓ y PASÓ ....... el aserto no ve el defecto. Es la mudez de verdad.
+ *   · el test salió SALTADO ....... no llegó a correr: eso es CEGUERA disfrazada de mudez, que
+ *     es exactamente lo que SCRUM-754c vino a separar.
+ *   · el test NO APARECE .......... ni pasó ni cayó ni se saltó: se perdió el evento, o el
+ *     fichero murió a medias. Acusar al guard aquí es acusar a un inocente.
+ *   · cayó con OTRO nombre ........ `cayo()` casa por FRAGMENTO; si el título cambió, el
+ *     instrumento mira donde ya no hay nada.
+ *
+ * 🔴 ESTO NO CAMBIA NINGÚN VEREDICTO: es texto para el mensaje que ya existía. Se añade porque
+ * SCRUM-908 midió una muda INTERMITENTE en CI —3 de 38 runs— que no reproduce en local (50
+ * pasadas, cero), y en CI **el log no se puede leer sin credenciales**. Lo que no diga este
+ * mensaje no lo sabrá nadie, y la siguiente sesión vuelve a empezar de cero.
+ *
+ * PURA a propósito: se ejercita en `npm test` en milisegundos, sin mutar nada.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function porQueNoCayo(tras, nombre) {
+  if ((tras?.pasados || []).some((n) => n.includes(nombre))) return 'PASÓ (corrió y no falló)';
+  if ((tras?.saltados || []).some((x) => String(x?.nombre || '').includes(nombre))) {
+    return 'SALTADO (no llegó a correr: esto es ceguera, no mudez)';
+  }
+  return 'NO APARECE en la pasada mutada (evento perdido, fichero muerto a medias, o el título cambió)';
 }
 
 /**
@@ -785,7 +1003,19 @@ export async function aplicarUna(mut, guard, limpia) {
           + 'Acota la mutación, o declara otra que produzca el mismo defecto sin tumbar el proceso.',
       };
     } else {
-      resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»` };
+      // 🔴 SCRUM-908 · LA MUDA SE EXPLICA SOLA, o el siguiente que la vea vuelve a empezar de cero.
+      //
+      // «No cayó» tiene CUATRO causas que se leen igual y no lo son: el test corrió y pasó (el
+      // aserto no ve el defecto), salió SALTADO (no corrió: eso es ceguera, no mudez), NO APARECE
+      // en la pasada (evento perdido o fichero muerto a medias), o cayó con otro nombre. En CI el
+      // log no se puede leer sin credenciales, así que lo que no diga este mensaje no lo sabrá
+      // nadie. Esto AÑADE información y no cambia el veredicto.
+      const donde = porQueNoCayo(tras, mut.cae);
+      resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»`
+        + `\n    → en la pasada MUTADA ese test: ${donde}.`
+        + ` Recuento: ${(tras?.pasados || []).length} pasados · ${(tras?.caidos || []).length} caídos`
+        + ` · ${(tras?.saltados || []).length} saltados.`
+        + ` Y en la LIMPIA: ${(limpia?.pasados || []).length} pasados · ${(limpia?.caidos || []).length} caídos.` };
     }
   } finally {
     const sinRestaurar = restaurarYVerificar(piezas);
@@ -906,7 +1136,20 @@ if (ejecutadoDirectamente(import.meta.url)) {
     process.exit(SALIDA_CIEGO);
   }
 
-  const censo = censoDeDeclaraciones();
+  // SCRUM-812 · el censo llega CON su población: las dos de la misma pasada.
+  const { poblacion, titulados, tituladosQueDeclaran, censo } = censoConPoblacion();
+
+  // ── SUELO ⓿ · ¿HE MIRADO ALGÚN FICHERO? (SCRUM-812) ───────────────────────────────────────
+  // Va ANTES que el suelo del censo porque aquél mide el RESULTADO y éste la POBLACIÓN, y sobre
+  // una población de cero cualquier resultado es un «no he mirado» con forma de dato. Si `tests/`
+  // se queda vacío —un `readdirSync` sobre el directorio equivocado, un checkout a medias—, el
+  // censo saldría 0 y el suelo de abajo diría «ha encogido», acusando al árbol de algo que le
+  // pasa al instrumento.
+  const sinPoblacion = sueloDePoblacion({ poblacion });
+  if (sinPoblacion) {
+    console.error(`🔴 CIEGO · ${sinPoblacion}`);
+    process.exit(SALIDA_CIEGO);
+  }
 
   // ── SUELO ① · EL TAMAÑO DEL CENSO ─────────────────────────────────────────────────────────
   const declaraciones = censo.reduce((n, c) => n + c.mutaciones.length, 0);
@@ -918,8 +1161,12 @@ if (ejecutadoDirectamente(import.meta.url)) {
   }
   if (soloCenso) {
     const expo = censoDeExposicionATypeScript(); // `expo`, no `ts`: `ts` es el compilador de arriba
-    console.log(`censo · ${guardsConDeclaracion} guards · ${declaraciones} declaraciones `
-      + `(suelos ${SUELO_GUARDS} / ${SUELO_DECLARACIONES})`);
+    // 🔴 SCRUM-812 · el rótulo lo escribe `rotuloDelCenso`, no este `console.log`: así su guard
+    // se lo puede exigir sin arrancar el trabajo entero. `declarantes` sale del MISMO sitio que
+    // `guardsConDeclaracion` —el filtro por `mutaciones.length`— y por eso se pasa ése.
+    for (const linea of rotuloDelCenso({
+      poblacion, declarantes: guardsConDeclaracion, declaraciones, titulados, tituladosQueDeclaran,
+    })) console.log(linea);
     console.log(`  sobre la frontera src/ ↔ dist/ (SCRUM-763): ${expo.expuestas.length} de ${expo.poblacion}`);
     for (const e of expo.expuestas) console.log(`    · ${e.guard} → ${e.fichero}`);
     console.log('\n⚠️ MODO CENSO: NO se ha ejecutado ninguna mutación.');

@@ -69,6 +69,23 @@
   }
 
   /**
+   * SCRUM-888c · EL IMPORTE DE UNA LÍNEA, en un solo sitio: `qty × precio efectivo`, y su IVA encima.
+   * `tax` es la FRACCIÓN (0,21), como la guarda el presupuesto.
+   *
+   * Existe porque tres pantallas pintaban la fila cada una con su cuenta: la del editor aplicaba el
+   * dto, la de la vista previa y la del detalle no (241,52 € frente a 205,29 € con un 15 %). Sin dto
+   * da exactamente lo mismo que `qty × price × (1 + tax)`, que es lo que hacían las tres.
+   * Una línea sin cantidad o sin precio legibles vale 0, como en `totalesConDescuento`.
+   */
+  function importeDeLinea(qty, price, dto, tax) {
+    const q = num(qty);
+    if (q === null || num(price) === null) return { base: 0, cuota: 0, total: 0 };
+    const base = q * precioEfectivo(price, dto);
+    const cuota = base * (num(tax) || 0);
+    return { base: base, cuota: cuota, total: base + cuota };
+  }
+
+  /**
    * Reparte `descuentoCents` entre los tipos, proporcional a su base.
    *
    * @param {Array<{rate:number, baseCents:number}>} porTipo
@@ -201,13 +218,51 @@
     return { dto: Math.min(100, n) };
   }
 
+  /**
+   * SCRUM-887 · L1 · ✅ TEXTO OFICIAL — aprobado por el orquestador por delegación del fundador,
+   * SCRUM-887 comentario 15697. Es EL MISMO que devuelve el servidor en el 400 de `POST /quote/create`
+   * (`COPY_CREAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA`); un test compara los dos byte a byte.
+   */
+  const TEXTO_DESCUENTO_GLOBAL_VARIOS_IVA =
+    'Un descuento global no se puede aplicar a un presupuesto con varios tipos de IVA. Quítalo o pon el descuento en cada línea.';
+
+  /**
+   * SCRUM-887 · ¿Es un caso C? Descuento global y VARIOS tipos de IVA con base de la que quitarlo.
+   *
+   * 🔴 NO REUTILIZA `totalesConDescuento`, y es a propósito: esa salta las líneas sin cantidad o sin
+   * precio, y el servidor (`descuentoGlobalEnCentimos`) las cuenta como tipo con base 0. La pregunta
+   * «¿cuántos tipos hay?» tiene que contestarse igual en los dos sitios, o el editor dejaría guardar
+   * lo que el servidor rechaza. Por eso aquí se copia la agrupación del SERVIDOR, término a término,
+   * y un test las compara sobre una muestra.
+   */
+  function descuentoGlobalConVariosIva(lineas, descuentoGlobal) {
+    const global = Number(descuentoGlobal);
+    if (!Number.isFinite(global) || global <= 0) return false;
+    const tipos = new Map();
+    let sumaBases = 0;
+    for (const l of Array.isArray(lineas) ? lineas : []) {
+      if (l && typeof l === 'object' && l.apartado === true) continue;
+      const p = Number(l && l.price);
+      const d = Number(l && l.dto);
+      const precio = !Number.isFinite(p) ? 0 : (!Number.isFinite(d) || d <= 0 ? p : p * (1 - Math.min(100, d) / 100));
+      const cents = Math.round(Number(l && l.qty) * precio * 100);
+      const base = Number.isFinite(cents) ? cents : 0;
+      tipos.set(Math.round((Number(l && l.tax) || 0) * 100), true);
+      sumaBases += base;
+    }
+    return sumaBases > 0 && tipos.size > 1;
+  }
+
   root.quoteDescuentos = {
     dtoDeLinea: dtoDeLinea,
     precioEfectivo: precioEfectivo,
+    importeDeLinea: importeDeLinea,
     repartirGlobal: repartirGlobal,
     totalesConDescuento: totalesConDescuento,
     hayDescuento: hayDescuento,
     descuentoParaPayload: descuentoParaPayload,
+    descuentoGlobalConVariosIva: descuentoGlobalConVariosIva,
+    TEXTO_DESCUENTO_GLOBAL_VARIOS_IVA: TEXTO_DESCUENTO_GLOBAL_VARIOS_IVA,
   };
   // Para la suite, que carga este fichero con `require` igual que `quoteSuplido.js`.
   if (typeof module !== 'undefined' && module.exports) module.exports = root.quoteDescuentos;

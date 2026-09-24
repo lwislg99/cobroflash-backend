@@ -840,3 +840,969 @@ siguiente, no se supuso.
 - `merchantName` sigue **NULLABLE** a propósito: es el centinela, y hay un assert que lo fija.
 - Ningún estado ni flag nuevo (27) · ninguna dependencia (36) · cero producción y cero staging ·
   `git stash` no usado · historia no reescrita.
+
+---
+
+# APÉNDICE (C) · ⓪ PARA: EL ESCRITOR TAMPOCO SE EJECUTA, Y EL ENCHUFE NO ES EL GEMELO DE UNA LÍNEA
+
+**Fecha:** 17-sep-2026 · **Carril:** B · emisión · **Gate:** ⓪ medición — **bloque ① PARADO**
+**Medido contra:** `origin/main` = `e48c18d57fd495d8929cd983733e18c2ac057e64` · 2026-09-17T10:20:37Z
+**Rama:** `scrum-665c-el-enchufe`
+
+> **Preámbulo, en este orden:** `git status` **limpio** y sin `MERGE_HEAD` ni `REBASE_HEAD` antes de
+> tocar nada. 24 worktrees listados, ninguno de ellos éste a medio merge.
+>
+> **Obligación 0:** la única rama `scrum-665*` viva es **la mía de 665b**
+> (`b854c15a…`, Javier Pereira, 17-sep 11:13), **sin mergear**. No es de otra persona, así que no
+> hay que parar por eso — pero sí cambia de dónde se ramifica:
+>
+> 🔴 **Esta rama sale de `scrum-665b-el-esquema-declara`, NO de `main`.** `main` todavía **no
+> declara** las siete columnas (comprobado: 0 apariciones en su `schema.prisma`). Si la 665b se
+> revierte, ésta se va con ella. Se dice en vez de disimularlo.
+
+---
+
+## ⓪ LAS DOS PREGUNTAS, MEDIDAS POR SEPARADO
+
+El encargo avisa de que «el módulo tiene» y «el test pasa por ahí» no son la misma pregunta. Lo son
+aún menos éstas dos:
+
+### ¿EXISTE el escritor en `main`? — **SÍ**
+
+```
+$ git show origin/main:src/modules/invoicing/domain/emisorCongelado.ts | grep -n 'export function congelarEmisor'
+104:export function congelarEmisor(ficha: FichaDeEmisor): EmisorCongelado {
+```
+
+### ¿Se EJECUTA en la emisión real? — **🔴 NO. Nadie lo llama.**
+
+```
+$ grep -rn "congelarEmisor" src/ --include=*.ts | grep -v domain/emisorCongelado.ts
+  (vacío)
+$ grep -rn "emisorCongelado" src/ --include=*.ts | grep -v domain/emisorCongelado.ts
+  (vacío)
+```
+
+**Y tampoco lo escribe nadie por otra vía.** Los siete campos, uno a uno, sobre todo `src/`: las
+únicas apariciones son variables locales y parámetros de WhatsApp, soporte e IA
+(`merchantPhone: merchant.whatsappPhone` para un mensaje, `merchantEmail` para el panel de soporte…).
+**Ni una sola escribe la columna de `invoices`.**
+
+> **La casa ya lo tenía anotado, y eso confirma la medida en vez de contradecirla.**
+> `tests/scrum411-exports-inalcanzables.test.mjs:197` subió su tope a **8** el 16-sep-2026 con su
+> motivo escrito: *«Entra `emisorCongelado.ts` (SCRUM-665 A) … Nace inalcanzable a propósito»*, y
+> deja dicho que quien lo enchufe baje el número en el mismo commit.
+
+### El veredicto de ⓪
+
+**Se para el bloque ①**, y por el motivo exacto que da el encargo: enchufar el LECTOR a unas
+columnas que nadie rellena no arregla nada —el lector caería siempre al perfil vivo, el papel
+seguiría igual que hoy— **con el agravante de que pareceríamos haberlo arreglado**.
+
+---
+
+## 🔴 Y HAY UNA SEGUNDA RAZÓN PARA PARAR: EL GEMELO NO ENCAJA
+
+El encargo dice «no inventes patrón: cópialo; si en algo no encaja, PARA y dime en qué». **No
+encaja, y no en un detalle.** Medido, pieza a pieza:
+
+| pieza | cliente (SCRUM-729) | emisor (SCRUM-665a) |
+|---|---|---|
+| congelar desde una ficha (puro) | `congelarDesdeFicha` | `congelarEmisor` ✅ |
+| **congelar LEYENDO la base** | `congelarCliente(prisma, merchantId, customerId)` | **NO EXISTE** 🔴 |
+| variante para rectificativa | `congelarParaRectificativa` | **NO EXISTE** 🔴 |
+| lector | `clienteDelDocumento` | `emisorDelDocumento` ✅ |
+| **escrito por el embudo** | sí: `...cliente` dentro de `crearFacturaEmitida` | **no** 🔴 |
+
+El cliente no se escribe «en una línea»: se escribe **por un embudo con un tipo que hace imposible
+saltárselo** —`DatosDeFacturaEmitida = Omit<Prisma.InvoiceUncheckedCreateInput, keyof ClienteCongelado>`,
+así que escribir esos campos a mano en `datos` **no compila**— y ese embudo tiene **SIETE llamadas**
+en `src/`, cada una con su `congelarCliente(...)` **antes** de abrir la transacción:
+
+```
+src/lib/invoicing.ts:345
+src/modules/invoicing/domain/invoicing.service.ts:98
+src/modules/jobs/app/routes/jobs.routes.ts:1443
+src/modules/quotes/app/routes/quotes.routes.ts:734
+src/modules/system/app/routes/invoicesAdmin.routes.ts:1022
+src/modules/system/app/routes/quotesAdmin.routes.ts:289
+src/modules/system/app/routes/quotesAdmin.routes.ts:552
+```
+
+### Lo que el enchufe completo exigiría de verdad
+
+No es «el gemelo de una línea». Son, como mínimo:
+
+1. **Una función que lea la ficha del merchant de la base** — el equivalente de `congelarCliente`,
+   que hoy **no existe**. `congelarEmisor` es pura y recibe la ficha ya leída.
+2. **Cambiar la firma del embudo** `crearFacturaEmitida(tx, cliente, datos)` para que acepte también
+   el emisor, y extender su `Omit` a `keyof ClienteCongelado | keyof EmisorCongelado` — porque si no
+   se extiende, el tipo **deja de proteger** a las siete nuevas y alguien podrá escribirlas a mano.
+3. **Tocar las SIETE llamadas**, cada una con su lectura fuera de la transacción (el propio 729 dejó
+   escrito por qué va fuera: para no meter un viaje dentro del cerrojo de serie).
+4. **El lector en `src/lib/invoicing.ts:108` y `:249`**, que es lo único que parecía faltar.
+
+**Todo eso es el camino de emisión fiscal, en siete sitios.** El GO concedido era para *el enchufe*
+descrito como el gemelo de una línea; lo que hay delante es otra cosa y de otro tamaño. Por eso se
+para y se cuenta, en vez de resolverlo sobre la marcha.
+
+---
+
+## ② NO SE HA HECHO, y por qué
+
+Los controles de ② prueban el enchufe. Sin ⓪ no hay enchufe que probar.
+
+**Lo que sí está ya construido y sigue verde** es el contraste que ② pedía reusar: en la 665b,
+`tests/scrum665b-el-esquema-declara.test.mjs` demuestra por CONTENIDO —y con el suelo del
+`{ok, texto}`— que con las siete columnas el papel **no cambia** (`Mayor 1`) y con `merchantName` a
+NULL **sí cambia** (`Nueva 99`). La tercera pata que el encargo pide —**una factura emitida antes de
+todo esto, con las columnas a NULL, se pinta exactamente igual que hoy**— es literalmente ese
+segundo caso, y está en verde: sin copia, el lector cae al perfil vivo y el papel sale como salía.
+
+---
+
+## LA TANDA
+
+```
+ARBOL QUIETO DESDE: 10:23:53 UTC
+ARBOL QUIETO HASTA: 10:37:39 UTC
+# tests 7270 · # pass 7160 · # fail 0 · # skipped 110 · cero `not ok`
+```
+
+> Se mira `# fail` y no sólo el código de salida: hoy un exit 0 con nueve fallos engañó a otra
+> sesión.
+
+---
+
+## LO NO TOCADO
+
+- **`src/`: NI UNA LÍNEA.** No se ha enchufado nada. El defecto de SCRUM-665 sigue vivo y sin
+  disimular.
+- **`prisma/schema.prisma`: ni una línea** — ya quedó declarado en la 665b, como manda el encargo.
+- **Ninguna factura tocada**: no se ha editado, renumerado ni re-sellado nada (regla 29). Cero
+  escrituras en ninguna base.
+- Ningún estado ni flag nuevo (27) · ninguna dependencia (36) · cero producción y staging ·
+  `git stash` no usado · historia no reescrita.
+
+---
+
+# APÉNDICE (D) · LA DIMENSIÓN REAL DEL ENCHUFE — NO SON SIETE SITIOS, SON DIEZ
+
+**Fecha:** 17-sep-2026 · **Carril:** fiscal · documento emitido · **Gate:** 🔴 **MIDE. NO TOCA `src/`.**
+**Medido contra:** `origin/main` = `2a9f73dbe913a7332f327db4df7583089ef2e2c2` · 2026-09-17T15:11:44Z
+**Y confirmado idéntico contra** `origin/main` = `1df4b9b9d67b2a1ed9d919bd7e746d6aae2dd219` · 2026-09-17T14:56:08Z
+**Rama:** `scrum-665d-la-dimension-real`
+**Encargo, en una línea:** *dosier de dimensión real de SCRUM-665, para firma del fundador.*
+
+> ⛔ **Ni una línea de `src/`.** Ni una de `prisma/schema.prisma`. Cero bases de datos, cero
+> `db push`, cero `migrate diff`, cero credenciales. Regla 38: leer el camino de emisión no es
+> STOP; modificarlo sí, y aquí no se modifica. El diff de ② (b) va **PROPUESTO**.
+>
+> **Esto NO reabre SCRUM-665c.** La parada de S2 fue correcta. Esto pone números debajo de ella
+> para que la firma sea sobre cifras y no sobre una descripción.
+
+---
+
+## 0 · 🔴 LO PRIMERO, PORQUE CAMBIA CÓMO SE LEE TODO LO DEMÁS
+
+El encargo pedía no citar de memoria ni del registro, sino reabrir `main` hoy y comprobar cada
+coordenada. **Bien pedido: cinco de las que este expediente da por buenas ya no están donde dice.**
+
+El apéndice (C) se midió contra `e48c18d5`, hoy a las **10:20 UTC**. Cinco horas después:
+
+| coordenada según el apéndice (C) | dónde está HOY | qué hay HOY en la línea vieja |
+|---|---|---|
+| `jobs.routes.ts:1443` | **`:1448`** (+5) | `exigirTiposDeIvaEmitibles(tramo.scaledLines);` |
+| `quotes.routes.ts:734` | **`:742`** (+8) | `if (emitidasAhora !== existingInvoices.length) return null;` |
+| `quotesAdmin.routes.ts:289` | **`:294`** (+5) | `exigirTiposDeIvaEmitibles(tramo.scaledLines);` |
+| `quotesAdmin.routes.ts:552` | **`:563`** (+11) | un comentario de `exigirTiposDeIvaEmitibles` |
+| `scrum411-exports-inalcanzables.test.mjs:197` | **`:199`** (+2) | — |
+| `lib/invoicing.ts:345` | `:345` | ✅ sigue |
+| `invoicing.service.ts:98` | `:98` | ✅ sigue |
+| `invoicesAdmin.routes.ts:1022` | `:1022` | ✅ sigue |
+
+**Las cinco las movió UN solo commit**, `89860c71` (SCRUM-887c), mergeado entre medias. Ninguna de
+las cinco líneas viejas está vacía ni da error: **todas apuntan hoy a código real y distinto**. Un
+lector que abriera `jobs.routes.ts:1443` buscando la boca del embudo encontraría una validación de
+IVA y no tendría motivo para sospechar.
+
+> **Es el canon de la casa otra vez:** *referenciar por posición caduca, referenciar por identidad
+> no.* Este apéndice también cita líneas, y también caducará. Por eso las dos sondas de abajo van
+> **commiteadas y son reejecutables**: el número se recalcula, no se recuerda.
+
+### ⚠️ Y `main` se movió mientras yo medía
+
+Exporté y medí contra `1df4b9b9`. Al ramificar, `origin/main` ya era `2a9f73db` — el `.git` es
+compartido y otra sesión trajo tres commits (`#1440`, SCRUM-307). **No lo di por bueno:** «main se
+ha movido» y «main se ha movido DONDE YO TOCO» son cosas distintas.
+
+```
+$ git diff --stat 1df4b9b9..origin/main -- src/
+(vacío)
+```
+
+Y además **volví a correr las dos sondas enteras** contra `2a9f73db`: salidas **idénticas byte a
+byte** a las de `1df4b9b9`. Los números de abajo valen para los dos SHA.
+
+---
+
+## ① EL CENSO DE LAS SIETE BOCAS
+
+### POBLACIÓN Y SUELO (norma A3 — un instrumento declara su población, no sólo su resultado)
+
+| | |
+|---|---|
+| **población barrida** | **288 ficheros `.ts`** bajo `src/` del árbol exportado de `origin/main` |
+| contraste de la población | `git ls-tree -r --name-only origin/main -- src/ \| grep -c '\.ts$'` → **288** |
+| método | **AST** (`typescript`), no `grep`: una boca es una `CallExpression`, no una línea que contiene un nombre. Un `grep` casa también el `import`, el comentario que la nombra y el fichero que la define |
+| **suelo (a)** | el censo ve la **definición** de `crearFacturaEmitida` → **SÍ**. Si no la viera, no estaría mirando este árbol |
+| **suelo (b)** | el censo ve llamadas al congelador de **CLIENTE** (SCRUM-729), que SABEMOS que existen → **11 fuera de su propio fichero**. Un censo que no ve el patrón ya construido no puede opinar del que falta |
+
+Banco: `docs/master/evidencias/SCRUM-665d/censo-de-las-bocas.mjs` (+ su salida).
+
+### LA TABLA — las siete, con fichero:línea de HOY
+
+`crearFacturaEmitida(tx, cliente, datos)`, `src/modules/invoicing/domain/crearFacturaEmitida.ts:58`.
+
+| # | boca (fichero : línea) | quién la llama | ¿tiene la ficha del merchant a mano? | ¿la lectura cae dentro o fuera de la `$transaction`? | qué firma cambiaría |
+|---|---|---|---|---|---|
+| **1** | `src/lib/invoicing.ts:345` | `ensureInvoiceForCharge` (camino **C6**, 4 bocas: 2 webhooks de PSP + 2 API internas) | ✅ **SÍ, completa** — `ch.merchant`, del `prisma.charge.findUnique({ include: { customer: true, merchant: true, … } })` de `:171` | ✅ **FUERA** (la `$transaction` abre en `:337`) | ninguna propia: sólo el 3.er argumento |
+| **2** | `src/modules/invoicing/domain/invoicing.service.ts:98` | `emitInvoice` — **no es un llamador, es OTRO EMBUDO** | 🔴 **NO** — sólo recibe `input.merchantId` | **no tiene `$transaction` propia**: se la abre cada llamador | 🔴 **`EmitInvoiceInput` gana un campo obligatorio** → arrastra a sus **4** llamadores (§②) |
+| **3** | `src/modules/jobs/app/routes/jobs.routes.ts:1448` | `POST /:id/collect-rest` (admin) | 🔴 **NO** — el `quote` se carga en `:1351` con `include: { Invoice: { select: { id: true } } }`, **sin merchant**. La única lectura de merchant del handler está en `:1498`, **después** de emitir, y con `select: { country, taxId }` | la que hay es **posterior a la emisión**: no sirve | ninguna propia, pero **exige una LECTURA NUEVA** |
+| **4** | `src/modules/quotes/app/routes/quotes.routes.ts:742` | `POST /:token/decision` — 🔴 **PÚBLICA, la dispara el CLIENTE FINAL desde WhatsApp, sin login** | ✅ **SÍ, completa** — `quote.merchant`, del `findUnique({ include: { merchant: true, customer: true, Invoice: true } })` de `:499` | ✅ **FUERA** (tx en `:714`) | ninguna propia |
+| **5** | `src/modules/system/app/routes/invoicesAdmin.routes.ts:1022` | `POST /:id/rectify` (rectificativa R1) | ✅ **SÍ, completa** — del `invoice.findFirst` con merchant de `:964` | ✅ **FUERA** (tx en `:1018`) | ninguna propia, **pero abre una decisión** (abajo) |
+| **6** | `src/modules/system/app/routes/quotesAdmin.routes.ts:294` | `POST /:id/invoice` (admin) | ✅ **SÍ, completa** — `quote.merchant` de `:180` | ✅ **FUERA** (tx en `:261`) | ninguna propia |
+| **7** | `src/modules/system/app/routes/quotesAdmin.routes.ts:563` | `POST /:id/invoice-manual` (admin) | ✅ **SÍ, completa** — `quote.merchant` de `:483` | ✅ **FUERA** (tx en `:559`) | ninguna propia. ⚠️ su 2.º argumento se llama `clienteCongeladoEntera`, no `clienteCongelado` |
+
+### 🔴 LA BOCA 5 NO ES UNA MÁS: HEREDA O CONGELA, Y ESO ES UNA DECISIÓN
+
+La rectificativa no usa `congelarCliente`: usa **`congelarParaRectificativa`** (`:1016`), que
+**hereda el cliente de la factura que rectifica** en vez de congelar la ficha de hoy. El motivo
+está escrito en `clienteCongelado.ts:177-190` y es fiscal, no técnico: *«congelar la ficha de HOY
+en una R1 declararía un destinatario y la factura rectificada otro, y a la AEAT le llegarían las
+dos»*.
+
+**Para el EMISOR la pregunta es idéntica y no está respondida en ninguna parte:** ¿una R1 lleva el
+emisor de hoy, o el de la factura que corrige? **No es una línea de código: es una decisión del
+fundador**, y sin ella la boca 5 no se puede enchufar aunque las otras nueve estén listas.
+
+---
+
+## ② 🔴 PERO LAS BOCAS DEL EMBUDO NO SON LOS SITIOS A TOCAR: SON **DIEZ**, NO SIETE
+
+Ésta es la corrección de dimensión que el encargo buscaba, y la destapó la **segunda sonda**
+(`censo-de-los-productores.mjs`), que hace una pregunta distinta de la primera: la primera censa
+**dónde se ESCRIBE la fila**; ésta censa **dónde se PRODUCE el dato congelado**. No son lo mismo.
+
+**La boca 2 no produce su congelado: lo recibe.** `emitInvoice` toma `input.clienteCongelado` como
+campo **obligatorio** de `EmitInvoiceInput` y lo reenvía. Quien lo produce son **sus cuatro
+llamadores**, y ésos no aparecen en el censo de bocas.
+
+| llamador de `emitInvoice` (fichero : línea) | quién | ¿ficha del merchant a mano? | ¿dónde se lee? | qué haría falta |
+|---|---|---|---|---|
+| `src/modules/jobs/app/routes/albaranes.routes.ts:1266` | `POST /:id/facturar-parcial` | 🟠 **PARCIAL** — hay `merchant` en `:1216`, pero con `select: { id, email, country, flags, defaultCurrency, taxId }` | ✅ FUERA (tx en `:1265`) | 🔴 **ENSANCHAR el `select` de `:1216`** |
+| `src/modules/jobs/app/routes/albaranes.routes.ts:1539` | `POST /:id/convertir-en-factura` | 🟠 **PARCIAL** — `:1409`, el **mismo** `select` de 6 campos | ✅ FUERA (tx en `:1538`) | 🔴 **ENSANCHAR el `select` de `:1409`** |
+| `src/modules/jobs/domain/recapitulativa.service.ts:105` | `emitirRecapitulativas` | 🔴 **NO** — sólo recibe `{ merchantId, customerId, currency, taxId, grupos, actor }` | `congelarCliente` va en `:77`, ✅ FUERA (tx en `:79`) | 🔴 **LECTURA NUEVA en `:77`** |
+| `src/modules/system/app/routes/invoicesAdmin.routes.ts:151` | `POST /` (factura suelta) | 🟠 **PARCIAL** — `:103`, `select: { id, email, country, flags, defaultCurrency }` | ✅ FUERA (tx en `:150`) | 🔴 **ENSANCHAR el `select` de `:103`** |
+
+### LA ARITMÉTICA, Y SU CONTROL DE CUADRE
+
+```
+bocas del embudo 1 (crearFacturaEmitida) ..... 7
+de ellas, DENTRO de emitInvoice .............. 1   (reenvía, no produce)
+bocas que PRODUCEN su congelado .............. 6
+llamadores de emitInvoice (producen) ......... 4
+SITIOS QUE TENDRÍAN QUE PRODUCIR EL EMISOR ... 6 + 4 = 10
+```
+
+**No me creo el 10 porque me salga: lo cuadro contra un conjunto que ya existe.** Si la cuenta es
+correcta, los productores de **cliente** congelado tienen que ser esos mismos 10 más los que
+congelan para un documento que **no** es factura:
+
+```
+productores de cliente fuera de su propio fichero ... 11
+sitios de FACTURA esperados ........................ 10
+resto .............................................. 1
+```
+
+Y ese 1 tiene nombre y se ha comprobado abriéndolo: `albaranes.routes.ts:905`, que congela para
+`datosDeAlbaranEmitido(clienteCongelado)` — **es el ALBARÁN, no una factura**. **Cuadra.**
+
+### 🔴 EL DESGLOSE QUE DECIDE EL TAMAÑO
+
+De los **10** sitios:
+
+| | sitios | qué hay que hacer ahí |
+|---|---|---|
+| ✅ **la ficha completa ya está en ámbito** | **5** — bocas 1, 4, 5, 6, 7 | `congelarEmisor(ficha)` y pasarlo. **Cero viajes nuevos.** `include: { merchant: true }` trae la fila entera |
+| 🟠 **hay lectura, pero con `select` recortado** | **3** — `albaranes:1216`, `albaranes:1409`, `invoicesAdmin:103` | **ensanchar el `select`**: de los siete campos sólo traen `email` (y `taxId` en dos). Faltan `name`, `legalName`, `address`, `logoUrl`, `whatsappPhone` |
+| 🔴 **no hay ninguna lectura utilizable** | **2** — `jobs.routes.ts` (collect-rest), `recapitulativa.service.ts` | **viaje NUEVO a la base**, fuera de la transacción |
+
+> **Los tres `select` recortados son el dato que no estaba en ningún sitio, y es el que más
+> cambia la conversación.** El apéndice (C) contó siete llamadas y describió el trabajo como
+> «tocar las SIETE llamadas». La realidad medida es: **diez sitios, de los cuales cinco son
+> triviales, tres exigen modificar una lectura que ya está EN el camino de emisión, y dos exigen
+> un viaje nuevo a la base.** Ensanchar el `select` de una lectura que alimenta `getEmissionMode`
+> y el gate de modo **no es cosmético**: es tocar el camino de emisión fiscal (regla 38).
+
+### ⚠️ UNA PRECISIÓN QUE EL INSTRUMENTO NO DA SOLO, Y QUE IMPORTA
+
+`invoicesAdmin.routes.ts:161` congela el cliente **DENTRO** de la `$transaction` (`congelarDesdeFicha`,
+la tx abre en `:150`). Parece violar la regla de SCRUM-729 — «el congelado va FUERA» — y **no la
+viola**: `congelarDesdeFicha` es **pura**, copia un objeto ya leído y **no hace ningún viaje**. El
+viaje está en `:103`, fuera.
+
+**La regla no es «la llamada va fuera»: es «la LECTURA va fuera».** Si se copia el patrón mirando
+dónde está la llamada en vez de dónde está el viaje, se mete un viaje en la sección crítica —
+detrás del `pg_advisory_xact_lock` de `allocateInvoiceNumber`, que se suelta en el COMMIT.
+
+### SUBPRODUCTO, y no es ticket (no tiene víctima hoy)
+
+`src/modules/jobs/app/routes/jobs.routes.ts:60` **importa `emitInvoice` y no lo llama**: una sola
+aparición del nombre en todo el fichero. Se dice y no se toca (regla 9: un hallazgo de otro carril
+se reporta, no se arregla).
+
+---
+
+## ③ (a) · LA FUNCIÓN QUE NO EXISTE — el equivalente de `congelarCliente` para el emisor
+
+### CONFIRMADO: **NO EXISTE**, y el cero tiene suelo debajo
+
+**Barrido 1** — quién usa las piezas de 665a, sobre los 288 ficheros `.ts`:
+
+```
+$ git grep -n "congelarEmisor\|emisorDelDocumento\|EmisorCongelado" origin/main -- 'src/**/*.ts'
+src/modules/invoicing/domain/emisorCongelado.ts:62    export interface EmisorCongelado
+src/modules/invoicing/domain/emisorCongelado.ts:73    export interface DocumentoConEmisorCongelado
+src/modules/invoicing/domain/emisorCongelado.ts:104   export function congelarEmisor(...)
+src/modules/invoicing/domain/emisorCongelado.ts:130   export function emisorDelDocumento(...)
+src/modules/invoicing/domain/emisorCongelado.ts:131   doc: DocumentoConEmisorCongelado,
+```
+
+**Cinco apariciones, las cinco dentro del propio fichero. Cero llamadores.** Sigue siendo cierto
+hoy, y ya lo era el 17-sep a las 10:20 (apéndice C).
+
+**Barrido 2** — por si existiera con otro nombre:
+
+```
+$ git grep -nE "congelarMerchant|congelarEmisorDesdeBase|leerFichaEmisor|fichaDelEmisor|congelarEmisorDeBase" \
+    origin/main -- 'src/**/*.ts'
+(rc=1 — CERO coincidencias)
+```
+
+**Barrido 3 (AST, el que lleva el suelo)** — `censo-de-los-productores.mjs`, sección ④:
+
+```
+④ PRODUCTORES de emisor congelado ... 0
+```
+
+### 🔴 ¿ES «NO HAY» O ES «NO MIRÉ DONDE HABÍA»? — **ES «NO HAY»**, y así se demuestra
+
+Un cero solo no vale. Este cero lo produce **el mismo barrido, en la misma pasada, sobre los mismos
+288 ficheros** que a la vez encuentra:
+
+- el tipo `EmisorCongelado` → **visto** (luego el analizador SÍ llega a ese fichero);
+- **11 productores de cliente congelado** (`congelarCliente`, `congelarParaRectificativa`,
+  `congelarDesdeFicha`), que es el patrón gemelo y que SABEMOS que existe;
+- **4 llamadas a `emitInvoice`** y **7 a `crearFacturaEmitida`**.
+
+Un instrumento que ve 11 del patrón A y 0 del patrón B, mirando lo mismo, está diciendo que B no
+está. Si el suelo cae, el censo **sale con código 3 y se declara CIEGO** en vez de imprimir un
+cero.
+
+**La casa ya lo tenía anotado, y confirma la medida en vez de contradecirla:**
+`tests/scrum411-exports-inalcanzables.test.mjs:199` subió su tope a **8** con el motivo escrito —
+*«Entra `src/modules/invoicing/domain/emisorCongelado.ts` (SCRUM-665 A)»*— y deja dicho que quien
+lo enchufe baje el número en el mismo commit. *(Ojo: el apéndice (C) citó esa línea como `:197`.
+Hoy es `:199`.)*
+
+### LO QUE HABRÍA QUE ESCRIBIR — **propuesto, no aplicado**
+
+El gemelo exacto de `congelarCliente` (`clienteCongelado.ts:154-175`), que hace
+`customer.findFirst({ where: { id, merchantId }, select: {…} })` y lanza si no está:
+
+```ts
+// src/modules/invoicing/domain/emisorCongelado.ts — NO ESCRITO, PROPUESTO
+
+/** Lo mínimo que este módulo necesita de Prisma. Mismo motivo que `LectorDeFichas`. */
+export interface LectorDeFichasDeEmisor {
+  merchant: {
+    findUnique(args: {
+      where: { id: number };
+      select: Record<string, boolean>;
+    }): Promise<FichaDeEmisor | null>;
+  };
+}
+
+/**
+ * EL VIAJE. Se llama ANTES de abrir la `$transaction`, nunca dentro: `allocateInvoiceNumber` toma
+ * `pg_advisory_xact_lock` como PRIMERA sentencia y el cerrojo es de transacción.
+ *
+ * 🔴 Aquí NO hay filtro por merchant como en `congelarCliente`, y no es un descuido: el merchant
+ *    ES el sujeto de la consulta, no un ámbito dentro del que buscar (regla 2).
+ */
+export async function congelarEmisorDesdeBase(
+  db: LectorDeFichasDeEmisor,
+  merchantId: number,
+): Promise<EmisorCongelado> {
+  const ficha = await db.merchant.findUnique({
+    where: { id: merchantId },
+    select: {
+      name: true, legalName: true, taxId: true,
+      address: true, logoUrl: true, whatsappPhone: true, email: true,
+    },
+  });
+  // Fallar ANTES de pedir número: si reventara después, el número ya estaría consumido y la
+  // serie tendría un hueco que justificar.
+  if (!ficha) throw new Error(`emisor_no_encontrado_al_congelar:${merchantId}`);
+  return congelarEmisor(ficha);
+}
+```
+
+⚠️ **`Merchant.whatsappPhone` → `FichaDeEmisor.phone`**: el `select` devuelve `whatsappPhone` y
+`FichaDeEmisor` declara `phone`. Ese renombrado hay que hacerlo en algún sitio, y el `select` de
+arriba **no lo hace**. Lo digo en vez de dejar un diff que no compila.
+
+---
+
+## ④ (b) · EL CAMBIO DE FIRMA DE `crearFacturaEmitida` — **DIFF PROPUESTO, SIN APLICAR**
+
+### `src/modules/invoicing/domain/crearFacturaEmitida.ts`
+
+```diff
+ import type { Prisma } from '@prisma/client';
+ import type { ClienteCongelado } from './clienteCongelado';
++import type { EmisorCongelado } from './emisorCongelado'; // SCRUM-665
+
+ /**
+- * Todo lo que hoy se escribe en un `invoice.create`, MENOS los cinco campos del cliente: ésos
+- * entran por su parámetro y no por el `data`. Escribirlos a mano aquí no compila.
++ * Todo lo que hoy se escribe en un `invoice.create`, MENOS los cinco campos del cliente y los
++ * SIETE del emisor: ésos entran por su parámetro y no por el `data`. Escribirlos a mano aquí no
++ * compila.
+  */
+ export type DatosDeFacturaEmitida = Omit<
+   Prisma.InvoiceUncheckedCreateInput,
+-  keyof ClienteCongelado
++  keyof ClienteCongelado | keyof EmisorCongelado
+ >;
+
+ export function crearFacturaEmitida(
+   tx: Prisma.TransactionClient,
+   cliente: ClienteCongelado,
++  emisor: EmisorCongelado,
+   datos: DatosDeFacturaEmitida,
+ ) {
+-  return tx.invoice.create({ data: { ...datos, ...cliente } });
++  return tx.invoice.create({ data: { ...datos, ...cliente, ...emisor } });
+ }
+```
+
+**Por qué el `Omit` se extiende y no se deja como está:** si no se extiende, el tipo **deja de
+proteger a las siete nuevas** y cualquiera podrá escribir `merchantName` a mano dentro de `datos`.
+Ese día habría **dos** sitios que deciden el emisor de un documento, y la regla de lectura de
+`emisorDelDocumento` —«`merchantName` a NULL significa *anterior al escritor*»— dejaría de ser
+cierta. El centinela no lo rompe una columna mal puesta: lo rompe una segunda puerta.
+
+**Sobre el orden de los parámetros:** tres objetos seguidos parecen intercambiables y no lo son.
+`ClienteCongelado` exige `customerName…` y `EmisorCongelado` exige `merchantName…`: **no tienen
+ninguna clave en común**, así que invertirlos **no compila**. El tipo protege el orden solo; no
+hace falta inventar nada.
+
+### `src/modules/invoicing/domain/invoicing.service.ts` — el que arrastra a los otros cuatro
+
+```diff
+   clienteCongelado: ClienteCongelado;
++  /**
++   * SCRUM-665 · OBLIGATORIO: el EMISOR tal y como está en este instante. Mismo patrón que
++   * `clienteCongelado`, `actor` (SCRUM-207) y `origen` (SCRUM-347): obligatorio por tipo, así
++   * que **un llamador nuevo no compila** hasta declarar con qué emisor se emite.
++   * Lo lee el llamador ANTES de abrir la `$transaction`, no esta función.
++   */
++  emisorCongelado: EmisorCongelado;
+ }
+
+ export async function emitInvoice(tx: Prisma.TransactionClient, input: EmitInvoiceInput) {
+   const number = await allocateInvoiceNumber(tx, input.merchantId, {
+     camino: input.origen, actor: input.actor,
+   });
+-  return crearFacturaEmitida(tx, input.clienteCongelado, {
++  return crearFacturaEmitida(tx, input.clienteCongelado, input.emisorCongelado, {
+```
+
+🔴 **Ese campo obligatorio es el que convierte «una línea» en diez sitios**: en cuanto entra, los
+cuatro llamadores de `emitInvoice` dejan de compilar hasta producir su emisor — y tres de ellos
+necesitan que se les ensanche el `select`.
+
+### ⚠️ EL DIFF NO SE PUEDE APLICAR SOLO, Y HAY QUE SABERLO
+
+Este diff, **sin las diez llamadas actualizadas, no compila**: cambiar la aridad de
+`crearFacturaEmitida` rompe las siete bocas en el mismo commit. **No es un paso previo que se
+pueda mergear aparte.** El enchufe es un único PR de diez sitios sobre el camino de emisión
+fiscal, o no es nada.
+
+---
+
+## ⑤ · POBLACIONES Y SUELOS DE TODO LO DE ARRIBA, EN UN SITIO
+
+| barrido | población | resultado | ¿el cero es «no hay» o «no miré»? |
+|---|---|---|---|
+| bocas de `crearFacturaEmitida` (AST) | 288 `.ts` de `src/` | **7** | n/a — no hay cero |
+| llamadas a `emitInvoice` (AST) | 288 `.ts` | **4** | n/a |
+| productores de cliente congelado (AST) | 288 `.ts` | **11** (10 factura + 1 albarán) | n/a |
+| **productores de emisor congelado (AST)** | 288 `.ts` | **0** | 🟢 **«NO HAY»** — mismo barrido, misma pasada, ve el tipo y ve 11 del patrón gemelo |
+| nombres alternativos del congelador de emisor (texto) | 288 `.ts` | **0** | 🟠 **«no hay CON ESOS CINCO NOMBRES»** — es un barrido de nombres que yo elegí; el que decide es el AST de arriba |
+| `emitInvoice` en `jobs.routes.ts` | 1 fichero | **1** aparición (el import) | 🟢 «no se llama» |
+| deriva `src/` entre `1df4b9b9` y `2a9f73db` | todo `src/` | **0 ficheros** | 🟢 «no hay» — `git diff --stat` vacío **y** las dos sondas reejecutadas dan salida idéntica |
+
+---
+
+## ⑥ · MIS ERRORES EN ESTA TANDA (A9)
+
+**1. La aritmética me salió 11 y era 10, por un bug mío de rutas.** En
+`censo-de-los-productores.mjs` comparé rutas con prefijo `src/` contra rutas que `rel()` produce
+**sin** él (la raíz que paso ya *es* `.../src`). Las tres exclusiones no dispararon **nunca**, así
+que la boca que vive dentro de `emitInvoice` se contó como productora y los dos congeladores
+internos de `clienteCongelado.ts` entraron en la lista de productores externos.
+
+**No lo cacé leyendo el resultado**: 11 era perfectamente creíble. Lo cazó que el desglose no
+cuadraba con el total. Por eso el instrumento lleva ahora **un control de cuadre explícito** que
+compara los dos conjuntos y grita si no encajan — antes lo comprobaba yo a ojo, que funciona
+justo cuando no hace falta.
+
+**2. Intenté escribir el instrumento con un heredoc desde bash y salió mutilado.** Es la MISMA
+trampa que este expediente ya tenía anotada en el apéndice (B) — *«los backticks se leyeron como
+sustitución de comandos»*—, y aun así la repetí. Esta vez falló en alto (error de sintaxis) en vez
+de escribir un fichero silenciosamente roto. Rehecho con una herramienta que no pasa por el shell.
+
+**3. Reconstruí números de línea con un `awk` casero para leer un tramo de fichero y me los
+inventó** (metió «8», «36», «46» en medio del código). No contaminó ninguna medición —las
+coordenadas del informe salen del AST, no de ese `awk`—, pero durante un minuto leí un fichero
+mal numerado. Dejé de usarlo.
+
+**4. El guard `guard-dangerous` me paró un `>` sobre un fichero versionado, y tenía razón.** Era
+mi propia salida de tres minutos antes, pero la regla no depende de que mi razonamiento sobre el
+alcance sea correcto. Escribí por otra vía en vez de crear `.claude/allow-destructivo`.
+
+---
+
+## ⑦ · LO QUE ESTA TANDA **NO** HA MEDIDO
+
+1. **Nada se ha ejecutado.** Este dosier es **estático**: AST y lectura. No he emitido una factura,
+   ni he corrido la suite, ni he tocado una base. Las diez coordenadas están **leídas**, no
+   **ejercitadas**.
+2. **No he medido el COSTE en viajes** de los dos sitios que necesitan lectura nueva.
+   `tests/scrum728d-viajes-de-la-reserva.test.mjs` existe y mide eso para el cliente (+1 fuera del
+   cerrojo, 0 dentro); **no lo he corrido para el emisor** y no afirmo el número.
+3. **No he medido si ensanchar los tres `select` rompe algo.** Traen `flags` y alimentan
+   `getEmissionMode`; añadir campos a un `select` es aditivo *en principio*, y «en principio» no
+   es una medición.
+4. **La decisión de la R1** (boca 5): si una rectificativa hereda el emisor de la factura que
+   corrige o congela el de hoy. **Es del fundador**, y sin ella el enchufe está incompleto.
+5. **El eje del CÓDIGO** sigue donde lo dejó el 15-sep: `generateInvoicePdf` no recibe versión de
+   plantilla. Declarado, sin medir, cuatro apéndices después.
+6. **Cuántas facturas emitidas hay en las tres bases** — sigue pendiente desde el 15-sep, sigue
+   exigiendo tocar las bases, sigue prohibido aquí.
+7. **Este apéndice también caducará.** Cita 30 y pico de coordenadas, y el §0 demuestra que cinco
+   de las del apéndice anterior aguantaron cinco horas. Las dos sondas van commiteadas y son
+   reejecutables **por ese motivo**: quien las vuelva a correr obtiene los números de su día, no
+   los míos.
+
+---
+
+## ⑧ · EL BANCO
+
+| fichero | qué |
+|---|---|
+| `docs/master/evidencias/SCRUM-665d/censo-de-las-bocas.mjs` | sonda 1 · AST · las bocas del embudo, con su población y su suelo |
+| `docs/master/evidencias/SCRUM-665d/salida-censo-de-las-bocas.txt` | su salida contra `2a9f73db` |
+| `docs/master/evidencias/SCRUM-665d/censo-de-los-productores.mjs` | sonda 2 · AST · los productores, el segundo embudo y el control de cuadre |
+| `docs/master/evidencias/SCRUM-665d/salida-censo-de-los-productores.txt` | su salida contra `2a9f73db` |
+
+Las dos son **SOLO LECTURA**: no importan nada de `src/`, no abren base, no tocan red. Analizan un
+árbol exportado con `git archive`, así que se pueden correr contra **cualquier** SHA:
+
+```bash
+git archive origin/main src | tar -x -C /un/sitio/fuera/del/arbol
+node docs/master/evidencias/SCRUM-665d/censo-de-las-bocas.mjs /un/sitio/fuera/del/arbol/src 288
+node docs/master/evidencias/SCRUM-665d/censo-de-los-productores.mjs /un/sitio/fuera/del/arbol/src 288
+```
+
+La población esperada va por argumento **a propósito**: si el árbol crece y nadie lo actualiza, el
+suelo cae y el censo se declara CIEGO en vez de medir media casa y dar un número creíble.
+
+---
+
+## ⑨ · LO NO TOCADO
+
+- **`src/`: NI UNA LÍNEA.** El defecto de SCRUM-665 sigue vivo y sin disimular.
+- **`prisma/schema.prisma`: ni una línea.** Las siete columnas siguen declaradas y **vacías**.
+- **Ninguna base de datos**: cero `db push`, cero `migrate diff`, cero `migrate dev`, ni para
+  comprobar. Cero credenciales. Producción y staging, ni mirados.
+- **Ninguna factura tocada** (regla 29). Ningún estado ni flag nuevo (27). Ninguna dependencia (36).
+- `git stash` no usado · historia no reescrita · rama propia, nunca `main`.
+- **Las 18 divergencias esquema/base del apéndice (B): ninguna arreglada.** No son de este encargo.
+
+---
+
+# APÉNDICE · 22-sep-2026 · J1 · RECONFIRMADO HOY, MÁS UN QUINTO SITIO: EL XML DE LA AEAT
+
+**Fecha:** 22-sep-2026 · **Carril:** J1 · **Gate:** 🔴 **MIDE. NO ARREGLA.**
+**Medido contra:** `origin/main` = `504cd33edb23d023b50ea8805cf359ab04096834` · 2026-09-22T09:59:36Z
+**Rama:** `scrum-665-verifactu-xml-emisor-vivo`
+**Encargo:** el orquestador pide reconfirmar si el PDF usa las columnas del cliente congelado (hoy
+sincronizadas en las tres bases) o la ficha viva. Antes de contestar, PASO 0: este ticket ya tenía
+1445 líneas de expedientes previos (15/16/17-sep) — no se repite lo medido, se apunta a ello.
+
+## 0 · La pregunta del orquestador, contestada primero
+
+**Sí, el PDF (y el XML de la AEAT) usan la columna, no la ficha viva — para el CLIENTE.**
+`clienteDelDocumento(inv, inv.customer)` es el único lector, y lo llaman los tres generadores de PDF
+(`invoicing.ts:122,260`; `invoicesAdmin.routes.ts:1161`) y el exportador de la AEAT
+(`verifactu.service.ts:856`). Cierra SCRUM-729; nada que construir ahí.
+
+**Para el EMISOR (el profesional) la respuesta sigue siendo NO**, y eso es justamente el resto de
+este ticket: el escritor y el lector (`emisorCongelado.ts`) están construidos y probados desde el
+16-sep, el ALTER está aplicado y VERIFICADO en las **tres** bases desde el 17-sep, y el esquema lo
+declara desde esa misma fecha — pero **nada los llama todavía** (censo AST del apéndice anterior:
+`emisorDelDocumento`, 0 apariciones en `src/`). El PDF y el XML siguen leyendo `merchant.*` en vivo.
+Reconfirmado hoy con el instrumento QUE YA EXISTÍA (`docs/master/evidencias/scrum665/dos-regeneraciones.mjs`,
+sin escribir uno nuevo), contra el commit de arriba: mismo veredicto que el 15-sep —
+
+```
+pasada1 vs pasada2 (el merchant corrigio su direccion):
+  por BYTES ....: 🔴 DISTINTOS
+  por CONTENIDO : 🔴 DISTINTO
+```
+
+## 1 · Lo nuevo: un QUINTO sitio que ningún apéndice anterior había mirado
+
+`clienteCongelado.ts:6-9` dice que son "los cuatro sitios que reconstruyen una factura emitida —dos
+PDF, la regeneración de admin y el XML de la AEAT". Los cuatro apéndices previos midieron ESE marco
+(y con razón: el título del ticket dice "el PDF"). Pero el propio XML de la AEAT tiene DOS caras, y
+solo se midió una:
+
+- **La cara del DESTINATARIO** (`clienteDelDocumento`, línea 856): ✅ ya congelada, medida en el §0.
+- **La cara del EMISOR de ese mismo XML**: 🔴 **nunca medida en este expediente.**
+  `buildVerifactuRegistrosXml` (`verifactu.service.ts:582`) hace
+  `await prismaClient.merchant.findUnique({ where: { id: params.merchantId } })` — EN VIVO, en el
+  momento de EXPORTAR — y usa `merchant.taxId` (`:771,788,883,912`) y
+  `merchant.legalName || merchant.name` (`nombreEmisor`, `:666,987`) para construir `IDEmisorFactura`
+  y `obligado.nombreRazon`. Llamado desde DOS rutas de exportación
+  (`exports.routes.ts:252` y `:556`), no desde `emitInvoice`: el censo de "productores" del apéndice
+  anterior no lo veía porque no es un productor, es un LECTOR que no pasa por `emisorDelDocumento`.
+
+### Un matiz que decide cómo de grave es cada campo, verificado leyendo `computeVeriFactuHash`
+
+`IDEmisorFactura=${nif}` es uno de los **ocho** campos que entran en la huella
+(`verifactu.service.ts:92-111`). Consecuencia medida por identidad, no supuesta:
+
+| campo del emisor en el XML | ¿entra en la huella sellada? | qué pasa si `Merchant.taxId`/`legalName` cambia tras emitir |
+|---|---|---|
+| `merchant.taxId` (`IDEmisorFactura`) | **SÍ** (uno de los 8) | el XML re-exportado llevaría un NIF que **no cuadra** con la huella que el mismo XML imprime — auto-defendido: un verificador que recompute la huella lo detecta |
+| `merchant.legalName`/`name` (`nombreEmisor`) | **NO** | puede derivar en silencio, sin que ninguna huella lo delate — el mismo defecto no detectable que ya tiene el PDF |
+
+O sea: el caso peor (el NIF) tiene una red de seguridad que el PDF no tiene para NADA; el caso del
+nombre del emisor no tiene ninguna, ni en el PDF ni en el XML.
+
+## 2 · Consecuencia para "el enchufe" (§⑤ del apéndice anterior, SCRUM-665d)
+
+El plan de conexión ya escrito (líneas 1312-1342 de este mismo fichero) cablea `emisorCongelado`
+dentro de `emitInvoice`/`crearFacturaEmitida` y sus lectores de PDF — **no nombra
+`buildVerifactuRegistrosXml`**. Si el enchufe se construye tal como está escrito hoy, el PDF
+dejaría de reimprimir con datos de hoy pero **el XML de la AEAT seguiría haciéndolo**: dos
+documentos de la misma factura, uno congelado y otro no. Se deja **nombrado y sin construir**
+(regla 38): el sexto punto de conexión sería `verifactu.service.ts:582,666,771,788,883,912,987`,
+sustituyendo el `findUnique` en vivo por `emisorDelDocumento(inv, merchant)` con el mismo criterio
+de NULL = "anterior al escritor".
+
+## 3 · Lo que sigue sin poder medirse (igual que el 15-sep)
+
+Cuántas facturas emitidas hay en las tres bases y cuántas dependen del disco efímero: sigue exigiendo
+tocar las bases, y esta sesión no tiene `DATABASE_URL_DEV` en su árbol (bloqueo reportado y resuelto
+por otra vía: el orquestador aplicó el sincronizado de columnas de HOY desde el suyo). Cero
+almacenamiento persistente reconfirmado por el mismo barrido de dependencias
+(`s3|aws|cloudinary|supabase|gcs|azure|minio|blob|r2|backblaze` → 0 en `src/modules/invoicing` y
+`src/core/storage`).
+
+## 4 · Nada aplicado
+
+Ni una línea de `src/`, ni de `prisma/schema.prisma`, ni de ninguna base. El enchufe (PDF + el sexto
+punto del XML) sigue esperando el GO del fundador sobre un único PR de ~10-11 sitios en el camino de
+emisión fiscal, más su decisión pendiente de la R1 (§④ del apéndice anterior).
+
+# APÉNDICE (F) · 22-sep-2026 · J1 · EL ENCHUFE, APLICADO — LOS DIEZ SITIOS + EL SEXTO PUNTO
+
+**Fecha:** 22-sep-2026 · **Carril:** J1 · **Gate:** ✅ **APLICADO, con GO.**
+**Medido contra:** `origin/main` = `081f619bad377709a06a02fcb80f627a7518983c` · 2026-09-22T11:06:18Z
+**Rama:** `scrum-665-enchufe-emisor-congelado` (arrancada por la sesión anterior en `9cb232b6`,
+2/10 sitios, NO COMPILABA a propósito)
+**GO:** comentario 16468 de Jira SCRUM-665, 22-sep-2026 12:22:47 CEST, Javier — «adelante con el
+emisor congelado» — leído directamente por esta sesión antes de tocar código, no heredado de un
+traspaso.
+
+## ⓪ Lo que ya estaba (2/10) y lo que trajo esta tanda
+
+Heredado, sin tocar: `emisorCongelado.ts` (escritor `congelarEmisor`/`congelarEmisorDesdeBase`,
+lector `emisorDelDocumento`) · `crearFacturaEmitida.ts` a 4 argumentos (`tx, cliente, emisor,
+datos`) · `invoicing.service.ts` (`EmitInvoiceInput.emisorCongelado` obligatorio) · el escritor y
+las dos lecturas de PDF en `lib/invoicing.ts` (boca 1).
+
+Nuevo en esta tanda:
+
+1. **`congelarEmisorDesdeFicha(m)`**, en `emisorCongelado.ts` — el gemelo de `congelarEmisor` para
+   quien YA tiene la ficha en ámbito (hace el renombrado `whatsappPhone → phone` en un solo sitio;
+   `congelarEmisorDesdeBase` se reescribió para reusarlo, sin cambiar su contrato).
+2. **Los 8 sitios que faltaban del embudo**, con las tres formas que midió el dosier (D):
+   - **5 triviales** (ficha ya en ámbito, cero viajes nuevos): `jobs.routes.ts` collect-rest
+     (boca 3 — el `include: { merchant: true }` de SCRUM-1027 la dejó trivial: ya NO es "sin
+     lectura utilizable" como medía el dosier D, `main` se movió), `quotes.routes.ts` decision
+     (boca 4, pública), `invoicesAdmin.routes.ts` `/:id/rectify` (boca 5, R1 — ver §① abajo),
+     `quotesAdmin.routes.ts` `/:id/invoice` y `/:id/invoice-manual` (bocas 6 y 7).
+   - **3 con `select` ensanchado** (la lectura ya estaba, fuera de la tx; se añadieron
+     `name/legalName/address/logoUrl/whatsappPhone`, y en dos de ellas también `taxId`):
+     `albaranes.routes.ts` `/:id/facturar-parcial` y `/:id/convertir-en-factura`,
+     `invoicesAdmin.routes.ts` `POST /` (factura suelta).
+   - **1 viaje nuevo, fuera de la tx**: `recapitulativa.service.ts` — `emitirRecapitulativas` sólo
+     recibe `merchantId`, no la ficha; usa `congelarEmisorDesdeBase(prisma, merchantId)` igual que
+     hace ya para el cliente.
+3. **Los 2 errores de tipo declarados pendientes por la sesión anterior** (`lib/invoicing.ts:112,255`,
+   `EmisorDelDocumento.name` es `string | null` y `generateInvoicePdf` exige `string`): se decidió
+   **fallar, no fabricar un nombre**. `Merchant.name` es `NOT NULL` en el esquema, así que un
+   `emisor.name == null` en este punto es una fila rota, no un caso normal; se lanza
+   `emisor_sin_nombre_al_generar_pdf` en vez de imprimir un documento fiscal con el emisor en
+   blanco — mismo criterio que ya usa `emisorDelDocumento` cuando no hay ni columna ni ficha.
+4. **El sexto punto de conexión** (hallazgo de la sesión anterior, sin empezar): `verifactu.service.ts`
+   `construirRegistro` ahora usa `emisorDelDocumento(inv, emisorFichaViva)` por factura — mismo
+   criterio que ya usaba `clienteDelDocumento` para el destinatario (SCRUM-729) — para
+   `IDEmisorFactura`, `NombreRazonEmisor`, `IDEmisorFacturaAnulada` y el `RegistroAnterior` de las
+   dos cadenas (alta y anulación). El `ObligadoEmision` del SOBRE (`<sum:Cabecera>`) se deja **a
+   propósito** en el merchant EN VIVO: identifica quién presenta el LOTE hoy, no quién emitió cada
+   factura — es un concepto distinto y las dos rutas del XML (`GET /verifactu.xml` y el ZIP de
+   `GET /datos.zip`) comparten el mismo `buildVerifactuRegistrosXml`, así que se arreglan las dos
+   a la vez sin tocarlas.
+5. **Trinquetes actualizados en el mismo commit** (regla 41 — se arregla el código/instrumento
+   nunca el guard, y aquí lo que cambió es el HECHO que el instrumento vigila):
+   - `tests/scrum411-exports-inalcanzables.test.mjs`: `MODULOS_DOMINIO_INALCANZABLES_MAX` **8 → 7**
+     — `emisorCongelado.ts` ya tiene llamador en `src/`, tal y como pedía su propio comentario y el
+     test de `scrum665a-congelar-el-emisor.test.mjs` que lo vigila.
+   - `tests/_huerfanos-declarados.mjs`: se declara `CAMPOS_CONGELADOS_EMISOR` (gemelo de
+     `CAMPOS_CONGELADOS`, misma categoría `VOCABULARIO_DEL_MODULO`) — al volverse alcanzable el
+     módulo, el censo de huérfanos empezó a verlo por primera vez.
+   - `tests/_embudo-factura.mjs` (SCRUM-203): el literal de datos de `crearFacturaEmitida` estaba
+     anclado al argumento `[2]` (cuando la firma era `(tx, cliente, datos)`); con el emisor de por
+     medio pasa a ser `(tx, cliente, emisor, datos)` y el dato está en `[3]`.
+   - `docs/legal/AUDITORIA_CAMINO_EMISION.md`: tres anclas de línea corregidas tras el desplazamiento
+     por mis inserciones (`buildVeriFactuQrUrl` 141→142, `buildVerifactuRegistrosXml` 574→575,
+     `exigirDocumentoEmitible` 101/237→102/246) — vigilado por
+     `tests/scrum525d-anclas-que-apuntan.test.mjs`.
+
+## ① Lo que NO se decidió — la R1 (boca 5)
+
+Instrucción explícita del GO: congelar el emisor **al emitir** (ficha de HOY), dejar el camino de
+la rectificativa **como está**, y no resolver por omisión si hereda el emisor de la factura
+ORIGINAL. Implementado así en `invoicesAdmin.routes.ts` `/:id/rectify`, con el comentario en código
+marcándolo PENDIENTE y remitiendo al comentario 16468. **Sin construir de nuevo aquí**: sigue
+esperando la respuesta del asesor.
+
+## ② Controles — rigor completo (regla 29, camino fiscal)
+
+Nuevo banco: `tests/scrum665e-el-escritor-del-emisor.test.mjs`, mismo patrón que
+`scrum729-el-escritor-del-cliente.test.mjs` pero para el emisor y sobre `buildVerifactuRegistrosXml`
+directamente (el escritor/lector del PDF ya los cubre `scrum665a`/`scrum665b` desde el 16-sep):
+
+- **ROJO reproducido y arreglado** (④-bis): la MISMA factura, sin columnas de emisor congeladas,
+  con la ficha viva cambiada entre dos exportaciones → el `RegistroFactura` de la AEAT SÍ cambia.
+  Es el mecanismo viejo, ejercitado de verdad, no supuesto.
+- **④ el que decide**: la misma factura CON columnas congeladas → el `RegistroFactura` (NIF y
+  nombre del emisor) NO cambia al corregir el perfil — comparado por SUBCADENA del documento, no
+  por igualdad completa, porque el `ObligadoEmision` del sobre sí sigue al merchant vivo a
+  propósito (③ punto 4 arriba); hay un test aparte que fija ESE comportamiento.
+- **✅ control positivo**: una factura SIN columnas congeladas (todas las anteriores a hoy) sigue
+  saliendo, con la ficha viva como respaldo — ni se rompe ni queda en blanco.
+- Cubre las DOS rutas del XML a la vez por compartir constructor (③ punto 4).
+
+Suelo: `npx tsc --noEmit` limpio (11 errores → 0) · `npm run build` limpio · los cinco ficheros de
+test tocados (`scrum665e` nuevo, `scrum665a`, `scrum665b`, `scrum411`, `scrum413`, `scrum275`,
+`scrum525d`, `scrum203`, `scrum729`) en verde, 56+ casos.
+
+Tanda completa (`node --test … "tests/*.test.mjs"`, TAP a fichero, leído en un segundo comando):
+de 13 `not ok` iniciales, **11 causados por esta rama** (arreglados arriba: SCRUM-203, SCRUM-275,
+SCRUM-411×2, SCRUM-413×4 — fixture de test con `merchant.name` ausente, `Merchant.name` es
+NOT NULL en el esquema real —, SCRUM-525d×2) y **2 preexistentes y ajenos a este carril**
+(SCRUM-476: censo de topología de `node_modules` de TODOS los worktrees de la máquina; SCRUM-939b:
+ruta de `gh.exe` de esta máquina en el trinquete de skills) — reportados, no arreglados: no son de
+facturación ni VeriFactu.
+
+## ③ Lo que NO se ha hecho (fuera del alcance del GO)
+
+`prisma/schema.prisma`: sin tocar. Publicar el PR: sin hacer — sigue en BORRADOR con el auto-merge
+DESARMADO, comprobado tras cada push (el bot lo rearma en cada uno). El sí de empujar el camino del
+cobro lo pide el orquestador a un jefe.
+
+# APÉNDICE (G) · 22-sep-2026 · J1 · EL EJE DEL CÓDIGO — NO SOLO EL DATO, TAMBIÉN LA PLANTILLA
+
+**Fecha:** 22-sep-2026 23:00:33Z (hora de GitHub, `gh api -i zen`) · **Carril:** J1 · **Gate:**
+🔴 **MIDE Y PROPONE. NO CONSTRUYE.**
+**Medido contra:** `origin/main` = `6bca74e55d4ad193debd03cd95223f8390080ad4` · 2026-09-22T23:00:33Z
+**Rama:** `scrum-665-eje-del-codigo-medicion`
+**Encargo:** el ticket se reabrió — el Apéndice (F) resolvió **sólo la opción B** (los DATOS
+congelados: emisor, cliente, XML). Su propio enunciado dice de esa opción: «no arregla el cambio
+por código». Este apéndice mide el otro eje: ¿`ensureInvoicePdf` reimprime una factura EMITIDA con
+la PLANTILLA de hoy, no sólo con datos de hoy? Sin construir ninguna de las cuatro salidas (A/B/C/D):
+la elección depende de una pregunta al asesor que J4 está registrando (si el hash sella el REGISTRO
+o también tiene que sellar el DOCUMENTO).
+
+## 1 · El mecanismo, confirmado CORRIENDO — no leído
+
+`ensureInvoicePdf` (`src/lib/invoicing.ts:70-77`) regenera cuando `!fs.existsSync(diskPath)`, y el
+comentario de la propia función dice por qué eso ocurre casi siempre: «el fs de Railway es efímero»
+(`src/lib/invoicing.ts:30`). Medido con la MISMA factura EMITIDA (datos 100% frozen, ni una tecla
+tocada entre pasadas — ni merchant, ni cliente, ni número, ni huella) generada dos veces, cambiando
+en medio **sólo el literal de la plantilla** (`docTitle` en
+`src/modules/invoicing/infra/pdf/pdf.service.ts:389`, de `'FACTURA'` a `'FACTURA-TEST-665'`),
+recompilando con `npm run build` entre pasadas — nada de `src/` tocado en el diff final (revertido
+justo después de medir, `git status` limpio):
+
+```
+pasada1 (plantilla de entonces): bytes=5209  contiene "FACTURA-TEST-665"=false
+pasada2 (misma factura, plantilla cambiada): bytes=5226  contiene "FACTURA-TEST-665"=true
+```
+
+**Confirmado, no razonado:** con datos idénticos, el PDF de una factura ya emitida cambia de
+contenido cuando cambia el CÓDIGO de la plantilla. La regla 29 («lo emitido no se edita jamás») está
+rota por esta puerta aunque los datos del emisor y del cliente estén perfectamente congelados —
+son dos ejes independientes y el Apéndice (F) sólo cerró uno.
+
+## 2 · `generateInvoicePdf` no recibe versión de plantilla — confirmado
+
+Su firma completa (`src/modules/invoicing/infra/pdf/pdf.service.ts:269-301`) y el `import` que la
+trae a `ensureInvoicePdf` (`src/lib/invoicing.ts:9`, reexportado sin cambios por el wrapper
+`src/lib/pdf.ts`) no llevan ningún parámetro de versión, sello de plantilla o fecha de generación
+que ate el PDF al código con el que nació. Grep de `TEMPLATE_VERSION|templateVersion|pdfVersion|
+PDF_VERSION|plantillaVersion` sobre `src/` entero: **cero resultados**. No es un descuido de
+lectura — el concepto no existe en el árbol.
+
+## 3 · La medición 2, pendiente — no tengo la clave en este árbol, medido con la herramienta propia
+
+`node scripts/comprobar-claves-bd.mjs` en `cobroflash-jv1`:
+
+```
+🔴 DATABASE_URL_STAGING: AUSENTE del entorno de este árbol.
+🔴 DATABASE_URL_DEV: AUSENTE del entorno de este árbol.
+🔴 DATABASE_URL_TESTS: AUSENTE del entorno de este árbol.
+❌ 4 problema(s) de claves en «cobroflash-jv1». No se sigue.
+```
+
+Ni `.env`, ni `.env.local`, ni variable de entorno del sistema en esta sesión (`ls -la .env*`,
+`printenv`, y `Object.keys(process.env)` desde node: los tres, vacíos). No se rodeó buscando la
+clave por otra vía (`~/.bashrc` u otro fichero fuera de lo designado): es el mismo límite que ya
+paró a la sesión anterior una vez, y sigue siendo el correcto. Declarado como suelo, no como
+«no lo hice».
+
+**El script queda escrito y listo para quien tenga la clave**:
+`docs/master/evidencias/scrum665-eje-codigo/desglose-pdfurl.mjs` — cuenta, sobre `invoices` con
+`vf_estado = 'sellado'` (facturas EMITIDAS de verdad), cuántas tienen `pdf_url` en
+`PENDING%` (nunca generado), cuántas en el formato válido D4 (`/admin/invoices/<id>/pdf`) y cuántas
+en formato legado. Uso: `node desglose-pdfurl.mjs DATABASE_URL_DEV` (o `_STAGING`, o
+`DATABASE_URL` para producción — la URL nunca se imprime, sólo el nombre de la variable).
+
+🔴 **Aviso de lectura, escrito en el propio script**: el desglose por `pdf_url` NO mide «persiste».
+Sin almacenamiento externo (confirmado de nuevo en el punto 4), NINGUNA fila sobrevive garantizada
+a un redeploy de Railway — el formato válido sólo dice que la última vez que se escribió esa fila
+el fichero SÍ estaba en el disco efímero, no que siga estando hoy. Confirmar el fichero real exige
+mirar el disco del contenedor de cada entorno, fuera del alcance de un script que corre en local.
+Los totales por entorno ya los midió el orquestador hoy (producción 2, staging 9, dev 5); falta el
+desglose por `pdf_url` de esos mismos totales, con esa salvedad puesta por delante.
+
+## 4 · Cero almacenamiento externo — reconfirmado
+
+`package.json` (`dependencies` + `devDependencies`), grep por claves que contengan
+`aws|s3|cloudinary|storage|azure|gcp|cloud|r2|minio|backblaze`: **cero coincidencias**.
+`src/core/storage/dirs.ts` — los tres directorios de documentos (`invoicesDir`, `outboxDir`,
+`albaranesDir`) son `path.join(process.cwd(), 'storage', ...)`: disco local, sin SDK de nube en el
+medio. Sin cambios desde la última vez que se midió hoy.
+
+## Lo que esto deja para decidir (sin decidirlo)
+
+El defecto vivo tiene DOS ejes, no uno: el dato (cerrado por el Apéndice F) y el código de la
+plantilla (medido aquí, abierto). Las cuatro salidas A/B/C/D del ticket siguen sin construirse —
+dependen de la respuesta del asesor que J4 está registrando. Si la respuesta es «el hash sólo sella
+el REGISTRO, el documento puede regenerarse», este eje deja de ser un defecto fiscal y pasa a ser
+una decisión de producto (¿molesta al profesional que su PDF cambie de aspecto?). Si es «el
+documento entregado también tiene que ser inmutable», este apéndice es la prueba de que hoy no lo
+es, en el mismo sentido en que el Apéndice (F) probó que los datos sí lo son ya.
+
+---
+
+# APÉNDICE (H) · 23-sep-2026 · J1 · El desglose por `pdfUrl` en DEV — y un bug en el script que lo mide
+
+**Medido contra:** `origin/main` = `62176956c35ea69eca18ba38567656965907bcf0` · 2026-09-23T08:09:09Z
+
+> Encargo: cerrar la medición 2 pendiente — correr
+> `docs/master/evidencias/scrum665-eje-codigo/desglose-pdfurl.mjs DATABASE_URL_DEV`. Los totales
+> por entorno (producción 2, staging 9, dev 5) ya los midió el orquestador; faltaba el desglose por
+> `pdfUrl` de esos mismos totales. Staging y producción no son de este puesto — no se han tocado.
+
+## El script, tal cual está en `main`, falla contra DEV — y no es un problema del entorno
+
+```
+node docs/master/evidencias/scrum665-eje-codigo/desglose-pdfurl.mjs DATABASE_URL_DEV
+```
+
+La primera consulta (huella + total de filas) corre bien: **5 filas en `invoices`**, coincide con
+el total que ya tenía el orquestador para DEV. La segunda consulta —el desglose por `pdf_url`—
+**lanza**:
+
+```
+PrismaClientKnownRequestError: Raw query failed. Code: `42703`.
+Message: `column "pdf_url" does not exist`
+```
+
+**No es un problema de la base ni del entorno: es un desajuste entre el SQL del script y el
+esquema.** `prisma/schema.prisma`, `model Invoice` (`@@map("invoices")`):
+
+```
+vfEstado  String  @default("pendiente_de_sellado")  @map("vf_estado")   ← SÍ tiene @map: columna real "vf_estado"
+pdfUrl    String                                                          ← NO tiene @map: columna real "pdfUrl" (camelCase, con comillas)
+```
+
+El script usa `vf_estado` (correcto, coincide con el `@map`) y `pdf_url` (incorrecto: ese campo NO
+lleva `@map`, así que Prisma lo creó con el nombre `"pdfUrl"` case-sensitive, no `pdf_url`). El
+`WHERE` de la primera columna filtra bien; la comparación de la segunda no encuentra la columna y
+Postgres corta la consulta entera.
+
+## La medición que SÍ se pudo hacer — con la columna corregida, no con el script de `main`
+
+Para no dejar la medición 2 sin cerrar, corrí la misma consulta cambiando `pdf_url` por `"pdfUrl"`
+(entre comillas, tal como exige Postgres para un identificador con mayúsculas). **No se tocó el
+fichero de `main`** — es una consulta ad-hoc, de solo lectura, ejecutada aparte:
+
+```
+DEV — facturas EMITIDAS (vf_estado = 'sellado'): 0
+  → PENDING%             : 0
+  → formato válido (D4)  : 0
+  → formato legado       : 0
+```
+
+**Motivo, no ausencia de dato:** las 5 filas de `invoices` en DEV están **las 5 en
+`pendiente_de_sellado`** (`SELECT vf_estado, count(*) FROM invoices GROUP BY vf_estado` → una sola
+fila, `pendiente_de_sellado: 5`). Ninguna ha llegado nunca a `sellado`. El desglose por `pdfUrl` es
+correctamente 0/0/0/0 porque el universo sobre el que se calcula —facturas emitidas— está vacío en
+este entorno, no porque el script no encontrara nada que buscar.
+
+🔴 **Repetido aquí, tal como pide el propio script**: «formato válido» ≠ «persiste». Sin
+almacenamiento externo (reconfirmado en el punto 4 de este mismo ticket: cero SDKs de nube en
+`package.json`), ninguna fila sobrevive garantizada a un redeploy de Railway — el proxy de formato
+solo dice si el disco efímero tenía el fichero la última vez que se escribió esa fila, no si sigue
+estando hoy. Con DEV en 0 emitidas, esta salvedad no tiene ninguna fila a la que aplicarse todavía,
+pero sigue valiendo para cuando staging o producción se corran con la columna corregida.
+
+## Lo que NO cubre esta entrada
+
+* ⛔ No se corrige `desglose-pdfurl.mjs` en `main` — es un bug de una línea (`pdf_url` → `"pdfUrl"`)
+  pero arreglarlo es construir, y el encargo de esta tanda es medir. Queda para quien lo pida.
+* ⛔ **Staging y producción no se han corrido**, ni con el script tal cual (fallaría igual, mismo
+  bug) ni con la columna corregida — no son de este puesto (dixit el encargo).
+* La cifra de DEV (0 emitidas) es la MEDICIÓN de hoy sobre esta base; no dice nada de staging (9
+  filas totales) ni de producción (2), que pueden tener una distribución de `vf_estado` distinta.

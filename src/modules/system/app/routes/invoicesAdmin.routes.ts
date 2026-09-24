@@ -1,5 +1,6 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
 import { Router } from 'express';
+import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
 // Quién lo ve se PREGUNTA a la política, no se decide aquí.
 import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
@@ -54,6 +55,7 @@ import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmiti
 import {
   congelarDesdeFicha, congelarParaRectificativa, clienteDelDocumento,
 } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
 import {
@@ -102,7 +104,13 @@ router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true },
+      // SCRUM-665 · se ensancha a los siete del emisor congelado (taxId también faltaba aquí).
+      // Esta lectura alimenta `modoDocumentoSuelto` más abajo: es camino de emisión, y el
+      // congelado sale a coste cero, porque el viaje ya se hacía.
+      select: {
+        id: true, email: true, country: true, flags: true, defaultCurrency: true,
+        name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true,
+      },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
 
@@ -147,6 +155,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(val.lineas);
 
+    const emisorCongelado = congelarEmisorDesdeFicha(merchant); // SCRUM-665 · sin viaje extra
+
     const invoice = await prisma.$transaction(async (tx) =>
       emitInvoice(tx, {
         merchantId: req.merchantId!,
@@ -159,6 +169,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         actor: actorDeRequest(req),
         origen: 'C7-suelta', // SCRUM-347: nace sin presupuesto ni albarán detrás (A0.5)
         clienteCongelado: congelarDesdeFicha(customer), // SCRUM-729 · sin viaje extra
+        emisorCongelado,
       }),
     );
 
@@ -716,7 +727,8 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
 
     const customerName = invoice.customer?.name || 'Cliente';
     const merchantName = invoice.merchant?.name || 'tu proveedor';
-    const total        = Number(invoice.total).toFixed(2);
+    // SCRUM-931: la forma de la casa, UNA vez, para la plantilla y para el texto libre de abajo.
+    const importe      = formatMoneyEs(invoice.total, invoice.currency);
     const chargeId     = invoice.chargeId;
     // SCRUM-85: token OPACO — NUNCA el chargeId en la URL pública (el botón real de
     // payment_request_es apunta a /pay/invoice/{{1}}, ver WHATSAPP_TEMPLATES.md §2).
@@ -736,7 +748,8 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
           customerName,
           businessName: merchantName,
           invoiceNumber: invoice.number,
-          amountWithCurrency: `${total} ${invoice.currency}`,
+          amount: Number(invoice.total), // SCRUM-931: en bruto; la forma la da el builder
+          currency: invoice.currency,
           urlToken: payToken as string,
         }),
       });
@@ -751,7 +764,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       const result = await sendWhatsAppText({
         to: phone,
         merchantId: invoice.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${total} ${invoice.currency}* de parte de *${merchantName}*.\n\n¡Gracias!`,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${importe}* de parte de *${merchantName}*.\n\n¡Gracias!`,
         // SCRUM-115: si falla, que la fila de WA-0b quede enlazada a ESTA factura/cliente.
         log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
@@ -1014,12 +1027,26 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // SCRUM-729 · la R1 HEREDA el destinatario de la factura que rectifica. Fuera de la
     // transacción, como todos: sólo viaja a la base si la original es anterior al escritor.
     const clienteCongelado = await congelarParaRectificativa(prisma, original);
+    // SCRUM-665 · el EMISOR se congela con la ficha de HOY («congelar al emitir»), NO con la
+    // heredada de la original: `original.merchant` es la relación en vivo, no una columna
+    // congelada del documento que se rectifica.
+    //
+    // 🔴 PENDIENTE, marcado a propósito y sin resolver por omisión (comentario 16468 de Jira
+    // SCRUM-665, instrucción explícita de Javier): si una R1 debería en cambio HEREDAR el emisor
+    // de la factura ORIGINAL —como sí hace el cliente, arriba— es una pregunta que Javier ha
+    // llevado al asesor. Hasta que responda, esta rectificativa usa el mismo criterio que las
+    // otras siete bocas (la ficha de hoy) y NO el de `congelarParaRectificativa`.
+    //
+    // Mismo criterio que esta misma ruta más abajo con `original.merchant` (sellado y auditoría):
+    // no se gatea aparte con un 404 nuevo — un `merchantId` sin fila sería una FK rota, y esta
+    // ruta ya asume que no lo está.
+    const emisorCongelado = congelarEmisorDesdeFicha(original.merchant!);
 
     const rect = await prisma.$transaction(async (tx) => {
       const number = await allocateInvoiceNumber(tx, req.merchantId, {
         rectifying: true, camino: 'C5', actor: actorDeRequest(req),
       });
-      return crearFacturaEmitida(tx, clienteCongelado, {
+      return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
         merchantId: original.merchantId,
         customerId: original.customerId,
         quoteId: original.quoteId,

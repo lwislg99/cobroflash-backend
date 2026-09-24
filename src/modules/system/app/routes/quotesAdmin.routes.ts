@@ -31,16 +31,20 @@ import { sendTechQuoteApprovedEmail } from '../../../messaging/domain/merchantNo
 // SCRUM-477: un aviso que no sale deja constancia -- y sin poder tumbar la operacion.
 import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
+import { albaranOrigenDelPresupuesto, type AlbaranOrigen } from '../../../jobs/domain/albaranOrigenDelPresupuesto'; // SCRUM-984
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
+import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 // SCRUM-814 · el cerrojo de serie que YA EXISTE, tomado por el llamador para que el recuento de
 // tramos y la reserva del número queden bajo la MISMA sección crítica. No es un cerrojo nuevo:
 // es `pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, el de SCRUM-234/728, y esta función lo
 // expone desde SCRUM-358 para exactamente este uso (comprobar ANTES de consumir número).
 import { tomarCerrojoDeSerie } from '../../../jobs/domain/albaranIdempotencia';
-import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar, tieneDescuentoGlobalConVariosIva } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../../../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (S1: emitir factura = admin)
 
 import fetch from 'node-fetch';
@@ -162,6 +166,11 @@ router.post('/:id/reject', async (req, res) => {
   }
 });
 
+// SCRUM-1027 · mismo marcador que `albaranes.routes.ts:MICROCOPY_PENDIENTE_290` e
+// `invoicesAdmin.routes.ts:MICROCOPY_PENDIENTE_308` — el TEXTO es lo que reconoce
+// `sinMarcadorPendiente.ts`, no el nombre de la constante. Regla 30: lo firma el fundador.
+const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
+
 /**
  * POST /admin/quotes/:id/invoice
  * SCRUM-55 (D2 del fundador): EMITE FACTURA → dinero. S1: "Facturas: emitir ❌ Técnico".
@@ -192,6 +201,13 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     if (!quote.merchant || !quote.customer) {
       return res.status(500).json({ error: 'quote_missing_relations' });
     }
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, no se
+    // emite NINGÚN documento. Sin este gate, `allocateInvoiceNumber` seguiría rechazando el modo
+    // `receipt` (punto único, SCRUM-1027), pero DESPUÉS de contar el tramo y abrir la
+    // transacción — y el rechazo saldría como 500, no 409.
+    if (getEmissionMode(quote.merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
+    }
 
     const existingInvoices = quote.Invoice || [];
     // SCRUM-27: plan efectivo (custom o preset); selección por conteo igual que antes.
@@ -205,6 +221,10 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
     // podían diferir 1 cént., y esa diferencia quedaba SELLADA en la huella VeriFactu
     // (`importeTotal` del total vs `cuotaTotal` de las líneas). Ver invoiceLines.service.ts.
     const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
+    // SCRUM-887 · un C no factura (la pieza deja sus líneas a 0). Antes del portón, para decir POR QUÉ.
+    if (tieneDescuentoGlobalConVariosIva(quote)) {
+      return res.status(409).json({ error: ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, message: COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA });
+    }
 
     // ── SCRUM-814 · EL TRAMO ES UNA FUNCIÓN DEL RECUENTO, no un valor decidido una vez ──────
     //
@@ -252,6 +272,9 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
 
     // SCRUM-729 · fuera de la transacción: el cerrojo se toma en la primera línea de dentro.
     const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `merchant` (= `quote.merchant`) ya viene completo: sin
+    // viaje nuevo.
+    const emisorCongelado = congelarEmisorDesdeFicha(merchant);
 
     const emision = await prisma.$transaction(async (tx) => {
       // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
@@ -286,7 +309,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C3', actor: actorDeRequest(req),
       });
-      const creada = await crearFacturaEmitida(tx, clienteCongelado, {
+      const creada = await crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,
@@ -423,7 +446,9 @@ router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
     // Los motivos que el dominio distingue viajan tal cual: «no existe» y «no tiene número» son
     // cosas distintas y la pantalla las cuenta distinto.
     if (err?.name === 'RevisionNoCreable') {
-      const status = err.motivo === 'quote_not_found' ? 404 : 409;
+      // SCRUM-887 · un C es un dato que no se puede guardar, no un conflicto de estado: 400.
+      const status = err.motivo === 'quote_not_found' ? 404
+        : err.motivo === ERROR_DESCUENTO_GLOBAL_VARIOS_IVA ? 400 : 409;
       return res.status(status).json({ error: err.motivo, message: err.message });
     }
     // `RevisionesAmbiguas` / `CensoDeRevisionesCiego`: el grupo no puede contestar cuál está
@@ -485,6 +510,11 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     if (!quote.merchant || !quote.customer) {
       return res.status(500).json({ error: 'quote_missing_relations' });
     }
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): mismo gate que `/:id/invoice`, arriba en este
+    // fichero — con el interruptor en OFF, en España, no se emite NINGÚN documento, tampoco a mano.
+    if (getEmissionMode(quote.merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
+    }
 
     // FAIL-CLOSED 1 — esta vía es SOLO para los que no tienen tramos. Con plan, la factura sale
     // por su cadena de siempre: dos vías compitiendo por el mismo presupuesto es como se emite
@@ -512,6 +542,10 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
     // sin líneas, pero para entonces la factura ya existe y ha consumido número de serie. Aquí se
     // para antes: mejor no crear el documento que crear uno que no se puede sellar.
     const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
+    // SCRUM-887 · un C no factura (la pieza deja sus líneas a 0). Antes del portón, para decir POR QUÉ.
+    if (tieneDescuentoGlobalConVariosIva(quote)) {
+      return res.status(409).json({ error: ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, message: COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA });
+    }
     if (quoteLines.length === 0) {
       return res.status(409).json({
         error: 'quote_without_lines',
@@ -544,12 +578,15 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
 
     // SCRUM-729 · el congelado, fuera de la transacción como en los otros seis sitios.
     const clienteCongeladoEntera = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `merchant` (= `quote.merchant`) ya viene completo: sin
+    // viaje nuevo.
+    const emisorCongeladoEntera = congelarEmisorDesdeFicha(merchant);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C4', actor: actorDeRequest(req),
       });
-      return crearFacturaEmitida(tx, clienteCongeladoEntera, {
+      return crearFacturaEmitida(tx, clienteCongeladoEntera, emisorCongeladoEntera, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,
@@ -893,7 +930,25 @@ router.get('/:id', async (req, res) => {
     // decide aquí, con el mismo criterio que rechaza al aceptar, y no en el navegador a ojo: hay
     // filas ya guardadas con `signatureUrl = "data:,"` que no se tocan.
     const firmaConTrazo = firmaTieneTrazo((detail as { signatureUrl?: unknown } | null)?.signatureUrl);
-    const cuerpo = { ...detail, firmaConTrazo, waDelivery, asignados, ...(maintenance ? { maintenance } : {}) };
+    // SCRUM-984 · A QUÉ TRABAJO IR PARA ABRIR UN ALBARÁN DESDE AQUÍ. La respuesta es la del buscador
+    // de Albaranes (ALB-01), no una lectura propia de `Quote.jobId`: misma regla, mismo técnico.
+    // Solo dice si hay a dónde ir; que el botón se vea en `accepted` lo decide la pantalla.
+    // Es una AYUDA de la pantalla, no el documento: si su lectura falla se registra y el detalle sale
+    // SIN el campo (la pantalla no pinta el botón), como el bloque de mantenimiento de arriba. Un
+    // aviso opcional no puede dejar al profesional sin ver su presupuesto.
+    let albaranOrigen: AlbaranOrigen | undefined;
+    try {
+      albaranOrigen = await albaranOrigenDelPresupuesto({
+        merchantId: req.merchantId!,
+        quoteId: id,
+        number: (detail as { number: number | string }).number,
+        userRole: req.userRole,
+        teamMemberId: req.teamMemberId ?? null,
+      });
+    } catch (e) {
+      console.error('[GET /admin/quotes/:id] albaranOrigen:', (e as Error)?.message);
+    }
+    const cuerpo = { ...detail, firmaConTrazo, waDelivery, asignados, ...(albaranOrigen ? { albaranOrigen } : {}), ...(maintenance ? { maintenance } : {}) };
     return res.json(veEconomiaDelNegocio(req.userRole) ? cuerpo : sinCosteEnDocumento(cuerpo as unknown as Record<string, unknown>));
   } catch (err: any) {
     console.error('[GET /admin/quotes/:id]', err);

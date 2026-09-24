@@ -1226,6 +1226,10 @@ function llevarASuPestana(destino) {
 // tarjeta (Connect) y datos fiscales. Copys del master M — jamás "factura" sin
 // datos fiscales: el documento es un justificante de cobro.
 async function renderReadinessCard(container, mainFormCard) {
+  // SCRUM-1029 (regla 24): en modo `receipt` (ES real, facturación apagada) YaQu no cobra por
+  // ninguna vía — la tarjeta entera se OCULTA en vez de reescribir sus filas de cobro. Mismo
+  // criterio que `window.appModoEmision`, sin recalcularlo (`settingsView.js:198-200`).
+  if (window.appModoEmision === 'receipt') return;
   let m;
   try { m = await apiRequest('/admin/merchant'); } catch { return; }
   if (m.slug === undefined) return; // perfil reducido (Operario) → sin checklist
@@ -1254,7 +1258,7 @@ async function renderReadinessCard(container, mainFormCard) {
       ok: !!m.whatsappPhone,
       label: 'Presupuestos por WhatsApp',
       okText: 'Listo — tus presupuestos salen por WhatsApp',
-      koText: 'Añade tu teléfono de WhatsApp para enviar presupuestos',
+      koText: 'Añade tu teléfono de WhatsApp para que te avisemos cuando un cliente decida',
       focus: 'whatsappPhone',
     },
     {

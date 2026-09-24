@@ -84,20 +84,20 @@ async function renderExportView(container) {
       -->
       <div class="customers-card" style="margin-top:16px" id="libro-emitidas-card">
         <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Facturas emitidas</div>
-        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">[PENDIENTE microcopy oficial]</p>
+        <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Un CSV con las facturas que has emitido en un trimestre.</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
           <div>
-            <label for="libro-anio" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">[PENDIENTE]</label>
+            <label for="libro-anio" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Año</label>
             <input type="number" id="libro-anio" class="input" style="width:auto" min="2000" max="2100" step="1">
           </div>
           <div>
-            <label for="libro-trimestre" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">[PENDIENTE]</label>
+            <label for="libro-trimestre" style="display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Trimestre</label>
             <select id="libro-trimestre" class="input" style="width:auto">
               <option value="1">T1</option><option value="2">T2</option>
               <option value="3">T3</option><option value="4">T4</option>
             </select>
           </div>
-          <button class="btn-secondary" id="btn-libro-emitidas">[PENDIENTE microcopy oficial]</button>
+          <button class="btn-secondary" id="btn-libro-emitidas">Descargar CSV</button>
         </div>
         <p id="libro-emitidas-info" style="margin:12px 0 0;font-size:12px;color:var(--muted)" aria-live="polite"></p>
       </div>

@@ -46,6 +46,11 @@ export interface DetalleDesglose {
 
 /** Operación SUJETA y NO EXENTA (el caso general). `CalificacionOperacionType`. */
 export const CALIFICACION_SUJETA_NO_EXENTA = 'S1';
+/**
+ * SCRUM-1051 · Operación sujeta, no exenta, CON inversión del sujeto pasivo (obra/subcontrata,
+ * art. 84.Uno.2.f LIVA — cita cotejada contra BOE en SCRUM-1088). `CalificacionOperacionType`.
+ */
+export const CALIFICACION_INVERSION_SUJETO_PASIVO = 'S2';
 /** Régimen general de IVA. `IdOperacionesTrascendenciaTributariaType`, lista L8A. */
 export const CLAVE_REGIMEN_GENERAL = '01';
 
@@ -283,22 +288,33 @@ export function resolverSinDestinatario(
 /**
  * Traduce un tramo del desglose de IVA (`calcVatBreakdown`) a su calificación fiscal.
  *
- * SOLO sabe resolver el caso general: **sujeta y no exenta a un tipo positivo** → `S1` + `01`.
- * Eso cubre el 21/10/4 % del régimen general, que es todo lo que YaQu emite hoy.
+ * Resuelve dos casos: **sujeta y no exenta a un tipo positivo, sin causa** → `S1` + el tipo
+ * (21/10/4 %, régimen general), y **inversión del sujeto pasivo** (`causa: 'S2'`, SCRUM-1051,
+ * GO 23-sep-2026) → `S2`, sin `TipoImpositivo` ni `CuotaRepercutida` (ambos `minOccurs="0"` en
+ * el XSD — la cuota la autorrepercute el destinatario, no se declara 0 % como si fuera un tipo).
  *
- * ⚠️ EL 0 % NO ES CLASIFICABLE, y por eso lanza. De `tax: 0` no se puede distinguir:
+ * ⚠️ EL 0 % SIN CAUSA NO ES CLASIFICABLE, y por eso lanza. De `tax: 0` sin `causa` no se puede
+ * distinguir:
  *   · una operación **sujeta al 0 %** (existe desde 2023 en alimentación básica) → S1
  *   · una operación **exenta** (art. 20 LIVA) → `OperacionExenta`, y CalificacionOperacion
  *     NO debe ir informada (son excluyentes — AEAT 1196)
  *   · una operación **no sujeta** → N1 / N2
- * Son tres declaraciones distintas y el dato que las separa no existe en `Invoice.lines`
- * (`VatLine` solo guarda `qty`, `price` y `tax`). Emitir `S1` "porque es lo más común"
- * sería inventarse la calificación fiscal de un tercero.
+ * Son tres declaraciones distintas y el dato que las separa no existe en `Invoice.lines` sin
+ * `causa` (SCRUM-1050: el mecanismo las admite estructuralmente, pero `E1`/`N1` no están
+ * activas — `Causa` en `vat.service.ts` sólo declara `'S2'`). Emitir `S1` "porque es lo más
+ * común" sería inventarse la calificación fiscal de un tercero.
  */
 export function clasificarDetalleDesglose(
-  entrada: { rate: number; base: number; cuota: number },
+  entrada: { rate: number; base: number; cuota: number; causa?: string },
   ref?: string,
 ): DetalleDesglose {
+  if (entrada.causa === 'S2') {
+    return {
+      claveRegimen: CLAVE_REGIMEN_GENERAL,
+      calificacion: CALIFICACION_INVERSION_SUJETO_PASIVO,
+      baseImponible: entrada.base.toFixed(2),
+    };
+  }
   if (!Number.isFinite(entrada.rate) || entrada.rate <= 0) {
     throw new DesgloseNoClasificableError(
       `tramo de IVA al ${entrada.rate}% (base ${entrada.base.toFixed(2)}): no se puede saber si es ` +

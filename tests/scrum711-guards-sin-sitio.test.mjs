@@ -24,6 +24,12 @@
 //          comprobaciones son `tests/*.test.mjs`, así que ya corren en la tanda.
 //     guards que no corren en ningún sitio  →  0
 //
+// 🔴 AÑADIDO EL 23-SEP-2026 (SCRUM-1097), SIN REPETIR LA MEDICIÓN DE ARRIBA — que ya está vieja
+// por el volumen de guards nuevos desde el 15-sep y no se re-teclea a ojo (SCRUM-846):
+// `guard-acreditacion-invoicing-es.mjs` se suma a DECLARADOS por el mismo motivo que
+// `guard-conformidad-landing.mjs` — CLI de solo lectura contra staging/producción, sin secretos en
+// CI (regla 9), cuya lógica corre en la tanda por su módulo puro (`scrum1097`).
+//
 // Un cero no se cree por sí solo (SCRUM-846): abajo va el CASO CONOCIDO —la situación exacta del
 // 3-sep, fabricada— y el censo tiene que verlo con la MISMA función que da el cero sobre el árbol.
 //
@@ -160,6 +166,22 @@ export const DECLARADOS = {
     porque: 'runner local para empujar una entrada del registro; lo que ejecuta son tests de la tanda',
     prueba: { susGuardsSonDeLaTanda: true },
   },
+  'scripts/guard-acreditacion-invoicing-es.mjs': {
+    porque: 'CLI de solo lectura contra staging/producción, SIN destino por defecto (`--staging` o '
+      + '`--prod-ro`): sus secretos `DATABASE_URL_STAGING`/`DATABASE_URL_PROD_RO` no viajan a un PR '
+      + '(regla 9), así que no puede engancharse a `npm test` ni a CI. Su lógica SÍ corre en la '
+      + 'tanda a través de su módulo puro: scrum1097 ejercita `medirAcreditacion()` con un '
+      + 'PrismaClient inyectado, sin BD real. Y desde SCRUM-1109, además, a través de su envoltorio '
+      + 'programado (`scripts/aviso-programado-…`), que la ejercita indirectamente vía `ejecutarPasada`.',
+    prueba: {
+      fichero: 'tests/scrum1097-guard-acreditacion-invoicing-es.test.mjs',
+      llamada: 'medirAcreditacion(prisma)',
+      envoltorio: 'scripts/aviso-programado-acreditacion-invoicing-es.mjs',
+      llamadasEnvoltorio: ['medirAcreditacion', 'verificarSoloLecturaEstructural'],
+      testEnvoltorio: 'tests/scrum1109-aviso-programado-acreditacion-invoicing-es.test.mjs',
+      llamadaTestEnvoltorio: 'ejecutarPasada',
+    },
+  },
 };
 
 // ── EL ÁRBOL REAL ────────────────────────────────────────────────────────────────────────────
@@ -184,7 +206,10 @@ function leerArbol() {
 function patronesDeLaTanda(script) {
   const conNode = String(script || '').split('&&').find((t) => /(^|\s)node\s+--test(\s|$)/.test(t));
   if (!conNode) return [];
-  return conNode.trim().split(/\s+/).slice(1)
+  // SCRUM-858b · detrás de `--test`, no del primer `node`: la tanda va envuelta
+  // (`node scripts/tanda-con-veredicto.mjs node --test …`) y el `.mjs` del envoltorio no es un patrón.
+  const palabras = conNode.trim().split(/\s+/);
+  return palabras.slice(palabras.indexOf('--test') + 1)
     .filter((a) => !a.startsWith('-') && /\.m?js$/.test(a))
     .map((p) => new RegExp('^' + p.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*') + '$'));
 }
@@ -330,6 +355,32 @@ test('SCRUM-711 · las pruebas de las declaraciones siguen siendo ciertas', () =
   assert.deepEqual(fuera, [],
     '🔴 `guards-entrada.mjs` ejecuta algo que la tanda NO corre, así que ya no vale su declaración: '
     + fuera.join(', '));
+
+  const pa = DECLARADOS['scripts/guard-acreditacion-invoicing-es.mjs'].prueba;
+  const codigoA = soloCodigo(fs.readFileSync(path.join(RAIZ, pa.fichero), 'utf8'));
+  assert.ok(codigoA.includes(pa.llamada),
+    `🔴 \`${pa.fichero}\` ya no ejecuta \`${pa.llamada}\` (fuera de comentarios). Sin esa llamada, `
+    + '`guard-acreditacion-invoicing-es` deja de correr en ningún sitio y su declaración lo estaría tapando.');
+  assert.ok(patrones.some((p) => p.test(pa.fichero)),
+    `🔴 \`${pa.fichero}\` no lo cubre ningún patrón de la tanda (\`${scripts.test}\`), así que su `
+    + 'declaración no vale aunque llame a lo que dice.');
+});
+
+test('SCRUM-1109 · el envoltorio programado también ejercita de verdad al guard importado', () => {
+  const pc = DECLARADOS['scripts/guard-acreditacion-invoicing-es.mjs'].prueba;
+
+  // El envoltorio de SCRUM-1109 llama a las dos funciones dentro de su propio código…
+  const codigoEnvoltorio = soloCodigo(fs.readFileSync(path.join(RAIZ, pc.envoltorio), 'utf8'));
+  for (const llamada of pc.llamadasEnvoltorio) {
+    assert.match(codigoEnvoltorio, new RegExp(`\\b${llamada}\\(`),
+      `🔴 ${pc.envoltorio} ya no llama a ${llamada}(…) fuera de comentarios — deja de ejercitar el `
+      + 'guard importado.');
+  }
+  // …y el test de SCRUM-1109 SÍ ejercita ese envoltorio de verdad (no solo lo importa).
+  const codigoTestEnvoltorio = soloCodigo(fs.readFileSync(path.join(RAIZ, pc.testEnvoltorio), 'utf8'));
+  assert.match(codigoTestEnvoltorio, new RegExp(`\\b${pc.llamadaTestEnvoltorio}\\(`),
+    `🔴 ${pc.testEnvoltorio} ya no llama a ${pc.llamadaTestEnvoltorio}(…) fuera de comentarios. Sin `
+    + 'esa llamada, la cadena hasta el guard importado deja de ejercitarse en la tanda por este camino.');
 });
 
 test('SCRUM-711 · 📌 el límite de «primer nivel» sigue sin esconder nada', () => {

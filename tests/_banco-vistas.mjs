@@ -234,6 +234,30 @@ function desengancha(h) {
   if (h && h._padre) h._padre.hijos = h._padre.hijos.filter((x) => x !== h);
 }
 
+/**
+ * 🔴 SCRUM-917f · `append` y `prepend` ACEPTAN CADENAS, como el navegador.
+ *
+ * `ParentNode.append(...nodos o cadenas)` admite strings y los mete como nodos de texto. Aquí no:
+ * el bucle hacía `x._padre = n` sobre cada argumento, y sobre un primitivo eso es un `TypeError`
+ * en modo estricto. Resultado, medido en SCRUM-917e: `jobDetailView` hacía `l.append(e, ' ', v)`
+ * —DOM de manual, perfectamente legítimo— y **la vista entera reventaba al montarse**, así que los
+ * dos contratos de SCRUM-817 caían en su SUELO sin llegar a mirar el orden que vigilan.
+ *
+ * Lo que hace este hueco distinto de `prepend` (SCRUM-460) o `insertAdjacentHTML` (SCRUM-698) es
+ * que aquí el banco y el navegador DISCREPABAN en silencio: `guard:detalle-trabajo-917` daba 92 de
+ * 92 en Chrome sobre la misma línea que tumbaba la suite. **Un verde de navegador y un rojo de
+ * banco estaban midiendo cosas distintas**, y el que se creyó fue el bonito.
+ *
+ * ⚠️ Convierte SÓLO strings y números, que es lo que convierte el navegador. `null` y `undefined`
+ * se dejan pasar tal cual para no cambiar lo que ya hacía el `if (x)` de las dos inserciones.
+ */
+function comoNodo(x, reg) {
+  if (typeof x !== 'string' && typeof x !== 'number') return x;
+  const t = nodo('#text', reg);
+  t.textContent = String(x);
+  return t;
+}
+
 export function nodo(tag, reg) {
   const n = {
     tagName: String(tag).toUpperCase(),
@@ -245,7 +269,12 @@ export function nodo(tag, reg) {
     // `appendChild`, la próxima vista que use `prepend` traería el mismo síntoma con otra
     // cara y costaría otro ticket entenderlo.
     appendChild(h) { if (h) { desengancha(h); h._padre = n; } n.hijos.push(h); return h; },
-    append(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.push(...h); },
+    // SCRUM-917f · las cadenas entran como nodos de texto, igual que en el navegador (ver `comoNodo`).
+    append(...bruto) {
+      const h = bruto.map((x) => comoNodo(x, reg));
+      for (const x of h) { if (x) { desengancha(x); x._padre = n; } }
+      n.hijos.push(...h);
+    },
     // ⚠️ SCRUM-444 · al quitar un nodo se DESREGISTRA su id. En el navegador, `getElementById` no
     // encuentra lo que ya no está en el documento; aquí seguía encontrándolo, así que un test que
     // borrara un contenedor y lo volviera a pedir recibía el nodo MUERTO y seguía escribiendo en
@@ -259,7 +288,11 @@ export function nodo(tag, reg) {
     // SCRUM-460 · `prepend`. No existía, y por eso `albaranDetailView` REVENTABA al montarse —
     // quedó reportado como hueco en SCRUM-451 y ahora bloqueaba el test que decide de H1. Nada
     // podía depender de él antes, porque llamarlo era un `TypeError`.
-    prepend(...h) { for (const x of h) { if (x) { desengancha(x); x._padre = n; } } n.hijos.unshift(...h); },
+    prepend(...bruto) {
+      const h = bruto.map((x) => comoNodo(x, reg));
+      for (const x of h) { if (x) { desengancha(x); x._padre = n; } }
+      n.hijos.unshift(...h);
+    },
     // 🔴 SCRUM-698 · `insertAdjacentHTML`. NO EXISTÍA, y por eso `renderSettingsView` REVENTABA
     // al montarse: la vista pone la nota del IBAN con
     // `fIban.wrapper.querySelector('label').insertAdjacentHTML('afterend', …)`, que es DOM de
@@ -893,6 +926,8 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'almacenLocal.js',
   'api.js',
   'app.js',
+  // SCRUM-918 · la decisión de arrancar sin red. Va ANTES de `app.js`, que la usa al arrancar.
+  'arranqueSinCobertura.js',
   // SCRUM-885 · la regla del aviso «el documento del cobro no ha salido», compartida por el
   // detalle de la factura y el del trabajo. La llaman al confirmar y al pintar, no al cargarse.
   'avisoDocumentoSinEnviar.js',
@@ -966,6 +1001,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   // quién lleva el documento y va ANTES de los dos detalles que lo montan.
   'documentoAsignados.js',
   'economiaVisible.js',
+  'facturasRecibidasView.js', // SCRUM-1040 (CON-04)
   'jobsCierreTrabajo.js',
   'jobsView.js',
   'libroRegistroView.js',

@@ -387,6 +387,17 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['FALTA', 'INCOHERENCIA', 'TOLERANCIA_CENTIMOS', 'VEREDICTO'] },
+  // SCRUM-912 · la lectura del ticket. El saneado corre dentro de `leerTicket`; se exporta para que
+  // su test fije caso a caso qué se descarta sin pasar por Google. Las dos constantes son la única
+  // fuente de la lista de modelos y del esquema: el test comprueba que la petición lleva ESAS.
+  { modulo: 'src/modules/expenses/domain/lecturaTicket.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-09-18',
+    motivo: 'SCRUM-912: el saneado de lo que devuelve la IA lo ejecuta `leerTicket`; el export es para que su test fije cada descarte sin red.',
+    exports: ['sanearLectura'] },
+  { modulo: 'src/modules/expenses/domain/lecturaTicket.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-18',
+    motivo: 'SCRUM-912: única fuente de los modelos de la lectura (cupo propio, nunca los de presupuestos) y de su esquema; los lee su módulo y su test.',
+    exports: ['ESQUEMA_LECTURA', 'MODELOS_LECTURA'] },
   { modulo: 'src/modules/exports/domain/exportData.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -443,6 +454,10 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-09',
     motivo: 'SCRUM-729 · los cinco nombres del cliente congelado, en un solo sitio. Ningun otro modulo de `src/` los enumera a proposito: el codigo derrama el objeto entero. Su lector es el banco, que comprueba con esta lista que el envoltorio escribe LOS CINCO — una copia escrita a mano en el test podria quedarse atras sin que nadie lo notara, y congelar cuatro de cinco deja un documento mitad congelado y mitad vivo.',
     exports: ['CAMPOS_CONGELADOS'] },
+  { modulo: 'src/modules/invoicing/domain/emisorCongelado.ts',
+    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-22',
+    motivo: 'SCRUM-665 · gemelo exacto de `CAMPOS_CONGELADOS` (clienteCongelado.ts, arriba) pero para los siete del emisor. Ningun modulo de `src/` los enumera a proposito: el codigo derrama el objeto entero. Su lector es el banco (`tests/scrum665a-congelar-el-emisor.test.mjs`), que comprueba que el escritor produce las SIETE — una copia a mano en el test podria quedarse atras sin que nadie lo notara, y congelar seis de siete deja un documento mitad congelado y mitad vivo.',
+    exports: ['CAMPOS_CONGELADOS_EMISOR'] },
   { modulo: 'src/modules/invoicing/domain/cerrojoSaturado.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-09-08',
     motivo: 'Codigo y texto oficial del 503 `serie_ocupada`; su lector de fuera es el guard, que los compara por identidad para no duplicar el literal aprobado.',
@@ -549,8 +564,10 @@ export const DECLARADOS = [
     exports: ['AEAT_POR_TIPO'] },
   { modulo: 'src/modules/invoicing/domain/verifactu.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
-    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
-    exports: ['buildVeriFactuQrUrl', 'computeVeriFactuHash', 'computeVeriFactuHashAnulacion', 'exigirTipoDeclarable', 'formatFechaHoraHuso'] },
+    motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test. '
+      + 'SCRUM-735 (23-sep-2026) añade `formatDateES` a esta misma lista: el GO del fundador (comentario 16573) autorizó '
+      + 'exportarla explícitamente para que su test la midiera directo, igual que ya se podía con `formatFechaHoraHuso`.',
+    exports: ['buildVeriFactuQrUrl', 'computeVeriFactuHash', 'computeVeriFactuHashAnulacion', 'exigirTipoDeclarable', 'formatFechaHoraHuso', 'formatDateES'] },
   { modulo: 'src/modules/jobs/domain/albaran.service.ts',
     cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
     motivo: 'La otra mitad de la verificación de evidencia, en la misma espera y con el mismo STOP.',

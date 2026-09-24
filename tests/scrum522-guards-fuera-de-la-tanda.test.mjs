@@ -18,6 +18,8 @@ import { fileURLToPath } from 'node:url';
 import { fueraDeLaTanda } from '../scripts/guards-visuales.mjs';
 import { resolverNavegador, CANDIDATOS } from '../scripts/_navegador.mjs';
 import { esDeNavegador } from '../scripts/_solape-de-guards.mjs';
+// SCRUM-970 · la cifra de guards fuera de la tanda ya no se escribe aquí: se deriva de esta lista.
+import { DECLARADOS, diferencias } from './_guards-de-navegador-declarados.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PKG = JSON.parse(fs.readFileSync(path.join(RAIZ, 'package.json'), 'utf8'));
@@ -132,11 +134,167 @@ test('SCRUM-522 · 🔴 SUELO: la lista de guards fuera de la tanda no está vac
   // vuelve a MEDIR corriendo este test**, que imprime lo que `fueraDeLaTanda` devuelve de verdad.
   // No se calculó 21+1: se corrió y se leyó. Los números de los dos comentarios se han quitado
   // justo por eso — el que vale es el del `assert`, y cada comentario dice QUÉ entra, no cuánto.
-  assert.equal(fuera.length, 22,
-    `🔴 HA CAMBIADO EL NÚMERO DE GUARDS FUERA DE LA TANDA: ~~3~~ ~~9~~ ~~10~~ ~~11~~ ~~12~~ ~~13~~ ~~14~~ ~~15~~ ~~16~~ ~~17~~ ~~18~~ ~~19~~ ~~20~~ ~~21~~ 22 → ${fuera.length}.\n`
-    + '  Si ha subido, hay uno nuevo que nadie corre salvo esta puerta — bien, pero míralo.\n'
-    + '  Si ha bajado, di CUÁL y por qué antes de tocar este número.\n'
-    + `  Ahora mismo: ${JSON.stringify(fuera)}`);
+  // SCRUM-888c · entra `guard:descuentos-en-el-detalle`. OBSERVA la ficha de un presupuesto
+  // servida por el panel real: líneas, base e IVA pintados con los descuentos, y sin descuentos
+  // idénticos a la cuenta de siempre. La tabla de la ficha se arma con `innerHTML`, que el banco de
+  // Node no reproduce. Comprobado en rojo contra `e437a51f` (17-sep-2026): 3 de 4 casos.
+  // SCRUM-918 · entra `guard:arranque-sin-red`. RECARGA sin red con el service worker de
+  // verdad: el corte lo hace el servidor destruyendo cada conexión, porque `setOffline` no corta el
+  // SW. Nada de esto existe fuera de un navegador. Comprobado en rojo contra `2be8fe16`
+  // (17-sep-2026): recargar sin red acababa en la pantalla de error de Chrome.
+  // SCRUM-909 · entra `guard:rotulos-de-la-linea`. Mide el ANCHO REAL de la columna del concepto
+  // en el editor y si el rótulo CABE en su caja, en 10 anchuras. Sube aquí porque el defecto es un
+  // número que sólo existe cuando el navegador resuelve la rejilla: en el fuente, un
+  // `minmax(0, 3fr)` que funciona y uno que deja la columna en 0 px se leen igual. Y trae su propio
+  // motivo, que no tenía ninguno de los anteriores: **el guard evidente para este defecto sale
+  // VERDE contra la pantalla rota** —las cajas de los dos rótulos no se cruzan, se cruza el TEXTO
+  // que se desborda de una caja de 0 px—, así que la aserción NO es por intersección. Comprobado en
+  // rojo contra `8b3f26d2` (17-sep-2026): 7 de 10 anchuras.
+  // SCRUM-915d · entra `guard:pasos-del-editor`. RECORRE el editor con clics de verdad y juzga qué se
+  // VE después de pulsar (un paso abierto, «Continuar» sólo cuando se puede, resúmenes, «Cambiar»,
+  // Ajustes en la página) e incluye el inventario de hoy como control positivo. Sube aquí porque lo
+  // que se juzga sólo existe con el CSS resuelto. Comprobado en rojo contra `c60008bd` (18-sep-2026):
+  // todos los casos con todos los pasos a la vez. El número de abajo se midió corriendo este test.
+  // SCRUM-947 · entra `guard:foto-del-gasto`. Mete una foto de móvil de 3–5 MB en el modal REAL
+  // del gasto y lo guarda contra un servidor con el MISMO `express.json({ limit: '2mb' })` que
+  // producción. Decodificar y reducir una imagen sólo existe en un navegador (canvas). Comprobado en
+  // rojo contra `e76580b1` (18-sep-2026): 4 de 5 casos con «API 413: Payload Too Large».
+  // ⚠️ SCRUM-915d y SCRUM-947 escribieron LOS DOS «25 → 26» a la vez, cada uno por su guard: es la
+  // quinta colisión de este contador. Resuelta como manda el párrafo de arriba: se SUMAN los dos
+  // comentarios y el número se vuelve a MEDIR corriendo este test tras el merge (18-sep-2026).
+  // SCRUM-937b · entra `guard:nif-del-gasto`. Teclea en el NIF del modal del gasto con y sin
+  // proveedor y guarda contra un servidor cuyo veredicto sale de `queFueDelNif` compilado. Sube aquí
+  // porque el banco no frena el teclado en un campo de solo lectura ni pinta el aviso flotante.
+  // Comprobado en rojo contra `34d06bb4` (18-sep-2026): 3 de 4 casos, con el positivo en verde.
+  // ⚠️ SCRUM-937b y SCRUM-947 escribieron LOS DOS «26 → 27» a la vez: sexta colisión. Entró 947
+  // primero; 937b, al mergear main, sumó los dos comentarios y MIDIÓ el número corriendo este test.
+  // SCRUM-917c · entra `guard:lista-trabajos-917`. PULSA, como 816: mide la lista de Trabajos
+  // rediseñada contra su inventario «antes → después» fila a fila, y cada acción de la fila se
+  // pulsa con el ratón y se juzga por el ESTADO después (la petición, el modal, la navegación):
+  // la lección del «⋯» del prototipo, cuyas capturas eran perfectas con los botones muertos.
+  // Comprobado en rojo contra `e76580b1` (18-sep-2026): 24 de 47 comprobaciones.
+  // ⚠️ SÉPTIMA colisión, y la SEGUNDA que se lleva 917c: el 18-sep chocó con 915d en el «26», y hoy
+  // 20-sep, al mergear main, se ha encontrado con que 947 y 937b habían movido el contador a 28
+  // mientras esta rama estaba sin empujar. Resuelto las dos veces igual, como manda el párrafo de
+  // arriba: NINGÚN comentario se tira, los tres se quedan, y el número NO se suma —se vuelve a
+  // MEDIR corriendo este test sobre el árbol ya fusionado.
+  // SCRUM-917e · entra `guard:detalle-trabajo-917`. Cuenta cuántas VECES se lee un importe en el
+  // DETALLE pintado, que es el ticket entero: el mismo «590,00 €» salía siete veces en la misma
+  // pantalla. Sube aquí porque eso no se puede contar en el fuente — el importe sale de una
+  // plantilla, de `progressBar()` en otro fichero y del rail en un tercero, y sólo el DOM resuelto
+  // sabe cuántas veces lo lee una persona. Trae dos controles que ninguno de los anteriores tenía:
+  // uno de DISCRIMINACIÓN (cuatro Trabajos distintos tienen que pintar cuatro pantallas distintas,
+  // comprobado ANTES de leer ningún resultado) y uno de NO PÉRDIDA (el aviso firmado de SCRUM-887
+  // no puede desaparecer al retirar el bloque DINERO del rail). Comprobado en rojo contra el árbol
+  // sin tocar (20-sep-2026): 32 de 92. El número de abajo se midió corriendo este test.
+  // SCRUM-926 · entra `guard:duplicar-conserva`. PULSA «Duplicar» de verdad y lee el editor que
+  // sale: mide que la copia no pierde el descuento global ni las condiciones de pago. Sube aquí
+  // porque el campo del descuento se juzga por `hidden` con el CSS resuelto y el duplicado pasa
+  // por `renderAppView`. Cada campo lleva SU control positivo, porque un campo vacío y un lector
+  // que no sabe mirarlo se leen igual. Comprobado en rojo contra `17a1ec57` (20-sep-2026): 3 de 9
+  // casillas, con los dos positivos en verde; y por mutación, cada mitad del arreglo tumba SOLO
+  // sus casillas. El número de abajo se midió corriendo este test, no sumando uno.
+  // ⚠️ OCTAVA colisión (20-sep-2026, SCRUM-917e): 917e y 926 escribieron los dos su comentario
+  // sobre el mismo «29 → 30», y el merge dejó los COMENTARIOS en conflicto pero la CIFRA no —
+  // la línea de abajo bajó limpia diciendo 30 cuando ya hay 31 guards. Es el caso que más
+  // engaña de este contador: el conflicto que sí ves te tapa el que no. Los dos comentarios se
+  // quedan, y el número se vuelve a MEDIR corriendo este test sobre el árbol ya fusionado.
+  // SCRUM-965 · entra `guard:un-solo-presupuesto`. PULSA «Generar presupuesto» DOS veces y cuenta
+  // las peticiones que llegan al SERVIDOR, que es donde se ve el defecto: en pantalla los dos clics
+  // se leen igual. Sube aquí porque necesita navegador —el estado que decide (la huella del payload
+  // y la hoja abierta) sólo existe en tiempo de render— y porque lleva su control NEGATIVO dentro:
+  // si entre los dos clics cambia el precio, tienen que salir DOS documentos, no uno. Sin ese caso,
+  // un arreglo que bloqueara SIEMPRE el segundo clic habría pasado por bueno.
+  // SCRUM-915e1 · entra `guard:documento-vivo`. Mira el DOCUMENTO de la derecha del editor, que es
+  // el papel que recibe el cliente, y sube aquí porque las tres cosas que vigila se leen IGUAL en
+  // el fuente y sólo existen en el árbol renderizado: que el pie lleve la fecha que el profesional
+  // puso y no una coletilla fija, que el papel se rehaga mientras se escribe, y que sus filas
+  // cuelguen de un `tbody` de verdad —`createElement('linesBody')` no lo es, y por eso la cebra
+  // del CSS no había pintado nunca—. Comprobado en rojo contra `e73e1630` (20-sep-2026): 7
+  // hallazgos en 5 de 5 casos; y por mutación, quitar SÓLO la delegación tumba exactamente las dos
+  // casillas de la fecha y ninguna más.
+  // SCRUM-915h · entra `guard:conceptos-limpios`. Mira el paso Conceptos DESPUÉS DE PULSAR: el menú
+  // ⋯ de la línea, la hoja de ajustes, qué ficha se ve y qué no, y la tecla N; nada de eso existe
+  // fuera del render. Comprobado en rojo con el `public/` de main, con el control de la N (en #home
+  // SÍ abre) medido primero y en página limpia (21-sep-2026): 8 hallazgos en 5 de 5 casos.
+  // SCRUM-915i · entra `guard:cabecera-del-editor`. Mira el menú «⋯» de arriba, la hoja de
+  // confirmación de «Limpiar formulario» y el borrador tras recargar: el menú y la hoja sólo existen
+  // al pulsar, y el borrador en el `localStorage` de un navegador. Comprobado en rojo con el
+  // `public/` de 915h (21-sep-2026): 6 hallazgos en 4 de 4 casos.
+  // SCRUM-915g · entra `guard:ajustes-del-justificante`. Mide la fila «Ajustes del documento» del
+  // documento suelto DESPUÉS DE PULSAR «Cambiar» y «Listo» —qué queda a la vista, qué dice su resumen,
+  // cuánto mide su botón a 390 px—, y nada de eso existe fuera del render. Comprobado en rojo con el
+  // `public/` de main 092ccb5a (21-sep-2026): 6 hallazgos en 6 de 6 casos; y por mutación, siete
+  // mutantes, los siete caen.
+  // El número de abajo se MIDIÓ corriendo este test sobre el árbol ya fusionado, no sumando uno.
+  // ⚠️ NOVENA colisión (20-sep-2026, al mergear main en la rama del #1541): otra vez los DOS
+  // comentarios en conflicto y la CIFRA no —917e decía 31 y main ya decía 31 por otro camino—,
+  // así que el merge la habría dejado pasar sin mirar. Re-medida corriendo este test.
+  // ⚠️ DÉCIMA colisión (21-sep-2026, otra vez al mergear main en la rama del #1541): main trajo
+  // 965 y 915e1, cada uno con SU comentario en su propio bloque, y el conflicto cayó sólo en el
+  // comentario de la novena. Se quedan todos, y la cifra NO se toma de ninguno de los dos lados:
+  // se volvió a MEDIR corriendo este test sobre el árbol ya fusionado. Y otra vez la cifra
+  // mentía sin marca de conflicto: bajó limpia de main diciendo 32, y medida da 33 (cada lado
+  // contaba sus guards y no los del otro).
+  //
+  // ⚠️ NOVENA COLISIÓN, Y ÉSTA SE RESOLVIÓ EN VIVO MIENTRAS SE ARREGLABA LA OCTAVA: SCRUM-965
+  // entró en `main` con «30 → 31» mientras esta rama tenía 30. Resuelta como manda el párrafo de
+  // arriba y como manda el arreglo de abajo: **el comentario de 965 se queda entero**, su guard se
+  // apunta en su propia línea de la lista declarada, y el número **NO se suma: se vuelve a MEDIR**
+  // corriendo este test sobre el árbol ya fusionado. Que la colisión número nueve ocurriera dentro
+  // del ticket que la arregla no es casualidad: es la frecuencia del defecto.
+  //
+  // ══════════════════════════════════════════════════════════════════════════════════════════
+  // 🔴 SCRUM-970 · Y AQUÍ YA NO HAY NINGÚN NÚMERO ESCRITO A MANO. Ésta era la OCTAVA colisión.
+  //
+  // Todo lo de arriba se queda: cada comentario dice por qué entró SU guard y ninguno se tira.
+  // Lo que se va es el `assert.equal(fuera.length, 30)` que había justo aquí, porque la forma que
+  // esos párrafos llevan cuatro días denunciando **no se arregla avisando**:
+  //
+  //   · dos ramas añaden un guard cada una y las dos escriben el MISMO número nuevo;
+  //   · git marca conflicto en los COMENTARIOS, que son distintos → alguien lo ve y los suma;
+  //   · pero la línea del número es IDÉNTICA en las dos, git la auto-mezcla SIN conflicto, y el
+  //     fichero queda mintiendo por uno.
+  //
+  //       🔒 El conflicto que sí ves te tapa el que no.
+  //
+  // MEDIDO con un merge de tres vías de verdad sobre este mismo fichero (evidencia
+  // `docs/master/evidencias/scrum970/colision-del-contador.mjs`): partiendo de 30, dos ramas que
+  // añaden un guard cada una dejan **31 donde la verdad son 32**, con marca de conflicto al lado
+  // que tapa que entró mal.
+  //
+  // Ahora la cifra se DERIVA de `tests/_guards-de-navegador-declarados.mjs`, donde los guards van
+  // **uno por línea** — así dos ramas que añaden el suyo escriben líneas DISTINTAS en el MISMO
+  // sitio y chocan de verdad, que es el conflicto que se buscaba.
+  //
+  // ⚠️ El trinquete no se relaja: se endurece. Antes decía «han cambiado de 30 a 31»; ahora dice
+  //    QUÉ guard sobra o falta, por su nombre. Ganar comodidad no podía perder detección.
+  // ══════════════════════════════════════════════════════════════════════════════════════════
+  const { sinDeclarar, declaradosQueYaNoEstan } = diferencias(fuera);
+  assert.deepEqual({ sinDeclarar, declaradosQueYaNoEstan }, { sinDeclarar: [], declaradosQueYaNoEstan: [] },
+    '🔴 LA LISTA DE GUARDS FUERA DE LA TANDA NO CUADRA CON LO DECLARADO.\n'
+    + `  Sin declarar (están en package.json y no en la lista): ${JSON.stringify(sinDeclarar)}\n`
+    + `  Declarados que ya no están:                            ${JSON.stringify(declaradosQueYaNoEstan)}\n`
+    + '  Si has añadido un guard: apúntalo EN SU PROPIA LÍNEA al final de\n'
+    + '  `tests/_guards-de-navegador-declarados.mjs`, y deja aquí arriba tu comentario diciendo\n'
+    + '  POR QUÉ no cabe en la tanda. Los dos sitios, no uno.\n'
+    + '  Si ha desaparecido uno: di CUÁL y por qué antes de quitarlo de la lista.\n'
+    + `  Ahora mismo hay ${fuera.length} guards fuera de la tanda y ${DECLARADOS.length} declarados.`);
+
+  // ✅ CONTROL DEL PROPIO TRINQUETE: la lista declarada no puede estar vacía ni llevar repetidos.
+  // Vacía, «no sobra ni falta ninguno» sería cierto sobre la nada; con un nombre repetido, los
+  // conjuntos cuadrarían y la cifra derivada dejaría de ser la cuenta.
+  assert.ok(DECLARADOS.length > 0, '🔴 la lista declarada está vacía: no estaría comparando nada.');
+  assert.equal(new Set(DECLARADOS).size, DECLARADOS.length,
+    '🔴 hay un guard declarado dos veces. Con repetidos, la cifra derivada deja de ser la cuenta.');
+  // ⚠️ ONCEAVA colisión (21-sep-2026, al mergear main en la rama del #1552 —SCRUM-970—): 970 quitaba
+  // de aquí el número escrito a mano y main, a la vez, lo subía a 33 con 915e1. Se quedan TODOS los
+  // comentarios de los dos lados, se tira la línea `assert.equal(fuera.length, 33, …)` —era justo lo
+  // que 970 arregla— y `guard:documento-vivo` se apunta en su propia línea de la lista declarada.
+  // ⚠️ DUODÉCIMA colisión (21-sep-2026, al mergear main en `scrum-915h-conceptos-limpios`): la rama
+  // traía el número escrito a mano (34, con `guard:conceptos-limpios`) y main ya lo había quitado
+  // con SCRUM-970. Se queda TODO lo de main, se tira el `assert.equal(fuera.length, 34, …)` —es lo
+  // que 970 arregla— y `guard:conceptos-limpios` se apunta en su propia línea de la lista declarada.
 });
 
 test('SCRUM-522 · la lista sale DERIVADA de package.json, no escrita aquí', () => {

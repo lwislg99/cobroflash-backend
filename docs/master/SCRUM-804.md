@@ -1673,3 +1673,190 @@ tests: quien lo vuelva a medir, que lo re-feche.
 
 **Ninguno de los dos es código nuevo de esta rama** (censo-regla-42.mjs no cambia); son
 correcciones a las declaraciones de prueba que la fusión de `main` dejó desactualizadas.
+## SCRUM-804g · La mutación de 738 que 804f dejó muda
+
+**Medido contra:** `origin/main` = `755d23997bd55ce7aa6d6a1cb6a98616926dfd7e` · 2026-09-17T14:05:18Z
+**Rama:** `scrum-804g-la-mutacion-muda-de-738`
+
+El meta-guard del PR #1430 (run 35230131786, job 105231752255) salió FAILURE con «vivas 235 · mudas 1 · ciegas 0 · ficheros muertos 0». El único ✖ era `scrum738` MUDO: su mutación ①, que quita el delimitador de `numeroDeRama` (`/^scrum-0*([0-9]+)/`), ya no tumbaba «72 NO casa con 720, 727 ni 1727». La cazaba `numeroDeRama('scrum-72') === null`, y desde 804f `scrum-72` da 72 **con la regla y con el mutante**. **Es mío**, no la muda intermitente de scrum859.
+
+**Arreglo** (`a18dc18f`): 738 exige `null` para `scrum-72.1` y `scrum-72bb`. Es lo que la regla sigue exigiendo (delimitador `-` o fin del nombre) y lo que el mutante no cumple. **Verificado aplicando la mutación EXACTA declarada**: cae el test que nombra, y sin mutación 738 da 7/7. Las 4 mutaciones de 804f no daban muda (no están declaradas en el meta-guard; se midieron a mano).
+
+## SCRUM-804h · La fase puede llevar CORTE (`scrum-915e1-…`), y sin eso no mergea nadie
+
+**Medido contra:** `origin/main` = `c5d642fe889af753ef6d6de27aabc84bdc3fc79b` · 2026-09-20T20:13:36Z (hora de GitHub, cabecera `Date:` de `gh api -i zen`; el reloj local va ~5,5 min adelantado)
+**Rama:** `scrum-804h-la-fase-con-corte`
+
+### El defecto, y a quién bloqueaba
+
+El trabajo **«build + tests (con banco desechable)»** —la ÚNICA puerta obligatoria de `main`— salió FAILURE **sobre `main` mismo** (run `35533496437`, job `106138275117`). Un solo test caído, de 7.7xx:
+
+```
+✖ SCRUM-804 · 🔴 SUELO: el censo cuadra rama a rama con lo que `git` lista, sin cifras escritas
+    actual:   { soloEnGit: [ 'scrum-915e1-documento-vivo' ], soloEnElCenso: [] }
+    expected: { soloEnGit: [], soloEnElCenso: [] }
+```
+
+Con esa puerta cerrada **no mergea nadie**: esa tarde había seis PR esperando, entre ellos el #1544 (SCRUM-964), el #1549 (964c) y el #1537 (944b).
+
+**Causa, EJECUTADA y no leída** — el patrón vigente sobre el nombre real:
+
+```
+/^scrum-0*(\d+)[a-z]?(?:-|$)/  sobre 'scrum-915e1-documento-vivo'  →  null
+/^scrum-0*(\d+)[a-z]?(?:-|$)/  sobre 'scrum-915-paso0-inventario'  →  915
+```
+
+La letra de fase era **un solo carácter**. `915e1` es fase `e`, corte `1`: tras la letra viene un dígito, y ahí el patrón ya exigía el `-`. La rama cae en `sinNumero`, el censo no la ve, y el suelo de 804 compara dos poblaciones distintas.
+
+**Y no era una rama rara.** En `origin` había ya **dos** con esa forma cuando se midió: `scrum-915e1-documento-vivo` y `scrum-915e2-ver-documento`. Salen de partir SCRUM-915 en **siete cortes**, así que quedaban cinco por llegar.
+
+**El origen, dicho por el orquestador y recogido aquí a petición suya:** la numeración de fase de dos caracteres la inventó él al aprobar la partición esa misma tarde, sin comprobar si el censo la entendía.
+
+### Por qué se arregla en la regla y no renombrando la rama
+
+Porque ya está decidido y escrito, tres días antes, en este mismo fichero por SCRUM-804f: *«si la rama se renombra, el rojo se va solo; la SIGUIENTE rama sin slug lo volvería a traer. Esto lo cierra en la regla, no en la rama»*. Es el **mismo borde de la misma línea**, con otra forma: 804f fue el delimitador, 804h es el sufijo. Con cinco cortes de 915 por nacer, renombrar dos ramas habría comprado el rojo de mañana.
+
+### El arreglo, y la alternativa que se descartó
+
+```
+antes    /^scrum-0*(\d+)[a-z]?(?:-|$)/
+después  /^scrum-0*(\d+)[a-z]?\d*(?:-|$)/
+```
+
+Se ensancharon los **dígitos**, no la letra. `[a-z]+` también arregla `915e1` — y rompe `scrum-72bb → null` («dos letras no son una fase»), que es una decisión explícita de 804f **que nadie pidió relajar**. Ensanchar de más para arreglar un borde es cómo un guard se desactiva por partes. Con `[a-z]?\d*` las **cuatro** afirmaciones de identidad de 804f siguen intactas, y este ticket las vuelve a comprobar en su propio fichero para que no se descubra en el PR de otro.
+
+### 🔴 Por qué no re-atribuye el trabajo de nadie — demostrado Y medido
+
+**Por construcción:** `0*` come los ceros y `\d+` es voraz, así que el grupo 1 se lleva la **tirada entera** de dígitos. No hay backtracking que lo cambie: partir la tirada dejaría al `\d*` delante de un DÍGITO, que no es `-` ni fin de nombre, así que ninguna partición alternativa casa. Ensanchar el sufijo sólo puede convertir un `null` en **ese mismo** número, nunca un número en otro.
+
+**Y medido igual**, porque una demostración que no se ejercita es una opinión con forma de demostración. Sobre los refs reales del 20-sep (remotos + locales), en el tercer test de `scrum804h`: **0 re-atribuidas**, y las rescatadas son exactamente las de forma `scrum-<n><letra><dígitos>`.
+
+### Rojo, arreglo y control positivo
+
+- **ROJO, antes de tocar el patrón** (`tests/scrum804h-la-fase-con-corte.test.mjs`): cayeron **2 de 3** y el que no cayó es el que no debía — el de identidad ya estaba verde, porque el defecto no era que la regla afloje sino que no llega. Y el tercero cayó por su mitad correcta: `yaCasaban > 0` y `reatribuidas == []` pasaron; lo que falló fue `rescatadas > 0`, o sea «el ensanche no hace nada».
+- **ARREGLO** (`e73b1eb3`): un carácter de patrón, `\d*`, más la prosa de por qué.
+- **VERDE**: los 7 ficheros que consumen la regla + los suyos, **65 tests, 0 fallos**: `scrum804h`, `scrum804f`, `scrum804`, `scrum829b`, `scrum738`, `scrum753`, `scrum637`. Y el que decide: **`SCRUM-804 · SUELO` pasa a ✔**, que es el desbloqueo de `main`.
+
+### 🔴 Se tocó un test de OTRO ticket (`scrum804f`), y por qué no es relajarlo
+
+El cuarto control de 804f —«sólo cambian de número las ramas sin slug»— **se puso rojo** con el arreglo, señalando `scrum-915e1-documento-vivo` y `scrum-915e2-ver-documento`.
+
+No es un defecto del arreglo ni de 804f: ese control compara la regla **PRE-804f** con la regla **VIVA**, así que no mide el delta de 804f — mide **la suma de todos los ensanches que haya habido desde entonces**. Con un solo ensanche no se notaba. Al llegar el segundo, el control acusa a un rescate **deliberado**. Es el patrón de «un control negativo cableado caduca».
+
+Lo que se hizo, y en este orden importa:
+
+1. La exención se abre en **lista con el ticket de cada forma delante** (`RESCATADAS_A_PROPOSITO`), uno por línea, en vez de ensanchar el patrón a algo cómodo que las cubra todas. La siguiente forma se **añade** con su ticket; la lista no se borra.
+2. **Y se le añadió la mitad que NO caduca**, que 804f no tenía: *quien YA tenía número sigue teniendo EL MISMO*. Una lista de formas permitidas se alarga con cada ensanche y acaba permitiéndolo todo; esa segunda mitad no, y es la que de verdad protege el reparto — mover una rama viva de un ticket a otro es repartirle el trabajo a otra persona sin que nadie lo vea.
+
+O sea que 804f sale de aquí **con un control más, no con uno menos**.
+
+### ⚠️ El sufijo `804g` estaba ocupado y el instrumento fácil mentía
+
+La rama iba a llamarse `scrum-804g-…`. El control de sufijo por ramas vivas **no lo habría cazado**: `git ls-remote` sólo devuelve `scrum-804b-…`, porque el repo borra la rama al mergear. Quien contestó fue **el expediente**: b, c, d, e, f y **g** ya citados aquí dentro. `gh pr list --search "scrum-804"` tampoco valió: devolvió uno solo.
+
+🔒 **Para el sufijo de un ticket con historia, la fuente es `docs/master/SCRUM-<n>.md`, no el remoto ni los PR.** Las dos listas que se borran solas dan un vacío que parece un hueco libre.
+
+### Segunda mitad, encargada por el orquestador: el fichero DECLARA sus formas legales
+
+Su motivo, y es el dato que lo justifica: **es la TERCERA vez** que este fichero cierra el check obligatorio de `main` por no saber leer una forma de nombre que alguien usó de buena fe — `revert-…` (829), sin slug (804f) y la fase con corte (804h). *Tres veces no es mala suerte*: las formas legales no estaban escritas en ninguna parte y se descubrían a golpes, un `main` bloqueado por vez.
+
+Va un bloque `FORMAS:` … `:FIN` junto al patrón, con **12 ejemplos y su resultado**, las dos clases (con número y `null`) y el motivo de cada uno.
+
+🔒 **Y no es un comentario: es un mecanismo.** El cuarto test de `scrum804h` **lee el bloque del fuente** y ejercita cada línea. Una forma añadida ahí que la regla no cumpla pone el guard en rojo; una regla que deje la lista atrás, también. Un comentario sólo avisa a quien pasa por delante — esta sesión ya tiene esa lección del 964, donde el aviso estaba escrito en la línea 113 y el accidente se repitió igual.
+
+**Los dos rojos de esa mitad, inyectados y medidos** (y con mensajes distintos, que es lo que prueba que miden cosas distintas):
+
+| Inyección | Lo que dijo |
+|---|---|
+| Declarar `scrum-72bb-x → 72` (una forma que la regla NO cumple) | «el fichero declara formas que su propia regla NO cumple» |
+| Quitar la marca `:FIN` | «NO PUDE MIRAR: no encuentro el bloque `FORMAS:` … `:FIN`» — el suelo, no un verde |
+
+### Lo medido por s2f-20, y por qué el patrón NO es el suyo
+
+s2f-20 midió por su cuenta, sobre diez nombres de control, que con `(?:[a-z]+\d*)?` cambian **exactamente dos**, los dos al valor correcto (915), y que no se mueven `scrum-904`, `scrum-727-x`, `scrum-72-x`, `scrum-839e-…` ni `revert-1192-scrum-824b-…`. Coincide con la monotonía de arriba y vale como control independiente.
+
+**Su patrón, sin embargo, no se aplicó**, y la diferencia es de una letra: `[a-z]+` lee `scrum-72bb` como **72**, y 804f exige ahí `null` («dos letras no son una fase»). Los diez nombres de control de s2f no incluían ninguno de dos letras, así que su medición no podía verlo. Con `[a-z]?\d*` el borde queda fuera y las cuatro afirmaciones de 804f siguen en pie.
+
+🔒 **Una medición sobre diez nombres de control no dice nada de la forma que no está entre los diez.** No es un fallo de la medición: es su alcance, y por eso el control que decide se hace sobre los refs REALES y no sobre una lista escrita a mano.
+
+### Lo que NO toca
+
+- `tests/_entrada-de-la-rama.mjs` (SCRUM-854) tiene **su propio** `numeroDeRama` (`/^scrum-(\d+)/i`), que ya leía `scrum-915e1-…` como 915. No se ha tocado.
+- La mutación ① declarada en el meta-guard para 738 (`/^scrum-0*([0-9]+)/`, sin delimitador) **sigue cayendo**: 738 exige `scrum-72.1 → null` y `scrum-72bb → null`, y el mutante da 72 en los dos.
+- `guard:escalera-por-estado` salió CIEGO en la misma tanda de navegador. **Está igual en `main`**, no lo trae esto, y lo lleva s2f-20 con SCRUM-917e.
+
+# APÉNDICE · 21-sep-2026 · SCRUM-804i · El control de 804h se quedó sin población en catorce horas, y volvió a cerrar la puerta
+
+**Carril:** orquestador (desbloqueo de `main`; no había ninguna sesión viva)
+**Medido contra:** `origin/main` = `f721436842b9dda6b945784098dc6ef2671b0105` (merge de SCRUM-958,
+#1551) · 2026-09-21T06:53:07Z (cabecera `Date` de GitHub)
+**Rama:** `scrum-804i-el-control-sin-poblacion` · **Worktree:** `wt-977`
+
+Apéndice CORTO a propósito: 34 líneas en UN fichero de test, sin dinero, sin fiscal, sin schema y
+sin tocar `src/` ni `public/` (rigor proporcional, norma de la tanda del 20-sep).
+
+## ① El defecto, medido
+
+`main` tenía en rojo **su único check obligatorio**, `build + tests (con banco desechable)` (run
+**35537122940**, `f7214368`, 2026-09-20T20:56Z), con **`fail 1`** y un solo test caído:
+
+    ✖ SCRUM-804h · ✅ EL CONTROL QUE DECIDE: sobre los refs de HOY, quien ya casaba da el MISMO número
+      AssertionError: 🔴 NINGUNA rama pasa de «sin número» a tener ticket. O el remoto ya no tiene
+      ramas `e<n>` —y entonces este control ha dejado de medir sobre población— o el ensanche no
+      hace nada.                      tests/scrum804h-la-fase-con-corte.test.mjs:164
+
+Detrás había **OCHO PR abiertos**, los ocho con el mismo `fail 1`: #1537, #1541, #1543, #1544,
+#1548, #1552, #1555 y #1557. El traspaso de la tanda anterior daba ese rojo por **caduco** —de
+antes de que entrara 804h— y proponía relanzarlos. **No lo era**, y relanzarlos no lo habría
+curado: el rojo es posterior al merge de 804h y se reproduce a voluntad.
+
+## ② La causa: el control medía el calendario, no la regla
+
+La última afirmación exigía que **alguna rama viva** pasara de «sin número» a tener ticket, con la
+población sacada de `git for-each-ref` en el momento de correr. Las únicas ramas con la forma que
+ejercita —`scrum-<n><letra><dígitos>`— eran `scrum-915e1-documento-vivo` y
+`scrum-915e2-ver-documento`. **Entraron en `main` esa misma noche** (#1545 y #1550, 20:41Z) y
+GitHub **las borró al mergear**. A las 20:41Z el remoto se quedó con **cero** ramas `e<n>`.
+
+Medido hoy sobre el remoto real: **154 ramas · 97 que la regla anterior ya reconocía · 0 de forma
+`e<n>`**. Las dos siguen existiendo **en local** (sus worktrees `wt-915e` y `wt-915e2` las tienen
+tomadas), y por eso el fichero pasaba en la máquina y caía en el servidor.
+
+🔒 **Esto matiza una frase de la entrada de 804h**, que cerraba así: «el control que decide se hace
+sobre los refs REALES y no sobre una lista escrita a mano». Para la mitad de las
+**re-atribuciones** sigue siendo cierto y no se toca — ahí la población real es la que vale, y la
+tiene (97). Para la mitad del **rescate** no lo era: los refs reales son una población que
+**caduca con el merge de otro**, y el auto-borrado de ramas la vacía justo cuando el ticket ha
+tenido éxito. El propio mensaje de error lo había escrito como hipótesis; era la cierta.
+
+## ③ Lo hecho
+
+1. La población del rescate pasa a ser **los refs de hoy MÁS las formas DECLARADAS** en el bloque
+   `FORMAS:` … `:FIN` de `scripts/_numero-de-rama.mjs` — la lista que estrenó 804h, que **no se
+   borra al mergear**.
+2. Esa lectura se saca a `formasDeclaradas()`, que ahora usan los **dos** sitios: el test que
+   ejercita la lista línea a línea (que le pone su suelo: que salgan líneas y de las dos clases) y
+   este control.
+3. Un suelo propio antes de juzgar: si el bloque dejara de declarar alguna forma
+   `scrum-<n><letra><dígitos>`, el control dice **NO PUDE MIRAR** en vez de dar verde.
+4. El mensaje del fallo deja de ofrecer la hipótesis que ya no puede darse.
+
+**No se toca la regla** (`numeroDeRama`, byte a byte igual) ni la mitad de re-atribuciones.
+
+## ④ Los controles
+
+- **🔴 ROJO REPRODUCIDO, no leído.** Repo de repro con **exactamente las 154 ramas del remoto de
+  hoy** creadas como refs: el fichero **tal y como está en `main`** cae con el mismo mensaje, letra
+  por letra, que el run 35537122940. Sin eso, «el remoto se quedó sin `e<n>`» era una teoría.
+- **✅ Con el arreglo, sobre esa misma población sin ninguna `e<n>`:** `pass 4 · fail 0`.
+- **⛔ CONTROL POSITIVO · los dientes siguen puestos.** Se **deshizo SCRUM-804h** en el repro
+  (sufijo de vuelta a `[a-z]?`), con su suelo comprobado
+  (`numeroDeRama('scrum-915e1-documento-vivo')` → `null`): el fichero parcheado cae con **`fail
+  3`**, y entre ellos la afirmación del rescate con su mensaje nuevo.
+- 🔎 **Un verde que no valía, por el camino:** el primer intento de inyección se hizo con `sed` y
+  **no llegó a tocar el fichero**; el `pass 4` que salió no medía nada. Se cazó porque la pasada
+  imprime la línea ejecutable del patrón, no porque se confiara en el verde.
+- **Censos de entrada** (237, 258, 267, 273, 514, 522, 548, 723) y `npm run guards:entrada`, en
+  verde. Ojo al instrumento: un worktree recién creado no tiene `node_modules` ni `dist/`, y sin
+  ellos cuatro de esos ficheros caen por `ERR_MODULE_NOT_FOUND` — eso no es un rojo, es no haber
+  medido.

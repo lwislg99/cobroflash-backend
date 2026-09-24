@@ -1,0 +1,19 @@
+huecos (ms) entre timestamps consecutivos del log de PR #1730 (job meta-guard), mayor a menor:
+
+ 26112ms -> linea 243 de 339, timestamp 2026-09-23T16:28:45.927Z
+ 26097ms -> linea 322 de 339, timestamp 2026-09-23T16:31:49.379Z
+ 20136ms -> linea 13 de 339, timestamp 2026-09-23T16:19:17.468Z
+ 17843ms -> linea 250 de 339, timestamp 2026-09-23T16:29:32.982Z
+ 16052ms -> linea 137 de 339, timestamp 2026-09-23T16:24:53.919Z
+ 13084ms -> linea 245 de 339, timestamp 2026-09-23T16:29:12.077Z
+ 13066ms -> linea 244 de 339, timestamp 2026-09-23T16:28:58.993Z
+ 11496ms -> linea 120 de 339, timestamp 2026-09-23T16:23:52.301Z
+ 10088ms -> linea 14 de 339, timestamp 2026-09-23T16:19:27.556Z
+ 10086ms -> linea 15 de 339, timestamp 2026-09-23T16:19:37.642Z
+ 10049ms -> linea 71 de 339, timestamp 2026-09-23T16:21:17.224Z
+  9694ms -> linea 139 de 339, timestamp 2026-09-23T16:25:10.382Z
+  9206ms -> linea 252 de 339, timestamp 2026-09-23T16:29:51.297Z
+  9109ms -> linea 251 de 339, timestamp 2026-09-23T16:29:42.091Z
+  8915ms -> linea 323 de 339, timestamp 2026-09-23T16:31:58.294Z
+
+duracion total del job medida por estas lineas: 796.343 s

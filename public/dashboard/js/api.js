@@ -1328,7 +1328,7 @@ window.copyRojo = copyRojo;
 // WA-0b · chip de entrega de WhatsApp (J4). Recibe `waDelivery` del detalle
 // ({status, templateName, at} | null) y devuelve el HTML del chip, o '' si no hay envío.
 // Estados de Meta: sent → delivered → read | failed. Microcopy clara para el merchant.
-function waDeliveryChip(waDelivery) {
+function waDeliveryChip(waDelivery, opciones) {
   if (!waDelivery || !waDelivery.status) return '';
   const map = {
     queued:    { cls: 'wa-chip-sent',      glyph: '🕓', label: 'En cola' },
@@ -1339,7 +1339,10 @@ function waDeliveryChip(waDelivery) {
   };
   const m = map[waDelivery.status] || map.sent;
   let when = '';
-  if (waDelivery.at) {
+  // SCRUM-986 · `sinFecha`: la LISTA lo pide para no ensanchar la columna de estado (con la fecha el
+  // chip mide ~200 px y parte en dos líneas el ID, la fecha y el importe de TODAS las filas). El
+  // detalle no lo pasa y sigue igual. Lo que cuenta —el estado— no cambia.
+  if (waDelivery.at && !(opciones && opciones.sinFecha)) {
     const d = new Date(waDelivery.at);
     if (!isNaN(d)) when = ' · ' + d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
   }
@@ -1348,6 +1351,56 @@ function waDeliveryChip(waDelivery) {
     + `<span class="wa-chip-glyph">${m.glyph}</span> WhatsApp: ${m.label}${when}</span>`;
 }
 window.waDeliveryChip = waDeliveryChip;
+
+// SCRUM-1032 (CRM-02) · llamar, escribir por WhatsApp o mandar un correo al cliente con UN TOQUE.
+//
+// Es un ENLACE del navegador (`tel:`, `wa.me`, `mailto:`), no un envío de YaQu: no manda nada solo
+// y no pasa por el anti-spam J6 (regla 28). Lo comparten la lista de Clientes y la ficha, para que
+// las dos normalicen igual. Sin dato válido NO hay enlace (nunca un botón muerto): el llamador
+// pinta el texto tal cual, o nada.
+//
+// La normalización es la del servidor (`normalizePhone`, utils.ts): quita espacios, guiones,
+// paréntesis y puntos, y un `+` o `00` delante; 8 a 15 dígitos o no es un teléfono. `wa.me` lleva
+// SÓLO dígitos. `tel:` lleva `+` cuando el número ya trae prefijo (lo escribió con `+`/`00`, o tiene
+// 11 dígitos o más: los teléfonos se guardan con prefijo, «34600000000»); uno corto se marca tal
+// cual, sin inventarle un país. WhatsApp va al móvil (`Móvil (WhatsApp)`) y, si no hay, al teléfono.
+function digitosDeTelefono(v) {
+  if (v === null || v === undefined) return null;
+  let p = String(v).trim().replace(/[\s\-().]/g, '');
+  let conPrefijo = false;
+  if (p.startsWith('+')) { p = p.slice(1); conPrefijo = true; }
+  else if (p.startsWith('00')) { p = p.slice(2); conPrefijo = true; }
+  if (!/^\d{8,15}$/.test(p)) return null;
+  return { digitos: p, marcable: (conPrefijo || p.length >= 11 ? '+' : '') + p };
+}
+function contactoDelCliente(c) {
+  const fijo = digitosDeTelefono(c && c.phone);
+  const movil = digitosDeTelefono(c && c.mobile);
+  const mismo = !!(fijo && movil && fijo.digitos === movil.digitos);
+  const tel = (d, texto) => ({ texto: String(texto).trim(), href: 'tel:' + d.marcable });
+  const correo = c && c.email ? String(c.email).trim() : '';
+  const destinoWa = movil || fijo;
+  return {
+    telefono: fijo ? tel(fijo, c.phone) : null,
+    movil: movil && !mismo ? tel(movil, c.mobile) : null,
+    whatsapp: destinoWa ? { href: 'https://wa.me/' + destinoWa.digitos } : null,
+    correo: /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(correo) ? { texto: correo, href: 'mailto:' + correo } : null,
+  };
+}
+window.contactoDelCliente = contactoDelCliente;
+
+// SCRUM-1004 (CRM-04) · la URL de «abrir en mapa» por dirección, para la ficha del cliente.
+// Sin proveedor de mapas nuevo (regla del ticket): Google Maps por búsqueda de texto, sin clave.
+//
+// ⚠️ MISMA FÓRMULA que `jobRailBlocks.js` (el carril del Trabajo), a propósito NO compartida: ese
+// fichero es funciones puras sin ninguna dependencia —se `require()` a pelo en
+// `tests/scrum424-donde-tiene-dato.test.mjs`, sin `window` ni bundler— y engancharlo a un global
+// de `api.js` le rompería esa garantía por una fórmula de una línea. Si el proveedor cambia algún
+// día, se cambia en los dos sitios.
+function hrefAbrirEnMapa(direccion) {
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(direccion);
+}
+window.hrefAbrirEnMapa = hrefAbrirEnMapa;
 
 // -------- Admin – Merchant --------
 

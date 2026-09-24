@@ -81,7 +81,21 @@ function citasDeTextoAprobado(md) {
     if (/^#{1,6}\s/.test(linea)) { dentro = /texto\s+aprobado/i.test(linea); continue; }
     if (!dentro) continue;
     const m = /^>\s?(.+)$/.exec(linea.trim());
-    if (m && m[1].trim().length >= 4) out.push(m[1].trim());
+    if (!m || m[1].trim().length < 4) continue;
+    // 🔴 SCRUM-915e1 · LA MISMA REGLA DE PLANTILLA QUE YA APLICA `celdasDeTabla`, que aquí
+    // faltaba. No es una excepción nueva ni una rebaja: es la de 20 líneas más abajo, escrita
+    // para el registro congelado y nunca traída a las fichas. Un texto aprobado con un hueco
+    // dentro —«Presupuesto válido hasta el {dd/mm/aaaa}.»— NUNCA aparece literal en el código,
+    // porque el código lo COMPONE; cruzarlo tal cual da un rojo permanente por un texto que SÍ
+    // está aplicado. Lo que este guard puede afirmar de una plantilla es que su parte fija esté,
+    // y eso lo cubren los censos de la pantalla que la pinta (`scrum600` la ranura, `scrum600b`
+    // el documento renderizado) y el guard de navegador del ticket, que cambia el hueco dos veces
+    // y comprueba que la pantalla va detrás.
+    //
+    // La exención es ESTRECHA a propósito: sólo salta con llaves. Un texto sin ellas se sigue
+    // cruzando byte a byte, y eso lo vigila el suelo de este mismo fichero.
+    if (/{[^}]+}/.test(m[1])) continue;
+    out.push(m[1].trim());
   }
   return out;
 }
@@ -215,6 +229,14 @@ const APARCADOS = [
       + 'linea en `quotesView.js` — fichero de otro carril en vuelo (SCRUM-594). Lo desbloquea '
       + 'esa sesion al '
       + 'liberar el fichero; el commit que lo cablee borra estas tres entradas.',
+  },
+  {
+    texto: '2. Líneas',
+    motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-915d, 18-sep-2026). Era el título del bloque '
+      + 'de líneas del editor. La v3 del editor, APROBADA por el fundador, convierte los bloques en '
+      + 'pasos, y sus títulos se firmaron en SCRUM-915 comentario 15868: este bloque es el paso '
+      + '«Conceptos» (el número lo pinta la hoja de estilos, aparte). NO se desaprueba en el '
+      + 'registro —la firma ocurrió—; ya no tiene dónde pintarse. Registro: `docs/master/SCRUM-915.md`.',
   },
   {
     texto: 'Modo no reconocido',

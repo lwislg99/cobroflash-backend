@@ -1,0 +1,14 @@
+﻿POBLACIÓN · 97 runs de ci.yml con job meta-guard medible, ventana 2026-09-17T21:09:10Z → 2026-09-20T14:03:43Z
+TODOS: n=97 · success 8 · failure 6 · cancelled 83
+   de los cancelados: 58 por el TECHO (≥600 s) · 25 por CONCURRENCIA (<600 s)
+   ⇒ el techo explica el 70 % de las cancelaciones; la concurrencia, el 30 %
+   ⇒ legibles hoy (llegaron al final): 14 % · si se quita el techo: 74 %
+SOLO push a main: n=44 · success 3 · failure 4 · cancelled 37
+   de los cancelados: 16 por el TECHO (≥600 s) · 21 por CONCURRENCIA (<600 s)
+   ⇒ el techo explica el 43 % de las cancelaciones; la concurrencia, el 57 %
+   ⇒ legibles hoy (llegaron al final): 16 % · si se quita el techo: 52 %
+SOLO pull_request: n=53 · success 5 · failure 2 · cancelled 46
+   de los cancelados: 42 por el TECHO (≥600 s) · 4 por CONCURRENCIA (<600 s)
+   ⇒ el techo explica el 91 % de las cancelaciones; la concurrencia, el 9 %
+   ⇒ legibles hoy (llegaron al final): 13 % · si se quita el techo: 92 %
+EXIT=0

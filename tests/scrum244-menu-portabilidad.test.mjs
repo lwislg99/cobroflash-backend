@@ -30,6 +30,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import ts from 'typescript';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -206,13 +207,89 @@ test('SCRUM-244 · el botón NO construye su etiqueta: pegarle un contador cambi
   );
 });
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// 🔴 SCRUM-732b · ESTE GUARD GOBERNABA TODO `exportView.js` PARA DEFENDER LO QUE LA VISTA OFRECE.
+//
+// Lo cazó el censo de SCRUM-732: prohibía cuatro palabras en el FICHERO ENTERO —comentarios e
+// identificadores incluidos— para defender que la pantalla no OFRECE la supresión. Mientras nadie
+// escriba «borrar» en un comentario, alcance y sujeto coinciden; el día que alguien lo escriba
+// —explicando precisamente por qué la supresión está bloqueada, que es lo natural— este guard se
+// pone rojo acusando de incumplir un dictamen que nadie ha incumplido. Y un rojo así se apaga.
+//
+// ⚠️ SE ESTRECHA DÓNDE MIRA, Y NADA MÁS. Las cuatro pistas son las mismas, el dictamen es el mismo
+// y el mensaje es el mismo: eso es contenido legal y no se toca (reglas 30 y 26). Lo único que
+// cambia es que se miran los textos que la vista PUEDE PINTAR en vez de los bytes del fichero.
+//
+// EL SUJETO, derivado por AST: los literales de cadena y de plantilla. Es lo único que puede
+// llegar a los ojos de alguien; un comentario no ofrece nada y un identificador tampoco.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+
+function textoQueLaVistaPuedePintar(fuente) {
+  const sf = ts.createSourceFile('exportView.js', fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const CADENAS = new Set([
+    ts.SyntaxKind.StringLiteral,
+    ts.SyntaxKind.NoSubstitutionTemplateLiteral,
+    ts.SyntaxKind.TemplateHead,
+    ts.SyntaxKind.TemplateMiddle,
+    ts.SyntaxKind.TemplateTail,
+  ]);
+  const trozos = [];
+  const visitar = (n) => {
+    if (CADENAS.has(n.kind)) trozos.push(n.text);
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return trozos.join('\n');
+}
+
 test('SCRUM-244 · la vista NO ofrece la supresión: sigue bloqueada por dictamen', () => {
+  const pintable = textoQueLaVistaPuedePintar(VISTA);
+
+  // SUELO: sin textos no hay veredicto. Un «no está» sobre la cadena vacía pasaría siempre, y
+  // este guard defiende un dictamen: su verde tiene que significar algo.
+  assert.ok(pintable.length > 500,
+    `🔴 ESCÁNER CIEGO: sólo ${pintable.length} caracteres de texto pintable en \`exportView.js\`. ` +
+    'Si el extractor no ve los literales, la ausencia de las pistas no prueba nada.');
+
   for (const pista of ['borrar', 'eliminar cuenta', 'darme de baja', 'suprimir']) {
     assert.ok(
-      !VISTA.toLowerCase().includes(pista),
+      !pintable.toLowerCase().includes(pista),
       `🔴 la vista de descargas menciona «${pista}». La supresión (art. 17) sigue BLOQUEADA por ` +
         'dictamen: hoy ejecutarla destruiría el AuditLog fiscal. Portabilidad y supresión son ' +
         'derechos distintos y esta pantalla solo ofrece el primero.',
     );
   }
+});
+
+// ═══ LOS DOS CONTROLES DEL ESTRECHAMIENTO (SCRUM-732b) ══════════════════════════════════════
+//
+// Se mutan COPIAS EN MEMORIA del fuente real, nunca el árbol.
+
+test('SCRUM-244 · 🔴 ROJO: una pista en un TEXTO de la vista sigue saltando', () => {
+  const ANCLA = "'portabilidad-info'";
+  assert.equal(VISTA.split(ANCLA).length - 1 >= 1, true,
+    `🔴 la mutación no entra: no encuentro el ancla ${ANCLA}.`);
+  const mutado = VISTA.replace(ANCLA, "'portabilidad-info borrar'");
+  assert.notEqual(mutado, VISTA, '🔴 la mutación no entró.');
+
+  const pintable = textoQueLaVistaPuedePintar(mutado);
+  assert.ok(pintable.toLowerCase().includes('borrar'),
+    '🔴 se ha metido una pista en un TEXTO de la vista y el guard estrechado no la ve. Entonces el\n' +
+    '  estrechamiento no ha estrechado: ha cegado, y un dictamen legal se quedaría sin vigilar.');
+});
+
+test('SCRUM-244 · ✅ EL VERDE QUE DECIDE: la misma pista en un COMENTARIO ya no acusa', () => {
+  // Un comentario que EXPLICA por qué la supresión está bloqueada es lo más natural del mundo
+  // escribir en este fichero — y antes del estrechamiento ponía el guard rojo acusando a la
+  // pantalla de ofrecer la supresión.
+  const mutado = '// no se puede borrar la cuenta: el dictamen lo bloquea\n' + VISTA;
+  assert.ok(mutado.toLowerCase().includes('borrar'),
+    '🔴 la mutación no contiene la pista que se quiere probar.');
+
+  const pintable = textoQueLaVistaPuedePintar(mutado);
+  assert.ok(!pintable.toLowerCase().includes('borrar'),
+    '🔴 EL ESTRECHAMIENTO NO SIRVE: una pista escrita en un COMENTARIO sigue acusando a la vista\n' +
+    '  de ofrecer la supresión. Es exactamente el defecto que SCRUM-732 midió — un rojo que nombra\n' +
+    '  el sitio equivocado — y en un guard que defiende un dictamen legal es de los caros: se\n' +
+    '  apaga, y con él se va la vigilancia del dictamen entero.');
 });

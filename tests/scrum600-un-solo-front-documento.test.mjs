@@ -184,13 +184,19 @@ test(`SCRUM-600 · 🔴 F9 NO SE PIERDE: ${F9_EN_EL_CATALOGO.que}`, () => {
 // Las lineas van en la entrada del master, fechadas contra su sha.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 const RANURAS_A = [
-  ["textContent", "Crear presupuesto"],
-  ["textContent", "Genera un presupuesto con varias líneas, calcula los totales y envía el link de pago por WhatsApp."],
+  // 🔁 SCRUM-915i (21-sep-2026) · el título pasa de «Crear presupuesto» a «Nuevo presupuesto», el
+  // rótulo que la app ya pone a esta ruta (`L.quoteNew`); y el subtítulo «Genera un presupuesto con
+  // varias líneas…» SALE de la lista porque sale de la pantalla (la v3 lo retira: cada paso lleva su
+  // guía). Una ranura menos, y ningún texto nuevo.
+  ["textContent", "Nuevo presupuesto"],
   ["cabeceraModal(titulo)", "Presupuesto #${displayNum} generado"],
   ["textContent", "Revisa el PDF del presupuesto antes de enviarlo por WhatsApp al cliente."],
   ["title", "PDF Presupuesto #${displayNum}"],
   ["setAlert", "Presupuesto enviado por email."],
   ["setAlert", "Presupuesto enviado por WhatsApp."],
+  // SCRUM-915d · la guía del paso Cliente. FIRMADA (SCRUM-915 comentario 15868), y con su variante
+  // del justificante firmada también; en modo FACTURA no hay texto firmado y la guía se omite.
+  ["textContent", "¿Para quién es el presupuesto?"],
   // 🔴 SCRUM-656 (T7) · RANURA NUEVA, y entra en esta lista precisamente porque el texto es MÍO
   // y no está aprobado (regla 30). Es el rótulo del selector que decide si el presupuesto suma
   // el IVA al final o lo declara no incluido. Los dos textos de las opciones —«Sumar el IVA al
@@ -208,7 +214,11 @@ const RANURAS_A = [
   ["innerHTML", "<strong>Presupuesto #${displayNum}</strong>"],
   ["innerHTML", "KPI-TOTAL"],
   ["innerHTML", "PIE-TOTAL"],
-  ["textContent", "Presupuesto válido durante 30 días salvo indicación en contrario."],
+  // 🔴 SCRUM-915e1 · LA RANURA NO SE BORRA: SE RE-ANCLA. Sigue siendo el pie del documento y sigue
+  // nombrando el presupuesto; lo que cambia es que ya no afirma un plazo inventado —«30 días»—
+  // sino el que el profesional ha puesto y se guarda. El `${diaValidez}` es parte del texto que el
+  // fundador tiene que poder leer aquí: es justamente el trozo que antes no existía.
+  ["textContent", "Presupuesto válido hasta el ${diaValidez}."],
   ["title", "Añadir una línea con \"${item.concepto}\" (en ${item.usos} presupuestos)"],
   ["textContent", "en ${item.usos} presupuestos"],
   ["innerHTML", "MODAL-USAR-PLANTILLA"],
@@ -273,6 +283,9 @@ test('SCRUM-600 · 🔴 LAS RANURAS QUE ESPERAN AL FUNDADOR: 29 posiciones, 27 t
   // 24 → 25 (SCRUM-656): entra el rótulo del selector de IVA del presupuesto.
   // 25 → 27 (SCRUM-600, 7-sep-2026): NO entra texto nuevo. El extractor aprendió a bajar a las
   // dos ramas de un ternario y destapó los dos `setAlert` del alta que estaban escondidos ahí.
+  // 27 → 28 (SCRUM-915d, 18-sep-2026): entra la guía del paso Cliente, FIRMADA en SCRUM-915
+  // comentario 15868 con su variante del justificante. 30 posiciones, 28 textos.
+  // 28 → 27 (SCRUM-915i, 21-sep-2026): sale el subtítulo, que la v3 retira. 29 posiciones, 27 textos.
   assert.equal(distintos.size, 27,
     `🔴 textos distintos: ${distintos.size}. Son 29 posiciones menos las dos parejas que `
     + 'comparten texto («Generar presupuesto» en el boton y al restaurarlo; el vacio del panel de '

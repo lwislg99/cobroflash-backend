@@ -60,6 +60,7 @@ import {
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service';
 import { lineasParaFacturar, tieneDescuentoGlobal } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { datosDeAlbaranEmitido } from '../../domain/albaranEmision'; // SCRUM-841
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
@@ -1215,7 +1216,13 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
 
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+      // SCRUM-665 · se ensancha a los siete del emisor congelado (name/legalName/address/
+      // logoUrl/whatsappPhone; email y taxId ya estaban). Esta lectura alimenta getEmissionMode
+      // más abajo — es camino de emisión, y el congelado sale a coste cero: el viaje ya se hacía.
+      select: {
+        id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true,
+        name: true, legalName: true, address: true, logoUrl: true, whatsappPhone: true,
+      },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     // La parcial es documento FISCAL puro, igual que la recapitulativa: en modo justificante no
@@ -1261,6 +1268,8 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
     // SCRUM-729 · el cliente se congela AQUÍ, fuera de la transacción: dentro estaría detrás del
     // cerrojo de serie y sería un viaje más en la sección crítica.
     const clienteCongelado = await congelarCliente(prisma, req.merchantId!, job.customerId);
+    // SCRUM-665 · idem para el emisor, y a coste cero: `merchant` ya trae los siete campos.
+    const emisorCongelado = congelarEmisorDesdeFicha(merchant);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
@@ -1272,6 +1281,7 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
         actor: actorDeRequest(req),
         origen: 'C7-parcial', // SCRUM-347: parcial de albarán, ya no «C7» a secas
         clienteCongelado,
+        emisorCongelado,
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 
@@ -1408,7 +1418,11 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
 
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+      // SCRUM-665 · idem que `facturar-parcial`: se ensancha a los siete del emisor congelado.
+      select: {
+        id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true,
+        name: true, legalName: true, address: true, logoUrl: true, whatsappPhone: true,
+      },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     // Documento FISCAL puro, igual que la parcial y la recapitulativa: en modo justificante no
@@ -1534,6 +1548,8 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
 
     // SCRUM-729 · idem: el congelado va FUERA de la transacción, antes del cerrojo.
     const clienteCongelado = await congelarCliente(prisma, req.merchantId!, job.customerId);
+    // SCRUM-665 · idem para el emisor, a coste cero: `merchant` ya trae los siete campos.
+    const emisorCongelado = congelarEmisorDesdeFicha(merchant);
 
     const invoice = await prisma.$transaction(async (tx) => {
       const inv = await emitInvoice(tx, {
@@ -1547,6 +1563,7 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
         actor: actorDeRequest(req),
         origen: 'C7-albaran', // SCRUM-347: albarán → factura (A0.4)
         clienteCongelado,
+        emisorCongelado,
       });
       if (isReceiptNumber(inv.number)) throw new Error('facturacion_no_disponible');
 

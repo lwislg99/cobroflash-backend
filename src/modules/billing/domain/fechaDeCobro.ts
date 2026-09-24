@@ -27,6 +27,8 @@
 // ⚠️ DECLARADO: esto roza el criterio de caja (A3), bloqueado esperando al asesor. Se revisa cuando
 // conteste. Mientras tanto, lo que se guarda es lo que la persona AFIRMA, no lo que el reloj dice.
 
+import { ZONA_POR_DEFECTO, diaNaturalEn, finDelDiaEn } from '../../../core/zonaDelMerchant';
+
 /** Lo que se admite en el cuerpo: una fecha ISO (`2026-03-31`) o el instante completo. */
 export type EntradaFecha = string | Date | null | undefined;
 
@@ -45,7 +47,11 @@ export type ResolucionFecha =
  *
  * `ahora` se inyecta para que el test pueda situarse un 2 de abril sin tocar el reloj del proceso.
  */
-export function resolverFechaDeCobro(entrada: EntradaFecha, ahora: Date = new Date()): ResolucionFecha {
+export function resolverFechaDeCobro(
+  entrada: EntradaFecha,
+  ahora: Date = new Date(),
+  zona: string = ZONA_POR_DEFECTO,
+): ResolucionFecha {
   if (entrada === null || entrada === undefined || entrada === '') {
     return { ok: true, fecha: ahora, origen: 'ahora' };
   }
@@ -57,8 +63,18 @@ export function resolverFechaDeCobro(entrada: EntradaFecha, ahora: Date = new Da
 
   // Se compara por INSTANTE, y el margen es el propio día de hoy: una fecha ISO sin hora llega
   // como medianoche UTC, así que «hoy» tiene que seguir valiendo aunque el reloj vaya por la tarde.
-  const finDeHoy = new Date(ahora);
-  finDeHoy.setHours(23, 59, 59, 999);
+  //
+  // SCRUM-1093 · «hoy» es el día natural DEL MERCHANT, no el del reloj del proceso. `setHours`
+  // leía la zona local de la MÁQUINA: en Railway (UTC) coincidía, y fuera de UTC acertaba o
+  // fallaba según dónde estuviera el servidor. Medido el 23-sep-2026 con el mismo instante que
+  // usan SCRUM-643/735 (`2026-03-31T23:30Z`): en UTC los dos rechazan el 1 de abril; en
+  // `Europe/London` el código viejo lo ACEPTABA — y lo aceptaba por dónde caía la máquina, no
+  // por acertar. Sin `zona` el resultado es el día natural en UTC: idéntico a producción hoy,
+  // y ya no depende del reloj de nadie.
+  //
+  // `diaNaturalEn` sale de un instante real, así que el día SIEMPRE existe: `finDelDiaEn` no
+  // puede lanzar por aquí.
+  const finDeHoy = finDelDiaEn(diaNaturalEn(ahora, zona), zona);
   if (d.getTime() > finDeHoy.getTime()) {
     return { ok: false, error: 'fecha_futura', message: COPY_FECHA_FUTURA };
   }

@@ -1,4 +1,4 @@
-// SCRUM-804f · UNA RAMA `scrum-<n>` SIN SLUG ES DEL TICKET <n>. No se pierde.
+﻿// SCRUM-804f · UNA RAMA `scrum-<n>` SIN SLUG ES DEL TICKET <n>. No se pierde.
 //
 // Sin gate: `agruparRamas` y `numeroDeRama` con poblaciones fabricadas, más los refs que `git` ya
 // tiene en local. Ni BD, ni red.
@@ -84,8 +84,29 @@ test('SCRUM-804f · ✅ POSITIVO sobre los refs de hoy: sólo cambian de número
     '🔴 NO PUDE MIRAR: `git for-each-ref` no trae ninguna rama `scrum-<n>-…`');
 
   const movidas = nombres.filter((n) => anterior(n) !== numeroDeRama(n));
-  const noSonSinSlug = movidas.filter((n) => !/^scrum-\d+[a-z]?$/i.test(n));
-  assert.deepEqual(noSonSinSlug, [],
+
+  // 🔴 SCRUM-804h (20-sep-2026) · ESTA LISTA LA ABRIÓ UN SEGUNDO ENSANCHE, Y SE DICE AQUÍ.
+  // Este control compara la regla PRE-804f con la regla VIVA, así que no mide el delta de 804f:
+  // mide la suma de todos los ensanches que haya habido desde entonces. Con un solo ensanche eso
+  // no se notaba. Al llegar el segundo —`scrum-915e1-…`, la fase con corte— el control se puso
+  // rojo señalando ramas cuyo rescate es DELIBERADO, que es un control acusando a lo que vigila.
+  // Se abre en lista, con el ticket de cada forma delante. Una forma nueva se AÑADE con el suyo;
+  // esta lista no se borra ni se sustituye por un patrón cómodo que las cubra todas.
+  const RESCATADAS_A_PROPOSITO = [
+    /^scrum-\d+[a-z]?$/i,          // SCRUM-804f · sin slug           (`scrum-904`)
+    /^scrum-\d+[a-z]\d+(?:-|$)/i,  // SCRUM-804h · fase con corte     (`scrum-915e1-documento-vivo`)
+  ];
+  const noPrevistas = movidas.filter((n) => !RESCATADAS_A_PROPOSITO.some((re) => re.test(n)));
+  assert.deepEqual(noPrevistas, [],
     '🔴 el cambio de regla ha movido de número ramas que SÍ llevan slug (o que no son de ticket):\n   · '
-    + noSonSinSlug.map((n) => `${n}: ${anterior(n)} → ${numeroDeRama(n)}`).join('\n   · '));
+    + noPrevistas.map((n) => `${n}: ${anterior(n)} → ${numeroDeRama(n)}`).join('\n   · '));
+
+  // 🔴 Y LA MITAD QUE NO CADUCA, que es la que de verdad protege el reparto: una lista de formas
+  // permitidas se alarga con cada ensanche y acaba permitiéndolo todo; esto no. Da igual qué forma
+  // se rescate, quien YA tenía número tiene que seguir teniendo EL MISMO. Lo contrario —mover una
+  // rama viva de un ticket a otro— es repartirle el trabajo a otra persona sin que nadie lo vea.
+  const reatribuidas = movidas.filter((n) => anterior(n) !== null);
+  assert.deepEqual(reatribuidas, [],
+    '🔴 una rama que YA tenía ticket ha cambiado de ticket:\n   · '
+    + reatribuidas.map((n) => `${n}: ${anterior(n)} → ${numeroDeRama(n)}`).join('\n   · '));
 });

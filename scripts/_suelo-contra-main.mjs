@@ -84,6 +84,11 @@ export const RETIRADAS_A_PROPOSITO = [
   // `tests/scrum867-el-modal-muerto.test.mjs`. No es cobertura perdida: es una pantalla menos.
   { guard: 'ficheros-js-de-public', motivo: 'SCRUM-867: se retiró `nuevaFacturaModal.js`, muerto por uso y vivo por carga (95 → 94)', fecha: '2026-09-16' },
   { guard: 'scripts-del-dashboard', motivo: 'SCRUM-867: el mismo fichero sale del índice y del SHELL del service worker a la vez, porque `cache.addAll` es atómico (92 → 91)', fecha: '2026-09-16' },
+  // 🔴 SCRUM-773 · SE RETIRA `tests/scrum650c-backfill-equivalencia.test.mjs` ENTERO (6 test()),
+  // porque el script que verificaba (`scripts/backfill-job-assignees.mjs`) se retira con él:
+  // decisión del fundador (Jira 16264) tras medir que no desbloquea nada hoy (docs/master/SCRUM-773.md,
+  // apéndice 773c). No es cobertura perdida sobre código vivo: es un test sin sujeto.
+  { guard: 'tests-declarados', motivo: 'SCRUM-773: se retiran el script backfill-job-assignees.mjs y su test scrum650c (6 test) — sin script no hay qué verificar (7802 → 7796)', fecha: '2026-09-22' },
 ];
 
 /** Los ficheros CANDIDATOS de una ref. El grep sólo preselecciona: quien cuenta es el AST. */

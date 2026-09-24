@@ -103,3 +103,13 @@ export function adminOnlyJobField(body: any): string | null {
   if (body.status !== undefined && String(body.status) === 'cerrado') return "status:'cerrado'";
   return null;
 }
+
+/**
+ * SCRUM-1078 · `precios` de un PARTE, reservado al admin (gate por CAMPO, como SCRUM-164).
+ * `permisoDeCampos` solo mira el estado del parte, no el rol: un técnico podía escribir importes
+ * en su propio parte con `PATCH {precios:[…]}`. FAIL-CLOSED: la petición entera se rechaza.
+ */
+export function adminOnlyParteField(body: any): string | null {
+  if (!body || typeof body !== 'object') return null;
+  return body.precios !== undefined ? 'precios' : null;
+}

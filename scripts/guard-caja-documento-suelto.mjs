@@ -315,6 +315,16 @@ try {
         poner(concepto, 'Mano de obra', 'input');
         poner(numeros[0], '2', 'input');
         poner(numeros[1], '50', 'input');
+        // SCRUM-915d · el botón primario vive en el ÚLTIMO paso («Revisar y emitir»), cerrado al
+        // entrar: medido sin llegar, su caja da 0 y este guard se declaraba ciego. Se llega como el
+        // profesional, por los dos «Continuar», y sólo entonces se mide y se pulsa.
+        for (let i = 0; i < 2; i++) {
+          const seguir = [...cont.querySelectorAll('button')]
+            .find((b) => b.textContent.trim() === 'Continuar' && b.checkVisibility() && !b.disabled);
+          if (!seguir) return { ciego: `no hay un «Continuar» habilitado en el paso ${i + 1}: no llego al botón primario` };
+          seguir.click();
+          await dormir(150);
+        }
         boton.click();
         await dormir(800);
         const alerta = [...cont.querySelectorAll('div.alert.error')].find((a) => a.style.display !== 'none');

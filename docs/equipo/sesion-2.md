@@ -1,5 +1,11 @@
 # Sesión 2 — «¿esta pantalla está bien construida?»
 
+🔴 **Antes de tocar cualquier UI (pantalla, componente, CSS):** `Skill(yaqu-premium-ui)`. Se
+declara obligatoria en `CLAUDE.md` y en la propia skill, y hasta el 22-sep-2026 casi nadie la
+cargaba (SCRUM-811: 2 de 222 registros que tocaban `public/`). Si tu entrada del registro nombra
+una ruta `public/*.{js,css,html}`, `tests/scrum811c-skill-ui-declarada.test.mjs` exige que
+declares `**Skill UI:** cargada` o `**Skill UI:** no cargada · <motivo>`.
+
 Las vistas del panel. Mide el DOM RENDERIZADO, no el fuente.
 Construyó la lista de Trabajos y un guard que compara lo que el front
 pide contra lo que el router atiende — dos conjuntos reales, no una

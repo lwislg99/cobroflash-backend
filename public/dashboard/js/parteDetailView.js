@@ -595,8 +595,8 @@
    * de un literal se separan en cuanto se toca una. Si no estuviera cargado, el pad pone su aviso por
    * defecto — que tampoco cierra.
    */
-  function mensajeDelAlbaran(e) {
-    return typeof window.mensajeDeFalloAlFirmar === 'function' ? window.mensajeDeFalloAlFirmar(e) : '';
+  function mensajeDelAlbaran(e, estado) {
+    return typeof window.mensajeDeFalloAlFirmar === 'function' ? window.mensajeDeFalloAlFirmar(e, estado) : '';
   }
 
   function firmarParte(parte, opciones, quien) {
@@ -621,6 +621,8 @@
     abrirPad({
       title: quien === 'tecnico' ? TEXTOS.firmarTecnico : TEXTOS.tituloFirma,
       hint: TEXTOS.pistaFirma,
+      // SCRUM-919 · la ayuda bajo el nombre del firmante es la DEL PARTE (servida por /admin/me), no la del albarán.
+      ayudas: window.appParteAyudas || null,
       // Mismo contrato que el albarán: {cliente, fecha, lugar, lineas:[{concepto,cantidad,unidad}]}.
       // `unidad` lleva la ETIQUETA DEL BLOQUE, que es lo que distingue una hora de un material en
       // el papel. Y no hay ni un campo de dinero que mapear, porque no hay ninguno que traer.
@@ -659,7 +661,7 @@
         // Se relanza el MISMO mensaje y NO se repinta: sin red, pedir el parte fallaría y taparía la
         // pantalla con «no se pudo cargar» detrás del pad.
         if (!r || r.estado !== window.FIRMA_A_SALVO) {
-          throw new Error(mensajeDelAlbaran(r && r.error));
+          throw new Error(mensajeDelAlbaran(r && r.error, { encolada: !!(r && r.encolada) }));
         }
         // Confirmada: se repinta con lo que dice el SERVIDOR.
         if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }

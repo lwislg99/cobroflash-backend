@@ -1,0 +1,79 @@
+SCRUM-917e - RE-ANCLAJE DE LOS CUATRO CONTRATOS DEL DINERO
+Medido el 20-sep-2026 sobre el arbol ya fusionado con origin/main 8fcfd13f.
+HEAD del arbol medido: 74a38f7362bb532f5e87fb11ad0e030b1b61c65d
+
+=== 0 - EL ROJO DE PARTIDA (antes de tocar nada) ===
+Los cinco ficheros de los contratos rotos, sobre 12009d26:
+  tests 55 - pass 49 - fail 6
+  318 x1  DINERO: solo lineas con dato (TypeError: bloqueDinero devuelve null)
+  320 x1  el importe entregado se OMITE si no se pudo medir
+  651 x1  el titular Total aceptado NO se pinta si no consta
+  817 x2  quien ejecuta va PRIMERO / el reorden no pierde NI UNA accion
+  907 x1  el aviso con el importe formateado (TypeError: bloqueDinero devuelve null)
+
+=== 1 - DIAGNOSTICO DE LOS DOS DE 817 (nadie los habia mirado) ===
+No era el orden de secciones. La vista NO MONTABA:
+  TypeError: Cannot create property '_padre' on string ' '
+    at Object.append (tests/_banco-vistas.mjs:248:75)
+    at renderJobDetailView (js/jobDetailView.js:730:9)
+`l.append(e, ' ', v)` pasaba una CADENA SUELTA. Es DOM valido en el navegador -por eso el
+guard en Chrome salia 92/92- pero el banco de vistas no la atiende, y los dos contratos
+caian en su SUELO sin llegar a mirar el orden que vigilan.
+Arreglado con `document.createTextNode(' ')`, el idioma que el propio fichero ya usa.
+Verde: tests 4 - pass 4 - fail 0.
+
+=== 2 - LOS CINCO ROJOS DE LOS RE-ANCLAJES ===
+Repetidos ENTEROS despues del merge con conflicto (A23 #11). Cada inyeccion lleva al lado
+su `git diff --numstat`, que prueba que SE APLICO, y el arbol vuelve limpio despues.
+
+R1 - 651 - se quita la guarda `if (job.totalAceptado != null)`
+   numstat: 1  1  public/dashboard/js/jobDetailView.js
+   ROJO: tests 22 - pass 20 - fail 2
+   mensaje: UN TRABAJO SIN PRESUPUESTO ESTA HABLANDO DE DINERO:
+            ["Aceptado","0,00 EUR","Cobrado","0,00 EUR"]
+   (cae tambien el control positivo del propio 651, que lee la guarda del fuente)
+
+R2 - 318 - se quita la guarda del FOCO `if (hayEje)`
+   numstat: 1  1  public/dashboard/js/jobDetailView.js
+   ROJO: tests 10 - pass 9 - fail 1
+   mensaje: LA FRANJA AFIRMA ALGO DEL DINERO SIN EJE CONTRA EL QUE MEDIRLO.
+
+R3 - 320 - `if (entregadoSinFacturar > 0)` pasa a `>= 0`
+   numstat: 1  1  public/dashboard/js/jobCobroHuecos.js
+   ROJO: tests 12 - pass 8 - fail 4
+   mensaje: SE ESCRIBE UN IMPORTE QUE NO SE HA MEDIDO. Con un albaran firmado y SIN
+            VALORAR sale el hueco "0,00 EUR entregados sin facturar".
+
+R4 - 907 - el aviso no se pinta (`i.cobradoDeMas > 99999`)
+   numstat: 1  1  public/dashboard/js/jobDetailView.js
+   ROJO: tests 7 - pass 5 - fail 2
+   mensaje: EL AVISO DE COBRO DE MAS NO ESTA EN LA PANTALLA CON SU IMPORTE.
+            Textos con dinero encontrados: ["539,05 EUR","539,05 EUR","628,60 EUR","628,60 EUR"]
+
+R4b - 907 - OK ESTRECHO: el aviso SE PINTA pero SIN su importe
+   (`aviso.textContent = 'Has cobrado de mas de lo aceptado.'`)
+   numstat: 1  1  public/dashboard/js/jobDetailView.js
+   ROJO: tests 7 - pass 5 - fail 2
+   Es el rojo que decide: un control de "el texto sigue en pantalla" habria pasado en VERDE
+   aqui, y habria sido mas debil que el contrato que dice proteger.
+
+=== 3 - VERDE DE VUELTA ===
+Los cinco ficheros, arbol limpio, tras revertir las cinco inyecciones:
+  tests 55 - pass 55 - fail 0
+
+=== 4 - LOS TRES CENSOS POR SU NOMBRE + GUARDS ===
+  scrum258-nota-por-sesion            tests 10 - pass 10 - fail 0
+  scrum522-guards-fuera-de-la-tanda   tests 26 - pass 26 - fail 0   (cifra MEDIDA: 31)
+  scrum548-peaje-package-json         tests  8 - pass  8 - fail 0
+  npm run build                       EXIT 0
+  npm run guards:entrada              4 guards, 26 tests, EXIT 0
+  guard:detalle-trabajo-917           92 de 92, EXIT 0
+  guard:lista-trabajos-917            49 de 49, EXIT 0
+  guard:escalera-por-estado           las dos pantallas de acuerdo en los 5 estados, EXIT 0
+
+=== 5 - EL INSTRUMENTO QUE NO ARRANCO, CONFESADO ===
+La primera pasada de los cinco rojos salio SIN NI UN RECUENTO y con el texto mojibake:
+escribi el .ps1 con caracteres no-ASCII y PowerShell 5.1 lee un .ps1 sin BOM como ANSI,
+asi que el patron `^i (tests|pass|fail)` no caso NUNCA. Las cinco inyecciones se aplicaron
+y se revirtieron, pero de su resultado no se supo nada. Un rojo sin poblacion no es un
+hallazgo: es un instrumento que no llego a arrancar. Rehecho en ASCII, y son los de arriba.

@@ -22,19 +22,29 @@
 // sale, y cubre los tres casos sin excepciones:
 //   · 'fiscal'  → factura real (no-ES siempre; ES con el flag ON tras SIF-1)  → SÍ
 //   · 'demo'    → factura completa con marca de agua (merchant demo, regla 8) → SÍ
-//   · 'receipt' → justificante de cobro (ES real con el flag OFF)             → NO
+//   · 'receipt' → NINGÚN documento (ES real con el flag OFF)                  → NO
 //
 // CONSECUENCIA ASUMIDA Y DICHA: hoy ningún merchant ES real ve esto. Es lo que impone la regla 24
 // y es lo esperado, no un fallo de alcance. No se compensa enseñándolo.
 //
-// SCRUM-346 (A0.5) YA ENTRÓ, y salió exactamente como A0.3 lo dejó previsto: se reutiliza esta
-// misma ruta y lo único que cambia es el RÓTULO y el `type`, nunca el entrypoint. El gate pasó de
-// booleano a un veredicto de TRES valores (`modoDocumentoSuelto`), porque `receipt` no es «no
-// puedes»: es «tú emites justificantes».
+// SCRUM-346 (A0.5) fue el paso intermedio: se reutilizó esta misma ruta y lo único que cambiaba
+// era el RÓTULO y el `type`, nunca el entrypoint. El gate pasó de booleano a un veredicto de TRES
+// valores (`modoDocumentoSuelto`), porque `receipt` no era «no puedes»: era «tú emites
+// justificantes».
 //
-// Y el `type` no hubo ni que tocarlo: `emitInvoice` ya fuerza `JUST` cuando la serie sale `J-`
-// (`invoicing.service.ts:52`). El camino de emisión no se modifica — se le añade un llamador
-// (regla 38).
+// 🔴 SCRUM-1027 (21-sep-2026) RETIRA ESE PASO INTERMEDIO, no lo que lo hizo posible. La enmienda
+// SCRUM-612c a la regla 24 manda que con el interruptor en OFF, en España, no se emite NINGÚN
+// documento — el justificante que A0.5 abrió deja de existir. El veredicto de TRES valores se
+// queda (el 'no' de «sin merchant» y el 'no' de «receipt» comparten desenlace pero no comparten
+// motivo, y separarlos costaría un cuarto valor que nadie necesita hoy): lo que cambia es que
+// 'receipt' ya no es un tercer caso — vuelve a caer en 'no', igual que antes de A0.5. No se
+// retira el tipo `JUST` ni sus usos (eso es SCRUM-825, que va firmado antes — regla 27): esto
+// solo cierra la PUERTA por la que se llegaba a pedir uno.
+//
+// Y el `type` no hubo ni que tocarlo: `emitInvoice` seguiría forzando `JUST` si la serie saliera
+// `J-`, pero ahora nunca sale — `allocateInvoiceNumber` rechaza el modo `receipt` para los siete
+// caminos (SCRUM-1027, `invoiceNumber.service.ts`). El camino de emisión no se modifica para
+// esto: se endurece el ÚNICO punto que ya decidía (regla 38).
 import { getEmissionMode, type MerchantLike } from './emission.service';
 
 /** Error nombrado del gate. Un 500 no prueba nada: quien lo reciba tiene que poder ramificar. */
@@ -50,22 +60,21 @@ export const ERROR_LINEAS_INVALIDAS = 'lineas_invalidas';
  * esconde es exactamente lo que pasa cuando cada lado tiene su propia copia del criterio.
  */
 /**
- * QUÉ DOCUMENTO SUELTO PUEDE CREAR ESTE MERCHANT. Tres valores, no dos.
+ * QUÉ DOCUMENTO SUELTO PUEDE CREAR ESTE MERCHANT. Tres valores, no dos — aunque hoy dos de ellos
+ * (sin merchant, y `receipt`) desemboquen en el mismo `'no'`.
  *
- * ── POR QUÉ DEJÓ DE SER UN BOOLEANO (SCRUM-346 / A0.5) ──────────────────────────────────────
- * A0.3 devolvía `false` para el modo `receipt`, y eso metía en el mismo saco dos cosas opuestas:
+ * ── HISTORIA (SCRUM-346 / A0.5, retirado por SCRUM-1027) ────────────────────────────────────
+ * A0.3 devolvía `false` para el modo `receipt`. A0.5 lo cambió a `'justificante'`, porque un
+ * merchant ES real sin el flag SÍ podía emitir un documento (el justificante `J-`) y `false` lo
+ * leía como «no puedes» cuando el caso real era «tú emites justificantes».
  *
- *   · «no puedes emitir nada» (no hay merchant: se falla cerrado), y
- *   · «tú emites JUSTIFICANTES», que es el caso del profesional español real de hoy — el 80 % de
- *     la clientela, no una excepción.
- *
- * Aplanados, el segundo se lee como una carencia y el fontanero se queda sin puerta para la
- * avería de 40 € del martes: la que se hace, se cobra y no tiene presupuesto, ni trabajo, ni
- * albarán. **El camino existía entero desde A0.3; lo que faltaba era el permiso.**
+ * 🔴 SCRUM-1027 (regla 24, enmienda SCRUM-612c, 21-sep-2026): con el interruptor en OFF, en
+ * España, YA NO se emite NINGÚN documento — ni factura, ni justificante. El caso que A0.5 abrió
+ * ya no existe, así que `receipt` vuelve a `'no'`. **No es deshacer A0.5 por descuido**: es la
+ * misma decisión de fundador, tomada otra vez, en sentido contrario, con fecha y ticket propios.
  *
  * ⚠️ ESTO NO ENCIENDE NADA (regla 24). `INVOICING_ES_ENABLED` sigue OFF y ese merchant sigue sin
- * emitir facturas: lo que se hace explícito es el justificante que YA le corresponde, que es un
- * documento distinto y no una factura degradada.
+ * emitir facturas — ahora tampoco emite el documento intermedio que existía entre A0.5 y hoy.
  *
  * El gate sigue siendo el MODO DE EMISIÓN (V0-0) y no un flag escrito a mano, por lo que ya
  * explicaba A0.3: `INVOICING_ES_ENABLED` es ES-only y un merchant no-ES se quedaría sin botón
@@ -75,7 +84,8 @@ export type ModoDocumentoSuelto = 'factura' | 'justificante' | 'no';
 
 export function modoDocumentoSuelto(merchant: MerchantLike | null | undefined): ModoDocumentoSuelto {
   if (!merchant) return 'no'; // sin merchant no se adivina: falla cerrado
-  return getEmissionMode(merchant) === 'receipt' ? 'justificante' : 'factura';
+  // SCRUM-1027: 'receipt' ya no es 'justificante' — regla 24 no deja NINGÚN documento suelto.
+  return getEmissionMode(merchant) === 'receipt' ? 'no' : 'factura';
 }
 
 export interface LineaEntrada {

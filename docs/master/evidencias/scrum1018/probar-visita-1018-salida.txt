@@ -1,0 +1,43 @@
+── A: con técnico, con hora (peninsular) ──
+<div class="pf-section">
+      <div class="pf-section-title">Tu visita</div>
+      <div class="pf-card"><div class="pf-card-body">
+        <div class="pf-card-title" style="margin-bottom:0">Marcos Ruiz · entre las 16:00 y las 17:00</div>
+      </div></div>
+    </div>
+
+── B: SIN técnico (assignedUserId y JobAssignee vacíos), con hora ──
+<div class="pf-section">
+      <div class="pf-section-title">Tu visita</div>
+      <div class="pf-card"><div class="pf-card-body">
+        <div class="pf-card-title" style="margin-bottom:0">entre las 16:00 y las 17:00</div>
+      </div></div>
+    </div>
+
+── C: SIN hora agendada (proximoJob null → sección entera fuera) ──
+(cadena vacía: la sección NO se pinta)
+
+── D: con técnico con nombre "peligroso" (XSS), con hora ──
+<div class="pf-section">
+      <div class="pf-section-title">Tu visita</div>
+      <div class="pf-card"><div class="pf-card-body">
+        <div class="pf-card-title" style="margin-bottom:0">&lt;script&gt;alert(1)&lt;/script&gt; · entre las 16:00 y las 17:00</div>
+      </div></div>
+    </div>
+
+── E: con técnico, con hora, merchant CANARIO (zona distinta) ──
+<div class="pf-section">
+      <div class="pf-section-title">Tu visita</div>
+      <div class="pf-card"><div class="pf-card-body">
+        <div class="pf-card-title" style="margin-bottom:0">Marcos Ruiz · entre las 15:00 y las 16:00</div>
+      </div></div>
+    </div>
+
+── F: merchant sin timezone declarada (cae a UTC por defecto) ──
+<div class="pf-section">
+      <div class="pf-section-title">Tu visita</div>
+      <div class="pf-card"><div class="pf-card-body">
+        <div class="pf-card-title" style="margin-bottom:0">Marcos Ruiz · entre las 14:00 y las 15:00</div>
+      </div></div>
+    </div>
+

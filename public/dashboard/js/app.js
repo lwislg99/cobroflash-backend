@@ -3,12 +3,28 @@
 async function initApp() {
   // 1. Auth check
   let me;
-  try { me = await apiRequest('/admin/me'); }
-  catch { window.location.href = '/login.html'; return; }
+  // SCRUM-918 · «SIN RED» NO ES «SESIÓN CADUCADA». Antes, cualquier fallo mandaba a /login.html, que
+  // no está en el service worker: sin red, recargar dejaba la pantalla de error de Chrome y el albarán
+  // descargado para firmar en el sótano, inalcanzable. La decisión vive en `arranqueSinCobertura.js`.
+  let sinCobertura = false;
+  try {
+    me = await apiRequest('/admin/me');
+    guardarCopiaDeSesion(window.localStorage, me);
+  } catch (e) {
+    const arranque = decidirArranque(e, leerCopiaDeSesion(window.localStorage));
+    if (arranque.destino === 'login') { window.location.href = '/login.html'; return; }
+    pintarAvisoSinCobertura();
+    vigilarVueltaDeLaRed();
+    // Sin copia no hay con qué pintar la app: se queda el aviso, que es mejor que un error de Chrome.
+    if (!arranque.me) return;
+    me = arranque.me;
+    sinCobertura = true;
+  }
 
   // SCRUM-360 (H5 fase 2) · SE MANDA EL ENTORNO, y va aquí porque aquí ya sabemos que la sesión
   // es buena. SUELTO Y SIN `await`: es telemetría, y nada de esto puede retrasar ni tumbar el
   // arranque. Quién lo consume es la fase siguiente; lo que esta fase cierra es que el dato LLEGUE.
+  // SCRUM-918 · sin red también se llama: `enviarEntornoDeLaApp` no espera y se traga el fallo.
   enviarEntornoDeLaApp();
 
   window.appMerchantId = me.merchantId;
@@ -61,6 +77,7 @@ async function initApp() {
   window.appAlbaranFirmanteOpciones = Array.isArray(me.albaranFirmanteOpciones) ? me.albaranFirmanteOpciones : [];
   window.appAlbaranRotulos = me.albaranRotulos || {};
   window.appAlbaranAyudas = me.albaranAyudas || {};
+  window.appParteAyudas = me.parteAyudas || null;   // SCRUM-919
   // SCRUM-474 fase 2 · LOS CUBOS DEL FILTRO DE COBROS, derivados de `PAID_VIA` en el servidor
   // (regla 22). El navegador NO decide qué método cae en qué cubo — esa copia en el front es
   // justo lo que este ticket vino a quitar. Mismo criterio que los rótulos del albarán de arriba.
@@ -424,6 +441,12 @@ async function initApp() {
         viewTitle.textContent = (window.LIBRO_COPY && window.LIBRO_COPY.titulo) || '';
         if (typeof window.renderLibroRegistroView === 'function') window.renderLibroRegistroView(viewContainer);
         break;
+      // SCRUM-1040 (CON-04). Junto a 'libro-registro', mismo criterio: el titulo sale de la
+      // MISMA constante que la vista.
+      case 'facturas-recibidas':
+        viewTitle.textContent = (window.FACTURAS_RECIBIDAS_COPY && window.FACTURAS_RECIBIDAS_COPY.titulo) || '';
+        if (typeof window.renderFacturasRecibidasView === 'function') window.renderFacturasRecibidasView(viewContainer);
+        break;
       case 'expenses':
         viewTitle.textContent = 'Gastos';
         renderExpensesView(viewContainer);
@@ -498,7 +521,7 @@ async function initApp() {
     // olvida. Sin esto, quien recargue estando a media factura suelta pierde la pantalla — que
     // es exactamente lo que le pasaba con el modal, y medio motivo del ticket.
     'invoices','invoices-new','expenses','export','reports','templates','quote-requests','jobs','plans','team','settings',
-      'libro-registro','albaranes',
+      'libro-registro','facturas-recibidas','albaranes',
     // sprint Tecnosel · el TERCER sitio, que es el que se olvida: sin esto, quien recargue
     // estando en «Partes por valorar» pierde la vista. Se entra desde Trabajos.
       'partes-oficina'];
@@ -525,6 +548,10 @@ async function initApp() {
     'invoice-detail': { clave: 'invoiceId',     lista: 'invoices',    ruta: (id) => '/admin/invoices/' + id,   aviso: 'Esa factura ya no existe.' },
     'albaran-detail': { clave: 'albaranId',     lista: 'albaranes',   ruta: (id) => '/admin/albaranes/' + id,  aviso: 'Ese albarán ya no existe.' },
     'customer-360':   { clave: 'customerId360', lista: 'customers',   ruta: (id) => '/admin/customers/' + id,  aviso: 'Ese cliente ya no existe.' },
+    // SCRUM-980 · la ficha del parte, que ahora se abre desde el historial del cliente: sin esto,
+    // recargar estando en ella la perdía. Vuelve a Trabajos, que es donde viven los partes.
+    // Aviso firmado por delegación (SCRUM-980, P8).
+    'parte-detail':   { clave: 'parteId',       lista: 'jobs',        ruta: (id) => '/admin/partes/' + id,     aviso: 'Ese parte ya no existe.' },
   };
 
   /** El hash, partido por la PRIMERA barra: `#quotes-detail/123` → `{ view, id }`. */
@@ -625,8 +652,12 @@ async function initApp() {
     const A = window.atajoNuevo;
     if (!A || !A.sePuedeDisparar(e, document)) return;
     e.preventDefault();
-    const accion = A.accionDe(window.appState && window.appState.view);
+    const vista = window.appState && window.appState.view;
+    const accion = A.accionDe(vista);
     if (accion) { accion(); return; }
+    // SCRUM-915h · dentro de una creación (el editor) el respaldo NO abre la Cotización rápida
+    // encima de lo que se está escribiendo. La regla es pura y vive en `atajoNuevo.esUnaCreacion`.
+    if (A.esUnaCreacion && A.esUnaCreacion(vista)) return;
     if (typeof openQuickQuoteModal === 'function') openQuickQuoteModal();
   });
 
@@ -691,6 +722,8 @@ async function initApp() {
   // Va DESPUÉS del render y SIN `await`: pintar el dashboard no puede esperar a la red. El aviso
   // se repinta solo cuando el drenado termina — `drenarAlAbrir` se encarga, y no lanza nunca.
   if (typeof window.drenarAlAbrir === 'function') window.drenarAlAbrir();
+  // SCRUM-919 · y también al volver la red y al volver a primer plano, sin recargar.
+  if (typeof window.activarDrenadoAlVolver === 'function') window.activarDrenadoAlVolver(window, document);
 
   // 10. SCRUM-360 (H5 · fase 3) · QUE iOS NO SE LLEVE UNA FIRMA EN SILENCIO.
   //
@@ -742,6 +775,39 @@ async function enviarEntornoDeLaApp() {
   } catch (_e) {
     return null;
   }
+}
+
+/**
+ * SCRUM-918 · el aviso de que la app ha arrancado SIN RED. Una sola vez, arriba de todo, como el de
+ * pago pendiente. `role="status"`: informa, no interrumpe. El texto vive en `arranqueSinCobertura.js`.
+ */
+function pintarAvisoSinCobertura() {
+  if (document.getElementById('sin-cobertura-banner')) return;
+  const aviso = document.createElement('div');
+  aviso.id = 'sin-cobertura-banner';
+  aviso.className = 'aviso-sin-cobertura';
+  aviso.setAttribute('role', 'status');
+  aviso.textContent = AVISO_SIN_COBERTURA;
+  document.body.prepend(aviso);
+}
+
+/**
+ * SCRUM-918 · cuando vuelve la red, se comprueba la sesión DE VERDAD: si el servidor la da por buena
+ * se guarda la copia y se quita el aviso; si responde que no (401…), al login. Un nuevo «sin red»
+ * deja todo como está. No se recarga la página: podría haber una firma a medias.
+ */
+function vigilarVueltaDeLaRed() {
+  window.addEventListener('online', async function alVolver() {
+    try {
+      const me = await apiRequest('/admin/me');
+      guardarCopiaDeSesion(window.localStorage, me);
+      const aviso = document.getElementById('sin-cobertura-banner');
+      if (aviso) aviso.remove();
+      window.removeEventListener('online', alVolver);
+    } catch (e) {
+      if (decidirArranque(e, null).destino === 'login') window.location.href = '/login.html';
+    }
+  });
 }
 
 async function logout() {

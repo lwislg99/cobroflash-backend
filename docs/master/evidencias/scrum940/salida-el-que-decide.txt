@@ -1,0 +1,22 @@
+═══ SCRUM-940 · EL QUE DECIDE ═══
+
+   suelo declarado .....: 20 guards · 54 declaraciones
+   población de HOY ....: 86 guards · 273 declaraciones
+   cociente ............: 0.23 · 0.20
+
+   qué pasaría si la casa perdiera cobertura:
+     hoy, sin tocar nada              →  86 guards ·  273 declaraciones  ·  🔇 calla
+     perdiendo un cuarto              →  64 guards ·  204 declaraciones  ·  🔇 calla
+     perdiendo LA MITAD               →  43 guards ·  136 declaraciones  ·  🔇 calla
+     perdiendo tres cuartos           →  21 guards ·   68 declaraciones  ·  🔇 calla
+     justo POR ENCIMA del declarado   →  21 guards ·   55 declaraciones  ·  🔇 calla
+     justo POR DEBAJO del declarado   →  19 guards ·   53 declaraciones  ·  🔊 HABLA
+
+🔴 MUERTO: ✅ CONFIRMADO POR REDUCCIÓN — la casa puede perder la MITAD de sus guards y este suelo no dice nada. Sigue callado hasta un dedo por encima de su valor, o sea perdiendo el 77%.
+   y que el mecanismo SÍ funciona (no está roto, está mal calibrado): justo por debajo del declarado ✅ HABLA
+
+✅ NEGATIVO · no se simula aquí: se mide sobre un suelo real en `reales-por-biseccion.mjs`
+     tests/scrum243-tenencia-lectura.test.mjs:190 · declarado 196 · real 287 · 0,68 → VIVO
+     (intentarlo aquí sería simular: esta función lleva el suelo cableado dentro — ver cabecera)
+
+SUELO DEL BANCO: población real leída del censo de verdad · 86 guards · 273 declaraciones. Si esto fuera cero, «calla» no significaría nada.

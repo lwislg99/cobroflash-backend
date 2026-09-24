@@ -16,12 +16,13 @@ import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; /
 // módulo para que el test use el MISMO y no una copia.
 import { primeroConTramoPendiente, restanteDelTrabajo } from '../../domain/presupuestosDelTrabajo';
 // SCRUM-651 (T2): el nucleo del Trabajo sin presupuesto, puro y probado sin base.
-import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo } from '../../domain/trabajoDirecto';
+import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo, tituloPropioDeTrabajo } from '../../domain/trabajoDirecto';
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
 // SCRUM-358 (H3): el alta de albarán, idempotente.
@@ -60,7 +61,8 @@ import {
 import { emitInvoice } from '../../../invoicing/domain/invoicing.service'; // SCRUM-17
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-17: gate fiscal
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-17: total con desglose IVA
-import { stageLinesReconciled, grossOfLines, lineasParaFacturar } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { stageLinesReconciled, grossOfLines, lineasParaFacturar, tieneDescuentoGlobalConVariosIva } from '../../../invoicing/domain/invoiceLines.service'; // SCRUM-141: el total se deriva de las líneas
+import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../../../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
@@ -468,6 +470,9 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     // podia vigilar comparando texto, y un guard asi pasa en verde en cuanto alguien reescribe la
     // expresion sin cambiar el defecto. Medido en su tanda de rojos.
     titulo: tituloDeTrabajo({ titulo: job.titulo, quote, customer, jobId: job.id }),
+    // SCRUM-917d · aditivo: el nombre que puso el profesional, sin derivar (null si no hay). La
+    // lista ya pinta el cliente aparte y con `titulo` a secas lo repetía.
+    tituloPropio: tituloPropioDeTrabajo(job),
     direccion: job.direccion ?? null,
     totalAceptado: job.totalAceptado != null ? Number(job.totalAceptado) : (quote ? Number(quote.total) : null),
     totalCobrado: Number(job.totalCobrado ?? 0),
@@ -540,13 +545,22 @@ async function serializeJobDetail(job: any) {
   // de solo lectura, igual que el email: `Customer.taxId` ya existe y ya se edita desde la ficha.
   // No toca el camino de emisión (regla 38) — el tipo de factura lo sigue derivando quien lo
   // derivaba; esto solo permite preguntar por el dato que falta ANTES de llegar ahí.
+  // SCRUM-982: y `notes`, la nota del cliente («timbre roto, llamar al móvil»), para el bloque
+  // CLIENTE del rail: el que llega a la puerta la lee donde mira al llegar. Va AQUÍ y no en
+  // `CUSTOMER_SELECT` a propósito: ése alimenta la LISTA (hasta 200 filas) y nada la pinta allí —
+  // texto libre viajando a cambio de nada—. Este serializador no se exporta y su router sólo se
+  // monta bajo `/admin` (lo vigila `tests/scrum982-la-nota-del-cliente-en-el-trabajo`).
   let customer: any = base.customer;
   if (customer && job.customerId) {
     const c = await prisma.customer.findUnique({
       where: { id: job.customerId },
-      select: { email: true, taxId: true },
+      select: {
+        email: true,
+        taxId: true,
+        notes: true,
+      },
     });
-    customer = { ...customer, email: c?.email ?? null, taxId: c?.taxId ?? null };
+    customer = { ...customer, email: c?.email ?? null, taxId: c?.taxId ?? null, notes: c?.notes ?? null };
   }
   // ── SCRUM-650 (T1) · QUIÉN EJECUTA, EN PLURAL ────────────────────────────────────────────
   //
@@ -1316,6 +1330,11 @@ router.post('/:id/albaranes', async (req, res) => {
   }
 });
 
+// SCRUM-1027 · mismo marcador que `albaranes.routes.ts:MICROCOPY_PENDIENTE_290` e
+// `invoicesAdmin.routes.ts:MICROCOPY_PENDIENTE_308` — el TEXTO es lo que reconoce
+// `sinMarcadorPendiente.ts`, no el nombre de la constante. Regla 30: lo firma el fundador.
+const MICROCOPY_PENDIENTE_1027 = '[PENDIENTE microcopy oficial]';
+
 // POST /admin/jobs/:id/collect-rest — A13.3: EL momento de dinero.
 // terminado + tramo pendiente → genera la factura del resto (misma maquinaria
 // getNextBillingStage del accept) y envía payment_request. V2: SIEMPRE acción
@@ -1332,6 +1351,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     if (job.status !== 'terminado') {
       return res.status(409).json({ error: 'job_not_finished', message: 'Marca el trabajo como terminado para cobrar el resto.' });
     }
+
     // ─────────────────────────────────────────────────────────────────────────
     // SCRUM-195 (rebanada 2) · AQUÍ ESTABA LA TRAMPA, y merece leerse entera.
     //
@@ -1347,14 +1367,28 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     //
     // Ahora se pregunta por el CONJUNTO. El 409 de «sin presupuesto» solo procede si el
     // Trabajo no tiene NINGUNO — que es lo que ese error siempre quiso decir.
+    //
+    // SCRUM-1027 · `merchant: true` se añade AQUÍ (no una consulta aparte) para el gate de abajo:
+    // los presupuestos de este Trabajo son todos del MISMO merchant (`merchantId: req.merchantId`
+    // en el `where`), así que el primero ya trae el dato que hace falta, sin un viaje más.
     const quotesConPlan = await prisma.quote.findMany({
       where: {
         merchantId: req.merchantId, // regla 2
         OR: [{ jobId: job.id }, ...(job.quoteId != null ? [{ id: job.quoteId }] : [])],
       },
-      include: { Invoice: { select: { id: true } } },
+      include: { Invoice: { select: { id: true } }, merchant: true },
     });
     if (quotesConPlan.length === 0) return res.status(409).json({ error: 'job_without_quote' });
+
+    // SCRUM-1027 · regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, no se
+    // emite NINGÚN documento ni se cobra por YaQu. Sin este gate, `allocateInvoiceNumber` seguiría
+    // rechazando el modo `receipt` (SCRUM-1027, punto único), pero DESPUÉS de que esta ruta ya
+    // hubiera contado el tramo y abierto la transacción — y el rechazo saldría como 500, no 409.
+    // Mismo patrón EXACTO que `/consolidar-albaranes` (línea ~1580 de este fichero).
+    if (!quotesConPlan[0].merchant) return res.status(404).json({ error: 'not_found' });
+    if (getEmissionMode(quotesConPlan[0].merchant) === 'receipt') {
+      return res.status(409).json({ error: 'facturacion_no_disponible', message: MICROCOPY_PENDIENTE_1027 });
+    }
 
     // ORIGINAL primero, adicionales después por id: el orden es determinista a propósito —
     // «cobrar el resto» tiene que emitir siempre el mismo tramo si se pulsa dos veces.
@@ -1385,6 +1419,10 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // las líneas). Antes venía de `distributeStageAmounts` con las líneas escaladas aparte: el
     // desfase de redondeo acababa sellado en la huella VeriFactu. Ver invoiceLines.service.ts.
     const quoteLines = lineasParaFacturar(quote); // SCRUM-887: el dto de línea, aplicado
+    // SCRUM-887 · un C no factura (la pieza deja sus líneas a 0). Antes del portón, para decir POR QUÉ.
+    if (tieneDescuentoGlobalConVariosIva(quote)) {
+      return res.status(409).json({ error: ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, message: COPY_FACTURAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA });
+    }
 
     // SCRUM-814 · el tramo se DERIVA del recuento, para poder recalcularlo DENTRO del cerrojo.
     // Misma forma exacta que `quotesAdmin.routes.ts`: un solo patrón para los tres caminos.
@@ -1412,6 +1450,12 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // SCRUM-729 · fuera de la transacción a propósito: aquí el cerrojo de serie se toma en la
     // PRIMERA línea de la tx (SCRUM-814), así que cualquier lectura de dentro se serializa.
     const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `quote.merchant` ya viene completo por el `include: {
+    // merchant: true }` de SCRUM-1027 (arriba, con `quotesConPlan`): sin viaje nuevo. Ya se gateó
+    // arriba (`if (!quotesConPlan[0].merchant) return 404`): todo `quotesConPlan` comparte
+    // `merchantId: req.merchantId` (mismo `where`), así que si el primero tiene merchant, éste
+    // también — no hace falta un segundo 404 sin mensaje para el mismo hecho.
+    const emisorCongelado = congelarEmisorDesdeFicha(quote.merchant!);
 
     const invoice = await prisma.$transaction(async (tx) => {
       // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
@@ -1440,7 +1484,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
       });
-      return crearFacturaEmitida(tx, clienteCongelado, {
+      return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,

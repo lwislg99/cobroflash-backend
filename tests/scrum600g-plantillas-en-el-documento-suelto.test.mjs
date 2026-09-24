@@ -72,6 +72,17 @@ const boton = (raiz, re) => todos(raiz).find((x) => x.tagName === 'BUTTON' && re
 const BOTON_USAR = /^📋 (Usar plantilla|Ver las \d+)$/;
 const BOTON_GUARDAR = /^💾 Guardar como plantilla$/;
 const hojas = (b) => todos(b.ctx.document.body).filter((x) => String(x.className || '').includes('modal-overlay'));
+/**
+ * SCRUM-915i · «💾 Guardar como plantilla» vive en el menú «⋯» de arriba («Más acciones»), que cuelga
+ * sus ítems del `body` sólo al abrirse. Se PULSA el «⋯» y se busca el botón dentro del menú abierto.
+ */
+function botonGuardar(m) {
+  const mas = todos(m.contenedor).find((x) => x.tagName === 'BUTTON' && x._attrs && x._attrs['aria-label'] === 'Más acciones');
+  if (!mas) return undefined;
+  mas.disparar('click');
+  const menu = todos(m.b.ctx.document.body).find((x) => x._attrs && x._attrs.role === 'menu');
+  return menu ? boton(menu, BOTON_GUARDAR) : undefined;
+}
 /** Todo lo que una hoja deja leer: el texto de cada nodo y el marcado con el que se escribió. */
 const leerHoja = (hoja) => todos(hoja).map((n) => `${texto(n)}\n${String(n._html || '')}`).join('\n');
 /** Las frases que pinta una hoja, una por nodo y recortadas, para comparar por identidad. */
@@ -149,7 +160,7 @@ async function abrirHojaUsar(m) {
 
 async function abrirHojaGuardar(m) {
   teclearLinea(m.contenedor); // sin una línea con concepto y precio, la hoja no se abre (avisa y vuelve)
-  const guardar = boton(m.contenedor, BOTON_GUARDAR);
+  const guardar = botonGuardar(m);
   assert.ok(guardar, '🔴 no hay «💾 Guardar como plantilla» en esta pantalla');
   await pulsar(guardar);
   const hoja = hojas(m.b).at(-1);
@@ -181,13 +192,14 @@ test('SCRUM-600g · ⓪ las dos frases constan APROBADAS, por la firma delegada 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-600g · ① en el documento suelto están los DOS botones, y con cuatro plantillas se llega a «Ver las 4»', async () => {
-  const { contenedor } = await montar('factura');
+  const m = await montar('factura');
+  const { contenedor } = m;
   const ver = boton(contenedor, BOTON_USAR);
   assert.ok(ver, '🔴 la factura suelta NO tiene «📋 Usar plantilla»: la parada de plantillas sigue puesta.');
   assert.equal(texto(ver).trim(), '📋 Ver las 4',
     '🔴 con cuatro plantillas el botón tiene que ofrecer «Ver las 4»: las fichas rápidas sólo enseñan tres.');
   assert.notEqual(ver.hidden, true, '🔴 «Ver las 4» está en la página pero ESCONDIDO: no se llega a la cuarta plantilla.');
-  assert.ok(boton(contenedor, BOTON_GUARDAR),
+  assert.ok(botonGuardar(m),
     '🔴 la factura suelta NO tiene «💾 Guardar como plantilla». Dejar «Usar» sin «Guardar» es media función.');
 });
 
@@ -216,19 +228,26 @@ test('SCRUM-600g · ③ la hoja «Guardar como plantilla» dice su frase firmada
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-600g · ④ NEGATIVO: «3. Condiciones» y «4. Envío» siguen FUERA del documento suelto', async () => {
-  const bloques = (c) => ['3. Condiciones', '4. Envío'].filter((t) => todos(c).some((n) => texto(n).trim() === t));
+  // SCRUM-915d · los dos bloques se llaman ahora «Condiciones» (paso) y «Ajustes del documento» (su fila).
+  const bloques = (c) => ['Condiciones', 'Ajustes del documento'].filter((t) => todos(c).some((n) => texto(n).trim() === t));
 
   // SUELO: en el presupuesto están los dos. Sin esto, un «no están» podría ser un lector ciego.
   const presupuesto = await montar(null);
-  assert.deepEqual(bloques(presupuesto.contenedor), ['3. Condiciones', '4. Envío'],
+  assert.deepEqual(bloques(presupuesto.contenedor), ['Condiciones', 'Ajustes del documento'],
     '🔴 SUELO: el lector no encuentra los bloques 3 y 4 ni en el presupuesto, así que no sabe mirar.');
 
+  // SCRUM-915g · «Ajustes del documento» YA ESTÁ en el documento suelto, y por identidad: es SU fila del
+  // último paso, con el IVA por defecto dentro (el IVA por línea sí sobrevive). «Condiciones» sigue
+  // fuera. Lo que sigue prohibido —dirección de la obra, IVA del presupuesto, los datos del cliente—
+  // lo ata `scrum600b` por su nombre; aquí, que el bloque de Condiciones no vuelva y que la fila de
+  // Ajustes sea UNA.
   for (const modo of ['factura', 'justificante']) {
     const { contenedor } = await montar(modo);
-    assert.deepEqual(bloques(contenedor), [],
-      `🔴 en modo ${modo} se cuela un bloque que el emisor no guarda. Los campos de «3. Condiciones» no ` +
-      'existen en `Invoice` (600e) y los de «4. Envío» tampoco; además, «4. Envío» tiene trabajo vivo en ' +
-      'scrum-820b. Levantar la parada de plantillas no levanta éstas.');
+    assert.deepEqual(bloques(contenedor), ['Ajustes del documento'],
+      `🔴 en modo ${modo} el documento suelto debe llevar SÓLO su fila «Ajustes del documento» (915g) y no ` +
+      '«Condiciones». Los campos de «3. Condiciones» no existen en `Invoice` (600e) y los de «4. Envío» ' +
+      'tampoco; además, «4. Envío» tiene trabajo vivo en scrum-820b. Levantar la parada de plantillas no ' +
+      'levanta éstas.');
   }
 });
 

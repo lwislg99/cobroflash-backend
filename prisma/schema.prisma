@@ -965,6 +965,19 @@ model Expense {
   providerInvoiceNumber String?   @map("provider_invoice_number")
   // Fecha de EXPEDICIÓN del proveedor. `Expense.date` es la del apunte, y no son la misma.
   providerInvoiceDate   DateTime? @map("provider_invoice_date")
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-1103 · LA RETENCIÓN QUE EL PROFESIONAL PRACTICA, NO LA QUE SUFRE.
+  //
+  // Los modelos 111/115 dependen de la retención de IRPF que el profesional PRACTICA como
+  // PAGADOR sobre esta factura recibida (a su gestor, a un subcontratista persona física, al
+  // alquiler de su local) — sentido INVERSO al de `retencionIrpf.ts` (SCRUM-293), que modela la
+  // que el profesional SUFRE en sus propias facturas EMITIDAS. Mismo patrón nullable-sin-default
+  // que `vatRate`/`vatAmount`/`vatDeducible` arriba, y por el mismo motivo: un gasto puede
+  // legítimamente no llevar retención (una ferretería no la lleva), y eso no puede leerse igual
+  // que «nadie lo clasificó».
+  retencionPracticadaTipo      Int?     @map("retencion_practicada_tipo")
+  retencionPracticadaCuota     Decimal? @map("retencion_practicada_cuota") @db.Decimal(12, 2)
+  retencionPracticadaDeclarada Boolean? @map("retencion_practicada_declarada")
 
   // SCRUM-109 (carril A, bloqueante de SCRUM-107 V2): autoría del gasto — el técnico que lo
   // registró desde la furgoneta. Int? con null = propietario, misma convención que

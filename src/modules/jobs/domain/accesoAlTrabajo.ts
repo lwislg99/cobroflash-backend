@@ -73,6 +73,28 @@ export function esSuyoElTrabajo(
   return (trabajo.assignees ?? []).some((a) => a?.teamMemberId != null && a.teamMemberId === teamMemberId);
 }
 
+/**
+ * SCRUM-992 · LOS MISMOS TRES EJES, PARA LISTAR: el `where` de Prisma que casa los Trabajos de este
+ * técnico. `esSuyoElTrabajo` responde sobre UN trabajo ya leído; esto sirve cuando lo que hay que
+ * recortar es una LISTA (los partes, cuyo `jobId` es una columna suelta sin relación con `Job`).
+ *
+ * Los dos se vigilan por AST (`tests/scrum992-partes-recortan-por-rol.test.mjs`): las propiedades
+ * que lee `esSuyoElTrabajo` y las que escribe esto tienen que ser las mismas.
+ *
+ * 🔴 Sin identidad NO se casa nada: `{ operarioId: null }` sería «los trabajos sin operario», que es
+ * justo lo contrario de «los suyos».
+ */
+export function whereSuyoElTrabajo(teamMemberId: number | null | undefined) {
+  if (teamMemberId == null) return { id: { in: [] as number[] } };
+  return {
+    OR: [
+      { operarioId: teamMemberId },
+      { assignedUserId: teamMemberId },
+      { assignees: { some: { teamMemberId } } },
+    ],
+  };
+}
+
 /** El `select` de Prisma que `esSuyoElTrabajo` necesita. Derivado, para que no se pida de menos. */
 export const SELECT_DUENOS = Object.freeze({
   operarioId: true,

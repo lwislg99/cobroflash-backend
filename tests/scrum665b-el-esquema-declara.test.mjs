@@ -11,15 +11,16 @@
 // Este fichero vigila ③ y el control que lo decide: **el papel**. No basta con que el esquema
 // nombre las columnas — hay que ver que el documento deja de reimprimirse con datos de hoy.
 //
-// ── 🔴 LO QUE ESTE FICHERO NO PUEDE DECIR, y es lo más importante ──────────────────────────
-// NO dice que el producto use ya el emisor congelado. Medido el 17-sep-2026: **nadie llama a
-// `emisorDelDocumento` en todo `src/`**. `src/lib/invoicing.ts:108` y `:249` siguen pasando el
-// perfil VIVO a `generateInvoicePdf`, justo al lado de `customer: clienteDelDocumento(...)`, que
-// es el gemelo ya enchufado (SCRUM-729). Ese enchufe MODIFICA el camino de emisión fiscal, así
-// que es STOP (regla 38) y NO se hace aquí: se nombra en el expediente con fichero y línea.
+// ── 🔴 LO QUE ESTE FICHERO NO PODÍA DECIR HASTA HOY ─────────────────────────────────────────
+// Hasta el 22-sep-2026 no decía que el producto usara ya el emisor congelado: nadie llamaba a
+// `emisorDelDocumento` en `src/`. Con el GO de Javier (comentario 16468 de SCRUM-665) el enchufe
+// ya está hecho — `src/lib/invoicing.ts`, los diez sitios del embudo y las dos rutas del XML de
+// VeriFactu — y lo ejercitan `tests/scrum665e-el-escritor-del-emisor.test.mjs` y el tope de
+// `tests/scrum411-exports-inalcanzables.test.mjs` (vuelto a 7).
 //
-// Por eso el papel se ejercita pasándole a `generateInvoicePdf` lo que el lector devuelve — que es
-// exactamente lo que el enchufe produciría— sin tocar una línea de `src/`.
+// Este fichero sigue ejercitando el papel pasándole a `generateInvoicePdf` lo que el lector
+// devuelve, sin depender de ningún llamador concreto de `src/`: es una prueba del MECANISMO
+// (escritor + lector + esquema), no del cableado, y las dos cosas se vigilan por separado.
 //
 // ── Y POR CONTENIDO, NO POR BYTES ─────────────────────────────────────────────────────────
 // El PDF no es determinista: lleva fecha de creación y un id propio, así que dos pasadas idénticas

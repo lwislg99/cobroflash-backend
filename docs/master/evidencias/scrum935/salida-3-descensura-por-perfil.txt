@@ -1,0 +1,35 @@
+﻿POBLACIÓN · logs leídos 34 · completas 15 · cortadas 19
+REFERENCIA · run 35513429033 (scrum-947b-medido-en-staging) · 307 mutaciones · job 615 s
+  fase de mutación de la referencia: 577 s de los 615 s del job (el resto: checkout, npm ci, tsc)
+
+PASADAS CORTADAS · proyección por PERFIL (no lineal)
+  dur.job  hechas  última mutación alcanzada → % del trabajo   proyección   run
+    615 s     235   82.5 %      734 s = 12:14   35328803518 2026-09-18T09:18
+    617 s     235   82.5 %      737 s = 12:17   35329797196 2026-09-18T09:29
+    616 s     286   99.8 %      617 s = 10:17   35340947864 2026-09-18T11:42
+    616 s     234   79.5 %      762 s = 12:42   35342013861 2026-09-18T11:55
+    617 s     235   82.5 %      737 s = 12:17   35344032316 2026-09-18T12:19
+    616 s     234   79.5 %      760 s = 12:40   35346129010 2026-09-18T12:42
+    616 s     250   88.1 %      693 s = 11:33   35347289902 2026-09-18T12:55
+    615 s     234   79.5 %      760 s = 12:40   35347817148 2026-09-18T13:01
+    615 s     278   91.8 %      666 s = 11:06   35349745102 2026-09-18T13:21
+    617 s     229   76.8 %      786 s = 13:06   35352593358 2026-09-18T13:50
+    614 s     234   79.5 %      758 s = 12:38   35353877511 2026-09-18T14:03
+    614 s     227   70.1 %      856 s = 14:16   35362335572 2026-09-18T15:25
+    615 s     234   79.5 %      759 s = 12:39   35365054060 2026-09-18T15:52
+    616 s     266   90.3 %      678 s = 11:18   35367072915 2026-09-18T16:12
+    616 s     256   89.6 %      682 s = 11:22   35513498039 2026-09-20T13:26
+    615 s     291   97.4 %      631 s = 10:31   35513932459 2026-09-20T13:35
+    615 s     234   79.5 %      760 s = 12:40   35514754503 2026-09-20T13:52
+    614 s     234   79.5 %      760 s = 12:40   35515050350 2026-09-20T13:58
+    615 s     235   82.5 %      736 s = 12:16   35515331832 2026-09-20T14:03
+
+DISTRIBUCIÓN DEL JOB (reales + proyectadas por perfil) · n=34
+  mín 8:03 · p50 11:06 · p75 12:38 · p90 12:40 · p95 13:06 · máx 14:16
+  por encima de los 600 s del techo actual: 20 de 34
+
+LA POBLACIÓN DE MUTACIONES CRECE (por eso un techo fijo se vuelve a cruzar):
+  2026-09-17 · 275 mutaciones declaradas
+  2026-09-18 · 307 mutaciones declaradas
+  2026-09-20 · 307 mutaciones declaradas
+EXIT=0

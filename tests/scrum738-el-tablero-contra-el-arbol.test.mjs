@@ -47,6 +47,12 @@ test('SCRUM-738 · 🔴 «72» NO casa con 720, 727 ni 1727 — se compara el N�
   // confunda con 727— se sigue comprobando, ahora también sin slug.
   assert.equal(numeroDeRama('scrum-72'), 72, '🔴 una rama sin slug no se atribuye a su ticket');
   assert.equal(numeroDeRama('scrum-727'), 727, '🔴 sin slug, `scrum-727` se confunde con 72');
+  // El delimitador sigue siendo OBLIGATORIO: tras el número (y su letra de fase) sólo vale `-` o el
+  // final. Sin él, cualquier cosa pegada al número casaría: `scrum-72.1` o `scrum-72bb` no son
+  // ramas del ticket 72. (SCRUM-804f: esto es lo que distingue a la regla del mutante sin
+  // delimitador, ahora que `scrum-72` a secas ya da 72.)
+  assert.equal(numeroDeRama('scrum-72.1'), null, '🔴 sin delimitador: lo pegado al número se está aceptando');
+  assert.equal(numeroDeRama('scrum-72bb'), null, '🔴 sin delimitador: dos letras tras el número no son una fase');
   assert.equal(numeroDeRama('feature/scrum-72-x'), null, '🔴 no está anclado al principio');
   // La letra de fase pertenece al MISMO ticket.
   assert.equal(numeroDeRama('scrum-684b-albaran-sin-presupuesto'), 684);

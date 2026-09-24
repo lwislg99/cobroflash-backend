@@ -10,6 +10,54 @@ Las seis sesiones tienen ficha. Ésta es la del que las coordina.
 
 ## 0 · 🔴 ARRANQUE Y CADA TURNO — la lista que no se salta
 
+### 0.0 · 🔴 ANTES DE ENVIAR CUALQUIER MENSAJE A UN JEFE — lista de comprobación
+
+Vale para los dos equipos (`dos-equipos.md`): el jefe es Luis o Javier, el que te habla. **Se pasa ENTERA
+antes de cada envío.** Cada casilla se contesta sí o no. **Un solo «no» y el mensaje no sale: se corrige y
+se vuelve a pasar.**
+
+Nace de una medición, no de un gusto: el fundador pidió este formato **tres veces** y el orquestador falló
+las tres. El 18-sep-2026 lo dijo así: «explicarme en simple qué se está haciendo… y al final decirme *Para
+ti* y ahí poner si tengo algo que hacer yo», y añadió «fallas en eso, apúntalo en las normas». Por eso no
+es un consejo de estilo: es una lista que se pasa.
+
+| # | la pregunta (sí / no) | ✗ falla si el mensaje… |
+|---|---|---|
+| 1 | ¿He mirado **Jira** en este turno y digo qué se puede cerrar por efecto y qué he puesto En curso, **aunque sea «nada»**? | habla de trabajo sin ninguna línea de Jira, o dice «lo miro luego» |
+| 2 | ¿Se entiende **sin saber programar**? En la PROSA no aparece ninguna de estas palabras: PR, merge, CI, rama, commit, SHA, worktree, guard, flag, test, deploy. Se dice qué cambia para el profesional que usa YaQu | dice «#1496 mergeado, 558f6b44 en main, CI verde» |
+| 3 | Si hace falta un enlace técnico (un PR, un run), ¿va **dentro de un bloque de código** y con una frase en plano delante que diga qué es? (§10.2) | pega el enlace suelto en la prosa, o el bloque sin frase |
+| 4 | ¿Es **corto**: solo lo que ha pasado desde el último mensaje? El cuadro del bucle de un día sano son tres líneas (§10.1) | repite el estado de las seis sesiones cuando solo cambió una |
+| 5 | ¿Es **UN** mensaje que agrupa el turno, y no uno por cada informe que llega? | manda tres mensajes en diez minutos, uno por sesión |
+| 6 | ¿Lo **delegado va como decisión** («he decidido X, por Y»), no como pregunta? (§10ter.19) | pregunta «¿firmo este texto?» con la microcopy delegada |
+| 7 | ¿Todo **hecho sobre el código** que afirmo lo ha medido alguien con un comando, o va escrito como pregunta? (§13) | dice «main está rojo» sin el run que lo mide |
+| 8 | ¿Las **malas noticias** van en prosa, no en viñetas? (§10.11) | una lista de tres viñetas con el despliegue caído en la segunda |
+| 9 | ¿Termina con **«Para ti»**, numerado, con SOLO lo que tiene que hacer él, y cada punto con el texto o la orden exacta? Lo manual, de uno en uno (§10.8). Si no hay nada: «Para ti: nada» | no trae «Para ti»; lo trae en medio; mezcla lo suyo con lo que hacen las sesiones; dice «revisa lo de arriba» |
+| 10 | ¿«Para ti» es **lo último** del mensaje, sin nada debajo (ni prompts, ni posdatas)? | pone un bloque de prompt o una nota después de «Para ti» |
+
+**Lo que NO se le manda:** informes de sesión reenviados tal cual · mediciones sin traducir a consecuencia ·
+decisiones ya tomadas contadas como si fueran preguntas.
+
+**Ejemplo que falla** (casillas 2, 5, 9 y 10):
+
+    S1 ha mergeado #1499 (aa4bc9cc), CI verde. S2 sigue con 915d en wt-915d.
+    Para ti: 1. Autoriza el relevo.
+    ```
+    Prompt S2: …
+    ```
+
+**El mismo, corregido:**
+
+    Hoy entró un arreglo: una factura ya no se guarda sin el NIF y el profesional ve qué le falta.
+    El editor de presupuestos por pasos está terminado y a la espera de su prueba completa.
+    Jira: el del NIF queda cerrado; el del editor sigue En curso, y no hay nada más que cerrar.
+    (Ejemplo inventado: no describe el estado de ningún día.)
+
+    Para ti:
+    1. Escríbeme «autorizo relevar sesiones en esta tanda» para que siga el trabajo.
+
+    🔒 Un mensaje que no pasa la lista le deja al jefe el trabajo de notarlo, y él no tiene por qué
+       saber notarlo.
+
 Nace el 17-sep-2026: un orquestador nuevo arrancó sin leer esta carpeta (nada la carga sola: el
 `CLAUDE.local.md` que lo pide vive en `wt-jefe`, y el chat se abre en `cobroflash-backend`) y
 repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este apartado es el sitio.
@@ -17,11 +65,14 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
 **AL ARRANCAR un chat de orquestador, antes del primer mensaje al fundador:**
 
 1. `git fetch origin` y leer DESDE `origin/main` (el checkout de la carpeta va miles de commits
-   atrás): esta ficha entera · `limites-del-fundador.md` · `traspaso.md` (el ESTADO y el
-   OBJETIVO VIGENTE) · `00-normas-comunes.md` · las seis `sesion-N.md` · `afirmaciones-verificadas.md`.
+   atrás): esta ficha entera · `dos-equipos.md` (qué equipo eres, tus puestos y los del otro) ·
+   `limites-del-fundador.md` · el traspaso de TU equipo (`traspaso.md` el de Luis,
+   `traspaso-javier.md` el de Javier: el ESTADO y el OBJETIVO VIGENTE) · `00-normas-comunes.md` · las
+   fichas de tus puestos · `afirmaciones-verificadas.md`.
 2. Medir el estado real antes de creerse ningún traspaso: PR abiertos y mergeados, CI de main,
    workflows activos, Jira de los tickets vivos. Un traspaso es una foto con fecha, no el ahora.
-3. Casar cada ticket vivo con su sesión por la tabla de §11bis.
+3. Casar cada ticket vivo con su puesto por la tabla de dueños (§11bis para el equipo de Luis y
+   `dos-equipos.md` §3 para los dos). Un ticket con la etiqueta del OTRO equipo no se toca.
 4. Leer `orquestador-autonomo.md`: **desde el 17-sep el orquestador habla con las sesiones
    DIRECTAMENTE** (`ListAgents` + `SendMessage`), sin que el fundador copie y pegue. Ese fichero
    tiene el protocolo, las direcciones y lo que sigue siendo del fundador.
@@ -32,19 +83,93 @@ repartió tickets fuera de carril. La memoria de la carpeta apunta aquí; este a
 2. **Explicarle en plano** lo que ha traído cada sesión (§10.9, §10ter): qué hizo, qué significa,
    qué se decide.
 3. **Jira**, y decirlo aunque no haya nada: se CIERRA lo que su efecto demuestra (§10bis.16), se
-   pone **EN CURSO + asignado a Luis** lo que una sesión está trabajando y no lo esté, y se dice
-   qué no se puede cerrar y por qué.
+   pone **EN CURSO + asignado al JEFE de tu equipo + etiqueta de tu equipo** lo que una sesión está
+   trabajando y no lo esté (A13), y se dice qué no se puede cerrar y por qué.
 4. **Decidir** lo delegado (microcopy, lo que sea del orquestador) y decir qué se decidió.
 5. **Encargos por el CANAL DIRECTO a las sesiones que han entregado** (`orquestador-autonomo.md`
    §3; sustituye a «prompts solo a las sesiones cuya respuesta trae él», §10.5-10.6), cada uno
-   casado con su carril (§11bis) y completo. Si hace falta un **chat nuevo**, eso sí se le pide
-   al fundador, con el prompt en un bloque y la línea «🆕 CHAT NUEVO de la Sesión N» encima
-   (§10.11bis).
+   casado con su carril (§11bis) y completo. Si hace falta una **sesión nueva**, desde el
+   17-sep-2026 **ya no se le pide al fundador**: la lanza el orquestador (A19 · F4 medido ·
+   `orquestador-autonomo.md` §5bis). Al fundador se le piden las **autorizaciones**, que no se
+   heredan.
+5bis. 🔴 **RELEVAR EN VEZ DE REANUDAR.** Antes de mandarle el encargo siguiente a una sesión, se
+   mira lo que ocupa (`sesion.mjs contexto N`). Si pasa de **200k** tras una entrega verificada, si
+   lleva **más de 1 h parada** o si empieza la **tanda del día siguiente**, no se le escribe: **se
+   la releva** (A19, «El PUESTO es fijo; la SESIÓN se releva» · `orquestador-autonomo.md` §5bis).
+   Nunca a mitad de una entrega, y nunca sin que haya dejado su traspaso.
+
+       🔒 Escribirle a una sesión cargada cuesta su contexto ENTERO en cada mensaje. Relevarla
+          cuesta un traspaso, una vez.
 6. **Memoria de traspaso al día** (qué está en main por efecto, qué queda, ramas y PR).
+6bis. **Gasto** (A25): `uso.mjs leer` + `gasto-arranque.mjs vivas` y `sesiones`; SCRUM-1070 y SCRUM-996 al día.
 7. **Lo que tiene que hacer él, SIEMPRE AL FINAL** del mensaje, numerado y corto; si no hay
-   nada, se dice. Los pasos manuales, uno a uno.
+   nada, se dice. Los pasos manuales, uno a uno. **Y antes de enviar, la lista de §0.0 entera.**
 
     🔒 Un turno que se salta un paso de esta lista le deja al fundador el trabajo de notarlo.
+
+### 0bis · 🔴 CIERRE POR FIN DE USO, y arranque de la tanda siguiente
+
+*(Norma del fundador del 17-sep-2026, con la casilla obligatoria que añadió el 18-sep. Vivía en la
+memoria de UNA máquina; entra aquí el 20-sep-2026 para que la tenga también el orquestador de Javier,
+que no ve esa memoria. Vale para los dos equipos.)*
+
+**El disparador no es que el fundador dé la orden.** Es que el uso se acerca al límite: él lo dice
+(«vamos al 9x %», «nos acercamos al final») **o lo ve el propio orquestador**. En cuanto aparece, se
+ejecuta la parte A sin preguntar.
+
+    🔒 El límite de uso no avisa: corta. Lo que no esté commiteado y escrito cuando corte, no existió.
+
+**El cierre empieza al 80 %**, medido —no estimado— con
+`node C:/Users/Admin/AppData/Local/yaqu-equipo/uso.mjs leer`. El trabajo que quede a medias se deja
+**commiteado en local** y apuntado en el traspaso.
+
+**A · CIERRE (orquestador saliente)**
+
+1. A **cada puesto vivo**, por `SendMessage`: «CIERRE POR FIN DE USO: punto limpio (nada a medio
+   empujar), `project_sN_traspaso.md` para alguien que no ha visto tu chat, su línea en `MEMORY.md`,
+   contesta "Sesión N · traspaso listo" y PARA».
+2. Escribe **su** traspaso (`project_orquestador_traspaso.md`): estado real medido y con SHA · qué
+   sesión ocupaba cada puesto (nombre e id) · decisiones pendientes del fundador · lo prometido y no
+   hecho.
+3. Borra sus crones si los hay (`CronList` / `CronDelete`).
+4. Manda el último mensaje al fundador con la casilla obligatoria de abajo.
+5. Si el uso se corta antes de que lleguen todos los «traspaso listo», **no pasa nada**: el
+   orquestador nuevo lo mide.
+
+**🔴 LA CASILLA OBLIGATORIA DEL CIERRE.** El último mensaje lleva **SIEMPRE**, al final y dentro de
+«Para ti», estas tres cosas, en este orden:
+
+1. el **PROMPT LITERAL del orquestador nuevo**, listo para copiar y pegar (el vigente, abajo);
+2. la **frase de autorización para lanzar sesiones**, porque **no se hereda** (A19): el orquestador
+   nuevo no puede levantar los puestos hasta que un jefe se lo escriba a él;
+3. qué chats viejos puede cerrar, y sus pendientes numerados.
+
+**Un cierre sin ese prompt no es un cierre.** Lo pidió el fundador con esas palabras el 18-sep-2026.
+
+> **Prompt vigente del orquestador nuevo:** «Eres la sesión ORQUESTADORA de YaQu. Lee en este orden
+> estas memorias: `feedback_formato_mensajes_fundador`, `project_orquestador_traspaso` y
+> `feedback_arranque_orquestador`. Lee `docs/equipo/orquestador.md` §0 desde `origin/main`. Mide el
+> estado real (PR, CI, Jira) y el contexto de cada sesión antes de creerte el traspaso. Después dime
+> en plano cómo está todo y lo mío al final.»
+
+**B · ARRANQUE (orquestador nuevo, cuando vuelve el uso)**
+
+0. 🔴 **CENSO DE HUÉRFANOS ANTES QUE NADA** (SCRUM-946): `node scripts/equipo/huerfanos.mjs` — el
+   trabajo commiteado que no está en ningún remoto, y el sucio reciente. La tanda del 17-sep murió
+   **sin aviso** y dejó tres trabajos invisibles; se salvaron por suerte. Y un «0» sin población es
+   «no he mirado».
+1. El arranque normal de §0, entero.
+2. `ListAgents`: las sesiones de la tanda anterior siguen registradas. Llevan más de 1 h paradas, así
+   que **NO se reanudan** (A19): se paran.
+3. Levanta los **puestos fijos** en segundo plano, cada uno con el prompt estándar (rol del puesto ·
+   leer desde `origin/main` el `CLAUDE.md`, `00-normas-comunes.md`, su ficha y su fila de §11bis ·
+   leer su `project_sN_traspaso.md` · presentarse por el canal · no preguntar de forma interactiva ·
+   dejar traspaso antes de que se acabe el uso) **más su encargo concreto**. El encargo avisa de que
+   **los GO de chats viejos no se heredan**.
+4. Espera los «Sesión N lista» y le dice al fundador qué chats viejos puede cerrar.
+
+El cableado (lanzador, protocolo y direcciones) es de la S5: `orquestador-autonomo.md` y
+`scripts/equipo/`. Esta ficha dice **qué** se hace y **cuándo**; aquel dice **con qué**.
 
 ## 1 · Qué es
 
@@ -111,6 +236,24 @@ Un encargo sin esto no está terminado:
 Y el encargo lleva su razón, no solo su orden: una sesión que entiende
 por qué puede corregirte; una que solo obedece, no.
 
+## 4bis · 🔴 Cómo entra una IDEA DE UN JEFE — la lista, igual para los dos equipos
+
+Nace de una pregunta del fundador (18-sep-2026): «si a Javier o a mí se nos ocurre algo de producto
+para mejorar, ¿qué sesión lo hace?». La respuesta no es «la que esté libre» (§13): es esta lista, en
+este orden, y **no se salta ningún paso**.
+
+| paso | qué hace el orquestador | ✗ falla si… |
+|---|---|---|
+| 1 | Recibe la idea del jefe **de su equipo**, con sus palabras («esto es una mierda, mejorémoslo»). | el orquestador toma una idea que le llega del OTRO jefe por otra vía que no sea Jira |
+| 2 | La convierte en **ticket** con ese literal dentro, la **casa con el ÁREA** que toca (`dos-equipos.md` §3) y le pone la etiqueta del equipo dueño de esa área. | el ticket parafrasea al jefe, o lleva la etiqueta del equipo que tuvo la idea en vez de la del dueño del área |
+| 3 | **PASO 0, «¿existe hoy?»**, medido y no leído: en el equipo de Luis lo hace la S0; en el de Javier, J6. Si no existe, se para y se le dice al jefe. | se construye sobre la descripción del jefe sin medirla |
+| 4 | Si cambia **lo que ve el usuario**, primero un **PROTOTIPO** que el jefe aprueba: S4 en el equipo de Luis, J5 en el de Javier. | se construye una pantalla sin prototipo aprobado |
+| 5 | Lo construye **el dueño del área**. Si el área es del otro equipo, el ticket se le pasa **por Jira con su etiqueta** y un comentario; **NUNCA se construye en su terreno**. | una sesión toca ficheros del otro equipo «porque ya estaba en ello» |
+| 6 | Se **cierra por el efecto** medido en staging o producción (§10bis.16) y se le dice al jefe **en plano**, con la lista de §0.0. | se cierra por el commit, o se le cuenta al jefe con jerga |
+
+    🔒 Una idea de un jefe es una HIPÓTESIS con su literal, no una orden de construir: primero se
+       mide que existe, y la construye quien es dueño del sitio, no quien la oyó.
+
 ## 5 · Cómo se mide
 
 - Un CERO no es «está limpio»: es «no he mirado».
@@ -176,6 +319,12 @@ Cuando el orquestador firma, firma así:
   conviven, gana la que el usuario ve escrita donde filtra.
 - Un aviso que no nombra lo que falta obliga a adivinar.
 - Si no cabe en la columna, se adapta la columna, no la palabra.
+
+🔴 **Antes de FIRMAR un literal, la comprobación** (error del 17-sep, SCRUM-905 L1): se busca su clave en
+`MICROCOPY_BLOQUEADA` (`tests/scrum302-rotulos-completos.test.mjs`) y el asunto en
+`docs/legal/PREGUNTAS_ASESOR.md`. **La delegación de microcopy NO levanta un bloqueo legal del asesor:**
+un texto bloqueado espera, lo firme quien lo firme. ✗ Falla: firmar «Convertir en factura» sin mirar que
+estaba en `MICROCOPY_BLOQUEADA` a la espera del asesor.
 
 ## 8 · Ingeniería — cuándo decir que sí y cuándo que no
 
@@ -285,6 +434,13 @@ Cuando el orquestador firma, firma así:
     no sirve: lo lee la sesión cuando ya está pegado en el chat equivocado. Pasó con S2 y S5.
     Los puestos no se cierran nunca: lo que se cierra es el chat.
 
+    ⚠️ **17-sep-2026: esto sigue valiendo, pero ya casi no se usa.** El camino normal dejó de ser
+    «el fundador pega un prompt»: las sesiones las lanza el orquestador (A19 · F4 ·
+    `orquestador-autonomo.md` §5bis), y ahí la etiqueta no la lee un humano. La regla se queda
+    **para los prompts que el fundador SÍ pega a mano**, que siguen existiendo. Y la última frase
+    se queda tal cual, porque es la A19 dicha con un día de antelación: *los puestos no se cierran
+    nunca; lo que se cierra es el chat*.
+
 ## 10bis · Las reglas de ticket
 
 12. Una sesión = UN objetivo = cerrar UN ticket concreto. Nada de
@@ -294,10 +450,10 @@ Cuando el orquestador firma, firma así:
     sigue resolviendo lo que aparezca por el camino y no para hasta
     cerrarlo, o dice POR ESCRITO por qué no se puede ANTES de gastar
     el turno.
-14. En cuanto una sesión coge un ticket: EN CURSO + ASIGNADO A LUIS,
-    antes de la primera línea de código (es A13 de las normas
-    comunes). Sin eso, el colaborador no ve quién está en qué y dos
-    sesiones pueden cogerlo a la vez.
+14. En cuanto una sesión coge un ticket: EN CURSO + ASIGNADO AL JEFE
+    DE SU EQUIPO + la etiqueta de su equipo, antes de la primera línea
+    de código (es A13 de las normas comunes). Sin eso, el otro equipo no
+    ve quién está en qué y dos sesiones pueden cogerlo a la vez.
 15. Se cierra en el MOMENTO en que el merge se confirma, no al final
     del día.
 16. 🔴 Se cierra por el EFECTO, NUNCA por el commit. Y se verifica por
@@ -348,18 +504,21 @@ carril**, o se declara la excepción en la primera línea del prompt, con su mot
 
 | sesión | puesto | carril: lo que se le manda | ficheros suyos | lo que NO se le manda |
 |---|---|---|---|---|
-| **S0** | consultoría · auditoría | veredicto «¿existe hoy?», recorridos del producto (SCRUM-882), filtro de las afirmaciones del orquestador, dueña de `00-normas-comunes.md` | `scripts/`, `tests/`, `docs/` | arreglos en `src/` o `public/`; abrir o cerrar tickets |
-| **S1** | backend · dinero · fiscal | importes, cobro, facturación, rutas del servidor | `src/modules/` (quotes, billing, invoicing, payments) | pantallas del panel |
-| **S2** | frontend | vistas del panel, DOM renderizado | `public/dashboard/js/`, `app.js`, `styles.css` | servidor, dinero |
+| **S0** | consultoría · auditoría | veredicto «¿existe hoy?», recorridos del producto (SCRUM-882), filtro de las afirmaciones del orquestador, dueña de `00-normas-comunes.md` (para los DOS equipos) | `scripts/`, `tests/`, `docs/` | arreglos en `src/` o `public/`; abrir o cerrar tickets; **la competencia** (pasa a J5 el 18-sep) |
+| **S1** | backend · importes | importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3 (`dos-equipos.md` §3) | `src/modules/` (quotes, jobs, expenses, maintenance, reports…), `src/app.ts`, `src/api/routes.ts`, `src/core/documentos/` | pantallas del panel; **lo fiscal (J1) y los medios de pago (J2)** desde el 18-sep |
+| **S2** | frontend | vistas del panel, DOM renderizado | `public/dashboard/js/` (salvo lo de S4 y lo de J1-J3), `app.js`, `api.js`, `styles.css`, `dashboard/index.html`, `sw.js` | servidor, dinero; **las pantallas de facturas, clientes, pagos, alta y configuración** desde el 18-sep |
 | **S3** | tests · bancos · instrumentación | bancos, sondas, guards, desgateo (SCRUM-876) | `tests/`, `scripts/_suelo-*` | producto |
 | **S4** | producto · microcopy · parte y albarán | textos firmados y sujetos, parte de trabajo, albaranes, vistas de lista | `jobsView.js`, `parteDetailView.js`, `albaranDetailView.js`, `docs/microcopy/` | automatización |
-| **S5** | automatización | el bucle PR → CI → merge → aviso: workflows, vigías, avisador, meta-guard | `.github/workflows/`, sus scripts | **producto, nunca** |
+| **S5** | **automatización y eficiencia** | el bucle PR → CI → merge → aviso (workflows, vigías, avisador, meta-guard); **el gasto de tokens por sesión** (`sesion.mjs contexto`, el umbral de relevo de la A19); **los fallos del flujo**, que vigila y mejora sin esperar a que se los manden | `.github/workflows/` y sus scripts, `scripts/equipo/`, `docs/equipo/orquestador-autonomo.md` | **producto, nunca** |
 
 ⚠️ **Dos fuentes que se contradecían, y cuál manda.** Hasta hoy la tabla de arriba daba a S5 «¿puede
 una persona hacer su trabajo con esto?» —y así lo dice aún la cabecera de `sesion-5.md`—, mientras
 `traspaso.md` §5 (9-sep) la pone en automatización, que es lo que hace desde entonces (SCRUM-836,
 839, 853) y lo que dice el fundador. **Manda automatización.** La cabecera de `sesion-5.md` es de la
 propia S5, y ya la reescribió en el #1391 (17-sep). El recorrido del producto lo hace hoy S0 (SCRUM-882).
+**Desde el 17-sep-2026 las dos fuentes ya no se contradicen**, y el puesto se amplía a **automatización
+y eficiencia** por decisión del fundador: además del bucle, mide el gasto de tokens por sesión y vigila
+los fallos del flujo. Sigue sin tocar producto.
 
 **Dónde se tocan dos carriles (auditoría de la S0, 17-sep):**
 - Dentro de `public/dashboard/js/`, los ficheros `jobsView.js`, `parteDetailView.js` y `albaranDetailView.js` son
@@ -370,6 +529,11 @@ propia S5, y ya la reescribió en el #1391 (17-sep). El recorrido del producto l
 - Los documentos de gobierno (`CLAUDE.md`, la skill `cerebro-yaqu` y la Parte AA del máster) derivan del
   máster: su cambio lo prepara la S0 como propuesta, y lo aprueba el fundador.
 
+🔴 **Desde el 18-sep-2026 hay DOS equipos** (el de Luis, esta tabla; el de Javier, J1-J6). El mapa
+completo de quién es dueño de qué fichero entre los dos, sin ningún puesto repetido, vive en
+**`docs/equipo/dos-equipos.md` §3**, y si esta tabla y aquel mapa discrepan, **manda el mapa**: esta tabla
+es el resumen de un equipo.
+
 **Antes de escribir cada prompt**, el ticket se casa con esta tabla. Si no casa, no se manda.
 
 Cuando una sesión tumba una decisión del orquestador con una
@@ -379,10 +543,15 @@ Cuando una sesión entrega, se le responde qué pasó con su trabajo —no
 solo el encargo siguiente—. Su puesto se mide por si acierta y no
 puede saberlo si nadie se lo dice.
 
-## 12 · El colaborador
+## 12 · Javier: el otro jefe
 
-Javier tiene acceso a las tres bases y aplica los ALTER. Sus reglas
-mandan sobre las del orquestador en su terreno:
+*(Hasta el 18-sep-2026 esta sección se llamaba «El colaborador».)* Desde el 18-sep **Luis y Javier son
+los dos JEFES** (decisión del fundador): los dos dan el «sí» de dinero, fiscal y base de datos, y cada
+uno tiene su orquestador y sus puestos. Cómo se coordinan dos orquestadores que no pueden hablarse:
+**`docs/equipo/dos-equipos.md`**.
+
+Javier tiene acceso a las tres bases y aplica los ALTER, **también los del equipo de Luis** (A5). Sus
+reglas mandan sobre las del orquestador en su terreno:
 
 - Un merge SIN conflictos no es un merge correcto.
 - Mergear no es acabar: un ticket no está cerrado hasta que su

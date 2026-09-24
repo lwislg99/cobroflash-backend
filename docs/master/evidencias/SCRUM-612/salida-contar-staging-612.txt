@@ -1,0 +1,19 @@
+clave DATABASE_URL_STAGING → acela.proxy.rlwy.net/railway  (host de producción declarado: autorack.proxy.rlwy.net · distinto: sí)
+sentencias: 7
+
+── 1 · SELECT current_database() AS base, now() AS medido_en
+   {"base":"railway","medido_en":"2026-09-18T15:09:54.189Z"}
+── 2 · SELECT (SELECT count(*) FROM invoices)        AS facturas_total,
+   {"facturas_total":9,"cobros_total":9,"merchants_total":8,"auditoria_total":33,"correos_total":0}
+── 3 · SELECT count(*) FILTER (WHERE type = 'JUST')      AS tipo_just,
+   {"tipo_just":9,"numero_j":9,"tipo_f1":0,"tipo_r1":0,"tipo_otro":0}
+── 4 · SELECT "merchantId" AS merchant_id,
+   {"merchant_id":2,"justificantes":9,"documentos_del_merchant":9,"primero":"2026-09-16T13:43:46.934Z","ultimo":"2026-09-17T10:05:26.638Z"}
+── 5 · SELECT (SELECT count(*) FROM audit_log
+   {"auditoria_con_just":9,"correos_justificante":0,"cobros_concepto_justificante":9}
+── 6 · SELECT id AS merchant_id, flags->>'INVOICING_ES_ENABLED' AS invoicing_es, flags->>'SIF_ENA
+   (0 filas)
+── 7 · SELECT meta->'flagsFiscales'->>'INVOICING_ES_ENABLED' AS invoicing_es_al_emitir,
+   {"invoicing_es_al_emitir":"false","tipo_pedido":"JUST","emisiones":9}
+
+EXIT=0

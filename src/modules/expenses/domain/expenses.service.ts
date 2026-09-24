@@ -1,4 +1,7 @@
 import { prisma } from '../../../core/db/prisma';
+// SCRUM-944 (punto 2) · cómo se llama un Trabajo lo decide UNA función, y es esta. Gastos la llama;
+// no la reescribe ni la adapta.
+import { tituloDeTrabajo } from '../../jobs/domain/trabajoDirecto';
 
 export const EXPENSE_CATEGORIES = ['materiales', 'desplazamiento', 'herramientas', 'subcontrata', 'otros'] as const;
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
@@ -36,7 +39,71 @@ export interface CreateExpenseInput {
   vatAmount?: number | null;
   providerInvoiceNumber?: string | null;
   providerInvoiceDate?: Date | null;
+  /**
+   * SCRUM-1103 · retención de IRPF PRACTICADA como pagador (111/115), no la que se SUFRE
+   * (`retencionIrpf.ts`, sentido inverso). Mismo patrón que el desglose de IVA de arriba:
+   * `tipo`/`cuota` son el dato objetivo que trae la factura del proveedor.
+   *
+   * `declarada` NO entra aquí a propósito, mismo criterio que `vatDeducible` (que tampoco es
+   * parámetro de alta): es una DECISIÓN de clasificación, no un dato que se transcribe, y su
+   * cubo de tipos válidos por 111/115 lo fija quien construya SCRUM-1066 — escribirla aquí sin
+   * esa validación dejaría entrar cualquier valor.
+   */
+  retencionPracticadaTipo?: number | null;
+  retencionPracticadaCuota?: number | null;
 }
+
+/**
+ * SCRUM-964 · LAS COLUMNAS QUE LA LISTA DEVUELVE — TODAS MENOS `receipt_data`.
+ *
+ * LA VÍCTIMA: el profesional en la furgoneta. `listExpenses` pedía `include` sin `select`, o sea
+ * TODAS las columnas, y `receipt_data` guarda la FOTO DEL TICKET entera como data-URI (tope
+ * `FOTO_TECHO_DATAURI` = 1,5 MiB en `expensesView.js`). Medido con la sonda de solo lectura
+ * `docs/prototipos/SCRUM-920/sonda-peso-lista-gastos.mjs`, sobre la ruta y el servicio REALES:
+ *
+ *     20 gastos × foto 1,50 MiB  ->  respuesta  30,00 MiB
+ *     60 gastos × foto 1,50 MiB  ->  respuesta  90,01 MiB
+ *    200 gastos × foto 1,50 MiB  ->  respuesta 300,03 MiB   (el `take` es 200)
+ *
+ * Son 300 MiB por abrir Gastos, con datos móviles, para pintar una tabla que NO enseña ninguna
+ * foto: la lista solo las quiere para el modal de edición, de una en una.
+ *
+ * 🔴 ES UNA LISTA CERRADA A PROPÓSITO, Y POR ESO LLEVA GUARD. Un `select` explícito deja fuera
+ * cualquier columna NUEVA de `Expense` sin decir nada — el defecto siguiente, con cara de
+ * arreglo. `tests/scrum964-la-lista-no-carga-las-fotos.test.mjs` lee `prisma/schema.prisma` y
+ * exige que el `select` que sale hacia la base sea EXACTAMENTE los escalares del modelo menos
+ * `receiptData`: la columna nueva pone el guard en rojo y obliga a decidir, en vez de desaparecer
+ * en silencio.
+ *
+ * ⚠️ SIN `export`, y es del censo de SCRUM-411: su único consumidor real está en este fichero. El
+ * test lo mira donde importa —en los argumentos que `listExpenses` le manda a la base—, no en una
+ * constante exportada para poder verla: un export que solo existe para el test es código que el
+ * test se ha inventado, y entonces mide lo que él añadió.
+ */
+const CAMPOS_DE_LA_LISTA = {
+  id: true,
+  merchantId: true,
+  quoteId: true,
+  providerId: true,
+  concept: true,
+  amount: true,
+  currency: true,
+  category: true,
+  date: true,
+  notes: true,
+  baseAmount: true,
+  vatRate: true,
+  vatAmount: true,
+  vatDeducible: true,
+  providerInvoiceNumber: true,
+  providerInvoiceDate: true,
+  retencionPracticadaTipo: true,
+  retencionPracticadaCuota: true,
+  retencionPracticadaDeclarada: true,
+  teamMemberId: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
 
 export async function listExpenses(
   merchantId: number,
@@ -54,13 +121,37 @@ export async function listExpenses(
   }
   const items = await prisma.expense.findMany({
     where,
-    include: {
+    // `select` y no `include`: `include` trae TODAS las columnas de `Expense` y la foto con ellas.
+    select: {
+      ...CAMPOS_DE_LA_LISTA,
       quote:    { select: { id: true } },
       provider: { select: { id: true, name: true } },
     },
     orderBy: { date: 'desc' },
     take: 200,
   });
+
+  /**
+   * SCRUM-964 · QUÉ GASTOS LLEVAN FOTO, SIN TRAERSE NI UNA.
+   *
+   * La pantalla necesita saber si HAY foto (para ofrecer verla), no la foto. Se pregunta con una
+   * consulta que solo devuelve `id`, acotada a los gastos de ESTA página y filtrada por
+   * `merchantId` (regla 2): **una consulta por página, nunca una por gasto** — el coste constante
+   * que fijó SCRUM-135.
+   *
+   * ⚠️ `tieneFoto` dice que la columna NO es `null`. No promete que sea una imagen legible: eso lo
+   * decide `GET /admin/expenses/:id/foto` al servirla, y por eso esa ruta tiene su propio código
+   * de error. Un gasto se guarda con `receiptData: receiptData ? String(receiptData) : null`, así
+   * que la cadena vacía ya llega como `null` y no cuenta como foto.
+   */
+  const idsConFoto = new Set<number>();
+  if (items.length) {
+    const conFoto = await prisma.expense.findMany({
+      where: { merchantId, id: { in: items.map((e) => e.id) }, receiptData: { not: null } },
+      select: { id: true },
+    });
+    for (const f of conFoto) idsConFoto.add(f.id);
+  }
 
   // SCRUM-135: el gasto guarda `quoteId` (COTIZACIÓN), pero lo que el pro ve y entiende es el
   // TRABAJO. Se resuelve aquí, con UNA query para toda la página, en vez de que el front pida
@@ -69,14 +160,79 @@ export async function listExpenses(
   // sea que la lista de gastos se quedaba esperando por un adorno. Aditivo: `job` se AÑADE al
   // item y `quote` sigue igual para quien ya lo leyera.
   const quoteIds = [...new Set(items.map((e) => e.quoteId).filter((id): id is number => id != null))];
-  if (!quoteIds.length) return items.map((e) => ({ ...e, job: null }));
+  if (!quoteIds.length) return items.map((e) => ({ ...e, tieneFoto: idsConFoto.has(e.id), job: null }));
 
   const porQuote = await trabajosPorQuote(merchantId, quoteIds);
+  // SCRUM-944 (punto 2) · `job.titulo` ya no es el campo crudo de la base: es el NOMBRE con el que
+  // Trabajos presenta ese mismo Trabajo. Con `Job.titulo` a secas, los Trabajos sin título (10 de 13
+  // en staging) llegaban a `null` y la pantalla los llamaba «Trabajo», mientras Trabajos decía
+  // «Presupuesto #5 · María López»: dos nombres para lo mismo.
+  const nombres = await nombresDeTrabajos(merchantId, [...porQuote.values()]);
   return items.map((e) => {
     const j = e.quoteId != null ? porQuote.get(e.quoteId) : null;
-    // `titulo` puede ser null en Jobs anteriores a SCRUM-10: el front cae a un texto neutro.
-    return { ...e, job: j ? { id: j.id, titulo: j.titulo } : null };
+    if (!j) return { ...e, tieneFoto: idsConFoto.has(e.id), job: null };
+    const nombre = nombres.get(j.id);
+    return { ...e, tieneFoto: idsConFoto.has(e.id), job: { id: j.id, titulo: nombre !== undefined ? nombre : j.titulo } };
   });
+}
+
+/**
+ * SCRUM-944 (punto 2) · el nombre de cada Trabajo, EL MISMO que le da la pantalla de Trabajos.
+ *
+ * NO decide nada: llama a `tituloDeTrabajo` (`jobs/domain/trabajoDirecto.ts`), que es quien decide, con
+ * las mismas entradas que le da `serializeJob` — el título propio, el presupuesto ORIGINAL del Trabajo
+ * (el de `Job.quoteId`; a falta de éste, el primero por id de los que tienen `Quote.jobId`) y su cliente.
+ * Ojo: es el original y no el presupuesto al que se imputó el gasto; un gasto de un adicional se
+ * presenta con el nombre del Trabajo, no con el número del adicional.
+ *
+ * Los Trabajos CON título no cuestan nada: `tituloDeTrabajo` devuelve ese título y no se consulta.
+ * Para el resto, tres consultas por página —Trabajos, presupuestos y clientes—, nunca una por gasto
+ * (el coste constante que fijó SCRUM-135). No se exporta: nadie de fuera la usa (`listExpenses` la llama
+ * y su test entra por `listExpenses`), y un `export` sin consumidor lo caza `scrum411`.
+ */
+async function nombresDeTrabajos(
+  merchantId: number,
+  trabajos: Array<{ id: number; titulo: string | null }>,
+  prismaClient = prisma,
+): Promise<Map<number, string>> {
+  const nombres = new Map<number, string>();
+  const sinTitulo: number[] = [];
+  // Varios presupuestos de un mismo Trabajo llegan como varias entradas: cada Trabajo se resuelve una vez.
+  for (const t of new Map(trabajos.map((x) => [x.id, x])).values()) {
+    if (t.titulo) nombres.set(t.id, tituloDeTrabajo({ titulo: t.titulo, jobId: t.id }));
+    else sinTitulo.push(t.id);
+  }
+  if (!sinTitulo.length) return nombres;
+
+  const jobs = await prismaClient.job.findMany({
+    where: { merchantId, id: { in: sinTitulo } },   // regla 2
+    select: { id: true, customerId: true, quoteId: true },
+  });
+  const quoteIds = jobs.map((j) => j.quoteId).filter((id): id is number => id != null);
+  const [quotes, clientes] = await Promise.all([
+    prismaClient.quote.findMany({
+      where: { merchantId, OR: [{ id: { in: quoteIds } }, { jobId: { in: sinTitulo } }] },
+      select: { id: true, jobId: true, quoteNumber: true },
+      orderBy: { id: 'asc' },
+    }),
+    prismaClient.customer.findMany({
+      where: { merchantId, id: { in: [...new Set(jobs.map((j) => j.customerId))] } },
+      select: { id: true, name: true },
+    }),
+  ]);
+  const cliente = new Map(clientes.map((c) => [c.id, c]));
+  for (const j of jobs) {
+    const original =
+      (j.quoteId != null ? quotes.find((q) => q.id === j.quoteId) : undefined)
+      ?? quotes.find((q) => q.jobId === j.id);
+    nombres.set(j.id, tituloDeTrabajo({
+      titulo: null,
+      quote: original ? { id: original.id, quoteNumber: original.quoteNumber } : null,
+      customer: cliente.get(j.customerId) ?? null,
+      jobId: j.id,
+    }));
+  }
+  return nombres;
 }
 
 /**
@@ -151,6 +307,26 @@ export class ExpenseRefError extends Error {
   }
 }
 
+// SCRUM-943 · la categoría se valida AQUÍ, en el dominio, por la misma razón que las referencias
+// de arriba (SCRUM-135): un tercer llamador de createExpense/updateExpense no se la salta por
+// olvido. Hasta hoy las rutas hacían `String(category)` y la escribían tal cual, así que la API
+// aceptaba cualquier cadena. Una categoría que el producto no conoce no desaparece: se cuela en
+// la base, cuenta en los totales bajo «Otros» y nadie la ve.
+//
+// No se normaliza ni se traduce nada: «materials» no se convierte en «materiales». Rechazar es
+// arreglar el defecto; traducir lo taparía. Y las filas ya escritas no se tocan (saneo aparte).
+function esCategoriaDeGasto(valor: unknown): valor is ExpenseCategory {
+  return typeof valor === 'string' && (EXPENSE_CATEGORIES as readonly string[]).includes(valor);
+}
+
+export class ExpenseCategoryError extends Error {
+  readonly code = 'category_invalid' as const;
+  constructor() {
+    super('category_invalid');
+    this.name = 'ExpenseCategoryError';
+  }
+}
+
 // MISMA respuesta para "no existe" y "no es tuya" a propósito: distinguirlas convertiría el
 // endpoint en un oráculo para enumerar ids de otros merchants.
 async function assertRefsOwned(merchantId: number, data: Partial<CreateExpenseInput>) {
@@ -171,6 +347,9 @@ async function assertRefsOwned(merchantId: number, data: Partial<CreateExpenseIn
 }
 
 export async function createExpense(merchantId: number, data: CreateExpenseInput) {
+  // Sin categoría (`undefined`/`null`) sigue siendo «otros», como siempre; lo que se rechaza es una
+  // categoría que llega y no es de las cinco.
+  if (data.category != null && !esCategoriaDeGasto(data.category)) throw new ExpenseCategoryError();
   await assertRefsOwned(merchantId, data);
   const gasto = await prisma.expense.create({
     data: {
@@ -191,6 +370,10 @@ export async function createExpense(merchantId: number, data: CreateExpenseInput
       vatAmount:             data.vatAmount             ?? null,
       providerInvoiceNumber: data.providerInvoiceNumber ?? null,
       providerInvoiceDate:   data.providerInvoiceDate   ?? null,
+      // SCRUM-1103 · igual criterio: `?? null` y no `x ? … : null`, porque un tipo 0 % legítimo
+      // es falsy y el atajo lo leería como «no se sabe».
+      retencionPracticadaTipo:  data.retencionPracticadaTipo  ?? null,
+      retencionPracticadaCuota: data.retencionPracticadaCuota ?? null,
     },
   });
   await guardarNifDelProveedor(merchantId, data);
@@ -214,12 +397,46 @@ async function guardarNifDelProveedor(merchantId: number, data: Partial<CreateEx
   });
 }
 
+/**
+ * SCRUM-937 · qué fue del NIF que tecleó el usuario, para que la respuesta lo DIGA.
+ *
+ * `guardarNifDelProveedor` tiene dos salidas mudas: sin proveedor no hay ficha donde dejarlo, y
+ * si la ficha ya tenía otro gana el de la ficha. Las dos son correctas (SCRUM-324 E3) y las dos
+ * se tragaban el dato sin avisar: el profesional creía haber completado su justificante.
+ *
+ * Se decide con lo que quedó en la ficha DESPUÉS de guardar, no con lo que se intentó: así el
+ * resultado es un hecho y no una predicción. `null` = no se tecleó ningún NIF.
+ */
+export type DestinoDelNif = 'en_la_ficha' | 'sin_proveedor' | 'la_ficha_tiene_otro';
+
+export function queFueDelNif(p: {
+  nifTecleado?: string | null;
+  providerId?: number | null;
+  nifDeLaFicha?: string | null;
+}): DestinoDelNif | null {
+  const nif = (p.nifTecleado ?? '').trim();
+  if (!nif) return null;
+  if (!p.providerId) return 'sin_proveedor';
+  // Mayúsculas y espacios no hacen de un NIF «otro»: el guardado es el recortado (arriba).
+  const ficha = (p.nifDeLaFicha ?? '').trim();
+  return ficha.toUpperCase() === nif.toUpperCase() ? 'en_la_ficha' : 'la_ficha_tiene_otro';
+}
+
 export async function updateExpense(merchantId: number, id: number, data: Partial<CreateExpenseInput>) {
+  // En la edición `undefined` es «no lo toques»; cualquier otro valor tiene que ser de las cinco.
+  if (data.category !== undefined && !esCategoriaDeGasto(data.category)) throw new ExpenseCategoryError();
   const existing = await prisma.expense.findFirst({ where: { id, merchantId } });
   if (!existing) return null;
   // SCRUM-135: el PUT comprobaba la tenencia del GASTO pero no la de las referencias NUEVAS.
   await assertRefsOwned(merchantId, data);
-  return prisma.expense.update({ where: { id }, data });
+  // SCRUM-937 · la edición hace con el NIF lo mismo que el alta. El modal ya lo mandaba y aquí no
+  // llegaba nunca: la otra puerta del mismo silencio. No es columna de `Expense`, así que se aparta
+  // antes del `update` y va a la ficha del proveedor que el gasto tenga DESPUÉS de editarlo — si la
+  // misma edición cambia de proveedor, al nuevo.
+  const { nifProveedor, ...campos } = data;
+  const actualizado = await prisma.expense.update({ where: { id }, data: campos });
+  await guardarNifDelProveedor(merchantId, { providerId: actualizado.providerId, nifProveedor });
+  return actualizado;
 }
 
 export async function deleteExpense(merchantId: number, id: number) {

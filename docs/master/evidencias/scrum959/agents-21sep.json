@@ -1,0 +1,86 @@
+[
+  {
+    "id": "df2fa38f",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789738788767,
+    "sessionId": "df2fa38f-f8b8-482e-a040-22b56ab065e9",
+    "name": "sesion-5",
+    "state": "working"
+  },
+  {
+    "pid": 3832,
+    "id": "58e4fcf4",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789974956076,
+    "sessionId": "58e4fcf4-22e3-49b2-8ffe-1a888abd0a77",
+    "name": "s2b-21",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 11824,
+    "id": "6433567b",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789974957648,
+    "sessionId": "6433567b-4f56-4fa3-9f2b-8e2918d6fa3e",
+    "name": "s5-21",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 4444,
+    "id": "81b3c104",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend\\.claude\\worktrees\\s4-21",
+    "kind": "background",
+    "startedAt": 1789974965010,
+    "sessionId": "81b3c104-34ee-4650-8ddf-4769ac51a891",
+    "name": "s4-21",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 10528,
+    "id": "829b5f76",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend\\.claude\\worktrees\\s1-967b",
+    "kind": "background",
+    "startedAt": 1789974968528,
+    "sessionId": "829b5f76-8ac6-40b6-b4c1-c8b3e0b1900f",
+    "name": "s1-21",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 27456,
+    "cwd": "d:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "interactive",
+    "startedAt": 1789975382168,
+    "sessionId": "19e7d48b-f0df-46db-be65-e0219c6b910b",
+    "name": "cobroflash-backend-90",
+    "status": "busy"
+  },
+  {
+    "pid": 13728,
+    "id": "4987d73c",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789976742339,
+    "sessionId": "4987d73c-2662-4153-869e-e4a07f73dd93",
+    "name": "s2-21b",
+    "status": "busy",
+    "state": "working"
+  },
+  {
+    "pid": 15968,
+    "id": "bdc0160c",
+    "cwd": "D:\\MILLONARIO\\cobroFlash\\cobroflash-backend",
+    "kind": "background",
+    "startedAt": 1789976922551,
+    "sessionId": "bdc0160c-413e-4cff-8729-324fda7c273b",
+    "name": "s0-21b",
+    "status": "busy",
+    "state": "working"
+  }
+]

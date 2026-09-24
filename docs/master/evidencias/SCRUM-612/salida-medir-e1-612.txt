@@ -1,0 +1,460 @@
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+0 · POBLACIÓN
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  raíz                         : <raíz del worktree>
+  ficheros de src/ (tsconfig)  : 289 declarados · 289 cargados en el programa con tipos
+  ficheros .js de public/      : 96 (AST sin tipos)
+  control · el programa carga todo src/: OK (289/289)
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+A · ¿DE DÓNDE SALE UN ENLACE DE PAGO? (el aviso preliminar del 18-sep ~15:30Z)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  población: 289 ficheros de src/ · busca (a) llamadas *.charge.create|createMany|upsert, (b) escritura anidada charge(s): { create… }, (c) SQL «INSERT INTO charges»
+  (a) llamadas que crean un Charge: 1
+      · src/modules/billing/app/routes/charges.routes.ts:53  en router.post('/')
+  (b) escrituras anidadas: 0
+  (c) SQL crudo: 0
+  control · (a) ve la creación conocida de charges.routes.ts: OK
+  control · (b) la misma búsqueda ve `events: { create }` (existe en charges.routes.ts): OK (5 vistas)
+
+  población: 289 ficheros de src/ + 96 de public/ + 224 de scripts/ · busca literales de texto que nombren la ruta «/charges» (no «/admin/charges»)
+      · src/modules/billing/app/routes/charges.routes.ts:99  «POST /charges error»  en router.post('/')
+      · src/modules/billing/domain/invoiceWhatsApp.service.ts:57  «${…}/charges»  en sendInvoicePaymentRequest
+      · src/modules/exports/app/routes/exports.routes.ts:628  «/charges.csv»  en (nivel de módulo)
+      · src/app.ts:351  «/charges»  en (nivel de módulo)
+      · src/core/http/publicAccessDeclarations.ts:52  «/charges»  en (nivel de módulo)
+      · src/core/http/publicAccessDeclarations.ts:75  «/charges»  en (nivel de módulo)
+      · src/core/http/publicAccessDeclarations.ts:251  «/charges»  en (nivel de módulo)
+  control · la misma búsqueda ve la ruta «/webhooks/psp» que llama confirm-bizum: OK (16 vistas)
+  de ellos, usados como URL de una llamada HTTP (fetch/axios): 1
+      · src/modules/billing/domain/invoiceWhatsApp.service.ts:57  en sendInvoicePaymentRequest
+
+  población: 227 entradas (rutas + crons de src/) · ¿cuáles llegan a crear un cobro?
+      · POST /charges
+          create@src/modules/billing/app/routes/charges.routes.ts:53
+      · POST /admin/jobs/:id/collect-rest
+          sendInvoicePaymentRequest@src/modules/jobs/app/routes/jobs.routes.ts:1511 → fetch@src/modules/billing/domain/invoiceWhatsApp.service.ts:57
+      · POST /quote/:token/decision
+          sendInvoicePaymentRequest@src/modules/quotes/app/routes/quotes.routes.ts:818 → fetch@src/modules/billing/domain/invoiceWhatsApp.service.ts:57
+      · POST /admin/invoices/:id/resend-whatsapp
+          sendInvoicePaymentRequest@src/modules/system/app/routes/invoicesAdmin.routes.ts:621 → fetch@src/modules/billing/domain/invoiceWhatsApp.service.ts:57
+  control · el grafo cruza ficheros: POST /webhooks/psp llega a sendWhatsAppWindowFirst por sendPaymentConfirmationInvoice: OK
+
+  pasarelas (checkout.sessions|paymentLinks|paymentIntents.create, preference(s).create): 3
+      · src/modules/billing/app/routes/payCard.routes.ts:104  stripe.checkout.sessions.create  en router.get('/card/:token')
+      · src/modules/billing/app/routes/payCard.routes.ts:105  stripe.checkout.sessions.create  en router.get('/card/:token')
+      · src/modules/billing/app/routes/subscriptions.routes.ts:121  stripe.checkout.sessions.create  en router.post('/checkout')
+
+  páginas públicas bajo /pay y /recibo: 13 rutas · tablas que leen (find*) por el grafo:
+      · GET /recibo/:token                                   charge, invoice, quote
+      · GET /recibo/:token/pdf                               charge, invoice, quote
+      · POST /recibo/:token/feedback                         charge
+      · GET /pay/bank/:token                                 charge
+      · GET /pay/card/:token                                 charge
+      · GET /pay/mp/:token                                   charge
+      · GET /pay/mp/:token/result                            charge
+      · GET /pay/invoice/:token                              charge, invoice
+      · GET /pay/bizum/:token                                charge, event
+      · POST /pay/bizum/:token/claimed                       charge, customer, event
+      · GET /pay/quote/:token/reject                         quote
+      · POST /pay/quote/:token/reject                        quote
+      · GET /pay/quote/:token/pdf                            quote
+  control · la página de tarjeta (GET /pay/card/:token) lee la tabla charge: OK
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+B · ¿QUÉ RECIBE EL CLIENTE? Todas las entradas que llegan a un envío (WhatsApp / correo) o a emitir
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  población: 227 entradas (221 rutas + 6 crons) · 41 llegan a algo
+
+  ▸ POST /dev/issue-invoice/:chargeId   [EMISION]   (src/modules/system/app/routes/dev.routes.ts)
+      EMISION    ensureInvoiceForCharge   [src/modules/system/app/routes/dev.routes.ts:64]
+
+  ▸ POST /dev/email-invoice/:chargeId   [EMISION, CORREO]   (src/modules/system/app/routes/dev.routes.ts)
+      EMISION    ensureInvoiceForCharge   [src/modules/system/app/routes/dev.routes.ts:79]
+      CORREO     sendInvoiceEmail → enviarPorResend   [src/modules/system/app/routes/dev.routes.ts:83]
+
+  ▸ POST /webhooks/stripe   [SALTO_HTTP, WHATSAPP, CORREO]   (src/modules/billing/app/routes/stripe.routes.ts)
+      SALTO_HTTP post   [src/modules/billing/app/routes/stripe.routes.ts:85]
+                 si event.type === 'checkout.session.completed' · si s.mode === 'payment' · si Number.isInteger(chargeId)
+      SALTO_HTTP post   [src/modules/billing/app/routes/stripe.routes.ts:125]
+                 si NO event.type === 'checkout.session.completed' · si event.type === 'payment_intent.payment_failed' · si Number.isInteger(chargeId)
+      SALTO_HTTP post   [src/modules/billing/app/routes/stripe.routes.ts:184]
+                 si NO event.type === 'checkout.session.completed' · si NO event.type === 'payment_intent.payment_failed' · si NO event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.c… · si NO event.type === 'customer.subscription.deleted' · si event.type === 'checkout.session.expired' · si Number.isInteger(chargeId)
+      WHATSAPP   handleStripeDispute → notifyMerchantAlert → sendWhatsAppCtaUrl   [src/modules/billing/app/routes/stripe.routes.ts:74]
+                 si event.type === 'charge.dispute.created'
+      CORREO     sendFirstPaymentEmail → sendEmail → enviarCorreo   [src/modules/billing/app/routes/stripe.routes.ts:117]
+                 si event.type === 'checkout.session.completed' · si NO s.mode === 'payment' · si s.mode === 'subscription' · si Number.isInteger(merchantId) && planId && s.customer
+
+  ▸ POST /webhooks/psp   [EMISION, WHATSAPP, CORREO]   (src/modules/billing/app/routes/psp.routes.ts)
+      EMISION    ensureInvoiceForCharge   [src/modules/billing/app/routes/psp.routes.ts:51]
+                 si charge.status === 'paid' && body.event === 'payment.confirmed' · si config.AUTO_INVOICE_ON_PAID
+      EMISION    ensureInvoiceForCharge   [src/modules/billing/app/routes/psp.routes.ts:191]
+                 si body.event === 'payment.confirmed' · si config.AUTO_INVOICE_ON_PAID
+      WHATSAPP   sendWhatsAppCtaUrl   [src/modules/billing/app/routes/psp.routes.ts:293]
+                 si body.event === 'payment.confirmed' · si merchant?.googleReviewUrl && updated.customer && tieneNumeroDeContacto(updated.customer) · si reviewPhone
+      CORREO     sendInvoiceEmail → enviarPorResend   [src/modules/billing/app/routes/psp.routes.ts:78]
+                 si charge.status === 'paid' && body.event === 'payment.confirmed' · si config.AUTO_INVOICE_ON_PAID · si hasRealPdf && config.AUTO_EMAIL_INVOICE_ON_PAID && charge.customerId · si NO await yaSeEnvioElCorreo(chargeId, inv.id, prisma) · si cust?.email
+      WHATSAPP   sendPaymentConfirmationInvoice → sendWhatsAppWindowFirst   [src/modules/billing/app/routes/psp.routes.ts:260]
+                 si body.event === 'payment.confirmed' · si updated.customer && tieneNumeroDeContacto(updated.customer)
+      WHATSAPP   notifyMerchantPaid → notifyMerchantAlert → sendWhatsAppCtaUrl   [src/modules/billing/app/routes/psp.routes.ts:309]
+                 si body.event === 'payment.confirmed'
+      CORREO     sendMerchantPaymentEmail → sendEmail → enviarCorreo   [src/modules/billing/app/routes/psp.routes.ts:325]
+                 si body.event === 'payment.confirmed' · si merchant?.notifyEmailOnPaid && merchant?.email
+
+  ▸ POST /pay/bizum/:token/claimed   [WHATSAPP]   (src/modules/billing/app/routes/payBizum.routes.ts)
+      WHATSAPP   notifyMerchantAlert → sendWhatsAppCtaUrl   [src/modules/billing/app/routes/payBizum.routes.ts:200]
+                 si !already
+
+  ▸ POST /webhooks/stripe-connect   [SALTO_HTTP, WHATSAPP]   (src/modules/payments/connect/connectWebhook.routes.ts)
+      SALTO_HTTP post   [src/modules/payments/connect/connectWebhook.routes.ts:94]
+                 si NO event.type === 'account.updated' · si event.type === 'checkout.session.completed' · si s.mode === 'payment' · si Number.isInteger(chargeId)
+      SALTO_HTTP post   [src/modules/payments/connect/connectWebhook.routes.ts:123]
+                 si NO event.type === 'account.updated' · si NO event.type === 'checkout.session.completed' · si NO event.type === 'charge.dispute.created' · si event.type === 'payment_intent.payment_failed' · si Number.isInteger(chargeId)
+      WHATSAPP   handleStripeDispute → notifyMerchantAlert → sendWhatsAppCtaUrl   [src/modules/payments/connect/connectWebhook.routes.ts:107]
+                 si NO event.type === 'account.updated' · si NO event.type === 'checkout.session.completed' · si event.type === 'charge.dispute.created'
+
+  ▸ POST /webhooks/mp   [EMISION, WHATSAPP, SALTO_HTTP, CORREO]   (src/modules/billing/app/routes/mpWebhook.routes.ts)
+      EMISION    ensureInvoiceForCharge   [src/modules/billing/app/routes/mpWebhook.routes.ts:139]
+                 si mpStatus === 'approved' && charge.status !== 'paid' · si config.AUTO_INVOICE_ON_PAID
+      WHATSAPP   sendWhatsAppCtaUrl   [src/modules/billing/app/routes/mpWebhook.routes.ts:208]
+                 si mpStatus === 'approved' && charge.status !== 'paid' · si merchant?.googleReviewUrl && updated.customer && tieneNumeroDeContacto(updated.customer) · si phone
+      SALTO_HTTP getMpPayment → get   [src/modules/billing/app/routes/mpWebhook.routes.ts:78]
+      CORREO     sendInvoiceEmail → enviarPorResend   [src/modules/billing/app/routes/mpWebhook.routes.ts:145]
+                 si mpStatus === 'approved' && charge.status !== 'paid' · si config.AUTO_INVOICE_ON_PAID · si config.AUTO_EMAIL_INVOICE_ON_PAID && updated.customer?.email
+      WHATSAPP   sendPaymentConfirmationInvoice → sendWhatsAppWindowFirst   [src/modules/billing/app/routes/mpWebhook.routes.ts:179]
+                 si mpStatus === 'approved' && charge.status !== 'paid' · si updated.customer && tieneNumeroDeContacto(updated.customer)
+      WHATSAPP   notifyMerchantPaid → notifyMerchantAlert → sendWhatsAppCtaUrl   [src/modules/billing/app/routes/mpWebhook.routes.ts:225]
+                 si mpStatus === 'approved' && charge.status !== 'paid'
+
+  ▸ POST /webhooks/whatsapp   [WHATSAPP, CORREO]   (src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts)
+      WHATSAPP   handleTemplateButtonReply → sendWhatsAppText   [src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:161]
+                 si NO msg.type === 'text' · si NO msg.type === 'interactive' · si msg.type === 'button'
+      WHATSAPP   handleIncomingPhoto → sendWhatsAppText   [src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:177]
+                 si NO msg.type === 'text' · si NO msg.type === 'interactive' · si NO msg.type === 'button' · si NO msg.type === 'location' · si msg.type === 'image' && isFlagEnabled('BOT_INBOUND_ENABLED') · si mediaId
+      WHATSAPP   handleUnsupportedMedia → sendWhatsAppText   [src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:181]
+                 si NO msg.type === 'text' · si NO msg.type === 'interactive' · si NO msg.type === 'button' · si NO msg.type === 'location' · si msg.type === 'image' && isFlagEnabled('BOT_INBOUND_ENABLED') · si NO mediaId
+      WHATSAPP   routeIncoming → handleMaintenanceButton → sendWhatsAppText   [src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:143]
+                 si msg.type === 'text'
+      CORREO     routeIncoming → handleIncomingText → sendMerchantQuoteAcceptedEmail → sendEmail → enviarCorreo   [src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:143]
+                 si msg.type === 'text'
+
+  ▸ POST /admin/jobs/:id/collect-rest   [EMISION, SALTO_HTTP, WHATSAPP]   (src/modules/jobs/app/routes/jobs.routes.ts)
+      EMISION    allocateInvoiceNumber   [src/modules/jobs/app/routes/jobs.routes.ts:1448]
+      EMISION    crearFacturaEmitida   [src/modules/jobs/app/routes/jobs.routes.ts:1451]
+      SALTO_HTTP sendInvoicePaymentRequest → fetch   [src/modules/jobs/app/routes/jobs.routes.ts:1511]
+      WHATSAPP   sendInvoicePaymentRequest → sendWhatsAppWindowFirst   [src/modules/jobs/app/routes/jobs.routes.ts:1511]
+
+  ▸ POST /admin/jobs/:id/consolidar-albaranes   [EMISION]   (src/modules/jobs/app/routes/jobs.routes.ts)
+      EMISION    emitirRecapitulativas → emitInvoice   [src/modules/jobs/app/routes/jobs.routes.ts:1615]
+
+  ▸ POST /admin/albaranes/consolidar   [EMISION]   (src/modules/jobs/app/routes/albaranes.routes.ts)
+      EMISION    emitirRecapitulativas → emitInvoice   [src/modules/jobs/app/routes/albaranes.routes.ts:503]
+
+  ▸ POST /admin/albaranes/:id/enviar-whatsapp   [WHATSAPP, SALTO_HTTP]   (src/modules/jobs/app/routes/albaranes.routes.ts)
+      WHATSAPP   sendAlbaranFirmadoWhatsApp → sendWhatsAppTemplate   [src/modules/jobs/app/routes/albaranes.routes.ts:1159]
+      SALTO_HTTP sendAlbaranFirmadoWhatsApp → uploadWhatsAppMedia → fetch   [src/modules/jobs/app/routes/albaranes.routes.ts:1159]
+
+  ▸ POST /admin/albaranes/:id/enviar-para-firmar   [WHATSAPP]   (src/modules/jobs/app/routes/albaranes.routes.ts)
+      WHATSAPP   sendAlbaranParaFirmarWhatsApp → sendWhatsAppWindowFirst   [src/modules/jobs/app/routes/albaranes.routes.ts:1174]
+
+  ▸ POST /admin/albaranes/:id/facturar-parcial   [EMISION]   (src/modules/jobs/app/routes/albaranes.routes.ts)
+      EMISION    emitInvoice   [src/modules/jobs/app/routes/albaranes.routes.ts:1266]
+
+  ▸ POST /admin/albaranes/:id/convertir-en-factura   [EMISION]   (src/modules/jobs/app/routes/albaranes.routes.ts)
+      EMISION    emitInvoice   [src/modules/jobs/app/routes/albaranes.routes.ts:1539]
+
+  ▸ POST /admin/soporte   [CORREO]   (src/modules/system/app/routes/soporteAdmin.routes.ts)
+      CORREO     enviarCorreo   [src/modules/system/app/routes/soporteAdmin.routes.ts:60]
+
+  ▸ POST /quote/create   [WHATSAPP]   (src/modules/quotes/app/routes/quotes.routes.ts)
+      WHATSAPP   sendWhatsAppText   [src/modules/quotes/app/routes/quotes.routes.ts:248]
+                 si needsApproval · si adminPhone
+
+  ▸ POST /quote/:token/accept   [CORREO]   (src/modules/quotes/app/routes/quotes.routes.ts)
+      CORREO     sendMerchantQuoteAcceptedEmail → sendEmail → enviarCorreo   [src/modules/quotes/app/routes/quotes.routes.ts:361]
+                 si quote.merchant?.notifyEmailOnQuoteAccepted && quote.merchant?.email
+
+  ▸ POST /quote/:token/decision   [EMISION, SALTO_HTTP, WHATSAPP]   (src/modules/quotes/app/routes/quotes.routes.ts)
+      EMISION    allocateInvoiceNumber   [src/modules/quotes/app/routes/quotes.routes.ts:736]
+                 si decision === 'accept' · si stage
+      EMISION    crearFacturaEmitida   [src/modules/quotes/app/routes/quotes.routes.ts:742]
+                 si decision === 'accept' · si stage
+      SALTO_HTTP sendInvoicePaymentRequest → fetch   [src/modules/quotes/app/routes/quotes.routes.ts:818]
+                 si decision === 'accept' · si stage · si paymentTerms === 'FULL_UPFRONT' && createdInvoice
+      WHATSAPP   sendInvoicePaymentRequest → sendWhatsAppWindowFirst   [src/modules/quotes/app/routes/quotes.routes.ts:818]
+                 si decision === 'accept' · si stage · si paymentTerms === 'FULL_UPFRONT' && createdInvoice
+      WHATSAPP   notifyMerchantAlert → sendWhatsAppCtaUrl   [src/modules/quotes/app/routes/quotes.routes.ts:857]
+
+  ▸ POST /invoice/issue   [EMISION]   (src/modules/invoicing/app/routes/invoice.routes.ts)
+      EMISION    ensureInvoiceForCharge   [src/modules/invoicing/app/routes/invoice.routes.ts:15]
+
+  ▸ POST /admin/quotes/:id/invoice   [EMISION]   (src/modules/system/app/routes/quotesAdmin.routes.ts)
+      EMISION    allocateInvoiceNumber   [src/modules/system/app/routes/quotesAdmin.routes.ts:291]
+      EMISION    crearFacturaEmitida   [src/modules/system/app/routes/quotesAdmin.routes.ts:294]
+
+  ▸ POST /admin/quotes/:id/invoice-manual   [EMISION]   (src/modules/system/app/routes/quotesAdmin.routes.ts)
+      EMISION    allocateInvoiceNumber   [src/modules/system/app/routes/quotesAdmin.routes.ts:560]
+      EMISION    crearFacturaEmitida   [src/modules/system/app/routes/quotesAdmin.routes.ts:563]
+
+  ▸ POST /admin/quotes/:id/send-whatsapp   [WHATSAPP]   (src/modules/system/app/routes/quotesAdmin.routes.ts)
+      WHATSAPP   sendQuoteWhatsAppToCustomer → sendWhatsAppWindowFirst   [src/modules/system/app/routes/quotesAdmin.routes.ts:618]
+
+  ▸ POST /admin/quotes/:id/send-email   [CORREO]   (src/modules/system/app/routes/quotesAdmin.routes.ts)
+      CORREO     sendQuoteEmail → enviarPorResend   [src/modules/system/app/routes/quotesAdmin.routes.ts:721]
+
+  ▸ POST /admin/quotes/:id/approve   [CORREO]   (src/modules/system/app/routes/quotesAdmin.routes.ts)
+      CORREO     sendTechQuoteApprovedEmail → sendEmail → enviarCorreo   [src/modules/system/app/routes/quotesAdmin.routes.ts:780]
+                 si quote.teamMemberId · si tech?.email
+
+  ▸ POST /admin/invoices   [EMISION]   (src/modules/system/app/routes/invoicesAdmin.routes.ts)
+      EMISION    emitInvoice   [src/modules/system/app/routes/invoicesAdmin.routes.ts:152]
+
+  ▸ POST /admin/invoices/:id/resend-whatsapp   [SALTO_HTTP, WHATSAPP]   (src/modules/system/app/routes/invoicesAdmin.routes.ts)
+      SALTO_HTTP sendInvoicePaymentRequest → fetch   [src/modules/system/app/routes/invoicesAdmin.routes.ts:621]
+      WHATSAPP   sendInvoicePaymentRequest → sendWhatsAppWindowFirst   [src/modules/system/app/routes/invoicesAdmin.routes.ts:621]
+
+  ▸ POST /admin/invoices/:id/send-email   [CORREO]   (src/modules/system/app/routes/invoicesAdmin.routes.ts)
+      CORREO     sendInvoiceEmail → enviarPorResend   [src/modules/system/app/routes/invoicesAdmin.routes.ts:681]
+
+  ▸ POST /admin/invoices/:id/send-reminder   [WHATSAPP]   (src/modules/system/app/routes/invoicesAdmin.routes.ts)
+      WHATSAPP   sendWhatsAppTemplate   [src/modules/system/app/routes/invoicesAdmin.routes.ts:734]
+                 si payUrl
+      WHATSAPP   sendWhatsAppText   [src/modules/system/app/routes/invoicesAdmin.routes.ts:754]
+                 si NO payUrl
+
+  ▸ POST /admin/invoices/:id/rectify   [EMISION]   (src/modules/system/app/routes/invoicesAdmin.routes.ts)
+      EMISION    allocateInvoiceNumber   [src/modules/system/app/routes/invoicesAdmin.routes.ts:1022]
+      EMISION    crearFacturaEmitida   [src/modules/system/app/routes/invoicesAdmin.routes.ts:1025]
+
+  ▸ POST /auth/login   [CORREO]   (src/modules/auth/app/routes/auth.routes.ts)
+      CORREO     requestMagicLink → issueLoginLink → sendEmail → enviarCorreo   [src/modules/auth/app/routes/auth.routes.ts:23]
+
+  ▸ POST /auth/register   [CORREO]   (src/modules/auth/app/routes/auth.routes.ts)
+      CORREO     registerMerchant → sendWelcomeEmail → sendEmail → enviarCorreo   [src/modules/auth/app/routes/auth.routes.ts:45]
+
+  ▸ POST /admin/team   [CORREO]   (src/modules/team/app/routes/team.routes.ts)
+      CORREO     createTeamMember → inviteTeamMember → sendEmail → enviarCorreo   [src/modules/team/app/routes/team.routes.ts:88]
+
+  ▸ POST /admin/team/:id/resend   [CORREO]   (src/modules/team/app/routes/team.routes.ts)
+      CORREO     resendInvite → inviteTeamMember → sendEmail → enviarCorreo   [src/modules/team/app/routes/team.routes.ts:140]
+
+  ▸ POST /cliente/:token/quote-request   [WHATSAPP]   (src/modules/system/app/routes/customerPortal.routes.ts)
+      WHATSAPP   sendWhatsAppText   [src/modules/system/app/routes/customerPortal.routes.ts:497]
+                 si mPhone
+
+  ▸ POST /albaran/:token/firmar   [WHATSAPP, SALTO_HTTP]   (src/modules/jobs/app/routes/albaranPublic.routes.ts)
+      WHATSAPP   sendAlbaranFirmadoWhatsApp → sendWhatsAppTemplate   [src/modules/jobs/app/routes/albaranPublic.routes.ts:427]
+      SALTO_HTTP sendAlbaranFirmadoWhatsApp → uploadWhatsAppMedia → fetch   [src/modules/jobs/app/routes/albaranPublic.routes.ts:427]
+
+  ▸ CRON '0 * * * *' (src/core/cron/cron.ts:58)   [WHATSAPP]   (src/core/cron/cron.ts)
+      WHATSAPP   sendPendingReminders → sendWhatsAppTemplate   [src/core/cron/cron.ts:66]
+
+  ▸ CRON '0 10 * * *' (src/core/cron/cron.ts:73)   [WHATSAPP]   (src/core/cron/cron.ts)
+      WHATSAPP   sendInvoicePaymentReminders → sendReminderWA → sendWhatsAppWindowFirst   [src/core/cron/cron.ts:76]
+
+  ▸ CRON '0 10 * * *' (src/core/cron/cron.ts:84)   [WHATSAPP]   (src/core/cron/cron.ts)
+      WHATSAPP   runMaintenanceProposals → sendWhatsAppButtons   [src/core/cron/cron.ts:87]
+      WHATSAPP   avisarSiEntroClienteReal → sendWhatsAppText   [src/core/cron/cron.ts:97]
+
+  ▸ CRON '0 9 * * 1' (src/core/cron/cron.ts:103)   [CORREO]   (src/core/cron/cron.ts)
+      CORREO     sendWeeklyDigests → sendDigestForMerchant → sendEmail → enviarCorreo   [src/core/cron/cron.ts:110]
+
+  ▸ CRON '0 8 * * *' (src/core/cron/cron.ts:120)   [CORREO]   (src/core/cron/cron.ts)
+      CORREO     runLifecycleEmails → sendEmail → enviarCorreo   [src/core/cron/cron.ts:125]
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+C · MARCAR UN COBRO A MANO: qué dispara cada puerta
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  población: las 4 puertas del panel que marcan cobrado (esperadas 4)
+  control · encuentra las 4 puertas: OK
+  ▸ POST /admin/charges/:id/confirm-bizum: envíos alcanzados directamente = 0 · saltos HTTP = /webhooks/psp · funciones cruzadas = 10
+        recorre isFlagEnabled@src/core/flags.ts
+        recorre resolverFechaDeCobro@src/modules/billing/domain/fechaDeCobro.ts
+        recorre internalHeaders@src/core/http/internalAuth.ts
+        recorre envioDelDocumentoDelCobro@src/modules/billing/app/routes/chargesAdmin.routes.ts
+        recorre parseBool@src/core/flags.ts
+        recorre leerEstados@src/modules/billing/app/routes/chargesAdmin.routes.ts
+        recorre tieneNumeroDeContacto@src/core/contacto/canalDeWhatsApp.ts
+        recorre envioDelDocumento@src/modules/billing/domain/envioDelDocumento.ts
+        recorre estadoWhatsappDeFilas@src/modules/billing/domain/envioDelDocumento.ts
+        recorre envioAutomaticoEncendido@src/modules/billing/domain/envioDelDocumento.ts
+  ▸ POST /admin/invoices/bulk-paid: envíos alcanzados directamente = 0 · saltos HTTP = ninguno · funciones cruzadas = 4
+        recorre resolverFechaDeCobro@src/modules/billing/domain/fechaDeCobro.ts
+        recorre recordAudit@src/modules/system/audit.service.ts
+        recorre requestIp@src/modules/system/audit.service.ts
+        recorre datosDe@src/modules/system/audit.service.ts
+  ▸ PUT /admin/invoices/:id/status: envíos alcanzados directamente = 0 · saltos HTTP = ninguno · funciones cruzadas = 12
+        recorre updateInvoiceStatusAdmin@src/modules/system/invoiceAdmin.ts
+        recorre recordAudit@src/modules/system/audit.service.ts
+        recorre requestIp@src/modules/system/audit.service.ts
+        recorre campoPaidViaAlMarcar@src/modules/billing/domain/metodoDeCobro.ts
+        recorre recalcJobCobradoForInvoice@src/modules/jobs/domain/job.service.ts
+        recorre datosDe@src/modules/system/audit.service.ts
+        recorre metodoDeclarado@src/modules/billing/domain/metodoDeCobro.ts
+        recorre recalcJobCobradoForQuote@src/modules/jobs/domain/job.service.ts
+        recorre esMetodoValido@src/modules/billing/domain/metodoDeCobro.ts
+        recorre recalcJobCobradoForJob@src/modules/jobs/domain/job.service.ts
+        recorre partirMetodo@src/modules/billing/domain/metodoDeCobro.ts
+        recorre quotesDelJob@src/modules/jobs/domain/job.service.ts
+  ▸ POST /admin/invoices/:id/pay: envíos alcanzados directamente = 0 · saltos HTTP = ninguno · funciones cruzadas = 13
+        recorre markInvoicePaidAdmin@src/modules/system/invoiceAdmin.ts
+        recorre recordAudit@src/modules/system/audit.service.ts
+        recorre requestIp@src/modules/system/audit.service.ts
+        recorre updateInvoiceStatusAdmin@src/modules/system/invoiceAdmin.ts
+        recorre datosDe@src/modules/system/audit.service.ts
+        recorre campoPaidViaAlMarcar@src/modules/billing/domain/metodoDeCobro.ts
+        recorre recalcJobCobradoForInvoice@src/modules/jobs/domain/job.service.ts
+        recorre metodoDeclarado@src/modules/billing/domain/metodoDeCobro.ts
+        recorre recalcJobCobradoForQuote@src/modules/jobs/domain/job.service.ts
+        recorre esMetodoValido@src/modules/billing/domain/metodoDeCobro.ts
+        recorre recalcJobCobradoForJob@src/modules/jobs/domain/job.service.ts
+        recorre partirMetodo@src/modules/billing/domain/metodoDeCobro.ts
+  control · el recorrido de PUT …/status cruza a job.service (recalcJobCobradoForInvoice): OK
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+D · BOCAS DE EMISIÓN y si consultan el modo ANTES de pedir número (reutiliza tests/_bocas-de-emision.mjs, SCRUM-778)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  población: 11 bocas (llamadas a allocateInvoiceNumber / emitInvoice en src/)
+  control · el censo de bocas no está vacío: OK (11)
+  · src/lib/invoicing.ts:338                                           embudo  C6                 modo consultado antes: no   (no es una ruta: función o cron)
+  · src/modules/invoicing/domain/invoicing.service.ts:92               embudo  input.origen       modo consultado antes: no   (no es una ruta: función o cron)
+  · src/modules/jobs/app/routes/albaranes.routes.ts:1266               emisor  C7-parcial         modo consultado antes: SÍ   POST /admin/albaranes/:id/facturar-parcial
+  · src/modules/jobs/app/routes/albaranes.routes.ts:1539               emisor  C7-albaran         modo consultado antes: SÍ   POST /admin/albaranes/:id/convertir-en-factura
+  · src/modules/jobs/app/routes/jobs.routes.ts:1448                    embudo  C2                 modo consultado antes: no   POST /admin/jobs/:id/collect-rest
+  · src/modules/jobs/domain/recapitulativa.service.ts:105              emisor  C7-recapitulativa  modo consultado antes: no   (no es una ruta: función o cron)
+  · src/modules/quotes/app/routes/quotes.routes.ts:736                 embudo  C1                 modo consultado antes: no   POST /quote/:token/decision
+  · src/modules/system/app/routes/invoicesAdmin.routes.ts:152          emisor  C7-suelta          modo consultado antes: no   POST /admin/invoices
+  · src/modules/system/app/routes/invoicesAdmin.routes.ts:1022         embudo  C5                 modo consultado antes: no   POST /admin/invoices/:id/rectify
+  · src/modules/system/app/routes/quotesAdmin.routes.ts:291            embudo  C3                 modo consultado antes: no   POST /admin/quotes/:id/invoice
+  · src/modules/system/app/routes/quotesAdmin.routes.ts:560            embudo  C4                 modo consultado antes: no   POST /admin/quotes/:id/invoice-manual
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+E · LOS FLAGS: valor por defecto y quién los lee
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  FLAG_DEFAULTS tiene 13 flags. Los dos del encargo:
+    INVOICING_ES_ENABLED   = false  (src/core/flags.ts:16)
+    SIF_ENABLED            = false  (src/core/flags.ts:17)
+  control · lee FLAG_DEFAULTS por AST: OK
+
+  INVOICING_ES_ENABLED: 8 apariciones como valor (src/ + public/; no cuenta la clave de FLAG_DEFAULTS)
+    · src/core/flags.ts:45  literal  en (nivel de módulo)
+    · src/modules/invoicing/domain/emission.service.ts:40  isFlagEnabled(…)  en getEmissionMode
+    · src/modules/system/audit.service.ts:253  isFlagEnabled(…)  en flagsFiscalesDe
+    · src/modules/invoicing/domain/invoiceNumber.service.ts:455  isFlagEnabled(…)  en allocateInvoiceNumber
+    · src/modules/exports/app/routes/exports.routes.ts:144  isFlagEnabled(…)  en router.get('/datos.zip')
+    · src/modules/exports/app/routes/exports.routes.ts:544  isFlagEnabled(…)  en router.get('/verifactu.xml')
+    · src/modules/system/domain/flagFiscal.service.ts:35  literal  en (nivel de módulo)
+    · src/modules/system/domain/flagFiscal.service.ts:133  isFlagEnabled(…)  en cambiarFlagFiscal
+  control · ve la lectura conocida de getEmissionMode: OK
+
+  SIF_ENABLED: 5 apariciones como valor (src/ + public/; no cuenta la clave de FLAG_DEFAULTS)
+    · src/core/flags.ts:46  literal  en (nivel de módulo)
+    · src/modules/system/audit.service.ts:254  isFlagEnabled(…)  en flagsFiscalesDe
+    · src/modules/invoicing/domain/invoiceNumber.service.ts:456  isFlagEnabled(…)  en allocateInvoiceNumber
+    · src/modules/system/domain/flagFiscal.service.ts:35  literal  en (nivel de módulo)
+    · src/modules/system/domain/flagFiscal.service.ts:134  isFlagEnabled(…)  en cambiarFlagFiscal
+  control · ve al menos una lectura de SIF_ENABLED fuera de flags.ts: OK
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+F · EL CAMINO DEL JUSTIFICANTE: dónde RAMIFICA el código por él
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  población: 289 de src/ + 96 de public/ · comparaciones (===, !==, ==, !=) contra 'receipt' | 'JUST' | 'justificante', y el filtro { not: 'JUST' }
+  ramificaciones: 16 en 12 ficheros
+    · src/modules/invoicing/domain/facturaSuelta.ts:78                       [receipt]  getEmissionMode(merchant) === 'receipt'
+    · src/modules/invoicing/domain/invoiceNumber.service.ts:487              [receipt]  getEmissionMode(m) === 'receipt'
+    · src/modules/invoicing/infra/pdf/pdf.service.ts:295                     [JUST]  params.type === 'JUST'
+    · src/modules/system/invoiceAdmin.ts:40                                  [JUST (filtro not)]  not: 'JUST'
+    · src/modules/system/invoiceAdmin.ts:251                                 [JUST]  existing.type === 'JUST'
+    · src/modules/billing/app/routes/receipt.routes.ts:96                    [JUST]  invoice.type === 'JUST'
+    · src/modules/jobs/app/routes/jobs.routes.ts:1571                        [receipt]  getEmissionMode(merchant) === 'receipt'
+    · src/modules/jobs/app/routes/albaranes.routes.ts:444                    [receipt]  getEmissionMode(merchant) === 'receipt'
+    · src/modules/jobs/app/routes/albaranes.routes.ts:1223                   [receipt]  getEmissionMode(merchant) === 'receipt'
+    · src/modules/jobs/app/routes/albaranes.routes.ts:1416                   [receipt]  getEmissionMode(merchant) === 'receipt'
+    · public/dashboard/js/invoiceDetailView.js:91                            [JUST]  invoice.type === 'JUST'
+    · public/dashboard/js/invoicesView.js:81                                 [justificante]  tipoDeFactura(doc) !== 'justificante'
+    · public/dashboard/js/invoicesView.js:222                                [justificante]  window.appDocumentoSuelto === 'justificante'
+    · public/dashboard/js/jobDocsReparto.js:36                               [JUST]  inv.type === 'JUST'
+    · public/dashboard/js/jobRailBlocks.js:141                               [justificante]  clasifica(inv) !== 'justificante'
+    · public/dashboard/js/rotulosDelDocumento.js:54                          [justificante]  window.appDocumentoSuelto === 'justificante'
+  control · ve la rama conocida de allocateInvoiceNumber (getEmissionMode(...) === 'receipt'): OK
+
+  referencias a los identificadores del mecanismo (fichero: nº):
+    getEmissionMode                   13 en 6 ficheros
+    isReceiptNumber                   42 en 19 ficheros
+    RECEIPT_NUMBER_PREFIX              3 en 1 ficheros
+    makeReceiptNumber                  2 en 1 ficheros
+    reservarReferenciaJustificante     2 en 1 ficheros
+    modoDocumentoSuelto                5 en 3 ficheros
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+G · TEXTOS con «justificante» que puede ver alguien (literales de código, sin comentarios)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  población: 289 de src/ + 96 de public/ · literales de texto (no identificadores, no comentarios) que contienen «justificante» sin distinguir acentos ni mayúsculas
+  29 textos en 16 ficheros · aparte, 2 del homónimo de GASTOS (justificante de un gasto, SCRUM-324), que no es este documento
+    public/dashboard/js/invoiceDetailView.js  (4)
+        :93  «Justificante de cobro»
+        :94  «Detalle y acciones del justificante.»
+        :138  «JUSTIFICANTE»
+        :534  «Presupuesto firmado + evidencia de aceptación + justificante + registro de mens…»
+    public/dashboard/js/invoicesView.js  (1)
+        :223  «+ Nuevo justificante»
+    public/dashboard/js/jobDetailView.js  (1)
+        :24  «Justificante»
+    public/dashboard/js/quotesDetailView.js  (1)
+        :288  «🧾 Ver justificante»
+    public/dashboard/js/quotesView.js  (1)
+        :437  «¿Para quién es el justificante?»
+    public/dashboard/js/rotulosDelDocumento.js  (6)
+        :70  «Justificantes»
+        :71  «Nº justificante»
+        :74  «Nuevo justificante»
+        :75  «Emitir justificante»
+        :79  «Justificante emitido»
+        :82  «No hemos podido emitir el justificante. Inténtalo otra vez.»
+    public/dashboard/js/settingsView.js  (3)
+        :39  «Se emiten justificantes de cobro»
+        :44  «Cada cobro genera un justificante para tu cliente, con su propia referencia. No…»
+        :1287  «Sin ellos, el documento tras el pago es un justificante de cobro»
+    src/modules/billing/app/routes/mpWebhook.routes.ts  (1)
+        :200  «Justificante»
+    src/modules/billing/app/routes/payInvoice.routes.ts  (1)
+        :48  «Justificante»
+    src/modules/billing/app/routes/psp.routes.ts  (1)
+        :282  «Justificante»
+    src/modules/billing/domain/invoiceWhatsApp.service.ts  (1)
+        :66  «Justificante»
+    src/modules/exports/domain/exportData.ts  (1)
+        :615  «facturas/ ${…} de ${…} PDF de factura/justificante»
+    src/modules/invoicing/domain/invoiceNumber.service.ts  (2)
+        :147  «referencia_justificante_agotada: ${…} intentos ocupados para el merchant»
+        :151  «ReferenciaJustificanteAgotada»
+    src/modules/invoicing/infra/pdf/pdf.service.ts  (2)
+        :378  «JUSTIFICANTE DE COBRO»
+        :689  «Justificante de cobro — este documento acredita el cobro recibido.»
+    src/modules/messaging/domain/email.service.ts  (1)
+        :43  «justificante de cobro»
+    src/modules/system/app/routes/invoicesAdmin.routes.ts  (2)
+        :354  «<!doctype html><html lang="es"><head><meta charset="utf-8"/> <title>Paquete de …»
+        :868  «Este documento es un justificante, no una factura fiscal: no entra en la cadena…»
+  control · ve «JUSTIFICANTE DE COBRO» del PDF (pdf.service.ts): OK
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+H · LA MARCA DE AGUA «DEMO — no válida fiscalmente»
+════════════════════════════════════════════════════════════════════════════════════════════════════
+  población: 289 de src/ + 96 de public/ · el literal, la constante, la propiedad `watermark:` y su lectura `params.watermark`
+    · src/modules/invoicing/domain/emission.service.ts:12  DEMO_WATERMARK  en (nivel de módulo)
+    · src/modules/invoicing/domain/emission.service.ts:12  literal «DEMO — no válida fiscalmente»  en (nivel de módulo)
+    · src/modules/invoicing/infra/pdf/pdf.service.ts:331  params.watermark  en drawWatermark
+    · src/modules/invoicing/infra/pdf/pdf.service.ts:336  params.watermark  en drawWatermark
+    · src/lib/invoicing.ts:131  watermark: isDemoMerchant(inv.merchant) ? DEMO_WATERMARK : null
+    · src/lib/invoicing.ts:131  DEMO_WATERMARK  en ensureInvoicePdf
+    · src/lib/invoicing.ts:268  watermark: merchant && isDemoMerchant(merchant) ? DEMO_WATERMARK : null
+    · src/lib/invoicing.ts:268  DEMO_WATERMARK  en ensurePdfAndEvent
+    · src/modules/system/app/routes/invoicesAdmin.routes.ts:1170  watermark: isDemoMerchant(merchant) ? DEMO_WATERMARK : null
+    · src/modules/system/app/routes/invoicesAdmin.routes.ts:1170  DEMO_WATERMARK  en router.post('/:id/regenerate-pdf')
+    · public/dashboard/js/invoiceDetailView.js:100  literal «DEMO — no válida fiscalmente»  en renderInvoiceDetailView
+  control · ve la constante en emission.service.ts: OK
+  control · ve el dibujo en pdf.service.ts (params.watermark): OK
+
+EXIT_PREVISTO=0  (controles fallidos: 0)

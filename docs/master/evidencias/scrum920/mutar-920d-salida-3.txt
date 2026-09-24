@@ -1,0 +1,15 @@
+TESTIGO · banco de mutacion 920d · HEAD 3f8253c81cbf2909871f32cb39eb994343e33945
+BASE sin mutar · guard exit=0 · ✅ 77 · 🔴 0
+M10 · la barra pasa POR ENCIMA del modal (z-index 900 y sin el contexto de apilado de la animacion)
+     aplicada=true (ocurrencias por cambio: 1+1) · diff 2 2 public/dashboard/css/styles.css · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 390px · la pregunta es [] y tiene que ser «¿Eliminar este gasto?»
+       🔴 390px · «Eliminar» no borró el gasto 5: []
+       🔴 390px · con el alta abierta la barra sigue POR ENCIMA del modal
+M15 · el chip pulsado no cambia su aria-pressed
+     aplicada=true (ocurrencias por cambio: 1) · diff 1 1 public/dashboard/js/expensesView.js · guard exit=1 (intentos 1) · rojo esperado visto=true · restaurado=true → CAE
+       🔴 1280px · tras pulsar «Sin foto» el chip pulsado es [{"texto":"Todos · 8","pulsado":"true"},{"texto":"Sin foto · 5","pulsado":"false"}]
+       🔴 390px · tras pulsar «Sin foto» el chip pulsado es [{"texto":"Todos · 8","pulsado":"true"},{"texto":"Sin foto · 5","pulsado":"false"}]
+       🔴 2 hallazgos.
+
+POBLACION mutaciones=2 · aplicadas=2 · caen=2 · vivas=[] · sin restaurar=[]
+EXIT=0

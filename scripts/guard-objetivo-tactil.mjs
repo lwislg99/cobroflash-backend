@@ -89,6 +89,17 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL, MINIMO_ESCRITORIO, CORTE_M
 // `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
 // diagnostico-dependencias.
 import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
+import { todos } from '../tests/_banco-vistas.mjs';
+
+/** SCRUM-915d · abre, sólo por clases de estado, todos los pasos del editor y la fila de Ajustes. */
+function abrirTodosLosPasos(contenedor) {
+  for (const n of todos(contenedor)) {
+    const c = String(n.className || '');
+    if (/\bquote-paso(-parte)?\b/.test(c)) n.className = c.replace(/\bis-cerrado\b/, 'is-abierto');
+    if (/\bquote-(ajustes|fila)\b/.test(n.className)) n.className = n.className.replace(/\bis-plegado\b/, 'is-desplegado');
+    if (/\bquote-fila__detalle\b/.test(c)) n.hidden = false;
+  }
+}
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -259,8 +270,15 @@ const SUPERFICIES_791 = [
   //     «💾 Guardar como plantilla»   BUTTON.btn-ghost.btn-sm.quote-header-btn  36,7 px a 929 · cumple a 390
   // Siguen los cuatro que son cortos TAMBIÉN en móvil: «✨ Sugerir con IA», «📋 Usar plantilla»,
   // «+ Añadir descuento» y las casillas de 17 px. Nada de la pantalla ha dejado de pintarse.
+  // 🔴 SCRUM-915d · EL EDITOR SE MIDE CON TODOS SUS PASOS ABIERTOS, y es una decisión declarada.
+  // Desde los pasos (v3), al entrar sólo se ve el paso Cliente: medido tal cual, este guard veía 5
+  // pulsables y se declaraba CIEGO (sus cortos declarados viven en Conceptos y en Condiciones). El
+  // tamaño de un botón no depende de qué paso esté abierto, así que `abrirTodosLosPasos` cambia
+  // SÓLO las clases de estado antes de serializar y la población vuelve a ser la de siempre. Lo que
+  // esto provoca —la visibilidad— no es lo que juzga; que los pasos se abran y se cierren como deben
+  // lo juzga `guard:pasos-del-editor`.
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 4,
-    origen: 'SCRUM-711 (15-sep-2026, con el mínimo de cada ancho)' },
+    origen: 'SCRUM-711 (15-sep-2026, con el mínimo de cada ancho)', preparar: abrirTodosLosPasos },
   // 🔴 SCRUM-848 · `datos` NO es una excepción nueva ni un número tocado: es la SUPERFICIE.
   //
   // Sin él, el banco montaba esta ficha con `{}` — un Trabajo SIN `status`, que el producto no
@@ -279,11 +297,14 @@ const SUPERFICIES_791 = [
   //
   // 🔴 SCRUM-711 · 15-sep-2026 · 6 → 5, y el que falta es justo el que nombraba el párrafo de arriba:
   // `BUTTON.btn-primary «+ Nuevo albarán»` a 37,0 px. Sólo era corto a 929; con el mínimo de
-  // escritorio de DESIGN.md (36) cumple, y su excepción se retiró. Siguen los cinco que son cortos
-  // también en móvil: la miga «Trabajos», «+ Nuevo albarán» y «Parte de trabajo» con `btn-sm`,
-  // «Cambiar» y la casilla de 14 px.
+  // escritorio de DESIGN.md (36) cumple, y su excepción se retiró.
+  // 🔴 SCRUM-962 · 22-sep-2026 · 5 → 1: arreglados la miga «Trabajos» (`.detail-miga-link` con
+  // `min-height`+`min-width`), «+ Nuevo albarán»/«Parte de trabajo»/«+ Añadir gasto» y «Cambiar»
+  // (opt-in `.job-toolbar-btn-44`, sin tocar `.btn-sm` en general). Queda la casilla de 14 px
+  // (deuda declarada, mismo patrón que `.quote-line__suplido`: la etiqueta lleva el área, no el
+  // checkbox nativo — ver `docs/master/SCRUM-962.md`).
   { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo',
-    distintosEsperados: 5, datos: TRABAJO_DE_MUESTRA, origen: 'SCRUM-711 (15-sep-2026, con el mínimo de cada ancho)' },
+    distintosEsperados: 1, datos: TRABAJO_DE_MUESTRA, origen: 'SCRUM-962 (22-sep-2026, con el mínimo de cada ancho)' },
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -298,7 +319,7 @@ const SUPERFICIES_791 = [
     origen: 'SCRUM-795 (7-sep-2026, con la lista de excepciones VACÍA)' },
 ];
 for (const s of SUPERFICIES_791) {
-  const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10 });
+  const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10, preparar: s.preparar || null });
   s.aviso = p.aviso;
   s.html = p.html && envolver(p.html);
   s.htmlSonda = p.html && envolver(p.html + SONDA_HTML + SONDAS_UMBRAL_HTML);
@@ -640,11 +661,11 @@ const EXCEPCIONES_791 = {
     { sel: 'BUTTON', motivo: 'las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).' },
   ],
   renderJobDetailView: [
-    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «Cambiar». Pre-existente; la retira el fundador con `.btn-sm`.' },
-    { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,9 px) — «+ Nuevo albarán», «Parte de trabajo». Ídem.' },
     // SCRUM-711 · aquí estaba `BUTTON.btn-primary` «+ Nuevo albarán», el CTA del héroe a 37,0 px. Sólo
     // era corto a 929, por exigir 44 en escritorio: retirada, la nombró el detector de sobrantes.
-    { sel: 'BUTTON.detail-miga-link', motivo: '19,6 px de ÁREA DE TOQUE — la miga «Trabajos». Uno de los DOS PEORES del árbol, y su caja CSS no lo delata: es el ejemplo de por qué el árbitro es el área y no la caja. Sin decidir.' },
+    // SCRUM-962 (22-sep-2026) · retiradas las tres de arriba: «Cambiar», «+ Nuevo albarán»/«Parte de
+    // trabajo» (ya llegan a 44/36 con `.job-toolbar-btn-44`) y la miga «Trabajos» (ya llega con
+    // `min-height`+`min-width` en `.detail-miga-link`). Las nombró el detector de sobrantes/caducas.
     { sel: 'INPUT', motivo: '14,0 px — la casilla de precios de la barra de documentos. EL PEOR del árbol entero, y en la pantalla que se usa de pie en obra. Sin decidir.' },
   ],
 };

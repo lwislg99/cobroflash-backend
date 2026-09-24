@@ -280,3 +280,109 @@ test('SCRUM-878 · 🔴 los spreads DECLARADOS son exactamente los medidos, y ll
       + 'su sitio es una promesa — y el sitio es un nombre, no un numero de linea.');
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// FASE b (SCRUM-878b) · EL CERROJO: «FISCAL NO PASA DE 0»
+//
+// La fase a midió y dejó escrito, en su propia entrada, lo que NO había hecho: *«convertir este
+// censo en trinquete»*. Lo dejó como decisión de producto porque una R1 implementada EDITANDO
+// daría rojo.
+//
+// 🔴 QUIÉN AUTORIZA ESTO, DICHO SIN ADORNOS — y se dice porque la primera versión de este bloque
+// escribió aquí «el fundador decide que sí se pone». **Eso era falso.** SCRUM-878 tiene CERO
+// comentarios en Jira (medido el 17-sep-2026, `comment.total = 0`) y el enunciado del ticket dice,
+// literal, que *mide y propone*. Ninguna firma respalda este trinquete, y una autorización
+// inventada en un comentario es peor que el trinquete que pretendía justificar.
+//
+// Lo que SÍ lo autoriza es otra cosa, y es comprobable:
+//
+//   · **Regla 38** — un guard que sólo LEE el camino de emisión se hace SIN pedir GO. Éste sólo
+//     lee: no modifica ni una línea de `src/`. El STOP es MODIFICARLO, y no se modifica.
+//   · **Regla 29**, firmada por el fundador en el máster (Parte I) — «una factura emitida JAMÁS se
+//     edita ni borra». El cerrojo no inventa una regla nueva: le pone el MECANISMO a una que ya
+//     estaba firmada. Una prohibición sin mecanismo es una frase.
+//
+// Y la reserva de la fase a queda contestada, no ignorada: una rectificativa se EMITE como
+// documento nuevo, no editando la anterior. Si algún día una R1 necesita editar, ese rojo es la
+// conversación que hay que tener — no un obstáculo que rodear ampliando la lista de campos.
+//
+// 🔒 Un trinquete en cero no prohíbe el futuro: obliga a que el futuro pase por una DECISIÓN en
+// vez de por un descuido.
+//
+// Si el fundador no lo quiere, quitarlo es BORRAR UN TEST: el censo y su clasificación siguen
+// midiendo igual, y la fase a no depende de este bloque.
+//
+// ⛔ Este bloque NO toca el camino de emisión (regla 38): clasifica lo que ya está escrito y no
+// modifica ni una línea de `src/`. Y no toca `scrum124` ni su lista blanca.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * La acusación del cerrojo. Vive en UNA función a propósito: el control de aquí abajo comprueba
+ * el texto que de verdad se emite, no una copia suya que podría decir otra cosa.
+ */
+function acusacion(escrituras) {
+  return escrituras.map((e) => `    · ${e.fichero}:${e.linea} — ${e.motivo}`).join('\n');
+}
+
+test('SCRUM-878b · 🔒 EL CERROJO: ninguna escritura sobre Invoice toca contenido FISCAL', () => {
+  const fiscales = CLASIFICADAS.filter((e) => e.clase === 'FISCAL');
+
+  // 🔴 SUELO ANTES DEL VEREDICTO: un cerrojo sobre una población vacía siempre está en verde.
+  assert.ok(CENSO.escrituras.length > 0,
+    '🔴 CIEGO: el censo no ve NINGUNA escritura sobre Invoice en todo `src/`. «0 escrituras que '
+    + 'tocan lo fiscal» y «no he sabido mirar» se leen igual, y una de las dos lecturas es falsa.');
+
+  assert.deepEqual(fiscales.map((e) => `${e.fichero}:${e.linea}`), [],
+    '🔴 HAY ESCRITURAS QUE EDITAN CONTENIDO FISCAL DE UNA FACTURA EMITIDA:\n'
+    + acusacion(fiscales)
+    + '\n\n  La regla 29 no lo permite: una factura emitida no se edita. Una rectificativa se\n'
+    + '  EMITE como documento nuevo (R1) y una anulación deja su propio registro — ninguna de\n'
+    + '  las dos reescribe la anterior.\n\n'
+    + '  🔴 SI ESTO SALE ROJO PORQUE UNA R1 NECESITA EDITAR, ESA ES LA CONVERSACIÓN QUE HAY QUE\n'
+    + '  TENER CON EL FUNDADOR — no algo que rodear ampliando la lista de campos permitidos.\n'
+    + '  El trinquete está en 0 para que el futuro pase por una decisión y no por un descuido.');
+});
+
+test('SCRUM-878b · 🔴 CONTROL DEL CERROJO: acusa nombrando FICHERO y LÍNEA, y la mutación CUENTA 1', () => {
+  // Se toma una escritura REAL de la población —no una inventada— y se le cambia UN campo de
+  // ficha por uno fiscal. Así el control mide sobre la forma que el árbol tiene de verdad.
+  const origen = CLASIFICADAS.find((e) => e.clase === 'FICHA' && /chargeId/.test(e.data));
+  assert.ok(origen,
+    '🔴 no hay ninguna escritura de FICHA con `chargeId` en la población: el control no puede '
+    + 'montarse sobre un caso real y no se monta sobre uno inventado.');
+
+  const veces = (origen.data.match(/chargeId/g) || []).length;
+  assert.equal(veces, 1,
+    `🔴 LA MUTACIÓN NO PUEDE ENTRAR: «chargeId» aparece ${veces} veces en \`${origen.data}\` y `
+    + 'debe aparecer exactamente 1. Una mutación que no entra y un cerrojo que no detecta dan la '
+    + 'misma salida.');
+
+  const mutada = { ...origen, data: origen.data.replace('chargeId', 'total') };
+  assert.notEqual(mutada.data, origen.data, '🔴 la sustitución no ha cambiado el texto: no mutó.');
+
+  const r = clasifica(mutada);
+  assert.equal(r.clase, 'FISCAL',
+    `🔴 cambiar \`chargeId\` por \`total\` en una escritura REAL no la convierte en FISCAL `
+    + `(sale ${r.clase}). El cerrojo no se dispararía ante el defecto que dice vigilar.`);
+
+  // 🔴 Y LO QUE EL ENCARGO EXIGE: que la acusación diga DÓNDE. Un rojo que no da fichero y línea
+  // manda a buscar por todo `src/`, y eso es lo que hace que un guard se apague.
+  const texto = acusacion([{ ...mutada, ...r }]);
+  assert.ok(texto.includes(origen.fichero),
+    `🔴 la acusación no nombra el FICHERO (\`${origen.fichero}\`). Se comprueba por SUBCADENA y no
+     con una expresión construida al vuelo: escapar una ruta a mano es justo donde se cuela el
+     error, y aquí lo que se mide es el texto, no la habilidad para escaparlo.`);
+  assert.ok(texto.includes(`:${origen.linea}`),
+    `🔴 la acusación no nombra la LÍNEA (\`${origen.linea}\`).`);
+});
+
+test('SCRUM-878b · ✅ VERDE REAL DEL CERROJO: el puntero al cobro NO lo dispara', () => {
+  // La otra mitad, sin la cual el cerrojo diría «toda escritura es sospechosa» y se desactivaría
+  // en una semana. `chargeId` es un puntero al cobro: se sabe DESPUÉS de emitir y la 29 lo permite.
+  const r = clasifica({ fichero: 'x.ts', linea: 1, data: '{ chargeId }', indirecto: '' });
+  assert.equal(r.clase, 'FICHA',
+    `🔴 \`invoice.update({ data: { chargeId } })\` sale como ${r.clase}. Un puntero al cobro no es `
+    + 'contenido fiscal, y un cerrojo que lo acusa se apaga en una semana — con razón.');
+  assert.deepEqual(acusacion([]), '',
+    '🔴 la acusación no está vacía con cero acusados: el cerrojo imprimiría un rojo sin nadie dentro.');
+});

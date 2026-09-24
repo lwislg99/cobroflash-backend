@@ -90,7 +90,10 @@ function renderCustomersView(container) {
   // Banco: `docs/master/evidencias/scrum886/`.
   headActions.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap";
   const importBtn = createElement("button", "btn-secondary btn-sm", "⬆ Importar CSV");
-  importBtn.title = "Importar clientes desde un fichero CSV o Excel";
+  // SCRUM-985 · el tooltip prometía un formato que el importador no lee: solo entra `.csv`/`.txt`.
+  // Texto FIRMADO por el orquestador por delegación del fundador (21-sep-2026), en
+  // `docs/microcopy/2026-09-21-SCRUM-985-importar-solo-csv.md`.
+  importBtn.title = "Importar clientes desde un fichero CSV";
   // SCRUM-312: un alta MASIVA de clientes es «catálogo entero» → admin, con el criterio ya
   // escrito en `adminRouteDeclarations.ts` (línea suelta → técnico, catálogo entero → admin).
   //
@@ -172,6 +175,7 @@ function renderCustomersView(container) {
   let pestanaActiva = FC.POR_DEFECTO.pestana;
   let ordenActivo = FC.POR_DEFECTO.orden;
   let etiquetaActiva = FC.POR_DEFECTO.etiqueta; // SCRUM-580 (CONT-07)
+  let visitaActiva = FC.POR_DEFECTO.visita; // SCRUM-979
 
   const pestanas = createElement("div", "customers-tabs");
   const botonesPestana = FC.PESTANAS.map((p) => {
@@ -245,6 +249,41 @@ function renderCustomersView(container) {
     // ofrecer un control con una sola opción que no filtra.
     etiquetaSelect.hidden = usadas.length === 0;
   }
+  // ── SCRUM-979 · EL FILTRO POR ÚLTIMA VISITA ─────────────────────────────────────────────
+  // Mismo componente y misma conducta que el de etiquetas: se oculta si ningún cliente del lote
+  // tiene visita (un control que no puede filtrar nada no se ofrece). Textos firmados, en la pieza.
+  const visitaSelect = document.createElement("select");
+  // Sin el tope de 220 px de los otros dos: a 390 px cortaba «Sin visitar desde hace 12 m…»
+  // (medido en Edge). Mide lo que su opción más larga y nunca más que la barra — clase en
+  // styles.css (`.customers-filtro-visita`), no `style.cssText` (SCRUM-713c: ese trinquete
+  // no sube; cayó en rojo en el CI de este PR al escribirlo así la primera vez).
+  visitaSelect.className = "input customers-filtro-visita";
+  // Nace OCULTO: hasta que llega el lote no se sabe si hay visitas, y un filtro visible sobre los
+  // esqueletos de carga se puede pulsar sin efecto (medido en Edge a 390 px).
+  visitaSelect.hidden = true;
+  const visitaTodas = document.createElement("option");
+  visitaTodas.value = "";
+  visitaTodas.textContent = FC.TEXTOS_VISITA.sinFiltro;
+  visitaSelect.appendChild(visitaTodas);
+  FC.FILTROS_VISITA.forEach((f) => {
+    const op = document.createElement("option");
+    op.value = String(f.meses);
+    op.textContent = FC.etiqueta(f);
+    visitaSelect.appendChild(op);
+  });
+  visitaSelect.addEventListener("change", () => {
+    visitaActiva = visitaSelect.value ? Number(visitaSelect.value) : null;
+    pintar();
+  });
+  toolbar.appendChild(visitaSelect);
+  /** Sin ninguna visita en el lote se oculta y se suelta el filtro: una lista vacía sin motivo visible no sirve. */
+  function repoblarVisita(lote) {
+    const hay = FC.hayVisitas(lote);
+    if (!hay) visitaActiva = null;
+    visitaSelect.value = visitaActiva === null ? "" : String(visitaActiva);
+    visitaSelect.hidden = !hay;
+  }
+
   ordenSelect.addEventListener("change", () => { ordenActivo = ordenSelect.value; pintar(); });
   toolbar.appendChild(ordenSelect);
 
@@ -536,7 +575,8 @@ function renderCustomersView(container) {
     // SCRUM-580: los TRES se encadenan — pestaña, etiqueta y orden— sobre el lote que ya viene
     // filtrado por el BUSCADOR desde el servidor. Los cuatro a la vez, y ninguno sustituye a otro.
     repoblarEtiquetas(lote);
-    const data = FC.aplicar(lote, pestanaActiva, ordenActivo, etiquetaActiva);
+    repoblarVisita(lote); // SCRUM-979
+    const data = FC.aplicar(lote, pestanaActiva, ordenActivo, etiquetaActiva, visitaActiva);
 
     // ── SCRUM-582 (CONT-09) · LA SELECCIÓN SE RECORTA A LO VISIBLE, EN CADA PINTADO ────────
     //
@@ -621,8 +661,8 @@ function renderCustomersView(container) {
 
         addCell(tr, "#" + c.id);
         addCell(tr, c.name || "Cliente sin nombre", "cell-title");
-        addCell(tr, c.phone || "sin teléfono", "cell-date");
-        addCell(tr, c.email || "", FC.claseDeColumna("email", columnasEncendidas));
+        celdaDeTelefonos(addCell(tr, "", "cell-date"), c);
+        celdaDeCorreo(addCell(tr, "", FC.claseDeColumna("email", columnasEncendidas)), c);
         const notesCell = addCell(tr, c.notes || "", FC.claseDeColumna("notas", columnasEncendidas));
         notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
         if (c.notes) notesCell.title = c.notes;
@@ -648,6 +688,13 @@ function renderCustomersView(container) {
           tagsCell.title = susTags.join(", ");
         }
         tr.appendChild(tagsCell);
+
+        // SCRUM-979 · «Última visita», con el mismo formato que «Alta». Sin visita, celda vacía.
+        const visita = FC.ultimaVisitaDe(c);
+        // `cell-visita` lleva el color (styles.css) y es además la marca con la que el guard de la
+        // lista de Trabajos reconoce esta celda como el cambio declarado de SCRUM-979.
+        addCell(tr, visita ? visita.toLocaleDateString() : "",
+          (FC.claseDeColumna("visita", columnasEncendidas) + " cell-visita").trim());
 
         const altaCell = addCell(tr, c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", FC.claseDeColumna("alta", columnasEncendidas));
         altaCell.style.color = "var(--muted)";
@@ -698,6 +745,50 @@ function renderCustomersView(container) {
     if (cls) td.className = cls;
     tr.appendChild(td);
     return td;
+  }
+
+  // SCRUM-1032 (CRM-02) · teléfono, móvil, WhatsApp y correo con UN TOQUE. Son enlaces del
+  // navegador, no envíos de YaQu. La normalización es la de `contactoDelCliente` (api.js), la misma
+  // que usa la ficha. `stopPropagation`: la FILA entera abre la ficha, y tocar el número no debe
+  // sacarte de la lista. Sin dato válido no hay enlace: se pinta el texto, o nada.
+  function enlaceDeContacto(href, texto, aparte, nombre) {
+    const a = document.createElement("a");
+    a.className = "contacto-link";
+    a.href = href;
+    a.textContent = texto;
+    // Sólo el icono («💬») en la lista, que va justa de ancho: el nombre accesible es el rótulo ya
+    // en uso, «WhatsApp», y no un texto nuevo.
+    if (nombre) { a.className += " contacto-link--icono"; a.setAttribute("aria-label", nombre); a.title = nombre; }
+    if (aparte) { a.target = "_blank"; a.rel = "noopener"; }
+    a.addEventListener("click", (ev) => ev.stopPropagation());
+    return a;
+  }
+
+  function celdaDeTelefonos(td, c) {
+    const k = window.contactoDelCliente(c);
+    const fijo = String(c.phone || "").trim();
+    // El teléfono (enlace si es un número; si no, tal cual lo escribió) y, si lo hay y es otro, el móvil.
+    const lineas = [];
+    if (k.telefono) lineas.push({ enlace: k.telefono });
+    else if (fijo) lineas.push({ texto: fijo });
+    if (k.movil) lineas.push({ enlace: k.movil, movil: true });
+    if (lineas.length === 0) { td.textContent = "sin teléfono"; return; }
+    // WhatsApp va al móvil y, si no hay, al teléfono: el mismo destino que decide `contactoDelCliente`.
+    const conWa = k.whatsapp ? (k.movil ? lineas.find((l) => l.movil) : lineas.find((l) => l.enlace)) : null;
+    lineas.forEach((l) => {
+      const fila = document.createElement("div");
+      fila.className = "contacto-fila"; // no «contacto» a secas: la landing (`index.html`) ya tiene esa clase
+      if (l.enlace) fila.appendChild(enlaceDeContacto(l.enlace.href, l.enlace.texto));
+      else fila.appendChild(document.createTextNode(l.texto));
+      if (l === conWa) fila.appendChild(enlaceDeContacto(k.whatsapp.href, "💬", true, "WhatsApp"));
+      td.appendChild(fila);
+    });
+  }
+
+  function celdaDeCorreo(td, c) {
+    const k = window.contactoDelCliente(c);
+    if (k.correo) td.appendChild(enlaceDeContacto(k.correo.href, k.correo.texto));
+    else td.textContent = c.email || "";
   }
 
   // -------- Eventos --------

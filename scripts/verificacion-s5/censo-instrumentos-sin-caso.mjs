@@ -115,16 +115,32 @@ const esCadenaLiteral = (x) => !!x && (ts.isStringLiteral(x) || ts.isNoSubstitut
   || ts.isTemplateExpression(x));
 const esLiteral = (e) => !!e && (esCadenaLiteral(e) || ts.isNumericLiteral(e)
   || ts.isArrayLiteralExpression(e) || ts.isObjectLiteralExpression(e));
+/**
+ * Las dos formas de crear un árbol temporal en esta casa.
+ *
+ * 🔴 `temporal` ENTRA AQUÍ EN SCRUM-864c, Y NO AFLOJA NADA. Es el ayudante de la casa
+ * (`tests/_temporal.mjs`): por dentro hace `fs.mkdtempSync(path.join(os.tmpdir(), prefijo))` y
+ * además se compromete a borrarlo. Desde SCRUM-864c es la forma OBLIGATORIA de crear un temporal
+ * —`scrum864c-el-temporal-no-vuelve` exige cero llamadas sueltas—, así que sin este reconocimiento
+ * el trinquete acusaría de «no tener caso conocido» a instrumentos que SÍ lo tienen, sólo porque
+ * su fixture dejó de fugar. Y el arreglo que pediría sería volver a fugar temporales.
+ *
+ * La exigencia es la misma: hace falta una entrada FABRICADA. Lo único que cambia es que se
+ * reconoce la forma nueva de fabricarla. Que `temporal()` siga colgando de `os.tmpdir()` no es
+ * una promesa escrita: lo vigila un caso de `tests/scrum864-el-temporal-que-se-borra.test.mjs`.
+ */
+const CREAN_ARBOL = new Set(['mkdtempSync', 'temporal']);
+
 function esArbolTemporal(e, sf) {
   if (!e || !ts.isCallExpression(e)) return false;
-  if (llamaA(e, sf).pop() === 'mkdtempSync') return true;
-  // `arbolSintetico()`: una función LOCAL que crea el árbol con `mkdtempSync` también lo es.
+  if (CREAN_ARBOL.has(llamaA(e, sf).pop())) return true;
+  // `arbolSintetico()`: una función LOCAL que crea el árbol con una de las dos también lo es.
   if (!ts.isIdentifier(e.expression)) return false;
   const g = funcionLocal(sf, e.expression.text);
   if (!g) return false;
   let crea = false;
   const v = (n) => {
-    if (ts.isCallExpression(n) && llamaA(n, sf).pop() === 'mkdtempSync') crea = true;
+    if (ts.isCallExpression(n) && CREAN_ARBOL.has(llamaA(n, sf).pop())) crea = true;
     if (!crea) ts.forEachChild(n, v);
   };
   ts.forEachChild(g, v);
@@ -375,6 +391,10 @@ export const REGLAS_SEMBRADAS = [
   ['un for-of desestructurado AJENO no lo salva', "for (const [a, b] of [['x', 'y']]) { usar(a, b); } censarInventado(RAIZ);", null],
   ['un número suelto no fabrica nada', 'const ficheros = process.argv.slice(2); censarInventado(ficheros);', null],
   ['sí lo salva un ÁRBOL TEMPORAL', "const dir = fs.mkdtempSync('sembrado-'); censarInventado(dir);", 'propio'],
+  // SCRUM-864c · el mismo árbol temporal, creado con el ayudante que se limpia solo. Si esta
+  // línea deja de decir «propio», el trinquete ha vuelto a castigar a los fixtures que no fugan.
+  ['sí lo salva un ÁRBOL TEMPORAL del ayudante de la casa', "const dir = temporal('sembrado-'); censarInventado(dir);", 'propio'],
+  ['pero NO lo salva un ayudante cualquiera que se llame parecido', "const dir = temporalizar(RAIZ); censarInventado(dir);", null],
   ['sí lo salva un literal que entra por un ENVOLTORIO', "const ve = (f) => censarInventado(f); ve('fuente fabricada');", 'propio'],
   ['unas OPCIONES literales para ejecutar el mundo no lo salvan', 'const flujo = run({ files: listarFicheros(), cwd: RAIZ }); for (const ev of flujo) censarInventado(ev);', null],
   ['un array que sólo REEMPAQUETA lo leído no lo salva', 'const todos = listar(RAIZ); for (const p of [...todos]) censarInventado(p);', null],

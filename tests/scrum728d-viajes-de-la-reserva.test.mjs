@@ -1,6 +1,17 @@
 // tests/scrum728d-viajes-de-la-reserva.test.mjs — SCRUM-728d
 //
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1027 (21-sep-2026) · EL CAMINO DEL «JUSTIFICANTE» YA NO EXISTE — Y ESO CAMBIA SU CUENTA
+//
+// Regla 24 (enmienda SCRUM-612c): con el interruptor en OFF, en España, `allocateInvoiceNumber`
+// ya no reserva un `J-…` — lanza `invoicing_es_disabled` justo después del cerrojo y de leer el
+// merchant, SIN llegar a `reservarReferenciaJustificante` (los 5 viajes que este fichero media
+// hasta hoy). No es que el número de viajes haya cambiado: es que ESE CAMINO ya no se recorre.
+// El propio helper (`_viajes-de-la-reserva.mjs`) sigue teniendo razón en su comentario: «`id: 1`
+// mediría el camino equivocado» — lo que ha cambiado es que el camino `MERCHANTS.justificante`
+// ahora tampoco mide lo que decía medir, porque ya no hay reserva que interceptar.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+//
 // LA FACTURA NO HACE CINCO VIAJES. EL TICKET MIDIÓ OTRA COSA.
 //
 // SCRUM-728 dice «880 ms = 5 viajes × 175 ms». Ese desglose es de `allocateAlbaranNumber`, y el
@@ -29,6 +40,7 @@ import assert from 'node:assert/strict';
 import {
   espiarReserva, conElCreateDelLlamador, cargarServicio, exigirSueloDeViajes, MERCHANTS, CensoCiego,
 } from './_viajes-de-la-reserva.mjs';
+import { isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
 
 /** Lo que midió la fase A para el ALBARÁN. Aquí es la referencia, no el objetivo. */
 const VIAJES_DEL_ALBARAN = 5;
@@ -37,10 +49,12 @@ test('SCRUM-728d · SUELO: el servicio carga y el doble intercepta de verdad', a
   const s = cargarServicio();
   assert.equal(typeof s.allocateInvoiceNumber, 'function',
     '🔴 `allocateInvoiceNumber` ya no se exporta: este censo no está midiendo lo que dice');
-  const r = await espiarReserva({ merchant: MERCHANTS.justificante });
+  // SCRUM-1027: el camino que interceptaba de verdad (≥3 sentencias) es ahora el FISCAL — el de
+  // `justificante` corta a los 2 viajes, ver el bloque de abajo.
+  const r = await espiarReserva({ merchant: MERCHANTS.fiscal });
   assert.ok(r.sentencias.length >= 3,
     `🔴 sólo ${r.sentencias.length} sentencias interceptadas: el doble no está viendo el camino`);
-  assert.match(r.numero, /^J-\d{8}-/, `🔴 el camino del justificante devolvió \`${r.numero}\``);
+  assert.ok(!isReceiptNumber(r.numero), `🔴 el camino fiscal devolvió un J-: \`${r.numero}\``);
 });
 
 test('SCRUM-728d · SUELO: el cerrojo sigue siendo la PRIMERA sentencia (si no, se declara ciego)', async () => {
@@ -63,12 +77,17 @@ test('SCRUM-728d · 🔴 EL NÚMERO QUE EL TICKET NO TENÍA: la factura hace 8 v
     + 'Este es el número que multiplica por N cuando hay N emisiones a la vez.');
 });
 
-test('SCRUM-728d · 🔴 el camino del ESPAÑOL REAL (justificante) hace 7, y es el 80 % de hoy', async () => {
-  const j = conElCreateDelLlamador(await espiarReserva({ merchant: MERCHANTS.justificante }));
-  assert.equal(j.viajes, 7,
-    `🔴 el justificante hace ${j.viajes} viajes. Es el camino que emite el merchant ES real `
-    + 'mientras `INVOICING_ES_ENABLED` siga OFF, así que es el que se paga hoy en producción.');
-  assert.equal(j.dentroDelCerrojo, 6);
+test('SCRUM-1027 · el camino del ESPAÑOL REAL YA NO RESERVA NADA (antes: 7 viajes, 6 dentro del cerrojo)', async () => {
+  // Hasta esta enmienda (regla 24 / SCRUM-612c) el merchant ES real sin flag reservaba un J- en 7
+  // viajes. Desde SCRUM-1027 `allocateInvoiceNumber` rechaza en cuanto lee el merchant, sin tocar
+  // `invoice.findUnique` ni `auditLog` — este fichero ya no puede contar ESOS viajes porque no se
+  // hacen, así que lo que queda por medir es que el rechazo ocurre (no un número de viajes: `1
+  // rechazo` no es una magnitud que valga la pena congelar aquí).
+  await assert.rejects(
+    () => espiarReserva({ merchant: MERCHANTS.justificante }),
+    /invoicing_es_disabled/,
+    '🔴 el merchant ES real sin flag ha vuelto a reservar un documento — regla 24 rota.',
+  );
 });
 
 test('SCRUM-728d · la rectificativa hace 7 — un viaje menos que la F1, y se ve por qué', async () => {

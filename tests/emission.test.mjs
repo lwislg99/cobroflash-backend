@@ -44,7 +44,10 @@ test('V0-0: fuera de ES no cambia nada → fiscal (su flujo actual)', () => {
 // ── Números de justificante ──────────────────────────────────────────────────
 
 test('makeReceiptNumber: formato J-YYYYMMDD-XXXX, reconocido por isReceiptNumber', () => {
-  const n = makeReceiptNumber(new Date(2026, 5, 11));
+  // SCRUM-735: `now` se interpreta en la zona EXPLÍCITA (por defecto UTC), ya no en la del
+  // reloj del proceso — así que el instante se construye en UTC para que el test no dependa
+  // de en qué zona corra la máquina que lo ejecuta.
+  const n = makeReceiptNumber(new Date(Date.UTC(2026, 5, 11)));
   assert.match(n, /^J-20260611-[A-Z0-9]{4}$/);
   assert.equal(isReceiptNumber(n), true);
   assert.equal(isReceiptNumber('2026-CF-001'), false);
@@ -81,18 +84,23 @@ function fakeTx(merchant) {
   };
 }
 
-test('allocate: ES real sin flag → J-number y NO toca los contadores de la serie fiscal', async () => {
+// SCRUM-1027 · regla 24 (enmienda SCRUM-612c, 21-sep-2026): con el interruptor en OFF, en
+// España, YA NO se emite NINGÚN documento — ni factura, ni justificante. Hasta este ticket, un
+// merchant ES real sin flag SÍ recibía un `J-…` (V0-0); ahora el punto único de decisión
+// (`allocateInvoiceNumber`) rechaza los SIETE caminos igual, no solo la rectificativa.
+test('allocate: ES real sin flag → invoicing_es_disabled, NO J-number (SCRUM-1027)', async () => {
   delete process.env.INVOICING_ES_ENABLED;
   const tx = fakeTx({
     id: 5, email: 'real@negocio.es', country: 'ES',
     invoiceSeriesPrefix: 'CF', nextInvoiceNumber: 4, nextRectInvoiceNumber: 1, invoiceSeriesYear: 2026,
   });
-  const n = await allocateInvoiceNumber(tx, 5, CTX);
-  assert.equal(isReceiptNumber(n), true);
+  await assert.rejects(() => allocateInvoiceNumber(tx, 5, CTX), /invoicing_es_disabled/,
+    '🔴 un merchant ES real sin flag ha vuelto a recibir un documento (J- o cualquier otro). ' +
+    'Desde SCRUM-1027 el interruptor en OFF significa CERO documentos, no «justificante».');
   assert.equal(tx.calls.updates.length, 0, 'la serie fiscal no debe avanzar');
 });
 
-test('allocate: ES real sin flag + rectificativa → invoicing_es_disabled', async () => {
+test('allocate: ES real sin flag + rectificativa → invoicing_es_disabled (sin cambios)', async () => {
   delete process.env.INVOICING_ES_ENABLED;
   const tx = fakeTx({
     id: 5, email: 'real@negocio.es', country: 'ES',

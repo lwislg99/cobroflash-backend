@@ -194,23 +194,18 @@ const R = analizar(RAIZ);
 // `revision.ts` están ya en la lista. Los 7 que quedan son los de siempre — el bloque fiscal y
 // los motores de oficina— y ninguno es de hoy.
 // ═══════════════════════════════════════════════════════════════════════════════════════
-// ⚠️ 16-sep-2026 · SUBE A 8, Y ES UNA DECISIÓN ESCRITA, NO UN AJUSTE PARA VOLVER AL VERDE.
+// ✅ 22-sep-2026 · VUELVE A 7 (SCRUM-665, enchufe del emisor congelado).
 //
-// Entra `src/modules/invoicing/domain/emisorCongelado.ts` (SCRUM-665 A): las siete columnas del
-// emisor congelado, con su escritor y su lector. **Nace inalcanzable a propósito y por una razón
-// que no está en mi mano:** su llamador necesita las siete columnas en `Invoice`, y
-// `prisma/schema.prisma` es del fundador — el encargo dice «PROPÓN el diff, NO lo apliques a
-// ninguna base». Sin columnas, `prisma.invoice.create({ data: { merchantName… } })` ni compila.
-//
-// 🔴 NO es un motor sin llamador de los que este trinquete persigue: está **ejercitado de punta a
-// punta** por `tests/scrum665a-congelar-el-emisor.test.mjs`, con el contraste positivo/negativo
-// sobre PDFs reales. Lo que falta es el ALTER, no la prueba.
-//
-// **VUELVE A 7** el día que se aplique el diff y se cablee el escritor en `src/lib/invoicing.ts`.
-// Quien lo haga, que baje este número en el mismo commit: un tope que se queda alto después de
-// que su motivo desaparezca es un trinquete que ha dejado de proteger sin que nadie lo note —
-// exactamente lo que dice el bloque de arriba.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 8;
+// El 16-sep `emisorCongelado.ts` subió el tope a 8 porque nacía inalcanzable a propósito: su
+// llamador necesitaba las siete columnas en `Invoice`, aplicadas por el fundador, no por código.
+// Esas columnas están aplicadas y verificadas en las tres bases desde el 17-sep, y con el GO de
+// Javier del 22-sep (comentario 16468 de SCRUM-665) el escritor `congelarEmisor`/
+// `congelarEmisorDesdeFicha`/`congelarEmisorDesdeBase` queda cableado en los diez sitios del
+// embudo (`crearFacturaEmitida`, `emitInvoice` y sus llamadores) y el lector `emisorDelDocumento`
+// en las dos rutas del XML de VeriFactu además del PDF. El módulo ya tiene llamador en `src/`, así
+// que la razón que sostenía el 8 desapareció y el tope baja EN EL MISMO COMMIT que cablea, tal y
+// como pedía el bloque anterior.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 7;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

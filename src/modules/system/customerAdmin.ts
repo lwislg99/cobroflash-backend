@@ -5,6 +5,8 @@ import { CustomerCreateInput, CustomerUpdateInput } from '../../core/validation/
 // SCRUM-580 (CONT-07): la decision de las etiquetas vive aparte y es pura — ver ese fichero.
 import { tagsParaPrisma } from './tagsDelCliente';
 import { normalizePhone } from '../../core/utils/utils'; // SCRUM-578: la que YA existe, sin tocarla
+import { BASE_URL } from '../../core/config/env'; // SCRUM-967b
+import { saldosPendientesPorCliente } from './domain/saldoPendiente'; // SCRUM-1043
 
 function generatePortalToken() {
   return crypto.randomBytes(16).toString('hex');
@@ -74,7 +76,14 @@ const CUSTOMER_SELECT_NO_TOKEN = {
   internalRef: true,
 } as const;
 
-export async function listCustomers(merchantId: number, search?: string) {
+export async function listCustomers(
+  merchantId: number,
+  search?: string,
+  // SCRUM-979: de qué trabajos sale «Última visita». Ver `ultimasVisitas`.
+  // SCRUM-1043: `conSaldo` añade `saldoPendiente` (solo a quien lo pide: es dinero); `soloConDeuda` deja
+  // los clientes que deben algo; `ordenPorSaldo` los pone de mayor a menor deuda. Ver `saldosPendientesPorCliente`.
+  opciones: { soloTrabajosDe?: number | null; conSaldo?: boolean; soloConDeuda?: boolean; ordenPorSaldo?: boolean } = {},
+) {
   const where: Prisma.CustomerWhereInput = { merchantId };
 
   if (search) {
@@ -97,7 +106,44 @@ export async function listCustomers(merchantId: number, search?: string) {
     }];
   }
 
-  return prisma.customer.findMany({ where, orderBy: { createdAt: 'desc' }, select: CUSTOMER_SELECT_NO_TOKEN });
+  const clientes = await prisma.customer.findMany({ where, orderBy: { createdAt: 'desc' }, select: CUSTOMER_SELECT_NO_TOKEN });
+  const visitas = await ultimasVisitas(merchantId, opciones.soloTrabajosDe);
+  // Sin visita → la clave NO se añade: ausente no es cero (ni `null` que la vista pinte como fecha).
+  const conVisita = clientes.map((c) => (visitas.has(c.id) ? { ...c, ultimaVisita: visitas.get(c.id)! } : c));
+  if (!opciones.conSaldo) return conVisita;
+  // SCRUM-1043 · «quién me debe». Cliente sin deuda = sin `saldoPendiente` (ausente no es cero).
+  const saldos = await saldosPendientesPorCliente(merchantId);
+  let filas = conVisita.map((c) => (saldos.has(c.id) ? { ...c, saldoPendiente: saldos.get(c.id)!.total } : c));
+  if (opciones.soloConDeuda) filas = filas.filter((c) => 'saldoPendiente' in c);
+  if (opciones.ordenPorSaldo) {
+    const de = (c: { saldoPendiente?: number } | object) => (c as { saldoPendiente?: number }).saldoPendiente ?? 0;
+    filas = [...filas].sort((a, b) => de(b) - de(a));
+  }
+  return filas;
+}
+
+/**
+ * SCRUM-979 · LA ÚLTIMA VISITA DE CADA CLIENTE: el `scheduledAt` más reciente de sus trabajos
+ * `terminado` o `cerrado` (Parte L). UNA consulta (`groupBy`), no una por cliente: la lista no pagina.
+ *
+ * 🔴 `soloTrabajosDe`: la lista de clientes NO se recorta por rol (el técnico ve la cartera
+ * entera), pero sus TRABAJOS sí (`jobs.routes.ts`, los tres ejes de SCRUM-650). La fecha sale solo
+ * de los trabajos que ese técnico puede ver: si no, la columna le enseñaría la fecha de un trabajo
+ * que en su lista no existe. `undefined` = sin recorte (admin y propietario).
+ */
+async function ultimasVisitas(merchantId: number, soloTrabajosDe?: number | null): Promise<Map<number, Date>> {
+  const where: Prisma.JobWhereInput = { merchantId, status: { in: ['terminado', 'cerrado'] }, scheduledAt: { not: null } };
+  if (soloTrabajosDe !== undefined) {
+    where.OR = [
+      { operarioId: soloTrabajosDe },
+      { assignedUserId: soloTrabajosDe },
+      { assignees: { some: { teamMemberId: soloTrabajosDe as number } } },
+    ];
+  }
+  const filas = await prisma.job.groupBy({ by: ['customerId'], where, _max: { scheduledAt: true } });
+  const fuera = new Map<number, Date>();
+  for (const f of filas) if (f._max.scheduledAt) fuera.set(f.customerId, f._max.scheduledAt);
+  return fuera;
 }
 
 export async function getCustomer(merchantId: number, id: number) {
@@ -311,6 +357,16 @@ export async function ensurePortalToken(merchantId: number, customerId: number):
   // inventa uno ni se devuelve el que este hilo generó y que NO está guardado.
   if (!yaPuesto?.portalToken) throw new Error('customer_not_found');
   return yaPuesto.portalToken;
+}
+
+/**
+ * SCRUM-967b · la URL del portal, construida en UN sitio para los envíos que la llevan (correo del
+ * presupuesto y respuesta de la firma del parte). Misma forma que `GET /admin/customers/:id/portal-url`.
+ * ⚠️ Abre TODOS los documentos del cliente: solo va a canales de un solo destinatario o de un solo
+ * uso, nunca a una página que conteste a cualquiera que tenga su enlace (test scrum967b ④).
+ */
+export async function portalUrlDelCliente(merchantId: number, customerId: number): Promise<string> {
+  return `${BASE_URL}/cliente/${await ensurePortalToken(merchantId, customerId)}`;
 }
 
 export async function updateCustomer(merchantId: number, id: number, data: CustomerUpdateInput) {

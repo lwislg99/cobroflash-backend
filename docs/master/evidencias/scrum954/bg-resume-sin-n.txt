@@ -1,0 +1,12 @@
+claude.exe : note: woke session 07e54b18 with its saved options (-n, --permission-mode).
+En C:\Users\Admin\AppData\Roaming\npm\claude.ps1: 14 Carácter: 3
++   & "$basedir/node_modules/@anthropic-ai/claude-code/bin/claude.exe"  ...
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (note: woke sess...rmission-mode).:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+backgrounded · 07e54b18 · prueba-954-20s
+  claude agents             list sessions
+  claude attach 07e54b18    open in this terminal
+  claude logs 07e54b18      show recent output
+  claude stop 07e54b18      stop this session

@@ -87,27 +87,19 @@ test('SCRUM-207 · EL ROJO: si el registro falla, allocateInvoiceNumber LANZA (n
   );
 });
 
-test('SCRUM-207 · el justificante también se audita, y se marca como tal', async () => {
-  // Merchant ES sin INVOICING_ES_ENABLED → J-…, fuera de la serie fiscal. Sigue siendo un
-  // documento con referencia que se le manda a un cliente: tiene que constar.
+// SCRUM-1027 (21-sep-2026, regla 24 / SCRUM-612c): con el interruptor en OFF, en España, ya NO
+// se emite NINGÚN documento — el justificante `J-` que este par de tests medía hasta hoy dejó de
+// salir. El fallo tiene que llegar ANTES de escribir ninguna fila de auditoría: no hay nada que
+// registrar como «factura_emitida» sobre un documento que el propio código acaba de rechazar.
+test('SCRUM-207 · el justificante YA NO se emite ni se audita: invoicing_es_disabled, cero filas (SCRUM-1027)', async () => {
   const tx = txFalso({ merchant: { flags: { INVOICING_ES_ENABLED: false } } });
-  const numero = await allocateInvoiceNumber(tx, MERCHANT_ID, { camino: 'C1', actor: { tipo: 'cliente_final', ref: 'quote_token' } });
-
-  assert.ok(numero.startsWith('J-'), 'sale justificante');
-  assert.equal(tx.escrito.length, 1);
-  assert.equal(tx.escrito[0].meta.esJustificante, true);
-  assert.equal(tx.escrito[0].meta.tipoFactura, 'JUST');
-  assert.equal(tx.escrito[0].meta.camino, 'C1');
-  assert.equal(tx.escrito[0].meta.actor.tipo, 'cliente_final', 'C1 lo dispara el CLIENTE, no el propietario');
-  assert.equal(tx.escrito[0].meta.actor.ref, 'quote_token', 'la vía, nunca el token en claro');
-});
-
-test('SCRUM-207 · y también falla el justificante si su registro falla', async () => {
-  const tx = txFalso({ auditFalla: true, merchant: { flags: { INVOICING_ES_ENABLED: false } } });
   await assert.rejects(
-    () => allocateInvoiceNumber(tx, MERCHANT_ID, { camino: 'C1', actor: ACTOR }),
-    /audit_write_failed/,
+    () => allocateInvoiceNumber(tx, MERCHANT_ID, { camino: 'C1', actor: { tipo: 'cliente_final', ref: 'quote_token' } }),
+    /invoicing_es_disabled/,
+    '🔴 un merchant ES sin flag ha vuelto a emitir un documento (J- o cualquier otro).',
   );
+  assert.equal(tx.escrito.length, 0,
+    '🔴 se escribió una fila de auditoría para un documento que nunca se emitió.');
 });
 
 // ── GATEADO · la garantía de verdad, contra PostgreSQL ────────────────────────────────

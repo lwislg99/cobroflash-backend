@@ -78,8 +78,13 @@ const RUTAS = [
 // exigiendo el hash; a Albaranes se le exige que su cambio sea EXACTAMENTE el declarado —una
 // acción en `.cell-actions` y el Trabajo en `.cell-trabajo`—, que es más fuerte que un hash: un
 // hash sólo dice «cambió», esto dice «cambió en lo que dijo y en nada más que importe».
+// ── SCRUM-979 · CLIENTES TAMPOCO SE COMPARA POR HASH A SECAS, por el mismo motivo que Albaranes ──
+//
+// SCRUM-979 le da A PROPÓSITO la columna «Última visita» y el filtro de 6/12/24 meses, así que su
+// hash cambia. No se retira del control: se le exige que su diferencia con la base sea EXACTAMENTE
+// la declarada — quitadas esas tres piezas, el HTML tiene que salir IDÉNTICO al de la base. Es más
+// fuerte que el hash de antes: dice «cambió solo en lo que dijo».
 const HERMANAS = [
-  { ruta: '/clientes', rotulo: 'Clientes' },
   { ruta: '/presupuestos', rotulo: 'Presupuestos' },
   { ruta: '/facturas', rotulo: 'Facturas' },
 ];
@@ -269,7 +274,9 @@ titulo('④ aguanta VARIOS técnicos · con cero dice «Sin asignar» · sin equ
   const r = await page.evaluate(`(() => ({
     filas: document.querySelectorAll('${SEL_FILA}').length,
     desplegables: document.querySelectorAll('${SEL_RESUMEN}').length,
-    celda: (document.querySelector('${SEL_FILA} td.cell-tecnicos') || {}).textContent || null,
+    // SCRUM-917c · los técnicos ya no son columna (td.cell-tecnicos): viven en la línea del
+    // cliente. Leer la celda vieja daba «» siempre, que parecía una respuesta y era un vacío.
+    celda: (document.querySelector('${SEL_FILA} td.cell-client .jobs-fila-linea') || {}).textContent || null,
   }))()`);
   if (r.filas < 1) nosupe('   🔴 NO SUPE MIRAR: la pantalla sin equipo no pintó filas.');
   else if (r.desplegables !== 0) mal(`   🔴 con CERO técnicos asignables se pintaron ${r.desplegables} desplegables. Un control sin opciones promete lo que no puede dar.`);
@@ -458,6 +465,71 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
         + `Trabajo en su celda: ${tieneTrabajo}`);
     } else {
       di('   ✅ Albaranes trae LO DECLARADO: acción en `.cell-actions`, Trabajo en `.cell-trabajo`');
+    }
+
+    // ── SCRUM-979 · Clientes: su diferencia con la base es EXACTAMENTE la declarada ──────────
+    // Las cuatro piezas, cada una por su marca y con las veces que TIENE que aparecer: una cada una
+    // de las tres de la barra y la cabecera, y la celda de la fila UNA POR FILA. Si no cuadra, no se
+    // sabe qué se ha quitado y el «idéntico» no valdría nada.
+    const cA = await huella(puertoMain, '/clientes');
+    const cB = await huella(puerto, '/clientes');
+    const filasCli = (cA._html.match(/<tr[\s>]/g) || []).length;
+    const filasDeDatos = (cB._html.match(/<td class="cell-title"[^>]*>/g) || []).length;
+    const PIEZAS_979 = [
+      ['el <th> de «Última visita»', /<th[^>]*data-columna="visita"[^>]*>[^<]*<\/th>/g, 1],
+      ['el <select> del filtro', /<select[^>]*>(?:(?!<\/select>)[\s\S])*?Cualquier fecha de visita(?:(?!<\/select>)[\s\S])*?<\/select>/g, 1],
+      ['su casilla en «Columnas»', /<label class="columnas-opcion"[^>]*>(?:(?!<\/label>)[\s\S])*?Última visita(?:(?!<\/label>)[\s\S])*?<\/label>/g, 1],
+      ['la celda de cada fila', /<td class="(?:col-hide-mobile )?cell-visita"[^>]*>[^<]*<\/td>/g, filasDeDatos],
+    ];
+    // ── SCRUM-1032 · Clientes: teléfono y correo pasan a ENLACES (`tel:`, `wa.me`, `mailto:`) ────
+    // Declaración EXACTA y MÍNIMA (autorizada por el orquestador, 21-sep-2026: es un cambio
+    // deliberado de Clientes, no un guard silenciado). Cada pieza se DESHACE a su texto de antes,
+    // con su forma completa —cada atributo escrito—, y las veces que TIENE que aparecer: una por
+    // fila de cliente. Lo que queda tiene que salir IDÉNTICO a la base, así que un enlace que
+    // cambie de forma, o cualquier otro cambio del HTML, sigue poniendo el guard en rojo.
+    // El móvil no está aquí a propósito: las muestras no lo llevan, y si algún día lo llevan el guard
+    // caerá pidiendo declararlo.
+    //
+    // 🔴 SIN EL `>` PEGADO (SCRUM-553 cuenta los extractores así y su tope sólo baja): cada etiqueta
+    // deja un hueco `([^>]*)` para atributos, y el SUSTITUTO es una función que sólo deshace la pieza
+    // si esos huecos están VACÍOS. Así la exactitud no se pierde: un atributo de más en el `<td>`, en
+    // la caja o en un enlace no lo absorbe la sustitución —se queda en el HTML y el guard cae—.
+    const sinHuecos = (...huecos) => huecos.every((h) => h === '');
+    const PIEZAS_1032 = [
+      ['el teléfono de cada fila como enlace (y su «WhatsApp»)',
+        /<td class="cell-date"([^>]*)><div class="contacto-fila"([^>]*)><a class="contacto-link" href="tel:\+?\d+"([^>]*)>([^<]*)<\/a>(?:<a class="contacto-link contacto-link--icono" href="https:\/\/wa\.me\/\d+" aria-label="WhatsApp" title="WhatsApp" target="_blank" rel="noopener"([^>]*)>💬<\/a>)?<\/div><\/td>/g,
+        filasDeDatos,
+        (todo, td, caja, enlace, texto, wa = '') => (sinHuecos(td, caja, enlace, wa) ? `<td class="cell-date">${texto}</td>` : todo)],
+      ['el correo de cada fila como enlace',
+        /<a class="contacto-link" href="mailto:[^"]*"([^>]*)>([^<]*)<\/a>/g,
+        filasDeDatos,
+        (todo, enlace, texto) => (sinHuecos(enlace) ? texto : todo)],
+    ];
+    const PIEZAS_DECLARADAS = [...PIEZAS_979, ...PIEZAS_1032];
+    const cuentas = PIEZAS_DECLARADAS.map(([nombre, re, esperadas]) => [nombre, (cB._html.match(re) || []).length, esperadas]);
+    // 🔴 SE DESHACEN LAS MISMAS PIEZAS EN LOS DOS LADOS. Antes sólo se quitaban de HOY y se comparaba con
+    // la base «tal cual», y eso valía mientras la base NO trajera lo declarado. Desde que SCRUM-979 está
+    // en `main` la base YA lleva sus cuatro piezas: quitárselas sólo a hoy daba SIEMPRE «ha cambiado
+    // MÁS de lo declarado», aunque el único cambio fuera el declarado (medido con SCRUM-1032, que fue el
+    // primero en cambiar Clientes después). Quitarlas de los dos lados exige lo mismo que antes —que
+    // el resto sea idéntico— sin depender de si la base ya las trae; una pieza que la base no tiene no
+    // se toca, porque su patrón no casa.
+    const deshacer = (html) => PIEZAS_DECLARADAS.reduce((h, [, re, , sustituto = '']) => h.replace(re, sustituto), html);
+    const sha = (html) => crypto.createHash('sha256').update(html).digest('hex').slice(0, 16);
+    const shaSin = sha(deshacer(cB._html));
+    const shaBaseSin = sha(deshacer(cA._html));
+    if (filasCli < 2 || filasDeDatos < 1) {
+      nosupe(`   🔴 NO SUPE MIRAR · Clientes: la base pintó ${filasCli} <tr> y hoy ${filasDeDatos} filas de cliente.`);
+    } else if (cuentas.some(([, n, esperadas]) => n !== esperadas)) {
+      mal('   🔴 Clientes NO trae lo declarado por SCRUM-979 y SCRUM-1032 · '
+        + cuentas.map(([nombre, n, esperadas]) => `${nombre}: ${n} de ${esperadas}`).join(' · '));
+    } else if (cA.sha === cB.sha) {
+      // La base ya trae 979 y 1032: entonces lo que se exige es lo de siempre, que no haya cambiado nada.
+      di(`   ✅ Clientes · ${cA.sha} · idéntico a la base (que ya trae SCRUM-979 y SCRUM-1032)`);
+    } else if (shaSin !== shaBaseSin) {
+      mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979 y SCRUM-1032 · base sin lo declarado ${shaBaseSin} ≠ hoy sin lo declarado ${shaSin}`);
+    } else {
+      di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979 y SCRUM-1032) y nada más · sin esas piezas (${filasDeDatos} celdas de cada fila), idéntico a la base sin ellas ${shaBaseSin}`);
     }
     srvMain.close();
   }

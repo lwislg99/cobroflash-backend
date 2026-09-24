@@ -1,0 +1,3947 @@
+[
+ {
+  "job": 105656372540,
+  "run": 35362335572,
+  "creado": "2026-09-18T15:25:33Z",
+  "rama": "main",
+  "head": "17b0c86b84fb0544013923314d250d7181d913db",
+  "clase": null,
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105653651731,
+  "run": 35361515773,
+  "creado": "2026-09-18T15:17:29Z",
+  "rama": "scrum-612-e1-medido-hoy",
+  "head": "b637f76b1e71f324dafd16505df87fe26d6d8f7d",
+  "clase": "timeout",
+  "n859": 1,
+  "m1": "VIVA",
+  "m2": null,
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105628680787,
+  "run": 35353877511,
+  "creado": "2026-09-18T14:03:25Z",
+  "rama": "main",
+  "head": "4d8f3a15f6b3489d7f53bfbde550c587ee9d7c61",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105626162458,
+  "run": 35353225648,
+  "creado": "2026-09-18T13:56:59Z",
+  "rama": "scrum-951d-ensayo-instalacion",
+  "head": "e965777d30705cf91a09e96d902174b2c0b22fd6",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105626055158,
+  "run": 35353194531,
+  "creado": "2026-09-18T13:56:40Z",
+  "rama": "main",
+  "head": "96e6fcb18e3f622d81cd196de0c0e36582f2597b",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105624048085,
+  "run": 35352593358,
+  "creado": "2026-09-18T13:50:33Z",
+  "rama": "scrum-951e-navegador",
+  "head": "dcb601b0ba4cef99dfb6b55716c4eb6a301184d1",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105621833727,
+  "run": 35351918095,
+  "creado": "2026-09-18T13:43:43Z",
+  "rama": "scrum-951d-ensayo-instalacion",
+  "head": "1cfa50f908b4438e7fb66cdce2a2c77e5012b7dd",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105614867008,
+  "run": 35349745102,
+  "creado": "2026-09-18T13:21:31Z",
+  "rama": "main",
+  "head": "988264d032840edcbf5b612d3d91d1c07e8f9f2f",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105613172708,
+  "run": 35349260260,
+  "creado": "2026-09-18T13:16:31Z",
+  "rama": "main",
+  "head": "8fd801c2007f564683ae5c4ae806b913eb5de6b7",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105612631004,
+  "run": 35349096274,
+  "creado": "2026-09-18T13:14:49Z",
+  "rama": "scrum-937b-nif-en-el-modal",
+  "head": "684dc9b238a462252e3f7a9ba51c7466d15525e3",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105610793874,
+  "run": 35348529850,
+  "creado": "2026-09-18T13:09:00Z",
+  "rama": "scrum-951c-fichas-javier",
+  "head": "afbc1438ff264c05ba3286135e07ac49183630cf",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105608576690,
+  "run": 35347817148,
+  "creado": "2026-09-18T13:01:32Z",
+  "rama": "main",
+  "head": "3b53c92fbc278fbe2c66e0b42300860fa21ed6f2",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105608048574,
+  "run": 35347692660,
+  "creado": "2026-09-18T13:00:17Z",
+  "rama": "scrum-937b-nif-en-el-modal",
+  "head": "b64c8e8ddee552d0c3db59d3ac629b169e23bed9",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105606730250,
+  "run": 35347289902,
+  "creado": "2026-09-18T12:55:56Z",
+  "rama": "scrum-947-foto-del-gasto",
+  "head": "140ec5a95acd40239a7b203f6e60c0eff1690f17",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105606260541,
+  "run": 35347134707,
+  "creado": "2026-09-18T12:54:08Z",
+  "rama": "main",
+  "head": "d44f4faf0061f2f861ebc4888a2a12a2adacbe41",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105604176189,
+  "run": 35346493876,
+  "creado": "2026-09-18T12:46:51Z",
+  "rama": "scrum-951a-equipo-configurable",
+  "head": "fbefce36189e0b6b318e6dfdf15c31c64ed5b537",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105603142566,
+  "run": 35346129010,
+  "creado": "2026-09-18T12:42:51Z",
+  "rama": "main",
+  "head": "b2c82c7137c87782242188829442895bc6269ba3",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105601923958,
+  "run": 35345789060,
+  "creado": "2026-09-18T12:38:59Z",
+  "rama": "main",
+  "head": "bfa8859a04bee7182d0c5526c59582412ab056cd",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105601372874,
+  "run": 35345618271,
+  "creado": "2026-09-18T12:37:01Z",
+  "rama": "scrum-912b-lecturas-staging",
+  "head": "14be732cb1ffeeb4f2d86c33229cf7aa298d6353",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105599880153,
+  "run": 35345152758,
+  "creado": "2026-09-18T12:31:51Z",
+  "rama": "scrum-951b-normas-dos-equipos",
+  "head": "c15970a3b65d9f5d1aaa77afcdb7d823ef7da0c8",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105597784039,
+  "run": 35344492403,
+  "creado": "2026-09-18T12:24:28Z",
+  "rama": "main",
+  "head": "effc107e047d34a5bc7d2f1cfc1c000952c2de19",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105596308319,
+  "run": 35344032316,
+  "creado": "2026-09-18T12:19:15Z",
+  "rama": "scrum-912-leer-ticket-gasto",
+  "head": "217936022f4d462369ac384b377a11892cacb8fe",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105591897142,
+  "run": 35342656588,
+  "creado": "2026-09-18T12:03:09Z",
+  "rama": "main",
+  "head": "34d06bb4f4e306b11745cf34fbbc85233c5a3299",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105589828567,
+  "run": 35342013861,
+  "creado": "2026-09-18T11:55:26Z",
+  "rama": "scrum-915d-pasos-del-editor",
+  "head": "0c30ca7010ea1ba663ff172392f6a1ed7725866e",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105588404863,
+  "run": 35341564195,
+  "creado": "2026-09-18T11:49:54Z",
+  "rama": "main",
+  "head": "e76580b1a4067b95e6b47f93dc43d12cdfa4618b",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105586471275,
+  "run": 35340947864,
+  "creado": "2026-09-18T11:42:22Z",
+  "rama": "scrum-899-aviso-de-uso",
+  "head": "aaa2ec2b4d58eb68b4c0759582872948cbc04da5",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105554218060,
+  "run": 35330729222,
+  "creado": "2026-09-18T09:40:09Z",
+  "rama": "main",
+  "head": "972b51b384e0b21e0265787392eb5c865b98cc4a",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105552194145,
+  "run": 35330089811,
+  "creado": "2026-09-18T09:32:46Z",
+  "rama": "scrum-949-el-suelo-como-cociente",
+  "head": "03a54c39e5799da2641500f4169d466fdf42ed23",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105551258677,
+  "run": 35329797196,
+  "creado": "2026-09-18T09:29:27Z",
+  "rama": "main",
+  "head": "436c924cc87331a9c39675ecce3a33f3f451b1b2",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105549278916,
+  "run": 35329174740,
+  "creado": "2026-09-18T09:22:15Z",
+  "rama": "scrum-938b-banco-fabricado",
+  "head": "30d4fbcc9eb0b44776db5ca14b94f5d52704f761",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105548082735,
+  "run": 35328803518,
+  "creado": "2026-09-18T09:18:00Z",
+  "rama": "scrum-949-el-suelo-como-cociente",
+  "head": "5db6d12ebecf2f20b389b1026e82309f3413ed2f",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105548075086,
+  "run": 35328773551,
+  "creado": "2026-09-18T09:17:39Z",
+  "rama": "main",
+  "head": "9381c451a91a7aabaf5595fa116b30e9ae65f2d4",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105547069721,
+  "run": 35328454927,
+  "creado": "2026-09-18T09:13:58Z",
+  "rama": "main",
+  "head": "e60cc9156f8b81b571e440aebbf85abda6388e05",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105545914268,
+  "run": 35328124095,
+  "creado": "2026-09-18T09:10:13Z",
+  "rama": "scrum-524b-el-trinquete",
+  "head": "3c0ec33a68f84603693ee03b471312022a8c0280",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105545580743,
+  "run": 35328022896,
+  "creado": "2026-09-18T09:09:03Z",
+  "rama": "main",
+  "head": "2db9433306cb9b36e09260b2e1ccea81796122d3",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105544944848,
+  "run": 35327827131,
+  "creado": "2026-09-18T09:06:48Z",
+  "rama": "scrum-921d-la-cita-no-afirma",
+  "head": "62e4e7900ad50fc2e90ab113178648defefca18b",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105543934658,
+  "run": 35327516662,
+  "creado": "2026-09-18T09:03:16Z",
+  "rama": "scrum-939b-el-trinquete-que-solo-baja",
+  "head": "df1e84fd4dbfc60a6d101aa7f61f6d1038410363",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105539611336,
+  "run": 35326170938,
+  "creado": "2026-09-18T08:47:29Z",
+  "rama": "main",
+  "head": "4a7ff1ec74c138c74d30a1c7bebc70d67a5d0d1c",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105537614433,
+  "run": 35325542899,
+  "creado": "2026-09-18T08:40:11Z",
+  "rama": "scrum-933-el-caso-de-la-segunda-mutacion",
+  "head": "d2072b5c3a79884f3f17ecc1b3ba8832d9a186a9",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105531905236,
+  "run": 35323744584,
+  "creado": "2026-09-18T08:18:55Z",
+  "rama": "main",
+  "head": "41bad7c83d84ba2cddcf267480bbd7bcd9bc0b2c",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105529929271,
+  "run": 35323127954,
+  "creado": "2026-09-18T08:11:37Z",
+  "rama": "scrum-921c-el-guard-ampliado",
+  "head": "ab853842a7d2b0bc665dd3790e7bc6387b1fa587",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105524228237,
+  "run": 35321320040,
+  "creado": "2026-09-18T07:49:43Z",
+  "rama": "main",
+  "head": "0ed838e6b992dd4fd77255bc0e187745f4dfa1c9",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105522369232,
+  "run": 35320715053,
+  "creado": "2026-09-18T07:42:22Z",
+  "rama": "scrum-917d-titulo-propio-en-la-lista",
+  "head": "0474b48f436d022eb86d3af8d0bb5f023738f27a",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105521500979,
+  "run": 35320407064,
+  "creado": "2026-09-18T07:38:37Z",
+  "rama": "main",
+  "head": "aa4bc9cc800bd4c55acd2d4e13b69d388af268ed",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105520662089,
+  "run": 35320164404,
+  "creado": "2026-09-18T07:35:34Z",
+  "rama": "main",
+  "head": "cf163ed6a6d6d22e41ddb2103ecbd904f67f431e",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105519940901,
+  "run": 35319928416,
+  "creado": "2026-09-18T07:32:42Z",
+  "rama": "scrum-937-el-nif-no-se-tira-en-silencio",
+  "head": "bf711a80479d7de6472f04937b0ff239ff5c8635",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105518892316,
+  "run": 35319589882,
+  "creado": "2026-09-18T07:28:32Z",
+  "rama": "scrum-946-censo-de-huerfanos",
+  "head": "4b743e93d4749ec75310dc5da508d52a30c996c3",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105515283222,
+  "run": 35318441517,
+  "creado": "2026-09-18T07:13:58Z",
+  "rama": "main",
+  "head": "27a7fb8b3755b9f00f5bcc74bc48b42ff0ed2037",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105514967066,
+  "run": 35318358502,
+  "creado": "2026-09-18T07:12:54Z",
+  "rama": "main",
+  "head": "548310eb0a4c9ef68c615b259df9ee21dcbf0d04",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105513491149,
+  "run": 35317893317,
+  "creado": "2026-09-18T07:06:51Z",
+  "rama": "scrum-931-un-solo-importe-de-plantilla",
+  "head": "4c710fdc266c6e83a326326f07c551f749caf838",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105513207771,
+  "run": 35317804332,
+  "creado": "2026-09-18T07:05:39Z",
+  "rama": "scrum-906d-consolidado",
+  "head": "558f6b446df509006908bfa4cfb4e2f32d23bad6",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105512911119,
+  "run": 35317708289,
+  "creado": "2026-09-18T07:04:25Z",
+  "rama": "scrum-929-el-total-sin-iva",
+  "head": "54c961ca7e4e9020538a52a4fef8c94d66ba57cb",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105512073763,
+  "run": 35317407798,
+  "creado": "2026-09-18T07:00:36Z",
+  "rama": "main",
+  "head": "ecccf94e8c90ec80eed75b5f3d4e320f90a910a8",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105510441572,
+  "run": 35316880391,
+  "creado": "2026-09-18T06:53:38Z",
+  "rama": "main",
+  "head": "c60008bdc857873b69c8a56fb47087f79b3bae6b",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105510314994,
+  "run": 35316865394,
+  "creado": "2026-09-18T06:53:26Z",
+  "rama": "scrum-945-node-p-sin-color",
+  "head": "21ffe7e6999f9c12cb37e35e2f77b9896f0ae163",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105509721712,
+  "run": 35316651405,
+  "creado": "2026-09-18T06:50:32Z",
+  "rama": "main",
+  "head": "9d39844a792a7c36c0d8899595a956c40caa9bc3",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105509518874,
+  "run": 35316606974,
+  "creado": "2026-09-18T06:49:58Z",
+  "rama": "main",
+  "head": "6fb653716bb639d641b2769db0cb74a4e35e9b9c",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105508964070,
+  "run": 35316429879,
+  "creado": "2026-09-18T06:47:32Z",
+  "rama": "scrum-932-turno-sin-credencial",
+  "head": "3e6e364ddcd330b9803293fddd2341e40d2c21bc",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105507979280,
+  "run": 35316107622,
+  "creado": "2026-09-18T06:43:13Z",
+  "rama": "scrum-941-normas-a22-y-suelos",
+  "head": "9de88bf7f5b7eade41ff970374580aa5e2448766",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105507826592,
+  "run": 35316054269,
+  "creado": "2026-09-18T06:42:32Z",
+  "rama": "scrum-909-rotulos-que-se-pisan",
+  "head": "1cf1fbf18d64875d5316bf9a6eb73bd3470a7259",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105390673348,
+  "run": 35277159315,
+  "creado": "2026-09-17T21:31:33Z",
+  "rama": "scrum-921c-el-guard-ampliado",
+  "head": "6e9f3e68cd62f359c444e94e5273e55a08f2cfce",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105389707486,
+  "run": 35276934560,
+  "creado": "2026-09-17T21:29:14Z",
+  "rama": "main",
+  "head": "16733a223b3d09d3fdf03bf03c67a2b278b4906c",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105388650261,
+  "run": 35276609785,
+  "creado": "2026-09-17T21:25:47Z",
+  "rama": "scrum-921c-el-guard-ampliado",
+  "head": "f46ebf7059a450fdcef051e0a115809c68144782",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105387489187,
+  "run": 35276245269,
+  "creado": "2026-09-17T21:21:58Z",
+  "rama": "scrum-940-suelos-que-no-pueden-saltar",
+  "head": "35b60da461134db59f062927bca71da8340d4751",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105384335457,
+  "run": 35275261486,
+  "creado": "2026-09-17T21:11:30Z",
+  "rama": "main",
+  "head": "652d90ec2f73b1f8a17b4d096fb2da2bb96fcf52",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105383909417,
+  "run": 35275039004,
+  "creado": "2026-09-17T21:09:10Z",
+  "rama": "main",
+  "head": "b60271185eb11a74b161835566d46cfceb4f1342",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105382991367,
+  "run": 35274857673,
+  "creado": "2026-09-17T21:07:15Z",
+  "rama": "main",
+  "head": "ddbcd880320ca2fbd55e72b5354b9be8444d739f",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105382139974,
+  "run": 35274641738,
+  "creado": "2026-09-17T21:05:02Z",
+  "rama": "scrum-921c-el-guard-ampliado",
+  "head": "b3e848640fc92f0e5b261c94f502038812b1eb53",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105381893911,
+  "run": 35274564508,
+  "creado": "2026-09-17T21:04:16Z",
+  "rama": "scrum-938-la-lista-como-fixture",
+  "head": "4443353668ed095d3afff443a3aeeb5ecd9ea6d7",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105381105462,
+  "run": 35274324946,
+  "creado": "2026-09-17T21:01:55Z",
+  "rama": "main",
+  "head": "88568c1e39a2165ded301dfcb3d8f9cd20eba587",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105381097966,
+  "run": 35274322572,
+  "creado": "2026-09-17T21:01:54Z",
+  "rama": "scrum-524-la-tabla-de-comprobacion",
+  "head": "61d356c2927efd2f710e9898dcecf05f95e629ab",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105380552726,
+  "run": 35274153393,
+  "creado": "2026-09-17T21:00:16Z",
+  "rama": "scrum-939-afirmaciones-de-las-skills",
+  "head": "e8916fcdde056d5507410e4e1b17f267afbcb4d1",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105378738038,
+  "run": 35273617301,
+  "creado": "2026-09-17T20:54:39Z",
+  "rama": "scrum-812c-los-suelos-muertos",
+  "head": "6127319b53399ebe2366efd15a0305912518a9d4",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105375265801,
+  "run": 35272503163,
+  "creado": "2026-09-17T20:43:13Z",
+  "rama": "main",
+  "head": "b425ef1d905758919288b73630ebee2355c4924d",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105374312121,
+  "run": 35272280938,
+  "creado": "2026-09-17T20:41:02Z",
+  "rama": "main",
+  "head": "b4a24ff67960cc26425ec6d1ced058591461dcb9",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105372732011,
+  "run": 35271802026,
+  "creado": "2026-09-17T20:36:14Z",
+  "rama": "scrum-927b-contar-no-es-avisar",
+  "head": "7099b4f55d638349cf0aad396c3679ab08fa56ee",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105371905085,
+  "run": 35271496052,
+  "creado": "2026-09-17T20:33:13Z",
+  "rama": "scrum-773b-el-backfill-en-seco",
+  "head": "149ff0487bd6c1fee3afbf70fdcddd5076e32b6e",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105369774069,
+  "run": 35270928164,
+  "creado": "2026-09-17T20:27:38Z",
+  "rama": "main",
+  "head": "2242683172bad64e4cc9f591e5c81b43fe5dc52e",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105369590405,
+  "run": 35270747403,
+  "creado": "2026-09-17T20:25:49Z",
+  "rama": "scrum-773b-el-backfill-en-seco",
+  "head": "7d7b5e2c14bc4a3256c1d7703cc5521d7734a014",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105368137187,
+  "run": 35270449835,
+  "creado": "2026-09-17T20:22:51Z",
+  "rama": "scrum-773b-el-backfill-en-seco",
+  "head": "70bad1c4d0f2bfd95dcd129eb2d31d5dbefbb5ae",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105367318697,
+  "run": 35270205450,
+  "creado": "2026-09-17T20:20:24Z",
+  "rama": "scrum-936",
+  "head": "8c8f5467bfd4f170d9c388c47ae449ac7c5f38ca",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105366837534,
+  "run": 35270060017,
+  "creado": "2026-09-17T20:18:58Z",
+  "rama": "scrum-909-rotulos-que-se-pisan",
+  "head": "5aeebba51ef0e5159f451d2cdb9e4b773e315631",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105364363752,
+  "run": 35269311406,
+  "creado": "2026-09-17T20:11:29Z",
+  "rama": "main",
+  "head": "a863416b5d303b4016e68a6134eac2908627679f",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105361885482,
+  "run": 35268588094,
+  "creado": "2026-09-17T20:04:09Z",
+  "rama": "scrum-928c-el-paso-que-hereda-el-color",
+  "head": "c542f1269d29a8697f8bb55a4c8eb3acaee9a5f4",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105361851557,
+  "run": 35268578679,
+  "creado": "2026-09-17T20:04:04Z",
+  "rama": "scrum-920-prototipo",
+  "head": "2ebc69b3c56fd85614d6ac1d8c6c8f9439187d73",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105361751319,
+  "run": 35268461610,
+  "creado": "2026-09-17T20:02:53Z",
+  "rama": "main",
+  "head": "7340d33116c5ab168aa7c5a67abee02813014cf8",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105360783981,
+  "run": 35268227277,
+  "creado": "2026-09-17T20:00:32Z",
+  "rama": "main",
+  "head": "0dc90ca45ae78951a8a059eb3ef69a549884c7fe",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105359075511,
+  "run": 35267644183,
+  "creado": "2026-09-17T19:54:29Z",
+  "rama": "scrum-917-prototipo",
+  "head": "4d694e73768d34944cc814e5dbc6c9b79d326e6a",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105358342897,
+  "run": 35267538111,
+  "creado": "2026-09-17T19:53:23Z",
+  "rama": "scrum-899-lanzador-relevar-contexto",
+  "head": "1285a0285e4296136496c83cb352b3f84386ef8d",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105358095585,
+  "run": 35267463023,
+  "creado": "2026-09-17T19:52:38Z",
+  "rama": "scrum-916-prototipo",
+  "head": "b5a1323133c3304847907512aa9174b48f857552",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105357735522,
+  "run": 35267357921,
+  "creado": "2026-09-17T19:51:34Z",
+  "rama": "scrum-917-prototipo",
+  "head": "c839c340c170ff5f70bbd50bf0b1feb280a857a2",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105357399975,
+  "run": 35267115142,
+  "creado": "2026-09-17T19:49:05Z",
+  "rama": "main",
+  "head": "11cc872a32b8b80b59746e3ee6999ca6c944279f",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105355650997,
+  "run": 35266634799,
+  "creado": "2026-09-17T19:44:13Z",
+  "rama": "main",
+  "head": "513a0df5c23521fe2d32b26d686ef96fbd13f3d1",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105354540751,
+  "run": 35266393999,
+  "creado": "2026-09-17T19:41:42Z",
+  "rama": "scrum-906c-holded-dentro-quipu",
+  "head": "923fbe5fbedbef3d9e0a86db84452a839d7d2f35",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105352995245,
+  "run": 35265933469,
+  "creado": "2026-09-17T19:36:59Z",
+  "rama": "scrum-917-prototipo",
+  "head": "c825e1a6ea08c7db1b533e166b4b7bebe3095721",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105352946364,
+  "run": 35265919378,
+  "creado": "2026-09-17T19:36:51Z",
+  "rama": "scrum-907b-evidencias-staging",
+  "head": "50c6c4070c29101c97c7cc65c61d73eebb81e863",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105352295391,
+  "run": 35265720755,
+  "creado": "2026-09-17T19:34:49Z",
+  "rama": "main",
+  "head": "fa9ff832e5d64a60ea9ef50bf863e138ef4de423",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105351740266,
+  "run": 35265515223,
+  "creado": "2026-09-17T19:32:44Z",
+  "rama": "main",
+  "head": "ff9426befef148deb9abb430cd5e65ea202ada5d",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105350059727,
+  "run": 35265064950,
+  "creado": "2026-09-17T19:28:12Z",
+  "rama": "scrum-812b-el-rotulo-honesto",
+  "head": "1d928357c00bfe239830fdb593d9fd35ab275da5",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105349996678,
+  "run": 35265045829,
+  "creado": "2026-09-17T19:28:00Z",
+  "rama": "scrum-813-el-trinquete-de-zona-horaria",
+  "head": "4c0e012c3088ce7e91200a59ce4d65467f3ff0cc",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105349799181,
+  "run": 35264988198,
+  "creado": "2026-09-17T19:27:24Z",
+  "rama": "scrum-928b-el-veredicto-que-el-color-tapa",
+  "head": "3c9b27acab8313383990b10856763e60d17f759e",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105349196831,
+  "run": 35264809742,
+  "creado": "2026-09-17T19:25:35Z",
+  "rama": "scrum-927-censos-que-no-corre-nadie",
+  "head": "2257f0a08b360ecf3e96c511a63e1afbed7ddf0f",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105348297138,
+  "run": 35264455851,
+  "creado": "2026-09-17T19:22:04Z",
+  "rama": "main",
+  "head": "f45b073adbcc79d9523d7a4eda6bb4318deeb482",
+  "clase": "concurrencia",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105347309008,
+  "run": 35264098254,
+  "creado": "2026-09-17T19:18:27Z",
+  "rama": "main",
+  "head": "706bd6f78de1502a1203547dd3c02a674cd6d531",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105345584293,
+  "run": 35263737463,
+  "creado": "2026-09-17T19:14:54Z",
+  "rama": "scrum-899-docs-relevo-de-sesion",
+  "head": "b0f72985bb36a260c40e9a56646fd5741e5da030",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105345043901,
+  "run": 35263481077,
+  "creado": "2026-09-17T19:12:23Z",
+  "rama": "main",
+  "head": "12b4992f965ef3af48c9cec0c3bb1ca115faebe3",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105344332673,
+  "run": 35263365386,
+  "creado": "2026-09-17T19:11:12Z",
+  "rama": "scrum-919b-pad-sin-red",
+  "head": "fc17a364045e67a9c7b13147ce3681bb09626d37",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105344091285,
+  "run": 35263159564,
+  "creado": "2026-09-17T19:09:08Z",
+  "rama": "main",
+  "head": "8b3f26d2cc3a3d1d1de03e1119a38dc0c94d97d7",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105343532738,
+  "ciego": true
+ },
+ {
+  "job": 105342264310,
+  "run": 35262750205,
+  "creado": "2026-09-17T19:05:04Z",
+  "rama": "scrum-786",
+  "head": "0827d747c0e1cd3fabbe512d539b7b0f804148e7",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105342564703,
+  "run": 35262716707,
+  "creado": "2026-09-17T19:04:44Z",
+  "rama": "main",
+  "head": "963c2732400c8ea786994c80214a65bae80bed17",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105341846164,
+  "run": 35262583380,
+  "creado": "2026-09-17T19:03:28Z",
+  "rama": "main",
+  "head": "6e3d86f0e0d2bd1f8d06fb95636531f042a0a773",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105341343816,
+  "run": 35262472982,
+  "creado": "2026-09-17T19:02:23Z",
+  "rama": "scrum-928-guards-entrada-color",
+  "head": "c07a8254598e285208b15b58c1aee7136056cabb",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105341204998,
+  "run": 35262430430,
+  "creado": "2026-09-17T19:01:59Z",
+  "rama": "scrum-921b-las-27-contra-jira",
+  "head": "597735a57ef42ff59de3b6a39f080721ba692a50",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105339801539,
+  "run": 35262009624,
+  "creado": "2026-09-17T18:57:54Z",
+  "rama": "scrum-911-mantenimientos-encender",
+  "head": "02ea19e13c9808c326dcdf42c6fff2085a502d4d",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105340085680,
+  "run": 35262002747,
+  "creado": "2026-09-17T18:57:49Z",
+  "rama": "scrum-915c-prototipo-v3",
+  "head": "1cd17922e1ad7564774fbfe91bf19fca4a3fad0e",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105339454517,
+  "run": 35261908247,
+  "creado": "2026-09-17T18:56:52Z",
+  "rama": "scrum-811b-la-skill-que-nadie-carga",
+  "head": "743f6943ef33ee2092fb19fad176e199bed58d00",
+  "clase": "timeout",
+  "n859": 1,
+  "m1": "VIVA",
+  "m2": null,
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105339174310,
+  "run": 35261824913,
+  "creado": "2026-09-17T18:56:02Z",
+  "rama": "main",
+  "head": "f5977e8c6d33a436d6d43fd20e345b12120c3977",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105338862618,
+  "run": 35261731666,
+  "creado": "2026-09-17T18:55:08Z",
+  "rama": "scrum-907-cobrado-de-mas",
+  "head": "84f1362db71854ddada28a6971560b2abe8acf60",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105338275888,
+  "run": 35261555729,
+  "creado": "2026-09-17T18:53:22Z",
+  "rama": "scrum-915c-prototipo-v3",
+  "head": "1edb86de06aa6846769eaed4533e9a6a5af341e3",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105336765441,
+  "run": 35261110268,
+  "creado": "2026-09-17T18:48:53Z",
+  "rama": "scrum-858c-el-cierre-con-indice",
+  "head": "e5567132f3aced9a37b2184fa52562fd2c414d9c",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105335327667,
+  "run": 35260640861,
+  "creado": "2026-09-17T18:44:18Z",
+  "rama": "main",
+  "head": "71c845c92c50c5daff5afa1f3be7c5fe0645de86",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105334969018,
+  "run": 35260576817,
+  "creado": "2026-09-17T18:43:40Z",
+  "rama": "scrum-907-cobrado-de-mas",
+  "head": "4e82b942bf3276b612a561a427e13230eabd7592",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105334768465,
+  "run": 35260515656,
+  "creado": "2026-09-17T18:43:05Z",
+  "rama": "main",
+  "head": "3f6d88fd960577da222114e2a254afe897e548fc",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105333144848,
+  "run": 35260031508,
+  "creado": "2026-09-17T18:38:14Z",
+  "rama": "scrum-906b-matriz-competencia",
+  "head": "492fce89b15411be1bca6aed3a9af49f55817d02",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105332265868,
+  "run": 35259770110,
+  "creado": "2026-09-17T18:35:37Z",
+  "rama": "scrum-919-cola-al-volver-la-red",
+  "head": "572b2eb23b9a8fc0b379a3a6d2bd84f178ec8d48",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105330229096,
+  "run": 35259057113,
+  "creado": "2026-09-17T18:28:43Z",
+  "rama": "main",
+  "head": "f52ff943e5a0ddff5c07aa760dbd8bc07a6acd8d",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105329711852,
+  "run": 35258955096,
+  "creado": "2026-09-17T18:27:42Z",
+  "rama": "main",
+  "head": "00eb8b47d054d02929838e731c9e3c3c5247a2d6",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105329152956,
+  "run": 35258703527,
+  "creado": "2026-09-17T18:25:12Z",
+  "rama": "main",
+  "head": "6775cd9cb7b9b8226b6721a72f9f05357bc127ff",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105327889092,
+  "run": 35258459223,
+  "creado": "2026-09-17T18:22:46Z",
+  "rama": "scrum-864c-el-censo-de-hoy",
+  "head": "8db2059e1fba3b98d4ef94691a48ffa1511b4d8f",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105326988364,
+  "run": 35258191574,
+  "creado": "2026-09-17T18:20:10Z",
+  "rama": "scrum-925",
+  "head": "cbf56c6f30cc5eeaf9182a5ed627ecf798bba59a",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105326911795,
+  "run": 35258065503,
+  "creado": "2026-09-17T18:18:55Z",
+  "rama": "main",
+  "head": "ef332b90728399ab0ee75c9166af63890fda2bfa",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105326088109,
+  "run": 35257924820,
+  "creado": "2026-09-17T18:17:31Z",
+  "rama": "scrum-921-censo-firmas-autorizacion",
+  "head": "82ce4503a1a546a908cdfc31844a960dd01cef63",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105325944052,
+  "run": 35257881481,
+  "creado": "2026-09-17T18:17:06Z",
+  "rama": "main",
+  "head": "b8698f0ae83f4fa0e5021fc85ee6a033d2bda056",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105323985862,
+  "run": 35257299743,
+  "creado": "2026-09-17T18:11:29Z",
+  "rama": "scrum-924-la-pantalla-que-se-cree-la-url",
+  "head": "8ba4551f7ff0a0d037cd71c23f4a2a6453762eec",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105323395530,
+  "run": 35257121948,
+  "creado": "2026-09-17T18:09:44Z",
+  "rama": "scrum-908b-quien-era-el-mudo",
+  "head": "01dfcd2f35b42d323a05cc444880e2039e9e0a64",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105287244575,
+  "run": 35246168583,
+  "creado": "2026-09-17T16:22:23Z",
+  "rama": "main",
+  "head": "adaef3c4aee5d72f02d39037edf133d09e37e2b5",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105286255975,
+  "run": 35245965744,
+  "creado": "2026-09-17T16:20:26Z",
+  "rama": "main",
+  "head": "8d29d7e8056550e2f5f39c6ecd49633710351413",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105284111853,
+  "run": 35245377429,
+  "creado": "2026-09-17T16:14:47Z",
+  "rama": "scrum-732b",
+  "head": "9e204817f27b9bef43ec6a9f9fe5cd27f515d602",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105283472937,
+  "run": 35245190062,
+  "creado": "2026-09-17T16:12:59Z",
+  "rama": "main",
+  "head": "b78defce6377666deaf0af3134cb5802659d7831",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105283463824,
+  "run": 35245187285,
+  "creado": "2026-09-17T16:12:58Z",
+  "rama": "scrum-678-los-webhooks-sin-secreto",
+  "head": "fefda1fe88ceef31e0425efa5f4b6974968871f1",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105280694928,
+  "run": 35244387014,
+  "creado": "2026-09-17T16:05:15Z",
+  "rama": "scrum-880d-la-prueba-del-empate",
+  "head": "57bb958934676d5f7f1236f521fa8efb1d3e44b5",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105277844932,
+  "run": 35243555657,
+  "creado": "2026-09-17T15:57:21Z",
+  "rama": "main",
+  "head": "45a62542fff7b104813308a59e50426ef3fc38c7",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105275641395,
+  "run": 35242915316,
+  "creado": "2026-09-17T15:51:13Z",
+  "rama": "scrum-732",
+  "head": "e1f5534c13e94167cf7559626a3e19b7e900bc25",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105270560907,
+  "run": 35241331014,
+  "creado": "2026-09-17T15:36:21Z",
+  "rama": "main",
+  "head": "5f7b994ef52020193f94560928521c73d4c9472d",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105269964281,
+  "run": 35241155357,
+  "creado": "2026-09-17T15:34:45Z",
+  "rama": "main",
+  "head": "c6e529de11d9313c3bb89ea139c6db4e2e22bec2",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105268914591,
+  "run": 35240928393,
+  "creado": "2026-09-17T15:32:40Z",
+  "rama": "main",
+  "head": "90ea1fed8a27bc97e951a66fc485283a871f6bc1",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105268314083,
+  "run": 35240593191,
+  "creado": "2026-09-17T15:29:37Z",
+  "rama": "main",
+  "head": "bf156e51bde14029ced3ba7e886f23ba50ef6877",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105267201590,
+  "run": 35240441924,
+  "creado": "2026-09-17T15:28:13Z",
+  "rama": "scrum-899c-guion-instalacion",
+  "head": "bf014f7028e878a5e610111be459a5aedaf37844",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105267102936,
+  "run": 35240415235,
+  "creado": "2026-09-17T15:27:58Z",
+  "rama": "main",
+  "head": "efb3920734215baed3bae9624585c251db0ad2d9",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105266795024,
+  "run": 35240323650,
+  "creado": "2026-09-17T15:27:09Z",
+  "rama": "scrum-899-a19-relevo",
+  "head": "daaf7a98b289ad6ed1a4e4d611993951e6ef981c",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105266735345,
+  "run": 35240158270,
+  "creado": "2026-09-17T15:25:39Z",
+  "rama": "scrum-919-cola-al-volver-la-red",
+  "head": "eb163c7be1d506015c06ddcdb52c4c7299af30ed",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105266080846,
+  "run": 35240115350,
+  "creado": "2026-09-17T15:25:16Z",
+  "rama": "scrum-665d-la-dimension-real",
+  "head": "7d242b344e03ae4b9c77ca9723818912c86fb6c0",
+  "clase": "timeout",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105265603454,
+  "run": 35239975898,
+  "creado": "2026-09-17T15:24:01Z",
+  "rama": "scrum-878b-el-cerrojo-del-29",
+  "head": "63fb45fef6e37b2f7f34744413eae6ed0a30ae01",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105264818040,
+  "run": 35239717546,
+  "creado": "2026-09-17T15:21:39Z",
+  "rama": "scrum-918-arranque-sin-red",
+  "head": "fd3bca56399d4fa6ace9e73f6ffce29ab19956bf",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105264321068,
+  "run": 35239602174,
+  "creado": "2026-09-17T15:20:36Z",
+  "rama": "scrum-888d-servidor-descuentos",
+  "head": "7b317cfc7c16a140ce75066a2024aadbe3231d84",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105263541923,
+  "run": 35239376177,
+  "creado": "2026-09-17T15:18:32Z",
+  "rama": "scrum-919-cola-al-volver-la-red",
+  "head": "6a3afa5b8f039fa79ced533ebe6b989bc0dce41b",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105263451709,
+  "run": 35239258504,
+  "creado": "2026-09-17T15:17:27Z",
+  "rama": "main",
+  "head": "45eb9b8a97840a8306d494b3d85073e5e7b88756",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105261615079,
+  "run": 35238811432,
+  "creado": "2026-09-17T15:13:28Z",
+  "rama": "scrum-918-arranque-sin-red",
+  "head": "6d4ef82142685f8a403861d2d9bc13d957f0bcc6",
+  "clase": "concurrencia",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105261878407,
+  "run": 35238807730,
+  "creado": "2026-09-17T15:13:26Z",
+  "rama": "main",
+  "head": "2d05887cb0b8c390f1b697fe5c252686488bad41",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105260786723,
+  "run": 35238572353,
+  "creado": "2026-09-17T15:11:17Z",
+  "rama": "main",
+  "head": "3974462e1bfa031147996fe4e59e65b22fd0f764",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105260175726,
+  "run": 35238393952,
+  "creado": "2026-09-17T15:09:41Z",
+  "rama": "scrum-858b-la-tanda-sin-resumen-falla",
+  "head": "2c11d5bd832330781c9fa2879766ca66fefda8e8",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105259291842,
+  "run": 35238141970,
+  "creado": "2026-09-17T15:07:19Z",
+  "rama": "scrum-812-las-dos-poblaciones",
+  "head": "98df68f344bbf54b45da2b4e72271b121d7cf28e",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105258291801,
+  "run": 35237854508,
+  "creado": "2026-09-17T15:04:43Z",
+  "rama": "scrum-903d",
+  "head": "d37dd2dfa536122829fd1ad3046b7070575906a7",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105257845296,
+  "run": 35237724167,
+  "creado": "2026-09-17T15:03:33Z",
+  "rama": "main",
+  "head": "2a9f73dbe913a7332f327db4df7583089ef2e2c2",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105255463252,
+  "run": 35237029037,
+  "creado": "2026-09-17T14:57:22Z",
+  "rama": "scrum-858b-la-tanda-sin-resumen-falla",
+  "head": "04f58e118de921fddf09359e00bbbd0302e71e55",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105254948776,
+  "run": 35236878521,
+  "creado": "2026-09-17T14:55:59Z",
+  "rama": "scrum-307-banco-sin-red",
+  "head": "a7411ce0bfbb065fd2f43f6c09cf52bcb35bb6f8",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105251560218,
+  "run": 35235841037,
+  "creado": "2026-09-17T14:46:33Z",
+  "rama": "main",
+  "head": "1df4b9b9d67b2a1ed9d919bd7e746d6aae2dd219",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105250448564,
+  "run": 35235450332,
+  "creado": "2026-09-17T14:43:08Z",
+  "rama": "main",
+  "head": "61945707a7b563614efee27713759fb27d9d9137",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105249335361,
+  "run": 35235098994,
+  "creado": "2026-09-17T14:40:02Z",
+  "rama": "main",
+  "head": "de798f5c9ca710041adf93886f1e63da390e6339",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105248555140,
+  "run": 35235009055,
+  "creado": "2026-09-17T14:39:15Z",
+  "rama": "scrum-888c-descuentos-en-lineas",
+  "head": "e467ee87e4cd36a826062ae0828e40be82184d7f",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105248228108,
+  "run": 35234836944,
+  "creado": "2026-09-17T14:37:41Z",
+  "rama": "main",
+  "head": "d6b48a4e67fe192ebf100114c8c749d9042eaeb9",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105247613606,
+  "run": 35234669774,
+  "creado": "2026-09-17T14:36:11Z",
+  "rama": "main",
+  "head": "545d5a929a227e2f54eb13c109855a5131989376",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105247317275,
+  "run": 35234648510,
+  "creado": "2026-09-17T14:35:59Z",
+  "rama": "scrum-915b-prototipo-v2",
+  "head": "27941c03967e3d46fa9f715bb941fa79ae8e7af5",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105246982124,
+  "run": 35234468375,
+  "creado": "2026-09-17T14:34:26Z",
+  "rama": "main",
+  "head": "262fd05f934e72472a9a6883999cf407e369f9bf",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105246753131,
+  "run": 35234314378,
+  "creado": "2026-09-17T14:33:03Z",
+  "rama": "scrum-864b-a19-y-la-vuelta-del-tope",
+  "head": "41ef4779e0ccfd02a0aa2da95dc1563565dbd51d",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105245000359,
+  "run": 35233967926,
+  "creado": "2026-09-17T14:30:01Z",
+  "rama": "scrum-910b-la-nota-de-la-lista",
+  "head": "5dffc4346e6ed8ea51deca398746062811b199e0",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105245078083,
+  "run": 35233879941,
+  "creado": "2026-09-17T14:29:13Z",
+  "rama": "scrum-902-firma-tecnico-con-estilo",
+  "head": "26b37ae5a10656a80fc02ceece0565709e3ef1cd",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105244873747,
+  "run": 35233821823,
+  "creado": "2026-09-17T14:28:41Z",
+  "rama": "main",
+  "head": "10e1b30b669134b7061638fdf51cc853dc3fbd9a",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105244705712,
+  "run": 35233738865,
+  "creado": "2026-09-17T14:27:58Z",
+  "rama": "scrum-864b-a19-y-la-vuelta-del-tope",
+  "head": "c3ef00bb15be86787e31fdcfafbce95d4fedfbbc",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105244239320,
+  "run": 35233718112,
+  "creado": "2026-09-17T14:27:46Z",
+  "rama": "main",
+  "head": "7151018c45e5a4610e70aadc213e76065d1b15ac",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105242854182,
+  "run": 35233343817,
+  "creado": "2026-09-17T14:24:26Z",
+  "rama": "scrum-899-orquestador-autonomo",
+  "head": "b328038d3e81461e1a6684baad0fa04fc8b7f160",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105242078640,
+  "run": 35233115458,
+  "creado": "2026-09-17T14:22:25Z",
+  "rama": "scrum-902-firma-tecnico-con-estilo",
+  "head": "920cd9dbe6a883f6e2c075b730bb0399d27f029f",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105241806547,
+  "run": 35233037422,
+  "creado": "2026-09-17T14:21:43Z",
+  "rama": "scrum-804g-la-mutacion-muda-de-738",
+  "head": "0fdc29b36f41e0b203a3b045670ba2e01f33c045",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105242170796,
+  "run": 35232988203,
+  "creado": "2026-09-17T14:21:16Z",
+  "rama": "scrum-864b-a19-y-la-vuelta-del-tope",
+  "head": "cbfba00b4a3d080099910fe08aafffe50bc4f23d",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105241574179,
+  "run": 35232970266,
+  "creado": "2026-09-17T14:21:06Z",
+  "rama": "scrum-864b-a19-y-la-vuelta-del-tope",
+  "head": "928331b226a104549d5f31df1b6295eb466513b2",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105241540059,
+  "run": 35232960752,
+  "creado": "2026-09-17T14:21:00Z",
+  "rama": "scrum-887c-bloquear-caso-c",
+  "head": "f28ae4859f0a53b90b5252fc28cbf2e9353f7fea",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105241732143,
+  "run": 35232870595,
+  "creado": "2026-09-17T14:20:12Z",
+  "rama": "main",
+  "head": "765a15f1c6f1ed75736c25d2dd311bcfc43e303c",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105241224400,
+  "run": 35232801794,
+  "creado": "2026-09-17T14:19:33Z",
+  "rama": "main",
+  "head": "d095afc4239e03f1b5be4e11ae0b073b7f3d550f",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105240612940,
+  "run": 35232611253,
+  "creado": "2026-09-17T14:17:47Z",
+  "rama": "main",
+  "head": "91bc3605089b587fc637edeeef9ad85e496d46fb",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105238566241,
+  "run": 35232101958,
+  "creado": "2026-09-17T14:13:09Z",
+  "rama": "scrum-908-la-muda-intermitente",
+  "head": "23798b57f31f846c47c9c4dc1222a430682259bf",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105237854650,
+  "run": 35231833846,
+  "creado": "2026-09-17T14:10:39Z",
+  "rama": "scrum-903c",
+  "head": "95a9e7f4129b21a7c66ad3f857220fc5ed8a53c0",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105237565525,
+  "run": 35231812709,
+  "creado": "2026-09-17T14:10:27Z",
+  "rama": "scrum-910-lo-que-se-ofrece-sin-condicion",
+  "head": "281b40c5695edb3d27337353dd262c4f56094b97",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105237702222,
+  "run": 35231802589,
+  "creado": "2026-09-17T14:10:22Z",
+  "rama": "scrum-804b-el-barrido-de-la-42",
+  "head": "6f011d3bde33fc55240d6041f751b3b5c80d5902",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105237676205,
+  "run": 35231769247,
+  "creado": "2026-09-17T14:10:05Z",
+  "rama": "main",
+  "head": "1941416eb53a8df862be016cab83aeeaf8b0f7ee",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105235743498,
+  "run": 35231200602,
+  "creado": "2026-09-17T14:04:50Z",
+  "rama": "scrum-903c",
+  "head": "14af9f3cd54c6ef76cf04944f4ae41a22835478a",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105235658362,
+  "run": 35231113182,
+  "creado": "2026-09-17T14:04:01Z",
+  "rama": "main",
+  "head": "755d23997bd55ce7aa6d6a1cb6a98616926dfd7e",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105234905766,
+  "run": 35231045101,
+  "creado": "2026-09-17T14:03:24Z",
+  "rama": "scrum-804d-lo-que-prometia",
+  "head": "d5d004091c927c8d7afc41d13a8383947ee2d4b6",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105234776180,
+  "run": 35231005300,
+  "creado": "2026-09-17T14:03:03Z",
+  "rama": "main",
+  "head": "82adb246e9d840f42ea998f5396b2ce3ec4571db",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105234460457,
+  "run": 35230915207,
+  "creado": "2026-09-17T14:02:14Z",
+  "rama": "scrum-804b-el-barrido-de-la-42",
+  "head": "fae8d8ab39c28905b09ee0b5b1300e642134248a",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105234352782,
+  "run": 35230883802,
+  "creado": "2026-09-17T14:01:56Z",
+  "rama": "scrum-895-literales-firmados",
+  "head": "3c6cb99c8ebf9b9f825ba0854e06d2b6642d905b",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105234763668,
+  "ciego": true
+ },
+ {
+  "job": 105234125602,
+  "run": 35230818908,
+  "creado": "2026-09-17T14:01:21Z",
+  "rama": "main",
+  "head": "06144bdc4d0db9c11f55ba14562b286d0b3e7f01",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105232801171,
+  "run": 35230433319,
+  "creado": "2026-09-17T13:57:49Z",
+  "rama": "scrum-903c",
+  "head": "f7491b0729063946e3be80ebf28275dce7669945",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105232533292,
+  "run": 35230356276,
+  "creado": "2026-09-17T13:57:05Z",
+  "rama": "scrum-893-solo-lo-que-puede-cobrar",
+  "head": "8b63b46feebaab65dcc4722d68a50b914385a01f",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105232036984,
+  "run": 35230214409,
+  "creado": "2026-09-17T13:55:45Z",
+  "rama": "scrum-880c-el-desempate-y-los-milisegundos",
+  "head": "480083076205df9707506ea9eee56828763749d6",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105231752255,
+  "run": 35230131786,
+  "creado": "2026-09-17T13:54:59Z",
+  "rama": "scrum-804f-la-rama-sin-slug",
+  "head": "ecd41904dddc86ad854d9bfa55da5eb7497b9803",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105231422991,
+  "run": 35230038918,
+  "creado": "2026-09-17T13:54:06Z",
+  "rama": "scrum-904-completar-lleva-al-campo",
+  "head": "18f0e7837ea7fc29927e18a06c991105c2a0f986",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105234002316,
+  "run": 35229611588,
+  "creado": "2026-09-17T13:50:11Z",
+  "rama": "scrum-899-orquestador-autonomo",
+  "head": "add0fec65b4eaed5d96319fc6a15bd88419e899d",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105229209484,
+  "run": 35229394828,
+  "creado": "2026-09-17T13:48:09Z",
+  "rama": "scrum-804b-el-barrido-de-la-42",
+  "head": "3c051e0681a5c9f755f115422229456f27a9a827",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105232130428,
+  "run": 35228697700,
+  "creado": "2026-09-17T13:41:44Z",
+  "rama": "scrum-888c-descuentos-en-lineas",
+  "head": "8df8671af47d3dbf24238b499797a98096355730",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105232306011,
+  "run": 35228485620,
+  "creado": "2026-09-17T13:39:47Z",
+  "rama": "scrum-915-prototipo-editor",
+  "head": "775344d07002d4c5e367a9d87fa19680eb478e84",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105225820943,
+  "run": 35228414645,
+  "creado": "2026-09-17T13:39:06Z",
+  "rama": "scrum-899-orquestador-autonomo",
+  "head": "baebfa1945934361ef3d2e4a9d098f94ec8acf5a",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105225154453,
+  "run": 35228220325,
+  "creado": "2026-09-17T13:37:18Z",
+  "rama": "scrum-904",
+  "head": "18f0e7837ea7fc29927e18a06c991105c2a0f986",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105219832425,
+  "run": 35226645854,
+  "creado": "2026-09-17T13:22:19Z",
+  "rama": "scrum-895-literales-firmados",
+  "head": "749da4bb9d5ae9e25ecadb4fd88d39df1f8a58eb",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105219668949,
+  "run": 35226595804,
+  "creado": "2026-09-17T13:21:51Z",
+  "rama": "scrum-904",
+  "head": "98f053ba3834164673b0c19d4e5f14e36fbdc223",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105219854448,
+  "run": 35226536503,
+  "creado": "2026-09-17T13:21:15Z",
+  "rama": "main",
+  "head": "2be8fe16a3245322e64837f789189875e0c9f560",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105218819568,
+  "run": 35226346324,
+  "creado": "2026-09-17T13:19:29Z",
+  "rama": "main",
+  "head": "05f1b1b07700796410590adc693f5aa183c071d1",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105217190674,
+  "run": 35225870776,
+  "creado": "2026-09-17T13:14:50Z",
+  "rama": "scrum-903-marcador-impreso",
+  "head": "3723cb1ad08e4189d09c3cea4a6e528300449fd7",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105216320131,
+  "run": 35225616253,
+  "creado": "2026-09-17T13:12:21Z",
+  "rama": "scrum-910-lo-que-se-ofrece-sin-condicion",
+  "head": "6a69d62cc42aae74ae887100f5ad3d616b7bd7fd",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105213961451,
+  "run": 35224934728,
+  "creado": "2026-09-17T13:05:34Z",
+  "rama": "main",
+  "head": "390995e420b375cef34438efceff56c1d372bba9",
+  "clase": "timeout",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105211278657,
+  "run": 35224132086,
+  "creado": "2026-09-17T12:57:40Z",
+  "rama": "scrum-880b-afirmaciones-caducadas",
+  "head": "9631a83cc59bb040d533b7ae97f245ed754cf537",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105174014117,
+  "run": 35212777530,
+  "creado": "2026-09-17T10:52:52Z",
+  "rama": "main",
+  "head": "6598e735fb3c8b4fbaa43a236713c51ad2609fdb",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105172074371,
+  "run": 35212189229,
+  "creado": "2026-09-17T10:45:59Z",
+  "rama": "scrum-orquestador-prompt-tanda",
+  "head": "986aa4fd0e958aff5cd861bb508e6e849359e693",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105171088802,
+  "run": 35211885556,
+  "creado": "2026-09-17T10:42:33Z",
+  "rama": "main",
+  "head": "294f59ca9f9a548e1e2e2553c0232417a8cf4282",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105168953239,
+  "run": 35211231124,
+  "creado": "2026-09-17T10:34:53Z",
+  "rama": "scrum-901b-limites-del-banco",
+  "head": "3c0a467ceefead44a0a886d6db2603ada1361406",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105168059834,
+  "run": 35210930565,
+  "creado": "2026-09-17T10:31:25Z",
+  "rama": "main",
+  "head": "0888df9e1e07d9678c87f5555a1d160db1c97eb8",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105167841141,
+  "run": 35210853653,
+  "creado": "2026-09-17T10:30:33Z",
+  "rama": "main",
+  "head": "3568b654fddbbaa60f7b478ddbca13e88064fe87",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105167008766,
+  "run": 35210593025,
+  "creado": "2026-09-17T10:27:37Z",
+  "rama": "scrum-893-solo-lo-que-puede-cobrar",
+  "head": "3a674c248d048f9d96607329f15bfff27e755a2e",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105166386105,
+  "run": 35210398759,
+  "creado": "2026-09-17T10:25:26Z",
+  "rama": "main",
+  "head": "921ad6c03ca24672b5df56ccbabfc84498e4ca80",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105165913657,
+  "run": 35210260982,
+  "creado": "2026-09-17T10:23:53Z",
+  "rama": "scrum-905-facturar-solo-si-se-puede",
+  "head": "def38e88567a47889029ef38b3e069f418ef62cb",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105165720583,
+  "run": 35210225078,
+  "creado": "2026-09-17T10:23:27Z",
+  "rama": "scrum-899-orquestador-autonomo",
+  "head": "746916c4f23229b02c450ac724d4f229869b2437",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105165368032,
+  "run": 35210083286,
+  "creado": "2026-09-17T10:21:51Z",
+  "rama": "scrum-893-solo-lo-que-puede-cobrar",
+  "head": "f1ec84a4cc8e86dfd8dda792cc507dadac45d527",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105165013364,
+  "run": 35209978999,
+  "creado": "2026-09-17T10:20:40Z",
+  "rama": "main",
+  "head": "e48c18d57fd495d8929cd983733e18c2ac057e64",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105164276446,
+  "run": 35209786022,
+  "creado": "2026-09-17T10:18:27Z",
+  "rama": "scrum-906-benchmark-publico",
+  "head": "07d717b2bc12531c37c955e086fbff2b8590c74c",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105163935862,
+  "run": 35209685908,
+  "creado": "2026-09-17T10:17:17Z",
+  "rama": "scrum-905-facturar-solo-si-se-puede",
+  "head": "36a12db031a66edec248495323f0a8677a7da4b9",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105163873593,
+  "run": 35209666766,
+  "creado": "2026-09-17T10:17:04Z",
+  "rama": "scrum-893-solo-lo-que-puede-cobrar",
+  "head": "2dc0b50b11af9146aed7a61bad72ac6332e57a7b",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105163696812,
+  "run": 35209591860,
+  "creado": "2026-09-17T10:16:11Z",
+  "rama": "main",
+  "head": "e437a51f7d58bc8b7bbcf20c1386a9fa9c1acb38",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105163416824,
+  "run": 35209491455,
+  "creado": "2026-09-17T10:15:06Z",
+  "rama": "main",
+  "head": "a766328323bb4e43e9e1f955b2e36e11a12e6ddc",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105162803814,
+  "run": 35209340821,
+  "creado": "2026-09-17T10:13:25Z",
+  "rama": "scrum-665b-el-esquema-declara",
+  "head": "b854c15a27bd504cb82959470add6cdb00213374",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105162672499,
+  "run": 35209301452,
+  "creado": "2026-09-17T10:12:58Z",
+  "rama": "main",
+  "head": "84ccf9261ae5ebc877667fc1e4f8ac403d911907",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105161490644,
+  "run": 35208941163,
+  "creado": "2026-09-17T10:08:52Z",
+  "rama": "scrum-899-orquestador-autonomo",
+  "head": "0e40830ef5bce3233f91336b85a136f16aca2efd",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105161454964,
+  "run": 35208907523,
+  "creado": "2026-09-17T10:08:28Z",
+  "rama": "scrum-901-banco-inicio-value-textcontent",
+  "head": "24ea042e7af30a6581e363af7ba18418cf0887ce",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105161189811,
+  "run": 35208849683,
+  "creado": "2026-09-17T10:07:49Z",
+  "rama": "scrum-888b-vista-previa-descuentos",
+  "head": "c8eaf24db4f71cf4229dc114bd3f0df9b29821cd",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105160995896,
+  "run": 35208790431,
+  "creado": "2026-09-17T10:07:10Z",
+  "rama": "scrum-880-el-empate-del-sello",
+  "head": "80b17e09b3317a8bfdfa479784d991250409a796",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105160010609,
+  "run": 35208460335,
+  "creado": "2026-09-17T10:03:29Z",
+  "rama": "main",
+  "head": "f3ab211d54fb4b04129498985b6a78079cf78448",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105159669853,
+  "run": 35208380132,
+  "creado": "2026-09-17T10:02:35Z",
+  "rama": "main",
+  "head": "bbcceb060421be3b45c5417e455cac1eb07a528e",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105159118909,
+  "run": 35208215798,
+  "creado": "2026-09-17T10:00:47Z",
+  "rama": "scrum-901-banco-inicio-value-textcontent",
+  "head": "ac0e662781ed32a4937239ce9964a910bd84e945",
+  "clase": "concurrencia",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+3 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105158316372,
+  "run": 35207970681,
+  "creado": "2026-09-17T09:58:05Z",
+  "rama": "scrum-895-sin-facturar-no-se-ofrece",
+  "head": "d132cb0ef1da8e05e663a090537ba090929c5bbb",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105157766458,
+  "run": 35207809289,
+  "creado": "2026-09-17T09:56:11Z",
+  "rama": "scrum-887b-descuento-global",
+  "head": "071579d694cb63f57a72f89007f8e79eaee75452",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105157534494,
+  "run": 35207738686,
+  "creado": "2026-09-17T09:55:22Z",
+  "rama": "scrum-orquestador-derivados-al-dia",
+  "head": "81b1405c693052ecf51effc39d89636dd90e1d5b",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105156744838,
+  "run": 35207496732,
+  "creado": "2026-09-17T09:52:41Z",
+  "rama": "main",
+  "head": "b0650ac389e9512d9bb4936095100c1643c2ce15",
+  "clase": "concurrencia",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105154830658,
+  "run": 35206916076,
+  "creado": "2026-09-17T09:46:10Z",
+  "rama": "scrum-895-boton-pendiente-microcopy",
+  "head": "e48f952092f2bba76d96e341adacfab444f974d9",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105153517493,
+  "run": 35206481494,
+  "creado": "2026-09-17T09:41:26Z",
+  "rama": "main",
+  "head": "76c786f60721e0caeb7eac056b5f65863abb6b6b",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105153092295,
+  "run": 35206348601,
+  "creado": "2026-09-17T09:40:00Z",
+  "rama": "main",
+  "head": "598c9873d11f3b86eec74bc30e3bc4fe3c1e96b3",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105151891905,
+  "run": 35205991751,
+  "creado": "2026-09-17T09:36:01Z",
+  "rama": "main",
+  "head": "7c1f259e9b87707632bf2bac77ddb6db127b8db3",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105151525091,
+  "run": 35205913674,
+  "creado": "2026-09-17T09:35:09Z",
+  "rama": "scrum-864b-a19-y-la-vuelta-del-tope",
+  "head": "6fc07daf77e421453eb515ca0fc610554029c731",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105151465130,
+  "run": 35205863161,
+  "creado": "2026-09-17T09:34:35Z",
+  "rama": "main",
+  "head": "2546280154c464bdc68f054db7642afd6ea02ab3",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105151166467,
+  "run": 35205804657,
+  "creado": "2026-09-17T09:33:58Z",
+  "rama": "scrum-900-push-de-claude-con-la-app",
+  "head": "542a7d3705c890ac078d8ddabbeab5fd800e23e7",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105150828846,
+  "run": 35205702778,
+  "creado": "2026-09-17T09:32:51Z",
+  "rama": "scrum-sesion0-normas-al-dia",
+  "head": "83c5124168de2e1f95e5d28065633903051563d2",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105150893172,
+  "run": 35205691113,
+  "creado": "2026-09-17T09:32:42Z",
+  "rama": "main",
+  "head": "4b88ab67fe4c36d57fa60a7e803ad9e71bb5c941",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105149968175,
+  "run": 35205443989,
+  "creado": "2026-09-17T09:30:02Z",
+  "rama": "scrum-691c-el-borde-del-input",
+  "head": "16bde51c27c0211eb38901fc9992b9b59c2814a4",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105149586982,
+  "run": 35205298791,
+  "creado": "2026-09-17T09:28:23Z",
+  "rama": "main",
+  "head": "c879c82e0a1ee04cf769471168efbdb2bed50b75",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105149195576,
+  "run": 35205183959,
+  "creado": "2026-09-17T09:27:06Z",
+  "rama": "scrum-orquestador-en-piedra",
+  "head": "6441f65e8c22e2ba4cec2c8757358b30322116a8",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105148564271,
+  "run": 35205023311,
+  "creado": "2026-09-17T09:25:18Z",
+  "rama": "scrum-881-el-detector-sin-fecha",
+  "head": "7bb55a08b586f53381c28af0222f6a2ff4c3bf01",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105148200020,
+  "run": 35204871626,
+  "creado": "2026-09-17T09:23:39Z",
+  "rama": "scrum-orquestador-en-piedra",
+  "head": "78c3f26d0c6266655035a2c2597288f7f683b15e",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105147556713,
+  "run": 35204658804,
+  "creado": "2026-09-17T09:21:22Z",
+  "rama": "main",
+  "head": "584f317f394c64d2ed4bf1a80d2a397c2b67ff8f",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105147365156,
+  "run": 35204650154,
+  "creado": "2026-09-17T09:21:16Z",
+  "rama": "scrum-900-push-de-claude-con-la-app",
+  "head": "e2a5439b37801a4d3c5fa9ce33b0dfc82d501a10",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105147221263,
+  "run": 35204590131,
+  "creado": "2026-09-17T09:20:36Z",
+  "rama": "scrum-890b-firma-sin-red-rechazo",
+  "head": "9e8d45c3db541bbe2450b48c350b9415be66ed20",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105146773336,
+  "run": 35204437337,
+  "creado": "2026-09-17T09:18:56Z",
+  "rama": "main",
+  "head": "384901385e886b0897055cdb33f5c2a671187a6e",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105146454810,
+  "run": 35204371762,
+  "creado": "2026-09-17T09:18:12Z",
+  "rama": "scrum-orquestador-en-piedra",
+  "head": "e06c3e6d087a654f7f3219b05c7563c209421a5e",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105146064165,
+  "run": 35204231683,
+  "creado": "2026-09-17T09:16:38Z",
+  "rama": "main",
+  "head": "7769e39d05e68b8f1b9f2e5a06072e8cb2d08ddb",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105145292776,
+  "run": 35204016774,
+  "creado": "2026-09-17T09:14:18Z",
+  "rama": "scrum-894-cobros-nif-aviso",
+  "head": "49ec7352ca6b0480fe42bc6b506bec94bf9759e4",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105144841763,
+  "run": 35203876961,
+  "creado": "2026-09-17T09:12:47Z",
+  "rama": "scrum-890b-firma-sin-red-rechazo",
+  "head": "0f026ffb2d831cc310bf0a955d8b0b7d5c1de1c8",
+  "clase": "concurrencia",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105144508479,
+  "run": 35203774904,
+  "creado": "2026-09-17T09:11:39Z",
+  "rama": "scrum-orquestador-traspaso-a19-cerrada",
+  "head": "e91be6f376492438706663d104d8d70abb6ff3c5",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105144123656,
+  "run": 35203625912,
+  "creado": "2026-09-17T09:10:00Z",
+  "rama": "scrum-691b-el-token-que-no-se-ve",
+  "head": "31b0e5a9bb445728a33d520395331476e956574c",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105143270680,
+  "run": 35203370330,
+  "creado": "2026-09-17T09:07:12Z",
+  "rama": "main",
+  "head": "8c354ff3404fb2a093d14b30414bc1a8e564c46a",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105142973315,
+  "run": 35203277311,
+  "creado": "2026-09-17T09:06:11Z",
+  "rama": "main",
+  "head": "7c7174153b8687aed7aead994e215e84010ff2e9",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105142852035,
+  "run": 35203266774,
+  "creado": "2026-09-17T09:06:04Z",
+  "rama": "scrum-691b-el-token-que-no-se-ve",
+  "head": "96090240338764b2202f2a7c5c5cb510b3a0c801",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105142722710,
+  "run": 35203192595,
+  "creado": "2026-09-17T09:05:16Z",
+  "rama": "main",
+  "head": "1bf1046db512796142709b73e7fb295684e03c42",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105141473063,
+  "run": 35202813773,
+  "creado": "2026-09-17T09:01:04Z",
+  "rama": "main",
+  "head": "74ba2aeb3f669c02a1bd0fb1cc548d6377e82e74",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105141148457,
+  "run": 35202743414,
+  "creado": "2026-09-17T09:00:22Z",
+  "rama": "scrum-sesion0-a19-decision-final",
+  "head": "41b7ba30c5447772f8b76a8a42855340ecca3ffc",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105141072851,
+  "run": 35202691392,
+  "creado": "2026-09-17T08:59:50Z",
+  "rama": "main",
+  "head": "3c1dfc94966aaa0830c915880be340dc31738727",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105140847283,
+  "run": 35202650387,
+  "creado": "2026-09-17T08:59:21Z",
+  "rama": "scrum-839h-cierre-por-efecto",
+  "head": "c62ede1aa875b02df2995732bf99e9be9bf8bda6",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105140395587,
+  "run": 35202465417,
+  "creado": "2026-09-17T08:57:13Z",
+  "rama": "scrum-534e-poblacion-del-censo",
+  "head": "70779575c6ce268fdb964aac00b930ea78a56b86",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105139673788,
+  "run": 35202296591,
+  "creado": "2026-09-17T08:55:19Z",
+  "rama": "scrum-897-banco-reemplaza-innerhtml",
+  "head": "1d00eb1ad711acb810f134950329a4b39cd4870d",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105138985421,
+  "run": 35202083207,
+  "creado": "2026-09-17T08:52:57Z",
+  "rama": "scrum-orquestador-autonomo",
+  "head": "7baae1f92f3e1aa906600bd2fc5d1dc52dc14f96",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105138644308,
+  "run": 35201952392,
+  "creado": "2026-09-17T08:51:30Z",
+  "rama": "main",
+  "head": "53e3db1f541574c4f231c3d196a2874680160d02",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105138331031,
+  "run": 35201853598,
+  "creado": "2026-09-17T08:50:23Z",
+  "rama": "scrum-534e-poblacion-del-censo",
+  "head": "7b5440608ec22b1fe71e8b504e461e1a25ff8261",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105136996247,
+  "run": 35201476082,
+  "creado": "2026-09-17T08:46:13Z",
+  "rama": "scrum-839g-ficha-sesion-5",
+  "head": "eefd3d5dedc560ab599fcfd38cb3bf1cd62d808e",
+  "clase": "failure",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "MUDA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+1 test(s) más caídos)",
+   "✖ scrum859-identidad-y-motivo-cerrado.test.mjs · MUDO"
+  ]
+ },
+ {
+  "job": 105136135824,
+  "run": 35201210707,
+  "creado": "2026-09-17T08:43:23Z",
+  "rama": "scrum-534e-poblacion-del-censo",
+  "head": "ce21cea76bd4307031abaf0c6f13f68224effb51",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105136036095,
+  "run": 35201148256,
+  "creado": "2026-09-17T08:42:43Z",
+  "rama": "main",
+  "head": "1e7d6de20a94bc67cad1dd8b04f00acfb8ec1507",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105135035374,
+  "run": 35200836531,
+  "creado": "2026-09-17T08:39:19Z",
+  "rama": "main",
+  "head": "46f495872b17c2960c4ae21a5d6632f6295266a6",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ },
+ {
+  "job": 105133936325,
+  "run": 35200535850,
+  "creado": "2026-09-17T08:35:59Z",
+  "rama": "scrum-839f-control-positivo",
+  "head": "b85eb3e8be5a8a8c7d1782cc47957f51c880237f",
+  "clase": "success",
+  "n859": 2,
+  "m1": "VIVA",
+  "m2": "VIVA",
+  "l859": [
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está cerrado en CINCO   (+3 test(s) más caídos)",
+   "✔ scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave   (+7 test(s) más caídos)"
+  ]
+ },
+ {
+  "job": 105133848735,
+  "run": 35200509230,
+  "creado": "2026-09-17T08:35:40Z",
+  "rama": "main",
+  "head": "aa0b4d299ee7daa097c8a4f49a21bc6525dbe41c",
+  "clase": "concurrencia",
+  "n859": 0,
+  "m1": null,
+  "m2": null,
+  "l859": []
+ }
+]

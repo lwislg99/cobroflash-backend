@@ -456,7 +456,7 @@ const flags = (a) => a.palabras.map((p) => p.texto).filter((t) => t.startsWith('
 const sinFlags = (a, desde) => a.palabras.slice(desde).map((p) => p.texto).filter((t) => !t.startsWith('-'));
 
 /**
- * Las tres formas de descartar con git, y lo que hay que preguntar ANTES en cada una.
+ * Las formas de descartar con git, y lo que hay que preguntar ANTES en cada una.
  * Devuelve `null` si el comando no es de esta familia.
  */
 function descarteGit(a) {
@@ -465,19 +465,39 @@ function descarteGit(a) {
   const todas = a.palabras.map((p) => p.texto);
 
   if (sub === 'checkout') {
-    // Cambiar de rama no descarta nada. La forma que descarta es la de rutas: `--` o `.`.
+    // La forma que descarta RUTAS es `--` o `.`.
     const corte = todas.indexOf('--');
-    if (corte === -1) return todas.includes('.') ? { que: 'git checkout .', rutas: ['.'] } : null;
-    return { que: 'git checkout --', rutas: todas.slice(corte + 1) };
+    if (corte !== -1) return { que: 'git checkout --', rutas: todas.slice(corte + 1), tipo: 'descarte' };
+    if (todas.includes('.')) return { que: 'git checkout .', rutas: ['.'], tipo: 'descarte' };
+    // SCRUM-774 · `checkout -b <rama>` no descarta nada — git ARRASTRA lo sin commitear a la
+    // rama nueva. El riesgo es otro: en un árbol COMPARTIDO entre sesiones, cambia bajo los pies
+    // de quien tenía ese trabajo sin saberlo, y lo próximo que esa sesión haga (un merge, un
+    // commit) aterriza en la rama nueva, no en la suya. Medido el 6-sep-2026 (SCRUM-774): así se
+    // perdieron dos ficheros .sql y un merge de otra sesión.
+    if (flags(a).some((f) => f === '-b' || f === '-B')) {
+      return { que: 'git checkout -b', rutas: [], tipo: 'cambio-de-rama' };
+    }
+    // Cambiar a una rama YA EXISTENTE, sin crear: git lo permite con el árbol sucio si no hay
+    // conflicto, y es una operación de rutina de una sola sesión en su propio árbol. Fuera de
+    // alcance a propósito (decisión del fundador, SCRUM-774): sólo se pregunta por la forma que
+    // CREA rama, que es la que dejó el árbol de otra sesión en un sitio que no esperaba.
+    return null;
+  }
+  if (sub === 'switch') {
+    // Mismo argumento que arriba: sólo `-c`/`-C` (crear) entra en esta familia.
+    if (flags(a).some((f) => f === '-c' || f === '-C')) {
+      return { que: 'git switch -c', rutas: [], tipo: 'cambio-de-rama' };
+    }
+    return null;
   }
   if (sub === 'restore') {
     // `--staged` a secas solo saca del índice: no toca el árbol, no pierde nada.
     const f = flags(a);
     if (f.includes('--staged') && !f.includes('--worktree') && !f.includes('-W')) return null;
-    return { que: 'git restore', rutas: sinFlags(a, 2) };
+    return { que: 'git restore', rutas: sinFlags(a, 2), tipo: 'descarte' };
   }
   if (sub === 'reset' && flags(a).some((f) => f === '--hard')) {
-    return { que: 'git reset --hard', rutas: [] };
+    return { que: 'git reset --hard', rutas: [], tipo: 'descarte' };
   }
   return null;
 }
@@ -518,11 +538,27 @@ function perdidaInminente(lista, cwd) {
         };
       }
       if (estado.salida) {
+        const listado = estado.salida.split('\n').slice(0, 20).map((l) => `      ${l}`).join('\n');
+        if (descarte.tipo === 'cambio-de-rama') {
+          return {
+            motivo:
+              `'${descarte.que}' CAMBIA la rama actual de un arbol que tiene cambios SIN COMMITEAR.\n`
+              + '  No se pierde nada al momento —git los arrastra a la rama nueva—, pero si este\n'
+              + '  arbol es COMPARTIDO con otra sesion, es SU trabajo el que acaba de moverse de\n'
+              + '  rama sin que ella lo sepa: su proximo commit o merge aterriza aqui, no en la suya\n'
+              + '  (SCRUM-774, 6-sep-2026: asi se perdieron dos .sql y un merge ajeno).\n'
+              + '  Esto es lo que hay sin commitear ahora mismo:\n'
+              + `${listado}\n`
+              + '  Si el arbol es tuyo, sigue. Si no estas segura de que sea tuyo: PARA y compruebalo\n'
+              + '  (`npm run arbol:mio`). Si de verdad quieres seguir, crea .claude/allow-destructivo\n'
+              + '  (un solo uso) y repite.',
+          };
+        }
         return {
           motivo:
             `'${descarte.que}' DESCARTA cambios sin commitear. Esto es lo que se perderia:\n`
-            + estado.salida.split('\n').slice(0, 20).map((l) => `      ${l}`).join('\n')
-            + '\n  Commitealo, guardalo con `git stash`, o —si de verdad sobra— crea\n'
+            + `${listado}\n`
+            + '  Commitealo, guardalo con `git stash`, o —si de verdad sobra— crea\n'
             + '  .claude/allow-destructivo (un solo uso) y repite. La comprobacion llega ANTES a\n'
             + '  proposito: encadenarla en el mismo comando es justo el orden que fallo.',
         };

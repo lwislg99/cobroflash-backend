@@ -1,0 +1,22 @@
+22-sep-2026 · node docs/verificacion/comprobar-citas-contabilidad.mjs docs/producto/CONTABILIDAD.md <carpeta con LIVA.html RIVA.html LIRPF.html RIRPF.html RFACT.html ORDEN303.html>
+
+{
+ "poblacion_fuentes": [
+  "LIVA:748965",
+  "RIVA:445672",
+  "LIRPF:832142",
+  "RIRPF:481395",
+  "RFACT:106999",
+  "ORDEN303:48793"
+ ],
+ "citas_extraidas": 26,
+ "encontradas": 26,
+ "no_encontradas": 0,
+ "control_negativo": "OK (la cita alterada NO aparece, la original SI)"
+}
+EXIT=0
+
+Nota: la primera pasada (antes de corregir las citas) dio 21/26 con 5 NO ENCONTRADA — las 5 usaban
+«(…)» para elidir texto legal real. El comprobador solo acepta elipsis TIPOGRÁFICA (borra la marca
+y exige que el resto sea una subcadena continua): detectó correctamente que esas 5 citas no eran
+contiguas en la fuente, y se rehicieron citando el tramo completo sin elidir nada.

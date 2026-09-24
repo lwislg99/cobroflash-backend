@@ -334,14 +334,57 @@ test('SCRUM-697 · CONTROL NEGATIVO: otra vista se sigue montando igual que ante
   // `.quote-total-kpi` (SPAN 3 · STRONG 3), idénticas a la última. Y una segunda sonda sin
   // mini-DOM, Edge pintando la vista con los mismos scripts y datos: 227 elementos, que son estos
   // 237 menos los 10 `#text` del banco, y la diferencia por etiqueta era exactamente esa.
-  assert.equal(nodos.length, 237,
-    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 237 `
+  // 🔴 SCRUM-915d · 18-sep-2026 · 237 → 282, y NO es del banco: la rama no toca
+  // `tests/_banco-vistas.mjs` (comprobado con `git diff origin/main...HEAD --stat`). Son los 45
+  // nodos del andamio de los pasos del editor, IDENTIFICADOS POR IDENTIDAD en el bloque SCRUM-915d
+  // de `scrum698-vistas-que-no-se-miden.test.mjs` (Cliente 6 · Conceptos 3 · pie de totales 4 ·
+  // Condiciones 21 · Ajustes 6 · Revisar 5), que mide este mismo árbol con el mismo `todos` y da
+  // 282. Este fichero es la segunda copia de esa cifra y se quedó fuera del subconjunto de la
+  // primera pasada: lo cazó la re-pasada tras mergear main, no el diseño.
+  // 🔴 SCRUM-915e1 · 20-sep-2026 · 282 → 283, y lo mueve la VISTA, no el banco. EL NODO, POR
+  // IDENTIDAD sobre los dos árboles montados con el mismo contador y no restando: `.quote-preview-
+  // subtitle` sale **1** en la rama y **0** en `origin/main`, y es un `<P>` con «Se actualiza
+  // mientras escribes» —el rótulo firmado (comentario 15868) que promete el repintado que este
+  // corte construye—. Subárbol de 1: el `<p>` no lleva hijos. Y el resto del corte NO mueve la
+  // cuenta, medido en la misma pasada: `.preview-footer` sigue siendo **1** en los dos (cambia lo
+  // que DICE —«válido durante 30 días» → «válido hasta el 20/10/2026»— no cuántos nodos es), y
+  // `createElement("linesBody")` → `createElement("tbody")` cambia la ETIQUETA de un nodo que ya
+  // existía. Si mañana subiera 2, no es esto.
+  // 🔴 SCRUM-915e2 · 20-sep-2026 · 283 → 286, y lo mueve la VISTA. LOS TRES NODOS, POR IDENTIDAD y
+  // no restando: se comparan las FIRMAS (etiqueta + clase + texto) de los dos árboles montados con
+  // el mismo contador, y lo único que SOBRA en la rama es **3 × `button.quote-ver-documento`** con
+  // «Ver documento» — uno en el pie de cada paso que no es el último (Cliente, Conceptos,
+  // Condiciones). Y no falta nada en el otro lado: el delta no esconde una resta compensada.
+  // 🔴 SCRUM-915h · 21-sep-2026 · 286 → 245, y lo mueve la VISTA. Por identidad (firmas de los dos
+  // árboles): −34 = las DOS líneas en blanco que el editor ya no abre (la v3 abre UNA; 17 nodos cada
+  // una) y −7 = `div.quote-totals` con sus dos filas de apoyo, que pasan al documento de la derecha.
+  // Lo único que «sobra» en la rama es la ficha de la línea con la clase `is-de-siempre`: el MISMO
+  // nodo con otra clase. No falta nada más: el delta no esconde una resta compensada.
+  // 🔴 SCRUM-915i · 21-sep-2026 · 245 → 244, y lo mueve la VISTA. Por identidad (firmas de los dos
+  // árboles, etiqueta + clase + texto): FALTAN `p.quotes-desc` (el subtítulo que la v3 retira) y los
+  // dos botones que se van al menú «⋯» de arriba (`button.btn-secondary` «Limpiar formulario» y
+  // `button.quote-header-btn` «💾 Guardar como plantilla»: viven fuera del árbol hasta que se abre el
+  // menú); SOBRAN `div.quotes-header-row` y `button.overflow-trigger` «⋯». El `h2.quotes-title` es el
+  // MISMO nodo con otro texto («Crear presupuesto» → «Nuevo presupuesto»). −3 +2 = −1.
+  // 🔴 SCRUM-915j · 21-sep-2026 · 244 → 248, y lo mueve la VISTA. Por identidad: el subárbol de
+  // `ul.quote-clientes` mide **4** sobre el árbol montado (con el mismo contador `todos`) y es TODO lo
+  // que sobra: el `<ul>`, `li.quote-clientes__nota` con «Primero necesitas un cliente.» (el banco monta
+  // sin clientes), el `<li>` del alta y `button.quote-cliente-opcion--nuevo` «+ Nuevo cliente». No
+  // falta nada en el otro lado: el `<select name="customer_id">` sigue siendo el MISMO nodo, ahora con
+  // `hidden`. Con clientes en la lista serían más (un `li` + `button` + `b` + `small` por cliente, hasta
+  // 4): este banco monta sin ellos, y el mismo 248 lo dan los dos montajes de 698.
+  assert.equal(nodos.length, 248,
+    `🔴 la vista de presupuestos produce ${nodos.length} nodos y se esperaban 248 `
     + '(236 sobre `origin/main` = 80db312b, + la opción de alta de SCRUM-591, + el bloque de '
     + 'descuento global de SCRUM-594, + el control de la dirección de la obra de SCRUM-602, '
     + '+ la tira de propuesta de SCRUM-587, + la tira de formas de pago de SCRUM-586, + la elección de nombre de SCRUM-589, − el «+ Añadir línea» duplicado de SCRUM-794, + el buscador de cliente y su aviso de lista vacía de SCRUM-713). Un arreglo del BANCO no debe cambiar ni uno: si '
     + '− los 3 avisos «Final: …» retirados por SCRUM-669, − las 24 pintadas viejas que el banco '
-    + 'apilaba hasta SCRUM-897). Si no has tocado el banco y esto se '
-    + 'mueve, el arreglo pinta.');
+    + 'apilaba hasta SCRUM-897, + los 45 del andamio de los pasos de SCRUM-915d, + el rótulo «Se '
+    + 'actualiza mientras escribes» de SCRUM-915e1, + los 3 «Ver documento» de SCRUM-915e2, − las 2 '
+    + 'líneas en blanco y − el bloque `.quote-totals` de SCRUM-915h, − el subtítulo y los dos botones '
+    + 'que se van al menú «⋯» + la fila del título y su «⋯» de SCRUM-915i + la lista de clientes por '
+    + 'botones de SCRUM-915j). Si no '
+    + 'has tocado el banco y esto se mueve, el arreglo pinta.');
 
   const tablas = nodos.filter((n) => n.tagName === 'TABLE');
   assert.equal(tablas.length, 1, '🔴 la vista de presupuestos ya no monta su tabla.');

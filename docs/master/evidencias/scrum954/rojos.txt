@@ -1,0 +1,28 @@
+﻿BASE (sin mutar) · tests 12 · pass 12 · fail 0 · EXIT=0
+
+MUTANTE 1 · 🔴 el `pid` es lo que dice que una sesión está viva; sin él, una viva se daría por muerta
+  inyección aplicada (git diff --numstat): 1	1	scripts/equipo/sesion.mjs
+  tests 12 · pass 10 · fail 2 · EXIT=1  →  MUERTO (rojo) ✓
+     ↳ cae: 🔴 EL CASO PELIGROSO: proceso VIVO con el `state.json` ya TERMINAL manda el `pid`
+     ↳ cae: 🔴 `estado` enseña los RESTOS y las sesiones de fondo que no son del equipo
+     ↳ cae: failing tests:
+     ↳ cae: 🔴 EL CASO PELIGROSO: proceso VIVO con el `state.json` ya TERMINAL manda el `pid`
+
+MUTANTE 2 · 🔴 SUELO: sin poder leer el state.json NO se declara muerta a nadie
+  inyección aplicada (git diff --numstat): 1	1	scripts/equipo/sesion.mjs
+  tests 12 · pass 11 · fail 1 · EXIT=1  →  MUERTO (rojo) ✓
+     ↳ cae: 🔴 SUELO: la duda NO mata — sin `state.json` legible, la entrada cuenta como viva
+     ↳ cae: failing tests:
+     ↳ cae: 🔴 SUELO: la duda NO mata — sin `state.json` legible, la entrada cuenta como viva
+
+MUTANTE 3 · 🔴 sólo cuenta como resto la que las DOS sondas dan por muerta, no la dudosa
+  inyección aplicada (git diff --numstat): 1	1	scripts/equipo/sesion.mjs
+  tests 12 · pass 10 · fail 2 · EXIT=1  →  MUERTO (rojo) ✓
+     ↳ cae: 🔴 SUELO: la duda NO mata — sin `state.json` legible, la entrada cuenta como viva
+     ↳ cae: 🔴 `olvidar` NO borra: ni una viva, ni una dudosa, ni cuando no hay nada
+     ↳ cae: failing tests:
+     ↳ cae: 🔴 SUELO: la duda NO mata — sin `state.json` legible, la entrada cuenta como viva
+
+VUELTA A VERDE · tests 12 · pass 12 · fail 0 · EXIT=0
+MUTANTES VIVOS: 0 de 3
+EXIT=0

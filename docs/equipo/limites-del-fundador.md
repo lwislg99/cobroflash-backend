@@ -4,6 +4,20 @@ Estas decisiones las tomó el fundador de viva voz. No están en el máster ni e
 normas, y por eso se pierden en cada traspaso. No se relajan sin que él lo diga
 otra vez, y «no lo veo escrito» no es motivo para saltárselas.
 
+## 🔴 Desde el 18-sep-2026: los límites de los DOS JEFES
+
+**Decisión del fundador (18-sep-2026 ~11:50Z):** Luis y Javier son los dos jefes. Desde ese día:
+
+- **Donde este fichero dice que algo «vuelve al fundador» o que «el sí lo escribe el fundador», vale
+  cualquiera de los dos jefes.** Cada jefe habla con SU orquestador (`dos-equipos.md`).
+- **Las decisiones de abajo siguen en vigor** tal como están escritas: el cambio es quién puede dar un sí,
+  no lo que ya se decidió. Si un jefe puede cambiar una decisión que tomó el otro está **PENDIENTE** de
+  decidir (`dos-equipos.md` §1); mientras tanto, una decisión escrita solo la cambia quien la tomó.
+- **Una decisión nueva se escribe con quién la tomó y la fecha** («Javier, 20-sep-2026: …»). La escribe el
+  orquestador de Luis, dueño de este fichero; el de Javier se la pasa por Jira (`dos-equipos.md` §3.3 y §5).
+- La **delegación permanente** de más abajo la dio el fundador a su orquestador. Si Javier delega lo mismo en
+  el suyo, se escribe aparte, con su fecha: no se supone.
+
 ## Seguridad y secretos
 
 - La credencial de staging que quedó expuesta **NO se rota**. Decisión suya,
@@ -101,7 +115,7 @@ robusto está en SCRUM-899.
 - Los pasos manuales, de UNO EN UNO. Nunca una lista.
 - Lo que no conoce, explicado «para tontos», sin dar contexto por sabido.
 
-## Las normas de Javier (el colaborador)
+## Las normas de Javier (jefe desde el 18-sep-2026; antes, «el colaborador»)
 
 - ① decisión → ② ALTER aditivo en las TRES bases → ③ un solo PR. **Nunca ③ sin ②.**
 - Nunca `db push` contra producción. El DDL sale de `prisma migrate diff`.

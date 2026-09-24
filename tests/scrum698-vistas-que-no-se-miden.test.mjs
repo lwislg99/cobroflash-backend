@@ -349,8 +349,47 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // `document.querySelector` y pinta «Completa tu configuración», 51 nodos). Edge, con los mismos
   // scripts y datos, pinta 143: la Inicio del banco coincide FIRMA A FIRMA salvo UN nodo, el
   // `.alert.warning` «No hemos podido comprobar…», porque el banco no tiene IndexedDB (declarado).
-  for (const [vista, nodos] of [['renderQuotesView', 237], ['renderProductsView', 166],
-    ['renderCustomersView', 69], ['renderHomeView', 144]]) {
+  // 🔴 SCRUM-915d · 18-sep-2026 · `renderQuotesView` 237 → 282, y NINGUNA de las otras tres se mueve.
+  // Lo mueve la VISTA: el andamio de los pasos, contado POR IDENTIDAD (sin `#text`): paso Cliente
+  // 6 (resumen, «Cambiar», guía, pie, aviso, «Continuar») · Conceptos 3 (resumen, «Cambiar», guía) ·
+  // pie de los totales 4 (pie, aviso, «Atrás», «Continuar») · Condiciones 21 (resumen, «Cambiar»,
+  // guía, y 3 filas × fila/cabecera/título/valor/botón/detalle) · Ajustes 6 (valor, «Cambiar», pie,
+  // aviso, «Atrás», «Continuar») · Revisar 5 (título, «Cambiar», guía, resumen, «Atrás») = 45.
+  // 🔴 SCRUM-915e1 · 20-sep-2026 · `renderQuotesView` 282 → 283, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. El nodo, POR IDENTIDAD sobre los dos árboles y no restando:
+  // `p.quote-preview-subtitle` = «Se actualiza mientras escribes», que sale **1** aquí y **0** en
+  // `origin/main`; subárbol de 1, sin hijos. Lo demás del corte no cuenta nodos: `.preview-footer`
+  // sigue siendo 1 en los dos (cambia su TEXTO, a la fecha real de «Válido hasta»), y el
+  // `createElement("linesBody")` → `"tbody"` renombra la etiqueta de un nodo que ya estaba.
+  // 🔴 SCRUM-915e2 · 20-sep-2026 · `renderQuotesView` 283 → 286, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. Los tres nodos, POR IDENTIDAD: comparando las FIRMAS (etiqueta +
+  // clase + texto) de los dos árboles, lo único que sobra en la rama es 3 ×
+  // `button.quote-ver-documento` = «Ver documento», uno por cada paso que no es el último. En el
+  // otro lado no falta nada, así que el delta no esconde una resta compensada.
+  // 🔴 SCRUM-915h · 21-sep-2026 · `renderQuotesView` 286 → 245, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. Los −41, POR IDENTIDAD (firmas etiqueta + clase de los dos árboles):
+  // −34 son las DOS líneas en blanco que el editor ya no abre (la v3 pide UNA; 17 nodos cada una:
+  // `div.quote-line` + 4 `label` con su `span` + 3 `input` + total + ficha + acciones + asa + ⋯) y
+  // −7 son `div.quote-totals` con sus dos filas de apoyo (Base imponible e IVA: `div` + `span` +
+  // `strong` cada una), que se van al documento de la derecha. Lo único que SOBRA en la rama es la
+  // ficha de la línea que queda con la clase `is-de-siempre`: el MISMO nodo con otra clase, no uno
+  // nuevo. No falta nada más, así que el delta no esconde una resta compensada.
+  // 🔴 SCRUM-915i · 21-sep-2026 · `renderQuotesView` 245 → 244, y las otras tres intactas. Por
+  // identidad (firmas de los dos árboles): faltan el subtítulo `p.quotes-desc` y los dos botones que
+  // se van al menú «⋯» de arriba («Limpiar formulario», «💾 Guardar como plantilla»), y sobran
+  // `div.quotes-header-row` y el `button.overflow-trigger` «⋯». El título es el mismo `h2`.
+  // 🔴 SCRUM-979 · 21-sep-2026 · `renderCustomersView` 69 → 78, y NINGUNA de las otras tres se
+  // mueve. Lo mueve la VISTA. Los nueve, POR IDENTIDAD (firmas etiqueta + clase de los dos árboles,
+  // `origin/main` 3ac838a5 contra la rama), y en el otro lado no falta nada: el `select.input` del
+  // filtro por última visita (1) con sus 4 `option` («Cualquier fecha de visita» y 6/12/24 meses),
+  // el `th` de «Última visita» (1, `col-hide-mobile`) y su casilla en el selector de columnas
+  // (`label.columnas-opcion` + `input` + `span` = 3).
+  // 🔴 SCRUM-915j · 21-sep-2026 · `renderQuotesView` 244 → 248, y las otras tres intactas. Por
+  // identidad: el subárbol de `ul.quote-clientes` (`ul` · `li.quote-clientes__nota` · `li` ·
+  // `button.quote-cliente-opcion--nuevo`) = 4, y no falta nada: el `<select name="customer_id">` es el
+  // mismo nodo con `hidden`.
+  for (const [vista, nodos] of [['renderQuotesView', 248], ['renderProductsView', 166],
+    ['renderCustomersView', 78], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
@@ -394,7 +433,27 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // SCRUM-897 (17-sep-2026): la DÉCIMA anotación, −24, y la única que no viene de la vista sino
   // del banco: `innerHTML` dejó de apilar pintadas. Recalculado sobre el árbol arreglado con los
   // DOS montajes: el de `datos` propios y el desnudo dan 237 los dos, así que siguen coincidiendo.
-  assert.equal(todos(desnuda.contenedor).length, 237,
+  // SCRUM-915d (18-sep-2026): la UNDÉCIMA anotación, +45 — el andamio de los pasos, identificado
+  // por identidad en el bloque de arriba. Los DOS montajes siguen dando el mismo número: 282.
+  // SCRUM-915e1 (20-sep-2026): la DUODÉCIMA anotación, +1 — el rótulo «Se actualiza mientras
+  // escribes» (`p.quote-preview-subtitle`), identificado por identidad en el bloque de arriba. Lo
+  // que este control vigila —que los DOS montajes den el mismo número— sigue intacto: el rótulo es
+  // fijo y no depende de los datos, así que lo pintan los dos. Los dos dan 283.
+  // SCRUM-915e2 (20-sep-2026): la DECIMOTERCERA anotación, +3 — los tres «Ver documento»
+  // (`button.quote-ver-documento`), identificados por identidad en el bloque de arriba. Lo que este
+  // control vigila —que los DOS montajes den el mismo número— sigue intacto: los botones cuelgan
+  // del pie de los pasos, que no depende de los datos. Los dos dan 286.
+  // SCRUM-915h (21-sep-2026): la DECIMOCUARTA anotación, −41 — dos líneas en blanco menos y el
+  // bloque `.quote-totals` fuera del editor, identificados por identidad en el bloque de arriba. Lo
+  // que este control vigila —que los DOS montajes den el mismo número— sigue intacto: ni el número
+  // de líneas al abrir ni el bloque de totales dependen de los datos. Los dos dan 245.
+  // SCRUM-915i (21-sep-2026): la DECIMOQUINTA, −1 — la cabecera (sin subtítulo, con su fila y su
+  // «⋯»), identificada por identidad en el bloque de arriba. Tampoco depende de los datos: 244.
+  // SCRUM-915j (21-sep-2026): la DECIMOSEXTA, +4 — el subárbol de `ul.quote-clientes`, identificado
+  // por identidad en el bloque de arriba. Lo que este control vigila —que los DOS montajes den el
+  // mismo número— sigue intacto: con o sin `datos` el banco monta la vista sin clientes, y el
+  // subárbol vacío son los mismos 4. Los dos dan 248.
+  assert.equal(todos(desnuda.contenedor).length, 248,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

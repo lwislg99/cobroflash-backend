@@ -22,12 +22,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import * as P from '../scripts/puerta-avisador-rojo.mjs';
 import { cortacircuitos, respuestaTopeAlcanzado, TOPE_POR_VENTANA, VENTANA_MINUTOS } from '../scripts/puerta-claude.mjs';
+import { temporal } from './_temporal.mjs';
 
 const RAIZ = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CLAUDE_YML = path.join(RAIZ, '.github', 'workflows', 'claude.yml');
@@ -216,7 +216,7 @@ function correrPaso(escenario = {}) {
   assert.ok(guion, '🔴 no encuentro el paso `puerta` en claude.yml');
   const desdeMain = (guion.match(DESDE_MAIN) || []).length;
   // El temporal se crea aquí y a la vista: el censo de SCRUM-824 no atraviesa lo que devuelve una función.
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-853d-${process.pid}-`));
+  const tmp = temporal(`yaqu-853d-${process.pid}-`);
   const bin = path.join(tmp, 'bin');
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, 'gh'), GH_FALSO);

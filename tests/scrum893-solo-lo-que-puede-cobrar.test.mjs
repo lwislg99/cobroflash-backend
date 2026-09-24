@@ -57,6 +57,8 @@ const R_PORTAL = require_.resolve('./dist/modules/system/app/routes/customerPort
 
 const { cardChargeMode } = require_('./dist/modules/billing/domain/cardCharge.js');
 const { DEMO_MERCHANT_ID } = require_('./dist/modules/invoicing/domain/emission.service.js');
+// SCRUM-910: el TERCER criterio de «hay tarjeta». Ver ⑥ al final del fichero.
+const { viasDeCobro } = require_('./dist/modules/billing/domain/viasDeCobro.js');
 
 // ── Los dobles ────────────────────────────────────────────────────────────────────────────────
 function poner(ruta, exports) {
@@ -288,6 +290,10 @@ const prismaDelPortal = (m) => ({
     findUnique: async () => ({ receiptToken: 'tok893' }),
     update: async () => ({ receiptToken: 'tok893' }),
   },
+  // SCRUM-1018: el portal ahora pregunta también por la próxima visita agendada. Sin ninguna,
+  // la sección «Tu visita» no se pinta — fuera del alcance de este fichero (card-charge mode).
+  job: { findFirst: async () => null },
+  teamMember: { findFirst: async () => null },
 });
 
 const PAGINAS = [
@@ -379,4 +385,122 @@ test('SCRUM-893 · 🔴 ⑤ sin Connect y SIN IBAN: ningún método, y la págin
     '🔴 NINGÚN método ofrecido y NINGÚN mensaje: la clienta se queda mirando una página que no le\n'
     + '    dice qué hacer. El literal existe en `payInvoice.routes.ts` para este caso — si dejó de\n'
     + '    pintarse, el arreglo cambió el caso de «no puede pagar aquí» a «no sabe qué pasa».');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ⑥ EL TERCER CRITERIO — SCRUM-910
+//
+// 🔴 ESTE TICKET DECLARÓ QUE LA EXPRESIÓN VIVÍA EN DOS SITIOS. VIVE EN TRES.
+//
+// Lo encontró la Sesión 3 (comentario 15679 de SCRUM-893) y tenía razón: `viasDeCobro.tarjeta`
+// —`viasDeCobro.ts:92`— contesta «¿hay tarjeta?» por su cuenta, con un criterio propio:
+//
+//     const tarjeta = String(entrada.connectStatus || 'none') === 'active';
+//
+// Ni mira el flag `PAYMENTS_CONNECT_ENABLED`, ni `stripeAccountId`, ni el merchant demo. Y no es
+// un rincón muerto: viaja en `GET /admin/merchant` (`app.ts:697`) al dashboard del PROFESIONAL,
+// que lo pinta en `homeView.js` y `settingsView.js`.
+//
+// La tabla de ② no lo cubría, así que **el tercero podía separarse de los otros dos sin que nada
+// se quejara** — que es exactamente el mecanismo que produjo el defecto de este ticket.
+//
+// ── ⚠️ ESTO ES UN TRINQUETE, NO UN VERDE. LO QUE FIJA HOY ES UN DEFECTO CONOCIDO ───────────────
+//
+// Medido: **15 discrepancias de 32**, y NO se arreglan en este ticket — el fundador decide qué
+// criterio manda (17-sep-2026), porque cambiar `viasDeCobro` cambia lo que el PROFESIONAL ve sobre
+// su propia cuenta, y eso no es una decisión de código. Mientras tanto el conjunto queda CERRADO:
+// si crece, mengua o se mueve, este caso cae diciendo cuál.
+//
+//   · QUIÉN LO RETIRA: el fundador. **Y YA DECIDIÓ EL CRITERIO (17-sep-2026): manda `payBank`,
+//     el que PINTA la cuenta** — la misma regla que `cardChargeMode` para la tarjeta: el criterio
+//     que manda es el del que HACE, no el del que OFRECE. Lo que queda pendiente es sólo CUÁNDO
+//     se aplica a `viasDeCobro`, no cuál gana.
+//   · CUÁNDO: cuando ese trabajo se planifique. Este bloque se borra entonces, no se amplía.
+//   · Y SI ALGUIEN AMPLÍA LA LISTA PARA QUE PASE, está apagando la alarma: la lista sólo puede
+//     ENCOGER. Un trinquete que se ensancha es una tolerancia con otro nombre.
+//
+// ⚠️ **POR QUÉ SE PUEDE ESPERAR, dicho con su fecha y su fuente:** las 3 discrepancias de la
+// familia ② son las que tienen víctima —le prometen tarjeta al profesional y su clienta se come el
+// 409—, pero **hoy no tienen a quién herir**: producción está vacía, **0 facturas y 0 albaranes**,
+// medido en consola por el fundador el 17-sep-2026. Eso no las hace menos graves: las hace baratas
+// de arreglar ahora y caras el día que haya datos. Si alguien lee esto con producción ya en uso,
+// la premisa de este párrafo ha caducado — **vuelve a contar antes de fiarte de él**.
+//
+// Las 15 son de DOS familias, y su gravedad no es la misma:
+//
+//   ① EL DEMO (12) ....... `viasDeCobro` no sabe de la regla 8, así que le dice al merchant demo
+//                          que NO puede cobrar con tarjeta cuando sí puede (por plataforma).
+//                          Afecta a UN merchant, el nuestro. Cosmético.
+//   ② `active` A MEDIAS (3) 🔴 `connectStatus='active'` pero con el flag OFF o sin
+//                          `stripeAccountId`: el dashboard le dice al PROFESIONAL que puede
+//                          cobrar con tarjeta, y su clienta se come el 409. Es el defecto de
+//                          SCRUM-893 **del lado del profesional**, y ése sí tiene víctima.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Clave compacta y estable de una combinación. El «cuál» tiene que caber en un mensaje de error. */
+const clave = (c) => `${c.flag ? 'ON ' : 'OFF'}|${c.connectStatus.padEnd(10)}|`
+                   + `${c.stripeAccountId ? 'sa' : '--'}|${c.id === DEMO_MERCHANT_ID ? 'demo' : 'real'}`;
+
+/** Las 15 discrepancias MEDIDAS el 17-sep-2026. Lista CERRADA: ver el bloque de arriba. */
+const DISCREPANCIAS_CONOCIDAS = new Set([
+  // ① el demo: cardChargeMode dice `demo_platform` (puede cobrar), viasDeCobro dice false
+  'OFF|none      |--|demo', 'OFF|none      |sa|demo',
+  'OFF|pending   |--|demo', 'OFF|pending   |sa|demo',
+  'OFF|restricted|--|demo', 'OFF|restricted|sa|demo',
+  'ON |none      |--|demo', 'ON |none      |sa|demo',
+  'ON |pending   |--|demo', 'ON |pending   |sa|demo',
+  'ON |restricted|--|demo', 'ON |restricted|sa|demo',
+  // ② `active` a medias: viasDeCobro dice true, la puerta REHÚSA
+  'OFF|active    |--|real', 'OFF|active    |sa|real',
+  'ON |active    |--|real',
+]);
+
+test('SCRUM-893/910 · 🔴 ⑥ el TERCER criterio no puede separarse de los otros dos sin avisar', () => {
+  const medidas = new Set();
+  for (const caso of CASOS) {
+    const m = caso.merchant;
+    const seOfrece = cardChargeMode(m) !== 'refuse';
+    const loQueVeElPro = viasDeCobro({
+      iban: m.iban, bizumPhone: m.bizumPhone, whatsappPhone: m.whatsappPhone,
+      connectStatus: m.connectStatus, flagBizum: false,
+    }).tarjeta;
+    if (seOfrece !== loQueVeElPro) medidas.add(clave(caso));
+  }
+
+  // CONTROL de la comparación: si cualquiera de los dos criterios fuera constante sobre las 32,
+  // «coinciden» o «discrepan» no diría nada de ellos, sólo de la población.
+  const valoresA = new Set(CASOS.map((c) => cardChargeMode(c.merchant) !== 'refuse'));
+  const valoresB = new Set(CASOS.map((c) => viasDeCobro({
+    iban: null, bizumPhone: null, whatsappPhone: null,
+    connectStatus: c.merchant.connectStatus, flagBizum: false,
+  }).tarjeta));
+  assert.equal(valoresA.size, 2, '🔴 CIEGO: `cardChargeMode` es constante sobre las 32.');
+  assert.equal(valoresB.size, 2, '🔴 CIEGO: `viasDeCobro.tarjeta` es constante sobre las 32.');
+
+  // Se comparan CONJUNTOS, no cuentas: un número igual deja pasar «he perdido una y he ganado otra».
+  const nuevas = [...medidas].filter((k) => !DISCREPANCIAS_CONOCIDAS.has(k)).sort();
+  const resueltas = [...DISCREPANCIAS_CONOCIDAS].filter((k) => !medidas.has(k)).sort();
+
+  // 🔴 UN SOLO VEREDICTO CON LAS DOS LISTAS, y no dos asserts seguidos. Con dos, el primero corta
+  // y el segundo no llega a ejecutarse nunca: al verificar este caso con mutaciones reales, las que
+  // producían nuevas Y resueltas sólo podían demostrar la mitad, porque `assert` para en la
+  // primera. El lado «resueltas» quedaba sin probar y el instrumento lo dijo — «sólo muerde por un
+  // lado». Juntarlas es lo que permite ver las dos a la vez, y es además lo que le sirve a quien
+  // lea el error: las dos listas describen el MISMO cambio, desde sus dos bordes.
+  const hayCambio = nuevas.length > 0 || resueltas.length > 0;
+  assert.equal(hayCambio, false,
+    '🔴 EL TERCER CRITERIO SE HA MOVIDO RESPECTO A LO DECLARADO.\n\n'
+    + (nuevas.length
+      ? '  ── SE HA SEPARADO MÁS ── combinaciones donde `viasDeCobro.tarjeta` y `cardChargeMode`\n'
+        + '     discrepan y NO estaban declaradas:\n\n      '
+        + nuevas.join('\n      ')
+        + '\n\n     No se añaden a la lista para que pase: la lista sólo puede ENCOGER (ver cabecera).\n\n'
+      : '')
+    + (resueltas.length
+      ? '  ── HAY DISCREPANCIAS RESUELTAS ── buena noticia, mal declarada:\n\n      '
+        + resueltas.join('\n      ')
+        + '\n\n     Si alguien arregló `viasDeCobro` —o el criterio de la puerta—, estas líneas se\n'
+        + '     quitan de `DISCREPANCIAS_CONOCIDAS` EN EL MISMO COMMIT. Este caso cae a propósito\n'
+        + '     para que la lista no se quede describiendo un defecto que ya no existe.\n'
+      : ''));
 });

@@ -1,5 +1,11 @@
 # Sesión 4 — «¿esto que ve el usuario está firmado y sujeto?»
 
+🔴 **Antes de tocar cualquier UI (pantalla, componente, CSS):** `Skill(yaqu-premium-ui)`. Se
+declara obligatoria en `CLAUDE.md` y en la propia skill, y hasta el 22-sep-2026 casi nadie la
+cargaba (SCRUM-811: 2 de 222 registros que tocaban `public/`). Si tu entrada del registro nombra
+una ruta `public/*.{js,css,html}`, `tests/scrum811c-skill-ui-declarada.test.mjs` exige que
+declares `**Skill UI:** cargada` o `**Skill UI:** no cargada · <motivo>`.
+
 Microcopy, guards y el parte de trabajo. Conoce sus 32 textos.
 Regeneró tres veces una cifra derivada en vez de elegirla.
 
@@ -99,6 +105,11 @@ La prueba es mía: el PR #1214 llevaba 816 + 823 + 831 dentro, 17
 commits y 51 ficheros, y **dos conflictos pararon los tres a la vez**.
 Ninguno de los dos conflictos era del ticket que los sufría.
 
+> ✅ **YA NO ES CIERTO (corregido el 17-sep-2026, SCRUM-902).** A15 existe:
+> `docs/equipo/00-normas-comunes.md:249`, «A15 · `git stash` es estado COMPARTIDO», añadida en
+> el commit `53a12e23` (fecha de autor 9-sep-2026 09:54 CEST; cuándo llegó a `main` no lo he medido). Lo de abajo se conserva como lo que se midió
+> aquel día; no describe el estado actual.
+
 **② A15 NO EXISTE.** La numeración salta de A14 a A16. Medido el
 9-sep-2026 sobre `origin/main = ee13c63f`:
 
@@ -150,6 +161,11 @@ de casa. Aquí se contó dos veces por caminos distintos: 348 y 348.
 
 ## 🔴 EL #1212 PARADO — los tres daños, juntos
 
+> ✅ **YA NO ESTÁ PARADO (corregido el 17-sep-2026, SCRUM-902).** El #1212 se mergeó el
+> 2026-09-15T11:30:34Z (medido con `gh pr view 1212`), y el daño ③ se cerró por otro lado: A15 está
+> en `main` (ver arriba). Se conserva el bloque como argumento del vigía de ramas atascadas, no como
+> estado actual.
+
 Aquí en un sitio, como pidió el fundador el 9-sep-2026, porque es el
 argumento del vigía de ramas atascadas. **Cada uno con su origen**: lo
 que he medido yo, lo que es hipótesis y lo que me han contado. Mezclar
@@ -174,3 +190,18 @@ Lo que sí queda establecido sin depender de la hipótesis es el hecho
 escribió dentro y nadie sabe que le falta.** El daño de un PR atascado
 no se ve en el PR — se ve en un fichero de otra sesión al que le falta
 una norma y en una numeración que salta.
+
+## 🪤 Trampa del 17-sep-2026: la comprobación encadenada al push
+
+En SCRUM-895 la comprobación de PRs justo antes del push **mostró** el duplicado (#1406, de otra
+sesión, ya mergeado), pero iba en el mismo comando que el `git push` y el push salió igual: rama
+nueva, #1408 con auto-merge armado (se desarmó y se cerró sin mergear).
+
+🔒 **Una comprobación que no puede parar lo que viene detrás no es una comprobación: es un log.**
+
+Cómo se hace desde entonces:
+1. En UN comando, y sin push detrás: PRs en cualquier estado cuyo `headRefName` case con
+   `^scrum-0*NNN[a-z]?-`, `git ls-remote --heads origin` con el mismo patrón y
+   `git log origin/main --grep=SCRUM-NNN`.
+2. Se LEE la salida. Un PR mergeado borra su rama y ls-remote no lo ve: por eso va también el log de main.
+3. El push va en el comando siguiente, y sólo si los tres salieron vacíos.

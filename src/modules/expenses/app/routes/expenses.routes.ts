@@ -1,12 +1,19 @@
 import { Router } from 'express';
 import {
   listExpenses, createExpense, updateExpense, deleteExpense,
-  getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError,
+  getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError, ExpenseCategoryError,
+  queFueDelNif, // SCRUM-937
 } from '../../domain/expenses.service';
 import { requireRole } from '../../../../core/http/authMiddleware';
 import { prisma } from '../../../../core/db/prisma';
 // SCRUM-324 (E3) · la regla fiscal vive en el dominio, no en cada pantalla que da de alta un gasto.
 import { clasificarJustificante } from '../../domain/justificante';
+// SCRUM-912 · leer la foto del ticket. Gemini directo: sin respaldo con Claude (ver el dominio).
+import { isGeminiConfigured } from '../../../../integrations/gemini';
+import { hitRateLimit } from '../../../../core/http/rateLimit';
+import {
+  parsearImagen, leerTicket, LECTURAS_TICKET_POR_DIA, hoyEnMadrid, corteDeCuota, ERROR_POR_CORTE,
+} from '../../domain/lecturaTicket';
 
 const router = Router();
 
@@ -86,6 +93,59 @@ router.get('/margin/:quoteId', requireRole('admin'), async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/expenses/:id/foto — SCRUM-964 · LA FOTO DEL TICKET, DE UNA EN UNA.
+ *
+ * Existe porque la lista dejó de llevarlas: `GET /admin/expenses` devolvía las 200 fotos del mes
+ * (hasta 300 MiB medidos) para pintar una tabla que no enseña ninguna. La lista dice ahora
+ * `tieneFoto`, y quien quiera verla la pide por aquí.
+ *
+ * 🔴 SALE COMO IMAGEN, NO COMO JSON, y eso no es estética: el data-URI guardado es base64 (+33 %
+ * de bulto) y dentro de un JSON se escapa otra vez. En binario, el navegador la pinta con un
+ * `<img src="…">` —la cookie `pf_session` viaja sola, es `same-origin`— sin cargar la cadena en
+ * memoria ni pasarla por el parser de JSON.
+ *
+ * MISMO PERMISO QUE LA LISTA (`admin`): la foto es una columna de la fila, y una fila que solo
+ * lee un admin no puede tener una puerta más abierta que la lista de la que sale. El filtro por
+ * `merchantId` es el de la regla 2 y decide: el gasto de otro negocio da **404**, el mismo que
+ * un id que no existe — distinguirlos convertiría la ruta en un oráculo de ids ajenos.
+ *
+ * `no-store` a propósito: la foto de un gasto se puede REEMPLAZAR desde el modal de edición, y no
+ * hay `ETag` que lo delate todavía. Antes servir una foto vieja por un cacheo de 5 minutos que
+ * ahorrar una petición.
+ */
+router.get('/:id/foto', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    const gasto = await prisma.expense.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { receiptData: true },
+    });
+    // «No es tuyo», «no existe» y «no tiene foto» dan lo mismo: no hay nada que servir.
+    if (!gasto || !gasto.receiptData) return res.status(404).json({ ok: false, error: 'not_found' });
+
+    // El MISMO parser que valida la foto al leer el ticket (`parsearImagen`): un solo sitio decide
+    // qué es una foto admitida, así que no se puede servir por aquí algo que allí se rechazaría.
+    const imagen = parsearImagen(gasto.receiptData);
+    // Código PROPIO y distinto del 404: la fila SÍ tiene contenido, lo que pasa es que no es una
+    // imagen que sepamos servir (filas anteriores al tope de tipos). `tieneFoto` dijo la verdad.
+    if (!imagen.ok) return res.status(415).json({ ok: false, error: 'foto_no_legible' });
+
+    const bytes = Buffer.from(imagen.data, 'base64');
+    res.setHeader('Content-Type', imagen.mimeType);
+    res.setHeader('Content-Length', String(bytes.length));
+    res.setHeader('Cache-Control', 'no-store');
+    // El tipo sale de la fila, así que se prohíbe que el navegador adivine otro (`parsearImagen`
+    // solo admite cinco tipos de imagen, pero la prohibición no depende de esa lista).
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.end(bytes);
+  } catch (err) {
+    console.error('[GET /admin/expenses/:id/foto]', err);
+    return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
 // POST /admin/expenses
 router.post('/', async (req, res) => {
   try {
@@ -144,11 +204,72 @@ router.post('/', async (req, res) => {
       providerInvoiceNumber: expense.providerInvoiceNumber,
       vatDeducible: expense.vatDeducible,
     });
-    return res.status(201).json({ ok: true, item: expense, justificante });
+    // SCRUM-937 · y qué fue del NIF tecleado. Sin proveedor no tiene dónde ir, y el veredicto de
+    // arriba dirá que falta; esto dice POR QUÉ, en vez de dejar que el profesional crea que lo dio.
+    const destinoDelNif = queFueDelNif({
+      nifTecleado: nifProveedor ? String(nifProveedor) : null,
+      providerId: expense.providerId,
+      nifDeLaFicha: proveedor?.taxId ?? null,
+    });
+    return res.status(201).json({ ok: true, item: expense, justificante, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
+    // SCRUM-943 · entrada inválida, no fallo del servidor. Sin `message`: el selector de la pantalla
+    // sólo ofrece las cinco, así que esto es la red para llamadas directas al endpoint, y un texto
+    // nuevo para el usuario tendría que estar firmado. Se devuelve la lista válida para quien llame.
+    if (err instanceof ExpenseCategoryError) {
+      return res.status(400).json({ ok: false, error: err.code, categories: EXPENSE_CATEGORIES });
+    }
     console.error('[POST /admin/expenses]', err);
     return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// POST /admin/expenses/leer-ticket — SCRUM-912
+// Body: { imagen: 'data:image/jpeg;base64,…' } → { ok, propuesta, descartados, justificante }
+//
+// LEE y NO GUARDA: ni la foto ni lo leído, y nada de ello va al log (lleva NIF y nombre de un
+// tercero). El gasto se guarda después con el POST de arriba, cuando el profesional lo ha mirado.
+// Mismo permiso que el alta: es trabajo de campo, el técnico está en el almacén con el ticket.
+// Solo CÓDIGOS de error: los textos los firma el fundador (regla 30).
+// La foto viaja por el parser global de 2 MB (medido en staging el 18-sep: 2,2 MB → 413 antes de
+// la auth): la pantalla manda la misma foto reducida que luego guarda (SCRUM-947).
+router.post('/leer-ticket', async (req, res) => {
+  if (!isGeminiConfigured()) return res.status(503).json({ ok: false, error: 'ai_not_configured' });
+
+  const imagen = parsearImagen(req.body?.imagen);
+  if (!imagen.ok) return res.status(400).json({ ok: false, error: imagen.error });
+
+  // Por día natural de Madrid: la clave lleva la fecha, así que al cambiar de día el contador es
+  // otro. Se cuenta DESPUÉS de validar la foto: un cuerpo malo no gasta cuota de Google.
+  const ahora = new Date();
+  if (hitRateLimit(`leer-ticket:${req.merchantId}:${hoyEnMadrid(ahora)}`, LECTURAS_TICKET_POR_DIA, 24 * 60 * 60_000)) {
+    return res.status(429).json({ ok: false, error: 'lecturas_agotadas' });
+  }
+
+  try {
+    const lectura = await leerTicket({
+      merchantId: req.merchantId,
+      imagen: { mimeType: imagen.mimeType, data: imagen.data },
+      ahora,
+    });
+    return res.json({ ok: true, ...lectura });
+  } catch (err: any) {
+    const codigo = String(err?.code || err?.message || '');
+    // Solo el código: `providerDetail` de Google puede citar el contenido de la petición.
+    console.error('[POST /admin/expenses/leer-ticket]', codigo || 'error desconocido');
+    // Cuota de Google agotada: código PROPIO, distinto de «no configurado» y de nuestro tope
+    // (`lecturas_agotadas`), y diciendo si es de hoy o de este minuto (orquestador, 18-sep).
+    if (codigo === 'gemini_rate_limited') {
+      return res.status(429).json({ ok: false, error: ERROR_POR_CORTE[corteDeCuota(err?.quotaIds)] });
+    }
+    if (codigo === 'gemini_not_configured') return res.status(503).json({ ok: false, error: 'ai_not_configured' });
+    if (codigo === 'gemini_bad_key') return res.status(503).json({ ok: false, error: 'ai_bad_key' });
+    if (codigo === 'ai_invalid_json' || codigo === 'ai_invalid_format') {
+      return res.status(422).json({ ok: false, error: 'ai_could_not_parse' });
+    }
+    if (codigo.startsWith('gemini_')) return res.status(502).json({ ok: false, error: 'ai_provider_error' });
+    return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
 
@@ -158,7 +279,7 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid_id' });
     const { concept, amount, currency, category, date, notes, quoteId, providerId, receiptData,
-            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate } = req.body || {};
+            baseAmount, vatRate, vatAmount, providerInvoiceNumber, providerInvoiceDate, nifProveedor } = req.body || {};
     const patch: any = {};
     if (concept     !== undefined) patch.concept     = String(concept).trim();
     if (amount      !== undefined) patch.amount      = Number(amount);
@@ -176,12 +297,32 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
       if (vatAmount   !== undefined) patch.vatAmount   = vatAmount   ?? null;
       if (providerInvoiceNumber !== undefined) patch.providerInvoiceNumber = providerInvoiceNumber ? String(providerInvoiceNumber) : null;
       if (providerInvoiceDate   !== undefined) patch.providerInvoiceDate   = providerInvoiceDate ? new Date(providerInvoiceDate) : null;
+    // SCRUM-937 · el modal de edición manda el NIF igual que el alta, y aquí no se leía: se tiraba.
+    if (nifProveedor !== undefined) patch.nifProveedor = nifProveedor ? String(nifProveedor) : null;
     if (!Object.keys(patch).length) return res.status(400).json({ error: 'empty_update' });
     const updated = await updateExpense(req.merchantId, id, patch);
     if (!updated) return res.status(404).json({ error: 'not_found' });
-    return res.json({ ok: true, item: updated });
+    // Lo que quedó en la ficha DESPUÉS de guardar: el destino es un hecho, no una predicción.
+    const fichaTrasEditar = patch.nifProveedor && updated.providerId
+      ? await prisma.provider.findFirst({
+          where: { id: updated.providerId, merchantId: req.merchantId },
+          select: { taxId: true },
+        })
+      : null;
+    const destinoDelNif = queFueDelNif({
+      nifTecleado: patch.nifProveedor ?? null,
+      providerId: updated.providerId,
+      nifDeLaFicha: fichaTrasEditar?.taxId ?? null,
+    });
+    return res.json({ ok: true, item: updated, destinoDelNif });
   } catch (err) {
     if (err instanceof ExpenseRefError) return res.status(400).json(refErrorBody(err));
+    // SCRUM-943 · entrada inválida, no fallo del servidor. Sin `message`: el selector de la pantalla
+    // sólo ofrece las cinco, así que esto es la red para llamadas directas al endpoint, y un texto
+    // nuevo para el usuario tendría que estar firmado. Se devuelve la lista válida para quien llame.
+    if (err instanceof ExpenseCategoryError) {
+      return res.status(400).json({ ok: false, error: err.code, categories: EXPENSE_CATEGORIES });
+    }
     console.error('[PUT /admin/expenses/:id]', err);
     return res.status(500).json({ error: 'internal_error' });
   }

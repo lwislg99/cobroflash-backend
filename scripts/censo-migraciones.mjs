@@ -117,7 +117,9 @@ export const DEBE_VER = [
   { rel: 'docs/sql/scrum-425-clave-idempotencia.sql', eje: 'estructura' }, // DDL en .sql
   { rel: 'docs/sql/scrum-650-paso-c-backfill.sql', eje: 'datos' },         // DML en .sql
   { rel: 'prisma/backfill/scrum609-item-kind.sql', eje: 'estructura' },    // mixto
-  { rel: 'scripts/backfill-job-assignees.mjs', eje: 'datos' },             // pg en crudo
+  // `scripts/backfill-job-assignees.mjs` (pg en crudo) RETIRADO en SCRUM-773: no desbloqueaba
+  // nada (visibilidad ya cubierta por otro eje) y su puerta de entrada seguía rota. Si vuelve a
+  // haber un caso de `cliente.query(sql)` con `pg` en crudo, entra aquí de nuevo.
   { rel: 'scripts/renumerar-documentos.mjs', eje: 'datos' },               // Prisma
 ];
 

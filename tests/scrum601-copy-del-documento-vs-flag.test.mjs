@@ -119,7 +119,23 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 //
 // Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VEREDICTO_AL_MEDIR = { flag: 12, tipo: 7, aPelo: 154 };
+// SCRUM-915d (18-sep-2026) · flag 12 → 13: entra la guía del paso Cliente del editor, que SÍ deriva
+// del flag («¿Para quién es el presupuesto?» / «…el justificante?», firmadas en SCRUM-915
+// comentario 15868). Regenerada con el censo, no deducida.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 154 → 156 · 22-sep-2026 (SCRUM-1040) · CUÁLES ENTRARON Y POR QUÉ NO ES REGRESIÓN. Los DOS son
+// el mismo sumidero, `facturasRecibidasView.js:37` (`recuento`), singular y plural: «1 factura
+// recibida» / « facturas recibidas».
+//
+// **«A pelo» es la categoría correcta, y no un defecto que se cuela.** La pantalla nueva enseña
+// las facturas que el profesional RECIBE de sus proveedores (A6/SCRUM-426), no las que él emite:
+// un documento de un proveedor SIEMPRE es una factura, gane o no el merchant su propio flag de
+// emisión — la palabra no depende de `INVOICING_ES_ENABLED` porque no describe lo que este
+// negocio emite, describe lo que otro negocio le ha entregado a él.
+//
+// Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VEREDICTO_AL_MEDIR = { flag: 13, tipo: 7, aPelo: 156 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -176,7 +192,10 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // 🔴 SCRUM-867 · ANTES ERA EL `aria-label` DEL MODAL (`nuevaFacturaModal.js:108`, «Cliente al que
   // facturas»). Ese modal se retiró por muerto y su literal se fue con él, así que el negativo se
   // reancla en otro que sí sigue en el árbol: el rótulo de Facturas del menú.
-  const menu = en('public/dashboard/js/app.js', 349);
+  // SCRUM-918 · 349 → 365: el arranque sin red añade 16 líneas antes en app.js (medido, no deducido).
+  // SCRUM-919 · 365 → 366 al fusionar: `app.js` gana además la línea de `appParteAyudas` por encima.
+  // Los dos lados movieron esta ancla; 366 está MEDIDO sobre el árbol ya fusionado, no sumado.
+  const menu = en('public/dashboard/js/app.js', 366);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);
@@ -264,7 +283,29 @@ const PENDIENTES_DE_FIRMA = [
   //
   // 🔴 LO QUE QUEDA DECLARADO es de otra clase, y por eso lleva su motivo: el censo lo ve «a pelo»
   // porque contiene la diana, pero NO nombra el documento que se emite.
-  { fichero: 'public/dashboard/js/quotesView.js', linea: 672, texto: 'Solo presupuesto (facturación manual)',
+  // SCRUM-915d · la línea pasa de 672 a 885 porque el esqueleto de los pasos se escribe encima;
+  // el texto y el motivo no cambian. Cifra MEDIDA sobre el árbol resultante, no deducida.
+  // SCRUM-915e2 · y de 885 a 889 por lo mismo: el «Ver documento» del pie de los pasos se escribe
+  // 150 líneas más arriba. CORREGIR un anclaje no es añadirlo (regla de `scrum710b`), y la cifra
+  // sale del propio censo sobre el árbol resultante —dice 889— no de contar el diff. El texto es
+  // byte a byte el mismo y el motivo sigue siendo el suyo.
+  // SCRUM-915i · y de 889 a 890: la cabecera pierde el subtítulo y gana la fila del título. Medido
+  // con el propio censo sobre el árbol resultante (el rojo decía `quotesView.js:890`), no contado.
+  // SCRUM-915g · y de 890 a 911: la fila «Ajustes del documento» del justificante se escribe 21 líneas
+  // más arriba. CORREGIR un anclaje no es añadirlo (regla de `scrum710b`): el texto es byte a byte el
+  // mismo y el motivo sigue siendo el suyo. Cifra medida con el propio censo sobre el árbol resultante
+  // (21-sep-2026; el rojo decía `quotesView.js:911`), no contada del diff. Y el censo NO marca como
+  // «a pelo» ninguno de los rótulos que entran con 915g («Ajustes del documento», «IVA por defecto»):
+  // ninguno nombra el documento que se emite.
+  // SCRUM-915k · y de 911 a 909: se retira la constante `MARCA_DESC_LINEA` (y su línea en blanco) de
+  // lo alto del fichero, así que TODO lo que va detrás sube dos líneas. Cifra MEDIDA con el propio
+  // censo sobre el árbol FUSIONADO con main (21-sep-2026; el rojo decía `quotesView.js:909`), no
+  // contada ni deducida: al fusionar, el generador la regeneró.
+  // SCRUM-915j · y de 909 a 935: la lista de clientes por botones y sus funciones se escriben ANTES de
+  // esta línea. CORREGIR un anclaje no es añadirlo: el texto es byte a byte el mismo y el motivo
+  // sigue siendo el suyo. Cifra MEDIDA con el propio censo sobre el árbol resultante (21-sep-2026; el
+  // rojo decía `quotesView.js:935`), no contada del diff.
+  { fichero: 'public/dashboard/js/quotesView.js', linea: 935, texto: 'Solo presupuesto (facturación manual)',
     motivo: 'opción del selector de propuesta, firmada en su ticket: dice cómo se facturará DESPUÉS, '
       + 'no cómo se llama el documento que sale. En modo justificante sigue siendo cierta.' },
 ];
