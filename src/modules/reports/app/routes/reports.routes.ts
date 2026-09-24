@@ -5,6 +5,7 @@ import { desglosarPorEmpleado } from '../../domain/desgloseEmpleado'; // SCRUM-2
 import { filasDelInforme } from '../../domain/cobrosPorCubo'; // SCRUM-488 / SCRUM-491
 import { leerLibroRegistro } from '../../../invoicing/domain/libroRegistro.repo'; // SCRUM-389: un solo agregador
 import { rangoTrimestre } from '../../../fiscal/modelo303/modelo303'; // SCRUM-389: un solo criterio de fechas
+import { calcularBeneficioSobreLaBase } from '../../domain/beneficioBaseImponible'; // SCRUM-1047 (CON-06)
 
 const router = Router();
 
@@ -38,7 +39,10 @@ router.get('/pl', async (req, res) => {
         // (presupuesto con `teamMemberId` null). Son cosas distintas y van a filas distintas.
         quoteId: true,
         // A15.3 (MANT-1): € cobrados que nacieron del ciclo de mantenimientos
-        quote: { select: { origin: true, teamMemberId: true } } },
+        quote: { select: { origin: true, teamMemberId: true } },
+        // SCRUM-1047 (CON-06): las líneas son lo único de lo que se puede sacar la base sin IVA.
+        lines: true,
+      },
     });
 
     // Gastos del año
@@ -48,7 +52,8 @@ router.get('/pl', async (req, res) => {
         date: { gte: yearStart, lte: yearEnd },
       },
       // SCRUM-228: `teamMemberId` null = propietario (SCRUM-109), nunca «sin asignar».
-      select: { date: true, amount: true, teamMemberId: true },
+      // SCRUM-1047 (CON-06): `baseAmount` es la base sin IVA; `null` = sin clasificar.
+      select: { date: true, amount: true, teamMemberId: true, baseAmount: true },
     });
 
     // Facturas pagadas año anterior (para comparación)
@@ -111,6 +116,12 @@ router.get('/pl', async (req, res) => {
     const prevRev = Number(prevInvoices._sum.total ?? 0);
     const prevExp = Number(prevExpenses._sum.amount ?? 0);
 
+    // SCRUM-1047 (CON-06) · el beneficio SOBRE LA BASE (sin IVA), aparte del «con IVA» de
+    // siempre. Sobre las MISMAS listas (`paidInvoices`, `expenses`) que arman `revenue`/`expenses`
+    // arriba, para que las dos cifras no puedan divergir por venir de consultas distintas.
+    // Aditivo: `totals.revenue/expenses/profit` NO cambian — la pantalla nueva (S2) lee estos.
+    const baseImponible = calcularBeneficioSobreLaBase({ invoices: paidInvoices, expenses });
+
     return res.json({
       year,
       currency,
@@ -120,6 +131,15 @@ router.get('/pl', async (req, res) => {
         expenses: Math.round(totalExpenses * 100) / 100,
         profit:   Math.round(totalProfit   * 100) / 100,
         maintenance: Math.round(monthlyMaintenance.reduce((a, b) => a + b, 0) * 100) / 100, // A15.3
+        // SCRUM-1047: con y sin IVA por separado; el beneficio se calcula sobre la base.
+        // Sin claims fiscales (regla 7): el rótulo de pantalla («sobre la base») lo pone S2.
+        revenueBase: baseImponible.revenueBase,
+        revenueWithVat: baseImponible.revenueWithVat,
+        revenueSinDesglose: baseImponible.revenueSinDesglose,
+        expensesBase: baseImponible.expensesBase,
+        expensesWithVat: baseImponible.expensesWithVat,
+        expensesSinClasificar: baseImponible.expensesSinClasificar,
+        profitBase: baseImponible.profitBase,
       },
       byEmployee: desglose.filas,
       prevYear: {

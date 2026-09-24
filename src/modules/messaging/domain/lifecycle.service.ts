@@ -12,6 +12,8 @@ import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../int
 import { dejarConstancia, parteNuevo, type ParteDeAvisos } from './avisoConstancia';
 // SCRUM-508: la clase de correo sale del vocabulario cerrado, no de un literal a mano.
 import { CLASES_DE_CORREO } from './registroDeEnvios';
+// SCRUM-1029 (regla 24): mismo lector que `weeklyDigest.service.ts`, solo LEE.
+import { getEmissionMode } from '../../invoicing/domain/emission.service';
 
 const DASHBOARD_URL = `${config.PUBLIC_BASE_URL || 'https://yaqu.app'}/dashboard/`;
 
@@ -49,16 +51,23 @@ async function sendEmail(
 }
 
 // Plantilla con cabecera de marca YaQu
-function wrap(bodyHtml: string, cta?: { label: string; url: string }): string {
+// SCRUM-1029 (regla 24, superficie F): `puedeCobrar` es OBLIGATORIO —sin default— para que TypeScript
+// obligue a decidirlo en cada llamada; un tercer parámetro opcional se habría quedado `undefined` en
+// las que nadie tocara, y ese `undefined` volvería a colar la promesa en los otros 5 avisos del
+// ciclo de vida, que es justo el hueco que el censo de ayer no vio (comparten este pie).
+function wrap(bodyHtml: string, cta: { label: string; url: string } | undefined, puedeCobrar: boolean): string {
   const button = cta
     ? `<p style="margin:28px 0"><a href="${cta.url}" style="background:#22c55e;color:#052e16;padding:13px 26px;border-radius:10px;text-decoration:none;font-weight:700;display:inline-block">${cta.label}</a></p>`
     : '';
+  // En `receipt` se OCULTA solo la promesa de cobro del pie, no se reescribe (texto sustituto
+  // pendiente de firma, docs/master/SCRUM-1029.md §11).
+  const tagline = puedeCobrar ? ' · Cotiza por WhatsApp y cobra antes de empezar' : '';
   return `
   <div style="font-family:system-ui,-apple-system,sans-serif;max-width:540px;margin:0 auto;color:#0f172a">
     <div style="padding:8px 0 20px"><span style="color:#22c55e;font-weight:800;font-size:20px">YaQu</span></div>
     <div style="font-size:15px;line-height:1.6;color:#374151">${bodyHtml}${button}</div>
     <hr style="border:none;border-top:1px solid #eef2f7;margin:28px 0 14px"/>
-    <p style="font-size:12px;color:#9ca3af">YaQu · Cotiza por WhatsApp y cobra antes de empezar · <a href="${config.PUBLIC_BASE_URL}" style="color:#9ca3af">yaqu.app</a></p>
+    <p style="font-size:12px;color:#9ca3af">YaQu${tagline} · <a href="${config.PUBLIC_BASE_URL}" style="color:#9ca3af">yaqu.app</a></p>
   </div>`.trim();
 }
 
@@ -121,16 +130,20 @@ function anotarEnvio(parte: ParteDeAvisos, destinatario: string, r: ResultadoCor
 export async function sendWelcomeEmail(merchantId: number): Promise<ResultadoCorreo | null> {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, email: true, name: true, lifecycleEmailsSent: true },
+    select: { id: true, email: true, name: true, lifecycleEmailsSent: true, country: true, flags: true },
   });
   if (!m || alreadySent(m, 'welcome')) return null;
   // Sin correo NO se manda nada, y eso ahora se DICE: `sin_destino` es un dato, no un hueco.
   if (!m.email) return resultadoSinDestino();
+  // SCRUM-1029 (regla 24): en modo `receipt` (ES real, facturación apagada) YaQu no cobra ni emite
+  // ningún documento — la frase se OCULTA entera para ese modo. El texto sustituto lo firma Javier
+  // (docs/master/SCRUM-1029.md); aquí no se inventa ninguno.
+  const puedeCobrar = getEmissionMode(m) !== 'receipt';
   const html = wrap(`
     <p>¡Hola ${m.name || ''}! 👋</p>
-    <p>Bienvenido a <strong>YaQu</strong>. A partir de ahora vas a cotizar por WhatsApp, cobrar antes de empezar y olvidarte del papeleo.</p>
+    ${puedeCobrar ? `<p>Bienvenido a <strong>YaQu</strong>. A partir de ahora vas a cotizar por WhatsApp, cobrar antes de empezar y olvidarte del papeleo.</p>` : ''}
     <p>Para arrancar solo necesitas 3 cosas: tu catálogo de servicios, un cliente y pulsar enviar. En 30 segundos tu primera cotización está en camino.</p>
-  `, { label: 'Crear mi primera cotización', url: DASHBOARD_URL });
+  `, { label: 'Crear mi primera cotización', url: DASHBOARD_URL }, puedeCobrar);
   // 🔴 El `.catch()` inline se retira: era lo que impedía que el fallo llegara a quien llama, y lo
   // que dejaba correr el `markSent` de abajo sobre un correo que no salió.
   const r = await sendEmail(m.id, m.email, '¡Bienvenido a YaQu! 🎉', html);
@@ -142,21 +155,24 @@ export async function sendWelcomeEmail(merchantId: number): Promise<ResultadoCor
 export async function sendFirstPaymentEmail(merchantId: number): Promise<ResultadoCorreo | null> {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, email: true, name: true, lifecycleEmailsSent: true },
+    select: { id: true, email: true, name: true, lifecycleEmailsSent: true, country: true, flags: true },
   });
   if (!m || alreadySent(m, 'firstPayment')) return null;
   if (!m.email) return resultadoSinDestino();
+  // SCRUM-1029 (regla 24): en `receipt` no se generan facturas al cobrar — se OCULTA la fila, no
+  // se reescribe (texto sustituto pendiente de firma, docs/master/SCRUM-1029.md).
+  const facturaAlCobrar = getEmissionMode(m) !== 'receipt';
   const html = wrap(`
     <p>¡Gracias por confiar en YaQu, ${m.name || ''}! 🚀</p>
     <p>Ya tienes el plan <strong>Pro</strong> activo. 5 cosas que quizá no sabías:</p>
     <ul>
       <li>La IA puede redactar tus cotizaciones a partir de una descripción.</li>
       <li>Puedes ofrecer 3 opciones de precio (Good/Better/Best) y cierras más.</li>
-      <li>Las facturas se generan solas al cobrar.</li>
+      ${facturaAlCobrar ? '<li>Las facturas se generan solas al cobrar.</li>' : ''}
       <li>Tienes informes de rentabilidad por servicio.</li>
       <li>Puedes invitar a tu equipo con roles.</li>
     </ul>
-  `, { label: 'Ir a mi panel', url: DASHBOARD_URL });
+  `, { label: 'Ir a mi panel', url: DASHBOARD_URL }, facturaAlCobrar);
   const r = await sendEmail(m.id, m.email, 'Bienvenido al plan Pro de YaQu', html);
   if (r.enviado) await markSent(m.id, m.lifecycleEmailsSent, 'firstPayment');
   return r;
@@ -174,13 +190,19 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
   const parte = parteNuevo();
   const merchants = await prisma.merchant.findMany({
     where: { status: 'active', email: { not: null } },
-    select: { id: true, email: true, name: true, plan: true, createdAt: true, lifecycleEmailsSent: true },
+    select: {
+      id: true, email: true, name: true, plan: true, createdAt: true, lifecycleEmailsSent: true,
+      // SCRUM-1029 (regla 24, superficie F): país+flags para el pie compartido de `wrap()`.
+      country: true, flags: true,
+    },
   });
 
   for (const m of merchants) {
     if (!m.email) continue;
     const age = daysSince(m.createdAt);
     const isTrial = m.plan === 'trial';
+    // SCRUM-1029 (regla 24, superficie F): UNA vez por merchant, reusado en los 5 `wrap()` de abajo.
+    const puedeCobrar = getEmissionMode(m) !== 'receipt';
 
     try {
       // Día 3 sin ninguna cotización enviada.
@@ -204,7 +226,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
               <li>Crea una cotización rápida desde Inicio.</li>
               <li>Envíala por WhatsApp: la mayoría de clientes responde en menos de 2 horas.</li>
             </ol>
-          `, { label: 'Enviar mi primera cotización', url: DASHBOARD_URL });
+          `, { label: 'Enviar mi primera cotización', url: DASHBOARD_URL }, puedeCobrar);
           const r = await sendEmail(m.id, m.email, '¿Te ayudamos a empezar con YaQu?', html);
           if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day3');
           continue;
@@ -216,7 +238,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
         const html = wrap(`
           <p>Hola ${m.name || ''},</p>
           <p>Tu prueba de YaQu expira en unos 7 días. ¿Qué tal va todo? Si tienes dudas, respóndenos a este correo y te ayudamos.</p>
-        `, { label: 'Ver mi panel', url: DASHBOARD_URL });
+        `, { label: 'Ver mi panel', url: DASHBOARD_URL }, puedeCobrar);
         const r = await sendEmail(m.id, m.email, 'Tu prueba de YaQu expira en 7 días', html);
         if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day7');
         continue;
@@ -241,7 +263,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
         const html = wrap(`
           <p>Hola ${m.name || ''},</p>
           <p>Te quedan unos 2 días de prueba. Si activas el plan Pro, sigues con cotizaciones y facturas ilimitadas, cobro integrado y soporte. Si no, dejarás de poder crear presupuestos nuevos y de enviar presupuestos y albaranes por WhatsApp. El resto del panel sigue funcionando: tus cobros, tus clientes y tus datos siguen ahí.</p>
-        `, { label: 'Activar plan Pro', url: `${DASHBOARD_URL}#plans` });
+        `, { label: 'Activar plan Pro', url: `${DASHBOARD_URL}#plans` }, puedeCobrar);
         const r = await sendEmail(m.id, m.email, 'Solo 2 días de prueba en YaQu', html);
         if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'day12');
         continue;
@@ -252,7 +274,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
         const html = wrap(`
           <p>Hola ${m.name || ''},</p>
           <p>Tu prueba de YaQu ha terminado, pero tus datos siguen aquí. Activa el plan Pro cuando quieras y retomas justo donde lo dejaste.</p>
-        `, { label: 'Continuar con YaQu', url: `${DASHBOARD_URL}#plans` });
+        `, { label: 'Continuar con YaQu', url: `${DASHBOARD_URL}#plans` }, puedeCobrar);
         const r = await sendEmail(m.id, m.email, 'Tus datos te esperan en YaQu', html);
         if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'trialExpired');
         continue;
@@ -267,7 +289,7 @@ export async function runLifecycleEmails(): Promise<ParteDeAvisos> {
           const html = wrap(`
             <p>Hola ${m.name || ''},</p>
             <p>Hace un par de semanas que no te vemos por YaQu. ¿En qué fallamos? Respóndenos a este correo: leemos todo y nos ayuda muchísimo a mejorar.</p>
-          `, { label: 'Volver a mi panel', url: DASHBOARD_URL });
+          `, { label: 'Volver a mi panel', url: DASHBOARD_URL }, puedeCobrar);
           const r = await sendEmail(m.id, m.email, '¿Qué ha pasado? Cuéntanos', html);
           if (anotarEnvio(parte, m.email, r)) await markSent(m.id, m.lifecycleEmailsSent, 'inactive');
         }

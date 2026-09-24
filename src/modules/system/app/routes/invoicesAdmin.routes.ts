@@ -55,6 +55,7 @@ import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmiti
 import {
   congelarDesdeFicha, congelarParaRectificativa, clienteDelDocumento,
 } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { puedeRectificarse } from '../../../invoicing/domain/rectificabilidad'; // SCRUM-308
 import { calcVatBreakdown } from '../../../invoicing/domain/vat.service'; // SCRUM-289
 import {
@@ -103,7 +104,13 @@ router.post('/', requireRole('admin'), async (req, res) => {
   try {
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true },
+      // SCRUM-665 · se ensancha a los siete del emisor congelado (taxId también faltaba aquí).
+      // Esta lectura alimenta `modoDocumentoSuelto` más abajo: es camino de emisión, y el
+      // congelado sale a coste cero, porque el viaje ya se hacía.
+      select: {
+        id: true, email: true, country: true, flags: true, defaultCurrency: true,
+        name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true,
+      },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
 
@@ -148,6 +155,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
     // hay segunda lista de tipos. El emisor no lo comprueba, y no se toca (regla 38).
     exigirTiposDeIvaEmitibles(val.lineas);
 
+    const emisorCongelado = congelarEmisorDesdeFicha(merchant); // SCRUM-665 · sin viaje extra
+
     const invoice = await prisma.$transaction(async (tx) =>
       emitInvoice(tx, {
         merchantId: req.merchantId!,
@@ -160,6 +169,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         actor: actorDeRequest(req),
         origen: 'C7-suelta', // SCRUM-347: nace sin presupuesto ni albarán detrás (A0.5)
         clienteCongelado: congelarDesdeFicha(customer), // SCRUM-729 · sin viaje extra
+        emisorCongelado,
       }),
     );
 
@@ -1017,12 +1027,26 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
     // SCRUM-729 · la R1 HEREDA el destinatario de la factura que rectifica. Fuera de la
     // transacción, como todos: sólo viaja a la base si la original es anterior al escritor.
     const clienteCongelado = await congelarParaRectificativa(prisma, original);
+    // SCRUM-665 · el EMISOR se congela con la ficha de HOY («congelar al emitir»), NO con la
+    // heredada de la original: `original.merchant` es la relación en vivo, no una columna
+    // congelada del documento que se rectifica.
+    //
+    // 🔴 PENDIENTE, marcado a propósito y sin resolver por omisión (comentario 16468 de Jira
+    // SCRUM-665, instrucción explícita de Javier): si una R1 debería en cambio HEREDAR el emisor
+    // de la factura ORIGINAL —como sí hace el cliente, arriba— es una pregunta que Javier ha
+    // llevado al asesor. Hasta que responda, esta rectificativa usa el mismo criterio que las
+    // otras siete bocas (la ficha de hoy) y NO el de `congelarParaRectificativa`.
+    //
+    // Mismo criterio que esta misma ruta más abajo con `original.merchant` (sellado y auditoría):
+    // no se gatea aparte con un 404 nuevo — un `merchantId` sin fila sería una FK rota, y esta
+    // ruta ya asume que no lo está.
+    const emisorCongelado = congelarEmisorDesdeFicha(original.merchant!);
 
     const rect = await prisma.$transaction(async (tx) => {
       const number = await allocateInvoiceNumber(tx, req.merchantId, {
         rectifying: true, camino: 'C5', actor: actorDeRequest(req),
       });
-      return crearFacturaEmitida(tx, clienteCongelado, {
+      return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
         merchantId: original.merchantId,
         customerId: original.customerId,
         quoteId: original.quoteId,

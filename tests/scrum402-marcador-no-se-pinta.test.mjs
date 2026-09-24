@@ -679,6 +679,16 @@ const CENSO = Object.freeze({
   // provisionales. Eso lo dice `ALB_OCULTAR_PRECIOS_SIN_APROBAR` en `jobDetailView.js`, y su
   // registro vive en `docs/master/SCRUM-607.md` — nunca en `docs/microcopy/`, que es del fundador
   // y `constaAprobado()` lo barre (SCRUM-726).
+  // 🔴 SCRUM-1040 (CON-04) · 22-sep-2026 · `facturasRecibidasView.js` ENTRA con 1, A CONCIENCIA.
+  //
+  // Pantalla nueva («Facturas recibidas», junto al Libro de registro). Su título, su rótulo de
+  // menú, el estado vacío y el aviso de descuadre no están aprobados (regla 30) y salen con
+  // marcador a propósito, mismo criterio que `libroRegistroView.js` (SCRUM-514): la pantalla
+  // entera se declara sin firmar en su propia cabecera. Se cuenta 1: los cuatro salen de una sola
+  // constante `MARCADOR`, así que aprobar el copy los apaga de golpe. Las cabeceras de columna
+  // (Fecha, Proveedor, NIF, Base, IVA, Total) NO llevan marcador: son los términos que impone la
+  // propia aceptación del ticket, no copy inventada.
+  'facturasRecibidasView.js': 1,
 });
 
 /** Marcadores que viven en un LITERAL (los que pueden pintarse). Los comentarios no son literales. */

@@ -270,4 +270,79 @@ opción (c) ni para (d) (regla 30) · `tests/` — ningún control añadido, por
 `prisma/schema.prisma` · el webhook de MP · `tests/scrum90-pay-bank-mp-token.test.mjs`, que hoy
 depende del comportamiento actual y **se ha reportado, no modificado** · Jira (SCRUM-924 sigue
 *En curso*) · el rojo de `scrum858b` (`wmic`), que es SCRUM-922 de Luis.
+
+---
+
+## SCRUM-924b · Construido: opción (d), leer `charge.status` en vez de la query string
+
+*22-sep-2026 · J2 (jv-j2) · rama `scrum-923-924-cobro-no-verificado`*
+
+**Medido contra:** `origin/main` = `f319add31e4e414ab9e9a70e10bc179dc13996c9` · 2026-09-22T08:19:27Z
+
+Sobre la medición de arriba (924/924b anteriores): **decisión** (d), no (a) — no exige el GO del
+fundador que (a) necesitaba, y cierra la misma mentira. Cero texto nuevo: el badge y los mensajes
+de `statusMap` no cambian, sólo de DÓNDE sale la clave que los elige.
+
+### Rojo primero
+
+`tests/scrum924-pay-mp-no-inventa-estado.test.mjs`, corrido contra el `payMp.routes.ts` sin tocar
+(mismo patrón de dobles que `scrum910-la-transferencia-que-no-mira.test.mjs`: doblado
+`dist/core/db/prisma.js`, montada la ruta real):
+
+    ✖ SCRUM-924 · ① cobro `pending` + `?status=approved` NO pinta «aprobado»
+      → sí lo pinta hoy (falla como se esperaba)
+    ✖ SCRUM-924 · ② token que no existe → 404, no una página con huecos
+      → devuelve 200 hoy (falla como se esperaba)
+    ✖ SCRUM-924 · ③ CONTROL: un cobro `paid` de verdad sigue pintando «aprobado» (con o sin query)
+      → sin query, hoy pinta «pendiente» (el default), no «aprobado» (falla, y de paso confirma
+        que el bug no es sólo "confía en la URL": SIN query también inventa un estado)
+    3 fail · 0 pass
+
+### El arreglo
+
+`payMp.routes.ts` — `GET /pay/mp/:token/result`:
+
+- Se lee el `Charge` por `receiptToken` (igual que la ruta hermana `GET /pay/mp/:token`, la del
+  paso anterior).
+- Si no existe → `404` con `documentNotFoundHtml()`, igual que esa hermana. Antes: `200` con la
+  página vacía de huecos, cualquiera que fuera el token.
+- `status` sale de un mapa fijo `charge.status → texto del badge`
+  (`{paid:'approved', failed:'rejected', expired:'expired', pending:'pending'}`), **nunca** de
+  `req.query.status`. El `try { … } catch {}` que envolvía la consulta y seguía pintando con la
+  query si fallaba, retirado: ahora un fallo de BD es un 500 real, no una página mintiendo.
+
+### Verde + control positivo
+
+    ✔ SCRUM-924 · ① cobro `pending` + `?status=approved` NO pinta «aprobado»
+    ✔ SCRUM-924 · ② token que no existe → 404, no una página con huecos
+    ✔ SCRUM-924 · ③ CONTROL: un cobro `paid` de verdad sigue pintando «aprobado» (con o sin query)
+    3 pass · 0 fail
+
+El control ③ es el que hace el verde no-tautológico: un cobro `paid` de verdad sigue diciendo
+«aprobado» tanto sin query como con `?status=rejected` en la URL — si el arreglo hubiera dejado
+algún camino leyendo la query, ese segundo caso habría caído.
+
+**Verificado que no rompe `tests/scrum90-pay-bank-mp-token.test.mjs:88-91`** (gateado
+`QA_DB_TEST=1`, no corrible en esta máquina sin Postgres — leído, no ejecutado): sólo comprueba
+`HTTP 200` y que el importe aparece (`'30.00'`/`'30,00'`); ninguna de las dos cosas cambia con este
+arreglo, porque el importe sigue viniendo de `charge.amount` sin condición y un token válido sigue
+dando 200.
+
+### Un error propio, esta tanda
+
+El primer test usaba `fetch` (undici) para las peticiones, el mismo patrón que
+`scrum910-la-transferencia-que-no-mira.test.mjs`. En la primera pasada (rojo) el proceso abortó al
+cerrar — **`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`**, ya documentado en
+SCRUM-556/SCRUM-100 como una carrera de libuv en Windows bajo `--test-force-exit`: los tres
+subtests habían corrido y fallado con el motivo correcto, pero el fichero se habría marcado como
+fallido igual encima de eso. Lo cambié a `node:http` con `agent:false` (el remedio ya probado en
+`scrum100-webhooks-fail-closed.test.mjs`) antes de darlo por bueno — no lo dejé pasar como "un
+crash raro del entorno" sin mirar si ya estaba explicado.
+
+### Lo NO tocado en esta tanda
+
+`src/modules/billing/app/routes/payMp.routes.ts` — nada fuera de la ruta `/mp/:token/result` (la
+ruta `/mp/:token` que crea la preferencia, sin diff) · el copy del badge/mensajes de `statusMap`
+(mismos textos, regla 30 no aplica: no hay texto nuevo) · `docs/master/SCRUM-923.md` (aparte) ·
+publicar el PR — queda EN BORRADOR, auto-merge desarmado, a la espera del GO de Javier.
 **Producción y staging: no tocados, ni para mirar.**

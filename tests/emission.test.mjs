@@ -44,7 +44,10 @@ test('V0-0: fuera de ES no cambia nada → fiscal (su flujo actual)', () => {
 // ── Números de justificante ──────────────────────────────────────────────────
 
 test('makeReceiptNumber: formato J-YYYYMMDD-XXXX, reconocido por isReceiptNumber', () => {
-  const n = makeReceiptNumber(new Date(2026, 5, 11));
+  // SCRUM-735: `now` se interpreta en la zona EXPLÍCITA (por defecto UTC), ya no en la del
+  // reloj del proceso — así que el instante se construye en UTC para que el test no dependa
+  // de en qué zona corra la máquina que lo ejecuta.
+  const n = makeReceiptNumber(new Date(Date.UTC(2026, 5, 11)));
   assert.match(n, /^J-20260611-[A-Z0-9]{4}$/);
   assert.equal(isReceiptNumber(n), true);
   assert.equal(isReceiptNumber('2026-CF-001'), false);

@@ -52,6 +52,7 @@ import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domai
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 // SCRUM-814 · el MISMO cerrojo de serie que toman `quotesAdmin` y `collect-rest`
 // (`pg_advisory_xact_lock(SERIE_LOCK_NS, merchantId)`, SCRUM-234/728/358). Aquí pesa más que en
 // ningún otro sitio: esta ruta la dispara el CLIENTE FINAL desde WhatsApp, y pulsar dos veces con
@@ -721,6 +722,11 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         // SCRUM-729 · antes de abrir la transacción: dentro está el cerrojo de serie desde la
         // primera línea (SCRUM-814) y todo lo de dentro se serializa entre emisiones.
         const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+        // SCRUM-665 · idem para el emisor. `quote.merchant` ya viene completo por el `include` de
+        // arriba (línea ~503): sin viaje nuevo. Mismo criterio que el resto de esta ruta con
+        // `quote.merchant` (líneas 669, 803): no se gatea aparte — un `quoteId` con merchant
+        // huérfano ya rompería antes, en `getEmissionMode(quote.merchant)`.
+        const emisorCongelado = congelarEmisorDesdeFicha(quote.merchant!);
         try {
         invoice = await prisma.$transaction(async (tx) => {
           // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ───────────────────────────
@@ -750,7 +756,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
             // `ref` nombra la VÍA, nunca el token (sería guardar una credencial).
             actor: { tipo: 'cliente_final', ref: 'quote_token' },
           });
-          return crearFacturaEmitida(tx, clienteCongelado, {
+          return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
             merchantId: quote.merchantId,
             customerId: quote.customerId,
             quoteId: quote.id,

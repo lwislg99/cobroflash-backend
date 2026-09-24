@@ -231,7 +231,9 @@ const prismaFalso = (invoices) => ({
   invoice: { findMany: async (a) => (a?.where?.vfHash ? invoices.filter((i) => i.vfHash) : invoices) },
   merchant: {
     findUnique: async () => ({
-      id: 7, country: 'ES', taxId: 'B99999999', legalName: 'Pro SL', email: 'p@x.es',
+      // SCRUM-665 · `name` es NOT NULL en `Merchant`; sin él, `emisorDelDocumento` cae a
+      // "sin nombre" y la factura sale EXCLUIDA, que no es lo que esta sonda mide.
+      id: 7, country: 'ES', taxId: 'B99999999', name: 'Pro SL', legalName: 'Pro SL', email: 'p@x.es',
       invoiceSeriesPrefix: 'CF',
     }),
   },

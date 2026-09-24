@@ -26,6 +26,7 @@ import fs from 'fs';
 import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import { buildVerifactuRegistrosXml } from '../../../invoicing/domain/verifactu.service'; // SCRUM-82
 import { invalidAnioFiscal } from '../../../../core/validation/fiscalInput'; // SCRUM-217
+import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-735
 import {
   construirCsvsDelPaquete, csvBody, csvRow, csvNum, MAX_FACTURAS_ZIP, resolverEntregaZip, construirLeeme,
   buildClientes, buildFacturas, buildCobros, buildTrabajos, buildPresupuestos, buildGastos,
@@ -530,16 +531,15 @@ router.get('/fees.csv', async (req, res) => {
 // registro fiscal no es acción de Técnico (S1, patrón SCRUM-54).
 router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
   try {
-    // SCRUM-217 (1152): el año no tenía cota inferior, así que `?year=2023` pedía el export de un
-    // ejercicio ANTERIOR al 28-10-2024 — antes de que este sistema exista fiscalmente. No hacía
-    // falta ningún bug: bastaba escribir un número en la URL. Fail-closed en la puerta.
-    const year = req.query.year === undefined ? new Date().getFullYear() : Number(req.query.year);
-    const motivoAnio = invalidAnioFiscal(year);
-    if (motivoAnio) {
-      return res.status(400).json({ error: 'anio_invalido', message: `El año pedido ${motivoAnio}.` });
-    }
-
-    const merchant = await prisma.merchant.findUnique({ where: { id: req.merchantId } });
+    // J1: SCRUM-735 (GO comentario 16573) — el merchant se lee ANTES de derivar el año, porque
+    // el año "de hoy" (sin `?year=`) y el tope de `invalidAnioFiscal` tienen que salir de la
+    // zona del MERCHANT, no del reloj del proceso (Railway va en UTC).
+    // SCRUM-860: sólo los campos que este bloque usa (país/flags para el gate, NIF para el
+    // 409, huso para la zona) — no el merchant entero.
+    const merchant = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { country: true, taxId: true, flags: true, timezone: true },
+    });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant })) {
       return res.status(404).json({ error: 'not_found' });
@@ -549,6 +549,18 @@ router.get('/verifactu.xml', requireRole('admin'), async (req, res) => {
         error: 'verifactu_not_applicable',
         message: 'VeriFactu solo aplica a negocios de España con NIF configurado (Ajustes → Datos fiscales).',
       });
+    }
+
+    // SCRUM-217 (1152): el año no tenía cota inferior, así que `?year=2023` pedía el export de un
+    // ejercicio ANTERIOR al 28-10-2024 — antes de que este sistema exista fiscalmente. No hacía
+    // falta ningún bug: bastaba escribir un número en la URL. Fail-closed en la puerta.
+    const zona = zonaDelMerchant(merchant);
+    const year = req.query.year === undefined
+      ? Number(diaNaturalEn(new Date(), zona).slice(0, 4))
+      : Number(req.query.year);
+    const motivoAnio = invalidAnioFiscal(year, new Date(), zona);
+    if (motivoAnio) {
+      return res.status(400).json({ error: 'anio_invalido', message: `El año pedido ${motivoAnio}.` });
     }
 
     // SCRUM-82: constructor RRSIF compartido con GET /datos.zip — misma fuente, sin

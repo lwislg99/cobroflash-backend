@@ -16,6 +16,19 @@ import { veEconomiaDelNegocio, sinCosteDeCatalogoEnLista, sinCosteDeCatalogo } f
 
 const router = Router();
 
+// SCRUM-1008 · texto libre, sin lista cerrada (a diferencia de `itemKind`): un SKU, la
+// referencia del proveedor o la unidad son del profesional, no un vocabulario que YaQu tenga que
+// decidir. Igual longitud máxima que `AlbaranLinea.unidad` (`albaran.service.ts`) para `unit`,
+// por ser el mismo tipo de dato; `sku`/`supplierRef` comparten el límite de una referencia corta.
+type TextoOpcional = { ok: true; valor: string | null } | { ok: false; error: string };
+export function textoOpcional(v: unknown, campo: string, max: number): TextoOpcional {
+  if (v === undefined || v === null) return { ok: true, valor: null };
+  if (typeof v !== 'string') return { ok: false, error: `${campo}_invalid` };
+  const t = v.trim();
+  if (t.length > max) return { ok: false, error: `${campo}_too_long` };
+  return { ok: true, valor: t || null };
+}
+
 router.get('/ping', (_req, res) => res.json({ ok: true, module: 'products' }));
 
 // Precargar catálogo de servicios típicos por oficio (onboarding).
@@ -294,6 +307,12 @@ router.post('/', requireRole('admin'), async (req, res) => {
     if (price == null || Number.isNaN(Number(price))) return res.status(400).json({ ok: false, error: 'price_required' });
     const priceNum = Number(price);
     if (priceNum <= 0) return res.status(400).json({ ok: false, error: 'price_invalid' });
+    const sku = textoOpcional(req.body?.sku, 'sku', 60);
+    if (!sku.ok) return res.status(400).json({ ok: false, error: sku.error });
+    const supplierRef = textoOpcional(req.body?.supplierRef, 'supplier_ref', 60);
+    if (!supplierRef.ok) return res.status(400).json({ ok: false, error: supplierRef.error });
+    const unit = textoOpcional(req.body?.unit, 'unit', 40);
+    if (!unit.ok) return res.status(400).json({ ok: false, error: unit.error });
     const created = await createProduct(req.merchantId, {
       name, description,
       price: priceNum,
@@ -304,6 +323,9 @@ router.post('/', requireRole('admin'), async (req, res) => {
       providerId: providerId == null ? null : Number(providerId),
       isActive: isActive === undefined ? true : Boolean(isActive),
       itemKind: ladoNuevo.data ?? null,
+      sku: sku.valor,
+      supplierRef: supplierRef.valor,
+      unit: unit.valor,
     });
     return res.status(201).json({ ok: true, item: created });
   } catch (err: any) {
@@ -341,6 +363,23 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
       const lado = itemKindSchema.safeParse(body.itemKind);
       if (!lado.success) return res.status(400).json({ ok: false, error: 'item_kind_invalid' });
       patch.itemKind = lado.data ?? null;
+    }
+    // SCRUM-1008 · sólo toca la columna si la clave VIAJA, igual que el resto del PUT: no
+    // enviarla deja el dato como estaba, y enviarla vacía SÍ borra (mismo trato que `description`).
+    if (body.sku !== undefined) {
+      const r = textoOpcional(body.sku, 'sku', 60);
+      if (!r.ok) return res.status(400).json({ ok: false, error: r.error });
+      patch.sku = r.valor;
+    }
+    if (body.supplierRef !== undefined) {
+      const r = textoOpcional(body.supplierRef, 'supplier_ref', 60);
+      if (!r.ok) return res.status(400).json({ ok: false, error: r.error });
+      patch.supplierRef = r.valor;
+    }
+    if (body.unit !== undefined) {
+      const r = textoOpcional(body.unit, 'unit', 40);
+      if (!r.ok) return res.status(400).json({ ok: false, error: r.error });
+      patch.unit = r.valor;
     }
     if (Object.keys(patch).length === 0) return res.status(400).json({ ok: false, error: 'empty_update' });
     const updated = await updateProduct(req.merchantId, id, patch);

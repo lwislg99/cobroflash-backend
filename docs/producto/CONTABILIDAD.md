@@ -1,9 +1,38 @@
 # Contabilidad · el apartado para un autónomo de oficio — diseño y backlog (SCRUM-1012)
 
-> **BORRADOR v0.9 · `sd-21` · 21-sep-2026 · cierre por fin de uso.** PASO 0 de código HECHO; 16 citas oficiales comprobadas por script;
+> **BORRADOR v0.10 · S0 · 22-sep-2026 (CON-03/SCRUM-1039, sobre v0.9 de `sd-21` del 21-sep).** PASO 0 de código HECHO; 26 citas oficiales
+> comprobadas por script (16 del 21-sep + 10 nuevas: RIRPF art. 95.4-6 retención 1/2 %, LIVA arts. 7 y 20 exento/no sujeto, plazo trimestral
+> del modelo 303). Q-C5 y Q-C9 quedan RESPONDIDAS por cita (§4); Q-C8 solo para el 303 — 130/131/111/115/347/390 siguen NO VERIFICADO.
 > backlog DISEÑADO pero **los tickets NO están creados en Jira** (§6). **Spec interna: cero claims fiscales en texto de producto** (regla 7,
 > `verifactu`). Todo texto de pantalla que aparezca aquí es propuesta **sin firma** (regla 39). Este documento no dice qué debe hacer el
 > profesional: dice qué dice la norma y qué hace hoy el código. CRM: `docs/producto/CRM.md`.
+>
+> **v0.11 · J4 · 23-sep-2026 (SCRUM-1104).** Q-C8 pasa de parcial a **RESPONDIDA** por el asesor
+> fiscal — mapa completo de modelos en §4. **Ninguna cita nueva entra en §3**: todo lo que el asesor
+> citó de memoria (marcado ⚠ por él mismo) queda NO VERIFICADO hasta que alguien lo coteje contra el
+> BOE consolidado — no se ha bajado ninguna fuente nueva en esta pasada (ni RGAT, ni los artículos
+> nuevos de RIVA/RIRPF/LIVA). **Cuatro cambios de alcance:** el 131 se retira (nunca aplica a este
+> perfil) · el 390 no está exonerado (con enlace AEAT, no ⚠) · se añaden el 100 y el 349, que
+> faltaban del mapa · el 347 NO desaparece con VeriFactu (sólo con SII, incompatible con VeriFactu).
+> REDEME→SII (SCRUM-1102) y la retención en facturas recibidas para 111/115 (SCRUM-1103) ya tienen
+> ticket propio: no se duplican aquí.
+>
+> **v0.12 · J4 · 23-sep-2026 (SCRUM-1106).** Q-C1, Q-C2, Q-C3, Q-C4, Q-C5 y Q-C7 quedan RESPONDIDAS
+> (Q-C5 sustituye su parcial del 22-sep). Afectan al alcance de **SCRUM-1051, 1052, 1053, 1054 y
+> 1073** — revisarlos con esto antes de construir. Dos hallazgos grandes: 🔴🔴 para este perfil
+> (estimación directa) **la retención en factura EMITIDA es CERO en todos los casos**, sin decisión
+> del fundador sobre si construirla igual para un segmento que hoy no existe; y el **ISP se
+> estrecha mucho** — una reforma de baño nunca es "rehabilitación", así que casi nunca aplica
+> aunque el cliente sea empresa. El art. 6.1.m/6.2.b ROF y las páginas AEAT de reformas los dio el
+> asesor como verificados hoy por él (se citan como fuente); mi propio cotejo del ROF por WebFetch
+> salió ambiguo en la letra exacta y **no se promueve a §3** — el resto de citas nuevas, todas ⚠ del
+> asesor, quedan NO VERIFICADO igual que en v0.11.
+>
+> **v0.13 · J4 · 23-sep-2026 (SCRUM-1039c, medido por J5).** La ambigüedad de v0.12 sobre el art.
+> 6.1.m ROF queda **cerrada**: bajado por `curl` (no WebFetch), sólo hay una letra m), sin cambios
+> desde 2012 — el duplicado que yo vi era un artefacto del resumen de WebFetch. **Promovida a §3**
+> con el literal completo (incluida la condición: la mención se incluye CUANDO el sujeto pasivo es
+> el destinatario, no son solo tres palabras sueltas). Q-C2 (§4) actualizada.
 
 ## 0 · La regla de oro y cómo se cumple
 
@@ -46,7 +75,7 @@ Plan contable y asientos: solo Holded (cuenta por línea `[D]` L334); la matriz 
 
 ## 3 · Reglas con cita oficial comprobada
 
-Fuentes en §8 (LIVA · RIVA · LIRPF · RIRPF · RFACT, BOE consolidado). Los números de apartado que no se ven en el texto extraído van marcados «(por confirmar)».
+Fuentes en §8 (LIVA · RIVA · LIRPF · RIRPF · RFACT · ORDEN303, BOE consolidado). Los números de apartado que no se ven en el texto extraído van marcados «(por confirmar)».
 
 | regla | dónde | cita literal |
 |---|---|---|
@@ -66,9 +95,25 @@ Fuentes en §8 (LIVA · RIVA · LIRPF · RIRPF · RFACT, BOE consolidado). Los n
 | Retención: inicio de actividad | RIRPF art. 95.1 | «el tipo de retención será del 7 por ciento en el período impositivo de inicio de actividades y en los dos siguientes» |
 | Factura simplificada | RFACT art. 4.1.a | «Cuando su importe no exceda de 400 euros, Impuesto sobre el Valor Añadido incluido» |
 | Simplificada, casos de 3.000 € | RFACT art. 4.2 | «podrán igualmente expedir factura simplificada y copia de ésta cuando su importe no exceda de 3.000 euros, Impuesto sobre el Valor Añadido incluido» |
+| Retención del 1 %: módulos, y para QUÉ epígrafes IAE | RIRPF art. 95.6.1º y 2º | «Cuando los rendimientos sean contraprestación de una de las actividades económicas previstas en el número 2.º de este apartado y se determine el rendimiento neto de la misma con arreglo al método de estimación objetiva, se aplicará el tipo de retención del 1 por ciento sobre los ingresos íntegros satisfechos.» — el 2.º lista los epígrafes IAE, e incluye literalmente «504.2 y 3 Instalaciones de fontanería, frío, calor y acondicionamiento de aire», «501.3 Albañilería y pequeños trabajos de construcción en general», «505.5 Carpintería y cerrajería» y «505.6 Pintura de cualquier tipo y clase y revestimientos con papel, tejido o plásticos y terminación y decoración de edificios y locales» |
+| Retención del 2 %: NO es la de los oficios | RIRPF art. 95.4 y 95.5 | «Cuando los rendimientos sean contraprestación de una actividad agrícola o ganadera, se aplicarán los siguientes porcentajes de retención: 1.º Actividades ganaderas de engorde de porcino y avicultura: 1 por ciento. 2.º Restantes casos: 2 por ciento.» y «Cuando los rendimientos sean contraprestación de una actividad forestal, se aplicará el tipo de retención del 2 por ciento» — agrícola/ganadera/forestal, no construcción/instalaciones |
+| Operaciones no sujetas (art. 7): ninguna encaja en un oficio | LIVA art. 7, encabezado y 1.º | «Artículo 7. Operaciones no sujetas al impuesto. No estarán sujetas al impuesto: 1.º La transmisión de un conjunto de elementos corporales y, en su caso, incorporales que, formando parte del patrimonio empresarial o profesional del sujeto pasivo, constituyan o sean susceptibles de constituir una unidad económica autónoma en el transmitente» — el resto de la lista (2.º a 12.º) son muestras gratuitas, relación laboral, Administraciones Públicas, cesiones de dinero: ninguna es la venta ordinaria de un servicio de reforma/instalación |
+| Exenciones interiores (art. 20): tampoco | LIVA art. 20.Uno, encabezado y 1.º-5.º | «Artículo 20. Exenciones en operaciones interiores. Uno. Estarán exentas de este impuesto las siguientes operaciones: 1.º Las prestaciones de servicios y las entregas de bienes accesorias a ellas que constituyan el servicio postal universal» — seguido de sanidad (2.º-4.º) y profesiones médicas/sanitarias (5.º): tampoco hay una exención para reformas/instalaciones en la parte revisada |
+| Plazo trimestral del modelo 303 | Orden EHA/3786/2008, art. 7.2 | «la presentación de las autoliquidaciones del modelo 303, así como, en su caso, el ingreso o la solicitud de devolución, si corresponde, de la cantidad resultante, se efectuará en los veinte primeros días naturales del mes siguiente a la finalización del correspondiente período de liquidación trimestral, excepto la correspondiente al último período de liquidación del año, que deberá presentarse durante los treinta primeros días naturales del mes de enero siguiente» |
+| Mención "inversión del sujeto pasivo" en factura | RFACT art. 6.1.m | «Artículo 6. Contenido de la factura. 1. Toda factura y sus copias contendrán los datos o requisitos que se citan a continuación (…): m) En el caso de que el sujeto pasivo del Impuesto sea el adquirente o el destinatario de la operación, la mención "inversión del sujeto pasivo".» |
+| ISP: bases separadas si la factura mezcla operaciones con y sin ISP | RFACT art. 6.2.b | «2. Deberá especificarse por separado la parte de base imponible correspondiente a cada una de las operaciones que se documenten en una misma factura en los siguientes casos: (…) b) Cuando se incluyan operaciones en las que el sujeto pasivo del Impuesto sobre el Valor Añadido correspondiente a aquéllas sea su destinatario y otras en las que no se dé esta circunstancia.» |
 
-**Cruce con el código (los números coinciden, la aplicación no está cableada):** recargo 5,2 / 1,4 / 0,5 (`recargoEquivalencia.ts:51-64`) ↔ art. 161 · retención 15 y 7 (`retencionIrpf.ts:54`) ↔ art. 95.1 · el 40 % de materiales **no existe** en el código.
+**Cruce con el código (los números coinciden, la aplicación no está cableada):** recargo 5,2 / 1,4 / 0,5 (`recargoEquivalencia.ts:51-64`) ↔ art. 161 · retención 15 y 7 (`retencionIrpf.ts:54`) ↔ art. 95.1 · retención 1 y 2 (`retencionIrpf.ts:54`) ↔ art. 95.4-6, y el 1 % SÍ encaja con los oficios de YaQu (fontanería, albañilería, carpintería/cerrajería, pintura); el 2 % es agrícola/forestal, no un oficio de YaQu · el 40 % de materiales **no existe** en el código.
 ⚠️ Trampa medida: la primera cita de «15 por ciento» que salió del RIRPF era del **art. 101 (propiedad intelectual)**, no de profesionales; el script no distingue, lo distingue leer el artículo. El art. 95.1 es el correcto para oficios.
+⚠️ Las citas de art. 7 y art. 20 son PARCIALES a propósito: se revisó el encabezado completo de cada lista cerrada y los primeros apartados (7.º completo — los 12 apartados —, 20.Uno los 5 primeros de una lista que sigue); ninguno de los revisados aplica a un oficio, y no se transcribió el resto de 20.Uno (sanidad, educación, finanzas, seguros, alquileres de vivienda…) por no ser candidatos plausibles para reformas/instalaciones. Si alguien necesita el 20.Uno completo, se vuelve a bajar la fuente.
+⚠️ Trampa medida (23-sep-2026, SCRUM-1039c): el art. 6.1.m ROF llegó de un primer cotejo por
+WebFetch con **dos textos distintos, los dos etiquetados «m)»**, en la misma respuesta — no se
+promovió a esta tabla con esa ambigüedad (correcto: no se fuerza una cita dudosa). Repetido con
+`curl` directo sobre el mismo `BOE-A-2012-14696` (dos sondas independientes sobre el art. 6
+completo, y el historial de modificaciones del propio BOE al pie del artículo): **solo hay una
+letra m)**, sin cambios desde 2012. El duplicado era un artefacto de resumen de WebFetch, no algo
+del origen — mismo defecto que SCRUM-1039b ya documentó para citas legales. **Lección: una cita
+legal se baja con `curl`, nunca con WebFetch.**
 
 ## 4 · NO VERIFICADO → pregunta al asesor (propuestas Q-C para `docs/legal/PREGUNTAS_ASESOR.md`, dueño J4)
 
@@ -76,17 +121,30 @@ Cada una: por qué está aquí = el texto no se ha localizado o no basta para de
 
 | id | pregunta | hoy en el código |
 |---|---|---|
-| Q-C1 | Reforma de vivienda al 10 %: cómo documentar «más de dos años» y el destinatario comunidad de propietarios; y que la regla de los materiales (§3) se aplica al total de la operación | no existe |
-| Q-C2 | ISP en obra: cómo debe verse en la factura y quién es «promotor/contratista» a efectos prácticos (art. 84 f) | no existe |
-| Q-C3 | Suplidos: forma de acreditar el «mandato expreso» y cómo se muestran en factura | casilla que fuerza IVA 0 |
-| Q-C4 | Recargo de equivalencia: ¿confirma el mapeo tipo→recargo y cuándo aplica al cliente? (el código lo marca "pendiente de confirmación") | dato guardado, no calculado |
-| Q-C5 | Retenciones: 15/7 verificados; los **2 y 1 %** que hoy acepta `retencionIrpf.ts:54`, ¿a qué casos se refieren? Y cuándo no retiene el cliente particular | 15/7/2/1 cerrada |
+| Q-C1 | ~~Reforma de vivienda al 10 %~~ **RESPONDIDA (23-sep-2026) → SCRUM-1052, detalle en `PREGUNTAS_ASESOR.md`.** El 40 % se mide sobre la operación entera, nunca por línea (cita AEAT con enlace, no ⚠). Falta una declaración firmada del cliente para los "2 años" (encaja con la firma que ya existe). **Hallazgo:** mantenimiento de instalaciones (calderas, revisiones) NO es ejecución de obra → 21 % siempre | no existe |
+| Q-C2 | ~~ISP en obra~~ **RESPONDIDA (23-sep-2026) → SCRUM-1051, alcance MUY estrechado.** Leyenda exacta «inversión del sujeto pasivo», con cita literal comprobada en §3 (art. 6.1.m/6.2.b RFACT, cerrado por SCRUM-1039c tras un primer cotejo ambiguo por WebFetch). Sólo aplica si la obra GLOBAL es construcción/rehabilitación (no una reforma de baño) y el destinatario lo comunica expresamente — si no, no hay ISP aunque el cliente sea empresa | no existe |
+| Q-C3 | ~~Suplidos~~ **RESPONDIDA (23-sep-2026) → SCRUM-1054.** Tres condiciones acumulativas: factura del tercero A NOMBRE DEL CLIENTE (nunca del profesional), mandato expreso identificando el gasto concreto (una línea genérica "suplidos" no vale), cuantía exacta con justificante | casilla que fuerza IVA 0 |
+| Q-C4 | ~~Recargo de equivalencia~~ **RESPONDIDA (23-sep-2026) → SCRUM-1054.** Sólo en entregas de BIENES a un minorista para su tienda; un oficio presta servicios, así que casi nunca aplica — "basta con tener el campo, no un flujo" | dato guardado, no calculado |
+| Q-C5 | ~~Retenciones 2 y 1 %~~ **RESPONDIDA por completo (23-sep-2026) → SCRUM-1053/1073, sustituye la parcial del 22-sep.** 🔴🔴 Para este perfil (estimación directa) **la retención en factura EMITIDA es CERO en todos los casos** — el 1 % sólo aplica a módulos. El "5 % en obra" no es retención fiscal: es garantía contractual de pago, no de impuestos. **Necesita decisión del fundador:** ¿se construye el campo igual para un segmento (módulos) que hoy no existe? | 15/7/2/1 cerrada |
 | Q-C6 | Criterio de caja: qué fecha cuenta como cobro (`paidAt` vs. fecha real) | usa `paidAt` |
-| Q-C7 | Los tipos **2, 5 y 7,5 %** que el servidor admite (`fiscalInput.ts:35`) no salen en los arts. 90-91 citados: ¿se retiran o se explican? | admitidos |
-| Q-C8 | Plazos y modelos trimestrales de un autónomo de oficio (303, 130/131, 111, 115, 347, 390): plazos según cada caso; **el art. 71 RIVA localizado no contiene los plazos, pendiente de hallar dónde están** | solo 303 devengado |
-| Q-C9 | Exento y no sujeto: qué operaciones de un oficio caen ahí (LIVA arts. 7 y 20, sin citar aún) | no existen |
+| Q-C7 | ~~Los tipos 2, 5 y 7,5 %~~ **RESUELTA (23-sep-2026).** Son los tipos temporales de alimentos del RDL 4/2024 (oct-dic 2024), ya caducados desde ene-2025. Siguen en el anexo de VeriFactu por facturas históricas. A un oficio no le aplican nunca: admitidos en código pero NO ofrecidos | admitidos |
+| Q-C8 | ~~Plazos y modelos trimestrales~~ **RESPONDIDA por el asesor fiscal (23-sep-2026), detalle completo en `PREGUNTAS_ASESOR.md`.** Mapa: **habitual** 303/390/130/100/347 · **excepción** 111+190 (si retiene)/115+180 (si paga alquiler)/349 (si hay UE) · **NUNCA** 131 (es de módulos, excluyente con el 130). El 390 **no** está exonerado (fuente AEAT con enlace); el 347 **no** desaparece con VeriFactu (sólo con SII, incompatible con VeriFactu). Todas las citas de artículo que trae el asesor (RIVA, RIRPF, LIRPF, RGAT) las marcó él mismo ⚠ (de memoria): **NO VERIFICADO** en §3, ninguna se promueve a cita comprobada en esta pasada | 303: solo devengado. 130/111/115/347/390/100/349: no existen |
+| Q-C9 | ~~Exento y no sujeto~~ **RESPONDIDA por cita (§3, 22-sep-2026):** se revisó LIVA art. 7 completo (los 12 apartados de no sujeción: transmisión de negocio, muestras gratuitas, relación laboral, Administraciones Públicas…) y art. 20.Uno, encabezado + los 5 primeros apartados (postal, sanidad, profesiones médicas). **Ninguno de los revisados aplica** a la venta ordinaria de un servicio de reforma/instalación. No se transcribió el resto de 20.Uno (~30 apartados más: educación, finanzas, seguros, alquiler de vivienda…) por no ser candidatos plausibles — si el asesor conoce un supuesto concreto de un oficio que SÍ pueda caer en el resto de la lista, se revisa ese apartado puntual | no existen |
 
-Sin fuente descargada todavía: órdenes ministeriales de modelos (303/130/111/115/347/390), LIRPF (bajada, sin cita), plazos RIVA. **Pendiente CON-03.**
+Sin fuente descargada todavía: órdenes ministeriales de los modelos 130, 111, 115, 347 y 390 (solo se
+localizó y citó la del 303: Orden EHA/3786/2008) — **el 131 se retira de esta lista, no aplica a este
+perfil**. Tampoco están descargadas las fuentes de las citas ⚠ del asesor que responden Q-C8: RGAT
+(RD 1065/2007, arts. 31-35), ni los artículos nuevos de RIVA (30, 61 *decies*, 71.3, 62.6), RIRPF
+(74-76, 100, 107, 109) y LIRPF (99) — LIVA/RIVA/RIRPF/LIRPF ya son fuente en §8 para OTROS artículos,
+pero cotejar estos concretos es trabajo aparte, no asumido por tenerlos ya descargados una vez.
+Igual para las que responden Q-C1 a Q-C5 y Q-C7 (SCRUM-1106): arts. 170.Dos.2º, 87.Uno, 91.Uno.3.1º,
+20.Uno.22º.B, 148-149, 163.Uno y 170.Dos.3º LIVA · art. 24 *quater* y 61 RIVA · art. 76 RIRPF ·
+art. 107 LCSP — todas **NO VERIFICADO**. Las páginas de la AEAT sobre reformas de vivienda las dio
+el asesor como verificadas hoy por él y se citan como fuente en `PREGUNTAS_ASESOR.md`, sin bajarlas
+aparte aquí. **El art. 6.1.m/6.2.b ROF SÍ pasó a la tabla de arriba** (SCRUM-1039c, 23-sep-2026):
+mi primer cotejo por WebFetch salió ambiguo (dos textos para «m)»); repetido por J5 con `curl`
+directo, sólo hay una letra m), sin cambios desde 2012 — el duplicado era un artefacto de WebFetch.
+**Pendiente CON-03** para todo lo anterior salvo esa ya cerrada.
 
 ## 5 · Principios del bloque
 
@@ -142,18 +200,20 @@ Dueños por `dos-equipos.md` §3: facturas, libros y entrega a la gestoría = **
 
 ## 8 · Fuentes y población
 
-Bajadas con GET público el 21-sep-2026 ~15:05 (reloj local, ≈5 min por delante de GitHub); texto consolidado del BOE; **fecha de última actualización del consolidado: no anotada**. SHA-256 (16 primeros) del HTML tal cual se guardó.
+Bajadas con GET público el 21-sep-2026 ~15:05 (LIVA/RIVA/LIRPF/RIRPF/RFACT) y el 22-sep-2026 ~11:15 (las cinco anteriores, re-bajadas para esta pasada, + ORDEN303 nueva); reloj local, ≈5 min por delante de GitHub. Texto consolidado del BOE; **fecha de última actualización del consolidado: no anotada**. SHA-256 (16 primeros) del HTML tal cual se guardó — **cambia en cada descarga** (la página de BOE incluye contenido dinámico ajeno al articulado: los SHA de abajo son de la descarga del 22-sep, no comparables con una tirada anterior).
 
-| fuente | dirección | SHA-256 (16) |
+| fuente | dirección | SHA-256 (16, descarga 22-sep-2026) |
 |---|---|---|
-| LIVA · Ley 37/1992 | https://www.boe.es/buscar/act.php?id=BOE-A-1992-28740 | `907B05C8F4FB773E` |
-| RIVA · RD 1624/1992 | https://www.boe.es/buscar/act.php?id=BOE-A-1992-28925 | `8E6DD297311B380A` |
-| LIRPF · Ley 35/2006 | https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 | `E65B47B68C35434F` |
-| RIRPF · RD 439/2007 | https://www.boe.es/buscar/act.php?id=BOE-A-2007-6820 | `22234B995F176F7D` |
-| RFACT · RD 1619/2012 | https://www.boe.es/buscar/act.php?id=BOE-A-2012-14696 | `F20AB0001A2E7567` |
+| LIVA · Ley 37/1992 | https://www.boe.es/buscar/act.php?id=BOE-A-1992-28740 | `585B54E95E3091AC` |
+| RIVA · RD 1624/1992 | https://www.boe.es/buscar/act.php?id=BOE-A-1992-28925 | `5D6FEBDA72A74C15` |
+| LIRPF · Ley 35/2006 | https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 | `06D66CEF8305A4B7` |
+| RIRPF · RD 439/2007 | https://www.boe.es/buscar/act.php?id=BOE-A-2007-6820 | `64D429A3E3810C42` |
+| RFACT · RD 1619/2012 | https://www.boe.es/buscar/act.php?id=BOE-A-2012-14696 | `DCB4D501BF9F0355` |
+| ORDEN303 · Orden EHA/3786/2008 | https://www.boe.es/buscar/act.php?id=BOE-A-2008-20953 | `0ECC0332CC06D7B6` |
 
-**Nota de método.** Las **16 citas** de la §3 (todo lo que va entre comillas angulares) se comprobaron contra los ficheros bajados: **16 de 16 aparecen literales** (salvo espacios, saltos de línea y comillas tipográficas). Población de texto por fuente, en caracteres: LIVA 748.965 · RIVA 445.672 · LIRPF 832.142 · RIRPF 481.395 · RFACT 106.999. El comprobador lleva **control negativo**: una cita alterada a propósito (21 → 1021 por ciento) sale como no encontrada y la original sí; código de salida 0 (21-sep-2026). Uso: `node docs/verificacion/comprobar-citas-contabilidad.mjs docs/producto/CONTABILIDAD.md <carpeta con LIVA.html RIVA.html LIRPF.html RIRPF.html RFACT.html>`.
+**Nota de método.** Las **26 citas** de la §3 (todo lo que va entre comillas angulares) se comprobaron contra los ficheros bajados: **26 de 26 aparecen literales** (salvo espacios, saltos de línea y comillas tipográficas) — 16 verificadas el 21-sep, 10 nuevas el 22-sep (SCRUM-1039). Población de texto por fuente, en caracteres: LIVA 748.965 · RIVA 445.672 · LIRPF 832.142 · RIRPF 481.395 · RFACT 106.999 · ORDEN303 48.793. El comprobador lleva **control negativo**: una cita alterada a propósito (21 → 1021 por ciento) sale como no encontrada y la original sí; código de salida 0 (22-sep-2026). Uso: `node docs/verificacion/comprobar-citas-contabilidad.mjs docs/producto/CONTABILIDAD.md <carpeta con LIVA.html RIVA.html LIRPF.html RIRPF.html RFACT.html ORDEN303.html>`.
 Los ficheros no están en git; se bajan de las direcciones de arriba con el nombre indicado.
+⚠️ Trampa medida (22-sep-2026): el ellipsis de cita **solo puede usarse cuando el hueco es tipográfico**, no para elidir texto legal real — el comprobador borra la marca y exige que el resto sea una subcadena CONTINUA del original. Las primeras 5 citas nuevas usaban «(…)» para saltarse frases enteras de la ley y el comprobador las marcó `NO ENCONTRADA`, correctamente: se rehicieron citando el tramo contiguo completo.
 
 ## 9 · Lo que falta para cerrar este entregable
 

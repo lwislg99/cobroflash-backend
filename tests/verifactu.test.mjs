@@ -52,6 +52,8 @@ test('QR: URL de cotejo oficial con nif/numserie/fecha/importe codificados', () 
 });
 
 test('FechaHoraHusoGenRegistro: ISO 8601 con huso explícito', () => {
-  const s = formatFechaHoraHuso(new Date(2026, 5, 11, 12, 0, 0));
-  assert.match(s, /^2026-06-11T12:00:00[+-]\d{2}:\d{2}$/);
+  // SCRUM-735: `zona` es obligatoria y explícita (la del merchant en el camino real). Aquí se
+  // construye el instante en UTC y se pide en Madrid, para no depender de la zona de la máquina.
+  const s = formatFechaHoraHuso(new Date(Date.UTC(2026, 5, 11, 10, 0, 0)), 'Europe/Madrid');
+  assert.equal(s, '2026-06-11T12:00:00+02:00');
 });

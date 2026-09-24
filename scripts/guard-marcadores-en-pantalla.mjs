@@ -52,12 +52,13 @@ const MARCADOR = '[PENDIENTE microcopy oficial]';
 // APARICIÓN = una ocurrencia del literal dentro de un NODO DE TEXTO del DOM ya pintado.
 // El censo se lleva por VISTA, sumando sus tres estados. Es la unidad que congela el trinquete.
 const CENSO = Object.freeze({
-  // SCRUM-722 · 7-sep-2026. Medido con este mismo guard sobre `origin/main`.
-  //
-  // `export` SALIÓ el 23-sep (SCRUM-1041): los cuatro textos de «Facturas emitidas» que
-  // `exportView.js:87`/`:100` pintaban como marcador quedaron firmados y el marcador se retiró
-  // del fuente. La entrada se BORRA, no se pone a 0 — el trinquete APRIETA (mismo criterio que
-  // SCRUM-402/424/405).
+  // `export` SALIÓ el 22-sep (SCRUM-1041, bloque A): com. 16306 de SCRUM-1041 (delegación
+  // permanente del fundador en microcopy no legal) firmó los 4 textos de la card «Facturas
+  // emitidas» que `exportView.js` pintaba como marcador (línea descriptiva, «Año», «Trimestre»
+  // y «Descargar CSV») y la vista ya no pinta ninguno. Estaba a 6 (2 nodos × 3 estados). Ese
+  // ticket actualizó el censo de `tests/scrum402-marcador-no-se-pinta.test.mjs` pero no este
+  // —es un censo aparte, del DOM renderizado, no del fuente (ver la cabecera de este fichero)—
+  // y quedó caduco. Misma regla: entrada BORRADA, no puesta a 0 (SCRUM-402/424/405).
   //
   // `albaranes` SALIÓ el 7-sep: el fundador firmó «Nuevo albarán». La entrada se BORRA, no se
   // pone a 0 — el trinquete APRIETA (mismo criterio que SCRUM-402/424/405).
@@ -67,6 +68,15 @@ const CENSO = Object.freeze({
   // descuento pactado y «Aplicar a las líneas»— y el editor de presupuestos ya no pinta ninguno.
   // Estaba a 6 (marcadores que llegaban al DOM OCULTOS en los tres estados). Misma regla: BORRADA,
   // no puesta a 0.
+
+  // `facturas-recibidas` ENTRA el 22-sep (SCRUM-1040): pantalla nueva junto al Libro de registro
+  // (las facturas que el profesional RECIBE de sus proveedores, A6/SCRUM-426; hasta hoy solo
+  // CSV). Su microcopy —título de la card y el aviso de error de carga— está SIN FIRMAR (regla
+  // 30) y se declara AQUÍ en vez de inventarse: firmar textos oficiales es STOP CONDITION de
+  // AA1.4, no algo que decida quien construye la pantalla. `facturasRecibidasView.js` los deja
+  // marcados como corresponde; QUIEN LOS FIRME los retira de este censo (mismo camino que
+  // `export`/`albaranes`/`quotes-new`, arriba). 6 = 2 nodos (`titulo`, `error`) × 3 estados.
+  'facturas-recibidas': 6,
 });
 
 const ESTADOS = ['con-datos', 'sin-datos', 'error'];

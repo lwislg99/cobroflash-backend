@@ -114,6 +114,56 @@ test('SCRUM-983 · 🔴 todo campo con el que el modal de la ficha 360 RELLENA u
     `\n  destinatario y la periodicidad. Añade el campo al \`select\` de ${RUTA} (GET /:id/detail).`);
 });
 
+// ═══ ④ SCRUM-1033 · la cabecera de la ficha 360 también necesita sus campos en el /detail ══
+
+// Los siete que pide SCRUM-1033: etiquetas, dirección (5) y referencia interna.
+const LOS_SIETE_DE_1033 = ['tags', 'billingAddress', 'billingCity', 'billingPostalCode', 'billingProvince', 'billingCountry', 'internalRef'];
+
+test('SCRUM-1033 · 🔴 el select del /detail trae etiquetas, dirección y referencia interna', () => {
+  const detail = new Set(camposDelDetail());
+  const faltan = LOS_SIETE_DE_1033.filter((k) => !detail.has(k));
+  assert.deepEqual(faltan, [],
+    '🔴 LA CABECERA DE LA FICHA 360 (SCRUM-1033) PINTA CHIPS DE CAMPOS QUE EL /detail NO TRAE:\n    '
+    + faltan.join(', ') + `\n\n  Añádelos al \`select\` de ${RUTA} (GET /:id/detail).`);
+});
+
+// ═══ ⑤ SCRUM-1033 · un técnico (u otro merchant) no ve el cliente ajeno a través del /detail ══
+//
+// AST, no DB (A2/A3): el mismo camino que ya usan los censos de tenencia de SCRUM-289/348 —
+// el filtro se lee del TEXTO, literal, no se ejecuta contra una base. Amplía el `select` no
+// tiene que poder ensanchar el `where`: sigue siendo el mismo cliente, del mismo merchant.
+test('SCRUM-1033 · 🔴 el `where` del /detail sigue filtrando por `merchantId: req.merchantId` (no se ve el cliente ajeno)', () => {
+  const src = fs.readFileSync(path.join(RAIZ, RUTA), 'utf8');
+  const sf = ts.createSourceFile(RUTA, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let handler = null;
+  (function walk(n) {
+    if (!handler && ts.isCallExpression(n) && n.expression.getText() === 'router.get'
+        && n.arguments[0] && ts.isStringLiteral(n.arguments[0]) && n.arguments[0].text === '/:id/detail') {
+      handler = n;
+    }
+    n.forEachChild(walk);
+  })(sf);
+  assert.ok(handler, '🔴 CIEGO: no encuentro el handler de GET /:id/detail.');
+
+  let where = null;
+  (function walk(n) {
+    if (where) return;
+    if (ts.isCallExpression(n) && /prisma\.customer\.findFirst$/.test(n.expression.getText())) {
+      const arg = n.arguments[0];
+      const w = arg && ts.isObjectLiteralExpression(arg)
+        && arg.properties.find((p) => p.name && p.name.getText() === 'where');
+      if (w && ts.isPropertyAssignment(w) && ts.isObjectLiteralExpression(w.initializer)) where = w.initializer;
+    }
+    n.forEachChild(walk);
+  })(handler);
+  assert.ok(where, '🔴 CIEGO: no encuentro el `where` de `prisma.customer.findFirst` en /:id/detail.');
+
+  const merchantIdProp = where.properties.find((p) => p.name && p.name.getText() === 'merchantId');
+  assert.ok(merchantIdProp, '🔴 EL `where` DEL /detail YA NO FILTRA POR `merchantId`: un cliente de otro merchant sería visible.');
+  assert.equal(merchantIdProp.initializer.getText(), 'req.merchantId',
+    `🔴 EL \`where\` DEL /detail FILTRA POR ALGO QUE NO ES \`req.merchantId\` (es \`${merchantIdProp.initializer.getText()}\`): la tenencia se rompe.`);
+});
+
 // ═══ ③ EL FRONT, POR EFECTO: lo que no se cargó no viaja ════════════════════════════════
 
 /** Monta la ficha 360 de verdad con el `customer` dado, edita SÓLO la nota y devuelve el PUT. */

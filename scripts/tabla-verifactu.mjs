@@ -266,6 +266,27 @@ const TIPOS = {
     return casan.length ? null : `en «${a.dentroDe}», «${a.nombre}» ya no es «${a.valor}»`;
   },
 
+  // «si SI está presente en un objeto, ENTONCES esa misma propiedad vale esto» — a diferencia de
+  // `propiedad` (que mira cada propiedad del ámbito por separado, sin atarla a sus hermanas), ésta
+  // exige que las dos vivan en el MISMO objeto literal. Nace de SCRUM-524b: con una sola rama,
+  // «TODAS las `calificacion` del ámbito son S1» y «`cuota` sólo con `calificacion`=S1» eran la
+  // misma frase; con dos ramas (S1/S2) dejan de serlo, y la primera es un atajo que ya no expresa
+  // la segunda, que es la regla real (código AEAT 1207).
+  propiedadLigada(a, sf, esc) {
+    const buscaProp = (lit, nombre) => lit.properties.find((p) => ts.isPropertyAssignment(p)
+      && (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name)) && p.name.text === nombre);
+    const literales = [];
+    descendientes(esc, (x) => { if (ts.isObjectLiteralExpression(x)) literales.push(x); });
+    const conSi = literales.filter((lit) => buscaProp(lit, a.si));
+    if (!conSi.length) return `«${a.dentroDe}» ya no escribe «${a.si}» en ningún objeto`;
+    const violacion = conSi.find((lit) => {
+      const p = buscaProp(lit, a.entonces.nombre);
+      return !p || norm(p.initializer, sf) !== a.entonces.valor;
+    });
+    return violacion ? `en «${a.dentroDe}», un objeto escribe «${a.si}» sin que «${a.entonces.nombre}» sea «${a.entonces.valor}»`
+      : null;
+  },
+
   elementoFijo(a, sf, esc) {
     const abre = `<sum1:${a.elemento}>`;
     const fijo = `${a.valor}</sum1:${a.elemento}>`;

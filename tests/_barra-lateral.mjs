@@ -175,6 +175,15 @@ export const ANADIDAS_DECLARADAS = {
       'registro» los decide el asesor el 10-ago-2026 — y aprueba el RÓTULO DE NAVEGACIÓN, no copy ' +
       'de VeriFactu: lo que se pinte dentro sigue bajo la regla 26 y sale del guion H2.',
   },
+  'facturas-recibidas': {
+    ticket: 'SCRUM-1040',
+    motivo:
+      'El diseño de B1 es del 5-ago y esta pantalla llega el 22-sep-2026, junto al Libro de ' +
+      'registro: las facturas que el profesional recibe de sus proveedores (A6/SCRUM-426), hasta ' +
+      'hoy solo descargables en CSV. El rótulo «Facturas recibidas» va SIN marcador (guard ④ de ' +
+      'este mismo fichero) porque es literal del propio ticket y de `LIBROS_DISPONIBLES` en el ' +
+      'servidor, no copy inventada; lo que se pinte DENTRO de la pantalla sigue sin firmar (regla 30).',
+  },
 };
 
 /**

@@ -102,7 +102,15 @@ function censo() {
 // el SHELL lo precacheaba— y sus OCHO asignaciones de estilo desde JS se fueron con él. El trinquete
 // lo pidió él solo al bajar: «HAN BAJADO (enhorabuena) … aprieta el número aquí». Recontado con
 // ESTE contador sobre el árbol ya sin el fichero, no deducido restando.
-const TECHO = 340;
+// 340 → 336 · 21-sep-2026 (SCRUM-917g). Cuatro asignaciones de `jobDetailView.js` (60 → 56) se fueron
+// con lo que las pintaba, no a una clase de `styles.css`: la fila «Tipo de trabajo» con su «Cambiar»
+// (`tipoCollapsed`, `tipoCollapsedLabel`), la casilla «Incluir precios en el parte» de la barra de
+// Documentos (`valoradoLabel`) y la cabecera de la sección suelta de Gastos (`header`); las cinco
+// líneas viven ahora en `jobTrabajoPlegable.js` con clases `.detail-plega*` y ese fichero NO escribe
+// ninguna (0). Contado con ESTE contador sobre el árbol ya fusionado con `origin/main` (2631bb9a):
+// main daba 340 —el techo anterior, así que el contador no estaba descarriado— y la rama 336, con
+// la diferencia entera en ese único fichero. Recontado, no deducido restando.
+const TECHO = 336;
 
 test('SCRUM-713c · SUELO: el contador VE lo que tiene que ver, y NO se caza a sí mismo', () => {
   // 🔴 El suelo que no caduca: se prueba contra cadenas fabricadas aquí, así que sigue probando

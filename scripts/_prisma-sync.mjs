@@ -26,6 +26,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { comprobarCliente } from './_prisma-client-guard.mjs';
+import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-773
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NODE_MODULES = path.join(RAIZ, 'node_modules');
@@ -99,7 +100,9 @@ export async function sincronizar() {
   return { estado: 'regenerado' };
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('_prisma-sync.mjs')) {
+// 🔴 SCRUM-773 · antes comparaba `import.meta.url` con `'file://' + argv[1]` (nunca casa en
+// Windows) con un respaldo `endsWith()` que arrancaba SOLO por nombre de fichero (SCRUM-765).
+if (ejecutadoDirectamente(import.meta.url)) {
   const r = await sincronizar();
   if (r.estado === 'regenerado') {
     console.log('[prisma] el cliente estaba viejo para esta rama y se ha regenerado solo.');

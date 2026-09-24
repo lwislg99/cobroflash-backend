@@ -636,6 +636,23 @@ function renderSettingsView(container) {
       return { wrapper, chk };
     }
 
+    // SCRUM-1042 · «foto del técnico», mitad FRONT. `showTechPhotoToClient` NO es una columna
+    // propia: vive dentro de `Merchant.homePrefs` (JSONB) por decisión del orquestador
+    // (22-sep-2026) — ese campo nació para los bloques de la Home (A6.7) pero es un JSON de
+    // preferencias del comercio sin más forma cerrada que la que le da cada consumidor, y añadir
+    // una columna aquí habría pedido un ALTER que este ticket no tiene (la foto en sí, sí lo
+    // necesita: eso es la otra mitad, de S1). Se lee/escribe fusionando con lo que ya hubiera en
+    // `homePrefs` — machacarlo entero borraría los bloques de Home que el comercio ya eligió.
+    // ✅ TEXTO FIRMADO por el orquestador por delegación del fundador (22-sep-2026, SCRUM-1042).
+    const tFotoTecnico = createToggle(
+      "showTechPhotoToClient",
+      "Enseñar la foto del técnico al cliente",
+      "La verá en su portal del trabajo — nunca en la factura."
+    );
+    // TODO(SCRUM-1042, mitad de S1): sin foto subida el ajuste no tiene nada que enseñar. Cuando
+    // exista la columna + ruta de la foto, aquí es donde avisar «ningún técnico tiene foto todavía»
+    // si el comercio activa esto sin haber subido ninguna — hoy no se puede saber (no hay endpoint).
+
     const tNotifyPaid = createToggle(
       "notifyEmailOnPaid",
       "Recibir email cuando un cliente paga",
@@ -704,6 +721,7 @@ function renderSettingsView(container) {
     colocar("notifyEmailOnPaid", tNotifyPaid.wrapper);
     colocar("notifyEmailOnQuoteAccepted", tNotifyAccepted.wrapper);
     colocar("notifyEmailWeeklyDigest", tNotifyWeekly.wrapper);
+    colocar("showTechPhotoToClient", tFotoTecnico.wrapper);
 
     // ── Enterprise: branding + aprobación (ENT-1, ENT-2) ──────────────────
     // Color de marca
@@ -721,6 +739,9 @@ function renderSettingsView(container) {
     const brandColorInput = fBrandWrapper.querySelector("#brand-color-input");
     const brandColorHex = fBrandWrapper.querySelector("#brand-color-hex");
     let brandColorEnabled = false;
+    // SCRUM-1042 · lo que YA hubiera en `homePrefs` (los bloques de la Home, A6.7), para
+    // fusionarlo al guardar y no machacarlo con solo el ajuste de esta pantalla.
+    let homePrefsCargados = null;
     brandColorInput.addEventListener("input", () => {
       brandColorEnabled = true;
       brandColorHex.textContent = brandColorInput.value;
@@ -862,6 +883,10 @@ function renderSettingsView(container) {
         tNotifyPaid.chk.checked     = merchant.notifyEmailOnPaid     !== false;
         tNotifyAccepted.chk.checked = !!merchant.notifyEmailOnQuoteAccepted;
         tNotifyWeekly.chk.checked   = !!merchant.notifyEmailWeeklyDigest;
+        // SCRUM-1042 · apagado por defecto (aceptación 2 del ticket): sin `homePrefs` o sin la
+        // clave, `!!undefined` da `false`, que es justo ese defecto.
+        homePrefsCargados = merchant.homePrefs || {};
+        tFotoTecnico.chk.checked = !!homePrefsCargados.showTechPhotoToClient;
         if (merchant.country) fCountrySelect.value = merchant.country;
         if (merchant.brandColor) {
           brandColorEnabled = true;
@@ -1065,6 +1090,9 @@ function renderSettingsView(container) {
         notifyEmailOnPaid:          tNotifyPaid.chk.checked,
         notifyEmailOnQuoteAccepted: tNotifyAccepted.chk.checked,
         notifyEmailWeeklyDigest:    tNotifyWeekly.chk.checked,
+        // SCRUM-1042 · FUSIÓN, no reemplazo: `homePrefs` también guarda los bloques visibles de la
+        // Home (A6.7); mandar solo `{showTechPhotoToClient}` los borraría de un plumazo.
+        homePrefs: Object.assign({}, homePrefsCargados, { showTechPhotoToClient: tFotoTecnico.chk.checked }),
         brandColor: brandColorEnabled ? brandColorInput.value : null,
         approvalThreshold: fApproval.input.value.trim() === "" ? null : Number(fApproval.input.value),
         // SCRUM-656 (T7 fase B): las condiciones del pie del presupuesto. Van con su `id` para
@@ -1226,6 +1254,10 @@ function llevarASuPestana(destino) {
 // tarjeta (Connect) y datos fiscales. Copys del master M — jamás "factura" sin
 // datos fiscales: el documento es un justificante de cobro.
 async function renderReadinessCard(container, mainFormCard) {
+  // SCRUM-1029 (regla 24): en modo `receipt` (ES real, facturación apagada) YaQu no cobra por
+  // ninguna vía — la tarjeta entera se OCULTA en vez de reescribir sus filas de cobro. Mismo
+  // criterio que `window.appModoEmision`, sin recalcularlo (`settingsView.js:198-200`).
+  if (window.appModoEmision === 'receipt') return;
   let m;
   try { m = await apiRequest('/admin/merchant'); } catch { return; }
   if (m.slug === undefined) return; // perfil reducido (Operario) → sin checklist
@@ -1254,7 +1286,7 @@ async function renderReadinessCard(container, mainFormCard) {
       ok: !!m.whatsappPhone,
       label: 'Presupuestos por WhatsApp',
       okText: 'Listo — tus presupuestos salen por WhatsApp',
-      koText: 'Añade tu teléfono de WhatsApp para enviar presupuestos',
+      koText: 'Añade tu teléfono de WhatsApp para que te avisemos cuando un cliente decida',
       focus: 'whatsappPhone',
     },
     {

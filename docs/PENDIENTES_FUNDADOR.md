@@ -23,6 +23,13 @@
 
 ## ✍️ Aprobar textos — 51 de la web, listos y esperándote
 
+- [ ] **Aprobar el lote de literales de cobro en la web** —
+  `docs/legal/LITERALES_COBRO_WEB_PENDIENTES.md` (SCRUM-1086). Con `INVOICING_ES_ENABLED`
+  en OFF para España, la web sigue prometiendo un cobro (tarjeta/Bizum/transferencia) que YaQu
+  hoy no presta a ningún merchant real: 13 literales ya propuestos en `index.html`/`precios.html`
+  + 3 nuevos + una decisión sobre el demo interactivo de `#probar` (retirar / marcar como
+  demo / recortar a la firma) + un cambio de máster (Parte H2, categoría de la Etapa 1). Contesta
+  con la letra de la opción que prefieras para el demo, y "sí" al resto para que J3 lo aplique.
 - [ ] **Aprobar la microcopy del bloque F** — `docs/MICROCOPY_BLOQUE_F_PARA_APROBAR.md`.
   Las cuatro secciones nuevas de la web (héroe, comparativa, gremios y contacto) están
   **construidas y ocultas**: nadie las ve, y hay guards que impiden publicarlas por descuido.

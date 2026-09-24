@@ -974,13 +974,39 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   //
   // ⚠️ NO ES UN RÓTULO NUEVO: el título lo trae ya `construirSelectorAsignados`
   // (`jobAsignados.js`, `titulo: 'Quién ejecuta este trabajo'`). Aquí sólo se le da sección propia.
+  // ── SCRUM-917g (F) · «EL TRABAJO»: CINCO LÍNEAS PLEGABLES EN UNA TARJETA ───────────────────
+  //
+  // Las cinco líneas se crean AQUÍ, antes que las secciones que las rellenan: cada bloque de abajo
+  // sigue siendo el suyo (los mismos nodos, los mismos guardados) y sólo cambia dónde se cuelga y que
+  // el rótulo y el valor los dice la línea. `jobTrabajoPlegable.js` decide qué dice cada una cerrada.
+  //
+  // 🔴 «Quién lo ejecuta» va TERCERA en el orden del prototipo aprobado, no primera como decidió
+  // SCRUM-817. Lo que 817 defendía —que la asignación se lea antes que lo que se escribe una vez—
+  // sigue en pie porque la línea CERRADA ya dice los nombres: no hace falta abrirla.
+  const textosTrabajo = TEXTOS_EL_TRABAJO;
+  const nombresAsignados = typeof nombresDeAsignados === 'function' ? nombresDeAsignados(job.asignados) : '';
+  const lineaTipo = construirLineaPlegable(document, { clave: 'tipo', rotulo: textosTrabajo.rotuloTipo });
+  const lineaDatos = construirLineaPlegable(document, {
+    clave: 'datos', rotulo: textosTrabajo.rotuloDatos, valor: resumenDeNombre(nombreTrabajo),
+  });
+  // Con nombres asignados se dicen ya. Sin ellos, el técnico ve «Sin asignar» (no hay nada que
+  // esperar), y al jefe NO se le dice nada todavía: si «Sin asignar» o «No tienes equipo» depende de
+  // la lista del equipo, que llega después, y decir uno y corregirlo a los 100 ms es parpadear.
+  const lineaQuien = construirLineaPlegable(document, {
+    clave: 'quien', rotulo: textosTrabajo.rotuloQuien,
+    valor: nombresAsignados || (isTecnico ? resumenDeQuien({ nombres: '' }) : ''),
+  });
+  const lineaNotas = construirLineaPlegable(document, {
+    clave: 'notas', rotulo: textosTrabajo.rotuloNotas, valor: textosTrabajo.notasPrivadas,
+  });
+  const lineaGastos = construirLineaPlegable(document, { clave: 'gastos', rotulo: textosTrabajo.rotuloGastos });
+
   const quienSec = document.createElement('div');
   quienSec.className = 'detail-section';
   quienSec.dataset.seccion = 'asignados';
 
   const infoSec = document.createElement('div');
   infoSec.className = 'detail-section';
-  infoSec.innerHTML = '<h3 class="detail-section-title">Datos</h3>';
   const dl = document.createElement('dl');
   dl.className = 'detail-dl';
   // ── SCRUM-318 (G3) · CLIENTE, TELÉFONO y DIRECCIÓN se van al rail ────────────────────
@@ -1013,11 +1039,17 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   nombreInput.className = 'input';
   nombreInput.type = 'text';
   nombreInput.maxLength = 120; // mismo tope que el backend, para avisar antes de recortar
-  nombreInput.placeholder = 'Ej. Reforma baño';
+  // SCRUM-917g: el marcador y la explicación del campo son los firmados en el com. 15881 (antes:
+  // «Ej. Reforma baño», sin explicación). La explicación va JUNTO al nombre, que es lo que explica.
+  nombreInput.placeholder = textosTrabajo.marcadorNombre;
   nombreInput.value = nombreTrabajo;
   nombreInput.style.minHeight = '44px';
+  const nombreAyuda = document.createElement('p');
+  nombreAyuda.className = 'detail-plega-ayuda';
+  nombreAyuda.textContent = textosTrabajo.ayudaNombre;
   nombreWrap.appendChild(nombreLabel);
   nombreWrap.appendChild(nombreInput);
+  nombreWrap.appendChild(nombreAyuda);
   infoSec.appendChild(nombreWrap);
 
   nombreInput.addEventListener('blur', async () => {
@@ -1105,8 +1137,26 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
           miembros,
           asignados: job.asignados || [],
           puedeEditar: !isTecnico,
+          sinTitulo: true, // SCRUM-917g: el rótulo lo dice la línea «Quién lo ejecuta»
         });
         asigWrap.appendChild(sel.elemento);
+        // SCRUM-917g · lo que dice la línea CERRADA. «No tienes equipo» sólo cuando se LEYÓ el equipo y
+        // no hay a quién asignar (`sel.editable` sin casillas: el negocio de una sola persona); con
+        // equipo y sin nadie asignado es «Sin asignar». Y con nombres, los nombres.
+        lineaQuien.poner(resumenDeQuien({
+          nombres: nombresAsignados,
+          sinEquipo: sel.editable && sel.casillas.length === 0,
+        }));
+        if (sel.editable && sel.casillas.length === 0) {
+          // El caso sin equipo tiene su salida: dar de alta a alguien. Sin ella la línea contaba un
+          // problema y no ofrecía el arreglo.
+          const alta = document.createElement('button');
+          alta.type = 'button';
+          alta.className = 'btn-secondary job-asignados-alta';
+          alta.textContent = textosTrabajo.altaEquipo;
+          alta.addEventListener('click', () => { if (window.renderAppView) window.renderAppView('team'); });
+          asigWrap.appendChild(alta);
+        }
 
         sel.casillas.forEach((casilla) => {
           casilla.addEventListener('change', async () => {
@@ -1133,6 +1183,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         // que el jefe leería como «no tengo empleados».
         console.error('[SCRUM-650] selector de asignados:', (e && e.message) || e);
         asigWrap.remove();
+        // SCRUM-917g: sin selector la línea no tiene nada que abrir. Se queda diciendo los nombres
+        // si los hay (y «Sin asignar» al técnico, ya puesto), pero deja de ser un control.
+        lineaQuien.sinCuerpo();
       }
     })();
   }
@@ -1145,9 +1198,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // ── Tipo de trabajo (SCRUM-66 · TRABAJO-4) — SCRUM-31 (F6): PLEGADO a una línea editable.
   // Es config que se toca una vez: se muestra el valor actual + "Cambiar", y expande al selector
   // de 2 tarjetas a demanda. La lógica de PATCH y las tarjetas NO cambian (solo el envoltorio).
+  // SCRUM-917g (F): ya NO es una sección con su título y su «Cambiar»: es la primera LÍNEA de «El
+  // trabajo». La línea cerrada dice el tipo actual; abierta, las tarjetas de siempre. El PATCH y las
+  // tarjetas no cambian — sólo el envoltorio, igual que en el F6 de SCRUM-31.
   const tipoSec = document.createElement('div');
   tipoSec.className = 'detail-section';
-  tipoSec.innerHTML = '<h3 class="detail-section-title">Tipo de trabajo</h3>';
   let tipoActual = job.tipoOperacion === 'OPERACIONES_SUELTAS' ? 'OPERACIONES_SUELTAS' : 'TRABAJO_UNICO';
   const TIPO_CARDS = [
     { value: 'OPERACIONES_SUELTAS', icon: '🔧', title: 'Varios avisos o visitas sueltas', desc: 'Cada visita es un trabajo independiente para este cliente.' },
@@ -1155,20 +1210,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   ];
   const tipoCardOf = (v) => TIPO_CARDS.find((c) => c.value === v) || TIPO_CARDS[1];
 
-  // Vista COLAPSADA: valor actual + "Cambiar".
-  const tipoCollapsed = document.createElement('div');
-  tipoCollapsed.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
-  const tipoCollapsedLabel = document.createElement('div');
-  tipoCollapsedLabel.style.cssText = 'font-size:14px;color:var(--ink)';
-  const tipoChangeBtn = document.createElement('button');
-  tipoChangeBtn.className = 'btn-ghost btn-sm';
-  tipoChangeBtn.textContent = 'Cambiar';
-  tipoCollapsed.append(tipoCollapsedLabel, tipoChangeBtn);
-  tipoSec.appendChild(tipoCollapsed);
-
-  // Vista EXPANDIDA (oculta por defecto): las 2 tarjetas + hint (idénticas a antes).
+  // Las 2 tarjetas + hint (idénticas a antes). Ya no hay vista «colapsada» aparte: la línea de «El
+  // trabajo» es la que se pliega, y su valor lo dice `syncTipoCollapsed`. SCRUM-962 (22-sep)
+  // arreglaba el «Cambiar» de la vista colapsada de antes con `job-toolbar-btn-44`; ese botón ya
+  // no existe desde 917g (com. 16142), así que el arreglo queda sin objeto aquí.
   const tipoExpanded = document.createElement('div');
-  tipoExpanded.style.display = 'none';
   const tipoRow = document.createElement('div');
   tipoRow.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap';
   const tipoCardEls = {};
@@ -1180,21 +1226,13 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         (sel ? 'border:2px solid var(--brand,#16a34a);background:#f0fdf4;' : 'border:2px solid var(--border,#e7e9e5);background:#fff;');
     }
   }
-  function syncTipoCollapsed() {
-    const c = tipoCardOf(tipoActual);
-    tipoCollapsedLabel.innerHTML = `<span style="font-size:16px" aria-hidden="true">${c.icon}</span> <strong style="color:var(--ink)">${esc(c.title)}</strong>`;
-  }
-  const tipoCollapse = () => { tipoExpanded.style.display = 'none'; tipoCollapsed.style.display = 'flex'; };
-  const tipoExpand = () => { tipoCollapsed.style.display = 'none'; tipoExpanded.style.display = 'block'; };
-  tipoChangeBtn.addEventListener('click', tipoExpand);
+  function syncTipoCollapsed() { lineaTipo.poner(tipoCardOf(tipoActual).title); }
+  const tipoCollapse = () => lineaTipo.cerrar();
   // SCRUM-120: cambiar el TIPO DE OPERACIÓN es admin-only (bandera fiscal; gate backend por campo).
-  // Técnico → el selector se ve pero DESHABILITADO con explicación (no dejar un botón muerto — la
-  // norma tras SCRUM-89: un gate nuevo que deja UI huérfana se arregla en el MISMO PR). El técnico
-  // sigue viendo el tipo actual (solo lectura); no lo puede cambiar.
-  if (isTecnico) {
-    lockActionForRole(tipoChangeBtn);
-    tipoSec.appendChild(roleLockedNote());
-  }
+  // Técnico → sigue viendo el tipo actual (en la línea cerrada), y al abrirla se le dice POR QUÉ no
+  // puede cambiarlo, en vez de dejar tarjetas muertas (la norma tras SCRUM-89: un gate nuevo que
+  // deja UI huérfana se arregla en el MISMO PR). Antes: un «Cambiar» deshabilitado con esa nota.
+  if (isTecnico) tipoSec.appendChild(roleLockedNote());
 
   for (const c of TIPO_CARDS) {
     const card = document.createElement('button');
@@ -1231,7 +1269,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   tipoHint.style.cssText = 'margin:8px 0 0;color:var(--muted);font-size:12px';
   tipoHint.textContent = 'Nos ayuda a preparar tus facturas correctamente. Si tienes dudas, confírmalo con tu asesor.';
   tipoExpanded.appendChild(tipoHint);
-  tipoSec.appendChild(tipoExpanded);
+  if (!isTecnico) tipoSec.appendChild(tipoExpanded);
 
   syncTipoCollapsed();
 
@@ -1265,11 +1303,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const gastosSec = document.createElement('div');
   gastosSec.className = 'detail-section';
   gastosSec.dataset.seccion = 'gastos';
-  gastosSec.innerHTML = '<h3 class="detail-section-title">Gastos de este trabajo</h3>';
+  // SCRUM-917g (F): el rótulo «Gastos de este trabajo» lo dice ahora la línea de «El trabajo»
+  // (`TEXTOS_EL_TRABAJO.rotuloGastos`); esta sección sólo lleva el contenido.
 
   apiRequest(`/admin/jobs/${job.id}/gastos`)
     .then((r) => {
       const gastos = (r && r.gastos) || [];
+      // Lo que dice la línea CERRADA: «Sin gastos», «1 gasto» o «N gastos». Nunca una suma (arriba).
+      // Si la carga FALLA no se llega aquí y la línea no dice nada: el vacío y el fallo no se confunden.
+      lineaGastos.poner(resumenDeGastos(gastos.length));
       if (!gastos.length) {
         const vacio = document.createElement('p');
         vacio.style.cssText = 'margin:4px 0 0;font-size:13px;color:var(--muted)';
@@ -1307,28 +1349,26 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
       gastosSec.appendChild(err);
     });
 
-  // ⚠️ Y EL BLOQUE DE ARRIBA VA AQUÍ, DESPUÉS de la carga de gastos, no pegado a su rótulo.
-  // `scrum370` acota su comprobación a 2.600 caracteres desde el texto «Gastos de este
-  // trabajo», así que veinte líneas metidas en medio le sacan su `.catch(` de la ventana y lo
-  // ponen rojo sin que se haya tragado nada. Es un anclaje por POSICIÓN (SCRUM-710) y es de
-  // otro carril: se reporta, no se toca — y aquí se le deja su ventana en paz.
   // ── SCRUM-817 · EL ORDEN DE LA PANTALLA, EN UN SOLO SITIO ───────────────────────────
+  //   SCRUM-917g (F) · …y desde el corte F son dos bloques, no seis.
   //
-  //   ① quién ejecuta   ② albaranes   ③ el trabajo (tipo + datos)   ④ notas   ⑤ gastos
+  //   ① albaranes   ② «El trabajo»: tipo · nombre y dirección · quién lo ejecuta · notas · gastos
   //
-  // Los cinco `appendChild` vivían repartidos por 300 líneas y el orden de la pantalla no se podía
-  // leer sin recorrerlas todas — que es cómo «quién ejecuta» acabó el último sin que nadie lo
-  // decidiera. Juntos, el orden ES esta lista.
+  // Los `appendChild` vivían repartidos por 300 líneas y el orden de la pantalla no se podía leer sin
+  // recorrerlas todas — que es cómo «quién ejecuta» acabó el último sin que nadie lo decidiera.
+  // Juntos, el orden ES esta lista. Y el de las CINCO líneas de dentro es el del prototipo aprobado
+  // (`docs/prototipos/SCRUM-917/trabajos.html`), que es el orden de `construirBloqueElTrabajo`.
   //
   // 🔴 CADA SECCIÓN SE AÑADE UNA SOLA VEZ, y su contenido se sigue rellenando después: son los
-  // MISMOS nodos, sólo cambia cuándo se cuelgan. Nada de re-`appendChild` para mover, que en un
-  // DOM de verdad mueve y en un banco puede duplicar.
-  body.appendChild(quienSec);
+  // MISMOS nodos, sólo cambia cuándo se cuelgan (ahora, dentro del cuerpo de su línea plegable).
+  // Nada de re-`appendChild` para mover, que en un DOM de verdad mueve y en un banco puede duplicar.
+  lineaTipo.cuerpo.appendChild(tipoSec);
+  lineaDatos.cuerpo.appendChild(infoSec);
+  lineaQuien.cuerpo.appendChild(quienSec);
+  pintarNotasInternas(lineaNotas.cuerpo, job);
+  lineaGastos.cuerpo.appendChild(gastosSec);
   body.appendChild(docsSec);
-  body.appendChild(tipoSec);
-  body.appendChild(infoSec);
-  pintarNotasInternas(body, job);
-  body.appendChild(gastosSec);
+  body.appendChild(construirBloqueElTrabajo(document, [lineaTipo, lineaDatos, lineaQuien, lineaNotas, lineaGastos]));
 
   const docs = []; // { when, el } — se ordena ascendente y se vuelca al final en la lista.
   // Formato de fecha ÚNICO de la lista: día + mes + año + hora. Conserva la HORA (que solo tenía el
@@ -1393,24 +1433,32 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // estado es reversible. Cerrar no.
   if (job.status === 'cerrado') newAlbRow.hidden = true;
   const newAlbBtn = document.createElement('button');
-  newAlbBtn.className = 'btn-secondary btn-sm';
+  newAlbBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   newAlbBtn.textContent = '+ Nuevo albarán';
   newAlbRow.appendChild(newAlbBtn);
-  // SCRUM-65: elegir el modo ANTES de crear (congelado desde 'emitido'; se puede
-  // ajustar también mientras el albarán siga en borrador, ver buildAlbEditor).
-  const valoradoLabel = document.createElement('label');
-  valoradoLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer';
-  const valoradoCheck = document.createElement('input');
-  valoradoCheck.type = 'checkbox';
-  valoradoLabel.appendChild(valoradoCheck);
-  valoradoLabel.appendChild(document.createTextNode('Incluir precios en el parte'));
-  newAlbRow.appendChild(valoradoLabel);
+  // ── SCRUM-917g (F) · LA CASILLA DE PRECIOS YA NO ESTÁ EN ESTA BARRA ─────────────────────────
+  //
+  // Antes fijaba el modo del albarán ANTES de abrir la hoja de alta (SCRUM-65). La hoja de alta lleva
+  // la MISMA casilla dentro (`buildAlbEditor`), así que el modo se sigue eligiendo —con precios o
+  // sin ellos— y ya no en dos sitios. Decisión del orquestador, SCRUM-917 com. 16142: se quita la de
+  // la barra y se deja SÓLO la de dentro de la hoja; la hoja se abre siempre prellenada desde el
+  // presupuesto, y quien marque la casilla de dentro escribe los precios a mano sobre esas líneas.
+  //
+  // ⚠️ «Dentro del parte» es la HOJA DE ALTA DEL ALBARÁN, no el `ParteTrabajo`: la casilla gobierna
+  // el `modoValoracion` del albarán (la palabra «parte» ahí es herencia de cuando el albarán era lo
+  // único que había), y llevarla al parte de verdad la ataría a un documento que no gobierna. Lo
+  // vigila `scrum817` (re-anclado en este corte). Consecuencia buscada: el alta ya no se abre nunca
+  // en modo con precios desde aquí, así que siempre se prellena (SIN_VALORAR).
+  //
+  // SCRUM-962 (22-sep) le había dado a esta misma casilla (`valoradoLabel`, aquí ya retirada) el
+  // `min-height:44px` que dejaba en 1 la deuda de 44 px de este bloque; con la casilla fuera de la
+  // barra ese control ya no existe, así que tampoco cuenta (guard-detalle-trabajo-917.mjs).
 
   // ── SCRUM-652 (fase D) · EL PARTE DE TRABAJO ────────────────────────────────────────
   //
-  // ⚠️ OJO CON EL NOMBRE: la casilla de precios de esta misma barra usa la palabra «parte» para
-  // referirse al ALBARÁN —herencia de cuando era lo único que había—. Este botón abre el
-  // `ParteTrabajo` de verdad: otro documento, otra tabla, y **sin importes en el móvil**.
+  // ⚠️ OJO CON EL NOMBRE: la casilla de precios (dentro de la hoja de alta del albarán) usa la
+  // palabra «parte» para referirse al ALBARÁN —herencia de cuando era lo único que había—. Este
+  // botón abre el `ParteTrabajo` de verdad: otro documento, otra tabla, y **sin importes en el móvil**.
   //
   // El rótulo de esa casilla NO se escribe aquí ni siquiera para citarlo: SCRUM-319 cuenta sus
   // apariciones y una cita en un comentario le sube el recuento. Ya me costó un rojo.
@@ -1424,7 +1472,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // cada fila, así que **no hace falta tocar `partes.routes.ts`** —que lo está editando otra
   // sesión ahora mismo— para abrir esta puerta.
   const parteBtn = document.createElement('button');
-  parteBtn.className = 'btn-secondary btn-sm';
+  parteBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
   parteBtn.setAttribute('data-abrir-parte', '1');
   parteBtn.textContent = 'Parte de trabajo';
   parteBtn.addEventListener('click', async () => {
@@ -1458,7 +1506,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // sin él no hay nada que vincular (mismo caso que las opciones deshabilitadas del selector).
   if (job.quote?.id != null && typeof openExpenseModal === 'function') {
     const gastoBtn = document.createElement('button');
-    gastoBtn.className = 'btn-secondary btn-sm';
+    gastoBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44'; // SCRUM-962 (AB6)
     gastoBtn.textContent = '+ Añadir gasto';
     gastoBtn.addEventListener('click', () => {
       openExpenseModal(null, {
@@ -1635,7 +1683,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
 
   newAlbBtn.addEventListener('click', async () => {
     newAlbBtn.disabled = true;
-    const modoValoracion = valoradoCheck.checked ? 'VALORADO' : 'SIN_VALORAR';
+    // SCRUM-917g: el alta se abre SIEMPRE sin precios y prellenada; el modo con precios se elige con
+    // la casilla de dentro de la hoja (ver arriba). Antes lo decidía la casilla de la barra.
+    const modoValoracion = 'SIN_VALORAR';
     try {
       // SCRUM-257 · el albarán nace PRELLENADO con lo presupuestado, para que el pro tache lo que
       // no ha entregado en vez de teclear la lista entera desde la furgoneta.
@@ -3128,26 +3178,28 @@ window.renderJobDetailView = renderJobDetailView;
 // propia sección en Presupuestos y su indicador en esa lista. Dos trabajos del mismo presupuesto
 // compartirían esa nota; la del trabajo es del trabajo.
 //
-// MICROCOPY: reutilizada LITERAL de la sección que ya existe en Presupuestos
-// (`quotesDetailView.js`), no inventada — mismo rótulo, misma píldora y mismo placeholder. Que las
-// dos pantallas digan lo mismo con las mismas palabras es la mitad del trabajo.
+// MICROCOPY: el rótulo y la píldora se reutilizaron LITERAL de la sección que ya existe en
+// Presupuestos (`quotesDetailView.js`), no inventados — y siguen siendo esos mismos textos, ahora
+// como la línea «Notas internas» y su valor «Solo tú las ves» dentro de «El trabajo» (SCRUM-917g).
+// El marcador del campo SÍ cambió: «Lo que necesites recordar de este trabajo.», firmado en el
+// com. 15881 de SCRUM-917, dice de qué trabajo son las notas; el del Presupuesto no lo dice porque
+// allí son las del presupuesto.
 function pintarNotasInternas(body, job) {
   const sec = document.createElement('div');
   sec.className = 'detail-section';
   sec.dataset.seccion = 'notas';
 
-  const header = document.createElement('div');
-  header.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px';
-  header.innerHTML =
-    '<h3 class="detail-section-title" style="margin:0">Notas internas</h3>' +
-    '<span style="font-size:11px;color:var(--muted);background:var(--neutral-100);padding:2px 8px;border-radius:999px">Solo tú las ves</span>';
-  sec.appendChild(header);
-
+  // SCRUM-917g (F): el rótulo «Notas internas» y la píldora «Solo tú las ves» ya no van aquí: los dice
+  // la línea de «El trabajo» (rótulo a la izquierda, «Solo tú las ves» como su valor a la derecha).
+  // El campo se nombra con el rótulo de su línea (`aria-labelledby`) y no con una copia del texto.
   const ta = document.createElement('textarea');
   ta.id = 'job-notas-internas';
   ta.value = job.notes || '';
   ta.rows = 3;
-  ta.placeholder = 'Anota detalles del trabajo, acuerdos verbales, recordatorios…';
+  ta.setAttribute('aria-labelledby', 'job-plega-rotulo-notas');
+  // El marcador FIRMADO en el com. 15881 (antes: «Anota detalles del trabajo, acuerdos verbales,
+  // recordatorios…», el mismo que la sección de notas del Presupuesto).
+  ta.placeholder = TEXTOS_EL_TRABAJO.marcadorNotas;
   ta.style.cssText = 'width:100%;resize:vertical;font:inherit;font-size:14px;padding:10px 12px;'
     + 'border:1px solid var(--neutral-200);border-radius:var(--r-md);color:var(--body);background:var(--surface)';
   sec.appendChild(ta);

@@ -1,9 +1,14 @@
 // src/integrations/gemini.ts — asistente IA vía Google Gemini (tier gratuito).
 // REST directo (sin SDK ni dependencia nueva): mismo patrón system+user que
 // usábamos con Claude. Se usa para "Sugerir con IA" (líneas de presupuesto y
-// mensaje de WhatsApp). Modelo por defecto: gemini-2.0-flash (rápido y gratis
-// hasta el límite diario del free tier; si se supera, coste en céntimos).
-import { config } from '../core/config/env';
+// mensaje de WhatsApp). Modelo por defecto: gemini-2.5-flash, con respaldo
+// gemini-2.5-flash-lite y gemini-flash-latest (SCRUM-952: los tres con cupo
+// gratis medido > 0; gratis hasta el límite diario del free tier de cada uno).
+import { config, MODELOS_PRESUPUESTOS_POR_DEFECTO } from '../core/config/env';
+
+// SCRUM-952 · re-exportada para quien la importaba desde aquí: la fuente única vive en env.ts
+// (config.GEMINI_MODEL YA la usa como fallback, así que duplicarla aquí es el defecto original).
+export { MODELOS_PRESUPUESTOS_POR_DEFECTO };
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -139,7 +144,7 @@ export async function geminiCompleteConModelo(params: GeminiParams): Promise<{ t
 
   const models = params.models?.length
     ? params.models
-    : (config.GEMINI_MODEL || 'gemini-2.5-flash,gemini-2.0-flash,gemini-flash-latest')
+    : (config.GEMINI_MODEL || MODELOS_PRESUPUESTOS_POR_DEFECTO)
       .split(',').map((m) => m.trim()).filter(Boolean);
 
   let lastErr: GeminiError | undefined;
