@@ -155,6 +155,9 @@ var ASIGNACION_SUBMENU = {
   // ── equipo ── «Importe máximo sin aprobación» gobierna las aprobaciones del equipo y no cabía en
   // ninguno de los nueve del ticket: por eso el fundador abrió el décimo.
   approvalThreshold: 'equipo',
+  // SCRUM-1042 · si el cliente ve la foto del técnico que le visita: es del EQUIPO (a quién
+  // enseña), no de «avisos» (que es sobre notificaciones al propio profesional).
+  showTechPhotoToClient: 'equipo',
 };
 
 /**
