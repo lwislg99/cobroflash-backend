@@ -1021,6 +1021,15 @@ model Product {
   // `contact_kind`, que es lo que ya está mergeado.
   itemKind    String?  @map("item_kind")
 
+  // SCRUM-1008 · la ficha del artículo, vista por dentro de Contasimple (com. 16436/16451):
+  // código propio (SKU), la referencia CON LA QUE EL PROVEEDOR llama a este artículo (no es
+  // `providerId`: ésa es la relación; ésta es su texto de catálogo) y la unidad de venta
+  // (m, ud, h…). Las tres nullables y SIN `@default`, mismo patrón que `itemKind`: ausente =
+  // nadie lo ha rellenado, no un valor por defecto que nadie ha decidido.
+  sku         String?  @map("sku")
+  supplierRef String?  @map("supplier_ref")
+  unit        String?  @map("unit")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
