@@ -21,14 +21,14 @@ import {
 
 /** Cerrados y mergeados: el criterio TIENE que sacarlos DENTRO o no está midiendo, está opinando. */
 const POSITIVOS = [866, 881];
-// 🔴 MEDIDO EL 23-sep-2026, NO SUPUESTO: `git merge-base --is-ancestor` sobre las 153 ramas
-// remotas de ese día. Este número ENVEJECE por diseño (es la misma naturaleza del NEGATIVO de
-// SCRUM-738 con `scrum-684`): en cuanto esta rama se mergee, el test pasa a medir DENTRO donde
-// pedía FUERA y hay que re-elegir un ticket vivo. Fue justo lo que le pasó al 880 original: su
-// rama se mergeó y este mismo test empezó a fallar en el sentido contrario (DENTRO donde exigía
-// FUERA), acusando al censo de un defecto que no tenía. Quien lo vuelva a medir, que lo re-feche.
-/** Su rama está viva y sin mergear hoy (23-sep-2026): TIENE que salir FUERA. */
-const NEGATIVO = 1099;
+// 🔴 MEDIDO EL 24-sep-2026, NO SUPUESTO: `git merge-base --is-ancestor` sobre las 149 ramas
+// remotas de hoy. SCRUM-1099 (el negativo anterior) se mergeó el 24-sep (PR #1734) y este mismo
+// test pasó a fallar en el sentido contrario (DENTRO donde exigía FUERA) — el defecto que el
+// comentario de esta misma línea ya avisaba que iba a pasar. Este número ENVEJECE por diseño (es
+// la misma naturaleza del NEGATIVO de SCRUM-738 con `scrum-684`): en cuanto `scrum-1107b-…` se
+// mergee, hay que re-elegir un ticket vivo. Quien lo vuelva a medir, que lo re-feche.
+/** Su rama está viva y sin mergear hoy (24-sep-2026): TIENE que salir FUERA. */
+const NEGATIVO = 1107;
 
 // ═══ 🔴 POR IDENTIDAD: el número no casa dentro de otro ═════════════════════════════════════
 
