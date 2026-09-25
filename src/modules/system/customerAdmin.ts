@@ -7,6 +7,7 @@ import { tagsParaPrisma } from './tagsDelCliente';
 import { normalizePhone } from '../../core/utils/utils'; // SCRUM-578: la que YA existe, sin tocarla
 import { BASE_URL } from '../../core/config/env'; // SCRUM-967b
 import { saldosPendientesPorCliente } from './domain/saldoPendiente'; // SCRUM-1043
+import { garantiasRetenidasPorCliente, type GarantiaDelCliente } from '../billing/domain/garantiasRetenidas'; // SCRUM-1108
 
 function generatePortalToken() {
   return crypto.randomBytes(16).toString('hex');
@@ -112,11 +113,21 @@ export async function listCustomers(
   const conVisita = clientes.map((c) => (visitas.has(c.id) ? { ...c, ultimaVisita: visitas.get(c.id)! } : c));
   if (!opciones.conSaldo) return conVisita;
   // SCRUM-1043 · «quién me debe». Cliente sin deuda = sin `saldoPendiente` (ausente no es cero).
-  const saldos = await saldosPendientesPorCliente(merchantId);
-  let filas = conVisita.map((c) => (saldos.has(c.id) ? { ...c, saldoPendiente: saldos.get(c.id)!.total } : c));
-  if (opciones.soloConDeuda) filas = filas.filter((c) => 'saldoPendiente' in c);
+  const [saldos, garantias] = await Promise.all([
+    saldosPendientesPorCliente(merchantId),
+    garantiasRetenidasPorCliente(merchantId), // SCRUM-1108
+  ]);
+  // SCRUM-1108 · la garantía retenida TAMBIÉN es deuda del cliente, pero va en su propio campo: `saldoPendiente`
+  // sigue siendo solo facturas `pending` (la cifra de SCRUM-1043). Quien solo debe garantía sale en «quién me
+  // debe» igual, y el orden suma las dos. Sin ella, 500 € retenidos no aparecen en ninguna lista.
+  let filas = conVisita.map((c) => {
+    const fila: typeof c & { saldoPendiente?: number; garantiaRetenida?: GarantiaDelCliente } = saldos.has(c.id) ? { ...c, saldoPendiente: saldos.get(c.id)!.total } : { ...c };
+    if (garantias.has(c.id)) fila.garantiaRetenida = garantias.get(c.id)!;
+    return fila;
+  });
+  if (opciones.soloConDeuda) filas = filas.filter((c) => 'saldoPendiente' in c || 'garantiaRetenida' in c);
   if (opciones.ordenPorSaldo) {
-    const de = (c: { saldoPendiente?: number } | object) => (c as { saldoPendiente?: number }).saldoPendiente ?? 0;
+    const de = (c: { id: number; saldoPendiente?: number }) => (c.saldoPendiente ?? 0) + (garantias.get(c.id)?.total ?? 0);
     filas = [...filas].sort((a, b) => de(b) - de(a));
   }
   return filas;
