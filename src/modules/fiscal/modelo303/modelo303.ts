@@ -31,7 +31,12 @@
 // fiscalmente: el aviso de «orientativo» viaja DENTRO del resultado (`avisoObligatorio`) para que
 // ningún consumidor pueda pintar un 303 sin él.
 import type { LibroRegistro } from '../../invoicing/domain/libroRegistro';
-import { TRIPLETAS, CASILLA_TOTAL_CUOTA_DEVENGADA, tripletaDe } from './casillas';
+import type { LibroRecibidas } from '../../invoicing/domain/libroRecibidas';
+import {
+  TRIPLETAS, CASILLA_TOTAL_CUOTA_DEVENGADA, tripletaDe,
+  CASILLAS_DEDUCIBLE_CORRIENTES, CASILLAS_DEDUCIBLE_BIENES_INVERSION,
+  CASILLA_TOTAL_A_DEDUCIR, CASILLA_RESULTADO_REGIMEN_GENERAL,
+} from './casillas';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -62,6 +67,46 @@ export interface CruceConCobros {
   asientosNoCobrados: number;
 }
 
+/**
+ * SCRUM-1063b · un gasto que NO entra en el IVA deducible porque su casilla habría que adivinarla.
+ *
+ * · `deducibilidad_sin_decidir` — `vatDeducible` a null: nadie dijo si se puede deducir.
+ * · `posible_bien_de_inversion` — categoría «herramientas»: puede ser corriente (29) o bien de
+ *   inversión (31), y `Expense` no guarda cuál. Repartirlo sería adivinarlo.
+ * · `categoria_desconocida` — sin categoría: por lo mismo, no se sabe si es corriente.
+ * · `sin_cuota` — deducible, pero sin cuota guardada: el libro no la deriva, y aquí tampoco.
+ * · `tipo_cero` — tipo 0 o ilegible: no hay cuota soportada que deducir.
+ */
+export interface GastoSinClasificar {
+  numeroProveedor: string | null;
+  categoria: string | null;
+  base: number | null;
+  cuota: number | null;
+  motivo: 'deducibilidad_sin_decidir' | 'posible_bien_de_inversion' | 'categoria_desconocida' | 'sin_cuota' | 'tipo_cero';
+}
+
+export interface IvaDeducible {
+  /** 28/29 · operaciones interiores corrientes. */
+  corrientes: { casillaBase: number; casillaCuota: number; base: number; cuota: number };
+  /**
+   * 30/31 · bienes de inversión. SIEMPRE a cero, y `vaciaPorque` dice por qué: `Expense` no
+   * distingue un bien de inversión de una compra corriente. Un cero sin motivo se leería como
+   * «no compró ninguno», y eso nadie lo sabe.
+   */
+  bienesDeInversion: { casillaBase: number; casillaCuota: number; base: 0; cuota: 0; vaciaPorque: 'sin_dato_de_bien_de_inversion' };
+  /** La 45. Hoy = la 29, porque es la única que se rellena. */
+  casillaTotalADeducir: { casilla: number; valor: number };
+  sinClasificar: GastoSinClasificar[];
+  /** Asientos con `vatDeducible === false`: decididos como NO deducibles. No es un fallo; se cuentan. */
+  noDeducibles: number;
+  /** Gastos examinados y asientos del libro de recibidas: separan «no compró» de «no supe leer». */
+  miradas: number;
+  asientos: number;
+  /** Gastos sin `baseAmount` (no son asiento, SCRUM-426). Excluidos Y declarados, con su dinero. */
+  gastosSinDatosDeIva: number;
+  gastosSinDatosDeIvaImporte: number;
+}
+
 export interface Modelo303 {
   año: number;
   trimestre: number;
@@ -75,6 +120,10 @@ export interface Modelo303 {
   sinClasificar: OperacionSinClasificar[];
   sinDesglose: string[];
   cruceConCobros: CruceConCobros;
+  /** SCRUM-1063b · el IVA soportado (28-31 y 45). */
+  ivaDeducible: IvaDeducible;
+  /** SCRUM-1063b · la 46 = 27 − 45. Si algo quedó sin clasificar, `motivosParaNoFiarse` lo dice. */
+  resultadoRegimenGeneral: { casilla: number; valor: number };
   miradas: number;
   asientos: number;
   motivosParaNoFiarse: string[];
@@ -115,6 +164,66 @@ function constaCobrado(estado: string | null): boolean {
 }
 
 /**
+ * Categorías de `Expense` que se sabe que NO son bien de inversión… o, mejor dicho, las que no se
+ * apartan. Decisión A del orquestador (SCRUM-1063b, 25-sep-2026): solo «herramientas» es ambigua
+ * entre corriente e inversión; el resto va a la 28/29. Una categoría que no esté aquí ni sea
+ * «herramientas» (una nueva, o ninguna) NO se coloca: se declara.
+ */
+const CATEGORIAS_CORRIENTES: ReadonlySet<string> = new Set(['materiales', 'desplazamiento', 'subcontrata', 'otros']);
+const CATEGORIA_AMBIGUA = 'herramientas';
+
+/**
+ * SCRUM-1063b · el IVA deducible SOBRE el libro de recibidas (SCRUM-426). Mismo principio que el
+ * devengado: no se vuelve a leer `Expense`, se suma el libro — y lo que no se puede colocar con el
+ * dato que hay NO se coloca en la casilla más probable: se declara, como `tipo_cero` arriba.
+ */
+export function construirIvaDeducible(recibidas: LibroRecibidas): IvaDeducible {
+  let base = 0;
+  let cuota = 0;
+  let noDeducibles = 0;
+  const sinClasificar: GastoSinClasificar[] = [];
+
+  recibidas.asientos.forEach((a, i) => {
+    const categoria = recibidas.categorias[i] ?? null;
+    const aparte = (motivo: GastoSinClasificar['motivo']) =>
+      sinClasificar.push({ numeroProveedor: a.numeroProveedor, categoria, base: a.base, cuota: a.cuota, motivo });
+
+    if (a.deducible === false) { noDeducibles += 1; return; }
+    if (a.deducible !== true) return aparte('deducibilidad_sin_decidir');
+    if (categoria === CATEGORIA_AMBIGUA) return aparte('posible_bien_de_inversion');
+    if (categoria === null || !CATEGORIAS_CORRIENTES.has(categoria)) return aparte('categoria_desconocida');
+    if (a.tipoIva === null || a.tipoIva === 0) return aparte('tipo_cero');
+    if (a.cuota === null || a.base === null) return aparte('sin_cuota');
+    base += a.base;
+    cuota += a.cuota;
+  });
+
+  const cuotaCorrientes = r2(cuota);
+  return {
+    corrientes: {
+      casillaBase: CASILLAS_DEDUCIBLE_CORRIENTES.base,
+      casillaCuota: CASILLAS_DEDUCIBLE_CORRIENTES.cuota,
+      base: r2(base),
+      cuota: cuotaCorrientes,
+    },
+    bienesDeInversion: {
+      casillaBase: CASILLAS_DEDUCIBLE_BIENES_INVERSION.base,
+      casillaCuota: CASILLAS_DEDUCIBLE_BIENES_INVERSION.cuota,
+      base: 0,
+      cuota: 0,
+      vaciaPorque: 'sin_dato_de_bien_de_inversion',
+    },
+    casillaTotalADeducir: { casilla: CASILLA_TOTAL_A_DEDUCIR, valor: cuotaCorrientes },
+    sinClasificar,
+    noDeducibles,
+    miradas: recibidas.miradas,
+    asientos: recibidas.asientos.length,
+    gastosSinDatosDeIva: recibidas.sinClasificar,
+    gastosSinDatosDeIvaImporte: recibidas.sinClasificarImporte,
+  };
+}
+
+/**
  * Construye el 303 de un trimestre a partir del libro de ese mismo trimestre.
  *
  * El `libro` tiene que venir YA acotado al periodo (lo hace `leerModelo303`): filtrar aquí sería
@@ -122,6 +231,8 @@ function constaCobrado(estado: string | null): boolean {
  */
 export function construirModelo303(params: {
   libro: LibroRegistro;
+  /** SCRUM-1063b · el libro de recibidas del MISMO periodo. Obligatorio: sin él no hay 45 ni 46. */
+  libroRecibidas: LibroRecibidas;
   año: number;
   trimestre: number;
 }): Modelo303 {
@@ -222,6 +333,22 @@ export function construirModelo303(params: {
     motivosParaNoFiarse.push(`${params.libro.importesIlegibles.length} ${params.libro.importesIlegibles.length === 1 ? 'importe ilegible' : 'importes ilegibles'} en el libro`);
   }
 
+  // SCRUM-1063b · el soportado. Cada cosa que no entra en la 45 se DICE: la 46 sale igual, pero
+  // con esto delante nadie puede leerla como definitiva.
+  const ivaDeducible = construirIvaDeducible(params.libroRecibidas);
+  if (ivaDeducible.sinClasificar.length > 0) {
+    motivosParaNoFiarse.push(
+      `${ivaDeducible.sinClasificar.length} ${ivaDeducible.sinClasificar.length === 1 ? 'gasto no entra' : 'gastos no entran'} en el IVA deducible porque su casilla habría que adivinarla`,
+    );
+  }
+  if (ivaDeducible.gastosSinDatosDeIva > 0) {
+    motivosParaNoFiarse.push(
+      `${ivaDeducible.gastosSinDatosDeIva} ${ivaDeducible.gastosSinDatosDeIva === 1 ? 'gasto sin datos de IVA no entra' : 'gastos sin datos de IVA no entran'} en el IVA deducible`,
+    );
+  }
+  // Las 30/31 vacías NO van aquí: estarían SIEMPRE, y un motivo que salta en todos los trimestres
+  // deja de leerse. Su porqué viaja en `ivaDeducible.bienesDeInversion.vaciaPorque`.
+
   return {
     año: params.año,
     trimestre: Math.min(4, Math.max(1, Math.trunc(params.trimestre) || 1)),
@@ -242,6 +369,11 @@ export function construirModelo303(params: {
       cuotaDeNoCobradas: r2(cuotaDeNoCobradas),
       asientosCobrados,
       asientosNoCobrados,
+    },
+    ivaDeducible,
+    resultadoRegimenGeneral: {
+      casilla: CASILLA_RESULTADO_REGIMEN_GENERAL,
+      valor: r2(totalCuota - ivaDeducible.casillaTotalADeducir.valor),
     },
     miradas: params.libro.miradas,
     asientos: params.libro.asientos.length,
