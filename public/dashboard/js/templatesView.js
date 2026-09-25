@@ -128,7 +128,8 @@ async function renderTemplatesView(container) {
 
       // Borrar
       const btnDel = document.createElement('button');
-      btnDel.className = 'btn-danger btn-sm';
+      // SCRUM-786 (AB6): irreversible — objetivo táctil de 44px, opt-in sin tocar `.btn-sm`.
+      btnDel.className = 'btn-danger btn-sm accion-irreversible-btn-44';
       btnDel.textContent = 'Borrar';
       btnDel.onclick = async () => {
         if (!confirm(`¿Borrar la plantilla "${tpl.name}"? Esta acción no se puede deshacer.`)) return;

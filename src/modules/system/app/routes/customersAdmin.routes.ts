@@ -23,6 +23,7 @@ import {
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
 import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
+import { garantiasRetenidasPorCliente } from '../../../billing/domain/garantiasRetenidas'; // SCRUM-1108
 import { etiquetarSeleccion, type AccionEtiqueta } from '../../domain/etiquetadoMasivo'; // SCRUM-1059
 import { historialWhatsAppDelCliente } from '../../domain/historialWhatsAppDelCliente'; // SCRUM-1062
 import { crearNota, listarNotas, resolverAutor } from '../../domain/notasDelCliente'; // SCRUM-1036
@@ -512,7 +513,7 @@ router.get('/:id/detail', async (req, res) => {
 
     // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
     // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
-    const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente] = await Promise.all([
+    const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente, garantias] = await Promise.all([
       prisma.quote.findMany({
         where: { customerId: id, merchantId: req.merchantId },
         orderBy: { createdAt: 'desc' },
@@ -536,6 +537,9 @@ router.get('/:id/detail', async (req, res) => {
       prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId }, _sum: { total: true } }),
       prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'paid' }, _sum: { total: true } }),
       saldosPendientesPorCliente(req.merchantId, [id]), // SCRUM-1043: la MISMA suma que la lista «quién me debe»
+      // SCRUM-1108: la garantía retenida es DINERO — mismo criterio que el saldo de la lista (SCRUM-1043):
+      // el técnico no la recibe. Aparte de `totalPending` (facturas `pending`), nunca sumada dentro.
+      seesOnlyOwnJobs(req.userRole) ? null : garantiasRetenidasPorCliente(req.merchantId, [id]),
     ]);
 
     const totalBilled = Number(facturado._sum.total ?? 0);
@@ -560,6 +564,8 @@ router.get('/:id/detail', async (req, res) => {
         pendingCount: pendiente.get(id)?.count ?? 0,
         totalExpenses: Number(expenses._sum.amount ?? 0),
         profit: totalPaid - Number(expenses._sum.amount ?? 0),
+        // SCRUM-1108 · ausente = no tiene (ausente no es cero). `aviso` = ya se puede reclamar y sigue sin cobrar.
+        ...(garantias?.has(id) ? { garantiaRetenida: garantias.get(id)! } : {}),
       },
     });
   } catch (err) {

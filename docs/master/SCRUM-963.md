@@ -142,3 +142,73 @@ firme esto está comprando detección con minutos de espera, y conviene decirlo 
 - **No he mirado** si un job en `skipped` cuenta como aprobado para un check obligatorio. Aquí no
   hace falta saberlo —los seis jobs de `ci.yml` corren siempre, ninguno lleva `if:` a nivel de
   job— pero **dejaría de no hacer falta** el día que alguien le ponga una condición a `meta-guard`.
+
+---
+
+# SCRUM-963b · 25-sep-2026 · el techo de `guards-visuales` (10 min) sube a 20, MEDIDO
+
+**Fecha:** 25-sep-2026 16:50Z (GitHub) · **Carril:** S5
+**Medido contra:** `origin/main` = `cab692d54fd183fb737d00365ee5dcdd3d6ea257` · 2026-09-25T16:38:35Z
+**Rama:** `scrum-1123-vigia-avisa-de-verdad` (junto con SCRUM-1123, mismo lote de sesión)
+**Encargo:** el orquestador pidió construir el arreglo de la SESIÓN ANTERIOR (comentario Jira
+16987, 25-sep 16:31Z): 21/60 push a `main` (35 %) cancelados porque `guards-visuales` choca con su
+propio `timeout-minutes: 10`, indistinguible en la lista de checks de un cancelado real.
+
+## PASO 0 · ¿es un cuelgue o es que ya no cabe?
+
+El comentario 16987 dejaba la pregunta abierta («si `guards-visuales` necesita más presupuesto, o
+si el cuelgue de fondo es lo que hay que arreglar»). Medí antes de tocar nada:
+
+- **`fueraDeLaTanda()` (la lista real que corre este job) da 37 guards hoy.** El comentario de
+  cabecera del job en `ci.yml` (SCRUM-522, 24-ago-2026) sigue diciendo «nueve guards» — la lista
+  ha crecido ×4 y ese número nunca se revisó.
+- **Ningún guard individual se acerca a su propio tope** (`GUARDS_VISUALES_TOPE_MS`, 240 s por
+  guard vía `spawnSync`, `guards-visuales.mjs:50`). Log completo del run cancelado 36160342546:
+  los 37 guards van de 2,8 s a 25 s cada uno, todos `verde`. **No hay ningún guard colgado.**
+- Ese mismo run (36160342546) corrió los 37 guards en serie, terminó de verdad —imprimió
+  `DEFECTOS (salida 1) · guard:objetivo-tactil` como último renglón— y GitHub lo canceló
+  **una fracción de segundo después**, con el veredicto ya en el log y tirado igual.
+- **Tres runs de `main` en verde** (no cancelados, para descartar que sea sólo el caso malo),
+  duración total del job completo (`gh api .../actions/runs/<id>/jobs`):
+
+      36007466639 · 9 min 26 s
+      35905842967 · 9 min 35 s
+      35894300030 · 9 min 45 s
+
+  **Un run SANO deja hoy 15-35 s de margen sobre el techo de 600 s.** Eso, con la varianza que ya
+  documentaba SCRUM-522 para la misma tanda (con el runner cargado, el doble de tiempo — 50 s →
+  102 s con nueve guards), explica el 35 % medido sin necesidad de ningún cuelgue.
+
+**Conclusión: es aritmética, no un cuelgue.** El arreglo correcto es subir el techo del JOB, no el
+tope de cada guard (`TOPE_MS` sigue en 240 s, sin tocar) ni investigar un cuelgue que no existe.
+
+## El arreglo
+
+`.github/workflows/ci.yml`, job `guards-visuales`: `timeout-minutes: 10` → **`20`**. Con el peor
+caso medido en 9 min 45 s, 20 min deja el doble de margen sobre el caso sano y cubre la varianza
+de carga documentada (que casi duplica el tiempo). Comentario añadido en el propio fichero con la
+medición completa, para que quien vuelva a tocar esto no repita el PASO 0.
+
+**No se toca**: el criterio de ningún guard (regla 41), el tope individual de 240 s por guard, ni
+el ruleset — este job sigue sin ser obligatorio (② de arriba: la única puerta real es
+`build + tests`), así que subir su techo no cambia cuánto tarda un PR en poder mergearse.
+
+## Medido después
+
+- `js-yaml` parsea `ci.yml` sin error tras el cambio (mismo método que SCRUM-1123, mismo commit).
+- `npm run guards:entrada`: verde (ver informe conjunto de la tanda).
+- **No se ha podido ejercer el efecto real en CI**: eso sólo lo mide GitHub Actions al empujar y
+  con el paso de tiempo (los cancelados por timeout son ~35 % de la muestra, no el 100 %, así que
+  hace falta ventana para volver a medir la tasa). Control por efecto pendiente: repetir la medida
+  de la Sesión anterior (población de 60 push a `main`, `gh run view --json jobs`) dentro de unos
+  días y comprobar que la categoría «cancelled por timeout-minutes propio» baja de 21/60.
+
+## Lo que NO se ha hecho
+
+- ⛔ No se ha tocado `TOPE_MS` (240 s por guard) ni el arnés de `guards-visuales.mjs`.
+- ⛔ No se ha corregido el comentario «nueve guards» en la cabecera del job (SCRUM-522):
+  documentación desfasada, sin víctima hoy más allá de confundir al próximo lector — se deja
+  anotado aquí en vez de abrir un tercer hallazgo en la misma tanda (tope de 3, regla A7).
+- ⛔ No se ha tocado el ruleset ni `cancel-in-progress` de `main`.
+- ⛔ El resto de SCRUM-963 (meta-guard obligatorio) sigue bloqueado en SCRUM-836/908, sin cambio
+  desde el 24-sep (comentario 16776) — no se remide en esta tanda.
