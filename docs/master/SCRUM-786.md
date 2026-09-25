@@ -189,3 +189,61 @@ línea (regla 4).
 ⛔ **El off-by-one del medidor NO se arregla aquí**: es de otro carril y se reporta.
 ⛔ **La calibración no queda como guard nuevo**: añadir un guard de navegador subiría el trinquete
 de `scrum522-guards-fuera-de-la-tanda`, y ese trinquete no es mío. Su salida literal está arriba.
+
+---
+
+## SCRUM-786b · el primer incremento CONSTRUIDO, 25-sep-2026 (S2)
+
+**Decisión del fundador (comentario 16266, 21-sep-2026):** opción ③ — reglas de 44px **acotadas
+por contenedor**, en orden A→B, empezando por los **irreversibles** (Borrar, Emitir). Nunca se
+toca `.btn-sm` global (eso es lo que hacía peligroso este ticket desde el principio).
+
+**Construido este incremento, con el patrón opt-in ya probado en SCRUM-962** (`.job-toolbar-btn-44`):
+una clase CSS nueva, `.accion-irreversible-btn-44 { min-height: 44px; }`, aplicada botón a botón,
+nunca a un contenedor entero:
+
+| dónde | botón | antes | ahora |
+| --- | --- | --- | --- |
+| `providersView.js` | «Borrar» proveedor | `btn btn-danger btn-sm` (30px) | + `accion-irreversible-btn-44` (44px) |
+| `templatesView.js` | «Borrar» plantilla | `btn-danger btn-sm` (30px) | + `accion-irreversible-btn-44` (44px) |
+| `albaranDetailView.js` | «Emitir» (solo en estado `borrador`, cuando es la primaria) | `btn-primary btn-sm` (30px) | + `accion-irreversible-btn-44` (44px), condicionado a `accion.id === 'btnEmitir'` — el resto del toolbar (PDF, Editar líneas, Enviar a firmar…) se queda en 30px |
+
+**NO entra en este incremento** (queda para el siguiente, mismo patrón): «Anular factura» y
+«Emitir factura rectificativa» en `invoiceDetailView.js`, y el «Borrar» de presupuesto
+(`quoteActionsRegistry.js:btnBorrar`), que vive dentro de un menú «⋯» (overflow) y no es un botón
+suelto — necesita mirar primero cómo mide el objetivo táctil un ítem de menú, no solo un botón.
+
+**Test de contrato:** `tests/scrum786-irreversibles-44px.test.mjs` — 6 casos: el CSS (clase nueva
+en 44px, `.btn-sm` global intacto en 30px) y los tres botones medidos en el **DOM real** que pinta
+el banco de SCRUM-417 (`providersView`, `albaranDetailView`) más un control de que los botones
+HERMANOS del mismo contenedor NO se llevan la clase por delante. `templatesView` se midió por
+FUENTE anclado (no por DOM): su celda se localiza con `tr.querySelector('td:last-child')`, y el
+mini-DOM del banco (`tests/_banco-vistas.mjs:76`) declara que no soporta pseudoclases — no es un
+hueco de este ticket, es infraestructura compartida.
+
+**Verificado en rojo:** se quitó a mano el `classList.add` de «Emitir» y el test de contrato cayó
+(5 pass / 1 fail) antes de reponerlo.
+
+**Ninguno de los tres ficheros está cubierto hoy por `guard:objetivo-tactil`** (que solo mide
+Clientes, el editor de presupuesto, la ficha de Trabajo y la ficha 360) ni tiene efecto en
+`EXCEPCIONES_PANEL`/`EXCEPCIONES_791`: no hay riesgo de que este cambio mueva un umbral ajeno.
+
+**Alcance de la decisión que sigue abierta:** el fundador solo se pronunció sobre `.btn-sm`. El
+grupo 2 de SCRUM-786 (el botón BASE de la app a 36–37px, comentario 14592 de Javier) sigue sin
+decidir y no se toca aquí.
+
+**Skill UI:** cargada (`yaqu-premium-ui`). Checklist AB6 de este incremento: sin cambio de
+color/tipografía/sombra (cero tokens nuevos), sin microcopy tocado, sin componente nuevo — solo
+el objetivo táctil (≥44px) de tres botones puntuales, opt-in por clase. ⚠️ **Sí hay cambio visual,
+pequeño y a propósito**: `min-height: 44px` agranda la CAJA del botón (30→44px), no solo el área
+de toque — es el mismo trato exacto que SCRUM-962 ya aprobó para el toolbar del Trabajo, no una
+técnica nueva.
+
+Capturas reales a 390px en `docs/master/evidencias/SCRUM-786/` (banco de SCRUM-417, servidor
+efímero + Edge vía puppeteer-core): `providers.png` y `albaran-emitir.png`. En los dos, «Borrar»/
+«Emitir» crecen sin solapar al vecino — van en una fila `flex` con `gap`, así que el vecino no
+cambia de tamaño, solo queda desalineado verticalmente unos px. **Falta `templates.png`**: el
+mismo límite del mini-DOM que ya obligó a medir «Borrar» plantilla por fuente (arriba) impide
+montar esa vista con una fila real a través del banco. No se ha visto en un navegador de verdad
+todavía — pendiente de una verificación manual rápida en `npm run dev` antes de cerrar el ticket
+en el sprint, o de que alguien arregle el soporte de pseudoclases del banco.

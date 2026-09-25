@@ -56,6 +56,9 @@ function dobles() {
     },
     expense: { aggregate: async () => ({ _sum: { amount: null } }) },
     customerEvent: { findMany: async () => [] },
+    // SCRUM-1108: la ficha y la lista consultan también las garantías retenidas (`Charge`); aquí no hay ninguna.
+    charge: { findMany: async () => [] },
+    merchant: { findUnique: async () => null },
   };
 }
 

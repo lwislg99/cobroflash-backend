@@ -102,16 +102,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
  * así baja. Una entrada NUEVA sube el trinquete — eso no se hace para que la tanda pase: se
  * arregla la skill, o se avisa al orquestador con el motivo, en el mismo commit y a la vista.
  */
+//
+// SCRUM-1113 (25-sep-2026) · SE RETIRA la de `cerebro-yaqu` · [RUTA_ABS] `C:\Program Files\GitHub CLI\gh.exe`.
+// La declaración era falsa ella misma: Javier instaló `gh` el 18-sep-2026 y desde entonces esa
+// ruta EXISTE en su máquina, así que el trinquete caía sólo en las Windows con `gh` (y en CI,
+// ubuntu, salía FALSA por construcción, sin discriminar). Ahora el censo lee la plataforma: en
+// Windows juzga el disco y fuera de Windows la da NO COMPROBABLE. La skill no se toca: esa línea
+// dice dónde está `gh` en el preámbulo de arranque de las seis sesiones.
 const FALSAS_DECLARADAS = Object.freeze([
-  {
-    skill: 'cerebro-yaqu',
-    tipo: 'RUTA_ABS',
-    valor: 'C:\\Program Files\\GitHub CLI\\gh.exe',
-    motivo: 'la skill que se carga SIEMPRE dice que `gh` está en esa ruta, y no existe: en estas '
-      + 'máquinas no hay `gh`, y es a propósito. Una sesión que se la crea intenta abrir el PR con él. '
-      + 'Es el defecto que abrió SCRUM-939.',
-    laRetira: 'quien gobierna la skill: la S0 prepara el cambio y lo firma el fundador.',
-  },
   {
     skill: 'verifactu',
     tipo: 'RUTA',
@@ -232,6 +230,19 @@ test('SCRUM-939b · los tres controles de la fase a, dentro, en cada pasada', ()
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ② EL TRINQUETE · sobre las skills de verdad
 // ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1113 · 🔴 una RUTA_ABS de Windows que EXISTE: CIERTA en Windows y NO COMPROBABLE fuera — las dos', () => {
+  // El disco se fija, así que las dos mitades se prueban en CUALQUIER máquina, CI incluida.
+  const ruta = afirmacionesDe('- `gh` vive en `"C:\\Program Files\\GitHub CLI\\gh.exe"`.').find((a) => a.tipo === 'RUTA_ABS');
+  assert.ok(ruta, '🔴 no se extrae la RUTA_ABS: el caso no mide nada.');
+  const existe = () => true;
+  assert.equal(verificar(ruta, '', undefined, { plataforma: 'win32', existe }).veredicto, 'CIERTA');
+  assert.equal(verificar(ruta, '', undefined, { plataforma: 'linux', existe }).veredicto, 'NO COMPROBABLE');
+  // Control positivo: el detector sigue vivo. Una ruta inventada, contra el disco REAL, en Windows
+  // sale FALSA; si saliera otra cosa, se habría apagado el detector en vez de afinarlo.
+  const inventada = { tipo: 'RUTA_ABS', valor: 'C:\\yaqu-scrum1113-no-existe\\cebo.exe' };
+  assert.equal(verificar(inventada, '', undefined, { plataforma: 'win32' }).veredicto, 'FALSA');
+});
 
 test('SCRUM-939b · 🔴 EL TRINQUETE: ninguna falsa nueva en las skills obligatorias, y el número sólo baja', () => {
   const v = juzgar(censar(), FALSAS_DECLARADAS);

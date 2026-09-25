@@ -32,6 +32,9 @@ const casa = (fila, where) => Object.entries(where).every(([k, v]) => v === unde
 const dobles = {
   customer: { findMany: async ({ where }) => clientes.filter((c) => c.merchantId === where.merchantId) },
   job: { groupBy: async () => [] },
+  // SCRUM-1108: la ficha y la lista consultan también las garantías retenidas (`Charge`); aquí no hay ninguna.
+  charge: { findMany: async () => [] },
+  merchant: { findUnique: async () => null },
   invoice: {
     groupBy: async ({ where }) => {
       const por = new Map();
