@@ -183,7 +183,13 @@ export function arbolDe(raiz = RAIZ) {
  */
 const NIEGA = /\bno existe\b|\bno hay\b|\bNO CONSTRUIDO\b|\bno está\b|\bya no\b/i;
 
-export function verificar(a, linea = '', arbol = arbolDe(RAIZ)) {
+/**
+ * `disco` existe para que las dos mitades de RUTA_ABS se puedan ejercitar en CUALQUIER máquina
+ * (SCRUM-1113): los controles le pasan una plataforma y un `existe` fijos. El censo de verdad no
+ * pasa nada y usa los del proceso.
+ */
+export function verificar(a, linea = '', arbol = arbolDe(RAIZ), disco = {}) {
+  const { plataforma = process.platform, existe = fs.existsSync } = disco;
   if (NIEGA.test(linea)) {
     return { veredicto: 'NO COMPROBABLE', evidencia: 'la línea NIEGA, y este censo no lee polaridad' };
   }
@@ -209,13 +215,22 @@ export function verificar(a, linea = '', arbol = arbolDe(RAIZ)) {
   if (a.tipo === 'RUTA_ABS') {
     // ⚠️ EL DISCO ES EL DE QUIEN CORRE ESTO, y se declara en vez de disimularlo (SCRUM-939b).
     //
-    // En CI (ubuntu) una ruta `C:\…` no existe POR CONSTRUCCIÓN: allí la de `gh` sale FALSA igual
-    // que aquí, pero sin discriminar — también saldría FALSA una ruta de Windows cierta. Hoy hay UNA
-    // RUTA_ABS en las cuatro skills, y es la falsa. Distinguir «no existe» de «este disco no es
-    // Windows» pide leer la plataforma, y eso sube el tope de `scrum702` (ficheros que leen el
-    // entorno): un trinquete ajeno se sube avisando, no de paso. Y convertirla en NO COMPROBABLE
-    // en Linux daría un veredicto distinto en cada sitio, que es lo que ese tope existe para ver.
-    const ok = fs.existsSync(a.valor);
+    // SCRUM-1113 · UNA RUTA DE WINDOWS, EN UN DISCO QUE NO ES WINDOWS, NO SE PUEDE JUZGAR.
+    // En CI (ubuntu) una ruta `C:\…` no existe POR CONSTRUCCIÓN, así que `existsSync` la daba
+    // FALSA fuera cual fuera la verdad. Y en Windows el veredicto dependía de lo instalado: la de
+    // `gh` era FALSA hasta el 18-sep-2026, cuando Javier instaló `gh`, y desde entonces sale
+    // CIERTA en esa máquina. La «falsa declarada» dejó de ser falsa porque cambió el mundo, no el
+    // código, y el trinquete cayó sólo en las máquinas Windows con `gh`.
+    //
+    // Decidido (opción ii del ticket): se LEE la plataforma. En Windows, el disco manda (CIERTA o
+    // FALSA); fuera de Windows, una ruta `X:\` sale NO COMPROBABLE —del lado malo, y dicho—.
+    // Cuesta un fichero más en el tope de `scrum702` (ficheros que leen el entorno), y se sube
+    // allí A PROPÓSITO y con este motivo. Sí, el veredicto es distinto en cada sitio: por eso es NO
+    // COMPROBABLE y no CIERTA, y es más honesto que un FALSA que en Linux salía por construcción.
+    if (/^[A-Za-z]:\\/.test(a.valor) && plataforma !== 'win32') {
+      return { veredicto: 'NO COMPROBABLE', evidencia: `ruta de Windows y este disco es ${plataforma}` };
+    }
+    const ok = existe(a.valor);
     return { veredicto: ok ? 'CIERTA' : 'FALSA', evidencia: ok ? 'existe en el disco' : 'NO existe en el disco' };
   }
   if (a.tipo === 'COMANDO') {
@@ -345,16 +360,34 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.met
 export function controles() {
   const fallos = [];
 
-  // 🔴 POSITIVO · la ruta de `gh` sale FALSA, y POR EL EJE CORRECTO: porque la ruta no existe,
-  // no porque la línea mencione `gh`.
+  // 🔴 POSITIVO · la ruta de `gh` se juzga POR EL EJE CORRECTO: por el disco, no porque la línea
+  // mencione `gh`. SCRUM-1113: antes exigía FALSA contra el disco REAL, y en una máquina con `gh`
+  // instalado caía con razón. Ahora el disco se fija, y se prueban las dos mitades en cualquier
+  // máquina: sin el fichero sale FALSA, con él sale CIERTA, y fuera de Windows NO COMPROBABLE.
   // La barra invertida va DOBLE: en un literal de JS `\P` es una `P` y el control se caía solo,
   // diciendo que no extraía la ruta cuando lo que pasaba es que la ruta no tenía barras.
   const gh = afirmacionesDe('- `gh` está instalado FUERA del PATH (`"C:\\Program Files\\GitHub CLI\\gh.exe"`).');
   const rutaGh = gh.find((a) => a.tipo === 'RUTA_ABS');
   if (!rutaGh) fallos.push('POSITIVO: no se extrae la RUTA_ABS de gh (se estaría cazando por mencionar «gh», que es el eje equivocado)');
   else {
-    const v = verificar(rutaGh, '');
-    if (v.veredicto !== 'FALSA') fallos.push(`POSITIVO: la ruta de gh sale ${v.veredicto} y esa ruta no existe`);
+    const casos = [
+      [{ plataforma: 'win32', existe: () => false }, 'FALSA', 'en Windows y sin el fichero'],
+      [{ plataforma: 'win32', existe: () => true }, 'CIERTA', 'en Windows y con el fichero'],
+      [{ plataforma: 'linux', existe: () => true }, 'NO COMPROBABLE', 'en Linux, aunque «exista»'],
+    ];
+    for (const [disco, espera, donde] of casos) {
+      const v = verificar(rutaGh, '', undefined, disco);
+      if (v.veredicto !== espera) fallos.push(`POSITIVO: la ruta de gh sale ${v.veredicto} ${donde}; se esperaba ${espera}`);
+    }
+  }
+
+  // 🔴 POSITIVO SOBRE EL DISCO REAL · una ruta de Windows INVENTADA sale FALSA en Windows. Si
+  // saliera otra cosa, SCRUM-1113 habría apagado el detector en vez de afinarlo. Fuera de Windows
+  // tiene que salir NO COMPROBABLE: nunca CIERTA.
+  const inventada = { tipo: 'RUTA_ABS', valor: 'C:\\yaqu-scrum1113-no-existe\\cebo.exe' };
+  for (const [plataforma, espera] of [['win32', 'FALSA'], ['linux', 'NO COMPROBABLE']]) {
+    const v = verificar(inventada, '', undefined, { plataforma });
+    if (v.veredicto !== espera) fallos.push(`POSITIVO: una ruta inventada sale ${v.veredicto} en ${plataforma}; se esperaba ${espera}`);
   }
 
   // ✅ NEGATIVO · una afirmación CIERTA sale CIERTA. Un instrumento que marca todo falso no
