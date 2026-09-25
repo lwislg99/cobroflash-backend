@@ -25,9 +25,19 @@ const POSITIVOS = [866, 881];
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 EL NEGATIVO SE DERIVA DEL ESTADO VIVO. NO SE ESCRIBE A MANO.
 //
-// Este número ha CADUCADO DOS VECES EN DOS DÍAS:
-//   · SCRUM-1099 el 24-sep-2026 (PR #1734)
-//   · SCRUM-1107 el 25-sep-2026 (PR #1758)
+// Este número se ha RE-ELEGIDO A MANO CUATRO VECES, y la cadena está en el git log del
+// fichero:
+//   · 880    (17-sep-2026, el original)
+//   · 1099   (23-sep-2026) — caducó al mergearse el PR #1734
+//   · 1107   (24-sep-2026) — caducó al mergearse el PR #1758, el 25-sep a las 14:52Z
+//   · 1118   (25-sep-2026, 15:19Z) — puesto por una ejecución de `claude[bot]` dentro del
+//              PR #1760, y su propio comentario YA ANUNCIA la quinta: «en cuanto
+//              scrum-1118-citas-rfact-contiguas se mergee, hay que re-elegir un ticket vivo».
+//
+// 🔴 Cada vez, el comentario de esta misma línea avisaba de que iba a volver a pasar. Y cada
+// vez el aviso llegó TARDE: el test caía primero y alguien iba a leer el comentario después.
+// Cuatro re-elecciones en ocho días no es mantenimiento: es un defecto de diseño que se paga
+// en cuotas.
 //
 // Las dos veces el comentario de esta misma línea ya avisaba de que iba a pasar. Y las dos veces
 // el aviso llegó TARDE: el test cayó primero, y alguien fue a leer el comentario después.
