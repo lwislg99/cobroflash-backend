@@ -36,6 +36,7 @@ const CAMPOS_GASTO = {
   vatDeducible: true,
   providerInvoiceNumber: true,
   providerInvoiceDate: true,
+  category: true, // SCRUM-1063b: solo para el 303 (corriente o bien de inversión); no es columna del libro
 } as const;
 
 /**
