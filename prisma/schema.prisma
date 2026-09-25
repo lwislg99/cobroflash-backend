@@ -488,6 +488,21 @@ model Charge {
   // `modelo303.ts:236` avisa de que tres de las cinco formas se marcan a mano. Nullable y sin
   // default: los cobros ya existentes no la tienen y ponerles `updated_at` seria inventarla.
   paidAt    DateTime? @map("paid_at")
+  // SCRUM-1107 · RETENCIÓN DE GARANTÍA DE OBRA. NULL en las cuatro = sin garantía retenida en
+  // este cobro. No es fiscal (confirmado con el asesor): la factura sale por el 100%, esto es
+  // un crédito pendiente de cobro que se anota sobre el `Charge` que cobró el resto.
+  //
+  // El importe REAL cobrado en la liberación (si difiere del retenido, p. ej. un desperfecto)
+  // no vive aquí: vive en el `amount` de un `Charge` NUEVO que registre esa liberación — un
+  // solo generador de «cuánto se cobró», el mismo principio de SCRUM-397. Por eso
+  // `retencionGarantiaCobrada` es solo una FECHA (el marcador que apaga el aviso), no un importe.
+  //
+  // ALTER ya aplicado en las tres bases (producción y staging por Javier, dev por J2), 23-sep-2026
+  // — verificado leyendo `information_schema.columns` (docs/master/SCRUM-1107.md §"APLICADO").
+  retencionGarantiaPorcentaje Decimal?  @db.Decimal(5, 2) @map("retencion_garantia_porcentaje")
+  retencionGarantiaImporte    Decimal?  @db.Decimal(12, 2) @map("retencion_garantia_importe")
+  retencionGarantiaLiberacion DateTime? @map("retencion_garantia_liberacion")
+  retencionGarantiaCobrada    DateTime? @map("retencion_garantia_cobrada")
   Quote     Quote[]
   invoices  Invoice[]
 
