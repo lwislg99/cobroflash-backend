@@ -259,7 +259,8 @@ async function renderCustomer360View(container, customerId) {
 
   const kpis = [
     { label: 'Pendiente de cobro', value: fmt(debt),
-      sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : 'al día ✓',
+      // SCRUM-1108b: con garantía retenida sin cobrar, «al día ✓» es falso. No se añade texto: se quita.
+      sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : (stats.garantiaRetenida ? '' : 'al día ✓'),
       color: debt > 0 ? 'var(--red-600)' : 'var(--green-600)' },
     { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
     { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },
@@ -279,6 +280,17 @@ async function renderCustomer360View(container, customerId) {
     kpiGrid.appendChild(k);
   });
   wrap.appendChild(kpiGrid);
+
+  // SCRUM-1108b: una línea POR RETENCIÓN (con dos fechas, «total · desde la más temprana» diría que
+  // todo se libera ya). `liberacionDia` es el día en la zona del merchant: lo resuelve el servidor.
+  // `.alert warning` si la fecha ya llegó, `.alert info` si no. Literal firmado (docs/microcopy/).
+  (stats.garantiaRetenida?.retenciones || []).forEach((r) => {
+    const [y, m, d] = String(r.liberacionDia).split('-');
+    const linea = document.createElement('div');
+    linea.className = r.aviso ? 'alert warning' : 'alert info';
+    linea.textContent = `Garantía retenida: ${fmt(r.importe)} · liberación desde el ${d}/${m}/${y} · sin cobrar`;
+    wrap.appendChild(linea);
+  });
 
   // ── Actividad / historial de comunicaciones (ENT-3) ───────────────────
   if (Array.isArray(events) && events.length) {
