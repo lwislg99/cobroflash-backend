@@ -22,6 +22,7 @@ import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioD
 
 /** Lo que el lector necesita del cliente Prisma. Inyectable: el test le pasa el suyo. */
 export interface ClienteDelPaquete extends ClienteDelLibro {
+  expense: { findMany(args: any): Promise<any[]> }; // SCRUM-1063b: el 303 lee ya el libro de recibidas
   job: { findMany(args: any): Promise<any[]> };
   customer: { findMany(args: any): Promise<any[]> };
   merchant: { findUnique(args: any): Promise<any> };

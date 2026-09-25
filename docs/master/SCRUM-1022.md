@@ -166,3 +166,65 @@ nueva creada desde `origin/main` — **un uso de `git stash` que A15 prohíbe** 
 compartido entre worktrees). No hubo colisión (se hizo y deshizo en el mismo turno, sin otra
 sesión de por medio), pero no debí usarlo: la alternativa correcta era copiar los ficheros a un
 directorio temporal fuera del árbol, no el stash compartido.
+
+## SCRUM-1022c · la pantalla ofrece el `.xlsx` que el servidor ya lee (CON FIRMA)
+
+**Medido contra:** `origin/main` = `bf4d82c68cc74c390af36f92c90cdb915e8c31e8` · 2026-09-25T17:55:29Z
+
+25-sep-2026 · rama `scrum-1022c-selector-ofrece-xlsx` · escrita por **J2**. Firma de los literales:
+**SCRUM-1022 comentario 17016** (delegada; registro en
+`docs/microcopy/2026-09-25-SCRUM-1022-importar-xlsx.md`). El comentario llama a esta tanda «1022b»;
+aquí es 1022c porque la sección de arriba ya se llamaba así.
+
+**PASO 0.** El orquestador me reasignó 1022 y 1018 como si estuvieran sin construir. Los dos estaban
+en `main` y en producción desde el 23-sep (#1723 y #1728; `yaqu.app/version` = `bf4d82c6`, que
+contiene los dos merges). Lo que sí faltaba, medido: el servidor lee `.xlsx`, pero
+`csvImport.js:74` tenía `accept=".csv,.txt"` —el selector escondía el `.xlsx` y sólo llegaba
+arrastrándolo, que en móvil no existe— y los textos decían sólo «.csv» / «CSV».
+
+**Qué cambia:**
+
+- `csvImport.js`: `accept=".csv,.txt,.xlsx"`; el párrafo del primer paso y la zona de arrastrar
+  pasan a los literales `importarSubeElFichero` e `importarArrastra`.
+- `customersView.js`: el `title` del botón pasa a `importarTooltipBoton` («… CSV o Excel»).
+- `tests/scrum985-…`: **se reescribe a propósito, no se relaja** (regla 41). Era cierto cuando se
+  escribió: el 21-sep el servidor no leía `.xlsx`. Cambió la condición, no el guard. Sigue exigiendo
+  que la pantalla no prometa más de lo que el importador lee; el `accept` se compara como CONJUNTO
+  (`.csv .txt .xlsx`, ni más ni menos), y además exige que las DOS rutas de importar sigan llamando a
+  `pareceXlsx(bytes)`: si esa lectura desaparece, el `.xlsx` de la pantalla vuelve a ser mentira y el
+  guard cae. El registro del 21-sep (SCRUM-985) no se borra.
+- `tests/scrum1022c-selector-ofrece-xlsx.test.mjs` (nuevo): lo que pintan el modal y el tooltip
+  consta aprobado con `constaAprobado()`, con control negativo (tres textos parecidos → `[]`) y un
+  control del extractor sobre un fuente fabricado.
+
+**Verificado en rojo, en este orden:**
+
+1. Con el cambio de pantalla y el guard viejo, `scrum985` cae en **3 de 5** subtests (tooltip,
+   `accept` y censo). Con el guard reescrito: 5 de 5.
+2. `scrum1022c` **sin** el registro nuevo: cae («… no consta aprobado»). Con él: 3 de 3.
+3. Mutación: quitar `pareceXlsx(bytes)` de la ruta `/import` → `scrum985` cae con «veo 1». Árbol
+   restaurado con `git checkout`.
+
+**Lo que no se toca:** la validación y la creación de clientes (`proponerMapeo`, `importarClientes`)
+y el servidor, ni una línea. Tampoco el paso «¿Se ven bien los acentos?»: con un `.xlsx` no hay codificación que
+elegir, y no he medido si la pantalla lo enseña igual.
+
+### SCRUM-1022c · segunda firma: el botón y el título del modal
+
+Firma: **SCRUM-1022 comentario 17019** (delegada; registro en
+`docs/microcopy/2026-09-25-SCRUM-1022-importar-boton-y-titulo.md`). En la primera entrega los dejé
+fuera porque no estaban firmados. El orquestador los firmó y pidió que entraran en el mismo PR, porque
+el defecto (un rótulo que dice «CSV» sobre un botón que importa Excel) lo crea el cambio del selector.
+
+- Botón de la lista de clientes: «⬆ Importar CSV» → «⬆ Importar clientes» (sin formato, a propósito).
+- Título del modal: «⬆ Importar clientes desde CSV» → «⬆ Importar clientes desde CSV o Excel».
+- `scrum985`: el título entra en la lista de lo que puede nombrar Excel.
+- `scrum886` usaba «⬆ Importar CSV» como SEÑAL de que la vista de clientes se había montado, no
+  como guard del texto. Con el rótulo nuevo daba «NO PUDE MIRAR»; la señal pasa al rótulo nuevo.
+- `scrum1022c` comprueba ahora los cinco textos con `constaAprobado()`, y los dos rótulos viejos van
+  al control negativo.
+- El «⬆ Importar CSV» de productos (`productsView.js`) es otro importador, que sólo lee CSV, y no se toca.
+
+**En rojo:** con los rótulos nuevos y los tests viejos caen 4 subtests (1 del censo de `scrum985` y 3 de `scrum886`).
+`scrum1022c` sin el registro nuevo: cae («⬆ Importar clientes no consta aprobado»). Con todo:
+`scrum1022c` + `scrum985` + `scrum886` + `scrum709` = 21 de 21.
