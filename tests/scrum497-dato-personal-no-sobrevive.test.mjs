@@ -184,19 +184,20 @@ test('SCRUM-497 · 🔴 ninguna columna personal del esquema queda SIN CLASIFICA
     + 'el camino, así que ninguno de sus números significa nada.');
 });
 
-test('SCRUM-497 · 🔴 TRINQUETE: quince datos personales siguen sin decidir, y van NOMBRADOS', () => {
+test('SCRUM-497 · 🔴 TRINQUETE: dieciséis datos personales siguen sin decidir, y van NOMBRADOS', () => {
   const reparto = repartir(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR);
 
-  // 🔴 EL SUELO VA PRIMERO: cero no es mejor que quince. Si baja, lo primero que hay que descartar
-  // es que el detector haya dejado de ver — pasó dos veces esta semana en este mismo repo.
+  // 🔴 EL SUELO VA PRIMERO: cero no es mejor que dieciséis. Si baja, lo primero que hay que
+  // descartar es que el detector haya dejado de ver — pasó dos veces esta semana en este repo.
   assert.ok(reparto.sinDecidir.length >= 1,
-    '🔴 EL TRINQUETE DA CERO Y ERAN QUINCE.\n\n'
-    + '  Si de verdad se han decidido los quince, enhorabuena: mueve cada uno a `CAMPOS_PERSONALES`\n'
+    '🔴 EL TRINQUETE DA CERO Y ERAN DIECISÉIS.\n\n'
+    + '  Si de verdad se han decidido los dieciséis, enhorabuena: mueve cada uno a `CAMPOS_PERSONALES`\n'
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 15,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 15 (medido el 12-ago-2026).\n`
+  assert.equal(reparto.sinDecidir.length, 16,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 16 (SCRUM-1014 sumó ` +
+    `\`customerSite.address\` el 25-sep-2026, sobre 15 medidos el 12-ago-2026).\n`
     + `    ${reparto.sinDecidir.join('\n    ')}\n\n`
     + '  Si SUBE, ha nacido un dato personal que nadie anonimiza: nómbralo o cúbrelo.\n'
     + '  Si BAJA, comprueba PRIMERO que no sea el censo el que dejó de ver.');

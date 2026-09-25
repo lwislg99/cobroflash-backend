@@ -29,6 +29,13 @@ export async function listarSitios(merchantId: number, customerId: number) {
     where: { merchantId, customerId },
     // Orden estable, igual que `listarNotas`: `id` desempata un `createdAt` coincidente.
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    // SCRUM-860: lista blanca explícita — sin ella, una columna que se añada mañana a
+    // `CustomerSite` saldría sola por esta respuesta, sin que nadie lo decidiera. `merchantId`
+    // fuera: es el dato del INQUILINO, no algo que la ficha de un cliente necesite enseñar.
+    select: {
+      id: true, customerId: true, name: true, address: true, city: true, postalCode: true,
+      province: true, country: true, contactName: true, phone: true, createdAt: true, updatedAt: true,
+    },
   });
 }
 
