@@ -46,6 +46,8 @@ const EXCEL_PERMITIDO = [
   { fichero: 'public/dashboard/js/csvImport.js', fragmento: 'o el <strong>.xlsx</strong> de tu Excel' },
   { fichero: 'public/dashboard/js/csvImport.js', fragmento: 'accept=".csv,.txt,.xlsx"' },
   { fichero: 'public/dashboard/js/customersView.js', fragmento: 'importBtn.title = "Importar clientes desde un fichero CSV o Excel"' },
+  // SCRUM-1022c (comentario 17019): el título del modal nombra los dos formatos; el botón, ninguno.
+  { fichero: 'public/dashboard/js/csvImport.js', fragmento: "titulo: '⬆ Importar clientes desde CSV o Excel'" },
   // SCRUM-1086 (23-sep-2026): «sin post-its ni Excel» no promete leerlo — dice que no hace falta.
   { fichero: 'public/index.html', fragmento: 'sin post-its ni Excel' },
 ];

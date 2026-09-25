@@ -40,12 +40,17 @@ export function textosDelPaso(html) {
   return { parrafo: parrafo && sinEtiquetas(parrafo[1]), zona: zona && sinEtiquetas(zona[1]) };
 }
 
-test('SCRUM-1022c · el modal y el tooltip pintan los literales FIRMADOS (constaAprobado)', () => {
-  const { parrafo, zona } = textosDelPaso(htmlDelPasoElegir(leer('public/dashboard/js/csvImport.js')));
-  const tooltip = leer('public/dashboard/js/customersView.js').match(/importBtn\.title\s*=\s*"([^"]*)"/);
-  assert.ok(parrafo && zona && tooltip, `🔴 CIEGO: párrafo=${parrafo} zona=${zona} tooltip=${tooltip && tooltip[1]}`);
+test('SCRUM-1022c · el modal, el botón y su tooltip pintan los literales FIRMADOS (constaAprobado)', () => {
+  const importar = leer('public/dashboard/js/csvImport.js');
+  const clientes = leer('public/dashboard/js/customersView.js');
+  const { parrafo, zona } = textosDelPaso(htmlDelPasoElegir(importar));
+  const tooltip = clientes.match(/importBtn\.title\s*=\s*"([^"]*)"/);
+  const boton = clientes.match(/const importBtn = createElement\("button", "[^"]*", "([^"]*)"\)/);
+  const titulo = importar.match(/titulo:\s*'([^']*)'/);
+  const vistos = [parrafo, zona, tooltip && tooltip[1], boton && boton[1], titulo && titulo[1]];
+  assert.ok(vistos.every(Boolean), `🔴 CIEGO: no veo alguno de los cinco textos: ${JSON.stringify(vistos)}`);
 
-  for (const texto of [parrafo, zona, tooltip[1]]) {
+  for (const texto of vistos) {
     assert.notDeepEqual(constaAprobado(texto), [],
       `🔴 «${texto}» no consta aprobado en docs/microcopy/ (regla 30/39)`);
   }
@@ -56,6 +61,8 @@ test('SCRUM-1022c · CONTROL NEGATIVO: un texto parecido, o el de antes, NO cons
   assert.deepEqual(constaAprobado('Sube el .csv o el .xlsx de tu Excel.'), []);
   assert.deepEqual(constaAprobado('📂 Arrastra tu fichero CSV o haz click para elegirlo'), []);
   assert.deepEqual(constaAprobado('Importar clientes desde un fichero CSV o un Excel'), []);
+  assert.deepEqual(constaAprobado('⬆ Importar CSV'), []);
+  assert.deepEqual(constaAprobado('⬆ Importar clientes desde CSV'), []);
 });
 
 test('SCRUM-1022c · CONTROL: el extractor ve los textos y quita las etiquetas', () => {

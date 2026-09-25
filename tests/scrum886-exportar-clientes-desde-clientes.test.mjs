@@ -50,7 +50,8 @@ async function montar(vista, rol, senal) {
 }
 
 // Señales de que la cabecera de cada vista está en el DOM (independientes de lo que se prueba).
-const cabeceraDeClientes = (n) => rotulo(n) === '⬆ Importar CSV';
+// SCRUM-1022c: el botón pasó de «⬆ Importar CSV» a «⬆ Importar clientes» (SCRUM-1022 comentario 17019).
+const cabeceraDeClientes = (n) => rotulo(n) === '⬆ Importar clientes';
 const cabeceraDeInformes = (n) => String(n.href || '').startsWith('/admin/exports/invoices.csv');
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

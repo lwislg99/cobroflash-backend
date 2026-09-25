@@ -23,7 +23,7 @@ lector del 23-sep (#1723).
 - `importarSubeElFichero` → el párrafo del primer paso del modal, `public/dashboard/js/csvImport.js`
   (`pintarElegir`). En pantalla, «.csv» y «.xlsx» van en negrita; el texto es el mismo.
 - `importarArrastra` → la zona de arrastrar del mismo paso; «haz click para elegirlo» es el enlace.
-- `importarTooltipBoton` → el `title` del botón «⬆ Importar CSV» de `public/dashboard/js/customersView.js`.
+- `importarTooltipBoton` → el `title` del botón de importar de `public/dashboard/js/customersView.js`.
 
 Con ellos cambia también el selector de ficheros: `accept=".csv,.txt"` pasa a `accept=".csv,.txt,.xlsx"`.
 

@@ -206,7 +206,25 @@ arrastrándolo, que en móvil no existe— y los textos decían sólo «.csv» /
    restaurado con `git checkout`.
 
 **Lo que no se toca:** la validación y la creación de clientes (`proponerMapeo`, `importarClientes`)
-y el servidor, ni una línea. El texto del botón («⬆ Importar CSV») y el título del modal («⬆ Importar
-clientes desde CSV») siguen diciendo sólo CSV: no entraban en la firma y quedan anotados para el
-orquestador. Tampoco el paso «¿Se ven bien los acentos?»: con un `.xlsx` no hay codificación que
+y el servidor, ni una línea. Tampoco el paso «¿Se ven bien los acentos?»: con un `.xlsx` no hay codificación que
 elegir, y no he medido si la pantalla lo enseña igual.
+
+### SCRUM-1022c · segunda firma: el botón y el título del modal
+
+Firma: **SCRUM-1022 comentario 17019** (delegada; registro en
+`docs/microcopy/2026-09-25-SCRUM-1022-importar-boton-y-titulo.md`). En la primera entrega los dejé
+fuera porque no estaban firmados. El orquestador los firmó y pidió que entraran en el mismo PR, porque
+el defecto (un rótulo que dice «CSV» sobre un botón que importa Excel) lo crea el cambio del selector.
+
+- Botón de la lista de clientes: «⬆ Importar CSV» → «⬆ Importar clientes» (sin formato, a propósito).
+- Título del modal: «⬆ Importar clientes desde CSV» → «⬆ Importar clientes desde CSV o Excel».
+- `scrum985`: el título entra en la lista de lo que puede nombrar Excel.
+- `scrum886` usaba «⬆ Importar CSV» como SEÑAL de que la vista de clientes se había montado, no
+  como guard del texto. Con el rótulo nuevo daba «NO PUDE MIRAR»; la señal pasa al rótulo nuevo.
+- `scrum1022c` comprueba ahora los cinco textos con `constaAprobado()`, y los dos rótulos viejos van
+  al control negativo.
+- El «⬆ Importar CSV» de productos (`productsView.js`) es otro importador, que sólo lee CSV, y no se toca.
+
+**En rojo:** con los rótulos nuevos y los tests viejos caen 4 subtests (1 del censo de `scrum985` y 3 de `scrum886`).
+`scrum1022c` sin el registro nuevo: cae («⬆ Importar clientes no consta aprobado»). Con todo:
+`scrum1022c` + `scrum985` + `scrum886` + `scrum709` = 21 de 21.

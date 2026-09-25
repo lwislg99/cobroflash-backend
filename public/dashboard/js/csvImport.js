@@ -36,7 +36,7 @@ function openImportCsvModal() {
   ].join('');
   // SCRUM-446: la cabecera sale del constructor compartido.
   overlay.querySelector('.modal').prepend(cabeceraModal({
-    titulo: '⬆ Importar clientes desde CSV', idCierre: 'csv-modal-close',
+    titulo: '⬆ Importar clientes desde CSV o Excel', idCierre: 'csv-modal-close',
   }));
   document.body.appendChild(overlay);
 
