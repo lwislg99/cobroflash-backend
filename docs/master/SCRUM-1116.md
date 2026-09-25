@@ -68,4 +68,26 @@ lo arregla nadie.
 
 ## 5 · Verificación
 
-Ver §6 (se rellena con la ejecución, no de memoria).
+**El test del ticket, antes y después del arreglo** (`node --test` sobre el fichero, con `dist/` recompilado):
+
+| Caso | Con el código de `main` | Con el arreglo |
+|---|---|---|
+| 500 € retenidos y nada pendiente: no sale «✅ ¡No tienes…!» | ✖ | ✔ |
+| Control: sin retención, el literal de siempre | ✔ | ✔ |
+| Retención ya cobrada: vuelve el literal de siempre | ✔ | ✔ |
+| Con facturas pendientes: el bloque «Pendiente de cobro» no cambia | ✔ | ✔ |
+| El día que se muestra es el de la zona del merchant (Madrid 12/03, UTC 11/03) | ✖ | ✔ |
+| Lo que se libera el mismo día se suma aunque sea de clientes distintos | ✖ | ✔ |
+| Con dos días salen LAS DOS líneas, la más temprana primero | ✖ | ✔ |
+| Cada línea es un literal firmado (`constaAprobado`) + control negativo con ✅ | ✖ | ✖ hasta que el registro esté en `main` |
+
+**`npm test` entero** en la rama (commit `1e97aafe`, sobre `bf4d82c6`): **8348 tests · 8211 pass · 3 fail ·
+134 skipped**. Los tres fallos:
+- `SCRUM-1116 · cada línea que se pinta es un literal FIRMADO`: el registro de la segunda ranura todavía
+  no está en `main` (va en `scrum-1116c-firma-digest`). Es el candado de §3, y es lo esperado.
+- `SCRUM-804b · SUELO y CONTROLES` y `scrum910d-microcopy-recibo-pendiente`: ya fallaban en esta máquina
+  antes de este ticket (traspaso de J3, y el aviso del orquestador para 910d). Ninguno de los dos toca
+  el resumen del lunes.
+
+Pendiente antes de empujar: esperar a que entre el registro, rebasar sobre `main` y volver a correr el
+test del ticket.
