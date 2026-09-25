@@ -110,6 +110,14 @@ async function renderReportsView(container) {
   vatCard.className = 'customers-card';
   wrap.appendChild(vatCard);
 
+  // ── SCRUM-1049 (CON-07, mitad 2/2) · Resumen del trimestre ───────────────
+  // Borrador para el asesor: IVA repercutido, IVA soportado y gastos, con lo que el
+  // servidor YA sabe dar hoy (regla 24: sin retenciones ni resultado — eso es SCRUM-1048,
+  // bloqueado esperando al asesor, y no se pinta ni con hueco ni con marcador).
+  const resumenCard = document.createElement('div');
+  resumenCard.className = 'customers-card';
+  wrap.appendChild(resumenCard);
+
   // ── Analytics: funnel + rentabilidad por servicio ────────────────────────
   const funnelCard = document.createElement('div');
   funnelCard.className = 'customers-card';
@@ -354,7 +362,15 @@ async function renderReportsView(container) {
     }
 
     if (!data.rates.length && !data.excluded.count) {
-      vatCard.innerHTML += '<p style="color:var(--neutral-400);font-size:13px">Sin facturas emitidas en este trimestre.</p>';
+      // 🔴 SCRUM-1049 · HALLAZGO DE PASO: era `vatCard.innerHTML +=`, y eso BORRA los 4 botones
+      // de trimestre que se acaban de appendChild-ear tres líneas arriba (la lección de
+      // SCRUM-515: un `innerHTML` después de un interactivo se lo lleva por delante). En un
+      // trimestre sin facturas, el profesional se quedaba sin forma de volver a otro trimestre.
+      // Con `appendChild` los botones sobreviven — mismo patrón que ya usa el bloque de abajo.
+      const vacio = document.createElement('p');
+      vacio.style.cssText = 'color:var(--neutral-400);font-size:13px';
+      vacio.textContent = 'Sin facturas emitidas en este trimestre.';
+      vatCard.appendChild(vacio);
       return;
     }
 
@@ -400,9 +416,144 @@ async function renderReportsView(container) {
     }
   }
 
-  yearSelect.addEventListener('change', () => { load(yearSelect.value); loadVat(yearSelect.value); loadX2(x2Card, yearSelect.value); });
+  // ── SCRUM-1049 (CON-07, mitad 2/2) · Resumen del trimestre ────────────────
+  //
+  // Selector de trimestre PROPIO, independiente del de «IVA repercutido» de arriba: es su propio
+  // componente (yaqu-premium-ui: una pantalla/componente por cambio, sin tocar el de al lado).
+  //
+  // Los TRES bloques salen de tres endpoints que YA EXISTÍAN antes de este ticket — cero cálculo
+  // fiscal nuevo, solo agregación en pantalla de lo que el servidor ya sabe dar:
+  //   · IVA repercutido  → GET /admin/reports/vat        (ya existía, SCRUM-389)
+  //   · IVA soportado    → GET /admin/libros/recibidas.json (ya existía, SCRUM-1040/CON-04):
+  //     se suma `cuota` de las filas con `deducible === 'Sí'`, con su motivo, no un cálculo nuevo.
+  //   · Gastos del trimestre → GET /admin/reports/pl (ya existía): 3 meses del año que caen en
+  //     el trimestre elegido.
+  // Retenciones y «diferencia» NO se pintan: eso es SCRUM-1048 (S1), bloqueado esperando al
+  // asesor, y la instrucción es dejarlo fuera sin hueco ni marcador (no un cálculo a medias).
+  const currentQuarterR = Math.floor(new Date().getMonth() / 3) + 1;
+  let resumenQuarter = currentQuarterR;
+  const r2 = (n) => Math.round(n * 100) / 100;
+
+  async function loadResumenTrimestre(year) {
+    resumenCard.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando…</p>';
+
+    let vat, recibidas, pl;
+    try {
+      [vat, recibidas, pl] = await Promise.all([
+        apiRequest(`/admin/reports/vat?year=${year}&quarter=${resumenQuarter}`),
+        apiRequest(`/admin/libros/recibidas.json?ano=${year}&trimestre=${resumenQuarter}`),
+        apiRequest(`/admin/reports/pl?year=${year}`),
+      ]);
+    } catch {
+      resumenCard.innerHTML = '<p style="color:var(--red-600);font-size:13px">Error al cargar el resumen del trimestre.</p>';
+      return;
+    }
+
+    const fmt = (n) => fmtMoneyEs(n, vat.currency || 'EUR');
+
+    // ⚠️ SOLO innerHTML AQUÍ, ANTES de colgar ningún listener (lección de SCRUM-515: un
+    // `innerHTML` después de un botón interactivo se lo lleva por delante). Todo lo que sigue
+    // usa `appendChild`.
+    resumenCard.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+        <div>
+          <h3 style="margin:0 0 4px;font-size:13px;font-weight:700;color:var(--neutral-600);text-transform:uppercase;letter-spacing:.04em">Resumen del trimestre</h3>
+          <p style="margin:0;font-size:12px;color:var(--neutral-400)">Borrador de trabajo con los números de tu cuenta — para llevarle a tu asesor, no es una presentación a Hacienda.</p>
+        </div>
+        <div id="resumen-quarter-row" style="display:flex;gap:4px"></div>
+      </div>
+    `;
+
+    const qRow = resumenCard.querySelector('#resumen-quarter-row');
+    for (let q = 1; q <= 4; q++) {
+      const b = document.createElement('button');
+      b.className = q === resumenQuarter ? 'btn-primary btn-sm' : 'btn-ghost btn-sm';
+      b.textContent = `${q}T`;
+      b.addEventListener('click', () => { resumenQuarter = q; loadResumenTrimestre(yearSelect.value); });
+      qRow.appendChild(b);
+    }
+
+    const now = new Date();
+    if (Number(year) === now.getFullYear() && resumenQuarter === currentQuarterR) {
+      const badge = document.createElement('p');
+      badge.style.cssText = 'margin:2px 0 0;font-size:11.5px;font-weight:600;color:var(--amber-700,#b45309)';
+      badge.textContent = 'Trimestre en curso — cifras provisionales, puede haber más movimientos antes de que acabe.';
+      resumenCard.appendChild(badge);
+    }
+
+    const monthsQ = (pl.months || []).slice((resumenQuarter - 1) * 3, (resumenQuarter - 1) * 3 + 3);
+    const gastosTotal = monthsQ.reduce((s, m) => s + (m.expenses || 0), 0);
+
+    let soportadoBase = 0, soportadoCuota = 0, noDeducibleCount = 0;
+    for (const f of (recibidas.filas || [])) {
+      if (f.deducible === 'Sí' && f.tipoIva !== null && f.cuota !== null) {
+        soportadoBase += f.base || 0;
+        soportadoCuota += f.cuota;
+      } else if (f.deducible !== 'Sí') {
+        noDeducibleCount += 1;
+      }
+    }
+
+    // Trimestre sin datos = estado vacío con mensaje (aceptación #3), no tres «0,00 €» sin
+    // explicar. Los TRES orígenes tienen que estar vacíos a la vez: uno solo con datos ya es
+    // un trimestre con actividad.
+    const sinDatos = vat.invoiceCount === 0 && recibidas.miradas === 0
+      && monthsQ.every((m) => (m.revenue || 0) === 0 && (m.expenses || 0) === 0);
+
+    if (sinDatos) {
+      const vacio = document.createElement('p');
+      vacio.style.cssText = 'margin:12px 0 0;color:var(--neutral-400);font-size:13px';
+      vacio.textContent = 'Sin movimientos en este trimestre.';
+      resumenCard.appendChild(vacio);
+      return;
+    }
+
+    const kpiWrap = document.createElement('div');
+    kpiWrap.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:14px 0 4px';
+    const bloques = [
+      { label: 'IVA repercutido', value: vat.totals.cuota, color: 'var(--neutral-900)' },
+      { label: 'IVA soportado (deducible)', value: r2(soportadoCuota), color: 'var(--neutral-900)' },
+      { label: 'Gastos del trimestre', value: r2(gastosTotal), color: 'var(--red-600)' },
+    ];
+    bloques.forEach(({ label, value, color }) => {
+      const kpi = document.createElement('div');
+      kpi.className = 'kpi-card';
+      kpi.innerHTML = `
+        <div class="kpi-label">${label}</div>
+        <div class="kpi-value" style="color:${color};font-size:20px">${fmt(value)}</div>
+      `;
+      kpiWrap.appendChild(kpi);
+    });
+    resumenCard.appendChild(kpiWrap);
+
+    // Lo que se queda FUERA de los números de arriba, con su motivo — nunca en silencio.
+    const notas = [];
+    if (vat.excluded.count > 0) {
+      notas.push(`⚠ ${vat.excluded.count} ${vat.excluded.count === 1 ? 'factura' : 'facturas'} sin desglose de líneas (${fmt(vat.excluded.total)}) no ${vat.excluded.count === 1 ? 'incluida' : 'incluidas'} en el repercutido.`);
+    }
+    // `avisos[0]` es siempre el aviso de formato de `/recibidas.json` (SCRUM-1040); el resto son
+    // los que importan aquí («N gastos sin datos de IVA no figuran…», ya aprobado en ese ticket).
+    for (const a of (recibidas.avisos || []).slice(1)) notas.push(`⚠ ${a}`);
+    if (noDeducibleCount > 0) {
+      notas.push(`ℹ ${noDeducibleCount} ${noDeducibleCount === 1 ? 'gasto' : 'gastos'} de este trimestre no ${noDeducibleCount === 1 ? 'tiene' : 'tienen'} el IVA marcado como deducible (o no se ha decidido) — no entra${noDeducibleCount === 1 ? '' : 'n'} en el soportado.`);
+    }
+    if (notas.length) {
+      const notasWrap = document.createElement('div');
+      notasWrap.style.cssText = 'margin-top:4px;display:flex;flex-direction:column;gap:4px';
+      for (const n of notas) {
+        const p = document.createElement('p');
+        p.style.cssText = 'margin:0;font-size:12px;color:var(--neutral-500)';
+        p.textContent = n;
+        notasWrap.appendChild(p);
+      }
+      resumenCard.appendChild(notasWrap);
+    }
+  }
+
+  yearSelect.addEventListener('change', () => { load(yearSelect.value); loadVat(yearSelect.value); loadResumenTrimestre(yearSelect.value); loadX2(x2Card, yearSelect.value); });
   load(currentYear);
   loadVat(currentYear);
+  loadResumenTrimestre(currentYear);
   loadX2(x2Card, currentYear); // A16.1
 }
 
