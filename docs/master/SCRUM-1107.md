@@ -332,3 +332,50 @@ el código; **no vuelve a pedir DDL**.
 solo test**. Es el mismo fallo del que el propio fichero avisa («`exit code 0` no es
 "pasó"»), sólo que por otra puerta. La tanda se corre con `npm test`, que tiene su propio
 veredicto.
+
+## Lo que CI destapó, y que la tanda local NO veía
+
+El primer CI del #1758 salió rojo por **seis** sitios. Separados por lo que decide —si son de
+esta rama o no—, quedan **dos** que sí lo son:
+
+### 🔴 Los DOS que son de esta rama, y los dos por la misma causa
+
+**El esquema creció, y dos derivados apuntaban al tamaño viejo.**
+
+1. **`docs/sql/deriva-prod.sql` desfasado.** Es un censo de columnas **commiteado** que tiene
+   que seguir al `.prisma`. Regenerado con `node scripts/generar-sql-deriva.mjs` —el comando
+   que el propio test da en su mensaje—, y el diff son **exactamente las cuatro columnas de la
+   garantía y nada más**: `retencion_garantia_importe`, `_porcentaje`, `_liberacion`,
+   `_cobrada`. Que el diff sea justo eso es lo que prueba que se regeneró y no se retocó.
+2. **Un ancla de `docs/legal/AUDITORIA_CAMINO_EMISION.md:36` apuntando a
+   `prisma/schema.prisma:888-889`.** `vf_hash` y `vf_prev_hash` están hoy en **903-904**: los
+   campos nuevos entraron por encima en el mismo modelo y **desplazaron las líneas**.
+
+⚠️ **De lo segundo, lo que importa es lo que NO se ha hecho:** no se ha tocado el camino de
+emisión ni el esquema, y **la afirmación del documento no cambia** — la huella y el encadenado
+siguen exactamente donde estaban. Lo único que se mueve es el **puntero**, con el motivo escrito
+al lado, que es la convención que ese documento ya usa en sus filas 2, 3 y 6.
+
+🔴 **Y es una trampa que volverá:** *cualquier* campo nuevo en ese modelo mueve esas líneas. El
+ancla no se rompe por tocar VeriFactu, se rompe por tocar **cualquier cosa por encima**.
+
+### ⛔ Los que NO son de esta rama
+
+- **`scrum939b` (trinquete de las skills)** — cae igual en un árbol de `main`. Ticket propio:
+  **SCRUM-1113**.
+- **`scrum859-identidad-y-motivo-cerrado` · MUDO** — en local pasa **20/20**. «MUDO» es que no
+  emitió en CI, no que fallara. No se arregla lo que aquí no falla.
+- **`guard:objetivo-tactil` · rojo(1)** — esta rama **no toca ni un fichero de `public/`**.
+  ⚠️ Y hay algo que decir: en los dos PR mergeados hoy ese job sale **CANCELLED**, así que
+  **casi nunca llega a medir**. Que aquí haya encontrado algo no significa que sea nuevo:
+  significa que esta vez corrió. **No está probado que venga de `main`** —no se ha ejecutado
+  contra `main` a propósito— pero la rama no le da nada que mirar.
+- **`vigía del despliegue` y `constancia del ALTER`** — los dos **informativos**. El primero se
+  queja de que producción no se ha movido, que no es asunto de este PR.
+
+### La lección, que es de método
+
+**La tanda local salió limpia de estos dos.** No los vio porque `prisma generate` en el árbol
+local deja el cliente al día **sin tocar el fichero commiteado**, y porque el guard de anclas
+compara contra un árbol que ya tenía el `.prisma` nuevo. **Un derivado commiteado sólo se
+desfasa a ojos de quien lo compara con lo commiteado**, y eso lo hace CI.
