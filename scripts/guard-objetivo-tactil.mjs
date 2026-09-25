@@ -88,7 +88,7 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL, MINIMO_ESCRITORIO, CORTE_M
 // SCRUM-782 · la vista del panel, montada por el banco y serializada. `scripts/` importando de
 // `tests/` no es nuevo: ya lo hacen censo-internos-de-prisma, censo-tablero-vs-arbol y
 // diagnostico-dependencias.
-import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
+import { paginaDeClientes, paginaDeVista, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
 import { todos } from '../tests/_banco-vistas.mjs';
 
 /** SCRUM-915d · abre, sólo por clases de estado, todos los pasos del editor y la fila de Ajustes. */
@@ -303,8 +303,16 @@ const SUPERFICIES_791 = [
   // (opt-in `.job-toolbar-btn-44`, sin tocar `.btn-sm` en general). Queda la casilla de 14 px
   // (deuda declarada, mismo patrón que `.quote-line__suplido`: la etiqueta lleva el área, no el
   // checkbox nativo — ver `docs/master/SCRUM-962.md`).
-  { ruta: '/__jobdetail', vista: 'renderJobDetailView', titulo: 'ficha de Trabajo',
-    distintosEsperados: 1, datos: TRABAJO_DE_MUESTRA, origen: 'SCRUM-962 (22-sep-2026, con el mínimo de cada ancho)' },
+  // 🔴 SCRUM-917g · 25-sep-2026 · 1 → 0, RETIRADA. «La casilla de precios sale de la barra de
+  // Documentos»: la única deuda que quedaba (la casilla de 14 px de arriba) dejó de estar en la
+  // pantalla tal cual la medía este guard. Confirmado en rojo (`node scripts/guard-objetivo-tactil.mjs`,
+  // 25-sep-2026): «CIEGO: 0 objetivos cortos y SCRUM-962 midió 1» + «EXCEPCIÓN CADUCA: INPUT ya no
+  // aparece». Con CERO deuda conocida, la ficha de Trabajo sale de esta lista — igual que
+  // providers/templates/albaranDetail (SCRUM-786) o las otras quince superficies del censo de
+  // SCRUM-787: se sigue midiendo por `npm run censo:tactil-panel`, no se vigila aquí por PR. No se
+  // deja en `distintosEsperados: 0` a propósito: ese número no defendería nada que el «detector de
+  // sobrantes» de abajo no proteja ya solo, y una superficie sin excepciones ni deuda declarada dice
+  // más sola que con un cero de adorno.
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -660,14 +668,13 @@ const EXCEPCIONES_791 = {
     { sel: 'BUTTON.btn-primary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,5–30,9 px) — «+ Nuevo presupuesto». Pre-existente, misma decisión que las anteriores.' },
     { sel: 'BUTTON', motivo: 'las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).' },
   ],
-  renderJobDetailView: [
-    // SCRUM-711 · aquí estaba `BUTTON.btn-primary` «+ Nuevo albarán», el CTA del héroe a 37,0 px. Sólo
-    // era corto a 929, por exigir 44 en escritorio: retirada, la nombró el detector de sobrantes.
-    // SCRUM-962 (22-sep-2026) · retiradas las tres de arriba: «Cambiar», «+ Nuevo albarán»/«Parte de
-    // trabajo» (ya llegan a 44/36 con `.job-toolbar-btn-44`) y la miga «Trabajos» (ya llega con
-    // `min-height`+`min-width` en `.detail-miga-link`). Las nombró el detector de sobrantes/caducas.
-    { sel: 'INPUT', motivo: '14,0 px — la casilla de precios de la barra de documentos. EL PEOR del árbol entero, y en la pantalla que se usa de pie en obra. Sin decidir.' },
-  ],
+  // renderJobDetailView: sin excepciones — SCRUM-917g bajó su última deuda (la casilla de 14 px)
+  // a cero y la superficie SALIÓ de SUPERFICIES_791 (ver el comentario junto a su entrada, arriba).
+  // SCRUM-711 · aquí estaba `BUTTON.btn-primary` «+ Nuevo albarán», el CTA del héroe a 37,0 px. Sólo
+  // era corto a 929, por exigir 44 en escritorio: retirada, la nombró el detector de sobrantes.
+  // SCRUM-962 (22-sep-2026) · retiradas las tres de arriba: «Cambiar», «+ Nuevo albarán»/«Parte de
+  // trabajo» (ya llegan a 44/36 con `.job-toolbar-btn-44`) y la miga «Trabajos» (ya llega con
+  // `min-height`+`min-width` en `.detail-miga-link`). Las nombró el detector de sobrantes/caducas.
 };
 
 for (const s of SUPERFICIES_791) {
