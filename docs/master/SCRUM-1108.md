@@ -164,3 +164,5 @@ fallo es `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` **como fichero**:
 proceso aborta al cerrar con `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c`.
 Es el rojo de libuv en Windows que ya estaba censado antes de esta rama; no toca ningún fichero de este
 cambio. Repetido 3 veces a solas: el mismo aborto, y los mismos 5 de 5 subtests con aserción pasando.
+
+Enlace de comparación (copiado de la salida de `git push`): https://github.com/lwislg99/cobroflash-backend/pull/new/scrum-1108b-pantalla-garantia
