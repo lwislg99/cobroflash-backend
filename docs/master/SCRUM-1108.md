@@ -156,3 +156,11 @@ del literal (`constaAprobado`) cae sin ese registro, a propósito.
   sitio del literal; cuando exista la pantalla, usará el mismo.
 - El color de la cifra «Pendiente de cobro» sigue en verde con deuda 0 y garantía retenida: §7 decía
   «no se añade texto: se quita uno», y cambiar el color no estaba en lo acordado.
+
+### La tanda entera
+
+`npm test` sobre esta rama (base `c6724310`): **8.334 tests · 8.199 pass · 1 fail · 134 skipped**. El único
+fallo es `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` **como fichero**: sus 6 subtests pasan y el
+proceso aborta al cerrar con `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c`.
+Es el rojo de libuv en Windows que ya estaba censado antes de esta rama; no toca ningún fichero de este
+cambio. Repetido 3 veces a solas: el mismo aborto, y los mismos 5 de 5 subtests con aserción pasando.
