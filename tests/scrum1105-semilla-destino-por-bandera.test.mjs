@@ -7,10 +7,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { temporal } from './_temporal.mjs';
 import {
   fijarDestinoPorBandera, BANDERAS_DE_DESTINO, SIN_BANDERA, FIJADO, RECHAZADO,
 } from '../scripts/_destino-de-semilla.mjs';
@@ -25,9 +25,9 @@ const DEV = url(D.host, D.base);
 const STAGING = url(S.host, S.base);
 const PROD = url(P.host, 'railway');
 
-/** Un `.env` de pega en un directorio temporal. No es un repo git: solo se mira ese fichero. */
+/** Un `.env` de pega en un temporal (lo borra `_temporal.mjs` al salir). No es un repo git: solo se mira ese fichero. */
 function conEnv(claves) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1105-'));
+  const dir = temporal('scrum1105-');
   fs.writeFileSync(path.join(dir, '.env'),
     Object.entries(claves).map(([k, v]) => `${k}=${v}`).join('\n') + '\n');
   return dir;
