@@ -41,6 +41,10 @@ type CreateProductInput = {
   isActive?: boolean;
   /** SCRUM-609 (CAT-01) · el LADO: PRODUCTO | SERVICIO. `null` = sin clasificar. */
   itemKind?: string | null;
+  /** SCRUM-1008 · la ficha del artículo. `null` = nadie lo ha rellenado, no vacío por defecto. */
+  sku?: string | null;
+  supplierRef?: string | null;
+  unit?: string | null;
 };
 
 export async function createProduct(merchantId: number, input: CreateProductInput) {
@@ -58,6 +62,9 @@ export async function createProduct(merchantId: number, input: CreateProductInpu
       // Sin `?? 'PRODUCTO'`: un default aquí declararía el lado por el profesional, que es
       // justo lo que la columna nullable evita. Ausente entra como NULL = sin clasificar.
       itemKind: input.itemKind ?? null,
+      sku: input.sku ?? null,
+      supplierRef: input.supplierRef ?? null,
+      unit: input.unit ?? null,
     },
   });
 }
@@ -292,8 +299,11 @@ export async function updateProduct(
     vat?: number | null;
     providerId?: number | null;
     isActive?: boolean;
+    sku?: string | null;
+    supplierRef?: string | null;
+    unit?: string | null;
   },
-) 
+)
  {
   // Multi-tenant: solo actualiza si pertenece al merchant
   const existing = await prisma.product.findFirst({ where: { id, merchantId } });

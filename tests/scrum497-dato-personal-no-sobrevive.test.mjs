@@ -38,6 +38,9 @@ const SCHEMA = leerSchema();
 const FUERA_DE_ANONIMIZADO = Object.freeze({
   'product.name': 'el nombre de un SERVICIO del catálogo («Desatasco»), no el de una persona',
   'quoteTemplate.name': 'el nombre de una PLANTILLA de presupuesto, no el de una persona',
+  // SCRUM-1014: la etiqueta que el profesional le pone al SITIO («Piso 3ºB», «Nave del
+  // polígono»), no el nombre de una persona — mismo caso que las dos de arriba.
+  'customerSite.name': 'el nombre del SITIO que el profesional elige («Piso 3ºB»), no el de una persona',
 });
 
 /**
@@ -47,7 +50,8 @@ const FUERA_DE_ANONIMIZADO = Object.freeze({
  * calificación jurídica distinta y es del fundador. Lo que este fichero garantiza es que están
  * NOMBRADOS y que no puede aparecer un dieciseisavo sin que salte.
  *
- * `to_email` era el número 16 de esta lista hasta hoy. Se ha cerrado uno; quedan quince.
+ * `to_email` era el número 16 de esta lista hasta hoy. Se ha cerrado uno; quedan quince — y
+ * SCRUM-1014 suma `customerSite.address` (misma pregunta que `job.direccion`): dieciséis.
  */
 const SIN_DECIDIR = Object.freeze({
   'teamMember.name': '¿los datos de un EMPLEADO del profesional se van con la baja del profesional?',
@@ -65,6 +69,9 @@ const SIN_DECIDIR = Object.freeze({
   'quote.internalNotes': 'texto libre, y va dentro de un documento que puede estar sellado (regla 29)',
   'expense.notes': 'texto libre; puede nombrar a un proveedor o a una persona',
   'botSession.phone': 'el teléfono del cliente que escribió por WhatsApp, antes de ser cliente',
+  // SCRUM-1014: la dirección DEL SITIO — casi siempre una obra del propio cliente, misma
+  // pregunta que `job.direccion` justo arriba.
+  'customerSite.address': 'la dirección del sitio — casi siempre una obra del propio cliente, misma pregunta que job.direccion',
 });
 
 // ── 0 · 🔴 SUELO Y AUTOPRUEBA · antes de creerse ningún reparto ─────────────────────────────
@@ -177,19 +184,20 @@ test('SCRUM-497 · 🔴 ninguna columna personal del esquema queda SIN CLASIFICA
     + 'el camino, así que ninguno de sus números significa nada.');
 });
 
-test('SCRUM-497 · 🔴 TRINQUETE: quince datos personales siguen sin decidir, y van NOMBRADOS', () => {
+test('SCRUM-497 · 🔴 TRINQUETE: dieciséis datos personales siguen sin decidir, y van NOMBRADOS', () => {
   const reparto = repartir(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR);
 
-  // 🔴 EL SUELO VA PRIMERO: cero no es mejor que quince. Si baja, lo primero que hay que descartar
-  // es que el detector haya dejado de ver — pasó dos veces esta semana en este mismo repo.
+  // 🔴 EL SUELO VA PRIMERO: cero no es mejor que dieciséis. Si baja, lo primero que hay que
+  // descartar es que el detector haya dejado de ver — pasó dos veces esta semana en este repo.
   assert.ok(reparto.sinDecidir.length >= 1,
-    '🔴 EL TRINQUETE DA CERO Y ERAN QUINCE.\n\n'
-    + '  Si de verdad se han decidido los quince, enhorabuena: mueve cada uno a `CAMPOS_PERSONALES`\n'
+    '🔴 EL TRINQUETE DA CERO Y ERAN DIECISÉIS.\n\n'
+    + '  Si de verdad se han decidido los dieciséis, enhorabuena: mueve cada uno a `CAMPOS_PERSONALES`\n'
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 15,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 15 (medido el 12-ago-2026).\n`
+  assert.equal(reparto.sinDecidir.length, 16,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 16 (SCRUM-1014 sumó ` +
+    `\`customerSite.address\` el 25-sep-2026, sobre 15 medidos el 12-ago-2026).\n`
     + `    ${reparto.sinDecidir.join('\n    ')}\n\n`
     + '  Si SUBE, ha nacido un dato personal que nadie anonimiza: nómbralo o cúbrelo.\n'
     + '  Si BAJA, comprueba PRIMERO que no sea el censo el que dejó de ver.');

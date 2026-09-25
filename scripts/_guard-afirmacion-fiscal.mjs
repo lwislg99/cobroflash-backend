@@ -124,7 +124,7 @@ export function afirmacionesFalsas(html, { envioConstruido = false } = {}) {
         continue;
       }
 
-      if (CONSTRUIDA.test(limpia) && !envioConstruido) {
+      if (CONSTRUIDA.test(limpia) && !envioConstruido && !negada) {
         fuera.push({
           linea: i + 1,
           texto: limpia.slice(0, 160),

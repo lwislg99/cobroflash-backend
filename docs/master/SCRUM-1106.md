@@ -66,3 +66,23 @@ las ⚠.
 `git diff` de las dos rutas contra el commit de SCRUM-1104 en esta misma rama: sólo las filas/
 párrafos de Q-C1 a Q-C5 y Q-C7 cambian; Q-C6, Q-C8 y Q-C9 (ya tratadas en otra entrega) quedan
 intactas.
+
+## Apéndice · el art. 6.1.m/6.2.b ROF, cerrado (23-sep-2026, tras PR #1740 de J5)
+
+**Medido contra:** `origin/main` = `1cc2e6bb04fec54ef9e39b52a0ea2e173eb15c6c` · 2026-09-23T18:14:22Z
+
+La ambigüedad que dejé abierta arriba (§3, punto 2) se cerró: J5 bajó el `BOE-A-2012-14696` por
+`curl` (no WebFetch) y con dos sondas independientes sobre el cuerpo completo del art. 6 confirmó
+que **sólo existe una letra m)**, sin cambios desde 2012 — el duplicado que yo vi era un artefacto
+del resumen de WebFetch (`docs/master/SCRUM-1039.md` §SCRUM-1039c). Con esa evidencia ya en `main`
+(PR #1740):
+
+* **Promovida a `CONTABILIDAD.md` §3** como cita comprobada, con el **literal completo** — la
+  norma no dice «la factura llevará la mención X»: dice que se incluye **cuando** el sujeto pasivo
+  es el destinatario. La condición es parte de la cita; el resumen anterior («esas tres palabras»)
+  la perdía.
+* **Q-C2 actualizada** en `PREGUNTAS_ASESOR.md` y en `CONTABILIDAD.md` §4 para apuntar a la cita
+  cerrada en vez de a la ambigüedad.
+* El resto de Q-C2 (las tres condiciones acumulativas del ISP, las citas ⚠ de los arts.
+  20.Uno.22º.B LIVA y 24 *quater* RIVA) sigue exactamente igual: esto solo cierra la leyenda de la
+  factura, no el resto de la respuesta.

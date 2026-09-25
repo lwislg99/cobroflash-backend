@@ -113,10 +113,15 @@ function construirSelectorAsignados(doc, opts) {
   var caja = doc.createElement('div');
   caja.className = 'job-asignados';
 
-  var titulo = doc.createElement('div');
-  titulo.className = 'job-asignados-titulo';
-  titulo.textContent = TEXTOS_ASIGNADOS.titulo;
-  caja.appendChild(titulo);
+  // SCRUM-917g · dentro de la línea plegable «Quién lo ejecuta» el rótulo ya lo dice la línea, y
+  // repetirlo dentro sería leer dos veces lo mismo. `sinTitulo` lo omite; sin la opción todo sigue
+  // igual (los demás sitios que montan el selector no cambian).
+  if (!o.sinTitulo) {
+    var titulo = doc.createElement('div');
+    titulo.className = 'job-asignados-titulo';
+    titulo.textContent = TEXTOS_ASIGNADOS.titulo;
+    caja.appendChild(titulo);
+  }
 
   // SOLO LECTURA (técnico): ve quién ejecuta, no lo cambia. La norma de SCRUM-89 es que un gate
   // no deje UI huérfana — así que se ve el dato y se dice por qué no se puede tocar, en vez de

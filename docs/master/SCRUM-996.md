@@ -92,3 +92,32 @@ normas es `node scripts/equipo/norma.mjs --arranque`. Yo no edito ese fichero.
   de 220 B a todas las líneas y solo entregué −1,8k (recorté las 8 mayores); y **construir esto costó**: el subagente que
   escribió el código y el test gastó 278k tokens de contexto acumulado en 73 llamadas, para un ahorro que se cobra en los
   relevos siguientes. **Contexto de esta sesión al entregar: 344.365 medido** (por encima de 300k: pido el relevo, A19).
+
+## SCRUM-996b · el efecto medido, con N=11, sigue en rojo (24-sep-2026)
+
+**Medido contra:** `origin/main` = `09f8ba99` · 2026-09-24, ~16:2xZ · escrito por la **Sesión 5**.
+
+`node scripts/equipo/gasto-arranque.mjs sesiones --desde 2026-09-22T16:35:00Z --min-turnos 8`, repetido con N
+creciente hasta ser CONCLUYENTE (antes N=1, sin valor): **N=11 sesiones**, todas ya nacidas con el bloque
+`--arranque` de este ticket en su prompt de relevo.
+
+- **U8 mediano: 105.351** (objetivo ≤ 90.000) → **NO CUMPLE**.
+- **Lectura/contexto: 21,2 %** (objetivo ≤ 10 %) → **NO CUMPLE**, y por encima del 16,8 % de la línea base SIN
+  el instrumento (línea 23 de este fichero).
+- Ninguna de las 11 sesiones bajó de U8=90k.
+
+**Sin causa confirmada** (A3: no se afirma lo que no se ha medido). Candidatos a mirar la próxima vez, SIN
+verificar todavía — no tratar como diagnóstico:
+1. El `--arranque` de `norma.mjs` es el suelo de NORMAS; no cubre lo que cada sesión lee además (su
+   `sesion-N.md`, su fila §11bis, su `project_sN_traspaso.md`, `orquestador-autonomo.md` §5bis) — la línea 22
+   base ya incluía eso y seguía en 102k, así que el ahorro de ~13k de `norma.mjs` puede estar compensado por
+   crecimiento en otro punto que nadie ha medido por separado.
+2. Traspasos por encima del tope de 5 KB (la comprobación es de quien escribe, `gasto-arranque.mjs traspaso
+   sN`; no hay guard que lo fuerce antes de guardar en memoria).
+3. `MEMORY.md` ha seguido creciendo desde el recorte de la línea 68-74 (más entradas nuevas desde el 21-sep):
+   no remedido desde entonces.
+
+**No se toca esta tanda** (cuota semanal a punto de resetear, A25: cerrar antes que empezar). Sigue el hilo
+abierto: la próxima sesión que mida, antes de tocar nada, remide con N mayor y, si el rojo persiste, corre el
+candidato 1 aislado del 2 y el 3 (medir `norma.mjs --arranque` a secas frente a un arranque real completo, en
+dos sesiones de control) en vez de tocar los tres a la vez.

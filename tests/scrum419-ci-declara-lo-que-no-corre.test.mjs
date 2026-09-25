@@ -127,6 +127,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // (dos merchants), que un documento borrado no se lleva el mensaje por delante (tabla suelta,
   // ENT-3) y las páginas de 20 con cursor.
   'scrum1062-historial-whatsapp-cliente.test.mjs': 1,
+  // SCRUM-1014: los sitios del cliente. Necesita banco porque vigila la TENENCIA (merchant y
+  // cliente) en las cuatro funciones, el orden estable, y que crear/editar un sitio no escribe
+  // `Quote.shippingAddress` (P2/DOC-12).
+  'scrum1014-sitios-del-cliente.test.mjs': 1,
   // SCRUM-1036: las notas del cliente. Necesita banco porque vigila la TENENCIA, que el autor se
   // CONGELA como texto (borrar al técnico no vacía la nota vieja) y la «Nota fija» sintetizada
   // desde `Customer.notes` sin copiarla ni inventarle fecha/autor.
@@ -136,6 +140,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // `DELETE` —si no, Postgres lo rechazaría—, las cinco sin FK, el rechazo por factura emitida,
   // la tenencia y el desvínculo de quien apuntara al fusionado como su empresa.
   'scrum1057b-fusion-clientes-postgres.test.mjs': 4,
+  // SCRUM-1103: la cadena entera de la retención practicada (alta → se lee de vuelta con su
+  // precisión Decimal → la LISTA la trae → `updateExpense` corrige sin borrar) y su control
+  // negativo. Necesita banco porque lo que prueba es que el ALTER ya aplicado y el dominio
+  // escriben y leen la MISMA fila, no que «se pinta el campo» (mismo motivo que SCRUM-324).
+  'scrum1103-retencion-practicada-en-gastos.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

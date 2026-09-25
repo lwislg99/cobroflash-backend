@@ -90,7 +90,12 @@ export const ORDEN_BORRADO_MERCHANT: readonly string[] = [
   //
   // Y no estar aquí no era «no tocar el RGPD», era incumplirlo: un parte huérfano conserva el
   // nombre del cliente, la dirección de la obra y lo que se hizo dentro.
-  'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment', 'emailMessage',
+  //
+  // SCRUM-1014 · `customerSite` (agenda de sitios) lleva datos PERSONALES propios — nombre y
+  // teléfono del contacto EN OBRA, la dirección — y tiene FK RESTRICT a `customer`. Va antes que
+  // `customerEvent` por el mismo motivo que éste va antes que `customer`, y da igual el orden
+  // entre los dos (ninguno cuelga del otro).
+  'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'customerSite', 'attachment', 'emailMessage',
   'parteTrabajo',
   // Documentos: albarán antes que factura (el albarán apunta a la factura que lo consolidó).
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',

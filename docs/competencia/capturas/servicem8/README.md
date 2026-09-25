@@ -24,3 +24,15 @@ equipo**, que es para lo que se usan aquí, y no para afirmar cómo se comporta.
 El texto literal de cada página se leyó aparte, a `textContent` (nunca con `WebFetch`, por el motivo
 que explica «Límites» en [`../../matriz.md`](../../matriz.md)): las citas del §13 vienen de ahí y no
 de leer la imagen.
+
+## Segunda tanda: con cuenta real (25-sep-2026, SCRUM-906m)
+
+Las 19 capturas `servicem8-01-*` a `servicem8-19-*` son de **esta** tanda: alta real
+(`lwislg99+servicem8@gmail.com`), panel completo, un Job de principio a fin (presupuesto → factura).
+Sin tarjeta ni teléfono real (el paso opcional se saltó con "Skip"). El detalle línea a línea, en
+[`docs/producto/_RAW-flujo-crear-factura.md`](../../producto/_RAW-flujo-crear-factura.md), sección
+`## SERVICEM8`. El registro del máster, en
+[`docs/master/SCRUM-906.md`](../../master/SCRUM-906.md), sección `SCRUM-906m`.
+
+Esto **sí** es su producto funcionando, a diferencia de las tres capturas de arriba (solo su
+marketing y manual, sin cuenta).
