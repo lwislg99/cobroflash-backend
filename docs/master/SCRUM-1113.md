@@ -41,6 +41,11 @@ propio test lea la plataforma, que habría sido otro fichero más en el tope de 
 | M1 · se quita la rama de plataforma (`&& false &&`) | **2 fail**: el caso SCRUM-1113 y los controles de 939b |
 | M2 · se apaga el detector (RUTA_ABS siempre NO COMPROBABLE) | **2 fail**: los mismos. La ruta inventada deja de salir FALSA |
 
+`npm test` completo en la rama: **8.314 tests · 8.179 pass · 1 fail · 134 skipped**.
+
+- El único fallo es SCRUM-804b, que en SCRUM-1105 ya se midió fallando **igual en la base**: es ajeno.
+- Los 3 fallos de `939b` de la tanda anterior ya no están.
+
 Censo real en esta máquina: 49 afirmaciones, sin ceguera.
 
 - `cerebro-yaqu:79` `C:\Program Files\GitHub CLI\gh.exe` sale **CIERTA** («existe en el disco»).
