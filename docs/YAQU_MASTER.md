@@ -1855,7 +1855,7 @@ Vanilla, sin React/Tailwind/build, sin dependencias pesadas, sin reescritura: **
 | VeriFactu: 1/1/2027 sociedades, 1/7/2027 autónomos | ✅ | RD-ley 15/2025 (BOE 3-dic-2025) · ya hubo UN aplazamiento → no apostar todo el GTM a la fecha |
 | Productor: solo software adaptado desde 29-jul-2025 (fecha mantenida por RDL 15/2025) | ✅ | AEAT FAQ + Orden HAC/1177/2024 (regla 9 meses) |
 | Sanciones: usuario 50.000 €/ej · fabricante 150.000 €/ej y tipo · 1.000 €/sistema sin declaración | ✅ | Art. 201 bis LGT + FAQ AEAT |
-| Exclusiones: módulos, recargo equivalencia, forales, SII | ✅ | RD 1007/2023 |
+| **Exclusión: quien lleve los libros por SII** (RIVA 62.6 → REDEME, >6.010.121,04 €, grupos, depósitos fiscales, **o por opción voluntaria** del 68 bis) **y quien tenga el domicilio fiscal en territorio foral**. 🔴 **Módulos y recargo de equivalencia NO excluyen: están DENTRO** y se informan en el registro de alta | ✅ verificado contra fuente primaria 25-sep-2026 (SCRUM-1102) | RD 1007/2023 **art. 3.3** (exclusión) y **art. 10** (módulos y recargo se informan) + RIVA arts. 30, 71.3 y 62.6 |
 | ~426K autónomos construcción (12,4 % de 3,44 M) | ✅ sector / subset obligado **[VALIDAR: 150-300K]** | MITES/SegSoc oct-2025 |
 | **Morosidad: PMP construcción 96,5 días · España 80,5 días · afecta ~44 % autónomos · cuesta 5.350 €/año a la pequeña empresa** | ✅ (munición de venta nº1) | Observatorio Morosidad CEPYME 2º sem. 2025 (Informa D&B/CESCE) + ATA cierre 2025 |
 | **Adopción VeriFactu baja: 8 % implementado, 15 % en piloto** (el miedo fiscal no vende solo) | ✅ | Observatorio TeamSystem/Ipsos, 30-oct-2025 |
