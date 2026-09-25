@@ -364,6 +364,19 @@ export function nodo(tag, reg) {
     // rodea desde la vista: la cabecera de este fichero lo dice — un banco infiel hace que el
     // test mida el banco y no el producto.
     get parentNode() { return n._padre; },
+    // 🔴 SCRUM-1038 · `selectedOptions` de un `<select>`. NO EXISTÍA, y por eso
+    // `expensesView.js` (`aplicarNifSegunProveedor`, `provSel.selectedOptions[0]`) REVENTABA en
+    // cuanto algo asignaba `.value` a un proveedor — DOM de manual perfectamente legítimo, y el
+    // único selector del panel que lee esta propiedad. Es el mismo hueco que `prepend`
+    // (SCRUM-460) o `classList` (SCRUM-792): una pieza fuera del alcance del banco por una API
+    // que el banco no tenía. Se corrige AQUÍ y no se rodea desde el test ni desde la vista.
+    // Aproximación deliberada: el `<option>` cuyo `value` casa con el `.value` del `<select>` —
+    // que es lo que importa a quien lee `dataset` del elegido— y no el estado `.selected` de
+    // cada opción, que este mini-DOM no sincroniza al asignar `.value` (el navegador sí).
+    get selectedOptions() {
+      if (n.tagName !== 'SELECT') return [];
+      return n.hijos.filter((h) => h.tagName === 'OPTION' && h.value === n.value);
+    },
     get children() { return n.hijos; },
     get firstElementChild() { return n.hijos[0] || null; },
     get lastElementChild() { return n.hijos[n.hijos.length - 1] || null; },
@@ -418,7 +431,23 @@ export function nodo(tag, reg) {
       const clave = String(k); n._attrs[clave] = String(v);
       if (clave === 'id') n.id = String(v);
       else if (clave === 'class') n.className = String(v);
-      else if (clave.startsWith('data-')) {
+      else if (clave === 'style') {
+        // 🔴 SCRUM-1038 · UN `style="display:none"` DEL MARCADO NO SE REFLEJABA en `.style`, que
+        // nacía siempre `{ display: '' }` sin mirar el atributo. El mismo hueco que `value`/
+        // `checked` (SCRUM-901: «un campo recién parseado parte de su atributo»), con otra cara:
+        // el modal de gasto esconde el botón de SCRUM-1038 con `style="display:none"` en su
+        // plantilla, y `#exp-error` nace igual — un test que leyera `.style.display` ANTES de que
+        // el producto lo tocara por JS veía `''` y no `'none'`, que es exactamente lo que el
+        // navegador NO hace. Se parsea la declaración en línea, propiedad a propiedad, como hace
+        // `CSSStyleDeclaration`; lo que la vista asigne DESPUÉS por JS (`el.style.display = 'x'`)
+        // sigue funcionando igual, porque `.style` sigue siendo el mismo objeto mutable.
+        for (const decl of String(v).split(';')) {
+          const i = decl.indexOf(':');
+          if (i === -1) continue;
+          const prop = decl.slice(0, i).trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+          if (prop) n.style[prop] = decl.slice(i + 1).trim();
+        }
+      } else if (clave.startsWith('data-')) {
         n.dataset[clave.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = String(v);
       }
     },
