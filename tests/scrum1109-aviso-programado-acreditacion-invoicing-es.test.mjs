@@ -17,6 +17,7 @@ import {
   construirAviso,
   ejecutarPasada,
   CONSULTA_TEXTO,
+  crearTransportadorResend,
 } from '../scripts/aviso-programado-acreditacion-invoicing-es.mjs';
 import { PROD_HOST, STAGING_HOST } from '../scripts/_db-guard.mjs';
 
@@ -36,12 +37,85 @@ test('SCRUM-1109 · validarConfiguracion: ok cuando están las tres variables', 
 
 test('SCRUM-1109 · validarConfiguracion: declara CADA variable ausente, una por una', () => {
   assert.deepEqual(validarConfiguracion({}, 'DATABASE_URL_PROD_RO').faltan.sort(), [
-    'AVISO_ACREDITACION_EMAIL_DESTINO', 'DATABASE_URL_PROD_RO', 'SMTP_URL',
+    // 🔴 SCRUM-1114 · CAMBIO DECLARADO: antes el hueco se llamaba 'SMTP_URL' a secas.
+    // Decir sólo eso mandaba a configurar JUSTO el canal que se colgaba en Railway
+    // (20 s agotados en «envio», medido el 25-sep). Ahora nombra los DOS, porque vale
+    // cualquiera de ellos y el bueno es el otro.
+    'AVISO_ACREDITACION_EMAIL_DESTINO', 'DATABASE_URL_PROD_RO', 'SMTP_URL o RESEND_API_KEY',
   ].sort());
   assert.deepEqual(validarConfiguracion({ DATABASE_URL_PROD_RO: 'x', SMTP_URL: 'x' }, 'DATABASE_URL_PROD_RO').faltan, [
     'AVISO_ACREDITACION_EMAIL_DESTINO',
   ]);
   assert.deepEqual(validarConfiguracion({ DATABASE_URL_STAGING: 'x', SMTP_URL: 'x', AVISO_ACREDITACION_EMAIL_DESTINO: 'x' }, 'DATABASE_URL_STAGING'), { ok: true, faltan: [] });
+});
+
+test('SCRUM-1114 · validarConfiguracion: RESEND_API_KEY SOLA basta — no hace falta SMTP', () => {
+  assert.deepEqual(validarConfiguracion({
+    DATABASE_URL_PROD_RO: 'x',
+    RESEND_API_KEY: 'x',
+    AVISO_ACREDITACION_EMAIL_DESTINO: 'x',
+  }, 'DATABASE_URL_PROD_RO'), { ok: true, faltan: [] });
+});
+
+test('SCRUM-1114 · 🔴 EL QUE DECIDE: sin NINGUNO de los dos canales, el hueco los nombra a los dos', () => {
+  const r = validarConfiguracion({
+    DATABASE_URL_PROD_RO: 'x',
+    AVISO_ACREDITACION_EMAIL_DESTINO: 'x',
+  }, 'DATABASE_URL_PROD_RO');
+  assert.equal(r.ok, false);
+  assert.deepEqual(r.faltan, ['SMTP_URL o RESEND_API_KEY']);
+  // Control positivo: con uno solo de ellos, ok. Sin esto, un validador que fallara
+  // SIEMPRE también daría este rojo.
+  assert.equal(validarConfiguracion({
+    DATABASE_URL_PROD_RO: 'x', SMTP_URL: 'x', AVISO_ACREDITACION_EMAIL_DESTINO: 'x',
+  }, 'DATABASE_URL_PROD_RO').ok, true);
+});
+
+// ── crearTransportadorResend ─────────────────────────────────────────────────────────────────
+// La petición se INYECTA: el caso no toca la red, y de paso esquiva la aserción de libuv que
+// `fetch()` dispara en Windows (SCRUM-100/560/809).
+
+test('SCRUM-1114 · el transportador de Resend tiene la MISMA forma que el de nodemailer', async () => {
+  const vistas = [];
+  const tr = crearTransportadorResend('clave-de-prueba', {
+    peticion: async (url, opciones) => {
+      vistas.push({ url, opciones });
+      return { ok: true, status: 200, text: async () => '{"id":"abc-123"}' };
+    },
+  });
+  const r = await tr.sendMail({ from: 'a@b.c', to: 'd@e.f', subject: 'S', text: 'T' });
+
+  assert.equal(vistas.length, 1);
+  assert.equal(vistas[0].url, 'https://api.resend.com/emails');
+  assert.equal(vistas[0].opciones.method, 'POST');
+  assert.equal(vistas[0].opciones.headers.Authorization, 'Bearer clave-de-prueba');
+  // El destinatario viaja como LISTA: es lo que pide la API, y mandarlo suelto no falla
+  // de forma visible — simplemente no llega.
+  assert.deepEqual(JSON.parse(vistas[0].opciones.body), {
+    from: 'a@b.c', to: ['d@e.f'], subject: 'S', text: 'T',
+  });
+  assert.equal(r.via, 'resend');
+});
+
+test('SCRUM-1114 · 🔴 un rechazo de Resend LANZA (no se traga), y el mensaje NO lleva la clave', async () => {
+  const tr = crearTransportadorResend('CLAVE-SECRETA-QUE-NO-DEBE-SALIR', {
+    peticion: async () => ({ ok: false, status: 422, text: async () => '{"message":"from no validado"}' }),
+  });
+  await assert.rejects(
+    () => tr.sendMail({ from: 'a@b.c', to: 'd@e.f', subject: 'S', text: 'T' }),
+    (e) => {
+      assert.match(e.message, /422/);
+      assert.match(e.message, /from no validado/);
+      // 🔴 Lo que de verdad decide: un error acaba en un log de Railway.
+      assert.ok(!e.message.includes('CLAVE-SECRETA-QUE-NO-DEBE-SALIR'), `la clave se coló: ${e.message}`);
+      return true;
+    },
+  );
+});
+
+test('SCRUM-1114 · sin clave no se construye un transportador que parezca bueno', () => {
+  assert.throws(() => crearTransportadorResend(''), /sin clave/);
+  assert.throws(() => crearTransportadorResend(undefined), /sin clave/);
 });
 
 // ── validarHost ───────────────────────────────────────────────────────────────────────────────
