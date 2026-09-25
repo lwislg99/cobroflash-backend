@@ -51,3 +51,35 @@ export const CASILLA_TOTAL_CUOTA_DEVENGADA = 27;
 export function tripletaDe(tipo: number): TripletaCasilla | null {
   return TRIPLETAS.find((t) => t.tipo === tipo) ?? null;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1063b · IVA DEDUCIBLE Y RESULTADO. PROCEDENCIA: el formulario oficial, LEÍDO.
+//
+// Orden HAC/27/2026, Anexo III (sustituye el Anexo I de EHA/3786/2008), página 1 del impreso:
+//   https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_7.png
+// La 45 y la 46 las transcribió SCRUM-1039b (`docs/master/SCRUM-1039.md` §1): «Total a deducir
+// (29+31+33+35+37+39+41+42+43+44)» y «Resultado régimen general (27-45)». QUÉ va en la 28/29 y en
+// la 30/31 no lo transcribió: se leyó en la misma imagen el 25-sep-2026 (`docs/master/SCRUM-1063.md`):
+//   28/29 «Por cuotas soportadas en operaciones interiores corrientes»
+//   30/31 «Por cuotas soportadas en operaciones interiores con bienes de inversión»
+//
+// ⚠️ Las demás que suman en la 45 (importaciones 32-35, intracomunitarias 36-39, rectificación
+// 40/41, 42-44) NO se rellenan: nada en `Expense` dice que un gasto sea ninguna de esas cosas.
+export interface ParCasilla {
+  /** Casilla de la BASE. */
+  base: number;
+  /** Casilla de la CUOTA. */
+  cuota: number;
+}
+
+/** Operaciones interiores CORRIENTES (28/29). */
+export const CASILLAS_DEDUCIBLE_CORRIENTES: ParCasilla = Object.freeze({ base: 28, cuota: 29 });
+
+/** Operaciones interiores con BIENES DE INVERSIÓN (30/31). Hoy siempre vacías: no hay dato. */
+export const CASILLAS_DEDUCIBLE_BIENES_INVERSION: ParCasilla = Object.freeze({ base: 30, cuota: 31 });
+
+/** «Total a deducir». */
+export const CASILLA_TOTAL_A_DEDUCIR = 45;
+
+/** «Resultado régimen general (27-45)». */
+export const CASILLA_RESULTADO_REGIMEN_GENERAL = 46;
