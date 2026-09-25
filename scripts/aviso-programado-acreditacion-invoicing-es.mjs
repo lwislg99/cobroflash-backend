@@ -118,6 +118,49 @@ export function construirAviso({ resultado, host, ahora }) {
  * `rutaGuard`), como `preview-migracion.mjs` y el propio guard de SCRUM-1097: la lógica entera
  * se prueba sin BD ni SMTP reales.
  */
+// ═══════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1112 · TRAZA Y LÍMITES — por qué existen
+//
+// Medido en Railway los días 24 y 25-sep-2026: tres ejecuciones de 27 min, 15 min y
+// 1 h 46 min, sin correo y CON LOS LOGS VACÍOS. Este script hace UNA consulta de solo
+// lectura: debería tardar segundos.
+//
+// 🔴 Dos defectos que se tapaban el uno al otro:
+//   ① NINGÚN timeout. `medirAcreditacion` y `sendMail` podían esperar para siempre.
+//   ② TODO se imprimía al FINAL. Si colgaba antes, no salía ni una línea — así que el
+//      log no decía dónde se había quedado. Una hora y tres cuartos de silencio.
+//
+// 🔴 Y eso derrota el propósito del guard. SCRUM-1109 exige que «un cero medido y un cero
+// por ceguera no salgan iguales» — pero cubría «no pude medir» y NO cubría «me quedé
+// colgado», que produce el MISMO silencio y encima cuesta horas de máquina.
+//
+// **Un guard colgado no avisa de nada, y encima figura como instalado.**
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+/** Escribe YA, no al final. Es lo que convierte un cuelgue en un diagnóstico. */
+export function traza(etapa, detalle = '') {
+  process.stdout.write(`[${new Date().toISOString()}] ${etapa}${detalle ? ' · ' + detalle : ''}\n`);
+}
+
+/** Límites en segundos. Generosos para una consulta de solo lectura, ridículos frente a 1 h 46. */
+export const LIMITES = { medicion: 20_000, envio: 20_000, total: 90_000 };
+
+/**
+ * Corre `promesa` con tope. Si vence, lanza un error que NOMBRA LA ETAPA — porque
+ * «timeout» a secas no dice si fue la base o el correo, que es justo lo que hay que saber.
+ */
+export function conLimite(promesa, ms, etapa) {
+  let reloj;
+  const vencimiento = new Promise((_, rechazar) => {
+    reloj = setTimeout(() => {
+      const e = new Error(`⏱ se agotaron ${ms / 1000}s en la etapa «${etapa}»`);
+      e.etapa = etapa;
+      rechazar(e);
+    }, ms);
+  });
+  return Promise.race([promesa, vencimiento]).finally(() => clearTimeout(reloj));
+}
+
 export async function ejecutarPasada({ prisma, transportador, remitente, destinatario, rutaGuard, host, ahora = () => new Date() }) {
   const auto = verificarSoloLecturaEstructural(rutaGuard);
   if (auto.prohibidos.length) {
@@ -129,13 +172,31 @@ export async function ejecutarPasada({ prisma, transportador, remitente, destina
     };
   }
 
-  const resultado = await medirAcreditacion(prisma);
+  traza('① midiendo', 'conectando y consultando');
+  let resultado;
+  try {
+    resultado = await conLimite(medirAcreditacion(prisma), LIMITES.medicion, 'medicion');
+  } catch (e) {
+    // 🔴 No se puede tratar como «cero»: no se ha medido nada. Sale por el camino de CIEGO.
+    traza('🔴 ① FALLÓ', e.message);
+    return {
+      exitCode: 2,
+      rastro: `🔴 CIEGO — no se pudo medir contra ${host}: ${e.message}. No se afirma nada.`,
+      avisoEnviado: false,
+    };
+  }
+  traza('① medido', `filas: ${resultado && resultado.hallazgos ? resultado.hallazgos.length : '?'}`);
   const aviso = construirAviso({ resultado, host, ahora: ahora() });
 
   let avisoEnviado = false;
   let errorEnvio = null;
   try {
-    await transportador.sendMail({ from: remitente, to: destinatario, subject: aviso.asunto, text: aviso.cuerpo });
+    traza('② enviando aviso', `a ${destinatario ? 'destinatario configurado' : '(SIN DESTINATARIO)'}`);
+    await conLimite(
+      transportador.sendMail({ from: remitente, to: destinatario, subject: aviso.asunto, text: aviso.cuerpo }),
+      LIMITES.envio, 'envio',
+    );
+    traza('② aviso entregado');
     avisoEnviado = true;
   } catch (e) {
     errorEnvio = e && e.message ? e.message : 'fallo desconocido al enviar';
@@ -181,6 +242,19 @@ async function principal() {
   // TODO `new URL` de scripts/ (no solo el de una URL de BD), y esta misma máquina tiene un
   // ESPACIO en la ruta de usuario que `new URL(...).pathname` no decodifica (`censo-alcanzabilidad.mjs`).
   const rutaGuard = path.join(path.dirname(fileURLToPath(import.meta.url)), 'guard-acreditacion-invoicing-es.mjs');
+  // 🔴 La cabecera va AQUÍ, antes de tocar nada. Si el proceso muere después, al menos
+  // el log dice contra qué destino lo intentaba — que es lo que faltó los días 24 y 25.
+  traza('=== SCRUM-1109 · aviso programado de acreditación INVOICING_ES ===');
+  traza('destino', `[${claveDB}] → ${describirBD(url)}`);
+
+  // Vigía general: si algo se queda colgado por debajo de los límites de etapa (un socket
+  // abierto que impide salir, por ejemplo), el proceso muere igual y CON código != 0.
+  const vigia = setTimeout(() => {
+    traza('🔴 VIGÍA', `el proceso lleva ${LIMITES.total / 1000}s y no ha terminado — se corta`);
+    process.exit(2);
+  }, LIMITES.total);
+  vigia.unref?.();
+
   const prisma = new PrismaClient({ datasourceUrl: url.trim().replace(/^['"]|['"]$/g, '') });
   const transportador = nodemailer.createTransport(process.env.SMTP_URL);
 
@@ -198,7 +272,7 @@ async function principal() {
     await prisma.$disconnect().catch(() => {});
   }
 
-  console.log(`\n=== SCRUM-1109 · aviso programado de acreditación INVOICING_ES · [${claveDB}] → ${describirBD(url)} ===`);
+  clearTimeout(vigia);
   console.log(salida.rastro);
   return salida.exitCode;
 }
