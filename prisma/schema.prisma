@@ -151,6 +151,7 @@ model Merchant {
   QuoteTemplate QuoteTemplate[]
   QuoteRequest  QuoteRequest[]
   CustomerEvent CustomerEvent[]
+  CustomerSite  CustomerSite[]
 
   // SCRUM-293 (A2) · RETENCIÓN DE IRPF. Autorización expresa del fundador para ESTAS DOS LÍNEAS.
   //
@@ -439,6 +440,7 @@ model Customer {
   Invoice      Invoice[]
   QuoteRequest QuoteRequest[]
   events       CustomerEvent[]
+  sites        CustomerSite[]
 
   @@index([merchantId])
   // Se busca «las personas de esta empresa»; sin índice sería un recorrido de toda la tabla.
@@ -1173,6 +1175,54 @@ model CustomerEvent {
   @@index([customerId, createdAt])
   @@index([merchantId])
   @@map("customer_events")
+}
+
+// SCRUM-1014 (CRM) · «SITIOS» DEL CLIENTE — agenda de direcciones de obra, cada una con su
+// contacto propio (el portero, el inquilino), sin crear un cliente entero por cada uno.
+//
+// 🔴 NO PRECARGA NADA (com. 16921, delegación del fundador). El fundador cerró P2/DOC-12
+// (SCRUM-602) el 24-ago-2026: la dirección de obra pertenece al DOCUMENTO (`Quote`/
+// `Invoice.shippingAddress`), no al cliente, y NUNCA se prerrellena sola — «una dirección
+// prerrellenada se firma sin leerla». Esta tabla NO reabre esa decisión: es sólo dónde vive la
+// agenda. El profesional elige un sitio A MANO, como elige cualquier otro dato del documento;
+// nada la copia sin que él actúe. La condición queda en la etiqueta `sin-precarga` del ticket.
+//
+// TABLA NUEVA Y NO UNA SEGUNDA DIRECCIÓN EN `Customer`: un cliente puede tener varias obras (la
+// misma evidencia que ya tiene `Customer` para una única dirección de facturación, multiplicada).
+//
+// MISMAS CINCO COLUMNAS DE DIRECCIÓN QUE `Customer.billingAddress` (SCRUM-579): mismo prefijo de
+// campos, ningún patrón nuevo. Todas NULLABLES y SIN `@default`, mismo motivo que sus primas: un
+// sitio puede declararse con sólo el nombre y completarse después.
+model CustomerSite {
+  id         Int @id @default(autoincrement())
+  merchantId Int @map("merchant_id")
+  customerId Int @map("customer_id")
+
+  // Cómo llama el profesional a este sitio («Piso 3ºB», «Nave del polígono») — el dato mínimo
+  // para poder elegirlo en una lista. Único campo obligatorio: el resto puede llegar después.
+  name String
+
+  address    String? @map("address")
+  city       String? @map("city")
+  postalCode String? @map("postal_code")
+  province   String? @map("province")
+  country    String? @map("country")
+
+  // El contacto EN OBRA (el portero, el inquilino) — lo que Tradify da y el modelo padre-hijo de
+  // `Customer.companyId` no: una persona sin ficha propia de cliente.
+  contactName String? @map("contact_name")
+  phone       String? @map("phone")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([merchantId])
+  // Se busca «los sitios de este cliente»; sin índice sería un recorrido de toda la tabla.
+  @@index([customerId])
+  @@map("customer_sites")
 }
 
 // WA-0b (master J4 · Parte L): log y estados de entrega de los mensajes de WhatsApp.

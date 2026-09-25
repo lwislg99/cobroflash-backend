@@ -2861,3 +2861,34 @@ es escribir en esas columnas desde Prisma hasta que estén en el modelo.
 El aviso del encargo decía que devuelve `"railway"` en todas las bases de Railway. En
 `DATABASE_URL_DEV` devolvió **`yaqu_dev_javier`**. No se afirma nada de las otras dos: no se han
 tocado. La acreditación se hizo con `pg_postmaster_start_time()` y el recuento de `invoices`.
+
+## SCRUM-1014 · tabla nueva `customer_sites` — 25-sep-2026 · 🔴 NINGUNA base tocada todavía
+
+`docs/sql/scrum-1014-customer-site.sql` · `CREATE TABLE IF NOT EXISTS` + 2 índices + 2 FK,
+aditiva e idempotente. DDL generado con `node scripts/preview-migracion.mjs --desde <schema sin
+el modelo>` (control positivo dentro, SCRUM-385) contra `origin/main`
+`639a276ffbd6e4ce8ef89b7f8e81c72fad31c111`. Veredicto de la herramienta: aditiva, cero sentencias
+destructivas.
+
+### Estado por base — 25-sep-2026
+
+- [ ] **producción** — sin tocar.
+- [ ] **staging** — sin tocar.
+- [ ] **desarrollo · yaqu_dev_javier** — sin tocar. `yaqu_dev_javier` es del carril B
+  (`docs/MIGRATIONS_PENDING.md`/memoria del equipo: «no la aplica otra sesión, se pide») y esta
+  sesión no tenía `DATABASE_URL_DEV` en el entorno de su worktree — sólo `DATABASE_URL` (BD local
+  de `npm run dev`, otro destino). No se ha forzado ningún env var para sortear el guard.
+
+**Por lo de arriba, este PR NO ES MERGEABLE hasta aplicar `docs/sql/scrum-1014-customer-site.sql`
+en las tres bases** (regla de la casa, 7-sep-2026: el PR lleva el esquema, el SQL y esta entrada
+sin marcar, todo junto). El esquema SÍ nombra `CustomerSite` en esta rama a propósito, por la
+misma regla — retener la línea del esquema produce medio modelo y dos PR por ticket.
+
+### Lo que esta tabla NO toca — medido, no supuesto
+
+- **`Customer` no gana columnas** y `shippingAddress`/`shippingAddressMode` de `Quote`/`Invoice`
+  (SCRUM-602, P2/DOC-12) no se tocan: la tabla es un vecino nuevo, no un reemplazo.
+- **El sello de VeriFactu:** `customer_sites` no aparece en la lista cerrada de ocho campos de
+  `computeVeriFactuHash` — no hay escritor que la alimente desde el camino de emisión.
+- **Vacía, cero efecto:** mientras no haya filas, ningún `SELECT`/`JOIN` existente la toca (nadie
+  la referenciaba antes de esta rama).

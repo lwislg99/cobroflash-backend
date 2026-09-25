@@ -223,6 +223,8 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
     'customer.updateMany': async () => ({ count: 3 }),
     // SCRUM-497: la supresión también redacta la dirección de `email_messages` (la fila se conserva).
     'emailMessage.updateMany': async () => ({ count: 5 }),
+    // SCRUM-1014: y el teléfono del contacto de cada sitio guardado.
+    'customerSite.updateMany': async () => ({ count: 2 }),
   });
   try {
     const res = resFalso();
@@ -237,6 +239,7 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
     // este aserto tiene que caer y obligar a mirarlo — derivarlo lo volvería tautológico.
     assert.deepEqual(res.body.redactados, [
       { modelo: 'merchant', filas: 1 }, { modelo: 'customer', filas: 3 }, { modelo: 'emailMessage', filas: 5 },
+      { modelo: 'customerSite', filas: 2 },
     ]);
   } finally { restaurar(); delete process.env.MERCHANT_DELETE_ENABLED; }
 });

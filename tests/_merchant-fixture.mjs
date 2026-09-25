@@ -106,7 +106,9 @@ const MODELOS_POR_MERCHANT = [
   // customer_id SIN FK ninguna. O sea, del grupo MUDO — `merchant.delete` «tiene exito» y deja
   // los partes huerfanos sin que nadie proteste. Esta lista es su unica red.
   'parteTrabajo',
-  'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment',
+  // SCRUM-1014 · `customerSite` (la agenda de sitios) es del grupo FK-RESTRICT: sin barrerla
+  // antes de `customer`, `merchant.delete` fallaría RUIDOSO si el test dejó algún sitio vivo.
+  'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'customerSite', 'attachment',
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   'botSession', 'quoteTemplate', 'expense', 'product', 'provider', 'authSession',
   'teamMember', 'customer',

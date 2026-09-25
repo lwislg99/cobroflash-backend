@@ -27,6 +27,8 @@ import { etiquetarSeleccion, type AccionEtiqueta } from '../../domain/etiquetado
 import { historialWhatsAppDelCliente } from '../../domain/historialWhatsAppDelCliente'; // SCRUM-1062
 import { crearNota, listarNotas, resolverAutor } from '../../domain/notasDelCliente'; // SCRUM-1036
 import { previsualizarFusion, fusionarClientes } from '../../domain/fusionClientes'; // SCRUM-1057
+import { listarSitios, crearSitio, actualizarSitio, borrarSitio } from '../../domain/sitiosDelCliente'; // SCRUM-1014
+import { customerSiteCreateSchema, customerSiteUpdateSchema } from '../../../../core/validation/schemas';
 
 const router = Router();
 
@@ -396,6 +398,80 @@ router.post('/:id/notes', requireRole('admin'), async (req, res) => {
     }
     if (err?.message === 'customer_not_found') return res.status(404).json({ error: 'not_found' });
     console.error('[POST /admin/customers/:id/notes]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/customers/:id/sites — SCRUM-1014 (CRM) · la agenda de sitios del cliente.
+ * Sólo lista: elegir uno para un documento es una acción del profesional en OTRA pantalla
+ * (P2/DOC-12 intacto — nada de aquí escribe `shippingAddress`).
+ */
+router.get('/:id/sites', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const sitios = await listarSitios(req.merchantId, id);
+    if (!sitios) return res.status(404).json({ error: 'not_found' });
+    return res.json({ sitios });
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/sites]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// POST /admin/customers/:id/sites — SCRUM-1014 · añade un sitio a la agenda del cliente.
+router.post('/:id/sites', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const parsed = customerSiteCreateSchema.parse(req.body);
+    const sitio = await crearSitio(req.merchantId, id, parsed);
+    if (!sitio) return res.status(404).json({ error: 'not_found' });
+    return res.status(201).json({ sitio });
+  } catch (err: any) {
+    if (err?.name === 'ZodError') return res.status(400).json({ error: 'invalid_body', details: err.issues });
+    console.error('[POST /admin/customers/:id/sites]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// PUT /admin/customers/:id/sites/:siteId — SCRUM-1014 · edita un sitio existente.
+router.put('/:id/sites/:siteId', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const siteId = Number(req.params.siteId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(siteId) || siteId <= 0) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+    const parsed = customerSiteUpdateSchema.parse(req.body);
+    const sitio = await actualizarSitio(req.merchantId, id, siteId, parsed);
+    if (!sitio) return res.status(404).json({ error: 'not_found' });
+    return res.json({ sitio });
+  } catch (err: any) {
+    if (err?.name === 'ZodError') return res.status(400).json({ error: 'invalid_body', details: err.issues });
+    console.error('[PUT /admin/customers/:id/sites/:siteId]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * DELETE /admin/customers/:id/sites/:siteId — SCRUM-1014. Sin `requireRole('admin')`: es la
+ * agenda de direcciones, no un dato fiscal ni de facturación — mismo nivel que crear/editar un
+ * sitio, arriba, y que el alta del propio cliente (`POST /admin/customers`).
+ */
+router.delete('/:id/sites/:siteId', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const siteId = Number(req.params.siteId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(siteId) || siteId <= 0) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+    const borrado = await borrarSitio(req.merchantId, id, siteId);
+    if (!borrado) return res.status(404).json({ error: 'not_found' });
+    return res.status(204).send();
+  } catch (err) {
+    console.error('[DELETE /admin/customers/:id/sites/:siteId]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });
