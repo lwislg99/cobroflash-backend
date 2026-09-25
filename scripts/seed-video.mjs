@@ -10,6 +10,10 @@
 // Requiere `npm run build` antes (importa los servicios compilados de dist/).
 //
 // EJECUCIÓN (el fundador decide la BD; el script NO asume prod):
+//   node scripts/seed-video.mjs --dev    (o `--staging`; SCRUM-1105: la URL la resuelve el
+//                                        script, nadie la exporta)
+//
+// Sin bandera, el camino de antes:
 //   1) export DATABASE_URL=<la BD que el fundador indique>
 //   2) export SEED_VIDEO_CONFIRM=<hostname EXACTO de esa BD>   (te lo dice el script si falta)
 //   3) node scripts/seed-video.mjs
@@ -28,6 +32,8 @@ import { normalizeSearch } from '../dist/modules/products/domain/products.servic
 // SCRUM-381: quien mira una URL de BD pasa por aquí (`parseBDSegura` no tiene forma de devolver
 // la cadena), y `destinoSembrable` es la allowlist de dónde puede escribir un sembrador.
 import { parseBDSegura, destinoSembrable } from './_db-guard.mjs';
+// SCRUM-1105: `--dev` / `--staging` nombran la base; la URL se resuelve por dentro.
+import { fijarDestinoPorBandera, RECHAZADO, FIJADO } from './_destino-de-semilla.mjs';
 
 // SCRUM-381 · EL SOBRE DE UNA SIEMBRA — ver la nota larga en `seed-demo.mjs`. Este script también
 // llamaba a `allocateInvoiceNumber` con `{}`, así que sus números quedaban en el AuditLog sin nada
@@ -77,8 +83,12 @@ const SAMPLE_PHOTO = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAA
 // GUARDS de seguridad (stop conditions del brief)
 // ─────────────────────────────────────────────────────────────────────────────
 async function preflight() {
+  const porBandera = fijarDestinoPorBandera();
+  if (porBandera.estado === RECHAZADO) abort(porBandera.mensaje);
+  for (const aviso of porBandera.avisos ?? []) console.warn('⚠️  ' + aviso);
+
   const dbUrl = process.env.DATABASE_URL || '';
-  if (!dbUrl) abort('DATABASE_URL no está definida. El fundador decide contra qué BD se ejecuta.');
+  if (!dbUrl) abort('Sin destino. Nómbralo: node scripts/seed-video.mjs --dev (o --staging). El fundador decide contra qué BD se ejecuta.');
 
   // SCRUM-381: esto era `new URL(dbUrl).hostname` dentro de un try/catch. NO filtraba —el catch
   // no imprimía el error— pero es la forma que SCRUM-223 quitó de `seed-demo.mjs` después de que
@@ -100,7 +110,11 @@ async function preflight() {
   }
 
   // El fundador DEBE confirmar explícitamente el host de la BD (no se asume prod).
-  if (process.env.SEED_VIDEO_CONFIRM !== host) {
+  // SCRUM-1105: con bandera la base YA está nombrada —con más precisión que el hostname, que dev
+  // y staging comparten—, así que no se pide una segunda confirmación que no distingue nada.
+  if (porBandera.estado === FIJADO) {
+    console.log(`[destino] ${porBandera.bandera} → ${porBandera.etiqueta}`);
+  } else if (process.env.SEED_VIDEO_CONFIRM !== host) {
     abort(
       `Confirma la BD de forma EXPLÍCITA. La DATABASE_URL apunta al host:\n\n    ${host}\n\n` +
       `Si es la BD correcta, re-ejecuta con:\n\n    SEED_VIDEO_CONFIRM=${host} node scripts/seed-video.mjs\n`,
