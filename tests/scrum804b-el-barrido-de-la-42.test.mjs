@@ -21,14 +21,15 @@ import {
 
 /** Cerrados y mergeados: el criterio TIENE que sacarlos DENTRO o no está midiendo, está opinando. */
 const POSITIVOS = [866, 881];
-// 🔴 MEDIDO EL 24-sep-2026, NO SUPUESTO: `git merge-base --is-ancestor` sobre las 149 ramas
-// remotas de hoy. SCRUM-1099 (el negativo anterior) se mergeó el 24-sep (PR #1734) y este mismo
-// test pasó a fallar en el sentido contrario (DENTRO donde exigía FUERA) — el defecto que el
-// comentario de esta misma línea ya avisaba que iba a pasar. Este número ENVEJECE por diseño (es
-// la misma naturaleza del NEGATIVO de SCRUM-738 con `scrum-684`): en cuanto `scrum-1107b-…` se
+// 🔴 MEDIDO EL 25-sep-2026, NO SUPUESTO (CI del PR #1761, run 36152039414): SCRUM-1107 (el
+// negativo anterior) mergeó sus ramas `scrum-1107b-…`/`scrum-1107c-garantia-desatasco` (PR #1758)
+// y este mismo test pasó a fallar en el sentido contrario (DENTRO donde exigía FUERA) — el
+// defecto que el comentario de esta misma línea ya avisaba que iba a pasar. Este número ENVEJECE
+// por diseño (es la misma naturaleza del NEGATIVO de SCRUM-738 con `scrum-684`, y de SCRUM-1099
+// con `scrum-1107`): en cuanto `scrum-1118-citas-rfact-contiguas` (PR #1761, esta misma rama) se
 // mergee, hay que re-elegir un ticket vivo. Quien lo vuelva a medir, que lo re-feche.
-/** Su rama está viva y sin mergear hoy (24-sep-2026): TIENE que salir FUERA. */
-const NEGATIVO = 1107;
+/** Su rama está viva y sin mergear hoy (25-sep-2026): TIENE que salir FUERA. */
+const NEGATIVO = 1118;
 
 // ═══ 🔴 POR IDENTIDAD: el número no casa dentro de otro ═════════════════════════════════════
 
