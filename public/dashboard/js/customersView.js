@@ -93,7 +93,7 @@ function renderCustomersView(container) {
   // SCRUM-985 · el tooltip prometía un formato que el importador no lee: solo entra `.csv`/`.txt`.
   // Texto FIRMADO por el orquestador por delegación del fundador (21-sep-2026), en
   // `docs/microcopy/2026-09-21-SCRUM-985-importar-solo-csv.md`.
-  importBtn.title = "Importar clientes desde un fichero CSV";
+  importBtn.title = "Importar clientes desde un fichero CSV o Excel";
   // SCRUM-312: un alta MASIVA de clientes es «catálogo entero» → admin, con el criterio ya
   // escrito en `adminRouteDeclarations.ts` (línea suelta → técnico, catálogo entero → admin).
   //

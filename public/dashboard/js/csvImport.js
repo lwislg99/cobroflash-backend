@@ -64,14 +64,14 @@ function openImportCsvModal() {
     setAlert(null, '');
     paso.innerHTML = [
       '<p style="font-size:13px;color:var(--neutral-500);margin:0 0 12px">',
-      'Sube el <strong>.csv</strong> que exporta tu Excel. Da igual el orden de las columnas: ',
+      'Sube el <strong>.csv</strong> o el <strong>.xlsx</strong> de tu Excel. Da igual el orden de las columnas: ',
       'te diremos qué hemos entendido antes de importar nada.',
       '</p>',
       '<div id="csv-dropzone" style="border:2px dashed var(--neutral-300);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:8px">',
       '<div style="font-size:13px;color:var(--neutral-500)">',
-      '📂 Arrastra tu fichero CSV o <span style="color:var(--green-600);font-weight:600;text-decoration:underline">haz click para elegirlo</span>',
+      '📂 Arrastra tu fichero o <span style="color:var(--green-600);font-weight:600;text-decoration:underline">haz click para elegirlo</span>',
       '</div>',
-      '<input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none"/>',
+      '<input type="file" id="csv-file-input" accept=".csv,.txt,.xlsx" style="display:none"/>',
       '</div>',
       '<div style="text-align:center;font-size:12px;color:var(--neutral-400);margin:4px 0">— o pega el contenido —</div>',
       '<textarea id="csv-paste" rows="4" placeholder="nombre;telefono;email" ',

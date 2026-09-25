@@ -14,6 +14,18 @@
 // de origen del fichero, no un formato que se acepte. Si mañana alguien la escribe en otro aviso, este
 // test cae y obliga a decidir: o se lee `.xlsx` de verdad (dependencia nueva: la decide el fundador,
 // regla 36) o el texto no lo promete.
+//
+// SCRUM-1022c (25-sep-2026) · CAMBIÓ LA CONDICIÓN, NO EL GUARD. Cuando se escribió (21-sep) el
+// servidor NO leía `.xlsx`, y exigir el tooltip «… CSV», `accept=".csv,.txt"` y «que exporta tu
+// Excel» era exactamente lo correcto: impedía prometer lo que no se hacía. Con SCRUM-1022 (#1723,
+// 23-sep) el servidor lee `.xlsx` de verdad (`read-excel-file`, autorizada) y la pantalla lo seguía
+// escondiendo: el selector no lo ofrecía y sólo llegaba arrastrándolo, que en móvil no existe.
+// Así que la pantalla lo ofrece y este guard se reescribe A PROPÓSITO, sin relajarlo (regla 41):
+// sigue exigiendo que el aviso no prometa más de lo que el importador lee, y ahora ATA la promesa al
+// lector del SERVIDOR — si alguien quita `pareceXlsx` de las rutas de importar, el `.xlsx` de la
+// pantalla vuelve a ser mentira y este fichero cae. Firma: SCRUM-1022 comentario 17016, registrada
+// en docs/microcopy/2026-09-25-SCRUM-1022-importar-xlsx.md. El registro del 21-sep (SCRUM-985) NO
+// se borra: fue cierto y es la constancia de por qué se escribió así.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,12 +36,16 @@ import { fileURLToPath } from 'node:url';
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (rel) => fs.readFileSync(path.join(RAIZ, rel), 'utf8');
 
-const TEXTO_FIRMADO = 'Importar clientes desde un fichero CSV';
+// SCRUM-1022c: era «… CSV» (SCRUM-985, comentario 16104); con el .xlsx leído, SCRUM-1022 comentario 17016.
+const TEXTO_FIRMADO = 'Importar clientes desde un fichero CSV o Excel';
 
 // Lo ÚNICO que puede nombrar Excel en `public/`, por fichero y por fragmento. Un fragmento, no un
 // número de línea: referenciar por posición caduca.
 const EXCEL_PERMITIDO = [
-  { fichero: 'public/dashboard/js/csvImport.js', fragmento: 'que exporta tu Excel' },
+  // SCRUM-1022c: el servidor lee `.xlsx` (lo exige el test del `accept`), así que la pantalla lo nombra.
+  { fichero: 'public/dashboard/js/csvImport.js', fragmento: 'o el <strong>.xlsx</strong> de tu Excel' },
+  { fichero: 'public/dashboard/js/csvImport.js', fragmento: 'accept=".csv,.txt,.xlsx"' },
+  { fichero: 'public/dashboard/js/customersView.js', fragmento: 'importBtn.title = "Importar clientes desde un fichero CSV o Excel"' },
   // SCRUM-1086 (23-sep-2026): «sin post-its ni Excel» no promete leerlo — dice que no hace falta.
   { fichero: 'public/index.html', fragmento: 'sin post-its ni Excel' },
 ];
@@ -60,23 +76,26 @@ test('SCRUM-985 · el tooltip de importar clientes dice exactamente el texto fir
   assert.equal(m[1], TEXTO_FIRMADO);
 });
 
-test('SCRUM-985 · el importador acepta solo lo que el aviso promete: CSV (y texto plano), no hojas de cálculo', () => {
+test('SCRUM-985 · SCRUM-1022c — el selector ofrece exactamente lo que el servidor lee: .csv, .txt y .xlsx', () => {
   const src = leer('public/dashboard/js/csvImport.js');
   const m = src.match(/type="file"[^>]*\baccept="([^"]*)"/);
   assert.ok(m, '🔴 no encuentro el `accept` del `<input type="file">` de csvImport.js');
   const aceptados = m[1].split(',').map((s) => s.trim()).filter(Boolean);
-  assert.deepEqual(aceptados.sort(), ['.csv', '.txt']);
-  assert.ok(!aceptados.some((e) => /xls/i.test(e)),
-    '🔴 el importador acepta hojas de cálculo: entonces sí hay que decidir qué lector las abre');
+  // Igualdad de CONJUNTO: ni falta el .xlsx (función invisible) ni sobra un .xls/.ods que no se lee.
+  assert.deepEqual(aceptados.sort(), ['.csv', '.txt', '.xlsx']);
+
+  // La condición que hace verdad el `.xlsx`: las DOS rutas de importar miran la firma del fichero.
+  // Sin esto, el `accept` volvería a prometer lo que no se lee, que es lo que este fichero impide.
+  const rutas = leer('src/modules/system/app/routes/customersAdmin.routes.ts');
+  const llamadas = rutas.split('\n').filter((l) => !/^\s*(\/\/|\*)/.test(l) && /\bpareceXlsx\(bytes\)/.test(l));
+  assert.equal(llamadas.length, 2,
+    `🔴 las rutas de importar deberían mirar la firma del .xlsx en /import/preparar y en /import; veo ${llamadas.length}`);
 });
 
-test('SCRUM-985 · SCRUM-1022 — el lector de hojas de cálculo es el autorizado, y el aviso sigue sin prometer Excel', () => {
+test('SCRUM-985 · SCRUM-1022 — el lector de hojas de cálculo es el autorizado', () => {
   // SCRUM-1022 (23-sep-2026, comentario 16597): el fundador autorizó `read-excel-file` (regla 36)
-  // para que el SERVIDOR lea un .xlsx real. Esto NO reescribe el aviso: el `title` del botón (test
-  // de arriba) y el `accept` del `<input>` (test de abajo) siguen sin nombrar Excel — que el
-  // servidor acepte un .xlsx por detrás (p.ej. arrastrado al dropzone, que `accept` no filtra) no
-  // es lo mismo que PROMETERLO en pantalla, y esa promesa la firma un jefe (regla 39): propuesta y
-  // pendiente en `docs/master/SCRUM-1022.md` §5, no de esta tanda.
+  // para que el SERVIDOR lea un .xlsx real. La promesa en pantalla llegó después y con su propia
+  // firma (SCRUM-1022c, comentario 17016): el `title`, el `accept` y el texto del modal.
   const pkg = JSON.parse(leer('package.json'));
   const deps = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
   assert.ok(deps.length > 10, `🔴 CIEGO: solo veo ${deps.length} dependencias en package.json`);
@@ -110,6 +129,7 @@ test('SCRUM-985 · «Excel»/«xlsx» en `public/` solo aparece donde está decl
     '🔴 un aviso nombra Excel/xlsx fuera de la única frase declarada. ¿Lee de verdad hojas de cálculo?');
 });
 
+// SCRUM-1022c: «CSV o Excel» vuelve al tooltip, ahora cierto; el control sigue midiendo el DETECTOR.
 test('SCRUM-985 · CONTROL: el detector ve la frase que se retiró', () => {
   const viejo = 'importBtn.title = "Importar clientes desde un fichero CSV o Excel";';
   assert.equal(menciones(viejo).length, 1, '🔴 el detector no ve «CSV o Excel»: un cero no probaría nada');
