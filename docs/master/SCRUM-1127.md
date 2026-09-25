@@ -181,54 +181,114 @@ Hay un test que pasa una clave y una contraseña y busca las dos en toda la traz
 - **[VALIDAR]** `SOAPAction: ""`. SOAP 1.1 lo exige presente. El envío de SCRUM-1110 se hizo desde
   el formulario web de la AEAT, no desde este cliente, así que el valor no está probado contra ella.
 
-## ④ DDL PROPUESTO de `VfSubmission`: NO aplicado, NO en el esquema
+## ④ DDL de `VfSubmission`, con las tres decisiones del fundador: NO aplicado, NO en el esquema
 
-Generado con la función del propio `scripts/preview-migracion.mjs` (`previewMigracion({ schema,
-desde })`), sobre una **copia** del esquema fuera del árbol. `prisma/schema.prisma` no se tocó.
-Resultado: control positivo `ok` (32 `CREATE TABLE`), clase `con_cambios`, **0 sentencias
-destructivas**.
+> **Actualizado el 25-sep-2026 (SCRUM-1127b).** El fundador contestó las tres preguntas que dejaba
+> abiertas la primera versión («las tres como recomiendas», transmitido por el orquestador de
+> Javier). Este apartado **sustituye** al DDL anterior; ese ya no vale.
+>
+> ⛔ `model VfSubmission` **no entra en `prisma/schema.prisma`** hasta que se cumplan las DOS cosas:
+> SCRUM-1128 mergeado Y el ALTER aplicado por Javier en las tres bases (A5).
 
-Modelo propuesto (y dos campos de vuelta, `vfSubmissions VfSubmission[]`, en `Invoice` y
-`Merchant`: solo son de Prisma y no producen DDL sobre esas tablas):
+### Las tres decisiones
+
+1. **`TiempoEsperaEnvio` → POR OBLIGADO.** La AEAT lo impone a quien envía. Uno global acabaría
+   siendo el máximo de todos, y se esperaría de más para todos por culpa de uno. Vive en una tabla
+   propia, `vf_flujo_obligado`, con clave el **NIF del obligado**, que es la unidad con la que
+   cuenta la AEAT (`ObligadoEmision`), y no el `merchantId`:
+   - si YaQu remite como colaborador social o con el certificado de cada comercio, la AEAT sigue
+     contando por NIF;
+   - dos comercios con el mismo NIF comparten la espera, porque la AEAT también se la aplica a los dos.
+
+   `vf_submissions` lleva también `obligado_nif`, para que la cola elija lo siguiente por obligado
+   (índice `obligado_nif, status`).
+2. **El estado → `enum` `VfSubmissionStatus`.** Tiene exactamente los cinco estados de la FSM:
+   `pending`, `sent`, `accepted`, `rejected` y `manual_review`. Son los mismos, y en el mismo orden,
+   que `ESTADOS_VF_SUBMISSION` de `sif.cola.ts`, y hay un test que los fija. Un estado nuevo costará
+   un ALTER, y ese coste se paga a gusto: con registros fiscales, un estado mal escrito es peor.
+   `tipo_operacion` y `estado_registro` siguen en `TEXT`: son valores que **escribe la AEAT**
+   (`Alta`/`Anulacion`, `Correcto`/…), y si no se reconocen el cliente ya los rechaza antes
+   (`interpretarRespuesta`).
+3. **Borrar un comercio con envíos → IMPEDIRLO** (`ON DELETE RESTRICT`), igual hacia `invoices`.
+   Son registros presentados ante la AEAT: borrar al titular dejaría envíos huérfanos de los que
+   nadie responde (regla 29).
+
+### El modelo
+
+Además, dos campos de vuelta, `vfSubmissions VfSubmission[]`, en `Invoice` y `Merchant`. Solo son de
+Prisma y no producen DDL en esas tablas.
 
 ```prisma
+enum VfSubmissionStatus {
+  pending
+  sent
+  accepted
+  rejected
+  manual_review
+}
+
 model VfSubmission {
-  id              Int       @id @default(autoincrement())
-  merchantId      Int       @map("merchant_id")
-  invoiceId       Int       @map("invoice_id")
-  tipoOperacion   String    @map("tipo_operacion")
-  registroXml     String    @map("registro_xml")
-  status          String    @default("pending")
-  attempts        Int       @default(0)
-  lastError       String?   @map("last_error")
-  nextAttemptAt   DateTime? @map("next_attempt_at")
-  lastSentAt      DateTime? @map("last_sent_at")
-  lastEnvioId     String?   @map("last_envio_id")
+  id              Int                @id @default(autoincrement())
+  merchantId      Int                @map("merchant_id")
+  invoiceId       Int                @map("invoice_id")
+  obligadoNif     String             @map("obligado_nif")
+  tipoOperacion   String             @map("tipo_operacion")
+  registroXml     String             @map("registro_xml")
+  status          VfSubmissionStatus @default(pending)
+  attempts        Int                @default(0)
+  lastError       String?            @map("last_error")
+  nextAttemptAt   DateTime?          @map("next_attempt_at")
+  lastSentAt      DateTime?          @map("last_sent_at")
+  lastEnvioId     String?            @map("last_envio_id")
   csv             String?
-  estadoRegistro  String?   @map("estado_registro")
-  subsanar        Boolean   @default(false)
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  estadoRegistro  String?            @map("estado_registro")
+  subsanar        Boolean            @default(false)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
 
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Restrict)
   invoice  Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
 
   @@index([status, nextAttemptAt])
+  @@index([obligadoNif, status])
   @@index([merchantId])
   @@index([invoiceId])
   @@map("vf_submissions")
 }
+
+model VfFlujoObligado {
+  obligadoNif         String    @id @map("obligado_nif")
+  tiempoEsperaEnvioS  Int?      @map("tiempo_espera_envio_s")
+  siguienteEnvioDesde DateTime? @map("siguiente_envio_desde")
+  ultimoEnvioId       String?   @map("ultimo_envio_id")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@map("vf_flujo_obligado")
+}
 ```
 
+### El SQL
+
+Generado con `previewMigracion({ schema, desde })` del propio `scripts/preview-migracion.mjs`,
+sobre una **copia** del esquema fuera del árbol. Resultados:
+
+- control positivo `ok` (33 `CREATE TABLE`), clase `con_cambios`;
+- **0 sentencias destructivas**;
+- `prisma/schema.prisma` intacto: el mismo sha256 (`b48b89356478c052…`) antes y después.
+
 ```sql
+-- CreateEnum
+CREATE TYPE "VfSubmissionStatus" AS ENUM ('pending', 'sent', 'accepted', 'rejected', 'manual_review');
+
 -- CreateTable
 CREATE TABLE "vf_submissions" (
     "id" SERIAL NOT NULL,
     "merchant_id" INTEGER NOT NULL,
     "invoice_id" INTEGER NOT NULL,
+    "obligado_nif" TEXT NOT NULL,
     "tipo_operacion" TEXT NOT NULL,
     "registro_xml" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'pending',
+    "status" "VfSubmissionStatus" NOT NULL DEFAULT 'pending',
     "attempts" INTEGER NOT NULL DEFAULT 0,
     "last_error" TEXT,
     "next_attempt_at" TIMESTAMP(3),
@@ -243,8 +303,22 @@ CREATE TABLE "vf_submissions" (
     CONSTRAINT "vf_submissions_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "vf_flujo_obligado" (
+    "obligado_nif" TEXT NOT NULL,
+    "tiempo_espera_envio_s" INTEGER,
+    "siguiente_envio_desde" TIMESTAMP(3),
+    "ultimo_envio_id" TEXT,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "vf_flujo_obligado_pkey" PRIMARY KEY ("obligado_nif")
+);
+
 -- CreateIndex
 CREATE INDEX "vf_submissions_status_next_attempt_at_idx" ON "vf_submissions"("status", "next_attempt_at");
+
+-- CreateIndex
+CREATE INDEX "vf_submissions_obligado_nif_status_idx" ON "vf_submissions"("obligado_nif", "status");
 
 -- CreateIndex
 CREATE INDEX "vf_submissions_merchant_id_idx" ON "vf_submissions"("merchant_id");
@@ -259,29 +333,24 @@ ALTER TABLE "vf_submissions" ADD CONSTRAINT "vf_submissions_merchant_id_fkey" FO
 ALTER TABLE "vf_submissions" ADD CONSTRAINT "vf_submissions_invoice_id_fkey" FOREIGN KEY ("invoice_id") REFERENCES "invoices"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ```
 
-Por qué cada campo que no estaba en `{invoiceId, status, attempts, lastError}`:
+### Por qué cada campo que no estaba en `{invoiceId, status, attempts, lastError}`
 
 - **`merchantId`**: regla dura 2 (multi-tenant). La cola se consulta por comercio.
+- **`obligadoNif`**: el flujo de control es por obligado (decisión 1). Se copia en la fila **al
+  encolar**, del registro ya sellado. Así, si después cambia el NIF del comercio, un registro ya
+  presentado no cambia de obligado.
 - **`tipoOperacion`**: el alta y la anulación de la misma factura son dos registros.
-- 🔴 **`registroXml`**: el registro **tal como se selló**. Reenviar «los mismos registros» (FAQ)
-  obliga a guardarlos. Si se regeneraran al reenviar, se recalcularía algo ya sellado, que es la
-  trampa de `puesto-j1.md`: «un documento firmado cuyo contenido se recalcula al exportarlo no está
-  firmado».
+- 🔴 **`registroXml`**: el registro **tal como se selló**. Reenviar «los mismos registros» (FAQ de la
+  AEAT) obliga a guardarlos. Si se regeneraran al reenviar, se recalcularía algo ya sellado, que es
+  la trampa de `puesto-j1.md`: «un documento firmado cuyo contenido se recalcula al exportarlo no
+  está firmado».
 - **`nextAttemptAt`, `lastSentAt`, `lastEnvioId`**: el backoff, y enlazar una fila con su línea de
   traza.
 - **`csv`, `estadoRegistro`, `subsanar`**: lo que contestó la AEAT.
 - **Sin `UNIQUE (invoice_id, tipo_operacion)`**: una subsanación es otra alta de la misma factura.
-
-**Preguntas abiertas para quien apruebe el ALTER** (no se han decidido aquí):
-
-1. **Dónde vive el `TiempoEsperaEnvio`.** La AEAT lo impone a quien envía, no a cada registro.
-   ¿Una fila por obligado o una columna en `merchants`? Afecta a si YaQu remite como colaborador
-   social o con el certificado de cada comercio (`SIF_SPEC_NOTES` §3, **[VALIDAR con asesor]**).
-2. **`status` como `TEXT` o como `enum`.** Se ha dejado en `TEXT` porque es lo que usa el resto del
-   esquema para los estados.
-3. **`ON DELETE RESTRICT` hacia `merchants`.** Igual que `Invoice` hoy (restrict por defecto). Una
-   baja o anonimización de un comercio con remisiones tendría que pasar por aquí, y eso lo revisa J1
-   (regla 29).
+- **`vf_flujo_obligado` sin clave ajena a `merchants`**: la clave es el NIF, que la AEAT reconoce.
+  Varios comercios pueden compartirlo, y una fila de espera no es un registro fiscal que haya que
+  retener.
 
 ## ⑤ Verificado en rojo: 4 mutaciones sobre `dist/`, las 4 caen
 
