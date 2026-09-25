@@ -24,9 +24,17 @@ distinguiría.
   Propuesto por J2 tras medir que los dos mecanismos de aviso existentes no servían.
 - `digestSinPendientesConGarantia` → `weeklyDigest.service.ts`.
 
-⚠️ **El segundo texto está aprobado; quién lo aplica NO está decidido.** Ese fichero vive en
-`messaging/`, que no aparece en la tabla de carriles de `dos-equipos.md` §3. Va por
-**SCRUM-1116**, y el carril hay que asignarlo antes de que nadie lo toque.
+El segundo texto lo aplica **J3**, que es el dueño del fichero según `dos-equipos.md` §3.1
+—fila `auth/**`, `lifecycle.service.ts`, `weeklyDigest.service.ts`, `soporte.ts`—, ahí desde el
+18-sep-2026 (SCRUM-951b). Va por **SCRUM-1116**, y consume `garantiasRetenidas.ts` de J2 como
+fuente: el cálculo no se rehace.
+
+🔴 **CORRECCIÓN — la primera versión de este registro decía que ese fichero «no aparece en la
+tabla de carriles». Era FALSO**, y entró en `main` así (PR #1776). Lo escribí repitiendo lo que
+me llegó sin comprobarlo: un `grep weeklyDigest` sobre `dos-equipos.md` lo habría desmentido en
+un segundo. **Lo cazó J2**, que en vez de quedarse el fichero fue a la tabla y encontró al dueño
+de verdad. Queda escrito porque un registro de aprobación es de los sitios donde una frase falsa
+sobrevive años: nadie vuelve a él a dudar, se le cita.
 
 ## 🔴 Qué cambió, y por qué: el ✅ se quita a propósito
 
