@@ -89,5 +89,12 @@ lo arregla nadie.
   antes de este ticket (traspaso de J3, y el aviso del orquestador para 910d). Ninguno de los dos toca
   el resumen del lunes.
 
-Pendiente antes de empujar: esperar a que entre el registro, rebasar sobre `main` y volver a correr el
-test del ticket.
+**Después de rebasar sobre `main` `e3b563e0`**, con el registro ya dentro (PR #1785 del orquestador):
+- El test del ticket, `scrum709` y `scrum267` juntos dan **30 tests · 30 pass · 0 fail**. Pasa también
+  el candado de `constaAprobado()`: las dos ranuras constan firmadas y el control negativo con ✅ no
+  consta.
+- `npm test` entero: **8423 tests · 8287 pass · 2 fail · 134 skipped**. Los dos fallos no son de este
+  ticket:
+  - `scrum910d`, el mismo de antes.
+  - `SCRUM-754b · con fs.watch MUDO…`, en `tests/scrum754-el-juez-que-oscila.test.mjs`. Corrido solo
+    sobre `main` `e3b563e0` **sin esta rama**, cae igual (21 pass · 1 fail). No toca el resumen.
