@@ -368,7 +368,7 @@ async function renderReportsView(container) {
       // trimestre sin facturas, el profesional se quedaba sin forma de volver a otro trimestre.
       // Con `appendChild` los botones sobreviven — mismo patrón que ya usa el bloque de abajo.
       const vacio = document.createElement('p');
-      vacio.style.cssText = 'color:var(--neutral-400);font-size:13px';
+      vacio.className = 'report-vat-empty';
       vacio.textContent = 'Sin facturas emitidas en este trimestre.';
       vatCard.appendChild(vacio);
       return;
@@ -432,7 +432,13 @@ async function renderReportsView(container) {
   // asesor, y la instrucción es dejarlo fuera sin hueco ni marcador (no un cálculo a medias).
   const currentQuarterR = Math.floor(new Date().getMonth() / 3) + 1;
   let resumenQuarter = currentQuarterR;
-  const r2 = (n) => Math.round(n * 100) / 100;
+  // SCRUM-624 · céntimos y LUEGO se divide, como ya hace `suma()` más abajo en este mismo
+  // fichero: no se suma una tercera convención de redondeo (`Math.round(x*100)/100` en la
+  // misma expresión) a las que ya conviven aquí.
+  const r2 = (n) => {
+    const centimos = Math.round(n * 100);
+    return centimos / 100;
+  };
 
   async function loadResumenTrimestre(year) {
     resumenCard.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando…</p>';
@@ -476,7 +482,7 @@ async function renderReportsView(container) {
     const now = new Date();
     if (Number(year) === now.getFullYear() && resumenQuarter === currentQuarterR) {
       const badge = document.createElement('p');
-      badge.style.cssText = 'margin:2px 0 0;font-size:11.5px;font-weight:600;color:var(--amber-700,#b45309)';
+      badge.className = 'resumen-trimestre-badge';
       badge.textContent = 'Trimestre en curso — cifras provisionales, puede haber más movimientos antes de que acabe.';
       resumenCard.appendChild(badge);
     }
@@ -502,14 +508,14 @@ async function renderReportsView(container) {
 
     if (sinDatos) {
       const vacio = document.createElement('p');
-      vacio.style.cssText = 'margin:12px 0 0;color:var(--neutral-400);font-size:13px';
+      vacio.className = 'resumen-trimestre-vacio';
       vacio.textContent = 'Sin movimientos en este trimestre.';
       resumenCard.appendChild(vacio);
       return;
     }
 
     const kpiWrap = document.createElement('div');
-    kpiWrap.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:14px 0 4px';
+    kpiWrap.className = 'resumen-trimestre-kpis';
     const bloques = [
       { label: 'IVA repercutido', value: vat.totals.cuota, color: 'var(--neutral-900)' },
       { label: 'IVA soportado (deducible)', value: r2(soportadoCuota), color: 'var(--neutral-900)' },
@@ -544,10 +550,10 @@ async function renderReportsView(container) {
     }
     if (notas.length) {
       const notasWrap = document.createElement('div');
-      notasWrap.style.cssText = 'margin-top:4px;display:flex;flex-direction:column;gap:4px';
+      notasWrap.className = 'resumen-trimestre-notas';
       for (const n of notas) {
         const p = document.createElement('p');
-        p.style.cssText = 'margin:0;font-size:12px;color:var(--neutral-500)';
+        p.className = 'resumen-trimestre-nota';
         p.textContent = n;
         notasWrap.appendChild(p);
       }

@@ -135,7 +135,18 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 //
 // Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VEREDICTO_AL_MEDIR = { flag: 13, tipo: 7, aPelo: 156 };
+// 156 → 157 · 25-sep-2026 (SCRUM-1049) · CUÁL ENTRÓ Y POR QUÉ NO ES REGRESIÓN. El literal no es
+// NUEVO: «Sin facturas emitidas en este trimestre.» ya vivía en `reportsView.js`, escrito con
+// `vatCard.innerHTML += '<p …>…</p>'`. Ese `+=` no es un `EqualsToken` y el censo no lo veía —
+// el literal existía y estaba invisible al instrumento, el mismo defecto de medición que ya
+// describió SCRUM-776 con la copy centralizada. SCRUM-1049 lo reescribió a
+// `vacio.textContent = '…'` para arreglar OTRO defecto (el `+=` borraba los botones de
+// trimestre recién montados, lección de SCRUM-515) y, de paso, el censo empezó a verlo: entra
+// por `DOM:textContent`. El texto no cambió ni una letra y no depende de ningún flag ni tipo —
+// es un estado vacío fijo, igual en los tres modos —, así que «a pelo» es la categoría correcta.
+// Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const VEREDICTO_AL_MEDIR = { flag: 13, tipo: 7, aPelo: 157 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
