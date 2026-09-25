@@ -107,6 +107,21 @@ El encargo pedía separar «no pude enviar», «enviado y rechazado» y «enviad
 | `rechazado` | `SOAP Fault` o `EstadoEnvio` `Incorrecto` | no lo registró | `rejected`, para una persona |
 | `respondido` | `Correcto` o `ParcialmenteCorrecto` | se lee **línea a línea** | según cada línea |
 
+🔴 **Por qué `no_enviado` y `sin_respuesta` NO se pueden fundir en uno**, aunque la cola reintente
+los dos. Es la decisión de este diseño que alguien querrá «simplificar», así que va explícita:
+
+- En `no_enviado` la AEAT **no tiene** el registro. Reintentarlo es enviarlo por primera vez.
+- En `sin_respuesta` la AEAT **puede tenerlo ya**. Lo que se reenvía tiene que ser **el mismo
+  registro, byte a byte**: el `registroXml` guardado, nunca uno regenerado (§④). La respuesta a ese
+  reenvío puede ser un `RegistroDuplicado`, y la cola lo lee por el estado del que la AEAT ya tiene:
+  `Correcta` es aceptado, no un error.
+- Si las dos cosas fueran una, una de dos. O se trataría el reenvío como un envío nuevo (se
+  regenera el registro, cambia la huella o la hora de generación, y **la AEAT recibe dos registros
+  distintos de la misma factura**). O se trataría el duplicado como un rechazo, y un registro ya
+  aceptado acabaría en manos de una persona como si hubiera fallado.
+- Y en la traza no sabrías si Hacienda tiene el registro o no, que es lo primero que hay que poder
+  contestar ante una incidencia.
+
 Nada sale como «aceptado» por defecto. Todo lo que no encaja con el XSD `RespuestaSuministro` cae en
 `sin_respuesta`: un `EstadoEnvio` desconocido, un `TiempoEsperaEnvio` ausente, una línea sin
 estado, un `Correcto` global con una línea `Incorrecto` o un XML válido con HTTP de error.
