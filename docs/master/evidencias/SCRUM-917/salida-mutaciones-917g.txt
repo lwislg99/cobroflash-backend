@@ -1,0 +1,213 @@
+# SCRUM-917g - AUDITORIA POR MUTACION: docs/master/evidencias/SCRUM-917/mutar-917g.mjs (19 mutaciones contra 10 ficheros de test y el guard F)
+# Date: Mon, 21 Sep 2026 14:06:32 GMT
+# Primera corrida: HEAD 79362001432b6dba6f767c3f8ca46027bee8e4b2, las 19 mutaciones. 18 de 19 cazadas; M16 NO cazada (verde).
+# Analisis de M16: MUTANTE EQUIVALENTE en estado asentado. Mutaba el valor INICIAL de la linea «Quien lo ejecuta» (valor: nombresAsignados || ...), que la linea pisa despues, al leer el equipo, con lineaQuien.poner(resumenDeQuien({ nombres: nombresAsignados, ... })). Los dos instrumentos miden el estado asentado, asi que no habia nada que notar: fallo del INSTRUMENTO (sitio equivocado), no del test. Corregido en 0fd6214015ec8bb47f1a0ff38d00d55dadd733c4 (M16 ahora muta la llamada a poner). Lo que NO se mide y se declara: los ~100 ms de valor inicial antes de que llegue el equipo.
+# Segunda corrida: --solo=M16 sobre 0fd6214015ec8bb47f1a0ff38d00d55dadd733c4. Cazada por SCRUM-817 (el re-anclado) y por el guard F (5 x rojo).
+# Total: 19 de 19 cazadas. En las dos corridas la BASE sin mutar dio verde CON poblacion (87 tests · 87 pass · guard F 246 comprobaciones), el git diff --numstat de cada inyeccion consta junto a su veredicto, y el arbol se restauro con git restore --source=HEAD --staged --worktree y git status --porcelain vacio tras cada una.
+# Lo que este barrido NO prueba: que los 19 mutantes sean TODOS los defectos posibles; prueba que cada superficie re-anclada o nueva de este corte cae ante UNA rotura real de lo que vigila.
+
+===================================== PRIMERA CORRIDA =====================================
+HEAD 79362001432b6dba6f767c3f8ca46027bee8e4b2 · 19 mutaciones · suites: 10 ficheros · guard F: scripts/guard-detalle-trabajo-917.mjs
+BASE sin mutar · tests: 87 tests · 87 pass · 0 fail · exit 0 · guard F: exit 0 · 246 comprobaciones · 0 ❌
+
+M01 · «1 gasto» pasa a «1 gastos» (el plural firmado se cuela en el singular)
+   diff --numstat: 1 1 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 13 tests · 11 pass · 2 fail · exit 1
+   caen: SCRUM-917g · los literales de «El trabajo» son EXACTAMENTE los firmados (15881 y 16142) ‖ SCRUM-917g · 🔴 «Gastos» cerrada: 0 · 1 · N — y SIN DATO no dice nada, ni una suma
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Gastos de este trabajo» dice «1 gastos», esperaba «1 gasto» ‖ ❌ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Gastos de este trabajo» dice «1 gastos», esperaba «1 gasto»
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M02 · «No tienes equipo» nunca se dice (sinEquipo se ignora: siempre «Sin asignar»)
+   diff --numstat: 1 1 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 13 tests · 12 pass · 1 fail · exit 1
+   caen: SCRUM-917g · 🔴 «Quién lo ejecuta» cerrada: TRES cosas que no se mezclan
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Quién lo ejecuta» dice «Sin asignar», esperaba «No tienes equipo» ‖ ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Quién lo ejecuta» dice «Sin asignar», esperaba «No tienes equipo»
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M03 · se quita `sinCuerpo()` cuando el equipo es ilegible (la línea vuelve a ser un control vacío)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Quién lo ejecuta»: debería ser fija (sin galón ni fo ‖ ❌ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Quién lo ejecuta»: debería ser fija (sin galón ni fo
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M04 · el técnico ve las tarjetas para CAMBIAR el tipo (se quita la puerta `!isTecnico`)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.7 [TÉCNICO · sólo lectura] al pulsar «Tipo de trabajo»: el técnico ve 2 tarjetas para CAMBIAR el tipo ‖ ❌ F.7 [TÉCNICO · sólo lectura] al pulsar «Tipo de trabajo»: el técnico ve 2 tarjetas para CAMBIAR el tipo
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M05 · la cabecera de cada línea pierde su `min-height: 44px` (zona de toque)
+   diff --numstat: 1 1 public/dashboard/css/styles.css
+   guard F: exit 1 · 246 comprobaciones · 11 ❌
+   caen: ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] cabeceras por debajo de 44 px: Tipo de trabajo 33.7 · Nombre y dire ‖ ❌ F.4 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] cabeceras por debajo de 44 px: Tipo de trabajo 33.7
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M06 · el script del módulo carga DESPUÉS de `jobDetailView.js` en el índice
+   diff --numstat: 2 1 public/dashboard/index.html
+   tests: 28 tests · 25 pass · 3 fail · exit 1
+   caen: SCRUM-662 · 🔴 un consumidor cargado ANTES de su pieza cae nombrando a los dos ‖ SCRUM-662 · CONTROL POSITIVO: con el índice intacto, ni sobra ni falta ni hay orden roto ‖ SCRUM-917g · el módulo está en el índice UNA vez, ANTES de jobDetailView.js, y sin `defer`
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M07 · vuelve una casilla «Incluir precios en el parte» FUERA de la hoja de alta (en la barra de Documentos)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 17 tests · 15 pass · 2 fail · exit 1
+   caen: SCRUM-319 · «Incluir precios en el parte» sigue intacto: UNA casilla, dentro de la hoja de alta ‖ SCRUM-817 · 📌 la casilla de precios vive SÓLO dentro de la hoja de alta del albarán, nunca en el flujo del parte
+   guard F: exit 0 · 246 comprobaciones · 0 ❌
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M08 · la llamada que pinta las notas se COMENTA (la función queda declarada y nadie la llama)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 6 tests · 5 pass · 1 fail · exit 1
+   caen: SCRUM-427 · la sección de notas se PINTA en el detalle
+   guard F: exit 1 · 246 comprobaciones · 11 ❌
+   caen: ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Notas internas»: falta el campo de notas · marcador de n ‖ ❌ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Notas internas»: falta el campo de notas
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M09 · la línea de gastos se construye pero NO se cuelga de la tarjeta
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 15 tests · 10 pass · 5 fail · exit 1
+   caen: SCRUM-427 · la composición del detalle CUADRA con el diseño de G — enumerando ‖ SCRUM-427 · CONTROL POSITIVO: las cuatro del diseño están, una a una ‖ SCRUM-917g · CONTROL POSITIVO: las cinco líneas de «El trabajo» se leen de la vista, en su orden ‖ SCRUM-817 · 🔴 el orden decidido: albaranes y «El trabajo» con sus cinco líneas — y «quién ejecuta» se lee SIN abrir (+1)
+   guard F: exit 1 · 246 comprobaciones · 41 ❌
+   caen: ❌ F.1 [SIN EQUIPO · sin nombre · 0 gastos] tarjetas=1 título=«El trabajo» líneas=["Tipo de trabajo","Nombre y  ‖ ❌ F.2 [SIN EQUIPO · sin nombre · 0 gastos] líneas abiertas al cargar: [] (de 4)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M10 · se intercambian «Quién lo ejecuta» y «Notas internas» (orden distinto al del prototipo)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 15 tests · 13 pass · 2 fail · exit 1
+   caen: SCRUM-917g · CONTROL POSITIVO: las cinco líneas de «El trabajo» se leen de la vista, en su orden ‖ SCRUM-817 · 🔴 el orden decidido: albaranes y «El trabajo» con sus cinco líneas — y «quién ejecuta» se lee SIN abrir
+   guard F: exit 1 · 246 comprobaciones · 11 ❌
+   caen: ❌ F.1 [SIN EQUIPO · sin nombre · 0 gastos] tarjetas=1 título=«El trabajo» líneas=["Tipo de trabajo","Nombre y  ‖ ❌ F.1 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] tarjetas=1 título=«El trabajo» líneas=["Tipo de tra
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M11 · el módulo escribe un `style.cssText` (sube el trinquete de estilos desde JS)
+   diff --numstat: 1 0 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 16 tests · 10 pass · 6 fail · exit 1
+   caen: SCRUM-713c · 🔴 EL TRINQUETE: los estilos escritos desde JS no SUBEN ‖ SCRUM-917g · la línea plegable: <details> nativo con su cabecera, su valor y su cuerpo ‖ SCRUM-917g · la línea: `poner` cambia lo que dice cerrada, `cerrar` la recoge, sin dato calla ‖ SCRUM-917g · 🔴 `sinCuerpo`: la línea sigue diciendo su valor pero deja de ser un control (+2)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M12 · el marcador del nombre vuelve al viejo «Ej. Reforma baño» (sin firma)
+   diff --numstat: 1 1 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 25 tests · 23 pass · 2 fail · exit 1
+   caen: SCRUM-317 · el campo de nombre existe, con su microcopy aprobada ‖ SCRUM-917g · los literales de «El trabajo» son EXACTAMENTE los firmados (15881 y 16142)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M13 · el rótulo de las notas vuelve a llevar emoji («📝 Notas internas»)
+   diff --numstat: 1 1 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 30 tests · 25 pass · 5 fail · exit 1
+   caen: SCRUM-427 · la composición del detalle CUADRA con el diseño de G — enumerando ‖ SCRUM-917g · CONTROL POSITIVO: las cinco líneas de «El trabajo» se leen de la vista, en su orden ‖ SCRUM-427 · el rótulo es «Notas internas», sin emoji ‖ SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal (+1)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M14 · «Nombre y dirección» vuelve a llamarse «Datos» (rótulo sin firma; la enmienda deja de casar)
+   diff --numstat: 1 1 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 28 tests · 22 pass · 6 fail · exit 1
+   caen: SCRUM-427 · la composición del detalle CUADRA con el diseño de G — enumerando ‖ SCRUM-917g · CONTROL POSITIVO: las cinco líneas de «El trabajo» se leen de la vista, en su orden ‖ SCRUM-427 · una enmienda que autoriza algo que ya NO se pinta, se caza ‖ SCRUM-817 · 🔴 el orden decidido: albaranes y «El trabajo» con sus cinco líneas — y «quién ejecuta» se lee SIN abrir (+2)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M15 · el marcador de las notas vuelve al de Presupuestos (dos marcadores en la pantalla)
+   diff --numstat: 1 1 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 19 tests · 17 pass · 2 fail · exit 1
+   caen: SCRUM-427 · la microcopy es la MISMA que ya usa Presupuestos, literal ‖ SCRUM-917g · los literales de «El trabajo» son EXACTAMENTE los firmados (15881 y 16142)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M16 · la línea «Quién lo ejecuta» CERRADA deja de decir los nombres (hay que abrirla)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 4 tests · 4 pass · 0 fail · exit 0
+   guard F: exit 0 · 246 comprobaciones · 0 ❌
+   ⇒ 🟢 NO CAZADA — la mutación pasó en verde: algo no vigila lo que dice
+
+M17 · las tarjetas del tipo pierden `aria-pressed` (ya no hay función detrás de «Cambiar»)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 4 tests · 3 pass · 1 fail · exit 1
+   caen: SCRUM-817 · 🔴 el reorden no pierde NI UNA acción
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M18 · la explicación del nombre se escribe a mano en la vista (literal duplicado, sin fuente única)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 13 tests · 12 pass · 1 fail · exit 1
+   caen: SCRUM-917g · la vista NO reescribe los literales: los lee de la fuente única
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M19 · el módulo desaparece del SHELL del service worker
+   diff --numstat: 1 1 public/sw.js
+   tests: 23 tests · 21 pass · 2 fail · exit 1
+   caen: SCRUM-274 · el SHELL del service worker lleva TODOS los <script> del dashboard ‖ SCRUM-917g · el módulo está en el SHELL del service worker (la ficha funciona sin red)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+RESUMEN: 18 de 19 cazadas · no cazadas: M16 · ciegas: — · no aplicadas: —
+ÁRBOL FINAL: git status --porcelain vacío · HEAD 79362001432b6dba6f767c3f8ca46027bee8e4b2
+
+===================================== SEGUNDA CORRIDA =====================================
+HEAD 0fd6214015ec8bb47f1a0ff38d00d55dadd733c4 · 1 mutaciones (--solo=M16) · suites: 10 ficheros · guard F: scripts/guard-detalle-trabajo-917.mjs
+BASE sin mutar · tests: 87 tests · 87 pass · 0 fail · exit 0 · guard F: exit 0 · 246 comprobaciones · 0 ❌
+
+M16 · la línea «Quién lo ejecuta» CERRADA deja de decir los nombres una vez leído el equipo (hay que abrirla)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 4 tests · 3 pass · 1 fail · exit 1
+   caen: SCRUM-817 · 🔴 el orden decidido: albaranes y «El trabajo» con sus cinco líneas — y «quién ejecuta» se lee SIN abrir
+   guard F: exit 1 · 246 comprobaciones · 5 ❌
+   caen: ❌ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Quién lo ejecuta» dice «Sin asignar», esperaba «Ja ‖ ❌ F.3 [TÉCNICO · sólo lectura] «Quién lo ejecuta» dice «Sin asignar», esperaba «Javier P. y Lucía M.»
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+RESUMEN: 1 de 1 cazadas · no cazadas: — · ciegas: — · no aplicadas: —
+ÁRBOL FINAL: git status --porcelain vacío · HEAD 0fd6214015ec8bb47f1a0ff38d00d55dadd733c4
+
+
+===================================== TERCERA CORRIDA =====================================
+# Tras tocar el guard F (b06e409e41e5fa575bde9eec6f37c4a0f184f984: el cuerpo de sus tres medidas de navegador pasa DENTRO de page.evaluate, por el censo de SCRUM-258) se vuelve a ver en rojo con las 7 mutaciones que dependen de el (M01 M03 M04 M05 M08 M09 M16): 7 de 7 cazadas. Un instrumento que se toca se vuelve a ver fallar.
+HEAD b06e409e41e5fa575bde9eec6f37c4a0f184f984 · 7 mutaciones (--solo=M01,M03,M04,M05,M08,M09,M16) · suites: 10 ficheros · guard F: scripts/guard-detalle-trabajo-917.mjs
+BASE sin mutar · tests: 87 tests · 87 pass · 0 fail · exit 0 · guard F: exit 0 · 246 comprobaciones · 0 ❌
+
+M01 · «1 gasto» pasa a «1 gastos» (el plural firmado se cuela en el singular)
+   diff --numstat: 1 1 public/dashboard/js/jobTrabajoPlegable.js
+   tests: 13 tests · 11 pass · 2 fail · exit 1
+   caen: SCRUM-917g · los literales de «El trabajo» son EXACTAMENTE los firmados (15881 y 16142) ‖ SCRUM-917g · 🔴 «Gastos» cerrada: 0 · 1 · N — y SIN DATO no dice nada, ni una suma
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Gastos de este trabajo» dice «1 gastos», esperaba «1 gasto» ‖ ❌ F.3 [CON EQUIPO · nadie asignado · 1 gasto] «Gastos de este trabajo» dice «1 gastos», esperaba «1 gasto»
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M03 · se quita `sinCuerpo()` cuando el equipo es ilegible (la línea vuelve a ser un control vacío)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Quién lo ejecuta»: debería ser fija (sin galón ni fo ‖ ❌ F.7 [EQUIPO ILEGIBLE (la lista llegó vacía)] al pulsar «Quién lo ejecuta»: debería ser fija (sin galón ni fo
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M04 · el técnico ve las tarjetas para CAMBIAR el tipo (se quita la puerta `!isTecnico`)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   guard F: exit 1 · 246 comprobaciones · 3 ❌
+   caen: ❌ F.7 [TÉCNICO · sólo lectura] al pulsar «Tipo de trabajo»: el técnico ve 2 tarjetas para CAMBIAR el tipo ‖ ❌ F.7 [TÉCNICO · sólo lectura] al pulsar «Tipo de trabajo»: el técnico ve 2 tarjetas para CAMBIAR el tipo
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M05 · la cabecera de cada línea pierde su `min-height: 44px` (zona de toque)
+   diff --numstat: 1 1 public/dashboard/css/styles.css
+   guard F: exit 1 · 246 comprobaciones · 11 ❌
+   caen: ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] cabeceras por debajo de 44 px: Tipo de trabajo 33.7 · Nombre y dire ‖ ❌ F.4 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] cabeceras por debajo de 44 px: Tipo de trabajo 33.7
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M08 · la llamada que pinta las notas se COMENTA (la función queda declarada y nadie la llama)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 6 tests · 5 pass · 1 fail · exit 1
+   caen: SCRUM-427 · la sección de notas se PINTA en el detalle
+   guard F: exit 1 · 246 comprobaciones · 11 ❌
+   caen: ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] al pulsar «Notas internas»: falta el campo de notas · marcador de n ‖ ❌ F.7 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] al pulsar «Notas internas»: falta el campo de notas
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M09 · la línea de gastos se construye pero NO se cuelga de la tarjeta
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 15 tests · 10 pass · 5 fail · exit 1
+   caen: SCRUM-427 · la composición del detalle CUADRA con el diseño de G — enumerando ‖ SCRUM-427 · CONTROL POSITIVO: las cuatro del diseño están, una a una ‖ SCRUM-917g · CONTROL POSITIVO: las cinco líneas de «El trabajo» se leen de la vista, en su orden ‖ SCRUM-817 · 🔴 el orden decidido: albaranes y «El trabajo» con sus cinco líneas — y «quién ejecuta» se lee SIN abrir (+1)
+   guard F: exit 1 · 246 comprobaciones · 41 ❌
+   caen: ❌ F.1 [SIN EQUIPO · sin nombre · 0 gastos] tarjetas=1 título=«El trabajo» líneas=["Tipo de trabajo","Nombre y  ‖ ❌ F.2 [SIN EQUIPO · sin nombre · 0 gastos] líneas abiertas al cargar: [] (de 4)
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+M16 · la línea «Quién lo ejecuta» CERRADA deja de decir los nombres una vez leído el equipo (hay que abrirla)
+   diff --numstat: 1 1 public/dashboard/js/jobDetailView.js
+   tests: 4 tests · 3 pass · 1 fail · exit 1
+   caen: SCRUM-817 · 🔴 el orden decidido: albaranes y «El trabajo» con sus cinco líneas — y «quién ejecuta» se lee SIN abrir
+   guard F: exit 1 · 246 comprobaciones · 5 ❌
+   caen: ❌ F.3 [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] «Quién lo ejecuta» dice «Sin asignar», esperaba «Ja ‖ ❌ F.3 [TÉCNICO · sólo lectura] «Quién lo ejecuta» dice «Sin asignar», esperaba «Javier P. y Lucía M.»
+   ⇒ 🔴 CAZADA (el rojo salió)
+
+RESUMEN: 7 de 7 cazadas · no cazadas: — · ciegas: — · no aplicadas: —
+ÁRBOL FINAL: git status --porcelain vacío · HEAD b06e409e41e5fa575bde9eec6f37c4a0f184f984

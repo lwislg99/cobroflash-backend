@@ -2861,3 +2861,63 @@ es escribir en esas columnas desde Prisma hasta que estén en el modelo.
 El aviso del encargo decía que devuelve `"railway"` en todas las bases de Railway. En
 `DATABASE_URL_DEV` devolvió **`yaqu_dev_javier`**. No se afirma nada de las otras dos: no se han
 tocado. La acreditación se hizo con `pg_postmaster_start_time()` y el recuento de `invoices`.
+
+## SCRUM-1014 · tabla nueva `customer_sites` — 25-sep-2026 · 🔴 NINGUNA base tocada todavía
+
+`docs/sql/scrum-1014-customer-site.sql` · `CREATE TABLE IF NOT EXISTS` + 2 índices + 2 FK,
+aditiva e idempotente. DDL generado con `node scripts/preview-migracion.mjs --desde <schema sin
+el modelo>` (control positivo dentro, SCRUM-385) contra `origin/main`
+`639a276ffbd6e4ce8ef89b7f8e81c72fad31c111`. Veredicto de la herramienta: aditiva, cero sentencias
+destructivas.
+
+### Estado por base — 25-sep-2026
+
+- [ ] **producción** — sin tocar.
+- [ ] **staging** — sin tocar.
+- [ ] **desarrollo · yaqu_dev_javier** — sin tocar. `yaqu_dev_javier` es del carril B
+  (`docs/MIGRATIONS_PENDING.md`/memoria del equipo: «no la aplica otra sesión, se pide») y esta
+  sesión no tenía `DATABASE_URL_DEV` en el entorno de su worktree — sólo `DATABASE_URL` (BD local
+  de `npm run dev`, otro destino). No se ha forzado ningún env var para sortear el guard.
+
+**Por lo de arriba, este PR NO ES MERGEABLE hasta aplicar `docs/sql/scrum-1014-customer-site.sql`
+en las tres bases** (regla de la casa, 7-sep-2026: el PR lleva el esquema, el SQL y esta entrada
+sin marcar, todo junto). El esquema SÍ nombra `CustomerSite` en esta rama a propósito, por la
+misma regla — retener la línea del esquema produce medio modelo y dos PR por ticket.
+
+### Lo que esta tabla NO toca — medido, no supuesto
+
+- **`Customer` no gana columnas** y `shippingAddress`/`shippingAddressMode` de `Quote`/`Invoice`
+  (SCRUM-602, P2/DOC-12) no se tocan: la tabla es un vecino nuevo, no un reemplazo.
+- **El sello de VeriFactu:** `customer_sites` no aparece en la lista cerrada de ocho campos de
+  `computeVeriFactuHash` — no hay escritor que la alimente desde el camino de emisión.
+- **Vacía, cero efecto:** mientras no haya filas, ningún `SELECT`/`JOIN` existente la toca (nadie
+  la referenciaba antes de esta rama).
+
+## SCRUM-1008 · tres columnas en `products` (sku/supplier_ref/unit) — 25-sep-2026 · 🔴 NINGUNA base tocada, sin registro hasta hoy
+
+Mergeada a `main` el 24-sep-2026 (PR #1750, commit `09f8ba99`) SIN entrada en este fichero — el
+hueco lo detectó SCRUM-1122 (diagnóstico de producción congelada) y lo cierra esta entrada, sin
+tocar ninguna base. `docs/sql/scrum-1008-ficha-articulo.sql` ya declaraba en su propia cabecera
+"PENDIENTE DE APLICAR en producción"; lo que faltaba era la fila con las tres casillas.
+
+```sql
+ALTER TABLE "products" ADD COLUMN     "sku" TEXT,
+ADD COLUMN     "supplier_ref" TEXT,
+ADD COLUMN     "unit" TEXT;
+```
+
+Aditiva (0 DROP/RENAME/TRUNCATE/DELETE/SET NOT NULL), generada offline con
+`preview-migracion.mjs` (detalle en `docs/master/SCRUM-1008.md`). **No lleva `IF NOT EXISTS`**:
+si alguna base ya la tuviera aplicada, re-ejecutarla daría error de "columna ya existe" — antes de
+correrla, comprobar con `docs/sql/deriva-prod.sql` que la fila sigue apareciendo.
+
+### Estado por base — 25-sep-2026
+
+- [ ] **producción** — sin tocar (es una de las dos causas confirmadas del arranque caído en
+  SCRUM-1122: `schemaDrift.ts` no deja escuchar en `NODE_ENV=production` con esta deriva).
+- [ ] **staging** — sin tocar.
+- [ ] **desarrollo · yaqu_dev_javier** — sin confirmar desde este carril (S1 no tiene
+  `DATABASE_URL_DEV`; `yaqu_dev_javier` es del carril B, no se aplica sin pedirlo).
+
+**Este PR ya está mergeado sin las tres casillas marcadas — corregir eso no es reabrir el PR, es
+la aplicación pendiente descrita en SCRUM-1122.**

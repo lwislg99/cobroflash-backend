@@ -119,6 +119,8 @@ test('SCRUM-440 · CONTROL POSITIVO: el merchant PROPIO sí puede pedir su supre
     'customer.updateMany': async () => ({ count: 3 }),
     // SCRUM-497: la supresión también redacta la dirección de `email_messages` (la fila se conserva).
     'emailMessage.updateMany': async () => ({ count: 2 }),
+    // SCRUM-1014: y el teléfono del contacto de cada sitio guardado.
+    'customerSite.updateMany': async () => ({ count: 0 }),
   });
   try {
     const res = resFalso();

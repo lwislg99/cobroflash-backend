@@ -118,3 +118,74 @@ factura-01-bloqueo-2fa-email.png: pantalla "Codigo de identificacion" pidiendo e
 
 ### Nota para quien redacte la comparacion final
 Del catalogo de capturas ya existentes de sesiones anteriores (docs/competencia/capturas/facturadirecta/, de antes de esta tanda) hay: facturadirecta-menu-crear-todos-los-documentos.png, facturadirecta-menu-mas-ventas-compras-gestion.png, facturadirecta-presupuesto-nuevo.png, facturadirecta-ordenes-de-compra.png, facturadirecta-presupuesto-comentarios-adjuntos-actividad.png. Son de PRESUPUESTOS, no de facturas, y no se si son de una sesion que SI logro entrar (con 2FA superado de otra forma) o de antes de que existiera el 2FA. Revisar su fecha/contexto antes de usarlas como sustituto del flujo de factura: no es lo mismo un presupuesto que una factura, aunque el formulario se parezca.
+
+## BILLIN (ahora "TS Facturas, antes Billin", grupo TeamSystem) — 25-sep-2026
+
+Cuenta NUEVA, creada en esta tanda: lwislg99+billin@gmail.com, empresa "Consultoria Prueba Billin" (autonomo), NIF inventado B90512837 (el primer intento, B00000022, dio "Este NIF ya esta en uso en otro negocio de nuestra plataforma": NIFs de relleno tipo B000000NN parecen ya quemados en su base, mejor usar uno con digitos dispersos). Contrasena generada en memoria para esta sesion, tecleada una vez, NO guardada en ningun fichero/mensaje/log (norma del gate, comentario SCRUM-906 del 17-sep). Alta SIN verificacion de email ni telefono: se entra al dashboard nada mas terminar el asistente de 4 pantallas (tipo de negocio -> objetivo -> datos fiscales con NIF/CIF obligatorio pero Telefono y Sector OPCIONALES -> dashboard). Nunca pidio tarjeta.
+
+Camino: dashboard -> "Crear factura" (nav superior, /documents/create/document-data). Es un WIZARD de 2 pasos con barra de progreso, a diferencia del formulario de una sola pagina de Verifacturamos/Contasimple.
+
+### Paso 1 - Datos de la factura
+Cabecera: Cliente* (buscador-select), Fecha de factura* (hoy, editable), Numero de factura* (autonumerico, editable), Vencimiento, Referencia.
+
+**Cliente nuevo SIN salir de la factura:** al escribir un nombre que no existe, el propio desplegable de busqueda muestra un boton "Crear cliente <lo que escribiste>" (no un "sin resultados" mudo como Verifacturamos, ni un boton aparte arriba de la pantalla como Contasimple). Se abre un MODAL con Nombre fiscal (preflotado con lo ya escrito), Tipo de documento, Nº de documento, Direccion, Codigo postal, Ciudad, Provincia, Pais - se completa y "Crear cliente" lo deja seleccionado sin recargar la pagina. YA EXISTE un ticket para esto en YaQu: **SCRUM-1083** ("Alta de cliente nuevo sin salir del formulario de factura suelta"), abierto el 22-sep por una sesion anterior - no duplico.
+
+**Conceptos (lineas):** Concepto* (buscador de productos o texto libre), Unidades*, Precio ud.*, Impuestos*, Descuento, Total (editable a mano, con boton de recalculo), Informacion adicional (texto libre por linea). Botones "Añadir linea de concepto" y "Añadir titulo" (para agrupar lineas bajo un encabezado, no explorado a fondo).
+
+**Impuestos* por linea - un UNICO desplegable con 35 opciones** que mezcla lo que otros competidores separan en varias pantallas: 21/10/4/0% IVA, Exenta IVA, No sujeta IVA, Inv. Suj. Pasivo IVA, y luego 35/20/15%... IGIC, y (no confirmado, se corto la lista) probablemente IPSI y combinaciones con Recargo de Equivalencia. No hay que elegir antes un "tipo de factura" como en Verifacturamos (21 opciones en un desplegable aparte, primer campo del formulario): aqui el tipo de operacion se deduce de lo que se elige EN CADA LINEA. Mas simple de teclear, pero mezcla territorial (IGIC/IPSI) con exencion/ISP en una lista plana sin agrupar, a diferencia de Verifacturamos (que SI agrupa en categorias con subtitulo explicativo) - candidato a confusion si hay muchas opciones parecidas.
+
+**Opciones avanzadas de factura** (colapsable, empieza ABIERTO): checkboxes "Recargo de equivalencia", "Añadir gastos suplidos", "Incluir retencion/IRPF", "Cantidad ya pagada", "Incluir Observaciones para el receptor" (con textarea, marcado por defecto), selector de moneda, boton "Configurar mas opciones" (no explorado). No pude marcar el checkbox de retencion/IRPF con Playwright (el clic quedaba interceptado por el nav fijo al hacer scroll); no es un hallazgo de producto, es una limitacion de la sesion.
+
+**Metodos de pago:** bloque aparte bajo las lineas, "No has añadido ningun metodo de pago a tu factura" + boton "Añadir metodo de pago" (no explorado). Debajo, resumen en vivo: Base imponible / IVA / Total, todo por el tipo de impuesto elegido.
+
+**Adjuntar archivo:** input de fichero (hasta 10 Mb) para adjuntar documentacion complementaria a la factura, visible siempre en el paso 1 (no until despues de emitir).
+
+Validacion al continuar vacio: "Campo obligatorio" bajo cada campo individual (Cliente, Concepto, Precio ud., Total) - mismo patron inline que Verifacturamos/Contasimple, sin recargar pagina.
+
+### Paso 2 - Previsualizacion y emision
+Resumen visual completo: cabecera con Nº y fecha, datos del emisor (colapsable "Mostrar"), datos del cliente, lista de conceptos, y el desglose Subtotal/Base imponible/IVA/Total. Checkbox "Enviar por email despues de emitir" ("Cuando se genere la factura se enviara automaticamente por email a tu cliente" - SOLO email, no WhatsApp/enlace/PDF como el "Guardar y enviar" de YaQu/PresupuestAPP). Dos botones finales JUNTOS: "Guardar borrador" y "Emitir factura" - a diferencia de Verifacturamos, que NO deja emitir sin firma electronica completada (banner fijo bloqueante) y solo ofrece borrador. Use "Guardar borrador" para no disparar una emision real; "Emitir factura" NO se probo.
+
+### Capturas (docs/competencia/capturas/billin/, prefijo factura-NN-)
+00 dashboard (tras alta), 01 paso1-vacio, 02 cliente-nuevo-inline (modal completo), 03 tipos-iva (listbox de 35 opciones desplegado), 04 paso2-preview (resumen + checkbox email + Guardar borrador/Emitir factura), 05 borrador-guardado (listado de facturas), 06 validacion-vacio (Campo obligatorio en los 4 campos).
+
+### Incidencias propias (Billin)
+- El primer intento de alta con NIF de relleno "B00000022" fallo con "Este NIF ya esta en uso": los NIF secuenciales tipo B000000NN que uso en sesiones anteriores para OTROS competidores estan quemados tambien aqui (o Billin comparte una base de datos de NIFs con otro producto del grupo TeamSystem, que tambien es dueño de Quipu). Para la proxima cuenta de prueba en cualquier producto TeamSystem, usar un NIF con digitos dispersos, no secuencial.
+- Quipu (tambien TeamSystem) EXIGE telefono real en su alta de autonomo (campo con asterisco) - no se dio de alta siguiendo la norma del gate ("si un alta pide telefono real, PARA y pregunta al fundador"). Sin cuenta de Quipu tras esta tanda.
+- El checkbox "Incluir retencion/IRPF" no se pudo marcar con Playwright por interceptacion del nav al hacer scroll (3 reintentos con distintas esperas); no bloqueo el resto del recorrido, se omitio esa rama.
+
+### Jira
+Sin ticket nuevo: el unico hallazgo con patron de mejora clara para YaQu (alta de cliente sin salir de la factura) YA tiene ticket - SCRUM-1083. El desplegable unico de impuestos (IVA+IGIC+IPSI+exencion+ISP en una lista) toca directamente el camino fiscal/VeriFactu (regla 40 del master: se lee, no se decide aqui); lo dejo escrito en este RAW para que lo valore quien lleve SIF-1/quotes, no abro ticket de producto sobre ello.
+
+## SERVICEM8 (con cuenta real, no solo paginas publicas) - 25-sep-2026
+
+Holded y Quipu seguian bloqueados por el gate (alias quemado / telefono real), asi que por indicacion del orquestador se cambio a un competidor sin esas trabas: ServiceM8 (australiano, gestion de trabajos de campo/oficios, ya tenia una pasada SOLO de paginas publicas en SCRUM-906i, centrada en fichas de equipo/QR - esta pasada es la primera que ENTRA al producto).
+
+Cuenta NUEVA: lwislg99+servicem8@gmail.com, empresa "Consultoria Prueba SL". Alta en go.servicem8.com/register: SOLO Nombre, Apellido, Email, Contrasena - CERO tarjeta, telefono o CIF en el alta. El wizard de 4 pasos posterior (industria/tamano -> software de contabilidad -> marca de presupuestos/facturas -> telefono y numero de empresa) tiene el paso 4 con "Business Phone Number" y "Business Number" (CIF) presentes pero AMBOS opcionales, con boton "Skip" explicito que lleva directo al panel - se uso Skip, sin escribir ningun dato de contacto real.
+
+**Toda la app gira en torno a un "Job" (trabajo), no en torno a un documento suelto.** No existe un menu "Nueva factura": existe "New Job", y ese Job UNICO pasa por Presupuesto -> Factura -> Cobro segun su estado, sin crear un documento nuevo ni volver a teclear cliente/lineas.
+
+### Cliente nuevo - CERO friccion, mas alla incluso que Billin
+El campo "Search or Create Client" del Job no tiene modal ni boton "Crear cliente": basta con escribir un nombre que no existe y, al hacer clic en cualquier otro campo (blur), el cliente queda CREADO y asignado, sin pedir NIF, direccion, email ni confirmacion de ningun tipo (capturas 11 y 12). Un "Undo" queda disponible por si acaso. Mas frictionless que el modal de Billin (que si exige Nombre fiscal + Nº de documento) y que el callejon sin salida de Verifacturamos (sin boton de creacion). Refuerza SCRUM-1083, no lo sustituye.
+
+### Job Status controla que documento se ve - mismo registro, sin duplicar
+El campo "Job Status" (pestaña Details) tiene 4 valores: Quote, Work Order, Completed, Unsuccessful. Al pasar de "Quote" a "Completed" (capturas 18 y 19), en la pestaña Billing, EN EL MISMO Job:
+- la cabecera cambia de naranja a verde,
+- "Quote Description" pasa a llamarse "Invoice Description",
+- el boton de accion pasa de "Send Quote" a "Send Invoice",
+- aparecen automaticamente las filas "Paid" y "Balance Due" bajo el Total, que no existian en modo Quote.
+Ni las lineas, ni el cliente, ni los importes se vuelven a teclear: es el MISMO registro visto con otra ropa segun el estado del trabajo.
+
+### Catalogo de items con sugerencia y precio por defecto
+Al escribir en "Search or Add New..." (lineas de la factura/presupuesto), aparece una lista de "Suggestions" con items YA CARGADOS de fabrica con precio (ej. "Labour" a 80,00 EUR, capturas 14-15): un clic (o Enter con la sugerencia resaltada) anade la linea completa con descripcion y precio, sin escribir nada a mano. Localizado automaticamente en EUR por geolocalizacion/idioma del navegador (nunca se indico pais).
+
+### Sin IVA en la linea, en ningun momento del recorrido
+A diferencia de TODA la familia espanola (Verifacturamos, Contasimple, Billin), la tabla de lineas NO tiene columna ni desplegable de IVA/impuesto por linea: el desglose "Tax" del resumen se quedo en 0,00 EUR con el item cargado. Coherente con ser una herramienta generalista sin modo fiscal espanol - no es una alternativa a lo que hace VeriFactu, es una gestion de trabajo con facturacion generica encima.
+
+### Incidencia propia de ServiceM8 (no copiar)
+Al escribir texto libre en el buscador de items ("Mano de obra fontaneria") y pulsar Enter mientras una sugerencia distinta seguia resaltada ("Labour"), el Enter selecciono la SUGERENCIA y DESCARTO en silencio el texto tecleado, sin aviso ni confirmacion (capturas 14 vs 15). Es una trampa de su UI, anotada como fallo DE ELLOS, no un patron a copiar.
+
+### Capturas (docs/competencia/capturas/servicem8/, prefijo servicem8-NN-)
+01 registro-formulario, 02 esperando-bd, 03 account-setup (paso 1/4, industria y tamano), 04 step3-marca (paso 3/4, nombre y direccion, Madrid autodetectado), 05 step4-opcional (telefono/CIF opcionales con Skip), 06-08 dashboard/tour animado, 09 dispatch-board (panel real), 10 new-job-modal, 11 crear-cliente-inline (antes), 12 cliente-creado (despues, autoguardado), 13 billing-tab (Send Quote, EUR, 0.00), 14 add-item (escribiendo, sugerencia Labour visible), 15 item-agregado (Enter selecciono la sugerencia, no el texto tecleado), 16 item-detalle, 17 send-quote-dropdown, 18 job-status-opciones (Quote/Work Order/Completed/Unsuccessful), 19 billing-completed (mismo Job en modo factura: verde, Send Invoice, Paid/Balance Due).
+
+### Jira
+Sin ticket nuevo de producto. La creacion de cliente sin friccion queda como segunda referencia (mas fuerte que Billin) para SCRUM-1083, comentado alli. El catalogo de items sugeridos con precio ya existe en YaQu como concepto (catalogo de productos, SCRUM-609, Finalizada) y el saldo pendiente por cobrar ya se rastrea en `invoicesView.js` - no hay hueco medido que justifique ticket nuevo. El Job unico que cambia de presupuesto a factura por estado es, en espiritu, el mismo enfoque que ya persigue YaQu (un documento, no dos); no se midio el codigo de quotes/invoicing a fondo para afirmar si hoy YaQu ya lo hace asi o crea un documento nuevo al convertir - lo dejo anotado para quien lleve ese modulo, sin ticket, por no tener certeza de que sea un hueco real (evitar el error de SCRUM-842: no encontrar algo no es lo mismo que no exista).

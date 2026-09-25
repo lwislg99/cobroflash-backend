@@ -1595,6 +1595,12 @@ html, body { overflow-x: clip; }
    aquí se opta-in por botón, con esta clase. */
 .job-toolbar-btn-44 { min-height: 44px; }
 
+/* SCRUM-786 (AB6), decisión del fundador del 21-sep-2026: opción ③, reglas acotadas por
+   contenedor a 44px, empezando por los IRREVERSIBLES (Borrar, Emitir) antes que el resto de
+   `.btn-sm` (que sigue en 30px sin decidir). Mismo patrón opt-in de SCRUM-962: nunca `.btn-sm`
+   global. */
+.accion-irreversible-btn-44 { min-height: 44px; }
+
 .quote-dto-global { margin-top: 8px; }
 
 /* ── SCRUM-602 (DOC-12) · el campo libre de la dirección de la obra ────────────────────────
@@ -2160,6 +2166,21 @@ html, body { overflow-x: clip; }
 .data-card .table-scroll { /* hereda, sin márgenes extra */ }
 .data-card .table { border-radius: 0; }
 
+/* SCRUM-1040 · Facturas recibidas: mismo lenguaje que el resto del panel (data-card + table +
+   alert), sin un solo estilo en línea (regla 4). El periodo reutiliza `.data-card-toolbar`. */
+.fr-title { margin: 0; font-size: 18px; }
+.fr-subtitle { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.fr-alert { margin: 16px; }
+.fr-alert-top { margin: 16px 16px 0; }
+.fr-alert-detail { margin: 0 16px 16px; font-size: 12px; color: var(--muted); }
+.fr-empty { margin: 24px 16px; color: var(--muted); font-size: 14px; }
+.fr-table-scroll { margin-top: 8px; }
+.fr-th { text-align: left; vertical-align: bottom; }
+.fr-td-nowrap { white-space: nowrap; }
+.fr-td-money { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.fr-td-money-strong { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.fr-tfoot-cell { font-weight: 700; border-top: 2px solid var(--border); }
+
 /* Pestañas de data-card (SCRUM-69, componente NUEVO — propuesto a AB3). Mismo lenguaje que
    .status-pill/.badge: sin sombras/colores nuevos, solo el verde de marca ya usado en
    .nav-item.active. Altura del botón ≥44px (AB6, targets táctiles).
@@ -2335,6 +2356,15 @@ html, body { overflow-x: clip; }
 .c360-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .c360-tags-limite { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .historial-sueltos-lista { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 16px 16px; }
+
+/* SCRUM-1061 (CRM-18) · miniaturas de las fotos del trabajo, en el historial de la ficha 360. */
+.historial-fotos-mini { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.historial-foto-mini {
+  display: inline-flex; width: 44px; height: 44px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.historial-foto-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.historial-fotos-mas { display: inline-flex; align-items: center; font-size: 12px; color: var(--muted); }
 
 /* ── Settings form: responsive ──────────────────────────────── */
 @media (max-width: 640px) {
@@ -2827,6 +2857,44 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .job-asignados-lectura { font-size: 14px; font-weight: 600; color: var(--ink); }
 .doc-asignados-nota,
 .job-asignados-nota { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+
+/* ── SCRUM-917g (F) · «EL TRABAJO»: CINCO LÍNEAS PLEGABLES EN UNA TARJETA ───────────────────────
+   Tipo · Nombre y dirección · Quién lo ejecuta · Notas · Gastos, cada una CERRADA con su valor a la
+   derecha (v. `jobTrabajoPlegable.js`). Es el patrón de SCRUM-915 v3 y del prototipo aprobado de
+   SCRUM-917. Un `<details>` nativo: se abre y se cierra con teclado y con lector de pantalla, y el
+   contenido cerrado sigue en el DOM. Tokens de DESIGN.md; ni uno nuevo. La fila entera es la zona
+   de toque (44 px, AB6). */
+.detail-trabajo .detail-section-title { margin-bottom: 4px; }
+.detail-plega { border-top: 1px solid var(--neutral-100); }
+.detail-plega:first-of-type { border-top: 0; }
+.detail-plega-cab {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  min-height: 44px; padding: 6px 0;
+}
+.detail-plega-cab::-webkit-details-marker { display: none; }
+.detail-plega-cab::before { content: "▸"; flex: none; width: 14px; color: var(--muted); font-size: 12px; }
+.detail-plega[open] > .detail-plega-cab::before { content: "▾"; }
+.detail-plega-cab:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--radius-sm); }
+.detail-plega-rotulo { flex: none; font-size: 14px; font-weight: 600; color: var(--ink); }
+/* El valor se lee a la derecha y se PARTE si no cabe (un nombre largo, tres técnicos): nunca ensancha
+   la tarjeta ni se recorta. */
+.detail-plega-valor {
+  flex: 1 1 auto; min-width: 0; margin-left: auto; text-align: right;
+  font-size: 14px; color: var(--body); overflow-wrap: anywhere;
+}
+/* El cuerpo se alinea con el rótulo (14 px de galón + 10 de hueco) y las secciones de siempre que
+   viven dentro pierden su relleno y su raya: la raya es de la tarjeta, no de cada línea. */
+.detail-plega-cuerpo { padding: 2px 0 14px 24px; }
+.detail-plega-cuerpo .detail-section { padding: 0; border-bottom: none; }
+.detail-plega-ayuda { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.job-asignados-alta { min-height: 44px; margin-top: 8px; }
+/* Sin nada que abrir (no se pudo leer el equipo): la línea dice su valor y deja de ser un control. */
+.detail-plega--fija > .detail-plega-cab { cursor: default; }
+.detail-plega--fija > .detail-plega-cab::before { visibility: hidden; }
+@media (max-width: 420px) {
+  .detail-plega-cuerpo { padding-left: 0; }
+}
 
 /* Tarjetas de margen (planas, dentro de su sección) */
 .margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }

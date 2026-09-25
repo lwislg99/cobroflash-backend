@@ -36,10 +36,10 @@
 // invisible.
 
 /** Razón social del PRODUCTOR del software (no del merchant que factura). */
-export const VERIFACTU_PRODUCTOR_NOMBRE = "<Luis Lara Granado>";
+export const VERIFACTU_PRODUCTOR_NOMBRE = "Javier Pereira Fernández";
 
 /** NIF del productor. Cambiarlo es un HECHO FISCAL: que se vea en el diff es el objetivo. */
-export const VERIFACTU_PRODUCTOR_NIF = "02290074X";
+export const VERIFACTU_PRODUCTOR_NIF = "05292751Z";
 
 /** Id del sistema informático. EXACTAMENTE 2 posiciones (XSD); la AEAT rechaza con 1177. */
 export const VERIFACTU_ID_SISTEMA = "01";

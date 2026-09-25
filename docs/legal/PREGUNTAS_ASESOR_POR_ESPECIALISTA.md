@@ -240,6 +240,52 @@ la AEAT, además del certificado FNMT?
 **Nota:** esto no necesita dictamen legal, es logística de la propia cita — se puede preguntar al
 concertarla, no hace falta tratarlo como bloqueo.
 
+## F16 · Los datos del EMISOR en una factura rectificativa, cuando han cambiado desde la original
+
+**Para el asesor:** Un autónomo emite en enero; en marzo cambia su domicilio fiscal (o constituye
+una sociedad, o cambia de denominación); en octubre emite una rectificativa sobre la de enero.
+(1) ¿Qué datos del expedidor deben figurar en la rectificativa: los de la fecha original o los
+vigentes al rectificar? (2) ¿Cambia la respuesta si lo que cambió fue el NIF (p. ej. constituyó una
+SL) frente a domicilio o denominación? Si la rectificativa lleva un NIF distinto al de la factura
+que rectifica, ¿sigue siendo válida como rectificativa de aquella? (3) Al reimprimir una copia de la
+factura original años después, ¿debe salir con los datos de expedidor de entonces? (4) ¿Hay
+obligación de conservar el historial de datos identificativos del expedidor, más allá del dato que
+figuró en cada factura? El programa ya congela los datos del emisor al emitir (SCRUM-665), y el
+camino de la rectificativa se dejó sin decidir a propósito hasta esta respuesta.
+**Desbloquea:** SCRUM-665, la ruta de emisión de rectificativas (R1).
+**Si no se contesta:** una R1 sigue usando los datos vigentes del merchant al rectificar, no los de
+la factura original.
+
+## F17 · El PRODUCTOR del SIF, ¿puede ser DOS personas físicas?
+
+**Para el asesor:** El bloque `SistemaInformatico` de cada registro tiene un solo campo de productor
+(un nombre, un NIF). Javier: "de momento nadie, pero seremos los dos [con Luis Lara Granado], más
+bien la empresa que conformemos dentro de poco"; "si hace falta uno para pruebas me pongo yo, pero el
+día que haya algo real será como empresa". (1) ¿Puede una declaración responsable del art. 13 RRSIF
+nombrar a dos personas físicas como productor conjunto? (2) ¿Puede el productor ser una comunidad de
+bienes mientras no exista la sociedad? (3) Si una sola persona física firma como productor (para
+pruebas), ¿qué responsabilidad asume frente a la otra, no nombrada? (4) Al constituir la sociedad,
+¿hay que reemitir la declaración responsable con el nuevo productor, conservando la anterior?
+**Desbloquea:** rellenar `docs/legal/DECLARACION_RESPONSABLE.md` §1 (Productor del sistema).
+**Si no se contesta:** el documento sigue con placeholders sin rellenar en el campo de productor.
+
+## F18 · 🔴 La huella sella el REGISTRO — ¿también el PDF entregado tiene que ser inmutable?
+
+**Para el asesor — la más urgente de las dos de hoy, bloquea una decisión de diseño ya:** el PDF de
+una factura se REGENERA con el código actual cada vez que falta en disco (el disco de Railway es
+efímero entre despliegues; `ensureInvoicePdf` en `src/lib/invoicing.ts`). Los DATOS que entran ya
+están congelados (columna congelada del emisor, no ficha viva — SCRUM-665/729); el DISEÑO
+(plantilla/maquetación) sale del código TAL COMO ESTÁ HOY, no como estaba el día de la emisión. (1) La
+huella encadenada sella el registro (los datos) — ¿exige la norma que el documento entregado sea
+también el mismo bit a bit, o basta con que los datos coincidan con el registro sellado? (2) La copia
+que el expedidor debe conservar (art. 19 ROF) — ¿del documento tal como se entregó, o basta con poder
+reconstruirlo desde los datos? (3) Si hace falta el documento inmutable, ¿basta con archivar el PDF de
+la emisión, o hay que versionar también la plantilla/el motor de generación?
+**Desbloquea:** elegir entre archivar el PDF, versionar la plantilla, las dos cosas, o asumir que solo
+el registro necesita ser inmutable — ninguna de las cuatro se construye sin esta respuesta.
+**Si no se contesta:** el PDF sigue regenerándose con el diseño vigente en cada descarga que falte en
+disco, sin garantía de reproducir el documento del día de la emisión.
+
 ---
 
 # 2 · Asesor MERCANTIL / SOCIETARIO (contratos, consumo, estructura de empresa)
@@ -344,12 +390,23 @@ banner mínimo. Hay un análisis con 6 preguntas concretas ya preparado en
 `docs/legal/RGPD_TRATAMIENTO_DATOS.md` (reparto responsable/encargado entre YaQu y el profesional,
 base jurídica de cada tratamiento, si hace falta un DPA con cada profesional, aviso de firma para el
 cliente final, plazos de conservación, y si hace falta Registro de Actividades de Tratamiento).
-**Urgente dentro de este bloque:** la política de privacidad que está publicada HOY en
-`yaqu.app/privacidad` no cubre el IBAN/NIF/teléfono del profesional, la dirección del cliente final ni
-la evidencia de firma — y nunca fue validada por un asesor pese a estar ya visible al público.
-**Desbloquea:** que la política publicada sea correcta (hoy tiene un hueco activo) + el resto del
-bundle Y3.
-**Si no se contesta:** la política sigue publicada con ese hueco.
+**CORREGIDO 23-sep-2026 (jv-j4):** este bloque decía que `yaqu.app/privacidad` "no cubre HOY" el
+IBAN/NIF/teléfono del profesional, la dirección del cliente final ni la evidencia de firma. Medido
+contra la página EN VIVO hoy (no solo el repo): **es falso** — SÍ los cubre, los tres, en su §2 ("Qué
+datos recogemos"), en la versión con fecha "Última actualización: 23 de julio de 2026". Ese hueco
+existió, pero se cerró ese mismo 23-jul-2026 (commit `c238ec706a`, "política de privacidad
+republicada"); `docs/legal/RGPD_TRATAMIENTO_DATOS.md` lo documenta correctamente en pasado ("no
+cubría") con el sello "Decisión del fundador (23-jul-2026): publicar ya". Esta sección heredó esa
+frase en presente sin recotejarla contra la página viva.
+**Lo que SIGUE abierto de verdad:** esa política, aunque completa, **nunca la revisó un asesor
+externo** — se publicó el 23-jul-2026 por decisión del fundador mientras se esperaba esa revisión.
+Las 6 preguntas del análisis de `RGPD_TRATAMIENTO_DATOS.md` (reparto responsable/encargado, DPA,
+aviso de firma, plazos de conservación, Registro de Actividades) siguen siendo las que hay que
+mandar — no ha cambiado nada de eso.
+**Desbloquea:** que quede una validación externa del bundle Y3 (no una corrección de contenido: no
+hay ninguna pendiente).
+**Si no se contesta:** la política sigue publicada sin haber pasado nunca por un asesor — no con un
+hueco de contenido.
 
 ---
 
@@ -365,9 +422,10 @@ bundle Y3.
 
 ## Contador — para que cuadre con `PREGUNTAS_ASESOR.md`
 
-**15 preguntas fiscales** (F1-F15, dos de ellas agrupan varias sub-preguntas del original: F4 agrupa
-las preguntas 14-24 de la sección F, y F14 agrupa las cinco del bloque 21) + **5 mercantiles**
-(M1-M5) + **3 de protección de datos** (P1-P3) = **23 preguntas de envío**, que cubren las ~40
-preguntas y sub-preguntas numeradas del expediente original. Los números no coinciden a propósito:
-el expediente original numera cada matiz técnico por separado; este documento agrupa por la decisión
-legal real que hay debajo, que es lo que un asesor necesita ver de una vez.
+**18 preguntas fiscales** (F1-F18, dos de ellas agrupan varias sub-preguntas del original: F4 agrupa
+las preguntas 14-24 de la sección F, y F14 agrupa las cinco del bloque 21; F16 es P18 del expediente,
+añadida el 22-sep-2026; F17 y F18 son P19 y P20, añadidas el 23-sep-2026 — SCRUM-1087) + **5
+mercantiles** (M1-M5) + **3 de protección de datos** (P1-P3) = **26 preguntas de envío**, que cubren
+las ~42 preguntas y sub-preguntas numeradas del expediente original. Los números no coinciden a
+propósito: el expediente original numera cada matiz técnico por separado; este documento agrupa por
+la decisión legal real que hay debajo, que es lo que un asesor necesita ver de una vez.

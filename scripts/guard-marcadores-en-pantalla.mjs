@@ -68,6 +68,15 @@ const CENSO = Object.freeze({
   // descuento pactado y «Aplicar a las líneas»— y el editor de presupuestos ya no pinta ninguno.
   // Estaba a 6 (marcadores que llegaban al DOM OCULTOS en los tres estados). Misma regla: BORRADA,
   // no puesta a 0.
+
+  // `facturas-recibidas` ENTRA el 22-sep (SCRUM-1040): pantalla nueva junto al Libro de registro
+  // (las facturas que el profesional RECIBE de sus proveedores, A6/SCRUM-426; hasta hoy solo
+  // CSV). Su microcopy —título de la card y el aviso de error de carga— está SIN FIRMAR (regla
+  // 30) y se declara AQUÍ en vez de inventarse: firmar textos oficiales es STOP CONDITION de
+  // AA1.4, no algo que decida quien construye la pantalla. `facturasRecibidasView.js` los deja
+  // marcados como corresponde; QUIEN LOS FIRME los retira de este censo (mismo camino que
+  // `export`/`albaranes`/`quotes-new`, arriba). 6 = 2 nodos (`titulo`, `error`) × 3 estados.
+  'facturas-recibidas': 6,
 });
 
 const ESTADOS = ['con-datos', 'sin-datos', 'error'];

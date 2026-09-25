@@ -1,0 +1,381 @@
+# SCRUM-1107 · Retención de garantía de obra — PASO 0, MEDICIÓN Y DISEÑO, sin construir
+
+**Medido contra:** `origin/main` = `5b007193a8c7ac07ada416d7a08131f5b4d67e32` · 2026-09-23T17:57:00Z
+
+23-sep-2026 · **J2** (Clientes y cobro). Encargo del orquestador, decidido por Javier hoy: el
+profesional que trabaja para una constructora o la Administración no cobra el 100% de la factura
+— se queda un porcentaje (5% habitual, variable por contrato) retenido hasta que pasa el plazo de
+garantía de la obra (12 meses habitual). Ese importe es SUYO, se lo deben, y hoy se olvida.
+**El problema es el olvido, no el cálculo.** Alcance de esta tanda: **solo PASO 0 — medir y
+proponer, no construir nada de código ni tocar el esquema.**
+
+## 1 · Confirmado NO fiscal — el asesor lo dijo con todas las letras
+
+*"La factura se emite por el 100% y el IVA se devenga sobre el 100%; lo retenido es un crédito
+pendiente de cobro. Si lo modeláis, va en cobros, no en la factura."*
+
+Esto fija el límite entero de esta tanda: **`Invoice` y el camino de emisión (`emitInvoice`,
+`verifactu.service.ts`) no se tocan.** Ningún campo nuevo entra en la huella VeriFactu (los ocho
+campos cerrados de `computeVeriFactuHash`), y la factura sigue diciendo el 100% que dice hoy. Si
+al construir apareciera la tentación de anotar el porcentaje en `Invoice`, es STOP (regla 40) —
+por eso el diseño de abajo lo coloca en `Charge`, no en `Invoice`.
+
+**Tampoco es** un descuento (el cliente debe el 100%, no menos), ni un pago parcial sin más (hay
+una FECHA y un MOTIVO contractual, no solo «pagó menos»), ni un impago (no está vencido: está
+aplazado por contrato). Confundirlo con cualquiera de los tres haría mentir a los informes de
+cobro — `saldoPendiente.ts` (SCRUM-1043, «quién me debe») y `cobros.service.ts` son los primeros
+que se leerían mal si el retenido se contara como «ya cobrado» o como «impagado».
+
+## 2 · Dónde vive el dato hoy — medido, no dos veces la pregunta de SCRUM-1050
+
+`Invoice.lines` (`prisma/schema.prisma:816`, `Json?`) es el precedente citado por el encargo
+(SCRUM-1050: ampliar un `Json` existente no necesita ALTER) — **pero `lines` es del camino de
+emisión** (se sella, entra en el PDF y en el desglose de IVA): meter ahí la retención sería
+exactamente el error que el §1 prohíbe, aunque la TÉCNICA (extender un JSON sin ALTER) sea válida
+en general.
+
+Buscado un JSON reutilizable en el lado de COBROS, que es donde el asesor dice que va:
+
+- `Charge.payMethods` (`Json?`, `prisma/schema.prisma:469`) — semánticamente es «qué métodos de
+  pago están habilitados para este cobro», no un sitio para datos de garantía. Reusarlo mezclaría
+  dos conceptos sin relación en la misma columna — descartado.
+- **Ningún otro campo `Json` existe en `Charge`.** No hay un cajón flexible ya abierto en el lado
+  de cobros: **hace falta ALTER**, y lo decide y lo aplica Javier (A5) — esta tanda solo propone
+  las columnas.
+
+## 3 · La relación Invoice↔Charge, medida, porque decide la forma del dato
+
+`Invoice.chargeId` (`Int?`) apunta a **UN** `Charge`; la relación inversa es
+`Charge.invoices Invoice[]` (`schema.prisma:490`) — un mismo `Charge` puede saldar VARIAS
+facturas (pago consolidado), pero **una factura no puede tener hoy dos `Charge` a la vez** por
+esa FK. Eso importa porque la liberación de la garantía, 12 meses después, es un segundo COBRO
+en el tiempo — y el esquema de hoy no modela «una factura, dos cobros sucesivos».
+
+**No se propone resolver eso en este ticket.** El encargo lo enmarca como lo que es: *«YaQu
+recuerda un dato que el profesional metió»* — un recordatorio, no un segundo objeto de cobro con
+su propio ciclo de vida. Cuando llegue el momento de liberar la garantía, el profesional
+registraría ese cobro como CUALQUIER OTRO (un `Charge` nuevo, sin necesidad de encadenarlo por FK
+al original) y marcaría la retención como liberada. Diseñar el encadenamiento formal (si hiciera
+falta) es una decisión de producto que no está pedida hoy — se deja anotada, no resuelta.
+
+## 4 · El diseño propuesto — tres columnas aditivas en `Charge`, NADA en `Invoice`
+
+Seguido el patrón ya usado en esta misma tabla para «un dato que puede no constar» (`paidAt`,
+`expiresAt`: nullable, sin `@default`, sin backfill) y NO el patrón de la retención de IRPF del
+`Merchant` (dos columnas, `declarada` + `tipo`) — porque ahí «declaro que no retengo IRPF»
+necesitaba distinguirse de «no consta», y aquí no hace falta: un `Charge` sin ninguna de las tres
+columnas rellenas simplemente NO tiene garantía retenida, que es la lectura natural de `NULL`.
+
+```prisma
+// Propuesta, NO aplicada — el ALTER lo decide y ejecuta Javier (A5)
+retencionGarantiaPorcentaje Decimal? @db.Decimal(5, 2) @map("retencion_garantia_porcentaje")
+retencionGarantiaImporte    Decimal? @db.Decimal(12, 2) @map("retencion_garantia_importe")
+retencionGarantiaLiberacion DateTime? @map("retencion_garantia_liberacion")
+```
+
+- **Porcentaje** — editable, sin valor fijo por defecto en el ESQUEMA (un `@default(5)` grabaría
+  una norma que no hemos visto en ningún contrato). El **5% propuesto en pantalla** es copy y lo
+  firma Javier (regla 39): la columna no impone nada, solo lo guarda.
+- **Importe** — el valor en euros, no derivado por fórmula en cada lectura: se guarda calculado
+  en el momento en que el profesional confirma el cobro parcial, igual que `suplidos` no se
+  recalcula en cada consulta sino que se fija una vez.
+- **Fecha de liberación** — 🔴 la más importante de las tres, tal como pide el encargo: sin ella,
+  el porcentaje anotado no dispara ningún aviso y el ticket no vale nada. Editable, sin `@default`
+  calculado en el ESQUEMA (proponer +12 meses es lógica de aplicación, no una columna que se
+  rellene sola).
+
+**El invariante a proteger** (el que más le importa al encargo): `retención + recibido = total`,
+EXACTO, al céntimo. Con `Charge.amount` ya representando lo efectivamente cobrado (el 95%, en el
+ejemplo) y la nueva `retencionGarantiaImporte` el otro 5%, la suma de los dos tiene que igualar el
+`Invoice.total` original — éste es el primer caso de test a escribir cuando se construya, con
+redondeos de céntimo incluidos (10.000 × 5% = 500 exacto, pero un contrato al 7% sobre una base
+no redonda no lo es).
+
+## 5 · Lo que esta tanda NO decide ni construye
+
+- **Ningún ALTER aplicado.** Solo propuesto arriba; lo decide y ejecuta Javier.
+- **Ningún código nuevo.** Cero líneas en `src/`.
+- **Ningún texto de pantalla.** El copy del recordatorio, del aviso y de los valores por defecto
+  (5%, 12 meses) se propone al construir y lo firma Javier (regla 39) — YaQu no asesora sobre qué
+  porcentaje corresponde ni si hay derecho a reclamar (regla 7).
+- **El disparo del aviso** (cuándo y cómo se le recuerda al profesional que ya puede reclamar) es
+  diseño de UI/notificación que tampoco se aborda aquí — depende de que las columnas existan
+  primero.
+- **El encadenamiento del segundo cobro** (§3) queda expresamente sin resolver, no es un olvido.
+
+## 6 · La cuarta pregunta: falta decir CUÁNDO SE COBRÓ — respondida, cambia el diseño
+
+El orquestador midió el hueco correcto: las tres columnas del §4 dicen cuánto y cuándo se PUEDE
+reclamar, pero no si YA SE RECLAMÓ. Sin eso, el aviso dispararía para siempre sobre un dinero ya
+ingresado — peor que no avisar, porque el profesional deja de creerse los avisos.
+
+**① ¿Cuarta columna o `Charge` nuevo?** Las dos cosas, no una u otra — son preguntas distintas:
+
+- **El DINERO que entra** (la liberación real de los 500€, o 480€ si hubo un desperfecto) debe
+  pasar por el mismo camino que CUALQUIER otro cobro: un `Charge` NUEVO, normal, confirmado con
+  el mismo mecanismo que ya existe (`confirm-bizum` u homólogo). No es un capricho de diseño: es
+  el mismo principio que ya cerró SCRUM-397 (`instanteDeCobro.ts`, «UN SOLO GENERADOR, no dos
+  asignaciones que se parecen» — el motivo exacto por el que ese ticket existió es que TRES
+  sitios daban tres respuestas sobre «cuándo se cobró»). Si el importe liberado viviera en un
+  campo aparte del retenido, `saldoPendiente.ts` y `cobros.service.ts` tendrían que aprender a
+  sumar DOS fuentes de «dinero cobrado» en vez de una, y ésa es la clase de bifurcación que ya
+  causó un ticket entero. El `Charge` nuevo no necesita un FK formal de vuelta a la factura
+  original — `Invoice.chargeId` ya lo ocupa el cobro inicial (§3) — se relaciona por el mismo
+  cliente, igual que hoy cualquier cobro se relaciona por `customerId`.
+- **La cuarta columna SÍ hace falta**, pero es MÁS PEQUEÑA de lo que parece: no es «cuánto se
+  cobró» (eso ya lo tiene el `Charge` nuevo, en su propio `amount`) — es solo **«¿sigue pendiente
+  este recordatorio, o ya se resolvió?»**, para que el aviso sepa cuándo callarse.
+
+**② ¿Solo fecha, o también importe?** **Solo fecha.** El importe REAL cobrado (500€, o 480€ con
+el desperfecto descontado) ya vive en `Charge.amount` del cobro nuevo — duplicarlo en la fila de
+la retención original sería el mismo defecto de «dos sitios que dicen cuánto» que el punto ① acaba
+de evitar para el DINERO; repetirlo para el IMPORTE sería la misma grieta un nivel más abajo.
+
+```prisma
+// Cuarta columna, añadida a la propuesta del §4 — sigue SIN aplicar
+retencionGarantiaCobrada DateTime? @map("retencion_garantia_cobrada")
+```
+
+### ✅ APLICADO — las tres bases
+
+Javier aplicó el DDL del §7 en **producción y staging** el 23-sep-2026 («Query ran successfully»
+en las dos). **DEV, aplicado por J2** el mismo día con `node scripts/aplicar-sql-dev.mjs --file
+docs/sql/scrum-1107-retencion-garantia-obra.sql --go` (destino confirmado ANTES:
+`acela.proxy.rlwy.net/yaqu_dev_javier`, el único que ese script acepta). El SQL del fichero es
+BYTE A BYTE el mismo que se aplicó en las otras dos — no se reescribió.
+
+**Verificado leyendo el catálogo** (no el mensaje de «aplicado»): `information_schema.columns`
+sobre `yaqu_dev_javier.charges` devuelve las cuatro, con el tipo, la nulabilidad y el `NULL`
+esperados —
+
+| columna | tipo | nullable | default |
+|---|---|---|---|
+| `retencion_garantia_cobrada` | `timestamp without time zone` | `YES` | ninguno |
+| `retencion_garantia_importe` | `numeric(12,2)` | `YES` | ninguno |
+| `retencion_garantia_liberacion` | `timestamp without time zone` | `YES` | ninguno |
+| `retencion_garantia_porcentaje` | `numeric(5,2)` | `YES` | ninguno |
+
+**Las tres bases tienen ya las cuatro columnas.** El paso ③ de A5 (esquema + código + tests en un
+PR) puede empezar.
+
+`NULL` = pendiente de reclamar (el aviso sigue vivo); con fecha = resuelto, el profesional marcó
+que ya entró (el aviso se apaga). La cifra exacta que entró, si difiere de la retenida, se lee del
+`Charge` nuevo — no de aquí. El invariante del §4 (`retención + recibido = total`) sigue siendo el
+control del cobro INICIAL; el cobro de la LIBERACIÓN es un segundo hecho independiente, con su
+propio importe, que puede no coincidir con lo retenido (ahí está el desperfecto) — y eso no es un
+error del sistema, es la realidad que el ticket pide poder anotar.
+
+## 7 · El DDL exacto — generado, no escrito a mano
+
+Pedido por el orquestador para poder llevárselo a Javier: `node scripts/preview-migracion.mjs
+--desde <viejo.prisma>` en modo offline (compara dos ficheros de esquema, no toca ninguna base).
+`prisma/schema.prisma` de este worktree se modificó SOLO para generar el DDL de abajo y se
+revirtió a continuación — no se empuja (regla A5: la decisión y el ALTER son de Javier; el PR con
+esquema + código + tests va DESPUÉS de que él lo aplique).
+
+```sql
+-- AlterTable
+ALTER TABLE "charges" ADD COLUMN     "retencion_garantia_cobrada" TIMESTAMP(3),
+ADD COLUMN     "retencion_garantia_importe" DECIMAL(12,2),
+ADD COLUMN     "retencion_garantia_liberacion" TIMESTAMP(3),
+ADD COLUMN     "retencion_garantia_porcentaje" DECIMAL(5,2);
+```
+
+**Veredicto de `preview-migracion.mjs`:** control positivo pasado (herramienta responde, 30
+tablas vistas) · **aditiva: ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.**
+
+**Árbol limpio tras generarlo, verificado por CONTENIDO, no solo porque el comando no fallara:**
+`git checkout -- prisma/schema.prisma`, luego `git status --short` (no lista `schema.prisma`) Y
+`sha256sum` del fichero en el árbol contra la copia intacta guardada antes de tocarlo — **hash
+idéntico** (`4084abc3…9a77a2` los dos). El esquema del worktree quedó exactamente como estaba.
+
+## Siguiente paso
+
+Con las cuatro columnas decididas y el ALTER aplicado por Javier en las tres bases, la construcción
+(escribir el importe retenido al confirmar un cobro parcial, leerlo en la ficha del cliente/factura,
+y el aviso cuando se acerque la fecha de liberación) cabe en un ticket de tamaño mediano sobre
+`src/modules/billing/**`, que es mi área.
+
+---
+
+# APÉNDICE · Paso ③ construido — esquema + código + tests
+
+**Medido contra:** `origin/main` = `1cc2e6bb04fec54ef9e39b52a0ea2e173eb15c6c` · 2026-09-23T18:19:36Z
+
+Con las tres bases ya con las cuatro columnas (§"APLICADO"), esta rama construye el paso ③ de
+A5: `prisma/schema.prisma` declarando lo que las bases ya tienen, el módulo de dominio, dos rutas
+nuevas, y los tests de los dos invariantes que el encargo pidió fijados desde el principio.
+
+## Qué se construye
+
+- **`src/modules/billing/domain/retencionGarantia.ts`** — módulo PURO (sin BD, sin red):
+  `calcularSplitRetencion(total, porcentaje)` reparte EXACTO al céntimo, por construcción (resta,
+  no dos redondeos independientes) — así que `retenido + recibido = total` no puede fallar por
+  un céntimo. Más los lectores (`tieneRetencionDeclarada`, `retencionPendiente`) y los
+  generadores de `data` (`datosParaDeclararRetencion`, `datosParaMarcarCobrada`).
+- **`POST /admin/charges/:id/garantia`** (`chargesAdmin.routes.ts`, `requireRole('admin')`,
+  mismo criterio que `bulk-tags`/SCRUM-1059) — declara la retención sobre un cobro YA existente.
+  `total` lo manda quien llama (nunca se deriva de `Invoice`: un `Charge` puede saldar más de una
+  factura — `Charge.invoices` — así que no hay «la» factura de la que sacarlo). NO toca
+  `charge.amount`: es metadata aditiva, no una corrección de lo ya cobrado.
+- **`POST /admin/charges/:id/garantia/liberar`** — registra que la garantía se cobró. El dinero
+  es un `Charge` NUEVO, creado con `datosDeCobroPagado` (SCRUM-397: el MISMO generador que
+  cualquier otro cobro, no un tercer sitio que escriba `status`/`paidAt` a mano — lo cazó el
+  censo de `scrum397-instante-de-cobro.test.mjs` al construirlo, ver abajo). Las dos escrituras
+  (el `Charge` nuevo y el `retencionGarantiaCobrada` del original) van en una `$transaction`.
+  `concept` y `method` los manda quien llama — regla 39: ningún texto se inventa aquí.
+
+## Los dos invariantes, fijados con test desde el principio
+
+1. **`retenido + recibido = total`, exacto.** `tests/scrum1107-retencion-garantia.test.mjs`
+   —batería de 10 pares total/porcentaje, incluidos NO redondos (12.345,67 al 7%, 77,77 al
+   0,01%)— y repetido a nivel de RUTA en `scrum1107b`, sobre la respuesta HTTP real.
+2. **El cobro de la liberación es un `Charge` NUEVO, y `retencionGarantiaCobrada` pasa de NULL a
+   fecha EN ESE MOMENTO.** `tests/scrum1107b-rutas-garantia.test.mjs` — verifica que
+   `POST …/liberar` crea el `Charge` (con el importe correcto, `status:'paid'`) Y actualiza el
+   original DENTRO de la misma `$transaction`, más que liberar una retención ya cobrada o sin
+   declarar se rechaza con 409 SIN crear un segundo `Charge` (evita cobrar la garantía dos veces).
+
+## Lo que este PR NO construye — declarado, no un olvido
+
+- **El aviso** (cuándo y cómo se le recuerda al profesional que ya puede reclamar): es diseño de
+  UI/notificación — cron, banner del dashboard, WhatsApp — que necesita su propia decisión y no
+  estaba pedido para esta tanda. Con `retencionPendiente()` ya expuesto, el disparo es un ticket
+  aparte que lee este dato, no que lo redefine.
+- **Ningún texto de pantalla.** Las dos rutas son API pura; nada en `public/` cambia. El 5%/12
+  meses sugeridos, y cualquier copy del formulario que los declare, los firma Javier (regla 39).
+- **No se toca `confirm-bizum`.** Declarar la retención es una acción POSTERIOR y separada, no
+  parte del flujo de confirmación existente — evita tocar la cadena post-pago ya delicada
+  (P0-3: factura ligada → paid → WA → email) para una funcionalidad que no la necesita.
+- **No se resuelve el encadenamiento formal** entre el `Charge` de liberación y la `Invoice`
+  original (§3): quedó anotado en el PASO 0 y sigue sin FK — se relacionan por `customerId`,
+  como cualquier cobro manual.
+
+## Verificado
+
+`npm run build` en verde. **19/19** tests nuevos (10 del módulo puro + 9 de las rutas) — las
+rutas usan `node:http` con `agent: false`, no `fetch` (SCRUM-100/560/809: con `fetch` sobre
+varios `listen(0)` seguidos el proceso revienta una aserción nativa de libuv al cerrar en
+Windows; medido aquí dos veces antes de aplicar el remedio ya escrito). Más **206 tests** de
+alrededor sin romper (225 corridos en total entre las dos tandas, menos los 19 nuevos): el censo
+de SCRUM-397 (que cazó el primer intento — escribía `status`/`paidAt` a mano en vez de usar
+`datosDeCobroPagado`, arreglado), SCRUM-860 (`select`), SCRUM-243 (`merchantId`), SCRUM-267
+(ancla), y toda la batería `*cobro*.test.mjs` del módulo de billing (131 tests, sin ninguno
+afectado).
+
+---
+
+# APÉNDICE · 25-sep-2026 · Desatasco: el conflicto que GitHub declaraba NO EXISTÍA
+
+**Medido contra:** `origin/main` = `6bbe1b4d98e18fd3f5f2fdedd4823d1e24a951b5` · 2026-09-25T14:22:10Z
+
+El PR #1743 llevaba **dos días parado** con `mergeable: CONFLICTING` y `mergeStateStatus: DIRTY`,
+y su sesión (J2) cerrada. Lo desatasca **el orquestador** (A13) por instrucción expresa del
+fundador (*«Desatáscalo»*).
+
+## 🔴 El dato que hay que decir primero: no había ningún conflicto
+
+`git merge-tree` contra la base de fusión devolvió **cero** marcadores. La fusión real de
+`origin/main` en la rama entró **limpia**, sin una sola resolución manual, tocando
+`prisma/schema.prisma` incluido.
+
+**El `CONFLICTING` de la API de GitHub estaba CADUCADO.** Es un valor que el servidor calcula
+de forma perezosa y no siempre recalcula cuando la base se mueve — y esta base se movió 14
+veces entre el 23 y el 25 de septiembre.
+
+⚠️ **La lección operativa:** `mergeable` de la API **no es una medición del árbol**, es una
+caché. Antes de declarar un PR «en conflicto» —y sobre todo antes de descartarlo o rehacerlo—
+se comprueba con `git merge-tree` contra la base real. Dos días de un PR terminado parados por
+creerle a un campo.
+
+## Por qué una rama nueva y no un `push` sobre la de J2
+
+`scrum-1107c-garantia-desatasco`, no un empujón sobre `scrum-1107b-…`:
+
+1. **No se escribe en la rama de otra sesión.** Es norma del equipo, y J2 está cerrada: no
+   puede confirmar que lo que hay empujado sea lo que quería entregar.
+2. El árbol de J2 sigue con esa rama montada. Trabajar ahí habría sido **modificar un recurso
+   compartido**, que es justo lo que el clasificador de permisos denegó al intentarlo — y la
+   salida limpia era un árbol propio, no gastar la excepción.
+
+**Nada del trabajo de J2 se ha reescrito.** Este commit es una fusión, no un rebase: los cuatro
+commits originales siguen siendo los suyos.
+
+## ⛔ El rojo que NO es de esta rama, y que por tanto no se arregla aquí
+
+La tanda deja `tests/scrum939b-trinquete-de-las-skills.test.mjs` en rojo:
+
+> *«EL TRINQUETE TIENE QUE BAJAR: 1 declarada(s) ya no sale(n) FALSA(S): `cerebro-yaqu ·
+> [RUTA_ABS] C:\Program Files\GitHub CLI\gh.exe`»*
+
+🔴 **Medido: el mismo test cae IGUAL en un árbol de `main` sin esta rama.** Esta rama no toca
+`.claude/` —el diff contra `main` lo confirma vacío para esa ruta— así que **el rojo venía de
+antes y está en `main`**.
+
+⛔ **No se toca el trinquete** (regla 41 / A7): un trinquete que salta no es un fallo, es el
+aviso, y ensanchar su lista de declaradas para que pase es exactamente lo que no se hace.
+**Se abre su propio ticket** y se arregla donde está la causa, que no es aquí.
+
+## Suelo
+
+⚠️ **Lo verificado es que `main` entra sin conflicto y que el árbol compila** (`tsc` limpio
+tras `prisma generate`). **La tanda completa NO sale verde** por el rojo heredado de arriba, y
+eso se dice tal cual en vez de presentar un verde que no existe.
+
+⚠️ **El ALTER de este ticket ya está aplicado** (PR #1739, 23-sep). Esta rama trae el esquema y
+el código; **no vuelve a pedir DDL**.
+
+## Y una trampa de la máquina que mordió por el camino
+
+`node --test tests/*.test.mjs` —la invocación que documenta `CLAUDE.md`— **desborda la línea de
+órdenes** en esta máquina: `Argument list too long`, y **sale con código 0 sin haber corrido un
+solo test**. Es el mismo fallo del que el propio fichero avisa («`exit code 0` no es
+"pasó"»), sólo que por otra puerta. La tanda se corre con `npm test`, que tiene su propio
+veredicto.
+
+## Lo que CI destapó, y que la tanda local NO veía
+
+El primer CI del #1758 salió rojo por **seis** sitios. Separados por lo que decide —si son de
+esta rama o no—, quedan **dos** que sí lo son:
+
+### 🔴 Los DOS que son de esta rama, y los dos por la misma causa
+
+**El esquema creció, y dos derivados apuntaban al tamaño viejo.**
+
+1. **`docs/sql/deriva-prod.sql` desfasado.** Es un censo de columnas **commiteado** que tiene
+   que seguir al `.prisma`. Regenerado con `node scripts/generar-sql-deriva.mjs` —el comando
+   que el propio test da en su mensaje—, y el diff son **exactamente las cuatro columnas de la
+   garantía y nada más**: `retencion_garantia_importe`, `_porcentaje`, `_liberacion`,
+   `_cobrada`. Que el diff sea justo eso es lo que prueba que se regeneró y no se retocó.
+2. **Un ancla de `docs/legal/AUDITORIA_CAMINO_EMISION.md:36` apuntando a
+   `prisma/schema.prisma:888-889`.** `vf_hash` y `vf_prev_hash` están hoy en **903-904**: los
+   campos nuevos entraron por encima en el mismo modelo y **desplazaron las líneas**.
+
+⚠️ **De lo segundo, lo que importa es lo que NO se ha hecho:** no se ha tocado el camino de
+emisión ni el esquema, y **la afirmación del documento no cambia** — la huella y el encadenado
+siguen exactamente donde estaban. Lo único que se mueve es el **puntero**, con el motivo escrito
+al lado, que es la convención que ese documento ya usa en sus filas 2, 3 y 6.
+
+🔴 **Y es una trampa que volverá:** *cualquier* campo nuevo en ese modelo mueve esas líneas. El
+ancla no se rompe por tocar VeriFactu, se rompe por tocar **cualquier cosa por encima**.
+
+### ⛔ Los que NO son de esta rama
+
+- **`scrum939b` (trinquete de las skills)** — cae igual en un árbol de `main`. Ticket propio:
+  **SCRUM-1113**.
+- **`scrum859-identidad-y-motivo-cerrado` · MUDO** — en local pasa **20/20**. «MUDO» es que no
+  emitió en CI, no que fallara. No se arregla lo que aquí no falla.
+- **`guard:objetivo-tactil` · rojo(1)** — esta rama **no toca ni un fichero de `public/`**.
+  ⚠️ Y hay algo que decir: en los dos PR mergeados hoy ese job sale **CANCELLED**, así que
+  **casi nunca llega a medir**. Que aquí haya encontrado algo no significa que sea nuevo:
+  significa que esta vez corrió. **No está probado que venga de `main`** —no se ha ejecutado
+  contra `main` a propósito— pero la rama no le da nada que mirar.
+- **`vigía del despliegue` y `constancia del ALTER`** — los dos **informativos**. El primero se
+  queja de que producción no se ha movido, que no es asunto de este PR.
+
+### La lección, que es de método
+
+**La tanda local salió limpia de estos dos.** No los vio porque `prisma generate` en el árbol
+local deja el cliente al día **sin tocar el fichero commiteado**, y porque el guard de anclas
+compara contra un árbol que ya tenía el `.prisma` nuevo. **Un derivado commiteado sólo se
+desfasa a ojos de quien lo compara con lo commiteado**, y eso lo hace CI.

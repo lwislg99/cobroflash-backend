@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 462. Tablas: 30.
+-- Columnas esperadas: 485. Tablas: 31.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -114,6 +114,10 @@ WITH esperado (tabla, columna) AS (
     ('charges','pay_methods'),
     ('charges','receipt_token'),
     ('charges','referencia'),
+    ('charges','retencion_garantia_cobrada'),
+    ('charges','retencion_garantia_importe'),
+    ('charges','retencion_garantia_liberacion'),
+    ('charges','retencion_garantia_porcentaje'),
     ('charges','status'),
     ('charges','updated_at'),
     ('charges','vencimiento'),
@@ -125,6 +129,19 @@ WITH esperado (tabla, columna) AS (
     ('customer_events','meta'),
     ('customer_events','title'),
     ('customer_events','type'),
+    ('customer_sites','address'),
+    ('customer_sites','city'),
+    ('customer_sites','contact_name'),
+    ('customer_sites','country'),
+    ('customer_sites','created_at'),
+    ('customer_sites','customer_id'),
+    ('customer_sites','id'),
+    ('customer_sites','merchant_id'),
+    ('customer_sites','name'),
+    ('customer_sites','phone'),
+    ('customer_sites','postal_code'),
+    ('customer_sites','province'),
+    ('customer_sites','updated_at'),
     ('customers','billing_address'),
     ('customers','billing_city'),
     ('customers','billing_country'),
@@ -183,6 +200,9 @@ WITH esperado (tabla, columna) AS (
     ('expenses','provider_invoice_number'),
     ('expenses','quote_id'),
     ('expenses','receipt_data'),
+    ('expenses','retencion_practicada_cuota'),
+    ('expenses','retencion_practicada_declarada'),
+    ('expenses','retencion_practicada_tipo'),
     ('expenses','team_member_id'),
     ('expenses','updated_at'),
     ('expenses','vat_amount'),
@@ -387,6 +407,9 @@ WITH esperado (tabla, columna) AS (
     ('products','name_search'),
     ('products','price'),
     ('products','provider_id'),
+    ('products','sku'),
+    ('products','supplier_ref'),
+    ('products','unit'),
     ('products','updated_at'),
     ('products','vat'),
     ('providers','created_at'),

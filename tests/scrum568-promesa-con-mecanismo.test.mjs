@@ -10,9 +10,9 @@
 // empezar a vender, todo será verdad.»
 //
 // Este fichero no revisa esa decisión: la SOSTIENE. Convierte «antes del go, o los medios están
-// encendidos o los nueve textos cambian» en algo que el repo comprueba solo.
+// encendidos o los textos condicionados cambian» en algo que el repo comprueba solo.
 //
-// ⚠️ ESTO ES UN REGISTRO, NO UNA PUERTA. Hoy está VERDE con las nueve inalcanzables, porque eso
+// ⚠️ ESTO ES UN REGISTRO, NO UNA PUERTA. Hoy está VERDE con la condicionada inalcanzable, porque eso
 // es la decisión correcta y un rojo permanente por una decisión correcta es el que el segundo
 // que lo ve desactiva (SCRUM-559). Lo que hay aquí es un TRINQUETE: el día que los flags se
 // enciendan, o que aparezca una décima frase condicionada, cae — pidiendo que se mire, no
@@ -31,8 +31,8 @@ import {
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = leerLanding(RAIZ);
 
-/** Lo medido el 21-ago-2026. */
-const CONDICIONADAS = 9;
+/** Lo medido el 21-ago-2026 (eran 9). SCRUM-1086, 23-sep-2026, retiró ocho de las nueve condicionadas. */
+const CONDICIONADAS = 1;
 const ALCANZABLES_HOY = 0;
 const FLAGS = ['BIZUM_MANUAL_ENABLED', 'PAYMENTS_CONNECT_ENABLED'];
 
@@ -46,16 +46,16 @@ function conLosFlagsEncendidos() {
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · un cero aquí diría «no hay ninguna promesa condicionada», que es lo contrario
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('SUELO · hay afirmaciones condicionadas a un flag, y son nueve', () => {
+test('SUELO · hay afirmaciones condicionadas a un flag, y es una', () => {
   const e = estadoCondicionadas(html, RAIZ, censoF);
   assert.ok(e.N > 0,
-    '🔴 CIEGO: cero afirmaciones condicionadas a un flag. Están medidas: son nueve. Un cero se '
+    '🔴 CIEGO: cero afirmaciones condicionadas a un flag. Está medida: es una. Un cero se '
     + 'leería como «ninguna promesa depende de una puerta cerrada», que es justo al revés.');
   assert.equal(e.N, CONDICIONADAS,
     `🔴 hay ${e.N} condicionadas y se midieron ${CONDICIONADAS} · diferencia ${e.N - CONDICIONADAS}.\n`
     + '      → si son MÁS, hay copy publicado nuevo que promete un medio que aún no existe.\n'
     + '      → si son MENOS, alguien cambió un texto o le quitó el `tras`: di cuál.');
-  assert.deepEqual(e.flags, FLAGS, '🔴 han cambiado las puertas que condicionan las nueve');
+  assert.deepEqual(e.flags, FLAGS, '🔴 han cambiado las puertas que condicionan la que queda');
 });
 
 test('SUELO · la tabla P se lee de verdad, y las dos puertas siguen apagadas', () => {
@@ -69,20 +69,20 @@ test('SUELO · la tabla P se lee de verdad, y las dos puertas siguen apagadas', 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // EL ESTADO, EN UNA LÍNEA · punto 3
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('el estado se puede leer en una línea, y hoy dice 0 de 9', () => {
+test('el estado se puede leer en una línea, y hoy dice 0 de 1', () => {
   const e = estadoCondicionadas(html, RAIZ, censoF);
   assert.equal(e.M, ALCANZABLES_HOY,
     `🔴 hoy son alcanzables ${e.M} de ${e.N}. Si ha subido, los flags se han encendido: **eso es `
     + 'la buena noticia**, y toca actualizar este trinquete y avisar de que ya no hay nada que '
     + 'esperar. Si ha bajado por debajo de 0, algo se ha roto en la cuenta.');
-  assert.equal(e.linea, 'de las 9 afirmaciones condicionadas a un flag, 0 son alcanzables hoy');
+  assert.equal(e.linea, 'de las 1 afirmaciones condicionadas a un flag, 0 son alcanzables hoy');
   assert.equal(e.ids.length, CONDICIONADAS);
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 EL CONTROL QUE DECIDE · ¿cambia el veredicto SOLO?
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('🔴 con los flags encendidos, las nueve pasan a alcanzables SIN tocar ningún fichero', () => {
+test('🔴 con los flags encendidos, la que queda pasa a alcanzable SIN tocar ningún fichero', () => {
   const antes = estadoCondicionadas(html, RAIZ, censoF);
   assert.equal(antes.M, 0, '🔴 el punto de partida no es 0: la prueba no probaría nada');
 
@@ -90,36 +90,41 @@ test('🔴 con los flags encendidos, las nueve pasan a alcanzables SIN tocar nin
 
   assert.equal(despues.N, CONDICIONADAS, '🔴 al encender los flags cambia CUÁNTAS hay, y no debería');
   assert.equal(despues.M, CONDICIONADAS,
-    '🔴 con los dos flags encendidos siguen sin ser alcanzables ' + (CONDICIONADAS - despues.M)
-    + ' de las nueve. Entonces su veredicto NO lo decide el flag, y «cambia solo» es mentira: '
+    '🔴 con los dos flags encendidos sigue sin ser alcanzable ' + (CONDICIONADAS - despues.M)
+    + ' de la que queda. Entonces su veredicto NO lo decide el flag, y «cambia solo» es mentira: '
     + 'las que faltan son ' + JSON.stringify(despues.ids.filter((id) => !despues.alcanzables.includes(id))));
   assert.deepEqual(despues.alcanzables.sort(), antes.ids.sort(),
-    '🔴 pasan a alcanzables OTRAS distintas de las nueve condicionadas');
+    '🔴 pasa a alcanzable OTRA distinta de la condicionada');
 });
 
-test('🔴 con UN solo flag encendido, sólo cambian las que dependen de él', () => {
-  // Si con medio flag cambiaran las nueve, el veredicto no estaría mirando el flag que dice
-  // mirar: estaría mirando cualquier cosa. Esto separa «depende del flag» de «depende de algo».
+test('🔴 con UN solo flag encendido no basta: la que queda exige los DOS', () => {
+  // Con las nueve condicionadas había ejemplos de sobra para probar que cada puerta actúa por su
+  // cuenta, cada una con SU flag. SCRUM-1086 dejó una sola (`todo/p#3`), y ésa exige los DOS
+  // (tarjeta y bizum) a la vez — así que aquí se prueba lo contrario de antes: que NINGÚN flag por
+  // separado basta, y que el rojo sigue nombrando la puerta que falta en cada caso.
   const real = censoF.defaultsDeLaTablaP(RAIZ);
   const soloBizum = { ok: true, tabla: { ...real.tabla, BIZUM_MANUAL_ENABLED: true } };
-  const e = estadoCondicionadas(html, RAIZ, censoF, soloBizum);
-  assert.ok(e.M > 0, '🔴 encender BIZUM_MANUAL_ENABLED no desbloquea NI UNA: no lo está mirando');
-  assert.ok(e.M < CONDICIONADAS,
-    '🔴 encender sólo el flag de Bizum desbloquea las nueve. Entonces las que hablan de tarjeta '
-    + 'no dependen de `PAYMENTS_CONNECT_ENABLED`, y su veredicto es casualidad.');
-  // y las que quedan fuera tienen que ser justo las de tarjeta
-  const siguenFuera = e.ids.filter((id) => !e.alcanzables.includes(id));
-  for (const id of siguenFuera) {
-    const tras = ANCLAS_564[id].tras.map((t) => t.flag);
-    assert.ok(tras.includes('PAYMENTS_CONNECT_ENABLED'),
-      `🔴 ${id} sigue inalcanzable con Bizum encendido y no declara depender de la tarjeta`);
-  }
+  const soloTarjeta = { ok: true, tabla: { ...real.tabla, PAYMENTS_CONNECT_ENABLED: true } };
+
+  const eBizum = estadoCondicionadas(html, RAIZ, censoF, soloBizum);
+  assert.equal(eBizum.M, 0,
+    '🔴 encender solo BIZUM_MANUAL_ENABLED ya desbloquea la condicionada: entonces no mira la tarjeta');
+  const eTarjeta = estadoCondicionadas(html, RAIZ, censoF, soloTarjeta);
+  assert.equal(eTarjeta.M, 0,
+    '🔴 encender solo PAYMENTS_CONNECT_ENABLED ya desbloquea la condicionada: entonces no mira bizum');
+
+  const rBizum = veredictos(html, RAIZ, censoF, soloBizum).veredictos.find((v) => v.id === 'todo/p#3');
+  assert.match(rBizum.problemas.join(' '), /PAYMENTS_CONNECT_ENABLED/,
+    '🔴 con solo bizum encendido, el rojo ya no nombra la puerta de tarjeta que sigue cerrada');
+  const rTarjeta = veredictos(html, RAIZ, censoF, soloTarjeta).veredictos.find((v) => v.id === 'todo/p#3');
+  assert.match(rTarjeta.problemas.join(' '), /BIZUM_MANUAL_ENABLED/,
+    '🔴 con solo tarjeta encendida, el rojo ya no nombra la puerta de bizum que sigue cerrada');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // LAS NUEVE · declaradas como manda 551 + 558, no a mano
 // ═════════════════════════════════════════════════════════════════════════════════════════
-test('las nueve tienen ancla VIVA y `tras` con flag y motivo', () => {
+test('la que queda tiene ancla VIVA y `tras` con flag y motivo', () => {
   const e = estadoCondicionadas(html, RAIZ, censoF);
   for (const id of e.ids) {
     const reg = ANCLAS_564[id];
@@ -143,7 +148,7 @@ test('las nueve tienen ancla VIVA y `tras` con flag y motivo', () => {
   }
 });
 
-test('las nueve salen hoy INALCANZABLE, y el rojo nombra la puerta', () => {
+test('la que queda sale hoy INALCANZABLE, y el rojo nombra la puerta', () => {
   const r = veredictos(html, RAIZ, censoF);
   const porId = new Map(r.veredictos.map((v) => [v.id, v]));
   for (const id of estadoCondicionadas(html, RAIZ, censoF).ids) {
@@ -189,9 +194,9 @@ test('si alguien mueve un default, se dice — sin que eso gobierne ningún vere
   const t = censoF.defaultsDeLaTablaP(RAIZ);
   for (const f of FLAGS) {
     assert.equal(t.tabla[f], DEFECTOS_AL_DECLARAR[f],
-      `🔴 «${f}» valía ${DEFECTOS_AL_DECLARAR[f]} cuando se declararon las nueve (${DEFECTOS_AL_DECLARAR.fecha}) `
+      `🔴 «${f}» valía ${DEFECTOS_AL_DECLARAR[f]} cuando se declaró la condicionada (${DEFECTOS_AL_DECLARAR.fecha}) `
       + `y hoy vale ${t.tabla[f]}.\n`
-      + '      → NO es un fallo: es la señal de que el mundo se movió. Vuelve a mirar las nueve '
+      + '      → NO es un fallo: es la señal de que el mundo se movió. Vuelve a mirar la condicionada '
       + 'con el valor de hoy y actualiza `DEFECTOS_AL_DECLARAR`. El veredicto ya ha cambiado solo; '
       + 'esto sólo se asegura de que alguien se entere.');
   }
@@ -214,7 +219,7 @@ test('🔴 no se ha añadido ninguna nota de condición a la landing', () => {
   }
 });
 
-test('🔴 los nueve textos siguen intactos, byte a byte', () => {
+test('🔴 el texto que queda sigue intacto, byte a byte', () => {
   const e = estadoCondicionadas(html, RAIZ, censoF);
   const bruto = Buffer.from(html, 'utf8');
   for (const id of e.ids) {

@@ -660,4 +660,33 @@ export const customerUpdateSchema = customerCreateSchema.partial();
 export type CustomerCreateInput = z.infer<typeof customerCreateSchema>;
 export type CustomerUpdateInput = z.infer<typeof customerUpdateSchema>;
 
+/**
+ * SCRUM-1014 (CRM) · «SITIOS» del cliente — la agenda de direcciones de obra, cada una con su
+ * contacto propio. `name` es el ÚNICO campo obligatorio (SCRUM-1014, `prisma/schema.prisma`):
+ * el resto puede llegar después, igual que el resto de la ficha del cliente.
+ *
+ * MISMOS TOPES QUE `billingAddress`/`billingCity`/… (arriba, CONT-06) — mismo tipo de dato, mismo
+ * límite. `country` en ISO-3166-1 alfa-2, igual que `billingCountry`.
+ *
+ * 🔴 NO PRECARGA NADA (com. 16921 de SCRUM-1014, delegación del fundador): este esquema valida la
+ * FORMA de un registro de agenda. Que el presupuesto/trabajo copie su texto sigue exigiendo una
+ * acción explícita del profesional — P2/DOC-12 (SCRUM-602) sigue intacto.
+ */
+export const customerSiteCreateSchema = z.object({
+  name: z.string().min(1).max(200),
+  address: z.string().max(200).nullable().optional(),
+  city: z.string().max(100).nullable().optional(),
+  postalCode: z.string().max(20).nullable().optional(),
+  province: z.string().max(100).nullable().optional(),
+  country: z.string().max(2).nullable().optional(),
+  // El contacto EN OBRA (el portero, el inquilino) — misma forma que `phone` del cliente.
+  contactName: z.string().max(200).nullable().optional(),
+  phone: z.string().max(30).nullable().optional(),
+});
+
+export const customerSiteUpdateSchema = customerSiteCreateSchema.partial();
+
+export type CustomerSiteCreateInput = z.infer<typeof customerSiteCreateSchema>;
+export type CustomerSiteUpdateInput = z.infer<typeof customerSiteUpdateSchema>;
+
 

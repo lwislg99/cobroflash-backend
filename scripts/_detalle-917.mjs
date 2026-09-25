@@ -82,23 +82,69 @@ export const JOB_COBRADO_DE_MAS = {
 };
 
 export const CASOS = [JOB_PAGADO, JOB_A_MEDIAS, JOB_SIN_PRESUPUESTO, JOB_COBRADO_DE_MAS];
-const POR_ID = new Map(CASOS.map((j) => [j.id, j]));
+
+// SCRUM-917g (F) · dos Trabajos que SÓLO mide el bloque F, y por eso NO están en `CASOS`: las
+// comprobaciones D y G se escribieron para los cuatro de arriba y cada caso nuevo exigiría su
+// entrada en `ESPERADO` y en `DEUDA_44PX`. Tienen lo que los cuatro no tienen y F necesita para
+// distinguir lo que dice cada línea plegada: nombre propio, técnicos asignados y gastos.
+export const JOB_CON_EQUIPO = {
+  ...JOB_A_MEDIAS,
+  id: 3103,
+  titulo: 'Cambio de cuadro en el 3º B',
+  customer: { id: 45, name: 'Comunidad Los Olmos', phone: telefonoDePrueba(4), email: null },
+  tipoOperacion: 'OPERACIONES_SUELTAS',
+  asignados: [{ id: 1, name: 'Javier P.' }, { id: 2, name: 'Lucía M.' }],
+  notes: 'Llamar antes de subir.',
+  gastos: [
+    { id: 71, description: 'Cable 2,5 mm', amount: 38.4, currency: 'EUR', date: '2026-09-18' },
+    { id: 72, description: 'Diferencial 40 A', amount: 61.9, currency: 'EUR', date: '2026-09-19' },
+  ],
+};
+// Un solo gasto y nadie asignado: el SINGULAR («1 gasto») y el «Sin asignar» con equipo.
+export const JOB_UN_GASTO = {
+  ...JOB_CON_EQUIPO,
+  id: 3104,
+  titulo: '',
+  customer: { id: 46, name: 'Taller Mecánico Ruiz', phone: telefonoDePrueba(5), email: null },
+  asignados: [],
+  notes: '',
+  gastos: [{ id: 73, description: 'Silicona neutra', amount: 6.5, currency: 'EUR', date: '2026-09-20' }],
+};
+export const CASOS_F = [JOB_PAGADO, JOB_CON_EQUIPO, JOB_UN_GASTO];
+const POR_ID = new Map([...CASOS, JOB_CON_EQUIPO, JOB_UN_GASTO].map((j) => [j.id, j]));
 
 /**
  * Levanta el servidor que sirve el dashboard real y contesta `/admin/*` con los casos de arriba.
  * Devuelve `{ base, cerrar }`. El puerto lo elige el sistema (0): dos sesiones a la vez no chocan.
  */
-export async function levantarBanco({ conEquipo = false } = {}) {
+export async function levantarBanco({ conEquipo = false, equipoCiego = false, rol = 'admin' } = {}) {
   const scripts = scriptsDelDashboard(RAIZ);
   const hojas = hojasDelDashboard(RAIZ);
-  const equipo = conEquipo ? [{ id: 1, name: 'Javier P.' }, { id: 2, name: 'Lucía M.' }] : [];
+  // 🔴 «SIN EQUIPO» NO ES UNA LISTA VACÍA. `GET /admin/team` sintetiza SIEMPRE al propietario
+  // (`id: null`, sin fila en `team_members`): un negocio de una sola persona recibe `[propietario]`.
+  // Una lista VACÍA es la otra cosa —«no se ha leído nada», `EquipoCiego` en `jobAsignados.js`— y la
+  // primera versión de este banco contestaba `[]` para «sin equipo»: la pantalla tomaba el camino
+  // del error, quitaba la sección y ningún guard llegó a ver el caso que decía estar midiendo.
+  // Por eso hay DOS interruptores y no uno: `equipoCiego` fabrica el `[]` a propósito.
+  const propietario = { id: null, name: 'Epipe' };
+  const equipo = equipoCiego ? []
+    : conEquipo ? [propietario, { id: 1, name: 'Javier P.' }, { id: 2, name: 'Lucía M.' }]
+    : [propietario];
 
   const srv = http.createServer((req, res) => {
     const u = req.url.split('?')[0];
     if (u.startsWith('/admin/team')) return json(res, equipo);
+    // 🔴 El ROL lo pone `app.js` al arrancar, desde `/admin/me` (`window.appUserRole = me.userRole ||
+    // 'admin'`), y PISA lo que escriba el HTML de abajo. La primera versión de `rol` sólo lo escribía
+    // en el HTML: el «técnico» del banco era un administrador y el bloque F medía el caso que no era.
+    // Para `admin` se sigue contestando `{}` (lo de siempre); sólo otro rol lleva el suyo.
+    if (u.startsWith('/admin/me')) return json(res, rol === 'admin' ? {} : { userRole: rol });
     if (u.startsWith('/admin/merchant')) return json(res, { name: 'Epipe', currency: 'EUR' });
     if (u.startsWith('/admin/partes')) return json(res, { partes: [] });
-    if (/gastos/.test(u)) return json(res, { gastos: [] });
+    // Los gastos son DEL TRABAJO que se pide, no una lista común: con `{ gastos: [] }` para todos,
+    // «Sin gastos» y «2 gastos» serían indistinguibles y el bloque F mediría siempre el mismo caso.
+    const g = u.match(/^\/admin\/jobs\/([^/?]+)\/gastos$/);
+    if (g) return json(res, { gastos: (POR_ID.get(Number(g[1])) || {}).gastos || [] });
     // 🔴 SIN COMODÍN. La primera versión de este banco acababa en
     // `if (u.startsWith('/admin/')) return json(res, JOB_PAGADO)`, y eso convirtió una llamada mal
     // hecha (`/admin/jobs/NaN`) en una respuesta perfectamente válida: los tres casos pintaron el
@@ -136,7 +182,7 @@ ${hojas.map((h) => `<link rel="stylesheet" href="/${path.relative(path.join(RAIZ
 <body><div class="app-main"><div id="view"></div></div>
 ${scripts.map((s) => `<script src="/dashboard/${s}"></script>`).join('\n')}
 <script>
-  window.appUserRole = 'admin';
+  window.appUserRole = '${rol}';
   window.appUserName = 'Epipe';
   window.__navegaciones = [];
   window.renderAppView = function (v, o) { window.__navegaciones.push({ vista: v, opts: o }); };

@@ -247,6 +247,18 @@ test('SCRUM-628c · 🔴 quoteRequestsView.js SE MONTA y pinta su contenedor', a
     'quoteRequestsView.js', 161);
 });
 
+// ═══ ②d SCRUM-1040 · LA VISTA NUEVA, CUBIERTA DESDE QUE NACE ═════════════════════════════════
+//
+// El trinquete está en CERO: una vista nueva sin cubrir lo sube (control de abajo). Se cubre en
+// el mismo commit que la crea, con el mismo criterio que las de la fase c.
+
+test('SCRUM-1040 · 🔴 facturasRecibidasView.js SE MONTA y pinta su contenedor', async () => {
+  // Con el `{}` de fábrica del banco, `filas` no es un array: la vista cae por su rama de error
+  // (misma familia que `libroRegistroView.js`) y sigue pintando título + selector + aviso.
+  exigeQueMonte(await pintarVista(cargarDashboard(RAIZ), 'renderFacturasRecibidasView'),
+    'facturasRecibidasView.js', 285);
+});
+
 // ═══ 🔴 EL CONTROL QUE JUSTIFICA NO BORRAR EL TRINQUETE EN CERO ══════════════════════════════
 
 test('SCRUM-628c · 🔴 una vista NUEVA sin cubrir hace SUBIR el trinquete', () => {

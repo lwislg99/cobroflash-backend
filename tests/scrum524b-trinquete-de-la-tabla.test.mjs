@@ -184,8 +184,10 @@ const MUTACIONES = [
     de: 'const motivo = invalidPrefijoSerie(v);', a: 'const motivo = null;', caen: ['1130'] },
   { que: '1130 · y de la otra puerta (app.ts)', fichero: F.app,
     de: 'const malPrefijo = invalidPrefijoSerie(prefijoPedido);', a: 'const malPrefijo = null;', caen: ['1130'] },
+  // SCRUM-735 (23-sep-2026): el año/zona ya no se leen del reloj del proceso — la llamada pasó
+  // a `invalidAnioFiscal(year, new Date(), zona)`, con `zona = zonaDelMerchant(merchant)`.
   { que: '1152 · /verifactu.xml deja de mirar el año', fichero: F.exports,
-    de: 'const motivoAnio = invalidAnioFiscal(year);', a: 'const motivoAnio = null;', caen: ['1152'] },
+    de: 'const motivoAnio = invalidAnioFiscal(year, new Date(), zona);', a: 'const motivoAnio = null;', caen: ['1152'] },
   { que: '1189 · la factura sin NIF deja de pasar por el resolvedor', fichero: F.servicio,
     de: '? resolverSinDestinatario(tipoBase, inv.number, opts.modoSinDestinatario ?? MODO_SIN_DESTINATARIO)',
     a: '? null', caen: ['1189'] },
@@ -212,6 +214,13 @@ const MUTACIONES = [
   { que: '1207 · aparece una calificación que no es S1', fichero: F.builder,
     de: 'calificacion: CALIFICACION_SUJETA_NO_EXENTA,',
     a: "calificacion: entrada.rate > 0 ? CALIFICACION_SUJETA_NO_EXENTA : 'N1',", caen: ['1207'] },
+  // La violación REAL que el ancla `propiedadLigada` existe para atrapar (SCRUM-524b, 23-sep-2026):
+  // no un cambio de sintaxis, sino la rama S2 (SCRUM-1051) empezando a declarar `cuotaRepercutida`
+  // — exactamente lo que el código AEAT 1207 prohíbe (cuota sólo con S1).
+  { que: '1207 · la rama S2 empieza a declarar `cuotaRepercutida` (violación real, no sintáctica)', fichero: F.builder,
+    de: 'calificacion: CALIFICACION_INVERSION_SUJETO_PASIVO,\n      baseImponible: entrada.base.toFixed(2),\n    };',
+    a: 'calificacion: CALIFICACION_INVERSION_SUJETO_PASIVO,\n      baseImponible: entrada.base.toFixed(2),\n      cuotaRepercutida: entrada.cuota.toFixed(2),\n    };',
+    caen: ['1207'] },
   { que: '1177 · el arranque deja de comprobar el id del sistema', fichero: F.arranque,
     de: 'assertVerifactuIdSistema();', a: '', caen: ['1177'] },
   { que: '1177 · el validador deja de exigir 2 posiciones', fichero: F.env,

@@ -259,7 +259,8 @@ async function renderCustomer360View(container, customerId) {
 
   const kpis = [
     { label: 'Pendiente de cobro', value: fmt(debt),
-      sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : 'al día ✓',
+      // SCRUM-1108b: con garantía retenida sin cobrar, «al día ✓» es falso. No se añade texto: se quita.
+      sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : (stats.garantiaRetenida ? '' : 'al día ✓'),
       color: debt > 0 ? 'var(--red-600)' : 'var(--green-600)' },
     { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
     { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },
@@ -279,6 +280,17 @@ async function renderCustomer360View(container, customerId) {
     kpiGrid.appendChild(k);
   });
   wrap.appendChild(kpiGrid);
+
+  // SCRUM-1108b: una línea POR RETENCIÓN (con dos fechas, «total · desde la más temprana» diría que
+  // todo se libera ya). `liberacionDia` es el día en la zona del merchant: lo resuelve el servidor.
+  // `.alert warning` si la fecha ya llegó, `.alert info` si no. Literal firmado (docs/microcopy/).
+  (stats.garantiaRetenida?.retenciones || []).forEach((r) => {
+    const [y, m, d] = String(r.liberacionDia).split('-');
+    const linea = document.createElement('div');
+    linea.className = r.aviso ? 'alert warning' : 'alert info';
+    linea.textContent = `Garantía retenida: ${fmt(r.importe)} · liberación desde el ${d}/${m}/${y} · sin cobrar`;
+    wrap.appendChild(linea);
+  });
 
   // ── Actividad / historial de comunicaciones (ENT-3) ───────────────────
   if (Array.isArray(events) && events.length) {
@@ -509,6 +521,41 @@ async function renderCustomer360View(container, customerId) {
         docs.appendChild(b);
       });
       tdDocs.appendChild(docs);
+
+      // ── SCRUM-1061 (CRM-18) · miniaturas de las fotos del trabajo (hasta 3, tope de SCRUM-1060) ──
+      // Ausente ≠ vacío: `t.fotos` solo viaja si el trabajo tiene alguna. Reutiliza
+      // `GET /admin/attachments/:id` (ya sirve el binario con su propio check de merchantId): sin
+      // ruta nueva, sin tocar el almacenamiento.
+      if (t.fotos && t.fotos.ids && t.fotos.ids.length) {
+        const galeria = document.createElement('div');
+        galeria.className = 'historial-fotos-mini';
+        t.fotos.ids.forEach((fotoId) => {
+          const enlaceFoto = document.createElement('a');
+          enlaceFoto.href = `/admin/attachments/${fotoId}`;
+          enlaceFoto.target = '_blank';
+          enlaceFoto.rel = 'noopener';
+          enlaceFoto.className = 'historial-foto-mini';
+          const img = document.createElement('img');
+          img.src = `/admin/attachments/${fotoId}`;
+          // ✅ TEXTO FIRMADO por el orquestador por delegación del fundador (22-sep-2026, SCRUM-1061).
+          img.alt = 'Foto del trabajo';
+          img.loading = 'lazy';
+          // Una foto que falla al cargar no rompe la ficha: se retira en vez de enseñar el icono roto.
+          img.onerror = () => { img.hidden = true; };
+          enlaceFoto.appendChild(img);
+          galeria.appendChild(enlaceFoto);
+        });
+        const restantes = t.fotos.total - t.fotos.ids.length;
+        if (restantes > 0) {
+          const mas = document.createElement('span');
+          mas.className = 'historial-fotos-mas';
+          mas.textContent = '+' + restantes + ' más'; // ✅ FIRMADO, SCRUM-1061
+          mas.setAttribute('aria-label', restantes + ' fotos más'); // ✅ FIRMADO, SCRUM-1061
+          galeria.appendChild(mas);
+        }
+        tdDocs.appendChild(galeria);
+      }
+
       tr.appendChild(tdDocs);
       tbody.appendChild(tr);
     });

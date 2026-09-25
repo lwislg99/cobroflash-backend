@@ -244,7 +244,15 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 //   · `tests/scrum858b-la-tanda-sin-veredicto.test.mjs` busca huérfanos con `wmic` o `ps`, y salta
 //     la propagación de señales en Windows (no hay señales POSIX que propagar) CON su motivo: el CI
 //     de Linux la mide.
-const TOPE_LEEN_EL_ENTORNO = 17;
+// SCRUM-1113 (25-sep-2026) · 17 → 18, A PROPÓSITO y avisando: es la subida que el autor de
+// `scripts/censo-afirmaciones-de-skills.mjs` dejó escrita como «se sube avisando, no de paso», y la
+// decidió el orquestador (opción ii del ticket). Ese censo lee `process.platform` para una sola
+// cosa: una ruta `C:\…` en un disco que no es Windows sale NO COMPROBABLE en vez de FALSA. Antes
+// salía FALSA en CI por construcción, y en Windows cambiaba según lo que hubiera instalado quien
+// corría el test (la de `gh` pasó a CIERTA el 18-sep-2026 y tumbó `scrum939b` sólo en esas
+// máquinas). El veredicto sigue sin ser el mismo en cada sitio, pero ahora lo DICE: fuera de
+// Windows sale del lado malo con su motivo, y nunca como CIERTA. No se ha subido ningún otro tope.
+const TOPE_LEEN_EL_ENTORNO = 18;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este

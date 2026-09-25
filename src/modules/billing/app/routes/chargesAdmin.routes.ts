@@ -10,8 +10,16 @@ import { BASE_URL } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
 import { resolverFechaDeCobro } from '../../domain/fechaDeCobro'; // SCRUM-397
+import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397 (SCRUM-1107: mismo generador)
+import { zonaDelMerchant, diaExiste, inicioDelDiaEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (SCRUM-1108b: el día de liberación)
 import { envioDelDocumento } from '../../domain/envioDelDocumento'; // SCRUM-885
 import { tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp';
+import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-1107 (D2: admin-only)
+import { PAID_VIA } from '../../domain/paidVia'; // SCRUM-1107
+import {
+  calcularSplitRetencion, tieneRetencionDeclarada, retencionPendiente,
+  datosParaDeclararRetencion, datosParaMarcarCobrada,
+} from '../../domain/retencionGarantia'; // SCRUM-1107
 
 // SCRUM-885 · cuánto se espera, como mucho, a que el WhatsApp de la confirmación deje su fila.
 // psp lo lanza sin `await`, así que al volver de psp puede no haber vuelto aún de Meta.
@@ -26,9 +34,20 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Multi-tenant: el cobro debe ser del merchant de la sesión
+    // SCRUM-860 (trinquete del select) + SCRUM-1093: `select`, no `include` — antes bastaba con
+    // `include: { merchant: true }` porque nada de `charge` llegaba a una respuesta; pasar
+    // `charge.merchant` a `zonaDelMerchant` (SCRUM-1093) hizo que el censo dejara de poder
+    // probarlo por sí solo. Solo las columnas que usa este handler: `status`/`amount`/`currency`
+    // de `charge`, y `country`/`flags` (isFlagEnabled) + `timezone` (zonaDelMerchant) del merchant.
     const charge = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId },
-      include: { merchant: true, customer: { select: { name: true } } },
+      select: {
+        status: true,
+        amount: true,
+        currency: true,
+        merchant: { select: { country: true, flags: true, timezone: true } },
+        customer: { select: { name: true } },
+      },
     });
     if (!charge) return res.status(404).json({ error: 'not_found' });
     if (charge.status === 'paid') return res.json({ ok: true, status: 'already_paid' });
@@ -48,7 +67,13 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     // El criterio (futura no, hacia atrás sin límite) y sus dos textos son los APROBADOS el
     // 10-ago-2026 para el mismo problema en facturas: se reutilizan, no se inventan (regla 30).
     // Sin fecha, `ahora` — que no es el defecto: el defecto era no poder cambiarla.
-    const fecha = resolverFechaDeCobro((req.body as any)?.paid_at ?? (req.body as any)?.fecha);
+    // SCRUM-1093 · el «hoy» que decide si la fecha es futura es el del MERCHANT. `charge.merchant`
+    // ya viaja completo en el `include` de arriba: no hace falta tocar la consulta.
+    const fecha = resolverFechaDeCobro(
+      (req.body as any)?.paid_at ?? (req.body as any)?.fecha,
+      new Date(),
+      zonaDelMerchant(charge.merchant),
+    );
     if (!fecha.ok) return res.status(400).json({ error: fecha.error, message: fecha.message });
 
     // Misma cadena post-pago que el PSP (P0-3: factura ligada → paid, WA, email)
@@ -71,6 +96,118 @@ router.post('/:id/confirm-bizum', async (req, res) => {
     return res.json({ ok: true, status: 'paid', paid_via: 'bizum_manual', paid_at: fecha.fecha.toISOString(), envioDocumento });
   } catch (err: any) {
     console.error('[POST /admin/charges/:id/confirm-bizum]', err?.message || err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/charges/:id/garantia — SCRUM-1107 · declara sobre un cobro EXISTENTE que un
+ * porcentaje quedó retenido por garantía de obra, y cuándo se puede reclamar.
+ *
+ * NO toca `charge.amount` ni el estado del cobro: es metadata aditiva, no una corrección de lo
+ * ya cobrado. `total` lo manda quien llama (no se deriva de `Invoice`: un `Charge` puede saldar
+ * más de una factura — `Charge.invoices` — y no hay «la» factura de la que sacarlo aquí).
+ *
+ * `requireRole('admin')`, mismo criterio que `bulk-tags` (SCRUM-55/1059): dinero retenido de un
+ * cliente, sin motivo de campo que lo lleve a `TECNICO_ALLOWED`.
+ */
+router.post('/:id/garantia', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const charge = await prisma.charge.findFirst({
+      where: { id, merchantId: req.merchantId }, // regla 2
+      select: { id: true, merchant: { select: { timezone: true } } },
+    });
+    if (!charge) return res.status(404).json({ error: 'not_found' });
+
+    const total = Number(req.body?.total);
+    const porcentaje = Number(req.body?.porcentaje);
+    // SCRUM-1108b: un día suelto (`YYYY-MM-DD`) es un día del MERCHANT, no la medianoche UTC. Con
+    // `new Date('2027-09-23')` una zona con desfase negativo (México, Bogotá) leía el día 22, y ese
+    // día es el que la ficha pinta en «liberación desde el …». Un instante completo se respeta.
+    const crudo = req.body?.liberacion ? String(req.body.liberacion) : '';
+    const liberacion = /^\d{4}-\d{2}-\d{2}$/.test(crudo)
+      ? (diaExiste(crudo) ? inicioDelDiaEn(crudo, zonaDelMerchant(charge.merchant)) : null)
+      : (crudo ? new Date(crudo) : null);
+    if (!liberacion || !Number.isFinite(liberacion.getTime())) {
+      return res.status(400).json({ error: 'liberacion_invalida' });
+    }
+
+    const split = calcularSplitRetencion(total, porcentaje);
+    if (!split.ok) return res.status(400).json({ error: split.error });
+
+    const actualizado = await prisma.charge.update({
+      where: { id },
+      data: datosParaDeclararRetencion(split, liberacion),
+      select: {
+        retencionGarantiaPorcentaje: true, retencionGarantiaImporte: true,
+        retencionGarantiaLiberacion: true, retencionGarantiaCobrada: true,
+      },
+    });
+    return res.json({ ok: true, retencion: actualizado, importeRecibido: split.importeRecibido });
+  } catch (err) {
+    console.error('[POST /admin/charges/:id/garantia]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/charges/:id/garantia/liberar — SCRUM-1107 · registra que la garantía retenida se
+ * cobró. El dinero es un `Charge` NUEVO (mismo generador que cualquier otro cobro — SCRUM-397,
+ * `datosParaMarcarCobrada`); las dos escrituras van en UNA transacción: nunca queda un cobro de
+ * liberación sin que se apague el aviso, ni el aviso apagado sin que exista el cobro.
+ *
+ * `concept` y `method` los manda quien llama — ningún texto se inventa aquí (regla 39).
+ */
+router.post('/:id/garantia/liberar', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+
+    const original = await prisma.charge.findFirst({
+      where: { id, merchantId: req.merchantId }, // regla 2
+      select: {
+        id: true, customerId: true, currency: true,
+        retencionGarantiaPorcentaje: true, retencionGarantiaImporte: true, retencionGarantiaCobrada: true,
+      },
+    });
+    if (!original) return res.status(404).json({ error: 'not_found' });
+    if (!tieneRetencionDeclarada(original)) return res.status(409).json({ error: 'sin_retencion_declarada' });
+    if (!retencionPendiente(original)) return res.status(409).json({ error: 'ya_cobrada' });
+
+    const importe = req.body?.importe !== undefined ? Number(req.body.importe) : Number(original.retencionGarantiaImporte);
+    if (!Number.isFinite(importe) || importe <= 0) return res.status(400).json({ error: 'importe_invalido' });
+
+    const method = String(req.body?.method || '');
+    if (!(PAID_VIA as readonly string[]).includes(method)) return res.status(400).json({ error: 'method_invalido' });
+
+    const concept = String(req.body?.concept || '').trim();
+    if (!concept) return res.status(400).json({ error: 'concept_requerido' });
+
+    // SCRUM-397 · un solo generador para «pagado + su instante + su evento» — nunca los tres
+    // campos a mano (censo `tests/scrum397-instante-de-cobro.test.mjs`, «nadie marca un cobro
+    // pagado fuera del generador»).
+    const ahora = new Date();
+    const [nuevoCharge] = await prisma.$transaction([
+      prisma.charge.create({
+        data: {
+          merchantId: req.merchantId!,
+          customerId: original.customerId,
+          concept,
+          amount: importe,
+          currency: original.currency,
+          method,
+          ...datosDeCobroPagado(ahora, { tipo: 'liberacion_garantia_obra', chargeOriginalId: original.id }),
+        },
+        select: { id: true },
+      }),
+      prisma.charge.update({ where: { id: original.id }, data: datosParaMarcarCobrada(ahora) }),
+    ]);
+    return res.json({ ok: true, chargeLiberacionId: nuevoCharge.id, retencionGarantiaCobrada: ahora.toISOString() });
+  } catch (err) {
+    console.error('[POST /admin/charges/:id/garantia/liberar]', err);
     return res.status(500).json({ error: 'internal_error' });
   }
 });

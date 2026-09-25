@@ -85,37 +85,43 @@ test('SCRUM-397 · una fecha FUTURA se rechaza: no puede ser un hecho', () => {
   assert.equal(hoyMismo.ok, true, '🔴 se rechazó HOY: la fecha llega a medianoche y sigue siendo hoy');
 });
 
-test('SCRUM-397 · 🔴 CARACTERIZACIÓN: con cadena `YYYY-MM-DD` el veredicto DEPENDE del servidor', () => {
-  // Esto NO se arregla moviendo el fixture, y por eso se escribe en vez de taparse.
-  //
-  // El front manda `paid_at` desde un `<input type="date">`, o sea una cadena `YYYY-MM-DD`.
-  // `new Date('2026-04-03')` es medianoche **UTC**; `finDeHoy` (`fechaDeCobro.ts:60-61`) es
-  // `setHours(23,59,59,999)`, o sea fin de día **LOCAL**. Se comparan dos convenciones distintas.
-  //
-  //   · desfase ≥ 0 (UTC, Madrid, Tokio) → el mañana-UTC queda FUERA del hoy-local → se rechaza ✅
-  //   · desfase < 0 (América)            → el mañana-UTC cae DENTRO del hoy-local → se ACEPTA 🔴
-  //
-  // **En Railway el desfase es 0** (sin variable `TZ` → UTC), así que hoy el producto se comporta
-  // bien donde corre. Es un defecto LATENTE, no uno vivo: se despierta el día que el proceso
-  // arranque al oeste de Greenwich. NO se arregla aquí — cambiar el producto para que un test
-  // pase es justo lo que este ticket no hace. Queda como ticket propio.
-  const hoy = new Date(2026, 3, 2, 11, 30);
-  const desfaseMin = -hoy.getTimezoneOffset(); // minutos al este de Greenwich
-  const r = resolverFechaDeCobro('2026-04-03', hoy);
+test('SCRUM-1093 · sin zona, el veredicto YA NO depende del servidor: siempre el día natural en UTC', () => {
+  // Hasta SCRUM-1093 este mismo caso CARACTERIZABA un defecto LATENTE: `finDeHoy` salía de
+  // `setHours(23,59,59,999)`, fin de día del reloj LOCAL del proceso — en Railway (sin `TZ`, UTC)
+  // coincidía por accidente de dónde corre, no porque el criterio fuera correcto. Arreglado:
+  // `finDeHoy` sale de `diaNaturalEn(ahora, zona)` con `zona` cayendo a `ZONA_POR_DEFECTO` (UTC)
+  // si no se declara — el mismo resultado lo corra QUIEN lo corra, ya no «depende del servidor».
+  const ahora = new Date('2026-03-31T23:30:00Z'); // instante ABSOLUTO: no depende del reloj local
+  const r = resolverFechaDeCobro('2026-04-01', ahora); // sin zona
+  assert.equal(r.ok, false,
+    '🔴 con zona por defecto (UTC), el 1-abr sigue siendo mañana en UTC y debe rechazarse — si '
+    + 'esto acepta, el defecto latente volvió a depender de la máquina.');
+  assert.equal(r.error, 'fecha_futura');
+  assert.equal(resolverFechaDeCobro('2026-03-31', ahora).ok, true, '🔴 se rechazó HOY en UTC');
+});
 
-  if (desfaseMin >= 0) {
-    assert.equal(r.ok, false,
-      `🔴 con desfase ${desfaseMin} min (≥ 0) el mañana-UTC debe quedar fuera del hoy-local y `
-      + 'rechazarse. Si esto falla, ha cambiado el criterio, no la máquina.');
-  } else {
-    assert.equal(r.ok, true,
-      `CARACTERIZACIÓN: con desfase ${desfaseMin} min (< 0) el producto ACEPTA una fecha de `
-      + 'mañana. Si esto empieza a fallar, alguien ha arreglado el defecto latente: bien — '
-      + 'bórrese esta rama del test y anótese la decisión.');
-  }
-  // Y en las dos zonas, HOY tiene que valer: es el caso que el ticket protege.
-  assert.equal(resolverFechaDeCobro('2026-04-02', hoy).ok, true,
-    '🔴 se rechazó HOY: la fecha ISO llega a medianoche UTC y sigue siendo hoy');
+test('SCRUM-1093 · 🔴 EL ARREGLO: con la zona del merchant, «hoy» es el día natural ALLÍ', () => {
+  // El mismo instante que usan SCRUM-643/735 para el sello fiscal y el justificante:
+  // 2026-03-31T23:30Z es la 01:30 del 1-abr en Madrid — ya HOY allí, aunque en UTC siga siendo ayer.
+  const ahora = new Date('2026-03-31T23:30:00Z');
+  const madrid = resolverFechaDeCobro('2026-04-01', ahora, 'Europe/Madrid');
+  assert.equal(madrid.ok, true,
+    '🔴 con zona=Europe/Madrid el 1-abr YA es hoy allí — antes de SCRUM-1093 esto SIEMPRE se '
+    + 'rechazaba, sin forma de pasarle la zona del merchant.');
+  assert.equal(madrid.origen, 'declarada');
+
+  // Control — SCRUM-643/735: fijar Europe/Madrid a pelo sería el mismo defecto con el signo
+  // cambiado. La prueba de que el criterio sigue la zona que se le PASA (no una constante) es el
+  // test anterior: MISMO instante y MISMA entrada, con `zona` por defecto (UTC) se rechaza y con
+  // `Europe/Madrid` se acepta — el único cambio entre ambos casos es la zona.
+  assert.notEqual(madrid.ok, resolverFechaDeCobro('2026-04-01', ahora).ok,
+    '🔴 con y sin zona el veredicto es el MISMO: la zona que se pasa no está afectando al criterio.');
+});
+
+test('SCRUM-1093 · la llamada de UN argumento (la de antes de este ticket) no se rompe', () => {
+  const r = resolverFechaDeCobro(undefined);
+  assert.equal(r.ok, true);
+  assert.equal(r.origen, 'ahora', '🔴 sin entrada, el origen tiene que declararse como «ahora»');
 });
 
 test('SCRUM-397 · hacia atrás NO hay límite, y es deliberado', () => {

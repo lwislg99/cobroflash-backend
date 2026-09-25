@@ -388,7 +388,12 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // identidad: el subárbol de `ul.quote-clientes` (`ul` · `li.quote-clientes__nota` · `li` ·
   // `button.quote-cliente-opcion--nuevo`) = 4, y no falta nada: el `<select name="customer_id">` es el
   // mismo nodo con `hidden`.
-  for (const [vista, nodos] of [['renderQuotesView', 248], ['renderProductsView', 166],
+  // 🔴 SCRUM-1008 · 24-sep-2026 · `renderProductsView` 166 → 176, y las otras tres intactas. Los
+  // DIEZ, POR IDENTIDAD sobre el árbol montado y no restando: la nueva `div.quote-form-row` del
+  // alta con sus tres `div.field` (SKU · Referencia del proveedor · Unidad), cada uno con su
+  // `label` y su `input` — 1 + 3×(1+1+1) = 10. El modal de EDICIÓN no cuenta: `buildEditModal`
+  // se construye perezosamente al pulsar «Editar», y sin datos no hay fila que editar.
+  for (const [vista, nodos] of [['renderQuotesView', 248], ['renderProductsView', 176],
     ['renderCustomersView', 78], ['renderHomeView', 144]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);

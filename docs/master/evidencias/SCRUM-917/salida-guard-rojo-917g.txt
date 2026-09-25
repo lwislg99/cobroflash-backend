@@ -1,0 +1,211 @@
+# SCRUM-917g - ROJO: guard-detalle-trabajo-917.mjs (con el bloque F) contra el PRODUCTO SIN TOCAR
+# Date: Mon, 21 Sep 2026 ~12:50 GMT (medido tras las 12:25:15 GMT de la sonda del PASO 0; sin cabecera propia de gh api en este comando: aproximado)
+# medido en un worktree temporal sobre 94bb495d (producto de bbe01631 SIN un cambio), con el guard y el banco NUEVOS copiados encima. Es el control que exige el bloque nuevo: sobre un detalle sin «El trabajo» tiene que caer.
+# Resultado: EXIT=2 (no 1): 72 hallazgos (64 del bloque nuevo y 8 de G.2, porque el techo nuevo es 5 y el producto viejo tiene 7) y 6 casos NO medidos, que es el control de discriminacion: sin lineas todos los casos pintan lo mismo y el guard se niega a juzgar. Los de D: 0 (nada de D cambia).
+# EXIT=2
+
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+⓪ SUELO y control de discriminación · a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ ⓪ los 4 casos se pintan y son DISTINTOS entre sí a 1280 px
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+D · el dinero se dice UNA vez: la franja (D.1-D.5) · lo que se retira (D.6-D.9) · lo que no se pierde (D.10) — a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ D.1 [PAGADO (aceptado = cobrado = 590,00 €)] franja presente y única
+   ✅ D.2 [PAGADO (aceptado = cobrado = 590,00 €)] rótulo «Cobrado del todo»
+   ✅ D.3 [PAGADO (aceptado = cobrado = 590,00 €)] cifra grande «590,00 €»
+   ✅ D.4 [PAGADO (aceptado = cobrado = 590,00 €)] al lado: Aceptado 590,00 € · Cobrado 590,00 €
+   ✅ D.5 [PAGADO (aceptado = cobrado = 590,00 €)] «590,00 €» se lee 4 veces (E lo bajará a 3: el hueco no debe repetir la cifra de la franja)
+   ✅ D.6 [PAGADO (aceptado = cobrado = 590,00 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [PAGADO (aceptado = cobrado = 590,00 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [PAGADO (aceptado = cobrado = 590,00 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [PAGADO (aceptado = cobrado = 590,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [PAGADO (aceptado = cobrado = 590,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] franja presente y única
+   ✅ D.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] rótulo «Te falta por cobrar»
+   ✅ D.3 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] cifra grande «317,45 €»
+   ✅ D.4 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] al lado: Aceptado 417,45 € · Cobrado 100,00 €
+   ✅ D.5 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] «417,45 €» se lee 2 veces (E lo bajará a 1: el hueco no debe repetir la cifra de la franja)
+   ✅ D.6 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [SIN PRESUPUESTO (no hay importe de referencia)] franja ausente, como debe (sin eje de cobro no se afirma nada)
+   ✅ D.5 [SIN PRESUPUESTO (no hay importe de referencia)] «—» se lee 0 veces
+   ✅ D.6 [SIN PRESUPUESTO (no hay importe de referencia)] el titular «Total aceptado» ya no está
+   ✅ D.7 [SIN PRESUPUESTO (no hay importe de referencia)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [SIN PRESUPUESTO (no hay importe de referencia)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [SIN PRESUPUESTO (no hay importe de referencia)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [SIN PRESUPUESTO (no hay importe de referencia)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] franja presente y única
+   ✅ D.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] rótulo «Cobrado del todo»
+   ✅ D.3 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] cifra grande «539,05 €»
+   ✅ D.4 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] al lado: Aceptado 539,05 € · Cobrado 628,60 €
+   ✅ D.5 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] «539,05 €» se lee 3 veces
+   ✅ D.6 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el aviso firmado de SCRUM-887 sigue en pantalla
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+G · todo control a ≥ 44 px (G.2) y sin scroll horizontal (G.1) — a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ G.1 [PAGADO (aceptado = cobrado = 590,00 €)] sin scroll horizontal
+      pequeños [PAGADO (aceptado = cobrado = 590,00 €)]: button«Trabajos» 43.7×18.6 · button«+ Añadir gasto» 110.5×30.0 · button«+ Nuevo albarán» 120.9×30.0 · input«» 13.0×13.0 · button«Parte de trabajo» 116.9×30.0 · button«Cambiar» 71.3×30.0 · a«Abrir en mapa» 84.0×20.1
+   ❌ G.2 [PAGADO (aceptado = cobrado = 590,00 €)] 7 de 14 por debajo de 44 px: SUBE desde 5. Este corte ha metido controles pequeños nuevos
+   ✅ G.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] sin scroll horizontal
+      pequeños [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)]: button«Trabajos» 43.7×18.6 · button«+ Añadir gasto» 110.5×30.0 · button«+ Nuevo albarán» 120.9×30.0 · input«» 13.0×13.0 · button«Parte de trabajo» 116.9×30.0 · button«Cambiar» 71.3×30.0 · a«Abrir en mapa» 84.0×20.1
+   ❌ G.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] 7 de 14 por debajo de 44 px: SUBE desde 5. Este corte ha metido controles pequeños nuevos
+   ✅ G.1 [SIN PRESUPUESTO (no hay importe de referencia)] sin scroll horizontal
+      pequeños [SIN PRESUPUESTO (no hay importe de referencia)]: button«Trabajos» 43.7×18.6 · button«+ Nuevo albarán» 120.9×30.0 · input«» 13.0×13.0 · button«Parte de trabajo» 116.9×30.0 · button«Cambiar» 71.3×30.0 · a«Abrir en mapa» 84.0×20.1
+   ❌ G.2 [SIN PRESUPUESTO (no hay importe de referencia)] 6 de 10 por debajo de 44 px: SUBE desde 4. Este corte ha metido controles pequeños nuevos
+   ✅ G.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sin scroll horizontal
+      pequeños [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)]: button«Trabajos» 43.7×18.6 · button«+ Añadir gasto» 110.5×30.0 · button«+ Nuevo albarán» 120.9×30.0 · input«» 13.0×13.0 · button«Parte de trabajo» 116.9×30.0 · button«Cambiar» 71.3×30.0 · a«Abrir en mapa» 84.0×20.1
+   ❌ G.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] 7 de 14 por debajo de 44 px: SUBE desde 5. Este corte ha metido controles pequeños nuevos
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+⓪ SUELO y control de discriminación · a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ ⓪ los 4 casos se pintan y son DISTINTOS entre sí a 390 px
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+D · el dinero se dice UNA vez: la franja (D.1-D.5) · lo que se retira (D.6-D.9) · lo que no se pierde (D.10) — a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ D.1 [PAGADO (aceptado = cobrado = 590,00 €)] franja presente y única
+   ✅ D.2 [PAGADO (aceptado = cobrado = 590,00 €)] rótulo «Cobrado del todo»
+   ✅ D.3 [PAGADO (aceptado = cobrado = 590,00 €)] cifra grande «590,00 €»
+   ✅ D.4 [PAGADO (aceptado = cobrado = 590,00 €)] al lado: Aceptado 590,00 € · Cobrado 590,00 €
+   ✅ D.5 [PAGADO (aceptado = cobrado = 590,00 €)] «590,00 €» se lee 4 veces (E lo bajará a 3: el hueco no debe repetir la cifra de la franja)
+   ✅ D.6 [PAGADO (aceptado = cobrado = 590,00 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [PAGADO (aceptado = cobrado = 590,00 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [PAGADO (aceptado = cobrado = 590,00 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [PAGADO (aceptado = cobrado = 590,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [PAGADO (aceptado = cobrado = 590,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] franja presente y única
+   ✅ D.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] rótulo «Te falta por cobrar»
+   ✅ D.3 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] cifra grande «317,45 €»
+   ✅ D.4 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] al lado: Aceptado 417,45 € · Cobrado 100,00 €
+   ✅ D.5 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] «417,45 €» se lee 2 veces (E lo bajará a 1: el hueco no debe repetir la cifra de la franja)
+   ✅ D.6 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [SIN PRESUPUESTO (no hay importe de referencia)] franja ausente, como debe (sin eje de cobro no se afirma nada)
+   ✅ D.5 [SIN PRESUPUESTO (no hay importe de referencia)] «—» se lee 0 veces
+   ✅ D.6 [SIN PRESUPUESTO (no hay importe de referencia)] el titular «Total aceptado» ya no está
+   ✅ D.7 [SIN PRESUPUESTO (no hay importe de referencia)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [SIN PRESUPUESTO (no hay importe de referencia)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [SIN PRESUPUESTO (no hay importe de referencia)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [SIN PRESUPUESTO (no hay importe de referencia)] el aviso firmado de SCRUM-887 no se pinta, y no toca
+   ✅ D.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] franja presente y única
+   ✅ D.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] rótulo «Cobrado del todo»
+   ✅ D.3 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] cifra grande «539,05 €»
+   ✅ D.4 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] al lado: Aceptado 539,05 € · Cobrado 628,60 €
+   ✅ D.5 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] «539,05 €» se lee 3 veces
+   ✅ D.6 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el titular «Total aceptado» ya no está
+   ✅ D.7 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] la barra no repite «Cobrado X de Y»
+   ✅ D.8 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el rail no repite ninguna cifra de la franja
+   ✅ D.9 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] no se dice «Te falta por cobrar 0,00 €»
+   ✅ D.10 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] el aviso firmado de SCRUM-887 sigue en pantalla
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+G · todo control a ≥ 44 px (G.2) y sin scroll horizontal (G.1) — a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ✅ G.1 [PAGADO (aceptado = cobrado = 590,00 €)] sin scroll horizontal
+      pequeños [PAGADO (aceptado = cobrado = 590,00 €)]: button«Trabajos» 43.7×18.6 · button«+ Añadir gasto» 110.5×30.0 · button«+ Nuevo albarán» 120.9×30.0 · input«» 13.0×13.0 · button«Parte de trabajo» 116.9×30.0 · button«Cambiar» 71.3×30.0 · a«Abrir en mapa» 84.0×20.1
+   ❌ G.2 [PAGADO (aceptado = cobrado = 590,00 €)] 7 de 14 por debajo de 44 px: SUBE desde 5. Este corte ha metido controles pequeños nuevos
+   ✅ G.1 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] sin scroll horizontal
+      pequeños [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)]: button«Trabajos» 43.7×18.6 · button«+ Añadir gasto» 110.5×30.0 · button«+ Nuevo albarán» 120.9×30.0 · input«» 13.0×13.0 · button«Parte de trabajo» 116.9×30.0 · button«Cambiar» 71.3×30.0 · a«Abrir en mapa» 84.0×20.1
+   ❌ G.2 [A MEDIAS (aceptado 417,45 € · cobrado 100,00 €)] 7 de 14 por debajo de 44 px: SUBE desde 5. Este corte ha metido controles pequeños nuevos
+   ✅ G.1 [SIN PRESUPUESTO (no hay importe de referencia)] sin scroll horizontal
+      pequeños [SIN PRESUPUESTO (no hay importe de referencia)]: button«Trabajos» 43.7×18.6 · button«+ Nuevo albarán» 120.9×30.0 · input«» 13.0×13.0 · button«Parte de trabajo» 116.9×30.0 · button«Cambiar» 71.3×30.0 · a«Abrir en mapa» 84.0×20.1
+   ❌ G.2 [SIN PRESUPUESTO (no hay importe de referencia)] 6 de 10 por debajo de 44 px: SUBE desde 4. Este corte ha metido controles pequeños nuevos
+   ✅ G.1 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] sin scroll horizontal
+      pequeños [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)]: button«Trabajos» 43.7×18.6 · button«+ Añadir gasto» 110.5×30.0 · button«+ Nuevo albarán» 120.9×30.0 · input«» 13.0×13.0 · button«Parte de trabajo» 116.9×30.0 · button«Cambiar» 71.3×30.0 · a«Abrir en mapa» 84.0×20.1
+   ❌ G.2 [COBRADO DE MÁS (aceptado 539,05 € · cobrado 628,60 €)] 7 de 14 por debajo de 44 px: SUBE desde 5. Este corte ha metido controles pequeños nuevos
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+F · «El trabajo» plegable: tarjeta única (F.1) · cerradas (F.2) · lo que dice cada línea (F.3) · 44 px y sin desbordar (F.4) · lo que se retira (F.5) · la casilla de precios (F.6) · al ABRIR (F.7) — a 1280 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ❌ F.1 [SIN EQUIPO · sin nombre · 0 gastos] tarjetas=0 título=«null» líneas=[] (esperaba UNA tarjeta «El trabajo» y ["Tipo de trabajo","Nombre y dirección","Quién lo ejecuta","Notas internas","Gastos de este trabajo"])
+   ❌ F.2 [SIN EQUIPO · sin nombre · 0 gastos] líneas abiertas al cargar: [] (de 0)
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Tipo de trabajo» dice «—», esperaba «Una obra o reforma de varios días»
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Nombre y dirección» dice «—», esperaba «Sin nombre»
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Quién lo ejecuta» dice «—», esperaba «No tienes equipo»
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Notas internas» dice «—», esperaba «Solo tú las ves»
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Gastos de este trabajo» dice «—», esperaba «Sin gastos»
+   ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] cabeceras por debajo de 44 px: no hay líneas que medir
+   ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] la tarjeta desborda a lo ancho (scrollWidth > clientWidth)
+   ❌ F.5 [SIN EQUIPO · sin nombre · 0 gastos] sigue vivo lo que F retira: cabeceras sueltas ["Tipo de trabajo","Datos","Notas internas","Gastos de este trabajo"] · «Cambiar» ×1 · rótulo del selector repetido ×1
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Tipo de trabajo»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Nombre y dirección»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Quién lo ejecuta»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Notas internas»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Gastos de este trabajo»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] «Dar de alta a alguien» no lleva al equipo: {"sinBoton":true}
+   ❌ F.6 [SIN EQUIPO · sin nombre · 0 gastos] casilla de precios: en la barra 1, en pantalla 1, hoja abierta=true, dentro de la hoja 1, marcada=false (esperaba 0 · 0 · true · 1 · false)
+   🟡 SUELO · F [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] pinta LO MISMO que SIN EQUIPO · sin nombre · 0 gastos: el banco no distingue sus casos, no juzgo nada de él
+   🟡 SUELO · F [CON EQUIPO · nadie asignado · 1 gasto] pinta LO MISMO que SIN EQUIPO · sin nombre · 0 gastos: el banco no distingue sus casos, no juzgo nada de él
+   ❌ F.1 [TÉCNICO · sólo lectura] tarjetas=0 título=«null» líneas=[] (esperaba UNA tarjeta «El trabajo» y ["Tipo de trabajo","Nombre y dirección","Quién lo ejecuta","Notas internas","Gastos de este trabajo"])
+   ❌ F.2 [TÉCNICO · sólo lectura] líneas abiertas al cargar: [] (de 0)
+   ❌ F.3 [TÉCNICO · sólo lectura] «Tipo de trabajo» dice «—», esperaba «Varios avisos o visitas sueltas»
+   ❌ F.3 [TÉCNICO · sólo lectura] «Nombre y dirección» dice «—», esperaba «Cambio de cuadro en el 3º B»
+   ❌ F.3 [TÉCNICO · sólo lectura] «Quién lo ejecuta» dice «—», esperaba «Javier P. y Lucía M.»
+   ❌ F.3 [TÉCNICO · sólo lectura] «Notas internas» dice «—», esperaba «Solo tú las ves»
+   ❌ F.3 [TÉCNICO · sólo lectura] «Gastos de este trabajo» dice «—», esperaba «2 gastos»
+   ❌ F.4 [TÉCNICO · sólo lectura] cabeceras por debajo de 44 px: no hay líneas que medir
+   ❌ F.4 [TÉCNICO · sólo lectura] la tarjeta desborda a lo ancho (scrollWidth > clientWidth)
+   ❌ F.5 [TÉCNICO · sólo lectura] sigue vivo lo que F retira: cabeceras sueltas ["Tipo de trabajo","Datos","Notas internas","Gastos de este trabajo"] · «Cambiar» ×1 · rótulo del selector repetido ×1
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Tipo de trabajo»: no hay nada que pulsar
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Nombre y dirección»: no hay nada que pulsar
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Quién lo ejecuta»: no hay nada que pulsar
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Notas internas»: no hay nada que pulsar
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Gastos de este trabajo»: no hay nada que pulsar
+   🟡 SUELO · F [EQUIPO ILEGIBLE (la lista llegó vacía)] pinta LO MISMO que SIN EQUIPO · sin nombre · 0 gastos: el banco no distingue sus casos, no juzgo nada de él
+
+══════════════════════════════════════════════════════════════════════════════════════════════
+F · «El trabajo» plegable: tarjeta única (F.1) · cerradas (F.2) · lo que dice cada línea (F.3) · 44 px y sin desbordar (F.4) · lo que se retira (F.5) · la casilla de precios (F.6) · al ABRIR (F.7) — a 390 px
+══════════════════════════════════════════════════════════════════════════════════════════════
+   ❌ F.1 [SIN EQUIPO · sin nombre · 0 gastos] tarjetas=0 título=«null» líneas=[] (esperaba UNA tarjeta «El trabajo» y ["Tipo de trabajo","Nombre y dirección","Quién lo ejecuta","Notas internas","Gastos de este trabajo"])
+   ❌ F.2 [SIN EQUIPO · sin nombre · 0 gastos] líneas abiertas al cargar: [] (de 0)
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Tipo de trabajo» dice «—», esperaba «Una obra o reforma de varios días»
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Nombre y dirección» dice «—», esperaba «Sin nombre»
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Quién lo ejecuta» dice «—», esperaba «No tienes equipo»
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Notas internas» dice «—», esperaba «Solo tú las ves»
+   ❌ F.3 [SIN EQUIPO · sin nombre · 0 gastos] «Gastos de este trabajo» dice «—», esperaba «Sin gastos»
+   ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] cabeceras por debajo de 44 px: no hay líneas que medir
+   ❌ F.4 [SIN EQUIPO · sin nombre · 0 gastos] la tarjeta desborda a lo ancho (scrollWidth > clientWidth)
+   ❌ F.5 [SIN EQUIPO · sin nombre · 0 gastos] sigue vivo lo que F retira: cabeceras sueltas ["Tipo de trabajo","Datos","Notas internas","Gastos de este trabajo"] · «Cambiar» ×1 · rótulo del selector repetido ×1
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Tipo de trabajo»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Nombre y dirección»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Quién lo ejecuta»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Notas internas»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] no existe la línea «Gastos de este trabajo»: no hay nada que pulsar
+   ❌ F.7 [SIN EQUIPO · sin nombre · 0 gastos] «Dar de alta a alguien» no lleva al equipo: {"sinBoton":true}
+   ❌ F.6 [SIN EQUIPO · sin nombre · 0 gastos] casilla de precios: en la barra 1, en pantalla 1, hoja abierta=true, dentro de la hoja 1, marcada=false (esperaba 0 · 0 · true · 1 · false)
+   🟡 SUELO · F [CON EQUIPO · nombre propio · 2 técnicos · 2 gastos] pinta LO MISMO que SIN EQUIPO · sin nombre · 0 gastos: el banco no distingue sus casos, no juzgo nada de él
+   🟡 SUELO · F [CON EQUIPO · nadie asignado · 1 gasto] pinta LO MISMO que SIN EQUIPO · sin nombre · 0 gastos: el banco no distingue sus casos, no juzgo nada de él
+   ❌ F.1 [TÉCNICO · sólo lectura] tarjetas=0 título=«null» líneas=[] (esperaba UNA tarjeta «El trabajo» y ["Tipo de trabajo","Nombre y dirección","Quién lo ejecuta","Notas internas","Gastos de este trabajo"])
+   ❌ F.2 [TÉCNICO · sólo lectura] líneas abiertas al cargar: [] (de 0)
+   ❌ F.3 [TÉCNICO · sólo lectura] «Tipo de trabajo» dice «—», esperaba «Varios avisos o visitas sueltas»
+   ❌ F.3 [TÉCNICO · sólo lectura] «Nombre y dirección» dice «—», esperaba «Cambio de cuadro en el 3º B»
+   ❌ F.3 [TÉCNICO · sólo lectura] «Quién lo ejecuta» dice «—», esperaba «Javier P. y Lucía M.»
+   ❌ F.3 [TÉCNICO · sólo lectura] «Notas internas» dice «—», esperaba «Solo tú las ves»
+   ❌ F.3 [TÉCNICO · sólo lectura] «Gastos de este trabajo» dice «—», esperaba «2 gastos»
+   ❌ F.4 [TÉCNICO · sólo lectura] cabeceras por debajo de 44 px: no hay líneas que medir
+   ❌ F.4 [TÉCNICO · sólo lectura] la tarjeta desborda a lo ancho (scrollWidth > clientWidth)
+   ❌ F.5 [TÉCNICO · sólo lectura] sigue vivo lo que F retira: cabeceras sueltas ["Tipo de trabajo","Datos","Notas internas","Gastos de este trabajo"] · «Cambiar» ×1 · rótulo del selector repetido ×1
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Tipo de trabajo»: no hay nada que pulsar
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Nombre y dirección»: no hay nada que pulsar
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Quién lo ejecuta»: no hay nada que pulsar
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Notas internas»: no hay nada que pulsar
+   ❌ F.7 [TÉCNICO · sólo lectura] no existe la línea «Gastos de este trabajo»: no hay nada que pulsar
+   🟡 SUELO · F [EQUIPO ILEGIBLE (la lista llegó vacía)] pinta LO MISMO que SIN EQUIPO · sin nombre · 0 gastos: el banco no distingue sus casos, no juzgo nada de él
+
+población: 156 comprobaciones · D y G sobre 4 casos × 2 anchuras · F sobre 5 casos (solo, equipo, equipo, tecnico, ciego) × 2 anchuras (1280, 390) · 6 no medidas
+🟡 6 cosas no supe medir: no doy veredicto.

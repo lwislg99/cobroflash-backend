@@ -15,6 +15,10 @@ import { isFlagEnabled } from '../../../core/flags';
 import { recordAuditOrThrow, sobreFiscal, type ActorAudit } from '../../system/audit.service';
 // SCRUM-780: el formato del número nuevo sale del sitio único, el mismo que compone P y AB.
 import { SERIES, formatoNumeroDocumento, parseNumeroDocumento } from '../../../core/documentos/formatoNumero';
+// SCRUM-735 (GO comentario 16573): el día/año de la serie sale de la zona del MERCHANT, no del
+// reloj del proceso. `zona` es opcional y cae a `ZONA_POR_DEFECTO` ('UTC') — exactamente lo que
+// el proceso hacía hasta hoy — para no romper a los llamadores que todavía no la pasan.
+import { zonaDelMerchant, diaNaturalEn, ZONA_POR_DEFECTO } from '../../../core/zonaDelMerchant';
 
 /**
  * SCRUM-207 · los 7 caminos por los que puede nacer una factura (mapa de SCRUM-200 §2.1).
@@ -85,8 +89,8 @@ export function isReceiptNumber(number: string | null | undefined): boolean {
   return typeof number === 'string' && number.startsWith(RECEIPT_NUMBER_PREFIX);
 }
 
-export function makeReceiptNumber(now = new Date()): string {
-  const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+export function makeReceiptNumber(now = new Date(), zona: string = ZONA_POR_DEFECTO): string {
+  const ymd = diaNaturalEn(now, zona).replace(/-/g, '');
   const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
   return `${RECEIPT_NUMBER_PREFIX}${ymd}-${rand}`;
 }
@@ -165,10 +169,11 @@ async function reservarReferenciaJustificante(
   tx: Prisma.TransactionClient,
   merchantId: number,
   now: Date,
+  zona: string = ZONA_POR_DEFECTO,
 ): Promise<string> {
   const candidatas: string[] = [];
   for (let intento = 0; intento < INTENTOS_REFERENCIA_JUSTIFICANTE; intento += 1) {
-    const candidata = makeReceiptNumber(now);
+    const candidata = makeReceiptNumber(now, zona);
     candidatas.push(candidata);
     // El índice, por su nombre. Un error de la consulta SUBE: no se reintenta a ciegas, porque
     // «no pude comprobar si está ocupada» y «está libre» no pueden dar el mismo resultado.
@@ -425,7 +430,6 @@ export async function allocateInvoiceNumber(
   // instante y no serviría de nada. Lo que lo impide es el guard de SCRUM-207 (misma `tx` en los
   // 7 caminos); SCRUM-219 es el hueco de tipos que lo haría posible. Los dos sostienen esto.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;
-  const year = now.getFullYear();
   const m = await tx.merchant.findUnique({
     where: { id: merchantId },
     select: {
@@ -439,6 +443,9 @@ export async function allocateInvoiceNumber(
       // fiscal con numeración de justificante, fuera de serie. Para merchants sin override (todos
       // hoy, flags null) el comportamiento es IDÉNTICO al previo.
       flags: true,
+      // SCRUM-735: el AÑO de la serie sale de la zona de ESTE merchant (`zonaDelMerchant`), no
+      // del reloj del proceso — ver el `year` de abajo.
+      timezone: true,
       invoiceSeriesPrefix: true,
       nextInvoiceNumber: true,
       nextRectInvoiceNumber: true,
@@ -446,6 +453,10 @@ export async function allocateInvoiceNumber(
     },
   });
   if (!m) throw new Error('merchant_not_found');
+  // SCRUM-735 (GO comentario 16573): antes el año salía de leer `now` con los getters locales
+  // del reloj del PROCESO (Railway va en UTC). En Nochevieja española eso reinicia la serie —o
+  // no— una noche antes de tiempo. `m` ya está leído arriba: ni una consulta de más.
+  const year = Number(diaNaturalEn(now, zonaDelMerchant(m)).slice(0, 4));
 
   const rect = !!opts.rectifying;
 

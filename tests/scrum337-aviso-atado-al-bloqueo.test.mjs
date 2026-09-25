@@ -185,6 +185,10 @@ const BORRADOS_DECLARADOS = [
   'src/modules/providers/domain/providers.service.ts::provider.delete#1',
   'src/modules/system/app/routes/invoicesAdmin.routes.ts::albaranLineaFacturada.deleteMany#1',
   'src/modules/system/customerAdmin.ts::customer.deleteMany#1',
+  // SCRUM-1014 · CONTESTADA: NO se dispara al vencer la prueba ni por inactividad. Es el botón
+  // «Borrar sitio» de la agenda del cliente — acción MANUAL del profesional sobre una fila suya
+  // (`DELETE /admin/customers/:id/sites/:siteId`), sin cron ni trial de por medio.
+  'src/modules/system/domain/sitiosDelCliente.ts::customerSite.deleteMany#1',
   'src/modules/system/domain/borradoMerchant.ts::botSession.deleteMany#1',
   'src/modules/system/domain/borradoMerchant.ts::merchant.deleteMany#1',
   'src/modules/team/domain/team.service.ts::authSession.deleteMany#1',

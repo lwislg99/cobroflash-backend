@@ -129,7 +129,8 @@ export const CIFRAS_ACOPLADAS = [
   { frase: 'Tres pasos. Cero fricción.', dice: 3, seccion: 'como', clase: 'prod', laCuenta: null },
   { frase: 'Seis herramientas. Una sola app.', dice: 6, seccion: 'todo', clase: 'prod', laCuenta: null },
   { frase: 'Un solo plan. Todo incluido.', dice: 1, seccion: 'precios', clase: 'price-card', laCuenta: null },
-  { frase: 'la demo se numera 1…5', dice: 5, seccion: 'probar', clase: 'try-step', laCuenta: null },
+  { frase: 'la demo se numera 1…3', dice: 3, seccion: 'probar', clase: 'try-step',
+    laCuenta: 'SCRUM-1086 (23-sep-2026) retiró los pasos 4 y 5 (el cobro); eran 1…5' },
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

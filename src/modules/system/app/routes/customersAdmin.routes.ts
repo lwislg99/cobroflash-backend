@@ -16,14 +16,20 @@ import {
 import { trocearCsv } from '../../../../core/csv/csv';
 import {
   decodificarCsv, proponerMapeo, importarClientes, csvDeRechazos,
+  pareceXlsx, xlsxATextoCsv, // SCRUM-1022
   type Codificacion, type CampoCliente,
 } from '../../domain/importarClientes.service';
 
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
 import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
+import { garantiasRetenidasPorCliente } from '../../../billing/domain/garantiasRetenidas'; // SCRUM-1108
+import { etiquetarSeleccion, type AccionEtiqueta } from '../../domain/etiquetadoMasivo'; // SCRUM-1059
 import { historialWhatsAppDelCliente } from '../../domain/historialWhatsAppDelCliente'; // SCRUM-1062
 import { crearNota, listarNotas, resolverAutor } from '../../domain/notasDelCliente'; // SCRUM-1036
+import { previsualizarFusion, fusionarClientes } from '../../domain/fusionClientes'; // SCRUM-1057
+import { listarSitios, crearSitio, actualizarSitio, borrarSitio } from '../../domain/sitiosDelCliente'; // SCRUM-1014
+import { customerSiteCreateSchema, customerSiteUpdateSchema } from '../../../../core/validation/schemas';
 
 const router = Router();
 
@@ -44,19 +50,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
-    const customer = await getCustomer(req.merchantId, id);
-    if (!customer) return res.status(404).json({ error: 'not_found' });
-    res.json(customer);
-  } catch (err) {
-    console.error('[GET /admin/customers/:id]', err);
-    res.status(500).json({ error: 'internal_error' });
-  }
-});
-
 /**
  * GET /admin/customers/duplicados — SCRUM-578 (CONT-05, punto c).
  *
@@ -66,8 +59,12 @@ router.get('/:id', async (req, res) => {
  * GET aparte en vez de dentro del POST: hay casos legítimos —marido y mujer con el mismo móvil,
  * dos comunidades del mismo administrador con el mismo email— y el que decide es el profesional.
  *
- * Va ANTES de `/:id` a propósito: `duplicados` no es un id, pero si esta ruta se registrara
- * después, `/:id` la capturaría y devolvería `invalid_id`. Es la misma precaución que ya toma
+ * 🔴 SCRUM-1031 (caso A) · VA ANTES DE `/:id` DE VERDAD, no solo en el comentario. Hasta hoy el
+ * comentario lo AFIRMABA pero el código registraba `/:id` primero: Express empareja por ORDEN DE
+ * REGISTRO, no por especificidad, así que `/:id` capturaba `duplicados` como si fuera un id
+ * (`Number('duplicados')` → `NaN` → `400 invalid_id`) y esta ruta nunca se ejecutaba. Medido en
+ * staging (SCRUM-1031, 22-sep-2026) y reproducido aquí invocando el router real
+ * (`tests/scrum1057-duplicados-antes-de-id.test.mjs`). Es la misma precaución que ya toma
  * `albaranes.routes.ts` con `/pendientes-facturar`.
  *
  * NO se lee la tabla entera: se pregunta por las FORMAS BUSCABLES del valor —con prefijo y sin
@@ -108,6 +105,51 @@ router.get('/duplicados', async (req, res) => {
     });
   } catch (err) {
     console.error('[GET /admin/customers/duplicados]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/customers/bulk-tags — SCRUM-1059 (CRM-17) · añadir/quitar una etiqueta a VARIOS
+ * clientes a la vez. Un cliente que no se puede actualizar (ya la tenía, ya tiene 20, o el id no
+ * es de este merchant) no tumba a los demás — se declara en `resultados`.
+ *
+ * NO hay «avisar a la selección»: sería un envío nuevo (J6, regla 28) y es otro ticket.
+ * NO exporta: el punto 3 del ticket (exportar la selección) es su propio commit, por ser STOP.
+ * `requireRole('admin')` (SCRUM-55): acción en bloque sobre datos de cliente, sin motivo de campo
+ * que la lleve a `TECNICO_ALLOWED` — el default de S1 es admin-only.
+ */
+router.post('/bulk-tags', requireRole('admin'), async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(Number) : [];
+    const accion = req.body?.accion as AccionEtiqueta;
+    const etiqueta = typeof req.body?.etiqueta === 'string' ? req.body.etiqueta : '';
+    if (accion !== 'add' && accion !== 'remove') {
+      return res.status(400).json({ error: 'accion_invalida', message: 'La acción tiene que ser "add" o "remove".' });
+    }
+    if (!etiqueta.trim()) {
+      return res.status(400).json({ error: 'etiqueta_vacia', message: 'Escribe una etiqueta.' });
+    }
+    if (ids.length === 0) {
+      return res.json({ actualizados: 0, resultados: [] });
+    }
+    const r = await etiquetarSeleccion(req.merchantId, ids, accion, etiqueta, prisma);
+    return res.json(r);
+  } catch (err) {
+    console.error('[POST /admin/customers/bulk-tags]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    const customer = await getCustomer(req.merchantId, id);
+    if (!customer) return res.status(404).json({ error: 'not_found' });
+    res.json(customer);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -176,18 +218,34 @@ router.post('/import/preparar', requireRole('admin'), async (req, res) => {
     const base64 = String(req.body?.fichero ?? '');
     if (!base64) return res.status(400).json({ error: 'no_data', message: 'No hemos recibido ningún archivo. Vuelve a elegirlo.' });
 
-    const forzar = req.body?.codificacion as Codificacion | undefined;
-    const d = decodificarCsv(Buffer.from(base64, 'base64'), forzar);
-    const { cabecera } = trocearCsv(d.texto);
+    const bytes = Buffer.from(base64, 'base64');
+
+    // SCRUM-1022: se mira la FIRMA del fichero, no la extensión ni un flag del cliente. Un .xlsx
+    // no tiene la ambigüedad de codificación de un CSV, así que se salta `decodificarCsv` entero;
+    // `trocearCsv`/`proponerMapeo` reciben el mismo shape de texto de siempre y no lo notan.
+    let texto: string;
+    let codificacion: Codificacion = 'utf-8';
+    let alternativa: Codificacion = 'windows-1252';
+    let primeraFila: string;
+    if (pareceXlsx(bytes)) {
+      texto = await xlsxATextoCsv(bytes);
+      primeraFila = texto.split(/\r?\n/).find((l) => l.trim() !== '') ?? '';
+    } else {
+      const forzar = req.body?.codificacion as Codificacion | undefined;
+      const d = decodificarCsv(bytes, forzar);
+      ({ texto, codificacion, alternativa, primeraFila } = d);
+    }
+
+    const { cabecera } = trocearCsv(texto);
     if (cabecera.length === 0) {
       return res.status(400).json({ error: 'csv_vacio', message: 'El archivo no tiene ninguna fila.' });
     }
 
     return res.json({
       ok: true,
-      codificacion: d.codificacion,
-      alternativa: d.alternativa,
-      primeraFila: d.primeraFila,
+      codificacion,
+      alternativa,
+      primeraFila,
       columnas: proponerMapeo(cabecera),
     });
   } catch (err) {
@@ -212,7 +270,11 @@ router.post('/import', requireRole('admin'), async (req, res) => {
       });
     }
 
-    const { texto } = decodificarCsv(Buffer.from(base64, 'base64'), req.body?.codificacion as Codificacion | undefined);
+    // SCRUM-1022: mismo criterio que en /import/preparar — la firma decide, no la extensión.
+    const bytes = Buffer.from(base64, 'base64');
+    const texto = pareceXlsx(bytes)
+      ? await xlsxATextoCsv(bytes)
+      : decodificarCsv(bytes, req.body?.codificacion as Codificacion | undefined).texto;
 
     // Tope de filas, como antes. El limite es del lote, no del formato.
     const { filas } = trocearCsv(texto);
@@ -341,6 +403,80 @@ router.post('/:id/notes', requireRole('admin'), async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/customers/:id/sites — SCRUM-1014 (CRM) · la agenda de sitios del cliente.
+ * Sólo lista: elegir uno para un documento es una acción del profesional en OTRA pantalla
+ * (P2/DOC-12 intacto — nada de aquí escribe `shippingAddress`).
+ */
+router.get('/:id/sites', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const sitios = await listarSitios(req.merchantId, id);
+    if (!sitios) return res.status(404).json({ error: 'not_found' });
+    return res.json({ sitios });
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/sites]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// POST /admin/customers/:id/sites — SCRUM-1014 · añade un sitio a la agenda del cliente.
+router.post('/:id/sites', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    const parsed = customerSiteCreateSchema.parse(req.body);
+    const sitio = await crearSitio(req.merchantId, id, parsed);
+    if (!sitio) return res.status(404).json({ error: 'not_found' });
+    return res.status(201).json({ sitio });
+  } catch (err: any) {
+    if (err?.name === 'ZodError') return res.status(400).json({ error: 'invalid_body', details: err.issues });
+    console.error('[POST /admin/customers/:id/sites]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+// PUT /admin/customers/:id/sites/:siteId — SCRUM-1014 · edita un sitio existente.
+router.put('/:id/sites/:siteId', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const siteId = Number(req.params.siteId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(siteId) || siteId <= 0) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+    const parsed = customerSiteUpdateSchema.parse(req.body);
+    const sitio = await actualizarSitio(req.merchantId, id, siteId, parsed);
+    if (!sitio) return res.status(404).json({ error: 'not_found' });
+    return res.json({ sitio });
+  } catch (err: any) {
+    if (err?.name === 'ZodError') return res.status(400).json({ error: 'invalid_body', details: err.issues });
+    console.error('[PUT /admin/customers/:id/sites/:siteId]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * DELETE /admin/customers/:id/sites/:siteId — SCRUM-1014. Sin `requireRole('admin')`: es la
+ * agenda de direcciones, no un dato fiscal ni de facturación — mismo nivel que crear/editar un
+ * sitio, arriba, y que el alta del propio cliente (`POST /admin/customers`).
+ */
+router.delete('/:id/sites/:siteId', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const siteId = Number(req.params.siteId);
+    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(siteId) || siteId <= 0) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+    const borrado = await borrarSitio(req.merchantId, id, siteId);
+    if (!borrado) return res.status(404).json({ error: 'not_found' });
+    return res.status(204).send();
+  } catch (err) {
+    console.error('[DELETE /admin/customers/:id/sites/:siteId]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
 // GET /admin/customers/:id/detail — vista 360: historial completo del cliente
 router.get('/:id/detail', async (req, res) => {
   try {
@@ -377,7 +513,7 @@ router.get('/:id/detail', async (req, res) => {
 
     // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
     // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
-    const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente] = await Promise.all([
+    const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente, garantias] = await Promise.all([
       prisma.quote.findMany({
         where: { customerId: id, merchantId: req.merchantId },
         orderBy: { createdAt: 'desc' },
@@ -401,6 +537,9 @@ router.get('/:id/detail', async (req, res) => {
       prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId }, _sum: { total: true } }),
       prisma.invoice.aggregate({ where: { customerId: id, merchantId: req.merchantId, status: 'paid' }, _sum: { total: true } }),
       saldosPendientesPorCliente(req.merchantId, [id]), // SCRUM-1043: la MISMA suma que la lista «quién me debe»
+      // SCRUM-1108: la garantía retenida es DINERO — mismo criterio que el saldo de la lista (SCRUM-1043):
+      // el técnico no la recibe. Aparte de `totalPending` (facturas `pending`), nunca sumada dentro.
+      seesOnlyOwnJobs(req.userRole) ? null : garantiasRetenidasPorCliente(req.merchantId, [id]),
     ]);
 
     const totalBilled = Number(facturado._sum.total ?? 0);
@@ -425,6 +564,8 @@ router.get('/:id/detail', async (req, res) => {
         pendingCount: pendiente.get(id)?.count ?? 0,
         totalExpenses: Number(expenses._sum.amount ?? 0),
         profit: totalPaid - Number(expenses._sum.amount ?? 0),
+        // SCRUM-1108 · ausente = no tiene (ausente no es cero). `aviso` = ya se puede reclamar y sigue sin cobrar.
+        ...(garantias?.has(id) ? { garantiaRetenida: garantias.get(id)! } : {}),
       },
     });
   } catch (err) {
@@ -445,6 +586,50 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
   } catch (err) {
     console.error('[DELETE /admin/customers/:id]', err);
     res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/customers/:id/fusion-preview?con=<id> — SCRUM-1057 (CRM-16) · qué se conserva (el
+ * principal, `:id`) y qué se movería (aceptación 2), SIN escribir nada. `requireRole('admin')`:
+ * operación destructiva, GO del fundador (22-sep-2026, citado en el ticket).
+ */
+router.get('/:id/fusion-preview', requireRole('admin'), async (req, res) => {
+  try {
+    const principalId = Number(req.params.id);
+    const fusionadoId = Number(req.query.con);
+    if (!Number.isInteger(principalId) || principalId <= 0 || !Number.isInteger(fusionadoId) || fusionadoId <= 0) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+    const preview = await previsualizarFusion(req.merchantId, principalId, fusionadoId);
+    return res.json(preview);
+  } catch (err) {
+    console.error('[GET /admin/customers/:id/fusion-preview]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * POST /admin/customers/:id/fusionar — SCRUM-1057 (CRM-16) · ejecuta la fusión: `:id` es el
+ * PRINCIPAL (lo que se conserva), `{ con }` es el que desaparece. Transaccional (aceptación 4).
+ * `requireRole('admin')`: operación destructiva, GO del fundador citado arriba.
+ */
+router.post('/:id/fusionar', requireRole('admin'), async (req, res) => {
+  try {
+    const principalId = Number(req.params.id);
+    const fusionadoId = Number(req.body?.con);
+    if (!Number.isInteger(principalId) || principalId <= 0 || !Number.isInteger(fusionadoId) || fusionadoId <= 0) {
+      return res.status(400).json({ error: 'invalid_id' });
+    }
+    const resultado = await fusionarClientes(req.merchantId, principalId, fusionadoId);
+    return res.json(resultado);
+  } catch (err: any) {
+    const motivo = String(err?.message || '');
+    if (motivo === 'mismo_cliente' || motivo === 'cliente_no_encontrado' || motivo === 'factura_emitida') {
+      return res.status(409).json({ error: motivo });
+    }
+    console.error('[POST /admin/customers/:id/fusionar]', err);
+    return res.status(500).json({ error: 'internal_error' });
   }
 });
 

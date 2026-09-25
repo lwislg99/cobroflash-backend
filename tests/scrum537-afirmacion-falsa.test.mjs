@@ -287,3 +287,27 @@ test('SCRUM-537 · C · el límite MEDIDO de un detector léxico, escrito en vez
     '🔴 crecen los casos que se escapan. Un detector léxico es un SUELO MÍNIMO, no un criterio: '
     + 'si la lista sube, el camino no es alargar la regex sino cambiar de instrumento.');
 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1090 · LA FAMILIA B NO MIRA LA NEGACION, Y LA A SI (asimetria entre lineas 115 y 127)
+// ═════════════════════════════════════════════════════════════════════════════════════════
+//
+// `negada` se calcula UNA vez (linea 113) para las dos familias, pero solo la A la usa
+// (`!negada` en la 115). La B (127) no, y por eso bloquea una frase VERDADERA: el subtitulo
+// firmado de SCRUM-1016 dice que la remision a Hacienda «todavia no esta construida», que es
+// justo lo que el guion H2 obliga a decir. Reportado por J3/equipo de Javier (SCRUM-1090).
+
+test('SCRUM-1090 · 🔴 la familia B bloquea el texto firmado de SCRUM-1016 por no mirar la negacion', () => {
+  const frase = 'La remisión a Hacienda todavía no está construida.';
+  const r = afirmacionesFalsas(`<p>${frase}</p>`, { envioConstruido: false });
+  assert.equal(r.length, 0,
+    `🔴 SCRUM-1090: bloquea una frase NEGADA y VERDADERA («${frase}»). La familia A ya tiene `
+    + 'la excepción de `negada` en la línea 115; la B, en la 127, no la usa.');
+});
+
+test('SCRUM-1090 · la familia B sigue bloqueando SIN negación (no se ha ablandado, solo emparejado con A)', () => {
+  const frase = '<p>La facturación VeriFactu ya está construida.</p>';
+  const r = afirmacionesFalsas(frase, { envioConstruido: false });
+  assert.ok(r.length > 0 && r[0].familia === 'B',
+    '🔴 el arreglo de la negación no puede volverse una exención general de la familia B');
+});

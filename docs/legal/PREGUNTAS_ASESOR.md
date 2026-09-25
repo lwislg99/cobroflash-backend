@@ -836,9 +836,332 @@ la factura, o cuando pida su borrado?
 
 ---
 
+# Q-C1…Q-C9 · Contabilidad para un autónomo de oficio (bloquea CON-08/09, `docs/producto/CONTABILIDAD.md` §4)
+
+> **Propuesta de S0, 22-sep-2026 (SCRUM-1039/CON-03) — dueño J4: pendiente de tu visto bueno.**
+> Nacen de `docs/producto/CONTABILIDAD.md` §1 y §3: el diseño del bloque de Contabilidad leyó el
+> código y dedujo qué hace falta, y cada regla fiscal que usa lleva su cita oficial comprobada por
+> script (`docs/verificacion/comprobar-citas-contabilidad.mjs`, 26/26 citas literales, control
+> negativo OK). **Q-C5 y Q-C9 se responden abajo con esa cita** — se dejan aquí para que las
+> confirmes o las corrijas, no porque falte la fuente. El resto sigue abierto.
+
+**Q-C1.** ~~Reforma de vivienda al 10 %~~ ✅ **RESPONDIDA por el asesor fiscal (23-sep-2026) →
+afecta a SCRUM-1052.** El 40 % de materiales se mide sobre **la operación entera** (todo el
+presupuesto/obra), **nunca partida a partida** — cita AEAT verificada hoy, con enlace (no ⚠):
+_«la ejecución de obra […] tributará, toda ella, al tipo general del 21 %»_ y _«no cabría facturar
+por separado una entrega de materiales […] al 21 % y una prestación de servicios […] al 10 %»_.
+Mano de obra y materiales pueden ir en líneas separadas de la factura; el tipo aplicado es único.
+
+Los «más de dos años desde el fin de obra»: la ley no exige un documento concreto. Criterio DGT
+(**NO VERIFICADO** ⚠, sin enlace): el profesional puede exigir una **declaración escrita y
+firmada** del cliente bajo su responsabilidad — con ella, si es falsa, responde el cliente (arts.
+170.Dos.2º y 87.Uno LIVA, **NO VERIFICADO** ⚠); sin ella, responde el profesional. Consecuencia de
+producto, textual: _«una casilla de aceptación en el presupuesto no basta; hace falta un texto
+firmado (vale la misma firma que ya usáis para el presupuesto, si el texto es explícito)»_ — encaja
+con la firma que YaQu ya tiene, no hace falta mecanismo nuevo.
+
+Comunidad de propietarios: incluida expresamente (no es empresario → ni ISP ni retención).
+
+**Queda fuera del 10 % aunque lo parezca:** vivienda alquilada o con actividad (21 %) ·
+🔴 **mantenimiento de instalaciones —calderas, revisiones— NO es ejecución de obra → 21 %** (fuente
+AEAT, con enlace) · rehabilitación integral va por otro número (art. 91.Uno.3.1º LIVA, **NO
+VERIFICADO** ⚠).
+
+**Q-C2.** ~~Inversión del sujeto pasivo~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1051, y le
+estrecha mucho el alcance.** La leyenda exacta, **RESPONDIDA por cita comprobada (§3 de
+`CONTABILIDAD.md`, SCRUM-1039c, 23-sep-2026)** — art. 6.1.m RFACT/ROF (RD 1619/2012): *«En el caso
+de que el sujeto pasivo del Impuesto sea el adquirente o el destinatario de la operación, la
+mención "inversión del sujeto pasivo"»* — la mención se incluye **cuando** el sujeto pasivo es el
+destinatario, no son tres palabras sueltas sin condición. Y art. 6.2.b: si la factura mezcla ISP y
+no-ISP, base separada por bloque (cita completa en §3).
+
+*Cómo se cerró la duda:* mi primer cotejo (WebFetch sobre el BOE consolidado) devolvió **dos
+textos distintos, ambos etiquetados «m)»**, en la misma pasada — no lo promoví a §3 con esa
+ambigüedad. J5 lo repitió con `curl` directo (dos sondas independientes sobre el art. 6 completo, y
+el historial de modificaciones que el BOE publica al pie del artículo): **sólo hay una letra m),
+sin cambios desde 2012**. El duplicado era un artefacto del resumen de WebFetch, no algo del
+origen (detalle en `docs/master/SCRUM-1039.md` §SCRUM-1039c). **Lección de método:** una cita legal
+se baja con `curl`, nunca con WebFetch.
+
+🔴 **El alcance se estrecha mucho.** Tres condiciones ACUMULATIVAS, y en un oficio fallan a menudo:
+1. destinatario **empresario o profesional** actuando como tal — un particular nunca es promotor;
+2. la obra global tiene que ser **construcción o rehabilitación** en el sentido del art.
+   20.Uno.22º.B LIVA (**NO VERIFICADO** ⚠: >50 % del coste en estructura/fachadas/cubiertas, y coste
+   >25 % del valor). **Una reforma de baño, por grande que sea, NO es rehabilitación → NO hay ISP
+   aunque el cliente sea una empresa**;
+3. el destinatario debe **comunicarlo expresa y fehacientemente** (art. 24 *quater* RIVA, **NO
+   VERIFICADO** ⚠). Con esa comunicación el emisor queda protegido; sin ella responde quien se
+   equivoca.
+
+Quién es quién: promotor = quien encarga para sí · contratista = contrata con el promotor ·
+subcontratista = contrata con el contratista. Textual: _«el electricista subcontratado por un
+reformista factura al reformista con ISP si la obra global es construcción/rehabilitación; si es
+una reforma corriente, le factura con IVA.»_
+
+En el 303: emisor → casilla informativa 61 (**NO VERIFICADO** ⚠) sin cuota; receptor liquida
+(casillas 12-13, **NO VERIFICADO** ⚠) y deduce. VeriFactu: `CalificacionOperacion = S2` — esto sí
+verificado, en código, contra el XSD (SCRUM-1088), no es cita legal.
+
+**Q-C3.** ~~Suplidos~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1054.** Tres condiciones
+ACUMULATIVAS, cada una con su prueba:
+1. 🔴 **la factura del tercero va A NOMBRE DEL CLIENTE**, no del profesional — textual: _«un
+   material comprado por el fontanero a su nombre nunca es suplido: es coste suyo, va en la base y
+   él deduce el IVA»_. Es la prueba que no admite discusión;
+2. **mandato expreso y previo:** cláusula en el presupuesto aceptado identificando el gasto
+   **concreto** (qué, a quién, importe estimado). Textual: _«una línea genérica "suplidos" sin
+   identificar el gasto no es mandato expreso»_. No hace falta firma aparte si el presupuesto ya
+   está firmado;
+3. **cuantía exacta:** el importe pagado, sin margen ni redondeo, con justificante.
+
+Factura y registro: importe separado, fuera de base y cuota; en VeriFactu fuera del registro o como
+no sujeto/tipo 0 — de la FAQ de registros de facturación de la AEAT (con enlace, no ⚠). No entra en
+el libro de gastos (su IVA no se deduce).
+
+**Q-C4.** ~~Recargo de equivalencia~~ ✅ **RESPONDIDA (23-sep-2026) → afecta a SCRUM-1054.**
+Corresponde al comerciante minorista persona física que vende sin transformar y ≥80 % a
+consumidores finales (arts. 148-149 LIVA, **NO VERIFICADO** ⚠). Tipos: 5,2/1,4/0,5 % (art. 161
+LIVA, **NO VERIFICADO** ⚠ en esta pasada — el valor ya estaba en el código, el artículo no se ha
+recotejado hoy).
+
+No hay registro público de quién está en recargo: el minorista está obligado a acreditarlo ante sus
+proveedores (art. 163.Uno LIVA y art. 61 RIVA, **NO VERIFICADO** ⚠). Sin esa comunicación, el
+proveedor no responde; el que fue informado y no lo repercutió, sí (infracción del minorista que no
+lo acreditó, art. 170.Dos.3º LIVA, **NO VERIFICADO** ⚠).
+
+🔴 **Alcance para este perfil, textual:** _«el recargo sólo existe en entregas de BIENES a un
+minorista para su tienda. Un oficio presta SERVICIOS (ejecución de obra); sólo tocaría si vende
+material suelto a una ferretería o similar para reventa. Es tan raro que basta con tener el campo,
+no un flujo.»_
+
+**Q-C5.** ~~Retenciones 2 y 1 %~~ ✅ **RESPONDIDA por completo (23-sep-2026) → afecta a SCRUM-1053 y
+SCRUM-1073, y necesita DECISIÓN DEL FUNDADOR (abajo).** Sustituye la respuesta parcial del 22-sep.
+
+Los cuatro tipos, situados: **15 %** profesionales (art. 95.1 RIRPF, ya comprobado en
+`CONTABILIDAD.md` §3) — la que un oficio **sufre** al recibir la factura de su gestor, no la que
+aplica · **7 %** profesionales en el año de inicio y los dos siguientes (mismo artículo, comprobado)
+· **2 %** agrícolas/ganaderas/forestales (**NO VERIFICADO** ⚠) · **1 %** porcino/avicultura y
+actividades empresariales en **estimación objetiva** de los epígrafes del art. 95.6 (fontanería,
+electricidad, albañilería, carpintería, pintura — lista ya comprobada en §3) cuando paga un
+empresario. Textual: _«ésta es la única retención "de obra" que existe, y es de módulos»_.
+
+🔴🔴 **Lo que cambia el ticket, textual:** _«un oficio en estimación directa no sufre retención de
+nadie, ni de empresas, porque su actividad es empresarial, no profesional, y el 1 % sólo aplica a
+módulos. Para vuestro perfil la retención en factura emitida es CERO en todos los casos; el campo
+tiene sentido sólo si un día admitís usuarios en módulos que facturan a empresas.»_
+
+Un particular nunca retiene (no está entre los obligados del art. 76 RIRPF, **NO VERIFICADO** ⚠).
+
+El «5 % en obra» que a veces se menciona **no es una retención fiscal**: es la retención de
+**garantía contractual** en certificaciones de obra (habitual 5 %; en contratos públicos, garantía
+definitiva del art. 107 LCSP, **NO VERIFICADO** ⚠). Textual: _«es una retención de PAGO, no de
+impuestos: la factura se emite por el 100 % y el IVA se devenga sobre el 100 %; lo retenido es un
+crédito pendiente de cobro. Si lo modeláis, va en cobros, no en la factura.»_
+
+🔴🔴 **DECISIÓN DEL FUNDADOR PENDIENTE — no la tomo yo:** si la retención en factura emitida de este
+perfil es CERO en todo caso, ¿se construye igual el campo/flujo para un segmento (módulos
+facturando a empresa) que YaQu hoy no tiene? Así lo marca el propio ticket (SCRUM-1106), sin
+resolver.
+
+**Q-C6.** Criterio de caja: `paidAt` es la fecha en que alguien MARCÓ el cobro, no necesariamente la
+fecha real en que entró el dinero (detalle y advertencia ya en el código,
+`criterioCaja.ts`/`devengoPorCaja.ts`). ¿Es una aproximación aceptable para un RECC, o hace falta la
+fecha real del apunte bancario? Mientras no haya respuesta, el módulo clasifica y avisa; no liquida
+ningún 303 (sin llamadores).
+
+**Q-C7.** ~~Los tipos de IVA 2, 5 y 7,5 %~~ ✅ **RESUELTA (23-sep-2026).** Son los tipos
+**temporales de alimentos** del RDL 4/2024 (1-oct a 31-dic-2024: el 0 % básico subió al 2 %, y el
+5 % de aceite y pasta al 7,5 %; desde 1-ene-2025 volvieron al 4 % y 10 % — fechas **NO VERIFICADO**
+⚠). Recargos de equivalencia asociados: 0,26 % y 1 %. Siguen en el anexo de la Orden VeriFactu
+porque hay facturas históricas que los usan. Textual: _«a un oficio no le aplican nunca; en el
+código pueden quedar como valores admitidos pero NO OFRECIDOS»_.
+
+**Q-C8.** ~~Plazos trimestrales~~ ✅ **RESPONDIDA por el asesor fiscal (23-sep-2026), pendiente de tu
+confirmación.** Perfil consultado: autónomo de oficio, estimación directa, régimen general de IVA,
+clientes particulares y empresas. **El asesor marcó él mismo con ⚠ lo que citó de memoria** — por la
+regla de oro de `docs/producto/CONTABILIDAD.md` §0, ninguna cita ⚠ entra aquí como cita comprobada:
+va marcada **NO VERIFICADO** hasta que alguien la coteje contra el BOE consolidado (pendiente,
+ninguna de las de abajo se ha descargado todavía). Lo que el asesor dio **con enlace propio** sí se
+trata como fuente: AEAT «Otras cuestiones de interés» (exoneración 390, calendario 2026), novedades
+Orden HAC/1148/2018, instrucciones del 390, RECC en la guía del 036, RD 1619/2012 (ROF) consolidado.
+
+*Qué modelos le tocan a este perfil:*
+
+| Modelo | ¿Le toca? | Cuándo | Cita |
+|---|---|---|---|
+| **303** | Siempre | Trimestral | art. 71.3 RIVA — **NO VERIFICADO** ⚠ |
+| **390** | Siempre. **NO está exonerado** | Anual, enero | AEAT «Otras cuestiones de interés» + instrucciones del 390 — con enlace, tratado como fuente |
+| **130** | Siempre (estimación directa) | Trimestral. Sólo se libra si ≥70 % de ingresos del año anterior llevaron retención — **en un oficio no ocurre** (su actividad es empresarial, no profesional) | art. 109 RIRPF — **NO VERIFICADO** ⚠ |
+| **131** | 🔴 **NUNCA** — es el pago fraccionado de estimación objetiva (módulos), excluyente con el 130 | — | definición del propio modelo (AEAT), no una cita de artículo |
+| **111 + 190** | Sólo si retiene a alguien (nóminas, o facturas de profesionales —no empresariales— con retención: gestoría, arquitecto, aparejador, abogado…) | Trimestral + anual | art. 99 LIRPF y arts. 74-76 RIRPF — **NO VERIFICADO** ⚠ |
+| **115 + 180** | Sólo si paga alquiler de local afecto (no si trabaja desde casa) | Trimestral + anual | art. 100 RIRPF — **NO VERIFICADO** ⚠ |
+| **347** | Habitual, no automático: cada cliente/proveedor con total anual IVA incluido > 3.005,06 €, por trimestres. Fuera: lo ya declarado en 190/180, lo del 349, y **quien esté en SII** (VeriFactu **no** lo elimina — sólo el SII, y SII es incompatible con VeriFactu) | Anual, febrero | arts. 31-35 RGAT (RD 1065/2007) — **NO VERIFICADO** ⚠ |
+| **100** | Siempre — **no estaba en nuestra lista**; es el que cierra el 130 | Renta anual | — |
+| **349** | Sólo si compra/vende a empresas de otros países UE — **no estaba en nuestra lista**; raro en oficios | — | — |
+
+**111 y 115, el detalle que falta en el código hoy:** la retención la sufre el profesional que emite
+la factura, pero **la presenta quien la paga** (texto del asesor). No genera 111 una factura de otro
+oficio o de un proveedor de material (son empresariales, sin retención). Consecuencia de producto ya
+recogida en **SCRUM-1103**: sin captar la retención en las facturas RECIBIDAS no se pueden calcular
+111 ni 115.
+
+**Trimestral → mensual:** automático sólo por volumen > 6.010.121,04 € (art. 71.3 RIVA ⚠, no le pasa
+a un oficio) o voluntario por **REDEME** (art. 30 RIVA ⚠), que arrastra **SII obligatorio** (art. 62.6
+RIVA ⚠) y saca al merchant del RRSIF/VeriFactu → tratado aparte en **SCRUM-1102**, no se duplica aquí.
+
+**Criterio de caja:** no cambia qué modelos tocan ni su periodicidad — cambia cómo se rellenan (303:
+repercutido en el trimestre del cobro con tope 31-dic siguiente, soportado al pagar, con casillas
+informativas del devengo general; 347: además de por devengo, los importes cobrados/pagados del año)
+y qué hay que guardar (mención "régimen especial del criterio de caja" en factura, y fecha/importe/
+medio de cobro en libros). Confirma exactamente lo que pedía **SCRUM-1055** (fecha real del cobro).
+Requisito y casillas: arts. 163 *decies*/*duodecies* LIVA, art. 34 RGAT, art. 61 *decies* RIVA, la
+numeración de casillas 62/63/74/75 del 303 — **todo NO VERIFICADO** ⚠.
+
+**Las cuatro preguntas de alta que propone el asesor** (textual): *«si tiene empleados o
+profesionales retenidos (111), si paga alquiler (115), si está en REDEME, si optó a criterio de
+caja, y si alguna cliente empresa le practica retención (sólo si su actividad estuviera dada de alta
+como profesional, no empresarial). Son cuatro preguntas de alta en la herramienta; el resto se deduce
+de las facturas.»* Es una propuesta de producto, no un texto de pantalla: sin firma del fundador
+(regla 39) no se implementa.
+
+**Lo que NO se le preguntó a propósito:** los plazos concretos de presentación de cada modelo — se
+citan de su propia orden ministerial (las seis ya localizadas en SCRUM-1039b), no de memoria del
+asesor.
+
+**Q-C9.** ✅ **RESPONDIDA por cita, pendiente de tu confirmación.** Se revisó LIVA art. 7 completo
+(los 12 supuestos de no sujeción: transmisión de negocio, muestras gratuitas, relación laboral,
+Administraciones Públicas, cesiones de dinero…) y art. 20.Uno, encabezado + los 5 primeros apartados
+de una lista más larga (postal universal, sanidad, profesiones médicas/sanitarias). **Ninguno de los
+revisados aplica** a la venta ordinaria de un servicio de reforma/instalación de un oficio. No se
+transcribió el resto de 20.Uno (~30 apartados más: educación, financiero, seguros, alquiler de
+vivienda…) por no ser candidatos plausibles. **Pregunta:** ¿conoces algún supuesto real de un oficio
+de YaQu (electricista, fontanero, reformista, pintor, cerrajero, climatización) que caiga en una
+exención o no sujeción del resto de la lista? Si la respuesta es «ninguno», Exento/No sujeto puede
+quedar fuera del selector de tipos de IVA en vez de construirse sin caso de uso.
+
+**Fuentes citadas arriba, con SHA-256 de la descarga y método de comprobación:**
+`docs/producto/CONTABILIDAD.md` §8. Los ficheros HTML no están en git (se vuelven a bajar de las
+direcciones de esa tabla); el comprobador con control negativo es
+`docs/verificacion/comprobar-citas-contabilidad.mjs`.
+
+---
+
+# P18. Los datos del EMISOR en una factura rectificativa, cuando han cambiado desde la original
+
+> **Formulada por J4 (SCRUM-1085), a partir de la instrucción explícita de Javier: «lo llevamos al
+> asesor» (22-sep-2026), sobre el PENDIENTE marcado a propósito en el comentario 16468 de Jira
+> SCRUM-665.**
+
+Un autónomo emite en enero; en marzo cambia su domicilio fiscal (o constituye una sociedad, o
+cambia de denominación); en octubre emite una rectificativa sobre la de enero.
+
+**1)** ¿Qué datos del expedidor deben figurar en la rectificativa: los de la fecha original o los
+vigentes al rectificar?
+
+**2)** ¿Cambia la respuesta si lo que cambió fue el **NIF** (p. ej. constituyó una SL) frente a
+domicilio o denominación? Si la rectificativa lleva un NIF distinto al de la factura que rectifica,
+¿sigue siendo válida como rectificativa de aquella?
+
+**3)** Al reimprimir una copia de la factura original años después, ¿debe salir con los datos de
+expedidor de entonces?
+
+**4)** ¿Hay obligación de conservar el historial de datos identificativos del expedidor, más allá
+del dato que figuró en cada factura?
+
+Hoy el programa ya congela los datos del emisor al emitir (`src/modules/invoicing/domain/emisorCongelado.ts`,
+SCRUM-665). El camino de la rectificativa se dejó **SIN DECIDIR a propósito**: en
+`src/modules/system/app/routes/invoicesAdmin.routes.ts` (ruta de rectificación), una R1 congela el
+emisor con la ficha VIVA del merchant al rectificar — igual que las otras siete bocas —, **no** con
+la del emisor de la factura original, y el código lo marca literalmente como «PENDIENTE, marcado a
+propósito y sin resolver por omisión», a la espera de esta pregunta. El cliente (destinatario) sí
+tiene resuelto el caso simétrico: hereda el de la factura que rectifica
+(`congelarParaRectificativa`, SCRUM-729).
+
+**Bloquea:** SCRUM-665 (qué criterio usa `congelarEmisorDesdeFicha` en la ruta de rectificación).
+
+---
+
+# P19. El PRODUCTOR del SIF, ¿puede ser DOS personas físicas?
+
+> **Formulada por J4 (SCRUM-1087), a partir de una decisión de Javier dicha hoy (23-sep-2026),
+> literal: «De momento nadie, pero seremos los dos, más bien la empresa que conformemos dentro de
+> poco» — refiriéndose a él mismo y a Luis Lara Granado. Y sobre las pruebas: «si hace falta uno
+> para pruebas me pongo yo, pero el día que haya algo real será como empresa».**
+
+**El problema concreto, medido en el código, no supuesto:** el bloque `SistemaInformatico` del
+registro tiene un solo campo de productor — `nombreRazonProductor: string` y `nifProductor: string`
+`src/modules/fiscal/verifactu/registro.builder.ts:19-21` (`nombreRazonProductor`), que se vuelcan
+tal cual a `<sum1:NombreRazon>`/`<sum1:NIF>` del XML
+`src/modules/fiscal/verifactu/registro.builder.ts:391-394` (`xmlSistema`) — SCRUM-1051 movió la línea. Un nombre, un NIF. «Los dos» no cabe ahí, y
+tampoco en `docs/legal/DECLARACION_RESPONSABLE.md` §1 ("Productor del sistema"), que hoy es un único
+placeholder de razón social + NIF.
+
+**1)** ¿Puede una **declaración responsable** del art. 13 RRSIF nombrar a **dos personas físicas** como
+productor conjunto, o el propio formato (un NIF por declaración) obliga a elegir una sola?
+
+**2)** ¿Puede el productor ser una **comunidad de bienes** en vez de una persona física o una SL,
+mientras la sociedad no esté constituida?
+
+**3)** Mientras se decide y si hace falta un productor solo para las **pruebas** del entorno de la
+AEAT (Javier: «me pongo yo»): si UNA sola persona física firma como productor, ¿qué responsabilidad
+asume esa persona **frente a la otra** (que participa en YaQu pero no queda nombrada en la
+declaración)?
+
+**4)** Cuando se constituya la sociedad, ¿hay que **reemitir** la declaración responsable con el
+nuevo productor (persona jurídica), conservando la anterior? (art. 13 RRSIF: "el productor conserva
+todas las versiones").
+
+**Bloquea:** rellenar `docs/legal/DECLARACION_RESPONSABLE.md` §1 y los valores reales de
+`nombreRazonProductor`/`nifProductor` — hoy los dos son placeholders sin rellenar.
+
+---
+
+# P20. 🔴 La huella sella el REGISTRO — ¿también tiene que ser inmutable el PDF entregado?
+
+> **Formulada por J4 (SCRUM-1087). Del enunciado de SCRUM-665, sin preguntar desde el 2-sep-2026 —
+> hoy bloquea una decisión de diseño, y por eso es la más urgente de las dos preguntas de esta
+> entrada.**
+
+**Medido hoy, no supuesto:** el PDF de una factura emitida se **regenera** con el código actual cada
+vez que falta en disco. `ensureInvoicePdf` (`src/lib/invoicing.ts`) comprueba
+`!fs.existsSync(diskPath)` entre las condiciones de `needs`, y si el fichero no está, vuelve a llamar
+a `generateInvoicePdf` (`src/modules/invoicing/infra/pdf/pdf.service.ts`) — y `storage/invoices` vive
+en el disco de Railway, que es **efímero** entre despliegues. Los **DATOS** que entran en esa
+regeneración ya están congelados (el emisor sale de la columna congelada de la factura, no de la
+ficha viva del merchant — `emisorDelDocumento`, SCRUM-665/729, ver P18 arriba); el **DISEÑO**
+(plantilla, maquetación, qué campos se imprimen y cómo) sale del código de `generateInvoicePdf` **tal
+como está hoy**, no como estaba el día de la emisión. Si la plantilla cambia en marzo, una factura de
+enero que se regenere en abril sale con el diseño de marzo.
+
+**1)** La huella encadenada sella el **registro de facturación** (los datos: base, cuota, NIF,
+fecha...). ¿Exige la norma que el **documento** entregado al cliente (el PDF) sea también el mismo
+bit a bit que el generado el día de la emisión, o basta con que los DATOS que contiene coincidan con
+el registro sellado?
+
+**2)** La copia que el expedidor debe conservar (art. 19 ROF: conservar "las copias o matrices de las
+facturas expedidas") — ¿es una copia del **documento** tal como se entregó, o basta con poder
+**reconstruirlo** a partir de los datos conservados?
+
+**3)** Si la respuesta exige el documento inmutable: ¿basta con archivar el PDF generado en el
+momento de la emisión (aunque el disco donde vive hoy sea efímero), o hace falta además versionar la
+**plantilla/el motor de generación** para poder reproducirlo bit a bit más adelante?
+
+🔴 **De esta respuesta depende elegir entre CUATRO salidas** — sin ella no se construye ninguna:
+- (a) archivar el PDF generado en el momento de emitir (en almacenamiento persistente, no en disco
+  efímero) y servir SIEMPRE ese archivo, nunca regenerar;
+- (b) no archivar el PDF pero congelar/versionar la plantilla de generación, de forma que una
+  regeneración futura reproduzca el mismo documento;
+- (c) las dos cosas;
+- (d) asumir que solo el registro necesita ser inmutable, y dejar el PDF como está hoy (se regenera
+  con el diseño vigente).
+
+**Bloquea:** decisión de diseño sobre `ensureInvoicePdf` (`src/lib/invoicing.ts`) y
+`generateInvoicePdf` (`src/modules/invoicing/infra/pdf/pdf.service.ts`).
+
+---
+
 ## RESPUESTAS · 22-sep-2026 (asesor, contra FAQ AEAT 21-jul-2026 y ROF consolidado 31-mar-2026)
 
-> **Quien preparó estas respuestas:** una sesión de IA de este equipo, consultando la FAQ de la AEAT y el BOE, el 22-sep-2026. **No las ha revisado un asesor humano.** Javier decidió ese mismo día mantener la cabecera «asesor» (SCRUM-1079, comentario 16403). Las **14 marcas ⚠** señalan lo que su propio autor no pudo releer en fuente oficial: **ninguna de ellas se convierte en microcopy ni en guard sin cotejarla antes.**
+> **Quien preparó estas respuestas:** una sesión de IA de este equipo, consultando la FAQ de la AEAT y el BOE, el 22-sep-2026. **No las ha revisado un asesor humano.** Javier decidió ese mismo día mantener la cabecera «asesor» (SCRUM-1079, comentario 16403). Las **14 marcas ⚠** que llevaba este apéndice señalaban lo que su propio autor no pudo releer en fuente oficial. **Cotejadas el 23-sep-2026 (SCRUM-1088, detalle y veredicto por punto en «Cotejo del 23-sep-2026» al final de este apéndice): las 14 quedan CONFIRMADAS** (una con matiz menor, ninguna contradicha, ninguna sin localizar). Sigue sin revisarlas un asesor humano — eso no lo cambia un cotejo de texto legal.
 
 Todo lo verificado hoy sale de la FAQ oficial de la AEAT (actualizada a 21-jul-2026), del texto consolidado del ROF (RD 1619/2012, últ. act. 31-mar-2026) y del ticket SCRUM-143. Lo que no se ha podido releer en fuente oficial en esta sesión va marcado ⚠.
 
@@ -889,7 +1212,7 @@ Las tres vías, con lo que exige cada una (todo verificado en la FAQ *Cumplimien
 | **Obligado con su certificado** | Cada merchant | Su certificado electrónico | Nada |
 
 Dos cosas que la FAQ dice y que tocan directamente al producto:
-- Para otorgar la representación al colaborador social **«no se admitirán modalidades de aceptación de condiciones del servicio»**. El Anexo I tiene que firmarse de forma manuscrita (con copia del DNI) o con firma electrónica cualificada / avanzada del art. 26 eIDAS. ⚠ Si la firma con el dedo + foto del DNI cumple el art. 26 eIDAS (vinculación única al firmante, control exclusivo, detección de cambios) es cuestión que debe validar el asesor legal; el ticket asume que sí sin haberlo contrastado.
+- Para otorgar la representación al colaborador social **«no se admitirán modalidades de aceptación de condiciones del servicio»**. El Anexo I tiene que firmarse de forma manuscrita (con copia del DNI) o con firma electrónica cualificada / avanzada del art. 26 eIDAS. **Cotejado 23-sep-2026 (SCRUM-1088):** el art. 26 del Reglamento (UE) 910/2014 exige, literal, que la firma (a) esté «vinculada al firmante de manera única», (b) «permita la identificación del firmante», (c) haya sido creada «utilizando datos de creación de la firma electrónica que el firmante puede utilizar, con un alto nivel de confianza, bajo su control exclusivo», y (d) esté «vinculada con los datos firmados... de modo tal que cualquier modificación ulterior de los mismos sea detectable» (fuente: [Iberley, art. 26 eIDAS](https://www.iberley.es/legislacion/articulo-26-identificacion-electronica-servicios-confianza-transacciones-electronicas-mercado-interior-reglamento-eidas), consolidado; texto oficial en [EUR-Lex, Reglamento 910/2014 consolidado](https://eur-lex.europa.eu/legal-content/ES/TXT/HTML/?uri=CELEX:02014R0910-20241018)). **La CITA queda confirmada — lo que sigue sin contrastar es la APLICACIÓN**: si la firma con el dedo + foto del DNI de YaQu satisface estas cuatro condiciones (sobre todo (a) y (c), vinculación única y control exclusivo) sigue siendo un juicio que debe hacer el asesor legal sobre el mecanismo concreto, no algo que este cotejo pueda resolver.
 - La delegación en un tercero «no exime al obligado a expedir facturas de la responsabilidad sobre dicho cumplimiento» (art. 6 RRSIF; art. 5 ROF). El merchant sigue siendo el responsable; eso es lo que deben decir los ToS.
 
 **Qué desbloquea:** el cliente mTLS y el sobre SOAP se pueden construir y probar con certificado propio de YaQu sobre registros propios (Modelo C). La custodia de N certificados de merchants (opción b del one-pager) no aparece en ninguna FAQ como vía prevista; la vía prevista para «YaQu remite por otros» es el 017 o el apoderamiento.
@@ -931,8 +1254,10 @@ Dos cosas que la FAQ dice y que tocan directamente al producto:
 **Opción (a), y con la mayor de las cifras de conservación que aplique.**
 
 - **Base para conservar:** art. 17.3.b) RGPD (excepción a la supresión por obligación legal); art. 19 ROF («conservar, durante el plazo previsto en la LGT», las copias de las facturas expedidas); art. 8.2.c) RRSIF (conservación de los registros de facturación durante el plazo de la LGT); art. 30 Código de Comercio (seis años).
-- **Plazo:** la LGT fija la prescripción en 4 años (art. 66), pero el art. 30 CCom exige **6 años** desde el último asiento a todo empresario, y ese es el que ya publica la política de privacidad. Mantener 6. ⚠ Art. 30 CCom y art. 66 LGT citados de memoria: son literales estables, pero no releídos hoy.
-- **Cómo conservar sin usar:** el mecanismo del RGPD español para esto es el **bloqueo** (art. 32 LOPDGDD): los datos se conservan sólo a disposición de Administraciones y jueces durante la prescripción y se destruyen después. ⚠ Artículo citado de memoria.
+- **Plazo:** la LGT fija la prescripción en 4 años (art. 66), pero el art. 30 CCom exige **6 años** desde el último asiento a todo empresario, y ese es el que ya publica la política de privacidad. Mantener 6. **Cotejado 23-sep-2026 (SCRUM-1088) — CONFIRMADO, los dos, literal:**
+  - Art. 30 CCom, leído directamente en el BOE consolidado (https://www.boe.es/buscar/act.php?id=BOE-A-1885-6627): *"1. Los empresarios conservarán los libros, correspondencia, documentación y justificantes concernientes a su negocio, debidamente ordenados, durante seis años, a partir del último asiento realizado en los libros, salvo lo que se establezca por disposiciones generales o especiales."*
+  - Art. 66 LGT, letras a)-d), cotejado contra [Iberley](https://www.iberley.es/legislacion/articulo-66-ley-general-tributaria): *"Prescribirán a los cuatro años los siguientes derechos: a) El derecho de la Administración para determinar la deuda tributaria mediante la oportuna liquidación. b) El derecho de la Administración para exigir el pago de las deudas tributarias liquidadas y autoliquidadas. c) El derecho a solicitar las devoluciones... d) El derecho a obtener las devoluciones..."*
+- **Cómo conservar sin usar:** el mecanismo del RGPD español para esto es el **bloqueo** (art. 32 LOPDGDD): los datos se conservan sólo a disposición de Administraciones y jueces durante la prescripción y se destruyen después. **Cotejado 23-sep-2026 (SCRUM-1088) — CONFIRMADO**, literal contra [Iberley, art. 32 LOPDGDD](https://www.iberley.es/legislacion/articulo-32-ley-organica-proteccion-datos-personales-garantia-derechos-digitales-lopdgdd) (texto oficial: BOE-A-2018-16673): *"1. El responsable del tratamiento estará obligado a bloquear los datos cuando proceda a su rectificación o supresión. [...] 3. Los datos bloqueados no podrán ser tratados para ninguna finalidad distinta de la señalada en el apartado anterior."* El apartado 2 confirma el mecanismo exacto que describe esta respuesta (reserva con medidas técnicas, disponibilidad solo para jueces/tribunales/Ministerio Fiscal/AAPP durante la prescripción, destrucción después).
 - **(b) queda descartada por la propia norma fiscal**, no sólo por la huella: una factura anonimizada deja de cumplir el art. 6.1.c)-e) ROF y la FAQ prohíbe alterar un registro ya generado («no hay acciones permitidas sobre los registros de facturación una vez producidos»). Anonimizar sí procede en lo que **no** está dentro de la factura ni del registro (ficha de contacto, presupuestos no facturados, mensajes).
 - **(c) borrado total** contravendría el art. 19 ROF y el 8.2.c) RRSIF.
 
@@ -944,13 +1269,20 @@ Dos cosas que la FAQ dice y que tocan directamente al producto:
 
 | Caso | Norma | En la factura (ROF) | En el registro VeriFactu |
 |---|---|---|---|
-| Ejecución de obra de **construcción o rehabilitación** de edificación, entre empresarios, contrato promotor-contratista o subcontrata | Art. 84.Uno.2.º.f) LIVA ⚠ | Sin IVA + mención «inversión del sujeto pasivo» (art. 6.1.m ROF) | `CalificacionOperacion = S2` ⚠ |
-| Renovación/reparación en **vivienda** para particular (o comunidad), edificio ≥ 2 años, materiales ≤ 40 % de la base | Art. 91.Uno.2.10.º LIVA ⚠ | Tipo 10 % | `S1`, tipo 10 |
-| Operación **exenta** (art. 20 LIVA; rara en oficios) | Art. 20 LIVA | Referencia al precepto o «operación exenta» (art. 6.1.j ROF) | `OperacionExenta = E1` ⚠ |
-| **No sujeta** | Art. 7 LIVA | Sin cuota | `N1` ⚠ |
+| Ejecución de obra de **construcción o rehabilitación** de edificación, entre empresarios, contrato promotor-contratista o subcontrata | Art. 84.Uno.2.º.f) LIVA ✅ | Sin IVA + mención «inversión del sujeto pasivo» (art. 6.1.m ROF) | `CalificacionOperacion = S2` ✅ |
+| Renovación/reparación en **vivienda** para particular (o comunidad), edificio ≥ 2 años, materiales ≤ 40 % de la base | Art. 91.Uno.2.10.º LIVA ✅ | Tipo 10 % | `S1`, tipo 10 |
+| Operación **exenta** (art. 20 LIVA; rara en oficios) | Art. 20 LIVA | Referencia al precepto o «operación exenta» (art. 6.1.j ROF) | `OperacionExenta = E1` ✅ |
+| **No sujeta** | Art. 7 LIVA | Sin cuota | `N1` ✅ |
 | Mezcla de casos en una factura | Art. 6.2 ROF | Base **separada** por cada bloque | Una línea de desglose por bloque |
 
-⚠ Los artículos 84 y 91 LIVA se citan de memoria (el consolidado del BOE no devolvió esos artículos hoy); las claves S1/S2/N1/E1 son de las listas del anexo de la Orden HAC/1177/2024 y conviene cotejarlas visualmente. Lo que no depende de YaQu: si una obra concreta es ISP o 10 % lo decide el hecho (quién es el destinatario, qué edificio, cuánto material). Encaja con `HITOS-producto.md`: el sistema pregunta, no decide.
+**Cotejado 23-sep-2026 (SCRUM-1088) — las 6 marcas de esta tabla, CONFIRMADAS:**
+- **Art. 84.Uno.2.º.f) LIVA**, literal contra [Iberley](https://www.iberley.es/legislacion/articulo-84-ley-impuesto-sobre-valor-anadido-iva): *"Ejecuciones de obra, con o sin aportación de materiales, así como las cesiones de personal para su realización, consecuencia de contratos directamente formalizados entre el promotor y el contratista que tengan por objeto la urbanización de terrenos o la construcción o rehabilitación de edificaciones."* — y confirma también el matiz «o subcontrata»: la regla aplica igual cuando el destinatario es el contratista principal u otros subcontratistas.
+- **Art. 91.Uno.2.10.º LIVA**, literal contra [Iberley](https://www.iberley.es/legislacion/articulo-91-ley-impuesto-sobre-valor-anadido-iva): exige que «el destinatario sea persona física, no actúe como empresario o profesional y utilice la vivienda... para su uso particular» (con la excepción de comunidades de propietarios), que «la construcción o rehabilitación... haya concluido al menos dos años antes» y que el coste de los materiales aportados «no exceda del 40 por ciento de la base imponible». Coincide exactamente con la fila de la tabla.
+- **Claves `S1`/`S2`/`N1`/`E1`**, cotejadas contra el XSD oficial de la AEAT ya vendorizado en este mismo repo (`src/modules/fiscal/verifactu/xsd/SuministroInformacion.xsd`, namespace `www2.agenciatributaria.gob.es/.../SuministroInformacion.xsd` — es la especificación técnica de la propia AEAT, no una transcripción de tercero): `S1` = *"OPERACIÓN SUJETA Y NO EXENTA - SIN INVERSIÓN DEL SUJETO PASIVO"* (:1240-1242), `S2` = *"...CON INVERSIÓN DEL SUJETO PASIVO"* (:1245-1247), `N1` = *"OPERACIÓN NO SUJETA ARTÍCULO 7, 14, OTROS"* (:1250-1252), `E1` = *"EXENTA por Art. 20"* (:681-683). Las cuatro coinciden letra a letra con el uso que les da esta tabla.
+
+Lo que no depende de YaQu: si una obra concreta es ISP o 10 % lo decide el hecho (quién es el destinatario, qué edificio, cuánto material). Encaja con `HITOS-producto.md`: el sistema pregunta, no decide.
+
+**Nota de método (para las tres citas de LIVA de esta página):** el visor del BOE consolidado (`boe.es/buscar/act.php` y `boe.es/eli/.../con`) no devolvió el texto completo de la Ley 37/1992 en este cotejo — la respuesta se corta antes de llegar a los artículos 78/84/91 (documento muy largo). Se cotejó contra Iberley, base de datos jurídica de uso habitual que marca sus artículos como «vigente» y cuyo texto coincidió, palabra por palabra, con los fragmentos que sí devolvió el buscador del BOE para otras leyes de este mismo cotejo (CCom, art. 30, verificado directamente contra `boe.es`). Se declara la limitación en vez de callarla.
 
 ---
 
@@ -963,7 +1295,7 @@ Dos cosas que la FAQ dice y que tocan directamente al producto:
 ## P11-P13 · Tres tipos de factura
 
 - **P11 · Sin identificar al cliente:** resuelto en B3. Particular sin NIF → **F2 simplificada** hasta 3.000 € (art. 4.2.c ROF); si pide factura con NIF → simplificada cualificada, registrada como F1; > 3.000 € o empresario → completa con NIF obligatorio. El caso `FacturaSinIdentifDestinatarioArt61d` no procede para un emisor establecido en TAI.
-- **P12 · Suplidos:** art. 78.Tres.3.º LIVA ⚠ (no forman parte de la base si son en nombre y por cuenta del cliente, con factura a nombre del cliente). La FAQ *Registros de facturación: alta* lo cierra para VeriFactu: los suplidos «no son importes “propios” del registro de facturación y no tienen que incluirse»; si se incluyen en el importe total, «deberán consignarse como importe no sujeto al IVA o cantidades a tipo cero». Pueden ir en la factura impresa sin problema.
+- **P12 · Suplidos:** art. 78.Tres.3.º LIVA ✅ **cotejado 23-sep-2026 (SCRUM-1088)** — no forman parte de la base imponible si son en nombre y por cuenta del cliente, con factura a nombre del cliente. Literal contra [Iberley](https://www.iberley.es/legislacion/articulo-78-ley-impuesto-sobre-valor-anadido-iva): *"Las sumas pagadas en nombre y por cuenta del cliente en virtud de mandato expreso del mismo. El sujeto pasivo vendrá obligado a justificar la cuantía efectiva de tales gastos y no podrá proceder a la deducción del impuesto que eventualmente los hubiera gravado."* Confirma "en nombre y por cuenta del cliente"; el requisito de "mandato expreso" y el de no deducir el IVA de esos gastos no estaban en la redacción original de esta fila — se añaden aquí como matiz. La FAQ *Registros de facturación: alta* lo cierra para VeriFactu: los suplidos «no son importes “propios” del registro de facturación y no tienen que incluirse»; si se incluyen en el importe total, «deberán consignarse como importe no sujeto al IVA o cantidades a tipo cero». Pueden ir en la factura impresa sin problema.
 - **P13 · Recargo de equivalencia:** sólo aplica si el merchant **vende bienes a un comerciante minorista en RE** para reventa (art. 16.4 ROF: factura separada con tipo y cuota del recargo). Para un oficio que presta servicios a particulares, no se da. Y la FAQ confirma que quien está en RE no está obligado a expedir factura salvo excepciones (art. 3.1.b ROF), lo que reduce aún más el caso.
 
 ---
@@ -985,9 +1317,37 @@ En ambos casos la factura original y su registro no se editan (FAQ: «no podrá 
 
 ---
 
-## Lo que no se ha verificado hoy (⚠ resumen)
+## Cotejo del 23-sep-2026 (SCRUM-1088) — las 14 marcas ⚠ de esta página
 
-Arts. 84.Uno.2.º.f), 91.Uno.2.10.º y 78.Tres.3.º LIVA; art. 30 CCom; art. 66 LGT; art. 32 LOPDGDD; claves S1/S2/N1/E1 del anexo de la Orden. Todo son textos estables citados de memoria, pero conviene cotejarlos antes de convertirlos en microcopy o en un guard.
+Encargo del orquestador: cotejar cada ⚠ contra el BOE consolidado o la fuente oficial que corresponda,
+antes de que se conviertan en microcopy o en un guard. Resultado, punto por punto (detalle y cita
+literal en el sitio de cada uno, arriba):
+
+| Cita | Veredicto | Fuente cotejada |
+|---|---|---|
+| Art. 84.Uno.2.º.f) LIVA | ✅ CONFIRMADA | Iberley (BOE-A-1992-28740) |
+| Art. 91.Uno.2.10.º LIVA | ✅ CONFIRMADA | Iberley (BOE-A-1992-28740) |
+| Art. 78.Tres.3.º LIVA | ✅ CONFIRMADA, con matiz (ver P12: "mandato expreso" y no deducción del IVA no estaban en la redacción original) | Iberley (BOE-A-1992-28740) |
+| Art. 30 CCom | ✅ CONFIRMADA, literal exacto | **BOE consolidado directo** (BOE-A-1885-6627) |
+| Art. 66 LGT | ✅ CONFIRMADA, literal exacto (a-d) | Iberley (BOE-A-2003-23186) |
+| Art. 32 LOPDGDD | ✅ CONFIRMADA, literal exacto (apdos. 1-3) | Iberley (BOE-A-2018-16673) |
+| Claves S1/S2/N1/E1 (anexo Orden HAC/1177/2024) | ✅ CONFIRMADAS, las 4 | XSD oficial de la AEAT, ya vendorizado en el repo (`SuministroInformacion.xsd`) |
+| Firma dedo+DNI ↔ art. 26 eIDAS | ✅ la CITA queda confirmada (los 4 requisitos, literal); la APLICACIÓN a la firma de YaQu sigue sin contrastar — no es algo que un cotejo de texto legal pueda resolver | Iberley + EUR-Lex (Reglamento UE 910/2014 consolidado) |
+
+**0 no localizadas, 0 que contradigan lo ya escrito en esta página.** Una matizada (P12/78.Tres.3.º:
+el texto añade dos condiciones — mandato expreso y no deducibilidad — que la fila original no
+mencionaba, aunque no cambian la conclusión).
+
+**Nota de método, para que quede escrita y no se repita el trabajo sin saberlo:** el visor del BOE
+consolidado (`boe.es/buscar/act.php`, `boe.es/eli/.../con`) funciona para leer un artículo si está
+cerca del principio de una ley corta (Código de Comercio, art. 30 — confirmado leyendo directamente el
+BOE), pero en este cotejo NO devolvió el texto completo de leyes largas (LIVA, LGT): la respuesta se
+corta antes de llegar a los artículos pedidos (medido: se cortó en el art. 14 de LIVA cuando se pedía
+el 84, y en el art. 26 de LGT cuando se pedía el 66). Para esas, el cotejo se hizo contra **Iberley**,
+base de datos jurídica de uso profesional habitual en España que marca sus artículos como «vigente» y
+transcribe el BOE consolidado. Es una fuente SECUNDARIA, no el BOE en bruto — se declara la diferencia
+en vez de presentarla como si fuera la primaria. Para las claves S1/S2/N1/E1 la fuente SÍ es primaria:
+el propio XSD que la AEAT publica y que este repo ya usa para construir los registros.
 
 ---
 
@@ -1003,7 +1363,7 @@ Arts. 84.Uno.2.º.f), 91.Uno.2.10.º y 78.Tres.3.º LIVA; art. 30 CCom; art. 66 
 
 Consecuencia: **S1-D puede arrancar hoy** con un certificado FNMT de persona física (o de representante cuando exista la SL). Lo que sigue bloqueado por la SL es probar en nombre de un merchant.
 
-**D11 · Coste y plazo de la revisión fiscal externa — SIN FUENTE, decisión del fundador.** Lo que la revisión debe cubrir: (1) visto bueno a la declaración responsable con los datos de la SL; (2) los ToS con el reparto art. 5 ROF / art. 6 RRSIF; (3) el Anexo I de representación y si la firma con el dedo + DNI cumple el art. 26 eIDAS; (4) los ⚠ abiertos: arts. 84/91 LIVA y art. 32 LOPDGDD. Los 300-600 € del máster son estimación sin fuente. El único plazo oficial es el del 017: «en condiciones normales podría ser de un mes», sin compromiso (correo AEAT).
+**D11 · Coste y plazo de la revisión fiscal externa — SIN FUENTE, decisión del fundador.** Lo que la revisión debe cubrir: (1) visto bueno a la declaración responsable con los datos de la SL; (2) los ToS con el reparto art. 5 ROF / art. 6 RRSIF; (3) el Anexo I de representación y si la firma con el dedo + DNI cumple el art. 26 eIDAS (la CITA de qué exige el art. 26 ya está cotejada — SCRUM-1088 — lo que falta es el juicio del asesor sobre el mecanismo concreto). Los arts. 84/91 LIVA y el art. 32 LOPDGDD, que estaban ⚠ aquí, quedaron cotejados y CONFIRMADOS el 23-sep-2026 (SCRUM-1088; detalle en el apéndice «Cotejo del 23-sep-2026», al final de esta página) — ya no son parte de lo que falta por revisar. Los 300-600 € del máster son estimación sin fuente. El único plazo oficial es el del 017: «en condiciones normales podría ser de un mes», sin compromiso (correo AEAT).
 
 ### G · El adicional en obra — RESPONDIDO (consumo, normativa autonómica)
 

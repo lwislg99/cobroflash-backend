@@ -22,6 +22,7 @@ import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsA
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
+import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service'; // SCRUM-173
 import { allocateAlbaranNumber } from '../../domain/albaranNumber.service';
 // SCRUM-358 (H3): el alta de albarán, idempotente.
@@ -1449,6 +1450,12 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
     // SCRUM-729 · fuera de la transacción a propósito: aquí el cerrojo de serie se toma en la
     // PRIMERA línea de la tx (SCRUM-814), así que cualquier lectura de dentro se serializa.
     const clienteCongelado = await congelarCliente(prisma, quote.merchantId, quote.customerId);
+    // SCRUM-665 · idem para el emisor. `quote.merchant` ya viene completo por el `include: {
+    // merchant: true }` de SCRUM-1027 (arriba, con `quotesConPlan`): sin viaje nuevo. Ya se gateó
+    // arriba (`if (!quotesConPlan[0].merchant) return 404`): todo `quotesConPlan` comparte
+    // `merchantId: req.merchantId` (mismo `where`), así que si el primero tiene merchant, éste
+    // también — no hace falta un segundo 404 sin mensaje para el mismo hecho.
+    const emisorCongelado = congelarEmisorDesdeFicha(quote.merchant!);
 
     const invoice = await prisma.$transaction(async (tx) => {
       // ── SCRUM-814 · EL CERROJO PRIMERO, Y EL RECUENTO DENTRO ─────────────────────────────
@@ -1477,7 +1484,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
       const invoiceNumber = await allocateInvoiceNumber(tx, quote.merchantId, {
         camino: 'C2', actor: actorDeRequest(req),
       });
-      return crearFacturaEmitida(tx, clienteCongelado, {
+      return crearFacturaEmitida(tx, clienteCongelado, emisorCongelado, {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         quoteId: quote.id,

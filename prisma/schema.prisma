@@ -151,6 +151,7 @@ model Merchant {
   QuoteTemplate QuoteTemplate[]
   QuoteRequest  QuoteRequest[]
   CustomerEvent CustomerEvent[]
+  CustomerSite  CustomerSite[]
 
   // SCRUM-293 (A2) · RETENCIÓN DE IRPF. Autorización expresa del fundador para ESTAS DOS LÍNEAS.
   //
@@ -439,6 +440,7 @@ model Customer {
   Invoice      Invoice[]
   QuoteRequest QuoteRequest[]
   events       CustomerEvent[]
+  sites        CustomerSite[]
 
   @@index([merchantId])
   // Se busca «las personas de esta empresa»; sin índice sería un recorrido de toda la tabla.
@@ -486,6 +488,21 @@ model Charge {
   // `modelo303.ts:236` avisa de que tres de las cinco formas se marcan a mano. Nullable y sin
   // default: los cobros ya existentes no la tienen y ponerles `updated_at` seria inventarla.
   paidAt    DateTime? @map("paid_at")
+  // SCRUM-1107 · RETENCIÓN DE GARANTÍA DE OBRA. NULL en las cuatro = sin garantía retenida en
+  // este cobro. No es fiscal (confirmado con el asesor): la factura sale por el 100%, esto es
+  // un crédito pendiente de cobro que se anota sobre el `Charge` que cobró el resto.
+  //
+  // El importe REAL cobrado en la liberación (si difiere del retenido, p. ej. un desperfecto)
+  // no vive aquí: vive en el `amount` de un `Charge` NUEVO que registre esa liberación — un
+  // solo generador de «cuánto se cobró», el mismo principio de SCRUM-397. Por eso
+  // `retencionGarantiaCobrada` es solo una FECHA (el marcador que apaga el aviso), no un importe.
+  //
+  // ALTER ya aplicado en las tres bases (producción y staging por Javier, dev por J2), 23-sep-2026
+  // — verificado leyendo `information_schema.columns` (docs/master/SCRUM-1107.md §"APLICADO").
+  retencionGarantiaPorcentaje Decimal?  @db.Decimal(5, 2) @map("retencion_garantia_porcentaje")
+  retencionGarantiaImporte    Decimal?  @db.Decimal(12, 2) @map("retencion_garantia_importe")
+  retencionGarantiaLiberacion DateTime? @map("retencion_garantia_liberacion")
+  retencionGarantiaCobrada    DateTime? @map("retencion_garantia_cobrada")
   Quote     Quote[]
   invoices  Invoice[]
 
@@ -965,6 +982,19 @@ model Expense {
   providerInvoiceNumber String?   @map("provider_invoice_number")
   // Fecha de EXPEDICIÓN del proveedor. `Expense.date` es la del apunte, y no son la misma.
   providerInvoiceDate   DateTime? @map("provider_invoice_date")
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // SCRUM-1103 · LA RETENCIÓN QUE EL PROFESIONAL PRACTICA, NO LA QUE SUFRE.
+  //
+  // Los modelos 111/115 dependen de la retención de IRPF que el profesional PRACTICA como
+  // PAGADOR sobre esta factura recibida (a su gestor, a un subcontratista persona física, al
+  // alquiler de su local) — sentido INVERSO al de `retencionIrpf.ts` (SCRUM-293), que modela la
+  // que el profesional SUFRE en sus propias facturas EMITIDAS. Mismo patrón nullable-sin-default
+  // que `vatRate`/`vatAmount`/`vatDeducible` arriba, y por el mismo motivo: un gasto puede
+  // legítimamente no llevar retención (una ferretería no la lleva), y eso no puede leerse igual
+  // que «nadie lo clasificó».
+  retencionPracticadaTipo      Int?     @map("retencion_practicada_tipo")
+  retencionPracticadaCuota     Decimal? @map("retencion_practicada_cuota") @db.Decimal(12, 2)
+  retencionPracticadaDeclarada Boolean? @map("retencion_practicada_declarada")
 
   // SCRUM-109 (carril A, bloqueante de SCRUM-107 V2): autoría del gasto — el técnico que lo
   // registró desde la furgoneta. Int? con null = propietario, misma convención que
@@ -1007,6 +1037,15 @@ model Product {
   // coste, ni margen, ni proveedor. El valor va en mayúsculas y sin acentos por consistencia con
   // `contact_kind`, que es lo que ya está mergeado.
   itemKind    String?  @map("item_kind")
+
+  // SCRUM-1008 · la ficha del artículo, vista por dentro de Contasimple (com. 16436/16451):
+  // código propio (SKU), la referencia CON LA QUE EL PROVEEDOR llama a este artículo (no es
+  // `providerId`: ésa es la relación; ésta es su texto de catálogo) y la unidad de venta
+  // (m, ud, h…). Las tres nullables y SIN `@default`, mismo patrón que `itemKind`: ausente =
+  // nadie lo ha rellenado, no un valor por defecto que nadie ha decidido.
+  sku         String?  @map("sku")
+  supplierRef String?  @map("supplier_ref")
+  unit        String?  @map("unit")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1151,6 +1190,54 @@ model CustomerEvent {
   @@index([customerId, createdAt])
   @@index([merchantId])
   @@map("customer_events")
+}
+
+// SCRUM-1014 (CRM) · «SITIOS» DEL CLIENTE — agenda de direcciones de obra, cada una con su
+// contacto propio (el portero, el inquilino), sin crear un cliente entero por cada uno.
+//
+// 🔴 NO PRECARGA NADA (com. 16921, delegación del fundador). El fundador cerró P2/DOC-12
+// (SCRUM-602) el 24-ago-2026: la dirección de obra pertenece al DOCUMENTO (`Quote`/
+// `Invoice.shippingAddress`), no al cliente, y NUNCA se prerrellena sola — «una dirección
+// prerrellenada se firma sin leerla». Esta tabla NO reabre esa decisión: es sólo dónde vive la
+// agenda. El profesional elige un sitio A MANO, como elige cualquier otro dato del documento;
+// nada la copia sin que él actúe. La condición queda en la etiqueta `sin-precarga` del ticket.
+//
+// TABLA NUEVA Y NO UNA SEGUNDA DIRECCIÓN EN `Customer`: un cliente puede tener varias obras (la
+// misma evidencia que ya tiene `Customer` para una única dirección de facturación, multiplicada).
+//
+// MISMAS CINCO COLUMNAS DE DIRECCIÓN QUE `Customer.billingAddress` (SCRUM-579): mismo prefijo de
+// campos, ningún patrón nuevo. Todas NULLABLES y SIN `@default`, mismo motivo que sus primas: un
+// sitio puede declararse con sólo el nombre y completarse después.
+model CustomerSite {
+  id         Int @id @default(autoincrement())
+  merchantId Int @map("merchant_id")
+  customerId Int @map("customer_id")
+
+  // Cómo llama el profesional a este sitio («Piso 3ºB», «Nave del polígono») — el dato mínimo
+  // para poder elegirlo en una lista. Único campo obligatorio: el resto puede llegar después.
+  name String
+
+  address    String? @map("address")
+  city       String? @map("city")
+  postalCode String? @map("postal_code")
+  province   String? @map("province")
+  country    String? @map("country")
+
+  // El contacto EN OBRA (el portero, el inquilino) — lo que Tradify da y el modelo padre-hijo de
+  // `Customer.companyId` no: una persona sin ficha propia de cliente.
+  contactName String? @map("contact_name")
+  phone       String? @map("phone")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([merchantId])
+  // Se busca «los sitios de este cliente»; sin índice sería un recorrido de toda la tabla.
+  @@index([customerId])
+  @@map("customer_sites")
 }
 
 // WA-0b (master J4 · Parte L): log y estados de entrega de los mensajes de WhatsApp.
