@@ -703,6 +703,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     const b = crear();
     b.className = destino === 'primaria' ? 'btn-primary btn-sm'
       : (destino === 'secundaria' ? 'btn-secondary btn-sm' : 'btn-ghost btn-sm');
+    // SCRUM-786 (AB6): «Emitir» es irreversible (regla 29) — objetivo táctil de 44px, solo este
+    // botón del carrusel, sin tocar el resto de acciones ni `.btn-sm` en general.
+    if (accion.id === 'btnEmitir') b.classList.add('accion-irreversible-btn-44');
     cubos[destino].push(b);
   }
   const avisoA = avisoEstadoNoReconocido(document, window.ALBARAN_ACTION_REGISTRY || [], alb.estado);

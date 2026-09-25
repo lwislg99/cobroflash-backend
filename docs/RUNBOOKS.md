@@ -784,3 +784,39 @@ sí mismo.
 `tests/scrum568-promesa-con-mecanismo.test.mjs` — 12 casos, incluido que el veredicto cambia SOLO al
 encender los flags, sin tocar ningún fichero. Si `npm run antes-del-go` y ese test discrepan, gana
 el test: el script es sólo la puerta para correrlo a mano.
+
+---
+
+## R22 · Producción congelada (el arranque no llega a escuchar) — deriva de schema sin aplicar (SCRUM-1122)
+
+**Síntoma:** `yaqu.app` sirve la versión de siempre pese a que `main` sigue recibiendo merges;
+`/version` no se mueve tras uno o varios deploys. El `vigía` (`.github/workflows/vigia-despliegue.yml`,
+cron cada 2h) pasa a `FAILURE` y **la lectura no se mueve entre dos comprobaciones seguidas** — Railway
+nunca ve la caída (el proceso viejo sigue vivo), así que no hay alerta de infraestructura, solo el
+vigía. Medido el 25-sep-2026: 193h congelada, sin que nada más lo señalara.
+
+**Causa:** `src/core/db/schemaDrift.ts` (`assertSchemaSinDeriva`, invocado en `src/index.ts`, SCRUM-222)
+aborta el arranque en `NODE_ENV=production` si el DMMF de Prisma nombra una tabla o columna que la base
+todavía no tiene. Un PR con un `ALTER`/`CREATE TABLE` **declarado en `schema.prisma` pero pendiente de
+aplicar en producción** (ver R18: un cambio de schema no está aplicado hasta estar en las TRES BD) hace
+que cada deploy siguiente muera igual en el arranque, sin llegar a escuchar el puerto.
+
+**Los 4 pasos:**
+
+1. **Confirmar el síntoma.** `GET https://yaqu.app/version` contra `git rev-parse origin/main`: si
+   difieren y `vigía` está en `FAILURE`, es candidato. Dispararlo a mano para no esperar al cron:
+   `gh workflow run vigia-despliegue.yml`.
+2. **Mirar `[schema] DERIVA` en los Deploy Logs de Railway.** El log de arranque en producción imprime
+   qué tabla o columna falta — eso apunta directo al PR/ticket que la declaró sin aplicar el ALTER.
+   Confirmación de solo lectura sin entrar a Railway: pegar `docs/sql/deriva-prod.sql` en la consola de
+   Postgres de la base que sea (0 filas = esa base tiene todo lo que el código nombra).
+3. **Aplicar el `.sql` pendiente de `docs/sql/`** (el que declaró el PR causante, ver
+   `docs/MIGRATIONS_PENDING.md`) contra la base de PRODUCCIÓN. Son aditivos (`ADD COLUMN` /
+   `CREATE TABLE`), nunca `DROP`; lo ejecuta el fundador o quien tenga acceso a la consola de Postgres
+   (regla 3: nunca `db push` contra prod, y la clave no se pega en el chat — regla 9).
+4. **Redeploy** en Railway. Verificar con el mismo par de comprobaciones del paso 1: `/version` debe
+   igualar `origin/main`, y el `vigía` disparado a mano debe salir `success`.
+
+**Prevención:** cada PR que declare un cambio de schema no aditivo-ya-aplicado debe dejar su `.sql` en
+`docs/sql/` con entrada en `docs/MIGRATIONS_PENDING.md` (R18) ANTES o en el mismo PR que el código que
+lo asume — nunca "declarado, pendiente de aplicar" como único registro, que es lo que costó las 193h.

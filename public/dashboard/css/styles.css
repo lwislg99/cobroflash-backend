@@ -1595,6 +1595,12 @@ html, body { overflow-x: clip; }
    aquí se opta-in por botón, con esta clase. */
 .job-toolbar-btn-44 { min-height: 44px; }
 
+/* SCRUM-786 (AB6), decisión del fundador del 21-sep-2026: opción ③, reglas acotadas por
+   contenedor a 44px, empezando por los IRREVERSIBLES (Borrar, Emitir) antes que el resto de
+   `.btn-sm` (que sigue en 30px sin decidir). Mismo patrón opt-in de SCRUM-962: nunca `.btn-sm`
+   global. */
+.accion-irreversible-btn-44 { min-height: 44px; }
+
 .quote-dto-global { margin-top: 8px; }
 
 /* ── SCRUM-602 (DOC-12) · el campo libre de la dirección de la obra ────────────────────────
