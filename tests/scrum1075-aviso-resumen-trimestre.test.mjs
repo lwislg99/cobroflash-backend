@@ -137,15 +137,16 @@ test('SCRUM-1075 · ④b el botón de cerrar GUARDA el descarte y lo quita de pa
 // ── ⑤ AISLAMIENTO ENTRE COMERCIANTES (y entre usuarios del mismo) ───────────────────────────
 
 test('SCRUM-1075 · ⑤ el descarte de un comerciante no calla el aviso de otro (misma clave física)', async () => {
-  const { banco: sonda } = montar({ merchantId: 1 });
+  // SCRUM-409: ids inventados (11, 12), no el 1 — aquí no se prueba nada del comportamiento DEMO.
+  const { banco: sonda } = montar({ merchantId: 11 });
   const { anio, trimestre } = sonda.ctx.trimestreAnteriorMadrid();
-  const claveMerchant1 = sonda.ctx.claveDescarteResumenTrimestre(anio, trimestre);
+  const claveMerchant11 = sonda.ctx.claveDescarteResumenTrimestre(anio, trimestre);
 
-  // El "navegador" comparte `localStorage`, pero es OTRO comerciante (merchantId 2): su clave es
-  // distinta y el descarte del 1 no debe alcanzarle.
+  // El "navegador" comparte `localStorage`, pero es OTRO comerciante (merchantId 12): su clave es
+  // distinta y el descarte del 11 no debe alcanzarle.
   const { banco, caja } = montar({
     vat: VAT_CON_DATOS, recibidas: RECIBIDAS_CON_DATOS, pl: PL_CON_DATOS,
-    localStorage: { [claveMerchant1]: '1' }, merchantId: 2,
+    localStorage: { [claveMerchant11]: '1' }, merchantId: 12,
   });
   await pintar(banco);
   assert.match(String(caja.innerHTML), /Tu resumen del trimestre ya está listo/,
@@ -153,13 +154,14 @@ test('SCRUM-1075 · ⑤ el descarte de un comerciante no calla el aviso de otro 
 });
 
 test('SCRUM-1075 · ⑤b dos usuarios del mismo comerciante lo descartan cada uno por su lado', async () => {
-  const { banco: sonda } = montar({ merchantId: 1, teamMemberId: 7 });
+  // SCRUM-409: id inventado (11), no el 1 — aquí no se prueba nada del comportamiento DEMO.
+  const { banco: sonda } = montar({ merchantId: 11, teamMemberId: 7 });
   const { anio, trimestre } = sonda.ctx.trimestreAnteriorMadrid();
   const claveTecnico7 = sonda.ctx.claveDescarteResumenTrimestre(anio, trimestre);
 
   const { banco, caja } = montar({
     vat: VAT_CON_DATOS, recibidas: RECIBIDAS_CON_DATOS, pl: PL_CON_DATOS,
-    localStorage: { [claveTecnico7]: '1' }, merchantId: 1, teamMemberId: null, // el OWNER, no el técnico 7
+    localStorage: { [claveTecnico7]: '1' }, merchantId: 11, teamMemberId: null, // el OWNER, no el técnico 7
   });
   await pintar(banco);
   assert.match(String(caja.innerHTML), /Tu resumen del trimestre ya está listo/,

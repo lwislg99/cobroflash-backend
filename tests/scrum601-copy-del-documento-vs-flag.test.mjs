@@ -194,8 +194,8 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // reancla en otro que sí sigue en el árbol: el rótulo de Facturas del menú.
   // SCRUM-918 · 349 → 365: el arranque sin red añade 16 líneas antes en app.js (medido, no deducido).
   // SCRUM-919 · 365 → 366 al fusionar: `app.js` gana además la línea de `appParteAyudas` por encima.
-  // Los dos lados movieron esta ancla; 366 está MEDIDO sobre el árbol ya fusionado, no sumado.
-  const menu = en('public/dashboard/js/app.js', 366);
+  // SCRUM-1075 · 366 → 367: `app.js` gana `window.appTeamMemberId` por encima (medido, no deducido).
+  const menu = en('public/dashboard/js/app.js', 367);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);
