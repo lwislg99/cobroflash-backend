@@ -30,6 +30,7 @@ async function initApp() {
   window.appMerchantId = me.merchantId;
   window.appUserRole   = me.userRole || 'admin';
   window.appUserName   = me.name || '';
+  window.appTeamMemberId = me.teamMemberId ?? null; // SCRUM-1075: descarte del aviso de trimestre, por usuario
   window.appVoiceEnabled = me.voiceEnabled === true; // VZ-1: flag VOICE_QUOTE_ENABLED
   window.appVoiceAlbaranEnabled = me.voiceAlbaranEnabled === true; // SCRUM-71: flag PROPIO del albarán
   // SCRUM-402: veredicto del SERVIDOR sobre Bizum manual. `=== true` a propósito: si el campo no
