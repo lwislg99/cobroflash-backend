@@ -29,7 +29,7 @@ Con ellos cambia también el selector de ficheros: `accept=".csv,.txt"` pasa a `
 
 ## Por qué cambian, y por qué NO se borra el registro del 21-sep
 
-El registro `2026-09-21-SCRUM-985-importar-solo-csv.md` quitó «o Excel» del tooltip porque entonces
+El registro de SCRUM-985 (21-sep-2026) quitó «o Excel» del tooltip porque entonces
 **el servidor no leía `.xlsx`**: prometerlo era mentir. Era cierto, y el guard que lo sujeta
 (`tests/scrum985-…`) era correcto.
 
