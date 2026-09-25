@@ -131,8 +131,8 @@ test('SCRUM-1049 · ② con datos en los tres orígenes: repercutido, soportado 
 
   // Las exclusiones se DICEN, no se callan (A3 de la casa).
   const texto = todos(r.contenedor).map((n) => n.textContent || '').join(' ');
-  assert.match(texto, /2 gastos.*no.*deducible.*no se ha decidido/i,
-    '🔴 los 2 gastos No/sin-decidir tienen que contarse aparte, con su motivo — no desaparecer en silencio.');
+  assert.match(texto, /2 gastos de este trimestre no los has marcado como IVA deducible/,
+    '🔴 los 2 gastos No/sin-decidir tienen que contarse aparte, con el texto APROBADO por el fundador — no desaparecer en silencio ni con la redacción vieja.');
 });
 
 // ═══ ③ CONTROL: el selector de trimestre es PROPIO, no el de «IVA repercutido» ═════════════

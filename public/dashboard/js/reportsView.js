@@ -535,7 +535,12 @@ async function renderReportsView(container) {
     // los que importan aquí («N gastos sin datos de IVA no figuran…», ya aprobado en ese ticket).
     for (const a of (recibidas.avisos || []).slice(1)) notas.push(`⚠ ${a}`);
     if (noDeducibleCount > 0) {
-      notas.push(`ℹ ${noDeducibleCount} ${noDeducibleCount === 1 ? 'gasto' : 'gastos'} de este trimestre no ${noDeducibleCount === 1 ? 'tiene' : 'tienen'} el IVA marcado como deducible (o no se ha decidido) — no entra${noDeducibleCount === 1 ? '' : 'n'} en el soportado.`);
+      // ✅ Texto APROBADO por el fundador (Jira SCRUM-1049, comentario de firma; corrige la
+      // propuesta inicial de S2): la versión anterior podía leerse como que YaQu decide qué es
+      // deducible, y esa decisión es del asesor. LITERAL, con la concordancia de singular/plural
+      // que el trinquete de SCRUM-377 exige (el plural perezoso no vale).
+      const uno = noDeducibleCount === 1;
+      notas.push(`ℹ ${noDeducibleCount} ${uno ? 'gasto' : 'gastos'} de este trimestre no ${uno ? 'lo has' : 'los has'} marcado como IVA deducible, así que no se ${uno ? 'ha' : 'han'} sumado aquí. Revísa${uno ? 'lo' : 'los'} con tu asesor si crees que ${uno ? 'debería' : 'deberían'} entrar.`);
     }
     if (notas.length) {
       const notasWrap = document.createElement('div');

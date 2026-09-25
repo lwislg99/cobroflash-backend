@@ -89,11 +89,7 @@ Cargada (`yaqu-premium-ui`). Reutiliza tokens y clases existentes (`.customers-c
 — cero tokens nuevos, cero componente nuevo. Capturas a 390px en
 `docs/master/evidencias/SCRUM-1049/` (`con-datos.png`, `sin-datos.png`).
 
-## Textos nuevos — PENDIENTES de firma (regla 39)
-
-Propuesta agrupada, enviada al orquestador/fundador en el mismo turno de esta entrega. Hasta que
-llegue la firma (o la delegación registrada, como en SCRUM-1038), la pantalla queda construida
-con estos literales pero SIN considerarse cerrada para producción:
+## ✅ Textos — FIRMADOS por el fundador (regla 39; SCRUM-1049, comentario de firma, 25-sep-2026)
 
 1. Título: «Resumen del trimestre»
 2. Subtítulo: «Borrador de trabajo con los números de tu cuenta — para llevarle a tu asesor, no
@@ -102,5 +98,12 @@ con estos literales pero SIN considerarse cerrada para producción:
    movimientos antes de que acabe.»
 4. Estado vacío: «Sin movimientos en este trimestre.»
 5. Etiquetas de bloque: «IVA repercutido» · «IVA soportado (deducible)» · «Gastos del trimestre»
-6. Nota de no-deducibles: «N gastos de este trimestre no tienen el IVA marcado como deducible (o
-   no se ha decidido) — no entra(n) en el soportado.»
+6. Nota de no-deducibles — **CORREGIDA por el fundador** al firmar: la propuesta inicial («…no
+   tienen el IVA marcado como deducible…») podía leerse como que YaQu decide qué es deducible, y
+   esa decisión es del asesor. Literal aprobado: «N gastos de este trimestre no los has marcado
+   como IVA deducible, así que no se han sumado aquí. Revísalos con tu asesor si crees que
+   deberían entrar.» — con la concordancia de singular/plural que exige el trinquete de SCRUM-377
+   (1 gasto → «no lo has marcado… no se ha sumado… Revísalo… debería entrar»).
+
+Aplicado en `reportsView.js`, verificado con el test de contrato y recapturada la captura
+`con-datos.png` con el texto final.
