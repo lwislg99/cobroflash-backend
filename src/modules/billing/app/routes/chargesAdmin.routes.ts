@@ -11,7 +11,7 @@ import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
 import { resolverFechaDeCobro } from '../../domain/fechaDeCobro'; // SCRUM-397
 import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397 (SCRUM-1107: mismo generador)
-import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093
+import { zonaDelMerchant, diaExiste, inicioDelDiaEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (SCRUM-1108b: el día de liberación)
 import { envioDelDocumento } from '../../domain/envioDelDocumento'; // SCRUM-885
 import { tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-1107 (D2: admin-only)
@@ -118,13 +118,19 @@ router.post('/:id/garantia', requireRole('admin'), async (req, res) => {
 
     const charge = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId }, // regla 2
-      select: { id: true },
+      select: { id: true, merchant: { select: { timezone: true } } },
     });
     if (!charge) return res.status(404).json({ error: 'not_found' });
 
     const total = Number(req.body?.total);
     const porcentaje = Number(req.body?.porcentaje);
-    const liberacion = req.body?.liberacion ? new Date(String(req.body.liberacion)) : null;
+    // SCRUM-1108b: un día suelto (`YYYY-MM-DD`) es un día del MERCHANT, no la medianoche UTC. Con
+    // `new Date('2027-09-23')` una zona con desfase negativo (México, Bogotá) leía el día 22, y ese
+    // día es el que la ficha pinta en «liberación desde el …». Un instante completo se respeta.
+    const crudo = req.body?.liberacion ? String(req.body.liberacion) : '';
+    const liberacion = /^\d{4}-\d{2}-\d{2}$/.test(crudo)
+      ? (diaExiste(crudo) ? inicioDelDiaEn(crudo, zonaDelMerchant(charge.merchant)) : null)
+      : (crudo ? new Date(crudo) : null);
     if (!liberacion || !Number.isFinite(liberacion.getTime())) {
       return res.status(400).json({ error: 'liberacion_invalida' });
     }

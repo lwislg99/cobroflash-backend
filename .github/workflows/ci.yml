@@ -397,10 +397,40 @@ jobs:
   # ⚠️ SIN SECRETOS, igual que el job de arriba y por el mismo motivo (regla 9). Estos nueve
   #    guards sirven sus propias páginas estáticas y no tocan ninguna base: comprobado, ninguno
   #    menciona `DATABASE_URL` ni Prisma.
+  #
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # 🔴 SCRUM-963 · EL TECHO DE 10 MIN SE PUSO PARA NUEVE GUARDS, Y HOY HAY 37
+  #
+  # No es un cuelgue: es aritmética que dejó de cuadrar. `fueraDeLaTanda()` (SCRUM-963,
+  # 25-sep-2026) mide **37** guards hoy, no los nueve de cuando se escribió el párrafo de arriba
+  # — la lista fuera de la tanda ha crecido x4 y el techo del job nunca se revisó. Cada guard
+  # sigue costando lo mismo que siempre (ninguno individual se acerca a su propio tope de 240 s,
+  # `GUARDS_VISUALES_TOPE_MS` en `guards-visuales.mjs`); lo que ya no cabe es la SUMA en serie.
+  #
+  # MEDIDO, tres runs de `main` en verde (no cancelados), duración total del job:
+  #
+  #     run 36007466639 · 9 min 26 s
+  #     run 35905842967 · 9 min 35 s
+  #     run 35894300030 · 9 min 45 s
+  #
+  # Un run SANO ya deja **15-35 s de margen** sobre un techo de 600 s. El histórico de SCRUM-522
+  # avisaba de que la misma tanda de guards podía tardar el DOBLE con el runner cargado (50 s →
+  # 102 s, con nueve). Con esa varianza, un margen de 15-35 s no aguanta: es justo el 35 % de
+  # los push a `main` que SCRUM-963 (comentario 16987) encontró cancelados por este timeout, y
+  # uno de esos runs (36160342546) había **terminado su veredicto real** (`DEFECTOS · 1 guard
+  # encontró algo`) un instante ANTES de que GitHub lo cancelara — el trabajo se hizo y el
+  # resultado se tiró igual.
+  #
+  # Subir el techo NO relaja lo que cada guard mide (regla 41): el criterio de cada uno sigue
+  # igual, y este job sigue sin ser obligatorio en el ruleset (SCRUM-963 — el gate real de
+  # `main` es sólo `build + tests`). Lo único que cambia es que un run sano tenga margen real en
+  # vez de jugárselo a los últimos 20 segundos. Si el catálogo de guards vuelve a crecer x4, este
+  # número habrá que remedirlo otra vez — no es una constante para siempre, es la que cuadra HOY.
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
   guards-visuales:
     name: guards de navegador (fuera de la tanda)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       # SCRUM-851 · SIN ESTAS DOS PIEZAS, `guard:lista-trabajos` NO HA MEDIDO NUNCA SU BLOQUE ⑥ EN

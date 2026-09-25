@@ -2892,3 +2892,32 @@ misma regla — retener la línea del esquema produce medio modelo y dos PR por 
   `computeVeriFactuHash` — no hay escritor que la alimente desde el camino de emisión.
 - **Vacía, cero efecto:** mientras no haya filas, ningún `SELECT`/`JOIN` existente la toca (nadie
   la referenciaba antes de esta rama).
+
+## SCRUM-1008 · tres columnas en `products` (sku/supplier_ref/unit) — 25-sep-2026 · 🔴 NINGUNA base tocada, sin registro hasta hoy
+
+Mergeada a `main` el 24-sep-2026 (PR #1750, commit `09f8ba99`) SIN entrada en este fichero — el
+hueco lo detectó SCRUM-1122 (diagnóstico de producción congelada) y lo cierra esta entrada, sin
+tocar ninguna base. `docs/sql/scrum-1008-ficha-articulo.sql` ya declaraba en su propia cabecera
+"PENDIENTE DE APLICAR en producción"; lo que faltaba era la fila con las tres casillas.
+
+```sql
+ALTER TABLE "products" ADD COLUMN     "sku" TEXT,
+ADD COLUMN     "supplier_ref" TEXT,
+ADD COLUMN     "unit" TEXT;
+```
+
+Aditiva (0 DROP/RENAME/TRUNCATE/DELETE/SET NOT NULL), generada offline con
+`preview-migracion.mjs` (detalle en `docs/master/SCRUM-1008.md`). **No lleva `IF NOT EXISTS`**:
+si alguna base ya la tuviera aplicada, re-ejecutarla daría error de "columna ya existe" — antes de
+correrla, comprobar con `docs/sql/deriva-prod.sql` que la fila sigue apareciendo.
+
+### Estado por base — 25-sep-2026
+
+- [ ] **producción** — sin tocar (es una de las dos causas confirmadas del arranque caído en
+  SCRUM-1122: `schemaDrift.ts` no deja escuchar en `NODE_ENV=production` con esta deriva).
+- [ ] **staging** — sin tocar.
+- [ ] **desarrollo · yaqu_dev_javier** — sin confirmar desde este carril (S1 no tiene
+  `DATABASE_URL_DEV`; `yaqu_dev_javier` es del carril B, no se aplica sin pedirlo).
+
+**Este PR ya está mergeado sin las tres casillas marcadas — corregir eso no es reabrir el PR, es
+la aplicación pendiente descrita en SCRUM-1122.**

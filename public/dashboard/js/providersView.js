@@ -369,7 +369,8 @@ function renderProvidersView(container) {
 
         const delBtn = document.createElement("button");
         delBtn.type = "button";
-        delBtn.className = "btn btn-danger btn-sm";
+        // SCRUM-786 (AB6): irreversible — objetivo táctil de 44px, opt-in sin tocar `.btn-sm`.
+        delBtn.className = "btn btn-danger btn-sm accion-irreversible-btn-44";
         delBtn.textContent = "Borrar";
 
         actionsDiv.appendChild(editBtn);
