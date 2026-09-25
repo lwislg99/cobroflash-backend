@@ -149,6 +149,7 @@ decisión.
   - Míos, y arreglados:
     - `scrum377`: puse «gasto(s)» en dos motivos → ahora el plural concuerda.
     - `scrum854`: faltaba esta entrada de registro.
+  - **Después de los dos arreglos, `npm test` entero:** 8.323 · 8.184 pass · **5 fail** · 134 skipped. Los 5 son los de la lista siguiente, y ninguno toca un fichero de esta rama.
   - Del host o del estado del repo, no de este cambio:
     - `scrum910d`: la aserción de libuv de Windows (`src\win\async.c`).
     - `scrum939b` ×3: `gh.exe` SÍ existe en esta máquina, y el trinquete lo declara como ruta falsa.
