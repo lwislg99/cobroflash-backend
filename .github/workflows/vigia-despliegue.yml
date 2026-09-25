@@ -42,6 +42,9 @@ on:
 
 permissions:
   contents: read
+  # SCRUM-1123 · para abrir/actualizar el Issue de aviso cuando el vigía canta. El vigía sigue
+  # sin necesitar ninguna credencial para MIRAR (regla intacta); esto es sólo para AVISAR.
+  issues: write
 
 concurrency:
   group: vigia-despliegue
@@ -118,14 +121,23 @@ jobs:
       - name: ¿Está producción corriendo lo que hay en main?
         # Sin esta variable el vigía no lee ni escribe historial y contesta «no se sabe», que es
         # lo honrado. La ruta va bajo `path:` de la caché de arriba, o no sobreviviría.
+        id: vigia
         env:
           VIGIA_ESTADO: .vigia/constancias.log
         run: |
+          # SCRUM-1123 · `set +e` a propósito: el paso sigue saliendo con el MISMO código (abajo
+          # se hace `exit "$codigo"`, el job sigue en rojo igual que siempre), pero primero se
+          # captura para que el paso de aviso sepa SIN adivinar si tocaba avisar. Sin esto, `bash
+          # -e` cortaría el step en el primer `exit` no-cero y nunca se llegaría a leer $?.
+          set +e
           if [ -n "${{ inputs.margen }}" ]; then
             node scripts/vigilante-de-despliegue.mjs --margen "${{ inputs.margen }}"
           else
             node scripts/vigilante-de-despliegue.mjs
           fi
+          codigo=$?
+          echo "salida=$codigo" >> "$GITHUB_OUTPUT"
+          exit "$codigo"
 
       # 🔴 SCRUM-716c · `if: always()` Y NO ES OPCIONAL: es la línea entera del arreglo.
       #
@@ -140,3 +152,64 @@ jobs:
         with:
           path: .vigia
           key: vigia-estado-${{ github.run_id }}
+
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      # SCRUM-1123 · AVISAR DE VERDAD, NO SÓLO PONER EL JOB EN ROJO
+      #
+      # El 24/25-sep-2026 este vigía llevaba DÍAS en FAILURE (SCRUM-1122: 193 h de hueco) y nadie
+      # lo miró: «el job falla» sólo avisa a quien tenga activada la notificación de GitHub para
+      # workflows programados en rojo, y aquí no la tenía nadie. El síntoma es el mismo que el
+      # que hizo nacer el vigía —«no cambia nada»—, un nivel más arriba.
+      #
+      # 🔴 SÓLO EN `salida == 1` (`SALIDA_CANTA`), nunca en `2` (`SALIDA_NO_SUPE_MIRAR`): un
+      # vigía ciego no ha medido un problema, y abrir un Issue por ceguera sería la misma
+      # confusión —«no sé» tratado como «sí»— que `_vigilante-de-despliegue.mjs` existe para no
+      # cometer. Tampoco en `0`: «retrasado pero desplegando» (SCRUM-716) se cierra solo a
+      # propósito y avisar ahí es el ruido que bloqueó cinco ramas el 6-sep.
+      #
+      # 🔴 SIN SECRETO NUEVO. La petición original pedía Jira; no hay ningún secreto de Jira en
+      # este repo (comprobado con `gh secret list`: sólo CLAUDE_CODE_OAUTH_TOKEN,
+      # SCHEMA_CHECK_SECRET, YAQU_BOT_CLIENT_ID/PRIVATE_KEY), y añadirlo es una decisión de
+      # credenciales del fundador (regla de la casa: secretos nunca en el chat, dependencia
+      # nueva la decide él), no algo que este ticket pueda simular. Mientras tanto, un GitHub
+      # Issue con `GITHUB_TOKEN` —ya concedido arriba— es visible sin abrir Actions y sin pedir
+      # nada a nadie. Detalle y el paso siguiente si se quiere Jira: SCRUM-1123.
+      #
+      # DEDUPE por MARCADOR en el cuerpo (mismo patrón que `avisador-rojo.yml`): si ya hay un
+      # Issue ABIERTO con la marca, se comenta con la lectura de HOY en vez de abrir uno nuevo.
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      - name: Avisar de verdad si el vigía cantó (Issue de GitHub)
+        if: always() && steps.vigia.outputs.salida == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MARCA: "<!-- vigia-despliegue:produccion-congelada -->"
+        run: |
+          RENGLON="$(tail -1 .vigia/constancias.log 2>/dev/null || true)"
+          if [ -z "$RENGLON" ]; then RENGLON="(sin constancia: no se pudo leer .vigia/constancias.log)"; fi
+
+          # 🔴 TODO EN UN PRINTF DE UNA SOLA LÍNEA FÍSICA, a propósito (mismo patrón que
+          # `avisador-rojo.yml`): un bloque `run: |` de YAML exige que cada línea del script
+          # mantenga la indentación del bloque, y un heredoc o una cadena multilínea literal la
+          # rompería en cuanto una línea de su cuerpo empezara en la columna 0.
+          CUERPO="$(printf 'El vigía del despliegue (`vigia-despliegue.yml`) ha cantado: producción no está al día con `main` y no se está cerrando solo.\n\nAntes esto tardó 8 días en verse (SCRUM-1122) porque el único aviso era el job en rojo y nadie miraba Actions.\n\nPrimer sitio donde mirar: los logs de arranque en Railway. Si dicen `[schema] DERIVA`, falta un `ALTER` en producción — mirar `docs/sql/` en `main` por SQL pendiente.\n\n```\n%s\n```\n\nEjecución: %s\n\n%s\n' "$RENGLON" "$RUN_URL" "$MARCA")"
+
+          # 🔴 NO se usa `gh issue list --search`: la búsqueda de GitHub tokeniza el cuerpo y no
+          # garantiza casar un literal con `<!-- … -->`. Se listan los Issues abiertos (sin PRs)
+          # y `jq contains()` busca la marca EXACTA por substring — mismo principio que
+          # `avisador-rojo.yml` (marcador HTML + coincidencia literal, nunca texto libre).
+          if ! EXISTENTE="$(gh api "repos/$REPO/issues?state=open&per_page=100" --paginate \
+                            -q "[.[] | select(.pull_request == null) | select(.body // \"\" | contains(\"$MARCA\"))] | .[0].number // empty" \
+                            | grep -v '^$' | head -1 2>/dev/null)"; then
+            EXISTENTE=''
+          fi
+
+          if [ -n "$EXISTENTE" ]; then
+            gh issue comment "$EXISTENTE" --repo "$REPO" --body "$CUERPO"
+            echo "- **ACTUALIZADO** — Issue #$EXISTENTE con la lectura de esta ejecución." >> "$GITHUB_STEP_SUMMARY"
+          else
+            SALIDA_ISSUE="$(gh issue create --repo "$REPO" --title "🔴 Producción congelada — el vigía del despliegue está en rojo" --body "$CUERPO" 2>&1)" \
+              && echo "- **ABIERTO** — $SALIDA_ISSUE" >> "$GITHUB_STEP_SUMMARY" \
+              || { echo "::error::No se pudo abrir el Issue de aviso: $SALIDA_ISSUE"; echo "- **NO SE PUDO ABRIR** — $SALIDA_ISSUE" >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+          fi

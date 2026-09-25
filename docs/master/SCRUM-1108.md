@@ -75,7 +75,8 @@ escriben:
 
 ## 6 · Fuera, declarado
 
-- **La pantalla de la ficha 360** (§7): espera a que la firma del literal conste en `docs/microcopy/`.
+- ~~**La pantalla de la ficha 360** (§7): espera a que la firma del literal conste en `docs/microcopy/`.~~
+  Hecha en SCRUM-1108b (§8).
 
 - El correo semanal y su «✅ ¡No tienes facturas pendientes de cobro!» → **SCRUM-1116**.
 - `Charge.customerId` es nullable: una retención sobre un cobro sin cliente no aparece en ninguna ficha
@@ -85,8 +86,9 @@ escriben:
   Canarias el día sale bien; en una zona con desfase negativo saldría un día antes. Cuando exista la
   pantalla que declara la retención, conviene que mande el día anclado a la zona del merchant
   (`inicioDelDiaEn`). Hoy no hay pantalla ni víctima.
+  **Arreglado en SCRUM-1108b (§8)**: con la pantalla ya hay víctima posible.
 
-## 7 · La pantalla, preparada y SIN aplicar
+## 7 · La pantalla, preparada y SIN aplicar (aplicada en SCRUM-1108b, §8)
 
 El servidor ya da todo lo que la ficha necesita: `stats.garantiaRetenida.retenciones[]`, con
 `importe`, `liberacionDia` (día natural en la zona del merchant, que el navegador no conoce) y `aviso`.
@@ -110,3 +112,57 @@ El cambio de `public/dashboard/js/customerDetailView.js` está escrito y medido 
   });
   // y en la KPI «Pendiente de cobro»: … : (stats.garantiaRetenida ? '' : 'al día ✓')
 ```
+
+## 8 · SCRUM-1108b — la pantalla, y el día que pinta
+
+**Medido contra:** `origin/main` = `c67243103d5032d0f7ee522f886c0bf8d136efd5` · 2026-09-25T16:55:42Z (con #1765 y #1776, el registro de la firma, dentro)
+
+Rama `scrum-1108b-pantalla-garantia`. Sesión jv-j2.
+
+**El literal** consta en `docs/microcopy/2026-09-25-SCRUM-1108-garantia-retenida.md`, ranura
+`garantiaRetenidaFicha` (PR #1776, mergeado a las 16:54:59Z). Esta rama se empujó después: el test
+del literal (`constaAprobado`) cae sin ese registro, a propósito.
+
+### Qué cambia
+
+- `public/dashboard/js/customerDetailView.js` — lo de §7, tal cual: una línea por retención con el
+  literal firmado, `.alert warning` si la fecha ya llegó e `.alert info` si no (clases existentes, sin
+  CSS nuevo), `textContent`; y «al día ✓» se calla cuando hay garantía sin cobrar.
+- `src/modules/billing/app/routes/chargesAdmin.routes.ts` — **la nota de §6 deja de ser hipotética y se
+  arregla.** `POST /admin/charges/:id/garantia` guardaba `new Date('AAAA-MM-DD')`, la medianoche UTC. Ahora
+  un día suelto se guarda como el primer instante de ese día en la zona del merchant
+  (`inicioDelDiaEn` + `zonaDelMerchant`, lo mismo que ya usa este fichero desde SCRUM-1093). Un instante
+  completo (`…T12:00:00Z`) se respeta tal cual. Y un día que no existe (`2027-02-30`) pasa a ser un 400:
+  antes `new Date` lo convertía en el 2 de marzo.
+  PASO 0, corrido sobre este `main` antes de tocar nada: `diaNaturalEn(new Date('2027-09-23'), zona)`
+  daba `2027-09-23` en Madrid y Canarias y **`2027-09-22` en `America/Mexico_City` y `America/Bogota`**.
+  ⚠️ Lo ya guardado antes de este cambio no se reescribe: sólo corrige las declaraciones nuevas.
+
+### Cómo se midió
+
+`tests/scrum1108b-pantalla-garantia.test.mjs`, 11 casos: la ficha PINTADA en el banco de vistas
+(no grep), el literal por `constaAprobado`, y la ruta corrida con un doble de prisma en cinco zonas.
+
+- Antes de que entrara #1776: 10 pasan y cae exactamente el del literal. Con #1776 en `main`: 11/11.
+- Mutaciones, las cinco muertas (con el registro puesto): quitar el silencio de «al día ✓» (1 fallo) ·
+  clase fija `.alert info` (1) · no pintar las líneas (2) · volver a `new Date(crudo)` (2: México y
+  Bogotá) · no comprobar que el día existe (1).
+- `tests/scrum1107b-rutas-garantia.test.mjs` y `scrum1108-aviso-garantia-retenida` siguen verdes.
+
+### Fuera, declarado
+
+- **La lista «quién me debe»** no tiene pantalla que pinte deuda: ningún `public/dashboard/js/` lee
+  `saldoPendiente` ni `garantiaRetenida` (grep sobre este `main`). El registro nombra esa lista como
+  sitio del literal; cuando exista la pantalla, usará el mismo.
+- El color de la cifra «Pendiente de cobro» sigue en verde con deuda 0 y garantía retenida: §7 decía
+  «no se añade texto: se quita uno», y cambiar el color no estaba en lo acordado.
+
+### La tanda entera
+
+`npm test` sobre esta rama (base `c6724310`): **8.334 tests · 8.199 pass · 1 fail · 134 skipped**. El único
+fallo es `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` **como fichero**: sus 6 subtests pasan y el
+proceso aborta al cerrar con `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c`.
+Es el rojo de libuv en Windows que ya estaba censado antes de esta rama; no toca ningún fichero de este
+cambio. Repetido 3 veces a solas: el mismo aborto, y los mismos 5 de 5 subtests con aserción pasando.
+
+Enlace de comparación (copiado de la salida de `git push`): https://github.com/lwislg99/cobroflash-backend/pull/new/scrum-1108b-pantalla-garantia
