@@ -141,6 +141,8 @@ async function renderReportsView(container) {
   wrap.appendChild(platformCard);
   loadPlatformFunnel(platformCard);
 
+  let modoBeneficio = 'iva'; // SCRUM-1134: se conserva entre cambios de año
+
   async function load(year) {
     chartCard.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando…</p>';
     summaryCard.innerHTML = '';
@@ -166,36 +168,99 @@ async function renderReportsView(container) {
     const fmt = (n) => fmtImporteEs(n, currency);
 
     // ── Tarjetas KPI ─────────────────────────────────────────────────────
-    const kpiWrap = document.createElement('div');
-    kpiWrap.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:20px';
     chartCard.innerHTML = '';
-    chartCard.appendChild(kpiWrap);
 
-    const kpis = [
-      { label: 'Ingresos totales', value: totals.revenue,  prev: prevYear.revenue,  color: 'var(--green-600)' },
-      { label: 'Gastos totales',   value: totals.expenses, prev: prevYear.expenses, color: 'var(--red-600)' },
-      { label: 'Beneficio neto',   value: totals.profit,   prev: prevYear.profit,   color: totals.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
-    ];
-    // A15.3 (MANT-1): € que nacieron del ciclo de mantenimientos — solo si existe
-    if (Number(totals.maintenance) > 0) {
-      kpiWrap.style.gridTemplateColumns = 'repeat(auto-fit,minmax(140px,1fr))';
-      kpis.push({ label: '🔧 De mantenimientos', value: totals.maintenance, prev: null, color: 'var(--green-600)' });
+    // SCRUM-1134 (CON-06): el servidor ya manda con/sin IVA por separado (SCRUM-1047);
+    // aquí solo se pinta. `tieneBase` cubre un backend viejo sin desplegar (aditivo).
+    const tieneBase = totals.revenueBase !== undefined && totals.expensesBase !== undefined;
+    if (tieneBase) {
+      // Lenguaje heredado de `.customers-tabs`/`.customers-tab` (AB3): «uno de N» ya
+      // resuelto en el sistema, no un segundo dialecto visual para el mismo gesto.
+      const modoTabs = document.createElement('div');
+      modoTabs.className = 'customers-tabs';
+      modoTabs.style.marginBottom = '14px';
+      const modos = [
+        { id: 'iva', label: 'Con IVA' },
+        { id: 'base', label: 'Sobre la base' },
+      ];
+      const botonesModo = modos.map((m) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'customers-tab';
+        b.textContent = m.label;
+        b.setAttribute('aria-pressed', String(m.id === modoBeneficio));
+        b.addEventListener('click', () => {
+          if (modoBeneficio === m.id) return;
+          modoBeneficio = m.id;
+          botonesModo.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+          renderKpis();
+        });
+        modoTabs.appendChild(b);
+        return b;
+      });
+      chartCard.appendChild(modoTabs);
     }
 
-    kpis.forEach(({ label, value, prev, color }) => {
-      const pct = (prev !== null && prev !== undefined && prev !== 0)
-        ? Math.round((value - prev) / Math.abs(prev) * 100) : null;
-      const sign = pct === null ? '' : pct >= 0 ? '▲' : '▼';
-      const pctColor = pct === null ? 'var(--neutral-400)' : pct >= 0 ? 'var(--green-600)' : 'var(--red-600)';
-      const kpi = document.createElement('div');
-      kpi.className = 'kpi-card';
-      kpi.innerHTML = `
-        <div class="kpi-label">${label}</div>
-        <div class="kpi-value" style="color:${color};font-size:22px">${fmt(value)} <span style="font-size:12px;font-weight:400;color:var(--neutral-400)">${currency === 'EUR' ? '€' : currency}</span></div>
-        ${pct !== null ? `<div class="kpi-sub" style="color:${pctColor}">${sign} ${Math.abs(pct)}% vs ${year - 1}</div>` : ''}
-      `;
-      kpiWrap.appendChild(kpi);
-    });
+    const kpiWrap = document.createElement('div');
+    kpiWrap.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:8px';
+    chartCard.appendChild(kpiWrap);
+
+    // Regla 7 (sin claims fiscales): lo que queda fuera de la base no se calla ni se
+    // suma a ella — se dice cuánto es. Vacío = `.alert:empty` lo oculta solo.
+    const baseNota = document.createElement('div');
+    baseNota.className = 'alert warning';
+    baseNota.style.marginBottom = '20px';
+    chartCard.appendChild(baseNota);
+
+    function renderKpis() {
+      const sobreBase = tieneBase && modoBeneficio === 'base';
+      const kpis = sobreBase
+        ? [
+            { label: 'Ingresos (base)',        value: totals.revenueBase,  prev: null, color: 'var(--green-600)' },
+            { label: 'Gastos (base)',           value: totals.expensesBase, prev: null, color: 'var(--red-600)' },
+            { label: 'Beneficio sobre la base', value: totals.profitBase,   prev: null, color: totals.profitBase >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
+          ]
+        : [
+            { label: 'Ingresos totales', value: totals.revenue,  prev: prevYear.revenue,  color: 'var(--green-600)' },
+            { label: 'Gastos totales',   value: totals.expenses, prev: prevYear.expenses, color: 'var(--red-600)' },
+            { label: 'Beneficio neto',   value: totals.profit,   prev: prevYear.profit,   color: totals.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
+          ];
+      // A15.3 (MANT-1): € que nacieron del ciclo de mantenimientos — solo en el modo con IVA
+      if (!sobreBase && Number(totals.maintenance) > 0) {
+        kpiWrap.style.gridTemplateColumns = 'repeat(auto-fit,minmax(140px,1fr))';
+        kpis.push({ label: '🔧 De mantenimientos', value: totals.maintenance, prev: null, color: 'var(--green-600)' });
+      }
+
+      kpiWrap.innerHTML = '';
+      kpis.forEach(({ label, value, prev, color }) => {
+        const pct = (prev !== null && prev !== undefined && prev !== 0)
+          ? Math.round((value - prev) / Math.abs(prev) * 100) : null;
+        const sign = pct === null ? '' : pct >= 0 ? '▲' : '▼';
+        const pctColor = pct === null ? 'var(--neutral-400)' : pct >= 0 ? 'var(--green-600)' : 'var(--red-600)';
+        const kpi = document.createElement('div');
+        kpi.className = 'kpi-card';
+        kpi.innerHTML = `
+          <div class="kpi-label">${label}</div>
+          <div class="kpi-value" style="color:${color};font-size:22px">${fmt(value)} <span style="font-size:12px;font-weight:400;color:var(--neutral-400)">${currency === 'EUR' ? '€' : currency}</span></div>
+          ${pct !== null ? `<div class="kpi-sub" style="color:${pctColor}">${sign} ${Math.abs(pct)}% vs ${year - 1}</div>` : ''}
+        `;
+        kpiWrap.appendChild(kpi);
+      });
+
+      const sinDesglose = sobreBase ? (Number(totals.revenueSinDesglose?.count) || 0) : 0;
+      const sinClasificar = sobreBase ? (Number(totals.expensesSinClasificar?.count) || 0) : 0;
+      if (sinDesglose > 0 || sinClasificar > 0) {
+        const moneda = currency === 'EUR' ? '€' : currency;
+        const partes = [];
+        if (sinDesglose > 0) partes.push(`${sinDesglose} factura${sinDesglose === 1 ? '' : 's'} (${fmt(totals.revenueSinDesglose.importe)} ${moneda})`);
+        if (sinClasificar > 0) partes.push(`${sinClasificar} gasto${sinClasificar === 1 ? '' : 's'} (${fmt(totals.expensesSinClasificar.importe)} ${moneda})`);
+        baseNota.textContent = `${partes.join(' y ')} sin desglose de IVA no entran en el cálculo sobre la base.`;
+      } else {
+        baseNota.textContent = '';
+      }
+    }
+
+    renderKpis();
 
     // ── Gráfico SVG de barras ─────────────────────────────────────────────
     const chartTitle = document.createElement('h3');
