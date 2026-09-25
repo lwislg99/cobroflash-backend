@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
@@ -50,7 +51,7 @@ test('SCRUM-786 · ② «Borrar» proveedor lleva la clase de 44px, y «Editar»
     datos: (u) => {
       if (/\/admin\/merchant/.test(u)) return { id: 1 };
       if (/\/admin\/providers/.test(u)) {
-        return { ok: true, items: [{ id: 5, name: 'ZZPROVEEDOR de prueba', phone: '600000000', email: 'p@x.com', isActive: true }] };
+        return { ok: true, items: [{ id: 5, name: 'ZZPROVEEDOR de prueba', phone: telefonoDePrueba(786), email: 'p@x.com', isActive: true }] };
       }
       return {};
     },
