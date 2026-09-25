@@ -118,3 +118,40 @@ factura-01-bloqueo-2fa-email.png: pantalla "Codigo de identificacion" pidiendo e
 
 ### Nota para quien redacte la comparacion final
 Del catalogo de capturas ya existentes de sesiones anteriores (docs/competencia/capturas/facturadirecta/, de antes de esta tanda) hay: facturadirecta-menu-crear-todos-los-documentos.png, facturadirecta-menu-mas-ventas-compras-gestion.png, facturadirecta-presupuesto-nuevo.png, facturadirecta-ordenes-de-compra.png, facturadirecta-presupuesto-comentarios-adjuntos-actividad.png. Son de PRESUPUESTOS, no de facturas, y no se si son de una sesion que SI logro entrar (con 2FA superado de otra forma) o de antes de que existiera el 2FA. Revisar su fecha/contexto antes de usarlas como sustituto del flujo de factura: no es lo mismo un presupuesto que una factura, aunque el formulario se parezca.
+
+## BILLIN (ahora "TS Facturas, antes Billin", grupo TeamSystem) — 25-sep-2026
+
+Cuenta NUEVA, creada en esta tanda: lwislg99+billin@gmail.com, empresa "Consultoria Prueba Billin" (autonomo), NIF inventado B90512837 (el primer intento, B00000022, dio "Este NIF ya esta en uso en otro negocio de nuestra plataforma": NIFs de relleno tipo B000000NN parecen ya quemados en su base, mejor usar uno con digitos dispersos). Contrasena generada en memoria para esta sesion, tecleada una vez, NO guardada en ningun fichero/mensaje/log (norma del gate, comentario SCRUM-906 del 17-sep). Alta SIN verificacion de email ni telefono: se entra al dashboard nada mas terminar el asistente de 4 pantallas (tipo de negocio -> objetivo -> datos fiscales con NIF/CIF obligatorio pero Telefono y Sector OPCIONALES -> dashboard). Nunca pidio tarjeta.
+
+Camino: dashboard -> "Crear factura" (nav superior, /documents/create/document-data). Es un WIZARD de 2 pasos con barra de progreso, a diferencia del formulario de una sola pagina de Verifacturamos/Contasimple.
+
+### Paso 1 - Datos de la factura
+Cabecera: Cliente* (buscador-select), Fecha de factura* (hoy, editable), Numero de factura* (autonumerico, editable), Vencimiento, Referencia.
+
+**Cliente nuevo SIN salir de la factura:** al escribir un nombre que no existe, el propio desplegable de busqueda muestra un boton "Crear cliente <lo que escribiste>" (no un "sin resultados" mudo como Verifacturamos, ni un boton aparte arriba de la pantalla como Contasimple). Se abre un MODAL con Nombre fiscal (preflotado con lo ya escrito), Tipo de documento, Nº de documento, Direccion, Codigo postal, Ciudad, Provincia, Pais - se completa y "Crear cliente" lo deja seleccionado sin recargar la pagina. YA EXISTE un ticket para esto en YaQu: **SCRUM-1083** ("Alta de cliente nuevo sin salir del formulario de factura suelta"), abierto el 22-sep por una sesion anterior - no duplico.
+
+**Conceptos (lineas):** Concepto* (buscador de productos o texto libre), Unidades*, Precio ud.*, Impuestos*, Descuento, Total (editable a mano, con boton de recalculo), Informacion adicional (texto libre por linea). Botones "Añadir linea de concepto" y "Añadir titulo" (para agrupar lineas bajo un encabezado, no explorado a fondo).
+
+**Impuestos* por linea - un UNICO desplegable con 35 opciones** que mezcla lo que otros competidores separan en varias pantallas: 21/10/4/0% IVA, Exenta IVA, No sujeta IVA, Inv. Suj. Pasivo IVA, y luego 35/20/15%... IGIC, y (no confirmado, se corto la lista) probablemente IPSI y combinaciones con Recargo de Equivalencia. No hay que elegir antes un "tipo de factura" como en Verifacturamos (21 opciones en un desplegable aparte, primer campo del formulario): aqui el tipo de operacion se deduce de lo que se elige EN CADA LINEA. Mas simple de teclear, pero mezcla territorial (IGIC/IPSI) con exencion/ISP en una lista plana sin agrupar, a diferencia de Verifacturamos (que SI agrupa en categorias con subtitulo explicativo) - candidato a confusion si hay muchas opciones parecidas.
+
+**Opciones avanzadas de factura** (colapsable, empieza ABIERTO): checkboxes "Recargo de equivalencia", "Añadir gastos suplidos", "Incluir retencion/IRPF", "Cantidad ya pagada", "Incluir Observaciones para el receptor" (con textarea, marcado por defecto), selector de moneda, boton "Configurar mas opciones" (no explorado). No pude marcar el checkbox de retencion/IRPF con Playwright (el clic quedaba interceptado por el nav fijo al hacer scroll); no es un hallazgo de producto, es una limitacion de la sesion.
+
+**Metodos de pago:** bloque aparte bajo las lineas, "No has añadido ningun metodo de pago a tu factura" + boton "Añadir metodo de pago" (no explorado). Debajo, resumen en vivo: Base imponible / IVA / Total, todo por el tipo de impuesto elegido.
+
+**Adjuntar archivo:** input de fichero (hasta 10 Mb) para adjuntar documentacion complementaria a la factura, visible siempre en el paso 1 (no until despues de emitir).
+
+Validacion al continuar vacio: "Campo obligatorio" bajo cada campo individual (Cliente, Concepto, Precio ud., Total) - mismo patron inline que Verifacturamos/Contasimple, sin recargar pagina.
+
+### Paso 2 - Previsualizacion y emision
+Resumen visual completo: cabecera con Nº y fecha, datos del emisor (colapsable "Mostrar"), datos del cliente, lista de conceptos, y el desglose Subtotal/Base imponible/IVA/Total. Checkbox "Enviar por email despues de emitir" ("Cuando se genere la factura se enviara automaticamente por email a tu cliente" - SOLO email, no WhatsApp/enlace/PDF como el "Guardar y enviar" de YaQu/PresupuestAPP). Dos botones finales JUNTOS: "Guardar borrador" y "Emitir factura" - a diferencia de Verifacturamos, que NO deja emitir sin firma electronica completada (banner fijo bloqueante) y solo ofrece borrador. Use "Guardar borrador" para no disparar una emision real; "Emitir factura" NO se probo.
+
+### Capturas (docs/competencia/capturas/billin/, prefijo factura-NN-)
+00 dashboard (tras alta), 01 paso1-vacio, 02 cliente-nuevo-inline (modal completo), 03 tipos-iva (listbox de 35 opciones desplegado), 04 paso2-preview (resumen + checkbox email + Guardar borrador/Emitir factura), 05 borrador-guardado (listado de facturas), 06 validacion-vacio (Campo obligatorio en los 4 campos).
+
+### Incidencias propias (Billin)
+- El primer intento de alta con NIF de relleno "B00000022" fallo con "Este NIF ya esta en uso": los NIF secuenciales tipo B000000NN que uso en sesiones anteriores para OTROS competidores estan quemados tambien aqui (o Billin comparte una base de datos de NIFs con otro producto del grupo TeamSystem, que tambien es dueño de Quipu). Para la proxima cuenta de prueba en cualquier producto TeamSystem, usar un NIF con digitos dispersos, no secuencial.
+- Quipu (tambien TeamSystem) EXIGE telefono real en su alta de autonomo (campo con asterisco) - no se dio de alta siguiendo la norma del gate ("si un alta pide telefono real, PARA y pregunta al fundador"). Sin cuenta de Quipu tras esta tanda.
+- El checkbox "Incluir retencion/IRPF" no se pudo marcar con Playwright por interceptacion del nav al hacer scroll (3 reintentos con distintas esperas); no bloqueo el resto del recorrido, se omitio esa rama.
+
+### Jira
+Sin ticket nuevo: el unico hallazgo con patron de mejora clara para YaQu (alta de cliente sin salir de la factura) YA tiene ticket - SCRUM-1083. El desplegable unico de impuestos (IVA+IGIC+IPSI+exencion+ISP en una lista) toca directamente el camino fiscal/VeriFactu (regla 40 del master: se lee, no se decide aqui); lo dejo escrito en este RAW para que lo valore quien lleve SIF-1/quotes, no abro ticket de producto sobre ello.
