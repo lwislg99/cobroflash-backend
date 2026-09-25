@@ -262,3 +262,73 @@ de SCRUM-397 (que cazó el primer intento — escribía `status`/`paidAt` a mano
 `datosDeCobroPagado`, arreglado), SCRUM-860 (`select`), SCRUM-243 (`merchantId`), SCRUM-267
 (ancla), y toda la batería `*cobro*.test.mjs` del módulo de billing (131 tests, sin ninguno
 afectado).
+
+---
+
+# APÉNDICE · 25-sep-2026 · Desatasco: el conflicto que GitHub declaraba NO EXISTÍA
+
+**Medido contra:** `origin/main` = `6bbe1b4d98e18fd3f5f2fdedd4823d1e24a951b5` · 2026-09-25T14:22:10Z
+
+El PR #1743 llevaba **dos días parado** con `mergeable: CONFLICTING` y `mergeStateStatus: DIRTY`,
+y su sesión (J2) cerrada. Lo desatasca **el orquestador** (A13) por instrucción expresa del
+fundador (*«Desatáscalo»*).
+
+## 🔴 El dato que hay que decir primero: no había ningún conflicto
+
+`git merge-tree` contra la base de fusión devolvió **cero** marcadores. La fusión real de
+`origin/main` en la rama entró **limpia**, sin una sola resolución manual, tocando
+`prisma/schema.prisma` incluido.
+
+**El `CONFLICTING` de la API de GitHub estaba CADUCADO.** Es un valor que el servidor calcula
+de forma perezosa y no siempre recalcula cuando la base se mueve — y esta base se movió 14
+veces entre el 23 y el 25 de septiembre.
+
+⚠️ **La lección operativa:** `mergeable` de la API **no es una medición del árbol**, es una
+caché. Antes de declarar un PR «en conflicto» —y sobre todo antes de descartarlo o rehacerlo—
+se comprueba con `git merge-tree` contra la base real. Dos días de un PR terminado parados por
+creerle a un campo.
+
+## Por qué una rama nueva y no un `push` sobre la de J2
+
+`scrum-1107c-garantia-desatasco`, no un empujón sobre `scrum-1107b-…`:
+
+1. **No se escribe en la rama de otra sesión.** Es norma del equipo, y J2 está cerrada: no
+   puede confirmar que lo que hay empujado sea lo que quería entregar.
+2. El árbol de J2 sigue con esa rama montada. Trabajar ahí habría sido **modificar un recurso
+   compartido**, que es justo lo que el clasificador de permisos denegó al intentarlo — y la
+   salida limpia era un árbol propio, no gastar la excepción.
+
+**Nada del trabajo de J2 se ha reescrito.** Este commit es una fusión, no un rebase: los cuatro
+commits originales siguen siendo los suyos.
+
+## ⛔ El rojo que NO es de esta rama, y que por tanto no se arregla aquí
+
+La tanda deja `tests/scrum939b-trinquete-de-las-skills.test.mjs` en rojo:
+
+> *«EL TRINQUETE TIENE QUE BAJAR: 1 declarada(s) ya no sale(n) FALSA(S): `cerebro-yaqu ·
+> [RUTA_ABS] C:\Program Files\GitHub CLI\gh.exe`»*
+
+🔴 **Medido: el mismo test cae IGUAL en un árbol de `main` sin esta rama.** Esta rama no toca
+`.claude/` —el diff contra `main` lo confirma vacío para esa ruta— así que **el rojo venía de
+antes y está en `main`**.
+
+⛔ **No se toca el trinquete** (regla 41 / A7): un trinquete que salta no es un fallo, es el
+aviso, y ensanchar su lista de declaradas para que pase es exactamente lo que no se hace.
+**Se abre su propio ticket** y se arregla donde está la causa, que no es aquí.
+
+## Suelo
+
+⚠️ **Lo verificado es que `main` entra sin conflicto y que el árbol compila** (`tsc` limpio
+tras `prisma generate`). **La tanda completa NO sale verde** por el rojo heredado de arriba, y
+eso se dice tal cual en vez de presentar un verde que no existe.
+
+⚠️ **El ALTER de este ticket ya está aplicado** (PR #1739, 23-sep). Esta rama trae el esquema y
+el código; **no vuelve a pedir DDL**.
+
+## Y una trampa de la máquina que mordió por el camino
+
+`node --test tests/*.test.mjs` —la invocación que documenta `CLAUDE.md`— **desborda la línea de
+órdenes** en esta máquina: `Argument list too long`, y **sale con código 0 sin haber corrido un
+solo test**. Es el mismo fallo del que el propio fichero avisa («`exit code 0` no es
+"pasó"»), sólo que por otra puerta. La tanda se corre con `npm test`, que tiene su propio
+veredicto.
