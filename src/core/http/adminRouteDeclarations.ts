@@ -75,6 +75,14 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'GET',  path: '/admin/customers/:id/detail', why: 'Ficha e historial del cliente que va a visitar' },
   { method: 'GET',  path: '/admin/customers/:id/historial', why: 'SCRUM-980: los trabajos del cliente que va a visitar (solo los suyos)' },
   { method: 'GET',  path: '/admin/customers/:id/portal-url', why: 'Link del portal para dárselo al cliente en mano' },
+  // SCRUM-1014 (CRM): la agenda de sitios (direcciones de obra) es la misma clase de dato que
+  // `PUT /admin/customers/:id` de arriba — el técnico apunta o corrige un sitio DESDE la obra,
+  // que es justo cuando más falta hace. No escribe `shippingAddress` de ningún documento
+  // (P2/DOC-12 intacto): sólo la agenda.
+  { method: 'GET',    path: '/admin/customers/:id/sites', why: 'Ver los sitios del cliente que va a visitar' },
+  { method: 'POST',   path: '/admin/customers/:id/sites', why: 'Añadir un sitio desde la obra, igual que corregir la dirección del cliente' },
+  { method: 'PUT',    path: '/admin/customers/:id/sites/:siteId', why: 'Corregir un sitio desde la obra, igual que el resto de la ficha' },
+  { method: 'DELETE', path: '/admin/customers/:id/sites/:siteId', why: 'Quitar un sitio dado de alta por error, mismo nivel que crearlo' },
 
   // Presupuestos — S1: "quotes crear-ver · enviar WA" ✅. EMITIR FACTURA no (ver /invoice).
   { method: 'GET',  path: '/admin/quotes', why: 'S1: quotes crear-ver ✅' },

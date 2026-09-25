@@ -49,6 +49,13 @@ export const CAMPOS_PERSONALES: Readonly<Record<string, readonly string[]>> = Ob
   // interesado y es lo que permite cruzar un rebote con su fila—, y `kind`/`status`/las fechas son
   // el hecho, no la persona.
   emailMessage: ['toEmail'],
+  // SCRUM-1014 · el contacto EN OBRA (el portero, el inquilino) — una persona sin ficha propia
+  // de cliente, así que su único rastro es este teléfono. `name` de `customerSite` es la
+  // etiqueta que el profesional le pone al SITIO («Piso 3ºB»), no el nombre de una persona —
+  // mismo caso que `product.name`, declarado fuera en el censo (`tests/…scrum497…`), y por
+  // tanto no entra aquí. `address` (la dirección del sitio) queda SIN DECIDIR, misma pregunta
+  // que `job.direccion`.
+  customerSite: ['phone'],
 });
 
 /** Lo que NUNCA se toca, con su motivo. Sirve de documentación y de guard a la vez. */

@@ -38,6 +38,9 @@ const SCHEMA = leerSchema();
 const FUERA_DE_ANONIMIZADO = Object.freeze({
   'product.name': 'el nombre de un SERVICIO del catálogo («Desatasco»), no el de una persona',
   'quoteTemplate.name': 'el nombre de una PLANTILLA de presupuesto, no el de una persona',
+  // SCRUM-1014: la etiqueta que el profesional le pone al SITIO («Piso 3ºB», «Nave del
+  // polígono»), no el nombre de una persona — mismo caso que las dos de arriba.
+  'customerSite.name': 'el nombre del SITIO que el profesional elige («Piso 3ºB»), no el de una persona',
 });
 
 /**
@@ -47,7 +50,8 @@ const FUERA_DE_ANONIMIZADO = Object.freeze({
  * calificación jurídica distinta y es del fundador. Lo que este fichero garantiza es que están
  * NOMBRADOS y que no puede aparecer un dieciseisavo sin que salte.
  *
- * `to_email` era el número 16 de esta lista hasta hoy. Se ha cerrado uno; quedan quince.
+ * `to_email` era el número 16 de esta lista hasta hoy. Se ha cerrado uno; quedan quince — y
+ * SCRUM-1014 suma `customerSite.address` (misma pregunta que `job.direccion`): dieciséis.
  */
 const SIN_DECIDIR = Object.freeze({
   'teamMember.name': '¿los datos de un EMPLEADO del profesional se van con la baja del profesional?',
@@ -65,6 +69,9 @@ const SIN_DECIDIR = Object.freeze({
   'quote.internalNotes': 'texto libre, y va dentro de un documento que puede estar sellado (regla 29)',
   'expense.notes': 'texto libre; puede nombrar a un proveedor o a una persona',
   'botSession.phone': 'el teléfono del cliente que escribió por WhatsApp, antes de ser cliente',
+  // SCRUM-1014: la dirección DEL SITIO — casi siempre una obra del propio cliente, misma
+  // pregunta que `job.direccion` justo arriba.
+  'customerSite.address': 'la dirección del sitio — casi siempre una obra del propio cliente, misma pregunta que job.direccion',
 });
 
 // ── 0 · 🔴 SUELO Y AUTOPRUEBA · antes de creerse ningún reparto ─────────────────────────────

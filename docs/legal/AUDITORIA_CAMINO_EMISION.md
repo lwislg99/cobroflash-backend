@@ -33,7 +33,7 @@ y el envío— no se han construido nunca.**
 | 1 | Puerta de emisión (usuario y admin) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:100` |
 | 2 | Decide qué documento sale (factura / justificante / ninguno) | **EXISTE** | `src/modules/invoicing/domain/facturaSuelta.ts:85-89` (`modoDocumentoSuelto`) — SCRUM-1027 (21-sep-2026) movió la línea: la afirmación sigue igual, «justificante» ya no es uno de los desenlaces posibles (regla 24 / SCRUM-612c) |
 | 3 | Numeración de serie | **EXISTE** | `src/modules/invoicing/domain/invoiceNumber.service.ts:395` (`allocateInvoiceNumber`) — SCRUM-735 (23-sep-2026) movió la línea: el año de la serie pasó a derivarse de la zona del merchant |
-| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:886-887` (`vf_hash`, `vf_prev_hash`) |
+| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:888-889` (`vf_hash`, `vf_prev_hash`) |
 | 5 | Sellado en el momento de emitir | **EXISTE** | `src/modules/invoicing/domain/selladoEstado.ts:116` (`sellarTrasEmision`), invocado desde `src/lib/invoicing.ts:17` |
 | 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:184` (`buildVeriFactuQrUrl`) — SCRUM-735 movió la línea |
 | 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:574` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:633` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:253` y `:563` — SCRUM-1051 (23-sep-2026) movió la línea: el bloque S2 se insertó antes de la función |

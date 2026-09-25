@@ -127,6 +127,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // (dos merchants), que un documento borrado no se lleva el mensaje por delante (tabla suelta,
   // ENT-3) y las páginas de 20 con cursor.
   'scrum1062-historial-whatsapp-cliente.test.mjs': 1,
+  // SCRUM-1014: los sitios del cliente. Necesita banco porque vigila la TENENCIA (merchant y
+  // cliente) en las cuatro funciones, el orden estable, y que crear/editar un sitio no escribe
+  // `Quote.shippingAddress` (P2/DOC-12).
+  'scrum1014-sitios-del-cliente.test.mjs': 1,
   // SCRUM-1036: las notas del cliente. Necesita banco porque vigila la TENENCIA, que el autor se
   // CONGELA como texto (borrar al técnico no vacía la nota vieja) y la «Nota fija» sintetizada
   // desde `Customer.notes` sin copiarla ni inventarle fecha/autor.
