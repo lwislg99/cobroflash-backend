@@ -287,7 +287,7 @@ coincidía con el del build.
 - Los dos ficheros nuevos, sueltos: **30 casos · 30 pass · 0 fail** (23 + 7).
 - `npm test` entero: **8.369 tests · 8.233 pass · 2 fail · 134 skipped** (sobre la rama ya fusionada con `bf4d82c6`). Los dos rojos:
   - `804b` es ajeno: el estado de 1107, ya declarado en el traspaso de J1.
-  - `835` («ninguna credencial en el historial») era mío. La clave inventada del test llevaba una cabecera PEM y el escáner la cazó en el commit LOCAL. Ese commit no llegó a empujarse: se cambió la clave por `CLAVE-FALSA-DE-PRUEBA-…` y se rehízo el commit. `scrum835` + los dos tests nuevos, sueltos después del arreglo: __SUELTOS__.
+  - `835` («ninguna credencial en el historial») era mío. La clave inventada del test llevaba una cabecera PEM y el escáner la cazó en el commit LOCAL. Ese commit no llegó a empujarse: se cambió la clave por `CLAVE-FALSA-DE-PRUEBA-…` y se rehízo el commit. `scrum835` + los dos tests nuevos, sueltos después del arreglo: **49 tests · 49 pass · 0 fail** (`scrum835`, `scrum267` y los dos nuevos, sobre el commit ya rehecho).
   - En la primera pasada cayeron además `237` (una negación sin respaldo en mi test) y `694` (un filtro de comentarios hecho a mano en mi test). Los dos se arreglaron con lo que ya existe (`tests/_solo-codigo.mjs` y un hermano del token), y el control de URL se comprobó en rojo con `soloCodigo`. `910d` (libuv) cayó en la primera pasada y no en la segunda: es intermitente y ajeno.
 
 ## ⑦ Lo que queda (fase 2 y lo que no es de J1)
