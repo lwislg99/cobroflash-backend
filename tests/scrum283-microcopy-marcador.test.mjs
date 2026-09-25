@@ -18,7 +18,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { censarAccionesFactura } from './_censo-acciones-factura.mjs';
-import registro from '../public/dashboard/js/invoiceActionsRegistry.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const VISTA = path.join(RAIZ, 'public', 'dashboard', 'js', 'invoiceDetailView.js');
@@ -28,9 +27,11 @@ const MARCA = '[PENDIENTE microcopy oficial]';
 const ANULAR = 'btnAnular';
 const desnuda = (t) => String(t).replace(/^['"`]/, '').replace(/['"`]$/, ''); // el censo trae el literal con comillas
 
-test('SCRUM-283 · el marcador del registro es exactamente el oficial', () => {
-  assert.equal(registro.MICROCOPY_PENDIENTE, MARCA, '🔴 el marcador del registro no coincide con el oficial');
-});
+// ✅ SCRUM-1124 (comentario 17002, firma delegada del orquestador): los tres papeles que usaban
+// el marcador único `MICROCOPY_PENDIENTE` de `patronDetalleAcciones.js` (procesando / rótulo sin
+// mapear / error genérico) quedaron con su texto firmado, y el registro ya NO reexporta un
+// marcador — retirado en el mismo commit que su único uso real (`albaranDetailView.js`). Este
+// test comprobaba justo esa reexportación; se retira con ella, no se deja apuntando al vacío.
 
 /**
  * 🔴 APROBADOS el 17-ago-2026 (regla 30). ESTA TABLA SUSTITUYE AL MARCADOR, no lo relaja.

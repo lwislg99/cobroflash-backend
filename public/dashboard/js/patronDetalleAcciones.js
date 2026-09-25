@@ -19,8 +19,13 @@
 /** Los destinos que una acción puede tener en un estado. */
 const DESTINOS = ['primaria', 'secundaria', 'overflow', 'seccion-propia', 'oculta'];
 
-/** El rótulo de toda acción reorganizada, hasta que el fundador apruebe el microcopy (regla 30). */
-const MICROCOPY_PENDIENTE = '[PENDIENTE microcopy oficial]';
+// ✅ LOS TRES TEXTOS DE ABAJO ESTÁN APROBADOS (SCRUM-1124, comentario 17002, firma delegada del
+// orquestador). Sustituían al marcador único `MICROCOPY_PENDIENTE` en sus tres papeles: el
+// estado de «procesando», el rótulo de un botón o rail sin mapear, y el error genérico. Constan
+// en `docs/microcopy/2026-09-25-SCRUM-1124-acciones-albaran-detalle.md`.
+const TEXTO_PROCESANDO = 'Procesando…';
+const TEXTO_ROTULO_SIN_MAPEAR = 'Acción';
+const TEXTO_ERROR_GENERICO = 'No se ha podido completar la acción. Vuelve a intentarlo.';
 
 /**
  * Destino EFECTIVO de una acción en un estado y contexto dados. Resuelve la primaria contextual:
@@ -111,13 +116,16 @@ function incumplimientosDeLaLey(registro, estados, ctx) {
 // Doble vida: global para el <script> clásico del dashboard, y module.exports para los guards.
 if (typeof window !== 'undefined') {
   window.DESTINOS_PATRON = DESTINOS;
-  window.MICROCOPY_PENDIENTE = MICROCOPY_PENDIENTE;
+  window.TEXTO_PROCESANDO = TEXTO_PROCESANDO;
+  window.TEXTO_ROTULO_SIN_MAPEAR = TEXTO_ROTULO_SIN_MAPEAR;
+  window.TEXTO_ERROR_GENERICO = TEXTO_ERROR_GENERICO;
   window.destinoEfectivo = destinoEfectivo;
   window.estadoReconocido = estadoReconocido;
   window.incumplimientosDeLaLey = incumplimientosDeLaLey;
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    DESTINOS, MICROCOPY_PENDIENTE, destinoEfectivo, estadoReconocido, incumplimientosDeLaLey,
+    DESTINOS, TEXTO_PROCESANDO, TEXTO_ROTULO_SIN_MAPEAR, TEXTO_ERROR_GENERICO,
+    destinoEfectivo, estadoReconocido, incumplimientosDeLaLey,
   };
 }

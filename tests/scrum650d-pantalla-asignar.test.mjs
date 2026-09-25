@@ -407,11 +407,14 @@ test('SCRUM-650d · 🔴 todo texto de pantalla lleva el marcador, y sale de UNA
       `«${texto}». El microcopy lo aprueba el fundador (regla 30), y una frase plausible sin ` +
       'marcar es texto que nadie ha firmado llegándole a un profesional.');
   }
-  // Y salen de UNA sola constante: aprobar el copy los apaga de golpe, y por eso el censo de
-  // SCRUM-402 cuenta 1 para este fichero y no cuatro.
+  // 🔴 SCRUM-1124 (25-sep-2026) · los cinco YA están aprobados (comentario 17002; constan en
+  // `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`). La constante `MARCA_ASIGNADOS`
+  // que los sujetaba dejó de usarse, pero SIGUE declarada — SCRUM-720 exige que el mecanismo se
+  // VACÍE, no se retire, así que el UNO de aquí abajo es esa declaración huérfana, no un texto
+  // sin firmar.
   const literalesConMarca = (FUENTE_FRONT.match(/'\[PENDIENTE[^']*'/g) || []);
   assert.equal(literalesConMarca.length, 1,
     `🔴 hay ${literalesConMarca.length} literales con marcador en el fichero y tiene que haber ` +
-    'UNO. Con el marcador repetido, aprobar el copy obliga a tocar cada texto por separado y el ' +
-    'censo de SCRUM-402 deja de poder contar 1.');
+    'UNO: la declaración de `MARCA_ASIGNADOS`, que SCRUM-720 exige mantener viva aunque nadie la ' +
+    'use hoy. Si sube por encima de uno, alguien se ha inventado un texto nuevo (regla 30).');
 });

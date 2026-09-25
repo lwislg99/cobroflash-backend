@@ -162,16 +162,27 @@ test('SCRUM-644 · 🔴 ANTES: la mitad A sigue metiendo el código crudo en el 
     '🔴 el identificador ya no gana al respaldo; entonces el defecto no era éste.');
 });
 
-test('SCRUM-644 · 🔴 DESPUÉS: sale el MARCADOR, no el identificador', () => {
+test('SCRUM-644 · 🔴 DESPUÉS: sale el TEXTO APROBADO, no el identificador', () => {
+  // SCRUM-1124 (comentario 17002, firma delegada del orquestador): el texto de `name_duplicate`
+  // quedó firmado. Consta en `docs/microcopy/2026-09-25-SCRUM-1124-proveedor-duplicado.md`.
   const win = cargarProvidersView();
   assert.equal(typeof win.mensajeDeErrorProveedor, 'function',
     '🔴 `providersView` no expone su traductor: el control no puede ejecutarlo.');
 
   const salida = win.mensajeDeErrorProveedor('name_duplicate', 'Error creando proveedor.');
-  assert.ok(salida.startsWith(MARCADOR),
-    `🔴 no sale el marcador de microcopy, sale «${salida}».`);
+  assert.equal(salida, 'Ya tienes un proveedor con ese nombre',
+    `🔴 el texto aprobado ha cambiado, sale «${salida}».`);
   assert.equal(salida.includes('name_duplicate'), false,
     `🔴 el identificador sigue llegando a la pantalla: «${salida}»`);
+});
+
+test('SCRUM-644 · un código SIN mapear TODAVÍA cae al marcador de último recurso', () => {
+  // El respaldo genérico existe: sin él, un código inesperado sin mensaje en castellano se
+  // quedaría sin nada que pintar.
+  const win = cargarProvidersView();
+  const salida = win.mensajeDeErrorProveedor('un_codigo_nuevo_sin_mapear', '');
+  assert.ok(salida.startsWith(MARCADOR),
+    `🔴 un código sin mapear y sin respaldo ya no cae al marcador de último recurso: «${salida}».`);
 });
 
 test('SCRUM-644 · un código SIN mapear cae al respaldo en castellano, no al identificador', () => {

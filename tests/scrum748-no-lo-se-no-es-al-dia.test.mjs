@@ -22,8 +22,9 @@
 // construye una insignia neutra con el código a la vista. Y es el REVERSO exacto de SCRUM-641 —
 // en un aviso de error, enseñar el código ES el defecto; en un rótulo de estado, esconderlo lo es.
 //
-// ⛔ NO se inventa el rótulo (regla 30) ni se construye el cuarto estado (regla 27). Esto sólo
-// deja de mentir sobre él.
+// ✅ EL RÓTULO QUEDÓ APROBADO EN SCRUM-1124 (comentario 17002, firma delegada del orquestador):
+// consta en `docs/microcopy/2026-09-25-SCRUM-1124-estado-cobro-sin-mapear.md`. El cuarto estado
+// SIGUE sin construirse (regla 27); esto sólo deja de mentir sobre él, con texto ya firmado.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,7 +40,7 @@ const DIR_JS = path.join(RAIZ, 'public/dashboard/js');
 
 const banco = cargarDashboard(RAIZ, {});
 const metaDelSemaforo = banco.ctx.metaDelSemaforo;
-const MARCADOR = banco.ctx.INV_MARCADOR_MICROCOPY;
+const PREFIJO_DESCONOCIDO = banco.ctx.INV_ROTULO_DESCONOCIDO;
 
 /** Los tres estados que el semáforo SÍ conoce, con su rótulo aprobado. Congelados. */
 const CONOCIDOS = Object.freeze({
@@ -58,7 +59,7 @@ const DESCONOCIDOS = ['sin_datos', 'CUARTO_ESTADO', 'no_calculado', '', undefine
 test('SCRUM-748 · SUELO: el dashboard carga y publica el decisor', () => {
   assert.equal(banco.fallos.length, 0, 'algún script del dashboard no cargó: nada de abajo vale.');
   assert.equal(typeof metaDelSemaforo, 'function');
-  assert.equal(MARCADOR, '[PENDIENTE microcopy oficial]');
+  assert.equal(PREFIJO_DESCONOCIDO, 'Estado no reconocido');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -78,11 +79,11 @@ test('SCRUM-748 · 🔴 NINGÚN estado desconocido se pinta «AL DÍA»', () => 
     + '  afirmar lo que no se sabe— esto lo convertiría en la mentira que venía a evitar.');
 });
 
-test('SCRUM-748 · 🔴 lo desconocido SE VE: marcador y el código a la vista', () => {
+test('SCRUM-748 · 🔴 lo desconocido SE VE: el rótulo aprobado y el código a la vista', () => {
   for (const s of DESCONOCIDOS) {
     const { label } = metaDelSemaforo(s);
-    assert.ok(label.startsWith(MARCADOR),
-      `🔴 «${s}» se pinta sin marcador («${label}»): sería microcopy que nadie aprobó.`);
+    assert.ok(label.startsWith(PREFIJO_DESCONOCIDO),
+      `🔴 «${s}» no lleva el rótulo aprobado («${label}»).`);
   }
   // Y el código del estado viaja en el rótulo, que es lo que distingue este caso de los otros.
   assert.match(metaDelSemaforo('CUARTO_ESTADO').label, /CUARTO_ESTADO/,
@@ -100,8 +101,8 @@ test('SCRUM-748 · 🔴 CONTROL NEGATIVO: los TRES conocidos siguen EXACTAMENTE 
   for (const [estado, label] of Object.entries(CONOCIDOS)) {
     assert.equal(metaDelSemaforo(estado).label, label,
       `🔴 REGRESIÓN: el rótulo de «${estado}» ha cambiado.`);
-    assert.equal(metaDelSemaforo(estado).label.includes(MARCADOR), false,
-      `🔴 «${estado}» ha ganado un marcador: está aprobado desde antes de este ticket.`);
+    assert.equal(metaDelSemaforo(estado).label.includes(PREFIJO_DESCONOCIDO), false,
+      `🔴 «${estado}» ha ganado el rótulo de desconocido: está aprobado desde antes de este ticket.`);
   }
   // Y su clase de insignia tampoco: el color es parte del mensaje.
   assert.equal(metaDelSemaforo('verde').pillClass, 'status-pill-accepted');

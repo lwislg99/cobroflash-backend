@@ -390,7 +390,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   page.appendChild(acts);
 
   const post = async (ruta, body) => {
-    setStatus('info', MICROCOPY_PENDIENTE);
+    setStatus('info', TEXTO_PROCESANDO);
     try {
       await apiRequest(`/admin/albaranes/${alb.id}${ruta}`, {
         method: 'POST', body: body ? JSON.stringify(body) : undefined,
@@ -418,7 +418,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     const b = document.createElement('button');
     b.type = 'button';
     b.dataset.accion = id;
-    b.textContent = ROTULOS_ALBARAN[id] || MICROCOPY_PENDIENTE;
+    b.textContent = ROTULOS_ALBARAN[id] || TEXTO_ROTULO_SIN_MAPEAR;
     b.addEventListener('click', onClick);
     return b;
   };
@@ -428,10 +428,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   const botones = {
     btnEmitir: () => mk('btnEmitir', () => post('/emitir')),
     btnEnviarFirmar: () => mk('btnEnviarFirmar', async () => {
-      setStatus('info', MICROCOPY_PENDIENTE);
+      setStatus('info', TEXTO_PROCESANDO);
       try {
         const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
-        if (waSendFailed(d)) { setStatus('error', d?.message || MICROCOPY_PENDIENTE); return; }
+        if (waSendFailed(d)) { setStatus('error', d?.message || TEXTO_ERROR_GENERICO); return; }
       } catch (e) {
         setStatus('error', e?.data?.message || e.message);
         return;
@@ -488,7 +488,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       // El aviso de lo que quedó fuera va DESPUÉS del refresco, que pinta su propio estado: antes,
       // lo borraría, y el profesional se quedaría creyendo que facturó todo lo que hizo.
       if (Array.isArray(d?.paraAdicional) && d.paraAdicional.length) {
-        setStatus('info', MICROCOPY_PENDIENTE);
+        setStatus('info', TEXTO_PROCESANDO);
       }
     }),
     // FIRMAR ES DE VERDAD AQUÍ. El rótulo aprobado dice «aquí mismo» y tiene que ser cierto: un
@@ -586,10 +586,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     }),
     btnPdf: () => mk('btnPdf', () => window.open(`/admin/albaranes/${alb.id}/pdf`, '_blank')),
     btnWhatsApp: () => mk('btnWhatsApp', async () => {
-      setStatus('info', MICROCOPY_PENDIENTE);
+      setStatus('info', TEXTO_PROCESANDO);
       try {
         const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-whatsapp`, { method: 'POST' });
-        if (waSendFailed(d)) { setStatus('error', d?.message || MICROCOPY_PENDIENTE); return; }
+        if (waSendFailed(d)) { setStatus('error', d?.message || TEXTO_ERROR_GENERICO); return; }
       } catch (e) {
         setStatus('error', e?.data?.message || e.message);
         return;
@@ -643,7 +643,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
         // re-renderizar. Marca de UN SOLO USO, que la vista consume al montar.
         if (window.appState) window.appState.avisoDuplicado = true;
         if (window.renderAppView) window.renderAppView('albaran-detail', { albaranId: copia.id });
-      } catch (e) { setStatus('error', e?.data?.message || MICROCOPY_PENDIENTE); }
+      } catch (e) { setStatus('error', e?.data?.message || TEXTO_ERROR_GENERICO); }
     }),
     btnVerTrabajo: () => mk('btnVerTrabajo', () => {
       if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: alb.job?.id });
@@ -780,7 +780,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     filaQuote.className = 'detail-rail-linea';
     const etiquetaQuote = document.createElement('span');
     etiquetaQuote.className = 'detail-rail-etiqueta';
-    etiquetaQuote.textContent = ROTULOS_RAIL_ALBARAN.presupuesto || MICROCOPY_PENDIENTE;
+    etiquetaQuote.textContent = ROTULOS_RAIL_ALBARAN.presupuesto || TEXTO_ROTULO_SIN_MAPEAR;
     filaQuote.appendChild(etiquetaQuote);
     // Navegación DENTRO del dashboard, con la misma llamada que ya usa el rail del Trabajo
     // (`jobRailBlocks`/`jobDetailView`): un `href` de verdad a otra URL recargaría la app entera.
@@ -815,7 +815,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     filaFotos.className = 'detail-rail-linea';
     const etiquetaFotos = document.createElement('span');
     etiquetaFotos.className = 'detail-rail-etiqueta';
-    etiquetaFotos.textContent = ROTULOS_RAIL_ALBARAN.fotos || MICROCOPY_PENDIENTE;
+    etiquetaFotos.textContent = ROTULOS_RAIL_ALBARAN.fotos || TEXTO_ROTULO_SIN_MAPEAR;
     filaFotos.appendChild(etiquetaFotos);
     const galeria = document.createElement('div');
     galeria.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';

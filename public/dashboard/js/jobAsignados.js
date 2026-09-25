@@ -25,11 +25,11 @@
 // el mismo patrón de SCRUM-229/500/655.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// ⚠️ MICROCOPY SIN APROBAR (regla 30) · el marcador se ve EN PANTALLA a propósito
-//
-// El mecanismo NO EXISTE SIN TEXTO: un selector sin rótulos no se puede usar. Mismo caso que
-// `jobNuevoModal.js` en el censo de SCRUM-402. Los CINCO textos salen de UNA sola constante,
-// así que el día que el fundador los firme se apagan de golpe y la entrada del censo se BORRA.
+// SCRUM-1124 · Los cinco textos de abajo YA están aprobados (constaba en `scrum650d`, que exige
+// que cada uno conste en el registro de aprobaciones). La constante `MARCA_ASIGNADOS` que los
+// sujetaba mientras estaban sin firmar dejó de usarse aquí, pero NO se retira: SCRUM-720 fijó que
+// el mecanismo se VACÍA, no se quita, para que el rótulo que alguien añada mañana sin firmar siga
+// naciendo marcado (`tests/scrum720-marcadores-en-lo-pintado.test.mjs`).
 var MARCA_ASIGNADOS = '[PENDIENTE microcopy oficial]';
 
 var TEXTOS_ASIGNADOS = {

@@ -79,7 +79,6 @@ if (typeof module !== 'undefined' && module.exports) {
   const ley = require('./patronDetalleAcciones.js');
   module.exports = {
     INVOICE_ACTION_REGISTRY, INVOICE_STATES,
-    MICROCOPY_PENDIENTE: ley.MICROCOPY_PENDIENTE,
     destinoEfectivo: ley.destinoEfectivo,
   };
 }

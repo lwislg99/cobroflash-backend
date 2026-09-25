@@ -27,17 +27,12 @@
 // `schema.prisma`: «un `@default(false)` convertiría a TODOS los clientes de hoy en “declarado
 // que NO”, y eso no lo ha dicho nadie».
 //
-// ── MICROCOPY (regla 30) ────────────────────────────────────────────────────────────────────
-// Ni la pregunta ni las dos etiquetas están aprobadas: son del fundador. Salen con el marcador
-// oficial `[PENDIENTE microcopy oficial]` MÁS la palabra de trabajo que viene en el ticket, y ese
-// «más» es deliberado: `scripts/censo-marcadores.mjs` distingue el rótulo que solo lleva la marca
-// —que pinta A CIEGAS, el profesional no sabe qué hace el control— del que lleva marca + texto,
-// que al menos se puede leer y juzgar. En un control de dos lados el marcador solo sería
-// inservible: los dos lados dirían lo mismo.
+// ── MICROCOPY (regla 30) · ✅ FIRMADOS (SCRUM-1124) ──────────────────────────────────────────
+// La pregunta y las dos etiquetas quedaron APROBADAS por el orquestador por delegación permanente
+// del fundador (SCRUM-1124, comentario 17002). Constan en
+// `docs/microcopy/2026-09-25-SCRUM-1124-switch-forma-juridica.md`. Salen ya sin marcador.
 (function () {
   'use strict';
-
-  var MARCADOR = '[PENDIENTE microcopy oficial]';
 
   // Los dos valores que la columna admite. Es la MISMA lista que el `z.enum` del backend
   // (`schemas.ts`), y si divergen el guard de la suite lo dice.
@@ -60,8 +55,8 @@
 
     var leyenda = document.createElement('legend');
     leyenda.className = 'segmented-legend';
-    // La pregunta que encabeza el control. Pendiente de aprobar (regla 30).
-    leyenda.textContent = MARCADOR + ' Este contacto es';
+    // La pregunta que encabeza el control. Aprobada (SCRUM-1124).
+    leyenda.textContent = 'Este contacto es';
     campo.appendChild(leyenda);
 
     var grupoEl = document.createElement('div');
@@ -84,8 +79,8 @@
 
       var texto = document.createElement('span');
       texto.className = 'segmented-text';
-      // Marca + palabra de trabajo: legible y contable por el censo de marcadores.
-      texto.textContent = MARCADOR + ' ' + (valor === 'EMPRESA' ? 'Empresa' : 'Persona');
+      // Aprobado (SCRUM-1124): «Empresa» / «Persona», tal cual.
+      texto.textContent = valor === 'EMPRESA' ? 'Empresa' : 'Persona';
 
       etiqueta.appendChild(radio);
       etiqueta.appendChild(texto);
@@ -114,7 +109,7 @@
     }
 
     escribir(opciones.valor);
-    return { nodo: campo, leer: leer, escribir: escribir, valores: VALORES.slice(), marcador: MARCADOR };
+    return { nodo: campo, leer: leer, escribir: escribir, valores: VALORES.slice() };
   }
 
   /**
@@ -264,9 +259,8 @@
    * salen SIN marca. Entraron marcados el día que nació el campo y estuvieron marcados hasta que
    * los firmó: eso es el mecanismo funcionando, no un provisional que se quedó.
    *
-   * ⚠️ EL FICHERO SIGUE PINTANDO MARCA, y por eso el censo BAJA en vez de desaparecer: las
-   * ranuras del SWITCH (la pregunta «Este contacto es» y sus dos etiquetas, SCRUM-574) **no
-   * están firmadas**. `MARCADOR` se queda donde está.
+   * Las ranuras del SWITCH (la pregunta «Este contacto es» y sus dos etiquetas, SCRUM-574)
+   * quedaron firmadas después, en SCRUM-1124: el fichero entero pinta ya sin marcador.
    *
    * @param {{valor?: number|null, clientes?: Array, excluirId?: number|null}} o
    * @returns {{nodo: HTMLElement, leer: Function, escribir: Function, refrescar: Function}}
@@ -340,7 +334,6 @@
     return { nodo: campo, leer: leer, escribir: escribir, refrescar: refrescar };
   }
 
-  switchFormaJuridica.MARCADOR = MARCADOR;
   switchFormaJuridica.VALORES = VALORES.slice();
   switchFormaJuridica.aplicarLado = aplicarLado;
   switchFormaJuridica.debeEsconder = debeEsconder;
@@ -356,5 +349,5 @@
   switchFormaJuridica.selectorDeEmpresa = selectorDeEmpresa;
 
   if (typeof window !== 'undefined') window.switchFormaJuridica = switchFormaJuridica;
-  if (typeof module !== 'undefined' && module.exports) module.exports = { switchFormaJuridica: switchFormaJuridica, MARCADOR: MARCADOR, VALORES: VALORES, aplicarLado: aplicarLado, debeEsconder: debeEsconder, debeEsconderDelLado: debeEsconderDelLado, SOLO_EMPRESA: SOLO_EMPRESA, SOLO_PERSONA: SOLO_PERSONA, empresasElegibles: empresasElegibles, selectorDeEmpresa: selectorDeEmpresa };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { switchFormaJuridica: switchFormaJuridica, VALORES: VALORES, aplicarLado: aplicarLado, debeEsconder: debeEsconder, debeEsconderDelLado: debeEsconderDelLado, SOLO_EMPRESA: SOLO_EMPRESA, SOLO_PERSONA: SOLO_PERSONA, empresasElegibles: empresasElegibles, selectorDeEmpresa: selectorDeEmpresa };
 })();
