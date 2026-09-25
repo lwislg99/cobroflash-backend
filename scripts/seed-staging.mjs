@@ -4,11 +4,14 @@
 //   1) preset FIFTY_FIFTY (200,00 €)   2) preset FULL_UPFRONT (150,00 €)
 //   3) custom 30/40/30 (Anticipo/Hito 1/Hito 2) con total IMPAR 100,01 €
 //     → tramos exactos 30,00 / 40,00 / 30,01 (SCRUM-32: el último absorbe el resto).
-// Uso:  DATABASE_URL=<postgres de STAGING> node scripts/seed-staging.mjs
+// Uso:  node scripts/seed-staging.mjs --staging   (o `--dev`; SCRUM-1105: la URL la resuelve el
+//       script desde el .env del equipo, nadie la exporta)
+//   Sin bandera, el camino de antes: DATABASE_URL=<postgres de STAGING> node scripts/seed-staging.mjs
 //   (email del merchant QA configurable con E2E_QA_EMAIL; default qa@staging.yaqu)
 // ⚠️ SIN datos personales (regla del brief): emails sintéticos del dominio staging.yaqu.
 import { PrismaClient } from '@prisma/client';
 import { assertSafeStagingUrl } from './_db-guard.mjs';
+import { fijarDestinoPorBandera, RECHAZADO, FIJADO } from './_destino-de-semilla.mjs';
 
 // GUARD anti-producción: este seed JAMÁS corre contra la BD de prod.
 //
@@ -19,6 +22,15 @@ import { assertSafeStagingUrl } from './_db-guard.mjs';
 //
 // Este seed BORRA Y REESCRIBE datos, así que la protección va antes de construir el cliente
 // y no depende de ningún gate.
+// SCRUM-1105: la bandera fija DATABASE_URL por dentro, y la allowlist de abajo la mira IGUAL.
+const porBandera = fijarDestinoPorBandera();
+if (porBandera.estado === RECHAZADO) {
+  console.error(`❌ ${porBandera.mensaje}\n— abortado.`);
+  process.exit(1);
+}
+for (const aviso of porBandera.avisos ?? []) console.warn('⚠️  ' + aviso);
+if (porBandera.estado === FIJADO) console.log(`[destino] ${porBandera.bandera} → ${porBandera.etiqueta}`);
+
 const dbUrl = process.env.DATABASE_URL || '';
 const dbCheck = assertSafeStagingUrl(dbUrl);
 if (!dbCheck.safe) {
