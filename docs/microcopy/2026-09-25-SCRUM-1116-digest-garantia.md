@@ -19,7 +19,7 @@ liberación distinto**, sumando lo que cae el mismo día. Ordenadas **de la fech
 más tardía**: lo primero que el profesional puede reclamar, primero.
 
 🔴 **Con un solo día, el resultado es carácter por carácter el literal que firmó Javier en
-persona** el 25-sep-2026 (registro `2026-09-25-SCRUM-1108-garantia-retenida.md`). No es un texto
+persona** el 25-sep-2026, en el registro de **SCRUM-1108**. No es un texto
 que lo sustituye: es el mismo, más una regla de repetición. Eso es lo que hace que la delegación
 cubra este caso.
 
