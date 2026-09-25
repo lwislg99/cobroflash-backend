@@ -67,7 +67,9 @@ export const CONSULTA_TEXTO =
 export function validarConfiguracion(env, claveDB) {
   const faltan = [];
   if (!env[claveDB]) faltan.push(claveDB);
-  if (!env.SMTP_URL) faltan.push('SMTP_URL');
+  // SCRUM-1114: vale CUALQUIERA de los dos canales. Se nombran los DOS en el hueco,
+  // porque decir sólo «falta SMTP_URL» mandaría a configurar justo el que se cuelga.
+  if (!env.RESEND_API_KEY && !env.SMTP_URL) faltan.push('SMTP_URL o RESEND_API_KEY');
   if (!env.AVISO_ACREDITACION_EMAIL_DESTINO) faltan.push('AVISO_ACREDITACION_EMAIL_DESTINO');
   return { ok: faltan.length === 0, faltan };
 }
@@ -159,6 +161,59 @@ export function conLimite(promesa, ms, etapa) {
     }, ms);
   });
   return Promise.race([promesa, vencimiento]).finally(() => clearTimeout(reloj));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1114 · POR QUÉ EL AVISO SALE POR HTTPS Y NO POR SMTP
+//
+// MEDIDO en Railway el 25-sep-2026, con la traza de SCRUM-1112 ya puesta:
+//
+//   [14:22:43.190Z] ① midiendo · conectando y consultando
+//   [14:22:43.340Z] ① medido · filas: ?            ← 150 MILISEGUNDOS
+//   [14:22:43.341Z] ② enviando aviso
+//   ✔ … aviso NO ENTREGADO (⏱ se agotaron 20s en la etapa «envio»)
+//
+// 🔴 NUNCA FUE LA BASE. Los cuelgues de 27 min, 15 min y 1 h 46 eran el CORREO, entero.
+//
+// Y la casa ya tenía el camino bueno: `src/integrations/enviarCorreo.ts` prefiere Resend
+// por HTTPS y sólo cae a SMTP si no hay clave. Este script era el ÚNICO sitio que salía
+// por SMTP a pelo — y el único que se colgaba.
+//
+// ⛔ NO se reusa `enviarPorResend` de la casa, aunque sea lo primero que uno piensa:
+// llama a `registrarEnvio`, que hace un INSERT de constancia, y la credencial de este
+// cron es `yaqu_lectura`, de SOLO LECTURA. Importarla cambiaría un cuelgue por un fallo
+// de permisos. Aquí va un POST directo, sin tocar la base.
+//
+// ⚠️ SUELO: lo medido es que SMTP agota 20 s desde dentro de Railway. Que Railway BLOQUEE
+// la salida por los puertos de SMTP es una HIPÓTESIS y no se afirma en ningún sitio: no
+// se ha comprobado desde dentro del contenedor. Se sale por el canal que ya funciona en
+// producción, que para arreglar esto es suficiente.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Un transportador con la MISMA forma que el de nodemailer (`sendMail`), para que
+ * `ejecutarPasada` no se entere de por dónde sale el correo y sus tests sigan valiendo.
+ *
+ * `peticion` se inyecta en los tests: así el caso NO toca la red — y de paso esquiva la
+ * aserción de libuv que `fetch()` dispara en Windows (SCRUM-100/560/809).
+ */
+export function crearTransportadorResend(apiKey, { peticion } = {}) {
+  if (!apiKey) throw new Error('crearTransportadorResend sin clave');
+  const pedir = peticion || ((u, o) => fetch(u, o));
+  return {
+    canal: 'resend',
+    async sendMail({ from, to, subject, text }) {
+      const r = await pedir('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to: [to], subject, text }),
+      });
+      const cuerpo = await r.text();
+      // 🔴 El mensaje lleva estado y cuerpo, NUNCA la clave: un error acaba en un log.
+      if (!r.ok) throw new Error(`Resend respondió ${r.status}: ${String(cuerpo).slice(0, 200)}`);
+      return { via: 'resend', crudo: cuerpo };
+    },
+  };
 }
 
 export async function ejecutarPasada({ prisma, transportador, remitente, destinatario, rutaGuard, host, ahora = () => new Date() }) {
@@ -256,7 +311,13 @@ async function principal() {
   vigia.unref?.();
 
   const prisma = new PrismaClient({ datasourceUrl: url.trim().replace(/^['"]|['"]$/g, '') });
-  const transportador = nodemailer.createTransport(process.env.SMTP_URL);
+  // Resend por HTTPS si hay clave; SMTP sólo como caída. La traza dice POR CUÁL sale,
+  // que es lo que no se sabía cuando esto se colgaba una hora y tres cuartos.
+  const porResend = Boolean(process.env.RESEND_API_KEY);
+  traza('canal del aviso', porResend ? 'Resend (HTTPS)' : 'SMTP (caída: se colgó el 24 y el 25-sep)');
+  const transportador = porResend
+    ? crearTransportadorResend(process.env.RESEND_API_KEY)
+    : nodemailer.createTransport(process.env.SMTP_URL);
 
   let salida;
   try {
