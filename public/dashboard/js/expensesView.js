@@ -585,6 +585,10 @@ function openExpenseModal(expense, opts) {
           <p style="margin:0 0 6px;font-size:12.5px;color:var(--muted)">Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.</p>
           ${expense?.tieneFoto ? `<img src="/admin/expenses/${expense.id}/foto" alt="" onerror="this.remove()" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--neutral-200);margin-bottom:6px"/>` : ''}
           <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px"/>
+          <!-- SCRUM-1038 · rellena los campos de arriba con lo que la IA lee en la foto. Empieza
+               escondido: solo tiene sentido con una foto ya elegida (ver el listener de change
+               más abajo). Texto firmado, ver la constante. -->
+          <button type="button" id="exp-leer-ticket" class="btn-secondary btn-sm" style="display:none;margin-top:8px">${TEXTO_LEER_TICKET}</button>
         </div>
         <div id="exp-error" class="alert error" style="display:none"></div>
       </div>
@@ -654,6 +658,84 @@ function openExpenseModal(expense, opts) {
           : '<option value="">No se pudo cargar la lista de proveedores</option>';
         aplicarNifSegunProveedor();
       });
+  }
+
+  // ═══ SCRUM-1038 · «LEER EL TICKET» — rellena el formulario con lo que ya lee el servidor ═══
+  // `POST /admin/expenses/leer-ticket` (SCRUM-912) devuelve `{ propuesta, descartados }` con los
+  // MISMOS nombres de campo que este formulario manda al guardar (S1, comentario SCRUM-1038:
+  // no hace falta tocar el servidor). Aquí dentro de `openExpenseModal` porque necesita
+  // `provSel`/`nifInput`/`aplicarNifSegunProveedor`, que son de este cierre.
+  //
+  // NO GUARDA NADA SOLO (AC#2): solo rellena los campos; el profesional revisa y pulsa «Guardar»
+  // como siempre. Un fallo o una lectura vacía dejan el formulario tal cual estaba (AC#4): no se
+  // borra ni se sobreescribe ningún campo que ya tuviera dato el servidor no ha devuelto.
+  const fileInputTicket = document.getElementById('exp-receipt');
+  const btnLeerTicket = document.getElementById('exp-leer-ticket');
+  if (fileInputTicket && btnLeerTicket) {
+    // El botón solo tiene sentido con una foto ya elegida: sin ella, mostrarlo deshabilitado
+    // obligaría a un texto de ayuda nuevo (firma aparte) para explicar por qué no hace nada.
+    fileInputTicket.addEventListener('change', () => {
+      btnLeerTicket.style.display = fileInputTicket.files && fileInputTicket.files[0] ? 'inline-block' : 'none';
+    });
+
+    function aplicarLecturaTicket(propuesta) {
+      const p = propuesta || {};
+      // «Lectura vacía» (foto borrosa, sin texto, o que no es un ticket): AC#3/comentario 16241.
+      // Si NINGÚN campo trajo nada, es indistinguible de un fallo para quien mira la pantalla, y
+      // se avisa igual que un fallo en vez de dejar el modal mudo.
+      if (Object.values(p).every((v) => v === null || v === undefined)) {
+        showExpError(AVISO_LECTURA_TICKET_FALLIDA);
+        return;
+      }
+      const setSiHay = (id, valor) => {
+        if (valor === null || valor === undefined) return;
+        const el = document.getElementById(id);
+        if (el) el.value = valor;
+      };
+      setSiHay('exp-concept', p.concept);
+      setSiHay('exp-amount', p.amount);
+      setSiHay('exp-base', p.baseAmount);
+      setSiHay('exp-vatrate', p.vatRate);
+      setSiHay('exp-vatamount', p.vatAmount);
+      setSiHay('exp-provinvnum', p.providerInvoiceNumber);
+      setSiHay('exp-provinvdate', p.providerInvoiceDate);
+      setSiHay('exp-date', p.date);
+
+      // El proveedor, SOLO si el servidor ya lo emparejó por NIF (SCRUM-961b: nunca por nombre).
+      // Si no hay proveedor pero sí NIF leído, se escribe en el campo (queda de solo lectura hasta
+      // que se elija proveedor, igual que si se tecleara a mano: SCRUM-937b).
+      if (p.providerId !== null && p.providerId !== undefined && provSel) {
+        provSel.value = String(p.providerId);
+        aplicarNifSegunProveedor();
+      } else if (p.nifProveedor) {
+        nifInput.value = p.nifProveedor;
+      }
+    }
+
+    btnLeerTicket.addEventListener('click', async () => {
+      if (btnLeerTicket.disabled) return; // doble clic: SCRUM-1038 comentario 16241
+      const file = fileInputTicket.files && fileInputTicket.files[0];
+      if (!file) return;
+      const textoReposo = btnLeerTicket.textContent;
+      btnLeerTicket.disabled = true;
+      btnLeerTicket.textContent = TEXTO_LEYENDO_TICKET;
+      try {
+        const imagen = await fotoParaGuardar(file);
+        const r = await apiRequest('/admin/expenses/leer-ticket', { method: 'POST', body: JSON.stringify({ imagen }) });
+        aplicarLecturaTicket(r.propuesta);
+      } catch (err) {
+        // AC#3: el tope de 5/día lleva SU mensaje, claro y en el idioma del usuario — nunca un
+        // código técnico. `err.message` es la que compone `fotoParaGuardar` (AVISO_FOTO_NO_SE_ABRE,
+        // ya firmada) si la foto no se pudo abrir; para cualquier otro fallo del servidor
+        // (sin IA configurada, cuota de Google, formato no parseable, 500) se usa el genérico.
+        if (err && err.message === AVISO_FOTO_NO_SE_ABRE) showExpError(AVISO_FOTO_NO_SE_ABRE);
+        else if (err && err.code === 'lecturas_agotadas') showExpError(AVISO_TOPE_LECTURAS_TICKET);
+        else showExpError(AVISO_LECTURA_TICKET_FALLIDA);
+      } finally {
+        btnLeerTicket.disabled = false;
+        btnLeerTicket.textContent = textoReposo;
+      }
+    });
   }
 
   // SCRUM-135: los Trabajos se piden a /admin/jobs (endpoint YA existente; para un técnico
@@ -767,6 +849,13 @@ function openExpenseModal(expense, opts) {
 // Ficha en docs/microcopy/2026-09-18-SCRUM-937-nif-del-gasto.md.
 const AYUDA_NIF_SIN_PROVEEDOR = 'Elige antes el proveedor: el NIF se guarda en su ficha.';
 const AVISO_NIF_SIN_PROVEEDOR = 'Gasto guardado. El NIF no se ha guardado: para guardarlo, el gasto necesita un proveedor.';
+
+// SCRUM-1038 · textos firmados por el orquestador por delegación (SCRUM-1038 comentario 16942).
+// Ficha en docs/microcopy/2026-09-25-SCRUM-1038-leer-el-ticket.md.
+const TEXTO_LEER_TICKET = 'Leer el ticket';
+const TEXTO_LEYENDO_TICKET = 'Leyendo…';
+const AVISO_TOPE_LECTURAS_TICKET = 'Has llegado al máximo de 5 lecturas de ticket hoy. Escribe los datos a mano.';
+const AVISO_LECTURA_TICKET_FALLIDA = 'No hemos podido leer este ticket. Escribe los datos a mano.';
 
 function closeExpModal() {
   document.getElementById('exp-modal')?.remove();
