@@ -376,6 +376,14 @@ const INDIRECTAS_DECLARADAS = [
   // …y su guard, que la nombra en la prosa que explica POR QUÉ la base y no la punta, y en el
   // motivo literal del salto que SCRUM-456 le exige («sin origin/main en este clon»).
   'tests/scrum810-el-suelo-a-la-primera.test.mjs',
+  // SCRUM-1120 · el barrido de la regla 42. Su negativo —un ticket con rama viva SIN mergear—
+  // se DERIVA de la punta de `origin/main`, y esa es justo la pregunta: «¿qué hay hoy fuera?».
+  // Contra la base de una rama respondería sobre un pasado que a nadie le sirve, igual que el
+  // censo del tablero de arriba.
+  // 🔴 Y la referencia móvil es lo que ARREGLA el defecto, no lo que lo causa: ese negativo era
+  // un número escrito a mano que caducó CINCO veces en ocho días (880 → 1099 → 1107 → 1118), y
+  // la última vez dejó `main` en rojo y paró los cuatro PR del repositorio a la vez.
+  'tests/scrum804b-el-barrido-de-la-42.test.mjs',
   'tests/_censo-eol.mjs',        // la lista de referencias que `merge-base` prueba: es la SOLUCIÓN
   'tests/_censo-tickets.mjs',    // recibe la referencia por parámetro (`ref = 'origin/main'`)
   'tests/scrum723-guard-contra-su-base.test.mjs',  // los mensajes y los comentarios de aquí mismo
