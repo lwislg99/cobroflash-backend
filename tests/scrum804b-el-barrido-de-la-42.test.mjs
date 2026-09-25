@@ -22,14 +22,17 @@ import {
 /** Cerrados y mergeados: el criterio TIENE que sacarlos DENTRO o no está midiendo, está opinando. */
 const POSITIVOS = [866, 881];
 // 🔴 MEDIDO EL 25-sep-2026, NO SUPUESTO: `git merge-base --is-ancestor` sobre las ramas remotas
-// de hoy. SCRUM-1107 (el negativo anterior) se mergeó vía `scrum-1107c-garantia-desatasco`
-// (PR #1758) y este mismo test pasó a fallar en el sentido contrario (DENTRO donde exigía FUERA)
+// de hoy. SCRUM-1118 (el negativo anterior) se mergeó vía `scrum-1118-citas-rfact-contiguas`
+// (PR #1761) y este mismo test pasó a fallar en el sentido contrario (DENTRO donde exigía FUERA)
 // — el defecto que el comentario de esta misma línea ya avisaba que iba a pasar. Este número
-// ENVEJECE por diseño (es la misma naturaleza del NEGATIVO de SCRUM-738 con `scrum-684`, y de
-// SCRUM-1099 antes de éste): en cuanto `scrum-1118-citas-rfact-contiguas` se mergee, hay que
-// re-elegir un ticket vivo. Quien lo vuelva a medir, que lo re-feche.
-/** Su rama está viva y sin mergear hoy (25-sep-2026): TIENE que salir FUERA. */
-const NEGATIVO = 1118;
+// ENVEJECE por diseño (es la misma naturaleza del NEGATIVO de SCRUM-738 con `scrum-684`, de
+// SCRUM-1099 con `scrum-1107`, y de SCRUM-1096 con `scrum-1118`). Esta vez se elige un negativo
+// con PR YA CERRADO sin mergear (`scrum-895-sin-facturar-no-se-ofrece`, PR #1408 CLOSED
+// 15-sep-2026): a diferencia de un negativo con PR abierto, nadie va a mergearlo por accidente
+// mientras otras ramas pasan por este mismo test. Sigue envejeciendo si algún día se reabre y
+// mergea, o si la rama se borra. Quien lo vuelva a medir, que lo re-feche.
+/** Su rama está viva (sin mergear, PR #1408 cerrado sin mergear) hoy (25-sep-2026): TIENE que salir FUERA. */
+const NEGATIVO = 895;
 
 // ═══ 🔴 POR IDENTIDAD: el número no casa dentro de otro ═════════════════════════════════════
 
