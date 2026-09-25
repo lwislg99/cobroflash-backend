@@ -76,6 +76,26 @@ Contra el `.env` real, sin escribir en ninguna base:
 - `seed-staging.mjs --dev --staging` aborta con exit 1.
 - `seed-video.mjs` sin bandera aborta diciendo cómo nombrar el destino.
 
+### 4.1 · `npm test` completo: lo que cayó y de quién era
+
+La primera pasada dio **8.322 tests · 8.179 pass · 9 fail · 134 skipped**. Todos los ficheros que
+fallaron se corrieron solos en la rama y después en la **base**: los tres seeds devueltos a
+`origin/main` y mis dos ficheros nuevos retirados, restaurado todo después con `git checkout HEAD`.
+
+| fallo | de quién | qué se hizo |
+|---|---|---|
+| SCRUM-864c · un `mkdtempSync` sin borrar | **mío** (mi test) | pasa a usar `temporal()` de `tests/_temporal.mjs` |
+| SCRUM-921c · el trinquete baja de 28 a 27 | **mío** | ver abajo |
+| SCRUM-804b, SCRUM-939b ×3, SCRUM-910d | ajenos: fallan **igual en la base** | nada; son de esta máquina/`main`, no de esta rama |
+| SCRUM-815, SCRUM-824b | ajenos: cayeron solo con la suite entera | solos pasan, en la rama y en la base |
+
+**SCRUM-921c, el que enseña algo.** `seed-video.mjs:12` dice «el fundador decide la BD». El guard
+lo cuenta como una marca de firma del fundador, y sin respaldo. Mi línea nueva de uso, en el mismo
+bloque de comentario, llevaba `SCRUM-1105`, y el guard acepta un `SCRUM-<n>` en el bloque como
+«dice dónde consta». Resultado: la marca salió del censo **sin que nadie firmara nada**, y el
+trinquete bajó. Se arregló el **código**, no el guard (regla 41): el número de ticket sale de ese
+bloque y el trinquete vuelve a 28. Después, 921c + el test nuevo: 21 pass · 0 fail.
+
 **Suelo declarado:** ningún seed se ha corrido hasta escribir. `seed-demo` **borra** el merchant 1
 de la base elegida, y sembrar no era el encargo.
 

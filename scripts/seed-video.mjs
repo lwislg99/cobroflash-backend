@@ -10,8 +10,8 @@
 // Requiere `npm run build` antes (importa los servicios compilados de dist/).
 //
 // EJECUCIÓN (el fundador decide la BD; el script NO asume prod):
-//   node scripts/seed-video.mjs --dev    (o `--staging`; SCRUM-1105: la URL la resuelve el
-//                                        script, nadie la exporta)
+//   node scripts/seed-video.mjs --dev    (o `--staging`: la URL la resuelve el script,
+//                                        nadie la exporta; ver `_destino-de-semilla.mjs`)
 //
 // Sin bandera, el camino de antes:
 //   1) export DATABASE_URL=<la BD que el fundador indique>
