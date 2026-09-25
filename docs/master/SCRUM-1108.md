@@ -115,13 +115,13 @@ El cambio de `public/dashboard/js/customerDetailView.js` está escrito y medido 
 
 ## 8 · SCRUM-1108b — la pantalla, y el día que pinta
 
-**Medido contra:** `origin/main` = `f09fbb67834ad84312318941f866b8db1bc4f6c6` · 2026-09-25T16:53:35Z (con #1765 dentro; #1776, el registro de la firma, TODAVÍA NO)
+**Medido contra:** `origin/main` = `c67243103d5032d0f7ee522f886c0bf8d136efd5` · 2026-09-25T16:55:42Z (con #1765 y #1776, el registro de la firma, dentro)
 
 Rama `scrum-1108b-pantalla-garantia`. Sesión jv-j2.
 
 **El literal** consta en `docs/microcopy/2026-09-25-SCRUM-1108-garantia-retenida.md`, ranura
-`garantiaRetenidaFicha` (PR #1776). Este PR no se empuja hasta que #1776 esté en `main`: el test del
-literal (`constaAprobado`) cae sin él, a propósito.
+`garantiaRetenidaFicha` (PR #1776, mergeado a las 16:54:59Z). Esta rama se empujó después: el test
+del literal (`constaAprobado`) cae sin ese registro, a propósito.
 
 ### Qué cambia
 
@@ -143,8 +143,7 @@ literal (`constaAprobado`) cae sin él, a propósito.
 `tests/scrum1108b-pantalla-garantia.test.mjs`, 11 casos: la ficha PINTADA en el banco de vistas
 (no grep), el literal por `constaAprobado`, y la ruta corrida con un doble de prisma en cinco zonas.
 
-- Sin el registro de #1776: 10 pasan, cae exactamente el del literal. Con el fichero de #1776 puesto a
-  mano (sin commitear): 11/11.
+- Antes de que entrara #1776: 10 pasan y cae exactamente el del literal. Con #1776 en `main`: 11/11.
 - Mutaciones, las cinco muertas (con el registro puesto): quitar el silencio de «al día ✓» (1 fallo) ·
   clase fija `.alert info` (1) · no pintar las líneas (2) · volver a `new Date(crudo)` (2: México y
   Bogotá) · no comprobar que el día existe (1).
