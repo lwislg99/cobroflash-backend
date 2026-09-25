@@ -67,6 +67,8 @@ export interface GastoParaLibro {
   vatDeducible: boolean | null;
   providerInvoiceNumber: string | null;
   providerInvoiceDate: Date | string | null;
+  /** SCRUM-1063b · `Expense.category`. Opcional: solo lo usa el 303, ver `LibroRecibidas.categorias`. */
+  category?: string | null;
 }
 
 export interface AsientoRecibida {
@@ -105,6 +107,15 @@ export interface LibroRecibidas {
   sinCuota: number;
   /** Asientos cuya deducibilidad nunca se decidió (`vatDeducible` a null). */
   sinDeducibilidadDecidida: number;
+  /**
+   * SCRUM-1063b · la categoría del gasto de cada asiento, EN LA MISMA POSICIÓN que `asientos`.
+   *
+   * ⚠️ Va aparte y no dentro del asiento A PROPÓSITO: cada campo del asiento es una columna del
+   * libro que se entrega al despacho (lo vigila SCRUM-426), y una columna nueva es texto nuevo que
+   * nadie ha firmado. Aquí solo la lee el 303, para no adivinar si una compra es corriente (casilla
+   * 29) o bien de inversión (casilla 31): `Expense` no guarda esa distinción. `null` = no consta.
+   */
+  categorias: (string | null)[];
 }
 
 /**
@@ -150,6 +161,7 @@ export function construirLibroRecibidas(params: {
   merchantId: number;
 }): LibroRecibidas {
   const asientos: AsientoRecibida[] = [];
+  const categorias: (string | null)[] = [];
   let ajenas = 0;
   let sinClasificar = 0;
   let sinClasificarImporte = 0;
@@ -200,6 +212,7 @@ export function construirLibroRecibidas(params: {
       total: importe(g.amount),
       moneda: g.currency ?? null,
     });
+    categorias.push(typeof g.category === 'string' && g.category !== '' ? g.category : null);
   }
 
   return {
@@ -211,6 +224,7 @@ export function construirLibroRecibidas(params: {
     sinNumeroProveedor,
     sinCuota,
     sinDeducibilidadDecidida,
+    categorias,
   };
 }
 

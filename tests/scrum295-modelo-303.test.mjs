@@ -21,6 +21,8 @@ const { construirModelo303, rangoTrimestre, AVISO_ORIENTATIVO } =
 const { TRIPLETAS, CASILLA_TOTAL_CUOTA_DEVENGADA } =
   await import('../dist/modules/fiscal/modelo303/casillas.js');
 const { construirLibroRegistro } = await import('../dist/modules/invoicing/domain/libroRegistro.js');
+// SCRUM-1063b · el 303 pide ya el libro de recibidas; aquí, vacío: estos casos miden el devengado.
+const { construirLibroRecibidas } = await import('../dist/modules/invoicing/domain/libroRecibidas.js');
 
 const MIO = 7;
 
@@ -44,7 +46,7 @@ const factura = (o = {}) => ({
 /** El 303 de un juego de facturas, pasando SIEMPRE por el libro. */
 function trescientosTres(facturas, { año = 2026, trimestre = 2 } = {}) {
   const libro = construirLibroRegistro({ facturas, merchantId: MIO });
-  return { libro, m303: construirModelo303({ libro, año, trimestre }) };
+  return { libro, m303: construirModelo303({ libro, libroRecibidas: construirLibroRecibidas({ gastos: [], merchantId: MIO }), año, trimestre }) };
 }
 
 /** La casilla `n` del resultado, buscada por número — no por posición. */
