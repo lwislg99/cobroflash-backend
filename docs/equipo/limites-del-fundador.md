@@ -54,6 +54,11 @@ El fundador ha delegado, por escrito y de forma permanente:
   dice qué ha decidido, en vez de devolverle la pregunta.
 - Sus palabras: «todo lo que dices que es mío decídelo tú si puedes».
 
+**Javier, 25-sep-2026:** los textos de microcopy que haya que aprobar los aprueba **su**
+orquestador (dentro de la regla 30: siguen sin poder inventarse a nivel de sesión). Referencia:
+SCRUM-1121. Delegación aparte de la de Luis (línea de arriba): dos jefes, dos delegaciones
+distintas, nunca una sola frase para las dos.
+
 Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva,
 el camino de emisión fiscal y cualquier cambio de infraestructura de producción (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
 El dinero tiene un matiz desde el 17-sep: ver «Delegaciones del 17-sep-2026».
