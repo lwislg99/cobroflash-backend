@@ -592,6 +592,46 @@ Candidatas apuntadas: **«Válido hasta» en el PDF del presupuesto** (pequeña)
 lo pide (`waDelivery` solo en `quotesAdmin.routes.ts:867` y `:907`, los dos detalles). Corregido en
 §16.4.3.
 
+## SCRUM-906m · ServiceM8 por dentro: un Job que pasa de presupuesto a factura sin duplicarse (25-sep-2026)
+
+**Medido el 25-sep-2026 (~12:40Z, hora de GitHub) sobre `origin/main` =
+`639a276ffbd6e4ce8ef89b7f8e81c72fad31c111`.** Rama `scrum-906m-servicem8-flujo-factura`. Solo docs.
+El detalle línea a línea está en
+[`docs/producto/_RAW-flujo-crear-factura.md`](../producto/_RAW-flujo-crear-factura.md) (sección
+`## SERVICEM8`), y las capturas en
+[`docs/competencia/capturas/servicem8/`](../competencia/capturas/servicem8/README.md).
+
+**Encargo con excepción explícita del orquestador (cobroflash-backend-06, 25-sep 12:27 GMT):**
+seguir con Holded o Quipu; los dos seguían bloqueados por el gate (alias quemado, teléfono real) —
+mismo estado que dejó `project_s0_traspaso.md` ayer. Se cambió a ServiceM8 por indicación del
+propio orquestador: competidor sin esas trabas, y esta vez **con cuenta real** (906i solo había
+mirado sus páginas públicas). **Construido por S0 en ausencia de J5** (la competencia es carril de
+J5 desde el 18-sep; `jv-j5` no existe todavía — excepción confirmada, no asumida).
+
+**Alta sin gate:** solo Nombre, Apellido, Email y Contraseña; el paso opcional de teléfono/CIF de
+empresa se saltó con "Skip". Cero tarjeta.
+
+**El hallazgo central:** ServiceM8 no tiene "factura" como documento independiente. Tiene un **Job**
+(trabajo), y ese mismo Job cambia de presupuesto a factura **por su `Job Status`** (Quote →
+Completed): mismo cliente, mismas líneas, mismo importe — solo cambia la cabecera (naranja→verde),
+la etiqueta ("Quote Description"→"Invoice Description"), el botón de envío ("Send Quote"→"Send
+Invoice") y aparecen "Paid"/"Balance Due". Nada se vuelve a teclear ni se duplica.
+
+**Dos hallazgos más:** la creación de cliente nuevo es de fricción CERO (se escribe el nombre, se
+sale del campo, queda creado — sin modal, sin NIF) y confirma con más fuerza SCRUM-1083 (ya abierto
+desde la pasada de Billin); y el catálogo de líneas trae sugerencias con precio de fábrica ("Labour"
+80 €) para añadir una línea de un clic.
+
+**Sin ticket nuevo de producto:** los dos hallazgos de arriba ya están cubiertos (SCRUM-1083 para el
+cliente; el catálogo de productos con precio, SCRUM-609, Finalizado; el saldo pendiente, ya en
+`invoicesView.js`). El patrón "un solo documento que cambia de estado" queda anotado para quien lleve
+`quotes`/`invoicing` — no se midió ese código a fondo esta tanda para afirmar si YaQu ya lo hace así o
+duplica al convertir, así que no se abre ticket sin esa certeza (SCRUM-842: no encontrarlo no es lo
+mismo que no exista).
+
+**Declarado:** ServiceM8 no tiene IVA por línea en ningún punto del recorrido — no es alternativa a
+VeriFactu, es gestión de trabajo con facturación genérica encima. No toca lo fiscal, no hay STOP.
+
 🔴 **Hallazgos para el orquestador, sin arreglar** (`src/` y `public/` no son de esta sesión):
 (1) el tooltip de importar clientes promete **«CSV o Excel»** y solo se lee `.csv`/`.txt`
 (`customersView.js:93` frente a `csvImport.js:74`; 0 lectores de `.xlsx`); (2) las **revisiones de

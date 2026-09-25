@@ -155,3 +155,37 @@ Resumen visual completo: cabecera con Nº y fecha, datos del emisor (colapsable 
 
 ### Jira
 Sin ticket nuevo: el unico hallazgo con patron de mejora clara para YaQu (alta de cliente sin salir de la factura) YA tiene ticket - SCRUM-1083. El desplegable unico de impuestos (IVA+IGIC+IPSI+exencion+ISP en una lista) toca directamente el camino fiscal/VeriFactu (regla 40 del master: se lee, no se decide aqui); lo dejo escrito en este RAW para que lo valore quien lleve SIF-1/quotes, no abro ticket de producto sobre ello.
+
+## SERVICEM8 (con cuenta real, no solo paginas publicas) - 25-sep-2026
+
+Holded y Quipu seguian bloqueados por el gate (alias quemado / telefono real), asi que por indicacion del orquestador se cambio a un competidor sin esas trabas: ServiceM8 (australiano, gestion de trabajos de campo/oficios, ya tenia una pasada SOLO de paginas publicas en SCRUM-906i, centrada en fichas de equipo/QR - esta pasada es la primera que ENTRA al producto).
+
+Cuenta NUEVA: lwislg99+servicem8@gmail.com, empresa "Consultoria Prueba SL". Alta en go.servicem8.com/register: SOLO Nombre, Apellido, Email, Contrasena - CERO tarjeta, telefono o CIF en el alta. El wizard de 4 pasos posterior (industria/tamano -> software de contabilidad -> marca de presupuestos/facturas -> telefono y numero de empresa) tiene el paso 4 con "Business Phone Number" y "Business Number" (CIF) presentes pero AMBOS opcionales, con boton "Skip" explicito que lleva directo al panel - se uso Skip, sin escribir ningun dato de contacto real.
+
+**Toda la app gira en torno a un "Job" (trabajo), no en torno a un documento suelto.** No existe un menu "Nueva factura": existe "New Job", y ese Job UNICO pasa por Presupuesto -> Factura -> Cobro segun su estado, sin crear un documento nuevo ni volver a teclear cliente/lineas.
+
+### Cliente nuevo - CERO friccion, mas alla incluso que Billin
+El campo "Search or Create Client" del Job no tiene modal ni boton "Crear cliente": basta con escribir un nombre que no existe y, al hacer clic en cualquier otro campo (blur), el cliente queda CREADO y asignado, sin pedir NIF, direccion, email ni confirmacion de ningun tipo (capturas 11 y 12). Un "Undo" queda disponible por si acaso. Mas frictionless que el modal de Billin (que si exige Nombre fiscal + Nº de documento) y que el callejon sin salida de Verifacturamos (sin boton de creacion). Refuerza SCRUM-1083, no lo sustituye.
+
+### Job Status controla que documento se ve - mismo registro, sin duplicar
+El campo "Job Status" (pestaña Details) tiene 4 valores: Quote, Work Order, Completed, Unsuccessful. Al pasar de "Quote" a "Completed" (capturas 18 y 19), en la pestaña Billing, EN EL MISMO Job:
+- la cabecera cambia de naranja a verde,
+- "Quote Description" pasa a llamarse "Invoice Description",
+- el boton de accion pasa de "Send Quote" a "Send Invoice",
+- aparecen automaticamente las filas "Paid" y "Balance Due" bajo el Total, que no existian en modo Quote.
+Ni las lineas, ni el cliente, ni los importes se vuelven a teclear: es el MISMO registro visto con otra ropa segun el estado del trabajo.
+
+### Catalogo de items con sugerencia y precio por defecto
+Al escribir en "Search or Add New..." (lineas de la factura/presupuesto), aparece una lista de "Suggestions" con items YA CARGADOS de fabrica con precio (ej. "Labour" a 80,00 EUR, capturas 14-15): un clic (o Enter con la sugerencia resaltada) anade la linea completa con descripcion y precio, sin escribir nada a mano. Localizado automaticamente en EUR por geolocalizacion/idioma del navegador (nunca se indico pais).
+
+### Sin IVA en la linea, en ningun momento del recorrido
+A diferencia de TODA la familia espanola (Verifacturamos, Contasimple, Billin), la tabla de lineas NO tiene columna ni desplegable de IVA/impuesto por linea: el desglose "Tax" del resumen se quedo en 0,00 EUR con el item cargado. Coherente con ser una herramienta generalista sin modo fiscal espanol - no es una alternativa a lo que hace VeriFactu, es una gestion de trabajo con facturacion generica encima.
+
+### Incidencia propia de ServiceM8 (no copiar)
+Al escribir texto libre en el buscador de items ("Mano de obra fontaneria") y pulsar Enter mientras una sugerencia distinta seguia resaltada ("Labour"), el Enter selecciono la SUGERENCIA y DESCARTO en silencio el texto tecleado, sin aviso ni confirmacion (capturas 14 vs 15). Es una trampa de su UI, anotada como fallo DE ELLOS, no un patron a copiar.
+
+### Capturas (docs/competencia/capturas/servicem8/, prefijo servicem8-NN-)
+01 registro-formulario, 02 esperando-bd, 03 account-setup (paso 1/4, industria y tamano), 04 step3-marca (paso 3/4, nombre y direccion, Madrid autodetectado), 05 step4-opcional (telefono/CIF opcionales con Skip), 06-08 dashboard/tour animado, 09 dispatch-board (panel real), 10 new-job-modal, 11 crear-cliente-inline (antes), 12 cliente-creado (despues, autoguardado), 13 billing-tab (Send Quote, EUR, 0.00), 14 add-item (escribiendo, sugerencia Labour visible), 15 item-agregado (Enter selecciono la sugerencia, no el texto tecleado), 16 item-detalle, 17 send-quote-dropdown, 18 job-status-opciones (Quote/Work Order/Completed/Unsuccessful), 19 billing-completed (mismo Job en modo factura: verde, Send Invoice, Paid/Balance Due).
+
+### Jira
+Sin ticket nuevo de producto. La creacion de cliente sin friccion queda como segunda referencia (mas fuerte que Billin) para SCRUM-1083, comentado alli. El catalogo de items sugeridos con precio ya existe en YaQu como concepto (catalogo de productos, SCRUM-609, Finalizada) y el saldo pendiente por cobrar ya se rastrea en `invoicesView.js` - no hay hueco medido que justifique ticket nuevo. El Job unico que cambia de presupuesto a factura por estado es, en espiritu, el mismo enfoque que ya persigue YaQu (un documento, no dos); no se midio el codigo de quotes/invoicing a fondo para afirmar si hoy YaQu ya lo hace asi o crea un documento nuevo al convertir - lo dejo anotado para quien lleve ese modulo, sin ticket, por no tener certeza de que sea un hueco real (evitar el error de SCRUM-842: no encontrar algo no es lo mismo que no exista).
