@@ -130,6 +130,14 @@ const CLAVES_LOCALES = [
       + 'venía a quitar.',
   },
   {
+    // SCRUM-1075 · el descarte de «Tu resumen del trimestre ya está listo», por merchant+usuario+trimestre.
+    patron: /^yaqu_resumen_t_/, almacen: 'localStorage', purga: true,
+    motivo: 'SE PURGA: la clave lleva el merchantId y el teamMemberId dentro (a diferencia de '
+      + '`yaqu_tips_shown`, que es del aparato y no de nadie). Dejarla tras el logout sería un '
+      + 'rastro de qué comerciante ha usado este móvil, y no protege nada: es solo un «no me lo '
+      + 'vuelvas a enseñar este trimestre», barato de volver a descartar.',
+  },
+  {
     patron: /^voiceUnsupported$/, almacen: 'sessionStorage', purga: false,
     motivo: 'SOBREVIVE. Es el resultado de probar si el micrófono de ESTE aparato funciona '
       + '(iOS en PWA lo declara y está roto). No hay dato de nadie; borrarlo solo haría repetir '

@@ -89,11 +89,11 @@ function renderCustomersView(container) {
   // aviso. Con el salto baja a su línea; a 768 y 1280 px la cabecera queda idéntica al píxel.
   // Banco: `docs/master/evidencias/scrum886/`.
   headActions.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap";
-  const importBtn = createElement("button", "btn-secondary btn-sm", "⬆ Importar CSV");
+  const importBtn = createElement("button", "btn-secondary btn-sm", "⬆ Importar clientes");
   // SCRUM-985 · el tooltip prometía un formato que el importador no lee: solo entra `.csv`/`.txt`.
   // Texto FIRMADO por el orquestador por delegación del fundador (21-sep-2026), en
   // `docs/microcopy/2026-09-21-SCRUM-985-importar-solo-csv.md`.
-  importBtn.title = "Importar clientes desde un fichero CSV";
+  importBtn.title = "Importar clientes desde un fichero CSV o Excel";
   // SCRUM-312: un alta MASIVA de clientes es «catálogo entero» → admin, con el criterio ya
   // escrito en `adminRouteDeclarations.ts` (línea suelta → técnico, catálogo entero → admin).
   //
