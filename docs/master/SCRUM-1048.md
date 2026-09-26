@@ -1,5 +1,7 @@
 # SCRUM-1048 (CON-07a) — Resumen del trimestre: el cálculo
 
+**Medido contra:** `origin/main` = `032afc9ccd2fca0e160af40fcbf1acc0bcf43e0d` · 2026-09-26T05:58:33Z
+
 **Sesión 1 · 25-sep-2026 · rama `scrum-1048-resumen-trimestre-calculo`** · base `origin/main`
 `bf4d82c6` (última entrega en `main` al empezar).
 
@@ -65,6 +67,25 @@ porque `read-excel-file` está en `package.json` pero NO instalado en `node_modu
 tests que importan `app.ts` (webhooks, `customersAdmin.routes`, etc.) porque `app.ts` importa esa
 ruta. Reportado aquí, no arreglado (no es mi carril y otra sesión puede estar ya tocando
 `importarClientes`/SCRUM-1046).
+
+## CI en rojo tras empujar (arreglado, misma rama)
+
+`build + tests (con banco desechable)` cayó por tres guards de entrada, los tres causados por
+esta misma entrega, ninguno por el guard:
+
+- **SCRUM-267** (ancla de medición): esta entrada no declaraba `**Medido contra:**` en el
+  encabezado. Añadido arriba.
+- **SCRUM-411** (exports inalcanzables): `agruparIvaPorTipo`, `calcularIvaSoportado` y
+  `retencionesNoDisponibles` se exportaban sin tener consumidor fuera de
+  `resumenTrimestre.ts` — solo los usaba `construirResumenTrimestre` (dentro) y el test
+  (que los importaba directo). Se les quita el `export`; el test pasa a medir por la
+  SUPERFICIE PÚBLICA (`construirResumenTrimestre`), patrón de
+  `tests/scrum441-metodo-declarado.test.mjs`. La tercera caída de este mismo guard («las
+  categorías SUMAN el total», 242≠245) era el mismo hecho contado dos veces: al quitar los
+  tres `export` de más, el censo vuelve a cuadrar solo.
+
+No se tocó ningún camino de emisión ni schema — regla 41 cumplida arreglando el código, no el
+guard.
 
 ## Siguiente (fuera de este ticket)
 

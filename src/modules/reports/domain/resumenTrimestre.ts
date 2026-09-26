@@ -36,7 +36,7 @@ export interface DesgloseIva {
  * para que el resumen del trimestre la reutilice en vez de reimplementarla una segunda vez
  * (la línea única no se busca, se crea).
  */
-export function agruparIvaPorTipo(
+function agruparIvaPorTipo(
   entradas: readonly { tipo: number; base: number; cuota: number }[],
 ): DesgloseIva[] {
   const map = new Map<number, { baseC: number; cuotaC: number }>();
@@ -92,7 +92,7 @@ export interface IvaSoportadoResumen {
  * `beneficioBaseImponible`), para que esta cifra no pueda divergir de esas por venir de una
  * consulta distinta.
  */
-export function calcularIvaSoportado(
+function calcularIvaSoportado(
   expenses: readonly GastoParaSoportado[],
 ): IvaSoportadoResumen {
   const deducibleMap = new Map<number, { baseC: number; cuotaC: number }>();
@@ -158,7 +158,7 @@ export interface RetencionesNoDisponibles {
  * Ver la cabecera del fichero. Es una función y no una constante para que el día que exista la
  * columna, quien construya esa parte tenga un único sitio que cambiar.
  */
-export function retencionesNoDisponibles(): RetencionesNoDisponibles {
+function retencionesNoDisponibles(): RetencionesNoDisponibles {
   return {
     disponible: false,
     motivo:
