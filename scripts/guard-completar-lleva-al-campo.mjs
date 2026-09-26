@@ -43,6 +43,10 @@
 //                     comprueba que el detector PASA A VER MUDAS. La sustitución se CUENTA: si no
 //                     es exactamente 1, el guard no ha mutado nada y se declara ciego en vez de
 //                     celebrar que «la mutación no rompió nada».
+//   ⑤ NI SIQUIERA SE OFRECE (SCRUM-904, 26-sep-2026, comentario 17138) ... con el flag
+//                     `PAYMENTS_CONNECT_ENABLED` OFF para el merchant, «Cobros con tarjeta» deja de
+//                     prometer una activación imposible: texto distinto, sin «Completar →», botón
+//                     `disabled`. Con control positivo (flag ON: sigue como antes).
 //
 // ── LA POBLACIÓN SE MUEVE, ASÍ QUE SE COMPARA POR CONJUNTOS ──────────────────────────────────
 // El checklist sólo pinta «Completar →» en las filas que NO están en verde, así que el número de
@@ -96,7 +100,12 @@ function cuerpoServido(ruta) {
   return texto;
 }
 
-function paginaHtml() {
+function paginaHtml(connectEnabled) {
+  // SCRUM-904 (26-sep-2026, comentario 17138) · `connectEnabled` PARAMETRIZADO. El resto del guard
+  // sigue midiendo con `true` (la superficie de Connect montada, como exige el suelo de más abajo);
+  // sólo la comprobación ⑤ pide `false` para medir la fila «Cobros con tarjeta» con el flag
+  // `PAYMENTS_CONNECT_ENABLED` apagado, que es un caso DISTINTO de «flag encendido, sin empezar».
+  const enabled = connectEnabled !== false;
   return '<!doctype html><html lang="es"><head><meta charset="utf-8">\n'
     + '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
     + CSS.map((h) => '<link rel="stylesheet" href="' + h + '">').join('\n')
@@ -110,7 +119,7 @@ function paginaHtml() {
     + '    if (ruta === "/admin/merchant") return window.__merchant;\n'
     // 🔴 `enabled:true` NO ES DECORADO: con `false`, `renderConnectCard` hace `return` en su
     // primera línea y la fila «Cobros con tarjeta» se mediría sobre una superficie que no existe.
-    + '    if (ruta === "/admin/connect/status") return { enabled: true, connectStatus: "none" };\n'
+    + '    if (ruta === "/admin/connect/status") return { enabled: ' + enabled + ', connectStatus: "none" };\n'
     + '    if (ruta === "/admin/referral") return { code: "X", redeemed: false };\n'
     + '    if (ruta === "/admin/metrics/whatsapp") return { month: { total: 0 }, channel: { windowMonth: 0 } };\n'
     + '    return {};\n'
@@ -132,7 +141,10 @@ function arrancarServidor() {
     const ruta = req.url.split('?')[0];
     if (ruta === PAGINA) {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      return res.end(paginaHtml());
+      // SCRUM-904 · `?connect=off` es SOLO para la comprobación ⑤; el resto de este guard nunca la
+      // pasa, así que su comportamiento no cambia ni un byte.
+      const connectOff = req.url.includes('connect=off');
+      return res.end(paginaHtml(!connectOff));
     }
     try {
       const cuerpo = cuerpoServido(ruta);
@@ -236,6 +248,37 @@ const MEDIR = new Function('merchant', 'pestana', 'accion', `
 `);
 
 /**
+ * SCRUM-904 (26-sep-2026, comentario 17138) · LEE LA FILA «Cobros con tarjeta» TAL CUAL SALE EN
+ * PANTALLA, sin pulsarla: con el flag `PAYMENTS_CONNECT_ENABLED` apagado para el merchant, esta
+ * fila deja de ofrecerse como acción completable (texto distinto, sin «Completar →», botón
+ * `disabled`). Es un caso DISTINTO del que barre `MEDIR`: aquí lo que se comprueba es que la fila
+ * NO INVITA a nada, no a dónde lleva un clic.
+ */
+const LEER_FILA_CONNECT = new Function('merchant', `
+  return (async () => {
+    window.__merchant = merchant;
+    try { renderSettingsView(document.getElementById('vista')); }
+    catch (e) { return { fatal: 'renderSettingsView lanzo: ' + (e && e.message ? e.message : String(e)) }; }
+    await new Promise((ok) => setTimeout(ok, 900));
+    var caja = document.querySelector('#readiness-rows');
+    if (!caja) return { fatal: 'no existe el checklist' };
+    var fila = [].slice.call(caja.children).find(function (b) {
+      return b.textContent.indexOf('Cobros con tarjeta') !== -1;
+    });
+    if (!fila) return { fatal: 'no existe la fila «Cobros con tarjeta»' };
+    // Orden en el DOM (pre-order de \`querySelectorAll\`): 0 el círculo del estado, 1 el envoltorio
+    // \`min-width:0\`, 2 el rótulo («Cobros con tarjeta»), 3 la descripción (lo que este guard mide).
+    var spans = fila.querySelectorAll('span');
+    return {
+      descripcion: spans[3] ? spans[3].textContent.trim() : null,
+      tieneCompletar: fila.textContent.indexOf('Completar') !== -1,
+      disabled: !!fila.disabled,
+      cursor: getComputedStyle(fila).cursor,
+    };
+  })();
+`);
+
+/**
  * ¿Llegó el clic a alguna parte? DOS formas válidas, que son las dos que el producto tiene:
  *   · el cursor acaba en un campo VISIBLE y su rótulo se puede leer (lleva Y nombra), o
  *   · se desplaza a un destino VISIBLE que no es la reserva (el bloque de Connect, que no se enfoca).
@@ -282,6 +325,7 @@ async function barrer(navegador, acciones, pestanas) {
 const ciegos = [];
 const fallos = [];
 let censoAntes = null; let censoDespues = null; let filas = []; let mutadas = null;
+let filaOff = null; let filaOn = null;
 
 const { srv, servidos } = await arrancarServidor();
 let navegador;
@@ -355,6 +399,44 @@ try {
       }
     }
 
+    // ── ⑤ LA FILA DEJA DE INVITAR CUANDO EL FLAG ESTÁ APAGADO (SCRUM-904, 26-sep, com. 17138) ──
+    // Un caso DISTINTO del que barre ①-④: no es «¿a dónde lleva el clic?», es «¿debería esta fila
+    // ofrecerse como acción, siquiera?». Con `PAYMENTS_CONNECT_ENABLED` OFF para el merchant, la
+    // fila no puede prometer una activación que no se sabe si es posible.
+    const pagOff = await navegador.newPage();
+    await pagOff.goto('http://127.0.0.1:' + PUERTO + PAGINA + '?connect=off', { waitUntil: 'load' });
+    filaOff = await pagOff.evaluate(LEER_FILA_CONNECT, MERCHANT);
+    await pagOff.close();
+
+    const pagOn = await navegador.newPage();
+    await pagOn.goto('http://127.0.0.1:' + PUERTO + PAGINA, { waitUntil: 'load' });
+    filaOn = await pagOn.evaluate(LEER_FILA_CONNECT, MERCHANT);
+    await pagOn.close();
+
+    if (filaOff.fatal || filaOn.fatal) {
+      ciegos.push('⑤ no se pudo leer la fila «Cobros con tarjeta»: ' + (filaOff.fatal || filaOn.fatal));
+    } else {
+      // Control positivo, flag ENCENDIDO: sigue ofreciéndose tal como antes de este cambio. Si esto
+      // cae, la comprobación de abajo no demuestra nada — sería comparar dos cegueras.
+      if (filaOn.descripcion !== 'Activar cobros con tarjeta · 2 min, DNI e IBAN' || !filaOn.tieneCompletar || filaOn.disabled) {
+        fallos.push('🔴 [⑤ control positivo, flag ON] «Cobros con tarjeta» ya NO se ofrece como antes: '
+          + 'descripción=«' + filaOn.descripcion + '» · Completar=' + filaOn.tieneCompletar + ' · disabled=' + filaOn.disabled + '.');
+      }
+      if (filaOff.descripcion !== 'Aún no disponible en tu cuenta') {
+        fallos.push('🔴 [⑤ flag OFF] el texto de «Cobros con tarjeta» es «' + filaOff.descripcion
+          + '», no «Aún no disponible en tu cuenta».');
+      }
+      if (filaOff.tieneCompletar) {
+        fallos.push('🔴 [⑤ flag OFF] la fila sigue mostrando «Completar →» con el flag apagado: '
+          + 'promete una acción que no se puede hacer.');
+      }
+      if (!filaOff.disabled) {
+        fallos.push('🔴 [⑤ flag OFF] la fila «Cobros con tarjeta» NO está `disabled`: sigue siendo '
+          + 'clicable como completable de verdad — cambiar solo el texto no cumple la condición del '
+          + 'orquestador (SCRUM-904, comentario 17138).');
+      }
+    }
+
     // ── LA POBLACIÓN, RELEÍDA · se comparan CONJUNTOS, no cuentas ───────────────────────────
     const pagN = await navegador.newPage();
     await pagN.goto('http://127.0.0.1:' + PUERTO + PAGINA, { waitUntil: 'load' });
@@ -411,6 +493,11 @@ if (mutadas) {
     + ' · acciones mudas con ella puesta: ' + mutadas.filter((f) => !f.fatal && !llego(f)).length
     + ' de ' + mutadas.length);
 }
+if (filaOff && filaOn && !filaOff.fatal && !filaOn.fatal) {
+  console.log('  ⑤ FLAG DE CONNECT · ON → «' + filaOn.descripcion + '» (Completar=' + filaOn.tieneCompletar
+    + ', disabled=' + filaOn.disabled + ') · OFF → «' + filaOff.descripcion + '» (Completar='
+    + filaOff.tieneCompletar + ', disabled=' + filaOff.disabled + ')');
+}
 
 // 🔴 EL ORDEN DEL VEREDICTO, Y ME LO ENSEÑÓ ESTE GUARD EN SU PRIMERA PASADA EN ROJO.
 //
@@ -440,4 +527,5 @@ if (fallos.length) {
   process.exit(1);
 }
 if (ciegos.length) process.exit(SALIDA_CIEGO);
-console.log('\n  ✔ las ' + filas.length + ' acciones llevan a su destino, y con la mutación puesta el detector las ve caer.\n');
+console.log('\n  ✔ las ' + filas.length + ' acciones llevan a su destino, con la mutación puesta el detector '
+  + 'las ve caer, y con el flag de Connect apagado la fila deja de invitar (⑤).\n');

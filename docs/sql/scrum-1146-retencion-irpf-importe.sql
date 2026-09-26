@@ -1,0 +1,44 @@
+-- docs/sql/scrum-1146-retencion-irpf-importe.sql — SCRUM-1146
+--
+-- LA RETENCIÓN DE IRPF SUFRIDA, POR FACTURA — hoy `Invoice` no guarda ninguna.
+--
+-- Es lo que dejó a medias el resumen del trimestre (SCRUM-1048): IVA repercutido, IVA soportado
+-- y su diferencia están construidos; «las retenciones sufridas» del trimestre se declara NO
+-- disponible porque `model Invoice` no tiene ninguna columna de retención — medido con
+-- `git grep retencion` sobre el modelo, cero resultados (SCRUM-1048, comentario 17021).
+--
+-- MISMO PATRÓN QUE `suplidos`, NO el de `Merchant.retencion_irpf_*` — y el motivo es del TIPO de
+-- dato, no gusto: el dato que hace falta aquí es un IMPORTE (cuánto se retuvo en ESTA factura), y
+-- un importe tiene un cero legítimo, así que basta UNA columna anulable:
+--   NULL  = no consta (todas las facturas anteriores a esta columna)
+--   0.00  = declarado: esta factura no lleva retención
+--   > 0   = el importe retenido
+-- `Merchant.retencion_irpf_tipo` necesitó DOS columnas porque su dato era un TIPO (7/15/2/1) y
+-- «declara que no retiene» no tenía representación propia — aquí no hace falta: el cero del
+-- importe YA es esa declaración.
+--
+-- SIN `NOT NULL` Y SIN `DEFAULT`: un `0.00` por defecto convertiría TODA la historia en
+-- «declarado que no hay retención», que no lo ha dicho nadie — el mismo motivo escrito para
+-- `suplidos`, `contact_kind`, `recargo_equivalencia` y `dto_por_defecto`.
+--
+-- 🛑 NO LA ESCRIBE NADIE TODAVÍA, y no es un olvido: rellenarla exige tocar el camino de emisión
+-- (los `invoice.create`, regla 38) y ES el ticket que la construya (SCRUM-1146), no este ALTER.
+-- El % que corresponde a cada caso (Q-C5) ya está cerrado desde SCRUM-1039 — lo que faltaba era
+-- la columna, no la respuesta del asesor.
+--
+-- Generado OFFLINE con `previewMigracion({ schema, desde })` (mismo mecanismo que
+-- `scripts/preview-migracion.mjs --desde`, sin tocar `prisma/schema.prisma` del repo ni ninguna
+-- base): copia intacta del schema actual como FROM, copia con la columna candidata como TO.
+-- Control positivo pasado, veredicto ADITIVA (ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni
+-- SET NOT NULL). Medido contra `origin/main` = `2ddcb5d38553581306e989adef9a1e1295389e5a` ·
+-- 2026-09-26T13:06:18Z.
+--
+-- ORDEN ①②③ (regla 3 / A5): este ALTER en las TRES bases (staging → yaqu_dev_javier →
+-- producción, con GO aparte para producción, SCRUM-169) es el ②. El ③ (servidor que la escribe
+-- y la suma en el resumen del trimestre + tests) va DESPUÉS, en SCRUM-1146.
+--
+-- ADITIVO Y RE-EJECUTABLE: `IF NOT EXISTS`, así que volver a correrlo sobre una base ya aplicada
+-- no hace nada y no falla.
+
+ALTER TABLE "invoices"
+  ADD COLUMN IF NOT EXISTS "retencion_irpf_importe" DECIMAL(12,2);

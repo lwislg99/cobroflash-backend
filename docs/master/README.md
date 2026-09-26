@@ -74,6 +74,10 @@ La linea `**Medido contra:**` es OBLIGATORIA y la exige
   una CORRECTA que caduco en una hora porque `main` se movio tres veces. Sin hora, el ancla no
   distingue «medido hace cinco minutos» de «medido esta manana».
 
+**No la teclees a mano** (SCRUM-1152): `node scripts/equipo/ancla.mjs` imprime la linea completa
+y correcta —sha de `origin/main` + hora real de GitHub—, lista para pegar. Escrita a mano, el
+ancla tumbo cinco veces en dos dias por el mismo motivo: se olvida la mitad del dato.
+
 Va en el ENCABEZADO y no junto a cada afirmacion, a proposito: detectar afirmaciones («esta en
 main», «mergeado») seria un guard de texto, y un guard de texto se caza a si mismo en la prosa
 que explica la prohibicion — ademas de esquivarse reformulando. **Una regla que depende de como
@@ -121,6 +125,30 @@ de verdad (eso no toca el árbol): mide la declaración, igual que la ancla mide
 sha, no que lo copiaste bien. **Entradas fechadas el 22-sep-2026 o antes quedan exentas** — el
 campo no existía cuando se escribieron.
 
+### 🔴 UN TICKET REPARTIDO ENTRE CARRILES COMPARTE UN SOLO FICHERO (SCRUM-1093)
+
+Antes de escribir `docs/master/SCRUM-<n>.md`, léelo desde `origin/main` — no asumas que es nuevo
+porque tu PARTE del ticket es nueva:
+
+```
+git show origin/main:docs/master/SCRUM-<n>.md
+```
+
+Un ticket que se reparte entre carriles o entre equipos (J1-J6 y S0-S5) aterriza en el MISMO
+número, y por tanto en el MISMO fichero. Si ya existe, **añade tu apéndice debajo de lo que haya
+— nunca lo reemplaces**. Medido el 26-sep-2026 (SCRUM-1093): la sesión de S1 sobrescribió por
+completo un `SCRUM-1093.md` que ya llevaba dos apéndices del equipo de Javier, porque su Write
+del registro entró como si el fichero no existiera. Los guards de esta misma página (ancla,
+formato) **no lo habrían cazado**: validan el fichero que hay, no que no falte el trabajo de
+otro equipo — un registro ajeno borrado en silencio pasa en verde igual que uno completo.
+
+**La señal, si ya escribiste antes de comprobar:** `git status` marca `M` (modificado) en un
+fichero que creías `??` (nuevo). Un `M` donde esperabas `??` es la primera pista — mírala antes de
+seguir, no después.
+
+Vale también para `docs/BUGS.md` y `docs/MIGRATIONS_PENDING.md`: cualquier registro compartido
+por varios equipos, no solo `docs/master/`.
+
 ### 🔴 UN APENDICE ES UNA ENTRADA, Y LLEVA SU PROPIA ANCLA (SCRUM-532)
 
 Si tu registro va sobre un ticket que **ya tiene fichero**, SCRUM-273 te manda escribirlo como
@@ -139,7 +167,7 @@ abrevio la suya a proposito para comprobarlo — siguio en verde.
 # APENDICE · <fecha> · <titulo>
 ```
 
-Y debajo, su ancla, medida por ti al escribirla:
+Y debajo, su ancla — generada, no tecleada: `node scripts/equipo/ancla.mjs`
 
 ```markdown
 **Medido contra:** `origin/main` = `<sha de 40>` · <ISO-8601 con huso>
