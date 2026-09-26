@@ -48,9 +48,9 @@ const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // Rutas tomadas de `gen-registros-sample.mjs`, que es la llamada que YA produce XML
 // válido contra el XSD oficial. No se deducen: se copian de lo que funciona.
-const { buildRegistroAlta, construirSobreRegFactu } =
+const { buildRegistroAlta, buildRegistroAnulacion, construirSobreRegFactu } =
   require(path.join(raiz, 'dist/modules/fiscal/verifactu/registro.builder.js'));
-const { computeVeriFactuHash } =
+const { computeVeriFactuHash, computeVeriFactuHashAnulacion } =
   require(path.join(raiz, 'dist/modules/invoicing/domain/verifactu.service.js'));
 const productor =
   require(path.join(raiz, 'dist/modules/fiscal/verifactu/productor.js'));
@@ -104,6 +104,58 @@ const sistema = {
   indicadorMultiplesOT: 'S',
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1140 · LOS TRES TIPOS, porque S1-D no se cierra sólo con altas
+//
+// El criterio de S1-D son ≥10 registros aceptados de ALTA, ANULACIÓN y R1. Este script
+// consiguió el primer `Correcto` de la AEAT el 24-sep, pero sólo sabía hacer altas.
+//
+// 🔴 DOS CADENAS DISTINTAS, y confundirlas rompe la tanda:
+//   · `tmp/ultimo-registro.json` → EL ÚLTIMO REGISTRO, sea del tipo que sea. Es el puntero
+//     de ENCADENAMIENTO, y así debe ser: la cadena de huellas no distingue tipos.
+//   · `tmp/ultima-alta.json` → LA ÚLTIMA ALTA. Es sobre lo que se anula o se rectifica.
+//
+// Si se reutilizara el puntero de la cadena para las dos cosas, una R1 lanzada después de
+// una anulación acabaría RECTIFICANDO UNA ANULACIÓN — que no es una factura. Son dos
+// preguntas distintas y tienen dos respuestas distintas.
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+const TIPOS = ['alta', 'anulacion', 'r1'];
+// Se usa el ayudante `arg()` que este fichero ya tiene, no un segundo lector de argv.
+const TIPO = arg('tipo') || 'alta';
+if (!TIPOS.includes(TIPO)) {
+  console.error(`Tipo desconocido: «${TIPO}». Valores: ${TIPOS.join(' | ')} (por defecto: alta).`);
+  process.exit(1);
+}
+
+const RUTA_ULTIMA_ALTA = path.join(raiz, 'tmp', 'ultima-alta.json');
+
+/**
+ * El alta sobre la que se opera al anular o rectificar.
+ *
+ * 🔴 FALLA CERRADO. Sin alta previa y sin --serie/--fecha, ABORTA en vez de inventarse una
+ * serie: un sobre con una factura que no existe no lo rechaza la AEAT por lo que uno cree,
+ * y el rechazo mandaría a buscar el defecto donde no está.
+ */
+function altaObjetivo() {
+  const s = arg('serie');
+  const f = arg('fecha');
+  if (s && f) {
+    return { numSerieFactura: s, fechaExpedicion: f, origen: 'argumentos' };
+  }
+  if (s || f) {
+    console.error('🔴 --serie y --fecha van JUNTAS: una sola no identifica una factura.');
+    process.exit(1);
+  }
+  if (!fs.existsSync(RUTA_ULTIMA_ALTA)) {
+    console.error(`🔴 No hay ninguna ALTA registrada, así que no hay nada que ${TIPO === 'r1' ? 'rectificar' : 'anular'}.`);
+    console.error('   Manda primero un alta (--tipo alta), o apunta a una con --serie y --fecha.');
+    process.exit(1);
+  }
+  const a = JSON.parse(fs.readFileSync(RUTA_ULTIMA_ALTA, 'utf8'));
+  return { numSerieFactura: a.numSerieFactura, fechaExpedicion: a.fechaExpedicion, origen: 'tmp/ultima-alta.json' };
+}
+
 // ────────────────────────────────────────────────────── el registro (UNO solo)
 
 // Primer registro de la cadena → huella anterior VACÍA (conformidad verificada en S1-A).
@@ -139,30 +191,65 @@ const anterior = fs.existsSync(RUTA_ULTIMO)
   ? JSON.parse(fs.readFileSync(RUTA_ULTIMO, 'utf8'))
   : null;
 
-const huella = computeVeriFactuHash({
-  nif: NIF, serie: SERIE, fecha: FECHA, tipoFactura: 'F1',
-  cuotaTotal: '21.00', importeTotal: '121.00', prevHash: anterior ? anterior.huella : '', timestamp: TS,
-});
+const objetivo = TIPO === 'alta' ? null : altaObjetivo();
+const prevHash = anterior ? anterior.huella : '';
 
-const registro = buildRegistroAlta({
-  idEmisorFactura: NIF,
-  numSerieFactura: SERIE,
-  fechaExpedicion: FECHA,
-  nombreRazonEmisor: NOMBRE,
-  tipoFactura: 'F1',
-  descripcionOperacion: 'Prueba de conformidad del envio VERI*FACTU',
-  destinatario: { nombreRazon: DEST_NOMBRE, nif: DEST_NIF },
-  desglose: [{
-    claveRegimen: '01', calificacion: 'S1', tipoImpositivo: '21',
-    baseImponible: '100.00', cuotaRepercutida: '21.00',
-  }],
-  cuotaTotal: '21.00',
-  importeTotal: '121.00',
-  encadenamiento: anterior ? { primerRegistro: false, anterior } : { primerRegistro: true },
-  sistema,
-  fechaHoraHusoGenRegistro: TS,
-  huella,
-});
+let huella;
+let registro;
+
+if (TIPO === 'anulacion') {
+  // La huella de anulación tiene su PROPIA fórmula (campos ...Anulada). Usar la del alta
+  // daría un SHA-256 válido de otra cosa: la AEAT lo rechazaría y el rechazo parecería un
+  // problema de encadenamiento.
+  huella = computeVeriFactuHashAnulacion({
+    nif: NIF, serie: objetivo.numSerieFactura, fecha: objetivo.fechaExpedicion,
+    prevHash, timestamp: TS,
+  });
+  registro = buildRegistroAnulacion({
+    idEmisorFacturaAnulada: NIF,
+    numSerieFacturaAnulada: objetivo.numSerieFactura,
+    fechaExpedicionAnulada: objetivo.fechaExpedicion,
+    encadenamiento: anterior ? { primerRegistro: false, anterior } : { primerRegistro: true },
+    sistema,
+    fechaHoraHusoGenRegistro: TS,
+    huella,
+  });
+} else {
+  // Alta y R1 comparten builder y fórmula de huella: una rectificativa ES un alta con otro
+  // TipoFactura y las facturas rectificadas dentro. Lo que cambia es el CONTENIDO, no la forma.
+  const tipoFactura = TIPO === 'r1' ? 'R1' : 'F1';
+  huella = computeVeriFactuHash({
+    nif: NIF, serie: SERIE, fecha: FECHA, tipoFactura,
+    cuotaTotal: '21.00', importeTotal: '121.00', prevHash, timestamp: TS,
+  });
+  registro = buildRegistroAlta({
+    idEmisorFactura: NIF,
+    numSerieFactura: SERIE,
+    fechaExpedicion: FECHA,
+    nombreRazonEmisor: NOMBRE,
+    tipoFactura,
+    // 'I' = INCREMENTAL: la rectificativa lleva la DIFERENCIA, no el total corregido. Es el
+    // modo que el repositorio ya declara en MODO_TIPO_RECTIFICATIVA, y mezclarlo con 'S'
+    // (sustitutiva) daría importes válidos que dicen otra cosa.
+    ...(TIPO === 'r1'
+      ? { rectifica: { numSerieFactura: objetivo.numSerieFactura, fechaExpedicion: objetivo.fechaExpedicion }, tipoRectificativa: 'I' }
+      : {}),
+    descripcionOperacion: TIPO === 'r1'
+      ? 'Rectificacion de prueba de conformidad VERI*FACTU'
+      : 'Prueba de conformidad del envio VERI*FACTU',
+    destinatario: { nombreRazon: DEST_NOMBRE, nif: DEST_NIF },
+    desglose: [{
+      claveRegimen: '01', calificacion: 'S1', tipoImpositivo: '21',
+      baseImponible: '100.00', cuotaRepercutida: '21.00',
+    }],
+    cuotaTotal: '21.00',
+    importeTotal: '121.00',
+    encadenamiento: anterior ? { primerRegistro: false, anterior } : { primerRegistro: true },
+    sistema,
+    fechaHoraHusoGenRegistro: TS,
+    huella,
+  });
+}
 
 // 🔴 CADA registro va envuelto en `<sum:RegistroFactura>`. Sin ese envoltorio el XSD lo
 // RECHAZA — medido, no supuesto: la primera versión de este script lo omitió y el validador
@@ -204,7 +291,20 @@ const controles = {
   unSoloRegistro: (soap.match(/<sum:RegistroFactura>/g) || []).length === 1,
   // El envoltorio que el XSD exige y que la primera version omitio.
   registroEnvuelto: soap.includes("<sum:RegistroFactura>") && soap.includes("</sum:RegistroFactura>"),
-  sinAnulacion: !soap.includes('RegistroAnulacion'),
+  // 🔴 SCRUM-1140 · EL SOBRE LLEVA EL TIPO QUE SE PIDIO, Y SOLO ESE.
+  //
+  // Antes este control era `sinAnulacion: !soap.includes(...)`, y era CORRECTO: el script
+  // solo sabia hacer altas, asi que una anulacion ahi dentro solo podia ser un accidente.
+  // Dejo de serlo al anadir --tipo. No se relaja (regla 41): se hace MAS preciso — antes
+  // comprobaba que no hubiera UNA cosa, ahora comprueba que haya EXACTAMENTE la pedida.
+  //
+  // Importa porque el error silencioso aqui es pedir una anulacion y mandar un alta: la AEAT
+  // la aceptaria tan contenta, y la tanda de S1-D contaria un tipo que nunca se envio.
+  tipoPedidoEsElQueVa: TIPO === 'anulacion'
+    ? soap.includes('RegistroAnulacion') && !soap.includes('RegistroAlta')
+    : soap.includes('RegistroAlta') && !soap.includes('RegistroAnulacion'),
+  // Y una R1 sin las facturas rectificadas dentro es un alta con otra etiqueta.
+  r1LlevaLoRectificado: TIPO !== 'r1' || /FacturasRectificadas/.test(soap),
   // Sin firma: en modalidad VERI*FACTU no se exige, y meterla sería un error.
   sinFirma: !/Signature|XAdES|<ds:/.test(soap),
   sobreCerrado: soap.trimEnd().endsWith('</soapenv:Envelope>'),
@@ -224,8 +324,16 @@ fs.writeFileSync(salida, soap, 'utf8');
 // El siguiente envío se encadena a éste. Se guarda DESPUÉS de que pasen los controles:
 // si el sobre no sale, la cadena no avanza.
 fs.writeFileSync(RUTA_ULTIMO, JSON.stringify({
-  idEmisorFactura: NIF, numSerieFactura: SERIE, fechaExpedicion: FECHA, huella,
+  idEmisorFactura: NIF, numSerieFactura: SERIE, fechaExpedicion: FECHA, huella, tipo: TIPO,
 }, null, 2));
+
+// 🔴 El puntero de ALTA sólo avanza con ALTAS. Una anulación o una R1 NO se convierten en
+// «la última factura»: no son facturas nuevas, son operaciones SOBRE una.
+if (TIPO === 'alta') {
+  fs.writeFileSync(RUTA_ULTIMA_ALTA, JSON.stringify({
+    idEmisorFactura: NIF, numSerieFactura: SERIE, fechaExpedicion: FECHA, huella,
+  }, null, 2));
+}
 
 console.log(JSON.stringify({
   veredicto: 'GENERADO',

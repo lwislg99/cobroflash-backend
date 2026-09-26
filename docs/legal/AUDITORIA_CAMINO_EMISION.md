@@ -51,6 +51,13 @@ y el envío— no se han construido nunca.**
 **Se para justo después de sellar.** Se genera el registro, se sella la huella, se encadena y se
 pinta el QR. **No se encola y no se envía.**
 
+> **Nota del 25-sep-2026 (SCRUM-1127):** desde ese día existen
+> `src/modules/fiscal/verifactu/sif.client.ts` (con una llamada `https.request`) y `sif.cola.ts`.
+> **Ningún código los llama**, el endpoint no está en `src/` y solo se han probado contra un
+> servidor falso. Los eslabones 8 y 9 siguen en **NO EXISTE**: hay piezas, pero no hay envío. Si
+> se repite el instrumento AST de abajo, esa llamada aparece en la zona fiscal, y **no es una
+> salida a la AEAT mientras no tenga llamante**. Expediente: `docs/master/SCRUM-1127.md`.
+
 ### ¿Se ha enviado alguna vez algo a la AEAT desde este código?
 
 **No.** Y no es una impresión: es lo que dieron los dos instrumentos.
