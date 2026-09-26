@@ -1,7 +1,7 @@
 # SCRUM-1091 · `guard-dangerous.mjs` traduce `/<letra>/…` antes de resolver rutas
 
 **Fecha:** 26-sep-2026 12:01Z (GitHub) · **Carril:** S5 · automatización y eficiencia
-**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87`
+**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87` · 2026-09-26T12:01:41Z
 **Rama:** `scrum-1091-guard-cwd-posix`
 
 > ⛔ `src/` intacto. Sólo se tocó `.claude/hooks/guard-dangerous.mjs` (una función) y se añadió un
