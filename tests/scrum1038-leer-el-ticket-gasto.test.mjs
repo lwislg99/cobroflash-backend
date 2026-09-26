@@ -193,6 +193,61 @@ test('SCRUM-1038 · ② el cuerpo de la petición lleva la imagen', async () => 
   assert.equal(cuerpo.imagen, FOTO_FALSA._dataUrl, '🔴 la imagen que llega al servidor no es la foto elegida');
 });
 
+// ═══ SCRUM-1155 (920f) · LOS 9 PORQUÉS DE LA LECTURA, CONECTADOS A LA PANTALLA REAL ══════════
+//
+// El servidor ya calculaba `descartados` desde SCRUM-912/1038; nadie lo pintaba (SCRUM-920
+// comentario 20-sep-2026, prototipo 920h firmado en 16173/16175, conectado aquí en SCRUM-1155).
+
+test('SCRUM-1155 · 🔴 un campo descartado por «no cuadra con el total» pinta su porqué bajo Base imponible', async () => {
+  const propuesta = { ...propuestaCompleta(), baseAmount: null };
+  const { banco } = bancoBase({
+    lecturas: [jsonOk({ ok: true, propuesta, descartados: [{ campo: 'baseAmount', motivo: 'no_cuadra_con_el_total' }] })],
+  });
+  const { btn } = await prepararConFoto(banco);
+  await pulsar(btn);
+
+  const aviso = banco.ctx.document.querySelector('.gasto-descarte[data-para="exp-base"]');
+  assert.ok(aviso, '🔴 no existe la ranura de aviso para «exp-base»');
+  assert.equal(aviso.hidden, false, '🔴 el aviso sigue oculto con un descarte real que mostrar');
+  assert.equal(aviso.textContent,
+    'La base, la cuota y el total no sumaban. Hemos dejado la base vacía: revisa las tres cifras en el ticket.',
+    '🔴 el texto del motivo no es el firmado (SCRUM-920 comentario 16175)');
+  // El resto de ranuras siguen calladas: un descarte no enciende avisos que no le tocan.
+  const otras = banco.ctx.document.querySelectorAll('.gasto-descarte');
+  const visibles = Array.from(otras).filter((el) => !el.hidden);
+  assert.equal(visibles.length, 1, '🔴 hay más avisos encendidos de los que trajo esta lectura');
+});
+
+test('SCRUM-1155 · una lectura nueva LIMPIA el aviso que dejó la anterior', async () => {
+  const { banco } = bancoBase({
+    lecturas: [
+      jsonOk({ ok: true, propuesta: propuestaCompleta(), descartados: [{ campo: 'baseAmount', motivo: 'no_cuadra_con_el_total' }] }),
+      jsonOk({ ok: true, propuesta: propuestaCompleta(), descartados: [] }),
+    ],
+  });
+  const { fileInput, btn } = await prepararConFoto(banco);
+  await pulsar(btn);
+  assert.equal(banco.ctx.document.querySelector('.gasto-descarte[data-para="exp-base"]').hidden, false,
+    'suelo: la primera lectura sí enciende el aviso');
+
+  fileInput.files = [FOTO_FALSA];
+  fileInput.disparar('change');
+  await pulsar(btn);
+  assert.equal(banco.ctx.document.querySelector('.gasto-descarte[data-para="exp-base"]').hidden, true,
+    '🔴 el aviso de la lectura anterior sigue encendido aunque esta vez el campo vino bien');
+});
+
+test('SCRUM-1155 · un motivo o campo que este modal no conoce no inventa un aviso', async () => {
+  const { banco } = bancoBase({
+    lecturas: [jsonOk({ ok: true, propuesta: propuestaCompleta(),
+      descartados: [{ campo: 'algoQueNoExiste', motivo: 'no_es_texto' }] })],
+  });
+  const { btn } = await prepararConFoto(banco);
+  await pulsar(btn); // no debe lanzar
+  const visibles = Array.from(banco.ctx.document.querySelectorAll('.gasto-descarte')).filter((el) => !el.hidden);
+  assert.equal(visibles.length, 0, '🔴 se ha pintado un aviso para un campo que este modal no tiene');
+});
+
 // ═══ ③ LECTURA PARCIAL: solo rellena lo que llega, y NO borra lo ya escrito ═════════════════
 
 test('SCRUM-1038 · 🔴 ③ lectura parcial: solo toca los campos que trae, y no borra lo ya tecleado', async () => {
