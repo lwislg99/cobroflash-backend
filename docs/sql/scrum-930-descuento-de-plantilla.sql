@@ -1,0 +1,42 @@
+-- docs/sql/scrum-930-descuento-de-plantilla.sql — SCRUM-930
+--
+-- EL DESCUENTO GLOBAL DE UNA PLANTILLA — hoy `quote_templates` no guarda ninguno.
+--
+-- Medido contra el repo (no contra el ticket): `model QuoteTemplate` (schema.prisma) solo tiene
+-- name, currency, lines, tiers y payment_terms. El editor YA sabe cargar un descuento desde una
+-- plantilla —`quotesView.js`, SCRUM-926, lee `template.discountGlobalAmount`—, pero solo le llega
+-- al DUPLICAR un presupuesto: una plantilla guardada por `/admin/templates` no lo trae porque no
+-- hay dónde guardarlo.
+--
+-- IMPORTE, NO PORCENTAJE (decisión del orquestador, 26-sep-2026, tres motivos):
+--   1. `quotes.discount_global_amount` ya es un IMPORTE. Una plantilla con porcentaje obligaría a
+--      CALCULAR el importe al aplicarla: lógica nueva en el camino del presupuesto.
+--   2. El front ya lee un importe (SCRUM-926). Porcentaje = rehacer código que funciona.
+--   3. El «un 10 %» del ticket es cómo se habla, no una especificación. Porcentaje de verdad
+--      sería un concepto nuevo en el presupuesto entero, y se decidiría con su coste delante.
+-- Por eso MISMO nombre, MISMO tipo y MISMA semántica que la columna de `quotes`.
+--
+-- SIN `NOT NULL` Y SIN `DEFAULT`: NULL = la plantilla no trae descuento (todas las guardadas
+-- antes de esta columna, que así se siguen cargando igual: el POSITIVO del ticket). Un `0.00`
+-- por defecto afirmaría «descuento cero» en plantillas que nunca lo dijeron.
+--
+-- La descripción del ticket NO necesita columna: es la descripción POR LÍNEA, que ya viaja dentro
+-- de `lines` (JSONB) y el servidor guarda sin mirarla. Se pierde en el front (S2), no aquí.
+--
+-- Generado OFFLINE con `node scripts/preview-migracion.mjs --desde <copia del schema actual>`,
+-- con la columna candidata añadida en una copia de trabajo y el schema del repo restaurado
+-- después (`git status` limpio). Control positivo pasado (31 tablas); veredicto ADITIVA (ni DROP,
+-- ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL). Medido contra `origin/main` =
+-- `cbb30708590011f79b1f392f322c4d264eab537c` · 2026-09-26T13:12Z; sin cambios en
+-- `prisma/schema.prisma` hasta `c4ea45bb2a106516fb8a250fa76b5c4febb6becc` · 2026-09-26T13:15:47Z.
+--
+-- ORDEN ①②③ (regla 3 / A5): este ALTER en las TRES bases (staging → yaqu_dev_javier →
+-- producción, con GO aparte para producción, SCRUM-169) es el ②. El ③ va DESPUÉS, en SCRUM-930:
+-- la columna en `prisma/schema.prisma` + `templates.routes.ts` (aceptarla en POST/PUT y
+-- devolverla en GET) + tests (S1), y enviarla al guardar desde el editor (S2).
+--
+-- ADITIVO Y RE-EJECUTABLE: `IF NOT EXISTS`, así que volver a correrlo sobre una base ya aplicada
+-- no hace nada y no falla.
+
+ALTER TABLE "quote_templates"
+  ADD COLUMN IF NOT EXISTS "discount_global_amount" DECIMAL(12,2);
