@@ -9,6 +9,10 @@
  *
  * EJECUCIÓN (quien ejecuta decide la BD; el script NO asume ninguna — SCRUM-208):
  *   1) npm run build                             (importa de `dist/`, como seed-video.mjs)
+ *   2) node scripts/seed-demo.mjs --dev          (o `--staging`; SCRUM-1105: la URL la resuelve
+ *                                                 el script, nadie la exporta)
+ *
+ * Sin bandera, el camino de antes:
  *   2) export DATABASE_URL=<la BD destino>
  *   3) export SEED_DEMO_CONFIRM=<hostname EXACTO de esa BD>   (te lo dice el script si falta)
  *   4) node scripts/seed-demo.mjs
@@ -42,6 +46,8 @@ import {
 // comillas del `.env` y NO tiene forma de devolver la cadena — solo host, base, usuario y puerto.
 // SCRUM-381: y `destinoSembrable` es la allowlist que la nota de SCRUM-208 (abajo) dejaba escrita.
 import { parseBDSegura, destinoSembrable } from './_db-guard.mjs';
+// SCRUM-1105: `--dev` / `--staging` nombran la base; la URL se resuelve por dentro.
+import { fijarDestinoPorBandera, RECHAZADO, FIJADO } from './_destino-de-semilla.mjs';
 // SCRUM-314: el barrido del demo, DERIVADO del orden que ya guarda el schema (no una lista aquí).
 // SCRUM-381: vivía en `./_wipe-demo.mjs`, que SCRUM-314 (cbc2880) borró al mover el barrido al
 // dominio SIN actualizar este import. El script llevaba tickets sin poder ni arrancar, y nadie se
@@ -119,13 +125,19 @@ const sembrado = (punto) => ({ actor: { tipo: 'semilla', ref: `seed-demo:${punto
 const abortar = (msg) => { console.error('\n❌ ABORTADO: ' + msg + '\n'); process.exit(1); };
 
 function confirmarDestino() {
+  const porBandera = fijarDestinoPorBandera();
+  if (porBandera.estado === RECHAZADO) abortar(porBandera.mensaje);
+  for (const aviso of porBandera.avisos ?? []) console.warn('⚠️  ' + aviso);
+
   const dbUrl = process.env.DATABASE_URL || '';
   if (!dbUrl) {
     abortar(
       'DATABASE_URL no está definida EN EL ENTORNO.\n\n' +
       '  Ojo: eso no significa "sin destino". Prisma cargaría `.env`, que apunta a\n' +
       '  PRODUCCIÓN, y este script BORRA y resiembra el merchant demo (id=1).\n\n' +
-      '  Elige la base a mano y nómbrala:\n\n' +
+      '  Nombra la base con una bandera (SCRUM-1105):\n\n' +
+      '    node scripts/seed-demo.mjs --dev        (o --staging)\n\n' +
+      '  o, a la antigua, elígela a mano y nómbrala:\n\n' +
       '    DATABASE_URL=<url-de-la-bd> SEED_DEMO_CONFIRM=<hostname-de-esa-bd> node scripts/seed-demo.mjs',
     );
   }
@@ -148,6 +160,12 @@ function confirmarDestino() {
     );
   }
 
+  // SCRUM-1105: con bandera la base YA está nombrada —y con más precisión que el hostname, que
+  // dev y staging comparten—, así que no se pide una segunda confirmación que no distingue nada.
+  if (porBandera.estado === FIJADO) {
+    console.log(`[destino] ${porBandera.bandera} → ${porBandera.etiqueta}`);
+    return host;
+  }
   if (process.env.SEED_DEMO_CONFIRM !== host) {
     abortar(
       `Confirma la base de forma EXPLÍCITA. DATABASE_URL apunta al host:\n\n    ${host}\n\n` +

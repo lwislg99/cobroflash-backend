@@ -393,8 +393,13 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // alta con sus tres `div.field` (SKU · Referencia del proveedor · Unidad), cada uno con su
   // `label` y su `input` — 1 + 3×(1+1+1) = 10. El modal de EDICIÓN no cuenta: `buildEditModal`
   // se construye perezosamente al pulsar «Editar», y sin datos no hay fila que editar.
+  // 🔴 SCRUM-1075 · 25-sep-2026 · `renderHomeView` 144 → 145, y las otras tres intactas. El UNO,
+  // POR IDENTIDAD: `div#home-resumen-trimestre`, el hueco del aviso de fin de trimestre. Sin
+  // `datos` este banco sirve `{}` a los tres endpoints que consulta (`vat`/`recibidas`/`pl`), así
+  // que `pintarResumenTrimestreEnHome` mide «sin datos» (aceptación #4) y lo deja VACÍO — el nodo
+  // que suma es el contenedor mismo, no su aviso.
   for (const [vista, nodos] of [['renderQuotesView', 248], ['renderProductsView', 176],
-    ['renderCustomersView', 78], ['renderHomeView', 144]]) {
+    ['renderCustomersView', 78], ['renderHomeView', 145]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
