@@ -522,6 +522,32 @@ export function porQueNoCayo(tras, nombre) {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1100 (propuesta de SCRUM-908c §⑦) · SALTADO y NO APARECE son CEGUERA, no MUDEZ —
+ * y hasta hoy el VEREDICTO no lo distinguía, sólo el TEXTO del mensaje.
+ *
+ * `porQueNoCayo` ya sabía escribir las tres causas por separado (SCRUM-908), pero quien llama
+ * seguía metiéndolas las tres por la misma puerta: `resultado.mudo`. Medido en CI (SCRUM-908c):
+ * la mutación nº 2 de `scrum859` pierde la cola de sus eventos bajo una ráfaga de stdout que
+ * supera la marca de agua de la tubería — el hijo llama a `process.exit()` (`forceExit: true`)
+ * antes de que esa cola se vacíe. El test NO APARECE, y el meta-guard lo contaba en «GUARDS
+ * MUDOS — pasan en verde sobre el defecto que dicen vigilar»: acusa a un guard SANO de estar
+ * inerte cuando lo que pasó es que el instrumento no llegó a mirar.
+ *
+ * Sólo «el test CORRIÓ y PASÓ» es mudez de verdad: el aserto vio la mutación y no la cazó. Las
+ * otras dos son ceguera del instrumento, y CUENTAN como tal (exit CIEGO, no exit MUDO) — así el
+ * SUELO de ejecución (SCRUM-765) las trata como lo que son y `GUARDS MUDOS` deja de nombrar
+ * guards que nunca llegaron a juzgarse.
+ *
+ * ⚠️ ESTO NO ARREGLA LA PÉRDIDA DE EVENTOS (esa es la propuesta separada de más abajo, en
+ * `correr()`): sólo deja de acusar al guard de algo que el instrumento no pudo ver.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function esCegueraNoMudez(donde) {
+  return /^(SALTADO|NO APARECE)/.test(String(donde));
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
  * 🔴 SCRUM-784 · EL CUARTO VEREDICTO: «EL FICHERO MURIÓ AL MUTAR».
  *
  * `cayo()` busca el nombre declarado entre los caídos. Cuando el RADIO de una mutación mata el
@@ -569,6 +595,27 @@ export function murioElFichero(resultado, guard, dir = DIR_TESTS) {
   const objetivo = rutaRealDe(path.join(dir, guard));
   if (!objetivo) return false; // sin fichero al que apuntar no se puede afirmar nada
   return (resultado?.caidos || []).some((n) => rutaRealDe(n) === objetivo);
+}
+
+/**
+ * 🔴 SCRUM-1100 (J4, `docs/master/SCRUM-1100.md`) · EL ERROR YA ESTABA GUARDADO Y NUNCA SE ENSEÑABA.
+ *
+ * `correr()` captura `tras.errores[nombre]` para CADA `test:fail`, incluida la muerte del propio
+ * fichero (SCRUM-788) — con su `name`/`code`/`message`. Pero el mensaje de `muerto` decía siempre
+ * «no se sabe si HABRÍA caído», como si ese dato no existiera. J4 lo midió en las caídas reales de
+ * PR #1730 y hermanos: **3-5 incidentes con 3 firmas distintas, sin poder compararse entre sí**,
+ * porque el `code` que habría distinguido un `ENOSPC` (agotamiento de `inotify`, candidato nombrado
+ * por J4 para `abrirObservacion`/`fs.watch`) de un `SIGKILL`/OOM externo estaba capturado y mudo.
+ *
+ * Esto NO decide la causa (eso exige un runner Linux real, fuera del alcance de esta sesión
+ * también). Sólo hace que la PRÓXIMA vez el mensaje diga lo que el proceso ya sabía.
+ */
+export function errorDelFicheroMuerto(resultado, guard, dir = DIR_TESTS) {
+  const objetivo = rutaRealDe(path.join(dir, guard));
+  if (!objetivo) return null;
+  const nombreCaido = (resultado?.caidos || []).find((n) => rutaRealDe(n) === objetivo);
+  if (!nombreCaido) return null;
+  return resultado?.errores?.[nombreCaido] || null;
 }
 
 /**
@@ -993,11 +1040,20 @@ export async function aplicarUna(mut, guard, limpia) {
     } else if (murioElFichero(tras, guard)) {
       // 🔴 EL CUARTO VEREDICTO. No es MUDO: el guard se puso rojo. Pero tampoco se ha medido lo
       // que se quería medir, porque el test declarado no llegó a reportarse.
+      //
+      // 🔴 SCRUM-1100 (J4): el error YA estaba capturado (`correr()` guarda `code`/`name`/`message`
+      // de cada `test:fail`, incluida la muerte del fichero) y este mensaje nunca lo enseñaba —
+      // «no se sabe si HABRÍA caído» sobre un dato que el proceso, un momento antes, sí tenía.
+      const causa = errorDelFicheroMuerto(tras, guard);
       resultado = {
         ok: false,
         muerto: `EL FICHERO MURIÓ AL MUTAR. \`node:test\` no ha reportado ni un nombre de test: el `
           + `único caído es el propio fichero. El guard SÍ se puso rojo, pero el test declarado `
           + `—«${mut.cae}»— nunca llegó a ejecutarse, así que no se sabe si HABRÍA caído.\n`
+          + `    → lo que murió con él: ${causa
+            ? `${causa.nombre || '(sin nombre)'}${causa.code ? ` · ${causa.code}` : ''}`
+              + `${causa.mensaje ? ` · ${causa.mensaje}` : ''}`
+            : 'sin error capturado (apunta a un SIGKILL/OOM externo, no a una excepción de JS)'}.\n`
           + '    Suele significar que la mutación tiene un RADIO más ancho que el defecto que '
           + 'quiere imitar (rompe la carga del fichero, o hace que un `import` ejecute algo). '
           + 'Acota la mutación, o declara otra que produzca el mismo defecto sin tumbar el proceso.',
@@ -1011,11 +1067,20 @@ export async function aplicarUna(mut, guard, limpia) {
       // log no se puede leer sin credenciales, así que lo que no diga este mensaje no lo sabrá
       // nadie. Esto AÑADE información y no cambia el veredicto.
       const donde = porQueNoCayo(tras, mut.cae);
-      resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»`
-        + `\n    → en la pasada MUTADA ese test: ${donde}.`
+      const recuento = `\n    → en la pasada MUTADA ese test: ${donde}.`
         + ` Recuento: ${(tras?.pasados || []).length} pasados · ${(tras?.caidos || []).length} caídos`
         + ` · ${(tras?.saltados || []).length} saltados.`
-        + ` Y en la LIMPIA: ${(limpia?.pasados || []).length} pasados · ${(limpia?.caidos || []).length} caídos.` };
+        + ` Y en la LIMPIA: ${(limpia?.pasados || []).length} pasados · ${(limpia?.caidos || []).length} caídos.`;
+      // 🔴 SCRUM-1100: SALTADO y NO APARECE son CEGUERA, no MUDEZ (ver `esCegueraNoMudez` arriba).
+      // Sólo «corrió y pasó» acusa a un guard que de verdad no ve la mutación.
+      if (esCegueraNoMudez(donde)) {
+        resultado = {
+          ok: false,
+          ciego: `no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «${mut.cae}»${recuento}`,
+        };
+      } else {
+        resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»${recuento}` };
+      }
     }
   } finally {
     const sinRestaurar = restaurarYVerificar(piezas);
