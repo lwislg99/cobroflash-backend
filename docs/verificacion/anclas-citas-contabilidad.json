@@ -1,0 +1,255 @@
+{
+ "fijado": "2026-09-25T15:09:12.628Z",
+ "documento": "docs/producto/CONTABILIDAD.md",
+ "anclas": [
+  {
+   "sha": "2530831898dda500",
+   "inicio": "El Impuesto se exigirá al tipo del 21 por ciento, salvo lo dispuesto e",
+   "fuente": "LIVA",
+   "bloques": [
+    "a90@20120714"
+   ]
+  },
+  {
+   "sha": "3ad4a5f112ee3cd6",
+   "inicio": "El tipo impositivo aplicable a cada operación será el vigente en el mo",
+   "fuente": "LIVA",
+   "bloques": [
+    "a90@20120714"
+   ]
+  },
+  {
+   "sha": "c87f2b89a6767520",
+   "inicio": "Se aplicará el tipo del 10 por ciento a las operaciones siguientes:",
+   "fuente": "LIVA",
+   "bloques": [
+    "a91@20241221"
+   ]
+  },
+  {
+   "sha": "25f06ed1c0a6e7b1",
+   "inicio": "Se aplicará el tipo del 4 por ciento a las operaciones siguientes:",
+   "fuente": "LIVA",
+   "bloques": [
+    "a91@20241221"
+   ]
+  },
+  {
+   "sha": "e51008a9cc9bef3b",
+   "inicio": "Que la construcción o rehabilitación de la vivienda a que se refieren ",
+   "fuente": "LIVA",
+   "bloques": [
+    "a91@20241221"
+   ]
+  },
+  {
+   "sha": "fdac03d924141b1a",
+   "inicio": "Que la persona que realice las obras no aporte materiales para su ejec",
+   "fuente": "LIVA",
+   "bloques": [
+    "a91@20241221"
+   ]
+  },
+  {
+   "sha": "19c65b1fbcec85e1",
+   "inicio": "Cuando se trate de ejecuciones de obra, con o sin aportación de materi",
+   "fuente": "LIVA",
+   "bloques": [
+    "a84@20221224"
+   ]
+  },
+  {
+   "sha": "62286e3bd95eedb8",
+   "inicio": "Las sumas pagadas en nombre y por cuenta del cliente en virtud de mand",
+   "fuente": "LIVA",
+   "bloques": [
+    "a78@20171109"
+   ]
+  },
+  {
+   "sha": "ed8c21cba889606d",
+   "inicio": "El sujeto pasivo vendrá obligado a justificar la cuantía efectiva de t",
+   "fuente": "LIVA",
+   "bloques": [
+    "a78@20171109"
+   ]
+  },
+  {
+   "sha": "2eb53115961f2854",
+   "inicio": "Los tipos del recargo de equivalencia serán los siguientes: 1.º Con ca",
+   "fuente": "LIVA",
+   "bloques": [
+    "a161@20120714"
+   ]
+  },
+  {
+   "sha": "b2402edcb32e684c",
+   "inicio": "Para las entregas de bienes a las que resulte aplicable el tipo imposi",
+   "fuente": "LIVA",
+   "bloques": [
+    "a161@20120714"
+   ]
+  },
+  {
+   "sha": "2461a298ba78e24f",
+   "inicio": "Para las entregas de bienes a las que sea aplicable el tipo impositivo",
+   "fuente": "LIVA",
+   "bloques": [
+    "a161@20120714"
+   ]
+  },
+  {
+   "sha": "8218d8f975e9c533",
+   "inicio": "Cuando los rendimientos sean contraprestación de una actividad profesi",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "10d4ff2ca779f3fc",
+   "inicio": "el tipo de retención será del 7 por ciento en el período impositivo de",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "48a26974e70c5865",
+   "inicio": "Cuando su importe no exceda de 400 euros, Impuesto sobre el Valor Añad",
+   "fuente": "RFACT",
+   "bloques": [
+    "a4@20210616"
+   ]
+  },
+  {
+   "sha": "66ecc3d76f5695a4",
+   "inicio": "podrán igualmente expedir factura simplificada y copia de ésta cuando ",
+   "fuente": "RFACT",
+   "bloques": [
+    "a4@20210616"
+   ]
+  },
+  {
+   "sha": "c7dbaf9a1d107e89",
+   "inicio": "Cuando los rendimientos sean contraprestación de una de las actividade",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "3d3944ab1ea28d43",
+   "inicio": "504.2 y 3 Instalaciones de fontanería, frío, calor y acondicionamiento",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "a366fc2c1d8638ae",
+   "inicio": "501.3 Albañilería y pequeños trabajos de construcción en general",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "9408adb7b23a24e3",
+   "inicio": "505.5 Carpintería y cerrajería",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "41855d750944e9e3",
+   "inicio": "505.6 Pintura de cualquier tipo y clase y revestimientos con papel, te",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "f4ec2a2b8bb558dc",
+   "inicio": "Cuando los rendimientos sean contraprestación de una actividad agrícol",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "a063c8b6c1659c5e",
+   "inicio": "Cuando los rendimientos sean contraprestación de una actividad foresta",
+   "fuente": "RIRPF",
+   "bloques": [
+    "a95@20230125"
+   ]
+  },
+  {
+   "sha": "042770796f79ef1c",
+   "inicio": "Artículo 7. Operaciones no sujetas al impuesto. No estarán sujetas al ",
+   "fuente": "LIVA",
+   "bloques": [
+    "a7@20221220"
+   ]
+  },
+  {
+   "sha": "593cf74e8ded2944",
+   "inicio": "Artículo 20. Exenciones en operaciones interiores. Uno. Estarán exenta",
+   "fuente": "LIVA",
+   "bloques": [
+    "a20@20180704"
+   ]
+  },
+  {
+   "sha": "1bdfccff6ca0cdda",
+   "inicio": "la presentación de las autoliquidaciones del modelo 303, así como, en ",
+   "fuente": "ORDEN303",
+   "bloques": [
+    "a7@20170515"
+   ]
+  },
+  {
+   "sha": "3286fb87597eef76",
+   "inicio": "Artículo 6. Contenido de la factura. 1. Toda factura y sus copias cont",
+   "fuente": "RFACT",
+   "bloques": [
+    "a6@20231206"
+   ]
+  },
+  {
+   "sha": "79762e82cd9e6e8a",
+   "inicio": "m) En el caso de que el sujeto pasivo del Impuesto sea el adquirente o",
+   "fuente": "RFACT",
+   "bloques": [
+    "a6@20231206"
+   ]
+  },
+  {
+   "sha": "64bc4731cf40f7a8",
+   "inicio": "2. Deberá especificarse por separado la parte de base imponible corres",
+   "fuente": "RFACT",
+   "bloques": [
+    "a6@20231206"
+   ]
+  },
+  {
+   "sha": "0581b94ec42435b0",
+   "inicio": "b) Cuando se incluyan operaciones en las que el sujeto pasivo del Impu",
+   "fuente": "RFACT",
+   "bloques": [
+    "a6@20231206"
+   ]
+  },
+  {
+   "sha": "79a420bf98b83aa0",
+   "inicio": "inversión del sujeto pasivo",
+   "fuente": "RIVA",
+   "bloques": [
+    "a24quater@20181229",
+    "a38@20071120"
+   ]
+  }
+ ]
+}

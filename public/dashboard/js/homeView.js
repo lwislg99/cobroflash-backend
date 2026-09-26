@@ -46,6 +46,14 @@ async function renderHomeView(container) {
            Lo único que no pinta es el hueco en que la medida aún no ha llegado. -->
       <div id="home-precarga"></div>
 
+      <!-- SCRUM-1075 · «Tu resumen del trimestre ya está listo».
+           Va DESPUÉS de los tres avisos de riesgo (firmas/desalojo/precarga) y ANTES del héroe: no
+           hay dinero en juego, así que no compite con ellos, pero sigue siendo lo primero que se lee.
+           Sin data-home-block a propósito: se descarta con su propio botón (por usuario y por
+           trimestre, SCRUM-1075 punto 5) y ese descarte no debe mezclarse con «Personalizar», que
+           es un ajuste de qué bloques ver, no un acuse de que ya se ha leído éste. -->
+      <div id="home-resumen-trimestre"></div>
+
       <!-- Número héroe: lo que te deben (foco principal) -->
       <div id="home-hero" data-home-block="hero"></div>
 
@@ -128,6 +136,10 @@ async function renderHomeView(container) {
 
     // A8.3: handoffs del bot pendientes — un cliente ESPERA que le escribas
     renderBotHandoffs();
+
+    // SCRUM-1075: aviso de fin de trimestre. Sin `await` a propósito, igual que los handoffs de
+    // arriba: sus tres peticiones no pueden retrasar el resto de la home.
+    pintarResumenTrimestreEnHome();
 
     // A6.7: preferencias de bloques desde BD (null = todo visible)
     if (merchant && merchant.homePrefs !== undefined) {
@@ -297,6 +309,85 @@ async function renderBotHandoffs() {
   `;
   hero.parentNode.insertBefore(card, hero);
 }
+
+/**
+ * SCRUM-1075 · «Tu resumen del trimestre ya está listo» — el HÁBITO de la competencia
+ * (Contasimple/Holded avisan del ciclo fiscal), sin su AFIRMACIÓN (ninguna fecha de presentación:
+ * regla 7). Solo enlaza al «Resumen del trimestre» de SCRUM-1049; no calcula nada nuevo.
+ *
+ * Trimestre NATURAL en hora de Madrid, calculado con `Intl` — nunca con `getMonth()` en la hora
+ * del navegador, que en un cliente fuera de España daría el trimestre equivocado justo el día que
+ * cambia.
+ */
+function trimestreAnteriorMadrid(fecha) {
+  const f = fecha || new Date();
+  const mes = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Madrid', month: 'numeric' }).format(f));
+  const anio = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Madrid', year: 'numeric' }).format(f));
+  const actual = Math.floor((mes - 1) / 3) + 1;
+  return actual === 1 ? { anio: anio - 1, trimestre: 4 } : { anio, trimestre: actual - 1 };
+}
+window.trimestreAnteriorMadrid = trimestreAnteriorMadrid; // testeable sin DOM ni red
+
+/**
+ * El descarte es por MERCHANT + USUARIO + TRIMESTRE (aceptación #5): dos usuarios del mismo
+ * comerciante lo descartan cada uno por su lado. `localStorage` basta — es una conveniencia de
+ * ESTE navegador, no un acuse que otro dispositivo del mismo usuario necesite ver (medido antes de
+ * pedir columna nueva, como pide el ticket).
+ */
+function claveDescarteResumenTrimestre(anio, trimestre) {
+  return `yaqu_resumen_t_${window.appMerchantId}_${window.appTeamMemberId || 'owner'}_${anio}T${trimestre}`;
+}
+window.claveDescarteResumenTrimestre = claveDescarteResumenTrimestre; // testeable sin repetir la fórmula
+
+async function pintarResumenTrimestreEnHome() {
+  const caja = document.getElementById('home-resumen-trimestre');
+  if (!caja) return;
+  caja.innerHTML = '';
+
+  const { anio, trimestre } = trimestreAnteriorMadrid();
+  const clave = claveDescarteResumenTrimestre(anio, trimestre);
+  try {
+    if (window.localStorage.getItem(clave) === '1') return;
+  } catch { /* privado/bloqueado: se comporta como no descartado */ }
+
+  // Los TRES mismos endpoints que ya usa el Resumen del trimestre (SCRUM-1049) — cero cálculo
+  // fiscal nuevo, solo la pregunta «¿hay algo que enseñar?» antes de afirmar que hay un resumen.
+  let vat, recibidas, pl;
+  try {
+    [vat, recibidas, pl] = await Promise.all([
+      apiRequest(`/admin/reports/vat?year=${anio}&quarter=${trimestre}`),
+      apiRequest(`/admin/libros/recibidas.json?ano=${anio}&trimestre=${trimestre}`),
+      apiRequest(`/admin/reports/pl?year=${anio}`),
+    ]);
+  } catch { return; } // sin poder comprobar que hay algo, no se afirma que lo hay
+
+  const monthsQ = (pl.months || []).slice((trimestre - 1) * 3, (trimestre - 1) * 3 + 3);
+  const sinDatos = (vat.invoiceCount || 0) === 0 && (recibidas.miradas || 0) === 0
+    && monthsQ.every((m) => (m.revenue || 0) === 0 && (m.expenses || 0) === 0);
+  if (sinDatos) return; // aceptación #4: sin documentos ni gastos, no hay aviso
+
+  // ✅ Texto FIRMADO por el fundador (regla 39; SCRUM-1075, comentario de firma 25-sep-2026).
+  // `aria-label="Cerrar"` no es texto nuevo: es el literal que ya usan invoiceDetailView/modalHeader.
+  caja.innerHTML = `
+    <div class="alert info" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      <div>
+        <strong>Tu resumen del trimestre ya está listo</strong>
+        <div style="font-size:12.5px;margin-top:2px">Con los números del trimestre pasado, para llevárselo a tu asesor.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+        <button class="btn-primary btn-sm" id="btn-ver-resumen-trimestre">Ver resumen</button>
+        <button class="btn-ghost btn-sm" id="btn-cerrar-resumen-trimestre" aria-label="Cerrar">✕</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('btn-ver-resumen-trimestre')
+    .addEventListener('click', () => window.renderAppView && renderAppView('reports'));
+  document.getElementById('btn-cerrar-resumen-trimestre').addEventListener('click', () => {
+    try { window.localStorage.setItem(clave, '1'); } catch { /* sin storage: reaparece, no rompe nada */ }
+    caja.innerHTML = '';
+  });
+}
+window.pintarResumenTrimestreEnHome = pintarResumenTrimestreEnHome;
 
 function renderSetupChecklist(merchant, data) {
   // A1.3: la checklist es tarea del admin (logo, datos fiscales → Configuración);

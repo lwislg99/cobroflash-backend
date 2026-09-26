@@ -1,0 +1,43 @@
+-- docs/sql/scrum-1102-sii-y-domicilio-foral.sql — SCRUM-1102
+--
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+-- LAS DOS PUERTAS QUE DEJAN A UN PROFESIONAL FUERA DEL RRSIF
+--
+-- Medido contra fuente primaria el 25-sep-2026 (BOE consolidado; expediente en
+-- docs/master/SCRUM-1102.md, con sha256 y fecha de consolidación de cada texto).
+--
+-- APLICADO POR EL FUNDADOR el 25-sep-2026 en STAGING y en PRODUCCIÓN.
+-- Este fichero existe porque el DDL se le pasó por chat y NO estaba escrito en el
+-- repositorio: una sesión fue a buscarlo para aplicarlo en dev y no lo encontró. Un DDL
+-- aplicado a producción que sólo vive en una conversación no es reproducible ni auditable.
+--
+-- 🔴 NULL NO ES FALSE.
+--   NULL  = «no se le ha preguntado todavía»
+--   false = «dijo que no»
+-- Tratarlos igual haría que un alta a medio rellenar pareciera un profesional obligado, que
+-- es exactamente el error que estos campos vienen a evitar. Por eso NO llevan DEFAULT.
+--
+-- ⛔ LO QUE **NO** EXCLUYE, para que nadie lo añada aquí de paso:
+-- módulos (régimen simplificado) y recargo de equivalencia están DENTRO del RRSIF. El
+-- art. 10 del RD 1007/2023 manda INFORMARLOS en el registro de alta — y no se informa del
+-- régimen de quien está excluido. El máster decía lo contrario y se corrigió (PR #1792).
+--
+-- LAS DOS PUERTAS, y por qué son dos preguntas y no un censo de regímenes:
+--   · lleva_libros_por_sii    → RD 1007/2023 art. 3.3. Entran por ahí REDEME, facturar más
+--                               de 6.010.121,04 €, los grupos de entidades, los depósitos
+--                               fiscales y la OPCIÓN VOLUNTARIA del art. 68 bis. El
+--                               profesional no sabe si está «en los términos del 62.6»,
+--                               pero sí sabe si su gestoría le lleva el SII.
+--   · domicilio_fiscal_foral  → RD art. 1: el RRSIF se aplica en País Vasco y Navarra sólo
+--                               a quien tenga el domicilio fiscal en territorio común. El
+--                               criterio es el DOMICILIO, no dónde se trabaja ni dónde está
+--                               la obra.
+--
+-- ADITIVO: ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni SET NOT NULL.
+-- Generado con `node scripts/preview-migracion.mjs --desde <copia>`, que llevó su control
+-- positivo (vio 31 tablas: no contestó a ciegas). El esquema se restauró después y se
+-- comprobó por sha256 que quedaba idéntico.
+-- ═══════════════════════════════════════════════════════════════════════════════════════════
+
+ALTER TABLE "merchants" ADD COLUMN "domicilio_fiscal_foral" BOOLEAN,
+ADD COLUMN "lleva_libros_por_sii" BOOLEAN;
