@@ -1077,6 +1077,40 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   }).catch(() => {
     mBody.innerHTML = '<p style="font-size:13px;color:var(--muted);margin:0">No hay datos de gastos.</p>';
   });
+
+  // ── Sección: REVISIONES (SCRUM-988) ─────────────────────────
+  // La pantalla existía desde SCRUM-655c/688 y no la llamaba nadie. Decidido por el orquestador
+  // (26-sep-2026): sección al pie del detalle, con los rótulos YA firmados de `quoteRevisiones.js`
+  // —ni uno nuevo—; la ve quien ve el presupuesto, en todos los estados; «Crear revisión» sólo el
+  // admin, que es exactamente lo que exige `requireRole('admin')` en el POST.
+  //
+  // ⛔ Crear una revisión GENERA UN PRESUPUESTO NUEVO (`crearRevisionDeQuote`, sobre la vigente);
+  // el anterior no se modifica. Por eso al crearla se navega a la nueva, no se repinta ésta.
+  // ⛔ Y aquí no se decide cuál es la vigente: lo dice el servidor, la pieza lo pinta.
+  if (window.pintarRevisiones) {
+    const revSec = document.createElement('div');
+    revSec.className = 'detail-section';
+    revSec.setAttribute('data-seccion-revisiones', '1');
+    const revTitulo = document.createElement('h3');
+    revTitulo.className = 'detail-section-title';
+    revTitulo.textContent = (window.REVISIONES_TEXTOS && window.REVISIONES_TEXTOS.titulo) || '';
+    revSec.appendChild(revTitulo);
+    const revBody = document.createElement('div');
+    revSec.appendChild(revBody);
+    page.appendChild(revSec);
+
+    window.pintarRevisiones(revBody, quote, quote.id, { sinTitulo: true });
+    const btnRevision = revBody.querySelector('[data-revision-crear]');
+    if (btnRevision && window.appUserRole !== 'admin') {
+      btnRevision.remove();
+    } else if (btnRevision && window.cablearCrearRevision) {
+      window.cablearCrearRevision(revBody, (creada) => {
+        if (creada && creada.id != null && window.renderAppView) {
+          window.renderAppView('quotes-detail', { quoteId: creada.id });
+        }
+      });
+    }
+  }
 }
 
 // ── Panel inline de decisión back-office (sustituye prompt/alert) ──────────

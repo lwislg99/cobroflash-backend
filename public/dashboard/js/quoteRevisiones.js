@@ -108,7 +108,10 @@
         : '') +
       (esLaAbierta
         ? ''
-        : '<a data-revision-ver="' + esc(fila.id) + '" href="#/presupuestos/' + esc(fila.id) + '"' +
+        // SCRUM-988 · decía `#/presupuestos/<id>`, un hash que el router NO atiende (`viewFromHash`
+        // en `app.js` parte `#quotes-detail/<id>`): el enlace no llevaba a ninguna parte. Nadie lo
+        // vio porque hasta SCRUM-988 esta pantalla no tenía llamador.
+        : '<a data-revision-ver="' + esc(fila.id) + '" href="#quotes-detail/' + encodeURIComponent(fila.id) + '"' +
           ' style="font-size:13px">' + esc(TEXTOS.verEsta) + '</a>') +
       '</li>';
   }
@@ -123,8 +126,11 @@
    * la revisión no es un rodeo a `puedeEditarse`, es la salida que faltaba cuando la anterior ya
    * está firmada y no se puede tocar.
    */
-  function pintarRevisiones(contenedor, datos, idAbierta) {
+  function pintarRevisiones(contenedor, datos, idAbierta, opciones) {
     if (!contenedor) return false;
+    // SCRUM-988 · la ficha del presupuesto ya pone el título «Revisiones» a su sección, como a
+    // todas las demás; con `sinTitulo` no se pinta un segundo debajo. Por defecto, igual que antes.
+    var conTitulo = !(opciones && opciones.sinTitulo);
 
     var filas = revisionesOCeguera(datos);
     if (filas === null) {
@@ -148,7 +154,9 @@
     }
 
     contenedor.innerHTML =
-      '<h4 style="margin:12px 0 4px;font-size:13px;color:var(--muted)">' + esc(TEXTOS.titulo) + '</h4>' +
+      (conTitulo
+        ? '<h4 style="margin:12px 0 4px;font-size:13px;color:var(--muted)">' + esc(TEXTOS.titulo) + '</h4>'
+        : '') +
       '<ul data-revisiones-lista="1" style="list-style:none;margin:0;padding:0">' +
       filas.map(function (f) { return filaDeRevision(f, f.id === idAbierta); }).join('') +
       '</ul>' + botonCrearRevision(vigente);
