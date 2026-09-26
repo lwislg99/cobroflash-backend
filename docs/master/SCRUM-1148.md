@@ -1,6 +1,6 @@
 # SCRUM-1148 · 44 px por contenedor en el editor de presupuesto (grupo B de SCRUM-786, parte 1)
 
-**Medido contra:** `origin/main` = `c3031d89ac3ecf7c9b54d11bf6e5bca2fd99f1b8` · 2026-09-26T12:35:00Z
+**Medido contra:** `origin/main` = `c3031d8929b268ed37a13b7674f81785aa61a9ed` · 2026-09-26T12:35:00Z
 **Rama:** `scrum-1148-tactil-presupuesto`.
 **Sesión:** S2 (front). **Skill UI:** cargada (`yaqu-premium-ui`).
 
