@@ -71,3 +71,73 @@ como el hueco si se prefiere Jira más adelante.
 - ⛔ No se ha creado el Issue de prueba real (bloqueado por auto-mode; ver arriba).
 - ⛔ No se ha tocado SCRUM-1122 (el ticket de la incidencia concreta, con los pasos para el
   fundador) ni el `docs/sql/` pendiente de aplicar.
+
+## SCRUM-1123b (seguimiento, 26-sep-2026) · la decisión sale del YAML y se prueba contra dobles
+
+**Medido contra:** `origin/main` = `c5dd40fbd61f275c736f535d0afb2b4cdf6a5808` · 2026-09-26T12:52:32Z
+**Rama:** `scrum-1123-verificado-servidor-falso` · **Worktree:** `wt-s5-1123-servidor-falso`
+**Origen:** el orquestador pidió, tras SCRUM-1123b arriba, "ejercitar el camino de notificación
+contra un servidor falso" (mismo espíritu que `tests/scrum1127-sif-client.test.mjs`) y declarar por
+escrito lo que quede sin medir — sin crear el Issue de prueba real (eso queda para el fundador).
+
+### Medido primero: el "experimento natural" NO sirve
+
+El orquestador comprobó, ANTES de mandarme a tocar nada, si los 4 fallos del vigía entre el 24 y el
+25-sep (22:46, 02:10, 09:09, 14:49) habían dejado algún Issue — habría sido la prueba en vivo del
+mecanismo. **No sirve como prueba**: los 4 fallos son ANTERIORES al merge de PR #1777 (25-sep
+17:02:50Z), y desde entonces el vigía está en success. Cero Issues de despliegue en el repo (solo
+#1241 y #1698, ninguno de este vigía). La ausencia de Issue no confirma ni descarta el mecanismo.
+
+### Por qué NO es un servidor HTTP falso hablando con `gh`
+
+`gh` no tiene un endpoint configurable hacia un host arbitrario sin asumir GitHub Enterprise
+(`GH_HOST` cambia la FORMA de la URL, `/api/v3/...`), así que un servidor falso ahí probaría una
+forma de llamada que la ejecución real no usa — no sería una prueba más fiel, sería otra cosa. Esta
+casa ya tiene el patrón correcto para este problema exacto (GH API vía `gh` CLI + dedupe por
+marcador): `scripts/puerta-avisador-rojo.mjs` (SCRUM-834/853), que saca la DECISIÓN a un módulo
+puro —JSON en, JSON fuera, cero red— y deja el `gh api`/`gh pr comment` real, fino, en el YAML.
+Es la misma idea que un servidor falso para un cliente HTTP propio (SCRUM-1127): ejercitar el
+código que TOMA LA DECISIÓN contra entradas fabricadas, en vez de confiar en que "debería funcionar".
+
+### Qué se construyó
+
+- `scripts/vigia-despliegue-aviso.mjs` (nuevo): `componerCuerpo` (el cuerpo del aviso, texto puro),
+  `elegirIssueExistente` (dedupe por substring exacto de la marca en un cuerpo, ignorando PRs —la
+  API de Issues los incluye— y `body: null`) y `decidirAviso` (junta las dos; sin `marca` no decide
+  nada, fail-closed). CLI: lee `VIGIA_ISSUES_JSON`/`VIGIA_MARCA`/`VIGIA_RENGLON`/`VIGIA_RUN_URL` del
+  entorno, imprime el JSON de la decisión, sale 0 si decidió y 1 si no pudo (`no-se-sabe`).
+- `.github/workflows/vigia-despliegue.yml`: el paso de aviso ahora hace `gh api` para traer los
+  Issues abiertos EN CRUDO, llama al script para decidir, y usa `jq` sobre su salida para el
+  `gh issue create`/`comment` real. Ni el permiso (`issues: write`), ni la condición
+  (`salida == '1'`), ni el patrón de dedupe cambian — se saca la lógica, no se rediseña.
+- 🔴 **Un fallo real que este mismo trabajo encontró y corrigió**: los pasos `run:` de Actions
+  llevan `-e -o pipefail`; sin guardas, un `jq`/`node` que fallara habría abortado el paso ANTES de
+  llegar al `if`/`else` que reporta el motivo — el mismo defecto de fondo («abortar en vez de
+  decidir») que esta pieza entera existe para no cometer, escondido un nivel más abajo. Añadidos
+  `|| true` en los tres puntos que pueden fallar, con su motivo en el comentario.
+
+### Verificado
+
+- 14 tests nuevos (`tests/scrum1123-vigia-despliegue-aviso.test.mjs`): `componerCuerpo` (constancia
+  + URL + marca, en orden; sin renglón no inventa uno), `elegirIssueExistente` (substring dentro de
+  cuerpo largo, PR no cuenta, `body:null` no revienta, elige el primero que casa) y `decidirAviso`
+  (crear vs. comentar, fail-closed sin marca) — y el CLI real, como SUBPROCESO (`spawnSync`, no un
+  `import`): issues vacío → crea; Issue con la marca → comenta ESE número; `VIGIA_ISSUES_JSON`
+  ilegible → exit 1; sin `VIGIA_MARCA` → exit 1. **14/14 pass.**
+- Los tests que YA leían este workflow (`scrum716b`, `scrum716c`, `scrum677b`, `scrum387`,
+  `scrum834`) siguen en verde: 91/91 sobre el conjunto.
+- `npm run guards:entrada`: 112/112. `npm run build`: limpio.
+- Sin `js-yaml` esta vez (no queda instalado en ningún árbol): la revisión de la sintaxis bash fue
+  manual, línea a línea, más las pruebas end-to-end del CLI real como subproceso.
+
+### Lo que SIGUE sin medir, dicho sin rodeos (lo que pidió el orquestador)
+
+- **Que `api.github.com` acepte de verdad** el `gh api .../issues`, `gh issue create` y
+  `gh issue comment` reales con el `GITHUB_TOKEN` de la ejecución. Ningún test de esta casa mide
+  eso para el mecanismo hermano (`avisador-rojo.yml`) tampoco — no es un hueco nuevo de este
+  ticket, es el mismo hueco que ya se acepta ahí.
+- **El Issue de prueba real** (crear uno, verlo aparecer, comentarlo, cerrarlo) sigue sin hacerse.
+  No lo hace esta sesión (el clasificador de auto-mode ya lo negó una vez) ni lo hace el
+  orquestador en su lugar: queda en la lista del fundador, como se acordó.
+- La próxima vez que el vigía cante DE VERDAD en producción será la primera comprobación end-to-end
+  real de los dos caminos (crear y comentar) desde que existe este mecanismo.
