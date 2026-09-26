@@ -826,7 +826,7 @@ y decides con ella delante.
 
 # SCRUM-631b · el hueco 1 de §5 se cierra: la caja medida, y el marcador retirado
 
-**Medido contra:** `origin/main` = `c62df27e5707eeff188a24d1cf030e30ede3f4b4`
+**Medido contra:** `origin/main` = `c62df27e5707eeff188a24d1cf030e30ede3f4b4` · 2026-09-26T15:03:11+02:00
 **Rama:** `scrum-631-reactivar-nombre-cogido` · **Carril:** Sesión 4 · **Skill UI:** cargada
 (`yaqu-premium-ui`)
 
