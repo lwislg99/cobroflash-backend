@@ -22,6 +22,12 @@ sigue con las casillas de producción SIN MARCAR para los dos — es un hueco de
 estado: la tabla evidentemente existe ya en producción (el despliegue no cae), falta que alguien
 marque las casillas. No es mío tocarlo (schema, Javier/A5); lo dejo anotado.
 
+⚠️ **CORRECCIÓN, 06:40Z:** el §1 de abajo se escribió tras ver los 5 PR sin `FAILURE` justo
+después del `update-branch`, pero esa lectura fue de una corrida TODAVÍA EN CURSO. La corrida
+completa (terminada 06:06Z) volvió a dar `build + tests` en FAILURE en al menos #1793. **No doy
+por resuelto el rojo de SCRUM-267/976** hasta que alguna sesión confirme la causa real del rojo
+de HOY — puede ser la misma, puede ser otra. sesion-1 ya está mirándolo (worktree `s1-1138-fix`).
+
 ## 1 · Los 6 PR abiertos, y qué hice con ellos esta mañana
 
 Los 5 primeros llevaban desde ayer BLOCKED por el mismo rojo (`build+tests`: SCRUM-267 y SCRUM-976
