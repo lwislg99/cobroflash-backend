@@ -260,7 +260,13 @@ function banco(agentes) {
   }));
 
   const correr = (...a) => {
-    const p = spawnSync(process.execPath, [path.join(inst, 'sesion.mjs'), ...a], { encoding: 'utf8' });
+    // SCRUM-1153 · el `env` se construye a mano: sin esto, el hijo hereda `NODE_TEST_CONTEXT`,
+    // `FORCE_COLOR` o `NODE_OPTIONS` de la máquina y se mide la CASA, no la copia instalada.
+    const entornoHijo = { ...process.env };
+    delete entornoHijo.FORCE_COLOR;
+    delete entornoHijo.NODE_OPTIONS;
+    delete entornoHijo.NODE_TEST_CONTEXT;
+    const p = spawnSync(process.execPath, [path.join(inst, 'sesion.mjs'), ...a], { encoding: 'utf8', env: entornoHijo });
     let v = null;
     try { v = JSON.parse((p.stdout || '').trim().split('\n').at(-1)); } catch { /* sin veredicto */ }
     return { status: p.status, v };

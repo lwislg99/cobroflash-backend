@@ -12,6 +12,7 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { temporal } from './_temporal.mjs';
+import { localAppData, escribirUso } from './_uso-banco.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const instalar = await import(pathToFileURL(path.join(RAIZ, 'scripts', 'equipo', 'instalar.mjs')).href);
@@ -31,6 +32,18 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: '🔴 ROJO: con sesion.mjs ALTERADO, la tanda no lanza nada',
   },
   {
+    fichero: 'scripts/equipo/orquestador-arranque.mjs',
+    de: "  ['uso.mjs', 'scripts/equipo/uso.mjs'],\n",
+    a: '',
+    cae: '🔴 SCRUM-999 · con uso.mjs ALTERADO, la tanda no lanza nada',
+  },
+  {
+    fichero: 'scripts/equipo/orquestador-arranque.mjs',
+    de: "  if (uso.veredicto !== 'VERDE') {",
+    a: '  if (false) {',
+    cae: '🔴 SCRUM-999 · sin cuota, la tanda lanza igual',
+  },
+  {
     // Sin entrar en el repo, la tarea arranca en System32 y el orquestador nace fuera del proyecto.
     fichero: 'scripts/equipo/instalar.mjs',
     de: '    `cd /d "${r}"`,\n',
@@ -48,7 +61,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 const PROMPT = 'Prompt de tanda del banco de SCRUM-899b.';
 const UUID = '1234abcd-0000-4000-8000-00000000abcd';
 
-function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = false } = {}) {
+function banco({ alterarArranque = false, alterarSesion = false, alterarUso = false, sinPrompt = false, usoVerde = true } = {}) {
   // SCRUM-864c · `temporal()` y no `fs.mkdtempSync`: el `finally` de cada test llama a
   // `b.limpiar()`, pero `banco()` crea el directorio ANTES de que su llamador entre en el `try`
   // —y entre medias hace `git init`, copia ficheros y lanza procesos—. Si algo de eso revienta,
@@ -62,6 +75,7 @@ function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = fal
   for (const [enRepo] of instalar.copias('docs/equipo/prompt-tanda-orquestador.md')) fs.mkdirSync(path.join(repo, path.dirname(enRepo)), { recursive: true });
   fs.copyFileSync(path.join(RAIZ, 'scripts/equipo/sesion.mjs'), path.join(repo, 'scripts/equipo/sesion.mjs'));
   fs.copyFileSync(path.join(RAIZ, 'scripts/equipo/orquestador-arranque.mjs'), path.join(repo, 'scripts/equipo/orquestador-arranque.mjs'));
+  fs.copyFileSync(path.join(RAIZ, 'scripts/equipo/uso.mjs'), path.join(repo, 'scripts/equipo/uso.mjs'));
   if (!sinPrompt) fs.writeFileSync(path.join(repo, 'docs/equipo/prompt-tanda-orquestador.md'), PROMPT);
   git(repo, 'add', '.');
   git(repo, '-c', 'user.name=banco', '-c', 'user.email=banco@x', 'commit', '-q', '-m', 'banco');
@@ -77,6 +91,14 @@ function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = fal
   }
   if (alterarArranque) fs.appendFileSync(path.join(inst, 'orquestador-arranque.mjs'), '\n// tocado\n');
   if (alterarSesion) fs.appendFileSync(path.join(inst, 'sesion.mjs'), '\n// tocado\n');
+  if (alterarUso) fs.appendFileSync(path.join(inst, 'uso.mjs'), '\n// tocado\n');
+
+  // SCRUM-999 · `uso.mjs leer` SIEMPRE mira `%LOCALAPPDATA%\yaqu-equipo\uso.json`: sin aislarlo
+  // aquí, el banco leería el de ESTA máquina (hoy AVISO al 88 %) y el veredicto del test
+  // dependería de cuánta cuota le quede a la cuenta real en el momento de correr — el mismo
+  // defecto de entorno que las cuatro rondas de CI de #1806. Por defecto, VERDE (10 %).
+  const localappdata = localAppData(dir);
+  if (usoVerde !== null) escribirUso(dir, usoVerde === true ? 10 : usoVerde);
 
   // `claude` falso con estado: cada llamada queda en llamadas.txt; `--bg` registra una sesión viva.
   const llamadas = path.join(dir, 'llamadas.txt');
@@ -113,12 +135,22 @@ function banco({ alterarArranque = false, alterarSesion = false, sinPrompt = fal
 
   const leerLlamadas = () => (fs.existsSync(llamadas) ? fs.readFileSync(llamadas, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
   const tanda = () => {
-    const r = spawnSync(process.execPath, [path.join(inst, 'orquestador-arranque.mjs')], { encoding: 'utf8' });
+    // SCRUM-999: LOCALAPPDATA aislado — ver el comentario de arriba. Se pasa por `env`, no por
+    // `--fichero`: en producción `orquestador-arranque.mjs` no le pasa ningún `--fichero` a
+    // `uso.mjs`, y el test tiene que ejercer EXACTAMENTE esa misma llamada, no una más permisiva.
+    // SCRUM-1153 · el `env` se construye a mano: sin el `delete`, el hijo también hereda
+    // `NODE_TEST_CONTEXT`/`FORCE_COLOR`/`NODE_OPTIONS` de la máquina.
+    const entornoHijo = { ...process.env, LOCALAPPDATA: localappdata };
+    delete entornoHijo.FORCE_COLOR;
+    delete entornoHijo.NODE_OPTIONS;
+    delete entornoHijo.NODE_TEST_CONTEXT;
+    const r = spawnSync(process.execPath, [path.join(inst, 'orquestador-arranque.mjs')],
+      { encoding: 'utf8', env: entornoHijo });
     let v = null;
     try { v = JSON.parse((r.stdout || '').trim().split('\n').at(-1)); } catch { /* sin veredicto */ }
     return { status: r.status, v };
   };
-  return { dir, inst, tanda, leerLlamadas, limpiar: () => fs.rmSync(dir, { recursive: true, force: true }) };
+  return { dir, inst, tanda, leerLlamadas, escribirUso: (usado, o) => escribirUso(dir, usado, o), limpiar: () => fs.rmSync(dir, { recursive: true, force: true }) };
 }
 
 const lanzamientos = (llamadas) => llamadas.filter((a) => a[0] === '--bg');
@@ -162,6 +194,48 @@ test('🔴 ROJO: con sesion.mjs ALTERADO, la tanda no lanza nada', () => {
     const r = b.tanda();
     assert.equal(r.v?.veredicto, 'ALTERADO', `🔴 el arranque no comprobó sesion.mjs antes de lanzarlo: ${JSON.stringify(r.v)}`);
     assert.deepEqual(b.leerLlamadas(), []);
+  } finally { b.limpiar(); }
+});
+
+test('🔴 SCRUM-999 · con uso.mjs ALTERADO, la tanda no lanza nada', () => {
+  const b = banco({ alterarUso: true });
+  try {
+    const r = b.tanda();
+    assert.equal(r.v?.veredicto, 'ALTERADO', `🔴 el arranque no comprobó uso.mjs antes de lanzarlo: ${JSON.stringify(r.v)}`);
+    assert.deepEqual(b.leerLlamadas(), []);
+  } finally { b.limpiar(); }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-999 · sin cuota, la tanda no lanza — es el defecto entero del ticket: `decidirLanzar`
+// (sesion.mjs) sólo mira si hay algo VIVO en el repo, nunca la cuota de la cuenta.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('🔴 SCRUM-999 · con la cuenta en AVISO (≥85 %), la tanda NO lanza y lo dice como SIN-CUOTA', () => {
+  const b = banco({ usoVerde: 90 });
+  try {
+    const r = b.tanda();
+    assert.equal(r.v?.veredicto, 'SIN-CUOTA', `🔴 lanza con la cuota casi agotada: ${JSON.stringify(r.v)}`);
+    assert.equal(r.v?.uso?.veredicto, 'AVISO', `🔴 no es el veredicto de uso.mjs el que lo para: ${JSON.stringify(r.v)}`);
+    assert.deepEqual(b.leerLlamadas(), [], '🔴 con AVISO, llegó a llamar a claude');
+  } finally { b.limpiar(); }
+});
+
+test('🔴 SCRUM-999 · sin lectura vigente de uso.mjs (máquina recién instalada), la tanda NO lanza', () => {
+  const b = banco({ usoVerde: null });
+  try {
+    const r = b.tanda();
+    assert.equal(r.v?.veredicto, 'SIN-CUOTA', `🔴 lanza sin poder mirar la cuota: ${JSON.stringify(r.v)}`);
+    assert.equal(r.v?.uso?.veredicto, 'NO_PUDE_MIRAR', `🔴 ${JSON.stringify(r.v)}`);
+    assert.deepEqual(b.leerLlamadas(), [], '🔴 sin dato de cuota, llegó a llamar a claude: no es fail-closed');
+  } finally { b.limpiar(); }
+});
+
+test('CONTROL: con la cuenta en VERDE, la misma tanda SÍ lanza (no es que el banco no pueda lanzar)', () => {
+  const b = banco({ usoVerde: 10 });
+  try {
+    const r = b.tanda();
+    assert.equal(r.v?.tanda?.veredicto, 'LANZADA', `🔴 NO PUDE MIRAR: el banco bueno no lanza (${JSON.stringify(r.v)})`);
   } finally { b.limpiar(); }
 });
 

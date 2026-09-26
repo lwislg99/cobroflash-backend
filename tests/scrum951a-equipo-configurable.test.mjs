@@ -20,6 +20,7 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { temporal } from './_temporal.mjs';
+import { localAppData, escribirUso } from './_uso-banco.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SESION = path.join(RAIZ, 'scripts', 'equipo', 'sesion.mjs');
@@ -139,10 +140,17 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
   for (const [enRepo, instalado] of [
     ['scripts/equipo/sesion.mjs', 'sesion.mjs'],
     ['scripts/equipo/orquestador-arranque.mjs', 'orquestador-arranque.mjs'],
+    ['scripts/equipo/uso.mjs', 'uso.mjs'],
     ['docs/equipo/prompt-tanda-orquestador.md', 'prompt-tanda.md'],
   ]) {
     fs.writeFileSync(path.join(inst, instalado), execFileSync('git', ['-C', repo, 'show', `origin/main:${enRepo}`]));
   }
+
+  // SCRUM-999 · `uso.mjs leer` SIEMPRE mira `%LOCALAPPDATA%\yaqu-equipo\uso.json`: aislado aquí
+  // para que el único test de este banco que pasa por `orquestador-arranque.mjs` no dependa de la
+  // cuota real de la máquina (ver el comentario largo en scrum899b). VERDE por defecto.
+  const localappdata = localAppData(dir);
+  escribirUso(dir, 10);
 
   const memoria = path.join(dir, 'memoria');
   fs.mkdirSync(memoria);
@@ -181,7 +189,15 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
     ? fs.readFileSync(llamadas, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l))
     : []);
   const correr = (script, ...args) => {
-    const r = spawnSync(process.execPath, [path.join(inst, script), ...args], { encoding: 'utf8' });
+    // SCRUM-1153 · el `env` se construye a mano: sin esto, el hijo hereda `NODE_TEST_CONTEXT`,
+    // `FORCE_COLOR` o `NODE_OPTIONS` de la máquina y se mide la CASA, no la copia instalada.
+    // SCRUM-999 · y hereda `LOCALAPPDATA` aislado, para el único `correr('orquestador-arranque.mjs')`
+    // de este banco: sin él, ese caso leería la cuota REAL de la máquina.
+    const entornoHijo = { ...process.env, LOCALAPPDATA: localappdata };
+    delete entornoHijo.FORCE_COLOR;
+    delete entornoHijo.NODE_OPTIONS;
+    delete entornoHijo.NODE_TEST_CONTEXT;
+    const r = spawnSync(process.execPath, [path.join(inst, script), ...args], { encoding: 'utf8', env: entornoHijo });
     let v = null;
     try { v = JSON.parse((r.stdout || '').trim().split('\n').at(-1)); } catch { /* sin veredicto */ }
     return { status: r.status, v };
@@ -196,7 +212,14 @@ function banco({ equipo = { prefijo: '', puestos: PUESTOS_DE_LUIS, orquestador: 
 const lanzamientos = (llamadas) => llamadas.filter((a) => a[0] === '--bg');
 
 function correrInstalar(args) {
-  const r = spawnSync(process.execPath, [INSTALAR, ...args], { encoding: 'utf8' });
+  // SCRUM-1153 · mismo motivo que `correr` arriba, aunque este censo no cruce funciones para
+  // verlo: el `JSON.parse(r.stdout)` de quien LLAMA a `correrInstalar` también mide la CASA si el
+  // hijo hereda el entorno sin limpiar.
+  const entornoHijo = { ...process.env };
+  delete entornoHijo.FORCE_COLOR;
+  delete entornoHijo.NODE_OPTIONS;
+  delete entornoHijo.NODE_TEST_CONTEXT;
+  const r = spawnSync(process.execPath, [INSTALAR, ...args], { encoding: 'utf8', env: entornoHijo });
   return { status: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
 }
 
