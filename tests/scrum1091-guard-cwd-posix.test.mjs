@@ -30,6 +30,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { evaluar, cwdDelComando } from '../.claude/hooks/guard-dangerous.mjs';
+import { temporal } from './_temporal.mjs';
 
 // ── ① DETERMINISTA: la traducción en sí, en CUALQUIER host ──────────────────────────────────
 
@@ -71,7 +72,7 @@ const SENTINEL_FALSO = path.join(os.tmpdir(), 'yaqu-1091-sentinel-que-no-existe'
 const llamada = (c) => JSON.stringify({ tool_name: 'Bash', tool_input: { command: c, description: 'prueba' } });
 
 function repoConVictima() {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1091-')));
+  const dir = fs.realpathSync(temporal('yaqu-1091-'));
   const git = (...a) => spawnSync('git', a, { cwd: dir, encoding: 'utf8' });
   git('init', '-q');
   git('config', 'user.email', 'x@x');
