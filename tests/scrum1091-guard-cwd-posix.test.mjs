@@ -11,6 +11,18 @@
 // devolvía SIN TRADUCIR, y luego `path.resolve(cwd, destino)` lo trataba como relativo al drive
 // actual — `C:\c\Users\…`, una ruta que nunca existe. El ENOENT de esa ruta inventada se leía como
 // «no hay nada que perder», y el guard fallaba ABIERTO justo en el caso que más importa.
+//
+// ── POR QUÉ HAY DOS GRUPOS DE TESTS AQUÍ ─────────────────────────────────────────────────────
+// `.github/workflows/ci.yml` corre TODO en `ubuntu-latest` — no hay ningún runner Windows en este
+// repo. El defecto y el arreglo dependen de `path.isAbsolute`/`path.resolve` NATIVOS de Windows
+// (`process.platform === 'win32'`), así que una reproducción con ficheros reales y la `evaluar()`
+// completa SOLO puede darse en un host Windows de verdad: en Linux, `path.isAbsolute('/c/…')` es
+// simplemente una ruta POSIX válida y no hay nada que duplicar.
+//   ① Grupo determinista (corre en CUALQUIER host, con `path.win32` explícito y la `plataforma`
+//     inyectable de `cwdDelComando` — SCRUM-1091): prueba la TRADUCCIÓN de verdad, sin fs.
+//   ② Grupo end-to-end con `evaluar()` y un repo Git real: solo tiene sentido en `win32`, y en
+//     cualquier otro host se declara el motivo (nunca un salto silencioso, A3) — verificado en
+//     rojo/verde en la máquina de desarrollo real; el detalle está en `docs/master/SCRUM-1091.md`.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -18,6 +30,37 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { evaluar, cwdDelComando } from '../.claude/hooks/guard-dangerous.mjs';
+
+// ── ① DETERMINISTA: la traducción en sí, en CUALQUIER host ──────────────────────────────────
+
+test('SCRUM-1091 · en win32, `/<letra>/…` se traduce a `<letra>:/…` — y ahí YA NO duplica la letra', () => {
+  const cwd = cwdDelComando('cd "/d/Users/javier/repro" && echo hola', 'Z:/donde-sea', 'win32');
+  assert.equal(cwd, 'd:/Users/javier/repro', `🔴 no tradujo: ${cwd}`);
+  // Lo que de verdad importaba: con la forma traducida, path.win32.resolve ya no duplica la letra.
+  assert.equal(path.win32.resolve(cwd, 'victima.md'), 'd:\\Users\\javier\\repro\\victima.md');
+});
+
+test('SCRUM-1091 · 🔴 EL DEFECTO, reproducido sin fs: SIN traducir, path.win32.resolve SÍ duplica la letra', () => {
+  // Esto es lo que hacía `cwdDelComando` antes del arreglo: devolver el destino MSYS tal cual.
+  const cwdSinTraducir = '/d/Users/javier/repro';
+  assert.equal(path.win32.resolve(cwdSinTraducir, 'victima.md'), 'D:\\d\\Users\\javier\\repro\\victima.md',
+    'si esto deja de duplicar la letra, `path.win32` cambió de comportamiento — no es este el test a tocar');
+});
+
+test('SCRUM-1091 · fuera de win32 (p.ej. el runner de CI), la forma MSYS se deja tal cual: no hay nada que traducir', () => {
+  assert.equal(cwdDelComando('cd "/d/Users/x" && echo hola', '/donde-sea', 'linux'), '/d/Users/x');
+});
+
+test('SCRUM-1091 · una ruta YA nativa de Windows (sin forma MSYS) no se toca, tampoco en win32', () => {
+  assert.equal(cwdDelComando('cd "D:/Users/x" && echo hola', 'Z:/donde-sea', 'win32'), 'D:/Users/x');
+});
+
+// ── ② END-TO-END: solo tiene sentido en un host win32 de verdad ─────────────────────────────
+
+const ES_WIN32 = process.platform === 'win32';
+const MOTIVO_SKIP = ES_WIN32 ? false
+  : 'el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 '
+    + '(verificado en rojo/verde en la máquina de desarrollo real, ver docs/master/SCRUM-1091.md)';
 
 const SENTINEL_FALSO = path.join(os.tmpdir(), 'yaqu-1091-sentinel-que-no-existe');
 const llamada = (c) => JSON.stringify({ tool_name: 'Bash', tool_input: { command: c, description: 'prueba' } });
@@ -40,22 +83,20 @@ function aPosix(dirWindows) {
   return `/${letra.toLowerCase()}/${resto.join(':/')}`;
 }
 
-const DIR = repoConVictima();
-test.after(() => fs.rmSync(DIR, { recursive: true, force: true }));
+const DIR = ES_WIN32 ? repoConVictima() : null;
+test.after(() => { if (DIR) fs.rmSync(DIR, { recursive: true, force: true }); });
 
-test('SCRUM-1091 · cwdDelComando traduce `/<letra>/…` a `<letra>:/…`: path.resolve ya no duplica la letra', () => {
+test('SCRUM-1091 · cwdDelComando (host real) traduce `/<letra>/…`: path.resolve ya no duplica la letra', { skip: MOTIVO_SKIP }, () => {
   const cwd = cwdDelComando(`cd "${aPosix(DIR)}" && echo hola`, 'Z:/donde-sea');
-  // Windows no distingue mayúsculas en la letra de unidad: se compara así, y lo que de verdad
-  // importa es que NO se duplique (`C:\c\Users\…`, la ruta que nunca existe).
   assert.equal(path.resolve(cwd, 'victima.md').toLowerCase(), path.join(DIR, 'victima.md').toLowerCase(),
     `🔴 la letra se duplica: cwdDelComando devolvió ${cwd}`);
 });
 
-test('SCRUM-1091 · una ruta ya nativa (sin forma MSYS) no se toca', () => {
+test('SCRUM-1091 · una ruta ya nativa (sin forma MSYS) no se toca, en el host real', { skip: MOTIVO_SKIP }, () => {
   assert.equal(cwdDelComando(`cd "${DIR.replace(/\\/g, '/')}" && echo hola`, 'Z:/donde-sea'), DIR.replace(/\\/g, '/'));
 });
 
-test('SCRUM-1091 · 🔴 EL CASO REAL: `cd "/<letra>/…" && … > fichero-existente` SÍ bloquea (antes pasaba limpio)', () => {
+test('SCRUM-1091 · 🔴 EL CASO REAL: `cd "/<letra>/…" && … > fichero-existente` SÍ bloquea (antes pasaba limpio)', { skip: MOTIVO_SKIP }, () => {
   const comando = `cd "${aPosix(DIR)}" && echo "NUEVO TEXTO QUE TRUNCA" > victima.md`;
   const { bloqueado, motivo } = evaluar(llamada(comando), SENTINEL_FALSO);
   assert.equal(bloqueado, true,
@@ -64,7 +105,7 @@ test('SCRUM-1091 · 🔴 EL CASO REAL: `cd "/<letra>/…" && … > fichero-exist
   assert.match(motivo, /TRUNCA un fichero/);
 });
 
-test('SCRUM-1091 · control negativo: la misma forma de `cd`, sobre un fichero que NO existe, no bloquea', () => {
+test('SCRUM-1091 · control negativo: la misma forma de `cd`, sobre un fichero que NO existe, no bloquea', { skip: MOTIVO_SKIP }, () => {
   const comando = `cd "${aPosix(DIR)}" && echo "contenido" > nuevo-de-verdad.md`;
   const { bloqueado } = evaluar(llamada(comando), SENTINEL_FALSO);
   assert.equal(bloqueado, false, '🔴 control negativo: no debería bloquear algo nuevo');

@@ -431,8 +431,8 @@ const esEnlace = (p) => {
  * `cd "/c/…" && …` que usa TODA sesión de esta máquina — medido, SCRUM-1091. Un solo punto: el
  * string nace aquí, no en cada consumidor de `cwd`.
  */
-function posixADrive(destino) {
-  if (process.platform !== 'win32') return destino;
+function posixADrive(destino, plataforma) {
+  if (plataforma !== 'win32') return destino;
   const m = /^\/([a-zA-Z])(\/.*)?$/.exec(destino);
   return m ? `${m[1]}:${m[2] || '/'}` : destino;
 }
@@ -441,11 +441,16 @@ function posixADrive(destino) {
  * Desde dónde se ejecuta. Un `cd X && …` al principio es la forma normal de trabajar en este
  * repo con cuatro worktrees, y sin esto el guard miraría el árbol equivocado — que es peor que
  * no mirar: diría «limpio» de otro sitio.
+ *
+ * `plataforma` es inyectable (por defecto `process.platform`) SOLO para que el test de SCRUM-1091
+ * pueda ejercer la traducción MSYS→Windows en cualquier runner: el CI de este repo corre en
+ * `ubuntu-latest` (`.github/workflows/ci.yml`), y esta máquina de desarrollo es Windows — el
+ * defecto y el arreglo son de Windows, pero la prueba tiene que poder correr en los dos sitios.
  */
-export function cwdDelComando(comando, base) {
+export function cwdDelComando(comando, base, plataforma = process.platform) {
   for (const a of acciones(comando)) {
     if (a.programa === 'cd' && a.palabras.length >= 2) {
-      const destino = posixADrive(a.palabras[1].texto);
+      const destino = posixADrive(a.palabras[1].texto, plataforma);
       return path.isAbsolute(destino) ? destino : path.resolve(base, destino);
     }
   }
