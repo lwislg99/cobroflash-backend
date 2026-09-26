@@ -84,11 +84,18 @@ const COPY_FACTURACION_NO_DISPONIBLE = 'Desde tu cuenta todavía no se pueden ge
  * pantalla NO pinta el `message`: pinta el texto firmado de arriba. Los demás 409 traen textos
  * firmados propios (`COPY_ADMIN_SIN_LINEAS`, `motivoSinTramo`…) y siguen saliendo tal cual.
  */
-function textoDeErrorDeFacturar(data, porDefecto) {
+function errorDeFacturarSinFirmar(data) {
   const d = data || {};
   const msg = typeof d.message === 'string' ? d.message : '';
-  if (d.error === 'facturacion_no_disponible' || msg.includes('[PENDIENTE')) return COPY_FACTURACION_NO_DISPONIBLE;
-  return msg || porDefecto;
+  // El marcador se busca con una expresión regular y no con un literal de texto: un literal con él
+  // es lo que `scrum402` cuenta como pintable, y éste sólo sirve para reconocerlo, nunca se pinta.
+  return d.error === 'facturacion_no_disponible' || /\[PENDIENTE/.test(msg) ? COPY_FACTURACION_NO_DISPONIBLE : null;
+}
+
+/** Lo mismo, con el `message` del servidor (firmado) o `porDefecto` para el resto de errores. */
+function textoDeErrorDeFacturar(data, porDefecto) {
+  const msg = data && typeof data.message === 'string' ? data.message : '';
+  return errorDeFacturarSinFirmar(data) || msg || porDefecto;
 }
 
 function ctxAlbaranDeFila(alb) {
@@ -127,6 +134,7 @@ function primariaDeAlbaran(alb) {
 if (typeof window !== 'undefined') {
   window.ctxAlbaranDeFila = ctxAlbaranDeFila;
   window.facturaFiscalDisponible = facturaFiscalDisponible;   // SCRUM-905 · consolidar, en la ficha del Trabajo
-  window.textoDeErrorDeFacturar = textoDeErrorDeFacturar;     // SCRUM-1160 · presupuesto y ficha del Trabajo
+  window.textoDeErrorDeFacturar = textoDeErrorDeFacturar;     // SCRUM-1160 · ficha del presupuesto
+  window.errorDeFacturarSinFirmar = errorDeFacturarSinFirmar; // SCRUM-1160 · CTA de la ficha del Trabajo
   window.primariaDeAlbaran = primariaDeAlbaran;
 }

@@ -69,6 +69,14 @@ for (const modo of ['fiscal', 'demo']) {
   });
 }
 
+test('SCRUM-1160 · control: en modo `receipt` CON Trabajo de origen, «Siguiente paso» sigue ahí con «Nuevo albarán»', async () => {
+  const m = await montar('receipt', presupuesto({ albaranOrigen: { elegible: true, jobId: 77, motivo: null } }));
+  assert.equal(m.cobrar.length, 0, '🔴 «Cobrar ahora» se ofrece en modo justificante');
+  assert.equal(m.nodos.filter((n) => n.getAttribute && n.getAttribute('data-accion') === 'btnNuevoAlbaran').length, 1,
+    '🔴 ocultar el cobro se llevó por delante el albarán, que no factura');
+  assert.match(m.textoTodo, /Siguiente paso/, '🔴 con una acción debajo, el bloque tiene que estar');
+});
+
 // La nota «sin tramos» solo sale con condiciones MANUAL, así que se mira con ellas: con el 100 % por
 // adelantado, «la nota no está» sería verdad sobre el vacío.
 const manual = () => presupuesto({ decision: { ...presupuesto().decision, paymentTerms: 'MANUAL' } });
@@ -91,7 +99,8 @@ for (const [nombre, modo] of [['receipt', 'receipt'], ['desconocido (null)', nul
     const m = await montar(modo);
     assert.equal(m.r.error, null, `🔴 la ficha revienta: ${m.r.error && m.r.error.message}`);
     assert.ok(m.nodos.length > 60, `🔴 CIEGO: la ficha montó ${m.nodos.length} nodos; «no está» no vale si la ficha no se pintó`);
-    assert.match(m.textoTodo, /Siguiente paso/, '🔴 CIEGO: no veo el bloque «Siguiente paso»');
+    assert.match(m.textoTodo, /Conceptos|Punto de luz/i, '🔴 CIEGO: no veo las líneas del presupuesto');
+    assert.doesNotMatch(m.textoTodo, /Siguiente paso/, '🔴 sin ninguna acción, «Siguiente paso» es un rótulo vacío');
     assert.equal(m.cobrar.length, 0, '🔴 «Cobrar ahora» se ofrece en un modo que solo puede acabar en 409');
     assert.equal(m.generar.length, 0, '🔴 «Generar factura» se ofrece en un modo que solo puede acabar en 409');
     assert.doesNotMatch(m.textoTodo, /Estas condiciones no generan tramos automáticos/,
@@ -148,6 +157,15 @@ test('SCRUM-1160 · 🔴 cinturón: el 409 `facturacion_no_disponible` y cualqui
   assert.equal(f({ error: 'facturacion_no_disponible' }, 'x'), FIRMADO);
   assert.equal(f({ error: 'otro', message: '[PENDIENTE microcopy oficial] algo' }, 'x'), FIRMADO,
     '🔴 un marcador de otro error también es un texto sin firmar');
+});
+
+test('SCRUM-1160 · 🔴 cinturón del CTA del Trabajo: `collect-rest` en 409 da el texto firmado; lo demás, null (sigue su camino)', () => {
+  const g = cargarDashboard(RAIZ, { datos: () => [] }).ctx.errorDeFacturarSinFirmar;
+  assert.equal(typeof g, 'function', '🔴 CIEGO: el panel no expone el cinturón del CTA');
+  assert.equal(g({ error: 'facturacion_no_disponible', message: '[PENDIENTE microcopy oficial]' }), FIRMADO);
+  assert.equal(g({ error: 'sin_lineas', message: 'Este presupuesto no tiene líneas.' }), null,
+    '🔴 un error con texto firmado propio no es asunto del cinturón');
+  assert.equal(g(undefined), null, '🔴 un fallo de red (sin `data`) no es asunto del cinturón');
 });
 
 test('SCRUM-1160 · control negativo: los 409 que YA traen texto firmado siguen saliendo tal cual', () => {

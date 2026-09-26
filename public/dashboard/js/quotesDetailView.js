@@ -338,7 +338,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         });
         actions.appendChild(btnAlbaran);
       }
-      summarySec.appendChild(actionsSec);
+      // SCRUM-1160 · en modo justificante y sin Trabajo de origen, aquí no queda ninguna acción: un
+      // «Siguiente paso» con nada debajo es un rótulo que promete algo que no está. No se pinta.
+      if (actions.children.length > 0) summarySec.appendChild(actionsSec);
 
       // A15.1 (MANT-1, tras flag): recordatorio de mantenimiento — solo si el
       // server lo ofrece (flag ON + línea mantenible del gremio o plan ya creado).
