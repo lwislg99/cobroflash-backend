@@ -838,3 +838,48 @@ desmonté con `git worktree remove --force` **antes** de desenlazar las junction
 de `wt-917g`. No tocó a ningún otro worktree (los demás tienen los suyos) y se recuperó con `npm ci` y
 `npm run build`; después se repitió la suite completa. 🔒 *Un aviso escrito en el traspaso propio no protege si
 no se convierte en el orden de los comandos.*
+
+## SCRUM-917g (apéndice) · `guard-objetivo-tactil.mjs`: retirada la excepción caduca de la ficha de Trabajo
+
+**Medido contra:** `origin/main` = `9f6887236257bd7a3ce382bd6223a7edb8eed2c7` · 2026-09-25T19:45:00Z
+**Rama:** `scrum-917-excepcion-caduca-objetivo-tactil` · **Skill UI:** no cargada · no toca ningún
+componente visual, solo la CONFIGURACIÓN de un guard de test.
+
+Tras el merge de SCRUM-786 (S2, PR #1772, sin relación directa), el check «guards de navegador
+(fuera de la tanda)» quedó en ROJO en `main`. Investigado por S2, que confirmó que su propio commit
+no toca `jobDetailView.js`.
+
+**PASO 0, medido corriendo** (`node scripts/guard-objetivo-tactil.mjs`, rojo, exit 1, sobre
+`origin/main` `9f688723`):
+
+    🔴 CIEGO · renderJobDetailView: he encontrado 0 objetivos cortos DISTINTOS y SCRUM-962
+    (22-sep-2026, con el mínimo de cada ancho) midió 1. Faltan 1: o la vista ya no pinta lo
+    mismo con estos datos, o el censo dejó de verlos.
+    🔴 EXCEPCIÓN CADUCA · renderJobDetailView: `INPUT` ya no aparece en esa pantalla. Bórrala.
+
+**La causa real es ESTE ticket** (commit `8bbf9b75`, «"El trabajo" plegable… y la casilla de
+precios sale de la barra de Documentos», tabla de arriba): esa casilla de 14 px era la ÚNICA deuda
+que `guard-objetivo-tactil.mjs` seguía vigilando en la ficha de Trabajo (SCRUM-962 la había bajado
+de 7/7/6/7 a 1/1/1/1), y al sacarla de la barra de Documentos dejó de existir donde el guard la
+esperaba.
+
+**Arreglo, en `scripts/guard-objetivo-tactil.mjs` (config del guard, no producto):**
+- Retirada la entrada de `renderJobDetailView` de `SUPERFICIES_791`.
+- Retirada su única excepción (`{ sel: 'INPUT', … }`) de `EXCEPCIONES_791`.
+- Import `TRABAJO_DE_MUESTRA` de `_pagina-panel.mjs` retirado por quedar sin uso.
+
+**No se deja `distintosEsperados: 0`**, a propósito: con cero deuda declarada, la ficha de Trabajo
+sale de la lista de superficies vigiladas por PR — mismo criterio que `providersView.js`,
+`templatesView.js` y `albaranDetailView.js` (SCRUM-786), que nunca entraron aquí por no tener
+deuda. Sigue medida por `npm run censo:tactil-panel`, no vigilada en cada PR.
+
+**Verificado en verde** (`node scripts/guard-objetivo-tactil.mjs`, exit 0, tras el arreglo): sin
+ninguna mención a `renderJobDetailView` en la salida.
+
+Tests que referencian este guard —`scrum542-objetivo-tactil`, `scrum562-arbitro-de-toque`,
+`scrum865-un-solo-minimo-para-la-landing`, `scrum711-guards-sin-sitio`, `scrum711b-escritorio-36`,
+`scrum548-peaje-package-json`— 60/60 en verde; ninguno referencia `SUPERFICIES_791`/
+`EXCEPCIONES_791` por nombre ni cuenta superficies, así que no hacía falta tocarlos.
+
+Fuera de este incremento: `renderCustomer360View` sigue con 6 excepciones de `.btn-sm` esperando
+la decisión del fundador (SCRUM-786/787). No se toca aquí.
