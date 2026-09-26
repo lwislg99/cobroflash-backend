@@ -1,0 +1,45 @@
+-- docs/sql/scrum-1072-activity-kind.sql — SCRUM-1072
+--
+-- ACTIVIDAD PROFESIONAL O EMPRESARIAL — solo para ORIENTAR, no decide nada todavía.
+--
+-- Junto a «Retención de IRPF» en el perfil: hoy no hay ninguna pregunta de actividad. La
+-- respuesta NO cambia la retención ni ningún importe (eso espera a que el asesor responda
+-- Q-C5, SCRUM-1039) — este ALTER solo abre el sitio donde guardarla.
+--
+-- TRES ESTADOS QUE NO COLAPSAN, y por qué basta UNA columna (a diferencia de la retención de
+-- IRPF del perfil, `retencion_irpf_declarada`/`retencion_irpf_tipo`, que necesitó DOS porque su
+-- dato era un TIPO numérico y «declara que no retiene» no tenía representación propia):
+--   NULL        = no consta (estado inicial, todo perfil de hoy)
+--   'no_lo_se'  = respuesta EXPLÍCITA, distinta de «no consta» — es una respuesta, no el
+--                 estado inicial
+--   'profesional' / 'empresarial' = declarado
+-- Un `String?` sin colisión: los tres valores de texto son distintos entre sí y de NULL, así
+-- que no hace falta una segunda columna como en la retención.
+--
+-- ⚠️ NOMBRE DE COLUMNA CANDIDATO: `activity_kind` (Prisma: `activityKind`). SCRUM-1072 no fija
+-- un nombre exacto en su encargo; quien lo construya puede ajustarlo ANTES de aplicar si el
+-- equipo prefiere otro — este fichero deja el ALTER listo con un nombre razonable, no un nombre
+-- cerrado.
+--
+-- SIN `NOT NULL` Y SIN `DEFAULT`: un valor por defecto afirmaría una respuesta que nadie ha
+-- dado. `NULL` = no consta, y ésa es la verdad de todo perfil existente.
+--
+-- Depende de (según el ticket): confirmar SCRUM-1037, que ya está Finalizada — el único
+-- bloqueo real que queda es este ALTER.
+--
+-- Generado OFFLINE con `previewMigracion({ schema, desde })` (mismo mecanismo que
+-- `scripts/preview-migracion.mjs --desde`, sin tocar `prisma/schema.prisma` del repo ni ninguna
+-- base): copia intacta del schema actual como FROM, copia con la columna candidata como TO.
+-- Control positivo pasado, veredicto ADITIVA (ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni
+-- SET NOT NULL). Medido contra `origin/main` = `2ddcb5d38553581306e989adef9a1e1295389e5a` ·
+-- 2026-09-26T13:06:18Z.
+--
+-- ORDEN ①②③ (regla 3 / A5): este ALTER en las TRES bases (staging → yaqu_dev_javier →
+-- producción, con GO aparte para producción, SCRUM-169) es el ②. El ③ (pantalla del perfil +
+-- servidor + tests) va DESPUÉS, en su propio PR (S2 pantalla + S1 servidor).
+--
+-- ADITIVO Y RE-EJECUTABLE: `IF NOT EXISTS`, así que volver a correrlo sobre una base ya aplicada
+-- no hace nada y no falla.
+
+ALTER TABLE "merchants"
+  ADD COLUMN IF NOT EXISTS "activity_kind" TEXT;
