@@ -40,11 +40,16 @@ test('SCRUM-1091 · en win32, `/<letra>/…` se traduce a `<letra>:/…` — y a
   assert.equal(path.win32.resolve(cwd, 'victima.md'), 'd:\\Users\\javier\\repro\\victima.md');
 });
 
-test('SCRUM-1091 · 🔴 EL DEFECTO, reproducido sin fs: SIN traducir, path.win32.resolve SÍ duplica la letra', () => {
-  // Esto es lo que hacía `cwdDelComando` antes del arreglo: devolver el destino MSYS tal cual.
-  const cwdSinTraducir = '/d/Users/javier/repro';
-  assert.equal(path.win32.resolve(cwdSinTraducir, 'victima.md'), 'D:\\d\\Users\\javier\\repro\\victima.md',
-    'si esto deja de duplicar la letra, `path.win32` cambió de comportamiento — no es este el test a tocar');
+test('SCRUM-1091 · 🔴 LA RAÍZ DEL DEFECTO, sin fs y sin depender del cwd del host: `/d/…` YA es "absoluta" para win32', () => {
+  // Esto es lo que hacía caer a `cwdDelComando` antes del arreglo: como `path.win32.isAbsolute`
+  // ya da `true` para una ruta MSYS sin traducir, el código devolvía el destino TAL CUAL, sin
+  // pasar por `posixADrive`. (La duplicación exacta de la letra que se ve en el mundo real —
+  // `C:\c\Users\…`— depende encima de en qué drive esté el `cwd` del proceso, que varía de
+  // máquina a máquina y en el runner de CI ni siquiera tiene una: por eso esta prueba no intenta
+  // reproducir el string exacto, que dejaría de ser determinista, y se queda en el hecho que SÍ
+  // lo es — medido en rojo el 26-sep-2026 al intentar lo primero.)
+  assert.equal(path.win32.isAbsolute('/d/Users/javier/repro'), true,
+    'si esto cambia, ya no hace falta `posixADrive`: revisar por qué dejó de hacer falta antes de tocar nada');
 });
 
 test('SCRUM-1091 · fuera de win32 (p.ej. el runner de CI), la forma MSYS se deja tal cual: no hay nada que traducir', () => {
