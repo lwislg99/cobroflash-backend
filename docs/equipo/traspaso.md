@@ -43,7 +43,7 @@ en FAILURE — quedan a que termine el run y el bot los mergee solo.
 | #1793 | SCRUM-1048 | scrum-1048-resumen-trimestre-calculo | sin FAILURE, esperando CI |
 | #1789 | SCRUM-1124 | scrum-1124-marcador-huerfano-jobasignados-parte | sin FAILURE, esperando CI |
 | #1787 | SCRUM-1128 | scrum-1128-envio-construido-criterio | sin FAILURE, esperando CI |
-| #1783 | SCRUM-917 (apéndice) | scrum-917-excepcion-caduca-objetivo-tactil | **DIRTY, conflicto real** — encargado a S2 (Tarea 1, abajo) |
+| #1783 | SCRUM-917 (apéndice) | scrum-917-excepcion-caduca-objetivo-tactil | 🟢 **RESUELTO por sesion-2** (06:4xZ): 2 merges de `origin/main` (nunca rebase), conservó `negativoVivo()` frente a un número puesto a mano en un commit ajeno que llegó a mitad. Build verde, empujado (`c152ffb0`), ya no DIRTY — BLOCKED normal a la espera del check |
 
 ## 2 · Puestos: hoy SÍ se pudo lanzar (ayer no había autorización vigente en el chat)
 
