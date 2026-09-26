@@ -274,8 +274,8 @@ cómo ponerlo en verde, y hacer lo que dice no lo pone en verde.
 
 # SCRUM-938c · Arreglado el instrumento (los tres puntos del §5 de la fase b, más uno medido hoy)
 
-**Medido contra:** `origin/main` = `942e90d1` · 2026-09-26 ~09:30Z (GitHub) · S3 · rama
-`scrum-938-arregla-censo-lista-fixture` · worktree `wt-s3-26-instrumentos`.
+**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87` · 2026-09-26T09:30:00Z
+(GitHub) · S3 · rama `scrum-938-arregla-censo-lista-fixture` · worktree `wt-s3-26-instrumentos`.
 
 **Carril: S3 (instrumentos).** Esto es justo lo que la fase b (§5 de arriba) dejó como bloqueante:
 *«El censo no se ha arreglado. Es el instrumento, está fuera de la excepción y es carril de la
