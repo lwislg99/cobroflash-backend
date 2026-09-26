@@ -11,6 +11,8 @@ import { CLASES_DE_CORREO } from './registroDeEnvios';
 // SCRUM-974: las dos se LEEN, ninguna se toca.
 import { getPendientesFacturar } from '../../jobs/domain/pendientesFacturar.service';
 import { getEmissionMode } from '../../invoicing/domain/emission.service';
+// SCRUM-1116: la retención de garantía la calcula J2 (SCRUM-1108). Se LEE; el cálculo no se rehace.
+import { garantiasRetenidasPorCliente } from '../../billing/domain/garantiasRetenidas';
 
 // SCRUM-475 · el POST propio se retira: emisor único, y la respuesta se devuelve con su acuse.
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
@@ -132,6 +134,32 @@ async function bloqueFirmadoSinFacturar(
     </div>`;
 }
 
+/**
+ * SCRUM-1116 · LA GARANTÍA RETENIDA DE TODO EL MERCHANT, UNA ENTRADA POR DÍA DE LIBERACIÓN.
+ *
+ * La retención vive en un `Charge` normalmente ya PAGADO, así que `Invoice.status='pending'` no la ve.
+ * Se suma por día (lo del mismo día, aunque sea de clientes distintos) y se ordena del más temprano
+ * al más tardío: lo primero que se puede reclamar, primero. NO se junta en un total con una fecha:
+ * con la más temprana diría que todo se libera ya, y con la más tardía callaría lo que se libera antes.
+ * El día es `liberacionDia`, ya en la zona del merchant (SCRUM-735). Se suma en céntimos.
+ */
+async function garantiaPorDia(merchantId: number): Promise<Array<{ importe: number; dia: string }>> {
+  const porDia = new Map<string, number>();
+  for (const g of (await garantiasRetenidasPorCliente(merchantId)).values()) {
+    for (const r of g.retenciones) {
+      porDia.set(r.liberacionDia, (porDia.get(r.liberacionDia) ?? 0) + Math.round(r.importe * 100));
+    }
+  }
+  return [...porDia].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([dia, cent]) => ({ importe: cent / 100, dia }));
+}
+
+/** `YYYY-MM-DD` → `dd/mm/aaaa`, sin pasar por `Date`: el día ya viene en la zona del merchant. */
+function diaEs(dia: string): string {
+  const [a, m, d] = dia.split('-');
+  return `${d}/${m}/${a}`;
+}
+
 async function sendDigestForMerchant(
   merchant: { id: number; name: string; email: string | null; defaultCurrency: string; country: string | null; flags: unknown },
   from: Date,
@@ -166,6 +194,11 @@ async function sendDigestForMerchant(
   const cobrado   = Number(paidInvoices._sum.total ?? 0);
   const pendiente = Number(pendingInvoices._sum.total ?? 0);
   const currency  = merchant.defaultCurrency || 'EUR';
+  // SCRUM-1116 · sólo hace falta cuando no hay facturas pendientes: es lo que decide si el
+  // «✅ ¡No tienes facturas pendientes de cobro!» es cierto. NO es best-effort, y es deliberado: si
+  // la consulta falla, caer al literal con ✅ sería volver a afirmar lo falso; mejor que el resumen
+  // de ese merchant no salga y quede constancia (SCRUM-475), como con cualquier otra consulta.
+  const garantia = pendiente > 0 ? [] : await garantiaPorDia(merchant.id);
   // SCRUM-974 · best-effort: si la bandeja falla, el resumen sale igual, sin este bloque.
   const firmadoSinFacturar = await bloqueFirmadoSinFacturar(merchant, currency).catch((e) => {
     console.error(`[weeklyDigest] firmado sin facturar, merchant ${merchant.id}:`, e?.message);
@@ -180,6 +213,11 @@ async function sendDigestForMerchant(
     `<tr><td style="padding:8px 0;color:#64748b;font-size:13px;border-bottom:1px solid #f1f5f9">${label}</td>
      <td style="padding:8px 0;text-align:right;font-weight:700;font-size:13px;color:${color};border-bottom:1px solid #f1f5f9">${value}</td></tr>`;
 
+  // 🔴 SCRUM-1116 · sin facturas pendientes pero CON garantía retenida, el bloque va SIN el ✅ y sin
+  // el verde, A PROPÓSITO: el visto verde convierte la frase en un certificado de que no le deben
+  // nada, y con dinero retenido eso es falso. Una línea por día de liberación; con un solo día es
+  // carácter por carácter el literal firmado. Textos:
+  // docs/microcopy/2026-09-25-SCRUM-1108-garantia-retenida.md y 2026-09-25-SCRUM-1116-digest-garantia.md.
   const html = `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0f172a">
   <div style="background:#0f172a;padding:20px 24px;border-radius:12px 12px 0 0">
@@ -206,6 +244,9 @@ async function sendDigestForMerchant(
       <div style="font-size:13px;font-weight:700;color:#92400e">⏳ Pendiente de cobro</div>
       <div style="font-size:20px;font-weight:800;color:#92400e;margin-top:4px">${fmt(pendiente, currency)}</div>
       <div style="font-size:12px;color:#78350f;margin-top:2px">${pendingInvoices._count.id} factura${pendingInvoices._count.id !== 1 ? 's' : ''} sin cobrar</div>
+    </div>` : garantia.length > 0 ? `
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:16px;color:#0f172a;font-size:13px">
+      ${garantia.map((g, i) => `<div${i > 0 ? ' style="margin-top:6px"' : ''}>${i === 0 ? 'No tienes facturas pendientes de cobro. ' : ''}Tienes ${fmt(g.importe, currency)} en garantía retenida, liberable desde el ${diaEs(g.dia)}.</div>`).join('')}
     </div>` : `
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center;color:#166534;font-weight:600;font-size:13px">
       ✅ ¡No tienes facturas pendientes de cobro!

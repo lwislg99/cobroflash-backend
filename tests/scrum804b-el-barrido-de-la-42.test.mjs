@@ -15,24 +15,78 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import {
   DENTRO, FUERA, NO_DECIDIBLE, censar, linea, ramasDelTicket, artefactosQueNombra,
 } from '../scripts/censo-regla-42.mjs';
 
 /** Cerrados y mergeados: el criterio TIENE que sacarlos DENTRO o no está midiendo, está opinando. */
 const POSITIVOS = [866, 881];
-// 🔴 MEDIDO EL 25-sep-2026, NO SUPUESTO: `git merge-base --is-ancestor` sobre las ramas remotas
-// de hoy. SCRUM-1118 (el negativo anterior) se mergeó vía `scrum-1118-citas-rfact-contiguas`
-// (PR #1761) y este mismo test pasó a fallar en el sentido contrario (DENTRO donde exigía FUERA)
-// — el defecto que el comentario de esta misma línea ya avisaba que iba a pasar. Este número
-// ENVEJECE por diseño (es la misma naturaleza del NEGATIVO de SCRUM-738 con `scrum-684`, de
-// SCRUM-1099 con `scrum-1107`, y de SCRUM-1096 con `scrum-1118`). Esta vez se elige un negativo
-// con PR YA CERRADO sin mergear (`scrum-895-sin-facturar-no-se-ofrece`, PR #1408 CLOSED
-// 15-sep-2026): a diferencia de un negativo con PR abierto, nadie va a mergearlo por accidente
-// mientras otras ramas pasan por este mismo test. Sigue envejeciendo si algún día se reabre y
-// mergea, o si la rama se borra. Quien lo vuelva a medir, que lo re-feche.
-/** Su rama está viva (sin mergear, PR #1408 cerrado sin mergear) hoy (25-sep-2026): TIENE que salir FUERA. */
-const NEGATIVO = 895;
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 EL NEGATIVO SE DERIVA DEL ESTADO VIVO. NO SE ESCRIBE A MANO.
+//
+// Este número se ha RE-ELEGIDO A MANO CUATRO VECES, y la cadena está en el git log del
+// fichero:
+//   · 880    (17-sep-2026, el original)
+//   · 1099   (23-sep-2026) — caducó al mergearse el PR #1734
+//   · 1107   (24-sep-2026) — caducó al mergearse el PR #1758, el 25-sep a las 14:52Z
+//   · 1118   (25-sep-2026, 15:19Z) — puesto por una ejecución de `claude[bot]` dentro del
+//              PR #1760, y su propio comentario YA ANUNCIA la quinta: «en cuanto
+//              scrum-1118-citas-rfact-contiguas se mergee, hay que re-elegir un ticket vivo».
+//
+// 🔴 Cada vez, el comentario de esta misma línea avisaba de que iba a volver a pasar. Y cada
+// vez el aviso llegó TARDE: el test caía primero y alguien iba a leer el comentario después.
+// Cuatro re-elecciones en ocho días no es mantenimiento: es un defecto de diseño que se paga
+// en cuotas.
+//
+// Las dos veces el comentario de esta misma línea ya avisaba de que iba a pasar. Y las dos veces
+// el aviso llegó TARDE: el test cayó primero, y alguien fue a leer el comentario después.
+//
+// 🔴 Y la segunda vez bloqueó los TRES PR abiertos del repositorio a la vez, porque
+// «build + tests» es un check obligatorio. Un fixture que envejece por diseño y para la línea
+// entera no es un suelo: es una bomba de relojería con un comentario al lado.
+//
+// Ahora se busca, entre las ramas vivas de HOY, un ticket que de verdad tenga obra sin mergear.
+//
+// ⚠️ POR UNA VÍA INDEPENDIENTE DE LA DEL CENSO, que es lo que hace que esto sea un control:
+// aquí se usa `ls-remote` + el número de la rama + `merge-base --is-ancestor`, y nada más. El
+// censo además lee entradas de registro, artefactos y commits. Si el censo se equivocara leyendo
+// las ramas, esta derivación NO se equivocaría igual — que es justo lo que un control tiene que
+// garantizar y lo que un fixture sacado del propio censo no garantizaría.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** Cero red, cero escritura: sólo pregunta. */
+function git(args) {
+  return execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+}
+
+/**
+ * Un ticket con rama viva SIN mergear hoy, o `null` si no hay ninguno.
+ *
+ * `null` NO es «todo bien»: es que este control no se puede ejercitar, y entonces el caso se
+ * SALTA declarando el motivo. Un negativo que no se puede montar y pasa en silencio cuenta como
+ * verde sin haberse ganado nada.
+ */
+function negativoVivo() {
+  const heads = git(['ls-remote', '--heads', 'origin']).split('\n').filter(Boolean);
+  const candidatos = [];
+  for (const fila of heads) {
+    const [sha, ref] = fila.split(/\s+/);
+    const m = /refs\/heads\/scrum-(\d+)(?:[a-z]\d*)?(?:-|$)/.exec(ref || '');
+    if (!m) continue;
+    try {
+      // `--is-ancestor` sale 0 si YA está en main; si sale != 0, la rama sigue viva.
+      execFileSync('git', ['merge-base', '--is-ancestor', sha, 'origin/main'], { stdio: 'ignore' });
+    } catch {
+      candidatos.push(Number(m[1]));
+    }
+  }
+  // El más alto: el más reciente, y por tanto el que menos probable es que esté a punto de
+  // mergearse mientras corre esta misma tanda.
+  return candidatos.length ? Math.max(...candidatos) : null;
+}
+
+const NEGATIVO = negativoVivo();
 
 // ═══ 🔴 POR IDENTIDAD: el número no casa dentro de otro ═════════════════════════════════════
 
@@ -85,7 +139,17 @@ test('SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ est�
   }
 
   // 🔴 NEGATIVO: el que tiene rama viva sin mergear sale FUERA.
+  if (NEGATIVO === null) {
+    // 🔴 No hay ni una rama viva en el remoto, así que este control NO SE PUEDE MONTAR. Se dice
+    // con esas palabras: un negativo que no se ejercita y pasa callando es verde sin ganar.
+    t.skip('⚠️ SIN NEGATIVO: hoy no hay ninguna rama sin mergear en origin, así que el control '
+      + 'de «rama viva → FUERA» no se ha ejercitado. No es un verde: es que no había caso.');
+    return;
+  }
   const neg = c.filas.find((x) => x.n === NEGATIVO);
+  assert.ok(neg, `🔴 el censo no trae fila para SCRUM-${NEGATIVO}, que SÍ tiene rama viva sin `
+    + 'mergear. Un ticket con obra abierta que no aparece en el censo es el peor de los casos: '
+    + 'no sale mal clasificado, sale invisible.');
   assert.equal(neg.cubo, FUERA,
     `🔴 SCRUM-${NEGATIVO} tiene rama viva SIN mergear y el criterio lo saca ${neg.cubo} `
     + `(${neg.motivo}). Un censo que da por DENTRO lo que no está cierra tickets vivos.`);
