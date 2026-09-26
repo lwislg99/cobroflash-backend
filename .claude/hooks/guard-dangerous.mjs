@@ -448,10 +448,15 @@ function posixADrive(destino, plataforma) {
  * defecto y el arreglo son de Windows, pero la prueba tiene que poder correr en los dos sitios.
  */
 export function cwdDelComando(comando, base, plataforma = process.platform) {
+  // El `path` AMBIENTE es el de la máquina que ejecuta node, no el de `plataforma`: en el CI de
+  // este repo (`ubuntu-latest`) sería SIEMPRE `path.posix`, por mucho que aquí se pida 'win32', y
+  // entonces ni `isAbsolute` reconocería `d:/…` ni `resolve` sabría qué hacer con él — el mismo
+  // defecto una capa más abajo. Se elige el `path` a mano según `plataforma`, nunca el ambiente.
+  const p = plataforma === 'win32' ? path.win32 : path.posix;
   for (const a of acciones(comando)) {
     if (a.programa === 'cd' && a.palabras.length >= 2) {
       const destino = posixADrive(a.palabras[1].texto, plataforma);
-      return path.isAbsolute(destino) ? destino : path.resolve(base, destino);
+      return p.isAbsolute(destino) ? destino : p.resolve(base, destino);
     }
   }
   return base;

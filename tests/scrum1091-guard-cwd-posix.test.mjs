@@ -57,10 +57,10 @@ test('SCRUM-1091 · una ruta YA nativa de Windows (sin forma MSYS) no se toca, t
 
 // ── ② END-TO-END: solo tiene sentido en un host win32 de verdad ─────────────────────────────
 
+// SCRUM-456 exige el motivo del `skip` como LITERAL en el propio sitio (análisis estructural del
+// AST, no por nombre de variable): una constante compartida no cuenta como declarado. Se repite
+// el literal en cada `skip:`, igual que el resto de tests gateados de esta casa (`!ENABLED && '…'`).
 const ES_WIN32 = process.platform === 'win32';
-const MOTIVO_SKIP = ES_WIN32 ? false
-  : 'el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 '
-    + '(verificado en rojo/verde en la máquina de desarrollo real, ver docs/master/SCRUM-1091.md)';
 
 const SENTINEL_FALSO = path.join(os.tmpdir(), 'yaqu-1091-sentinel-que-no-existe');
 const llamada = (c) => JSON.stringify({ tool_name: 'Bash', tool_input: { command: c, description: 'prueba' } });
@@ -86,17 +86,17 @@ function aPosix(dirWindows) {
 const DIR = ES_WIN32 ? repoConVictima() : null;
 test.after(() => { if (DIR) fs.rmSync(DIR, { recursive: true, force: true }); });
 
-test('SCRUM-1091 · cwdDelComando (host real) traduce `/<letra>/…`: path.resolve ya no duplica la letra', { skip: MOTIVO_SKIP }, () => {
+test('SCRUM-1091 · cwdDelComando (host real) traduce `/<letra>/…`: path.resolve ya no duplica la letra', { skip: !ES_WIN32 && 'el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 (ver docs/master/SCRUM-1091.md)' }, () => {
   const cwd = cwdDelComando(`cd "${aPosix(DIR)}" && echo hola`, 'Z:/donde-sea');
   assert.equal(path.resolve(cwd, 'victima.md').toLowerCase(), path.join(DIR, 'victima.md').toLowerCase(),
     `🔴 la letra se duplica: cwdDelComando devolvió ${cwd}`);
 });
 
-test('SCRUM-1091 · una ruta ya nativa (sin forma MSYS) no se toca, en el host real', { skip: MOTIVO_SKIP }, () => {
+test('SCRUM-1091 · una ruta ya nativa (sin forma MSYS) no se toca, en el host real', { skip: !ES_WIN32 && 'el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 (ver docs/master/SCRUM-1091.md)' }, () => {
   assert.equal(cwdDelComando(`cd "${DIR.replace(/\\/g, '/')}" && echo hola`, 'Z:/donde-sea'), DIR.replace(/\\/g, '/'));
 });
 
-test('SCRUM-1091 · 🔴 EL CASO REAL: `cd "/<letra>/…" && … > fichero-existente` SÍ bloquea (antes pasaba limpio)', { skip: MOTIVO_SKIP }, () => {
+test('SCRUM-1091 · 🔴 EL CASO REAL: `cd "/<letra>/…" && … > fichero-existente` SÍ bloquea (antes pasaba limpio)', { skip: !ES_WIN32 && 'el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 (ver docs/master/SCRUM-1091.md)' }, () => {
   const comando = `cd "${aPosix(DIR)}" && echo "NUEVO TEXTO QUE TRUNCA" > victima.md`;
   const { bloqueado, motivo } = evaluar(llamada(comando), SENTINEL_FALSO);
   assert.equal(bloqueado, true,
@@ -105,7 +105,7 @@ test('SCRUM-1091 · 🔴 EL CASO REAL: `cd "/<letra>/…" && … > fichero-exist
   assert.match(motivo, /TRUNCA un fichero/);
 });
 
-test('SCRUM-1091 · control negativo: la misma forma de `cd`, sobre un fichero que NO existe, no bloquea', { skip: MOTIVO_SKIP }, () => {
+test('SCRUM-1091 · control negativo: la misma forma de `cd`, sobre un fichero que NO existe, no bloquea', { skip: !ES_WIN32 && 'el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 (ver docs/master/SCRUM-1091.md)' }, () => {
   const comando = `cd "${aPosix(DIR)}" && echo "contenido" > nuevo-de-verdad.md`;
   const { bloqueado } = evaluar(llamada(comando), SENTINEL_FALSO);
   assert.equal(bloqueado, false, '🔴 control negativo: no debería bloquear algo nuevo');

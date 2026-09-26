@@ -252,7 +252,13 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 // corría el test (la de `gh` pasó a CIERTA el 18-sep-2026 y tumbó `scrum939b` sólo en esas
 // máquinas). El veredicto sigue sin ser el mismo en cada sitio, pero ahora lo DICE: fuera de
 // Windows sale del lado malo con su motivo, y nunca como CIERTA. No se ha subido ningún otro tope.
-const TOPE_LEEN_EL_ENTORNO = 18;
+// SCRUM-1091 (26-sep-2026) · 18 → 19: `tests/scrum1091-guard-cwd-posix.test.mjs` lee
+// `process.platform` para decidir si sus 4 casos end-to-end pueden correr — el defecto que arregla
+// (`/c/…` sin traducir en Windows) depende de `path.isAbsolute`/`resolve` NATIVOS, y este repo NO
+// tiene runner Windows en CI (`ci.yml` es `ubuntu-latest`). Fuera de win32 esos 4 casos se saltan
+// CON motivo declarado (no en silencio); los otros 4, deterministas con `path.win32` explícito,
+// corren en cualquier host y no leen esta señal.
+const TOPE_LEEN_EL_ENTORNO = 19;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este
