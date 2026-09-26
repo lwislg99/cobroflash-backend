@@ -130,7 +130,7 @@ async function renderExportView(container) {
     const l = document.createElement('label');
     l.style.cssText = 'display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:13.5px;color:var(--ink);min-height:44px;padding:6px 0';
     l.innerHTML = `
-      <input type="checkbox" class="export-ds" value="${d.id}" style="margin-top:3px;flex:none">
+      <input type="checkbox" class="export-ds casilla-tactil-44" value="${d.id}" style="margin-top:3px;flex:none">
       <span><b style="font-weight:600">${d.label}</b><br><span style="color:var(--neutral-400);font-size:12px">${d.nota}</span></span>
     `;
     dsBox.appendChild(l);

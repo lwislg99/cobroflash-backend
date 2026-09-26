@@ -3069,6 +3069,18 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
   inset: -16px;
 }
 
+/* SCRUM-786 · MISMO MECANISMO que `.casilla-seleccion`, con nombre neutro para reusar en
+   cualquier checkbox suelto (no solo listas con selección múltiple). Envolver en `<label>` NO
+   sube esta medición: el área pasa a pertenecer AL LABEL, no a la casilla — ya medido y descartado
+   en `customersView.js` (`casillaConNombre`). Sólo el pseudo-elemento, sobre la propia casilla,
+   sube el área de toque sin mover el tamaño visible. */
+.casilla-tactil-44 { position: relative; }
+.casilla-tactil-44::before {
+  content: "";
+  position: absolute;
+  inset: -16px;
+}
+
 /* ── Feedback fundador 6-jul: tablas SIMPLES (sin dinero) como cards en móvil ──
    Clientes, Proveedores, Plantillas, Equipo: cada fila = card apilada, sin
    overflow horizontal. cell-title = destacado arriba; cell-actions = ancho
