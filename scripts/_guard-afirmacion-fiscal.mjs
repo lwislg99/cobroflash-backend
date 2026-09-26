@@ -42,6 +42,7 @@
 // construido) gana el CODIGO.
 import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 
 /** Terminos que situan la frase en NUESTRO terreno fiscal. Sin esto no hay afirmacion nuestra. */
 // ⚠️ SCRUM-537 (2ª pasada): faltaba «Agencia Tributaria» escrita entera, que es la forma NATURAL
@@ -188,15 +189,15 @@ function ficherosTs(dir, out = []) {
 }
 
 /**
- * ¿Existe el envio a la AEAT? Dos señales independientes, y basta una:
- *   ① el codigo nombra un host de la AEAT para algo que no es el QR;
- *   ② el esquema declara una cola de remision (`VfSubmission`).
+ * LAS PIEZAS del envío: lo que el criterio anterior tomaba por «envío construido». Se siguen
+ * midiendo y se devuelven, pero YA NO DECIDEN (SCRUM-1128):
+ *   ① el código nombra un host de la AEAT para algo que no es el QR, en un fichero que pide red;
+ *   ② el esquema declara una cola de remisión (`VfSubmission`).
  *
- * Devuelve tambien `vistos`, que es el SUELO: si el barrido no encuentra NI SIQUIERA la URL del
- * QR, no esta leyendo `src/` y su «no hay envio» es ceguera, no medicion. Y esa ceguera importa
- * en las dos direcciones: manteniendo bloqueada la familia B el dia que el envio SI exista.
+ * Devuelve también `vistosAeat`, que es el SUELO: si el barrido no encuentra NI SIQUIERA la URL
+ * del QR, no está leyendo `src/` y su «no hay envío» es ceguera, no medición.
  */
-export function envioConstruido(raiz) {
+export function piezasDelEnvio(raiz) {
   const src = path.join(raiz, 'src');
   const señales = [];
   let vistosAeat = 0;
@@ -222,7 +223,145 @@ export function envioConstruido(raiz) {
     señales.push({ tipo: 'cola', donde: 'prisma/schema.prisma', texto: 'model VfSubmission' });
   }
 
-  return { construido: señales.length > 0, señales, vistosAeat, esquemaLeido: esquema.length > 0 };
+  return { señales, vistosAeat, esquemaLeido: esquema.length > 0 };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1128 · EL CRITERIO NUEVO, APROBADO POR EL FUNDADOR EL 25-sep-2026
+//
+// El criterio anterior confundía «LAS PIEZAS EXISTEN» con «EL ENVÍO FUNCIONA». Bastaba una fila
+// `model VfSubmission` en el esquema para que la familia B dejara de bloquear en la landing
+// —«cumple», «conforme a la AEAT», «ya está construida»— sin certificado, sin cablear a ninguna
+// factura y con los flags en OFF. Lo midió J1 en SCRUM-1127, antes de escribir esa fila.
+//
+// Ahora «envío construido» exige LAS DOS COSAS A LA VEZ:
+//   ① un LLAMANTE: un fichero de `src/` —que no sea el propio cliente ni su cola— que importa
+//     `enviarSobre` de `sif.client` como VALOR (no como tipo) y lo LLAMA. Se mide por AST: un
+//     comentario, un `import type` o el nombre dentro de una cadena no son una llamada.
+//   ② el flag `SIF_ENABLED` en ON en su valor POR DEFECTO de `src/core/flags.ts`.
+//
+// 🔴 POR QUÉ ESTO NO ES RELAJAR UN GUARD (regla 41 / A7): el criterio nuevo es MÁS ESTRICTO. Todo
+// estado que antes daba «no construido» lo sigue dando, y además deja de dar «construido» con
+// solo las piezas. La landing queda bloqueada MÁS tiempo, no menos. No se afloja para que pase un
+// PR: se corrige un criterio que abría la puerta demasiado pronto. Lo decide la dirección del
+// riesgo, y aquí va al lado seguro.
+//
+// 🔴 Y CUANDO DUDA, BLOQUEA. Un `SIF_ENABLED` encendido SOLO en Railway (variable de entorno) no lo
+// ve este guard: la landing sigue bloqueada. Si algún día alguien enciende el flag en el entorno y
+// espera que la landing se desbloquee sola, lo que tiene que fallar es ese despliegue, no el
+// guard. Lo mismo con un valor por defecto que no sea un `true` literal, o con un `flags.ts` que
+// no se pueda leer: cuentan como OFF.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** El flag que tiene que estar en ON. Su valor por DEFECTO, en el código. */
+export const FLAG_DEL_ENVIO = 'SIF_ENABLED';
+const RUTA_FLAGS = 'src/core/flags.ts';
+/** La función del cliente que ENVÍA (`src/modules/fiscal/verifactu/sif.client.ts`, SCRUM-1127). */
+export const FUNCION_DE_ENVIO = 'enviarSobre';
+const MODULO_CLIENTE = /(^|\/)sif\.client(\.js)?$/;
+/** El cliente y su cola no son llamantes de sí mismos. */
+const FICHEROS_DEL_CLIENTE = /^src\/modules\/fiscal\/verifactu\/sif\.[a-z]+\.ts$/;
+
+function parsear(fuente, nombre) {
+  return ts.createSourceFile(nombre, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+}
+
+function sinEnvoltorio(n) {
+  let x = n;
+  while (x && (ts.isAsExpression(x) || ts.isParenthesizedExpression(x) || ts.isSatisfiesExpression(x))) {
+    x = x.expression;
+  }
+  return x;
+}
+
+/**
+ * El valor POR DEFECTO de un flag en `flags.ts`, leído del AST de `FLAG_DEFAULTS`.
+ * `leido: false` si no encuentra la tabla o la propiedad (CIEGO). Solo un `true` literal es ON.
+ */
+export function flagPorDefecto(fuente, flag = FLAG_DEL_ENVIO) {
+  if (typeof fuente !== 'string' || !fuente) return { leido: false, on: false };
+  let res = { leido: false, on: false };
+  const visitar = (n) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === 'FLAG_DEFAULTS') {
+      const obj = sinEnvoltorio(n.initializer);
+      if (obj && ts.isObjectLiteralExpression(obj)) {
+        for (const p of obj.properties) {
+          if (ts.isPropertyAssignment(p) && p.name.getText() === flag) {
+            res = { leido: true, on: sinEnvoltorio(p.initializer).kind === ts.SyntaxKind.TrueKeyword };
+          }
+        }
+      }
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(parsear(fuente, RUTA_FLAGS));
+  return res;
+}
+
+/**
+ * Cuántas LLAMADAS a `enviarSobre` del cliente hace un fuente. Por AST: solo cuentan las que usan
+ * un nombre importado COMO VALOR desde `sif.client` (directo, renombrado, o `* as x` →
+ * `x.enviarSobre`).
+ */
+export function llamadasAlEnvio(fuente, nombre = 'x.ts') {
+  const sf = parsear(fuente, nombre);
+  const locales = new Set();
+  const espacios = new Set();
+  for (const st of sf.statements) {
+    if (!ts.isImportDeclaration(st) || !ts.isStringLiteral(st.moduleSpecifier)) continue;
+    if (!MODULO_CLIENTE.test(st.moduleSpecifier.text)) continue;
+    const c = st.importClause;
+    if (!c || c.isTypeOnly || !c.namedBindings) continue;
+    if (ts.isNamespaceImport(c.namedBindings)) { espacios.add(c.namedBindings.name.text); continue; }
+    for (const el of c.namedBindings.elements) {
+      if (el.isTypeOnly) continue;
+      if ((el.propertyName ?? el.name).text === FUNCION_DE_ENVIO) locales.add(el.name.text);
+    }
+  }
+  let n = 0;
+  const visitar = (x) => {
+    if (ts.isCallExpression(x)) {
+      const f = x.expression;
+      if (ts.isIdentifier(f) && locales.has(f.text)) n += 1;
+      else if (ts.isPropertyAccessExpression(f) && ts.isIdentifier(f.expression)
+        && espacios.has(f.expression.text) && f.name.text === FUNCION_DE_ENVIO) n += 1;
+    }
+    ts.forEachChild(x, visitar);
+  };
+  visitar(sf);
+  return n;
+}
+
+/**
+ * ¿Existe el envío a la AEAT? SCRUM-1128: un LLAMANTE del cliente en `src/` Y el flag en ON, a la
+ * vez. Las piezas (`señales`) se devuelven para informar, pero no deciden.
+ */
+export function envioConstruido(raiz) {
+  const piezas = piezasDelEnvio(raiz);
+
+  const llamantes = [];
+  let ficherosLeidos = 0;
+  for (const f of ficherosTs(path.join(raiz, 'src'))) {
+    const rel = path.relative(raiz, f).replace(/\\/g, '/');
+    ficherosLeidos += 1;
+    if (FICHEROS_DEL_CLIENTE.test(rel)) continue;
+    const fuente = fs.readFileSync(f, 'utf8');
+    if (!fuente.includes(FUNCION_DE_ENVIO)) continue;   // sin el nombre no puede haber llamada
+    const n = llamadasAlEnvio(fuente, rel);
+    if (n > 0) llamantes.push({ donde: rel, llamadas: n });
+  }
+
+  let fuenteFlags = '';
+  try { fuenteFlags = fs.readFileSync(path.join(raiz, RUTA_FLAGS), 'utf8'); } catch { fuenteFlags = ''; }
+  const flag = flagPorDefecto(fuenteFlags);
+
+  return {
+    construido: llamantes.length > 0 && flag.leido && flag.on,
+    llamantes,
+    flag: { nombre: FLAG_DEL_ENVIO, leido: flag.leido, on: flag.on },
+    ficherosLeidos,
+    ...piezas,
+  };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
