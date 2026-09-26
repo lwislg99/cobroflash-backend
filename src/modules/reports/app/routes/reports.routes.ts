@@ -6,6 +6,7 @@ import { filasDelInforme } from '../../domain/cobrosPorCubo'; // SCRUM-488 / SCR
 import { leerLibroRegistro } from '../../../invoicing/domain/libroRegistro.repo'; // SCRUM-389: un solo agregador
 import { rangoTrimestre } from '../../../fiscal/modelo303/modelo303'; // SCRUM-389: un solo criterio de fechas
 import { calcularBeneficioSobreLaBase } from '../../domain/beneficioBaseImponible'; // SCRUM-1047 (CON-06)
+import { construirResumenTrimestre } from '../../domain/resumenTrimestre'; // SCRUM-1048 (CON-07a)
 
 const router = Router();
 
@@ -327,6 +328,72 @@ router.get('/vat', async (req, res) => {
     });
   } catch (err) {
     console.error('[GET /admin/reports/vat]', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/reports/resumen-trimestre?year=2026&quarter=2 — SCRUM-1048 (CON-07a)
+ *
+ * IVA repercutido, IVA soportado y su diferencia, como BORRADOR para el asesor (regla 7: nunca
+ * «lo que debes» ni «Hacienda»). El repercutido sale del mismo libro y el mismo periodo que
+ * `/vat` (SCRUM-296/389 — un solo agregador, un solo criterio de fechas); el soportado es nuevo
+ * aquí, sobre `Expense.vatRate/vatAmount/vatDeducible` (SCRUM-403), sumando SOLO lo que el
+ * profesional ya marcó — esta ruta no decide qué gasto es deducible.
+ *
+ * Las retenciones sufridas NO están: `Invoice` no guarda la retención aplicada (falta el ALTER
+ * de SCRUM-293/A2). El campo `retenciones.disponible` lo dice, en vez de devolver un 0,00 que
+ * afirmaría «no hubo» cuando lo cierto es «no se guarda todavía».
+ */
+router.get('/resumen-trimestre', async (req, res) => {
+  try {
+    const now = new Date();
+    const year = Number(req.query.year) || now.getFullYear();
+    const qRaw = Number(req.query.quarter) || Math.floor(now.getMonth() / 3) + 1;
+    const quarter = Math.min(4, Math.max(1, qRaw));
+
+    const { desde: from, hasta: to } = rangoTrimestre(year, quarter);
+
+    // Mismo libro que `/vat`: si este resumen leyera las facturas por su cuenta, el repercutido
+    // de las dos rutas podría acabar diciendo cifras distintas del mismo trimestre.
+    const libro = await leerLibroRegistro(prisma, { merchantId: req.merchantId, desde: from, hasta: to });
+
+    let facturasSinDesgloseCount = 0;
+    let facturasSinDesgloseImporte = 0;
+    const repercutidoPorTipo: { tipo: number; base: number; cuota: number }[] = [];
+    for (const a of libro.asientos) {
+      if (a.porTipo.length === 0) {
+        facturasSinDesgloseCount += 1;
+        facturasSinDesgloseImporte += a.total ?? 0;
+        continue;
+      }
+      repercutidoPorTipo.push(...a.porTipo);
+    }
+    facturasSinDesgloseCount += libro.sinNumero;
+    facturasSinDesgloseImporte += libro.sinNumeroImporte;
+
+    // Gastos del MISMO periodo, por fecha de apunte — mismo criterio que `/pl` y
+    // `beneficioBaseImponible` (SCRUM-1047).
+    const expenses = await prisma.expense.findMany({
+      where: { merchantId: req.merchantId, date: { gte: from, lte: to } },
+      select: { amount: true, vatRate: true, vatAmount: true, baseAmount: true, vatDeducible: true },
+    });
+
+    const resumen = construirResumenTrimestre({ año: year, trimestre: quarter, repercutidoPorTipo, expenses });
+
+    return res.json({
+      ...resumen,
+      from: from.toISOString().slice(0, 10),
+      to: to.toISOString().slice(0, 10),
+      facturasSinDesglose: {
+        count: facturasSinDesgloseCount,
+        importe: Math.round(facturasSinDesgloseImporte * 100) / 100,
+      },
+      invoiceCount: libro.miradas,
+      expenseCount: expenses.length,
+    });
+  } catch (err) {
+    console.error('[GET /admin/reports/resumen-trimestre]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });

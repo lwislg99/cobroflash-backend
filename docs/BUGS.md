@@ -927,6 +927,29 @@
 - **No es de mi carril:** no toqué `exportView.js` ni `scripts/guard-marcadores-en-pantalla.mjs` en esta rama (`scrum-1033-ficha-datos-y-etiquetas`); el censo `CENSO.export = 6` (`scripts/guard-marcadores-en-pantalla.mjs:58`) ya no coincide con lo que la vista pinta hoy, y es anterior a este PR.
 - **No arreglado aquí** (regla: un hallazgo de otro carril se reporta, no se arregla): quien tocó `exportView.js` por última vez decide si los 6 marcadores `[PENDIENTE…]` deberían seguir ahí (y se restauran) o si de verdad ya no hacen falta (y se borra la entrada del censo, `guard-marcadores-en-pantalla.mjs:58`).
 
+### [ ] P4 · `trinquete:zona` (SCRUM-813): `tests/vigia-atascados.test.mjs` (SCRUM-839/840) cambia de veredicto entre zonas horarias y no está censado (26-sep, hallazgo de S? en SCRUM-1048, de OTRO carril — se reporta, no se arregla)
+- **Síntoma:** el job «trinquete · ningún test nuevo mide la zona de la máquina» cae con «🔴 EL
+  TRINQUETE HABLA» sobre 11 casos de `tests/vigia-atascados.test.mjs` que cambian de veredicto
+  entre `Pacific/Kiritimati` y `Pacific/Midway` (los umbrales de edad 24h/72h/168h, el clasificador
+  sin checks/sin lista de obligatorios, el control de PR recién empujado, etc.) y que NO aparecen
+  en `CENSADAS` (`scripts/_trinquete-de-zona.mjs`, que hoy solo censa 3 casos de SCRUM-592).
+  Run: https://github.com/lwislg99/cobroflash-backend/actions/runs/36223325763.
+- **No es de mi carril, y es PRE-EXISTENTE en `main`, no algo que este PR introdujera:** el diff de
+  `scrum-1048-resumen-trimestre-calculo` toca solo `docs/master/SCRUM-1048.md`,
+  `src/modules/reports/app/routes/reports.routes.ts`, `src/modules/reports/domain/resumenTrimestre.ts`
+  y `tests/scrum1048-resumen-trimestre.test.mjs` — ninguno roza `scripts/vigia-atascados.mjs` ni
+  `tests/vigia-atascados.test.mjs`. Medido con `git merge-base --is-ancestor <sha> origin/main`:
+  tanto el censo del trinquete (`7ba206d9`, SCRUM-813, 17-sep-2026) como el vigía de PRs atascados
+  (`383aa877`/`d2990977`/`e91a3741`, SCRUM-839/840, 15-sep-2026) YA son ancestros de `origin/main`.
+  El defecto vive ahí desde antes de abrir esta rama.
+- **Impacto:** es un check obligatorio (el aviso automático lo reporta bajo «build + tests (con
+  banco desechable)») — bloquea el merge de CUALQUIER PR que dispare este job, no solo el #1793.
+- **No arreglado aquí** (A7 — «un hallazgo de otro carril se reporta, no se arregla»; y regla 41 no
+  aplica sobre código ajeno a esta tarea): decidir si se arregla `scripts/vigia-atascados.mjs` (que
+  sus umbrales de edad no dependan de ningún componente LOCAL de fecha) o si se censa a propósito en
+  `CENSADAS` con el motivo escrito (SCRUM-643 §2·A) es de quien tocó SCRUM-839/840 por última vez, o
+  del fundador.
+
 ### [x] P3-10 · Suite gateada COMPLETA (`QA_DB_TEST=1 npm test`) era inestable por concurrencia contra staging (22-jul, hallazgo en SCRUM-75; corregido en SCRUM-78)
 - **Síntoma:** con los ~19 archivos de test gateados corriendo TODOS a la vez (comportamiento por
   defecto de `node --test` con múltiples archivos: paraleliza por worker), el resultado NO era
