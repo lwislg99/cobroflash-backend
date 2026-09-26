@@ -1,0 +1,38 @@
+-- docs/sql/scrum-529-to-phone.sql — SCRUM-529
+--
+-- A QUÉ NÚMERO SE ENVIÓ CADA MENSAJE DE WHATSAPP — hoy no se guarda.
+--
+-- `WhatsAppMessage` no lleva el destinatario. El único rastro es `customer.phone`, que es
+-- MUTABLE: si el profesional corrige un móvil mal puesto y reenvía, se pierde para siempre la
+-- única prueba de a dónde fue el presupuesto anterior (nombre del cliente, dirección de la obra
+-- e importe dentro). Nadie hizo nada mal — el sistema simplemente no guardó el dato.
+--
+-- APROBADO POR EL FUNDADOR el 21-sep-2026 (Jira SCRUM-529, comentario 16296): «SÍ al ALTER
+-- aditivo `toPhone String? @map("to_phone")` en WhatsAppMessage: staging → yaqu_dev_javier →
+-- prod, con GO aparte para prod.» Sigue sin aplicar 5 días después de la aprobación.
+--
+-- SIN `NOT NULL` Y SIN `DEFAULT`: `NULL` = envíos anteriores a esta columna, de los que no se
+-- sabe el destinatario y no se va a inventar. Un `DEFAULT` con `customer.phone` de HOY habría
+-- fabricado un destinatario para envíos donde ese dato ya no existe — exactamente el defecto
+-- que este ticket viene a cerrar, con otra cara.
+--
+-- Auditar el CAMBIO de teléfono de un cliente (SCRUM-529 lo deja anotado como decisión aparte,
+-- que toca `auditLog`) NO entra aquí — es otro alcance, no bloquea éste.
+--
+-- Generado OFFLINE con `previewMigracion({ schema, desde })` (mismo mecanismo que
+-- `scripts/preview-migracion.mjs --desde`, sin tocar `prisma/schema.prisma` del repo ni ninguna
+-- base): copia intacta del schema actual como FROM, copia con la columna candidata como TO.
+-- Control positivo pasado, veredicto ADITIVA (ni DROP, ni RENAME, ni TRUNCATE, ni DELETE, ni
+-- SET NOT NULL). Medido contra `origin/main` = `2ddcb5d38553581306e989adef9a1e1295389e5a` ·
+-- 2026-09-26T13:06:18Z.
+--
+-- ORDEN ①②③ (regla 3 / A5): este ALTER en las TRES bases (staging → yaqu_dev_javier →
+-- producción, con GO aparte para producción, SCRUM-169) es el ② — lo aplica el colaborador
+-- (regla 40). El ③ (esquema + código que lo escribe, en `whatsapp.ts`/`whatsappLog.service.ts`
+-- + tests) va DESPUÉS, en su propio PR de servidor (area-s1).
+--
+-- ADITIVO Y RE-EJECUTABLE: `IF NOT EXISTS`, así que volver a correrlo sobre una base ya aplicada
+-- no hace nada y no falla.
+
+ALTER TABLE "whatsapp_messages"
+  ADD COLUMN IF NOT EXISTS "to_phone" TEXT;
