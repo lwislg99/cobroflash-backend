@@ -488,40 +488,97 @@ function openExpenseModal(expense, opts) {
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-overlay';
   backdrop.id = 'exp-modal';
+  // SCRUM-1155 (920f) · EL ALTA REDISEÑADA: foto primero. `hayFotoDeEntrada` es la única rama que
+  // distingue alta de edición en este paso — con foto ya guardada se nace en el estado «Foto
+  // guardada»; sin ella, en el de elegir. Los pasos 2 y 3 NO son un asistente que oculta pasos: los
+  // tres se pintan a la vez (regla de la casa: «el alta sigue siendo MODAL», SCRUM-920 comentario
+  // 15992) — «1/2/3» son cabeceras que organizan el scroll, no páginas que se turnan.
+  const hayFotoDeEntrada = !!expense?.tieneFoto;
   backdrop.innerHTML = `
     <div class="modal" style="max-width:480px">
       <div class="modal-body" style="gap:12px">
+
+        <!-- ── 1 · LA FOTO DEL TICKET ────────────────────────────────────────────────────────── -->
+        <div class="field">
+          <label style="font-weight:700">${TEXTO_PASO1_TITULO}</label>
+          <p style="margin:2px 0 8px;font-size:12.5px;color:var(--muted)">${TEXTO_PASO1_AYUDA}</p>
+          <label style="font-size:13px" for="exp-receipt">${TEXTO_HAZ_LA_FOTO}</label>
+
+          <div id="exp-foto-elegir" style="display:${hayFotoDeEntrada ? 'none' : 'flex'};gap:8px;flex-wrap:wrap;margin-top:6px">
+            <input type="file" id="exp-receipt-camara" accept="image/*" capture="environment" style="display:none"/>
+            <button type="button" id="exp-btn-camara" class="btn btn-primary btn-sm">${TEXTO_HACER_FOTO}</button>
+            <input type="file" id="exp-receipt" accept="image/*" style="display:none"/>
+            <button type="button" id="exp-btn-archivo" class="btn-secondary btn-sm">${TEXTO_ELEGIR_FOTO}</button>
+            <button type="button" id="exp-btn-sin-foto" class="btn-ghost btn-sm">${TEXTO_SIN_TICKET}</button>
+          </div>
+
+          <div id="exp-foto-elegida" style="display:${hayFotoDeEntrada ? 'block' : 'none'};margin-top:6px">
+            <!-- SIN src="" cuando no hay foto: un src vacío hace que el navegador pida la página
+                 actual COMO imagen (404 de sobra evitable). Sin foto de entrada, el atributo no se
+                 escribe; mostrarFotoElegida/FileReader lo rellenan al elegir una nueva. -->
+            <img id="exp-foto-preview" ${hayFotoDeEntrada ? `src="/admin/expenses/${expense.id}/foto"` : ''} alt=""
+                 onerror="this.style.display='none'"
+                 style="display:${hayFotoDeEntrada ? 'block' : 'none'};max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--neutral-200);margin-bottom:6px"/>
+            <p style="margin:0;font-size:12.5px;color:var(--body);font-weight:600">${TEXTO_FOTO_GUARDADA}</p>
+            <p style="margin:2px 0 8px;font-size:11.5px;color:var(--neutral-400)">${TEXTO_FOTO_MAL_LEIDA}</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" id="exp-foto-ver" class="btn-ghost btn-sm" style="display:${hayFotoDeEntrada ? 'inline-block' : 'none'}">${TEXTO_FOTO_VERLA}</button>
+              <button type="button" id="exp-foto-quitar" class="btn-ghost btn-sm">${TEXTO_FOTO_QUITARLA}</button>
+              <!-- SCRUM-1038 · rellena los campos de abajo con lo que la IA lee en la foto. Único
+                   mecanismo de lectura de la pantalla (SCRUM-1155 lo reconcilia con este paso;
+                   antes vivía suelto junto al campo de fichero). Texto firmado, ver la constante. -->
+              <button type="button" id="exp-leer-ticket" class="btn-secondary btn-sm" style="display:none">${TEXTO_LEER_TICKET}</button>
+            </div>
+          </div>
+          <!-- SCRUM-324 (E3) · TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026); F1 de la
+               17002 lo reubica «de abajo» porque la foto sube al paso 1. -->
+          <p style="margin:8px 0 0;font-size:12.5px;color:var(--muted)">${TEXTO_F1_FOTO_ES_COPIA}</p>
+        </div>
+
+        <!-- ── 2 · QUÉ ES Y CUÁNTO ───────────────────────────────────────────────────────────── -->
+        <div class="field">
+          <label style="font-weight:700">${TEXTO_PASO2_TITULO}</label>
+        </div>
         <div class="field">
           <label>Concepto *</label>
           <input id="exp-concept" type="text" placeholder="Ej: Tubería PVC 20mm" value="${escHtml(expense?.concept||'')}"/>
+          <div class="gasto-descarte" data-para="exp-concept" hidden></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="field">
-            <label>Importe *</label>
-            <input id="exp-amount" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.amount||''}"/>
-          </div>
+        <div class="field">
+          <label>Importe *</label>
+          <input id="exp-amount" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.amount||''}"/>
+          <div class="gasto-descarte" data-para="exp-amount" hidden></div>
         </div>
+        <p style="margin:0;font-size:12.5px;color:var(--green-700,#15803d);font-weight:600">${TEXTO_PASO2_BASTA}</p>
 
-        <!-- SCRUM-324 (E3) · EL DESGLOSE, que es lo que convierte un apunte en un ASIENTO.
-             «Importe» es el TOTAL con IVA y así se declaró en el censo. Sin base, tipo y cuota, el
-             libro de facturas recibidas EXCLUYE el gasto («libroRecibidas.ts:98») y sale vacío: eso
-             es lo que pasaba hasta hoy, con las columnas ya en las tres bases y nadie escribiéndolas.
-             Los tres son OPCIONALES: un gasto sin desglose se sigue guardando igual. -->
+        <!-- ── 3 · DATOS DE LA FACTURA DEL PROVEEDOR (opcional) ─────────────────────────────────
+             SCRUM-324 (E3) · EL DESGLOSE, que es lo que convierte un apunte en un ASIENTO. «Importe»
+             es el TOTAL con IVA. Sin base, tipo y cuota, el libro de facturas recibidas EXCLUYE el
+             gasto («libroRecibidas.ts:98»). Los tres son OPCIONALES: sin ellos se guarda igual. -->
+        <div class="field">
+          <label style="font-weight:700">${TEXTO_PASO3_TITULO} <span style="font-weight:400;color:var(--neutral-400)">(${TEXTO_OPCIONAL})</span></label>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
           <div class="field">
             <label>Base imponible</label>
             <input id="exp-base" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.baseAmount ?? ''}"/>
+            <div class="gasto-descarte" data-para="exp-base" hidden></div>
           </div>
           <div class="field">
             <label>Tipo de IVA</label>
+            <!-- SCRUM-920 comentario 16175 punto 3 (21-sep-2026): ampliado de 21,10,4,0 a los
+                 seis valores que el servidor ya admite, para no dejar un tipo leído (p.ej. 5 %)
+                 sin sitio en el desplegable. Decisión ya tomada; se aplica aquí. -->
             <select id="exp-vatrate">
               <option value="">—</option>
-              ${[21, 10, 4, 0].map((t) => `<option value="${t}"${Number(expense?.vatRate) === t ? ' selected' : ''}>${t}%</option>`).join('')}
+              ${[0, 2, 4, 5, 10, 21].map((t) => `<option value="${t}"${Number(expense?.vatRate) === t ? ' selected' : ''}>${t}%</option>`).join('')}
             </select>
+            <div class="gasto-descarte" data-para="exp-vatrate" hidden></div>
           </div>
           <div class="field">
             <label>Cuota de IVA</label>
             <input id="exp-vatamount" type="number" min="0" step="0.01" placeholder="0.00" value="${expense?.vatAmount ?? ''}"/>
+            <div class="gasto-descarte" data-para="exp-vatamount" hidden></div>
           </div>
         </div>
 
@@ -529,14 +586,17 @@ function openExpenseModal(expense, opts) {
           <div class="field">
             <label>Nº de factura del proveedor</label>
             <input id="exp-provinvnum" type="text" placeholder="A-2026/114" value="${escHtml(expense?.providerInvoiceNumber||'')}"/>
+            <div class="gasto-descarte" data-para="exp-provinvnum" hidden></div>
           </div>
           <div class="field">
             <label>Fecha de la factura</label>
             <input id="exp-provinvdate" type="date" value="${expense?.providerInvoiceDate ? String(expense.providerInvoiceDate).slice(0,10) : ''}"/>
+            <div class="gasto-descarte" data-para="exp-provinvdate" hidden></div>
           </div>
           <div class="field">
             <label>Fecha</label>
             <input id="exp-date" type="date" value="${expense ? new Date(expense.date).toISOString().slice(0,10) : today}"/>
+            <div class="gasto-descarte" data-para="exp-date" hidden></div>
           </div>
         </div>
         <div class="field">
@@ -571,24 +631,12 @@ function openExpenseModal(expense, opts) {
                    ${expense?.provider?.taxId ? 'data-origen="ficha"' : ''} readonly
                    aria-describedby="exp-nif-ayuda"/>
             <p id="exp-nif-ayuda" class="gasto-nif-ayuda"${expense?.providerId ? ' hidden' : ''}>${AYUDA_NIF_SIN_PROVEEDOR}</p>
+            <div class="gasto-descarte" data-para="exp-provider-nif" hidden></div>
           </div>
         </div>
         <div class="field">
           <label>Notas</label>
           <textarea id="exp-notes" placeholder="Detalles adicionales…" style="height:60px;resize:vertical">${expense?.notes||''}</textarea>
-        </div>
-        <div class="field" id="exp-receipt-section">
-          <label>Foto del ticket (opcional)</label>
-          <!-- SCRUM-324 (E3) · TEXTO OFICIAL APROBADO (regla 30, fundador 10-ago-2026). No se
-               reescribe ni se «mejora». Describe lo que hace el SOFTWARE y no afirma nada sobre lo
-               que Hacienda admite: eso último espera al asesor. -->
-          <p style="margin:0 0 6px;font-size:12.5px;color:var(--muted)">Guardamos la foto como tu copia. Los datos fiscales salen de los campos de arriba.</p>
-          ${expense?.tieneFoto ? `<img src="/admin/expenses/${expense.id}/foto" alt="" onerror="this.remove()" style="max-width:100%;max-height:120px;border-radius:8px;object-fit:contain;border:1px solid var(--neutral-200);margin-bottom:6px"/>` : ''}
-          <input type="file" id="exp-receipt" accept="image/*" style="font-size:13px"/>
-          <!-- SCRUM-1038 · rellena los campos de arriba con lo que la IA lee en la foto. Empieza
-               escondido: solo tiene sentido con una foto ya elegida (ver el listener de change
-               más abajo). Texto firmado, ver la constante. -->
-          <button type="button" id="exp-leer-ticket" class="btn-secondary btn-sm" style="display:none;margin-top:8px">${TEXTO_LEER_TICKET}</button>
         </div>
         <div id="exp-error" class="alert error" style="display:none"></div>
       </div>
@@ -660,26 +708,125 @@ function openExpenseModal(expense, opts) {
       });
   }
 
-  // ═══ SCRUM-1038 · «LEER EL TICKET» — rellena el formulario con lo que ya lee el servidor ═══
+  // ═══ SCRUM-1155 (920f) · EL PASO 1, CABLEADO — foto (cámara o archivo), lectura, descartes ═══
   // `POST /admin/expenses/leer-ticket` (SCRUM-912) devuelve `{ propuesta, descartados }` con los
-  // MISMOS nombres de campo que este formulario manda al guardar (S1, comentario SCRUM-1038:
-  // no hace falta tocar el servidor). Aquí dentro de `openExpenseModal` porque necesita
-  // `provSel`/`nifInput`/`aplicarNifSegunProveedor`, que son de este cierre.
+  // MISMOS nombres de campo que este formulario manda al guardar. Aquí dentro de `openExpenseModal`
+  // porque necesita `provSel`/`nifInput`/`aplicarNifSegunProveedor`, que son de este cierre.
   //
-  // NO GUARDA NADA SOLO (AC#2): solo rellena los campos; el profesional revisa y pulsa «Guardar»
-  // como siempre. Un fallo o una lectura vacía dejan el formulario tal cual estaba (AC#4): no se
-  // borra ni se sobreescribe ningún campo que ya tuviera dato el servidor no ha devuelto.
-  const fileInputTicket = document.getElementById('exp-receipt');
+  // NO GUARDA NADA SOLO (AC#2 de SCRUM-1038): solo rellena los campos; el profesional revisa y
+  // pulsa «Guardar» como siempre. Un fallo o una lectura vacía dejan el formulario tal cual estaba.
+  //
+  // 🔒 UN SOLO MECANISMO DE LECTURA. `exp-leer-ticket` es el mismo botón/texto de SCRUM-1038; lo
+  // único que cambia en SCRUM-1155 es DÓNDE vive (paso 1, junto a la foto) y QUÉ dispara su
+  // aparición (cualquiera de los dos file inputs, no solo uno).
+  const inputCamara = document.getElementById('exp-receipt-camara');
+  const inputArchivo = document.getElementById('exp-receipt');
+  const btnCamara = document.getElementById('exp-btn-camara');
+  const btnArchivo = document.getElementById('exp-btn-archivo');
+  const btnSinFoto = document.getElementById('exp-btn-sin-foto');
+  const cajaElegir = document.getElementById('exp-foto-elegir');
+  const cajaElegida = document.getElementById('exp-foto-elegida');
+  const preview = document.getElementById('exp-foto-preview');
+  const btnVerla = document.getElementById('exp-foto-ver');
+  const btnQuitarla = document.getElementById('exp-foto-quitar');
   const btnLeerTicket = document.getElementById('exp-leer-ticket');
-  if (fileInputTicket && btnLeerTicket) {
-    // El botón solo tiene sentido con una foto ya elegida: sin ella, mostrarlo deshabilitado
-    // obligaría a un texto de ayuda nuevo (firma aparte) para explicar por qué no hace nada.
-    fileInputTicket.addEventListener('change', () => {
-      btnLeerTicket.style.display = fileInputTicket.files && fileInputTicket.files[0] ? 'inline-block' : 'none';
-    });
 
-    function aplicarLecturaTicket(propuesta) {
+  let fotoQuitada = false; // se envía `receiptData: null` al guardar si se quitó una foto YA guardada
+  let previewEsDeUnaFotoNueva = false; // distingue la preview de un fichero recién elegido de la ya guardada
+
+  function inputConFoto() {
+    return (inputCamara && inputCamara.files && inputCamara.files[0]) ? inputCamara
+      : (inputArchivo && inputArchivo.files && inputArchivo.files[0]) ? inputArchivo : null;
+  }
+
+  // `FileReader`, no `URL.createObjectURL`: esto SOLO es una preview de un ficherito ya elegido
+  // (no la foto entera que se manda al guardar, que reduce aparte `fotoParaGuardar`), y así el
+  // banco de pruebas —que shima `FileReader` para sus ficheros de mentira, no `createObjectURL`—
+  // puede ejercitar el modal sin abrir un navegador real.
+  function mostrarFotoElegida(file) {
+    fotoQuitada = false;
+    previewEsDeUnaFotoNueva = true;
+    cajaElegir.style.display = 'none';
+    cajaElegida.style.display = 'block';
+    btnLeerTicket.style.display = 'inline-block';
+    if (!file) { btnVerla.style.display = 'none'; return; }
+    btnVerla.style.display = 'inline-block';
+    const reader = new FileReader();
+    reader.onload = () => { preview.src = reader.result; preview.style.display = 'block'; };
+    reader.readAsDataURL(file);
+  }
+
+  // SCRUM-1038 (comentario 16241) · un `change` con `files` VACÍO —el navegador lo dispara al
+  // cancelar el selector con una foto ya puesta— vuelve al estado de elegir, no se queda a medias
+  // mostrando el botón de leer sobre un input sin fichero.
+  function volverAElegir() {
+    previewEsDeUnaFotoNueva = false;
+    // Si YA había una foto guardada (edición) y no se quitó a propósito, cancelar el selector de
+    // fichero la deja tal cual estaba — no la borra ni oculta lo que no ha cambiado.
+    if (hayFotoDeEntrada && !fotoQuitada) return;
+    preview.removeAttribute('src'); preview.style.display = 'none';
+    cajaElegida.style.display = 'none';
+    cajaElegir.style.display = 'flex';
+    btnLeerTicket.style.display = 'none';
+  }
+  if (inputCamara && inputArchivo && btnCamara && btnArchivo) {
+    btnCamara.addEventListener('click', () => inputCamara.click());
+    btnArchivo.addEventListener('click', () => inputArchivo.click());
+    inputCamara.addEventListener('change', () => {
+      if (inputCamara.files[0]) { inputArchivo.value = ''; mostrarFotoElegida(inputCamara.files[0]); } else volverAElegir();
+    });
+    inputArchivo.addEventListener('change', () => {
+      if (inputArchivo.files[0]) { inputCamara.value = ''; mostrarFotoElegida(inputArchivo.files[0]); } else volverAElegir();
+    });
+  }
+  if (btnSinFoto && cajaElegir) {
+    // «Ahora no tengo el ticket»: no es una acción irreversible ni cambia nada del formulario, solo
+    // deja de invitar a hacer la foto — los pasos 2 y 3 ya están a la vista, siempre lo estuvieron.
+    btnSinFoto.addEventListener('click', () => {
+      cajaElegir.style.display = 'none';
+      document.getElementById('exp-concept')?.focus();
+    });
+  }
+  if (btnVerla) {
+    // La foto YA guardada se abre por su URL de servidor (misma que la preview, en ese caso); la
+    // recién elegida se abre por su `src` en data-URI, que `mostrarFotoElegida` ya dejó puesto.
+    btnVerla.addEventListener('click', () => { if (preview.src) window.open(preview.src, '_blank', 'noopener'); });
+  }
+  if (btnQuitarla && cajaElegir && cajaElegida) {
+    btnQuitarla.addEventListener('click', () => {
+      if (hayFotoDeEntrada && !previewEsDeUnaFotoNueva) fotoQuitada = true; // era la foto YA guardada
+      if (inputCamara) inputCamara.value = '';
+      if (inputArchivo) inputArchivo.value = '';
+      previewEsDeUnaFotoNueva = false;
+      preview.removeAttribute('src'); preview.style.display = 'none';
+      cajaElegida.style.display = 'none';
+      cajaElegir.style.display = 'flex';
+    });
+  }
+
+  // Los 9 porqués de la lectura (SCRUM-920 comentario 16175/920h). Se limpian en cada lectura nueva
+  // ANTES de aplicar la siguiente: un campo que esta vez SÍ vino bien no puede arrastrar el aviso
+  // de la lectura anterior.
+  function limpiarDescartes() {
+    document.querySelectorAll('.gasto-descarte').forEach((el) => { el.hidden = true; el.textContent = ''; });
+  }
+  function pintarDescartes(descartados) {
+    for (const d of (descartados || [])) {
+      const idInput = CAMPO_DESCARTE_A_INPUT[d.campo];
+      const texto = MOTIVOS_DESCARTE_TEXTO[d.motivo];
+      if (!idInput || !texto) continue; // campo/motivo que este modal no conoce: no se inventa aviso
+      const el = document.querySelector(`.gasto-descarte[data-para="${idInput}"]`);
+      if (!el) continue;
+      el.hidden = false;
+      el.textContent = texto;
+      el.style.cssText = 'margin:2px 0 0;font-size:11.5px;color:var(--warn,#b45309)';
+    }
+  }
+
+  if (btnLeerTicket) {
+    function aplicarLecturaTicket(propuesta, descartados) {
       const p = propuesta || {};
+      limpiarDescartes();
       // «Lectura vacía» (foto borrosa, sin texto, o que no es un ticket): AC#3/comentario 16241.
       // Si NINGÚN campo trajo nada, es indistinguible de un fallo para quien mira la pantalla, y
       // se avisa igual que un fallo en vez de dejar el modal mudo.
@@ -700,6 +847,7 @@ function openExpenseModal(expense, opts) {
       setSiHay('exp-provinvnum', p.providerInvoiceNumber);
       setSiHay('exp-provinvdate', p.providerInvoiceDate);
       setSiHay('exp-date', p.date);
+      pintarDescartes(descartados);
 
       // El proveedor, SOLO si el servidor ya lo emparejó por NIF (SCRUM-961b: nunca por nombre).
       // Si no hay proveedor pero sí NIF leído, se escribe en el campo (queda de solo lectura hasta
@@ -710,11 +858,15 @@ function openExpenseModal(expense, opts) {
       } else if (p.nifProveedor) {
         nifInput.value = p.nifProveedor;
       }
+      // `proveedorNombre` (SCRUM-920 comentario 16173 punto 3): el servidor ya lo lee, pero
+      // pintarlo con un texto propio es microcopy NUEVA sin firmar (regla 30). Se propone y se
+      // para — no se inventa aquí. De momento el NIF sigue siendo el único camino para emparejar
+      // proveedor tras la lectura.
     }
 
     btnLeerTicket.addEventListener('click', async () => {
       if (btnLeerTicket.disabled) return; // doble clic: SCRUM-1038 comentario 16241
-      const file = fileInputTicket.files && fileInputTicket.files[0];
+      const file = inputConFoto() && inputConFoto().files[0];
       if (!file) return;
       const textoReposo = btnLeerTicket.textContent;
       btnLeerTicket.disabled = true;
@@ -722,7 +874,7 @@ function openExpenseModal(expense, opts) {
       try {
         const imagen = await fotoParaGuardar(file);
         const r = await apiRequest('/admin/expenses/leer-ticket', { method: 'POST', body: JSON.stringify({ imagen }) });
-        aplicarLecturaTicket(r.propuesta);
+        aplicarLecturaTicket(r.propuesta, r.descartados);
       } catch (err) {
         // AC#3: el tope de 5/día lleva SU mensaje, claro y en el idioma del usuario — nunca un
         // código técnico. `err.message` es la que compone `fotoParaGuardar` (AVISO_FOTO_NO_SE_ABRE,
@@ -770,7 +922,9 @@ function openExpenseModal(expense, opts) {
       : document.getElementById('exp-quoteid').value;
     const providerId = document.getElementById('exp-providerid').value;
     const notes      = document.getElementById('exp-notes').value.trim();
-    const fileInput  = document.getElementById('exp-receipt');
+    // SCRUM-1155 (920f) · dos file inputs ahora (cámara y archivo), mutuamente excluyentes —
+    // `mostrarFotoElegida` vacía el otro en cuanto uno tiene fichero.
+    const fileNuevo  = inputConFoto() && inputConFoto().files[0];
 
     if (!concept) { showExpError('El concepto es obligatorio.'); return; }
     if (!amount || amount <= 0) { showExpError('El importe debe ser mayor que 0.'); return; }
@@ -787,9 +941,15 @@ function openExpenseModal(expense, opts) {
       // del gasto — el profesional perdería su justificante por corregir un importe.
       // `undefined` no viaja en el JSON, y el servidor distingue «no lo mandes» (no se toca) de
       // «bórralo» (`null`) desde SCRUM-324: por eso omitir la clave es exactamente «no la toques».
+      //
+      // SCRUM-1155 · «Quitarla» sobre la foto YA GUARDADA (edición) es la TERCERA vía: ni una
+      // nueva ni «no la toques» — `fotoQuitada` manda `null` a propósito, la única forma de que
+      // `PUT` la borre.
       let receiptData;
-      if (fileInput.files && fileInput.files[0]) {
-        receiptData = await fotoParaGuardar(fileInput.files[0]);
+      if (fileNuevo) {
+        receiptData = await fotoParaGuardar(fileNuevo);
+      } else if (fotoQuitada) {
+        receiptData = null;
       }
 
       const payload = {
@@ -856,6 +1016,49 @@ const TEXTO_LEER_TICKET = 'Leer el ticket';
 const TEXTO_LEYENDO_TICKET = 'Leyendo…';
 const AVISO_TOPE_LECTURAS_TICKET = 'Has llegado al máximo de 5 lecturas de ticket hoy. Escribe los datos a mano.';
 const AVISO_LECTURA_TICKET_FALLIDA = 'No hemos podido leer este ticket. Escribe los datos a mano.';
+
+// SCRUM-920 · el alta rediseñada — textos firmados por el orquestador por delegación permanente
+// (SCRUM-920 comentario 15992, 20-sep-2026). Ficha en
+// docs/microcopy/2026-09-26-SCRUM-1155-alta-rediseno.md. Construidos en SCRUM-1155 (920f), un mes
+// después de firmarse: quedaron escritos y sin aplicar hasta entonces.
+const TEXTO_PASO1_TITULO = '1 · La foto del ticket';
+const TEXTO_PASO1_AYUDA = 'Hazla ahora, que el papel lo tienes delante. Lo demás lo puedes rellenar luego.';
+const TEXTO_HAZ_LA_FOTO = 'Haz la foto del ticket';
+const TEXTO_HACER_FOTO = '📷 Hacer foto';
+const TEXTO_ELEGIR_FOTO = 'Elegir foto o archivo';
+const TEXTO_SIN_TICKET = 'Ahora no tengo el ticket';
+const TEXTO_FOTO_GUARDADA = 'Foto guardada';
+const TEXTO_FOTO_MAL_LEIDA = 'Si no se lee bien, repítela.';
+const TEXTO_FOTO_VERLA = 'Verla';
+const TEXTO_FOTO_QUITARLA = 'Quitarla';
+const TEXTO_PASO2_TITULO = '2 · Qué es y cuánto';
+const TEXTO_PASO2_BASTA = '✓ Con esto ya se guarda. Lo de abajo es opcional.';
+const TEXTO_PASO3_TITULO = '3 · Datos de la factura del proveedor';
+const TEXTO_OPCIONAL = 'Opcional';
+// F1 · «de abajo», no «de arriba»: en el rediseño la foto sube al paso 1, así que los campos
+// fiscales que describe quedan DEBAJO de este párrafo, no encima como en el modal viejo.
+const TEXTO_F1_FOTO_ES_COPIA = 'Guardamos la foto como tu copia. Los datos fiscales salen de los campos de abajo.';
+
+// SCRUM-920h · los 9 porqués de la lectura — textos firmados por el orquestador por delegación
+// permanente (SCRUM-920 comentario 16175, 21-sep-2026, junto con SCRUM-912). Prototipo en su día
+// (`docs/prototipos/SCRUM-920/`); conectados a la pantalla real en SCRUM-1155 (920f).
+const MOTIVOS_DESCARTE_TEXTO = {
+  no_es_numero: 'No hemos podido leer esta cifra. Escríbela tú.',
+  fuera_de_rango: 'La cifra que hemos leído no tiene sentido. Escríbela tú.',
+  tipo_iva_no_admitido: 'El tipo de IVA que hemos leído no es uno de los que se pueden guardar. Elígelo tú.',
+  no_cuadra_con_el_total: 'La base, la cuota y el total no sumaban. Hemos dejado la base vacía: revisa las tres cifras en el ticket.',
+  fecha_invalida: 'La fecha que hemos leído no existe. Hemos dejado la de hoy: cámbiala si hace falta.',
+  fecha_futura: 'La fecha que hemos leído es posterior a hoy. Hemos dejado la de hoy: cámbiala si hace falta.',
+  nif_invalido: 'El NIF que hemos leído no es válido. Compruébalo en el ticket.',
+  demasiado_largo: 'Lo que hemos leído es demasiado largo para este campo. Escríbelo tú.',
+  no_es_texto: 'No hemos podido leer este dato. Escríbelo tú.',
+};
+// `campo` de `Descartado` (servidor) → id del input en este modal.
+const CAMPO_DESCARTE_A_INPUT = {
+  amount: 'exp-amount', baseAmount: 'exp-base', vatRate: 'exp-vatrate', vatAmount: 'exp-vatamount',
+  date: 'exp-date', providerInvoiceDate: 'exp-provinvdate', providerInvoiceNumber: 'exp-provinvnum',
+  nifProveedor: 'exp-provider-nif', concept: 'exp-concept',
+};
 
 function closeExpModal() {
   document.getElementById('exp-modal')?.remove();
