@@ -110,11 +110,18 @@ código que TOMA LA DECISIÓN contra entradas fabricadas, en vez de confiar en q
   Issues abiertos EN CRUDO, llama al script para decidir, y usa `jq` sobre su salida para el
   `gh issue create`/`comment` real. Ni el permiso (`issues: write`), ni la condición
   (`salida == '1'`), ni el patrón de dedupe cambian — se saca la lógica, no se rediseña.
-- 🔴 **Un fallo real que este mismo trabajo encontró y corrigió**: los pasos `run:` de Actions
-  llevan `-e -o pipefail`; sin guardas, un `jq`/`node` que fallara habría abortado el paso ANTES de
-  llegar al `if`/`else` que reporta el motivo — el mismo defecto de fondo («abortar en vez de
-  decidir») que esta pieza entera existe para no cometer, escondido un nivel más abajo. Añadidos
-  `|| true` en los tres puntos que pueden fallar, con su motivo en el comentario.
+- 🔴 **La clase de fallo que esto encontró, no un detalle de bash.** Los pasos `run:` de Actions
+  llevan `-e -o pipefail`, así que si `jq` o `node` fallaban, el paso ABORTABA ANTES de poder decir
+  por qué. Es la MISMA avería que ha dominado la tanda de hoy —«no pude mirar» indistinguible de
+  «no hay nada»— pero en su forma más cruel: **el mecanismo de AVISO enmudecido por el propio fallo
+  del que tenía que avisar.** Es hermano literal de SCRUM-1112 (el guard de acreditación del equipo
+  de Javier se colgaba 1h46 en silencio porque imprimía todo al final): en los dos casos, el
+  instrumento que existe para hablar cuando algo va mal es el primero en callarse cuando algo va
+  mal. Arreglado con `|| true` en los tres puntos que pueden fallar (nunca relajando el `exit 1`
+  final: el job sigue en rojo igual, lo único que cambia es que ahora SÍ llega a decir el motivo).
+  **Pendiente, sin tiempo hoy para comprobarlo**: si otros workflows de este repo (`avisador-rojo.yml`,
+  `pr-automatico.yml`, `zona-roja.yml`) tienen el mismo punto ciego — si tres de ellos no pueden
+  reportar su propio fallo, eso es un ticket en sí, y no se ha medido todavía.
 
 ### Verificado
 
