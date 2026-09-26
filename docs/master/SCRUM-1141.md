@@ -1,6 +1,7 @@
 # SCRUM-1141 · Campo NIF en la pantalla de proveedores
 
-**Rama:** `scrum-1141-nif-proveedor-pantalla` sobre `origin/main` `942e90d15ef6` (26-sep-2026).
+**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87` · 2026-09-26T11:45:00Z
+**Rama:** `scrum-1141-nif-proveedor-pantalla`.
 **Sesión:** S2 (front). **Skill UI:** cargada (`yaqu-premium-ui`).
 **Hermano de:** SCRUM-960 (servidor, en main desde PR #1533).
 
