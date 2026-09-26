@@ -1,5 +1,6 @@
 # SCRUM-1134 · Beneficio "sobre la base" en Informes
 
+**Medido contra:** `origin/main` = `032afc9ccd2fca0e160af40fcbf1acc0bcf43e0d` · 2026-09-26T06:14:08Z
 **Rama:** `scrum-1134-beneficio-sobre-la-base` sobre `origin/main` `24123060d733af2aa4c7517b481358896c843b4f`.
 **Fecha:** 2026-09-25 18:35 UTC (`gh api -i zen`).
 
