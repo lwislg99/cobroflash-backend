@@ -646,7 +646,9 @@ test('SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se m
     '  fecha de caducidad encima.\n\n' +
     '  Añade al encabezado, con el sha COMPLETO (40) y hora con huso:\n' +
     '    **Medido contra:** `origin/main` = `<sha40>` · <ISO-8601>\n\n' +
-    '  El sha corto no vale: `1bb0b5e` aparece en tres ramas distintas de este repo esta semana.\n\n  Y NO ES EL UNICO que vigila una entrada del registro: son CUATRO, y cada sesion los ha\n  ido descubriendo EN ROJO despues de empujar. Compruebalos todos antes con\n  `npm run guards:entrada` (segundos: no compila ni toca la base).');
+    '  El sha corto no vale: `1bb0b5e` aparece en tres ramas distintas de este repo esta semana.\n\n' +
+    '  NO LO TECLEES A MANO (SCRUM-1152: cinco tumbados en dos dias por olvidar la mitad).\n' +
+    '  `node scripts/equipo/ancla.mjs` imprime la linea completa y correcta, lista para pegar.\n\n  Y NO ES EL UNICO que vigila una entrada del registro: son CUATRO, y cada sesion los ha\n  ido descubriendo EN ROJO despues de empujar. Compruebalos todos antes con\n  `npm run guards:entrada` (segundos: no compila ni toca la base).');
 });
 
 // ── SCRUM-516 · EL CONTROL QUE DECIDE ────────────────────────────────────────────────────

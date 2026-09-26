@@ -74,6 +74,10 @@ La linea `**Medido contra:**` es OBLIGATORIA y la exige
   una CORRECTA que caduco en una hora porque `main` se movio tres veces. Sin hora, el ancla no
   distingue «medido hace cinco minutos» de «medido esta manana».
 
+**No la teclees a mano** (SCRUM-1152): `node scripts/equipo/ancla.mjs` imprime la linea completa
+y correcta —sha de `origin/main` + hora real de GitHub—, lista para pegar. Escrita a mano, el
+ancla tumbo cinco veces en dos dias por el mismo motivo: se olvida la mitad del dato.
+
 Va en el ENCABEZADO y no junto a cada afirmacion, a proposito: detectar afirmaciones («esta en
 main», «mergeado») seria un guard de texto, y un guard de texto se caza a si mismo en la prosa
 que explica la prohibicion — ademas de esquivarse reformulando. **Una regla que depende de como
@@ -139,7 +143,7 @@ abrevio la suya a proposito para comprobarlo — siguio en verde.
 # APENDICE · <fecha> · <titulo>
 ```
 
-Y debajo, su ancla, medida por ti al escribirla:
+Y debajo, su ancla — generada, no tecleada: `node scripts/equipo/ancla.mjs`
 
 ```markdown
 **Medido contra:** `origin/main` = `<sha de 40>` · <ISO-8601 con huso>
