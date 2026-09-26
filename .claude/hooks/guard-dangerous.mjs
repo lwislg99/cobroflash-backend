@@ -422,6 +422,22 @@ const esEnlace = (p) => {
 };
 
 /**
+ * SCRUM-1091 · Traduce un destino con forma MSYS (`/c/Users/…`) a la forma que `path` nativo
+ * entiende (`C:/Users/…`). Sin esto, en Windows `path.isAbsolute('/c/…')` ya da `true` —así que
+ * `cwdDelComando` lo devolvía TAL CUAL, sin traducir— y luego cualquier `path.resolve(cwd, …)`
+ * trataba ese `cwd` como una ruta RELATIVA al drive actual, duplicando la letra
+ * (`C:\c\Users\…`, que no existe). El guard leía el ENOENT de esa ruta inventada como «no hay
+ * nada que perder»: fallaba ABIERTO justo en la regla 5 (redirección que trunca) con el
+ * `cd "/c/…" && …` que usa TODA sesión de esta máquina — medido, SCRUM-1091. Un solo punto: el
+ * string nace aquí, no en cada consumidor de `cwd`.
+ */
+function posixADrive(destino) {
+  if (process.platform !== 'win32') return destino;
+  const m = /^\/([a-zA-Z])(\/.*)?$/.exec(destino);
+  return m ? `${m[1]}:${m[2] || '/'}` : destino;
+}
+
+/**
  * Desde dónde se ejecuta. Un `cd X && …` al principio es la forma normal de trabajar en este
  * repo con cuatro worktrees, y sin esto el guard miraría el árbol equivocado — que es peor que
  * no mirar: diría «limpio» de otro sitio.
@@ -429,7 +445,7 @@ const esEnlace = (p) => {
 export function cwdDelComando(comando, base) {
   for (const a of acciones(comando)) {
     if (a.programa === 'cd' && a.palabras.length >= 2) {
-      const destino = a.palabras[1].texto;
+      const destino = posixADrive(a.palabras[1].texto);
       return path.isAbsolute(destino) ? destino : path.resolve(base, destino);
     }
   }

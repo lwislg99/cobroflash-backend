@@ -1,0 +1,71 @@
+// tests/scrum1091-guard-cwd-posix.test.mjs — SCRUM-1091
+//
+// EL CASO REAL, MEDIDO POR J6: con un `cd "/c/…" &&` delante —la forma en la que el propio
+// prompt de arranque dice a TODA sesión de esta máquina que anteponga cada comando, porque el
+// shell vuelve al directorio base tras cada uno— la regla 5 (redirección que trunca un fichero
+// existente) dejaba de ver ficheros que SÍ existían.
+//
+// SCRUM-454 ya probaba `cd <ruta> && …`, pero con la ruta en forma NATIVA (`D:/x/y`). Nadie había
+// probado la forma MSYS (`/d/x/y`) que es la que de verdad escriben las sesiones, y ahí es donde
+// vivía el agujero: en Windows `path.isAbsolute('/c/…')` ya da `true`, así que `cwdDelComando` lo
+// devolvía SIN TRADUCIR, y luego `path.resolve(cwd, destino)` lo trataba como relativo al drive
+// actual — `C:\c\Users\…`, una ruta que nunca existe. El ENOENT de esa ruta inventada se leía como
+// «no hay nada que perder», y el guard fallaba ABIERTO justo en el caso que más importa.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { evaluar, cwdDelComando } from '../.claude/hooks/guard-dangerous.mjs';
+
+const SENTINEL_FALSO = path.join(os.tmpdir(), 'yaqu-1091-sentinel-que-no-existe');
+const llamada = (c) => JSON.stringify({ tool_name: 'Bash', tool_input: { command: c, description: 'prueba' } });
+
+function repoConVictima() {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1091-')));
+  const git = (...a) => spawnSync('git', a, { cwd: dir, encoding: 'utf8' });
+  git('init', '-q');
+  git('config', 'user.email', 'x@x');
+  git('config', 'user.name', 'x');
+  fs.writeFileSync(path.join(dir, 'victima.md'), 'CONTENIDO ORIGINAL QUE NO DEBERIA PERDERSE\n');
+  git('add', '-A');
+  git('commit', '-qm', 'base');
+  return dir;
+}
+
+/** El `dir` de Windows (`D:\x\y`) en la forma MSYS que usan las sesiones (`/d/x/y`). */
+function aPosix(dirWindows) {
+  const [letra, ...resto] = dirWindows.replace(/\\/g, '/').split(':/');
+  return `/${letra.toLowerCase()}/${resto.join(':/')}`;
+}
+
+const DIR = repoConVictima();
+test.after(() => fs.rmSync(DIR, { recursive: true, force: true }));
+
+test('SCRUM-1091 · cwdDelComando traduce `/<letra>/…` a `<letra>:/…`: path.resolve ya no duplica la letra', () => {
+  const cwd = cwdDelComando(`cd "${aPosix(DIR)}" && echo hola`, 'Z:/donde-sea');
+  // Windows no distingue mayúsculas en la letra de unidad: se compara así, y lo que de verdad
+  // importa es que NO se duplique (`C:\c\Users\…`, la ruta que nunca existe).
+  assert.equal(path.resolve(cwd, 'victima.md').toLowerCase(), path.join(DIR, 'victima.md').toLowerCase(),
+    `🔴 la letra se duplica: cwdDelComando devolvió ${cwd}`);
+});
+
+test('SCRUM-1091 · una ruta ya nativa (sin forma MSYS) no se toca', () => {
+  assert.equal(cwdDelComando(`cd "${DIR.replace(/\\/g, '/')}" && echo hola`, 'Z:/donde-sea'), DIR.replace(/\\/g, '/'));
+});
+
+test('SCRUM-1091 · 🔴 EL CASO REAL: `cd "/<letra>/…" && … > fichero-existente` SÍ bloquea (antes pasaba limpio)', () => {
+  const comando = `cd "${aPosix(DIR)}" && echo "NUEVO TEXTO QUE TRUNCA" > victima.md`;
+  const { bloqueado, motivo } = evaluar(llamada(comando), SENTINEL_FALSO);
+  assert.equal(bloqueado, true,
+    '🔴 con `cd "/<letra>/…" &&` delante —la forma en la que TODA sesión antepone sus comandos— '
+    + `una redirección que trunca un fichero real pasa limpio: la regla 5 está ciega. motivo=${motivo}`);
+  assert.match(motivo, /TRUNCA un fichero/);
+});
+
+test('SCRUM-1091 · control negativo: la misma forma de `cd`, sobre un fichero que NO existe, no bloquea', () => {
+  const comando = `cd "${aPosix(DIR)}" && echo "contenido" > nuevo-de-verdad.md`;
+  const { bloqueado } = evaluar(llamada(comando), SENTINEL_FALSO);
+  assert.equal(bloqueado, false, '🔴 control negativo: no debería bloquear algo nuevo');
+});
