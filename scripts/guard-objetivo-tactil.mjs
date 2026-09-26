@@ -647,7 +647,7 @@ const EXCEPCIONES_791 = {
     // campo.hidden=false y botón.hidden=true; `[hidden]` es `display:none !important`, SCRUM-731),
     // pero el mini-DOM no refleja la PROPIEDAD `hidden` como atributo y la página serializada los
     // pinta a los dos. Medido con `elementsFromPoint` en el borde, no supuesto.
-    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: '«+ Añadir descuento»: caja 44 px, 43,6 px de toque a 390 SOLO en el banco — el campo «Descuento global» (oculto con `hidden` en el producto, que nunca lo pinta junto al botón) sale visible en la página serializada porque el mini-DOM no refleja la propiedad `hidden`. Se retira cuando el banco la refleje (SCRUM-1148 lo deja anotado).' },
+    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'LIMITACIÓN DEL BANCO, NO DECISIÓN DE PRODUCTO. «+ Añadir descuento»: caja 44 px, 43,6 px de toque a 390 SOLO en el banco — el campo «Descuento global» (oculto con `hidden` en el producto, que nunca lo pinta junto al botón) sale visible en la página serializada porque el mini-DOM no refleja la propiedad `hidden`. Aquí el instrumento no sabe medir: se RETIRA en cuanto el banco refleje `hidden` (SCRUM-1158).' },
     // SCRUM-1148 · aquí estaba `BUTTON.btn-ghost.btn-sm.quote-header-btn` «📋 Usar plantilla»: cumple
     // a 929 y a 390 con la regla por contenedor. Retirada; la nombró el detector de sobrantes.
     // 🔴 SCRUM-711 · AQUÍ HABÍA DOS EXCEPCIONES MÁS, y se retiran porque ya no tienen causa:
