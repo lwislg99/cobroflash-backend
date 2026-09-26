@@ -44,6 +44,10 @@ function mensajeDeErrorProveedor(codigoOMensaje, respaldo) {
     // NO lleva marcador — marcarlo diría que está sin aprobar, y lleva aprobado desde que se
     // escribió.
     provider_in_use: 'No se puede borrar el proveedor porque está asignado a uno o más productos.',
+    // SCRUM-1141 · el servidor valida el NIF desde SCRUM-960 y contesta este código. La frase es
+    // la que ya enseña la ficha del cliente (`customersView.js`, SCRUM-575): se reutiliza, no se
+    // inventa una segunda para el mismo fallo.
+    taxId_invalido: 'Ese NIF/CIF no es válido. Compruébalo.',
   };
   if (M[bruto]) return M[bruto];
 
@@ -111,6 +115,7 @@ function renderProvidersView(container) {
               <div class="field"><label>Nombre *</label><input name="name"/></div>
               <div class="field"><label>Teléfono</label><input name="phone"/></div>
               <div class="field"><label>Email</label><input name="email" type="email"/></div>
+              <div class="field"><label for="pf-prov-edit-taxid">NIF/CIF (opcional)</label><input id="pf-prov-edit-taxid" name="taxId" type="text" autocapitalize="characters" placeholder="B12345678"/></div>
             </div>
             <div class="field"><label>Notas</label><input name="notes"/></div>
           </div>
@@ -134,6 +139,7 @@ function renderProvidersView(container) {
         const name  = body.querySelector('[name="name"]').value.trim();
         const phone = body.querySelector('[name="phone"]').value.trim();
         const email = body.querySelector('[name="email"]').value.trim();
+        const taxId = body.querySelector('[name="taxId"]').value.trim();
         const notes = body.querySelector('[name="notes"]').value.trim();
 
         if (!name) return setAlert('error', 'El nombre es obligatorio.');
@@ -146,6 +152,8 @@ function renderProvidersView(container) {
             name,
             phone: phone || null,
             email: email || null,
+            // SCRUM-1141 · vacío = «sin constar»: `null` BORRA el NIF guardado (SCRUM-960, PUT).
+            taxId: taxId || null,
             notes: notes || null,
           });
           closeProviderEditModal();
@@ -174,6 +182,7 @@ function renderProvidersView(container) {
       body.querySelector('[name="name"]').value  = it.name  || '';
       body.querySelector('[name="phone"]').value = it.phone || '';
       body.querySelector('[name="email"]').value = it.email || '';
+      body.querySelector('[name="taxId"]').value = it.taxId || '';
       body.querySelector('[name="notes"]').value = it.notes || '';
 
       editProviderOverlay.style.display = 'flex';
@@ -215,6 +224,11 @@ function renderProvidersView(container) {
             <label>Email</label>
             <input name="email" placeholder="proveedor@email.com" />
           </div>
+
+          <div class="field">
+            <label for="pf-provider-taxid">NIF/CIF (opcional)</label>
+            <input id="pf-provider-taxid" name="taxId" type="text" autocapitalize="characters" placeholder="B12345678" />
+          </div>
         </div>
   
         <div class="field">
@@ -232,6 +246,7 @@ function renderProvidersView(container) {
     const nameI = form.querySelector('input[name="name"]');
     const phoneI = form.querySelector('input[name="phone"]');
     const emailI = form.querySelector('input[name="email"]');
+    const taxIdI = form.querySelector('input[name="taxId"]');
     const notesI = form.querySelector('input[name="notes"]');
     // ═══════════════════════════════════════════════════════════════════════════════════════
     // 🔴 ESTA PANTALLA **NO** LLEVA EL ATAJO «N», Y NO ES UN HUECO. Decisión del fundador,
@@ -447,20 +462,23 @@ function renderProvidersView(container) {
         const name = String(nameI.value || "").trim();
         const phone = String(phoneI.value || "").trim();
         const email = String(emailI.value || "").trim();
+        const taxId = String(taxIdI.value || "").trim();
         const notes = String(notesI.value || "").trim();
-  
+
         if (!name) return setAlert("error", "name_required");
-  
+
         await createProvider(merchantId, {
           name,
           phone: phone || null,
           email: email || null,
+          taxId: taxId || null, // SCRUM-1141 · el servidor valida (SCRUM-960); aquí solo se envía
           notes: notes || null,
         });
-  
+
         nameI.value = "";
         phoneI.value = "";
         emailI.value = "";
+        taxIdI.value = "";
         notesI.value = "";
   
         setAlert("success", "Proveedor creado.");
