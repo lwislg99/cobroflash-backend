@@ -183,3 +183,58 @@ test('SCRUM-904 · 🔴 cada campo al que apunta el checklist vive en un submen�
       `🔴 «${campo}» está asignado a «${submenu}», que no es uno de los submenús de la pantalla.`);
   }
 });
+
+// ── 6 · UNA FILA PUEDE QUEDAR KO SIN OFRECERSE COMO ACCIÓN (SCRUM-904, 26-sep, com. 17138) ──────
+//
+// El comportamiento de verdad —texto, `disabled`, sin «Completar →» con el flag apagado— lo mide
+// la comprobación ⑤ del guard, EN NAVEGADOR, por la misma razón que el resto de este fichero: un
+// botón `disabled` y uno que no lo es se leen igual en el fuente si solo se busca el atributo a
+// ojo. Aquí se vigila que el MECANISMO exista y que la comprobación ⑤ no desaparezca en silencio.
+
+test('SCRUM-904 · 🔴 una fila con `completable: false` deja de invitar, no solo cambia de texto', () => {
+  assert.match(VISTA, /completable\s*:\s*connectEnabled/,
+    '🔴 la fila de Connect ya no decide su `completable` a partir del flag. Sin eso, «Aún no '
+    + 'disponible en tu cuenta» sería solo un cambio de texto sobre una fila que sigue prometiendo '
+    + 'una acción.');
+  assert.match(VISTA, /r\.completable\s*!==\s*false/,
+    '🔴 el `forEach` de las filas ya no lee `completable`: aunque la fila lo declare, nadie lo mira.');
+  assert.match(VISTA, /row\.disabled\s*=\s*true/,
+    '🔴 la fila no completable ha dejado de nacer `disabled`. Un botón que sigue activo, aunque no '
+    + 'tenga la flecha, sigue siendo clicable de verdad.');
+  assert.match(VISTA, /if\s*\(completable\)\s*{\s*\n\s*row\.addEventListener/,
+    '🔴 el listener de clic ya no se salta para las filas no completables: seguiría intentando '
+    + 'llevar a un sitio que la propia fila dice que no existe.');
+
+  const guard = leer('scripts/guard-completar-lleva-al-campo.mjs');
+  assert.match(guard, /LEER_FILA_CONNECT/,
+    '🔴 la comprobación ⑤ (flag OFF) ha desaparecido del guard: sin ella, un `disabled` que se '
+    + 'pierde no lo nota nadie hasta que alguien mira la pantalla a mano.');
+  assert.match(guard, /connect=off/,
+    '🔴 el guard ya no sabe pedir la página con el flag de Connect apagado.');
+  assert.match(guard, /control positivo, flag ON/,
+    '🔴 la comprobación ⑤ ha perdido su control positivo: sin él, un `disabled` que sale SIEMPRE '
+    + '—también con el flag encendido— pasaría el mismo verde.');
+});
+
+// ── 7 · EL AVISO DE PESTAÑA DEL CHECKLIST SALE DE LO QUE LA PANTALLA YA MUESTRA ─────────────────
+
+test('SCRUM-904 · 🔴 el aviso de pestaña del checklist no inventa un rótulo propio', () => {
+  const submenus = leer('public/dashboard/js/settingsSubmenus.js');
+  assert.match(submenus, /function\s+checklistEstaEnLaPestana/,
+    '🔴 `checklistEstaEnLaPestana` ha desaparecido: sin ella, el aviso de la 17138 vuelve a ser un '
+    + 'texto escrito a mano fila por fila, que es como se desfasa de la pantalla.');
+  // No reusa el prefijo de SCRUM-894 («Para guardar, rellena…»): aquí nadie está guardando.
+  const cuerpo = submenus.slice(submenus.indexOf('function checklistEstaEnLaPestana'));
+  const fn = cuerpo.slice(0, cuerpo.indexOf('\n}'));
+  assert.ok(!/Para guardar/.test(fn),
+    '🔴 el aviso del checklist ha vuelto a decir «Para guardar,», que es el texto de SCRUM-894 (un '
+    + 'error de guardado) y aquí sería falso: se navega desde una lista de pendientes, no desde un '
+    + 'intento de guardar.');
+  assert.match(fn, /está en la pestaña/, '🔴 el literal firmado en la 17138 ha cambiado.');
+
+  assert.match(VISTA, /checklistEstaEnLaPestana\(/,
+    '🔴 `settingsView.js` ya no llama a `checklistEstaEnLaPestana`: el aviso dejó de pintarse.');
+  assert.match(VISTA, /closest\(['"]\.field['"]\)/,
+    '🔴 el rótulo del campo ya no se lee del `<label>` real del formulario: si se escribe a mano '
+    + 'aquí, puede desfasarse de lo que la pantalla muestra de verdad.');
+});

@@ -1281,6 +1281,17 @@ async function renderReadinessCard(container, mainFormCard) {
   const fiscalReady = !!(m.legalName && m.taxId && m.address);
   const connect = String(m.connectStatus || 'none');
 
+  // SCRUM-904 (26-sep-2026, comentario 17138) · CON EL FLAG `PAYMENTS_CONNECT_ENABLED` OFF PARA
+  // ESTE MERCHANT, «Cobros con tarjeta» NO SE OFRECE COMO ACCIÓN COMPLETABLE. Antes esta fila solo
+  // miraba `connectStatus` (que nace en 'none' tanto si el flag está apagado como si está
+  // encendido y el profesional aún no ha empezado), así que con el flag OFF la fila prometía
+  // «Activar cobros con tarjeta · 2 min» y el clic llevaba a una pestaña donde `bloqueDeConnect()`
+  // sigue oculto (`renderConnectCard`, más arriba: `if (!st.enabled) return`) — la MISMA causa que
+  // ya diagnosticó este ticket para el `<h2>` que no existía, con otra cara. Fallo cerrado (`{}`)
+  // se trata como NO disponible: no se promete una activación que no se sabe si es posible.
+  let connectEnabled = false;
+  try { const cs = await apiRequest('/admin/connect/status'); connectEnabled = !!(cs && cs.enabled); } catch { connectEnabled = false; }
+
   const rows = [
     {
       ok: !!m.whatsappPhone,
@@ -1304,13 +1315,16 @@ async function renderReadinessCard(container, mainFormCard) {
       focus: 'iban',
     },
     {
-      ok: connect === 'active',
-      warn: connect === 'pending' || connect === 'restricted',
+      ok: connectEnabled && connect === 'active',
+      warn: connectEnabled && (connect === 'pending' || connect === 'restricted'),
       label: 'Cobros con tarjeta',
       okText: 'Stripe activo — tus clientes pueden pagar con tarjeta',
       warnText: connect === 'pending' ? 'Verificación en curso en Stripe' : 'Cuenta restringida — revisa Stripe',
-      koText: 'Activar cobros con tarjeta · 2 min, DNI e IBAN',
+      // SCRUM-904 (26-sep, comentario 17138): con el flag OFF, ni fecha ni plazo ni Hacienda — y
+      // `completable: false` le quita la flecha y el clic (ver el forEach de abajo).
+      koText: connectEnabled ? 'Activar cobros con tarjeta · 2 min, DNI e IBAN' : 'Aún no disponible en tu cuenta',
       scrollConnect: true,
+      completable: connectEnabled,
     },
     {
       ok: fiscalReady,
@@ -1330,19 +1344,42 @@ async function renderReadinessCard(container, mainFormCard) {
   const box = card.querySelector('#readiness-rows');
   rows.forEach((r) => {
     const state = r.ok ? 'ok' : r.warn ? 'warn' : 'ko';
+    // SCRUM-904 (26-sep, comentario 17138) · una fila puede quedar KO y aun así NO ofrecerse como
+    // acción: hoy es solo el caso de Connect con el flag apagado. `completable` por defecto es
+    // `true` (no cambia nada para las otras filas); una fila con `completable: false` deja de
+    // pintar «Completar →» y su botón nace `disabled` — no solo cambia el texto, deja de ser
+    // clicable de verdad, que es la condición que puso el orquestador.
+    const completable = r.completable !== false;
     const row = document.createElement('button');
     row.type = 'button';
+    if (!completable) row.disabled = true;
     row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:11px 14px;min-height:44px;'
       + 'border:1px solid var(--border);border-radius:10px;background:'
       + (state === 'ok' ? 'var(--brand-tint,#ecfdf5)' : '#fff')
-      + ';cursor:pointer;text-align:left;font:inherit;width:100%';
+      + ';text-align:left;font:inherit;width:100%'
+      + (completable ? ';cursor:pointer' : ';cursor:default');
+    // SCRUM-904 (26-sep, comentario 17138) · el aviso de pestaña, solo mientras la fila sigue KO/
+    // warn y solo si tiene `focus` (Connect no lo tiene: usa `scrollConnect` y su propio texto ya
+    // dice dónde está — «en tu cuenta» — sin necesitar nombrar una pestaña). El rótulo del campo
+    // sale del `<label>` YA PINTADO en el formulario, nunca de un texto escrito a mano aquí: así
+    // no puede desfasarse de la pantalla (la misma garantía que pidió el orquestador al firmarlo).
+    let pestanaHint = '';
+    if (!r.ok && r.focus && typeof submenuDeCampo === 'function') {
+      const campoEl = mainFormCard.querySelector(`[name="${r.focus}"]`);
+      const ranura = campoEl ? campoEl.closest('.field') : null;
+      const etiqueta = ranura ? ranura.querySelector('label') : null;
+      if (etiqueta && etiqueta.textContent.trim()) {
+        pestanaHint = checklistEstaEnLaPestana(etiqueta.textContent.trim(), rotuloDeSubmenu(submenuDeCampo(r.focus)));
+      }
+    }
     row.innerHTML = `
       <span style="flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#fff;background:${state === 'ok' ? 'var(--green-600,#16a34a)' : state === 'warn' ? '#f59e0b' : 'var(--neutral-300,#cdd2cb)'}">${state === 'ok' ? '✓' : state === 'warn' ? '…' : '·'}</span>
       <span style="min-width:0">
         <span style="display:block;font-size:13.5px;font-weight:600;color:var(--ink)">${r.label}</span>
         <span style="display:block;font-size:12.5px;color:${state === 'ko' ? 'var(--neutral-600)' : 'var(--muted)'}">${r.ok ? r.okText : r.warn ? r.warnText : r.koText}</span>
+        ${pestanaHint ? `<span style="display:block;font-size:12px;color:var(--neutral-400);margin-top:2px">${pestanaHint}</span>` : ''}
       </span>
-      ${r.ok ? '' : '<span style="margin-left:auto;flex:none;font-size:12.5px;font-weight:600;color:var(--green-700,#15803d)">Completar →</span>'}
+      ${state === 'ok' || !completable ? '' : '<span style="margin-left:auto;flex:none;font-size:12.5px;font-weight:600;color:var(--green-700,#15803d)">Completar →</span>'}
     `;
     // ── SCRUM-904 · «COMPLETAR →» LLEVA A DONDE ESTÁ EL CAMPO ───────────────────────────────
     //
@@ -1355,17 +1392,19 @@ async function renderReadinessCard(container, mainFormCard) {
     // llevan a ninguna parte no es una ayuda con fallos: enseña a no fiarse de ella.
     //
     // ⛔ NO cambia QUÉ es obligatorio ni qué filas salen: sólo A DÓNDE va el clic.
-    row.addEventListener('click', () => {
-      const destino = r.scrollConnect ? bloqueDeConnect() : mainFormCard.querySelector(`[name="${r.focus}"]`);
-      if (llevarASuPestana(destino)) {
-        // El foco va DESPUÉS del desplazamiento suave, como estaba: enfocar antes lo interrumpe.
-        // El bloque de Connect no es un campo y no se enfoca — se muestra.
-        if (!r.scrollConnect) setTimeout(() => destino.focus(), 350);
-        return;
-      }
-      // No se pudo llevar a ninguna parte. Se hace lo de siempre, que al menos mueve la pantalla.
-      mainFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    if (completable) {
+      row.addEventListener('click', () => {
+        const destino = r.scrollConnect ? bloqueDeConnect() : mainFormCard.querySelector(`[name="${r.focus}"]`);
+        if (llevarASuPestana(destino)) {
+          // El foco va DESPUÉS del desplazamiento suave, como estaba: enfocar antes lo interrumpe.
+          // El bloque de Connect no es un campo y no se enfoca — se muestra.
+          if (!r.scrollConnect) setTimeout(() => destino.focus(), 350);
+          return;
+        }
+        // No se pudo llevar a ninguna parte. Se hace lo de siempre, que al menos mueve la pantalla.
+        mainFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
     box.appendChild(row);
   });
 }
