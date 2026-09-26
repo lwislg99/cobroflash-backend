@@ -821,3 +821,62 @@ y decides con ella delante.
    ninguna unicidad, y esa base la comparten otras sesiones.
 4. **`providers` sigue sin medir.**
 5. **Staging y producción: sin tocar y sin medir.**
+
+---
+
+# SCRUM-631b · el hueco 1 de §5 se cierra: la caja medida, y el marcador retirado
+
+**Medido contra:** `origin/main` = `c62df27e5707eeff188a24d1cf030e30ede3f4b4` · 2026-09-26T15:03:11+02:00
+**Rama:** `scrum-631-reactivar-nombre-cogido` · **Carril:** Sesión 4 · **Skill UI:** cargada
+(`yaqu-premium-ui`)
+
+**Corrección sobre el estado anterior:** §4 y §3 de este fichero daban por hecho que reactivar con
+choque «exige el paso 2 de la opción B» y que por eso «hoy no puede salir en pantalla». Era falso:
+medido el 26-sep-2026 por S0 sobre los ficheros SERVIDOS por yaqu.app, el marcador SÍ es alcanzable
+en producción hoy. Lo que de verdad bloqueaba la firma no era una decisión de producto pendiente —
+era que el navegador de la sesión que escribió §3 no arrancaba, y la caja no se pudo medir. 22 días
+parado por una herramienta, no por un juicio.
+
+## La caja, medida en el DOM renderizado con la CSS real del sitio (mismo método que SCRUM-641)
+
+Sobre la misma caja `.alert` de esta pantalla, con el candidato de 46 caracteres que §3 ya proponía
+(«Ya tienes otro producto activo con ese nombre.»):
+
+```
+929 px · 1 línea, sobra
+390 px · 1 línea: cabe
+320 px · 2 líneas (mismo comportamiento que el texto ya aprobado de SCRUM-641)
+```
+
+## Firma
+
+**Aprobado por el orquestador por delegación permanente** el 26-sep-2026 (comentario 17180). No es
+fiscal y no promete nada. Distinto de `PV_NOMBRE_DUPLICADO` porque aquí no hay campo de nombre
+delante (se pulsa «Activar») y el choque es con OTRO producto que está ACTIVO.
+
+**Sobre si falta decir «qué hacer»:** no hace falta una segunda versión con la salida dentro del
+texto — el botón «Editar» vive en la MISMA fila, junto a «Activar», y abre el modal donde se cambia
+el nombre. La pantalla ya deja el siguiente paso a la vista.
+
+## Lo construido
+
+`public/dashboard/js/productsView.js`: `PV_NOMBRE_ACTIVO_DUPLICADO` pierde el prefijo
+`PV_MARCADOR_MICROCOPY +`; `PV_SIN_APROBAR` baja de 2 a 1 (solo queda `PV_NOMBRE_DUPLICADO`,
+aprobado por el asesor y pendiente del fundador — canal de firma distinto de la delegación de
+microcopy).
+
+## Test de contrato
+
+`tests/scrum631-la-unicidad-tiene-vigilante.test.mjs` repropuesto: donde antes comprobaba «lleva
+marcador, no lo ha firmado nadie», ahora comprueba lo contrario — el literal exacto SIN marcador, el
+contador en 1, y el registro en `docs/microcopy/`. `tests/scrum641-nombre-cogido-sin-500.test.mjs` y
+`tests/scrum755-el-contador-que-cuadro-solo.test.mjs` actualizados al mismo número (el guard gemelo
+que ambos citan explícitamente).
+
+## Ficha
+
+`docs/microcopy/2026-09-26-SCRUM-631-nombre-activo-duplicado.md`, citando el comentario 17180.
+
+## Hueco 1 de §5: CERRADO
+
+Los huecos 2-5 de §5 siguen igual — no son de este incremento.

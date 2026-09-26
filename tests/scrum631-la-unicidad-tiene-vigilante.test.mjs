@@ -229,26 +229,48 @@ test('GUARD · src/index.ts ESPERA a assertUnicidadDeNombre ANTES de app.listen'
   );
 });
 
-// ── ⑥ LA MICROCOPY DEL REACTIVAR — sin firmar, y por eso MARCADA ─────────────────────────
+// ── ⑥ LA MICROCOPY DEL REACTIVAR — firmada el 26-sep-2026 (SCRUM-631 comentario 17180) ──────
+//
+// 🔄 HASTA EL 26-SEP-2026 este test comprobaba lo contrario: que el literal llevaba marcador
+// porque nadie lo había firmado. Lo firmó el orquestador por delegación permanente (no era
+// fiscal, y lo que de verdad lo bloqueaba desde el 4-sep no era una decisión pendiente: era que
+// el navegador de aquella sesión no arrancaba y la caja no se pudo medir). Repurpuesto para
+// vigilar que la aprobación NO se pierda en silencio, con el mismo criterio que SCRUM-1124 aplicó
+// a sus propios textos.
 
-test('SCRUM-631 · el texto de reactivar lleva marcador: no lo ha firmado nadie', () => {
+test('SCRUM-631 · 🔴 el texto de reactivar está APROBADO, sin marcador, y el contador lo sabe', () => {
   const vista = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/productsView.js'), 'utf8');
 
-  // ① El literal existe y NACE MARCADO. Sin caja medida no se puede aprobar (regla 30), y la
-  //    caja NO se pudo medir: el navegador de esta máquina no arranca — control hecho con
-  //    `guard-caja-avisos.mjs`, que falla igual. Está declarado en el fichero y en el máster.
-  const linea = vista.split(String.fromCharCode(10)).find((l) => l.includes('PV_MARCADOR_MICROCOPY + '));
-  assert.ok(linea, '🔴 CIEGO: no encuentro el literal de reactivar');
-  assert.match(linea, /Ya tienes otro producto activo con ese nombre/);
+  // ① El literal existe, SIN marcador, con el texto exacto firmado en el comentario 17180.
+  const linea = vista.split(String.fromCharCode(10)).find((l) => l.includes('const PV_NOMBRE_ACTIVO_DUPLICADO ='));
+  assert.ok(linea, '🔴 CIEGO: no encuentro la declaración del literal de reactivar');
+  assert.match(linea, /'Ya tienes otro producto activo con ese nombre\.'/,
+    '🔴 el texto firmado ha cambiado, o ha vuelto a llevar `PV_MARCADOR_MICROCOPY +` delante.');
+  assert.ok(!linea.includes('PV_MARCADOR_MICROCOPY'),
+    '🔴 el marcador ha vuelto a esta declaración: un texto firmado no se pinta marcado.');
 
-  // ② Y EL CONTADOR lo declara. Son DOS ranuras sin firma: la de SCRUM-641 (aprobada por el
-  //    asesor, pendiente del fundador) y ésta (sin aprobar por nadie). Si alguien quita el
-  //    marcador sin subir el número, el texto entraría en pantalla como si estuviera firmado.
+  // ② Y lo que se pinta de verdad tampoco lo lleva.
+  assert.ok(!vista.includes("PV_MARCADOR_MICROCOPY + ' Ya tienes otro producto activo"),
+    '🔴 sigue existiendo la concatenación vieja del marcador sobre este texto en algún otro sitio.');
+
+  // ③ EL CONTADOR baja de 2 a 1: solo queda `PV_NOMBRE_DUPLICADO` (aprobado por el asesor,
+  //    pendiente del fundador — canal de firma distinto). Si sube sin que entre un texto nuevo
+  //    sin firmar, alguien ha declarado un hueco que no existe; si se queda en 2, la aprobación
+  //    de hoy no se ha anotado y `PV_NOMBRE_ACTIVO_DUPLICADO` seguiría contando como sin firma.
   const m = vista.match(/const PV_SIN_APROBAR = (\d+);/);
   assert.ok(m, '🔴 no hay contador de ranuras sin firmar');
-  assert.equal(Number(m[1]), 2,
-    '🔴 el contador no declara las dos ranuras sin firma. El guard gemelo de SCRUM-641 mira el '
+  assert.equal(Number(m[1]), 1,
+    '🔴 el contador dice ' + m[1] + ' y solo debería quedar una ranura sin firma '
+    + '(`PV_NOMBRE_DUPLICADO`, pendiente del fundador). El guard gemelo de SCRUM-641 mira el '
     + 'mismo número: si se cambia aquí y no allí, uno de los dos miente.');
+
+  // ④ Y la aprobación queda REGISTRADA — es la mitad que un guard por texto no puede dar por
+  //    hecha: que exista el fichero de `docs/microcopy/` citando el comentario de la firma.
+  const dir = path.join(RAIZ, 'docs/microcopy');
+  const registros = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+  assert.ok(registros.some((f) => f.includes('631') && f.includes('activo-duplicado')),
+    '🔴 no hay ficha en `docs/microcopy/` para esta aprobación: sin registro, `constaAprobado()` '
+    + 'no puede confirmar que la firmó quien puede.');
 });
 
 test('SCRUM-631 · el camino de Activar usa el literal propio, no el del alta', () => {
