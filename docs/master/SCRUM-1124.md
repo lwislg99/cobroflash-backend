@@ -1,5 +1,7 @@
 # SCRUM-1124 · Retirar el marcador `[PENDIENTE microcopy oficial]` no fiscal (censo + firma + limpieza)
 
+**Medido contra:** `origin/main` = `032afc9ccd2fca0e160af40fcbf1acc0bcf43e0d` · 2026-09-26T06:16:30Z
+
 **25-sep-2026 · Sesión 4 · rama `scrum-1124-marcador-huerfano-jobasignados-parte`.**
 
 ## Encargo
