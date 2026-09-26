@@ -247,3 +247,26 @@ mismo límite del mini-DOM que ya obligó a medir «Borrar» plantilla por fuent
 montar esa vista con una fila real a través del banco. No se ha visto en un navegador de verdad
 todavía — pendiente de una verificación manual rápida en `npm run dev` antes de cerrar el ticket
 en el sprint, o de que alguien arregle el soporte de pseudoclases del banco.
+
+---
+
+## SCRUM-786c · casilla de exportar datos a 44px, 26-sep-2026
+
+**PASO 0 (`censo:tactil-panel`, medido hoy):** la casilla de selección de datasets en
+`exportView.js` medía **~24px** de área de toque real (`elementsFromPoint`, no la caja CSS).
+Estaba envuelta en un `<label>` con `min-height:44px`, pero ese patrón **no** sube la medición
+real: el área pasa a pertenecer al `<label>`, no a la casilla — ya documentado y descartado en
+`customersView.js`/`casillaConNombre` (SCRUM-782).
+
+**Arreglo:** mismo mecanismo ya probado y medido en SCRUM-782 — pseudo-elemento `::before` con
+`inset:-16px` sobre la propia casilla, sin mover el tamaño visible. Clase nueva
+`.casilla-tactil-44` en `styles.css` (nombre neutro, no ligado a "selección múltiple" como
+`.casilla-seleccion`, para poder reusarla en cualquier checkbox suelto). Aplicada al único
+`<input type="checkbox">` de `exportView.js`.
+
+**No toca** `.btn`, `.btn-lg`, `.btn-sm` ni ningún texto — fuera de alcance del encargo.
+
+**Verificado:** build + tests relevantes en verde (scrum417, scrum244,
+scrum786-irreversibles-44px, scrum562, public-js-parsea); `guard-objetivo-tactil.mjs` en verde;
+`censo-objetivo-tactil-panel.mjs` re-corrido tras el fix confirma que el checkbox ya no aparece
+entre los objetivos cortos.
