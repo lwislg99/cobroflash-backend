@@ -109,8 +109,17 @@ ya implementada). Diff spec↔código → `docs/AUDITORIA_RRSIF.md`.
 
 ## 6. Stack elegido para `src/modules/fiscal/verifactu/sif.client.ts` (S1-D)  **[SE HARÁ]**
 
-> 🔴 **`sif.client.ts` NO EXISTE.** Esta sección es la decisión de cómo se construirá, no una
-> descripción de lo que hay. `fast-xml-parser` tampoco está instalado, y la cola
+> 🟡 **Actualizado el 25-sep-2026 (SCRUM-1127, fase 1):** `sif.client.ts` y `sif.cola.ts`
+> **EXISTEN pero NO ESTÁN CABLEADOS.** Nada de `src/` los llama, así que **sigue sin haber envío
+> a la AEAT**. Solo se han probado contra un servidor falso local, nunca contra la AEAT. Los
+> endpoints salen solo de `VERIFACTU_AEAT_ENDPOINT` y no hay ninguno escrito en el código.
+> La respuesta se lee con un lector propio acotado al XSD `RespuestaSuministro`, **sin
+> `fast-xml-parser`**: una dependencia nueva la decide el fundador. El expediente es
+> `docs/master/SCRUM-1127.md`.
+>
+> Lo que sigue es el texto anterior a esa fecha y sigue siendo cierto para lo que no se ha
+> construido. `sif.client.ts` NO EXISTÍA: esta sección era la decisión de cómo se construiría,
+> no una descripción de lo que había. `fast-xml-parser` tampoco está instalado, y la cola
 > `VfSubmission` del último punto no está en el esquema.
 
 - **HTTP:** `https` nativo de Node con agente mTLS (cert del merchant/colaborador en env
