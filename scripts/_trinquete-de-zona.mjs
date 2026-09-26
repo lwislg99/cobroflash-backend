@@ -146,18 +146,20 @@ export const SALIDA_APAGADA = 3;
  * `clave` es `<ruta relativa con />::<nombre exacto de la prueba>`.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
+//
+// ✂ RETIRADAS A PROPÓSITO · 26-sep-2026 · SCRUM-1093 (a0f454f3, PR #1811). Quien mejora, declara.
+//
+//   · `tests/quoteNumber.test.mjs::allocateQuoteNumber: toma el cerrojo ANTES de leer, y avanza la serie`
+//   · `tests/scrum592-numeracion-doc02.test.mjs::SCRUM-592 · el display se DERIVA: no hay columna de texto que pueda discrepar`
+//
+// No es la alarma que se apaga sola: es el defecto que se ARREGLÓ. `allocateQuoteNumber` y
+// `displayQuoteNumber` (quoteNumber.service.ts) derivan el año con `diaNaturalEn(…,
+// zonaDelMerchant(…))` y ya no con `getFullYear()` del proceso, así que su veredicto no depende
+// de la zona de la máquina. Medido en el CI de #1821 (run 36243801473, 26-sep 13:17Z): las dos
+// salieron APAGADAS y la tercera siguió cambiando — el instrumento SÍ midió.
+// Lo que queda de la familia NO está arreglado: `planDeRenumeracion` (abajo) y `allocateAlbaranNumber`
+// (albaranNumber.service.ts, el resto de SCRUM-1093) y `allocateInvoiceNumber` (SCRUM-643 §2·A).
 export const CENSADAS = [
-  {
-    clave: 'tests/quoteNumber.test.mjs::allocateQuoteNumber: toma el cerrojo ANTES de leer, y avanza la serie',
-    nacio: 'SCRUM-592 · 271e461f · 4-sep-2026',
-    porque: 'El fixture `new Date(\'2027-01-01\')` es medianoche UTC y `allocateQuoteNumber` lee el '
-      + 'año con `now.getFullYear()` (LOCAL). Con desfase negativo el instante es 31-dic-2026, la '
-      + 'serie no reinicia y sale `{ numero: P260003, seq: 3, year: 2026 }` donde el test espera '
-      + '`{ numero: P270001, seq: 1, year: 2027 }`. Medido el 7-sep-2026.',
-    parado_en: 'docs/master/SCRUM-643.md §2·A — el año de la serie sale del reloj de la máquina '
-      + '(`allocateQuoteNumber` y `displayQuoteNumber`, en quoteNumber.service.ts). Numeración '
-      + 'fiscal: se decide, no se parchea.',
-  },
   {
     clave: 'tests/scrum592-numeracion-doc02.test.mjs::SCRUM-592 · una mezcla de renumerados y sin renumerar no se pisa',
     nacio: 'SCRUM-592 · 271e461f · 4-sep-2026',
@@ -168,14 +170,6 @@ export const CENSADAS = [
       + '`[[2, P260002]]` — o sea, el duplicado que esa prueba existe para impedir. '
       + 'Medido el 7-sep-2026.',
     parado_en: 'docs/master/SCRUM-643.md §2·A — misma familia: el año se deriva del reloj del proceso.',
-  },
-  {
-    clave: 'tests/scrum592-numeracion-doc02.test.mjs::SCRUM-592 · el display se DERIVA: no hay columna de texto que pueda discrepar',
-    nacio: 'SCRUM-592 · 271e461f · 4-sep-2026',
-    porque: '`displayQuoteNumber({ quoteNumber: 3, createdAt: \'2027-01-01T00:00:00Z\' })` formatea '
-      + 'con `d.getFullYear()` (LOCAL, en quoteNumber.service.ts). Con desfase negativo sale '
-      + '`P260003` donde el test espera `P270003`. Medido el 7-sep-2026.',
-    parado_en: 'docs/master/SCRUM-643.md §2·A — el año del documento sale del reloj de quien lo pinta.',
   },
 ];
 
