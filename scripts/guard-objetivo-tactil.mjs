@@ -277,8 +277,14 @@ const SUPERFICIES_791 = [
   // SÓLO las clases de estado antes de serializar y la población vuelve a ser la de siempre. Lo que
   // esto provoca —la visibilidad— no es lo que juzga; que los pasos se abran y se cierren como deben
   // lo juzga `guard:pasos-del-editor`.
-  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 4,
-    origen: 'SCRUM-711 (15-sep-2026, con el mínimo de cada ancho)', preparar: abrirTodosLosPasos },
+  // 🔴 SCRUM-1148 · 26-sep-2026 · 4 → 2, y los dos que salen VAN NOMBRADOS. Regla por contenedor a
+  // 44 px (`.quote-lines-header > .btn-sm`), medidos con ESTE guard antes y después:
+  //     «✨ Sugerir con IA»    BUTTON.btn-ghost.btn-sm                   30,7 → cumple a 929 y a 390
+  //     «📋 Usar plantilla»    BUTTON.btn-ghost.btn-sm.quote-header-btn  30,7 → cumple a 929 y a 390
+  // Siguen: las casillas de 17 px (INPUT) y «+ Añadir descuento» (ver su excepción: 43,6 px, y es
+  // el banco, no el producto).
+  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 2,
+    origen: 'SCRUM-1148 (26-sep-2026, con el mínimo de cada ancho)', preparar: abrirTodosLosPasos },
   // 🔴 SCRUM-848 · `datos` NO es una excepción nueva ni un número tocado: es la SUPERFICIE.
   //
   // Sin él, el banco montaba esta ficha con `{}` — un Trabajo SIN `status`, que el producto no
@@ -633,12 +639,17 @@ if (!PANEL_HTML) {
 // una deuda: es bajar el umbral. Cada superficie declara las suyas y responde de ellas.
 const EXCEPCIONES_791 = {
   renderQuotesView: [
-    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` (29,5–30,8 px) — «✨ Sugerir con IA», «+ Añadir descuento». Pre-existente. La retira el fundador al decidir sobre `.btn-sm` (SCRUM-787: 57 de los 76 son de esa clase).' },
-    // 🔴 SCRUM-711 · EL MOTIVO NOMBRABA DOS VÍCTIMAS Y UNA YA CUMPLE — la avería de SCRUM-794 otra
-    // vez: el detector va por SELECTOR y «📋 Usar plantilla» sigue corta, así que nada avisaba.
-    // «💾 Guardar como plantilla» mide 36,7 px a 929 y no era corta a 390: sólo lo era por el
-    // escritorio. Se quita del motivo a mano y se deja dicho.
-    { sel: 'BUTTON.btn-ghost.btn-sm.quote-header-btn', motivo: 'clase compartida `.btn-sm` (30,7 px a 929 y a 390) — «📋 Usar plantilla». Misma decisión que la anterior.' },
+    // 🔴 SCRUM-1148 · UNA SOLA VÍCTIMA YA, y es DEL BANCO. «✨ Sugerir con IA» cumple desde la regla
+    // por contenedor y sale del motivo (la avería de SCRUM-794: el emparejador va por selector y no
+    // avisaría). «+ Añadir descuento» tiene caja de 44 px y el medidor le da 43,6 a 390 porque el
+    // `<span>` «Descuento global» del campo le pisa el borde inferior. Ese campo nace con
+    // `hidden = true` y en el producto NUNCA convive con el botón (quotesView.js, el clic hace
+    // campo.hidden=false y botón.hidden=true; `[hidden]` es `display:none !important`, SCRUM-731),
+    // pero el mini-DOM no refleja la PROPIEDAD `hidden` como atributo y la página serializada los
+    // pinta a los dos. Medido con `elementsFromPoint` en el borde, no supuesto.
+    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: '«+ Añadir descuento»: caja 44 px, 43,6 px de toque a 390 SOLO en el banco — el campo «Descuento global» (oculto con `hidden` en el producto, que nunca lo pinta junto al botón) sale visible en la página serializada porque el mini-DOM no refleja la propiedad `hidden`. Se retira cuando el banco la refleje (SCRUM-1148 lo deja anotado).' },
+    // SCRUM-1148 · aquí estaba `BUTTON.btn-ghost.btn-sm.quote-header-btn` «📋 Usar plantilla»: cumple
+    // a 929 y a 390 con la regla por contenedor. Retirada; la nombró el detector de sobrantes.
     // 🔴 SCRUM-711 · AQUÍ HABÍA DOS EXCEPCIONES MÁS, y se retiran porque ya no tienen causa:
     // `BUTTON.btn.btn-primary` «Generar presupuesto» y `BUTTON.btn.btn-secondary` «Limpiar formulario».
     // Los dos miden 36,7 px a 929 y cumplen a 390: sólo existían porque el guard exigía 44 en
