@@ -269,3 +269,88 @@ cómo ponerlo en verde, y hacer lo que dice no lo pone en verde.
   menguar también lo tumba.
 - `scrum644` · el suelo exige `hallazgos.length > 0` y su mensaje dice que, si están todos
   arreglados, hay que vaciar la tabla. Vaciarla no cambia `hallazgos`: seguiría en rojo.
+
+---
+
+# SCRUM-938c · Arreglado el instrumento (los tres puntos del §5 de la fase b, más uno medido hoy)
+
+**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87` · 2026-09-26T09:30:00Z
+(GitHub) · S3 · rama `scrum-938-arregla-censo-lista-fixture` · worktree `wt-s3-26-instrumentos`.
+
+**Carril: S3 (instrumentos).** Esto es justo lo que la fase b (§5 de arriba) dejó como bloqueante:
+*«El censo no se ha arreglado. Es el instrumento, está fuera de la excepción y es carril de la
+S3.»* No se toca ninguna lista real, ningún test de clase (b), ni la clase (a)/(b) ya censada.
+
+## 1 · La propia declaración no es un uso (§5.1 de arriba)
+
+`usoDeLaLista` recorría el fichero entero, incluida la declaración de la lista. `Object.freeze({
+'settingsView.js': 1 })` pone una llamada encima de la propia declaración, y sin excluirla la
+forma ③ contaba el elemento consigo mismo — el hallazgo de S1: *«de 42 candidatos con forma ③, en
+22 la ③ es SÓLO el literal de su propia declaración»*.
+
+**Arreglo:** se calcula el rango del INICIALIZADOR de la declaración (si `nombre` vive en el mismo
+fichero) y `recorrer` no baja a él: nada de lo que hay dentro cuenta como forma de uso.
+
+**Rojo → verde**, dos casos conocidos nuevos (tests ⑤/⑤bis):
+- sólo declarar con `Object.freeze` → antes `(b) DEGRADA`, ahora `LIMPIO`;
+- declarar **y además** usar la lista de verdad en otro sitio → antes `(a) MIENTE` (2 formas, una
+  falsa), ahora `(b) DEGRADA` (1 forma, la real). Coincide con lo medido por S1: 14 casos pasaban
+  de (b) a LIMPIO y 8 de (a) a (b).
+
+## 2 · La sonda hermana DE VERDAD, con control de copia idéntica (§5.2 de arriba)
+
+`decidirVaciando` escribía la copia siempre en `tests/`, aunque `censarExcepciones` censa listas
+en cualquier carpeta (`scripts/…`, `docs/master/evidencias/…`). Un fichero fuera de `tests/` con
+un import relativo pierde ese import al mudarse de directorio, y el reventón se leía «la lista
+vaciada lo tumbó» cuando era el propio fichero cargando mal — el hallazgo de S1: *«3 de 46 copias
+IDÉNTICAS caían sin vaciar nada, y arrastraban 5 de los 36 pares confirmados»*.
+
+**Arreglo, dos partes:**
+1. la copia se escribe en el MISMO directorio que el original (`path.dirname(abs)`), no siempre
+   en `tests/`;
+2. antes de vaciar nada, se corre una copia IDÉNTICA (sin tocar) como CONTROL: si esa ya cae —o ni
+   siquiera ejecuta un caso—, el par sale NO DECIDIBLE (`la sonda está rota, no el árbol`), nunca
+   CONFIRMADO.
+
+**Rojo → verde**, dos casos conocidos nuevos (tests ⑥/⑥bis): una lista fuera de `tests/` con un
+import relativo real ahora decide bien (`cae:true` al vaciar) · una lista cuya sonda está rota de
+verdad (import a un módulo que no existe) sale NO DECIDIBLE, no CONFIRMADA.
+
+## 3 · 🔴 Hallazgo nuevo, no estaba en la fase b: el laboratorio le prestaba su entorno al sujeto
+
+Al escribir el caso ⑥ como test —ejecutando `decidirVaciando` desde DENTRO de un `node --test`,
+que es como SCRUM-846 exige el caso conocido— el hijo que `decidirVaciando` lanza moría con «run()
+is being called recursively within a test file. skipping running files»: `NODE_TEST_CONTEXT` se
+hereda de `{ ...process.env }` a pelo. Y por el mismo mecanismo, con `FORCE_COLOR` puesto —esta
+casa arranca sus sesiones así, SCRUM-928— el ANSI delante de `ℹ tests N` rompe el ancla `^` del
+regex. Los dos acaban en el mismo síntoma: `total=0`, que `decidirVaciando` lee como «import
+roto» sin serlo.
+
+    🔒 Un laboratorio que le presta su entorno al sujeto no mide el sujeto: mide la suma de los
+       dos. (Precedente exacto: SCRUM-928c en `correrPaso`, mismo mecanismo, otro nombre.)
+
+**Arreglo:** el entorno del hijo se construye a mano, borrando `NODE_TEST_CONTEXT`, `FORCE_COLOR`
+y `NODE_OPTIONS`. **Rojo → verde**, un caso conocido nuevo (test ⑦).
+
+## 4 · Punto §5.3 de la fase b, NO tocado — y por qué
+
+*«Que el veredicto lea qué nombra el fallo, y sólo acuse cuando nombre algo que no está en el
+árbol real»* sigue sin implementarse. Es una función nueva (parsear el mensaje de fallo y cruzarlo
+contra el árbol real), no un arreglo del mecanismo existente, y decidir CÓMO se lee «qué nombra el
+fallo» es una decisión de diseño que no cabe en la misma tanda que los tres arreglos mecánicos de
+arriba. SCRUM-938b ya lo hizo A MANO para los 8 pares de clase (a) (§2 de esa sección); automatizarlo
+queda propuesto, sin implementar, para quien retome la clase (b).
+
+## 5 · Verificación
+
+`tests/scrum938-la-lista-como-fixture.test.mjs`: 11/11 (6 preexistentes + 5 nuevos: ⑤, ⑤bis, ⑥,
+⑥bis, ⑦). `guards:entrada`: 112/112. Nada de `src/` tocado, ninguna lista real vaciada (todo sobre
+copias en `os.tmpdir()` o sobre fixtures fabricados en memoria), ninguna clase (a)/(b) del árbol
+real re-clasificada.
+
+## 6 · Ficheros
+
+| fichero | qué |
+|---|---|
+| `scripts/censo-lista-como-fixture.mjs` | los tres arreglos: declaración-no-es-uso, sonda hermana + control, entorno del hijo a mano |
+| `tests/scrum938-la-lista-como-fixture.test.mjs` | 5 casos conocidos nuevos, los 6 preexistentes intactos |

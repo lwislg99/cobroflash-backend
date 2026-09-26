@@ -122,6 +122,26 @@ export function usoDeLaLista(fuenteTest, nombre, elementos) {
   let assertsSobreLaLista = 0;
   let pasadaComoArgumento = 0;
 
+  // 🔴 SCRUM-938b §3.1: LA PROPIA DECLARACIÓN NO ES UN USO.
+  //
+  // `Object.freeze({ 'settingsView.js': 1 })` pone una LLAMADA encima de la declaración misma, y
+  // sin excluirla la forma ③ contaba el literal de la lista consigo mismo: de 42 candidatos con
+  // forma ③, en 22 la ③ era SÓLO esto. Se calcula el rango del INICIALIZADOR (si `nombre` se
+  // declara en este mismo fichero) y se descarta cualquier nodo que caiga dentro: nada de lo que
+  // hay en la propia declaración cuenta como forma de uso.
+  let rangoDeclaracion = null;
+  const buscarDeclaracion = (n) => {
+    if (rangoDeclaracion) return;
+    if (ts.isVariableDeclaration(n) && n.name.getText() === nombre && n.initializer) {
+      rangoDeclaracion = { ini: n.initializer.getStart(), fin: n.initializer.getEnd() };
+      return;
+    }
+    ts.forEachChild(n, buscarDeclaracion);
+  };
+  buscarDeclaracion(sf);
+  const esLaPropiaDeclaracion = (n) => !!rangoDeclaracion
+    && n.getStart() >= rangoDeclaracion.ini && n.getEnd() <= rangoDeclaracion.fin;
+
   const dentroDeAssert = (n) => {
     for (let p = n.parent; p; p = p.parent) {
       if (ts.isCallExpression(p) && /^assert\b/.test(p.expression.getText())) return true;
@@ -130,6 +150,7 @@ export function usoDeLaLista(fuenteTest, nombre, elementos) {
   };
 
   const recorrer = (n) => {
+    if (esLaPropiaDeclaracion(n)) return; // no baja al initializer: nada de dentro es "uso"
     // ① / (c): la constante aparece. Si está bajo un `assert`, es un trinquete de contenido.
     if (ts.isIdentifier(n) && n.text === nombre) {
       if (dentroDeAssert(n)) assertsSobreLaLista++;
@@ -302,21 +323,67 @@ export function decidirVaciando(candidato, raiz = RAIZ) {
   const vaciado = original.slice(0, rango.ini) + '[]' + original.slice(rango.fin);
   if (vaciado === original) return { decidido: false, motivo: 'la sustitución no cambió el fichero' };
 
-  const copia = path.join(raiz, 'tests', `_938-sonda-${process.pid}-${Math.random().toString(36).slice(2, 8)}.mjs`);
-  try {
-    fs.writeFileSync(copia, vaciado);
-    const r = require_('node:child_process').spawnSync(
-      process.execPath, ['--test', '--test-force-exit', path.relative(raiz, copia).replace(/\\/g, '/')],
-      { cwd: raiz, encoding: 'utf8' },
-    );
-    const fail = Number((r.stdout.match(/^ℹ fail (\d+)/m) || [])[1] || 0);
-    const total = Number((r.stdout.match(/^ℹ tests (\d+)/m) || [])[1] || 0);
-    if (!total) return { decidido: false, motivo: 'la copia no ejecutó ni un caso (import roto)' };
-    return { decidido: true, cae: fail > 0, fail, total };
-  } finally {
-    try { fs.unlinkSync(copia); } catch { /* ya no está */ }
-    if (fs.existsSync(copia)) console.error('🔴 NO SE PUDO BORRAR LA SONDA: ' + copia);
+  // 🔴 SCRUM-938b §3.3: LA SONDA TIENE QUE SER HERMANA DE VERDAD, no siempre vivir en `tests/`.
+  //
+  // `censarExcepciones` (SCRUM-927) censa listas declaradas en cualquier parte del árbol, no sólo
+  // en `tests/` (`scripts/…`, `docs/master/evidencias/…`). Copiar SIEMPRE a `tests/` rompe los
+  // imports relativos de un fichero que vive en otro sitio. Medido: 3 de 46 copias IDÉNTICAS (sin
+  // vaciar nada) caían solas por esto, y arrastraban 5 pares confirmados de más.
+  const dirOriginal = path.dirname(abs);
+  const nombreSonda = () => path.join(
+    dirOriginal, `_938-sonda-${process.pid}-${Math.random().toString(36).slice(2, 8)}.mjs`,
+  );
+
+  // 🔴 UN LABORATORIO QUE LE PRESTA SU ENTORNO AL SUJETO NO MIDE EL SUJETO: MIDE LA SUMA DE LOS
+  // DOS (precedente medido en SCRUM-928c, `correrPaso`). `{ ...process.env }` a pelo cuela tres
+  // cosas que rompen la lectura del hijo:
+  //   · `NODE_TEST_CONTEXT` — si `decidirVaciando` se llama desde DENTRO de un `node --test`
+  //     (que es justo como lo ejercita esta casa: SCRUM-846 exige el caso conocido), el hijo lo
+  //     hereda y Node se niega a correr: «run() is being called recursively… skipping running
+  //     files», y la sonda sale con `total=0` — se lee como «import roto» sin serlo.
+  //   · `FORCE_COLOR` — con color, `^ℹ tests N` llega como `\x1b[34mℹ tests N`: el ANSI delante
+  //     del glifo rompe el ancla `^` y `total` también sale 0. Esta casa arranca sus sesiones con
+  //     `FORCE_COLOR` puesto (SCRUM-928).
+  //   · `NODE_OPTIONS` — un `--test-reporter` de fuera cambia el formato que este regex espera.
+  const entornoHijo = { ...process.env };
+  delete entornoHijo.NODE_TEST_CONTEXT;
+  delete entornoHijo.FORCE_COLOR;
+  delete entornoHijo.NODE_OPTIONS;
+
+  const correr = (contenido) => {
+    const copia = nombreSonda();
+    try {
+      fs.writeFileSync(copia, contenido);
+      const r = require_('node:child_process').spawnSync(
+        process.execPath, ['--test', '--test-force-exit', path.relative(raiz, copia).replace(/\\/g, '/')],
+        { cwd: raiz, encoding: 'utf8', env: entornoHijo },
+      );
+      const fail = Number((r.stdout.match(/^ℹ fail (\d+)/m) || [])[1] || 0);
+      const total = Number((r.stdout.match(/^ℹ tests (\d+)/m) || [])[1] || 0);
+      return { ejecuto: total > 0, cae: fail > 0, fail, total };
+    } finally {
+      try { fs.unlinkSync(copia); } catch { /* ya no está */ }
+      if (fs.existsSync(copia)) console.error('🔴 NO SE PUDO BORRAR LA SONDA: ' + copia);
+    }
+  };
+
+  // 🔴 EL CONTROL: la copia IDÉNTICA (sin vaciar nada) tiene que seguir corriendo verde. Si ya cae
+  // —o ni siquiera arranca—, lo que está roto es la sonda, no la lista: NO DECIDIBLE, nunca
+  // CONFIRMADO. Sin este control, «caen 1 de 1» se leía igual viniendo de la lista vacía que
+  // viniendo del propio fichero reventando al cargar.
+  const control = correr(original);
+  if (!control.ejecuto) return { decidido: false, motivo: 'la copia no ejecutó ni un caso (import roto)' };
+  if (control.cae) {
+    return {
+      decidido: false,
+      motivo: `la copia IDÉNTICA (sin vaciar nada) ya cae — ${control.fail}/${control.total}: `
+        + 'la sonda está rota, no el árbol',
+    };
   }
+
+  const resultado = correr(vaciado);
+  if (!resultado.ejecuto) return { decidido: false, motivo: 'la copia vaciada no ejecutó ni un caso (import roto)' };
+  return { decidido: true, cae: resultado.cae, fail: resultado.fail, total: resultado.total };
 }
 
 function ficherosDe(dir) {
