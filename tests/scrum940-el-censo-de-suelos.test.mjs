@@ -86,3 +86,44 @@ test('SCRUM-940 · 🔴 ③ CASO CONOCIDO: el cociente decide, y una lista escri
     '🔴 una lista escrita a mano, pegada a propósito, se acusa como AJUSTADA. Un suelo de '
     + 'población envejece solo; un trinquete sobre una lista fija, no.');
 });
+
+// ═══ ④ `magnitudDeListaFija` LA CALCULA EL PROPIO DETECTOR, NO SÓLO EL TEST DE ARRIBA ═══════════
+//
+// El test ③ pasa `magnitudDeListaFija` A MANO como tercer argumento de `clasificar`: eso prueba la
+// clasificación, no el detector. `suelosDeFuente` lo calcula solo con
+// `new RegExp('\b' + n + '\b')` — y ese `'\b'`, dentro de una cadena, es el ESCAPE DE RETROCESO
+// (0x08), no `\`+`b`. La regex busca un carácter de control que no aparece en ningún nombre de
+// variable: nunca casa, así que la clase LISTA_FIJA nunca se alcanza vía el detector (SCRUM-940,
+// hallazgo de S2 sobre `docs/master/SCRUM-940.md`).
+
+test('SCRUM-940 · 🔴 ④ CASO CONOCIDO: el DETECTOR marca `magnitudDeListaFija`, no sólo `clasificar` a mano', () => {
+  const [s] = clases([
+    'const CONOCIDOS_AL_MEDIR = ["a", "b", "c"];',
+    'const CENSO_MIN = 3;',
+    'assert.ok(CONOCIDOS_AL_MEDIR.length >= CENSO_MIN, "CIEGO: faltan casos conocidos");',
+  ]);
+  assert.equal(s?.magnitudDeListaFija, true,
+    '🔴 la magnitud es `CONOCIDOS_AL_MEDIR.length` y `CONOCIDOS_AL_MEDIR` es una lista declarada '
+    + 'a mano en el propio fichero: el detector tiene que marcarla, no sólo `clasificar()` cuando '
+    + 'alguien se lo pasa por fuera.');
+
+  // Negativo: una magnitud que NO nombra ninguna lista fija no se marca.
+  const [t] = clases([
+    'const CONOCIDOS_AL_MEDIR = ["a", "b"];',
+    'const SUELO_OTRO = 5;',
+    'assert.ok(otraCosa.length >= SUELO_OTRO, "CIEGO");',
+  ]);
+  assert.equal(t?.magnitudDeListaFija, false,
+    '🔴 `otraCosa` no es `CONOCIDOS_AL_MEDIR`: marcarla también dice que el detector no distingue '
+    + 'nada, sólo que hay ALGUNA lista fija en el fichero.');
+
+  // Y no por SUBCADENA: una lista CASOS no debe casar dentro de CASOS_EXTRA (A3: un prefijo no es
+  // un nombre, y una subcadena tampoco).
+  const [u] = clases([
+    'const CASOS = ["a"];',
+    'const SUELO_X = 1;',
+    'assert.ok(CASOS_EXTRA.length >= SUELO_X, "CIEGO");',
+  ]);
+  assert.equal(u?.magnitudDeListaFija, false,
+    '🔴 CASOS es subcadena de CASOS_EXTRA: sin límite de palabra real, casaría por dentro.');
+});

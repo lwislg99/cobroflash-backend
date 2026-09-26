@@ -225,3 +225,39 @@ no ajustar 410 números.
 | `docs/master/evidencias/scrum940/censar.mjs` | el acta del censo |
 | `docs/master/evidencias/scrum940/reales-por-biseccion.mjs` | el valor real, medido ejecutando |
 | `docs/master/evidencias/scrum940/el-que-decide.mjs` | la reducción de población sobre el mecanismo real |
+
+---
+
+## SCRUM-940b · el mismo `\b` mordió también el CÓDIGO, no sólo el heredoc del acta
+
+**Medido contra:** `origin/main` = `942e90d1` · 2026-09-26 ~09:10Z (GitHub) · S3 · rama
+`scrum-940-arreglo-magnituddelistafija` · worktree `wt-s3-26-instrumentos`.
+
+**Lo que reportó S2 (comentario 15927, 18-sep):** además del heredoc del §6.4 de arriba, **el
+propio fichero vivo** llevaba el defecto: `scripts/_censo-de-suelos.mjs:198`,
+`magnitudDeListaFija: [...listasFijas].some((n) => new RegExp('\b' + n + '\b').test(...))`. El
+`\b` DENTRO de una cadena de un solo carácter de ancho es el escape de RETROCESO (0x08), no
+`\`+`b`: la regex buscaba un carácter de control que ningún nombre de variable lleva. **Nunca
+casaba**, así que la clase `LISTA_FIJA` **nunca se alcanzaba vía el detector real** — el único
+sitio que la ejercitaba era el test ③, que le pasa `magnitudDeListaFija` a mano por parámetro a
+`clasificar()`, sin pasar por `suelosDeFuente()`.
+
+**Consecuencia igual que ya describía §6.5 de arriba** (el falso AJUSTADO en listas fijas), pero
+esta vez viva en `main`, no sólo en un acta: cualquier censo futuro que corriera `suelosDeFuente`
+de verdad habría repetido las acusaciones falsas contra `SIGUEN_BLOQUEADOS`,
+`CONOCIDOS_AL_MEDIR` y `consumidores`, exactamente las tres que este mismo ticket ya había cazado
+a mano.
+
+**Rojo antes** (test ④ nuevo en `tests/scrum940-el-censo-de-suelos.test.mjs`): 3 pass · 1 fail —
+fixture `CONOCIDOS_AL_MEDIR.length >= CENSO_MIN` con la lista declarada en el mismo fichero,
+`magnitudDeListaFija` daba `false`.
+
+**Arreglo:** `'\b'` → `'\\b'` (dos caracteres). **Verde después:** 4/4, con un negativo (magnitud
+que no nombra ninguna lista fija) y un control por SUBCADENA (`CASOS` no debe casar dentro de
+`CASOS_EXTRA`, A3).
+
+**`guards:entrada`: 112/112, 54,3 s.** Nada más tocado: `censarSuelos`/`clasificar` intactos,
+ningún suelo real subido, `src/` intacto.
+
+**No cierra SCRUM-940 entero.** Sigue abierto lo del §4 (la holgura derivada) y la categoría
+SUSTITUIDO que pidió Javier (comentario 15835) para los suelos que otro mecanismo ya vigila.

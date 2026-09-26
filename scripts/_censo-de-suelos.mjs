@@ -195,7 +195,12 @@ export function suelosDeFuente(rel, fuente, importadas = new Map()) {
                 // Un suelo de `> 0` no declara cuánta población esperaba: sólo que hubiera alguna.
                 esCeroEstricto: valor === 0,
                 // ¿la magnitud es una LISTA ESCRITA A MANO? Entonces estar pegado no es defecto.
-                magnitudDeListaFija: [...listasFijas].some((n) => new RegExp('\b' + n + '\b').test(magnitud.getText(sf))),
+                // 🔴 SCRUM-940: `'\b'` DENTRO DE UNA CADENA es el escape de RETROCESO (0x08), no
+                // `\`+`b`. Con eso la regex buscaba un carácter de control que ningún nombre lleva
+                // y nunca casaba: la clase LISTA_FIJA no se alcanzaba nunca vía este detector. El
+                // límite de palabra se escribe con `\\b` (dos caracteres) para que llegue como
+                // `\b` al motor de regex.
+                magnitudDeListaFija: [...listasFijas].some((n) => new RegExp('\\b' + n + '\\b').test(magnitud.getText(sf))),
               });
             }
           }
