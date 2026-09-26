@@ -486,15 +486,21 @@ async function renderReportsView(container) {
   // Selector de trimestre PROPIO, independiente del de «IVA repercutido» de arriba: es su propio
   // componente (yaqu-premium-ui: una pantalla/componente por cambio, sin tocar el de al lado).
   //
-  // Los TRES bloques salen de tres endpoints que YA EXISTÍAN antes de este ticket — cero cálculo
-  // fiscal nuevo, solo agregación en pantalla de lo que el servidor ya sabe dar:
-  //   · IVA repercutido  → GET /admin/reports/vat        (ya existía, SCRUM-389)
-  //   · IVA soportado    → GET /admin/libros/recibidas.json (ya existía, SCRUM-1040/CON-04):
-  //     se suma `cuota` de las filas con `deducible === 'Sí'`, con su motivo, no un cálculo nuevo.
-  //   · Gastos del trimestre → GET /admin/reports/pl (ya existía): 3 meses del año que caen en
-  //     el trimestre elegido.
-  // Retenciones y «diferencia» NO se pintan: eso es SCRUM-1048 (S1), bloqueado esperando al
-  // asesor, y la instrucción es dejarlo fuera sin hueco ni marcador (no un cálculo a medias).
+  // 🔴 SCRUM-1147 · LAS CIFRAS DE IVA LAS DA EL SERVIDOR, NO ESTA PANTALLA.
+  //
+  // Hasta SCRUM-1147 el soportado se sumaba AQUÍ, fila a fila, sobre `recibidas.json`, mientras
+  // `GET /admin/reports/resumen-trimestre` (SCRUM-1048) calculaba lo mismo en el servidor y nadie
+  // lo llamaba: dos cálculos de la misma cifra fiscal. Medido antes de cambiarlo (2000 lotes
+  // aleatorios por los dos caminos): 0 diferencias — se retira el de aquí sin mover ninguna cifra.
+  //   · IVA repercutido, IVA soportado deducible, diferencia y facturas sin desglose
+  //       → GET /admin/reports/resumen-trimestre. Aquí NO se suma ni se resta nada.
+  //   · Gastos del trimestre → GET /admin/reports/pl: 3 meses del año que caen en el trimestre
+  //     (no es una cifra de IVA y el resumen no la trae).
+  //   · La nota firmada «N gastos… no los has marcado como IVA deducible» y los avisos del libro
+  //     → GET /admin/libros/recibidas.json, SOLO para contar. ⚠️ No se pasa al endpoint: su
+  //     `noDeducible + sinClasificar` NO es ese N (distinto en 1718 de 2000 lotes) y cablearlo
+  //     cambiaría el significado de un texto firmado. Lo trae SCRUM-1151 (S1).
+  // Retenciones: siguen fuera; el endpoint las declara no disponibles (falta el ALTER de A2).
   const currentQuarterR = Math.floor(new Date().getMonth() / 3) + 1;
   let resumenQuarter = currentQuarterR;
   // SCRUM-624 · céntimos y LUEGO se divide, como ya hace `suma()` más abajo en este mismo
@@ -508,10 +514,10 @@ async function renderReportsView(container) {
   async function loadResumenTrimestre(year) {
     resumenCard.innerHTML = '<p style="color:var(--neutral-400);font-size:13px;padding:8px 0">Cargando…</p>';
 
-    let vat, recibidas, pl;
+    let resumen, recibidas, pl;
     try {
-      [vat, recibidas, pl] = await Promise.all([
-        apiRequest(`/admin/reports/vat?year=${year}&quarter=${resumenQuarter}`),
+      [resumen, recibidas, pl] = await Promise.all([
+        apiRequest(`/admin/reports/resumen-trimestre?year=${year}&quarter=${resumenQuarter}`),
         apiRequest(`/admin/libros/recibidas.json?ano=${year}&trimestre=${resumenQuarter}`),
         apiRequest(`/admin/reports/pl?year=${year}`),
       ]);
@@ -520,7 +526,7 @@ async function renderReportsView(container) {
       return;
     }
 
-    const fmt = (n) => fmtMoneyEs(n, vat.currency || 'EUR');
+    const fmt = (n) => fmtMoneyEs(n, pl.currency || 'EUR');
 
     // ⚠️ SOLO innerHTML AQUÍ, ANTES de colgar ningún listener (lección de SCRUM-515: un
     // `innerHTML` después de un botón interactivo se lo lleva por delante). Todo lo que sigue
@@ -555,20 +561,13 @@ async function renderReportsView(container) {
     const monthsQ = (pl.months || []).slice((resumenQuarter - 1) * 3, (resumenQuarter - 1) * 3 + 3);
     const gastosTotal = monthsQ.reduce((s, m) => s + (m.expenses || 0), 0);
 
-    let soportadoBase = 0, soportadoCuota = 0, noDeducibleCount = 0;
-    for (const f of (recibidas.filas || [])) {
-      if (f.deducible === 'Sí' && f.tipoIva !== null && f.cuota !== null) {
-        soportadoBase += f.base || 0;
-        soportadoCuota += f.cuota;
-      } else if (f.deducible !== 'Sí') {
-        noDeducibleCount += 1;
-      }
-    }
+    // SOLO se cuenta, para la nota firmada (ver la cabecera): aquí ya no se suma ninguna cuota.
+    const noDeducibleCount = (recibidas.filas || []).filter((f) => f.deducible !== 'Sí').length;
 
     // Trimestre sin datos = estado vacío con mensaje (aceptación #3), no tres «0,00 €» sin
     // explicar. Los TRES orígenes tienen que estar vacíos a la vez: uno solo con datos ya es
     // un trimestre con actividad.
-    const sinDatos = vat.invoiceCount === 0 && recibidas.miradas === 0
+    const sinDatos = resumen.invoiceCount === 0 && recibidas.miradas === 0
       && monthsQ.every((m) => (m.revenue || 0) === 0 && (m.expenses || 0) === 0);
 
     if (sinDatos) {
@@ -581,9 +580,14 @@ async function renderReportsView(container) {
 
     const kpiWrap = document.createElement('div');
     kpiWrap.className = 'resumen-trimestre-kpis';
+    // ✅ «Diferencia (repercutido − soportado)» FIRMADO por el orquestador por delegación del
+    // fundador (regla 39, SCRUM-1147, 26-sep-2026). Nombra la OPERACIÓN, no su significado fiscal:
+    // aquí no va «a pagar», «a compensar» ni «a devolver» (reglas 7/24). Puede salir negativa y se
+    // pinta tal cual, sin palabras.
     const bloques = [
-      { label: 'IVA repercutido', value: vat.totals.cuota, color: 'var(--neutral-900)' },
-      { label: 'IVA soportado (deducible)', value: r2(soportadoCuota), color: 'var(--neutral-900)' },
+      { label: 'IVA repercutido', value: resumen.ivaRepercutido.totalCuota, color: 'var(--neutral-900)' },
+      { label: 'IVA soportado (deducible)', value: resumen.ivaSoportado.totalCuotaDeducible, color: 'var(--neutral-900)' },
+      { label: 'Diferencia (repercutido − soportado)', value: resumen.diferencia, color: 'var(--neutral-900)' },
       { label: 'Gastos del trimestre', value: r2(gastosTotal), color: 'var(--red-600)' },
     ];
     bloques.forEach(({ label, value, color }) => {
@@ -599,8 +603,9 @@ async function renderReportsView(container) {
 
     // Lo que se queda FUERA de los números de arriba, con su motivo — nunca en silencio.
     const notas = [];
-    if (vat.excluded.count > 0) {
-      notas.push(`⚠ ${vat.excluded.count} ${vat.excluded.count === 1 ? 'factura' : 'facturas'} sin desglose de líneas (${fmt(vat.excluded.total)}) no ${vat.excluded.count === 1 ? 'incluida' : 'incluidas'} en el repercutido.`);
+    const sinDesglose = resumen.facturasSinDesglose || { count: 0, importe: 0 };
+    if (sinDesglose.count > 0) {
+      notas.push(`⚠ ${sinDesglose.count} ${sinDesglose.count === 1 ? 'factura' : 'facturas'} sin desglose de líneas (${fmt(sinDesglose.importe)}) no ${sinDesglose.count === 1 ? 'incluida' : 'incluidas'} en el repercutido.`);
     }
     // `avisos[0]` es siempre el aviso de formato de `/recibidas.json` (SCRUM-1040); el resto son
     // los que importan aquí («N gastos sin datos de IVA no figuran…», ya aprobado en ese ticket).

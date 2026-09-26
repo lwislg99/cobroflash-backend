@@ -31,6 +31,12 @@ function datosDe({ vat, recibidas, pl } = {}) {
     const u = String(url);
     if (/\/admin\/reports\/vat\?/.test(u)) return vat ?? VAT_VACIO;
     if (/\/admin\/libros\/recibidas\.json\?/.test(u)) return recibidas ?? RECIBIDAS_VACIO;
+    // SCRUM-1147 · Home pregunta ya al resumen del servidor. Sus dos conteos son, por construcción,
+    // los mismos que daban `/vat` (`invoiceCount`, el `miradas` del libro de expedidas) y
+    // `recibidas.json` (`miradas` = gastos del periodo), así que se derivan de ellos.
+    if (/\/admin\/reports\/resumen-trimestre\?/.test(u)) {
+      return { invoiceCount: (vat ?? VAT_VACIO).invoiceCount || 0, expenseCount: (recibidas ?? RECIBIDAS_VACIO).miradas || 0 };
+    }
     if (/\/admin\/reports\/pl\?/.test(u)) return pl ?? PL_VACIO;
     return {};
   };

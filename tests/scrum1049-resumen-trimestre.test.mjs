@@ -30,9 +30,20 @@ const PL_VACIO = {
 };
 
 /** `datos` del banco: responde por RUTA, con defaults inertes para todo lo que no es de este ticket. */
-function datosDe({ vat, recibidas, pl } = {}) {
+// SCRUM-1147 · las cifras de IVA del resumen salen ya de `/admin/reports/resumen-trimestre`
+// (`/vat` sigue sirviendo a la tarjeta «IVA repercutido» de arriba). Forma vacía = la del servidor.
+const RESUMEN_VACIO = {
+  año: 2026, trimestre: 2,
+  ivaRepercutido: { porTipo: [], totalBase: 0, totalCuota: 0 },
+  ivaSoportado: { porTipo: [], totalBaseDeducible: 0, totalCuotaDeducible: 0, noDeducible: { count: 0, importe: 0 }, sinClasificar: { count: 0, importe: 0 } },
+  diferencia: 0, retenciones: { disponible: false, motivo: 'x' }, borradorParaAsesor: true,
+  from: '2026-04-01', to: '2026-06-30', facturasSinDesglose: { count: 0, importe: 0 }, invoiceCount: 0, expenseCount: 0,
+};
+
+function datosDe({ vat, recibidas, pl, resumen } = {}) {
   return (url) => {
     const u = String(url);
+    if (/\/admin\/reports\/resumen-trimestre\?/.test(u)) return resumen ?? RESUMEN_VACIO;
     if (/\/admin\/reports\/vat\?/.test(u)) return vat ?? { year: 2026, quarter: 2, from: '2026-04-01', to: '2026-06-30', currency: 'EUR', rates: [], totals: { base: 0, cuota: 0 }, invoiceCount: 0, excluded: { count: 0, total: 0 } };
     if (/\/admin\/libros\/recibidas\.json\?/.test(u)) return recibidas ?? { filas: [], miradas: 0, avisos: ['Formato provisional: no contrastado contra especificación oficial.'], desde: '2026-04-01', hasta: '2026-06-30' };
     if (/\/admin\/reports\/pl\?/.test(u)) return pl ?? PL_VACIO;
@@ -115,7 +126,16 @@ test('SCRUM-1049 · ② con datos en los tres orígenes: repercutido, soportado 
     totals: { revenue: 1500, expenses: gasto1 + gasto2 + gasto3, profit: -900 },
   };
 
-  const banco = cargarDashboard(RAIZ, { datos: datosDe({ vat, recibidas, pl }) });
+  // SCRUM-1147 · lo que el SERVIDOR da para estos mismos gastos y facturas: 210 repercutido,
+  // 63 + 10 = 73 deducible. Las cifras esperadas de abajo NO cambian: cambia quién las calcula.
+  const resumen = {
+    ...RESUMEN_VACIO,
+    ivaRepercutido: { porTipo: [{ tipo: 21, base: 1000, cuota: 210 }], totalBase: 1000, totalCuota: 210 },
+    ivaSoportado: { ...RESUMEN_VACIO.ivaSoportado, totalBaseDeducible: 400, totalCuotaDeducible: 73 },
+    diferencia: 137, invoiceCount: 3, expenseCount: 4,
+  };
+
+  const banco = cargarDashboard(RAIZ, { datos: datosDe({ vat, recibidas, pl, resumen }) });
   const r = await pintarVista(banco, 'renderReportsView');
   assert.equal(r.error, null, `🔴 Informes revienta con datos reales: ${r.error && r.error.message}`);
 
@@ -123,7 +143,7 @@ test('SCRUM-1049 · ② con datos en los tres orígenes: repercutido, soportado 
   const porLabel = Object.fromEntries(bloques.map((b) => [b.label, b.value]));
 
   assert.equal(porLabel['IVA repercutido'], eur(210),
-    `🔴 el repercutido no es el total de \`/vat\` (esperaba ${eur(210)}, salió ${porLabel['IVA repercutido']}).`);
+    `🔴 el repercutido no es el del resumen del servidor (esperaba ${eur(210)}, salió ${porLabel['IVA repercutido']}).`);
   assert.equal(porLabel['IVA soportado (deducible)'], eur(73),
     `🔴 el soportado tiene que sumar SOLO lo deducible (63 + 10 = 73), no lo No/sin decidir (salió ${porLabel['IVA soportado (deducible)']}).`);
   assert.equal(porLabel['Gastos del trimestre'], eur(gasto1 + gasto2 + gasto3),

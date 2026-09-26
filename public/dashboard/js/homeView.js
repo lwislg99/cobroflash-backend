@@ -350,19 +350,20 @@ async function pintarResumenTrimestreEnHome() {
     if (window.localStorage.getItem(clave) === '1') return;
   } catch { /* privado/bloqueado: se comporta como no descartado */ }
 
-  // Los TRES mismos endpoints que ya usa el Resumen del trimestre (SCRUM-1049) — cero cálculo
-  // fiscal nuevo, solo la pregunta «¿hay algo que enseñar?» antes de afirmar que hay un resumen.
-  let vat, recibidas, pl;
+  // SCRUM-1147 · el MISMO resumen que pinta Informes (`/admin/reports/resumen-trimestre`), más
+  // `/pl` para los meses — solo la pregunta «¿hay algo que enseñar?» antes de afirmar que hay un
+  // resumen. `invoiceCount` es el `miradas` del libro de expedidas (el que daba `/vat`) y
+  // `expenseCount` son los gastos del periodo (el `miradas` que daba `recibidas.json`).
+  let resumen, pl;
   try {
-    [vat, recibidas, pl] = await Promise.all([
-      apiRequest(`/admin/reports/vat?year=${anio}&quarter=${trimestre}`),
-      apiRequest(`/admin/libros/recibidas.json?ano=${anio}&trimestre=${trimestre}`),
+    [resumen, pl] = await Promise.all([
+      apiRequest(`/admin/reports/resumen-trimestre?year=${anio}&quarter=${trimestre}`),
       apiRequest(`/admin/reports/pl?year=${anio}`),
     ]);
   } catch { return; } // sin poder comprobar que hay algo, no se afirma que lo hay
 
   const monthsQ = (pl.months || []).slice((trimestre - 1) * 3, (trimestre - 1) * 3 + 3);
-  const sinDatos = (vat.invoiceCount || 0) === 0 && (recibidas.miradas || 0) === 0
+  const sinDatos = (resumen.invoiceCount || 0) === 0 && (resumen.expenseCount || 0) === 0
     && monthsQ.every((m) => (m.revenue || 0) === 0 && (m.expenses || 0) === 0);
   if (sinDatos) return; // aceptación #4: sin documentos ni gastos, no hay aviso
 
