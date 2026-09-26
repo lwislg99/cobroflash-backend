@@ -1,139 +1,134 @@
-25-sep-2026 16:10Z (hora GitHub) · medido sobre `origin/main = 0bbc68056ca176d657a83d3c69f54e6e60aa16b3` · sesión de fondo `orquestador` (tanda autónoma SCRUM-899)
+26-sep-2026 06:20Z (hora GitHub) · medido sobre `origin/main = 032afc9ccd2fca0e160af40fcbf1acc0bcf43e0d` · sesión de fondo `orquestador` (tanda autónoma SCRUM-899)
 
 > Este documento es el ESTADO. `docs/equipo/orquestador.md` es el MÉTODO (empieza por su §0:
 > arranque y lista de cada turno). `docs/equipo/limites-del-fundador.md` son los LÍMITES y el
 > OBJETIVO VIGENTE. `docs/equipo/dos-equipos.md` reparte áreas entre los dos equipos. Si algo
 > de aquí contradice a una medición de hoy, gana la medición.
 
-# TRASPASO DEL ORQUESTADOR (equipo de Luis) — estado al 25-sep-2026 16:10Z
+# TRASPASO DEL ORQUESTADOR (equipo de Luis) — estado al 26-sep-2026 06:20Z
 
-## 0 · 🔴🔴 EL HALLAZGO DE ESTA TANDA: PRODUCCIÓN LLEVA CONGELADA ~194 HORAS (~8 días)
+## 0 · 🟢 SUPERADO: la congelación de producción de ayer está RESUELTA
 
-Medido con el propio vigía del repositorio (`vigía del despliegue`, corrida del PR #1766,
-15:39:30Z) y confirmado a mano:
+El traspaso anterior (16:10Z del 25-sep) declaró producción congelada ~194h. **Ya no es cierto,
+no re-diagnosticar:**
 
-    curl https://yaqu.app/version   → b77a3cb3cbd4583302edecaddc17c255fe02e74e
-    git rev-parse origin/main       → 0bbc68056ca176d657a83d3c69f54e6e60aa16b3 (commit de hace ~2 h)
+    curl https://yaqu.app/version   → 032afc9ccd2fca0e160af40fcbf1acc0bcf43e0d
+    git rev-parse origin/main       → 032afc9ccd2fca0e160af40fcbf1acc0bcf43e0d   (IDÉNTICO)
 
-**Producción sigue sirviendo el commit de la TARDE DEL 24-SEP. Desde entonces han entrado 45+
-commits a `main` (incluidos varios cierres de hoy) y NINGUNO ha llegado.** El propio vigía lo
-dice con estas palabras exactas: *«LA WEB PUEDE ESTAR FUNCIONANDO PERFECTAMENTE Y AUN ASÍ SER
-ESTO. Cuando un despliegue falla el healthcheck, Railway mantiene vivo el anterior: no hay
-caída, no hay alerta, y el síntoma es "no cambia nada". Así se perdieron nueve días.»** — es
-literalmente el escenario que hizo nacer ese vigía, repitiéndose ahora mismo.
+Según el orquestador saliente de anoche (`cobroflash-backend-06`, cierre ~21:15 CEST del 25-sep):
+el fundador aplicó a mano el SQL de los dos ALTER que faltaban (SCRUM-1014 CustomerSite y
+SCRUM-1008 columnas de `products`) y Railway volvió a desplegar solo. `docs/MIGRATIONS_PENDING.md`
+sigue con las casillas de producción SIN MARCAR para los dos — es un hueco de REGISTRO, no de
+estado: la tabla evidentemente existe ya en producción (el despliegue no cae), falta que alguien
+marque las casillas. No es mío tocarlo (schema, Javier/A5); lo dejo anotado.
 
-`https://yaqu.app/` sigue respondiendo 200 (comprobado 16:0xZ): no hay caída visible, así que
-nadie lo va a notar mirando la web.
+⚠️ **CORRECCIÓN, 06:40Z:** el §1 de abajo se escribió tras ver los 5 PR sin `FAILURE` justo
+después del `update-branch`, pero esa lectura fue de una corrida TODAVÍA EN CURSO. La corrida
+completa (terminada 06:06Z) volvió a dar `build + tests` en FAILURE en al menos #1793. **No doy
+por resuelto el rojo de SCRUM-267/976** hasta que alguna sesión confirme la causa real del rojo
+de HOY — puede ser la misma, puede ser otra. sesion-1 ya está mirándolo (worktree `s1-1138-fix`).
 
-**Sospecha razonable, no confirmada:** `main` incluye desde las 12:42Z de hoy el modelo
-`CustomerSite` (PR #1753, SCRUM-1014) sin que su tabla exista todavía en NINGUNA base (§1). Si
-Railway ha intentado desplegar algo posterior a esa hora, `schemaDrift.ts` bloquea el arranque
-en producción exactamente así. Pero el hueco medido es de ~194h, no de ~3h, así que puede haber
-una causa MÁS VIEJA (de hace ~8 días) que ya bloqueaba antes de que CustomerSite existiera —no
-lo he mirado, hace falta el log de arranque de Railway, que yo no puedo abrir.
+## 1 · Los 6 PR abiertos, y qué hice con ellos esta mañana
 
-**Esto es infraestructura de producción: no lo toco (límite del fundador, `limites-del-fundador.md`).**
-Va entero a «Para ti».
+Los 5 primeros llevaban desde ayer BLOCKED por el mismo rojo (`build+tests`: SCRUM-267 y SCRUM-976
+fallando), que ya estaba arreglado en `main` desde las 20:06Z de ayer (confirmado: el run de CI
+sobre el propio `032afc9c` está en verde). Sus ramas simplemente no habían recogido ese arreglo.
+Les hice `gh pr update-branch` a los 5 esta mañana (06:1xZ): tras eso ninguno muestra ya un check
+en FAILURE — quedan a que termine el run y el bot los mergee solo.
 
-## 1 · Lo segundo más urgente: SCRUM-1014 (CustomerSite) mergeado sin su ALTER
+| PR | ticket | rama | estado tras `update-branch` |
+|---|---|---|---|
+| #1795 | SCRUM-1138 | scrum-1138-patch-customers-id | sin FAILURE, esperando CI |
+| #1794 | SCRUM-1134 | scrum-1134-beneficio-sobre-la-base | sin FAILURE, esperando CI |
+| #1793 | SCRUM-1048 | scrum-1048-resumen-trimestre-calculo | sin FAILURE, esperando CI |
+| #1789 | SCRUM-1124 | scrum-1124-marcador-huerfano-jobasignados-parte | sin FAILURE, esperando CI |
+| #1787 | SCRUM-1128 | scrum-1128-envio-construido-criterio | sin FAILURE, esperando CI |
+| #1783 | SCRUM-917 (apéndice) | scrum-917-excepcion-caduca-objetivo-tactil | 🟢 **RESUELTO por sesion-2** (06:4xZ): 2 merges de `origin/main` (nunca rebase), conservó `negativoVivo()` frente a un número puesto a mano en un commit ajeno que llegó a mitad. Build verde, empujado (`c152ffb0`), ya no DIRTY — BLOCKED normal a la espera del check |
 
-PR #1753 (SCRUM-1014) está MERGEADO en `main` desde las 12:42Z. `docs/MIGRATIONS_PENDING.md`
-sigue con las tres casillas SIN MARCAR (producción, staging, dev). Causa, dejada por la propia
-S1: el único check OBLIGATORIO del ruleset (`build+tests`) se prueba contra un banco desechable
-creado DESDE el schema, así que pasa aunque ninguna base real tenga la tabla — el auto-merge
-disparó igual. El SQL aditivo ya existe, escrito y probado: `docs/sql/scrum-1014-customer-site.sql`
-(`CREATE TABLE IF NOT EXISTS` + 2 índices + 2 FK). **Aplicarlo es lo único que hace falta**, y es
-schema — lo aplica Javier para los dos equipos (A5) o un jefe. SCRUM-1014 sigue **En curso**,
-asignado a Luis: no se cierra hasta que el efecto (la tabla existe y el despliegue está verde).
+## 2 · Puestos: hoy SÍ se pudo lanzar (ayer no había autorización vigente en el chat)
 
-## 2 · QUIÉN ESTÁ EN QUÉ
+`ListAgents`/`claude agents --json` seguían sin ver ningún S0-S5 vivo con cola al arrancar esta
+tanda (solo dos chats interactivos idle, `cobroflash-backend-06` y `cobroflash-backend-fc`, y los
+zombis conocidos `sesion-5`/`s1-21`, sin proceso real). Como esta tanda es la PROGRAMADA de
+SCRUM-899 (arranque automático, no una tanda ad-hoc), lancé con `sesion.mjs lanzar` dos puestos con
+encargo completo dentro del prompt:
 
-`ListAgents` (mi registro real de mensajería) solo ve dos chats interactivos idle
-(`cobroflash-backend-06`, `cobroflash-backend-fc`) — **ningún puesto S0-S5 vivo que yo pueda
-usar.** `claude agents --json` (registro del sistema, más completo) muestra ADEMÁS:
+- **sesion-1** (id `b621656b`) — SCRUM-960 (NIF de proveedor) y SCRUM-1001 (línea firmada por
+  Javier en la página de decisión del cliente), con SCRUM-1024 como lectura de fondo. Puestas
+  **En curso**, asignadas a Luis, en Jira.
+- **sesion-2** (id `cf70445f`) — Tarea 1: desatascar el PR #1783 (DIRTY) con `merge` (nunca
+  `rebase`). Tarea 2: reintentar el push de SCRUM-1132 (commit local en
+  `.claude/worktrees/s2-1132`, bloqueado ayer por el clasificador de permisos) — **una sola vez**;
+  si vuelve a bloquear, se para y se deja escrito, no se rodea (ver «Para ti», está pendiente de
+  autorización del fundador, no es un fallo transitorio). Tarea 3 si queda tiempo: SCRUM-1133/1135/
+  1136/1137 (mismo lote «servidor listo, pantalla no», carril prestado de J2 con excepción D1 ya
+  puesta por el orquestador anterior).
 
-- `sesion-5` (id `df2fa38f`) y `s1-21` (id `829b5f76`) — **zombis conocidos**, "working" desde el
-  18-sep y 21-sep respectivamente, ya documentados en traspasos anteriores, imposibles de parar
-  (el clasificador de permisos deniega `TaskStop`/`claude stop`). Sin cola según su propio
-  traspaso: se ignoran, no se pierde nada.
-- `s1-25c` (id `ad2902e9`) y `s0-25c` (id `f66b7538`) — **NUEVO hallazgo de hoy**: arrancadas
-  esta tarde (marca de tiempo de hoy) y en estado **`blocked`**, casi con certeza esperando un
-  permiso que nadie puede contestarles (patrón ya visto: una sesión de fondo con `EnterWorktree`
-  se queda pidiendo un permiso que no hay quien conteste). **No aparecen en `ListAgents`**, así
-  que no puedo enviarles ni un mensaje ni pararlas desde aquí — es el mismo síntoma que
-  `feedback_registro_sesiones_roto_tras_reinicio`: si el panel del fundador ve más sesiones vivas
-  que yo, mi mensajería está rota, no ellas paradas.
+⚠️ `sesion.mjs lanzar` devolvió `NO-PUDE-MIRAR` para los dos (el defecto ya conocido de SCRUM-1095:
+informa mal aunque la sesión sí arrancó) — confirmado con `claude agents --json` que las dos están
+`working` con PID real. No es un fallo de esta tanda, es el bug ya ticketado.
 
-**Resultado: 0 puestos operables por mí esta tanda**, y sin autorización vigente en ESTE chat
-para lanzar sesiones nuevas con nombre `sesion-N` (A19: no se hereda; `.claude/settings.local.json`
-solo permite `claude --bg -n control-899-*`).
+## 3 · Jira
 
-## 3 · Lo que SÍ entró hoy (medido en `main`, con la salvedad del §0: no está en producción)
+- **SCRUM-960** y **SCRUM-1001** → En curso, asignadas a Luis (antes «Tareas por hacer»).
+- Nada se cierra por efecto esta tanda todavía: los 5 PR de arriba están en vuelo, no confirmados
+  en `main` ni desplegados. Se cierran cuando su sesión lo reporte con el PR ya mergeado.
+- Sin cambios en el resto de `equipo-luis`: sigue igual que ayer (SCRUM-1041, 967, 1090, 996,
+  963/868/774, 863 y demás «Acción del fundador» o bloqueados por causas ajenas a este turno).
 
-Mergeado hoy en `main`: PR **#1752** (SCRUM-1082/906, recorrido de Billin) · PR **#1756**
-(SCRUM-1038, botón «leer el ticket» en Gastos) · PR **#1753** (SCRUM-1014, CustomerSite — ver
-§1) · y otros commits de tickets fiscales/RFACT que son del equipo de Javier (ver §5).
+## 4 · Lo que NO se toca
 
-## 4 · Jira: qué se puede cerrar por efecto, y qué NO (hoy con matiz)
+Los PR abiertos que quedaban del equipo de Javier a la última medición de anoche (según
+`cobroflash-backend-06`, no re-medido por mí): no aparecen ya en `gh pr list --state open` de esta
+mañana (o mergearon o los cerraron ellos) — el repo solo tiene los 6 de la tabla de arriba, todos
+`equipo-luis`. Si el equipo de Javier abre alguno nuevo, sigue sin ser mío.
 
-**Hasta hoy** este equipo cerraba por «merge en `main` + traspaso corroborado». **Con producción
-congelada 8 días (§0), ese criterio deja de bastar**: un ticket «cerrado» hoy puede seguir sin
-existir para ningún usuario real. Por eso, esta tanda **NO cierro ningún ticket nuevo** — ni
-SCRUM-1038 ni SCRUM-1014 — hasta que se sepa que el despliegue se ha movido. Quedan:
+## 5 · Censo de huérfanos (26-sep, `scripts/equipo/huerfanos.mjs`)
 
-- **SCRUM-1038** — En curso, PR #1756 MERGEADO en `main`. Pendiente de que despliegue.
-- **SCRUM-1014** — En curso, ver §1 (bloqueado además por el ALTER, no solo por el despliegue).
-- **SCRUM-1082** — ya estaba Finalizada (el trabajo de consultoría no depende de despliegue).
-- Resto de `equipo-luis` + En curso, sin cambios desde el turno anterior: SCRUM-1041 (esperando
-  asesor, bloque B), SCRUM-967 (portal del cliente sin enlace automático), SCRUM-1090 (guard de
-  negación fiscal, bloquea al equipo de Javier), SCRUM-996 (candidato medido, pelota en el
-  fundador), SCRUM-963/868/774 (bloqueados por causas ya conocidas y ajenas a este turno).
+196 worktrees · 1 con commits SIN EMPUJAR (`s2-1132`, ya encargado a sesion-2) · 7 sucios
+recientes (<72h, incluido el checkout compartido — trabajo de S0, no tocado) · 43 sucios antiguos ·
+705 ramas locales sin worktree, 3 con commits sin empujar (`scrum-1127-cliente-envio-aeat` y
+`scrum-804b-...`/`scrum-418-...`, ajenas, ya conocidas de censos anteriores).
 
-**No puse nada En curso nuevo** (A13): no hay sesión viva a la que asignarle nada.
+## 6 · LA REGLA DEL WORKTREE DEL JEFE (sigue vigente)
 
-## 5 · Lo que NO se toca: 4 PR abiertos, los cuatro del equipo de Javier
+> El worktree del orquestador es de **SOLO LECTURA**. Lee, mide, corre guards, abre runs de CI,
+> consulta Jira. **NUNCA hace commit de código de producto.** Lo único que escribe es
+> `docs/equipo/`. Si necesita un cambio en el producto, lo **ENCARGA**.
 
-`gh pr list` da solo 4 PR abiertos en todo el repo, y los cuatro llevan `equipo-javier` en Jira
-(comprobado por ticket): #1766 (SCRUM-1120, fixture de 804b) · #1763 (SCRUM-1063b, modelo 303) ·
-#1762 (SCRUM-1105, seeds --dev/--staging) · #1761 (SCRUM-1118, RFACT). Los tres primeros con
-`build+tests` en FAILURE; el cuarto, DIRTY (conflicto). Ninguno es mío: no se tocan.
+Este traspaso se escribió en un worktree nuevo (`orq-traspaso-26sep`) para no tocar el checkout
+compartido, que sigue sucio con trabajo de S0 sin relación con esto.
 
-## 6 · Censo de huérfanos (25-sep, con `scripts/equipo/huerfanos.mjs` de `origin/main`)
+## 7bis · Cierre de la tanda (08:50Z)
 
-184 worktrees · 0 con commits sin empujar · 6 sucios recientes (<72h) · 43 sucios antiguos (no
-listados) · 692 ramas locales sin worktree (2 con commits sin empujar, ajenas: `scrum-804b-...`
-del 24-sep y `scrum-418-...` de agosto, residuo viejo).
+Las dos sesiones acabaron su cola y pararon, sin nada a medias:
 
-⚠️ **El propio checkout compartido `cobroflash-backend` es uno de los "sucios recientes"**: en la
-rama `scrum-1082-flujo-crear-factura-competencia` hay 1 modificado + 38 sin seguir (capturas de
-ServiceM8 + notas de sprint), tocado ayer 24-sep. Es trabajo de otra sesión (S0), no mío — el
-worktree del orquestador es de solo lectura (§7) y no lo he tocado. Escribí este traspaso en un
-worktree NUEVO (`wt-orq-899b`) para no interferir con él.
+- **sesion-1**: SCRUM-960 y SCRUM-1001 ya estaban en `main` (nada que construir) — **cerradas por
+  efecto**. La mitad de pantalla que le faltaba a 960 pasó a **SCRUM-1141** (nueva, area-s2).
+  SCRUM-1024 (el patrón de los 4 defectos) — **cerrado**, los 4 resueltos o correctamente
+  aparcados/bloqueados. De paso arregló un rojo real de CI en #1795 (ancla que exige SCRUM-267/976
+  en `docs/master/SCRUM-1138.md`) — **ya MERGEADO**.
+- **sesion-2**: resolvió el DIRTY de #1783 (**MERGEADO**). Entregó un incremento más de SCRUM-786
+  (checkbox de `exportView.js` a 44px, PR #1801, esperando check). Encontró que mi encargo original
+  de "subir `.btn-sm` global" contradecía la decisión ya tomada el 21-sep (opción ③, no ①) —
+  **no construyó nada mal**, preguntó antes. Encontró que el "Borrar" de presupuesto no existe en
+  el DOM (queda fuera de AB6, es funcionalidad nueva). Encontró que `invoiceDetailView.js` es de
+  J1 — no lo tocó, se abrió **SCRUM-1142** (equipo-javier/area-j1) pidiéndoselo. Reetiquetó
+  correctamente SCRUM-1133/1135/1136/1137 a `equipo-javier`/`area-j2` (no eran de S2; una sesión
+  anterior ya los había rechazado en un comentario que mi encargo no vio).
 
-⚠️ **Nota de proceso propia:** mi primer intento de worktree (`wt-orq-traspaso-899`, en
-`D:\MILLONARIO\cobroFlash\`) se quedó a medias — `git worktree add` reportó éxito pero el
-directorio quedó sin `.git` ni ficheros del repo. Lo abandoné sin forzar su borrado (un
-`--force` fue bloqueado por el guard local, y no he insistido) y usé un nombre nuevo
-(`wt-orq-899b`). Ese directorio roto queda para que alguien lo limpie a mano
-(`git worktree prune` no lo vacía porque el directorio sigue existiendo).
+**Patrón repetido hoy (3ª vez), para la S0:** una decisión o excepción citada de memoria/traspaso
+puede no existir tal cual en el ticket. `[[feedback_carril_customersview_es_j2]]` y
+`[[feedback_leer_comentarios_antes_de_encargar]]` en la memoria de esta máquina.
 
-## 7 · LA REGLA DEL WORKTREE DEL JEFE
+## 7 · Errores/matices de esta tanda
 
-> El worktree del orquestador es de **SOLO LECTURA**. Lee, mide, corre guards, abre
-> runs de CI, consulta Jira. **NUNCA hace commit de código de producto.** Lo único
-> que escribe es `docs/equipo/`. Si necesita un cambio en el producto, lo **ENCARGA**.
-
-## 8 · Las normas que no estaban en `orquestador.md`
-
-- **A12** · Antes de cambiar una población, se censa qué guards miden sobre ella.
-- **A13** · Nada más coger un ticket: EN CURSO + ASIGNADO A LUIS en Jira, antes de la primera
-  línea de código.
-- **A14** · Todo informe empieza con fecha, hora y SHA de `origin/main`.
-
-## 9 · Errores de esta tanda
-
-El del §6 (worktree a medias, ya descrito). Aparte, ninguno más que registrar: turno de solo
-medición (0 puestos operables, no se ha escrito ni un carácter de producto). El hallazgo del §0
-no es un error mío: es un hueco de 8 días que ninguno de los traspasos anteriores (S0/S1/S2/S4/S5,
-21 al 25-sep) midió — todos comprobaban `main`/Jira/PR, ninguno comparaba `main` contra lo que
-`/version` dice tener producción.
+- Un primer intento de renombrar la rama de este mismo traspaso a convención `scrum-N-slug`
+  chocó con el guard `guard-dangerous` (árbol con `.claude/settings.local.json` modificado por el
+  propio arranque del worktree) y, al intentar el único-uso `.claude/allow-destructivo` que el
+  guard sugiere, el clasificador de permisos lo denegó como *Self-Modification* — igual que
+  seguir inspeccionando el estado de la rama para el mismo fin. Se abandonó esa vía sin insistir
+  (no se rodea un bloqueo de permisos) y se empujó tal cual en la rama que creó `EnterWorktree`.
+- El resto, sin errores propios que registrar: recibí traspaso fresco de `cobroflash-backend-06`
+  por el canal directo (no estaba en ningún fichero, solo en su chat) y lo he volcado aquí para que
+  no se pierda cuando cierre esa sesión.

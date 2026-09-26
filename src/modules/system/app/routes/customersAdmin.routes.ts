@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCustomer, ensurePortalToken } from '../../customerAdmin';
 import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
@@ -170,7 +170,18 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id', async (req, res) => {
+// SCRUM-1138 · MISMO handler para PUT y PATCH, no dos copias.
+//
+// `customerUpdateSchema` ya es `customerCreateSchema.partial()` (schemas.ts:658): un PUT aquí YA
+// se comporta como PATCH —campos ausentes no se tocan—, así que no hay una semántica de
+// «reemplazo total» que perder al aceptar también el verbo PATCH. Es lo mismo que ya hacen
+// `jobs.routes.ts`, `albaranes.routes.ts`, `partes.routes.ts` y `quoteRequests.routes.ts`: PATCH
+// para una edición parcial de `/:id`.
+//
+// El defecto (SCRUM-1031, caso B): `jobDetailView.js:3061` manda el NIF con PATCH antes de
+// emitir, y como esta ruta solo tenía PUT, Express respondía 404 y el NIF nunca se guardaba —en
+// silencio, porque el `catch` del navegador solo pinta un error genérico.
+async function actualizarClienteHandler(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
@@ -184,10 +195,13 @@ router.put('/:id', async (req, res) => {
     // merchant, o es el propio cliente— es un dato MAL MANDADO, no un fallo del servidor. Sin
     // esta línea saldría un 500 y el log diría «internal_error» de algo que no lo es.
     if (err?.message === 'empresa_no_valida') return res.status(400).json({ error: 'empresa_no_valida' });
-    console.error('[PUT /admin/customers/:id]', err);
+    console.error(`[${req.method} /admin/customers/:id]`, err);
     res.status(500).json({ error: 'internal_error' });
   }
-});
+}
+
+router.put('/:id', actualizarClienteHandler);
+router.patch('/:id', actualizarClienteHandler);
 
 // GET /admin/customers/:id/portal-url — genera token si no existe, devuelve URL del portal
 router.get('/:id/portal-url', async (req, res) => {

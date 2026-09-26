@@ -133,7 +133,8 @@ test('SCRUM-537 · el hecho se DERIVA del codigo, y hoy el envio NO existe', () 
 
   assert.equal(h.construido, false,
     '🔴 EL ENVIO A LA AEAT APARECE COMO CONSTRUIDO. Si es verdad, enhorabuena y hay que revisar '
-    + `este guard y el guion H2 entero. Señales: ${JSON.stringify(h.señales)}`);
+    + `este guard y el guion H2 entero. Llamantes: ${JSON.stringify(h.llamantes)} · flag: `
+    + `${JSON.stringify(h.flag)} · piezas: ${JSON.stringify(h.señales)} (SCRUM-1128: deciden los dos primeros)`);
 });
 
 test('SCRUM-537 · lo que se EMITE no cuenta como envio: el QR y los espacios de nombres', () => {
@@ -149,7 +150,10 @@ test('SCRUM-537 · lo que se EMITE no cuenta como envio: el QR y los espacios de
   const h = envioConstruido(RAIZ);
   assert.ok(h.vistosAeat >= 3,
     `🔴 solo ve ${h.vistosAeat} menciones de la AEAT en src/: sin verlas, este control no prueba nada`);
-  assert.deepEqual(h.señales, [],
+  // SCRUM-1128: se mira SOLO `host-aeat`, que es lo que este test vigila (una cadena EMITIDA
+  // contada como llamada). La otra pieza, `cola` (`model VfSubmission`), no es una cadena
+  // emitida: el día que entre en el esquema aparecerá aquí con razón, y ya no decide nada.
+  assert.deepEqual(h.señales.filter((s) => s.tipo === 'host-aeat'), [],
     `🔴 algo que solo se EMITE se conto como envio: ${JSON.stringify(h.señales)}. Con esto, el `
     + 'guard dejaria de bloquear «esta construida» sin que nadie haya construido nada.');
 });

@@ -66,6 +66,11 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   { method: 'POST', path: '/admin/customers', why: 'S1: clientes crear-ver ✅' },
   { method: 'GET',  path: '/admin/customers/:id', why: 'S1: clientes crear-ver ✅' },
   { method: 'PUT',  path: '/admin/customers/:id', why: 'Corregir teléfono/dirección desde la obra' },
+  // SCRUM-1138: mismo handler que el PUT de arriba (customerUpdateSchema ya es parcial), y el
+  // caso que lo trae es justo el de campo: jobDetailView.js manda el NIF con PATCH antes de
+  // emitir, desde la obra. Negarle el verbo al técnico y dárselo al PUT sería el mismo permiso
+  // con dos puertas distintas.
+  { method: 'PATCH', path: '/admin/customers/:id', why: 'SCRUM-1138: el NIF que se manda con PATCH antes de emitir, mismo caso que el PUT de arriba' },
   // SCRUM-578 (CONT-05): va con `POST`/`PUT` de clientes, que YA son de campo. Si el aviso de
   // duplicado fuera admin-only, el Operario podría seguir CREANDO clientes sin verlo nunca — y es
   // justo quien más los da de alta desde la obra, con el móvil y con prisa. El aviso quedaría
