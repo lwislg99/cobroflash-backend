@@ -14,7 +14,7 @@ async function renderTemplatesView(container) {
 
   // ── Header ──────────────────────────────────────────────────────────────
   const header = document.createElement('div');
-  header.className = 'data-card-header customers-card';
+  header.className = 'data-card-header customers-card plantillas-cabecera'; // SCRUM-1148: 44 px
   header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap';
   header.innerHTML = `
     <div>
