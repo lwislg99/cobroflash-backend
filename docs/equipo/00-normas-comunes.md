@@ -57,6 +57,16 @@ CORRIENDO, no leyendo. Si no ocurre: PARAS, lo dices, y no gastas la
 tanda. En una sola semana se gastaron dieciséis tandas en defectos ya
 arreglados.
 
+Y antes de la primera escritura, ¿este árbol es TUYO?
+
+    npm run arbol:mio -- <nº de ticket>
+
+Dice en qué worktree y rama estás y si esa rama es la del ticket.
+`NO-MIO` o `CIEGO` salen con código ≠ 0: PARAS y avisas, sin
+`checkout -b` ni `reset --hard` ahí. Así una sesión se llevó a su
+rama el trabajo sin commitear de otra, sin romper ninguna regla,
+porque no la había (SCRUM-774).
+
 ## A3 · Cómo se mide aquí
 
 - 🔴 **Un instrumento declara su POBLACIÓN, no sólo su resultado.**
