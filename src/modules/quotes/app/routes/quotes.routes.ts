@@ -250,7 +250,7 @@ router.post('/create', async (req, res) => {
         sendWhatsAppText({
           to: adminPhone,
           merchantId: quote.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-          text: `📋 Nuevo presupuesto ${displayQuoteNumber(quote)} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
+          text: `📋 Nuevo presupuesto ${displayQuoteNumber(quote, merchant)} por ${totalNum.toFixed(2)} ${quote.currency} pendiente de tu aprobación antes de enviarlo al cliente. Revísalo en tu panel de YaQu.`,
         }).catch(() => {});
       }
     }
@@ -315,7 +315,12 @@ router.post('/:token/accept', decisionLimiter, async (req, res) => {
     const quote = token ? await prisma.quote.findUnique({
       where: { decisionToken: token },
       include: {
-        merchant: { select: { id: true, email: true, name: true, notifyEmailOnQuoteAccepted: true } },
+        // SCRUM-1093: `timezone` para que `displayQuoteNumber` lea el año en la zona del merchant.
+        merchant: {
+          select: {
+            id: true, email: true, name: true, notifyEmailOnQuoteAccepted: true, timezone: true,
+          },
+        },
         customer: { select: { name: true } },
       },
     }) : null;
@@ -615,7 +620,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         type: 'quote_accepted',
-        title: `Presupuesto ${displayQuoteNumber(quote)} aceptado por el cliente`,
+        title: `Presupuesto ${displayQuoteNumber(quote, quote.merchant)} aceptado por el cliente`,
         detail: signatureData ? 'Firmado digitalmente' : null,
       });
 
@@ -857,7 +862,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
         merchantId: quote.merchantId,
         customerId: quote.customerId,
         type: 'quote_rejected',
-        title: `Presupuesto ${displayQuoteNumber(quote)} rechazado por el cliente`,
+        title: `Presupuesto ${displayQuoteNumber(quote, quote.merchant)} rechazado por el cliente`,
         detail: reason || comment || null,
       });
     }
@@ -867,7 +872,7 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
     {
       const customerName = quote.customer?.name || 'El cliente';
       const amount = `${Number(quote.total).toFixed(2)} ${quote.currency}`;
-      const qNum = displayQuoteNumber(quote); // A1.2: número por merchant, no el id global
+      const qNum = displayQuoteNumber(quote, quote.merchant); // A1.2: número por merchant, no el id global
       const freeText = decision === 'accept'
         ? `✅ ${customerName} aceptó tu presupuesto ${qNum} por ${amount}`
         : `❌ ${customerName} rechazó el presupuesto ${qNum}. Motivo: ${reason || comment || 'Sin especificar'}`;

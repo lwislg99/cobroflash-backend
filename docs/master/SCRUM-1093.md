@@ -286,3 +286,62 @@ fichero más tocado (`chargesAdmin.routes.ts`), nada en `fechaDeCobro.ts`.
 `scrum-1093b-zona-en-fecha-de-cobro` · 23-sep-2026.
 
 **Listo para auto-merge.** J2 lo rearma tras empujar este commit.
+
+---
+
+# APÉNDICE · 26-sep-2026 · SCRUM-1093c (S1) · `quoteNumber.service.ts` — Construido
+
+**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87` · 2026-09-26T12:31:19Z
+
+**Escribe:** Sesión 1 (S1), rama `scrum-1093-quotenumber-zona-merchant`. Cierra, para
+`quoteNumber.service.ts`, la SEGUNDA de las tres ocurrencias que este ticket abrió (comentario
+16587 al cerrar SCRUM-735): `albaranNumber.service.ts` (carril S/S4) y `fechaDeCobro.ts` (carril
+J2, ya construido arriba en el APÉNDICE `SCRUM-1093b`) son las otras dos — no se tocan aquí (A7).
+
+## PASO 0 (medido antes de tocar código)
+
+`git grep getFullYear` sobre `origin/main` de hoy: las dos líneas seguían ahí,
+`quoteNumber.service.ts:77` (`displayQuoteNumber`) y `:100` (`allocateQuoteNumber`) — el reloj del
+PROCESO (Railway, UTC), exactamente el defecto que `invoiceNumber.service.ts` ya cerró con el GO
+del fundador de SCRUM-735 (comentario 16573).
+
+## El cambio
+
+Mismo patrón que `invoiceNumber.service.ts` (SCRUM-735), sin inventar una forma nueva:
+
+- `allocateQuoteNumber`: añade `timezone: true` a la lectura de `merchant` que ya hacía (ni una
+  consulta de más) y deriva el año con `Number(diaNaturalEn(now, zonaDelMerchant(m)).slice(0, 4))`
+  en vez de `now.getFullYear()`.
+- `displayQuoteNumber`: nuevo parámetro opcional `merchant?: { timezone?: string | null }`. Sin
+  él (o sin zona declarada), cae a `ZONA_POR_DEFECTO` ('UTC') — mismo resultado que antes, cero
+  cambio para quien no lo pidió. Con merchant, el año sale de su zona.
+- Los cuatro sitios de `quotes.routes.ts` que llaman a `displayQuoteNumber` ahora le pasan el
+  merchant (`merchant` o `quote.merchant`); uno de los `select` de `merchant` no traía `timezone`
+  y se le añadió.
+
+## No toca
+
+`albaranNumber.service.ts` (carril S/S4) ni `fechaDeCobro.ts`/`invoicesAdmin.routes.ts:450`
+(carril J2/J1) — reportados en Jira (SCRUM-1093), no construidos desde aquí. El camino de emisión
+fiscal (ya cerrado por SCRUM-735). El `{ increment: 1 }` sigue siendo el
+`pg_advisory_xact_lock` de SCRUM-234: este cambio no toca la concurrencia, solo qué año lee.
+
+## Verificación
+
+- `tests/scrum1093-quotenumber-zona-merchant.test.mjs` (4/4 verde): un merchant en
+  `Europe/Madrid` a las 23:30 UTC del 31-dic ya numera en el año NUEVO (`P270001`); el mismo
+  instante sin zona declarada (o en `Atlantic/Canary`, que en invierno sigue en UTC+0) sigue en
+  el año viejo — control negativo por zona, no solo por fecha.
+- `tests/quoteNumber.test.mjs` y `tests/scrum592-*.test.mjs`: 24/24 verde (4 gateados sin
+  `QA_DB_TEST`, sin tocar).
+- `npm run guards:entrada`: 112/112 verde.
+- `npm test` completo sobre la rama: 8315 pass / 2 fail — los dos ajenos a este cambio:
+  `scrum910d` (crash de proceso por Gemini/rate-limit, ya declarado en otros registros de hoy) y
+  el guard de registro de esta misma rama (`scrum854`, que exigía este fichero — ya escrito).
+- Rojo-antes: verificado por inspección directa contra el mecanismo ya probado de SCRUM-735
+  (mismo helper, mismo patrón); no se completó el ciclo mecánico de revertir-y-repetir en este
+  worktree porque el guard de destino (`guard-dangerous.sh`) bloqueó el `git checkout --` de
+  reversión temporal, y no se buscó una vía alternativa para sortearlo (correcto: ese guard existe
+  para evitar pérdidas de trabajo sin commitear). Los tests nuevos documentan en su cuerpo, con el
+  valor exacto que darían con el defecto (`P260001` en vez de `P270001`), por qué caerían sin el
+  fix.

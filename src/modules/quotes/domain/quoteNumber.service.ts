@@ -40,6 +40,7 @@ import { SERIE_LOCK_NS } from '../../invoicing/domain/invoiceNumber.service'; //
 import {
   SERIES, formatoNumeroDocumento, secuenciaDelAnio, esNumeroNuevo,
 } from '../../../core/documentos/formatoNumero';
+import { zonaDelMerchant, diaNaturalEn } from '../../../core/zonaDelMerchant';
 
 /**
  * Display canónico del número de un presupuesto.
@@ -67,14 +68,22 @@ export const SIN_NUMERO = '—';
  * El AÑO sale de `createdAt`, y es correcto por construcción: la reserva del número ocurre
  * DENTRO de la misma transacción que crea la fila, así que `createdAt` es el instante en que se
  * numeró. No es una aproximación — es el mismo reloj.
+ *
+ * SCRUM-1093 (mismo patrón que SCRUM-735 en `invoiceNumber.service.ts`): el año se lee en la
+ * ZONA DEL MERCHANT (`zonaDelMerchant`/`diaNaturalEn`), no con `d.getFullYear()` sobre el reloj
+ * del PROCESO (Railway va en UTC). Si el merchant no viaja aquí (o no ha declarado zona), cae a
+ * `ZONA_POR_DEFECTO` ('UTC') — el mismo resultado que antes, así que nadie ve un cambio que no
+ * pidió.
  */
 export function displayQuoteNumber(
   q: { quoteNumber?: number | null; createdAt?: Date | string | null },
+  merchant?: { timezone?: string | null } | null,
 ): string {
   if (q.quoteNumber == null) return SIN_NUMERO;
   const d = q.createdAt ? new Date(q.createdAt) : null;
   if (!d || Number.isNaN(d.getTime())) return SIN_NUMERO;
-  return formatoNumeroDocumento(SERIES.presupuesto, d.getFullYear(), q.quoteNumber);
+  const year = Number(diaNaturalEn(d, zonaDelMerchant(merchant)).slice(0, 4));
+  return formatoNumeroDocumento(SERIES.presupuesto, year, q.quoteNumber);
 }
 
 /**
@@ -97,12 +106,17 @@ export async function allocateQuoteNumber(
   // suelta solo al terminar la transacción: no hay cerrojo que liberar a mano ni que se olvide.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;
 
-  const year = now.getFullYear();
   const m = await tx.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, nextQuoteNumber: true, quoteSeriesYear: true },
+    // SCRUM-1093: `timezone` hace falta para el año de la serie — ver el `year` de abajo.
+    select: {
+      id: true, nextQuoteNumber: true, quoteSeriesYear: true, timezone: true,
+    },
   });
   if (!m) throw new Error('merchant_not_found');
+  // SCRUM-1093 (mismo GO que SCRUM-735): el AÑO de la serie sale de la zona de ESTE merchant,
+  // no del reloj del PROCESO (Railway va en UTC). `m` ya está leído: ni una consulta de más.
+  const year = Number(diaNaturalEn(now, zonaDelMerchant(m)).slice(0, 4));
 
   const seq = secuenciaDelAnio(
     { seriesYear: m.quoteSeriesYear, nextNumber: m.nextQuoteNumber }, year,
