@@ -1,6 +1,8 @@
 # SCRUM-1138 — Falta PATCH /admin/customers/:id
 
-**Sesión 1 · 25-sep-2026 · rama `scrum-1138-patch-customers-id`** · base `origin/main` `bf4d82c6`.
+**Sesión 1 · 25-sep-2026 · rama `scrum-1138-patch-customers-id`**
+
+**Medido contra:** `origin/main` = `bf4d82c68cc74c390af36f92c90cdb915e8c31e8` · 2026-09-25T20:58:50+02:00
 
 ## PASO 0 (medido antes de tocar código)
 
