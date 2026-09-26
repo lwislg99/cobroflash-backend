@@ -1,6 +1,6 @@
 # SCRUM-1147 · El resumen del trimestre toma sus cifras de IVA del servidor
 
-**Medido contra:** `origin/main` = `9d66dd25` · 2026-09-26T12:20:00Z
+**Medido contra:** `origin/main` = `9d66dd2585e25c307d3f4f1f469223b2e91c179b` · 2026-09-26T12:20:00Z
 **Rama:** `scrum-1147-resumen-trimestre-del-servidor`.
 **Sesión:** S2 (front). **Skill UI:** cargada (`yaqu-premium-ui`).
 
