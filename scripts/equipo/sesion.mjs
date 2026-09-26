@@ -252,6 +252,17 @@ export function equipoVivo({ agentes, repo, job }) {
 }
 
 /**
+ * El motivo de una BLOQUEADA, sin inventar uno (SCRUM-1095). `claude agents --json` no trae nunca
+ * `waitingFor` — medido: 9 agentes, ningún campo así. El `||` que había aquí no rellenaba un hueco
+ * ocasional: disparaba SIEMPRE, así que «espera algo interactivo» no era un dato, era relleno con
+ * forma de dato. Si algún día el CLI empieza a traer `waitingFor` de verdad, se usa; si no, se dice
+ * que no se sabe, en vez de inventar qué tipo de algo espera.
+ */
+function motivoDeBloqueo(v) {
+  return v.waitingFor ? `espera ${v.waitingFor}` : 'está bloqueada, motivo desconocido — `agents --json` no informa de por qué';
+}
+
+/**
  * Qué hacer al lanzar `nombre`.
  *
  * @param {{nombre:string, agentes:object[]|null, registro:object|null, ahora:number}} e
@@ -275,9 +286,9 @@ export function decidirLanzar({ nombre, agentes, registro, ahora, equipo, job, r
   if (cuentan.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${cuentan.length} sesiones vivas se llaman «${nombre}»` };
   if (cuentan.length === 1) {
     const v = cuentan[0].agente;
-    // Bloqueada = esperando algo interactivo que nadie va a contestar. Se dice; no se rodea.
+    // Bloqueada = esperando algo que nadie va a contestar. Se dice; no se rodea ni se inventa qué.
     if (v.state === 'blocked' || v.waitingFor) {
-      return { veredicto: 'BLOQUEADA', motivo: `«${nombre}» (${v.id}) espera ${v.waitingFor || 'algo interactivo'}`, id: v.id };
+      return { veredicto: 'BLOQUEADA', motivo: `«${nombre}» (${v.id}) ${motivoDeBloqueo(v)}`, id: v.id };
     }
     return { veredicto: 'YA-VIVA', motivo: `«${nombre}» ya está en marcha (${v.id})`, id: v.id };
   }
@@ -460,7 +471,7 @@ export function decidirRelevar({ nombre, agentes, traspasoMtime, ultimoTurno, ah
     return { veredicto: 'OCUPADA', motivo: `«${nombre}» está trabajando: no se para a mitad, aunque el traspaso esté fresco`, id: v.id, comprobado };
   }
   if (v.state === 'blocked' || v.waitingFor) {
-    return { veredicto: 'BLOQUEADA', motivo: `«${nombre}» (${v.id}) espera ${v.waitingFor || 'algo interactivo'}`, id: v.id, comprobado };
+    return { veredicto: 'BLOQUEADA', motivo: `«${nombre}» (${v.id}) ${motivoDeBloqueo(v)}`, id: v.id, comprobado };
   }
   return { veredicto: 'RELEVAR', id: v.id, comprobado };
 }
@@ -552,7 +563,7 @@ export function sesionesBloqueadas({ agentes, sinActividadMs }) {
     bloqueadas.push({
       id: a.id ?? null,
       nombre: a.name ?? null,
-      waitingFor: a.waitingFor || 'algo interactivo',
+      waitingFor: a.waitingFor || null,
       sinActividadMs: typeof ms === 'number' ? ms : null,
       avisar: typeof ms === 'number' && ms >= UMBRAL_AVISO_BLOQUEO_MS,
     });
