@@ -252,3 +252,64 @@ mismas ~320 declaraciones, sólo cambia CÓMO se clasifica y CUÁNTO cuenta un v
   mutaciones de cada pasada del meta-guard, y las tres sesiones que sí tenían acceso a Linux CI para
   probarla no lo consiguieron cerrar. Aplicarla a ciegas desde una máquina Windows que no puede
   verificarla sería exactamente lo que A2 prohíbe (medir antes de construir).
+
+---
+
+# SCRUM-1100c · El próximo corte se explica solo — `test:summary` como prueba directa
+
+**Medido contra:** `origin/main` = `cbb30708590011f79b1f392f322c4d264eab537c` · 2026-09-26T ~16:15Z
+(worktree `wt-s3-1153-censo-entorno`, rama `scrum-1100c-el-resumen-explica-el-corte`).
+
+**Decisión del orquestador (S3):** no reproducir el mecanismo (tres sesiones de J6 con acceso a
+Linux CI ya lo intentaron y no lo cerraron; repetirlo desde Windows sin esa evidencia repite el
+mismo callejón). En su lugar, **instrumentar `correr()` para que la PRÓXIMA vez que el corte
+ocurra de verdad en CI, se explique con un dato directo en vez de una lista de sospechas.**
+
+## Qué se añadió
+
+`node:test`'s `run()` emite `test:summary` como el ÚLTIMO evento de cada fichero, con el recuento
+que el propio runner hizo de sí mismo (`counts.tests/passed/failed/skipped`, verificado en vivo con
+una sonda de 3 casos — ver `diagnosticoDeCorte`). Si la hipótesis de SCRUM-908c es cierta —el hijo
+pierde la cola de stdout al llamar `process.exit()` (`forceExit: true`) antes de vaciarla—, el
+resumen es justo lo último en la cola: su AUSENCIA es una prueba directa del corte, no una lectura
+de nombres que aparecen o no.
+
+`correr()` ahora captura ese evento y devuelve `resumen` (los `counts` de node:test), `duracionMs` y
+`timeoutMs`. Nueva función pura `diagnosticoDeCorte(tras)`, FAIL-CLOSED (si `tras` no trae los campos
+nuevos, lo DICE — «NO EVALUABLE» — en vez de inventar un veredicto):
+
+* **SIN resumen** → confirma que la salida se cortó ANTES de terminar (pérdida de eventos, no
+  cambio de título), y avisa si la duración quedó pegada al timeout de 300000 ms (podría ser el
+  timeout, no el corte de stdout).
+* **CON resumen pero `counts.tests` no cuadra** con lo que este script acumuló → se perdió algo
+  ANTES del resumen, no al final: mismo mecanismo, otro punto de corte.
+* **CON resumen y cuadra** → el fichero terminó con normalidad; si el test buscado no aparece, la
+  pregunta deja de ser «¿se cortó la salida?» y pasa a ser «¿cambió el título?».
+
+Se enchufa en `aplicarUna()`, sólo para la causa «NO APARECE» (la única de las tres donde
+`test:summary` da evidencia directa; SALTADO ya tiene causa conocida — QA_DB_TEST — y añadir esto
+ahí sería ruido).
+
+## Verificado, no asumido
+
+* Semántica de `counts.tests` de `node:test` (Node 24.20) comprobada con una sonda de 3 casos
+  (1 pass, 1 skip, 1 fail): `tests` cuenta las tres, y existe un campo `failed` (no documentado en
+  los tipos de `@types/node` instalados, pero presente en tiempo de ejecución).
+* Smoke test real: `correr('scrum908-la-muda-se-explica.test.mjs')` devuelve `resumen`/`duracionMs`
+  poblados y `diagnosticoDeCorte` dice «CUADRAN» sobre una pasada limpia real (no fabricada).
+* Fail-closed comprobado: pasando un `tras` sin los campos nuevos (una llamada anterior a este
+  cambio), `diagnosticoDeCorte` devuelve «NO EVALUABLE» en vez de una conclusión inventada.
+* `tests/scrum908-la-muda-se-explica.test.mjs` (5/5) y `tests/scrum784-el-cuarto-veredicto.test.mjs`
+  (5/5) siguen verdes sin tocarlos. `guards:entrada` 112/112. `npm run build` sin errores. No se
+  corrió la tanda completa (7,7k) por presupuesto de contexto de la tanda.
+
+## Lo que esto NO hace
+
+* **No arregla la pérdida de eventos ni confirma su causa.** Es puramente diagnóstico: la próxima
+  vez que `scrum859` (o cualquier otro) salga «NO APARECE» en CI real, el mensaje dirá si el resumen
+  llegó o no, en vez de dejarlo para que alguien vuelva a investigar desde cero.
+* **No toca `forceExit` ni el `--import` bloqueante** (sigue siendo hipótesis sin demostrar, A2).
+* **SCRUM-836 (marcar el meta-guard obligatorio) sigue aparcado.** Con esta instrumentación no
+  cambia la tasa de fallo — sigue siendo del orden del 36 % de los runs donde el job llega a
+  arrancar (13 de 36 de 58 corridas medidas por S5 el 26-sep; las otras 22 son «pendiente
+  sustituido», reemplazadas por GitHub antes de empezar). Condición de reapertura dejada en Jira.
