@@ -1,7 +1,7 @@
 # SCRUM-1095 · `sesion.mjs` ya no inventa `waitingFor`
 
 **Fecha:** 26-sep-2026 11:54Z (GitHub) · **Carril:** S5 · automatización y eficiencia
-**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87`
+**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87` · 2026-09-26T11:54:03Z
 **Rama:** `scrum-1095-waitingfor-no-inventado`
 
 ## 0 · El encargo, en una línea
