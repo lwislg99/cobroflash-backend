@@ -37,9 +37,9 @@ function mensajeDeErrorProveedor(codigoOMensaje, respaldo) {
 
   // Sólo los que necesitan decir algo DISTINTO del respaldo genérico.
   const M = {
-    // Texto NUEVO → marcador. Va con su palabra distintiva, no solo: si todos los errores dijeran
-    // lo mismo, la pantalla perdería la distinción que este ticket viene a dar.
-    name_duplicate: PRV_MARCADOR_MICROCOPY + ' nombre ya en uso',
+    // Texto APROBADO (SCRUM-1124, comentario 17002, firma delegada del orquestador). Consta en
+    // `docs/microcopy/2026-09-25-SCRUM-1124-proveedor-duplicado.md`.
+    name_duplicate: 'Ya tienes un proveedor con ese nombre',
     // Texto que YA EXISTÍA en esta pantalla y ya se enseñaba: se mueve, no se inventa. Por eso
     // NO lleva marcador — marcarlo diría que está sin aprobar, y lleva aprobado desde que se
     // escribió.

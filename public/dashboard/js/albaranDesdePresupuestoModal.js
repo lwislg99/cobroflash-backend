@@ -29,37 +29,29 @@
 // un peaje: es lo que hace visible el encadenamiento que el ticket quiere «sin la rigidez» de
 // Quipu.
 //
-// ── MICROCOPY · REGLA 30 · NINGUNO DE ESTOS SEIS TEXTOS ESTÁ APROBADO ───────────────────────
+// ── MICROCOPY · REGLA 30 · LOS SEIS TEXTOS ESTÁN APROBADOS (SCRUM-1124) ─────────────────────
 //
-// Van con el marcador VISIBLE a propósito, como hicieron `albaranesView` y el Libro registro antes
-// de que el asesor los firmara: se ve en pantalla para que nadie encienda por descuido texto que
-// nadie ha aprobado. El rótulo del BOTÓN no está aquí — vive en `atajoNuevo.js`, que es la fuente
-// única de los rótulos de «nuevo» de las listas, y allí tiene su propio contador.
+// Firmados por el orquestador por delegación permanente del fundador (regla 39;
+// `docs/equipo/limites-del-fundador.md` §Delegación permanente), SCRUM-1124 comentario 17002.
+// Consta en `docs/microcopy/2026-09-25-SCRUM-1124-buscador-albaran-presupuesto.md`. El rótulo
+// del BOTÓN no está aquí — vive en `atajoNuevo.js`, que es la fuente única de los rótulos de
+// «nuevo» de las listas, y allí tiene su propio contador.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 (function () {
   'use strict';
 
-  /** La grafía que CUENTA el censo de SCRUM-402/667. Desde un solo sitio. */
-  var MARCA = '[PENDIENTE microcopy oficial]';
-
-  /**
-   * Cuántas ranuras de ESTE fichero esperan la firma del fundador. Se declara para que nadie las
-   * cuente a mano y para que añadir una sin decirlo salga rojo (patrón de `PV_SIN_APROBAR` y de
-   * `ALB_OCULTAR_PRECIOS_SIN_APROBAR`). Cuando el fundador firme, el número BAJA y el trinquete
-   * aprieta; no se borra mientras quede una sin firmar.
-   */
-  var ALB_ORIGEN_SIN_APROBAR = 6;
-
   var COPY = {
-    buscar: MARCA + ' Busca por nº de presupuesto, cliente o teléfono',
-    vacio: MARCA + ' Ningún presupuesto coincide con esa búsqueda',
+    buscar: 'Busca por nº de presupuesto, cliente o teléfono',
+    vacio: 'Ningún presupuesto coincide con esa búsqueda',
     // Los DOS motivos del conjunto cerrado de `presupuestosParaAlbaran.ts`. Cada uno con su
     // texto: un motivo sin frase deja al profesional mirando un código, que es el defecto que
     // SCRUM-275 cerró en /login.html.
-    sin_trabajo: MARCA + ' Todavía no tiene trabajo: acepta el presupuesto y vuelve',
-    trabajo_no_visible: MARCA + ' Su trabajo no es tuyo',
-    truncado: MARCA + ' Puede haber más: afina la búsqueda',
-    error: MARCA + ' No se han podido cargar los presupuestos',
+    sin_trabajo: 'Todavía no tiene trabajo: acepta el presupuesto y vuelve',
+    // 🔄 CAMBIADO respecto a la propuesta («Su trabajo no es tuyo»): el orquestador firmó esta
+    // versión por lenguaje llano — la original sonaba a reproche y no decía quién lo tiene.
+    trabajo_no_visible: 'Ese trabajo es de otro técnico',
+    truncado: 'Puede haber más: afina la búsqueda',
+    error: 'No se han podido cargar los presupuestos',
   };
 
   /**
@@ -229,5 +221,4 @@
 
   window.abrirModalAlbaranDesdePresupuesto = abrirModalAlbaranDesdePresupuesto;
   window.ALB_ORIGEN_COPY = COPY;
-  window.ALB_ORIGEN_SIN_APROBAR = ALB_ORIGEN_SIN_APROBAR;
 })();

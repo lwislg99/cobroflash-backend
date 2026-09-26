@@ -6,7 +6,8 @@
 // ── EL INCIDENTE, MEDIDO ────────────────────────────────────────────────────────────────
 //
 // El 5-sep-2026 `main` se mergeó EN ROJO (PR #1065) y nadie lo vio venir. El objeto `CENSO` de
-// `scrum402-marcador-no-se-pinta.test.mjs` abre en la línea 54 y cierra en la 593, y dentro
+// `scrum402-marcador-no-se-pinta.test.mjs` abre en la línea 54 y cierra en la 722 (medido el
+// 26-sep-2026, SCRUM-1124: el censo creció por comentario, no por CENSO), y dentro
 // tenía la clave `'invoicesView.js'` DOS VECES:
 //
 //     línea 139 — la puso SCRUM-748  (4-sep): el rótulo del cuarto estado del semáforo
@@ -149,9 +150,13 @@ test('SCRUM-751 · NINGÚN objeto literal del árbol repite una clave', () => {
 // ═════════════════════════════════════════════════════════════════════════════════════════
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
+    // 🔴 SCRUM-1124 (26-sep-2026) · el ancla vivía en `'invoicesView.js': 1,`, y esa entrada SALIÓ
+    // del censo (el fundador firmó el texto, SCRUM-1124). El meta-guard la declaró CIEGA: «la
+    // declaración caducó». Se realoja en `'jobAsignados.js': 1,`, que el propio SCRUM-1124 dejó
+    // A CONCIENCIA (huérfana pero exigida por SCRUM-720, ver el censo) — no es una entrada de paso.
     fichero: 'tests/scrum402-marcador-no-se-pinta.test.mjs',
-    de: "  'invoicesView.js': 1,",
-    a: "  'invoicesView.js': 1,\n  'invoicesView.js': 1,",
+    de: "  'jobAsignados.js': 1,",
+    a: "  'jobAsignados.js': 1,\n  'jobAsignados.js': 1,",
     cae: 'NINGÚN objeto literal del árbol repite una clave',
   },
   {

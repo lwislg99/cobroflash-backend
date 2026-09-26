@@ -38,6 +38,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url'; // NUNCA `new URL().pathname`: no decodifica (SCRUM-730)
 
@@ -58,7 +59,10 @@ const JS = path.join(RAIZ, 'public/dashboard/js');
  * del fichero. Ése es todo el mecanismo: convertir «nadie se enteró» en «alguien lo afirmó».
  */
 const CENSO_DE_SITIOS = {
-  'albaranDesdePresupuestoModal.js': 6,
+  // 🔴 SCRUM-1124 (25-sep-2026) · `albaranDesdePresupuestoModal.js` SALE (tenía 6): el
+  // orquestador firmó los seis textos por delegación del fundador (comentario 17002). Consta en
+  // `docs/microcopy/2026-09-25-SCRUM-1124-buscador-albaran-presupuesto.md`. Entrada BORRADA, no
+  // puesta a 0.
   // 🔴 SCRUM-597 · 8-sep-2026 · `documentoAsignados.js` SALE: el fundador firmó los cinco
   // rótulos («me parecen genial los rótulos»), registrados en
   // `docs/microcopy/2026-09-08-SCRUM-597-quien-lleva-el-documento.md`. La entrada se BORRA, no
@@ -83,11 +87,20 @@ const CENSO_DE_SITIOS = {
   // aprobar el copy los apaga de golpe. El rótulo de la BARRA no cuenta aquí: SCRUM-420 §④ le
   // prohíbe llevar marcador, así que sale como texto plano desde que nace.
   'facturasRecibidasView.js': 1,
-  'invoicesView.js': 1,
+  // 🔴 SCRUM-1124 (25-sep-2026) · `invoicesView.js` SALE (tenía 1): el orquestador firmó
+  // «Estado no reconocido: ${codigo}» por delegación del fundador (comentario 17002). Consta en
+  // `docs/microcopy/2026-09-25-SCRUM-1124-estado-cobro-sin-mapear.md`. Entrada BORRADA.
   'libroRegistroView.js': 1,
-  'parteDetailView.js': 1,
+  // 🔴 SCRUM-1124 (25-sep-2026) · `parteDetailView.js` SALE (tenía 1): la constante `var M` que
+  // sostenía las últimas seis ranuras estaba huérfana desde su propia firma
+  // (`docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`) por un cierre de ticket
+  // incompleto; retirada al comprobarlo. Entrada BORRADA.
   'productsView.js': 3,
-  'providersView.js': 3,
+  // 🔴 SCRUM-1124 (25-sep-2026) · `providersView.js` BAJA de 3 a 2: `name_duplicate` quedó
+  // firmado (comentario 17002; `docs/microcopy/2026-09-25-SCRUM-1124-proveedor-duplicado.md`).
+  // Quedan los DOS respaldos de último recurso (`PRV_MARCADOR_MICROCOPY`, sin literal propio
+  // fuera de su declaración). La entrada NO se borra: sigue pintando 2 sitios por constante.
+  'providersView.js': 2,
   // 🔴 SCRUM-632 · 8-sep-2026 · `quotesView.js` SUBE de 3 a 4, y a conciencia.
   //
   // Entra el rótulo del campo de DESCRIPCIÓN DE LA LÍNEA. El mecanismo no existe sin él: la
@@ -116,11 +129,20 @@ const CENSO_DE_SITIOS = {
   // El censo de SCRUM-402 no se mueve —sigue en 1— y tampoco se movió al añadirlas: cuenta
   // LITERALES por AST, y el único literal de este fichero es la declaración de `MARCADOR`. Ése
   // es exactamente el hueco que este contador existe para tapar.
-  // 🔴 SCRUM-530 · 15-sep-2026 · `reportsView.js` ENTRA con 1 sitio: 29 → 30.
-  // La tarjeta de WhatsApp pasa a decir que no puede pronunciarse cuando la muestra de 7 días no
-  // llega al mínimo, en vez de callarse. El texto es del fundador (regla 30) y va con marcador.
-  'reportsView.js': 1,
-  'switchFormaJuridica.js': 4,
+  // 🔴 SCRUM-530 · 15-sep-2026 · `reportsView.js` ENTRÓ con 1 sitio: 29 → 30. La tarjeta de
+  // WhatsApp pasaba a decir que no puede pronunciarse cuando la muestra de 7 días no llega al
+  // mínimo, en vez de callarse.
+  //
+  // 🔴 SCRUM-1124 (25-sep-2026) · `reportsView.js` SALE: el orquestador firmó «Aún no hay
+  // suficientes envíos para calcular esto: ${sample} de ${minimo} en los últimos 7 días.» por
+  // delegación del fundador (comentario 17002). Consta en
+  // `docs/microcopy/2026-09-25-SCRUM-1124-muestra-insuficiente-whatsapp.md`. Entrada BORRADA.
+  //
+  // 🔴 SCRUM-1124 (25-sep-2026) · `switchFormaJuridica.js` SALE (tenía 4): los tres rótulos del
+  // switch —pregunta, «Empresa», «Persona»— quedaron firmados por delegación del fundador
+  // (comentario 17002). Consta en
+  // `docs/microcopy/2026-09-25-SCRUM-1124-switch-forma-juridica.md`. La constante `MARCADOR` se
+  // retiró entera. Entrada BORRADA, no puesta a 0.
   'tipoDestinatarioPendiente.js': 2,
 };
 const TOTAL_DE_SITIOS = Object.values(CENSO_DE_SITIOS).reduce((t, n) => t + n, 0);
@@ -145,13 +167,13 @@ const PINTAN_Y_NO_CUENTAN = {
   // `CENSO_DE_SITIOS` arriba). Entrada BORRADA, no puesta a 0 (SCRUM-424 / SCRUM-405).
   'facturasRecibidasView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera (mismo criterio que libroRegistroView.js), y `scrum1040-pantalla-facturas-recibidas` la compara ranura a ranura',
   'libroRegistroView.js': 'la pantalla entera va marcada por decisión escrita en su cabecera, y `scrum296-pantalla-libro` la compara ranura a ranura',
-  'parteDetailView.js': 'su propio comentario dice que entra en el censo de SCRUM-402 con su número',
   'providersView.js': 'mensajes de error y respaldo de último recurso; `scrum644-trinquete-mensaje-crudo` los vigila',
-  'reportsView.js': 'su única ranura es el aviso de muestra corta de la tarjeta de WhatsApp, y `scrum530-la-alerta-que-no-puede-pronunciarse` la sujeta con su número (3/10) y con los dos controles de alerta',
   'settingsView.js': 'rótulo del modo de emisión, cubierto por `scrum298-modo-visible`',
-  'switchFormaJuridica.js': 'los rótulos del control, cubiertos por `scrum574-switch-forma-juridica`',
   'tipoDestinatarioPendiente.js': 'el aviso entero es la ranura; `scrum615` y `scrum622` la sujetan',
 };
+// 🔴 SCRUM-1124 (25-sep-2026) · SALEN de aquí `parteDetailView.js`, `reportsView.js` y
+// `switchFormaJuridica.js`: sus rótulos quedaron firmados (comentario 17002) y ya no pintan
+// ningún marcador — `ranurasDelPanel` no los lista, así que tampoco tienen sitio en este dict.
 
 /**
  * EL OTRO LADO DEL HUECO, y es el que decide la recomendación: ficheros que DECLARAN ranuras
@@ -170,11 +192,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // 🔴 POR LA CONSTANTE, y ahí está la grieta que este guard cubre y el trinquete de SCRUM-402
     // no: aquél cuenta LITERALES por AST —lo dice él mismo— y el único literal de este fichero es
-    // la DECLARACIÓN de `INV_MARCADOR_MICROCOPY`, que no se mueve por añadirle usos. Medido: con
+    // la DECLARACIÓN de `PV_MARCADOR_MICROCOPY`, que no se mueve por añadirle usos. Medido: con
     // esta mutación SCRUM-402 se queda VERDE. Es la forma exacta del incidente de SCRUM-648 B.
-    fichero: 'public/dashboard/js/invoicesView.js',
-    de: '  const INV_SIN_APROBAR = 1;',
-    a: '  const INV_SIN_APROBAR = 1;\n  const INV_ROTULO_NUEVO = INV_MARCADOR_MICROCOPY + \' nuevo\';',
+    //
+    // 🔄 SCRUM-1124 · este ejemplo vivía en `invoicesView.js` (`INV_SIN_APROBAR`), retirado al
+    // firmarse su rótulo. Se pasa a `productsView.js` (`PV_SIN_APROBAR`), que sigue sin firmar.
+    fichero: 'public/dashboard/js/productsView.js',
+    de: 'const PV_SIN_APROBAR = 2;',
+    a: 'const PV_SIN_APROBAR = 2;\nconst PV_ROTULO_NUEVO = PV_MARCADOR_MICROCOPY + \' nuevo\';',
     cae: 'SCRUM-755 · 🔴 EL ÁRBOL PINTA MÁS MARCADORES DE LOS DECLARADOS',
   },
   {
@@ -188,14 +213,33 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 test('SCRUM-755 · SUELO: el lector VE los marcadores que hay (si no, el cero de abajo no vale)', () => {
   const panel = ranurasDelPanel(RAIZ);
   const total = Object.values(panel).reduce((t, s) => t + s.length, 0);
-  assert.ok(total >= 20,
+  // 🔴 SCRUM-1124 (25-sep-2026) · el suelo BAJA de 20 a 8: siete ficheros salieron del panel al
+  // firmarse sus textos (comentario 17002) y el total real pasó de ~30 a 11 (CENSO_DE_SITIOS).
+  // Un suelo de alcance se escribe a mano a propósito (SCRUM-377) y éste bajó porque la POBLACIÓN
+  // bajó de verdad, medido, no porque el instrumento dejara de ver.
+  assert.ok(total >= 8,
     `el lector sólo encuentra ${total} sitios con marcador en todo el panel. ` +
     'Un número bajo aquí no es una buena noticia: es un instrumento que dejó de mirar.');
 
-  // Y que sabe leer las DOS formas, porque la casa usa las dos.
+  // 🔴 SCRUM-1124 · YA NO QUEDA NINGÚN SITIO «literal» EN EL ÁRBOL REAL: los siete ficheros que
+  // salieron pintaban el suyo directo (sin constante) o eran el único literal de su fichero, y los
+  // que quedan (`productsView.js`, `providersView.js`…) sólo pintan por constante, de último
+  // recurso. Medido: `porVia.literal` real es 0 hoy. Comprobar «las DOS formas» contra el árbol ya
+  // no puede depender de que alguna pantalla siga sin firmar — así que la vía «literal» se prueba
+  // con un CONTROL, igual que hacen `scrum622`/`scrum748` cuando el caso real desaparece.
   const porVia = Object.values(panel).flat().reduce((a, s) => (a[s.via] = (a[s.via] || 0) + 1, a), {});
-  assert.ok(porVia.literal > 0, 'el lector no ve ni un marcador escrito como literal');
   assert.ok(porVia.constante > 0, 'el lector no ve ni un marcador puesto a través de su constante');
+
+  const tmp = path.join(os.tmpdir(), `scrum755-control-literal-${Date.now()}.js`);
+  fs.writeFileSync(tmp, `el.textContent = '${MARCA} control de la vía literal';\n`);
+  try {
+    const sitios = ranurasDe(tmp);
+    assert.deepEqual(sitios.map((s) => s.via), ['literal'],
+      'el lector ya no detecta la vía «literal» ni en un fixture construido a propósito: es el ' +
+      'instrumento el que se quedó ciego, no que hayan desaparecido los literales.');
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
 });
 
 /**
@@ -267,7 +311,8 @@ test('SCRUM-755 · ninguno de ellos está DESNUDO: los cubre el censo de SCRUM-4
   // SUELO: si el lector no encuentra el censo ajeno, el «todos cubiertos» de abajo sería el
   // verde de no haber mirado.
   assert.ok(censo402.size > 5, `sólo leo ${censo402.size} entradas del censo de SCRUM-402: no lo estoy leyendo`);
-  assert.ok(censo402.has('invoicesView.js'), 'no encuentro una entrada conocida en el censo de SCRUM-402');
+  // 🔄 SCRUM-1124 · era `invoicesView.js`, que salió del censo de SCRUM-402 al firmarse su rótulo.
+  assert.ok(censo402.has('libroRegistroView.js'), 'no encuentro una entrada conocida en el censo de SCRUM-402');
 
   const desnudos = Object.keys(PINTAN_Y_NO_CUENTAN).filter((f) => !censo402.has(f));
   assert.deepEqual(desnudos, [],
@@ -315,8 +360,10 @@ test('SCRUM-755 · EL LECTOR OFICIAL ME VE — la declaración no vale si el met
 test('SCRUM-755 · el marcador que se busca es el de la casa, no uno inventado aquí', () => {
   // Suelo del suelo: si alguien cambia el texto del marcador en el panel y no aquí, este guard
   // se quedaría mirando una cadena que ya no existe y saldría verde por no encontrar nada.
-  const invoices = fs.readFileSync(path.join(JS, 'invoicesView.js'), 'utf8');
-  assert.ok(invoices.includes(MARCA),
-    `el marcador que busca este guard (${MARCA}) ya no aparece en invoicesView.js: ` +
+  // 🔄 SCRUM-1124 · el ejemplo era `invoicesView.js`, y salió del censo al firmarse su rótulo:
+  // se pasa a `productsView.js`, que sigue llevando `PV_MARCADOR_MICROCOPY` de último recurso.
+  const products = fs.readFileSync(path.join(JS, 'productsView.js'), 'utf8');
+  assert.ok(products.includes(MARCA),
+    `el marcador que busca este guard (${MARCA}) ya no aparece en productsView.js: ` +
     'o cambió el texto oficial, o el guard se quedó ciego. Las dos cosas se arreglan aquí.');
 });

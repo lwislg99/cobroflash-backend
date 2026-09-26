@@ -770,8 +770,9 @@ async function loadWhatsAppMetrics(card) {
   //      y significan lo contrario.
   //
   // El mínimo NO se escribe aquí: viaja en el DTO, porque la misma regla en dos sitios es cómo
-  // una de las dos se queda atrás. Y el texto de este tercer caso es del fundador (regla 30):
-  // va MARCADO y sin escribir.
+  // una de las dos se queda atrás. El texto de este tercer caso está aprobado (SCRUM-1124,
+  // comentario 17002, firma delegada del orquestador): consta en
+  // `docs/microcopy/2026-09-25-SCRUM-1124-muestra-insuficiente-whatsapp.md`.
   const al = data.alert || {};
   const muestraCorta = al.active !== true
     && typeof al.minimo === 'number'
@@ -779,7 +780,7 @@ async function loadWhatsAppMetrics(card) {
   const alertHtml = al.active
     ? `<div class="alert warning" style="display:block;margin:0 0 14px">⚠ Tasa de entrega de los últimos 7 días: <strong>${al.deliveryRate7d}%</strong> (por debajo del 90%). Revisa el runbook R1/R2.</div>`
     : muestraCorta
-      ? `<div class="alert" data-microcopy="PENDIENTE_FUNDADOR" style="display:block;margin:0 0 14px">[PENDIENTE microcopy oficial] · <strong>${Number(al.sample || 0)}/${al.minimo}</strong></div>`
+      ? `<div class="alert" style="display:block;margin:0 0 14px">Aún no hay suficientes envíos para calcular esto: <strong>${Number(al.sample || 0)}</strong> de <strong>${al.minimo}</strong> en los últimos 7 días.</div>`
       : '';
 
   // A5.4: plantilla (pagada) vs ventana (gratis) — el ahorro se enseña

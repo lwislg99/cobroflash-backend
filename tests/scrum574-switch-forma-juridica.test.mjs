@@ -152,16 +152,14 @@ test('SCRUM-574 · los dos formularios llevan el switch, y sale del MISMO compon
   assert.match(leer(INDEX), /switchFormaJuridica\.js/, '🔴 el componente no está cargado en index.html: los dos formularios petarían');
 });
 
-test('SCRUM-574 · 🔴 NADIE escribe microcopy: las tres etiquetas van con el marcador oficial', () => {
-  // Regla 30: la pregunta y las dos etiquetas son del fundador. Salen con marca + palabra de
-  // trabajo, que es el patrón que `scripts/censo-marcadores.mjs` cuenta como legible.
+test('SCRUM-574 · las tres etiquetas llevan el texto APROBADO (SCRUM-1124), sin marcador', () => {
+  // SCRUM-1124 (comentario 17002, firma delegada del orquestador) firmó los tres. Constan en
+  // `docs/microcopy/2026-09-25-SCRUM-1124-switch-forma-juridica.md`.
   const codigo = soloCodigo(leer(COMPONENTE));
-  assert.equal(mod.MARCADOR, '[PENDIENTE microcopy oficial]', '🔴 el marcador no es el oficial del repo');
-  const conMarca = (codigo.match(/MARCADOR \+ '/g) || []).length;
-  assert.ok(
-    conMarca >= 2,
-    `🔴 solo ${conMarca} rótulo(s) llevan el marcador: la pregunta y las dos etiquetas tienen que llevarlo`,
-  );
+  assert.equal(codigo.includes('[PENDIENTE'), false,
+    '🔴 ha vuelto un marcador al switch: los tres textos ya están firmados.');
+  assert.match(codigo, /textContent = 'Este contacto es'/, '🔴 falta la pregunta aprobada');
+  assert.match(codigo, /valor === 'EMPRESA' \? 'Empresa' : 'Persona'/, '🔴 faltan las dos etiquetas aprobadas');
 });
 
 test('SCRUM-574 · 🔴 el switch NUNCA cae a un lado por defecto', () => {

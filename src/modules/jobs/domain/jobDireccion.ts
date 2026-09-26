@@ -44,12 +44,12 @@ export function normalizarJobDireccion(v: unknown): string | null {
 /** El código del 409 cuando escribir la dirección dejaría una evidencia firmada sin verificar. */
 export const ERROR_DIRECCION_SELLADA = 'direccion_sellada_en_evidencia';
 
-// SCRUM-424 · microcopy SIN APROBAR (regla 30). Solo se ve en el caso raro de abajo: un Trabajo con
-// un albarán firmado ANTES de SCRUM-300. Texto propuesto al fundador en el informe del ticket.
+// SCRUM-424 · microcopy APROBADA (SCRUM-1124, comentario 17002, firma delegada del orquestador).
+// Solo se ve en el caso raro de abajo: un Trabajo con un albarán firmado ANTES de SCRUM-300.
+// Consta en `docs/microcopy/2026-09-25-SCRUM-1124-direccion-albaran-firmado.md`.
 export const MSG_DIRECCION_SELLADA =
-  '[PENDIENTE microcopy oficial · propuesta: No se puede añadir la dirección a este trabajo: ' +
-  'tiene un albarán ya firmado que la lleva dentro de su firma. Cambiarla dejaría esa firma sin ' +
-  'poder verificarse.]';
+  'No se puede añadir la dirección a este trabajo: tiene un albarán ya firmado que la lleva ' +
+  'dentro de su firma. Cambiarla dejaría esa firma sin poder verificarse.';
 
 /**
  * 🔴 REGLA 29 · ¿LEE ESTA VERSIÓN DE SOBRE LA DIRECCIÓN DEL TRABAJO?

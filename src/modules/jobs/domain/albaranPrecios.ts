@@ -83,14 +83,13 @@ export function referenciaPresupuesto(quote: { id?: unknown; number?: unknown } 
 }
 
 /**
- * ⚠️ MICROCOPY SIN APROBAR (regla 30). Sale con la grafía que CUENTA el censo de SCRUM-402
- * —`[PENDIENTE`—, para que aprobarlo lo apague desde un solo sitio.
+ * ✅ MICROCOPY APROBADA (SCRUM-1124, comentario 17002, firma delegada del orquestador). Consta
+ * en `docs/microcopy/2026-09-25-SCRUM-1124-referencia-presupuesto-albaran.md`.
  *
- * Va impreso en un papel que recibe el CLIENTE, así que el marcador se ve: es incómodo a
- * propósito. La alternativa —inventarme el literal— es lo que la regla 30 prohíbe.
+ * Va impreso en un papel que recibe el CLIENTE.
  */
 // 🔴 SIN `export`, y lo pidió el trinquete de SCRUM-411: su único consumidor real es
 // `referenciaPresupuesto`, aquí al lado. Exportarlo sólo para que lo lea un test es un export
 // huérfano — desde fuera no se distingue de una pieza entregada. Se prueba por la SUPERFICIE
 // PÚBLICA, que es la que de verdad tiene consumidor.
-const ROTULO_PRESUPUESTO_ORIGEN = 'Presupuesto nº [PENDIENTE microcopy oficial]';
+const ROTULO_PRESUPUESTO_ORIGEN = 'Presupuesto nº';

@@ -123,19 +123,17 @@ async function fetchInvoices(options = {}) {
   // desconocido SE VE. Ahí está escrito por qué, y es el reverso exacto de SCRUM-641: en un
   // aviso de error enseñar el código ES el defecto; en un rótulo de estado, ESCONDERLO lo es.
   //
-  // ⚠️ EL RÓTULO NO ESTÁ ESCRITO. Va con marcador hasta que lo firme quien puede: no es una
-  // frase que pueda inventar quien programa (regla 30). Y no se construye el cuarto estado:
-  // eso es del fundador (regla 27). Esto sólo deja de mentir sobre él.
+  // ✅ EL RÓTULO ESTÁ APROBADO (SCRUM-1124, comentario 17002, firma delegada del orquestador).
+  // Consta en `docs/microcopy/2026-09-25-SCRUM-1124-estado-cobro-sin-mapear.md`. El cuarto
+  // estado SIGUE sin construirse: eso es del fundador (regla 27). Esto sólo deja de mentir sobre
+  // él, con el texto ya firmado.
   // ═══════════════════════════════════════════════════════════════════════════════════════
-  const INV_MARCADOR_MICROCOPY = '[PENDIENTE microcopy oficial]';
-
-  /** Cuántas ranuras estrena esta pantalla SIN la firma del fundador. UNA: el rótulo de abajo. */
-  const INV_SIN_APROBAR = 1;
+  const INV_ROTULO_DESCONOCIDO = 'Estado no reconocido';
 
   /**
    * La insignia de un semáforo. Un estado que no está en el mapa NO se disfraza del más
-   * inocente: se pinta con marcador y con su código a la vista, y se avisa por consola —donde
-   * lo ve quien puede mapearlo, no quien está mirando si le deben dinero.
+   * inocente: se enseña con su código a la vista, y se avisa por consola —donde lo ve quien
+   * puede mapearlo, no quien está mirando si le deben dinero.
    */
   function metaDelSemaforo(semaforo) {
     const conocido = SEMAFORO_META[semaforo];
@@ -144,12 +142,11 @@ async function fetchInvoices(options = {}) {
     // el rótulo nunca termine en un espacio colgando que se leería como un fallo de pintado.
     const codigo = String(semaforo == null ? '' : semaforo).trim().toUpperCase() || '—';
     try { console.warn('[invoicesView] semáforo sin mapear:', semaforo); } catch (_) { /* sin consola */ }
-    return { pillClass: 'status-pill-draft', label: INV_MARCADOR_MICROCOPY + ' ' + codigo };
+    return { pillClass: 'status-pill-draft', label: INV_ROTULO_DESCONOCIDO + ': ' + codigo };
   }
   if (typeof window !== 'undefined') {
     window.metaDelSemaforo = metaDelSemaforo;
-    window.INV_MARCADOR_MICROCOPY = INV_MARCADOR_MICROCOPY;
-    window.INV_SIN_APROBAR = INV_SIN_APROBAR;
+    window.INV_ROTULO_DESCONOCIDO = INV_ROTULO_DESCONOCIDO;
   }
 
   // SCRUM-210: `copyRojo` se MUDÓ a api.js sin tocar una letra de su texto. Motivo: el semáforo

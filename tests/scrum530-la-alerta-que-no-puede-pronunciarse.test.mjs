@@ -18,8 +18,8 @@
 // Es la misma familia que «un CERO no es "está limpio", es "no he mirado"» (A3), aplicada a lo
 // que ve un cliente de pago.
 //
-// ⛔ MICROCOPY: el texto del caso nuevo es del fundador (regla 30). Aquí se exige que la pantalla
-// DIGA algo y que lleve su marca `[PENDIENTE microcopy oficial]`; **no** se exige un literal.
+// ✅ MICROCOPY: el texto del caso nuevo quedó APROBADO (SCRUM-1124, comentario 17002, firma
+// delegada del orquestador). Aquí se exige ya el LITERAL exacto, no sólo que lleve marca.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,6 +28,11 @@ import { cargarDashboard, pintarVista } from './_banco-vistas.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const MARCA = '[PENDIENTE microcopy oficial]';
+// SCRUM-1124 · el texto quedó APROBADO (comentario 17002, firma delegada del orquestador):
+// `docs/microcopy/2026-09-25-SCRUM-1124-muestra-insuficiente-whatsapp.md`. Los tests de abajo
+// comprueban ya el LITERAL, no el marcador — `MARCA` queda declarada sin usar como constancia de
+// lo que decía antes esta suite.
+const TEXTO_MUESTRA_CORTA = 'Aún no hay suficientes envíos para calcular esto';
 
 /**
  * El mínimo que el SERVICIO manda en el DTO. No se elige aquí: lo comprueba contra el servicio de
@@ -88,21 +93,21 @@ test('SCRUM-530 · 🔴 EL QUE DECIDE: 3 envíos y 2 fallos — la pantalla NO p
   assert.equal(d.alert.deliveryRate7d, 33, 'precondición: la tasa es 33 %, un desastre');
 
   const { html } = await pintarTarjeta(d);
-  assert.ok(html.includes(MARCA),
+  assert.ok(html.includes(TEXTO_MUESTRA_CORTA),
     '🔴 EL FONTANERO NO SE ENTERA DE NADA. Con 3 envíos y 2 fallos (33 % de entrega) la tarjeta '
     + 'no dice ni que hay un problema ni que no puede pronunciarse: pinta lo mismo que si todo '
-    + `fuera bien. La pantalla tiene que DECIR que la muestra es corta, con su ${MARCA}.\n`
+    + `fuera bien. La pantalla tiene que DECIR que la muestra es corta, con el literal aprobado.\n`
     + `  pintado: ${html.replace(/\s+/g, ' ').slice(0, 300)}`);
 });
 
 test('SCRUM-530 · la muestra corta se dice CON SU NÚMERO, no en abstracto', async () => {
   const { html } = await pintarTarjeta(metricas({ enviados: 3, entregados: 1 }));
-  // los dos números van PEGADOS a la marca, no sueltos por la tarjeta: los KPI ya imprimen un 3
-  // por su cuenta, así que buscarlo suelto aprobaría el silencio.
-  assert.match(html.replace(/<[^>]+>/g, ''), /\[PENDIENTE microcopy oficial\][^\n]*\b3\s*\/\s*10\b/,
+  // los dos números van dentro de la misma frase, no sueltos por la tarjeta: los KPI ya imprimen
+  // un 3 por su cuenta, así que buscarlo suelto aprobaría el silencio.
+  assert.match(html.replace(/<[^>]+>/g, ''), /Aún no hay suficientes envíos para calcular esto:\s*3\s*de\s*10\s*en los últimos 7 días\./,
     'si la pantalla va a decir que no puede pronunciarse, tiene que decir SOBRE CUÁNTOS: la '
-    + 'muestra que hay y la que haría falta, juntas y junto a la marca. Un aviso sin población '
-    + `es la misma frase que el silencio.\n  pintado: ${html.replace(/\s+/g, ' ').slice(0, 300)}`);
+    + 'muestra que hay y la que haría falta, dentro de la misma frase aprobada. Un aviso sin '
+    + `población es la misma frase que el silencio.\n  pintado: ${html.replace(/\s+/g, ' ').slice(0, 300)}`);
 });
 
 // ═══ ✅ POSITIVO — si esto empieza a alertar a todo el mundo, lo apagarán ═════════════════════
@@ -112,7 +117,7 @@ test('SCRUM-530 · ✅ POSITIVO: 20 envíos y buena tasa NO recibe ninguna alert
   assert.ok(!/por debajo del 90/.test(html),
     '🔴 se está alertando a un merchant con 95 % de entrega: eso es lo que hace que la gente '
     + 'apague los avisos.');
-  assert.ok(!html.includes(MARCA),
+  assert.ok(!html.includes(TEXTO_MUESTRA_CORTA),
     '🔴 con muestra de sobra la pantalla no tiene por qué decir que no puede pronunciarse.');
 });
 

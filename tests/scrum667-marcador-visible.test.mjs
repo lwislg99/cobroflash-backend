@@ -84,9 +84,12 @@ const CENSO_SERVIDOR = Object.freeze({
   // aceptó—, y eso es peor que el marcador. Los DOS textos de la casilla que lo enciende viven
   // en `jobDetailView.js` y están declarados en el censo de SCRUM-402.
   //
-  // El asesor firma con las cajas ya medidas (929 y 390 px, en `docs/master/SCRUM-607.md`). Ese
-  // día la entrada se BORRA, no se pone a 0.
-  'src/modules/jobs/domain/albaranPrecios.ts': 1,
+  // El asesor firmaba con las cajas ya medidas (929 y 390 px, en `docs/master/SCRUM-607.md`).
+  //
+  // 🔴 SCRUM-1124 (25-sep-2026) · SALE DEL CENSO: el rótulo «Presupuesto nº» quedó firmado por
+  // el orquestador por delegación del fundador (comentario 17002). Consta en
+  // `docs/microcopy/2026-09-25-SCRUM-1124-referencia-presupuesto-albaran.md`. Entrada BORRADA,
+  // no puesta a 0.
   // Mensajes de error de API (409): los lee el profesional en un aviso del panel.
   'src/modules/jobs/app/routes/albaranes.routes.ts': 1,
   'src/modules/system/app/routes/invoicesAdmin.routes.ts': 1,
@@ -100,9 +103,11 @@ const CENSO_SERVIDOR = Object.freeze({
   // de API (409): los lee el profesional en un aviso del panel, nunca en un PDF.
   'src/modules/jobs/app/routes/jobs.routes.ts': 1,
   'src/modules/system/app/routes/quotesAdmin.routes.ts': 1,
-  // Etiqueta de la calidad del firmante y aviso de dirección del trabajo.
+  // Etiqueta de la calidad del firmante.
   'src/modules/jobs/domain/albaranFirmante.ts': 1,
-  'src/modules/jobs/domain/jobDireccion.ts': 1,
+  // 🔴 SCRUM-1124 (25-sep-2026) · `jobDireccion.ts` SALE DEL CENSO: `MSG_DIRECCION_SELLADA`
+  // quedó firmado por el orquestador por delegación del fundador (comentario 17002). Consta en
+  // `docs/microcopy/2026-09-25-SCRUM-1124-direccion-albaran-firmado.md`. Entrada BORRADA.
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -113,9 +118,9 @@ const CENSO_SERVIDOR = Object.freeze({
 // ═════════════════════════════════════════════════════════════════════════════════════════
 const EN_EL_PAPEL = Object.freeze({
   'MARCADOR_MICROCOPY_DESGLOSE': 'factura con MÁS DE UN tipo de IVA — el rótulo de la columna de bases',
-  // SCRUM-607 (ALB-02): el pie del ALBARÁN, con el presupuesto de origen. Se imprime siempre que
-  // el Trabajo venga de un presupuesto — con precios y sin ellos.
-  'ROTULO_PRESUPUESTO_ORIGEN': 'albarán cuyo Trabajo viene de un presupuesto — el pie con su número',
+  // SCRUM-607 (ALB-02) · `ROTULO_PRESUPUESTO_ORIGEN` SALIÓ el 25-sep-2026 (SCRUM-1124): el pie
+  // del albarán con el presupuesto de origen imprime ya «Presupuesto nº», firmado por delegación
+  // del fundador (comentario 17002). Ya no lleva marcador.
 });
 
 /** Una factura de prueba. Los campos son `qty`/`price`/`tax` (fracción), que es lo que lee el generador. */

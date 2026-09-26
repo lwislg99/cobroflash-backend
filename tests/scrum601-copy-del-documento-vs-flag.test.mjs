@@ -190,7 +190,12 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   const en = (f, l) => censo.visibles.filter((v) => v.fichero === f && v.linea === l);
 
   // POSITIVO, del árbol real: el rótulo del botón SÍ deriva del flag.
-  const boton = en('public/dashboard/js/invoicesView.js', 223);
+  //
+  // SCRUM-1124 (26-sep-2026) · 223 → 220: al firmar el rótulo del semáforo sin mapear, el bloque
+  // de comentario+constantes que hay ENCIMA de este botón pierde 3 líneas netas en DOS hunks
+  // (un `⚠️`→`✅` de 19→17 líneas y un `window.INV_*` de 12→11). Cifra MEDIDA con el propio censo
+  // sobre el árbol resultante (no deducida del diff, que sólo enseña -2 en el primer hunk).
+  const boton = en('public/dashboard/js/invoicesView.js', 220);
   assert.equal(boton.length, 1, 'no se encuentra el rótulo «+ Nuevo justificante» donde se midió');
   assert.equal(boton[0].texto, '+ Nuevo justificante');
   assert.equal(boton[0].dependeDelFlag, true,
@@ -330,7 +335,11 @@ test('SCRUM-601 · 🔴 el flujo del documento suelto NO habla con una sola voz 
 
   // Premisa: el botón que ABRE este modal sí deriva del flag. Si dejara de hacerlo, la
   // contradicción desaparecería por el lado malo y este test tiene que enterarse.
-  const boton = censo.visibles.find((v) => v.fichero === 'public/dashboard/js/invoicesView.js' && v.linea === 223);
+  //
+  // SCRUM-1124 (26-sep-2026) · 223 → 220: mismo desplazamiento y mismo motivo que el anclaje de
+  // arriba en este fichero (línea ~193): 3 líneas netas menos en el bloque de comentario+
+  // constantes que precede al botón. Medido con el propio censo, no deducido.
+  const boton = censo.visibles.find((v) => v.fichero === 'public/dashboard/js/invoicesView.js' && v.linea === 220);
   assert.ok(boton && boton.dependeDelFlag,
     'el rótulo del botón ha dejado de derivar del flag: ya no hay «uno sí y otro no», hay «ninguno».');
 

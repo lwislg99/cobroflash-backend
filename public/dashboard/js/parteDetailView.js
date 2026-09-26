@@ -26,15 +26,14 @@
   'use strict';
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
-  // 🔴 MICROCOPY SIN APROBAR (regla 30). Todo lo de aquí SALE MARCADO hasta que el fundador lo
-  // firme, y por eso este fichero entra en el censo de SCRUM-402 con su número.
-  //
-  // Se propone con las palabras del papel —«UNDS», «Mano de obra», «Materiales», «Entrada»,
-  // «Salida», «Desplazamiento», «Kilómetros», «REF»— porque son las que el técnico ya lee en el
-  // impreso que rellena hoy. Estrenar sinónimos obligaría a traducir mentalmente entre el papel y
-  // la pantalla justo cuando está en casa de un cliente.
+  // SCRUM-1124 · Los textos de abajo YA están aprobados (varios con cita a
+  // `docs/microcopy/` y su ticket: SCRUM-818, SCRUM-704, SCRUM-703). La constante `M` que los
+  // sujetaba dejó de usarse, pero NO se retira: SCRUM-720 fijó que el mecanismo se VACÍA, no se
+  // quita, para que el rótulo que alguien añada mañana sin firmar siga naciendo marcado
+  // (`tests/scrum720-marcadores-en-lo-pintado.test.mjs`).
   // ═══════════════════════════════════════════════════════════════════════════════════════
-  var M = '[PENDIENTE microcopy oficial] ';
+  var M = '[PENDIENTE microcopy oficial]';
+
   var TEXTOS = {
     tituloFirma: 'Firma del cliente',
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
