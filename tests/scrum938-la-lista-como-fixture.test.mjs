@@ -12,10 +12,13 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 import {
-  clasificar, elementosDeLaLista, importaDe, usoDeLaLista,
+  clasificar, elementosDeLaLista, importaDe, usoDeLaLista, decidirVaciando,
 } from '../scripts/censo-lista-como-fixture.mjs';
 
 // 🔴 MUTACIONES_QUE_ME_TUMBAN · SCRUM-745.
@@ -179,4 +182,148 @@ test('SCRUM-938 · 🔴 ④bis un MOTIVO en prosa no es un elemento de la lista'
   assert.ok(elementos.includes('a/'), '🔴 CIEGO: no extrae el elemento legítimo.');
   assert.ok(!elementos.some((e) => e.length >= 60),
     `🔴 la prosa del motivo entró como elemento: ${JSON.stringify(elementos.filter((e) => e.length >= 60))}`);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ⑤ SCRUM-938b §3.1 · LA PROPIA DECLARACIÓN NO ES UN USO
+//
+// `Object.freeze({...})` pone una llamada ENCIMA de la declaración misma: sin excluirla, la forma
+// ③ contaba los literales de la lista consigo misma. Medido: de 42 candidatos con forma ③, en 22
+// la ③ era SÓLO esto — 8 pasaron de (a) a (b) y 14 de (b) a LIMPIO al arreglarlo. Carril S3
+// (comentario 15925 de SCRUM-938: «arreglar el instrumento, antes de trabajar la fase b»).
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-938 · 🔴 ⑤ CASO CONOCIDO: sólo DECLARAR la lista (`Object.freeze`) no es usarla como fixture', () => {
+  const soloDeclaracion = "export const EXCEPCIONES = Object.freeze({ 'settingsView.js': 1 });";
+  const { elementos } = elementosDeLaLista(soloDeclaracion, 'EXCEPCIONES');
+  const uso = usoDeLaLista(soloDeclaracion, 'EXCEPCIONES', elementos);
+  assert.equal(clasificar(uso), 'LIMPIO',
+    '🔴 acusa a un fichero que sólo DECLARA la lista, sin usarla en ningún caso: `Object.freeze` '
+    + 'envuelve la declaración, no un uso, y contarlo como forma ③ es autoacusarse.');
+});
+
+test('SCRUM-938 · 🔴 ⑤bis CASO CONOCIDO: con un uso real ADEMÁS de la declaración, baja de (a) a (b), no desaparece', () => {
+  const declaracionYUso = [
+    "export const EXCEPCIONES = Object.freeze({ 'settingsView.js': 1 });",
+    "test('caso', () => { revisar(EXCEPCIONES); });",
+  ].join('\n');
+  const { elementos } = elementosDeLaLista(declaracionYUso, 'EXCEPCIONES');
+  const uso = usoDeLaLista(declaracionYUso, 'EXCEPCIONES', elementos);
+  assert.equal(clasificar(uso), '(b) DEGRADA',
+    '🔴 con la declaración contando como forma extra salía (a) MIENTE por "dos formas" que en '
+    + `realidad eran una sola (el uso real, ①): ${clasificar(uso)}`);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ⑥ SCRUM-938b §3.3 · LA SONDA TIENE QUE SER HERMANA DE VERDAD, NO SIEMPRE EN `tests/`
+//
+// Medido: 3 de 46 copias IDÉNTICAS (sin vaciar nada) caían solas porque `decidirVaciando` escribía
+// la copia siempre en `tests/`, y un fichero que vive fuera de ahí (`scripts/…`,
+// `docs/master/evidencias/…`) pierde sus imports relativos al mudarse de directorio. El síntoma es
+// «caen 1 de 1» — que se lee igual que la lista vaciada tumbando el caso, y es el propio fichero
+// reventando al cargar.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-938 · 🔴 ⑥ CASO CONOCIDO: una lista fuera de `tests/`, con un import relativo, decide bien', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum938-hermano-'));
+  try {
+    const dirGuard = path.join(tmp, 'scripts', 'subdir');
+    fs.mkdirSync(dirGuard, { recursive: true });
+    fs.writeFileSync(path.join(dirGuard, 'ayudante.mjs'), "export const AYUDA = 'ok';\n");
+    fs.writeFileSync(path.join(dirGuard, 'guard-fixture-real.mjs'), [
+      "import test from 'node:test';",
+      "import assert from 'node:assert/strict';",
+      "import { AYUDA } from './ayudante.mjs';",
+      "export const LISTA_REAL = ['x/'];",
+      "test('usa la ayuda del vecino', () => {",
+      "  assert.equal(AYUDA, 'ok');",
+      "  assert.ok(LISTA_REAL.length, 'CIEGO: la lista real esta vacia');",
+      "});",
+      '',
+    ].join('\n'));
+
+    const candidato = {
+      lista: 'LISTA_REAL',
+      declaradaEn: 'scripts/subdir/guard-fixture-real.mjs',
+      test: 'scripts/subdir/guard-fixture-real.mjs',
+    };
+    const d = decidirVaciando(candidato, tmp);
+    assert.equal(d.decidido, true,
+      `🔴 la copia en 'tests/' rompe el import relativo './ayudante.mjs': ${JSON.stringify(d)}`);
+    assert.equal(d.cae, true,
+      '🔴 con la lista vacía, `LISTA_REAL.length` es 0 y el assert tiene que caer: si no cae, la '
+      + 'sonda no está midiendo lo que dice medir.');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('SCRUM-938 · 🔴 ⑥bis CASO CONOCIDO: si la copia IDÉNTICA (sin vaciar) ya cae, el par sale NO DECIDIBLE', () => {
+  // La sonda rota: un import que ni siquiera el hermano de verdad resuelve (apunta a un módulo
+  // que no existe). Antes de este arreglo, ese reventón se leía como «la lista vaciada lo tumbó».
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum938-control-'));
+  try {
+    const dirGuard = path.join(tmp, 'scripts');
+    fs.mkdirSync(dirGuard, { recursive: true });
+    fs.writeFileSync(path.join(dirGuard, 'guard-roto.mjs'), [
+      "import test from 'node:test';",
+      "import assert from 'node:assert/strict';",
+      "import { NO_EXISTE } from './modulo-que-no-esta.mjs';",
+      "export const LISTA_REAL = ['x/'];",
+      "test('nunca llega a correr', () => { assert.ok(NO_EXISTE); });",
+      '',
+    ].join('\n'));
+
+    const candidato = {
+      lista: 'LISTA_REAL',
+      declaradaEn: 'scripts/guard-roto.mjs',
+      test: 'scripts/guard-roto.mjs',
+    };
+    const d = decidirVaciando(candidato, tmp);
+    assert.equal(d.decidido, false,
+      `🔴 CONFIRMA una lista que en realidad es una sonda rota: ${JSON.stringify(d)}`);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ⑦ DEFECTO NUEVO, MEDIDO HOY (no estaba en SCRUM-938b) · el laboratorio le prestaba su entorno
+//   al sujeto — SCRUM-928 con otro nombre de función
+//
+// `decidirVaciando` lee `node --test` con `spawnSync(...)` SIN construir el entorno del hijo a
+// mano: heredaba `process.env` entero. Medido corriendo el propio caso ⑥ bajo `SCRUM938_DEBUG=1`:
+// el hijo moría con «run() is being called recursively within a test file. skipping running
+// files» — porque `decidirVaciando` se ejercita, aquí mismo, DESDE DENTRO de un `node --test`
+// (SCRUM-846 exige el caso conocido corriendo), y `NODE_TEST_CONTEXT` se hereda igual que un
+// `FORCE_COLOR` puesto (esta casa arranca sus sesiones con él, SCRUM-928): con color, el ANSI
+// delante de «ℹ tests N» rompe el ancla `^` del regex. Los dos escapes acaban en el mismo síntoma:
+// `total=0`, que se lee como «import roto» sin serlo. Precedente exacto: SCRUM-928c en
+// `correrPaso`. Aquí se borran `NODE_TEST_CONTEXT`, `FORCE_COLOR` y `NODE_OPTIONS`.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-938 · 🔴 ⑦ CASO CONOCIDO: `decidirVaciando` construye el entorno del hijo a mano (NODE_TEST_CONTEXT/FORCE_COLOR/NODE_OPTIONS) — SCRUM-928 con otro nombre', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum938-color-'));
+  const antes = process.env.FORCE_COLOR;
+  try {
+    process.env.FORCE_COLOR = '3';
+    const dirGuard = path.join(tmp, 'scripts');
+    fs.mkdirSync(dirGuard, { recursive: true });
+    fs.writeFileSync(path.join(dirGuard, 'guard-color.mjs'), [
+      "import test from 'node:test';",
+      "import assert from 'node:assert/strict';",
+      "export const LISTA_REAL = ['x/'];",
+      "test('caso', () => { assert.ok(LISTA_REAL.length, 'CIEGO: la lista real esta vacia'); });",
+      '',
+    ].join('\n'));
+    const candidato = { lista: 'LISTA_REAL', declaradaEn: 'scripts/guard-color.mjs', test: 'scripts/guard-color.mjs' };
+    const d = decidirVaciando(candidato, tmp);
+    assert.equal(d.decidido, true,
+      '🔴 con `FORCE_COLOR` heredado, el ANSI delante de "ℹ tests N" rompe el ancla `^ℹ` y la '
+      + `sonda cree que el fichero no ejecutó nada, aunque corrió limpio: ${JSON.stringify(d)}`);
+    assert.equal(d.cae, true, '🔴 con la lista vacía el assert tiene que caer.');
+  } finally {
+    if (antes === undefined) delete process.env.FORCE_COLOR; else process.env.FORCE_COLOR = antes;
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
