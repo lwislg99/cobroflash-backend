@@ -99,6 +99,28 @@ recientes (<72h, incluido el checkout compartido — trabajo de S0, no tocado) �
 Este traspaso se escribió en un worktree nuevo (`orq-traspaso-26sep`) para no tocar el checkout
 compartido, que sigue sucio con trabajo de S0 sin relación con esto.
 
+## 7bis · Cierre de la tanda (08:50Z)
+
+Las dos sesiones acabaron su cola y pararon, sin nada a medias:
+
+- **sesion-1**: SCRUM-960 y SCRUM-1001 ya estaban en `main` (nada que construir) — **cerradas por
+  efecto**. La mitad de pantalla que le faltaba a 960 pasó a **SCRUM-1141** (nueva, area-s2).
+  SCRUM-1024 (el patrón de los 4 defectos) — **cerrado**, los 4 resueltos o correctamente
+  aparcados/bloqueados. De paso arregló un rojo real de CI en #1795 (ancla que exige SCRUM-267/976
+  en `docs/master/SCRUM-1138.md`) — **ya MERGEADO**.
+- **sesion-2**: resolvió el DIRTY de #1783 (**MERGEADO**). Entregó un incremento más de SCRUM-786
+  (checkbox de `exportView.js` a 44px, PR #1801, esperando check). Encontró que mi encargo original
+  de "subir `.btn-sm` global" contradecía la decisión ya tomada el 21-sep (opción ③, no ①) —
+  **no construyó nada mal**, preguntó antes. Encontró que el "Borrar" de presupuesto no existe en
+  el DOM (queda fuera de AB6, es funcionalidad nueva). Encontró que `invoiceDetailView.js` es de
+  J1 — no lo tocó, se abrió **SCRUM-1142** (equipo-javier/area-j1) pidiéndoselo. Reetiquetó
+  correctamente SCRUM-1133/1135/1136/1137 a `equipo-javier`/`area-j2` (no eran de S2; una sesión
+  anterior ya los había rechazado en un comentario que mi encargo no vio).
+
+**Patrón repetido hoy (3ª vez), para la S0:** una decisión o excepción citada de memoria/traspaso
+puede no existir tal cual en el ticket. `[[feedback_carril_customersview_es_j2]]` y
+`[[feedback_leer_comentarios_antes_de_encargar]]` en la memoria de esta máquina.
+
 ## 7 · Errores/matices de esta tanda
 
 - Un primer intento de renombrar la rama de este mismo traspaso a convención `scrum-N-slug`
