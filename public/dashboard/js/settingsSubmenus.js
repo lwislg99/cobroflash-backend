@@ -97,6 +97,20 @@ function avisoFaltaEnOtraPestana(rotuloCampo, rotuloPestana) {
   return 'Para guardar, rellena «' + rotuloCampo + '». Está en la pestaña ' + rotuloPestana + '.';
 }
 
+/**
+ * SCRUM-904 · el aviso del CHECKLIST de «Tu cuenta, lista para cobrar», no el de guardar (94).
+ * Aquí nadie está guardando: se está navegando desde una lista de pendientes, y el defecto que
+ * arregla 904 es que «Completar →» ya lleva a la pestaña correcta pero no la nombraba antes de
+ * llegar. No reusa `avisoFaltaEnOtraPestana` porque ese empieza con «Para guardar,» — una frase que
+ * aquí sería falsa: no hay ningún guardado en curso.
+ * Aprobado por el orquestador por delegación del fundador el 26-sep-2026 (SCRUM-904 comentario
+ * 17138), tal cual se propuso, con la misma condición que 894: los dos huecos salen de rótulos que
+ * la pantalla ya muestra. Ficha: docs/microcopy/2026-09-26-SCRUM-904-checklist-pestana.md.
+ */
+function checklistEstaEnLaPestana(rotuloCampo, rotuloPestana) {
+  return '«' + rotuloCampo + '» está en la pestaña ' + rotuloPestana + '.';
+}
+
 /** Asignación campo → submenú. La clave es la del censo; el valor, una clave de `SUBMENUS`. */
 var ASIGNACION_SUBMENU = {
   // ── empresa ── `taxId`/`address` (antes `fiscales`), `whatsappPhone` (antes `whatsapp`) y
@@ -392,6 +406,7 @@ if (typeof window !== 'undefined') {
   window.rotuloDeSubmenu = rotuloDeSubmenu;
   window.pestanaDelQueFalta = pestanaDelQueFalta;
   window.avisoFaltaEnOtraPestana = avisoFaltaEnOtraPestana;
+  window.checklistEstaEnLaPestana = checklistEstaEnLaPestana;
   window.ASIGNACION_SUPERFICIE = ASIGNACION_SUPERFICIE;
 }
 if (typeof module !== 'undefined' && module.exports) {
@@ -409,6 +424,7 @@ if (typeof module !== 'undefined' && module.exports) {
     rotuloDeSubmenu: rotuloDeSubmenu,
     pestanaDelQueFalta: pestanaDelQueFalta,
     avisoFaltaEnOtraPestana: avisoFaltaEnOtraPestana,
+    checklistEstaEnLaPestana: checklistEstaEnLaPestana,
     submenuDeCampo: submenuDeCampo,
     submenuDeSuperficie: submenuDeSuperficie,
     revisarAsignacion: revisarAsignacion,
