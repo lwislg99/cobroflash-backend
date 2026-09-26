@@ -54,7 +54,10 @@ export const agente = new https.Agent({});
 `;
 
 let n = 0;
-function raiz({ cola = false, llamante = null, flagOn = false, hostConRed = false, flags = undefined } = {}) {
+// SCRUM-824: `const raiz = (...) => {...}` (no `function raiz(...) {...}`) — el censo de temporales
+// solo sigue la pista de un identificador hasta `os.tmpdir()` a través de una `VariableDeclaration`;
+// una `FunctionDeclaration` lo deja en DESCONOCIDO aunque cuelgue de `TMP` como aquí.
+const raiz = ({ cola = false, llamante = null, flagOn = false, hostConRed = false, flags = undefined } = {}) => {
   const r = path.join(TMP, `r${++n}`);
   const escribir = (rel, txt) => {
     fs.mkdirSync(path.dirname(path.join(r, rel)), { recursive: true });
@@ -67,7 +70,7 @@ function raiz({ cola = false, llamante = null, flagOn = false, hostConRed = fals
   if (llamante) escribir('src/modules/invoicing/domain/remitir.ts', llamante);
   if (hostConRed) escribir('src/modules/fiscal/verifactu/transporte.ts', HOST_CON_RED);
   return r;
-}
+};
 
 const FRASES = [
   '<p>Nuestra facturación es conforme a la AEAT.</p>',
