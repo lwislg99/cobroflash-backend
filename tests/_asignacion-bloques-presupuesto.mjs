@@ -83,6 +83,11 @@ export const CAMPO_A_BLOQUE = {
   // «Ajustes del documento», que es cómo SALE impreso, y ahí va la dirección que se imprime.
   shippingAddressMode: { control: 'fieldDireccionObra', bloque: 'blockDelivery' },
   shippingAddress: { control: 'direccionObraWrap', bloque: 'blockDelivery' },
+  // SCRUM-1174 · los dos textos libres del documento («Añadir texto en el documento» y
+  // «Observaciones»), con el componente del albarán. Van a «Envío», junto a `docFields` e
+  // `ivaModo`: los tres deciden cómo SALE el documento, no qué se cobra ni a quién.
+  docHeaderText: { control: 'textoDocWrap', bloque: 'blockDelivery' },
+  docFooterText: { control: 'textoDocWrap', bloque: 'blockDelivery' },
 };
 
 /**

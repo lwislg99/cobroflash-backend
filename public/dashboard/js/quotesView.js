@@ -1477,6 +1477,18 @@ descWrapper.appendChild(descLabel);
     blockDelivery.appendChild(docFieldsWrapper);
     blockDelivery.appendChild(descWrapper); // SCRUM-915d: detrás de los datos del cliente (v3)
 
+    // SCRUM-1174 · LOS DOS TEXTOS LIBRES DEL DOCUMENTO. El servidor los acepta y el PDF los pinta
+    // desde SCRUM-593, pero el presupuesto no tenía DÓNDE escribirlos: sólo los montaba el albarán.
+    // Es el MISMO componente que el albarán (`textoDelDocumento.js`), con sus rótulos ya firmados:
+    // ni copy nueva ni un segundo formulario. Van en «Envío», junto a qué datos del cliente salen y
+    // cómo se presenta el IVA: los tres deciden cómo sale el documento.
+    // Sólo en el PRESUPUESTO: la factura suelta compone su cuerpo en `cuerpoDelDocumentoSuelto.js`.
+    // La guarda, en la forma simple que lee el censo de SCRUM-600e: una compuesta le es opaca.
+    const textoDocWrap = document.createElement("div");
+    textoDocWrap.className = "quote-texto-documento";
+    if (typeof window.textoDelDocumentoMontar === "function") window.textoDelDocumentoMontar(textoDocWrap, {});
+    if (!esDocumentoSuelto) blockDelivery.appendChild(textoDocWrap);
+
     // ── SCRUM-915d · EL PIE DEL PASO «CONDICIONES» ──────────────────────────────────────────
     // Va en el ÚLTIMO bloque del paso, que es la fila de Ajustes. Lo único que puede frenarlo es
     // un plan por tramos que no cuadra, y el motivo es el texto que «Generar» ya da hoy para eso.
@@ -5511,6 +5523,12 @@ payloadLines.push(lineaParaPayload({
         fieldDireccionObra.select.value,
         direccionObraInput.value,
       );
+      // SCRUM-1174 · el lector del componente devuelve un VEREDICTO: si los campos no están montados
+      // dice que no los ve, y entonces las claves NO viajan (omitidas), en vez de mandar `null` como
+      // si el profesional los hubiera dejado en blanco.
+      const textoDelDocumento = typeof window.textoDelDocumentoLeer === "function"
+        ? window.textoDelDocumentoLeer(textoDocWrap)
+        : { ok: false };
       const quotePayload = {
         merchant_id: currentMerchant.id,
         customer_id: Number(customerId),
@@ -5538,6 +5556,10 @@ payloadLines.push(lineaParaPayload({
         // «un campo asignado que ya no viaja»; pero un campo nuevo nace SIN registrar.)
         shippingAddressMode: direccionDeLaObra.shippingAddressMode,
         shippingAddress: direccionDeLaObra.shippingAddress,
+        // SCRUM-1174 · los dos textos del documento. A MANO y no con spread, por lo mismo que las
+        // dos de arriba: el censo de SCRUM-286 tiene que ver las claves.
+        docHeaderText: textoDelDocumento.ok ? textoDelDocumento.valores.docHeaderText : undefined,
+        docFooterText: textoDelDocumento.ok ? textoDelDocumento.valores.docFooterText : undefined,
         created_via: quoteFormCreatedVia, // VZ-3: 'voice' si hubo dictado
         // A16.2: caducidad elegida (fin del día local); omitida = 30d en server
         validUntil: validInput.value ? new Date(validInput.value + "T23:59:59").toISOString() : undefined,
