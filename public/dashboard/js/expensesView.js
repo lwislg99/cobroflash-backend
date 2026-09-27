@@ -617,6 +617,10 @@ function openExpenseModal(expense, opts) {
           <div class="field">
             <label>Proveedor (opcional)</label>
             <select id="exp-providerid"><option value="">Cargando proveedores…</option></select>
+            <!-- SCRUM-920 comentario 17138b (26-sep-2026) · texto vacío A PROPÓSITO: se rellena
+                 con .textContent en aplicarLecturaTicket, nunca interpolado en HTML — el
+                 nombre viene de una lectura por IA de una foto que sube el usuario. -->
+            <p id="exp-proveedor-sugerido" hidden></p>
           </div>
           <div class="field">
             <!-- SCRUM-324 (E3) · el tercero de los tres campos del momento. Se teclea aquí y se
@@ -819,7 +823,6 @@ function openExpenseModal(expense, opts) {
       if (!el) continue;
       el.hidden = false;
       el.textContent = texto;
-      el.style.cssText = 'margin:2px 0 0;font-size:11.5px;color:var(--warn,#b45309)';
     }
   }
 

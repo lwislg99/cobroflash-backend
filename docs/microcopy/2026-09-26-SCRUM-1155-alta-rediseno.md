@@ -1,8 +1,6 @@
 # SCRUM-1155 (920f) · el alta de gasto rediseñada, foto primero
 
-**Aprobado por el orquestador por delegación del fundador** el 2026-09-20 — SCRUM-920 comentario
-15992 (los literales del alta), con los 9 motivos de descarte firmados el 2026-09-21 — SCRUM-920
-comentario 16175 (junto con SCRUM-912/920h). Construido en SCRUM-1155, un mes después de firmarse.
+**Aprobado por el orquestador por delegación del fundador** el 2026-09-20 — SCRUM-920 comentario 15992 (los literales del alta), con los 9 motivos de descarte firmados el 2026-09-21 — SCRUM-920 comentario 16175 (junto con SCRUM-912/920h). Construido en SCRUM-1155, un mes después de firmarse.
 
 ## Los literales, tal cual se pintan
 

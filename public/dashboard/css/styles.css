@@ -2509,6 +2509,8 @@ html, body { overflow-x: clip; }
 .aviso-falta-campo { font-size: 12.5px; font-weight: 600; color: var(--danger); margin: 2px 0 6px; }
 /* SCRUM-937b: ayuda bajo el NIF del gasto mientras no hay proveedor (mismo tono que .qq-help, AA). */
 .gasto-nif-ayuda { font-size: 12px; color: var(--muted); margin: 2px 0 0; line-height: 1.4; }
+/* SCRUM-1155 (920f): el porqué de un campo descartado por la lectura del ticket, mismo ámbar que .aviso-falta-campo. */
+.gasto-descarte { font-size: 11.5px; color: #b45309; margin: 2px 0 0; }
 
 /* Pills de estado más expresivas */
 .status-pill { font-weight: 700; letter-spacing: .02em; }
