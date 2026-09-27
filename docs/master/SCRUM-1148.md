@@ -34,3 +34,36 @@ y nunca convive con el botón (el clic los intercambia); `[hidden]` es `display:
 (SCRUM-731). Pero el mini-DOM del banco no refleja la PROPIEDAD `hidden` como atributo, y la
 página serializada pinta los dos a la vez. No se tapa con CSS: se declara y queda anotado.
 Pendiente de medir en `yaqu.app` a 390 px tras el despliegue.
+
+---
+
+## Parte 2 · Plantillas: «+ Nuevo presupuesto» de la cabecera a 44 px
+
+**Rama:** `scrum-1148-tactil-plantillas` · commit de producto `47ee5676` (s2-26b, 26-sep-2026),
+registro y merge de main por S2 el 27-sep-2026. Sección AÑADIDA: la parte 1 de arriba no se toca.
+Base de la rama al empujar: `origin/main` = `37bda5dbc6991cc33a54ee7248020be30d2f977f` (ancla
+generada con `scripts/equipo/ancla.mjs` a 2026-09-27T15:52:48Z).
+
+Una pantalla por PR: esto es SOLO Plantillas.
+
+| Objetivo | Antes (929 / 390) | Después (929 / 390) |
+|---|---|---|
+| «+ Nuevo presupuesto» `BUTTON.btn-primary.btn-sm` en la cabecera | 31,0 / 30,6 px | 45,0 / 44,6 px |
+| «📋 Usar», «Renombrar», «Borrar» (filas) | ya 44 px | sin tocar |
+| Pestañas «Historial · Plantillas» | ya 44 px | sin tocar |
+
+Medido por s2-26b en **Chrome real con el JS del producto** (no en el banco). No lo he vuelto a medir
+hoy: la cifra es suya, y el código de producto no ha cambiado desde entonces (el merge de main no toca
+`templatesView.js` ni la regla nueva de `styles.css`).
+
+**Qué se construyó:** `styles.css`: `.plantillas-cabecera > .btn-sm { min-height: 44px; }`, y la
+cabecera de `templatesView.js` lleva la clase `plantillas-cabecera`. Regla acotada a su contenedor
+(opción ③ del 21-sep), solo tamaño; `.btn-sm` global no se toca; sin JS nuevo.
+
+**Guard táctil:** Plantillas no es una superficie de `guard-objetivo-tactil.mjs`, así que no hay
+excepción que retirar. (La de `BUTTON.btn-primary.btn-sm` «+ Nuevo presupuesto» que hay en ese
+fichero es de la ficha 360, `renderCustomer360View`, que es de J2: no se toca.)
+
+**Sin test automático propio, y lo digo como hueco:** ni el guard táctil ni ningún test mide
+Plantillas. La evidencia es la medición en Chrome real de arriba; queda pendiente la de `yaqu.app` a
+390 px tras el despliegue. Meter Plantillas como superficie del guard sería otro ticket.
