@@ -477,3 +477,90 @@ guard definitivo tendrá que mirar el tipo (el `TypeChecker`), no sólo el nombr
 
 Con 65 llamadas, lo que procede es convertirlo en un censo con su guard (como SCRUM-1153 con el entorno
 prestado), no en arreglos sueltos. Queda propuesto al orquestador.
+
+---
+
+# APÉNDICE · SCRUM-1093h (S3) · el censo de arriba, convertido en guard que corre solo
+
+**Medido contra:** `origin/main` = `0af96be9c111d37aa9b1c3067fc23befbebe2f8e` · 2026-09-27T16:36:13Z
+(worktree `wt-s3-1093h-censo-fecha-zona`, rama `scrum-1093h-censo-guard-fecha-zona`, apilada sobre
+`scrum-1093g-parte-zona`).
+
+## Qué se construyó
+
+`scripts/_censo-fecha-sin-zona.mjs` — censo AST + **`ts.TypeChecker` real** (un `ts.Program` sobre
+`tsconfig.json`, no un atajo sin tipos) sobre `src/` (304 ficheros `.ts`). Dos capas separadas a
+propósito, porque son dos preguntas distintas:
+
+**① La FAMILIA — por TIPO, no por nombre de método.** `<receptor>.<método>(...)` con `<método>` en
+`getFullYear/getMonth/getDate/getDay/getHours/getMinutes/getSeconds/getMilliseconds` y sus
+hermanas `set*` (siempre dependen del proceso), o en `toLocaleDateString/toLocaleTimeString/
+toLocaleString` **sin** `{ timeZone }` inline en el sitio de la llamada — y el receptor tiene que
+ser de TIPO `Date` según el `checker`, no un nombre de variable ni una lista de opciones. Esto
+resuelve el falso positivo que el propio censo de 1093g encontró a mano: `albaranPdf.service.ts:133`
+(`v.toLocaleString('es-ES', { maximumFractionDigits: 2 })`, `v: number`) **ya no aparece**, porque
+su tipo es `number`, no `Date` — sin lista de excepciones, por construcción.
+
+**② El USO — declarado por IDENTIDAD (fichero + función, SCRUM-710b: nunca la línea), no
+inferido.** Clasificar automáticamente «esto numera un documento» por AST es la lista negra por
+FORMA que `_trinquete-de-zona.mjs` rechaza por escrito (denunciaría los 39 bordes de ventana en
+silencio y el guard se apagaría por ruido). El mapa `USO` recoge la clasificación de la tabla de
+arriba, y `RETIRADAS` las que ya se arreglaron (mismo patrón que `CENSADAS`/`RETIRADAS AL CANON`
+de SCRUM-813). **Cualquier llamada que el censo vea y `USO` no conozca es CIEGA por defecto — no
+limpia**: el guard falla y pide que alguien la clasifique, en vez de dejarla pasar muda.
+
+## Medido de nuevo sobre esta rama: 62, no 65 — y con una corrección propia
+
+S1 midió 65 sobre `37bda5db` (antes de 1093f/g). Sobre esta rama (con `albaranNumber.service.ts` y
+`partes.routes.ts` ya curados) el censo real da **62 llamadas en los mismos ficheros restantes**.
+No investigado más allá de eso (la diferencia exacta 65→62 no es objeto de este ticket).
+
+🔴 **Una entrada de la tabla de arriba estaba mal clasificada, y se corrige aquí, no en silencio:**
+`weeklyDigest.service.ts` línea 208 (dentro de `sendDigestForMerchant`) estaba en el grupo de
+AGREGADO junto a sus otros dos `setHours` del mismo fichero. Leído el código: construye `weekStr`,
+que se IMPRIME literalmente en el asunto del correo (`` `📊 Tu semana en YaQu (${weekStr})` ``) —
+es la misma familia que `receipt.routes.ts` o `albaranPdf.service.ts`, no un borde de ventana.
+Movida a IMPRIME. Los otros dos `setHours` de ese fichero (`sendWeeklyDigests`, `getDigestPreview`)
+sí son ventana y se quedan en AGREGADO. Con esto: **18 IMPRIME, no 17** (recontadas sobre el árbol
+real, no reconstruidas de la tabla).
+
+## Verificación — `tests/scrum1093h-censo-fecha-sin-zona.test.mjs`, 16/16
+
+* **SUELO**: población > 250 ficheros, al menos una acusada y al menos una limpia (AGREGADO).
+* **RATCHET**: ninguna fila del censo real queda sin clasificar en `USO` — verificado a mano que
+  con `USO` vacío las 62 filas caerían como sin clasificar (no es una prueba vacía).
+* **Control positivo REAL** (×3, no fabricado): el código de `quoteNumber.service.ts` (antes de
+  `a0f454f3`), `albaranNumber.service.ts` (antes de `f0ff43df`) y `partes.routes.ts` (antes de
+  `5cb43c1c`), leído de `git show <sha>^`, compilado con tipos reales vía `ts.Program` con overrides
+  — se acusa. **Control negativo DERIVADO**: los mismos tres ficheros en HEAD (con el arreglo
+  `diaNaturalEn(fecha, zonaDelMerchant(m))` aplicado) — limpios.
+* **Falso positivo real**: `albaranPdf.service.ts:133` (`fmtQty`, número) sigue sin acusarse, con
+  control de que el mismo fichero SÍ da señal en `fmtDate`/`generateAlbaranPdf` (el negativo no vale
+  nada si el censo se ha quedado ciego para el fichero entero).
+* **Fabricado + derivado** (×5): `getFullYear` sobre `Date` se acusa; `toLocaleDateString` sin
+  `timeZone` se acusa; el MISMO código con `timeZone` inline no se acusa; `getUTCFullYear` no se
+  acusa; `toLocaleString` sobre `number` no se acusa.
+
+Trampa real encontrada construyendo esto, para quien reconstruya algo parecido:
+`ts.createCompilerHost().getSourceFile` **no llama a `this.readFile`** — tiene su propia lectura de
+disco cerrada al crear el host. Sobreescribir sólo `readFile`/`fileExists` no cambia lo que el
+compilador analiza; hay que sobreescribir `getSourceFile` también. Y **TypeScript normaliza sus
+rutas internas con `/` siempre, también en Windows** — una clave de `overrides` escrita con
+`path.join` (que da `\`) no casa nunca, y el override pasa desapercibido EN SILENCIO (el censo cae
+al fichero real del disco sin decir que el override no se aplicó). Las dos costaron el primer rojo
+de este mismo test; quedan arregladas en `programaDe` y documentadas en su comentario.
+
+## Dónde NO entra: no es de `guards:entrada`
+
+`scripts/guards-entrada.mjs` exige «sin compilar y sin base, segundos» — este censo COMPILA un
+`ts.Program` de 304 ficheros con el `TypeChecker` real (~15-20 s solo). Añadirlo a esa lista
+empujaría el TECHO de 90 s (SCRUM-976) justo con la máquina cargada, que es la causa que este mismo
+equipo midió hoy para los rojos de "pasa sola, falla en tanda". Vive en `tests/` como el resto de
+`npm test`, no en la lista rápida.
+
+## Lo que esto NO hace
+* No arregla nada de lo NUMERA/GUARDA/IMPRIME encontrado — sigue reportado (SCRUM-1168 para J1; el
+  resto ya lo estaba). Este ticket es el INSTRUMENTO, no el arreglo.
+* No decide si `getMonth`/`getDate` sin `Date` explícito en otras 68 proyecciones de Prisma (fuera
+  de alcance, ya separadas en SCRUM-1093/1093g) son de esta familia: sólo mira llamadas de método
+  sobre un valor de tipo `Date`, nunca columnas.
