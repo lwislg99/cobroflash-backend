@@ -382,3 +382,43 @@ exigiendo que lo censado cambie y que nada nuevo cambie; `planDeRenumeracion` si
   retiradas.
 - `tests/scrum813-trinquete-de-zona.test.mjs` (red rápida, canarios incluidos): 28/28.
 - La pasada completa en dos zonas la corre el job del CI de este mismo PR.
+
+---
+
+# APÉNDICE · 27-sep-2026 · SCRUM-1093f (S1) · el resto: `allocateAlbaranNumber`
+
+**Medido contra:** `origin/main` = `37bda5dbc6991cc33a54ee7248020be30d2f977f` · 2026-09-27T15:44:47Z
+
+**Escribe:** Sesión 1 (S1, `s1-27a`), rama `scrum-1093f-albaran-zona`. Encargo del orquestador:
+`albaranNumber.service.ts:115` (`now.getFullYear()` sin zona), el último sitio de la familia en
+`src/modules/jobs`.
+
+## PASO 0 — el defecto, CORRIENDO
+
+Test nuevo `tests/scrum1093f-albarannumber-zona-merchant.test.mjs` (mismo instante frontera que
+`scrum1093-quotenumber…`: 31-dic-2026 23:30Z) corrido sobre el código SIN tocar, en esta máquina
+(reloj del proceso en Europe/Madrid): 1 pass / 2 fail — el merchant SIN zona y el de
+`Atlantic/Canary` salían `AB270001` en vez de `AB260005`. El número lo decidía la zona de la
+MÁQUINA; en el CI (UTC) el que cae es el de Europe/Madrid.
+
+## El cambio
+
+`allocateAlbaranNumber` lee `timezone` en el mismo `findUnique` (ni una consulta de más) y deriva
+el año con `diaNaturalEn(now, zonaDelMerchant(m))`, igual que `allocateQuoteNumber` e
+`allocateInvoiceNumber` (SCRUM-735). Sin zona declarada cae a `'UTC'`: lo mismo que producción
+hacía hasta hoy.
+
+## El trinquete de zona: nada que retirar, y sigue vivo
+
+Ninguna prueba de albaranes estaba CENSADA (sus fixtures son `12:00Z` y `2-ene 09:00Z`, lejos de la
+frontera), así que no baja y no hay entrada que declarar. Se corrige sólo el COMENTARIO de
+`scripts/_trinquete-de-zona.mjs` que afirmaba que `allocateAlbaranNumber` y `allocateInvoiceNumber`
+seguían sin arreglar (lo segundo era falso desde SCRUM-735). Prueba de que no se afloja, corrida
+con `TZ` en el `env`: `scrum1093f` + `albaran` + `scrum306` + `scrum592-doc02` → Kiritimati 46/48
+(2 saltos QA_DB_TEST) · Midway 45/48 con UN rojo, `una mezcla de renumerados…` — la censada que
+queda (`planDeRenumeracion`) SIGUE cambiando · UTC 46/48.
+
+## Controles, corridos
+
+- Relacionados (`scrum1093f`, `albaran`, `scrum306`, `scrum234`, `scrum728`, `scrum1093`): 44 tests,
+  42 pass, 0 fail, 2 skipped (`sin QA_DB_TEST=1`).

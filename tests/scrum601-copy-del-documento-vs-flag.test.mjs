@@ -151,9 +151,24 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // de SECCIÓN fijo, firmado en SCRUM-920 comentario 15992: no depende de ningún flag ni tipo de
 // documento —los gastos no tienen `INVOICING_ES_ENABLED` ni `type`—, así que «a pelo» es la
 // categoría correcta, igual que la de la entrada de arriba (156→157).
-// Cifra REGENERADA con el censo sobre el árbol resultante, no deducida.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-const VEREDICTO_AL_MEDIR = { flag: 13, tipo: 7, aPelo: 158 };
+// 🔴 flag 13 → 16 · aPelo 157 → 154 · 26-sep-2026 (SCRUM-1160) · CUÁLES SE MOVIERON Y POR QUÉ, y
+// **NO ES UN ARREGLO DE COPY que celebrar**: ninguno de los tres cambió de texto ni elige su
+// palabra por el modo de emisión. Son de `jobDetailView.js`:
+//     «El WhatsApp del recordatorio falló — reinténtalo desde la factura»   (CTA, rama `recordar`)
+//     «⚠️ Factura emitida, revisa su registro» · «✓ Factura emitida.»      (hoja de facturar parcial)
+// Pasan a «flag» porque `jobNextAction` ES AHORA portador del flag, y eso sí es verdad: su nivel 1
+// («Cobrar el resto») se salta en modo justificante (`facturaFiscalDisponible`), así que la escalera
+// que decide qué rama del CTA corre depende del modo. El censo hereda esa dependencia a los literales
+// de la función que la llama. AISLADO, no deducido: con `jobNextAction.js` de `origin/main` y el resto
+// de la rama, el diff del censo entre main y la rama sale VACÍO. Por eso NO se tocan
+// `PENDIENTES_DE_FIRMA` (no se ha firmado nada) ni ningún rótulo.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 🔀 CONFLICTO DE MERGE (SCRUM-1155 × SCRUM-1160), 27-sep-2026: las dos ramas tocan este mismo
+// anclaje por SU literal, cada una en un fichero distinto (expensesView.js / jobDetailView.js).
+// Por A4 de la casa, no se elige lado ni se suma a mano: se REGENERA con el propio censo sobre
+// el árbol YA FUSIONADO. Ver el número de abajo y su comentario.
+const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 155 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA

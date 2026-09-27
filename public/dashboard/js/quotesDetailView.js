@@ -298,7 +298,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: pendingInvCta.id });
         });
         actions.appendChild(btnPend);
-      } else {
+      } else if (typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible()) {
+        // SCRUM-1160 · «Cobrar ahora» delega en «Generar factura», y en modo justificante esa
+        // factura no existe: el servidor corta con 409 `facturacion_no_disponible` y la pantalla
+        // acababa enseñando su marcador. Mismo criterio y misma comprobación que los albaranes
+        // (`albaranAccion.js:65`, `jobDetailView.js:1540`): falla cerrado y el botón no se pinta.
         const btnCollect = document.createElement('button');
         btnCollect.className = 'btn-primary';
         // SCRUM-984 · la acción de la pantalla lleva el id de SU fila en `QUOTE_ACTION_REGISTRY`,
@@ -334,7 +338,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
         });
         actions.appendChild(btnAlbaran);
       }
-      summarySec.appendChild(actionsSec);
+      // SCRUM-1160 · en modo justificante y sin Trabajo de origen, aquí no queda ninguna acción: un
+      // «Siguiente paso» con nada debajo es un rótulo que promete algo que no está. No se pinta.
+      if (actions.children.length > 0) summarySec.appendChild(actionsSec);
 
       // A15.1 (MANT-1, tras flag): recordatorio de mantenimiento — solo si el
       // server lo ofrece (flag ON + línea mantenible del gremio o plan ya creado).
@@ -893,7 +899,10 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   btnInvoice.id = 'btn-generate-invoice'; // A2.2: el CTA "💰 Cobrar ahora" delega aquí
   btnInvoice.className = 'btn-primary';
   btnInvoice.style.marginTop = '12px';
-  invSec.appendChild(btnInvoice);
+  // SCRUM-1160 · en modo justificante (o sin saber el modo) no se OFRECE facturar: el botón solo
+  // puede acabar en el 409 `facturacion_no_disponible`. No se pinta, igual que en los albaranes.
+  const facturaDisponible = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
+  if (facturaDisponible) invSec.appendChild(btnInvoice);
 
   let canGenerateInvoice = false;
   // SCRUM-178: a qué ruta va el botón. Por defecto la de TRAMOS; la emisión manual (un solo
@@ -946,7 +955,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const notaSinTramos = document.createElement('div');
     notaSinTramos.style.cssText = 'font-size:13px;color:var(--muted);margin-top:6px';
     notaSinTramos.textContent = 'Estas condiciones no generan tramos automáticos';
-    invSec.appendChild(notaSinTramos);
+    if (facturaDisponible) invSec.appendChild(notaSinTramos); // SCRUM-1160: acompaña al botón
   } else {
     btnInvoice.textContent = 'Factura ya generada';
     btnInvoice.disabled = true;
@@ -967,7 +976,13 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
           // SCRUM-151: el mensaje del servidor manda. Antes se pintaba `data.error`, o sea el
           // identificador interno: el usuario leía "Error generando factura:
           // no_more_invoices_for_payment_terms". El código queda para el log, no para la pantalla.
-          setStatus('error', data.message || ('Error generando factura: ' + (data.error || 'desconocido')));
+          //
+          // SCRUM-1160 · …salvo que ese mensaje sea el de «aquí no se factura» o no esté firmado: era
+          // `[PENDIENTE microcopy oficial]`, en rojo y solo. Lo decide `textoDeErrorDeFacturar`
+          // (`albaranAccion.js`); sin él, el texto de siempre, nunca el `message` en crudo.
+          const porDefecto = 'Error generando factura: ' + (data.error || 'desconocido');
+          setStatus('error', typeof window.textoDeErrorDeFacturar === 'function'
+            ? window.textoDeErrorDeFacturar(data, porDefecto) : porDefecto);
           btnInvoice.disabled = false;
           btnInvoice.textContent = original;
           return;
