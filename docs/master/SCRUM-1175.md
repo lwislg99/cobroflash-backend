@@ -144,7 +144,8 @@ De los diez firmados en SCRUM-916 c.17251, **cuatro no se cumplen y NO se pintan
   lo rellena incluido (`partes.routes.ts:389-411`, SCRUM-818); vacío es «sin trabajo o sin asignados», y
   «tú» sería el jefe si lo abre desde la oficina.
 
-Los sustituyen cuatro firmados por el orquestador (delegación del fundador) el 27-sep-2026 por mensaje:
+Los sustituyen cuatro firmados por el orquestador (delegación del fundador) el 27-sep-2026 en SCRUM-916,
+comentario 17273, que registra también la retirada de los cuatro falsos:
 «Dónde se ha hecho el trabajo» · «Sin dirección ni referencia» · «Sin técnicos» · «Quién ha estado en la obra».
 Se pintan los otros seis: «Datos del parte», «Obra y referencia», «Tu referencia interna, si usas alguna»,
 «Sin elegir» (`tipo` es nullable, :381), «Sin notas», «Lo que haya que dejar dicho.».

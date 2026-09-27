@@ -121,8 +121,8 @@
     // ── SCRUM-1175 (916a, PR-C) · LOS DATOS DEL PARTE, PLEGADOS ─────────────────────────
     // FIRMADOS por delegación del fundador el 27-sep-2026, SCRUM-916 comentario 17251, y cada
     // uno COMPROBADO contra el código antes de pintarlo. Cuatro de los firmados ahí NO se pintan
-    // porque no se cumplen, y los sustituyen cuatro que el orquestador firmó después (mensaje del
-    // 27-sep-2026, registrado en `docs/master/SCRUM-1175.md`):
+    // porque no se cumplen, y los sustituyen cuatro que el orquestador firmó después en SCRUM-916,
+    // comentario 17273 (27-sep-2026), que registra también su retirada:
     //   ⛔ «La del trabajo, si no pones otra» y «Los del trabajo»: con la obra vacía NADA usa la
     //      dirección del trabajo — ni al crear el parte ni en lo que se sella y firma el cliente
     //      (`partes.routes.ts`, `obra: parte.obra ?? null`).
