@@ -93,15 +93,34 @@ test('SCRUM-1155 · los 9 motivos de descarte están completos (SCRUM-920 coment
   }
 });
 
-// ── `proveedorNombre`: EL SERVIDOR YA LO MANDA, EL MODAL NO SE INVENTA CÓMO ENSEÑARLO ────────
+// ── `proveedorNombre`: FIRMADO EN SCRUM-1155 COMENTARIO 17250 (27-sep-2026) ──────────────────
+//
+// Hasta el 27-sep esto comprobaba que `p.proveedorNombre` NO se usara sin un texto firmado (regla
+// 30) — el incremento lo dejaba explícitamente sin construir. Ya no mide lo mismo A PROPÓSITO: la
+// firma llegó y el comportamiento correcto pasó a ser el contrario. El comportamiento en navegador
+// (se pinta/se oculta/se limpia según corresponda) lo mide `tests/scrum1038-leer-el-ticket-
+// gasto.test.mjs`; aquí solo el LITERAL y la VÍA de pintado.
 
-test('SCRUM-1155 · `proveedorNombre` no se pinta con un texto sin firmar', () => {
-  // El servidor ya lo lee (PropuestaGasto.proveedorNombre); pintarlo necesitaría una frase NUEVA
-  // sin aprobar (regla 30), así que este incremento lo deja explícitamente sin construir — no a
-  // medias con un texto inventado. Si algún día se firma, este test se actualiza CON la firma.
-  assert.ok(!/p\.proveedorNombre/.test(VISTA.replace(/\/\/.*proveedorNombre.*/g, '')),
-    '🔴 `p.proveedorNombre` se está usando en el código sin que haya un texto firmado que lo '
-    + 'acompañe — comprueba que no se ha pintado un literal nuevo sin pasar por regla 30.');
+test('SCRUM-1155 · `proveedorNombre` se pinta con el texto firmado (SCRUM-1155 comentario 17250)', () => {
+  assert.ok(VISTA.includes('El ticket dice «'),
+    '🔴 falta el prefijo firmado de la sugerencia de proveedor');
+  assert.ok(VISTA.includes('». Si no está en tu lista, puedes darlo de alta en Proveedores.'),
+    '🔴 falta el sufijo firmado de la sugerencia de proveedor');
+});
+
+test('SCRUM-1155 · 🔴 CONDICIÓN DE LA FIRMA: `proveedorNombre` se pinta por `textContent`, nunca por HTML', () => {
+  // El nombre es contenido de una lectura por IA sobre una foto sin validar: la firma exige
+  // `textContent` explícitamente. Se busca la línea que USA el valor (no la que lo comenta ni la
+  // que lo lee del servidor) y se comprueba que compone `textContent`, no `innerHTML` ni una
+  // plantilla HTML con el valor interpolado dentro.
+  const usoReal = VISTA.split('\n').find((l) => /avisoProveedor\.\w+\s*=.*proveedorNombre/.test(l)
+    || /textContent\s*=\s*TEXTO_PROVEEDOR_SUGERIDO_PREFIJO/.test(l));
+  assert.ok(usoReal, '🔴 no se encuentra la línea que pinta `proveedorNombre` en el DOM');
+  assert.match(usoReal, /\.textContent\s*=/,
+    `🔴 AGUJERO: «${usoReal.trim()}» no usa \`.textContent\` — un nombre con \`<\`/\`&\` de una `
+    + 'foto sin validar se pintaría como HTML.');
+  assert.ok(!/\.innerHTML\s*=.*proveedorNombre/.test(VISTA),
+    '🔴 AGUJERO: hay una asignación de `innerHTML` que interpola `proveedorNombre` en crudo.');
 });
 
 // ── EL REGISTRO ───────────────────────────────────────────────────────────────────────────────

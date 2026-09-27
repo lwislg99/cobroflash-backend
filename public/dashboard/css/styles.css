@@ -3706,6 +3706,62 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
   color: var(--ink);
 }
 
+/* ══ SCRUM-1175 (916a, PR-A) · HORAS Y DESPLAZAMIENTO, SU PROPIO PASO ═════════════════════════
+   Entrada y salida con selector de hora y «Ahora» al lado; la duración, dicha; y los dos números
+   en campos estrechos en vez de 487 px para dos cifras. Dos columnas también a 390 px: son pares
+   (entrada/salida, desplazamiento/km) y se leen juntos. */
+.parte-horas { margin-bottom: 18px; }
+.parte-horas-titulo {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.parte-horas-guia {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.parte-horas-par {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.parte-ahora {
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--r-full);
+  background: var(--surface, #fff);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.parte-ahora:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+.parte-duracion {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+.parte-duracion b { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.parte-duracion-rotulo { font-size: 13px; font-weight: 600; }
+.parte-duracion-mal { background: var(--danger-bg); color: var(--danger-ink); }
+.parte-duracion-mal b { font-size: 14px; }
+.parte-campo-con-unidad { display: flex; align-items: center; gap: 8px; }
+.parte-campo-unidad { font-size: 14px; color: var(--muted); }
+
 /* El grupo de los tres tipos ya dice de qué es (rótulo firmado en SCRUM-703). */
 .parte-tipo legend {
   font-size: 12.5px;
