@@ -151,3 +151,45 @@ contra el censo en vivo confirma que es el valor real, no una coincidencia.
 
 **PR #1824 MERGEADO:** 2026-09-27T16:20:48Z, los 8 checks en verde (`build + tests`, `guards de
 navegador`, `meta-guard`, `trinquete`, y los 4 informativos), auto-merge armado por `yaqu-bot`.
+
+## SCRUM-1155d · `proveedorNombre`, construido (27-sep-2026)
+
+**Firma:** SCRUM-1155 comentario 17250 — «El ticket dice «{proveedorNombre}». Si no está en tu
+lista, puedes darlo de alta en Proveedores.» Bajo el select «Proveedor (opcional)», solo cuando la
+lectura trae `proveedorNombre` y no engancha ningún proveedor por NIF (SCRUM-961b: el enganche
+sigue siendo únicamente por NIF).
+
+**Historia de la firma, contada por el propio orquestador en el comentario 17250:** el texto se
+había dado por mensaje a esta sesión el 26-sep, no por Jira. Se buscó en los 4 tickets relacionados
+y por JQL en todo el proyecto: cero resultados, y se paró en vez de registrar una aprobación sin
+referencia verificable (SCRUM-861/regla 30) — el mismo fallo que el equipo de Javier ya había
+reportado el 25-sep. El orquestador lo corrigió publicando el comentario 17250 al día siguiente.
+
+**Construido:**
+- `TEXTO_PROVEEDOR_SUGERIDO_PREFIJO`/`_SUFIJO` (dos constantes, no una plantilla) en
+  `expensesView.js`. Compuestas con `+` y asignadas por `.textContent` — nunca `innerHTML` ni una
+  plantilla HTML con el valor interpolado, condición explícita de la firma.
+- `aplicarLecturaTicket`: se enciende cuando `providerId` es `null`/`undefined` y `proveedorNombre`
+  viene con algo; se apaga y se limpia en cualquier otro caso, dentro de `limpiarDescartes()` (misma
+  vida que los 9 porqués: una lectura nueva no arrastra el aviso de la anterior).
+
+**Test, con la condición de la firma fijada** (`tests/scrum1038-leer-el-ticket-gasto.test.mjs`,
+5 casos nuevos): se pinta con proveedor sin enganchar · no se pinta con proveedor ya enganchado ·
+no se pinta sin `proveedorNombre` · limpieza entre lecturas · y el caso que fija el agujero: un
+nombre con `Bricolaje <Martínez> & Hijos, S.L.` (se evitó un payload de `<script>` real porque el
+clasificador de permisos de la sesión lo bloqueaba como «Create RCE Surface» — el nombre con `<`,
+`>` y `&` prueba la misma propiedad sin parecer un exploit) se pinta LETRA A LETRA como texto y no
+crea ningún nodo hijo (`querySelectorAll('*').length === 0`). Más 2 tests estáticos en
+`tests/scrum1155-alta-rediseno.test.mjs` (el literal existe; la línea que lo usa es `.textContent`,
+nunca `.innerHTML`), que sustituyen al test viejo «no se pinta con un texto sin firmar» — medía
+justo lo contrario de lo que ahora es correcto, y se actualizó CON la firma, tal como su propio
+comentario decía que había que hacer.
+
+**No verifiqué en rojo con el propio código de producción** (asignar `innerHTML` en vez de
+`textContent` de verdad) porque el clasificador de permisos denegó la edición al detectarla como
+creación de superficie RCE — una lectura razonable del propio código en abstracto, aunque aquí era
+para un test, no para un envío real. Verificado en su lugar leyendo `tests/_banco-vistas.mjs`
+(el `innerHTML` setter SÍ parsea etiquetas arbitrarias en nodos reales, `textContent` no las toca)
+y razonando la propiedad desde ahí. Declarado, no ocultado.
+
+**Fuera de este incremento:** ninguno — cierra el último pendiente de SCRUM-1155/920f.

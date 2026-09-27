@@ -617,7 +617,7 @@ function openExpenseModal(expense, opts) {
           <div class="field">
             <label>Proveedor (opcional)</label>
             <select id="exp-providerid"><option value="">Cargando proveedores…</option></select>
-            <!-- SCRUM-920 comentario 17138b (26-sep-2026) · texto vacío A PROPÓSITO: se rellena
+            <!-- SCRUM-1155 comentario 17250 (27-sep-2026) · texto vacío A PROPÓSITO: se rellena
                  con .textContent en aplicarLecturaTicket, nunca interpolado en HTML — el
                  nombre viene de una lectura por IA de una foto que sube el usuario. -->
             <p id="exp-proveedor-sugerido" hidden></p>
@@ -813,6 +813,8 @@ function openExpenseModal(expense, opts) {
   // de la lectura anterior.
   function limpiarDescartes() {
     document.querySelectorAll('.gasto-descarte').forEach((el) => { el.hidden = true; el.textContent = ''; });
+    const avisoProveedor = document.getElementById('exp-proveedor-sugerido');
+    if (avisoProveedor) { avisoProveedor.hidden = true; avisoProveedor.textContent = ''; }
   }
   function pintarDescartes(descartados) {
     for (const d of (descartados || [])) {
@@ -861,10 +863,18 @@ function openExpenseModal(expense, opts) {
       } else if (p.nifProveedor) {
         nifInput.value = p.nifProveedor;
       }
-      // `proveedorNombre` (SCRUM-920 comentario 16173 punto 3): el servidor ya lo lee, pero
-      // pintarlo con un texto propio es microcopy NUEVA sin firmar (regla 30). Se propone y se
-      // para — no se inventa aquí. De momento el NIF sigue siendo el único camino para emparejar
-      // proveedor tras la lectura.
+      // `proveedorNombre` (SCRUM-920 comentario 16173 punto 3; texto SCRUM-1155 comentario 17250):
+      // solo cuando la lectura trajo un nombre y NO enganchó proveedor por NIF (SCRUM-961b: el
+      // enganche automático sigue siendo únicamente por NIF, esto es solo una pista para elegir a
+      // mano). `{proveedorNombre}` por `textContent`, NUNCA HTML — ver la constante.
+      const avisoProveedor = document.getElementById('exp-proveedor-sugerido');
+      if (avisoProveedor) {
+        const sinProveedorEnganchado = p.providerId === null || p.providerId === undefined;
+        if (sinProveedorEnganchado && p.proveedorNombre) {
+          avisoProveedor.textContent = TEXTO_PROVEEDOR_SUGERIDO_PREFIJO + p.proveedorNombre + TEXTO_PROVEEDOR_SUGERIDO_SUFIJO;
+          avisoProveedor.hidden = false;
+        }
+      }
     }
 
     btnLeerTicket.addEventListener('click', async () => {
@@ -1041,6 +1051,12 @@ const TEXTO_OPCIONAL = 'Opcional';
 // F1 · «de abajo», no «de arriba»: en el rediseño la foto sube al paso 1, así que los campos
 // fiscales que describe quedan DEBAJO de este párrafo, no encima como en el modal viejo.
 const TEXTO_F1_FOTO_ES_COPIA = 'Guardamos la foto como tu copia. Los datos fiscales salen de los campos de abajo.';
+
+// SCRUM-1155 comentario 17250 · firmado por el orquestador por delegación permanente, 27-sep-2026.
+// `{proveedorNombre}` va SIEMPRE por `textContent` (ver aplicarLecturaTicket): es contenido de una
+// lectura por IA sobre una foto que sube el usuario, sin validar.
+const TEXTO_PROVEEDOR_SUGERIDO_PREFIJO = 'El ticket dice «';
+const TEXTO_PROVEEDOR_SUGERIDO_SUFIJO = '». Si no está en tu lista, puedes darlo de alta en Proveedores.';
 
 // SCRUM-920h · los 9 porqués de la lectura — textos firmados por el orquestador por delegación
 // permanente (SCRUM-920 comentario 16175, 21-sep-2026, junto con SCRUM-912). Prototipo en su día
