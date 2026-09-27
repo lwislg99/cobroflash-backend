@@ -4221,3 +4221,9 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .contacto-link:hover { text-decoration-color: currentColor; }
 .contacto-link--icono { min-width: 36px; justify-content: center; text-decoration: none; }
 @media (max-width: 768px) { .contacto-link { min-height: 44px; } .contacto-link--icono { min-width: 44px; } }
+
+/* SCRUM-1148 (AB6, grupo B, opción ③) · Plantillas: «+ Nuevo presupuesto» de la cabecera medía
+   30,6 px de toque en Chrome real, a 929 y a 390. Regla ACOTADA A SU CONTENEDOR, solo tamaño:
+   `.btn-sm` global no se toca. Los botones de las filas («📋 Usar», «Renombrar», «Borrar») y las
+   pestañas `Historial · Plantillas` ya daban 44 px en el producto: no se tocan. */
+.plantillas-cabecera > .btn-sm { min-height: 44px; }

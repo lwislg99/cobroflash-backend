@@ -422,3 +422,58 @@ queda (`planDeRenumeracion`) SIGUE cambiando · UTC 46/48.
 
 - Relacionados (`scrum1093f`, `albaran`, `scrum306`, `scrum234`, `scrum728`, `scrum1093`): 44 tests,
   42 pass, 0 fail, 2 skipped (`sin QA_DB_TEST=1`).
+
+---
+
+# APÉNDICE · 27-sep-2026 · SCRUM-1093g (S1) · el número del PARTE, y el censo de la familia en `src/`
+
+**Medido contra:** `origin/main` = `6cbf22ce9c13587d348dffd4ecad8996027257d6` · 2026-09-27T16:07:28Z
+
+**Escribe:** Sesión 1 (S1, `s1-27a`), rama `scrum-1093g-parte-zona`, APILADA sobre
+`scrum-1093f-albaran-zona` (mismo fichero de registro: dos apéndices en paralelo chocarían al final
+del fichero). Encargo del orquestador: arreglar `partes.routes.ts:418`, el tercer sitio de la
+familia, y censarla entera.
+
+## El arreglo
+
+`POST /admin/partes` numeraba con `siguienteNumeroParte(…, fecha.getFullYear())`, con
+`fecha = new Date()`. Ahora lee `timezone` del merchant dentro de la misma transacción y usa
+`Number(diaNaturalEn(fecha, zonaDelMerchant(m)).slice(0, 4))`. Sin zona declarada, `'UTC'`: lo mismo
+que en producción hasta hoy.
+
+La ruta entera necesita Postgres (no hay banco en esta máquina), así que la red es ESTRUCTURAL, por
+AST sobre el fichero real: `tests/scrum1093g-parte-numero-zona-merchant.test.mjs` exige que el año de
+cada `siguienteNumeroParte` salga de `diaNaturalEn` + `zonaDelMerchant`, y que no quede ningún
+`getFullYear()` en el fichero. Tiene SUELO (sin numeración a la vista dice CIEGO) y un CONTROL que caza
+la forma del defecto y absuelve la del arreglo. **Corrido en rojo:** sin el arreglo, 1 pass / 1 fail
+(`una numeración del parte no deriva el año…`); con él, 2/2. El comportamiento de `diaNaturalEn` lo
+prueban sus propios tests.
+
+Controles: los 19 ficheros de test que tocan partes + `scrum745`, `scrum938` y `scrum813`: 230 tests,
+224 pass, 0 fail, 6 skipped.
+
+## El censo de la familia en `src/` — LARGO, y por eso NO se arregla aquí
+
+Censo AST (no `grep`) de las llamadas a métodos de `Date` que leen o escriben componentes LOCALES
+(`getFullYear`, `getMonth`, `getDate`, `getDay`, `getHours`, `set*`, `toLocale*` sin `timeZone`),
+con un control positivo que tiene que ver 2 de 4 formas sintéticas y no ve `getUTCFullYear` ni
+`toLocaleDateString({ timeZone })`. **Población: 304 ficheros `.ts` en `src/`. Resultado: 65 llamadas
+en 23 ficheros** (sobre `37bda5db`; `albaranNumber.service.ts:115` ya curado en 1093f).
+
+| clase | dónde | dueño | estado |
+|---|---|---|---|
+| **NUMERA** un documento | `partes.routes.ts:418` | S1 | **arreglado aquí** |
+| **NUMERA** un documento | `albaranNumber.service.ts:115` | S1 | arreglado en 1093f |
+| 🔴 **Serie de FACTURAS**, año del proceso | `app.ts:410`, `:873`, `:926` · `system/merchantAdmin.ts:202` | J1 (fiscal) | AJENO, reportado. Ojo: `allocateInvoiceNumber` ya usa la zona del merchant (SCRUM-735), así que en la frontera del año estas puertas miran la serie de un año DISTINTO del que va a emitirse |
+| **GUARDA** una fecha | `maintenance/domain/maintenance.service.ts:74` (`setMonth` para `nextDueAt`) | S1 | módulo apagado (`MAINTENANCE_ENABLED`) y NO TOCAR en 1056: reportado |
+| Código de referido | `auth/domain/referral.service.ts:13` (año en el código) | — | bajo impacto, reportado |
+| Se IMPRIME en un documento | `pdf.service.ts:374`, `:1137-1138`, `:1180` · `albaranPdf.service.ts:130`, `:357`, `:417` · `albaranes.routes.ts:1247`, `:1499` · `recapitulativa.service.ts:89` · `receipt.routes.ts:244`, `:286` · `customerPortal.routes.ts:45` · `invoicesAdmin.routes.ts:360` | J1 / S1 / J2 | fecha pintada con la zona del proceso: reportado |
+| Ventanas de AGREGADO (informes, métricas, filtros) | `reports.routes.ts` (8) · `metrics.service.ts` (8) · `exports.routes.ts` (4) · `expenses.service.ts:451-452` · `weeklyDigest.service.ts` (4) · `whatsappLog.service.ts` (3) · `whatsapp.ts:280` · `precarga.service.ts` (5) · `teamOverview.service.ts` (2) · `invoicesAdmin`/`quotesAdmin` `setHours` (2) | varios | no guardan ni numeran: bordes de ventana; reportado |
+
+Cuadre: 6 numeran + 2 guardan + 1 referido + 17 se imprimen + 39 agregan = 65. De las 17 «se
+imprimen», **`albaranPdf.service.ts:133` es un FALSO POSITIVO**: `toLocaleString` sobre un NÚMERO
+(`maximumFractionDigits`), no sobre una fecha. Un censo por nombre de método no distingue el tipo; el
+guard definitivo tendrá que mirar el tipo (el `TypeChecker`), no sólo el nombre.
+
+Con 65 llamadas, lo que procede es convertirlo en un censo con su guard (como SCRUM-1153 con el entorno
+prestado), no en arreglos sueltos. Queda propuesto al orquestador.
