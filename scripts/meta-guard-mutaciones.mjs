@@ -548,6 +548,54 @@ export function esCegueraNoMudez(donde) {
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1100 · EL DIAGNÓSTICO QUE `porQueNoCayo` NO PUEDE DAR: ¿LLEGÓ EL RESUMEN?
+ *
+ * Tres sesiones de J6 (SCRUM-908/908b/908c) persiguieron con acceso a Linux CI la hipótesis de
+ * que el hijo pierde la COLA de su stdout al llamar a `process.exit()` (`forceExit: true`) antes
+ * de que la tubería se vacíe. La reprodujeron UNA vez, de forma intermitente incluso dentro del
+ * mismo proceso padre, y no pudieron cerrarla: no hay Linux ni WSL en esta máquina para seguir
+ * por esa vía sin repetir el mismo callejón.
+ *
+ * Lo que SÍ se puede hacer desde aquí es dejar de adivinar la próxima vez. `test:summary` es el
+ * ÚLTIMO evento que `node:test` emite por fichero (SCRUM-908c §⑦ trabajó siempre a ciegas de él).
+ * Si la hipótesis es cierta, el resumen es justo lo último en la cola y lo primero que se pierde:
+ * su AUSENCIA es una prueba directa del corte, no una lectura de nombres que aparecen o no.
+ *
+ *   · SIN resumen → la salida se cortó ANTES de terminar. Confirma pérdida de eventos.
+ *   · CON resumen pero `counts.tests` no cuadra con lo que este script contó → el resumen llegó,
+ *     pero antes de él se perdió algo (a medio camino, no al final): mismo mecanismo, otro punto.
+ *   · CON resumen Y cuadra → el fichero terminó su ejecución con normalidad; si el nombre buscado
+ *     sigue sin aparecer, la pregunta ya NO es «¿se cortó la salida?» — es «¿cambió el título?».
+ *
+ * FAIL-CLOSED, a propósito: si `tras` no trae lo que esta función necesita (una sesión vieja que
+ * llamó a `correr()` antes de SCRUM-1100, o un `tras` fabricado a mano en un test), lo DICE en vez
+ * de inventar un veredicto — el mismo principio que el resto de esta casa (A3).
+ */
+export function diagnosticoDeCorte(tras) {
+  if (!tras || typeof tras !== 'object' || (tras.resumen === undefined && tras.duracionMs === undefined)) {
+    return 'NO EVALUABLE: este `tras` no trae `resumen`/`duracionMs` (¿corrió con una versión de '
+      + '`correr()` anterior a SCRUM-1100?). No se afirma nada sobre si la salida se cortó.';
+  }
+  const duracion = Number.isFinite(tras.duracionMs) ? `${tras.duracionMs} ms` : '(sin medir)';
+  const tope = Number.isFinite(tras.timeoutMs) ? tras.timeoutMs : null;
+  const cercaDelTimeout = tope !== null && Number.isFinite(tras.duracionMs) && (tope - tras.duracionMs) < 5000;
+  if (!tras.resumen) {
+    return `🔴 SIN RESUMEN: node:test NO llegó a emitir \`test:summary\` para este fichero (duró ${duracion}`
+      + (cercaDelTimeout ? `, PEGADO al timeout de ${tope} ms — puede ser el timeout, no el corte de stdout` : '')
+      + '). Confirma que la salida se cortó ANTES de terminar: pérdida de eventos, no cambio de título.';
+  }
+  const c = tras.resumen.counts || {};
+  const contadosAqui = (tras.pasados?.length || 0) + (tras.caidos?.length || 0) + (tras.saltados?.length || 0);
+  const cuadra = Number.isFinite(c.tests) && c.tests === contadosAqui;
+  return `resumen SÍ llegó en ${duracion}: node:test contó ${c.tests ?? '?'} tests (${c.passed ?? '?'} pasados, `
+    + `${c.skipped ?? '?'} saltados) frente a los ${contadosAqui} que este script acumuló. `
+    + (cuadra
+      ? 'CUADRAN: el fichero terminó con normalidad — si el test buscado no aparece, el título cambió.'
+      : '🔴 NO CUADRAN: se perdió algo ANTES del resumen, no al final — mismo mecanismo de pérdida, otro punto de corte.');
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
  * 🔴 SCRUM-784 · EL CUARTO VEREDICTO: «EL FICHERO MURIÓ AL MUTAR».
  *
  * `cayo()` busca el nombre declarado entre los caídos. Cuando el RADIO de una mutación mata el
@@ -675,6 +723,8 @@ export async function correr(guard, propias = null) {
   // SCRUM-754b · las DOS capas. La huella antes/despues es la que contesta la pregunta en
   // cualquier plataforma; `fs.watch` solo ANADE el nombre del transitorio donde entrega.
   const vigia = abrirObservacion(RAIZ);
+  const TIMEOUT_MS = 300000;
+  const inicio = Date.now();
   const flujo = run({
     // SCRUM-754c · se admite una ruta ABSOLUTA para poder ejercitar esto con un fichero de
     // fuera del árbol. No es una concesión al test: crear el fichero de prueba DENTRO de
@@ -682,7 +732,7 @@ export async function correr(guard, propias = null) {
     files: [path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard)],
     cwd: RAIZ,
     forceExit: true,
-    timeout: 300000,
+    timeout: TIMEOUT_MS,
   });
   // ⚠️ EL FLUJO HAY QUE CONSUMIRLO. Con sólo suscribirse a `test:pass` no arranca: salen CERO
   // eventos y estado 0, que es un «no hay» indistinguible de un «no supe mirar». Cazado al
@@ -692,6 +742,13 @@ export async function correr(guard, propias = null) {
   // `ERR_MODULE_NOT_FOUND` o un `TypeError` dicen que se rompió el andamio y el test no llegó a
   // opinar. Es el dato que separa cobertura de arrastre, y hasta hoy se tiraba.
   const errores = {};
+  // 🔴 SCRUM-1100 · QUE LA PRÓXIMA MUDA SE EXPLIQUE SOLA (en vez de esperar a la siguiente sesión
+  // con acceso a Linux CI). `test:summary` es el ÚLTIMO evento que emite `node:test` por fichero,
+  // con el recuento que el propio runner hizo de sí mismo. Si la hipótesis de SCRUM-908c es
+  // cierta —el hijo llama a `process.exit()` (`forceExit: true`) con la tubería de stdout todavía
+  // llena—, el resumen es justo lo último en la cola y es lo primero que se pierde. Su AUSENCIA
+  // es una prueba directa de corte, no una inferencia sobre nombres que aparecen o no aparecen.
+  let resumen = null;
   for await (const ev of flujo) {
     // ═══════════════════════════════════════════════════════════════════════════════════════
     // 🔴 SCRUM-754c · UN TEST SALTADO NO ES UN TEST APROBADO.
@@ -725,13 +782,21 @@ export async function correr(guard, propias = null) {
         mensaje: String(causa?.message || e?.message || '').slice(0, 160),
       };
     }
+    // SCRUM-1100 · el resumen final, si llega. `counts.tests` es el propio recuento de node:test,
+    // independiente de lo que este script haya conseguido acumular arriba.
+    else if (ev.type === 'test:summary') resumen = ev.data;
   }
+  const duracionMs = Date.now() - inicio;
   // 🔴 SCRUM-754 · Y AHORA, ¿SOBRE QUÉ ÁRBOL SE HA MEDIDO ESTO? Los eventos llegan con retardo:
   // cerrar sin esperarlos devolvería «quieto» sin haber mirado, que es el defecto que se persigue.
   await new Promise((s) => setTimeout(s, GRACIA_MS));
   vigia.cerrar();
   const movidos = vigia.movimientos(desde, propias);
-  return { pasados, caidos, saltados, errores, movidos, sinVigilar: vigia.sinVigilar, vigilada: true };
+  return {
+    pasados, caidos, saltados, errores, movidos, sinVigilar: vigia.sinVigilar, vigilada: true,
+    // SCRUM-1100: ver el comentario junto a `resumen` más arriba y `diagnosticoDeCorte`.
+    resumen, duracionMs, timeoutMs: TIMEOUT_MS,
+  };
 }
 
 /**
@@ -1067,10 +1132,15 @@ export async function aplicarUna(mut, guard, limpia) {
       // log no se puede leer sin credenciales, así que lo que no diga este mensaje no lo sabrá
       // nadie. Esto AÑADE información y no cambia el veredicto.
       const donde = porQueNoCayo(tras, mut.cae);
+      // SCRUM-1100 · sólo para «NO APARECE»: es la única de las tres causas donde `test:summary`
+      // puede dar evidencia directa de corte. SALTADO ya tiene su causa conocida (QA_DB_TEST) y
+      // añadir esto ahí sería ruido, no diagnóstico.
+      const corte = donde.startsWith('NO APARECE') ? `\n    → ${diagnosticoDeCorte(tras)}` : '';
       const recuento = `\n    → en la pasada MUTADA ese test: ${donde}.`
         + ` Recuento: ${(tras?.pasados || []).length} pasados · ${(tras?.caidos || []).length} caídos`
         + ` · ${(tras?.saltados || []).length} saltados.`
-        + ` Y en la LIMPIA: ${(limpia?.pasados || []).length} pasados · ${(limpia?.caidos || []).length} caídos.`;
+        + ` Y en la LIMPIA: ${(limpia?.pasados || []).length} pasados · ${(limpia?.caidos || []).length} caídos.`
+        + corte;
       // 🔴 SCRUM-1100: SALTADO y NO APARECE son CEGUERA, no MUDEZ (ver `esCegueraNoMudez` arriba).
       // Sólo «corrió y pasó» acusa a un guard que de verdad no ve la mutación.
       if (esCegueraNoMudez(donde)) {
