@@ -39,5 +39,9 @@ del producto con datos de prueba, **no de yaqu.app**; eso queda pendiente tras e
 
 - En `receipt`, la ficha sigue teniendo la sección **«FACTURAS · No hay facturas generadas.»**: la misma
   familia (habla de un documento que el modo no deja emitir).
-- **«MARGEN · undefined%»** en «Gastos y margen». Puede venir del fixture (la ruta de gastos devuelve
-  `[]`); no está medido contra datos reales.
+- ~~«MARGEN · undefined%»~~ **NO es un defecto: es un fantasma de mi fixture.** Servía `[]` en
+  `/admin/expenses/margin/1`, y el servidor devuelve un objeto con `marginPct` siempre numérico
+  (`expenses.service.ts:512`: `revenue > 0 ? … : 0`). Con la forma real sale «100 %» (captura de
+  SCRUM-1170). Queda aquí escrito para que nadie abra el ticket mirando la captura de arriba.
+
+Suite completa: 8560 tests, 1 fallo = `scrum910d` (libuv en Windows, no es de este ticket).
