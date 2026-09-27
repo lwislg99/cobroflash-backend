@@ -248,6 +248,88 @@ test('SCRUM-1155 · un motivo o campo que este modal no conoce no inventa un avi
   assert.equal(visibles.length, 0, '🔴 se ha pintado un aviso para un campo que este modal no tiene');
 });
 
+// ═══ SCRUM-1155 comentario 17250 · «El ticket dice «{proveedorNombre}»…», SOLO sin proveedor enganchado ═
+
+test('SCRUM-1155 · con proveedorNombre y SIN proveedor enganchado, pinta la sugerencia con el texto firmado', async () => {
+  const propuesta = { ...propuestaCompleta(), providerId: null };
+  const { banco } = bancoBase({
+    lecturas: [jsonOk({ ok: true, propuesta, descartados: [] })],
+  });
+  const { btn } = await prepararConFoto(banco);
+  await pulsar(btn);
+
+  const aviso = banco.ctx.document.getElementById('exp-proveedor-sugerido');
+  assert.ok(aviso, '🔴 no existe #exp-proveedor-sugerido');
+  assert.equal(aviso.hidden, false, '🔴 sin proveedor enganchado, la sugerencia tiene que verse');
+  assert.equal(aviso.textContent, 'El ticket dice «Leroy Merlin». Si no está en tu lista, puedes darlo de alta en Proveedores.',
+    '🔴 el texto no es el firmado (SCRUM-1155 comentario 17250)');
+});
+
+test('SCRUM-1155 · con proveedor YA enganchado por NIF, la sugerencia no se pinta (no hace falta)', async () => {
+  const propuesta = propuestaCompleta(); // providerId: 42, ya enganchado
+  const { banco } = bancoBase({
+    providers: [{ id: 42, name: 'Leroy Merlin', taxId: 'A58818501' }],
+    lecturas: [jsonOk({ ok: true, propuesta, descartados: [] })],
+  });
+  const { btn } = await prepararConFoto(banco);
+  await pulsar(btn);
+
+  const aviso = banco.ctx.document.getElementById('exp-proveedor-sugerido');
+  assert.equal(aviso.hidden, true, '🔴 con proveedor ya enganchado, la sugerencia no debería verse');
+});
+
+test('SCRUM-1155 · sin proveedorNombre en la lectura, la sugerencia no se pinta', async () => {
+  const propuesta = { ...propuestaCompleta(), providerId: null, proveedorNombre: null };
+  const { banco } = bancoBase({
+    lecturas: [jsonOk({ ok: true, propuesta, descartados: [] })],
+  });
+  const { btn } = await prepararConFoto(banco);
+  await pulsar(btn);
+
+  const aviso = banco.ctx.document.getElementById('exp-proveedor-sugerido');
+  assert.equal(aviso.hidden, true, '🔴 sin proveedorNombre no hay nada que sugerir');
+});
+
+test('SCRUM-1155 · 🔴 CONDICIÓN DE LA FIRMA: un nombre con `<` y `&` se pinta como TEXTO, nunca como HTML', async () => {
+  // El nombre viene de una lectura por IA sobre una foto que sube el usuario: contenido arbitrario
+  // sin validar (SCRUM-1155 comentario 17250). Si algún día la pintura pasa de `textContent` a
+  // interpolación en una plantilla HTML, `<b>` dejaría de ser texto plano y se convertiría en un
+  // nodo real — la marca que este test busca, sin necesidad de un payload de exploit de verdad.
+  const nombreConHtml = 'Bricolaje <Martínez> & Hijos, S.L.';
+  const propuesta = { ...propuestaCompleta(), providerId: null, proveedorNombre: nombreConHtml };
+  const { banco } = bancoBase({
+    lecturas: [jsonOk({ ok: true, propuesta, descartados: [] })],
+  });
+  const { btn } = await prepararConFoto(banco);
+  await pulsar(btn);
+
+  const aviso = banco.ctx.document.getElementById('exp-proveedor-sugerido');
+  assert.equal(aviso.hidden, false, 'suelo: con proveedorNombre y sin enganche, se ve');
+  assert.equal(aviso.textContent, `El ticket dice «${nombreConHtml}». Si no está en tu lista, puedes darlo de alta en Proveedores.`,
+    '🔴 el texto plano tiene que llevar el nombre tal cual, sin escaparlo dos veces ni perderlo');
+  assert.equal(aviso.querySelectorAll('*').length, 0,
+    '🔴 AGUJERO: el `<` y `>` del nombre se han convertido en nodos reales — se pintó como HTML, no como texto');
+});
+
+test('SCRUM-1155 · una lectura nueva sin proveedorNombre LIMPIA la sugerencia que dejó la anterior', async () => {
+  const { banco } = bancoBase({
+    lecturas: [
+      jsonOk({ ok: true, propuesta: { ...propuestaCompleta(), providerId: null }, descartados: [] }),
+      jsonOk({ ok: true, propuesta: { ...propuestaCompleta(), providerId: null, proveedorNombre: null }, descartados: [] }),
+    ],
+  });
+  const { fileInput, btn } = await prepararConFoto(banco);
+  await pulsar(btn);
+  assert.equal(banco.ctx.document.getElementById('exp-proveedor-sugerido').hidden, false,
+    'suelo: la primera lectura sí enciende la sugerencia');
+
+  fileInput.files = [FOTO_FALSA];
+  fileInput.disparar('change');
+  await pulsar(btn);
+  assert.equal(banco.ctx.document.getElementById('exp-proveedor-sugerido').hidden, true,
+    '🔴 la sugerencia de la lectura anterior sigue encendida aunque esta vez no trajo nombre');
+});
+
 // ═══ ③ LECTURA PARCIAL: solo rellena lo que llega, y NO borra lo ya escrito ═════════════════
 
 test('SCRUM-1038 · 🔴 ③ lectura parcial: solo toca los campos que trae, y no borra lo ya tecleado', async () => {

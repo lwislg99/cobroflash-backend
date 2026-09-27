@@ -26,6 +26,14 @@
 Y los 9 motivos de descarte de la lectura (`MOTIVOS_DESCARTE_TEXTO`), firmados en el comentario
 16175 — ver el propio código, que los cita tal cual.
 
+**Aprobado por el orquestador por delegación del fundador** el 2026-09-27 — SCRUM-1155 comentario
+17250: la sugerencia de proveedor de la lectura, bajo el select «Proveedor (opcional)», solo cuando
+la lectura trae `proveedorNombre` y no engancha ningún proveedor por NIF.
+
+16. «El ticket dice «{proveedorNombre}». Si no está en tu lista, puedes darlo de alta en
+    Proveedores.» — `{proveedorNombre}` se inserta con `textContent` (condición de la propia firma:
+    es contenido de una lectura por IA sobre una foto que sube el usuario, sin validar).
+
 ## Qué cambió
 
 El modal de alta reordena la foto AL PRINCIPIO (antes iba al final) y añade dos botones —«📷 Hacer
