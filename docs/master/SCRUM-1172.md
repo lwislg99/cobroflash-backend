@@ -52,3 +52,76 @@ da verde, sin ningún `btn-primary btn-sm` nuevo sin declarar en todo el front.
 - Vecinos (352, 368, 412, 846b, 962, 786, 1167, 267 y todos los que leen `jobDetailView`):
   **743 tests · 742 pass · 0 fail · 1 saltado** (SCRUM-22, gateado «sin QA_DB_TEST=1»: pide la base de staging, que este checkout no tiene).
 - Tanda completa: la corre el check obligatorio del PR.
+
+---
+
+## Parte S3 (el instrumento) · 27-sep-2026
+
+**Medido contra:** `origin/main` = `8f68b3e5f28c846868207e67db05420e82a20ff3` · 2026-09-27T18:00:01Z
+(worktree `wt-s3-1172-guard-ficha-trabajo`, rama `scrum-1172-guard-ficha-trabajo`).
+
+### ① La ficha del Trabajo vuelve a `guard-objetivo-tactil.mjs`, midiendo en navegador
+
+Nueva entrada en `SUPERFICIES_791` (`renderJobDetailView`), con un fixture LOCAL (`DATOS_1172`,
+no el `TRABAJO_DE_MUESTRA` compartido con `censo:tactil-panel` — tocar ese habría cambiado el
+número de OTRO instrumento sin que este ticket lo midiera) que sirve un Trabajo con una factura
+PENDIENTE de cobro: sin eso no salen «📲 Confirmar Bizum recibido», «Marcar como PAGADA», el «⋯»
+de secundarias ni «Enlace de pago» — los botones de COBRO que la aceptación #4 manda medir
+primero.
+
+**Rojo-antes, verde-después, medido en navegador (aceptación #6):** con el fixture y SIN
+excepciones, el guard midió **1 objetivo corto de 20** en los dos anchos (929 y 390) — no 17: los
+20 `btn-sm` de la parte S2 ya llegan a 44 px. El que queda es un hallazgo NUEVO, no el que motivó
+el ticket:
+
+🔴 **El «⋯» de acciones secundarias (`overflow-trigger`, `api.js`) mide 30,7–31,0 px.** No estaba
+en las 20 asignaciones de `jobDetailView.js` que midió S2 (el trigger vive en `api.js`, compartido
+por otras vistas), así que ni el censo de clases ni este guard lo habían visto nunca. Se DECLARA en
+`EXCEPCIONES_791.renderJobDetailView` con su cifra — no se arregla aquí: es un componente
+compartido y decidir su tamaño no es de esta sesión ni de este ticket (que es el instrumento, no
+el arreglo). **Reportado aparte para que alguien lo recoja como ticket.**
+
+**Fail-closed (aceptación #5):** además del suelo de `distintosEsperados` (ya existía para las
+demás superficies), esta entrada añade `conocidos: ['Marcar como PAGADA', '📲 Confirmar Bizum
+recibido']` — si cualquiera de los dos deja de PINTARSE (no que mida poco: que desaparezca), el
+guard sale CIEGO con su nombre. Verificado quitando `chargeId` del fixture a mano: cae con «no he
+medido ningún botón «📲 Confirmar Bizum recibido»»; repuesto, vuelve a verde.
+
+### ② El comentario de `:317` (hoy en otra línea, movido por los cambios de S2) se corrige
+
+Decía que la ficha salía «igual que providers/templates/albaranDetail». **Falso**, medido con
+`git log -S` sobre los tres nombres de vista en este fichero: **cero apariciones** de Plantillas y
+del detalle del Albarán — nunca entraron, no es que se retiraran. Proveedores YA VOLVIÓ (SCRUM-1167).
+Corregido en el propio comentario del guard, con la cita retirada y dicho por qué era falsa.
+
+### ③ La cita a `censo:tactil-panel` como red, corregida en su sitio (mensaje final del guard)
+
+El guard seguía diciendo, incluso con la ficha fuera de la lista, que las superficies restantes
+«se siguen midiendo por `npm run censo:tactil-panel`» — dando a entender que hay vigilancia donde
+no la hay. Medido (S0, SCRUM-1172): ese comando no está en ningún workflow, ni en
+`guards-visuales.mjs`, ni en `test`; y el propio job de guards de navegador NO es obligatorio (sólo
+`build + tests` lo es, confirmado con `gh api rules/branches/main`). El mensaje final ahora dice
+que es un CENSO MANUAL —cuenta, no vigila, no bloquea— en vez de dejarlo sonar a red.
+
+### ④ Segundo par de ojos sobre el regex de SCRUM-412 (pedido por S2)
+
+Revisado `tests/scrum412-primaria-nunca-es-sm.test.mjs`: el ensanche (`(?: [\w-]+)*` tras
+`btn-primary btn-sm`) es simétrico en las DOS formas que reconoce (asignación directa y
+`createElement`), no introduce falsos positivos por posición —sigue exigiendo que `btn-primary
+btn-sm` sean las DOS PRIMERAS clases del literal, igual que el regex viejo, así que no cambia esa
+suposición ya existente— y no tiene forma de backtracking catastrófico (cada repetición del grupo
+consume un espacio obligatorio que no se solapa con la siguiente). 73/73 tests de los vecinos
+(352, 368, 412, 786, 1167, 1172, 267, 649) en verde.
+
+### Verificación
+
+`node scripts/guard-objetivo-tactil.mjs` verde (con la excepción del «⋯» declarada). Vecinos
+(352, 368, 412, 786, 1167, 1172, 267, 649): 73/73. `npm run guards:entrada`: sin tocar (este guard
+no entra ahí — compila/lanza Chromium, y `guards:entrada` es «sin compilar, segundos»).
+
+### Lo que esto NO cierra
+
+El ticket sigue con un hallazgo nuevo sin arreglar (el «⋯» compartido) y las quince superficies del
+censo de SCRUM-787 siguen sin guard que corra o bloquee — eso es DELIBERADO y medido, no una deuda
+de esta sesión: decidir vigilarlas todas es una decisión de producto (coste en cada PR), no algo
+que se cuele por inercia.

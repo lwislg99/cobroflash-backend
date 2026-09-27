@@ -263,6 +263,39 @@ const DATOS_1167 = (url) => {
 };
 
 /**
+ * SCRUM-1172 · EL TRABAJO CON UNA FACTURA PENDIENTE DE COBRO — para que salgan «📲 Confirmar
+ * Bizum recibido», «Marcar como PAGADA», el «⋯» de las secundarias (Recordar pago/Reenviar por
+ * WhatsApp) y «Enlace de pago», que son justo los botones de COBRO que el ticket manda medir
+ * PRIMERO. Vive AQUÍ, no en `_pagina-panel.mjs`: el fixture compartido (`TRABAJO_DE_MUESTRA`) lo
+ * usa también `censo:tactil-panel`, y tocarlo le cambiaría el número a ESE instrumento sin que
+ * este ticket lo haya medido — la misma lección de SCRUM-1167 con `DATOS_1167`, un fixture local
+ * para una superficie local.
+ */
+const DATOS_1172 = (url) => {
+  const u = String(url || '');
+  if (u.includes('/admin/merchant')) return { id: 1, name: 'Fontanería Soler' };
+  if (/\/admin\/jobs\/\d+\/gastos/.test(u)) return [];
+  if (/\/admin\/jobs\/\d+$/.test(u)) {
+    return {
+      id: 1, titulo: 'Reforma de baño', status: 'en_curso',
+      // El teléfono en el RANGO IMPOSIBLE `34 0XX XXX XXX` (SCRUM-262), como el resto de esta casa.
+      customer: { id: 5, name: 'Ana Ruiz', phone: '34000000005' },
+      direccion: 'Calle Mayor 1',
+      albaranes: [],
+      quote: null,
+      invoices: [{
+        id: 30, number: 'F-2026-0030', status: 'pending',
+        total: 250, currency: 'EUR', createdAt: '2026-09-01T09:00:00.000Z',
+        // `chargeId` pinta el botón de Bizum; `payToken`, el «Enlace de pago». Sin los dos, la
+        // fila de cobro se queda con SOLO «Marcar como PAGADA» y no mide lo que el ticket manda.
+        chargeId: 99, payToken: 'tok-1172',
+      }],
+    };
+  }
+  return [];
+};
+
+/**
  * 🔴 SCRUM-1167 · LA CLASE DE LAS ACCIONES IRREVERSIBLES SE MIDE POR SU EFECTO, NO POR ESTAR.
  *
  * SCRUM-786 le puso `accion-irreversible-btn-44` a «Borrar» proveedor y su test comprobaba que el
@@ -338,16 +371,28 @@ const SUPERFICIES_791 = [
   // (opt-in `.job-toolbar-btn-44`, sin tocar `.btn-sm` en general). Queda la casilla de 14 px
   // (deuda declarada, mismo patrón que `.quote-line__suplido`: la etiqueta lleva el área, no el
   // checkbox nativo — ver `docs/master/SCRUM-962.md`).
-  // 🔴 SCRUM-917g · 25-sep-2026 · 1 → 0, RETIRADA. «La casilla de precios sale de la barra de
-  // Documentos»: la única deuda que quedaba (la casilla de 14 px de arriba) dejó de estar en la
-  // pantalla tal cual la medía este guard. Confirmado en rojo (`node scripts/guard-objetivo-tactil.mjs`,
-  // 25-sep-2026): «CIEGO: 0 objetivos cortos y SCRUM-962 midió 1» + «EXCEPCIÓN CADUCA: INPUT ya no
-  // aparece». Con CERO deuda conocida, la ficha de Trabajo sale de esta lista — igual que
-  // providers/templates/albaranDetail (SCRUM-786) o las otras quince superficies del censo de
-  // SCRUM-787: se sigue midiendo por `npm run censo:tactil-panel`, no se vigila aquí por PR. No se
-  // deja en `distintosEsperados: 0` a propósito: ese número no defendería nada que el «detector de
-  // sobrantes» de abajo no proteja ya solo, y una superficie sin excepciones ni deuda declarada dice
-  // más sola que con un cero de adorno.
+  // 🔴 SCRUM-917g · 25-sep-2026 · 1 → 0, RETIRADA — Y ERA UN ERROR, corregido en SCRUM-1172
+  // (27-sep-2026; ver la entrada de `renderJobDetailView` en `SUPERFICIES_791`, más abajo). «La
+  // casilla de precios sale de la barra de Documentos»: la única deuda CONOCIDA (la casilla de
+  // 14 px) dejó de estar. Con CERO deuda CONOCIDA la ficha salió de esta lista citando
+  // `npm run censo:tactil-panel` como red — y esa red **no corre en ningún sitio automático ni
+  // bloquea nada** (medido por S0, SCRUM-1172: no está en los workflows, ni en
+  // `guards-visuales.mjs`, ni en `test`). Cero deuda CONOCIDA no es cero deuda: es que nadie
+  // miraba, y detrás había botones de COBRO a 30 px («📲 Confirmar Bizum recibido», acciones de
+  // cobro, «Enlace de pago»).
+  //
+  // 🔴 Y EL PRECEDENTE QUE CITABA ESTA MISMA LÍNEA ERA FALSO, y se retira aquí: decía que la ficha
+  // salía «igual que providers/templates/albaranDetail». `git log -S` sobre esos tres nombres de
+  // vista en este fichero da CERO apariciones — Plantillas y el detalle del Albarán NUNCA
+  // entraron en este guard (no es que se retiraran: nunca estuvieron), y Proveedores YA VOLVIÓ
+  // (SCRUM-1167, con su propia deuda real). Un precedente inventado es peor que ninguno: justifica
+  // la siguiente retirada con una cita que no resiste `git log`.
+  //
+  // Las quince superficies restantes del censo de SCRUM-787 (Plantillas y el detalle del Albarán
+  // entre ellas) SIGUEN sin vigilarse aquí — eso es cierto y se mantiene así, con `distintosEsperados`
+  // ausente a propósito: un número inventado no defendería nada que el «detector de sobrantes» de
+  // abajo no proteja solo. Se miden con `npm run censo:tactil-panel`, que es un CENSO manual —no
+  // corre solo, no bloquea— y así hay que leerlo: sin la promesa de una red que no existe.
   // 🔴 SCRUM-795 · LA FICHA 360, y por qué entra AHORA y no en SCRUM-791.
   //
   // El censo de SCRUM-787 no pudo proponerla: la 360 nunca llegó a montarse. El banco llamaba a
@@ -367,6 +412,22 @@ const SUPERFICIES_791 = [
   { ruta: '/__proveedores', vista: 'renderProvidersView', titulo: 'lista de Proveedores',
     datos: DATOS_1167, irreversibles: ['Borrar'], distintosEsperados: 2,
     origen: 'SCRUM-1167 (27-sep-2026, medido con la lista de excepciones VACÍA)' },
+  // 🔴 SCRUM-1172 · LA FICHA DEL TRABAJO VUELVE — y por el mismo motivo que Proveedores en 1167:
+  // SCRUM-917g la retiró con «cero deuda conocida», y la deuda existía: 17 de sus 20 `btn-sm`
+  // medían 30 px, varios de COBRO («📲 Confirmar Bizum recibido», «Marcar como PAGADA», el «⋯» de
+  // las secundarias, «Enlace de pago»). S2 ya los sube a 44 en el código (SCRUM-1172, parte S2,
+  // `.job-toolbar-btn-44`); esto es la parte de S3: que el navegador lo compruebe, con los datos
+  // que hacen SALIR a los botones de cobro (`DATOS_1172`, arriba) — sin factura pendiente no hay
+  // Bizum que medir, y medir la pantalla vacía sería medir otra pantalla.
+  //
+  // Argumentos: `renderJobDetailView(container, jobId)` — SIN `id` no hay fetch y la vista no monta.
+  { ruta: '/__job', vista: 'renderJobDetailView', titulo: 'ficha del Trabajo',
+    datos: DATOS_1172, args: [1], distintosEsperados: 1,
+    // Los de COBRO primero (aceptación #4): si cualquiera deja de pintarse, CIEGO — no un cero que
+    // parezca limpieza. «Marcar como PAGADA» y «📲 Confirmar Bizum recibido» son los dos que la
+    // fixture de `DATOS_1172` existe para sacar a pantalla.
+    conocidos: ['Marcar como PAGADA', '📲 Confirmar Bizum recibido'],
+    origen: 'SCRUM-1172 (27-sep-2026, medido con la lista de excepciones VACÍA: 1 corto en los dos anchos, el «⋯»)' },
 ];
 for (const s of SUPERFICIES_791) {
   const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10, preparar: s.preparar || null });
@@ -722,13 +783,20 @@ const EXCEPCIONES_791 = {
   renderProvidersView: [
     { sel: 'BUTTON.btn.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` — «Editar» y «Desactivar/Activar» de cada fila, 30,7 px a 929 y 44 px a 390 (la tabla apila en móvil). Pre-existentes, no irreversibles. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786/787).' },
   ],
-  // renderJobDetailView: sin excepciones — SCRUM-917g bajó su última deuda (la casilla de 14 px)
-  // a cero y la superficie SALIÓ de SUPERFICIES_791 (ver el comentario junto a su entrada, arriba).
-  // SCRUM-711 · aquí estaba `BUTTON.btn-primary` «+ Nuevo albarán», el CTA del héroe a 37,0 px. Sólo
-  // era corto a 929, por exigir 44 en escritorio: retirada, la nombró el detector de sobrantes.
-  // SCRUM-962 (22-sep-2026) · retiradas las tres de arriba: «Cambiar», «+ Nuevo albarán»/«Parte de
-  // trabajo» (ya llegan a 44/36 con `.job-toolbar-btn-44`) y la miga «Trabajos» (ya llega con
-  // `min-height`+`min-width` en `.detail-miga-link`). Las nombró el detector de sobrantes/caducas.
+  // SCRUM-917g bajó su última deuda conocida (la casilla de 14 px) a cero y la superficie SALIÓ de
+  // SUPERFICIES_791 citando una red que no corre (SCRUM-1172). SCRUM-711 retiró aquí `BUTTON.
+  // btn-primary` «+ Nuevo albarán» (37,0 px, sólo corto en escritorio) y SCRUM-962 las tres de
+  // «Cambiar»/«+ Nuevo albarán»/«Parte de trabajo»/miga «Trabajos» — las nombró el detector de
+  // sobrantes/caducas, no se inventan.
+  //
+  // 🔴 SCRUM-1172 · Y AL VOLVER A MEDIR, HABÍA UNA DEUDA NUEVA QUE NADIE HABÍA VISTO: el «⋯» de las
+  // acciones secundarias (Recordar pago/Reenviar por WhatsApp) mide 30-31 px. No es un `btn-sm` DE
+  // ESTA PANTALLA: `overflowMenu` vive en `public/dashboard/js/api.js` y lo comparten otras vistas,
+  // así que subirlo aquí no es una decisión de esta sesión ni de este ticket —que es el INSTRUMENTO,
+  // no el arreglo—. Se declara, con su cifra, y se reporta aparte (ver docs/master/SCRUM-1172.md).
+  renderJobDetailView: [
+    { sel: 'BUTTON.overflow-trigger.btn-ghost.btn-sm', motivo: 'el «⋯» de acciones secundarias (Recordar pago/Reenviar por WhatsApp), compartido vía `overflowMenu` en `api.js`. 30,7 px a 929, 31,0 px a 390. Hallazgo NUEVO de SCRUM-1172 (27-sep-2026), reportado y sin arreglar: cambiar un componente compartido no es decisión de esta sesión.' },
+  ],
 };
 
 for (const s of SUPERFICIES_791) {
@@ -831,6 +899,18 @@ for (const s of SUPERFICIES_791) {
         }
       }
     }
+    // 🔴 SCRUM-1172 · FAIL-CLOSED SOBRE BOTONES CONCRETOS, no sólo sobre el recuento de cortos: el
+    // suelo de `distintosEsperados` (abajo) sólo mira lo que se queda CORTO — si un botón de COBRO
+    // dejara de pintarse ENTERO (no que midiera poco, que desapareciera), esa cuenta no lo vería.
+    // Aceptación #4 pide que los de cobro vayan primero: se comprueba que SIGUEN saliendo, con
+    // nombre, antes de creer que la pantalla mide lo que promete medir.
+    for (const texto of s.conocidos || []) {
+      const hallados = r.medidos.filter((m) => m.texto === texto);
+      if (!hallados.length) {
+        mal(`   🔴 CIEGO · ${s.vista} @${ancho}px: no he medido ningún botón «${texto}». O el fixture `
+          + 'dejó de activarlo, o la pantalla dejó de pintarlo: en los dos casos el verde de arriba no lo cubre.');
+      }
+    }
     for (const m of r.medidos) {
       if (!vistos.has(m.sel)) vistos.set(m.sel, { corto: false });
       if (!m.cumple) vistos.get(m.sel).corto = true;
@@ -896,11 +976,17 @@ if (fallos) {
     + `—${MINIMO_TACTIL} px en móvil, ${MINIMO_ESCRITORIO} en escritorio, como dice DESIGN.md—, va a EXCEPCIONES con su motivo y quién la retira.`);
   process.exit(1);
 }
-// El mensaje final NOMBRA LAS CINCO. Un «todo bien» que no dice de qué es cómo este guard
+// El mensaje final NOMBRA LAS SEIS. Un «todo bien» que no dice de qué es cómo este guard
 // empezó: se llamaba «objetivo-tactil» y sólo miraba la landing (SCRUM-782).
-decir('✅ objetivos de toque: todos llegan a su mínimo —44 px de AB6 en móvil, 36 en escritorio como dice DESIGN.md— (o están excusados con motivo) — '
-  + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto, ficha de Trabajo y ficha 360 '
-  + 'del cliente (929 y 390) · lista de Proveedores (929 y 390), con sus acciones irreversibles a 44 px '
-  + 'en los dos anchos. SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795 + SCRUM-1167. Las demás vistas '
-  + 'del panel NO se vigilan aquí: están '
-  + 'medidas en `npm run censo:tactil-panel` (SCRUM-787).');
+//
+// 🔴 SCRUM-1172 · Y DICE LA VERDAD SOBRE LAS QUE FALTAN: `npm run censo:tactil-panel` es un CENSO
+// MANUAL — no corre en ningún workflow, no está en `guards-visuales.mjs` ni en `test`, y el job de
+// guards de navegador TAMPOCO es obligatorio (sólo `build + tests` lo es). Citarlo como si vigilara
+// es EXACTAMENTE el error que SCRUM-1172 vino a cerrar: una red que no corre y no bloquea no es una
+// red, y decir que «se sigue midiendo» sin decir que nadie mira ese número es la misma promesa vacía.
+decir('✅ objetivos de toque: todos llegan a su mínimo —44 px de AB6 en móvil, 36 en escritorio como dice DESIGN.md— (o están excusados con motivo, ver EXCEPCIONES_791) — '
+  + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto, ficha de Trabajo (con sus botones de COBRO), '
+  + 'ficha 360 del cliente (929 y 390) · lista de Proveedores (929 y 390), con sus acciones irreversibles a 44 px '
+  + 'en los dos anchos. SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795 + SCRUM-1167 + SCRUM-1172. Las demás vistas '
+  + 'del panel NO están vigiladas por ningún guard que corra o bloquee: `npm run censo:tactil-panel` (SCRUM-787) '
+  + 'las CUENTA a mano, sin correr solo y sin frenar ningún PR — no es una red, es un número que hay que ir a leer.');
