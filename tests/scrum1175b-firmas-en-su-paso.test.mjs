@@ -42,21 +42,21 @@ const BASE = Object.freeze({
 
 /** El HTML de la caja de esa firma (cliente | tecnico), o null. */
 function caja(html, quien) {
-  const m = html.match(new RegExp(`<div class="parte-firma-caja" data-parte-caja-firma="${quien}">([\\s\\S]*?)</div>`));
+  const m = html.match(new RegExp(`<div class="parte-firma-caja" data-parte-caja-firma="${quien}"[^>]*>([\\s\\S]*?)</div>`));
   return m ? m[1] : null;
 }
 
 test('SCRUM-1175b · el paso «Firmas» y una caja por firma, cada aviso en SU caja', () => {
   const html = pintar(BASE);
-  assert.ok(html.includes('<h4 class="parte-firmas-titulo">Firmas</h4>'), '🔴 falta el título del paso');
+  assert.match(html, /<h4 class="parte-firmas-titulo"[^>]*>Firmas<\/h4>/, '🔴 falta el título del paso');
   const cliente = caja(html, 'cliente');
   const tecnico = caja(html, 'tecnico');
   assert.ok(cliente && tecnico, '🔴 faltan las cajas de las dos firmas');
   assert.ok(cliente.includes('data-parte-firmar="1"') && cliente.includes('data-parte-falta-firma="cliente"'),
     '🔴 la caja del cliente no lleva su botón y su aviso');
   assert.ok(!cliente.includes('data-parte-falta-firma="tecnico"'), '🔴 el aviso del técnico cayó en la caja del cliente');
-  assert.ok(tecnico.includes('data-parte-firmar-tecnico="1"') && tecnico.includes('data-parte-falta-firma="tecnico"'),
-    '🔴 la caja del técnico no lleva su botón y su aviso');
+  assert.ok(tecnico.includes('data-parte-firmar-tecnico="1"'), '🔴 la caja del técnico no lleva su botón');
+  assert.ok(tecnico.includes('data-parte-falta-firma="tecnico"'), '🔴 la caja del técnico no lleva su aviso');
 });
 
 test('SCRUM-1175b · firmadas las dos: cada caja dice quién firmó y no queda ningún «falta»', () => {
@@ -70,6 +70,10 @@ test('SCRUM-1175b · firmadas las dos: cada caja dice quién firmó y no queda n
 });
 
 test('SCRUM-1175b · 🔴 «Sin las dos firmas el parte no se cierra.» NO se pinta en ningún estado', () => {
+  // RESPALDO (SCRUM-237): el token es REAL, es la guía que proponía el prototipo aprobado. Sin esto,
+  // una frase mal copiada aquí daría un «no aparece» verde para siempre.
+  const propuesta = fs.readFileSync(path.join(RAIZ, 'docs', 'prototipos', 'SCRUM-916', 'textos-propuestos.md'), 'utf8');
+  assert.ok(/Sin las dos firmas/.test(propuesta), '🔴 CIEGO: el texto vigilado no es el que se propuso');
   const casos = [
     BASE,
     { ...BASE, estado: 'firmado', firmoElCliente: true, puedeEditarContenido: { ok: false, motivo: 'firmado' } },
