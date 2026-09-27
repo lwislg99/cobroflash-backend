@@ -1301,6 +1301,12 @@ async function duplicateQuote(quoteId) {
     // campo cualquiera: se perdía una rebaja que el cliente ya había aceptado.
     // `?? null` y no `|| null`: un descuento de 0 es una decisión escrita, no «no hay descuento».
     discountGlobalAmount: detail.discountGlobalAmount ?? null,
+    // SCRUM-1186 · LOS DOS TEXTOS DEL DOCUMENTO VIAJAN EN LA COPIA. Desde SCRUM-1174 el editor
+    // tiene dónde escribirlos, y sin estas dos líneas el duplicado salía sin cabecera ni
+    // Observaciones, en silencio. Necesitan que el detalle los mande (SCRUM-1187, servidor):
+    // mientras no llegan, `?? null` deja el campo vacío, que es lo que pasaba hasta ahora.
+    docHeaderText: detail.docHeaderText ?? null,
+    docFooterText: detail.docFooterText ?? null,
   };
   // SCRUM-140: la copia va como ARGUMENTO (antes por sessionStorage + sello `_ts`). Este camino
   // ya tenía el orden correcto y nunca falló, pero compartía el canal global con "Usar plantilla":
