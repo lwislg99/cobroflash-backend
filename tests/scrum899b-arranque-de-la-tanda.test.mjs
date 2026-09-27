@@ -41,7 +41,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/orquestador-arranque.mjs',
     de: "  if (uso.veredicto !== 'VERDE') {",
     a: '  if (false) {',
-    cae: '🔴 SCRUM-999 · sin cuota, la tanda lanza igual',
+    cae: '🔴 SCRUM-999 · con la cuenta en AVISO (≥85 %), la tanda NO lanza y lo dice como SIN-CUOTA',
   },
   {
     // Sin entrar en el repo, la tarea arranca en System32 y el orquestador nace fuera del proyecto.

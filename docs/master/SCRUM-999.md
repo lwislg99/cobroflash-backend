@@ -1,7 +1,7 @@
 # SCRUM-999 · el arranque automático comprueba si queda uso antes de lanzar
 
 **Fecha:** 26-sep-2026 13:38Z (GitHub) · **Carril:** S5 · **Medido contra:** `origin/main` =
-`ef07945b3adc00de4d6009db3021188d4b8219be`.
+`ef07945b3adc00de4d6009db3021188d4b8219be` · 2026-09-26T13:38Z (GitHub)
 
 ## PASO 0 — lo medido antes de tocar nada
 
