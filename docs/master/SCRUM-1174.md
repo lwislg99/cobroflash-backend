@@ -76,3 +76,16 @@ pide verlo, no deducirlo.
 - **Duplicar un presupuesto no copia los dos textos** (`quotesDetailView.js:1291`, `duplicateQuote`):
   el mismo defecto que SCRUM-926 corrigió para el descuento global. Hoy no se pierde nada porque el editor
   no los tenía; desde este ticket, sí. Se pasa al orquestador.
+
+## Apéndice · 27-sep-2026 · el check obligatorio en rojo por dos trinquetes de recuento
+
+El primer CI de este PR cayó en 3 tests: scrum697 (1) y scrum698 (2), que cuentan los nodos que monta
+enderQuotesView en el banco y esperaban 248. Con este ticket son **255**. No es un arreglo del banco:
+lo mueve la VISTA, y se declara por identidad como las dieciséis subidas anteriores. Medido sobre el árbol
+montado con el mismo contador 	odos, en los DOS montajes (con y sin datos): el subárbol de
+div.quote-texto-documento es **7** — el envoltorio + 2 × (div.field · label · 	extarea) — y
+255 − 248 = 7, así que no hay una resta compensada escondida. Ni se relaja el guard ni se retira el campo:
+se anota la subida en los dos tests con su motivo. Vecinos (todo lo que monta enderQuotesView + 593e,
+237, 553, 286, 600e): **291 · 291 pass · 0 fail**.
+
+**Medido contra:** `origin/main` = `0a10475c144763982b7b9d535bbaa14718843ee8` · 2026-09-27T17:29:23Z

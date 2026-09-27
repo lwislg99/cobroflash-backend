@@ -398,7 +398,10 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // `datos` este banco sirve `{}` a los tres endpoints que consulta (`vat`/`recibidas`/`pl`), así
   // que `pintarResumenTrimestreEnHome` mide «sin datos» (aceptación #4) y lo deja VACÍO — el nodo
   // que suma es el contenedor mismo, no su aviso.
-  for (const [vista, nodos] of [['renderQuotesView', 248], ['renderProductsView', 176],
+  // 🔴 SCRUM-1174 · 27-sep-2026 · `renderQuotesView` 248 → 255, y las otras tres intactas. Por
+  // identidad: el subárbol de `div.quote-texto-documento` (el envoltorio + 2 × `div.field` · `label`
+  // · `textarea`) = 7, que es todo el delta.
+  for (const [vista, nodos] of [['renderQuotesView', 255], ['renderProductsView', 176],
     ['renderCustomersView', 78], ['renderHomeView', 145]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
@@ -463,7 +466,10 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // por identidad en el bloque de arriba. Lo que este control vigila —que los DOS montajes den el
   // mismo número— sigue intacto: con o sin `datos` el banco monta la vista sin clientes, y el
   // subárbol vacío son los mismos 4. Los dos dan 248.
-  assert.equal(todos(desnuda.contenedor).length, 248,
+  // SCRUM-1174 (27-sep-2026): la DECIMOSÉPTIMA, +7 — los dos textos del documento, identificados por
+  // identidad en el bloque de arriba. El componente se monta con valores vacíos y no depende de los
+  // datos, así que lo pintan los dos montajes. Los dos dan 255.
+  assert.equal(todos(desnuda.contenedor).length, 255,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });
