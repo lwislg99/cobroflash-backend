@@ -248,6 +248,10 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     // presupuesto sin el global y a más precio (D6 de SCRUM-883), y el detalle no podía cuadrar
     // base e IVA con un `total` que sí lo lleva. Es precio, no margen: lo ve quien ve el total.
     discountGlobalAmount: quote.discountGlobalAmount ?? null,
+    // SCRUM-1187 · la cabecera y el pie del documento (SCRUM-1174). Mismo motivo que el global:
+    // sin ellos «Duplicar» copiaba el presupuesto sin sus textos, en silencio (SCRUM-1186).
+    docHeaderText: quote.docHeaderText ?? null,
+    docFooterText: quote.docFooterText ?? null,
     lines: quote.lines,
     pdfUrl: (quote as any).pdfUrl ?? null,
     signatureUrl: quote.signatureUrl ?? null,
