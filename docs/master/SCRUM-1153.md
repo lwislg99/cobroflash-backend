@@ -84,3 +84,53 @@ para que el orquestador reparta hasta 3 como ticket nuevo si al comprobarlos tie
 - No se corrió la tanda completa (7.7xx tests, ~340 s) por presupuesto de contexto de la tanda; no se
   tocó ningún fichero de `src/`, `scripts/` o `tests/` fuera de los dos nuevos, así que el riesgo de
   regresión fuera de lo verificado es bajo, pero queda declarado en vez de omitido.
+
+---
+
+# APÉNDICE · 27-sep-2026 · SCRUM-1153b · `tests/scrum750-los-dos-calendarios.test.mjs`, curado
+
+**Medido contra:** `origin/main` en el momento del push · rama `scrum-1153b-scrum750-env-explicito`.
+
+Cierra uno de los 8 acusados del censo de arriba: `tests/scrum750-los-dos-calendarios.test.mjs`
+(entonces línea 55), cuya `sonda()` lanzaba el `node` hijo con `{ encoding: 'utf8' }` — sin `env`
+en absoluto, así que heredaba `process.env` completo de la tanda. `NODE_TEST_CONTEXT` (que node
+`--test` fija en el proceso padre y que cambia el formato de salida del hijo),
+`FORCE_COLOR`/`NODE_OPTIONS` (de la máquina, no del sujeto que se está probando) viajaban sin
+querer al subproceso.
+
+## El arreglo — el mismo patrón que SCRUM-938 (`decidirVaciando`)
+
+```js
+const entornoSonda = { ...process.env };
+delete entornoSonda.FORCE_COLOR;
+delete entornoSonda.NODE_OPTIONS;
+delete entornoSonda.NODE_TEST_CONTEXT;
+// …
+const r = spawnSync(process.execPath, [...], { encoding: 'utf8', env: entornoSonda });
+```
+
+`entornoSonda` se construye UNA vez, junto al `cache` de la sonda (memorizado igual que antes), y
+se reutiliza en cada llamada — no cambia la firma de `sonda()` ni el resto del fichero.
+
+## El censo baja en uno — NO re-medido en esta sesión, y se dice
+
+El título de este PR afirma que el censo baja de 10 acusados a 9. **Esta sesión no ha podido
+volver a correr `censar('.')` sobre el árbol de hoy**: el entorno de ejecución de esta tarea (una
+invocación automática de `@claude` sobre un PR ya abierto) no tiene aprobación para lanzar `node`
+fuera de `git`, así que el número de 8 acusados que registra el cuerpo de este ticket pudo haber
+cambiado por ficheros nuevos entre medias, y no se reconstruye aquí de memoria. Lo que SÍ es cierto,
+medido en el propio diff: este apéndice cura exactamente UNA llamada —
+`scrum750-los-dos-calendarios.test.mjs` — con el mismo patrón que SCRUM-938, y no toca ninguna otra.
+Quien vuelva a correr el censo, que reemplace esta nota por el número real.
+
+## Verificación
+
+- Los 8 tests de `tests/scrum750-los-dos-calendarios.test.mjs` en verde (CI, run del PR de este
+  apéndice): `SUELO`, `EL QUE DECIDE`, `el mismo día…`, `CONTROL POSITIVO`, `fechaDeAtajo DELEGA…`,
+  `FAIL-CLOSED`, `la VISTA le pasa el merchant…`, `mis mutaciones las LEE el lector oficial…`.
+- No se tocó ningún otro fichero de `src/`, `scripts/` o `tests/`: el diff es una sola línea de
+  import de `env` en la llamada existente a `spawnSync`, más las cuatro líneas que construyen
+  `entornoSonda`.
+- Esta misma entrada es lo que exigía el guard SCRUM-854 (`docs/master/SCRUM-1153.md` tenía que
+  aparecer en los ficheros que toca la rama): el rojo del check obligatorio no era del código, era
+  de este expediente, que faltaba.
