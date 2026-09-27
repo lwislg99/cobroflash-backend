@@ -38,3 +38,8 @@ captura aún enseña «Facturada · Cobrada». Son datos de prueba, **no yaqu.ap
 su fixture servía `[]` en `/admin/expenses/margin/1`, y el servidor devuelve un objeto con `marginPct`
 siempre numérico (`expenses.service.ts:512`). Aquí esa ruta devuelve la forma real y el margen sale
 «100 %». **Un fixture con la forma equivocada fabrica defectos fantasma en las capturas.**
+
+## Suite
+
+Tanda completa tras el merge de main: 8577 tests, 1 fallo = `scrum910d` (libuv en Windows, no es de este ticket).
+
