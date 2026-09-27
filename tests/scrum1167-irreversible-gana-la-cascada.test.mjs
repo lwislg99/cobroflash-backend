@@ -26,6 +26,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8');
@@ -105,7 +106,7 @@ for (const irr of IRREVERSIBLES) {
 
 // El patrón hermano de SCRUM-1111: un guard que se pone verde RETIRANDO la pantalla que vigila.
 test('SCRUM-1167 · el guard táctil sigue vigilando Proveedores y exige «Borrar» como irreversible', () => {
-  const sinComentarios = GUARD.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const sinComentarios = soloCodigo(GUARD, 'guard-objetivo-tactil.mjs');
   assert.match(sinComentarios, /vista:\s*'renderProvidersView'[\s\S]{0,200}irreversibles:\s*\['Borrar'\]/,
     '🔴 `guard-objetivo-tactil.mjs` ya no declara la superficie de Proveedores con «Borrar» como irreversible.');
 });
