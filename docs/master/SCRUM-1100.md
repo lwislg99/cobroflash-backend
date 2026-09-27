@@ -257,7 +257,7 @@ mismas ~320 declaraciones, sólo cambia CÓMO se clasifica y CUÁNTO cuenta un v
 
 # SCRUM-1100c · El próximo corte se explica solo — `test:summary` como prueba directa
 
-**Medido contra:** `origin/main` = `cbb30708590011f79b1f392f322c4d264eab537c` · 2026-09-26T ~16:15Z
+**Medido contra:** `origin/main` = `cbb30708590011f79b1f392f322c4d264eab537c` · 2026-09-26T16:15:00Z
 (worktree `wt-s3-1153-censo-entorno`, rama `scrum-1100c-el-resumen-explica-el-corte`).
 
 **Decisión del orquestador (S3):** no reproducir el mecanismo (tres sesiones de J6 con acceso a
