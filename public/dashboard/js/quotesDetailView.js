@@ -355,7 +355,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     btnSend.className = isDraft ? 'btn-primary' : 'btn-secondary btn-sm';
     btnSend.textContent = isDraft ? '📤 Enviar por WhatsApp' : '↻ Reenviar por WhatsApp';
 
-    const hasPhone = !!(quote.customer && quote.customer.phone);
+    // SCRUM-1163 · ¿hay ALGÚN número (móvil o fijo)? Lo dice el servidor (`tieneNumeroDeContacto`,
+    // SCRUM-1166) con la misma función que usa el envío: la pantalla no decide por su cuenta. Si el
+    // dato no llega (un servidor anterior), se queda el criterio de siempre, `phone`.
+    const c = quote.customer || {};
+    const hasPhone = typeof c.tieneNumeroDeContacto === 'boolean' ? c.tieneNumeroDeContacto : !!c.phone;
     if (!hasPhone) {
       btnSend.disabled = true;
       btnSend.title = 'El cliente no tiene teléfono de WhatsApp configurado.';
