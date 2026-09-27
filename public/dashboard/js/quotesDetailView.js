@@ -656,9 +656,14 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const invSec = document.createElement('div');
   invSec.className = 'detail-section';
   invSec.innerHTML = '<h3 class="detail-section-title">Facturas</h3>';
-  page.appendChild(invSec);
 
   const invoices = Array.isArray(quote.invoices) ? quote.invoices : [];
+  // SCRUM-1170 · en modo justificante (regla 24) o sin saber el modo, y sin facturas, la sección
+  // sólo diría «No hay facturas generadas.» de un documento que no se puede emitir: no se monta.
+  // Si YA hay facturas, sale con ellas. La condición es el modo: vuelve sola con el interruptor.
+  if ((typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible()) || invoices.length) {
+    page.appendChild(invSec);
+  }
   const invList = document.createElement('div');
   invSec.appendChild(invList);
 
