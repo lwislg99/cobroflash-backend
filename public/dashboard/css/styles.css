@@ -3812,6 +3812,83 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 /* Las tres casillas de tipo: el objetivo es la etiqueta entera, que es lo que ya recibe el toque. */
 .parte-tipo label { min-height: 44px; box-sizing: border-box; }
 
+/* ══ SCRUM-1175 (916a, PR-C) · LOS DATOS DEL PARTE, PLEGADOS AL FINAL ═══════════════════════
+   Obra y REF, tipo, técnicos y notas: una línea por dato con su resumen, que se abre al tocarla.
+   Plegado no es quitado: los campos siguen dentro. La línea entera es el objetivo (≥48 px). */
+.parte-datos-del-parte { margin-top: 18px; }
+.parte-datos-del-parte-titulo {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--neutral-600, var(--muted));
+}
+.parte-plegable { border-top: 1px solid var(--border); }
+.parte-plegable:last-child { border-bottom: 1px solid var(--border); }
+.parte-plegable-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 2px;
+  cursor: pointer;
+  list-style: none;
+}
+.parte-plegable-cabeza::-webkit-details-marker { display: none; }
+.parte-plegable-cabeza::after {
+  content: "›";
+  flex: none;
+  font-size: 18px;
+  color: var(--muted);
+  transition: transform 150ms ease;
+}
+.parte-plegable[open] > .parte-plegable-cabeza::after { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .parte-plegable-cabeza::after { transition: none; } }
+.parte-plegable-cabeza:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+  border-radius: var(--radius-md, 10px);
+}
+.parte-plegable-titulo { font-size: 14px; font-weight: 600; color: var(--ink); flex: none; }
+.parte-plegable-resumen {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.parte-plegable-cuerpo { padding: 2px 0 14px; }
+.parte-plegable-cuerpo .parte-datos { margin-bottom: 0; }
+/* Dentro de su línea el grupo ya dice de qué es: la leyenda sigue para el lector de pantalla. */
+.parte-plegable .parte-tipo legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.parte-plegable .parte-tipo { margin: 0 !important; }
+/* Las tres fichas del tipo: 48 px de alto y la ficha entera recibe el toque. */
+.parte-tipo .parte-tipo-ficha {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin: 0 8px 8px 0;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+.parte-tipo .parte-tipo-ficha input { margin: 0; }
+.parte-tipo .parte-tipo-ficha:has(input:focus-visible) {
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(22,163,74,.18));
+}
+
 /* El campo del dictado y las cantidades de la propuesta, al mismo mínimo. */
 [data-parte-dictado] textarea { min-height: 88px; }
 [data-propuesta] input[type="number"] { min-height: 44px; }

@@ -117,6 +117,28 @@
     // el parte ya pasa a `firmado` (`partes.routes.ts`, rutas `firmar` y `firmar-tecnico`). Espera
     // decisión del fundador (SCRUM-1175, comentario 17253).
     firmasTitulo: 'Firmas',
+
+    // ── SCRUM-1175 (916a, PR-C) · LOS DATOS DEL PARTE, PLEGADOS ─────────────────────────
+    // FIRMADOS por delegación del fundador el 27-sep-2026, SCRUM-916 comentario 17251, y cada
+    // uno COMPROBADO contra el código antes de pintarlo. Cuatro de los firmados ahí NO se pintan
+    // porque no se cumplen, y los sustituyen cuatro que el orquestador firmó después (mensaje del
+    // 27-sep-2026, registrado en `docs/master/SCRUM-1175.md`):
+    //   ⛔ «La del trabajo, si no pones otra» y «Los del trabajo»: con la obra vacía NADA usa la
+    //      dirección del trabajo — ni al crear el parte ni en lo que se sella y firma el cliente
+    //      (`partes.routes.ts`, `obra: parte.obra ?? null`).
+    //   ⛔ «Solo tú» y «Quién más ha estado en la obra»: Técnicos se prellena con TODOS los
+    //      asignados del trabajo, quien lo rellena incluido (SCRUM-818); vacío es «sin trabajo o
+    //      sin asignados», y «tú» sería el jefe si lo mira desde la oficina.
+    datosTitulo: 'Datos del parte',
+    obraYReferencia: 'Obra y referencia',
+    pistaObra: 'Dónde se ha hecho el trabajo',
+    pistaReferencia: 'Tu referencia interna, si usas alguna',
+    sinObraNiReferencia: 'Sin dirección ni referencia',
+    sinElegir: 'Sin elegir',
+    sinTecnicos: 'Sin técnicos',
+    pistaTecnicos: 'Quién ha estado en la obra',
+    sinNotas: 'Sin notas',
+    pistaNotas: 'Lo que haya que dejar dicho.',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -261,7 +283,8 @@
       '<legend>' + esc(TEXTOS.tituloTipo) + '</legend>' +
       TIPOS.map(function (t) {
         return (
-          '<label style="display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:14px">' +
+          // SCRUM-1175 (PR-C) · fichas de 48 px: la etiqueta entera es el objetivo del dedo.
+          '<label class="parte-tipo-ficha">' +
           '<input type="radio" name="parte-tipo" value="' + esc(t) + '"' +
           (tipoActual === t ? ' checked' : '') + (editable ? '' : ' disabled') + '>' +
           esc(ETIQUETA_TIPO[t]) + '</label>'
@@ -312,8 +335,9 @@
    * @param {boolean} editable
    * @param {'number'} [modo]   abre el teclado numérico del móvil.
    * @param {string}  [unidad]  se pinta al lado del número (SCRUM-1175: «km»).
+   * @param {string}  [pista]   el marcador del campo vacío (SCRUM-1175, PR-C). Sólo al editar.
    */
-  function campo(rotulo, valor, nombre, editable, modo, unidad) {
+  function campo(rotulo, valor, nombre, editable, modo, unidad, pista) {
     var v = valor === null || valor === undefined ? '' : String(valor);
     if (!editable) {
       return (
@@ -326,6 +350,7 @@
     var casilla =
       '<input type="' + (modo === 'number' ? 'number' : 'text') + '"' +
       (modo === 'number' ? ' inputmode="decimal"' : '') +
+      (pista ? ' placeholder="' + esc(pista) + '"' : '') +
       ' data-parte-campo="' + esc(nombre || '') + '" value="' + esc(v) + '">';
     return (
       '<label class="parte-campo">' +
@@ -428,6 +453,77 @@
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-1175 (916a, PR-C) · LOS DATOS DEL PARTE, RECOGIDOS AL FINAL.
+  //
+  // Obra, REF, técnicos, tipo y notas ocupaban la primera pantalla entera, todos antes que el
+  // trabajo. Ahora van al final, cada uno en una línea que se abre (`<details>` nativo: teclado y
+  // lector de pantalla gratis, sin JS para abrir). 🔴 SIN RETIRAR NI UN CAMPO: plegado no es
+  // quitado. Cada campo sigue en el DOM con su `data-parte-campo` y su cable (lo exige el
+  // inventario de `tests/scrum1175c-datos-del-parte-plegados.test.mjs`).
+  //
+  // El RESUMEN de cada línea se calcula aquí y se recalcula al escribir (`refrescarResumen`), con
+  // la MISMA función: dos cálculos para el mismo dato acabarían diciendo cosas distintas.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  var NOTAS_RESUMEN_MAX = 28;
+
+  function resumenDe(clave, v) {
+    if (clave === 'obra') {
+      var partes = [v.obra, v.referencia].map(function (x) { return String(x == null ? '' : x).trim(); })
+        .filter(Boolean);
+      return partes.length ? partes.join(' · ') : TEXTOS.sinObraNiReferencia;
+    }
+    if (clave === 'tipo') return v.tipo && ETIQUETA_TIPO[v.tipo] ? ETIQUETA_TIPO[v.tipo] : TEXTOS.sinElegir;
+    if (clave === 'tecnicos') {
+      var t = String(v.tecnicos == null ? '' : v.tecnicos).trim();
+      return t || TEXTOS.sinTecnicos;
+    }
+    if (clave === 'notas') {
+      var n = String(v.notas == null ? '' : v.notas).trim();
+      if (!n) return TEXTOS.sinNotas;
+      return n.length > NOTAS_RESUMEN_MAX ? n.slice(0, NOTAS_RESUMEN_MAX) + '…' : n;
+    }
+    return '';
+  }
+
+  function plegable(clave, titulo, resumen, cuerpo) {
+    return (
+      '<details class="parte-plegable" data-parte-plegable="' + esc(clave) + '">' +
+      '<summary class="parte-plegable-cabeza">' +
+      '<span class="parte-plegable-titulo">' + esc(titulo) + '</span>' +
+      '<span class="parte-plegable-resumen" data-parte-resumen="' + esc(clave) + '">' + esc(resumen) + '</span>' +
+      '</summary>' +
+      '<div class="parte-plegable-cuerpo">' + cuerpo + '</div>' +
+      '</details>'
+    );
+  }
+
+  function pintarDatosDelParte(parte, editable) {
+    var tecnicos = (parte.tecnicos || []).join(', ');
+    var valores = { obra: parte.obra, referencia: parte.referencia, tipo: parte.tipo, tecnicos: tecnicos, notas: parte.notas };
+    return (
+      '<section class="parte-datos-del-parte" data-parte-datos-del-parte="1">' +
+      '<h4 class="parte-datos-del-parte-titulo">' + esc(TEXTOS.datosTitulo) + '</h4>' +
+      plegable('obra', TEXTOS.obraYReferencia, resumenDe('obra', valores),
+        '<div class="parte-datos">' +
+        campo(TEXTOS.obra, parte.obra, 'obra', editable, null, null, TEXTOS.pistaObra) +
+        campo(TEXTOS.referencia, parte.referencia, 'referencia', editable, null, null, TEXTOS.pistaReferencia) +
+        '</div>') +
+      plegable('tipo', TEXTOS.tituloTipo, resumenDe('tipo', valores), pintarTipo(parte.tipo, editable)) +
+      // 🔴 EDITABLE, aunque venga PRELLENADO de los asignados del Trabajo (SCRUM-818): el parte es
+      // la prueba de lo que PASÓ, y si el técnico lo cambia, eso es el dato.
+      plegable('tecnicos', TEXTOS.tecnicos, resumenDe('tecnicos', valores),
+        '<div class="parte-datos">' +
+        campo(TEXTOS.tecnicos, tecnicos, 'tecnicos', editable, null, null, TEXTOS.pistaTecnicos) +
+        '</div>') +
+      plegable('notas', TEXTOS.notas, resumenDe('notas', valores),
+        '<div class="parte-datos">' +
+        campo(TEXTOS.notas, parte.notas, 'notas', editable, null, null, TEXTOS.pistaNotas) +
+        '</div>') +
+      '</section>'
+    );
+  }
+
   /**
    * Pinta el parte entero dentro de `contenedor`.
    *
@@ -445,35 +541,17 @@
       esc(parte.numero) + '</h3>' +
       '<p style="margin:2px 0 0;font-size:13px;color:var(--muted)">' +
       esc(parte.clienteNombre || '') + '</p></header>' +
-      // 🔴 SCRUM-818 · LOS SIETE SON CAMPOS DE VERDAD. Antes eran un rótulo con un guion debajo:
-      // parecían campos y no se podían tocar, y fue lo primero que el fundador notó al abrir la
-      // pantalla. Los siete existen en la base y los siete se escriben por el `PATCH` — medido
-      // campo a campo en el PASO 0, ejecutando `permisoDeCampos`, no leyendo el código.
-      '<div class="parte-datos">' +
-      campo(TEXTOS.obra, parte.obra, 'obra', editable) +
-      campo(TEXTOS.referencia, parte.referencia, 'referencia', editable) +
-      // Entrada, salida, desplazamiento y kilómetros viven ahora en su propio paso (SCRUM-1175),
-      // justo debajo: los siete siguen siendo campos de verdad.
-      // El papel admite VARIOS técnicos en la misma línea, así que se pintan juntos y separados
-      // por coma, tal como se escriben ahí.
-      //
-      // 🔴 EDITABLE, aunque venga PRELLENADO de los asignados del Trabajo: el parte es la prueba
-      // de lo que PASÓ, no el registro de lo que se planeó, y lo firma un cliente que puede
-      // discutirlo. Si el técnico lo cambia respecto a la asignación, eso NO es un error: es el
-      // dato, y no se revierte al guardar.
-      campo(TEXTOS.tecnicos, (parte.tecnicos || []).join(', '), 'tecnicos', editable) +
-      '</div>' +
+      // 🔴 SCRUM-818 · LOS SIETE SON CAMPOS DE VERDAD, medidos campo a campo en el PASO 0
+      // ejecutando `permisoDeCampos`. Entrada, salida, desplazamiento y kilómetros viven en su
+      // paso (SCRUM-1175 PR-A); obra, REF, técnicos, tipo y notas, plegados al final (PR-C).
       pintarHoras(parte, editable) +
-      pintarTipo(parte.tipo, editable) +
       // El dictado solo tiene sentido mientras el contenido se pueda tocar: ofrecerlo en un parte
       // firmado sería enseñar un camino que el siguiente paso cierra con un 409.
       (editable ? pintarDictado() : '') +
       pintarBloque('mano_obra', lineas, editable) +
       pintarBloque('materiales', lineas, editable) +
-      '<div class="parte-datos">' + campo(TEXTOS.notas, parte.notas, 'notas', editable) + '</div>' +
-      (editable
-        ? pintarLasDosFirmas(parte)
-        : pintarLasDosFirmas(parte));
+      pintarLasDosFirmas(parte) +
+      pintarDatosDelParte(parte, editable);
 
     return true;
   }
@@ -944,10 +1022,44 @@
       }(casillas[c]));
     }
 
-    // SCRUM-1175 · la duración se recalcula mientras se elige la hora, no al guardar.
     var casillaDe = function (nombre) {
       return contenedor.querySelector ? contenedor.querySelector('[data-parte-campo="' + nombre + '"]') : null;
     };
+
+    // 🔴 SCRUM-1189 · EL TIPO DE INTERVENCIÓN SE GUARDA. Los radios se pintaban editables y nadie
+    // los escuchaba: el profesional lo marcaba, se veía marcado, y al recargar volvía vacío. El
+    // servidor ya lo acepta (`PATCH /admin/partes/:id`, `tipo`); se manda por el MISMO
+    // `guardarCampo` que los demás campos, y si falla se repinta desde el servidor.
+    var radiosTipo = contenedor.querySelectorAll ? contenedor.querySelectorAll('input[name="parte-tipo"]') : [];
+    for (var r = 0; r < radiosTipo.length; r++) {
+      (function (radio) {
+        radio.addEventListener('change', function () {
+          if (!radio.checked) return;
+          guardarCampo('tipo', radio.value);
+          refrescarResumen('tipo');
+        });
+      }(radiosTipo[r]));
+    }
+
+    // SCRUM-1175 (PR-C) · el resumen de cada línea plegada, al día mientras se escribe. Se lee de
+    // las casillas y se calcula con `resumenDe`, la misma función que lo pinta.
+    var refrescarResumen = function (clave) {
+      var hueco = contenedor.querySelector ? contenedor.querySelector('[data-parte-resumen="' + clave + '"]') : null;
+      if (!hueco) return;
+      var valorDe = function (nombre) { var c = casillaDe(nombre); return c ? c.value : ''; };
+      var marcado = '';
+      for (var i = 0; i < radiosTipo.length; i++) if (radiosTipo[i].checked) marcado = radiosTipo[i].value;
+      hueco.textContent = resumenDe(clave, {
+        obra: valorDe('obra'), referencia: valorDe('referencia'), tecnicos: valorDe('tecnicos'),
+        notas: valorDe('notas'), tipo: marcado,
+      });
+    };
+    [['obra', 'obra'], ['referencia', 'obra'], ['tecnicos', 'tecnicos'], ['notas', 'notas']].forEach(function (par) {
+      var casilla = casillaDe(par[0]);
+      if (casilla) casilla.addEventListener('input', function () { refrescarResumen(par[1]); });
+    });
+
+    // SCRUM-1175 · la duración se recalcula mientras se elige la hora, no al guardar.
     var refrescarDuracion = function () {
       var hueco = contenedor.querySelector ? contenedor.querySelector('[data-parte-duracion]') : null;
       var e = casillaDe('entrada');

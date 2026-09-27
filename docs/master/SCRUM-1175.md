@@ -105,3 +105,60 @@ Medido sobre `origin/main` = `f0eac753c14885d78b754fdd578579e2b80223e2` (27-sep-
 
 `scrum1175b-firmas-390-despues` (las dos cajas, con su aviso cada una) · `scrum1175b-unafirma-390-despues`
 (parte firmado sólo por el cliente: su caja dice quién firmó y la del técnico sigue ofreciendo su firma).
+
+# PR-C · Los datos del parte, plegados al final (+ SCRUM-1189, el tipo que no se guardaba)
+
+**Medido contra:** `origin/main` = `494c0a7165d4b3e39e9b4b39d50616e32616a710` · 2026-09-27T17:50:45Z
+
+## El cambio
+
+- Obra y REF, tipo de intervención, técnicos y notas salen de la primera pantalla y van al final, **después de
+  las firmas**, en una sección «Datos del parte» con una línea por dato (`<details>` nativo) que enseña su
+  resumen y se abre al tocarla. Línea y fichas del tipo a **48 px**.
+- El tipo, en fichas: la etiqueta entera es el objetivo; el radio sigue dentro (teclado y lector de pantalla).
+- 🔴 **SCRUM-1189 dentro de este PR** (decisión del orquestador: mismo fichero y mismo control). Los radios
+  `name="parte-tipo"` se pintaban editables en `pintarTipo` y el único cable (`[data-parte-campo]`) no los
+  veía: marcar el tipo no se guardaba nunca. Ahora el `change` manda `PATCH { tipo }` por el mismo
+  `guardarCampo` (`partes.routes.ts:504` ya lo aceptaba; **no hace falta servidor**). Lo que NO entra: que
+  el ALTA mande `tipo` (no tiene selector y no se inventa), así que `cuerpo · POST /admin/partes::tipo`
+  sigue declarada en el trinquete de 1185.
+
+## Inventario de campos (condición de la firma: sin retirar ninguno)
+
+Medido montando `renderParte` en el banco con el mismo parte, antes (`origin/main` 0a10475c) y después:
+
+| | antes | después |
+|---|---|---|
+| casillas `data-parte-campo` (editable) | obra, referencia, tecnicos, entrada, salida, desplazamientos, kilometros, notas | las mismas 8 (cambia el orden) |
+| datos `data-parte-dato` (firmado) | las mismas 8 | las mismas 8 |
+| radios del tipo | 3 (deshabilitados en firmado) | 3 (deshabilitados en firmado) |
+
+## Textos: comprobados contra el código ANTES de pintarlos
+
+De los diez firmados en SCRUM-916 c.17251, **cuatro no se cumplen y NO se pintan**:
+
+- «La del trabajo, si no pones otra» y «Los del trabajo»: con la obra vacía nada usa la dirección del trabajo:
+  ni al crear el parte (`partes.routes.ts:425-437`) ni en lo que se sella y firma el cliente
+  (`obra: parte.obra ?? null`, :214).
+- «Solo tú» y «Quién más ha estado en la obra»: Técnicos se prellena con TODOS los asignados del trabajo, quien
+  lo rellena incluido (`partes.routes.ts:389-411`, SCRUM-818); vacío es «sin trabajo o sin asignados», y
+  «tú» sería el jefe si lo abre desde la oficina.
+
+Los sustituyen cuatro firmados por el orquestador (delegación del fundador) el 27-sep-2026 por mensaje:
+«Dónde se ha hecho el trabajo» · «Sin dirección ni referencia» · «Sin técnicos» · «Quién ha estado en la obra».
+Se pintan los otros seis: «Datos del parte», «Obra y referencia», «Tu referencia interna, si usas alguna»,
+«Sin elegir» (`tipo` es nullable, :381), «Sin notas», «Lo que haya que dejar dicho.».
+
+## Tests — `tests/scrum1175c-datos-del-parte-plegados.test.mjs` (7)
+
+Contra la vista sin el cambio **5 fallan** (plegado tras las firmas, resúmenes, marcadores y ausencia de los
+cuatro falsos, fichas de 48 px, y el viaje del tipo); el inventario y el control del firmado pasan en los dos,
+que es lo que tienen que hacer. Con el cambio, 7/7. El de 1189 recorre el viaje entero: marcar → `PATCH`
+→ **recargar otra vista** desde lo que quedó en el servidor → sale marcado.
+Vecinos: los 18 ficheros que cargan `parteDetailView` **140/140**; censos de todo el panel (clases, hojas,
+scripts, 1185) 94/94; censos de microcopy y objetivos táctiles 851/857 con 5 saltados y 1 fallo, `scrum910d`,
+uno de los tres que caen bajo carga: solo, 5/5.
+
+## Capturas (390 px, vista y hoja reales en Edge)
+
+`scrum1175c-datos-cerrado-390.png` · `scrum1175c-datos-abierto-390.png` · `scrum1175c-datos-vacio-390.png`.
