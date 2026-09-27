@@ -1815,10 +1815,31 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // Consecuencia buscada: al crear en blanco no hay placeholder de lugar de entrega. El
     // `ctx = {}` por defecto de `buildAlbEditor` lo hace inofensivo — `ctx.direccionSugerida` es
     // `undefined`, falsy, y el campo sale vacío en lugar de reventar.
+    // SCRUM-993 · ¿el cliente puede recibir el envío por WhatsApp? INTERINO con `phone`/`mobile`
+    // en vez de `canalDeWhatsApp` — el detalle del Trabajo no manda `customer.tieneNumeroDeContacto`
+    // (eso es del detalle del PRESUPUESTO, SCRUM-1166; medido en `jobs.routes.ts:87`, que solo
+    // proyecta `{ id, name, phone, mobile }`). Cuando SCRUM-1171 añada el dato preciso al detalle
+    // del Trabajo, esta línea se cambia por él (orquestador, SCRUM-993 comentario 17263). El
+    // criterio interino solo decide si el TEXTO nombra el canal, no si el envío se intenta.
+    const tieneCanalWhatsAppInterino = !!(job.customer?.phone || job.customer?.mobile);
+    const textoConfirmarEntrega = tieneCanalWhatsAppInterino
+      ? ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP
+      : ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP;
+
+    // SCRUM-303 · EL ÚNICO POST DE CREACIÓN, tanto para «Guardar» como para «Entregar y enviar a
+    // firmar» (SCRUM-993): el guard de esta pantalla cuenta los sitios que llaman a este endpoint
+    // en `jobDetailView.js` y exige que sea UNO — dos altas divergen en cuanto alguien toca una.
+    // Toma el CUERPO ya construido: quien lo construye (`onGuardar`, justo abajo, SIN TOCAR — es
+    // el receptor que vigila SCRUM-593e/607) sigue siendo el único sitio que decide su forma.
+    function crearAlbaran(cuerpo) {
+      return apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
+    }
+
     buildAlbEditor(bodyEl, enBlanco, {
       onClose: close,
       onError: (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; },
       textoGuardar: ALB_CREAR_COPY.guardar,
+      textoConfirmarEntrega,
       onGuardar: async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
         const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
         // SCRUM-607 (ALB-02): la misma trampa que describe `docHeaderText` justo debajo — si no se
@@ -1829,12 +1850,28 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         // habría cazado ningún test del editor: el editor sí lo manda.
         // `undefined` = no se pudo leer → no se manda la clave y el servidor no toca la columna.
         if (docHeaderText !== undefined) cuerpo.docHeaderText = docHeaderText;
-        await apiRequest(`/admin/jobs/${job.id}/albaranes`, { method: 'POST', body: JSON.stringify(cuerpo) });
+        await crearAlbaran(cuerpo);
         showToast(
           lineas.length
             ? `✓ Albarán creado con ${lineas.length} ${lineas.length === 1 ? 'línea' : 'líneas'}.`
             : '✓ Albarán creado (borrador).',
         );
+      },
+      // SCRUM-993 · «UN TOQUE»: crea (por `crearAlbaran`, arriba — un solo alta, SCRUM-303), EMITE
+      // y ENVÍA A FIRMAR, encadenados. Si el envío falla, el albarán YA está emitido (paso
+      // irreversible: SCRUM-841 congela al cliente en ese instante) y el aviso lo dice ANTES que
+      // el fallo — texto firmado, SCRUM-993 comentario 17263. No hay reintento automático: la
+      // escalera y la fila del albarán siguen ofreciendo «Enviar para firmar» sobre el emitido,
+      // que es por donde se reenvía a mano (regla 28: nada de envío automático nuevo).
+      onEntregarYFirmar: async ({ lineas, notas, modoValoracion: modo, docHeaderText, ocultarPreciosEnDocumento }) => {
+        const cuerpo = lineas.length ? { modoValoracion: modo, lineas, notas } : { modoValoracion: modo, notas };
+        if (ocultarPreciosEnDocumento !== undefined) cuerpo.ocultarPreciosEnDocumento = ocultarPreciosEnDocumento;
+        if (docHeaderText !== undefined) cuerpo.docHeaderText = docHeaderText;
+        const creado = await crearAlbaran(cuerpo);
+        await apiRequest(`/admin/albaranes/${creado.id}/emitir`, { method: 'POST' });
+        const envio = await apiRequest(`/admin/albaranes/${creado.id}/enviar-para-firmar`, { method: 'POST' });
+        if (waSendFailed(envio)) showToast(ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_ENVIO, 'warn');
+        else showToast('✓ Albarán entregado y enviado a firmar.');
       },
     }, { cur, refresh, setStatus });
     (bodyEl.querySelector('.input') || closeBtn).focus();
@@ -2388,7 +2425,33 @@ function vozIvaValorDicho(motivo) {
   return cola || null;
 }
 
-function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } = {}, ctx = {}) {
+// ── SCRUM-993 · «UN TOQUE»: crear + emitir + enviar a firmar, encadenados ─────────────────────
+//
+// FIRMADO por el orquestador por delegación permanente (regla 39), SCRUM-993 comentario 17261
+// (rótulo) y 17263 (texto del fallo de envío), 27-sep-2026. Ficha en
+// `docs/microcopy/2026-09-27-SCRUM-993-un-toque.md`.
+//
+// ⚠️ DECLARADAS AQUÍ, junto a `buildAlbEditor` que las usa, y NO junto a `ALB_CREAR_COPY`: ese
+// bloque vive DENTRO del recorte que `tests/scrum303-albaran-una-pantalla.test.mjs` extrae con dos
+// anclas de texto («ESCÁNER CIEGO») y le exige un techo de 4000 caracteres — el mismo motivo que ya
+// dejó escrito el comentario de `frontEjecutable`: «se movió el código nuevo en vez de tocar el
+// guard ajeno».
+const ALB_ENTREGAR_Y_FIRMAR_LABEL = 'Entregar y enviar a firmar';
+// El texto NOMBRA el canal solo si el cliente puede recibirlo por él — condición de la propia
+// firma (com. 17262/17263): decirlo cuando no va a pasar sería una promesa falsa.
+const ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_CON_WHATSAPP =
+  'Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar por WhatsApp.';
+const ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP =
+  'Esto emite el albarán —los datos del cliente quedan fijos en el documento— y lo envía a firmar.';
+// El envío puede fallar DESPUÉS de un paso irreversible (emitir ya congeló al cliente): el aviso
+// dice primero lo que SÍ pasó, y solo entonces lo que falló — misma forma que el ya firmado de
+// `collect-rest` (SCRUM-126, «Cobro creado — el WhatsApp falló, reenvíalo desde Cobros»). «Desde
+// el trabajo» es cierto: la escalera y la fila del albarán (`albaranAccion.js`) ofrecen «Enviar
+// para firmar» sobre un albarán ya emitido, las dos en esta misma pantalla.
+const ALB_ENTREGAR_Y_FIRMAR_AVISO_FALLO_ENVIO =
+  'Albarán emitido — el envío por WhatsApp falló, reenvíalo desde el trabajo.';
+
+function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, onEntregarYFirmar, textoConfirmarEntrega } = {}, ctx = {}) {
   // SCRUM-386 · lo que antes venía del ámbito de `renderJobDetailView`. Se desestructura con
   // los MISMOS nombres a propósito: así el cuerpo de abajo no cambia ni un carácter, y la
   // mudanza se puede comprobar comparando textos en vez de leyendo.
@@ -2827,29 +2890,12 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
   box.appendChild(notas);
 
   const saveRow = document.createElement('div');
-  saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+  saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px;flex-wrap:wrap';
   const save = document.createElement('button');
   save.className = 'btn-primary btn-sm job-toolbar-btn-44';
   save.textContent = textoGuardar || 'Guardar cambios';
   save.addEventListener('click', async () => {
-    const out = [];
-    for (const r of rows.children) {
-      const inputs = r.querySelectorAll('input');
-      const c = inputs[0].value.trim(), qv = inputs[1].value, u = inputs[2].value.trim();
-      const pv = inputs[3].value, ivv = inputs[4].value;
-      if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
-      const linea = { concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u };
-      // SCRUM-303 · y el origen vuelve a salir con ella. ⚠️ FAMILIA SCRUM-271: `dataset` devuelve
-      // SIEMPRE cadena, y `Number('')` es 0 — un índice ausente se convertiría en «la primera
-      // partida del presupuesto», en silencio. Se exige que sean dígitos ANTES de convertir.
-      const origen = r.dataset.quoteLineIndex;
-      if (typeof origen === 'string' && /^\d+$/.test(origen)) linea.quoteLineIndex = Number(origen);
-      if (modo === 'VALORADO') {
-        linea.precioUnitario = Number(String(pv).replace(',', '.'));
-        linea.tipoIva = Number(String(ivv).replace(',', '.'));
-      }
-      out.push(linea);
-    }
+    const out = leerLineasDelFormulario();
     // SCRUM-361 (H6 · fase 2): la versión que ESTE editor abrió viaja con el guardado. Sin ella el
     // servidor no tiene contra qué comparar y la segunda de dos ediciones a la vez pisa a la
     // primera en silencio. `alb.version` viene de `serializeAlbaran` — ya venía, no se añade campo.
@@ -2904,12 +2950,120 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     }
   });
   saveRow.appendChild(save);
+
+  // SCRUM-993 · EXTRAÍDA, VERBATIM, para poder reutilizarla desde el botón «Entregar y enviar a
+  // firmar» sin copiarla — mismo criterio que SCRUM-366 con la escalera: es un TRASLADO, no un
+  // rediseño. Ni una línea de dentro cambia; solo cambia que ahora tiene nombre y se puede llamar
+  // desde dos sitios (la declaración de función SUBE por hoisting: `save.addEventListener`, más
+  // arriba, ya podía llamarla). `tests/scrum993-boton-un-toque.test.mjs` fija que el camino de
+  // «Guardar» sigue llamándola tal cual y que la propia función no ha cambiado de conducta.
+  function leerLineasDelFormulario() {
+    const out = [];
+    for (const r of rows.children) {
+      const inputs = r.querySelectorAll('input');
+      const c = inputs[0].value.trim(), qv = inputs[1].value, u = inputs[2].value.trim();
+      const pv = inputs[3].value, ivv = inputs[4].value;
+      if (!c && !qv && !u) continue; // fila totalmente vacía se ignora
+      const linea = { concepto: c, cantidad: Number(String(qv).replace(',', '.')), unidad: u };
+      // SCRUM-303 · y el origen vuelve a salir con ella. ⚠️ FAMILIA SCRUM-271: `dataset` devuelve
+      // SIEMPRE cadena, y `Number('')` es 0 — un índice ausente se convertiría en «la primera
+      // partida del presupuesto», en silencio. Se exige que sean dígitos ANTES de convertir.
+      const origen = r.dataset.quoteLineIndex;
+      if (typeof origen === 'string' && /^\d+$/.test(origen)) linea.quoteLineIndex = Number(origen);
+      if (modo === 'VALORADO') {
+        linea.precioUnitario = Number(String(pv).replace(',', '.'));
+        linea.tipoIva = Number(String(ivv).replace(',', '.'));
+      }
+      out.push(linea);
+    }
+    return out;
+  }
+
+  // SCRUM-993 · los datos de creación en la forma que espera `onGuardar`/`onEntregarYFirmar`
+  // (SOLO se usa en la hoja de ALTA: las dos opciones son exclusivas de `onGuardar`). Extraída del
+  // cuerpo de `save` de más arriba para no duplicarla en el botón nuevo.
+  function leerDatosDeCreacion() {
+    const leidoCab = cabeceraDoc && typeof window.textoDelDocumentoLeer === 'function'
+      ? window.textoDelDocumentoLeer(cabeceraDoc, ['docHeaderText'])
+      : { ok: false };
+    return {
+      lineas: leerLineasDelFormulario(), notas: notas.value, modoValoracion: modo,
+      ocultarPreciosEnDocumento: ocultarPrecios,
+      ...(leidoCab.ok ? { docHeaderText: leidoCab.valores.docHeaderText } : {}),
+    };
+  }
+
+  // ── SCRUM-993 · «UN TOQUE»: SOLO en la hoja de ALTA (mismo criterio que `onGuardar`: la edición
+  // de un albarán que ya existe no tiene nada que «entregar», ya se entregó). El primer clic NO
+  // ejecuta nada — abre la confirmación DENTRO de la misma hoja, mismo patrón que «LA REVISIÓN
+  // ANTES DE EMITIR» de facturas (SCRUM-292): un paso irreversible se enseña antes de darlo, no se
+  // pregunta «¿seguro?» de un texto que no dice qué va a pasar.
+  let entregar = null;
+  let confirmBox = null;
+  if (onEntregarYFirmar) {
+    entregar = document.createElement('button');
+    entregar.id = 'alb-entregar-firmar';
+    entregar.className = 'btn-secondary btn-sm';
+    entregar.textContent = ALB_ENTREGAR_Y_FIRMAR_LABEL;
+    saveRow.appendChild(entregar);
+
+    // SCRUM-993 · sin estilo en línea (regla 4 / SCRUM-713c): `.alert.info` es el MISMO componente
+    // de fondo que ya usa «LA REVISIÓN ANTES DE EMITIR» (SCRUM-292) y `.modal-footer` el mismo que
+    // ya reparte los botones de esa hoja. Visibilidad por `hidden`, no por `style.display`.
+    confirmBox = document.createElement('div');
+    confirmBox.id = 'alb-confirmar-entrega';
+    confirmBox.className = 'alert info';
+    confirmBox.hidden = true;
+    const confirmTexto = document.createElement('p');
+    confirmTexto.textContent = textoConfirmarEntrega || ALB_ENTREGAR_Y_FIRMAR_CONFIRMACION_SIN_WHATSAPP;
+    confirmBox.appendChild(confirmTexto);
+    const confirmRow = document.createElement('div');
+    confirmRow.className = 'alb-confirmar-fila';
+    const confirmContinuar = document.createElement('button');
+    confirmContinuar.id = 'alb-confirmar-continuar';
+    confirmContinuar.className = 'btn-primary btn-sm';
+    confirmContinuar.textContent = ALB_ENTREGAR_Y_FIRMAR_LABEL;
+    const confirmCancelar = document.createElement('button');
+    confirmCancelar.id = 'alb-confirmar-cancelar';
+    confirmCancelar.className = 'btn-ghost btn-sm';
+    confirmCancelar.textContent = 'Cancelar';
+    confirmRow.append(confirmContinuar, confirmCancelar);
+    confirmBox.appendChild(confirmRow);
+
+    // `saveRow` lleva su propio `display:flex` en línea (preexistente): alternarla por `hidden`
+    // perdería contra esa regla inline (mayor especificidad que el `[hidden]` del user-agent), así
+    // que se apaga con `style.display` — `confirmBox`, sin estilo en línea, sí usa `hidden`.
+    entregar.addEventListener('click', () => {
+      saveRow.style.display = 'none';
+      confirmBox.hidden = false;
+    });
+    confirmCancelar.addEventListener('click', () => {
+      confirmBox.hidden = true;
+      saveRow.style.display = 'flex';
+    });
+    confirmContinuar.addEventListener('click', async () => {
+      confirmContinuar.disabled = true;
+      confirmCancelar.disabled = true;
+      try {
+        await onEntregarYFirmar(leerDatosDeCreacion());
+        if (onClose) onClose();
+        refresh();
+      } catch (e) {
+        const msg = e?.data?.message || 'No se pudo completar la entrega.';
+        if (onError) onError(msg); else setStatus('error', msg);
+        confirmContinuar.disabled = false;
+        confirmCancelar.disabled = false;
+      }
+    });
+  }
+
   const cancelEd = document.createElement('button');
   cancelEd.className = 'btn-secondary btn-sm job-toolbar-btn-44';
   cancelEd.textContent = 'Cancelar';
   cancelEd.addEventListener('click', () => { if (onClose) onClose(); else box.style.display = 'none'; });
   saveRow.appendChild(cancelEd);
   box.appendChild(saveRow);
+  if (confirmBox) box.appendChild(confirmBox);
 }
 
 function openAlbEditorSheet(alb, ctx) {
