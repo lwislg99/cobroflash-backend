@@ -162,7 +162,9 @@ export const SALIDA_APAGADA = 3;
 // y `allocateInvoiceNumber` lo hacía desde SCRUM-735. Ninguno de los dos tenía prueba CENSADA aquí
 // (sus fixtures no caen en la frontera del año), así que no hay entrada que retirar: la vigila
 // `tests/scrum1093f-albarannumber-zona-merchant.test.mjs`. Medido ese día: `planDeRenumeracion`
-// sigue cambiando (Kiritimati pasa, Midway cae).
+// sigue cambiando (Kiritimati pasa, Midway cae). SCRUM-1093g, mismo día: el número del PARTE
+// (`partes.routes.ts`, `siguienteNumeroParte`) tampoco tenía censada; lo vigila
+// `tests/scrum1093g-parte-numero-zona-merchant.test.mjs`.
 export const CENSADAS = [
   {
     clave: 'tests/scrum592-numeracion-doc02.test.mjs::SCRUM-592 · una mezcla de renumerados y sin renumerar no se pisa',
