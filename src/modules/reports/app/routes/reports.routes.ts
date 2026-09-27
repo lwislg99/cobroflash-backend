@@ -4,7 +4,9 @@ import { prisma } from '../../../../core/db/prisma';
 import { desglosarPorEmpleado } from '../../domain/desgloseEmpleado'; // SCRUM-228
 import { filasDelInforme } from '../../domain/cobrosPorCubo'; // SCRUM-488 / SCRUM-491
 import { leerLibroRegistro } from '../../../invoicing/domain/libroRegistro.repo'; // SCRUM-389: un solo agregador
+import { leerLibroRecibidas } from '../../../invoicing/domain/libroRecibidas.repo'; // SCRUM-1151: solo lectura (regla 38)
 import { rangoTrimestre } from '../../../fiscal/modelo303/modelo303'; // SCRUM-389: un solo criterio de fechas
+import { avisosLibroRecibidas } from '../../../fiscal/librosAeat/librosAeat'; // SCRUM-1151: solo lectura (regla 38)
 import { calcularBeneficioSobreLaBase } from '../../domain/beneficioBaseImponible'; // SCRUM-1047 (CON-06)
 import { construirResumenTrimestre } from '../../domain/resumenTrimestre'; // SCRUM-1048 (CON-07a)
 
@@ -344,6 +346,17 @@ router.get('/vat', async (req, res) => {
  * Las retenciones sufridas NO están: `Invoice` no guarda la retención aplicada (falta el ALTER
  * de SCRUM-293/A2). El campo `retenciones.disponible` lo dice, en vez de devolver un 0,00 que
  * afirmaría «no hubo» cuando lo cierto es «no se guarda todavía».
+ *
+ * SCRUM-1151 (CON-07b) · `gastosNoDeducibleDeclarados` y `avisosLibroRecibidas` son ADITIVOS:
+ * la nota firmada «N gastos… no los has marcado como IVA deducible» (Jira SCRUM-1049) necesita
+ * el MISMO conteo que pinta `/admin/libros/recibidas.json` sobre sus filas —
+ * `deducible !== 'Sí'` sobre asientos CON base—, no `ivaSoportado.noDeducible.count +
+ * ivaSoportado.sinClasificar.count`: medido con 2000 lotes aleatorios, las dos sumas difieren en
+ * 1718 casos (`sinClasificar` de `calcularIvaSoportado` también cuenta gastos con base pero SIN
+ * `vatRate`/`vatAmount`, que el libro sigue contando como asiento). Cablear la nota a la suma
+ * equivocada le cambiaría el significado a un texto firmado sin que nadie lo notara (regla 39).
+ * Por eso se reutiliza `leerLibroRecibidas`/`avisosLibroRecibidas` (solo lectura, regla 38) en
+ * vez de derivarlo de `resumen.ivaSoportado`.
  */
 router.get('/resumen-trimestre', async (req, res) => {
   try {
@@ -381,6 +394,15 @@ router.get('/resumen-trimestre', async (req, res) => {
 
     const resumen = construirResumenTrimestre({ año: year, trimestre: quarter, repercutidoPorTipo, expenses });
 
+    // SCRUM-1151: MISMO periodo, MISMO libro que pintaría `/admin/libros/recibidas.json` — solo
+    // se cuenta, no se suma ninguna cuota aquí (eso ya lo hace `construirResumenTrimestre` arriba).
+    const libroRecibidas = await leerLibroRecibidas(prisma, { merchantId: req.merchantId, desde: from, hasta: to });
+    const gastosNoDeducibleDeclarados = libroRecibidas.asientos
+      .filter((a) => a.deducible !== true).length;
+    // `avisos[0]` es siempre el de formato provisional (SCRUM-1040); la nota firmada solo quiere
+    // los que importan de verdad («N gastos sin datos de IVA no figuran…»).
+    const avisosLibroRecibidasSinFormato = avisosLibroRecibidas(libroRecibidas).slice(1);
+
     return res.json({
       ...resumen,
       from: from.toISOString().slice(0, 10),
@@ -391,6 +413,8 @@ router.get('/resumen-trimestre', async (req, res) => {
       },
       invoiceCount: libro.miradas,
       expenseCount: expenses.length,
+      gastosNoDeducibleDeclarados,
+      avisosLibroRecibidas: avisosLibroRecibidasSinFormato,
     });
   } catch (err) {
     console.error('[GET /admin/reports/resumen-trimestre]', err);

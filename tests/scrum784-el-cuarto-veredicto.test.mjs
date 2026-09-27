@@ -29,7 +29,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { cayo, murioElFichero, paso } from '../scripts/meta-guard-mutaciones.mjs';
+import { cayo, murioElFichero, paso, errorDelFicheroMuerto } from '../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const YO = 'scrum784-el-cuarto-veredicto.test.mjs';
@@ -136,6 +136,31 @@ test('SCRUM-784 · 🔴 la ruta se compara RESUELTA, no por texto', (t) => {
   assert.equal(murioElFichero({ caidos: [enMinuscula] }, YO), true,
     '🔴 la misma ruta con la unidad en minúscula se lee como otro fichero. `realpathSync` CONSERVA '
     + 'la unidad y `realpathSync.native` la NORMALIZA: se ha vuelto a la primera.');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// ①bis SCRUM-1100 (J4) · EL ERROR QUE MATÓ AL FICHERO YA ESTABA GUARDADO, Y NO SE ENSEÑABA
+//
+// `correr()` guarda `tras.errores[nombre]` para cada `test:fail`, incluida la muerte del propio
+// fichero — pero el mensaje de `muerto` no lo miraba. J4 midió 3-5 caídas reales con 3 firmas
+// distintas, sin poder compararlas: el `code` que las habría distinguido (`ENOSPC`, `EMFILE`, un
+// `SIGKILL` externo…) estaba capturado y mudo.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+test('SCRUM-1100 · 🔴 el error que mató al fichero se recupera de `tras.errores`, no se inventa', () => {
+  // Positivo: el caído es LA RUTA del fichero, y esa misma clave tiene un error guardado.
+  const conError = { caidos: [RUTA_YO], errores: { [RUTA_YO]: { nombre: 'Error', code: 'ENOSPC', mensaje: 'x' } } };
+  assert.deepEqual(errorDelFicheroMuerto(conError, YO), { nombre: 'Error', code: 'ENOSPC', mensaje: 'x' },
+    '🔴 CIEGO: el error estaba guardado bajo la ruta del fichero muerto y no se ha recuperado.');
+
+  // Negativo: el fichero murió pero SIN error capturado (p. ej. un SIGKILL externo) — no se inventa uno.
+  assert.equal(errorDelFicheroMuerto({ caidos: [RUTA_YO], errores: {} }, YO), null,
+    '🔴 sin error guardado se está devolviendo algo: eso es inventar una causa.');
+
+  // Negativo: el fichero muerto es OTRO — no se le atribuye el error de éste.
+  const otraRuta = path.join(RAIZ, 'tests', 'utils.test.mjs');
+  assert.equal(errorDelFicheroMuerto(
+    { caidos: [otraRuta], errores: { [otraRuta]: { nombre: 'TypeError' } } }, YO), null,
+    '🔴 el error de OTRO fichero se está atribuyendo a este guard.');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -289,5 +314,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  return (resultado?.caidos || []).some((n) => n.includes(nombre));',
     a: '  return (resultado?.caidos || []).length > 0;',
     cae: '`cayo()` sigue exigiendo EL NOMBRE declarado, ni uno más',
+  },
+  {
+    // SCRUM-1100: el error recuperado deja de mirar la clave correcta y siempre sale vacío.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '  return resultado?.errores?.[nombreCaido] || null;',
+    a: '  return null;',
+    cae: 'el error que mató al fichero se recupera de `tras.errores`, no se inventa',
   },
 ];

@@ -523,6 +523,13 @@ const INDIRECTAS_DECLARADAS = [
   // leer ese remoto sintético — ninguno de los dos es el `origin/main` de este repositorio.
   // Lo retira quien borre el banco.
   'tests/scrum973-titulo-del-pr.test.mjs',
+  // SCRUM-1152 · el generador del ancla de SCRUM-267. Su llamada a git (`rev-parse origin/main`)
+  // no es una comparación —solo resuelve el sha de la punta, no censa nada contra ella— y por
+  // eso no entra en HALLAZGOS_DECLARADOS. Lo que SÍ nombra `origin/main` fuera de los argumentos
+  // de git es el TEXTO que imprime: la línea `**Medido contra:** \`origin/main\` = ...` es el
+  // formato del ancla en sí (mismo caso que scrum267/scrum649 de arriba), no un descuido.
+  // Lo retira quien borre la plantilla del ancla.
+  'scripts/equipo/ancla.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

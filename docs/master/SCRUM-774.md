@@ -75,3 +75,26 @@ añada la línea de `npm run arbol:mio` al PASO 0, en vez de escribirla yo.
 - ⛔ `stash@{0}` de S1 — no se toca (regla explícita del ticket).
 - ⛔ Ninguna rama reescrita, ningún `--force`.
 - ⛔ `docs/equipo/00-normas-comunes.md` — reportado, no editado (dueño único: S0).
+
+## SCRUM-774b · `arbol:mio` en el PASO 0 de las normas (S0)
+
+**Fecha:** 26-sep-2026 · **Carril:** S0 (dueña de `00-normas-comunes.md`)
+**Medido contra:** `origin/main` = `c3031d8929b268ed37a13b7674f81785aa61a9ed` · 2026-09-26T12:35Z
+**Rama:** `scrum-774b-arbol-mio-en-el-paso-0`
+
+Cierra el punto que la sección de arriba dejó «reportado, no editado»: la decisión del fundador
+(com. 16265) pedía `npm run arbol:mio` en el PASO 0, y A2 no lo nombraba.
+
+**Corrido antes de escribirlo en la norma:**
+
+| llamada | veredicto | exit |
+|---|---|---|
+| `node scripts/arbol-mio.mjs 774` desde la rama `scrum-774b-…` | `MIO` | 0 |
+| `node scripts/arbol-mio.mjs 1139` desde esa misma rama | `NO-MIO` | 1 |
+
+**Cambio:** `docs/equipo/00-normas-comunes.md` §A2, un párrafo al final: el comando, qué dice y qué
+se hace con `NO-MIO`/`CIEGO` (parar y avisar, sin `checkout -b` ni `reset --hard`). Nada más.
+A2 ya está en la selección de arranque de `norma.mjs` (`IDS_ARRANQUE` de `scrum996`), así que el
+párrafo llega a toda sesión en su `--arranque` sin más cambios.
+
+**Siguen sin tocar:** las caras B y C, y la ampliación de `guard-dangerous` (ya la hizo S5, arriba).

@@ -1634,6 +1634,14 @@ html, body { overflow-x: clip; }
    global. */
 .accion-irreversible-btn-44 { min-height: 44px; }
 
+/* SCRUM-1148 (AB6, grupo B de la misma decisión, opción ③): en el editor de presupuesto, los
+   `.btn-sm` de la cabecera de líneas («✨ Sugerir con IA», «📋 Usar plantilla») y el de
+   «+ Añadir descuento» se quedaban en 29,6–30,7 px. Regla ACOTADA A SU CONTENEDOR, solo tamaño:
+   `.btn-sm` global no se toca. `min-height` gana a la altura que dé el padding (y al inline de
+   «Sugerir con IA»), así que no hace falta tocar el JS. */
+.quote-lines-header > .btn-sm,
+.quote-dto-global > .btn-sm { min-height: 44px; }
+
 .quote-dto-global { margin-top: 8px; }
 
 /* ── SCRUM-602 (DOC-12) · el campo libre de la dirección de la obra ────────────────────────

@@ -230,8 +230,9 @@ no ajustar 410 números.
 
 ## SCRUM-940b · el mismo `\b` mordió también el CÓDIGO, no sólo el heredoc del acta
 
-**Medido contra:** `origin/main` = `942e90d1` · 2026-09-26 ~09:10Z (GitHub) · S3 · rama
-`scrum-940-arreglo-magnituddelistafija` · worktree `wt-s3-26-instrumentos`.
+**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87` · 2026-09-26T09:10:00Z
+
+S3 · rama `scrum-940-arreglo-magnituddelistafija` · worktree `wt-s3-26-instrumentos`.
 
 **Lo que reportó S2 (comentario 15927, 18-sep):** además del heredoc del §6.4 de arriba, **el
 propio fichero vivo** llevaba el defecto: `scripts/_censo-de-suelos.mjs:198`,

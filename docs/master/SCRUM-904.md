@@ -178,3 +178,60 @@ guard me contestó «no supe medir» cuando acababa de encontrar 33 defectos. Es
 corrección. La lección que me llevo es la contraria a la que parece: el fallo no fue poner el suelo,
 fue ponerlo **por encima** del hallazgo — un suelo que se traga un rojo real protege al instrumento,
 no al profesional.
+
+---
+
+# SCRUM-904b · las dos decisiones del §7/§5 quedaron resueltas, y el checklist las aplica
+
+**Medido contra:** `origin/main` = `942e90d1f84dd6d7fcf5fa92aad48f36758c2d87` · 2026-09-26T11:56:11Z
+**Rama:** `scrum-904-checklist-completar-honesto` · commit `4198016909295cc4c684343257117f362b1ed623`
+**Carril:** Sesión 4 · **Skill UI:** cargada (`yaqu-premium-ui`)
+
+Las dos cosas que el §5 (microcopy propuesta y parada) y el §7 (hallazgo del flag apagado) de este
+mismo fichero dejaron pendientes del fundador quedaron resueltas el 26-sep-2026 por el orquestador,
+por delegación permanente (regla 39, comentario 17138):
+
+1. **El aviso de §5 SE FIRMÓ, tal cual se propuso.** «"{rótulo del campo}" está en la pestaña
+   {pestaña}.» — nueva función `checklistEstaEnLaPestana(rotuloCampo, rotuloPestana)` en
+   `public/dashboard/js/settingsSubmenus.js`, hermana de `avisoFaltaEnOtraPestana` (SCRUM-894) pero
+   sin su prefijo «Para guardar,» (aquí no hay ningún guardado en curso). Se pinta bajo la
+   descripción de cada acción pendiente que tiene `focus` (Connect no lo tiene: usa `scrollConnect`
+   y ya dice «en tu cuenta»), leyendo el `<label>` real del campo en el DOM
+   (`mainFormCard.querySelector([name=...]).closest('.field').querySelector('label')`) y componiendo
+   con `rotuloDeSubmenu(submenuDeCampo(focus))` — nunca escrito a mano.
+
+2. **El hallazgo de §7 SE RESOLVIÓ, no solo se reportó.** «Cobros con tarjeta» ya distingue «flag
+   `PAYMENTS_CONNECT_ENABLED` apagado» de «flag encendido, sin empezar» (antes los dos daban
+   `connectStatus: 'none'` y la fila prometía igual). `renderReadinessCard` ahora hace un fetch
+   propio a `/admin/connect/status` para leer `enabled`; con el flag apagado, `koText` pasa a «Aún
+   no disponible en tu cuenta» (sin fecha, sin plazo, sin Hacienda) y la fila deja de ofrecerse como
+   completable de verdad — nace `<button disabled>`, sin la flecha «Completar →» y sin el listener
+   de clic, no solo cambia el texto.
+
+## Guard ampliado, con una comprobación nueva EN NAVEGADOR
+
+`scripts/guard-completar-lleva-al-campo.mjs` gana la comprobación ⑤: mide la fila de Connect con
+`?connect=off` (flag apagado) y con el flag encendido (control positivo, para no comparar dos
+cegueras). **Verificado en rojo a propósito** antes de arreglar — revertí `completable` a `true` y
+el guard cayó con los dos mensajes exactos que se esperaban («sigue mostrando Completar» / «NO está
+`disabled`») — y en verde después. Las cuatro patas de antes (①-④) no se tocan.
+
+`tests/scrum904-completar-lleva-al-campo.test.mjs` gana 2 tests sobre el MECANISMO en el fuente
+(el comportamiento real —`disabled`, texto, sin flecha— lo mide el guard en navegador, por la misma
+razón de siempre: un botón `disabled` y uno que no lo es se leen igual en el código si solo se
+busca el atributo a ojo).
+
+## Verificación
+
+- `npm run build` exit 0.
+- `guard-completar-lleva-al-campo.mjs`: 36/36 llegan a su destino, mutación 1 sustitución con 32/36
+  mudas, comprobación ⑤ verde (ON: completable · OFF: `disabled=true`, sin «Completar»).
+- `scrum904`/`scrum894`/`scrum284` (pantalla hermana): 57/57 verde, sin regresiones.
+- **No corrí la suite completa `npm test`**: se lanzó en background y el propio harness la mató por
+  presión de memoria del sistema mientras esperaba otro resultado (no un fallo del test). No la
+  relancé por indicación explícita de la herramienta.
+
+## Fuera de este incremento
+
+Nada: las dos decisiones que quedaban abiertas en este ticket (§5 y §7) están resueltas. No queda
+trabajo de producto pendiente en SCRUM-904.
