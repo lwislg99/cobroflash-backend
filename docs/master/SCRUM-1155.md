@@ -100,3 +100,39 @@ exactamente los ficheros que este ticket toca.
 - `proveedorNombre` (arriba): espera firma.
 - SCRUM-1156 (920e, el detalle): ticket propio, siguiente en la cola.
 - `.btn-sm` a 30 px: decisión del fundador, SCRUM-786/787.
+
+## SCRUM-1155b · el CI en rojo, arreglado (27-sep-2026)
+
+**Medido contra:** `origin/main` tras `update-branch` · commit del arreglo `8509ef79`.
+
+El PR #1824 llevaba 3 checks en rojo. Diagnosticado por el LOG REAL de cada job (no por
+suposición), los 5 hallazgos:
+
+1. **SCRUM-601 (2 tests) y SCRUM-666b y SCRUM-713c** — el árbol de trabajo tenía ya el arreglo
+   (el anclaje 157→158/32→33 del censo de copy, y la clase `.gasto-descarte` en `styles.css`) pero
+   nunca se había COMMITEADO ni empujado: quedó pendiente de una sesión anterior. No es tocar un
+   test para que pase — el comportamiento cambió a propósito (SCRUM-920 comentario 16175: el rótulo
+   de sección «3 · Datos de la factura del proveedor» y el estilo del aviso de descarte pasan a ser
+   una clase, no un `style.cssText` en línea) y el test medía lo viejo.
+2. **SCRUM-726 (control positivo de firmas)** — causa real, no de árbol: en
+   `docs/microcopy/2026-09-26-SCRUM-1155-alta-rediseno.md` la referencia «SCRUM-920 comentario
+   15992» quedaba partida en DOS líneas por el ajuste de línea del editor, y SCRUM-861 exige esa
+   cita EN LA MISMA LÍNEA que la firma delegada. Unida en una sola línea, sin tocar el contenido ni
+   la firma.
+3. **`guard:foto-del-gasto` (SCRUM-947, guard de navegador, no estaba en la lista de checks
+   obligatorios pero SÍ en rojo)** — apuntaba a `#exp-receipt-section img`, el id del `.field` que
+   envolvía el `<input type=file>` VIEJO. 920f lo quitó al mover la foto al paso 1 (ahora vive en
+   `#exp-foto-elegida` / `#exp-foto-preview`). Actualizado el selector del guard a `#exp-foto-elegida
+   img`: mismo hecho que mide siempre (la foto guardada se ve al reabrir el gasto), no un guard
+   relajado. Verificado en rojo con el selector viejo (3 de 5 casos, «no hay `<img>` de la foto») y
+   en verde con el nuevo (5/5).
+
+**Hallazgo AJENO, NO tocado:** `meta-guard` daba CIEGO en `scrum757-la-declaracion-que-nadie-lee` y
+`scrum859-identidad-y-motivo-cerrado` — `scrum859` está en la lista conocida de tests que fallan
+bajo carga y pasan solos (`scrum804b`, `scrum859`, `scrum910d`, umbral de memoria de las tandas
+grandes en CI). No es de este diff (no toca ninguno de los dos ficheros).
+
+**Verificado localmente antes de empujar:** `npm run build` exit 0 · los 4 tests de build+tests
+(23/23) · `guard:foto-del-gasto` (5/5 casos) · suite completa `node --test tests/*.test.mjs`:
+8540 tests, 8527 pass, 13 fail — los 13 son el conjunto AJENO ya conocido (SCRUM-245, SCRUM-385,
+SCRUM-471, SCRUM-475, SCRUM-476, SCRUM-804, scrum910d), ninguno toca `expensesView.js` ni Gastos.
