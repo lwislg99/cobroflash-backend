@@ -89,7 +89,11 @@ para que el orquestador reparta hasta 3 como ticket nuevo si al comprobarlos tie
 
 # APÉNDICE · 27-sep-2026 · SCRUM-1153b · `tests/scrum750-los-dos-calendarios.test.mjs`, curado
 
-**Medido contra:** `origin/main` en el momento del push · rama `scrum-1153b-scrum750-env-explicito`.
+**Medido contra:** `origin/main` = `37bda5dbc6991cc33a54ee7248020be30d2f977f` · 2026-09-27T15:51:17Z
+
+Rama `scrum-1153b-scrum750-env-explicito`. *(El ancla la generó `node scripts/equipo/ancla.mjs` el
+27-sep; la primera versión de este apéndice decía «`origin/main` en el momento del push», que no es
+un ancla y que `tests/scrum267-ancla-de-medicion.test.mjs` acusa trozo a trozo.)*
 
 Cierra uno de los 8 acusados del censo de arriba: `tests/scrum750-los-dos-calendarios.test.mjs`
 (entonces línea 55), cuya `sonda()` lanzaba el `node` hijo con `{ encoding: 'utf8' }` — sin `env`
@@ -112,16 +116,21 @@ const r = spawnSync(process.execPath, [...], { encoding: 'utf8', env: entornoSon
 `entornoSonda` se construye UNA vez, junto al `cache` de la sonda (memorizado igual que antes), y
 se reutiliza en cada llamada — no cambia la firma de `sonda()` ni el resto del fichero.
 
-## El censo baja en uno — NO re-medido en esta sesión, y se dice
+## El censo baja en uno — MEDIDO (S1, 27-sep)
 
-El título de este PR afirma que el censo baja de 10 acusados a 9. **Esta sesión no ha podido
-volver a correr `censar('.')` sobre el árbol de hoy**: el entorno de ejecución de esta tarea (una
-invocación automática de `@claude` sobre un PR ya abierto) no tiene aprobación para lanzar `node`
-fuera de `git`, así que el número de 8 acusados que registra el cuerpo de este ticket pudo haber
-cambiado por ficheros nuevos entre medias, y no se reconstruye aquí de memoria. Lo que SÍ es cierto,
-medido en el propio diff: este apéndice cura exactamente UNA llamada —
-`scrum750-los-dos-calendarios.test.mjs` — con el mismo patrón que SCRUM-938, y no toca ninguna otra.
-Quien vuelva a correr el censo, que reemplace esta nota por el número real.
+La primera versión de este apéndice (una invocación de `@claude` sin permiso para lanzar `node`)
+dejó el número sin medir y lo dijo. Medido después por la S1 con `censar()` de
+`scripts/_censo-entorno-prestado.mjs`, sobre los DOS árboles y con la misma población:
+
+| árbol | ficheros | con spawn/exec | llamadas nuestras | acusados | limpios | suelo |
+|---|---|---|---|---|---|---|
+| `origin/main` (`37bda5db`) | 1.410 | 249 | 11 | **10** | 1 | ok |
+| esta rama | 1.410 | 249 | 11 | **9** | 2 | ok |
+
+La única diferencia entre los dos conjuntos de acusados es `tests/scrum750-los-dos-calendarios.test.mjs:55`,
+que pasa a limpio. (El cuerpo de este fichero registraba 8 el 26-sep. Comparado con su lista, las dos llamadas acusadas
+nuevas son `tests/scrum1123-vigia-despliegue-aviso.test.mjs:95` y `:131`, entradas después del
+censo; no son de esta rama y quedan para quien siga con SCRUM-1153.)
 
 ## Verificación
 
