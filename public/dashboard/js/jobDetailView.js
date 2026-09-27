@@ -257,7 +257,7 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     }
     const a = document.createElement('button');
     a.type = 'button';
-    a.className = 'btn-ghost btn-sm';
+    a.className = 'btn-ghost btn-sm job-toolbar-btn-44';
     a.textContent = TEXTO_ACCION[h.accion];
     // Los tres llevan al sitio donde se resuelve: dentro de esta misma pantalla (albaranes y
     // facturas ya tienen su sección tras G4). Navegar, no ejecutar — ejecutar es de la cabecera y
@@ -1387,7 +1387,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // (refresh se define arriba, junto al fetch — SCRUM-31 F1: el CTA del héroe lo necesita antes.)
   const mkBtn = (label, fn) => {
     const b = document.createElement('button');
-    b.className = 'btn-secondary btn-sm';
+    b.className = 'btn-secondary btn-sm job-toolbar-btn-44';
     b.textContent = label;
     b.addEventListener('click', fn);
     return b;
@@ -1545,7 +1545,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const CONSOLIDA_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
   const consolidarBtn = document.createElement('button');
-  consolidarBtn.className = 'btn-secondary btn-sm';
+  consolidarBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44';
   consolidarBtn.textContent = '🧾 Consolidar en factura';
   consolidarBtn.style.display = consolidaEnabled ? '' : 'none';
   newAlbRow.appendChild(consolidarBtn);
@@ -1560,10 +1560,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const consolidaBar = document.createElement('div');
   consolidaBar.style.cssText = 'display:none;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap';
   const consolidaConfirm = document.createElement('button');
-  consolidaConfirm.className = 'btn-primary btn-sm';
+  consolidaConfirm.className = 'btn-primary btn-sm job-toolbar-btn-44';
   consolidaConfirm.textContent = 'Consolidar seleccionados';
   const consolidaCancel = document.createElement('button');
-  consolidaCancel.className = 'btn-secondary btn-sm';
+  consolidaCancel.className = 'btn-secondary btn-sm job-toolbar-btn-44';
   consolidaCancel.textContent = 'Cancelar';
   const consolidaCount = document.createElement('span');
   consolidaCount.style.cssText = 'font-size:13px;color:var(--muted)';
@@ -1615,10 +1615,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:10px;justify-content:flex-end';
     const cancelM = document.createElement('button');
-    cancelM.className = 'btn-secondary btn-sm';
+    cancelM.className = 'btn-secondary btn-sm job-toolbar-btn-44';
     cancelM.textContent = 'Cancelar';
     const goM = document.createElement('button');
-    goM.className = 'btn-primary btn-sm';
+    goM.className = 'btn-primary btn-sm job-toolbar-btn-44';
     goM.textContent = `Crear ${nF} factura${nF > 1 ? 's' : ''}`;
     cancelM.addEventListener('click', () => overlay.remove());
     goM.addEventListener('click', async () => {
@@ -2061,15 +2061,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
           const amountTxt = fmtMoneyEs(inv.total, inv.currency || cur);
           const custName = job.customer?.name || 'el cliente';
           const bz = document.createElement('button');
-          bz.className = 'btn-secondary btn-sm';
+          bz.className = 'btn-secondary btn-sm job-toolbar-btn-44';
           bz.textContent = '📲 Confirmar Bizum recibido';
           let armed = false;
           bz.addEventListener('click', async () => {
             if (!armed) {
               armed = true;
-              bz.className = 'btn-primary btn-sm';
+              bz.className = 'btn-primary btn-sm job-toolbar-btn-44';
               bz.textContent = `¿Has recibido ${amountTxt} de ${custName} en tu Bizum? Sí, confirmar`;
-              setTimeout(() => { if (armed) { armed = false; bz.className = 'btn-secondary btn-sm'; bz.textContent = '📲 Confirmar Bizum recibido'; } }, 6000);
+              setTimeout(() => { if (armed) { armed = false; bz.className = 'btn-secondary btn-sm job-toolbar-btn-44'; bz.textContent = '📲 Confirmar Bizum recibido'; } }, 6000);
               return;
             }
             bz.disabled = true;
@@ -2085,7 +2085,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
             } catch (e) {
               const msgs = { bizum_disabled: 'Los cobros por Bizum no están activados todavía.', charge_not_pending: 'Este cobro ya no está pendiente.' };
               setStatus('error', msgs[e?.data?.error] || 'No se pudo confirmar el Bizum.');
-              bz.disabled = false; armed = false; bz.className = 'btn-secondary btn-sm'; bz.textContent = '📲 Confirmar Bizum recibido';
+              bz.disabled = false; armed = false; bz.className = 'btn-secondary btn-sm job-toolbar-btn-44'; bz.textContent = '📲 Confirmar Bizum recibido';
             }
           });
           bizumBtn = bz;
@@ -2132,7 +2132,7 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
         let payLink = null;
         if (inv.payToken) {
           payLink = document.createElement('a');
-          payLink.className = 'btn-ghost btn-sm';
+          payLink.className = 'btn-ghost btn-sm job-toolbar-btn-44';
           payLink.style.textDecoration = 'none';
           payLink.href = `/pay/invoice/${inv.payToken}`;
           payLink.target = '_blank';
@@ -2506,7 +2506,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
     }
     [q, p, iv].forEach((inp) => inp.addEventListener('input', updateTotales));
     const del = document.createElement('button');
-    del.className = 'btn-ghost btn-sm';
+    del.className = 'btn-ghost btn-sm job-toolbar-btn-44';
     del.textContent = '✕';
     del.setAttribute('aria-label', 'Quitar línea');
     del.addEventListener('click', () => { r.remove(); updateTotales(); });
@@ -2520,7 +2520,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
   box.appendChild(rows);
 
   const addRow = document.createElement('button');
-  addRow.className = 'btn-ghost btn-sm';
+  addRow.className = 'btn-ghost btn-sm job-toolbar-btn-44';
   addRow.textContent = '+ Añadir línea';
   addRow.addEventListener('click', () => { rows.appendChild(mkRow({})); updateTotales(); });
   box.appendChild(addRow);
@@ -2556,7 +2556,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
   if (vozDisponible) {
     const btnDictar = document.createElement('button');
     btnDictar.type = 'button';
-    btnDictar.className = 'btn-secondary btn-sm';
+    btnDictar.className = 'btn-secondary btn-sm job-toolbar-btn-44';
     btnDictar.style.cssText = 'margin-left:8px;min-height:44px'; // target al pulgar (AB6)
     btnDictar.textContent = '🎤 Dictar el parte';
     btnDictar.addEventListener('click', () => abrirHojaDictado());
@@ -2829,7 +2829,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
   const saveRow = document.createElement('div');
   saveRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
   const save = document.createElement('button');
-  save.className = 'btn-primary btn-sm';
+  save.className = 'btn-primary btn-sm job-toolbar-btn-44';
   save.textContent = textoGuardar || 'Guardar cambios';
   save.addEventListener('click', async () => {
     const out = [];
@@ -2905,7 +2905,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar } 
   });
   saveRow.appendChild(save);
   const cancelEd = document.createElement('button');
-  cancelEd.className = 'btn-secondary btn-sm';
+  cancelEd.className = 'btn-secondary btn-sm job-toolbar-btn-44';
   cancelEd.textContent = 'Cancelar';
   cancelEd.addEventListener('click', () => { if (onClose) onClose(); else box.style.display = 'none'; });
   saveRow.appendChild(cancelEd);
