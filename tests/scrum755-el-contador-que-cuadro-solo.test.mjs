@@ -95,7 +95,12 @@ const CENSO_DE_SITIOS = {
   // sostenía las últimas seis ranuras estaba huérfana desde su propia firma
   // (`docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`) por un cierre de ticket
   // incompleto; retirada al comprobarlo. Entrada BORRADA.
-  'productsView.js': 3,
+  // 🔴 SCRUM-631b (26-sep-2026) · `productsView.js` BAJA de 3 a 2: `PV_NOMBRE_ACTIVO_DUPLICADO`
+  // quedó firmado (SCRUM-631 comentario 17180; `docs/microcopy/2026-09-26-SCRUM-631-nombre-activo-
+  // duplicado.md`) y perdió su concatenación con `PV_MARCADOR_MICROCOPY`. Quedan los DOS respaldos
+  // de último recurso (`mensajeDeErrorCatalogo`, líneas 130 y 132), sin literal propio fuera de su
+  // declaración — mismo reparto que `providersView.js`, justo debajo.
+  'productsView.js': 2,
   // 🔴 SCRUM-1124 (25-sep-2026) · `providersView.js` BAJA de 3 a 2: `name_duplicate` quedó
   // firmado (comentario 17002; `docs/microcopy/2026-09-25-SCRUM-1124-proveedor-duplicado.md`).
   // Quedan los DOS respaldos de último recurso (`PRV_MARCADOR_MICROCOPY`, sin literal propio
@@ -196,10 +201,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     // esta mutación SCRUM-402 se queda VERDE. Es la forma exacta del incidente de SCRUM-648 B.
     //
     // 🔄 SCRUM-1124 · este ejemplo vivía en `invoicesView.js` (`INV_SIN_APROBAR`), retirado al
-    // firmarse su rótulo. Se pasa a `productsView.js` (`PV_SIN_APROBAR`), que sigue sin firmar.
+    // firmarse su rótulo. Se pasa a `productsView.js` (`PV_SIN_APROBAR`), que sigue sin firmar
+    // del todo (`PV_NOMBRE_DUPLICADO` espera al fundador). 🔄 26-sep-2026 (SCRUM-631 comentario
+    // 17180): el número bajó de 2 a 1 al firmarse `PV_NOMBRE_ACTIVO_DUPLICADO`; la diana de esta
+    // mutación se actualiza con él, o deja de encontrarse en el árbol real.
     fichero: 'public/dashboard/js/productsView.js',
-    de: 'const PV_SIN_APROBAR = 2;',
-    a: 'const PV_SIN_APROBAR = 2;\nconst PV_ROTULO_NUEVO = PV_MARCADOR_MICROCOPY + \' nuevo\';',
+    de: 'const PV_SIN_APROBAR = 1;',
+    a: 'const PV_SIN_APROBAR = 1;\nconst PV_ROTULO_NUEVO = PV_MARCADOR_MICROCOPY + \' nuevo\';',
     cae: 'SCRUM-755 · 🔴 EL ÁRBOL PINTA MÁS MARCADORES DE LOS DECLARADOS',
   },
   {

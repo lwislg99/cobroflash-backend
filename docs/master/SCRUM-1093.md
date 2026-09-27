@@ -345,3 +345,40 @@ fiscal (ya cerrado por SCRUM-735). El `{ increment: 1 }` sigue siendo el
   para evitar pérdidas de trabajo sin commitear). Los tests nuevos documentan en su cuerpo, con el
   valor exacto que darían con el defecto (`P260001` en vez de `P270001`), por qué caerían sin el
   fix.
+
+---
+
+# APÉNDICE · 26-sep-2026 · SCRUM-1093e (S1) · el trinquete de zona, declarado — quien mejora, declara
+
+**Medido contra:** `origin/main` = `12f43aa8d1c2b07ad3f39c572d3d7b4fec1954e9` · 2026-09-26T13:35:34Z
+
+**Escribe:** Sesión 1 (S1), rama `scrum-1093e-declara-retirada-zona`. Encargo del orquestador: el
+trinquete de zona (SCRUM-813) tumbaba PR ajenos (#1812, #1821) con `SALIDA_APAGADA` (exit 3).
+
+## La causa, leída en el log y no deducida
+
+CI de #1821, run `36243801473` (26-sep 13:17Z), job «trinquete · ningún test nuevo mide la zona de
+la máquina»: `CAMBIAN DE VEREDICTO EN EL ÁRBOL: 1 (censadas: 3)`. Se apagaron **DOS**, no una:
+
+- `tests/quoteNumber.test.mjs::allocateQuoteNumber: toma el cerrojo ANTES de leer, y avanza la serie`
+- `tests/scrum592-numeracion-doc02.test.mjs::SCRUM-592 · el display se DERIVA: …`
+
+Las dos son `allocateQuoteNumber` y `displayQuoteNumber`, que el APÉNDICE `SCRUM-1093c` (a0f454f3,
+PR #1811) pasó a `diaNaturalEn(…, zonaDelMerchant(…))`. Es una MEJORA, no una avería del
+instrumento: la tercera censada (`planDeRenumeracion`) siguió cambiando en la misma pasada.
+
+## El cambio
+
+`scripts/_trinquete-de-zona.mjs`: las dos entradas salen de `CENSADAS` con un bloque «✂ RETIRADAS A
+PROPÓSITO» encima de la lista que nombra las dos claves, el commit y el PR que las curó, el run de
+CI donde se midió, y lo que de la familia NO está arreglado. El trinquete no se relaja: sigue
+exigiendo que lo censado cambie y que nada nuevo cambie; `planDeRenumeracion` sigue censada.
+
+## Controles, corridos
+
+- `quoteNumber.test.mjs` + `scrum592-numeracion-doc02.test.mjs` con `TZ=Pacific/Kiritimati`: 20/20;
+  con `TZ=Pacific/Midway`: 19/20, y el único rojo es `una mezcla de renumerados…` — la que se
+  queda. El 17-sep (APÉNDICE de SCRUM-813) eran 17 pass / 3 fail en Midway: bajan dos, las dos
+  retiradas.
+- `tests/scrum813-trinquete-de-zona.test.mjs` (red rápida, canarios incluidos): 28/28.
+- La pasada completa en dos zonas la corre el job del CI de este mismo PR.

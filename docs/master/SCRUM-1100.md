@@ -151,3 +151,104 @@ este check, un rerun es razonable pedirlo antes de escalar más.
   rondas), importa las funciones reales de `meta-guard-mutaciones.mjs`, no reescribe nada.
 * `docs/master/evidencias/scrum1100/huecos-1730.txt` — huecos entre timestamps del log real de
   PR #1730, con el máximo y su ubicación.
+
+---
+
+# SCRUM-1100b · Dos arreglos del INSTRUMENTO — habla primero, y deja de acusar a un guard sano
+
+**Medido contra:** `origin/main` = `c3031d8929b268ed37a13b7674f81785aa61a9ed` · 2026-09-26T12:42:06Z
+
+S3 · rama `scrum-1100-meta-guard-ciego-no-mudo` · worktree `wt-s3-26-instrumentos`.
+
+**Carril: S3 (instrumentos).** Retoma el punto 1 de J4 (§ arriba, «Barato y de bajo riesgo — hacerlo
+hablar primero») y aplica la segunda propuesta de SCRUM-908c §⑦, que ya estaba escrita y esperando
+a S3. **No confirma ni descarta ninguna de las dos hipótesis de causa** (ni el `fs.watch`/`inotify`
+de J4, ni el `forceExit`/backpressure de stdout de SCRUM-908c): sólo arregla dos sitios donde el
+INSTRUMENTO mentía o callaba, con evidencia FRESCA de que ambos siguen vivos en `main` hoy.
+
+## 0 · PASO 0 — el defecto existe HOY, medido en `main`, no en una rama
+
+Antes de tocar nada: 58 runs de `ci.yml` en push a `main`, 24-sep 13:42Z → 26-sep 07:49Z (ver
+SCRUM-935, misma sesión). Job `meta-guard`: **23 success · 13 failure · 22 sin job**. De los 13
+`failure`, leídos uno a uno por su log (`gh api .../jobs/<id>/logs --allow-escape-sequences`):
+
+| causa | jobs | firma |
+|---|---|---|
+| `scrum859-identidad-y-motivo-cerrado.test.mjs` · MUDO | **10** | idéntica las 10 veces: «NO APARECE… Recuento: 9 pasados · 7 caídos · 0 saltados. Y en la LIMPIA: 20 pasados · 0 caídos.» |
+| `scrum853-avisador-solo-obligatorio.test.mjs` · CIEGAS (varios tests no aparecen en la LIMPIA) | 2 | exit 2 |
+| `scrum853-avisador-solo-obligatorio.test.mjs` · FICHERO MURIÓ AL MUTAR | 1 | exit 2, «EL FICHERO MURIÓ AL MUTAR» |
+
+**El recuento MUDO es EXACTAMENTE el mismo en las 10 pasadas** — no gotea al azar: es la misma cola
+de eventos que se pierde siempre. Esto es la mutación nº 2 de `scrum859` que SCRUM-908/908b/908c ya
+investigó a fondo (hipótesis: `forceExit: true` + backpressure de stdout en pipes de Linux). **No
+he añadido nada a esa investigación** — la evidencia de arriba la CONFIRMA con población fresca
+(10/13 fallos reales de los últimos dos días, 100 % la misma firma), y es la razón por la que decido
+no re-investigar el mecanismo: ya está investigado por tres sesiones anteriores con acceso a los
+logs de CI, y sigue **sin reproducirse de forma controlada** (SCRUM-908c-2, §④).
+
+## 1 · Arreglo ①: SALTADO y NO APARECE son CEGUERA, no MUDEZ (propuesta 2 de SCRUM-908c §⑦)
+
+`aplicarUna()` metía las tres causas de `porQueNoCayo` por la misma puerta: `resultado.mudo`. Eso
+hacía que la muda de `scrum859` (NO APARECE, un evento perdido) contara en «GUARDS MUDOS — pasan en
+verde sobre el defecto que dicen vigilar» — acusando a un guard SANO de estar inerte cuando el
+instrumento no llegó a mirar.
+
+**Arreglo:** nueva función pura `esCegueraNoMudez(donde)`, que reconoce `SALTADO` y `NO APARECE`
+como ceguera. Sólo «corrió y pasó» sigue siendo `mudo` (mudez de verdad: el aserto vio la mutación
+y no la cazó). El código de salida cambia de `SALIDA_MUDO` a `SALIDA_CIEGO` para estos casos, que es
+lo correcto: el CIEGO dice «no medí», el MUDO dice «medí y el guard no sirve», y son cosas distintas
+con arreglos opuestos.
+
+**Rojo → verde:** test nuevo en `tests/scrum908-la-muda-se-explica.test.mjs` (⑤). Verificado a mano
+que el test cae si `esCegueraNoMudez` se rompe (mutación temporal a `return false`, restaurada
+después, `git status` limpio) y ahora vive declarada en `MUTACIONES_QUE_ME_TUMBAN` para
+`meta:mutaciones`.
+
+⛔ **Esto NO arregla la pérdida de eventos.** Sólo dice la verdad sobre lo que pasó: el meta-guard
+seguirá sin poder marcarse obligatorio mientras exista esta pérdida (SCRUM-908 sigue abierto), pero
+al menos dejará de imprimir «GUARDS MUDOS» sobre un guard que nadie ha podido juzgar.
+
+## 2 · Arreglo ②: el error que mató al fichero YA estaba guardado (propuesta 1 de J4, §1100 arriba)
+
+`correr()` captura `tras.errores[nombre]` de cada `test:fail` (SCRUM-788), incluida la muerte del
+propio fichero. El mensaje de `muerto` decía siempre «no se sabe si HABRÍA caído», tapando un dato
+que el proceso, un instante antes, ya tenía. J4 lo señaló como la razón de fondo por la que las
+firmas de las caídas reales «no se pueden comparar entre sí»: el `code` (`ENOSPC`, `EMFILE`,
+`SIGKILL`…) que distinguiría la hipótesis del `fs.watch` de un OOM externo estaba capturado y mudo.
+
+**Arreglo:** nueva función `errorDelFicheroMuerto(resultado, guard, dir)`, hermana de
+`murioElFichero` pero que además devuelve el error capturado (o `null`, explícitamente, si no hay
+uno — no se inventa una causa). El mensaje de `muerto` ahora incluye una línea «→ lo que murió con
+él: `<nombre>` · `<code>` · `<mensaje>`», o dice explícitamente que no hay error capturado (lo que
+por descarte apunta a un `SIGKILL`/OOM externo).
+
+**Rojo → verde:** test nuevo en `tests/scrum784-el-cuarto-veredicto.test.mjs` (①bis), con positivo
+(error guardado bajo la ruta del fichero muerto se recupera), y dos negativos (sin error guardado no
+se inventa uno; el error de OTRO fichero no se le atribuye a éste). Mutación declarada añadida a
+`MUTACIONES_QUE_ME_TUMBAN`. Verificado el rojo con la mutación puesta y quitada.
+
+## 3 · Verificación conjunta
+
+`tests/scrum908-la-muda-se-explica.test.mjs`: 5/5. `tests/scrum784-el-cuarto-veredicto.test.mjs`:
+5/5. `guards:entrada`: 112/112 (11,3 s de 90). `npm run build` sin errores. `src/` intacto, ningún
+suelo bajado, ninguna mutación declarada excluida — regla 41: el meta-guard sigue evaluando las
+mismas ~320 declaraciones, sólo cambia CÓMO se clasifica y CUÁNTO cuenta un veredicto ya existente.
+
+## 4 · Lo que esto NO hace, y quién lo hace
+
+* **No arregla la pérdida de eventos de `scrum859`** (SCRUM-908/908b/908c, hipótesis del backpressure
+  de stdout con `forceExit`). Necesita un runner Linux real y experimentación que ya han intentado
+  tres sesiones sin éxito concluyente (SCRUM-908c-2 §④: incluso un caso calibrado a 2,4× la
+  capacidad medida del transporte no reprodujo la pérdida en la corrida más reciente).
+* **No confirma ni descarta el `fs.watch`/`inotify` de J4** para el caso `vigia-atascados`/`scrum853`.
+  Sigue sin verse ninguna caída de `vigia-atascados` en la ventana medida hoy (§0): el síntoma
+  «FICHERO MUERTO» de esta ventana es de `scrum853`, no de `vigia-atascados`, y no se ha investigado
+  si comparte mecanismo.
+* **No marca el meta-guard obligatorio.** Ese criterio (SCRUM-836 ②) sigue sin cumplirse: la próxima
+  vez que salga rojo por esto, el mensaje dirá CIEGO (con el error, si lo hay) en vez de MUDO, y eso
+  es lo que cambia hoy.
+* **Deliberadamente NO se aplicó** el arreglo del `--import` bloqueante propuesto en SCRUM-908c §⑦
+  (forzar stdout síncrono en el hijo). Es una hipótesis sin demostrar, aplicarla afecta a las ~320
+  mutaciones de cada pasada del meta-guard, y las tres sesiones que sí tenían acceso a Linux CI para
+  probarla no lo consiguieron cerrar. Aplicarla a ciegas desde una máquina Windows que no puede
+  verificarla sería exactamente lo que A2 prohíbe (medir antes de construir).

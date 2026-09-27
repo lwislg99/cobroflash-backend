@@ -24,7 +24,7 @@
 //    la próxima vez que ocurra, se sepa cuál de las cuatro causas fue.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { porQueNoCayo, cayo, paso } from '../scripts/meta-guard-mutaciones.mjs';
+import { porQueNoCayo, cayo, paso, esCegueraNoMudez } from '../scripts/meta-guard-mutaciones.mjs';
 
 // ⚠️ MUTACIÓN DECLARADA (SCRUM-745): la ejecuta `npm run meta:mutaciones` en CI. Devuelve el
 // diagnóstico a una respuesta única —lo que había antes— y exige el rojo.
@@ -33,6 +33,10 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: "  if ((tras?.pasados || []).some((n) => n.includes(nombre))) return 'PASÓ (corrió y no falló)';",
     a: "  if (true) return 'PASÓ (corrió y no falló)'; // una sola respuesta, a proposito",
     cae: 'SCRUM-908 · 🔴 EL QUE DECIDE: las tres situaciones NO dan la misma respuesta' },
+  { fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: "  return /^(SALTADO|NO APARECE)/.test(String(donde));",
+    a: '  return false; // SCRUM-1100, mutacion a proposito',
+    cae: 'SCRUM-1100 · 🔴 CASO CONOCIDO: sólo "corrió y pasó" es mudez; SALTADO y NO APARECE son ceguera' },
 ];
 
 const NOMBRE = 'SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave';
@@ -87,4 +91,20 @@ test('SCRUM-908 · sin datos de la pasada, no se afirma que el test pasó', () =
     assert.match(porQueNoCayo(vacio, NOMBRE), /NO APARECE/,
       '🔴 sin datos se está diciendo que el test «pasó», que es una causa inventada.');
   }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ⑤ SCRUM-1100 (propuesta de SCRUM-908c §⑦) · SALTADO y NO APARECE cuentan como CEGUERA, no
+//    como MUDEZ del guard — hasta hoy las tres causas de arriba producían el MISMO veredicto
+//    (`resultado.mudo`), acusando a un guard sano de estar inerte cuando el instrumento no
+//    pudo mirar (medido en CI: la mutación nº 2 de `scrum859` pierde su cola de eventos).
+// ═════════════════════════════════════════════════════════════════════════════════════════
+test('SCRUM-1100 · 🔴 CASO CONOCIDO: sólo "corrió y pasó" es mudez; SALTADO y NO APARECE son ceguera', () => {
+  assert.equal(esCegueraNoMudez(porQueNoCayo(conPasado, NOMBRE)), false,
+    '🔴 el test CORRIÓ y PASÓ: el aserto no ve el defecto. Eso SÍ es mudez de verdad.');
+  assert.equal(esCegueraNoMudez(porQueNoCayo(conSaltado, NOMBRE)), true,
+    '🔴 SALTADO es "no llegó a correr": es ceguera del instrumento, no un guard inerte.');
+  assert.equal(esCegueraNoMudez(porQueNoCayo(ausente, NOMBRE)), true,
+    '🔴 NO APARECE es un evento perdido (o un fichero muerto a medias): el instrumento no vio, '
+    + 'y contarlo como MUDO acusa a un inocente — el defecto exacto de SCRUM-908/908b/908c.');
 });

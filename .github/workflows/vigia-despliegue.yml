@@ -177,6 +177,12 @@ jobs:
       #
       # DEDUPE por MARCADOR en el cuerpo (mismo patrón que `avisador-rojo.yml`): si ya hay un
       # Issue ABIERTO con la marca, se comenta con la lectura de HOY en vez de abrir uno nuevo.
+      #
+      # 🔴 SEGUIMIENTO (26-sep-2026): la DECISIÓN (qué Issue elegir, qué cuerpo componer) vivía
+      # entera en bash+jq, intocable por un test — el mismo punto ciego que ya tiene resuelto
+      # `scripts/puerta-avisador-rojo.mjs` para el otro avisador de esta casa. Se saca a
+      # `scripts/vigia-despliegue-aviso.mjs` (JSON en, JSON fuera, cero red, con tests contra
+      # dobles); el `gh api`/`gh issue` que de verdad habla con GitHub se queda aquí, fino.
       # ═══════════════════════════════════════════════════════════════════════════════════════
       - name: Avisar de verdad si el vigía cantó (Issue de GitHub)
         if: always() && steps.vigia.outputs.salida == '1'
@@ -187,29 +193,34 @@ jobs:
           MARCA: "<!-- vigia-despliegue:produccion-congelada -->"
         run: |
           RENGLON="$(tail -1 .vigia/constancias.log 2>/dev/null || true)"
-          if [ -z "$RENGLON" ]; then RENGLON="(sin constancia: no se pudo leer .vigia/constancias.log)"; fi
-
-          # 🔴 TODO EN UN PRINTF DE UNA SOLA LÍNEA FÍSICA, a propósito (mismo patrón que
-          # `avisador-rojo.yml`): un bloque `run: |` de YAML exige que cada línea del script
-          # mantenga la indentación del bloque, y un heredoc o una cadena multilínea literal la
-          # rompería en cuanto una línea de su cuerpo empezara en la columna 0.
-          CUERPO="$(printf 'El vigía del despliegue (`vigia-despliegue.yml`) ha cantado: producción no está al día con `main` y no se está cerrando solo.\n\nAntes esto tardó 8 días en verse (SCRUM-1122) porque el único aviso era el job en rojo y nadie miraba Actions.\n\nPrimer sitio donde mirar: los logs de arranque en Railway. Si dicen `[schema] DERIVA`, falta un `ALTER` en producción — mirar `docs/sql/` en `main` por SQL pendiente.\n\n```\n%s\n```\n\nEjecución: %s\n\n%s\n' "$RENGLON" "$RUN_URL" "$MARCA")"
 
           # 🔴 NO se usa `gh issue list --search`: la búsqueda de GitHub tokeniza el cuerpo y no
-          # garantiza casar un literal con `<!-- … -->`. Se listan los Issues abiertos (sin PRs)
-          # y `jq contains()` busca la marca EXACTA por substring — mismo principio que
-          # `avisador-rojo.yml` (marcador HTML + coincidencia literal, nunca texto libre).
-          if ! EXISTENTE="$(gh api "repos/$REPO/issues?state=open&per_page=100" --paginate \
-                            -q "[.[] | select(.pull_request == null) | select(.body // \"\" | contains(\"$MARCA\"))] | .[0].number // empty" \
-                            | grep -v '^$' | head -1 2>/dev/null)"; then
-            EXISTENTE=''
+          # garantiza casar un literal con `<!-- … -->`. Se listan los Issues abiertos tal cual
+          # (JSON crudo) y la DEDUPE por substring exacto la hace `vigia-despliegue-aviso.mjs`.
+          if ! VIGIA_ISSUES_JSON="$(gh api "repos/$REPO/issues?state=open&per_page=100" --paginate 2>/dev/null)"; then
+            VIGIA_ISSUES_JSON='[]'
           fi
 
-          if [ -n "$EXISTENTE" ]; then
-            gh issue comment "$EXISTENTE" --repo "$REPO" --body "$CUERPO"
-            echo "- **ACTUALIZADO** — Issue #$EXISTENTE con la lectura de esta ejecución." >> "$GITHUB_STEP_SUMMARY"
-          else
-            SALIDA_ISSUE="$(gh issue create --repo "$REPO" --title "🔴 Producción congelada — el vigía del despliegue está en rojo" --body "$CUERPO" 2>&1)" \
+          # 🔴 `|| true` en las tres líneas siguientes A PROPÓSITO: los `run:` de Actions llevan
+          # `-e -o pipefail`, y sin esto un `jq`/`node` que fallara abortaría el paso ANTES de
+          # llegar al `if`/`else` que decide cómo avisar del fallo — el mismo error de "abortar en
+          # vez de decidir" que este propio seguimiento viene a evitar en la decisión de arriba.
+          DECISION="$(VIGIA_ISSUES_JSON="$VIGIA_ISSUES_JSON" VIGIA_MARCA="$MARCA" VIGIA_RENGLON="$RENGLON" VIGIA_RUN_URL="$RUN_URL" \
+                      node scripts/vigia-despliegue-aviso.mjs)" || true
+          ACCION="$(printf '%s' "$DECISION" | jq -r '.accion' 2>/dev/null)" || true
+
+          if [ "$ACCION" = "comentar" ]; then
+            NUMERO="$(printf '%s' "$DECISION" | jq -r '.numero')"
+            printf '%s' "$DECISION" | jq -r '.cuerpo' | gh issue comment "$NUMERO" --repo "$REPO" --body-file -
+            echo "- **ACTUALIZADO** — Issue #$NUMERO con la lectura de esta ejecución." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$ACCION" = "crear" ]; then
+            SALIDA_ISSUE="$(printf '%s' "$DECISION" | jq -r '.cuerpo' \
+              | gh issue create --repo "$REPO" --title "🔴 Producción congelada — el vigía del despliegue está en rojo" --body-file - 2>&1)" \
               && echo "- **ABIERTO** — $SALIDA_ISSUE" >> "$GITHUB_STEP_SUMMARY" \
               || { echo "::error::No se pudo abrir el Issue de aviso: $SALIDA_ISSUE"; echo "- **NO SE PUDO ABRIR** — $SALIDA_ISSUE" >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+          else
+            MOTIVO="$(printf '%s' "$DECISION" | jq -r '.motivo // "sin motivo"' 2>/dev/null || echo "sin motivo (DECISION ilegible: $DECISION)")"
+            echo "::error::No se pudo decidir el aviso: $MOTIVO"
+            echo "- **NO-SE-SABE** — $MOTIVO" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
