@@ -11,6 +11,7 @@
 import { Prisma } from '@prisma/client';
 import { SERIE_LOCK_NS } from '../../invoicing/domain/invoiceNumber.service'; // SCRUM-234: un solo namespace
 import { SERIES, formatoNumeroDocumento, parseNumeroDocumento } from '../../../core/documentos/formatoNumero'; // SCRUM-592
+import { zonaDelMerchant, diaNaturalEn } from '../../../core/zonaDelMerchant'; // SCRUM-1093
 
 /**
  * El prefijo VIEJO, `ALB-2026-001`. Se conserva **sólo para reconocer** los albaranes que aún no
@@ -112,12 +113,16 @@ export async function allocateAlbaranNumber(
   // la factura recapitulativa: dos albaranes con el mismo número son dos referencias que no
   // distinguen a qué parte de la obra corresponde cada cosa.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;
-  const year = now.getFullYear();
   const m = await tx.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, nextAlbaranNumber: true, albaranSeriesYear: true },
+    // SCRUM-1093: `timezone` hace falta para el año de la serie — ver el `year` de abajo.
+    select: { id: true, nextAlbaranNumber: true, albaranSeriesYear: true, timezone: true },
   });
   if (!m) throw new Error('merchant_not_found');
+  // SCRUM-1093 (mismo GO que SCRUM-735 y que `allocateQuoteNumber`): el AÑO de la serie sale de la
+  // zona de ESTE merchant, no del reloj del PROCESO (Railway va en UTC). Sin zona declarada cae a
+  // `ZONA_POR_DEFECTO` ('UTC'): el mismo resultado que en producción hasta hoy.
+  const year = Number(diaNaturalEn(now, zonaDelMerchant(m)).slice(0, 4));
 
   const seq = resolveAlbaranSeq(m, year);
   await tx.merchant.update({
