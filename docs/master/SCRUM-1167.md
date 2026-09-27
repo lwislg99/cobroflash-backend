@@ -68,7 +68,13 @@ lleva `.btn` («Borrar» plantilla, «Emitir» albarán), que ya ganaba por orde
 
 ## Suite
 
-Ver el comentario de entrega en Jira (cifra medida tras el merge de main).
+Tanda completa tras el merge de main: **8558 tests, 3 fallos**. Dos eran míos y están arreglados:
+- `scrum694`: mi test leía el guard con un filtro de comentarios hecho a mano (40 contra un tope de 39).
+  Ahora usa `soloCodigo()`, como pide la casa. El tope no se ha tocado.
+- `scrum854`: faltaba comitear este registro.
+
+Repetidos después los dos más el mío: 19/19. El tercero es `scrum910d` (libuv en Windows), que no es
+de este ticket.
 
 ## Fuera de este ticket
 
