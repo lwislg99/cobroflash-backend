@@ -136,3 +136,18 @@ grandes en CI). No es de este diff (no toca ninguno de los dos ficheros).
 (23/23) · `guard:foto-del-gasto` (5/5 casos) · suite completa `node --test tests/*.test.mjs`:
 8540 tests, 8527 pass, 13 fail — los 13 son el conjunto AJENO ya conocido (SCRUM-245, SCRUM-385,
 SCRUM-471, SCRUM-475, SCRUM-476, SCRUM-804, scrum910d), ninguno toca `expensesView.js` ni Gastos.
+
+**Segundo rojo, tras el primer push: `mergeable: CONFLICTING`.** Main había avanzado 23 commits
+mientras se arreglaba el primer rojo, y una de esas ramas (SCRUM-1160) tocaba el MISMO anclaje
+compartido (`tests/scrum601-copy-del-documento-vs-flag.test.mjs`, `VEREDICTO_AL_MEDIR`) que esta
+rama, cada una por su propio literal (SCRUM-1155 en `expensesView.js`, SCRUM-1160 en
+`jobDetailView.js`). Por A4 de la casa («una cifra derivada en un merge no se elige ni se suma: se
+regenera con su generador sobre el árbol fusionado»): se hizo `git merge origin/main`, se
+conservaron los DOS comentarios narrativos (qué se movió y por qué, de cada rama) y el número se
+REGENERÓ corriendo el propio test sobre el árbol ya fusionado — no sumando a mano los deltas de
+cada lado. Resultado medido: `{ flag: 16, tipo: 7, aPelo: 155 }` (coincide con la suma aritmética
+en este caso, pero se verificó corriendo el instrumento, no calculándola). `assert.deepEqual`
+contra el censo en vivo confirma que es el valor real, no una coincidencia.
+
+**PR #1824 MERGEADO:** 2026-09-27T16:20:48Z, los 8 checks en verde (`build + tests`, `guards de
+navegador`, `meta-guard`, `trinquete`, y los 4 informativos), auto-merge armado por `yaqu-bot`.
