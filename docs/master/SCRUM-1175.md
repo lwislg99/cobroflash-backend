@@ -60,3 +60,48 @@ sin «Ahora»**. La regla va campo a campo. Sin tocar el esquema.
 
 `selector-390-antes` (main) · `selector-390-despues` · `textolibre-390-despues` («8h» se queda de texto,
 sin «Ahora» y sin la guía) · `aviso-390-despues`.
+
+**PR-A mergeado:** #1845. El primer intento del check obligatorio dio rojo por MIS tests (tres negaciones
+sin positivo hermano, SCRUM-237; dos regex con el `>` pegado, SCRUM-553; SCRUM-976 caía por el 237). Se
+arreglaron los tests, no los guards.
+
+---
+
+# PR-B · Las firmas en su paso
+
+Medido sobre `origin/main` = `f0eac753c14885d78b754fdd578579e2b80223e2` (27-sep-2026 17:16Z), con PR-A ya dentro.
+**Rama:** `scrum-1175-parte-firmas-en-su-paso`.
+
+## El cambio
+
+- Las dos firmas pasan a un paso con título, **«Firmas»** (firmado, com. 17251), y **una caja por firma**.
+  Cada aviso «Falta la firma del … para cerrar el parte.» vive DENTRO de la caja de su firma: así el botón
+  «Firmar aquí mismo», que no dice de quién es, queda al lado del texto que sí lo dice.
+- Mismos botones, mismos atributos (`data-parte-firmar`, `data-parte-firmar-tecnico`) y mismo camino de
+  firma. **La cola sin conexión (SCRUM-890/919) no se toca**, y un test lo fija: `firmarConRedDeSeguridad`,
+  los tipos de cola `parte` / `parte-tecnico` y sus dos rutas.
+
+## Lo que NO se pinta, y por qué
+
+- **«Sin las dos firmas el parte no se cierra.»** Con UNA firma cualquiera el parte ya es `firmado`
+  (`partes.routes.ts:675` y `:754`). `firmasCompletas()` existe (`parteTrabajo.ts:429`) y se sirve, pero
+  nada la consume. Decide el fundador (com. 17253): o se cablea la regla (ticket de servidor) o no existe.
+  El test lo fija en los tres estados (sin firmas, sólo cliente, sólo técnico), con su respaldo: el token es
+  el de `docs/prototipos/SCRUM-916/textos-propuestos.md`.
+- **«N firma(s) guardada(s) en este móvil».** El prototipo la ponía en la franja de sin cobertura (fuera de
+  esta pantalla y dentro del camino sin conexión, que no se toca), y el panel YA tiene un contador aprobado
+  para el mismo dato («Te quedan N firmas por subir», `estadoFirma.js:250`). Dos textos para un mismo dato
+  divergen. Retirada por el orquestador (SCRUM-916).
+
+## Tests — `tests/scrum1175b-firmas-en-su-paso.test.mjs` (4)
+
+- **Contra main: 2 fallan** (el paso y las cajas) **y 2 pasan** (las dos protecciones, que tienen que
+  pasar en los dos lados: la frase no pintada y el camino sin conexión intacto).
+- Vecinos (todo lo que lee `parteDetailView` o `styles.css`, más 653, 919, 358, 362, 267, 854): 80 ficheros,
+  **786 · 785 pass**; el único rojo era el registro de este apéndice (SCRUM-854), que es esto. Con 237 y 553
+  en verde antes de empujar.
+
+## Capturas (390 px)
+
+`scrum1175b-firmas-390-despues` (las dos cajas, con su aviso cada una) · `scrum1175b-unafirma-390-despues`
+(parte firmado sólo por el cliente: su caja dice quién firmó y la del técnico sigue ofreciendo su firma).

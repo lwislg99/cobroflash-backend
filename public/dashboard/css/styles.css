@@ -3570,6 +3570,23 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 }
 [data-parte-firmar]:hover:not(:disabled) { background: var(--green-700, var(--brand-700)); color: #fff; }
 
+/* SCRUM-1175 (916a, PR-B) · las firmas en su paso, una caja por firma. Contorno y fondo de la
+   tarjeta de contenido de DESIGN.md (plano por defecto: borde de 1 px, sin sombra). */
+.parte-firmas { margin-top: 12px; }
+.parte-firmas-titulo {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.parte-firma-caja {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
 /* Quitar una línea: presente, pero nunca compitiendo con la acción principal.
    ⚠️ AQUÍ ESTÁ TODO LO DE ESTA CLASE, y en un solo sitio a propósito (SCRUM-818). Vivía partida en
    dos reglas —el aspecto aquí y el área táctil 50 líneas más abajo— y no eran duplicadas sino

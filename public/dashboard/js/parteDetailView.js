@@ -110,6 +110,13 @@
     revisaLasHoras: 'Revisa las horas',
     salidaAntesQueEntrada: 'La salida es antes que la entrada',
     km: 'km',
+
+    // SCRUM-1175 (916a, PR-B) · el título del paso de las firmas. FIRMADO por delegación del
+    // fundador el 27-sep-2026, SCRUM-916 comentario 17251.
+    // ⛔ Su guía propuesta, «Sin las dos firmas el parte no se cierra.», NO se pinta: con UNA firma
+    // el parte ya pasa a `firmado` (`partes.routes.ts`, rutas `firmar` y `firmar-tecnico`). Espera
+    // decisión del fundador (SCRUM-1175, comentario 17253).
+    firmasTitulo: 'Firmas',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -655,25 +662,34 @@
   function pintarLasDosFirmas(parte) {
     var recuadro = function (firmado, marca, rotulo, hecho, quien) {
       return firmado
-        ? '<p data-parte-' + marca + '-hecha="1" style="margin:8px 0 0;font-size:14px;color:var(--muted)">' +
+        ? '<p data-parte-' + marca + '-hecha="1" style="margin:0;font-size:14px;color:var(--muted)">' +
           esc(hecho) + (quien ? ' ' + esc(quien) : '') + '</p>'
-        : '<button type="button" data-parte-' + marca + '="1" style="width:100%;margin-top:8px">' +
+        : '<button type="button" data-parte-' + marca + '="1" style="width:100%">' +
           esc(rotulo) + '</button>';
     };
+    // SCRUM-1175 (PR-B) · UN PASO PROPIO Y UNA CAJA POR FIRMA. Cada aviso «falta» vive DENTRO de la
+    // caja de su firma, así el botón «Firmar aquí mismo» —que no dice de quién es— queda al lado del
+    // texto que sí lo dice. Mismos botones, mismos atributos y mismo camino de firma: la cola sin
+    // conexión (SCRUM-890/919) no se toca.
     return (
-      '<section data-parte-firmas="1" style="margin-top:12px">' +
+      '<section data-parte-firmas="1" class="parte-firmas">' +
+      '<h4 class="parte-firmas-titulo">' + esc(TEXTOS.firmasTitulo) + '</h4>' +
+      '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
-      recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
       // 🔴 EL AVISO NOMBRA LA QUE FALTA, y si faltan las dos se dicen las dos: fundir ambas en
       // «falta una firma» era exactamente el defecto — el técnico tendría que adivinar cuál.
       (!parte.firmoElCliente
         ? '<p data-parte-falta-firma="cliente" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
           esc(TEXTOS.faltaLaFirmaDelCliente) + '</p>'
         : '') +
+      '</div>' +
+      '<div class="parte-firma-caja" data-parte-caja-firma="tecnico">' +
+      recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
       (!parte.firmoElTecnico
         ? '<p data-parte-falta-firma="tecnico" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
           esc(TEXTOS.faltaLaFirmaDelTecnico) + '</p>'
         : '') +
+      '</div>' +
       '</section>'
     );
   }
