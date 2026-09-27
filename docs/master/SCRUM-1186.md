@@ -35,3 +35,11 @@ copiando `null`. El borrador sí queda arreglado entero con esto.
   él, 7/7. Controles: una plantilla de catálogo y un borrador viejo no inventan texto.
 - Vecinos (todo lo que monta o lee `quotesView.js`/`quotesDetailView.js`/`saveDraft`/la asignación
   de bloques, más 237 y 553): **82 ficheros · 840 · 840 pass · 0 fail**.
+## Apéndice · el trinquete de SCRUM-1185 en rojo en main
+
+#1847 (1174) mergeó a las 17:37:07Z y #1849 (1185) a las 17:38:10Z, así que `main` (e1adef97) quedó en rojo en el ②
+de 1185: `cuerpo · POST /quote/create::docHeaderText` y `::docFooterText` ya se consumen desde 1174 y seguían en
+`declaradas`. Por decisión del orquestador (el PR que conecta la pieza es el que la retira) se mueven aquí de
+`declaradas` a `retiradas` en `scripts/_sin-consumir-declarados.json` con motivo
+«SCRUM-1174: conectada en quotesView.js (editor del presupuesto)». Ni se relaja el guard ni se borra la entrada.
+`scrum1185` + `scrum1186`: 17/17.
