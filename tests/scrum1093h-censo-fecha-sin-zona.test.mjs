@@ -1,0 +1,209 @@
+// tests/scrum1093h-censo-fecha-sin-zona.test.mjs — SCRUM-1093h
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// LA RED DE `scripts/_censo-fecha-sin-zona.mjs`: que siga viendo lo que promete ver, por TIPO y
+// no por nombre, y que la clasificación de USO no deje pasar muda una llamada nueva.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import {
+  RAIZ, censar, censarPrograma, programaDe, USO, RETIRADAS, clasifica, acusada, AGREGADO, NUMERA,
+} from '../scripts/_censo-fecha-sin-zona.mjs';
+
+const deGit = (sha, ruta) => execFileSync('git', ['show', `${sha}:${ruta}`], { cwd: RAIZ, encoding: 'utf8', maxBuffer: 1 << 24 });
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ① SUELO — sobre el árbol de verdad, no fabricado. `guards:entrada` corre esto: tiene que ser
+// rápido comparado con compilar 304 ficheros, así que aquí se mide el árbol REAL una sola vez.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const REAL = censar('.');
+
+test('SCRUM-1093h · SUELO: el censo ve población, ve familia y distingue (no acusa a todo)', () => {
+  assert.ok(REAL.ficheros > 250, `🔴 población sospechosamente pequeña: ${REAL.ficheros} ficheros`);
+  assert.ok(REAL.filas.length > 0, '🔴 CIEGO: cero llamadas de la familia sobre un árbol que las tiene.');
+  const acusadas = REAL.filas.filter(acusada);
+  const limpias = REAL.filas.filter((f) => !acusada(f));
+  assert.ok(acusadas.length > 0, '🔴 CIEGO: cero acusadas — o el árbol se curó entero, o el detector no distingue.');
+  assert.ok(limpias.length > 0, '🔴 acusa a TODO: si no hay ninguna AGREGADO, el detector no está mirando el uso.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ② EL RATCHET — ninguna fila del censo real puede quedar SIN clasificar. Una identidad nueva
+// que el `USO` no conoce es CIEGA para el mapa (aunque el TIPO la haya visto bien), y eso es
+// justo lo que fuerza a alguien a mirarla y escribir su clase — no a que pase muda.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1093h · 🔴 RATCHET: toda fila del censo real tiene una entrada en `USO`', () => {
+  const sinClasificar = REAL.filas.filter((f) => clasifica(f) === null);
+  assert.deepEqual(sinClasificar.map((f) => `${f.identidad} (${f.fichero}:${f.linea}, ${f.metodo})`), [],
+    '🔴 LLAMADA NUEVA SIN CLASIFICAR — no numera ni guarda automáticamente por defecto: alguien '
+    + 'tiene que decidir su clase en `USO` (NUMERA/GUARDA/IMPRIME/REFERIDO/AGREGADO) y escribir '
+    + 'por qué. Si de verdad NUMERA o GUARDA: derivar el año/mes/día con `diaNaturalEn(fecha, '
+    + 'zonaDelMerchant(merchant))` de `src/core/zonaDelMerchant.ts`, en la MISMA transacción que '
+    + 'lee al merchant (patrón de SCRUM-1093/f/g).');
+});
+
+test('SCRUM-1093h · toda entrada `USO` con uso ≠ AGREGADO sigue viva en el censo, o está en `RETIRADAS`', () => {
+  const vivas = new Set(REAL.filas.map((f) => f.identidad));
+  const desaparecidas = [...USO.entries()]
+    .filter(([id, v]) => v.uso !== AGREGADO && !vivas.has(id) && !RETIRADAS.has(id));
+  assert.deepEqual(desaparecidas.map(([id]) => id), [],
+    '🔴 Una identidad declarada como NUMERA/GUARDA/IMPRIME/REFERIDO ya no aparece en el censo y '
+    + 'NO está en `RETIRADAS`. Si se arregló: mover la entrada a `RETIRADAS` con su commit '
+    + '(regla 41 — mejorar se declara, no desaparece en silencio). Si no se arregló, el censo se '
+    + 'ha quedado CIEGO para ella: sospechar del detector antes de sospechar del código.');
+});
+
+test('SCRUM-1093h · ninguna entrada de `RETIRADAS` ha vuelto a aparecer en el censo', () => {
+  const vivas = new Set(REAL.filas.map((f) => f.identidad));
+  const resucitadas = [...RETIRADAS].filter((id) => vivas.has(id));
+  assert.deepEqual(resucitadas, [],
+    '🔴 Una identidad RETIRADA (se declaró arreglada) ha vuelto a depender de la zona del '
+    + 'proceso: o el arreglo se revirtió, o el censo la ve por un motivo distinto al que la hizo '
+    + 'RETIRARSE. Cualquiera de los dos es un hallazgo, no un ruido a callar.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ③ 🔴 CONTROLES POSITIVOS REALES — el código histórico de los tres arreglos de esta misma
+// familia, leído de git tal cual existió, no reconstruido. Cada uno tiene que acusarse ANTES del
+// arreglo (misma forma que las NUMERA vivas hoy) y quedar LIMPIO en HEAD (control negativo
+// DERIVADO: el mismo fichero, el estado real de hoy — no un segundo texto que pueda divergir).
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const HISTORICOS = [
+  {
+    nombre: 'quoteNumber.service.ts (SCRUM-1093, a0f454f3)',
+    ruta: 'src/modules/quotes/domain/quoteNumber.service.ts',
+    antesDe: 'a0f454f3',
+  },
+  {
+    nombre: 'albaranNumber.service.ts (SCRUM-1093f, f0ff43df)',
+    ruta: 'src/modules/jobs/domain/albaranNumber.service.ts',
+    antesDe: 'f0ff43df',
+  },
+  {
+    nombre: 'partes.routes.ts (SCRUM-1093g, 5cb43c1c)',
+    ruta: 'src/modules/jobs/app/routes/partes.routes.ts',
+    antesDe: '5cb43c1c',
+  },
+];
+
+for (const h of HISTORICOS) {
+  test(`SCRUM-1093h · 🔴 ③ CONTROL POSITIVO REAL: ${h.nombre} se acusaba ANTES del arreglo`, () => {
+    const abs = path.join(RAIZ, h.ruta);
+    const viejo = deGit(`${h.antesDe}^`, h.ruta);
+    const program = programaDe([abs], new Map([[abs, viejo]]));
+    const filas = censarPrograma(program, [h.ruta]);
+    assert.ok(filas.length > 0,
+      `🔴 EL CENSO NO VE EL DEFECTO QUE LO ORIGINÓ en ${h.ruta}@${h.antesDe}^: esperaba al menos `
+      + 'una llamada get*/set*/toLocale* sobre un receptor `Date`.');
+    assert.ok(filas.some((f) => f.clase === 'GET_SET'),
+      `🔴 esperaba un get*/set* (el patrón \`.getFullYear()\` del año de la serie), y salió: ${JSON.stringify(filas)}`);
+  });
+
+  test(`SCRUM-1093h · CONTROL NEGATIVO DERIVADO: ${h.nombre} en HEAD ya no se acusa`, () => {
+    const filas = REAL.filas.filter((f) => f.fichero === h.ruta);
+    assert.deepEqual(filas, [],
+      `🔴 FALSO POSITIVO sobre código ya arreglado: ${h.ruta} sigue dando llamadas de la familia `
+      + `en HEAD: ${JSON.stringify(filas)}. El arreglo usa diaNaturalEn(fecha, zonaDelMerchant(m)) `
+      + 'y no debería dejar ningún get*/set*/toLocale* sin zona sobre la fecha de la serie.');
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ④ 🔴 EL FALSO POSITIVO REAL — `albaranPdf.service.ts:133`, un `toLocaleString` sobre un
+// `number` (`v.toLocaleString('es-ES', { maximumFractionDigits: 2 })`). El censo de SCRUM-1093g
+// lo encontró A MANO; este control lo deja escrito para que no haga falta volver a encontrarlo.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1093h · 🔴 ④ NEGATIVO REAL: `fmtQty` (toLocaleString sobre un número) no se acusa', () => {
+  const enElFichero = REAL.filas.filter((f) => f.fichero === 'src/modules/jobs/infra/albaranPdf.service.ts');
+  const conNumero = enElFichero.filter((f) => f.linea >= 132 && f.linea <= 134);
+  assert.deepEqual(conNumero, [],
+    `🔴 FALSO POSITIVO: fmtQty(v: number) usa toLocaleString sobre un NÚMERO, no una fecha, y el `
+    + `censo lo acusó igual — por NOMBRE de método en vez de por TIPO del receptor: ${JSON.stringify(conNumero)}`);
+  // Y el control de que el propio fichero SÍ tiene familia real cerca (fmtDate, la línea de
+  // arriba): si este negativo se cumpliera porque el censo dejó de ver el fichero ENTERO, sería
+  // un cero que no ha ganado nada.
+  assert.ok(enElFichero.length > 0,
+    '🔴 CIEGO: albaranPdf.service.ts no dio NINGUNA fila — el negativo de fmtQty no vale nada si '
+    + 'el censo tampoco ve fmtDate/generateAlbaranPdf, que sí son de la familia.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// ⑤ CONTROL POSITIVO FABRICADO + NEGATIVO DERIVADO — casos mínimos, con tipos reales (no un
+// truco de texto): prueban que el detector reconoce la familia por SU CUENTA, sin depender de
+// que el fichero real exista o siga teniendo esa forma.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+const FABRICADO_ABS = path.join(RAIZ, 'src', '__scrum1093h_fabricado__.ts');
+
+const FABRICADO_GET_SET = [
+  'export function anioDeLaSerie(fecha: Date): number {',
+  '  return fecha.getFullYear();',
+  '}',
+].join('\n');
+
+const FABRICADO_LOCALE_SIN_ZONA = [
+  'export function fechaImpresa(fecha: Date): string {',
+  "  return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });",
+  '}',
+].join('\n');
+
+const FABRICADO_LOCALE_CON_ZONA = [
+  'export function fechaImpresaConZona(fecha: Date, zona: string): string {',
+  "  return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', timeZone: zona });",
+  '}',
+].join('\n');
+
+const FABRICADO_NUMERO = [
+  'export function importeFormateado(v: number): string {',
+  "  return v.toLocaleString('es-ES', { maximumFractionDigits: 2 });",
+  '}',
+].join('\n');
+
+const FABRICADO_UTC = [
+  'export function anioUtc(fecha: Date): number {',
+  '  return fecha.getUTCFullYear();',
+  '}',
+].join('\n');
+
+function censarFabricado(fuente) {
+  const program = programaDe([FABRICADO_ABS], new Map([[FABRICADO_ABS, fuente]]));
+  return censarPrograma(program, ['src/__scrum1093h_fabricado__.ts']);
+}
+
+test('SCRUM-1093h · 🔴 ⑤ FABRICADO positivo: `Date.getFullYear()` con tipo `Date` se acusa', () => {
+  const filas = censarFabricado(FABRICADO_GET_SET);
+  assert.equal(filas.length, 1, `🔴 no ve la llamada mínima: ${JSON.stringify(filas)}`);
+  assert.equal(filas[0].metodo, 'getFullYear');
+  assert.equal(filas[0].clase, 'GET_SET');
+});
+
+test('SCRUM-1093h · 🔴 ⑤ FABRICADO positivo: `toLocaleDateString` SIN `timeZone` se acusa', () => {
+  const filas = censarFabricado(FABRICADO_LOCALE_SIN_ZONA);
+  assert.equal(filas.length, 1, `🔴 no ve la llamada mínima: ${JSON.stringify(filas)}`);
+  assert.equal(filas[0].clase, 'LOCALE');
+});
+
+test('SCRUM-1093h · ⑤ NEGATIVO DERIVADO: el MISMO `toLocaleDateString`, con `timeZone` inline, no se acusa', () => {
+  assert.notEqual(FABRICADO_LOCALE_CON_ZONA, FABRICADO_LOCALE_SIN_ZONA);
+  const filas = censarFabricado(FABRICADO_LOCALE_CON_ZONA);
+  assert.deepEqual(filas, [],
+    `🔴 sigue acusando con \`timeZone\` declarado en el propio sitio de la llamada: ${JSON.stringify(filas)}`);
+});
+
+test('SCRUM-1093h · ⑤ NEGATIVO DERIVADO: `getUTCFullYear` (explícito) no se acusa', () => {
+  const filas = censarFabricado(FABRICADO_UTC);
+  assert.deepEqual(filas, [], `🔴 acusa una llamada UTC explícita: ${JSON.stringify(filas)}`);
+});
+
+test('SCRUM-1093h · ⑤ NEGATIVO: `toLocaleString` sobre un `number` (mismo nombre, otro tipo) no se acusa', () => {
+  const filas = censarFabricado(FABRICADO_NUMERO);
+  assert.deepEqual(filas, [],
+    `🔴 acusa por el NOMBRE del método en vez de por el TIPO del receptor: ${JSON.stringify(filas)}. `
+    + 'Es exactamente el defecto que `albaranPdf.service.ts:133` (el control ④) demuestra en código real.');
+});
