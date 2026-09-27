@@ -77,6 +77,13 @@ const DECLARADAS = {
     'MODAL de firma. ⚠️ DECLARADO CON DUDA, y se dice en vez de decidirlo solo: es un modal, pero '
     + 'lo pulsa el CLIENTE en una obra y es el momento más irrepetible del producto (SCRUM-404). '
     + 'Si el fundador decide que un modal así cuenta como primaria, sale de esta lista.',
+  // SCRUM-993 · el paso de confirmación de «Entregar y enviar a firmar», DENTRO de la misma hoja
+  // de alta que ya declara `save` arriba. Confirma un paso que ya se pidió con otro botón (el
+  // secundario `entregar`, `btn-secondary btn-sm`, que esta lista no vigila); la pantalla del
+  // Trabajo tiene sentido completo sin abrir esta hoja.
+  'jobDetailView.js:confirmContinuar':
+    'MODAL (paso de confirmación del sheet de alta de albarán). Igual que `save` de esta misma '
+    + 'hoja: confirma un diálogo, no es la acción por la que existe la pantalla del Trabajo.',
 };
 
 /**
