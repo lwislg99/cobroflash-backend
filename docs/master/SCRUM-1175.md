@@ -38,8 +38,12 @@ sin «Ahora»**. La regla va campo a campo. Sin tocar el esquema.
 - Selector `type="time"` + «Ahora» (44 px), que guarda por el MISMO camino que el `change` a mano.
 - Duración recalculada al elegir la hora. Salida anterior → aviso, sólo mientras el parte se puede
   editar. Salida igual a la entrada, o alguna hora de texto: no se pinta nada (no se adivina).
-- Límite conocido: una visita que cruza la medianoche (22:00 → 02:00) da el aviso. La frase es
-  literalmente cierta en el reloj y sólo pide revisar; no bloquea nada.
+- Una visita que cruza la medianoche (22:00 → 02:00, una urgencia de noche: caso NORMAL en un oficio)
+  da el aviso. **Molesta, pero no miente**, y por eso se deja así: «La salida es antes que la
+  entrada» es literalmente cierto (02:00 es anterior a 22:00 en el reloj) y «Revisa las horas» es una
+  petición, no un veredicto; no bloquea nada. Un «Las horas están mal» sí habría sido falso en ese caso.
+  No se arregla: distinguir «se equivocó al teclear» de «cruzó la medianoche» necesita una FECHA en la
+  salida, y hoy sólo hay una hora de texto. Sería cambio de esquema.
 - Parte firmado: sin selector, sin «Ahora», sin guía y sin aviso; la duración sí (es un dato cierto).
 
 ## Tests — `tests/scrum1175-horas-del-parte.test.mjs` (8)
