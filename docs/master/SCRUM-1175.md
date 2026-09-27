@@ -48,7 +48,9 @@ sin «Ahora»**. La regla va campo a campo. Sin tocar el esquema.
 - **Mutación:** `cabeEnSelector` devolviendo siempre `true` (el selector se pinta sobre «8h») →
   cae **sólo** el test de la pérdida silenciosa (7 pasan, 1 falla). El guard ve el defecto que dice ver.
 - Con el cambio, junto con los 14 ficheros que leen `parteDetailView` (818, 652c, 666b, 720, 890…):
-  **136/136**.
+  **136/136**. Ampliado a todo fichero que lee `parteDetailView` o `styles.css`, más el ancla (267) y
+  el registro (854): **74 ficheros · 714/714 · 0 saltados**. La tanda completa NO se ha corrido en
+  local (la máquina es compartida y el turno se pide para eso); la corre el check obligatorio del PR.
 
 ## Capturas (390 px, producto real en Edge, `docs/master/evidencias/scrum1175/`)
 
