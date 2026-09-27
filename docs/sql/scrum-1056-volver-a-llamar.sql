@@ -1,0 +1,61 @@
+-- docs/sql/scrum-1056-volver-a-llamar.sql — SCRUM-1056 (CRM, bloque 977, ola 3) · paso ② de A5
+--
+-- «VOLVER A LLAMAR»: una tarea con fecha y una nota corta dentro del cliente.
+--
+-- ── APROBACIÓN ─────────────────────────────────────────────────────────────────────────────────
+--   · ① Decisión D6 del FUNDADOR (`docs/producto/CRM.md` §6; descripción de SCRUM-1056): tarea
+--     PROPIA y simple (fecha + nota), SIN reutilizar mantenimientos (`MAINTENANCE_ENABLED` no se
+--     toca).
+--   · Encargado por el ORQUESTADOR (cobroflash-backend-06) el 27-sep-2026, «mismo método que 914».
+--   · Escrito por la Sesión 1 (S1, `s1-27a`).
+--
+-- ── DÓNDE SE APLICA ────────────────────────────────────────────────────────────────────────────
+--   En las TRES bases (dev, staging y producción), lo aplica el equipo de Javier, y ANTES de que
+--   se mergee el PR ③ que toca `prisma/schema.prisma` (`schemaDrift` es fail-closed — SCRUM-1122).
+--
+-- ── EL DISEÑO: DOS COLUMNAS EN `customers`, NO UNA TABLA ──────────────────────────────────────
+--   La aceptación dice «poner otra SUSTITUYE a la anterior» y «marcarlo hecho deja un apunte en
+--   el historial del cliente (`CustomerEvent`)». O sea: hay como mucho UNA pendiente por cliente,
+--   y el historial YA tiene su tabla. Una tabla nueva guardaría un historial paralelo al de
+--   `customer_events` —dos sitios para lo mismo— y obligaría a imponer «una activa por cliente» con
+--   un índice parcial. Dos columnas nullables lo dicen sin más:
+--     · `callback_on`   DATE  — el DÍA en que toca volver a llamar. NULL = no hay nada pendiente.
+--                               `DATE` y no `TIMESTAMP`: es un día del calendario del profesional;
+--                               «vencido» se decide comparándolo con HOY en la zona del merchant
+--                               (`diaNaturalEn`), nunca con el reloj del proceso (familia SCRUM-1093).
+--     · `callback_note` TEXT  — la nota corta. NULL = sin nota.
+--   «Hecho» = poner las dos a NULL + un `CustomerEvent` en la misma transacción (código del ③).
+--
+-- ── ADITIVO PURO ───────────────────────────────────────────────────────────────────────────────
+--   Dos columnas NULLABLES sin `DEFAULT` y un índice. Ninguna fila cambia: todo cliente queda con
+--   NULL = «nada pendiente», que es la verdad de hoy. RE-EJECUTABLE (`IF NOT EXISTS`).
+--
+-- ── OBLIGACIONES DEL ③ (criterios de aceptación en SCRUM-1056) ─────────────────────────────────
+--   · `callbackNote` es texto libre sobre una persona: entra en la lista de `customer` de
+--     `anonimizarMerchant.ts`, con su test (`callbackOn` no identifica a nadie).
+--   · Toda lectura y escritura filtra por `req.merchantId` (regla 2).
+--   · Ningún envío ni aviso sale de esto (regla 28; J6).
+--
+-- ── DE DÓNDE SALE ──────────────────────────────────────────────────────────────────────────────
+--   Derivado con `previewMigracion({ schema: <candidato>, desde: prisma/schema.prisma })` de
+--   `scripts/preview-migracion.mjs` (control positivo dentro: ok, 31 tablas), OFFLINE, el
+--   27-sep-2026, contra `prisma/schema.prisma` de origin/main (sin cambios de esquema entre
+--   e264c234 y c30b4ed4). El candidato vivió en el scratchpad: `prisma/schema.prisma` del repo NO se
+--   ha tocado (regla 40). Nada aplicado a ninguna base, ni a staging.
+--
+--   Lo que el ③ escribe en `model Customer`:
+--     callbackOn   DateTime? @map("callback_on") @db.Date
+--     callbackNote String?   @map("callback_note")
+--     @@index([merchantId, callbackOn])
+
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "callback_on"   DATE;
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "callback_note" TEXT;
+
+-- «Los que tocan hoy o están vencidos» y «los de esta semana» son rangos de fecha por merchant.
+CREATE INDEX IF NOT EXISTS "customers_merchant_id_callback_on_idx" ON "customers"("merchant_id", "callback_on");
+
+-- ── VERIFICACIÓN (solo lectura, después de aplicar) ────────────────────────────────────────────
+-- Tiene que devolver 2 filas, las dos `is_nullable = YES`.
+-- SELECT column_name, is_nullable, data_type
+--   FROM information_schema.columns
+--  WHERE table_name = 'customers' AND column_name IN ('callback_on', 'callback_note');
