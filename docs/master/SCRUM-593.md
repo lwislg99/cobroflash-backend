@@ -328,12 +328,14 @@ el PDF con el código de hoy, así que un bloque nuevo cambiaría **facturas ya 
 | Documento | Estado |
 |---|---|
 | **ALBARÁN** | ✅ **cabecera montada y ALCANZABLE** — se escribe en el editor, se guarda al crear **y** al editar, se relee y sale en el PDF. Su pie es `notas`, que ya existía y ya se imprimía. |
-| **PRESUPUESTO** | ⚠️ **cableado y NO montado** — esquema, rutas, las tres puertas del PDF y los tests, todo hecho; **ningún formulario lo ofrece**. Espera a que salga **SCRUM-598** de `quotesView.js`. |
+| **PRESUPUESTO** | ✅ **montado por SCRUM-1174** (27-sep-2026) — los dos textos en «Envío» del editor, con el mismo componente que el albarán; viajan en el POST de crear. *(Hasta entonces sólo estaba cableado, sin formulario; SCRUM-598 cerró sin montarlo.)* |
 | **FACTURA** | ⛔ **fuera, por SCRUM-665** — `ensureInvoicePdf` REGENERA el PDF emitido con el código de hoy (el fs de Railway es efímero), así que añadirle un bloque cambiaría **facturas ya emitidas**. Regla 29. |
 
 **Este ticket sigue ABIERTO mientras el presupuesto no esté montado**, y ése es el sitio donde el
 hueco tiene que vivir: en un ticket abierto. Cerrarlo lo borraría de todas las listas y «el
 presupuesto no tiene dónde escribirse» dejaría de existir para todo el mundo.
+*(27-sep-2026: el hueco se quedó sin dueño al cerrarse SCRUM-598 sin montarlo; lo recogió
+SCRUM-1174, que es quien lo monta.)*
 
 ## Por qué el albarán SÍ se pudo montar hoy
 
