@@ -90,13 +90,15 @@ test('SCRUM-1175 · vacío → selector (no hay nada que perder) y la guía sale
 });
 
 test('SCRUM-1175 · la duración: «3 h 30 min», y el aviso si la salida es antes', () => {
-  assert.ok(pintar(BASE).includes('3 h 30 min'), '🔴 09:15 → 12:45 no dice 3 h 30 min');
+  const bien = pintar(BASE);
+  assert.ok(bien.includes('Tiempo en la obra'), '🔴 con las dos horas no se dice el tiempo en la obra');
+  assert.ok(bien.includes('3 h 30 min'), '🔴 09:15 → 12:45 no dice 3 h 30 min');
   assert.ok(pintar({ ...BASE, salida: '09:45' }).includes('30 min'));
   assert.ok(pintar({ ...BASE, salida: '11:15' }).includes('2 h<'));
 
   const mal = pintar({ ...BASE, entrada: '12:00', salida: '09:00' });
-  assert.ok(mal.includes('Revisa las horas') && mal.includes('La salida es antes que la entrada'),
-    '🔴 salida anterior a la entrada y nadie lo dice');
+  assert.ok(mal.includes('Revisa las horas'), '🔴 salida anterior a la entrada y nadie lo dice');
+  assert.ok(mal.includes('La salida es antes que la entrada'), '🔴 el aviso no dice qué pasa');
   assert.ok(!mal.includes('Tiempo en la obra'));
 
   // Iguales: no es «antes», y no se pinta nada.
@@ -119,10 +121,10 @@ test('SCRUM-1175 · parte FIRMADO: ni selector ni «Ahora» ni guía ni aviso; l
 
 test('SCRUM-1175 · «km» al lado de los kilómetros; «horas» NO al lado del desplazamiento', () => {
   const html = pintar(BASE);
-  assert.match(html, /data-parte-campo="kilometros"[^>]*>\s*<span class="parte-campo-unidad">km<\/span>/,
+  assert.match(html, /data-parte-campo="kilometros"[^>]*>\s*<span class="parte-campo-unidad"[^>]*>km<\/span>/,
     '🔴 falta la unidad de los kilómetros');
   // `desplazamientos` es un ENTERO (recuento): llamarlo «horas» afirmaría lo que el dato no es.
-  assert.doesNotMatch(html, /data-parte-campo="desplazamientos"[^>]*>\s*<span class="parte-campo-unidad">/,
+  assert.doesNotMatch(html, /data-parte-campo="desplazamientos"[^>]*>\s*<span class="parte-campo-unidad"[^>]*>/,
     '🔴 el desplazamiento lleva unidad: el dato es un recuento entero, no horas');
   assert.match(casilla(html, 'desplazamientos'), /type="number"/);
 });
