@@ -1,6 +1,6 @@
 # SCRUM-1160 · En modo justificante no se ofrece facturar: «Cobrar ahora» (presupuesto) y «Cobrar el resto» (Trabajo)
 
-**Medido contra:** `origin/main` = `12f43aa8d1c2b07ad3f39c572d3d7b4fec1954e9` · 2026-09-26T13:35:02Z
+**Medido contra:** `origin/main` = `37bda5dbc6991cc33a54ee7248020be30d2f977f` · 2026-09-27T15:39:53Z
 **Rama:** `scrum-1160-cobrar-ahora-modo-recibo`.
 **Sesión:** S2 (front). **Skill UI:** cargada (`yaqu-premium-ui`).
 
@@ -35,8 +35,13 @@ es lo que `scrum402` cuenta como pintable, y éste sólo sirve para reconocerlo.
 
 `tests/scrum1160-cobrar-ahora-modo-recibo.test.mjs` (16 tests), ficha y escalera montadas con el
 panel entero (`albaranAccion.js` de verdad, no un doble). Contra los cuatro ficheros de producto de
-`origin/main`: **9 fallan** (los de `receipt`/`null`/`undefined` y el cinturón) y **5 pasan** (los
-controles `fiscal`/`demo`). Con el cambio: todos en verde.
+`origin/main`: **11 fallan y 5 pasan (16)** — medido de nuevo el 27-sep-2026 con los 16; la cifra
+anterior («9 / 5») se midió con 14 tests y era falsa para este fichero. Pasan los 5 controles
+positivos `fiscal`/`demo`. Fallan: los 6 de `receipt`/`null`/`undefined` (ficha y escalera), el de
+MANUAL en `receipt`, los 2 del cinturón y además dos cuyo nombre dice «control»: el 3 (en `receipt`
+con Trabajo de origen) cae porque también afirma que no hay «Cobrar ahora» y en main lo hay
+(`1 !== 0`), y el 16 (control negativo del cinturón) cae con `f is not a function`: en main el
+cinturón no existe, así que ése es rojo por AUSENCIA, no por defecto. Con el cambio: 16/16 en verde.
 
 **Tests de otros tickets tocados, y por qué NO es «tocar tests para que pasen»:** el producto ahora
 depende de un dato —el modo de emisión— que su montaje no le daba.
