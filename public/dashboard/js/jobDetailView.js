@@ -3003,7 +3003,7 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
   if (onEntregarYFirmar) {
     entregar = document.createElement('button');
     entregar.id = 'alb-entregar-firmar';
-    entregar.className = 'btn-secondary btn-sm';
+    entregar.className = 'btn-secondary btn-sm job-toolbar-btn-44';
     entregar.textContent = ALB_ENTREGAR_Y_FIRMAR_LABEL;
     saveRow.appendChild(entregar);
 
@@ -3021,11 +3021,11 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
     confirmRow.className = 'alb-confirmar-fila';
     const confirmContinuar = document.createElement('button');
     confirmContinuar.id = 'alb-confirmar-continuar';
-    confirmContinuar.className = 'btn-primary btn-sm';
+    confirmContinuar.className = 'btn-primary btn-sm job-toolbar-btn-44';
     confirmContinuar.textContent = ALB_ENTREGAR_Y_FIRMAR_LABEL;
     const confirmCancelar = document.createElement('button');
     confirmCancelar.id = 'alb-confirmar-cancelar';
-    confirmCancelar.className = 'btn-ghost btn-sm';
+    confirmCancelar.className = 'btn-ghost btn-sm job-toolbar-btn-44';
     confirmCancelar.textContent = 'Cancelar';
     confirmRow.append(confirmContinuar, confirmCancelar);
     confirmBox.appendChild(confirmRow);
