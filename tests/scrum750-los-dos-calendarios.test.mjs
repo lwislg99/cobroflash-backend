@@ -49,12 +49,18 @@ const VISTA = 'public/dashboard/js/quotesView.js';
 
 // ── la sonda, memorizada: cada arranque cuesta ~1,9 s y varios tests miran lo mismo ────────
 const cache = new Map();
+// SCRUM-1153b · el hijo NO hereda el entorno de la tanda: `NODE_TEST_CONTEXT` cambia su salida,
+// y `FORCE_COLOR`/`NODE_OPTIONS` son de la máquina, no del sujeto. Se construye aquí, a mano.
+const entornoSonda = { ...process.env };
+delete entornoSonda.FORCE_COLOR;
+delete entornoSonda.NODE_OPTIONS;
+delete entornoSonda.NODE_TEST_CONTEXT;
 function sonda(navegador, merchant = 'Europe/Madrid', modo = 'derivado') {
   const clave = `${navegador}|${merchant}|${modo}`;
   if (!cache.has(clave)) {
     const r = spawnSync(process.execPath,
       [path.join(RAIZ, 'tests', '_sonda-calendarios.mjs'), navegador, merchant, modo],
-      { encoding: 'utf8' });
+      { encoding: 'utf8', env: entornoSonda });
     assert.equal(r.status, 0,
       `🔴 CIEGO: la sonda ${clave} salió con ${r.status}. stdout: ${r.stdout} stderr: ${r.stderr}`);
     const j = JSON.parse(r.stdout.trim().split('\n').pop());
