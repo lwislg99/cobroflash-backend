@@ -1,0 +1,33 @@
+-- docs/sql/scrum-359-ventana-de-firma.sql — SCRUM-359 (H4) · paso ② de A5, recuperado en SCRUM-1184
+--
+-- LOS TRES RELOJES DE UNA FIRMA DE ALBARÁN: al lado del sobre, nunca dentro.
+--
+-- ── APROBACIÓN ─────────────────────────────────────────────────────────────────────────────────
+--   · ① Decisión del FUNDADOR (11-ago-2026, `docs/master/SCRUM-359.md`): «se guardan los tres, y
+--     no se elige entre ellos». El diff quedó «PREPARADO Y PARADO» en §4 de ese registro, sin .sql.
+--   · Encargado por el ORQUESTADOR (cobroflash-backend-06) el 27-sep-2026 en SCRUM-1184 («si
+--     necesita un ALTER, escribes el .sql con el método de siempre»).
+--   · Escrito por la Sesión 1 (S1). Generado con `node scripts/preview-migracion.mjs --desde`
+--     (offline, control positivo OK, veredicto «aditiva»); `prisma/schema.prisma` intacto.
+--
+-- ── DÓNDE SE APLICA ────────────────────────────────────────────────────────────────────────────
+--   En las TRES bases (dev, staging y producción), lo aplica el equipo de Javier, y ANTES de que
+--   se mergee el PR ③ que toca `prisma/schema.prisma` (`schemaDrift` es fail-closed — SCRUM-1122).
+--
+-- ── LAS COLUMNAS ───────────────────────────────────────────────────────────────────────────────
+--   · `firmado_en_dispositivo_at` — ① la hora de firma según el RELOJ DEL MÓVIL (`encoladaEn` de
+--     `colaDeFirmas.js`). La controla el usuario: el nombre lo dice para que nadie la lea como hora
+--     nuestra.
+--   · `ventana_suelo_at` + `ventana_suelo_fuente` — ② el último evento de NUESTRO servidor antes
+--     de la firma, y de dónde sale (`FUENTES_DE_SUELO` en `ventanaDeFirma.ts`).
+--   · ③ la llegada al servidor NO necesita columna: ya es `firmado_at`.
+--   Todas anulables y sin defecto: las filas existentes quedan con NULL, que significa «de esta
+--   firma no se guardó ventana», no «se firmó fuera de ella».
+--
+-- ── 🔴 LO QUE ESTO NO DESBLOQUEA POR SÍ SOLO ───────────────────────────────────────────────────
+--   Cablear `contrastarReloj` añade una escritura a los dos endpoints que SELLAN la firma
+--   (`albaranes.routes.ts` y `albaranPublic.routes.ts`, donde hoy se hace `firmadoAt = new Date()`).
+--   Eso es STOP de la regla 38 y va con GO explícito del fundador (SCRUM-359 §5).
+ALTER TABLE "albaranes" ADD COLUMN IF NOT EXISTS "firmado_en_dispositivo_at" TIMESTAMP(3);
+ALTER TABLE "albaranes" ADD COLUMN IF NOT EXISTS "ventana_suelo_at" TIMESTAMP(3);
+ALTER TABLE "albaranes" ADD COLUMN IF NOT EXISTS "ventana_suelo_fuente" TEXT;
