@@ -94,6 +94,29 @@
     // SCRUM-890 (PR 2) · una firma que se quedó en la cola y el servidor rechazó al vaciarla, con un
     // código distinto de `parte_vacio`. ⚠️ PROPUESTA, PENDIENTE DE FIRMA (regla 30).
     firmaRechazada: 'La firma que quedó pendiente no se ha podido registrar. Vuelve a firmar el parte.',
+
+    // ── SCRUM-1175 (916a, PR-A) · HORAS Y DESPLAZAMIENTO ────────────────────────────────
+    // FIRMADOS por delegación del fundador el 27-sep-2026, SCRUM-916 comentario 17251.
+    // «La hora se elige, no se escribe.» va firmada CON CONDICIÓN: sólo se pinta cuando los dos
+    // campos son de verdad un selector (ver `pintarHoras`). Con un valor viejo de texto libre la
+    // hora SÍ se escribe, y la frase sería falsa justo donde aparece.
+    // ⛔ «horas» al lado de Desplazamiento NO se pinta aunque esté firmado: `desplazamientos` es un
+    // ENTERO (`schema.prisma`, y el PATCH responde «Los desplazamientos son un número entero»), o
+    // sea un recuento y no una duración. Llamarlo horas afirmaría algo que el dato no es.
+    horasTitulo: 'Horas y desplazamiento',
+    horasGuia: 'La hora se elige, no se escribe.',
+    ahora: 'Ahora',
+    tiempoEnLaObra: 'Tiempo en la obra',
+    revisaLasHoras: 'Revisa las horas',
+    salidaAntesQueEntrada: 'La salida es antes que la entrada',
+    km: 'km',
+
+    // SCRUM-1175 (916a, PR-B) · el título del paso de las firmas. FIRMADO por delegación del
+    // fundador el 27-sep-2026, SCRUM-916 comentario 17251.
+    // ⛔ Su guía propuesta, «Sin las dos firmas el parte no se cierra.», NO se pinta: con UNA firma
+    // el parte ya pasa a `firmado` (`partes.routes.ts`, rutas `firmar` y `firmar-tecnico`). Espera
+    // decisión del fundador (SCRUM-1175, comentario 17253).
+    firmasTitulo: 'Firmas',
   };
 
   // El vocabulario CERRADO del dominio (`parteTrabajo.ts`). No se inventa aquí ni se amplía:
@@ -288,23 +311,120 @@
    * @param {string}  nombre    la clave del `PATCH`: es lo que ata la casilla a su columna.
    * @param {boolean} editable
    * @param {'number'} [modo]   abre el teclado numérico del móvil.
+   * @param {string}  [unidad]  se pinta al lado del número (SCRUM-1175: «km»).
    */
-  function campo(rotulo, valor, nombre, editable, modo) {
+  function campo(rotulo, valor, nombre, editable, modo, unidad) {
     var v = valor === null || valor === undefined ? '' : String(valor);
     if (!editable) {
       return (
         '<div class="parte-campo">' +
         '<span class="parte-campo-rotulo">' + esc(rotulo) + '</span>' +
         '<span class="parte-campo-dato" data-parte-dato="' + esc(nombre || '') + '">' +
-        esc(v || '—') + '</span></div>'
+        esc(v ? v + (unidad ? ' ' + unidad : '') : '—') + '</span></div>'
       );
     }
+    var casilla =
+      '<input type="' + (modo === 'number' ? 'number' : 'text') + '"' +
+      (modo === 'number' ? ' inputmode="decimal"' : '') +
+      ' data-parte-campo="' + esc(nombre || '') + '" value="' + esc(v) + '">';
     return (
       '<label class="parte-campo">' +
       '<span class="parte-campo-rotulo">' + esc(rotulo) + '</span>' +
-      '<input type="' + (modo === 'number' ? 'number' : 'text') + '"' +
-      (modo === 'number' ? ' inputmode="decimal"' : '') +
-      ' data-parte-campo="' + esc(nombre || '') + '" value="' + esc(v) + '"></label>'
+      (unidad
+        ? '<span class="parte-campo-con-unidad">' + casilla +
+          '<span class="parte-campo-unidad">' + esc(unidad) + '</span></span>'
+        : casilla) +
+      '</label>'
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-1175 (916a, PR-A) · LAS HORAS CON SELECTOR, SIN PERDER NI UN VALOR VIEJO.
+  //
+  // 🔴 `entrada` y `salida` son `String?` de TEXTO LIBRE (`schema.prisma`, modelo ParteTrabajo) y
+  // hay partes guardados con «8h» o «8.30». Un `<input type="time">` con un `value` que no es
+  // HH:MM lo DESCARTA en silencio: el campo sale vacío, y el siguiente `change` guardaría el vacío
+  // encima del dato del profesional. Por eso el selector sólo se pinta cuando el valor guardado
+  // es HH:MM (o no hay valor); si no, el campo se queda de TEXTO con su valor, como hasta hoy.
+  // Lo exige `tests/scrum1175-horas-del-parte.test.mjs`. Sin tocar el esquema.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  var HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+  /** ¿Cabe este valor en un selector de hora SIN perderse? Vacío sí: no hay nada que perder. */
+  function cabeEnSelector(valor) {
+    if (valor === null || valor === undefined || String(valor) === '') return true;
+    return HH_MM.test(String(valor));
+  }
+
+  function minutosDelDia(valor) {
+    var v = valor === null || valor === undefined ? '' : String(valor);
+    if (!HH_MM.test(v)) return null;
+    return Number(v.slice(0, 2)) * 60 + Number(v.slice(3, 5));
+  }
+
+  /** «3 h 30 min», «45 min», «2 h». */
+  function enHorasYMinutos(minutos) {
+    var h = Math.floor(minutos / 60);
+    var m = minutos % 60;
+    if (h && m) return h + ' h ' + m + ' min';
+    if (h) return h + ' h';
+    return m + ' min';
+  }
+
+  /**
+   * La duración, o el aviso. Sólo con las DOS horas en HH:MM: de «8h» no se resta nada, y
+   * adivinar qué quiso decir sería inventarse el dato. Salida igual a entrada no pinta nada: no
+   * es «antes», y «0 min» en la obra no dice nada útil.
+   *
+   * El aviso sólo sale mientras se puede corregir: en un parte firmado no hay nada que revisar.
+   */
+  function pintarDuracion(entrada, salida, editable) {
+    var a = minutosDelDia(entrada);
+    var b = minutosDelDia(salida);
+    if (a === null || b === null || a === b) return '';
+    if (b > a) {
+      return '<div class="parte-duracion">' +
+        '<span class="parte-duracion-rotulo">' + esc(TEXTOS.tiempoEnLaObra) + '</span>' +
+        '<b>' + esc(enHorasYMinutos(b - a)) + '</b></div>';
+    }
+    if (!editable) return '';
+    return '<div class="parte-duracion parte-duracion-mal" role="status">' +
+      '<span class="parte-duracion-rotulo">' + esc(TEXTOS.revisaLasHoras) + '</span>' +
+      '<b>' + esc(TEXTOS.salidaAntesQueEntrada) + '</b></div>';
+  }
+
+  /** Entrada o salida: selector con «Ahora» si el valor cabe; si no, el campo de siempre. */
+  function campoHora(rotulo, valor, nombre, editable) {
+    if (!editable || !cabeEnSelector(valor)) return campo(rotulo, valor, nombre, editable);
+    var v = valor === null || valor === undefined ? '' : String(valor);
+    return (
+      '<div class="parte-campo">' +
+      '<label>' +
+      '<span class="parte-campo-rotulo">' + esc(rotulo) + '</span>' +
+      '<input type="time" data-parte-campo="' + esc(nombre) + '" value="' + esc(v) + '"></label>' +
+      '<button type="button" class="parte-ahora" data-parte-ahora="' + esc(nombre) + '">' +
+      esc(TEXTOS.ahora) + '</button></div>'
+    );
+  }
+
+  function pintarHoras(parte, editable) {
+    // La guía, SOLO si las dos son selector de verdad (condición de la firma, com. 17251).
+    var sonSelector = editable && cabeEnSelector(parte.entrada) && cabeEnSelector(parte.salida);
+    return (
+      '<section class="parte-horas">' +
+      '<h4 class="parte-horas-titulo">' + esc(TEXTOS.horasTitulo) + '</h4>' +
+      (sonSelector ? '<p class="parte-horas-guia" data-parte-guia-horas="1">' + esc(TEXTOS.horasGuia) + '</p>' : '') +
+      '<div class="parte-horas-par">' +
+      campoHora(TEXTOS.entrada, parte.entrada, 'entrada', editable) +
+      campoHora(TEXTOS.salida, parte.salida, 'salida', editable) +
+      '</div>' +
+      '<div data-parte-duracion="1" aria-live="polite">' +
+      pintarDuracion(parte.entrada, parte.salida, editable) + '</div>' +
+      '<div class="parte-horas-par">' +
+      campo(TEXTOS.desplazamiento, parte.desplazamientos, 'desplazamientos', editable, 'number') +
+      campo(TEXTOS.kilometros, parte.kilometros, 'kilometros', editable, 'number', TEXTOS.km) +
+      '</div>' +
+      '</section>'
     );
   }
 
@@ -332,10 +452,8 @@
       '<div class="parte-datos">' +
       campo(TEXTOS.obra, parte.obra, 'obra', editable) +
       campo(TEXTOS.referencia, parte.referencia, 'referencia', editable) +
-      campo(TEXTOS.entrada, parte.entrada, 'entrada', editable) +
-      campo(TEXTOS.salida, parte.salida, 'salida', editable) +
-      campo(TEXTOS.desplazamiento, parte.desplazamientos, 'desplazamientos', editable, 'number') +
-      campo(TEXTOS.kilometros, parte.kilometros, 'kilometros', editable, 'number') +
+      // Entrada, salida, desplazamiento y kilómetros viven ahora en su propio paso (SCRUM-1175),
+      // justo debajo: los siete siguen siendo campos de verdad.
       // El papel admite VARIOS técnicos en la misma línea, así que se pintan juntos y separados
       // por coma, tal como se escriben ahí.
       //
@@ -345,6 +463,7 @@
       // dato, y no se revierte al guardar.
       campo(TEXTOS.tecnicos, (parte.tecnicos || []).join(', '), 'tecnicos', editable) +
       '</div>' +
+      pintarHoras(parte, editable) +
       pintarTipo(parte.tipo, editable) +
       // El dictado solo tiene sentido mientras el contenido se pueda tocar: ofrecerlo en un parte
       // firmado sería enseñar un camino que el siguiente paso cierra con un 409.
@@ -543,25 +662,34 @@
   function pintarLasDosFirmas(parte) {
     var recuadro = function (firmado, marca, rotulo, hecho, quien) {
       return firmado
-        ? '<p data-parte-' + marca + '-hecha="1" style="margin:8px 0 0;font-size:14px;color:var(--muted)">' +
+        ? '<p data-parte-' + marca + '-hecha="1" style="margin:0;font-size:14px;color:var(--muted)">' +
           esc(hecho) + (quien ? ' ' + esc(quien) : '') + '</p>'
-        : '<button type="button" data-parte-' + marca + '="1" style="width:100%;margin-top:8px">' +
+        : '<button type="button" data-parte-' + marca + '="1" style="width:100%">' +
           esc(rotulo) + '</button>';
     };
+    // SCRUM-1175 (PR-B) · UN PASO PROPIO Y UNA CAJA POR FIRMA. Cada aviso «falta» vive DENTRO de la
+    // caja de su firma, así el botón «Firmar aquí mismo» —que no dice de quién es— queda al lado del
+    // texto que sí lo dice. Mismos botones, mismos atributos y mismo camino de firma: la cola sin
+    // conexión (SCRUM-890/919) no se toca.
     return (
-      '<section data-parte-firmas="1" style="margin-top:12px">' +
+      '<section data-parte-firmas="1" class="parte-firmas">' +
+      '<h4 class="parte-firmas-titulo">' + esc(TEXTOS.firmasTitulo) + '</h4>' +
+      '<div class="parte-firma-caja" data-parte-caja-firma="cliente">' +
       recuadro(parte.firmoElCliente, 'firmar', TEXTOS.firmar, TEXTOS.yaFirmoElCliente, parte.firmadoPorNombre) +
-      recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
       // 🔴 EL AVISO NOMBRA LA QUE FALTA, y si faltan las dos se dicen las dos: fundir ambas en
       // «falta una firma» era exactamente el defecto — el técnico tendría que adivinar cuál.
       (!parte.firmoElCliente
         ? '<p data-parte-falta-firma="cliente" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
           esc(TEXTOS.faltaLaFirmaDelCliente) + '</p>'
         : '') +
+      '</div>' +
+      '<div class="parte-firma-caja" data-parte-caja-firma="tecnico">' +
+      recuadro(parte.firmoElTecnico, 'firmar-tecnico', TEXTOS.firmarTecnico, TEXTOS.yaFirmoElTecnico, parte.firmadoTecnicoNombre) +
       (!parte.firmoElTecnico
         ? '<p data-parte-falta-firma="tecnico" style="margin:8px 0 0;font-size:13px;color:var(--muted)">' +
           esc(TEXTOS.faltaLaFirmaDelTecnico) + '</p>'
         : '') +
+      '</div>' +
       '</section>'
     );
   }
@@ -802,15 +930,49 @@
       }
     };
     var casillas = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-parte-campo]') : [];
+    var guardarLaCasilla = {};
     for (var c = 0; c < casillas.length; c++) {
       (function (casilla) {
         var original = casilla.value;
-        casilla.addEventListener('change', function () {
+        var alCambiar = function () {
           if (casilla.value === original) return;   // abrir y cerrar sin tocar no escribe nada
           original = casilla.value;
           guardarCampo(casilla.getAttribute('data-parte-campo'), casilla.value);
-        });
+        };
+        casilla.addEventListener('change', alCambiar);
+        guardarLaCasilla[casilla.getAttribute('data-parte-campo')] = alCambiar;
       }(casillas[c]));
+    }
+
+    // SCRUM-1175 · la duración se recalcula mientras se elige la hora, no al guardar.
+    var casillaDe = function (nombre) {
+      return contenedor.querySelector ? contenedor.querySelector('[data-parte-campo="' + nombre + '"]') : null;
+    };
+    var refrescarDuracion = function () {
+      var hueco = contenedor.querySelector ? contenedor.querySelector('[data-parte-duracion]') : null;
+      var e = casillaDe('entrada');
+      var s = casillaDe('salida');
+      if (!hueco || !e || !s) return;
+      hueco.innerHTML = pintarDuracion(e.value, s.value, true);
+    };
+    ['entrada', 'salida'].forEach(function (nombre) {
+      var casilla = casillaDe(nombre);
+      if (casilla) casilla.addEventListener('input', refrescarDuracion);
+    });
+    // «Ahora»: pone la hora del móvil y la guarda por el MISMO camino que un cambio a mano.
+    var botonesAhora = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-parte-ahora]') : [];
+    for (var a = 0; a < botonesAhora.length; a++) {
+      (function (boton) {
+        boton.addEventListener('click', function () {
+          var nombre = boton.getAttribute('data-parte-ahora');
+          var casilla = casillaDe(nombre);
+          if (!casilla || typeof guardarLaCasilla[nombre] !== 'function') return;
+          var n = new Date();
+          casilla.value = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+          guardarLaCasilla[nombre]();
+          refrescarDuracion();
+        });
+      }(botonesAhora[a]));
     }
 
     // Las líneas: cantidad y descripción. El `PATCH` reemplaza la lista ENTERA, así que se manda
