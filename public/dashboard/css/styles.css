@@ -1632,6 +1632,12 @@ html, body { overflow-x: clip; }
    contenedor a 44px, empezando por los IRREVERSIBLES (Borrar, Emitir) antes que el resto de
    `.btn-sm` (que sigue en 30px sin decidir). Mismo patrón opt-in de SCRUM-962: nunca `.btn-sm`
    global. */
+/* SCRUM-1167 · la regla sola pesaba (0,1,0) y `.btn.btn-sm { min-height: 30px }` pesa (0,2,0):
+   «Borrar» proveedor lleva las dos clases y se quedaba en 30 px en escritorio. El selector
+   compuesto `.btn.btn-sm.accion-irreversible-btn-44` pesa (0,3,0) y gana sin `!important`; la
+   regla sola sigue para los que no llevan `.btn` (plantillas: `btn-danger btn-sm …`, que ya
+   ganaba por orden). Lo mide `guard:objetivo-tactil` en navegador, no la presencia de la clase. */
+.btn.btn-sm.accion-irreversible-btn-44,
 .accion-irreversible-btn-44 { min-height: 44px; }
 
 /* SCRUM-1148 (AB6, grupo B de la misma decisión, opción ③): en el editor de presupuesto, los
