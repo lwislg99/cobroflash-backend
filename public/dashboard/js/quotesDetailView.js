@@ -1326,9 +1326,18 @@ function buildStatusTimeline(quote) {
     rejected
       ? { label: 'Rechazada', icon: '✖', state: 'rejected', date: fmtD(d.rejectedAt || quote.rejectedAt) }
       : { label: 'Aceptada', icon: '✍️', state: accepted ? 'done' : (st === 'sent' ? 'current' : 'pending'), date: fmtD(d.acceptedAt || quote.acceptedAt) },
-    { label: 'Facturada', icon: '🧾', state: invoices.length ? 'done' : 'pending', date: invoices.length ? fmtD(invoices[0].createdAt) : '' },
-    { label: 'Cobrada', icon: '💰', state: paidInv ? 'done' : 'pending', date: paidInv ? fmtD(paidInv.paidAt || paidInv.createdAt) : '' },
   ];
+  // SCRUM-1169 · «Facturada · Cobrada» solo donde pueden ocurrir: en modo justificante (regla 24)
+  // no hay ni documento ni cobro por YaQu, y con el modo desconocido se falla cerrado — la misma
+  // comprobación que el resto de la casa. Si el presupuesto YA tiene facturas, se enseñan: se
+  // oculta lo que no va a ocurrir, no lo que ya ocurrió.
+  const puedeFacturar = typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
+  if (puedeFacturar || invoices.length) {
+    steps.push(
+      { label: 'Facturada', icon: '🧾', state: invoices.length ? 'done' : 'pending', date: invoices.length ? fmtD(invoices[0].createdAt) : '' },
+      { label: 'Cobrada', icon: '💰', state: paidInv ? 'done' : 'pending', date: paidInv ? fmtD(paidInv.paidAt || paidInv.createdAt) : '' },
+    );
+  }
 
   const colorFor = (s) => s === 'done' ? 'var(--brand-bright)' : s === 'current' ? 'var(--blue-600)' : s === 'rejected' ? 'var(--red-500)' : 'var(--neutral-200)';
   const textFor = (s) => s === 'pending' ? 'var(--muted)' : 'var(--neutral-700)';
