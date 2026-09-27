@@ -1,6 +1,6 @@
 # SCRUM-1163 · Un cliente con solo MÓVIL puede recibir el presupuesto por WhatsApp (parte de pantalla)
 
-**Medido contra:** `origin/main` = `29f43a406b0e3663b6227dc6a26bad3ea0e0fa9f` · 2026-09-27T16:29:06Z
+**Medido contra:** `origin/main` = `63e33e92c5c7f1f535513e7a52b7126707a34247` · 2026-09-27T16:49:07Z
 **Rama:** `scrum-1163-whatsapp-cliente-solo-movil`.
 **Sesión:** S2 (front). **Skill UI:** cargada (`yaqu-premium-ui`). La parte de servidor es SCRUM-1166 (S1, ya en main).
 
@@ -35,6 +35,16 @@ banco, con los tres clientes de la aceptación tal y como los manda el servidor 
 | ninguno | pasa (control negativo) | desactivado con su mensaje |
 
 **Contra main: 1 falla y 2 pasan (3). Con el cambio: 3/3.** Junto con 1160, 1166 y 601: 30/30.
+
+**Tanda completa** (con el TURNO del orquestador, 27-sep ~16:40Z), sobre `33c5e458` (rama con main
+`0af96be9` mergeado): **8.586 tests · 8.450 pass · 2 fail · 134 skip**. Los dos fallos son AJENOS:
+- `scrum804b` falla bajo carga y **pasa solo** (10/10 en el mismo árbol).
+- `scrum910d` cae por `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c`:
+  la caída de libuv en Windows, no una aserción del test. Cae igual corrido solo.
+
+Después entró en main SCRUM-1170, que toca `quotesDetailView.js` en otro trozo: merge de main (sin
+conflicto) y otra vez los tests de ese fichero y sus vecinos (1163, 1169, 1170, 1160, 1166, 601):
+**42/42**. La tanda completa no se repitió: el merge solo trae 1170, que ya pasó su CI en main.
 
 No hay captura: no cambia nada visible salvo el estado del botón, y ese estado lo mide el test.
 
