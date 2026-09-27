@@ -248,6 +248,35 @@ const DATOS_795 = (url) => {
   return [];
 };
 
+// ═══ SCRUM-1167 · LOS DATOS DE PROVEEDORES ═══════════════════════════════════════════════════
+//
+// Una fila, para que se pinten sus acciones («Editar», «Desactivar», «Borrar»). Sin ella la vista
+// se queda en su estado vacío y no habría ningún «Borrar» que medir. Sin teléfono a propósito:
+// no hace falta ninguno para medir un botón.
+const DATOS_1167 = (url) => {
+  const u = String(url || '');
+  if (u.includes('/admin/merchant')) return { id: 1, name: 'Fontanería Soler' };
+  if (/\/admin\/providers/.test(u)) {
+    return { ok: true, items: [{ id: 5, name: 'ZZPROVEEDOR de prueba', phone: null, email: 'p@x.com', isActive: true }] };
+  }
+  return [];
+};
+
+/**
+ * 🔴 SCRUM-1167 · LA CLASE DE LAS ACCIONES IRREVERSIBLES SE MIDE POR SU EFECTO, NO POR ESTAR.
+ *
+ * SCRUM-786 le puso `accion-irreversible-btn-44` a «Borrar» proveedor y su test comprobaba que el
+ * botón LLEVARA la clase. La llevaba, y medía 30 px en escritorio: `.btn.btn-sm` (0,2,0) le ganaba
+ * a `.accion-irreversible-btn-44` (0,1,0). Tres capas verdes y el botón mal.
+ *
+ * Aquí se exige lo que la clase promete: 44 px de área de toque EN TODOS LOS ANCHOS —también en
+ * escritorio, donde el mínimo general es 36—, porque el criterio del fundador (SCRUM-786, com.
+ * 16266) es que una acción irreversible no se pulse de refilón. NO hay excepción posible: estos
+ * botones no pasan por la lista de excusas. Y la superficie declara qué irreversibles TIENE que
+ * encontrar: si no aparecen, es ceguera, no limpieza.
+ */
+const CLASE_IRREVERSIBLE = 'accion-irreversible-btn-44';
+
 const SUPERFICIES_791 = [
   // 🔴 SCRUM-794 · 6-sep-2026 · 8 → 7, y el que falta VA NOMBRADO. Este suelo hizo justo lo que
   // se le pide: saltó en cuanto la pantalla dejó de pintar uno de los objetivos censados. No era
@@ -331,6 +360,13 @@ const SUPERFICIES_791 = [
   { ruta: '/__cliente360', vista: 'renderCustomer360View', titulo: 'ficha 360 del cliente',
     datos: DATOS_795, args: ARGUMENTOS_DE_VISTA.renderCustomer360View, distintosEsperados: 7,
     origen: 'SCRUM-795 (7-sep-2026, con la lista de excepciones VACÍA)' },
+  // 🔴 SCRUM-1167 · PROVEEDORES VUELVE, y por qué. SCRUM-786 la sacó de aquí con «cero deuda
+  // conocida», y la deuda existía: «Borrar» medía 30 px en escritorio. Una superficie que no se
+  // vigila no tiene deuda conocida porque nadie la mira. Vuelve con `irreversibles`: los textos de
+  // las acciones irreversibles que TIENE que encontrar, medidas contra 44 px en todos los anchos.
+  { ruta: '/__proveedores', vista: 'renderProvidersView', titulo: 'lista de Proveedores',
+    datos: DATOS_1167, irreversibles: ['Borrar'], distintosEsperados: 2,
+    origen: 'SCRUM-1167 (27-sep-2026, medido con la lista de excepciones VACÍA)' },
 ];
 for (const s of SUPERFICIES_791) {
   const p = await paginaDeVista(RAIZ, s.vista, { datos: s.datos || DATOS_791, args: s.args || [], minimoNodos: 10, preparar: s.preparar || null });
@@ -679,6 +715,13 @@ const EXCEPCIONES_791 = {
     { sel: 'BUTTON.btn-primary.btn-sm', motivo: 'clase compartida `.btn-sm` (30,5–30,9 px) — «+ Nuevo presupuesto». Pre-existente, misma decisión que las anteriores.' },
     { sel: 'BUTTON', motivo: 'las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.btn-sm` sino dándoles área donde están—. Sin decidir. ⚠️ Este selector es el más ancho de todo el fichero: excusa cualquier <button> SIN CLASE de esta pantalla, y hoy son exactamente esos dos (7 interactivos censados, 7 nombrados arriba).' },
   ],
+  // 🔴 SCRUM-1167 · medido el 27-sep-2026 con esta lista VACÍA: tres cortos a 929 (30,7 px) y
+  // ninguno a 390. «Borrar» era uno de los tres y se ARREGLA en el código (no se excusa: las
+  // irreversibles no pasan por esta lista). Quedan los dos de abajo, y se declaran porque son
+  // `.btn-sm` de siempre, la misma decisión pendiente del fundador que en las demás pantallas.
+  renderProvidersView: [
+    { sel: 'BUTTON.btn.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` — «Editar» y «Desactivar/Activar» de cada fila, 30,7 px a 929 y 44 px a 390 (la tabla apila en móvil). Pre-existentes, no irreversibles. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786/787).' },
+  ],
   // renderJobDetailView: sin excepciones — SCRUM-917g bajó su última deuda (la casilla de 14 px)
   // a cero y la superficie SALIÓ de SUPERFICIES_791 (ver el comentario junto a su entrada, arriba).
   // SCRUM-711 · aquí estaba `BUTTON.btn-primary` «+ Nuevo albarán», el CTA del héroe a 37,0 px. Sólo
@@ -771,6 +814,23 @@ for (const s of SUPERFICIES_791) {
       const e = excs.find((x) => x.sel === m.sel);
       decir(`   ⚠️ EXCEPCIÓN ${m.tocable}px · ${m.sel} «${m.texto}» — ${e.motivo}`);
     }
+    // 🔴 SCRUM-1167 · las irreversibles: 44 px en TODOS los anchos, sin excusa posible.
+    for (const texto of s.irreversibles || []) {
+      const suyas = r.medidos.filter((m) => m.texto === texto && m.sel.split('.').includes(CLASE_IRREVERSIBLE));
+      if (!suyas.length) {
+        mal(`   🔴 CIEGO · ${s.vista} @${ancho}px: no he medido ninguna acción irreversible «${texto}» con `
+          + `\`${CLASE_IRREVERSIBLE}\`. O la vista dejó de pintarla, o dejó de llevar la clase: el verde no vale.`);
+        continue;
+      }
+      for (const m of suyas) {
+        if (m.tocable < MINIMO_TACTIL) {
+          mal(`   ✖ IRREVERSIBLE ${m.tocable}px < ${MINIMO_TACTIL} · ${m.sel} «${m.texto}» (caja CSS ${m.caja}px) — `
+            + 'lleva la clase de 44 px y NO mide 44: la clase pierde la cascada.');
+        } else {
+          decir(`   ✅ irreversible «${m.texto}» ${m.tocable}px ≥ ${MINIMO_TACTIL} (caja CSS ${m.caja}px).`);
+        }
+      }
+    }
     for (const m of r.medidos) {
       if (!vistos.has(m.sel)) vistos.set(m.sel, { corto: false });
       if (!m.cumple) vistos.get(m.sel).corto = true;
@@ -840,6 +900,7 @@ if (fallos) {
 // empezó: se llamaba «objetivo-tactil» y sólo miraba la landing (SCRUM-782).
 decir('✅ objetivos de toque: todos llegan a su mínimo —44 px de AB6 en móvil, 36 en escritorio como dice DESIGN.md— (o están excusados con motivo) — '
   + 'LANDING (1280 y 360) · PANEL/clientes, editor de presupuesto, ficha de Trabajo y ficha 360 '
-  + 'del cliente (929 y 390). SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795. Las otras 15 vistas '
+  + 'del cliente (929 y 390) · lista de Proveedores (929 y 390), con sus acciones irreversibles a 44 px '
+  + 'en los dos anchos. SCRUM-542 + SCRUM-782 + SCRUM-791 + SCRUM-795 + SCRUM-1167. Las demás vistas '
   + 'del panel NO se vigilan aquí: están '
   + 'medidas en `npm run censo:tactil-panel` (SCRUM-787).');
