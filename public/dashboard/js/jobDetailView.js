@@ -863,7 +863,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // SCRUM-823 · UN SOLO SITIO por el que el mensaje del servidor puede asomar en este CTA.
     // El trinquete de SCRUM-644 cuenta SITIOS, y este ticket añade un camino de fallo más (el del
     // agendado): los dos entran por aquí, así que el número no sube. El texto es el que ya había.
-    const falloDelCta = (err) => setStatus('error', 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
+    // SCRUM-1160 · el 409 sin firmar de `collect-rest` pinta el texto firmado (`albaranAccion.js`).
+    const falloDelCta = (err) => setStatus('error', (window.errorDeFacturarSinFirmar && window.errorDeFacturarSinFirmar(err?.data))
+      || 'No se pudo completar la acción: ' + (err?.data?.message || err.message));
     const cta = document.createElement('button');
     // 🔴 SCRUM-380 · SIN `btn-sm`, y el arreglo va POR AQUÍ y no por el CSS.
     //

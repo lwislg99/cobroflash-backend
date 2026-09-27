@@ -195,7 +195,10 @@ test('SCRUM-320 · CONTROL POSITIVO: todo cobrado → la sección NO se pinta, y
 // ── EL INVARIANTE CON LA CABECERA ───────────────────────────────────────────────────────
 
 function cargarEscalera() {
-  const ctx = { window: {}, fmtMoneyEs: (n, c) => `${Number(n).toFixed(2)} ${c || 'EUR'}` };
+  // SCRUM-1160 · «Cobrar» (nivel 1) sólo existe para quien puede facturar; sin el dato, la escalera
+  // lo salta (falla cerrado). Este invariante es el de quien EMITE, así que lo declara con el
+  // veredicto que en el panel da `albaranAccion.js`. El modo justificante lo mide SCRUM-1160.
+  const ctx = { window: { facturaFiscalDisponible: () => true }, fmtMoneyEs: (n, c) => `${Number(n).toFixed(2)} ${c || 'EUR'}` };
   vm.createContext(ctx);
   vm.runInContext(leer('public/dashboard/js/jobNextAction.js'), ctx);
   return ctx.window.jobNextAction;

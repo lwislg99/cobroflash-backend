@@ -89,7 +89,10 @@ test('SCRUM-316 · CONTROL NEGATIVO: un estado que no existe en el modelo no pue
 
 // ── LA ESCALERA, EJECUTADA ──────────────────────────────────────────────────────────────
 function cargarEscalera() {
-  const ctx = { window: {}, fmtMoneyEs: (n, cur) => `${Number(n).toFixed(2)} ${cur || 'EUR'}` };
+  // SCRUM-1160 · «Cobrar» (nivel 1) sólo existe para quien puede facturar; sin el dato, la escalera
+  // lo salta (falla cerrado). Este fichero mide la escalera de quien EMITE, así que lo declara con el
+  // veredicto que en el panel da `albaranAccion.js`. El modo justificante lo mide SCRUM-1160.
+  const ctx = { window: { facturaFiscalDisponible: () => true }, fmtMoneyEs: (n, cur) => `${Number(n).toFixed(2)} ${cur || 'EUR'}` };
   vm.createContext(ctx);
   vm.runInContext(leer('public/dashboard/js/jobNextAction.js'), ctx);
   assert.equal(typeof ctx.window.jobNextAction, 'function', '🔴 la escalera no se pudo cargar');

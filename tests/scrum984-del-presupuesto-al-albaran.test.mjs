@@ -322,6 +322,10 @@ async function montar(quote) {
     },
   });
   banco.ctx.renderAppView = (vista, args) => { navegaciones.push({ vista, args }); };
+  // SCRUM-1160 · «Cobrar ahora» sólo se ofrece si el servidor dijo que este profesional EMITE
+  // (`fiscal`/`demo`, fijado por `app.js` desde `/admin/me`); sin el dato, falla cerrado. Este
+  // fichero mide la ficha de quien emite, así que lo declara. El modo justificante tiene el suyo.
+  banco.ctx.appModoEmision = 'fiscal';
   const r = await pintarVista(banco, 'renderQuoteDetailView', 1);
   const nodos = r.contenedor ? todos(r.contenedor) : [];
   const accion = (id) => nodos.filter((n) => n.getAttribute && n.getAttribute('data-accion') === id);

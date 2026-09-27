@@ -63,7 +63,15 @@ function jobNextAction(job, isAdmin = true) {
   // técnico los SALTA y el héroe solo le sugiere lo que SÍ puede (firmar/emitir/nuevo) o nada (nivel 6),
   // nunca un CTA muerto. El dinero queda deshabilitado en su sitio (la fila de factura), no en el héroe.
   // 1 · terminado con saldo → Cobrar el resto (label honesto SCRUM-34).
-  if (isAdmin && job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
+  //
+  // SCRUM-1160 · y SOLO si este profesional puede facturar. `collect-rest` emite una factura, y en
+  // modo justificante corta con 409 `facturacion_no_disponible` (`jobs.routes.ts`): era la PRIMARIA
+  // de un trabajo terminado y solo sabía fallar. Mismo criterio y misma comprobación que los
+  // albaranes (`albaranAccion.js`, falla cerrado con el modo desconocido); y el mismo desenlace que
+  // el técnico de SCRUM-89: el nivel se SALTA y la escalera sigue, nunca un CTA muerto.
+  const puedeFacturar = typeof window !== 'undefined'
+    && typeof window.facturaFiscalDisponible === 'function' && window.facturaFiscalDisponible();
+  if (isAdmin && puedeFacturar && job.status === 'terminado' && job.remaining && job.remaining.amount > 0) {
     const restAmount = (job.pendingStagesCount === 1 && job.nextStage)
       ? fmtMoneyEs(job.nextStage.amount, job.nextStage.currency)
       : fmtMoneyEs(job.remaining.amount, job.remaining.currency);
