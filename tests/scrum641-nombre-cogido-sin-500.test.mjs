@@ -185,14 +185,14 @@ test('SCRUM-641 · 🔴 el texto está aprobado, y el contador dice cuántos fal
   // entra en pantalla en silencio.
   const m = vista.match(/const PV_SIN_APROBAR = (\d+);/);
   assert.ok(m, '🔴 no hay contador de ranuras sin firmar: «sin marcador» se leería como «aprobado»');
-  // 🔴 SUBIDO A 2 EN SCRUM-631, y este guard es quien lo pidió: entró `PV_NOMBRE_ACTIVO_DUPLICADO`
-  //    (el texto del nombre cogido AL REACTIVAR) y la tanda se puso ROJA aquí hasta declararlo.
-  //    Es exactamente el caso que el comentario de arriba anticipaba. Los dos huecos de hoy:
-  //      · `PV_NOMBRE_DUPLICADO`        — aprobado por el ASESOR, pendiente del fundador (sin marcador)
-  //      · `PV_NOMBRE_ACTIVO_DUPLICADO` — sin aprobar por NADIE, y por eso SÍ lleva marcador
-  assert.equal(Number(m[1]), 2,
-    `🔴 el contador dice ${m[1]} y el traductor estrena 2 textos sin firma. O ha entrado uno nuevo `
-    + 'sin declararlo, o el fundador ha firmado y no se ha anotado.');
+  // 🔴 SUBIÓ A 2 EN SCRUM-631 (entró `PV_NOMBRE_ACTIVO_DUPLICADO`) y BAJÓ A 1 EL 26-SEP-2026
+  //    (SCRUM-631 comentario 17180): ese texto quedó aprobado por el orquestador por delegación
+  //    permanente. Solo queda una ranura sin firma DEL FUNDADOR:
+  //      · `PV_NOMBRE_DUPLICADO` — aprobado por el ASESOR, pendiente del fundador (sin marcador,
+  //        canal de firma distinto de la delegación de microcopy)
+  assert.equal(Number(m[1]), 1,
+    `🔴 el contador dice ${m[1]} y el traductor estrena 1 texto sin firma DEL FUNDADOR. O ha `
+    + 'entrado uno nuevo sin declararlo, o el fundador ha firmado el que queda y no se ha anotado.');
 
   // ③ Y NO ESTÁ EN `docs/microcopy/`, que es el registro del FUNDADOR: `constaAprobado()` lo
   // barre (SCRUM-726), así que meter ahí la firma del asesor la haría pasar por la suya.

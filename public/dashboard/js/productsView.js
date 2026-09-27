@@ -68,39 +68,41 @@ const PV_NOMBRE_DUPLICADO = 'Ya tienes un producto con ese nombre.';
 
 // ── SCRUM-631 · EL NOMBRE COGIDO **AL REACTIVAR** ────────────────────────────────────────────
 //
-// 🔴 PENDIENTE DE FIRMA: LLEVA MARCADOR EN PANTALLA. No lo ha aprobado nadie todavia — ni el
-// asesor ni el fundador. Es la otra mitad del reparto que este fichero ya usa: SIN marcador =
-// aprobado por el asesor (PV_NOMBRE_DUPLICADO, arriba); CON marcador = sin aprobar por nadie.
+// ✅ APROBADO POR EL ORQUESTADOR POR DELEGACIÓN PERMANENTE del fundador (regla 39 · SCRUM-631
+// comentario 17180, 26-sep-2026). No es fiscal y no promete nada.
 //
-// POR QUE NO VALE `PV_NOMBRE_DUPLICADO` AQUI. Aquel dice «Ya tienes un producto con ese nombre»
+// POR QUÉ NO VALE `PV_NOMBRE_DUPLICADO` AQUÍ. Aquel dice «Ya tienes un producto con ese nombre»
 // y se lee CON EL CAMPO DEL NOMBRE DELANTE, en un alta. Al pulsar «Activar» no hay campo que
-// cambiar y el choque es con OTRO producto que esta ACTIVO: el texto tiene que decir eso, o el
-// profesional lee un mensaje de alta sobre una accion que no es un alta.
+// cambiar y el choque es con OTRO producto que está ACTIVO: el texto tiene que decir eso, o el
+// profesional lee un mensaje de alta sobre una acción que no es un alta.
 //
-// ⚠️ Y HOY NO PUEDE SALIR EN PANTALLA: reactivar solo choca cuando el nombre se ha liberado, y
-// eso exige el paso 2 de la opcion B, que espera al fundador. Nace marcado y sin camino que lo
-// pinte en produccion — que es exactamente como debe nacer un texto sin firmar.
+// 🔴 CORRECCIÓN SOBRE EL ESTADO ANTERIOR: este comentario decía «hoy no puede salir en pantalla»
+// —creía que reactivar con choque exigía un paso 2 pendiente del fundador—. Era falso: medido el
+// 26-sep-2026 por S0 sobre los ficheros SERVIDOS por yaqu.app, el marcador SÍ es alcanzable en
+// producción. Y lo que de verdad bloqueaba la firma desde el 4-sep no era una decisión pendiente:
+// era que el navegador de aquella sesión no arrancaba y la caja no se pudo medir (control hecho
+// con `scripts/guard-caja-avisos.mjs`, que fallaba igual — «CORTADA EN proceso+ws»). 22 días
+// parados por una herramienta, no por un juicio de producto.
 //
-// 🔴 LA CAJA: **NO MEDIDA**, y por eso este texto NO se puede aprobar todavia (regla 30).
+// LA CAJA, MEDIDA en el DOM renderizado con la CSS real del sitio (mismo método que SCRUM-641),
+// sobre esta misma caja `.alert` — 46 caracteres:
+//   · 929 px → 1 línea, sobra.
+//   · 390 px → 1 línea: cabe (el candidato SIN marcador ya eran 46, y el 641 midió capacidad ~45
+//     de forma aproximada; la medida real en el DOM es la que manda, no el conteo de caracteres).
+//   · 320 px → 2 líneas, mismo comportamiento que el texto ya aprobado de SCRUM-641.
 //
-// No es que no se haya intentado: el navegador de esta maquina NO ARRANCA. Y no es culpa del
-// medidor — control hecho: `scripts/guard-caja-avisos.mjs`, que es un guard de navegador que ya
-// existe y funciona en CI, falla EXACTAMENTE igual aqui («CORTADA EN proceso+ws» en 0,2-0,4 s,
-// tres intentos, salida 3). Edge esta instalado y se resuelve; lo que no levanta es el proceso.
-//
-// Asi que esto es NO MEDIDO, no «cabe». Mientras no haya caja medida a 929 y 390 px, el asesor
-// no puede firmarlo y el marcador se queda. Referencia para cuando se mida: el texto aprobado
-// de SCRUM-641 son 37 caracteres y a 390 px la capacidad medida fue 45; este candidato, SIN el
-// marcador, son 46 — o sea que esta JUSTO en el borde y por eso hay que verlo, no calcularlo.
-const PV_NOMBRE_ACTIVO_DUPLICADO =
-  PV_MARCADOR_MICROCOPY + ' Ya tienes otro producto activo con ese nombre.';
+// EL «QUÉ HACER» YA ESTÁ EN PANTALLA: el botón «Editar» vive en la MISMA fila, junto a «Activar»,
+// y abre el modal donde se cambia el nombre. No hace falta una segunda frase con la salida dentro.
+const PV_NOMBRE_ACTIVO_DUPLICADO = 'Ya tienes otro producto activo con ese nombre.';
 
 /** El codigo del servidor, en UN solo sitio: lo usan el mapa de abajo y el camino de Activar. */
 const PV_COD_NOMBRE_DUPLICADO = 'name_duplicate';
 
-// Cuantas ranuras estrena esta pantalla SIN firma. DOS desde SCRUM-631: el texto de arriba
-// (aprobado por el asesor, pendiente del fundador) y el de reactivar (sin aprobar por nadie).
-const PV_SIN_APROBAR = 2;
+// Cuántas ranuras estrena esta pantalla SIN firma DEL FUNDADOR (o su delegación permanente).
+// UNA desde el 26-sep-2026 (SCRUM-631 comentario 17180): `PV_NOMBRE_DUPLICADO`, arriba, sigue
+// aprobado solo por el ASESOR — un canal de firma distinto, no la delegación de microcopy — y
+// pendiente del fundador. `PV_NOMBRE_ACTIVO_DUPLICADO` ya no cuenta: bajó de 2 a 1.
+const PV_SIN_APROBAR = 1;
 
 // Un identificador interno no lleva espacios ni mayúsculas: `name_duplicate`, `forbidden`,
 // `trial_expired`. Una frase escrita para una persona siempre lleva una de las dos cosas.
