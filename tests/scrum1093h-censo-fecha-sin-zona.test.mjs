@@ -205,5 +205,6 @@ test('SCRUM-1093h · ⑤ NEGATIVO: `toLocaleString` sobre un `number` (mismo nom
   const filas = censarFabricado(FABRICADO_NUMERO);
   assert.deepEqual(filas, [],
     `🔴 acusa por el NOMBRE del método en vez de por el TIPO del receptor: ${JSON.stringify(filas)}. `
-    + 'Es exactamente el defecto que `albaranPdf.service.ts:133` (el control ④) demuestra en código real.');
+    + 'Es exactamente el defecto que demuestra el control ④ sobre albaranPdf.service.ts, más arriba en '
+    + 'este fichero.');
 });
