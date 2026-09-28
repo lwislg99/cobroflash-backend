@@ -168,7 +168,19 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // anclaje por SU literal, cada una en un fichero distinto (expensesView.js / jobDetailView.js).
 // Por A4 de la casa, no se elige lado ni se suma a mano: se REGENERA con el propio censo sobre
 // el árbol YA FUSIONADO. Ver el número de abajo y su comentario.
-const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 155 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 155 → 156 · 28-sep-2026 (SCRUM-1216b) · «Facturas recibidas» (`facturasRecibidasView.js:31`,
+// `titulo: rotulo('Facturas recibidas')`, SCRUM-1040). **NO ES COPY NUEVA:** el fichero no cambió
+// (diff vacío entre 1216a y 1216b), y el literal ya era visible (`title.textContent = COPY.titulo`),
+// pero el censo no lo veía. Lo que cambió es la PASADA 0 del censo, que junta los nombres que se
+// LLAMAN dentro de un sumidero: 1216b pinta `${T.titulo(anio)}` en un `innerHTML` (la pregunta de
+// la serie, firmada en SCRUM-1216 comentario 17347), así que `titulo` entró en esa lista y la
+// clave homónima de facturas recibidas se volvió visible al instrumento. Es la misma ceguera por
+// copy centralizada que describió SCRUM-776, curada por accidente. Es un título de pantalla fijo:
+// no depende de flag ni de tipo, así que «a pelo» es su categoría. AISLADO con el propio censo: el
+// diff de `visibles` entre 1216a y 1216b es EXACTAMENTE esa línea, y ninguna de las dos pantallas de
+// la serie añade una. Renombrar `titulo` para que volviera a no verse sería apagar el instrumento.
+const VEREDICTO_AL_MEDIR = { flag: 16, tipo: 7, aPelo: 156 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA

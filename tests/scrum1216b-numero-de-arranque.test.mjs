@@ -117,6 +117,30 @@ test('SCRUM-1216b · 🔴 declarado 41 y ya emitidas F…0042 y F…0043 → la 
 // ② LOS CONTROLES — lo que NO puede cambiar
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
+test('SCRUM-1216b · 🔴 declaró 41 y luego contesta «No» → el arranque se BORRA (NULL explícito) y vuelve a la 0001', async () => {
+  // «No» significa «no declaró»: un arranque anterior vivo sería un dato que nadie puso decidiendo
+  // un número de factura. Se exige `null` y no `undefined` (no escribir la columna la dejaría viva).
+  const { merchant: declarado } = await declarar(BASE, [], { vieneDeOtroSitio: true, ultimoNumero: 41 });
+  assert.equal(await emitir(declarado, []), F(42), 'suelo: la declaración había cuajado');
+  const { merchant } = await declarar(declarado, [], { vieneDeOtroSitio: false });
+  assert.strictEqual(merchant.invoiceStartSeq, null, '🔴 «No» deja vivo el arranque anterior');
+  assert.strictEqual(merchant.invoiceStartYear, null, '🔴 «No» deja vivo el año del arranque anterior');
+  assert.equal(await emitir(merchant, []), F(1));
+});
+
+test('SCRUM-1216b · `seqDeLaSerieF`: NULL («no declaró») y 1 («declaró arranque 1») son datos distintos, y lo corrupto no fabrica un número', async () => {
+  const { seqDeLaSerieF } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
+  assert.equal(seqDeLaSerieF(1, null, ANIO), 1, 'sin declarar manda lo derivado');
+  assert.equal(seqDeLaSerieF(1, { invoiceStartSeq: 1, invoiceStartYear: ANIO }, ANIO), 1);
+  assert.equal(seqDeLaSerieF(7, { invoiceStartSeq: 42, invoiceStartYear: ANIO }, ANIO), 42, 'declarado por encima: manda él');
+  assert.equal(seqDeLaSerieF(50, { invoiceStartSeq: 42, invoiceStartYear: ANIO }, ANIO), 50, 'lo emitido por encima: manda lo emitido');
+  assert.equal(seqDeLaSerieF(1, { invoiceStartSeq: 42, invoiceStartYear: ANIO - 1 }, ANIO), 1, 'el arranque de otro año no cuenta');
+  // Un valor corrupto no fabrica un número: cae a lo derivado, nunca a 0 ni a NaN.
+  for (const malo of [0, -3, 4.5, NaN, '42']) {
+    assert.equal(seqDeLaSerieF(1, { invoiceStartSeq: malo, invoiceStartYear: ANIO }, ANIO), 1, `arranque corrupto ${String(malo)}`);
+  }
+});
+
 test('SCRUM-1216b · CONTROL · «No, empiezo ahora» → la 0001', async () => {
   const { r, merchant } = await declarar(BASE, [], { vieneDeOtroSitio: false });
   assert.equal(r.status, 200);

@@ -31,7 +31,8 @@ import { soloCodigo } from './_solo-codigo.mjs';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ANIO = new Date().getFullYear();
 const PROMESA_FALSA = 'Seguimos por ahí para que tu numeración no tenga saltos.';
-const PASO_SERIE = `¿Ya has facturado en ${ANIO}?`;
+// SCRUM-1216b: el título lo firmó de nuevo el fundador (SCRUM-1216, comentario 17347).
+const PASO_SERIE = `¿Ya has emitido facturas en ${ANIO}?`;
 
 function montar(modo) {
   const peticiones = [];

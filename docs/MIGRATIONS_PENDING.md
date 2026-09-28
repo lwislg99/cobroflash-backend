@@ -2981,3 +2981,28 @@ de arriba (`information_schema.columns`, `pg_indexes`, `information_schema.table
    `CREATE TABLE … ( … )` · `ALTER COLUMN … DROP DEFAULT` · `CREATE TYPE … AS ENUM ( … )`
    (SCRUM-1197). Sus conclusiones sobre el DML no cambian: el DML sigue sin estar permitido. Aquí
    se registra, no se corrige.
+
+## SCRUM-1216b · arranque declarado de la serie F en `merchants` (invoice_start_seq / invoice_start_year) — 28-sep-2026
+
+Decisión y forma: el orquestador de Javier, con el SÍ del fundador (SCRUM-1216, comentarios 17347 y
+siguientes). `invoice_start_seq` guarda EL ARRANQUE (declaró 41 → 42); `invoice_start_year` es año
+PROPIO. **Sin DEFAULT a propósito: NULL = «no declaró», que no es 1.**
+
+```sql
+ALTER TABLE "merchants"
+  ADD COLUMN IF NOT EXISTS "invoice_start_seq"  INTEGER,
+  ADD COLUMN IF NOT EXISTS "invoice_start_year" INTEGER;
+```
+
+Aditiva. El diff offline de `preview-migracion.mjs --desde <schema de main>` da exactamente estas
+dos columnas (0 DROP/RENAME/TRUNCATE/DELETE/SET NOT NULL).
+
+### Estado por base — 28-sep-2026
+
+- [ ] **producción** — la pegó Javier (lo dice el orquestador). **SIN verificar por catálogo**: ninguna
+  sesión tiene la clave. 🔴 Hasta verificarlo, el PR de 1216b NO debe mergearse: `schemaDrift.ts` no
+  deja escuchar en `NODE_ENV=production` si el esquema espera columnas que la base no tiene
+  (SCRUM-1122).
+- [x] **staging** — verificado por el orquestador leyendo `information_schema`: las dos, `integer`,
+  nullable, sin default; `next_invoice_number` intacto.
+- [ ] **desarrollo · yaqu_dev_javier** — pedido a J6 (tiene el aplicador). J1 no lo aplica.
