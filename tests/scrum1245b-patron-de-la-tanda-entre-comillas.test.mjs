@@ -101,12 +101,13 @@ test('SCRUM-1245b · el árbol real: ningún documento enseña el patrón sin co
   assert.ok(r.poblacion.ficheros >= 250, `sólo he mirado ${r.poblacion.ficheros} documentos`);
   assert.ok(r.poblacion.bloques >= 300, `sólo he visto ${r.poblacion.bloques} bloques de código`);
   assert.ok(r.poblacion.invocaciones >= 5, `sólo he visto ${r.poblacion.invocaciones} invocaciones de node --test`);
-  // Control positivo: las dos copias que arregló SCRUM-1245 se VEN, con su patrón entre comillas.
-  const conPatron = r.invocaciones.filter((v) => v.comando.includes("'tests/*.test.mjs'")).map((v) => v.fichero).sort();
-  assert.deepEqual(conPatron, ['CLAUDE.md', 'docs/RUNBOOKS.md']);
+  // Primero el hallazgo, para que el rojo diga DÓNDE está el patrón sin comillas.
   assert.deepEqual(
     r.hallazgos.map((h) => `${h.fichero}:${h.linea} ${h.sinComillas.join(' ')}`), [],
     'Un documento enseña `node --test` con un patrón SIN COMILLAS. En bash lo expande el shell y, con la\n' +
     'tanda entera, node no arranca y el bloque puede salir 0. Ponlo entre comillas simples (SCRUM-1245).',
   );
+  // Control positivo: las dos copias que arregló SCRUM-1245 se VEN, con su patrón entre comillas.
+  const conPatron = r.invocaciones.filter((v) => /['"]tests\/\*\.test\.mjs['"]/.test(v.comando)).map((v) => v.fichero).sort();
+  assert.deepEqual(conPatron, ['CLAUDE.md', 'docs/RUNBOOKS.md']);
 });
