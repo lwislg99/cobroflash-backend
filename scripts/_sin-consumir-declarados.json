@@ -28,10 +28,6 @@
     {"clave":"cuerpo · POST /admin/quotes/:id/reject::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:135","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/templates::paymentTerms","donde":"src/modules/templates/app/routes/templates.routes.ts:32","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/templates::tiers","donde":"src/modules/templates/app/routes/templates.routes.ts:32","carril":"S2","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /quote/:token/accept::channel","donde":"src/modules/quotes/app/routes/quotes.routes.ts:305","carril":"S2","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /quote/:token/accept::comment","donde":"src/modules/quotes/app/routes/quotes.routes.ts:305","carril":"S2","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /quote/:token/accept::evidence","donde":"src/modules/quotes/app/routes/quotes.routes.ts:305","carril":"S2","ticket":"SCRUM-1185"},
-    {"clave":"cuerpo · POST /quote/:token/accept::paymentTerms","donde":"src/modules/quotes/app/routes/quotes.routes.ts:305","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /quote/create::clausulasExcluidas","donde":"src/modules/quotes/app/routes/quotes.routes.ts:98","carril":"S2","ticket":"SCRUM-1180"},
     {"clave":"cuerpo · POST /quote/create::job_id","donde":"src/modules/quotes/app/routes/quotes.routes.ts:98","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · PUT /admin/invoices/:id/status::paidVia","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:525","carril":"J1","ticket":"SCRUM-1185"},
@@ -127,7 +123,6 @@
     {"clave":"export · src/modules/system/tagsDelCliente.ts::tieneTag","donde":"src/modules/system/tagsDelCliente.ts:113","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/team/domain/team.service.ts::listTeamMembers","donde":"src/modules/team/domain/team.service.ts:4","carril":"J3","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/aiQuoteAssistant.js::openAiMessageModal","donde":"public/dashboard/js/aiQuoteAssistant.js:183","carril":"S2","ticket":"SCRUM-1182"},
-    {"clave":"front-funcion · public/dashboard/js/api.js::acceptQuote","donde":"public/dashboard/js/api.js:1451","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/api.js::acceptQuoteAdmin","donde":"public/dashboard/js/api.js:1483","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/api.js::getProducts","donde":"public/dashboard/js/api.js:1500","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"front-funcion · public/dashboard/js/api.js::getQuotesList","donde":"public/dashboard/js/api.js:1462","carril":"S2","ticket":"SCRUM-1185"},
@@ -173,7 +168,6 @@
     {"clave":"ruta · POST /admin/invoices/:id/unpay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:590","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/supresion/:merchantId","donde":"src/modules/system/app/routes/supresion.routes.ts:29","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /auth/test-login","donde":"src/modules/auth/app/routes/auth.routes.ts:95","carril":"operación","ticket":"SCRUM-1185"},
-    {"clave":"ruta · POST /quote/:token/reject","donde":"src/modules/quotes/app/routes/quotes.routes.ts:401","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /schema-check","donde":"src/app.ts:328","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"ruta · PUT /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:455","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta-inalcanzable · POST /admin/ai/quote-message","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
@@ -181,6 +175,12 @@
   ],
   "retiradas": [
     {"clave":"cuerpo · POST /quote/create::docFooterText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
-    {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"}
+    {"clave":"cuerpo · POST /quote/create::docHeaderText","motivo":"SCRUM-1174: conectada en quotesView.js (editor del presupuesto)"},
+    {"clave":"cuerpo · POST /quote/:token/accept::channel","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
+    {"clave":"cuerpo · POST /quote/:token/accept::comment","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
+    {"clave":"cuerpo · POST /quote/:token/accept::evidence","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
+    {"clave":"cuerpo · POST /quote/:token/accept::paymentTerms","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
+    {"clave":"ruta · POST /quote/:token/reject","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"},
+    {"clave":"front-funcion · public/dashboard/js/api.js::acceptQuote","motivo":"SCRUM-1202: BORRADA. Puerta publica sin autenticar: POST /quote/:token/accept y /reject reescribian paymentTerms/evidence sin sello ni caducidad; nadie las llamaba desde SCRUM-95 (la landing decide por /decision)"}
   ]
 }

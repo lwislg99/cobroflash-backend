@@ -172,18 +172,9 @@ export const PUBLIC_ACCESS_DECLARED: ReadonlyArray<PublicAccessDeclaration> = [
   // además su PDF no expone a nadie nuevo. Sin `:id` —eso es justo lo que cerró SCRUM-95— y
   // sólo LEE: no muta estado ni escribe `quote.pdfUrl`.
   { method: 'GET', path: '/pay/quote/:token/pdf', kind: 'token', reason: 'Quote.decisionToken' },
-  {
-    method: 'POST',
-    path: '/quote/:token/accept',
-    kind: 'token',
-    reason: 'Quote.decisionToken + decisionLimiter (defensa en profundidad, no la categoría segura en sí)',
-  },
-  {
-    method: 'POST',
-    path: '/quote/:token/reject',
-    kind: 'token',
-    reason: 'Quote.decisionToken + decisionLimiter',
-  },
+  // SCRUM-1202 · POST /quote/:token/accept y /reject se RETIRARON: nadie las llamaba desde
+  // SCRUM-95 y /accept marcaba `accepted` SIN firma ni sello, reescribiendo paymentTerms y
+  // evidence con el cuerpo. La decisión del cliente entra SOLO por /decision.
   {
     method: 'POST',
     path: '/quote/:token/decision',
