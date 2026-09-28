@@ -125,6 +125,35 @@ function pintarBloqueRail(bloque) {
 }
 
 /**
+ * SCRUM-1164 · ¿ESTE NEGOCIO ESTÁ EN MODO JUSTIFICANTE? Con `INVOICING_ES_ENABLED` en OFF (todo
+ * merchant ES real hoy) el servidor manda `receipt`, y entonces YaQu ni factura ni cobra (regla 24).
+ * Los textos que afirman lo contrario se OCULTAN, no se reescriben: ocultar no es inventar copy
+ * (decisión del orquestador en SCRUM-1164). Mismo criterio y misma fuente que ya ocultan en
+ * `receipt` Planes, el tutorial, Ajustes y el onboarding: `window.appModoEmision`, tal cual lo
+ * calculó el servidor (`app.js`, SCRUM-298) — el navegador no recalcula el modo.
+ *
+ * ⚠️ Compara con `=== 'receipt'` y NO con `facturaFiscalDisponible()`, a propósito: aquello decide si
+ * se OFRECE una acción fiscal y falla cerrado (SCRUM-905); esto decide si se CALLA un texto que es
+ * verdad en los otros dos modos. Y ocultar no es borrar: el día que el cobro se encienda, el modo
+ * cambia y los textos vuelven solos.
+ */
+function enModoJustificante() {
+  return typeof window !== 'undefined' && window.appModoEmision === 'receipt';
+}
+
+// SCRUM-1164 (fila A del com. 17240) · los huecos que invitan a FACTURAR o a COBRAR por YaQu. En
+// `receipt` no hay factura posible, así que «X entregados sin facturar» + «Facturar lo entregado»
+// empujan a una acción que no existe. `sin-cobrar` («X facturados sin cobrar») no puede darse sin
+// facturas, pero se nombra igual: es la misma afirmación. Precedente en el servidor:
+// `weeklyDigest.service.ts` ya calla el «sin facturar» en este modo.
+const HUECOS_SOLO_SI_FACTURA = new Set(['sin-facturar', 'sin-facturar-nada', 'sin-cobrar']);
+
+function huecosVisibles(job) {
+  const huecos = huecosDeCobro(job);
+  return enModoJustificante() ? huecos.filter((h) => !HUECOS_SOLO_SI_FACTURA.has(h.id)) : huecos;
+}
+
+/**
  * SCRUM-320 (G5) · pinta «QUÉ FALTA PARA COBRAR».
  *
  * Aquí no se decide nada: los importes y los huecos salen de `jobCobroHuecos.js`, que es puro y por
@@ -233,7 +262,7 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
 
   const lista = document.createElement('div');
   lista.className = 'cobro-huecos';
-  for (const h of huecosDeCobro(job)) {
+  for (const h of huecosVisibles(job)) {
     const f = document.createElement('div');
     f.className = 'cobro-hueco';
     f.dataset.hueco = h.id;
@@ -722,10 +751,15 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // Si no hay ningún hueco, la sección NO SE PINTA: no falta nada, y preguntar qué falta cuando no
   // falta nada es ruido (misma regla del hueco que G3 y G4).
   if (typeof seccionCobroVisible === 'function' && seccionCobroVisible(job)) {
-    const cobroSec = document.createElement('div');
-    cobroSec.className = 'detail-section';
-    body.appendChild(cobroSec);
-    pintarQueFaltaParaCobrar(cobroSec, job, fmtMoneyEs, cur);
+    // SCRUM-1164 · y en `receipt` cuenta con los huecos que QUEDAN tras ocultar los de facturar: si
+    // sólo había ésos, la sección sería un título «Lo que falta» sobre una lista vacía. Va DENTRO de
+    // su condición, no sumada a ella: la sección se sigue montando bajo su propio `if` (SCRUM-320).
+    if (huecosVisibles(job).length > 0 || importesDeCobro(job).cobradoDeMas > 0) {
+      const cobroSec = document.createElement('div');
+      cobroSec.className = 'detail-section';
+      body.appendChild(cobroSec);
+      pintarQueFaltaParaCobrar(cobroSec, job, fmtMoneyEs, cur);
+    }
   }
 
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
@@ -750,7 +784,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     // gris: un Trabajo sin importe de referencia no admite ninguna afirmación sobre su dinero, y
     // «Parcial» era una afirmación FALSA que además no se podía deshacer nunca (la pestaña
     // «Pagado» no lo enseñaba jamás, así que el pro perseguía un pago que ya tenía).
-    (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : '');
+    // SCRUM-1164 (fila F) · y en `receipt` tampoco: sin cobro por YaQu el cobrado no se mueve nunca
+    // de 0, así que el chip diría «Pendiente» para siempre, cobre el profesional o no. El modo va
+    // FUERA de la condición de SCRUM-363, que se queda tal cual: son dos razones distintas para callar.
+    (enModoJustificante() ? '' : (job.estadoCobro ? `<span class="status-pill ${cobroCls}">${esc(job.estadoCobro)}</span>` : ''));
   // 🔴 SCRUM-917e (D) · EL DINERO SE DICE UNA VEZ. Aquí había un titular «Total aceptado» a 2,2 rem
   // y, debajo, una barra que repetía «Cobrado X de Y». Entre eso, las cuatro filas de importes de
   // «Qué falta para cobrar» y el bloque DINERO del rail, **«590,00 €» se leía SIETE veces en la
@@ -794,7 +831,11 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     franja.className = 'detail-dinero';
 
     const foco = document.createElement('div');
-    if (hayEje) {
+    // SCRUM-1164 (fila F) · en `receipt` se calla el FOCO («Te falta por cobrar X €» / «Cobrado del
+    // todo»): es un DERIVADO del cobrado, y el cobrado por YaQu es 0 para siempre en este modo. Los
+    // lados (Aceptado, Cobrado) son datos medidos y se siguen diciendo — mismo reparto que ya hace
+    // el caso sin eje de justo arriba: se calla lo derivado, no el dato.
+    if (hayEje && !enModoJustificante()) {
       const rot = document.createElement('span');
       rot.className = 'detail-dinero__rotulo';
       // «Cobrado del todo» en vez de «Te falta por cobrar 0,00 €»: enseñar un cero donde se espera
@@ -1270,7 +1311,8 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   const tipoHint = document.createElement('p');
   tipoHint.style.cssText = 'margin:8px 0 0;color:var(--muted);font-size:12px';
   tipoHint.textContent = 'Nos ayuda a preparar tus facturas correctamente. Si tienes dudas, confírmalo con tu asesor.';
-  tipoExpanded.appendChild(tipoHint);
+  // SCRUM-1164 (fila C) · en `receipt` YaQu no prepara facturas: la nota se calla, el selector no.
+  if (!enModoJustificante()) tipoExpanded.appendChild(tipoHint);
   if (!isTecnico) tipoSec.appendChild(tipoExpanded);
 
   syncTipoCollapsed();
@@ -2521,7 +2563,9 @@ function buildAlbEditor(box, alb, { onClose, onError, onGuardar, textoGuardar, o
   const ocultarHint = document.createElement('p');
   ocultarHint.style.cssText = 'margin:2px 0 0;color:var(--muted);font-size:12px';
   ocultarHint.textContent = ALB_OCULTAR_PRECIOS_NOTA;
-  ocultarRow.appendChild(ocultarHint);
+  // SCRUM-1164 (fila B) · «…y puedes facturarlo» es falso en `receipt`: la nota se calla, la casilla
+  // (que sí hace lo que dice) se queda.
+  if (!enModoJustificante()) ocultarRow.appendChild(ocultarHint);
   // Se muestra u oculta con el modo, sin re-pintar nada: el pro marca «con precios» y aparece.
   function syncOcultarRow() { ocultarRow.style.display = modo === 'VALORADO' ? '' : 'none'; }
   syncOcultarRow();
