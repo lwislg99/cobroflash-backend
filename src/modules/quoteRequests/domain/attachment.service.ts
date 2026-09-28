@@ -33,14 +33,3 @@ export async function saveQuoteRequestPhoto(params: {
   return { id: att.id, url };
 }
 
-/**
- * Lista los adjuntos de una solicitud SIN los bytes (solo metadatos para la
- * galería del BO). Filtra por merchant (multi-tenant).
- */
-export async function listQuoteRequestAttachments(merchantId: number, quoteRequestId: number) {
-  return prisma.attachment.findMany({
-    where: { merchantId, entityType: 'quote_request', entityId: quoteRequestId },
-    orderBy: { createdAt: 'asc' },
-    select: { id: true, url: true, kind: true, mime: true, createdAt: true },
-  });
-}

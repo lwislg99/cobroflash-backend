@@ -161,12 +161,22 @@ export async function setQuoteTags(merchantId: number, id: number, tags: unknown
 }
 
 /**
+ * SCRUM-1213 · tenencia FAIL-CLOSED (regla 2). Antes, sin `merchantId` el `where` se quedaba sin
+ * filtro de merchant y servía, aceptaba o rechazaba el presupuesto de OTRO negocio. Ahora un
+ * llamador que no lo pasa recibe lo mismo que un id ajeno: `quote_not_found`.
+ */
+function exigirMerchant(merchantId: number | null | undefined): number {
+  if (merchantId == null) throw new Error('quote_not_found');
+  return merchantId;
+}
+
+/**
  * Detalle completo de un presupuesto para el panel admin.
  */
 export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
   // A12.1: scoping multi-tenant (regla 2) — un id ajeno = not found
   const quote = await prisma.quote.findFirst({
-    where: { id, ...(merchantId != null ? { merchantId } : {}) },
+    where: { id, merchantId: exigirMerchant(merchantId) },
     include: {
       merchant: true,
       customer: true,
@@ -343,7 +353,7 @@ export async function acceptQuoteAdmin(
   merchantId?: number, // A12.1: scoping multi-tenant (regla 2)
 ) {
   const quote = await prisma.quote.findFirst({
-    where: { id: quoteId, ...(merchantId != null ? { merchantId } : {}) },
+    where: { id: quoteId, merchantId: exigirMerchant(merchantId) },
   });
 
   if (!quote) {
@@ -390,7 +400,7 @@ export async function rejectQuoteAdmin(
   merchantId?: number, // A12.1: scoping multi-tenant (regla 2)
 ) {
   const quote = await prisma.quote.findFirst({
-    where: { id: quoteId, ...(merchantId != null ? { merchantId } : {}) },
+    where: { id: quoteId, merchantId: exigirMerchant(merchantId) },
   });
 
   if (!quote) {
